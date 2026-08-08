@@ -788,8 +788,12 @@ export default function Render3DModeSkeleton() {
             'Sang bảng dựng (Node) để lắp chuỗi camera → khối 3D → render AI. Dựng sẵn dây nối — việc kế tiếp, chưa làm.',
             'Switch to the Node board to assemble camera → 3D block → render AI. Pre-wired chain — not built yet.',
           )}
+          /* ⑥ p14 (Hoà 08/08, đo DOM 1440×900): bottom:76 đặt nút HÀNH ĐỘNG này ĐÈ lên nút "Thêm"
+             của dock công cụ (dock 1240–1313 · nút này x=1300, cùng hàng y≈754) — hành động và
+             cần-số/công cụ dính một cụm. Nâng lên bottom:132: một mình góc phải (nổi bật giữ
+             nguyên), cụm dock + công tắc chế độ (ModeSwitchBar) ở dưới tách hẳn. */
           style={{
-            position: 'absolute', right: 18, bottom: 76, zIndex: 6,
+            position: 'absolute', right: 18, bottom: 132, zIndex: 6,
             height: 38, padding: '0 18px', display: 'flex', alignItems: 'center', gap: 9,
             color: 'var(--t1)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
           }}

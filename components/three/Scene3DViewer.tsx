@@ -39,6 +39,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { buildMergedGeometries, buildMassingWalls, isMassingWallGroup } from '@/lib/three/obj-scene-to-geometry';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { ensureBoundsTree, dropBoundsTree, installAcceleratedRaycast } from '@/lib/three/bvh';
 import { findSnap3D, lockToAxis, DEFAULT_SNAP_TOLERANCE_PX, type Snap3DKind, type CadAxis } from '@/lib/three/snap3d';
 import type { SnapSettings } from '@/lib/cad/store';
@@ -71,7 +72,25 @@ export interface Scene3DCameraApi {
  * `fitToScene|zoomExtents|zoomToFit|fitCamera|Toàn cảnh|Vừa khung` trong `components/three/` +
  * `components/render-studio/` + `lib/three/` = 0 trước bản vá này (`GAP-IF.md` G-M18-04). Toán
  * giữ NGUYÊN VĂN công thức cũ (03/08, phán quyết PHU) — chỉ đổi chỗ ở, không đổi số. */
-function fitCameraToScene(scene: Scene3DData, camera: THREE.PerspectiveCamera, controls: OrbitControls) {
+function fitCameraToScene(scene: Scene3DData, camera: THREE.PerspectiveCamera, controls: OrbitControls, object?: THREE.Object3D | null) {
+  // p14 (Hoà báo 08/08 "fit chạy rồi mà camera vẫn dí sát"): nguồn khung cũ là `scene.bboxMm` —
+  // bbox của ENTITY 2D. Hai lỗ đo được: ① gọi lúc CHƯA dựng mesh (trước là dòng trên cùng của
+  // effect, mesh dựng sau) — với bboxMm thì không sao nhưng là sai thời điểm chờ sẵn; ② hình học
+  // THẬT vượt ra ngoài bboxMm: bản nhân lưới (2 bậc arrayLinear, p14) chỉ tồn tại sau
+  // `resolveGroupGeometry` ở tầng three — bboxMm không hề biết ⇒ lưới 3×2 nằm ngoài khung.
+  // Sửa: đo `Box3.setFromObject(group)` — khung bao của ĐÚNG những mesh đang vẽ (kể cả ops/scale).
+  // Giữ đường bboxMm làm fallback khi group rỗng (cảnh trống — vẫn cần đứng đúng chỗ 8×8m).
+  const box = object ? new THREE.Box3().setFromObject(object) : null;
+  if (box && !box.isEmpty()) {
+    const c = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const halfDiag = Math.max(0.5, Math.hypot(size.x, size.y, size.z) / 2) * 1.15;
+    camera.position.set(c.x + halfDiag * 1.1, c.y + halfDiag * 0.9, c.z + halfDiag * 1.1);
+    controls.target.copy(c);
+    camera.updateProjectionMatrix();
+    controls.update();
+    return;
+  }
   const { minX, minY, maxX, maxY } = scene.bboxMm;
   const cx = (minX + maxX) / 2 / 1000;
   const cy = (minY + maxY) / 2 / 1000;
@@ -250,10 +269,9 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     controls.enableDamping = true;
     controls.enabled = !walkActive && !campathActive; // walk/campath tự lái camera, orbit nhường
 
-    // G-M18-04 — khung ban đầu bao trọn bbox (thay vì tự tính lại y hệt công thức ở đây): walk có
-    // vị trí đứng-trong-phòng riêng ở trên (KHÔNG fit), mọi mode khác dùng đúng 1 hàm dùng lại
-    // được cho cả nút "Toàn cảnh" bên dưới.
-    if (!walkActive) fitCameraToScene(scene, camera, controls);
+    // G-M18-04 — khung ban đầu bao trọn CẢNH. p14: fit dời XUỐNG SAU khi dựng mesh (xem chỗ gọi
+    // `fitCameraToScene(scene, camera, controls, group)` bên dưới) — đo Box3 từ mesh thật cần
+    // mesh tồn tại trước; gọi ở đây là sai thời điểm (đúng nghi vấn Hoà 08/08).
     controls.update();
 
     if (cameraApiRef) {
@@ -262,10 +280,12 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
         controls,
         fit: () => {
           if (walkActive || campathActive) return; // 2 mode này tự lái camera mỗi khung, fit vô nghĩa
-          fitCameraToScene(scene, camera, controls);
+          fitCameraToScene(scene, camera, controls, fitTargetRef.group);
         },
       };
     }
+    // hộp trỏ tới group mesh (dựng bên dưới) cho closure fit ở trên — tránh dùng-trước-khai-báo.
+    const fitTargetRef: { group: THREE.Group | null } = { group: null };
 
     // Mode walk (3D-4) — PointerLockControls chuẩn three (KHÔNG tự viết vector nhìn/di chuyển).
     // Cần cú click (kích hoạt Pointer Lock API) — hint phủ toàn khung, ẩn khi đã lock.
@@ -317,9 +337,31 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     const staticScene = massingActive ? { ...scene, groups: scene.groups.filter((g) => !isMassingWallGroup(g)) } : scene;
     const built = buildMergedGeometries(staticScene);
     const group = new THREE.Group();
+    /* p14 (Hoà báo 08/08 "khối nhìn không đọc được hình"): MeshBasicMaterial phẳng lì làm mọi mặt
+       cùng màu dính thành một mảng. Thêm VIỀN CẠNH — EdgesGeometry(30°, bỏ chéo fan cùng mặt) +
+       LineSegments tối, gắn làm CON của từng mesh (scale.y lúc kéo push-pull tự co theo). KHÔNG
+       đèn, KHÔNG bóng đổ — quyết định #3 SPEC-3D-CORE §6 giữ nguyên, chỉ thêm nét đọc khối. */
+    const edgeJunk: { dispose(): void }[] = [];
+    const addEdges = (mesh: THREE.Mesh) => {
+      // soup không chỉ mục ⇒ EdgesGeometry coi mỗi tam giác là đảo riêng, vẽ CẢ chéo fan (đã
+      // thấy lúc verify) — hàn đỉnh (mergeVertices, dung sai 0.1mm) trước rồi mới rút cạnh 30°.
+      // (Hoà 08/08: ngưỡng 15° — mặt phẳng sạch trơn, góc tường/cạnh trên vẫn rõ. Chéo lộ ra
+      // KHÔNG phải do WireframeGeometry — là EdgesGeometry chạy trên soup CHƯA hàn đỉnh: mỗi tam
+      // giác một đảo nên mọi cạnh đều là biên. mergeVertices là thuốc đúng, ngưỡng chỉ là phụ.)
+      const welded = mergeVertices((mesh.geometry as THREE.BufferGeometry).clone(), 1e-4);
+      const eg = new THREE.EdgesGeometry(welded, 15);
+      welded.dispose();
+      const em = new THREE.LineBasicMaterial({ color: 0x26221c, transparent: true, opacity: 0.55 });
+      const lines = new THREE.LineSegments(eg, em);
+      lines.renderOrder = 1;
+      mesh.add(lines);
+      edgeJunk.push(eg, em);
+    };
     for (const b of built) {
       const material = new THREE.MeshBasicMaterial({ color: b.colorHex, side: THREE.DoubleSide });
-      group.add(new THREE.Mesh(b.geometry, material));
+      const mesh = new THREE.Mesh(b.geometry, material);
+      addEdges(mesh);
+      group.add(mesh);
     }
     three.add(group);
 
@@ -329,9 +371,14 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
       const material = new THREE.MeshBasicMaterial({ color: w.colorHex, side: THREE.DoubleSide });
       const mesh = new THREE.Mesh(w.geometry, material);
       mesh.userData = { entityId: w.entityId, baseHeightMm: w.baseHeightMm, baseMm: w.baseMm };
+      addEdges(mesh);
       massingMeshes.push(mesh);
       group.add(mesh);
     }
+
+    // p14 — fit SAU khi mesh tồn tại, đo Box3 từ chính group (xem docstring fitCameraToScene).
+    fitTargetRef.group = group;
+    if (!walkActive) fitCameraToScene(scene, camera, controls, group);
 
     /* ── T1 (P14) — BVH cho mọi mesh bắn tia được (NC-12 §3.1). ensureBoundsTree idempotent;
        dispose ở cleanup PHẢI dropBoundsTree trước geometry.dispose() (cây giữ mảng riêng).
@@ -697,6 +744,7 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
       axisGuideGeo.dispose();
       axisGuideMat.dispose();
       for (const j of gridJunk) j.dispose();
+      for (const j of edgeJunk) j.dispose();
       for (const b of built) {
         b.geometry.dispose();
       }

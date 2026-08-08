@@ -95,8 +95,8 @@ const meshCache = new Map<string, { hash: string; geom: THREE.BufferGeometry }>(
  */
 export function resolveGroupGeometry(g: SceneGroup): THREE.BufferGeometry {
   const booleans = g.ops?.filter((op) => op.op === 'boolean') ?? [];
-  const arrayOp = g.ops?.find((op): op is Extract<BuildOp, { op: 'arrayLinear' }> => op.op === 'arrayLinear');
-  if (!booleans.length && !arrayOp) return geometryOf(g.positions);
+  const arrayOps = g.ops?.filter((op): op is Extract<BuildOp, { op: 'arrayLinear' }> => op.op === 'arrayLinear') ?? [];
+  if (!booleans.length && !arrayOps.length) return geometryOf(g.positions);
 
   const key = g.entityId ?? g.name;
   const hash = hashGroup(g);
@@ -111,9 +111,52 @@ export function resolveGroupGeometry(g: SceneGroup): THREE.BufferGeometry {
     const cutterGeom = geometryOf(cutterPositions);
     geom = booleanOp(geom, cutterGeom, op.kind);
   }
-  if (arrayOp) geom = repeatGeometry(geom, arrayOp);
+  geom = applyArrayOps(geom, arrayOps);
   meshCache.set(key, { hash, geom });
   return geom;
+}
+
+/** p14 MỞ KHO: `ops[]` nay được chứa NHIỀU bậc `arrayLinear` — 2 bậc = LƯỚI (hàng × cột), đúng
+ * toán học `repeat(repeat(g,a),b)` = lưới 2 chiều. KHÔNG cần kiểu `BuildOp` mới trong
+ * `lib/cad/model.ts` (ngoài vùng phiếu p14) — lưới persist bằng đúng bậc đã có, `.idf` cũ 1 bậc
+ * đọc y nguyên. Ca chuẩn UI (2 bậc, mỗi bậc chạy đúng 1 trục CAD) đi qua `arrayGrid` (1 lần
+ * replicate n×m ma trận — đường sống thật đầu tiên của hàm đó); tổ hợp khác (bậc chéo trục, ≥3
+ * bậc) rơi về ghép `repeatGeometry` tuần tự — cùng kết quả hình học, có test đối chiếu bbox. */
+function applyArrayOps(geom: THREE.BufferGeometry, arrayOps: Extract<BuildOp, { op: 'arrayLinear' }>[]): THREE.BufferGeometry {
+  if (!arrayOps.length) return geom;
+  if (arrayOps.length === 1) return repeatGeometry(geom, arrayOps[0]);
+  const axisOf = (op: Extract<BuildOp, { op: 'arrayLinear' }>): 'x' | 'y' | 'z' | null => {
+    const ax = op.dx !== 0;
+    const ay = op.dy !== 0;
+    const az = op.dz !== 0;
+    if (ax && !ay && !az) return 'x';
+    if (!ax && ay && !az) return 'y';
+    if (!ax && !ay && az) return 'z';
+    return null;
+  };
+  if (arrayOps.length === 2) {
+    const a0 = axisOf(arrayOps[0]);
+    const a1 = axisOf(arrayOps[1]);
+    if (a0 && a1 && a0 !== a1) {
+      const opts: ArrayGridOpts = { nx: 1, ny: 1, nz: 1, dxMm: 0, dyMm: 0, dzMm: 0 };
+      for (const [axis, op] of [[a0, arrayOps[0]], [a1, arrayOps[1]]] as const) {
+        if (axis === 'x') {
+          opts.nx = op.n;
+          opts.dxMm = op.dx;
+        } else if (axis === 'y') {
+          opts.ny = op.n;
+          opts.dyMm = op.dy;
+        } else {
+          opts.nz = op.n;
+          opts.dzMm = op.dz;
+        }
+      }
+      return arrayGrid(geom, opts);
+    }
+  }
+  let out = geom;
+  for (const op of arrayOps) out = repeatGeometry(out, op);
+  return out;
 }
 
 /* ═══════════════════════ BỘ LỆNH DỰNG HÌNH MỞ RỘNG (G-M17-02, 07/08) ═══════════════════════
