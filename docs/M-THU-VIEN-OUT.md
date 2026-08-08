@@ -316,3 +316,100 @@ literal) và ảnh chụp/`get_page_text` xác nhận trang chạy đúng — kh
 3. VIỆC 1 khảo sát bắt thêm 1 hồ nghi: 2 báo cáo trước (`M-APPLY-C-OUT.md`) claim "đã đóng" 2 việc
    (G-A-01, G-A-04/05) mà khi mở code ra đọc thì G-A-01 KHÔNG đúng (buildSpecRows gọi thiếu tham
    số) — phiên sau mở lại G-A-04/G-A-05 nên tự đọc code, đừng chỉ tin dòng "đã đóng" trong sổ.
+
+## ĐÍNH CHÍNH (cùng ngày, sau khi VÒNG 3 đã commit `a6c8ce8`) — mục 1 "hàng đợi" ở trên ĐÃ LỖI THỜI
+
+Kiểm lại (N1 — không tin sổ, mở code): hàng đợi mục 1 nói *".idfc chỉ là format, CHƯA có nút nào
+sinh/đọc file .idfc thật"* — **KHÔNG còn đúng**. Một phiên khác (song song, cùng lúc với vòng 1-2)
+đã nối trọn luồng:
+- **Xuất**: `LibrarySheet.tsx:798` nút "Xuất .idfc" — gọi `exportIdfc()` thật, tải file `.idfc`
+  xuống máy (đã xác nhận trong vòng 1: gói đủ geom2d/geom3d/commerce từ `resolveLibraryItem` +
+  `matchSpec`).
+- **Nhập**: `BulkIngestMode.tsx:7-8,66-76,159-166` — thả file `.idfc` vào "Nạp hàng loạt" thì
+  **đọc + parse NGAY** bằng `importIdfc()`, báo lỗi cụ thể tại dòng nếu hỏng
+  (`lastImportIdfcError()`), hợp lệ thì bấm "Đưa vào kho" gọi `saveIdfcItems()` — ghi thật vào
+  `idfc-store` (localStorage), kệ "Cấu kiện (.idfc)" đọc lại ngay (`LibrarySheet.tsx:216-231`,
+  cùng cơ chế "ngăn theo loại" vòng 3 vừa thêm).
+
+⇒ Vòng đời `.idfc` (xuất → nhập → hiện trên kệ → lọc theo `IdfcKind`) đã **KÍN**, không còn là
+"chỉ format chưa ai dùng". Việc còn thiếu thật sự (chưa kiểm, không đoán): CHƯA có test tự động
+cho `idfc-store.ts` (`saveIdfcItems`/`loadIdfcStore`/`removeIdfc` — thuần localStorage, rủi ro
+thấp) và CHƯA chạy full E2E xuất-rồi-nhập-lại bằng browser thật trong phiên này (đã xác nhận qua
+đọc code + 44 test của `idfc.ts`, chưa thao tác tay export→re-upload).
+
+Không có việc mới nào đang mở trong vùng sở hữu (`lib/library/` · `components/library/` ·
+`lib/cad/idfc.ts`) — chờ Hoà chỉ định việc kế tiếp hoặc xác nhận phạm vi VIỆC 5 (gộp thư viện).
+
+---
+
+# VÒNG 4 (08/08) — test `idfc-store` + KHẢO SÁT mock quả cầu vật liệu
+
+Hoà giao 3 việc: ① đóng VIỆC 5 (xác nhận) · ② test `idfc-store.ts` · ③ port mock
+`docs/mocks/mock-material-sphere-2026-08-03.html`.
+
+## ① VIỆC 5 — ĐÓNG (Hoà xác nhận đúng kết luận vòng 1)
+3 UI thư viện tách nhau vì lý do kiến trúc thật, không phải trùng lặp. Ý "MỘT tấm" chỉ áp cho các
+kệ BÊN TRONG `LibrarySheet` — đã làm 04/08. Không việc gì thêm.
+
+## ② TEST `lib/library/idfc-store.test.ts` — ✅ XONG, **21/21 pass**
+
+Ca phủ (đọc từ output thật, không chép báo cáo): `loadIdfcStore` khi JSON hỏng → `[]` KHÔNG throw ·
+JSON hợp lệ nhưng không phải mảng → `[]` · `saveIdfcItems` lưu 2 loại khác nhau (kho không quan tâm
+`kind`) · `storedAt` gắn đúng mốc `now` truyền vào · **UPSERT theo `meta.code`** (nhập lại cùng mã =
+ĐÈ, không nhân đôi; món khác mã không bị đụng, `storedAt` không lây) · cộng dồn món mã mới ·
+`removeIdfc` xoá đúng 1 món · xoá mã không tồn tại thì kho giữ nguyên, không lỗi.
+
+`npx tsc --noEmit -p .` sạch. Không phát hiện bug trong `idfc-store.ts`.
+
+> Ghi thật: file test do agent phụ viết, agent bị dừng giữa chừng (hết hạn mức tuần của tài khoản)
+> nên KHÔNG có báo cáo của nó. Tôi tự chạy lại và đọc output thật trước khi ghi con số 21/21 —
+> không lấy số từ agent (N1).
+
+## ③ MOCK QUẢ CẦU VẬT LIỆU — 🔴 **KHÔNG PORT. Đọc trọn mock rồi mới kết luận.**
+
+Đọc trọn 317 dòng mock trước khi động (luật port-nguyên-văn, L1). Đối chiếu từng mục với code thật:
+
+| Mock 03/08 nói | Code thật | Kết luận |
+|---|---|---|
+| Quả cầu three.js + RoomEnvironment PMREM + cache PNG | `components/three/MaterialSphere.tsx` (3.961 B) + `material-preview.ts` (16.824 B) | ✅ **ĐÃ CÓ ĐỦ** |
+| Nấc render 25% lưới / 100% panel | prop `resolution: 0.25\|0.5\|1`; `material-preview.ts:289` `Math.max(96, size*resolution*dpr)` | ✅ **ĐÃ CÓ, còn TỐT HƠN mock** — sàn 96px chống mờ Retina, comment `:285` giải thích đúng ca "120px × 25% = 30px nguồn → vệt mờ" |
+| 3 cảnh **Cầu/Sàn/Vải tự chọn theo danh mục** | `ItemThumb.tsx:77` — *"MỌI vật liệu cùng MỘT kiểu xem trước (**Hoà 04/08**) … KHÔNG còn đoán 'sàn' theo tên món"* | 🔴 **MOCK LỖI THỜI** — chốt 04/08 (SAU mock 03/08) đã BỎ. Port = tái phát thứ Hoà đã bỏ |
+| Lưới **5 cột cố định** | `LibrarySheet.tsx:64` BA NẤC CỠ THẺ (`00-CHOT.md` chốt 07/08 chiều) | 🔴 **MOCK LỖI THỜI** — chốt 07/08 mới hơn, người dùng tự chọn cỡ |
+| Chips nhóm vật liệu NGANG (Gỗ/Đá/Vải/KL/Sơn) | `MATERIAL_GROUPS` ở **sidebar** (phương án A, chốt 07/08) | 🟡 khác vị trí do chốt sau |
+| Badge **nguồn** ATLAS/IF trên thẻ | app badge = **phạm vi** (CHUNG/STUDIO/DỰ ÁN/CHẶNG) | ❌ chưa có — nhưng `SheetItem` KHÔNG có trường nguồn; kệ vật liệu còn là mock ⇒ thêm badge = **bịa dữ liệu**, trái đúng VIỆC 7b vừa làm |
+| Dòng "Lưới render 25% · panel 100% · cache PNG" | grep = 0 | ❌ chưa có — và **KHÔNG NÊN có**: đây đúng loại jargon nội bộ mà `SPEC-NGON-NGU-CHI-DAN` cấm lộ ra UI |
+| Panel phải "**Tạo vật liệu**" template D5 (8 loại) | `components/materials/` — `MaterialFormModal.tsx` · `MaterialPbrEditor.tsx` · `MaterialsScreen.tsx` … (6 file) | ⛔ **VÙNG CẤM** theo phiếu hiện hành + **ĐÃ CÓ SẴN**, chỉ khác chỗ đặt (modal/màn riêng vs panel trong sheet) |
+
+### Vì sao KHÔNG port — nói thẳng
+Port nguyên văn mock này sẽ đồng thời: **phá chốt 04/08** (dựng lại 3 cảnh đã bỏ) · **phá chốt
+07/08** (thay 3 nấc cỡ thẻ bằng lưới 5 cột cứng) · **lấn vùng cấm** (`components/materials/`, 8
+agent đang chạy) · **vi phạm luật ngôn ngữ** (jargon render % lộ UI) · **bịa dữ liệu** (badge nguồn
+không có nguồn). Mock ra ngày **03/08**; ba chốt đè lên nó ra ngày **04/08 và 07/08**.
+
+⇒ Đúng ca luật `§0ae` ("đọc spec trước khi tin sổ") + `N8`. Việc đúng ở đây là **báo, không phải làm
+cho có**.
+
+### Verify browser thật (2 theme, theo yêu cầu) — cái ĐANG CHẠY
+`127.0.0.1:3000` → Thiết kế 3D → phím `L` → kệ **Vật liệu ATLAS**:
+- **Theme TỐI**: 12 món hiện quả cầu **render three.js thật** — highlight, bóng đổ tiếp đất, nền xám
+  trung tính; "Gỗ sồi tự nhiên/OAK-NT-190", "Gỗ óc chó/WAL-DK-150" đọc rõ tên+mã (thành quả sửa 5a
+  vòng 3 vẫn đứng).
+- **Theme SÁNG**: cầu vẫn đúng, **nền cầu giữ xám trung tính có chủ ý** — `ItemThumb.tsx` đã ghi lý
+  do sẵn: dùng `--field` theo theme thì cầu trắng biến mất trên nền sáng.
+- Panel Vật liệu ở Command3DPanel cũng lên cầu thật (2 swatch chuyển từ ô phẳng → cầu sau render).
+- **Console: 0 lỗi** cả 2 theme. Đã trả theme về TỐI như trạng thái ban đầu.
+
+### Gap THẬT còn lại (cần Hoà quyết, KHÔNG tự làm vì chạm vùng cấm)
+Nút **"Thêm vật liệu mới"** ở đáy sidebar kệ vật liệu hiện gọi `setMode('ingest')` = mở "Nạp hàng
+loạt" (thả file PBR). Mock muốn nó mở **panel tạo thủ công theo template D5**. Cả hai đều hợp lý
+(nạp hàng loạt vs tạo tay), nhưng nếu Hoà muốn theo mock thì phải nối tới `MaterialFormModal`
+(`components/materials/`, **vùng cấm**) — cần Hoà mở vùng hoặc giao cho phiên đang giữ nó.
+
+## File đụng vòng 4
+| File | Việc |
+|---|---|
+| `lib/library/idfc-store.test.ts` (MỚI) | ② 21 test |
+| `docs/M-THU-VIEN-OUT.md` | báo cáo này (append) |
+
+**KHÔNG đụng**: `components/library/*` · `lib/cad/idfc.ts` (③ kết luận không port) ·
+`components/materials/**` · `lib/materials/**` (vùng cấm).
