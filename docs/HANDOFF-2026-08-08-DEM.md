@@ -14,14 +14,27 @@ commit hôm nay ~20 commit, 8 CHƯA PUSH (git log origin/main..main)
 working tree   sạch (trừ 2 agent đang chạy dở — xem "ĐANG CHẠY")
 ```
 
-## ĐANG CHẠY lúc rời phiên (2 agent, chưa có kết quả)
+## ĐANG CHẠY lúc rời phiên (4 agent, chưa có kết quả)
 
-Cả 2 phóng cùng lúc, vùng file KHÔNG giẫm nhau:
+Vùng file KHÔNG giẫm nhau, xác nhận qua `git status --short` trước khi phóng thêm:
 1. **Port 3 mock "2D Kỹ thuật"** vào chặng Thiết kế 2D — đích: `Navigator.tsx` ·
    `AppLogoMenu.tsx` · `CadStageScreen.tsx` · `CadEditor.tsx` · `CadToolbar.tsx` ·
    `CadToolbelt.tsx` · `RevitSummaryPanel.tsx` · `PlanPresentPanel.tsx` · `CadInspectorPages.tsx`.
 2. **Port mock Vẽ 3D** (`mock-if-ve3d.html`) — đích: `Command3DPanel.tsx` · `Viewport3D.tsx` ·
    `Object3DTree.tsx` · `Object3DInspector.tsx`.
+3. **Nhập .xlsx vào BOQ** (Hoà yêu cầu, chốt phạm vi qua AskUserQuestion) — nạp GIÁ TRỊ vào
+   `boq-overrides.ts` có sẵn theo mã khớp, KHÔNG đẻ hạng mục ảo (BOQ luôn bám bản vẽ). Đích:
+   `lib/present-editor/boq-xlsx-import.ts` (mới) · `components/present-editor/Toolbar.tsx`.
+4. **Nhập .pptx vào Deck** (Hoà chốt: đọc slide → ảnh+text cơ bản, không animation) — mở khoá
+   nút "Mở deck (.pptx)" đang `disabled` sẵn trong Toolbar. Đích: `lib/present-editor/
+   pptx-import.ts` (mới, dùng jszip đã có sẵn trong package.json) · `Toolbar.tsx`.
+
+**.docx bị hoãn theo yêu cầu Hoà** — chưa có màn "Văn bản" (docType editor) để chứa, làm sau
+khi editor đó tồn tại (xem bảng "phần 3" bên dưới).
+
+⚠️ Agent #3 và #4 CÙNG sửa `components/present-editor/Toolbar.tsx` (2 mục menu khác nhau trong
+cùng `IOMenu`) — có rủi ro conflict khi cả hai ghi cùng lúc. Khi cả hai báo về: đọc diff CẨN
+THẬN, có thể cần merge tay 2 đoạn JSX nếu chúng ghi đè lẫn nhau thay vì cả hai đều còn nguyên.
 
 **Khi 2 agent này báo về:** kiểm độc lập theo đúng quy trình cả phiên đã làm — đọc diff, chạy
 lại test/tsc, verify browser (server đang chạy sẵn 127.0.0.1:3000, demo@if.local/demo1234), rồi
