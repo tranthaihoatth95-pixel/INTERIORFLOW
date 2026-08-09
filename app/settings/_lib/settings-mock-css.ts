@@ -41,8 +41,7 @@ export const SETTINGS_MOCK_CSS = `
 .if-settings-app .wp.none{border:1.5px dashed var(--t3);background:var(--field);display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:10px}
 
 .if-settings-app .pathbox{display:flex;align-items:center;gap:11px;background:var(--field);border-radius:var(--radius-sm);padding:11px 13px}
-.if-settings-app .pathbox .fi{width:32px;height:27px;border-radius:var(--radius-sm);background:linear-gradient(180deg,#8f7df7,#6a57f5);position:relative;flex:none}
-.if-settings-app .pathbox .fi::before{content:"";position:absolute;top:-4px;left:0;width:14px;height:6px;border-radius:4px 4px 0 0;background:#8f7df7}
+.if-settings-app .pathbox .fi{width:34px;height:34px;border-radius:var(--radius-sm);display:grid;place-items:center;flex:none;color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);border:1px solid color-mix(in srgb,var(--accent) 18%,var(--line))}
 .if-settings-app .pathbox .p{flex:1;min-width:0}
 .if-settings-app .pathbox .pp{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--t1)}
 .if-settings-app .pathbox .ps{font-size:10.5px;color:var(--success);display:flex;align-items:center;gap:5px;margin-top:1px}

@@ -88,7 +88,7 @@ export function StorageCard({
         </p>
       ) : (
         <div className="pathbox">
-          <span className="fi" />
+          <span className="fi" aria-hidden="true"><FolderOpen size={20} strokeWidth={1.8} /></span>
           <span className="p">
             <span className="pp">{folderName ?? tr('Chưa chọn thư mục', 'No folder chosen')}</span>
             {folderName && (
