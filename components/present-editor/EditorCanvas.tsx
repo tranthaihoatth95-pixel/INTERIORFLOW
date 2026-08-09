@@ -193,16 +193,28 @@ export default function EditorCanvas({
   // (không đổi công thức, giữ NGUYÊN `Math.max/min` clamp + luật lật xuống `y < 16`) — hook LO
   // phần đóng băng trong lúc kéo (chi tiết ④, xem `useFloatingToolbarVisibility.ts`).
   const [dragActive, setDragActive] = useState(false);
-  const liveTextToolbarPos = soleTextEl
-    ? {
-        left: Math.max(14, Math.min(86, soleTextEl.frame.x + soleTextEl.frame.w / 2)),
-        top:
-          soleTextEl.frame.y < 16
-            ? soleTextEl.frame.y + soleTextEl.frame.h
-            : soleTextEl.frame.y,
-        below: soleTextEl.frame.y < 16,
-      }
-    : { left: 0, top: 0, below: false };
+  // PHẢI memo theo các số thật: object literal mới ở mỗi render làm effect trong
+  // useFloatingToolbarVisibility thấy `livePos` đổi → setPos → render → object mới vô hạn
+  // (`Maximum update depth exceeded`, bắt được sau khi nhập PPTX có text).
+  const liveTextToolbarPos = useMemo(
+    () =>
+      soleTextEl
+        ? {
+            left: Math.max(14, Math.min(86, soleTextEl.frame.x + soleTextEl.frame.w / 2)),
+            top:
+              soleTextEl.frame.y < 16
+                ? soleTextEl.frame.y + soleTextEl.frame.h
+                : soleTextEl.frame.y,
+            below: soleTextEl.frame.y < 16,
+          }
+        : { left: 0, top: 0, below: false },
+    [
+      soleTextEl?.frame.x,
+      soleTextEl?.frame.y,
+      soleTextEl?.frame.w,
+      soleTextEl?.frame.h,
+    ],
+  );
   const { hidden: textToolbarHidden, pos: textToolbarPos } = useFloatingToolbarVisibility(
     dragActive,
     liveTextToolbarPos,
