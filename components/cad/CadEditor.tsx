@@ -89,7 +89,6 @@ import { ZonePanel, ZonesLegend } from './ZonePanel';
 import PlanPresentPanel from './PlanPresentPanel';
 import { usePlanPresent } from './plan-present-store';
 import CamPathPanel from './CamPathPanel';
-import RevitSummaryPanel from './RevitSummaryPanel';
 // Hệ Legend C1+C2 (docs/PROPOSAL-LEGEND-SYSTEM.md) — panel Thống kê · Schedule + Chú giải.
 import SchedulePanel from './SchedulePanel';
 // VIỆC 4 (Sprint ĐỔ NỀN 2) — T4: panel lịch sử Undo/Redo (past/future đã có sẵn ở lib/cad/store.ts).
@@ -789,9 +788,6 @@ export default function CadEditor() {
         {(cadTool === 'campath' || hasCampathEntity) && !camPathPanelClosed && (
           <CamPathPanel onClose={() => setCamPathPanelClosed(true)} />
         )}
-        {/* Mode Chuyên bao gồm lớp CAD chính xác + BIM 2D (chốt 08/08). Trước đây bảng này chỉ
-            hiện cho khoá legacy `revit`, khiến nút Chuyên người dùng đang bấm không khác Pro cũ. */}
-        {(cadMode === 'pro' || cadMode === 'revit') && <RevitSummaryPanel />}
         {scheduleOpen && <SchedulePanel onClose={() => setScheduleOpen(false)} />}
         {historyOpen && <HistoryPanel onClose={() => setHistoryOpen(false)} />}
         {/* SelectionInfoPanel — VIỆC 2: ra khỏi canvas, nay sống ở ổ ④ Inspector của `AppShell`
