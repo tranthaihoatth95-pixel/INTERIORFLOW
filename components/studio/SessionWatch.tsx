@@ -16,6 +16,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 
 /** Nhịp hỏi lại định kỳ khi tab mở liên tục — thưa, chỉ để không bỏ sót phiên hết hạn. */
@@ -23,9 +24,12 @@ const POLL_MS = 5 * 60_000;
 
 export default function SessionWatch() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [lost, setLost] = useState(false);
   // StrictMode dev mount effect 2 lần → chặn cú fetch trùng lúc mở chặng.
   const ran = useRef(false);
+
+  useEffect(() => setMounted(true), []);
 
   const check = useCallback(async () => {
     try {
@@ -60,16 +64,20 @@ export default function SessionWatch() {
     };
   }, [check]);
 
-  if (!lost) return null;
+  if (!lost || !mounted) return null;
 
-  return (
+  // AppChrome có backdrop-filter; `position:fixed` nằm bên trong nó sẽ lấy HEADER làm containing
+  // block và bị ghim/cắt ở mép trên. Portal ra body để `bottom` thật sự theo viewport.
+  return createPortal(
     <div
       role="status"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-4 pb-4"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-3"
+      style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
     >
       <div
-        className="pointer-events-auto flex items-center gap-3 rounded-[10px] border px-4 py-2.5 text-[12.5px] shadow-lg"
+        className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 rounded-[10px] border px-3 py-2.5 text-center text-[12.5px] shadow-lg sm:flex-nowrap sm:gap-3 sm:px-4 sm:text-left"
         style={{
+          maxWidth: 'min(680px, calc(100vw - 24px))',
           borderColor: 'var(--border)',
           background: 'var(--panel, var(--bg))',
           color: 'var(--t2)',
@@ -86,6 +94,7 @@ export default function SessionWatch() {
           Đăng nhập lại
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
