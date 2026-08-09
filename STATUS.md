@@ -6,7 +6,7 @@
 
 ## Đang chạy
 
-- Worktree `interiorflow-wt-sketch-gestures` chờ commit/merge: lớp bút/chống tì tay cho Sơ phác.
+- Không còn worktree phụ. Lớp bút/chống tì tay Sơ phác đã merge vào `main` (`b7318b1`).
   `main` có 4 file untracked của chủ dự án; không chạm.
 - Gateway đã ở `main` (`c408684`): một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu ·
   chỉ lưu · chưa hỗ trợ. Lối AI Brief chuyên biệt vẫn giữ nguyên.
@@ -24,7 +24,8 @@
 - Sơ phác tablet mẻ 1: nhận bút, loại vùng tì tay ≥24px và touch chen lúc bút chạm/300ms sau
   pen-up; sau khi thấy bút, ngón chuyển sang pan/pinch, có gạt “Ngón vẽ” lưu trên thiết bị. Dock
   có Hoàn tác/Làm lại đi qua cùng nhánh phím. Test lớp input 10/10, typecheck và toàn bộ test PASS;
-  preview `3016` thấy đủ ba nút mới, không lỗi console.
+  sau merge typecheck/toàn bộ test PASS; preview thấy đủ ba nút mới, không lỗi console; worktree
+  và nhánh đã dọn an toàn.
 - Sau merge: parser OBJ 5/5, Gateway 30/30, typecheck và toàn bộ `npm test` PASS. Đã
   click-through hai mode trên local `3015`, không lỗi console; worktree/nhánh đã dọn an toàn.
 
