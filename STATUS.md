@@ -2,14 +2,13 @@
 
 > Lịch sử ở `CHANGELOG.md`; báo cáo mẻ ở `docs/M-*-OUT.md`.
 > Git + code + DB là nguồn kiểm chứng, không lấy brief/GAP cũ làm bằng chứng.
-> IF là sản phẩm global, độc lập: **2D Kỹ thuật · 3D Thiết kế · Trình bày**; Brand Kit thuộc từng dự án.
+> IF là sản phẩm global: **2D Kỹ thuật · 3D Thiết kế · Trình bày**; Brand Kit theo dự án.
 
 ## Đang chạy
 
 - Không còn worktree phụ. Sửa canvas/dock màn hẹp đã merge vào `main` (`0a9bcda`).
   `main` có 4 file untracked của chủ dự án; không chạm.
-- Gateway đã ở `main` (`c408684`): một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu ·
-  chỉ lưu · chưa hỗ trợ. Lối AI Brief chuyên biệt vẫn giữ nguyên.
+- Gateway là một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu · chỉ lưu · chưa hỗ trợ.
 
 ## Vừa xong
 
