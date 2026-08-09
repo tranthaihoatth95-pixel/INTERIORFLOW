@@ -81,8 +81,8 @@ import { saveSheets } from '@/lib/sheets-persist';
 import { useSaveStatus } from '@/lib/save-status';
 import { useRouter } from 'next/navigation';
 import { drawEntities } from '@/lib/cad/render';
-import { patchSheetViewport, viewportWorldBox } from '@/lib/cad/paper-space';
-import { Lock, LockOpen, ScanSearch } from 'lucide-react';
+import { moveViewportRect, patchSheetViewport, removeSheetViewport, resizeViewportRect, viewportWorldBox } from '@/lib/cad/paper-space';
+import { Grip, Lock, LockOpen, Plus, ScanSearch, Trash2 } from 'lucide-react';
 
 const ROUTE = '/cad-editor' as const;
 const DEFAULT_VIEWPORT: Viewport = { scale: 0.08, panX: 300, panY: 400 };
@@ -614,6 +614,7 @@ export default function CadSheets() {
 
   const updateViewport = (viewportId: string, patch: Partial<Sheet['viewports'][number]>) =>
     setSheets((prev) => prev.map((sheet) => sheet.id === activeId ? patchSheetViewport(sheet, viewportId, patch) : sheet));
+  const replaceSheet = (nextSheet: Sheet) => setSheets((prev) => prev.map((sheet) => sheet.id === nextSheet.id ? nextSheet : sheet));
 
   /**
    * Sprint 7 — Việc 2 (.idf): CadEditor (nút "Xuất .idf"/"Mở .idf") không giữ danh sách sheet
@@ -866,6 +867,7 @@ export default function CadSheets() {
         <PaperSpace
           sheet={sheets.find((sheet) => sheet.id === activeId) ?? sheets[0]}
           onViewportChange={updateViewport}
+          onSheetChange={replaceSheet}
           onOpenModel={(viewport) => {
             useCadStore.getState().setCadWorkspace('model');
             const box = viewportWorldBox(viewport);
@@ -893,61 +895,84 @@ export default function CadSheets() {
 
 const PAPER_SCALES = [20, 25, 50, 75, 100, 150, 200] as const;
 
-function PaperSpace({ sheet, onViewportChange, onOpenModel }: {
+function PaperSpace({ sheet, onViewportChange, onSheetChange, onOpenModel }: {
   sheet: Sheet;
   onViewportChange: (viewportId: string, patch: Partial<Sheet['viewports'][number]>) => void;
+  onSheetChange: (sheet: Sheet) => void;
   onOpenModel: (viewport: Sheet['viewports'][number]) => void;
 }) {
   const doc = useCadStore((s) => s.doc);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const viewport = sheet.viewports[0];
+  const [selectedId, setSelectedId] = useState(sheet.viewports[0]?.id ?? '');
+  const gesture = useRef<{ id: string; kind: 'move' | 'resize'; x: number; y: number; rect: Sheet['viewports'][number]['rectOnPaper']; paperPxW: number; paperPxH: number } | null>(null);
   const [paperW, paperH] = paperSizeMm(sheet.paper, sheet.orientation);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !viewport) return;
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.max(1, Math.round(rect.width * dpr));
-    canvas.height = Math.max(1, Math.round(rect.height * dpr));
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, rect.width, rect.height);
-    const box = viewportWorldBox(viewport);
-    const scale = Math.min(rect.width / (box.maxX - box.minX), rect.height / (box.maxY - box.minY));
-    drawEntities(ctx, {
-      scale,
-      panX: rect.width / 2 - viewport.centerMm.x * scale,
-      panY: rect.height / 2 + viewport.centerMm.y * scale,
-    }, doc, { stroke: '#34312d', lineWidth: 1, text: true });
-  }, [doc, viewport]);
-
-  if (!viewport) return <div style={{ padding: 24 }}>Tờ này chưa có ô nhìn.</div>;
+  const selected = sheet.viewports.find((viewport) => viewport.id === selectedId) ?? sheet.viewports[0];
+  const beginGesture = (event: React.PointerEvent, viewport: Sheet['viewports'][number], kind: 'move' | 'resize') => {
+    if (viewport.locked && kind === 'move') return;
+    const paper = event.currentTarget.closest('[data-paper]') as HTMLElement | null;
+    if (!paper) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const rect = paper.getBoundingClientRect();
+    gesture.current = { id: viewport.id, kind, x: event.clientX, y: event.clientY, rect: viewport.rectOnPaper, paperPxW: rect.width, paperPxH: rect.height };
+    setSelectedId(viewport.id);
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  const continueGesture = (event: React.PointerEvent) => {
+    const g = gesture.current;
+    if (!g) return;
+    const dx = (event.clientX - g.x) * paperW / g.paperPxW;
+    const dy = (event.clientY - g.y) * paperH / g.paperPxH;
+    const rectOnPaper = g.kind === 'move'
+      ? moveViewportRect(g.rect, dx, dy, paperW, paperH)
+      : resizeViewportRect(g.rect, dx, dy, paperW, paperH);
+    onViewportChange(g.id, { rectOnPaper });
+  };
+  const endGesture = () => { gesture.current = null; };
+  const addViewport = () => {
+    const n = sheet.viewports.length;
+    const viewport = { id: newId('vp'), rectOnPaper: { x: 24 + n * 8, y: 24 + n * 8, w: Math.min(180, paperW - 48), h: Math.min(120, paperH - 48) }, centerMm: selected?.centerMm ?? { x: 0, y: 0 }, scale: selected?.scale ?? 100, locked: false };
+    onSheetChange({ ...sheet, viewports: [...sheet.viewports, viewport] });
+    setSelectedId(viewport.id);
+  };
   return (
     <div style={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'grid', placeItems: 'center', padding: 28, background: 'var(--canvas-bg, #242424)' }}>
-      <div style={{ width: `min(82vw, ${paperW * 2}px)`, aspectRatio: `${paperW}/${paperH}`, minWidth: 520, position: 'relative', background: '#fff', color: '#25221e', boxShadow: '0 18px 55px rgba(0,0,0,.35)', border: '1px solid rgba(0,0,0,.25)' }}>
+      <div data-paper style={{ width: `min(82vw, ${paperW * 2}px)`, aspectRatio: `${paperW}/${paperH}`, minWidth: 520, position: 'relative', background: '#fff', color: '#25221e', boxShadow: '0 18px 55px rgba(0,0,0,.35)', border: '1px solid rgba(0,0,0,.25)', touchAction: 'none' }} onPointerMove={continueGesture} onPointerUp={endGesture} onPointerCancel={endGesture}>
         <div style={{ position: 'absolute', inset: 14, border: '1px solid #777' }} />
-        <div style={{ position: 'absolute', left: `${viewport.rectOnPaper.x / paperW * 100}%`, top: `${viewport.rectOnPaper.y / paperH * 100}%`, width: `${viewport.rectOnPaper.w / paperW * 100}%`, height: `${viewport.rectOnPaper.h / paperH * 100}%`, border: '1.5px solid #6455d9', overflow: 'hidden', background: '#fcfcfb' }}>
-          <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
-          <div style={{ position: 'absolute', left: 8, top: 8, display: 'flex', gap: 6, alignItems: 'center', padding: '5px 7px', borderRadius: 7, background: 'rgba(255,255,255,.92)', boxShadow: '0 2px 10px rgba(0,0,0,.12)', font: '600 11px Archivo, sans-serif' }}>
-            <select aria-label="Tỉ lệ ô nhìn" value={viewport.scale} onChange={(event) => onViewportChange(viewport.id, { scale: Number(event.target.value) })} style={{ border: 0, background: 'transparent', font: 'inherit' }}>
-              {PAPER_SCALES.map((scale) => <option key={scale} value={scale}>1:{scale}</option>)}
-            </select>
-            <button type="button" title={viewport.locked ? 'Mở khoá ô nhìn' : 'Khoá tỉ lệ ô nhìn'} onClick={() => onViewportChange(viewport.id, { locked: !viewport.locked })} style={paperButton}>{viewport.locked ? <Lock size={13} /> : <LockOpen size={13} />}</button>
-            <button type="button" title="Mở vùng này trong Model" onClick={() => onOpenModel(viewport)} style={paperButton}><ScanSearch size={13} /> Model</button>
-          </div>
+        {sheet.viewports.map((viewport) => <PaperViewport key={viewport.id} doc={doc} viewport={viewport} paperW={paperW} paperH={paperH} selected={viewport.id === selected?.id} onSelect={() => setSelectedId(viewport.id)} onMoveStart={(event) => beginGesture(event, viewport, 'move')} onResizeStart={(event) => beginGesture(event, viewport, 'resize')} onChange={(patch) => onViewportChange(viewport.id, patch)} onOpenModel={() => onOpenModel(viewport)} />)}
+        <div style={{ position: 'absolute', left: 18, bottom: 18, display: 'flex', gap: 6 }}>
+          <button type="button" onClick={addViewport} style={paperActionButton}><Plus size={14} /> Thêm ô nhìn</button>
+          <button type="button" disabled={sheet.viewports.length <= 1} onClick={() => selected && onSheetChange(removeSheetViewport(sheet, selected.id))} style={paperActionButton}><Trash2 size={14} /> Xóa ô</button>
         </div>
         <div style={{ position: 'absolute', right: 14, bottom: 14, width: '42%', height: 54, border: '1px solid #777', padding: '7px 9px', font: '600 10px Archivo, sans-serif', display: 'grid', gridTemplateColumns: '1fr auto', gap: 4 }}>
           <span>{sheet.titleBlock.project || 'TÊN DỰ ÁN'}</span><span>{sheet.number || '—'}</span>
-          <strong>{sheet.name}</strong><span>{sheet.paper} · 1:{viewport.scale}</span>
+          <strong>{sheet.name}</strong><span>{sheet.paper} · {sheet.viewports.length} ô nhìn</span>
         </div>
       </div>
     </div>
   );
 }
 
+function PaperViewport({ doc, viewport, paperW, paperH, selected, onSelect, onMoveStart, onResizeStart, onChange, onOpenModel }: { doc: Doc; viewport: Sheet['viewports'][number]; paperW: number; paperH: number; selected: boolean; onSelect: () => void; onMoveStart: (event: React.PointerEvent) => void; onResizeStart: (event: React.PointerEvent) => void; onChange: (patch: Partial<Sheet['viewports'][number]>) => void; onOpenModel: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return;
+    const rect = canvas.getBoundingClientRect(); const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.round(rect.width * dpr)); canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    const ctx = canvas.getContext('2d'); if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, rect.width, rect.height);
+    const box = viewportWorldBox(viewport); const scale = Math.min(rect.width / (box.maxX - box.minX), rect.height / (box.maxY - box.minY));
+    drawEntities(ctx, { scale, panX: rect.width / 2 - viewport.centerMm.x * scale, panY: rect.height / 2 + viewport.centerMm.y * scale }, doc, { stroke: '#34312d', lineWidth: 1, text: true });
+  }, [doc, viewport]);
+  return <div onPointerDown={onSelect} style={{ position: 'absolute', left: `${viewport.rectOnPaper.x / paperW * 100}%`, top: `${viewport.rectOnPaper.y / paperH * 100}%`, width: `${viewport.rectOnPaper.w / paperW * 100}%`, height: `${viewport.rectOnPaper.h / paperH * 100}%`, border: `${selected ? 2 : 1}px solid ${selected ? '#6455d9' : '#8d8880'}`, overflow: 'hidden', background: '#fcfcfb' }}>
+    <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
+    {selected && <><div onPointerDown={onMoveStart} title={viewport.locked ? 'Mở khóa để kéo' : 'Kéo ô nhìn'} style={{ ...paperHandle, left: 6, top: 6, cursor: viewport.locked ? 'not-allowed' : 'move' }}><Grip size={13} /></div><div onPointerDown={onResizeStart} title="Đổi kích thước ô nhìn" style={{ ...paperHandle, right: 2, bottom: 2, cursor: 'nwse-resize' }} /></>}
+    {selected && <div style={{ position: 'absolute', left: 28, top: 6, display: 'flex', gap: 5, alignItems: 'center', padding: '4px 6px', borderRadius: 7, background: 'rgba(255,255,255,.94)', boxShadow: '0 2px 10px rgba(0,0,0,.12)', font: '600 11px Archivo, sans-serif' }}><select aria-label="Tỉ lệ ô nhìn" value={viewport.scale} onChange={(event) => onChange({ scale: Number(event.target.value) })} style={{ border: 0, background: 'transparent', font: 'inherit' }}>{PAPER_SCALES.map((scale) => <option key={scale} value={scale}>1:{scale}</option>)}</select><button type="button" title={viewport.locked ? 'Mở khoá ô nhìn' : 'Khoá tỉ lệ ô nhìn'} onClick={() => onChange({ locked: !viewport.locked })} style={paperButton}>{viewport.locked ? <Lock size={13} /> : <LockOpen size={13} />}</button><button type="button" title="Mở vùng này trong Model" onClick={onOpenModel} style={paperButton}><ScanSearch size={13} /> Model</button></div>}
+  </div>;
+}
+
 const paperButton: React.CSSProperties = { border: 0, background: 'transparent', color: '#34312d', display: 'inline-flex', alignItems: 'center', gap: 4, padding: 2, font: '600 11px Archivo, sans-serif', cursor: 'pointer' };
+const paperActionButton: React.CSSProperties = { ...paperButton, minHeight: 30, padding: '0 9px', border: '1px solid #aaa', borderRadius: 7, background: 'rgba(255,255,255,.94)' };
+const paperHandle: React.CSSProperties = { position: 'absolute', zIndex: 2, width: 18, height: 18, display: 'grid', placeItems: 'center', borderRadius: 4, background: '#6455d9', color: '#fff' };
 
 /**
  * Làn C — cầu nối giữa hộp thoại Màn 7 (`components/print/*`, thuần trình bày) và dữ liệu CAD THẬT.

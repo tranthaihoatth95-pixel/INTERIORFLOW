@@ -6,8 +6,8 @@
 
 ## Đang chạy
 
-- Không còn worktree phụ. Paper Space Pro đã merge vào `main` (`176a3a2`); `main` có 4 file
-  untracked của chủ dự án, không chạm.
+- Worktree `interiorflow-wt-pro-multi-viewport` đang làm nhiều ô nhìn; `main` có 4 file untracked
+  của chủ dự án, không chạm.
 - Gateway là một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu · chỉ lưu · chưa hỗ trợ.
 
 ## Vừa xong
@@ -26,12 +26,11 @@
 - Nắn nét Sơ phác: “Nét tay” chỉ hiện ở Sketch, đổi bút/ngón thành line, polyline, chữ nhật hoặc
   tròn chuẩn của Doc; snap ngang/dọc 5°. Bỏ pen hover; ellipse/nét nguệch ngoạc không nhận nhầm.
   Nhận dạng 10/10, typecheck/toàn bộ test và preview PASS; cần nghiệm thu trên tablet thật.
-- Paper Space Pro mẻ 1: MODEL/PAPER là chuyển không gian thật. PAPER dựng tờ theo khổ/hướng,
-  khung tên và ô nhìn từ cùng `Sheet/Viewport2D`; preview đọc trực tiếp một Doc chung. Đổi tỉ lệ
-  1:20…1:200, khóa ô nhìn, và mở đúng vùng đó trong Model. Logic 4/4, typecheck/toàn bộ test PASS;
-  sau merge typecheck/toàn bộ test PASS. Nghiệm thu cổng 3015: chuyển Pro→PAPER, đổi 1:50,
-  khóa/mở khóa và quay về Model đúng vùng; console sạch. Worktree/nhánh đã dọn. Mẻ sau: nhiều
-  viewport, đặt/resize ô nhìn, metadata tờ.
+- Paper Space Pro: MODEL/PAPER đổi không gian thật; PAPER dựng giấy, khung tên và ô nhìn từ cùng
+  `Sheet/Viewport2D` + một Doc. Mẻ 1 đổi tỉ lệ/khóa/quay đúng vùng Model, test và preview PASS.
+  Mẻ 2 thêm nhiều ô nhìn độc lập; chọn/thêm/xóa, kéo/resize có chặn mép và kích thước tối thiểu;
+  không cho xóa ô cuối. Logic 9/9, typecheck/toàn bộ test PASS. Còn metadata tờ và persist nhiều
+  viewport qua reload/IDF.
 
 ## Sự thật dữ liệu
 
