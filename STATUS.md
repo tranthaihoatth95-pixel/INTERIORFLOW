@@ -37,12 +37,6 @@
   với căn vùng, tỉ lệ, khóa, xem sạch, xuất. Tọa độ làm tròn và để nâng cao; viewport trống có CTA.
   Browser 3015 + typecheck/toàn bộ test PASS.
 
-## Sự thật dữ liệu
-
-- DB có `WorkflowState`, `Task`, `ExternalRef`; migration đủ 3 bản ghi đến
-  `20260808000002_them_workflowstate_task_externalref`. Xem `docs/M-NEN-DL-OUT.md`; không chạy
-  migrate, db push hay VACUUM.
-
 ## Năng lực định dạng đã đo
 
 - 2D: mở/nhập `.idf`, `.dwg`, `.dxf`; backup `.ifpack`; xuất `.dxf`, PDF. IFC mới có metadata,
