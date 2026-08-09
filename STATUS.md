@@ -6,8 +6,8 @@
 
 ## Đang chạy
 
-- Không còn worktree phụ. Nhiều ô nhìn đã merge vào `main` (`937a372`); 4 file untracked của chủ
-  dự án được giữ nguyên.
+- Worktree `interiorflow-wt-paper-persist` đang lưu bền Paper; 4 file untracked của chủ dự án
+  được giữ nguyên.
 - Gateway là một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu · chỉ lưu · chưa hỗ trợ.
 
 ## Vừa xong
@@ -26,12 +26,11 @@
 - Nắn nét Sơ phác: “Nét tay” chỉ hiện ở Sketch, đổi bút/ngón thành line, polyline, chữ nhật hoặc
   tròn chuẩn của Doc; snap ngang/dọc 5°. Bỏ pen hover; ellipse/nét nguệch ngoạc không nhận nhầm.
   Nhận dạng 10/10, typecheck/toàn bộ test và preview PASS; cần nghiệm thu trên tablet thật.
-- Paper Space Pro: MODEL/PAPER đổi không gian thật; PAPER dựng giấy, khung tên và ô nhìn từ cùng
-  `Sheet/Viewport2D` + một Doc. Mẻ 1 đổi tỉ lệ/khóa/quay đúng vùng Model, test và preview PASS.
-  Mẻ 2 thêm nhiều ô nhìn độc lập; chọn/thêm/xóa, kéo/resize có chặn mép và kích thước tối thiểu;
-  không cho xóa ô cuối. Logic 9/9, typecheck/toàn bộ test PASS sau merge. Preview 3015 thêm ô
-  thứ hai/xóa về một ô đúng, console sạch; đã sửa cụm nút bị dock Pro che hit-area. Worktree/
-  nhánh đã dọn. Còn metadata tờ và persist nhiều viewport qua reload/IDF.
+- Paper Space Pro: MODEL/PAPER thật; nhiều ô nhìn cùng một Doc, độc lập tỉ lệ/khóa, kéo/resize có
+  chặn mép, không xóa ô cuối. Logic 9/9, test/preview PASS; đã sửa nút bị dock che.
+- Lưu bền Paper: một Doc duy nhất + `paperSheets` metadata nhẹ đi qua IndexedDB, `.idf`, `.ifpack`
+  và backup; file cũ thiếu field vẫn mở về tờ mặc định. UI sửa số tờ, dự án, người vẽ, revision.
+  IDF 45/45, IFpack 19/19, typecheck/toàn bộ test PASS. Chờ nghiệm thu reload sau merge.
 
 ## Sự thật dữ liệu
 
