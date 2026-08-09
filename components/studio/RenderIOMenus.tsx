@@ -101,7 +101,7 @@ export function RenderIOMenus() {
     {
       id: 'gateway',
       label: tr('Chọn tệp — tự nhận định dạng', 'Choose files — auto-detect format'),
-      sub: tr('Ảnh tạo node · GLB mở trong Vẽ 3D', 'Images create nodes · GLB opens in 3D Design'),
+      sub: tr('Ảnh tạo node · GLB hoặc gói glTF mở trong Vẽ 3D', 'Images create nodes · GLB or glTF bundle opens in 3D Design'),
       icon: <FileUp size={15} />,
       onSelect: () => fileRef.current?.click(),
     },
@@ -206,9 +206,20 @@ export function RenderIOMenus() {
           const images: File[] = [];
           const models: File[] = [];
           const rejected: string[] = [];
-          for (const file of files) {
+          const detected = await Promise.all(files.map(async (file) => {
             const bytes = new Uint8Array(await file.slice(0, 8192).arrayBuffer());
-            const format = detectFormat({ name: file.name, bytes });
+            return { file, format: detectFormat({ name: file.name, bytes }) };
+          }));
+          const gltfEntries = detected.filter((item) => item.format === 'gltf');
+          const asDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Không đọc được file.'));
+            reader.onerror = () => reject(reader.error ?? new Error('Không đọc được file.'));
+            reader.readAsDataURL(file);
+          });
+
+          // Có .gltf ⇒ cả lượt chọn là MỘT gói; .bin/texture là phụ thuộc, không tạo node ảnh rời.
+          if (!gltfEntries.length) for (const { file, format } of detected) {
             const action = routeFormat(format, 'render');
             if (action.kind === 'place-image') images.push(file);
             else if (action.kind === 'render-import-model') models.push(file);
@@ -216,17 +227,37 @@ export function RenderIOMenus() {
           }
           if (images.length) await addImageNodesFromFiles(images);
           const modelReports: string[] = [];
+          if (gltfEntries.length > 1) {
+            rejected.push(tr('Mỗi lượt chỉ nhập một tệp .gltf cùng các file phụ của nó.', 'Choose one .gltf entry plus its dependencies per import.'));
+          } else if (gltfEntries.length === 1) {
+            const entry = gltfEntries[0].file;
+            try {
+              const resources = await Promise.all(files.map(async (file) => ({
+                name: file.webkitRelativePath || file.name,
+                dataUrl: await asDataUrl(file),
+                sizeBytes: file.size,
+              })));
+              const { parseGltfBundle } = await import('@/lib/three/glb-import');
+              const parsed = await parseGltfBundle(
+                await entry.text(),
+                resources.filter((resource) => resource.name !== (entry.webkitRelativePath || entry.name)),
+              );
+              useCadStore.getState().addModel3DSource({
+                id: crypto.randomUUID(), name: entry.name, format: 'gltf',
+                entryName: entry.webkitRelativePath || entry.name, resources,
+                sizeBytes: files.reduce((sum, file) => sum + file.size, 0), importedAt: new Date().toISOString(),
+              });
+              modelReports.push(`${entry.name}: ${parsed.report.meshes} mesh · ${Math.round(parsed.report.triangles).toLocaleString()} tam giác · ${files.length} file nguồn${parsed.report.warnings.length ? ` · ${parsed.report.warnings.join(' ')}` : ''}`);
+            } catch (err) {
+              rejected.push(`${entry.name}: ${err instanceof Error ? err.message : 'Gói glTF không đọc được'}`);
+            }
+          }
           for (const file of models) {
             try {
               const buffer = await file.arrayBuffer();
               const { parseGlb } = await import('@/lib/three/glb-import');
               const parsed = await parseGlb(buffer.slice(0));
-              const dataUrl = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Không đọc được file.'));
-                reader.onerror = () => reject(reader.error ?? new Error('Không đọc được file.'));
-                reader.readAsDataURL(file);
-              });
+              const dataUrl = await asDataUrl(file);
               useCadStore.getState().addModel3DSource({
                 id: crypto.randomUUID(), name: file.name, format: 'glb', dataUrl,
                 sizeBytes: file.size, importedAt: new Date().toISOString(),

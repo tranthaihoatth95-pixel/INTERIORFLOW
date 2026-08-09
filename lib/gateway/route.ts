@@ -32,6 +32,7 @@ const STATIC_ROUTE: Partial<Record<GatewayFormat, RouteAction>> = {
   xlsx: { kind: 'library-bulk-ingest' },
   csv: { kind: 'library-bulk-ingest' },
   glb: { kind: 'render-import-model' },
+  gltf: { kind: 'render-import-model' },
 };
 
 /** Ánh xạ định dạng → đích. `stage` = chặng đang gọi Gateway (chỉ ảnh hưởng khi định dạng là ảnh). */
