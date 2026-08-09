@@ -25,24 +25,38 @@
  * vỏ kính + định vị do dock lo.
  */
 
-import { Crosshair, Gauge, Terminal, Hand, Check, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Crosshair, Gauge, Terminal, Hand, Check, X, Undo2, Redo2, Fingerprint } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
+import {
+  FINGER_DRAW_EVENT,
+  readFingerDrawPreference,
+  writeFingerDrawPreference,
+} from '@/lib/cad/touch-input';
 
 /** Kích thước cạnh nhỏ nhất của một vùng chạm (chuẩn Apple HIG / Material). */
 const TOUCH_MIN = 44;
 
-function synthKey(key: string) {
+function synthKey(key: string, modifiers?: { mod?: boolean; shift?: boolean }) {
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('cad:synth-key', { detail: key }));
+    window.dispatchEvent(new CustomEvent('cad:synth-key', { detail: { key, ...modifiers } }));
   }
 }
 
 export default function CadTouchDock() {
+  const [fingerDraw, setFingerDraw] = useState(false);
   const cadMode = useCadStore((s) => s.cadMode);
   const orthoLock = useCadStore((s) => s.orthoLock);
   const dynInput = useCadStore((s) => s.dynInput);
   const tool = useCadStore((s) => s.tool);
   const setTool = useCadStore((s) => s.setTool);
+
+  useEffect(() => {
+    setFingerDraw(readFingerDrawPreference());
+    const sync = (event: Event) => setFingerDraw(Boolean((event as CustomEvent<boolean>).detail));
+    window.addEventListener(FINGER_DRAW_EVENT, sync);
+    return () => window.removeEventListener(FINGER_DRAW_EVENT, sync);
+  }, []);
 
   if (cadMode !== 'sketch') return null;
 
@@ -89,7 +103,28 @@ export default function CadTouchDock() {
         onPress={() => setTool(panOn ? 'select' : 'pan')}
         title="Kéo màn hình (trên bàn phím: giữ Space và rê chuột)"
       />
+      <DockBtn
+        icon={Fingerprint}
+        label="Ngón vẽ"
+        active={fingerDraw}
+        onPress={() => writeFingerDrawPreference(!fingerDraw)}
+        title={`${fingerDraw ? 'Tắt' : 'Bật'} vẽ bằng ngón tay khi thiết bị đã nhận bút`}
+      />
       <span style={{ width: 1, height: 26, background: 'var(--border)', margin: '0 2px' }} />
+      <DockBtn
+        icon={Undo2}
+        label="Hoàn tác"
+        active={false}
+        onPress={() => synthKey('z', { mod: true })}
+        title="Hoàn tác bước gần nhất (⌘Z/Ctrl+Z)"
+      />
+      <DockBtn
+        icon={Redo2}
+        label="Làm lại"
+        active={false}
+        onPress={() => synthKey('z', { mod: true, shift: true })}
+        title="Làm lại bước vừa hoàn tác (⌘⇧Z/Ctrl+Shift+Z)"
+      />
       <DockBtn
         icon={Check}
         label="Xong"
