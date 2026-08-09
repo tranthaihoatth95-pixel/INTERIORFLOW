@@ -53,6 +53,7 @@ const PresentEditor = dynamic(() => import('./PresentEditor'), {
     </div>
   ),
 });
+const PresentDocTypePicker = dynamic(() => import('./PresentDocTypePicker'), { ssr: false });
 import type { EditorDeck, EditorSlide } from '@/lib/present-editor/model';
 import { newId } from '@/lib/present-editor/model';
 import { getLastUserId, loadResume, saveResume } from '@/lib/resume';
@@ -78,8 +79,14 @@ const BLANK_PALETTE = ['#EFE9DC', '#C2AD86', '#8A6A3A', '#6E4A2E', '#3B352F', '#
 
 interface Props {
   /** Deck khởi đầu. BỎ TRỐNG (mặc định từ 07/08 — Hoà chốt "bỏ hết dự án mẫu") = deck RỖNG
-   * 0 slide: người dùng mới thấy màn "Chưa có slide" của PresentEditor, không thấy deck của ai. */
+   * 0 slide: người dùng mới thấy màn chọn loại hồ sơ (V6/H4) thay vì deck của ai. */
   initialDeck?: EditorDeck;
+  /**
+   * (V6/H4) Thẻ "Bảng tính/BOQ" trên màn chọn loại hồ sơ mở `BoqScreen` — màn đó sống ở tầng
+   * NGOÀI `PresentSheets` (`PresentStageScreen`, cùng `mode` đã có sẵn cho nút BOQ cũ). Bỏ
+   * trống = thẻ BOQ không hiện trên màn chọn (tránh nút giả bấm không ra gì, luật §9).
+   */
+  onRequestBoq?: () => void;
 }
 
 interface Sheet extends SheetTab {
@@ -220,7 +227,7 @@ async function resolveAndSyncPresentDisk(
 let seq = 1;
 const nextId = () => `presheet-${seq++}`;
 
-export default function PresentSheets({ initialDeck: initialDeckProp }: Props) {
+export default function PresentSheets({ initialDeck: initialDeckProp, onRequestBoq }: Props) {
   // 07/08 (M-EMPTY, Hoà chốt "bỏ hết dự án mẫu — app thật bắt đầu trống"): không truyền deck
   // khởi đầu ⇒ deck RỖNG 0 slide (khác `blankDeck` có sẵn 1 trang trắng — 0 slide để
   // PresentEditor hiện đúng màn "Chưa có slide" với lối đi tiếp, thay vì một trang trắng câm).
@@ -251,6 +258,8 @@ export default function PresentSheets({ initialDeck: initialDeckProp }: Props) {
    * hiện trên màn hình phải đổi theo; `liveDeck` vẫn là ref cho đường lưu (không render thừa).
    */
   const [slideCount, setSlideCount] = useState(initialDeck.slides.length);
+  // H4: lựa chọn điều hướng UI cho lần mount đầu của Deck, không phải dữ liệu hồ sơ cần persist.
+  const [deckStartBySheet, setDeckStartBySheet] = useState<Record<string, 'blank' | 'magic'>>({});
 
   // ---- Persistence (J-3): refs gương cho autosaver + cờ hydrate ----
   const userIdRef = useRef<string | null>(null);
@@ -543,11 +552,28 @@ export default function PresentSheets({ initialDeck: initialDeckProp }: Props) {
     // nguyên 1 deck — nhưng deck chỉ nặng theo số slide người dùng thật sự tạo, trần cứng 5
     // không bảo vệ gì thêm mà chỉ chặn studio nhiều hồ sơ.
     const id = nextId();
-    const deck = blankDeck(sheets.length + 1);
+    // V6/H4: hồ sơ MỚI chưa quyết loại → 0 slide + docType bỏ trống, để PresentDocTypePicker
+    // hiện (cùng điều kiện với deck khởi đầu, xem `initialDeck` ở trên).
+    const deck: EditorDeck = { ...blankDeck(sheets.length + 1), slides: [] };
     const committed = commitActive(sheets);
     liveDeck.current = deck;
     setSheets([...committed, { id, name: `Hồ sơ ${sheets.length + 1}`, deck }]);
     setActiveId(id);
+  };
+
+  const chooseDeck = (start: 'blank' | 'magic') => {
+    const deck: EditorDeck = {
+      ...liveDeck.current,
+      docType: 'deck',
+      slides: liveDeck.current.slides.length > 0 ? liveDeck.current.slides : [blankSlide()],
+    };
+    liveDeck.current = deck;
+    setSheets((prev) => prev.map((s) => (s.id === activeId ? { ...s, deck } : s)));
+    setDeckStartBySheet((prev) => ({ ...prev, [activeId]: start }));
+    setSlideCount(deck.slides.length);
+    setImportGen((g) => g + 1);
+    saverRef.current?.touch();
+    diskWriterRef.current?.touch();
   };
 
   const closeSheet = (id: string) => {
@@ -592,10 +618,18 @@ export default function PresentSheets({ initialDeck: initialDeckProp }: Props) {
         {/* Chỉ mount editor SAU hydrate: deck khôi phục phải vào từ initialDeck (key=activeId).
             B2 (4.1.b) — `:importGen` ép remount sau khi nhập .idfp dù id sheet trùng (xem
             docstring importGen phía trên). */}
-        {hydrated && (
+        {hydrated && active.deck.slides.length === 0 && !active.deck.docType ? (
+          <PresentDocTypePicker
+            onChooseBlankDeck={() => chooseDeck('blank')}
+            onChooseMagicDeck={() => chooseDeck('magic')}
+            onChooseBoq={() => onRequestBoq?.()}
+          />
+        ) : hydrated ? (
           <PresentEditor
             key={`${activeId}:${importGen}`}
             initialDeck={active.deck}
+            initialTab="layout"
+            skipGenerateFlow={deckStartBySheet[activeId] === 'blank'}
             onDeckChange={(d) => {
               liveDeck.current = d;
               setSlideCount(d.slides.length);
@@ -603,7 +637,7 @@ export default function PresentSheets({ initialDeck: initialDeckProp }: Props) {
               diskWriterRef.current?.touch();
             }}
           />
-        )}
+        ) : null}
       </div>
     </div>
   );

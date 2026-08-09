@@ -80,6 +80,11 @@ interface Props {
   content?: { nImages: number; textLen: number } | null;
   /** (PS-2) slide đang hiển thị trên canvas — nguồn cho "Lưu slide này thành template". */
   activeSlide?: EditorSlide | null;
+  /**
+   * (V6/H4) `true` = mở thẳng kệ mẫu, bỏ qua GenerateFlow mở đầu (lối "Tự dàn" ở màn chọn hồ
+   * sơ). Bỏ trống = false = hành vi cũ (luôn hiện GenerateFlow trước, "Bỏ qua" mới sang kệ).
+   */
+  initialGenerated?: boolean;
 }
 
 const PREVIEW_CTX = {
@@ -105,6 +110,7 @@ export default function LayoutShelf({
   refGrid,
   content,
   activeSlide,
+  initialGenerated,
 }: Props) {
   const [query, setQuery] = useState('');
   const [specOpen, setSpecOpen] = useState(false);
@@ -146,7 +152,9 @@ export default function LayoutShelf({
   // biến thể sinh thêm theo template gốc (id gốc → danh sách biến thể).
   const [variants, setVariants] = useState<Record<string, EditorTemplate[]>>({});
   // Flow generate: chỉ hiện kệ 4 cột SAU khi Generate (góp ý #1 & #12). Trước đó = GenerateFlow.
-  const [generated, setGenerated] = useState(false);
+  // V6/H4: lối "Tự dàn" ở màn chọn hồ sơ truyền initialGenerated=true để mở thẳng kệ, bỏ qua
+  // GenerateFlow (lối đó dành cho "✨ Magic").
+  const [generated, setGenerated] = useState(initialGenerated ?? false);
   const [learnedNotes, setLearnedNotes] = useState<string[] | null>(null);
 
   /* ─────────────── M-1: PERCEPTRON FEEDBACK (Nhận/Bỏ → learning-to-rank) ───────────────

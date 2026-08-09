@@ -104,6 +104,17 @@ interface Props {
    * KHÔNG đổi hành vi. Tầng PresentSheets dùng để lưu nội dung sheet trước khi chuyển tab.
    */
   onDeckChange?: (deck: EditorDeck) => void;
+  /**
+   * (V6/H4, `PresentDocTypePicker`) Tab mở sẵn khi mount. Bỏ trống = 'layout' (hành vi cũ,
+   * KHÔNG đổi).
+   */
+  initialTab?: LeftTab;
+  /**
+   * (V6/H4) Lối "Tự dàn" từ màn chọn hồ sơ cần vào THẲNG kệ mẫu, KHÔNG qua GenerateFlow (lối
+   * đó dành riêng cho "✨ Magic"). Forward xuống `LayoutShelf` làm `initialGenerated`. Bỏ trống
+   * = false = hành vi cũ (tab Mẫu luôn mở bằng GenerateFlow trước).
+   */
+  skipGenerateFlow?: boolean;
 }
 
 type LeftTab = 'layout' | 'reference' | 'motion';
@@ -124,7 +135,7 @@ const ZOOM_STEP = 0.1;
 const STAGE_MAX_W = 1100; // rộng tối đa sân khấu ở zoom 100% (khớp giá trị cũ EditorCanvas).
 const STAGE_PAD = 48; // padding ngang của <main> (24px × 2).
 
-export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
+export default function PresentEditor({ initialDeck, onDeckChange, initialTab, skipGenerateFlow }: Props) {
   const ed = useEditor(initialDeck);
 
   // Multi-sheet: đẩy deck hiện tại ra wrapper (nếu có) để lưu khi đổi tab. Phụ-thêm, vô hại
@@ -152,7 +163,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     [ed],
   );
 
-  const [tab, setTab] = useState<LeftTab>('layout');
+  const [tab, setTab] = useState<LeftTab>(initialTab ?? 'layout');
   const [panelOpen, setPanelOpen] = useState(true);
   // "Thay ảnh…" (VIỆC 2d, 28/07): replaceDialogId = đang hiện hộp thoại 2 lựa chọn cho ảnh này;
   // replaceTarget = đã chọn "Từ thư viện", đang chờ user bấm 1 ảnh trong tab Reference.
@@ -1810,6 +1821,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
                     refGrid={refGrid}
                     content={contentStats}
                     activeSlide={ed.slide ?? null}
+                    initialGenerated={skipGenerateFlow}
                   />
                 )}
                 {tab === 'reference' && (
