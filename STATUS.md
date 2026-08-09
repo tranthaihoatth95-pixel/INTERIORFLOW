@@ -10,7 +10,8 @@
   09/08; không sửa, không commit.
 - Registry định dạng đã làm trên nhánh `codex/format-registry`: phân biệt chỉnh được · mất mát ·
   tham chiếu · chỉ lưu · chưa hỗ trợ. Cửa Trình bày đã nối: chọn một lần rồi tự phân luồng
-  ảnh/PPTX/IDFP/XLSX/CSV; định dạng chưa có importer báo đúng lý do từ registry.
+  ảnh/PPTX/IDFP/XLSX/CSV; cửa 2D cũng đã nối IDF/IFpack/DXF/DWG/ảnh. Định dạng chưa có importer
+  báo đúng lý do từ registry; các lối chuyên biệt của AI Brief vẫn giữ nguyên.
 
 ## Vừa xong 09/08
 
@@ -47,7 +48,7 @@
 
 ## Việc kế tiếp
 
-1. Nối cùng cửa Gateway vào 2D rồi 3D; không bắt chọn lại file sau khi đã nhận diện.
+1. Nối cùng cửa Gateway vào 3D; không bắt chọn lại file sau khi đã nhận diện.
 2. Ưu tiên 3D mở: GLB/glTF → OBJ/MTL → FBX; sau đó IFC. SKP dùng SDK/bridge sau kiểm license;
    `.max/.rvt` dùng bridge/plugin, không tự viết parser native.
 3. Hoàn thiện Trình bày theo thứ tự: PDF deck → DOCX → media video/audio → HTML; tăng fidelity PPTX.

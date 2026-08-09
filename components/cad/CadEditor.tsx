@@ -99,6 +99,8 @@ import HistoryPanel from './HistoryPanel';
 import { Checkpoint } from '@/components/studio/Checkpoint';
 import { LibraryDropBridge } from './LibraryDropBridge';
 import type { CheckpointItem } from '@/components/studio/checkpoint-core';
+import { detectFormat } from '@/lib/gateway/detect';
+import { routeFormat } from '@/lib/gateway/route';
 
 export default function CadEditor() {
   const router = useRouter();
@@ -172,9 +174,7 @@ export default function CadEditor() {
   }, []);
   const fileRef = useRef<HTMLInputElement>(null);
   const dwgRef = useRef<HTMLInputElement>(null);
-  const idfRef = useRef<HTMLInputElement>(null);
-  const photoRef = useRef<HTMLInputElement>(null);
-  const ifpackRef = useRef<HTMLInputElement>(null);
+  const gatewayFileRef = useRef<HTMLInputElement>(null);
 
   const status = useCadStore((s) => s.status);
   // Zone tool (24/07) — panel cấu hình hiện khi đang ở tool zone/arrow (đóng được bằng ✕,
@@ -330,10 +330,7 @@ export default function CadEditor() {
   const doOpenPaperExport = () => {
     window.dispatchEvent(new CustomEvent('cad:paper-export-dialog-request'));
   };
-  const onOpenIdfFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    e.target.value = '';
-    if (!f) return;
+  const openIdfFile = (f: File) => {
     // .idf THAY THẾ TOÀN BỘ project (mọi sheet) — luôn hỏi trước, không chỉ khi bản đang mở có
     // dữ liệu (sheet khác có thể đang có nội dung mà CadEditor không thấy được). Hỏi bằng hộp
     // xác nhận nổi non-blocking (file giữ trong closure, chỉ đọc khi user bấm Tiếp tục).
@@ -371,10 +368,7 @@ export default function CadEditor() {
   };
   // "Phục hồi từ .ifpack" — KHÔNG thay thế project hiện tại (khác .idf) nên KHÔNG cần hộp xác
   // nhận "sẽ ghi đè" — CadSheets tự tạo dự án MỚI để phục hồi vào, dự án đang mở không đổi gì.
-  const onOpenIfpackFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    e.target.value = '';
-    if (!f) return;
+  const openIfpackFile = (f: File) => {
     const reader = new FileReader();
     reader.onload = () => {
       const buffer = reader.result as ArrayBuffer;
@@ -387,16 +381,36 @@ export default function CadEditor() {
   // Sprint 7 — Việc 4: chọn ảnh từ máy → data URL (pattern readAsDataURL đã dùng ở
   // components/studio/UploadButton.tsx/CommentLayer.tsx — tái dùng nguyên xi, không viết lại).
   // Sau khi chọn, tool tự chuyển 'photo' (setPendingPhoto) — click tiếp trên canvas để đặt.
-  const onPickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    e.target.value = '';
-    if (!f || !f.type.startsWith('image/')) return;
+  const pickPhoto = (f: File) => {
+    if (!f.type.startsWith('image/') && detectFormat({ name: f.name }) !== 'image') return;
     const reader = new FileReader();
     reader.onload = () => {
       useCadStore.getState().setPendingPhoto(String(reader.result));
     };
     reader.onerror = () => useCadStore.getState().setStatus(`Không đọc được ảnh "${f.name}".`);
     reader.readAsDataURL(f);
+  };
+
+  const onGatewayFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    const bytes = new Uint8Array(await f.slice(0, 8192).arrayBuffer());
+    const format = detectFormat({ name: f.name, bytes });
+    const action = routeFormat(format, 'cad');
+    if (action.kind === 'cad-open-project') openIdfFile(f);
+    else if (action.kind === 'cad-restore-project') openIfpackFile(f);
+    else if (action.kind === 'cad-import-drawing') {
+      if (format === 'dwg') importDwgFile(f);
+      else importDxfFile(f);
+    } else if (action.kind === 'place-image') pickPhoto(f);
+    else {
+      useCadStore.getState().setStatus(
+        action.kind === 'unsupported' && action.reason
+          ? action.reason
+          : `Chưa biết cách mở "${f.name}" trong chặng Thiết kế 2D.`,
+      );
+    }
   };
 
   const openDemo = () => {
@@ -627,11 +641,7 @@ export default function CadEditor() {
           size="sm"
           title="Nhập / mở file vào chặng Thiết kế 2D"
           items={[
-            { id: 'dxf', label: 'Mở DXF', sub: 'Bản vẽ AutoCAD trao đổi (.dxf)', icon: <FolderOpen size={15} />, onSelect: () => fileRef.current?.click() },
-            { id: 'dwg', label: 'Mở DWG', sub: 'Parse trong Web Worker riêng — chưa hỗ trợ block INSERT/DIMENSION', icon: <FolderOpen size={15} />, onSelect: () => dwgRef.current?.click() },
-            { id: 'idf', label: 'Mở .idf', sub: 'File project InteriorFlow — THAY THẾ toàn bộ project (mọi sheet)', icon: <FolderOpen size={15} />, onSelect: () => idfRef.current?.click() },
-            { id: 'ifpack', label: 'Phục hồi từ .ifpack', sub: 'Bản sao lưu đầy đủ (bản vẽ + ảnh) — luôn tạo DỰ ÁN MỚI, không đè dự án đang mở', icon: <FolderOpen size={15} />, onSelect: () => ifpackRef.current?.click() },
-            { id: 'photo', label: 'Ảnh hiện trường', sub: 'Chọn ảnh rồi click vị trí trên bản vẽ để gắn', icon: <Camera size={15} />, onSelect: () => photoRef.current?.click() },
+            { id: 'gateway', label: 'Chọn tệp — tự nhận định dạng', sub: 'IDF · IFpack · DXF · DWG · ảnh; định dạng chưa hỗ trợ sẽ nói rõ lý do', icon: <FolderOpen size={15} />, onSelect: () => gatewayFileRef.current?.click() },
           ]}
         />
         <IOMenu
@@ -721,9 +731,7 @@ export default function CadEditor() {
         </button>
         <input ref={fileRef} type="file" accept=".dxf" hidden onChange={onImportFile} />
         <input ref={dwgRef} type="file" accept=".dwg" hidden onChange={onImportDwgFile} />
-        <input ref={idfRef} type="file" accept=".idf,.json,application/json" hidden onChange={onOpenIdfFile} />
-        <input ref={ifpackRef} type="file" accept=".ifpack,.zip,application/zip" hidden onChange={onOpenIfpackFile} />
-        <input ref={photoRef} type="file" accept="image/*" hidden onChange={onPickPhoto} />
+        <input ref={gatewayFileRef} type="file" hidden onChange={onGatewayFile} />
       </div>
 
       {/* vùng canvas + panel */}
