@@ -9,7 +9,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Doc, Entity, Layer, LineType, Viewport, HatchPattern, MarkupPin, PhotoEmbed, SiteImage, ZoneGroup, PaperKey, PaperOrientation } from './model';
+import type { Doc, Entity, Layer, LineType, Viewport, HatchPattern, MarkupPin, PhotoEmbed, SiteImage, Model3DSource, ZoneGroup, PaperKey, PaperOrientation } from './model';
 import { emptyDoc, ZONE_DEFAULT_OPACITY, expandIdsByInsertGroup, entityGeomSignature } from './model';
 import { pasteEntities } from './geometry';
 import {
@@ -402,6 +402,8 @@ interface CadState {
   setSiteImage: (img: SiteImage | null) => void;
   /** chỉnh vị trí/kích thước/opacity/ẩn-hiện ảnh aerial (KHÔNG snapshot — kéo slider mượt). */
   updateSiteImage: (patch: Partial<SiteImage>) => void;
+  /** Thêm nguồn GLB vào Doc; mesh được derive ở viewer, không ghi bản sao vào store. */
+  addModel3DSource: (source: Model3DSource) => void;
 }
 
 function clone(d: Doc): Doc {
@@ -415,6 +417,7 @@ function clone(d: Doc): Doc {
     photos: (d.photos ?? []).map((p) => ({ ...p })),
     // Zone tool — ảnh aerial nền cũng vào snapshot Undo/Redo (shallow copy đủ — field thuần).
     siteImage: d.siteImage ? { ...d.siteImage } : d.siteImage ?? undefined,
+    model3dSources: (d.model3dSources ?? []).map((source) => ({ ...source })),
   };
 }
 
@@ -772,6 +775,12 @@ export const useCadStore = create<CadState>((set, get) => ({
   },
   updateSiteImage: (patch) =>
     set((s) => (s.doc.siteImage ? { doc: { ...s.doc, siteImage: { ...s.doc.siteImage, ...patch } } } : s)),
+  addModel3DSource: (source) =>
+    set((s) => ({
+      past: [...s.past, clone(s.doc)].slice(-MAX_HISTORY),
+      future: [],
+      doc: { ...s.doc, model3dSources: [...(s.doc.model3dSources ?? []), source] },
+    })),
   setWallThickness: (wallThickness) => set({ wallThickness }),
   setFilletRadius: (filletRadius) => set({ filletRadius }),
   setChamferDist: (chamferD1, chamferD2) => set({ chamferD1, chamferD2 }),

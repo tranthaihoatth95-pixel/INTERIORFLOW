@@ -1,4 +1,4 @@
-# STATUS — InteriorFlow (09/08, dưới 800 từ)
+# STATUS — InteriorFlow (10/08, dưới 800 từ)
 
 > Lịch sử chi tiết ở `CHANGELOG.md`; báo cáo từng mẻ ở `docs/M-*-OUT.md`.
 > Git + code + DB thật là nguồn kiểm chứng; không lấy brief hoặc GAP cũ làm bằng chứng hoàn thành.
@@ -6,12 +6,10 @@
 
 ## Đang chạy
 
-- Không còn worktree phụ. `main` có 4 file untracked của chủ dự án: `AGENTS.md` và 3 mock ngày
-  09/08; không sửa, không commit.
-- Registry định dạng đã làm trên nhánh `codex/format-registry`: phân biệt chỉnh được · mất mát ·
-  tham chiếu · chỉ lưu · chưa hỗ trợ. Cửa Trình bày đã nối: chọn một lần rồi tự phân luồng
-  ảnh/PPTX/IDFP/XLSX/CSV; cửa 2D đã nối IDF/IFpack/DXF/DWG/ảnh; cửa 3D/Node nhận nhiều ảnh và
-  báo rõ file model chưa có importer. Các lối chuyên biệt của AI Brief vẫn giữ nguyên.
+- Worktree `interiorflow-wt-import-glb`, nhánh `codex/import-glb`: importer GLB P0 đã code và test,
+  chờ commit/merge. `main` có 4 file untracked của chủ dự án; không sửa, không commit.
+- Gateway đã ở `main` (`c408684`): một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu ·
+  chỉ lưu · chưa hỗ trợ. Các lối chuyên biệt của AI Brief vẫn giữ nguyên.
 
 ## Vừa xong 09/08
 
@@ -25,6 +23,9 @@
 - Đã dọn hai worktree trên theo đủ 4 điều kiện: đã merge, sạch, không server, không commit độc nhất.
 - Browser click-through chưa nghiệm thu: môi trường browser chặn URL localhost `:3008`; không lách
   bằng công cụ khác. Kiểm chứng hiện tại là typecheck + test, chưa tuyên bố UI chạy tay.
+- GLB P0: kiểm file thật, lưu nguyên nguồn trong `Doc`/autosave/IDF, derive tam giác cho cùng
+  viewport 3D, giữ transform và màu nền, tự chuyển sang Vẽ 3D, báo mesh/tam giác và mất mát.
+  Typecheck PASS; test Gateway 28/28; test hình học 6/6; toàn bộ `npm test` PASS.
 
 ## Sự thật dữ liệu
 
@@ -38,17 +39,17 @@
 
 - 2D: mở/nhập `.idf`, `.dwg`, `.dxf`; backup `.ifpack`; xuất `.dxf`, PDF. IFC mới có metadata,
   chưa import/export BIM đầy đủ.
-- 3D/Node: nhập ảnh; chưa có importer thực cho `.skp`, `.max`, `.fbx`, `.obj`, `.glb/.gltf`,
-  `.ifc`, `.rvt`. Danh sách đuôi trong prompt/URL không được tính là hỗ trợ.
+- 3D/Node: nhập ảnh; GLB P0 đã có trên nhánh chờ merge ở mức `lossy` (hình học/transform/màu nền;
+  texture/animation chưa trình diễn). Chưa nhập `.gltf` nhiều file, `.skp`, `.max`, `.fbx`,
+  `.obj`, `.ifc`, `.rvt`. Danh sách đuôi trong prompt/URL không được tính là hỗ trợ.
 - Trình bày: nhập `.pptx` (mức cơ bản), ảnh, `.idfp`; nhập `.xlsx/.csv` vào BOQ; xuất PDF, PPTX,
   PNG, `.idfp`, XLSX cho BOQ/FF&E. PDF deck và DOCX chưa nhập; Văn bản/Video/HTML chưa có editor.
-- Gateway nhận diện/định tuyến file đã có nhưng chưa nối UI, nên chưa tính là import dùng được.
-- Nhánh registry nhận thêm GLB/glTF/OBJ/FBX/SKP/MAX/IFC/RVT/DOCX/video/audio/HTML nhưng vẫn đánh
-  dấu `unavailable`; sửa PDF Present về `unsupported`, không còn định tuyến sai thành import deck.
+- Gateway đã nối UI cả ba chặng. GLB chỉ đổi sang `lossy` sau khi có importer thật; glTF nhiều file
+  và các định dạng 3D còn lại vẫn `unavailable`. PDF Present là `unsupported`, không định tuyến giả.
 
 ## Việc kế tiếp
 
-1. Ưu tiên 3D mở: GLB/glTF → OBJ/MTL → FBX; sau đó IFC. SKP dùng SDK/bridge sau kiểm license;
+1. Merge GLB sau kiểm tra; tiếp theo glTF bundle → OBJ/MTL → FBX; sau đó IFC. SKP dùng SDK/bridge sau kiểm license;
    `.max/.rvt` dùng bridge/plugin, không tự viết parser native.
 2. Hoàn thiện Trình bày theo thứ tự: PDF deck → DOCX → media video/audio → HTML; tăng fidelity PPTX.
 3. Bổ sung báo cáo đơn vị/trục/font/material/asset bị thiếu và giữ file nguồn để refresh.
