@@ -6,7 +6,7 @@
 
 ## Đang chạy
 
-- Không còn worktree phụ. OBJ/MTL và tách Sơ phác/Chuyên đã merge vào `main` (`b02b711`).
+- Worktree `interiorflow-wt-sketch-gestures` chờ commit/merge: lớp bút/chống tì tay cho Sơ phác.
   `main` có 4 file untracked của chủ dự án; không chạm.
 - Gateway đã ở `main` (`c408684`): một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu ·
   chỉ lưu · chưa hỗ trợ. Lối AI Brief chuyên biệt vẫn giữ nguyên.
@@ -21,6 +21,10 @@
   derive mesh vào viewer; báo giả định mét/Y-up và texture chưa hiển thị. Gateway đánh dấu `lossy`.
 - Chặng 1: Sơ phác chỉ giữ dựng nhanh, Move/Measure/Markup và thanh chạm. Chuyên giữ bộ lệnh đầy
   đủ, thêm ngữ cảnh MODEL/đơn vị/tờ/tỉ lệ/BIM và mở lớp BIM 2D.
+- Sơ phác tablet mẻ 1: nhận bút, loại vùng tì tay ≥24px và touch chen lúc bút chạm/300ms sau
+  pen-up; sau khi thấy bút, ngón chuyển sang pan/pinch, có gạt “Ngón vẽ” lưu trên thiết bị. Dock
+  có Hoàn tác/Làm lại đi qua cùng nhánh phím. Test lớp input 10/10, typecheck và toàn bộ test PASS;
+  preview `3016` thấy đủ ba nút mới, không lỗi console.
 - Sau merge: parser OBJ 5/5, Gateway 30/30, typecheck và toàn bộ `npm test` PASS. Đã
   click-through hai mode trên local `3015`, không lỗi console; worktree/nhánh đã dọn an toàn.
 
@@ -43,7 +47,7 @@
 
 ## Việc kế tiếp
 
-1. Làm sâu hai mode: Sơ phác cần radial/gesture, palm rejection và bút; Chuyên cần Model/Paper,
+1. Làm sâu hai mode: Sơ phác tiếp theo radial + chạm 2/3 ngón + nắn nét; Chuyên cần Model/Paper,
    viewport/tờ in, property/layer workflow. BIM mới là phân loại 2D; chưa có quan hệ mô hình, IFC
    hoặc clash, nên chưa ngang Revit.
 2. Định dạng FBX → IFC. SKP dùng SDK/bridge sau kiểm license; `.max/.rvt` dùng bridge/plugin,

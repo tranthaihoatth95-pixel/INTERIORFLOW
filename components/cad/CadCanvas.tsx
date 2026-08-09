@@ -73,6 +73,12 @@ import { classifyWheel, findScrollableAncestor, normalizeWheelDelta } from '@/li
 import { SHAPE_DND_MIME } from '@/components/ShapePalette';
 import type { BlockEntity } from '@/lib/cad/model';
 import Popover from '@/components/ui/Popover';
+import {
+  FINGER_DRAW_EVENT,
+  readFingerDrawPreference,
+  shouldRejectTouch,
+  shouldUseTouchForNavigation,
+} from '@/lib/cad/touch-input';
 
 interface Ix {
   cursorScreen: Pt;
@@ -121,6 +127,9 @@ interface Ix {
   // Cảm ứng — cờ "pointer gần nhất là ngón tay" cập nhật ở pointerdown/up, dùng để quyết định
   // hiện nút Xoá nổi (thiết bị không có bàn phím vật lý thì không dùng được phím Delete/Backspace).
   lastPointerWasTouch: boolean;
+  /** Bút được ưu tiên trong mode Sơ phác; không ghi vào Doc vì là khả năng của thiết bị. */
+  penSeen: boolean;
+  penUpAt: number;
   /** GỐC B3 — lần "Xem vừa màn" gần nhất đã CANH VÀO CỤM VẼ CHÍNH (bỏ bản sao để xa) hay chưa.
    *  Bấm lần nữa khi cờ đang bật = xem toàn bộ. Là đường quay lại bắt buộc của G-M1-04. */
   zoomedToCluster: boolean;
@@ -240,6 +249,14 @@ export default function CadCanvas() {
   // trong draw()/updateDeleteFabPosition() để không ép React re-render mỗi frame pan/zoom).
   const selection = useCadStore((s) => s.selection);
   const cadTool = useCadStore((s) => s.tool);
+  const cadMode = useCadStore((s) => s.cadMode);
+  const [fingerDrawEnabled, setFingerDrawEnabled] = useState(false);
+  useEffect(() => {
+    setFingerDrawEnabled(readFingerDrawPreference());
+    const sync = (event: Event) => setFingerDrawEnabled(Boolean((event as CustomEvent<boolean>).detail));
+    window.addEventListener(FINGER_DRAW_EVENT, sync);
+    return () => window.removeEventListener(FINGER_DRAW_EVENT, sync);
+  }, []);
 
   /**
    * Tầng 3 onboarding (coachmark) — "Kéo để di chuyển, bấm đúp để sửa" hiện ĐÚNG 1 LẦN,
@@ -351,6 +368,8 @@ export default function CadCanvas() {
     pointers: new Map(),
     pinch: null,
     lastPointerWasTouch: false,
+    penSeen: false,
+    penUpAt: 0,
     zoomedToCluster: false,
     eyedropper: { active: false, sourceId: null },
     lastMoveCopy: null,
@@ -639,6 +658,22 @@ export default function CadCanvas() {
 
   const onPointerDown = (ev: React.PointerEvent) => {
     const e = ev.nativeEvent;
+    const st = useCadStore.getState();
+    if (cadMode === 'sketch' && ev.pointerType === 'pen') ix.current.penSeen = true;
+    const penActive = [...ix.current.pointers.values()].some((pointer) => pointer.type === 'pen');
+    if (cadMode === 'sketch' && shouldRejectTouch({
+      pointerType: ev.pointerType,
+      width: ev.width,
+      height: ev.height,
+      now: performance.now(),
+      penActive,
+      penSeen: ix.current.penSeen,
+      penUpAt: ix.current.penUpAt,
+      fingerDrawEnabled,
+    })) {
+      ev.preventDefault();
+      return;
+    }
     // setPointerCapture có thể throw DOMException "No active pointer" (vd pointerId không còn
     // hợp lệ khi đầu vào tổng hợp/tự động hoá) — bọc try/catch để không chặn luôn thao tác vẽ
     // phía sau (bắt điểm/handleClick) chỉ vì capture thất bại, không ảnh hưởng hành vi chuột thật.
@@ -649,7 +684,6 @@ export default function CadCanvas() {
     }
     const screen = toLocal(e);
     updateCursor(screen);
-    const st = useCadStore.getState();
 
     // Cảm ứng — theo dõi MỌI pointer đang active (map theo pointerId) để phát hiện gesture 2 ngón.
     ix.current.lastPointerWasTouch = ev.pointerType === 'touch';
@@ -679,6 +713,11 @@ export default function CadCanvas() {
       }
       if (ix.current.pinch) {
         // Đã có pinch chạy (vd ngón thứ 3 chạm thêm) — bỏ qua, KHÔNG phá gesture 2 ngón gốc.
+        return;
+      }
+      if (shouldUseTouchForNavigation({ pointerType: ev.pointerType, penSeen: ix.current.penSeen, fingerDrawEnabled })) {
+        ix.current.panning = true;
+        ix.current.panStart = { screen, vp: st.viewport };
         return;
       }
     }
@@ -853,6 +892,7 @@ export default function CadCanvas() {
 
   const onPointerUp = (ev: React.PointerEvent) => {
     const st = useCadStore.getState();
+    if (cadMode === 'sketch' && ev.pointerType === 'pen') ix.current.penUpAt = performance.now();
     ix.current.lastPointerWasTouch = ev.pointerType === 'touch';
     setIsTouchInput(ev.pointerType === 'touch');
     ix.current.pointers.delete(ev.pointerId);
@@ -906,6 +946,7 @@ export default function CadCanvas() {
    * dọn sạch MỌI trạng thái tương tác ephemeral để không kẹt UI (khác onPointerUp — không giả
    * định gesture kết thúc "sạch", nên reset rộng tay hơn thay vì chỉ xử lý đúng nhánh đang chạy). */
   const onPointerCancel = (ev: React.PointerEvent) => {
+    if (cadMode === 'sketch' && ev.pointerType === 'pen') ix.current.penUpAt = performance.now();
     ix.current.pointers.delete(ev.pointerId);
     const touchLeft = [...ix.current.pointers.values()].filter((p) => p.type === 'touch').length;
     if (touchLeft < 2) ix.current.pinch = null;
@@ -2458,9 +2499,12 @@ export default function CadCanvas() {
     // (không dispatch) → e.target = null → guard INPUT/TEXTAREA ở đầu onKey bỏ qua, đúng ý:
     // bấm nút cảm ứng vẫn ăn kể cả khi con trỏ text đang nằm trong ô lệnh.
     const onSynthKey = (ev: Event) => {
-      const key = (ev as CustomEvent<string>).detail;
+      const detail = (ev as CustomEvent<string | { key: string; mod?: boolean; shift?: boolean }>).detail;
+      const key = typeof detail === 'string' ? detail : detail?.key;
       if (typeof key !== 'string' || !key) return;
-      onKey(new KeyboardEvent('keydown', { key }));
+      const mod = typeof detail === 'object' && Boolean(detail.mod);
+      const shift = typeof detail === 'object' && Boolean(detail.shift);
+      onKey(new KeyboardEvent('keydown', { key, metaKey: mod, ctrlKey: mod, shiftKey: shift }));
     };
     window.addEventListener('keydown', onKey);
     window.addEventListener('keyup', onKeyUp);
