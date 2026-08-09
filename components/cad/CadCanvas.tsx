@@ -73,8 +73,13 @@ import { classifyWheel, findScrollableAncestor, normalizeWheelDelta } from '@/li
 import { SHAPE_DND_MIME } from '@/components/ShapePalette';
 import type { BlockEntity } from '@/lib/cad/model';
 import Popover from '@/components/ui/Popover';
+import RadialToolMenu, { type RadialTool } from '@/components/print/RadialToolMenu';
 import {
   FINGER_DRAW_EVENT,
+  MULTI_TAP_MS,
+  RADIAL_HOLD_MS,
+  TOUCH_MOVE_THRESHOLD_PX,
+  classifyMultiTouchGesture,
   readFingerDrawPreference,
   shouldRejectTouch,
   shouldUseTouchForNavigation,
@@ -124,6 +129,12 @@ interface Ix {
   // non-null khi ĐANG có gesture pinch 2 ngón chạy; startDist/startScale chốt lúc bắt đầu để tính
   // tỉ lệ zoom so với GESTURE START (không phải incremental) — tránh trôi dạt tích luỹ sai số.
   pinch: { startDist: number; startScale: number; lastMid: Pt } | null;
+  touchGesture: {
+    startedAt: number;
+    maxCount: number;
+    starts: Map<number, Pt>;
+    maxMovePx: number;
+  } | null;
   // Cảm ứng — cờ "pointer gần nhất là ngón tay" cập nhật ở pointerdown/up, dùng để quyết định
   // hiện nút Xoá nổi (thiết bị không có bàn phím vật lý thì không dùng được phím Delete/Backspace).
   lastPointerWasTouch: boolean;
@@ -199,6 +210,28 @@ function placeLibraryBlock(id: string, at: Pt, rot: number, layer: string) {
   })();
 }
 
+const EMPTY_RADIAL_TOOLS: RadialTool[] = [
+  { id: 'line', icon: 'L', label: 'Đường' },
+  { id: 'rect', icon: '▭', label: 'Chữ nhật' },
+  { id: 'room', icon: 'R', label: 'Phòng' },
+  { id: 'circle', icon: '○', label: 'Tròn' },
+  { id: 'pan', icon: '✥', label: 'Kéo' },
+  { id: 'undo', icon: '↶', label: 'Hoàn tác' },
+  { id: 'polyline', icon: '⌁', label: 'Đa tuyến' },
+  { id: 'command', icon: '›_', label: 'Lệnh' },
+];
+
+const SELECTED_RADIAL_TOOLS: RadialTool[] = [
+  { id: 'move', icon: '✥', label: 'Di chuyển' },
+  { id: 'copy', icon: '⧉', label: 'Nhân bản' },
+  { id: 'rotate', icon: '↻', label: 'Xoay' },
+  { id: 'mirror', icon: '↔', label: 'Đối xứng' },
+  { id: 'scale', icon: '↗', label: 'Tỉ lệ' },
+  { id: 'stretch', icon: '⇱', label: 'Kéo giãn' },
+  { id: 'delete', icon: '⌫', label: 'Xoá' },
+  { id: 'cancel', icon: '×', label: 'Bỏ chọn' },
+];
+
 export default function CadCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -243,6 +276,8 @@ export default function CadCanvas() {
    * phải vị trí con trỏ lúc file đã chọn xong (có thể lệch nếu tay run trong lúc chờ hộp thoại). */
   const [cadMenu, setCadMenu] = useState<{ clientX: number; clientY: number; hasSelection: boolean; worldAt: Pt } | null>(null);
   const cadQuickPhotoRef = useRef<HTMLInputElement>(null);
+  const [cadRadial, setCadRadial] = useState<{ x: number; y: number; selected: boolean } | null>(null);
+  const radialHoldRef = useRef<{ timer: number; pointerId: number; start: Pt } | null>(null);
 
   // Cảm ứng — nút Xoá nổi: chỉ cần re-render khi selection/tool đổi (selector zustand, KHÔNG
   // đọc viewport ở đây — viewport đổi liên tục lúc pan/zoom và được xử lý riêng, imperative,
@@ -257,6 +292,18 @@ export default function CadCanvas() {
     window.addEventListener(FINGER_DRAW_EVENT, sync);
     return () => window.removeEventListener(FINGER_DRAW_EVENT, sync);
   }, []);
+
+  function runCadRadialAction(id: string) {
+    const st = useCadStore.getState();
+    if (id === 'undo') st.undo();
+    else if (id === 'delete') st.deleteSelected();
+    else if (id === 'cancel') st.clearSelection();
+    else if (id === 'command') window.dispatchEvent(new CustomEvent('cad:cmd-focus'));
+    else if (id === 'line' || id === 'rect' || id === 'room' || id === 'circle' || id === 'pan'
+      || id === 'polyline' || id === 'move' || id === 'copy' || id === 'rotate' || id === 'mirror'
+      || id === 'scale' || id === 'stretch') st.setTool(id);
+    ix.current.redraw = true;
+  }
 
   /**
    * Tầng 3 onboarding (coachmark) — "Kéo để di chuyển, bấm đúp để sửa" hiện ĐÚNG 1 LẦN,
@@ -367,6 +414,7 @@ export default function CadCanvas() {
     hud: true,
     pointers: new Map(),
     pinch: null,
+    touchGesture: null,
     lastPointerWasTouch: false,
     penSeen: false,
     penUpAt: 0,
@@ -689,6 +737,33 @@ export default function CadCanvas() {
     ix.current.lastPointerWasTouch = ev.pointerType === 'touch';
     setIsTouchInput(ev.pointerType === 'touch');
     ix.current.pointers.set(ev.pointerId, { x: screen.x, y: screen.y, type: ev.pointerType });
+    if (cadMode === 'sketch' && ev.pointerType === 'touch' && st.tool === 'select') {
+      if (!ix.current.touchGesture) {
+        ix.current.touchGesture = {
+          startedAt: performance.now(),
+          maxCount: 1,
+          starts: new Map([[ev.pointerId, screen]]),
+          maxMovePx: 0,
+        };
+      } else {
+        ix.current.touchGesture.starts.set(ev.pointerId, screen);
+        ix.current.touchGesture.maxCount = Math.max(ix.current.touchGesture.maxCount, ix.current.touchGesture.starts.size);
+      }
+    }
+    if (cadMode === 'sketch' && (ev.pointerType === 'touch' || ev.pointerType === 'pen') && st.tool === 'select') {
+      if (radialHoldRef.current) window.clearTimeout(radialHoldRef.current.timer);
+      const pointerId = ev.pointerId;
+      const start = screen;
+      const clientAt = { x: e.clientX, y: e.clientY };
+      const timer = window.setTimeout(() => {
+        const active = ix.current.pointers.has(pointerId);
+        if (!active || ix.current.pinch || ix.current.touchGesture?.maxCount !== 1) return;
+        ix.current.selDrag = null;
+        setCadRadial({ x: clientAt.x, y: clientAt.y, selected: useCadStore.getState().selection.length > 0 });
+        radialHoldRef.current = null;
+      }, RADIAL_HOLD_MS);
+      radialHoldRef.current = { timer, pointerId, start };
+    }
     if (ev.pointerType === 'touch') {
       const touchPts = [...ix.current.pointers.values()].filter((p) => p.type === 'touch');
       if (!ix.current.pinch && touchPts.length === 2) {
@@ -844,6 +919,15 @@ export default function CadCanvas() {
     if (ix.current.pointers.has(ev.pointerId)) {
       ix.current.pointers.set(ev.pointerId, { x: screen.x, y: screen.y, type: ev.pointerType });
     }
+    const touchGesture = ix.current.touchGesture;
+    const touchStart = touchGesture?.starts.get(ev.pointerId);
+    if (touchGesture && touchStart) {
+      touchGesture.maxMovePx = Math.max(touchGesture.maxMovePx, dist(touchStart, screen));
+    }
+    if (radialHoldRef.current?.pointerId === ev.pointerId && dist(radialHoldRef.current.start, screen) >= TOUCH_MOVE_THRESHOLD_PX) {
+      window.clearTimeout(radialHoldRef.current.timer);
+      radialHoldRef.current = null;
+    }
     // Cảm ứng — 2 ngón đang active + gesture pinch đã bắt đầu → tính zoom (so với khoảng cách
     // LÚC BẮT ĐẦU gesture, tránh trôi dạt) + pan (theo dịch chuyển điểm giữa 2 ngón so với lần
     // move trước), rồi trả sớm — KHÔNG chạy tiếp logic pan/vẽ/chọn 1-pointer bên dưới.
@@ -851,6 +935,10 @@ export default function CadCanvas() {
       const touchPts = [...ix.current.pointers.values()].filter((p) => p.type === 'touch');
       if (touchPts.length >= 2) {
         const [p1, p2] = touchPts;
+        const gesture = ix.current.touchGesture;
+        if (gesture && performance.now() - gesture.startedAt < MULTI_TAP_MS && gesture.maxMovePx < TOUCH_MOVE_THRESHOLD_PX) {
+          return;
+        }
         const newMid = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
         const newDist = Math.max(1, dist(p1, p2));
         const pinch = ix.current.pinch;
@@ -896,6 +984,39 @@ export default function CadCanvas() {
     ix.current.lastPointerWasTouch = ev.pointerType === 'touch';
     setIsTouchInput(ev.pointerType === 'touch');
     ix.current.pointers.delete(ev.pointerId);
+    if (radialHoldRef.current?.pointerId === ev.pointerId) {
+      window.clearTimeout(radialHoldRef.current.timer);
+      radialHoldRef.current = null;
+    }
+    if (cadRadial) {
+      ix.current.touchGesture = null;
+      ix.current.pinch = null;
+      ix.current.selDrag = null;
+      return;
+    }
+    if (ix.current.touchGesture?.maxCount && ix.current.touchGesture.maxCount >= 2) {
+      const touchLeft = [...ix.current.pointers.values()].filter((p) => p.type === 'touch').length;
+      if (touchLeft === 0) {
+        const gesture = ix.current.touchGesture;
+        const action = classifyMultiTouchGesture({
+          pointerCount: gesture.maxCount,
+          durationMs: performance.now() - gesture.startedAt,
+          maxMovePx: gesture.maxMovePx,
+        });
+        if (action === 'undo') st.undo();
+        if (action === 'redo') st.redo();
+        if (action === 'undo' || action === 'redo') st.setStatus(action === 'undo' ? 'Đã hoàn tác bằng hai ngón.' : 'Đã làm lại bằng ba ngón.');
+        ix.current.touchGesture = null;
+        ix.current.pinch = null;
+        ix.current.redraw = true;
+      } else if (touchLeft < 2) {
+        ix.current.pinch = null;
+      }
+      return;
+    }
+    if (ix.current.touchGesture && [...ix.current.pointers.values()].every((p) => p.type !== 'touch')) {
+      ix.current.touchGesture = null;
+    }
     if (ix.current.pinch) {
       // Số pointer touch đổi từ 2 xuống 1/0 (nhấc 1 hoặc cả 2 ngón) → thoát pinch, quay lại xử lý
       // pointer đơn bình thường. Pointerup của MỘT trong 2 ngón pinch không được rơi vào logic
@@ -948,6 +1069,11 @@ export default function CadCanvas() {
   const onPointerCancel = (ev: React.PointerEvent) => {
     if (cadMode === 'sketch' && ev.pointerType === 'pen') ix.current.penUpAt = performance.now();
     ix.current.pointers.delete(ev.pointerId);
+    if (radialHoldRef.current?.pointerId === ev.pointerId) {
+      window.clearTimeout(radialHoldRef.current.timer);
+      radialHoldRef.current = null;
+    }
+    ix.current.touchGesture = null;
     const touchLeft = [...ix.current.pointers.values()].filter((p) => p.type === 'touch').length;
     if (touchLeft < 2) ix.current.pinch = null;
     ix.current.panning = false;
@@ -3357,6 +3483,18 @@ export default function CadCanvas() {
         onDrop={onDrop}
         style={{ display: 'block', touchAction: 'none', cursor: 'crosshair' }}
       />
+      {cadRadial && (
+        <RadialToolMenu
+          x={cadRadial.x}
+          y={cadRadial.y}
+          tools={cadRadial.selected ? SELECTED_RADIAL_TOOLS : EMPTY_RADIAL_TOOLS}
+          onPick={(id) => {
+            runCadRadialAction(id);
+            setCadRadial(null);
+          }}
+          onClose={() => setCadRadial(null)}
+        />
+      )}
       {/* Sprint 7 — Việc 4: lightbox xem full-size ảnh hiện trường. */}
       {viewPhoto && (
         <div

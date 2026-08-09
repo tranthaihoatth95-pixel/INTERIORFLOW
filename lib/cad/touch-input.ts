@@ -2,6 +2,9 @@ export const PALM_CONTACT_PX = 24;
 export const PEN_RELEASE_GUARD_MS = 300;
 export const FINGER_DRAW_STORAGE_KEY = 'if:cad:finger-draw';
 export const FINGER_DRAW_EVENT = 'cad:finger-draw-change';
+export const MULTI_TAP_MS = 250;
+export const TOUCH_MOVE_THRESHOLD_PX = 8;
+export const RADIAL_HOLD_MS = 450;
 
 export interface TouchGuardInput {
   pointerType: string;
@@ -39,4 +42,18 @@ export function writeFingerDrawPreference(enabled: boolean): void {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(FINGER_DRAW_STORAGE_KEY, enabled ? '1' : '0');
   window.dispatchEvent(new CustomEvent(FINGER_DRAW_EVENT, { detail: enabled }));
+}
+
+export type MultiTouchAction = 'undo' | 'redo' | 'navigate' | 'none';
+
+export function classifyMultiTouchGesture(input: {
+  pointerCount: number;
+  durationMs: number;
+  maxMovePx: number;
+}): MultiTouchAction {
+  if (input.pointerCount < 2) return 'none';
+  if (input.durationMs >= MULTI_TAP_MS || input.maxMovePx >= TOUCH_MOVE_THRESHOLD_PX) return 'navigate';
+  if (input.pointerCount === 2) return 'undo';
+  if (input.pointerCount === 3) return 'redo';
+  return 'none';
 }
