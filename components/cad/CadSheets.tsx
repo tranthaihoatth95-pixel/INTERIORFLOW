@@ -14,18 +14,14 @@
  * hình ở tab này, sang tab khác thấy đổi theo ngay — vì giờ chỉ có MỘT Doc. Undo/redo cũng thành
  * MỘT dòng lịch sử chung (đúng AutoCAD — undo không theo tab/layout).
  *
- * PHẠM VI D1 (CHƯA làm — đợi D3, xem phiếu): định dạng LƯU (.idf trên đĩa, bản ghi IndexedDB,
- * .ifpack, backup) CHƯA đổi cấu trúc — mỗi bản ghi vẫn là mảng `{id,name,doc}` (giữ nguyên để
- * KHÔNG đụng `lib/cad/cad3d-autosave-core.ts`, autosave riêng của mode 3D đọc/ghi CHUNG bucket
- * IndexedDB này và có logic "chỉ cập nhật đúng 1 sheet đang hoạt động, giữ nguyên các sheet khác"
- * — nếu bản ghi có N sheet cùng trỏ 1 Doc, logic đó dễ làm chúng LỆCH NHAU rồi hồi sinh bản cũ khi
- * gộp lại). Giải pháp AN TOÀN cho D1: LUÔN ghi/xuất ĐÚNG 1 sheet (tab đang mở, mang trọn `Doc`
- * chung) — nhiều tab UI trong 1 phiên là dữ liệu PHIÊN LÀM VIỆC (session-only), CHƯA persist tab
- * thứ 2 trở đi qua reload. Mở file/.idf/.ifpack CŨ có N sheet mỗi sheet 1 Doc khác nhau (từ trước
+ * PERSIST PAPER (10/08): định dạng lưu vẫn có ĐÚNG 1 sheet dữ liệu mang trọn `Doc` chung, nên
+ * không nhân hình học và không phá autosave 3D. Field additive `paperSheets?: Sheet[]` trên bản
+ * ghi đó mang toàn bộ metadata tờ/viewport nhẹ qua IndexedDB, `.idf`, `.ifpack` và backup. App/file
+ * cũ thiếu field này rơi về một tờ mặc định. Mở file/.idf/.ifpack CŨ có N sheet mỗi sheet 1 Doc
+ * khác nhau (từ trước
  * luật này) → GỘP về 1 Doc chung bằng bộ chuyển đã có + đã test (`lib/cad/sheet-migrate.ts` Bước
  * 2, `mergeIdfSheetsToDoc()`), bảo toàn mọi entity, không rơi rớt — chỉ còn 1 tab sau khi gộp (tách
- * lại thành N tab đúng Q1 là việc D3). Bump `IDF_VERSION` + đường nạp/backup file cũ có báo UI
- * cũng là D3 — D1 KHÔNG đụng `lib/cad/idf.ts`.
+ * lại thành N tab không thể suy chính xác vì file cũ không có quan hệ viewport).
  *
  * PERSISTENCE (J-3 Sprint 2 — quyết định #6 "nhớ chính xác từng sheet", đã thu hẹp theo D1 ở
  * trên): bộ sheet (đúng 1 tab, doc + tên + viewport + layer hiện hành) serialize vào IndexedDB
@@ -96,6 +92,7 @@ interface PersistedCadSheet {
   doc: Doc;
   viewport: Viewport;
   currentLayer: string;
+  paperSheets?: Sheet[];
   [k: string]: unknown;
 }
 
@@ -276,7 +273,8 @@ function docAndSheetsFromIdf(idfSheets: IdfSheetData[]): { doc: Doc; sheets: She
   // `importDoc`, chỉ khác cửa vào. Nay gọi CẶP hàm y hệt mọi mutation trong store (poche.ts:13).
   if (idfSheets.length === 1) {
     const doc = syncPocheAnchors(syncHostedOpenings(backfillRoomTypes(idfSheets[0].doc)));
-    return { doc, sheets: [defaultSheet(idfSheets[0].name, doc, idfSheets[0].id)] };
+    const paperSheets = idfSheets[0].paperSheets;
+    return { doc, sheets: paperSheets?.length ? paperSheets : [defaultSheet(idfSheets[0].name, doc, idfSheets[0].id)] };
   }
   const cleaned = idfSheets.map((s) => ({ ...s, doc: backfillRoomTypes(s.doc) }));
   const merged = mergeIdfSheetsToDoc(cleaned);
@@ -286,8 +284,8 @@ function docAndSheetsFromIdf(idfSheets: IdfSheetData[]): { doc: Doc; sheets: She
 /** Bản ghi 1-sheet để xuất/ghi đĩa (.idf/.ifpack/backup) — LUÔN đúng 1 phần tử mang trọn Doc
  * chung hiện tại (xem docstring đầu file — an toàn cho `cad3d-autosave-core.ts` + không tự nhân
  * đôi nội dung nếu lỡ re-import). */
-function singleIdfSheet(id: string, name: string): IdfSheetData[] {
-  return [{ id, name, doc: useCadStore.getState().doc }];
+function singleIdfSheet(id: string, name: string, paperSheets: Sheet[] = []): IdfSheetData[] {
+  return [{ id, name, doc: useCadStore.getState().doc, ...(paperSheets.length ? { paperSheets } : {}) }];
 }
 
 /** Đổi tab = đổi KHUNG NHÌN — bay camera 2D tới vùng world mà Viewport2D của sheet đang soi vào
@@ -405,7 +403,7 @@ export default function CadSheets() {
       if (bucketId) await ensureProjectScope(bucketId);
       if (cancelled) return;
       const projectName = useFlowStore.getState().flowName || 'InteriorFlow project';
-      const cacheSheets: IdfSheetData[] = valid.map((s) => ({ id: s.id, name: s.name, doc: s.doc }));
+      const cacheSheets: IdfSheetData[] = valid.map((s) => ({ id: s.id, name: s.name, doc: s.doc, ...(s.paperSheets?.length ? { paperSheets: s.paperSheets } : {}) }));
       const diskSheets = await resolveAndSyncCadDisk(bucketId, projectName, cacheSheets, rec?.ts ?? 0);
       if (cancelled) return;
 
@@ -452,13 +450,12 @@ export default function CadSheets() {
       const active = sheetsRef.current.find((sh) => sh.id === activeIdRef.current) ?? sheetsRef.current[0];
       if (!active) return null;
       const s = useCadStore.getState();
-      // D1 (xem docstring đầu file) — LUÔN ghi ĐÚNG 1 sheet mang trọn Doc chung. Metadata các tab
-      // khác (nếu có, trong phiên) chưa persist qua reload — việc đó thuộc D3.
+      // Một bản ghi dữ liệu mang Doc chung + paperSheets nhẹ: không nhân hình học, vẫn giữ đủ tờ.
       return {
         v: 1,
         activeId: active.id,
         ts: Date.now(),
-        sheets: [{ id: active.id, name: active.name, doc: s.doc, viewport: s.viewport, currentLayer: s.currentLayer }],
+        sheets: [{ id: active.id, name: active.name, doc: s.doc, viewport: s.viewport, currentLayer: s.currentLayer, paperSheets: sheetsRef.current }],
       };
     };
     // B1 (30/07, docs/CAT-PHAM-VI-3-NGAY-2026-07-30.md §1) — backup .ifpack ra thư mục thứ 2
@@ -468,7 +465,7 @@ export default function CadSheets() {
     const backup = startAutoBackup(() => {
       const active = sheetsRef.current.find((sh) => sh.id === activeIdRef.current) ?? sheetsRef.current[0];
       return {
-        sheets: active ? singleIdfSheet(active.id, active.name) : [],
+        sheets: active ? singleIdfSheet(active.id, active.name, sheetsRef.current) : [],
         projectId: bucketId || userId,
         projectName: useFlowStore.getState().flowName || 'InteriorFlow project',
       };
@@ -496,7 +493,7 @@ export default function CadSheets() {
         if (!bucketId || !(await rootFolderChosen())) return { ok: true, reason: 'off' };
         const projectName = useFlowStore.getState().flowName || 'InteriorFlow project';
         const active = sheetsRef.current.find((sh) => sh.id === activeIdRef.current) ?? sheetsRef.current[0];
-        const idfSheets: IdfSheetData[] = active ? singleIdfSheet(active.id, active.name) : [];
+        const idfSheets: IdfSheetData[] = active ? singleIdfSheet(active.id, active.name, sheetsRef.current) : [];
         const wrote = await writeIdfToDisk(bucketId, projectName, idfSheets, { create: true });
         return wrote ? { ok: true } : { ok: false, reason: 'write-failed' };
       },
@@ -624,7 +621,7 @@ export default function CadSheets() {
   useEffect(() => {
     const onExportIdf = () => {
       const active = sheetsRef.current.find((s) => s.id === activeIdRef.current) ?? sheetsRef.current[0];
-      const idfSheets = singleIdfSheet(active?.id ?? 'cadsheet-0', active?.name ?? 'Bản vẽ 1');
+      const idfSheets = singleIdfSheet(active?.id ?? 'cadsheet-0', active?.name ?? 'Bản vẽ 1', sheetsRef.current);
       const json = exportIdf(idfSheets);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -691,7 +688,7 @@ export default function CadSheets() {
      */
     const onExportIfpack = () => {
       const active = sheetsRef.current.find((s) => s.id === activeIdRef.current) ?? sheetsRef.current[0];
-      const idfSheets = singleIdfSheet(active?.id ?? 'cadsheet-0', active?.name ?? 'Bản vẽ 1');
+      const idfSheets = singleIdfSheet(active?.id ?? 'cadsheet-0', active?.name ?? 'Bản vẽ 1', sheetsRef.current);
       const projectId = bucketIdRef.current || userIdRef.current || 'local';
       const projectName = useFlowStore.getState().flowName || 'InteriorFlow project';
       void buildIfpack(idfSheets, { id: projectId, name: projectName })
@@ -746,6 +743,7 @@ export default function CadSheets() {
               doc,
               viewport: { ...DEFAULT_VIEWPORT },
               currentLayer: doc.layers[0]?.id ?? 'l-wall',
+              paperSheets: newSheets,
             },
           ],
         };
@@ -794,6 +792,7 @@ export default function CadSheets() {
               doc,
               viewport: { ...DEFAULT_VIEWPORT },
               currentLayer: doc.layers[0]?.id ?? 'l-wall',
+              paperSheets: newSheets,
             },
           ],
         };
@@ -944,6 +943,12 @@ function PaperSpace({ sheet, onViewportChange, onSheetChange, onOpenModel }: {
           <button type="button" onClick={addViewport} style={paperActionButton}><Plus size={14} /> Thêm ô nhìn</button>
           <button type="button" disabled={sheet.viewports.length <= 1} onClick={() => selected && onSheetChange(removeSheetViewport(sheet, selected.id))} style={paperActionButton}><Trash2 size={14} /> Xóa ô</button>
         </div>
+        <div aria-label="Thông tin tờ" style={{ position: 'absolute', left: 18, top: 18, zIndex: 5, width: 214, display: 'grid', gridTemplateColumns: '72px 1fr', gap: 5, padding: 8, border: '1px solid #aaa', borderRadius: 8, background: 'rgba(255,255,255,.95)', font: '600 10px Archivo, sans-serif' }}>
+          <label style={paperMetaLabel}>Số tờ<input aria-label="Số tờ" value={sheet.number} onChange={(event) => onSheetChange({ ...sheet, number: event.target.value })} style={paperMetaInput} placeholder="A-01" /></label>
+          <label style={paperMetaLabel}>Dự án<input aria-label="Tên dự án trên tờ" value={sheet.titleBlock.project} onChange={(event) => onSheetChange({ ...sheet, titleBlock: { ...sheet.titleBlock, project: event.target.value } })} style={paperMetaInput} placeholder="Tên dự án" /></label>
+          <label style={paperMetaLabel}>Người vẽ<input aria-label="Người vẽ" value={sheet.titleBlock.drawnBy} onChange={(event) => onSheetChange({ ...sheet, titleBlock: { ...sheet.titleBlock, drawnBy: event.target.value } })} style={paperMetaInput} placeholder="—" /></label>
+          <label style={paperMetaLabel}>Sửa đổi<input aria-label="Sửa đổi" value={sheet.titleBlock.revision} onChange={(event) => onSheetChange({ ...sheet, titleBlock: { ...sheet.titleBlock, revision: event.target.value } })} style={paperMetaInput} placeholder="00" /></label>
+        </div>
         <div style={{ position: 'absolute', right: 14, bottom: 14, width: '42%', height: 54, border: '1px solid #777', padding: '7px 9px', font: '600 10px Archivo, sans-serif', display: 'grid', gridTemplateColumns: '1fr auto', gap: 4 }}>
           <span>{sheet.titleBlock.project || 'TÊN DỰ ÁN'}</span><span>{sheet.number || '—'}</span>
           <strong>{sheet.name}</strong><span>{sheet.paper} · {sheet.viewports.length} ô nhìn</span>
@@ -974,6 +979,8 @@ function PaperViewport({ doc, viewport, paperW, paperH, selected, onSelect, onMo
 const paperButton: React.CSSProperties = { border: 0, background: 'transparent', color: '#34312d', display: 'inline-flex', alignItems: 'center', gap: 4, padding: 2, font: '600 11px Archivo, sans-serif', cursor: 'pointer' };
 const paperActionButton: React.CSSProperties = { ...paperButton, minHeight: 30, padding: '0 9px', border: '1px solid #aaa', borderRadius: 7, background: 'rgba(255,255,255,.94)' };
 const paperHandle: React.CSSProperties = { position: 'absolute', zIndex: 2, width: 18, height: 18, display: 'grid', placeItems: 'center', borderRadius: 4, background: '#6455d9', color: '#fff' };
+const paperMetaLabel: React.CSSProperties = { display: 'contents', color: '#625d55' };
+const paperMetaInput: React.CSSProperties = { minWidth: 0, height: 24, padding: '0 6px', border: '1px solid #c8c4bc', borderRadius: 5, background: '#fff', color: '#25221e', font: '500 10px Archivo, sans-serif' };
 
 /**
  * Làn C — cầu nối giữa hộp thoại Màn 7 (`components/print/*`, thuần trình bày) và dữ liệu CAD THẬT.

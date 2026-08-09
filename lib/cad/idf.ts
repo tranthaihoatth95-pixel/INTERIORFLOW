@@ -13,7 +13,7 @@
  * không cần userId/route).
  */
 
-import type { Doc } from './model';
+import type { Doc, Sheet } from './model';
 import { upgradeDocLevelsFromStorey } from './levels';
 
 /**
@@ -110,6 +110,8 @@ export interface IdfSheetData {
   id: string;
   name: string;
   doc: Doc;
+  /** Metadata Paper Space nhẹ của TOÀN bộ tờ. Chỉ neo ở sheet dữ liệu đầu tiên để không nhân Doc. */
+  paperSheets?: Sheet[];
 }
 
 export interface IdfMeta {
@@ -175,6 +177,18 @@ function isValidDoc(v: unknown): v is Doc {
   return Array.isArray(v.entities) && Array.isArray(v.layers);
 }
 
+function isValidPaperSheet(v: unknown): v is Sheet {
+  if (!isPlainObject(v) || typeof v.id !== 'string' || typeof v.name !== 'string') return false;
+  if (typeof v.number !== 'string' || typeof v.paper !== 'string' || typeof v.orientation !== 'string') return false;
+  if (!isPlainObject(v.titleBlock) || !Array.isArray(v.viewports) || v.viewports.length < 1) return false;
+  return v.viewports.every((viewport) => isPlainObject(viewport)
+    && typeof viewport.id === 'string'
+    && isPlainObject(viewport.rectOnPaper)
+    && isPlainObject(viewport.centerMm)
+    && typeof viewport.scale === 'number'
+    && typeof viewport.locked === 'boolean');
+}
+
 /**
  * Đọc chuỗi JSON .idf → { meta, sheets } hoặc `null` nếu file hỏng/sai định dạng/không phải
  * .idf (KHÔNG throw — an toàn gọi trực tiếp từ UI, tự quyết định thông báo lỗi).
@@ -215,7 +229,8 @@ export function importIdf(json: string): ParsedIdf | null {
     if (!isPlainObject(raw)) continue;
     if (typeof raw.id !== 'string' || typeof raw.name !== 'string') continue;
     if (!isValidDoc(raw.doc)) continue;
-    sheets.push({ id: raw.id, name: raw.name, doc: raw.doc });
+    const paperSheets = Array.isArray(raw.paperSheets) ? raw.paperSheets.filter(isValidPaperSheet) : undefined;
+    sheets.push({ id: raw.id, name: raw.name, doc: raw.doc, ...(paperSheets?.length ? { paperSheets } : {}) });
   }
   if (!sheets.length) return null;
 

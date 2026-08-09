@@ -4,6 +4,7 @@
  */
 import { exportIdf, importIdf, IDF_VERSION, migrateIdf, lastImportIdfError, __setCurrentIdfVersionForTest } from './idf';
 import type { IdfSheetData } from './idf';
+import type { Sheet } from './model';
 import { emptyDoc } from './model';
 import type { Doc } from './model';
 import { newId } from './store';
@@ -38,8 +39,8 @@ function buildDoc(seedX: number): Doc {
 function testSingleSheetRoundtrip() {
   console.log('\n[1] 1 sheet — round-trip entities/layers/markups/photos 1:1');
   const doc = buildDoc(0);
-  const sheets: IdfSheetData[] = [{ id: 'cadsheet-0', name: 'Bản vẽ 1', doc }];
-  const json = exportIdf(sheets, { projectName: 'Căn hộ demo' });
+const sheets: IdfSheetData[] = [{ id: 'cadsheet-0', name: 'Bản vẽ 1', doc }];
+const json = exportIdf(sheets, { projectName: 'Căn hộ demo' });
 
   ok('JSON hợp lệ (parse không lỗi)', (() => { try { JSON.parse(json); return true; } catch { return false; } })());
   ok('có field idfVersion đúng', JSON.parse(json).idfVersion === IDF_VERSION);
@@ -65,6 +66,23 @@ function testSingleSheetRoundtrip() {
   ok('markup text/color/ts đúng', back.doc.markups?.[0]?.text === 'KH muốn đổi màu sàn' && back.doc.markups?.[0]?.color === '#e0603a' && back.doc.markups?.[0]?.ts === 1700000000000);
   ok('photos round-trip đúng 1 ảnh', (back.doc.photos?.length ?? 0) === 1);
   ok('photo src/caption đúng', back.doc.photos?.[0]?.src === 'data:image/png;base64,iVBORw0KGgo=' && back.doc.photos?.[0]?.caption === 'hiện trạng');
+}
+
+function testPaperSheetsRoundtrip() {
+  console.log('\n[1b] Paper Space metadata — một Doc, nhiều tờ/viewport');
+  const doc = buildDoc(0);
+  const paperSheets: Sheet[] = [{
+    id: 'paper-a', name: 'Mặt bằng', number: 'A-01', paper: 'A3', orientation: 'landscape',
+    titleBlock: { project: 'Nhà A', drawnBy: 'KT', date: '2026-08-10', revision: '02' },
+    viewports: [
+      { id: 'vp-a', rectOnPaper: { x: 10, y: 10, w: 180, h: 120 }, centerMm: { x: 1000, y: 2000 }, scale: 50, locked: true },
+      { id: 'vp-b', rectOnPaper: { x: 200, y: 10, w: 180, h: 120 }, centerMm: { x: 8000, y: 4000 }, scale: 20, locked: false },
+    ],
+  }];
+  const parsed = importIdf(exportIdf([{ id: 'data', name: 'Model', doc, paperSheets }]))!;
+  ok('paperSheets round-trip đủ một tờ', parsed.sheets[0].paperSheets?.length === 1);
+  ok('round-trip đủ hai viewport, không nhân Doc', parsed.sheets.length === 1 && parsed.sheets[0].paperSheets?.[0].viewports.length === 2);
+  ok('metadata và tỉ lệ/khóa giữ nguyên', parsed.sheets[0].paperSheets?.[0].number === 'A-01' && parsed.sheets[0].paperSheets?.[0].viewports[0].scale === 50 && parsed.sheets[0].paperSheets?.[0].viewports[0].locked);
 }
 
 /* ── 2) round-trip NHIỀU sheet (project thật có ≥2 bản vẽ) ── */
@@ -190,6 +208,7 @@ function testMigrationPath() {
 }
 
 testSingleSheetRoundtrip();
+testPaperSheetsRoundtrip();
 testMultiSheetRoundtrip();
 testDeleteThenReimport();
 testInvalidInput();
