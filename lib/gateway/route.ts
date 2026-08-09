@@ -16,6 +16,7 @@ export type RouteAction =
   | { kind: 'cad-restore-project' } // .ifpack — phục hồi toàn bộ dự án (đã có, lib/cad/ifpack.ts)
   | { kind: 'place-image'; stage: GatewayStage } // ảnh — đích tuỳ chặng đang gọi
   | { kind: 'present-import-deck' } // .pptx / .pdf — nhập làm slide
+  | { kind: 'present-open-project' } // .idfp — thay toàn bộ project Trình bày
   | { kind: 'library-bulk-ingest' } // .xlsx / .csv — nạp hàng loạt vào thư viện (NT1)
   | { kind: 'unsupported'; format: GatewayFormat; reason?: string };
 
@@ -26,6 +27,7 @@ const STATIC_ROUTE: Partial<Record<GatewayFormat, RouteAction>> = {
   dwg: { kind: 'cad-import-drawing' },
   ifpack: { kind: 'cad-restore-project' },
   pptx: { kind: 'present-import-deck' },
+  idfp: { kind: 'present-open-project' },
   xlsx: { kind: 'library-bulk-ingest' },
   csv: { kind: 'library-bulk-ingest' },
 };

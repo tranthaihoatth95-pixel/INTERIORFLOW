@@ -73,6 +73,8 @@ import type { BoqRow } from '@/lib/boq/model';
 // Làn C (in/giấy/xuất) — mục "Xuất PDF theo tờ giấy…" mở ExportPdfDialog (Màn 7). Dialog tự
 // portal ra document.body, không cần đổi layout Toolbar để chứa nó.
 import ExportPdfDialog from '@/components/print/ExportPdfDialog';
+import { detectFormat } from '@/lib/gateway/detect';
+import { routeFormat } from '@/lib/gateway/route';
 
 interface Props {
   onAddText: () => void;
@@ -132,14 +134,14 @@ interface Props {
 
 export default function Toolbar(p: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const idfpFileRef = useRef<HTMLInputElement>(null);
-  const pptxFileRef = useRef<HTMLInputElement>(null);
+  const gatewayFileRef = useRef<HTMLInputElement>(null);
   const [libOpen, setLibOpen] = useState(false);
   // L4 — cụm Sắp xếp gom vào popover (xem chú thích tại nút).
   const [arrangeOpen, setArrangeOpen] = useState(false);
   const arrangeBtnRef = useRef<HTMLSpanElement>(null);
   // Cửa nhập .xlsx vào BẢNG KHỐI LƯỢNG (BOQ) — xem docblock `BoqXlsxImportDialog` bên dưới.
   const [boqImportOpen, setBoqImportOpen] = useState(false);
+  const [boqInitialFile, setBoqInitialFile] = useState<File | null>(null);
   // Làn C — hộp thoại "Xuất PDF theo tờ giấy…" (Màn 7). Toolbar chưa có Sheet[]/checklist thật
   // của chặng Trình chiếu trong props hiện tại — dùng placeholder tối thiểu (1 "tờ" = trang đang
   // mở, checklist rỗng thay vì bịa mục giả) cho tới khi có phiên nối dữ liệu thật sâu hơn.
@@ -162,16 +164,19 @@ export default function Toolbar(p: Props) {
     e.target.value = '';
   }
 
+  const addImageFile = (f: File) => {
+    const reader = new FileReader();
+    reader.onload = () => p.onAddImageUrl(String(reader.result));
+    reader.readAsDataURL(f);
+  };
+
   /**
    * B2 (31/07, ĐỢT B lớp lưu trữ, mã `4.1.b`) — `.idfp` gồm TẤT CẢ sheet (không chỉ trang đang
    * mở) — Toolbar/PresentEditor không giữ danh sách sheet (nằm trong PresentSheets.tsx, phía
    * trên trong cây component). Bắc cầu qua CustomEvent, ĐÚNG pattern `cad:idf-export-request`/
    * `cad:idf-import-request` (CadEditor.tsx/CadSheets.tsx) — không viết cơ chế mới.
    */
-  function onOpenIdfpFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    e.target.value = '';
-    if (!f) return;
+  function openIdfpFile(f: File) {
     // .idfp THAY THẾ TOÀN BỘ project (mọi trang) — luôn hỏi trước, cùng UX .idf phía CAD.
     if (!window.confirm(`Mở "${f.name}" sẽ THAY THẾ TOÀN BỘ project hiện tại (mọi trang đang mở). Tiếp tục?`)) return;
     const reader = new FileReader();
@@ -191,10 +196,7 @@ export default function Toolbar(p: Props) {
    * (có hỏi trước); `.pptx` là deck của người khác/công cụ khác nên **NỐI VÀO CUỐI** hồ sơ đang
    * mở — nhập xong vẫn còn nguyên thứ đang làm dở, không cần hỏi gì.
    */
-  async function onOpenPptxFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    e.target.value = '';
-    if (!f) return;
+  async function openPptxFile(f: File) {
     const say = (ok: boolean, text: string) =>
       window.dispatchEvent(new CustomEvent('present:pptx-import-done', { detail: { ok, text } }));
     say(true, `Đang đọc "${f.name}"…`);
@@ -213,6 +215,36 @@ export default function Toolbar(p: Props) {
     } catch (err) {
       say(false, err instanceof Error ? err.message : `Không mở được "${f.name}".`);
     }
+  }
+
+  async function onGatewayFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    const bytes = new Uint8Array(await f.slice(0, 8192).arrayBuffer());
+    const format = detectFormat({ name: f.name, bytes });
+    const action = routeFormat(format, 'present');
+    if (action.kind === 'place-image') {
+      addImageFile(f);
+      return;
+    }
+    if (action.kind === 'present-import-deck') {
+      await openPptxFile(f);
+      return;
+    }
+    if (action.kind === 'present-open-project') {
+      openIdfpFile(f);
+      return;
+    }
+    if (format === 'xlsx' || format === 'csv') {
+      setBoqInitialFile(f);
+      setBoqImportOpen(true);
+      return;
+    }
+    const reason = action.kind === 'unsupported' && action.reason
+      ? action.reason
+      : `Chưa biết cách mở "${f.name}" trong chặng Trình bày.`;
+    window.dispatchEvent(new CustomEvent('present:pptx-import-done', { detail: { ok: false, text: reason } }));
   }
 
   // Thoát Canva mode: quay lại trang trước, không có lịch sử thì về app chính '/'.
@@ -247,55 +279,25 @@ export default function Toolbar(p: Props) {
         title="Nhập file vào chặng Trình chiếu"
         items={[
           {
-            id: 'image',
-            label: 'Ảnh vào slide',
-            sub: 'Ảnh NỘI DUNG — đưa thẳng vào slide đang dàn',
-            icon: <ImageIcon size={15} />,
-            onSelect: () => fileRef.current?.click(),
-          },
-          {
-            // MỞ KHOÁ 09/08 — trước đây mục này gộp ".pptx / .pdf" vào một nút xám. Nay .pptx
-            // ĐỌC ĐƯỢC THẬT (lib/present-editor/pptx-import.ts), .pdf thì chưa ⇒ TÁCH LÀM HAI
-            // mục để nhãn không nói dối: cái chạy được thì bấm được, cái chưa có thì vẫn hiện
-            // (ô trống là bằng chứng còn việc — luật §9, cấm xoá cho gọn mắt).
-            id: 'deck',
-            label: 'Mở deck (.pptx)',
-            sub: 'Mỗi slide PowerPoint → 1 slide, NỐI VÀO CUỐI hồ sơ đang mở (không thay thế)',
+            id: 'gateway',
+            label: 'Chọn tệp — tự nhận định dạng',
+            sub: 'Ảnh · PPTX · IDFP · XLSX/CSV; định dạng chưa hỗ trợ sẽ nói rõ lý do',
             icon: <FileUp size={15} />,
-            onSelect: () => pptxFileRef.current?.click(),
-          },
-          {
-            id: 'deck-pdf',
-            label: 'Mở deck (.pdf)',
-            icon: <FileUp size={15} />,
-            onSelect: () => {},
-            disabled: true,
-            disabledReason: 'Chưa đọc được .pdf — dùng ".pptx", hoặc ".idfp" để mở lại project đã lưu',
-          },
-          {
-            id: 'idfp',
-            label: 'Mở project (.idfp)',
-            sub: 'Thay thế toàn bộ project — mọi trang/slide/font/ảnh nhúng',
-            icon: <FileJson size={15} />,
-            onSelect: () => idfpFileRef.current?.click(),
-          },
-          {
-            id: 'boq-xlsx',
-            label: 'Nhập .xlsx vào bảng khối lượng',
-            sub: 'Nạp khối lượng/đơn giá vào hạng mục ĐÃ CÓ theo mã — không thêm hạng mục mới',
-            icon: <FileSpreadsheet size={15} />,
-            onSelect: () => setBoqImportOpen(true),
+            onSelect: () => gatewayFileRef.current?.click(),
           },
         ]}
       />
-      {boqImportOpen && <BoqXlsxImportDialog onClose={() => setBoqImportOpen(false)} />}
-      <input ref={idfpFileRef} type="file" accept=".idfp,application/json" hidden onChange={onOpenIdfpFile} />
+      {boqImportOpen && (
+        <BoqXlsxImportDialog
+          initialFile={boqInitialFile}
+          onClose={() => { setBoqImportOpen(false); setBoqInitialFile(null); }}
+        />
+      )}
       <input
-        ref={pptxFileRef}
+        ref={gatewayFileRef}
         type="file"
-        accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation"
         hidden
-        onChange={onOpenPptxFile}
+        onChange={onGatewayFile}
       />
       <IOMenu
         kind="export"
@@ -711,7 +713,7 @@ const BOQ_PREVIEW_COUNT = 20;
  * Toàn bộ phần đọc/khớp/báo lỗi nằm ở `lib/present-editor/boq-xlsx-import.ts` (có test) — file
  * này chỉ hiển thị và gọi.
  */
-function BoqXlsxImportDialog({ onClose }: { onClose: () => void }) {
+function BoqXlsxImportDialog({ onClose, initialFile = null }: { onClose: () => void; initialFile?: File | null }) {
   const tr = useT();
   const lang = useLang();
   const params = useParams<{ id?: string }>();
@@ -729,6 +731,7 @@ function BoqXlsxImportDialog({ onClose }: { onClose: () => void }) {
   const [columns, setColumns] = useState<BoqImportColumns | null>(null);
   const [applied, setApplied] = useState<{ rows: number; cells: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const initialFileConsumed = useRef(false);
 
   /**
    * Nạp bảng BOQ hiện tại — CÙNG đường `BoqScreen.tsx` đi (Doc sống, không snapshot).
@@ -791,6 +794,12 @@ function BoqXlsxImportDialog({ onClose }: { onClose: () => void }) {
       setFileError(e instanceof Error ? e.message : String(e));
     }
   };
+
+  useEffect(() => {
+    if (step !== 'pick' || !initialFile || initialFileConsumed.current) return;
+    initialFileConsumed.current = true;
+    void openFile(initialFile);
+  }, [step, initialFile]);
 
   const plan: BoqXlsxImportPlan | null = sheet && columns ? buildBoqImportPlan(sheet, columns, boqRows) : null;
   const dropped = sheet && columns ? unusedBoqColumns(sheet.headers, columns) : [];

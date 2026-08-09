@@ -29,6 +29,7 @@ ok('mọi entry tự khai đúng key format', Object.entries(FORMAT_CAPABILITIES
 console.log('\n[3] Router phải theo năng lực thật và theo đúng chặng');
 ok('PPTX ở Present → import deck', routeFormat('pptx', 'present').kind === 'present-import-deck');
 ok('PPTX ở CAD → unsupported', routeFormat('pptx', 'cad').kind === 'unsupported');
+ok('IDFP ở Present → mở project', routeFormat('idfp', 'present').kind === 'present-open-project');
 ok('PDF ở Present → unsupported, không nói dối đã nhập được', routeFormat('pdf', 'present').kind === 'unsupported');
 ok('GLB ở Render → unsupported có lý do', (() => {
   const r = routeFormat('glb', 'render');

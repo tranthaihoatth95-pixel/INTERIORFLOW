@@ -9,7 +9,8 @@
 - Không còn worktree phụ. `main` có 4 file untracked của chủ dự án: `AGENTS.md` và 3 mock ngày
   09/08; không sửa, không commit.
 - Registry định dạng đã làm trên nhánh `codex/format-registry`: phân biệt chỉnh được · mất mát ·
-  tham chiếu · chỉ lưu · chưa hỗ trợ; chờ duyệt merge rồi mới nối lần lượt vào UI ba chặng.
+  tham chiếu · chỉ lưu · chưa hỗ trợ. Cửa Trình bày đã nối: chọn một lần rồi tự phân luồng
+  ảnh/PPTX/IDFP/XLSX/CSV; định dạng chưa có importer báo đúng lý do từ registry.
 
 ## Vừa xong 09/08
 
@@ -46,7 +47,7 @@
 
 ## Việc kế tiếp
 
-1. Chốt registry năng lực file theo 4 mức: chỉnh được · nhập có mất mát · liên kết tham chiếu · chỉ lưu.
+1. Nối cùng cửa Gateway vào 2D rồi 3D; không bắt chọn lại file sau khi đã nhận diện.
 2. Ưu tiên 3D mở: GLB/glTF → OBJ/MTL → FBX; sau đó IFC. SKP dùng SDK/bridge sau kiểm license;
    `.max/.rvt` dùng bridge/plugin, không tự viết parser native.
 3. Hoàn thiện Trình bày theo thứ tự: PDF deck → DOCX → media video/audio → HTML; tăng fidelity PPTX.
