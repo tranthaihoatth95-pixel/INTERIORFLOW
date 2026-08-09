@@ -6,9 +6,8 @@
 
 ## Đang chạy
 
-- Không còn worktree phụ. Lưu bền Paper đã merge vào `main` (`0d14cb0`); 4 file untracked của
+- Paper Properties đã merge vào `main`; worktree phụ đang chờ dọn an toàn. 4 file untracked của
   chủ dự án được giữ nguyên.
-- Gateway là một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu · chỉ lưu · chưa hỗ trợ.
 
 ## Vừa xong
 
@@ -19,10 +18,8 @@
 - Sơ phác tablet: nhận bút, chống tì tay, ngón pan/pinch hoặc bật “Ngón vẽ”; dock có undo/redo.
   Tap 2/3 ngón undo/redo; giữ 450ms mở radial 8 lệnh theo ngữ cảnh, có kẹp mép. Input 10/10,
   gesture 15/15, typecheck/toàn bộ test và preview PASS; radial cần test tay trên tablet.
-- Màn hẹp: canvas dùng ResizeObserver trên chính khung chứa, đo sau layout và CSS phủ 100%; dock
-  Sơ phác cuộn ngang từ trái. Nghiệm thu viewport 592px: canvas 542/542px, DPR backing đúng,
-  body không tràn, lưới phủ kín; console sạch, typecheck/toàn bộ test PASS sau merge; worktree
-  và nhánh đã dọn an toàn.
+- Màn hẹp: canvas đo đúng khung chứa; dock Sơ phác cuộn từ trái. Nghiệm thu 592px không tràn,
+  lưới phủ kín, console/test sạch; worktree đã dọn.
 - Nắn nét Sơ phác: “Nét tay” chỉ hiện ở Sketch, đổi bút/ngón thành line, polyline, chữ nhật hoặc
   tròn chuẩn của Doc; snap ngang/dọc 5°. Bỏ pen hover; ellipse/nét nguệch ngoạc không nhận nhầm.
   Nhận dạng 10/10, typecheck/toàn bộ test và preview PASS; cần nghiệm thu trên tablet thật.
@@ -32,6 +29,9 @@
   và backup; file cũ thiếu field vẫn mở về tờ mặc định. UI sửa số tờ, dự án, người vẽ, revision.
   IDF 45/45, IFpack 19/19, typecheck/toàn bộ test PASS sau merge. Nghiệm thu 3015: 2 viewport +
   metadata sống qua reload, console sạch; dữ liệu test đã dọn và autosave lại. Worktree đã dọn.
+- Paper Properties: từng ô nhìn có tâm X/Y và bật/tắt layer độc lập, nút về trạng thái Doc chung;
+  chỉ tạo Doc nhẹ lúc render, không nhân/mutate hình học. Logic 14/14, typecheck và toàn bộ test
+  PASS trên `main`.
 
 ## Sự thật dữ liệu
 
@@ -52,8 +52,8 @@
 
 ## Việc kế tiếp
 
-1. Làm sâu hai mode: nghiệm thu bút/radial trên tablet; Chuyên cần Model/Paper,
-   viewport/tờ in, property/layer workflow. BIM mới là phân loại 2D; chưa có quan hệ mô hình, IFC
+1. Làm sâu hai mode: nghiệm thu bút/radial trên tablet; Kỹ thuật cần tiếp tục Page Setup/in theo
+   viewport và quản lý lớp nâng cao. BIM mới là phân loại 2D; chưa có quan hệ mô hình, IFC
    hoặc clash, nên chưa ngang Revit.
 2. Định dạng FBX → IFC. SKP dùng SDK/bridge sau kiểm license; `.max/.rvt` dùng bridge/plugin,
    không tự viết parser native.
