@@ -939,7 +939,8 @@ function PaperSpace({ sheet, onViewportChange, onSheetChange, onOpenModel }: {
       <div data-paper style={{ width: `min(82vw, ${paperW * 2}px)`, aspectRatio: `${paperW}/${paperH}`, minWidth: 520, position: 'relative', background: '#fff', color: '#25221e', boxShadow: '0 18px 55px rgba(0,0,0,.35)', border: '1px solid rgba(0,0,0,.25)', touchAction: 'none' }} onPointerMove={continueGesture} onPointerUp={endGesture} onPointerCancel={endGesture}>
         <div style={{ position: 'absolute', inset: 14, border: '1px solid #777' }} />
         {sheet.viewports.map((viewport) => <PaperViewport key={viewport.id} doc={doc} viewport={viewport} paperW={paperW} paperH={paperH} selected={viewport.id === selected?.id} onSelect={() => setSelectedId(viewport.id)} onMoveStart={(event) => beginGesture(event, viewport, 'move')} onResizeStart={(event) => beginGesture(event, viewport, 'resize')} onChange={(patch) => onViewportChange(viewport.id, patch)} onOpenModel={() => onOpenModel(viewport)} />)}
-        <div style={{ position: 'absolute', left: 18, bottom: 18, display: 'flex', gap: 6 }}>
+        {/* Nằm ở đầu tờ: dock Pro nổi giữa-dưới Stage sẽ che hit-area nếu đặt cụm này dưới giấy. */}
+        <div style={{ position: 'absolute', right: 18, top: 18, zIndex: 5, display: 'flex', gap: 6 }}>
           <button type="button" onClick={addViewport} style={paperActionButton}><Plus size={14} /> Thêm ô nhìn</button>
           <button type="button" disabled={sheet.viewports.length <= 1} onClick={() => selected && onSheetChange(removeSheetViewport(sheet, selected.id))} style={paperActionButton}><Trash2 size={14} /> Xóa ô</button>
         </div>
