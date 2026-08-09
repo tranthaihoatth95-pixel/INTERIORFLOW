@@ -21,7 +21,8 @@
 import CadToolbar from './CadToolbar';
 import CadTouchDock from './CadTouchDock';
 import { useCadStore } from '@/lib/cad/store';
-import { FileText, Terminal } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Eye, FileOutput, FileText, Focus, Layers3, Lock, LockOpen, Plus, Settings2, Terminal } from 'lucide-react';
 
 function fire(name: string) {
   if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(name));
@@ -29,7 +30,9 @@ function fire(name: string) {
 
 export default function CadToolbelt() {
   const cadMode = useCadStore((s) => s.cadMode);
+  const workspace = useCadStore((s) => s.cadWorkspace);
   const twoRows = cadMode === 'sketch';
+  if (cadMode !== 'sketch' && workspace === 'paper') return <PaperToolbelt />;
   return (
     <div
       style={{
@@ -60,6 +63,46 @@ export default function CadToolbelt() {
     </div>
   );
 }
+
+type PaperSelectionState = { scale: number; locked: boolean; clean: boolean };
+
+function paperAction(action: string, value?: number) {
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('cad:paper-action', { detail: { action, value } }));
+}
+
+/** Paper chỉ hiện thao tác dàn tờ; không bê nguyên gia phả lệnh vẽ Model sang che giấy. */
+function PaperToolbelt() {
+  const setWorkspace = useCadStore((s) => s.setCadWorkspace);
+  const [state, setState] = useState<PaperSelectionState>({ scale: 100, locked: false, clean: false });
+  useEffect(() => {
+    const onState = (event: Event) => setState((event as CustomEvent<PaperSelectionState>).detail);
+    window.addEventListener('cad:paper-selection-state', onState);
+    paperAction('report');
+    return () => window.removeEventListener('cad:paper-selection-state', onState);
+  }, []);
+  return <div style={{ display: 'flex', alignItems: 'center', gap: 5, minHeight: 52, padding: 6, maxWidth: 'calc(100vw - 40px)', overflowX: 'auto', borderRadius: 18, background: 'color-mix(in srgb, var(--panel) 82%, transparent)', backdropFilter: 'blur(18px) saturate(1.35)', WebkitBackdropFilter: 'blur(18px) saturate(1.35)', border: '1px solid var(--border)', boxShadow: '0 8px 28px rgba(0,0,0,.2)' }}>
+    <button type="button" onClick={() => setWorkspace('model')} style={paperToolBtn}><span style={paperModeBadge}>PAPER</span><span style={{ color: 'var(--t3)' }}>Model</span></button>
+    <Divider />
+    <button type="button" onClick={() => paperAction('add')} style={paperToolBtn} title="Thêm một ô nhìn"><Plus size={15} /> Ô nhìn</button>
+    <button type="button" onClick={() => paperAction('center')} style={paperToolBtn} title="Căn ô nhìn vào toàn bộ bản vẽ"><Focus size={15} /> Căn vùng</button>
+    <select aria-label="Tỉ lệ ô nhìn trên Paper" value={state.scale} onChange={(event) => paperAction('scale', Number(event.target.value))} style={paperScaleSelect}>
+      {PAPER_TOOL_SCALES.map((scale) => <option key={scale} value={scale}>1:{scale}</option>)}
+    </select>
+    <button type="button" onClick={() => paperAction('lock')} style={{ ...paperToolBtn, ...(state.locked ? paperToolActive : {}) }} title={state.locked ? 'Mở khóa ô nhìn' : 'Khóa ô nhìn'}>{state.locked ? <Lock size={15} /> : <LockOpen size={15} />}<span className="paper-tool-label">{state.locked ? 'Đã khóa' : 'Khóa'}</span></button>
+    <button type="button" onClick={() => paperAction('layers')} style={paperToolBtn}><Layers3 size={15} /> Lớp</button>
+    <Divider />
+    <button type="button" onClick={() => fire('cad:paper-export-dialog-request')} style={paperToolBtn}><Settings2 size={15} /> Thiết lập</button>
+    <button type="button" onClick={() => paperAction('clean')} style={{ ...paperToolBtn, ...(state.clean ? paperToolActive : {}) }}><Eye size={15} /> {state.clean ? 'Chỉnh tờ' : 'Xem sạch'}</button>
+    <button type="button" onClick={() => fire('cad:paper-export-dialog-request')} style={{ ...paperToolBtn, background: 'var(--accent)', color: '#fff', borderColor: 'transparent' }}><FileOutput size={15} /> Xuất PDF</button>
+  </div>;
+}
+
+const PAPER_TOOL_SCALES = [20, 25, 50, 75, 100, 150, 200] as const;
+const Divider = () => <span aria-hidden style={{ width: 1, height: 24, flex: 'none', background: 'var(--border)' }} />;
+const paperToolBtn: React.CSSProperties = { height: 38, flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0 10px', borderRadius: 11, border: '1px solid transparent', background: 'transparent', color: 'var(--t2)', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 650, cursor: 'pointer', whiteSpace: 'nowrap' };
+const paperToolActive: React.CSSProperties = { background: 'var(--accent-soft)', color: 'var(--accent)', borderColor: 'color-mix(in srgb, var(--accent) 30%, transparent)' };
+const paperModeBadge: React.CSSProperties = { padding: '4px 7px', borderRadius: 7, background: 'var(--accent)', color: '#fff', fontSize: 10, fontWeight: 800, letterSpacing: '.06em' };
+const paperScaleSelect: React.CSSProperties = { height: 38, flex: 'none', padding: '0 8px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 700 };
 
 /** Mode Chuyên phải lộ workflow, không chỉ "thêm nút": dòng này nói rõ đang ở Model Space,
  * đơn vị và tờ in hiện hành; hai CTA mở đúng dòng lệnh/thiết lập tờ đã có thật. */
