@@ -17,8 +17,6 @@
   đủ, thêm ngữ cảnh MODEL/đơn vị/tờ/tỉ lệ/BIM và mở lớp BIM 2D.
 - Sơ phác tablet: nhận bút, chống tì, pan/pinch; dock có undo/redo. Tap 2/3 ngón undo/redo;
   giữ 450ms mở radial 8 lệnh. Input 10/10, gesture 15/15 và test PASS; cần test tablet thật.
-- Màn hẹp: canvas đo đúng khung chứa; dock Sơ phác cuộn từ trái. Nghiệm thu 592px không tràn,
-  lưới phủ kín, console/test sạch; worktree đã dọn.
 - Nắn nét Sơ phác đổi bút/ngón thành line, polyline, chữ nhật hoặc tròn chuẩn; snap 5°.
   Nhận dạng 10/10, typecheck/toàn bộ test và preview PASS; cần nghiệm thu trên tablet thật.
 - Paper Space Pro: MODEL/PAPER thật; nhiều ô nhìn cùng một Doc, độc lập tỉ lệ/khóa, kéo/resize có
@@ -37,6 +35,8 @@
   tải, thu hồi URL tạm khi đóng/đổi tờ. Paper 5/5, typecheck/toàn bộ test PASS.
 - Chốt mọi lệnh chạy được phải có đường bàn phím thật, cùng nguồn với tooltip/`⌘/`/`⌘K`, có guard
   ô nhập và không gán phím giả. `⌘P`/`Ctrl+P` mở preview/xuất PDF Paper; shortcuts 23/23 PASS.
+- Dock Sơ phác gọn: nhãn Vẽ/Cấu kiện chuyển lên đầu cụm icon cùng hàng; bỏ tầng chữ treo dưới.
+  Hàng chạm không co/bẻ nhãn, vẫn giữ vùng bấm 44px. Preview 3016 và toàn bộ test PASS.
 
 ## Năng lực định dạng đã đo
 
