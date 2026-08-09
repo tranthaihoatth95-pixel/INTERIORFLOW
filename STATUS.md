@@ -6,7 +6,7 @@
 
 ## Đang chạy
 
-- Hệ phím tắt toàn app đang triển khai; 4 file riêng của chủ dự án được giữ nguyên.
+- Hệ phím tắt toàn app đang triển khai; giữ nguyên 4 file riêng của chủ dự án.
 
 ## Vừa xong
 
@@ -24,18 +24,18 @@
   và backup; file cũ thiếu field vẫn mở về tờ mặc định. UI sửa số tờ, dự án, người vẽ, revision.
   IDF 45/45, IFpack 19/19, typecheck/toàn bộ test PASS sau merge. Nghiệm thu 3015: 2 viewport +
   metadata sống qua reload, console sạch; dữ liệu test đã dọn và autosave lại. Worktree đã dọn.
-- Paper Properties: từng ô nhìn có tâm X/Y và layer độc lập; chỉ tạo Doc nhẹ lúc render, không
-  nhân/mutate hình học. Logic 14/14, typecheck và toàn bộ test
-  PASS trên `main`.
+- Paper Properties: mỗi ô có tâm X/Y và layer riêng; không nhân/mutate hình học. Logic 14/14,
+  typecheck và toàn bộ test PASS.
 - Xuất Paper: PDF một tờ/cả bộ đọc đúng khổ, hướng, rect, tâm, tỉ lệ và layer riêng từng ô nhìn;
   đổi Page Setup ghi vào Sheet và kẹp viewport trong giấy. Đo 5000mm ở 1:50 = 100mm; Paper 5/5,
   sheet-set 19/19, typecheck/toàn bộ test PASS.
 - Paper UI: Inspector Tờ/Ô nhìn/Lớp; toolbar ngữ cảnh gọn. Hộp xuất nhúng chính PDF thật trước khi
   tải, thu hồi URL tạm khi đóng/đổi tờ. Paper 5/5, typecheck/toàn bộ test PASS.
-- Chốt mọi lệnh chạy được phải có đường bàn phím thật, cùng nguồn với tooltip/`⌘/`/`⌘K`, có guard
-  ô nhập và không gán phím giả. `⌘P`/`Ctrl+P` mở preview/xuất PDF Paper; shortcuts 23/23 PASS.
+- Mọi lệnh chạy được phải có phím thật, chung nguồn với tooltip/`⌘/`/`⌘K`, guard ô nhập.
+  `⌘P`/`Ctrl+P` mở preview/xuất PDF Paper; shortcuts 23/23 PASS.
 - Dock Sơ phác gọn, vùng chạm 44px; Hatch overlay 2 cột né dock. Banner mất phiên portal ra body,
   có safe-area. Bàn trống bỏ thẻ giới thiệu/“Vẽ mới”, chỉ còn nút Nhập; click ngoài tự đóng.
+  Panel BIM cũ đè toolbar đã bỏ; số liệu BIM vẫn ở thanh Chuyên, gán cấu kiện ở Inspector.
   Preview, typecheck và toàn bộ test PASS.
 
 ## Năng lực định dạng đã đo
