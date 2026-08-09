@@ -15,13 +15,15 @@
  */
 
 import { useRef, useState, type ReactNode } from 'react';
-import { Files, Image as ImageIcon, FileDown, FileText, Printer, FileUp, ChevronDown } from 'lucide-react';
+import { Files, FileDown, FileText, Printer, FileUp, ChevronDown } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { addImageNodesFromFiles } from '@/components/studio/UploadButton';
 import { deckImagesFromNodes } from '@/lib/present-editor/handoff';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { useDismissable } from '@/lib/useDismissable';
+import { detectFormat } from '@/lib/gateway/detect';
+import { routeFormat } from '@/lib/gateway/route';
 
 interface FileItem {
   id: string;
@@ -94,19 +96,11 @@ export function RenderIOMenus() {
 
   const importItems: FileItem[] = [
     {
-      id: 'image',
-      label: tr('Ảnh (tạo khối Nhập ảnh)', 'Images (creates an Import Image block)'),
-      sub: tr('Chọn nhiều ảnh — mỗi ảnh 1 khối gắn sẵn trên canvas', 'Pick multiple images — each becomes 1 block, ready on the canvas'),
-      icon: <ImageIcon size={15} />,
-      onSelect: () => fileRef.current?.click(),
-    },
-    {
-      id: 'flow',
-      label: tr('Mở bảng làm việc (.json)', 'Open board (.json)'),
+      id: 'gateway',
+      label: tr('Chọn tệp — tự nhận định dạng', 'Choose files — auto-detect format'),
+      sub: tr('Ảnh tạo node; file 3D chưa có importer sẽ báo rõ lý do', 'Images create nodes; unsupported 3D files show the exact reason'),
       icon: <FileUp size={15} />,
-      onSelect: () => {},
-      disabled: true,
-      disabledReason: tr('Chưa hỗ trợ — bảng làm việc lưu trên server, chưa xuất/nhập ra file rời', 'Not supported yet — boards live on the server, no file export/import yet'),
+      onSelect: () => fileRef.current?.click(),
     },
   ];
 
@@ -201,13 +195,23 @@ export function RenderIOMenus() {
       <input
         ref={fileRef}
         type="file"
-        accept="image/*"
         multiple
         hidden
         onChange={async (e) => {
           const files = Array.from(e.target.files ?? []);
           e.target.value = '';
-          await addImageNodesFromFiles(files);
+          const images: File[] = [];
+          const rejected: string[] = [];
+          for (const file of files) {
+            const bytes = new Uint8Array(await file.slice(0, 8192).arrayBuffer());
+            const format = detectFormat({ name: file.name, bytes });
+            const action = routeFormat(format, 'render');
+            if (action.kind === 'place-image') images.push(file);
+            else rejected.push(action.kind === 'unsupported' && action.reason ? `${file.name}: ${action.reason}` : `${file.name}: chưa hỗ trợ`);
+          }
+          if (images.length) await addImageNodesFromFiles(images);
+          if (rejected.length) flash(false, rejected.join(' · '));
+          else if (images.length) flash(true, tr(`Đã thêm ${images.length} ảnh vào bảng làm việc.`, `Added ${images.length} image(s) to the board.`));
         }}
       />
     </div>
