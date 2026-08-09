@@ -71,8 +71,8 @@ export default function CadTouchDock() {
         // Màn hẹp: tổng 9 nút rộng hơn Stage. Center sẽ làm tràn CẢ hai phía, cắt mất nút đầu;
         // bắt đầu từ trái + cuộn ngang giúp mọi nút luôn tới được mà không che canvas.
         justifyContent: 'flex-start',
-        gap: 4,
-        padding: 5,
+        gap: 2,
+        padding: '3px 5px',
         maxWidth: '100%',
         overflowX: 'auto',
         overflowY: 'hidden',
@@ -173,10 +173,11 @@ function DockBtn({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 6,
+        gap: 5,
+        flex: 'none',
         minWidth: TOUCH_MIN,
         height: TOUCH_MIN,
-        padding: '0 12px',
+        padding: '0 9px',
         borderRadius: 999,
         // 2.1.8.l (30/07) — bật KHÔNG tô đặc nữa: trên bản vẽ kỹ thuật, khối màu đặc thắng chính
         // bản vẽ (cùng luật đã áp cho nút "Chạy flow", xem docs/TICKET-CHAY-FLOW-KHONG-GHIM-BAR
@@ -187,6 +188,7 @@ function DockBtn({
         fontFamily: 'inherit',
         fontSize: 12,
         fontWeight: 600,
+        whiteSpace: 'nowrap',
         cursor: 'pointer',
         touchAction: 'manipulation',
         transition: 'background .15s, color .15s',

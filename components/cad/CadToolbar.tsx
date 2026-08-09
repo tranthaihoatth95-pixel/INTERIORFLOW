@@ -363,12 +363,13 @@ export default function CadToolbar({
         borderRadius: 999,
       }}
     >
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4, padding: 6, width: 'max-content' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: 6, width: 'max-content' }}>
       <div style={{ display: 'flex', alignItems: 'center', height: rowH }}>
         <ModeSwitch mode={cadMode} onChange={setCadMode} pro={isPro} />
       </div>
       <Divider h={rowH} />
-      {/* VIỆC 1 — nhãn nhóm theo NGHỀ (ribbon: chia nhóm phải in nhãn), đặt DƯỚI hàng nút.
+      {/* Nhãn nhóm theo NGHỀ đặt ở ĐẦU cụm, cùng hàng với icon: mắt đọc "Vẽ → công cụ" thay vì
+          phải dò nhãn treo phía dưới; đồng thời giảm một hàng chữ khỏi dock cảm ứng.
           VẼ = DRAW+DRAW_PRO+SHAPES2 gộp (VIỆC 3): Sketch chỉ có 4 lệnh nền tảng (không dư gì để
           "còn nữa"); Pro/Revit phơi 6 lệnh hay dùng + nút ↘ mở 8 lệnh còn lại. */}
       <GroupBlock label="VẼ">
@@ -472,15 +473,12 @@ export default function CadToolbar({
   );
 }
 
-/** `h` = chiều cao hàng nút hiện tại (rowH trong CadToolbar) — container giờ `alignItems:
- * 'flex-start'` (VIỆC 1, để nhãn nhóm nằm dưới không kéo lệch mọi nút khác), nên vạch ngăn phải
- * TỰ nêu chiều cao thay vì trông chờ 'center' canh hộ như trước, nếu không sẽ dán sát mép trên. */
+/** `h` = chiều cao hàng nút hiện tại (rowH trong CadToolbar). */
 function Divider({ h = 22 }: { h?: number }) {
   return <span style={{ width: 1, height: h, background: 'var(--border)', margin: '0 2px' }} />;
 }
 
-/** VIỆC 1 — nhãn nhóm kiểu ribbon: 10px, UPPERCASE, tracking .18em, --t4, đặt DƯỚI hàng nút
- * (toolbelt IF nổi TRÊN canvas, không phải cố định trên đầu màn hình như ribbon Office). */
+/** Nhãn dẫn đường nhỏ nằm ngay trước nhóm icon; không chiếm thêm một tầng dọc. */
 // 07/08 M-UI-CAD VIỆC 7 (cùng họ VIỆC 1+2+5 của RevitSummaryPanel — nhãn nhóm chữ Việt có dấu
 // "VẼ · CẤU KIỆN · SỬA · ĐO & GHI CHÚ" trước 10px/line-height:1 cắt dấu + var(--t4) trượt tương
 // phản trên nền panel): nâng ≥11.5px, line-height ≥1.5, đổi sang --t3.
@@ -493,7 +491,7 @@ function GroupLabel({ children }: { children: string }) {
         textTransform: 'uppercase',
         letterSpacing: '.14em',
         color: 'var(--t3)',
-        marginTop: 3,
+        padding: '0 5px 0 3px',
         whiteSpace: 'nowrap',
       }}
     >
@@ -504,9 +502,9 @@ function GroupLabel({ children }: { children: string }) {
 
 function GroupBlock({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{children}</div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
       <GroupLabel>{label}</GroupLabel>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{children}</div>
     </div>
   );
 }
