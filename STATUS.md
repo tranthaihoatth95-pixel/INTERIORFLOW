@@ -6,8 +6,8 @@
 
 ## Đang chạy
 
-- Worktree `interiorflow-wt-paper-persist` đang lưu bền Paper; 4 file untracked của chủ dự án
-  được giữ nguyên.
+- Không còn worktree phụ. Lưu bền Paper đã merge vào `main` (`0d14cb0`); 4 file untracked của
+  chủ dự án được giữ nguyên.
 - Gateway là một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu · chỉ lưu · chưa hỗ trợ.
 
 ## Vừa xong
@@ -30,7 +30,8 @@
   chặn mép, không xóa ô cuối. Logic 9/9, test/preview PASS; đã sửa nút bị dock che.
 - Lưu bền Paper: một Doc duy nhất + `paperSheets` metadata nhẹ đi qua IndexedDB, `.idf`, `.ifpack`
   và backup; file cũ thiếu field vẫn mở về tờ mặc định. UI sửa số tờ, dự án, người vẽ, revision.
-  IDF 45/45, IFpack 19/19, typecheck/toàn bộ test PASS. Chờ nghiệm thu reload sau merge.
+  IDF 45/45, IFpack 19/19, typecheck/toàn bộ test PASS sau merge. Nghiệm thu 3015: 2 viewport +
+  metadata sống qua reload, console sạch; dữ liệu test đã dọn và autosave lại. Worktree đã dọn.
 
 ## Sự thật dữ liệu
 
