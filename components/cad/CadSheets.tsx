@@ -80,6 +80,9 @@ import { createProject } from '@/lib/workspace';
 import { saveSheets } from '@/lib/sheets-persist';
 import { useSaveStatus } from '@/lib/save-status';
 import { useRouter } from 'next/navigation';
+import { drawEntities } from '@/lib/cad/render';
+import { patchSheetViewport, viewportWorldBox } from '@/lib/cad/paper-space';
+import { Lock, LockOpen, ScanSearch } from 'lucide-react';
 
 const ROUTE = '/cad-editor' as const;
 const DEFAULT_VIEWPORT: Viewport = { scale: 0.08, panX: 300, panY: 400 };
@@ -323,6 +326,8 @@ export default function CadSheets() {
   // đọc bằng `getState()` ở component này chứ không subscribe.
   const [paperExportOpen, setPaperExportOpen] = useState(false);
   const [paperTick, setPaperTick] = useState(0);
+  const cadMode = useCadStore((s) => s.cadMode);
+  const cadWorkspace = useCadStore((s) => s.cadWorkspace);
 
   // ---- Persistence (J-3): refs gương cho autosaver đọc mà không re-subscribe ----
   const userIdRef = useRef<string | null>(null);
@@ -607,6 +612,9 @@ export default function CadSheets() {
       return next;
     });
 
+  const updateViewport = (viewportId: string, patch: Partial<Sheet['viewports'][number]>) =>
+    setSheets((prev) => prev.map((sheet) => sheet.id === activeId ? patchSheetViewport(sheet, viewportId, patch) : sheet));
+
   /**
    * Sprint 7 — Việc 2 (.idf): CadEditor (nút "Xuất .idf"/"Mở .idf") không giữ danh sách sheet
    * (chỉ CadSheets giữ, xem đầu file) → bắc cầu qua CustomEvent 'cad:idf-export-request' /
@@ -853,8 +861,18 @@ export default function CadSheets() {
         onReorder={reorder}
         addLabel="Thêm bản vẽ"
       />
-      {/* CadEditor tự có flex:1 → là con trực tiếp của cột này để giãn đầy. */}
-      <CadEditor />
+      {/* Sketch luôn ở Model; Pro đổi thật giữa hình học 1:1 và tờ giấy. */}
+      {cadMode === 'sketch' || cadWorkspace === 'model' ? <CadEditor /> : (
+        <PaperSpace
+          sheet={sheets.find((sheet) => sheet.id === activeId) ?? sheets[0]}
+          onViewportChange={updateViewport}
+          onOpenModel={(viewport) => {
+            useCadStore.getState().setCadWorkspace('model');
+            const box = viewportWorldBox(viewport);
+            window.dispatchEvent(new CustomEvent('cad:goto-box', { detail: box }));
+          }}
+        />
+      )}
       <PaperExportDialogHost
         open={paperExportOpen}
         tick={paperTick}
@@ -872,6 +890,64 @@ export default function CadSheets() {
     </div>
   );
 }
+
+const PAPER_SCALES = [20, 25, 50, 75, 100, 150, 200] as const;
+
+function PaperSpace({ sheet, onViewportChange, onOpenModel }: {
+  sheet: Sheet;
+  onViewportChange: (viewportId: string, patch: Partial<Sheet['viewports'][number]>) => void;
+  onOpenModel: (viewport: Sheet['viewports'][number]) => void;
+}) {
+  const doc = useCadStore((s) => s.doc);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const viewport = sheet.viewports[0];
+  const [paperW, paperH] = paperSizeMm(sheet.paper, sheet.orientation);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !viewport) return;
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.round(rect.width * dpr));
+    canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, rect.width, rect.height);
+    const box = viewportWorldBox(viewport);
+    const scale = Math.min(rect.width / (box.maxX - box.minX), rect.height / (box.maxY - box.minY));
+    drawEntities(ctx, {
+      scale,
+      panX: rect.width / 2 - viewport.centerMm.x * scale,
+      panY: rect.height / 2 + viewport.centerMm.y * scale,
+    }, doc, { stroke: '#34312d', lineWidth: 1, text: true });
+  }, [doc, viewport]);
+
+  if (!viewport) return <div style={{ padding: 24 }}>Tờ này chưa có ô nhìn.</div>;
+  return (
+    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'grid', placeItems: 'center', padding: 28, background: 'var(--canvas-bg, #242424)' }}>
+      <div style={{ width: `min(82vw, ${paperW * 2}px)`, aspectRatio: `${paperW}/${paperH}`, minWidth: 520, position: 'relative', background: '#fff', color: '#25221e', boxShadow: '0 18px 55px rgba(0,0,0,.35)', border: '1px solid rgba(0,0,0,.25)' }}>
+        <div style={{ position: 'absolute', inset: 14, border: '1px solid #777' }} />
+        <div style={{ position: 'absolute', left: `${viewport.rectOnPaper.x / paperW * 100}%`, top: `${viewport.rectOnPaper.y / paperH * 100}%`, width: `${viewport.rectOnPaper.w / paperW * 100}%`, height: `${viewport.rectOnPaper.h / paperH * 100}%`, border: '1.5px solid #6455d9', overflow: 'hidden', background: '#fcfcfb' }}>
+          <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
+          <div style={{ position: 'absolute', left: 8, top: 8, display: 'flex', gap: 6, alignItems: 'center', padding: '5px 7px', borderRadius: 7, background: 'rgba(255,255,255,.92)', boxShadow: '0 2px 10px rgba(0,0,0,.12)', font: '600 11px Archivo, sans-serif' }}>
+            <select aria-label="Tỉ lệ ô nhìn" value={viewport.scale} onChange={(event) => onViewportChange(viewport.id, { scale: Number(event.target.value) })} style={{ border: 0, background: 'transparent', font: 'inherit' }}>
+              {PAPER_SCALES.map((scale) => <option key={scale} value={scale}>1:{scale}</option>)}
+            </select>
+            <button type="button" title={viewport.locked ? 'Mở khoá ô nhìn' : 'Khoá tỉ lệ ô nhìn'} onClick={() => onViewportChange(viewport.id, { locked: !viewport.locked })} style={paperButton}>{viewport.locked ? <Lock size={13} /> : <LockOpen size={13} />}</button>
+            <button type="button" title="Mở vùng này trong Model" onClick={() => onOpenModel(viewport)} style={paperButton}><ScanSearch size={13} /> Model</button>
+          </div>
+        </div>
+        <div style={{ position: 'absolute', right: 14, bottom: 14, width: '42%', height: 54, border: '1px solid #777', padding: '7px 9px', font: '600 10px Archivo, sans-serif', display: 'grid', gridTemplateColumns: '1fr auto', gap: 4 }}>
+          <span>{sheet.titleBlock.project || 'TÊN DỰ ÁN'}</span><span>{sheet.number || '—'}</span>
+          <strong>{sheet.name}</strong><span>{sheet.paper} · 1:{viewport.scale}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const paperButton: React.CSSProperties = { border: 0, background: 'transparent', color: '#34312d', display: 'inline-flex', alignItems: 'center', gap: 4, padding: 2, font: '600 11px Archivo, sans-serif', cursor: 'pointer' };
 
 /**
  * Làn C — cầu nối giữa hộp thoại Màn 7 (`components/print/*`, thuần trình bày) và dữ liệu CAD THẬT.

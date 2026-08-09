@@ -65,13 +65,16 @@ export default function CadToolbelt() {
  * đơn vị và tờ in hiện hành; hai CTA mở đúng dòng lệnh/thiết lập tờ đã có thật. */
 function ProWorkspaceBar() {
   const doc = useCadStore((s) => s.doc);
+  const workspace = useCadStore((s) => s.cadWorkspace);
+  const setWorkspace = useCadStore((s) => s.setCadWorkspace);
   const paper = doc.paperKey ?? 'A3';
   const orientation = doc.paperOrientation === 'portrait' ? 'Dọc' : 'Ngang';
   const scale = doc.printScale ? `1:${doc.printScale}` : 'Tự khớp';
   const assigned = doc.entities.filter((entity) => entity.elementType !== undefined).length;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 32, padding: '0 10px 6px', fontSize: 11.5, color: 'var(--t3)' }}>
-      <strong style={{ color: 'var(--t1)', letterSpacing: '.08em' }}>MODEL</strong>
+      <button type="button" aria-pressed={workspace === 'model'} onClick={() => setWorkspace('model')} style={workspaceTab(workspace === 'model')}>MODEL</button>
+      <button type="button" aria-pressed={workspace === 'paper'} onClick={() => setWorkspace('paper')} style={workspaceTab(workspace === 'paper')}>PAPER</button>
       <span>mm</span>
       <span style={{ width: 1, height: 16, background: 'var(--border)' }} />
       <span>{paper} · {orientation} · {scale}</span>
@@ -92,3 +95,9 @@ const modeActionBtn: React.CSSProperties = {
   borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)',
   fontFamily: 'inherit', fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
 };
+
+const workspaceTab = (active: boolean): React.CSSProperties => ({
+  minHeight: 26, padding: '0 8px', borderRadius: 7, border: '1px solid var(--border)',
+  background: active ? 'var(--accent)' : 'var(--field)', color: active ? 'white' : 'var(--t2)',
+  fontFamily: 'inherit', fontSize: 10.5, fontWeight: 750, letterSpacing: '.08em', cursor: 'pointer',
+});
