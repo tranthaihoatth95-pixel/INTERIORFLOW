@@ -101,7 +101,7 @@ export function RenderIOMenus() {
     {
       id: 'gateway',
       label: tr('Chọn tệp — tự nhận định dạng', 'Choose files — auto-detect format'),
-      sub: tr('Ảnh tạo node · GLB hoặc gói glTF mở trong Vẽ 3D', 'Images create nodes · GLB or glTF bundle opens in 3D Design'),
+      sub: tr('Ảnh tạo node · GLB, glTF hoặc OBJ/MTL mở trong Vẽ 3D', 'Images create nodes · GLB, glTF or OBJ/MTL opens in 3D Design'),
       icon: <FileUp size={15} />,
       onSelect: () => fileRef.current?.click(),
     },
@@ -211,6 +211,7 @@ export function RenderIOMenus() {
             return { file, format: detectFormat({ name: file.name, bytes }) };
           }));
           const gltfEntries = detected.filter((item) => item.format === 'gltf');
+          const objEntries = detected.filter((item) => /\.obj$/i.test(item.file.name));
           const asDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Không đọc được file.'));
@@ -218,8 +219,9 @@ export function RenderIOMenus() {
             reader.readAsDataURL(file);
           });
 
-          // Có .gltf ⇒ cả lượt chọn là MỘT gói; .bin/texture là phụ thuộc, không tạo node ảnh rời.
-          if (!gltfEntries.length) for (const { file, format } of detected) {
+          // Có .gltf/.obj ⇒ cả lượt chọn là MỘT gói; file phụ/texture không tạo node ảnh rời.
+          const hasBundle = gltfEntries.length > 0 || objEntries.length > 0;
+          if (!hasBundle) for (const { file, format } of detected) {
             const action = routeFormat(format, 'render');
             if (action.kind === 'place-image') images.push(file);
             else if (action.kind === 'render-import-model') models.push(file);
@@ -227,7 +229,9 @@ export function RenderIOMenus() {
           }
           if (images.length) await addImageNodesFromFiles(images);
           const modelReports: string[] = [];
-          if (gltfEntries.length > 1) {
+          if (gltfEntries.length && objEntries.length) {
+            rejected.push(tr('Không trộn gói glTF và OBJ trong cùng một lượt nhập.', 'Do not mix glTF and OBJ bundles in one import.'));
+          } else if (gltfEntries.length > 1) {
             rejected.push(tr('Mỗi lượt chỉ nhập một tệp .gltf cùng các file phụ của nó.', 'Choose one .gltf entry plus its dependencies per import.'));
           } else if (gltfEntries.length === 1) {
             const entry = gltfEntries[0].file;
@@ -250,6 +254,38 @@ export function RenderIOMenus() {
               modelReports.push(`${entry.name}: ${parsed.report.meshes} mesh · ${Math.round(parsed.report.triangles).toLocaleString()} tam giác · ${files.length} file nguồn${parsed.report.warnings.length ? ` · ${parsed.report.warnings.join(' ')}` : ''}`);
             } catch (err) {
               rejected.push(`${entry.name}: ${err instanceof Error ? err.message : 'Gói glTF không đọc được'}`);
+            }
+          }
+          if (!gltfEntries.length && objEntries.length > 1) {
+            rejected.push(tr('Mỗi lượt chỉ nhập một tệp .obj cùng MTL/texture của nó.', 'Choose one .obj entry plus its MTL/textures per import.'));
+          } else if (!gltfEntries.length && objEntries.length === 1) {
+            const entry = objEntries[0].file;
+            const mtlFiles = files.filter((file) => /\.mtl$/i.test(file.name));
+            if (mtlFiles.length > 1) {
+              rejected.push(tr('Gói có nhiều MTL — hãy chọn đúng một MTL cho OBJ này.', 'The bundle has multiple MTL files — choose the one for this OBJ.'));
+            } else {
+              try {
+                const resources = await Promise.all(files.map(async (file) => ({
+                  name: file.webkitRelativePath || file.name,
+                  dataUrl: await asDataUrl(file),
+                  sizeBytes: file.size,
+                })));
+                const mtl = mtlFiles[0];
+                const { parseObjBundle } = await import('@/lib/three/glb-import');
+                const parsed = await parseObjBundle(
+                  await entry.text(), mtl ? await mtl.text() : undefined,
+                  resources.filter((resource) => resource.name !== (entry.webkitRelativePath || entry.name) && resource.name !== (mtl?.webkitRelativePath || mtl?.name)),
+                );
+                useCadStore.getState().addModel3DSource({
+                  id: crypto.randomUUID(), name: entry.name, format: 'obj',
+                  entryName: entry.webkitRelativePath || entry.name,
+                  ...(mtl ? { mtlName: mtl.webkitRelativePath || mtl.name } : {}), resources,
+                  sizeBytes: files.reduce((sum, file) => sum + file.size, 0), importedAt: new Date().toISOString(),
+                });
+                modelReports.push(`${entry.name}: ${parsed.report.meshes} mesh · ${Math.round(parsed.report.triangles).toLocaleString()} tam giác · ${files.length} file nguồn · ${parsed.report.warnings.join(' ')}`);
+              } catch (err) {
+                rejected.push(`${entry.name}: ${err instanceof Error ? err.message : 'Gói OBJ không đọc được'}`);
+              }
             }
           }
           for (const file of models) {

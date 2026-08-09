@@ -954,6 +954,7 @@ export type Model3DSource = {
 } & (
   | { format: 'glb'; dataUrl: string }
   | { format: 'gltf'; entryName: string; resources: Model3DResource[] }
+  | { format: 'obj'; entryName: string; mtlName?: string; resources: Model3DResource[] }
 );
 
 export interface Doc {

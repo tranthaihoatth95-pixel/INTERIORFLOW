@@ -398,19 +398,19 @@ export default function CadToolbar({
       </div>
       <Divider h={rowH} />
       <GroupBlock label="SỬA">
-        <Group items={EDIT} />
+        <Group items={isPro ? EDIT : [EDIT[0]]} />
         <EyedropperButton isPro={isPro} />
       </GroupBlock>
       {isPro && <Divider h={rowH} />}
       {isPro && <Group items={MODIFY} />}
       <Divider h={rowH} />
       <GroupBlock label="ĐO & GHI CHÚ">
-        <Group items={MEASURE} />
+        <Group items={isPro ? MEASURE : [MEASURE[0]]} />
       </GroupBlock>
       {isPro && <Group items={DIMENSION} />}
       <Divider h={rowH} />
       <Group items={ANNOTATE} />
-      <Group items={DIAGRAM} />
+      {isPro && <Group items={DIAGRAM} />}
       <Divider h={rowH} />
       <Tooltip label="Nội thất" desc="Mở thư viện block nội thất để đặt vào bản vẽ">
         <button type="button" onClick={onToggleFurniture} style={b(tool === 'block')}>

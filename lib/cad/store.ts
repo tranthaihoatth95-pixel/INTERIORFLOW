@@ -417,7 +417,7 @@ function clone(d: Doc): Doc {
     photos: (d.photos ?? []).map((p) => ({ ...p })),
     // Zone tool — ảnh aerial nền cũng vào snapshot Undo/Redo (shallow copy đủ — field thuần).
     siteImage: d.siteImage ? { ...d.siteImage } : d.siteImage ?? undefined,
-    model3dSources: (d.model3dSources ?? []).map((source) => source.format === 'gltf'
+    model3dSources: (d.model3dSources ?? []).map((source) => source.format !== 'glb'
       ? { ...source, resources: source.resources.map((resource) => ({ ...resource })) }
       : { ...source }),
   };

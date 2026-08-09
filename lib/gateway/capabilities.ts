@@ -72,7 +72,9 @@ export const FORMAT_CAPABILITIES: Record<GatewayFormat, FormatCapability> = {
   gltf: { format: 'gltf', label: 'glTF', extensions: ['.gltf'], stages: {
     cad: no(), render: stage('lossy', 'unavailable', 'Chọn cùng .gltf + .bin + texture; nhập hình học/màu nền và giữ trọn gói nguồn'), present: no(),
   } },
-  obj: { format: 'obj', label: 'Wavefront OBJ', extensions: ['.obj', '.mtl'], stages: { cad: no(), render: no('Chưa có importer OBJ/MTL'), present: no() } },
+  obj: { format: 'obj', label: 'Wavefront OBJ', extensions: ['.obj', '.mtl'], stages: {
+    cad: no(), render: stage('lossy', 'unavailable', 'Chọn cùng OBJ + MTL + texture; OBJ không khai đơn vị/trục nên phải kiểm kích thước'), present: no(),
+  } },
   fbx: { format: 'fbx', label: 'Autodesk FBX', extensions: ['.fbx'], stages: { cad: no(), render: no('Chưa có importer FBX'), present: no() } },
   skp: { format: 'skp', label: 'SketchUp', extensions: ['.skp'], stages: { cad: no(), render: no('Cần SDK/bridge và kiểm tra license'), present: no() } },
   max: { format: 'max', label: '3ds Max Scene', extensions: ['.max'], stages: { cad: no(), render: no('Dùng bridge/plugin qua FBX hoặc glTF; không đọc native trực tiếp'), present: no() } },
