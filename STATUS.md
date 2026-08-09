@@ -6,8 +6,8 @@
 
 ## Đang chạy
 
-- Worktree `interiorflow-wt-import-glb`, nhánh `codex/import-glb`: importer GLB P0 đã code và test,
-  chờ commit/merge. `main` có 4 file untracked của chủ dự án; không sửa, không commit.
+- Không còn worktree phụ. Importer GLB P0 đã merge vào `main` (`9808184`). `main` có 4 file
+  untracked của chủ dự án; không sửa, không commit.
 - Gateway đã ở `main` (`c408684`): một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu ·
   chỉ lưu · chưa hỗ trợ. Các lối chuyên biệt của AI Brief vẫn giữ nguyên.
 
@@ -25,7 +25,8 @@
   bằng công cụ khác. Kiểm chứng hiện tại là typecheck + test, chưa tuyên bố UI chạy tay.
 - GLB P0: kiểm file thật, lưu nguyên nguồn trong `Doc`/autosave/IDF, derive tam giác cho cùng
   viewport 3D, giữ transform và màu nền, tự chuyển sang Vẽ 3D, báo mesh/tam giác và mất mát.
-  Typecheck PASS; test Gateway 28/28; test hình học 6/6; toàn bộ `npm test` PASS.
+  Sau merge trên `main`: typecheck PASS; test Gateway 28/28; test hình học 6/6; toàn bộ
+  `npm test` PASS. Worktree/nhánh đã dọn theo đủ 4 điều kiện an toàn.
 
 ## Sự thật dữ liệu
 
@@ -39,7 +40,7 @@
 
 - 2D: mở/nhập `.idf`, `.dwg`, `.dxf`; backup `.ifpack`; xuất `.dxf`, PDF. IFC mới có metadata,
   chưa import/export BIM đầy đủ.
-- 3D/Node: nhập ảnh; GLB P0 đã có trên nhánh chờ merge ở mức `lossy` (hình học/transform/màu nền;
+- 3D/Node: nhập ảnh; GLB P0 đã có ở mức `lossy` (hình học/transform/màu nền;
   texture/animation chưa trình diễn). Chưa nhập `.gltf` nhiều file, `.skp`, `.max`, `.fbx`,
   `.obj`, `.ifc`, `.rvt`. Danh sách đuôi trong prompt/URL không được tính là hỗ trợ.
 - Trình bày: nhập `.pptx` (mức cơ bản), ảnh, `.idfp`; nhập `.xlsx/.csv` vào BOQ; xuất PDF, PPTX,
@@ -49,7 +50,7 @@
 
 ## Việc kế tiếp
 
-1. Merge GLB sau kiểm tra; tiếp theo glTF bundle → OBJ/MTL → FBX; sau đó IFC. SKP dùng SDK/bridge sau kiểm license;
+1. Tiếp theo glTF bundle → OBJ/MTL → FBX; sau đó IFC. SKP dùng SDK/bridge sau kiểm license;
    `.max/.rvt` dùng bridge/plugin, không tự viết parser native.
 2. Hoàn thiện Trình bày theo thứ tự: PDF deck → DOCX → media video/audio → HTML; tăng fidelity PPTX.
 3. Bổ sung báo cáo đơn vị/trục/font/material/asset bị thiếu và giữ file nguồn để refresh.
