@@ -6,8 +6,8 @@
 
 ## Đang chạy
 
-- Worktree `interiorflow-wt-obj-mode-separation` chờ commit/merge: importer OBJ/MTL và tách trải
-  nghiệm Sơ phác/Chuyên. `main` có 4 file untracked của chủ dự án; không chạm.
+- Không còn worktree phụ. OBJ/MTL và tách Sơ phác/Chuyên đã merge vào `main` (`b02b711`).
+  `main` có 4 file untracked của chủ dự án; không chạm.
 - Gateway đã ở `main` (`c408684`): một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu ·
   chỉ lưu · chưa hỗ trợ. Lối AI Brief chuyên biệt vẫn giữ nguyên.
 
@@ -21,8 +21,8 @@
   derive mesh vào viewer; báo giả định mét/Y-up và texture chưa hiển thị. Gateway đánh dấu `lossy`.
 - Chặng 1: Sơ phác chỉ giữ dựng nhanh, Move/Measure/Markup và thanh chạm. Chuyên giữ bộ lệnh đầy
   đủ, thêm ngữ cảnh MODEL/đơn vị/tờ/tỉ lệ/BIM và mở lớp BIM 2D.
-- Nhánh hiện tại: parser OBJ 5/5, Gateway 30/30, typecheck và toàn bộ `npm test` PASS. Đã
-  click-through hai mode trên preview, không lỗi console.
+- Sau merge: parser OBJ 5/5, Gateway 30/30, typecheck và toàn bộ `npm test` PASS. Đã
+  click-through hai mode trên local `3015`, không lỗi console; worktree/nhánh đã dọn an toàn.
 
 ## Sự thật dữ liệu
 
