@@ -6,8 +6,7 @@
 
 ## Đang chạy
 
-- Hệ phím tắt toàn app đang triển khai; mốc đầu đã merge. 4 file untracked của
-  chủ dự án được giữ nguyên.
+- Hệ phím tắt toàn app đang triển khai; 4 file riêng của chủ dự án được giữ nguyên.
 
 ## Vừa xong
 
@@ -25,8 +24,8 @@
   và backup; file cũ thiếu field vẫn mở về tờ mặc định. UI sửa số tờ, dự án, người vẽ, revision.
   IDF 45/45, IFpack 19/19, typecheck/toàn bộ test PASS sau merge. Nghiệm thu 3015: 2 viewport +
   metadata sống qua reload, console sạch; dữ liệu test đã dọn và autosave lại. Worktree đã dọn.
-- Paper Properties: từng ô nhìn có tâm X/Y và bật/tắt layer độc lập, nút về trạng thái Doc chung;
-  chỉ tạo Doc nhẹ lúc render, không nhân/mutate hình học. Logic 14/14, typecheck và toàn bộ test
+- Paper Properties: từng ô nhìn có tâm X/Y và layer độc lập; chỉ tạo Doc nhẹ lúc render, không
+  nhân/mutate hình học. Logic 14/14, typecheck và toàn bộ test
   PASS trên `main`.
 - Xuất Paper: PDF một tờ/cả bộ đọc đúng khổ, hướng, rect, tâm, tỉ lệ và layer riêng từng ô nhìn;
   đổi Page Setup ghi vào Sheet và kẹp viewport trong giấy. Đo 5000mm ở 1:50 = 100mm; Paper 5/5,
@@ -35,8 +34,9 @@
   tải, thu hồi URL tạm khi đóng/đổi tờ. Paper 5/5, typecheck/toàn bộ test PASS.
 - Chốt mọi lệnh chạy được phải có đường bàn phím thật, cùng nguồn với tooltip/`⌘/`/`⌘K`, có guard
   ô nhập và không gán phím giả. `⌘P`/`Ctrl+P` mở preview/xuất PDF Paper; shortcuts 23/23 PASS.
-- Dock Sơ phác: nhãn Vẽ/Cấu kiện đứng đầu cụm icon; bỏ tầng chữ dưới. Hàng chạm không bẻ nhãn,
-  vẫn giữ vùng bấm 44px. Preview và toàn bộ test PASS.
+- Dock Sơ phác: nhãn Vẽ/Cấu kiện đứng đầu cụm, hàng chạm không bẻ nhãn và giữ vùng bấm 44px.
+  Bảng Hatch ra overlay toàn app, né dock, lưới 2 cột không cắt thẻ, một vùng cuộn. Preview và
+  toàn bộ test PASS.
 
 ## Năng lực định dạng đã đo
 
