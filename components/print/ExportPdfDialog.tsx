@@ -60,6 +60,9 @@ export interface ExportPdfDialogProps {
   /** mặc định rỗng — nơi gọi CHƯA nối dữ liệu kiểm tra thật thì không hiện checklist giả, không
    * bịa mục để "cho đủ" (đúng luật §9 CLAUDE.md: ô trống là bằng chứng còn việc, không phải lỗi). */
   checks?: ExportChecklistItem[];
+  /** URL blob của PDF THẬT vừa dựng từ engine xuất; thiếu = đang dựng hoặc caller cũ. */
+  previewUrl?: string;
+  previewError?: string;
   /** dữ liệu cho Bảng nét in (Màn 8) mở lồng trong hộp thoại — không truyền thì dùng mẫu. */
   lineweightRows?: LineweightRow[];
   /** nơi gọi KHÔNG cầm được khổ giấy (khổ do chỗ khác quyết định) → cột "Khổ giấy" mờ đi kèm
@@ -85,6 +88,8 @@ export default function ExportPdfDialog({
   initialPaper = 'A3',
   initialOrientation = 'landscape',
   checks = [],
+  previewUrl,
+  previewError,
   lineweightRows,
   paperLockedReason,
   onPaperChange,
@@ -253,13 +258,12 @@ export default function ExportPdfDialog({
               borderRight: '1px solid var(--border)',
             }}
           >
-            <PaperSheetFrame
-              variant="preview"
-              paper={paper}
-              orientation={orientation}
-              sheetIndex={currentSheetIndex + 1}
-              sheetTotal={sheetCount}
-            />
+            {previewUrl ? <object aria-label="Xem trước PDF thật" data={previewUrl} type="application/pdf" style={{ width: '100%', height: 410, border: 0, borderRadius: 10, background: '#fff' }}>
+              <a href={previewUrl} target="_blank" rel="noreferrer">Mở bản xem trước PDF</a>
+            </object> : <>
+              <PaperSheetFrame variant="preview" paper={paper} orientation={orientation} sheetIndex={currentSheetIndex + 1} sheetTotal={sheetCount} />
+              <div role={previewError ? 'alert' : 'status'} style={{ position: 'absolute', left: '50%', bottom: 22, translate: '-50% 0', maxWidth: '80%', padding: '6px 9px', borderRadius: 8, background: 'var(--panel)', border: '1px solid var(--border)', color: previewError ? 'var(--warn)' : 'var(--t3)', fontSize: 10.5, textAlign: 'center', boxShadow: 'var(--shadow-pop)' }}>{previewError ?? 'Đang dựng bản xem trước PDF thật…'}</div>
+            </>}
             {onPickTool && (
               <button
                 type="button"

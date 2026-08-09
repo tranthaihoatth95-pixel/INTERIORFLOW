@@ -54,7 +54,7 @@ import { rootFolderChosen, getProjectFolderHandle, writeTextFile, readTextFile }
 import { resolveSourceOfTruth, createDiskWriter, watchProjectPresence, type DiskWriter } from '@/lib/disk-sync';
 import { useProjectPresence } from '@/lib/project-presence-ui';
 import { ensureProjectScope } from '@/lib/project-scope';
-import { exportSheetSetPdf, exportPaperSheetPdf } from '@/lib/cad/pdf';
+import { buildPaperSheetPdf, exportSheetSetPdf, exportPaperSheetPdf } from '@/lib/cad/pdf';
 /**
  * Làn C (in/giấy/xuất) — hộp thoại "Xuất PDF theo tờ giấy" (Màn 7) mount Ở ĐÂY chứ không ở
  * `CadEditor.tsx`, vì đây mới là nơi giữ `sheets[]` THẬT (CadEditor không có — xem chú thích
@@ -1089,6 +1089,8 @@ function PaperExportDialogHost({
   onSheetChange: (sheet: Sheet) => void;
 }) {
   const doc = useCadStore.getState().doc;
+  const [previewUrl, setPreviewUrl] = useState<string>();
+  const [previewError, setPreviewError] = useState<string>();
   const activeSheet = sheets.find((sheet) => sheet.id === activeId) ?? sheets[0];
   const paper: PaperKey = activeSheet?.paper ?? 'A3';
   const orientation: PaperOrientation = activeSheet?.orientation ?? defaultPaperOrientation(paper);
@@ -1103,6 +1105,24 @@ function PaperExportDialogHost({
   }
   void tick;
 
+  useEffect(() => {
+    if (!open || !activeSheet) { setPreviewUrl(undefined); setPreviewError(undefined); return; }
+    let cancelled = false;
+    let url: string | undefined;
+    setPreviewUrl(undefined);
+    setPreviewError(undefined);
+    void buildPaperSheetPdf(doc, activeSheet, { title: useFlowStore.getState().flowName || 'InteriorFlow project', dimStyle: useCadStore.getState().dimStyle })
+      .then((pdf) => {
+        if (cancelled) return;
+        url = URL.createObjectURL(pdf.output('blob'));
+        setPreviewUrl(url);
+      })
+      .catch((error) => {
+        if (!cancelled) setPreviewError(`Không dựng được bản xem trước: ${error instanceof Error ? error.message : String(error)}`);
+      });
+    return () => { cancelled = true; if (url) URL.revokeObjectURL(url); };
+  }, [open, activeSheet, doc, tick]);
+
   return (
     <ExportPdfDialog
       open={open}
@@ -1111,6 +1131,8 @@ function PaperExportDialogHost({
       initialPaper={paper}
       initialOrientation={orientation}
       checks={checks}
+      previewUrl={previewUrl}
+      previewError={previewError}
       onPaperChange={(p, o) => {
         if (activeSheet) {
           const [pw, ph] = paperSizeMm(p, o);
