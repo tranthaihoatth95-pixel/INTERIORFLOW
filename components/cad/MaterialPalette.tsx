@@ -15,7 +15,8 @@
  *     ai cần chỉnh tay chi tiết hơn preset vật liệu (không xoá tính năng cũ, chỉ thêm lớp trên).
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import type { HatchPattern } from '@/lib/cad/model';
@@ -26,6 +27,7 @@ const PATTERNS: HatchPattern[] = ['SOLID', 'ANSI31', 'ANSI32', 'ANSI37', 'DOTS']
 
 export default function MaterialPalette({ onClose }: { onClose: () => void }) {
   const hatchMaterialId = useCadStore((s) => s.hatchMaterialId);
+  const cadMode = useCadStore((s) => s.cadMode);
   const hatchPattern = useCadStore((s) => s.hatchPattern);
   const hatchScale = useCadStore((s) => s.hatchScale);
   const hatchAngle = useCadStore((s) => s.hatchAngle);
@@ -35,11 +37,14 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
   const setHatchAngle = useCadStore((s) => s.setHatchAngle);
   const setHatchColor = useCadStore((s) => s.setHatchColor);
   const setTool = useCadStore((s) => s.setTool);
+  const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<'all' | MaterialCategory>('all');
   const [hovered, setHovered] = useState<MaterialDef | null>(null);
 
   const categories = useMemo(() => Array.from(new Set(MATERIALS.map((m) => m.category))), []);
   const shown = tab === 'all' ? MATERIALS : MATERIALS.filter((m) => m.category === tab);
+
+  useEffect(() => setMounted(true), []);
 
   // Sinh 1 lần hoạ tiết procedural (data URL PNG) cho từng vật liệu, có cache — dùng cho cả swatch
   // nhỏ lẫn preview hover. materialTextureDataUrl tự ưu tiên photoUrl nếu preset có ảnh thật.
@@ -61,8 +66,20 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
     applyMaterial(m.name, m.hatchPattern, m.patternScale, m.patternAngle, m.color);
   };
 
-  return (
-    <div style={{ ...panel, right: 12, top: 400, width: 250, maxHeight: '58vh', display: 'flex', flexDirection: 'column' }}>
+  if (!mounted) return null;
+  return createPortal(
+    <div
+      style={{
+        ...panel,
+        right: 16,
+        top: 120,
+        bottom: cadMode === 'sketch' ? 252 : 120,
+        width: 'min(360px, calc(100vw - 32px))',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
       {hovered && (
         <div style={hoverPreview} aria-hidden>
           <span
@@ -83,6 +100,8 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
+      <div style={{ minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', padding: '0 2px 4px' }}>
+
       <div style={{ display: 'flex', gap: 4, padding: '0 4px 8px', flexWrap: 'wrap' }}>
         {(['all', ...categories] as const).map((c) => (
           <button
@@ -101,8 +120,8 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
 
       <div
         style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6,
-          maxHeight: 320, overflowY: 'auto', padding: '0 2px 4px',
+          display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8,
+          padding: '0 2px 4px',
         }}
       >
         {shown.map((m) => {
@@ -118,18 +137,18 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
               onBlur={() => setHovered((h) => (h === m ? null : h))}
               title={`${m.name} — hoạ tiết vẽ bằng thuật toán (procedural), chưa có ảnh chụp thật`}
               style={{
-                display: 'flex', flexDirection: 'column', gap: 3, padding: 4, borderRadius: 8,
+                display: 'flex', flexDirection: 'column', gap: 5, padding: 5, minWidth: 0, borderRadius: 10,
                 border: active ? '2px solid var(--accent)' : '1px solid var(--border)',
                 background: 'transparent', cursor: 'pointer',
               }}
             >
               <span
                 style={{
-                  width: '100%', aspectRatio: '1 / 1', borderRadius: 5, border: '1px solid rgba(0,0,0,.15)',
+                  width: '100%', aspectRatio: '4 / 3', borderRadius: 7, border: '1px solid rgba(0,0,0,.15)',
                   ...swatchBg(m),
                 }}
               />
-              <span style={{ fontSize: 9.5, lineHeight: 1.2, color: 'var(--t2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ width: '100%', fontSize: 10.5, lineHeight: 1.35, color: 'var(--t2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left' }}>
                 {m.name}
               </span>
             </button>
@@ -198,13 +217,15 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 
 const panel: React.CSSProperties = {
-  position: 'absolute',
-  zIndex: 15,
+  position: 'fixed',
+  zIndex: 45,
   background: 'color-mix(in srgb, var(--panel) 82%, transparent)',
   backdropFilter: 'blur(16px)',
   WebkitBackdropFilter: 'blur(16px)',
