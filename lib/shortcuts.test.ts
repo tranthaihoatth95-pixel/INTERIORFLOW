@@ -32,8 +32,15 @@ function testNoEmptyLabel() {
   ok('tất cả SHORTCUTS có keys.length > 0', SHORTCUTS.every((s) => s.keys.length > 0));
 }
 
+function testExecutableCadPrintShortcut() {
+  console.log('\n[3] lệnh xuất PDF CAD có phím thật, không còn ghi dự kiến');
+  const print = SHORTCUTS.find((s) => s.scope === 'cad' && s.keys.join('+') === 'mod+P');
+  ok('có ⌘P/Ctrl+P trong nguồn phím tắt chung', !!print);
+  ok('⌘P/Ctrl+P đã bật hành vi thật', !!print && !print.disabled);
+}
+
 function testFormatShortcutKeys() {
-  console.log('\n[3] formatShortcutKeys — Mac vs Windows');
+  console.log('\n[4] formatShortcutKeys — Mac vs Windows');
   ok('Mac: mod+Z → "⌘Z"', formatShortcutKeys(['mod', 'Z'], true) === '⌘Z');
   ok('Windows: mod+Z → "Ctrl+Z"', formatShortcutKeys(['mod', 'Z'], false) === 'Ctrl+Z');
   ok('Mac: mod+shift+S → "⌘⇧S"', formatShortcutKeys(['mod', 'shift', 'S'], true) === '⌘⇧S');
@@ -43,7 +50,7 @@ function testFormatShortcutKeys() {
 }
 
 function testCadTypedCommandGroups() {
-  console.log('\n[4] cadTypedCommandGroups — đọc từ command-aliases.ts, không chép tay');
+  console.log('\n[5] cadTypedCommandGroups — đọc từ command-aliases.ts, không chép tay');
   const groups = cadTypedCommandGroups();
   ok('có ít nhất 30 nhóm lệnh (danh mục CAD thật khá dài)', groups.length >= 30);
   // Lưu ý: gộp nhóm dựa trên LABEL TRÙNG TUYỆT ĐỐI — 'XL'/'XLINE' có label khác nhau ("Xline —
@@ -58,7 +65,7 @@ function testCadTypedCommandGroups() {
 }
 
 function testCadTypedCommandGroupsByCategory() {
-  console.log('\n[5] cadTypedCommandGroupsByCategory — 5 nhóm hiển thị (mẫu Hoà 31/07)');
+  console.log('\n[6] cadTypedCommandGroupsByCategory — 5 nhóm hiển thị (mẫu Hoà 31/07)');
   const cats = cadTypedCommandGroupsByCategory();
   const flatCount = cadTypedCommandGroups().length;
   const catCount = cats.reduce((n, c) => n + c.items.length, 0);
@@ -71,6 +78,7 @@ function testCadTypedCommandGroupsByCategory() {
 
 testNoDuplicateWithinScope();
 testNoEmptyLabel();
+testExecutableCadPrintShortcut();
 testFormatShortcutKeys();
 testCadTypedCommandGroups();
 testCadTypedCommandGroupsByCategory();

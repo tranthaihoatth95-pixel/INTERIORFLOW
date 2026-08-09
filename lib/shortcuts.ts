@@ -99,10 +99,7 @@ export const SHORTCUTS: ShortcutEntry[] = [
     scope: 'cad', keys: ['mod', 'O'], label: 'Mở tệp', group: 'Tệp',
     disabled: true, disabledReason: 'Nút "Mở tệp" trên thanh xổ nhiều lựa chọn (demo/.idf/DXF/AI mô tả) — chưa có 1 hành động dứt khoát để gán phím',
   },
-  {
-    scope: 'cad', keys: ['mod', 'P'], label: 'In / xuất PDF', group: 'Tệp',
-    disabled: true, disabledReason: 'Nút "Xuất" trên thanh xổ nhiều định dạng (PDF 1 tờ/bộ hồ sơ/DXF/.idf) — chưa có 1 hành động dứt khoát để gán phím',
-  },
+  { scope: 'cad', keys: ['mod', 'P'], label: 'Mở xem trước / xuất PDF Paper', group: 'Tệp' },
   {
     scope: 'cad', keys: ['mod', 'N'], label: 'Tờ bản vẽ mới', group: 'Tệp',
     disabled: true, disabledReason: '⌘N/Ctrl+N do trình duyệt giữ cứng (mở cửa sổ/tab mới) — JS không ghi đè được. Dùng nút "+" cạnh tên tờ',

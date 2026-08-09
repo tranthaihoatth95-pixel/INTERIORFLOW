@@ -2515,6 +2515,14 @@ export default function CadCanvas() {
         else window.dispatchEvent(new CustomEvent('cad:force-save-request'));
         return;
       }
+      // 10/08 — ⌘P/Ctrl+P là lối vào chuẩn của Xuất PDF Paper. Chặn hộp in trang web của
+      // trình duyệt và tái dùng đúng dialog/engine PDF mà nút "Xuất PDF" đang gọi; không tạo
+      // đường xuất thứ hai. Shift/Alt phải rỗng để dành tổ hợp mở rộng sau này.
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('cad:paper-export-dialog-request'));
+        return;
+      }
       if (e.key === ' ') {
         // Việc 3: đánh dấu thời điểm nhấn để phân biệt TAP nhanh (lặp lệnh) với GIỮ để pan.
         if (!e.repeat) {
