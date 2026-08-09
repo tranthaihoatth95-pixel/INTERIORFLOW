@@ -4,6 +4,7 @@ import {
   Color,
   Mesh,
   MeshStandardMaterial,
+  LoadingManager,
   Object3D,
   Vector3,
   type Material,
@@ -22,6 +23,11 @@ export interface GlbImportReport {
 export interface ParsedGlb {
   scene: Scene3DData;
   report: GlbImportReport;
+}
+
+export interface GltfResource {
+  name: string;
+  dataUrl: string;
 }
 
 function colorOf(material: Material | Material[] | undefined): string {
@@ -98,6 +104,82 @@ export async function parseGlb(buffer: ArrayBuffer): Promise<ParsedGlb> {
       warnings,
     },
   };
+}
+
+function normalizedResourceName(name: string): string {
+  return decodeURIComponent(name).replace(/^\.\//, '').replace(/\\/g, '/');
+}
+
+/** Ghép manifest `.gltf` với `.bin`/texture người dùng chọn cùng lượt. Ưu tiên đúng đường dẫn;
+ * nếu file picker làm mất thư mục thì cho phép basename DUY NHẤT. Trùng basename bị từ chối để
+ * không âm thầm gắn nhầm texture. Data URI/URL tuyệt đối để loader tự xử lý. */
+export function resolveGltfResource(uri: string, resources: readonly GltfResource[]): string | null {
+  if (/^(data:|blob:|https?:)/i.test(uri)) return uri;
+  const wanted = normalizedResourceName(uri);
+  const exact = resources.find((resource) => normalizedResourceName(resource.name) === wanted);
+  if (exact) return exact.dataUrl;
+  const basename = wanted.split('/').pop();
+  const matches = resources.filter((resource) => normalizedResourceName(resource.name).split('/').pop() === basename);
+  return matches.length === 1 ? matches[0].dataUrl : null;
+}
+
+/** URI phụ được manifest khai trực tiếp. Chỉ đọc hai vị trí chuẩn glTF 2.0; data URI đã tự chứa
+ * nên không cần file. URL/blob ngoài không được coi là gói bền vì lần mở offline sẽ hỏng. */
+export function gltfDependencyUris(manifest: unknown): string[] {
+  if (!manifest || typeof manifest !== 'object') return [];
+  const root = manifest as { buffers?: unknown; images?: unknown };
+  const from = (items: unknown) => Array.isArray(items)
+    ? items.flatMap((item) => item && typeof item === 'object' && typeof (item as { uri?: unknown }).uri === 'string'
+      ? [(item as { uri: string }).uri]
+      : [])
+    : [];
+  return Array.from(new Set([...from(root.buffers), ...from(root.images)]));
+}
+
+export async function parseGltfBundle(manifestText: string, resources: readonly GltfResource[]): Promise<ParsedGlb> {
+  let manifest: unknown;
+  try {
+    manifest = JSON.parse(manifestText);
+  } catch {
+    throw new Error('Tệp .gltf không phải JSON hợp lệ.');
+  }
+  if (!manifest || typeof manifest !== 'object' || !('asset' in manifest)) {
+    throw new Error('Tệp .gltf thiếu khối asset bắt buộc.');
+  }
+  const dependencyUris = gltfDependencyUris(manifest);
+  const remote = dependencyUris.filter((uri) => /^(blob:|https?:)/i.test(uri));
+  if (remote.length) throw new Error(`File phụ dùng URL ngoài, chưa thể lưu offline: ${remote.join(', ')}`);
+  const preflightMissing = dependencyUris.filter((uri) => !/^data:/i.test(uri) && !resolveGltfResource(uri, resources));
+  if (preflightMissing.length) throw new Error(`Thiếu file phụ: ${preflightMissing.join(', ')}`);
+  const manager = new LoadingManager();
+  const missing = new Set<string>();
+  manager.setURLModifier((url) => {
+    const resolved = resolveGltfResource(url, resources);
+    if (!resolved) missing.add(normalizedResourceName(url));
+    return resolved ?? url;
+  });
+  const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
+  try {
+    const gltf = await new GLTFLoader(manager).parseAsync(manifestText, '');
+    const converted = objectToScene3D(gltf.scene);
+    const warnings: string[] = [];
+    if (converted.textures) warnings.push('Texture được giữ trong gói nguồn nhưng viewport khối xám hiện chưa hiển thị texture.');
+    if (gltf.animations.length) warnings.push('Animation được giữ trong gói nguồn nhưng chưa phát trong viewport.');
+    return {
+      scene: converted.scene,
+      report: {
+        meshes: converted.meshes,
+        triangles: converted.triangles,
+        materials: converted.materials,
+        textures: converted.textures,
+        animations: gltf.animations.length,
+        warnings,
+      },
+    };
+  } catch (error) {
+    if (missing.size) throw new Error(`Thiếu file phụ: ${Array.from(missing).join(', ')}`);
+    throw error;
+  }
 }
 
 export function dataUrlToArrayBuffer(dataUrl: string): ArrayBuffer {

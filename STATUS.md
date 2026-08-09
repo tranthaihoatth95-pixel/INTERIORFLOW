@@ -6,8 +6,8 @@
 
 ## Đang chạy
 
-- Không còn worktree phụ. Importer GLB P0 đã merge vào `main` (`9808184`). `main` có 4 file
-  untracked của chủ dự án; không sửa, không commit.
+- Worktree `interiorflow-wt-import-gltf-bundle`, nhánh `codex/import-gltf-bundle`: importer gói
+  glTF đã code/test, chờ commit/merge. `main` có 4 file untracked của chủ dự án; không chạm.
 - Gateway đã ở `main` (`c408684`): một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu ·
   chỉ lưu · chưa hỗ trợ. Các lối chuyên biệt của AI Brief vẫn giữ nguyên.
 
@@ -27,6 +27,9 @@
   viewport 3D, giữ transform và màu nền, tự chuyển sang Vẽ 3D, báo mesh/tam giác và mất mát.
   Sau merge trên `main`: typecheck PASS; test Gateway 28/28; test hình học 6/6; toàn bộ
   `npm test` PASS. Worktree/nhánh đã dọn theo đủ 4 điều kiện an toàn.
+- glTF bundle: một lượt chọn `.gltf` + `.bin` + texture; kiểm thiếu/trùng file phụ, cấm URL ngoài
+  làm gói offline giả, lưu trọn nguồn và derive qua cùng viewer. Target 13/13, Gateway 28/28,
+  typecheck và toàn bộ `npm test` PASS.
 
 ## Sự thật dữ liệu
 
@@ -40,8 +43,8 @@
 
 - 2D: mở/nhập `.idf`, `.dwg`, `.dxf`; backup `.ifpack`; xuất `.dxf`, PDF. IFC mới có metadata,
   chưa import/export BIM đầy đủ.
-- 3D/Node: nhập ảnh; GLB P0 đã có ở mức `lossy` (hình học/transform/màu nền;
-  texture/animation chưa trình diễn). Chưa nhập `.gltf` nhiều file, `.skp`, `.max`, `.fbx`,
+- 3D/Node: nhập ảnh; GLB đã có; glTF bundle ở nhánh chờ merge. Cả hai mức `lossy`: hình học,
+  transform, màu nền có; texture/animation chưa trình diễn. Chưa nhập `.skp`, `.max`, `.fbx`,
   `.obj`, `.ifc`, `.rvt`. Danh sách đuôi trong prompt/URL không được tính là hỗ trợ.
 - Trình bày: nhập `.pptx` (mức cơ bản), ảnh, `.idfp`; nhập `.xlsx/.csv` vào BOQ; xuất PDF, PPTX,
   PNG, `.idfp`, XLSX cho BOQ/FF&E. PDF deck và DOCX chưa nhập; Văn bản/Video/HTML chưa có editor.
@@ -50,7 +53,7 @@
 
 ## Việc kế tiếp
 
-1. Tiếp theo glTF bundle → OBJ/MTL → FBX; sau đó IFC. SKP dùng SDK/bridge sau kiểm license;
+1. Merge glTF bundle sau kiểm tra; tiếp theo OBJ/MTL → FBX; sau đó IFC. SKP dùng SDK/bridge sau kiểm license;
    `.max/.rvt` dùng bridge/plugin, không tự viết parser native.
 2. Hoàn thiện Trình bày theo thứ tự: PDF deck → DOCX → media video/audio → HTML; tăng fidelity PPTX.
 3. Bổ sung báo cáo đơn vị/trục/font/material/asset bị thiếu và giữ file nguồn để refresh.

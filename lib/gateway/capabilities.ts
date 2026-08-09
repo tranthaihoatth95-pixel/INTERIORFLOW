@@ -69,7 +69,9 @@ export const FORMAT_CAPABILITIES: Record<GatewayFormat, FormatCapability> = {
   glb: { format: 'glb', label: 'glTF Binary', extensions: ['.glb'], stages: {
     cad: no(), render: stage('lossy', 'unavailable', 'Nhập hình học và màu nền; giữ file gốc, chưa hiển thị texture/animation'), present: no(),
   } },
-  gltf: { format: 'gltf', label: 'glTF', extensions: ['.gltf'], stages: { cad: no(), render: no('Chưa nhận gói glTF nhiều file (.gltf + .bin + texture); hãy xuất GLB tự chứa'), present: no() } },
+  gltf: { format: 'gltf', label: 'glTF', extensions: ['.gltf'], stages: {
+    cad: no(), render: stage('lossy', 'unavailable', 'Chọn cùng .gltf + .bin + texture; nhập hình học/màu nền và giữ trọn gói nguồn'), present: no(),
+  } },
   obj: { format: 'obj', label: 'Wavefront OBJ', extensions: ['.obj', '.mtl'], stages: { cad: no(), render: no('Chưa có importer OBJ/MTL'), present: no() } },
   fbx: { format: 'fbx', label: 'Autodesk FBX', extensions: ['.fbx'], stages: { cad: no(), render: no('Chưa có importer FBX'), present: no() } },
   skp: { format: 'skp', label: 'SketchUp', extensions: ['.skp'], stages: { cad: no(), render: no('Cần SDK/bridge và kiểm tra license'), present: no() } },

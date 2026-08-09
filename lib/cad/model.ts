@@ -937,17 +937,24 @@ export interface SiteImage {
   visible: boolean;
 }
 
-/** Tệp mô hình 3D gốc do người dùng nhập. Lưu NGUỒN (data URL), không lưu mesh dẫn xuất:
- * viewer parse lại khi cần, nên `.idf`/autosave vẫn có đúng một nguồn sự thật và có thể nâng
- * importer về sau mà không mất file ban đầu. P0 chỉ nhận GLB tự chứa; glTF nhiều file chưa nhận. */
-export interface Model3DSource {
-  id: string;
+export interface Model3DResource {
+  /** Đường dẫn tương đối mà manifest glTF dùng; file picker thường chỉ cấp basename. */
   name: string;
-  format: 'glb';
   dataUrl: string;
   sizeBytes: number;
-  importedAt: string;
 }
+
+/** Tệp/gói mô hình 3D gốc do người dùng nhập. Lưu NGUỒN, không lưu mesh dẫn xuất: viewer parse
+ * lại khi cần nên `.idf`/autosave vẫn có đúng một nguồn sự thật. Union giữ GLB P0 tương thích. */
+export type Model3DSource = {
+  id: string;
+  name: string;
+  sizeBytes: number;
+  importedAt: string;
+} & (
+  | { format: 'glb'; dataUrl: string }
+  | { format: 'gltf'; entryName: string; resources: Model3DResource[] }
+);
 
 export interface Doc {
   entities: Entity[];
