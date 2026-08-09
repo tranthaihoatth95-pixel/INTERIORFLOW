@@ -6,7 +6,7 @@
 
 ## Đang chạy
 
-- Worktree `interiorflow-wt-sketch-stroke` đang hoàn tất nắn nét Sơ phác; `main` có 4 file
+- Không còn worktree phụ. Nắn nét Sơ phác đã merge vào `main` (`9df52fd`); `main` có 4 file
   untracked của chủ dự án, không chạm.
 - Gateway là một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu · chỉ lưu · chưa hỗ trợ.
 
@@ -31,7 +31,8 @@
   polyline, chữ nhật hoặc tròn chuẩn của Doc; snap ngang/dọc 5°. Không tạo loại entity riêng nên
   vẫn chọn/sửa/xuất theo flow cũ. Bỏ pen hover/áp lực gần 0; ellipse và nét nguệch ngoạc không bị
   nhận nhầm. Bộ nhận dạng 10/10, typecheck và toàn bộ test PASS. Bản worktree biên dịch/trả CAD;
-  tương tác bút/ngón thật còn cần nghiệm thu trên tablet.
+  sau merge typecheck/toàn bộ test và preview cổng 3015 PASS, console sạch; worktree/nhánh đã
+  dọn an toàn. Tương tác bút/ngón thật còn cần nghiệm thu trên tablet.
 
 ## Sự thật dữ liệu
 
