@@ -22,6 +22,7 @@ import { useT } from '@/lib/i18n';
 import { usePlayStatus } from '@/lib/present-editor/play-status';
 import type {
   EditorDeck,
+  EditorSlide,
   ShapeKind,
   Frame,
   SlideElement,
@@ -226,9 +227,12 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     };
     window.addEventListener('present:idfp-export-done', onDone);
     window.addEventListener('present:idfp-import-done', onDone);
+    // 09/08 — nhập .pptx dùng CHUNG kênh toast này (Toolbar.tsx#onOpenPptxFile báo lỗi/tiến độ).
+    window.addEventListener('present:pptx-import-done', onDone);
     return () => {
       window.removeEventListener('present:idfp-export-done', onDone);
       window.removeEventListener('present:idfp-import-done', onDone);
+      window.removeEventListener('present:pptx-import-done', onDone);
     };
   }, []);
   const [libAssets, setLibAssets] = useState<GuAsset[]>([]);
@@ -350,6 +354,28 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     ed.selectSlide(insertAt);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * 09/08 — NHẬP `.pptx` (Toolbar.tsx#onOpenPptxFile đọc file bằng lib/present-editor/
+   * pptx-import.ts rồi bắc cầu sang đây bằng CustomEvent, cùng pattern `present:idfp-import-*`).
+   * Slide nhập vào NỐI VÀO CUỐI deck đang mở — KHÔNG thay thế như `.idfp`, vì đây là deck của
+   * nguồn khác chứ không phải project của chính mình. Cùng khuôn với cầu nối CAD→Present ngay
+   * trên: push slide → `selectSlide` nhảy tới slide mới đầu tiên → toast qua `exportMsg`.
+   */
+  useEffect(() => {
+    const onImportPptx = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ slides: EditorSlide[]; message: string }>).detail;
+      if (!detail?.slides?.length) return;
+      const insertAt = ed.deck.slides.length;
+      ed.update((d) => {
+        d.slides.push(...detail.slides);
+      });
+      ed.selectSlide(insertAt);
+      setExportMsg({ ok: true, text: detail.message });
+    };
+    window.addEventListener('present:pptx-import-request', onImportPptx);
+    return () => window.removeEventListener('present:pptx-import-request', onImportPptx);
+  }, [ed.deck.slides.length, ed.update, ed.selectSlide]);
 
   const templates: EditorTemplate[] = useMemo(
     () => [...BUILTIN_TEMPLATES, ...templatesFromLibrary(libAssets)],
