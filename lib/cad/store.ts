@@ -47,6 +47,8 @@ export interface DimStyle {
   dimScale: number;
 }
 
+export type CadWorkspace = 'model' | 'paper';
+
 export type Tool =
   | 'select'
   | 'line'
@@ -213,6 +215,8 @@ interface CadState {
   tool: Tool;
   /** Sprint 9 — mặc định 'sketch' (đúng triết lý Phase 1, xem PRO_ONLY_TOOLS). */
   cadMode: CadMode;
+  /** Không gian làm việc của Pro. Sketch luôn hiển thị Model nhưng không xoá lựa chọn Pro. */
+  cadWorkspace: CadWorkspace;
   /** IF2-nền — vai trò user đang mở file (relay pipeline). Mặc định 'crea' cho user IF1 cũ. */
   role: CadRole;
   /** IF2-nền — chặng dự án hiện tại. Mặc định 'sketch'. */
@@ -287,6 +291,7 @@ interface CadState {
   /** Sprint 9 — chuyển Sketch↔Pro. Nếu đang chuyển VỀ 'sketch' mà tool hiện tại là Pro-only,
    * tự trả về 'select' (nút tool đó vừa biến mất khỏi toolbar, không để canvas kẹt hành vi cũ). */
   setCadMode: (m: CadMode) => void;
+  setCadWorkspace: (workspace: CadWorkspace) => void;
   /** IF2-nền — đổi vai trò (debug/impersonate). Sau khi đổi, nếu Pro tools không còn được bật
    * theo shouldShowProTools() mà tool hiện tại thuộc PRO_ONLY_TOOLS, tự trả tool về 'select'. */
   setRole: (r: CadRole) => void;
@@ -435,6 +440,7 @@ export const useCadStore = create<CadState>((set, get) => ({
   selection: [],
   tool: 'select',
   cadMode: 'sketch',
+  cadWorkspace: 'model',
   role: 'crea',
   stage: 'sketch',
   currentLayer: 'l-wall',
@@ -490,6 +496,7 @@ export const useCadStore = create<CadState>((set, get) => ({
       cadMode,
       tool: !shouldShowProTools(s.role, s.stage, cadMode) && PRO_ONLY_TOOLS.has(s.tool) ? 'select' : s.tool,
     })),
+  setCadWorkspace: (cadWorkspace) => set({ cadWorkspace }),
 
   setRole: (role) =>
     set((s) => ({

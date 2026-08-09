@@ -6,18 +6,14 @@
 
 ## Đang chạy
 
-- Không còn worktree phụ. Nắn nét Sơ phác đã merge vào `main` (`9df52fd`); `main` có 4 file
+- Worktree `interiorflow-wt-pro-model-paper` đang làm Paper Space cho Pro; `main` có 4 file
   untracked của chủ dự án, không chạm.
 - Gateway là một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu · chỉ lưu · chưa hỗ trợ.
 
 ## Vừa xong
 
-- Trình bày có màn chọn 6 hồ sơ; Deck/BOQ vào editor, bốn loại chưa làm được ghi rõ. Đã vá vòng
-  render vô hạn sau nhập PPTX.
-- GLB và gói glTF (`.gltf` + `.bin` + texture): kiểm file, lưu nguồn trong Doc/autosave/IDF,
-  derive tam giác cho viewer chung, giữ transform/màu nền, báo mesh/tam giác và mất mát.
-- OBJ/MTL: chọn gói `.obj` + `.mtl` + texture, kiểm cấu trúc/trùng file, lưu nguồn và derive mesh;
-  báo giả định mét/Y-up, texture chưa hiển thị. Parser 5/5, Gateway 30/30, mọi test PASS sau merge.
+- Trình bày chọn 6 hồ sơ; Deck/BOQ vào editor, bốn loại chưa làm ghi rõ. Đã vá vòng render vô hạn
+  sau nhập PPTX. 3D nhập GLB, gói glTF và OBJ/MTL ở mức mất mát, giữ nguồn trong Doc/autosave/IDF.
 - Chặng 1: Sơ phác chỉ giữ dựng nhanh, Move/Measure/Markup và thanh chạm. Chuyên giữ bộ lệnh đầy
   đủ, thêm ngữ cảnh MODEL/đơn vị/tờ/tỉ lệ/BIM và mở lớp BIM 2D.
 - Sơ phác tablet: nhận bút, chống tì tay, ngón pan/pinch hoặc bật “Ngón vẽ”; dock có undo/redo.
@@ -33,6 +29,10 @@
   nhận nhầm. Bộ nhận dạng 10/10, typecheck và toàn bộ test PASS. Bản worktree biên dịch/trả CAD;
   sau merge typecheck/toàn bộ test và preview cổng 3015 PASS, console sạch; worktree/nhánh đã
   dọn an toàn. Tương tác bút/ngón thật còn cần nghiệm thu trên tablet.
+- Paper Space Pro mẻ 1: MODEL/PAPER là chuyển không gian thật. PAPER dựng tờ theo khổ/hướng,
+  khung tên và ô nhìn từ cùng `Sheet/Viewport2D`; preview đọc trực tiếp một Doc chung. Đổi tỉ lệ
+  1:20…1:200, khóa ô nhìn, và mở đúng vùng đó trong Model. Logic 4/4, typecheck/toàn bộ test PASS;
+  bản worktree biên dịch/trả trang CAD. Mẻ sau: nhiều viewport, đặt/resize ô nhìn, metadata tờ.
 
 ## Sự thật dữ liệu
 
