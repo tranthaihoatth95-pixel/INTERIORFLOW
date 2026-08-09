@@ -1,4 +1,4 @@
-import type { Box, Sheet, Viewport2D } from './model';
+import type { Box, Doc, Sheet, Viewport2D } from './model';
 
 const MIN_VIEWPORT_MM = 35;
 
@@ -11,6 +11,32 @@ export function viewportWorldBox(viewport: Viewport2D): Box {
     minY: viewport.centerMm.y - halfH,
     maxX: viewport.centerMm.x + halfW,
     maxY: viewport.centerMm.y + halfH,
+  };
+}
+
+/** Trạng thái lớp hiệu lực trong riêng một ô nhìn; thiếu override thì theo Doc chung. */
+export function viewportLayerVisible(viewport: Viewport2D, layerId: string, defaultVisible: boolean): boolean {
+  const override = viewport.layerOverrides?.[layerId];
+  return typeof override === 'boolean' ? override : defaultVisible;
+}
+
+/** Đổi hiển thị lớp cho một ô nhìn mà không mutate viewport/Doc nguồn. */
+export function setViewportLayerVisibility(viewport: Viewport2D, layerId: string, visible: boolean): Viewport2D {
+  return {
+    ...viewport,
+    layerOverrides: { ...viewport.layerOverrides, [layerId]: visible },
+  };
+}
+
+/** View nhẹ chỉ dành cho render Paper; hình học vẫn là đúng một Doc nguồn sự thật. */
+export function docForViewport(doc: Doc, viewport: Viewport2D): Doc {
+  if (!viewport.layerOverrides || Object.keys(viewport.layerOverrides).length === 0) return doc;
+  return {
+    ...doc,
+    layers: doc.layers.map((layer) => ({
+      ...layer,
+      visible: viewportLayerVisible(viewport, layer.id, layer.visible),
+    })),
   };
 }
 

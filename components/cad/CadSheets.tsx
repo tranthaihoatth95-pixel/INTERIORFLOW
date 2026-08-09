@@ -77,7 +77,7 @@ import { saveSheets } from '@/lib/sheets-persist';
 import { useSaveStatus } from '@/lib/save-status';
 import { useRouter } from 'next/navigation';
 import { drawEntities } from '@/lib/cad/render';
-import { moveViewportRect, patchSheetViewport, removeSheetViewport, resizeViewportRect, viewportWorldBox } from '@/lib/cad/paper-space';
+import { docForViewport, moveViewportRect, patchSheetViewport, removeSheetViewport, resizeViewportRect, setViewportLayerVisibility, viewportLayerVisible, viewportWorldBox } from '@/lib/cad/paper-space';
 import { Grip, Lock, LockOpen, Plus, ScanSearch, Trash2 } from 'lucide-react';
 
 const ROUTE = '/cad-editor' as const;
@@ -949,6 +949,16 @@ function PaperSpace({ sheet, onViewportChange, onSheetChange, onOpenModel }: {
           <label style={paperMetaLabel}>Người vẽ<input aria-label="Người vẽ" value={sheet.titleBlock.drawnBy} onChange={(event) => onSheetChange({ ...sheet, titleBlock: { ...sheet.titleBlock, drawnBy: event.target.value } })} style={paperMetaInput} placeholder="—" /></label>
           <label style={paperMetaLabel}>Sửa đổi<input aria-label="Sửa đổi" value={sheet.titleBlock.revision} onChange={(event) => onSheetChange({ ...sheet, titleBlock: { ...sheet.titleBlock, revision: event.target.value } })} style={paperMetaInput} placeholder="00" /></label>
         </div>
+        {selected && <div aria-label="Thuộc tính ô nhìn" style={{ position: 'absolute', right: 18, top: 58, zIndex: 5, width: 190, maxHeight: '62%', overflow: 'auto', padding: 9, border: '1px solid #aaa', borderRadius: 8, background: 'rgba(255,255,255,.96)', boxShadow: '0 4px 16px rgba(0,0,0,.12)', font: '600 10px Archivo, sans-serif' }}>
+          <div style={{ marginBottom: 7, fontSize: 11 }}>Ô nhìn đang chọn</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            <label style={{ color: '#625d55' }}>Tâm X (mm)<input aria-label="Tâm X ô nhìn" type="number" disabled={selected.locked} value={selected.centerMm.x} onChange={(event) => { const x = Number(event.target.value); if (Number.isFinite(x)) onViewportChange(selected.id, { centerMm: { ...selected.centerMm, x } }); }} style={{ ...paperMetaInput, width: '100%', marginTop: 3 }} /></label>
+            <label style={{ color: '#625d55' }}>Tâm Y (mm)<input aria-label="Tâm Y ô nhìn" type="number" disabled={selected.locked} value={selected.centerMm.y} onChange={(event) => { const y = Number(event.target.value); if (Number.isFinite(y)) onViewportChange(selected.id, { centerMm: { ...selected.centerMm, y } }); }} style={{ ...paperMetaInput, width: '100%', marginTop: 3 }} /></label>
+          </div>
+          {selected.locked && <div style={{ marginTop: 5, color: '#7b756c', fontWeight: 500 }}>Mở khóa để đổi tâm.</div>}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '9px 0 5px' }}><span>Lớp trong ô này</span>{selected.layerOverrides && Object.keys(selected.layerOverrides).length > 0 && <button type="button" onClick={() => onViewportChange(selected.id, { layerOverrides: undefined })} style={{ ...paperButton, fontSize: 9 }}>Theo bản vẽ</button>}</div>
+          <div style={{ display: 'grid', gap: 4 }}>{doc.layers.map((layer) => <label key={layer.id} style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 22, fontWeight: 500 }}><input type="checkbox" checked={viewportLayerVisible(selected, layer.id, layer.visible)} onChange={(event) => { const next = setViewportLayerVisibility(selected, layer.id, event.target.checked); onViewportChange(selected.id, { layerOverrides: next.layerOverrides }); }} /><span style={{ width: 8, height: 8, borderRadius: 2, background: layer.color, border: '1px solid #888' }} /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{layer.name}</span></label>)}</div>
+        </div>}
         <div style={{ position: 'absolute', right: 14, bottom: 14, width: '42%', height: 54, border: '1px solid #777', padding: '7px 9px', font: '600 10px Archivo, sans-serif', display: 'grid', gridTemplateColumns: '1fr auto', gap: 4 }}>
           <span>{sheet.titleBlock.project || 'TÊN DỰ ÁN'}</span><span>{sheet.number || '—'}</span>
           <strong>{sheet.name}</strong><span>{sheet.paper} · {sheet.viewports.length} ô nhìn</span>
@@ -967,7 +977,7 @@ function PaperViewport({ doc, viewport, paperW, paperH, selected, onSelect, onMo
     const ctx = canvas.getContext('2d'); if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, rect.width, rect.height);
     const box = viewportWorldBox(viewport); const scale = Math.min(rect.width / (box.maxX - box.minX), rect.height / (box.maxY - box.minY));
-    drawEntities(ctx, { scale, panX: rect.width / 2 - viewport.centerMm.x * scale, panY: rect.height / 2 + viewport.centerMm.y * scale }, doc, { stroke: '#34312d', lineWidth: 1, text: true });
+    drawEntities(ctx, { scale, panX: rect.width / 2 - viewport.centerMm.x * scale, panY: rect.height / 2 + viewport.centerMm.y * scale }, docForViewport(doc, viewport), { stroke: '#34312d', lineWidth: 1, text: true });
   }, [doc, viewport]);
   return <div onPointerDown={onSelect} style={{ position: 'absolute', left: `${viewport.rectOnPaper.x / paperW * 100}%`, top: `${viewport.rectOnPaper.y / paperH * 100}%`, width: `${viewport.rectOnPaper.w / paperW * 100}%`, height: `${viewport.rectOnPaper.h / paperH * 100}%`, border: `${selected ? 2 : 1}px solid ${selected ? '#6455d9' : '#8d8880'}`, overflow: 'hidden', background: '#fcfcfb' }}>
     <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
