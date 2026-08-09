@@ -103,3 +103,34 @@ dừng giữa chừng chờ.
    tay, verify browser nếu đổi UI — quy trình đã chứng minh bắt được ít nhất 3 bug thật hôm nay
    mà agent tự báo "xong" (hex Tailwind trá hình, lỗ hổng bộ ký tự VCB, gap admin-permission).
 5. Chưa push — Hoà cần chạy `git push origin main` khi sẵn sàng.
+
+---
+
+## CẬP NHẬT — lượt 2 (sau khi Hoà nạp lại usage lần 2)
+
+### Đã commit thêm 2 commit (việc 2 agent port mock chết dở, tôi kiểm rồi commit)
+- **Port mock "2D Kỹ thuật"** → trang "Phòng" trong Inspector (diện tích/chu vi tính THẬT từ
+  `boundary`) · rollout "Kích thước" tường (xuất `measuredWallLengthMm` mới) · nhãn "Lớp bản vẽ" +
+  dòng đếm lớp · đính chính comment sai về `RoomEntity.name`.
+- **Port mock `mock-if-ve3d`** → sidebar `Command3DPanel` nền đặc 214px (bỏ kính, đúng luật G9) ·
+  gizmo `Viewport3D` đúng tỉ lệ mock · `Object3DInspector`/`Object3DTree` spacing/viền.
+- Cửa kiểm: `tsc` 0 · `npm test` 0 fail · `check-chot` 0/0.
+- ⚠️ **KHAI THẬT:** 2 panel này CHƯA được tôi tự click-through. 2 agent bị cắt giữa lúc đang
+  verify browser; tôi xác nhận tsc + test + app khởi động 200, nhưng **không đăng nhập được bằng
+  công cụ tự động** (React controlled input không nhận giá trị điền máy — cả `form_input` lẫn
+  synthetic event đều trượt). Cần 1 lượt soi mắt khi Hoà rảnh.
+
+### ĐANG CHẠY (2 agent, phóng lại lần 2 — 2 việc Hoà yêu cầu trực tiếp)
+1. **Nhập .xlsx → BOQ**: `lib/present-editor/boq-xlsx-import.ts` (mới) + `Toolbar.tsx`.
+   Nạp GIÁ TRỊ vào `boq-overrides.ts` theo mã khớp, KHÔNG đẻ hạng mục ảo.
+2. **Nhập .pptx → Deck**: `lib/present-editor/pptx-import.ts` (mới, jszip + DOMParser) +
+   `Toolbar.tsx`. Nối slide vào CUỐI deck (khác `.idfp` thay thế toàn bộ).
+⚠️ Cả 2 cùng sửa `Toolbar.tsx` — đã dặn agent #2 sửa tối thiểu đúng mục `id:'deck'`. Khi cả hai
+về: đọc diff kỹ, có thể phải merge tay 2 mục menu.
+
+### Ghi chú vận hành mới học được
+- **Login bằng công cụ tự động KHÔNG hoạt động** trên màn login này (React controlled input).
+  Phiên sau muốn verify browser: hoặc nhờ Hoà đăng nhập tay sẵn rồi mới chạy agent, hoặc chấp
+  nhận verify bằng tsc+test và khai rõ "chưa click-through" — ĐỪNG bịa là đã xem.
+- File `AGENTS.md` ở gốc repo (untracked) là bản sao CLAUDE.md cho công cụ Codex, KHÔNG phải của
+  phiên này — để nguyên theo luật "file lạ không đụng".
