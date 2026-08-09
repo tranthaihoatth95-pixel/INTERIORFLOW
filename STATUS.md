@@ -1,7 +1,7 @@
 # STATUS — InteriorFlow (10/08, dưới 800 từ)
 
 > Lịch sử ở `CHANGELOG.md`; báo cáo mẻ ở `docs/M-*-OUT.md`.
-> Git + code + DB là nguồn kiểm chứng, không lấy brief/GAP cũ làm bằng chứng.
+> Git + code + DB là nguồn kiểm chứng, không lấy GAP cũ làm bằng chứng.
 > IF là sản phẩm global: **2D Kỹ thuật · 3D Thiết kế · Trình bày**; Brand Kit theo dự án.
 
 ## Đang chạy
