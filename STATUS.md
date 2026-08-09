@@ -6,7 +6,7 @@
 
 ## Đang chạy
 
-- Preview PDF thật đã merge vào `main`; worktree phụ đang chờ dọn an toàn. 4 file untracked của
+- Preview PDF thật đã merge vào `main`; worktree phụ đã dọn an toàn. 4 file untracked của
   chủ dự án được giữ nguyên.
 
 ## Vừa xong
