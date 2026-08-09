@@ -489,23 +489,43 @@ export default function CadCanvas() {
     ix.current.redraw = true;
   }, [appliedTheme]);
 
-  // resize canvas theo khung + DPR
+  // Resize canvas theo CHÍNH khung chứa + DPR. Chỉ nghe `window.resize` là chưa đủ: trên màn
+  // hẹp, sidebar/chrome có thể co giãn Stage sau mount mà viewport trình duyệt không đổi, khiến
+  // backing canvas giữ chiều rộng cũ và phần Stage mới lộ ra thành một dải đen.
   useEffect(() => {
+    let frame = 0;
     const onResize = () => {
       const c = canvasRef.current;
       const wrap = wrapRef.current;
       if (!c || !wrap) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const r = wrap.getBoundingClientRect();
-      c.width = Math.max(1, Math.floor(r.width * dpr));
-      c.height = Math.max(1, Math.floor(r.height * dpr));
-      c.style.width = `${r.width}px`;
-      c.style.height = `${r.height}px`;
+      const width = Math.max(1, Math.floor(r.width * dpr));
+      const height = Math.max(1, Math.floor(r.height * dpr));
+      if (c.width === width && c.height === height) return;
+      c.width = width;
+      c.height = height;
+      // CSS luôn phủ khung ngay cả trong frame layout trung gian; backing store được đồng bộ ở
+      // callback kế tiếp. Nhờ vậy không có dải nền đen ló ra trước khi ResizeObserver chạy.
+      c.style.width = '100%';
+      c.style.height = '100%';
       ix.current.redraw = true;
     };
-    onResize();
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    const scheduleResize = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(onResize);
+    };
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(scheduleResize);
+    if (wrapRef.current) observer?.observe(wrapRef.current);
+    // Đo ở frame kế, SAU khi AppShell/sidebar/toolbelt hoàn tất layout màn hẹp. Bản cũ đo đồng bộ
+    // trước rồi mới observe nên có thể bỏ lỡ đúng lần co đầu tiên của Stage.
+    scheduleResize();
+    window.addEventListener('resize', scheduleResize);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+      window.removeEventListener('resize', scheduleResize);
+    };
   }, []);
 
   // events từ toolbar: zoom-extents / export-png / to-render lo ở CadEditor,
