@@ -737,72 +737,31 @@ export default function CadEditor() {
       {/* vùng canvas + panel */}
       <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
         <CadCanvas />
-        {/* M-EMPTY (07/08, Hoà chốt "bỏ dự án mẫu — app bắt đầu trống") — màn TRỐNG chặng 2D:
-            bản vẽ 0 entity thì nói rõ đang trống + 2 lối TẠI CHỖ (X2): nhập bản vẽ có sẵn (mở
-            đúng picker DXF sẵn có) / vẽ mới (đóng thẻ, canvas đã sẵn sàng vẽ). Card tự biến mất
-            khi có entity đầu tiên. pointerEvents chỉ trên thẻ — không chặn canvas phía sau. */}
+        {/* Bàn trống đã tự là "Vẽ mới": chỉ giữ một lối nhập gọn. Chạm vùng ngoài nút đóng lớp
+            gợi ý; lần chạm kế tiếp làm việc trực tiếp trên canvas, không còn bước "Vẽ mới". */}
         {docIsEmpty && !emptyCardDismissed && (
-          <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', pointerEvents: 'none', zIndex: 5 }}>
-            {/* M-EMPTY-2 (07/08) — chữ + hành vi theo mock [BẢN CHỐT] `Bốn trạng thái rỗng.dc.html`
-                màn 1b. Kéo-thả tệp .dxf/.dwg rơi thẳng vào thẻ (dùng chung importDxfFile/
-                importDwgFile với 2 input chọn tệp — không đường nhập thứ hai). "Vẽ mới" đóng thẻ
-                VÀ cầm sẵn công cụ Tường (2c: "công cụ vẽ sẵn sàng"). */}
+          <div
+            data-empty-drawing-overlay
+            onPointerDown={() => setEmptyCardDismissed(true)}
+            style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', zIndex: 5 }}
+          >
             <div
-              onDragOver={(e) => {
-                if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }
-              }}
-              onDrop={(e) => {
-                const f = e.dataTransfer.files?.[0];
-                if (!f) return;
-                e.preventDefault();
-                const name = f.name.toLowerCase();
-                if (name.endsWith('.dxf')) importDxfFile(f);
-                else if (name.endsWith('.dwg')) importDwgFile(f);
-                else useCadStore.getState().setStatus(t('Chỉ nhận tệp .dxf hoặc .dwg — tệp khác mở qua menu Mở tệp.', 'Only .dxf or .dwg files here — use the Open menu for other formats.'));
-              }}
+              data-empty-drawing-prompt
+              onPointerDown={(event) => event.stopPropagation()}
               style={{
-                pointerEvents: 'auto', textAlign: 'center', maxWidth: 420, padding: '26px 28px',
-                borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
-                background: 'var(--panel)', boxShadow: '0 8px 32px rgba(0,0,0,.18)',
+                padding: 6, borderRadius: 999, border: '1px solid var(--border)',
+                background: 'color-mix(in srgb, var(--panel) 86%, transparent)',
+                backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+                boxShadow: '0 6px 22px rgba(0,0,0,.16)',
               }}
             >
-              <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--t1)', lineHeight: 1.5 }}>
-                {t('Bàn vẽ hai chiều', '2D drafting table')}
-              </p>
-              <p style={{ margin: '1px 0 0', fontSize: 11.5, color: 'var(--t4)', lineHeight: 1.5 }}>
-                {t('2D drafting table', 'Bàn vẽ hai chiều')}
-              </p>
-              <p style={{ margin: '8px 0 16px', fontSize: 12.5, color: 'var(--t2)', lineHeight: 1.6 }}>
-                {t(
-                  'Mặt bằng dựng ở đây là gốc cho khối 3D và bảng khối lượng về sau. Bắt đầu bằng bản vẽ người khác gửi, hoặc vẽ thẳng từ đầu.',
-                  'The plan you draft here feeds the 3D model and quantity tables later. Start from a drawing you received, or draw from scratch.',
-                )}
-              </p>
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  style={{
-                    padding: '9px 16px', borderRadius: 999, border: 'none', cursor: 'pointer',
-                    background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 600, lineHeight: 1.5,
-                  }}
-                >
-                  {t('Nhập bản vẽ có sẵn', 'Import drawings')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setEmptyCardDismissed(true); useCadStore.getState().setTool('wall'); }}
-                  style={{
-                    padding: '9px 16px', borderRadius: 999, border: '1px solid var(--border)', cursor: 'pointer',
-                    background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, fontWeight: 600, lineHeight: 1.5,
-                  }}
-                >
-                  {t('Vẽ mới', 'Draw new')}
-                </button>
-              </div>
-              <p style={{ margin: '10px 0 0', fontSize: 11, color: 'var(--t4)', lineHeight: 1.6 }}>
-                {t('Kéo tệp thả vào bàn vẽ cũng được', 'You can also drop a file right here')}
-              </p>
+              <button
+                type="button"
+                onClick={() => gatewayFileRef.current?.click()}
+                style={{ padding: '9px 16px', borderRadius: 999, border: 'none', cursor: 'pointer', background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 650, lineHeight: 1.5 }}
+              >
+                {t('Nhập bản vẽ', 'Import drawing')}
+              </button>
             </div>
           </div>
         )}
