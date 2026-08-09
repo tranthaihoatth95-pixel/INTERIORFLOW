@@ -1,9 +1,8 @@
 'use client';
 
 /**
- * components/cad/RevitSummaryPanel.tsx — H1 (`docs/TICKET-UI-HATANG-2026-08-02.md`,
- * `docs/SPEC-MODE-PER-STAGE.md` §1): shell RIÊNG cho mode `revit` — không phải "thêm nút" mà một
- * MẢNG THÔNG TIN chỉ có ý nghĩa ở tầng BIM (IF2). Additive 100%: đọc lại field `elementType` đã
+ * components/cad/RevitSummaryPanel.tsx — lớp BIM 2D của mode Chuyên. Additive 100%: đọc lại
+ * field `elementType` đã
  * có sẵn từ B1 (24/07, `lib/cad/model.ts`) — KHÔNG thêm field/data mới, chỉ đổi CÁCH HIỂN THỊ khi
  * bật mode Revit (đúng luật "mode = đổi bố cục, không đổi Doc").
  *
@@ -80,7 +79,7 @@ export default function RevitSummaryPanel() {
         {assigned === 0 && <p style={{ fontSize: 11.5, lineHeight: 1.5, color: 'var(--t3)' }}>Chọn đối tượng → gán &ldquo;Cấu kiện BIM&rdquo; ở panel bên phải để bắt đầu.</p>}
       </div>
       <p style={{ fontSize: 11.5, color: 'var(--t3)', marginTop: 10, lineHeight: 1.5 }}>
-        Nền cho nhận IFC + va chạm (B3-B4, chưa làm) — mode Revit chỉ khác Pro ở chỗ hiện được bảng này.
+        BIM 2D đang dùng được: phân loại cấu kiện, tầng và type. Nhận IFC + va chạm vẫn chưa làm.
       </p>
     </div>
   );

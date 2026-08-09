@@ -25,6 +25,7 @@ ok('DWG chưa xuất được', capabilityFor('dwg', 'cad').export === 'unavaila
 ok('ảnh là reference ở 3D', capabilityFor('image', 'render').import === 'reference');
 ok('GLB nhập hình học có mất mát ở Render', capabilityFor('glb', 'render').import === 'lossy' && canOperate('glb', 'render', 'import'));
 ok('glTF nhiều file nhập mất mát ở Render', capabilityFor('gltf', 'render').import === 'lossy' && canOperate('gltf', 'render', 'import'));
+ok('OBJ/MTL nhập mất mát ở Render', capabilityFor('obj', 'render').import === 'lossy' && canOperate('obj', 'render', 'import'));
 ok('mọi entry tự khai đúng key format', Object.entries(FORMAT_CAPABILITIES).every(([k, v]) => k === v.format));
 
 console.log('\n[3] Router phải theo năng lực thật và theo đúng chặng');
@@ -34,6 +35,7 @@ ok('IDFP ở Present → mở project', routeFormat('idfp', 'present').kind === 
 ok('PDF ở Present → unsupported, không nói dối đã nhập được', routeFormat('pdf', 'present').kind === 'unsupported');
 ok('GLB ở Render → importer mô hình', routeFormat('glb', 'render').kind === 'render-import-model');
 ok('glTF ở Render → importer mô hình', routeFormat('gltf', 'render').kind === 'render-import-model');
+ok('OBJ ở Render → importer mô hình', routeFormat('obj', 'render').kind === 'render-import-model');
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

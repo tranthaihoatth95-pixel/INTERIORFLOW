@@ -830,8 +830,9 @@ export default function CadEditor() {
         {(cadTool === 'campath' || hasCampathEntity) && !camPathPanelClosed && (
           <CamPathPanel onClose={() => setCamPathPanelClosed(true)} />
         )}
-        {/* H1 — shell riêng mode Revit (SPEC-MODE-PER-STAGE §1): đổi CẢ bố cục, không chỉ thêm nút. */}
-        {cadMode === 'revit' && <RevitSummaryPanel />}
+        {/* Mode Chuyên bao gồm lớp CAD chính xác + BIM 2D (chốt 08/08). Trước đây bảng này chỉ
+            hiện cho khoá legacy `revit`, khiến nút Chuyên người dùng đang bấm không khác Pro cũ. */}
+        {(cadMode === 'pro' || cadMode === 'revit') && <RevitSummaryPanel />}
         {scheduleOpen && <SchedulePanel onClose={() => setScheduleOpen(false)} />}
         {historyOpen && <HistoryPanel onClose={() => setHistoryOpen(false)} />}
         {/* SelectionInfoPanel — VIỆC 2: ra khỏi canvas, nay sống ở ổ ④ Inspector của `AppShell`

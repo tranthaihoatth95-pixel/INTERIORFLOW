@@ -31,14 +31,18 @@ export function useScene3D(): Scene3DData | null {
       return () => { cancelled = true; };
     }
     void (async () => {
-      const { dataUrlToArrayBuffer, parseGlb, parseGltfBundle } = await import('@/lib/three/glb-import');
+      const { dataUrlToArrayBuffer, parseGlb, parseGltfBundle, parseObjBundle } = await import('@/lib/three/glb-import');
       const parsed = await Promise.all(sources.map(async (source) => {
         try {
           const result = source.format === 'glb'
             ? await parseGlb(dataUrlToArrayBuffer(source.dataUrl))
-            : await parseGltfBundle(
+            : source.format === 'gltf' ? await parseGltfBundle(
                 new TextDecoder().decode(dataUrlToArrayBuffer(source.resources.find((resource) => resource.name === source.entryName)?.dataUrl ?? '')),
                 source.resources.filter((resource) => resource.name !== source.entryName),
+              ) : await parseObjBundle(
+                new TextDecoder().decode(dataUrlToArrayBuffer(source.resources.find((resource) => resource.name === source.entryName)?.dataUrl ?? '')),
+                source.mtlName ? new TextDecoder().decode(dataUrlToArrayBuffer(source.resources.find((resource) => resource.name === source.mtlName)?.dataUrl ?? '')) : undefined,
+                source.resources.filter((resource) => resource.name !== source.entryName && resource.name !== source.mtlName),
               );
           return {
             ...result.scene,

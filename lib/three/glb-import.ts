@@ -182,6 +182,68 @@ export async function parseGltfBundle(manifestText: string, resources: readonly 
   }
 }
 
+/** OBJ không mang chuẩn đơn vị/trục. IF giữ nguyên số toạ độ theo quy ước viewer (mét, Y-up) và
+ * báo rõ giả định; không tự đoán mm/cm rồi âm thầm đổi kích thước hồ sơ. MTL/texture là tùy chọn. */
+export async function parseObjBundle(
+  objText: string,
+  mtlText: string | undefined,
+  resources: readonly GltfResource[],
+): Promise<ParsedGlb> {
+  const inspection = inspectObjText(objText);
+  if (!inspection.vertices || !inspection.faces) {
+    throw new Error('Tệp .obj không có dữ liệu hình học hợp lệ.');
+  }
+  const manager = new LoadingManager();
+  const missing = new Set<string>();
+  manager.setURLModifier((url) => {
+    const resolved = resolveGltfResource(url, resources);
+    if (!resolved) missing.add(normalizedResourceName(url));
+    return resolved ?? url;
+  });
+  const [{ OBJLoader }, { MTLLoader }] = await Promise.all([
+    import('three/examples/jsm/loaders/OBJLoader.js'),
+    import('three/examples/jsm/loaders/MTLLoader.js'),
+  ]);
+  const loader = new OBJLoader(manager);
+  if (mtlText) {
+    const materials = new MTLLoader(manager).parse(mtlText, '');
+    materials.preload();
+    loader.setMaterials(materials);
+  }
+  const root = loader.parse(objText);
+  const converted = objectToScene3D(root);
+  if (!converted.meshes) throw new Error('Tệp .obj không tạo được mesh nào.');
+  const warnings = ['OBJ không khai đơn vị/trục; IF giữ số 1:1 theo mét, Y-up. Hãy kiểm kích thước sau nhập.'];
+  if (!mtlText) warnings.push('Không có MTL — dùng màu trung tính.');
+  if (missing.size) warnings.push(`Thiếu texture: ${Array.from(missing).join(', ')}.`);
+  if (converted.textures) warnings.push('Texture được giữ trong gói nguồn nhưng viewport khối xám hiện chưa hiển thị texture.');
+  return {
+    scene: converted.scene,
+    report: {
+      meshes: converted.meshes,
+      triangles: converted.triangles,
+      materials: converted.materials,
+      textures: converted.textures,
+      animations: 0,
+      warnings,
+    },
+  };
+}
+
+/** Kiểm tra cấu trúc OBJ không cần DOM/loader — dùng trước bước parse nặng và test Node. */
+export function inspectObjText(text: string): { vertices: number; faces: number; materialLibs: string[] } {
+  let vertices = 0;
+  let faces = 0;
+  const materialLibs: string[] = [];
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (/^v\s+[-+.\deE]+\s+[-+.\deE]+\s+[-+.\deE]+(?:\s|$)/.test(line)) vertices += 1;
+    else if (/^f\s+\S+\s+\S+\s+\S+/.test(line)) faces += 1;
+    else if (/^mtllib\s+/i.test(line)) materialLibs.push(line.replace(/^mtllib\s+/i, '').trim());
+  }
+  return { vertices, faces, materialLibs };
+}
+
 export function dataUrlToArrayBuffer(dataUrl: string): ArrayBuffer {
   const comma = dataUrl.indexOf(',');
   if (comma < 0) throw new Error('Nguồn GLB không phải data URL hợp lệ.');
