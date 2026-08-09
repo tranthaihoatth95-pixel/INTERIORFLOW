@@ -16,7 +16,7 @@ import {
   Radius, Diameter, DraftingCompass, ChevronsRight, GitBranch, PaintBucket,
   CircleDashed, LocateFixed, Palette, StickyNote,
   Pentagon, Ellipse, Donut, SplinePointer, Slash, Divide,
-  Blend, MoveUpRight, Video, ArrowDownRight, Pipette,
+  Blend, MoveUpRight, Video, ArrowDownRight, Pipette, Pencil,
 } from 'lucide-react';
 import { useCadStore, type Tool, type CadMode } from '@/lib/cad/store';
 import { useModKey, useModShiftKey } from '@/lib/kbd';
@@ -54,6 +54,7 @@ interface ToolBtn {
 /** Sprint 9 — Sketch: bộ vẽ tối thiểu đúng triết lý Phase 1 ("Sketch, không phải Draft"). */
 const DRAW: ToolBtn[] = [
   { tool: 'select', icon: MousePointer2, label: 'Chọn', key: 'Esc' },
+  { tool: 'freehand', icon: Pencil, label: 'Nét tay — kéo bằng bút hoặc ngón, nhấc để tự nắn', key: '—' },
   { tool: 'line', icon: Minus, label: 'Đường', key: 'L' },
   { tool: 'rect', icon: Square, label: 'Chữ nhật', key: 'REC' },
   { tool: 'circle', icon: Circle, label: 'Tròn', key: 'C' },
@@ -96,7 +97,7 @@ const MEASURE: ToolBtn[] = [
  * nấp sau hover — SPEC-HOVER §3.7), mở qua Popover dùng chung (components/ui/Popover.tsx).
  * Sketch mode KHÔNG có nút ↘ vì DRAW_PRO/SHAPES2 vốn đã ẩn ở Sketch (triết lý "vẽ tối thiểu"
  * giữ nguyên — xem comment DRAW phía trên), nên không có gì để "còn nữa". */
-const VE_DIRECT_PRO: ToolBtn[] = [DRAW[0], DRAW[1], DRAW[2], DRAW[3], DRAW_PRO[0], DRAW_PRO[2]];
+const VE_DIRECT_PRO: ToolBtn[] = [DRAW[0], DRAW[2], DRAW[3], DRAW[4], DRAW_PRO[0], DRAW_PRO[2]];
 const VE_MORE: ToolBtn[] = [DRAW_PRO[1], DRAW_PRO[3], ...SHAPES2];
 
 /** VIỆC 2 — 6 lệnh dùng nhiều nhất (Chọn·Đường·Đường gấp·Tường·Phòng·Hatch) nút TO hơn ~1.4 lần,

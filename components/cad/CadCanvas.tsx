@@ -73,6 +73,7 @@ import { classifyWheel, findScrollableAncestor, normalizeWheelDelta } from '@/li
 import { SHAPE_DND_MIME } from '@/components/ShapePalette';
 import type { BlockEntity } from '@/lib/cad/model';
 import Popover from '@/components/ui/Popover';
+import { recognizeStroke } from '@/lib/cad/stroke-recognize';
 import RadialToolMenu, { type RadialTool } from '@/components/print/RadialToolMenu';
 import {
   FINGER_DRAW_EVENT,
@@ -138,6 +139,9 @@ interface Ix {
   // Cảm ứng — cờ "pointer gần nhất là ngón tay" cập nhật ở pointerdown/up, dùng để quyết định
   // hiện nút Xoá nổi (thiết bị không có bàn phím vật lý thì không dùng được phím Delete/Backspace).
   lastPointerWasTouch: boolean;
+  freehandStroke: Pt[] | null;
+  freehandPointerId: number | null;
+  freehandMaxPressure: number;
   /** Bút được ưu tiên trong mode Sơ phác; không ghi vào Doc vì là khả năng của thiết bị. */
   penSeen: boolean;
   penUpAt: number;
@@ -416,6 +420,9 @@ export default function CadCanvas() {
     pinch: null,
     touchGesture: null,
     lastPointerWasTouch: false,
+    freehandStroke: null,
+    freehandPointerId: null,
+    freehandMaxPressure: 0,
     penSeen: false,
     penUpAt: 0,
     zoomedToCluster: false,
@@ -817,6 +824,14 @@ export default function CadCanvas() {
       }
     }
 
+    if (st.tool === 'freehand' && (ev.pointerType === 'touch' || ev.pointerType === 'pen')) {
+      ix.current.freehandStroke = [ix.current.cursorWorld];
+      ix.current.freehandPointerId = ev.pointerId;
+      ix.current.freehandMaxPressure = ev.pointerType === 'pen' ? ev.pressure : 1;
+      ix.current.redraw = true;
+      return;
+    }
+
     // pan: chuột giữa, hoặc space, hoặc tool pan
     if (e.button === 1 || ix.current.spaceHeld || st.tool === 'pan') {
       ix.current.panning = true;
@@ -981,6 +996,16 @@ export default function CadCanvas() {
         return;
       }
     }
+    if (ix.current.freehandPointerId === ev.pointerId && ix.current.freehandStroke) {
+      const world = screenToWorld(useCadStore.getState().viewport, screen);
+      const last = ix.current.freehandStroke[ix.current.freehandStroke.length - 1];
+      if (dist(last, world) >= 1) ix.current.freehandStroke.push(world);
+      if (ev.pointerType === 'pen') ix.current.freehandMaxPressure = Math.max(ix.current.freehandMaxPressure, ev.pressure);
+      ix.current.cursorScreen = screen;
+      ix.current.cursorWorld = world;
+      ix.current.redraw = true;
+      return;
+    }
     if (ix.current.panning && ix.current.panStart) {
       const { screen: s0, vp } = ix.current.panStart;
       useCadStore.getState().setViewport({ ...vp, panX: vp.panX + (screen.x - s0.x), panY: vp.panY + (screen.y - s0.y) });
@@ -1004,6 +1029,25 @@ export default function CadCanvas() {
     ix.current.lastPointerWasTouch = ev.pointerType === 'touch';
     setIsTouchInput(ev.pointerType === 'touch');
     ix.current.pointers.delete(ev.pointerId);
+    if (ix.current.freehandPointerId === ev.pointerId && ix.current.freehandStroke) {
+      const stroke = ix.current.freehandStroke;
+      const maxPressure = ix.current.freehandMaxPressure;
+      ix.current.freehandStroke = null;
+      ix.current.freehandPointerId = null;
+      ix.current.freehandMaxPressure = 0;
+      if (ev.pointerType !== 'pen' || maxPressure >= 0.05) {
+        const result = recognizeStroke(stroke, { tolMm: 8 });
+        if (result?.kind === 'line') st.addEntity({ id: newId('e'), type: 'line', layer: st.currentLayer, a: result.a, b: result.b });
+        else if (result?.kind === 'rect') st.addEntity({ id: newId('e'), type: 'rect', layer: st.currentLayer, x: result.x, y: result.y, w: result.w, h: result.h });
+        else if (result?.kind === 'circle') st.addEntity({ id: newId('e'), type: 'circle', layer: st.currentLayer, c: result.c, r: result.r });
+        else if (result?.kind === 'polyline') st.addEntity({ id: newId('e'), type: 'polyline', layer: st.currentLayer, points: result.points, closed: result.closed });
+        if (result) st.setStatus(`Đã nắn nét thành ${result.kind === 'line' ? 'đường thẳng' : result.kind === 'rect' ? 'chữ nhật' : result.kind === 'circle' ? 'đường tròn' : 'đa tuyến'}.`);
+      } else {
+        st.setStatus('Đã bỏ nét bút chạm quá nhẹ.');
+      }
+      ix.current.redraw = true;
+      return;
+    }
     if (radialHoldRef.current?.pointerId === ev.pointerId) {
       window.clearTimeout(radialHoldRef.current.timer);
       radialHoldRef.current = null;
@@ -1089,6 +1133,11 @@ export default function CadCanvas() {
   const onPointerCancel = (ev: React.PointerEvent) => {
     if (cadMode === 'sketch' && ev.pointerType === 'pen') ix.current.penUpAt = performance.now();
     ix.current.pointers.delete(ev.pointerId);
+    if (ix.current.freehandPointerId === ev.pointerId) {
+      ix.current.freehandStroke = null;
+      ix.current.freehandPointerId = null;
+      ix.current.freehandMaxPressure = 0;
+    }
     if (radialHoldRef.current?.pointerId === ev.pointerId) {
       window.clearTimeout(radialHoldRef.current.timer);
       radialHoldRef.current = null;
@@ -3131,6 +3180,11 @@ export default function CadCanvas() {
     };
 
     switch (st.tool) {
+      case 'freehand':
+        if (ix.current.freehandStroke && ix.current.freehandStroke.length > 1) {
+          for (let i = 1; i < ix.current.freehandStroke.length; i++) line(ix.current.freehandStroke[i - 1], ix.current.freehandStroke[i]);
+        }
+        break;
       case 'line':
       case 'dimension':
       case 'measure':

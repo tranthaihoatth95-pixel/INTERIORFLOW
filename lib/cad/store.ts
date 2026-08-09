@@ -50,6 +50,7 @@ export interface DimStyle {
 export type Tool =
   | 'select'
   | 'line'
+  | 'freehand'
   | 'polyline'
   | 'rect'
   | 'circle'
@@ -976,6 +977,7 @@ export function toolHint(t: Tool): string {
   const H: Record<Tool, string> = {
     select: 'Chọn: click vào đối tượng, hoặc quây khung. Xoá = Delete/Backspace/E.',
     line: 'Line (L): click điểm đầu → điểm cuối. Gõ số + Enter = độ dài. Esc huỷ.',
+    freehand: 'Nét tay: kéo một nét bằng bút/ngón; nhấc tay để nắn thành đường, đa tuyến, chữ nhật hoặc tròn.',
     polyline: 'Polyline (PL): click các điểm; Enter/double-click kết thúc; C đóng.',
     rect: 'Rect (REC): click 2 góc đối diện.',
     circle: 'Circle (C): click tâm → điểm trên đường tròn (hoặc gõ bán kính).',

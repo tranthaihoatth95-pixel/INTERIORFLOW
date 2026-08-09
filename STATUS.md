@@ -6,8 +6,8 @@
 
 ## Đang chạy
 
-- Không còn worktree phụ. Sửa canvas/dock màn hẹp đã merge vào `main` (`0a9bcda`).
-  `main` có 4 file untracked của chủ dự án; không chạm.
+- Worktree `interiorflow-wt-sketch-stroke` đang hoàn tất nắn nét Sơ phác; `main` có 4 file
+  untracked của chủ dự án, không chạm.
 - Gateway là một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu · chỉ lưu · chưa hỗ trợ.
 
 ## Vừa xong
@@ -20,26 +20,24 @@
   báo giả định mét/Y-up, texture chưa hiển thị. Parser 5/5, Gateway 30/30, mọi test PASS sau merge.
 - Chặng 1: Sơ phác chỉ giữ dựng nhanh, Move/Measure/Markup và thanh chạm. Chuyên giữ bộ lệnh đầy
   đủ, thêm ngữ cảnh MODEL/đơn vị/tờ/tỉ lệ/BIM và mở lớp BIM 2D.
-- Sơ phác tablet mẻ 1: nhận bút, loại vùng tì tay ≥24px và touch chen lúc bút chạm/300ms sau
-  pen-up; sau khi thấy bút, ngón chuyển sang pan/pinch, có gạt “Ngón vẽ” lưu trên thiết bị. Dock
-  có Hoàn tác/Làm lại đi qua cùng nhánh phím. Test lớp input 10/10, typecheck và toàn bộ test PASS;
-  sau merge typecheck/toàn bộ test PASS; preview thấy đủ ba nút mới, không lỗi console; worktree
-  và nhánh đã dọn an toàn.
-- Sơ phác tablet mẻ 2: ở công cụ Chọn, tap nhanh 2 ngón hoàn tác, 3 ngón làm lại; ≥250ms hoặc
-  dịch ≥8px giữ pan/pinch. Giữ touch/pen 450ms mở radial 8 lệnh thật, đổi bộ theo nền/selection,
-  kẹp mép bằng component dùng chung. Gesture 15/15, typecheck/toàn bộ test PASS; preview render
-  sạch cả sau merge; worktree/nhánh đã dọn. Browser không giả lập long-press thật nên radial còn
-  cần test tay trên tablet.
+- Sơ phác tablet: nhận bút, chống tì tay, ngón pan/pinch hoặc bật “Ngón vẽ”; dock có undo/redo.
+  Tap 2/3 ngón undo/redo; giữ 450ms mở radial 8 lệnh theo ngữ cảnh, có kẹp mép. Input 10/10,
+  gesture 15/15, typecheck/toàn bộ test và preview PASS; radial cần test tay trên tablet.
 - Màn hẹp: canvas dùng ResizeObserver trên chính khung chứa, đo sau layout và CSS phủ 100%; dock
   Sơ phác cuộn ngang từ trái. Nghiệm thu viewport 592px: canvas 542/542px, DPR backing đúng,
   body không tràn, lưới phủ kín; console sạch, typecheck/toàn bộ test PASS sau merge; worktree
   và nhánh đã dọn an toàn.
+- Nắn nét Sơ phác: công cụ “Nét tay” chỉ hiện ở Sketch, nhận bút/ngón rồi chuyển nét thành line,
+  polyline, chữ nhật hoặc tròn chuẩn của Doc; snap ngang/dọc 5°. Không tạo loại entity riêng nên
+  vẫn chọn/sửa/xuất theo flow cũ. Bỏ pen hover/áp lực gần 0; ellipse và nét nguệch ngoạc không bị
+  nhận nhầm. Bộ nhận dạng 10/10, typecheck và toàn bộ test PASS. Bản worktree biên dịch/trả CAD;
+  tương tác bút/ngón thật còn cần nghiệm thu trên tablet.
 
 ## Sự thật dữ liệu
 
-- `prisma/dev.db` có `WorkflowState`, `Task`, `ExternalRef`; `_prisma_migrations` đủ 3 bản ghi đến
-  `20260808000002_them_workflowstate_task_externalref`. Migration bù drift/Task đã tồn tại; xem
-  `docs/M-NEN-DL-OUT.md`. Không chạy migrate, db push hay VACUUM trong phiên này.
+- DB có `WorkflowState`, `Task`, `ExternalRef`; migration đủ 3 bản ghi đến
+  `20260808000002_them_workflowstate_task_externalref`. Xem `docs/M-NEN-DL-OUT.md`; không chạy
+  migrate, db push hay VACUUM.
 
 ## Năng lực định dạng đã đo
 
@@ -54,7 +52,7 @@
 
 ## Việc kế tiếp
 
-1. Làm sâu hai mode: Sơ phác tiếp theo nắn nét và test tay radial; Chuyên cần Model/Paper,
+1. Làm sâu hai mode: nghiệm thu bút/radial trên tablet; Chuyên cần Model/Paper,
    viewport/tờ in, property/layer workflow. BIM mới là phân loại 2D; chưa có quan hệ mô hình, IFC
    hoặc clash, nên chưa ngang Revit.
 2. Định dạng FBX → IFC. SKP dùng SDK/bridge sau kiểm license; `.max/.rvt` dùng bridge/plugin,
