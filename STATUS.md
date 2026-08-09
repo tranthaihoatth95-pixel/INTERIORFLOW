@@ -6,7 +6,7 @@
 
 ## Đang chạy
 
-- Paper PDF theo viewport đã merge vào `main`; worktree phụ chờ dọn an toàn. 4 file untracked của
+- Paper PDF theo viewport đã merge vào `main`; worktree phụ đã dọn an toàn. 4 file untracked của
   chủ dự án được giữ nguyên.
 
 ## Vừa xong
