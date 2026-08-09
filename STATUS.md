@@ -6,7 +6,7 @@
 
 ## Đang chạy
 
-- Worktree `interiorflow-wt-pro-model-paper` đang làm Paper Space cho Pro; `main` có 4 file
+- Không còn worktree phụ. Paper Space Pro đã merge vào `main` (`176a3a2`); `main` có 4 file
   untracked của chủ dự án, không chạm.
 - Gateway là một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu · chỉ lưu · chưa hỗ trợ.
 
@@ -32,7 +32,9 @@
 - Paper Space Pro mẻ 1: MODEL/PAPER là chuyển không gian thật. PAPER dựng tờ theo khổ/hướng,
   khung tên và ô nhìn từ cùng `Sheet/Viewport2D`; preview đọc trực tiếp một Doc chung. Đổi tỉ lệ
   1:20…1:200, khóa ô nhìn, và mở đúng vùng đó trong Model. Logic 4/4, typecheck/toàn bộ test PASS;
-  bản worktree biên dịch/trả trang CAD. Mẻ sau: nhiều viewport, đặt/resize ô nhìn, metadata tờ.
+  sau merge typecheck/toàn bộ test PASS. Nghiệm thu cổng 3015: chuyển Pro→PAPER, đổi 1:50,
+  khóa/mở khóa và quay về Model đúng vùng; console sạch. Worktree/nhánh đã dọn. Mẻ sau: nhiều
+  viewport, đặt/resize ô nhìn, metadata tờ.
 
 ## Sự thật dữ liệu
 
