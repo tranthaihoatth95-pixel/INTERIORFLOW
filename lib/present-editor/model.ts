@@ -507,9 +507,25 @@ export interface EditorSlide {
   reveal?: ElementReveal;
 }
 
+/**
+ * Loại hồ sơ (V6/H4, `docs/PHIEU-PRESENT-G4.md` · `docs/SPEC-MODE-PER-STAGE.md` §4) — 6 thẻ
+ * màn chọn của chặng Trình chiếu. Chỉ `'deck'` và `'boq'` có editor thật hiện nay (BOQ dùng
+ * `BoqScreen` riêng — KHÔNG đọc/ghi field này, đây chỉ là NHÃN để sheet nhớ mình thuộc loại
+ * nào, cho màn chọn khỏi hỏi lại). 4 loại còn lại đang disabled trên màn chọn.
+ */
+export type PresentDocType = 'deck' | 'material-a3' | 'boq' | 'doc' | 'video' | 'html';
+
 /** Deck = nhiều slide + brand + bộ chữ + palette gu. */
 export interface EditorDeck {
   id: string;
+  /**
+   * Loại hồ sơ đã CHỌN cho sheet này (V6/H4, `PresentDocTypePicker`). Bỏ trống = CHƯA CHỌN —
+   * `PresentSheets` hiện màn chọn 6 thẻ thay vì mở thẳng editor, nhưng CHỈ khi đồng thời
+   * `slides.length === 0` (hồ sơ thật sự mới). Deck cũ trước H4 có sẵn slide nhưng không có
+   * field này vẫn mở thẳng như trước — additive, không phá `.idfp` cũ (cùng nguyên tắc `filter`
+   * ở `SlideElement`, xem ghi chú field đó).
+   */
+  docType?: PresentDocType;
   brand: string;
   project: string;
   fonts: FontPairing;

@@ -95,7 +95,7 @@ export default function PresentStageScreen() {
           /* Tầng multi-sheet (phụ-thêm): thanh tab + PresentEditor. 1 sheet ⇒ y hệt bản cũ.
            * 07/08 (M-EMPTY) — KHÔNG truyền initialDeck: màn Trình chiếu THẬT bắt đầu RỖNG
            * (trước đây chạy bằng makeSampleDeck — deck mẫu, vi phạm chốt "bỏ hết dự án mẫu"). */
-          <PresentSheets />
+          <PresentSheets onRequestBoq={() => setMode('boq')} />
         )}
       </StageEnter>
       <ChatPanel />
