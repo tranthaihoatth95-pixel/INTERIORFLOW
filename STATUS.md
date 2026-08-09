@@ -34,9 +34,9 @@
   tải, thu hồi URL tạm khi đóng/đổi tờ. Paper 5/5, typecheck/toàn bộ test PASS.
 - Chốt mọi lệnh chạy được phải có đường bàn phím thật, cùng nguồn với tooltip/`⌘/`/`⌘K`, có guard
   ô nhập và không gán phím giả. `⌘P`/`Ctrl+P` mở preview/xuất PDF Paper; shortcuts 23/23 PASS.
-- Dock Sơ phác: nhãn nhóm cùng hàng, vùng chạm 44px. Bảng Hatch là overlay né dock, lưới 2 cột.
-  Banner mất phiên portal ra body, không bị header blur ghim/cắt; có safe-area và tự xuống
-  dòng trên màn hẹp. Preview, typecheck và toàn bộ test PASS.
+- Dock Sơ phác gọn, vùng chạm 44px; Hatch overlay 2 cột né dock. Banner mất phiên portal ra body,
+  có safe-area. Bàn trống bỏ thẻ giới thiệu/“Vẽ mới”, chỉ còn nút Nhập; click ngoài tự đóng.
+  Preview, typecheck và toàn bộ test PASS.
 
 ## Năng lực định dạng đã đo
 
