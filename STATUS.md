@@ -1,6 +1,6 @@
 # STATUS — InteriorFlow (10/08)
 
-> Lịch sử ở `CHANGELOG.md`; báo cáo mẻ ở `docs/M-*-OUT.md`.
+> Lịch sử ở `CHANGELOG.md`.
 > Git + code + DB là nguồn kiểm chứng, không lấy GAP cũ làm bằng chứng.
 > IF là sản phẩm global: **2D Kỹ thuật · 3D Thiết kế · Trình bày**; Brand Kit theo dự án.
 
@@ -35,8 +35,8 @@
   tải, thu hồi URL tạm khi đóng/đổi tờ. Paper 5/5, typecheck/toàn bộ test PASS.
 - Chốt mọi lệnh chạy được phải có đường bàn phím thật, cùng nguồn với tooltip/`⌘/`/`⌘K`, có guard
   ô nhập và không gán phím giả. `⌘P`/`Ctrl+P` mở preview/xuất PDF Paper; shortcuts 23/23 PASS.
-- Dock Sơ phác gọn: nhãn Vẽ/Cấu kiện chuyển lên đầu cụm icon cùng hàng; bỏ tầng chữ treo dưới.
-  Hàng chạm không co/bẻ nhãn, vẫn giữ vùng bấm 44px. Preview 3016 và toàn bộ test PASS.
+- Dock Sơ phác: nhãn Vẽ/Cấu kiện đứng đầu cụm icon; bỏ tầng chữ dưới. Hàng chạm không bẻ nhãn,
+  vẫn giữ vùng bấm 44px. Preview và toàn bộ test PASS.
 
 ## Năng lực định dạng đã đo
 
