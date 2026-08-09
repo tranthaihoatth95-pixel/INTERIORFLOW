@@ -24,6 +24,8 @@ import { cn } from '@/lib/utils';
 import { useDismissable } from '@/lib/useDismissable';
 import { detectFormat } from '@/lib/gateway/detect';
 import { routeFormat } from '@/lib/gateway/route';
+import { useCadStore } from '@/lib/cad/store';
+import { useStageMode } from '@/lib/stage-mode';
 
 interface FileItem {
   id: string;
@@ -42,6 +44,7 @@ export function RenderIOMenus() {
   const fileRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const tr = useT();
+  const { setMode } = useStageMode('render');
 
   useDismissable({ open, onDismiss: () => setOpen(false), refs: [menuRef] });
 
@@ -98,7 +101,7 @@ export function RenderIOMenus() {
     {
       id: 'gateway',
       label: tr('Chọn tệp — tự nhận định dạng', 'Choose files — auto-detect format'),
-      sub: tr('Ảnh tạo node; file 3D chưa có importer sẽ báo rõ lý do', 'Images create nodes; unsupported 3D files show the exact reason'),
+      sub: tr('Ảnh tạo node · GLB mở trong Vẽ 3D', 'Images create nodes · GLB opens in 3D Design'),
       icon: <FileUp size={15} />,
       onSelect: () => fileRef.current?.click(),
     },
@@ -201,16 +204,41 @@ export function RenderIOMenus() {
           const files = Array.from(e.target.files ?? []);
           e.target.value = '';
           const images: File[] = [];
+          const models: File[] = [];
           const rejected: string[] = [];
           for (const file of files) {
             const bytes = new Uint8Array(await file.slice(0, 8192).arrayBuffer());
             const format = detectFormat({ name: file.name, bytes });
             const action = routeFormat(format, 'render');
             if (action.kind === 'place-image') images.push(file);
+            else if (action.kind === 'render-import-model') models.push(file);
             else rejected.push(action.kind === 'unsupported' && action.reason ? `${file.name}: ${action.reason}` : `${file.name}: chưa hỗ trợ`);
           }
           if (images.length) await addImageNodesFromFiles(images);
+          const modelReports: string[] = [];
+          for (const file of models) {
+            try {
+              const buffer = await file.arrayBuffer();
+              const { parseGlb } = await import('@/lib/three/glb-import');
+              const parsed = await parseGlb(buffer.slice(0));
+              const dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Không đọc được file.'));
+                reader.onerror = () => reject(reader.error ?? new Error('Không đọc được file.'));
+                reader.readAsDataURL(file);
+              });
+              useCadStore.getState().addModel3DSource({
+                id: crypto.randomUUID(), name: file.name, format: 'glb', dataUrl,
+                sizeBytes: file.size, importedAt: new Date().toISOString(),
+              });
+              modelReports.push(`${file.name}: ${parsed.report.meshes} mesh · ${Math.round(parsed.report.triangles).toLocaleString()} tam giác${parsed.report.warnings.length ? ` · ${parsed.report.warnings.join(' ')}` : ''}`);
+            } catch (err) {
+              rejected.push(`${file.name}: ${err instanceof Error ? err.message : 'GLB không đọc được'}`);
+            }
+          }
+          if (modelReports.length) setMode('model3d');
           if (rejected.length) flash(false, rejected.join(' · '));
+          else if (modelReports.length) flash(true, modelReports.join(' · '));
           else if (images.length) flash(true, tr(`Đã thêm ${images.length} ảnh vào bảng làm việc.`, `Added ${images.length} image(s) to the board.`));
         }}
       />

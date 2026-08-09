@@ -937,6 +937,18 @@ export interface SiteImage {
   visible: boolean;
 }
 
+/** Tệp mô hình 3D gốc do người dùng nhập. Lưu NGUỒN (data URL), không lưu mesh dẫn xuất:
+ * viewer parse lại khi cần, nên `.idf`/autosave vẫn có đúng một nguồn sự thật và có thể nâng
+ * importer về sau mà không mất file ban đầu. P0 chỉ nhận GLB tự chứa; glTF nhiều file chưa nhận. */
+export interface Model3DSource {
+  id: string;
+  name: string;
+  format: 'glb';
+  dataUrl: string;
+  sizeBytes: number;
+  importedAt: string;
+}
+
 export interface Doc {
   entities: Entity[];
   layers: Layer[];
@@ -945,6 +957,8 @@ export interface Doc {
   photos?: PhotoEmbed[];
   /** Zone tool — ảnh aerial nền (optional, backward-compat). */
   siteImage?: SiteImage | null;
+  /** Mô hình 3D ngoại nhập, tự vào autosave/.idf cùng Doc. Mesh hiển thị luôn là dữ liệu dẫn xuất. */
+  model3dSources?: Model3DSource[];
   /**
    * B1 (24/07) — TỈ LỆ IN per-sheet: N của "1:N" (20/25/50/100/200…). undefined = auto-fit
    * (hành vi cũ nguyên vẹn — fitBox/fitScaleLabel). Lưu trong Doc nên tự per-sheet (mỗi sheet

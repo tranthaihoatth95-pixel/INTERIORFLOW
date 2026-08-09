@@ -18,6 +18,7 @@ export type RouteAction =
   | { kind: 'present-import-deck' } // .pptx / .pdf — nhập làm slide
   | { kind: 'present-open-project' } // .idfp — thay toàn bộ project Trình bày
   | { kind: 'library-bulk-ingest' } // .xlsx / .csv — nạp hàng loạt vào thư viện (NT1)
+  | { kind: 'render-import-model' } // .glb — lưu nguồn vào Doc, derive mesh cho viewport 3D
   | { kind: 'unsupported'; format: GatewayFormat; reason?: string };
 
 /** định dạng KHÔNG phụ thuộc chặng gọi — tra thẳng bảng. */
@@ -30,6 +31,7 @@ const STATIC_ROUTE: Partial<Record<GatewayFormat, RouteAction>> = {
   idfp: { kind: 'present-open-project' },
   xlsx: { kind: 'library-bulk-ingest' },
   csv: { kind: 'library-bulk-ingest' },
+  glb: { kind: 'render-import-model' },
 };
 
 /** Ánh xạ định dạng → đích. `stage` = chặng đang gọi Gateway (chỉ ảnh hưởng khi định dạng là ảnh). */

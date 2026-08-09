@@ -23,7 +23,8 @@ ok('PPTX nhập có mất mát ở Trình bày', capabilityFor('pptx', 'present'
 ok('PDF chưa nhập thành slide', capabilityFor('pdf', 'present').import === 'unavailable');
 ok('DWG chưa xuất được', capabilityFor('dwg', 'cad').export === 'unavailable');
 ok('ảnh là reference ở 3D', capabilityFor('image', 'render').import === 'reference');
-ok('GLB được nhận diện nhưng chưa được khai import', !canOperate('glb', 'render', 'import'));
+ok('GLB nhập hình học có mất mát ở Render', capabilityFor('glb', 'render').import === 'lossy' && canOperate('glb', 'render', 'import'));
+ok('glTF nhiều file chưa được nhận giả là đã nhập', !canOperate('gltf', 'render', 'import'));
 ok('mọi entry tự khai đúng key format', Object.entries(FORMAT_CAPABILITIES).every(([k, v]) => k === v.format));
 
 console.log('\n[3] Router phải theo năng lực thật và theo đúng chặng');
@@ -31,8 +32,9 @@ ok('PPTX ở Present → import deck', routeFormat('pptx', 'present').kind === '
 ok('PPTX ở CAD → unsupported', routeFormat('pptx', 'cad').kind === 'unsupported');
 ok('IDFP ở Present → mở project', routeFormat('idfp', 'present').kind === 'present-open-project');
 ok('PDF ở Present → unsupported, không nói dối đã nhập được', routeFormat('pdf', 'present').kind === 'unsupported');
-ok('GLB ở Render → unsupported có lý do', (() => {
-  const r = routeFormat('glb', 'render');
+ok('GLB ở Render → importer mô hình', routeFormat('glb', 'render').kind === 'render-import-model');
+ok('glTF ở Render → unsupported có lý do', (() => {
+  const r = routeFormat('gltf', 'render');
   return r.kind === 'unsupported' && Boolean(r.reason);
 })());
 
