@@ -23,12 +23,9 @@
   Sơ phác cuộn ngang từ trái. Nghiệm thu viewport 592px: canvas 542/542px, DPR backing đúng,
   body không tràn, lưới phủ kín; console sạch, typecheck/toàn bộ test PASS sau merge; worktree
   và nhánh đã dọn an toàn.
-- Nắn nét Sơ phác: công cụ “Nét tay” chỉ hiện ở Sketch, nhận bút/ngón rồi chuyển nét thành line,
-  polyline, chữ nhật hoặc tròn chuẩn của Doc; snap ngang/dọc 5°. Không tạo loại entity riêng nên
-  vẫn chọn/sửa/xuất theo flow cũ. Bỏ pen hover/áp lực gần 0; ellipse và nét nguệch ngoạc không bị
-  nhận nhầm. Bộ nhận dạng 10/10, typecheck và toàn bộ test PASS. Bản worktree biên dịch/trả CAD;
-  sau merge typecheck/toàn bộ test và preview cổng 3015 PASS, console sạch; worktree/nhánh đã
-  dọn an toàn. Tương tác bút/ngón thật còn cần nghiệm thu trên tablet.
+- Nắn nét Sơ phác: “Nét tay” chỉ hiện ở Sketch, đổi bút/ngón thành line, polyline, chữ nhật hoặc
+  tròn chuẩn của Doc; snap ngang/dọc 5°. Bỏ pen hover; ellipse/nét nguệch ngoạc không nhận nhầm.
+  Nhận dạng 10/10, typecheck/toàn bộ test và preview PASS; cần nghiệm thu trên tablet thật.
 - Paper Space Pro mẻ 1: MODEL/PAPER là chuyển không gian thật. PAPER dựng tờ theo khổ/hướng,
   khung tên và ô nhìn từ cùng `Sheet/Viewport2D`; preview đọc trực tiếp một Doc chung. Đổi tỉ lệ
   1:20…1:200, khóa ô nhìn, và mở đúng vùng đó trong Model. Logic 4/4, typecheck/toàn bộ test PASS;
