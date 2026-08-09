@@ -6,7 +6,7 @@
 
 ## Đang chạy
 
-- Worktree `interiorflow-wt-sketch-radial` chờ commit/merge: radial và gesture 2/3 ngón.
+- Không còn worktree phụ. Radial và gesture 2/3 ngón đã merge vào `main` (`3ac3b60`).
   `main` có 4 file untracked của chủ dự án; không chạm.
 - Gateway đã ở `main` (`c408684`): một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu ·
   chỉ lưu · chưa hỗ trợ. Lối AI Brief chuyên biệt vẫn giữ nguyên.
@@ -29,7 +29,8 @@
 - Sơ phác tablet mẻ 2: ở công cụ Chọn, tap nhanh 2 ngón hoàn tác, 3 ngón làm lại; ≥250ms hoặc
   dịch ≥8px giữ pan/pinch. Giữ touch/pen 450ms mở radial 8 lệnh thật, đổi bộ theo nền/selection,
   kẹp mép bằng component dùng chung. Gesture 15/15, typecheck/toàn bộ test PASS; preview render
-  sạch. Công cụ browser không giả lập long-press thật nên radial còn cần test tay trên tablet.
+  sạch cả sau merge; worktree/nhánh đã dọn. Browser không giả lập long-press thật nên radial còn
+  cần test tay trên tablet.
 
 ## Sự thật dữ liệu
 
