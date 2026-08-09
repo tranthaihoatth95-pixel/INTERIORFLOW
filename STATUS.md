@@ -15,13 +15,11 @@
   sau nhập PPTX. 3D nhập GLB, gói glTF và OBJ/MTL ở mức mất mát, giữ nguồn trong Doc/autosave/IDF.
 - Chặng 1: Sơ phác chỉ giữ dựng nhanh, Move/Measure/Markup và thanh chạm. Chuyên giữ bộ lệnh đầy
   đủ, thêm ngữ cảnh MODEL/đơn vị/tờ/tỉ lệ/BIM và mở lớp BIM 2D.
-- Sơ phác tablet: nhận bút, chống tì tay, ngón pan/pinch hoặc bật “Ngón vẽ”; dock có undo/redo.
-  Tap 2/3 ngón undo/redo; giữ 450ms mở radial 8 lệnh theo ngữ cảnh, có kẹp mép. Input 10/10,
-  gesture 15/15, typecheck/toàn bộ test và preview PASS; radial cần test tay trên tablet.
+- Sơ phác tablet: nhận bút, chống tì, pan/pinch; dock có undo/redo. Tap 2/3 ngón undo/redo;
+  giữ 450ms mở radial 8 lệnh. Input 10/10, gesture 15/15 và test PASS; cần test tablet thật.
 - Màn hẹp: canvas đo đúng khung chứa; dock Sơ phác cuộn từ trái. Nghiệm thu 592px không tràn,
   lưới phủ kín, console/test sạch; worktree đã dọn.
-- Nắn nét Sơ phác: “Nét tay” chỉ hiện ở Sketch, đổi bút/ngón thành line, polyline, chữ nhật hoặc
-  tròn chuẩn của Doc; snap ngang/dọc 5°. Bỏ pen hover; ellipse/nét nguệch ngoạc không nhận nhầm.
+- Nắn nét Sơ phác đổi bút/ngón thành line, polyline, chữ nhật hoặc tròn chuẩn; snap 5°.
   Nhận dạng 10/10, typecheck/toàn bộ test và preview PASS; cần nghiệm thu trên tablet thật.
 - Paper Space Pro: MODEL/PAPER thật; nhiều ô nhìn cùng một Doc, độc lập tỉ lệ/khóa, kéo/resize có
   chặn mép, không xóa ô cuối. Logic 9/9, test/preview PASS; đã sửa nút bị dock che.
