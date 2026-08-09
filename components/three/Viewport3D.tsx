@@ -147,27 +147,28 @@ export function Viewport3D({
         <circle cx="45" cy="60" r="3" fill="var(--t3)" />
       </svg>
 
-      {/* ── Gizmo di chuyển 3 trục trên khối đang chọn ── */}
+      {/* ── Gizmo di chuyển 3 trục trên khối đang chọn — kích thước/tỉ lệ port đúng mock `.gizmo`
+          (96×96, stroke 2.2, đầu mút r=3.4; trước 120×120/2.5/5 — chỉ số, không đổi hành vi kéo) ── */}
       {selectedId && (
         <svg
-          style={{ position: 'absolute', left: '50%', top: '50%', width: 120, height: 120, transform: 'translate(-50%,-50%)', zIndex: 5 }}
-          viewBox="0 0 120 120"
+          style={{ position: 'absolute', left: '50%', top: '50%', width: 96, height: 96, transform: 'translate(-50%,-50%)', zIndex: 5 }}
+          viewBox="0 0 96 96"
           aria-label="Gizmo di chuyển"
         >
           {([
-            ['z', 60, 60, 60, 18, 'var(--ax-z)'],
-            ['x', 60, 60, 100, 82, 'var(--ax-x)'],
-            ['y', 60, 60, 20, 82, 'var(--ax-y)'],
+            ['z', 48, 48, 48, 6, 'var(--ax-z)'],
+            ['x', 48, 48, 90, 62, 'var(--ax-x)'],
+            ['y', 48, 48, 10, 62, 'var(--ax-y)'],
           ] as const).map(([axis, x1, y1, x2, y2, color]) => (
             /* Dùng aria-label, KHÔNG <title> trong SVG: React 18 xử lý <title> khác giữa
                server/client ⇒ hydration mismatch thật (bắt ở console lúc verify; đổi sang
                template literal vẫn không hết, nên bỏ hẳn phần tử này). */
             <g key={axis} style={{ cursor: 'grab' }} role="button" aria-label={`Kéo theo trục ${axis.toUpperCase()}`} onPointerDown={() => onNudge?.(axis, 100)}>
-              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth="2.5" />
-              <circle cx={x2} cy={y2} r="5" fill={color} />
+              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth="2.2" />
+              <circle cx={x2} cy={y2} r="3.4" fill={color} />
             </g>
           ))}
-          <circle cx="60" cy="60" r="3.5" fill="var(--t2)" />
+          <circle cx="48" cy="48" r="3" fill="var(--t2)" />
         </svg>
       )}
 

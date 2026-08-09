@@ -39,8 +39,10 @@ export function Object3DInspector() {
   const selectedMat = selected.specId ? materials.find((m) => m.id === selected.specId) : undefined;
 
   return (
-    <div className="space-y-3 p-2.5">
-      <div className="flex items-center gap-2">
+    // mock `.iscroll`/`.grp` dùng padding 11-12px quanh nội dung — nâng p-2.5(10px)→p-3(12px).
+    <div className="space-y-3 p-3">
+      {/* mock `.ihead`: viền dưới mat-hairline tách tên/mã khỏi phần thân cuộn — trước không có. */}
+      <div className="flex items-center gap-2 border-b border-[var(--mat-hairline)] pb-2.5">
         <span className="h-[10px] w-[10px] flex-none rounded-[3px]" style={{ background: KIND_DOT[kind] }} />
         <span className="flex-1 truncate text-[13px] font-semibold text-[var(--t1)]">{labelOfGroup(selected, tr)}</span>
         <span className="rounded-[5px] bg-[var(--mat-card)] px-1.5 py-[1px] text-[9px] font-bold uppercase text-[var(--t3)]">
@@ -57,7 +59,8 @@ export function Object3DInspector() {
       <LevelRow storey={selected.storey} entityId={selected.entityId} />
 
       <div className="space-y-2 border-t border-[var(--mat-hairline)] pt-3">
-        <span className="text-[10.5px] font-bold uppercase tracking-wide text-[var(--t4)]">{tr('Vật liệu', 'Material')}</span>
+        {/* mock `.grp h4`: 11px (fs-2xs), letter-spacing .07em — trước 10.5px/tracking-wide(.025em) */}
+        <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-[var(--t4)]">{tr('Vật liệu', 'Material')}</span>
         <div className="flex items-center gap-2.5">
           {selectedMat ? (
             <MaterialSphere

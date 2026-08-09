@@ -123,8 +123,9 @@ export function Object3DTree() {
               >
                 {isCollapsed ? <ChevronRight size={11} className="text-[var(--t4)]" /> : <ChevronDown size={11} className="text-[var(--t4)]" />}
                 <Layers size={11} className="text-[var(--t4)]" />
+                {/* mock `.sech`: 11px, chữ t4, letter-spacing .07em (không phải tracking-wide mặc định) */}
                 <span
-                  className="flex-1 truncate text-[10.5px] font-semibold uppercase leading-[1.6] tracking-wide text-[var(--t3)]"
+                  className="flex-1 truncate text-[11px] font-bold uppercase leading-[1.6] tracking-[0.07em] text-[var(--t4)]"
                   style={{ opacity: levelHidden ? 0.45 : 1 }}
                 >
                   {isUnassigned ? tr('Chưa xếp tầng', 'Unassigned') : storeyKey}
@@ -151,11 +152,14 @@ export function Object3DTree() {
                 const hidden = hiddenNames.has(g.name);
                 const isSelected = selectedName === g.name;
                 return (
+                  // mock `.lay`: hàng cao ~28px (var(--row)), gap 8px, gạch trái 2px báo trạng thái
+                  // chọn (trước chỉ có nền accent-soft, không có gạch) — pl-6 giữ nguyên (thụt cấp
+                  // con trong cây tầng, mock không có cấu trúc lồng này nên không có số để đối chiếu).
                   <div
                     key={g.name}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-[8px] py-1 pl-6 pr-1.5 transition-colors',
-                      isSelected ? 'bg-[var(--accent-soft)]' : 'hover:bg-[var(--hover)]',
+                      'flex min-h-[28px] items-center gap-2 border-l-2 py-1 pl-6 pr-1.5 transition-colors',
+                      isSelected ? 'border-l-[var(--accent)] bg-[var(--accent-soft)]' : 'border-l-transparent hover:bg-[var(--hover)]',
                     )}
                   >
                     <button
@@ -164,12 +168,13 @@ export function Object3DTree() {
                       className="flex flex-1 items-center gap-2 overflow-hidden text-left"
                     >
                       <span
-                        className="h-[8px] w-[8px] flex-none rounded-[3px]"
+                        className="h-[10px] w-[10px] flex-none rounded-[3px]"
                         style={{ background: KIND_DOT[kind], opacity: hidden ? 0.4 : 1 }}
                       />
+                      {/* mock `.nm`: font-size var(--fs-xs) = 12px */}
                       <span
                         className={cn(
-                          'truncate text-[11.5px]',
+                          'truncate text-[12px]',
                           isSelected ? 'font-semibold text-[var(--accent)]' : 'text-[var(--t2)]',
                         )}
                         style={{ opacity: hidden ? 0.45 : 1 }}

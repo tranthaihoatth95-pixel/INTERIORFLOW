@@ -108,8 +108,12 @@ export default function Command3DPanel({
   const materials = useMaterials(true);
 
   return (
-    <div className="mat-panel flex h-full w-64 shrink-0 flex-col border-r border-[var(--border)]">
-      <div className="flex border-b border-[var(--border)]">
+    // Port `docs/mocks/mock-if-ve3d.html` `.side` (08/06): panel NỀN ĐẶC var(--panel) 214px, không
+    // kính — đúng G9 (kính chỉ dành 4 chỗ nổi TRÊN WebGL: ModeSwitchBar/nút Dựng ảnh/ViewCube/
+    // Lightbox, sidebar KHÔNG nằm trong danh sách đó). Trước là `.mat-panel` (kính) + `w-64`(256px).
+    <div className="flex h-full w-[214px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--panel)]">
+      {/* mock `.cptabs`: gap 1px, padding 5px 6px, viền dưới mat-hairline (không phải --border đặc) */}
+      <div className="flex gap-px border-b border-[var(--mat-hairline)] p-[5px]">
         {TABS.map(({ id, icon: Icon, label }) => {
           const active = tab === id;
           return (
@@ -117,8 +121,9 @@ export default function Command3DPanel({
               key={id}
               onClick={() => setTab(id)}
               className={cn(
-                'flex flex-1 flex-col items-center gap-1 px-0.5 py-2 text-[10px] transition-colors',
-                active ? 'font-semibold text-[var(--accent)] shadow-[inset_0_-2px_0_var(--accent)]' : 'text-[var(--t4)] hover:text-[var(--t2)]',
+                // mock `.cpt`: bo góc 8px, nền pill khi active (không phải gạch chân), hover đổi nền
+                'flex flex-1 flex-col items-center gap-1 rounded-[8px] px-0.5 py-1.5 text-[10px] transition-colors',
+                active ? 'bg-[var(--accent-soft)] font-semibold text-[var(--accent)]' : 'text-[var(--t3)] hover:bg-[var(--hover)] hover:text-[var(--t1)]',
               )}
               /* `title=` gỡ 05/08 (VIỆC 2): nhãn tab ĐÃ hiện ngay dưới icon — `title=` chỉ lặp
                  đúng chữ đó sau 1-2s chờ, không thêm thông tin nào. Tab không cần tooltip. */
