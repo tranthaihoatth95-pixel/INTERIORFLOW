@@ -8,7 +8,10 @@
 
 - Không còn worktree phụ. `main` có 4 file untracked của chủ dự án: `AGENTS.md` và 3 mock ngày
   09/08; không sửa, không commit.
-- Đang rà khả năng nhập/xuất định dạng theo từng chặng và tiếp tục kế hoạch phát hành an toàn.
+- Registry định dạng đã làm trên nhánh `codex/format-registry`: phân biệt chỉnh được · mất mát ·
+  tham chiếu · chỉ lưu · chưa hỗ trợ. Cửa Trình bày đã nối: chọn một lần rồi tự phân luồng
+  ảnh/PPTX/IDFP/XLSX/CSV; cửa 2D đã nối IDF/IFpack/DXF/DWG/ảnh; cửa 3D/Node nhận nhiều ảnh và
+  báo rõ file model chưa có importer. Các lối chuyên biệt của AI Brief vẫn giữ nguyên.
 
 ## Vừa xong 09/08
 
@@ -40,15 +43,16 @@
 - Trình bày: nhập `.pptx` (mức cơ bản), ảnh, `.idfp`; nhập `.xlsx/.csv` vào BOQ; xuất PDF, PPTX,
   PNG, `.idfp`, XLSX cho BOQ/FF&E. PDF deck và DOCX chưa nhập; Văn bản/Video/HTML chưa có editor.
 - Gateway nhận diện/định tuyến file đã có nhưng chưa nối UI, nên chưa tính là import dùng được.
+- Nhánh registry nhận thêm GLB/glTF/OBJ/FBX/SKP/MAX/IFC/RVT/DOCX/video/audio/HTML nhưng vẫn đánh
+  dấu `unavailable`; sửa PDF Present về `unsupported`, không còn định tuyến sai thành import deck.
 
 ## Việc kế tiếp
 
-1. Chốt registry năng lực file theo 4 mức: chỉnh được · nhập có mất mát · liên kết tham chiếu · chỉ lưu.
-2. Ưu tiên 3D mở: GLB/glTF → OBJ/MTL → FBX; sau đó IFC. SKP dùng SDK/bridge sau kiểm license;
+1. Ưu tiên 3D mở: GLB/glTF → OBJ/MTL → FBX; sau đó IFC. SKP dùng SDK/bridge sau kiểm license;
    `.max/.rvt` dùng bridge/plugin, không tự viết parser native.
-3. Hoàn thiện Trình bày theo thứ tự: PDF deck → DOCX → media video/audio → HTML; tăng fidelity PPTX.
-4. Nối gateway thật vào UI kèm báo cáo đơn vị/trục/font/material/asset bị thiếu và giữ file nguồn để refresh.
-5. Tiếp tục golden flow, nghiệm thu 3D/Trình bày và release gate; không push khi chưa có lệnh.
+2. Hoàn thiện Trình bày theo thứ tự: PDF deck → DOCX → media video/audio → HTML; tăng fidelity PPTX.
+3. Bổ sung báo cáo đơn vị/trục/font/material/asset bị thiếu và giữ file nguồn để refresh.
+4. Tiếp tục golden flow, nghiệm thu 3D/Trình bày và release gate; không push khi chưa có lệnh.
 
 ## Rủi ro còn hiệu lực
 

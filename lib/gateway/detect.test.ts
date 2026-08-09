@@ -97,10 +97,10 @@ ok(
 console.log('\n[4] routeFormat — bảng ánh xạ định dạng → đích');
 ok('idf → cad-open-project', routeFormat('idf', 'cad').kind === 'cad-open-project');
 ok('dxf → cad-import-drawing', routeFormat('dxf', 'cad').kind === 'cad-import-drawing');
-ok('dwg → cad-import-drawing', routeFormat('dwg', 'render').kind === 'cad-import-drawing');
+ok('dwg → cad-import-drawing ở đúng chặng', routeFormat('dwg', 'cad').kind === 'cad-import-drawing');
 ok('ifpack → cad-restore-project (gọi từ bất kỳ chặng nào)', routeFormat('ifpack', 'present').kind === 'cad-restore-project');
-ok('pptx → present-import-deck', routeFormat('pptx', 'cad').kind === 'present-import-deck');
-ok('pdf → present-import-deck', routeFormat('pdf', 'render').kind === 'present-import-deck');
+ok('pptx → present-import-deck ở đúng chặng', routeFormat('pptx', 'present').kind === 'present-import-deck');
+ok('pdf → unsupported vì chưa có importer deck PDF', routeFormat('pdf', 'present').kind === 'unsupported');
 ok('xlsx → library-bulk-ingest', routeFormat('xlsx', 'present').kind === 'library-bulk-ingest');
 ok('csv → library-bulk-ingest', routeFormat('csv', 'cad').kind === 'library-bulk-ingest');
 ok('unknown → unsupported (kèm format gốc)', (() => {
