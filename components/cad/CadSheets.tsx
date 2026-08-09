@@ -78,7 +78,7 @@ import { useSaveStatus } from '@/lib/save-status';
 import { useRouter } from 'next/navigation';
 import { drawEntities } from '@/lib/cad/render';
 import { clampViewportRect, docForViewport, moveViewportRect, patchSheetViewport, removeSheetViewport, resizeViewportRect, setViewportLayerVisibility, viewportLayerVisible, viewportWorldBox } from '@/lib/cad/paper-space';
-import { Grip, Lock, LockOpen, Plus, ScanSearch, Trash2 } from 'lucide-react';
+import { Grip, Lock, LockOpen, ScanSearch, Trash2 } from 'lucide-react';
 
 const ROUTE = '/cad-editor' as const;
 const DEFAULT_VIEWPORT: Viewport = { scale: 0.08, panX: 300, panY: 400 };
@@ -904,9 +904,33 @@ function PaperSpace({ sheet, onViewportChange, onSheetChange, onOpenModel }: {
 }) {
   const doc = useCadStore((s) => s.doc);
   const [selectedId, setSelectedId] = useState(sheet.viewports[0]?.id ?? '');
+  const [inspectorTab, setInspectorTab] = useState<'sheet' | 'viewport' | 'layers'>('viewport');
+  const [cleanView, setCleanView] = useState(false);
   const gesture = useRef<{ id: string; kind: 'move' | 'resize'; x: number; y: number; rect: Sheet['viewports'][number]['rectOnPaper']; paperPxW: number; paperPxH: number } | null>(null);
   const [paperW, paperH] = paperSizeMm(sheet.paper, sheet.orientation);
   const selected = sheet.viewports.find((viewport) => viewport.id === selectedId) ?? sheet.viewports[0];
+  useEffect(() => {
+    const report = () => window.dispatchEvent(new CustomEvent('cad:paper-selection-state', { detail: { scale: selected?.scale ?? 100, locked: selected?.locked ?? false, clean: cleanView } }));
+    const onAction = (event: Event) => {
+      const { action, value } = (event as CustomEvent<{ action: string; value?: number }>).detail ?? {};
+      if (action === 'report') { report(); return; }
+      if (action === 'add') { addViewport(); return; }
+      if (action === 'layers') { setCleanView(false); setInspectorTab('layers'); return; }
+      if (action === 'clean') { setCleanView((current) => !current); return; }
+      if (!selected) return;
+      if (action === 'lock') onViewportChange(selected.id, { locked: !selected.locked });
+      if (action === 'scale' && value && value > 0) onViewportChange(selected.id, { scale: value });
+      if (action === 'center') {
+        const box = docBox(doc);
+        if (box) onViewportChange(selected.id, { centerMm: { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 } });
+      }
+    };
+    window.addEventListener('cad:paper-action', onAction);
+    report();
+    return () => window.removeEventListener('cad:paper-action', onAction);
+  // `addViewport` chỉ đọc snapshot render hiện tại; listener được làm mới khi Sheet đổi.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, cleanView, doc]);
   const beginGesture = (event: React.PointerEvent, viewport: Sheet['viewports'][number], kind: 'move' | 'resize') => {
     if (viewport.locked && kind === 'move') return;
     const paper = event.currentTarget.closest('[data-paper]') as HTMLElement | null;
@@ -936,42 +960,33 @@ function PaperSpace({ sheet, onViewportChange, onSheetChange, onOpenModel }: {
     setSelectedId(viewport.id);
   };
   return (
-    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'grid', placeItems: 'center', padding: 28, background: 'var(--canvas-bg, #242424)' }}>
-      <div data-paper style={{ width: `min(82vw, ${paperW * 2}px)`, aspectRatio: `${paperW}/${paperH}`, minWidth: 520, position: 'relative', background: '#fff', color: '#25221e', boxShadow: '0 18px 55px rgba(0,0,0,.35)', border: '1px solid rgba(0,0,0,.25)', touchAction: 'none' }} onPointerMove={continueGesture} onPointerUp={endGesture} onPointerCancel={endGesture}>
+    <div style={{ flex: 1, minHeight: 0, display: 'flex', background: 'var(--canvas-bg, #242424)' }}>
+      <div style={{ flex: 1, minWidth: 0, overflow: 'auto', display: 'grid', placeItems: 'center', padding: cleanView ? 22 : 28 }}>
+      <div data-paper style={{ width: `min(${cleanView ? 90 : 76}vw, ${paperW * 2}px)`, aspectRatio: `${paperW}/${paperH}`, minWidth: 520, position: 'relative', background: '#fff', color: '#25221e', boxShadow: '0 18px 55px rgba(0,0,0,.35)', border: '1px solid rgba(0,0,0,.25)', touchAction: 'none' }} onPointerMove={continueGesture} onPointerUp={endGesture} onPointerCancel={endGesture}>
         <div style={{ position: 'absolute', inset: 14, border: '1px solid #777' }} />
-        {sheet.viewports.map((viewport) => <PaperViewport key={viewport.id} doc={doc} viewport={viewport} paperW={paperW} paperH={paperH} selected={viewport.id === selected?.id} onSelect={() => setSelectedId(viewport.id)} onMoveStart={(event) => beginGesture(event, viewport, 'move')} onResizeStart={(event) => beginGesture(event, viewport, 'resize')} onChange={(patch) => onViewportChange(viewport.id, patch)} onOpenModel={() => onOpenModel(viewport)} />)}
-        {/* Nằm ở đầu tờ: dock Pro nổi giữa-dưới Stage sẽ che hit-area nếu đặt cụm này dưới giấy. */}
-        <div style={{ position: 'absolute', right: 18, top: 18, zIndex: 5, display: 'flex', gap: 6 }}>
-          <button type="button" onClick={addViewport} style={paperActionButton}><Plus size={14} /> Thêm ô nhìn</button>
-          <button type="button" disabled={sheet.viewports.length <= 1} onClick={() => selected && onSheetChange(removeSheetViewport(sheet, selected.id))} style={paperActionButton}><Trash2 size={14} /> Xóa ô</button>
-        </div>
-        <div aria-label="Thông tin tờ" style={{ position: 'absolute', left: 18, top: 18, zIndex: 5, width: 214, display: 'grid', gridTemplateColumns: '72px 1fr', gap: 5, padding: 8, border: '1px solid #aaa', borderRadius: 8, background: 'rgba(255,255,255,.95)', font: '600 10px Archivo, sans-serif' }}>
-          <label style={paperMetaLabel}>Số tờ<input aria-label="Số tờ" value={sheet.number} onChange={(event) => onSheetChange({ ...sheet, number: event.target.value })} style={paperMetaInput} placeholder="A-01" /></label>
-          <label style={paperMetaLabel}>Dự án<input aria-label="Tên dự án trên tờ" value={sheet.titleBlock.project} onChange={(event) => onSheetChange({ ...sheet, titleBlock: { ...sheet.titleBlock, project: event.target.value } })} style={paperMetaInput} placeholder="Tên dự án" /></label>
-          <label style={paperMetaLabel}>Người vẽ<input aria-label="Người vẽ" value={sheet.titleBlock.drawnBy} onChange={(event) => onSheetChange({ ...sheet, titleBlock: { ...sheet.titleBlock, drawnBy: event.target.value } })} style={paperMetaInput} placeholder="—" /></label>
-          <label style={paperMetaLabel}>Sửa đổi<input aria-label="Sửa đổi" value={sheet.titleBlock.revision} onChange={(event) => onSheetChange({ ...sheet, titleBlock: { ...sheet.titleBlock, revision: event.target.value } })} style={paperMetaInput} placeholder="00" /></label>
-        </div>
-        {selected && <div aria-label="Thuộc tính ô nhìn" style={{ position: 'absolute', right: 18, top: 58, zIndex: 5, width: 190, maxHeight: '62%', overflow: 'auto', padding: 9, border: '1px solid #aaa', borderRadius: 8, background: 'rgba(255,255,255,.96)', boxShadow: '0 4px 16px rgba(0,0,0,.12)', font: '600 10px Archivo, sans-serif' }}>
-          <div style={{ marginBottom: 7, fontSize: 11 }}>Ô nhìn đang chọn</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-            <label style={{ color: '#625d55' }}>Tâm X (mm)<input aria-label="Tâm X ô nhìn" type="number" disabled={selected.locked} value={selected.centerMm.x} onChange={(event) => { const x = Number(event.target.value); if (Number.isFinite(x)) onViewportChange(selected.id, { centerMm: { ...selected.centerMm, x } }); }} style={{ ...paperMetaInput, width: '100%', marginTop: 3 }} /></label>
-            <label style={{ color: '#625d55' }}>Tâm Y (mm)<input aria-label="Tâm Y ô nhìn" type="number" disabled={selected.locked} value={selected.centerMm.y} onChange={(event) => { const y = Number(event.target.value); if (Number.isFinite(y)) onViewportChange(selected.id, { centerMm: { ...selected.centerMm, y } }); }} style={{ ...paperMetaInput, width: '100%', marginTop: 3 }} /></label>
-          </div>
-          {selected.locked && <div style={{ marginTop: 5, color: '#7b756c', fontWeight: 500 }}>Mở khóa để đổi tâm.</div>}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '9px 0 5px' }}><span>Lớp trong ô này</span>{selected.layerOverrides && Object.keys(selected.layerOverrides).length > 0 && <button type="button" onClick={() => onViewportChange(selected.id, { layerOverrides: undefined })} style={{ ...paperButton, fontSize: 9 }}>Theo bản vẽ</button>}</div>
-          <div style={{ display: 'grid', gap: 4 }}>{doc.layers.map((layer) => <label key={layer.id} style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 22, fontWeight: 500 }}><input type="checkbox" checked={viewportLayerVisible(selected, layer.id, layer.visible)} onChange={(event) => { const next = setViewportLayerVisibility(selected, layer.id, event.target.checked); onViewportChange(selected.id, { layerOverrides: next.layerOverrides }); }} /><span style={{ width: 8, height: 8, borderRadius: 2, background: layer.color, border: '1px solid #888' }} /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{layer.name}</span></label>)}</div>
-        </div>}
+        {sheet.viewports.map((viewport) => <PaperViewport key={viewport.id} doc={doc} viewport={viewport} paperW={paperW} paperH={paperH} selected={!cleanView && viewport.id === selected?.id} onSelect={() => { if (!cleanView) { setSelectedId(viewport.id); setInspectorTab('viewport'); } }} onMoveStart={(event) => beginGesture(event, viewport, 'move')} onResizeStart={(event) => beginGesture(event, viewport, 'resize')} onChange={(patch) => onViewportChange(viewport.id, patch)} onOpenModel={() => onOpenModel(viewport)} />)}
         <div style={{ position: 'absolute', right: 14, bottom: 14, width: '42%', height: 54, border: '1px solid #777', padding: '7px 9px', font: '600 10px Archivo, sans-serif', display: 'grid', gridTemplateColumns: '1fr auto', gap: 4 }}>
           <span>{sheet.titleBlock.project || 'TÊN DỰ ÁN'}</span><span>{sheet.number || '—'}</span>
           <strong>{sheet.name}</strong><span>{sheet.paper} · {sheet.viewports.length} ô nhìn</span>
         </div>
       </div>
+      </div>
+      {!cleanView && <PaperInspector sheet={sheet} selected={selected} doc={doc} tab={inspectorTab} onTab={setInspectorTab} onSheetChange={onSheetChange} onViewportChange={onViewportChange} onOpenModel={() => selected && onOpenModel(selected)} onDelete={() => {
+        if (!selected || sheet.viewports.length <= 1) return;
+        const next = removeSheetViewport(sheet, selected.id);
+        onSheetChange(next);
+        setSelectedId(next.viewports[0]?.id ?? '');
+      }} />}
     </div>
   );
 }
 
 function PaperViewport({ doc, viewport, paperW, paperH, selected, onSelect, onMoveStart, onResizeStart, onChange, onOpenModel }: { doc: Doc; viewport: Sheet['viewports'][number]; paperW: number; paperH: number; selected: boolean; onSelect: () => void; onMoveStart: (event: React.PointerEvent) => void; onResizeStart: (event: React.PointerEvent) => void; onChange: (patch: Partial<Sheet['viewports'][number]>) => void; onOpenModel: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const viewportDoc = docForViewport(doc, viewport);
+  const world = viewportWorldBox(viewport);
+  const content = docBox(viewportDoc);
+  const hasVisibleContent = !!content && content.maxX >= world.minX && content.minX <= world.maxX && content.maxY >= world.minY && content.minY <= world.maxY;
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas) return;
     const rect = canvas.getBoundingClientRect(); const dpr = window.devicePixelRatio || 1;
@@ -979,20 +994,67 @@ function PaperViewport({ doc, viewport, paperW, paperH, selected, onSelect, onMo
     const ctx = canvas.getContext('2d'); if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, rect.width, rect.height);
     const box = viewportWorldBox(viewport); const scale = Math.min(rect.width / (box.maxX - box.minX), rect.height / (box.maxY - box.minY));
-    drawEntities(ctx, { scale, panX: rect.width / 2 - viewport.centerMm.x * scale, panY: rect.height / 2 + viewport.centerMm.y * scale }, docForViewport(doc, viewport), { stroke: '#34312d', lineWidth: 1, text: true });
+    drawEntities(ctx, { scale, panX: rect.width / 2 - viewport.centerMm.x * scale, panY: rect.height / 2 + viewport.centerMm.y * scale }, viewportDoc, { stroke: '#34312d', lineWidth: 1, text: true });
   }, [doc, viewport]);
   return <div onPointerDown={onSelect} style={{ position: 'absolute', left: `${viewport.rectOnPaper.x / paperW * 100}%`, top: `${viewport.rectOnPaper.y / paperH * 100}%`, width: `${viewport.rectOnPaper.w / paperW * 100}%`, height: `${viewport.rectOnPaper.h / paperH * 100}%`, border: `${selected ? 2 : 1}px solid ${selected ? '#6455d9' : '#8d8880'}`, overflow: 'hidden', background: '#fcfcfb' }}>
     <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
+    {!hasVisibleContent && <button type="button" onClick={(event) => { event.stopPropagation(); onOpenModel(); }} style={{ position: 'absolute', left: '50%', top: '50%', translate: '-50% -50%', border: '1px solid #c8c4bc', borderRadius: 8, background: 'rgba(255,255,255,.94)', color: '#625d55', padding: '6px 9px', font: '600 10px Archivo, sans-serif', cursor: 'pointer' }}>Không thấy nội dung · Chọn vùng</button>}
+    <div style={{ position: 'absolute', right: 5, bottom: 4, padding: '2px 5px', borderRadius: 5, background: 'rgba(255,255,255,.9)', color: '#625d55', font: '600 9px Archivo, sans-serif' }}>1:{viewport.scale} · {viewport.locked ? 'Đã khóa' : 'Chưa khóa'}</div>
     {selected && <><div onPointerDown={onMoveStart} title={viewport.locked ? 'Mở khóa để kéo' : 'Kéo ô nhìn'} style={{ ...paperHandle, left: 6, top: 6, cursor: viewport.locked ? 'not-allowed' : 'move' }}><Grip size={13} /></div><div onPointerDown={onResizeStart} title="Đổi kích thước ô nhìn" style={{ ...paperHandle, right: 2, bottom: 2, cursor: 'nwse-resize' }} /></>}
-    {selected && <div style={{ position: 'absolute', left: 28, top: 6, display: 'flex', gap: 5, alignItems: 'center', padding: '4px 6px', borderRadius: 7, background: 'rgba(255,255,255,.94)', boxShadow: '0 2px 10px rgba(0,0,0,.12)', font: '600 11px Archivo, sans-serif' }}><select aria-label="Tỉ lệ ô nhìn" value={viewport.scale} onChange={(event) => onChange({ scale: Number(event.target.value) })} style={{ border: 0, background: 'transparent', font: 'inherit' }}>{PAPER_SCALES.map((scale) => <option key={scale} value={scale}>1:{scale}</option>)}</select><button type="button" title={viewport.locked ? 'Mở khoá ô nhìn' : 'Khoá tỉ lệ ô nhìn'} onClick={() => onChange({ locked: !viewport.locked })} style={paperButton}>{viewport.locked ? <Lock size={13} /> : <LockOpen size={13} />}</button><button type="button" title="Mở vùng này trong Model" onClick={onOpenModel} style={paperButton}><ScanSearch size={13} /> Model</button></div>}
   </div>;
 }
 
+function PaperInspector({ sheet, selected, doc, tab, onTab, onSheetChange, onViewportChange, onOpenModel, onDelete }: {
+  sheet: Sheet;
+  selected: Sheet['viewports'][number] | undefined;
+  doc: Doc;
+  tab: 'sheet' | 'viewport' | 'layers';
+  onTab: (tab: 'sheet' | 'viewport' | 'layers') => void;
+  onSheetChange: (sheet: Sheet) => void;
+  onViewportChange: (id: string, patch: Partial<Sheet['viewports'][number]>) => void;
+  onOpenModel: () => void;
+  onDelete: () => void;
+}) {
+  return <aside aria-label="Thuộc tính Paper" style={{ width: 252, flex: 'none', minHeight: 0, overflow: 'auto', padding: 12, borderLeft: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--t1)', font: '500 11px Archivo, sans-serif' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 3, padding: 3, borderRadius: 10, background: 'var(--field)', marginBottom: 12 }}>
+      {([['sheet', 'Tờ'], ['viewport', 'Ô nhìn'], ['layers', 'Lớp']] as const).map(([id, label]) => <button key={id} type="button" onClick={() => onTab(id)} style={{ border: 0, borderRadius: 8, minHeight: 30, background: tab === id ? 'var(--card)' : 'transparent', color: tab === id ? 'var(--t1)' : 'var(--t3)', font: '650 11px Archivo, sans-serif', boxShadow: tab === id ? '0 1px 4px rgba(0,0,0,.12)' : 'none', cursor: 'pointer' }}>{label}</button>)}
+    </div>
+    {tab === 'sheet' && <div style={paperInspectorGrid}>
+      <strong style={paperInspectorHeading}>Thông tin tờ</strong>
+      <PaperField label="Số tờ"><input aria-label="Số tờ" value={sheet.number} onChange={(event) => onSheetChange({ ...sheet, number: event.target.value })} style={inspectorInput} placeholder="A-01" /></PaperField>
+      <PaperField label="Dự án"><input aria-label="Tên dự án trên tờ" value={sheet.titleBlock.project} onChange={(event) => onSheetChange({ ...sheet, titleBlock: { ...sheet.titleBlock, project: event.target.value } })} style={inspectorInput} placeholder="Tên dự án" /></PaperField>
+      <PaperField label="Người vẽ"><input aria-label="Người vẽ" value={sheet.titleBlock.drawnBy} onChange={(event) => onSheetChange({ ...sheet, titleBlock: { ...sheet.titleBlock, drawnBy: event.target.value } })} style={inspectorInput} placeholder="—" /></PaperField>
+      <PaperField label="Sửa đổi"><input aria-label="Sửa đổi" value={sheet.titleBlock.revision} onChange={(event) => onSheetChange({ ...sheet, titleBlock: { ...sheet.titleBlock, revision: event.target.value } })} style={inspectorInput} placeholder="00" /></PaperField>
+      <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('cad:paper-export-dialog-request'))} style={inspectorAction}>Thiết lập khổ và xuất</button>
+    </div>}
+    {tab === 'viewport' && selected && <div style={paperInspectorGrid}>
+      <strong style={paperInspectorHeading}>Ô nhìn đang chọn</strong>
+      <PaperField label="Tỉ lệ"><select value={selected.scale} onChange={(event) => onViewportChange(selected.id, { scale: Number(event.target.value) })} style={inspectorInput}>{PAPER_SCALES.map((scale) => <option key={scale} value={scale}>1:{scale}</option>)}</select></PaperField>
+      <button type="button" onClick={() => onViewportChange(selected.id, { locked: !selected.locked })} style={inspectorAction}>{selected.locked ? <Lock size={14} /> : <LockOpen size={14} />}{selected.locked ? 'Đã khóa · Bấm để mở' : 'Khóa ô nhìn'}</button>
+      <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('cad:paper-action', { detail: { action: 'center' } }))} style={inspectorAction}><ScanSearch size={14} /> Căn vào bản vẽ</button>
+      <button type="button" onClick={onOpenModel} style={inspectorAction}>Mở vùng này trong Model</button>
+      <details style={{ marginTop: 5 }}><summary style={{ color: 'var(--t3)', cursor: 'pointer' }}>Tọa độ nâng cao</summary><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 7 }}>
+        <PaperField label="Tâm X"><input aria-label="Tâm X ô nhìn" type="number" step="1" disabled={selected.locked} value={Number(selected.centerMm.x.toFixed(2))} onChange={(event) => { const x = Number(event.target.value); if (Number.isFinite(x)) onViewportChange(selected.id, { centerMm: { ...selected.centerMm, x } }); }} style={inspectorInput} /></PaperField>
+        <PaperField label="Tâm Y"><input aria-label="Tâm Y ô nhìn" type="number" step="1" disabled={selected.locked} value={Number(selected.centerMm.y.toFixed(2))} onChange={(event) => { const y = Number(event.target.value); if (Number.isFinite(y)) onViewportChange(selected.id, { centerMm: { ...selected.centerMm, y } }); }} style={inspectorInput} /></PaperField>
+      </div></details>
+      <button type="button" disabled={sheet.viewports.length <= 1} onClick={onDelete} style={{ ...inspectorAction, marginTop: 10, color: sheet.viewports.length <= 1 ? 'var(--t4)' : 'var(--danger, #c64b4b)' }}><Trash2 size={14} /> Xóa ô nhìn</button>
+    </div>}
+    {tab === 'layers' && selected && <div style={paperInspectorGrid}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><strong style={paperInspectorHeading}>Lớp trong ô này</strong>{selected.layerOverrides && Object.keys(selected.layerOverrides).length > 0 && <button type="button" onClick={() => onViewportChange(selected.id, { layerOverrides: undefined })} style={{ ...paperButton, color: 'var(--accent)' }}>Theo bản vẽ</button>}</div>
+      {doc.layers.map((layer) => <label key={layer.id} style={{ display: 'flex', alignItems: 'center', gap: 7, minHeight: 30, cursor: 'pointer' }}><input type="checkbox" checked={viewportLayerVisible(selected, layer.id, layer.visible)} onChange={(event) => { const next = setViewportLayerVisibility(selected, layer.id, event.target.checked); onViewportChange(selected.id, { layerOverrides: next.layerOverrides }); }} /><span style={{ width: 9, height: 9, borderRadius: 3, background: layer.color, border: '1px solid var(--border-strong)' }} /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{layer.name}</span></label>)}
+    </div>}
+  </aside>;
+}
+
+function PaperField({ label, children }: { label: string; children: React.ReactNode }) { return <label style={{ display: 'grid', gap: 4, color: 'var(--t3)', fontSize: 10.5 }}>{label}{children}</label>; }
+
+const paperInspectorGrid: React.CSSProperties = { display: 'grid', gap: 9 };
+const paperInspectorHeading: React.CSSProperties = { color: 'var(--t1)', fontSize: 12 };
+const inspectorInput: React.CSSProperties = { width: '100%', minWidth: 0, height: 32, padding: '0 8px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--field)', color: 'var(--t1)', font: '550 11.5px Archivo, sans-serif' };
+const inspectorAction: React.CSSProperties = { minHeight: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, border: '1px solid var(--border)', borderRadius: 9, background: 'var(--field)', color: 'var(--t2)', font: '650 11px Archivo, sans-serif', cursor: 'pointer' };
+
 const paperButton: React.CSSProperties = { border: 0, background: 'transparent', color: '#34312d', display: 'inline-flex', alignItems: 'center', gap: 4, padding: 2, font: '600 11px Archivo, sans-serif', cursor: 'pointer' };
-const paperActionButton: React.CSSProperties = { ...paperButton, minHeight: 30, padding: '0 9px', border: '1px solid #aaa', borderRadius: 7, background: 'rgba(255,255,255,.94)' };
 const paperHandle: React.CSSProperties = { position: 'absolute', zIndex: 2, width: 18, height: 18, display: 'grid', placeItems: 'center', borderRadius: 4, background: '#6455d9', color: '#fff' };
-const paperMetaLabel: React.CSSProperties = { display: 'contents', color: '#625d55' };
-const paperMetaInput: React.CSSProperties = { minWidth: 0, height: 24, padding: '0 6px', border: '1px solid #c8c4bc', borderRadius: 5, background: '#fff', color: '#25221e', font: '500 10px Archivo, sans-serif' };
 
 /**
  * Làn C — cầu nối giữa hộp thoại Màn 7 (`components/print/*`, thuần trình bày) và dữ liệu CAD THẬT.
