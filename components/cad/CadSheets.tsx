@@ -54,7 +54,7 @@ import { rootFolderChosen, getProjectFolderHandle, writeTextFile, readTextFile }
 import { resolveSourceOfTruth, createDiskWriter, watchProjectPresence, type DiskWriter } from '@/lib/disk-sync';
 import { useProjectPresence } from '@/lib/project-presence-ui';
 import { ensureProjectScope } from '@/lib/project-scope';
-import { exportSheetSetPdf, exportCadToPdf } from '@/lib/cad/pdf';
+import { exportSheetSetPdf, exportPaperSheetPdf } from '@/lib/cad/pdf';
 /**
  * Làn C (in/giấy/xuất) — hộp thoại "Xuất PDF theo tờ giấy" (Màn 7) mount Ở ĐÂY chứ không ở
  * `CadEditor.tsx`, vì đây mới là nơi giữ `sheets[]` THẬT (CadEditor không có — xem chú thích
@@ -77,7 +77,7 @@ import { saveSheets } from '@/lib/sheets-persist';
 import { useSaveStatus } from '@/lib/save-status';
 import { useRouter } from 'next/navigation';
 import { drawEntities } from '@/lib/cad/render';
-import { docForViewport, moveViewportRect, patchSheetViewport, removeSheetViewport, resizeViewportRect, setViewportLayerVisibility, viewportLayerVisible, viewportWorldBox } from '@/lib/cad/paper-space';
+import { clampViewportRect, docForViewport, moveViewportRect, patchSheetViewport, removeSheetViewport, resizeViewportRect, setViewportLayerVisibility, viewportLayerVisible, viewportWorldBox } from '@/lib/cad/paper-space';
 import { Grip, Lock, LockOpen, Plus, ScanSearch, Trash2 } from 'lucide-react';
 
 const ROUTE = '/cad-editor' as const;
@@ -642,7 +642,7 @@ export default function CadSheets() {
      */
     const onExportSheetSetPdf = () => {
       const doc = useCadStore.getState().doc;
-      const idfSheets: IdfSheetData[] = sheetsRef.current.map((s) => ({ id: s.id, name: s.name, doc }));
+      const idfSheets = sheetsRef.current.map((s) => ({ id: s.id, name: s.name, doc, paperSheet: s }));
       useCadStore.getState().setStatus('Đang dựng bộ hồ sơ PDF…');
       void exportSheetSetPdf(idfSheets, 'drawing-set.pdf', { title: useFlowStore.getState().flowName || 'InteriorFlow — Drafting CAD' })
         .then(() => {
@@ -878,8 +878,10 @@ export default function CadSheets() {
         open={paperExportOpen}
         tick={paperTick}
         sheets={sheets}
+        activeId={activeId}
         onClose={() => setPaperExportOpen(false)}
         onPaperChanged={() => setPaperTick((n) => n + 1)}
+        onSheetChange={replaceSheet}
       />
       {backupBrowserOpen && (
         <BackupRecoveryModal
@@ -1004,39 +1006,62 @@ const paperMetaInput: React.CSSProperties = { minWidth: 0, height: 24, padding: 
  *    khổ, khoảng cách tới gốc 0,0), không phải 5 dòng "✓ đã chạy" cứng như mock.
  *
  * Không tự dựng PDF: 2 nút xuất gọi lại đúng 2 đường đã có (`exportSheetSetPdf` cho cả bộ,
- * `exportCadToPdf` cho tờ đang mở).
+ * `exportPaperSheetPdf` cho tờ đang mở).
  */
 function PaperExportDialogHost({
   open,
   tick,
   sheets,
+  activeId,
   onClose,
   onPaperChanged,
+  onSheetChange,
 }: {
   open: boolean;
   /** đổi giá trị = tín hiệu "khổ giấy vừa đổi, tính lại danh sách kiểm". */
   tick: number;
   sheets: Sheet[];
+  activeId: string;
   onClose: () => void;
   onPaperChanged: () => void;
+  onSheetChange: (sheet: Sheet) => void;
 }) {
   const doc = useCadStore.getState().doc;
-  const paper: PaperKey = doc.paperKey ?? 'A3';
-  const orientation: PaperOrientation = doc.paperOrientation ?? defaultPaperOrientation(paper);
+  const activeSheet = sheets.find((sheet) => sheet.id === activeId) ?? sheets[0];
+  const paper: PaperKey = activeSheet?.paper ?? 'A3';
+  const orientation: PaperOrientation = activeSheet?.orientation ?? defaultPaperOrientation(paper);
   // `tick` cố ý nằm trong biểu thức: nó là lý do duy nhất khiến khối này chạy lại sau khi người
   // dùng đổi khổ giấy (doc đọc bằng getState(), không subscribe).
   const checks = open ? buildExportChecks(doc, paper, orientation) : [];
+  if (open && activeSheet && checks.length > 1) {
+    checks[1] = {
+      label: `${activeSheet.viewports.length} ô nhìn giữ đúng vị trí và tỉ lệ trên ${paper} ${orientation === 'portrait' ? 'dọc' : 'ngang'}`,
+      ok: activeSheet.viewports.length > 0 && activeSheet.viewports.every((viewport) => viewport.scale > 0),
+    };
+  }
   void tick;
 
   return (
     <ExportPdfDialog
       open={open}
       sheets={sheets.map((s) => ({ id: s.id, label: s.name }))}
+      currentSheetIndex={Math.max(0, sheets.findIndex((sheet) => sheet.id === activeId))}
       initialPaper={paper}
       initialOrientation={orientation}
       checks={checks}
       onPaperChange={(p, o) => {
-        useCadStore.getState().setPrintSettings({ paperKey: p, paperOrientation: o });
+        if (activeSheet) {
+          const [pw, ph] = paperSizeMm(p, o);
+          onSheetChange({
+            ...activeSheet,
+            paper: p,
+            orientation: o,
+            viewports: activeSheet.viewports.map((viewport) => ({
+              ...viewport,
+              rectOnPaper: clampViewportRect(viewport.rectOnPaper, pw, ph),
+            })),
+          });
+        }
         onPaperChanged();
       }}
       onExportAll={() => {
@@ -1046,8 +1071,9 @@ function PaperExportDialogHost({
       onExportCurrent={() => {
         onClose();
         const st = useCadStore.getState();
+        if (!activeSheet) return;
         st.setStatus('Đang dựng PDF vector…');
-        void exportCadToPdf(st.doc, 'layout.pdf', { title: useFlowStore.getState().flowName || 'InteriorFlow — Drafting CAD', dimStyle: st.dimStyle })
+        void exportPaperSheetPdf(st.doc, activeSheet, 'layout.pdf', { title: useFlowStore.getState().flowName || 'InteriorFlow — Drafting CAD', dimStyle: st.dimStyle })
           .then(() => st.setStatus('Đã xuất layout.pdf — tờ đang mở.'))
           .catch((err) => st.setStatus(`Lỗi xuất PDF: ${err instanceof Error ? err.message : String(err)}`));
       }}
