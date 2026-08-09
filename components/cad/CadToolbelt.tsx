@@ -36,6 +36,8 @@ export default function CadToolbelt() {
         display: 'flex',
         flexDirection: 'column',
         maxWidth: '100%',
+        minWidth: 0,
+        overflow: 'hidden',
         marginBottom: 34,
         borderRadius: 24,
         background: 'color-mix(in srgb, var(--panel) 78%, transparent)',
@@ -51,7 +53,7 @@ export default function CadToolbelt() {
       />
       {!twoRows && <div style={{ borderTop: '1px solid var(--mat-hairline)' }}><ProWorkspaceBar /></div>}
       {twoRows && (
-        <div style={{ borderTop: '1px solid var(--mat-hairline)' }}>
+        <div style={{ borderTop: '1px solid var(--mat-hairline)', minWidth: 0, overflow: 'hidden' }}>
           <CadTouchDock />
         </div>
       )}

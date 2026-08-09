@@ -68,9 +68,15 @@ export default function CadTouchDock() {
       style={{
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
+        // Màn hẹp: tổng 9 nút rộng hơn Stage. Center sẽ làm tràn CẢ hai phía, cắt mất nút đầu;
+        // bắt đầu từ trái + cuộn ngang giúp mọi nút luôn tới được mà không che canvas.
+        justifyContent: 'flex-start',
         gap: 4,
         padding: 5,
+        maxWidth: '100%',
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        WebkitOverflowScrolling: 'touch',
         // Nút bấm nhanh liên tiếp không bị trình duyệt trễ 300ms / phóng to 2 chạm.
         touchAction: 'manipulation',
       }}

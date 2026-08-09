@@ -1,20 +1,20 @@
 # STATUS — InteriorFlow (10/08, dưới 800 từ)
 
-> Lịch sử chi tiết ở `CHANGELOG.md`; báo cáo mẻ ở `docs/M-*-OUT.md`.
-> Git + code + DB thật là nguồn kiểm chứng, không lấy brief/GAP cũ làm bằng chứng hoàn thành.
+> Lịch sử ở `CHANGELOG.md`; báo cáo mẻ ở `docs/M-*-OUT.md`.
+> Git + code + DB là nguồn kiểm chứng, không lấy brief/GAP cũ làm bằng chứng.
 > IF là sản phẩm global, độc lập: **2D Kỹ thuật · 3D Thiết kế · Trình bày**; Brand Kit thuộc từng dự án.
 
 ## Đang chạy
 
-- Không còn worktree phụ. Radial và gesture 2/3 ngón đã merge vào `main` (`3ac3b60`).
+- Worktree `interiorflow-wt-cad-narrow-layout` chờ commit/merge: sửa canvas và dock màn hẹp.
   `main` có 4 file untracked của chủ dự án; không chạm.
 - Gateway đã ở `main` (`c408684`): một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu ·
   chỉ lưu · chưa hỗ trợ. Lối AI Brief chuyên biệt vẫn giữ nguyên.
 
 ## Vừa xong
 
-- Trình bày có màn chọn 6 loại hồ sơ: Deck có Tự dàn/Magic; BOQ mở editor hiện có; Material A3,
-  Văn bản, Video, HTML hiện rõ là chưa làm. Đã vá vòng render vô hạn sau nhập PPTX.
+- Trình bày có màn chọn 6 hồ sơ; Deck/BOQ vào editor, bốn loại chưa làm được ghi rõ. Đã vá vòng
+  render vô hạn sau nhập PPTX.
 - GLB và gói glTF (`.gltf` + `.bin` + texture): kiểm file, lưu nguồn trong Doc/autosave/IDF,
   derive tam giác cho viewer chung, giữ transform/màu nền, báo mesh/tam giác và mất mát.
 - OBJ/MTL: chọn gói `.obj` + `.mtl` + texture, kiểm cấu trúc/trùng file, lưu nguồn và derive mesh;
@@ -31,6 +31,9 @@
   kẹp mép bằng component dùng chung. Gesture 15/15, typecheck/toàn bộ test PASS; preview render
   sạch cả sau merge; worktree/nhánh đã dọn. Browser không giả lập long-press thật nên radial còn
   cần test tay trên tablet.
+- Màn hẹp: canvas dùng ResizeObserver trên chính khung chứa, đo sau layout và CSS phủ 100%; dock
+  Sơ phác cuộn ngang từ trái. Nghiệm thu viewport 592px: canvas 542/542px, DPR backing đúng,
+  body không tràn, lưới phủ kín; console sạch, typecheck/toàn bộ test PASS.
 
 ## Sự thật dữ liệu
 
