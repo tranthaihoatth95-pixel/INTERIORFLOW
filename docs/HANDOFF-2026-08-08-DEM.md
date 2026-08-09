@@ -134,3 +134,40 @@ về: đọc diff kỹ, có thể phải merge tay 2 mục menu.
   nhận verify bằng tsc+test và khai rõ "chưa click-through" — ĐỪNG bịa là đã xem.
 - File `AGENTS.md` ở gốc repo (untracked) là bản sao CLAUDE.md cho công cụ Codex, KHÔNG phải của
   phiên này — để nguyên theo luật "file lạ không đụng".
+
+---
+
+## CẬP NHẬT — lượt 3 (cuối phiên, context cạn)
+
+### ĐÃ XONG + COMMIT: nhập .pptx và .xlsx (việc Hoà yêu cầu trực tiếp)
+- **`.pptx` → deck** (`lib/present-editor/pptx-import.ts`, 75/75 test): jszip + XML reader thuần
+  90 dòng (KHÔNG DOMParser — browser-only, test node phải chạy đúng code app) · thứ tự slide đọc
+  từ `p:sldIdLst` không theo tên file · placeholder kế thừa vị trí từ slideLayout→slideMaster ·
+  EMU→% sân khấu, có test round-trip qua chính `pptxgenjs` app dùng để xuất · slide hỏng chỉ cảnh
+  báo, không throw cả file · nối vào CUỐI deck.
+- **`.xlsx` → BOQ** (`lib/present-editor/boq-xlsx-import.ts`, 55/55 test): tái dùng `xlsx-parse.ts`
+  (đã vá mojibake UTF-8) + `guessMapping()`, chỉ vá 2 lỗ bộ chung không biết (cột matId, cột
+  "Khối lượng") · khớp THEO MÃ, không khớp theo tên, **không sinh dòng BOQ mới** · dialog xem
+  trước 20 dòng, mỗi dòng báo lý do riêng.
+- Cửa kiểm: **130/130 test · tsc 0 · check-chot 0/0**. Working tree SẠCH.
+- Agent .xlsx **đăng nhập browser được** — nên bài học "login tự động không hoạt động" ở lượt 2
+  là do CÁCH tôi làm (form_input/synthetic event), không phải app hỏng. Agent làm được thì phiên
+  sau cũng làm được.
+
+### 🐞 LỖI THẬT CÒN TREO — cần soi riêng
+`Maximum update depth exceeded` từ **`EditorCanvas`** (KHÔNG phải code 2 agent vừa làm) xuất hiện
+sau khi deck có 2 slide nhập từ pptx. Agent .xlsx bắt được lúc verify và khai rõ. Chưa ai điều
+tra. Đây là việc đầu tiên nên làm ở phiên sau — lỗi vòng lặp render thật, không phải cảnh báo.
+
+### Phần .xlsx CHƯA verify được nhánh "áp thật"
+Dự án test trong profile browser có BOQ rỗng (Doc nằm IndexedDB của profile) nên mọi dòng đều
+`not-found` — nhánh ghi override chỉ được phủ bằng test, chưa bấm trên app thật. Cần 1 lượt thử
+với dự án có BOQ thật.
+
+### Trạng thái cuối phiên
+```
+commit chưa push  14
+working tree      sạch (trừ AGENTS.md — file của công cụ Codex, không đụng)
+tsc / test / chot 0 / 0 fail / 0 vi phạm
+server            127.0.0.1:3000 đang chạy
+```
