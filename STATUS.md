@@ -1,4 +1,4 @@
-# STATUS — InteriorFlow (10/08, dưới 800 từ)
+# STATUS — InteriorFlow (10/08)
 
 > Lịch sử ở `CHANGELOG.md`; báo cáo mẻ ở `docs/M-*-OUT.md`.
 > Git + code + DB là nguồn kiểm chứng, không lấy GAP cũ làm bằng chứng.
