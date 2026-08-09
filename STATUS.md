@@ -8,7 +8,8 @@
 
 - Không còn worktree phụ. `main` có 4 file untracked của chủ dự án: `AGENTS.md` và 3 mock ngày
   09/08; không sửa, không commit.
-- Đang rà khả năng nhập/xuất định dạng theo từng chặng và tiếp tục kế hoạch phát hành an toàn.
+- Registry định dạng đã làm trên nhánh `codex/format-registry`: phân biệt chỉnh được · mất mát ·
+  tham chiếu · chỉ lưu · chưa hỗ trợ; chờ duyệt merge rồi mới nối lần lượt vào UI ba chặng.
 
 ## Vừa xong 09/08
 
@@ -40,6 +41,8 @@
 - Trình bày: nhập `.pptx` (mức cơ bản), ảnh, `.idfp`; nhập `.xlsx/.csv` vào BOQ; xuất PDF, PPTX,
   PNG, `.idfp`, XLSX cho BOQ/FF&E. PDF deck và DOCX chưa nhập; Văn bản/Video/HTML chưa có editor.
 - Gateway nhận diện/định tuyến file đã có nhưng chưa nối UI, nên chưa tính là import dùng được.
+- Nhánh registry nhận thêm GLB/glTF/OBJ/FBX/SKP/MAX/IFC/RVT/DOCX/video/audio/HTML nhưng vẫn đánh
+  dấu `unavailable`; sửa PDF Present về `unsupported`, không còn định tuyến sai thành import deck.
 
 ## Việc kế tiếp
 

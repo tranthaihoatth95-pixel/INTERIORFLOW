@@ -19,6 +19,19 @@ export type GatewayFormat =
   | 'pdf'
   | 'xlsx'
   | 'csv'
+  | 'idfp'
+  | 'glb'
+  | 'gltf'
+  | 'obj'
+  | 'fbx'
+  | 'skp'
+  | 'max'
+  | 'ifc'
+  | 'rvt'
+  | 'docx'
+  | 'video'
+  | 'audio'
+  | 'html'
   | 'unknown';
 
 export interface DetectInput {
@@ -48,6 +61,19 @@ function byExtension(name: string): GatewayFormat {
   if (e === 'pdf') return 'pdf';
   if (e === 'xlsx') return 'xlsx';
   if (e === 'csv') return 'csv';
+  if (e === 'idfp') return 'idfp';
+  if (e === 'glb') return 'glb';
+  if (e === 'gltf') return 'gltf';
+  if (e === 'obj' || e === 'mtl') return 'obj';
+  if (e === 'fbx') return 'fbx';
+  if (e === 'skp') return 'skp';
+  if (e === 'max') return 'max';
+  if (e === 'ifc' || e === 'ifczip') return 'ifc';
+  if (e === 'rvt') return 'rvt';
+  if (e === 'docx') return 'docx';
+  if (e === 'mp4' || e === 'mov' || e === 'webm') return 'video';
+  if (e === 'mp3' || e === 'wav' || e === 'm4a' || e === 'ogg') return 'audio';
+  if (e === 'html' || e === 'htm') return 'html';
   if (IMAGE_EXT.has(e)) return 'image';
   return 'unknown';
 }

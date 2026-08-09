@@ -6,6 +6,7 @@
  */
 
 import type { GatewayFormat } from './detect';
+import { capabilityFor } from './capabilities';
 
 export type GatewayStage = 'cad' | 'render' | 'present';
 
@@ -16,7 +17,7 @@ export type RouteAction =
   | { kind: 'place-image'; stage: GatewayStage } // ảnh — đích tuỳ chặng đang gọi
   | { kind: 'present-import-deck' } // .pptx / .pdf — nhập làm slide
   | { kind: 'library-bulk-ingest' } // .xlsx / .csv — nạp hàng loạt vào thư viện (NT1)
-  | { kind: 'unsupported'; format: GatewayFormat };
+  | { kind: 'unsupported'; format: GatewayFormat; reason?: string };
 
 /** định dạng KHÔNG phụ thuộc chặng gọi — tra thẳng bảng. */
 const STATIC_ROUTE: Partial<Record<GatewayFormat, RouteAction>> = {
@@ -25,13 +26,16 @@ const STATIC_ROUTE: Partial<Record<GatewayFormat, RouteAction>> = {
   dwg: { kind: 'cad-import-drawing' },
   ifpack: { kind: 'cad-restore-project' },
   pptx: { kind: 'present-import-deck' },
-  pdf: { kind: 'present-import-deck' },
   xlsx: { kind: 'library-bulk-ingest' },
   csv: { kind: 'library-bulk-ingest' },
 };
 
 /** Ánh xạ định dạng → đích. `stage` = chặng đang gọi Gateway (chỉ ảnh hưởng khi định dạng là ảnh). */
 export function routeFormat(format: GatewayFormat, stage: GatewayStage): RouteAction {
+  const capability = capabilityFor(format, stage);
+  if (capability.import === 'unavailable') {
+    return { kind: 'unsupported', format, reason: capability.note };
+  }
   if (format === 'image') return { kind: 'place-image', stage };
   return STATIC_ROUTE[format] ?? { kind: 'unsupported', format };
 }
