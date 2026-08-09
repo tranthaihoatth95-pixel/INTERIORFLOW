@@ -1383,13 +1383,18 @@ export function LayerPanel() {
   const updateLayer = useCadStore((s) => s.updateLayer);
   const removeLayer = useCadStore((s) => s.removeLayer);
 
+  // 08/08 — port `docs/mocks/2D Kỹ thuật.dc.html` khối "Lớp bản vẽ" + dòng đếm đáy
+  // ("N lớp · X đang ẩn · Y đang khoá"), số THẬT đọc từ doc.layers (không chép chữ tĩnh của mock).
+  const hiddenCount = doc.layers.filter((l) => !l.visible).length;
+  const lockedCount = doc.layers.filter((l) => l.locked).length;
+
   return (
     <div style={{ padding: '2px 6px', fontSize: 12.5 }}>
       {/* Nút "+ Lớp mới" nay ở đáy Navigator (`Navigator.tsx`, hàng trên) — không lặp ở đây nữa
           (VIỆC 2, tránh 2 chỗ cùng chức năng khi LayerPanel dời từ Inspector phải sang Navigator
-          trái). */}
+          trái). Nhãn "Lớp bản vẽ" khớp mock (trước "Lớp (Layer)" — trộn VI/EN khác quy ước mock). */}
       <div style={panelHead}>
-        <span>Lớp (Layer)</span>
+        <span>Lớp bản vẽ</span>
       </div>
       <div style={{ overflowY: 'auto' }}>
         {doc.layers.map((l) => {
@@ -1465,6 +1470,14 @@ export function LayerPanel() {
             </div>
           );
         })}
+      </div>
+      {/* Dòng đếm đáy — khớp mock "6 lớp · 1 đang ẩn · 1 đang khoá", số THẬT từ doc.layers.
+          KHÔNG lặp dòng "N tờ"/save-status của StatusBar (đó là ổ ⑥ dùng chung, ngoài phạm vi
+          file này) — dòng này CHỈ nói về chính danh sách lớp đang cuộn ở trên. */}
+      <div style={{ padding: '6px 8px 2px', fontSize: 11, color: 'var(--t4)' }}>
+        {doc.layers.length} lớp
+        {hiddenCount > 0 && ` · ${hiddenCount} đang ẩn`}
+        {lockedCount > 0 && ` · ${lockedCount} đang khoá`}
       </div>
     </div>
   );
@@ -3015,8 +3028,10 @@ export function RoomTypeBox({ entity, onApply }: { entity: TextEntity; onApply: 
  * Undo được, tôn trọng layer khoá) — cùng pattern RoomTypeBox/BimAssignBox. */
 /** G-M2-08 — bề dày VẼ THẬT của một tường quad (mm): cạnh ngắn nhất của tứ giác poché. Chỉ đo
  * được quad 4 đỉnh (tường đoạn chuẩn `wallSegment`); biên phức tạp hơn (chuỗi nối/vát góc) trả
- * null — nói "không đo được", không đoán (K3). */
-function measuredWallThicknessMm(entity: Entity): number | null {
+ * null — nói "không đo được", không đoán (K3).
+ * XUẤT (08/08, port `docs/mocks/2D Kỹ thuật.dc.html` khối "Kích thước" aside) — CadInspectorPages
+ * cần đọc lại để hiện Dài/Dày thật, không viết bản đo thứ hai. */
+export function measuredWallThicknessMm(entity: Entity): number | null {
   if (entity.type !== 'hatch' && !(entity.type === 'polyline' && entity.closed)) return null;
   const pts = entity.points;
   if (pts.length !== 4) return null;
@@ -3027,6 +3042,27 @@ function measuredWallThicknessMm(entity: Entity): number | null {
     min = Math.min(min, Math.hypot(b.x - a.x, b.y - a.y));
   }
   return Number.isFinite(min) && min > 0 ? min : null;
+}
+
+/** 08/08 — cạnh song song bề dày ở trên (chiều DÀI vẽ thật của đoạn tường mm): cạnh DÀI nhất của
+ * cùng tứ giác poché (đối lập `measuredWallThicknessMm` lấy cạnh ngắn nhất). `LineEntity` (tường
+ * vẽ tay bằng LINE, không có poché) đo trực tiếp khoảng cách 2 đầu — hình học của nó CHÍNH LÀ độ
+ * dài, không cần đo qua quad. */
+export function measuredWallLengthMm(entity: Entity): number | null {
+  if (entity.type === 'line') {
+    const d = Math.hypot(entity.b.x - entity.a.x, entity.b.y - entity.a.y);
+    return Number.isFinite(d) && d > 0 ? d : null;
+  }
+  if (entity.type !== 'hatch' && !(entity.type === 'polyline' && entity.closed)) return null;
+  const pts = entity.points;
+  if (pts.length !== 4) return null;
+  let max = 0;
+  for (let i = 0; i < 4; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % 4];
+    max = Math.max(max, Math.hypot(b.x - a.x, b.y - a.y));
+  }
+  return Number.isFinite(max) && max > 0 ? max : null;
 }
 
 export function WallTypePanel({ entity, onApply }: { entity: Entity; onApply: (es: Entity[]) => void }) {

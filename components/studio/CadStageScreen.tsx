@@ -91,8 +91,11 @@ export default function CadStageScreen() {
   const mode = requireMode(cadModeToModeId(cadMode));
 
   // Tiêu đề Inspector — 1 vật chọn thì tên rõ theo type, nhiều vật thì đếm số (khớp mock
-  // "Phòng khách"/"24.6 m²" — ở đây chưa có mô hình "tên vật" đầy đủ như mock giả định, dùng
-  // nhãn theo LOẠI entity, trung thực hơn là bịa tên phòng không có thật).
+  // "Phòng khách"/"24.6 m²"). 08/08 ĐÍNH CHÍNH — ghi chú cũ ở đây nói "chưa có mô hình 'tên vật'
+  // đầy đủ như mock giả định" là SAI: `RoomEntity.name` (lib/cad/model.ts:860) đã là tên THẬT
+  // ("PHÒNG KHÁCH"…, gán lúc `detectRooms` đọc từ nhãn TEXT gốc) — chỉ chưa được ĐỌC ở đây. Phòng
+  // (type 'room') giờ hiện đúng tên thật; mọi loại entity khác vẫn dùng nhãn LOẠI như cũ (đúng —
+  // chúng thật sự không có "tên", suy tên là bịa).
   // CHINH-5 (SPEC-PANEL-ROLLOUT §3 hàng "Lớp: Tường"): sub = CHẤM MÀU lớp + TÊN lớp (học Figma),
   // không nhãn "Lớp:", không lộ id thô (`l-wall`) như bản đầu.
   const { title, sub } = useMemo(() => {
@@ -101,7 +104,7 @@ export default function CadStageScreen() {
     const e = doc.entities.find((x) => x.id === selection[0]);
     const layer = e ? doc.layers.find((l) => l.id === e.layer) : undefined;
     return {
-      title: e ? tr(entityTypeLabel(e.type), e.type) : undefined,
+      title: e ? (e.type === 'room' ? e.name : tr(entityTypeLabel(e.type), e.type)) : undefined,
       sub: layer ? (
         <span className="flex items-center gap-1.5" title={tr('Lớp', 'Layer')}>
           <span className="h-2 w-2 shrink-0 rounded-[3px]" style={{ background: layer.color }} />
