@@ -36,7 +36,7 @@
 - Dock Sơ phác gọn, vùng chạm 44px; Hatch overlay 2 cột né dock. Banner mất phiên portal ra body,
   có safe-area. Bàn trống bỏ thẻ giới thiệu/“Vẽ mới”, chỉ còn nút Nhập; click ngoài tự đóng.
   Panel BIM cũ đè toolbar đã bỏ; số liệu BIM vẫn ở thanh Chuyên, gán cấu kiện ở Inspector.
-  Preview, typecheck và toàn bộ test PASS.
+  Icon nơi lưu đổi sang thư mục nét rõ. Preview, typecheck và toàn bộ test PASS.
 
 ## Năng lực định dạng đã đo
 
