@@ -1,5 +1,5 @@
-import { clampViewportRect, moveViewportRect, patchSheetViewport, removeSheetViewport, resizeViewportRect, viewportWorldBox } from './paper-space';
-import type { Sheet } from './model';
+import { clampViewportRect, docForViewport, moveViewportRect, patchSheetViewport, removeSheetViewport, resizeViewportRect, setViewportLayerVisibility, viewportLayerVisible, viewportWorldBox } from './paper-space';
+import type { Doc, Sheet } from './model';
 
 let pass = 0;
 function ok(label: string, yes: boolean) { if (!yes) throw new Error(`FAIL: ${label}`); pass += 1; console.log(`  ok  - ${label}`); }
@@ -25,4 +25,18 @@ ok('resize giữ min và không tràn giấy', resized.w === 35 && resized.h ===
 ok('không xoá viewport cuối cùng', removeSheetViewport(sheet, 'vp1') === sheet);
 const two = { ...sheet, viewports: [...sheet.viewports, { ...sheet.viewports[0], id: 'vp2' }] };
 ok('xoá đúng viewport khi tờ còn ô khác', removeSheetViewport(two, 'vp1').viewports[0].id === 'vp2');
+const doc: Doc = {
+  entities: [],
+  layers: [
+    { id: 'wall', name: 'Tường', color: '#ffffff', visible: true, locked: false },
+    { id: 'furniture', name: 'Nội thất', color: '#ffffff', visible: false, locked: false },
+  ],
+};
+const overridden = setViewportLayerVisibility(setViewportLayerVisibility(sheet.viewports[0], 'wall', false), 'furniture', true);
+ok('override tắt lớp đang hiện trong riêng ô nhìn', !viewportLayerVisible(overridden, 'wall', true));
+ok('override bật lớp đang ẩn trong riêng ô nhìn', viewportLayerVisible(overridden, 'furniture', false));
+ok('đổi lớp không mutate viewport gốc', sheet.viewports[0].layerOverrides === undefined);
+const viewportDoc = docForViewport(doc, overridden);
+ok('Doc render nhận đúng hai override', !viewportDoc.layers[0].visible && viewportDoc.layers[1].visible);
+ok('Doc nguồn không bị đổi trạng thái lớp', doc.layers[0].visible && !doc.layers[1].visible);
 console.log(`\n${pass} pass, 0 fail`);
