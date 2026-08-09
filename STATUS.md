@@ -29,7 +29,7 @@
 
 - Nghiệm thu build cuối + **vá bug CHẶN PHÁT HÀNH** (electron-builder rơi `node_modules/.prisma`;
   DMG 352MB đi hết 3 chặng thật) → `docs/M-BUILD-FINAL-OUT.md`.
-- Cửa kiểm `check-chot` 🔴34→0, đã nối vào `npm test` → `docs/M-CHOT-OUT.md`.
+- Cửa kiểm `check-chot` 🔴34→0; vòng render `EditorCanvas` sau nhập PPTX đã vá → `docs/M-CHOT-OUT.md`.
 - BOQ/FF&E/bảng món + dây ảnh→bản vẽ bấm thật → `docs/M-BOQ-OUT.md` · `M-FIX-C-OUT.md`.
 - Soi 16 mảng chưa sổ (17 đề xuất GAP chờ TỔNG duyệt) → `docs/M-SOI-16-MANG-OUT.md`.
 - Vật liệu PBR + ảnh vân · login UI · build-ops engine · snap 3D → `M-VAT-LIEU-OUT` ·
