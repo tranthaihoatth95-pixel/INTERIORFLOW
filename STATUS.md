@@ -6,7 +6,7 @@
 
 ## Đang chạy
 
-- Paper Properties đã merge vào `main`; worktree phụ đang chờ dọn an toàn. 4 file untracked của
+- Paper Properties đã merge vào `main`; worktree phụ đã dọn an toàn. 4 file untracked của
   chủ dự án được giữ nguyên.
 
 ## Vừa xong
