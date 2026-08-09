@@ -35,11 +35,12 @@
  * chật là do dữ liệu người dùng nhập dài, không phải do bước xuất.
  */
 
-import type { Doc, Entity, Pt, Viewport, DimEntity } from './model';
-import { docBox, fitBox, fitScaleLabel, worldToScreen, ellipseBoundaryPoints, zoneBoundaryPoints, zoneCentroid, ZONE_GROUP_META, fixedScaleViewport, fitsAtScale, docPaperMm, defaultPaperOrientation } from './model';
+import type { Doc, Entity, Pt, Viewport, DimEntity, Sheet } from './model';
+import { docBox, fitBox, fitScaleLabel, worldToScreen, ellipseBoundaryPoints, zoneBoundaryPoints, zoneCentroid, ZONE_GROUP_META, fixedScaleViewport, fitsAtScale, docPaperMm, defaultPaperOrientation, paperSizeMm } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
 import { hatchLines, hatchDots } from './hatch';
 import { ensureVietnameseFont } from '../pdf-font';
+import { docForViewport } from './paper-space';
 
 /**
  * M0 fix (docs/RESEARCH-TECHNICAL-DRAWING-PIPELINE.md §1.6/§4) — khổ giấy/lề mặc định dùng khi
@@ -461,6 +462,59 @@ function drawDocOntoPdfPage(pdf: JsPdf, doc: Doc, pw: number, ph: number, opts: 
   }
 }
 
+/** Vẽ đúng bố cục Paper: mỗi ô nhìn có rect/tâm/tỉ lệ/layer riêng, không fit lại toàn Doc. */
+function drawPaperSheetOntoPdfPage(pdf: JsPdf, doc: Doc, sheet: Sheet, opts: CadPdfOptions): void {
+  const ds = opts.dimStyle ?? DEFAULT_DIM_STYLE;
+  for (const viewport of sheet.viewports) {
+    const { x, y, w, h } = viewport.rectOnPaper;
+    const scale = 1 / viewport.scale;
+    const v: Viewport = {
+      scale,
+      panX: x + w / 2 - viewport.centerMm.x * scale,
+      panY: y + h / 2 + viewport.centerMm.y * scale,
+    };
+    const viewportDoc = docForViewport(doc, viewport);
+    pdf.saveGraphicsState();
+    pdf.rect(x, y, w, h);
+    pdf.clip();
+    pdf.discardPath?.();
+    for (const entity of viewportDoc.entities) {
+      const layer = viewportDoc.layers.find((candidate) => candidate.id === entity.layer);
+      if (layer && !layer.visible) continue;
+      drawEntityPdf(pdf, v, viewportDoc, entity, ds);
+    }
+    pdf.restoreGraphicsState();
+    pdf.setDrawColor('#8D8880');
+    pdf.setLineWidth(0.13);
+    pdf.rect(x, y, w, h);
+  }
+
+  // Khung giấy + khung tên metadata của Sheet; không ghi ngược vào Doc.
+  const [pw, ph] = paperSizeMm(sheet.paper, sheet.orientation);
+  pdf.setDrawColor('#555555');
+  pdf.setLineWidth(0.18);
+  pdf.rect(8, 8, pw - 16, ph - 16);
+  const titleW = Math.min(180, pw - 16);
+  const titleH = Math.min(34, ph - 16);
+  const tx = pw - 8 - titleW;
+  const ty = ph - 8 - titleH;
+  pdf.rect(tx, ty, titleW, titleH);
+  pdf.line(tx, ty + 12, tx + titleW, ty + 12);
+  pdf.line(tx + titleW - 42, ty, tx + titleW - 42, ty + titleH);
+  pdf.setTextColor('#25221E');
+  pdf.setFontSize(9);
+  pdf.text(sheet.titleBlock.project || opts.title || 'InteriorFlow project', tx + 4, ty + 7);
+  pdf.setFontSize(8);
+  pdf.text(sheet.name, tx + 4, ty + 18);
+  pdf.text(`Người vẽ: ${sheet.titleBlock.drawnBy || '—'}`, tx + 4, ty + 25);
+  pdf.text(`Rev: ${sheet.titleBlock.revision || '—'}`, tx + 4, ty + 31);
+  pdf.setFontSize(11);
+  pdf.text(sheet.number || '—', tx + titleW - 38, ty + 8);
+  pdf.setFontSize(7);
+  pdf.text(`${sheet.paper} · ${sheet.orientation === 'portrait' ? 'Dọc' : 'Ngang'}`, tx + titleW - 38, ty + 18);
+  pdf.text(`${sheet.viewports.length} ô nhìn`, tx + titleW - 38, ty + 25);
+}
+
 /**
  * P4 (04/08) — dòng ghi chú cuối trang: tiêu đề · "Tờ N/M" · "Rev X" nếu caller truyền
  * `sheetIndex`/`sheetCount`/`version`. Tách THÀNH HÀM THUẦN (không phụ thuộc jsPDF) để test được
@@ -506,12 +560,31 @@ export async function exportCadToPdf(doc: Doc, filename = 'layout.pdf', opts: Ca
   pdf.save(filename);
 }
 
+/** Dựng một tờ Paper thật, dùng cho xem/xuất tờ đang mở. */
+export async function buildPaperSheetPdf(doc: Doc, sheet: Sheet, opts: CadPdfOptions = {}) {
+  const { jsPDF } = await import('jspdf');
+  const [pw, ph] = paperSizeMm(sheet.paper, sheet.orientation);
+  const orientation = pw >= ph ? 'landscape' : 'portrait';
+  const pdf = new jsPDF({ orientation, unit: 'mm', format: [pw, ph] });
+  await ensureVietnameseFont(pdf);
+  drawPaperSheetOntoPdfPage(pdf, doc, sheet, opts);
+  return pdf;
+}
+
+export async function exportPaperSheetPdf(doc: Doc, sheet: Sheet, filename = 'layout.pdf', opts: CadPdfOptions = {}): Promise<void> {
+  if (typeof window === 'undefined') return;
+  const pdf = await buildPaperSheetPdf(doc, sheet, opts);
+  pdf.save(filename);
+}
+
 /** 1 tờ trong bộ hồ sơ — id/name khớp hình hài `sheets[]` của `CadSheets.tsx` (không import
  * type từ đó để tránh vòng lặp 'use client' → module thuần này chỉ cần 3 field). */
 export interface SheetSetEntry {
   id: string;
   name: string;
   doc: Doc;
+  /** Có metadata Paper ⇒ xuất đúng layout nhiều ô nhìn; thiếu ⇒ tương thích bộ Doc kiểu cũ. */
+  paperSheet?: Sheet;
 }
 
 /**
@@ -579,22 +652,25 @@ export async function buildSheetSetPdf(sheets: SheetSetEntry[], opts: CadPdfOpti
   };
 
   sheets.forEach((s, i) => {
-    const { pw, ph } = pageFormatOf(s.doc, opts);
+    const [pw, ph] = s.paperSheet ? paperSizeMm(s.paperSheet.paper, s.paperSheet.orientation) : [pageFormatOf(s.doc, opts).pw, pageFormatOf(s.doc, opts).ph];
     pdf.text(String(i + 1), colNo, y);
     pdf.text(s.name, colName, y);
-    pdf.text(paperKeyOrientationLabel(s.doc), colPaper, y);
-    pdf.text(scaleLabelOf(s.doc, pw, ph), colScale, y);
+    pdf.text(s.paperSheet ? `${s.paperSheet.paper} · ${s.paperSheet.orientation === 'portrait' ? 'Dọc' : 'Ngang'}` : paperKeyOrientationLabel(s.doc), colPaper, y);
+    pdf.text(s.paperSheet ? s.paperSheet.viewports.map((viewport) => `1:${viewport.scale}`).join(' · ') : scaleLabelOf(s.doc, pw, ph), colScale, y);
     y += 7;
   });
 
   // Mỗi tờ 1 trang, khổ giấy RIÊNG của tờ đó (không ép chung 1 khổ như brief yêu cầu) — trang
   // mục lục là trang 1, tờ thứ i là trang i+1 (outline.add pageNumber phải khớp thứ tự này).
   sheets.forEach((s, i) => {
-    const { pw, ph, orientation } = pageFormatOf(s.doc, opts);
+    const page = pageFormatOf(s.doc, opts);
+    const [pw, ph] = s.paperSheet ? paperSizeMm(s.paperSheet.paper, s.paperSheet.orientation) : [page.pw, page.ph];
+    const orientation = pw >= ph ? 'landscape' : 'portrait';
     pdf.addPage([pw, ph], orientation);
     // P4 (04/08) — "số tờ" khung tên: bộ hồ sơ BIẾT thứ tự/tổng số tờ thật (sheets[]), tự điền
     // sheetIndex/sheetCount cho MỖI trang — caller không cần tự đếm, không lệch với mục lục ở trên.
-    drawDocOntoPdfPage(pdf, s.doc, pw, ph, { ...opts, title: s.name, sheetIndex: i + 1, sheetCount: sheets.length });
+    if (s.paperSheet) drawPaperSheetOntoPdfPage(pdf, s.doc, s.paperSheet, { ...opts, title: s.name, sheetIndex: i + 1, sheetCount: sheets.length });
+    else drawDocOntoPdfPage(pdf, s.doc, pw, ph, { ...opts, title: s.name, sheetIndex: i + 1, sheetCount: sheets.length });
     pdf.outline.add(null, s.name, { pageNumber: i + 2 });
   });
 
