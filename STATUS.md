@@ -6,13 +6,13 @@
 
 ## Đang chạy
 
-- Paper UI gọn đã merge vào `main`; worktree phụ đã dọn an toàn. 4 file untracked của
+- Preview PDF thật đã merge vào `main`; worktree phụ đang chờ dọn an toàn. 4 file untracked của
   chủ dự án được giữ nguyên.
 
 ## Vừa xong
 
-- Trình bày chọn 6 hồ sơ; Deck/BOQ vào editor, bốn loại chưa làm ghi rõ. Đã vá vòng render vô hạn
-  sau nhập PPTX. 3D nhập GLB, gói glTF và OBJ/MTL ở mức mất mát, giữ nguồn trong Doc/autosave/IDF.
+- Trình bày chọn 6 hồ sơ; Deck/BOQ vào editor, bốn loại chưa làm ghi rõ. 3D nhập GLB, gói glTF và
+  OBJ/MTL ở mức mất mát, giữ nguồn trong Doc/autosave/IDF.
 - Chặng 1: Sơ phác chỉ giữ dựng nhanh, Move/Measure/Markup và thanh chạm. Chuyên giữ bộ lệnh đầy
   đủ, thêm ngữ cảnh MODEL/đơn vị/tờ/tỉ lệ/BIM và mở lớp BIM 2D.
 - Sơ phác tablet: nhận bút, chống tì, pan/pinch; dock có undo/redo. Tap 2/3 ngón undo/redo;
@@ -33,9 +33,9 @@
 - Xuất Paper: PDF một tờ/cả bộ đọc đúng khổ, hướng, rect, tâm, tỉ lệ và layer riêng từng ô nhìn;
   đổi Page Setup ghi vào Sheet và kẹp viewport trong giấy. Đo 5000mm ở 1:50 = 100mm; Paper 5/5,
   sheet-set 19/19, typecheck/toàn bộ test PASS.
-- Paper UI: bỏ hai bảng che giấy; Inspector phải có Tờ/Ô nhìn/Lớp; toolbar một hàng theo ngữ cảnh
-  với căn vùng, tỉ lệ, khóa, xem sạch, xuất. Tọa độ làm tròn và để nâng cao; viewport trống có CTA.
-  Browser 3015 + typecheck/toàn bộ test PASS.
+- Paper UI: Inspector Tờ/Ô nhìn/Lớp; toolbar một hàng theo ngữ cảnh với căn vùng, tỉ lệ, khóa,
+  xem sạch, xuất. Hộp xuất nay dựng và nhúng chính PDF thật trước khi tải; URL tạm được thu hồi khi
+  đóng/đổi tờ, có trạng thái chờ và lỗi rõ. Paper 5/5, typecheck/toàn bộ test PASS sau merge.
 
 ## Năng lực định dạng đã đo
 
@@ -50,8 +50,8 @@
 
 ## Việc kế tiếp
 
-1. Nghiệm thu bút/radial trên tablet; Kỹ thuật cần preview PDF. BIM mới là phân loại 2D; chưa có IFC
-   hoặc clash, nên chưa ngang Revit.
+1. Nghiệm thu bút/radial trên tablet. BIM mới là phân loại 2D; chưa có IFC hoặc clash, nên chưa
+   ngang Revit.
 2. Định dạng FBX → IFC. SKP dùng SDK/bridge sau kiểm license; `.max/.rvt` dùng bridge/plugin,
    không tự viết parser native.
 3. Trình bày: PDF deck → DOCX → media → HTML; tăng fidelity PPTX.
