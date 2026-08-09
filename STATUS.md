@@ -6,7 +6,7 @@
 
 ## Đang chạy
 
-- Preview PDF thật đã merge vào `main`; worktree phụ đã dọn an toàn. 4 file untracked của
+- Hệ phím tắt toàn app đang triển khai; mốc đầu đã merge. 4 file untracked của
   chủ dự án được giữ nguyên.
 
 ## Vừa xong
@@ -33,9 +33,10 @@
 - Xuất Paper: PDF một tờ/cả bộ đọc đúng khổ, hướng, rect, tâm, tỉ lệ và layer riêng từng ô nhìn;
   đổi Page Setup ghi vào Sheet và kẹp viewport trong giấy. Đo 5000mm ở 1:50 = 100mm; Paper 5/5,
   sheet-set 19/19, typecheck/toàn bộ test PASS.
-- Paper UI: Inspector Tờ/Ô nhìn/Lớp; toolbar một hàng theo ngữ cảnh với căn vùng, tỉ lệ, khóa,
-  xem sạch, xuất. Hộp xuất nay dựng và nhúng chính PDF thật trước khi tải; URL tạm được thu hồi khi
-  đóng/đổi tờ, có trạng thái chờ và lỗi rõ. Paper 5/5, typecheck/toàn bộ test PASS sau merge.
+- Paper UI: Inspector Tờ/Ô nhìn/Lớp; toolbar ngữ cảnh gọn. Hộp xuất nhúng chính PDF thật trước khi
+  tải, thu hồi URL tạm khi đóng/đổi tờ. Paper 5/5, typecheck/toàn bộ test PASS.
+- Chốt mọi lệnh chạy được phải có đường bàn phím thật, cùng nguồn với tooltip/`⌘/`/`⌘K`, có guard
+  ô nhập và không gán phím giả. `⌘P`/`Ctrl+P` mở preview/xuất PDF Paper; shortcuts 23/23 PASS.
 
 ## Năng lực định dạng đã đo
 
@@ -50,8 +51,8 @@
 
 ## Việc kế tiếp
 
-1. Nghiệm thu bút/radial trên tablet. BIM mới là phân loại 2D; chưa có IFC hoặc clash, nên chưa
-   ngang Revit.
+1. Kiểm kê lệnh chạy được chưa có phím theo từng chặng; nối qua registry chung, xử xung đột và
+   nghiệm thu bút/radial trên tablet. BIM chưa có IFC/clash nên chưa ngang Revit.
 2. Định dạng FBX → IFC. SKP dùng SDK/bridge sau kiểm license; `.max/.rvt` dùng bridge/plugin,
    không tự viết parser native.
 3. Trình bày: PDF deck → DOCX → media → HTML; tăng fidelity PPTX.
