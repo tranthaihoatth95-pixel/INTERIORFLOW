@@ -6,7 +6,7 @@
 
 ## Đang chạy
 
-- Không còn worktree phụ. Lớp bút/chống tì tay Sơ phác đã merge vào `main` (`b7318b1`).
+- Worktree `interiorflow-wt-sketch-radial` chờ commit/merge: radial và gesture 2/3 ngón.
   `main` có 4 file untracked của chủ dự án; không chạm.
 - Gateway đã ở `main` (`c408684`): một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu ·
   chỉ lưu · chưa hỗ trợ. Lối AI Brief chuyên biệt vẫn giữ nguyên.
@@ -17,8 +17,8 @@
   Văn bản, Video, HTML hiện rõ là chưa làm. Đã vá vòng render vô hạn sau nhập PPTX.
 - GLB và gói glTF (`.gltf` + `.bin` + texture): kiểm file, lưu nguồn trong Doc/autosave/IDF,
   derive tam giác cho viewer chung, giữ transform/màu nền, báo mesh/tam giác và mất mát.
-- OBJ/MTL: chọn gói `.obj` + `.mtl` + texture, kiểm cấu trúc/trùng file, lưu nguồn để mở lại,
-  derive mesh vào viewer; báo giả định mét/Y-up và texture chưa hiển thị. Gateway đánh dấu `lossy`.
+- OBJ/MTL: chọn gói `.obj` + `.mtl` + texture, kiểm cấu trúc/trùng file, lưu nguồn và derive mesh;
+  báo giả định mét/Y-up, texture chưa hiển thị. Parser 5/5, Gateway 30/30, mọi test PASS sau merge.
 - Chặng 1: Sơ phác chỉ giữ dựng nhanh, Move/Measure/Markup và thanh chạm. Chuyên giữ bộ lệnh đầy
   đủ, thêm ngữ cảnh MODEL/đơn vị/tờ/tỉ lệ/BIM và mở lớp BIM 2D.
 - Sơ phác tablet mẻ 1: nhận bút, loại vùng tì tay ≥24px và touch chen lúc bút chạm/300ms sau
@@ -26,8 +26,10 @@
   có Hoàn tác/Làm lại đi qua cùng nhánh phím. Test lớp input 10/10, typecheck và toàn bộ test PASS;
   sau merge typecheck/toàn bộ test PASS; preview thấy đủ ba nút mới, không lỗi console; worktree
   và nhánh đã dọn an toàn.
-- Sau merge: parser OBJ 5/5, Gateway 30/30, typecheck và toàn bộ `npm test` PASS. Đã
-  click-through hai mode trên local `3015`, không lỗi console; worktree/nhánh đã dọn an toàn.
+- Sơ phác tablet mẻ 2: ở công cụ Chọn, tap nhanh 2 ngón hoàn tác, 3 ngón làm lại; ≥250ms hoặc
+  dịch ≥8px giữ pan/pinch. Giữ touch/pen 450ms mở radial 8 lệnh thật, đổi bộ theo nền/selection,
+  kẹp mép bằng component dùng chung. Gesture 15/15, typecheck/toàn bộ test PASS; preview render
+  sạch. Công cụ browser không giả lập long-press thật nên radial còn cần test tay trên tablet.
 
 ## Sự thật dữ liệu
 
@@ -48,7 +50,7 @@
 
 ## Việc kế tiếp
 
-1. Làm sâu hai mode: Sơ phác tiếp theo radial + chạm 2/3 ngón + nắn nét; Chuyên cần Model/Paper,
+1. Làm sâu hai mode: Sơ phác tiếp theo nắn nét và test tay radial; Chuyên cần Model/Paper,
    viewport/tờ in, property/layer workflow. BIM mới là phân loại 2D; chưa có quan hệ mô hình, IFC
    hoặc clash, nên chưa ngang Revit.
 2. Định dạng FBX → IFC. SKP dùng SDK/bridge sau kiểm license; `.max/.rvt` dùng bridge/plugin,
