@@ -6,8 +6,8 @@
 
 ## Đang chạy
 
-- Worktree `interiorflow-wt-pro-multi-viewport` đang làm nhiều ô nhìn; `main` có 4 file untracked
-  của chủ dự án, không chạm.
+- Không còn worktree phụ. Nhiều ô nhìn đã merge vào `main` (`937a372`); 4 file untracked của chủ
+  dự án được giữ nguyên.
 - Gateway là một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu · chỉ lưu · chưa hỗ trợ.
 
 ## Vừa xong
@@ -29,8 +29,9 @@
 - Paper Space Pro: MODEL/PAPER đổi không gian thật; PAPER dựng giấy, khung tên và ô nhìn từ cùng
   `Sheet/Viewport2D` + một Doc. Mẻ 1 đổi tỉ lệ/khóa/quay đúng vùng Model, test và preview PASS.
   Mẻ 2 thêm nhiều ô nhìn độc lập; chọn/thêm/xóa, kéo/resize có chặn mép và kích thước tối thiểu;
-  không cho xóa ô cuối. Logic 9/9, typecheck/toàn bộ test PASS. Còn metadata tờ và persist nhiều
-  viewport qua reload/IDF.
+  không cho xóa ô cuối. Logic 9/9, typecheck/toàn bộ test PASS sau merge. Preview 3015 thêm ô
+  thứ hai/xóa về một ô đúng, console sạch; đã sửa cụm nút bị dock Pro che hit-area. Worktree/
+  nhánh đã dọn. Còn metadata tờ và persist nhiều viewport qua reload/IDF.
 
 ## Sự thật dữ liệu
 
