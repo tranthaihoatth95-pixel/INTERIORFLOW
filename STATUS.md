@@ -6,7 +6,7 @@
 
 ## Đang chạy
 
-- Worktree `interiorflow-wt-cad-narrow-layout` chờ commit/merge: sửa canvas và dock màn hẹp.
+- Không còn worktree phụ. Sửa canvas/dock màn hẹp đã merge vào `main` (`0a9bcda`).
   `main` có 4 file untracked của chủ dự án; không chạm.
 - Gateway đã ở `main` (`c408684`): một cửa/chặng, phân biệt chỉnh được · mất mát · tham chiếu ·
   chỉ lưu · chưa hỗ trợ. Lối AI Brief chuyên biệt vẫn giữ nguyên.
@@ -33,7 +33,8 @@
   cần test tay trên tablet.
 - Màn hẹp: canvas dùng ResizeObserver trên chính khung chứa, đo sau layout và CSS phủ 100%; dock
   Sơ phác cuộn ngang từ trái. Nghiệm thu viewport 592px: canvas 542/542px, DPR backing đúng,
-  body không tràn, lưới phủ kín; console sạch, typecheck/toàn bộ test PASS.
+  body không tràn, lưới phủ kín; console sạch, typecheck/toàn bộ test PASS sau merge; worktree
+  và nhánh đã dọn an toàn.
 
 ## Sự thật dữ liệu
 
