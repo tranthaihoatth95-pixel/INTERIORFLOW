@@ -1,85 +1,63 @@
-# STATUS — InteriorFlow (bản gọn 08/08 · trần <800 từ theo CLAUDE.md)
+# STATUS — InteriorFlow (09/08, dưới 800 từ)
 
-> Lịch sử chi tiết → `CHANGELOG.md` (bản cũ 8.674 từ chép NGUYÊN VĂN ở mục 08/08 — không đọc mỗi phiên). Chi tiết mẻ việc → `docs/M-*-OUT.md`.
-> ⚠️ Git là sự thật duy nhất — verify SHA bằng `git log`, không chép từ brief/memory.
-> ⚠️ Sản phẩm = **Thiết kế 2D · Thiết kế 3D · Trình chiếu** + login/Gallery/Vitals/Notebook.
-> ⚠️ ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG: IF độc lập global, không dính TTT; Brand Kit = từng dự án.
+> Lịch sử chi tiết ở `CHANGELOG.md`; báo cáo từng mẻ ở `docs/M-*-OUT.md`.
+> Git + code + DB thật là nguồn kiểm chứng; không lấy brief hoặc GAP cũ làm bằng chứng hoàn thành.
+> IF là sản phẩm global, độc lập: **2D Kỹ thuật · 3D Thiết kế · Trình bày**; Brand Kit thuộc từng dự án.
 
-## 🟡 ĐANG CHẠY
+## Đang chạy
 
-- ~~p13/.idfc~~ **XONG + ĐÃ COMMIT** (chiều 08/08): specLinks gán tay + badge Tham số kiểm độc lập
-  101 test rồi commit; kind `preset` DUYỆT thêm ở v3 (00-CHOT 08/08). Working tree SẠCH.
-- **p7** (worktree `interiorflow-wt-p7`, server 3007) — lighting·camera·phím tắt, phiếu
-  `docs/DAN-VAO-p7.md`, phiên riêng của Hoà đang/sắp chạy.
-- Sổ phiếu đã phát → `docs/SO-PHIEU-DA-PHAT.md` (§0w — đọc TRƯỚC khi soạn phiếu mới).
+- Không còn worktree phụ. `main` có 4 file untracked của chủ dự án: `AGENTS.md` và 3 mock ngày
+  09/08; không sửa, không commit.
+- Đang rà khả năng nhập/xuất định dạng theo từng chặng và tiếp tục kế hoạch phát hành an toàn.
 
-## ✅ MERGE ĐỢT 08/08 (Hoà ra lệnh "merge đi" — phiên kiểm bàn giao thực hiện)
+## Vừa xong 09/08
 
-- **p14** (`d7364d2`) build-ops UI: Array 2 cửa + QuickCommandBox + 6 việc soi 3D · **p3c**
-  (`87e7215`) ReviewPanel mount AppShell · **p2** (`c54267a`) dọn trần 5 sheet + cắt STATUS này.
-  Conflict duy nhất: STATUS.md (bản cắt p2 thắng, mục hôm nay ghi lại ở đây). tsc + test chạy
-  sau merge — kết quả ở báo cáo phiên. p3-mock rỗng (0 file) — bỏ nhánh. KHÔNG push (chưa có lệnh).
-- Cùng phiên: vá regex `soi-that.mjs` → **1 đỏ thật duy nhất = `openingsWidthOnBoundary()`**
-  (5 dòng kia là đổi tên/chữ bảng); dọn server §0aa (kill 3001 rác, giữ 3000); support.js +
-  3 export mock hỏng xác nhận ĐÃ có/đã sửa (README-mocks đính chính). 🟡 Lệch chốt chưa sửa:
-  dải mode 2D còn 3 nút (chốt 07/08 = 2) · intro clipart cũ (chốt 02/08 = video) · 3 thẻ
-  trùng tên "Dự án mẫu" trong dev.db.
+- Merge màn chọn 6 loại hồ sơ Trình bày: Deck có **Tự dàn/Magic**; BOQ mở editor hiện có;
+  Material A3, Văn bản, Video, HTML hiện rõ là chưa làm và có lý do. Commit gốc `0e8355c`,
+  merge `d23643f`.
+- Vá vòng render vô hạn `EditorCanvas` sau nhập PPTX bằng cách ổn định vị trí toolbar. Commit gốc
+  `8412356`, merge `17f63e2`.
+- Sau merge: `npx tsc --noEmit --incremental false` PASS; toàn bộ `npm test` PASS, gồm kiểm license
+  và `check:chot` 0 lỗi chặn.
+- Đã dọn hai worktree trên theo đủ 4 điều kiện: đã merge, sạch, không server, không commit độc nhất.
+- Browser click-through chưa nghiệm thu: môi trường browser chặn URL localhost `:3008`; không lách
+  bằng công cụ khác. Kiểm chứng hiện tại là typecheck + test, chưa tuyên bố UI chạy tay.
 
-## ✅ VỪA XONG (chi tiết + số đo trong từng tệp OUT)
+## Sự thật dữ liệu
 
-- Nghiệm thu build cuối + **vá bug CHẶN PHÁT HÀNH** (electron-builder rơi `node_modules/.prisma`;
-  DMG 352MB đi hết 3 chặng thật) → `docs/M-BUILD-FINAL-OUT.md`.
-- Cửa kiểm `check-chot` 🔴34→0; vòng render `EditorCanvas` sau nhập PPTX đã vá → `docs/M-CHOT-OUT.md`.
-- BOQ/FF&E/bảng món + dây ảnh→bản vẽ bấm thật → `docs/M-BOQ-OUT.md` · `M-FIX-C-OUT.md`.
-- Soi 16 mảng chưa sổ (17 đề xuất GAP chờ TỔNG duyệt) → `docs/M-SOI-16-MANG-OUT.md`.
-- Vật liệu PBR + ảnh vân · login UI · build-ops engine · snap 3D → `M-VAT-LIEU-OUT` ·
-  `M-VAT-LIEU-2-OUT` · `M-LOGIN-UI-OUT` · `M-BUILD-OPS-OUT` · `M-3D-NOI-OUT`.
-- Bảng màu sơn (bỏ Pantone) · tên node VI/EN · 3 task AI internal-free — CHANGELOG mục 08/08.
+- `prisma/dev.db` hiện có đủ `WorkflowState`, `Task`, `ExternalRef`; `_prisma_migrations` có đủ 3
+  bản ghi đến `20260808000002_them_workflowstate_task_externalref`.
+- Migration bù drift và migration Task đã tồn tại; xem `docs/M-NEN-DL-OUT.md`. Không còn đúng khi
+  nói “schema 20 model nhưng DB chỉ 17 bảng”.
+- Không chạy `prisma db push`, `migrate` hay `VACUUM` trong phiên này.
 
-## 📌 WORKTREE ĐANG MỞ (đo 08/08)
+## Năng lực định dạng đã đo
 
-Sau merge 08/08: `main` + **`interiorflow-wt-p7`** (giữ — phiên p7 + server 3007) + worktree đã
-merge chờ dọn theo 4 điều kiện an toàn CLAUDE.md (xem báo cáo phiên merge).
-(Ghi chú `interiorflow-g4` cũ đã LỖI THỜI — không còn.)
+- 2D: mở/nhập `.idf`, `.dwg`, `.dxf`; backup `.ifpack`; xuất `.dxf`, PDF. IFC mới có metadata,
+  chưa import/export BIM đầy đủ.
+- 3D/Node: nhập ảnh; chưa có importer thực cho `.skp`, `.max`, `.fbx`, `.obj`, `.glb/.gltf`,
+  `.ifc`, `.rvt`. Danh sách đuôi trong prompt/URL không được tính là hỗ trợ.
+- Trình bày: nhập `.pptx` (mức cơ bản), ảnh, `.idfp`; nhập `.xlsx/.csv` vào BOQ; xuất PDF, PPTX,
+  PNG, `.idfp`, XLSX cho BOQ/FF&E. PDF deck và DOCX chưa nhập; Văn bản/Video/HTML chưa có editor.
+- Gateway nhận diện/định tuyến file đã có nhưng chưa nối UI, nên chưa tính là import dùng được.
 
-## ⬜ VIỆC KẾ TIẾP
+## Việc kế tiếp
 
-- **BỎ HOÃN H4** — màn chọn 6 loại hồ sơ chặng Trình chiếu (chốt 07/08 mục 8; loại thứ 6
-  "trình chiếu HTML" chưa có spec).
-- Nối `ops[]`/UI cho 10 lệnh build-ops (p14 VIỆC 6) · menu "3D — sắp có" header canvas chưa nối
-  Scene3DViewer.
-- V1.1 so le nội thất theo cửa chính · V2.1 look-at + `CamPathPreview` chưa wire vào `/cad-editor`.
-- Tay cầm thu/mở panel thành component dùng chung (chốt 07/08 mục 10) · liên kết sống CAD→deck.
-- 17 dòng `G-M14-*` (soi 16 mảng) chờ TỔNG gộp vào `GAP-IF.md`.
+1. Chốt registry năng lực file theo 4 mức: chỉnh được · nhập có mất mát · liên kết tham chiếu · chỉ lưu.
+2. Ưu tiên 3D mở: GLB/glTF → OBJ/MTL → FBX; sau đó IFC. SKP dùng SDK/bridge sau kiểm license;
+   `.max/.rvt` dùng bridge/plugin, không tự viết parser native.
+3. Hoàn thiện Trình bày theo thứ tự: PDF deck → DOCX → media video/audio → HTML; tăng fidelity PPTX.
+4. Nối gateway thật vào UI kèm báo cáo đơn vị/trục/font/material/asset bị thiếu và giữ file nguồn để refresh.
+5. Tiếp tục golden flow, nghiệm thu 3D/Trình bày và release gate; không push khi chưa có lệnh.
 
-## 🔴 LỜI DẶN CÒN HIỆU LỰC
+## Rủi ro còn hiệu lực
 
-- **G-M3-15 (54 block) chừa cho p2 — không đụng, tầng dữ liệu ngăn Cấu kiện sẵn chỗ.**
-- **Hydrate**: `useFlowStore.hydrate()` CHỈ gọi từ `HomeScreen` — vào thẳng URL con là store về
-  mặc định (`aiTier=2`, `userId` rỗng). Verify phải đi từ `/` bằng click UI thật.
-- `findHatchBoundary` (`lib/three/cad-to-obj.ts`) treo >2 phút ở mật độ cực cao →
-  `docs/TECH-DEBT.md`.
-- `tsc -p .` chạy NỀN (`run_in_background`) thì xong bình thường; foreground bị cap ~40s.
-- Scratch chờ Hoà `rm`: `app/dev-bench-3d-2/page.tsx` (bench, route 307kB — cân nhắc loại khỏi
-  build phát hành). `tsconfig.scoped.json` ĐÃ dọn.
-- File `*-css.ts` (template literal) **CẤM backtick trong comment** — gãy build 3 lần 07/08.
-- Cấm `git stash`/`checkout` khi nhiều phiên chung một working tree (suýt-sự-cố P13 vòng 4).
+- GPL của `libredwg-web` chưa chốt cho sản phẩm thương mại global; xem `docs/RESEARCH-DWG-LICENSE.md`.
+- Dấu thương hiệu/PII và asset khách trong lịch sử Git cần xử lý trước khi giao repo ra ngoài.
+- Cần cài DMG trên máy sạch để nghiệm thu Prisma đóng gói; dev machine không đủ chứng minh.
+- `findHatchBoundary` có thể treo trên bản vẽ mật độ cực cao; xem `docs/TECH-DEBT.md`.
 
-## ⏳ CHỜ HOÀ QUYẾT
+## Quy tắc phiên
 
-DWG: hướng GPL + nghiệm thu "huỷ <1s" + `terminate()` không cắt được WASM (`SO-KIEM-TONG.md` §11d)
-· kind `preset` (p13) · kênh liên hệ written-offer GPL (`lib/legal/third-party-licenses.ts:29`)
-· Pantone `lib/colors/trend.ts` · duyệt xoá 5 ảnh `public/covers/` (`detech/` đã xoá 07/08)
-· `git filter-repo` dấu vết TTT + `pantone-tcx.json` + `__dwg-cancel-test.dwg` trong lịch sử git
-(trước khi giao repo ra ngoài) · 4.1.f brand-kit thi công · sprint BOQ ĐỢT 3.
-
-## Quy tắc session
-
-1. Không tự merge/push **main** nếu chưa hỏi. **V6: phiên code KHÔNG commit — Hoà commit.**
-2. Verify browser qua `127.0.0.1:<port>`; KHÔNG logout/xoá cookie. Login demo: `demo@if.local` /
-   `demo1234`.
-3. KHÔNG `prisma db push`/`migrate` qua sandbox — soạn lệnh cho Hoà. Backup:
-   `sqlite3 dev.db ".backup 'ten'"`.
-4. Nhiều phiên chung repo: mỗi phiếu một worktree riêng (`interiorflow-wt-*`), đọc
-   `SO-PHIEU-DA-PHAT.md` trước khi nhận việc; một thư mục = MỘT dev server.
-5. Nợ kỹ thuật → `docs/TECH-DEBT.md`. Quyết định đã chốt → `docs/00-CHOT.md`.
+Không push hoặc merge tiếp khi chưa được phép; không chạm DB bằng migrate/db push; mỗi việc code dùng
+worktree `interiorflow-wt-*`; giữ STATUS dưới 800 từ và chuyển lịch sử đã xong sang CHANGELOG.
