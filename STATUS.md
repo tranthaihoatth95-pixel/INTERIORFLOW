@@ -1,7 +1,7 @@
 # STATUS — InteriorFlow (10/08)
 
 > Lịch sử ở `CHANGELOG.md`.
-> Git + code + DB là nguồn kiểm chứng, không lấy GAP cũ làm bằng chứng.
+> Git + code + DB là nguồn kiểm chứng.
 > IF là sản phẩm global: **2D Kỹ thuật · 3D Thiết kế · Trình bày**; Brand Kit theo dự án.
 
 ## Đang chạy
@@ -34,9 +34,9 @@
   tải, thu hồi URL tạm khi đóng/đổi tờ. Paper 5/5, typecheck/toàn bộ test PASS.
 - Chốt mọi lệnh chạy được phải có đường bàn phím thật, cùng nguồn với tooltip/`⌘/`/`⌘K`, có guard
   ô nhập và không gán phím giả. `⌘P`/`Ctrl+P` mở preview/xuất PDF Paper; shortcuts 23/23 PASS.
-- Dock Sơ phác: nhãn Vẽ/Cấu kiện đứng đầu cụm, hàng chạm không bẻ nhãn và giữ vùng bấm 44px.
-  Bảng Hatch ra overlay toàn app, né dock, lưới 2 cột không cắt thẻ, một vùng cuộn. Preview và
-  toàn bộ test PASS.
+- Dock Sơ phác: nhãn nhóm cùng hàng, vùng chạm 44px. Bảng Hatch là overlay né dock, lưới 2 cột.
+  Banner mất phiên portal ra body, không bị header blur ghim/cắt; có safe-area và tự xuống
+  dòng trên màn hẹp. Preview, typecheck và toàn bộ test PASS.
 
 ## Năng lực định dạng đã đo
 
