@@ -6,7 +6,7 @@
 
 ## Đang chạy
 
-- Paper PDF theo viewport đã merge vào `main`; worktree phụ đã dọn an toàn. 4 file untracked của
+- Paper UI gọn đã merge vào `main`; worktree phụ chờ dọn an toàn. 4 file untracked của
   chủ dự án được giữ nguyên.
 
 ## Vừa xong
@@ -33,6 +33,9 @@
 - Xuất Paper: PDF một tờ/cả bộ đọc đúng khổ, hướng, rect, tâm, tỉ lệ và layer riêng từng ô nhìn;
   đổi Page Setup ghi vào Sheet và kẹp viewport trong giấy. Đo 5000mm ở 1:50 = 100mm; Paper 5/5,
   sheet-set 19/19, typecheck/toàn bộ test PASS.
+- Paper UI: bỏ hai bảng che giấy; Inspector phải có Tờ/Ô nhìn/Lớp; toolbar một hàng theo ngữ cảnh
+  với căn vùng, tỉ lệ, khóa, xem sạch, xuất. Tọa độ làm tròn và để nâng cao; viewport trống có CTA.
+  Browser 3015 + typecheck/toàn bộ test PASS.
 
 ## Sự thật dữ liệu
 
@@ -53,8 +56,7 @@
 
 ## Việc kế tiếp
 
-1. Làm sâu hai mode: nghiệm thu bút/radial trên tablet; Kỹ thuật cần preview PDF và quản lý lớp
-   nâng cao. BIM mới là phân loại 2D; chưa có quan hệ mô hình, IFC
+1. Nghiệm thu bút/radial trên tablet; Kỹ thuật cần preview PDF. BIM mới là phân loại 2D; chưa có IFC
    hoặc clash, nên chưa ngang Revit.
 2. Định dạng FBX → IFC. SKP dùng SDK/bridge sau kiểm license; `.max/.rvt` dùng bridge/plugin,
    không tự viết parser native.
