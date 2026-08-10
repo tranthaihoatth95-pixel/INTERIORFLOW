@@ -18,6 +18,7 @@
  */
 
 import type { EditorSlide } from './model';
+import { makeShape, makeText } from './model';
 import { BUILTIN_TEMPLATES } from './templates';
 import type { FontPairing } from '@/lib/slides';
 
@@ -151,16 +152,35 @@ export function slidesFromContent(
     // Content — body dài tách "(tiếp)" thay vì cắt bỏ.
     chunk(blk.body, 5).forEach((part, ci) => {
       const img = ci === 0 ? nextImg() : undefined;
-      slides.push(
-        content.build({
+      const slide = content.build({
           palette,
           fonts,
           kicker: String(i).padStart(2, '0'),
           title: ci === 0 ? blk.title || `Nội dung ${i}` : `${blk.title} (tiếp)`,
           body: part,
           images: img ? [img] : [],
-        }),
-      );
+        });
+      if (!img) {
+        slide.elements.push(
+          makeShape('rect', {
+            frame: { x: 55, y: 10, w: 39, h: 80, rotation: 0 },
+            fill: palette[0] ?? '#e8e8e8',
+            stroke: palette[2] ?? '#a0a0a0',
+            strokeWidth: 1,
+            radius: 12,
+          }),
+          makeText({
+            text: 'VỊ TRÍ HÌNH ẢNH\nThay bằng ảnh dự án',
+            role: 'free',
+            frame: { x: 61, y: 45, w: 27, h: 12, rotation: 0 },
+            fontSize: 2.3,
+            color: palette[4] ?? '#444444',
+            align: 'center',
+            lineHeight: 1.4,
+          }),
+        );
+      }
+      slides.push(slide);
     });
   });
 

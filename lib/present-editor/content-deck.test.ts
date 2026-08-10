@@ -67,6 +67,14 @@ it('slidesFromContent: text rỗng → [] (không dựng deck ma)', () => {
   assert.deepStrictEqual(slidesFromContent('', [], PAL), []);
   assert.deepStrictEqual(slidesFromContent('   \n\n', [], PAL), []);
 });
+it('slidesFromContent: thiếu ảnh → có ô giữ chỗ được nhìn thấy và sửa được', () => {
+  const slides = slidesFromContent(TEXT, [], PAL);
+  assert.ok(textsOf(slides[1]).some((t) => t.includes('VỊ TRÍ HÌNH ẢNH')));
+});
+it('slidesFromContent: có ảnh → dùng ảnh thật, không chồng ô giữ chỗ', () => {
+  const slides = slidesFromContent(TEXT, ['data:image/png;base64,AA=='], PAL);
+  assert.ok(!textsOf(slides[1]).some((t) => t.includes('VỊ TRÍ HÌNH ẢNH')));
+});
 it('parseBlocks vẫn tách theo heading cấp 1–2 (không hồi quy)', () => {
   const blocks = parseBlocks(TEXT);
   assert.strictEqual(blocks.length, 2);
