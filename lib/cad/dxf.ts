@@ -921,7 +921,7 @@ const VALID_ELEMENT_TYPES = new Set(['wall', 'slab', 'column', 'beam', 'door', '
 
 /**
  * Đọc các chuỗi group 1000 (XDATA) → gán storey/elementType/campath vào entity vừa parse. Chỉ
- * nhận đúng 3 khoá app tự ghi (IF_STOREY=/IF_ELEMTYPE=/IF_CAMPATH=) — chuỗi 1000 khác (app
+ * nhận các khoá app tự ghi — chuỗi 1000 khác (app
  * ngoài) bỏ qua. 'null' = "đã kiểm, không phải phần tử BIM" (phân biệt undefined — xem model.ts).
  */
 function applyIfXdata(ent: Entity, xd?: string[]): void {
@@ -938,6 +938,13 @@ function applyIfXdata(ent: Entity, xd?: string[]): void {
     } else if (s.startsWith('IF_CAMPATH=')) {
       const v = s.slice('IF_CAMPATH='.length).trim();
       if (v === '1') ent.campath = true;
+    } else if (s.startsWith('IF_CAMSHOT=')) {
+      try {
+        const value = JSON.parse(decodeURIComponent(s.slice('IF_CAMSHOT='.length)));
+        if (value && typeof value === 'object' && typeof value.intent === 'string') ent.cameraShot = value;
+      } catch {
+        // Metadata camera hỏng không được làm mất phần hình học DXF.
+      }
     } else if (s.startsWith('IF_INFERRED=')) {
       // A5/K3 — cờ "elementType do máy đoán" phải sống sót vòng xuất–nạp, nếu không thì bản vẽ
       // quay lại trông như đã được người khai báo chắc chắn. Xem `Base.inferred` (model.ts).
@@ -1375,7 +1382,7 @@ export function exportDxfEx(doc: Doc): { dxf: string; report: DxfExportReport } 
     // B1 (24/07, IF2-nền) — XDATA storey/elementType (đặt CUỐI record entity, chuẩn DXF). Chỉ ghi
     // khi entity CÓ dữ liệu — file không dùng IF2 giữ nguyên từng byte như cũ (backward-safe).
     const xdataPairs = (e: Entity): string[] => {
-      const has = e.storey !== undefined || e.elementType !== undefined || e.campath !== undefined;
+      const has = e.storey !== undefined || e.elementType !== undefined || e.campath !== undefined || e.cameraShot !== undefined;
       if (!has) return [];
       const xd: string[] = [pair(1001, 'INTERIORFLOW')];
       if (e.storey !== undefined) xd.push(pair(1000, `IF_STOREY=${e.storey}`));
@@ -1383,6 +1390,7 @@ export function exportDxfEx(doc: Doc): { dxf: string; report: DxfExportReport } 
       // A5/K3 — chỉ có nghĩa khi ĐI KÈM elementType (xem `Base.inferred`), nên nằm trong nhánh này.
       if (e.elementType !== undefined && e.inferred) xd.push(pair(1000, 'IF_INFERRED=1'));
       if (e.campath !== undefined) xd.push(pair(1000, 'IF_CAMPATH=1'));
+      if (e.cameraShot !== undefined) xd.push(pair(1000, `IF_CAMSHOT=${encodeURIComponent(JSON.stringify(e.cameraShot))}`));
       return xd;
     };
     // Override lineweight/linetype RIÊNG của entity (hiếm — mặc định không có, dùng ByLayer).

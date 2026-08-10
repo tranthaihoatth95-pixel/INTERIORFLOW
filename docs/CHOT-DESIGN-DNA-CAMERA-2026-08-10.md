@@ -43,3 +43,9 @@ render video và đoạn media đưa sang Present.
 MVP chỉ cảnh báo hình học suy được từ đường quay. Xuyên tường/sàn/đồ phải kiểm lại trên scene 3D thật;
 không tuyên bố “đã an toàn” chỉ từ prompt.
 
+### Trạng thái code 10/08
+
+Panel đường cam trong 2D đã có đủ 5 ý đồ, preview trước khi áp, target kéo được, cao độ/lens/tốc độ,
+cảnh báo và nút áp dụng tạo đúng một bước Undo. Cấu hình nằm trên chính polyline, sống qua IDF và
+DXF XDATA. Viewer 3D đã nhận đường cam, cao độ và lens từ cùng nguồn; bước kế là host chặng 2 chọn
+đường trong Doc rồi chạy kiểm va chạm với hình học scene.

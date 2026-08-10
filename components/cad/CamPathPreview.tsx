@@ -41,6 +41,8 @@ export interface CamPathPreviewProps {
   doc: Pick<Doc, 'entities' | 'layers'>;
   /** id entity polyline mang cờ `campath:true` cần xem — component tự đọc `points` từ đó. */
   campathEntityId: string;
+  /** Bản xem trước chưa commit (preset/orbit); thiếu thì đọc điểm thật từ entity. */
+  controlPoints?: Pt[];
   /** tiêu cự mm — suy FOV qua `fovFromLens()` (`lib/three/camera.ts`). Mặc định 35 (§2.1). */
   lensMm?: number;
   /** tốc độ đi, mm/giây. Mặc định 1200 (§2.1). */
@@ -55,14 +57,14 @@ export interface CamPathPreviewProps {
 
 const DOT_RADIUS_FRACTION = 0.01; // bán kính chấm định vị = 1% cạnh dài mặt bằng — tỉ lệ, không cố định px
 
-export default function CamPathPreview({ doc, campathEntityId, lensMm = 35, speedMmPerSec = 1200, lookAt, onLookAtPointChange, className }: CamPathPreviewProps) {
+export default function CamPathPreview({ doc, campathEntityId, controlPoints, lensMm = 35, speedMmPerSec = 1200, lookAt, onLookAtPointChange, className }: CamPathPreviewProps) {
   const reduce = !!useReducedMotion();
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragging, setDragging] = useState(false);
   const box = useMemo(() => docBox(doc as Doc), [doc]);
   const layerById = useMemo(() => new Map(doc.layers.map((l) => [l.id, l] as const)), [doc.layers]);
   const campathEntity = useMemo(() => doc.entities.find((e) => e.id === campathEntityId), [doc.entities, campathEntityId]);
-  const points = useMemo(() => (campathEntity?.type === 'polyline' ? campathEntity.points : []), [campathEntity]);
+  const points = useMemo(() => controlPoints ?? (campathEntity?.type === 'polyline' ? campathEntity.points : []), [campathEntity, controlPoints]);
 
   const zoneEntity = useMemo(
     () => (lookAt?.kind === 'zone' ? (doc.entities.find((e) => e.id === lookAt.zoneId && e.type === 'zone') as ZoneEntity | undefined) : undefined),

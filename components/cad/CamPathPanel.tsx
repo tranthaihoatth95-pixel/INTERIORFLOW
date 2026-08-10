@@ -18,9 +18,10 @@
 import { useMemo, useState } from 'react';
 import { X, Video } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
-import { docBox, type Pt, type ZoneEntity } from '@/lib/cad/model';
+import { docBox, type Pt, type PolylineEntity, type ZoneEntity } from '@/lib/cad/model';
 import CamPathPreview, { type PreviewLookAt } from './CamPathPreview';
 import CamPathControlPanel, { type LookAtChoice, type ZoneOption } from './CamPathControlPanel';
+import { analyzeShotSafety, CINEMATIC_SHOT_PRESETS, createCinematicShot, type CinematicShotIntent } from '@/lib/cad/cinematic-shot';
 
 // `right:12,top:70` đã bị chiếm bởi `LayerPanel` (luôn hiện, không điều kiện — xem CadEditor.tsx
 // `<LayerPanel />`) — neo panel này từ ĐÁY thay vì đỉnh để không đè lên nhau, dùng góc phải-dưới
@@ -67,13 +68,17 @@ const emptyHint: React.CSSProperties = {
 export default function CamPathPanel({ onClose }: { onClose: () => void }) {
   const doc = useCadStore((s) => s.doc);
   const selection = useCadStore((s) => s.selection);
+  const updateEntities = useCadStore((s) => s.updateEntities);
 
+  const [intent, setIntent] = useState<CinematicShotIntent>('follow');
   const [lookAtMode, setLookAtMode] = useState<LookAtChoice>('tangent');
   const [zoneId, setZoneId] = useState<string>('');
   const [lookAtPoint, setLookAtPoint] = useState<Pt | null>(null);
   const [speedMmPerSec, setSpeedMmPerSec] = useState(1200);
   const [lensMm, setLensMm] = useState(35);
   const [ratio, setRatio] = useState('16:9');
+  const [cameraHeightM, setCameraHeightM] = useState(CINEMATIC_SHOT_PRESETS.follow.cameraHeightM);
+  const [appliedMessage, setAppliedMessage] = useState('');
   // Điểm ngắm mặc định lúc mới chuyển sang "Khoá điểm" (chưa kéo lần nào) — tâm mặt bằng, chắc
   // chắn nằm trong khung nhìn thay vì đoán bừa toạ độ (0,0) có thể ở ngoài bản vẽ.
   const box = useMemo(() => docBox(doc), [doc]);
@@ -96,11 +101,65 @@ export default function CamPathPanel({ onClose }: { onClose: () => void }) {
     [doc.entities],
   );
 
+  const campathEntity = useMemo(
+    () => doc.entities.find((e): e is PolylineEntity => e.id === campathEntityId && e.type === 'polyline'),
+    [doc.entities, campathEntityId],
+  );
+
   const lookAt: PreviewLookAt = useMemo(() => {
     if (lookAtMode === 'point') return { kind: 'point', at: lookAtPoint ?? defaultLookAtPoint };
     if (lookAtMode === 'zone') return { kind: 'zone', zoneId };
     return { kind: 'tangent' };
   }, [lookAtMode, lookAtPoint, zoneId, defaultLookAtPoint]);
+
+  const target = lookAt.kind === 'point' ? lookAt.at : defaultLookAtPoint;
+  const draftShot = useMemo(() => {
+    if (!campathEntity) return null;
+    const needsTarget = intent === 'reveal' || intent === 'push-in' || intent === 'orbit';
+    return createCinematicShot(intent, campathEntity.points, {
+      target: needsTarget ? target : undefined,
+      speedMmPerSec,
+    });
+  }, [campathEntity, intent, target, speedMmPerSec]);
+  const safety = useMemo(
+    () => draftShot ? analyzeShotSafety(draftShot.path, cameraHeightM) : null,
+    [draftShot, cameraHeightM],
+  );
+
+  function chooseIntent(next: CinematicShotIntent) {
+    const preset = CINEMATIC_SHOT_PRESETS[next];
+    setIntent(next);
+    setCameraHeightM(preset.cameraHeightM);
+    setLensMm(preset.lensMm);
+    setSpeedMmPerSec(preset.speedMmPerSec);
+    if (next === 'reveal' || next === 'push-in' || next === 'orbit') {
+      setLookAtMode('point');
+      setLookAtPoint((p) => p ?? defaultLookAtPoint);
+    } else {
+      setLookAtMode('tangent');
+    }
+    setAppliedMessage('');
+  }
+
+  function applyShot() {
+    if (!campathEntity || !draftShot) return;
+    const preset = CINEMATIC_SHOT_PRESETS[intent];
+    updateEntities([{
+      ...campathEntity,
+      points: draftShot.controlPoints,
+      cameraShot: {
+        intent,
+        cameraHeightM,
+        lensMm,
+        speedMmPerSec,
+        easing: preset.easing,
+        stabilization: preset.stabilization,
+        ratio,
+        ...((intent === 'reveal' || intent === 'push-in' || intent === 'orbit') ? { target } : {}),
+      },
+    }]);
+    setAppliedMessage('Đã lưu vào đường cam · có thể Hoàn tác.');
+  }
 
   return (
     <div style={panel}>
@@ -132,6 +191,7 @@ export default function CamPathPanel({ onClose }: { onClose: () => void }) {
             <CamPathPreview
               doc={doc}
               campathEntityId={campathEntityId}
+              controlPoints={draftShot?.controlPoints}
               lensMm={lensMm}
               speedMmPerSec={speedMmPerSec}
               lookAt={lookAt}
@@ -139,6 +199,8 @@ export default function CamPathPanel({ onClose }: { onClose: () => void }) {
             />
           </div>
           <CamPathControlPanel
+            intent={intent}
+            onIntentChange={chooseIntent}
             lookAtMode={lookAtMode}
             onLookAtModeChange={setLookAtMode}
             zoneOptions={zoneOptions}
@@ -150,7 +212,14 @@ export default function CamPathPanel({ onClose }: { onClose: () => void }) {
             onLensChange={setLensMm}
             ratio={ratio}
             onRatioChange={setRatio}
+            cameraHeightM={cameraHeightM}
+            onCameraHeightChange={setCameraHeightM}
+            safetyWarnings={safety?.warnings}
+            onApply={applyShot}
           />
+          <p aria-live="polite" style={{ margin: 0, padding: '0 4px', color: 'var(--t4)', fontSize: 10.5 }}>
+            {appliedMessage || 'Va chạm tường/đồ sẽ được kiểm khi mở scene 3D.'}
+          </p>
         </>
       )}
     </div>

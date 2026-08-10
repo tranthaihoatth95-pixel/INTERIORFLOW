@@ -78,11 +78,11 @@ export function sampleCamPathAt(path: CamPathResult, t: number): CamPathSample {
 }
 
 /** vị trí + điểm nhìn (mét, three.js Y-up) từ 1 mẫu đường cam. */
-export function camPathSampleToThree(sample: CamPathSample): { position: THREE.Vector3; target: THREE.Vector3 } {
-  const [px, py, pz] = cadToThreeM(sample.point.x, sample.point.y, EYE_HEIGHT_MM);
+export function camPathSampleToThree(sample: CamPathSample, cameraHeightMm = EYE_HEIGHT_MM): { position: THREE.Vector3; target: THREE.Vector3 } {
+  const [px, py, pz] = cadToThreeM(sample.point.x, sample.point.y, cameraHeightMm);
   const fwdXMm = sample.point.x + Math.cos(sample.dirRad) * LOOK_AHEAD_M * 1000;
   const fwdYMm = sample.point.y + Math.sin(sample.dirRad) * LOOK_AHEAD_M * 1000;
-  const [tx, ty, tz] = cadToThreeM(fwdXMm, fwdYMm, EYE_HEIGHT_MM);
+  const [tx, ty, tz] = cadToThreeM(fwdXMm, fwdYMm, cameraHeightMm);
   return { position: new THREE.Vector3(px, py, pz), target: new THREE.Vector3(tx, ty, tz) };
 }
 

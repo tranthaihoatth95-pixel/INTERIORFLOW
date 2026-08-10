@@ -47,6 +47,7 @@ import { clampWallHeight, cadToThreeM, type Scene3DData } from '@/lib/three/cad-
 import { camPathSampleToThree, sampleCamPathAt, EYE_HEIGHT_MM } from '@/lib/three/capture';
 import { sectionPlane, type SectionSpec } from '@/lib/three/section';
 import type { CamPathResult } from '@/lib/cad/campath';
+import { fovFromLens } from '@/lib/three/camera';
 
 export type Scene3DMode = 'orbit' | 'walk' | 'campath' | 'section' | 'massing';
 
@@ -121,6 +122,9 @@ export interface Scene3DViewerProps {
   scene: Scene3DData;
   mode: Scene3DMode;
   camPath?: CamPathResult;
+  /** Camera Intent đã lưu trên polyline; mặc định giữ hành vi cũ 1650mm/35mm. */
+  cameraHeightMm?: number;
+  lensMm?: number;
   /** mặt cắt cho mode `section` (3D-4) — thiếu → rơi về orbit. */
   sectionMm?: SectionSpec;
   /** đồng bộ UI ngoài (thanh tua) — gọi mỗi khung hình với giây đã trôi từ lúc mount. */
@@ -157,7 +161,7 @@ export interface Scene3DViewerProps {
 const IMPLEMENTED_MODES: Scene3DMode[] = ['orbit', 'campath', 'section', 'walk', 'massing'];
 const WALK_SPEED_M_PER_SEC = 1.5; // ~tốc độ đi bộ chậm, cùng cảm giác tempo với campath 1200mm/s
 
-export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame, onPushPull, lightMarkers, onLightMove, ground = false, className, cameraApiRef, snap3d }: Scene3DViewerProps) {
+export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = EYE_HEIGHT_MM, lensMm = 35, sectionMm, onFrame, onPushPull, lightMarkers, onLightMove, ground = false, className, cameraApiRef, snap3d }: Scene3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // T4 — snap qua REF (cùng lý do lightMarkersRef): đổi công tắc không dựng lại cảnh.
   const snap3dRef = useRef(snap3d ?? null);
@@ -662,6 +666,10 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
       const h = container.clientHeight || 1;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
+      if (campathActive) {
+        const hFov = (fovFromLens(lensMm) * Math.PI) / 180;
+        camera.fov = (2 * Math.atan(Math.tan(hFov / 2) / camera.aspect) * 180) / Math.PI;
+      }
       camera.updateProjectionMatrix();
     }
     resize();
@@ -678,7 +686,7 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
         // Phát lặp (loop) đường cam — video 2-b xem trước ở đây, xuất file thật qua
         // captureSequence() (capture.ts, CÙNG camPathSampleToThree nên khung xem = khung xuất).
         const loopT = camPath.totalDurationSec > 0 ? t % camPath.totalDurationSec : 0;
-        const pose = camPathSampleToThree(sampleCamPathAt(camPath, loopT));
+        const pose = camPathSampleToThree(sampleCamPathAt(camPath, loopT), cameraHeightMm);
         camera.position.copy(pose.position);
         camera.lookAt(pose.target);
       } else if (walkActive && walkControls.isLocked) {
@@ -763,7 +771,7 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     // lần đổi (không incremental-update riêng clippingPlanes) — chấp nhận được ở V1 (rebuild
     // scene vài chục ms, xem bench 3D-1), tối ưu sau nếu UI thật thấy giật khi kéo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, mode, camPath, sectionMm, ground]);
+  }, [scene, mode, camPath, cameraHeightMm, lensMm, sectionMm, ground]);
 
   return <div ref={containerRef} className={className} style={{ width: '100%', height: '100%', minHeight: 320, position: 'relative' }} />;
 }

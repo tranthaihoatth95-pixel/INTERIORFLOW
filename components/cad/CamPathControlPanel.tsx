@@ -15,6 +15,7 @@
  * yêu cầu Hoà, không tự đặt danh sách riêng lệch với node "Góc máy ảnh".
  */
 import { CAMERA_LENSES, CAMERA_RATIOS } from '@/lib/three/camera';
+import { CINEMATIC_SHOT_PRESETS, type CinematicShotIntent } from '@/lib/cad/cinematic-shot';
 import type { PreviewLookAt } from './CamPathPreview';
 
 export type LookAtChoice = PreviewLookAt['kind'];
@@ -68,6 +69,8 @@ export interface ZoneOption {
 }
 
 export interface CamPathControlPanelProps {
+  intent: CinematicShotIntent;
+  onIntentChange: (intent: CinematicShotIntent) => void;
   lookAtMode: LookAtChoice;
   onLookAtModeChange: (mode: LookAtChoice) => void;
   /** danh sách zone trong doc — chỉ dùng khi `lookAtMode==='zone'` (dropdown chọn). Rỗng/thiếu →
@@ -81,6 +84,10 @@ export interface CamPathControlPanelProps {
   onLensChange: (v: number) => void;
   ratio: string;
   onRatioChange: (v: string) => void;
+  cameraHeightM: number;
+  onCameraHeightChange: (v: number) => void;
+  safetyWarnings?: string[];
+  onApply: () => void;
   className?: string;
 }
 
@@ -99,6 +106,8 @@ function speedHint(mmPerSec: number): string {
 }
 
 export default function CamPathControlPanel({
+  intent,
+  onIntentChange,
   lookAtMode,
   onLookAtModeChange,
   zoneOptions,
@@ -110,10 +119,28 @@ export default function CamPathControlPanel({
   onLensChange,
   ratio,
   onRatioChange,
+  cameraHeightM,
+  onCameraHeightChange,
+  safetyWarnings,
+  onApply,
   className,
 }: CamPathControlPanelProps) {
   return (
     <div style={panel} className={className}>
+      <div>
+        <p style={rowLabel}>Ý đồ quay</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 4 }}>
+          {(Object.keys(CINEMATIC_SHOT_PRESETS) as CinematicShotIntent[]).map((key) => (
+            <SegBtn key={key} active={intent === key} onClick={() => onIntentChange(key)}>
+              {CINEMATIC_SHOT_PRESETS[key].label}
+            </SegBtn>
+          ))}
+        </div>
+        <p style={{ fontSize: 10.5, color: 'var(--t4)', marginTop: 5 }}>
+          Chỉ xem trước; bấm Áp dụng mới đổi đường thật.
+        </p>
+      </div>
+
       <div>
         <p style={rowLabel}>Điểm ngắm</p>
         <div style={{ ...segmentWrap, marginTop: 4 }}>
@@ -139,6 +166,19 @@ export default function CamPathControlPanel({
             ))}
           </select>
         )}
+      </div>
+
+      <div>
+        <p style={rowLabel}>Cao độ camera — {cameraHeightM.toFixed(2)}m</p>
+        <input
+          type="range"
+          min={0.15}
+          max={2.2}
+          step={0.05}
+          value={cameraHeightM}
+          onChange={(e) => onCameraHeightChange(Number(e.target.value))}
+          style={{ width: '100%', marginTop: 4 }}
+        />
       </div>
 
       <div>
@@ -178,6 +218,20 @@ export default function CamPathControlPanel({
           </select>
         </div>
       </div>
+
+      {!!safetyWarnings?.length && (
+        <div role="status" style={{ border: '1px solid color-mix(in srgb, #e8a23a 50%, var(--border))', borderRadius: 8, padding: 8, color: 'var(--t2)', fontSize: 11, lineHeight: 1.45 }}>
+          {safetyWarnings.map((warning) => <div key={warning}>• {warning}</div>)}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={onApply}
+        style={{ minHeight: 36, border: 'none', borderRadius: 9, background: 'var(--accent-strong, #6a57f5)', color: '#fff', fontWeight: 650, cursor: 'pointer' }}
+      >
+        Áp vào đường cam
+      </button>
     </div>
   );
 }

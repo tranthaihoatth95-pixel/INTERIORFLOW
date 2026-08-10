@@ -8,7 +8,7 @@
 
 - Hệ phím tắt toàn app đang triển khai; giữ nguyên 4 file riêng của chủ dự án.
 - Material Intelligence: lõi impact/replace đã xong; việc kế là nối hộp xem phạm vi rồi mới áp.
-- Camera/Video: lõi 5 ý đồ nghề đã có; việc kế là nối panel đường cam và kiểm scene collision.
+- Camera/Video: 5 ý đồ đã vào panel 2D và lưu cùng polyline; việc kế là host chặng 2 + scene collision.
 
 ## Vừa xong
 
@@ -32,8 +32,8 @@
 - Material Impact MVP: quét đúng vùng hatch, furniture, vật liệu mặc định và từng lớp tường;
   thay một entity hoặc toàn Doc bất biến, không tạo undo thừa khi no-op. BOQ tự đọc specId mới.
   Test mới 12/12, typecheck và toàn bộ test PASS. Kế hoạch tổng 10/08 đã ghi riêng.
-- Camera Intent MVP: thấp sát sàn, bám theo, reveal, push-in, orbit sinh polyline chỉnh được;
-  có chiều cao/lens/tốc độ/easing/look-at. Test lõi PASS; chưa nối UI/scene.
+- Camera Intent: thấp sát sàn, bám theo, reveal, push-in, orbit đã vào UI; preview trước khi áp,
+  Undo được; cao độ/lens/tốc độ/easing/look-at sống qua IDF/DXF. Viewer 3D nhận cùng nguồn.
 
 ## Năng lực định dạng đã đo
 

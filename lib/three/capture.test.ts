@@ -75,6 +75,8 @@ console.log('camPathSampleToThree — vị trí/hướng nhìn tầm mắt ngư�
 
   const poseTurned = camPathSampleToThree({ point: { x: 0, y: 0 }, dirRad: Math.PI / 2, tSec: 0, cumLenMm: 0 });
   ok('nhìn +Y CAD (dirRad=π/2) → target.z ÂM (three.js z=-y)', poseTurned.target.z < 0);
+  const lowPose = camPathSampleToThree({ point: { x: 0, y: 0 }, dirRad: 0, tSec: 0, cumLenMm: 0 }, 320);
+  ok('Camera Intent thấp sát sàn dùng đúng cao 0.32m', Math.abs(lowPose.position.y - 0.32) < 1e-9 && Math.abs(lowPose.target.y - 0.32) < 1e-9);
 }
 
 console.log('nearFarForScene — near/far riêng theo khoảng cách camera→tâm scene (3D-3, C3)');
