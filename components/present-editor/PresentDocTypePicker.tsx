@@ -7,12 +7,13 @@
  */
 
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { FileSpreadsheet, FileText, Film, Layers3, LockKeyhole, Plus, Presentation } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
 export interface PresentDocTypePickerProps {
   onChooseBlankDeck: () => void;
   onChooseMagicDeck: () => void;
+  onChooseMaterialBoard: () => void;
   onChooseBoq: () => void;
 }
 
@@ -24,6 +25,8 @@ type Template = {
   image?: string;
   tone?: string;
   enabled: boolean;
+  /** Khả năng chưa có editor riêng phải nói thật ngay tại chỗ, không hứa CTA mơ hồ. */
+  unavailableReason?: [string, string];
 };
 
 const LIBRARY: Record<Kind, { label: [string, string]; count: string; lead: [string, string]; templates: Template[] }> = {
@@ -40,9 +43,9 @@ const LIBRARY: Record<Kind, { label: [string, string]; count: string; lead: [str
     label: ['Bảng vật liệu', 'Material board'], count: '04',
     lead: ['Ghép vật liệu, mã hàng và vùng sử dụng trên một tấm rõ ràng.', 'Pair finishes, product codes, and usage zones on a clear board.'],
     templates: [
-      { title: ['Palette hoàn thiện', 'Finish palette'], caption: ['Đang hoàn thiện editor', 'Editor in progress'], image: '/demo/mood4.jpg', enabled: false },
-      { title: ['Bảng mẫu dự án', 'Project sample board'], caption: ['Đang hoàn thiện editor', 'Editor in progress'], tone: '#bcae9e', enabled: false },
-      { title: ['Bề mặt & sắc độ', 'Surface & tone'], caption: ['Đang hoàn thiện editor', 'Editor in progress'], tone: '#829aa0', enabled: false },
+      { title: ['Palette hoàn thiện', 'Finish palette'], caption: ['Mở khổ A3 để tự dàn', 'Open an A3 workspace'], image: '/demo/mood4.jpg', enabled: true },
+      { title: ['Bảng mẫu dự án', 'Project sample board'], caption: ['Mở khổ A3 để tự dàn', 'Open an A3 workspace'], tone: '#bcae9e', enabled: true },
+      { title: ['Bề mặt & sắc độ', 'Surface & tone'], caption: ['Mở khổ A3 để tự dàn', 'Open an A3 workspace'], tone: '#829aa0', enabled: true },
     ],
   },
   boq: {
@@ -58,31 +61,40 @@ const LIBRARY: Record<Kind, { label: [string, string]; count: string; lead: [str
     label: ['Văn bản', 'Documents'], count: '05',
     lead: ['Văn bản có cấu trúc riêng, không bị nhét vào trang slide.', 'Documents have their own structure, never squeezed into slides.'],
     templates: [
-      { title: ['Thuyết minh thiết kế', 'Design narrative'], caption: ['Editor sắp có', 'Editor coming soon'], tone: '#ece8df', enabled: false },
-      { title: ['Biểu mẫu nghiệm thu', 'Inspection form'], caption: ['Editor sắp có', 'Editor coming soon'], tone: '#ddd7cb', enabled: false },
-      { title: ['Hợp đồng song ngữ', 'Bilingual agreement'], caption: ['Editor sắp có', 'Editor coming soon'], tone: '#cfc8bb', enabled: false },
+      { title: ['Thuyết minh thiết kế', 'Design narrative'], caption: ['Chưa có trình soạn thảo văn bản', 'No document editor yet'], tone: '#ece8df', enabled: false, unavailableReason: ['Chưa thể tạo hoặc xuất văn bản trong app.', 'Documents cannot be created or exported in the app yet.'] },
+      { title: ['Biểu mẫu nghiệm thu', 'Inspection form'], caption: ['Chưa có trình soạn thảo biểu mẫu', 'No form editor yet'], tone: '#ddd7cb', enabled: false, unavailableReason: ['Chưa có biểu mẫu lưu được vào dự án.', 'There is no project-backed form editor yet.'] },
+      { title: ['Hợp đồng song ngữ', 'Bilingual agreement'], caption: ['Chưa có trình soạn thảo hợp đồng', 'No agreement editor yet'], tone: '#cfc8bb', enabled: false, unavailableReason: ['Không dùng slide thay cho hợp đồng.', 'Slides are not used as a substitute for agreements.'] },
     ],
   },
   video: {
     label: ['Video', 'Video'], count: '03',
     lead: ['Dựng footage từ chặng 3D thành một nhịp xem có chủ đích.', 'Shape footage from 3D into an intentional viewing rhythm.'],
     templates: [
-      { title: ['Walkthrough 60 giây', '60-second walkthrough'], caption: ['Editor sắp có', 'Editor coming soon'], image: '/demo/mood2.jpg', enabled: false },
-      { title: ['Phương án ánh sáng', 'Lighting study'], caption: ['Editor sắp có', 'Editor coming soon'], image: '/demo/mood3.jpg', enabled: false },
-      { title: ['Tổng hợp dự án', 'Project reel'], caption: ['Editor sắp có', 'Editor coming soon'], image: '/demo/mood4.jpg', enabled: false },
+      { title: ['Walkthrough 60 giây', '60-second walkthrough'], caption: ['Chưa có dựng, xem footage ở 3D', 'No timeline editor; view footage in 3D'], image: '/demo/mood2.jpg', enabled: false, unavailableReason: ['Chưa có cắt, ghép hoặc xuất phim.', 'Trimming, editing, and video export are not available yet.'] },
+      { title: ['Phương án ánh sáng', 'Lighting study'], caption: ['Chưa có dựng, xem footage ở 3D', 'No timeline editor; view footage in 3D'], image: '/demo/mood3.jpg', enabled: false, unavailableReason: ['Chưa có dựng phim trong Trình chiếu.', 'There is no video editor in Presenting yet.'] },
+      { title: ['Tổng hợp dự án', 'Project reel'], caption: ['Chưa có dựng, xem footage ở 3D', 'No timeline editor; view footage in 3D'], image: '/demo/mood4.jpg', enabled: false, unavailableReason: ['Dữ liệu video chưa có đường xuất tin cậy.', 'Video data has no reliable export path yet.'] },
     ],
   },
 };
 
-export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onChooseBoq }: PresentDocTypePickerProps) {
+const KIND_ICON: Record<Kind, typeof Presentation> = {
+  deck: Presentation,
+  material: Layers3,
+  boq: FileSpreadsheet,
+  text: FileText,
+  video: Film,
+};
+
+export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onChooseMaterialBoard, onChooseBoq }: PresentDocTypePickerProps) {
   const tr = useT();
   const [kind, setKind] = useState<Kind>('deck');
   const current = LIBRARY[kind];
-  const canCreateBlank = kind === 'deck';
+  const canCreateBlank = kind === 'deck' || kind === 'material';
 
   const openTemplate = (template: Template) => {
     if (!template.enabled) return;
     if (kind === 'boq') onChooseBoq();
+    else if (kind === 'material') onChooseMaterialBoard();
     else onChooseMagicDeck();
   };
 
@@ -104,30 +116,33 @@ export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onC
           {(Object.keys(LIBRARY) as Kind[]).map((key) => {
             const item = LIBRARY[key];
             const selected = key === kind;
-            return <button key={key} type="button" onClick={() => setKind(key)} style={{ flex: 'none', height: 34, padding: '0 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: selected ? 'var(--accent-soft)' : 'transparent', color: selected ? 'var(--accent)' : 'var(--t3)', fontSize: 12, fontWeight: selected ? 650 : 500 }}>
-              {tr(...item.label)} <small style={{ marginLeft: 5, opacity: .68 }}>{item.count}</small>
+            const Icon = KIND_ICON[key];
+            return <button key={key} type="button" onClick={() => setKind(key)} style={{ flex: 'none', height: 34, padding: '0 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: selected ? 'var(--accent-soft)' : 'transparent', color: selected ? 'var(--accent)' : 'var(--t3)', fontSize: 12, fontWeight: selected ? 650 : 500, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <Icon size={14} strokeWidth={1.8} aria-hidden="true" />
+              {tr(...item.label)} <small style={{ marginLeft: 2, opacity: .68 }}>{item.count}</small>
             </button>;
           })}
         </nav>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 18 }} className="present-template-grid">
           {current.templates.map((template, index) => (
-            <button key={template.title[0]} type="button" onClick={() => openTemplate(template)} disabled={!template.enabled} style={{ minWidth: 0, padding: 0, border: 0, background: 'transparent', color: 'inherit', textAlign: 'left', cursor: template.enabled ? 'pointer' : 'not-allowed', opacity: template.enabled ? 1 : .56 }}>
+            <button key={template.title[0]} type="button" onClick={() => openTemplate(template)} disabled={!template.enabled} title={!template.enabled ? tr(...(template.unavailableReason ?? ['Chưa khả dụng', 'Not available yet'])) : undefined} style={{ minWidth: 0, padding: 0, border: 0, background: 'transparent', color: 'inherit', textAlign: 'left', cursor: template.enabled ? 'pointer' : 'not-allowed', opacity: template.enabled ? 1 : .56 }}>
               <div style={{ position: 'relative', height: 185, overflow: 'hidden', borderRadius: 14, background: template.tone ?? '#292733', boxShadow: '0 14px 32px -24px rgba(0,0,0,.8)' }}>
                 {template.image ? <img src={template.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: 'saturate(.74) contrast(.94)' }} /> : null}
                 {kind === 'boq' ? <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent 0 26px, rgba(63,54,40,.22) 27px 28px), repeating-linear-gradient(90deg, transparent 0 59px, rgba(63,54,40,.18) 60px 61px)' }} /> : null}
                 <div style={{ position: 'absolute', inset: 0, background: template.image ? 'linear-gradient(180deg, transparent 34%, rgba(0,0,0,.66))' : 'linear-gradient(145deg, rgba(255,255,255,.12), rgba(0,0,0,.24))' }} />
+                {!template.enabled ? <span aria-label={tr('Chưa khả dụng', 'Not available')} style={{ position: 'absolute', top: 12, right: 12, width: 28, height: 28, display: 'grid', placeItems: 'center', borderRadius: 9, background: 'rgba(15,15,18,.65)', color: '#fff' }}><LockKeyhole size={14} aria-hidden="true" /></span> : null}
                 <strong style={{ position: 'absolute', left: 16, right: 16, bottom: 15, color: kind === 'boq' || kind === 'text' ? '#312c26' : '#fff', fontSize: 17, lineHeight: 1.08, letterSpacing: '-.025em' }}>{tr(...template.title)}</strong>
               </div>
               <div style={{ marginTop: 11, color: 'var(--t1)', fontSize: 13.5, fontWeight: 650 }}>{tr(...template.caption)}</div>
-              {!template.enabled ? <div style={{ marginTop: 3, color: 'var(--t4)', fontSize: 11 }}>{tr('Sắp có', 'Coming soon')}</div> : null}
+              {!template.enabled ? <div style={{ marginTop: 3, color: 'var(--t4)', fontSize: 11 }}>{tr(...(template.unavailableReason ?? ['Chưa khả dụng', 'Not available yet']))}</div> : null}
             </button>
           ))}
 
-          <button type="button" onClick={canCreateBlank ? onChooseBlankDeck : undefined} disabled={!canCreateBlank} aria-label={tr('Tạo hồ sơ trống', 'Create blank document')} style={{ height: 185, border: '1px dashed var(--border)', borderRadius: 14, background: 'transparent', color: canCreateBlank ? 'var(--t3)' : 'var(--t4)', cursor: canCreateBlank ? 'pointer' : 'not-allowed', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 11 }}>
+          <button type="button" onClick={canCreateBlank ? (kind === 'material' ? onChooseMaterialBoard : onChooseBlankDeck) : undefined} disabled={!canCreateBlank} aria-label={tr('Tạo hồ sơ trống', 'Create blank document')} style={{ height: 185, border: '1px dashed var(--border)', borderRadius: 14, background: 'transparent', color: canCreateBlank ? 'var(--t3)' : 'var(--t4)', cursor: canCreateBlank ? 'pointer' : 'not-allowed', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 11 }}>
             <span style={{ width: 42, height: 42, borderRadius: '50%', border: '1px solid currentColor', display: 'grid', placeItems: 'center' }}><Plus size={23} strokeWidth={1.5} /></span>
-            <span style={{ fontSize: 12, fontWeight: 650 }}>{tr('Tạo hồ sơ trống', 'Create blank document')}</span>
-            {!canCreateBlank ? <span style={{ fontSize: 10 }}>{tr('Sắp có', 'Coming soon')}</span> : null}
+            <span style={{ fontSize: 12, fontWeight: 650 }}>{kind === 'material' ? tr('Tạo bảng A3 trống', 'Create blank A3 board') : tr('Tạo hồ sơ trống', 'Create blank document')}</span>
+            {!canCreateBlank ? <span style={{ fontSize: 10 }}>{tr('Chưa khả dụng', 'Not available yet')}</span> : null}
           </button>
         </div>
       </section>

@@ -56,6 +56,7 @@ const PresentEditor = dynamic(() => import('./PresentEditor'), {
 const PresentDocTypePicker = dynamic(() => import('./PresentDocTypePicker'), { ssr: false });
 import type { EditorDeck, EditorSlide } from '@/lib/present-editor/model';
 import { newId } from '@/lib/present-editor/model';
+import type { StagePresetId } from '@/lib/present-editor/stage-presets';
 import { getLastUserId, loadResume, saveResume } from '@/lib/resume';
 import { getActiveBrandKit, seedDeckWithBrandKit } from '@/lib/present-editor/brand-kit';
 import { exportIdfp, importIdfp, lastImportIdfpError, type IdfpSheetData } from '@/lib/present-editor/idfp';
@@ -561,10 +562,18 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
     setActiveId(id);
   };
 
-  const chooseDeck = (start: 'blank' | 'magic') => {
+  /**
+   * Cửa vào chỉ được bật khi editor phía sau có thật. `material-a3` không hứa một editor vật
+   * liệu riêng: nó mở cùng trình dàn trang đã có, ở khổ A3 và lưu đúng loại hồ sơ trong `.idfp`.
+   */
+  const chooseDeck = (
+    start: 'blank' | 'magic',
+    options: { docType?: 'deck' | 'material-a3'; stagePreset?: StagePresetId } = {},
+  ) => {
     const deck: EditorDeck = {
       ...liveDeck.current,
-      docType: 'deck',
+      docType: options.docType ?? 'deck',
+      stagePreset: options.stagePreset ?? liveDeck.current.stagePreset,
       slides: liveDeck.current.slides.length > 0 ? liveDeck.current.slides : [blankSlide()],
     };
     liveDeck.current = deck;
@@ -622,6 +631,7 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
           <PresentDocTypePicker
             onChooseBlankDeck={() => chooseDeck('blank')}
             onChooseMagicDeck={() => chooseDeck('magic')}
+            onChooseMaterialBoard={() => chooseDeck('blank', { docType: 'material-a3', stagePreset: 'a3-landscape' })}
             onChooseBoq={() => onRequestBoq?.()}
           />
         ) : hydrated ? (
