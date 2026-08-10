@@ -215,6 +215,7 @@ export default function Render3DModeSkeleton() {
   /**
    * VIỆC 4 · §0c MẢNG 1 — PHÍM TẮT CỦA MODE 3D, đăng ký ngay tại đây (mount/unmount cùng mode nên
    * không rò ra chặng khác):
+   *   W        mở lệnh Tường hai điểm (nhập số, ghi vào cùng Doc)
    *   1…5      đổi tab bảng lệnh (Tạo · Sửa · Vật liệu · Camera · Đèn)
    *   [ / ]    xoay mặt trời ∓5° — giữ Shift = 15° (quen tay Photoshop: ngoặc = chỉnh một tham
    *            số đang cầm, không cần rời chuột khỏi khung nhìn)
@@ -250,6 +251,11 @@ export default function Render3DModeSkeleton() {
       }
       if (e.shiftKey && (e.key === 'T' || e.key === 't')) {
         addLevelToDoc('Tầng mới');
+        e.preventDefault();
+        return;
+      }
+      if (!e.shiftKey && (e.key === 'w' || e.key === 'W')) {
+        moLenhTuongHaiDiem();
         e.preventDefault();
         return;
       }

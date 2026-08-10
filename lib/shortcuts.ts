@@ -149,6 +149,7 @@ SHORTCUTS.push(
   { scope: 'render', keys: ['mod', '-'], label: 'Thu nhỏ', group: 'Xem' },
   { scope: 'render', keys: ['mod', "'"], label: 'Bật/tắt snap lưới', group: 'Xem' },
   { scope: 'render', keys: ['Space', '(giữ)'], label: 'Giữ để kéo màn hình (pan tạm)', group: 'Xem' },
+  { scope: 'render', keys: ['W'], label: 'Mở lệnh Tường hai điểm', group: 'Vẽ' },
   { scope: 'render', keys: ['V'], label: 'Công cụ Chọn', group: 'Vẽ' },
   { scope: 'render', keys: ['H'], label: 'Công cụ kéo màn hình (Pan)', group: 'Vẽ' },
   { scope: 'render', keys: ['Esc'], label: 'Về công cụ Chọn', group: 'Vẽ' },
