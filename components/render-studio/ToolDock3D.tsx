@@ -38,6 +38,8 @@ const CHUA_DUNG_DUOC = {
 interface ToolDock3DProps {
   open: boolean;
   onToggleOpen: () => void;
+  /** Opens the numeric two-point Wall command in the Create panel. */
+  onCreateWall: () => void;
   onOpenLibrary: () => void;
   onOpenMaterialTab: () => void;
 }
@@ -54,7 +56,7 @@ interface DockGroupItem {
   onClick?: () => void;
 }
 
-export default function ToolDock3D({ open, onToggleOpen, onOpenLibrary, onOpenMaterialTab }: ToolDock3DProps) {
+export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLibrary, onOpenMaterialTab }: ToolDock3DProps) {
   const tr = useT();
 
   // Tab mở/thu gọn dock — đúng phím mock (`onClick="{{ go4 }}" title="… — Tab"`), guard gõ chữ
@@ -92,6 +94,7 @@ export default function ToolDock3D({ open, onToggleOpen, onOpenLibrary, onOpenMa
     {
       title: 'Dựng khối', titleEn: 'Model',
       items: [
+        { key: 'wall', label: 'Tường', labelEn: 'Wall', icon: <Square size={18} />, shortcut: 'W', title: tr('Mở lệnh tường hai điểm', 'Open the two-point wall command'), onClick: onCreateWall },
         { key: 'pushpull', label: 'Kéo mặt', labelEn: 'Push/pull', icon: <Triangle size={18} />, shortcut: 'P', disabled: true, title: tr('Chọn khối tường rồi kéo mép trên ngay trên khung nhìn — không cần bấm nút này trước', 'Select a wall block then drag its top edge in the viewport — no need to press this first') },
         { key: 'fillet', label: 'Bo cạnh', labelEn: 'Fillet', icon: <RotateCw size={18} />, shortcut: 'F', disabled: true, title: tr(CHUA_DUNG_DUOC.vi, CHUA_DUNG_DUOC.en) },
         { key: 'cut', label: 'Cắt khối', labelEn: 'Cut', icon: <Scissors size={18} />, shortcut: 'X', disabled: true, title: tr(CHUA_DUNG_DUOC.vi, CHUA_DUNG_DUOC.en) },

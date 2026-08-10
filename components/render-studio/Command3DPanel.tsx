@@ -23,7 +23,7 @@
  * kiểu tab, xem cảnh báo trong báo cáo phiên này về phần CHƯA làm: dock công cụ nổi đáy viewport).
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useCadStore, type Tool } from '@/lib/cad/store';
 import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
@@ -64,13 +64,28 @@ import { setEntityArrayRadial, setEntityMirror, setEntityBevelEx, setEntityTaper
 export type Command3DTab = 'tao' | 'sua' | 'vatlieu' | 'camera' | 'den' | 'banve';
 type Tab = Command3DTab;
 
+/** Minimum numeric input for the first professional 3D command: a two-point wall.
+ * It stays in CAD millimetres and the mount is the only place that writes the Doc. */
+export interface WallDraft3D {
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  thicknessMm: number;
+  heightMm: number;
+}
+
+const DEFAULT_WALL_DRAFT: WallDraft3D = {
+  from: { x: 0, y: 0 }, to: { x: 4000, y: 0 }, thicknessMm: 220, heightMm: 2700,
+};
+
 export interface Command3DPanelProps {
   tab: Tab;
   onTabChange: (tab: Tab) => void;
   /** nháy nút Tường sau khi người dùng bấm "Dựng khối đầu tiên" — chỉ dẫn ĐÚNG MỘT việc kế tiếp. */
   nhayNutTuong?: boolean;
-  /** dựng tường mẫu (nơi mount ghi vào Doc qua engine `wallSegment`, panel không tự ghi). */
-  onTaoTuong?: () => void;
+  /** Incremented by the viewport dock to open the real numeric Wall command. */
+  openWallBuilderNonce?: number;
+  /** dựng tường hai điểm (nơi mount ghi vào Doc, panel không tự ghi). */
+  onTaoTuong?: (draft?: WallDraft3D) => void;
   /** VIỆC 1 (nối `arrayLinear` thật) — dựng lan can mẫu (nơi mount ghi vào Doc qua engine
    * `railingPosts`, panel không tự ghi — cùng khuôn `onTaoTuong`). */
   onTaoLanCan?: () => void;
@@ -84,7 +99,7 @@ export interface Command3DPanelProps {
 
 /** Một điểm vào theo ngữ cảnh, không phải danh mục "AI" mới. Mỗi nút chỉ dẫn đến hành động đã
  * có thật; phần còn lại của tác vụ giữ trong tab chuyên môn bên dưới. */
-function ContextQuickTools({ tab, onTaoTuong }: { tab: Command3DTab; onTaoTuong?: () => void }) {
+function ContextQuickTools({ tab, onTaoTuong }: { tab: Command3DTab; onTaoTuong?: (draft?: WallDraft3D) => void }) {
   const tr = useT();
   const openParts = () => openLibrarySheet({ shelfId: 'common-idfc' });
   const openMaterials = () => openLibrarySheet({ shelfId: 'common-atlas' });
@@ -153,6 +168,7 @@ export default function Command3DPanel({
   tab,
   onTabChange,
   nhayNutTuong = false,
+  openWallBuilderNonce = 0,
   onTaoTuong,
   onTaoLanCan,
   onPickMaterial,
@@ -194,7 +210,7 @@ export default function Command3DPanel({
       <div className="flex-1 overflow-y-auto p-3">
         <ContextQuickTools tab={tab} onTaoTuong={onTaoTuong} />
         {tab === 'vatlieu' && <MaterialTab materials={materials} onPick={onPickMaterial} />}
-        {tab === 'tao' && <CreateTab nhayNutTuong={nhayNutTuong} onTaoTuong={onTaoTuong} onTaoLanCan={onTaoLanCan} onTabChange={onTabChange} />}
+        {tab === 'tao' && <CreateTab nhayNutTuong={nhayNutTuong} openWallBuilderNonce={openWallBuilderNonce} onTaoTuong={onTaoTuong} onTaoLanCan={onTaoLanCan} onTabChange={onTabChange} />}
         {tab === 'sua' && <EditTab scene={scene} />}
         {tab === 'den' && <LightTab />}
         {tab === 'banve' && <SectionExtractPanel scene={scene} onNhan={onNhanMatCat} />}
@@ -346,16 +362,23 @@ const NHOM_BIEN_DOI: CellDef[] = [
 
 function CreateTab({
   nhayNutTuong,
+  openWallBuilderNonce,
   onTaoTuong,
   onTaoLanCan,
   onTabChange,
 }: {
   nhayNutTuong: boolean;
-  onTaoTuong?: () => void;
+  openWallBuilderNonce: number;
+  onTaoTuong?: (draft?: WallDraft3D) => void;
   onTaoLanCan?: () => void;
   onTabChange?: (tab: Tab) => void;
 }) {
   const tr = useT();
+  const [wallBuilderOpen, setWallBuilderOpen] = useState(false);
+  const [wallDraft, setWallDraft] = useState<WallDraft3D>(DEFAULT_WALL_DRAFT);
+  useEffect(() => {
+    if (openWallBuilderNonce > 0) setWallBuilderOpen(true);
+  }, [openWallBuilderNonce]);
   const router = useRouter();
   const pathname = usePathname();
   const { begin } = useStageTransition();
@@ -374,7 +397,7 @@ function CreateTab({
   // MỞ KHO 08/08 — chamfer/arrayradial/mirror/taper/sweep đều mở tab Sửa (một ổ ghi mỗi lệnh,
   // cùng lý do `array` đã ghi — form nhập số cần chỗ rộng hơn 1 ô lưới vuông ở tab Tạo).
   const HANDLER: Partial<Record<string, (() => void) | undefined>> = {
-    tuong: onTaoTuong,
+    tuong: () => setWallBuilderOpen(true),
     lancan: onTaoLanCan,
     array: () => onTabChange?.('sua'), // Array sống ở mục Array tab Sửa (một ổ ghi, không nhân đôi form)
     arrayradial: () => onTabChange?.('sua'),
@@ -422,6 +445,17 @@ function CreateTab({
 
   return (
     <div className="space-y-3">
+      {wallBuilderOpen && (
+        <WallBuilder
+          draft={wallDraft}
+          onChange={setWallDraft}
+          onCancel={() => setWallBuilderOpen(false)}
+          onCreate={() => {
+            onTaoTuong?.(wallDraft);
+            setWallBuilderOpen(false);
+          }}
+        />
+      )}
       {/* ① VẼ RỒI ĐÙN — tạo TỪ ĐÂU (không nút xám nào — nhóm đầu tiên toàn nút sống) */}
       <div className="space-y-2">
         <p className="px-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--t4)]">
@@ -463,6 +497,67 @@ function CreateTab({
         <div className="grid grid-cols-3 gap-2">{NHOM_BIEN_DOI.map(cell)}</div>
       </div>
     </div>
+  );
+}
+
+function WallBuilder({
+  draft, onChange, onCancel, onCreate,
+}: {
+  draft: WallDraft3D;
+  onChange: (draft: WallDraft3D) => void;
+  onCancel: () => void;
+  onCreate: () => void;
+}) {
+  const tr = useT();
+  const set = (key: 'from.x' | 'from.y' | 'to.x' | 'to.y' | 'thicknessMm' | 'heightMm', raw: string) => {
+    const value = Number(raw);
+    if (!Number.isFinite(value)) return;
+    const next: WallDraft3D = {
+      ...draft,
+      from: { ...draft.from },
+      to: { ...draft.to },
+    };
+    if (key === 'from.x') next.from.x = value;
+    else if (key === 'from.y') next.from.y = value;
+    else if (key === 'to.x') next.to.x = value;
+    else if (key === 'to.y') next.to.y = value;
+    else next[key] = Math.max(key === 'thicknessMm' ? 50 : 100, value);
+    onChange(next);
+  };
+  const fields: { key: 'from.x' | 'from.y' | 'to.x' | 'to.y' | 'thicknessMm' | 'heightMm'; label: string; value: number }[] = [
+    { key: 'from.x', label: tr('Điểm đầu X', 'Start X'), value: draft.from.x },
+    { key: 'from.y', label: tr('Điểm đầu Y', 'Start Y'), value: draft.from.y },
+    { key: 'to.x', label: tr('Điểm cuối X', 'End X'), value: draft.to.x },
+    { key: 'to.y', label: tr('Điểm cuối Y', 'End Y'), value: draft.to.y },
+    { key: 'thicknessMm', label: tr('Dày', 'Thickness'), value: draft.thicknessMm },
+    { key: 'heightMm', label: tr('Cao', 'Height'), value: draft.heightMm },
+  ];
+  const hasLength = Math.hypot(draft.to.x - draft.from.x, draft.to.y - draft.from.y) >= 10;
+  return (
+    <section className="rounded-[10px] border border-[var(--accent-ring)] bg-[var(--field)] p-2.5" aria-label={tr('Tường hai điểm', 'Two-point wall')}>
+      <div className="flex items-baseline justify-between gap-2">
+        <b className="text-[11px] text-[var(--t1)]">{tr('Tường hai điểm', 'Two-point wall')}</b>
+        <span className="text-[9px] text-[var(--t4)]">mm</span>
+      </div>
+      <p className="mt-0.5 text-[9px] leading-[1.5] text-[var(--t4)]">{tr('Nhập hai điểm, bề dày và cao độ. Có thể sửa tiếp bằng Inspector.', 'Enter both points, thickness, and height. Refine later in Inspector.')}</p>
+      <div className="mt-2 grid grid-cols-2 gap-1.5">
+        {fields.map((field) => (
+          <label key={field.key} className="text-[8.5px] font-medium text-[var(--t4)]">
+            {field.label}
+            <input
+              type="number"
+              value={field.value}
+              onChange={(event) => set(field.key, event.target.value)}
+              className="mt-0.5 h-7 w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[10px] text-[var(--t1)] outline-none focus:border-[var(--accent)]"
+            />
+          </label>
+        ))}
+      </div>
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <button type="button" onClick={onCancel} className="h-7 rounded-[7px] px-2 text-[10px] font-semibold text-[var(--t3)] hover:bg-[var(--hover)]">{tr('Hủy', 'Cancel')}</button>
+        <button type="button" disabled={!hasLength} onClick={onCreate} className="h-7 rounded-[7px] bg-[var(--accent)] px-2.5 text-[10px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45">{tr('Tạo tường', 'Create wall')}</button>
+      </div>
+    </section>
   );
 }
 

@@ -28,12 +28,12 @@ import { useStageTransition } from '@/components/studio/StageTransitionProvider'
 import { useCad3DAutosave } from '@/lib/cad/cad3d-autosave';
 import { useStageMode } from '@/lib/stage-mode';
 import { useT } from '@/lib/i18n';
-import { wallSegment, railingPosts } from '@/lib/cad/commands';
+import { wallSegmentOutline, railingPosts } from '@/lib/cad/commands';
 import { useScene3D } from '@/lib/render-studio/use-scene3d';
 import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
 import { Viewport3D, EMPTY_SCENE_3D } from '@/components/three/Viewport3D';
 import ModeSwitchBar from '@/components/render-studio/ModeSwitchBar';
-import Command3DPanel, { type Command3DTab } from '@/components/render-studio/Command3DPanel';
+import Command3DPanel, { type Command3DTab, type WallDraft3D } from '@/components/render-studio/Command3DPanel';
 import ToolDock3D from '@/components/render-studio/ToolDock3D';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import PanelFlank from '@/components/ui/PanelFlank';
@@ -73,6 +73,7 @@ export default function Render3DModeSkeleton() {
   const { begin } = useStageTransition();
   const [tab, setTab] = useState<Command3DTab>('vatlieu');
   const [nhayNutTuong, setNhayNutTuong] = useState(false);
+  const [openWallBuilderNonce, setOpenWallBuilderNonce] = useState(0);
   // VIỆC 2 (M-3D-OUT) — dock công cụ nổi đáy viewport, đúng mock "3D Dựng khối" trạng thái 03/04.
   const [dockOpen, setDockOpen] = useState(false);
   const [matDangCam, setMatDangCam] = useState<string | null>(null);
@@ -345,6 +346,12 @@ export default function Render3DModeSkeleton() {
   }
   void dungKhoiTaiCho; // giữ hàm cho đường quay lại; tránh cảnh báo unused khi lint bật
 
+  function moLenhTuongHaiDiem() {
+    setTab('tao');
+    setNhayNutTuong(false);
+    setOpenWallBuilderNonce((nonce) => nonce + 1);
+  }
+
   /** M-EMPTY-2 (07/08, mock [BẢN CHỐT] màn 1c) — lối thoát "Vẽ mặt bằng trước": mở chặng Thiết
    * kế 2D bằng ĐÚNG đường StageSwitcher đang đi (`pickStage`, lib/studio/stage-nav — origin
    * 'render' → begin('concept') + push href cad), không chế đường điều hướng thứ hai. */
@@ -352,11 +359,14 @@ export default function Render3DModeSkeleton() {
     pickStage('concept', { active: 'render', pathname, router, begin });
   }
 
-  function taoTuongMau() {
-    useCadStore.getState().addEntities(
-      wallSegment(FIRST_WALL.from, FIRST_WALL.to, FIRST_WALL.thicknessMm, useCadStore.getState().currentLayer),
+  function taoTuongMau(draft: WallDraft3D = { ...FIRST_WALL, heightMm: 2700 }) {
+    const store = useCadStore.getState();
+    store.addEntities(
+      wallSegmentOutline(draft.from, draft.to, draft.thicknessMm, store.currentLayer)
+        .map((entity) => ({ ...entity, heightMm: draft.heightMm })),
     );
     setNhayNutTuong(false);
+    store.setStatus(tr('Đã tạo tường hai điểm. Chọn khối để đổi cao độ hoặc mở Inspector để chỉnh thông số.', 'Two-point wall created. Select it to change height or open Inspector for parameters.'));
   }
 
   function taoLanCanMau() {
@@ -419,6 +429,7 @@ export default function Render3DModeSkeleton() {
           tab={tab}
           onTabChange={setTab}
           nhayNutTuong={nhayNutTuong}
+          openWallBuilderNonce={openWallBuilderNonce}
           onTaoTuong={taoTuongMau}
           onTaoLanCan={taoLanCanMau}
           onPickMaterial={setMatDangCam}
@@ -636,6 +647,7 @@ export default function Render3DModeSkeleton() {
         <ToolDock3D
           open={dockOpen}
           onToggleOpen={() => setDockOpen((o) => !o)}
+          onCreateWall={moLenhTuongHaiDiem}
           onOpenLibrary={() => openLibrarySheet({ stage: 'render' })}
           onOpenMaterialTab={() => setTab('vatlieu')}
         />
