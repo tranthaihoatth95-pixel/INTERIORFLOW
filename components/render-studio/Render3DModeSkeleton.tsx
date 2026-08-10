@@ -29,6 +29,7 @@ import { useCad3DAutosave } from '@/lib/cad/cad3d-autosave';
 import { useStageMode } from '@/lib/stage-mode';
 import { useT } from '@/lib/i18n';
 import { wallSegmentOutline, railingPosts } from '@/lib/cad/commands';
+import { translateEntity } from '@/lib/cad/geometry';
 import { useScene3D } from '@/lib/render-studio/use-scene3d';
 import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
 import { Viewport3D, EMPTY_SCENE_3D } from '@/components/three/Viewport3D';
@@ -334,6 +335,29 @@ export default function Render3DModeSkeleton() {
     store.updateEntities([{ ...entity, heightMm: newHeightMm }]);
   }
 
+  /** Gizmo 3D phải ghi được: X/Y tịnh tiến tất cả phần của cấu kiện đang chọn;
+   * Z đổi cao độ đáy. Với tường hatch+outline, hostId giữ hai phần đi cùng nhau. */
+  function handleNudge(axis: 'x' | 'y' | 'z', deltaMm: number) {
+    const store = useCadStore.getState();
+    const selected = store.doc.entities.find((entity) => entity.id === viewportSelectedId);
+    if (!selected) return;
+    const linkedIds = new Set<string>([selected.id]);
+    if (selected.hostId) linkedIds.add(selected.hostId);
+    for (const entity of store.doc.entities) {
+      if (entity.hostId === selected.id || (selected.hostId && entity.hostId === selected.hostId)) linkedIds.add(entity.id);
+    }
+    const updates = store.doc.entities
+      .filter((entity) => linkedIds.has(entity.id))
+      .map((entity) => axis === 'z'
+        ? { ...entity, elevationMm: Math.max(0, (entity.elevationMm ?? 0) + deltaMm) }
+        : translateEntity(entity, axis === 'x' ? deltaMm : 0, axis === 'y' ? deltaMm : 0));
+    store.updateEntities(updates);
+    store.setStatus(tr(
+      `Đã dịch ${axis.toUpperCase()} ${Math.abs(deltaMm)} mm.`,
+      `Moved ${axis.toUpperCase()} by ${Math.abs(deltaMm)} mm.`,
+    ));
+  }
+
   /** Đùn từ bản vẽ: cảnh 3D vốn tự suy từ Doc, nên việc thật ở đây là ĐẶT CAO ĐỘ cho các nét
    * tường chưa có `heightMm` — đúng nghĩa "đùn", và ghi thẳng vào Doc (một nguồn). */
   function dunTuBanVe() {
@@ -459,6 +483,7 @@ export default function Render3DModeSkeleton() {
           scene={visibleScene ?? EMPTY_SCENE_3D}
           selectedId={viewportSelectedId}
           mode="massing"
+          onNudge={handleNudge}
           onPushPull={handlePushPull}
           lightMarkers={lightMarkers}
           onLightMove={handleLightMove}
