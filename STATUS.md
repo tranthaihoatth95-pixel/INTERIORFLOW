@@ -8,6 +8,7 @@
 
 - Hệ phím tắt toàn app đang triển khai; giữ nguyên 4 file riêng của chủ dự án.
 - Material Intelligence: lõi impact/replace đã xong; việc kế là nối hộp xem phạm vi rồi mới áp.
+- Camera/Video: lõi 5 ý đồ nghề đã có; việc kế là nối panel đường cam và kiểm scene collision.
 
 ## Vừa xong
 
@@ -31,6 +32,8 @@
 - Material Impact MVP: quét đúng vùng hatch, furniture, vật liệu mặc định và từng lớp tường;
   thay một entity hoặc toàn Doc bất biến, không tạo undo thừa khi no-op. BOQ tự đọc specId mới.
   Test mới 12/12, typecheck và toàn bộ test PASS. Kế hoạch tổng 10/08 đã ghi riêng.
+- Camera Intent MVP: thấp sát sàn, bám theo, reveal, push-in, orbit sinh polyline chỉnh được;
+  có chiều cao/lens/tốc độ/easing/look-at. Test lõi PASS; chưa nối UI/scene.
 
 ## Năng lực định dạng đã đo
 
@@ -48,7 +51,7 @@
 1. Nối Material Impact vào nơi gán vật liệu: xem phạm vi → chọn món/phòng/loại/toàn dự án → commit
    một snapshot; sau đó Element Capture/ảnh→MaterialSpec nháp. Tái dùng single-view metrology.
 2. Hợp nhất Vitals; BOQ Form/Magic; Present Magic để nội dung quyết định số slide, không giới hạn 7.
-3. Mood/Collab→Thẻ gu; Shape Magic; 6 pipeline Render, ưu tiên mask/đổi vật liệu/giữ hình học.
+3. Mood/Collab→Thẻ gu + Design DNA; Shape Magic; Render và Camera Intent nối scene thật.
 4. FBX→IFC; PDF deck→DOCX→media→HTML; tăng fidelity PPTX. Chi tiết xem
    `docs/KE-HOACH-MVP-TONG-2026-08-10.md`.
 

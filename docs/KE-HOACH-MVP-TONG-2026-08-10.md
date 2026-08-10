@@ -36,8 +36,12 @@
 ### P3 — Chặng 2 đắt giá
 
 - Mood/Collab kiểu bảng làm việc; kết quả duyệt đóng thành Thẻ gu có ảnh, palette, matId và ràng buộc.
+- Design DNA: trích hình thái/motif có nguồn → biến thể chỉnh được → Thẻ gu → pattern, cấu kiện,
+  render và trang concept; tách khỏi engine trích vật liệu kỹ thuật.
 - Shape Magic: mô tả → khối tham số + lịch sử phép dựng, sửa tay được.
 - Render Magic: clay/depth khóa hình học, mask cục bộ, đổi vật liệu, before/after, camera/light, hàng đợi.
+- Camera Intent: thấp sát sàn, bám theo, reveal, push-in, orbit; preset phải bung thành đường
+  camera/keyframe chỉnh được và kiểm va chạm trên scene thật trước khi render.
 - Góc render và vật liệu đã chốt nuôi trực tiếp Spec, Material Board và Present.
 
 ### P4 — Hồ sơ nghề hoàn chỉnh
@@ -52,4 +56,3 @@
 - `Estimated` không được đổi nhãn thành `Verified` nếu chưa có neo kích thước/nguồn kỹ thuật.
 - Không nhúng asset tham khảo, thương hiệu studio hay dữ liệu khách vào sản phẩm global.
 - Không thêm ngữ nghĩa nếu chưa có nơi tiêu thụ; không thêm định dạng chỉ để hiện tên hỗ trợ.
-

@@ -775,3 +775,7 @@ Máy không biết *"đúng concept chưa"* nếu không ai khai concept. Kiểm
 được khai lệch hành vi. Ưu tiên quy ước nghề/OS quen thuộc; không kích hoạt khi đang nhập chữ;
 không cướp tổ hợp OS/trình duyệt nếu nền web không chặn đáng tin cậy. Lệnh chưa đủ điều kiện chạy
 phải hiện mờ kèm lý do, không gán phím giả. Mốc đầu: `⌘P`/`Ctrl+P` mở preview/xuất PDF Paper.
+
+[10/08 — CHỐT DESIGN DNA + CAMERA INTENT] Design DNA trích hình thái/motif có nguồn, tách khỏi
+Material Intelligence; Camera Intent luôn bung thành polyline/keyframe sửa được và chỉ xác nhận va
+chạm sau khi kiểm scene thật. Xem `docs/CHOT-DESIGN-DNA-CAMERA-2026-08-10.md`.
