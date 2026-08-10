@@ -28,7 +28,7 @@ import {
   type PhotoDoc,
 } from '@/lib/photo-editor/model';
 import { exportDoc, clearRenderCache } from '@/lib/photo-editor/render';
-import { loadImage } from '@/lib/photo-editor/imaging';
+import { cropSourceToDoc, loadImage } from '@/lib/photo-editor/imaging';
 import { DEFAULT_BRUSH, type Tool, type BrushSettings } from '@/lib/photo-editor/tools';
 import { toolForHotkey, nextBrushSize } from '@/lib/photo-editor/hotkeys';
 import { useDoc } from './useDoc';
@@ -313,6 +313,54 @@ export default function PhotoEditor({ initialDoc, onWriteBack }: Props) {
     });
   }, [ed]);
 
+  /* --------------------------- crop tài liệu --------------------------- */
+  /**
+   * Crop là thao tác thật, áp cho TOÀN tài liệu (không chỉ layer đang chọn): raster/mask
+   * cùng bị cắt về khung mới, adjustment vẫn giữ non-destructive. Vùng Lasso dùng bao chữ
+   * nhật của path; người dùng cần cắt theo silhouette thì dùng mask thay vì Crop.
+   */
+  const onCropToSelection = useCallback(async () => {
+    if (!selection || selection.length < 3) return;
+    const xs = selection.map((pt) => pt.x);
+    const ys = selection.map((pt) => pt.y);
+    const left = Math.max(0, Math.floor(Math.min(...xs)));
+    const top = Math.max(0, Math.floor(Math.min(...ys)));
+    const right = Math.min(ed.doc.width, Math.ceil(Math.max(...xs)));
+    const bottom = Math.min(ed.doc.height, Math.ceil(Math.max(...ys)));
+    const width = right - left;
+    const height = bottom - top;
+    if (width < 2 || height < 2) return;
+
+    setBusy('crop');
+    try {
+      const rect = { x: left, y: top, width, height };
+      const nextLayers = await Promise.all(
+        ed.doc.layers.map(async (layer) => {
+          const next = JSON.parse(JSON.stringify(layer));
+          if (next.kind === 'raster') {
+            next.src = await cropSourceToDoc(next.src, ed.doc.width, ed.doc.height, rect);
+          }
+          if (next.mask) {
+            next.mask = await cropSourceToDoc(next.mask, ed.doc.width, ed.doc.height, rect);
+          }
+          return next;
+        }),
+      );
+      clearRenderCache();
+      ed.update((d) => {
+        d.width = width;
+        d.height = height;
+        d.layers = nextLayers;
+      });
+      setSelection(null);
+    } catch (e) {
+      console.error('[PhotoEditor] cắt ảnh lỗi', e);
+      alert('Không cắt được ảnh (nguồn ảnh có thể không cho đọc pixel). Thử bằng ảnh đã tải lên.');
+    } finally {
+      setBusy(null);
+    }
+  }, [ed, selection]);
+
   /* --------------------------- export --------------------------- */
   const onExport = useCallback(
     async (format: 'png' | 'jpeg') => {
@@ -368,6 +416,8 @@ export default function PhotoEditor({ initialDoc, onWriteBack }: Props) {
         canUndo={ed.canUndo}
         canRedo={ed.canRedo}
         onFit={() => setFitSignal((s) => s + 1)}
+        onCropToSelection={onCropToSelection}
+        canCrop={Boolean(selection && selection.length > 2)}
         onExport={onExport}
         busy={busy}
         onWriteBack={onWriteBack ? onWriteBackClick : undefined}

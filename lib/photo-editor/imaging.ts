@@ -53,6 +53,30 @@ export async function imageToCanvas(
   return c;
 }
 
+/**
+ * Cắt một ảnh/layer theo khung tài liệu hiện tại.
+ *
+ * Raster trong PhotoDoc luôn được composite vừa toàn bộ `docW × docH`, vì vậy phép cắt
+ * phải chuẩn hoá nó về đúng khung đó trước rồi mới lấy vùng. Làm vậy giữ nguyên hình ảnh
+ * người dùng đang thấy, kể cả khi nguồn gốc là ảnh có kích thước khác. Hàm trả dataURL để
+ * vẫn đi cùng model/undo hiện có, không tạo một đường lưu trữ riêng cho Crop.
+ */
+export async function cropSourceToDoc(
+  src: string,
+  docW: number,
+  docH: number,
+  rect: { x: number; y: number; width: number; height: number },
+): Promise<string> {
+  const out = makeCanvas(rect.width, rect.height);
+  if (!src) return out.toDataURL('image/png');
+  const img = await loadImage(src);
+  const ctx = out.getContext('2d');
+  if (!ctx) throw new Error('Không lấy được context 2D để cắt ảnh.');
+  // Cùng quy ước với compositeRaster(): nguồn được stretch vừa khung tài liệu.
+  ctx.drawImage(img, -rect.x, -rect.y, docW, docH);
+  return out.toDataURL('image/png');
+}
+
 /* ------------------------------------------------------------------ */
 /* Dựng LUT (bảng tra 256) cho các phép chỉnh theo kênh độc lập.       */
 /* ------------------------------------------------------------------ */

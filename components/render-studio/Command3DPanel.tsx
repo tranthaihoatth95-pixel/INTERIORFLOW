@@ -33,7 +33,7 @@ import { useStageTransition } from '@/components/studio/StageTransitionProvider'
 import {
   Plus, Pencil, Palette, Camera, Square, DoorClosed, AppWindow, TrendingUp,
   CornerUpRight, RotateCw, Fence, Minus, PanelTop, Archive, Lightbulb, Scissors,
-  Disc, Triangle, Spline, Layers,
+  Disc, Triangle, Spline, Layers, CircleDot, Box, ArrowUpRight,
 } from 'lucide-react';
 import type { Scene3DData } from '@/lib/three/cad-to-obj';
 import { SectionExtractPanel, type SectionAcceptPayload } from './SectionExtractPanel';
@@ -82,8 +82,64 @@ export interface Command3DPanelProps {
   onNhanMatCat?: (payload: SectionAcceptPayload) => void;
 }
 
+/** Một điểm vào theo ngữ cảnh, không phải danh mục "AI" mới. Mỗi nút chỉ dẫn đến hành động đã
+ * có thật; phần còn lại của tác vụ giữ trong tab chuyên môn bên dưới. */
+function ContextQuickTools({ tab, onTaoTuong }: { tab: Command3DTab; onTaoTuong?: () => void }) {
+  const tr = useT();
+  const openParts = () => openLibrarySheet({ shelfId: 'common-idfc' });
+  const openMaterials = () => openLibrarySheet({ shelfId: 'common-atlas' });
+
+  const config: Partial<Record<Command3DTab, { title: [string, string]; detail: [string, string]; action?: { label: [string, string]; icon: typeof Plus; run: () => void } }>> = {
+    tao: {
+      title: ['Bắt đầu từ cấu kiện', 'Start with components'],
+      detail: ['Dựng nhanh hoặc kéo cấu kiện có sẵn vào cảnh.', 'Build quickly or place a saved component.'],
+      action: onTaoTuong ? { label: ['Thêm tường', 'Add wall'], icon: Plus, run: onTaoTuong } : { label: ['Mở cấu kiện', 'Browse components'], icon: Box, run: openParts },
+    },
+    vatlieu: {
+      title: ['Gán vật liệu đúng chỗ', 'Assign material in context'],
+      detail: ['Mở ATLAS để so sánh bề mặt trước khi áp.', 'Open ATLAS to compare surfaces before applying.'],
+      action: { label: ['Mở ATLAS', 'Open ATLAS'], icon: Palette, run: openMaterials },
+    },
+    den: {
+      title: ['Kiểm tra ánh sáng', 'Check lighting'],
+      detail: ['Đặt nguồn đèn, xem tiền kiểm lux và phối cảnh cùng lúc.', 'Place sources, check estimated lux and perspective together.'],
+    },
+    camera: {
+      title: ['Chuẩn bị góc máy', 'Prepare a camera view'],
+      detail: ['Thiết lập khung hình, ống kính và đường đi trước khi xuất.', 'Set framing, lens, and the path before export.'],
+    },
+    sua: {
+      title: ['Sửa đối tượng đã chọn', 'Refine the selected object'],
+      detail: ['Chọn một khối trên khung nhìn để mở các phép biến đổi phù hợp.', 'Select a block in the viewport to reveal applicable transforms.'],
+    },
+    banve: {
+      title: ['Rút nét về 2D', 'Extract back to 2D'],
+      detail: ['Chọn mặt cắt, duyệt bản xem trước rồi nhận nét vào bản vẽ.', 'Choose a section, review it, then add lines to the drawing.'],
+    },
+  };
+  const item = config[tab];
+  if (!item) return null;
+  const Icon = item.action?.icon ?? CircleDot;
+  return (
+    <section className="mb-3 rounded-[10px] border border-[var(--mat-hairline)] bg-[var(--field)] p-2.5" aria-label={tr('Tác vụ theo ngữ cảnh', 'Contextual tasks')}>
+      <div className="flex gap-2">
+        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] bg-[var(--accent-soft)] text-[var(--accent)]"><Icon size={14} strokeWidth={1.8} /></span>
+        <span className="min-w-0">
+          <b className="block text-[11px] font-semibold text-[var(--t1)]">{tr(item.title[0], item.title[1])}</b>
+          <span className="mt-0.5 block text-[10px] leading-[1.5] text-[var(--t4)]">{tr(item.detail[0], item.detail[1])}</span>
+        </span>
+      </div>
+      {item.action && (
+        <button type="button" onClick={item.action.run} className="mt-2 flex h-7 items-center gap-1 rounded-[7px] border border-[var(--border)] bg-transparent px-2 text-[10px] font-semibold text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]">
+          <Icon size={12} strokeWidth={1.8} />{tr(item.action.label[0], item.action.label[1])}<ArrowUpRight size={11} strokeWidth={1.8} />
+        </button>
+      )}
+    </section>
+  );
+}
+
 const TABS: { id: Tab; icon: typeof Plus; label: [string, string] }[] = [
-  { id: 'tao', icon: Plus, label: ['Tạo', 'Create'] },
+  { id: 'tao', icon: Plus, label: ['＋', '＋'] },
   { id: 'sua', icon: Pencil, label: ['Sửa', 'Edit'] },
   { id: 'vatlieu', icon: Palette, label: ['Vật liệu', 'Material'] },
   { id: 'camera', icon: Camera, label: ['Camera', 'Camera'] },
@@ -120,6 +176,7 @@ export default function Command3DPanel({
             <button
               key={id}
               onClick={() => setTab(id)}
+              aria-label={id === 'tao' ? tr('Tạo mới', 'Create new') : tr(label[0], label[1])}
               className={cn(
                 // mock `.cpt`: bo góc 8px, nền pill khi active (không phải gạch chân), hover đổi nền
                 'flex flex-1 flex-col items-center gap-1 rounded-[8px] px-0.5 py-1.5 text-[10px] transition-colors',
@@ -135,6 +192,7 @@ export default function Command3DPanel({
         })}
       </div>
       <div className="flex-1 overflow-y-auto p-3">
+        <ContextQuickTools tab={tab} onTaoTuong={onTaoTuong} />
         {tab === 'vatlieu' && <MaterialTab materials={materials} onPick={onPickMaterial} />}
         {tab === 'tao' && <CreateTab nhayNutTuong={nhayNutTuong} onTaoTuong={onTaoTuong} onTaoLanCan={onTaoLanCan} onTabChange={onTabChange} />}
         {tab === 'sua' && <EditTab scene={scene} />}

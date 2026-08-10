@@ -106,19 +106,21 @@ export const LIBRARY_SHEET_CSS = `
 /* 🔴 SỬA 07/08 (Hoà chốt "PHƯƠNG ÁN A"): 186px chỉ là số chép nguyên văn từ mock CŨ
    (mock-if-3chang.html) — KHÔNG phải chốt của Hoà. Mock MỚI (Thư viện.dc.html, 06/08) và
    bảng chốt 07/08 đều ghi 214px — đổi theo, không giữ số cũ "cho tiện tay". */
-.if-lib-root .shelf{width:214px;flex:none;border-right:1px solid var(--mat-hairline);padding:4px 6px;overflow-y:auto;
+.if-lib-root .shelf{width:214px;flex:none;border-right:1px solid var(--mat-hairline);padding:7px 6px;overflow-y:auto;
        display:flex;flex-direction:column}
 .if-lib-root .shrow{width:100%;height:30px;flex:none;display:flex;align-items:center;gap:9px;padding:0 9px;border-radius:var(--radius-sm);
        color:var(--t2);font-size:var(--fs-xs);text-align:left;transition:background .12s var(--ease-apple);border:0;background:none;cursor:pointer}
 .if-lib-root .shrow:hover{background:var(--hover)}
 .if-lib-root .shrow.on{background:var(--accent-soft);color:var(--accent);font-weight:var(--fw-semi)}
+.if-lib-root .shelficon{color:var(--t4);flex:none;transition:color .12s var(--ease-apple)}
+.if-lib-root .shrow:hover .shelficon,.if-lib-root .shrow.on .shelficon{color:var(--accent)}
 .if-lib-root .shrow .c{margin-left:auto;font-size:var(--fs-2xs);color:var(--t4);font-variant-numeric:tabular-nums}
 /* Chấm LOẠI KỆ (port "docs/mocks/Thư viện.dc.html" màn 01, cột kệ). Mock: 10px, bo 3px cho kệ
    thường và bo tròn cho kệ ĐANG MỞ — giữ đúng cả hai. Màu do TSX truyền vào từ "ShelfDef.dot"
    (luôn là token, không hex). */
 .if-lib-root .shrow .dot{width:10px;height:10px;flex:none;border-radius:3px}
 .if-lib-root .shrow.on .dot{border-radius:50%;background:var(--accent)!important}
-.if-lib-root .shcap{padding:9px 9px 5px;flex:none;font-size:var(--fs-2xs);font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t5)}
+.if-lib-root .shcap{padding:9px 9px 5px;flex:none;display:flex;align-items:center;gap:6px;font-size:var(--fs-2xs);font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t5)}
 /* Hàng NHÓM VẬT LIỆU con — mock thụt lề sâu hơn hàng kệ (padding-left 22 vs 12) và chữ nhạt hơn.
    Ở đây là NÚT lọc thật (mock vẽ tĩnh), nên có thêm trạng thái chọn. */
 .if-lib-root .subrow{width:100%;height:24px;flex:none;display:flex;align-items:center;padding:0 9px 0 19px;
@@ -136,8 +138,24 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .shelfcta{margin-top:auto;flex:none;position:sticky;bottom:0;z-index:1;
        padding:10px 3px 2px;border-top:1px solid var(--mat-hairline);background:var(--panel)}
 .if-lib-root .shelfcta .pub{margin-left:0;width:100%;height:var(--tap);justify-content:center}
+.if-lib-root .create-quiet{width:30px;height:30px;border-radius:9px;border:1px dashed var(--border-strong);background:transparent;color:var(--t4);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:color .12s var(--ease-apple),border-color .12s var(--ease-apple),background .12s var(--ease-apple)}
+.if-lib-root .create-quiet:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+.if-lib-root .create-quiet:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
 .if-lib-root .libmain{flex:1;min-width:0;display:flex;flex-direction:column}
 .if-lib-root .chips{flex:none;display:flex;gap:5px;padding:9px 14px;border-bottom:1px solid var(--mat-hairline);overflow-x:auto;scrollbar-width:none}
+.if-lib-root .discoverbar{flex:none;display:flex;align-items:center;gap:2px;padding:8px 14px 3px}
+.if-lib-root .discoverbar button{height:27px;border:0;border-radius:8px;background:transparent;color:var(--t4);padding:0 8px;display:flex;align-items:center;gap:5px;cursor:pointer;font:inherit;font-size:var(--fs-2xs);transition:color .12s var(--ease-apple),background .12s var(--ease-apple)}
+.if-lib-root .discoverbar button:hover{background:var(--hover);color:var(--t1)}
+.if-lib-root .discoverbar button.on{background:var(--accent-soft);color:var(--accent);font-weight:var(--fw-semi)}
+.if-lib-root .discoverbar button:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
+.if-lib-root .library-spotlight{margin:5px 14px 8px;width:calc(100% - 28px);min-height:82px;border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;background:var(--card);display:grid;grid-template-columns:116px 1fr 28px;align-items:stretch;padding:0;text-align:left;color:var(--t1);cursor:pointer;transition:transform .2s var(--ease-apple),border-color .15s var(--ease-apple),box-shadow .2s var(--ease-apple)}
+.if-lib-root .library-spotlight:hover{transform:translateY(-1px);border-color:var(--border-strong);box-shadow:var(--shadow-pop)}
+.if-lib-root .library-spotlight .th{height:auto;border:0;border-right:1px solid var(--mat-hairline)}
+.if-lib-root .spotlight-copy{display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0;padding:10px 12px}
+.if-lib-root .spotlight-copy strong{font-size:var(--fs-xs);font-weight:var(--fw-semi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.if-lib-root .spotlight-copy small{font-size:var(--fs-2xs);line-height:1.45;color:var(--t4);max-width:50ch}
+.if-lib-root .spotlight-kicker{display:flex;align-items:center;gap:5px;color:var(--accent);font-size:10px;font-weight:var(--fw-semi);letter-spacing:.04em;text-transform:uppercase}
+.if-lib-root .spotlight-open{display:flex;align-items:center;justify-content:center;color:var(--t4);font-size:16px}
 .if-lib-root .chip{height:24px;padding:0 11px;border-radius:20px;background:var(--field);color:var(--t3);
       font-size:var(--fs-2xs);white-space:nowrap;display:flex;align-items:center;gap:5px;border:0;cursor:pointer;
       transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}

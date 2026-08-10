@@ -148,7 +148,7 @@ export default function ToolDock3D({ open, onToggleOpen, onOpenLibrary, onOpenMa
     const flat = groups.flatMap((g, gi) => g.items.map((it) => ({ ...it, groupIdx: gi })));
     return (
       <div
-        className="mat-panel"
+        className="glass-float glass-float--bar"
         style={{
           position: 'absolute', left: '50%', bottom: 76, transform: 'translateX(-50%)', zIndex: 6,
           display: 'flex', alignItems: 'center', gap: 1, padding: 4, borderRadius: 14,
@@ -195,7 +195,7 @@ export default function ToolDock3D({ open, onToggleOpen, onOpenLibrary, onOpenMa
   const rows = [groups.slice(0, 3), groups.slice(3)];
   return (
     <div
-      className="mat-panel"
+      className="glass-float"
       style={{
         position: 'absolute', left: '50%', bottom: 76, transform: 'translateX(-50%)', zIndex: 6, padding: 6,
         borderRadius: 14, border: '1px solid var(--mat-hairline)', boxShadow: 'var(--shadow-pop)',

@@ -19,8 +19,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { PointerEvent as ReactPointerEvent, TouchEvent as ReactTouchEvent } from 'react';
-import { Boxes, Check, Hammer, Sparkles, Sun, X } from 'lucide-react';
+import type { TouchEvent as ReactTouchEvent } from 'react';
+import { Hammer, Sun, X } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useCadStore } from '@/lib/cad/store';
 import { pickStage } from '@/lib/studio/stage-nav';
@@ -42,15 +42,10 @@ import { SECTION_LAYERS } from '@/lib/three/section-entities';
 import { useLevelUi, UNASSIGNED_LEVEL, ROOM_LIGHT_KINDS, ROOM_LIGHT_DEFAULT_Z_MM } from '@/components/render-studio/scene3d-ui';
 import { addLevelToDoc, currentLighting, writeSun, writeRoomLights, patchRoomLight, newRoomLightId } from '@/components/render-studio/doc-catalog';
 import { buildLightRig, type RoomLight } from '@/lib/three/lighting';
+import { useVitalsUi } from '@/lib/vitals-ui';
+import VitalsIcon from '@/components/studio/VitalsIcon';
 
-const GUIDE_HIDDEN_KEY = 'if.ve3d.guide_hidden_v1';
-const GUIDE_POS_KEY = 'if.ve3d.guide_pos_v1';
 const WELCOME_HIDDEN_KEY = 'if.ve3d.welcome_hidden_v1';
-
-interface GuidePos {
-  left: number;
-  top: number;
-}
 
 /** Tường mẫu 4m khi bấm "Dựng khối đầu tiên" — dùng ĐÚNG hàm engine `wallSegment()` của chặng Vẽ
  * (không tự chế hình học), dày 220mm, đặt ở gốc toạ độ để camera đang khung sẵn nhìn thấy ngay. */
@@ -81,93 +76,23 @@ export default function Render3DModeSkeleton() {
   // VIỆC 2 (M-3D-OUT) — dock công cụ nổi đáy viewport, đúng mock "3D Dựng khối" trạng thái 03/04.
   const [dockOpen, setDockOpen] = useState(false);
   const [matDangCam, setMatDangCam] = useState<string | null>(null);
+  const openVitals = useVitalsUi((s) => s.open);
   // VIỆC "MỘT THƯ VIỆN" (`PHIEU-CODE-IF-DOT6`, 05/08) — cây đối tượng + panel thuộc tính dời sang
   // Navigator/Inspector (`Object3DTree.tsx`/`Object3DInspector.tsx`, ổ SIBLING của AppShell, xem
   // `HomeScreen.tsx`) — tên group ẩn/đang chọn nay sống ở store chia sẻ `useTree3DUi`, không phải
   // `useState` cục bộ (2 ổ kia không chung cây React cha gần để nhận props).
   const hiddenGroupNames = useTree3DUi((s) => s.hiddenNames);
   const selectedGroupName = useTree3DUi((s) => s.selectedName);
-  const [guideHidden, setGuideHidden] = useState(false);
-  // PHIẾU ĐỢT 7 A1 — bảng TRÌNH TỰ đóng đinh `left:12;bottom:156` đè lên vùng nhìn khối. Kéo được
-  // (di chuyển tự do) + thu gọn còn 1 dòng khi bấm nhãn (KHÁC nút ✕ = ẩn hẳn, giữ nguyên bên dưới).
-  const [guidePos, setGuidePos] = useState<GuidePos | null>(null);
-  const [guideCollapsed, setGuideCollapsed] = useState(false);
   const [welcomeHidden, setWelcomeHidden] = useState(false);
   const welcomeRef = useRef<HTMLDivElement>(null);
   const soKhoiRef = useRef(0);
-  const guideRef = useRef<HTMLDivElement>(null);
   const viewportWrapRef = useRef<HTMLDivElement>(null);
-  const guideDragRef = useRef<{ id: number; startX: number; startY: number; startLeft: number; startTop: number; moved: boolean } | null>(null);
 
   useEffect(() => {
     try {
-      setGuideHidden(localStorage.getItem(GUIDE_HIDDEN_KEY) === '1');
       setWelcomeHidden(localStorage.getItem(WELCOME_HIDDEN_KEY) === '1');
-      const savedPos = localStorage.getItem(GUIDE_POS_KEY);
-      if (savedPos) {
-        const parsed = JSON.parse(savedPos) as GuidePos;
-        if (typeof parsed?.left === 'number' && typeof parsed?.top === 'number') setGuidePos(parsed);
-      }
     } catch {
       /* localStorage bị chặn hoặc dữ liệu hỏng — cứ hiện ở vị trí mặc định, không phải lỗi chặn việc */
-    }
-  }, []);
-
-  /** pointerdown trên thanh tiêu đề (bọc icon+nhãn, KHÔNG bọc nút ✕ — click ✕ vẫn chỉ ẩn hẳn,
-   * không kéo/thu gọn theo). Kéo thật (> 3px) thì di chuyển bảng, kẹp trong lòng viewport; bấm
-   * đứng yên (không kéo) thì đổi vai trò thành thu-gọn/mở-lại — cả 2 dùng CHUNG 3 pointer handler
-   * để không phải phân biệt 2 bộ listener cho 2 trạng thái mở/gọn. */
-  const onGuideHeaderPointerDown = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
-    const panel = guideRef.current;
-    const wrap = viewportWrapRef.current;
-    if (!panel || !wrap) return;
-    const panelRect = panel.getBoundingClientRect();
-    const wrapRect = wrap.getBoundingClientRect();
-    guideDragRef.current = {
-      id: e.pointerId,
-      startX: e.clientX,
-      startY: e.clientY,
-      startLeft: panelRect.left - wrapRect.left,
-      startTop: panelRect.top - wrapRect.top,
-      moved: false,
-    };
-    e.currentTarget.setPointerCapture(e.pointerId);
-  }, []);
-
-  const onGuideHeaderPointerMove = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
-    const ds = guideDragRef.current;
-    const wrap = viewportWrapRef.current;
-    const panel = guideRef.current;
-    if (!ds || ds.id !== e.pointerId || !wrap || !panel) return;
-    const dx = e.clientX - ds.startX;
-    const dy = e.clientY - ds.startY;
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) ds.moved = true;
-    if (!ds.moved) return;
-    const wrapRect = wrap.getBoundingClientRect();
-    const panelRect = panel.getBoundingClientRect();
-    const left = Math.max(0, Math.min(ds.startLeft + dx, wrapRect.width - panelRect.width));
-    const top = Math.max(0, Math.min(ds.startTop + dy, wrapRect.height - panelRect.height));
-    setGuidePos({ left, top });
-  }, []);
-
-  const onGuideHeaderPointerUp = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
-    const ds = guideDragRef.current;
-    if (!ds || ds.id !== e.pointerId) return;
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
-    guideDragRef.current = null;
-    if (ds.moved) {
-      setGuidePos((pos) => {
-        if (pos) {
-          try {
-            localStorage.setItem(GUIDE_POS_KEY, JSON.stringify(pos));
-          } catch {
-            /* không lưu được thì phiên sau về vị trí mặc định — không chặn việc */
-          }
-        }
-        return pos;
-      });
-    } else {
-      setGuideCollapsed((c) => !c);
     }
   }, []);
 
@@ -393,12 +318,6 @@ export default function Render3DModeSkeleton() {
   const selectedGroup = scene?.groups.find((g) => g.name === selectedGroupName) ?? null;
   const viewportSelectedId = selectedGroup?.entityId ?? null;
 
-  // Doc CAD chưa có field vật liệu (grep matId trong lib/cad = 0) ⇒ tín hiệu khả dụng duy nhất
-  // hôm nay là "người dùng đã chọn vật liệu trong panel". Khi gán-lên-mặt (raycast) xong thì đổi
-  // tín hiệu này sang dữ liệu Doc, đừng để nó mãi là state phiên.
-  const daGanVatLieu = matDangCam !== null;
-  const daDatMayQuay = doc.entities.some((e) => e.layer === 'IF_CAMPATH' || Boolean(e.campath));
-
   // `updateEntities`/`addEntities` tạo Doc MỚI trong store → `doc` đổi reference → `scene` tự tính
   // lại → viewer dựng lại. Không ép remount tay (luật một nguồn).
   function handlePushPull(entityId: string, newHeightMm: number) {
@@ -453,21 +372,6 @@ export default function Render3DModeSkeleton() {
       ),
     );
   }
-
-  function anTrinhTu() {
-    setGuideHidden(true);
-    try {
-      localStorage.setItem(GUIDE_HIDDEN_KEY, '1');
-    } catch {
-      /* không lưu được thì thôi, phiên sau hiện lại — không chặn việc */
-    }
-  }
-
-  const buoc = [
-    { xong: soKhoi > 0, chu: 'Dựng khối' },
-    { xong: daGanVatLieu, chu: 'Gán vật liệu' },
-    { xong: daDatMayQuay, chu: 'Đặt máy quay' },
-  ];
 
   /**
    * VIỆC 2 (S2 BUILD#1) — NGƯỜI DÙNG ĐÃ DUYỆT ở màn xem trước ⇒ giờ mới ghi vào `Doc`.
@@ -692,81 +596,6 @@ export default function Render3DModeSkeleton() {
             </button>
           )}
 
-          {/* ── TRÌNH TỰ 3 BƯỚC — xương sống của mode, kéo thả tự do (mặc định góc dưới trái) ── */}
-          {!guideHidden && (
-            <div
-              ref={guideRef}
-              className="vitals-pop"
-              style={{
-                position: 'absolute', zIndex: 6,
-                ...(guidePos
-                  ? { left: guidePos.left, top: guidePos.top }
-                  // bottom 156 = 54 (chỗ trục XYZ đứng) + 90 (chiều cao trục) + 12 thở — mặc định
-                  // TRƯỚC khi kéo lần nào; sau khi kéo thì luôn dùng toạ độ đã lưu (left/top).
-                  : { left: 12, bottom: 156 }),
-                padding: guideCollapsed ? '6px 11px' : '9px 10px 9px 11px',
-                display: 'flex', flexDirection: 'column', gap: guideCollapsed ? 0 : 5,
-                minWidth: guideCollapsed ? 0 : 156,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div
-                  onPointerDown={onGuideHeaderPointerDown}
-                  onPointerMove={onGuideHeaderPointerMove}
-                  onPointerUp={onGuideHeaderPointerUp}
-                  onPointerCancel={onGuideHeaderPointerUp}
-                  title={guideCollapsed ? 'Kéo để di chuyển · bấm để mở lại' : 'Kéo để di chuyển · bấm để thu gọn'}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0,
-                    cursor: 'grab', touchAction: 'none', userSelect: 'none',
-                  }}
-                >
-                  <Boxes size={12} color="var(--t4)" style={{ flexShrink: 0 }} />
-                  {guideCollapsed ? (
-                    <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--t2)', whiteSpace: 'nowrap' }}>
-                      ✓{buoc.filter((b) => b.xong).length}/3 · Trình tự
-                    </span>
-                  ) : (
-                    <span style={{ fontSize: 'var(--fs-3xs, 10px)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--t4)', fontWeight: 700 }}>
-                      Trình tự
-                    </span>
-                  )}
-                </div>
-                {!guideCollapsed && (
-                  <button
-                    type="button"
-                    onClick={anTrinhTu}
-                    title="Ẩn trình tự"
-                    aria-label="Ẩn trình tự"
-                    style={{
-                      marginLeft: 'auto', width: 18, height: 18, display: 'grid', placeItems: 'center', border: 0,
-                      background: 'none', color: 'var(--t4)', cursor: 'pointer', borderRadius: 5, flexShrink: 0,
-                    }}
-                  >
-                    <X size={11} />
-                  </button>
-                )}
-              </div>
-              {!guideCollapsed && buoc.map((b, i) => (
-                <div key={b.chu} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <span
-                    style={{
-                      width: 15, height: 15, flexShrink: 0, borderRadius: 999, display: 'grid', placeItems: 'center',
-                      fontSize: 9, fontWeight: 700,
-                      background: b.xong ? 'var(--accent)' : 'var(--field)',
-                      color: b.xong ? '#fff' : 'var(--t4)',
-                      border: b.xong ? '1px solid var(--accent)' : '1px solid var(--border)',
-                    }}
-                  >
-                    {b.xong ? <Check size={9} strokeWidth={3} /> : i + 1}
-                  </span>
-                  <span style={{ fontSize: 'var(--fs-2xs)', color: b.xong ? 'var(--t3)' : 'var(--t2)', textDecoration: b.xong ? 'line-through' : 'none' }}>
-                    {b.chu}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
         </Viewport3D>
 
         {/* 08/08 — Hoà chốt trực tiếp: nút này TRÙNG HỆT công tắc "Vẽ 3D" tắt (cả hai chỉ gọi
@@ -781,14 +610,14 @@ export default function Render3DModeSkeleton() {
             soạn, chưa duyệt. Disabled + lý do thay vì bịa hành vi (§9, cấm nút giả). */}
         <button
           type="button"
-          disabled
+          onClick={() => openVitals(tr('Tôi muốn dựng một khối nội thất. Hãy hỏi lần lượt loại cấu kiện, kích thước và vị trí.', 'I want to model an interior element. Ask me for the component type, dimensions, and position.'))}
           /* P5 (04/08): kính lỏng `.glass-float--bar` — 1 trong ĐÚNG 4 chỗ được phép (nút này),
              luật ở globals.css. Giữ dù disabled — đây là chỗ đứng cố định cho Magic, không phải
              xoá khỏi giao diện (§9 "cấm xoá ô trống cho gọn mắt"). */
-          className="glass-float glass-float--bar"
+          className="vitals-model-trigger"
           title={tr(
-            'Dựng khối Magic — mô tả bằng lời → bộ tham số thấy được, sửa được → khối dựng đúng số. Đang soạn spec (docs/SPEC-MAGIC-DUNG-KHOI-3D.md), chưa nối.',
-            'Magic build — describe in words → a visible, editable parameter set → block built to exact numbers. Spec being drafted, not wired yet.',
+            'Mở Vitals để bắt đầu một cấu kiện bằng mô tả và kích thước. Lệnh dựng sẽ luôn hiện tham số để bạn kiểm trước khi áp.',
+            'Open Vitals to start a component from a description and dimensions. Build commands will always show parameters before applying.',
           )}
           /* ⑥ p14 (Hoà 08/08, đo DOM 1440×900): bottom:76 đặt nút HÀNH ĐỘNG này ĐÈ lên nút "Thêm"
              của dock công cụ (dock 1240–1313 · nút này x=1300, cùng hàng y≈754) — hành động và
@@ -797,11 +626,11 @@ export default function Render3DModeSkeleton() {
           style={{
             position: 'absolute', right: 18, bottom: 132, zIndex: 6,
             height: 38, padding: '0 18px', display: 'flex', alignItems: 'center', gap: 9,
-            color: 'var(--t3)', fontSize: 13, fontWeight: 600, cursor: 'not-allowed', opacity: 0.55,
+            color: 'var(--t1)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
           }}
         >
-          <Sparkles size={16} strokeWidth={2} color="var(--t3)" />
-          {tr('Dựng khối · Magic', 'Magic build')}
+          <VitalsIcon size={18} />
+          {tr('Dựng cùng Vitals', 'Build with Vitals')}
         </button>
 
         <ToolDock3D

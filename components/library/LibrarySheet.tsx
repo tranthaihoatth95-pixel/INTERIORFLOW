@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, X, ArrowUp, Plus } from 'lucide-react';
+import {
+  Search, X, ArrowUp, Plus, Box, Palette, Network, Images, LayoutTemplate,
+  Compass, Star, TrendingUp, Folder, type LucideIcon,
+} from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import type { StageKey } from '@/lib/library/types';
 import { idfcKindOfThumb, IDFC_KIND_LABEL, THUMB_OF_IDFC_KIND, type ThumbKind } from '@/lib/library/thumb-kinds';
@@ -74,6 +77,16 @@ const CARD_SIZE_OPTIONS: { id: LibCardSize; label: [string, string] }[] = [
   { id: 'lg', label: ['Lớn', 'Large'] },
 ];
 
+const BAY_ICON: Record<string, LucideIcon> = {
+  'cau-kien': Box,
+  'vat-lieu': Palette,
+  node: Network,
+  anh: Images,
+  mau: LayoutTemplate,
+};
+
+type DiscoverMode = 'browse' | 'featured' | 'trending';
+
 /** w×d×h chỉ hiện ở nấc Lớn (chốt: "dân thiết kế cần con số này trước tiên"). KHÔNG bịa số — bỏ
  * hẳn kích thước còn thiếu thay vì hiện "—" (khác `.speccol` là bảng có nhãn cố định cho MỘT món
  * đang xem kỹ; đây là dòng phụ trên hàng chục thẻ cùng lúc, thiếu 1 trong 3 số vẫn còn 2 số đúng
@@ -127,6 +140,7 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   /** Món ĐANG CHỌN — mở cột thông số ④ (`docs/mocks/Thư viện.dc.html`, khối CotThongSo). */
   const [picked, setPicked] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const [discoverMode, setDiscoverMode] = useState<DiscoverMode>('browse');
   const [publishOpen, setPublishOpen] = useState(false);
   /** `/library/ingest` gộp thành 1 CHẾ ĐỘ của sheet (SPEC-NAVIGATION-MODEL §1) — không trang riêng. */
   const [mode, setMode] = useState<'browse' | 'ingest'>('browse');
@@ -343,6 +357,12 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   }, [displayItem, displayIdfc, displaySpecSource]);
   /** Nhãn kệ đang mở — dùng cho dòng đếm ở chân sheet ("N mục trong kệ …", mock thanh trạng thái). */
   const activeShelf = [...stageShelves, ...COMMON_SHELVES].find((s) => s.id === shelfId);
+  const spotlightItem = items[0] ?? null;
+  const discoverItems = useMemo(() => {
+    if (discoverMode === 'trending') return items.filter((item) => item.recent).concat(items.filter((item) => !item.recent));
+    if (discoverMode === 'featured') return items.slice(0, 4);
+    return items;
+  }, [discoverMode, items]);
 
   /**
    * 06/08 (G-M3-14) — SỬA LỜI BÁO NÓI DỐI. Trước: phát sự kiện xong là toast "Đã tạo bản làm
@@ -466,7 +486,10 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
               if (!inBay.length && !clusterHere) return null;
               return (
                 <div key={bay.id}>
-                  <div className="shcap">{tr(bay.label[0], bay.label[1])}</div>
+                  <div className="shcap">
+                    {(() => { const Icon = BAY_ICON[bay.id] ?? Folder; return <Icon size={12} strokeWidth={1.8} aria-hidden />; })()}
+                    {tr(bay.label[0], bay.label[1])}
+                  </div>
                   {inBay.map((s) => (
                     <button
                       type="button"
@@ -475,8 +498,7 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                       aria-current={s.id === shelfId}
                       onClick={() => setShelfId(s.id)}
                     >
-                      {/* chấm LOẠI kệ — port mock màn 01; màu đi từ token, xem `ShelfDef.dot`. */}
-                      <span className="dot" style={{ background: s.dot }} aria-hidden />
+                      {(() => { const Icon = BAY_ICON[bay.id] ?? Folder; return <Icon className="shelficon" size={15} strokeWidth={1.65} aria-hidden />; })()}
                       {tr(s.label[0], s.label[1])}
                       <span className="c">{s.id === 'common-idfc' ? idfcItems.length : (s.count ?? '—')}</span>
                     </button>
@@ -488,7 +510,7 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                       aria-current={shelfId === CLUSTER_SHELF_ID}
                       onClick={() => setShelfId(CLUSTER_SHELF_ID)}
                     >
-                      <span className="dot" style={{ background: 'var(--t2)' }} aria-hidden />
+                      <Box className="shelficon" size={15} strokeWidth={1.65} aria-hidden />
                       {tr('Văn phòng · Cụm bàn', 'Office · Desk clusters')}
                       <span className="c">{CLUSTER_SPECS.length}</span>
                     </button>
@@ -541,9 +563,8 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                 (không xoá đường đã có) cho ca thả nhiều file. Chỉ hiện ở kệ vật liệu. */}
             {shelfId === MATERIAL_GROUP_SHELF && (
               <div className="shelfcta">
-                <button type="button" className="pub" onClick={() => setShowAddMaterial(true)}>
-                  <Plus size={13} strokeWidth={2} />
-                  {tr('Thêm vật liệu mới', 'Add new material')}
+                <button type="button" className="create-quiet" onClick={() => setShowAddMaterial(true)} title={tr('Thêm vật liệu mới', 'Add new material')} aria-label={tr('Thêm vật liệu mới', 'Add new material')}>
+                  <Plus size={16} strokeWidth={1.8} />
                 </button>
               </div>
             )}
@@ -558,6 +579,28 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
               <ClusterPanel onInserted={() => setOpen(false)} />
             ) : (
             <>
+            <div className="discoverbar" role="tablist" aria-label={tr('Khám phá thư viện', 'Library discovery')}>
+              <button type="button" role="tab" aria-selected={discoverMode === 'browse'} className={discoverMode === 'browse' ? 'on' : ''} onClick={() => setDiscoverMode('browse')}>
+                <Folder size={14} strokeWidth={1.75} />{tr('Tất cả', 'All')}
+              </button>
+              <button type="button" role="tab" aria-selected={discoverMode === 'featured'} className={discoverMode === 'featured' ? 'on' : ''} onClick={() => setDiscoverMode('featured')}>
+                <Star size={14} strokeWidth={1.75} />{tr('Nổi bật', 'Featured')}
+              </button>
+              <button type="button" role="tab" aria-selected={discoverMode === 'trending'} className={discoverMode === 'trending' ? 'on' : ''} onClick={() => setDiscoverMode('trending')}>
+                <TrendingUp size={14} strokeWidth={1.75} />{tr('Top tuần này', 'Top this week')}
+              </button>
+            </div>
+            {spotlightItem && discoverMode !== 'browse' && (
+              <button type="button" className="library-spotlight" onClick={() => setPicked(spotlightItem.id)}>
+                <ItemThumb item={spotlightItem} />
+                <span className="spotlight-copy">
+                  <span className="spotlight-kicker"><Compass size={13} strokeWidth={1.75} />{tr('Chọn cho dự án này', 'Picked for this project')}</span>
+                  <strong>{spotlightItem.name}</strong>
+                  <small>{tr('Xem thông số, kéo vào bàn làm việc hoặc áp cho lựa chọn hiện tại.', 'Review specs, drag to the workspace, or apply to the current selection.')}</small>
+                </span>
+                <span className="spotlight-open" aria-hidden>↗</span>
+              </button>
+            )}
             <div className="chips" role="group" aria-label={tr('Lọc theo phạm vi', 'Filter by scope')}>
               {SCOPE_CHIPS.map((c) => (
                 <button
@@ -592,10 +635,10 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
             </div>
 
             <div className="grid">
-              {items.length === 0 && (
+              {discoverItems.length === 0 && (
                 <p className="empty">{tr('Không có món nào khớp bộ lọc.', 'Nothing matches this filter.')}</p>
               )}
-              {items.map((it) => {
+              {discoverItems.map((it) => {
                 /* w×d×h chỉ tính khi nấc LỚN đang bật (tránh dò khớp mã vô ích ở nấc khác) —
                    xem `formatDims()` cho luật "không bịa số". */
                 const dims = cardSize === 'lg' && specs?.length ? matchSpec(it.code, specs) : undefined;

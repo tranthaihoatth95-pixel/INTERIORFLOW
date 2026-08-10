@@ -920,6 +920,36 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   border-radius: 999px;
 }
 
+/* Cửa vào Vitals trong workspace dựng hình: cùng chất liệu ánh sáng với glyph Vitals,
+   không dùng icon "magic"/sparkle độc lập. Viền chuyển động chỉ có ở hành động này; tắt hoàn
+   toàn khi người dùng giảm chuyển động. */
+.vitals-model-trigger {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent) 62%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.vitals-model-trigger::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(transparent 0 42%, var(--accent) 50%, transparent 58% 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: vitals-model-ring 3.4s linear infinite;
+  pointer-events: none;
+}
+.vitals-model-trigger > * { position: relative; z-index: 1; }
+@keyframes vitals-model-ring { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .vitals-model-trigger::before { animation: none; }
+}
+
 /* Thư viện là modal; đừng để thanh chuyển mode phía sau trông như một control bị hỏng. */
 body[data-if-library-open='true'] .if-bottombar {
   visibility: hidden;

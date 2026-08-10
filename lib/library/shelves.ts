@@ -79,6 +79,7 @@ export const COMMON_SHELVES: ShelfDef[] = [
   // "Bộ nhận diện" — cùng tên VÀ cùng màu chấm (--warning) với kệ thứ 6 của mock.
   { id: 'common-brand', label: ['Bộ nhận diện', 'Brand kits'], count: null, dot: 'var(--warning)' },
   { id: 'common-asset', label: ['Ảnh & tài sản', 'Images & assets'], count: null, dot: 'var(--t2)' },
+  { id: 'common-direction', label: ['Định hướng thiết kế', 'Design directions'], count: null, dot: 'var(--accent-warm)' },
   { id: 'common-theme', label: ['Phông · màu · nền', 'Type · color · background'], count: null, dot: 'var(--success)' },
 ];
 
@@ -126,7 +127,7 @@ export const BAY_OF_SHELF: Record<string, ShelfBay> = {
   'common-asset': 'anh', 'render-mood': 'anh',
   'cad-sheet': 'mau', 'cad-form': 'mau', 'render-form': 'mau',
   'present-page': 'mau', 'present-mata3': 'mau', 'present-boq': 'mau', 'present-doc': 'mau', 'present-video': 'mau',
-  'common-brand': 'mau', 'common-theme': 'mau',
+  'common-brand': 'mau', 'common-direction': 'mau', 'common-theme': 'mau',
 };
 
 /** Cơ chế dùng món — SPEC-STAGE-LIBRARIES "3 động tác". */
@@ -211,6 +212,16 @@ const ITEMS_BY_SHELF: Record<string, Row[]> = {
   ],
   'common-brand': [['Bộ nhận diện dự án', 'BK-PRJ', 'page'], ['Bộ nhận diện studio', 'BK-STD', 'page']],
   'common-asset': [['Ảnh khảo sát', 'AS-SURVEY', 'sheet'], ['Ảnh tham chiếu', 'AS-REF', 'sheet'], ['Texture rời', 'AS-TEX', 'fabric']],
+  // Thẻ định hướng là điểm bắt đầu để gom hình, vật liệu và ánh sáng thành một ý đồ có thể áp
+  // dụng; chúng không tự nhận là "gu AI" hay kết quả tạo tự động.
+  'common-direction': [
+    ['Ấm · tối giản', 'DIR-WARM-MIN', 'light-gold'],
+    ['Japandi tự nhiên', 'DIR-JAPANDI', 'wood'],
+    ['Đương đại trầm', 'DIR-DARK-CONT', 'light-night'],
+    ['Địa Trung Hải sáng', 'DIR-MED-LIGHT', 'light-studio'],
+    ['Đá · kim loại · bóng', 'DIR-STONE-METAL', 'metal'],
+    ['Biên tập · tương phản', 'DIR-EDITORIAL', 'sheet'],
+  ],
   'common-theme': [['Cặp phông Editorial', 'TH-EDI', 'page'], ['Bảng màu ấm', 'TH-WARM', 'paint'], ['Nền canvas kẻ ô', 'TH-GRID', 'block']],
 };
 

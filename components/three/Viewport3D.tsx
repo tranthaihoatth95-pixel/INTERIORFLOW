@@ -134,7 +134,7 @@ export function Viewport3D({
           6 mặt · 12 cạnh · 8 góc, không cần 2 nút chữ đứng ngoài nữa. ── */}
       {/* P5 (04/08): kính lỏng `.glass-float` — 1 trong ĐÚNG 4 chỗ được phép (ViewCube), luật ở
           globals.css. Khối vuông → bo mặc định var(--radius-lg) của class. */}
-      <ViewCube3D className="viewcube glass-float" cameraApiRef={cameraApiRef} onPick={onViewChange} />
+      <ViewCube3D size={76} className="viewcube" cameraApiRef={cameraApiRef} onPick={onViewChange} />
 
       {/* G-M18-04 — đưa camera về khung bao trọn toàn cảnh. Chữ THẬT (G6 — nút hành động, không
           icon-hoá), dưới ViewCube. */}

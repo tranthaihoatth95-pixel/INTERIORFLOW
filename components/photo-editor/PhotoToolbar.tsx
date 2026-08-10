@@ -25,6 +25,7 @@ import {
   Link2,
   ImagePlus,
   Download,
+  Crop,
   CornerUpLeft,
   Check,
 } from 'lucide-react';
@@ -46,6 +47,9 @@ interface Props {
   canUndo: boolean;
   canRedo: boolean;
   onFit: () => void;
+  /** Cắt toàn tài liệu theo vùng marquee/lasso đang chọn. Không có vùng chọn thì bị khoá. */
+  onCropToSelection: () => void;
+  canCrop: boolean;
   onExport: (format: 'png' | 'jpeg') => void;
   busy: string | null;
   /** PS-3: có truyền (ảnh đến từ /present-editor qua handoff) → hiện nút "Ghi về Present". */
@@ -129,6 +133,15 @@ export default function PhotoToolbar(p: Props) {
             ))}
           </span>
         ))}
+
+        <Divider />
+        <Btn
+          onClick={p.onCropToSelection}
+          title={p.canCrop ? 'Cắt tài liệu theo vùng đang chọn' : 'Chọn vùng bằng Marquee hoặc Lasso trước'}
+          disabled={!p.canCrop || !!p.busy}
+        >
+          <Crop size={15} /> Cắt
+        </Btn>
 
         <Divider />
         <Btn onClick={() => fileRef.current?.click()} title="Tải ảnh lên">
