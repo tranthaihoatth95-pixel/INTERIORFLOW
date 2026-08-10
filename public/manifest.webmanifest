@@ -1,7 +1,7 @@
 {
   "name": "InteriorFlow",
   "short_name": "InteriorFlow",
-  "description": "Node-based AI workflow canvas cho studio thiết kế nội thất",
+  "description": "Integrated workspace for interior design delivery.",
   "id": "/",
   "start_url": "/",
   "scope": "/",

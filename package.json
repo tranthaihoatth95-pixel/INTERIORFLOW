@@ -2,7 +2,7 @@
   "name": "interiorflow",
   "version": "0.1.0",
   "private": true,
-  "description": "InteriorFlow — canvas node AI cho pipeline nội thất (desktop native qua Electron).",
+  "description": "InteriorFlow — integrated workspace for interior design delivery (native desktop).",
   "author": "InteriorFlow",
   "main": "electron/main.js",
   "scripts": {
