@@ -15,8 +15,9 @@
  *
  * Thuần TS (không DOM) — test: node_modules/.bin/sucrase-node lib/three/cad-to-obj.test.ts
  */
-import type { Doc, Entity, HatchEntity, BlockEntity, Pt, BuildOp } from '../cad/model';
+import type { Doc, Entity, HatchEntity, BlockEntity, Pt, BuildOp, RoomEntity } from '../cad/model';
 import { entityBox, blockToWorld, type Box } from '../cad/model';
+import { derivedSpatial, spatialIdentity, type SemanticProvenance, type SpatialKind } from '../cad/semantic-contract';
 import { BLOCK_MAP } from '../cad/furniture';
 import { buildHatchFaceIndex, pickHatchFace, collectBoundarySegments, polygonArea, pointInPolygon } from '../cad/hatch';
 import { effectiveBlockSize } from '../cad/shape-interactions';
@@ -137,6 +138,14 @@ export interface SceneGroup {
    * KHÔNG ứng với 1 entity riêng nào trong Doc hôm nay (Floor chưa có slab entity; Room_i theo
    * §0.5 "không id bền, đổi theo số đồ trong phòng" — chờ §6 `RoomEntity`, P5, chưa code). */
   entityId?: string;
+  /** Stable spatial bucket shared by the 2D Doc and the 3D scene tree. */
+  semanticKind?: SpatialKind;
+  /** Authored, inferred, or projection-only geometry. Never hide this distinction in UI. */
+  semanticProvenance?: SemanticProvenance;
+  /** Level identity (not the display label `storey`) for real source entities. */
+  levelId?: string;
+  /** Type identity for type/instance editing. Present only where a source entity has one. */
+  typeId?: string;
   /** 3D-5 — cao độ (mm) ĐÃ DÙNG để đùn group tường này (đọc từ `entity.heightMm` hoặc mặc định
    * scene) — viewer 3D dùng số này làm mốc scale khi kéo-đẩy, KHÔNG tính lại từ hình học. */
   heightMm?: number;
@@ -294,7 +303,7 @@ class ObjBuilder {
   faces = 0;
   private posByIndex: number[][] = []; // posByIndex[i] = vị trí (m, Y-up) của vertex OBJ #(i+1)
   private groupList: SceneGroup[] = [];
-  private cur: { name: string; colorHex: string; tris: number[]; entityId?: string; heightMm?: number; baseMm?: number; inferred?: true; storey?: string; specId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]> } | null = null;
+  private cur: { name: string; colorHex: string; tris: number[]; entityId?: string; semanticKind?: SpatialKind; semanticProvenance?: SemanticProvenance; levelId?: string; typeId?: string; heightMm?: number; baseMm?: number; inferred?: true; storey?: string; specId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]> } | null = null;
 
   constructor(mtlFile: string) {
     this.lines.push('# InteriorFlow — OBJ sinh tất định từ bản vẽ CAD (mm → m)');
@@ -306,11 +315,11 @@ class ObjBuilder {
    * `storey` (SPEC-DUNG-3D-THONG-NHAT §5.1/D1) — tầng của entity gốc, group hình học tổng hợp
    * (Sàn/Phòng/Trần) không truyền. `ops`/`opCutters` (NC-12 §4.2/§4.3) — ngăn xếp dựng hình +
    * hình học cutter đã tam-giác-hoá sẵn (`boxPositionsMm`), tầng ba.js đọc để chạy CSG. */
-  object(name: string, mat: Mat, meta?: { entityId?: string; heightMm?: number; baseMm?: number; inferred?: true; storey?: string; specId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]> }) {
+  object(name: string, mat: Mat, meta?: { entityId?: string; semanticKind?: SpatialKind; semanticProvenance?: SemanticProvenance; levelId?: string; typeId?: string; heightMm?: number; baseMm?: number; inferred?: true; storey?: string; specId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]> }) {
     this.lines.push(`o ${name}`);
     this.lines.push(`usemtl ${mat.name}`);
     this.flushGroup();
-    this.cur = { name, colorHex: mat.hex, tris: [], entityId: meta?.entityId, heightMm: meta?.heightMm, baseMm: meta?.baseMm, inferred: meta?.inferred, storey: meta?.storey, specId: meta?.specId, ops: meta?.ops, opCutters: meta?.opCutters };
+    this.cur = { name, colorHex: mat.hex, tris: [], entityId: meta?.entityId, semanticKind: meta?.semanticKind, semanticProvenance: meta?.semanticProvenance, levelId: meta?.levelId, typeId: meta?.typeId, heightMm: meta?.heightMm, baseMm: meta?.baseMm, inferred: meta?.inferred, storey: meta?.storey, specId: meta?.specId, ops: meta?.ops, opCutters: meta?.opCutters };
   }
 
   private flushGroup() {
@@ -320,6 +329,10 @@ class ObjBuilder {
         colorHex: this.cur.colorHex,
         positions: this.cur.tris,
         entityId: this.cur.entityId,
+        semanticKind: this.cur.semanticKind,
+        semanticProvenance: this.cur.semanticProvenance,
+        levelId: this.cur.levelId,
+        typeId: this.cur.typeId,
         heightMm: this.cur.heightMm,
         baseMm: this.cur.baseMm,
         inferred: this.cur.inferred,
@@ -593,7 +606,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
   // riêng lẻ nào trong Doc (không như Wall_i/Furn_i/Window_i đều bắt nguồn từ đúng 1 entity).
   // Đ1 (SPEC-TANG-DU-LIEU-CAU-KIEN §8) chỉ đòi "mọi group PHẢI có entityId" khi group đó THỰC SỰ
   // ứng với entity — Floor chưa có entity nguồn (chờ §6 RoomEntity/slab entity, P5, chưa code).
-  builder.object('Floor', mats.floor);
+  builder.object('Floor', mats.floor, { ...derivedSpatial('floor') });
   builder.prism(floorPoly, -100, 0);
 
   // ---- Phòng: dò biên qua findHatchBoundary tại tâm mỗi block nội thất (import-only) ----
@@ -602,7 +615,20 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
   // (không id bền, đổi theo số đồ trong phòng), không phải entity thật trong Doc. Gán entityId
   // giả (vd theo furniture kích hoạt) sẽ SAI — nó neo vào phòng chứ không phải cái đồ đó. Chờ
   // §6 `RoomEntity` (P5, chưa code) mới có id thật để gán ở đây.
+  const persistedRooms = doc.entities.filter((e): e is RoomEntity => e.type === 'room' && e.boundary.length >= 3);
   const roomPolys: Pt[][] = [];
+  // A persisted RoomEntity is the primary source. Legacy boundary detection remains a clear
+  // fallback only for old documents that have not yet adopted RoomEntity.
+  for (const room of persistedRooms) {
+    const height = computeHeights(room, doc).baseMm;
+    const identity = spatialIdentity(room, 'room', 'declared');
+    builder.object(`Room_${room.id}`, mats.room, {
+      ...identity,
+      storey: room.storey,
+      ...(height !== 0 ? { baseMm: height } : {}),
+    });
+    builder.prism(room.boundary, height, height + 2);
+  }
   const traceDoc: Doc = {
     layers: doc.layers,
     entities: doc.entities.filter((e) => e.type !== 'block' && e.type !== 'text' && e.type !== 'dim' && e.type !== 'hatch'),
@@ -626,8 +652,8 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
       // dò biên là nice-to-have — lỗi thì bỏ qua phòng đó
     }
   }
-  roomPolys.forEach((poly, i) => {
-    builder.object(`Room_${i + 1}`, mats.room);
+  if (!persistedRooms.length) roomPolys.forEach((poly, i) => {
+    builder.object(`Room_${i + 1}`, mats.room, { ...derivedSpatial('room') });
     builder.prism(poly, 0, 2);
   });
 
@@ -659,8 +685,9 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     }
     const inferred = h.elementType === undefined ? true : undefined;
     const opCutters = buildOpCutters(h.ops, doc, wallH, baseMm);
+    const identity = spatialIdentity(h, 'wall', h.elementType === undefined ? 'inferred' : 'declared');
     builder.object(`Wall_${i + 1}`, mats.wall, {
-      entityId: h.id,
+      ...identity,
       heightMm: wallH,
       ...(baseMm !== 0 ? { baseMm } : {}),
       storey: h.storey,
@@ -679,7 +706,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
 
   // ---- Trần (tuỳ chọn) ----
   if (opts.ceiling) {
-    builder.object('Ceiling', mats.ceil);
+    builder.object('Ceiling', mats.ceil, { ...derivedSpatial('ceiling') });
     builder.prism(floorPoly, H, H + 100);
   }
 
@@ -704,7 +731,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     // không khai `heightMm`), lấy nó sẽ là bịa. Đáy sai thì cái ghế nằm dưới sàn tầng 2 — nhìn
     // thấy ngay; nên chỉ vá đúng cái sai, không nhân tiện đổi luôn chiều cao.
     const fBase = computeHeights(b, doc).baseMm;
-    builder.object(`Furn_${i + 1}_${def.id}`, mats.furn, { entityId: b.id, storey: b.storey, specId: b.specId, ...(fBase !== 0 ? { baseMm: fBase } : {}) });
+    builder.object(`Furn_${i + 1}_${def.id}`, mats.furn, { ...spatialIdentity(b, 'furniture', b.elementType === 'furniture' ? 'declared' : 'inferred'), storey: b.storey, specId: b.specId, ...(fBase !== 0 ? { baseMm: fBase } : {}) });
     builder.box4(base, fBase, fBase + furnitureHeightMm(def.id));
   });
 
@@ -749,7 +776,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
       // tấm kính mỏng LẮP VÀO lỗ — dày tối đa 30mm hoặc hết bề dày tường (tường rất mỏng), không
       // còn "đè tường" như khối proxy cũ (§ VIỆC 2).
       const paneT = Math.min(30, thickness) / 2;
-      builder.object(`Window_${windowIdx}`, mats.wall, { entityId: b.id, storey: b.storey, specId: b.specId, ...(hostBaseMm !== 0 ? { baseMm: hostBaseMm } : {}) });
+      builder.object(`Window_${windowIdx}`, mats.wall, { ...spatialIdentity(b, 'window', b.elementType === 'window' ? 'declared' : 'inferred'), storey: b.storey, specId: b.specId, ...(hostBaseMm !== 0 ? { baseMm: hostBaseMm } : {}) });
       builder.box4(quad(b, -hw, hw, -paneT, paneT), sillMm, headMm);
       return;
     }
@@ -758,7 +785,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     // KHÔNG PBR (`docs/SPEC-3D-CORE.md` §6 — đẹp là việc D5, IF chỉ cần đúng hình học tối thiểu).
     doorIdx += 1;
     const frameT = Math.min(60, Math.max(20, hw)); // nẹp 60mm, tự co với cửa rất hẹp (hiếm)
-    const meta = { entityId: b.id, storey: b.storey, specId: b.specId, ...(hostBaseMm !== 0 ? { baseMm: hostBaseMm } : {}) };
+    const meta = { ...spatialIdentity(b, 'door', b.elementType === 'door' ? 'declared' : 'inferred'), storey: b.storey, specId: b.specId, ...(hostBaseMm !== 0 ? { baseMm: hostBaseMm } : {}) };
     builder.object(`Door_${doorIdx}_khung`, mats.wall, meta);
     builder.box4(quad(b, -hw, -hw + frameT, -ht, ht), sillMm, headMm); // nẹp trái
     builder.box4(quad(b, hw - frameT, hw, -ht, ht), sillMm, headMm); // nẹp phải
@@ -773,7 +800,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
   const stats: SceneStats = {
     walls: wallHatches.length,
     furniture: furnitureBlocks.length,
-    rooms: roomPolys.length,
+    rooms: persistedRooms.length || roomPolys.length,
     verts: builder.verts,
     faces: builder.faces,
     bboxMm: { minX: bbox.minX, minY: bbox.minY, maxX: bbox.maxX, maxY: bbox.maxY },
