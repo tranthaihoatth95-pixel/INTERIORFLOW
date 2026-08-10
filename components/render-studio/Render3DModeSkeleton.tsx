@@ -18,7 +18,7 @@
  * Nguồn dữ liệu vẫn là Doc chặng 1 (`docToObjScene`) — luật một nguồn, mode KHÔNG giữ bản 3D riêng.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TouchEvent as ReactTouchEvent } from 'react';
 import { Hammer, Sun, X } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -146,7 +146,10 @@ export default function Render3DModeSkeleton() {
   const hiddenLevels = useLevelUi((s) => s.hiddenLevels);
   // Đèn đọc THẲNG từ Doc qua `buildLightRig()` của PHU — không có bản sao nào trong component này
   // (K1 một nguồn). `rig` cho toạ độ tuyệt đối + màu Kelvin đã quy đổi, dùng luôn cho dấu đèn 3D.
-  const rig = buildLightRig(doc);
+  // `Scene3DViewer` dựng renderer/cảnh trong effect phụ thuộc `lightingPreview`.
+  // Không memo hoá ở đây khiến mọi thay đổi UI như chọn/ẩn một khối tạo LightRig mới,
+  // rồi teardown + dựng lại WebGL dù Doc chưa đổi — nguyên nhân giật khi thao tác.
+  const rig = useMemo(() => buildLightRig(doc), [doc]);
   /** HUD góc nắng chỉ hiện TRONG LÚC đang xoay — không đắp thêm tấm thông tin thường trực lên
    * canvas WebGL (G9: quá 4 tấm backdrop là giật; HUD này không dùng backdrop-filter). */
   const [sunScrubbing, setSunScrubbing] = useState(false);
