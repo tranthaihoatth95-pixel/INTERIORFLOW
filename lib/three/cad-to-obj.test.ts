@@ -78,6 +78,29 @@ console.log('docToObjScene — groups (nguyên liệu viewer 3D, SPEC-3D-CORE §
   ok('tổng số tam giác toàn scene khớp verts/faces cùng cấp độ lớn (không rỗng, không nổ số)', scene.groups.reduce((n, g) => n + g.positions.length / 9, 0) > scene.stats.faces * 0.5);
 }
 
+console.log('docToObjScene — hợp đồng ngữ nghĩa 2D ↔ 3D');
+{
+  const room: Entity = {
+    id: 'room-l2', type: 'room', layer: 'l-text', name: 'Studio', elementType: 'space',
+    boundary: [{ x: 300, y: 300 }, { x: 3700, y: 300 }, { x: 3700, y: 2700 }, { x: 300, y: 2700 }],
+    levelId: 'lv-2',
+  };
+  const doc: Doc = {
+    ...demoDoc(),
+    entities: demoDoc().entities.map((e) => e.type === 'hatch' ? { ...e, elementType: 'wall', levelId: 'lv-2', typeId: 'wall-200' } : e).concat(room),
+    levels: [{ id: 'lv-2', name: 'Level 2', elevationMm: 3600, order: 1 }],
+  };
+  const scene = docToObjScene(doc, { ceiling: true });
+  const wall = scene.groups.find((g) => g.semanticKind === 'wall')!;
+  const roomGroup = scene.groups.find((g) => g.entityId === 'room-l2')!;
+  const floor = scene.groups.find((g) => g.semanticKind === 'floor')!;
+  const ceiling = scene.groups.find((g) => g.semanticKind === 'ceiling')!;
+  ok('tường mang id, level và type bền từ Doc', wall.entityId && wall.levelId === 'lv-2' && wall.typeId === 'wall-200');
+  ok('tường khai báo rõ không bị đánh dấu suy đoán', wall.semanticProvenance === 'declared' && wall.inferred === undefined);
+  ok('RoomEntity là nguồn chính, không phải phòng dò runtime', roomGroup.semanticKind === 'room' && roomGroup.semanticProvenance === 'declared' && roomGroup.levelId === 'lv-2');
+  ok('sàn/trần dẫn xuất có nhãn rõ và không giả mạo entity', floor.semanticProvenance === 'derived' && ceiling.semanticProvenance === 'derived' && !floor.entityId && !ceiling.entityId);
+}
+
 console.log('docToObjScene — SPEC-TANG-DU-LIEU-CAU-KIEN §0.4/§8 Đ1: entityId cho MỌI nhóm ứng với 1 entity');
 {
   const corners = [
