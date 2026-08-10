@@ -1,264 +1,137 @@
 'use client';
 
 /**
- * components/present-editor/PresentDocTypePicker.tsx — Màn chọn LOẠI HỒ SƠ khi vào chặng
- * Trình chiếu CHƯA có hồ sơ nào (V6/H4, `docs/PHIEU-PRESENT-G4.md` mục "V6 · Màn chọn 5 loại
- * hồ sơ + tách lối vào Magic", `docs/SPEC-MODE-PER-STAGE.md` §4).
- *
- * 6 thẻ (5 chốt trong spec gốc + 1 bổ sung theo `STATUS.md` "BỎ HOÃN H4" — loại thứ 6 "Trình
- * chiếu HTML", CHƯA có spec nên disabled, không tự chế đặc tả cho nó):
- *   Deck · Bảng vật liệu A3 · Bảng tính/BOQ · Văn bản · Video · Trình chiếu HTML
- *
- * Enable/disable theo NĂNG LỰC CODE THẬT (không theo văn bản ticket cũ — ticket V6 viết
- * "BOQ disabled" hồi 04/08, nhưng `BoqScreen` đã có editor thật từ `M-BOQ-OUT.md` — coi code
- * là sự thật, xem `docs/CLAUDE.md`):
- *   - Deck        → editor thật (PresentEditor), 2 lối vào: ✨ Magic / Chỉnh tay.
- *   - Bảng tính/BOQ → editor thật (BoqScreen).
- *   - 3 loại còn lại + HTML → disabled, "Sắp có" + lý do cụ thể (SPEC-NGON-NGU-CHI-DAN).
- *
- * Nhãn theo `docs/SPEC-NGON-NGU-CHI-DAN.md`: hành động trước · ≤12 từ · luôn kèm nút · không
- * jargon nội bộ. Từ khoá "Magic" + dấu ✨ + accent, KHÔNG dùng chữ "tự động"
- * (`docs/CHOT-TACH-AI-VA-CHINH-TAY.md`).
+ * Cửa vào Trình chiếu: thư viện mẫu, không phải form chọn loại tài liệu.
+ * Chốt 10/08: bốn ô ngang hàng; ô cuối luôn là hành động tạo trống.
+ * Các loại chưa có editor vẫn hiện đúng cấu trúc thư viện, nhưng không giả thao tác.
  */
 
 import { useState } from 'react';
-import {
-  LayoutTemplate,
-  Palette,
-  FileSpreadsheet,
-  FileText,
-  Clapperboard,
-  Globe,
-  Sparkles,
-  PenLine,
-} from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
 export interface PresentDocTypePickerProps {
-  /** "Chỉnh tay" — deck mới bắt đầu với 1 trang trắng, KHÔNG qua GenerateFlow. */
   onChooseBlankDeck: () => void;
-  /** "✨ Magic" — deck mới, mở thẳng GenerateFlow (import ảnh/text → máy dàn). */
   onChooseMagicDeck: () => void;
-  /** Bảng tính/BOQ — mở `BoqScreen` (editor thật, đã ship). */
   onChooseBoq: () => void;
 }
 
-interface DisabledCard {
-  key: string;
-  icon: React.ReactNode;
+type Kind = 'deck' | 'material' | 'boq' | 'text' | 'video';
+
+type Template = {
   title: [string, string];
-  /** Lý do disabled — RIÊNG từng thẻ, tham chiếu đúng spec đang chờ (không viết chung chung). */
-  reason: [string, string];
-  specFile: string | null;
-}
-
-const DISABLED_CARDS: DisabledCard[] = [
-  {
-    key: 'material-a3',
-    icon: <Palette size={20} />,
-    title: ['Bảng vật liệu A3', 'Material board A3'],
-    reason: [
-      'Đã có bản thiết kế, chưa xây xong — sắp có.',
-      'Design is ready, still being built — coming soon.',
-    ],
-    specFile: 'SPEC-TRINH-MATERIAL-A3.md',
-  },
-  {
-    key: 'doc',
-    icon: <FileText size={20} />,
-    title: ['Văn bản', 'Word document'],
-    reason: [
-      'Đã có bản thiết kế, chưa xây xong — sắp có.',
-      'Design is ready, still being built — coming soon.',
-    ],
-    specFile: 'SPEC-TRINH-VANBAN-EDITOR.md',
-  },
-  {
-    key: 'video',
-    icon: <Clapperboard size={20} />,
-    title: ['Video', 'Video'],
-    reason: [
-      'Đã có bản thiết kế, chưa xây xong — sắp có.',
-      'Design is ready, still being built — coming soon.',
-    ],
-    specFile: 'SPEC-TRINH-VIDEO-EDITOR.md',
-  },
-  {
-    key: 'html',
-    icon: <Globe size={20} />,
-    title: ['Trình chiếu HTML', 'HTML presentation'],
-    reason: [
-      'Chưa có bản thiết kế cho loại này — sắp có.',
-      'No design yet for this type — coming soon.',
-    ],
-    specFile: null,
-  },
-];
-
-const cardBase: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 10,
-  borderRadius: 'var(--radius-lg)',
-  border: '1px solid var(--border)',
-  background: 'var(--card)',
-  padding: 18,
-  minHeight: 168,
-  transition: 'transform 200ms cubic-bezier(.32,.72,0,1), box-shadow 200ms, border-color 200ms',
+  caption: [string, string];
+  image?: string;
+  tone?: string;
+  enabled: boolean;
 };
 
-function CardShell({
-  active,
-  children,
-  style,
-}: {
-  active: boolean;
-  children: React.ReactNode;
-  style?: React.CSSProperties;
-}) {
-  const [hover, setHover] = useState(false);
-  return (
-    <div
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        ...cardBase,
-        ...(active
-          ? {
-              cursor: 'default',
-              transform: hover ? 'translateY(-2px) scale(1.02)' : 'none',
-              boxShadow: hover ? 'var(--shadow-pop)' : 'none',
-              borderColor: hover ? 'var(--accent-ring)' : 'var(--border)',
-            }
-          : { opacity: 0.62 }),
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-const primaryBtn: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 6,
-  height: 34,
-  borderRadius: 'var(--radius-sm)',
-  border: '1px solid var(--border-strong)',
-  background: 'var(--field)',
-  color: 'var(--t1)',
-  fontSize: 12.5,
-  fontWeight: 600,
-  cursor: 'pointer',
+const LIBRARY: Record<Kind, { label: [string, string]; count: string; lead: [string, string]; templates: Template[] }> = {
+  deck: {
+    label: ['Deck', 'Deck'], count: '03',
+    lead: ['Tạo một câu chuyện thiết kế rõ ràng, phù hợp cho từng buổi duyệt.', 'Create a clear design story for every review.'],
+    templates: [
+      { title: ['Không gian có câu chuyện', 'A space with a story'], caption: ['Concept tối giản', 'Minimal concept'], image: '/demo/mood1.jpg', enabled: true },
+      { title: ['Mộc Residence', 'Moc Residence'], caption: ['Hồ sơ khách hàng', 'Client presentation'], image: '/demo/mood2.jpg', enabled: true },
+      { title: ['Phương án 02', 'Option 02'], caption: ['So sánh phương án', 'Option comparison'], image: '/demo/mood3.jpg', enabled: true },
+    ],
+  },
+  material: {
+    label: ['Bảng vật liệu', 'Material board'], count: '04',
+    lead: ['Ghép vật liệu, mã hàng và vùng sử dụng trên một tấm rõ ràng.', 'Pair finishes, product codes, and usage zones on a clear board.'],
+    templates: [
+      { title: ['Palette hoàn thiện', 'Finish palette'], caption: ['Đang hoàn thiện editor', 'Editor in progress'], image: '/demo/mood4.jpg', enabled: false },
+      { title: ['Bảng mẫu dự án', 'Project sample board'], caption: ['Đang hoàn thiện editor', 'Editor in progress'], tone: '#bcae9e', enabled: false },
+      { title: ['Bề mặt & sắc độ', 'Surface & tone'], caption: ['Đang hoàn thiện editor', 'Editor in progress'], tone: '#829aa0', enabled: false },
+    ],
+  },
+  boq: {
+    label: ['Bảng tính BOQ', 'BOQ spreadsheet'], count: '03',
+    lead: ['Dự toán và khối lượng được đọc cùng nhịp với dự án.', 'Quantities and estimates remain in step with your project.'],
+    templates: [
+      { title: ['Khối lượng tổng', 'Total quantities'], caption: ['Mở bảng tính BOQ', 'Open BOQ spreadsheet'], tone: '#e5dfd1', enabled: true },
+      { title: ['Dự toán hoàn thiện', 'Finishes estimate'], caption: ['Đang bổ sung mẫu', 'Templates in progress'], tone: '#d7d1c4', enabled: false },
+      { title: ['Đối chiếu vật tư', 'Procurement check'], caption: ['Đang bổ sung mẫu', 'Templates in progress'], tone: '#cbc4b5', enabled: false },
+    ],
+  },
+  text: {
+    label: ['Văn bản', 'Documents'], count: '05',
+    lead: ['Văn bản có cấu trúc riêng, không bị nhét vào trang slide.', 'Documents have their own structure, never squeezed into slides.'],
+    templates: [
+      { title: ['Thuyết minh thiết kế', 'Design narrative'], caption: ['Editor sắp có', 'Editor coming soon'], tone: '#ece8df', enabled: false },
+      { title: ['Biểu mẫu nghiệm thu', 'Inspection form'], caption: ['Editor sắp có', 'Editor coming soon'], tone: '#ddd7cb', enabled: false },
+      { title: ['Hợp đồng song ngữ', 'Bilingual agreement'], caption: ['Editor sắp có', 'Editor coming soon'], tone: '#cfc8bb', enabled: false },
+    ],
+  },
+  video: {
+    label: ['Video', 'Video'], count: '03',
+    lead: ['Dựng footage từ chặng 3D thành một nhịp xem có chủ đích.', 'Shape footage from 3D into an intentional viewing rhythm.'],
+    templates: [
+      { title: ['Walkthrough 60 giây', '60-second walkthrough'], caption: ['Editor sắp có', 'Editor coming soon'], image: '/demo/mood2.jpg', enabled: false },
+      { title: ['Phương án ánh sáng', 'Lighting study'], caption: ['Editor sắp có', 'Editor coming soon'], image: '/demo/mood3.jpg', enabled: false },
+      { title: ['Tổng hợp dự án', 'Project reel'], caption: ['Editor sắp có', 'Editor coming soon'], image: '/demo/mood4.jpg', enabled: false },
+    ],
+  },
 };
 
-const magicBtn: React.CSSProperties = {
-  ...primaryBtn,
-  border: '1px solid var(--accent-ring)',
-  background: 'var(--accent-soft)',
-  color: 'var(--accent)',
-};
-
-export function PresentDocTypePicker({
-  onChooseBlankDeck,
-  onChooseMagicDeck,
-  onChooseBoq,
-}: PresentDocTypePickerProps) {
+export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onChooseBoq }: PresentDocTypePickerProps) {
   const tr = useT();
+  const [kind, setKind] = useState<Kind>('deck');
+  const current = LIBRARY[kind];
+  const canCreateBlank = kind === 'deck';
+
+  const openTemplate = (template: Template) => {
+    if (!template.enabled) return;
+    if (kind === 'boq') onChooseBoq();
+    else onChooseMagicDeck();
+  };
+
   return (
-    <div
-      style={{
-        height: '100%',
-        overflowY: 'auto',
-        display: 'flex',
-        justifyContent: 'center',
-        padding: '48px 24px',
-      }}
-    >
-      <div style={{ width: '100%', maxWidth: 900 }}>
-        <div style={{ marginBottom: 28, textAlign: 'center' }}>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: 'var(--t1)' }}>
-            {tr('Chọn loại hồ sơ để bắt đầu', 'Choose a document type to start')}
+    <div style={{ height: '100%', overflowY: 'auto', padding: 'clamp(34px, 7vh, 76px) 26px 96px' }}>
+      <section style={{ width: '100%', maxWidth: 1120, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ color: 'var(--accent)', fontSize: 11, fontWeight: 750, letterSpacing: '.09em' }}>
+            <span aria-hidden="true" style={{ display: 'inline-block', width: 7, height: 7, marginRight: 7, borderRadius: '50%', background: 'currentColor' }} />
+            {tr('THƯ VIỆN HỒ SƠ', 'DOCUMENT LIBRARY')}
+          </div>
+          <h1 style={{ margin: '10px 0 7px', color: 'var(--t1)', fontSize: 'clamp(30px, 4vw, 43px)', lineHeight: 1.08, letterSpacing: '-.045em' }}>
+            {tr('Bắt đầu từ một mẫu phù hợp.', 'Start with a fitting template.')}
           </h1>
-          <p style={{ margin: '6px 0 0', fontSize: 12.5, color: 'var(--t3)' }}>
-            {tr('Mỗi hồ sơ trình bày một cách khác nhau.', 'Each document presents your project differently.')}
-          </p>
+          <p style={{ maxWidth: 540, margin: '0 auto', color: 'var(--t3)', fontSize: 14.5, lineHeight: 1.55 }}>{tr(...current.lead)}</p>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-            gap: 14,
-          }}
-        >
-          {/* Deck — Magic là lối mặc định; Chỉnh tay là lối biên tập từ trang trắng. */}
-          <CardShell active>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent)' }}>
-              <LayoutTemplate size={20} />
-              <strong style={{ fontSize: 13.5, color: 'var(--t1)' }}>{tr('Deck', 'Deck')}</strong>
-            </div>
-            <p style={{ margin: 0, fontSize: 11.5, color: 'var(--t3)', flex: 1, lineHeight: 1.5 }}>
-              {tr('Dàn slide kể câu chuyện thiết kế.', 'Slides that tell your design story.')}
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <button type="button" onClick={onChooseMagicDeck} style={magicBtn}>
-                <Sparkles size={13} />
-                {tr('Magic — tạo hồ sơ', 'Magic — create deck')}
-              </button>
-              <button type="button" onClick={onChooseBlankDeck} style={primaryBtn}>
-                <PenLine size={13} />
-                {tr('Chỉnh tay', 'Edit manually')}
-              </button>
-            </div>
-          </CardShell>
+        <nav aria-label={tr('Loại hồ sơ', 'Document type')} style={{ display: 'flex', justifyContent: 'center', gap: 5, margin: '32px 0 24px', paddingBottom: 12, borderBottom: '1px solid var(--border)', overflowX: 'auto' }}>
+          {(Object.keys(LIBRARY) as Kind[]).map((key) => {
+            const item = LIBRARY[key];
+            const selected = key === kind;
+            return <button key={key} type="button" onClick={() => setKind(key)} style={{ flex: 'none', height: 34, padding: '0 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: selected ? 'var(--accent-soft)' : 'transparent', color: selected ? 'var(--accent)' : 'var(--t3)', fontSize: 12, fontWeight: selected ? 650 : 500 }}>
+              {tr(...item.label)} <small style={{ marginLeft: 5, opacity: .68 }}>{item.count}</small>
+            </button>;
+          })}
+        </nav>
 
-          {/* Bảng tính/BOQ — editor thật đã ship (BoqScreen), ENABLE. */}
-          <CardShell active>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent)' }}>
-              <FileSpreadsheet size={20} />
-              <strong style={{ fontSize: 13.5, color: 'var(--t1)' }}>
-                {tr('Bảng tính / BOQ', 'Spreadsheet / BOQ')}
-              </strong>
-            </div>
-            <p style={{ margin: 0, fontSize: 11.5, color: 'var(--t3)', flex: 1, lineHeight: 1.5 }}>
-              {tr('Dự toán khối lượng tự tính từ bản vẽ.', 'Quantities calculated straight from the drawing.')}
-            </p>
-            <button type="button" onClick={onChooseBoq} style={primaryBtn}>
-              {tr('Mở', 'Open')}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 18 }} className="present-template-grid">
+          {current.templates.map((template, index) => (
+            <button key={template.title[0]} type="button" onClick={() => openTemplate(template)} disabled={!template.enabled} style={{ minWidth: 0, padding: 0, border: 0, background: 'transparent', color: 'inherit', textAlign: 'left', cursor: template.enabled ? 'pointer' : 'not-allowed', opacity: template.enabled ? 1 : .56 }}>
+              <div style={{ position: 'relative', height: 185, overflow: 'hidden', borderRadius: 14, background: template.tone ?? '#292733', boxShadow: '0 14px 32px -24px rgba(0,0,0,.8)' }}>
+                {template.image ? <img src={template.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: 'saturate(.74) contrast(.94)' }} /> : null}
+                {kind === 'boq' ? <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent 0 26px, rgba(63,54,40,.22) 27px 28px), repeating-linear-gradient(90deg, transparent 0 59px, rgba(63,54,40,.18) 60px 61px)' }} /> : null}
+                <div style={{ position: 'absolute', inset: 0, background: template.image ? 'linear-gradient(180deg, transparent 34%, rgba(0,0,0,.66))' : 'linear-gradient(145deg, rgba(255,255,255,.12), rgba(0,0,0,.24))' }} />
+                <strong style={{ position: 'absolute', left: 16, right: 16, bottom: 15, color: kind === 'boq' || kind === 'text' ? '#312c26' : '#fff', fontSize: 17, lineHeight: 1.08, letterSpacing: '-.025em' }}>{tr(...template.title)}</strong>
+              </div>
+              <div style={{ marginTop: 11, color: 'var(--t1)', fontSize: 13.5, fontWeight: 650 }}>{tr(...template.caption)}</div>
+              {!template.enabled ? <div style={{ marginTop: 3, color: 'var(--t4)', fontSize: 11 }}>{tr('Sắp có', 'Coming soon')}</div> : null}
             </button>
-          </CardShell>
-
-          {DISABLED_CARDS.map((c) => (
-            <CardShell key={c.key} active={false}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--t3)' }}>
-                {c.icon}
-                <strong style={{ fontSize: 13.5, color: 'var(--t2)' }}>{tr(...c.title)}</strong>
-              </div>
-              <p style={{ margin: 0, fontSize: 11.5, color: 'var(--t4)', flex: 1, lineHeight: 1.5 }}>
-                {tr(...c.reason)}
-              </p>
-              {c.specFile && (
-                <p style={{ margin: 0, fontSize: 10, color: 'var(--t4)' }}>{c.specFile}</p>
-              )}
-              <div
-                style={{
-                  ...primaryBtn,
-                  cursor: 'default',
-                  color: 'var(--t4)',
-                  border: '1px solid var(--border)',
-                  background: 'var(--field)',
-                }}
-                aria-disabled="true"
-              >
-                {tr('Sắp có', 'Coming soon')}
-              </div>
-            </CardShell>
           ))}
+
+          <button type="button" onClick={canCreateBlank ? onChooseBlankDeck : undefined} disabled={!canCreateBlank} aria-label={tr('Tạo hồ sơ trống', 'Create blank document')} style={{ height: 185, border: '1px dashed var(--border)', borderRadius: 14, background: 'transparent', color: canCreateBlank ? 'var(--t3)' : 'var(--t4)', cursor: canCreateBlank ? 'pointer' : 'not-allowed', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 11 }}>
+            <span style={{ width: 42, height: 42, borderRadius: '50%', border: '1px solid currentColor', display: 'grid', placeItems: 'center' }}><Plus size={23} strokeWidth={1.5} /></span>
+            <span style={{ fontSize: 12, fontWeight: 650 }}>{tr('Tạo hồ sơ trống', 'Create blank document')}</span>
+            {!canCreateBlank ? <span style={{ fontSize: 10 }}>{tr('Sắp có', 'Coming soon')}</span> : null}
+          </button>
         </div>
-      </div>
+      </section>
+      <style jsx>{`@media (max-width: 780px) { .present-template-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 16px 12px !important; } } @media (max-width: 420px) { .present-template-grid { grid-template-columns: 1fr !important; } }`}</style>
     </div>
   );
 }
