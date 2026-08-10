@@ -5,7 +5,7 @@
 // InteriorFlow KHÔNG phải web tĩnh: nó có API routes (app/api/**) + Prisma/SQLite
 // nên bắt buộc phải có một Next.js server Node chạy nền. Luồng khởi động:
 //   1. Chuẩn bị thư mục GHI ĐƯỢC trong userData (DB SQLite + thư mục uploads).
-//   2. (Chỉ khi đóng gói) Chạy `prisma migrate deploy` để tạo/nâng cấp dev.db lần đầu.
+//   2. (Chỉ khi đóng gói) Chạy `prisma db push` để kiểm tra/nâng cấp dev.db; lỗi thì dừng.
 //   3. Spawn Next.js production server (`next start`) trên một cổng nội bộ (dò cổng trống).
 //   4. Đợi server trả lời (poll HTTP) rồi mới tạo BrowserWindow trỏ vào http://localhost:<port>.
 //   5. Đóng app -> kill server. Single-instance lock để tránh mở 2 cửa sổ.
@@ -190,12 +190,11 @@ function loadUserConfig(userDataDir) {
 // bằng db push (prisma/migrations ĐÃ CŨ hơn schema.prisma — deploy sẽ tạo schema
 // thiếu bảng). db push idempotent: lần đầu tạo đủ bảng, các lần sau chỉ diff.
 function runDbPush(appRoot, env, userDataDir) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     // Prisma CLI có sẵn trong node_modules được đóng gói.
     const prismaBin = path.join(appRoot, 'node_modules', 'prisma', 'build', 'index.js');
     if (!fs.existsSync(prismaBin)) {
-      console.warn('[db push] Không thấy Prisma CLI, bỏ qua.');
-      resolve();
+      reject(new Error('Không tìm thấy Prisma CLI để kiểm tra dữ liệu. Hãy cài lại InteriorFlow.'));
       return;
     }
     // Log ra userData để debug được khi máy user lỗi (không có console).
@@ -205,6 +204,17 @@ function runDbPush(appRoot, env, userDataDir) {
     } catch {
       /* không ghi được log — vẫn chạy */
     }
+    let settled = false;
+    const finish = (error) => {
+      if (settled) return;
+      settled = true;
+      if (logFd !== null) {
+        try { fs.closeSync(logFd); } catch { /* bỏ qua */ }
+        logFd = null;
+      }
+      if (error) reject(error);
+      else resolve();
+    };
     const child = spawn(
       process.execPath,
       [prismaBin, 'db', 'push', '--skip-generate', '--schema', path.join(appRoot, 'prisma', 'schema.prisma')],
@@ -219,15 +229,19 @@ function runDbPush(appRoot, env, userDataDir) {
         windowsHide: true,
       }
     );
-    const done = () => {
-      if (logFd !== null) {
-        try { fs.closeSync(logFd); } catch { /* bỏ qua */ }
-        logFd = null;
+    child.on('exit', (code, signal) => {
+      if (code === 0) {
+        finish();
+        return;
       }
-      resolve(); // dù thành/bại đều tiếp tục; server sẽ báo lỗi rõ hơn nếu DB hỏng
-    };
-    child.on('exit', done);
-    child.on('error', done);
+      finish(
+        new Error(
+          `Không thể kiểm tra/nâng cấp dữ liệu cục bộ${code !== null ? ` (mã ${code})` : ''}${signal ? ` (${signal})` : ''}. ` +
+            `Dữ liệu chưa được mở để tránh ghi tiếp khi chưa an toàn. Xem db-push.log trong thư mục dữ liệu rồi liên hệ người quản trị.`,
+        ),
+      );
+    });
+    child.on('error', (err) => finish(new Error(`Không chạy được Prisma: ${err.message}`)));
   });
 }
 
@@ -248,15 +262,15 @@ async function startNextServer() {
     NODE_ENV: 'production',
     DATABASE_URL: dbUrl, // ghi đè file:./dev.db bằng path tuyệt đối trong userData
     PORT: String(resolvedPort),
-    // 0.0.0.0: server phục vụ cả LAN → điện thoại/máy khác trong mạng trỏ vào máy này được
-    // (dùng làm "hub" cho Oppo). Cửa sổ app vẫn load qua 127.0.0.1 (cục bộ).
-    HOSTNAME: '0.0.0.0',
+    // Bản desktop nội bộ chỉ phục vụ chính máy đang mở app. Không bind LAN ngầm:
+    // chia sẻ nhiều máy cần server có xác thực và kiến trúc đồng bộ riêng.
+    HOSTNAME: '127.0.0.1',
     ELECTRON_RUN_AS_NODE: '1', // để dùng binary electron như node chạy next start
   };
 
-  // Lần đầu: tạo/nâng cấp schema vào <userData>/dev.db (db push idempotent —
-  // chạy cả khi dev `electron .` vì DATABASE_URL luôn trỏ userData, không phải
-  // prisma/dev.db của repo).
+  // Lần đầu: tạo/nâng cấp schema vào <userData>/dev.db. Nếu bước này lỗi thì
+  // DỪNG khởi động; tuyệt đối không mở app rồi ghi tiếp trên trạng thái không rõ.
+  // Người vận hành phải sao lưu DB trước khi cài bản nâng cấp (checklist release).
   await runDbPush(appRoot, serverEnv, userDataDir);
 
   // Đường tới CLI `next` trong node_modules đóng gói.
@@ -266,7 +280,7 @@ async function startNextServer() {
   // truyền appRoot làm tham số để `next start <appRoot>` đọc `.next` đúng chỗ đóng gói.
   serverProcess = spawn(
     process.execPath,
-    [nextBin, 'start', appRoot, '-p', String(resolvedPort), '-H', '0.0.0.0'],
+    [nextBin, 'start', appRoot, '-p', String(resolvedPort), '-H', '127.0.0.1'],
     {
       cwd: userDataDir,
       env: serverEnv,
@@ -410,9 +424,9 @@ if (!gotLock) {
       app.quit();
     }
 
-    // OTA: kiểm bản mới trên GitHub Releases rồi tải + cài ngầm (chỉ bản đóng gói).
-    // Bản mới sẽ được cài ở lần thoát/mở app kế tiếp. Lỗi mạng -> bỏ qua im lặng.
-    if (autoUpdater && isPackaged) {
+    // Bản nội bộ chỉ cập nhật khi người vận hành bật rõ ràng biến môi trường này.
+    // Không tự tải bản từ một kho public/personal vào máy đang giữ dữ liệu dự án.
+    if (autoUpdater && isPackaged && process.env.INTERIORFLOW_AUTO_UPDATE === '1') {
       try {
         autoUpdater.checkForUpdatesAndNotify();
       } catch {

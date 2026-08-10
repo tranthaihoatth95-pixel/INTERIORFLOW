@@ -3,9 +3,9 @@
  * — tách khỏi lib/server/auth.ts để test được bằng sucrase-node (auth.ts kéo
  * next/headers nên không chạy ngoài Next).
  *
- * CHÍNH SÁCH MỚI (chủ dự án chốt 19/07 — THAY quyết định cũ "chỉ Google @ttt.vn"):
- *   · Đăng ký + đăng nhập bằng email MỌI domain (@ttt.vn, gmail, domain công ty khác…)
- *     — đề phòng sau này rời công ty, sản phẩm không bị trói vào mail @ttt.vn.
+ * Chính sách trung tính:
+ *   · Đăng ký + đăng nhập bằng email MỌI domain hợp lệ — app không bị trói vào
+ *     một studio hay nhà cung cấp email.
  *   · OAuth (Google + Microsoft): chấp nhận MỌI tài khoản — workspace lẫn cá nhân.
  *     Gate chỉ còn chặn email dị dạng (nhiều @, thiếu domain) phòng provider trả rác.
  *   · Bootstrap admin vẫn = scripts/seed-admin.ts (giữ nguyên).
@@ -20,7 +20,7 @@
 export function isValidAccountEmail(email: string): boolean {
   const s = String(email).trim().toLowerCase();
   const parts = s.split('@');
-  if (parts.length !== 2) return false; // chặn "user@gmail.com@ttt.vn" (bypass cũ)
+  if (parts.length !== 2) return false; // chặn địa chỉ có nhiều dấu @
   const [local, domain] = parts;
   if (!local) return false;
   return /^[^\s@]+\.[^\s@]+$/.test(domain);

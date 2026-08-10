@@ -5,10 +5,10 @@ import { hashPassword, publicUser, normalizeVNPhone, getSessionUser, createSessi
 /**
  * Tạo tài khoản email/SĐT + mật khẩu.
  *
- * CHÍNH SÁCH MỚI (chủ dự án chốt 19/07 — THAY quyết định "register 403" Sprint 1/2):
- * ĐĂNG KÝ CÔNG KHAI ĐÃ MỞ LẠI — email BẤT KỲ domain nào (@ttt.vn, gmail, domain
- * công ty khác…) đều đăng ký được. Lý do: đề phòng sau này rời công ty, sản phẩm
- * không bị trói vào mail @ttt.vn.
+ * Với bản desktop nội bộ, API này chỉ được Electron bind ở 127.0.0.1. Vì vậy
+ * người dùng trên chính máy có thể tự tạo tài khoản cục bộ; đây KHÔNG phải cơ chế
+ * mời người dùng qua mạng và cũng không là ranh giới phân quyền cho bản cloud sau này.
+ * Email thuộc mọi domain hợp lệ đều được chấp nhận — không gắn app vào một studio.
  *   · Mật khẩu ≥ 6 ký tự + bcrypt (giữ như cũ).
  *   · Đăng ký công khai → TỰ ĐĂNG NHẬP luôn (set cookie session) như flow register cổ điển.
  *   · Admin đã đăng nhập vẫn CẤP HỘ được tài khoản — trường hợp đó GIỮ session admin,

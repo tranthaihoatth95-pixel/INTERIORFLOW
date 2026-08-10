@@ -53,7 +53,7 @@ Lệnh này chạy `next dev` (cổng 3000) rồi mở cửa sổ Electron trỏ
 Khi mở app đã cài (`electron/main.js`):
 
 1. **Chuẩn bị thư mục ghi được** trong `userData` (xem mục 4): tạo `dev.db` + thư mục `uploads`.
-2. **Chạy `prisma migrate deploy`** (chỉ bản đóng gói, lần đầu) để tạo/nâng cấp schema vào `dev.db`.
+2. **Chạy `prisma db push --skip-generate`** để tạo/kiểm tra schema vào `dev.db`. Nếu bước này lỗi, app dừng và ghi `db-push.log`; không mở tiếp trên dữ liệu không rõ trạng thái.
 3. **Dò cổng trống** bắt đầu từ `3777` rồi **spawn `next start`** (production) ở cổng đó, chỉ nghe `127.0.0.1` (không mở ra LAN).
 4. **Poll HTTP** tới khi server trả lời, rồi mới tạo cửa sổ `BrowserWindow` load `http://127.0.0.1:<port>`.
 5. Đóng app → **kill server**. Có **single-instance lock** (mở app lần 2 chỉ đưa cửa sổ cũ lên trước). Menu tối giản, `contextIsolation: true`, `nodeIntegration: false`.
@@ -80,35 +80,32 @@ Cơ chế để **không phải sửa bất kỳ API route nào**:
   ```
   (Prisma chấp nhận `file:` với path tuyệt đối. Bạn **không cần** set biến này thủ công — `electron/main.js` tự làm trong hàm `prepareWritablePaths()`.)
 
-> **Sao lưu / reset dữ liệu**: copy hoặc xoá thư mục `...\AppData\Roaming\InteriorFlow\`. Xoá `dev.db` → lần mở kế app sẽ tạo lại DB rỗng (migrate deploy chạy lại).
+> **Sao lưu / reset dữ liệu**: trước khi cài bản mới, dùng tiện ích SQLite để tạo backup nhất quán của `dev.db` và sao chép cả thư mục `uploads`. Không xoá dữ liệu để “sửa nhanh”. Xoá `dev.db` chỉ dùng khi người quản trị đã xác nhận reset vì lần mở kế tiếp sẽ tạo DB rỗng.
 
 > **Đổi vị trí DB thủ công (nâng cao)**: nếu muốn DB nằm chỗ khác (ổ D, thư mục chung...), sửa hằng trong `prepareWritablePaths()` ở `electron/main.js` cho trỏ tới path mong muốn, hoặc set sẵn biến môi trường `DATABASE_URL` ở cấp hệ thống trước khi mở app (main.js ưu tiên giữ giá trị đã có nếu bạn chỉnh lại logic — mặc định hiện tại là luôn trỏ userData cho an toàn).
 
 ---
 
-## 5. Biến môi trường (fal.ai, secret…)
+## 5. Cấu hình cục bộ (cloud provider, secret…)
 
-- **`AUTH_SECRET`**: app cần secret để ký JWT. Khi build, giá trị trong `.env` **không** được đóng gói (`.env` bị `.gitignore`). Với bản desktop nội bộ, nên **đặt sẵn một `AUTH_SECRET` cố định**: dễ nhất là thêm dòng `AUTH_SECRET=...` vào `electron/main.js` (trong `serverEnv`) trước khi build, hoặc tạo file `.env.production` cạnh app root và để Next tự nạp. (Nếu thiếu, mỗi lần mở app secret khác nhau → user phải đăng nhập lại; với 1 máy dùng nội bộ vẫn chấp nhận được.)
-- **`FAL_KEY`**: để render AI qua fal.ai. Tương tự, nhét vào `serverEnv` trong `electron/main.js` hoặc `.env.production`. Không có key thì app vẫn chạy, chỉ là node AI báo chưa cấu hình.
+- **`AUTH_SECRET`**: được tự sinh một lần và chỉ lưu ở `config.json` trong thư mục dữ liệu của đúng máy đó. Không nhúng secret vào mã nguồn, `.env.production`, bản cài hay kho mã.
+- **`FAL_KEY`** và các key cloud khác: người quản trị thêm vào `config.json` bằng menu **Tệp → Mở file cấu hình**. Không có key thì tác vụ tương ứng hiển thị là chưa cấu hình; app vẫn dùng được các chức năng cục bộ.
 
-> Gợi ý gọn: mở `electron/main.js`, trong object `serverEnv` (hàm `startNextServer`) thêm:
-> ```js
-> AUTH_SECRET: 'chuỗi-bí-mật-cố-định-của-team',
-> FAL_KEY: 'fal-key-nếu-muốn-gắn-sẵn',
-> ```
-> rồi build lại. Comment sẵn vị trí đã có trong file.
+> `config.json` chứa bí mật. Không đưa file này vào git, email, chat hoặc ảnh chụp màn hình. Khi đổi người quản trị hoặc nghi lộ key, thu hồi/đổi key tại nhà cung cấp rồi cập nhật file cục bộ.
+
+Ứng dụng đóng gói mặc định chỉ nghe tại `127.0.0.1`, nên máy khác trong LAN không truy cập được. Chia sẻ nhiều máy cần một máy chủ có xác thực, phân quyền và đồng bộ được thiết kế riêng; không mở cổng LAN tạm thời để thay thế.
 
 ---
 
-## 6. Cài lên dàn máy render công ty (khuyến nghị dùng)
+## 6. Cài trên máy làm việc nội bộ
 
-Dàn máy công ty (đang chạy **3ds Max + V-Ray / D5 Render**, GPU mạnh, RAM lớn) là nơi lý tưởng để chạy bản `.exe` này **native**:
+Máy làm việc có cấu hình phù hợp để chạy **3ds Max, V-Ray hoặc D5 Render** là nơi phù hợp để chạy bản `.exe` này **native**:
 
 1. Copy `dist/InteriorFlow Setup <version>.exe` sang máy render, chạy để cài.
 2. Mở **InteriorFlow** từ Start Menu / shortcut desktop → app tự dựng server nội bộ, không cần Node, không cần vào `http://<ip>:3000` như trước.
-3. Dữ liệu (DB + ảnh) nằm trong `AppData\Roaming\InteriorFlow\` của user đăng nhập Windows.
+3. Dữ liệu (DB + ảnh) nằm trong `AppData\Roaming\InteriorFlow\` của user đăng nhập Windows. Sao lưu theo checklist trước khi nâng cấp.
 
-**Vì sao nên chạy trên máy này**: về sau nối **ComfyUI local** (self-host FLUX.1 trên chính GPU render) qua một provider mới trong `lib/ai/providers/` → **render ảnh 0đ/ảnh, không gửi bản vẽ khách ra ngoài**, tận dụng đúng con máy đã có sẵn cho V-Ray/D5. Bản desktop chạy ngay cạnh ComfyUI trên cùng máy nên độ trễ thấp, không phụ thuộc mạng.
+**Vì sao nên chạy trên máy này**: có thể nối một provider cục bộ (ví dụ ComfyUI) trên cùng GPU. Khi cấu hình, endpoint phải được người quản trị phê duyệt; thông tin dự án vẫn cần tuân theo quy tắc dữ liệu của studio.
 
 - Không thay thế 3ds Max/V-Ray — mà **bổ trợ**: xuất viewport/clay từ Max → Import Image → AI polish/relight/upscale trong InteriorFlow.
 - Khi có provider ComfyUI: trỏ endpoint về `http://127.0.0.1:8188` (ComfyUI mặc định) — cùng máy nên gọi nội bộ.
