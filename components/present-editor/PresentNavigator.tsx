@@ -13,9 +13,8 @@
  * Để trống trung thực thay vì giả (đúng tinh thần "Layer State" của CAD Navigator — khai báo rõ
  * CHƯA có, không phải quên).
  *
- * TODO(H4): `PHIEU-PRESENT-G4.md` V6/H4 "màn chọn 5 loại hồ sơ" CHƯA xong — mục "Bảng khối
- * lượng (BOQ)" dưới đây là chỗ TẠM treo theo đúng chỉ dẫn B1 của `PHIEU-TRINH-BOQ-EDITOR.md`;
- * khi H4 xong thì BOQ trở thành 1 trong 5 thẻ loại hồ sơ ở đó, xoá mục tạm này.
+ * Cửa chọn loại hồ sơ giờ nằm trước canvas. Navigator chỉ là lối tắt BOQ cho hồ sơ đang mở;
+ * không liệt kê Văn bản/Video vì hai editor đó chưa tồn tại — tránh tạo menu có nút giả.
  */
 
 import { FileSpreadsheet } from 'lucide-react';
@@ -27,8 +26,8 @@ export function PresentNavigator({ boqActive, onOpenBoq }: { boqActive?: boolean
     <div>
       <div className="px-3 py-4 text-center text-[12px] leading-relaxed text-[var(--t4)]">
         {tr(
-          'Danh sách trang sống trong dải thumbnail dưới canvas — Navigator trang riêng sẽ nối sau.',
-          'Page list lives in the thumbnail strip below the canvas — a dedicated Navigator page list is planned.',
+          'Chuyển trang ở dải thumbnail dưới canvas.',
+          'Switch pages in the thumbnail strip below the canvas.',
         )}
       </div>
       {onOpenBoq && (
@@ -41,7 +40,7 @@ export function PresentNavigator({ boqActive, onOpenBoq }: { boqActive?: boolean
             border: 0, background: boqActive ? 'var(--accent-soft)' : 'transparent',
             color: boqActive ? 'var(--accent)' : 'var(--t2)', fontWeight: boqActive ? 600 : 400, fontSize: 12,
           }}
-          title={tr('Bảng khối lượng (BOQ) — tạm treo ở đây, chờ màn chọn 5 loại hồ sơ (H4)', 'Bill of quantities — parked here until the 5-document-type picker (H4) ships')}
+          title={tr('Mở Bảng khối lượng (BOQ)', 'Open Bill of quantities')}
         >
           <FileSpreadsheet size={14} style={{ flexShrink: 0 }} />
           {tr('Bảng khối lượng (BOQ)', 'Bill of quantities')}

@@ -13,34 +13,11 @@
 
 ## Vừa xong
 
-- Cửa vào Trình bày đã thay theo mock mới: thư viện mẫu, 4 ô ngang hàng không khung kính lồng; ô cuối luôn là ＋ tạo hồ sơ trống. Deck/BOQ đi vào thao tác thật; Material/Văn bản/Video giữ mẫu minh hoạ và khóa “Sắp có”.
-- Chặng 3D: kệ khối đã thu gọn theo 6 cụm nghiệp vụ; sheet Thư viện che hẳn thanh mode khi mở để không còn cảm giác công tắc 3D bị lỗi. Bổ sung spec + mock sinh phim (camera path → footage → Dựng phim); video editor Present có mock sẵn.
-- Chốt hình minh hoạ toàn app: đúng nội dung → điện ảnh → quiet luxury; cửa vào Trình bày là thư viện mẫu và luôn có thẻ ＋ tạo hồ sơ trống, không qua form.
-- Chốt Master Library: trang tổng gallery/collection; kệ chặng hai nấc tự lọc + nhập Kho chung. Bộ tool chung xuyên Slide/BOQ/Văn bản/Video/Ảnh; tác vụ riêng qua Smart Tool + Vitals.
-- Đã kết nối Figma Remote MCP với team Pro; file thiết kế chung `InteriorFlow · UI Foundations & Screens` đã tạo để dựng UI editable trực tiếp, bắt đầu từ Master Library và cửa vào Trình bày.
-- Chiếu sáng: workspace thuộc 3D đã vào `main`; Figma có màn desktop layout↔phối cảnh, Vitals và inspector. App dùng `Doc.lighting` làm nguồn duy nhất, viewport phản chiếu rig trực tiếp và tab Đèn hiển thị chỉ số tiền kiểm. IES/LDT + engine trắc quang chuẩn chưa làm.
-- Trình bày chọn 6 hồ sơ; Deck/BOQ vào editor, bốn loại chưa làm ghi rõ. 3D nhập GLB, gói glTF và
-  OBJ/MTL ở mức mất mát, giữ nguồn trong Doc/autosave/IDF.
-- Chặng 1: Sơ phác chỉ giữ dựng nhanh, Move/Measure/Markup và thanh chạm. Chuyên giữ bộ lệnh đầy
-  đủ, thêm ngữ cảnh MODEL/đơn vị/tờ/tỉ lệ/BIM và mở lớp BIM 2D.
-- Sơ phác tablet: nhận bút, chống tì, pan/pinch; dock có undo/redo. Tap 2/3 ngón undo/redo;
-  giữ 450ms mở radial 8 lệnh. Input 10/10, gesture 15/15 và test PASS; cần test tablet thật.
-- Paper Space Pro: MODEL/PAPER thật; nhiều ô nhìn chung một Doc, metadata lưu bền, Inspector
-  Tờ/Ô nhìn/Lớp và PDF một tờ/cả bộ đúng khổ, hướng, tỉ lệ, layer. Test/preview PASS.
-- Mọi lệnh chạy được phải có phím thật, chung nguồn với tooltip/`⌘/`/`⌘K`, guard ô nhập.
-  `⌘P`/`Ctrl+P` mở preview/xuất PDF Paper; shortcuts 23/23 PASS.
-- Dock Sơ phác gọn, vùng chạm 44px; Hatch overlay 2 cột né dock. Banner mất phiên portal ra body,
-  có safe-area. Bàn trống bỏ thẻ giới thiệu/“Vẽ mới”, chỉ còn nút Nhập; click ngoài tự đóng.
-  Panel BIM cũ đè toolbar đã bỏ; số liệu BIM vẫn ở thanh Chuyên, gán cấu kiện ở Inspector.
-  Icon nơi lưu đổi sang thư mục nét rõ. Preview, typecheck và toàn bộ test PASS.
-- Trình bày: Deck vào bằng Magic hoặc Chỉnh tay. Magic dùng Brand Kit; nội dung, ảnh và phong
-  cách tham khảo đều không bắt buộc. Thiếu text sinh 7 trang nháp có nhãn; thiếu ảnh có ô giữ chỗ
-  sửa được. Bốn tổ hợp input 4/4, content-deck 11/11, typecheck/toàn bộ test và preview PASS.
-- Material Impact MVP: quét đúng vùng hatch, furniture, vật liệu mặc định và từng lớp tường;
-  thay một entity hoặc toàn Doc bất biến, không tạo undo thừa khi no-op. BOQ tự đọc specId mới.
-  Test mới 12/12, typecheck và toàn bộ test PASS. Kế hoạch tổng 10/08 đã ghi riêng.
-- Camera Intent: thấp sát sàn, bám theo, reveal, push-in, orbit đã vào UI; preview trước khi áp,
-  Undo được; cao độ/lens/tốc độ/easing/look-at sống qua IDF/DXF. Viewer 3D nhận cùng nguồn.
+- Cửa vào Trình bày đã thay theo mock mới: thư viện mẫu, 4 ô ngang hàng không khung kính lồng; ô cuối luôn là ＋ tạo hồ sơ trống. Deck/BOQ đi vào thao tác thật; Bảng vật liệu mở workspace A3 chung và lưu `.idfp`; Văn bản/Video khóa kèm lý do năng lực cụ thể, không CTA giả. Ma trận gate nội bộ: `docs/OUTPUT-CAPABILITY-MATRIX-INTERNAL-2026-08-11.md`.
+- Chặng 3D đã có kệ công cụ theo cụm, lighting workspace `Doc.lighting`, camera intent và luồng mock footage; engine quang học/IES cùng editor phim chưa có.
+- Master Library là gallery + kệ theo chặng, có Smart Tool/Vitals; Figma Remote MCP đã nối với file UI chung.
+- 2D có Sketch/Pro, thao tác bút tablet, MODEL/PAPER và xuất PDF đúng khổ; Material Impact thay theo phạm vi và BOQ đọc `specId`.
+- Present Deck có Magic/Chỉnh tay, Brand Kit theo dự án và export; 3D nhập GLB/glTF/OBJ-MTL ở mức `lossy`.
 
 ## Năng lực định dạng đã đo
 
