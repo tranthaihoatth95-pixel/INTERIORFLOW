@@ -165,6 +165,9 @@ Trước khi thiết kế bất cứ gì: `ls docs/` + grep tên chủ đề + g
 
 *Cowork lập 01/08/2026. Thêm quyết định mới thì thêm **1 dòng** — đừng để nó chỉ nằm trong chat,
 chat bị nén là mất.*
+
+[10/08 Hoà chốt] Hình minh hoạ toàn app: ưu tiên ảnh/khung hình **đúng nội dung → điện ảnh → quiet luxury** (ánh sáng ngày/đêm, vật liệu, không gian, storyboard…); màn trống không để trắng khi có thể minh hoạ. Cửa vào Trình bày (bước 4 flow 0→3) = thư viện mẫu, thẻ **＋ Tạo hồ sơ trống** luôn ở cuối, tạo ngay không qua form.
+[10/08 Hoà chốt] Master Library có 2 mặt: trang tổng là gallery/collection; trong mỗi chặng là sidebar hai nấc tự lọc theo ngữ cảnh + nút nhập từ Kho chung. Slide/BOQ/Văn bản/Video/Ảnh dùng chung bộ thao tác (chọn·biến đổi·cắt/mask·diện mạo·chữ·sắp xếp·asset·undo/export); phần đặc thù ở Smart Tool ngữ cảnh + Vitals, không tách thành editor/route riêng.
 [03/08 01:2x] Claude Design = xưởng mock chính của COWORK-UI (Hoà: "tương tự với giao diện, hãy cho nó làm hạ tầng ui đi"). Seed: docs/IF-design-system-seed.html. Mock từ app vẫn qua audit A4; vùng tạm ghi PLACEHOLDER; HTML tay chỉ khi app trượt 2 vòng.
 [03/08 02:0x TỔNG duyệt] Tên hiển thị 3 mode chặng Vẽ: **Phác · Kỹ thuật · Cấu kiện** (Sketch/Pro/Revit = tên nội bộ — đề xuất COWORK-UI).
 [03/08 02:0x TỔNG duyệt] SPEC-DESIGN-SYSTEM-IF §6: 7 token --snap-*/--axis-* 2 theme, không màu mới — CHINH nạp globals.css · PHU đổi fallback drawSnap.

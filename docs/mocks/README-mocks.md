@@ -241,3 +241,7 @@ Chi tiết port + nghiệm thu: `docs/M-APPLY-C-OUT.md`.
 - **`support.js` ĐÃ CÓ** (10KB, 07/08 22:41, commit `7303aee`) — mục "🔴 CHẶN CHUNG: support.js KHÔNG TỒN TẠI" lỗi thời. 24 tệp khai `support.js` (tăng từ 16 do thêm export `.dc.html` mới).
 - **3 export hỏng ĐÃ export lại đủ ruột**: `_archinote/mock-if-du-an.html` 22→422 dòng · `mock-if-cai-dat.html` 26→271 · `mock-if-anh-dai-dien.html` 60→265. Mục 🔴 EXPORT HỎNG trong AUDIT A4 lỗi thời cho 3 file này (nội dung ruột chưa audit lại token — việc riêng).
 - Đếm máy 08/08: **80 tệp `.html` ở `docs/mocks/` (30 là `.dc.html`) + 10 tệp trong `_archinote/` = 90**. Verify browser thật `Thư viện.dc.html`: render đủ 2 lớp, không lộ `{{ }}`.
+
+## ✅ THÊM 10/08 — cửa vào Trình bày
+
+- `mock-trinh-chon-ho-so-tablet-2026-08-10.html` — Thư viện hồ sơ khi dự án chưa có hồ sơ, theo gallery template: danh mục ngang Deck/A3/BOQ/Văn bản/Video → lưới mẫu → thanh xác nhận tạo từ mẫu; không dùng sidebar kỹ thuật trước khi vào editor. Tablet chuyển danh mục thành dải cuộn + thanh tạo cố định, đủ hai theme. Bản xem concept không phản ánh trạng thái hoàn tất editor trong app.

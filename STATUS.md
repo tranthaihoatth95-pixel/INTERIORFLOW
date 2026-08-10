@@ -10,6 +10,11 @@
 
 ## Vừa xong
 
+- Mock cửa vào Trình bày mới: 5 loại hồ sơ, desktop + tablet responsive, hai theme; Deck mở được, bốn editor chưa có khóa rõ “Sắp có”.
+- Chốt hình minh hoạ toàn app: đúng nội dung → điện ảnh → quiet luxury; cửa vào Trình bày là thư viện mẫu và luôn có thẻ ＋ tạo hồ sơ trống, không qua form.
+- Chốt Master Library: trang tổng gallery/collection; kệ chặng hai nấc tự lọc + nhập Kho chung. Bộ tool chung xuyên Slide/BOQ/Văn bản/Video/Ảnh; tác vụ riêng qua Smart Tool + Vitals.
+- Đã kết nối Figma Remote MCP với team Pro; file thiết kế chung `InteriorFlow · UI Foundations & Screens` đã tạo để dựng UI editable trực tiếp, bắt đầu từ Master Library và cửa vào Trình bày.
+- Chiếu sáng: chốt là workspace thuộc 3D; Figma đã có màn desktop layout↔phối cảnh, Vitals và inspector. App đã có `Doc.lighting`/tab Đèn nhưng viewport mới chỉ marker; nối mô phỏng cần worktree sạch (đang còn `interiorflow-wt-material-impact-mvp`).
 - Trình bày chọn 6 hồ sơ; Deck/BOQ vào editor, bốn loại chưa làm ghi rõ. 3D nhập GLB, gói glTF và
   OBJ/MTL ở mức mất mát, giữ nguồn trong Doc/autosave/IDF.
 - Chặng 1: Sơ phác chỉ giữ dựng nhanh, Move/Measure/Markup và thanh chạm. Chuyên giữ bộ lệnh đầy
