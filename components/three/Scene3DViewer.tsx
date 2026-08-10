@@ -209,7 +209,10 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
     if (!container) return undefined;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Viewport chiếm gần toàn màn hình. DPR 2 trên Retina biến mỗi khung thành ~4 lần số pixel
+    // CSS, trong khi đây là màn dựng hình thao tác (không phải ảnh xuất). Giữ nét đủ đọc cạnh
+    // ở 1.5x, còn ảnh/video xuất dùng pipeline riêng với độ phân giải thật.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     if (lightingPreview) {
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -499,6 +502,7 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
       markerGroup.clear();
     }
 
+    let needsRender = true;
     function syncMarkers() {
       clearMarkers();
       for (const lm of lightMarkersRef.current) {
@@ -521,6 +525,7 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
         markerGroup.add(stem);
         markerJunk.push(stemGeo, stemMat);
       }
+      needsRender = true;
     }
     syncMarkers();
     syncMarkersRef.current = syncMarkers;
@@ -565,6 +570,7 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
           dragPlane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), mesh.position);
         }
         draggingLight = { mesh, id, vertical: e.shiftKey, startPos: mesh.position.clone() };
+        needsRender = true;
         hideSnapUi();
         controls.enabled = false;
         renderer.domElement.setPointerCapture(e.pointerId);
@@ -585,6 +591,7 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
       planeNormal.normalize();
       dragPlane.setFromNormalAndCoplanarPoint(planeNormal, hit.point);
       dragging = { mesh, entityId: ud.entityId, baseHeightMm: ud.baseHeightMm, baseM: (ud.baseMm ?? 0) / 1000 };
+      needsRender = true;
       controls.enabled = false;
       renderer.domElement.setPointerCapture(e.pointerId);
     }
@@ -614,6 +621,7 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
           draggingLight.mesh.position.z = dragPoint.z;
           axisGuide.visible = false;
         }
+        needsRender = true;
         return;
       }
       // T4 — BẮT ĐIỂM khi RÊ (không kéo gì): dấu + chữ tiếng Việt, ⇧ khoá loại đang bắt.
@@ -645,6 +653,7 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
         } else {
           hideSnapUi();
         }
+        needsRender = true;
         return;
       }
       if (!dragging) return;
@@ -659,6 +668,7 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
       const s = newHeightM / (dragging.baseHeightMm / 1000);
       dragging.mesh.scale.y = s;
       dragging.mesh.position.y = dragging.baseM * (1 - s);
+      needsRender = true;
     }
     function onPointerUp(e: PointerEvent) {
       if (draggingLight) {
@@ -705,17 +715,25 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
         camera.fov = (2 * Math.atan(Math.tan(hFov / 2) / camera.aspect) * 180) / Math.PI;
       }
       camera.updateProjectionMatrix();
+      needsRender = true;
     }
     resize();
     const ro = new ResizeObserver(resize);
     ro.observe(container);
 
+    // Chỉ có video path/walk cần vẽ liên tục. Ở mode dựng khối, vòng lặp trước đây render canvas
+    // 60fps kể cả khi người dùng không làm gì; cộng thêm ViewCube tạo hai WebGL loop song song và
+    // là nguồn giật chính trên laptop Retina. OrbitControls phát `change` cho pan/zoom/xoay, nên
+    // đánh dấu bẩn rồi chỉ render một khung khi có thay đổi thật.
+    const requestRender = () => { needsRender = true; };
+    controls.addEventListener('change', requestRender);
     const timer = new THREE.Timer();
     let raf = 0;
     function tick() {
       timer.update();
       const t = timer.getElapsed();
       const dt = timer.getDelta();
+      const dynamicFrame = (campathActive && !!camPath) || (walkActive && walkControls.isLocked);
       if (campathActive && camPath) {
         // Phát lặp (loop) đường cam — video 2-b xem trước ở đây, xuất file thật qua
         // captureSequence() (capture.ts, CÙNG camPathSampleToThree nên khung xem = khung xuất).
@@ -733,12 +751,12 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
         if (moveState.left) walkControls.moveRight(-WALK_SPEED_M_PER_SEC * dt);
         camera.position.y = EYE_HEIGHT_MM / 1000;
       } else {
-        controls.update();
+        if (controls.update()) needsRender = true;
       }
       // VIỆC 7 (P14) — lưới đổi mật độ theo tầm nhìn: xa ô 1m · gần thêm ô 100mm · rất gần thêm
       // ô 10mm (chuẩn SketchUp — mắt ước lượng kích thước không cần đo). 2 lưới mịn bám target,
       // làm tròn về mắt ô của CHÍNH NÓ để vạch đứng yên khi pan (không "trôi lưới").
-      if (gridCoarse) {
+      if (gridCoarse && (needsRender || dynamicFrame)) {
         const d = camera.position.distanceTo(controls.target);
         if (gridMid) {
           gridMid.visible = d < 8;
@@ -750,8 +768,11 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
         }
         gridCoarse.visible = d >= 2; // rất gần thì tắt lưới thô cho đỡ rối vạch chồng vạch
       }
-      renderer.render(three, camera);
-      onFrame?.(t);
+      if (needsRender || dynamicFrame) {
+        renderer.render(three, camera);
+        needsRender = false;
+      }
+      if (dynamicFrame) onFrame?.(t);
       raf = requestAnimationFrame(tick);
     }
     raf = requestAnimationFrame(tick);
@@ -760,6 +781,7 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
       if (cameraApiRef) cameraApiRef.current = null;
       cancelAnimationFrame(raf);
       ro.disconnect();
+      controls.removeEventListener('change', requestRender);
       controls.dispose();
       walkControls.dispose();
       if (hintEl) {

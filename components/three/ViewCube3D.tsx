@@ -153,7 +153,8 @@ export default function ViewCube3D({ cameraApiRef, onPick, size = 96, className 
     if (!container) return undefined;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // ViewCube rất nhỏ; 1.25x giữ chữ đọc rõ mà không duy trì một canvas Retina 2x suốt phiên.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
     // LỖI 3 (P8, 04/08) — `setSize(size, size, false)` CHỈ set buffer vẽ (canvas.width/height =
     // size×pixelRatio), KHÔNG set canvas.style.width/height. Canvas không có CSS ràng buộc thì
     // hiển thị đúng bằng ATTRIBUTE width/height (vd 96×2=192px trên màn 2x) — to gấp đôi khung
@@ -308,6 +309,8 @@ export default function ViewCube3D({ cameraApiRef, onPick, size = 96, className 
     renderer.domElement.addEventListener('pointerleave', onPointerLeave);
 
     let raf = 0;
+    let needsRender = true;
+    const lastQuaternion = new THREE.Quaternion();
     function tick() {
       const api = cameraApiRef.current;
       if (api) {
@@ -316,9 +319,18 @@ export default function ViewCube3D({ cameraApiRef, onPick, size = 96, className 
         const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(cubeCamera.quaternion);
         cubeCamera.position.copy(forward).multiplyScalar(-5);
         cubeCamera.updateMatrixWorld();
+        if (!lastQuaternion.equals(cubeCamera.quaternion)) {
+          lastQuaternion.copy(cubeCamera.quaternion);
+          needsRender = true;
+        }
       }
+      const wasFlying = !!flying;
       tickFly();
-      renderer.render(scene, cubeCamera);
+      if (wasFlying || flying) needsRender = true;
+      if (needsRender) {
+        renderer.render(scene, cubeCamera);
+        needsRender = false;
+      }
       raf = requestAnimationFrame(tick);
     }
     raf = requestAnimationFrame(tick);
