@@ -87,7 +87,9 @@ console.log('docToObjScene — hợp đồng ngữ nghĩa 2D ↔ 3D');
   };
   const doc: Doc = {
     ...demoDoc(),
-    entities: demoDoc().entities.map((e) => e.type === 'hatch' ? { ...e, elementType: 'wall', levelId: 'lv-2', typeId: 'wall-200' } : e).concat(room),
+    entities: demoDoc().entities.map((e): Entity => e.type === 'hatch'
+      ? { ...e, elementType: 'wall' as const, levelId: 'lv-2', typeId: 'wall-200' }
+      : e).concat(room),
     levels: [{ id: 'lv-2', name: 'Level 2', elevationMm: 3600, order: 1 }],
   };
   const scene = docToObjScene(doc, { ceiling: true });
@@ -95,7 +97,7 @@ console.log('docToObjScene — hợp đồng ngữ nghĩa 2D ↔ 3D');
   const roomGroup = scene.groups.find((g) => g.entityId === 'room-l2')!;
   const floor = scene.groups.find((g) => g.semanticKind === 'floor')!;
   const ceiling = scene.groups.find((g) => g.semanticKind === 'ceiling')!;
-  ok('tường mang id, level và type bền từ Doc', wall.entityId && wall.levelId === 'lv-2' && wall.typeId === 'wall-200');
+  ok('tường mang id, level và type bền từ Doc', !!wall.entityId && wall.levelId === 'lv-2' && wall.typeId === 'wall-200');
   ok('tường khai báo rõ không bị đánh dấu suy đoán', wall.semanticProvenance === 'declared' && wall.inferred === undefined);
   ok('RoomEntity là nguồn chính, không phải phòng dò runtime', roomGroup.semanticKind === 'room' && roomGroup.semanticProvenance === 'declared' && roomGroup.levelId === 'lv-2');
   ok('sàn/trần dẫn xuất có nhãn rõ và không giả mạo entity', floor.semanticProvenance === 'derived' && ceiling.semanticProvenance === 'derived' && !floor.entityId && !ceiling.entityId);
