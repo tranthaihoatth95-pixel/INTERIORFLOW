@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReactFlow } from '@xyflow/react';
-import { X, GripVertical, Star, Plus, Command, Paintbrush, Wand2, Users, Sparkles, StickyNote, Palette, Network } from 'lucide-react';
+import { X, GripVertical, Star, Plus, Command, Paintbrush, Wand2, Users, Sparkles, StickyNote, Palette, Network, ChevronRight } from 'lucide-react';
 import { NODE_DEFINITIONS, NODE_REGISTRY } from '@/lib/nodes/registry';
 import { nodeIconFor } from '@/components/nodes/NodeIcons';
 import { useFlowStore } from '@/lib/store';
@@ -72,6 +72,9 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
   const tr = useT();
   const [query, setQuery] = useState('');
   const [activeGroup, setActiveGroup] = useState<NodeGroup | typeof ALL_GROUP>(ALL_GROUP);
+  // Kệ khối không được là một danh sách dài không đáy: mỗi cụm nghề nghiệp tự thu/mở.
+  // Chỉ mở Nguồn lúc mới vào để người dùng có điểm bắt đầu; khi tìm, mọi kết quả mở ra.
+  const [openGroups, setOpenGroups] = useState<Set<NodeGroup>>(() => new Set(['source']));
   const { screenToFlowPosition, setCenter } = useReactFlow();
   // DỌN ĐỊA TẦNG (Hoà 04/08) — nhóm "Trên bảng" đầu panel: node ĐANG có trên canvas, bấm = focus.
   const canvasNodes = useFlowStore((s) => s.nodes);
@@ -475,20 +478,35 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
             <div className="mt-3 border-t border-[var(--border)]" />
           </div>
         )}
-        {groups.map(({ group, defs }) => (
+        {groups.map(({ group, defs }) => {
+          const expanded = Boolean(query.trim()) || openGroups.has(group);
+          return (
           <div key={group}>
-            <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t4)]">
+            <button
+              type="button"
+              onClick={() => setOpenGroups((current) => {
+                const next = new Set(current);
+                if (next.has(group)) next.delete(group); else next.add(group);
+                return next;
+              })}
+              aria-expanded={expanded}
+              className="mb-1.5 flex w-full items-center gap-1.5 rounded-md px-1 py-1 text-left text-[10px] font-semibold uppercase tracking-wider text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
+            >
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: GROUP_META[group].color }} />
               {tr(GROUP_META[group].label, GROUP_META[group].labelEn)}
-            </p>
-            {/* stagger nhẹ — item hiện lần lượt như list iOS */}
-            <motion.div className="space-y-1" variants={staggerList} initial="hidden" animate="visible">
-              {defs.map((def) => (
-                <NodeCard key={`${group}-${def.type}`} def={def} onAdd={onAdd} />
-              ))}
-            </motion.div>
+              <span className="ml-auto text-[10px] tabular-nums text-[var(--t5)]">{defs.length}</span>
+              <ChevronRight size={13} className={cn('shrink-0 transition-transform duration-150', expanded && 'rotate-90')} />
+            </button>
+            {expanded && (
+              <motion.div className="space-y-1" variants={staggerList} initial="hidden" animate="visible">
+                {defs.map((def) => (
+                  <NodeCard key={`${group}-${def.type}`} def={def} onAdd={onAdd} />
+                ))}
+              </motion.div>
+            )}
           </div>
-        ))}
+          );
+        })}
         {/* "Không tìm thấy" chỉ khi KHÔNG vùng nào có kết quả — vùng ghim Mood/Công cụ nay cũng
             lọc theo truy vấn nên đếm cả chúng, không thì gõ "inpainting" ra 1 kết quả mà vẫn
             kèm dòng "Không tìm thấy khối nào." ngay dưới (mâu thuẫn, thấy khi verify 05/08). */}

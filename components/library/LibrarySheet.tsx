@@ -163,6 +163,13 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
 
   useEffect(() => setMounted(true), []);
 
+  // Sheet là modal: không để thanh mode phía dưới còn lộ như một nút bấm được nhưng thực ra bị
+  // scrim chặn. Nó từng tạo cảm giác công tắc 3D bị lỗi. Đóng sheet thì trả chrome về ngay.
+  useEffect(() => {
+    document.body.dataset.ifLibraryOpen = open ? 'true' : 'false';
+    return () => { delete document.body.dataset.ifLibraryOpen; };
+  }, [open]);
+
   /* ───── Kéo vạch xuống để đóng (card rời, 05/08) ─────
    * Trước đây `.grab` chỉ là vạch TRANG TRÍ — nhìn như kéo được nhưng không có handler nào, đúng
    * kiểu "nút giả" §9 cấm. Nay nó kéo thật: theo ngón tay, thả quá ngưỡng thì đóng, chưa tới thì

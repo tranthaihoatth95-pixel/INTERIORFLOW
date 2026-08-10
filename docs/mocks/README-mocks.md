@@ -15,6 +15,7 @@
 | `mock-avatar-picker-v2.html` | Trang đổi avatar v2 — ĐÃ PORT (`88566c6`), giữ làm chuẩn đối chiếu |
 | `mock-trinh-boq-2026-08-04.html` | BOQ editor theo `SPEC-TRINH-BOQ-EDITOR` — summary-bar·6 kiểu cột·badge sửa-tay·dòng lỗi (đợt 3.①) |
 | `mock-trinh-video-2026-08-04.html` | Video editor theo `SPEC-TRINH-VIDEO-EDITOR` — shot có tên·3 tầng·collapsed·beat snap·MP4 0-credit (đợt 3.②) |
+| `mock-video-sinh-phim-3d-2026-08-10.html` | Chặng 3D: camera path → footage; nhóm công cụ nghề nghiệp thu gọn và handoff một-nguồn sang Dựng phim |
 
 ## ✅ CẬP NHẬT 08/08 (phiên đối chiếu-port, phát hiện dòng ⬆️ lỗi thời)
 - **`mock-cad-shell-v5.html` KHÔNG còn hiện hành** — đã đổi tên `mock-cad-shell-v5_cu.html` từ 06/08

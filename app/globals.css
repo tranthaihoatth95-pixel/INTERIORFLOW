@@ -920,6 +920,11 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   border-radius: 999px;
 }
 
+/* Thư viện là modal; đừng để thanh chuyển mode phía sau trông như một control bị hỏng. */
+body[data-if-library-open='true'] .if-bottombar {
+  visibility: hidden;
+}
+
 /* ---------- Vitals typing indicator (3 chấm iMessage) ----------
    Chấm nhấp nháy lệch pha; prefers-reduced-motion: ẩn chấm, hiện text tĩnh (fallback).
 */
