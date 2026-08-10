@@ -84,6 +84,7 @@
 | `CONTENT-RULES.md` | Nội dung app thật · demo · dự án khách **không được trộn** |
 | `AUDIT-BRAND-PII.md` | **LUẬT TRUNG TÍNH** — IF là sản phẩm bán ra. Danh sách chuỗi phải dọn |
 | `SPEC-VITALS-VISUAL.md` | Glyph Vitals: cầu kính + electron, **số hạt là kênh thông tin**, 1 accent `#6a57f5` |
+| `CHOT-ELEMENT-MATERIAL-INTELLIGENCE-2026-08-10.md` | ⭐ Ảnh→Element/MaterialSpec nháp · tái dùng single-view metrology đã có · measured/inferred/verified · đổi `specId` hai chiều có impact preview, nuôi 2D·3D·BOQ·MB·MĐ·Present |
 
 ### Bảy spec gỡ nhãn `[CẦN HOÀ DUYỆT]` ngày 01/08
 
