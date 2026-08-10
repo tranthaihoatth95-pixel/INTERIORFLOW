@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
-import { Be_Vietnam_Pro } from 'next/font/google';
 import './globals.css';
 import './foldable.css';
 import { PWARegister } from '@/components/PWARegister';
@@ -9,25 +8,18 @@ import { StoreHydrator } from '@/components/entry/StoreHydrator';
 import StageTransitionProvider from '@/components/studio/StageTransitionProvider';
 import { CanvasWallpaper } from '@/app/settings/_components/CanvasWallpaper';
 
-// Font hệ thống TTT Design System — Be Vietnam Pro (hỗ trợ dấu tiếng Việt đầy đủ).
-const beVietnamPro = Be_Vietnam_Pro({
-  subsets: ['latin', 'vietnamese'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-sans',
-  display: 'swap',
-});
-
-// Giữ Geist làm fallback biến-trục (không đặt làm mặc định nữa).
+// Font cục bộ để build/installer không phụ thuộc Google Fonts. Hệ điều hành
+// tự fallback glyph tiếng Việt khi Geist không có ký tự tương ứng.
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
-  variable: '--font-geist-sans',
+  variable: '--font-sans',
   weight: '100 900',
 });
 
 export const metadata: Metadata = {
   applicationName: 'InteriorFlow',
   title: 'InteriorFlow',
-  description: 'Node-based AI workflow canvas cho studio thiết kế nội thất',
+  description: 'Integrated workspace for interior design delivery.',
   manifest: '/manifest.webmanifest',
   icons: {
     icon: [
@@ -61,7 +53,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="vi" className="dark">
-      <body className={`${beVietnamPro.variable} ${geistSans.variable} font-sans antialiased`}>
+      <body className={`${geistSans.variable} font-sans antialiased`}>
         {/* Migration 21/07: đổi tên `Vitas` → `Vitals`. Đọc mọi key `interiorflow.vitas.*` cũ
             trong localStorage, ghi sang `interiorflow.vitals.*` mới rồi xoá cũ. Chạy 1 lần đầu
             phiên; guard bằng key sentinel để tránh chạy lại nhiều lần. */}

@@ -23,7 +23,7 @@ import { useLang } from '@/lib/i18n';
  * nhập (giữ nguyên luồng auth cũ).
  *
  * Reduce Motion: bố cục tĩnh (không spring/trôi), fade nhanh ~1.5s.
- * Chữ dùng font-sans toàn app (Be Vietnam Pro) — không import webfont riêng.
+ * Chữ dùng font-sans cục bộ toàn app — không import webfont ngoài.
  */
 
 const COPPER = '#c79a63';
