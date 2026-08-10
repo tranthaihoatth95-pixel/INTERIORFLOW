@@ -6,6 +6,8 @@ import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
 import { applyArrayGrid, parseArrayCommand } from '@/lib/render-studio/array-grid-ops';
 import type { Scene3DData } from '@/lib/three/cad-to-obj';
 import type { Scene3DMode, Scene3DCameraApi, LightMarker } from './Scene3DViewer';
+import type { CamPathResult } from '@/lib/cad/campath';
+import type { LightRig } from '@/lib/three/lighting';
 import type { ViewDir } from './ViewCube3D';
 import { RawStyle } from './RawStyle';
 import { VE3D_CSS } from './ve3d-css';
@@ -28,6 +30,11 @@ export type { ViewDir, LightMarker };
 export interface Viewport3DProps {
   scene: Scene3DData;
   mode?: Scene3DMode;
+  camPath?: CamPathResult;
+  cameraHeightMm?: number;
+  lensMm?: number;
+  /** Bật riêng cho workspace Chiếu sáng; các nơi khác giữ khối xám như trước. */
+  lightingPreview?: LightRig | null;
   /** khối đang chọn — gizmo di chuyển vẽ trên khối này. */
   selectedId?: string | null;
   /** đổi hướng nhìn từ ViewCube. */
@@ -74,6 +81,10 @@ export const EMPTY_SCENE_3D: Scene3DData = {
 export function Viewport3D({
   scene,
   mode = 'orbit',
+  camPath,
+  cameraHeightMm,
+  lensMm,
+  lightingPreview = null,
   selectedId = null,
   onViewChange,
   onNudge,
@@ -101,6 +112,10 @@ export function Viewport3D({
       <Scene3DViewer
         scene={scene}
         mode={mode}
+        camPath={camPath}
+        cameraHeightMm={cameraHeightMm}
+        lensMm={lensMm}
+        lightingPreview={lightingPreview}
         onPushPull={onPushPull}
         lightMarkers={lightMarkers}
         onLightMove={onLightMove}

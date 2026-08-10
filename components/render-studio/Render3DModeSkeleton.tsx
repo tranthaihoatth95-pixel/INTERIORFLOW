@@ -541,6 +541,7 @@ export default function Render3DModeSkeleton() {
           onPushPull={handlePushPull}
           lightMarkers={lightMarkers}
           onLightMove={handleLightMove}
+          lightingPreview={rig}
           ground
           snap3d={{ settings: snapSettings, gridStepMm }}
           label={soKhoi > 0 ? 'Khối xám · chưa vật liệu' : 'Không gian trống'}

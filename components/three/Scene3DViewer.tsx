@@ -24,8 +24,9 @@
  *
  * Thiếu `camPath`/`sectionMm` tương ứng → rơi về orbit, không throw, cảnh báo console 1 lần.
  *
- * Xám trơn, KHÔNG PBR/đèn/bóng đổ (quyết định #3) — `MeshBasicMaterial` phẳng theo `colorHex` của
- * từng group, không cần ánh sáng. Hình học đến từ `buildMergedGeometries` (gộp theo màu = gộp
+ * Mặc định xám trơn, KHÔNG PBR/đèn/bóng đổ. Riêng workspace Chiếu sáng có thể truyền một
+ * `lightingPreview` tường minh để đổi sang preview ánh sáng thời gian thực; đây không phải render
+ * cuối hoặc báo cáo trắc quang. Hình học đến từ `buildMergedGeometries` (gộp theo màu = gộp
  * theo lớp, quyết định #2 + FPS §4.1) — ~6 draw call thay vì 1/entity.
  *
  * Nặng vì kéo theo `three` (~170KB gzip, quyết định #1) — component này (và mọi thứ nó import
@@ -47,6 +48,8 @@ import { clampWallHeight, cadToThreeM, type Scene3DData } from '@/lib/three/cad-
 import { camPathSampleToThree, sampleCamPathAt, EYE_HEIGHT_MM } from '@/lib/three/capture';
 import { sectionPlane, type SectionSpec } from '@/lib/three/section';
 import type { CamPathResult } from '@/lib/cad/campath';
+import { fovFromLens } from '@/lib/three/camera';
+import type { LightRig } from '@/lib/three/lighting';
 
 export type Scene3DMode = 'orbit' | 'walk' | 'campath' | 'section' | 'massing';
 
@@ -121,6 +124,11 @@ export interface Scene3DViewerProps {
   scene: Scene3DData;
   mode: Scene3DMode;
   camPath?: CamPathResult;
+  /** Camera Intent đã lưu trên polyline; mặc định giữ hành vi cũ 1650mm/35mm. */
+  cameraHeightMm?: number;
+  lensMm?: number;
+  /** Preview ánh sáng của workspace Chiếu sáng. Bỏ trống giữ khung khối xám mặc định. */
+  lightingPreview?: LightRig | null;
   /** mặt cắt cho mode `section` (3D-4) — thiếu → rơi về orbit. */
   sectionMm?: SectionSpec;
   /** đồng bộ UI ngoài (thanh tua) — gọi mỗi khung hình với giây đã trôi từ lúc mount. */
@@ -157,7 +165,7 @@ export interface Scene3DViewerProps {
 const IMPLEMENTED_MODES: Scene3DMode[] = ['orbit', 'campath', 'section', 'walk', 'massing'];
 const WALK_SPEED_M_PER_SEC = 1.5; // ~tốc độ đi bộ chậm, cùng cảm giác tempo với campath 1200mm/s
 
-export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame, onPushPull, lightMarkers, onLightMove, ground = false, className, cameraApiRef, snap3d }: Scene3DViewerProps) {
+export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = EYE_HEIGHT_MM, lensMm = 35, lightingPreview = null, sectionMm, onFrame, onPushPull, lightMarkers, onLightMove, ground = false, className, cameraApiRef, snap3d }: Scene3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // T4 — snap qua REF (cùng lý do lightMarkersRef): đổi công tắc không dựng lại cảnh.
   const snap3dRef = useRef(snap3d ?? null);
@@ -202,6 +210,12 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    if (lightingPreview) {
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1;
+    }
     // Mặt cắt (mode section, 3D-4) — bật sẵn cờ này (0 phí khi clippingPlanes rỗng), chỉ nạp
     // plane thật khi có sectionMm hợp lệ.
     renderer.localClippingEnabled = true;
@@ -210,6 +224,26 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
 
     const three = new THREE.Scene();
     three.background = new THREE.Color('#2a2d33');
+
+    if (lightingPreview) {
+      const ambient = new THREE.HemisphereLight('#dce8ff', '#19120d', Math.max(0.15, lightingPreview.sky.intensity * 0.35));
+      three.add(ambient);
+      if (!lightingPreview.sun.belowHorizon) {
+        const [x, y, z] = lightingPreview.sun.directionThree;
+        const sun = new THREE.DirectionalLight(lightingPreview.sun.colorHex, lightingPreview.sun.intensity * 2.2);
+        sun.position.set(x * 40, y * 40, z * 40);
+        sun.castShadow = true;
+        three.add(sun);
+        three.add(sun.target);
+      }
+      for (const light of lightingPreview.rooms) {
+        const [x, y, z] = light.posThreeM;
+        const point = new THREE.PointLight(light.colorHex, Math.min(12, Math.max(0.2, light.candelaIsotropic / 18)), 14, 2);
+        point.position.set(x, y, z);
+        point.castShadow = true;
+        three.add(point);
+      }
+    }
 
     // SÂN KHẤU (ground) — VIỆC 7 (P14): lưới ĐỔI MẬT ĐỘ THEO TẦM NHÌN kiểu SketchUp thay
     // GridHelper(200,200) cố định — xa: ô 1m · gần: 100mm · rất gần: 10mm. 3 lưới dựng sẵn,
@@ -358,7 +392,9 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
       edgeJunk.push(eg, em);
     };
     for (const b of built) {
-      const material = new THREE.MeshBasicMaterial({ color: b.colorHex, side: THREE.DoubleSide });
+      const material = lightingPreview
+        ? new THREE.MeshStandardMaterial({ color: b.colorHex, roughness: 0.78, metalness: 0.02, side: THREE.DoubleSide })
+        : new THREE.MeshBasicMaterial({ color: b.colorHex, side: THREE.DoubleSide });
       const mesh = new THREE.Mesh(b.geometry, material);
       addEdges(mesh);
       group.add(mesh);
@@ -368,7 +404,9 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     const massingWalls = massingActive ? buildMassingWalls(scene) : [];
     const massingMeshes: THREE.Mesh[] = [];
     for (const w of massingWalls) {
-      const material = new THREE.MeshBasicMaterial({ color: w.colorHex, side: THREE.DoubleSide });
+      const material = lightingPreview
+        ? new THREE.MeshStandardMaterial({ color: w.colorHex, roughness: 0.78, metalness: 0.02, side: THREE.DoubleSide })
+        : new THREE.MeshBasicMaterial({ color: w.colorHex, side: THREE.DoubleSide });
       const mesh = new THREE.Mesh(w.geometry, material);
       mesh.userData = { entityId: w.entityId, baseHeightMm: w.baseHeightMm, baseMm: w.baseMm };
       addEdges(mesh);
@@ -662,6 +700,10 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
       const h = container.clientHeight || 1;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
+      if (campathActive) {
+        const hFov = (fovFromLens(lensMm) * Math.PI) / 180;
+        camera.fov = (2 * Math.atan(Math.tan(hFov / 2) / camera.aspect) * 180) / Math.PI;
+      }
       camera.updateProjectionMatrix();
     }
     resize();
@@ -678,7 +720,7 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
         // Phát lặp (loop) đường cam — video 2-b xem trước ở đây, xuất file thật qua
         // captureSequence() (capture.ts, CÙNG camPathSampleToThree nên khung xem = khung xuất).
         const loopT = camPath.totalDurationSec > 0 ? t % camPath.totalDurationSec : 0;
-        const pose = camPathSampleToThree(sampleCamPathAt(camPath, loopT));
+        const pose = camPathSampleToThree(sampleCamPathAt(camPath, loopT), cameraHeightMm);
         camera.position.copy(pose.position);
         camera.lookAt(pose.target);
       } else if (walkActive && walkControls.isLocked) {
@@ -763,7 +805,7 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     // lần đổi (không incremental-update riêng clippingPlanes) — chấp nhận được ở V1 (rebuild
     // scene vài chục ms, xem bench 3D-1), tối ưu sau nếu UI thật thấy giật khi kéo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, mode, camPath, sectionMm, ground]);
+  }, [scene, mode, camPath, cameraHeightMm, lensMm, lightingPreview, sectionMm, ground]);
 
   return <div ref={containerRef} className={className} style={{ width: '100%', height: '100%', minHeight: 320, position: 'relative' }} />;
 }

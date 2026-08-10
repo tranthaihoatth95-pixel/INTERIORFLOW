@@ -7,6 +7,9 @@
 ## Đang chạy
 
 - Hệ phím tắt toàn app đang triển khai; giữ nguyên 4 file riêng của chủ dự án.
+- Workspace Chiếu sáng thuộc 3D: viewport nhận `Doc.lighting` và preview trực tiếp; tab Đèn có lux/quang thông/diện tích/đồng đều dạng **ước tính**. IES/LDT + engine trắc quang chuẩn chưa làm.
+- Material Intelligence: lõi impact/replace đã xong; việc kế là nối hộp xem phạm vi rồi mới áp.
+- Camera/Video: 5 ý đồ đã vào panel 2D và lưu cùng polyline; việc kế là host chặng 2 + scene collision.
 
 ## Vừa xong
 
@@ -21,17 +24,8 @@
   đủ, thêm ngữ cảnh MODEL/đơn vị/tờ/tỉ lệ/BIM và mở lớp BIM 2D.
 - Sơ phác tablet: nhận bút, chống tì, pan/pinch; dock có undo/redo. Tap 2/3 ngón undo/redo;
   giữ 450ms mở radial 8 lệnh. Input 10/10, gesture 15/15 và test PASS; cần test tablet thật.
-- Paper Space Pro: MODEL/PAPER thật; nhiều ô nhìn cùng một Doc, độc lập tỉ lệ/khóa, kéo/resize có
-  chặn mép, không xóa ô cuối. Logic 9/9, test/preview PASS; đã sửa nút bị dock che.
-- Lưu bền Paper: một Doc duy nhất + `paperSheets` metadata nhẹ đi qua IndexedDB, `.idf`, `.ifpack`
-  và backup; file cũ thiếu field vẫn mở về tờ mặc định. UI sửa số tờ, dự án, người vẽ, revision.
-  IDF 45/45, IFpack 19/19, typecheck/toàn bộ test PASS sau merge. Nghiệm thu 3015: 2 viewport +
-  metadata sống qua reload, console sạch; dữ liệu test đã dọn và autosave lại. Worktree đã dọn.
-- Xuất Paper: PDF một tờ/cả bộ đọc đúng khổ, hướng, rect, tâm, tỉ lệ và layer riêng từng ô nhìn;
-  đổi Page Setup ghi vào Sheet và kẹp viewport trong giấy. Đo 5000mm ở 1:50 = 100mm; Paper 5/5,
-  sheet-set 19/19, typecheck/toàn bộ test PASS.
-- Paper UI: Inspector Tờ/Ô nhìn/Lớp; toolbar ngữ cảnh gọn. Hộp xuất nhúng chính PDF thật trước khi
-  tải, thu hồi URL tạm khi đóng/đổi tờ. Paper 5/5, typecheck/toàn bộ test PASS.
+- Paper Space Pro: MODEL/PAPER thật; nhiều ô nhìn chung một Doc, metadata lưu bền, Inspector
+  Tờ/Ô nhìn/Lớp và PDF một tờ/cả bộ đúng khổ, hướng, tỉ lệ, layer. Test/preview PASS.
 - Mọi lệnh chạy được phải có phím thật, chung nguồn với tooltip/`⌘/`/`⌘K`, guard ô nhập.
   `⌘P`/`Ctrl+P` mở preview/xuất PDF Paper; shortcuts 23/23 PASS.
 - Dock Sơ phác gọn, vùng chạm 44px; Hatch overlay 2 cột né dock. Banner mất phiên portal ra body,
@@ -41,6 +35,11 @@
 - Trình bày: Deck vào bằng Magic hoặc Chỉnh tay. Magic dùng Brand Kit; nội dung, ảnh và phong
   cách tham khảo đều không bắt buộc. Thiếu text sinh 7 trang nháp có nhãn; thiếu ảnh có ô giữ chỗ
   sửa được. Bốn tổ hợp input 4/4, content-deck 11/11, typecheck/toàn bộ test và preview PASS.
+- Material Impact MVP: quét đúng vùng hatch, furniture, vật liệu mặc định và từng lớp tường;
+  thay một entity hoặc toàn Doc bất biến, không tạo undo thừa khi no-op. BOQ tự đọc specId mới.
+  Test mới 12/12, typecheck và toàn bộ test PASS. Kế hoạch tổng 10/08 đã ghi riêng.
+- Camera Intent: thấp sát sàn, bám theo, reveal, push-in, orbit đã vào UI; preview trước khi áp,
+  Undo được; cao độ/lens/tốc độ/easing/look-at sống qua IDF/DXF. Viewer 3D nhận cùng nguồn.
 
 ## Năng lực định dạng đã đo
 
@@ -55,12 +54,12 @@
 
 ## Việc kế tiếp
 
-1. Kiểm kê lệnh chạy được chưa có phím theo từng chặng; nối qua registry chung, xử xung đột và
-   nghiệm thu bút/radial trên tablet. BIM chưa có IFC/clash nên chưa ngang Revit.
-2. Định dạng FBX → IFC. SKP dùng SDK/bridge sau kiểm license; `.max/.rvt` dùng bridge/plugin,
-   không tự viết parser native.
-3. Trình bày: PDF deck → DOCX → media → HTML; tăng fidelity PPTX.
-4. Bổ sung báo cáo đơn vị/trục/font/material/asset thiếu; tiếp tục golden flow và release gate.
+1. Nối Material Impact vào nơi gán vật liệu: xem phạm vi → chọn món/phòng/loại/toàn dự án → commit
+   một snapshot; sau đó Element Capture/ảnh→MaterialSpec nháp. Tái dùng single-view metrology.
+2. Hợp nhất Vitals; BOQ Form/Magic; Present Magic để nội dung quyết định số slide, không giới hạn 7.
+3. Mood/Collab→Thẻ gu + Design DNA; Shape Magic; Render và Camera Intent nối scene thật.
+4. FBX→IFC; PDF deck→DOCX→media→HTML; tăng fidelity PPTX. Chi tiết xem
+   `docs/KE-HOACH-MVP-TONG-2026-08-10.md`.
 
 ## Rủi ro
 

@@ -215,6 +215,18 @@ export interface LevelConstraint {
  */
 export type TopConstraint = LevelConstraint | { heightMm: number };
 
+/** Thiết lập nghề của một đường camera. Optional để mọi IDF cũ vẫn mở nguyên trạng. */
+export interface CameraShotMeta {
+  intent: 'low-track' | 'follow' | 'reveal' | 'push-in' | 'orbit';
+  cameraHeightM: number;
+  lensMm: number;
+  speedMmPerSec: number;
+  easing: 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
+  stabilization: 'locked' | 'soft' | 'handheld';
+  ratio: string;
+  target?: Pt;
+}
+
 interface Base {
   id: string;
   type: EntityType;
@@ -254,6 +266,8 @@ interface Base {
    * `IF_CAMPATH`). Cờ đặt TRÊN entity (không suy từ tên layer) để round-trip DXF an toàn khi
    * layer bị đổi tên tay — xem `applyIfXdata`/`xdataPairs` (`dxf.ts`), cùng khuôn `elementType`. */
   campath?: true;
+  /** Cấu hình shot đi cùng chính polyline, không nằm trong một kho video thứ hai. */
+  cameraShot?: CameraShotMeta;
 
   /** NC-12 (`docs/nc/NC-12-bo-lenh-3d-2026-08-03.md` §4.2) — NGĂN XẾP DỰNG HÌNH 3D (tầng ③④⑤
    * `SPEC-DUNG-BO-LENH-3D`). undefined = không có ngăn xếp, ống kính 3D dựng đúng như hôm nay

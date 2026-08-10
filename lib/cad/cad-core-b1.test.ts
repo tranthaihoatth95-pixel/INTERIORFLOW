@@ -116,7 +116,8 @@ function testIfcSerialization() {
     { id: newId('e'), type: 'text', layer: wall, at: { x: 0, y: 0 }, text: 'GHI CHÚ', h: 200, elementType: null },
     { id: newId('e'), type: 'line', layer: wall, a: { x: 0, y: 500 }, b: { x: 1000, y: 500 } }, // không BIM
     // V2 (§2.1) — đường cam: polyline layer hệ thống IF_CAMPATH + cờ campath:true.
-    { id: newId('e'), type: 'polyline', layer: wall, points: [{ x: 0, y: 0 }, { x: 2000, y: 0 }, { x: 2000, y: 2000 }], closed: false, campath: true },
+    { id: newId('e'), type: 'polyline', layer: wall, points: [{ x: 0, y: 0 }, { x: 2000, y: 0 }, { x: 2000, y: 2000 }], closed: false, campath: true,
+      cameraShot: { intent: 'low-track', cameraHeightM: 0.32, lensMm: 24, speedMmPerSec: 700, easing: 'ease-in-out', stabilization: 'soft', ratio: '16:9' } },
     // polyline THƯỜNG, CÙNG layer — không được tự "lây" cờ campath (kiểm false-positive).
     { id: newId('e'), type: 'polyline', layer: wall, points: [{ x: 0, y: 0 }, { x: 10, y: 10 }], closed: false },
   );
@@ -124,6 +125,7 @@ function testIfcSerialization() {
   ok('DXF có APPID INTERIORFLOW', dxf.includes('INTERIORFLOW'));
   ok('DXF có IF_STOREY=L2', dxf.includes('IF_STOREY=L2'));
   ok('DXF có IF_CAMPATH=1', dxf.includes('IF_CAMPATH=1'));
+  ok('DXF có cấu hình Camera Intent', dxf.includes('IF_CAMSHOT='));
   const back = parseDxf(dxf);
   const lines = back.entities.filter((e) => e.type === 'line');
   const withBim = lines.find((e) => e.storey === 'L2');
@@ -147,6 +149,8 @@ function testIfcSerialization() {
   const campathBack = back.entities.find((e) => e.type === 'polyline' && (e as { campath?: true }).campath === true);
   ok('polyline round-trip giữ campath=true', !!campathBack);
   ok('polyline campath giữ đủ 3 điểm hình học', campathBack?.type === 'polyline' && campathBack.points.length === 3);
+  ok('polyline campath giữ cao độ/lens/intent', campathBack?.cameraShot?.intent === 'low-track'
+    && campathBack.cameraShot.cameraHeightM === 0.32 && campathBack.cameraShot.lensMm === 24);
   const plainPoly = back.entities.find((e) => e.type === 'polyline' && e.points.length === 2);
   ok('polyline THƯỜNG cùng layer KHÔNG tự bị gắn campath (không lây theo layer)', !!plainPoly && (plainPoly as { campath?: true }).campath === undefined);
   // file cũ (không XDATA) mở bình thường

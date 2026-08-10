@@ -16,6 +16,8 @@
 
 ## ✅ ĐÃ CHỐT — coi như luật, không bàn lại
 
+- [10/08 Hoà chốt] Chiếu sáng là workspace trong 3D Thiết kế, dùng chung `Doc.lighting`: layout ↔ phối cảnh realtime ↔ Vitals/BOQ; lux trước IES/LDT phải ghi rõ là ước tính.
+
 > ⭐ **NGUYÊN TẮC GIAI ĐOẠN MỚI (Hoà chốt 01/08):** hệ IDF đã ĐỊNH HÌNH ĐỦ — chat nhóm, lập việc,
 > 3 chặng × 2 mode, ArchiNote, ATLAS, Vitals, siêu thư viện, chợ đầu mối (File Manager) ↔ cửa hàng
 > (Library). Từ nay **ĐI SÂU từng tính năng: giữ cái đắt giá, giải đúng nỗi đau hiện tại; cái thừa
@@ -84,6 +86,7 @@
 | `CONTENT-RULES.md` | Nội dung app thật · demo · dự án khách **không được trộn** |
 | `AUDIT-BRAND-PII.md` | **LUẬT TRUNG TÍNH** — IF là sản phẩm bán ra. Danh sách chuỗi phải dọn |
 | `SPEC-VITALS-VISUAL.md` | Glyph Vitals: cầu kính + electron, **số hạt là kênh thông tin**, 1 accent `#6a57f5` |
+| `CHOT-ELEMENT-MATERIAL-INTELLIGENCE-2026-08-10.md` | ⭐ Ảnh→Element/MaterialSpec nháp · tái dùng single-view metrology đã có · measured/inferred/verified · đổi `specId` hai chiều có impact preview, nuôi 2D·3D·BOQ·MB·MĐ·Present |
 
 ### Bảy spec gỡ nhãn `[CẦN HOÀ DUYỆT]` ngày 01/08
 
@@ -777,3 +780,7 @@ Máy không biết *"đúng concept chưa"* nếu không ai khai concept. Kiểm
 được khai lệch hành vi. Ưu tiên quy ước nghề/OS quen thuộc; không kích hoạt khi đang nhập chữ;
 không cướp tổ hợp OS/trình duyệt nếu nền web không chặn đáng tin cậy. Lệnh chưa đủ điều kiện chạy
 phải hiện mờ kèm lý do, không gán phím giả. Mốc đầu: `⌘P`/`Ctrl+P` mở preview/xuất PDF Paper.
+
+[10/08 — CHỐT DESIGN DNA + CAMERA INTENT] Design DNA trích hình thái/motif có nguồn, tách khỏi
+Material Intelligence; Camera Intent luôn bung thành polyline/keyframe sửa được và chỉ xác nhận va
+chạm sau khi kiểm scene thật. Xem `docs/CHOT-DESIGN-DNA-CAMERA-2026-08-10.md`.
