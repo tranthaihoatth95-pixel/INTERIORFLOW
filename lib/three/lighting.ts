@@ -325,6 +325,37 @@ export interface LightRig {
   warnings: string[];
 }
 
+/**
+ * Chỉ số đọc nhanh cho workspace Chiếu sáng.
+ *
+ * Đây là **ước tính tiền kiểm**, không thay thế báo cáo trắc quang: chưa có IES/LDT, hệ số phản
+ * xạ bề mặt hay phép dò tia nên không được gắn nhãn "đạt chuẩn". Nó vẫn hữu ích khi đặt đèn vì
+ * phản hồi lập tức theo quang thông và diện tích cảnh, trước khi người dùng xuất sang công cụ
+ * kiểm chứng chuyên dụng.
+ */
+export interface LightingQuickEstimate {
+  areaM2: number;
+  totalLumens: number;
+  estimatedLux: number | null;
+  uniformity: number | null;
+}
+
+export function estimateLightingQuick(rig: Pick<LightRig, 'rooms'>, areaM2: number): LightingQuickEstimate {
+  const safeArea = Number.isFinite(areaM2) && areaM2 > 0 ? areaM2 : 0;
+  const totalLumens = rig.rooms.reduce((sum, light) => sum + Math.max(0, light.lumens), 0);
+  if (!safeArea || !totalLumens) {
+    return { areaM2: safeArea, totalLumens, estimatedLux: null, uniformity: null };
+  }
+
+  // 0.62 = hệ số sử dụng THAM KHẢO cho không gian nội thất trung tính. Cố ý nằm ở UI estimate,
+  // không phải dữ liệu đèn/engine; IES/LDT sẽ thay hoàn toàn công thức này.
+  const estimatedLux = Math.round((totalLumens * 0.62) / safeArea);
+  const count = rig.rooms.length;
+  // Chỉ là tín hiệu phân bố: 1 đèn không thể có độ đồng đều có nghĩa; nhiều đèn hơn tiệm cận 1.
+  const uniformity = count > 1 ? Math.min(0.9, Math.round((0.35 + Math.log2(count) * 0.17) * 100) / 100) : null;
+  return { areaM2: Math.round(safeArea * 10) / 10, totalLumens, estimatedLux, uniformity };
+}
+
 function toThreeM(p: Pt3Mm): [number, number, number] {
   const [x, y, z] = cadAxesToThree(p.x, p.y, p.z);
   return [x / 1000, y / 1000, z / 1000];

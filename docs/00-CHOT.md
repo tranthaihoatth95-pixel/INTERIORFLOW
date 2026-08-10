@@ -16,6 +16,8 @@
 
 ## ✅ ĐÃ CHỐT — coi như luật, không bàn lại
 
+- [10/08 Hoà chốt] Chiếu sáng là workspace trong 3D Thiết kế, dùng chung `Doc.lighting`: layout ↔ phối cảnh realtime ↔ Vitals/BOQ; lux trước IES/LDT phải ghi rõ là ước tính.
+
 > ⭐ **NGUYÊN TẮC GIAI ĐOẠN MỚI (Hoà chốt 01/08):** hệ IDF đã ĐỊNH HÌNH ĐỦ — chat nhóm, lập việc,
 > 3 chặng × 2 mode, ArchiNote, ATLAS, Vitals, siêu thư viện, chợ đầu mối (File Manager) ↔ cửa hàng
 > (Library). Từ nay **ĐI SÂU từng tính năng: giữ cái đắt giá, giải đúng nỗi đau hiện tại; cái thừa

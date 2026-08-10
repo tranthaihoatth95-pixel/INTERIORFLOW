@@ -24,7 +24,7 @@
 import { Lightbulb, Plus, Sun, Trash2, Cloud, Compass, MoveHorizontal, MapPin, AlertTriangle } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import { sortedLevels } from '@/lib/cad/levels';
-import { buildLightRig, kelvinToHex, sunLightFromDateTime, type RoomLight, type RoomLightKind } from '@/lib/three/lighting';
+import { buildLightRig, estimateLightingQuick, kelvinToHex, sunLightFromDateTime, type RoomLight, type RoomLightKind } from '@/lib/three/lighting';
 import { useScene3D } from '@/lib/render-studio/use-scene3d';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -100,6 +100,10 @@ export function LightTab() {
   // buildLightRig() là NGUỒN DUY NHẤT cho mọi con số dẫn xuất hiện trên UI (màu Kelvin đã đổi hex,
   // cảnh báo, cao độ đèn đã cộng cao độ tầng). Không tự tính lại bất kỳ dòng nào trong đó.
   const rig = buildLightRig(doc);
+  const quickEstimate = estimateLightingQuick(
+    rig,
+    scene ? ((scene.bboxMm.maxX - scene.bboxMm.minX) * (scene.bboxMm.maxY - scene.bboxMm.minY)) / 1_000_000 : 0,
+  );
   const lighting = currentLighting();
   const levels = sortedLevels(doc);
   const dateTimeReady = canUseDateTime(sunUi);
@@ -157,10 +161,24 @@ export function LightTab() {
     <div className="space-y-3.5">
       <p className="rounded-[9px] border border-dashed border-[var(--border)] px-2 py-1.5 text-[10px] leading-relaxed text-[var(--t4)]">
         {tr(
-          'Khung nhìn giữ khối xám để nhìn rõ hình — chỉ hiện dấu vị trí đèn. Bộ đèn dưới đây dùng khi dựng ảnh.',
-          'The viewport stays flat grey so the geometry reads clearly — it only shows light markers. This rig is used when rendering.',
+          'Khung nhìn đổi sáng ngay theo bộ đèn. Số lux dưới đây là ước tính, chưa thay báo cáo IES/LDT.',
+          'The viewport updates with this light rig. The lux values below are estimates, not an IES/LDT report.',
         )}
       </p>
+
+      <section className="grid grid-cols-2 gap-1.5" aria-label={tr('Chỉ số ánh sáng ước tính', 'Estimated lighting metrics')}>
+        {[
+          [tr('Độ rọi', 'Illuminance'), quickEstimate.estimatedLux === null ? '—' : `${quickEstimate.estimatedLux} lux`],
+          [tr('Quang thông', 'Luminous flux'), `${formatThousands(quickEstimate.totalLumens)} lm`],
+          [tr('Diện tích', 'Area'), quickEstimate.areaM2 ? `${quickEstimate.areaM2} m²` : '—'],
+          [tr('Đồng đều', 'Uniformity'), quickEstimate.uniformity === null ? '—' : quickEstimate.uniformity.toFixed(2)],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5">
+            <p className="text-[9px] font-bold uppercase tracking-wide text-[var(--t4)]">{label}</p>
+            <p className="mt-0.5 text-[12px] font-semibold tabular-nums text-[var(--t1)]">{value}</p>
+          </div>
+        ))}
+      </section>
 
       {rig.warnings.length > 0 && (
         <ul className="space-y-1 rounded-[9px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5">

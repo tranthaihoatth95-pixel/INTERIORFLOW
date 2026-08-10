@@ -7,6 +7,7 @@ import { applyArrayGrid, parseArrayCommand } from '@/lib/render-studio/array-gri
 import type { Scene3DData } from '@/lib/three/cad-to-obj';
 import type { Scene3DMode, Scene3DCameraApi, LightMarker } from './Scene3DViewer';
 import type { CamPathResult } from '@/lib/cad/campath';
+import type { LightRig } from '@/lib/three/lighting';
 import type { ViewDir } from './ViewCube3D';
 import { RawStyle } from './RawStyle';
 import { VE3D_CSS } from './ve3d-css';
@@ -32,6 +33,8 @@ export interface Viewport3DProps {
   camPath?: CamPathResult;
   cameraHeightMm?: number;
   lensMm?: number;
+  /** Bật riêng cho workspace Chiếu sáng; các nơi khác giữ khối xám như trước. */
+  lightingPreview?: LightRig | null;
   /** khối đang chọn — gizmo di chuyển vẽ trên khối này. */
   selectedId?: string | null;
   /** đổi hướng nhìn từ ViewCube. */
@@ -81,6 +84,7 @@ export function Viewport3D({
   camPath,
   cameraHeightMm,
   lensMm,
+  lightingPreview = null,
   selectedId = null,
   onViewChange,
   onNudge,
@@ -111,6 +115,7 @@ export function Viewport3D({
         camPath={camPath}
         cameraHeightMm={cameraHeightMm}
         lensMm={lensMm}
+        lightingPreview={lightingPreview}
         onPushPull={onPushPull}
         lightMarkers={lightMarkers}
         onLightMove={onLightMove}

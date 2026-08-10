@@ -17,6 +17,7 @@ import type { Doc, Level } from '../cad/model';
 import {
   DEFAULT_SUN,
   buildLightRig,
+  estimateLightingQuick,
   julianDayFromMs,
   kelvinToHex,
   kelvinToRgb,
@@ -291,6 +292,28 @@ function testSunLightFromDateTime() {
   ok('cập nhật hướng theo ngày giờ thật', near(out.azimuthDeg, 180, 8) && out.altitudeDeg > 40);
 }
 
+/* ── [13] Lighting quick estimate — phản hồi UI, KHÔNG phải báo cáo IES/LDT ── */
+function testQuickEstimate() {
+  console.log('\n[13] lighting quick estimate — lux tiền kiểm');
+  const rig = buildLightRig({
+    ...emptyDoc(),
+    lighting: {
+      sun: DEFAULT_SUN,
+      sky: { intensity: 1, rotationDeg: 0 },
+      rooms: [
+        { id: 'a', kind: 'ceiling', posMm: { x: 0, y: 0, z: 2700 }, lumens: 1000, colorK: 3000 },
+        { id: 'b', kind: 'ceiling', posMm: { x: 1000, y: 0, z: 2700 }, lumens: 1000, colorK: 3000 },
+      ],
+    },
+  });
+  const estimate = estimateLightingQuick(rig, 10);
+  ok('tổng quang thông đúng', estimate.totalLumens === 2000);
+  ok('độ rọi = lm × 0.62 / diện tích', estimate.estimatedLux === 124);
+  ok('2 đèn có tín hiệu đồng đều', estimate.uniformity !== null && estimate.uniformity > 0);
+  const missing = estimateLightingQuick(buildLightRig(emptyDoc()), 10);
+  ok('không đèn → không bịa lux/đồng đều', missing.estimatedLux === null && missing.uniformity === null);
+}
+
 testJulianDay();
 testDeclination();
 testEquationOfTime();
@@ -303,6 +326,7 @@ testRigBasics();
 testRoomLightLevels();
 testRigEdges();
 testSunLightFromDateTime();
+testQuickEstimate();
 
 console.log(`\nlighting.test.ts — ${pass} pass, ${fail} fail`);
 if (fail) process.exit(1);

@@ -7,6 +7,7 @@
 ## Đang chạy
 
 - Hệ phím tắt toàn app đang triển khai; giữ nguyên 4 file riêng của chủ dự án.
+- Workspace Chiếu sáng thuộc 3D: viewport nhận `Doc.lighting` và preview trực tiếp; tab Đèn có lux/quang thông/diện tích/đồng đều dạng **ước tính**. IES/LDT + engine trắc quang chuẩn chưa làm.
 - Material Intelligence: lõi impact/replace đã xong; việc kế là nối hộp xem phạm vi rồi mới áp.
 - Camera/Video: 5 ý đồ đã vào panel 2D và lưu cùng polyline; việc kế là host chặng 2 + scene collision.
 
