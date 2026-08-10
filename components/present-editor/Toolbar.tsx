@@ -508,8 +508,8 @@ export default function Toolbar(p: Props) {
           thức "Bố cục" (nhãn cũ trên nút + tab panel ghi "Magic" là hai tên cho một thứ;
           không nhắc nguyên văn nhãn cũ ở đây để cửa kiểm PHEU-AI-TEN-MAGIC quét chuỗi không
           báo nhầm vào comment lịch sử). */}
-      <Btn onClick={p.onToggleTemplates} active={p.templatesOpen} title="Bố cục — mẫu dàn trang, bấm là áp">
-        <LayoutTemplate size={15} /> Bố cục
+      <Btn onClick={p.onToggleTemplates} active={p.templatesOpen} title="Thiết kế — Magic và các mẫu dàn trang">
+        <LayoutTemplate size={15} /> Thiết kế
       </Btn>
 
       <Divider />
@@ -521,8 +521,8 @@ export default function Toolbar(p: Props) {
       </IconOnly>
 
       <Divider />
-      <Btn onClick={p.onBrandKit} title="Brand Kit — Nhận diện (logo · màu · font · watermark). Lưu 1 lần, áp lại cho cả deck.">
-        <Palette size={15} /> Nhận diện
+      <Btn onClick={p.onBrandKit} title="Brand Kit của dự án — logo · màu · font · watermark">
+        <Palette size={15} /> Brand Kit
       </Btn>
       <Btn
         onClick={p.onStagePreset}

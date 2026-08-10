@@ -12,7 +12,7 @@
  * Enable/disable theo NĂNG LỰC CODE THẬT (không theo văn bản ticket cũ — ticket V6 viết
  * "BOQ disabled" hồi 04/08, nhưng `BoqScreen` đã có editor thật từ `M-BOQ-OUT.md` — coi code
  * là sự thật, xem `docs/CLAUDE.md`):
- *   - Deck        → editor thật (PresentEditor), 2 lối vào: Tự dàn / ✨ Magic.
+ *   - Deck        → editor thật (PresentEditor), 2 lối vào: ✨ Magic / Chỉnh tay.
  *   - Bảng tính/BOQ → editor thật (BoqScreen).
  *   - 3 loại còn lại + HTML → disabled, "Sắp có" + lý do cụ thể (SPEC-NGON-NGU-CHI-DAN).
  *
@@ -35,7 +35,7 @@ import {
 import { useT } from '@/lib/i18n';
 
 export interface PresentDocTypePickerProps {
-  /** "Tự dàn" — deck mới bắt đầu với 1 trang trắng, KHÔNG qua GenerateFlow. */
+  /** "Chỉnh tay" — deck mới bắt đầu với 1 trang trắng, KHÔNG qua GenerateFlow. */
   onChooseBlankDeck: () => void;
   /** "✨ Magic" — deck mới, mở thẳng GenerateFlow (import ảnh/text → máy dàn). */
   onChooseMagicDeck: () => void;
@@ -194,7 +194,7 @@ export function PresentDocTypePicker({
             gap: 14,
           }}
         >
-          {/* Deck — thẻ duy nhất có 2 lối vào (Tự dàn / Magic). */}
+          {/* Deck — Magic là lối mặc định; Chỉnh tay là lối biên tập từ trang trắng. */}
           <CardShell active>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent)' }}>
               <LayoutTemplate size={20} />
@@ -204,13 +204,13 @@ export function PresentDocTypePicker({
               {tr('Dàn slide kể câu chuyện thiết kế.', 'Slides that tell your design story.')}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <button type="button" onClick={onChooseBlankDeck} style={primaryBtn}>
-                <PenLine size={13} />
-                {tr('Tự dàn', 'Start blank')}
-              </button>
               <button type="button" onClick={onChooseMagicDeck} style={magicBtn}>
                 <Sparkles size={13} />
-                {tr('✨ Magic', '✨ Magic')}
+                {tr('Magic — tạo hồ sơ', 'Magic — create deck')}
+              </button>
+              <button type="button" onClick={onChooseBlankDeck} style={primaryBtn}>
+                <PenLine size={13} />
+                {tr('Chỉnh tay', 'Edit manually')}
               </button>
             </div>
           </CardShell>

@@ -16,16 +16,12 @@
   đủ, thêm ngữ cảnh MODEL/đơn vị/tờ/tỉ lệ/BIM và mở lớp BIM 2D.
 - Sơ phác tablet: nhận bút, chống tì, pan/pinch; dock có undo/redo. Tap 2/3 ngón undo/redo;
   giữ 450ms mở radial 8 lệnh. Input 10/10, gesture 15/15 và test PASS; cần test tablet thật.
-- Nắn nét Sơ phác đổi bút/ngón thành line, polyline, chữ nhật hoặc tròn chuẩn; snap 5°.
-  Nhận dạng 10/10, typecheck/toàn bộ test và preview PASS; cần nghiệm thu trên tablet thật.
 - Paper Space Pro: MODEL/PAPER thật; nhiều ô nhìn cùng một Doc, độc lập tỉ lệ/khóa, kéo/resize có
   chặn mép, không xóa ô cuối. Logic 9/9, test/preview PASS; đã sửa nút bị dock che.
 - Lưu bền Paper: một Doc duy nhất + `paperSheets` metadata nhẹ đi qua IndexedDB, `.idf`, `.ifpack`
   và backup; file cũ thiếu field vẫn mở về tờ mặc định. UI sửa số tờ, dự án, người vẽ, revision.
   IDF 45/45, IFpack 19/19, typecheck/toàn bộ test PASS sau merge. Nghiệm thu 3015: 2 viewport +
   metadata sống qua reload, console sạch; dữ liệu test đã dọn và autosave lại. Worktree đã dọn.
-- Paper Properties: mỗi ô có tâm X/Y và layer riêng; không nhân/mutate hình học. Logic 14/14,
-  typecheck và toàn bộ test PASS.
 - Xuất Paper: PDF một tờ/cả bộ đọc đúng khổ, hướng, rect, tâm, tỉ lệ và layer riêng từng ô nhìn;
   đổi Page Setup ghi vào Sheet và kẹp viewport trong giấy. Đo 5000mm ở 1:50 = 100mm; Paper 5/5,
   sheet-set 19/19, typecheck/toàn bộ test PASS.
@@ -37,6 +33,9 @@
   có safe-area. Bàn trống bỏ thẻ giới thiệu/“Vẽ mới”, chỉ còn nút Nhập; click ngoài tự đóng.
   Panel BIM cũ đè toolbar đã bỏ; số liệu BIM vẫn ở thanh Chuyên, gán cấu kiện ở Inspector.
   Icon nơi lưu đổi sang thư mục nét rõ. Preview, typecheck và toàn bộ test PASS.
+- Trình bày: Deck vào bằng Magic hoặc Chỉnh tay. Magic dùng Brand Kit; nội dung, ảnh và phong
+  cách tham khảo đều không bắt buộc. Thiếu text sinh 7 trang nháp có nhãn; thiếu ảnh có ô giữ chỗ
+  sửa được. Bốn tổ hợp input 4/4, content-deck 11/11, typecheck/toàn bộ test và preview PASS.
 
 ## Năng lực định dạng đã đo
 

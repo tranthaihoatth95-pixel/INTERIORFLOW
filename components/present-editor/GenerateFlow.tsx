@@ -4,8 +4,8 @@
  * components/present-editor/GenerateFlow.tsx — Flow MỞ ĐẦU của gợi ý bố cục (góp ý #1 & #12).
  *
  * Mạch 1 chiều, human-in-loop:
- *   1) IDLE   — nút Import ảnh nội dung (lượng lớn) → cuộn xuống paste text → đính kèm
- *               ≤5 ảnh reference HOẶC template .pptx từ thư viện → nút Generate.
+ *   1) IDLE   — nội dung + ảnh đều KHÔNG bắt buộc. Brand Kit dự án được editor nạp sẵn.
+ *               Reference là tuỳ chọn nâng cao, không phải một chặng thao tác.
  *   2) SCANNING — hiệu ứng "quét tài liệu" + mô tả ngắn máy HỌC được gì (rút từ ảnh ref
  *               bằng heuristic local analyzeReferences) & đang áp dụng.
  *   3) Sau khi quét xong → gọi onComplete(result) để container HIỆN kệ 4 cột gợi ý.
@@ -16,6 +16,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { analyzeReferences, type RefRuleSet } from '@/lib/present-editor/analyze-refs';
+import { magicBodyText } from '@/lib/present-editor/magic-input';
 import type { RefImage } from './LibraryBrowser';
 import {
   Upload,
@@ -37,6 +38,8 @@ export interface GenerateResult {
   pptxTemplate: string | null;
   /** ảnh reference đã đính (≤5) — nếu có, container dàn theo LƯỚI ảnh (region-layout). */
   attachRefs: string[];
+  /** true khi Magic dựng sườn + nội dung mẫu vì người dùng chưa cung cấp text. */
+  usesDraftCopy: boolean;
 }
 
 interface Props {
@@ -95,8 +98,8 @@ export default function GenerateFlow({ refImages, onComplete, onSkip }: Props) {
     setPhase('scanning');
     setScanNote(
       attachRefs.length
-        ? `Đang đọc ${attachRefs.length} ảnh reference để rút quy tắc bố cục…`
-        : 'Đang chuẩn bị bố cục theo nội dung…',
+        ? `Đang đọc ${attachRefs.length} ảnh tham khảo và Brand Kit…`
+        : 'Đang dựng cấu trúc hồ sơ theo Brand Kit…',
     );
     let r: RefRuleSet | null = null;
     if (attachRefs.length) {
@@ -110,7 +113,15 @@ export default function GenerateFlow({ refImages, onComplete, onSkip }: Props) {
     // để hiệu ứng quét chạy đủ 1 nhịp cho "cảm giác học", rồi bàn giao.
     const delay = attachRefs.length ? 2100 : 1200;
     setTimeout(() => {
-      onComplete({ rules: r, contentImages, bodyText, pptxTemplate, attachRefs });
+      const prepared = magicBodyText(bodyText, contentImages.length > 0);
+      onComplete({
+        rules: r,
+        contentImages,
+        bodyText: prepared.bodyText,
+        pptxTemplate,
+        attachRefs,
+        usesDraftCopy: prepared.usesDraftCopy,
+      });
     }, delay);
   }
 
@@ -129,14 +140,21 @@ export default function GenerateFlow({ refImages, onComplete, onSkip }: Props) {
     return <ScanningCard note={scanNote} rules={rules} />;
   }
 
-  const canGenerate = contentImages.length > 0 || bodyText.trim().length > 0;
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* 1) Import ảnh nội dung */}
-      <StepCard n={1} title="Ảnh nội dung để dàn vào slide">
+      <div style={magicIntro}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <Sparkles size={15} style={{ color: 'var(--accent)' }} />
+          <strong style={{ fontSize: 13, color: 'var(--t1)' }}>Magic tạo hồ sơ hoàn chỉnh</strong>
+        </div>
+        <p style={{ ...hintP, marginTop: 6 }}>
+          Brand Kit của dự án được áp dụng sẵn. Thêm dữ liệu nếu có; để trống, Magic sẽ dựng sườn có ghi chú để bạn sửa.
+        </p>
+      </div>
+
+      <InputCard title="Hình ảnh (không bắt buộc)">
         <button type="button" onClick={() => imgInput.current?.click()} style={importBtn}>
-          <Upload size={15} /> Import ảnh (chọn nhiều)
+          <Upload size={15} /> Thêm hình ảnh
         </button>
         <input ref={imgInput} type="file" accept="image/*" multiple hidden onChange={onPickContent} />
         {contentImages.length > 0 && (
@@ -159,23 +177,23 @@ export default function GenerateFlow({ refImages, onComplete, onSkip }: Props) {
         <p style={hintP}>
           <ImagePlus size={11} /> {contentImages.length} ảnh — máy sẽ dàn vào slide theo bố cục gợi ý.
         </p>
-      </StepCard>
+      </InputCard>
 
-      {/* 2) Paste nội dung text */}
-      <StepCard n={2} title="Nội dung text (paste vào)">
+      <InputCard title="Nội dung (không bắt buộc)">
         <textarea
           value={bodyText}
           onChange={(e) => setBodyText(e.target.value)}
           rows={4}
-          placeholder="Dán nội dung deck: tiêu đề, ý chính, mô tả concept…"
+          placeholder="Dán brief, tiêu đề, ý chính hoặc mô tả concept…"
           style={textArea}
         />
-      </StepCard>
+      </InputCard>
 
-      {/* 3) Đính kèm reference (≤5 ảnh) hoặc template pptx */}
-      <StepCard n={3} title="Reference để học gu (≤5 ảnh) hoặc template .pptx">
+      <details style={advancedBox}>
+        <summary style={advancedSummary}>Phong cách tham khảo · Tuỳ chọn nâng cao</summary>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
         <button type="button" onClick={() => setPickerOpen((v) => !v)} style={attachBtn}>
-          <Paperclip size={14} /> Đính kèm từ thư viện Reference
+          <Paperclip size={14} /> Chọn ảnh tham khảo
         </button>
 
         {(attachRefs.length > 0 || pptxTemplate) && (
@@ -202,7 +220,7 @@ export default function GenerateFlow({ refImages, onComplete, onSkip }: Props) {
         {pickerOpen && (
           <div style={pickerBox}>
             {refImages.length === 0 && (
-              <p style={{ ...hintP, gridColumn: '1 / -1' }}>Thư viện Reference trống. Tải ảnh ở tab Reference.</p>
+              <p style={{ ...hintP, gridColumn: '1 / -1' }}>Chưa có ảnh tham khảo trong thư viện.</p>
             )}
             {refImages.slice(0, 24).map((img) => {
               const on = attachRefs.includes(img.url);
@@ -235,22 +253,19 @@ export default function GenerateFlow({ refImages, onComplete, onSkip }: Props) {
           </div>
         )}
         <p style={hintP}>
-          <Wand2 size={11} /> Máy đọc ảnh reference → rút quy tắc bố cục · màu · nền · số ảnh (heuristic local).
+          <Wand2 size={11} /> Chỉ bổ sung phong cách; Brand Kit dự án vẫn là nhận diện chính.
         </p>
-      </StepCard>
+        </div>
+      </details>
 
       {/* Generate */}
       <button
         type="button"
         onClick={onGenerate}
-        disabled={!canGenerate}
-        style={{ ...genBtn, opacity: canGenerate ? 1 : 0.5, cursor: canGenerate ? 'pointer' : 'default' }}
+        style={genBtn}
       >
-        <Sparkles size={15} /> Generate slide deck
+        <Sparkles size={15} /> Tạo hồ sơ
       </button>
-      {!canGenerate && (
-        <p style={{ ...hintP, justifyContent: 'center' }}>Cần ít nhất 1 ảnh nội dung hoặc nội dung text.</p>
-      )}
       {onSkip && (
         <button
           type="button"
@@ -265,7 +280,7 @@ export default function GenerateFlow({ refImages, onComplete, onSkip }: Props) {
             cursor: 'pointer',
           }}
         >
-          Bỏ qua, xem mẫu có sẵn →
+          Chuyển sang chỉnh tay →
         </button>
       )}
     </div>
@@ -307,11 +322,10 @@ function ScanningCard({ note, rules }: { note: string; rules: RefRuleSet | null 
 }
 
 /* ------------------------- UI bits ------------------------- */
-function StepCard({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
+function InputCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ border: '1px solid var(--border)', borderRadius: 10, background: 'var(--card)', padding: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 9 }}>
-        <span style={stepNum}>{n}</span>
         <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t2)' }}>{title}</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>{children}</div>
@@ -319,17 +333,25 @@ function StepCard({ n, title, children }: { n: number; title: string; children: 
   );
 }
 
-const stepNum: React.CSSProperties = {
-  width: 18,
-  height: 18,
-  borderRadius: '50%',
-  display: 'grid',
-  placeItems: 'center',
+const magicIntro: React.CSSProperties = {
+  border: '1px solid var(--accent-ring)',
+  borderRadius: 12,
   background: 'var(--accent-soft)',
-  color: 'var(--accent)',
-  fontSize: 10.5,
-  fontWeight: 700,
-  flexShrink: 0,
+  padding: 12,
+};
+
+const advancedBox: React.CSSProperties = {
+  border: '1px solid var(--border)',
+  borderRadius: 10,
+  background: 'var(--card)',
+  padding: '10px 12px',
+};
+
+const advancedSummary: React.CSSProperties = {
+  cursor: 'pointer',
+  color: 'var(--t2)',
+  fontSize: 11.5,
+  fontWeight: 600,
 };
 
 const importBtn: React.CSSProperties = {

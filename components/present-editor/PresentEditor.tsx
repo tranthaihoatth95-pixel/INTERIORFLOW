@@ -1042,8 +1042,12 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
         }
         if (built.length) {
           const startIdx = ed.deck.slides.length;
+          const onlyBlankSlide =
+            ed.deck.slides.length === 1 &&
+            ed.deck.slides[0].elements.length === 0 &&
+            !ed.deck.slides[0].backgroundImage;
           const replace =
-            startIdx === 0 ||
+            startIdx === 0 || onlyBlankSlide ||
             window.confirm(
               `Dàn ${built.length} slide từ nội dung.\n\nOK = THAY toàn bộ slide hiện có.\nHuỷ = NỐI vào cuối (giữ slide cũ).`,
             );
@@ -1793,13 +1797,13 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
                 {/* 07/08 (p12): tab đổi "Magic"→"Bố cục" — một thứ một tên (chốt 01/08 §3c);
                     "Magic" giữ cho phần AI sinh bên trong LayoutShelf, không phải tên cái kệ. */}
                 <TabBtn active={tab === 'layout'} onClick={() => setTab('layout')} icon={<LayoutTemplate size={13} />}>
-                  Bố cục
+                  Thiết kế
                 </TabBtn>
                 <TabBtn active={tab === 'reference'} onClick={() => setTab('reference')} icon={<Images size={13} />}>
-                  Reference
+                  Tài nguyên
                 </TabBtn>
                 <TabBtn active={tab === 'motion'} onClick={() => setTab('motion')} icon={<Wand2 size={13} />}>
-                  Motion
+                  Hiệu ứng
                 </TabBtn>
               </div>
 
