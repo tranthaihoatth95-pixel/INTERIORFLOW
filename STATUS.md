@@ -15,7 +15,7 @@
 
 ## Vừa xong
 
-- R1 hardening: Electron chỉ bind `127.0.0.1`; lỗi kiểm tra schema DB chặn khởi động và ghi log; auto-update là opt-in; key/config chỉ trong userData. Có `npm run release:preflight` và `docs/RELEASE-CHECKLIST-INTERNAL.md`.
+- R1 hardening: Electron chỉ bind `127.0.0.1`; khi phiên bản đổi, DB + uploads được snapshot trước schema; lỗi kiểm tra schema chặn khởi động và ghi log; auto-update là opt-in; key/config chỉ trong userData. Có `npm run release:preflight` và `docs/RELEASE-CHECKLIST-INTERNAL.md`.
 - 3D Scene giữ `entityId`, `levelId`, `typeId`, provenance; `RoomEntity` là nguồn phòng ưu tiên; preview floor/ceiling được đánh dấu dẫn xuất.
 - Present: Material A3 vào editor thật và lưu `.idfp`; Deck/BOQ giữ lối vào thật; Văn bản/Video bị khoá bằng lý do năng lực, không còn CTA giả. Ma trận: `docs/OUTPUT-CAPABILITY-MATRIX-INTERNAL-2026-08-11.md`.
 - Wallpaper aura tím–lam procedural; Visual Vitals là ba quỹ đạo oval ánh sáng, tắt khi giảm chuyển động.

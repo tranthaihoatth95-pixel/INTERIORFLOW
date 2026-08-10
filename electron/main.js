@@ -129,6 +129,58 @@ function prepareWritablePaths() {
   return { userDataDir, dbUrl, dbPath };
 }
 
+// ── Snapshot an toàn trước khi đổi schema ────────────────────────────────────
+// `db push` không có migration history/rollback. Vì vậy khi phiên bản app thay đổi,
+// giữ nguyên một bản DB + uploads trước khi Prisma chạm vào dữ liệu. Không xoá hay
+// ghi đè snapshot cũ; nếu không thể tạo snapshot thì CHẶN nâng cấp thay vì liều ghi.
+const RELEASE_STATE_FILE = '.interiorflow-release-state.json';
+function releaseStatePath(userDataDir) {
+  return path.join(userDataDir, RELEASE_STATE_FILE);
+}
+
+function readReleaseState(userDataDir) {
+  try {
+    return JSON.parse(fs.readFileSync(releaseStatePath(userDataDir), 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+function writeReleaseState(userDataDir) {
+  fs.writeFileSync(
+    releaseStatePath(userDataDir),
+    JSON.stringify({ lastStartedVersion: app.getVersion(), updatedAt: new Date().toISOString() }, null, 2) + '\n',
+    'utf8',
+  );
+}
+
+function snapshotBeforeUpgrade(userDataDir, dbPath) {
+  if (!fs.existsSync(dbPath)) return; // first boot has no data to protect yet
+  const state = readReleaseState(userDataDir);
+  const currentVersion = app.getVersion();
+  if (state.lastStartedVersion === currentVersion) return;
+
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const previous = String(state.lastStartedVersion || 'unknown');
+  const snapshotDir = path.join(userDataDir, 'backups', `${stamp}-before-${previous}`);
+  try {
+    fs.mkdirSync(snapshotDir, { recursive: true });
+    for (const suffix of ['', '-wal', '-shm']) {
+      const source = `${dbPath}${suffix}`;
+      if (fs.existsSync(source)) fs.copyFileSync(source, path.join(snapshotDir, `dev.db${suffix}`));
+    }
+    const uploads = path.join(userDataDir, 'uploads');
+    if (fs.existsSync(uploads)) fs.cpSync(uploads, path.join(snapshotDir, 'uploads'), { recursive: true, errorOnExist: true });
+    fs.writeFileSync(
+      path.join(snapshotDir, 'snapshot.json'),
+      JSON.stringify({ createdAt: new Date().toISOString(), previousVersion: previous, nextVersion: currentVersion }, null, 2) + '\n',
+      'utf8',
+    );
+  } catch (error) {
+    throw new Error(`Không tạo được bản sao an toàn trước khi nâng cấp (${error.message}). Dữ liệu chưa được mở.`);
+  }
+}
+
 // ── Cấu hình người dùng: <userData>/config.json ──────────────────────────────
 // KHÔNG hardcode API key vào bộ cài. Lần đầu chạy, app tự tạo config.json từ
 // electron/config.example.json (AUTH_SECRET sinh ngẫu nhiên + persist để giữ
@@ -248,7 +300,7 @@ function runDbPush(appRoot, env, userDataDir) {
 // ── Spawn Next.js production server ───────────────────────────────────────────
 async function startNextServer() {
   const appRoot = getAppRoot();
-  const { userDataDir, dbUrl } = prepareWritablePaths();
+  const { userDataDir, dbUrl, dbPath } = prepareWritablePaths();
   resolvedPort = await findFreePort(PREFERRED_PORT);
 
   // Cấu hình user (API key, AUTH_SECRET…) đọc từ <userData>/config.json —
@@ -268,10 +320,15 @@ async function startNextServer() {
     ELECTRON_RUN_AS_NODE: '1', // để dùng binary electron như node chạy next start
   };
 
+  // Khi app version đổi, snapshot DB + uploads TRƯỚC. Lần đầu không cần snapshot.
+  snapshotBeforeUpgrade(userDataDir, dbPath);
   // Lần đầu: tạo/nâng cấp schema vào <userData>/dev.db. Nếu bước này lỗi thì
   // DỪNG khởi động; tuyệt đối không mở app rồi ghi tiếp trên trạng thái không rõ.
   // Người vận hành phải sao lưu DB trước khi cài bản nâng cấp (checklist release).
   await runDbPush(appRoot, serverEnv, userDataDir);
+  // Chỉ đánh dấu phiên bản sau khi schema pass; lần khởi động lại cùng bản không
+  // tạo thêm snapshot, còn lần update tiếp theo luôn còn một đường lùi.
+  writeReleaseState(userDataDir);
 
   // Đường tới CLI `next` trong node_modules đóng gói.
   const nextBin = path.join(appRoot, 'node_modules', 'next', 'dist', 'bin', 'next');

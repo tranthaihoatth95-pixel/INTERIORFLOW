@@ -12,8 +12,9 @@ Phạm vi: bản desktop dùng trong nội bộ. Đây là ứng dụng local-fi
 
 ## 2. Sao lưu và nâng cấp dữ liệu
 
+- [ ] Khi bản app đổi phiên bản, lần mở đầu tự tạo snapshot `backups/<thời-gian>-before-<phiên-bản>` gồm SQLite (`dev.db`, WAL/SHM nếu có) và `uploads` trước khi kiểm tra schema. Nếu không tạo được snapshot, app phải dừng; không bỏ qua.
 - [ ] Trước khi nâng cấp một máy đang dùng, đóng InteriorFlow.
-- [ ] Tạo backup nhất quán của `dev.db` bằng công cụ SQLite và lưu ngày/phiên bản; sao chép cả thư mục `uploads`.
+- [ ] Xác minh snapshot vừa tạo có DB và uploads trước khi tiếp tục nâng cấp; lưu thêm một backup độc lập cho dữ liệu công việc quan trọng.
 - [ ] Cài thử bản mới trên một bản sao dữ liệu; không thử trực tiếp trên dữ liệu công việc duy nhất.
 - [ ] Nếu app báo lỗi kiểm tra/nâng cấp schema: dừng lại, giữ nguyên DB, lấy `db-push.log`, khôi phục từ backup nếu được hướng dẫn. Không xoá DB hoặc chạy lệnh Prisma tùy tiện.
 - [ ] Quyết định rõ chính sách giữ dữ liệu khi gỡ cài đặt trước khi đưa cho người dùng.

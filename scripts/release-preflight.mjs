@@ -28,6 +28,12 @@ if (!main.includes('INTERIORFLOW_AUTO_UPDATE === \'1\'')) {
 if (!main.includes('Dữ liệu chưa được mở để tránh ghi tiếp')) {
   failures.push('Lỗi đồng bộ schema chưa dừng khởi động với thông báo rõ ràng.');
 }
+if (!main.includes('snapshotBeforeUpgrade(userDataDir, dbPath)')) {
+  failures.push('Thiếu snapshot DB + uploads trước khi kiểm tra schema của bản nâng cấp.');
+}
+if (!main.includes("path.join(userDataDir, 'backups'")) {
+  failures.push('Thiếu thư mục backup phiên bản trong userData.');
+}
 
 if (failures.length) {
   console.error('Release preflight không đạt:');
@@ -35,4 +41,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Release preflight đạt: loopback, migration failure gate, và update opt-in đã hiện diện.');
+console.log('Release preflight đạt: loopback, snapshot/migration gate, và update opt-in đã hiện diện.');
