@@ -11,7 +11,7 @@
 - **R1 nội bộ:** desktop local-first; nghiệm thu máy sạch cài/mở/lưu/nâng cấp/khôi phục; quyết định GPL/DWG theo phạm vi pháp nhân.
 - **Lõi 2D↔3D:** entity có identity/type-instance/provenance và category/level thống nhất cho Wall, Floor, Ceiling, Room.
 - **M1 3D:** tường hai điểm → push/pull → transform/snap/hotkey → floor/ceiling + lọc category; Library contract chung cho 2D–3D–BOQ–Present. Specs: `docs/SPEC-3D-MVP-MODELING-2026-08-11.md`, `docs/SPEC-MASTER-LIBRARY-3D-CONTRACT-2026-08-11.md`.
-- **Mock 3D Library:** type/instance → editor theo tác vụ → FlowRender → ảnh/BOQ/board; Reference Canvas có trace/provenance. Specs: `docs/SPEC-FLOWRENDER-ELEMENT-TOOLS-2026-08-11.md`, `docs/SPEC-REFERENCE-CANVAS-3D-2026-08-11.md`.
+- **Mock 3D Library:** type/instance → editor theo tác vụ → FlowRender → ảnh/BOQ/board; Reference Canvas có trace/provenance. Figma đã có Foundations, Spatial, Context Tools, Editors, FlowRender, Library, Tablet: `https://www.figma.com/design/NSyHdb0FZNNSbY9PeQng1b`. Specs: `docs/SPEC-FLOWRENDER-ELEMENT-TOOLS-2026-08-11.md`, `docs/SPEC-REFERENCE-CANVAS-3D-2026-08-11.md`.
 - **Vitals V1:** toàn app: 2D kiểm/vẽ; 3D recipe/preview; Present kiểm/xuất; Library tra/import; mọi ghi có undo. Spec: `docs/SPEC-VITALS-UNIFIED-2026-08-11.md`.
 - **Present/output:** chỉ mở khả năng thật; Deck/BOQ/Material A3 hoạt động, Văn bản/Video/HTML không giả.
 
@@ -24,7 +24,7 @@
 - 3D Scene giữ `entityId`, `levelId`, `typeId`, provenance; `RoomEntity` là nguồn phòng ưu tiên; preview floor/ceiling được đánh dấu dẫn xuất.
 - Present: Material A3 vào editor thật và lưu `.idfp`; Deck/BOQ giữ lối vào thật; Văn bản/Video bị khoá bằng lý do năng lực, không còn CTA giả. Ma trận: `docs/OUTPUT-CAPABILITY-MATRIX-INTERNAL-2026-08-11.md`.
 - Wallpaper aura tím–lam procedural; Visual Vitals là ba quỹ đạo oval ánh sáng, tắt khi giảm chuyển động.
-- Master Library có Khám phá/Nổi bật, spotlight theo ngữ cảnh, kệ định hướng và icon theo nhóm; tạo mới là dấu ＋. “Top tuần này” là dữ liệu minh hoạ, chưa được quảng bá là analytics.
+- Master Library có Khám phá/Nổi bật, spotlight theo ngữ cảnh, kệ/icon theo nhóm; tạo mới là dấu ＋. “Top tuần này” là dữ liệu minh hoạ, chưa là analytics.
 - Photo Editor Crop là thao tác thật, cập nhật raster/mask/document và undo/redo. Perspective/vertical correction chưa có UI.
 - 3D shell dọn nhẹ: bỏ checklist/CTA Vitals che canvas, dock nền đặc và empty state không card; mở thẳng nhóm Tạo. ViewCube kỹ thuật 76px; Tường hai điểm từ dock/phím W ghi về Doc; gizmo X/Y/Z giữ cặp tường liên kết. M1 tiếp tục.
 
