@@ -17,6 +17,8 @@
 
 ## Vừa xong
 
+- 12/08 đêm (phiên dài, 4 agent + audit mắt): **xuất 2D đạt LUẬT** (tỷ lệ bắt nấc 1:50, khung tên 9 ô sạch jargon, né nhãn v1 leader, gate CHUAN_DAU_RA trong dialog xuất — PDF sinh lại soi mắt xác nhận) · **Material Impact preview** (hỏi trước khi áp vật liệu lên selection, số thật 6 nơi tiêu thụ, undo giữ nguyên) · **TaskContext** (Task mang stage/workspace/entity + migration + chip chặng bấm nhảy deep-link, agent verify browser) · **ThinkDial 4 nấc Vitals** (Nghiên cứu nối RAG notebook thật) · **LightArc + PresenceRow** (online màu/offline trắng-đen). Sổ máy: `npm run soi:frontier` = 14 xong · 26 chờ · 0 lệch — ĐẦU PHIÊN SAU CHẠY LỆNH NÀY thay cho đọc sổ giấy. Còn treo cho phiên sau: label-ne-hinh-v2 (WC/BẾP còn cấn, dim chưa ra ngoài hình) · flip kho Library/FM · ProjectProfile/Scaffolder · Story Set v1. Luật mới trong CHUAN-DAU-RA-NGHE.md: nghiệm thu = MỞ FILE ĐẦU RA.
+
 - Handoff tổng hợp: `docs/HANDOFF-CODEX-2026-08-11.md` + `docs/HANDOFF-KIEM-TONG-2026-08-11.md`. Canvas bỏ hết nền trang trí (aura/ảnh/gradient) nhưng GIỮ pattern kỹ thuật dot grid `--dots` theo theme; minimap Tổng quan lên góc phải trên; toolbar đáy giới hạn theo bề rộng canvas.
 - R1 hardening: Electron chỉ bind `127.0.0.1`; khi phiên bản đổi, DB + uploads được snapshot trước schema; lỗi kiểm tra schema chặn khởi động và ghi log; auto-update là opt-in; key/config chỉ trong userData. Có `npm run release:preflight` và `docs/RELEASE-CHECKLIST-INTERNAL.md`.
 - Build không còn phụ thuộc Google Fonts: font UI dùng file cục bộ + fallback hệ điều hành. Cảnh báo `unpdf` còn theo dõi riêng khi nghiệm thu artifact production.
