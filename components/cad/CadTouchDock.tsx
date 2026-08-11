@@ -132,6 +132,9 @@ export default function CadTouchDock() {
         onPress={() => synthKey('z', { mod: true, shift: true })}
         title="Làm lại bước vừa hoàn tác (⌘⇧Z/Ctrl+Shift+Z)"
       />
+      {/* 11/08 — "tool khó xài, không phân loại": tách 3 lớp bằng vách — [chế độ vẽ] | [lịch
+          sử] | [chốt lệnh]. Vách thứ nhất đã có sau "Ngón vẽ"; đây là vách thứ hai. */}
+      <span style={{ width: 1, height: 26, background: 'var(--border)', margin: '0 2px' }} />
       <DockBtn
         icon={Check}
         label="Xong"

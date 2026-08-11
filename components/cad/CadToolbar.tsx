@@ -177,8 +177,11 @@ export default function CadToolbar({
   //               Sketch bỏ đi vì trên cảm ứng không có bàn phím để mà gõ phím tắt.
   // `big` (VIỆC 2) — 6 lệnh hay dùng TO hơn ~1.4 lần, luôn ≥44px dù mode nào.
   const b = (active: boolean, disabled = false, big = false) => btn(active, disabled, isPro, big);
-  const icoS = isPro ? 17 : 19;
-  const icoBig = isPro ? 20 : 24;
+  // 11/08 Hoà chê "lệch bento, không chuyên nghiệp": nút to 1.4× (62px) đứng cạnh nút 44px phá
+  // nhịp 44/34 của chính design system (§2c một-nhịp). Sketch: MỌI nút đồng 44/icon 20 — phân
+  // cấp bằng accent khi active, không bằng cỡ. Pro: 44 (big) / 36 (thường) — đúng hai nấc.
+  const icoS = isPro ? 17 : 20;
+  const icoBig = isPro ? 19 : 20;
   const rowH = btnSize(isPro, false);
   // 05/08 VIỆC 2 — helper `tip()` cũ (nhét phím tắt vào CHUỖI nhãn: "Đường (L)") đã bỏ: Tooltip
   // nay có ô `shortcut` riêng, phím tắt hiện dạng phím bấm bên phải tiêu đề thay vì lẫn vào tên.
@@ -615,8 +618,10 @@ function ModeSwitch({ mode, onChange, pro }: { mode: CadMode; onChange: (m: CadM
  * trên pill đều đi qua hàm này nên chỉ cần đổi một chỗ.
  * `big` (VIỆC 2, cùng ticket) — 6 lệnh hay dùng nhất TO hơn ~1.4 lần, luôn ≥44px dù mode nào. */
 function btnSize(pro: boolean, big = false): number {
+  // 11/08 — bỏ hệ số 1.4× (ra 62px lạc nhịp, Hoà chê "lệch bento"): big nay = nấc 44 chuẩn,
+  // thường = 44 (Sketch, đồng nhất) hoặc 36 (Pro). Hai nấc, không số lẻ.
   const base = pro ? 36 : 44;
-  return big ? Math.max(44, Math.round(base * 1.4)) : base;
+  return big ? 44 : base;
 }
 
 function btn(active: boolean, disabled = false, pro = false, big = false): React.CSSProperties {
