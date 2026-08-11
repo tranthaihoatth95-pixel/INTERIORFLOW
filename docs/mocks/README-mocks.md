@@ -246,3 +246,6 @@ Chi tiết port + nghiệm thu: `docs/M-APPLY-C-OUT.md`.
 ## ✅ THÊM 10/08 — cửa vào Trình bày
 
 - `mock-trinh-chon-ho-so-tablet-2026-08-10.html` — Thư viện hồ sơ khi dự án chưa có hồ sơ, theo gallery template: danh mục ngang Deck/A3/BOQ/Văn bản/Video → lưới mẫu → thanh xác nhận tạo từ mẫu; không dùng sidebar kỹ thuật trước khi vào editor. Tablet chuyển danh mục thành dải cuộn + thanh tạo cố định, đủ hai theme. Bản xem concept không phản ánh trạng thái hoàn tất editor trong app.
+
+## ✅ THÊM 11/08 — Chat nhóm + AI tham vấn
+- `mock-chat-nhom-ai-2026-08-11.html` — Kênh chat dự án 3 cột kiểu NotebookLM (Hoà đặt bài 11/08): TRÁI nguồn cho AI (checkbox) · GIỮA chat nhóm (tin AI = glyph Vitals + viền accent, @Vitals mới nói; card DWG tiến độ ref #10 → kết quả "Mở trong Thiết kế 2D"; avatar online màu/offline grayscale; dải đang họp thu nhỏ; voice capsule ref #4) · PHẢI Chưng cất AI gom, người duyệt. Token globals + 2 theme (phím D), khung 1440. Spec nguồn: `docs/SPEC-CHAT-NHOM-AI-2026-08-11.md` (id chat-ai-notebook).

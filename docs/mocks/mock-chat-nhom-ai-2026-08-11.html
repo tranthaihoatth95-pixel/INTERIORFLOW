@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · Chat nhóm + AI tham vấn — mock hợp đồng</title>
+<!--
+  MOCK 11/08/2026 · STAGE CHAT NHÓM + AI THAM VẤN (bố cục NotebookLM, Hoà chỉ định) — COWORK-UI dựng.
+  Nguồn: CHOT-VITALS-LM-CHAT-2026-08-02 (AI riêng + @AI trong nhóm · AI chỉ nói khi được gọi ·
+  nhận diện glyph, KHÔNG giả người) · REF-VISUAL #4 (voice capsule, CẤM orb) · #10 (upload card
+  + progress phát sáng) · SPEC-NGON-NGU-CHI-DAN (nhãn ≤12 từ) · PHIEU-CHONG-RUI-RO-5-CHU-DE phiếu 5.
+  Spec kèm: SPEC-CHAT-NHOM-AI-2026-08-11.md (id: chat-ai-notebook).
+  3 cột: TRÁI nguồn cho AI đọc (checkbox) · GIỮA luồng chat nhóm · PHẢI "Chưng cất" AI gom, người duyệt.
+  Khung 42/214/236/26 giữ đúng AppShell 6 ổ. Container 1440×900, px cố định.
+  PLACEHOLDER: nội dung tin nhắn/nguồn = giả lập; avatar = chữ cái tô màu (ảnh thật khi port —
+  online = ảnh MÀU, offline = grayscale, mock mô phỏng bằng filter). Panel họp CHỈ là dải thu nhỏ
+  đang-họp (avatar + thời lượng + chấm đỏ ghi âm) — màn video call đầy đủ NGOÀI PHẠM VI.
+  Token chép nguyên app/globals.css · 2 theme (phím D) · KHÔNG hex tự chế · nhãn chặng:
+  Thiết kế 2D · Thiết kế 3D · Trình chiếu (theo đặt bài 11/08).
+-->
+<style>
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --accent-warm:#c79a63;
+  --radius-sm:10px; --radius-md:14px; --radius-lg:20px; --radius-xl:28px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --blur:22px; --blur-strong:40px;
+  --ease-apple:cubic-bezier(0.32,0.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --tap:32px; --row:28px; --gap:8px;
+}
+:root,:root[data-theme='dark']{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --dots:#26262d;
+  --mat-header:rgba(20,20,23,.72); --mat-panel:rgba(20,20,23,.68);
+  --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --dots:#ddd8ce;
+  --mat-header:rgba(250,248,244,.72); --mat-panel:rgba(250,248,244,.7);
+  --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+  --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+}
+@media (hover:none) and (pointer:coarse){ :root{ --tap:44px; --row:44px; --gap:12px } }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--t1);overflow:hidden;display:flex;align-items:flex-start;justify-content:center;
+  font:var(--fw-normal) var(--fs-xs)/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  transition:background-color var(--dur-base) var(--ease-apple),color var(--dur-base) var(--ease-apple)}
+svg{display:block}
+button{font:inherit;color:inherit}
+.i{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.i.s{width:13px;height:13px}
+:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px;border-radius:var(--radius-sm)}
+.num{font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,monospace;font-size:var(--fs-2xs)}
+.pin{position:absolute;z-index:60;display:flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700}
+.app{display:flex;flex-direction:column;width:1440px;height:900px;flex:none;background:var(--bg);
+  border:1px solid var(--border);overflow:hidden}
+
+/* ① Header 42 — kênh + avatar dãy + toggle AI */
+.top{height:42px;flex:none;display:flex;align-items:center;gap:10px;padding:0 10px;
+  background:var(--mat-header);backdrop-filter:saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));border-bottom:1px solid var(--mat-hairline)}
+.logo{width:24px;height:24px;border-radius:var(--radius-sm);background:var(--t1);color:var(--bg);
+  display:flex;align-items:center;justify-content:center;font-size:var(--fs-2xs);font-weight:800;border:0;cursor:pointer}
+.doc{display:flex;align-items:center;gap:5px;padding:5px 9px;border:0;background:transparent;
+  border-radius:var(--radius-sm);color:var(--t1);font-size:var(--fs-xs);cursor:pointer}
+.doc:hover{background:var(--hover)}
+/* avatar dãy: online = MÀU · offline = grayscale */
+.avrow{display:flex;align-items:center;margin-left:4px}
+.av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:#fff;border:2px solid var(--panel);margin-left:-7px;position:relative}
+.av:first-child{margin-left:0}
+.av.off{filter:grayscale(1);opacity:.62}
+.av.more{background:var(--field);color:var(--t3);filter:none;opacity:1}
+.av .dot{position:absolute;right:-1px;bottom:-1px;width:8px;height:8px;border-radius:50%;
+  background:var(--success);border:2px solid var(--panel)}
+/* toggle AI tham vấn — hình học Apple §2d: track 22/r11, núm 18 */
+.aitg{display:flex;align-items:center;gap:7px;margin-left:auto;padding:4px 9px;border:1px solid var(--border);
+  background:var(--field);border-radius:var(--radius-sm);cursor:pointer;font-size:var(--fs-2xs);color:var(--t2)}
+.aitg .gl{color:var(--accent)}
+.sw{width:36px;height:22px;border-radius:11px;background:var(--accent);position:relative;flex:none;
+  transition:background var(--dur-fast) var(--ease-apple)}
+.sw::after{content:"";position:absolute;top:2px;left:16px;width:18px;height:18px;border-radius:50%;background:#fff;
+  transition:left var(--dur-fast) var(--ease-apple)}
+.aitg.off .sw{background:var(--border-strong)}
+.aitg.off .sw::after{left:2px}
+.aitg b{font-weight:var(--fw-semi);color:var(--t1)}
+.hbtn{height:28px;display:flex;align-items:center;gap:6px;padding:0 11px;border-radius:var(--radius-sm);
+  font-size:var(--fs-2xs);cursor:pointer;border:1px solid var(--border);background:var(--field);color:var(--t2)}
+.hbtn:hover{background:var(--hover)}
+.mid{flex:1;display:flex;min-height:0}
+
+/* ② Cột TRÁI 214 — nguồn cho AI đọc (kiểu NotebookLM) */
+.side{width:214px;flex:none;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sech{height:24px;flex:none;display:flex;align-items:center;padding:0 10px;color:var(--t4);font-size:var(--fs-2xs);
+  font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-top:7px}
+.sech .n{margin-left:auto;font-variant-numeric:tabular-nums}
+.list{flex:1;overflow-y:auto;padding:4px 8px 8px}
+.src{display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border-radius:var(--radius-sm);cursor:pointer;
+  border:1px solid transparent}
+.src:hover{background:var(--hover)}
+.src.on{background:var(--accent-soft);border-color:transparent}
+.ck{width:15px;height:15px;flex:none;margin-top:1px;border-radius:5px;border:1.5px solid var(--border-strong);
+  display:flex;align-items:center;justify-content:center;color:#fff}
+.src.on .ck{background:var(--accent);border-color:var(--accent)}
+.src .m{min-width:0}
+.src .nm{display:block;color:var(--t1);font-size:var(--fs-xs);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.src .ty{display:block;color:var(--t4);font-size:var(--fs-2xs);margin-top:1px}
+.sideft{flex:none;border-top:1px solid var(--mat-hairline);padding:8px;display:flex;flex-direction:column;gap:6px}
+.sideft button{height:32px;border-radius:9px;font-size:var(--fs-xs);display:flex;align-items:center;
+  justify-content:center;gap:6px;cursor:pointer;border:0}
+.add{background:var(--accent-soft);color:var(--accent);font-weight:var(--fw-semi)}
+.srcnote{font-size:9.5px;color:var(--t4);line-height:1.45;padding:0 2px}
+
+/* ③ Cột GIỮA — luồng chat */
+.stage{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+/* dải ĐANG HỌP thu nhỏ — không phải màn video call */
+.meet{flex:none;display:flex;align-items:center;gap:10px;height:38px;margin:8px 14px 0;padding:0 12px;
+  background:var(--mat-card);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+  border:1px solid var(--mat-hairline);border-radius:var(--radius-md);box-shadow:var(--shadow-node);
+  font-size:var(--fs-2xs);color:var(--t2)}
+.rec{width:8px;height:8px;border-radius:50%;background:var(--danger);flex:none;animation:blink 1.6s infinite}
+@keyframes blink{0%,100%{transform:scale(1)}50%{transform:scale(.6)}}
+.meet .join{margin-left:auto;height:24px;padding:0 11px;border:0;border-radius:8px;background:var(--accent);
+  color:#fff;font-weight:var(--fw-semi);font-size:var(--fs-2xs);cursor:pointer}
+.flow{flex:1;overflow-y:auto;padding:12px 18px 6px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin}
+.day{align-self:center;font-size:var(--fs-2xs);color:var(--t4);background:var(--field);padding:2px 10px;
+  border-radius:99px}
+.msg{display:flex;gap:9px;max-width:640px}
+.msg .av{width:28px;height:28px;flex:none;margin-left:0;border:0}
+.msg .bd{min-width:0}
+.msg .who{display:flex;align-items:baseline;gap:7px;margin-bottom:2px}
+.msg .who b{font-size:var(--fs-xs);font-weight:var(--fw-semi)}
+.msg .who span{font-size:var(--fs-2xs);color:var(--t4)}
+.bub{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-md);padding:7px 11px;
+  color:var(--t2);font-size:var(--fs-xs);line-height:1.5}
+.bub .at{color:var(--accent);font-weight:var(--fw-semi)}
+/* tin AI — glyph Vitals + viền accent nhạt, KHÔNG avatar robot, không giả người */
+.msg.ai .glyph{width:28px;height:28px;flex:none;border-radius:50%;background:var(--accent-soft);
+  display:flex;align-items:center;justify-content:center;color:var(--accent)}
+.msg.ai .bub{border-color:var(--accent-ring);background:color-mix(in srgb,var(--accent) 6%,var(--card));color:var(--t1)}
+.msg.ai .who b{color:var(--accent)}
+.msg.ai .tagai{font-size:9.5px;color:var(--t4);border:1px solid var(--border);border-radius:99px;padding:0 6px}
+.cite{display:inline-flex;align-items:center;gap:4px;margin:5px 5px 0 0;padding:2px 8px;border-radius:99px;
+  background:var(--field);border:1px solid var(--border);font-size:9.5px;color:var(--t3);cursor:pointer}
+.cite:hover{background:var(--hover);color:var(--t1)}
+.cite .i{width:10px;height:10px}
+/* card file DWG — ref #10: kính · badge loại · cung tiến độ phát sáng nhẹ */
+.fcard{width:330px;background:var(--mat-card);backdrop-filter:blur(var(--blur));
+  -webkit-backdrop-filter:blur(var(--blur));border:1px solid var(--mat-hairline);border-radius:var(--radius-md);
+  box-shadow:var(--shadow-node);padding:10px 12px;display:flex;align-items:center;gap:11px}
+.fbad{width:38px;height:38px;flex:none;border-radius:var(--radius-sm);background:var(--field);
+  border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:var(--t3)}
+.fbad em{font-style:normal;font-size:8.5px;font-weight:700;letter-spacing:.05em}
+.fcard .fm{flex:1;min-width:0}
+.fcard .fn{display:block;color:var(--t1);font-size:var(--fs-xs);font-weight:var(--fw-semi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fcard .fs{display:block;color:var(--t4);font-size:var(--fs-2xs);margin-top:1px}
+.ring{width:34px;height:34px;flex:none;position:relative}
+.ring svg{width:34px;height:34px;transform:rotate(-90deg)}
+.ring .tr{stroke:var(--border);fill:none;stroke-width:3}
+.ring .pr{stroke:var(--accent);fill:none;stroke-width:3;stroke-linecap:round;
+  filter:drop-shadow(0 0 4px var(--accent-ring))}
+.ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:8.5px;font-weight:700;color:var(--t2);font-variant-numeric:tabular-nums}
+/* card kết quả sau khi trích xong */
+.fdone{border-color:transparent;outline:1px solid color-mix(in srgb,var(--success) 45%,transparent)}
+.fdone .ok{width:34px;height:34px;flex:none;border-radius:50%;background:color-mix(in srgb,var(--success) 16%,var(--panel));
+  color:var(--success);display:flex;align-items:center;justify-content:center}
+.fdone .open{height:26px;padding:0 10px;border:0;border-radius:8px;background:var(--accent);color:#fff;
+  font-size:var(--fs-2xs);font-weight:var(--fw-semi);cursor:pointer;flex:none}
+/* thanh nhập — text + voice capsule (ref #4) + gọi họp */
+.inbar{flex:none;display:flex;align-items:center;gap:8px;margin:6px 14px 10px;padding:6px 8px;
+  background:var(--mat-panel);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+  border:1px solid var(--mat-hairline);border-radius:var(--radius-lg);box-shadow:var(--shadow-node)}
+.inbar input{flex:1;height:30px;border:0;background:transparent;color:var(--t1);font:inherit;outline:none;padding:0 6px}
+.inbar input::placeholder{color:var(--t4)}
+.ib{width:30px;height:30px;flex:none;border:0;border-radius:10px;background:transparent;color:var(--t3);
+  display:flex;align-items:center;justify-content:center;cursor:pointer}
+.ib:hover{background:var(--hover);color:var(--t1)}
+/* voice capsule: ✕ · waveform · pause — KHÔNG orb */
+.voice{height:30px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;border:0;cursor:pointer;
+  border-radius:99px;background:var(--accent-soft);color:var(--accent)}
+.wave{display:flex;align-items:center;gap:2px;height:14px}
+.wave i{width:2.5px;border-radius:2px;background:currentColor;display:block}
+.send{width:30px;height:30px;flex:none;border:0;border-radius:10px;background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;cursor:pointer}
+.send:hover{background:var(--accent-strong)}
+
+/* ④ Cột PHẢI 236 — Chưng cất (AI gom · người duyệt) */
+.insp{width:236px;flex:none;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column}
+.ihead{height:34px;flex:none;display:flex;align-items:center;gap:7px;padding:0 12px;border-bottom:1px solid var(--mat-hairline)}
+.ihead h2{margin:0;font-size:var(--fs-sm);font-weight:var(--fw-semi)}
+.ihead .gl{color:var(--accent)}
+.ibody{flex:1;overflow-y:auto}
+.grp2{padding:11px 12px;border-bottom:1px solid var(--mat-hairline)}
+.grp2 h4{margin:0 0 8px;font-size:var(--fs-2xs);font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t4)}
+.pt{display:flex;gap:7px;padding:3px 0;font-size:var(--fs-xs);color:var(--t2);line-height:1.5}
+.pt::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent);flex:none;margin-top:6px}
+.task{display:flex;align-items:flex-start;gap:8px;padding:6px 0;font-size:var(--fs-xs);color:var(--t2)}
+.task .ck{margin-top:2px}
+.task .as{color:var(--accent);font-weight:var(--fw-semi)}
+.task .dl{color:var(--t4);font-size:var(--fs-2xs)}
+.dec{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;
+  font-size:var(--fs-xs);color:var(--t1);line-height:1.5}
+.dec .by{font-size:var(--fs-2xs);color:var(--t4);margin-top:3px}
+.drow{display:flex;gap:6px;margin-top:7px}
+.dbtn{flex:1;height:28px;border:0;border-radius:9px;font-size:var(--fs-2xs);font-weight:var(--fw-semi);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
+.dbtn.ok{background:var(--accent);color:#fff}
+.dbtn.sec{background:var(--field);color:var(--t2);border:1px solid var(--border)}
+.hint{font-size:9.5px;color:var(--t4);line-height:1.45;margin-top:7px}
+
+/* ⑥ Status 26 */
+.foot{height:26px;flex:none;display:flex;align-items:center;gap:14px;padding:0 12px;background:var(--panel);
+  border-top:1px solid var(--border);font-size:var(--fs-2xs);color:var(--t4)}
+.foot .r{margin-left:auto;display:flex;gap:14px}
+.vt{display:flex;align-items:center;gap:5px;color:var(--t3)}
+.vtd{width:7px;height:7px;border-radius:2px;background:var(--success)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.1s!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <button class="logo">IF</button>
+    <button class="doc">Căn hộ Thảo Điền · #trao-đổi-thiết-kế<svg class="i s" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+
+    <!-- ② avatar dãy: online = MÀU (chấm xanh) · offline = grayscale · tối đa 5 + "+3" -->
+    <div class="avrow" style="position:relative"><span class="pin" style="top:-9px;left:-9px">2</span>
+      <span class="av" style="background:#6a57f5">HO<span class="dot"></span></span>
+      <span class="av" style="background:var(--accent-warm)">LI<span class="dot"></span></span>
+      <span class="av" style="background:#46b876">NA<span class="dot"></span></span>
+      <span class="av off" style="background:#6a57f5">TU</span>
+      <span class="av off" style="background:var(--accent-warm)">MI</span>
+      <span class="av more">+3</span>
+    </div>
+
+    <!-- ① toggle AI tham vấn: BẬT = AI được gọi bằng @Vitals; TẮT = AI im hoàn toàn -->
+    <button class="aitg" title="Tắt thì AI im hoàn toàn" style="position:relative"><span class="pin" style="top:-9px;left:-9px">1</span>
+      <svg class="i s gl" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5"/><ellipse cx="12" cy="12" rx="9" ry="4.5" transform="rotate(-25 12 12)"/></svg>
+      AI tham vấn <b>BẬT</b><span class="sw"></span>
+    </button>
+    <button class="hbtn"><svg class="i s" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Tìm trong kênh</button>
+  </header>
+
+  <div class="mid">
+
+    <!-- ③ CỘT TRÁI — nguồn cho AI đọc (kiểu NotebookLM) -->
+    <aside class="side" style="position:relative"><span class="pin" style="top:8px;right:8px">3</span>
+      <div class="sech">Nguồn cho AI<span class="n">4/6</span></div>
+      <div class="list">
+        <div class="src on"><span class="ck"><svg class="i s" viewBox="0 0 24 24" style="width:10px;height:10px"><path d="M4 12l5 5L20 6"/></svg></span>
+          <span class="m"><span class="nm">Đề bài · Brief khách</span><span class="ty">Văn bản · 03/08</span></span></div>
+        <div class="src on"><span class="ck"><svg class="i s" viewBox="0 0 24 24" style="width:10px;height:10px"><path d="M4 12l5 5L20 6"/></svg></span>
+          <span class="m"><span class="nm">MB-01 · Mặt bằng tầng trệt</span><span class="ty">Bản vẽ · Thiết kế 2D</span></span></div>
+        <div class="src on"><span class="ck"><svg class="i s" viewBox="0 0 24 24" style="width:10px;height:10px"><path d="M4 12l5 5L20 6"/></svg></span>
+          <span class="m"><span class="nm">Quyết định đã chốt · 7 mục</span><span class="ty">Sổ chốt dự án</span></span></div>
+        <div class="src on"><span class="ck"><svg class="i s" viewBox="0 0 24 24" style="width:10px;height:10px"><path d="M4 12l5 5L20 6"/></svg></span>
+          <span class="m"><span class="nm">Moodboard phòng khách</span><span class="ty">Ảnh · Thiết kế 3D</span></span></div>
+        <div class="src"><span class="ck"></span>
+          <span class="m"><span class="nm">BOQ-01 · Dự toán</span><span class="ty">Bảng tính · Trình chiếu</span></span></div>
+        <div class="src"><span class="ck"></span>
+          <span class="m"><span class="nm">Ghi âm họp 05/08</span><span class="ty">Âm thanh · 42 phút</span></span></div>
+      </div>
+      <div class="sideft">
+        <div class="srcnote">AI chỉ đọc nguồn được tick. Trả lời luôn ghi rõ lấy từ đâu.</div>
+        <button class="add"><svg class="i s" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Thêm nguồn</button>
+      </div>
+    </aside>
+
+    <!-- CỘT GIỮA — luồng chat nhóm -->
+    <main class="stage">
+
+      <!-- ⑦ dải ĐANG HỌP thu nhỏ — avatar dãy + thời lượng + chấm đỏ đang ghi âm -->
+      <div class="meet" style="position:relative"><span class="pin" style="top:-9px;left:-9px">7</span>
+        <span class="rec"></span><b style="color:var(--t1)">Đang họp</b>
+        <span class="avrow" style="margin-left:2px">
+          <span class="av" style="width:22px;height:22px;font-size:8.5px;background:#6a57f5">HO</span>
+          <span class="av" style="width:22px;height:22px;font-size:8.5px;background:var(--accent-warm)">LI</span>
+          <span class="av" style="width:22px;height:22px;font-size:8.5px;background:#46b876">NA</span>
+        </span>
+        <span class="num">12:34</span>
+        <span style="color:var(--t4)">đang ghi âm — biên bản tự về Chưng cất</span>
+        <button class="join">Vào họp</button>
+      </div>
+
+      <div class="flow">
+        <span class="day">Hôm nay · 11/08</span>
+
+        <div class="msg">
+          <span class="av" style="background:var(--accent-warm)">LI</span>
+          <div class="bd">
+            <div class="who"><b>Linh</b><span>09:02</span></div>
+            <div class="bub">Khách vừa gửi hiện trạng mới, mình thả vào đây — mọi người xem giúp phần bếp.</div>
+          </div>
+        </div>
+
+        <!-- ④ card file DWG đang trích — ref #10: badge loại + cung tiến độ phát sáng % -->
+        <div class="msg">
+          <span class="av" style="background:var(--accent-warm)">LI</span>
+          <div class="bd">
+            <div class="fcard" style="position:relative"><span class="pin" style="top:-9px;left:-9px">4</span>
+              <span class="fbad"><svg class="i s" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg><em>DWG</em></span>
+              <span class="fm"><span class="fn">hien-trang-tang-tret.dwg</span><span class="fs">8,4 MB · đang trích tường và phòng</span></span>
+              <span class="ring"><svg viewBox="0 0 34 34"><circle class="tr" cx="17" cy="17" r="14"/><circle class="pr" cx="17" cy="17" r="14" stroke-dasharray="88" stroke-dashoffset="26"/></svg><b>70%</b></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ⑤ card kết quả khi xong — mở đúng chặng -->
+        <div class="msg">
+          <span class="av" style="background:var(--accent-warm)">LI</span>
+          <div class="bd">
+            <div class="fcard fdone" style="position:relative"><span class="pin" style="top:-9px;left:-9px">5</span>
+              <span class="ok"><svg class="i" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></span>
+              <span class="fm"><span class="fn">hien-trang-tang-tret.dwg</span><span class="fs">Đã trích 42 tường · 12 phòng</span></span>
+              <button class="open">Mở trong Thiết kế 2D</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="msg">
+          <span class="av" style="background:#46b876">NA</span>
+          <div class="bd">
+            <div class="who"><b>Nam</b><span>09:11</span></div>
+            <div class="bub">Bếp hiện trạng hẹp hơn bản cũ. <span class="at">@Vitals</span> lối đi giữa đảo bếp và tủ còn đạt chuẩn không?</div>
+          </div>
+        </div>
+
+        <!-- ⑥ tin AI — glyph Vitals + viền accent nhạt + trích nguồn; chỉ nói khi được gọi -->
+        <div class="msg ai">
+          <span class="glyph" style="position:relative"><span class="pin" style="top:-9px;left:-9px">6</span>
+            <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5"/><ellipse cx="12" cy="12" rx="9" ry="4.5" transform="rotate(-25 12 12)"/></svg>
+          </span>
+          <div class="bd">
+            <div class="who"><b>Vitals</b><span class="tagai">AI · trả lời khi được gọi</span><span>09:11</span></div>
+            <div class="bub">Khoảng hở đo trên bản vẽ mới là 880. Chuẩn lối đi giữa hai mép bếp cần từ 900 — thiếu 20. Dời đảo bếp về trái 20 là đạt, không chạm cột.</div>
+            <div>
+              <span class="cite"><svg class="i" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>MB-01 · Mặt bằng tầng trệt</span>
+              <span class="cite"><svg class="i" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Quyết định đã chốt · mục 4</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="msg">
+          <span class="av" style="background:#6a57f5">HO<span class="dot" style="border-color:var(--bg)"></span></span>
+          <div class="bd">
+            <div class="who"><b>Hoà</b><span>09:14</span></div>
+            <div class="bub">OK, chốt dời đảo bếp 20 về trái. Linh nhận việc này nhé, xong trước thứ năm.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑧ thanh nhập: text + voice capsule (ref #4, KHÔNG orb) + Gọi họp -->
+      <div class="inbar" style="position:relative"><span class="pin" style="top:-9px;left:-9px">8</span>
+        <button class="ib" title="Đính kèm tệp"><svg class="i" viewBox="0 0 24 24"><path d="M21.4 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg></button>
+        <input type="text" placeholder="Nhắn nhóm — gõ @Vitals để hỏi AI, kéo tệp vào đây">
+        <button class="voice" title="Nói thay vì gõ">
+          <svg class="i s" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          <span class="wave"><i style="height:5px"></i><i style="height:11px"></i><i style="height:14px"></i><i style="height:8px"></i><i style="height:12px"></i><i style="height:5px"></i></span>
+          <svg class="i s" viewBox="0 0 24 24"><path d="M10 5v14M14 5v14"/></svg>
+        </button>
+        <button class="ib" title="Gọi họp"><svg class="i" viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></button>
+        <button class="send" title="Gửi"><svg class="i s" viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button>
+      </div>
+    </main>
+
+    <!-- ⑨ CỘT PHẢI 236 — Chưng cất: AI gom · người duyệt -->
+    <aside class="insp">
+      <div class="ihead" style="position:relative"><span class="pin" style="top:8px;right:8px">9</span>
+        <svg class="i s gl" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5"/><ellipse cx="12" cy="12" rx="9" ry="4.5" transform="rotate(-25 12 12)"/></svg>
+        <h2>Chưng cất</h2>
+      </div>
+      <div class="ibody">
+        <div class="grp2">
+          <h4>Điểm chính hôm nay</h4>
+          <div class="pt">Hiện trạng mới: bếp hẹp hơn bản cũ 120.</div>
+          <div class="pt">Lối đi đảo bếp 880 — thiếu 20 so chuẩn.</div>
+          <div class="pt">Khách muốn giữ vị trí cột giữa phòng.</div>
+        </div>
+        <div class="grp2">
+          <h4>Việc phát sinh</h4>
+          <div class="task"><span class="ck"></span><span>Dời đảo bếp 20 về trái — <span class="as">@Linh</span> <span class="dl">· thứ năm</span></span></div>
+          <div class="task"><span class="ck"></span><span>Đo lại thông thủy cửa bếp — <span class="as">@Nam</span></span></div>
+          <div class="hint">Tick để tạo việc thật, gắn kèm đoạn chat làm ngữ cảnh.</div>
+        </div>
+        <div class="grp2">
+          <h4>Quyết định chờ duyệt</h4>
+          <div class="dec">Dời đảo bếp 20mm về trái để đạt chuẩn lối đi.
+            <div class="by">AI gom từ trao đổi 09:11–09:14 · Hoà chốt miệng</div>
+            <div class="drow">
+              <button class="dbtn ok"><svg class="i s" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg>Ghi vào sổ chốt</button>
+              <button class="dbtn sec">Sửa</button>
+            </div>
+          </div>
+          <div class="hint">AI chỉ gom nháp — chưa ai duyệt thì chưa vào sổ chốt dự án.</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ⑥ Status 26 -->
+  <footer class="foot">
+    <span>3 người đang xem</span>
+    <span style="color:var(--warning)">1 quyết định chờ duyệt</span>
+    <div class="r">
+      <span class="num">4/6 nguồn đang mở cho AI</span>
+      <span class="vt"><span class="vtd"></span>Vitals</span>
+      <span>Đã lưu 09:15</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+addEventListener('keydown',e=>{
+  if(e.key.toLowerCase()==='d'){const r=document.documentElement;r.dataset.theme=r.dataset.theme==='light'?'dark':'light'}
+});
+</script>
+</body>
+</html>
