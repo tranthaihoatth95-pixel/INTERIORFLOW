@@ -11,7 +11,7 @@
 - **R1 nội bộ:** desktop local-first; nghiệm thu máy sạch cài/mở/lưu/nâng cấp/khôi phục; quyết định GPL/DWG theo phạm vi pháp nhân.
 - **Lõi 2D↔3D:** entity có identity/type-instance/provenance và category/level thống nhất cho Wall, Floor, Ceiling, Room.
 - **M1 3D:** tường hai điểm → push/pull → transform/snap/hotkey → floor/ceiling + lọc category; Edit Mesh là giai đoạn sau. Spec: `docs/SPEC-3D-MVP-MODELING-2026-08-11.md`.
-- **Vitals V1:** một cửa vào ở status bar; selection-aware; mô tả → recipe → preview → apply/undo cho lệnh 3D có thật. Spec: `docs/SPEC-VITALS-UNIFIED-2026-08-11.md`.
+- **Vitals V1:** toàn app: 2D kiểm/vẽ; 3D recipe/preview; Present kiểm/xuất; Library tra/import; mọi ghi có undo. Spec: `docs/SPEC-VITALS-UNIFIED-2026-08-11.md`.
 - **Present/output:** chỉ mở khả năng thật; Deck/BOQ/Material A3 hoạt động, Văn bản/Video/HTML không giả.
 
 ## Vừa xong

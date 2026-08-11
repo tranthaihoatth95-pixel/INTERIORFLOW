@@ -102,6 +102,74 @@ Chỉ gửi property cần cho công việc hiện tại. Vitals đọc Brand Ki
 
 Gợi ý là các action chip có ý nghĩa, không phải danh sách lời mời dài. Chỉ hiện 2–3 gợi ý phù hợp với selection hiện thời.
 
+### 7.1. Thiết kế 2D — trợ lý bản vẽ, không tự vẽ mơ hồ
+
+Vitals ở 2D không được biến CAD thành một ô chat. Người dùng vẫn vẽ bằng công cụ chuẩn, snap, layer và phím tắt; Vitals chỉ làm ba việc mà CAD truyền thống làm chậm: **đọc bản vẽ, chuẩn bị lệnh chính xác và kiểm dữ liệu sau khi vẽ**.
+
+| Tình huống | Vitals nhìn thấy | Kết quả hợp lệ |
+|---|---|---|
+| Chưa chọn gì | Doc, tầng active, template và cảnh báo hiện có | “Bản vẽ chưa có thang tỷ lệ” / “Bắt đầu bằng phòng, tường hay import?” |
+| Chọn phòng | Chu vi, diện tích, nhãn, cửa, lớp hoàn thiện và lỗi liên quan | Checklist phòng, đặt room tag/dimension hoặc mở lệnh phù hợp |
+| Chọn tường/cửa/kích thước | Type, chuỗi hình học, độ dày, level và quan hệ liền kề | Một `CadProposal`: đổi type, đặt kích thước, thêm opening hoặc sửa label |
+| Chọn nhiều đối tượng | Bộ selection và layer | Nhóm, phân layer, đổi style/hatch, kiểm naming — luôn preview phạm vi bị đổi |
+| Không có bản vẽ | Không suy ra được mặt bằng | Empty state cho “Mô tả không gian”, “Nhập DXF/DWG”, “Chọn mẫu phòng”; mỗi đường mở công cụ thật |
+
+`CadProposal` phải cùng tinh thần với GeometryProposal: có `targetIds`, giá trị trước/sau, giả định, warning và preview highlight trên bản vẽ. Ví dụ, “tạo phòng ngủ 3,6 × 4,2 m” không tự bắn ra một bản vẽ hoàn chỉnh; Vitals đưa ra đường bao, lưới/snap đang dùng và layer đích để người dùng duyệt trước.
+
+Các tác vụ ưu tiên:
+
+1. **Kiểm dữ liệu:** phòng không kín, thiếu nhãn/tầng, kích thước mâu thuẫn, vùng hoàn thiện chưa có `matId`.
+2. **Chuẩn bị lệnh:** đặt dimension, room tag, hatch, layer, opening và cấu kiện đã có engine thật.
+3. **Đối chiếu:** trả lời “phòng này bao nhiêu m²?”, “những phòng nào dùng cùng sàn?” từ Doc hiện hành; số tiêu chuẩn chỉ trả khi có nguồn.
+4. **Chuyển sang 3D không xuất file:** nói rõ entity nào sẽ được dùng, nhưng không dựng một model thứ hai. Luật một Doc luôn giữ nguyên.
+
+Vitals không được tự “sửa cả bản vẽ cho đẹp”, tự chọn thickness theo cảm tính, tự đổi layer hàng loạt khi không có preview, hoặc gọi một tường/vùng không được selection xác định. Những thao tác lớn phải có bảng thay đổi dạng: `12 tường sẽ đổi từ 100 → 120 mm · Xem trên bản vẽ · Áp dụng`.
+
+### 7.2. Trình bày — người kiểm nhịp và tính nhất quán, không phải người làm hộ một bộ hồ sơ
+
+Ở Trình bày, Vitals đứng giữa **nội dung dự án, editor đúng loại và output thật**. Nó không vẽ mơ hồ lên slide canvas rồi gọi đó là “sinh hồ sơ”; mỗi đề xuất phải đi vào editor có thật: Deck, Material A3, BOQ, Văn bản hoặc Video.
+
+| Loại hồ sơ | Vitals được giúp | Preview/điểm dừng bắt buộc |
+|---|---|---|
+| **Deck** | Kiểm mạch câu chuyện, trùng ý, hierarchy, Brand Kit, số liệu giữa slide và Doc | Outline/slide diff; apply từng slide hoặc cả nhóm; luôn undo |
+| **Material board** | Gom asset đã có quyền dùng, kiểm mã vật liệu/ghi chú, gợi bố cục theo khổ | Board preview; item thiếu nguồn/`matId` bị gắn cờ, không tự thay asset |
+| **BOQ** | Đối chiếu bảng với diện tích/cấu kiện trong Doc, chỉ ô thiếu/không khớp | Chỉ hiện cell diff và công thức/nguồn; không tự bịa đơn giá/NCC |
+| **Văn bản** | Điền dữ liệu dự án vào template, kiểm placeholder, viết lại đoạn ngắn theo giọng đã chọn | Track changes / preview đoạn; chỉ mở khi document editor có thật |
+| **Video dựng** | Lập beat sheet, gợi nhịp dựng/titles từ footage có sẵn | Shot list/timeline preview; không giả render 3D hay video editor chưa có |
+
+Luồng deck điển hình: chọn slide → `Hỏi Vitals về slide này` → Vitals trả về một nhận định có căn cứ, ví dụ “Slide này đang có 4 ý ngang cấp; đề xuất giữ 1 tiêu đề + 3 số liệu” → preview diff → áp dụng hoặc bỏ qua. Nó không thay người dùng quyết câu chuyện thiết kế.
+
+Luồng kiểm nhất quán: user bấm `Kiểm hồ sơ` → Vitals chạy các rule xác định được (Brand Kit rỗng, placeholder, ảnh thiếu alt/credit, page missing, BOQ/Doc chênh số, asset thiếu provenance) → trả một danh sách theo mức độ. Mỗi lỗi có **một nút dẫn đúng editor**, không có popup “đã tối ưu”.
+
+Video ở chặng này chỉ là dựng footage, nhạc, title, chuyển cảnh và màu. Vitals không được mở scene 3D riêng hay ngụ ý nó sinh được footage nếu năng lực đó chưa có ở chặng 3D.
+
+### 7.3. Phạm vi ở cấp toàn app
+
+Vitals có mặt xuyên app nhưng **không sở hữu app**. Nó là lớp điều phối nhẹ nằm trên các công cụ và hạ tầng dưới đây:
+
+| Phạm vi | Vitals có thể | Vitals không thể |
+|---|---|---|
+| **Project / một Doc** | Đọc ngữ cảnh, kiểm nhất quán 2D↔3D↔Present, đề xuất mutation có preview | Chuyển dữ liệu giữa project hoặc tạo nguồn sự thật khác |
+| **Master Library** | Tìm, so sánh, lọc, nạp asset có provenance | Lấy ảnh web/asset thương mại vô điều kiện hoặc bỏ qua license |
+| **File Manager** | Đề xuất import/export phù hợp, kiểm định dạng/support | Tự đổi/ghi đè file, tạo output định dạng app chưa hỗ trợ |
+| **Knowledge / Notebook** | Tra cứu theo quyền, trích dẫn, chỉ phần thiếu nguồn | Nói như đã đọc tài liệu không nằm trong scope/quyền xem |
+| **Team chat** | Chỉ trả lời khi `@Vitals`, theo quyền của người gọi | Xen vào hội thoại, giả làm thành viên, công khai dữ liệu riêng |
+| **System / desktop** | Báo build/output lỗi có lý do và hướng xử lý | Đọc file máy người dùng, gọi mạng/connector, hay gửi dữ liệu ra ngoài mà chưa có consent |
+
+Ba lớp phạm vi phải được nhìn thấy trong giao diện khi cần: **Dự án này · Studio/Shared · Nguồn ngoài**. Mặc định là *Dự án này*. Khi một action dùng asset dùng chung hoặc connector ngoài, result panel phải nói rõ nguồn trước khi áp dụng.
+
+### 7.4. Ranh giới quyền và an toàn
+
+| Cấp hành động | Ví dụ | Cơ chế |
+|---|---|---|
+| **Chỉ đọc** | Tóm tắt brief, tìm vật liệu, kiểm bản vẽ | Làm ngay, hiển thị nguồn khi có |
+| **Preview** | Ghost 3D, highlight CAD, deck/BOQ diff | Làm ngay nhưng không ghi Doc |
+| **Ghi có thể hoàn tác** | Tạo tường, đổi property, áp bố cục, thêm asset | Nút Áp dụng rõ ràng + undo chung |
+| **Có rủi ro / phạm vi rộng** | Đổi hàng loạt, export, mời người, import ngoài | Tóm tắt phạm vi + xác nhận riêng |
+| **Cấm tự động** | Xoá dữ liệu, publish/mua, gửi ra ngoài, cài connector | User thực hiện theo UI chuyên dụng, không qua một câu chat |
+
+Vitals chỉ gọi capability đã có registry, schema input/output và test. Một lời nói tự nhiên không bao giờ là quyền thực thi. Nếu không có capability, trả lời tốt nhất là dẫn đúng công cụ hoặc ghi rõ “phần này chưa có trong bản hiện tại”.
+
 ## 8. Luồng chuẩn cho dựng khối 3D
 
 Đây là nơi Vitals có giá trị rõ nhất trong MVP. Dựng trực tiếp và dựng qua Vitals dùng **cùng một engine tham số**; khác nhau chỉ ở cách tạo recipe.
