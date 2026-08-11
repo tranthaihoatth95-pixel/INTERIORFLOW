@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · Vitals 3 cấp window + gradient kem — mock hợp đồng</title>
+<!--
+  MOCK 12/08 · VITALS 3 CẤP WINDOW (visual Siri mới) + HIGHLIGHT GRADIENT KEM — COWORK-UI dựng 12/08/2026
+  Nguồn: 00-CHOT.md "[12/08 Hoà giao 5 ref Siri mới]" · REF-VISUAL #14 (3 cấp window + Reduce Bright
+  Effects) · REF-VISUAL #15 (Tanj card hover gradient kem) · SPEC-APPLE-MOTION §4b (pill→thẻ→trang,
+  KHÔNG orb, KHÔNG chatbot toàn màn mặc định) · SPEC-VITALS-VISUAL (glyph cầu + quỹ đạo 1 accent).
+  Thể hiện:
+  ① Pill kết quả tại chỗ — viên kính nhỏ, 1-2 câu + glyph + "Xem thêm" → bung cấp ②.
+  ② Thẻ hội thoại nổi — sheet kính giữa màn, hỏi-đáp vật liệu ốp bếp, ô nhập + ＋ + mic capsule,
+     nút phóng to → cấp ③. Kèm nấc GIẢM CHÓI: 2 trạng thái kính/đặc vẽ cạnh nhau (bài học
+     Reduce Bright Effects — độ đọc thắng).
+  ③ Trang phiên đầy đủ — theo tone canvas (be/xám-đen), trả lời dài + chip trích nguồn +
+     lưới 4 phiên cũ + ＋ phiên mới. Chỉ vào khi người dùng chủ động.
+  ④ Demo gradient kem — 4 thẻ, thẻ :hover nổi radial kem ấm (pha --warm + kem, KHÔNG hex lạ);
+     chỉ phần tử CHỌN ĐƯỢC, chrome/toolbar không áp; reduced-motion hiện tức thì.
+  RÀNG BUỘC GIỮ: G1 — kính KHÔNG animate opacity (chỉ transform + background) · nhãn ≤12 từ ·
+  token chép nguyên app/globals.css · 2 theme app (phím D) ĐỘC LẬP nút gạt tone canvas ·
+  khung 1440 cố định · pin chú thích đánh số.
+  QUYẾT ĐỊNH TỰ CHỌN (ghi để phiên code khỏi đoán):
+  - Tone canvas là data-tone trên .canvas, chỉ đổi NỀN canvas — chrome app vẫn theo theme D.
+  - Gradient kem = radial-gradient color-mix(--warm + kem giấy), alpha đỉnh .32 — đủ thấy, không chói.
+  - Pill/sheet vào bằng translateY+scale (như chốt card rời 07/08), không fade opacity.
+  - Cấp ③ nền: tone be → giấy kem; tone xám-đen → #0c0c0e họ --bg dark (token, không chế hex).
+-->
+<style>
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --radius-sm:10px; --radius-md:14px; --radius-lg:20px; --radius-xl:28px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --blur:22px; --blur-strong:40px;
+  --ease-apple:cubic-bezier(0.32,0.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+}
+:root,:root[data-theme='dark']{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --dots:#26262d;
+  --mat-header:rgba(20,20,23,.72); --mat-panel:rgba(20,20,23,.68);
+  --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --warm:#c79a63;
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --dots:#ddd8ce;
+  --mat-header:rgba(250,248,244,.72); --mat-panel:rgba(250,248,244,.7);
+  --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+  --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --warm:#8a6a44;
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);
+  font:var(--fw-normal) var(--fs-xs)/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  transition:background-color var(--dur-base) var(--ease-apple),color var(--dur-base) var(--ease-apple)}
+svg{display:block}
+button{font:inherit;color:inherit;cursor:pointer}
+.i{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.i.s{width:13px;height:13px}
+:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px;border-radius:var(--radius-sm)}
+.pin{position:absolute;z-index:60;display:flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700}
+
+.wrap{width:1440px;margin:0 auto}
+
+/* Header mock */
+.top{height:42px;display:flex;align-items:center;gap:10px;padding:0 14px;
+  background:var(--mat-header);backdrop-filter:saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));border-bottom:1px solid var(--mat-hairline);
+  position:sticky;top:0;z-index:50}
+.logo{width:24px;height:24px;border-radius:var(--radius-sm);background:var(--t1);color:var(--bg);
+  display:flex;align-items:center;justify-content:center;font-size:var(--fs-2xs);font-weight:800}
+.top .ti{font-size:var(--fs-sm);font-weight:var(--fw-semi)}
+.top .sub{color:var(--t4)}
+.top .r{margin-left:auto;display:flex;align-items:center;gap:10px;color:var(--t4);font-size:var(--fs-2xs)}
+kbd{background:var(--field);border:1px solid var(--border);border-radius:6px;padding:1px 6px;
+  font:600 10px/1.6 ui-monospace,Menlo,monospace;color:var(--t2)}
+
+/* ══ CANVAS 2 TONE — nút gạt độc lập với theme app ══ */
+.canvas{position:relative;margin:18px;border-radius:var(--radius-xl);border:1px solid var(--border);
+  padding:26px 30px 34px;overflow:hidden;
+  transition:background-color var(--dur-base) var(--ease-apple)}
+.canvas[data-tone='be']{background:#f2efe9}
+.canvas[data-tone='xam']{background:#141417}
+.canvas[data-tone='be']{--ct1:#211e19;--ct2:#47423a;--ct3:#726c62;--cline:#e3ded4;
+  --ccard:#faf8f4;--ccream:#ffffff}
+.canvas[data-tone='xam']{--ct1:#f5f5f7;--ct2:#d6d6db;--ct3:#9e9ea8;--cline:#2a2a31;
+  --ccard:#1a1a1e;--ccream:#f2efe9}
+.canvas h2{margin:0 0 2px;font-size:var(--fs-md);color:var(--ct1)}
+.canvas .lead{margin:0 0 20px;color:var(--ct3);font-size:var(--fs-xs)}
+
+/* nút gạt tone */
+.toneseg{position:absolute;top:22px;right:26px;display:flex;background:var(--ccard);
+  border:1px solid var(--cline);border-radius:14px;padding:3px;height:34px}
+.toneseg button{border:0;background:transparent;color:var(--ct3);font-size:var(--fs-xs);
+  padding:0 14px;border-radius:11px}
+.toneseg button.on{background:var(--accent-soft);color:var(--accent);font-weight:var(--fw-semi)}
+
+/* lưới 3 cấp */
+.board{display:grid;grid-template-columns:340px 1fr 400px;gap:22px;align-items:start}
+.cell{position:relative}
+.cell .cap{display:flex;align-items:baseline;gap:8px;margin:0 0 12px}
+.cell .cap b{font-size:var(--fs-sm);color:var(--ct1)}
+.cell .cap span{color:var(--ct3);font-size:var(--fs-2xs)}
+
+/* ── Kính chung: G1 — KHÔNG transition/animation opacity, chỉ transform + background ── */
+.glass{background:color-mix(in srgb, var(--panel) 55%, transparent);
+  backdrop-filter:saturate(160%) blur(var(--blur));
+  -webkit-backdrop-filter:saturate(160%) blur(var(--blur));
+  border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop);
+  transition:transform var(--dur-fast) var(--ease-apple),background-color var(--dur-base) var(--ease-apple)}
+
+/* ══ CẤP ① — pill kết quả tại chỗ ══ */
+.dotgrid{border-radius:var(--radius-lg);border:1px dashed var(--cline);height:270px;position:relative;
+  background-image:radial-gradient(var(--cline) 1px, transparent 1px);background-size:22px 22px;overflow:hidden}
+.dotgrid .ctx{position:absolute;left:16px;top:14px;color:var(--ct3);font-size:var(--fs-2xs)}
+.pill{position:absolute;left:24px;bottom:26px;width:280px;border-radius:22px;padding:12px 14px;
+  display:flex;gap:10px;align-items:flex-start}
+.pill p{margin:0 0 8px;color:var(--t1);font-size:var(--fs-xs)}
+.pill .more{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 11px;border-radius:13px;
+  border:0;background:var(--accent-soft);color:var(--accent);font-size:var(--fs-2xs);font-weight:var(--fw-semi)}
+.pill .more:hover{background:var(--accent);color:#fff}
+.glyph{flex:none;width:26px;height:26px}
+.glyph circle.core{fill:var(--accent)}
+.glyph ellipse{stroke:var(--accent);fill:none;stroke-width:1.3;opacity:.55}
+.glyph circle.e{fill:var(--accent)}
+
+/* ══ CẤP ② — thẻ hội thoại nổi · 2 trạng thái kính/giảm chói ══ */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.sheet{border-radius:var(--radius-lg);padding:14px;display:flex;flex-direction:column;gap:10px;min-height:270px}
+.sheet.solid{background:color-mix(in srgb, var(--panel) 96%, transparent);
+  backdrop-filter:none;-webkit-backdrop-filter:none;border:1px solid var(--border)}
+.sheet .shead{display:flex;align-items:center;gap:8px}
+.sheet .shead b{font-size:var(--fs-xs);color:var(--t1)}
+.sheet .shead .exp{margin-left:auto;width:26px;height:26px;border-radius:9px;border:0;
+  background:var(--field);color:var(--t3);display:flex;align-items:center;justify-content:center}
+.sheet .shead .exp:hover{background:var(--hover);color:var(--t1)}
+.msg{max-width:82%;padding:8px 11px;border-radius:14px;font-size:var(--fs-xs)}
+.msg.q{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:5px}
+.msg.a{align-self:flex-start;background:var(--field);color:var(--t1);border-bottom-left-radius:5px}
+.msg.a .src{display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:2px 8px;border-radius:9px;
+  background:var(--accent-soft);color:var(--accent);font-size:10px;font-weight:var(--fw-semi)}
+.ask{margin-top:auto;display:flex;align-items:center;gap:7px;height:38px;border-radius:19px;
+  background:var(--field);border:1px solid var(--border);padding:0 5px 0 7px}
+.ask .plus,.ask .mic{flex:none;width:28px;height:28px;border-radius:50%;border:0;display:flex;
+  align-items:center;justify-content:center;background:transparent;color:var(--t3)}
+.ask .plus:hover,.ask .mic:hover{background:var(--hover);color:var(--t1)}
+.ask .mic{background:var(--accent-soft);color:var(--accent)}
+.ask input{flex:1;border:0;background:transparent;color:var(--t1);font:inherit;outline:none}
+.ask input::placeholder{color:var(--t4)}
+/* toggle giảm chói */
+.dimrow{display:flex;align-items:center;gap:9px;margin:10px 0 0;color:var(--ct3);font-size:var(--fs-2xs)}
+.sw{position:relative;width:38px;height:22px;border-radius:11px;background:var(--cline);border:0;
+  transition:background-color var(--dur-fast) var(--ease-apple)}
+.sw::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+  background:var(--ccream);box-shadow:0 1px 3px rgba(0,0,0,.3);
+  transition:transform var(--dur-fast) var(--ease-apple)}
+.sw.on{background:var(--accent)}
+.sw.on::after{transform:translateX(16px)}
+.lab{margin:8px 0 0;color:var(--ct3);font-size:var(--fs-2xs)}
+.lab b{color:var(--ct1)}
+
+/* ══ CẤP ③ — trang phiên đầy đủ ══ */
+.page{border-radius:var(--radius-lg);border:1px solid var(--cline);padding:18px;min-height:270px;
+  display:flex;flex-direction:column;gap:12px;
+  transition:background-color var(--dur-base) var(--ease-apple)}
+.canvas[data-tone='be'] .page{background:#faf8f4}
+.canvas[data-tone='xam'] .page{background:#0c0c0e}
+.page .phead{display:flex;align-items:center;gap:9px}
+.page .phead b{font-size:var(--fs-sm);color:var(--ct1)}
+.page .phead .x{margin-left:auto;width:26px;height:26px;border-radius:9px;border:0;
+  background:transparent;color:var(--ct3);display:flex;align-items:center;justify-content:center}
+.page .ans{margin:0;color:var(--ct2);font-size:var(--fs-xs);line-height:1.6}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:12px;
+  background:var(--accent-soft);color:var(--accent);font-size:10px;font-weight:var(--fw-semi)}
+.page .sech{margin:4px 0 0;color:var(--ct3);font-size:10px;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase}
+.sess{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.scard{border-radius:var(--radius-md);border:1px solid var(--cline);background:var(--ccard);
+  padding:9px 11px;text-align:left;transition:transform var(--dur-fast) var(--ease-apple)}
+.scard:hover{transform:translateY(-2px)}
+.scard b{display:block;color:var(--ct1);font-size:var(--fs-2xs);margin-bottom:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scard span{color:var(--ct3);font-size:10px}
+.snew{border-style:dashed;display:flex;align-items:center;justify-content:center;gap:6px;
+  color:var(--accent);font-weight:var(--fw-semi);font-size:var(--fs-2xs);background:transparent}
+
+/* ══ DEMO GRADIENT KEM (ref #15) ══ */
+.kemrow{margin-top:26px;position:relative}
+.kemrow .cap{display:flex;align-items:baseline;gap:8px;margin:0 0 12px}
+.kemrow .cap b{font-size:var(--fs-sm);color:var(--ct1)}
+.kemrow .cap span{color:var(--ct3);font-size:var(--fs-2xs)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kcard{position:relative;border-radius:var(--radius-md);border:1px solid var(--cline);
+  background:var(--ccard);padding:0;overflow:hidden;text-align:left;
+  transition:transform 200ms var(--ease-apple),box-shadow 200ms var(--ease-apple)}
+/* lớp gradient kem: pha --warm + kem giấy, KHÔNG hex lạ; hiện bằng background đổi (G1: không fade opacity kính) */
+.kcard::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 0%,
+    color-mix(in srgb, var(--warm) 0%, transparent), transparent 70%);
+  transition:background 200ms var(--ease-apple)}
+.kcard:hover,.kcard.demo-hover{transform:translateY(-3px);box-shadow:var(--shadow-node)}
+.kcard:hover::before,.kcard.demo-hover::before{
+  background:radial-gradient(120% 90% at 50% 0%,
+    color-mix(in srgb, var(--warm) 32%, color-mix(in srgb, var(--ccream) 60%, transparent)),
+    transparent 70%)}
+.kcard .thumb{height:96px;background:var(--field);display:flex;align-items:center;justify-content:center;
+  color:var(--t4);border-bottom:1px solid var(--cline)}
+.kcard .meta{position:relative;padding:9px 12px 11px}
+.kcard .meta b{display:block;color:var(--ct1);font-size:var(--fs-xs)}
+.kcard .meta span{color:var(--ct3);font-size:10px}
+@media (prefers-reduced-motion: reduce){
+  .kcard,.kcard::before,.scard,.sw,.sw::after,.glass,.pill,.sheet{transition:none !important}
+}
+
+/* Chú giải pin */
+.legend{margin:26px 18px 30px;padding:14px 18px;border-radius:var(--radius-lg);
+  background:var(--panel);border:1px solid var(--border);
+  display:grid;grid-template-columns:1fr 1fr;gap:5px 26px;color:var(--t3);font-size:var(--fs-2xs)}
+.legend div{display:flex;gap:8px;align-items:baseline}
+.legend .pn{flex:none;position:static;width:16px;height:16px;font-size:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="logo">|F</div>
+    <span class="ti">Vitals · 3 cấp window</span>
+    <span class="sub">mock hợp đồng · học visual Siri · ref #14-15</span>
+    <div class="r"><span>Đổi theme app</span><kbd>D</kbd></div>
+  </header>
+
+  <!-- CANVAS 2 TONE -->
+  <section class="canvas" data-tone="be" id="cv">
+    <h2>Bảng trạng thái 3 cấp Vitals</h2>
+    <p class="lead">Cùng một Vitals — ba cỡ cửa sổ, người dùng chủ động nâng cấp từng nấc.</p>
+
+    <div class="toneseg" style="position:absolute">
+      <span class="pin" style="top:-9px;right:-9px">1</span>
+      <button class="on" data-tone="be" onclick="setTone('be',this)">Be</button>
+      <button data-tone="xam" onclick="setTone('xam',this)">Xám đen</button>
+    </div>
+
+    <div class="board">
+
+      <!-- CẤP ① -->
+      <div class="cell">
+        <p class="cap"><b>Cấp ① · Pill tại chỗ</b><span>trả lời ngay trên canvas</span></p>
+        <div class="dotgrid">
+          <span class="ctx">canvas Thiết kế 2D · đang chọn tường bếp</span>
+          <div class="pill glass">
+            <span class="pin" style="top:-9px;left:-9px">2</span>
+            <svg class="glyph" viewBox="0 0 26 26">
+              <ellipse cx="13" cy="13" rx="11.5" ry="5" transform="rotate(-24 13 13)"/>
+              <circle class="core" cx="13" cy="13" r="4"/>
+              <circle class="e" cx="22" cy="9.5" r="1.6"/>
+            </svg>
+            <div>
+              <p>Tường này 4,2 m² — ốp đá cần thêm 8% hao hụt.</p>
+              <button class="more">Xem thêm
+                <svg class="i s" viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="lab" style="margin-top:8px">Bấm <b>Xem thêm</b> → bung lên cấp ②</p>
+      </div>
+
+      <!-- CẤP ② · 2 trạng thái -->
+      <div class="cell">
+        <p class="cap"><b>Cấp ② · Thẻ hội thoại nổi</b><span>sheet giữa màn · kèm nấc giảm chói</span></p>
+        <div class="duo">
+          <!-- trạng thái kính -->
+          <div class="sheet glass" style="position:relative">
+            <span class="pin" style="top:-9px;left:-9px">3</span>
+            <div class="shead">
+              <svg class="glyph" viewBox="0 0 26 26" style="width:20px;height:20px">
+                <ellipse cx="13" cy="13" rx="11.5" ry="5" transform="rotate(-24 13 13)"/>
+                <circle class="core" cx="13" cy="13" r="4"/>
+                <circle class="e" cx="22" cy="9.5" r="1.6"/>
+              </svg>
+              <b>Vitals</b>
+              <button class="exp" title="Mở trang phiên">
+                <svg class="i s" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+              </button>
+            </div>
+            <div class="msg q">Ốp bếp này nên dùng vật liệu gì?</div>
+            <div class="msg a">Khu vực bếp cần chịu nhiệt và lau chùi dễ — đá thạch anh
+              hoặc gạch men khổ lớn phù hợp hơn gỗ.
+              <br><span class="src">Thư viện · 12 mẫu đá</span>
+            </div>
+            <div class="msg q">Đá thạch anh giá khoảng bao nhiêu?</div>
+            <div class="ask">
+              <button class="plus"><svg class="i s" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+              <input placeholder="Hỏi Vitals">
+              <button class="mic"><svg class="i s" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 17v4"/></svg></button>
+            </div>
+          </div>
+          <!-- trạng thái giảm chói -->
+          <div class="sheet solid" style="position:relative">
+            <span class="pin" style="top:-9px;left:-9px">4</span>
+            <div class="shead">
+              <svg class="glyph" viewBox="0 0 26 26" style="width:20px;height:20px">
+                <ellipse cx="13" cy="13" rx="11.5" ry="5" transform="rotate(-24 13 13)"/>
+                <circle class="core" cx="13" cy="13" r="4"/>
+                <circle class="e" cx="22" cy="9.5" r="1.6"/>
+              </svg>
+              <b>Vitals</b>
+              <button class="exp"><svg class="i s" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
+            </div>
+            <div class="msg q">Ốp bếp này nên dùng vật liệu gì?</div>
+            <div class="msg a">Khu vực bếp cần chịu nhiệt và lau chùi dễ — đá thạch anh
+              hoặc gạch men khổ lớn phù hợp hơn gỗ.
+              <br><span class="src">Thư viện · 12 mẫu đá</span>
+            </div>
+            <div class="msg q">Đá thạch anh giá khoảng bao nhiêu?</div>
+            <div class="ask">
+              <button class="plus"><svg class="i s" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+              <input placeholder="Hỏi Vitals">
+              <button class="mic"><svg class="i s" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 17v4"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div class="dimrow">
+          <button class="sw on" onclick="this.classList.toggle('on')" aria-label="Giảm hiệu ứng kính"></button>
+          <span>Giảm hiệu ứng kính — bật là nền đặc, chữ đọc rõ</span>
+          <span class="pin" style="position:static">5</span>
+        </div>
+        <p class="lab" style="margin:4px 0 0">
+          Trái: kính · Phải: giảm chói. Độ đọc luôn thắng.</p>
+      </div>
+
+      <!-- CẤP ③ -->
+      <div class="cell">
+        <p class="cap"><b>Cấp ③ · Trang phiên đầy đủ</b><span>chỉ khi người dùng chủ động vào</span></p>
+        <div class="page" style="position:relative">
+          <span class="pin" style="top:-9px;left:-9px">6</span>
+          <div class="phead">
+            <svg class="glyph" viewBox="0 0 26 26" style="width:22px;height:22px">
+              <ellipse cx="13" cy="13" rx="11.5" ry="5" transform="rotate(-24 13 13)"/>
+              <circle class="core" cx="13" cy="13" r="4"/>
+              <circle class="e" cx="22" cy="9.5" r="1.6"/>
+            </svg>
+            <b>Phiên · Vật liệu ốp bếp</b>
+            <button class="x"><svg class="i s" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+          </div>
+          <p class="ans">Với tường bếp 4,2 m² cạnh vùng nấu, đá thạch anh nhân tạo cân bằng
+            tốt nhất giữa chịu nhiệt, chống thấm và chi phí. Gạch men khổ lớn rẻ hơn
+            khoảng một phần ba nhưng nhiều mạch ron. Hao hụt cắt góc nên tính 8%,
+            đã cộng sẵn vào bảng khối lượng của dự án này.</p>
+          <div class="chips">
+            <span class="chip">Thư viện · kệ Đá</span>
+            <span class="chip">BOQ · dòng 4</span>
+            <span class="chip">Bản vẽ · tường T-02</span>
+          </div>
+          <p class="sech">Phiên cũ<span class="pin" style="position:static;display:inline-flex;margin-left:8px">7</span></p>
+          <div class="sess">
+            <button class="scard"><b>Chiếu sáng phòng khách</b><span>11/08 · 14 lượt</span></button>
+            <button class="scard"><b>So giá sàn gỗ</b><span>10/08 · 6 lượt</span></button>
+            <button class="scard"><b>Chuẩn bậc thang</b><span>09/08 · 9 lượt</span></button>
+            <button class="scard snew">
+              <svg class="i s" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Phiên mới</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO GRADIENT KEM -->
+    <div class="kemrow">
+      <p class="cap"><b>Highlight gradient kem</b>
+        <span>chỉ phần tử chọn được — chrome, toolbar không áp</span>
+        <span class="pin" style="position:static">8</span></p>
+      <div class="cards">
+        <button class="kcard">
+          <div class="thumb"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 14l4-4 5 5 4-4 5 5"/></svg></div>
+          <div class="meta"><b>Mẫu trang bìa</b><span>Trình chiếu · Deck</span></div>
+        </button>
+        <button class="kcard demo-hover">
+          <span class="pin" style="top:8px;right:8px">9</span>
+          <div class="thumb"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 14l4-4 5 5 4-4 5 5"/></svg></div>
+          <div class="meta"><b>Bảng vật liệu A3</b><span>đang trỏ — nổi gradient kem</span></div>
+        </button>
+        <button class="kcard">
+          <div class="thumb"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 14l4-4 5 5 4-4 5 5"/></svg></div>
+          <div class="meta"><b>Moodboard phòng ngủ</b><span>Thiết kế 3D · Node</span></div>
+        </button>
+        <button class="kcard">
+          <div class="thumb"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 14l4-4 5 5 4-4 5 5"/></svg></div>
+          <div class="meta"><b>Khung tên bản vẽ</b><span>Thiết kế 2D · Paper</span></div>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHÚ GIẢI PIN -->
+  <div class="legend">
+    <div><span class="pin pn">1</span>Gạt tone canvas Be / Xám đen — độc lập theme app (phím D).</div>
+    <div><span class="pin pn">2</span>Cấp ①: pill kính nhỏ, glyph cầu + quỹ đạo 1 accent, không orb. "Xem thêm" bung cấp ②.</div>
+    <div><span class="pin pn">3</span>Cấp ②: sheet kính giữa màn, hỏi-đáp ngắn, ô nhập + ＋ + mic capsule, nút phóng to → cấp ③.</div>
+    <div><span class="pin pn">4</span>Cùng sheet ở nấc giảm chói: nền đặc rõ rệt, bỏ blur — độ đọc thắng.</div>
+    <div><span class="pin pn">5</span>Toggle "Giảm hiệu ứng kính" — bài học Reduce Bright Effects iOS 27.</div>
+    <div><span class="pin pn">6</span>Cấp ③: trang phiên theo tone canvas, trả lời dài + chip trích nguồn bấm nhảy được.</div>
+    <div><span class="pin pn">7</span>Lưới phiên cũ + thẻ ＋ phiên mới — như trang Ask Siri, không chatbot toàn màn mặc định.</div>
+    <div><span class="pin pn">8</span>Gradient kem = radial pha --warm + kem giấy, chỉ áp phần tử CHỌN ĐƯỢC.</div>
+    <div><span class="pin pn">9</span>Thẻ demo giữ trạng thái hover; thẻ khác phẳng. Reduced-motion: hiện tức thì, không chuyển cảnh.</div>
+    <div><span class="pin pn">·</span>G1 giữ nguyên: kính không animate opacity — chỉ transform + background.</div>
+  </div>
+
+</div>
+
+<script>
+addEventListener('keydown',e=>{
+  if(e.key.toLowerCase()==='d' && e.target.tagName!=='INPUT'){
+    const r=document.documentElement;r.dataset.theme=r.dataset.theme==='light'?'dark':'light'}
+});
+function setTone(t,btn){
+  document.getElementById('cv').dataset.tone=t;
+  document.querySelectorAll('.toneseg button').forEach(b=>b.classList.toggle('on',b===btn));
+}
+</script>
+</body>
+</html>
