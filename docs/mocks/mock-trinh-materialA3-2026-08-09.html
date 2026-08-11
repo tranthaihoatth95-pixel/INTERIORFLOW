@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · Trình chiếu · Bảng vật liệu A3 — mock hợp đồng</title>
+<!--
+  MOCK 09/08 · MATERIAL A3 EDITOR (loại hồ sơ #2) — dựng theo SPEC-TRINH-MATERIAL-A3.md (đọc trọn).
+  Khung tổng thể COPY từ mock-trinh-boq-2026-08-04.html (AppShell 6 ổ 42/214/236/26, token, cmdk,
+  phím tắt Inspector) — đổi nội dung đúng nghiệp vụ bảng vật liệu A3.
+  Thể hiện đúng spec:
+  §2 khổ A3 ngang 420×297mm 300dpi · preset L12 (4×3) / L6 (3×2) · header đọc Brand Kit DỰ ÁN
+  §3 anatomy materialCard: swatch 65% ô · tên · SKU/NCC (qua neo ProductSpec) · giá tabular-nums · khu vực
+  §1 ranh giới dữ liệu: THỊ GIÁC (MaterialDef) tách THƯƠNG MẠI (ProductSpec neo atlasRecordId) —
+     matId chưa neo ATLAS → "— chưa gán mã" + nút Gán mã ATLAS, KHÔNG chặn hiển thị
+  §4 sidebar trái = kệ vật liệu dự án (thay LayoutShelf) + toggle Hiện giá/Hiện khu vực + layout L12/L6
+  §5 live-link một-nguồn: card KHÔNG copy dữ liệu, đổi ATLAS → giá đổi theo; matId bị xoá → card mồ côi
+     viền --warning + icon xích đứt + 2 nút "Gỡ ô"/"Chọn vật liệu khác"
+  §7 xuất PDF A3 300dpi 2 bản (nội bộ có giá / khách ẩn giá)
+  PLACEHOLDER: 13 vật liệu demo đúng tỉ lệ nghiệm thu §8.1 (7 neo ATLAS · 6 chưa neo).
+  Token chép nguyên app/globals.css · 2 theme (phím D) · khung AppShell 6 ổ (42/214/236/26).
+  Icon: inline SVG cùng bộ nét lucide-style, theo đúng quy ước mock-trinh-boq-2026-08-04.html.
+-->
+<style>
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --accent-warm:#c79a63;
+  --radius-sm:10px; --radius-md:14px; --radius-lg:20px; --radius-xl:28px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --blur:22px; --blur-strong:40px;
+  --ease-apple:cubic-bezier(0.32,0.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --tap:32px; --row:28px; --gap:8px;
+}
+:root,:root[data-theme='dark']{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --dots:#26262d;
+  --mat-header:rgba(20,20,23,.72); --mat-panel:rgba(20,20,23,.68);
+  --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --dots:#ddd8ce;
+  --mat-header:rgba(250,248,244,.72); --mat-panel:rgba(250,248,244,.7);
+  --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+  --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+}
+@media (hover:none) and (pointer:coarse){ :root{ --tap:44px; --row:44px; --gap:12px } }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--t1);overflow:hidden;
+  font:var(--fw-normal) var(--fs-xs)/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  transition:background-color var(--dur-base) var(--ease-apple),color var(--dur-base) var(--ease-apple)}
+svg{display:block}
+button{font:inherit;color:inherit}
+.i{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.i.s{width:13px;height:13px}
+:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px;border-radius:var(--radius-sm)}
+.num{font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,monospace;font-size:var(--fs-2xs)}
+.pin{position:absolute;z-index:60;display:flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700}
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* ① Header 42 */
+.top{height:42px;flex:none;display:flex;align-items:center;gap:10px;padding:0 10px;
+  background:var(--mat-header);backdrop-filter:saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));border-bottom:1px solid var(--mat-hairline)}
+.logo{width:24px;height:24px;border-radius:var(--radius-sm);background:var(--t1);color:var(--bg);
+  display:flex;align-items:center;justify-content:center;font-size:var(--fs-2xs);font-weight:800;border:0;cursor:pointer}
+.doc{display:flex;align-items:center;gap:5px;padding:5px 9px;border:0;background:transparent;
+  border-radius:var(--radius-sm);color:var(--t1);font-size:var(--fs-xs);cursor:pointer}
+.doc:hover{background:var(--hover)}
+.cmdk{display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;
+  border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--field);color:var(--t3);
+  font-size:var(--fs-2xs);cursor:pointer;transition:background .12s var(--ease-apple)}
+.cmdk:hover{background:var(--hover);color:var(--t1)}
+.cmdk kbd,.kbdrow kbd{font:inherit;background:var(--card);border:1px solid var(--border-strong);
+  border-radius:5px;padding:1px 6px;font-size:10px;color:var(--t2);font-family:ui-monospace,Menlo,monospace}
+.kbdrow{display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:var(--fs-2xs);color:var(--t3)}
+.seg{margin-left:auto;display:flex;background:var(--field);border-radius:var(--radius-sm);padding:2px}
+.seg button{border:0;background:transparent;color:var(--t3);font-size:var(--fs-xs);padding:5px 14px;border-radius:8px;cursor:pointer}
+.seg button.on{background:var(--panel);color:var(--t1);font-weight:var(--fw-semi);box-shadow:var(--shadow-node)}
+.mid{flex:1;display:flex;min-height:0}
+
+/* ② Sidebar 214 — kệ vật liệu dự án (thay LayoutShelf, §4.3) */
+.side{width:214px;flex:none;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sech{height:24px;display:flex;align-items:center;padding:0 10px;color:var(--t4);font-size:var(--fs-2xs);
+  font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-top:7px}
+.sech .n{margin-left:auto;font-variant-numeric:tabular-nums}
+.sfind{margin:7px 10px 4px;height:28px;display:flex;align-items:center;gap:6px;padding:0 9px;
+  background:var(--field);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--t4);font-size:var(--fs-2xs)}
+.sfind .i{width:12px;height:12px}
+.matmini{display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:grab;border-left:2px solid transparent}
+.matmini:hover{background:var(--hover)}
+.matmini .sw{width:26px;height:26px;border-radius:7px;flex:none;border:1px solid var(--mat-hairline)}
+.matmini .mt{overflow:hidden}
+.matmini .m1{font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.matmini .m2{font-size:9.5px;color:var(--t4)}
+.matmini.orphan{border-left-color:var(--warning)}
+.list{flex:1;overflow-y:auto;padding-bottom:8px}
+.sideft{flex:none;border-top:1px solid var(--mat-hairline);padding:8px;display:flex;flex-direction:column;gap:6px}
+.sideft button{height:32px;border-radius:9px;font-size:var(--fs-xs);display:flex;align-items:center;
+  justify-content:center;gap:6px;cursor:pointer;border:0}
+.add{background:var(--accent-soft);color:var(--accent);font-weight:var(--fw-semi)}
+.lib{background:var(--field);color:var(--t2);border:1px solid var(--border) !important}
+
+/* ③ Stage — trang A3 */
+.stage{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+.ebar{height:40px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--panel);
+  border-bottom:1px solid var(--border);flex-wrap:nowrap}
+.ebar .ti{font-size:var(--fs-sm);font-weight:var(--fw-semi);white-space:nowrap}
+.layoutseg{display:flex;background:var(--field);border-radius:var(--radius-sm);padding:2px}
+.layoutseg button{border:0;background:transparent;color:var(--t3);font-size:10.5px;padding:5px 10px;border-radius:7px;cursor:pointer}
+.layoutseg button.on{background:var(--panel);color:var(--accent);font-weight:var(--fw-semi)}
+.tog{display:flex;align-items:center;gap:6px;height:28px;padding:0 9px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:var(--field);font-size:10.5px;color:var(--t3);cursor:pointer}
+.tog .sw2{width:26px;height:15px;border-radius:999px;background:var(--border-strong);position:relative;flex:none}
+.tog .sw2::after{content:"";position:absolute;width:11px;height:11px;border-radius:50%;background:var(--t1);top:2px;left:2px;transition:left .15s var(--ease-apple)}
+.tog.on .sw2{background:var(--accent)}
+.tog.on .sw2::after{left:13px;background:#fff}
+.tog.on{color:var(--t1)}
+.ebar .r{margin-left:auto;display:flex;gap:6px}
+.eb{height:28px;display:flex;align-items:center;gap:6px;padding:0 11px;border-radius:var(--radius-sm);
+  font-size:var(--fs-2xs);cursor:pointer;border:1px solid var(--border);background:var(--field);color:var(--t2);
+  transition:background .12s var(--ease-apple)}
+.eb:hover{background:var(--hover)}
+.eb.pri{background:var(--accent);border-color:transparent;color:#fff;font-weight:var(--fw-semi)}
+.eb.pri:hover{background:var(--accent-strong)}
+
+/* Trang A3 giấy — tỉ lệ 420:297 */
+.pagewrap{flex:1;overflow:auto;display:flex;justify-content:center;padding:22px 14px}
+.a3{width:820px;height:581px;flex:none;background:var(--card);border-radius:10px;box-shadow:var(--shadow-sheet);
+  padding:26px 30px 20px;position:relative;color:#1c1a16;}
+:root[data-theme='dark'] .a3{background:#efece5;color:#1c1a16}
+.a3head{display:flex;align-items:center;gap:12px;padding-bottom:10px;border-bottom:2px solid #1c1a16}
+.a3logo{width:34px;height:34px;border-radius:8px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex:none}
+.a3ttl{flex:1}
+.a3ttl .t1{font-size:15px;font-weight:700}
+.a3ttl .t2{font-size:10px;color:#5c574c}
+.a3pg{font-size:11px;color:#5c574c;font-variant-numeric:tabular-nums;white-space:nowrap}
+.grid{display:grid;gap:10px;margin-top:12px}
+.grid.l12{grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr)}
+.grid.l6{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr)}
+
+/* ③ materialCard — anatomy §3 */
+.mcard{background:#fff;border:1px solid #d9d3c5;border-radius:9px;overflow:hidden;display:flex;flex-direction:column;position:relative}
+.mcard .msw{height:65%;position:relative;overflow:hidden}
+.mcard .mname{padding:6px 8px 0;font-size:10.5px;font-weight:700;color:#1c1a16}
+.mcard .msku{padding:1px 8px 0;font-size:8.5px;color:#6d6858;font-family:ui-monospace,Menlo,monospace}
+.mcard .mprice{padding:2px 8px 5px;font-size:9.5px;font-weight:700;color:var(--accent-strong);font-variant-numeric:tabular-nums}
+.mcard .mzone{padding:0 8px 6px;font-size:8px;color:#8a8474}
+.mcard .nogrant{padding:1px 8px 0;font-size:8.5px;color:#a07a1f;font-style:italic}
+.mcard.orphan{border-color:var(--warning);border-width:1.5px}
+.mcard .chain{position:absolute;top:5px;right:5px;width:18px;height:18px;border-radius:5px;background:var(--warning);
+  display:flex;align-items:center;justify-content:center;color:#3a2900}
+.mcard .chain svg{width:11px;height:11px;stroke:#3a2900}
+.mcard.sel{outline:2px solid var(--accent);outline-offset:1px}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.1s!important}}
+
+/* ④ Inspector 236 */
+.insp{width:236px;flex:none;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.ihead{height:34px;flex:none;display:flex;align-items:center;gap:7px;padding:0 6px 0 12px;border-bottom:1px solid var(--mat-hairline)}
+.ihead h2{margin:0;font-size:var(--fs-sm);font-weight:var(--fw-semi)}
+.ihead .sub{font-size:var(--fs-2xs);color:var(--t3);font-family:ui-monospace,Menlo,monospace}
+.ihead .x{margin-left:auto;width:26px;height:26px;border:0;background:transparent;color:var(--t4);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer}
+.ihead .x:hover{background:var(--hover);color:var(--t1)}
+.grp2{padding:11px 12px;border-bottom:1px solid var(--mat-hairline)}
+.grp2 h4{margin:0 0 8px;font-size:var(--fs-2xs);font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t4)}
+.kv{display:flex;justify-content:space-between;align-items:baseline;font-size:var(--fs-xs);padding:3px 0;color:var(--t3)}
+.kv b{color:var(--t1);font-weight:var(--fw-semi);font-variant-numeric:tabular-nums}
+.ibtn{width:100%;height:30px;border-radius:9px;border:0;font-size:var(--fs-2xs);font-weight:var(--fw-semi);
+  cursor:pointer;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:6px}
+.ibtn.warn{background:color-mix(in srgb,var(--warning) 18%,var(--panel));color:var(--warning)}
+.ibtn.sec{background:var(--field);color:var(--t2);border:1px solid var(--border)}
+.ibtn.pri{background:var(--accent);color:#fff}
+.hint{font-size:9.5px;color:var(--t4);line-height:1.45;margin-top:7px}
+
+/* ⑥ Status 26 */
+.foot{height:26px;flex:none;display:flex;align-items:center;gap:14px;padding:0 12px;background:var(--panel);
+  border-top:1px solid var(--border);font-size:var(--fs-2xs);color:var(--t4)}
+.foot .warn{color:var(--warning);cursor:pointer}
+.foot .r{margin-left:auto;display:flex;gap:14px}
+.vt{display:flex;align-items:center;gap:5px;color:var(--t3)}
+.vtd{width:7px;height:7px;border-radius:2px;background:var(--success)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <button class="logo">IF</button>
+    <button class="doc">Căn hộ Thảo Điền · MB-01 · Vật liệu A3<svg class="i s" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    <button class="cmdk" title="Mở bảng lệnh"><svg class="i s" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Tìm lệnh<kbd>⌘K</kbd></button>
+    <div class="seg"><button>Thiết kế 2D</button><button>Thiết kế 3D</button><button class="on">Trình chiếu</button></div>
+  </header>
+
+  <div class="mid">
+
+    <!-- ② kệ vật liệu dự án — kéo thả vào lưới (§4.3) -->
+    <aside class="side">
+      <div class="sech">Hồ sơ dự án<span class="n">4</span></div>
+      <div class="matmini" style="height:24px;padding-top:0"></div>
+      <div class="sech" style="margin-top:0">Vật liệu dự án<span class="n">13</span></div>
+      <div class="sfind"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Tìm / lọc theo nhóm</div>
+      <div class="list">
+        <div class="matmini"><div class="sw" style="background:#8a6a45"></div><div class="mt"><div class="m1">Gỗ óc chó ốp tường</div><div class="m2">AC-OAK-224 · An Cường</div></div></div>
+        <div class="matmini"><div class="sw" style="background:#c9b48a"></div><div class="mt"><div class="m1">Sàn gỗ sồi 190</div><div class="m2">AC-OAK-190 · An Cường</div></div></div>
+        <div class="matmini"><div class="sw" style="background:#e9e3d6"></div><div class="mt"><div class="m1">Sơn hiệu ứng xi măng</div><div class="m2">JT-CEM-04 · Jotun</div></div></div>
+        <div class="matmini"><div class="sw" style="background:#dcdcdc"></div><div class="mt"><div class="m1">Đá thạch anh mặt bàn</div><div class="m2">VC-QTZ-142 · Vicostone</div></div></div>
+        <div class="matmini"><div class="sw" style="background:#b8a88f"></div><div class="mt"><div class="m1">Gạch ốp bếp 60×120</div><div class="m2">TP-POR-61 · Taicera</div></div></div>
+        <div class="matmini orphan"><div class="sw" style="background:#7c6a53"></div><div class="mt"><div class="m1">Vải bọc sofa lanh</div><div class="m2">— chưa gán mã</div></div></div>
+        <div class="matmini orphan"><div class="sw" style="background:#3b3b3b"></div><div class="mt"><div class="m1">Kim loại đen mờ</div><div class="m2">— chưa gán mã</div></div></div>
+        <div class="matmini"><div class="sw" style="background:#e2d9c3"></div><div class="mt"><div class="m1">Rèm vải lanh thô</div><div class="m2">HB-LIN-08 · Hoà Bình</div></div></div>
+      </div>
+      <div class="sideft">
+        <button class="add"><svg class="i s" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Thêm tất cả vào lưới</button>
+        <button class="lib"><svg class="i s" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Thư viện vật liệu</button>
+      </div>
+    </aside>
+
+    <main class="stage">
+      <div class="ebar">
+        <span class="ti">Bảng vật liệu A3</span>
+        <div class="layoutseg" style="position:relative"><span class="pin" style="top:-9px;left:-9px">1</span>
+          <button class="on">L12 · 4×3</button><button>L6 · 3×2</button>
+        </div>
+        <div class="tog on" style="position:relative"><span class="pin" style="top:-9px;left:-9px">2</span>
+          <span class="sw2"></span>Hiện giá
+        </div>
+        <div class="tog on">
+          <span class="sw2"></span>Hiện khu vực
+        </div>
+        <div class="r">
+          <button class="eb"><svg class="i s" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>Bản khách · ẩn giá</button>
+          <button class="eb pri"><svg class="i s" viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M8 17h8v4H8z"/></svg>Xuất PDF 300dpi</button>
+        </div>
+      </div>
+
+      <div class="pagewrap">
+        <div class="a3">
+          <div class="a3head">
+            <div class="a3logo">TĐ</div>
+            <div class="a3ttl">
+              <div class="t1">Căn hộ Thảo Điền — Bảng vật liệu hoàn thiện</div>
+              <div class="t2">Brand Kit dự án · logo/màu/font đọc từ dự án, không hardcode</div>
+            </div>
+            <div class="a3pg">Trang 1/2</div>
+          </div>
+
+          <div class="grid l12">
+            <div class="mcard sel">
+              <div class="msw" style="background:linear-gradient(135deg,#a9855c,#6b4c30)"></div>
+              <div class="mname">Gỗ óc chó ốp tường</div>
+              <div class="msku">AC-OAK-224 · An Cường</div>
+              <div class="mprice">1.240.000đ/m²</div>
+              <div class="mzone">Khu vực: Phòng khách, Ăn</div>
+            </div>
+            <div class="mcard">
+              <div class="msw" style="background:linear-gradient(135deg,#d8c49c,#a9855c)"></div>
+              <div class="mname">Sàn gỗ sồi 190</div>
+              <div class="msku">AC-OAK-190 · An Cường</div>
+              <div class="mprice">1.250.000đ/m²</div>
+              <div class="mzone">Khu vực: Toàn căn</div>
+            </div>
+            <div class="mcard">
+              <div class="msw" style="background:linear-gradient(135deg,#efe9dd,#cfc7b4)"></div>
+              <div class="mname">Sơn hiệu ứng xi măng</div>
+              <div class="msku">JT-CEM-04 · Jotun</div>
+              <div class="mprice">185.000đ/m²</div>
+              <div class="mzone">Khu vực: Phòng ngủ chính</div>
+            </div>
+            <div class="mcard">
+              <div class="msw" style="background:linear-gradient(135deg,#e5e5e5,#b9b9b9)"></div>
+              <div class="mname">Đá thạch anh mặt bàn</div>
+              <div class="msku">VC-QTZ-142 · Vicostone</div>
+              <div class="mprice">3.450.000đ/m²</div>
+              <div class="mzone">Khu vực: Bếp</div>
+            </div>
+            <div class="mcard">
+              <div class="msw" style="background:linear-gradient(135deg,#c7b596,#8f7a5a)"></div>
+              <div class="mname">Gạch ốp bếp 60×120</div>
+              <div class="msku">TP-POR-61 · Taicera</div>
+              <div class="mprice">520.000đ/m²</div>
+              <div class="mzone">Khu vực: Bếp</div>
+            </div>
+            <div class="mcard">
+              <div class="msw" style="background:linear-gradient(135deg,#ded4bf,#b6a988)"></div>
+              <div class="mname">Rèm vải lanh thô</div>
+              <div class="msku">HB-LIN-08 · Hoà Bình</div>
+              <div class="mprice">890.000đ/md</div>
+              <div class="mzone">Khu vực: Phòng khách</div>
+            </div>
+            <div class="mcard orphan" style="position:relative"><span class="pin" style="top:-9px;left:-9px">3</span>
+              <div class="chain" title="matId bị xoá khỏi dự án"><svg viewBox="0 0 24 24"><path d="M9 15l6-6M9 9l1-1a3 3 0 014.2 4.2l-1 1M15 15l-1 1a3 3 0 01-4.2-4.2l1-1"/></svg></div>
+              <div class="msw" style="background:linear-gradient(135deg,#9c8568,#5a4936)"></div>
+              <div class="mname">Vải bọc sofa lanh</div>
+              <div class="nogrant">— chưa gán mã</div>
+              <div class="mzone">Khu vực: Phòng khách</div>
+            </div>
+            <div class="mcard">
+              <div class="msw" style="background:linear-gradient(135deg,#3b3b3b,#161616)"></div>
+              <div class="mname">Kim loại đen mờ</div>
+              <div class="nogrant">— chưa gán mã</div>
+              <div class="mzone">Khu vực: Cầu thang</div>
+            </div>
+            <div class="mcard">
+              <div class="msw" style="background:linear-gradient(135deg,#e8dcc4,#c7ad81)"></div>
+              <div class="mname">Đá marble be</div>
+              <div class="msku">VC-MRB-071 · Vicostone</div>
+              <div class="mprice">2.680.000đ/m²</div>
+              <div class="mzone">Khu vực: Sảnh</div>
+            </div>
+            <div class="mcard">
+              <div class="msw" style="background:linear-gradient(135deg,#cfd6d3,#9aa4a0)"></div>
+              <div class="mname">Kính mờ acid-etch</div>
+              <div class="msku">VG-ACD-03 · Viglacera</div>
+              <div class="mprice">610.000đ/m²</div>
+              <div class="mzone">Khu vực: WC</div>
+            </div>
+            <div class="mcard">
+              <div class="msw" style="background:linear-gradient(135deg,#b7c8b0,#7f9678)"></div>
+              <div class="mname">Thảm len dệt tay</div>
+              <div class="nogrant">— chưa gán mã</div>
+              <div class="mzone">Khu vực: Phòng ngủ</div>
+            </div>
+            <div class="mcard">
+              <div class="msw" style="background:linear-gradient(135deg,#8a99ab,#4d5a6b)"></div>
+              <div class="mname">Thép sơn tĩnh điện</div>
+              <div class="msku">HP-STL-19 · Hoà Phát</div>
+              <div class="mprice">450.000đ/kg</div>
+              <div class="mzone">Khu vực: Lan can</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ④ Inspector — materialCard đang chọn (§3, §5) -->
+    <aside class="insp">
+      <div class="ihead">
+        <h2>Ô đang chọn</h2><span class="sub">materialCard</span>
+        <button class="x"><svg class="i s" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="grp2">
+        <h4>Nhịp thị giác · MaterialDef</h4>
+        <div class="kv"><span>Tên</span><b>Gỗ óc chó ốp tường</b></div>
+        <div class="kv"><span>Nhóm</span><b>Gỗ tự nhiên</b></div>
+        <div class="kv"><span>matId</span><b class="num">mat_oak_224</b></div>
+      </div>
+      <div class="grp2" style="position:relative"><span class="pin" style="top:8px;right:8px">4</span>
+        <h4>Nhịp thương mại · ProductSpec (neo)</h4>
+        <div class="kv"><span>SKU</span><b>AC-OAK-224</b></div>
+        <div class="kv"><span>NCC</span><b>An Cường</b></div>
+        <div class="kv"><span>Đơn giá</span><b>1.240.000đ/m²</b></div>
+        <div class="hint">Neo qua <code style="font-family:ui-monospace,Menlo,monospace">atlasRecordId</code>. Đổi giá bên ATLAS → mở lại bảng thấy số mới, KHÔNG cần tạo lại (live-link §5).</div>
+      </div>
+      <div class="grp2">
+        <h4>Live-link</h4>
+        <div class="kv"><span>Đồng bộ lần cuối</span><b>hôm nay 09:02</b></div>
+        <button class="ibtn sec"><svg class="i s" viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-6.2-8.6"/><path d="M21 3v6h-6"/></svg>Đồng bộ lại từ ATLAS</button>
+        <div class="hint">Sửa trên bảng A3 KHÔNG ghi ngược về Thiết kế 2D/Thư viện — bảng là hồ sơ, không phải editor vật liệu.</div>
+      </div>
+      <div class="grp2">
+        <h4>Phím tắt</h4>
+        <div class="kbdrow"><span>Kéo vào lưới</span><kbd>drag</kbd></div>
+        <div class="kbdrow"><span>Xoá ô</span><kbd>Del</kbd></div>
+        <div class="kbdrow"><span>Đổi layout</span><kbd>⌘L</kbd></div>
+        <div class="kbdrow"><span>Bảng lệnh</span><kbd>⌘K</kbd></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ⑥ Status -->
+  <footer class="foot">
+    <span class="warn">2 vật liệu mồ côi/chưa gán mã — bấm để xem</span>
+    <div class="r">
+      <span class="num">₫ VN</span>
+      <span class="vt"><span class="vtd"></span>Vitals</span>
+      <span>Đã lưu 09:41</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+addEventListener('keydown',e=>{
+  if(e.key.toLowerCase()==='d'){const r=document.documentElement;r.dataset.theme=r.dataset.theme==='light'?'dark':'light'}
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · Trình chiếu · Văn bản / biểu mẫu — mock hợp đồng</title>
+<!--
+  MOCK 09/08 · DOCUMENT / FORM EDITOR (loại hồ sơ #5) — dựng theo SPEC-TRINH-VANBAN-EDITOR.md (đọc trọn).
+  Khung tổng thể COPY từ mock-trinh-boq-2026-08-04.html (AppShell 6 ổ, token, cmdk, phím tắt Inspector)
+  — đổi nội dung đúng nghiệp vụ biểu mẫu mail-merge.
+  Thể hiện đúng spec:
+  §1 3 template builtin (Báo giá · Hợp đồng thi công · Thuyết minh thiết kế), TRUNG TÍNH — không TTT
+  §2 khổ CỐ ĐỊNH A4 dọc, KHÔNG auto-flow — chữ tràn box hiện cảnh báo viền --warning + đếm ký tự thừa
+  §3 biến {{tên_biến}} — có dữ liệu = điền + nền ánh accent; chưa có = placeholder --warning
+     "⟨chưa có — bấm điền⟩"; sửa đè = badge tay + revert (cùng cơ chế BOQ §5, dấu + truy vết)
+  §4 block bảng nhúng sống {{bang_boq_rut_gon}} — chỉ đọc, không sửa số tại đây
+  §6 xuất PDF 2 preset (In văn phòng / Gửi nhà in), DOCX = v2 (khoá kèm lý do, không ẩn)
+  §7 3 mảng §0c: Tab nhảy giữa biến chưa điền · status bar đếm "còn N biến" · vùng chạm ≥44 khi selected
+  §9 nghiệm thu #2: cảnh báo chặn xuất khi còn biến trống — "vẫn xuất?"
+  PLACEHOLDER: dữ liệu dự án demo — 2/9 biến còn trống (bên B), đúng tình huống nghiệm thu §9.2.
+  Token chép nguyên app/globals.css · 2 theme (phím D) · khung AppShell 6 ổ (42/214/236/26).
+  Icon: inline SVG cùng bộ nét lucide-style, theo đúng quy ước mock-trinh-boq-2026-08-04.html.
+-->
+<style>
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --accent-warm:#c79a63;
+  --radius-sm:10px; --radius-md:14px; --radius-lg:20px; --radius-xl:28px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --blur:22px; --blur-strong:40px;
+  --ease-apple:cubic-bezier(0.32,0.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --tap:32px; --row:28px; --gap:8px;
+}
+:root,:root[data-theme='dark']{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --dots:#26262d;
+  --mat-header:rgba(20,20,23,.72); --mat-panel:rgba(20,20,23,.68);
+  --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --dots:#ddd8ce;
+  --mat-header:rgba(250,248,244,.72); --mat-panel:rgba(250,248,244,.7);
+  --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+  --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+}
+@media (hover:none) and (pointer:coarse){ :root{ --tap:44px; --row:44px; --gap:12px } }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--t1);overflow:hidden;
+  font:var(--fw-normal) var(--fs-xs)/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  transition:background-color var(--dur-base) var(--ease-apple),color var(--dur-base) var(--ease-apple)}
+svg{display:block}
+button{font:inherit;color:inherit}
+.i{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.i.s{width:13px;height:13px}
+:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px;border-radius:var(--radius-sm)}
+.num{font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,monospace;font-size:var(--fs-2xs)}
+.pin{position:absolute;z-index:60;display:flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700}
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* ① Header 42 + toolbar định dạng chữ tối thiểu */
+.top{height:42px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;
+  background:var(--mat-header);backdrop-filter:saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));border-bottom:1px solid var(--mat-hairline)}
+.logo{width:24px;height:24px;border-radius:var(--radius-sm);background:var(--t1);color:var(--bg);
+  display:flex;align-items:center;justify-content:center;font-size:var(--fs-2xs);font-weight:800;border:0;cursor:pointer}
+.doc{display:flex;align-items:center;gap:5px;padding:5px 9px;border:0;background:transparent;
+  border-radius:var(--radius-sm);color:var(--t1);font-size:var(--fs-xs);cursor:pointer}
+.doc:hover{background:var(--hover)}
+.fmtbar{display:flex;align-items:center;gap:2px;background:var(--field);border-radius:var(--radius-sm);padding:3px}
+.fmtbar button{width:26px;height:24px;border:0;background:transparent;border-radius:6px;color:var(--t2);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;font-weight:700}
+.fmtbar button:hover{background:var(--hover)}
+.fmtbar button.on{background:var(--panel);color:var(--accent)}
+.fmtsep{width:1px;height:16px;background:var(--border-strong);margin:0 3px}
+.cmdk{display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;
+  border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--field);color:var(--t3);
+  font-size:var(--fs-2xs);cursor:pointer;transition:background .12s var(--ease-apple)}
+.cmdk:hover{background:var(--hover);color:var(--t1)}
+.cmdk kbd,.kbdrow kbd{font:inherit;background:var(--card);border:1px solid var(--border-strong);
+  border-radius:5px;padding:1px 6px;font-size:10px;color:var(--t2);font-family:ui-monospace,Menlo,monospace}
+.kbdrow{display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:var(--fs-2xs);color:var(--t3)}
+.seg{margin-left:auto;display:flex;background:var(--field);border-radius:var(--radius-sm);padding:2px}
+.seg button{border:0;background:transparent;color:var(--t3);font-size:var(--fs-xs);padding:5px 14px;border-radius:8px;cursor:pointer}
+.seg button.on{background:var(--panel);color:var(--t1);font-weight:var(--fw-semi);box-shadow:var(--shadow-node)}
+.mid{flex:1;display:flex;min-height:0}
+
+/* ② Sidebar 214 — 3 template + danh sách biến */
+.side{width:214px;flex:none;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sech{height:24px;display:flex;align-items:center;padding:0 10px;color:var(--t4);font-size:var(--fs-2xs);
+  font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-top:7px}
+.sech .n{margin-left:auto;font-variant-numeric:tabular-nums}
+.tplcard{margin:6px 10px;padding:9px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);
+  background:var(--field);cursor:pointer}
+.tplcard:hover{background:var(--hover)}
+.tplcard.on{border-color:var(--accent);background:var(--accent-soft)}
+.tplcard .tn{font-size:11.5px;font-weight:var(--fw-semi);color:var(--t1);display:flex;align-items:center;gap:6px}
+.tplcard .tn .i{width:13px;height:13px;color:var(--t4)}
+.tplcard.on .tn .i{color:var(--accent)}
+.tplcard .td{font-size:9.5px;color:var(--t4);margin-top:3px}
+.langtog{margin:2px 10px 8px;display:flex;background:var(--field);border-radius:8px;padding:2px}
+.langtog button{flex:1;border:0;background:transparent;color:var(--t3);font-size:10.5px;padding:5px 0;border-radius:6px;cursor:pointer}
+.langtog button.on{background:var(--panel);color:var(--accent);font-weight:var(--fw-semi)}
+.varitem{display:flex;align-items:center;gap:7px;height:30px;padding:0 10px;cursor:pointer;border-left:2px solid transparent}
+.varitem:hover{background:var(--hover)}
+.varitem.filled{color:var(--t2)}
+.varitem.filled .dot{background:var(--success)}
+.varitem.empty{color:var(--warning);border-left-color:var(--warning)}
+.varitem.empty .dot{background:var(--warning)}
+.varitem.hand .dot{background:var(--accent)}
+.varitem .dot{width:6px;height:6px;border-radius:50%;flex:none}
+.varitem .vn{flex:1;font-size:10.5px;font-family:ui-monospace,Menlo,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list{flex:1;overflow-y:auto;padding-bottom:8px}
+.sideft{flex:none;border-top:1px solid var(--mat-hairline);padding:8px;display:flex;flex-direction:column;gap:6px}
+.sideft button{height:32px;border-radius:9px;font-size:var(--fs-xs);display:flex;align-items:center;
+  justify-content:center;gap:6px;cursor:pointer;border:0}
+.add{background:var(--accent-soft);color:var(--accent);font-weight:var(--fw-semi)}
+.lib{background:var(--field);color:var(--t2);border:1px solid var(--border) !important}
+
+/* ③ Stage — trang A4 cố định */
+.stage{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+.ebar{height:40px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--panel);
+  border-bottom:1px solid var(--border)}
+.ebar .ti{font-size:var(--fs-sm);font-weight:var(--fw-semi)}
+.ebar .r{margin-left:auto;display:flex;gap:6px}
+.eb{height:28px;display:flex;align-items:center;gap:6px;padding:0 11px;border-radius:var(--radius-sm);
+  font-size:var(--fs-2xs);cursor:pointer;border:1px solid var(--border);background:var(--field);color:var(--t2);
+  transition:background .12s var(--ease-apple)}
+.eb:hover{background:var(--hover)}
+.eb.pri{background:var(--accent);border-color:transparent;color:#fff;font-weight:var(--fw-semi)}
+.eb.pri:hover{background:var(--accent-strong)}
+.eb[disabled]{opacity:.45;cursor:not-allowed}
+
+.pagewrap{flex:1;overflow:auto;display:flex;justify-content:center;padding:20px 14px}
+.a4{width:595px;height:842px;flex:none;background:var(--card);border-radius:8px;box-shadow:var(--shadow-sheet);
+  padding:46px 52px;position:relative;color:#1c1a16;font-size:12.5px;line-height:1.55}
+:root[data-theme='dark'] .a4{background:#efece5;color:#1c1a16}
+.a4head{display:flex;align-items:center;gap:12px;padding-bottom:14px;border-bottom:1.5px solid #1c1a16;margin-bottom:16px}
+.a4logo{width:32px;height:32px;border-radius:8px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex:none}
+.a4ttl{flex:1}
+.a4ttl .t1{font-size:16px;font-weight:700}
+.a4ttl .t2{font-size:10px;color:#5c574c}
+
+/* biến {{}} — 3 trạng thái §3 */
+.vr{display:inline;border-radius:4px;padding:0 2px;cursor:pointer}
+.vr.filled{background:rgba(106,87,245,.13);color:#1c1a16}
+.vr.filled:hover{background:rgba(106,87,245,.24)}
+.vr.empty{background:rgba(154,99,4,.16);color:#8a6304;font-style:italic;min-width:44px;min-height:44px;
+  display:inline-flex;align-items:center}
+.vr.hand{background:rgba(106,87,245,.13);position:relative;padding-right:16px}
+.vr.hand::after{content:"";position:absolute;right:3px;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:var(--warning)}
+
+.a4p{margin:0 0 10px}
+.a4h2{font-size:13px;font-weight:700;margin:16px 0 6px}
+
+/* bảng nhúng sống §4 */
+.embtbl{width:100%;border-collapse:collapse;margin:8px 0;font-size:10.5px}
+.embtbl th{text-align:left;border-bottom:1.5px solid #1c1a16;padding:4px 6px;font-size:9.5px;color:#5c574c}
+.embtbl td{border-bottom:1px solid #d9d3c5;padding:4px 6px}
+.embtbl td.n{text-align:right;font-variant-numeric:tabular-nums}
+.embtbl tfoot td{font-weight:700;border-bottom:none;padding-top:6px}
+.embnote{font-size:9px;color:#8a8474;font-style:italic;margin-top:2px}
+
+/* cảnh báo tràn box (§2) */
+.overflowbox{border:1.5px dashed var(--warning);border-radius:6px;padding:6px 8px;margin:8px 0;position:relative}
+.overflowbox .ow{position:absolute;top:-9px;right:8px;background:var(--warning);color:#3a2900;font-size:8.5px;
+  font-weight:800;padding:1px 6px;border-radius:999px}
+
+.a4sig{display:flex;gap:40px;margin-top:30px}
+.a4sig .sb{flex:1;text-align:center}
+.a4sig .sline{border-top:1px solid #1c1a16;margin-top:36px;padding-top:4px;font-size:10px;color:#5c574c}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.1s!important}}
+
+/* ④ Inspector 236 */
+.insp{width:236px;flex:none;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.ihead{height:34px;flex:none;display:flex;align-items:center;gap:7px;padding:0 6px 0 12px;border-bottom:1px solid var(--mat-hairline)}
+.ihead h2{margin:0;font-size:var(--fs-sm);font-weight:var(--fw-semi)}
+.ihead .sub{font-size:var(--fs-2xs);color:var(--t3);font-family:ui-monospace,Menlo,monospace}
+.ihead .x{margin-left:auto;width:26px;height:26px;border:0;background:transparent;color:var(--t4);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer}
+.ihead .x:hover{background:var(--hover);color:var(--t1)}
+.grp2{padding:11px 12px;border-bottom:1px solid var(--mat-hairline)}
+.grp2 h4{margin:0 0 8px;font-size:var(--fs-2xs);font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t4)}
+.kv{display:flex;justify-content:space-between;align-items:baseline;font-size:var(--fs-xs);padding:3px 0;color:var(--t3)}
+.kv b{color:var(--t1);font-weight:var(--fw-semi);font-variant-numeric:tabular-nums}
+.field{width:100%;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--field);
+  color:var(--t1);font-size:var(--fs-xs);padding:0 9px;margin-top:5px}
+.ibtn{width:100%;height:30px;border-radius:9px;border:0;font-size:var(--fs-2xs);font-weight:var(--fw-semi);
+  cursor:pointer;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:6px}
+.ibtn.warn{background:color-mix(in srgb,var(--warning) 18%,var(--panel));color:var(--warning)}
+.ibtn.sec{background:var(--field);color:var(--t2);border:1px solid var(--border)}
+.ibtn.pri{background:var(--accent);color:#fff}
+.hint{font-size:9.5px;color:var(--t4);line-height:1.45;margin-top:7px}
+
+/* ⑥ Status 26 (§7.2 — đếm biến chưa điền) */
+.foot{height:26px;flex:none;display:flex;align-items:center;gap:14px;padding:0 12px;background:var(--panel);
+  border-top:1px solid var(--border);font-size:var(--fs-2xs);color:var(--t4)}
+.foot .warn{color:var(--warning);cursor:pointer;font-weight:var(--fw-semi)}
+.foot .r{margin-left:auto;display:flex;gap:14px}
+.vt{display:flex;align-items:center;gap:5px;color:var(--t3)}
+.vtd{width:7px;height:7px;border-radius:2px;background:var(--success)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <button class="logo">IF</button>
+    <button class="doc">Căn hộ Thảo Điền · Báo giá — 01<svg class="i s" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="fmtbar">
+      <button class="on" style="font-weight:800">B</button>
+      <button style="font-style:italic">I</button>
+      <button style="text-decoration:underline">U</button>
+      <div class="fmtsep"></div>
+      <button><svg class="i s" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h13"/></svg></button>
+      <button><svg class="i s" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M4 18h16"/></svg></button>
+      <div class="fmtsep"></div>
+      <button title="Chèn biến"><svg class="i s" viewBox="0 0 24 24"><path d="M8 4l-4 8 4 8M16 4l4 8-4 8"/></svg></button>
+    </div>
+    <button class="cmdk" title="Mở bảng lệnh"><svg class="i s" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Tìm lệnh<kbd>⌘K</kbd></button>
+    <div class="seg"><button>Thiết kế 2D</button><button>Thiết kế 3D</button><button class="on">Trình chiếu</button></div>
+  </header>
+
+  <div class="mid">
+
+    <!-- ② 3 template builtin + danh sách biến (§1, §3) -->
+    <aside class="side">
+      <div class="sech">3 mẫu khởi đầu<span class="n">3</span></div>
+      <div class="tplcard on">
+        <div class="tn"><svg class="i" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V9l-4-4h-2"/><path d="M13 3v6h6"/></svg>Báo giá</div>
+        <div class="td">Bảng BOQ rút gọn nhúng sống + tổng</div>
+      </div>
+      <div class="tplcard">
+        <div class="tn"><svg class="i" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V9l-4-4h-2"/><path d="M13 3v6h6M9 15h6M9 11h3"/></svg>Hợp đồng thi công</div>
+        <div class="td">Điều khoản mẫu + chỗ ký 2 bên</div>
+      </div>
+      <div class="tplcard">
+        <div class="tn"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Thuyết minh thiết kế</div>
+        <div class="td">Mô tả concept + ảnh + vật liệu chính</div>
+      </div>
+
+      <div class="langtog"><button class="on">Tiếng Việt</button><button>English</button></div>
+
+      <div class="sech">Biến trong mẫu<span class="n">9</span></div>
+      <div class="list">
+        <div class="varitem filled"><span class="dot"></span><span class="vn">{{ten_du_an}}</span></div>
+        <div class="varitem filled"><span class="dot"></span><span class="vn">{{khach_hang}}</span></div>
+        <div class="varitem filled"><span class="dot"></span><span class="vn">{{ngay}}</span></div>
+        <div class="varitem hand"><span class="dot"></span><span class="vn">{{tong_boq}}</span></div>
+        <div class="varitem filled"><span class="dot"></span><span class="vn">{{tong_boq_chu}}</span></div>
+        <div class="varitem filled"><span class="dot"></span><span class="vn">{{bang_boq_rut_gon}}</span></div>
+        <div class="varitem filled"><span class="dot"></span><span class="vn">{{ben_A_ten}}</span></div>
+        <div class="varitem empty"><span class="dot"></span><span class="vn">{{ben_B_ten}}</span></div>
+        <div class="varitem empty"><span class="dot"></span><span class="vn">{{ben_B_dia_chi}}</span></div>
+      </div>
+      <div class="sideft">
+        <button class="add"><svg class="i s" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Lưu thành mẫu của tôi</button>
+        <button class="lib"><svg class="i s" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Thư viện mẫu</button>
+      </div>
+    </aside>
+
+    <main class="stage">
+      <div class="ebar">
+        <span class="ti">Báo giá · A4 dọc</span>
+        <div class="r">
+          <button class="eb" disabled title="v2 — xem SPEC-TRINH-VANBAN-EDITOR §6, §8">Xuất DOCX</button>
+          <button class="eb">Gửi nhà in — PDF</button>
+          <button class="eb pri">In văn phòng — PDF</button>
+        </div>
+      </div>
+
+      <div class="pagewrap">
+        <div class="a4">
+          <div class="a4head">
+            <div class="a4logo">TĐ</div>
+            <div class="a4ttl">
+              <div class="t1">BÁO GIÁ THIẾT KẾ NỘI THẤT</div>
+              <div class="t2">Dự án: <span class="vr filled" title="Nguồn: project.name — hover thấy nguồn">Căn hộ Thảo Điền</span> · Ngày <span class="vr filled" title="Nguồn: Date">09/08/2026</span></div>
+            </div>
+          </div>
+
+          <p class="a4p"><b>Bên A (đơn vị thiết kế):</b> <span class="vr filled" title="Nguồn: Brand Kit dự án">Xưởng thiết kế Hoà & Cộng sự</span></p>
+          <p class="a4p"><b>Bên B (chủ đầu tư):</b> <span class="vr empty" style="position:relative" title="Chưa có dữ liệu — bấm để điền"><span class="pin" style="top:-9px;left:-9px">1</span>⟨chưa có — bấm điền⟩</span></p>
+          <p class="a4p">Địa chỉ bên B: <span class="vr empty">⟨chưa có — bấm điền⟩</span></p>
+
+          <div class="a4h2">Bảng dự toán rút gọn</div>
+          <table class="embtbl" style="position:relative"><span class="pin" style="top:-9px;left:0">2</span>
+            <thead><tr><th>Tên vật liệu</th><th style="text-align:right">KL m²</th><th style="text-align:right">Đơn giá</th><th style="text-align:right">Thành tiền</th></tr></thead>
+            <tbody>
+              <tr><td>Gỗ óc chó ốp tường</td><td class="n">40,0</td><td class="n">1.240.000</td><td class="n">49.600.000</td></tr>
+              <tr><td>Sàn gỗ sồi 190</td><td class="n">24,6</td><td class="n">1.250.000</td><td class="n">30.750.000</td></tr>
+              <tr><td>Đá thạch anh mặt bàn</td><td class="n">6,4</td><td class="n">3.450.000</td><td class="n">22.080.000</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="3">…và 2 hạng mục — xem BOQ đầy đủ</td>
+              <td class="n"><span class="vr hand" title="Sửa đè — badge tay, khác số máy 123.742.580đ">123.500.000đ</span></td></tr></tfoot>
+          </table>
+          <div class="embnote">*chưa gồm 3 vùng lỗi — xem BOQ-01. Sửa số ở đây KHÔNG được — sang editor BOQ (một-nguồn).</div>
+
+          <div class="a4h2">Điều kiện thanh toán</div>
+          <div class="overflowbox" style="position:relative"><span class="pin" style="top:-9px;left:-9px;background:var(--warning)">3</span>
+            <span class="ow">tràn 18 ký tự</span>
+            Thanh toán 3 đợt: 40% tạm ứng khi ký hợp đồng, 40% khi hoàn thiện thi công phần thô, 20% còn lại khi nghiệm thu bàn giao đầy đủ hồ sơ hoàn công và bảo hành 12 tháng kể từ ngày bàn giao chính thức cho chủ đầu tư sử dụng.
+          </div>
+
+          <div class="a4sig">
+            <div class="sb"><div class="sline">Đại diện Bên A</div></div>
+            <div class="sb"><div class="sline">Đại diện Bên B</div></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ④ Inspector — biến đang chọn (§3, §7.3 vùng chạm ≥44 khi selected) -->
+    <aside class="insp">
+      <div class="ihead">
+        <h2>Biến đang chọn</h2><span class="sub">{{ben_B_ten}}</span>
+        <button class="x"><svg class="i s" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="grp2" style="position:relative"><span class="pin" style="top:8px;right:8px">4</span>
+        <h4>Chưa có dữ liệu</h4>
+        <div class="kv"><span>Nhóm</span><b>Hai bên</b></div>
+        <div class="kv"><span>Nguồn dự kiến</span><b>form 1 lần/dự án</b></div>
+        <input class="field" placeholder="Nhập tên bên B…">
+        <button class="ibtn pri"><svg class="i s" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Điền & lưu vào dự án</button>
+        <div class="hint">Điền xong ô này thì mọi văn bản khác của dự án dùng lại — không phải gõ lại mỗi lần (§3).</div>
+      </div>
+      <div class="grp2">
+        <h4>Ô {{tong_boq}} — đã sửa tay</h4>
+        <div class="kv"><span>Máy tính từ BOQ</span><b>123.742.580đ</b></div>
+        <div class="kv"><span>Bạn đang giữ</span><b style="color:var(--warning)">123.500.000đ</b></div>
+        <button class="ibtn warn"><svg class="i s" viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9"/><path d="M3 3v6h6"/></svg>Về số máy 123.742.580đ</button>
+      </div>
+      <div class="grp2">
+        <h4>Phím tắt</h4>
+        <div class="kbdrow"><span>Nhảy biến chưa điền</span><kbd>Tab</kbd></div>
+        <div class="kbdrow"><span>Điền</span><kbd>Enter</kbd></div>
+        <div class="kbdrow"><span>Đổi ngôn ngữ</span><kbd>⌘K</kbd></div>
+        <div class="kbdrow"><span>Bảng lệnh</span><kbd>⌘K</kbd></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ⑥ Status — đếm biến chưa điền (§7.2), cảnh báo chặn xuất (§9.2) -->
+  <footer class="foot">
+    <span class="warn">còn 2 biến chưa điền — bấm để nhảy tới</span>
+    <div class="r">
+      <span class="num">A4 · 1/1 trang</span>
+      <span class="vt"><span class="vtd"></span>Vitals</span>
+      <span>Đã lưu 09:47</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+addEventListener('keydown',e=>{
+  if(e.key.toLowerCase()==='d'){const r=document.documentElement;r.dataset.theme=r.dataset.theme==='light'?'dark':'light'}
+});
+</script>
+</body>
+</html>
