@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/server/auth';
 import { assertProjectAccess, accessErrorPayload } from '@/lib/server/access';
-import { listWorkflowStates, listTasks, createTask } from '@/lib/server/tasks';
+import { listWorkflowStates, listTasks, createTask, isTaskStage } from '@/lib/server/tasks';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +35,10 @@ export async function POST(req: Request) {
   if (!projectId || !title.trim()) {
     return NextResponse.json({ error: 'thiếu projectId hoặc title' }, { status: 400 });
   }
+  // TaskContext Link (11/08) — stage sai giá trị là lỗi ĐẦU VÀO (400), không phải lỗi server.
+  if (body.stage !== undefined && body.stage !== null && !isTaskStage(body.stage)) {
+    return NextResponse.json({ error: "stage chỉ nhận 'concept' | 'render' | 'present' hoặc null" }, { status: 400 });
+  }
 
   try {
     await assertProjectAccess(user.id, projectId, 'drafter');
@@ -46,6 +50,9 @@ export async function POST(req: Request) {
       startAt: typeof body.startAt === 'string' ? body.startAt : null,
       dueAt: typeof body.dueAt === 'string' ? body.dueAt : null,
       order: typeof body.order === 'number' ? body.order : 0,
+      stage: isTaskStage(body.stage) ? body.stage : null,
+      workspaceId: typeof body.workspaceId === 'string' ? body.workspaceId : null,
+      entityId: typeof body.entityId === 'string' ? body.entityId : null,
     });
     return NextResponse.json({ task });
   } catch (e) {

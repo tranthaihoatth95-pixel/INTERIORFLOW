@@ -82,6 +82,27 @@ async function main() {
       await prisma.project.delete({ where: { id: otherProject.id } });
     }
 
+    // ④b TaskContext Link (11/08) — 3 field ngữ cảnh round-trip qua DB thật + stage sai bị chặn
+    {
+      const ctx = await createTask({
+        projectId: project.id, title: 'Việc có ngữ cảnh', stage: 'render', workspaceId: 'board', entityId: 'wall-1',
+      });
+      assert.strictEqual(ctx.stage, 'render');
+      assert.strictEqual(ctx.workspaceId, 'board');
+      assert.strictEqual(ctx.entityId, 'wall-1');
+      const upd = await updateTask(ctx.id, project.id, { stage: null, entityId: null });
+      assert.strictEqual(upd.stage, null);
+      assert.strictEqual(upd.entityId, null);
+      assert.strictEqual(upd.workspaceId, 'board'); // undefined = giữ nguyên
+      let threw = false;
+      try {
+        await updateTask(ctx.id, project.id, { stage: 'sai-gia-tri' as never });
+      } catch { threw = true; }
+      assert.ok(threw, 'stage ngoài 3 giá trị phải bị từ chối');
+      await deleteTask(ctx.id, project.id);
+      ok('TaskContext: stage/workspaceId/entityId ghi-đọc đúng, null gỡ được, stage lạ bị chặn');
+    }
+
     // ⑤ xoá việc
     await deleteTask(t.id, project.id);
     const empty = await listTasks(project.id);

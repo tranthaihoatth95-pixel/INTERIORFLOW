@@ -28,6 +28,7 @@ function task(id: string, statusId: string, order = 0, extra: Partial<TaskRow> =
   return {
     id, projectId: 'p1', title: `Việc ${id}`, statusId, assigneeIds: [],
     startAt: null, dueAt: null, order,
+    stage: null, workspaceId: null, entityId: null, // TaskContext Link 11/08
     createdAt: '2026-08-01T00:00:00.000Z', updatedAt: '2026-08-01T00:00:00.000Z',
     ...extra,
   };

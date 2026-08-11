@@ -545,6 +545,15 @@ model Task {
   startAt     DateTime?
   dueAt       DateTime?
   order       Int       @default(0) // thứ tự trong cột (kéo-thả)
+
+  /// TaskContext Link (chốt 11/08 — SPEC-KHOI-TAO-DU-AN §"Dây sang ngữ cảnh"): việc mang ngữ
+  /// cảnh {stage, workspace, entity} để bấm là nhảy đúng chỗ. Cả 3 optional — việc không ngữ
+  /// cảnh vẫn hợp lệ. `stage` ∈ 'concept'|'render'|'present' (ID kỹ thuật lib/phases.ts, KHÔNG
+  /// đổi). `workspaceId` là khoá tự do (vd 'cad','board','present') — cố ý không enum.
+  stage       String?
+  workspaceId String?
+  entityId    String?
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

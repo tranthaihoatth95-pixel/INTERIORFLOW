@@ -18,9 +18,10 @@
  *    duy nhất); kéo-thả HTML5 làm thêm vì rẻ.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ClipboardList, Loader2, Plus, Search } from 'lucide-react';
+import { Box, ClipboardList, Loader2, PencilRuler, Plus, Presentation, Search } from 'lucide-react';
 import { useT } from '@/lib/i18n';
-import type { TaskRow, WorkflowStateRow } from '@/lib/server/tasks';
+import type { TaskRow, TaskStage, WorkflowStateRow } from '@/lib/server/tasks';
+import { buildTaskDeepLink, STAGE_LABELS } from '@/lib/tasks/context';
 import {
   adjacentStatusId,
   countOverdue,
@@ -115,6 +116,12 @@ const BOARD_CSS = `
 .tb-tool:disabled { opacity: .35; cursor: not-allowed; }
 .tb-col-drop { outline: 1.5px dashed var(--accent); outline-offset: -4px; background: var(--accent-soft) !important; }
 .tb-addbtn:hover { background: var(--hover) !important; color: var(--t1) !important; }
+/* Chip ngữ cảnh (TaskContext Link 11/08) — bấm là nhảy đúng chặng của dự án. */
+.tb-ctx { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 7px;
+  border: 1px solid var(--border); border-radius: 9px; background: var(--field); color: var(--t3);
+  font-size: 10px; font-weight: 600; line-height: 1; cursor: pointer; flex: none;
+  transition: color .15s var(--ease-apple, ease), border-color .15s var(--ease-apple, ease); }
+.tb-ctx:hover { color: var(--accent); border-color: var(--accent); }
 /* Thẻ template — vật đơn lẻ nên ĐƯỢC scale nhẹ (SPEC-HOVER-FOCUS-IDF: thẻ 1.02 + lift 2px 200ms). */
 .tb-tpl { transition: transform .2s var(--ease-apple, ease), border-color .2s, box-shadow .2s; }
 .tb-tpl:hover:not(:disabled) { transform: translateY(-2px) scale(1.02); border-color: var(--border-strong); box-shadow: 0 6px 18px rgba(0,0,0,.12); }
@@ -304,6 +311,32 @@ export function TaskBoardScreen() {
   const firstStateId = columns[0]?.state.id ?? null;
   const loadingBoard = projectId !== '' && (states === null || tasks === null);
   const boardEmpty = (tasks?.length ?? 0) === 0 && !query;
+
+  /* ── chip ngữ cảnh (TaskContext Link 11/08) — chỉ hiện khi việc CÓ stage; bấm = deep-link ── */
+  const STAGE_ICONS: Record<TaskStage, JSX.Element> = {
+    concept: <PencilRuler size={10} />,
+    render: <Box size={10} />,
+    present: <Presentation size={10} />,
+  };
+  const contextChip = (t: TaskRow) => {
+    if (!t.stage) return null;
+    const href = buildTaskDeepLink(t);
+    if (!href) return null;
+    const label = tr(STAGE_LABELS[t.stage].vi, STAGE_LABELS[t.stage].en);
+    return (
+      <button
+        type="button"
+        className="tb-ctx"
+        title={tr(`Mở ${label} của dự án này`, `Open ${label} for this project`)}
+        onClick={(e) => { e.stopPropagation(); window.location.href = href; }}
+        // draggable cha bắt pointer — chặn để bấm chip không kích hoạt kéo thẻ
+        onMouseDown={(e) => e.stopPropagation()}
+        draggable={false}
+      >
+        {STAGE_ICONS[t.stage]} {label}
+      </button>
+    );
+  };
 
   /* ── nhãn hạn — mock: trễ đỏ "Trễ N ngày" · nay vàng "Hôm nay" · còn lại "d/m" ── */
   const dueBadge = (t: TaskRow) => {
@@ -558,6 +591,7 @@ export function TaskBoardScreen() {
                       style={{ borderRadius: 12, background: 'var(--card)', border: '1px solid var(--border)', padding: '11px 12px', cursor: 'grab', display: 'flex', flexDirection: 'column', gap: 8 }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 15 }}>
+                        {contextChip(t)}
                         {dueBadge(t)}
                       </div>
 

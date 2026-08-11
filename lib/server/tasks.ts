@@ -27,6 +27,13 @@ export interface WorkflowStateRow {
   isDone: boolean;
 }
 
+/** TaskContext Link (11/08) — stage hợp lệ = ID kỹ thuật của 3 chặng (lib/phases.ts, KHÔNG đổi). */
+export const TASK_STAGES = ['concept', 'render', 'present'] as const;
+export type TaskStage = (typeof TASK_STAGES)[number];
+export function isTaskStage(v: unknown): v is TaskStage {
+  return v === 'concept' || v === 'render' || v === 'present';
+}
+
 export interface TaskRow {
   id: string;
   projectId: string;
@@ -36,6 +43,10 @@ export interface TaskRow {
   startAt: string | null;
   dueAt: string | null;
   order: number;
+  /** TaskContext Link — cả 3 optional; việc không ngữ cảnh là hợp lệ. */
+  stage: TaskStage | null;
+  workspaceId: string | null;
+  entityId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -56,6 +67,9 @@ interface TaskDelegate {
       startAt: Date | null;
       dueAt: Date | null;
       order: number;
+      stage: string | null;
+      workspaceId: string | null;
+      entityId: string | null;
       createdAt: Date;
       updatedAt: Date;
     }>
@@ -122,6 +136,9 @@ function toTaskRow(t: {
   startAt: Date | null;
   dueAt: Date | null;
   order: number;
+  stage: string | null;
+  workspaceId: string | null;
+  entityId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }): TaskRow {
@@ -141,6 +158,10 @@ function toTaskRow(t: {
     startAt: t.startAt ? t.startAt.toISOString() : null,
     dueAt: t.dueAt ? t.dueAt.toISOString() : null,
     order: t.order,
+    // DB có thể chứa chuỗi lạ (ghi tay/hệ ngoài) — chuẩn hoá về null thay vì lộ giá trị sai kiểu.
+    stage: isTaskStage(t.stage) ? t.stage : null,
+    workspaceId: t.workspaceId ?? null,
+    entityId: t.entityId ?? null,
     createdAt: t.createdAt.toISOString(),
     updatedAt: t.updatedAt.toISOString(),
   };
@@ -160,6 +181,18 @@ export interface CreateTaskInput {
   startAt?: string | null;
   dueAt?: string | null;
   order?: number;
+  /** TaskContext Link — tuỳ chọn; stage sai giá trị là LỖI (không lặng lẽ nuốt). */
+  stage?: TaskStage | null;
+  workspaceId?: string | null;
+  entityId?: string | null;
+}
+
+/** stage chỉ nhận 'concept'|'render'|'present' hoặc null — giá trị lạ ném lỗi rõ ràng. */
+function assertStageValue(stage: string | null | undefined): void {
+  if (stage === undefined || stage === null) return;
+  if (!isTaskStage(stage)) {
+    throw new Error(`[Task] stage không hợp lệ: "${stage}" — chỉ nhận ${TASK_STAGES.join(' | ')} hoặc null.`);
+  }
 }
 
 export async function createTask(input: CreateTaskInput): Promise<TaskRow> {
@@ -178,6 +211,7 @@ export async function createTask(input: CreateTaskInput): Promise<TaskRow> {
     // (create/update) bằng cùng 1 hàm kiểm.
     await assertStatusBelongsToProject(statusId, input.projectId);
   }
+  assertStageValue(input.stage);
   const created = await task.create({
     data: {
       projectId: input.projectId,
@@ -187,6 +221,11 @@ export async function createTask(input: CreateTaskInput): Promise<TaskRow> {
       startAt: input.startAt ? new Date(input.startAt) : null,
       dueAt: input.dueAt ? new Date(input.dueAt) : null,
       order: input.order ?? 0,
+      // null ≡ vắng mặt (cột default null) — chỉ gửi khi CÓ giá trị, để Prisma client cũ
+      // (dev server chưa restart sau generate) không vỡ với create không ngữ cảnh.
+      ...(input.stage ? { stage: input.stage } : {}),
+      ...(input.workspaceId ? { workspaceId: input.workspaceId } : {}),
+      ...(input.entityId ? { entityId: input.entityId } : {}),
     },
   });
   const rows = await task.findMany({ where: { id: created.id } });
@@ -200,6 +239,10 @@ export interface UpdateTaskInput {
   startAt?: string | null;
   dueAt?: string | null;
   order?: number;
+  /** TaskContext Link — null = gỡ ngữ cảnh; undefined = giữ nguyên. */
+  stage?: TaskStage | null;
+  workspaceId?: string | null;
+  entityId?: string | null;
 }
 
 /** projectId truyền vào để CHẶN sửa Task của project khác qua id đoán mò (không đi qua access.ts ở tầng này — route gọi assertProjectAccess trước). */
@@ -217,6 +260,12 @@ export async function updateTask(id: string, projectId: string, patch: UpdateTas
   if (patch.startAt !== undefined) data.startAt = patch.startAt ? new Date(patch.startAt) : null;
   if (patch.dueAt !== undefined) data.dueAt = patch.dueAt ? new Date(patch.dueAt) : null;
   if (patch.order !== undefined) data.order = patch.order;
+  if (patch.stage !== undefined) {
+    assertStageValue(patch.stage);
+    data.stage = patch.stage;
+  }
+  if (patch.workspaceId !== undefined) data.workspaceId = patch.workspaceId;
+  if (patch.entityId !== undefined) data.entityId = patch.entityId;
   await task.update({ where: { id }, data });
   const rows = await task.findMany({ where: { id } });
   return toTaskRow(rows[0]);
