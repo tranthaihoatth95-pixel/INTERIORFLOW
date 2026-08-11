@@ -65,6 +65,7 @@ export default function CadTouchDock() {
   return (
     <div
       aria-label="Cụm nút cảm ứng (Sketch)"
+      className="cad-pill-scroll"
       style={{
         display: 'flex',
         alignItems: 'center',

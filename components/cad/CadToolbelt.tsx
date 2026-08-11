@@ -80,7 +80,7 @@ function PaperToolbelt() {
     paperAction('report');
     return () => window.removeEventListener('cad:paper-selection-state', onState);
   }, []);
-  return <div style={{ display: 'flex', alignItems: 'center', gap: 5, minHeight: 52, padding: 6, maxWidth: 'calc(100vw - 40px)', overflowX: 'auto', borderRadius: 18, background: 'color-mix(in srgb, var(--panel) 82%, transparent)', backdropFilter: 'blur(18px) saturate(1.35)', WebkitBackdropFilter: 'blur(18px) saturate(1.35)', border: '1px solid var(--border)', boxShadow: '0 8px 28px rgba(0,0,0,.2)' }}>
+  return <div className="cad-pill-scroll" style={{ display: 'flex', alignItems: 'center', gap: 5, minHeight: 52, padding: 6, maxWidth: 'calc(100vw - 40px)', overflowX: 'auto', borderRadius: 18, background: 'color-mix(in srgb, var(--panel) 82%, transparent)', backdropFilter: 'blur(18px) saturate(1.35)', WebkitBackdropFilter: 'blur(18px) saturate(1.35)', border: '1px solid var(--border)', boxShadow: '0 8px 28px rgba(0,0,0,.2)' }}>
     <button type="button" onClick={() => setWorkspace('model')} style={paperToolBtn}><span style={paperModeBadge}>PAPER</span><span style={{ color: 'var(--t3)' }}>Model</span></button>
     <Divider />
     <button type="button" onClick={() => paperAction('add')} style={paperToolBtn} title="Thêm một ô nhìn"><Plus size={15} /> Ô nhìn</button>
