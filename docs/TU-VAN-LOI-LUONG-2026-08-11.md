@@ -98,3 +98,22 @@ Cột **ĐỌC** = ăn từ lõi nào · cột **NUÔI** = đầu ra của nó a
 > Nguyên tắc chung rút từ toàn bộ kiểm: lợi thế IF không nằm ở từng tool — nằm ở chỗ MỌI tool
 > đọc/ghi một nguồn và NUÔI nhau. Vậy tiêu chí nghiệm thu mọi tính năng mới = Hợp đồng 4 câu;
 > hàng nào cột NUÔI trống thì hoặc nối dây, hoặc cắt.
+
+## §4 · KẾ HOẠCH 3 ĐỢT (Hoà duyệt hướng 11/08 — "dẹp GPL qua bên" giai đoạn nội bộ)
+
+**ĐỢT 1 Khâu dây (1-2 phiên):** ① TaskContext Link (Task thêm stage/workspaceId/entityId additive
++ deep-link 2 chiều + "Tạo việc từ đây") ② Flip Library/FM sang dữ liệu thật (bỏ LIBRARY_DATA_IS_MOCK,
+FM bỏ mock-data — engine DB/real-fs sẵn) ③ ThinkDial 4 nấc trên thanh Vitals (tổ hợp engine sẵn:
+nhanh/docContext/violations/RAG) ④ LightArc + nút xuất PNG sequence (captureSequence rời bench).
+
+**ĐỢT 2 Lõi dựng (gắn M1, 2-3 phiên):** ⑤ máy trạng thái công cụ 3D (mở 12 nút dock chờ)
+⑥ BuildRecipe stack non-destructive + impact preview — nền .idfc ⑦ SnapCore hợp nhất 2D↔3D
+⑧ Touch: dải số nổi (NumStrip, nối vcb.ts) + pie menu theo đối tượng (tái dùng RadialToolMenu).
+
+**ĐỢT 3 Ra cổng (trước người ngoài dùng):** ⑨ DWG converter TÁCH TIẾN TRÌNH (libredwg đứng
+riêng GPL, IPC qua file = mere aggregation — luồng người dùng không đổi; dài hạn ODA SDK khi có
+doanh thu, mở năng lực GHI DWG) ⑩ quét confirm→undo ⑪ tái-audit FEATURE-TREE cột Code
+⑫ 2 quyết Hoà: ChatMessage+projectId (đề nghị: CÓ) · Neufert tách gói ngoài repo (đề nghị: TÁCH).
+
+Chuyện GPL giai đoạn nội bộ: không phân phối = không kích hoạt nghĩa vụ — giữ nguyên, không tốn
+phiên nào bây giờ; ⑨ chỉ làm sát ngày bán.
