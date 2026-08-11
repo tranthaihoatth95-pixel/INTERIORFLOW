@@ -50,8 +50,10 @@ export const FRONTIER = [
   //     nghiệm thu sản phẩm thay vì code; 3 lỗi khiến bản vẽ "chưa cầm đi gặp khách được") ──
   { id: 'label-ne-hinh', ten: 'Nhãn phòng/dim NÉ hình học khi xuất (PDF: chữ đè giường/WC/dim chồng nhau)', he: 'DocCore', dot: 1, trangThai: 'chua',
     bangChung: [{ dir: 'lib/cad', mau: 'avoidLabelCollision|LabelPlacer' }] },
-  { id: 'ty-le-chuan', ten: 'Bắt tỷ lệ về nấc chuẩn khi fit trang (PDF in "1:47" — nghề chỉ có 1:50/1:100)', he: 'DocCore', dot: 1, trangThai: 'chua',
-    bangChung: [{ dir: 'lib', mau: 'snapToStandardScale|STANDARD_SCALES' }] },
+  // ⚠️ soi-frontier bắt được ngay 11/08: STANDARD_SCALES + hàm bắt nấc ĐÃ CÓ (model.ts:1059-1071)
+  // nhưng đường xuất PDF không gọi → in "1:47". Việc là NỐI DÂY vào đường xuất, marker mới:
+  { id: 'ty-le-chuan', ten: 'NỐI STANDARD_SCALES (có sẵn model.ts:1059) vào đường xuất PDF — hết "1:47"', he: 'DocCore', dot: 1, trangThai: 'chua',
+    bangChung: [{ dir: 'lib', mau: 'snapPrintScale|CHUAN_TY_LE_IN' }] },
   { id: 'khung-ten-sach', ten: 'Khung tên sạch jargon + đủ ô (mã bản vẽ·ngày·người vẽ/kiểm; bỏ "(đã rà công năng)")', he: 'DocCore', dot: 1, trangThai: 'chua',
     bangChung: [{ dir: 'lib/cad', mau: 'drawingNumber|soHieuBanVe' }] },
 
