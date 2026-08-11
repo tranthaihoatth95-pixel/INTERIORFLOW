@@ -90,6 +90,8 @@ export const FRONTIER = [
   // 11/08 khuya — Hoà giao batch chat/khởi tạo/họp (3 agent mock+spec đang chạy):
   { id: 'presence-avatar-row', ten: 'Dãy avatar tròn thành viên: online = màu, offline = trắng đen (header chat/workspace)', he: 'LightState', dot: 1, trangThai: 'chua',
     bangChung: [{ dir: 'components', mau: 'PresenceRow|presence-row' }] },
+  { id: 'activity-feed', ten: 'Dòng Hoạt Động dự án (ref #13): filter Tất-cả/Của-tôi/Đội, event card theo loại + thread inline — bề mặt nhận push Cổng Duyệt, phiếu điều chỉnh họp, báo đổi vật liệu', he: 'Workspace', dot: 2, trangThai: 'chua',
+    bangChung: [{ dir: 'components', mau: 'ActivityFeed|DongHoatDong' }] },
   { id: 'chat-ai-notebook', ten: 'Stage chat nhóm bố cục NotebookLM (nguồn trái · luồng giữa · chưng cất phải) + toggle AI tham vấn', he: 'Workspace', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'components', mau: 'ChatNhomAi|AiGroupChat' }] },
   { id: 'project-init-board', ten: 'Bảng khởi tạo dự án Plan-Task-Timeline: quản lý tạo + phân quyền, chủ trì gắn thẻ đầu mục', he: 'TriTueDuAn', dot: 2, trangThai: 'chua',

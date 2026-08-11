@@ -23,3 +23,10 @@
 
 ---
 *Cowork chưng cất 02/08/2026 từ 10 ảnh Hoà giao (ảnh gốc trong chat, không đưa vào repo theo luật dọn ảnh 01/08).*
+
+## Bổ sung 11/08 khuya — 2 ref Hoà gửi (batch khởi tạo/duyệt/hoạt động)
+
+| # | Ref | LẤY | Cho IF | TRÁNH |
+|---|---|---|---|---|
+| 12 | **Trickly features** (landing productivity, card mini-UI) | ① thẻ tính năng chứa MINI-UI THẬT thu nhỏ (không icon suông) — đúng hướng preview template đã làm ở Bảng việc ② "Adaptive Organiser": việc TỰ XẾP theo hạn + độ quan trọng ③ "AI auto task breakdown" = đúng Scaffolder/Soạn-việc-với-Vitals ④ Progress: bar chart + chip MILESTONE + pill "65%" — khuôn cho TIMELINE bảng khởi tạo (Project chưa có milestone — spec khởi tạo đã ghi thiếu) ⑤ con trỏ mang TÊN người (Brimo/Tony) — xác nhận hướng presence Mood+Collab | Bảng việc (auto-sắp theo hạn — dueInfo có sẵn) · Bảng khởi tạo (TIMELINE + milestone) · thẻ template · presence cursor | accent xanh dương + giọng marketing vui nhộn — IF giữ tím + quiet-luxury; không chép nguyên landing style vào app |
+| 13 | **Activity feed tối** (Sora UI kit style) | ① DÒNG HOẠT ĐỘNG có filter tab (Tất cả/Của tôi/Đội[3]) + đếm đỏ ② event card THEO LOẠI với glyph trái (comment/AI-sinh/duyệt) + thread trả lời inline + ô viết ngay trong card ③ card ảnh AI-sinh có menu ngữ cảnh hover: Copy prompt→**copy recipe** · Bookmark→**lưu vào Thư viện** · Send to→**Đưa sang Render Studio** · nút tách "Download ▾ / Use image"→**"Tải ▾ / Dùng vào hồ sơ"** ④ cụm avatar chồng | **Dòng Hoạt Động dự án** — CHÍNH LÀ bề mặt UI còn thiếu cho: push Cổng Duyệt (review-gate) · phiếu điều chỉnh sau họp (meeting-distill dòng ③) · thông báo đổi vật liệu (material-impact). IF hiện CHƯA có trung tâm thông báo nào | toàn bộ lớp MẠNG XÃ HỘI (likes · follow · Community · showcase) — IF là công cụ studio nội bộ, lấy CẤU TRÚC feed, bỏ social |
