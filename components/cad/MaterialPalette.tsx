@@ -22,6 +22,7 @@ import { useCadStore } from '@/lib/cad/store';
 import type { HatchPattern } from '@/lib/cad/model';
 import { MATERIALS, materialSwatchStyle, type MaterialDef, type MaterialCategory } from '@/lib/cad/materials';
 import { materialTextureDataUrl } from '@/lib/cad/material-texture';
+import MaterialImpactPreview from '@/components/materials/MaterialImpactPreview';
 
 const PATTERNS: HatchPattern[] = ['SOLID', 'ANSI31', 'ANSI32', 'ANSI37', 'DOTS'];
 
@@ -37,9 +38,13 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
   const setHatchAngle = useCadStore((s) => s.setHatchAngle);
   const setHatchColor = useCadStore((s) => s.setHatchColor);
   const setTool = useCadStore((s) => s.setTool);
+  const doc = useCadStore((s) => s.doc);
+  const selection = useCadStore((s) => s.selection);
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<'all' | MaterialCategory>('all');
   const [hovered, setHovered] = useState<MaterialDef | null>(null);
+  /** Material Impact preview (Cổng R1 mục 4) — vật liệu đang CHỜ áp, treo lại tới khi xác nhận. */
+  const [pendingPick, setPendingPick] = useState<MaterialDef | null>(null);
 
   const categories = useMemo(() => Array.from(new Set(MATERIALS.map((m) => m.category))), []);
   const shown = tab === 'all' ? MATERIALS : MATERIALS.filter((m) => m.category === tab);
@@ -62,8 +67,25 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
       : (materialSwatchStyle(m) as React.CSSProperties);
   };
 
-  const pick = (m: MaterialDef) => {
+  /**
+   * Material Impact preview (KS3, chèn TRƯỚC bước ghi — impact.ts docstring bắt caller hiển thị
+   * impact trước khi thay): chỉ khi đang có vùng tô ĐƯỢC CHỌN thì applyMaterial mới GHI vào Doc
+   * (store.ts:804 — nhánh selectedHatches), lúc đó dừng lại hỏi trước. Không có selection thì
+   * applyMaterial chỉ đổi "vật liệu đang cầm để vẽ tiếp" (không đụng Doc) — áp thẳng, không hỏi.
+   * Đường ghi + undo giữ NGUYÊN: xác nhận xong vẫn gọi đúng applyMaterial cũ (updateEntities đã
+   * snapshot ⇒ ⌘Z lùi được).
+   */
+  const selectedHatches = doc.entities.filter((e) => e.type === 'hatch' && selection.includes(e.id));
+  const selectedSpecIds = Array.from(
+    new Set(selectedHatches.map((e) => (e.type === 'hatch' ? e.specId : undefined)).filter((id): id is string => !!id)),
+  );
+
+  const reallyApply = (m: MaterialDef) => {
     applyMaterial(m.name, m.hatchPattern, m.patternScale, m.patternAngle, m.color);
+  };
+  const pick = (m: MaterialDef) => {
+    if (selectedHatches.length) setPendingPick(m);
+    else reallyApply(m);
   };
 
   if (!mounted) return null;
@@ -80,6 +102,19 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
         overflow: 'hidden',
       }}
     >
+      {pendingPick && (
+        // Tự portal ra body (K4) — đặt ở đây chỉ để cùng vòng đời panel, DOM không lồng trong kính.
+        <MaterialImpactPreview
+          doc={doc}
+          specIds={selectedSpecIds}
+          nextName={pendingPick.name}
+          onApply={() => {
+            reallyApply(pendingPick);
+            setPendingPick(null);
+          }}
+          onCancel={() => setPendingPick(null)}
+        />
+      )}
       {hovered && (
         <div style={hoverPreview} aria-hidden>
           <span
