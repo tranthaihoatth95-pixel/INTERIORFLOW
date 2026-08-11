@@ -85,6 +85,16 @@ export const FRONTIER = [
   { id: 'nhan-nguon-reset', ten: 'Nhãn nguồn DataOrigin (app-core/studio/project/demo) trên mọi bản ghi + lệnh reset về trung tính', he: 'DocCore', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'DataOrigin|NHAN_NGUON' }] },
 
+  // 11/08 khuya — Hoà giao batch chat/khởi tạo/họp (3 agent mock+spec đang chạy):
+  { id: 'presence-avatar-row', ten: 'Dãy avatar tròn thành viên: online = màu, offline = trắng đen (header chat/workspace)', he: 'LightState', dot: 1, trangThai: 'chua',
+    bangChung: [{ dir: 'components', mau: 'PresenceRow|presence-row' }] },
+  { id: 'chat-ai-notebook', ten: 'Stage chat nhóm bố cục NotebookLM (nguồn trái · luồng giữa · chưng cất phải) + toggle AI tham vấn', he: 'Workspace', dot: 2, trangThai: 'chua',
+    bangChung: [{ dir: 'components', mau: 'ChatNhomAi|AiGroupChat' }] },
+  { id: 'project-init-board', ten: 'Bảng khởi tạo dự án Plan-Task-Timeline: quản lý tạo + phân quyền, chủ trì gắn thẻ đầu mục', he: 'TriTueDuAn', dot: 2, trangThai: 'chua',
+    bangChung: [{ dir: 'components', mau: 'ProjectInitBoard|BangKhoiTao' }] },
+  { id: 'meeting-distill', ten: 'Họp → nháp biên bản (biểu mẫu kho chuẩn) → chủ trì duyệt → 3 dòng: quyết định/việc/phiếu điều chỉnh gắn ĐỐI TƯỢNG (định tuyến theo entity, không theo chặng). KHÔNG tự xây engine video — nhận bản ghi từ ngoài', he: 'Workspace', dot: 3, trangThai: 'chua',
+    bangChung: [{ dir: 'lib', mau: 'MeetingDistill|BienBanHop' }] },
+
   // ── ĐỢT 3 · RA CỔNG ─────────────────────────────────────────────────────────
   { id: 'chat-project', ten: 'Chat theo dự án (ChatMessage + projectId)', he: 'Workspace', dot: 3, trangThai: 'chua',
     bangChung: [{ file: 'prisma/schema.prisma', mau: 'model ChatMessage \\{[^}]*projectId' }] },
