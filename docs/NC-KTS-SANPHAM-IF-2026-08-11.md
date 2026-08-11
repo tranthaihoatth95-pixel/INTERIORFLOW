@@ -98,3 +98,24 @@ có cấu trúc) → Thẻ DNA (chưng cất có nguồn) → giả lập tình 
 - Persona lớp A đa gu ⇒ Thẻ DNA phải cho N thẻ / dự án (mỗi phương án một DNA) — ghi vào spec.
 - Lớp C cần "bản MỚI NHẤT" ⇒ TaskContext + revision phải có mặt trong hồ sơ xuất (số revision
   trên khung tên/BOQ đã có — nối thông báo khi đổi).
+
+## §6 · TẦNG TRÍ TUỆ DỰ ÁN (CẤP 0.75 — Hoà yêu cầu 11/08: "từ đầu bài đến tổ chức quy trình, gợi ý team")
+
+Lỗ hổng: một-nguồn mới phủ THIẾT KẾ (Doc), chưa phủ VẬN HÀNH — bằng chứng: Gallery toàn
+"Untitled flow", khoảnh khắc tạo dự án bị bỏ phí. Giải: MỘT GỐC SINH BA NHÁNH.
+
+**① Hồ Sơ Dự Án Thông Minh (ProjectProfile)** — form 60s lúc tạo dự án (loại hình·m²·ngân
+sách·mốc·hiện trạng·Brand Kit), KHÔNG bắt buộc (X2). Neo: brief-intake operator-detect có sẵn.
+**② Máy Sinh Khung (Project Scaffolder)** — đọc Profile → chọn cột WorkflowState + task
+template (5 mẫu 11/08 = nguyên liệu) + BỘ CHUẨN theo loại hình (11 bộ sẵn, áp chọn lọc) + kệ
+Library spotlight. Bản chất: BỘ CHỌN trên đồ sẵn, không engine mới.
+**③ Máy Hiểu Người (TeamFit)** — hồ sơ nguồn/thành viên từ: vai RBAC + STAGE_OWNER + lịch sử
+Task.assigneeIds + tải đang mở. Luật đạo đức: chỉ dữ liệu việc trong IF, thành viên xem được hồ
+sơ mình (gương, không camera); gợi ý NHIỀU phương án kèm căn cứ, người quyết cuối (luật 6).
+Cold-start: khai tay vai/sở trường lúc mời, task tự nuôi dần.
+**④ Máy Chưng Cất DNA (DNA Distiller)** — nhánh sáng tạo cùng gốc (§5, Thẻ DNA).
+
+Để đời sau (cần ≥10-20 dự án hoàn thành làm mẫu): **Máy Ước Lượng** (profile → timeline/ngân
+sách sơ bộ) — backlog, không vẽ nút bây giờ. Mọi máy im lặng khi Profile trống, không đoán bừa.
+
+⇒ Đề xuất nhét ProjectProfile + Scaffolder vào ĐỢT 1 (nhân giá trị template Bảng việc vừa ship).
