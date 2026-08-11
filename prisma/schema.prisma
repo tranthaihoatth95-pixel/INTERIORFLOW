@@ -106,6 +106,8 @@ model Project {
   // M-SCOPE VIỆC 2 (07/08) — xem khối chú thích TASK_TABLES_READY phía cuối file.
   tasks          Task[]
   workflowStates WorkflowState[]
+  // Bảng khởi tạo dự án 12/08 (SPEC-KHOI-TAO-DU-AN-2026-08-11 mảnh PLAN) — hồ sơ 60s.
+  profile ProjectProfile?
 
   @@index([larkProjectCode])
   @@index([deletedAt])
@@ -138,6 +140,26 @@ model ProjectMember {
   @@unique([projectId, userId]) // 1 người 1 vai / 1 dự án (Q6 RESEARCH — chốt giữ unique)
   @@index([userId]) // truy vấn nóng: "dự án của tôi"
   @@index([deletedAt])
+}
+
+// ══ MỚI 12/08 (SPEC-KHOI-TAO-DU-AN-2026-08-11, mảnh PLAN — Hồ Sơ Dự Án 60s) ══
+// Additive: mọi field NGHIỆP VỤ đều optional (luật X2 — bỏ trống ô nào máy im ô đó,
+// không đoán bừa). 1 project ↔ tối đa 1 profile. `loaiHinh` là KHOÁ kỹ thuật
+// ('nha-o'|'van-phong'|'fnb'|'khach-san'|...) — ràng buộc ở lib/tasks/scaffolder.ts,
+// KHÔNG enum trong DB (SQLite + cho phép giá trị mới không cần migrate).
+model ProjectProfile {
+  id         String    @id @default(cuid())
+  projectId  String    @unique
+  loaiHinh   String? // khoá loại hình — nguồn duy nhất cho Scaffolder gợi ý template
+  dienTichM2 Float?
+  nganSach   String? // chuỗi tự do ("2 tỷ", "USD 150k") — chưa chuẩn hoá tiền tệ, cố ý
+  mocBanGiao DateTime? // mốc bàn giao (mảnh TIMELINE v1 — milestone chi tiết CHƯA có model)
+  hienTrang  String? // hiện trạng mặt bằng (nhà thô / đang ở / cải tạo...)
+  ghiChu     String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 // ══════════════════════════════════════════════════════════════════════════

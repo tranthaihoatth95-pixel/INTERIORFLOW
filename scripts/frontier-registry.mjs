@@ -27,9 +27,9 @@ export const FRONTIER = [
     bangChung: [{ file: 'components/cad/CadCanvas.tsx', mau: 'RadialToolMenu' }] },
 
   // ── ĐỢT 1 · KHÂU DÂY ─────────────────────────────────────────────────────────
-  { id: 'project-profile', ten: 'Hồ Sơ Dự Án Thông Minh (form 60s, gốc 3 máy)', he: 'TriTueDuAn', dot: 1, trangThai: 'chua',
+  { id: 'project-profile', ten: 'Hồ Sơ Dự Án (12/08: model+API+bảng khởi tạo 3 mảnh PLAN·TASK·TIMELINE từ ＋ Dự án mới)', he: 'TriTueDuAn', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'ProjectProfile' }] },
-  { id: 'scaffolder', ten: 'Máy Sinh Khung (Profile → cột/task/chuẩn/kệ)', he: 'TriTueDuAn', dot: 1, trangThai: 'chua',
+  { id: 'scaffolder', ten: 'Máy Sinh Khung v1 (12/08: suggestScaffold theo loại hình KÈM căn cứ, gieo việc mang stage TaskContext; thiếu loại hình → im, không đoán)', he: 'TriTueDuAn', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'lib', mau: 'ProjectScaffolder' }] },
   { id: 'dna-card', ten: 'Thẻ DNA Thiết kế (8 lớp · 3 đầu ra · trạng thái)', he: 'TriTueDuAn', dot: 1, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'DnaCard|DesignDnaCard' }] },

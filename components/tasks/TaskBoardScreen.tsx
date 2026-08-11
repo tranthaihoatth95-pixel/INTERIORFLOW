@@ -45,7 +45,7 @@ const PROJECT_KEY = 'if.tasks.projectId';
  * Template = gieo danh sách việc THẬT qua POST /api/tasks có sẵn (vào cột đầu "Chưa làm"),
  * không đẻ API mới, không nút giả.
  */
-const BOARD_TEMPLATES: { key: string; vi: string; en: string; descVi: string; descEn: string; tasks: [string, string][] }[] = [
+export const BOARD_TEMPLATES: { key: string; vi: string; en: string; descVi: string; descEn: string; tasks: [string, string][] }[] = [
   {
     key: 'concept', vi: 'Concept dự án', en: 'Project concept',
     descVi: 'Từ đề bài đến duyệt concept', descEn: 'From brief to concept sign-off',

@@ -30,6 +30,7 @@ import { useLang } from '@/lib/i18n';
 import { useFlowStore } from '@/lib/store';
 import { createFlow, openFlow, createProject, assignProject } from '@/lib/workspace';
 import { applyCadHandoff } from '@/lib/cad/handoff';
+import { ProjectInitBoard } from '@/components/project-init/ProjectInitBoard';
 import { brandContextForVitals } from '@/lib/present-editor/brand-kit';
 import { getGalleryViewOverride, setGalleryViewOverride, type GalleryViewOverride } from '@/lib/resume';
 import { LangToggle } from '@/components/LangToggle';
@@ -611,26 +612,77 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
     });
   }, [flows, query, projFilter]);
 
-  /** Chọn card: flow → openFlow; new → createFlow rỗng rồi openFlow. Xong gọi onEnter. */
+  /**
+   * Bảng khởi tạo dự án 12/08 ([marker: ProjectInitBoard], SPEC-KHOI-TAO-DU-AN-2026-08-11):
+   * ＋ Dự án mới nay MỞ BẢNG (PLAN·TASK·TIMELINE) thay vì tạo trống ngay; đường 1-click cũ
+   * vẫn còn nguyên qua nút "Bỏ qua, tạo trống" trong bảng (luật X2 — không chặn ai).
+   */
+  const [initOpen, setInitOpen] = useState(false);
+
+  /** Đường tạo-trống CŨ (nguyên văn hành vi trước 12/08) — nay gọi từ "Bỏ qua, tạo trống". */
+  const createEmptyAndEnter = useCallback(async () => {
+    if (busy) return;
+    setBusy(true);
+    setOpenError(null);
+    setInitOpen(false);
+    try {
+      const id = await createFlow('Untitled flow', JSON.stringify({ nodes: [], edges: [] }));
+      // Liên kết Larkbase TUỲ CHỌN (§2.4/§2.6) — chỉ chạy khi user đã CHỌN 1 mã trước khi
+      // bấm tạo (pendingLarkCode !== ''); bỏ qua hoàn toàn (giữ hành vi hôm nay) nếu để trống.
+      if (pendingLarkCode) {
+        const codeInfo = larkSummary?.distinctCodes.find((c) => c.code === pendingLarkCode);
+        const project = await createProject(codeInfo?.name ?? `Dự án ${pendingLarkCode}`, pendingLarkCode).catch(() => null);
+        if (project?.id) await assignProject(id, project.id).catch(() => {});
+        setPendingLarkCode('');
+      }
+      await openFlow(id); // nạp graph vào store + set currentFlowId
+      applyCadHandoff(); // bản vẽ CAD chờ handoff (nếu có) — consume sau khi graph nạp
+      onEnter();
+    } catch {
+      setBusy(false);
+      setOpenError(
+        en
+          ? 'Could not open the project — try again, or enter an empty canvas.'
+          : 'Không mở được dự án — thử lại, hoặc vào canvas trống.',
+      );
+    }
+  }, [busy, en, onEnter, pendingLarkCode, larkSummary]);
+
+  /** Bảng khởi tạo tạo xong (project + profile + việc đã gieo) → mở flow như đường cũ. */
+  const enterCreatedFlow = useCallback(
+    async (flowId: string) => {
+      setInitOpen(false);
+      setBusy(true);
+      setOpenError(null);
+      setPendingLarkCode('');
+      try {
+        await openFlow(flowId);
+        applyCadHandoff();
+        onEnter();
+      } catch {
+        setBusy(false);
+        setOpenError(
+          en
+            ? 'Project created but could not open — pick it from the list.'
+            : 'Đã tạo dự án nhưng chưa mở được — chọn lại từ danh sách.',
+        );
+      }
+    },
+    [en, onEnter],
+  );
+
+  /** Chọn card: flow → openFlow; new → mở Bảng khởi tạo dự án. */
   const choose = useCallback(
     async (item: CardItem) => {
       if (busy) return;
+      if (item.kind === 'new') {
+        setInitOpen(true);
+        return;
+      }
       setBusy(true);
       setOpenError(null);
       try {
-        const id =
-          item.kind === 'new'
-            ? await createFlow('Untitled flow', JSON.stringify({ nodes: [], edges: [] }))
-            : item.flow.id;
-        // Liên kết Larkbase TUỲ CHỌN (§2.4/§2.6) — chỉ chạy khi user đã CHỌN 1 mã trước khi
-        // bấm tạo (pendingLarkCode !== ''); bỏ qua hoàn toàn (giữ hành vi hôm nay) nếu để trống.
-        if (item.kind === 'new' && pendingLarkCode) {
-          const codeInfo = larkSummary?.distinctCodes.find((c) => c.code === pendingLarkCode);
-          const project = await createProject(codeInfo?.name ?? `Dự án ${pendingLarkCode}`, pendingLarkCode).catch(() => null);
-          if (project?.id) await assignProject(id, project.id).catch(() => {});
-          setPendingLarkCode('');
-        }
-        await openFlow(id); // nạp graph vào store + set currentFlowId
+        await openFlow(item.flow.id); // nạp graph vào store + set currentFlowId
         applyCadHandoff(); // bản vẽ CAD chờ handoff (nếu có) — consume sau khi graph nạp
         onEnter();
       } catch {
@@ -642,7 +694,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         );
       }
     },
-    [busy, en, onEnter, pendingLarkCode, larkSummary],
+    [busy, en, onEnter],
   );
 
   /* ---------- Đổi bìa: mở picker + PUT optimistic ---------- */
@@ -2183,6 +2235,20 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         </motion.div>
       )}
 
+      {/* Bảng khởi tạo dự án ([marker: ProjectInitBoard]) — mở từ ＋ Dự án mới */}
+      <ProjectInitBoard
+        open={initOpen}
+        en={en}
+        larkCode={pendingLarkCode || undefined}
+        larkName={
+          pendingLarkCode
+            ? larkSummary?.distinctCodes.find((c) => c.code === pendingLarkCode)?.name
+            : undefined
+        }
+        onClose={() => setInitOpen(false)}
+        onSkip={() => void createEmptyAndEnter()}
+        onCreated={(flowId) => void enterCreatedFlow(flowId)}
+      />
     </div>
   );
 }
