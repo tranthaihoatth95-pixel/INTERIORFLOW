@@ -37,6 +37,71 @@ interface ProjectOpt { id: string; name: string }
 
 const PROJECT_KEY = 'if.tasks.projectId';
 
+/**
+ * 11/08 Hoà chốt (kèm ảnh khoanh đỏ vùng trống dưới empty state): bảng trống chia HAI luồng —
+ * người muốn MẪU SẴN chọn thẻ template theo nghiệp vụ, người muốn TỰ TẠO đi đường "Thêm việc
+ * đầu tiên" (một mình) hoặc Vitals (AI — chưa nối, để disabled kèm lý do theo luật §9).
+ * Template = gieo danh sách việc THẬT qua POST /api/tasks có sẵn (vào cột đầu "Chưa làm"),
+ * không đẻ API mới, không nút giả.
+ */
+const BOARD_TEMPLATES: { key: string; vi: string; en: string; descVi: string; descEn: string; tasks: [string, string][] }[] = [
+  {
+    key: 'concept', vi: 'Concept nhà ở', en: 'Residential concept',
+    descVi: 'Từ đề bài đến duyệt concept', descEn: 'From brief to concept sign-off',
+    tasks: [
+      ['Nhận đề bài & ngân sách', 'Take brief & budget'],
+      ['Đo đạc hiện trạng', 'Site survey'],
+      ['Moodboard định hướng', 'Direction moodboard'],
+      ['Layout 2 phương án', 'Two layout options'],
+      ['Duyệt concept với khách', 'Client concept review'],
+    ],
+  },
+  {
+    key: 'technical', vi: 'Hồ sơ kỹ thuật', en: 'Technical package',
+    descVi: 'Bộ bản vẽ thi công đủ mã', descEn: 'Full construction drawing set',
+    tasks: [
+      ['Mặt bằng bố trí nội thất', 'Furniture layout plan'],
+      ['Mặt bằng trần & đèn', 'Ceiling & lighting plan'],
+      ['Mặt bằng sàn & hoàn thiện', 'Floor & finish plan'],
+      ['Chi tiết tủ bếp / đồ mộc', 'Millwork details'],
+      ['Khung tên · kiểm chuẩn · in', 'Title block · checks · print'],
+    ],
+  },
+  {
+    key: 'render', vi: 'Sản xuất render', en: 'Render production',
+    descVi: 'Dựng khối đến ảnh final', descEn: 'Massing to final images',
+    tasks: [
+      ['Dựng khối từ mặt bằng', 'Extrude massing from plan'],
+      ['Áp vật liệu theo matId', 'Assign materials by matId'],
+      ['Đặt đèn & camera', 'Lights & cameras'],
+      ['Render nháp duyệt nội bộ', 'Draft renders for internal review'],
+      ['Render final + hậu kỳ', 'Final renders + post'],
+    ],
+  },
+  {
+    key: 'present', vi: 'Trình khách', en: 'Client presentation',
+    descVi: 'Gom sản phẩm thành hồ sơ', descEn: 'Package outputs into a deck',
+    tasks: [
+      ['Chọn ảnh & bản vẽ chốt', 'Pick final images & drawings'],
+      ['Dàn deck trình bày', 'Lay out the deck'],
+      ['BOQ sơ bộ kèm hồ sơ', 'Preliminary BOQ'],
+      ['Duyệt nội bộ', 'Internal review'],
+      ['Gửi khách & ghi phản hồi', 'Send to client & log feedback'],
+    ],
+  },
+  {
+    key: 'fitout', vi: 'Fit-out thi công', en: 'Fit-out delivery',
+    descVi: 'Từ khối lượng đến nghiệm thu', descEn: 'From quantities to handover',
+    tasks: [
+      ['Bóc khối lượng theo bản vẽ', 'Quantity take-off from drawings'],
+      ['Chọn nhà cung cấp / báo giá', 'Vendors & quotations'],
+      ['Duyệt shop drawing', 'Approve shop drawings'],
+      ['Giám sát mẫu tại xưởng', 'Factory sample inspection'],
+      ['Nghiệm thu & bàn giao', 'Acceptance & handover'],
+    ],
+  },
+];
+
 /** Hover/kéo-thả cần pseudo-class — inline style không làm được, 1 khối CSS phạm vi `tb-`. */
 const BOARD_CSS = `
 .tb-card { position: relative; }
@@ -50,6 +115,11 @@ const BOARD_CSS = `
 .tb-tool:disabled { opacity: .35; cursor: not-allowed; }
 .tb-col-drop { outline: 1.5px dashed var(--accent); outline-offset: -4px; background: var(--accent-soft) !important; }
 .tb-addbtn:hover { background: var(--hover) !important; color: var(--t1) !important; }
+/* Thẻ template — vật đơn lẻ nên ĐƯỢC scale nhẹ (SPEC-HOVER-FOCUS-IDF: thẻ 1.02 + lift 2px 200ms). */
+.tb-tpl { transition: transform .2s var(--ease-apple, ease), border-color .2s, box-shadow .2s; }
+.tb-tpl:hover:not(:disabled) { transform: translateY(-2px) scale(1.02); border-color: var(--border-strong); box-shadow: 0 6px 18px rgba(0,0,0,.12); }
+.tb-tpl:disabled { opacity: .55; cursor: default; }
+@media (prefers-reduced-motion: reduce) { .tb-tpl, .tb-tpl:hover:not(:disabled) { transition: none; transform: none; } }
 `;
 
 export function TaskBoardScreen() {
@@ -130,6 +200,27 @@ export function TaskBoardScreen() {
 
   /* ── hành động qua API thật ─────────────────────────────────────────────── */
   const apiError = (e: unknown) => setError(e instanceof Error ? e.message : String(e));
+
+  /** Gieo template = POST tuần tự từng việc vào cột đầu (statusId bỏ trống → server tự chọn
+   *  cột order thấp nhất). Tuần tự chứ không Promise.all để giữ đúng THỨ TỰ trong cột. */
+  const applyTemplate = async (tpl: (typeof BOARD_TEMPLATES)[number]) => {
+    if (!projectId || busy) return;
+    setBusy(true);
+    try {
+      const created: TaskRow[] = [];
+      for (const [vi, en] of tpl.tasks) {
+        const res = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId, title: tr(vi, en) }),
+        });
+        const j = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(j?.error || `HTTP ${res.status}`);
+        created.push(j.task);
+      }
+      setTasks((prev) => [...(prev ?? []), ...created]);
+    } catch (e) { apiError(e); } finally { setBusy(false); }
+  };
 
   const addTask = async (statusId: string) => {
     const title = newTitle.trim();
@@ -337,7 +428,7 @@ export function TaskBoardScreen() {
         </div>
       ) : boardEmpty && adding === null ? (
         /* RỖNG THẬT cấp 2 (≠ tìm không khớp): dự án chưa có việc — nút mở thẳng ô nhập cột đầu. */
-        <div style={{ flex: 1, display: 'grid', placeItems: 'center', minHeight: 0, overflow: 'auto' }}>
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'grid', alignContent: 'center', justifyItems: 'center', gap: 26, padding: '24px 20px' }}>
           <EmptyState
             ghost="rows"
             icon={<ClipboardList size={18} />}
@@ -348,8 +439,46 @@ export function TaskBoardScreen() {
             )}
             actions={[
               { label: tr('Thêm việc đầu tiên', 'Add the first task'), primary: true, icon: <Plus size={13} />, onClick: () => { if (firstStateId) { setAdding(firstStateId); setNewTitle(''); } }, disabled: !firstStateId, disabledReason: tr('Dự án chưa có cột trạng thái', 'Project has no status columns') },
+              { label: tr('✨ Soạn việc với Vitals', '✨ Draft tasks with Vitals'), onClick: () => {}, disabled: true, disabledReason: tr('Sắp có — Vitals sẽ soạn danh sách việc từ đề bài dự án', 'Coming soon — Vitals will draft a task list from the project brief') },
             ]}
           />
+          {/* 11/08 — luồng "muốn mẫu sẵn": dải template theo nghiệp vụ, bấm là gieo việc thật. */}
+          <div style={{ width: '100%', maxWidth: 880, display: 'grid', gap: 12, justifyItems: 'center' }}>
+            <div style={{ fontSize: 11, fontWeight: 650, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--t4)' }}>
+              {tr('Hoặc bắt đầu từ mẫu', 'Or start from a template')}
+            </div>
+            <div style={{ width: '100%', display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
+              {BOARD_TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.key}
+                  type="button"
+                  className="tb-tpl"
+                  disabled={busy || !projectId}
+                  onClick={() => void applyTemplate(tpl)}
+                  title={tr(`Tạo ${tpl.tasks.length} việc vào cột đầu — sửa/xoá tự do sau đó`, `Creates ${tpl.tasks.length} tasks in the first column — edit or delete freely after`)}
+                  style={{
+                    display: 'grid', gap: 8, padding: 12, textAlign: 'left', cursor: 'pointer',
+                    borderRadius: 14, border: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--t1)',
+                  }}
+                >
+                  {/* preview mini: 3 cột board thu nhỏ — thuần token, không ảnh */}
+                  <span aria-hidden style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, height: 34 }}>
+                    {[3, 2, 1].map((rows, ci) => (
+                      <span key={ci} style={{ display: 'grid', alignContent: 'start', gap: 3, padding: 3, borderRadius: 5, background: 'var(--field)' }}>
+                        {Array.from({ length: rows }).map((_, ri) => (
+                          <span key={ri} style={{ height: 5, borderRadius: 2, background: ci === 0 && ri === 0 ? 'var(--accent)' : 'var(--border-strong)', opacity: ci === 0 && ri === 0 ? 0.8 : 1 }} />
+                        ))}
+                      </span>
+                    ))}
+                  </span>
+                  <span style={{ display: 'grid', gap: 2 }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 650, lineHeight: 1.5 }}>{tr(tpl.vi, tpl.en)}</span>
+                    <span style={{ fontSize: 11, color: 'var(--t4)', lineHeight: 1.5 }}>{tr(tpl.descVi, tpl.descEn)} · {tpl.tasks.length} {tr('việc', 'tasks')}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       ) : (
         <>

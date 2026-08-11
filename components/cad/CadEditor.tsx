@@ -744,23 +744,43 @@ export default function CadEditor() {
             onPointerDown={() => setEmptyCardDismissed(true)}
             style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', zIndex: 5 }}
           >
+            {/* 11/08 Hoà chê pill tím lơ lửng "vô duyên" — đổi thành card empty-state có dẫn
+                dắt (khuôn chặng 3D: chữ dẫn + hành động, không CTA trần giữa canvas). Accent
+                chỉ còn ở MỘT nút chính; đường "vẽ ngay" là ghost vì canvas trống tự nó đã là
+                bàn vẽ (chạm ngoài card = bắt đầu vẽ, giữ nguyên cơ chế dismiss). */}
             <div
               data-empty-drawing-prompt
               onPointerDown={(event) => event.stopPropagation()}
               style={{
-                padding: 6, borderRadius: 999, border: '1px solid var(--border)',
-                background: 'color-mix(in srgb, var(--panel) 86%, transparent)',
+                display: 'grid', justifyItems: 'center', gap: 10, maxWidth: 340, textAlign: 'center',
+                padding: '22px 26px 20px', borderRadius: 16, border: '1px solid var(--border)',
+                background: 'color-mix(in srgb, var(--panel) 92%, transparent)',
                 backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
-                boxShadow: '0 6px 22px rgba(0,0,0,.16)',
+                boxShadow: '0 6px 22px rgba(0,0,0,.14)',
               }}
             >
-              <button
-                type="button"
-                onClick={() => gatewayFileRef.current?.click()}
-                style={{ padding: '9px 16px', borderRadius: 999, border: 'none', cursor: 'pointer', background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 650, lineHeight: 1.5 }}
-              >
-                {t('Nhập bản vẽ', 'Import drawing')}
-              </button>
+              <div style={{ fontSize: 13.5, fontWeight: 650, color: 'var(--t1)', lineHeight: 1.5 }}>
+                {t('Bàn vẽ đang trống', 'The drawing board is empty')}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--t3)', lineHeight: 1.5 }}>
+                {t('Gõ L để vẽ tường ngay tại chỗ, hoặc mở file có sẵn (.idf · .dxf · .dwg).', 'Type L to draw a wall right here, or open an existing file (.idf · .dxf · .dwg).')}
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                <button
+                  type="button"
+                  onClick={() => gatewayFileRef.current?.click()}
+                  style={{ padding: '8px 15px', borderRadius: 999, border: 'none', cursor: 'pointer', background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 650, lineHeight: 1.5 }}
+                >
+                  {t('Nhập bản vẽ', 'Import drawing')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEmptyCardDismissed(true)}
+                  style={{ padding: '8px 15px', borderRadius: 999, border: '1px solid var(--border)', cursor: 'pointer', background: 'transparent', color: 'var(--t2)', fontSize: 12.5, fontWeight: 500, lineHeight: 1.5 }}
+                >
+                  {t('Vẽ ngay', 'Start drawing')}
+                </button>
+              </div>
             </div>
           </div>
         )}
