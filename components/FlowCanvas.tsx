@@ -658,7 +658,8 @@ export function FlowCanvas() {
           <MiniMap
             pannable
             zoomable
-            className="!bottom-4 !right-4 hidden rounded-lg border border-[var(--border)] md:block"
+            aria-label="Tổng quan bảng làm việc"
+            className="!bottom-auto !right-4 !top-4 hidden rounded-lg border border-[var(--border)] shadow-[0_6px_20px_rgba(40,38,35,.10)] md:block"
             style={{ background: 'var(--card)', width: 160, height: 110 }}
             nodeColor={(n) => {
               if (n.type === 'note') return '#fbbf24';

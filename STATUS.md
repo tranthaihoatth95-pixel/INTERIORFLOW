@@ -11,12 +11,13 @@
 - **R1 nội bộ:** desktop local-first; nghiệm thu máy sạch cài/mở/lưu/nâng cấp/khôi phục; quyết định GPL/DWG theo phạm vi pháp nhân.
 - **Lõi 2D↔3D:** entity có identity/type-instance/provenance và category/level thống nhất cho Wall, Floor, Ceiling, Room.
 - **M1 3D:** tường hai điểm → push/pull → transform/snap/hotkey → floor/ceiling + lọc category; Library contract chung cho 2D–3D–BOQ–Present. Specs: `docs/SPEC-3D-MVP-MODELING-2026-08-11.md`, `docs/SPEC-MASTER-LIBRARY-3D-CONTRACT-2026-08-11.md`.
-- **Mock 3D Library:** type/instance → editor theo tác vụ → FlowRender → ảnh/BOQ/board; Reference Canvas có provenance. Figma có Spatial Build stages, Context Tools, Editors, Render Studio, FlowRender/Pipeline, Library, Tablet, Visual Production: recipe→preview, nhiều cảnh→timeline/checkpoint: `https://www.figma.com/design/NSyHdb0FZNNSbY9PeQng1b`. Specs: `docs/SPEC-FLOWRENDER-ELEMENT-TOOLS-2026-08-11.md`, `docs/SPEC-REFERENCE-CANVAS-3D-2026-08-11.md`.
+- **Mock 3D Library:** type/instance → editor → FlowRender → ảnh/BOQ/board; Reference Canvas có provenance. Specs: `docs/SPEC-FLOWRENDER-ELEMENT-TOOLS-2026-08-11.md`, `docs/SPEC-REFERENCE-CANVAS-3D-2026-08-11.md`.
 - **Vitals V1:** toàn app: 2D kiểm/vẽ; 3D recipe/preview; Present kiểm/xuất; Library tra/import; mọi ghi có undo. Spec: `docs/SPEC-VITALS-UNIFIED-2026-08-11.md`.
 - **Present/output:** chỉ mở khả năng thật; Deck/BOQ/Material A3 hoạt động, Văn bản/Video/HTML không giả.
 
 ## Vừa xong
 
+- Handoff tổng hợp: `docs/HANDOFF-CODEX-2026-08-11.md` + `docs/HANDOFF-KIEM-TONG-2026-08-11.md`. Canvas bỏ hết nền trang trí (aura/ảnh/gradient) nhưng GIỮ pattern kỹ thuật dot grid `--dots` theo theme; minimap Tổng quan lên góc phải trên; toolbar đáy giới hạn theo bề rộng canvas.
 - R1 hardening: Electron chỉ bind `127.0.0.1`; khi phiên bản đổi, DB + uploads được snapshot trước schema; lỗi kiểm tra schema chặn khởi động và ghi log; auto-update là opt-in; key/config chỉ trong userData. Có `npm run release:preflight` và `docs/RELEASE-CHECKLIST-INTERNAL.md`.
 - Build không còn phụ thuộc Google Fonts: font UI dùng file cục bộ + fallback hệ điều hành. Cảnh báo `unpdf` còn theo dõi riêng khi nghiệm thu artifact production.
 - Metadata desktop/PWA đổi sang mô tả trung tính, không định vị app như một “AI canvas” hay gắn với studio cụ thể.

@@ -21,7 +21,7 @@ interface LocalState {
   autoBackup: boolean;
 }
 
-const DEFAULTS: LocalState = { avatarSwatch: 0, wallpaper: 'aura', reducedMotion: false, autoBackup: true };
+const DEFAULTS: LocalState = { avatarSwatch: 0, wallpaper: 'none', reducedMotion: false, autoBackup: true };
 
 function readStorage(): LocalState {
   if (typeof window === 'undefined') return DEFAULTS;

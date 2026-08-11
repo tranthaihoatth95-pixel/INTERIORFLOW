@@ -4,7 +4,7 @@ import { Check, SunMoon } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import type { ThemePref } from '@/lib/store';
 import { useT } from '@/lib/i18n';
-import { WALLPAPERS, type WallpaperId } from '../_lib/wallpaper';
+import type { WallpaperId } from '../_lib/wallpaper';
 
 const THEME_CARDS: { id: ThemePref; label: [string, string]; preview: string; inner: string }[] = [
   { id: 'light', label: ['Sáng', 'Light'], preview: '#edebe7', inner: '#fff' },
@@ -18,7 +18,7 @@ const THEME_CARDS: { id: ThemePref; label: [string, string]; preview: string; in
  * chế bảng tối riêng). Kích thước cố định px trong `settings-mock-css.ts` (KHÔNG 1fr) — sửa bug
  * "avatar/preview phình" đã gặp.
  */
-export function AppearanceCard({ wallpaper, onPickWallpaper }: { wallpaper: WallpaperId; onPickWallpaper: (id: WallpaperId) => void }) {
+export function AppearanceCard(_props: { wallpaper: WallpaperId; onPickWallpaper: (id: WallpaperId) => void }) {
   const pref = useFlowStore((s) => s.themePref);
   const setThemePref = useFlowStore((s) => s.setThemePref);
   const tr = useT();
@@ -43,23 +43,8 @@ export function AppearanceCard({ wallpaper, onPickWallpaper }: { wallpaper: Wall
         })}
       </div>
 
-      <div className="hint" style={{ margin: '14px 0 8px' }}>
-        {tr('Hình nền canvas — áp cho canvas cả 3 chặng', 'Canvas wallpaper — applies to all 3 stages')}
-      </div>
-      <div className="wpgrid">
-        {WALLPAPERS.map((w) => (
-          <button
-            type="button"
-            key={w.id}
-            className={`wp${wallpaper === w.id ? ' sel' : ''}${w.swatch ? '' : ' none'}`}
-            style={w.swatch ? { background: w.swatch } : undefined}
-            onClick={() => onPickWallpaper(w.id)}
-            aria-pressed={wallpaper === w.id}
-            title={tr(w.label[0], w.label[1])}
-          >
-            {w.swatch ? '' : tr(w.label[0], w.label[1])}
-          </button>
-        ))}
+      <div className="hint" style={{ marginTop: 14 }}>
+        {tr('Các chặng dùng nền làm việc trung tính để tập trung vào nội dung.', 'Stages use a neutral workspace so the content stays in focus.')}
       </div>
     </div>
   );
