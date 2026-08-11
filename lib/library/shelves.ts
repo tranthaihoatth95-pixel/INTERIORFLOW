@@ -3,9 +3,9 @@
 // Nguồn: `docs/SPEC-STAGE-LIBRARIES.md` (kệ theo chặng · 3 động tác · 4 mức phạm vi) +
 // `docs/mocks/mock-if-3chang.html` (vật mẫu — tên kệ, số đếm, mã món chép nguyên văn từ mock).
 //
-// ⚠️ DỮ LIỆU MOCK: số đếm trên kệ (46/12/9/31/18…) và danh sách món là dữ liệu vật mẫu, CHƯA nối
-// kho thật (`/api/library`, ATLAS matId). Khi nối backend thì thay `ITEMS_BY_SHELF`/`count` bằng
-// truy vấn thật — cấu trúc kệ + phạm vi giữ nguyên.
+// ✅ 12/08 (`library-data-that`): kệ ĐÃ nối kho thật — món từ DB `LibraryAsset` (qua
+// `lib/library/db-items.ts` + `GET /api/library`) trộn với món built-in có tài nguyên thật
+// đứng sau (xem `BUILTIN_ITEMS`). Cấu trúc kệ + phạm vi giữ nguyên.
 //
 // 🔴 SỬA 04/08 (Hoà chê): (1) BỎ bảng `SWATCH` 12 gradient giả — ô xem trước giờ đi theo bậc
 // thang quả-cầu / vân-procedural / ảnh-thật, xem `thumb-kinds.ts` + `components/library/ItemThumb`.
@@ -17,12 +17,12 @@ import type { ScopeLevel, StageKey } from './types';
 import type { ThumbKind } from './thumb-kinds';
 
 /**
- * VIỆC 7b (07/08, Hoà giao giữa phiên) — trước đây `count` bịa số (1449/46/12…) và giao diện bày
- * y như hàng thật, không cách nào người dùng biết đây là dữ liệu mẫu. Cờ này là NGUỒN DUY NHẤT
- * quyết định UI có hiện nhãn "Dữ liệu mẫu" hay không (`LibrarySheet.tsx`) — khi nối `/api/library`
- * thật thì đổi ĐÚNG MỘT chỗ này thành `false`, không phải sửa rải rác nhiều component.
+ * VIỆC 7b (07/08) → ĐÓNG 12/08 (`library-data-that`): kệ đã nối kho THẬT — món đọc từ DB
+ * `LibraryAsset` qua `GET /api/library` (xem `lib/library/db-items.ts`), dữ liệu bịa
+ * (`ITEMS_BY_SHELF` cũ) đã gỡ. Cờ giữ lại `false` để không vỡ import (`LibrarySheet.tsx` dùng nó
+ * ẩn nhãn "Dữ liệu mẫu") — đừng bật lại trừ khi cố ý quay về mock.
  */
-export const LIBRARY_DATA_IS_MOCK = true;
+export const LIBRARY_DATA_IS_MOCK = false;
 
 export interface ShelfDef {
   id: string;
@@ -150,17 +150,19 @@ export interface SheetItem {
   recent?: boolean;
 }
 
-// Phạm vi lặp CHUNG→STUDIO→DỰ ÁN→CHẶNG đúng công thức `SCOPE[n%4]` của mock. Mỗi kệ lệch pha một
-// chút (theo mã kệ) để lưới không rập khuôn y hệt nhau — thuần trang trí dữ liệu mock.
-const SCOPE_CYCLE: ScopeLevel[] = ['chung', 'studio', 'du_an', 'chang'];
-const shelfPhase = (shelfId: string) => [...shelfId].reduce((s, c) => s + c.charCodeAt(0), 0) % 4;
-
 type Row = [name: string, code: string, kind: ThumbKind];
 
-/** Món theo từng kệ. Kệ mặc định của mỗi chặng chép nguyên văn bảng `DATA` của mock; các kệ còn
- * lại mock không vẽ nên đặt tên theo đúng nghĩa kệ (đánh dấu rõ là mock ở đầu file). */
-const ITEMS_BY_SHELF: Record<string, Row[]> = {
-  // ── chặng Vẽ ─────────────────────────────────────────────────────────────────
+/**
+ * 12/08 (`library-data-that`) — DỌN MOCK: bảng `ITEMS_BY_SHELF` cũ bịa món cho ~20 kệ (vật liệu
+ * OAK-NT-190, mẫu trang COVER-FULL… không có gì đứng sau). Nay chỉ giữ kệ có TÀI NGUYÊN THẬT
+ * trong app đứng sau từng dòng:
+ *   · `cad-kyhieu` — mỗi dòng resolve ra `BlockDef`/block .dxf thật (`lib/cad/block-library.ts`,
+ *     `public/cad-library/manifest.json`; test canh: `lib/cad/library-item-resolve.test.ts` [5]).
+ * Mọi kệ khác đọc kho THẬT: DB `LibraryAsset` qua `lib/library/db-items.ts` (tham số `dbItems`
+ * của `itemsFor`), kệ `.idfc` đọc `idfc-store`. Kho rỗng → UI hiện empty-state có nút nhập,
+ * KHÔNG bịa món cho đầy kệ.
+ */
+const BUILTIN_ITEMS: Record<string, Row[]> = {
   'cad-kyhieu': [
     ['Cửa 1 cánh 800', 'DOOR-S-800', 'block'], ['Cửa 2 cánh 1600', 'DOOR-D-1600', 'block'],
     ['Cửa sổ trượt', 'WIN-SL-1800', 'block'], ['Sofa 3 chỗ', 'SOFA-3S', 'furniture'],
@@ -169,60 +171,6 @@ const ITEMS_BY_SHELF: Record<string, Row[]> = {
     ['Bếp chữ L', 'KIT-L', 'furniture'], ['Tủ áo 2m4', 'WRD-240', 'furniture'],
     ['Người · tỉ lệ', 'SCALE-H', 'misc'], ['Cây trong nhà', 'PLANT-M', 'misc'],
   ],
-  'cad-sheet': [['Khung tên A1', 'TB-A1', 'sheet'], ['Khung tên A3', 'TB-A3', 'sheet'], ['Bố cục 4 view', 'LAY-4V', 'sheet']],
-  'cad-room': [['Bếp chữ L', 'RM-KIT-L', 'furniture'], ['WC 3m²', 'RM-WC-3', 'sanitary'], ['Phòng ngủ master', 'RM-BED-M', 'furniture']],
-  // hatch = vật liệu 2D: GIỮ vân phẳng, không lên quả cầu (SPEC-VAT-LIEU §2, xem ItemThumb).
-  'cad-hatch': [['Gạch 600×600', 'HT-TIL-600', 'stone'], ['Sàn gỗ', 'HT-WOOD', 'wood'], ['Đá granite', 'HT-GRN', 'stone']],
-  'cad-form': [['Dây chuyền công năng', 'FRM-FLOW', 'page'], ['Sơ đồ bong bóng', 'FRM-BUBBLE', 'page']],
-
-  // ── chặng Dựng ảnh (không còn kệ vật liệu — xem kệ chung) ────────────────────
-  // VIỆC 7b (07/08) — mỗi preset ánh sáng mang ĐÚNG `kind` của nó (trước dùng chung 'sheet' nên
-  // 3 ánh sáng đối lập vẽ ra 1 khung xám y hệt, xem `thumb-kinds.ts` đầu file phần 'light-*').
-  'render-preset': [
-    ['Nắng chiều', 'PRE-GOLD', 'light-gold'], ['Trời phủ mây', 'PRE-OVC', 'light-overcast'], ['Đèn đêm', 'PRE-NIGHT', 'light-night'],
-    ['Nắng sớm', 'PRE-DAWN', 'light-dawn'], ['Studio trắng', 'PRE-STUDIO', 'light-studio'],
-  ],
-  'render-mood': [['Board theo phòng', 'MB-ROOM', 'sheet'], ['Board 9 ô A3', 'MB-A3-9', 'sheet']],
-  'render-chain': [['Sketch→Render→Upscale', 'CH-SRU', 'block'], ['Ảnh→Đổi góc', 'CH-RECAM', 'block']],
-  'render-form': [['Khung concept 5 nhánh', 'FRM-C5', 'page'], ['So sánh phương án', 'FRM-CMP', 'page'], ['6 chiếc mũ', 'FRM-6H', 'page']],
-
-  // ── chặng Trình bày ──────────────────────────────────────────────────────────
-  'present-page': [
-    ['Bìa · ảnh tràn', 'COVER-FULL', 'page'], ['Bìa · chia đôi', 'COVER-SPLIT', 'page'],
-    ['Mục lục 2 cột', 'TOC-2C', 'page'], ['Concept · 1 ảnh lớn', 'CPT-HERO', 'sheet'],
-    ['Concept · lưới 4', 'CPT-G4', 'sheet'], ['Mặt bằng + chú thích', 'PLAN-ANNO', 'sheet'],
-    ['Phối cảnh đôi', 'PSP-DUO', 'sheet'], ['Bảng vật liệu A3', 'MAT-A3', 'sheet'],
-    ['Trước · sau', 'BA-COMPARE', 'sheet'], ['Bảng khối lượng', 'BOQ-STD', 'page'],
-    ['Trang kết', 'END-CARD', 'page'], ['Thông tin liên hệ', 'CONTACT', 'page'],
-  ],
-  'present-mata3': [['Lưới 9 ô', 'MB-9', 'sheet'], ['Lưới 6 ô + chú thích', 'MB-6N', 'sheet']],
-  'present-boq': [['Dự toán cơ bản', 'BOQ-BASE', 'page'], ['Dự toán live-link Thiết kế 2D', 'BOQ-LIVE', 'page']],
-  'present-doc': [['Thuyết minh song ngữ', 'DOC-BRIEF', 'page'], ['Hợp đồng mẫu', 'DOC-CTR', 'page']],
-  'present-video': [['Timeline intro/outro', 'VID-IO', 'sheet'], ['Nhịp cắt theo nhạc', 'VID-BEAT', 'sheet']],
-
-  // ── kệ CHUNG ─────────────────────────────────────────────────────────────────
-  // 12 món vật liệu (trước ở kệ "Vật liệu" của chặng Dựng ảnh) nay về đúng MỘT chỗ này.
-  'common-atlas': [
-    ['Gỗ sồi tự nhiên', 'OAK-NT-190', 'wood'], ['Gỗ óc chó', 'WAL-DK-150', 'wood'],
-    ['Đá Calacatta', 'MRB-CAL', 'stone'], ['Đá đen Marquina', 'MRB-MQ', 'stone'],
-    ['Sơn trắng ngà', 'PNT-IV', 'paint'], ['Sơn xám khói', 'PNT-SM', 'paint'],
-    ['Vải lanh be', 'FAB-LIN-BE', 'fabric'], ['Vải nhung xanh rêu', 'FAB-VEL-GR', 'fabric'],
-    ['Gạch terrazzo', 'TRZ-WH', 'stone'], ['Đồng thau xước', 'BRS-BR', 'metal'],
-    ['Thép sơn đen', 'STL-BK', 'metal'], ['Kính mờ', 'GLS-FR', 'glass'],
-  ],
-  'common-brand': [['Bộ nhận diện dự án', 'BK-PRJ', 'page'], ['Bộ nhận diện studio', 'BK-STD', 'page']],
-  'common-asset': [['Ảnh khảo sát', 'AS-SURVEY', 'sheet'], ['Ảnh tham chiếu', 'AS-REF', 'sheet'], ['Texture rời', 'AS-TEX', 'fabric']],
-  // Thẻ định hướng là điểm bắt đầu để gom hình, vật liệu và ánh sáng thành một ý đồ có thể áp
-  // dụng; chúng không tự nhận là "gu AI" hay kết quả tạo tự động.
-  'common-direction': [
-    ['Ấm · tối giản', 'DIR-WARM-MIN', 'light-gold'],
-    ['Japandi tự nhiên', 'DIR-JAPANDI', 'wood'],
-    ['Đương đại trầm', 'DIR-DARK-CONT', 'light-night'],
-    ['Địa Trung Hải sáng', 'DIR-MED-LIGHT', 'light-studio'],
-    ['Đá · kim loại · bóng', 'DIR-STONE-METAL', 'metal'],
-    ['Biên tập · tương phản', 'DIR-EDITORIAL', 'sheet'],
-  ],
-  'common-theme': [['Cặp phông Editorial', 'TH-EDI', 'page'], ['Bảng màu ấm', 'TH-WARM', 'paint'], ['Nền canvas kẻ ô', 'TH-GRID', 'block']],
 };
 
 /** Kệ mặc định mỗi chặng — chặng Dựng ảnh đổi sang Preset sau khi gộp kệ vật liệu. */
@@ -235,19 +183,29 @@ export const DEFAULT_SHELF: Record<StageKey, string> = {
 /** Vật liệu/preset/hatch = ÁP lên vật đang chọn; còn lại = KÉO ra bàn làm việc. */
 const APPLY_SHELVES = new Set(['cad-hatch', 'render-preset', 'common-atlas', 'common-theme']);
 
+/** Cơ chế dùng của 1 kệ — export cho `db-items.ts` gán đúng cơ chế cho món từ DB. */
+export function mechanicOfShelf(shelfId: string): Mechanic {
+  return APPLY_SHELVES.has(shelfId) ? 'ap' : 'keo';
+}
+
 function itemsForShelf(shelfId: string): SheetItem[] {
-  const mech: Mechanic = APPLY_SHELVES.has(shelfId) ? 'ap' : 'keo';
-  const phase = shelfPhase(shelfId);
-  return (ITEMS_BY_SHELF[shelfId] ?? []).map(([name, code, kind], i) => ({
+  const mech = mechanicOfShelf(shelfId);
+  // Món built-in đi kèm app ⇒ phạm vi CHUNG thật (mọi studio đều có), không còn xoay vòng phạm vi
+  // trang trí như bản mock; `recent` bỏ — "gần đây" chỉ có nghĩa với kho thật có lịch sử dùng.
+  return (BUILTIN_ITEMS[shelfId] ?? []).map(([name, code, kind]) => ({
     id: `${shelfId}-${code}`,
     shelfId,
     name,
     code,
     kind,
-    scope: SCOPE_CYCLE[(phase + i) % 4],
+    scope: 'chung',
     mechanic: mech,
-    recent: (phase + i) % 5 === 0,
   }));
+}
+
+/** Số món built-in của 1 kệ — cộng với số món DB để ra số đếm THẬT trên cột kệ. */
+export function builtinCount(shelfId: string): number {
+  return (BUILTIN_ITEMS[shelfId] ?? []).length;
 }
 
 /** Mọi kệ của 1 chặng (nhóm trên + kệ chung). */
@@ -258,15 +216,18 @@ export function shelvesForStage(stage: StageKey): { stage: ShelfDef[]; common: S
 export type ScopeChip = 'all' | ScopeLevel | 'recent';
 
 /** Món của 1 kệ, đã lọc theo chip phạm vi + từ khoá tìm (+ nhóm vật liệu con nếu có chọn).
- *  `group` để trống = không lọc theo nhóm — giữ nguyên hành vi cũ cho mọi nơi gọi 4 tham số. */
+ *  `group` để trống = không lọc theo nhóm — giữ nguyên hành vi cũ cho mọi nơi gọi 4 tham số.
+ *  `dbItems` (12/08, `library-data-that`) = món từ kho THẬT `LibraryAsset` (đã map ở
+ *  `db-items.ts`, mang `shelfId` sẵn) — trộn sau món built-in, cùng một đường lọc. */
 export function itemsFor(
   stage: StageKey,
   shelfId: string,
   chip: ScopeChip,
   query = '',
   group: ThumbKind | null = null,
+  dbItems: SheetItem[] = [],
 ): SheetItem[] {
-  let out = itemsForShelf(shelfId);
+  let out = [...itemsForShelf(shelfId), ...dbItems.filter((i) => i.shelfId === shelfId)];
   if (chip === 'recent') out = out.filter((i) => i.recent);
   else if (chip !== 'all') out = out.filter((i) => i.scope === chip);
   if (group) out = out.filter((i) => i.kind === group);

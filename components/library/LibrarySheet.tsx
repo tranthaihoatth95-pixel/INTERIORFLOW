@@ -21,10 +21,12 @@ import {
   SCOPE_BADGE_TEXT,
   SCOPE_CHIPS,
   STAGE_SHELVES,
+  builtinCount,
   itemsFor,
   type ScopeChip,
   type SheetItem,
 } from '@/lib/library/shelves';
+import { useLibraryDbItems } from '@/lib/library/db-items';
 import { loadIdfcStore, type StoredIdfc } from '@/lib/library/idfc-store';
 import { getPbr } from '@/lib/materials/pbr-store';
 import { exportIdfc, IDFC_KINDS, type IdfcKind } from '@/lib/cad/idfc';
@@ -245,6 +247,9 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   useEffect(() => {
     if (open) setIdfcItems(loadIdfcStore());
   }, [open, mode]);
+  /* 12/08 (`library-data-that`) — kệ đọc kho THẬT `LibraryAsset` qua `/api/library`
+   * (lib/library/db-items.ts), trộn với món built-in trong `itemsFor`. */
+  const { dbItems, dbLoaded, refreshDb } = useLibraryDbItems(open);
   const items = useMemo(() => {
     if (shelfId === 'common-idfc') {
       const q = query.trim().toLowerCase();
@@ -256,8 +261,14 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
         }))
         .filter((i) => (chip === 'all' || chip === 'studio') && (!q || i.name.toLowerCase().includes(q) || i.code.toLowerCase().includes(q)));
     }
-    return itemsFor(activeStage, shelfId, chip, query, matGroup);
-  }, [activeStage, shelfId, chip, query, matGroup, idfcItems, idfcKindFilter]);
+    return itemsFor(activeStage, shelfId, chip, query, matGroup, dbItems);
+  }, [activeStage, shelfId, chip, query, matGroup, idfcItems, idfcKindFilter, dbItems]);
+  /** Số đếm THẬT trên cột kệ = built-in + món DB của kệ đó (thay `count` mock cũ luôn null). */
+  const shelfCount = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const it of dbItems) m.set(it.shelfId, (m.get(it.shelfId) ?? 0) + 1);
+    return (id: string) => builtinCount(id) + (m.get(id) ?? 0);
+  }, [dbItems]);
   const stageShelves = STAGE_SHELVES[activeStage];
   /* Món đang chọn phải LUÔN nằm trong danh sách đang hiện — đổi kệ/lọc mà giữ lại thì cột thông
      số tả một món không còn trên lưới, người dùng không đối chiếu được. Không cần effect riêng:
@@ -465,7 +476,7 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
         </div>
 
         {mode === 'ingest' ? (
-          <BulkIngestMode onDone={() => setMode('browse')} />
+          <BulkIngestMode onDone={() => { setMode('browse'); refreshDb(); }} />
         ) : (
         <div className="libbody">
           {/* p3 07/08 — tay cầm thu/mở dùng chung (PanelFlank), Hoà chốt nhân bản mẫu chặng
@@ -500,7 +511,7 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                     >
                       {(() => { const Icon = BAY_ICON[bay.id] ?? Folder; return <Icon className="shelficon" size={15} strokeWidth={1.65} aria-hidden />; })()}
                       {tr(s.label[0], s.label[1])}
-                      <span className="c">{s.id === 'common-idfc' ? idfcItems.length : (s.count ?? '—')}</span>
+                      <span className="c">{s.id === 'common-idfc' ? idfcItems.length : shelfCount(s.id)}</span>
                     </button>
                   ))}
                   {clusterHere && (
@@ -636,7 +647,29 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
 
             <div className="grid">
               {discoverItems.length === 0 && (
-                <p className="empty">{tr('Không có món nào khớp bộ lọc.', 'Nothing matches this filter.')}</p>
+                /* 12/08 — kệ RỖNG THẬT (kho chưa có món, không phải do lọc) thì nói rõ + đưa
+                   đường nhập ngay tại chỗ, không để màn trắng câm (X2/§9). Còn đang lọc/tìm thì
+                   giữ câu "không khớp bộ lọc" như cũ. */
+                query.trim() || chip !== 'all' || matGroup || idfcKindFilter ? (
+                  <p className="empty">{tr('Không có món nào khớp bộ lọc.', 'Nothing matches this filter.')}</p>
+                ) : (
+                  <div className="empty" style={{ display: 'grid', gap: 10, justifyItems: 'start' }}>
+                    <span>
+                      {!dbLoaded
+                        ? tr('Đang đọc kho…', 'Loading the store…')
+                        : tr(
+                            'Kệ này chưa có món nào trong kho. Nhập ảnh/tài sản của studio để lấp kệ.',
+                            'This shelf has nothing in the store yet. Import your studio assets to fill it.',
+                          )}
+                    </span>
+                    {dbLoaded && (
+                      <button type="button" className="pub" onClick={() => setMode('ingest')}>
+                        <Plus size={13} strokeWidth={2} />
+                        {tr('Nhập vào kho', 'Import to store')}
+                      </button>
+                    )}
+                  </div>
+                )
               )}
               {discoverItems.map((it) => {
                 /* w×d×h chỉ tính khi nấc LỚN đang bật (tránh dò khớp mã vô ích ở nấc khác) —

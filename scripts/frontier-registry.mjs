@@ -35,9 +35,9 @@ export const FRONTIER = [
     bangChung: [{ dir: 'lib', mau: 'DnaCard|DesignDnaCard' }] },
   { id: 'task-context', ten: 'Dây Việc–Ngữ Cảnh (12/08: schema+API+deep-link+chip chặng — chiều ngược Tạo-việc-từ-đây và đọc focusEntity ở chặng là entry riêng sau)', he: 'Workspace', dot: 1, trangThai: 'xong',
     bangChung: [{ file: 'prisma/schema.prisma', mau: 'workspaceId String\\?' }] }, // regex block-brace vấp dấu } trong docblock — đổi sang mẫu field trực tiếp (12/08)
-  { id: 'library-data-that', ten: 'Thư viện đọc kho THẬT (bỏ mock)', he: 'LibraryFirst', dot: 1, trangThai: 'chua',
+  { id: 'library-data-that', ten: 'Thư viện đọc kho THẬT (12/08: LibraryAsset qua API, số đếm thật, empty-state + nút Nhập; 17 seed minh hoạ Unsplash tải về uploads/ chạy offline, gỡ --undo)', he: 'LibraryFirst', dot: 1, trangThai: 'xong',
     bangChung: [{ file: 'lib/library/shelves.ts', mau: 'LIBRARY_DATA_IS_MOCK = true', can: false }] },
-  { id: 'fm-data-that', ten: 'File Manager đọc đĩa THẬT (bỏ mock-data)', he: 'LibraryFirst', dot: 1, trangThai: 'chua',
+  { id: 'fm-data-that', ten: 'FM đọc đĩa THẬT (12/08: bỏ mock-data, cây 5 root + real-fs, số 0 thật thay 2,1GB bịa; quyền per-folder = TODO entry riêng)', he: 'LibraryFirst', dot: 1, trangThai: 'xong',
     bangChung: [{ file: 'lib/filemanager/queries.ts', mau: "mock-data", can: false }] },
   { id: 'think-dial', ten: 'Nấc Suy Nghĩ — 4 nấc Vitals (12/08: fast/balanced/deep/research — research nối RAG notebook thật)', he: 'ThinkDial', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'ThinkDial' }] },
