@@ -33,7 +33,7 @@ export const FRONTIER = [
     bangChung: [{ dir: 'lib', mau: 'ProjectScaffolder' }] },
   { id: 'dna-card', ten: 'Thẻ DNA Thiết kế (8 lớp · 3 đầu ra · trạng thái)', he: 'TriTueDuAn', dot: 1, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'DnaCard|DesignDnaCard' }] },
-  { id: 'task-context', ten: 'Dây Việc–Ngữ Cảnh (Task mang stage/workspace/entity)', he: 'Workspace', dot: 1, trangThai: 'chua',
+  { id: 'task-context', ten: 'Dây Việc–Ngữ Cảnh (12/08: schema+API+deep-link+chip chặng — chiều ngược Tạo-việc-từ-đây và đọc focusEntity ở chặng là entry riêng sau)', he: 'Workspace', dot: 1, trangThai: 'xong',
     bangChung: [{ file: 'prisma/schema.prisma', mau: 'model Task \\{[^}]*workspaceId' }] },
   { id: 'library-data-that', ten: 'Thư viện đọc kho THẬT (bỏ mock)', he: 'LibraryFirst', dot: 1, trangThai: 'chua',
     bangChung: [{ file: 'lib/library/shelves.ts', mau: 'LIBRARY_DATA_IS_MOCK = true', can: false }] },
