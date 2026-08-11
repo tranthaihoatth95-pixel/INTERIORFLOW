@@ -402,6 +402,48 @@ body {
   }
 }
 
+/* ---------- `.glass-gradient-run` — viền gradient CHẠY quanh card kính (12/08, tái sinh) ----------
+   Tái sinh "card kính chạy màu đèn gradient" (Hoà nhớ từ chặng render cũ) theo luật mới
+   "ánh sáng = trạng thái, cấm trang trí tĩnh": class này CHỈ được gắn khi card đang LÀM VIỆC
+   THẬT (node AI đang sinh ảnh / job đang chạy) — xong việc phải gỡ, viền về bình thường.
+   Kỹ thuật: ::before phủ đúng vành mép bằng border-mask hai lớp (content-box XOR full-box,
+   padding 1.5px = bề dày viền), nền là linear-gradient 2 token --accent → --accent-warm
+   (KHÔNG hex mới) size 200%, animate `background-position` cho màu chạy vòng — gradient
+   đầu = cuối nên vòng lặp liền mạch.
+   Luật G1: chỉ animate background-position (thuộc tính paint) — KHÔNG animate opacity trên
+   card có backdrop-filter. Luật G9: KHÔNG thêm backdrop-filter mới — card dùng lớp kính
+   SẴN CÓ (mat-card), ::before này chỉ là lớp màu mỏng, không blur.
+   2 theme tự ăn theo token. `overflow-hidden` trên card (MacroNodeFace) không cắt vì inset: 0. */
+.glass-gradient-run {
+  position: relative;
+}
+.glass-gradient-run::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-warm), var(--accent)) 0 0 / 200% 100%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+  animation: glass-gradient-run-flow 2.6s linear infinite;
+}
+@keyframes glass-gradient-run-flow {
+  to {
+    background-position: 200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Gradient đứng yên — viền 2 màu tĩnh vẫn báo được "đang chạy", không mất tín hiệu. */
+  .glass-gradient-run::before {
+    animation: none;
+  }
+}
+
 /* Dây ĐANG CHẠY — nét đứt bò dọc dây (port `docs/mocks/Bảng nút.dc.html` màn 02:
    `stroke-dasharray:6 6; opacity:.5; animation:bn-dash 1s linear infinite`).
    `@keyframes bn-dash` chép NGUYÊN VĂN từ mock. Chỉ animate `stroke-dashoffset`

@@ -152,7 +152,7 @@ export function MacroNodeFace({ group }: { group: NodeGroup }) {
     <div
       className={cn(
         'nodrag mat-card absolute w-[300px] overflow-hidden rounded-[20px] border-[1.5px] border-[var(--accent)] shadow-[var(--shadow-pop),0_0_0_5px_var(--accent-soft)]',
-        busy && 'nt-macro-halo',
+        busy && 'nt-macro-halo glass-gradient-run',
       )}
       style={{ transform: `translate(${cx - 150}px, ${cy - 60}px)`, zIndex: 5, pointerEvents: 'auto' }}
     >

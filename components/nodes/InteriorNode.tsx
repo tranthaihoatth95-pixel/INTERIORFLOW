@@ -304,7 +304,7 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
         'group relative mat-card w-64 rounded-[14px] border transition-colors',
         selected ? 'border-[1.5px] border-[var(--accent)]' : 'border-[var(--mat-hairline)]',
         status === 'error' && 'border-red-500/60',
-        status === 'running' && 'node-running-halo',
+        status === 'running' && 'node-running-halo glass-gradient-run',
       )}
     >
       {/* G2 phần (2) — comment neo vào node này (badge góc phải-trên, xem CommentPin.tsx). */}
