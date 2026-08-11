@@ -147,8 +147,14 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
   });
 
   if (!open) {
-    // Trạng thái 03 (thu gọn) — 1 hàng, chỉ icon, đúng mock `dockSmall`.
-    const flat = groups.flatMap((g, gi) => g.items.map((it) => ({ ...it, groupIdx: gi })));
+    // Trạng thái 03 (thu gọn) — 1 hàng, chỉ icon. 11/08 Hoà soi: bản cũ bày CẢ 12 nút disabled
+    // không nhãn không lý do → "hầu như chẳng sử dụng được". Ở dạng thu gọn icon câm không tải
+    // nổi chữ "vì sao mờ" ⇒ chỉ hiện nút CÓ HÀNH VI THẬT (đúng chốt "dock chỉ mang lệnh dùng
+    // liên tục"); các nút chờ-engine vẫn LỘ Ở DẠNG MỞ RỘNG ("Thêm") — nơi có nhãn + phím + lý
+    // do, frontier không bị giấu (luật §9 vẫn giữ, chỉ đổi chỗ đứng cho trung thực với mắt nhìn).
+    const flat = groups
+      .flatMap((g, gi) => g.items.map((it) => ({ ...it, groupIdx: gi })))
+      .filter((it) => !it.disabled);
     return (
       <div
         className="if-3d-tool-dock"
