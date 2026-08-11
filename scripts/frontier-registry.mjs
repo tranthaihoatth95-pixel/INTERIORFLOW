@@ -46,6 +46,18 @@ export const FRONTIER = [
   { id: 'capture-nut', ten: 'Nút xuất PNG sequence (rời route bench)', he: 'DocCore', dot: 1, trangThai: 'chua',
     bangChung: [{ dir: 'components', mau: 'import \\{[^}]*captureSequence' }] },
 
+  // ── ĐỢT 1b · CHẤT LƯỢNG ĐẦU RA (11/08 — soi MẮT file layout.pdf xuất thật, lần đầu
+  //     nghiệm thu sản phẩm thay vì code; 3 lỗi khiến bản vẽ "chưa cầm đi gặp khách được") ──
+  { id: 'label-ne-hinh', ten: 'Nhãn phòng/dim NÉ hình học khi xuất (PDF: chữ đè giường/WC/dim chồng nhau)', he: 'DocCore', dot: 1, trangThai: 'chua',
+    bangChung: [{ dir: 'lib/cad', mau: 'avoidLabelCollision|LabelPlacer' }] },
+  { id: 'ty-le-chuan', ten: 'Bắt tỷ lệ về nấc chuẩn khi fit trang (PDF in "1:47" — nghề chỉ có 1:50/1:100)', he: 'DocCore', dot: 1, trangThai: 'chua',
+    bangChung: [{ dir: 'lib', mau: 'snapToStandardScale|STANDARD_SCALES' }] },
+  { id: 'khung-ten-sach', ten: 'Khung tên sạch jargon + đủ ô (mã bản vẽ·ngày·người vẽ/kiểm; bỏ "(đã rà công năng)")', he: 'DocCore', dot: 1, trangThai: 'chua',
+    bangChung: [{ dir: 'lib/cad', mau: 'drawingNumber|soHieuBanVe' }] },
+
+  { id: 'chuan-dau-ra-gate', ten: 'Máy chặn CHUAN-DAU-RA-NGHE lúc xuất (mở rộng export-checks)', he: 'DocCore', dot: 1, trangThai: 'chua',
+    bangChung: [{ dir: 'lib/print', mau: 'CHUAN_DAU_RA' }] },
+
   // ── ĐỢT 2 · LÕI DỰNG ────────────────────────────────────────────────────────
   { id: 'tool-state-3d', ten: 'Máy trạng thái công cụ 3D (mở 12 nút dock chờ)', he: 'NhapLenh', dot: 2, trangThai: 'chua',
     bangChung: [{ file: 'components/render-studio/ToolDock3D.tsx', mau: 'CHUA_DUNG_DUOC', can: false }] },
