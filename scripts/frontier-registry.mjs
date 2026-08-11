@@ -88,6 +88,10 @@ export const FRONTIER = [
   // ── ĐỢT 3 · RA CỔNG ─────────────────────────────────────────────────────────
   { id: 'chat-project', ten: 'Chat theo dự án (ChatMessage + projectId)', he: 'Workspace', dot: 3, trangThai: 'chua',
     bangChung: [{ file: 'prisma/schema.prisma', mau: 'model ChatMessage \\{[^}]*projectId' }] },
+  { id: 'comment-neo-doi-tuong', ten: 'Comment ghim vào đối tượng/vị trí (PHIẾU 5 Collaborate — XÂY MỚI, không phải nối dây)', he: 'Workspace', dot: 3, trangThai: 'chua',
+    bangChung: [{ file: 'prisma/schema.prisma', mau: 'model Comment \\{[^}]*entityId' }] },
+  { id: 'khach-qua-link', ten: 'Khách xem qua link không tài khoản, không tải gốc (PHIẾU 5)', he: 'Workspace', dot: 3, trangThai: 'chua',
+    bangChung: [{ dir: 'lib/server', mau: 'guestShareToken|GuestLink' }] },
   { id: 'dwg-tach-tien-trinh', ten: 'DWG converter tách tiến trình (mere aggregation)', he: 'DocCore', dot: 3, trangThai: 'chua',
     bangChung: [{ dir: 'scripts', mau: 'dwg-converter|dwgConverterProcess' }] },
 ];
