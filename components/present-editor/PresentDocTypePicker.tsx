@@ -15,6 +15,8 @@ export interface PresentDocTypePickerProps {
   onChooseMagicDeck: () => void;
   onChooseMaterialBoard: () => void;
   onChooseBoq: () => void;
+  /** [storySet] Hero output — nạp deck "Bộ hồ sơ kể chuyện" 8 trang (lib/present-editor/story-set). */
+  onChooseStorySet?: () => void;
 }
 
 type Kind = 'deck' | 'material' | 'boq' | 'text' | 'video';
@@ -27,13 +29,18 @@ type Template = {
   enabled: boolean;
   /** Khả năng chưa có editor riêng phải nói thật ngay tại chỗ, không hứa CTA mơ hồ. */
   unavailableReason?: [string, string];
+  /** [storySet] thẻ hero — bấm nạp buildStorySetDeck thay vì deck trống. */
+  storySet?: boolean;
 };
 
 const LIBRARY: Record<Kind, { label: [string, string]; count: string; lead: [string, string]; templates: Template[] }> = {
   deck: {
-    label: ['Deck', 'Deck'], count: '03',
+    label: ['Deck', 'Deck'], count: '04',
     lead: ['Tạo một câu chuyện thiết kế rõ ràng, phù hợp cho từng buổi duyệt.', 'Create a clear design story for every review.'],
     templates: [
+      // [storySet] Hero output (chốt 11/08): thẻ ĐẦU danh mục Deck. Ảnh minh hoạ Unsplash
+      // (Unsplash License, đã verify 200 image/jpeg 12/08) — người dùng thay bằng ảnh dự án.
+      { title: ['Bộ hồ sơ kể chuyện', 'The Story Set'], caption: ['Bộ hồ sơ kể chuyện · 8 trang', 'Story Set · 8 pages'], image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=75', enabled: true, storySet: true },
       { title: ['Không gian có câu chuyện', 'A space with a story'], caption: ['Concept tối giản', 'Minimal concept'], image: '/demo/mood1.jpg', enabled: true },
       { title: ['Mộc Residence', 'Moc Residence'], caption: ['Hồ sơ khách hàng', 'Client presentation'], image: '/demo/mood2.jpg', enabled: true },
       { title: ['Phương án 02', 'Option 02'], caption: ['So sánh phương án', 'Option comparison'], image: '/demo/mood3.jpg', enabled: true },
@@ -85,7 +92,7 @@ const KIND_ICON: Record<Kind, typeof Presentation> = {
   video: Film,
 };
 
-export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onChooseMaterialBoard, onChooseBoq }: PresentDocTypePickerProps) {
+export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onChooseMaterialBoard, onChooseBoq, onChooseStorySet }: PresentDocTypePickerProps) {
   const tr = useT();
   const [kind, setKind] = useState<Kind>('deck');
   const current = LIBRARY[kind];
@@ -93,7 +100,8 @@ export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onC
 
   const openTemplate = (template: Template) => {
     if (!template.enabled) return;
-    if (kind === 'boq') onChooseBoq();
+    if (template.storySet && onChooseStorySet) onChooseStorySet();
+    else if (kind === 'boq') onChooseBoq();
     else if (kind === 'material') onChooseMaterialBoard();
     else onChooseMagicDeck();
   };
@@ -131,6 +139,7 @@ export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onC
                 {template.image ? <img src={template.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: 'saturate(.74) contrast(.94)' }} /> : null}
                 {kind === 'boq' ? <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent 0 26px, rgba(63,54,40,.22) 27px 28px), repeating-linear-gradient(90deg, transparent 0 59px, rgba(63,54,40,.18) 60px 61px)' }} /> : null}
                 <div style={{ position: 'absolute', inset: 0, background: template.image ? 'linear-gradient(180deg, transparent 34%, rgba(0,0,0,.66))' : 'linear-gradient(145deg, rgba(255,255,255,.12), rgba(0,0,0,.24))' }} />
+                {template.storySet ? <span style={{ position: 'absolute', top: 12, left: 12, padding: '4px 9px', borderRadius: 8, background: 'var(--accent)', color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: '.07em' }}>{tr('MẪU ĐẶC TRƯNG', 'SIGNATURE')}</span> : null}
                 {!template.enabled ? <span aria-label={tr('Chưa khả dụng', 'Not available')} style={{ position: 'absolute', top: 12, right: 12, width: 28, height: 28, display: 'grid', placeItems: 'center', borderRadius: 9, background: 'rgba(15,15,18,.65)', color: '#fff' }}><LockKeyhole size={14} aria-hidden="true" /></span> : null}
                 <strong style={{ position: 'absolute', left: 16, right: 16, bottom: 15, color: kind === 'boq' || kind === 'text' ? '#312c26' : '#fff', fontSize: 17, lineHeight: 1.08, letterSpacing: '-.025em' }}>{tr(...template.title)}</strong>
               </div>

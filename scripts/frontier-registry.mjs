@@ -57,8 +57,8 @@ export const FRONTIER = [
   { id: 'khung-ten-sach', ten: 'Khung tên 9 ô + strip jargon (12/08: drawingNumber, không bịa giá trị — PDF soi mắt sạch)', he: 'DocCore', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'lib/cad', mau: 'drawingNumber|soHieuBanVe' }] },
 
-  { id: 'story-set', ten: 'BỘ HỒ SƠ KỂ CHUYỆN (Story Set) — hero output 6 chương: bìa editorial → DNA board → câu chuyện → ảnh điện ảnh → vật liệu tạp chí → phụ lục sự thật, template trung tính ship kèm app, ăn theo Thẻ DNA từng dự án', he: 'Workspace', dot: 1, trangThai: 'chua',
-    bangChung: [{ dir: 'lib/present-editor', mau: 'StorySet|storySet' }] },
+  { id: 'story-set', ten: 'BỘ HỒ SƠ KỂ CHUYỆN (Story Set) — hero output 6 chương: bìa editorial → DNA board → câu chuyện → ảnh điện ảnh → vật liệu tạp chí → phụ lục sự thật, template trung tính ship kèm app, ăn theo Thẻ DNA từng dự án', he: 'Workspace', dot: 1, trangThai: 'xong',
+    bangChung: [{ dir: 'lib/present-editor', mau: 'StorySet|storySet' }] }, // 12/08: buildStorySetDeck 8 trang + thẻ đầu gallery, 38 test, 8 URL unsplash verify 200
   { id: 'material-impact-ui', ten: 'Material Impact preview lên UI (12/08: MaterialImpactPreview + chèn trước applyMaterial, undo giữ nguyên)', he: 'LibraryFirst', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'MaterialImpact|impact-preview' }] },
   { id: 'chuan-dau-ra-gate', ten: 'Máy chặn CHUAN_DAU_RA lúc xuất (12/08: tỷ lệ lẻ/thiếu ô/nhãn đè → error+fix trong dialog)', he: 'DocCore', dot: 1, trangThai: 'xong',

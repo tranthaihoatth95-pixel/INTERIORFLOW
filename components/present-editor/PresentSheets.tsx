@@ -56,6 +56,7 @@ const PresentEditor = dynamic(() => import('./PresentEditor'), {
 const PresentDocTypePicker = dynamic(() => import('./PresentDocTypePicker'), { ssr: false });
 import type { EditorDeck, EditorSlide } from '@/lib/present-editor/model';
 import { newId } from '@/lib/present-editor/model';
+import { buildStorySetDeck } from '@/lib/present-editor/story-set';
 import type { StagePresetId } from '@/lib/present-editor/stage-presets';
 import { getLastUserId, loadResume, saveResume } from '@/lib/resume';
 import { getActiveBrandKit, seedDeckWithBrandKit } from '@/lib/present-editor/brand-kit';
@@ -585,6 +586,29 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
     diskWriterRef.current?.touch();
   };
 
+  /**
+   * [storySet] Hero output — nạp trọn bộ "Bộ hồ sơ kể chuyện" 8 trang (lib/present-editor/
+   * story-set) vào sheet hiện tại. Đi đường 'blank' (skipGenerateFlow) vì deck đã đủ trang,
+   * người dùng sửa tự do — không qua flow Magic.
+   */
+  const chooseStorySet = () => {
+    const built = buildStorySetDeck({ projectName: liveDeck.current.project });
+    const deck: EditorDeck = {
+      ...liveDeck.current,
+      docType: 'deck',
+      fonts: built.fonts,
+      palette: built.palette,
+      slides: built.slides,
+    };
+    liveDeck.current = deck;
+    setSheets((prev) => prev.map((s) => (s.id === activeId ? { ...s, deck } : s)));
+    setDeckStartBySheet((prev) => ({ ...prev, [activeId]: 'blank' }));
+    setSlideCount(deck.slides.length);
+    setImportGen((g) => g + 1);
+    saverRef.current?.touch();
+    diskWriterRef.current?.touch();
+  };
+
   const closeSheet = (id: string) => {
     if (sheets.length <= 1) return;
     const committed = commitActive(sheets);
@@ -633,6 +657,7 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
             onChooseMagicDeck={() => chooseDeck('magic')}
             onChooseMaterialBoard={() => chooseDeck('blank', { docType: 'material-a3', stagePreset: 'a3-landscape' })}
             onChooseBoq={() => onRequestBoq?.()}
+            onChooseStorySet={chooseStorySet}
           />
         ) : hydrated ? (
           <PresentEditor
