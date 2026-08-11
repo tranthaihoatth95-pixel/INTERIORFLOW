@@ -41,3 +41,25 @@
 ④: mời theo vai → cùng làm thấy nhau → góp ý tại chỗ → chốt thành việc → lịch sử giữ lại.
 ⑤: chat-project (+ cụm XÂY MỚI: comment-neo-doi-tuong · khach-qua-link — thêm registry khi mở phiếu code).
 ⚠️ NÓI THẲNG: kịch bản ③ HIỆN KHÔNG CHẠY ĐƯỢC — comment đang là công cụ dev (JSON), chat không theo dự án, link khách bị chặn auth. Đây là phiếu XÂY (~2 phiên), KHÔNG phải phiếu nối dây — không hứa Đợt 1.
+
+## ⚠️ ĐÍNH CHÍNH PHIẾU 5 — Hoà chốt lại 11/08 khuya (đè lên kịch bản CĐT-iPad phía trên)
+
+**CĐT KHÔNG vào hệ để comment.** Luồng với khách giữ truyền thống: sản phẩm xong → gửi MAIL →
+ban bệ họ xem, trình sếp họ, phản hồi về → chủ trì nhập phản hồi thành note. Không tài khoản
+khách, không link công khai cho CĐT.
+
+**Tính năng thật là CỔNG DUYỆT NỘI BỘ (Review Gate):**
+①: Chủ trì SET MỐC DUYỆT (time) cho một sản phẩm/trang canvas → đến mốc (hoặc bấm "gửi duyệt"),
+   **Vitals tự push thông báo + deep-link** cho SẾP và các bộ phận liên quan (chọn theo vai) —
+   bấm là rơi vào ĐÚNG trang canvas đó, chế độ XEM + NOTE (không sửa được).
+②: Người duyệt để lại NOTE ghim vào vị trí cần chỉnh — nhập linh hoạt: GÕ CHỮ hoặc NÓI
+   (voice-to-text tiếng Việt).
+③: Các note tự gom thành **CHECKLIST CHỈNH SỬA** trên trang đó — designer tick từng mục
+   (tick = xong hoặc chuyển thành việc kèm ngữ cảnh); vòng duyệt khép khi checklist sạch →
+   lúc đó mới xuất file gửi mail ra ngoài.
+Kịch bản nghiệm thu MỚI: 16h thứ Ba là mốc duyệt deck concept → 16h sếp nội bộ nhận thông báo,
+bấm link rơi đúng trang 5 → nói "đổi ảnh này, màu trầm hơn" (voice-to-text thành note ghim
+trang 5) → sáng thứ Tư designer mở trang thấy checklist 4 mục, tick dần → sạch → xuất PDF gửi
+mail CĐT. Không họp thêm, không tìm "sếp nói ở tin nhắn nào".
+⑤ dây máy CẬP NHẬT: comment-neo-doi-tuong (giữ) · **review-gate** (THAY cho khach-qua-link —
+   entry đó gỡ vì trái chốt mới) · task-context.

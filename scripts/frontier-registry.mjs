@@ -102,8 +102,8 @@ export const FRONTIER = [
     bangChung: [{ file: 'prisma/schema.prisma', mau: 'model ChatMessage \\{[^}]*projectId' }] },
   { id: 'comment-neo-doi-tuong', ten: 'Comment ghim vào đối tượng/vị trí (PHIẾU 5 Collaborate — XÂY MỚI, không phải nối dây)', he: 'Workspace', dot: 3, trangThai: 'chua',
     bangChung: [{ file: 'prisma/schema.prisma', mau: 'model Comment \\{[^}]*entityId' }] },
-  { id: 'khach-qua-link', ten: 'Khách xem qua link không tài khoản, không tải gốc (PHIẾU 5)', he: 'Workspace', dot: 3, trangThai: 'chua',
-    bangChung: [{ dir: 'lib/server', mau: 'guestShareToken|GuestLink' }] },
+  { id: 'review-gate', ten: 'Cổng Duyệt nội bộ: mốc time → Vitals push deep-link cho sếp/bộ phận → xem+note (gõ/voice-to-text) → note gom thành checklist chỉnh sửa → sạch mới gửi mail. CĐT ở NGOÀI hệ (chốt 11/08 khuya)', he: 'Workspace', dot: 3, trangThai: 'chua',
+    bangChung: [{ dir: 'lib', mau: 'ReviewGate|CongDuyet' }] },
   { id: 'dwg-tach-tien-trinh', ten: 'DWG converter tách tiến trình (mere aggregation)', he: 'DocCore', dot: 3, trangThai: 'chua',
     bangChung: [{ dir: 'scripts', mau: 'dwg-converter|dwgConverterProcess' }] },
 ];
