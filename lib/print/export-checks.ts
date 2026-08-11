@@ -12,12 +12,18 @@
  */
 
 import type { Doc, PaperKey, PaperOrientation } from '../cad/model';
-import { docBox, paperSizeMm, fitsAtScale, suggestStandardScale } from '../cad/model';
-import { DEFAULT_PDF_MARGIN_MM, MIN_PRINTABLE_LINE_MM } from '../cad/pdf';
+import { docBox, paperSizeMm, fitsAtScale, suggestStandardScale, isStandardPrintScale, snapPrintScale } from '../cad/model';
+import { DEFAULT_PDF_MARGIN_MM, MIN_PRINTABLE_LINE_MM, resolveExportScaleN } from '../cad/pdf';
+import { TITLE_BLOCK_REQUIRED_CELLS } from '../cad/commands';
+import { countUnresolvedLabelCollisions } from '../cad/label-placer';
 
 export interface ExportCheckItem {
   label: string;
   ok: boolean;
+  /** CHUAN_DAU_RA — 'error' chặn/đỏ, 'warn' cảnh báo. Thiếu = dòng kiểm cũ (hiện như trước). */
+  level?: 'error' | 'warn';
+  /** cách sửa ngắn gọn — hiện dòng phụ dưới thông điệp. */
+  fix?: string;
 }
 
 /** Bề dày mặc định khi layer chưa khai — khớp chú thích `Layer.lineweight` trong `lib/cad/model.ts`. */
@@ -89,5 +95,86 @@ export function buildExportChecks(doc: Doc, paper: PaperKey, orientation: PaperO
     );
   }
 
+  // ⑥ VIỆC 4 — bộ kiểm CHUAN_DAU_RA nối thẳng vào danh sách (CadSheets đã truyền items này cho
+  //    ExportPdfDialog, không cần dây mới). Sạch cả bộ thì báo 1 dòng ✓ để người xuất biết bộ
+  //    kiểm CÓ chạy (khác với "không kiểm gì").
+  const chuan = buildChuanDauRaChecks(doc, paper, orientation);
+  if (chuan.length === 0) {
+    items.push({ label: 'Đạt chuẩn đầu ra: tỷ lệ · khung tên · nhãn', ok: true });
+  } else {
+    for (const c of chuan) items.push({ label: c.message, ok: false, level: c.level, fix: c.fix });
+  }
+
   return items;
+}
+
+/* ───────────── VIỆC 4 `chuan-dau-ra-gate` — bộ kiểm CHUAN_DAU_RA (marker) ─────────────
+ * docs/CHUAN-DAU-RA-NGHE.md §6 tầng 1 "máy chặn lúc xuất". Mỗi phát hiện: mức + thông điệp
+ * ≤12 từ + cách sửa. Trả [] khi sạch. */
+
+export interface ChuanDauRaFinding {
+  level: 'error' | 'warn';
+  /** thông điệp ≤12 từ (SPEC-NGON-NGU-CHI-DAN: hành động trước, không jargon nội bộ). */
+  message: string;
+  /** cách sửa — luôn kèm việc làm được ngay, không chỉ chê. */
+  fix: string;
+}
+
+/** Marker bộ kiểm — CHUAN-DAU-RA-NGHE.md §6 yêu cầu code mang mã này để registry soi được. */
+export const CHUAN_DAU_RA = 'CHUAN_DAU_RA';
+
+/** DimStyle mặc định cho bước đếm nhãn — khớp DEFAULT_DIM_STYLE của pdf.ts (không export bên đó,
+ * bản sao 3 số này là hợp đồng đã tài liệu hoá ở render.ts/pdf.ts). */
+const GATE_DIM_STYLE = { textHeight: 120, dimScale: 1 };
+
+export function buildChuanDauRaChecks(doc: Doc, paper: PaperKey, orientation: PaperOrientation): ChuanDauRaFinding[] {
+  const findings: ChuanDauRaFinding[] = [];
+  const entities = doc.entities ?? [];
+  if (!entities.length) return findings; // bản vẽ trống — dòng ① của buildExportChecks đã báo
+
+  // ① Tỷ lệ in phải thuộc dãy chuẩn — đọc CÙNG nguồn số với file xuất thật (resolveExportScaleN).
+  const [pw, ph] = paperSizeMm(paper, orientation);
+  const n = resolveExportScaleN(doc, pw, ph, DEFAULT_PDF_MARGIN_MM);
+  if (n === null) {
+    findings.push({
+      level: 'error',
+      message: 'Bản vẽ quá lớn, không nấc tỷ lệ chuẩn nào lọt giấy',
+      fix: 'Chọn khổ giấy lớn hơn hoặc tách bản vẽ thành nhiều tờ',
+    });
+  } else if (!isStandardPrintScale(n)) {
+    findings.push({
+      level: 'error',
+      message: `Tỷ lệ 1:${n} không thuộc dãy chuẩn`,
+      fix: `Đổi tỷ lệ in về 1:${snapPrintScale(n)}`,
+    });
+  }
+
+  // ② Khung tên đủ 9 ô bắt buộc — nhận diện caption trong text entity (khung tên đã bake).
+  const texts = entities.filter((e) => e.type === 'text').map((e) => (e as { text: string }).text.trim());
+  const missing = TITLE_BLOCK_REQUIRED_CELLS.filter((cell) => !texts.some((t) => cell.test(t)));
+  if (missing.length === TITLE_BLOCK_REQUIRED_CELLS.length) {
+    findings.push({
+      level: 'error',
+      message: 'Bản vẽ chưa có khung tên',
+      fix: 'Chèn khung tên từ bảng Khung tên rồi điền đủ ô',
+    });
+  } else if (missing.length > 0) {
+    findings.push({
+      level: 'error',
+      message: `Khung tên thiếu ${missing.length} ô bắt buộc`,
+      fix: `Bổ sung: ${missing.map((m) => m.label).join(' · ')}`,
+    });
+  }
+
+  // ③ Nhãn còn đè nhau/đè hình SAU khi máy đã né (label-placer) — cảnh báo, không chặn.
+  const con = countUnresolvedLabelCollisions({ entities, layers: doc.layers ?? [] }, GATE_DIM_STYLE);
+  if (con > 0) {
+    findings.push({
+      level: 'warn',
+      message: `${con} nhãn còn đè lên hình hoặc nhãn khác`,
+      fix: 'Dời nhãn bằng tay hoặc rút gọn chữ',
+    });
+  }
+
+  return findings;
 }

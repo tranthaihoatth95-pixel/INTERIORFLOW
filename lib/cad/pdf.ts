@@ -36,7 +36,8 @@
  */
 
 import type { Doc, Entity, Pt, Viewport, DimEntity, Sheet } from './model';
-import { docBox, fitBox, fitScaleLabel, worldToScreen, ellipseBoundaryPoints, zoneBoundaryPoints, zoneCentroid, ZONE_GROUP_META, fixedScaleViewport, fitsAtScale, docPaperMm, defaultPaperOrientation, paperSizeMm } from './model';
+import { docBox, fitBox, fitScaleLabel, worldToScreen, ellipseBoundaryPoints, zoneBoundaryPoints, zoneCentroid, ZONE_GROUP_META, fixedScaleViewport, fitsAtScale, docPaperMm, defaultPaperOrientation, paperSizeMm, snapPrintScale } from './model';
+import { planExportLabelShifts, stripInternalJargon, type ExportLabelShift } from './label-placer';
 import { BLOCK_MAP, type Prim } from './furniture';
 import { hatchLines, hatchDots } from './hatch';
 import { ensureVietnameseFont } from '../pdf-font';
@@ -74,6 +75,37 @@ export function applyRealScaleToTitleBlock(entities: Entity[], scaleLabel: strin
       ? { ...e, text: `${TITLE_BLOCK_SCALE_PREFIX}${scaleLabel}` }
       : e,
   );
+}
+
+/** VIỆC 2 `khung-ten-sach` (CHUAN-DAU-RA §1) — gỡ jargon nội bộ khỏi MỌI text sẽ in ra file
+ * (bắt được 11/08: "(đã rà công năng)" nằm trong tên bản vẽ đã BAKE thành entity từ trước, sửa
+ * ở `titleBlockPro` không cứu được doc cũ). Chỉ clone entity có chữ đổi — giữ reference còn lại
+ * (cùng convention `applyRealScaleToTitleBlock`). */
+export function stripJargonFromEntities(entities: Entity[]): Entity[] {
+  return entities.map((e) => {
+    if (e.type !== 'text') return e;
+    const clean = stripInternalJargon(e.text);
+    return clean === e.text ? e : { ...e, text: clean };
+  });
+}
+
+/**
+ * VIỆC 1 `ty-le-chuan` — TỈ LỆ CHUẨN hiệu dụng mà đường xuất PDF sẽ dùng cho Doc này:
+ *   · `doc.printScale` đã chọn và lọt giấy → tôn trọng nguyên vẹn (kể cả nấc lẻ người dùng
+ *     cố ý gõ — cổng CHUAN_DAU_RA sẽ báo, đường xuất không tự sửa lựa chọn tường minh);
+ *   · còn lại → auto-fit rồi BẮT về nấc chuẩn gần nhất phía nhỏ (`snapPrintScale`) — hết cảnh
+ *     in "Tỷ lệ 1:47";
+ *   · null = không nấc chuẩn nào lọt giấy (vượt 1:500) — caller rơi về auto-fit số lẻ cũ và
+ *     cổng kiểm sẽ chặn, không im lặng.
+ * Export để `export-checks.ts` kiểm CÙNG con số với file xuất thật (một nguồn, không lệch nhau).
+ */
+export function resolveExportScaleN(doc: Doc, pw: number, ph: number, margin: number): number | null {
+  const box = docBox(doc) ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
+  if (doc.printScale && fitsAtScale(box, [pw, ph], margin, doc.printScale)) return doc.printScale;
+  const fit = fitBox(box, pw, ph, margin);
+  if (!Number.isFinite(fit.scale) || fit.scale <= 0) return 100;
+  const snapped = snapPrintScale(1 / fit.scale);
+  return fitsAtScale(box, [pw, ph], margin, snapped) ? snapped : null;
 }
 
 /** 2.1.8.m (30/07) — nhãn "Khổ · Hướng" cho mục lục bộ hồ sơ (VD "A4 · Dọc") — khổ và hướng là
@@ -249,7 +281,7 @@ function drawHatchPdf(pdf: JsPdf, v: Viewport, e: Extract<Entity, { type: 'hatch
   }
 }
 
-function drawDimPdf(pdf: JsPdf, v: Viewport, e: DimEntity, color: string, ds: CadPdfDimStyle) {
+function drawDimPdf(pdf: JsPdf, v: Viewport, e: DimEntity, color: string, ds: CadPdfDimStyle, shift?: ExportLabelShift) {
   const S = (p: Pt) => worldToScreen(v, p);
   const kind = e.kind ?? 'aligned';
   setStroke(pdf, color, 0.15);
@@ -305,11 +337,14 @@ function drawDimPdf(pdf: JsPdf, v: Viewport, e: DimEntity, color: string, ds: Ca
     pdf.line(sa0.x, sa0.y, sa.x, sa.y);
     pdf.line(sb0.x, sb0.y, sb.x, sb.y);
     pdf.line(sa.x, sa.y, sb.x, sb.y);
-    pdf.text(`${Math.round(len)}`, (sa.x + sb.x) / 2, (sa.y + sb.y) / 2 - 1);
+    // VIỆC 3 — chuỗi dim đè chuỗi khác thì DỜI RIÊNG CHỮ (mm world, từ label-placer), đường
+    // dim/extension giữ nguyên vị trí thật của nó.
+    const tm = S({ x: (oa.x + ob.x) / 2 + (shift?.dx ?? 0), y: (oa.y + ob.y) / 2 + (shift?.dy ?? 0) });
+    pdf.text(`${Math.round(len)}`, tm.x, tm.y - 1);
   }
 }
 
-function drawEntityPdf(pdf: JsPdf, v: Viewport, doc: Doc, e: Entity, ds: CadPdfDimStyle) {
+function drawEntityPdf(pdf: JsPdf, v: Viewport, doc: Doc, e: Entity, ds: CadPdfDimStyle, shift?: ExportLabelShift) {
   const S = (p: Pt) => worldToScreen(v, p);
   const color = layerColorOf(doc, e, '#111111');
   const widthMm = lineWidthMmOf(doc, e);
@@ -340,14 +375,22 @@ function drawEntityPdf(pdf: JsPdf, v: Viewport, doc: Doc, e: Entity, ds: CadPdfD
       polylinePdf(pdf, arcPoints(e.c, e.r, e.a1, e.a2).map(S), false);
       break;
     case 'text': {
-      const at = S(e.at);
+      // VIỆC 3 `label-ne-hinh` — nhãn (phòng) có kế hoạch né thì vẽ ở vị trí ĐÃ DỜI; phải kéo
+      // ra ngoài thì vẽ thêm leader mảnh trỏ về điểm gốc nó chú thích (CHUAN-DAU-RA §1).
+      const at = S(shift ? { x: e.at.x + shift.dx, y: e.at.y + shift.dy } : e.at);
+      if (shift?.leader) {
+        setStroke(pdf, color, 0.13);
+        const lf = S(shift.leader.from);
+        const lt = S(shift.leader.to);
+        pdf.line(lf.x, lf.y, lt.x, lt.y);
+      }
       pdf.setTextColor(color);
       pdf.setFontSize(mmToPt(Math.max(1, e.h) * v.scale));
       pdf.text(e.text, at.x, at.y);
       break;
     }
     case 'dim':
-      drawDimPdf(pdf, v, e, color, ds);
+      drawDimPdf(pdf, v, e, color, ds, shift);
       break;
     case 'block': {
       const def = BLOCK_MAP[e.block];
@@ -435,24 +478,28 @@ function drawDocOntoPdfPage(pdf: JsPdf, doc: Doc, pw: number, ph: number, opts: 
   const margin = opts.margin ?? DEFAULT_PDF_MARGIN_MM;
   const ds = opts.dimStyle ?? DEFAULT_DIM_STYLE;
   const box = docBox(doc) ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
-  // B1 (24/07) — "plot to scale": doc.printScale (1:N chuẩn, per-sheet) + bản vẽ LỌT giấy ở tỉ
-  // lệ đó → viewport tỉ lệ CỐ ĐỊNH (đo thước trên bản in ra đúng 1:N). Không đặt/không lọt →
-  // auto-fit như cũ (fitBox — hành vi cũ nguyên vẹn, test pdf-scale.test.ts giữ pass).
-  const useFixed = !!doc.printScale && fitsAtScale(box, [pw, ph], margin, doc.printScale);
-  const v: Viewport = useFixed
-    ? fixedScaleViewport(box, [pw, ph], doc.printScale!)
+  // VIỆC 1 `ty-le-chuan` (CHUAN-DAU-RA §1) — B1 "plot to scale" mở rộng: MỌI đường ra tỉ lệ đều
+  // qua `resolveExportScaleN` (printScale hợp lệ → giữ; auto-fit → BẮT về nấc chuẩn phía nhỏ).
+  // Chỉ khi không nấc chuẩn nào lọt giấy (vượt 1:500) mới rơi về auto-fit số lẻ cũ — ca đó cổng
+  // CHUAN_DAU_RA trong export-checks.ts báo lỗi, không im lặng in "1:47".
+  const scaleN = resolveExportScaleN(doc, pw, ph, margin);
+  const v: Viewport = scaleN !== null
+    ? fixedScaleViewport(box, [pw, ph], scaleN)
     : fitBox(box, pw, ph, margin);
   // M0 fix (§1.6) — khoá lỗi tỉ lệ khung tên gõ tay không khớp tỉ lệ in thật: TÍNH LẠI "1:N" thật
-  // từ ĐÚNG viewport sẽ vẽ (fixed 1:N chuẩn hoặc auto-fit) rồi ghi đè vào entity text khung tên
-  // trước khi vẽ — entity gốc trong doc/app KHÔNG đổi.
-  const scaleLabel = useFixed ? `1:${doc.printScale}` : fitScaleLabel(box, [pw, ph], margin);
-  const entities = applyRealScaleToTitleBlock(doc.entities, scaleLabel);
+  // từ ĐÚNG viewport sẽ vẽ rồi ghi đè vào entity text khung tên trước khi vẽ — entity gốc trong
+  // doc/app KHÔNG đổi. Kèm VIỆC 2: gỡ jargon nội bộ khỏi mọi text sẽ in ra.
+  const scaleLabel = scaleN !== null ? `1:${scaleN}` : fitScaleLabel(box, [pw, ph], margin);
+  const entities = stripJargonFromEntities(applyRealScaleToTitleBlock(doc.entities, scaleLabel));
+  // VIỆC 3 `label-ne-hinh` — kế hoạch DỜI nhãn phòng/chuỗi dim để không đè hình/đè nhau khi in.
+  // Tính trên entities SẼ VẼ (sau ghi đè tỉ lệ — cùng id), chỉ áp lúc vẽ, Doc gốc không đổi.
+  const labelShifts = planExportLabelShifts({ entities, layers: doc.layers }, ds);
 
   pdf.setLineCap?.(1); // 1 = round — nét nối mượt hơn (không bắt buộc, jsPDF fallback im lặng nếu thiếu)
   for (const e of entities) {
     const lay = doc.layers.find((l) => l.id === e.layer);
     if (lay && !lay.visible) continue; // layer ẩn trong app → không vẽ vào PDF (xem giới hạn OCG đầu file)
-    drawEntityPdf(pdf, v, doc, e, ds);
+    drawEntityPdf(pdf, v, doc, e, ds, labelShifts.get(e.id));
   }
   const footer = pdfFooterLine(opts);
   if (footer) {
@@ -643,12 +690,11 @@ export async function buildSheetSetPdf(sheets: SheetSetEntry[], opts: CadPdfOpti
   y += 6;
   pdf.setFont(FONT, 'normal');
 
+  // VIỆC 1 — mục lục phải in CÙNG con số tỉ lệ với trang thật (một nguồn: resolveExportScaleN).
   const scaleLabelOf = (doc: Doc, pw: number, ph: number) => {
-    const box = docBox(doc) ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
     const m = opts.margin ?? DEFAULT_PDF_MARGIN_MM;
-    return doc.printScale && fitsAtScale(box, [pw, ph], m, doc.printScale)
-      ? `1:${doc.printScale}`
-      : fitScaleLabel(box, [pw, ph], m);
+    const n = resolveExportScaleN(doc, pw, ph, m);
+    return n !== null ? `1:${n}` : fitScaleLabel(docBox(doc), [pw, ph], m);
   };
 
   sheets.forEach((s, i) => {

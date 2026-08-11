@@ -48,6 +48,11 @@ export interface ExportSheetInfo {
 export interface ExportChecklistItem {
   label: string;
   ok: boolean;
+  /** VIỆC 4 CHUAN_DAU_RA (lib/print/export-checks.ts) — 'error' đỏ (--danger), 'warn'/thiếu =
+   * vàng như cũ. Additive: caller cũ không truyền vẫn hiện y hệt trước. */
+  level?: 'error' | 'warn';
+  /** cách sửa — dòng phụ nhỏ dưới thông điệp. */
+  fix?: string;
 }
 
 export interface ExportPdfDialogProps {
@@ -366,14 +371,17 @@ export default function ExportPdfDialog({
                 <SectionLabel>Trước khi xuất</SectionLabel>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                   {checks.map((c, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, color: 'var(--t2)', lineHeight: 1.5 }}>
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 11.5, color: 'var(--t2)', lineHeight: 1.5 }}>
                       <span
                         style={{
                           width: 14,
                           height: 14,
                           flex: 'none',
+                          marginTop: 1.5,
                           borderRadius: 5,
-                          background: c.ok ? 'var(--ok)' : 'var(--warn)',
+                          // VIỆC 4 CHUAN_DAU_RA — mức 'error' dùng --danger (token sẵn có, nghĩa
+                          // "lỗi"); thiếu level giữ --warn y hệt trước (caller cũ không đổi gì).
+                          background: c.ok ? 'var(--ok)' : c.level === 'error' ? 'var(--danger)' : 'var(--warn)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -386,7 +394,13 @@ export default function ExportPdfDialog({
                       >
                         {c.ok ? '✓' : '!'}
                       </span>
-                      <span style={{ minWidth: 0 }}>{c.label}</span>
+                      <span style={{ minWidth: 0 }}>
+                        {c.label}
+                        {/* cách sửa — dòng phụ mờ, chỉ hiện khi bộ kiểm cấp (CHUAN_DAU_RA). */}
+                        {!c.ok && c.fix && (
+                          <span style={{ display: 'block', fontSize: 10.5, color: 'var(--t5)' }}>{c.fix}</span>
+                        )}
+                      </span>
                     </div>
                   ))}
                 </div>

@@ -9,7 +9,8 @@
 import assert from 'node:assert';
 import { emptyDoc } from '../cad/model';
 import type { Doc, Layer, LineEntity } from '../cad/model';
-import { buildExportChecks } from './export-checks';
+import { titleBlockPro } from '../cad/commands';
+import { buildExportChecks, buildChuanDauRaChecks } from './export-checks';
 
 let pass = 0;
 function test(name: string, fn: () => void) {
@@ -36,11 +37,24 @@ const line = (id: string, layerId: string, a: [number, number], b: [number, numb
   ...(lw === undefined ? {} : { lineweight: lw }),
 });
 
-/** Doc "sạch": 1 layer, mọi nét dùng layer đó, nằm quanh gốc, nét đủ dày. */
+/** Khung tên ĐỦ 9 ô (CHUAN-DAU-RA §1) — docSach phải có mới "sạch" dưới bộ kiểm CHUAN_DAU_RA
+ * (11/08: khung tên thiếu ô = trượt, doc không khung tên không còn được coi là sạch). */
+function khungTenDu(layerId: string) {
+  return titleBlockPro(
+    { x: 4000, y: -3400 },
+    {
+      project: 'CĂN HỘ MẪU', category: 'Nội thất', drawing: 'MẶT BẰNG BỐ TRÍ', drawingNumber: 'IF-01',
+      scale: '1:50', date: '11/08/2026', author: 'A', checker: 'B', revision: 'A',
+    },
+    layerId, layerId, 50,
+  );
+}
+
+/** Doc "sạch": 1 layer, mọi nét dùng layer đó, nằm quanh gốc, nét đủ dày, khung tên đủ ô. */
 function docSach(): Doc {
   const d = emptyDoc();
   d.layers = [layer('l1', 0.35)];
-  d.entities = [line('e1', 'l1', [0, 0], [4000, 0]), line('e2', 'l1', [0, 0], [0, 3000])];
+  d.entities = [line('e1', 'l1', [0, 0], [4000, 0]), line('e2', 'l1', [0, 0], [0, 3000]), ...khungTenDu('l1')];
   return d;
 }
 
@@ -130,6 +144,54 @@ test('không có printScale (tự động fit) thì không bị báo hỏng oan'
   delete d.printScale;
   const dong = buildExportChecks(d, 'A4', 'portrait').find((i) => /Tỉ lệ/.test(i.label))!;
   assert.strictEqual(dong.ok, true, dong.label);
+});
+
+/* ───────────── VIỆC 4 — bộ kiểm CHUAN_DAU_RA (docs/CHUAN-DAU-RA-NGHE.md §6 tầng 1) ───────────── */
+
+test('CHUAN_DAU_RA: doc sạch (khung tên đủ 9 ô, tỷ lệ chuẩn) → 0 phát hiện + 1 dòng ✓ tổng', () => {
+  const d = docSach();
+  assert.strictEqual(buildChuanDauRaChecks(d, 'A3', 'landscape').length, 0);
+  const items = buildExportChecks(d, 'A3', 'landscape');
+  assert.ok(items.some((i) => i.ok && /Đạt chuẩn đầu ra/.test(i.label)), nhan(items));
+});
+
+test('CHUAN_DAU_RA: printScale LẺ (1:47) → lỗi mức error, cách sửa chỉ đúng nấc 1:50', () => {
+  const d = docSach();
+  d.printScale = 47; // lọt giấy nhưng không thuộc dãy chuẩn — đúng ca layout.pdf 11/08
+  const f = buildChuanDauRaChecks(d, 'A3', 'landscape');
+  const dong = f.find((i) => /1:47/.test(i.message));
+  assert.ok(dong, f.map((i) => i.message).join(' | '));
+  assert.strictEqual(dong!.level, 'error');
+  assert.ok(/1:50/.test(dong!.fix), dong!.fix);
+});
+
+test('CHUAN_DAU_RA: KHÔNG có khung tên → lỗi "chưa có khung tên"', () => {
+  const d = docSach();
+  d.entities = d.entities.filter((e) => e.type === 'line'); // gỡ toàn bộ khung tên
+  const f = buildChuanDauRaChecks(d, 'A3', 'landscape');
+  assert.ok(f.some((i) => i.level === 'error' && /khung tên/i.test(i.message)), f.map((i) => i.message).join(' | '));
+});
+
+test('CHUAN_DAU_RA: khung tên THIẾU Ô (kiểu cũ, không hạng mục/revision) → lỗi kể tên ô thiếu', () => {
+  const d = docSach();
+  // Giả lập khung tên đời cũ: xoá ô hạng mục + revision khỏi khung tên đủ.
+  d.entities = d.entities.filter((e) => !(e.type === 'text' && (e.text === 'HẠNG MỤC · CATEGORY' || /^Rev /.test(e.text))));
+  const f = buildChuanDauRaChecks(d, 'A3', 'landscape');
+  const dong = f.find((i) => /thiếu 2 ô/.test(i.message));
+  assert.ok(dong, f.map((i) => i.message).join(' | '));
+  assert.ok(/hạng mục/.test(dong!.fix) && /revision/.test(dong!.fix), dong!.fix);
+});
+
+test('CHUAN_DAU_RA: nhãn máy né được → KHÔNG cảnh báo (chỉ báo ca máy chịu thua)', () => {
+  const d = docSach();
+  d.entities.push({ id: 'lbl', type: 'text', layer: 'l1', at: { x: 500, y: 500 }, text: 'PHÒNG NGỦ', h: 200 });
+  d.entities.push({ id: 'bed', type: 'block', layer: 'l1', block: 'bed-double', at: { x: 800, y: 600 }, rot: 0, sx: 1, sy: 1 });
+  const f = buildChuanDauRaChecks(d, 'A3', 'landscape');
+  assert.ok(!f.some((i) => /nhãn/.test(i.message)), f.map((i) => i.message).join(' | '));
+});
+
+test('CHUAN_DAU_RA: doc trống → không phát sinh dòng nào (dòng "trống" cũ đã báo)', () => {
+  assert.strictEqual(buildChuanDauRaChecks(emptyDoc(), 'A3', 'landscape').length, 0);
 });
 
 console.log(`\nexport-checks.test.ts — ${pass}/${pass} PASS`);

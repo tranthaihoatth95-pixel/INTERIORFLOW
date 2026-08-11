@@ -48,21 +48,23 @@ export const FRONTIER = [
 
   // ── ĐỢT 1b · CHẤT LƯỢNG ĐẦU RA (11/08 — soi MẮT file layout.pdf xuất thật, lần đầu
   //     nghiệm thu sản phẩm thay vì code; 3 lỗi khiến bản vẽ "chưa cầm đi gặp khách được") ──
-  { id: 'label-ne-hinh', ten: 'Nhãn phòng/dim NÉ hình học khi xuất (PDF: chữ đè giường/WC/dim chồng nhau)', he: 'DocCore', dot: 1, trangThai: 'chua',
+  { id: 'label-ne-hinh', ten: 'Né nhãn v1 (12/08: label-placer 8 hướng + leader — PHÒNG NGỦ hết đè giường)', he: 'DocCore', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'lib/cad', mau: 'avoidLabelCollision|LabelPlacer' }] },
   // ⚠️ soi-frontier bắt được ngay 11/08: STANDARD_SCALES + hàm bắt nấc ĐÃ CÓ (model.ts:1059-1071)
   // nhưng đường xuất PDF không gọi → in "1:47". Việc là NỐI DÂY vào đường xuất, marker mới:
-  { id: 'ty-le-chuan', ten: 'NỐI STANDARD_SCALES (có sẵn model.ts:1059) vào đường xuất PDF — hết "1:47"', he: 'DocCore', dot: 1, trangThai: 'chua',
+  { id: 'ty-le-chuan', ten: 'Tỷ lệ bắt nấc chuẩn khi xuất (12/08: snapPrintScale — PDF soi mắt ra 1:50)', he: 'DocCore', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'lib', mau: 'snapPrintScale|CHUAN_TY_LE_IN' }] },
-  { id: 'khung-ten-sach', ten: 'Khung tên sạch jargon + đủ ô (mã bản vẽ·ngày·người vẽ/kiểm; bỏ "(đã rà công năng)")', he: 'DocCore', dot: 1, trangThai: 'chua',
+  { id: 'khung-ten-sach', ten: 'Khung tên 9 ô + strip jargon (12/08: drawingNumber, không bịa giá trị — PDF soi mắt sạch)', he: 'DocCore', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'lib/cad', mau: 'drawingNumber|soHieuBanVe' }] },
 
   { id: 'story-set', ten: 'BỘ HỒ SƠ KỂ CHUYỆN (Story Set) — hero output 6 chương: bìa editorial → DNA board → câu chuyện → ảnh điện ảnh → vật liệu tạp chí → phụ lục sự thật, template trung tính ship kèm app, ăn theo Thẻ DNA từng dự án', he: 'Workspace', dot: 1, trangThai: 'chua',
     bangChung: [{ dir: 'lib/present-editor', mau: 'StorySet|storySet' }] },
   { id: 'material-impact-ui', ten: 'Material Impact preview lên UI (12/08: MaterialImpactPreview + chèn trước applyMaterial, undo giữ nguyên)', he: 'LibraryFirst', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'MaterialImpact|impact-preview' }] },
-  { id: 'chuan-dau-ra-gate', ten: 'Máy chặn CHUAN-DAU-RA-NGHE lúc xuất (mở rộng export-checks)', he: 'DocCore', dot: 1, trangThai: 'chua',
+  { id: 'chuan-dau-ra-gate', ten: 'Máy chặn CHUAN_DAU_RA lúc xuất (12/08: tỷ lệ lẻ/thiếu ô/nhãn đè → error+fix trong dialog)', he: 'DocCore', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'lib/print', mau: 'CHUAN_DAU_RA' }] },
+  { id: 'label-ne-hinh-v2', ten: 'Né nhãn v2 — soi mắt 12/08 còn: WC/BẾP cấn thiết bị · dim chưa ra NGOÀI hình · dịch chưa ràng biên phòng thật (findHatchBoundary) · vị trí leader còn vụng', he: 'DocCore', dot: 1, trangThai: 'chua',
+    bangChung: [{ dir: 'lib/cad', mau: 'labelInRoomBounds|dimOutsideRoom' }] },
   { id: 'bento-align-2d', ten: 'Căn lưới bento vùng đầu chặng 2D (tab Bản vẽ · Mở tệp · rail LỚP chung một lề — Hoà chụp lệch 11/08)', he: 'DocCore', dot: 1, trangThai: 'chua',
     bangChung: [{ dir: 'components/cad', mau: 'BENTO_GRID|--bento-gutter' }] },
 

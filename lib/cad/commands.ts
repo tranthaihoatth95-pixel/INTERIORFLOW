@@ -14,6 +14,7 @@ import type { Doc, Entity, Box, Pt, WallRun, WallLocationLine, BuildOp } from '.
 import { entityBox } from './model';
 import { newId } from './store';
 import { BLOCK_MAP } from './furniture';
+import { stripInternalJargon } from './label-placer';
 
 /* ───────────────────────── Sprint 10 — Việc 1: nhập toạ độ chính xác ───────────────────────── */
 
@@ -301,13 +302,38 @@ export function titleBlock(at: { x: number; y: number }, info: TitleBlockInfo, w
  * `TitleBlockPanel` trong components/cad/CadEditor.tsx, lưu ở `Doc.studioName` → vào .idf).
  */
 export interface TitleBlockInfoPro extends TitleBlockInfo {
-  /** số bản vẽ, VD "IF-01". */
+  /** số bản vẽ, VD "IF-01". @deprecated dùng `drawingNumber` (tên chuẩn theo CHUAN-DAU-RA §1) —
+   * giữ đọc được cho code/dữ liệu cũ, `drawingNumber` thắng khi có cả hai. */
   drawingNo?: string;
+  /** VIỆC 2 `khung-ten-sach` — MÃ SỐ bản vẽ (CHUAN-DAU-RA-NGHE.md §1, ô bắt buộc). */
+  drawingNumber?: string;
+  /** hạng mục (package/category), VD "Nội thất tầng 2" — ô bắt buộc theo CHUAN-DAU-RA §1. */
+  category?: string;
+  /** revision bản vẽ, VD "A"/"02" — ô bắt buộc theo CHUAN-DAU-RA §1. */
+  revision?: string;
   /** người kiểm (checked by). */
   checker?: string;
   /** tên studio/công ty của DỰ ÁN (Brand Kit). Rỗng/undefined ⇒ ô wordmark để TRỐNG. */
   studio?: string;
 }
+
+/**
+ * VIỆC 4 `chuan-dau-ra-gate` — 9 Ô BẮT BUỘC của khung tên theo CHUAN-DAU-RA-NGHE.md §1, kèm cách
+ * NHẬN DIỆN từng ô trong `doc.entities` (khung tên đã bake thành text entity, không còn cấu trúc).
+ * `test` chạy trên text.trim() — export để `lib/print/export-checks.ts` kiểm CÙNG danh sách với
+ * chuỗi `titleBlockPro` sinh ra (một nguồn, khỏi mỗi nơi tự đoán một kiểu caption).
+ */
+export const TITLE_BLOCK_REQUIRED_CELLS: readonly { key: string; label: string; test: (t: string) => boolean }[] = [
+  { key: 'project', label: 'tên dự án', test: (t) => t === 'DỰ ÁN · PROJECT' },
+  { key: 'category', label: 'hạng mục', test: (t) => t === 'HẠNG MỤC · CATEGORY' },
+  { key: 'drawing', label: 'tên bản vẽ', test: (t) => t === 'BẢN VẼ · DRAWING' },
+  { key: 'drawingNumber', label: 'mã số bản vẽ', test: (t) => t === 'SỐ · NO' },
+  { key: 'scale', label: 'tỷ lệ', test: (t) => /^Tỷ lệ \d/.test(t) },
+  { key: 'date', label: 'ngày', test: (t) => t.startsWith('Ngày · Date') },
+  { key: 'author', label: 'người vẽ', test: (t) => t.includes('Vẽ · Drawn') },
+  { key: 'checker', label: 'người kiểm', test: (t) => t.includes('Kiểm · Checked') },
+  { key: 'revision', label: 'revision', test: (t) => /^Rev(\s|$)/.test(t) },
+];
 
 /** @deprecated tên cũ (khi khung tên còn hardcode 1 studio) — giữ cho code/.idf cũ. */
 export type TitleBlockInfoTTT = TitleBlockInfoPro;
@@ -395,20 +421,37 @@ export function titleBlockPro(
   const txFit = (x: number, y: number, text: string, h: number, cellWmm: number) =>
     tx(x, y, text, fitTextHeightMm(text, h, cellWmm));
 
+  // VIỆC 2 `khung-ten-sach` (CHUAN-DAU-RA-NGHE.md §1) — đủ 9 ô bắt buộc; giá trị người dùng CHƯA
+  // nhập thì Ô ĐỂ TRỐNG dưới nhãn mờ (caption), KHÔNG bịa mặc định ("DỰ ÁN"/"IF-01" cũ là bịa).
+  // Mọi giá trị hiển thị đi qua stripInternalJargon — jargon nội bộ không được ra bản in.
+  const val = (s?: string) => stripInternalJargon((s || '').trim());
+  const project = val(info.project);
+  const category = val(info.category);
+  const drawing = val(info.drawing);
+  const drawingNumber = val(info.drawingNumber ?? info.drawingNo);
+  const revision = val(info.revision);
+
   // ── cột trái: wordmark studio của DỰ ÁN (Brand Kit) — trống nếu user chưa nhập ──
-  const studio = (info.studio || '').trim();
+  const studio = val(info.studio);
   if (studio) txFit(x0 + pad, y0 + H - 12 * k, studio.toUpperCase(), 5, cellL);
   txFit(x0 + pad, y0 + 3 * k, 'Hồ sơ sơ phác · Design Development', 2.4, cellL);
-  // ── cột giữa: dự án (trên) · bản vẽ (giữa) · vẽ/kiểm (đáy) ──
-  txFit(cA + pad, rMid + 14 * k, 'DỰ ÁN · PROJECT', 2.4, cellM);
-  txFit(cA + pad, rMid + 4 * k, (info.project || 'DỰ ÁN').toUpperCase(), 5, cellM);
+  // ── cột giữa: dự án + hạng mục (trên, chia đôi bằng vạch rCat) · bản vẽ (giữa) · vẽ/kiểm (đáy) ──
+  const rCat = y0 + 31 * k; // vạch tách ô DỰ ÁN (trên) / HẠNG MỤC (dưới) trong vùng 22–42mm
+  ln({ x: cA, y: rCat }, { x: cB, y: rCat });
+  txFit(cA + pad, rCat + 7.5 * k, 'DỰ ÁN · PROJECT', 2.2, cellM);
+  if (project) txFit(cA + pad, rCat + 1.5 * k, project.toUpperCase(), 4.2, cellM);
+  txFit(cA + pad, rMid + 5.5 * k, 'HẠNG MỤC · CATEGORY', 2.2, cellM);
+  if (category) txFit(cA + pad, rMid + 1 * k, category, 3, cellM);
   txFit(cA + pad, rBot + 7 * k, 'BẢN VẼ · DRAWING', 2.4, cellM);
-  txFit(cA + pad, rBot + 2 * k, info.drawing || 'MẶT BẰNG BỐ TRÍ — SƠ PHÁC DD', 3.2, cellM);
+  if (drawing) txFit(cA + pad, rBot + 2 * k, drawing, 3.2, cellM);
   txFit(cA + pad, y0 + 2.5 * k, `Vẽ · Drawn: ${info.author || '—'}    Kiểm · Checked: ${info.checker || '—'}`, 2.6, cellM);
-  // ── cột phải: số bản vẽ (trên) · tỉ lệ + ngày (dưới) ──
+  // ── cột phải: mã số (trên) · tỉ lệ + revision (giữa, chia đôi bằng vạch cRev) · ngày (đáy) ──
   txFit(cB + pad, rMid + 14 * k, 'SỐ · NO', 2.4, cellR);
-  txFit(cB + pad, rMid + 4 * k, info.drawingNo || 'IF-01', 6, cellR);
-  txFit(cB + pad, rR2 + 6 * k, `Tỷ lệ ${info.scale}`, 3.6, cellR);
+  if (drawingNumber) txFit(cB + pad, rMid + 4 * k, drawingNumber, 6, cellR);
+  const cRev = cB + 27 * k; // vạch tách ô Tỷ lệ (trái) / Rev (phải) trong hàng 11–22mm
+  ln({ x: cRev, y: rR2 }, { x: cRev, y: rMid });
+  txFit(cB + pad, rR2 + 6 * k, `Tỷ lệ ${info.scale}`, 3.4, 27 - 6);
+  txFit(cRev + pad, rR2 + 6 * k, `Rev ${revision || '—'}`, 3.4, 23 - 6);
   txFit(cB + pad, y0 + 3 * k, info.date ? `Ngày · Date ${info.date}` : 'Ngày · Date —', 2.6, cellR);
   return out;
 }

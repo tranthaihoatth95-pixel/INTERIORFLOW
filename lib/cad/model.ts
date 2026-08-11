@@ -1059,6 +1059,33 @@ export function paperSizeMm(key: PaperKey, orientation: PaperOrientation): [numb
 export const STANDARD_SCALES = [10, 20, 25, 50, 100, 200, 500] as const;
 
 /**
+ * VIỆC 1 `ty-le-chuan` (docs/CHUAN-DAU-RA-NGHE.md §1) — dãy nấc tỉ lệ IN đầy đủ theo LUẬT:
+ * 1:1 · 1:2 · 1:5 + STANDARD_SCALES (10…500). KHÔNG sửa `STANDARD_SCALES` (UI/`suggestStandardScale`
+ * đang dùng, đổi là lệch hành vi chỗ khác) — chỉ GHÉP thêm 3 nấc nhỏ mà LUẬT liệt kê cho bản vẽ
+ * chi tiết (1:1/1:2/1:5 dùng cho detail đồ mộc, chưa gặp ở mặt bằng nhưng dãy chuẩn phải đủ).
+ */
+export const PRINT_SCALE_STEPS: readonly number[] = [1, 2, 5, ...STANDARD_SCALES];
+
+/** N có phải một nấc tỉ lệ in chuẩn không — cổng kiểm CHUAN_DAU_RA dùng (export-checks.ts). */
+export function isStandardPrintScale(n: number): boolean {
+  return PRINT_SCALE_STEPS.includes(n);
+}
+
+/**
+ * VIỆC 1 `ty-le-chuan` — BẮT tỉ lệ fit-trang về nấc chuẩn GẦN NHẤT VỀ PHÍA NHỎ HƠN (N lớn hơn):
+ * bản vẽ thu nhỏ lại một chút thì chắc chắn vẫn lọt giấy, còn phóng to là tràn. `rawN` là N thô
+ * từ auto-fit (vd 47.3 nghĩa là "1:47.3") → trả nấc chuẩn (47.3 → 50 · 12 → 20 · 200 → 200).
+ * Vượt cả 1:500 → trả 500 (caller phải tự kiểm `fitsAtScale` — bản vẽ cỡ đó không lọt khổ nào,
+ * cổng CHUAN_DAU_RA sẽ báo thay vì im lặng in số lẻ).
+ */
+export function snapPrintScale(rawN: number): number {
+  if (!Number.isFinite(rawN) || rawN <= 0) return 100;
+  // 1e-9: N đã LÀ nấc chuẩn nhưng lệch epsilon do phép chia float thì vẫn giữ đúng nấc đó.
+  for (const n of PRINT_SCALE_STEPS) if (n >= rawN - 1e-9) return n;
+  return PRINT_SCALE_STEPS[PRINT_SCALE_STEPS.length - 1];
+}
+
+/**
  * Gợi ý tỉ lệ CHUẨN nhỏ nhất (chi tiết nhất) mà bản vẽ vẫn lọt khổ giấy: N chuẩn đầu tiên
  * ≥ 1/fitScale. Vượt cả 1:500 → trả 500 (bản vẽ cực lớn, người dùng tự cân nhắc).
  */
