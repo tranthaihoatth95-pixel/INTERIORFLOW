@@ -334,11 +334,16 @@ function drawDimPdf(pdf: JsPdf, v: Viewport, e: DimEntity, color: string, ds: Ca
     const sb = S(ob);
     const sa0 = S(e.a);
     const sb0 = S(e.b);
-    pdf.line(sa0.x, sa0.y, sa.x, sa.y);
-    pdf.line(sb0.x, sb0.y, sb.x, sb.y);
-    pdf.line(sa.x, sa.y, sb.x, sb.y);
-    // VIỆC 3 — chuỗi dim đè chuỗi khác thì DỜI RIÊNG CHỮ (mm world, từ label-placer), đường
-    // dim/extension giữ nguyên vị trí thật của nó.
+    // VIỆC v2 `dimOutsideRoom` — shift.wholeDim = dời CẢ CỤM: đường dim + chữ dời theo (dx,dy),
+    // extension line vẫn bám mốc đo thật a/b (kéo dài ra tới đường dim mới — đúng ngữ nghĩa dim).
+    const whole = shift?.wholeDim ? { dx: shift.dx, dy: shift.dy } : { dx: 0, dy: 0 };
+    const sa2 = whole.dx || whole.dy ? S({ x: oa.x + whole.dx, y: oa.y + whole.dy }) : sa;
+    const sb2 = whole.dx || whole.dy ? S({ x: ob.x + whole.dx, y: ob.y + whole.dy }) : sb;
+    pdf.line(sa0.x, sa0.y, sa2.x, sa2.y);
+    pdf.line(sb0.x, sb0.y, sb2.x, sb2.y);
+    pdf.line(sa2.x, sa2.y, sb2.x, sb2.y);
+    // VIỆC 3 — chuỗi dim đè chuỗi khác thì DỜI RIÊNG CHỮ (mm world, từ label-placer); wholeDim
+    // thì chữ đi cùng cụm (cùng dx/dy).
     const tm = S({ x: (oa.x + ob.x) / 2 + (shift?.dx ?? 0), y: (oa.y + ob.y) / 2 + (shift?.dy ?? 0) });
     pdf.text(`${Math.round(len)}`, tm.x, tm.y - 1);
   }
@@ -491,9 +496,17 @@ function drawDocOntoPdfPage(pdf: JsPdf, doc: Doc, pw: number, ph: number, opts: 
   // doc/app KHÔNG đổi. Kèm VIỆC 2: gỡ jargon nội bộ khỏi mọi text sẽ in ra.
   const scaleLabel = scaleN !== null ? `1:${scaleN}` : fitScaleLabel(box, [pw, ph], margin);
   const entities = stripJargonFromEntities(applyRealScaleToTitleBlock(doc.entities, scaleLabel));
-  // VIỆC 3 `label-ne-hinh` — kế hoạch DỜI nhãn phòng/chuỗi dim để không đè hình/đè nhau khi in.
-  // Tính trên entities SẼ VẼ (sau ghi đè tỉ lệ — cùng id), chỉ áp lúc vẽ, Doc gốc không đổi.
-  const labelShifts = planExportLabelShifts({ entities, layers: doc.layers }, ds);
+  // VIỆC 3 `label-ne-hinh` (v2) — kế hoạch DỜI nhãn phòng/chuỗi dim để không đè hình/đè nhau khi
+  // in. Tính trên entities SẼ VẼ (sau ghi đè tỉ lệ — cùng id), chỉ áp lúc vẽ, Doc gốc không đổi.
+  // v2 cần biết: scaleN (bậc thang dim 8mm GIẤY → mm world) + vùng world còn thấy trên trang
+  // (dim dời ra ngoài không được rơi khỏi mép giấy — rơi thì giữ nguyên, gate warn đếm).
+  const pageWorldBox = {
+    minX: (0 - v.panX) / v.scale,
+    maxX: (pw - v.panX) / v.scale,
+    minY: (v.panY - ph) / v.scale,
+    maxY: (v.panY - 0) / v.scale,
+  };
+  const labelShifts = planExportLabelShifts({ entities, layers: doc.layers }, ds, { scaleN: scaleN ?? undefined, pageWorldBox });
 
   pdf.setLineCap?.(1); // 1 = round — nét nối mượt hơn (không bắt buộc, jsPDF fallback im lặng nếu thiếu)
   for (const e of entities) {

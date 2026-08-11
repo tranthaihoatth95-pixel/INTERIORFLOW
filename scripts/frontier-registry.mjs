@@ -63,7 +63,7 @@ export const FRONTIER = [
     bangChung: [{ dir: 'components', mau: 'MaterialImpact|impact-preview' }] },
   { id: 'chuan-dau-ra-gate', ten: 'Máy chặn CHUAN_DAU_RA lúc xuất (12/08: tỷ lệ lẻ/thiếu ô/nhãn đè → error+fix trong dialog)', he: 'DocCore', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'lib/print', mau: 'CHUAN_DAU_RA' }] },
-  { id: 'label-ne-hinh-v2', ten: 'Né nhãn v2 — soi mắt 12/08 còn: WC/BẾP cấn thiết bị · dim chưa ra NGOÀI hình · dịch chưa ràng biên phòng thật (findHatchBoundary) · vị trí leader còn vụng', he: 'DocCore', dot: 1, trangThai: 'chua',
+  { id: 'label-ne-hinh-v2', ten: 'Né nhãn v2 (12/08: labelInRoomBounds + dimOutsideRoom — audit mắt PDF: 0 nhãn đè, dim ra ngoài 2 lớp thẳng hàng; còn dim xiên/radius đếm vào gate)', he: 'DocCore', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'lib/cad', mau: 'labelInRoomBounds|dimOutsideRoom' }] },
   { id: 'bento-align-2d', ten: 'Căn lưới bento vùng đầu chặng 2D (tab Bản vẽ · Mở tệp · rail LỚP chung một lề — Hoà chụp lệch 11/08)', he: 'DocCore', dot: 1, trangThai: 'chua',
     bangChung: [{ dir: 'components/cad', mau: 'BENTO_GRID|--bento-gutter' }] },
