@@ -75,6 +75,13 @@ export const FRONTIER = [
     bangChung: [{ dir: 'components/render-studio', mau: 'RadialToolMenu' }] },
   { id: 'team-fit', ten: 'Máy Hiểu Người (hồ sơ nguồn thành viên, gợi ý kèm căn cứ)', he: 'TriTueDuAn', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'TeamFit' }] },
+  // 11/08 tối — Hoà đặt bài "DNA công ty + smart transfer + nhãn trung tính để reset":
+  { id: 'company-dna-pack', ten: 'Hồ Sơ Công Ty (quy trình·quy định·gu·thư viện riêng — tham chiếu, không nhúng cứng)', he: 'TriTueDuAn', dot: 2, trangThai: 'chua',
+    bangChung: [{ dir: 'lib', mau: 'CompanyDnaPack|HoSoCongTy' }] },
+  { id: 'smart-ingest', ten: 'Smart Ingest: bản gốc bất biến + proxy + định tuyến trích xuất theo yêu cầu (nâng Gateway/refingest sẵn có)', he: 'DocCore', dot: 2, trangThai: 'chua',
+    bangChung: [{ dir: 'lib', mau: 'SmartIngest|IngestRouter' }] },
+  { id: 'nhan-nguon-reset', ten: 'Nhãn nguồn DataOrigin (app-core/studio/project/demo) trên mọi bản ghi + lệnh reset về trung tính', he: 'DocCore', dot: 2, trangThai: 'chua',
+    bangChung: [{ dir: 'lib', mau: 'DataOrigin|NHAN_NGUON' }] },
 
   // ── ĐỢT 3 · RA CỔNG ─────────────────────────────────────────────────────────
   { id: 'chat-project', ten: 'Chat theo dự án (ChatMessage + projectId)', he: 'Workspace', dot: 3, trangThai: 'chua',
