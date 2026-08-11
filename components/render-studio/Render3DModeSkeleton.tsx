@@ -43,8 +43,6 @@ import { SECTION_LAYERS } from '@/lib/three/section-entities';
 import { useLevelUi, UNASSIGNED_LEVEL, ROOM_LIGHT_KINDS, ROOM_LIGHT_DEFAULT_Z_MM } from '@/components/render-studio/scene3d-ui';
 import { addLevelToDoc, currentLighting, writeSun, writeRoomLights, patchRoomLight, newRoomLightId } from '@/components/render-studio/doc-catalog';
 import { buildLightRig, type RoomLight } from '@/lib/three/lighting';
-import { useVitalsUi } from '@/lib/vitals-ui';
-import VitalsIcon from '@/components/studio/VitalsIcon';
 
 const WELCOME_HIDDEN_KEY = 'if.ve3d.welcome_hidden_v1';
 
@@ -72,13 +70,13 @@ export default function Render3DModeSkeleton() {
   const router = useRouter();
   const pathname = usePathname();
   const { begin } = useStageTransition();
-  const [tab, setTab] = useState<Command3DTab>('vatlieu');
+  // Mở bằng nhóm Tạo: một cảnh trống cần cho thấy cách bắt đầu dựng, không phải kệ vật liệu.
+  const [tab, setTab] = useState<Command3DTab>('tao');
   const [nhayNutTuong, setNhayNutTuong] = useState(false);
   const [openWallBuilderNonce, setOpenWallBuilderNonce] = useState(0);
   // VIỆC 2 (M-3D-OUT) — dock công cụ nổi đáy viewport, đúng mock "3D Dựng khối" trạng thái 03/04.
   const [dockOpen, setDockOpen] = useState(false);
   const [matDangCam, setMatDangCam] = useState<string | null>(null);
-  const openVitals = useVitalsUi((s) => s.open);
   // VIỆC "MỘT THƯ VIỆN" (`PHIEU-CODE-IF-DOT6`, 05/08) — cây đối tượng + panel thuộc tính dời sang
   // Navigator/Inspector (`Object3DTree.tsx`/`Object3DInspector.tsx`, ổ SIBLING của AppShell, xem
   // `HomeScreen.tsx`) — tên group ẩn/đang chọn nay sống ở store chia sẻ `useTree3DUi`, không phải
@@ -527,11 +525,9 @@ export default function Render3DModeSkeleton() {
               <div
                 ref={welcomeRef}
                 style={{
-                  position: 'relative', pointerEvents: 'auto', textAlign: 'center', maxWidth: 360, padding: '18px 20px 20px',
-                  borderRadius: 'var(--radius-lg)', border: '1px solid var(--mat-hairline)',
-                  background: 'color-mix(in srgb, var(--panel) 88%, transparent)',
-                  backdropFilter: 'blur(var(--blur))', WebkitBackdropFilter: 'blur(var(--blur))',
-                  boxShadow: 'var(--shadow-pop)',
+                  position: 'relative', pointerEvents: 'auto', textAlign: 'center', maxWidth: 400, padding: '8px 12px 12px',
+                  // Empty state là chỉ dẫn trên sân khấu, không phải một card kính thứ hai.
+                  textShadow: '0 2px 16px color-mix(in srgb, var(--bg) 86%, transparent)',
                 }}
               >
                 <button
@@ -642,41 +638,6 @@ export default function Render3DModeSkeleton() {
           )}
 
         </Viewport3D>
-
-        {/* 08/08 — Hoà chốt trực tiếp: nút này TRÙNG HỆT công tắc "Vẽ 3D" tắt (cả hai chỉ gọi
-            `setMode('render')`, cùng về Bảng dựng) — gốc là vì việc dựng-sẵn-chuỗi node ở VIỆC 2
-            cũ (SPEC-DUNG-3D-THONG-NHAT §7.2) CHƯA BAO GIỜ làm, nút rơi lại đúng hành vi trùng.
-            ĐỔI VAI: đây là chỗ đứng cho "Dựng khối · Magic" (docs/SPEC-MAGIC-DUNG-KHOI-3D.md,
-            ĐƯỜNG B đã chốt hướng 00-CHOT.md PHẦN 6§②) — mô tả tự nhiên → bộ THAM SỐ thấy được,
-            sửa được → lệnh dựng hình TẤT ĐỊNH (build-ops.ts, vừa mở khoá 08/08) chạy ra khối/mesh
-            CHI TIẾT (một vật thể). Phân vai với công tắc "Vẽ 3D": công tắc = TỔNG THỂ (đổi cả
-            khung nhìn Node↔3D); nút này = CHI TIẾT (sinh một khối trong khung nhìn đang có).
-            CHƯA NỐI ENGINE THẬT — luật CLAUDE.md #2 "không có spec thì không code": spec vừa
-            soạn, chưa duyệt. Disabled + lý do thay vì bịa hành vi (§9, cấm nút giả). */}
-        <button
-          type="button"
-          onClick={() => openVitals(tr('Tôi muốn dựng một khối nội thất. Hãy hỏi lần lượt loại cấu kiện, kích thước và vị trí.', 'I want to model an interior element. Ask me for the component type, dimensions, and position.'))}
-          /* P5 (04/08): kính lỏng `.glass-float--bar` — 1 trong ĐÚNG 4 chỗ được phép (nút này),
-             luật ở globals.css. Giữ dù disabled — đây là chỗ đứng cố định cho Magic, không phải
-             xoá khỏi giao diện (§9 "cấm xoá ô trống cho gọn mắt"). */
-          className="vitals-model-trigger"
-          title={tr(
-            'Mở Vitals để bắt đầu một cấu kiện bằng mô tả và kích thước. Lệnh dựng sẽ luôn hiện tham số để bạn kiểm trước khi áp.',
-            'Open Vitals to start a component from a description and dimensions. Build commands will always show parameters before applying.',
-          )}
-          /* ⑥ p14 (Hoà 08/08, đo DOM 1440×900): bottom:76 đặt nút HÀNH ĐỘNG này ĐÈ lên nút "Thêm"
-             của dock công cụ (dock 1240–1313 · nút này x=1300, cùng hàng y≈754) — hành động và
-             cần-số/công cụ dính một cụm. Nâng lên bottom:132: một mình góc phải (nổi bật giữ
-             nguyên), cụm dock + công tắc chế độ (ModeSwitchBar) ở dưới tách hẳn. */
-          style={{
-            position: 'absolute', right: 18, bottom: 132, zIndex: 6,
-            height: 38, padding: '0 18px', display: 'flex', alignItems: 'center', gap: 9,
-            color: 'var(--t1)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-          }}
-        >
-          <VitalsIcon size={18} />
-          {tr('Dựng cùng Vitals', 'Build with Vitals')}
-        </button>
 
         <ToolDock3D
           open={dockOpen}

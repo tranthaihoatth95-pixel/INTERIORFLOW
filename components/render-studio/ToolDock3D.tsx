@@ -151,11 +151,11 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
     const flat = groups.flatMap((g, gi) => g.items.map((it) => ({ ...it, groupIdx: gi })));
     return (
       <div
-        className="glass-float glass-float--bar"
+        className="if-3d-tool-dock"
         style={{
           position: 'absolute', left: '50%', bottom: 76, transform: 'translateX(-50%)', zIndex: 6,
           display: 'flex', alignItems: 'center', gap: 1, padding: 4, borderRadius: 14,
-          border: '1px solid var(--mat-hairline)', boxShadow: 'var(--shadow-pop)',
+          border: '1px solid var(--mat-hairline)', boxShadow: '0 12px 30px rgba(0, 0, 0, .2)',
         }}
       >
         {flat.map((item, i) => (
@@ -198,10 +198,10 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
   const rows = [groups.slice(0, 3), groups.slice(3)];
   return (
     <div
-      className="glass-float"
+      className="if-3d-tool-dock"
       style={{
         position: 'absolute', left: '50%', bottom: 76, transform: 'translateX(-50%)', zIndex: 6, padding: 6,
-        borderRadius: 14, border: '1px solid var(--mat-hairline)', boxShadow: 'var(--shadow-pop)',
+        borderRadius: 14, border: '1px solid var(--mat-hairline)', boxShadow: '0 12px 30px rgba(0, 0, 0, .2)',
       }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9, padding: '2px 0 4px' }}>

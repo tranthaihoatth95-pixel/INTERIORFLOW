@@ -25,7 +25,7 @@
 - Wallpaper aura tím–lam procedural; Visual Vitals là ba quỹ đạo oval ánh sáng, tắt khi giảm chuyển động.
 - Master Library có Khám phá/Nổi bật, spotlight theo ngữ cảnh, kệ định hướng và icon theo nhóm; tạo mới là dấu ＋. “Top tuần này” là dữ liệu minh hoạ, chưa được quảng bá là analytics.
 - Photo Editor Crop là thao tác thật, cập nhật raster/mask/document và undo/redo. Perspective/vertical correction chưa có UI.
-- 3D shell dọn nhẹ: bỏ checklist che canvas, dock kính lỏng/thu gọn, ViewCube kỹ thuật 76px, Magic đổi cửa vào Vitals. Lệnh Tường hai điểm đã có từ dock/phím W, nhập điểm–dày–cao thật; gizmo X/Y/Z ghi về Doc và giữ cặp tường liên kết; các lệnh M1 còn lại tiếp tục.
+- 3D shell dọn nhẹ: bỏ checklist/CTA Vitals che canvas, dock nền đặc và empty state không card; mở thẳng nhóm Tạo. ViewCube kỹ thuật 76px; Tường hai điểm từ dock/phím W ghi về Doc; gizmo X/Y/Z giữ cặp tường liên kết. M1 tiếp tục.
 
 ## Năng lực hiện có — nói đúng mức
 
