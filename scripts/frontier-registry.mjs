@@ -39,9 +39,9 @@ export const FRONTIER = [
     bangChung: [{ file: 'lib/library/shelves.ts', mau: 'LIBRARY_DATA_IS_MOCK = true', can: false }] },
   { id: 'fm-data-that', ten: 'File Manager đọc đĩa THẬT (bỏ mock-data)', he: 'LibraryFirst', dot: 1, trangThai: 'chua',
     bangChung: [{ file: 'lib/filemanager/queries.ts', mau: "mock-data", can: false }] },
-  { id: 'think-dial', ten: 'Nấc Suy Nghĩ — cần gạt 4 nấc Vitals', he: 'ThinkDial', dot: 1, trangThai: 'chua',
+  { id: 'think-dial', ten: 'Nấc Suy Nghĩ — 4 nấc Vitals (12/08: fast/balanced/deep/research — research nối RAG notebook thật)', he: 'ThinkDial', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'ThinkDial' }] },
-  { id: 'light-arc', ten: 'LightArc — cung sáng tiến độ (upload/queue/xuất)', he: 'LightState', dot: 1, trangThai: 'chua',
+  { id: 'light-arc', ten: 'LightArc — cung sáng tiến độ (12/08: components/ui/LightArc + ExportPdfDialog indeterminate thật)', he: 'LightState', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'components/ui', mau: 'LightArc' }] },
   { id: 'capture-nut', ten: 'Nút xuất PNG sequence (rời route bench)', he: 'DocCore', dot: 1, trangThai: 'chua',
     bangChung: [{ dir: 'components', mau: 'import \\{[^}]*captureSequence' }] },
@@ -59,7 +59,7 @@ export const FRONTIER = [
 
   { id: 'story-set', ten: 'BỘ HỒ SƠ KỂ CHUYỆN (Story Set) — hero output 6 chương: bìa editorial → DNA board → câu chuyện → ảnh điện ảnh → vật liệu tạp chí → phụ lục sự thật, template trung tính ship kèm app, ăn theo Thẻ DNA từng dự án', he: 'Workspace', dot: 1, trangThai: 'chua',
     bangChung: [{ dir: 'lib/present-editor', mau: 'StorySet|storySet' }] },
-  { id: 'material-impact-ui', ten: 'Material Impact preview lên UI — lõi impact.ts + test ĐỦ, 0 component gọi (đối chiếu chặng 2-3 bắt được 11/08; Cổng R1 mục 4)', he: 'LibraryFirst', dot: 1, trangThai: 'chua',
+  { id: 'material-impact-ui', ten: 'Material Impact preview lên UI (12/08: MaterialImpactPreview + chèn trước applyMaterial, undo giữ nguyên)', he: 'LibraryFirst', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'MaterialImpact|impact-preview' }] },
   { id: 'chuan-dau-ra-gate', ten: 'Máy chặn CHUAN-DAU-RA-NGHE lúc xuất (mở rộng export-checks)', he: 'DocCore', dot: 1, trangThai: 'chua',
     bangChung: [{ dir: 'lib/print', mau: 'CHUAN_DAU_RA' }] },
@@ -88,7 +88,7 @@ export const FRONTIER = [
     bangChung: [{ dir: 'lib', mau: 'DataOrigin|NHAN_NGUON' }] },
 
   // 11/08 khuya — Hoà giao batch chat/khởi tạo/họp (3 agent mock+spec đang chạy):
-  { id: 'presence-avatar-row', ten: 'Dãy avatar tròn thành viên: online = màu, offline = trắng đen (header chat/workspace)', he: 'LightState', dot: 1, trangThai: 'chua',
+  { id: 'presence-avatar-row', ten: 'Dãy avatar online màu/offline trắng-đen (12/08: PresenceRow thay stack trong PresenceBar, khử hex ngoài token)', he: 'LightState', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'PresenceRow|presence-row' }] },
   { id: 'activity-feed', ten: 'Dòng Hoạt Động dự án (ref #13): filter Tất-cả/Của-tôi/Đội, event card theo loại + thread inline — bề mặt nhận push Cổng Duyệt, phiếu điều chỉnh họp, báo đổi vật liệu', he: 'Workspace', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'components', mau: 'ActivityFeed|DongHoatDong' }] },

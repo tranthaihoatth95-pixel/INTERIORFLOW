@@ -20,7 +20,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Loader2, Maximize2, Send, X } from 'lucide-react';
+import { BookOpen, Brain, Loader2, Maximize2, Scale, Send, X, Zap } from 'lucide-react';
 import type { ChatTurn } from '@/lib/ai/chat-assist';
 import { summarizeDoc, type DocContext } from '@/lib/ai/doc-context';
 import { topViolations, type TopViolationsResult } from '@/lib/ai/violations-context';
@@ -71,10 +71,17 @@ const STAGE_SUGGESTIONS: Record<Phase, [string, string, string]> = {
  * lên là Vitals nói về thứ họ không nhìn thấy. Doc thì gửi ở cả 3 chặng (luật X1: một Doc chung,
  * chặng nào cũng đọc nó). Doc rỗng → trả {} — prompt y hệt trước, không hồi quy.
  */
-function buildVitalsDocPayload(stage: Phase): {
+function buildVitalsDocPayload(
+  stage: Phase,
+  level: ThinkLevel = 'deep',
+): {
   docContext?: DocContext;
   violations?: TopViolationsResult;
 } {
+  // ThinkDial (12/08): 'fast' = không gửi ngữ cảnh nào (câu hỏi trần, rẻ + nhanh) ·
+  // 'balanced' = chỉ docContext · 'deep' = docContext + violations (đường đầy đủ cũ).
+  // 'research' KHÔNG đi qua hàm này — nó gọi route Notebook RAG riêng (xem send()).
+  if (level === 'fast') return {};
   const st = useCadStore.getState();
   const doc = st.doc;
   if (!doc || !Array.isArray(doc.entities) || doc.entities.length === 0) return {};
@@ -83,10 +90,136 @@ function buildVitalsDocPayload(stage: Phase): {
     doc,
     stage === 'concept' && st.selection.length ? { selectedIds: st.selection } : {},
   );
+  if (level === 'balanced') return { docContext };
   if (docContext.areasSkipped) return { docContext }; // bản vẽ nặng — bỏ kiểm, tránh treo (xem trên)
 
   const violations = topViolations(doc);
   return violations.total > 0 ? { docContext, violations } : { docContext };
+}
+
+/* ====================================================================================
+ * ThinkDial — [marker: ThinkDial] cần gạt mức suy nghĩ của Vitals (12/08).
+ * 4 nấc, người dùng CHỌN gửi bao nhiêu ngữ cảnh (mặc định Cân bằng, nhớ localStorage):
+ *   fast     Trả nhanh   — không gửi docContext/violations
+ *   balanced Cân bằng    — gửi docContext (tóm tắt bản vẽ)
+ *   deep     Nghĩ sâu    — docContext + kiểm quy chuẩn (đường đầy đủ trước 12/08)
+ *   research Nghiên cứu  — tra sổ tri thức dự án qua route Notebook RAG THẬT
+ *                          (`POST /api/notebook/{id}/query` — có sẵn, trả answer + sources).
+ * ==================================================================================== */
+
+export type ThinkLevel = 'fast' | 'balanced' | 'deep' | 'research';
+
+const THINK_LEVEL_KEY = 'interiorflow.vitals.thinkLevel';
+
+const THINK_LEVELS: {
+  id: ThinkLevel;
+  label: string;
+  hint: string;
+  Icon: typeof Zap;
+}[] = [
+  { id: 'fast', label: 'Trả nhanh', hint: 'Không gửi ngữ cảnh bản vẽ', Icon: Zap },
+  { id: 'balanced', label: 'Cân bằng', hint: 'Gửi tóm tắt bản vẽ', Icon: Scale },
+  { id: 'deep', label: 'Nghĩ sâu', hint: 'Tóm tắt bản vẽ + kiểm quy chuẩn', Icon: Brain },
+  { id: 'research', label: 'Nghiên cứu', hint: 'Tra sổ tri thức Notebook, trả lời kèm nguồn', Icon: BookOpen },
+];
+
+function readThinkLevel(): ThinkLevel {
+  if (typeof window === 'undefined') return 'balanced';
+  try {
+    const v = window.localStorage.getItem(THINK_LEVEL_KEY);
+    if (v === 'fast' || v === 'balanced' || v === 'deep' || v === 'research') return v;
+  } catch {
+    /* private mode — dùng mặc định */
+  }
+  return 'balanced';
+}
+
+function ThinkDial({ level, onChange }: { level: ThinkLevel; onChange: (l: ThinkLevel) => void }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const dialRef = useRef<HTMLDivElement>(null);
+  useDismissable({ open: menuOpen, onDismiss: () => setMenuOpen(false), refs: [dialRef] });
+  const current = THINK_LEVELS.find((l) => l.id === level) ?? THINK_LEVELS[1];
+
+  return (
+    <div ref={dialRef} data-think-dial="" style={{ position: 'relative', flex: 'none' }}>
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={menuOpen}
+        aria-label={`Mức suy nghĩ: ${current.label}`}
+        title={`${current.label} — ${current.hint}`}
+        onClick={() => setMenuOpen((v) => !v)}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 4,
+          height: 24,
+          padding: '0 8px',
+          borderRadius: 12,
+          border: '1px solid rgba(127,127,127,0.2)',
+          background: 'transparent',
+          color: 'var(--t3)',
+          fontSize: 10.5,
+          fontWeight: 600,
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <current.Icon size={11} style={{ color: ACCENT }} />
+        {current.label}
+      </button>
+      {menuOpen && (
+        <div
+          role="menu"
+          aria-label="Chọn mức suy nghĩ"
+          style={{
+            position: 'absolute',
+            bottom: 'calc(100% + 6px)',
+            right: 0,
+            width: 216,
+            padding: 4,
+            borderRadius: 12,
+            background: 'var(--panel)',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-pop)',
+            zIndex: 5,
+          }}
+        >
+          {THINK_LEVELS.map((l) => (
+            <button
+              key={l.id}
+              type="button"
+              role="menuitemradio"
+              aria-checked={l.id === level}
+              onClick={() => {
+                onChange(l.id);
+                setMenuOpen(false);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+                width: '100%',
+                padding: '6px 8px',
+                borderRadius: 8,
+                border: 'none',
+                background: l.id === level ? 'var(--accent-soft)' : 'transparent',
+                color: l.id === level ? 'var(--accent)' : 'var(--t2)',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              <l.Icon size={12} style={{ flex: 'none', marginTop: 2 }} />
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 11.5, fontWeight: 600, lineHeight: 1.4 }}>{l.label}</span>
+                <span style={{ display: 'block', fontSize: 10, color: 'var(--t4)', lineHeight: 1.45 }}>{l.hint}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /** Lịch sử hội thoại sống ở mức MODULE — panel unmount không mất, reload mới mất. */
@@ -157,6 +290,16 @@ export default function VitalsGesturePanel({
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<{ message: string; code?: string } | null>(null);
+  // ThinkDial (12/08) — mức suy nghĩ, nhớ giữa các phiên qua localStorage, mặc định Cân bằng.
+  const [thinkLevel, setThinkLevel] = useState<ThinkLevel>(readThinkLevel);
+  const changeThinkLevel = useCallback((l: ThinkLevel) => {
+    setThinkLevel(l);
+    try {
+      window.localStorage.setItem(THINK_LEVEL_KEY, l);
+    } catch {
+      /* private mode — lựa chọn vẫn sống trong phiên này */
+    }
+  }, []);
 
   useEffect(() => {
     vitalsSession = messages;
@@ -182,6 +325,41 @@ export default function VitalsGesturePanel({
     setInput('');
     setSending(true);
     setError(null);
+    // ThinkDial nấc "Nghiên cứu" (12/08): KHÔNG đi /api/ai-assist-chat — hỏi thẳng sổ tri thức
+    // dự án qua route Notebook RAG có sẵn (một-lượt: route nhận `question`, không nhận thread).
+    // Trả lời kèm danh sách nguồn trích; notebook trống thì route vẫn trả lời và nói rõ là
+    // hiểu biết chung (sources rỗng) — không bịa nguồn.
+    if (thinkLevel === 'research') {
+      try {
+        const id = currentProjectId || currentFlowId || 'default';
+        const res = await fetch(`/api/notebook/${id}/query`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: text, stage }),
+        });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setError({
+            message:
+              res.status === 401
+                ? 'Cần đăng nhập để tra sổ tri thức dự án.'
+                : typeof j?.error === 'string' ? j.error : 'Có lỗi xảy ra — thử lại.',
+          });
+          return;
+        }
+        const sources: { sourceTitle?: string }[] = Array.isArray(j?.sources) ? j.sources : [];
+        const titles = [...new Set(sources.map((s) => String(s.sourceTitle ?? '').trim()).filter(Boolean))];
+        const reply =
+          String(j?.answer ?? '').trim() +
+          (titles.length ? `\n\nNguồn: ${titles.join(' · ')}` : '\n\n(Notebook chưa có tài liệu — trả lời từ hiểu biết chung.)');
+        setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
+      } catch {
+        setError({ message: 'Mất kết nối — thử lại.' });
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
     try {
       const res = await fetch('/api/ai-assist-chat', {
         method: 'POST',
@@ -195,7 +373,7 @@ export default function VitalsGesturePanel({
           messages: next,
           stage,
           brand: brandContextForVitals(),
-          ...buildVitalsDocPayload(stage),
+          ...buildVitalsDocPayload(stage, thinkLevel),
         }),
       });
       const j = await res.json().catch(() => ({}));
@@ -212,7 +390,7 @@ export default function VitalsGesturePanel({
     } finally {
       setSending(false);
     }
-  }, [input, sending, messages, stage]);
+  }, [input, sending, messages, stage, thinkLevel, currentProjectId, currentFlowId]);
 
   // VIỆC A (28/07) — mở từ StatusBar kèm sẵn câu hỏi (gõ ở ô gọn trước khi bấm/Enter).
   // Chỉ chạy khi `open` chuyển true (không phụ thuộc initialInput đổi liên tục — chỉ đọc 1 lần
@@ -248,7 +426,9 @@ export default function VitalsGesturePanel({
   const [pendingIssues, setPendingIssues] = useState(0);
   useEffect(() => {
     if (!open) return;
-    const v = buildVitalsDocPayload(stage).violations;
+    // Chấm "có việc cần xem" luôn kiểm ĐẦY ĐỦ ('deep') bất kể nấc ThinkDial — cảnh báo quy chuẩn
+    // là thông tin thật của bản vẽ, người dùng chọn Trả nhanh không có nghĩa muốn giấu lỗi.
+    const v = buildVitalsDocPayload(stage, 'deep').violations;
     setPendingIssues(v ? v.countsBySeverity.error + v.countsBySeverity.warning : 0);
   }, [open, stage]);
 
@@ -465,6 +645,7 @@ export default function VitalsGesturePanel({
                 color: 'var(--t1)',
               }}
             />
+            <ThinkDial level={thinkLevel} onChange={changeThinkLevel} />
             <button
               type="button"
               aria-label="Gửi cho Vitals"

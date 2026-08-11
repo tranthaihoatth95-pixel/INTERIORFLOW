@@ -18,22 +18,15 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { UserPlus } from 'lucide-react';
 import { useCollabStore, colorForUser } from '@/lib/collabStore';
 import { useFlowStore } from '@/lib/store';
 import { springPop } from '@/lib/motion';
 import { useDismissable } from '@/lib/useDismissable';
 import Popover from '@/components/ui/Popover';
+import PresenceRow from '@/components/ui/PresenceRow';
 import { useT } from '@/lib/i18n';
-
-/** Lấy initials từ tên: "Trần Hoà" → "TH", "Khách" → "K". */
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
 
 interface Person {
   userId: string;
@@ -133,8 +126,6 @@ export function PresenceBar() {
 
   if (people.length <= 1 && !canManage) return null; // 1 mình + không có quyền mời thì ẩn cho gọn
 
-  const shown = people.slice(0, MAX_AVATARS);
-  const overflow = people.length - shown.length;
   const memberIds = new Set(members.map((m) => m.userId));
   const invitable = (teamUsers ?? []).filter((u) => u.id !== meId && !memberIds.has(u.id));
 
@@ -145,38 +136,14 @@ export function PresenceBar() {
       transition={springPop}
       className="mat-card pointer-events-auto absolute right-4 top-4 z-30 flex items-center gap-1.5 rounded-[14px] border border-[var(--mat-hairline)] px-2 py-1.5 shadow-xl shadow-black/20"
     >
-      <div className="flex -space-x-2">
-        <AnimatePresence mode="popLayout">
-          {shown.map((p) => (
-            <motion.div
-              key={p.userId}
-              layout
-              initial={{ opacity: 0, scale: 0.4 }}
-              // p.online PHẢI nằm trong `animate` (không phải `style` tĩnh) — framer-motion tự
-              // đặt inline style cho property nó đang animate (opacity ở đây), ĐÈ MẤT giá trị
-              // style tĩnh dù đặt sau trong JSX. Bug thật gặp lúc verify: offline vẫn hiện
-              // opacity:1 vì animate={{opacity:1}} cứng thắng style={{opacity:.45}}.
-              animate={{ opacity: p.online ? 1 : 0.45, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.4 }}
-              transition={springPop}
-              title={p.name}
-              className="relative grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-semibold text-white ring-2 ring-[var(--card)]"
-              style={{ background: p.color }}
-            >
-              {initials(p.name)}
-              <span
-                className="absolute -bottom-0 -right-0 h-2 w-2 rounded-full ring-2 ring-[var(--card)]"
-                style={{ background: p.online ? '#34d399' /* emerald-400 */ : 'var(--t5)' }}
-              />
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-      {overflow > 0 && (
-        <span className="ml-0.5 text-[11px] font-medium tabular-nums text-[var(--t3)]">
-          +{overflow}
-        </span>
-      )}
+      {/* 12/08 — thay stack avatar tự chế bằng PresenceRow dùng chung (components/ui/PresenceRow.tsx):
+          online = màu đủ + chấm --success · offline = grayscale + mờ 0.7 (không chấm) · "+n" khi quá
+          MAX_AVATARS. Bỏ luôn chấm hex '#34d399' cũ (ngoài token) và animate opacity theo online
+          (offline nay là opacity TĨNH trong PresenceRow — đúng luật G1). */}
+      <PresenceRow
+        members={people.map((p) => ({ id: p.userId, name: p.name, color: p.color, online: p.online }))}
+        max={MAX_AVATARS}
+      />
       {canManage && (
         <button
           ref={inviteBtnRef}

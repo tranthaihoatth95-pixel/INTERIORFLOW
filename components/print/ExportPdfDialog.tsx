@@ -31,6 +31,7 @@ import { createPortal } from 'react-dom';
 import { Ruler, Wand2 } from 'lucide-react';
 import { useDismissable } from '@/lib/useDismissable';
 import type { PaperKey, PaperOrientation } from '@/lib/cad/model';
+import LightArc from '@/components/ui/LightArc';
 import PaperSheetFrame from './PaperSheetFrame';
 import LineweightTable, { type LineweightRow } from './LineweightTable';
 import RadialToolMenu from './RadialToolMenu';
@@ -262,7 +263,15 @@ export default function ExportPdfDialog({
               <a href={previewUrl} target="_blank" rel="noreferrer">Mở bản xem trước PDF</a>
             </object> : <>
               <PaperSheetFrame variant="preview" paper={paper} orientation={orientation} sheetIndex={currentSheetIndex + 1} sheetTotal={sheetCount} />
-              <div role={previewError ? 'alert' : 'status'} style={{ position: 'absolute', left: '50%', bottom: 22, translate: '-50% 0', maxWidth: '80%', padding: '6px 9px', borderRadius: 8, background: 'var(--panel)', border: '1px solid var(--border)', color: previewError ? 'var(--warn)' : 'var(--t3)', fontSize: 10.5, textAlign: 'center', boxShadow: 'var(--shadow-pop)' }}>{previewError ?? 'Đang dựng bản xem trước PDF thật…'}</div>
+              {/* 12/08 — LightArc indeterminate KÈM trạng thái đang-dựng THẬT (chưa có % đo được
+                  từ engine xuất nên không bịa số — quay đều tới khi previewUrl về). Lỗi thì
+                  đổi sang biến thể warn đứng yên đủ vòng: việc dựng đã DỪNG, không quay nữa. */}
+              <div role={previewError ? 'alert' : 'status'} style={{ position: 'absolute', left: '50%', bottom: 22, translate: '-50% 0', maxWidth: '80%', padding: '6px 9px', borderRadius: 8, background: 'var(--panel)', border: '1px solid var(--border)', color: previewError ? 'var(--warn)' : 'var(--t3)', fontSize: 10.5, textAlign: 'center', boxShadow: 'var(--shadow-pop)', display: 'flex', alignItems: 'center', gap: 7 }}>
+                {previewError
+                  ? <LightArc value={100} size={16} strokeWidth={2.5} state="warn" label="Dựng xem trước gặp lỗi" />
+                  : <LightArc size={16} strokeWidth={2.5} label="Đang dựng bản xem trước PDF" />}
+                <span style={{ minWidth: 0 }}>{previewError ?? 'Đang dựng bản xem trước PDF thật…'}</span>
+              </div>
             </>}
             {onPickTool && (
               <button
