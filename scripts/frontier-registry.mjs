@@ -28,7 +28,7 @@ export const FRONTIER = [
 
   // ── ĐỢT 1 · KHÂU DÂY ─────────────────────────────────────────────────────────
   { id: 'project-profile', ten: 'Hồ Sơ Dự Án (12/08: model+API+bảng khởi tạo 3 mảnh PLAN·TASK·TIMELINE từ ＋ Dự án mới)', he: 'TriTueDuAn', dot: 1, trangThai: 'xong',
-    bangChung: [{ dir: 'components', mau: 'ProjectProfile' }] },
+    bangChung: [{ file: 'prisma/schema.prisma', mau: 'model ProjectProfile' }] },
   { id: 'scaffolder', ten: 'Máy Sinh Khung v1 (12/08: suggestScaffold theo loại hình KÈM căn cứ, gieo việc mang stage TaskContext; thiếu loại hình → im, không đoán)', he: 'TriTueDuAn', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'lib', mau: 'ProjectScaffolder' }] },
   { id: 'dna-card', ten: 'Thẻ DNA Thiết kế (8 lớp · 3 đầu ra · trạng thái)', he: 'TriTueDuAn', dot: 1, trangThai: 'chua',
@@ -38,7 +38,7 @@ export const FRONTIER = [
   { id: 'library-data-that', ten: 'Thư viện đọc kho THẬT (12/08: LibraryAsset qua API, số đếm thật, empty-state + nút Nhập; 17 seed minh hoạ Unsplash tải về uploads/ chạy offline, gỡ --undo)', he: 'LibraryFirst', dot: 1, trangThai: 'xong',
     bangChung: [{ file: 'lib/library/shelves.ts', mau: 'LIBRARY_DATA_IS_MOCK = true', can: false }] },
   { id: 'fm-data-that', ten: 'FM đọc đĩa THẬT (12/08: bỏ mock-data, cây 5 root + real-fs, số 0 thật thay 2,1GB bịa; quyền per-folder = TODO entry riêng)', he: 'LibraryFirst', dot: 1, trangThai: 'xong',
-    bangChung: [{ file: 'lib/filemanager/queries.ts', mau: "mock-data", can: false }] },
+    bangChung: [{ file: 'lib/filemanager/queries.ts', mau: "from '\\./mock-data'", can: false }] }, // mẫu cũ vấp comment kể-lịch-sử
   { id: 'think-dial', ten: 'Nấc Suy Nghĩ — 4 nấc Vitals (12/08: fast/balanced/deep/research — research nối RAG notebook thật)', he: 'ThinkDial', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'ThinkDial' }] },
   { id: 'light-arc', ten: 'LightArc — cung sáng tiến độ (12/08: components/ui/LightArc + ExportPdfDialog indeterminate thật)', he: 'LightState', dot: 1, trangThai: 'xong',
@@ -80,7 +80,7 @@ export const FRONTIER = [
   { id: 'pie-menu-3d', ten: 'Đĩa lệnh theo đối tượng cho 3D (tái dùng RadialToolMenu)', he: 'NhapLenh', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'components/render-studio', mau: 'RadialToolMenu' }] },
   { id: 'team-fit', ten: 'Máy Hiểu Người (hồ sơ nguồn thành viên, gợi ý kèm căn cứ)', he: 'TriTueDuAn', dot: 2, trangThai: 'chua',
-    bangChung: [{ dir: 'lib', mau: 'TeamFit' }] },
+    bangChung: [{ dir: 'lib', mau: 'TeamFitEngine|hoSoNguonThanhVien' }] }, // 'TeamFit' trần vấp comment scaffolder
   // 11/08 tối — Hoà đặt bài "DNA công ty + smart transfer + nhãn trung tính để reset":
   { id: 'company-dna-pack', ten: 'Hồ Sơ Công Ty (quy trình·quy định·gu·thư viện riêng — tham chiếu, không nhúng cứng)', he: 'TriTueDuAn', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'CompanyDnaPack|HoSoCongTy' }] },
@@ -96,7 +96,7 @@ export const FRONTIER = [
     bangChung: [{ dir: 'components', mau: 'ActivityFeed|DongHoatDong' }] },
   { id: 'chat-ai-notebook', ten: 'Stage chat nhóm bố cục NotebookLM (nguồn trái · luồng giữa · chưng cất phải) + toggle AI tham vấn', he: 'Workspace', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'components', mau: 'ChatNhomAi|AiGroupChat' }] },
-  { id: 'project-init-board', ten: 'Bảng khởi tạo dự án Plan-Task-Timeline: quản lý tạo + phân quyền, chủ trì gắn thẻ đầu mục', he: 'TriTueDuAn', dot: 2, trangThai: 'chua',
+  { id: 'project-init-board', ten: 'Bảng khởi tạo v1 (12/08 giao sớm cùng project-profile: 3 mảnh + căn cứ; phân quyền thư mục/gán chủ trì còn mờ chờ fm-quyền)', he: 'TriTueDuAn', dot: 2, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'ProjectInitBoard|BangKhoiTao' }] },
   { id: 'meeting-distill', ten: 'Họp → nháp biên bản (biểu mẫu kho chuẩn) → chủ trì duyệt → 3 dòng: quyết định/việc/phiếu điều chỉnh gắn ĐỐI TƯỢNG (định tuyến theo entity, không theo chặng). KHÔNG tự xây engine video — nhận bản ghi từ ngoài', he: 'Workspace', dot: 3, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'MeetingDistill|BienBanHop' }] },
