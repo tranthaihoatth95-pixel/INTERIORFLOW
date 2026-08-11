@@ -59,6 +59,8 @@ export const FRONTIER = [
 
   { id: 'story-set', ten: 'BỘ HỒ SƠ KỂ CHUYỆN (Story Set) — hero output 6 chương: bìa editorial → DNA board → câu chuyện → ảnh điện ảnh → vật liệu tạp chí → phụ lục sự thật, template trung tính ship kèm app, ăn theo Thẻ DNA từng dự án', he: 'Workspace', dot: 1, trangThai: 'chua',
     bangChung: [{ dir: 'lib/present-editor', mau: 'StorySet|storySet' }] },
+  { id: 'material-impact-ui', ten: 'Material Impact preview lên UI — lõi impact.ts + test ĐỦ, 0 component gọi (đối chiếu chặng 2-3 bắt được 11/08; Cổng R1 mục 4)', he: 'LibraryFirst', dot: 1, trangThai: 'chua',
+    bangChung: [{ dir: 'components', mau: 'MaterialImpact|impact-preview' }] },
   { id: 'chuan-dau-ra-gate', ten: 'Máy chặn CHUAN-DAU-RA-NGHE lúc xuất (mở rộng export-checks)', he: 'DocCore', dot: 1, trangThai: 'chua',
     bangChung: [{ dir: 'lib/print', mau: 'CHUAN_DAU_RA' }] },
   { id: 'bento-align-2d', ten: 'Căn lưới bento vùng đầu chặng 2D (tab Bản vẽ · Mở tệp · rail LỚP chung một lề — Hoà chụp lệch 11/08)', he: 'DocCore', dot: 1, trangThai: 'chua',
