@@ -105,6 +105,9 @@ export const FRONTIER = [
     bangChung: [{ file: 'components/render-studio/ToolDock3D.tsx', mau: 'CHUA_DUNG_DUOC', can: false }] },
   { id: 'build-recipe', vai: 'mvp', ten: 'Công Thức Khối — BuildOp thành stack sửa-lại-được', he: 'BuildRecipe', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'lib/three', mau: 'BuildRecipe' }] },
+  // 12/08 Đợt 4 — T mở entry theo uỷ quyền plan (docType đầu = schedule "Bảng thống kê"):
+  { id: 'editor-bang-bieu-mau', vai: 'mvp', ten: 'Engine bảng chung (TableDocEngine, nâng từ BOQ) — docType đầu: schedule "Bảng thống kê" đọc Doc 2D thật (cửa/phòng, hàng giữ entityId), re-sync không ghi đè ô tay, xuất XLSX/PDF sửa được; spec-sheet/approval-form là mặt tiền sau', he: 'Workspace', dot: 4, trangThai: 'chua',
+    bangChung: [{ dir: 'lib/present-editor', mau: 'TableDocEngine' }] },
   { id: 'snap-hop-nhat', vai: 'day', ten: 'Bắt Điểm Hợp Nhất — một engine 2D↔3D', he: 'SnapCore', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'SnapCore' }] },
   { id: 'num-strip', vai: 'do', ten: 'Dải số nổi tại điểm thả (touch, nối vcb)', he: 'NhapLenh', dot: 2, trangThai: 'chua',
