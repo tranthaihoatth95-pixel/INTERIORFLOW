@@ -21,19 +21,29 @@ function fmtDayHeader(iso: string, en: boolean): string {
   return en ? `${weekday} ${dd}/${mm}` : `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${dd}/${mm}`;
 }
 
-export default function UpcomingList({ summary }: { summary: HomeSummary }) {
+/** Cùng lý do `todayHasSignal` (TodayStrip.tsx) — MỘT nơi định nghĩa "ô G có gì để hiện". */
+export function upcomingHasSignal(summary: HomeSummary): boolean {
+  return summary.upcoming.length > 0;
+}
+
+export default function UpcomingList({ summary, index }: { summary: HomeSummary; index?: string }) {
   const tr = useT();
   const lang = useLang();
   const router = useRouter();
   const days = summary.upcoming;
-  if (days.length === 0) return null;
+  if (!upcomingHasSignal(summary)) return null;
 
   return (
-    <WidgetCard title={tr('Sắp tới', 'Upcoming')}>
+    <WidgetCard dense index={index} title={tr('Sắp tới', 'Upcoming')} bodyClassName="overflow-y-auto">
       <div className="flex gap-4 overflow-x-auto pb-1">
         {days.map((day) => (
           <div key={day.date} className="w-40 shrink-0">
-            <div className="mb-1.5 text-[length:var(--fs-2xs)] font-semibold uppercase tracking-wide text-[var(--t4)]">
+            {/* v3 (ⓖ "hover ngày → tooltip tên việc") — tooltip native liệt kê MỌI việc trong
+                ngày, kể cả phần bị "+N việc khác" gấp gọn bên dưới. */}
+            <div
+              className="mb-1.5 text-[length:var(--fs-2xs)] font-semibold uppercase tracking-wide text-[var(--t4)]"
+              title={day.items.map((t) => t.title).join('\n')}
+            >
               {fmtDayHeader(day.date, lang === 'en')}
             </div>
             <ul className="space-y-1">

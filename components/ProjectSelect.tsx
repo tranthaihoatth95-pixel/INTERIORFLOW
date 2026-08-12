@@ -32,7 +32,8 @@ import { createFlow, openFlow, createProject, assignProject } from '@/lib/worksp
 import { applyCadHandoff } from '@/lib/cad/handoff';
 import { ProjectInitBoard } from '@/components/project-init/ProjectInitBoard';
 import ProjectOverviewCard from '@/components/home/ProjectOverviewCard';
-import type { PresenceMember } from '@/components/ui/PresenceRow';
+import { NOTE_DRAG_MIME } from '@/components/home/widgets/QuickNotes';
+import PresenceRow, { type PresenceMember } from '@/components/ui/PresenceRow';
 import { getLastStage } from '@/lib/shell/last-stage';
 import { stageRoutePath, stageSegmentForPhase } from '@/lib/scope-core';
 import { PHASE_MAP } from '@/lib/phases';
@@ -320,6 +321,11 @@ export function ProjectSelect({
   onEnter,
   hideHeroCopy = false,
   hideVitalsBar = false,
+  bentoBox = false,
+  openTasksByProject,
+  onNoteDrop,
+  armedNoteId = null,
+  revealAll = false,
 }: {
   onEnter: () => void;
   /**
@@ -339,6 +345,32 @@ export function ProjectSelect({
    * Siri §4b, docs/00-CHOT.md 12/08). Mặc định `false`.
    */
   hideVitalsBar?: boolean;
+  /**
+   * BENTO v3 (13/08, phiếu home-bento-v3.md, ô A "DỰ ÁN" 7c×2h) — mount bên trong MỘT Ô LƯỚI cố
+   * định thay vì trang riêng. Đổi NGUYÊN VĂN 2 chỗ, KHÔNG đụng logic bên trong:
+   *   ① gốc `min-h-[100dvh] flex items-center justify-center` (hero toàn màn) → `h-full` lấp
+   *      đúng khung cha, KHÔNG còn ép chiều cao viewport (nguyên do PHẢI có cờ này — cắm thẳng
+   *      component gốc vào một ô 7×2 sẽ đội cả lưới bento cao bằng 100dvh).
+   *   ② `effectiveGrid` LUÔN true (ép chế độ lưới+tìm kiếm, tắt carousel 3D) — thẻ carousel dùng
+   *      `width: clamp(240px, 46vw, 460px)` (đơn vị `vw` GẮN VIEWPORT, không phải khung chứa) nên
+   *      nhét vào ô nhỏ sẽ vỡ hình; sửa carousel sang đơn vị theo container là việc khác, ngoài
+   *      phạm vi phiếu này — xem báo cáo ⑦ (quyết định + lý do). Toggle carousel/grid vẫn ẨN khi
+   *      `bentoBox` (không hứa một nút không chạy đúng).
+   * Mặc định `false` — mọi nơi gọi khác giữ nguyên hành vi hôm nay.
+   */
+  bentoBox?: boolean;
+  /** BENTO v3 — số Task CHƯA XONG theo projectId, cho lớp kính dữ liệu hover trên card (chặng ·
+   * việc mở · presence). Thiếu/undefined = ẩn dòng "việc mở" (không bịa 0 giả). */
+  openTasksByProject?: Record<string, number>;
+  /** BENTO v3 (ô F kéo-thả note) — thả 1 ghi chú vào card dự án. `noteId` đọc từ
+   * `dataTransfer` khoá `NOTE_DRAG_MIME` (`components/home/widgets/QuickNotes.tsx`). */
+  onNoteDrop?: (noteId: string, projectId: string) => void;
+  /** BENTO v3 — id ghi chú đang "cầm sẵn" (fallback click, không cần kéo chuột) — bấm 1 card khi
+   * có giá trị này sẽ GẮN NOTE thay vì mở dự án. */
+  armedNoteId?: string | null;
+  /** BENTO v3 (③ "giữ Tab → lớp dữ liệu bung trên TẤT CẢ card") — ép lớp kính dữ liệu mở trên
+   * MỌI card ô A cùng lúc, bất kể hover/focus. */
+  revealAll?: boolean;
 }) {
   const user = useFlowStore((s) => s.user);
   const openDashboardTab = useFlowStore((s) => s.openDashboardTab);
@@ -554,7 +586,9 @@ export function ProjectSelect({
     },
     [user?.id],
   );
-  const effectiveGrid = viewOverride === 'grid' ? true : viewOverride === 'carousel' ? false : manyMode;
+  // BENTO v3 — `bentoBox` ép lưới, LUÔN đứng trước mọi nhánh khác (xem comment prop `bentoBox`
+  // ở khai báo component: carousel dùng đơn vị `vw` gắn viewport, vỡ hình trong ô nhỏ).
+  const effectiveGrid = bentoBox ? true : viewOverride === 'grid' ? true : viewOverride === 'carousel' ? false : manyMode;
 
   /** MỘT nút toggle bật/tắt (không segmented) — icon phẳng lucide cho biết BẤM SẼ SANG kiểu nào:
    * đang lưới → `GalleryHorizontal` (bấm sang carousel) · đang carousel → `LayoutGrid` (bấm về lưới).
@@ -954,6 +988,27 @@ export function ProjectSelect({
     chatSending,
     chatInput,
   ]);
+
+  /* ---------- BENTO v3 (③ "phím 1-9 nhảy nhanh vào 9 dự án đầu, chỉ khi không focus input") ----
+   * Chỉ bật khi `bentoBox` — cử chỉ riêng của ô A trong Home; nơi khác (mở ProjectSelect làm
+   * trang riêng, nếu còn) giữ hành vi hôm nay, không thêm phím mới không xin phép. */
+  useEffect(() => {
+    if (!bentoBox) return;
+    const onDigit = (e: KeyboardEvent) => {
+      if (busy || e.metaKey || e.ctrlKey || e.altKey) return;
+      const digit = Number(e.key);
+      if (!Number.isInteger(digit) || digit < 1 || digit > 9) return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if ((tag && ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) || target?.isContentEditable) return;
+      const group = projectGroups[digit - 1];
+      if (!group) return;
+      e.preventDefault();
+      void choose({ kind: 'flow', flow: group.flows[0] });
+    };
+    window.addEventListener('keydown', onDigit);
+    return () => window.removeEventListener('keydown', onDigit);
+  }, [bentoBox, busy, projectGroups, choose]);
 
   const step = (dir: 1 | -1) => setActive((a) => Math.min(n - 1, Math.max(0, a + dir)));
 
@@ -1798,6 +1853,12 @@ export function ProjectSelect({
     const rep = group.flows[0];
     const stage = getLastStage(group.projectId) ?? getLastStage(rep.id);
     const stageMeta = stage ? PHASE_MAP[stage] : null;
+    // BENTO v3 (ô A hover "lớp kính dữ liệu" — chặng · việc mở · presence) — dữ liệu đã có sẵn
+    // trong scope này (stageMeta ở trên, presence dưới đây dùng lại đúng nguồn ProjectOverviewCard
+    // đang fetch, `openTasksByProject` từ prop mới). Không thêm request nào.
+    const openTasks = openTasksByProject?.[group.projectId];
+    const overlayPresence = presenceMembersOfGroup(group.flows);
+    const noteArmed = !!armedNoteId;
     return (
       <div
         key={group.projectId}
@@ -1806,20 +1867,47 @@ export function ProjectSelect({
         aria-disabled={busy}
         aria-label={group.projectName}
         onClick={() => {
+          // BENTO v3 (ô F fallback click-chọn) — có 1 ghi chú đang "cầm sẵn" thì bấm card = GẮN
+          // ghi chú vào dự án này, KHÔNG mở dự án (đổi ý định bấm khi đang ở chế độ gắn).
+          if (noteArmed && onNoteDrop) {
+            onNoteDrop(armedNoteId as string, group.projectId);
+            return;
+          }
           if (!busy) void choose({ kind: 'flow', flow: rep });
         }}
         onKeyDown={(e) => {
           if ((e.key === 'Enter' || e.key === ' ') && !busy) {
             e.preventDefault();
+            if (noteArmed && onNoteDrop) {
+              onNoteDrop(armedNoteId as string, group.projectId);
+              return;
+            }
             void choose({ kind: 'flow', flow: rep });
           }
         }}
-        className="group cursor-pointer overflow-hidden text-left transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:scale-[1.02]"
+        // BENTO v3 (ô F kéo-thả note) — chỉ preventDefault khi payload ĐÚNG khoá note (không nuốt
+        // mọi kiểu drag khác, vd kéo file từ Finder vẫn phải rơi vào nhánh xử lý khác nếu có sau này).
+        onDragOver={(e) => {
+          if (onNoteDrop && e.dataTransfer.types.includes(NOTE_DRAG_MIME)) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+          }
+        }}
+        onDrop={(e) => {
+          if (!onNoteDrop) return;
+          const noteId = e.dataTransfer.getData(NOTE_DRAG_MIME);
+          if (noteId) {
+            e.preventDefault();
+            e.stopPropagation();
+            onNoteDrop(noteId, group.projectId);
+          }
+        }}
+        className={`group cursor-pointer overflow-hidden text-left ${reduce ? '' : 'transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:scale-[1.02]'}`}
         style={{
           borderRadius: 'var(--radius-xl)',
-          border: '1px solid rgba(127,127,127,0.25)',
+          border: noteArmed ? '1px solid var(--accent)' : '1px solid rgba(127,127,127,0.25)',
           background: '#141210',
-          boxShadow: '0 18px 44px -20px rgba(0,0,0,0.55)',
+          boxShadow: noteArmed ? '0 0 0 3px var(--accent-soft), 0 18px 44px -20px rgba(0,0,0,0.55)' : '0 18px 44px -20px rgba(0,0,0,0.55)',
           opacity: busy ? 0.6 : 1,
         }}
       >
@@ -1836,6 +1924,37 @@ export function ProjectSelect({
               {en ? stageMeta.labelEn : stageMeta.label}
             </span>
           )}
+          {/* BENTO v3 (④.2 ô A "hover → lớp kính dữ liệu trượt lên", ③ "giữ Tab bung TẤT CẢ") —
+              transform-CHỈ (luật G1 "kính không animate opacity" + ràng buộc ⑤ phiếu), KHÔNG
+              backdrop-filter (đè lên ảnh cả khối, tránh chi phí blur lặp trên nhiều card cùng
+              lúc). `revealAll` ép mở qua inline style (thắng class Tailwind vì cùng thuộc tính). */}
+          <div
+            className={`pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-1 px-3 py-2.5 ${
+              reduce
+                ? ''
+                : 'translate-y-full transition-transform duration-[140ms] ease-out group-hover:translate-y-0 group-hover:duration-200 group-hover:ease-[cubic-bezier(0.32,0.72,0,1)] group-focus-visible:translate-y-0'
+            }`}
+            style={{
+              background: 'linear-gradient(to top, rgba(10,9,8,0.94) 0%, rgba(10,9,8,0.62) 65%, transparent 100%)',
+              transform: revealAll || reduce ? 'translateY(0)' : undefined,
+            }}
+          >
+            {stageMeta && (
+              <span className="font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-white/70">
+                {en ? stageMeta.labelEn : stageMeta.label}
+              </span>
+            )}
+            {typeof openTasks === 'number' && openTasks > 0 && (
+              <span className="text-[length:var(--fs-xs)] text-white/90">
+                {en ? `${openTasks} open ${openTasks === 1 ? 'task' : 'tasks'}` : `${openTasks} việc mở`}
+              </span>
+            )}
+            {overlayPresence.length > 0 && (
+              <div className="mt-0.5">
+                <PresenceRow members={overlayPresence} max={5} />
+              </div>
+            )}
+          </div>
           <div className="absolute right-2 top-2 flex flex-col items-end gap-1.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
             <button
               type="button"
@@ -1941,13 +2060,18 @@ export function ProjectSelect({
             </option>
           ))}
         </select>
-        {viewToggle}
+        {/* BENTO v3 — ẩn toggle carousel/grid trong ô A: `bentoBox` đã ép lưới cứng (xem comment
+            prop), hiện một nút không đổi được gì là hứa suông (luật §9). */}
+        {!bentoBox && viewToggle}
         <span className="text-[length:var(--fs-xs)] text-[var(--t4)]">
           {filteredFlows.length}/{flows.length}
         </span>
       </div>
 
-      <div className="grid max-h-[56vh] grid-cols-2 gap-4 overflow-y-auto px-1 pb-2 sm:grid-cols-3 lg:grid-cols-4">
+      {/* BENTO v3 — trong ô A, KHÔNG tự cuộn riêng (`max-h-[56vh]` tính theo VIEWPORT, sai khi
+          nhét vào khung nhỏ) — nhường việc cuộn cho container ô A ở DongStudioHome.tsx (root
+          wrapper bên dưới đặt `overflow-y-auto h-full`, MỘT vùng cuộn duy nhất cho cả card). */}
+      <div className={`grid grid-cols-2 gap-4 px-1 pb-2 sm:grid-cols-3 lg:grid-cols-4 ${bentoBox ? '' : 'max-h-[56vh] overflow-y-auto'}`}>
         {/* tile "+ Dự án mới" luôn đứng đầu — không lệ thuộc filter */}
         <div
           role="button"
@@ -2077,8 +2201,16 @@ export function ProjectSelect({
 
   return (
     <div
-      className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-4 py-12 sm:px-6"
-      style={{ background: 'var(--bg)' }}
+      // BENTO v3 (`bentoBox`) — LẤP ĐÚNG khung ô A do DongStudioHome cấp: `h-full`, không còn
+      // ép `min-h-[100dvh]`/căn giữa toàn màn; tự cuộn (`overflow-y-auto`) làm vùng cuộn DUY
+      // NHẤT của cả card (search + Nháp + lưới, xem comment ở khối lưới bên dưới). Nhánh cũ
+      // (trang riêng) giữ NGUYÊN VĂN.
+      className={
+        bentoBox
+          ? 'relative flex h-full flex-col overflow-y-auto px-3 py-3'
+          : 'relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-4 py-12 sm:px-6'
+      }
+      style={{ background: bentoBox ? 'transparent' : 'var(--bg)' }}
     >
       {/* Ambient cover glow — LỚP DƯỚI CÙNG (z thấp nhất), đặt TRƯỚC quầng đồng để không đè lên nó.
           Ảnh bìa card đang focus, blur rất mạnh + tối đi, crossfade mượt khi đổi card (gu tvOS). */}

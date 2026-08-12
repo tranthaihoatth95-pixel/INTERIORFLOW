@@ -105,3 +105,22 @@ export async function deleteHomeNote(userId: string, noteId: string): Promise<Ho
   await fs.writeFile(file, serializeNotesFile(next), 'utf8');
   return next;
 }
+
+/**
+ * v3 (13/08 home-bento-v3.md, ④.2 ô F "kéo chấm note thả vào card dự án ở ô A") — gán/ĐỔI thẻ
+ * dự án của MỘT ghi chú đã có (kéo-thả hoặc fallback click-chọn ở QuickNotes.tsx). `projectId`
+ * là `null` thì gỡ thẻ (đưa về "ghi chú chung"). Không thấy `noteId` → trả nguyên danh sách,
+ * không lỗi (best-effort, cùng luật các hàm khác của store này).
+ */
+export async function setHomeNoteProject(
+  userId: string,
+  noteId: string,
+  projectId: string | null,
+): Promise<HomeNote[]> {
+  const existing = await readHomeNotes(userId);
+  const next = existing.map((n) => (n.id === noteId ? { ...n, projectId } : n));
+  const file = fileFor(userId);
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  await fs.writeFile(file, serializeNotesFile(next), 'utf8');
+  return next;
+}

@@ -7,7 +7,6 @@ import { PHASE_MAP, type Phase } from '@/lib/phases';
 import {
   countTasksDoneToday,
   countTasksDueToday,
-  pickRecentProject,
   pickRecentProjects,
   buildStageCounts,
   buildActivityDays,
@@ -99,6 +98,15 @@ export async function GET() {
     .filter((u) => nowMs - new Date(u.lastSeenAt).getTime() < ONLINE_MS)
     .map((u) => ({ id: u.id, name: u.name }));
 
+  // v3 (13/08 home-bento-v3.md, ④.2 ô A "lớp kính dữ liệu" — chặng · VIỆC MỞ · presence) — đếm
+  // Task CHƯA XONG theo từng dự án, cấp cho lớp phủ hover trên card ProjectSelect. Tính Ở ĐÂY
+  // (route có Prisma sẵn `tasks` toàn bộ dự án của user) thay vì thêm request riêng.
+  const openTasksByProject: Record<string, number> = {};
+  for (const t of tasks) {
+    if (t.isDone) continue;
+    openTasksByProject[t.projectId] = (openTasksByProject[t.projectId] ?? 0) + 1;
+  }
+
   const stageCounts = buildStageCounts(projects, tasks);
   const stageChart = (['concept', 'render', 'present'] as Phase[]).map((phase) => ({
     phase,
@@ -115,19 +123,21 @@ export async function GET() {
     select: { id: true },
   });
 
-  const recentProject = pickRecentProject(flows, projects);
+  // v2 (13/08 home-dong-studio-v2.md ④.3) — `pickRecentProject` (Flow.updatedAt gần nhất) KHÔNG
+  // còn cấp cho `greeting`/`today` nữa: sự kiện đó lặp ở 3 widget cùng lúc với 3 cách đọc giờ
+  // khác nhau (lỗi #4). Hàm vẫn còn trong lib/home/aggregate.ts (test riêng, có thể tái dùng
+  // sau) nhưng endpoint này chỉ còn cấp nó cho `news` qua `buildNewsFeed` bên dưới — MỘT nơi.
 
   return NextResponse.json({
     greeting: {
       dueTodayCount: countTasksDueToday(tasks, now),
-      recentProjectName: recentProject?.name ?? null,
     },
     today: {
       tasksDoneToday: countTasksDoneToday(tasks, now),
       online,
-      recentProject,
     },
     recentProjects: pickRecentProjects(flows, projects, 6),
+    openTasksByProject,
     stageChart,
     activityDays: buildActivityDays(tasks, flows, now, 10),
     news: buildNewsFeed(tasks, flows, projectNameById, now, { limit: 8, windowDays: 7 }),

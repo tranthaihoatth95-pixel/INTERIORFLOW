@@ -1,43 +1,88 @@
 'use client';
 
 /**
- * components/home/DongStudioHome.tsx — [marker: DongStudio] Home "Dòng Studio" — dashboard
- * live, cuộn dọc 2 trang (phiếu docs/phieu-giao/home-dong-studio.md, việc ④; Hoà chốt 13/08:
- * Home = TỔNG QUAN, tiêu chí cảm nhận "người ta muốn trở về").
+ * components/home/DongStudioHome.tsx — [marker: DongStudio] Home "Dòng Studio" — BENTO v3, MỘT
+ * MÀN (phiếu docs/phieu-giao/home-bento-v3.md; Hoà chốt 13/08: "cuộn 2 trang không ổn — tổng
+ * quan chia lưới BENTO, mỗi thẻ thiết kế như MỘT WIDGET ĐỘNG, thêm cử chỉ tương tác").
  *
- * NÂNG chứ không đập: `ProjectSelect` (toggle carousel/grid, tìm kiếm, card dự án đợt 3 —
- * ProjectProfile + PresenceRow + lastStage) mount NGUYÊN VẸN làm Tầng 2 "triển lãm" của Trang 1
- * — 2 prop mới `hideHeroCopy`/`hideVitalsBar` (additive, ProjectSelect.tsx) ẩn pill/tiêu đề/mô
- * tả cũ + thanh Vitals to, nhường chỗ cho ánh sáng-giờ-thật + lời chào dữ liệu thật + VitalsPill
- * ở đây. KHÔNG viết lại gallery/search/toggle — tránh vỡ 2318 dòng logic đã ổn định.
+ * ĐẢO NGƯỢC v2: BỎ cuộn 2 trang (Trang 1 hero + Trang 2 lưới `md:grid-cols-2`) — v2 giữ NGUYÊN
+ * nội dung/logic từng widget (chỉ port sang props mới khi cần), CHỈ đổi BỐ CỤC + THÊM ĐỘNG theo
+ * phiếu ④. `ProjectSelect` (toggle carousel/grid, tìm kiếm, card dự án đợt 3, ngăn Nháp) mount
+ * NGUYÊN VẸN trong ô A ở chế độ `bentoBox` (xem prop đó trong ProjectSelect.tsx — lý do carousel
+ * 3D bị tắt trong ô A: đơn vị `vw` gắn viewport, vỡ hình khi nhét vào ô nhỏ).
  *
- * TRANG 1 (viewport đầu) = Tầng 1 "tiếp tục" (dải ánh sáng mỏng: chào + tín hiệu thật) + Tầng 2
- * "triển lãm" (ProjectSelect). TRANG 2 (cuộn xuống) = 6 widget "studio đang thở", mỗi widget tự
- * ẩn khi thiếu dữ liệu (luật chung phiếu — trừ QuickNotes, ô gõ hữu ích cả khi chưa có gì).
+ * GU (chỉ đạo giữa phiên, `docs/nc/NC-GU-BENTRAN-PINTEREST-2026-08-13.md`) — Swiss/editorial:
+ * hairline (đã có ở `WidgetCard`, không đổi), số ô mono nhỏ ("01 · Dự án"…) qua prop `index` của
+ * `WidgetCard`, khoảng thở `--gap`, KHÔNG bo bubbly/icon hoạt hình.
+ *
+ * MỘT INTERVAL TOÀN TRANG (ràng buộc ⑤ phiếu) — `minuteTick`/`eightSecTick` cùng cấp bởi MỘT
+ * `setInterval` 1s (chỉ setState khi mốc thật sự đổi, tránh re-render vô ích mỗi giây). Ticker
+ * (ô I) và pulse (ô C) là CSS `@keyframes` thuần — không đụng interval này (compositor, không
+ * React state) — xem comment ở từng widget.
+ *
+ * "Widget trống tự ẩn, ô lân cận GIÃN chiếm chỗ" (④ mục giữ nguyên) — vì các ô nằm trên MỘT lưới
+ * CSS Grid tường minh (không phải flow tự nhiên), lưới không tự "chảy" lấp lỗ như flexbox — các
+ * biến `bArea/eArea/fAreaLeft/gArea/hArea/iArea` bên dưới tính lại `gridColumn/gridRow` CÓ ĐIỀU
+ * KIỆN theo 6 cờ rỗng (C/D/E/G/H/I — chỉ ô A và ô B/F LUÔN có nội dung: dự án luôn có "+ Dự án
+ * mới", chào luôn có, ghi chú luôn có ô gõ). Đây là quy tắc BOUNDED cho ĐÚNG 9 ô của phiếu này
+ * (không phải thuật toán bento tổng quát — ghi rõ để phiên sau không tưởng nhầm là generic, xem
+ * bảng đầy đủ ở báo cáo ⑦).
  */
 
-import { useEffect, useState } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { ProjectSelect } from '@/components/ProjectSelect';
 import { useFlowStore } from '@/lib/store';
-import { useLang } from '@/lib/i18n';
+import { useLang, useT } from '@/lib/i18n';
 import { timeOfDayNow } from '@/lib/home/time-of-day';
 import { buildGreeting } from '@/lib/home/greeting';
+import { shouldShowActivityGrid } from '@/lib/home/aggregate';
+import { pickWeeklyItem, pickWeeklyImages } from '@/lib/home/weekly-picks';
 import VitalsPill from './widgets/VitalsPill';
-import TodayStrip from './widgets/TodayStrip';
-import StageChart from './widgets/StageChart';
+import LightClock from './widgets/LightClock';
+import TodayStrip, { todayHasSignal } from './widgets/TodayStrip';
+import StageChart, { stageChartHasSignal } from './widgets/StageChart';
 import ContributionGrid from './widgets/ContributionGrid';
 import QuickNotes from './widgets/QuickNotes';
-import NewsFeed from './widgets/NewsFeed';
-import UpcomingList from './widgets/UpcomingList';
+import NewsFeed, { newsHasSignal } from './widgets/NewsFeed';
+import UpcomingList, { upcomingHasSignal } from './widgets/UpcomingList';
+import WeeklyImage, { type WeeklyImageItem } from './widgets/WeeklyImage';
+import WeeklyMaterial, { type WeeklyMaterialItem } from './widgets/WeeklyMaterial';
 import type { HomeSummary } from './widgets/types';
+
+/** Shape rỗng hợp lệ — QuickNotes render ngay cả trước khi `/api/home/summary` trả lời. */
+const EMPTY_SUMMARY: HomeSummary = {
+  greeting: { dueTodayCount: 0 },
+  today: { tasksDoneToday: 0, online: [] },
+  recentProjects: [],
+  openTasksByProject: {},
+  stageChart: [],
+  activityDays: [],
+  news: [],
+  upcoming: [],
+  ambientImage: null,
+};
+
+interface LibraryAssetLite {
+  id: string;
+  name: string;
+  url: string;
+  usage: string;
+  category: string;
+  tags: string;
+}
+
+function area(col: [number, number], row: [number, number]): CSSProperties {
+  return { gridColumn: `${col[0]} / ${col[1]}`, gridRow: `${row[0]} / ${row[1]}` };
+}
 
 export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   const user = useFlowStore((s) => s.user);
   const en = useLang() === 'en';
-  const reduce = useReducedMotion();
+  const tr = useT();
   const [summary, setSummary] = useState<HomeSummary | null>(null);
+  const [libraryAssets, setLibraryAssets] = useState<LibraryAssetLite[] | null>(null);
 
+  // ---------- ①.a dữ liệu tổng hợp (giữ nguyên nguồn v2) ----------
   useEffect(() => {
     let cancelled = false;
     fetch('/api/home/summary')
@@ -46,11 +91,98 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
         if (!cancelled && j) setSummary(j as HomeSummary);
       })
       .catch(() => {
-        /* best-effort — Trang 2 rỗng, Trang 1 (ProjectSelect) vẫn chạy đầy đủ */
+        /* best-effort — bento vẫn chạy, ô A không phụ thuộc summary */
       });
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // ---------- ①.b kho vật liệu/ảnh — CHỈ ĐỌC /api/library (②.6 phiếu), cho ô D + ô H ----------
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/library')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (cancelled || !Array.isArray(j?.assets)) return;
+        setLibraryAssets(
+          j.assets.map((a: Record<string, unknown>) => ({
+            id: String(a.id ?? ''),
+            name: typeof a.name === 'string' ? a.name : '',
+            url: typeof a.url === 'string' ? a.url : '',
+            usage: typeof a.usage === 'string' ? a.usage : '',
+            category: typeof a.category === 'string' ? a.category : '',
+            tags: typeof a.tags === 'string' ? a.tags : '',
+          })),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setLibraryAssets([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // ---------- ⑤ MỘT interval toàn trang — cấp nhịp phút (ô B) + nhịp 8s (ô D crossfade) ----------
+  const [minuteTick, setMinuteTick] = useState(() => Math.floor(Date.now() / 60000));
+  const [eightSecTick, setEightSecTick] = useState(() => Math.floor(Date.now() / 8000));
+  useEffect(() => {
+    const id = setInterval(() => {
+      const now = Date.now();
+      const m = Math.floor(now / 60000);
+      const e = Math.floor(now / 8000);
+      setMinuteTick((prev) => (prev === m ? prev : m));
+      setEightSecTick((prev) => (prev === e ? prev : e));
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // ---------- ③ giữ Tab → lớp dữ liệu bung trên TẤT CẢ card ô A cùng lúc ----------
+  const [revealAll, setRevealAll] = useState(false);
+  useEffect(() => {
+    const onDown = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') setRevealAll(true);
+    };
+    const onUp = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') setRevealAll(false);
+    };
+    const onBlur = () => setRevealAll(false); // đổi tab/app khi đang giữ Tab — không kẹt mở
+    window.addEventListener('keydown', onDown);
+    window.addEventListener('keyup', onUp);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      window.removeEventListener('keydown', onDown);
+      window.removeEventListener('keyup', onUp);
+      window.removeEventListener('blur', onBlur);
+    };
+  }, []);
+
+  // ---------- ④.2 ô F kéo-thả note → ô A gán dự án (fallback click-chọn dùng chung state) ------
+  const [armedNoteId, setArmedNoteId] = useState<string | null>(null);
+  const [notesRefreshKey, setNotesRefreshKey] = useState(0);
+  const handleNoteDrop = useCallback(async (noteId: string, projectId: string) => {
+    setArmedNoteId(null);
+    try {
+      await fetch('/api/home/notes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: noteId, projectId }),
+      });
+    } catch {
+      /* best-effort — QuickNotes tải lại dù PATCH lỗi mạng, không kẹt state armed */
+    } finally {
+      setNotesRefreshKey((k) => k + 1);
+    }
+  }, []);
+
+  // ---------- <1100px xếp lại, cuộn tự nhiên (mặc định desktop — sửa đúng lúc mount) ----------
+  const [isWide, setIsWide] = useState(true);
+  useEffect(() => {
+    const check = () => setIsWide(window.innerWidth >= 1100);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
   const tod = timeOfDayNow();
@@ -60,107 +192,190 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
     en,
     dueTodayCount: summary?.greeting.dueTodayCount ?? 0,
   });
-  const lightTextOnGradient = tod.textOnGradient === 'light';
 
-  return (
+  // ---------- widget sáng tạo #2/#3 — chọn TẤT ĐỊNH/lọc từ /api/library (thuần, có test) ----------
+  const weeklyImages: WeeklyImageItem[] = useMemo(() => {
+    if (!libraryAssets) return [];
+    return pickWeeklyImages(libraryAssets, 'ref-render', 6).map((a) => ({ id: a.id, url: a.url, name: a.name }));
+  }, [libraryAssets]);
+  const weeklyMaterial: WeeklyMaterialItem | null = useMemo(() => {
+    if (!libraryAssets) return null;
+    const pool = libraryAssets.filter((a) => a.usage === 'material');
+    return pickWeeklyItem(pool, new Date());
+  }, [libraryAssets]);
+
+  // ---------- ④ "widget trống tự ẩn, ô lân cận giãn" — cờ rỗng của 5 ô CÓ THỂ rỗng ----------
+  const s = summary ?? EMPTY_SUMMARY;
+  const hasD = weeklyImages.length > 0;
+  const hasE = stageChartHasSignal(s);
+  const hasG = upcomingHasSignal(s);
+  const hasH = !!weeklyMaterial;
+  // ô I: lưới tích luỹ THAY CHỖ bảng tin khi đủ dày (④ "đủ dày thì thay chỗ ô I" — chọn nhánh
+  // này thay vì "thêm hàng" vì thêm hàng phá luật "một màn không cuộn" ở desktop, xem báo cáo ⑦).
+  const showActivityInI = shouldShowActivityGrid(s.activityDays);
+  const hasI = showActivityInI || newsHasSignal(s);
+  const hasC = todayHasSignal(s);
+
+  const openTasksByProject = summary?.openTasksByProject;
+
+  // ---- vùng trên-phải (B/C, row1) — C rỗng thì B (luôn có) giãn hết 5 cột ----
+  const bArea = area(hasC ? [8, 11] : [8, 13], [1, 2]);
+  // ---- vùng dưới-trái row3 (E/F/G dưới ô A) — F (luôn có) hấp thụ cột của E/G khi rỗng ----
+  const eArea = area([1, 4], [3, 4]);
+  const fAreaLeft: [number, number] = hasE && hasG ? [4, 6] : hasE ? [4, 8] : hasG ? [1, 6] : [1, 8];
+  const gArea = area([6, 8], [3, 4]);
+  // ---- vùng dưới-phải (D trên, H/I dưới, cols 8-12) — D rỗng thì H/I giãn LÊN chiếm cả 2 hàng;
+  //      trong hàng dưới, H/I rỗng thì bên còn lại giãn NGANG hết 5 cột. Bảng đủ 8 tổ hợp ở
+  //      báo cáo ⑦ (comment đầu file dẫn tới đó) — ở đây chỉ tính 2 trục độc lập cho gọn. */
+  const rightRow: [number, number] = hasD ? [3, 4] : [2, 4];
+  const hArea = area(hasI ? [8, 11] : [8, 13], rightRow);
+  const iArea = area(hasH ? [11, 13] : [8, 13], rightRow);
+
+  const bentoGrid = (
     <div
-      className="relative h-[100dvh] overflow-x-hidden overflow-y-auto"
-      style={{ scrollSnapType: reduce ? undefined : 'y proximity' }}
-      data-dong-studio=""
+      className="grid h-full w-full"
+      style={{ gridTemplateColumns: 'repeat(12, minmax(0,1fr))', gridTemplateRows: 'repeat(3, minmax(0,1fr))', gap: 'var(--gap)' }}
     >
-      {/* Vitals thu về pill góc màn (④.3) — fixed, sống ở MỌI trang cuộn, không chiếm giữa màn. */}
-      <VitalsPill />
-
-      {/* ============ TRANG 1 · "nơi chốn" ============ */}
-      <section className="relative w-full" style={{ scrollSnapAlign: 'start' }}>
-        {/* Tầng 1 "tiếp tục" — ánh sáng theo giờ thật (④.1) + lời chào dữ liệu thật (④.2).
-            Dải mỏng, KHÔNG chiếm cả Trang 1 — Tầng 2 (ProjectSelect ngay dưới) giữ nguyên lớp
-            ambient-từ-ảnh-card riêng của nó (đã có, tinh vi hơn); dải này chỉ phủ phần TRÊN
-            CÙNG, hoà mượt vào nền `var(--bg)` bằng lớp fade ở đáy. */}
-        <div className="relative h-40 w-full overflow-hidden sm:h-48">
-          <div className="absolute inset-0" style={{ background: tod.gradient }} aria-hidden />
-          {summary?.ambientImage && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={summary.ambientImage.url}
-              alt=""
-              draggable={false}
-              className="absolute inset-0 h-full w-full object-cover opacity-40 mix-blend-overlay"
-              aria-hidden
+      {/* Ô A · DỰ ÁN — 7c × 2h, luôn hiện (never rỗng: "+ Dự án mới" luôn có trong ProjectSelect) */}
+      <div style={area([1, 8], [1, 3])} className="flex h-full flex-col overflow-hidden">
+        <div
+          className="flex h-full flex-col overflow-hidden rounded-[var(--r-3)]"
+          style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+        >
+          <div className="shrink-0 px-3.5 pb-1 pt-3 font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-[var(--t4)]">
+            <span style={{ color: 'var(--t5)' }}>01</span> {tr('Dự án', 'Projects')}
+          </div>
+          <div className="min-h-0 flex-1">
+            <ProjectSelect
+              onEnter={onEnter}
+              hideHeroCopy
+              hideVitalsBar
+              bentoBox
+              openTasksByProject={openTasksByProject}
+              onNoteDrop={handleNoteDrop}
+              armedNoteId={armedNoteId}
+              revealAll={revealAll}
             />
-          )}
-          <div
-            className="absolute inset-x-0 bottom-0 h-16"
-            style={{ background: 'linear-gradient(to bottom, transparent, var(--bg))' }}
-            aria-hidden
-          />
-          <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
-            <h1
-              className="text-[length:var(--fs-lg)] font-semibold"
-              // Chữ trên gradient động (không phải token) — CÙNG cơ chế adaptiveTextStyle của
-              // ProjectSelect.tsx (chữ trên ảnh/gradient KHÔNG token hoá được, phải đo tương phản
-              // trực tiếp). tod.textOnGradient đã tính sẵn nấc sáng/tối phù hợp từng khung giờ.
-              style={{ color: lightTextOnGradient ? '#ffffff' : '#1a1a1a' }}
-            >
-              {greeting.headline}
-            </h1>
-            {greeting.signal && (
-              <p
-                className="mt-1 text-[length:var(--fs-sm)]"
-                style={{ color: lightTextOnGradient ? 'rgba(255,255,255,0.82)' : 'rgba(20,20,20,0.72)' }}
-              >
-                {greeting.signal}
-              </p>
-            )}
           </div>
         </div>
+      </div>
 
-        {/* Tầng 2 "triển lãm" — GIỮ NGUYÊN ProjectSelect (toggle carousel/grid, tìm kiếm, card
-            dự án đợt 3). hideHeroCopy/hideVitalsBar cắt hero 2 dòng + thanh Vitals to cũ. */}
-        <ProjectSelect onEnter={onEnter} hideHeroCopy hideVitalsBar />
-      </section>
+      {/* Ô B · CHÀO + ĐỒNG HỒ ÁNH SÁNG — luôn hiện; C rỗng thì B giãn hết 5 cột (`bArea`) */}
+      <div style={bArea}>
+        <LightClock headline={greeting.headline} signal={greeting.signal} tick={minuteTick} index="02" />
+      </div>
 
-      {/* ============ TRANG 2 · "studio đang thở" ============ */}
-      <section
-        className="relative w-full px-4 py-10 sm:px-8"
-        style={{ scrollSnapAlign: 'start', minHeight: '100dvh', background: 'var(--bg)' }}
-      >
-        <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-4 md:grid-cols-2">
-          {summary && (
-            <div className="md:col-span-2">
-              <TodayStrip summary={summary} />
-            </div>
-          )}
-          {summary && <StageChart summary={summary} />}
-          {summary && <ContributionGrid summary={summary} />}
-          {/* QuickNotes LUÔN render (không đợi summary) — ô gõ hữu ích cả khi chưa có dữ liệu
-              nào khác; recentProjects rỗng thì widget tự bỏ dải chấm màu, vẫn còn ô gõ. */}
-          <QuickNotes summary={summary ?? EMPTY_SUMMARY} />
-          {summary && (
-            <div className="md:col-span-2">
-              <NewsFeed summary={summary} />
-            </div>
-          )}
-          {summary && (
-            <div className="md:col-span-2">
-              <UpcomingList summary={summary} />
-            </div>
-          )}
+      {/* Ô C · HÔM NAY — tự ẩn */}
+      {hasC && (
+        <div style={area([11, 13], [1, 2])}>
+          <TodayStrip summary={s} index="03" />
         </div>
-      </section>
+      )}
+
+      {/* Ô D · ẢNH ĐẸP TUẦN NÀY — tự ẩn; rỗng thì H/I (hàng dưới, cùng cột) giãn LÊN chiếm cả 2 hàng (`rightRow`) */}
+      {hasD && (
+        <div style={area([8, 13], [2, 3])}>
+          <WeeklyImage images={weeklyImages} eightSecTick={eightSecTick} index="04" />
+        </div>
+      )}
+
+      {/* ---- Hàng 3 trái (dưới ô A): E · BIỂU ĐỒ CHẶNG · F · GHI CHÚ · G · MỐC SẮP TỚI ---- */}
+      {hasE && (
+        <div style={eArea}>
+          <StageChart summary={s} index="05" />
+        </div>
+      )}
+      <div style={area(fAreaLeft, [3, 4])}>
+        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index="06" />
+      </div>
+      {hasG && (
+        <div style={gArea}>
+          <UpcomingList summary={s} index="07" />
+        </div>
+      )}
+
+      {/* ---- Hàng 3 phải (dưới ô D): H · VẬT LIỆU CỦA TUẦN · I · BẢNG TIN / LƯỚI TÍCH LUỸ ---- */}
+      {hasH && (
+        <div style={hArea}>
+          <WeeklyMaterial item={weeklyMaterial} index="08" />
+        </div>
+      )}
+      {hasI && (
+        <div style={iArea}>
+          {showActivityInI ? <ContributionGrid summary={s} /> : <NewsFeed summary={s} index="09" />}
+        </div>
+      )}
+    </div>
+  );
+
+  const stackedList = (
+    <div className="flex w-full flex-col gap-[var(--gap)] px-3 pb-6 pt-3">
+      <div className="flex h-[440px] flex-col overflow-hidden rounded-[var(--r-3)]" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
+        <div className="shrink-0 px-3.5 pb-1 pt-3 font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-[var(--t4)]">
+          <span style={{ color: 'var(--t5)' }}>01</span> {tr('Dự án', 'Projects')}
+        </div>
+        <div className="min-h-0 flex-1">
+          <ProjectSelect
+            onEnter={onEnter}
+            hideHeroCopy
+            hideVitalsBar
+            bentoBox
+            openTasksByProject={openTasksByProject}
+            onNoteDrop={handleNoteDrop}
+            armedNoteId={armedNoteId}
+            revealAll={revealAll}
+          />
+        </div>
+      </div>
+      <div className="h-[170px]">
+        <LightClock headline={greeting.headline} signal={greeting.signal} tick={minuteTick} index="02" />
+      </div>
+      {hasC && (
+        <div className="h-[150px]">
+          <TodayStrip summary={s} index="03" />
+        </div>
+      )}
+      {hasD && (
+        <div className="h-[220px]">
+          <WeeklyImage images={weeklyImages} eightSecTick={eightSecTick} index="04" />
+        </div>
+      )}
+      {hasE && (
+        <div className="h-[190px]">
+          <StageChart summary={s} index="05" />
+        </div>
+      )}
+      <div className="h-[220px]">
+        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index="06" />
+      </div>
+      {hasG && (
+        <div className="h-[200px]">
+          <UpcomingList summary={s} index="07" />
+        </div>
+      )}
+      {hasH && (
+        <div className="h-[110px]">
+          <WeeklyMaterial item={weeklyMaterial} index="08" />
+        </div>
+      )}
+      {hasI && (
+        <div className="h-[220px]">{showActivityInI ? <ContributionGrid summary={s} /> : <NewsFeed summary={s} index="09" />}</div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className={isWide ? 'relative h-[100dvh] w-full overflow-hidden' : 'relative min-h-[100dvh] w-full overflow-y-auto'} data-dong-studio="">
+      {/* Nền toàn trang = ánh sáng theo giờ thật (giữ v2) nhưng MỜ/TRẦM (④.1 phiếu v3) — thẻ
+          bento nổi trên nền, nền không còn "là" nội dung như hero v2 nữa. */}
+      <div className="pointer-events-none absolute inset-0" style={{ background: 'var(--bg)' }} aria-hidden />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.16]" style={{ background: tod.gradient }} aria-hidden />
+
+      <VitalsPill />
+
+      <div className={isWide ? 'relative z-10 h-full w-full p-3' : 'relative z-10 w-full'}>
+        {isWide ? bentoGrid : stackedList}
+      </div>
     </div>
   );
 }
-
-/** Shape rỗng hợp lệ — cho QuickNotes render ngay cả trước khi `/api/home/summary` trả lời
- * (chỉ QuickNotes cần trước; các widget khác đợi `summary` thật vì chúng tự ẩn khi rỗng). */
-const EMPTY_SUMMARY: HomeSummary = {
-  greeting: { dueTodayCount: 0 },
-  today: { tasksDoneToday: 0, online: [] },
-  recentProjects: [],
-  stageChart: [],
-  activityDays: [],
-  news: [],
-  upcoming: [],
-  ambientImage: null,
-};

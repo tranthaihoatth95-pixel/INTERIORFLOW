@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/server/auth';
-import { readHomeNotes, appendHomeNote, deleteHomeNote } from '@/lib/home/notes-store';
+import { readHomeNotes, appendHomeNote, deleteHomeNote, setHomeNoteProject } from '@/lib/home/notes-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +21,22 @@ export async function POST(req: Request) {
   if (!text) return NextResponse.json({ error: 'thiếu text' }, { status: 400 });
   const projectId = typeof body.projectId === 'string' && body.projectId ? body.projectId : null;
   const notes = await appendHomeNote(user.id, { text: text.slice(0, 500), projectId });
+  return NextResponse.json({ notes });
+}
+
+/**
+ * PATCH /api/home/notes { id, projectId } — v3 (13/08 home-bento-v3.md, ④.2 ô F) gán/đổi thẻ dự
+ * án của 1 ghi chú ĐÃ CÓ (kéo-thả note vào card dự án ở ô A, hoặc fallback click-chọn).
+ * `projectId: null` = gỡ thẻ (ghi chú chung).
+ */
+export async function PATCH(req: Request) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const body = await req.json().catch(() => ({}));
+  const id = typeof body.id === 'string' ? body.id : '';
+  if (!id) return NextResponse.json({ error: 'thiếu id' }, { status: 400 });
+  const projectId = typeof body.projectId === 'string' && body.projectId ? body.projectId : null;
+  const notes = await setHomeNoteProject(user.id, id, projectId);
   return NextResponse.json({ notes });
 }
 

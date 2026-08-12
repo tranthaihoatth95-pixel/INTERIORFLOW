@@ -21,6 +21,9 @@ export interface HomeSummary {
     online: { id: string; name: string }[];
   };
   recentProjects: { id: string; name: string }[];
+  /** v3 (13/08 home-bento-v3.md ④.2 ô A) — số Task CHƯA XONG theo projectId, cho lớp kính dữ
+   * liệu hover trên card dự án ("việc mở"). Thiếu key = 0 việc mở, KHÔNG bịa số. */
+  openTasksByProject: Record<string, number>;
   stageChart: {
     phase: Phase;
     label: string;
