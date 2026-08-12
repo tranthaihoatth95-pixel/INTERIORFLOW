@@ -26,6 +26,9 @@ TRƯỚC khi nhận việc mới — im lặng để app xây lệch là T vi ph
 1. **TRAO ĐỔI** — Hoà và T bàn tự do (ý tưởng, ảnh ref, lời chê). T được đóng vai đa ngành
    (KTS · designer nội thất · kỹ sư M&E · drafter · 3D artist · chủ xưởng · CĐT) để phản biện.
 2. **HOÀ NÓI "CHỐT"** — từ khoá kích hoạt. Chưa có chữ "chốt" thì mọi thứ chỉ là bàn.
+   **2b · PHẢN BIỆN TRƯỚC CHỐT (nâng cấp 12/08):** với chốt cỡ lớn (tính năng mới / đổi kiến
+   trúc / đổi định vị), T bắt buộc trình kèm MỘT đoạn "lập luận chống mạnh nhất + chi phí cơ
+   hội" TRƯỚC khi Hoà gõ chốt — hệ thống phải có phanh, không chỉ có ga.
 3. **T LẬP PLAN** ngay sau chốt, gồm BẢNG TÍNH NĂNG ĐÃ CHỐT — mỗi dòng bắt buộc đủ 5 cột:
    - **Tên** (thoả global · trung tính · rõ ngữ nghĩa · thực thi được)
    - **Giải quyết chuyện gì** (painpoint ngành, tận gốc — không mô tả tính năng suông)
@@ -44,6 +47,8 @@ TRƯỚC khi nhận việc mới — im lặng để app xây lệch là T vi ph
 7. **PHIÊN V KIỂM CHỨNG** (riêng, sau mỗi đợt): đối chiếu toàn bộ báo cáo folder chung với
    code + file đầu ra; xuất `docs/bao-cao-phien/YYYY-MM-DD-V-kiem-chung.md` — liệt kê
    khớp/lệch/khai man. Lệch = mở lại entry registry, không tranh luận.
+   **V đếm 3 CON SỐ mỗi đợt (nâng cấp 12/08):** ① số lệch bắt được ② thời gian chu kỳ
+   chốt→ship ③ số việc phải làm lại — "tối ưu hiệu suất" phải đo được, không chạy bằng cảm giác.
 8. **T TỔNG KẾT cho Hoà**: bảng commit · cái gì đạt Cửa · lệch V bắt được · các quyết đang
    chờ tay Hoà. Kết mỗi phiên: `soi:frontier` + `soi:hinh-hoc` phải 0 lệch mới được nghỉ.
 
@@ -146,5 +151,32 @@ Mọi thứ còn lại tự chạy:
    nhất (không bắt Hoà đọc từng báo cáo con).
 4. Máy canh nền: soi:frontier + soi:hinh-hoc (0 lệch mới kết phiên) · bản đọc 8 TRỤ cuối đợt
    · cảnh báo tự phát khi trụ đói/anti-pattern chớm — KHÔNG đợi Hoà hỏi.
+
+## §8 · HAI TRẠNG THÁI NGHIỆM THU + CHỐNG LỆCH ĐỊNH NGHĨA (nâng cấp Hoà duyệt 12/08)
+
+1. **`xong` (xong-MÁY) ≠ `xong-mat` (đã qua MẮT Hoà).** Registry + soi-frontier phân biệt 2
+   trạng thái; dòng tổng luôn hiện "NỢ NGHIỆM THU MẮT". Định kỳ một **phiên duyệt mắt gộp**:
+   T soạn 1 lô ảnh/file đầu ra, Hoà soi 20 phút, T flip loạt `xong → xong-mat`. Cửa A/B/C chỉ
+   đóng khi nợ mắt của giai đoạn = 0.
+2. **CHỐNG LỆCH ĐỊNH NGHĨA** — `npm run soi:tu-dien` (scripts/soi-tu-dien.mjs): TỪ ĐIỂN CHUẨN
+   máy-đọc (từ đã chốt ↔ từ lỗi thời/cấm), grep UI + mock, báo chỗ dùng sai. KỶ LUẬT: chốt
+   TÊN mới = thêm 1 entry từ điển ngay lúc chốt (cùng nhịp frontier-registry); dùng từ ngoài
+   chuẩn trong tài liệu/UI mới = lệch, sửa trước khi commit.
+
+## §9 · TỔNG QUAN ĐỒNG BỘ — nhận diện cơ chế TƯƠNG ĐỒNG để học chéo (Hoà đặt 12/08)
+
+T có nghĩa vụ thường trực nhìn đa chiều và NHẬN RA các cơ chế giống nhau giữa (a) quy trình
+build app và (b) sản phẩm IF — để tái dùng tài nguyên, học chéo hai chiều thay vì phát minh
+hai lần. Các đẳng cấu ĐÃ NHẬN DIỆN (12/08 — mỗi cặp là một cơ hội áp dụng chéo):
+
+| Cơ chế phía BUILD (nhóm Tạo công cụ) | Cơ chế phía SẢN PHẨM (IF) | Áp dụng chéo |
+|---|---|---|
+| Sổ Frontier Sống (registry + soi 2 chiều) | Drawing Register + kiểm chuẩn CHUAN_DAU_RA | IF nên có "SỔ DỰ ÁN SỐNG": registry deliverable từng dự án, máy kiểm bản vẽ nào xong/lệch — đúng deliverable ngành (drawing register NC-6-vai) |
+| Hợp đồng giao việc 8 ô tự chứa | TaskContext + template Bảng việc | phiếu việc trong IF cũng nên TỰ CHỨA ngữ cảnh như phiếu giao agent |
+| Phiên V kiểm chứng độc lập | Cổng Duyệt nội bộ (Review Gate) | cùng một khuôn: người làm ≠ người kiểm; checklist sạch mới ra cổng |
+| xong-máy / xong-mắt | trạng thái bản vẽ WIP → Checked → Approved (tinh thần ISO 19650) | trạng thái deliverable trong IF dùng đúng cặp máy-kiểm/người-duyệt |
+| Phiếu 5 Ô — kịch bản hành vi | Nghiệm thu bàn giao / as-built | nghiệm thu dự án thật = làm theo kịch bản, không nghiệm thu bằng lời |
+
+Khi T thấy đẳng cấu MỚI → đề xuất vào bảng này (chốt của Hoà mới thành luật).
 
 *Lập 12/08/2026 theo lệnh Hoà. Sửa hợp đồng này = chốt mới, ghi 00-CHOT.*

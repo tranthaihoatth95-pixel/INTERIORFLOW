@@ -80,6 +80,12 @@ export const FRONTIER = [
     bangChung: [{ dir: 'components', mau: 'GalleryLienNganh|gallery-curated' }] },
   { id: 'home-overview-card', ten: 'Home đổi ngữ nghĩa thành TỔNG QUAN DỰ ÁN (nhường tên Gallery cho kho ảnh): card = tên + quy mô (đọc ProjectProfile) + start + PresenceRow avatar online/offline + click nhảy STAGE ĐANG DỞ (lưu lastStage)', he: 'Workspace', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'components', mau: 'lastStage|ProjectOverviewCard' }] },
+  { id: 'chong-lech-dinh-nghia', ten: 'Máy soi TỪ ĐIỂN CHUẨN (12/08: soi-tu-dien.mjs — phát đầu bắt 81 chỗ nhãn lệch; sửa khi chạm, nhãn hiển thị sửa ngay)', he: 'DocCore', dot: 1, trangThai: 'xong',
+    bangChung: [{ dir: 'scripts', mau: 'soi-tu-dien' }] },
+  { id: 'backup-offsite', ten: 'Backup tự động dev.db + uploads ra NGOÀI máy (rủi ro một-đĩa — nâng cấp Hoà duyệt 12/08)', he: 'DocCore', dot: 1, trangThai: 'chua',
+    bangChung: [{ dir: 'scripts', mau: 'backup-offsite|backupOffsite' }] },
+  { id: 'nguoi-dung-that', ten: 'Vòng người dùng thật trước Cửa B: 2-3 người TTT chạy kịch bản Phiếu trên app, note về Cổng Duyệt/Dòng Hoạt Động', he: 'Workspace', dot: 2, trangThai: 'chua',
+    bangChung: [{ dir: 'docs/bao-cao-phien', mau: 'nguoi-dung-that|phan-hoi-ttt' }] },
   // ── ĐỢT 2 · LÕI DỰNG ────────────────────────────────────────────────────────
   { id: 'tool-state-3d', ten: 'Máy trạng thái công cụ 3D (mở 12 nút dock chờ)', he: 'NhapLenh', dot: 2, trangThai: 'chua',
     bangChung: [{ file: 'components/render-studio/ToolDock3D.tsx', mau: 'CHUA_DUNG_DUOC', can: false }] },

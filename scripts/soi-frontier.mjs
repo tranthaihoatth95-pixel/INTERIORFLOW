@@ -52,9 +52,11 @@ const rows = [];
 for (const it of FRONTIER) {
   const holds = doneHolds(it);
   let mark, note;
-  if (it.trangThai === 'xong' && holds) { mark = '✅'; note = 'xong, bằng chứng còn'; }
+  const done = it.trangThai === 'xong' || it.trangThai === 'xong-mat';
+  if (it.trangThai === 'xong-mat' && holds) { mark = '👁'; note = 'đã qua mắt Hoà'; }
+  else if (it.trangThai === 'xong' && holds) { mark = '✅'; note = 'xong-MÁY (chưa qua mắt Hoà)'; }
   else if (it.trangThai === 'chua' && !holds) { mark = '⬜'; note = 'chưa làm (đúng sổ)'; }
-  else if (it.trangThai === 'xong' && !holds) { mark = '🔴'; note = 'KHAI XONG mà bằng chứng MẤT — regress?'; red++; }
+  else if (done && !holds) { mark = '🔴'; note = 'KHAI XONG mà bằng chứng MẤT — regress?'; red++; }
   else { mark = '🔴'; note = 'CODE CÓ RỒI mà sổ ghi chưa — cập nhật registry + nối dây'; red++; }
   rows.push({ mark, dot: it.dot, id: it.id, he: it.he, ten: it.ten, note });
 }
@@ -68,8 +70,9 @@ for (const r of rows) {
   if (r.dot !== lastDot) { console.log(`\n· ĐỢT ${r.dot === 0 ? '0 (đã xong — canh regress)' : r.dot}`); lastDot = r.dot; }
   console.log(`  ${r.mark} ${r.id.padEnd(w)}  [${r.he}] ${r.ten}${r.mark === '🔴' ? `\n     ↳ ${r.note}` : ''}`);
 }
-const done = rows.filter((r) => r.mark === '✅').length;
+const mayOnly = rows.filter((r) => r.mark === '✅').length;
+const mat = rows.filter((r) => r.mark === '👁').length;
 const todo = rows.filter((r) => r.mark === '⬜').length;
 console.log('─'.repeat(100));
-console.log(`✅ ${done} xong · ⬜ ${todo} chờ · 🔴 ${red} LỆCH${red ? '  ← xử lệch TRƯỚC khi bàn việc mới' : ''}\n`);
+console.log(`👁 ${mat} qua mắt Hoà · ✅ ${mayOnly} xong-MÁY (NỢ NGHIỆM THU MẮT) · ⬜ ${todo} chờ · 🔴 ${red} LỆCH${red ? '  ← xử lệch TRƯỚC khi bàn việc mới' : ''}\n`);
 process.exit(red ? 1 : 0);
