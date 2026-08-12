@@ -221,7 +221,7 @@ export default function Tool3DBar({ selectedEntityId, bottomPx = 130 }: Tool3DBa
       className="if-3d-tool-bar"
       style={{
         position: 'absolute', left: '50%', bottom: bottomPx, transform: 'translateX(-50%)', zIndex: 6,
-        display: 'flex', alignItems: 'center', gap: 10, padding: '7px 12px', borderRadius: 12,
+        display: 'flex', alignItems: 'center', gap: 10, padding: '7px 12px', borderRadius: RADIUS.r3, // thang bo 12/08
         background: 'color-mix(in srgb, var(--panel) 96%, transparent)',
         border: '1px solid var(--mat-hairline)', boxShadow: '0 12px 30px rgba(0, 0, 0, .2)',
         fontSize: 11, lineHeight: 1.5, color: 'var(--t2)', whiteSpace: 'nowrap',
@@ -251,7 +251,7 @@ export default function Tool3DBar({ selectedEntityId, bottomPx = 130 }: Tool3DBa
                 inputMode="decimal"
                 aria-label={tr(f.vi, f.en)}
                 style={{
-                  width: 58, padding: '3px 6px', borderRadius: 7, border: '1px solid var(--border-strong)',
+                  width: 58, padding: '3px 6px', borderRadius: concentricRadius(RADIUS.r3, 7), border: '1px solid var(--border-strong)',
                   background: 'var(--field)', color: 'var(--t1)', fontSize: 11, lineHeight: 1.5,
                   fontVariantNumeric: 'tabular-nums', outline: 'none', fontFamily: 'inherit',
                 }}
@@ -262,7 +262,7 @@ export default function Tool3DBar({ selectedEntityId, bottomPx = 130 }: Tool3DBa
             type="button"
             onClick={() => { applyRef.current(); setActive('select'); }}
             style={{
-              height: 24, padding: '0 10px', border: 0, borderRadius: 8, background: 'var(--accent)',
+              height: 24, padding: '0 10px', border: 0, borderRadius: concentricRadius(RADIUS.r3, 7), background: 'var(--accent)',
               color: 'var(--on-accent)', fontFamily: 'inherit', fontSize: 11, fontWeight: 600,
               cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
             }}
