@@ -1324,7 +1324,7 @@ function BuildRecipeSection({ scene }: { scene: Scene3DData | null }) {
                   <div
                     key={step.id}
                     className={cn(
-                      'rounded-[8px] border px-2 py-1.5 transition-colors',
+                      'rounded-[var(--r-2)] border px-2 py-1.5 transition-colors',
                       error ? 'border-[var(--danger,#c0392b)]' : 'border-[var(--border)]',
                       !step.enabled && 'opacity-55',
                     )}
@@ -1405,7 +1405,7 @@ function BuildRecipeSection({ scene }: { scene: Scene3DData | null }) {
                 onClick={a.run}
                 title={a.disabled ? tr('khối này không có biên đa giác để vát', 'this block has no polygon boundary to bevel') : undefined}
                 className={cn(
-                  'rounded-[8px] border px-2 py-1 text-[10px] font-semibold transition-colors',
+                  'rounded-[var(--r-2)] border px-2 py-1 text-[10px] font-semibold transition-colors',
                   a.disabled
                     ? 'cursor-not-allowed border-dashed border-[var(--border)] text-[var(--t5)]'
                     : 'border-[var(--border)] text-[var(--t3)] hover:border-[var(--accent-ring)] hover:text-[var(--accent)]',

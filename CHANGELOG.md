@@ -1625,3 +1625,9 @@ AI ở Settings không ăn" — nghi đúng nguyên nhân này (route không qua
 
 
 </details>
+
+## 12/08/2026 — Đợt 2 & 3 & phiên dài (chuyển từ STATUS để giữ <800 từ)
+
+- **12/08 rạng sáng (đợt 2, 4 agent + audit):** né nhãn v2 đạt trọn luật (dim ra ngoài nhà 2 lớp, WC/BẾP leader chuẩn nghề — PDF soi mắt độc lập) · Story Set v1 (hero output 8 trang, thẻ đầu gallery hồ sơ, ảnh Unsplash verify 200) · Bảng khởi tạo dự án (ProjectProfile model+API + Scaffolder gợi ý theo loại hình kèm căn cứ, việc gieo mang TaskContext) · Kho THẬT (Library đọc LibraryAsset, FM bỏ mock, 17 seed minh hoạ tải offline, gỡ --undo). Đợt 1 đã push origin (65fb168).
+- **12/08 đêm (phiên dài, 4 agent + audit mắt):** xuất 2D đạt LUẬT (tỷ lệ bắt nấc 1:50, khung tên 9 ô sạch jargon, né nhãn v1 leader, gate CHUAN_DAU_RA trong dialog xuất) · Material Impact preview (hỏi trước khi áp, số thật 6 nơi tiêu thụ, undo giữ nguyên) · TaskContext (stage/workspace/entity + migration + chip chặng deep-link) · ThinkDial 4 nấc (Nghiên cứu nối RAG notebook) · LightArc + PresenceRow. Luật mới CHUAN-DAU-RA-NGHE.md: nghiệm thu = MỞ FILE ĐẦU RA.
+- **12/08 chiều (ĐỢT 3, mô hình T trọn 8 bước, 5 agent song song 14ph24s, V độc lập bắt 1 lệch đã vá):** tool-state 3D (dock 12→8 nút sống + Tool3DBar) · thang bo áp v1 (498→442) · TaskContext khép 2 chiều cả 3 chặng · Home = Tổng quan dự án · backup offsite.

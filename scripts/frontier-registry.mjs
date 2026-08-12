@@ -35,7 +35,7 @@ export const FRONTIER = [
     bangChung: [{ file: 'prisma/schema.prisma', mau: 'model ProjectProfile' }] },
   { id: 'scaffolder', vai: 'mvp', ten: 'Máy Sinh Khung v1 (12/08: suggestScaffold theo loại hình KÈM căn cứ, gieo việc mang stage TaskContext; thiếu loại hình → im, không đoán)', he: 'TriTueDuAn', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'lib', mau: 'ProjectScaffolder' }] },
-  { id: 'dna-card', vai: 'mvp', ten: 'Thẻ DNA Thiết kế (8 lớp · 3 đầu ra · trạng thái)', he: 'TriTueDuAn', dot: 1, trangThai: 'chua',
+  { id: 'dna-card', vai: 'mvp', ten: 'Thẻ DNA Thiết kế (12/08 Đợt 4: DistillEngine generic lib/distill + 8 lớp đúng NC:53 + cờ 3 nấc + lưu JSON per-project không bảng mới + panel Tổng quan; chọn ảnh tay vì LibraryAsset chưa có projectId — biên đề xuất T: cơ chế provenance project chung)', he: 'TriTueDuAn', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'lib', mau: 'DnaCard|DesignDnaCard' }] },
   { id: 'task-context', vai: 'mvp', ten: 'Dây Việc–Ngữ Cảnh (12/08: schema+API+deep-link+chip chặng — chiều ngược Tạo-việc-từ-đây và đọc focusEntity ở chặng là entry riêng sau)', he: 'Workspace', dot: 1, trangThai: 'xong',
     bangChung: [{ file: 'prisma/schema.prisma', mau: 'workspaceId String\\?' }] }, // regex block-brace vấp dấu } trong docblock — đổi sang mẫu field trực tiếp (12/08)
@@ -80,7 +80,7 @@ export const FRONTIER = [
 
   { id: 'hatch-t-junction-cay-lai', vai: 'do', ten: 'Đánh giá + cấy lại nhánh fix/hatch-t-junction (11/07, +244 dòng DCEL biên phòng vách chữ T + 29 test — GIỮ nhánh, merge thẳng sẽ conflict vì lib/cad đã đổi)', he: 'DocCore', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'lib/cad', mau: 'facesFromDcel|hatch-t-junction' }] },
-  { id: 'gallery-lien-nganh', vai: 'mvp', ten: 'GALLERY — kho ảnh tuyển liên ngành (kiến trúc·nội thất·cảnh quan·graphic·art) phân nhóm + bộ sưu tập xu hướng CÓ NGUỒN; mặt tiền tuyển chọn của kệ Ảnh & tài sản (không đẻ kho mới); nguồn sạch giấy phép (CC0/Unsplash/studio/AI/user — cấm Pinterest); NUÔI Thẻ DNA + moodboard + Story Set ch.3', he: 'LibraryFirst', dot: 2, trangThai: 'chua',
+  { id: 'gallery-lien-nganh', vai: 'mvp', ten: 'GALLERY liên ngành (12/08 Đợt 4: route /library/gallery + quy ước tag nganh/license/nguon/bosuutap trên LibraryAsset 0 cột mới + bộ sưu tập bắt buộc nguồn + chặn Pinterest; seed 17 ảnh đã gắn tag trong script — CẦN CHẠY LẠI SEED để tag vào DB; đề xuất K: PATCH /api/library/[id] cho đề xuất nguồn ghi thật)', he: 'LibraryFirst', dot: 2, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'GalleryLienNganh|gallery-curated' }] },
   { id: 'home-overview-card', vai: 'do', ten: 'Home = Tổng quan dự án (12/08: card quy mô ProjectProfile + PresenceRow thành viên thật + click nhảy lastStage, thiếu dữ liệu tự ẩn; ⚠️ đổi hành vi: mặc định concept thay render — Hoà xem ở phiên duyệt mắt)', he: 'Workspace', dot: 2, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'lastStage|ProjectOverviewCard' }] },
@@ -103,10 +103,10 @@ export const FRONTIER = [
   // ── ĐỢT 2 · LÕI DỰNG ────────────────────────────────────────────────────────
   { id: 'tool-state-3d', vai: 'day', ten: 'Máy trạng thái công cụ 3D (12/08: useTool3D + Tool3DBar nhập số, dock disabled 12→5, gizmo-first giữ nguyên; nhánh 3D focusEntity+tạo-việc luôn; còn click-điểm viewport = đề xuất đợt sau)', he: 'NhapLenh', dot: 2, trangThai: 'xong',
     bangChung: [{ file: 'components/render-studio/ToolDock3D.tsx', mau: 'CHUA_DUNG_DUOC', can: false }] },
-  { id: 'build-recipe', vai: 'mvp', ten: 'Công Thức Khối — BuildOp thành stack sửa-lại-được', he: 'BuildRecipe', dot: 2, trangThai: 'chua',
+  { id: 'build-recipe', vai: 'mvp', ten: 'Công Thức Khối (12/08 Đợt 4: evalRecipe + Base.recipe additive không vỡ .idf cũ + UI ngăn xếp tab Sửa; ops[]/opsDisabled cũ giữ nguyên — recipe ưu tiên khi có; nợ D2 flag: opsDisabled 0 caller + hasOpsGeometry nhánh ops[] sót array/mirror/shape)', he: 'BuildRecipe', dot: 2, trangThai: 'xong',
     bangChung: [{ dir: 'lib/three', mau: 'BuildRecipe' }] },
   // 12/08 Đợt 4 — T mở entry theo uỷ quyền plan (docType đầu = schedule "Bảng thống kê"):
-  { id: 'editor-bang-bieu-mau', vai: 'mvp', ten: 'Engine bảng chung (TableDocEngine, nâng từ BOQ) — docType đầu: schedule "Bảng thống kê" đọc Doc 2D thật (cửa/phòng, hàng giữ entityId), re-sync không ghi đè ô tay, xuất XLSX/PDF sửa được; spec-sheet/approval-form là mặt tiền sau', he: 'Workspace', dot: 4, trangThai: 'chua',
+  { id: 'editor-bang-bieu-mau', vai: 'mvp', ten: 'Engine bảng chung (12/08 Đợt 4: TableDocEngine trừu tượng từ boq-overrides/boq-group + schedule "Bảng thống kê" cửa/phòng giữ entityId + re-sync không đè ô tay + thẻ thật trong picker, BOQ 0 hồi quy; BoqScreen chưa rewire qua engine — chủ đích, chờ verify browser; spec-sheet/approval-form là mặt tiền sau)', he: 'Workspace', dot: 4, trangThai: 'xong',
     bangChung: [{ dir: 'lib/present-editor', mau: 'TableDocEngine' }] },
   { id: 'snap-hop-nhat', vai: 'day', ten: 'Bắt Điểm Hợp Nhất — một engine 2D↔3D', he: 'SnapCore', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'SnapCore' }] },
