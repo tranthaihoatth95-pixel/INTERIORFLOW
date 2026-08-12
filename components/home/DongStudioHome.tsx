@@ -59,7 +59,6 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
     now: new Date(),
     en,
     dueTodayCount: summary?.greeting.dueTodayCount ?? 0,
-    recentProjectName: summary?.greeting.recentProjectName ?? null,
   });
   const lightTextOnGradient = tod.textOnGradient === 'light';
 
@@ -156,8 +155,8 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
 /** Shape rỗng hợp lệ — cho QuickNotes render ngay cả trước khi `/api/home/summary` trả lời
  * (chỉ QuickNotes cần trước; các widget khác đợi `summary` thật vì chúng tự ẩn khi rỗng). */
 const EMPTY_SUMMARY: HomeSummary = {
-  greeting: { dueTodayCount: 0, recentProjectName: null },
-  today: { tasksDoneToday: 0, online: [], recentProject: null },
+  greeting: { dueTodayCount: 0 },
+  today: { tasksDoneToday: 0, online: [] },
   recentProjects: [],
   stageChart: [],
   activityDays: [],

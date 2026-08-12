@@ -9,9 +9,12 @@ import {
   buildActivityDays,
   buildNewsFeed,
   groupUpcoming,
+  shouldShowActivityGrid,
+  MIN_TOTAL_ACTIVITY_FOR_GRID,
   type TaskLite,
   type ProjectLite,
   type FlowLite,
+  type ActivityDay,
 } from './aggregate';
 
 let pass = 0;
@@ -160,6 +163,40 @@ console.log('groupUpcoming() — CHỈ hiện ngày có mốc (DayTicker), bỏ 
   const groups = groupUpcoming(tasks, NOW, 14);
   eq('2 ngày có mốc (không phải ngày trống nào)', groups.length, 2);
   eq('ngày đầu đúng thứ tự việc trong ngày (sáng trước chiều)', groups[0].items.map((t) => t.id), ['b', 'a']);
+}
+
+console.log('shouldShowActivityGrid() — ngưỡng ≥30 hoạt động HOẶC ≥4 tuần có hoạt động (v2 lỗi #5)');
+{
+  const flat = (counts: number[]): ActivityDay[] => counts.map((count, i) => ({ date: `d${i}`, count }));
+
+  // Đúng ca báo lỗi thật: "16 hoạt động/10 tuần", dồn hết vào 2 tuần đầu → CHƯA đủ dày.
+  // Tuần 0 (index 0-6): 7 hoạt động (1/ngày) · tuần 1 (index 7-13): 9 hoạt động (vài ngày 2) → tổng 16.
+  const week2counts = [2, 2, 1, 1, 1, 1, 1]; // sum = 9
+  const days16in2weeks: ActivityDay[] = [...Array(70)].map((_, i) => ({
+    date: `d${i}`,
+    count: i < 7 ? 1 : i < 14 ? week2counts[i - 7] : 0,
+  }));
+  eq('tổng đúng 16', days16in2weeks.reduce((s, d) => s + d.count, 0), 16);
+  ok('16 hoạt động dồn 2 tuần → ẨN (dưới cả 2 ngưỡng)', shouldShowActivityGrid(days16in2weeks) === false);
+
+  ok('0 hoạt động → ẨN', shouldShowActivityGrid(flat(new Array(70).fill(0))) === false);
+
+  const days30: ActivityDay[] = [{ date: 'a', count: 30 }, ...flat(new Array(69).fill(0))];
+  ok('≥30 tổng (dù dồn 1 ngày) → HIỆN', shouldShowActivityGrid(days30) === true);
+
+  // 4 tuần rải rác, mỗi tuần chỉ 2 hoạt động (tổng 8, dưới ngưỡng tổng) → vẫn HIỆN nhờ ≥4 tuần.
+  const spread4weeks: ActivityDay[] = [...Array(70)].map((_, i) => ({
+    date: `d${i}`,
+    count: [0, 7, 14, 21].includes(i) ? 2 : 0,
+  }));
+  ok('tổng thấp (8) nhưng đủ 4 tuần', spread4weeks.reduce((s, d) => s + d.count, 0) < MIN_TOTAL_ACTIVITY_FOR_GRID);
+  ok('4 tuần rải rác → HIỆN (đủ nấc "bền", dù tổng thấp)', shouldShowActivityGrid(spread4weeks) === true);
+
+  const spread3weeks: ActivityDay[] = [...Array(70)].map((_, i) => ({
+    date: `d${i}`,
+    count: [0, 7, 14].includes(i) ? 2 : 0,
+  }));
+  ok('chỉ 3 tuần rải rác → ẨN (chưa đủ 4)', shouldShowActivityGrid(spread3weeks) === false);
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);

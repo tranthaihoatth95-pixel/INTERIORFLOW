@@ -2,28 +2,29 @@
 
 /**
  * components/home/widgets/TodayStrip.tsx — [marker: DongStudio] "Hôm nay của studio"
- * (phiếu docs/phieu-giao/home-dong-studio.md, việc ④.5) — việc xong hôm nay · ai online ·
- * dự án vừa có chuyển động. TỰ ẨN nếu cả 3 tín hiệu đều rỗng (luật chung phiếu).
+ * (phiếu docs/phieu-giao/home-dong-studio.md, việc ④.5) — việc xong hôm nay · ai online.
+ * TỰ ẨN nếu cả 2 tín hiệu đều rỗng (luật chung phiếu).
  *
- * "dự án vừa CHUYỂN CHẶNG" (chữ gốc trong phiếu) KHÔNG CÓ NGUỒN THẬT — app chưa có bảng ghi log
- * đổi chặng (activity-feed CHƯA xây, xem STATUS.md 12/08 khuya "cụm ENGINE NEO NGỮ CẢNH" — hàng
- * đợi). Nói thẳng ở đây thay vì bịa: dùng Flow.updatedAt ("vừa có cập nhật") — tín hiệu THẬT gần
- * nhất hiện có, không phải "chuyển chặng" cụ thể.
+ * v2 (13/08 home-dong-studio-v2.md ④.3 khử trùng sự kiện) — BỎ dòng "<dự án> vừa có cập nhật":
+ * đo trên app thật thấy CÙNG một sự kiện Flow.updatedAt lặp ở 3 nơi (lời chào "vừa có chuyển
+ * động" · đây "vừa có cập nhật" · NewsFeed "cập nhật mới 3 ngày trước") — 3 cách đọc giờ khác
+ * nhau cho 1 sự thật, đúng bẫy NC-HOME-DELIGHT. Theo bảng ưu tiên của phiếu, "flow cập nhật"
+ * không phải "online"/"chuyển-chặng" nên thuộc về NHÓM "còn lại" → chỉ sống ở `NewsFeed`, MỘT
+ * chỗ. "dự án vừa CHUYỂN CHẶNG" (chữ gốc phiếu v1) vẫn KHÔNG CÓ NGUỒN THẬT — app chưa có bảng
+ * ghi log đổi chặng (activity-feed CHƯA xây, xem STATUS.md 12/08 khuya "cụm ENGINE NEO NGỮ
+ * CẢNH"), nên khi nguồn đó có thật, tín hiệu "chuyển chặng" mới quay lại đúng vị trí Dải này.
  */
 
-import { useRouter } from 'next/navigation';
 import PresenceRow, { type PresenceMember } from '@/components/ui/PresenceRow';
 import { useT } from '@/lib/i18n';
 import WidgetCard from './WidgetCard';
-import { goToProjectStage } from './nav';
 import type { HomeSummary } from './types';
 
 export default function TodayStrip({ summary }: { summary: HomeSummary }) {
   const tr = useT();
-  const router = useRouter();
 
-  const { tasksDoneToday, online, recentProject } = summary.today;
-  const hasSignal = tasksDoneToday > 0 || online.length > 0 || !!recentProject;
+  const { tasksDoneToday, online } = summary.today;
+  const hasSignal = tasksDoneToday > 0 || online.length > 0;
   if (!hasSignal) return null;
 
   const onlineMembers: PresenceMember[] = online.map((u) => ({ id: u.id, name: u.name, online: true }));
@@ -44,15 +45,6 @@ export default function TodayStrip({ summary }: { summary: HomeSummary }) {
               {tr('đang online', 'online now')}
             </span>
           </div>
-        )}
-        {recentProject && (
-          <button
-            type="button"
-            onClick={() => goToProjectStage(router, recentProject.id, null)}
-            className="text-[length:var(--fs-sm)] text-[var(--t2)] underline-offset-2 hover:text-[var(--t1)] hover:underline"
-          >
-            {recentProject.name} · {tr('vừa có cập nhật', 'just updated')}
-          </button>
         )}
       </div>
     </WidgetCard>

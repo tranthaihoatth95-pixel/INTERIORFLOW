@@ -7,9 +7,15 @@
  *
  * ⛔ CẤM ngôn ngữ streak/phạt (ràng buộc ⑤) — không có số "chuỗi ngày", không tô đỏ ngày trống,
  * không đếm ngược. Chỉ MỘT câu trung tính: tổng hoạt động trong khung đang xem.
+ *
+ * v2 (13/08 home-dong-studio-v2.md ④.4 lỗi #5) — đo trên app thật: lưới hiện dù chỉ 16 hoạt
+ * động/10 tuần, trái luật "widget-mỏng-tự-ẩn" (một lưới gần trắng trông như lỗi/trống, không
+ * như "studio đang thở"). Thêm `shouldShowActivityGrid` (lib/home/aggregate.ts, có test) —
+ * hiện khi ĐỦ DÀY: tổng ≥30 HOẶC trải qua ≥4 tuần có hoạt động.
  */
 
 import { useT, useLang } from '@/lib/i18n';
+import { shouldShowActivityGrid } from '@/lib/home/aggregate';
 import WidgetCard from './WidgetCard';
 import type { HomeSummary } from './types';
 
@@ -30,7 +36,7 @@ export default function ContributionGrid({ summary }: { summary: HomeSummary }) 
   const lang = useLang();
   const days = summary.activityDays;
   const total = days.reduce((s, d) => s + d.count, 0);
-  if (total === 0 || days.length === 0) return null; // studio chưa có hoạt động nào ghi nhận được
+  if (days.length === 0 || !shouldShowActivityGrid(days)) return null; // chưa đủ dày để đáng một ô riêng
 
   const max = Math.max(1, ...days.map((d) => d.count));
   // Gom theo cột-tuần: ngày đầu tiên trong mảng không nhất thiết là Chủ Nhật — đệm ô trống ĐẦU

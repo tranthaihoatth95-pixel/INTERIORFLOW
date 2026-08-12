@@ -1,14 +1,22 @@
 /**
  * lib/home/greeting.ts — [marker: DongStudio] lời chào dữ liệu thật, KHÔNG quote sáo, KHÔNG AI
- * (phiếu docs/phieu-giao/home-dong-studio.md, việc ④.2).
+ * (phiếu docs/phieu-giao/home-dong-studio.md, việc ④.2; sửa 13/08 v2 việc ④.3 "khử trùng sự
+ * kiện").
  *
- * "Chào <tên> · <thứ, ngày>" + 1 dòng TÍN HIỆU rút từ dữ liệu thật (việc đến hạn hôm nay ưu
- * tiên hơn dự án vừa chuyển động — việc đến hạn CẦN HÀNH ĐỘNG, chuyển động chỉ là thông tin).
- * Không có tín hiệu nào → `signal: null`, component TỰ ẨN dòng đó (luật X2 — không bịa, không
- * số 0 tròn) và chỉ còn lời chào trơn.
+ * "Chào <tên> · <thứ, ngày>" + 1 dòng TÍN HIỆU rút từ dữ liệu thật — CHỈ việc đến hạn hôm nay
+ * (CẦN HÀNH ĐỘNG). Không có tín hiệu nào → `signal: null`, component TỰ ẨN dòng đó (luật X2 —
+ * không bịa, không số 0 tròn) và chỉ còn lời chào trơn.
+ *
+ * v2 (13/08, phiếu home-dong-studio-v2.md ④.3): BỎ nhánh "X vừa có chuyển động"
+ * (`recentProjectName`) — đo trên app thật thấy CÙNG một sự kiện (Flow.updatedAt gần nhất) lặp
+ * lại ở 3 nơi (lời chào "vừa có chuyển động" · TodayStrip "vừa có cập nhật" · NewsFeed "cập nhật
+ * mới 3 ngày trước") với 3 cách đọc thời gian khác nhau — đúng bẫy NC-HOME-DELIGHT "quote lặp =
+ * noise". Theo bảng ưu tiên của phiếu (đến-hạn → lời chào; còn lại → bảng tin), "flow vừa cập
+ * nhật" không phải việc CẦN HÀNH ĐỘNG nên KHÔNG thuộc về lời chào nữa — chỉ còn sống ở
+ * `NewsFeed` (nơi nó vốn thuộc về, đúng 1 chỗ).
  *
  * THUẦN — chạy được sucrase-node, không gọi fetch/AI. Route/component truyền dữ liệu đã fetch
- * sẵn (dueTodayCount, recentProjectName) vào — hàm này chỉ QUYẾT ĐỊNH câu chữ.
+ * sẵn (dueTodayCount) vào — hàm này chỉ QUYẾT ĐỊNH câu chữ.
  */
 
 export interface GreetingInput {
@@ -18,8 +26,6 @@ export interface GreetingInput {
   en: boolean;
   /** Số việc (Task) chưa xong, hạn hôm nay — 0/âm/NaN đều coi như "không có". */
   dueTodayCount: number;
-  /** Tên dự án có Flow cập nhật gần nhất — null = không suy được / chưa có dự án nào. */
-  recentProjectName: string | null;
 }
 
 export interface GreetingResult {
@@ -59,18 +65,14 @@ export function buildGreeting(input: GreetingInput): GreetingResult {
   const headline = dateLine ? `${namePart} · ${dateLine}` : namePart;
 
   const due = Number.isFinite(input.dueTodayCount) ? Math.max(0, Math.trunc(input.dueTodayCount)) : 0;
-  let signal: string | null = null;
-  if (due > 0) {
-    signal = input.en
-      ? due === 1
-        ? '1 task due today'
-        : `${due} tasks due today`
-      : `${due} việc đến hạn hôm nay`;
-  } else if (input.recentProjectName) {
-    signal = input.en
-      ? `${input.recentProjectName} just had activity`
-      : `${input.recentProjectName} vừa có chuyển động`;
-  }
+  const signal: string | null =
+    due > 0
+      ? input.en
+        ? due === 1
+          ? '1 task due today'
+          : `${due} tasks due today`
+        : `${due} việc đến hạn hôm nay`
+      : null;
 
   return { headline, signal };
 }

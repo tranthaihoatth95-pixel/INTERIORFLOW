@@ -9,12 +9,16 @@ import type { Phase } from '@/lib/phases';
 export interface HomeSummary {
   greeting: {
     dueTodayCount: number;
-    recentProjectName: string | null;
   };
+  /**
+   * v2 (13/08 home-dong-studio-v2.md ④.3 khử trùng sự kiện): `recentProject`/`recentProjectName`
+   * (Flow.updatedAt gần nhất) đã BỎ khỏi `greeting`/`today` — sự kiện đó là "còn lại" trong bảng
+   * ưu tiên của phiếu (không phải đến-hạn, không phải online/chuyển-chặng) nên chỉ thuộc về
+   * `news` (NewsFeed). Trước đó nó lặp ở CẢ BA nơi với 3 cách đọc giờ khác nhau — đúng lỗi #4.
+   */
   today: {
     tasksDoneToday: number;
     online: { id: string; name: string }[];
-    recentProject: { id: string; name: string } | null;
   };
   recentProjects: { id: string; name: string }[];
   stageChart: {

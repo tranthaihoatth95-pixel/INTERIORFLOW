@@ -10,21 +10,10 @@
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, Sparkles } from 'lucide-react';
 import { useT, useLang } from '@/lib/i18n';
+import { timeAgo } from '@/lib/home/format-time';
 import WidgetCard from './WidgetCard';
 import { goToProjectStage } from './nav';
 import type { HomeSummary } from './types';
-
-function timeAgo(iso: string, en: boolean): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  if (!Number.isFinite(diff) || diff < 0) return en ? 'just now' : 'vừa xong';
-  const min = Math.floor(diff / 60_000);
-  if (min < 1) return en ? 'just now' : 'vừa xong';
-  if (min < 60) return en ? `${min}m ago` : `${min} phút trước`;
-  const h = Math.floor(min / 60);
-  if (h < 24) return en ? `${h}h ago` : `${h} giờ trước`;
-  const d = Math.floor(h / 24);
-  return en ? `${d}d ago` : `${d} ngày trước`;
-}
 
 export default function NewsFeed({ summary }: { summary: HomeSummary }) {
   const tr = useT();

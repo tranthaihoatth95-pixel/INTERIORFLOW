@@ -125,6 +125,30 @@ export interface ActivityDay {
 }
 
 /**
+ * Ngưỡng "đủ dày" để lưới tích luỹ đáng hiện (phiếu home-dong-studio-v2.md ④.4 lỗi #5 — đo
+ * trên app thật: lưới hiện dù chỉ 16 hoạt động/10 tuần, trái luật widget-mỏng-tự-ẩn). Hằng số
+ * đặt CỐ ĐỊNH ở đây (không rải trong component) để phiên sau chỉnh 1 chỗ.
+ */
+export const MIN_TOTAL_ACTIVITY_FOR_GRID = 30;
+export const MIN_ACTIVE_WEEKS_FOR_GRID = 4;
+
+/**
+ * Studio đã "đủ dày" để lưới tích luỹ đáng một ô riêng trên Home — TỔNG hoạt động cao HOẶC trải
+ * đều qua đủ tuần (một studio hoạt động rải rác 5 tuần dù mỗi tuần chỉ vài việc vẫn đáng hiện
+ * hơn một studio dồn 29 việc vào đúng 1 ngày). `days` PHẢI theo đúng thứ tự thời gian liên tiếp
+ * của `buildActivityDays` (index = ngày thứ mấy kể từ đầu cửa sổ) để gom tuần đúng.
+ */
+export function shouldShowActivityGrid(days: readonly ActivityDay[]): boolean {
+  const total = days.reduce((s, d) => s + d.count, 0);
+  if (total >= MIN_TOTAL_ACTIVITY_FOR_GRID) return true;
+  const weeksWithActivity = new Set<number>();
+  days.forEach((d, i) => {
+    if (d.count > 0) weeksWithActivity.add(Math.floor(i / 7));
+  });
+  return weeksWithActivity.size >= MIN_ACTIVE_WEEKS_FOR_GRID;
+}
+
+/**
  * Lưới tích luỹ GitHub-graph — CẤM ngôn ngữ streak/phạt (luật ⑤ phiếu). Đếm sự kiện thật/ngày:
  * Task xong (updatedAt) + Flow cập nhật (updatedAt). Trả ĐỦ `weeks*7` ngày liên tiếp kết thúc ở
  * `now` (kể cả ngày count=0) để component vẽ lưới đều — khác `groupUpcoming` (nén ngày trống).

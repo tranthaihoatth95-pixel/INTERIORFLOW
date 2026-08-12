@@ -35,11 +35,13 @@ import ProjectOverviewCard from '@/components/home/ProjectOverviewCard';
 import type { PresenceMember } from '@/components/ui/PresenceRow';
 import { getLastStage } from '@/lib/shell/last-stage';
 import { stageRoutePath, stageSegmentForPhase } from '@/lib/scope-core';
+import { PHASE_MAP } from '@/lib/phases';
 import { brandContextForVitals } from '@/lib/present-editor/brand-kit';
 import { getGalleryViewOverride, setGalleryViewOverride, type GalleryViewOverride } from '@/lib/resume';
 import { LangToggle } from '@/components/LangToggle';
 import { adaptiveTextStyle, useAdaptiveContrast } from '@/components/ui/AdaptiveContrast';
 import type { ContrastPlan } from '@/lib/adaptive-contrast';
+import { timeAgo } from '@/lib/home/format-time';
 
 /**
  * Home/Gallery ↔ Larkbase (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md, M1) — BỔ SUNG dữ liệu vào
@@ -147,20 +149,8 @@ function coverOf(f: FlowRow): string {
   return f.coverUrl && f.coverUrl.length > 0 ? f.coverUrl : coverFor(f.id);
 }
 
-/** "2 ngày trước" / "2 days ago" từ ISO updatedAt. */
-function timeAgo(iso: string, en: boolean): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  if (!Number.isFinite(diff) || diff < 0) return en ? 'just now' : 'vừa xong';
-  const min = Math.floor(diff / 60_000);
-  if (min < 1) return en ? 'just now' : 'vừa xong';
-  if (min < 60) return en ? `${min} min ago` : `${min} phút trước`;
-  const h = Math.floor(min / 60);
-  if (h < 24) return en ? `${h} h ago` : `${h} giờ trước`;
-  const d = Math.floor(h / 24);
-  if (d < 30) return en ? (d === 1 ? '1 day ago' : `${d} days ago`) : `${d} ngày trước`;
-  const mo = Math.floor(d / 30);
-  return en ? (mo === 1 ? '1 month ago' : `${mo} months ago`) : `${mo} tháng trước`;
-}
+/* `timeAgo` — dùng bản DÙNG CHUNG `@/lib/home/format-time` (v2 13/08 home-dong-studio-v2.md
+ * ④.3 "MỘT hàm format" — trước đây file này có bản riêng lệch nấc với bản của NewsFeed.tsx). */
 
 /* ---------- Memoji-slot avatar: gradient theo hash tên + chữ cái đầu ---------- */
 
@@ -335,10 +325,12 @@ export function ProjectSelect({
   /**
    * DÒNG STUDIO (13/08, phiếu home-dong-studio.md, ④.4) — ẩn pill "Chào …" + tiêu đề + mô tả
    * hero: `DongStudioHome` (components/home/) đã thay bằng ánh sáng theo giờ thật + lời chào dữ
-   * liệu thật ở Trang 1 Tầng 1, đứng NGOÀI component này. Nút "Chi tiết"/"Đồng bộ tiến độ" +
-   * toggle carousel/grid GIỮ NGUYÊN dù bật cờ này (không nằm trong khối bị ẩn — vẫn cần dùng
-   * được). Mặc định `false` — HomeScreen.tsx là nơi gọi DUY NHẤT, bật cờ này ở đó; mọi nơi khác
-   * (không có) hành vi giữ y hệt hôm nay.
+   * liệu thật ở Trang 1 Tầng 1, đứng NGOÀI component này. "Chi tiết" (v2 13/08) đã dời sang cụm
+   * góc-phải-trên cạnh LangToggle — KHÔNG còn nằm trong hàng nút hero nữa, luôn hiện bất kể cờ
+   * này. "Đồng bộ tiến độ" + toggle carousel/grid vẫn ở hàng dưới hero, GIỮ NGUYÊN dù bật cờ này
+   * (không nằm trong khối bị ẩn — vẫn cần dùng được), nhưng Đồng bộ giờ chỉ render khi Lark ĐÃ
+   * cấu hình (v2 lỗi #2 "nút bệnh"). Mặc định `false` — HomeScreen.tsx là nơi gọi DUY NHẤT, bật
+   * cờ này ở đó; mọi nơi khác (không có) hành vi giữ y hệt hôm nay.
    */
   hideHeroCopy?: boolean;
   /**
@@ -412,6 +404,9 @@ export function ProjectSelect({
   // Grid + tìm kiếm khi >8 dự án (J-4c)
   const [query, setQuery] = useState('');
   const [projFilter, setProjFilter] = useState<string>(''); // '' = tất cả, '__none__' = chưa gắn dự án
+  // v2 (13/08 home-dong-studio-v2.md ④.1 lỗi #1) — mặt tiền grid gom flow theo DỰ ÁN; flow chưa
+  // gắn dự án gom vào MỘT ngăn "Nháp" thu gọn, bấm mới mở ra danh sách flow lẻ bên trong.
+  const [draftExpanded, setDraftExpanded] = useState(false);
   // Liên kết Larkbase TUỲ CHỌN lúc "+ Dự án mới" (§2.4/§2.6 M1) — chọn TRƯỚC khi bấm tạo,
   // KHÔNG chèn dialog chắn luồng 1-click hiện có (mặc định '' = "Chưa liên kết", hành vi hôm
   // nay giữ nguyên y hệt nếu bỏ qua bước này).
@@ -636,6 +631,40 @@ export function ProjectSelect({
       );
     });
   }, [flows, query, projFilter]);
+
+  /**
+   * v2 (13/08 home-dong-studio-v2.md ④.1, lỗi #1) — GOM `filteredFlows` THEO DỰ ÁN cho bố cục
+   * grid: mặt tiền trước đây là ~16 card FLOW rời ("Untitled flow" ×10 khi chưa gắn dự án) —
+   * đúng "cái thừa đứng giữa, cái thiếu vắng mặt" Hoà chê. Nay mỗi DỰ ÁN một card (đại diện =
+   * flow cập nhật gần nhất của dự án đó — dùng để lấy cover/mở/lastStage, cùng cơ chế
+   * `pickRecentProject` ở lib/home/aggregate.ts); flow CHƯA gắn dự án gom vào `draftFlows` (ngăn
+   * "Nháp" thu gọn, render riêng bên dưới). Tính từ `filteredFlows` (không phải `flows` thô) —
+   * tìm kiếm/lọc dự án vẫn hoạt động đúng trên kết quả đã gom nhóm.
+   */
+  type ProjectGroup = { projectId: string; projectName: string; flows: FlowRow[] };
+  const { projectGroups, draftFlows } = useMemo(() => {
+    const map = new Map<string, ProjectGroup>();
+    const drafts: FlowRow[] = [];
+    for (const f of filteredFlows) {
+      if (f.project) {
+        const g = map.get(f.project.id);
+        if (g) g.flows.push(f);
+        else map.set(f.project.id, { projectId: f.project.id, projectName: f.project.name, flows: [f] });
+      } else {
+        drafts.push(f);
+      }
+    }
+    const groups = [...map.values()];
+    for (const g of groups) g.flows.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    groups.sort((a, b) => new Date(b.flows[0].updatedAt).getTime() - new Date(a.flows[0].updatedAt).getTime());
+    drafts.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    return { projectGroups: groups, draftFlows: drafts };
+  }, [filteredFlows]);
+
+  // Tìm kiếm/lọc "Chưa gắn dự án" phải THẤY NGAY kết quả khớp, không bắt bấm thêm 1 lần để mở
+  // ngăn Nháp — tự bung khi có tín hiệu lọc rõ ràng; người dùng vẫn thu lại tay được sau đó.
+  const draftAutoOpen = query.trim() !== '' || projFilter === '__none__';
+  const draftShown = draftExpanded || draftAutoOpen;
 
   /**
    * Bảng khởi tạo dự án 12/08 ([marker: ProjectInitBoard], SPEC-KHOI-TAO-DU-AN-2026-08-11):
@@ -994,6 +1023,17 @@ export function ProjectSelect({
     (f: FlowRow): PresenceMember[] =>
       membersOf(f).map((m) => ({ id: m.id, name: m.name, online: m.online, color: avatarGradient(m.name) })),
     [membersOf],
+  );
+
+  /** v2 (④.1) — owner của TẤT CẢ flow trong một nhóm dự án, dedup theo id — presence fallback
+   * cho card DỰ ÁN (gộp nhiều flow) thay vì chỉ 1 flow. */
+  const presenceMembersOfGroup = useCallback(
+    (fs: FlowRow[]): PresenceMember[] => {
+      const seen = new Map<string, PresenceMember>();
+      for (const f of fs) for (const m of presenceMembersOf(f)) if (!seen.has(m.id)) seen.set(m.id, m);
+      return [...seen.values()];
+    },
+    [presenceMembersOf],
   );
 
   /**
@@ -1595,6 +1635,274 @@ export function ProjectSelect({
 
   /* ---------- Grid + tìm kiếm/lọc (J-4c — khi >8 dự án, mọi khổ màn hình) ---------- */
 
+  /**
+   * v2 (13/08 home-dong-studio-v2.md ④.1, lỗi #1) — thẻ MỘT FLOW (bản vẽ lẻ). Trước đây đây là
+   * mọi thẻ trong grid; nay CHỈ dùng cho flow trong ngăn "Nháp" đã mở (`draftFlows`, chưa gắn dự
+   * án) — mỗi flow vẫn giữ nguyên "Đổi bìa"/"Chi tiết"/"Tổng quan"/sửa ghi chú per-flow như hôm
+   * nay, KHÔNG mất năng lực nào. Tách thành hàm để dùng lại được (trước đây trộn thẳng trong
+   * `.map`), KHÔNG đổi 1 dòng logic bên trong.
+   */
+  const renderFlowTile = (f: FlowRow) => {
+    const editing = statusFor === f.id;
+    return (
+      <div
+        key={f.id}
+        role="button"
+        tabIndex={0}
+        aria-disabled={busy}
+        aria-label={f.name}
+        onClick={() => {
+          if (!busy) void choose({ kind: 'flow', flow: f });
+        }}
+        onKeyDown={(e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && !busy && !editing) {
+            e.preventDefault();
+            void choose({ kind: 'flow', flow: f });
+          }
+        }}
+        // hover thẻ 1.02 + lift 200ms (phiếu home-overview-card ④.3, khớp SPEC-HOVER-FOCUS-IDF: thẻ 1.02 + lift 2px 200ms)
+        className="group cursor-pointer overflow-hidden text-left transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:scale-[1.02]"
+        style={{
+          borderRadius: 'var(--radius-xl)',
+          border: '1px solid rgba(127,127,127,0.25)',
+          background: '#141210',
+          boxShadow: '0 18px 44px -20px rgba(0,0,0,0.55)',
+          opacity: busy ? 0.6 : 1,
+        }}
+      >
+        <div className="relative" style={{ aspectRatio: '4 / 3' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={coverOf(f)} alt="" draggable={false} className="h-full w-full object-cover" />
+          {/* Đổi bìa + Chi tiết — hiện khi hover card (desktop) / luôn chạm được trên touch */}
+          <div className="absolute right-2 top-2 flex flex-col items-end gap-1.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+            <button
+              type="button"
+              aria-label={en ? 'Change cover' : 'Đổi bìa'}
+              onClick={(e) => {
+                e.stopPropagation();
+                openPicker(f.id);
+              }}
+              className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
+              style={darkPill}
+            >
+              <ImagePlus size={13} />
+            </button>
+            <button
+              type="button"
+              aria-label={en ? 'Details' : 'Chi tiết'}
+              onClick={(e) => {
+                e.stopPropagation();
+                openDashboardTab('board', f.project?.id ?? null);
+              }}
+              className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
+              style={darkPill}
+            >
+              <Info size={13} />
+            </button>
+            {/* "Tổng quan" — /projects/[id]/overview của ĐÚNG dự án (id ổn định, Task #18) */}
+            <button
+              type="button"
+              aria-label={en ? 'Open project overview' : 'Mở tổng quan dự án'}
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/projects/${f.project?.id ?? f.id}/overview`);
+              }}
+              className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
+              style={darkPill}
+            >
+              <ArrowRight size={13} />
+            </button>
+          </div>
+        </div>
+        <div className="px-3 pb-2.5 pt-2">
+          <div className="truncate text-[length:var(--fs-sm)] font-semibold text-white">
+            {f.name}
+          </div>
+          {editing ? (
+            <div
+              className="mt-1 flex items-center gap-1.5 rounded-full px-2 py-1"
+              style={darkPill}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+              <input
+                autoFocus
+                value={statusDraft}
+                maxLength={160}
+                onChange={(e) => setStatusDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  if (e.key === 'Enter') void saveStatus(f.id);
+                  else if (e.key === 'Escape') setStatusFor(null);
+                }}
+                placeholder={en ? 'Short status…' : 'Ghi chú ngắn…'}
+                className="w-full bg-transparent text-[length:var(--fs-xs)] text-white placeholder:text-white/40 focus:outline-none"
+              />
+              <button
+                type="button"
+                aria-label={en ? 'Save' : 'Lưu'}
+                onClick={() => void saveStatus(f.id)}
+                className="grid h-5 w-5 shrink-0 place-items-center text-white/85 hover:text-white"
+              >
+                <Check size={12} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                beginStatus(f);
+              }}
+              className="mt-0.5 block max-w-full truncate text-left text-[length:var(--fs-xs)]"
+              style={{
+                color: f.status ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.4)',
+              }}
+            >
+              {f.status ? f.status : en ? '· No note yet' : '· Chưa có ghi chú'}
+            </button>
+          )}
+          <div className="mt-1.5 flex items-center justify-between gap-2">
+            <span className="min-w-0 truncate text-[length:var(--fs-xs)] text-white/50">
+              {f.project ? f.project.name : timeAgo(f.updatedAt, en)}
+            </span>
+            <span className="shrink-0 text-[length:var(--fs-xs)] tabular-nums text-white/40">
+              {en ? `v${f.version}` : `Bản ${f.version}`}
+            </span>
+          </div>
+          {/* [marker: ProjectOverviewCard] tổng quan grid — thiếu dữ liệu tự ẩn dòng */}
+          <div className="mt-1.5">
+            <ProjectOverviewCard
+              projectId={f.project?.id ?? null}
+              flowId={f.id}
+              en={en}
+              fallbackMembers={presenceMembersOf(f)}
+              onlineOf={onlineOf}
+              textMutedStyle={{ color: 'rgba(255,255,255,0.6)' }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  /**
+   * v2 (④.1, lỗi #1) — thẻ MỘT DỰ ÁN, gộp mọi flow của dự án đó. Đại diện = flow cập nhật gần
+   * nhất trong nhóm (`group.flows[0]`, đã sort desc): cung cấp cover/mở/Đổi bìa/lastStage — mở
+   * dự án ĐÚNG như bấm thẳng flow đó (cùng `choose()`/`enterAtLastStage`, không đường riêng).
+   * Badge chặng (góc trái ảnh) + `ProjectOverviewCard` (quy mô, bắt đầu, PresenceRow gộp) trả
+   * lời lỗi #5 "card nghèo" — trước đây hầu hết thẻ là flow rời KHÔNG có `projectId` thật nên
+   * `ProjectOverviewCard` không có gì để fetch; nay thẻ LUÔN có `projectId` thật.
+   */
+  const renderProjectTile = (group: ProjectGroup) => {
+    const rep = group.flows[0];
+    const stage = getLastStage(group.projectId) ?? getLastStage(rep.id);
+    const stageMeta = stage ? PHASE_MAP[stage] : null;
+    return (
+      <div
+        key={group.projectId}
+        role="button"
+        tabIndex={0}
+        aria-disabled={busy}
+        aria-label={group.projectName}
+        onClick={() => {
+          if (!busy) void choose({ kind: 'flow', flow: rep });
+        }}
+        onKeyDown={(e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && !busy) {
+            e.preventDefault();
+            void choose({ kind: 'flow', flow: rep });
+          }
+        }}
+        className="group cursor-pointer overflow-hidden text-left transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:scale-[1.02]"
+        style={{
+          borderRadius: 'var(--radius-xl)',
+          border: '1px solid rgba(127,127,127,0.25)',
+          background: '#141210',
+          boxShadow: '0 18px 44px -20px rgba(0,0,0,0.55)',
+          opacity: busy ? 0.6 : 1,
+        }}
+      >
+        <div className="relative" style={{ aspectRatio: '4 / 3' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={coverOf(rep)} alt="" draggable={false} className="h-full w-full object-cover" />
+          {/* chip chặng đang dở (lỗi #5) — badge nổi trên ảnh, GIỐNG dòng "Đang dở · …" mà
+              ProjectOverviewCard đã hiện bên dưới card, chỉ thêm 1 chỗ nhìn thấy NGAY khi lướt. */}
+          {stageMeta && (
+            <span
+              className="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[length:var(--fs-2xs)] font-medium text-white"
+              style={{ background: 'rgba(106,87,245,0.85)', backdropFilter: 'blur(6px)' }}
+            >
+              {en ? stageMeta.labelEn : stageMeta.label}
+            </span>
+          )}
+          <div className="absolute right-2 top-2 flex flex-col items-end gap-1.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+            <button
+              type="button"
+              aria-label={en ? 'Change cover' : 'Đổi bìa'}
+              onClick={(e) => {
+                e.stopPropagation();
+                openPicker(rep.id);
+              }}
+              className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
+              style={darkPill}
+            >
+              <ImagePlus size={13} />
+            </button>
+            <button
+              type="button"
+              aria-label={en ? 'Details' : 'Chi tiết'}
+              onClick={(e) => {
+                e.stopPropagation();
+                openDashboardTab('board', group.projectId);
+              }}
+              className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
+              style={darkPill}
+            >
+              <Info size={13} />
+            </button>
+            <button
+              type="button"
+              aria-label={en ? 'Open project overview' : 'Mở tổng quan dự án'}
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/projects/${group.projectId}/overview`);
+              }}
+              className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
+              style={darkPill}
+            >
+              <ArrowRight size={13} />
+            </button>
+          </div>
+        </div>
+        <div className="px-3 pb-2.5 pt-2">
+          <div className="truncate text-[length:var(--fs-sm)] font-semibold text-white">
+            {group.projectName}
+          </div>
+          <div className="mt-1.5 flex items-center justify-between gap-2">
+            <span className="min-w-0 truncate text-[length:var(--fs-xs)] text-white/50">
+              {en
+                ? `${group.flows.length} ${group.flows.length === 1 ? 'drawing' : 'drawings'}`
+                : `${group.flows.length} bản vẽ`}{' '}
+              · {timeAgo(rep.updatedAt, en)}
+            </span>
+          </div>
+          {/* [marker: ProjectOverviewCard] tổng quan grid — thiếu dữ liệu tự ẩn dòng */}
+          <div className="mt-1.5">
+            <ProjectOverviewCard
+              projectId={group.projectId}
+              flowId={rep.id}
+              en={en}
+              fallbackMembers={presenceMembersOfGroup(group.flows)}
+              onlineOf={onlineOf}
+              textMutedStyle={{ color: 'rgba(255,255,255,0.6)' }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const searchGrid = flows && (
     <div className="w-full" data-tour="project-gallery">
       {/* thanh tìm kiếm + lọc theo dự án */}
@@ -1676,152 +1984,90 @@ export function ProjectSelect({
           </div>
         </div>
 
-        {filteredFlows.map((f) => {
-          const editing = statusFor === f.id;
-          return (
-            <div
-              key={f.id}
-              role="button"
-              tabIndex={0}
-              aria-disabled={busy}
-              aria-label={f.name}
-              onClick={() => {
-                if (!busy) void choose({ kind: 'flow', flow: f });
-              }}
-              onKeyDown={(e) => {
-                if ((e.key === 'Enter' || e.key === ' ') && !busy && !editing) {
-                  e.preventDefault();
-                  void choose({ kind: 'flow', flow: f });
-                }
-              }}
-              // hover thẻ 1.02 + lift 200ms (phiếu home-overview-card ④.3, khớp SPEC-HOVER-FOCUS-IDF: thẻ 1.02 + lift 2px 200ms)
-              className="group cursor-pointer overflow-hidden text-left transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:scale-[1.02]"
-              style={{
-                borderRadius: 'var(--radius-xl)',
-                border: '1px solid rgba(127,127,127,0.25)',
-                background: '#141210',
-                boxShadow: '0 18px 44px -20px rgba(0,0,0,0.55)',
-                opacity: busy ? 0.6 : 1,
-              }}
-            >
-              <div className="relative" style={{ aspectRatio: '4 / 3' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={coverOf(f)} alt="" draggable={false} className="h-full w-full object-cover" />
-                {/* Đổi bìa + Chi tiết — hiện khi hover card (desktop) / luôn chạm được trên touch */}
-                <div className="absolute right-2 top-2 flex flex-col items-end gap-1.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                  <button
-                    type="button"
-                    aria-label={en ? 'Change cover' : 'Đổi bìa'}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openPicker(f.id);
-                    }}
-                    className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
-                    style={darkPill}
-                  >
-                    <ImagePlus size={13} />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={en ? 'Details' : 'Chi tiết'}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openDashboardTab('board', f.project?.id ?? null);
-                    }}
-                    className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
-                    style={darkPill}
-                  >
-                    <Info size={13} />
-                  </button>
-                  {/* "Tổng quan" — /projects/[id]/overview của ĐÚNG dự án (id ổn định, Task #18) */}
-                  <button
-                    type="button"
-                    aria-label={en ? 'Open project overview' : 'Mở tổng quan dự án'}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/projects/${f.project?.id ?? f.id}/overview`);
-                    }}
-                    className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
-                    style={darkPill}
-                  >
-                    <ArrowRight size={13} />
-                  </button>
-                </div>
-              </div>
-              <div className="px-3 pb-2.5 pt-2">
-                <div className="truncate text-[length:var(--fs-sm)] font-semibold text-white">
-                  {f.name}
-                </div>
-                {editing ? (
-                  <div
-                    className="mt-1 flex items-center gap-1.5 rounded-full px-2 py-1"
-                    style={darkPill}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
-                    <input
-                      autoFocus
-                      value={statusDraft}
-                      maxLength={160}
-                      onChange={(e) => setStatusDraft(e.target.value)}
-                      onKeyDown={(e) => {
-                        e.stopPropagation();
-                        if (e.key === 'Enter') void saveStatus(f.id);
-                        else if (e.key === 'Escape') setStatusFor(null);
-                      }}
-                      placeholder={en ? 'Short status…' : 'Ghi chú ngắn…'}
-                      className="w-full bg-transparent text-[length:var(--fs-xs)] text-white placeholder:text-white/40 focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      aria-label={en ? 'Save' : 'Lưu'}
-                      onClick={() => void saveStatus(f.id)}
-                      className="grid h-5 w-5 shrink-0 place-items-center text-white/85 hover:text-white"
-                    >
-                      <Check size={12} />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      beginStatus(f);
-                    }}
-                    className="mt-0.5 block max-w-full truncate text-left text-[length:var(--fs-xs)]"
-                    style={{
-                      color: f.status ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.4)',
-                    }}
-                  >
-                    {f.status ? f.status : en ? '· No note yet' : '· Chưa có ghi chú'}
-                  </button>
-                )}
-                <div className="mt-1.5 flex items-center justify-between gap-2">
-                  <span className="min-w-0 truncate text-[length:var(--fs-xs)] text-white/50">
-                    {f.project ? f.project.name : timeAgo(f.updatedAt, en)}
-                  </span>
-                  <span className="shrink-0 text-[length:var(--fs-xs)] tabular-nums text-white/40">
-                    {en ? `v${f.version}` : `Bản ${f.version}`}
-                  </span>
-                </div>
-                {/* [marker: ProjectOverviewCard] tổng quan grid — thiếu dữ liệu tự ẩn dòng */}
-                <div className="mt-1.5">
-                  <ProjectOverviewCard
-                    projectId={f.project?.id ?? null}
-                    flowId={f.id}
-                    en={en}
-                    fallbackMembers={presenceMembersOf(f)}
-                    onlineOf={onlineOf}
-                    textMutedStyle={{ color: 'rgba(255,255,255,0.6)' }}
-                  />
-                </div>
-              </div>
+        {/* v2 (④.1, lỗi #1) — MỘT card MỖI DỰ ÁN, không còn một card mỗi flow. */}
+        {projectGroups.map(renderProjectTile)}
+
+        {/* Ngăn "Nháp" (flow chưa gắn dự án) — thu gọn thành 1 tile cuối lưới; bấm mới mở ra
+            từng flow lẻ (renderFlowTile, y hệt card flow hôm nay). Tự bung khi tìm kiếm/lọc
+            "Chưa gắn dự án" đang có tín hiệu rõ (draftAutoOpen) — không bắt bấm 2 lần mới thấy
+            kết quả khớp. */}
+        {draftFlows.length > 0 && !draftShown && (
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label={en ? `Drafts (${draftFlows.length})` : `Nháp (${draftFlows.length})`}
+            onClick={() => setDraftExpanded(true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setDraftExpanded(true);
+              }
+            }}
+            className="grid cursor-pointer place-items-center transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:scale-[1.02]"
+            style={{
+              aspectRatio: '4 / 4.1',
+              borderRadius: 'var(--radius-xl)',
+              border: '1.5px dashed rgba(127,127,127,0.4)',
+              background: 'rgba(127,127,127,0.06)',
+            }}
+          >
+            <div className="flex flex-col items-center gap-2 px-3 text-center">
+              <span
+                className="grid h-10 w-10 place-items-center rounded-full"
+                style={{ border: '1.5px dashed rgba(127,127,127,0.55)', color: 'var(--t3)' }}
+              >
+                <FolderPlus size={17} />
+              </span>
+              <span className="text-[length:var(--fs-sm)] font-semibold text-[var(--t1)]">
+                {en ? `Drafts (${draftFlows.length})` : `Nháp (${draftFlows.length})`}
+              </span>
+              <span className="text-[length:var(--fs-2xs)] text-[var(--t4)]">
+                {en ? 'No project yet' : 'Chưa gắn dự án'}
+              </span>
             </div>
-          );
-        })}
+          </div>
+        )}
+
+        {draftShown && draftFlows.map(renderFlowTile)}
+
+        {/* Thu gọn lại — chỉ hiện khi TỰ TAY bấm mở (không hiện khi search/lọc đang ép mở, vì
+            bấm lúc đó sẽ không có tác dụng nhìn thấy được, xem `draftAutoOpen`). */}
+        {draftExpanded && !draftAutoOpen && draftFlows.length > 0 && (
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label={en ? 'Collapse drafts' : 'Thu gọn Nháp'}
+            onClick={() => setDraftExpanded(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setDraftExpanded(false);
+              }
+            }}
+            className="grid cursor-pointer place-items-center transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:scale-[1.02]"
+            style={{
+              aspectRatio: '4 / 4.1',
+              borderRadius: 'var(--radius-xl)',
+              border: '1.5px dashed rgba(127,127,127,0.4)',
+              background: 'rgba(127,127,127,0.06)',
+            }}
+          >
+            <div className="flex flex-col items-center gap-2 px-3 text-center">
+              <span
+                className="grid h-10 w-10 place-items-center rounded-full"
+                style={{ border: '1.5px dashed rgba(127,127,127,0.55)', color: 'var(--t3)' }}
+              >
+                <ChevronLeft size={17} className="rotate-90" />
+              </span>
+              <span className="text-[length:var(--fs-sm)] font-semibold text-[var(--t1)]">
+                {en ? 'Collapse' : 'Thu gọn'}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {filteredFlows.length === 0 && (
+      {projectGroups.length === 0 && draftFlows.length === 0 && (
         <p className="mt-4 text-center text-[length:var(--fs-xs)] text-[var(--t4)]">
           {en ? 'No project matches the search.' : 'Không có dự án nào khớp tìm kiếm.'}
         </p>
@@ -1866,8 +2112,24 @@ export function ProjectSelect({
         </div>
       )}
 
-      {/* đổi ngôn ngữ — góc phải trên (giữ ngữ nghĩa StageSelect cũ) */}
-      <div className="absolute right-6 top-6 z-20">
+      {/* Cụm tiện ích góc phải trên: "Chi tiết" (Dashboard toàn bộ, không lọc) + đổi ngôn ngữ.
+          v2 (13/08 home-dong-studio-v2.md ④.2 lỗi #2) — "Chi tiết" dời từ hàng nút giữa-màn về
+          ĐÂY: khi `hideHeroCopy` bật (DongStudioHome), pill chào/tiêu đề/mô tả biến mất nên hàng
+          nút cũ hoá "lơ lửng" một mình ngay dưới dải ánh sáng — không thuộc khu vực nào. Gộp vào
+          cụm góc-phải-trên (nơi nó VỐN thuộc về: điều khiển toàn cục, không gắn 1 dự án cụ thể),
+          cùng hàng với LangToggle — icon-only + tooltip, không chiếm chỗ giữa màn. Per-card "Chi
+          tiết"/"Tổng quan" (mỗi thẻ dự án) GIỮ NGUYÊN, không đụng. */}
+      <div className="absolute right-6 top-6 z-20 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => openDashboardTab('board', null)}
+          aria-label={en ? 'Details (all projects)' : 'Chi tiết (toàn bộ dự án)'}
+          title={en ? 'Details (all projects)' : 'Chi tiết (toàn bộ dự án)'}
+          className="grid h-9 w-9 place-items-center rounded-full text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
+          style={glass}
+        >
+          <Info size={15} aria-hidden="true" />
+        </button>
         <LangToggle variant="ghost" />
       </div>
 
@@ -1933,44 +2195,31 @@ export function ProjectSelect({
             </>
           )}
 
-          {/* "Chi tiết" (toàn bộ, không lọc) + "Đồng bộ tiến độ" — 2 điểm neo cố định đầu
-              Gallery (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.2(b)/§2.5). Nút Đồng bộ
-              disabled + tooltip rõ khi Lark chưa cấu hình (health-check qua registry, KHÔNG
-              throw lỗi khó hiểu — đúng pattern các integration khác đã có). Trên ambient,
-              màu chữ khoá theo heroPlan nên hover:text-[var(--t1)] tạm im (inline style luôn
-              thắng pseudo-class) — chấp nhận được, đọc được > hiệu ứng hover. */}
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => openDashboardTab('board', null)}
-              className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-[var(--t2)] transition-colors hover:text-[var(--t1)]"
-              style={showAmbient ? { ...glass, ...adaptiveTextStyle(heroPlan) } : glass}
-            >
-              <Info size={13} />
-              {en ? 'Details' : 'Chi tiết'}
-            </button>
-            <button
-              type="button"
-              onClick={runLarkSync}
-              disabled={syncing || larkConfigured === false}
-              title={
-                larkConfigured === false
-                  ? en
-                    ? 'Lark not configured — LARK_APP_ID/LARK_APP_SECRET/LARK_BASE_APP_TOKEN missing. See docs/INTEGRATIONS.md.'
-                    : 'Chưa cấu hình Lark — thiếu LARK_APP_ID/LARK_APP_SECRET/LARK_BASE_APP_TOKEN. Xem docs/INTEGRATIONS.md.'
-                  : undefined
-              }
-              className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-[var(--t2)] transition-colors hover:text-[var(--t1)] disabled:cursor-not-allowed disabled:opacity-45"
-              style={showAmbient ? { ...glass, ...adaptiveTextStyle(heroPlan) } : glass}
-            >
-              {syncing ? <Loader2 size={13} className="animate-spin" /> : <Link2 size={13} />}
-              {en ? 'Sync progress' : 'Đồng bộ tiến độ'}
-            </button>
-            {/* Toggle Carousel↔Grid — CHỈ hiện ở đây khi carousel/flatList đang hiện (đỡ trùng
-                với bản trong `searchGrid` cạnh "Tất cả dự án"); đây là lối vào duy nhất để BẬT
-                grid khi ≤8 dự án hoặc quay lại carousel — bản kia chỉ tới được SAU KHI đã ở grid. */}
-            {!loadError && flows !== null && !effectiveGrid && viewToggle}
-          </div>
+          {/* "Đồng bộ tiến độ" — v2 (13/08 home-dong-studio-v2.md ④.2 lỗi #2, "nút bệnh"): CHỈ
+              render khi Lark ĐÃ cấu hình (`larkConfigured === true`) — trước đây nút LUÔN hiện
+              rồi mới disabled+tooltip khi chưa cấu hình, tức luôn có một nút chết trên màn cho
+              phần lớn người dùng (studio chưa nối Lark). "Chi tiết" đã dời lên cụm góc-phải-trên
+              (cùng LangToggle) — xem trên. Toggle Carousel↔Grid GIỮ chỗ cũ, không phụ thuộc Lark. */}
+          {(larkConfigured === true || (!loadError && flows !== null && !effectiveGrid)) && (
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              {larkConfigured === true && (
+                <button
+                  type="button"
+                  onClick={runLarkSync}
+                  disabled={syncing}
+                  className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-[var(--t2)] transition-colors hover:text-[var(--t1)] disabled:cursor-not-allowed disabled:opacity-45"
+                  style={showAmbient ? { ...glass, ...adaptiveTextStyle(heroPlan) } : glass}
+                >
+                  {syncing ? <Loader2 size={13} className="animate-spin" /> : <Link2 size={13} />}
+                  {en ? 'Sync progress' : 'Đồng bộ tiến độ'}
+                </button>
+              )}
+              {/* Toggle Carousel↔Grid — CHỈ hiện ở đây khi carousel/flatList đang hiện (đỡ trùng
+                  với bản trong `searchGrid` cạnh "Tất cả dự án"); đây là lối vào duy nhất để BẬT
+                  grid khi ≤8 dự án hoặc quay lại carousel — bản kia chỉ tới được SAU KHI đã ở grid. */}
+              {!loadError && flows !== null && !effectiveGrid && viewToggle}
+            </div>
+          )}
           {syncMsg && (
             <p
               className="mt-2 text-[length:var(--fs-xs)] text-[var(--t4)]"
