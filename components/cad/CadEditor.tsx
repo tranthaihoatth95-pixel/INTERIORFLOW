@@ -54,7 +54,7 @@ import { CAD_COMMANDS } from '@/lib/cad/command-aliases';
 import { backupSupported, backupFolderChosen, chooseBackupFolder } from '@/lib/cad/auto-backup';
 import { getActiveBrandKit } from '@/lib/present-editor/brand-kit';
 import {
-  docBox, docScaleLabel, docPaperMm, suggestStandardScale, fitsAtScale, defaultPaperOrientation,
+  docBox, docScaleLabel, docPaperMm, suggestStandardScale, fitsAtScale, defaultPaperOrientation, entityBox,
   // B4 (GỐC B) — người tiêu thụ của `Base.srcInsertId` do GỐC A vừa thêm (model.ts:343). Hàm THUẦN
   // đã có sẵn ở model.ts:396, KHÔNG viết lại phép nở cụm ở tầng UI.
   expandIdsByInsertGroup,
@@ -97,6 +97,10 @@ import HistoryPanel from './HistoryPanel';
 // KHÔNG hoàn tác được ở phía file đã tải về, nên phải cho xem con số thật rồi mới quyết.
 import { Checkpoint } from '@/components/studio/Checkpoint';
 import { LibraryDropBridge } from './LibraryDropBridge';
+// [marker: focusEntity] — toast nhẹ dùng CHUNG LibraryToastHost (AppShell mount sẵn qua
+// LibrarySheet), không viết toast mới (Luật Đồng Bộ #6). Helper parse ở lib/tasks/focus-entity.
+import { pushLibraryToast } from '@/components/library/LibraryToast';
+import { parseFocusEntity } from '@/lib/tasks/focus-entity';
 import type { CheckpointItem } from '@/components/studio/checkpoint-core';
 import { detectFormat } from '@/lib/gateway/detect';
 import { routeFormat } from '@/lib/gateway/route';
@@ -210,6 +214,59 @@ export default function CadEditor() {
     useCadStore.getState().setStatus('Đã nạp mặt bằng mẫu — bấm F để Zoom Extents, thử vẽ/sửa tự do.');
     window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // [marker: focusEntity] — chiều ĐỌC của TaskContext Link (phiếu focus-entity-2d-present):
+  // Bảng việc deep-link `/projects/{id}/cad?focusEntity=` (buildTaskDeepLink, lib/tasks/context.ts)
+  // → select + bay camera tới đối tượng. Doc hydrate BẤT ĐỒNG BỘ (CadSheets loadSheets từ IDB)
+  // nên không đọc 1 phát lúc mount: thử ngay, rồi subscribe store thử lại mỗi lần doc đổi,
+  // quá 6s không thấy → toast nhẹ "Đối tượng không còn trong bản vẽ", KHÔNG chặn gì.
+  useEffect(() => {
+    const focusId = parseFocusEntity(window.location.search);
+    if (!focusId) return;
+    let done = false;
+    let timer = 0;
+    let unsub: (() => void) | null = null;
+    const tryFocus = (): boolean => {
+      if (done) return true;
+      const st = useCadStore.getState();
+      const ent = st.doc.entities.find((e) => e.id === focusId);
+      if (!ent) return false;
+      done = true;
+      st.select([focusId]);
+      const b = entityBox(ent);
+      if (Number.isFinite(b.minX) && Number.isFinite(b.maxX)) {
+        // đệm 1.5m quanh đối tượng — thấy ngữ cảnh, không dí sát mép (CadCanvas nghe 'cad:goto-box').
+        const pad = 1500;
+        window.dispatchEvent(new CustomEvent('cad:goto-box', {
+          detail: { minX: b.minX - pad, minY: b.minY - pad, maxX: b.maxX + pad, maxY: b.maxY + pad },
+        }));
+      }
+      st.setStatus('Đã chọn đối tượng từ Bảng việc.');
+      return true;
+    };
+    if (!tryFocus()) {
+      unsub = useCadStore.subscribe(() => {
+        if (tryFocus()) {
+          unsub?.();
+          unsub = null;
+          window.clearTimeout(timer);
+        }
+      });
+      timer = window.setTimeout(() => {
+        if (done) return;
+        done = true;
+        unsub?.();
+        unsub = null;
+        pushLibraryToast('Đối tượng không còn trong bản vẽ');
+        useCadStore.getState().setStatus('Đối tượng của việc này không còn trong bản vẽ — có thể đã bị xoá.');
+      }, 6000);
+    }
+    return () => {
+      done = true;
+      unsub?.();
+      window.clearTimeout(timer);
+    };
   }, []);
 
   // 21/07 (quy trình CAD thực tế): AiBriefPanel bước 1 "Import hồ sơ CAD" TÁI DÙNG đúng 2 input

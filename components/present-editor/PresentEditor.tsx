@@ -68,6 +68,8 @@ import {
   PHOTO_EDITOR_RETURN_KEY,
 } from '@/lib/photo-editor/handoff';
 import { stageHrefFrom } from '@/lib/project-scope';
+// [marker: focusEntity] — đọc `?focusEntity=` từ deep-link Bảng việc (lib/tasks/context.ts sinh).
+import { parseFocusEntity } from '@/lib/tasks/focus-entity';
 import {
   createAssetFromElement,
   attachElementToAsset,
@@ -363,6 +365,33 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
       });
     });
     ed.selectSlide(insertAt);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /**
+   * [marker: focusEntity] — chiều ĐỌC của TaskContext Link (phiếu focus-entity-2d-present):
+   * Bảng việc deep-link `/projects/{id}/present?focusEntity=` → nhảy đúng TRANG (mức trang là
+   * đủ v1; id trỏ vào element thì nhảy tới trang chứa nó + chọn luôn element). PresentEditor
+   * chỉ mount SAU khi PresentSheets hydrate xong (xem docstring PresentSheets) nên đọc 1 lần
+   * lúc mount là đủ — không cần chờ như bên 2D. Không thấy → toast nhẹ, không chặn.
+   */
+  useEffect(() => {
+    const focusId = parseFocusEntity(window.location.search);
+    if (!focusId) return;
+    const slides = ed.deck.slides;
+    let idx = slides.findIndex((s) => s.id === focusId);
+    let elementId: string | null = null;
+    if (idx < 0) {
+      idx = slides.findIndex((s) => s.elements.some((e) => e.id === focusId));
+      if (idx >= 0) elementId = focusId;
+    }
+    if (idx >= 0) {
+      ed.selectSlide(idx);
+      if (elementId) ed.select(elementId);
+      setExportMsg({ ok: true, text: `Đã mở trang ${idx + 1} từ Bảng việc.` });
+    } else {
+      setExportMsg({ ok: false, text: 'Trang không còn trong hồ sơ này.' });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -2137,6 +2166,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
               {ed.slide && (
                 <Inspector
                   slide={ed.slide}
+                  slideIndex={ed.currentSlide}
                   selected={ed.selected}
                   palette={palette}
                   deckFonts={ed.deck.fonts}

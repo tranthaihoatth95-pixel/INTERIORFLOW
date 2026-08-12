@@ -29,6 +29,8 @@ import type { LinkedAsset } from '@/lib/present-editor/model';
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
+// [marker: taoViecTuDay] — tạo Task từ trang (POST /api/tasks sẵn có, lib/tasks/focus-entity).
+import { postTaskFromHere, suggestedTaskTitle, TASK_BOARD_ROUTE } from '@/lib/tasks/focus-entity';
 import { effectiveUserId } from '@/lib/resume';
 import { getProjectDoc } from '@/lib/present-editor/project-doc';
 import {
@@ -95,6 +97,8 @@ type AlignMode = 'left' | 'hcenter' | 'right' | 'top' | 'vcenter' | 'bottom';
 
 interface Props {
   slide: EditorSlide;
+  /** [marker: taoViecTuDay] — số thứ tự trang hiện tại (0-based) để đặt title "Trang N". */
+  slideIndex?: number;
   selected: SlideElement | null;
   palette: string[];
   deckFonts: FontPairing;
@@ -146,6 +150,7 @@ interface Props {
 
 export default function Inspector({
   slide,
+  slideIndex,
   selected,
   palette,
   deckFonts,
@@ -327,6 +332,8 @@ export default function Inspector({
             />
           </>
         )}
+        {/* [marker: taoViecTuDay] — tạo Task {stage:'present', entityId: slide.id} từ trang này */}
+        <CreateTaskFromSlide slide={slide} slideIndex={slideIndex} />
         <p style={{ fontSize: 11, color: 'var(--t4)', lineHeight: 1.4, marginTop: 4 }}>
           Chọn một phần tử trên slide để chỉnh. Kéo để di chuyển, kéo góc để đổi cỡ, chấm tròn
           trên đỉnh để xoay. Nhấp đúp chữ để sửa nội dung.
@@ -1126,7 +1133,7 @@ function ImageInspector({
             gap: 6,
             width: '100%',
             padding: '9px',
-            borderRadius: 8,
+            borderRadius: 10,
             border: '1px solid var(--accent)',
             background: 'var(--accent-soft)',
             color: 'var(--accent)',
@@ -1203,7 +1210,7 @@ function ImageInspector({
                     marginTop: 6,
                     fontSize: 11.5,
                     padding: '6px 8px',
-                    borderRadius: 7,
+                    borderRadius: 6,
                     border: '1px solid var(--border)',
                     background: 'var(--field)',
                     color: 'var(--t2)',
@@ -1253,7 +1260,7 @@ function ImageInspector({
             width: '100%',
             fontSize: 11.5,
             padding: '6px 8px',
-            borderRadius: 7,
+            borderRadius: 6,
             border: '1px solid var(--border)',
             background: 'var(--field)',
             color: 'var(--t2)',
@@ -1673,7 +1680,7 @@ function FillOverlayControls<T extends { fillOverlay?: FillOverlay }>({
                 width: '100%',
                 fontSize: 11.5,
                 padding: '6px 8px',
-                borderRadius: 7,
+                borderRadius: 6,
                 border: '1px solid var(--border)',
                 background: 'var(--field)',
                 color: 'var(--t2)',
@@ -1955,7 +1962,7 @@ function ActionBtn({
         gap: 5,
         minWidth: 90,
         padding: '8px 6px',
-        borderRadius: 7,
+        borderRadius: 6,
         border: '1px solid var(--border)',
         background: 'var(--field)',
         color: danger ? '#e5674f' : 'var(--t2)',
@@ -1997,7 +2004,7 @@ function ColorRow({
           style={{
             width: 20,
             height: 20,
-            borderRadius: 5,
+            borderRadius: 6,
             background: c,
             border: value.toLowerCase() === c.toLowerCase() ? '2px solid var(--accent)' : '1px solid var(--border)',
             cursor: 'pointer',
@@ -2016,7 +2023,7 @@ function ColorRow({
 const input: React.CSSProperties = {
   width: '100%',
   padding: '7px 9px',
-  borderRadius: 7,
+  borderRadius: 6,
   border: '1px solid var(--border)',
   background: 'var(--field)',
   color: 'var(--t1)',
@@ -2035,3 +2042,63 @@ const ghostBtn: React.CSSProperties = {
   fontSize: 11,
   cursor: 'pointer',
 };
+
+/**
+ * [marker: taoViecTuDay] — nút nhỏ trong Inspector trang (phiếu focus-entity-2d-present ô④):
+ * tạo Task {stage:'present', entityId: slide.id} qua POST /api/tasks sẵn có; title gợi ý theo
+ * chữ đầu tiên trên trang hoặc "Trang N". Xong hiện xác nhận + lối mở Bảng việc (không tự
+ * điều hướng — người dùng đang dàn trang, không giật họ đi nơi khác).
+ */
+function CreateTaskFromSlide({ slide, slideIndex }: { slide: EditorSlide; slideIndex?: number }) {
+  const params = useParams<{ id?: string }>();
+  const storeProjectId = useFlowStore((s) => s.currentProjectId);
+  const projectId = params?.id || storeProjectId || '';
+  const [state, setState] = useState<'idle' | 'busy' | 'done' | 'error'>('idle');
+  const [errText, setErrText] = useState('');
+
+  const pageName = `Trang ${typeof slideIndex === 'number' ? slideIndex + 1 : 1}`;
+  const firstText = slide.elements.find(
+    (e): e is Extract<SlideElement, { kind: 'text' }> => e.kind === 'text' && !!e.text.trim(),
+  );
+
+  const run = () => {
+    if (!projectId || state === 'busy') return;
+    setState('busy');
+    void postTaskFromHere({
+      projectId,
+      stage: 'present',
+      entityId: slide.id,
+      title: suggestedTaskTitle(firstText?.text.split('\n')[0] ?? '', pageName),
+    }).then((r) => {
+      if (r.ok) setState('done');
+      else { setErrText(r.error); setState('error'); }
+    });
+  };
+
+  return (
+    <Row>
+      <button
+        type="button"
+        onClick={run}
+        disabled={!projectId || state === 'busy'}
+        title={!projectId
+          ? 'Chưa xác định dự án — mở hồ sơ từ trang Dự án'
+          : `Tạo việc gắn ${pageName} vào Bảng việc`}
+        style={{ ...ghostBtn, opacity: !projectId || state === 'busy' ? 0.55 : 1 }}
+      >
+        {state === 'busy' ? 'Đang tạo việc…' : 'Tạo việc từ đây'}
+      </button>
+      {state === 'done' && (
+        <span style={{ fontSize: 11, color: 'var(--t3)' }}>
+          Đã tạo việc ·{' '}
+          <a href={TASK_BOARD_ROUTE} style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>
+            Mở Bảng việc
+          </a>
+        </span>
+      )}
+      {state === 'error' && (
+        <span style={{ fontSize: 11, color: 'var(--danger)' }}>Không tạo được: {errText}</span>
+      )}
+    </Row>
+  );
+}

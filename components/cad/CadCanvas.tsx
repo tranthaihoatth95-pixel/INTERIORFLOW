@@ -75,6 +75,10 @@ import type { BlockEntity } from '@/lib/cad/model';
 import Popover from '@/components/ui/Popover';
 import { recognizeStroke } from '@/lib/cad/stroke-recognize';
 import RadialToolMenu, { type RadialTool } from '@/components/print/RadialToolMenu';
+// [marker: taoViecTuDay] — chiều NGƯỢC của TaskContext Link (phiếu focus-entity-2d-present):
+// từ đối tượng đang chọn tạo Task {stage:'concept', entityId} qua POST /api/tasks sẵn có.
+import { postTaskFromHere, suggestedTaskTitle, TASK_BOARD_ROUTE } from '@/lib/tasks/focus-entity';
+import { pushLibraryToast } from '@/components/library/LibraryToast';
 import {
   FINGER_DRAW_EVENT,
   MULTI_TAP_MS,
@@ -281,6 +285,15 @@ export default function CadCanvas() {
   const [cadMenu, setCadMenu] = useState<{ clientX: number; clientY: number; hasSelection: boolean; worldAt: Pt } | null>(null);
   const cadQuickPhotoRef = useRef<HTMLInputElement>(null);
   const [cadRadial, setCadRadial] = useState<{ x: number; y: number; selected: boolean } | null>(null);
+  // [marker: taoViecTuDay] — toast "Đã tạo việc" KÈM nút mở Bảng việc (phiếu ô④). Toast text
+  // thuần dùng pushLibraryToast; riêng ca này cần THÊM hành động nên render pill nhỏ tại chỗ,
+  // tự tắt sau 5s, không chặn thao tác vẽ.
+  const [taskToast, setTaskToast] = useState(false);
+  useEffect(() => {
+    if (!taskToast) return;
+    const t = window.setTimeout(() => setTaskToast(false), 5000);
+    return () => window.clearTimeout(t);
+  }, [taskToast]);
   const radialHoldRef = useRef<{ timer: number; pointerId: number; start: Pt } | null>(null);
 
   // Cảm ứng — nút Xoá nổi: chỉ cần re-render khi selection/tool đổi (selector zustand, KHÔNG
@@ -1323,6 +1336,41 @@ export default function CadCanvas() {
   function cadMenuChangeMaterial() {
     setCadMenu(null);
     window.dispatchEvent(new CustomEvent('cad:open-material-palette'));
+  }
+  /** [marker: taoViecTuDay] — nhãn gợi title việc theo TÊN đối tượng (phòng/chữ/block), không id. */
+  function cadTaskLabel(ent: Entity): string {
+    if (ent.type === 'room') return ent.name;
+    if (ent.type === 'text') return ent.text;
+    if (ent.type === 'block') return BLOCK_MAP[ent.block]?.name ?? ent.block;
+    if (ent.type === 'zone') return ent.label || ZONE_GROUP_META[ent.group]?.vi || 'vùng';
+    if (ent.type === 'hatch') return 'mảng tường';
+    return 'đối tượng 2D';
+  }
+  function cadMenuCreateTask() {
+    setCadMenu(null);
+    const st = useCadStore.getState();
+    const id = st.selection[0];
+    const ent = st.doc.entities.find((e) => e.id === id);
+    // projectId từ store scope (URL là nguồn sự thật, useProjectScopeSync đã ép store theo URL).
+    const projectId = useFlowStore.getState().currentProjectId;
+    if (!ent) return;
+    if (!projectId) {
+      st.setStatus('Chưa xác định dự án — mở bản vẽ từ trang Dự án rồi thử lại.');
+      return;
+    }
+    void postTaskFromHere({
+      projectId,
+      stage: 'concept',
+      entityId: ent.id,
+      title: suggestedTaskTitle(cadTaskLabel(ent), 'đối tượng 2D'),
+    }).then((r) => {
+      if (r.ok) {
+        setTaskToast(true);
+        st.setStatus('Đã tạo việc gắn đối tượng này — xem ở Bảng việc.');
+      } else {
+        pushLibraryToast(`Không tạo được việc: ${r.error}`);
+      }
+    });
   }
 
   /**
@@ -3836,6 +3884,8 @@ export default function CadCanvas() {
               <CadMenuItem onClick={cadMenuDuplicate}>Nhân bản</CadMenuItem>
               <CadMenuItem onClick={cadMenuDelete} danger>Xoá</CadMenuItem>
               <CadMenuItem onClick={cadMenuChangeMaterial}>Đổi vật liệu</CadMenuItem>
+              {/* [marker: taoViecTuDay] — tạo Task mang {stage:'concept', entityId} từ đối tượng này */}
+              <CadMenuItem onClick={cadMenuCreateTask}>Tạo việc từ đây</CadMenuItem>
             </>
           ) : (
             <>
@@ -3845,6 +3895,48 @@ export default function CadCanvas() {
             </>
           )}
         </Popover>
+      )}
+
+      {/* [marker: taoViecTuDay] — toast "Đã tạo việc" kèm nút mở Bảng việc, tự tắt 5s */}
+      {taskToast && (
+        <div
+          role="status"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: 64,
+            transform: 'translateX(-50%)',
+            zIndex: 40,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '8px 12px',
+            borderRadius: 10,
+            fontSize: 12.5,
+            fontWeight: 500,
+            background: 'var(--panel)',
+            color: 'var(--t1)',
+            border: '1px solid var(--border)',
+            boxShadow: '0 8px 24px rgba(0,0,0,.35)',
+          }}
+        >
+          Đã tạo việc
+          <button
+            type="button"
+            onClick={() => { setTaskToast(false); window.location.href = TASK_BOARD_ROUTE; }}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--accent)',
+              fontSize: 12.5,
+              fontWeight: 600,
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            Mở Bảng việc
+          </button>
+        </div>
       )}
 
       {/* Cảm ứng — nút Xoá nổi: thiết bị không có bàn phím (tablet) không dùng được phím Delete/
