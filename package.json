@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "backup:offsite": "node scripts/backup-offsite.mjs",
     "check:mocks": "node scripts/check-mocks.mjs",
     "check:chot": "node scripts/check-chot.mjs",
     "soi:frontier": "node scripts/soi-frontier.mjs",

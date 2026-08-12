@@ -86,7 +86,7 @@ export const FRONTIER = [
     bangChung: [{ dir: 'components', mau: 'lastStage|ProjectOverviewCard' }] },
   { id: 'chong-lech-dinh-nghia', vai: 'day', ten: 'Máy soi TỪ ĐIỂN CHUẨN (12/08: soi-tu-dien.mjs — phát đầu bắt 81 chỗ nhãn lệch; sửa khi chạm, nhãn hiển thị sửa ngay)', he: 'DocCore', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'scripts', mau: 'soi-tu-dien' }] },
-  { id: 'backup-offsite', vai: 'do', ten: 'Backup tự động dev.db + uploads ra NGOÀI máy (rủi ro một-đĩa — nâng cấp Hoà duyệt 12/08)', he: 'DocCore', dot: 1, trangThai: 'chua',
+  { id: 'backup-offsite', vai: 'do', ten: 'Backup offsite (12/08: sqlite .backup + integrity trên bản sao + rsync --link-dest + rotation 7 + manifest — audit T tự chạy đích riêng OK)', he: 'DocCore', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'scripts', mau: 'backup-offsite|backupOffsite' }] },
   { id: 'nguoi-dung-that', vai: 'do', ten: 'Vòng người dùng thật trước Cửa B: 2-3 người TTT chạy kịch bản Phiếu trên app, note về Cổng Duyệt/Dòng Hoạt Động', he: 'Workspace', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'docs/bao-cao-phien', mau: 'nguoi-dung-that|phan-hoi-ttt' }] },
