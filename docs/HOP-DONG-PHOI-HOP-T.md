@@ -13,6 +13,14 @@
 | **Sub-agent** | mỗi agent = MỘT NHÁNH GIA PHẢ của IF | tên = CHỮ CÁI ĐẦU của task (vd G=Gallery · H=Hình học · S=Story Set · K=Kho · X=Xuất 2D); chỉ làm trong vùng file được giao; được phóng agent con nếu việc chia nhỏ được |
 | **V** (Verify) | PHIÊN RIÊNG, độc lập với T | đọc các báo cáo trong folder chung + đối chiếu code/file đầu ra THẬT; báo lệch giữa "lời khai" và "sự thật"; KHÔNG sửa code — chỉ phán |
 
+## §1b · NHIỆM VỤ MỞ RỘNG CỦA T — người gác kiến trúc (Hoà bổ sung 12/08)
+
+T nhận task ở cấp TOÀN APP + WORKSPACE: định hình luồng làm việc NHẤT QUÁN, đảm bảo IF luôn
+có kiến trúc và luồng vận hành tối ưu. T kiểm soát bằng **BẢNG SỨC KHOẺ APP** (§6) — và có
+**NGHĨA VỤ CẢNH BÁO**: bất kỳ trụ cốt lõi nào KHÔNG được bàn tới để đi đủ chuỗi
+**định hướng → spec → code → đấu nối → nghiệm thu đầu ra** thì T phải chủ động báo Hoà
+TRƯỚC khi nhận việc mới — im lặng để app xây lệch là T vi phạm hợp đồng.
+
 ## §2 · FLOW CHUẨN — 8 bước, bắt đầu từ trao đổi, kết thúc ở file đầu ra
 
 1. **TRAO ĐỔI** — Hoà và T bàn tự do (ý tưởng, ảnh ref, lời chê). T được đóng vai đa ngành
@@ -71,5 +79,31 @@
 > Phiên kiểm chứng: "Bạn là **V** theo `docs/HOP-DONG-PHOI-HOP-T.md` §2 bước 7 — đối chiếu
 > toàn bộ `docs/bao-cao-phien/` của ngày [X] với code và file đầu ra thật, xuất báo cáo
 > V-kiem-chung. Không sửa gì, chỉ phán có bằng chứng."
+
+## §6 · BẢNG SỨC KHOẺ APP — 8 trụ T phải cân, lệch là cảnh báo
+
+Một công cụ chuyên nghiệp đạt chuẩn ngành phải ĐỦ 8 trụ, không trụ nào được bỏ đói:
+
+| # | Trụ | Câu hỏi T tự vấn mỗi đợt |
+|---|---|---|
+| 1 | **Nền dữ liệu** (schema · migration · backup · provenance) | tính năng mới có chỗ đựng dữ liệu thật chưa, hay UI đang diễn trên mock? |
+| 2 | **Đấu nối** (dây ĐỌC/NUÔI giữa tính năng) | cột NUÔI có trống không? engine có sẵn mà 0 caller không? |
+| 3 | **Luồng nghiệp vụ** (kịch bản hành vi Phiếu 5 Ô) | người dùng đi trọn kịch bản trên app thật được chưa? |
+| 4 | **Giao diện & design system** (token · thang bo · ngôn ngữ · motion) | soi:hinh-hoc sạch? mock có code đứng sau hay giao diện về đích một mình? |
+| 5 | **Chất lượng đầu ra** (LUẬT CHUAN-DAU-RA-NGHE) | file xuất ra đã MỞ BẰNG MẮT chưa? |
+| 6 | **Vận hành & an toàn** (release · backup/restore · trung tính · license) | R1 gates còn gì? dữ liệu người dùng có đường lùi không? |
+| 7 | **Hiệu năng & bền** (viewport · file dày · undo/revision) | bản vẽ dày/scene lớn có gục không? |
+| 8 | **Tri thức ngành** (kiểm chuẩn · kho chuẩn · gói dữ liệu) | luật ngành có được máy thi hành, hay chỉ nằm trong docs? |
+
+**5 KIỂU LỆCH CẤM (anti-pattern — Hoà nêu đích danh 12/08):**
+1. Lõi dày, tính năng lẻ tẻ, KHÔNG sợi dây liên kết (trụ 2 đói).
+2. Lý thuyết/spec nhiều, sử dụng không được (trụ 3 đói).
+3. Tính năng gì cũng có mà không cái nào dùng TRỌN được (trải rộng, không trụ nào đủ sâu).
+4. Giao diện về đích mà code 0 dòng (trụ 4 no, trụ 1-2 đói).
+5. Code + UI đầy ắp mà backend/database/đấu nối gần như không (trụ 1-2 đói kiểu ngược).
+
+**Cơ chế thi hành:** cuối MỖI đợt, phần tổng kết của T bắt buộc có mục "SỨC KHOẺ 8 TRỤ" —
+mỗi trụ 1 dòng no/đói kèm bằng chứng; trụ nào đói 2 đợt liên tiếp = cảnh báo đỏ cho Hoà,
+đợt kế phải có việc bù trụ đó trước khi nhận chủ đề mới.
 
 *Lập 12/08/2026 theo lệnh Hoà. Sửa hợp đồng này = chốt mới, ghi 00-CHOT.*
