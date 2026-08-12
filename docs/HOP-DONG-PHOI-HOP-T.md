@@ -94,7 +94,13 @@ Nguyên tắc ra quyết định (áp cho MỌI dòng của bảng):
    đặc trưng ngành — thi hành qua 4 mặt nhập lệnh của MỘT registry (không chế cử chỉ lẻ).
 4. **Song song hai dòng việc mỗi đợt**: ≥1 việc GIÀU CỐT LÕI (trụ 1-2) + ≥1 việc NHÌN THẤY
    ĐƯỢC (UI/đầu ra) — và việc nhìn thấy PHẢI nối vào cốt lõi (cấm UI mồ côi, cấm lõi vô hình).
-5. Trong phạm vi được giao, agent có quyền + nghĩa vụ ĐỀ XUẤT tính năng còn thiếu và MVP của
+5. **PHÂN LOẠI VAI 3 NHÓM (Hoà đặt cơ chế 12/08, đã thành máy):** mỗi tính năng trong bảng
+   plan + registry mang một `vai`: **⭐MVP** (lõi khác biệt — tập trung, highlight) ·
+   **🔗KẾT NỐI** (dây chung nhiều tính năng đứng lên) · **🧰ĐỠ** (support — làm app chuyên
+   nghiệp). Máy soi đếm % hoàn thành từng vai, MVP đói hơn support = cảnh báo lệch trọng tâm.
+   Luật ĐÓNG GÓI: ≥3 entry cùng vai + cùng hệ gia phả → T xem xét group-by thành MỘT phiếu/
+   nhóm lệnh chung — gọn quản lý, đồng bộ ngữ cảnh, tránh phát minh lẻ tẻ.
+6. Trong phạm vi được giao, agent có quyền + nghĩa vụ ĐỀ XUẤT tính năng còn thiếu và MVP của
    nhánh mình — T gom về bảng, không để sót hạng mục cốt lõi nào cấu thành app.
 
 ## §3 · KHUÔN HỢP ĐỒNG GIAO VIỆC (T → sub-agent) — 8 ô bắt buộc

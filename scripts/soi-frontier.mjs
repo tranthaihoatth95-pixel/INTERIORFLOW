@@ -74,5 +74,14 @@ const mayOnly = rows.filter((r) => r.mark === '✅').length;
 const mat = rows.filter((r) => r.mark === '👁').length;
 const todo = rows.filter((r) => r.mark === '⬜').length;
 console.log('─'.repeat(100));
+const byVai = { mvp: [0, 0], day: [0, 0], do: [0, 0] }; // [xong, tổng]
+for (const it of FRONTIER) {
+  const v = byVai[it.vai || 'do'];
+  v[1]++;
+  if (it.trangThai === 'xong' || it.trangThai === 'xong-mat') v[0]++;
+}
+const pct = (v) => v[1] ? Math.round((v[0] / v[1]) * 100) : 0;
+console.log(`VAI — ⭐MVP ${byVai.mvp[0]}/${byVai.mvp[1]} (${pct(byVai.mvp)}%) · 🔗Kết nối ${byVai.day[0]}/${byVai.day[1]} (${pct(byVai.day)}%) · 🧰Đỡ ${byVai.do[0]}/${byVai.do[1]} (${pct(byVai.do)}%)`);
+if (pct(byVai.mvp) < pct(byVai.do)) console.log('⚠️  MVP đang ĐÓI hơn support — lệch trọng tâm (anti-pattern #3), đợt kế ưu tiên entry ⭐');
 console.log(`👁 ${mat} qua mắt Hoà · ✅ ${mayOnly} xong-MÁY (NỢ NGHIỆM THU MẮT) · ⬜ ${todo} chờ · 🔴 ${red} LỆCH${red ? '  ← xử lệch TRƯỚC khi bàn việc mới' : ''}\n`);
 process.exit(red ? 1 : 0);
