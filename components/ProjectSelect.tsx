@@ -326,7 +326,28 @@ type CardItem = { kind: 'flow'; flow: FlowRow } | { kind: 'new' };
 /** Lượt chat "Trợ lý AI" — cùng shape với payload app/api/ai-assist-chat mong đợi. */
 type ChatTurn = { role: 'user' | 'assistant'; content: string };
 
-export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
+export function ProjectSelect({
+  onEnter,
+  hideHeroCopy = false,
+  hideVitalsBar = false,
+}: {
+  onEnter: () => void;
+  /**
+   * DÒNG STUDIO (13/08, phiếu home-dong-studio.md, ④.4) — ẩn pill "Chào …" + tiêu đề + mô tả
+   * hero: `DongStudioHome` (components/home/) đã thay bằng ánh sáng theo giờ thật + lời chào dữ
+   * liệu thật ở Trang 1 Tầng 1, đứng NGOÀI component này. Nút "Chi tiết"/"Đồng bộ tiến độ" +
+   * toggle carousel/grid GIỮ NGUYÊN dù bật cờ này (không nằm trong khối bị ẩn — vẫn cần dùng
+   * được). Mặc định `false` — HomeScreen.tsx là nơi gọi DUY NHẤT, bật cờ này ở đó; mọi nơi khác
+   * (không có) hành vi giữ y hệt hôm nay.
+   */
+  hideHeroCopy?: boolean;
+  /**
+   * DÒNG STUDIO — ẩn thanh "Vitals AI" luôn-hiện (từng chiếm ngang dưới hero). Thay bằng
+   * `VitalsPill` góc màn (components/home/widgets/VitalsPill.tsx), không chiếm giữa màn (khuôn
+   * Siri §4b, docs/00-CHOT.md 12/08). Mặc định `false`.
+   */
+  hideVitalsBar?: boolean;
+}) {
   const user = useFlowStore((s) => s.user);
   const openDashboardTab = useFlowStore((s) => s.openDashboardTab);
   const router = useRouter();
@@ -1521,7 +1542,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                     src={coverOf(item.flow)}
                     alt=""
                     draggable={false}
-                    className="h-14 w-[74px] shrink-0 rounded-lg object-cover"
+                    className="h-14 w-[74px] shrink-0 rounded-[10px] object-cover"
                   />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[length:var(--fs-sm)] font-semibold text-[var(--t1)]">
@@ -1550,7 +1571,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               ) : (
                 <>
                   <span
-                    className="grid h-14 w-[74px] shrink-0 place-items-center rounded-lg"
+                    className="grid h-14 w-[74px] shrink-0 place-items-center rounded-[10px]"
                     style={{ border: `1.5px dashed ${ACCENT}`, color: ACCENT }}
                   >
                     <Plus size={18} />
@@ -1877,32 +1898,40 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             không có ambient (grid/mobile/reduce), giữ nguyên token cũ — không có gì để
             thích ứng trên nền phẳng var(--bg). */}
         <div
-          className="relative mb-8 flex flex-col items-center rounded-[32px] px-4 py-3 text-center sm:mb-10"
+          className="relative mb-8 flex flex-col items-center rounded-[20px] px-4 py-3 text-center sm:mb-10"
           style={showAmbient ? { background: heroPlan.scrim } : undefined}
         >
-          <div className="flex items-center gap-2 rounded-full px-4 py-1.5" style={glass}>
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: ACCENT }} />
-            <span
-              className="text-[length:var(--fs-xs)] uppercase text-[var(--t4)]"
-              style={{ letterSpacing: '0.28em', ...(showAmbient ? adaptiveTextStyle(heroPlan, true) : null) }}
-            >
-              {firstName ? (en ? `Hi ${firstName}` : `Chào ${firstName}`) : 'InteriorFlow'}
-            </span>
-          </div>
-          <h1
-            className="mt-4 text-[length:var(--fs-xl)] font-semibold leading-tight text-[var(--t1)] sm:text-[length:var(--fs-xl)]"
-            style={{ letterSpacing: '-0.028em', ...(showAmbient ? adaptiveTextStyle(heroPlan) : null) }}
-          >
-            {en ? 'Pick a project to begin' : 'Chọn dự án để bắt đầu'}
-          </h1>
-          <p
-            className="mt-2.5 max-w-md text-[length:var(--fs-sm)] leading-relaxed text-[var(--t4)]"
-            style={showAmbient ? adaptiveTextStyle(heroPlan, true) : undefined}
-          >
-            {en
-              ? 'Open a flow and land straight on the canvas — Concept · Render · Present live in the header.'
-              : 'Mở một flow là vào thẳng canvas — Concept · Render · Present nằm sẵn trên thanh Header.'}
-          </p>
+          {/* DÒNG STUDIO (13/08) — pill "Chào…" + tiêu đề + mô tả BỊ ẨN khi `hideHeroCopy` (Trang
+              1 Tầng 1 của DongStudioHome đã thay bằng ánh sáng giờ thật + lời chào dữ liệu thật,
+              đứng NGOÀI component này). Nút Chi tiết/Đồng bộ/toggle bên dưới KHÔNG nằm trong khối
+              này — luôn hiện, không phụ thuộc cờ. */}
+          {!hideHeroCopy && (
+            <>
+              <div className="flex items-center gap-2 rounded-full px-4 py-1.5" style={glass}>
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: ACCENT }} />
+                <span
+                  className="text-[length:var(--fs-xs)] uppercase text-[var(--t4)]"
+                  style={{ letterSpacing: '0.28em', ...(showAmbient ? adaptiveTextStyle(heroPlan, true) : null) }}
+                >
+                  {firstName ? (en ? `Hi ${firstName}` : `Chào ${firstName}`) : 'InteriorFlow'}
+                </span>
+              </div>
+              <h1
+                className="mt-4 text-[length:var(--fs-xl)] font-semibold leading-tight text-[var(--t1)] sm:text-[length:var(--fs-xl)]"
+                style={{ letterSpacing: '-0.028em', ...(showAmbient ? adaptiveTextStyle(heroPlan) : null) }}
+              >
+                {en ? 'Pick a project to begin' : 'Chọn dự án để bắt đầu'}
+              </h1>
+              <p
+                className="mt-2.5 max-w-md text-[length:var(--fs-sm)] leading-relaxed text-[var(--t4)]"
+                style={showAmbient ? adaptiveTextStyle(heroPlan, true) : undefined}
+              >
+                {en
+                  ? 'Open a flow and land straight on the canvas — Concept · Render · Present live in the header.'
+                  : 'Mở một flow là vào thẳng canvas — Concept · Render · Present nằm sẵn trên thanh Header.'}
+              </p>
+            </>
+          )}
 
           {/* "Chi tiết" (toàn bộ, không lọc) + "Đồng bộ tiến độ" — 2 điểm neo cố định đầu
               Gallery (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.2(b)/§2.5). Nút Đồng bộ
@@ -1952,6 +1981,11 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           )}
         </div>
 
+        {/* DÒNG STUDIO (13/08) — toàn khối Vitals AI bên dưới CHỈ hiện khi !hideVitalsBar
+            (HomeScreen.tsx bật cờ này — DongStudioHome dùng VitalsPill góc màn thay thế, luật
+            "KHÔNG chiếm giữa màn" của phiếu home-dong-studio.md ④.3). */}
+        {!hideVitalsBar && (
+        <>
         {/* ---------- Vitals AI — thanh chat LUÔN HIỆN phía trên thẻ dự án ----------
             KHÁC "Chat nhóm" (Header, người-với-người). Nền trong suốt (chỉ hairline + blur),
             placeholder xoay vòng mô tả khả năng. Vùng tin nhắn khi nở ra là OVERLAY kính lỏng
@@ -2088,7 +2122,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                     )}
                     {chatError && (
                       <div
-                        className="rounded-xl px-3 py-2.5 text-left text-[11.5px] leading-relaxed text-[var(--t1)]"
+                        className="rounded-[10px] px-3 py-2.5 text-left text-[11.5px] leading-relaxed text-[var(--t1)]"
                         style={{ background: 'rgba(200,64,40,0.12)', border: '1px solid rgba(200,64,40,0.3)'}}
                       >
                         {chatError.code === 'NO_TEXT_PROVIDER'
@@ -2104,6 +2138,8 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             )}
           </AnimatePresence>
         </div>
+        </>
+        )}
 
         {/* thân màn theo trạng thái — reduce-motion THẮNG TẤT CẢ (kể cả override toggle,
             xem viewToggle), rồi mới tới effectiveGrid (J-4c mặc định HOẶC override thủ công). */}
@@ -2203,7 +2239,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   type="button"
                   disabled={uploading}
                   onClick={() => fileInputRef.current?.click()}
-                  className="mb-1 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[length:var(--fs-sm)] font-medium text-[var(--t1)] transition-opacity disabled:opacity-60"
+                  className="mb-1 flex w-full items-center justify-center gap-2 rounded-[10px] px-4 py-3 text-[length:var(--fs-sm)] font-medium text-[var(--t1)] transition-opacity disabled:opacity-60"
                   style={{ ...glass, border: '1.5px dashed rgba(106,87,245,0.53)' }}
                 >
                   {uploading ? (
@@ -2234,7 +2270,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                       key={url}
                       type="button"
                       onClick={() => void setCover(pickerFor, url)}
-                      className="overflow-hidden rounded-lg border border-white/12 transition-transform hover:scale-[1.03]"
+                      className="overflow-hidden rounded-[10px] border border-white/12 transition-transform hover:scale-[1.03]"
                       style={{ aspectRatio: '4 / 3' }}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2262,7 +2298,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                         key={url}
                         type="button"
                         onClick={() => void setCover(pickerFor, url)}
-                        className="overflow-hidden rounded-lg border border-white/12 transition-transform hover:scale-[1.05]"
+                        className="overflow-hidden rounded-[10px] border border-white/12 transition-transform hover:scale-[1.05]"
                         style={{ aspectRatio: '1 / 1' }}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -680,7 +680,7 @@ export function LoginBackdropPicker({
   };
 
   const modeBtn =
-    'flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[9px] border text-[11px] transition-colors';
+    'flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[10px] border text-[11px] transition-colors';
 
   return (
     <div className="absolute bottom-5 right-5 z-30">
@@ -693,7 +693,7 @@ export function LoginBackdropPicker({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 6, scale: 0.98 }}
               transition={{ duration: 0.2, ease: easeApple }}
-              className="lq-card absolute bottom-11 right-0 z-40 w-[19rem] rounded-[16px] p-3"
+              className="lq-card absolute bottom-11 right-0 z-40 w-[19rem] rounded-[14px] p-3"
             >
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--t4)]">
                 {en ? 'Backdrop' : 'Nền đăng nhập'}
@@ -765,7 +765,7 @@ export function LoginBackdropPicker({
                           className="group flex flex-col items-center gap-1"
                         >
                           <span
-                            className={`relative h-12 w-full overflow-hidden rounded-[9px] border transition-transform group-hover:scale-[1.03] if-dyn-swatch-${d.id}`}
+                            className={`relative h-12 w-full overflow-hidden rounded-[10px] border transition-transform group-hover:scale-[1.03] if-dyn-swatch-${d.id}`}
                             style={{
                               borderColor: on ? 'var(--accent)' : 'var(--border)',
                               boxShadow: on ? '0 0 0 1px var(--accent)' : undefined,
@@ -811,7 +811,7 @@ export function LoginBackdropPicker({
                           className="group flex flex-col items-center gap-1"
                         >
                           <span
-                            className="relative grid h-10 w-full place-items-center rounded-[9px] border transition-transform group-hover:scale-[1.04]"
+                            className="relative grid h-10 w-full place-items-center rounded-[10px] border transition-transform group-hover:scale-[1.04]"
                             style={{
                               background: p.swatch,
                               borderColor: on ? 'var(--accent)' : 'var(--border)',
@@ -831,7 +831,7 @@ export function LoginBackdropPicker({
                     {en ? 'Image library' : 'Thư viện ảnh'}
                   </p>
                   {noLibrary && (
-                    <p className="rounded-[9px] border border-dashed border-[var(--border)] px-2.5 py-2 text-[10px] leading-snug text-[var(--t4)]">
+                    <p className="rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-2 text-[10px] leading-snug text-[var(--t4)]">
                       {noLibraryReason}
                     </p>
                   )}
@@ -844,7 +844,7 @@ export function LoginBackdropPicker({
                           type="button"
                           onClick={() => onPick({ kind: 'wall', id: w.id })}
                           title={w.id}
-                          className="relative overflow-hidden rounded-[7px] border transition-transform hover:scale-[1.04]"
+                          className="relative overflow-hidden rounded-[6px] border transition-transform hover:scale-[1.04]"
                           style={{
                             borderColor: on ? 'var(--accent)' : 'var(--border)',
                             boxShadow: on ? '0 0 0 1px var(--accent)' : undefined,
@@ -866,7 +866,7 @@ export function LoginBackdropPicker({
                     <button
                       type="button"
                       onClick={() => fileRef.current?.click()}
-                      className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[9px] border border-[var(--border)] text-[11px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+                      className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border)] text-[11px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
                     >
                       <Upload size={11} />
                       {en ? 'Your photo' : 'Ảnh của bạn'}
@@ -876,7 +876,7 @@ export function LoginBackdropPicker({
                         type="button"
                         onClick={() => onPick({ kind: 'preset', id: 'ember' })}
                         title={en ? 'Remove photo' : 'Gỡ ảnh'}
-                        className="grid h-8 w-8 place-items-center rounded-[9px] border border-[var(--border)] text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-red-400"
+                        className="grid h-8 w-8 place-items-center rounded-[10px] border border-[var(--border)] text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-red-400"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -899,7 +899,7 @@ export function LoginBackdropPicker({
                   <button
                     type="button"
                     onClick={() => setOnlineOpen((o) => !o)}
-                    className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-[9px] border border-[var(--border)] text-[11px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+                    className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border)] text-[11px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
                   >
                     <Globe size={11} />
                     {en ? 'From the web' : 'Ảnh trên mạng'}
@@ -977,7 +977,7 @@ export function LoginBackdropPicker({
                           type="button"
                           onClick={() => toggleSlide(w.id)}
                           title={w.id}
-                          className="relative overflow-hidden rounded-[7px] border transition-transform hover:scale-[1.04]"
+                          className="relative overflow-hidden rounded-[6px] border transition-transform hover:scale-[1.04]"
                           style={{
                             borderColor: on ? 'var(--accent)' : 'var(--border)',
                             boxShadow: on ? '0 0 0 1px var(--accent)' : undefined,
@@ -999,7 +999,7 @@ export function LoginBackdropPicker({
                     <button
                       type="button"
                       onClick={() => onPick({ ...choice, ids: WALLPAPERS.map((w) => w.id) })}
-                      className="flex h-7 flex-1 items-center justify-center rounded-[9px] border border-[var(--border)] text-[10.5px] text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
+                      className="flex h-7 flex-1 items-center justify-center rounded-[10px] border border-[var(--border)] text-[10.5px] text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
                     >
                       {en ? 'Select all' : 'Chọn hết'}
                     </button>

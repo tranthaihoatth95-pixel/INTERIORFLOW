@@ -297,7 +297,7 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
               </div>
             )}
             {isMeasureCard && anchorPoints.length === 2 && (
-              <div style={{ marginTop: 10, padding: 12, borderRadius: 8, border: '1px solid var(--accent-ring)', background: 'var(--accent-soft)' }}>
+              <div style={{ marginTop: 10, padding: 12, borderRadius: 10, border: '1px solid var(--accent-ring)', background: 'var(--accent-soft)' }}>
                 <div style={{ fontSize: 11, color: 'var(--t2)', marginBottom: 6 }}>Vật chuẩn vừa khoanh là gì?</div>
                 <select
                   value={anchorKind}
@@ -382,11 +382,11 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
                 marginTop: 18,
                 width: '100%',
                 padding: '10px',
-                borderRadius: 8,
+                borderRadius: 10,
                 border: 'none',
                 background: canRender ? 'var(--accent)' : 'var(--border)',
                 color: '#fff',
-                fontSize: 13,
+                fontSize: 'var(--fs-ui)',
                 fontWeight: 600,
                 cursor: canRender ? 'pointer' : 'not-allowed',
               }}
@@ -451,7 +451,7 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
                     color: 'var(--t3)',
                     background: 'transparent',
                     border: '1px solid var(--border)',
-                    borderRadius: 7,
+                    borderRadius: 6,
                     padding: '6px 12px',
                     cursor: 'pointer',
                   }}
@@ -536,7 +536,7 @@ function MeasurementPanel({
         style={{
           marginTop: 8,
           padding: '8px 10px',
-          borderRadius: 8,
+          borderRadius: 10,
           border: '1px solid var(--warning)',
           background: 'color-mix(in srgb, var(--warning) 12%, transparent)',
           color: 'var(--warning)',
@@ -590,7 +590,7 @@ function MeasurementExportButton({
           marginTop: 12,
           width: '100%',
           padding: '9px',
-          borderRadius: 8,
+          borderRadius: 10,
           border: '1px solid var(--border)',
           background: 'transparent',
           color: 'var(--t2)',
@@ -709,7 +709,7 @@ function MeasurementToCadButtons({
   const btn = (disabled: boolean): React.CSSProperties => ({
     flex: 1,
     padding: '9px',
-    borderRadius: 8,
+    borderRadius: 10,
     border: '1px solid var(--border)',
     background: 'transparent',
     color: 'var(--t2)',
@@ -803,7 +803,7 @@ function ParamControl({
           style={{
             width: '100%',
             padding: '7px 9px',
-            borderRadius: 7,
+            borderRadius: 6,
             border: '1px solid var(--border)',
             background: 'var(--panel)',
             color: 'var(--t1)',
@@ -850,7 +850,7 @@ function ParamControl({
         style={{
           width: '100%',
           padding: '7px 9px',
-          borderRadius: 7,
+          borderRadius: 6,
           border: '1px solid var(--border)',
           background: 'var(--panel)',
           color: 'var(--t1)',

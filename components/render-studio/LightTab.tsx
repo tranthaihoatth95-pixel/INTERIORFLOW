@@ -159,7 +159,7 @@ export function LightTab() {
 
   return (
     <div className="space-y-3.5">
-      <p className="rounded-[9px] border border-dashed border-[var(--border)] px-2 py-1.5 text-[10px] leading-relaxed text-[var(--t4)]">
+      <p className="rounded-[10px] border border-dashed border-[var(--border)] px-2 py-1.5 text-[10px] leading-relaxed text-[var(--t4)]">
         {tr(
           'Khung nhìn đổi sáng ngay theo bộ đèn. Số lux dưới đây là ước tính, chưa thay báo cáo IES/LDT.',
           'The viewport updates with this light rig. The lux values below are estimates, not an IES/LDT report.',
@@ -173,7 +173,7 @@ export function LightTab() {
           [tr('Diện tích', 'Area'), quickEstimate.areaM2 ? `${quickEstimate.areaM2} m²` : '—'],
           [tr('Đồng đều', 'Uniformity'), quickEstimate.uniformity === null ? '—' : quickEstimate.uniformity.toFixed(2)],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5">
+          <div key={label} className="rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5">
             <p className="text-[9px] font-bold uppercase tracking-wide text-[var(--t4)]">{label}</p>
             <p className="mt-0.5 text-[12px] font-semibold tabular-nums text-[var(--t1)]">{value}</p>
           </div>
@@ -181,7 +181,7 @@ export function LightTab() {
       </section>
 
       {rig.warnings.length > 0 && (
-        <ul className="space-y-1 rounded-[9px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5">
+        <ul className="space-y-1 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5">
           {rig.warnings.map((w) => (
             <li key={w} className="flex items-start gap-1 text-[10px] leading-relaxed text-[var(--warning)]">
               <AlertTriangle size={11} className="mt-[2px] flex-none" />
@@ -204,7 +204,7 @@ export function LightTab() {
                 writeSun(p.sun);
                 writeSky(p.sky);
               }}
-              className="min-h-[var(--tap)] rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-[10.5px] font-medium leading-[1.4] text-[var(--t2)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
+              className="min-h-[var(--tap)] rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-[10.5px] font-medium leading-[1.4] text-[var(--t2)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
             >
               {tr(p.vi, p.en)}
             </button>
@@ -227,7 +227,7 @@ export function LightTab() {
               type="button"
               onClick={() => setSunUi({ mode: m })}
               className={cn(
-                'h-[var(--tap)] flex-1 rounded-[8px] border text-[10.5px] font-semibold leading-[1.6] transition-colors',
+                'h-[var(--tap)] flex-1 rounded-[10px] border text-[10.5px] font-semibold leading-[1.6] transition-colors',
                 sunUi.mode === m
                   ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
                   : 'border-[var(--border)] bg-[var(--field)] text-[var(--t3)] hover:border-[var(--accent-ring)]',
@@ -306,7 +306,7 @@ export function LightTab() {
           <>
             {/* Chưa khai vị trí/ngày thì KHÔNG bịa Hà Nội vào hồ sơ người dùng (N4) — hiện ô nhập
                 ngay tại chỗ, đúng luật "empty state làm được việc TẠI CHỖ" (X2). */}
-            <div className="space-y-1 rounded-[9px] border border-[var(--border)] bg-[var(--field)] p-1.5">
+            <div className="space-y-1 rounded-[10px] border border-[var(--border)] bg-[var(--field)] p-1.5">
               <span className="flex items-center gap-1 text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">
                 <MapPin size={10} /> {tr('Vị trí công trình', 'Project location')}
               </span>
@@ -341,7 +341,7 @@ export function LightTab() {
                   value={sunUi.dateIso}
                   onChange={(e) => applyDateTime({ dateIso: e.target.value })}
                   aria-label={tr('Ngày', 'Date')}
-                  className="h-[var(--tap)] w-full rounded-[7px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
+                  className="h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
                 />
               </label>
               <p className="text-[9.5px] leading-relaxed text-[var(--t5)]">
@@ -420,7 +420,7 @@ export function LightTab() {
           value={lighting.sky.hdriId ?? ''}
           onChange={(e) => writeSky({ hdriId: e.target.value || undefined })}
           aria-label={tr('Chọn bầu trời', 'Pick a sky')}
-          className="h-[var(--tap)] w-full rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
+          className="h-[var(--tap)] w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
         >
           <option value="">{tr('— môi trường mặc định —', '— default environment —')}</option>
           {HDRI_OPTIONS.map((o) => (
@@ -475,7 +475,7 @@ export function LightTab() {
               <button
                 type="button"
                 onClick={() => addLight(k.id)}
-                className="flex min-h-[var(--tap)] w-full items-center justify-center gap-1 rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-1 text-[10.5px] font-medium leading-[1.4] text-[var(--t2)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
+                className="flex min-h-[var(--tap)] w-full items-center justify-center gap-1 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-1 text-[10.5px] font-medium leading-[1.4] text-[var(--t2)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
               >
                 <Plus size={11} className="flex-none" />
                 {tr(k.vi, k.en)}
@@ -485,7 +485,7 @@ export function LightTab() {
         </div>
 
         {lighting.rooms.length === 0 ? (
-          <p className="rounded-[9px] border border-dashed border-[var(--border)] px-2 py-2 text-[10.5px] leading-relaxed text-[var(--t4)]">
+          <p className="rounded-[10px] border border-dashed border-[var(--border)] px-2 py-2 text-[10.5px] leading-relaxed text-[var(--t4)]">
             {tr('Chưa có đèn nào trong cảnh.', 'No lights in the scene yet.')}
           </p>
         ) : (
@@ -494,7 +494,7 @@ export function LightTab() {
               const kindDef = ROOM_LIGHT_KINDS.find((k) => k.id === l.kind);
               const resolved = rig.rooms.find((r) => r.id === l.id);
               return (
-                <li key={l.id} className="space-y-1.5 rounded-[9px] border border-[var(--border)] bg-[var(--field)] p-1.5">
+                <li key={l.id} className="space-y-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] p-1.5">
                   <div className="flex items-center gap-1.5">
                     <span
                       className="h-[10px] w-[10px] flex-none rounded-full border border-[var(--border)]"
@@ -523,7 +523,7 @@ export function LightTab() {
                       patchRoomLight(l.id, { kind, ...(def ? { lumens: def.lumens, colorK: def.colorK } : {}) });
                     }}
                     aria-label={tr('Loại đèn', 'Light kind')}
-                    className="h-[var(--tap)] w-full rounded-[7px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[10.5px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
+                    className="h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[10.5px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
                   >
                     {ROOM_LIGHT_KINDS.map((k) => (
                       <option key={k.id} value={k.id}>{tr(k.vi, k.en)}</option>
@@ -580,7 +580,7 @@ export function LightTab() {
                         value={l.levelId ?? ''}
                         onChange={(e) => patchRoomLight(l.id, { levelId: e.target.value || undefined })}
                         aria-label={tr('Gắn tầng', 'Level')}
-                        className="h-[var(--tap)] w-full rounded-[7px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[10.5px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
+                        className="h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[10.5px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
                       >
                         <option value="">{tr('— cao độ tuyệt đối —', '— absolute elevation —')}</option>
                         {levels.map((lv) => (

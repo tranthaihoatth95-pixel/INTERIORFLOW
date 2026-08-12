@@ -180,13 +180,13 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
 
   return (
     <div role="dialog" aria-modal style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(10,8,6,0.4)' }}>
-      <div style={{ width: 720, maxHeight: '88vh', display: 'flex', flexDirection: 'column', background: 'var(--panel)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden' }}>
+      <div style={{ width: 720, maxHeight: '88vh', display: 'flex', flexDirection: 'column', background: 'var(--panel)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', height: 46, padding: '0 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
           <FileSpreadsheet size={15} style={{ color: 'var(--accent)' }} />
           <span style={{ marginLeft: 8, fontSize: 14, fontWeight: 600, color: 'var(--t1)' }}>
             {tr('Nhập vật liệu từ Excel/CSV', 'Import materials from Excel/CSV')}
           </span>
-          <button type="button" onClick={onClose} style={{ marginLeft: 'auto', width: 26, height: 26, display: 'grid', placeItems: 'center', border: 0, borderRadius: 8, background: 'transparent', color: 'var(--t4)', cursor: 'pointer' }}>
+          <button type="button" onClick={onClose} style={{ marginLeft: 'auto', width: 26, height: 26, display: 'grid', placeItems: 'center', border: 0, borderRadius: 6, background: 'transparent', color: 'var(--t4)', cursor: 'pointer' }}>
             <X size={14} />
           </button>
         </div>
@@ -203,17 +203,17 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
               }}
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '48px 20px',
-                borderRadius: 12, border: `1.5px dashed ${dragOver ? 'var(--accent)' : 'var(--border)'}`,
+                borderRadius: 10, border: `1.5px dashed ${dragOver ? 'var(--accent)' : 'var(--border)'}`,
                 background: dragOver ? 'var(--accent-soft, var(--field))' : 'var(--field)',
               }}
             >
               <Upload size={26} strokeWidth={1.5} style={{ color: 'var(--t4)' }} />
-              <b style={{ fontSize: 13, color: 'var(--t1)' }}>{tr('Thả file .xlsx hoặc .csv vào đây', 'Drop an .xlsx or .csv file here')}</b>
+              <b style={{ fontSize: 'var(--fs-ui)', color: 'var(--t1)' }}>{tr('Thả file .xlsx hoặc .csv vào đây', 'Drop an .xlsx or .csv file here')}</b>
               <span style={{ fontSize: 11.5, color: 'var(--t4)' }}>{tr('Bảng giá từ nhà cung cấp — ghép cột ở bước sau', "Supplier price list — you'll map columns next")}</span>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                style={{ marginTop: 6, height: 30, padding: '0 14px', borderRadius: 8, border: 0, background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
+                style={{ marginTop: 6, height: 30, padding: '0 14px', borderRadius: 10, border: 0, background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
               >
                 {tr('Chọn file từ máy', 'Choose a file')}
               </button>
@@ -244,7 +244,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
                   id="import-kind"
                   value={kind}
                   onChange={(e) => setKind(e.target.value)}
-                  style={{ width: '100%', height: 30, borderRadius: 7, border: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--t1)', fontSize: 12.5, padding: '0 8px' }}
+                  style={{ width: '100%', height: 30, borderRadius: 6, border: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--t1)', fontSize: 12.5, padding: '0 8px' }}
                 >
                   {SPEC_KINDS.map((k) => (
                     <option key={k} value={k}>{tr(IMPORT_KIND_LABEL[k]?.vi ?? k, IMPORT_KIND_LABEL[k]?.en ?? k)}</option>
@@ -263,7 +263,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--gap)', marginBottom: 16 }}>
                 {MATERIAL_FIELDS.map((field) => (
                   <div key={field}>
                     <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t3)', display: 'block', marginBottom: 4 }}>
@@ -273,7 +273,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
                     <select
                       value={mapping[field] ?? ''}
                       onChange={(e) => setField(field, e.target.value === '' ? null : Number(e.target.value))}
-                      style={{ width: '100%', height: 30, borderRadius: 7, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, padding: '0 8px' }}
+                      style={{ width: '100%', height: 30, borderRadius: 6, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, padding: '0 8px' }}
                     >
                       <option value="">{tr('— không dùng —', '— unused —')}</option>
                       {sheet.headers.map((h, i) => (
@@ -287,7 +287,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
               {/* ② Cột người dùng ĐƯA VÀO mà app KHÔNG nhận — trước 06/08 bị bỏ rơi lặng lẽ
                   (`guessMapping` trả về "CỘT BỊ BỎ RƠI: [Ảnh]" mà màn hình không nói gì). */}
               {droppedColumns.length > 0 && (
-                <div style={{ marginBottom: 12, padding: '8px 10px', borderRadius: 9, background: 'color-mix(in srgb, var(--warning) 12%, var(--field))', border: '1px solid var(--border)' }}>
+                <div style={{ marginBottom: 12, padding: '8px 10px', borderRadius: 10, background: 'color-mix(in srgb, var(--warning) 12%, var(--field))', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t2)', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <AlertTriangle size={12} style={{ color: 'var(--warning)' }} />
                     {tr(`${droppedColumns.length} cột trong file KHÔNG được nhập:`, `${droppedColumns.length} column(s) in the file are NOT imported:`)}
@@ -361,7 +361,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
                 <button
                   type="button"
                   onClick={() => folderInputRef.current?.click()}
-                  style={{ height: 28, padding: '0 12px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)', fontSize: 12, cursor: 'pointer' }}
+                  style={{ height: 28, padding: '0 12px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)', fontSize: 12, cursor: 'pointer' }}
                 >
                   {imageFiles.length > 0 ? tr(`${imageFiles.length} file trong thư mục`, `${imageFiles.length} files in folder`) : tr('Chọn thư mục ảnh', 'Choose image folder')}
                 </button>
@@ -392,7 +392,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
               {step === 'importing' && (
                 <>
                   <Loader2 size={22} className="animate-spin" style={{ color: 'var(--accent)' }} />
-                  <span style={{ fontSize: 13, color: 'var(--t2)' }}>
+                  <span style={{ fontSize: 'var(--fs-ui)', color: 'var(--t2)' }}>
                     {progress?.phase === 'images'
                       ? tr(`Đang tải ảnh ${progress.done}/${progress.total}…`, `Uploading images ${progress.done}/${progress.total}…`)
                       : tr(`Đang nhập ${progress?.done ?? 0}/${progress?.total ?? validCount}…`, `Importing ${progress?.done ?? 0}/${progress?.total ?? validCount}…`)}
@@ -402,7 +402,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
               {step === 'done' && result && (
                 <>
                   <CheckCircle2 size={22} style={{ color: 'var(--accent)' }} />
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>
+                  <span style={{ fontSize: 'var(--fs-ui)', fontWeight: 600, color: 'var(--t1)' }}>
                     {tr(
                       `Đã thêm ${result.ok} ${(IMPORT_KIND_LABEL[kind]?.vi ?? kind).toLowerCase()}`,
                       `Added ${result.ok} ${(IMPORT_KIND_LABEL[kind]?.en ?? kind).toLowerCase()} item(s)`,
@@ -441,7 +441,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
                       onClick={() => void exportFfeSheet()}
                       disabled={result.table.items.length === 0 || exporting}
                       style={{
-                        height: 30, padding: '0 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 600,
+                        height: 30, padding: '0 14px', borderRadius: 10, fontSize: 12.5, fontWeight: 600,
                         border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)',
                         cursor: result.table.items.length === 0 || exporting ? 'not-allowed' : 'pointer',
                         opacity: result.table.items.length === 0 || exporting ? 0.55 : 1,
@@ -480,13 +480,13 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
           )}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: 14, borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--gap)', padding: 14, borderTop: '1px solid var(--border)', flexShrink: 0 }}>
           {step === 'map' && (
             <button
               type="button"
               onClick={() => void commitImport()}
               disabled={validCount === 0}
-              style={{ height: 32, padding: '0 16px', borderRadius: 8, border: 0, background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', opacity: validCount === 0 ? 0.5 : 1 }}
+              style={{ height: 'var(--tap)', padding: '0 16px', borderRadius: 10, border: 0, background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', opacity: validCount === 0 ? 0.5 : 1 }}
             >
               {tr(`Nhập ${validCount} dòng`, `Import ${validCount} row(s)`)}
             </button>
@@ -495,7 +495,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
             <button
               type="button"
               onClick={onImported}
-              style={{ height: 32, padding: '0 16px', borderRadius: 8, border: 0, background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
+              style={{ height: 'var(--tap)', padding: '0 16px', borderRadius: 10, border: 0, background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
             >
               {tr('Xong', 'Done')}
             </button>

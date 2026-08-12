@@ -54,11 +54,11 @@ const quickLoadItemStyle: React.CSSProperties = {
   height: 34,
   textAlign: 'left',
   padding: '0 12px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: 'none',
   background: 'transparent',
   color: 'var(--t2)',
-  fontSize: 13,
+  fontSize: 'var(--fs-ui)',
   cursor: 'pointer',
 };
 
@@ -659,7 +659,7 @@ export function FlowCanvas() {
             pannable
             zoomable
             aria-label="Tổng quan bảng làm việc"
-            className="!bottom-auto !right-4 !top-4 hidden rounded-lg border border-[var(--border)] shadow-[0_6px_20px_rgba(40,38,35,.10)] md:block"
+            className="!bottom-auto !right-4 !top-4 hidden rounded-[10px] border border-[var(--border)] shadow-[0_6px_20px_rgba(40,38,35,.10)] md:block"
             style={{ background: 'var(--card)', width: 160, height: 110 }}
             nodeColor={(n) => {
               if (n.type === 'note') return '#fbbf24';
@@ -726,7 +726,7 @@ export function FlowCanvas() {
             width: 264,
             background: 'var(--panel)',
             border: '1px solid var(--border)',
-            borderRadius: 12,
+            borderRadius: 10,
             padding: 4,
             boxShadow: '0 8px 24px rgba(0,0,0,.35)',
             userSelect: 'none',
@@ -767,7 +767,7 @@ export function FlowCanvas() {
                 flex: 1,
                 minWidth: 0,
                 padding: '5px 8px',
-                borderRadius: 7,
+                borderRadius: 6,
                 border: '1px solid var(--border)',
                 background: 'var(--field)',
                 color: 'var(--t1)',
@@ -781,7 +781,7 @@ export function FlowCanvas() {
               disabled={!pasteUrl.trim()}
               style={{
                 padding: '5px 10px',
-                borderRadius: 7,
+                borderRadius: 6,
                 border: '1px solid var(--accent)',
                 background: 'var(--accent-soft)',
                 color: 'var(--accent)',
@@ -809,7 +809,7 @@ export function FlowCanvas() {
               style={{
                 width: '100%',
                 padding: '5px 8px',
-                borderRadius: 7,
+                borderRadius: 6,
                 border: '1px solid var(--border)',
                 background: 'var(--field)',
                 color: 'var(--t1)',
@@ -843,12 +843,12 @@ export function FlowCanvas() {
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 8,
+                        gap: 'var(--gap)',
                         width: '100%',
-                        height: 32,
+                        height: 'var(--tap)',
                         textAlign: 'left',
                         padding: '0 12px',
-                        borderRadius: 8,
+                        borderRadius: 10,
                         border: 'none',
                         background: 'transparent',
                         color: 'var(--t1)',
@@ -874,14 +874,14 @@ export function FlowCanvas() {
 
       {/* toast lỗi nối edge / lỗi flow */}
       {connectError && (
-        <div className="absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-lg border border-red-500/40 bg-red-950/90 px-3.5 py-2 text-xs text-red-200 shadow-xl backdrop-blur">
+        <div className="absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-[10px] border border-red-500/40 bg-red-950/90 px-3.5 py-2 text-xs text-red-200 shadow-xl backdrop-blur">
           {connectError}
         </div>
       )}
 
       {/* toast thông báo smart-import (chuyển định dạng, giữ thông số gốc) */}
       {notice && !connectError && (
-        <div className="absolute left-1/2 top-4 z-30 -translate-x-1/2 max-w-[92vw] rounded-lg border border-emerald-500/40 bg-emerald-950/90 px-3.5 py-2 text-xs text-emerald-100 shadow-xl backdrop-blur">
+        <div className="absolute left-1/2 top-4 z-30 -translate-x-1/2 max-w-[92vw] rounded-[10px] border border-emerald-500/40 bg-emerald-950/90 px-3.5 py-2 text-xs text-emerald-100 shadow-xl backdrop-blur">
           {notice}
         </div>
       )}

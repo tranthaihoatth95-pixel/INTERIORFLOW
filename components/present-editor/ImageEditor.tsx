@@ -196,7 +196,7 @@ export default function ImageEditor({ el, libAssets, onUpdate, onOpenAdvanced, o
         }}
       >
         <CropIcon size={16} style={{ color: 'var(--accent)' }} />
-        <strong style={{ fontSize: 13, color: 'var(--t1)' }}>Chỉnh ảnh</strong>
+        <strong style={{ fontSize: 'var(--fs-ui)', color: 'var(--t1)' }}>Chỉnh ảnh</strong>
         <div style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
           <Tab active={tab === 'adjust'} onClick={() => setTab('adjust')}>Chỉnh màu</Tab>
           <Tab active={tab === 'crop'} onClick={() => setTab('crop')}>Cắt</Tab>
@@ -316,7 +316,7 @@ export default function ImageEditor({ el, libAssets, onUpdate, onOpenAdvanced, o
                         flexDirection: 'column',
                         gap: 4,
                         padding: 4,
-                        borderRadius: 8,
+                        borderRadius: 10,
                         border: '1px solid var(--border)',
                         background: 'var(--card)',
                         cursor: 'pointer',
@@ -328,7 +328,7 @@ export default function ImageEditor({ el, libAssets, onUpdate, onOpenAdvanced, o
                       <div
                         style={{
                           aspectRatio: '16/10',
-                          borderRadius: 5,
+                          borderRadius: 6,
                           backgroundImage: `url("${el.src}")`,
                           backgroundSize: 'cover',
                           backgroundPosition: 'center',
@@ -467,7 +467,7 @@ function Tab({ children, active, onClick }: { children: React.ReactNode; active:
       onClick={onClick}
       style={{
         padding: '5px 12px',
-        borderRadius: 7,
+        borderRadius: 6,
         border: active ? '1px solid var(--accent)' : '1px solid transparent',
         background: active ? 'var(--accent-soft)' : 'transparent',
         color: active ? 'var(--accent)' : 'var(--t3)',
@@ -537,7 +537,7 @@ function RatioBtn({ children, onClick }: { children: React.ReactNode; onClick: (
       onClick={onClick}
       style={{
         padding: '8px 6px',
-        borderRadius: 7,
+        borderRadius: 6,
         border: '1px solid var(--border)',
         background: 'var(--field)',
         color: 'var(--t2)',
@@ -555,20 +555,20 @@ const doneBtn: React.CSSProperties = {
   alignItems: 'center',
   gap: 6,
   padding: '7px 14px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--accent)',
   background: 'var(--accent)',
   color: '#fff',
-  fontSize: 13,
+  fontSize: 'var(--fs-ui)',
   cursor: 'pointer',
 };
 
 const iconBtn: React.CSSProperties = {
-  width: 32,
-  height: 32,
+  width: 'var(--tap)',
+  height: 'var(--tap)',
   display: 'grid',
   placeItems: 'center',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--border)',
   background: 'var(--field)',
   color: 'var(--t2)',
@@ -582,11 +582,11 @@ const primaryBtn: React.CSSProperties = {
   gap: 6,
   width: '100%',
   padding: '10px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--accent)',
   background: 'var(--accent-soft)',
   color: 'var(--accent)',
-  fontSize: 13,
+  fontSize: 'var(--fs-ui)',
   cursor: 'pointer',
 };
 
@@ -596,7 +596,7 @@ const ghostBtn: React.CSSProperties = {
   justifyContent: 'center',
   gap: 5,
   padding: '7px 10px',
-  borderRadius: 7,
+  borderRadius: 6,
   border: '1px solid var(--border)',
   background: 'var(--field)',
   color: 'var(--t3)',

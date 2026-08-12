@@ -34,8 +34,8 @@ import type { PreviewSpec } from '@/components/three/material-preview';
 import { pbrCacheKey } from '@/lib/three/pbr-three';
 
 const inputStyle: React.CSSProperties = {
-  width: '100%', height: 32, padding: '0 10px', borderRadius: 8,
-  border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', fontSize: 13,
+  width: '100%', height: 'var(--tap)', padding: '0 10px', borderRadius: 10,
+  border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', fontSize: 'var(--fs-ui)',
 };
 const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: 'var(--t3)', display: 'block', marginBottom: 4 };
 const lockRow: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--t3)' };
@@ -158,11 +158,11 @@ export function MaterialPbrEditor({
       style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(10,8,6,0.4)' }}
       onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()}
-        style={{ width: 480, maxHeight: '86vh', overflowY: 'auto', background: 'var(--panel)', borderRadius: 16, border: '1px solid var(--border)', padding: 20 }}>
+        style={{ width: 480, maxHeight: '86vh', overflowY: 'auto', background: 'var(--panel)', borderRadius: 14, border: '1px solid var(--border)', padding: 20 }}>
 
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--t1)' }}>{tr('Chất liệu render', 'Render material')}</span>
-          <button type="button" onClick={onClose} style={{ marginLeft: 'auto', width: 26, height: 26, display: 'grid', placeItems: 'center', border: 0, borderRadius: 8, background: 'transparent', color: 'var(--t4)', cursor: 'pointer' }}>
+          <button type="button" onClick={onClose} style={{ marginLeft: 'auto', width: 26, height: 26, display: 'grid', placeItems: 'center', border: 0, borderRadius: 6, background: 'transparent', color: 'var(--t4)', cursor: 'pointer' }}>
             <X size={14} />
           </button>
         </div>
@@ -171,7 +171,7 @@ export function MaterialPbrEditor({
         </div>
 
         {pbr.suyDoan && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, padding: '7px 10px', borderRadius: 8, background: 'color-mix(in srgb, var(--warning) 14%, var(--panel))', color: 'var(--t1)', fontSize: 12, lineHeight: 1.5 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, padding: '7px 10px', borderRadius: 10, background: 'color-mix(in srgb, var(--warning) 14%, var(--panel))', color: 'var(--t1)', fontSize: 12, lineHeight: 1.5 }}>
             <Sparkles size={13} />
             {tr('Số liệu đang là SUY ĐOÁN từ tên/danh mục — chưa ai đo hay chọn tay. Chỉnh một núm là hết suy đoán.', 'Values are GUESSED from the name/category — not measured. Adjust any control to confirm them.')}
           </div>
@@ -180,7 +180,7 @@ export function MaterialPbrEditor({
         <div style={{ display: 'flex', gap: 14, marginBottom: 14 }}>
           <MaterialSphere spec={preview} fallback={`radial-gradient(circle at 35% 30%, ${pbr.baseColor ?? '#9a9a9a'}, #555)`}
             size={96} resolution={1} fit="contain" title={typeDef ? typeDef.label[0] : tr('Chưa chọn loại', 'No type yet')}
-            style={{ width: 96, height: 96, borderRadius: 12, flexShrink: 0, border: '1px solid var(--border)' }} />
+            style={{ width: 96, height: 96, borderRadius: 10, flexShrink: 0, border: '1px solid var(--border)' }} />
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div>
               <label style={labelStyle}>{tr('① Loại vật liệu', '① Material type')}</label>
@@ -218,7 +218,7 @@ export function MaterialPbrEditor({
         )}
 
         {/* 2 khoá vật lý — HIỆN để người dùng hiểu, KHÔNG có control chỉnh (Hoà chốt: cho kéo là sai vật lý) */}
-        <div style={{ display: 'flex', gap: 16, marginBottom: 14, padding: '8px 10px', borderRadius: 8, background: 'var(--field)' }}>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 14, padding: '8px 10px', borderRadius: 10, background: 'var(--field)' }}>
           <span style={lockRow}><Lock size={11} /> metallic = {pbr.metallic ?? 0} {tr('(theo loại)', '(by type)')}</span>
           <span style={lockRow}><Lock size={11} /> specular = {DEFAULT_PBR.specular} (IOR 1.5)</span>
         </div>
@@ -239,7 +239,7 @@ export function MaterialPbrEditor({
         {/* Bước lặp vân bằng MM THẬT — không có nó viên gạch 600mm hiện thành 3m (schema.ts). Chỉ
             hiện khi đã có ít nhất 1 map (chưa có ảnh thì số này chưa có nghĩa gì để chỉnh). */}
         {(pbr.baseColorMapUrl || pbr.roughnessMapUrl || pbr.metallicMapUrl || pbr.normalUrl || pbr.aoUrl || pbr.heightUrl) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--gap)', marginBottom: 14 }}>
             <label style={{ ...labelStyle, marginBottom: 0, flex: 'none' }}>{tr('Bước lặp vân (mm)', 'Pattern repeat (mm)')}</label>
             <input style={{ ...inputStyle, width: 90 }} inputMode="numeric" placeholder={tr('rộng', 'w')}
               value={pbr.uvScaleMm?.w ?? ''}
@@ -289,7 +289,7 @@ export function MaterialPbrEditor({
         {/* §1#7 — 2 cửa xuất engine, đứng NGAY trong lớp chỉnh PBR (đây là nơi duy nhất người
             dùng nhìn thấy/sửa PBR của matId đang chọn — xuất phải đứng cạnh nguồn, không rải ra
             bảng kho nơi mỗi hàng phải tự dò localStorage mới biết có gì để xuất). */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--gap)', marginBottom: 10 }}>
           {(['vray', 'd5'] as const).map((engine) => (
             <button key={engine} type="button" disabled={!savedPbr} onClick={() => exportEngine(engine)}
               title={!savedPbr
@@ -299,7 +299,7 @@ export function MaterialPbrEditor({
                   ? tr('Xuất bản ĐÃ LƯU (chỉnh sửa đang dở chưa lưu sẽ không vào file).',
                       'Exports the SAVED version (unsaved edits are not included).')
                   : tr('Tải file JSON tham số cho engine render.', 'Download the engine parameter JSON file.')}
-              style={{ height: 30, padding: '0 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', color: savedPbr ? 'var(--t2)' : 'var(--t4)', fontSize: 12, fontWeight: 600, cursor: savedPbr ? 'pointer' : 'not-allowed', opacity: savedPbr ? 1 : 0.55, display: 'flex', alignItems: 'center', gap: 5 }}>
+              style={{ height: 30, padding: '0 10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', color: savedPbr ? 'var(--t2)' : 'var(--t4)', fontSize: 12, fontWeight: 600, cursor: savedPbr ? 'pointer' : 'not-allowed', opacity: savedPbr ? 1 : 0.55, display: 'flex', alignItems: 'center', gap: 5 }}>
               <Download size={12} /> {engine === 'vray' ? tr('Xuất V-Ray', 'Export V-Ray') : tr('Xuất D5', 'Export D5')}
             </button>
           ))}
@@ -312,16 +312,16 @@ export function MaterialPbrEditor({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button type="button" onClick={reset} title={tr('Xoá bản chỉnh, quay về suy đoán', 'Discard edits, back to inferred')}
-            style={{ height: 32, padding: '0 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--t3)', fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+            style={{ height: 'var(--tap)', padding: '0 10px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--t3)', fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
             <RotateCcw size={12} /> {tr('Về mặc định', 'Reset')}
           </button>
           {savedFlash && <span style={{ fontSize: 12, color: 'var(--success)' }}>{tr('Đã lưu.', 'Saved.')}</span>}
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-            <button type="button" onClick={onClose} style={{ height: 32, padding: '0 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--t2)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
+            <button type="button" onClick={onClose} style={{ height: 'var(--tap)', padding: '0 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--t2)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
               {tr('Đóng', 'Close')}
             </button>
             <button type="button" onClick={save}
-              style={{ height: 32, padding: '0 16px', borderRadius: 8, border: 0, background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
+              style={{ height: 'var(--tap)', padding: '0 16px', borderRadius: 10, border: 0, background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
               {tr('Lưu chất liệu', 'Save material')}
             </button>
           </div>

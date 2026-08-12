@@ -103,7 +103,7 @@ export function ProjectMembersPanel({ projects, teamUsers }: {
         <select
           value={projectId}
           onChange={(e) => setProjectId(e.target.value)}
-          className="rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-[11px] text-[var(--t1)]"
+          className="rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-[11px] text-[var(--t1)]"
         >
           {projects.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
@@ -126,7 +126,7 @@ export function ProjectMembersPanel({ projects, teamUsers }: {
           <Loader2 size={18} className="animate-spin" />
         </div>
       ) : data ? (
-        <div className="mat-card divide-y divide-[var(--border)] overflow-hidden rounded-[16px] border border-[var(--mat-hairline)]">
+        <div className="mat-card divide-y divide-[var(--border)] overflow-hidden rounded-[14px] border border-[var(--mat-hairline)]">
           {data.members.map((m) => (
             <div key={m.userId} className="flex items-center gap-3 px-4 py-2.5">
               <div className="min-w-0 flex-1">
@@ -147,7 +147,7 @@ export function ProjectMembersPanel({ projects, teamUsers }: {
                         body: JSON.stringify({ userId: m.userId, role: e.target.value }),
                       })
                     }
-                    className="rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-[11px] text-[var(--t1)]"
+                    className="rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-[11px] text-[var(--t1)]"
                   >
                     {ROLE_OPTIONS.map((r) => (
                       <option key={r} value={r}>{ROLE_LABELS[r]}</option>
@@ -158,7 +158,7 @@ export function ProjectMembersPanel({ projects, teamUsers }: {
                     disabled={busy}
                     title="Gỡ khỏi dự án"
                     onClick={() => call({ method: 'DELETE', qs: `?userId=${m.userId}` })}
-                    className="grid h-7 w-7 place-items-center rounded-[8px] border border-[var(--border)] text-[var(--t4)] hover:bg-[var(--hover)] hover:text-red-400 disabled:opacity-50"
+                    className="grid h-7 w-7 place-items-center rounded-[10px] border border-[var(--border)] text-[var(--t4)] hover:bg-[var(--hover)] hover:text-red-400 disabled:opacity-50"
                   >
                     <Trash2 size={12} />
                   </button>
@@ -177,7 +177,7 @@ export function ProjectMembersPanel({ projects, teamUsers }: {
               <select
                 value={addUserId}
                 onChange={(e) => setAddUserId(e.target.value)}
-                className="rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-[11px] text-[var(--t1)]"
+                className="rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-[11px] text-[var(--t1)]"
               >
                 <option value="">Thêm thành viên…</option>
                 {addable.map((u) => (
@@ -187,7 +187,7 @@ export function ProjectMembersPanel({ projects, teamUsers }: {
               <select
                 value={addRole}
                 onChange={(e) => setAddRole(e.target.value)}
-                className="rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-[11px] text-[var(--t1)]"
+                className="rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-[11px] text-[var(--t1)]"
               >
                 {ROLE_OPTIONS.map((r) => (
                   <option key={r} value={r}>{ROLE_LABELS[r]}</option>
@@ -204,7 +204,7 @@ export function ProjectMembersPanel({ projects, teamUsers }: {
                   }).then(() => setAddUserId(''))
                 }
                 className={cn(
-                  'rounded-[8px] bg-[var(--accent-strong)] px-2.5 py-1 text-[11px] font-medium text-white disabled:opacity-50',
+                  'rounded-[6px] bg-[var(--accent-strong)] px-2.5 py-1 text-[11px] font-medium text-white disabled:opacity-50',
                 )}
               >
                 {busy ? <Loader2 size={11} className="animate-spin" /> : 'Thêm'}

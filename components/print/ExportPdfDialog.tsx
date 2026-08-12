@@ -202,7 +202,7 @@ export default function ExportPdfDialog({
             style={{
               width: 26,
               height: 26,
-              borderRadius: 9,
+              borderRadius: 10,
               flex: 'none',
               background: 'var(--accent-soft)',
               display: 'flex',
@@ -228,7 +228,7 @@ export default function ExportPdfDialog({
               onClick={() => setTab('export')}
               style={{
                 border: '1px solid var(--border)',
-                borderRadius: 8,
+                borderRadius: 6,
                 background: 'var(--field)',
                 color: 'var(--t2)',
                 fontSize: 11.5,
@@ -271,7 +271,7 @@ export default function ExportPdfDialog({
               {/* 12/08 — LightArc indeterminate KÈM trạng thái đang-dựng THẬT (chưa có % đo được
                   từ engine xuất nên không bịa số — quay đều tới khi previewUrl về). Lỗi thì
                   đổi sang biến thể warn đứng yên đủ vòng: việc dựng đã DỪNG, không quay nữa. */}
-              <div role={previewError ? 'alert' : 'status'} style={{ position: 'absolute', left: '50%', bottom: 22, translate: '-50% 0', maxWidth: '80%', padding: '6px 9px', borderRadius: 8, background: 'var(--panel)', border: '1px solid var(--border)', color: previewError ? 'var(--warn)' : 'var(--t3)', fontSize: 10.5, textAlign: 'center', boxShadow: 'var(--shadow-pop)', display: 'flex', alignItems: 'center', gap: 7 }}>
+              <div role={previewError ? 'alert' : 'status'} style={{ position: 'absolute', left: '50%', bottom: 22, translate: '-50% 0', maxWidth: '80%', padding: '6px 9px', borderRadius: 6, background: 'var(--panel)', border: '1px solid var(--border)', color: previewError ? 'var(--warn)' : 'var(--t3)', fontSize: 10.5, textAlign: 'center', boxShadow: 'var(--shadow-pop)', display: 'flex', alignItems: 'center', gap: 7 }}>
                 {previewError
                   ? <LightArc value={100} size={16} strokeWidth={2.5} state="warn" label="Dựng xem trước gặp lỗi" />
                   : <LightArc size={16} strokeWidth={2.5} label="Đang dựng bản xem trước PDF" />}
@@ -352,7 +352,7 @@ export default function ExportPdfDialog({
                   style={{
                     height: 'var(--tap)',
                     border: '1px solid var(--border)',
-                    borderRadius: 9,
+                    borderRadius: 10,
                     background: 'var(--field)',
                     display: 'flex',
                     alignItems: 'center',
@@ -371,14 +371,14 @@ export default function ExportPdfDialog({
                 <SectionLabel>Trước khi xuất</SectionLabel>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                   {checks.map((c, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 11.5, color: 'var(--t2)', lineHeight: 1.5 }}>
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--gap)', fontSize: 11.5, color: 'var(--t2)', lineHeight: 1.5 }}>
                       <span
                         style={{
                           width: 14,
                           height: 14,
                           flex: 'none',
                           marginTop: 1.5,
-                          borderRadius: 5,
+                          borderRadius: 6,
                           // VIỆC 4 CHUAN_DAU_RA — mức 'error' dùng --danger (token sẵn có, nghĩa
                           // "lỗi"); thiếu level giữ --warn y hệt trước (caller cũ không đổi gì).
                           background: c.ok ? 'var(--ok)' : c.level === 'error' ? 'var(--danger)' : 'var(--warn)',
@@ -442,7 +442,7 @@ function HeaderIconButton({ title, onClick, children }: { title: string; onClick
         width: 28,
         height: 28,
         border: 0,
-        borderRadius: 9,
+        borderRadius: 10,
         background: hover ? 'var(--hover)' : 'transparent',
         color: hover ? 'var(--t1)' : 'var(--t4)',
         cursor: 'pointer',
@@ -481,7 +481,7 @@ function PaperButton({
       style={{
         height: 'var(--tap)',
         border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-        borderRadius: 9,
+        borderRadius: 10,
         background: active ? 'var(--accent-soft)' : 'var(--field)',
         color: active ? 'var(--accent)' : 'var(--t3)',
         fontWeight: 700,
@@ -520,7 +520,7 @@ function OrientationButton({
         flex: 1,
         height: 'var(--tap)',
         border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-        borderRadius: 9,
+        borderRadius: 10,
         background: active ? 'var(--accent-soft)' : 'var(--field)',
         color: active ? 'var(--accent)' : 'var(--t3)',
         fontWeight: 600,
@@ -548,11 +548,11 @@ function ExportMainButton({ onClick, children }: { onClick: () => void; children
         width: '100%',
         height: 'var(--tap-lg)',
         border: 0,
-        borderRadius: 11,
+        borderRadius: 10,
         background: hover ? 'var(--accent-strong)' : 'var(--accent)',
         color: 'var(--on-accent)',
         fontWeight: 700,
-        fontSize: 13,
+        fontSize: 'var(--fs-ui)',
         lineHeight: 1.45,
         fontFamily: 'inherit',
         cursor: 'pointer',

@@ -147,7 +147,7 @@ export function SectionExtractPanel({ scene, onNhan }: SectionExtractPanelProps)
       </p>
 
       {/* ── chế độ ── */}
-      <div className="flex gap-1 rounded-[9px] bg-[var(--field)] p-1">
+      <div className="flex gap-1 rounded-[10px] bg-[var(--field)] p-1">
         {(
           [
             ['section', 'Cắt lớp', 'Section'],
@@ -159,7 +159,7 @@ export function SectionExtractPanel({ scene, onNhan }: SectionExtractPanelProps)
             type="button"
             onClick={() => setMode(id)}
             className={cn(
-              'flex-1 rounded-[7px] px-2 py-1 text-[10.5px] leading-normal transition-colors',
+              'flex-1 rounded-[6px] px-2 py-1 text-[10.5px] leading-normal transition-colors',
               mode === id ? 'bg-[var(--panel)] font-semibold text-[var(--t1)]' : 'text-[var(--t3)] hover:text-[var(--t1)]',
             )}
           >
@@ -178,7 +178,7 @@ export function SectionExtractPanel({ scene, onNhan }: SectionExtractPanelProps)
                 type="button"
                 onClick={() => setAxis(t.axis)}
                 className={cn(
-                  'w-full rounded-[8px] border px-1 py-1.5 text-[10px] leading-normal transition-colors',
+                  'w-full rounded-[6px] border px-1 py-1.5 text-[10px] leading-normal transition-colors',
                   axis === t.axis
                     ? 'border-[var(--accent)] bg-[var(--accent-soft)] font-semibold text-[var(--accent)]'
                     : 'border-[var(--border)] text-[var(--t3)] hover:border-[var(--accent-ring)]',
@@ -202,7 +202,7 @@ export function SectionExtractPanel({ scene, onNhan }: SectionExtractPanelProps)
             step={100}
             value={atMm}
             onChange={(e) => setAtMm(Number(e.target.value))}
-            className="w-full rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-[11px] leading-normal text-[var(--t1)] outline-none focus:border-[var(--accent)]"
+            className="w-full rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-[11px] leading-normal text-[var(--t1)] outline-none focus:border-[var(--accent)]"
           />
           {caoDo && (
             <span className="block px-0.5 text-[9.5px] leading-normal text-[var(--t5)]">
@@ -228,7 +228,7 @@ export function SectionExtractPanel({ scene, onNhan }: SectionExtractPanelProps)
               value={names[key]}
               onChange={(e) => setNames((n) => ({ ...n, [key]: e.target.value }))}
               disabled={mode === 'elevation' && key === 'cut'}
-              className="min-w-0 flex-1 rounded-[7px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-[10px] leading-normal text-[var(--t1)] outline-none focus:border-[var(--accent)] disabled:opacity-40"
+              className="min-w-0 flex-1 rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-[10px] leading-normal text-[var(--t1)] outline-none focus:border-[var(--accent)] disabled:opacity-40"
             />
           </label>
         ))}
@@ -243,7 +243,7 @@ export function SectionExtractPanel({ scene, onNhan }: SectionExtractPanelProps)
           disabled={!coKhoi || dangTinh}
           onClick={tinh}
           className={cn(
-            'flex w-full items-center justify-center gap-1.5 rounded-[9px] px-2 py-2 text-[11px] font-semibold leading-normal transition-colors',
+            'flex w-full items-center justify-center gap-1.5 rounded-[10px] px-2 py-2 text-[11px] font-semibold leading-normal transition-colors',
             coKhoi && !dangTinh
               ? 'cursor-pointer bg-[var(--accent)] text-white hover:bg-[var(--accent-strong)]'
               : 'cursor-not-allowed border border-dashed border-[var(--border)] text-[var(--t5)]',
@@ -334,7 +334,7 @@ function ChuaCoNhungPhaiThay() {
           <button
             type="button"
             disabled
-            className="w-full cursor-not-allowed rounded-[8px] border border-dashed border-[var(--border)] px-2 py-1.5 text-left text-[10px] leading-normal text-[var(--t5)] opacity-60"
+            className="w-full cursor-not-allowed rounded-[6px] border border-dashed border-[var(--border)] px-2 py-1.5 text-left text-[10px] leading-normal text-[var(--t5)] opacity-60"
           >
             {tr(c.vi, c.en)}
           </button>

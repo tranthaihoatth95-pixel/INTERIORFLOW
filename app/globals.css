@@ -111,6 +111,11 @@
   --row: 28px;
   --gap: 8px;
   --fs-2xs: 11px;
+  /* Bổ sung 13/08 (đợt 5, phiếu H3) — 2 token còn thiếu trong bộ 5 đã chốt ở
+     SPEC-MAT-DO-CON-TRO §5 (`--tap/--row/--gap/--pad-card/--fs-ui`). 3 token đầu đã có
+     từ trước (dòng trên); --pad-card/--fs-ui nạp ở đây, override cùng khối cảm ứng dưới. */
+  --pad-card: 8px 12px;
+  --fs-ui: 13px; /* chữ giao diện (nhãn nút, dòng danh sách) */
 
   /* Placeholder chưa-tải (badge PLACEHOLDER trên ảnh/vật liệu chưa có asset thật) +
      alias --ink cho nét vẽ minh hoạ (SVG mặt bằng…) — port từ mock-if-tep.html sau audit
@@ -159,6 +164,8 @@
     --tap: 44px;
     --row: 44px;
     --gap: 12px;
+    --pad-card: 12px 16px;
+    --fs-ui: 15px;
   }
 }
 

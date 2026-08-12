@@ -234,7 +234,7 @@ export function CommentLayer() {
             width: 280,
             background: '#fff',
             color: '#1a1a1a',
-            borderRadius: 12,
+            borderRadius: 10,
             boxShadow: '0 10px 40px rgba(0,0,0,.28)',
             border: `1.5px solid ${ACCENT}`,
             padding: 12,
@@ -261,9 +261,9 @@ export function CommentLayer() {
             style={{
               width: '100%',
               border: '1px solid #ddd',
-              borderRadius: 8,
+              borderRadius: 10,
               padding: 8,
-              fontSize: 13,
+              fontSize: 'var(--fs-ui)',
               resize: 'vertical',
               outline: 'none',
               fontFamily: 'inherit',
@@ -274,17 +274,17 @@ export function CommentLayer() {
           {draft.image ? (
             <div style={{ position: 'relative', marginTop: 8 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={draft.image} alt="minh hoạ" style={{ width: '100%', maxHeight: 160, objectFit: 'contain', borderRadius: 8, border: '1px solid #eee', background: '#fafafa' }} />
+              <img src={draft.image} alt="minh hoạ" style={{ width: '100%', maxHeight: 160, objectFit: 'contain', borderRadius: 10, border: '1px solid #eee', background: '#fafafa' }} />
               <button
                 onClick={() => setDraft({ ...draft, image: undefined })}
-                style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 11, border: 'none', background: 'rgba(0,0,0,.6)', color: '#fff', cursor: 'pointer', fontSize: 13 }}
+                style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 10, border: 'none', background: 'rgba(0,0,0,.6)', color: '#fff', cursor: 'pointer', fontSize: 13 }}
               >×</button>
             </div>
           ) : (
             <label
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => { e.preventDefault(); attachFrom(e.dataTransfer.files); }}
-              style={{ display: 'block', marginTop: 8, padding: '10px', border: '1.5px dashed #ddd', borderRadius: 8, textAlign: 'center', fontSize: 11.5, color: '#999', cursor: 'pointer' }}
+              style={{ display: 'block', marginTop: 8, padding: '10px', border: '1.5px dashed #ddd', borderRadius: 10, textAlign: 'center', fontSize: 11.5, color: '#999', cursor: 'pointer' }}
             >
               📎 Dán · kéo-thả · hoặc bấm chọn ảnh minh hoạ
               <input type="file" accept="image/*" hidden onChange={(e) => attachFrom(e.target.files)} />
@@ -336,7 +336,7 @@ export function CommentLayer() {
                 transition={reduce ? { duration: 0 } : springNode}
                 style={{ borderTop: '1px solid #f0f0f0', padding: '8px 0', fontSize: 12.5, overflow: 'hidden' }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--gap)', alignItems: 'center' }}>
                   <span style={{ color: c.resolved ? '#8a8f98' : ACCENT, fontWeight: 700 }}>
                     #{comments.filter((x) => x.route === c.route).indexOf(c) + 1} · {c.stage}
                     {c.resolved && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, color: '#22a06b' }}>✓ Đã xử lý</span>}
@@ -365,7 +365,7 @@ export function CommentLayer() {
       )}
 
       {/* Nút bật/tắt + xem danh sách */}
-      <div style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 99996, display: 'flex', gap: 8, pointerEvents: 'auto' }}>
+      <div style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 99996, display: 'flex', gap: 'var(--gap)', pointerEvents: 'auto' }}>
         {comments.length > 0 && (
           <button onClick={() => setListOpen((v) => !v)} style={{ ...pillBtn, background: '#333' }}>
             💬 {comments.length}
@@ -418,7 +418,7 @@ const btnGhost: React.CSSProperties = {
   border: '1px solid #ddd',
   background: '#fff',
   color: '#555',
-  borderRadius: 8,
+  borderRadius: 6,
   padding: '5px 10px',
   fontSize: 12,
   cursor: 'pointer',
@@ -427,7 +427,7 @@ const btnGhost: React.CSSProperties = {
 const btnSolid: React.CSSProperties = {
   border: 'none',
   color: '#fff',
-  borderRadius: 8,
+  borderRadius: 6,
   padding: '5px 12px',
   fontSize: 12,
   fontWeight: 600,
