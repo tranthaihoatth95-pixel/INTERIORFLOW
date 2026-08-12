@@ -15,7 +15,7 @@
  *
  * Thuần TS (không DOM) — test: node_modules/.bin/sucrase-node lib/three/cad-to-obj.test.ts
  */
-import type { Doc, Entity, HatchEntity, BlockEntity, Pt, BuildOp, RoomEntity } from '../cad/model';
+import type { Doc, Entity, HatchEntity, BlockEntity, Pt, BuildOp, BuildRecipe, RoomEntity } from '../cad/model';
 import { entityBox, blockToWorld, type Box } from '../cad/model';
 import { derivedSpatial, spatialIdentity, type SemanticProvenance, type SpatialKind } from '../cad/semantic-contract';
 import { BLOCK_MAP } from '../cad/furniture';
@@ -189,6 +189,13 @@ export interface SceneGroup {
    * cho nó) — nó KHÔNG render độc lập, chỉ là dữ liệu modifier, đúng cách Blender ẩn object cutter
    * của boolean modifier. */
   opCutters?: Record<string, number[]>;
+  /** Đợt 4 (12/08) — `Base.recipe` của entity gốc, đọc NGUYÊN VĂN (CÙNG điều kiện với `ops` phía
+   * trên: chỉ tường/`HatchEntity` truyền vào hôm nay). Tầng ba.js (`lib/three/build-recipe.ts`
+   * `resolveSceneGroupGeometry`) đọc field này để biết có cần chạy ngăn xếp `evalRecipe` hay lùi
+   * về `ops`/`resolveGroupGeometry` — file NÀY (`cad-to-obj.ts`) KHÔNG import `three`, chỉ truyền
+   * dữ liệu qua, đúng ranh giới "thuần TS" đã ghi ở đầu file (cùng lý do `ops` không dựng hình ở
+   * đây). */
+  recipe?: BuildRecipe;
 }
 
 export interface ObjScene {
@@ -303,7 +310,7 @@ class ObjBuilder {
   faces = 0;
   private posByIndex: number[][] = []; // posByIndex[i] = vị trí (m, Y-up) của vertex OBJ #(i+1)
   private groupList: SceneGroup[] = [];
-  private cur: { name: string; colorHex: string; tris: number[]; entityId?: string; semanticKind?: SpatialKind; semanticProvenance?: SemanticProvenance; levelId?: string; typeId?: string; heightMm?: number; baseMm?: number; inferred?: true; storey?: string; specId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]> } | null = null;
+  private cur: { name: string; colorHex: string; tris: number[]; entityId?: string; semanticKind?: SpatialKind; semanticProvenance?: SemanticProvenance; levelId?: string; typeId?: string; heightMm?: number; baseMm?: number; inferred?: true; storey?: string; specId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]>; recipe?: BuildRecipe } | null = null;
 
   constructor(mtlFile: string) {
     this.lines.push('# InteriorFlow — OBJ sinh tất định từ bản vẽ CAD (mm → m)');
@@ -315,11 +322,11 @@ class ObjBuilder {
    * `storey` (SPEC-DUNG-3D-THONG-NHAT §5.1/D1) — tầng của entity gốc, group hình học tổng hợp
    * (Sàn/Phòng/Trần) không truyền. `ops`/`opCutters` (NC-12 §4.2/§4.3) — ngăn xếp dựng hình +
    * hình học cutter đã tam-giác-hoá sẵn (`boxPositionsMm`), tầng ba.js đọc để chạy CSG. */
-  object(name: string, mat: Mat, meta?: { entityId?: string; semanticKind?: SpatialKind; semanticProvenance?: SemanticProvenance; levelId?: string; typeId?: string; heightMm?: number; baseMm?: number; inferred?: true; storey?: string; specId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]> }) {
+  object(name: string, mat: Mat, meta?: { entityId?: string; semanticKind?: SpatialKind; semanticProvenance?: SemanticProvenance; levelId?: string; typeId?: string; heightMm?: number; baseMm?: number; inferred?: true; storey?: string; specId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]>; recipe?: BuildRecipe }) {
     this.lines.push(`o ${name}`);
     this.lines.push(`usemtl ${mat.name}`);
     this.flushGroup();
-    this.cur = { name, colorHex: mat.hex, tris: [], entityId: meta?.entityId, semanticKind: meta?.semanticKind, semanticProvenance: meta?.semanticProvenance, levelId: meta?.levelId, typeId: meta?.typeId, heightMm: meta?.heightMm, baseMm: meta?.baseMm, inferred: meta?.inferred, storey: meta?.storey, specId: meta?.specId, ops: meta?.ops, opCutters: meta?.opCutters };
+    this.cur = { name, colorHex: mat.hex, tris: [], entityId: meta?.entityId, semanticKind: meta?.semanticKind, semanticProvenance: meta?.semanticProvenance, levelId: meta?.levelId, typeId: meta?.typeId, heightMm: meta?.heightMm, baseMm: meta?.baseMm, inferred: meta?.inferred, storey: meta?.storey, specId: meta?.specId, ops: meta?.ops, opCutters: meta?.opCutters, recipe: meta?.recipe };
   }
 
   private flushGroup() {
@@ -340,6 +347,7 @@ class ObjBuilder {
         specId: this.cur.specId,
         ops: this.cur.ops,
         opCutters: this.cur.opCutters,
+        recipe: this.cur.recipe,
       });
     }
     this.cur = null;
@@ -684,7 +692,11 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
       );
     }
     const inferred = h.elementType === undefined ? true : undefined;
-    const opCutters = buildOpCutters(h.ops, doc, wallH, baseMm);
+    // Đợt 4 (12/08) — cutter phải gom CẢ bậc `boolean` nằm trong `recipe.steps` (không chỉ `ops`),
+    // nếu không bước boolean trong ngăn xếp mới sẽ luôn báo lỗi "không tìm thấy hình cắt" dù
+    // `withRef` hợp lệ — cùng khoá `SceneGroup.opCutters`, `resolveSceneGroupGeometry` đọc chung.
+    const recipeOps = h.recipe?.steps.map((s) => s.op) ?? [];
+    const opCutters = buildOpCutters([...(h.ops ?? []), ...recipeOps], doc, wallH, baseMm);
     const identity = spatialIdentity(h, 'wall', h.elementType === undefined ? 'inferred' : 'declared');
     builder.object(`Wall_${i + 1}`, mats.wall, {
       ...identity,
@@ -694,6 +706,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
       specId: h.specId,
       ops: h.ops,
       opCutters,
+      recipe: h.recipe,
       ...(inferred ? { inferred } : {}),
     });
     // NC-12 §4.2 tầng ③ "extrude" — bevel THẬT (khác `arrayLinear`, tính ở tầng ba.js

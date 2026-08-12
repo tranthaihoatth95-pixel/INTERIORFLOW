@@ -288,6 +288,13 @@ interface Base {
    * đẻ field rời sau này). */
   opsDisabled?: number[];
 
+  /** Đợt 4 (12/08) — "Công Thức Khối" (`BuildRecipe`, xem docstring type phía dưới union `BuildOp`
+   * trong file này). undefined = không có ngăn xếp, hành vi y hệt hôm nay (`.idf` cũ mở bình
+   * thường, KHÔNG cần bump `IDF_VERSION` — additive/optional cùng khuôn `ops`/`storey`). LƯU THAM
+   * SỐ, KHÔNG BAO GIỜ lưu mesh (cùng luật K1 đã ghi ở `ops` phía trên) — evaluator+cache sống ở
+   * `lib/three/build-recipe.ts`, KHÔNG vào `Doc`/`.idf`. */
+  recipe?: BuildRecipe;
+
   /** VIỆC "cửa/cửa sổ hosted" (`docs/SO-KIEM-TONG.md` §7) — cao độ ĐÁY (mm, tính từ sàn z=0) của
    * khối/hốc mà entity này biểu diễn. Chỉ có ý nghĩa khi entity đóng vai trò CUTTER (`lib/three/
    * cad-to-obj.ts` `cutterPositionsMm` đọc field này làm z0 thay vì luôn cắt từ sàn — trước đây
@@ -504,6 +511,34 @@ export type BuildOp =
   /** Nối chuỗi tiết diện ở nhiều cao độ (chụp đèn côn, đảo bếp vát) — mọi tiết diện PHẢI cùng số
    * đỉnh (xem `loftSections`). `build-ops.ts` `loftSections`. */
   | { op: 'loft'; sections: { polyMm: Pt[]; zMm: number }[] };
+
+/** Đợt 4 (12/08) — "Công Thức Khối" (BuildRecipe), CẤP 1 `00-CHOT.md` 11/08: BIẾN `ops[]` phía
+ * trên (thứ tự CỐ ĐỊNH theo LOẠI, xem `resolveGroupGeometry`) thành NGĂN XẾP THẬT — mỗi bước tự
+ * `enabled` (mắt nhắm/mở, không xoá mất tham số), tự `id` (sửa/xoá/kéo đúng ĐÚNG bậc, không đoán
+ * theo index — index đổi khi người dùng kéo thứ tự), `label?` (tuỳ chọn, đặt tên bước cho dễ đọc,
+ * vd "Vát chân bàn"). KHÔNG THAY `Base.ops`/`opsDisabled` — hai cơ chế CÙNG TỒN TẠI, entity có thể
+ * mang cả hai; nơi tiêu thụ (`lib/three/build-recipe.ts` `resolveSceneGroupGeometry`) ưu tiên
+ * `recipe` khi có bước bật, lùi về `ops[]` khi không. Lý do giữ riêng, không "nâng cấp" `ops[]`
+ * tại chỗ: `ops[]`/`opsDisabled` đã persist trong `.idf` thật của người dùng — đổi HÌNH DẠNG field
+ * đó là vỡ dữ liệu cũ; `recipe` là field additive mới, `.idf` cũ không có vẫn mở nguyên.
+ *
+ * Type khai Ở ĐÂY (không phải `lib/three/build-recipe.ts` dù đó là nơi có evaluator+UI) để giữ
+ * đúng ranh giới lớp đã ghi khắp file này: `model.ts` là lõi THUẦN, không phụ thuộc `three` dưới
+ * bất kỳ hình thức nào (kể cả type-only import ngược) — xem docstring đầu `cad-to-obj.ts` "file
+ * NÀY KHÔNG import three... đúng ranh giới thuần TS". `lib/three/build-recipe.ts` RE-EXPORT hai
+ * type này để nơi gọi vẫn `import { BuildRecipe, evalRecipe } from 'lib/three/build-recipe'`. */
+export interface BuildRecipeStep {
+  id: string;
+  op: BuildOp;
+  enabled: boolean;
+  label?: string;
+}
+
+/** Ngăn xếp — thứ tự MẢNG là thứ tự ÁP DỤNG THẬT (khác `ops[]` ưu tiên theo loại), người dùng đổi
+ * bằng mũi tên lên/xuống ở UI (`Command3DPanel.tsx`). */
+export interface BuildRecipe {
+  steps: BuildRecipeStep[];
+}
 
 export interface LineEntity extends Base {
   type: 'line';

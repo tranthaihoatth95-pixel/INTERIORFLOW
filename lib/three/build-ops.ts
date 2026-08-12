@@ -33,8 +33,10 @@ export function geometryOf(positions: number[] | Float32Array): THREE.BufferGeom
  * `cadToThreeM` của `cad-to-obj.ts` (tuyến tính — áp được cho VECTOR dịch chuyển, không chỉ điểm
  * tuyệt đối, nên tái dùng thẳng thay vì tự viết công thức trục thứ hai). CHỈ NỐI hình học (concat
  * vị trí tam giác) — không CSG union: viewer preview không cần khối liền (SPEC-3D-CORE §6 "xám
- * trơn không PBR, đủ xem"), union N bản qua CSG tốn nhiều hơn hẳn mà không đổi gì nhìn thấy được. */
-function repeatGeometry(geom: THREE.BufferGeometry, op: Extract<BuildOp, { op: 'arrayLinear' }>): THREE.BufferGeometry {
+ * trơn không PBR, đủ xem"), union N bản qua CSG tốn nhiều hơn hẳn mà không đổi gì nhìn thấy được.
+ * EXPORTED (Đợt 4, 12/08) — `lib/three/build-recipe.ts` `evalRecipe` tái dùng làm bước `arrayLinear`
+ * đơn lẻ trong ngăn xếp tuần tự (không viết lại toán, đúng luật "1 cỗ máy nhiều mặt tiền"). */
+export function repeatGeometry(geom: THREE.BufferGeometry, op: Extract<BuildOp, { op: 'arrayLinear' }>): THREE.BufferGeometry {
   const n = Math.max(1, Math.round(op.n));
   if (n <= 1) return geom;
   const flat = geom.index ? geom.toNonIndexed() : geom;

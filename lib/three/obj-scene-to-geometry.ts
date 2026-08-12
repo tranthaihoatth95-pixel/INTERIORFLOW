@@ -9,7 +9,14 @@
  */
 import * as THREE from 'three';
 import type { Scene3DData, SceneGroup } from './cad-to-obj';
-import { geometryOf, resolveGroupGeometry } from './build-ops';
+import { geometryOf } from './build-ops';
+// Đợt 4 (12/08) — dùng `resolveSceneGroupGeometry` (build-recipe.ts) thay `resolveGroupGeometry`
+// (build-ops.ts) trực tiếp: hàm này đọc `g.recipe` khi có (ngăn xếp mới, thứ tự người dùng chọn)
+// rồi mới lùi về `resolveGroupGeometry`/`ops[]` cũ — "nơi tiêu thụ" mục ④.3 của phiếu
+// `docs/phieu-giao/build-recipe.md`. Import MỘT CHIỀU (obj-scene-to-geometry → build-recipe →
+// build-ops) — không sửa ngược `build-ops.ts` để gọi vào `build-recipe.ts`, tránh vòng lặp import
+// giữa 2 file cùng thư mục `lib/three/`.
+import { resolveSceneGroupGeometry } from './build-recipe';
 
 export interface BuiltGroup {
   name: string;
@@ -17,12 +24,22 @@ export interface BuiltGroup {
   colorHex: string;
 }
 
-/** Group có `ops` boolean cần CSG riêng (`resolveGroupGeometry`, `build-ops.ts`) — KHÔNG gộp
- * chung màu với group khác (gộp là concat `positions` thô, hình học đã boolean không còn là
- * mảng vị trí gốc để concat kiểu đó). Số tường có khoét thường vài chục, chấp nhận thêm vài draw
- * call như đã chấp nhận cho `buildMassingWalls`. */
+/** Group có `ops` boolean HOẶC có `recipe` với ít nhất 1 bước bật cần CSG/ngăn xếp riêng
+ * (`resolveSceneGroupGeometry`, `build-recipe.ts`) — KHÔNG gộp chung màu với group khác (gộp là
+ * concat `positions` thô, hình học đã boolean/ngăn xếp không còn là mảng vị trí gốc để concat
+ * kiểu đó). Số tường có khoét/ngăn xếp thường vài chục, chấp nhận thêm vài draw call như đã chấp
+ * nhận cho `buildMassingWalls`.
+ *
+ * Đợt 4 (12/08) — nhánh `recipe` kiểm BẤT KỲ bước nào bật (không chỉ `boolean`, khác nhánh `ops`
+ * cũ CHỈ kiểm boolean — xem giải thích tại sao ở `hasOpsGeometry` gốc: `ops` array/mirror/shape
+ * không boolean vẫn lọt qua đường concat thô hôm nay, một khoảng hở CÓ TRƯỚC ticket này, KHÔNG sửa
+ * ở đây để không lấn phạm vi phiếu `build-recipe.md`). Ngăn xếp MỚI thì phải ĐÚNG NGAY từ đầu —
+ * mọi loại bước (array/mirror/shape/boolean) trong `recipe` đều đổi hình dạng geometry so với
+ * `g.positions` thô, nên bất kỳ bước bật nào cũng phải tách khỏi đường concat màu. */
 function hasOpsGeometry(g: SceneGroup): boolean {
-  return !!g.ops?.some((op) => op.op === 'boolean');
+  if (g.ops?.some((op) => op.op === 'boolean')) return true;
+  if (g.recipe?.steps?.some((s) => s.enabled)) return true;
+  return false;
 }
 
 /**
@@ -59,7 +76,7 @@ export function buildMergedGeometries(scene: Scene3DData): BuiltGroup[] {
     out.push({ name: `merged_${colorHex}`, geometry: geometryOf(positions), colorHex });
   }
   for (const g of opsGroups) {
-    out.push({ name: g.name, geometry: resolveGroupGeometry(g), colorHex: g.colorHex });
+    out.push({ name: g.name, geometry: resolveSceneGroupGeometry(g), colorHex: g.colorHex });
   }
   return out;
 }
@@ -106,7 +123,7 @@ export function buildMassingWalls(scene: Scene3DData): MassingWall[] {
     // để 2 đường không lệch nhau (luật K1 "một nguồn"). Kéo-đẩy (push-pull) sau đó scale.y mesh
     // này tạm thời méo hố khoét trong lúc kéo — chấp nhận được, `pointerup` ghi `heightMm` mới
     // vào Doc rồi `useScene3D()` tính lại `scene` → hình cắt đúng lại (xem Scene3DViewer.tsx).
-    out.push({ entityId: g.entityId!, baseHeightMm: g.heightMm!, baseMm: g.baseMm ?? 0, geometry: resolveGroupGeometry(g), colorHex: g.colorHex });
+    out.push({ entityId: g.entityId!, baseHeightMm: g.heightMm!, baseMm: g.baseMm ?? 0, geometry: resolveSceneGroupGeometry(g), colorHex: g.colorHex });
   }
   return out;
 }

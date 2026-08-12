@@ -23,7 +23,7 @@
  * kiểu tab, xem cảnh báo trong báo cáo phiên này về phần CHƯA làm: dock công cụ nổi đáy viewport).
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useCadStore, type Tool } from '@/lib/cad/store';
 import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
@@ -34,6 +34,7 @@ import {
   Plus, Pencil, Palette, Camera, Square, DoorClosed, AppWindow, TrendingUp,
   CornerUpRight, RotateCw, Fence, Minus, PanelTop, Archive, Lightbulb, Scissors,
   Disc, Triangle, Spline, Layers, CircleDot, Box, ArrowUpRight,
+  Eye, EyeOff, Trash2, ChevronUp, ChevronDown, AlertTriangle,
 } from 'lucide-react';
 import type { Scene3DData } from '@/lib/three/cad-to-obj';
 import { SectionExtractPanel, type SectionAcceptPayload } from './SectionExtractPanel';
@@ -46,8 +47,10 @@ import { cn } from '@/lib/utils';
 import Tooltip from '@/components/ui/Tooltip';
 import { WallTypePanel3D } from './WallTypePanel3D';
 import { LightTab } from './LightTab';
-import { entityBox } from '@/lib/cad/model';
-import { setEntityArrayRadial, setEntityMirror, setEntityBevelEx, setEntityTaper, setEntitySweep } from '@/lib/cad/commands';
+import { entityBox, type BuildOp, type Entity } from '@/lib/cad/model';
+import { setEntityArrayRadial, setEntityMirror, setEntityBevelEx, setEntityTaper, setEntitySweep, entityFootprintMm } from '@/lib/cad/commands';
+import { newId } from '@/lib/cad/store';
+import { evalRecipe, type BuildRecipeStep } from '@/lib/three/build-recipe';
 
 /**
  * Tab do NƠI MOUNT giữ (mode Vẽ 3D cần mở thẳng tab Tạo khi bấm "Dựng khối đầu tiên").
@@ -655,6 +658,7 @@ function EditTab({ scene }: { scene?: Scene3DData | null }) {
       <BevelExSection scene={scene ?? null} />
       <TaperSection scene={scene ?? null} />
       <SweepSection scene={scene ?? null} />
+      <BuildRecipeSection scene={scene ?? null} />
       <p className="rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-2.5 text-[10.5px] leading-relaxed text-[var(--t4)]">
         {tr(vi, en)}
       </p>
@@ -1126,6 +1130,290 @@ function SweepSection({ scene }: { scene: Scene3DData | null }) {
                 Remove
               </button>
             )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════ Đợt 4 (12/08) — BUILD RECIPE (Công Thức Khối) ═══════════════════════
+ * `docs/phieu-giao/build-recipe.md` mục ④.4. KHÁC 6 mục phía trên (Array/Array Radial/Mirror/
+ * Chamfer-Fillet/Taper/Sweep — mỗi mục CHỈ 1 bậc/entity, ghi thẳng `entity.ops`): mục này là NGĂN
+ * XẾP THẬT, ghi vào field RIÊNG `entity.recipe` (additive, `lib/cad/model.ts`) — nhiều bước cùng
+ * loại được, bật/tắt từng bước, đổi thứ tự bằng mũi tên. HAI CƠ CHẾ CÙNG TỒN TẠI SONG SONG, không
+ * mục nào thay mục nào (xem docstring `BuildRecipe`, model.ts) — 6 mục trên vẫn chạy y nguyên.
+ * Thêm bước mới TỐI THIỂU đúng phiếu: Array (grid) · Array Radial · Mirror · Bevel · Chamfer —
+ * Taper/Sweep/Revolve/Loft/Boolean/Extrude CHƯA có nút "thêm" ở đây (thiếu UI vẽ tiết diện nhiều
+ * điểm cho 3 loại sau — cùng khoảng hở đã ghi ở `TaperSection`/`SweepSection`/comment `NHOM_BIEN_DOI`
+ * phía trên, N5) nhưng NẾU đã có sẵn trong `recipe` (vd nhập từ .idf ngoài) vẫn toggle/xoá/đổi thứ
+ * tự được, chỉ không "Sửa tham số" tại chỗ — hiện tóm tắt read-only + gợi ý sửa ở tab nào.
+ */
+
+/** Tóm tắt 1 bước cho DÒNG DANH SÁCH — [tên lệnh GIỮ TIẾNG ANH (luật 08/08), chi tiết tiếng Việt]. */
+function recipeStepSummary(op: BuildOp, tr: (vi: string, en: string) => string): [string, string] {
+  switch (op.op) {
+    case 'extrude':
+      return ['Extrude', tr('đùn theo cao độ khối (mặc định)', 'extrude to the block height (default)')];
+    case 'boolean':
+      return [op.kind === 'union' ? 'Union' : op.kind === 'intersect' ? 'Intersect' : 'Subtract', tr(`khoét/hợp với ${op.withRef}`, `${op.kind} with ${op.withRef}`)];
+    case 'arrayLinear':
+      return ['Array', tr(`×${op.n}, dịch ${op.dx}·${op.dy}·${op.dz}mm`, `×${op.n}, offset ${op.dx}·${op.dy}·${op.dz}mm`)];
+    case 'arrayRadial':
+      return ['Array Radial', tr(`×${op.n} quanh tâm ${op.centerXMm}·${op.centerYMm}`, `×${op.n} around center ${op.centerXMm}·${op.centerYMm}`)];
+    case 'mirror':
+      return ['Mirror', tr(`qua trục ${op.axis} tại ${op.atMm}mm`, `across ${op.axis} at ${op.atMm}mm`)];
+    case 'bevelEx':
+      return [op.segments <= 1 ? 'Chamfer' : 'Fillet', tr(`${op.radiusMm}mm, ${op.segments} đoạn, cạnh ${op.edges}`, `${op.radiusMm}mm, ${op.segments} segs, ${op.edges} edges`)];
+    case 'taper':
+      return ['Taper', tr(`co đỉnh ${op.topInsetMm}mm`, `top inset ${op.topInsetMm}mm`)];
+    case 'sweep':
+      return ['Sweep', tr(`quét tiết diện dọc đường dẫn`, `sweep profile along path`)];
+    case 'revolve':
+      return ['Revolve', tr(`xoay tiết diện quanh trục`, `revolve profile around axis`)];
+    case 'loft':
+      return ['Loft', tr(`nối ${op.sections.length} tiết diện`, `loft ${op.sections.length} sections`)];
+    default: {
+      const _exhaustive: never = op;
+      return [String((_exhaustive as BuildOp).op), ''];
+    }
+  }
+}
+
+/** Loại bước có form "Sửa tham số" TẠI CHỖ trong danh sách — đúng tối thiểu phiếu yêu cầu
+ * (Array/Array Radial/Mirror/Bevel-Chamfer). Bước loại khác vẫn toggle/xoá/đổi thứ tự được. */
+const RECIPE_EDITABLE_KINDS = new Set(['arrayLinear', 'arrayRadial', 'mirror', 'bevelEx']);
+
+/** Form sửa tham số 1 bước — state LOCAL (khởi tạo từ `step.op` lúc mount, key theo `step.id` ở nơi
+ * gọi nên đổi bước là remount đúng dữ liệu mới), "Cập nhật" mới ghi vào Doc — cùng nhịp Apply-rồi-
+ * mới-ghi của 6 mục phía trên (không ghi mỗi phím gõ, đỡ rác lịch sử Ctrl+Z). */
+function RecipeStepParamForm({ op, onSave }: { op: BuildOp; onSave: (next: BuildOp) => void }) {
+  const tr = useT();
+  if (op.op === 'arrayLinear') {
+    const [n, setN] = [op.n, (v: number) => onSave({ ...op, n: Math.round(v) })];
+    return (
+      <div className="grid grid-cols-2 gap-1.5 pt-1">
+        <label className={labCls}>{tr('Số bản', 'Count')}<input type="number" min={1} className={numCls} defaultValue={n} onBlur={(e) => setN(Number(e.target.value))} /></label>
+        <label className={labCls}>{tr('Δx (mm)', 'Δx (mm)')}<input type="number" step={50} className={numCls} defaultValue={op.dx} onBlur={(e) => onSave({ ...op, dx: Number(e.target.value) })} /></label>
+        <label className={labCls}>{tr('Δy (mm)', 'Δy (mm)')}<input type="number" step={50} className={numCls} defaultValue={op.dy} onBlur={(e) => onSave({ ...op, dy: Number(e.target.value) })} /></label>
+        <label className={labCls}>{tr('Δz (mm)', 'Δz (mm)')}<input type="number" step={50} className={numCls} defaultValue={op.dz} onBlur={(e) => onSave({ ...op, dz: Number(e.target.value) })} /></label>
+      </div>
+    );
+  }
+  if (op.op === 'arrayRadial') {
+    return (
+      <div className="grid grid-cols-2 gap-1.5 pt-1">
+        <label className={labCls}>{tr('Số bản', 'Count')}<input type="number" min={2} className={numCls} defaultValue={op.n} onBlur={(e) => onSave({ ...op, n: Math.round(Number(e.target.value)) })} /></label>
+        <label className={labCls}>{tr('Góc quét (độ)', 'Sweep (deg)')}<input type="number" step={5} className={numCls} defaultValue={op.sweepDeg ?? 360} onBlur={(e) => onSave({ ...op, sweepDeg: Number(e.target.value) })} /></label>
+        <label className={labCls}>{tr('Tâm X (mm)', 'Center X (mm)')}<input type="number" step={50} className={numCls} defaultValue={op.centerXMm} onBlur={(e) => onSave({ ...op, centerXMm: Number(e.target.value) })} /></label>
+        <label className={labCls}>{tr('Tâm Y (mm)', 'Center Y (mm)')}<input type="number" step={50} className={numCls} defaultValue={op.centerYMm} onBlur={(e) => onSave({ ...op, centerYMm: Number(e.target.value) })} /></label>
+      </div>
+    );
+  }
+  if (op.op === 'mirror') {
+    return (
+      <div className="grid grid-cols-2 gap-1.5 pt-1">
+        <label className={labCls}>
+          {tr('Trục gương', 'Mirror axis')}
+          <select className={numCls + ' text-left'} defaultValue={op.axis} onChange={(e) => onSave({ ...op, axis: e.target.value as 'x' | 'y' | 'z' })}>
+            <option value="x">X</option>
+            <option value="y">Y</option>
+            <option value="z">Z ({tr('cao độ', 'elevation')})</option>
+          </select>
+        </label>
+        <label className={labCls}>{tr('Vị trí mặt gương (mm)', 'Plane position (mm)')}<input type="number" step={10} className={numCls} defaultValue={op.atMm} onBlur={(e) => onSave({ ...op, atMm: Number(e.target.value) })} /></label>
+        <label className="col-span-2 flex items-center gap-1.5 px-0.5 text-[10px] text-[var(--t3)]">
+          <input type="checkbox" defaultChecked={op.withOriginal !== false} onChange={(e) => onSave({ ...op, withOriginal: e.target.checked })} />
+          {tr('Giữ bản gốc (tủ đôi)', 'Keep the original (twin cabinet)')}
+        </label>
+      </div>
+    );
+  }
+  if (op.op === 'bevelEx') {
+    return (
+      <div className="grid grid-cols-2 gap-1.5 pt-1">
+        <label className={labCls}>{tr('Bán kính (mm)', 'Radius (mm)')}<input type="number" min={1} className={numCls} defaultValue={op.radiusMm} onBlur={(e) => onSave({ ...op, radiusMm: Number(e.target.value) })} /></label>
+        <label className={labCls}>{tr('Số đoạn chia', 'Segments')}<input type="number" min={1} className={numCls} defaultValue={op.segments} onBlur={(e) => onSave({ ...op, segments: Math.max(1, Math.round(Number(e.target.value))) })} /></label>
+        <label className={labCls + ' col-span-2'}>
+          {tr('Cạnh', 'Edges')}
+          <select className={numCls + ' text-left'} defaultValue={op.edges} onChange={(e) => onSave({ ...op, edges: e.target.value as 'all' | 'vertical' | 'top' })}>
+            {BEVEL_EX_EDGE_OPTS.map((o) => (
+              <option key={o.value} value={o.value}>{tr(o.vi, o.en)}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+    );
+  }
+  return null;
+}
+
+/**
+ * Đợt 4 (12/08), phiếu `build-recipe.md` mục ④.4 — danh sách bước: toggle mắt (enabled) · xoá ·
+ * sửa tham số (loại đủ điều kiện, `RECIPE_EDITABLE_KINDS`) · mũi tên lên/xuống đổi THỨ TỰ MẢNG
+ * (đúng ngữ nghĩa `evalRecipe` — thứ tự áp dụng THẬT, khác 6 mục `ops[]` phía trên ưu tiên cố định
+ * theo loại). Mọi ghi đi qua `useCadStore.updateEntities` ⇒ Ctrl+Z lùi được (KS4, mục ④.5 phiếu).
+ * `stepErrors` tính bằng CHÍNH `evalRecipe` (không viết lại luật lỗi ở UI) trên hình học GỐC của
+ * khối đang chọn (`group.positions`/`baseMm`/`heightMm`/`opCutters` — cùng field `evalRecipe` cần).
+ */
+function BuildRecipeSection({ scene }: { scene: Scene3DData | null }) {
+  const tr = useT();
+  const { group, entityId, entity } = useSelected3DEntity(scene);
+  // `entity?.recipe?.steps ?? []` tạo mảng RỖNG MỚI mỗi render khi chưa có recipe ⇒ deps của
+  // `useMemo` dưới đổi liên tục dù nội dung không đổi (eslint react-hooks/exhaustive-deps bắt
+  // đúng) — bọc trong `useMemo` riêng, khoá theo `entity?.recipe` (identity ổn định giữa các
+  // render không đổi Doc) thay vì mảng con.
+  const recipeSteps = entity?.recipe;
+  const steps = useMemo(() => recipeSteps?.steps ?? [], [recipeSteps]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const stepErrors = useMemo(() => {
+    if (!group || !steps.length) return {};
+    return evalRecipe({ positions: group.positions, baseMm: group.baseMm, heightMm: group.heightMm, opCutters: group.opCutters }, steps).stepErrors;
+  }, [group, steps]);
+
+  const writeSteps = (next: BuildRecipeStep[]) => {
+    if (!entity) return;
+    const updated: Entity = { ...entity, recipe: next.length ? { steps: next } : undefined };
+    useCadStore.getState().updateEntities([updated]);
+    useCadStore.getState().setStatus(next.length ? 'Đã cập nhật Build Recipe — Ctrl+Z để lùi' : 'Đã xoá hết bước Build Recipe — Ctrl+Z để lùi');
+  };
+
+  const addStep = (op: BuildOp, label: string) => writeSteps([...steps, { id: newId('recipe'), enabled: true, op, label }]);
+
+  const box = entity ? entityBox(entity) : null;
+  const cx = box && Number.isFinite(box.minX) ? Math.round((box.minX + box.maxX) / 2) : 0;
+  const cy = box && Number.isFinite(box.minY) ? Math.round((box.minY + box.maxY) / 2) : 0;
+  const footprint = entity ? entityFootprintMm(entity) : null;
+
+  const ADD_ACTIONS: { key: string; label: string; disabled?: boolean; run: () => void }[] = [
+    { key: 'array', label: 'Array', run: () => addStep({ op: 'arrayLinear', n: 3, dx: 500, dy: 0, dz: 0 }, 'Array') },
+    { key: 'arrayradial', label: 'Array Radial', run: () => addStep({ op: 'arrayRadial', n: 6, centerXMm: cx, centerYMm: cy, sweepDeg: 360 }, 'Array Radial') },
+    { key: 'mirror', label: 'Mirror', run: () => addStep({ op: 'mirror', axis: 'x', atMm: cx, withOriginal: true }, 'Mirror') },
+    {
+      key: 'bevel', label: 'Bevel', disabled: !footprint,
+      run: () => { if (footprint) addStep({ op: 'bevelEx', polyMm: footprint, radiusMm: 30, segments: 6, edges: 'top' }, 'Bevel'); },
+    },
+    {
+      key: 'chamfer', label: 'Chamfer', disabled: !footprint,
+      run: () => { if (footprint) addStep({ op: 'bevelEx', polyMm: footprint, radiusMm: 20, segments: 1, edges: 'top' }, 'Chamfer'); },
+    },
+  ];
+
+  return (
+    <div className="space-y-2 rounded-[10px] border border-[var(--border)] p-2">
+      {sectionTitle('Build Recipe')}
+      <p className="-mt-1 px-0.5 text-[9px] leading-[1.5] text-[var(--t4)]">
+        {tr(
+          'ngăn xếp bước dựng hình — bật/tắt, sửa, đổi thứ tự tự do, không phải dựng lại từ đầu',
+          'a modeling step stack — toggle, edit, and reorder freely, no need to rebuild from scratch',
+        )}
+      </p>
+      {!entityId ? (
+        <NoSelectionNote group={group} tr={tr} />
+      ) : (
+        <>
+          {steps.length > 0 && (
+            <div className="space-y-1.5">
+              {steps.map((step, i) => {
+                const [label, detail] = recipeStepSummary(step.op, tr);
+                const error = stepErrors[step.id];
+                const editable = RECIPE_EDITABLE_KINDS.has(step.op.op);
+                const expanded = expandedId === step.id;
+                return (
+                  <div
+                    key={step.id}
+                    className={cn(
+                      'rounded-[8px] border px-2 py-1.5 transition-colors',
+                      error ? 'border-[var(--danger,#c0392b)]' : 'border-[var(--border)]',
+                      !step.enabled && 'opacity-55',
+                    )}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        title={step.enabled ? tr('tắt (mắt nhắm)', 'disable (eye closed)') : tr('bật', 'enable')}
+                        onClick={() => writeSteps(steps.map((s) => (s.id === step.id ? { ...s, enabled: !s.enabled } : s)))}
+                        className="shrink-0 text-[var(--t3)] hover:text-[var(--accent)]"
+                      >
+                        {step.enabled ? <Eye size={13} /> : <EyeOff size={13} />}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={i === 0}
+                        title={tr('lên', 'move up')}
+                        onClick={() => {
+                          const next = [...steps];
+                          [next[i - 1], next[i]] = [next[i], next[i - 1]];
+                          writeSteps(next);
+                        }}
+                        className="shrink-0 text-[var(--t4)] hover:text-[var(--accent)] disabled:opacity-30"
+                      >
+                        <ChevronUp size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={i === steps.length - 1}
+                        title={tr('xuống', 'move down')}
+                        onClick={() => {
+                          const next = [...steps];
+                          [next[i], next[i + 1]] = [next[i + 1], next[i]];
+                          writeSteps(next);
+                        }}
+                        className="shrink-0 text-[var(--t4)] hover:text-[var(--accent)] disabled:opacity-30"
+                      >
+                        <ChevronDown size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => (editable ? setExpandedId(expanded ? null : step.id) : undefined)}
+                        className={cn('min-w-0 flex-1 text-left', editable && 'cursor-pointer')}
+                      >
+                        <span className="text-[10.5px] font-semibold text-[var(--t1)]">{step.label ? `${label} · ${step.label}` : label}</span>
+                        <span className="block truncate text-[9px] text-[var(--t4)]">{detail}</span>
+                      </button>
+                      {error && <AlertTriangle size={13} className="shrink-0 text-[var(--danger,#c0392b)]" />}
+                      <button
+                        type="button"
+                        title={tr('xoá bước', 'delete step')}
+                        onClick={() => writeSteps(steps.filter((s) => s.id !== step.id))}
+                        className="shrink-0 text-[var(--t4)] hover:text-[var(--danger,#c0392b)]"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                    {error && (
+                      <p className="mt-1 pl-[52px] text-[9.5px] leading-[1.4] text-[var(--danger,#c0392b)]">{error}</p>
+                    )}
+                    {editable && expanded && (
+                      <RecipeStepParamForm
+                        op={step.op}
+                        onSave={(next) => writeSteps(steps.map((s) => (s.id === step.id ? { ...s, op: next } : s)))}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <div className="flex flex-wrap gap-1.5">
+            {ADD_ACTIONS.map((a) => (
+              <button
+                key={a.key}
+                type="button"
+                disabled={a.disabled}
+                onClick={a.run}
+                title={a.disabled ? tr('khối này không có biên đa giác để vát', 'this block has no polygon boundary to bevel') : undefined}
+                className={cn(
+                  'rounded-[8px] border px-2 py-1 text-[10px] font-semibold transition-colors',
+                  a.disabled
+                    ? 'cursor-not-allowed border-dashed border-[var(--border)] text-[var(--t5)]'
+                    : 'border-[var(--border)] text-[var(--t3)] hover:border-[var(--accent-ring)] hover:text-[var(--accent)]',
+                )}
+              >
+                + {a.label}
+              </button>
+            ))}
           </div>
         </>
       )}
