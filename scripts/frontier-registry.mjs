@@ -67,13 +67,19 @@ export const FRONTIER = [
     bangChung: [{ dir: 'lib/cad', mau: 'labelInRoomBounds|dimOutsideRoom' }] },
   { id: 'hinh-hoc-dong-tam', ten: 'Đồng bộ hình học toàn app (Hoà 12/08: bo góc phải PHÁT TRIỂN TỪ TÂM — trong = ngoài − đệm như Apple §2d; hiện đường nét không nhất quán từ hệ thống tới chi tiết). Phần AUDIT+MÁY SOI xong 12/08 (AUDIT-HINH-HOC: 35% radius lẻ, 10/15 cặp lồng vi phạm, 8px×259 lần không thuộc thang nào)', he: 'DocCore', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'scripts', mau: 'soi-hinh-hoc' }] },
-  { id: 'hinh-hoc-ap-thang', ten: 'ÁP thang bo hợp nhất (chờ HOÀ DUYỆT thang đề xuất 6/10/14/20 + capsule 999 + rInner=max(4,rOuter−pad)) → token --r-* + sửa top 10 (CadToolbelt r24/r18 đệm 0, tấm Thư viện badge...) + siết soi-hinh-hoc --strict', he: 'DocCore', dot: 1, trangThai: 'chua',
+  { id: 'hinh-hoc-ap-thang', ten: 'ÁP thang bo ĐÃ DUYỆT 12/08 (6/10/14/20 + --r-full 999 + rInner=max(4,rOuter−pad), concentric chỉ khi pad≤8) → token --r-* + sửa top 10 (CadToolbelt r24/r18 đệm 0, tấm Thư viện badge...) + siết soi-hinh-hoc --strict', he: 'DocCore', dot: 1, trangThai: 'chua',
     bangChung: [{ file: 'app/globals.css', mau: '--r-full' }] },
   { id: 'card-kinh-gradient', ten: 'Khôi phục card kính lỏng viền gradient chạy màu ở chặng render (Hoà 12/08: "rất đẹp") — tái sinh dạng ÁNH SÁNG CÓ NGHĨA: viền gradient chỉ chạy khi card ĐANG render/sinh ảnh (hợp luật ánh-sáng-là-trạng-thái + G1/G9)', he: 'LightState', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'glass-gradient-run|GlassGradientCard' }] }, // 12/08: viền gradient chạy CHỈ khi status=running (2 chỗ, grep xác nhận), G1/G9 sạch
   { id: 'bento-align-2d', ten: 'Căn lưới bento vùng đầu chặng 2D (tab Bản vẽ · Mở tệp · rail LỚP chung một lề — Hoà chụp lệch 11/08)', he: 'DocCore', dot: 1, trangThai: 'chua',
     bangChung: [{ dir: 'components/cad', mau: 'BENTO_GRID|--bento-gutter' }] },
 
+  { id: 'hatch-t-junction-cay-lai', ten: 'Đánh giá + cấy lại nhánh fix/hatch-t-junction (11/07, +244 dòng DCEL biên phòng vách chữ T + 29 test — GIỮ nhánh, merge thẳng sẽ conflict vì lib/cad đã đổi)', he: 'DocCore', dot: 2, trangThai: 'chua',
+    bangChung: [{ dir: 'lib/cad', mau: 'facesFromDcel|hatch-t-junction' }] },
+  { id: 'gallery-lien-nganh', ten: 'GALLERY — kho ảnh tuyển liên ngành (kiến trúc·nội thất·cảnh quan·graphic·art) phân nhóm + bộ sưu tập xu hướng CÓ NGUỒN; mặt tiền tuyển chọn của kệ Ảnh & tài sản (không đẻ kho mới); nguồn sạch giấy phép (CC0/Unsplash/studio/AI/user — cấm Pinterest); NUÔI Thẻ DNA + moodboard + Story Set ch.3', he: 'LibraryFirst', dot: 2, trangThai: 'chua',
+    bangChung: [{ dir: 'components', mau: 'GalleryLienNganh|gallery-curated' }] },
+  { id: 'home-overview-card', ten: 'Home đổi ngữ nghĩa thành TỔNG QUAN DỰ ÁN (nhường tên Gallery cho kho ảnh): card = tên + quy mô (đọc ProjectProfile) + start + PresenceRow avatar online/offline + click nhảy STAGE ĐANG DỞ (lưu lastStage)', he: 'Workspace', dot: 2, trangThai: 'chua',
+    bangChung: [{ dir: 'components', mau: 'lastStage|ProjectOverviewCard' }] },
   // ── ĐỢT 2 · LÕI DỰNG ────────────────────────────────────────────────────────
   { id: 'tool-state-3d', ten: 'Máy trạng thái công cụ 3D (mở 12 nút dock chờ)', he: 'NhapLenh', dot: 2, trangThai: 'chua',
     bangChung: [{ file: 'components/render-studio/ToolDock3D.tsx', mau: 'CHUA_DUNG_DUOC', can: false }] },
@@ -111,6 +117,10 @@ export const FRONTIER = [
   { id: 'meeting-distill', ten: 'Họp → nháp biên bản (biểu mẫu kho chuẩn) → chủ trì duyệt → 3 dòng: quyết định/việc/phiếu điều chỉnh gắn ĐỐI TƯỢNG (định tuyến theo entity, không theo chặng). KHÔNG tự xây engine video — nhận bản ghi từ ngoài', he: 'Workspace', dot: 3, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'MeetingDistill|BienBanHop' }] },
 
+  { id: 'neufert-tach-goi', ten: 'Tách Neufert ra GÓI DỮ LIỆU ngoài repo (Hoà gật 12/08 — sách Wiley có bản quyền; app giữ cơ chế RuleGroup, gói nạp qua Kho tri thức/Company DNA Pack; nội bộ dùng tiếp, tách trước khi có người ngoài)', he: 'DocCore', dot: 3, trangThai: 'chua',
+    bangChung: [{ file: 'lib/cad/standards/registry.ts', mau: "from '\\./neufert'", can: false }] },
+  { id: 'color-system-packs', ten: 'Hệ màu hãng thành GÓI NẠP NGOÀI: Pantone · Jotun · Dulux (Hoà 12/08: đưa hệ màu trở lại cho KTS chọn — cùng cơ chế pack như Neufert: app trung tính, studio tự nạp catalog, DataOrigin nhãn nguồn, map về matId)', he: 'LibraryFirst', dot: 3, trangThai: 'chua',
+    bangChung: [{ dir: 'lib', mau: 'ColorSystemPack|colorPack' }] },
   // ── ĐỢT 3 · RA CỔNG ─────────────────────────────────────────────────────────
   { id: 'chat-project', ten: 'Chat theo dự án (ChatMessage + projectId)', he: 'Workspace', dot: 3, trangThai: 'chua',
     bangChung: [{ file: 'prisma/schema.prisma', mau: 'model ChatMessage \\{[^}]*projectId' }] },
