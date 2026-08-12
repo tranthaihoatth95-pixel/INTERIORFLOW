@@ -1,4 +1,4 @@
-# STATUS — InteriorFlow (12/08 khuya)
+# STATUS — InteriorFlow (13/08)
 
 > Lịch sử ở `CHANGELOG.md`. Code, schema và test là nguồn kiểm chứng. IF là sản phẩm global: **2D Kỹ thuật · 3D Thiết kế · Trình bày**; Brand Kit thuộc từng dự án.
 
@@ -17,8 +17,8 @@
 
 ## Vừa xong
 
-- **12/08 khuya — ĐỢT 4 (T điều phối, 4 agent song song ~15-19ph, audit + verify browser từng cụm):** ⭐**Công Thức Khối** `build-recipe` — BuildRecipe stack non-destructive trên 9 hàm build-ops sẵn có, `Base.recipe` additive không vỡ `.idf` cũ, UI ngăn xếp tab Sửa (d0b0c13) · ⭐**Thẻ DNA Thiết kế** — DistillEngine generic (dùng chung cho auto-define/company-dna-pack sau) + 8 lớp đúng NC + cờ 3 nấc + lưu JSON per-project KHÔNG bảng DB mới + panel Tổng quan dự án, tạo thẻ verify trọn đường nút→API→đĩa (b0327cc) · ⭐**Gallery liên ngành** `/library/gallery` — quy ước tag nganh/license/nguon/bosuutap trên LibraryAsset 0 cột mới, bộ sưu tập bắt buộc có nguồn, chặn Pinterest (5662b9f) · ⭐**Engine bảng** TableDocEngine + docType "Bảng thống kê" đọc Doc 2D thật (cửa/phòng giữ entityId, re-sync không đè ô tay), thẻ thật trong picker, BOQ 0 hồi quy (b5feacb). tsc toàn cây 0 · soi:frontier 34 xong/25 chờ/0 lệch · soi:hinh-hoc giữ 442 (vá 2 nợ mới của agent ngay trong phiên). **LÔ DUYỆT MẮT #1 đã soạn** `docs/duyet-mat/LO-1-2026-08-12.md` (30 mục/8 trạm) — chờ Hoà tick; 2 nghi vấn cần tay Hoà: đường ＋ Dự án mới → Bảng khởi tạo, click card Home. Dọn 3 dev server cùng thư mục về 1 (3002).
-- 12/08 chiều — ĐỢT 3 mô hình T trọn 8 bước (5 agent, V bắt 1 lệch đã vá): tool-state 3D · thang bo v1 · TaskContext 2 chiều 3 chặng · Home = Tổng quan · backup offsite. Chi tiết đợt 2-3 đã chuyển CHANGELOG.
+- **13/08 — ĐỢT 5 (Hoà chốt kép: GIAO DIỆN THỐNG NHẤT + HOME; 4 agent, T audit từng cụm):** ⭐**HOME "Dòng Studio"** — 2 trang cuộn: ①ánh sáng theo giờ thật + lời chào dữ liệu thật + Vitals pill + card dự án ②6 widget live (hôm-nay · biểu đồ chặng · lưới tích luỹ KHÔNG streak · ghi chú Tot · tin tự sinh · mốc DayTicker), 0 bảng DB mới, widget trống tự ẩn (cf3b5ec; NC nền: `docs/nc/NC-HOME-CAM-NHAN` + `NC-HOME-DELIGHT`) · **Dọn giao diện v2** — radius 442→**335**, từ điển mocks 77→**0**, đủ 5 token mật độ (d00de01) · **Phát hiện quý H2**: tay cầm panel ĐÃ CÓ từ 07/08 (`PanelFlank`, 3 chỗ) — sổ ghi sai marker nên soi lọt, đã sửa sổ, 0 dòng code thừa; Navigator 2D khác biệt CÓ CHỦ ĐÍCH · 🔴→✅ **Trụ hiệu năng có số đầu tiên** — bench tất định: điểm gãy `pickHatchFace` O(N²) (hatch.ts:502), recipe 10 bước nhân 660× tam giác/cấu kiện (e16546f; việc SỬA = entry đợt kế). Sổ: 40 xong-MÁY · 25 chờ · 0 lệch. **LÔ DUYỆT MẮT #1 + #2 chờ Hoà** (`docs/duyet-mat/` — app giờ ở cổng 3000, cần login tay). Va chạm ghi nhận: `ProjectSelect.tsx` nằm 2 vùng phiếu (H3 radius + H1 mount) → commit d00de01 cuốn theo phần H1 — lỗi chia vùng của T, vô hại, rút kinh nghiệm khai vùng loại trừ file cụ thể.
+- 12/08 khuya — ĐỢT 4: build-recipe · dna-card · gallery-lien-nganh · editor-bang-bieu-mau (4 commit, chi tiết chuyển CHANGELOG). 12/08 chiều — ĐỢT 3: tool-state 3D · thang bo v1 · TaskContext 2 chiều · Home=Tổng quan · backup offsite.
 
 - Nền 11/08 (R1 hardening · Present ma trận năng lực · 3D scene provenance · Master Library · Photo Editor Crop…) đã chuyển CHANGELOG mục 11/08.
 

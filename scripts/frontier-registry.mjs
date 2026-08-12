@@ -93,7 +93,7 @@ export const FRONTIER = [
   { id: 'auto-define', vai: 'mvp', ten: 'TỰ ĐỊNH NGHĨA cấu kiện (Hoà đặt 12/08): intelligent core suy elementType/category/tham số từ hình học+ngữ cảnh thay vì bắt KTS nhập parametric tay — gắn cờ 3 nấc measured/inferred/verified (chốt 10/08); HUMAN-IN-LOOP 2 CHIỀU: máy suy→người xác nhận dần, người nhập→máy kiểm lệch — hai bên đỡ sai cho nhau, không bên nào là chân lý', he: 'TriTueDuAn', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'autoDefine|suyDinhNghia' }] },
   { id: 'hieu-nang-do', vai: 'do', ten: 'ĐO hiệu năng có số (13/08 P: bench tất định 500/2k/5k entity — điểm gãy pickHatchFace O(N²) hatch.ts:502 ×6,7 khi N×2,5; docToObjScene tuyến tính OK; 100k tam giác chưa chạm ở 5k entity nhưng recipe 10 bước nhân 660× tam giác/cấu kiện; kệ 1.500 ảnh cần browser = hàng đợi; việc SỬA pickHatchFace = entry mới đợt sau)', he: 'DocCore', dot: 2, trangThai: 'xong',
-    bangChung: [{ dir: 'docs/bao-cao-phien', mau: 'hieu-nang-do|benchmark-if' }] },
+    bangChung: [{ dir: 'scripts/bench', mau: 'bench-2d|mulberry32' }] }, // 13/08: mẫu cũ trỏ .md — máy soi chỉ quét code, trỏ lại scripts/bench
   { id: 'focus-entity-doc', vai: 'day', ten: 'Chặng đọc ?focusEntity (12/08: 2D select+bay camera · Trình chiếu nhảy trang; round-trip test khoá chung hằng với deep-link; nhánh 3D theo phiếu D)', he: 'Workspace', dot: 2, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'focusEntity' }] },
   { id: 'tao-viec-tu-day', vai: 'day', ten: 'Tạo việc từ đây (12/08: 2D menu chuột phải theo tên đối tượng thật · Trình chiếu nút Inspector trang, thiếu projectId thì mờ kèm lý do; nhánh 3D theo phiếu D)', he: 'Workspace', dot: 2, trangThai: 'xong',

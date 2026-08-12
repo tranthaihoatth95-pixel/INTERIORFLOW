@@ -1645,3 +1645,7 @@ AI ở Settings không ăn" — nghi đúng nguyên nhân này (route không qua
 - Master Library Khám phá/Nổi bật + spotlight ngữ cảnh; "Top tuần này" là minh hoạ.
 - Photo Editor Crop thật (raster/mask/document + undo/redo); perspective correction chưa UI.
 - 3D shell dọn nhẹ: bỏ checklist che canvas; ViewCube 76px; Tường hai điểm ghi về Doc; gizmo giữ cặp tường liên kết.
+
+## 12/08/2026 khuya — ĐỢT 4 (chuyển từ STATUS 13/08)
+
+- T điều phối, 4 agent song song ~15-19ph, audit + verify browser từng cụm: Công Thức Khối build-recipe (BuildRecipe stack non-destructive, d0b0c13) · Thẻ DNA Thiết kế (DistillEngine generic + 8 lớp + JSON per-project, b0327cc) · Gallery liên ngành /library/gallery (tag nganh/license/nguon/bosuutap, chặn Pinterest, 5662b9f) · TableDocEngine + docType "Bảng thống kê" (b5feacb). tsc 0 · frontier 34/25/0 · hinh-hoc giữ 442. Dọn 3 dev server cùng thư mục về 1.
