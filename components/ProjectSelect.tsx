@@ -31,6 +31,10 @@ import { useFlowStore } from '@/lib/store';
 import { createFlow, openFlow, createProject, assignProject } from '@/lib/workspace';
 import { applyCadHandoff } from '@/lib/cad/handoff';
 import { ProjectInitBoard } from '@/components/project-init/ProjectInitBoard';
+import ProjectOverviewCard from '@/components/home/ProjectOverviewCard';
+import type { PresenceMember } from '@/components/ui/PresenceRow';
+import { getLastStage } from '@/lib/shell/last-stage';
+import { stageRoutePath, stageSegmentForPhase } from '@/lib/scope-core';
 import { brandContextForVitals } from '@/lib/present-editor/brand-kit';
 import { getGalleryViewOverride, setGalleryViewOverride, type GalleryViewOverride } from '@/lib/resume';
 import { LangToggle } from '@/components/LangToggle';
@@ -671,6 +675,33 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
     [en, onEnter],
   );
 
+  /**
+   * [marker: lastStage] — click card nhảy CHẶNG ĐANG DỞ của dự án đó (phiếu
+   * home-overview-card ④.1); chưa từng ghi → mặc định 'concept'.
+   * - 'render': đi đường cũ `onEnter()` (HomeScreen setStageDone + toProjectRender).
+   * - 'concept'/'present': vào thẳng route chặng `/projects/[id]/(cad|present)` —
+   *   tự ghi cờ `interiorflow.stageDone` y hệt HomeScreen.onEnter (cùng khoá + user.id)
+   *   để lần quay về '/' vẫn vào thẳng canvas, không rơi lại Gallery.
+   */
+  const enterAtLastStage = useCallback(
+    (f: FlowRow) => {
+      const stage = getLastStage(f.project?.id) ?? getLastStage(f.id) ?? 'concept';
+      const s = useFlowStore.getState();
+      s.setWorkspace(stage); // ghi store + localStorage 'interiorflow.workspace' (lib/store.ts)
+      if (stage === 'render') {
+        onEnter();
+        return;
+      }
+      try {
+        if (s.user) localStorage.setItem('interiorflow.stageDone', s.user.id);
+      } catch {
+        /* bỏ qua — chỉ là cờ tiện nghi */
+      }
+      router.push(stageRoutePath(f.project?.id ?? f.id, stageSegmentForPhase(stage)));
+    },
+    [onEnter, router],
+  );
+
   /** Chọn card: flow → openFlow; new → mở Bảng khởi tạo dự án. */
   const choose = useCallback(
     async (item: CardItem) => {
@@ -684,7 +715,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
       try {
         await openFlow(item.flow.id); // nạp graph vào store + set currentFlowId
         applyCadHandoff(); // bản vẽ CAD chờ handoff (nếu có) — consume sau khi graph nạp
-        onEnter();
+        enterAtLastStage(item.flow);
       } catch {
         setBusy(false);
         setOpenError(
@@ -694,7 +725,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         );
       }
     },
-    [busy, en, onEnter],
+    [busy, en, enterAtLastStage],
   );
 
   /* ---------- Đổi bìa: mở picker + PUT optimistic ---------- */
@@ -932,6 +963,18 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
     [team, user],
   );
 
+  /* ---------- [marker: ProjectOverviewCard] nguồn presence cho khối tổng quan ---------- */
+
+  /** online theo roster team (GET /api/flows) — id lạ coi như offline, không bịa. */
+  const onlineOf = useCallback((id: string) => team.find((m) => m.id === id)?.online ?? false, [team]);
+
+  /** owner của card → PresenceMember (fallback khi chưa đọc được thành viên dự án). */
+  const presenceMembersOf = useCallback(
+    (f: FlowRow): PresenceMember[] =>
+      membersOf(f).map((m) => ({ id: m.id, name: m.name, online: m.online, color: avatarGradient(m.name) })),
+    [membersOf],
+  );
+
   /**
    * Tooltip avatar owner — nối thêm Chức danh/Phòng ban Larkbase nếu đối chiếu được qua
    * LarkUserMap (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.2(a) bullet 3). Không tìm được
@@ -1157,8 +1200,18 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           )}
         </div>
 
-        {/* icon thành viên (owner từ dữ liệu đang có) — góc dưới card */}
-        <div className="mt-2.5">{avatarRow(membersOf(f), { ownerId: f.userId })}</div>
+        {/* [marker: ProjectOverviewCard] tổng quan: quy mô · bắt đầu · đang dở · PresenceRow
+            (thay hàng avatar cũ — thiếu dữ liệu thì component tự ẨN dòng, không bịa). */}
+        <div className="mt-2.5">
+          <ProjectOverviewCard
+            projectId={f.project?.id ?? null}
+            flowId={f.id}
+            en={en}
+            fallbackMembers={presenceMembersOf(f)}
+            onlineOf={onlineOf}
+            textMutedStyle={{ ...adaptiveTextStyle(plan, true), opacity: 0.82 }}
+          />
+        </div>
       </>
     );
   };
@@ -1620,7 +1673,8 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   void choose({ kind: 'flow', flow: f });
                 }
               }}
-              className="group cursor-pointer overflow-hidden text-left transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5"
+              // hover thẻ 1.02 + lift 200ms (phiếu home-overview-card ④.3, khớp SPEC-HOVER-FOCUS-IDF: thẻ 1.02 + lift 2px 200ms)
+              className="group cursor-pointer overflow-hidden text-left transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:scale-[1.02]"
               style={{
                 borderRadius: 'var(--radius-xl)',
                 border: '1px solid rgba(127,127,127,0.25)',
@@ -1728,7 +1782,17 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   <span className="shrink-0 text-[length:var(--fs-xs)] tabular-nums text-white/40">
                     {en ? `v${f.version}` : `Bản ${f.version}`}
                   </span>
-                  {avatarRow(membersOf(f), { ownerId: f.userId })}
+                </div>
+                {/* [marker: ProjectOverviewCard] tổng quan grid — thiếu dữ liệu tự ẩn dòng */}
+                <div className="mt-1.5">
+                  <ProjectOverviewCard
+                    projectId={f.project?.id ?? null}
+                    flowId={f.id}
+                    en={en}
+                    fallbackMembers={presenceMembersOf(f)}
+                    onlineOf={onlineOf}
+                    textMutedStyle={{ color: 'rgba(255,255,255,0.6)' }}
+                  />
                 </div>
               </div>
             </div>

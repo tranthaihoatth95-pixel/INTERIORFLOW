@@ -82,7 +82,7 @@ export const FRONTIER = [
     bangChung: [{ dir: 'lib/cad', mau: 'facesFromDcel|hatch-t-junction' }] },
   { id: 'gallery-lien-nganh', vai: 'mvp', ten: 'GALLERY — kho ảnh tuyển liên ngành (kiến trúc·nội thất·cảnh quan·graphic·art) phân nhóm + bộ sưu tập xu hướng CÓ NGUỒN; mặt tiền tuyển chọn của kệ Ảnh & tài sản (không đẻ kho mới); nguồn sạch giấy phép (CC0/Unsplash/studio/AI/user — cấm Pinterest); NUÔI Thẻ DNA + moodboard + Story Set ch.3', he: 'LibraryFirst', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'components', mau: 'GalleryLienNganh|gallery-curated' }] },
-  { id: 'home-overview-card', vai: 'do', ten: 'Home đổi ngữ nghĩa thành TỔNG QUAN DỰ ÁN (nhường tên Gallery cho kho ảnh): card = tên + quy mô (đọc ProjectProfile) + start + PresenceRow avatar online/offline + click nhảy STAGE ĐANG DỞ (lưu lastStage)', he: 'Workspace', dot: 2, trangThai: 'chua',
+  { id: 'home-overview-card', vai: 'do', ten: 'Home = Tổng quan dự án (12/08: card quy mô ProjectProfile + PresenceRow thành viên thật + click nhảy lastStage, thiếu dữ liệu tự ẩn; ⚠️ đổi hành vi: mặc định concept thay render — Hoà xem ở phiên duyệt mắt)', he: 'Workspace', dot: 2, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'lastStage|ProjectOverviewCard' }] },
   { id: 'chong-lech-dinh-nghia', vai: 'day', ten: 'Máy soi TỪ ĐIỂN CHUẨN (12/08: soi-tu-dien.mjs — phát đầu bắt 81 chỗ nhãn lệch; sửa khi chạm, nhãn hiển thị sửa ngay)', he: 'DocCore', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'scripts', mau: 'soi-tu-dien' }] },
