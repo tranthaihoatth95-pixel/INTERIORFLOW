@@ -20,17 +20,7 @@
 - **12/08 khuya — ĐỢT 4 (T điều phối, 4 agent song song ~15-19ph, audit + verify browser từng cụm):** ⭐**Công Thức Khối** `build-recipe` — BuildRecipe stack non-destructive trên 9 hàm build-ops sẵn có, `Base.recipe` additive không vỡ `.idf` cũ, UI ngăn xếp tab Sửa (d0b0c13) · ⭐**Thẻ DNA Thiết kế** — DistillEngine generic (dùng chung cho auto-define/company-dna-pack sau) + 8 lớp đúng NC + cờ 3 nấc + lưu JSON per-project KHÔNG bảng DB mới + panel Tổng quan dự án, tạo thẻ verify trọn đường nút→API→đĩa (b0327cc) · ⭐**Gallery liên ngành** `/library/gallery` — quy ước tag nganh/license/nguon/bosuutap trên LibraryAsset 0 cột mới, bộ sưu tập bắt buộc có nguồn, chặn Pinterest (5662b9f) · ⭐**Engine bảng** TableDocEngine + docType "Bảng thống kê" đọc Doc 2D thật (cửa/phòng giữ entityId, re-sync không đè ô tay), thẻ thật trong picker, BOQ 0 hồi quy (b5feacb). tsc toàn cây 0 · soi:frontier 34 xong/25 chờ/0 lệch · soi:hinh-hoc giữ 442 (vá 2 nợ mới của agent ngay trong phiên). **LÔ DUYỆT MẮT #1 đã soạn** `docs/duyet-mat/LO-1-2026-08-12.md` (30 mục/8 trạm) — chờ Hoà tick; 2 nghi vấn cần tay Hoà: đường ＋ Dự án mới → Bảng khởi tạo, click card Home. Dọn 3 dev server cùng thư mục về 1 (3002).
 - 12/08 chiều — ĐỢT 3 mô hình T trọn 8 bước (5 agent, V bắt 1 lệch đã vá): tool-state 3D · thang bo v1 · TaskContext 2 chiều 3 chặng · Home = Tổng quan · backup offsite. Chi tiết đợt 2-3 đã chuyển CHANGELOG.
 
-- Handoff tổng hợp: `docs/HANDOFF-CODEX-2026-08-11.md` + `docs/HANDOFF-KIEM-TONG-2026-08-11.md`. Canvas bỏ hết nền trang trí (aura/ảnh/gradient) nhưng GIỮ pattern kỹ thuật dot grid `--dots` theo theme; minimap Tổng quan lên góc phải trên; toolbar đáy giới hạn theo bề rộng canvas.
-- R1 hardening: Electron chỉ bind `127.0.0.1`; khi phiên bản đổi, DB + uploads được snapshot trước schema; lỗi kiểm tra schema chặn khởi động và ghi log; auto-update là opt-in; key/config chỉ trong userData. Có `npm run release:preflight` và `docs/RELEASE-CHECKLIST-INTERNAL.md`.
-- Build không còn phụ thuộc Google Fonts: font UI dùng file cục bộ + fallback hệ điều hành. Cảnh báo `unpdf` còn theo dõi riêng khi nghiệm thu artifact production.
-- Metadata desktop/PWA đổi sang mô tả trung tính, không định vị app như một “AI canvas” hay gắn với studio cụ thể.
-- Sửa giật viewport 3D: LightRig memo theo Doc; khung 3D chỉ render khi cảnh/camera đổi (video/walk vẫn realtime), ViewCube chỉ redraw khi xoay và DPR được giới hạn cho màn Retina. Khi dev cache lỗi chunk, chạy production build thay vì Fast Refresh để tránh reload vòng lặp.
-- 3D Scene giữ `entityId`, `levelId`, `typeId`, provenance; `RoomEntity` là nguồn phòng ưu tiên; preview floor/ceiling được đánh dấu dẫn xuất.
-- Present: Material A3 vào editor thật và lưu `.idfp`; Deck/BOQ giữ lối vào thật; Văn bản/Video bị khoá bằng lý do năng lực, không còn CTA giả. Ma trận: `docs/OUTPUT-CAPABILITY-MATRIX-INTERNAL-2026-08-11.md`.
-- Wallpaper aura tím–lam procedural; Visual Vitals là ba quỹ đạo oval ánh sáng, tắt khi giảm chuyển động.
-- Master Library có Khám phá/Nổi bật, spotlight theo ngữ cảnh, kệ/icon theo nhóm; tạo mới là dấu ＋. “Top tuần này” là dữ liệu minh hoạ, chưa là analytics.
-- Photo Editor Crop là thao tác thật, cập nhật raster/mask/document và undo/redo. Perspective/vertical correction chưa có UI.
-- 3D shell dọn nhẹ: bỏ checklist/CTA Vitals che canvas, dock nền đặc và empty state không card; mở thẳng nhóm Tạo. ViewCube kỹ thuật 76px; Tường hai điểm từ dock/phím W ghi về Doc; gizmo X/Y/Z giữ cặp tường liên kết. M1 tiếp tục.
+- Nền 11/08 (R1 hardening · Present ma trận năng lực · 3D scene provenance · Master Library · Photo Editor Crop…) đã chuyển CHANGELOG mục 11/08.
 
 ## Năng lực hiện có — nói đúng mức
 

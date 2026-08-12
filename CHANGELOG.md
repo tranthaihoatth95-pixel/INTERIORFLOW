@@ -1631,3 +1631,17 @@ AI ở Settings không ăn" — nghi đúng nguyên nhân này (route không qua
 - **12/08 rạng sáng (đợt 2, 4 agent + audit):** né nhãn v2 đạt trọn luật (dim ra ngoài nhà 2 lớp, WC/BẾP leader chuẩn nghề — PDF soi mắt độc lập) · Story Set v1 (hero output 8 trang, thẻ đầu gallery hồ sơ, ảnh Unsplash verify 200) · Bảng khởi tạo dự án (ProjectProfile model+API + Scaffolder gợi ý theo loại hình kèm căn cứ, việc gieo mang TaskContext) · Kho THẬT (Library đọc LibraryAsset, FM bỏ mock, 17 seed minh hoạ tải offline, gỡ --undo). Đợt 1 đã push origin (65fb168).
 - **12/08 đêm (phiên dài, 4 agent + audit mắt):** xuất 2D đạt LUẬT (tỷ lệ bắt nấc 1:50, khung tên 9 ô sạch jargon, né nhãn v1 leader, gate CHUAN_DAU_RA trong dialog xuất) · Material Impact preview (hỏi trước khi áp, số thật 6 nơi tiêu thụ, undo giữ nguyên) · TaskContext (stage/workspace/entity + migration + chip chặng deep-link) · ThinkDial 4 nấc (Nghiên cứu nối RAG notebook) · LightArc + PresenceRow. Luật mới CHUAN-DAU-RA-NGHE.md: nghiệm thu = MỞ FILE ĐẦU RA.
 - **12/08 chiều (ĐỢT 3, mô hình T trọn 8 bước, 5 agent song song 14ph24s, V độc lập bắt 1 lệch đã vá):** tool-state 3D (dock 12→8 nút sống + Tool3DBar) · thang bo áp v1 (498→442) · TaskContext khép 2 chiều cả 3 chặng · Home = Tổng quan dự án · backup offsite.
+
+## 11/08/2026 — các mục "Vừa xong" chuyển từ STATUS (12/08, giữ STATUS <800 từ)
+
+- Handoff tổng hợp: `docs/HANDOFF-CODEX-2026-08-11.md` + `docs/HANDOFF-KIEM-TONG-2026-08-11.md`. Canvas bỏ nền trang trí, giữ dot grid `--dots`; minimap góc phải trên; toolbar đáy theo bề rộng canvas.
+- R1 hardening: Electron bind `127.0.0.1`; snapshot DB+uploads trước đổi schema; lỗi schema chặn khởi động + log; auto-update opt-in; key/config trong userData; `npm run release:preflight` + `docs/RELEASE-CHECKLIST-INTERNAL.md`.
+- Build bỏ Google Fonts (font cục bộ + fallback OS); cảnh báo `unpdf` theo dõi riêng.
+- Metadata desktop/PWA trung tính.
+- Sửa giật viewport 3D: LightRig memo; render khi cảnh/camera đổi; ViewCube redraw khi xoay; DPR giới hạn Retina. Dev cache lỗi chunk → production build thay Fast Refresh.
+- 3D Scene giữ entityId/levelId/typeId/provenance; RoomEntity nguồn phòng ưu tiên; floor/ceiling preview đánh dấu dẫn xuất.
+- Present: Material A3 editor thật lưu `.idfp`; Văn bản/Video khoá lý do năng lực; ma trận `docs/OUTPUT-CAPABILITY-MATRIX-INTERNAL-2026-08-11.md`.
+- Wallpaper aura procedural; Visual Vitals 3 quỹ đạo oval, tắt khi giảm chuyển động.
+- Master Library Khám phá/Nổi bật + spotlight ngữ cảnh; "Top tuần này" là minh hoạ.
+- Photo Editor Crop thật (raster/mask/document + undo/redo); perspective correction chưa UI.
+- 3D shell dọn nhẹ: bỏ checklist che canvas; ViewCube 76px; Tường hai điểm ghi về Doc; gizmo giữ cặp tường liên kết.
