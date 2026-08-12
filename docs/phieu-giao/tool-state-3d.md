@@ -1,0 +1,9 @@
+# PHIẾU tool-state-3d — Máy trạng thái công cụ 3D (+ nhánh 3D của focus-entity/tạo-việc)
+①NGÀNH: designer quen SketchUp/AutoCAD bấm-tool-rồi-thao-tác; dock 3D đang có 12 nút disabled chờ đúng cơ chế này — mở nó là mở kịch bản 90-phút (Phiếu 3).
+②ĐỌC TRƯỚC: components/render-studio/ToolDock3D.tsx (CHUA_DUNG_DUOC + comment mô hình gizmo-first) · Viewport3D.tsx · Command3DPanel.tsx · lib/three/build-ops* · docs/00-CHOT.md mục "SPEC-LENH-VE-IF" (gõ số sau thao tác) · lib/tasks/context.ts (deep-link).
+③VÙNG FILE: components/render-studio/** · lib/three/** · lib/render-studio/**. KHÔNG đụng components/cad, present-editor, globals.css.
+④VIỆC: (1) Máy trạng thái công cụ [marker: Tool3DStateMachine] — activeTool3d trong store 3D: chọn tool → thao tác trên viewport → Enter/Esc kết thúc, Space về Chọn; gizmo-first GIỮ NGUYÊN (tool rời là đường thêm, không thay gizmo). (2) Mở dần nút dock theo lệnh CÓ ENGINE THẬT: tối thiểu Đường/Chữ nhật/Vòng tròn (vẽ khối đáy→đùn), Di chuyển/Xoay/Nhân bản (qua transform sẵn có), Thước đo; nút chưa engine GIỮ disabled+lý do. (3) Nhánh 3D liên chặng (T đã thiết kế interface): đọc ?focusEntity= từ URL → select đúng entity trong scene [marker: focusEntity]; menu ngữ cảnh/nút "Tạo việc từ đây" [marker: taoViecTuDay] → POST /api/tasks {title gợi từ entity, stage:'render', entityId} → toast link mở Bảng việc.
+⑤RÀNG BUỘC: không git · không dev server · token globals · nhãn ≤12 từ · không nút giả.
+⑥NGHIỆM THU TỰ LÀM: tsc 0 · test lib/three pass (sucrase-node) · đếm nút dock bấm được trước/sau (grep disabled).
+⑦BÁO CÁO: docs/bao-cao-phien/2026-08-12-D-tool-state.md (khuôn: file · lệnh thật dán nguyên văn · quyết định · CHƯA LÀM nói thẳng · 2 GIÁ TRỊ kiến trúc/vận hành phạm vi chặng 3D).
+⑧DÂY MÁY: tool-state-3d · focus-entity-doc (phần 3D) · tao-viec-tu-day (phần 3D). Agent KHÔNG sửa registry.
