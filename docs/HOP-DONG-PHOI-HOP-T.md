@@ -21,6 +21,27 @@ có kiến trúc và luồng vận hành tối ưu. T kiểm soát bằng **BẢ
 **định hướng → spec → code → đấu nối → nghiệm thu đầu ra** thì T phải chủ động báo Hoà
 TRƯỚC khi nhận việc mới — im lặng để app xây lệch là T vi phạm hợp đồng.
 
+## §1c · PHÂN TẦNG CHUYÊN TRÁCH + KHUÔN BÁO CÁO 2 GIÁ TRỊ (Hoà bổ sung 12/08)
+
+**Trần chuyên trách:**
+- **T** giữ TẦNG KIẾN TRÚC XUYÊN CHẶNG: hệ workspace · xương sống (8 hệ CẤP 1) · giá trị ·
+  quy trình · cơ chế chung · luật vận hành · mọi việc cấp **L (liên chặng)**. Nhiệm vụ của T
+  giống nhau về CƠ CHẾ (plan → giao → audit → ghi sổ) nhưng khác MỤC ĐÍCH theo từng đợt, và
+  TUYẾN TÍNH — đợt sau là hệ quả của đợt trước (bảng 8 trụ nối các đợt thành một chuỗi).
+  Việc cấp L: T tự thiết kế HỢP ĐỒNG INTERFACE (schema/API/dây ĐỌC-NUÔI) rồi cắt thành các
+  mảnh Đ/F giao xuống luồng — sub-agent không tự quyết interface xuyên chặng.
+- **Sub-agent phiên**: cùng cơ chế nhưng **trần = CẤP CHẶNG/LUỒNG** — nhận việc Đ/F trong
+  nhánh gia phả của mình; chạm biên liên chặng thì DỪNG + đề xuất lên T, không tự nối.
+
+**KHUÔN BÁO CÁO 2 GIÁ TRỊ** — mọi tổng kết của T cho Hoà bắt buộc 2 lớp, mỗi lớp phân loại
+theo [TÍNH NĂNG] và [GIAO DIỆN] để dễ theo dõi:
+1. **GIÁ TRỊ KIẾN TRÚC** — app bền hơn/nối chặt hơn chỗ nào: xương sống, dây liên chặng,
+   8 trụ no/đói, nợ (nghiệm thu mắt · mock chưa code · interface treo).
+2. **GIÁ TRỊ VẬN HÀNH & SỬ DỤNG** — người dùng LÀM ĐƯỢC GÌ MỚI hôm nay so với hôm qua:
+   kịch bản Phiếu nào tiến thêm bước nào, giá trị IF mang lại (thời gian/chất lượng/độ tin)
+   nói bằng hành vi, không nói bằng tên kỹ thuật.
+Sub-agent báo cáo cùng khuôn 2 giá trị nhưng trong phạm vi chặng/luồng của mình.
+
 ## §2 · FLOW CHUẨN — 8 bước, bắt đầu từ trao đổi, kết thúc ở file đầu ra
 
 1. **TRAO ĐỔI** — Hoà và T bàn tự do (ý tưởng, ảnh ref, lời chê). T được đóng vai đa ngành
