@@ -1,0 +1,1 @@
+# Folder PHIẾU GIAO VIỆC dán-được — T xuất mỗi phiếu = 1 hợp đồng tự chứa (khuôn §3 HOP-DONG-PHOI-HOP-T). Hoà duyệt bảng plan rồi dán phiếu vào phiên phụ là agent chạy đúng, không cần giải thích thêm.

@@ -47,6 +47,30 @@ TRƯỚC khi nhận việc mới — im lặng để app xây lệch là T vi ph
 8. **T TỔNG KẾT cho Hoà**: bảng commit · cái gì đạt Cửa · lệch V bắt được · các quyết đang
    chờ tay Hoà. Kết mỗi phiên: `soi:frontier` + `soi:hinh-hoc` phải 0 lệch mới được nghỉ.
 
+## §2b · QUY TRÌNH CHUYÊN MÔN CỦA T — BẢNG TÍNH NĂNG 3 CẤP ĐỘ (Hoà bổ sung 12/08)
+
+Mọi plan của T tóm về MỘT BẢNG TÍNH NĂNG đủ cột phả hệ, mỗi tính năng xếp vào 1 trong 3 CẤP:
+**Đ** = lệnh ĐƠN LẺ chính xác (một thao tác, một kết quả đúng) · **F** = FLOW/PIPELINE cấp
+chặng (chuỗi Đ nối trong một chặng) · **L** = LIÊN CHẶNG (quy trình phối hợp xuyên chặng).
+
+Khuôn bảng (cột bắt buộc):
+| Tên (global) | Cấp Đ/F/L | Phả hệ (hệ CẤP 1 · workspace/chặng) | Painpoint + persona | Đối thủ có? IF hơn gì | ĐỌC ← / NUÔI → | registry-id |
+
+Nguyên tắc ra quyết định (áp cho MỌI dòng của bảng):
+1. **Benchmark ngành trước khi chốt** — đối thủ có thì IF có; điểm hơn của IF chọn trong 3:
+   hiểu SÂU ngành · một-nguồn (MVP) · **NHÓM LỆNH ĐÓNG GÓI** — các lệnh đơn được gói thành
+   nhóm lệnh đơn giản dùng ngay (2 tầng: pro vẫn gọi lệnh đơn chính xác, người mới dùng gói —
+   cùng triết lý Sơ phác↔Chuyên, một registry lệnh).
+2. **Chung thì GIỐNG HỆT, riêng thì SÂU TUỲ BIẾN** — hạ tầng (shell, token, nhập lệnh, undo,
+   snap, provenance) đồng bộ một khuôn để tận dụng; chi tiết chuyên môn từng task tuỳ biến
+   cực sâu phục vụ đúng sản phẩm KTS/designer/người sáng tạo cần.
+3. **Cử chỉ thao tác** nghiên cứu ở cấp đa thiết bị · đa ngữ cảnh · đa hành vi nhưng CHUNG MỘT
+   đặc trưng ngành — thi hành qua 4 mặt nhập lệnh của MỘT registry (không chế cử chỉ lẻ).
+4. **Song song hai dòng việc mỗi đợt**: ≥1 việc GIÀU CỐT LÕI (trụ 1-2) + ≥1 việc NHÌN THẤY
+   ĐƯỢC (UI/đầu ra) — và việc nhìn thấy PHẢI nối vào cốt lõi (cấm UI mồ côi, cấm lõi vô hình).
+5. Trong phạm vi được giao, agent có quyền + nghĩa vụ ĐỀ XUẤT tính năng còn thiếu và MVP của
+   nhánh mình — T gom về bảng, không để sót hạng mục cốt lõi nào cấu thành app.
+
 ## §3 · KHUÔN HỢP ĐỒNG GIAO VIỆC (T → sub-agent) — 8 ô bắt buộc
 
 ```
@@ -105,5 +129,22 @@ Một công cụ chuyên nghiệp đạt chuẩn ngành phải ĐỦ 8 trụ, kh
 **Cơ chế thi hành:** cuối MỖI đợt, phần tổng kết của T bắt buộc có mục "SỨC KHOẺ 8 TRỤ" —
 mỗi trụ 1 dòng no/đói kèm bằng chứng; trụ nào đói 2 đợt liên tiếp = cảnh báo đỏ cho Hoà,
 đợt kế phải có việc bù trụ đó trước khi nhận chủ đề mới.
+
+## §7 · VÒNG KHÉP KÍN — ít phụ thuộc Hoà nhất có thể (Hoà bổ sung 12/08)
+
+**Hoà chỉ cần 3 chạm mỗi chu kỳ:** ① nói "chốt" · ② duyệt BẢNG PLAN · ③ duyệt bằng MẮT tại Cửa.
+Mọi thứ còn lại tự chạy:
+
+1. Sau "chốt", T xuất 2 thứ: BẢNG PLAN (§2b) + các **HỢP ĐỒNG DÁN-ĐƯỢC** lưu
+   `docs/phieu-giao/<registry-id>.md` — mỗi phiếu TỰ CHỨA đủ ngữ cảnh (khuôn 8 ô §3),
+   Hoà duyệt bảng xong chỉ việc DÁN phiếu vào phiên phụ bất kỳ, không cần giải thích thêm.
+   Phiếu tự chứa = chống sót · chống rơi rớt · chống làm-lại (ô ② ĐỌC TRƯỚC bắt agent kiểm
+   cái đã có trước khi xây).
+2. Agent chạy → báo cáo về `docs/bao-cao-phien/` → T audit → commit + flip registry.
+3. **Agent kiểm LIÊN PHIÊN (V)** tự chạy sau mỗi đợt: đối chiếu mọi báo cáo với code + file
+   đầu ra, ĐÁNH GIÁ chất lượng từng agent, đề xuất định hướng — xuất một bản trình Hoà duy
+   nhất (không bắt Hoà đọc từng báo cáo con).
+4. Máy canh nền: soi:frontier + soi:hinh-hoc (0 lệch mới kết phiên) · bản đọc 8 TRỤ cuối đợt
+   · cảnh báo tự phát khi trụ đói/anti-pattern chớm — KHÔNG đợi Hoà hỏi.
 
 *Lập 12/08/2026 theo lệnh Hoà. Sửa hợp đồng này = chốt mới, ghi 00-CHOT.*
