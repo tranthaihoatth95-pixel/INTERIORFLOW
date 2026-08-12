@@ -108,8 +108,8 @@ export const FRONTIER = [
   // 13/08 Đợt 5 — Hoà chốt kép: ĐỢT GIAO DIỆN THỐNG NHẤT + HOME "Dòng Studio" (00-CHOT 13/08):
   { id: 'home-dong-studio', vai: 'mvp', ten: 'HOME "Dòng Studio" — dashboard widget live cuộn dọc 2 trang (①lời chào+Vitals pill+card dự án ②biểu đồ+thông tin từ các chặng+ghi chú nhanh+tin studio+lịch/mốc); cảm nhận "muốn trở về"; widget trống tự ẩn; v1 không schema mới', he: 'Workspace', dot: 5, trangThai: 'chua',
     bangChung: [{ dir: 'components/home', mau: 'DongStudio|dong-studio' }] },
-  { id: 'panel-handle-chung', vai: 'do', ten: 'PanelHandle — tay cầm thu/mở panel dùng chung toàn app (chốt 07/08 mục 10: dải dọc mảnh + mũi tên, nhớ trạng thái giữa phiên), lắp tối thiểu tấm Thư viện + rail Lớp 2D + panel 3D', he: 'DocCore', dot: 5, trangThai: 'chua',
-    bangChung: [{ dir: 'components/ui', mau: 'PanelHandle' }] },
+  { id: 'panel-handle-chung', vai: 'do', ten: 'Tay cầm thu/mở panel dùng chung — ĐÃ CÓ từ 07/08 dưới tên PanelFlank (ad2d23b): components/ui/PanelFlank.tsx lắp LibrarySheet + Render3DModeSkeleton + AppShell/FlankStrip; H2 13/08 phát hiện sổ ghi sai tên marker ("PanelHandle") nên soi lọt — đúng ca "khai chưa mà code có". Navigator 2D giữ cơ chế riêng CÓ CHỦ ĐÍCH (rail điều hướng có hàng nút đáy, không phải panel mép — T chốt 13/08)', he: 'DocCore', dot: 5, trangThai: 'xong',
+    bangChung: [{ dir: 'components/ui', mau: 'PanelFlank' }] },
   { id: 'mat-do-con-tro', vai: 'do', ten: 'Hoàn thiện token mật độ con trỏ (SPEC-MAT-DO-CON-TRO §5: đủ 5 token --tap/--row/--gap/--pad-card/--fs-ui + override (hover:none) and (pointer:coarse)) — 4/5 đã có globals.css:105, thiếu --pad-card/--fs-ui + áp vào chỗ hardcode', he: 'DocCore', dot: 5, trangThai: 'chua',
     bangChung: [{ file: 'app/globals.css', mau: '--fs-ui' }] },
   { id: 'hinh-hoc-v2', vai: 'do', ten: 'Radius v2 — trả hàng đợi 442 ngoài thang (top file: MaterialPbrEditor 10 · FlowCanvas 9 · ExportPdfDialog 9 · ImageEditor 8 · ToolModeForm 8 · LightTab…) về thang --r-*', he: 'DocCore', dot: 5, trangThai: 'chua',
