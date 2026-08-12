@@ -62,10 +62,19 @@
   --k-doc: #c79a63;
 
   /* Bo góc kiểu Apple (nhịp 10 / 14 / 20 / 28) */
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
+  /* THANG BO GÓC DUYỆT 12/08 (AUDIT-HINH-HOC §3, Hoà gật): 4 nấc + capsule.
+     Dẫn xuất concentric: rInner = max(4, rOuter − pad), chỉ khi pad ≤ 8
+     (CSS: max(4px, calc(var(--r-out) - var(--pad))) · TS: concentricRadius() lib/geometry.ts). */
+  --r-1: 6px;      /* chip, badge, ô nhập nhỏ */
+  --r-2: 10px;     /* nút, hàng list, field */
+  --r-3: 14px;     /* card, popover, panel con */
+  --r-4: 20px;     /* tấm/sheet/modal, khối kính lớn */
+  --r-full: 999px; /* capsule/tròn — mọi thanh, pill, switch, track */
+  /* Token cũ = BÍ DANH trỏ về thang mới — KHÔNG xoá (62 usage), migrate dần. */
+  --radius-sm: var(--r-2);
+  --radius-md: var(--r-3);
+  --radius-lg: var(--r-4);
+  --radius-xl: var(--r-4); /* 28 gộp về 20 theo bảng migrate §3d */
   --radius: var(--radius-md);
 
   /* Cỡ chữ — VIỆC 6 (28/07, docs/DESIGN-TOKENS.md audit: ~967 khai báo font-size rời, 0%
@@ -532,7 +541,7 @@ body {
   /* PHIẾU ĐỢT 7 A3 — var(--border-strong) cũ ra TRẮNG CHÓI trên nền tối chặng 3D (Viewport3D nền
      cứng #2a2d33 + cột cây tầng dark). --t3 mờ + trộn transparent giữ được cả 2 theme. */
   background: color-mix(in srgb, var(--t3) 45%, transparent);
-  border-radius: 8px;
+  border-radius: var(--r-full);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
@@ -910,7 +919,7 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
    theo hệ, không phải số bịa riêng. KHÔNG text-shadow (thừa khi nền đã đặc, chỉ làm chữ bẩn). */
 .vitals-pop {
   position: relative;
-  border-radius: 16px;
+  border-radius: var(--r-3);
   overflow: hidden;
   /* 08/08 — Hoà chê "xám đục": hạ về ĐÚNG sàn 92% (luật G2, không xuống thấp hơn — chữ dày phải
      giữ tương phản) thay vì 96% cũ, cho thoáng blur rõ hơn ở rìa. KHÔNG đổi sang backdrop-filter
@@ -1449,7 +1458,7 @@ body[data-if-library-open='true'] .if-bottombar {
   display: flex;
   gap: 2px;
   padding: 3px;
-  border-radius: 12px;
+  border-radius: var(--r-2);
   background: var(--mat-panel);
   border: 1px solid var(--border);
   backdrop-filter: saturate(160%) blur(14px);

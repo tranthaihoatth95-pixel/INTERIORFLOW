@@ -247,7 +247,7 @@ function DeckActions({ slidesJson, deckName }: { slidesJson: string; deckName: s
 
 /**
  * Nút TƯỜNG MINH "Đưa sang Trình chiếu →" trên node slide.* đã render (quyết định user #4 —
- * Sprint 2; nhãn đổi 04/08 [P7 ĐỔI TÊN] từ "Trình bày" → "Trình chiếu", route/hành vi không đổi).
+ * Sprint 2; nhãn đổi 04/08 [P7 ĐỔI TÊN] từ tên cũ Trình bày → Trình chiếu, route/hành vi không đổi).
  * Bấm: stash ảnh (lib/present-editor/handoff, consume-once) → toast nhỏ "Đã gửi N ảnh…" →
  * điều hướng /present-editor (delay ngắn để user kịp thấy xác nhận). Ảnh vào RỔ REFERENCE
  * của Present (human-in-loop kéo vào slide), không tự chèn vào deck.

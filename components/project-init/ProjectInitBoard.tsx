@@ -49,14 +49,14 @@ const CSS = `
   color: var(--t3); margin: 0 0 8px; }
 .pib-field { display: flex; flex-direction: column; gap: 4px; }
 .pib-field > span { font-size: 11.5px; color: var(--t3); }
-.pib-input, .pib-select { height: 32px; padding: 0 10px; border-radius: 9px; font-size: 12.5px;
+.pib-input, .pib-select { height: 32px; padding: 0 10px; border-radius: var(--r-2, 10px); font-size: 12.5px;
   border: 1px solid var(--border); background: var(--field); color: var(--t1); outline: none; }
 .pib-input:focus, .pib-select:focus { border-color: var(--accent); }
-.pib-tpl { display: flex; align-items: flex-start; gap: 9px; padding: 8px 10px; border-radius: 10px;
+.pib-tpl { display: flex; align-items: flex-start; gap: 9px; padding: 8px 10px; border-radius: var(--r-2, 10px);
   border: 1px solid var(--border); background: var(--card); cursor: pointer; }
 .pib-tpl:hover { background: var(--hover); }
 .pib-tpl[data-on='true'] { border-color: var(--accent); background: var(--accent-soft); }
-.pib-btn { height: 34px; padding: 0 14px; border-radius: 10px; font-size: 12.5px; font-weight: 600;
+.pib-btn { height: 34px; padding: 0 14px; border-radius: var(--r-2, 10px); font-size: 12.5px; font-weight: 600;
   border: 1px solid var(--border); background: var(--field); color: var(--t1); cursor: pointer; }
 .pib-btn:hover:not(:disabled) { background: var(--hover); }
 .pib-btn:disabled { opacity: .5; cursor: not-allowed; }

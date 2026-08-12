@@ -85,7 +85,7 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .grab i{width:38px;height:4px;border-radius:2px;background:var(--border-strong)}
 .if-lib-root .libh{flex:none;display:flex;align-items:center;gap:10px;padding:2px 14px 10px}
 .if-lib-root .libh h3{margin:0;font-size:var(--fs-md);font-weight:var(--fw-semi);letter-spacing:-.015em;color:var(--t1)}
-.if-lib-root .libh .cx{margin-left:auto;width:28px;height:28px;color:var(--t3);border-radius:8px;display:flex;
+.if-lib-root .libh .cx{margin-left:auto;width:28px;height:28px;color:var(--t3);border-radius:var(--r-2);display:flex;
           align-items:center;justify-content:center;transition:background .12s,color .12s;border:0;background:none;cursor:pointer}
 .if-lib-root .libh .cx:hover{background:var(--hover);color:var(--t1)}
 /* VIỆC 7b (07/08) — nhãn "Dữ liệu mẫu": nền đặc (G2, không kính), tông --warning nhẹ vì đây là
@@ -138,13 +138,13 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .shelfcta{margin-top:auto;flex:none;position:sticky;bottom:0;z-index:1;
        padding:10px 3px 2px;border-top:1px solid var(--mat-hairline);background:var(--panel)}
 .if-lib-root .shelfcta .pub{margin-left:0;width:100%;height:var(--tap);justify-content:center}
-.if-lib-root .create-quiet{width:30px;height:30px;border-radius:9px;border:1px dashed var(--border-strong);background:transparent;color:var(--t4);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:color .12s var(--ease-apple),border-color .12s var(--ease-apple),background .12s var(--ease-apple)}
+.if-lib-root .create-quiet{width:30px;height:30px;border-radius:var(--r-2);border:1px dashed var(--border-strong);background:transparent;color:var(--t4);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:color .12s var(--ease-apple),border-color .12s var(--ease-apple),background .12s var(--ease-apple)}
 .if-lib-root .create-quiet:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
 .if-lib-root .create-quiet:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
 .if-lib-root .libmain{flex:1;min-width:0;display:flex;flex-direction:column}
 .if-lib-root .chips{flex:none;display:flex;gap:5px;padding:9px 14px;border-bottom:1px solid var(--mat-hairline);overflow-x:auto;scrollbar-width:none}
 .if-lib-root .discoverbar{flex:none;display:flex;align-items:center;gap:2px;padding:8px 14px 3px}
-.if-lib-root .discoverbar button{height:27px;border:0;border-radius:8px;background:transparent;color:var(--t4);padding:0 8px;display:flex;align-items:center;gap:5px;cursor:pointer;font:inherit;font-size:var(--fs-2xs);transition:color .12s var(--ease-apple),background .12s var(--ease-apple)}
+.if-lib-root .discoverbar button{height:27px;border:0;border-radius:var(--r-1);background:transparent;color:var(--t4);padding:0 8px;display:flex;align-items:center;gap:5px;cursor:pointer;font:inherit;font-size:var(--fs-2xs);transition:color .12s var(--ease-apple),background .12s var(--ease-apple)}
 .if-lib-root .discoverbar button:hover{background:var(--hover);color:var(--t1)}
 .if-lib-root .discoverbar button.on{background:var(--accent-soft);color:var(--accent);font-weight:var(--fw-semi)}
 .if-lib-root .discoverbar button:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
@@ -156,7 +156,7 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .spotlight-copy small{font-size:var(--fs-2xs);line-height:1.45;color:var(--t4);max-width:50ch}
 .if-lib-root .spotlight-kicker{display:flex;align-items:center;gap:5px;color:var(--accent);font-size:10px;font-weight:var(--fw-semi);letter-spacing:.04em;text-transform:uppercase}
 .if-lib-root .spotlight-open{display:flex;align-items:center;justify-content:center;color:var(--t4);font-size:16px}
-.if-lib-root .chip{height:24px;padding:0 11px;border-radius:20px;background:var(--field);color:var(--t3);
+.if-lib-root .chip{height:24px;padding:0 11px;border-radius:var(--r-full);background:var(--field);color:var(--t3);
       font-size:var(--fs-2xs);white-space:nowrap;display:flex;align-items:center;gap:5px;border:0;cursor:pointer;
       transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
 .if-lib-root .chip:hover{background:var(--hover);color:var(--t1)}
@@ -176,8 +176,8 @@ export const LIBRARY_SHEET_CSS = `
    segmented với .modeseg/.sizeseg dùng chung style bên dưới. */
 .if-lib-root .densitybar{flex:none;display:flex;justify-content:flex-end;padding:7px 14px;
       border-bottom:1px solid var(--mat-hairline)}
-.if-lib-root .sizeseg{display:flex;gap:3px;background:var(--field);border-radius:20px;padding:3px;flex:none}
-.if-lib-root .sizeseg button{height:22px;padding:0 10px;border-radius:20px;border:0;background:none;cursor:pointer;
+.if-lib-root .sizeseg{display:flex;gap:3px;background:var(--field);border-radius:var(--r-full);padding:3px;flex:none}
+.if-lib-root .sizeseg button{height:22px;padding:0 10px;border-radius:var(--r-full);border:0;background:none;cursor:pointer;
       color:var(--t3);font-size:var(--fs-2xs);transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
 .if-lib-root .sizeseg button:hover{color:var(--t1)}
 .if-lib-root .sizeseg button.on{background:var(--panel);color:var(--t1);font-weight:var(--fw-semi)}
@@ -229,7 +229,7 @@ export const LIBRARY_SHEET_CSS = `
    kính đi từ token". Nay suy từ --blur (22px): badge chỉ cao 15px nên lấy MỘT NỬA token, blur
    nguyên 22px trên vệt 15px thì nhoè hết chữ. Chia từ token nên đổi token là đổi theo, không
    còn con số rời. Kèm -webkit- (bài học K3: thiếu prefix ⇒ tablet không blur). */
-.if-lib-root .badge{position:absolute;top:6px;right:6px;height:15px;padding:0 5px;border-radius:5px;background:var(--mat-card);
+.if-lib-root .badge{position:absolute;top:6px;right:6px;height:15px;padding:0 5px;border-radius:max(4px, calc(var(--r-3) - 6px));background:var(--mat-card);
        backdrop-filter:blur(calc(var(--blur) / 2));-webkit-backdrop-filter:blur(calc(var(--blur) / 2));
        color:var(--t3);font-size:9px;font-weight:700;display:flex;align-items:center;
        letter-spacing:.03em}
@@ -302,13 +302,13 @@ export const LIBRARY_SHEET_CSS = `
    G8 (không phải đường duy nhất — kéo thả vẫn còn, đây chỉ là lối thay thế khi khớp tự động thua). */
 .if-lib-root .speccol .splink{padding:10px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;
        font-size:var(--fs-2xs);line-height:1.5;color:var(--t3);border-bottom:1px solid var(--mat-hairline)}
-.if-lib-root .speccol .splink select{height:var(--tap);max-width:100%;border-radius:8px;border:1px solid var(--border);
+.if-lib-root .speccol .splink select{height:var(--tap);max-width:100%;border-radius:var(--r-2);border:1px solid var(--border);
        background:var(--field);color:var(--t1);font:inherit;font-size:var(--fs-2xs);padding:0 8px}
-.if-lib-root .speccol .splink button{height:26px;padding:0 9px;border-radius:8px;border:1px solid var(--border);
+.if-lib-root .speccol .splink button{height:26px;padding:0 9px;border-radius:var(--r-1);border:1px solid var(--border);
        background:var(--field);color:var(--t2);font:inherit;font-size:var(--fs-2xs);cursor:pointer}
 .if-lib-root .speccol .splink button:hover{background:var(--hover);color:var(--t1)}
 .if-lib-root .speccol .spact{margin-top:auto;padding:12px;display:flex;flex-direction:column;gap:7px}
-.if-lib-root .speccol .spact button{width:100%;height:var(--tap);border-radius:10px;border:0;cursor:pointer;
+.if-lib-root .speccol .spact button{width:100%;height:var(--tap);border-radius:var(--r-2);border:0;cursor:pointer;
        font-size:var(--fs-xs);font-weight:var(--fw-semi);font-family:inherit;
        transition:background var(--dur-fast) var(--ease-apple)}
 .if-lib-root .speccol .spact .primary{background:var(--accent);color:var(--on-accent)}
@@ -319,8 +319,8 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .it.on{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
 
 /* chuyển chế độ Duyệt kho ↔ Nạp hàng loạt — segmented nhỏ trong header, cùng ngôn ngữ .chip */
-.if-lib-root .modeseg{display:flex;gap:3px;background:var(--field);border-radius:20px;padding:3px;flex:none}
-.if-lib-root .modeseg button{height:22px;padding:0 10px;border-radius:20px;border:0;background:none;cursor:pointer;
+.if-lib-root .modeseg{display:flex;gap:3px;background:var(--field);border-radius:var(--r-full);padding:3px;flex:none}
+.if-lib-root .modeseg button{height:22px;padding:0 10px;border-radius:var(--r-full);border:0;background:none;cursor:pointer;
       color:var(--t3);font-size:var(--fs-2xs);transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
 .if-lib-root .modeseg button:hover{color:var(--t1)}
 .if-lib-root .modeseg button.on{background:var(--panel);color:var(--t1);font-weight:var(--fw-semi)}
@@ -348,7 +348,7 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .droprow .k{color:var(--t4)}
 .if-lib-root .droprow .s{text-align:right;color:var(--t4);font-variant-numeric:tabular-nums}
 .if-lib-root .droprow .rm{width:22px;height:22px;display:flex;align-items:center;justify-content:center;border:0;
-      background:none;color:var(--t4);border-radius:6px;cursor:pointer;transition:background .12s,color .12s}
+      background:none;color:var(--t4);border-radius:var(--r-1);cursor:pointer;transition:background .12s,color .12s}
 .if-lib-root .droprow .rm:hover{background:var(--hover);color:var(--t1)}
 .if-lib-root .ingestft{flex:none;height:38px;display:flex;align-items:center;gap:10px;
       border-top:1px solid var(--mat-hairline);margin-top:10px;font-size:var(--fs-2xs);color:var(--t4)}

@@ -394,7 +394,7 @@ export default function LayoutShelf({
             style={{
               width: '100%',
               padding: '6px 8px 6px 26px',
-              borderRadius: 8,
+              borderRadius: 10,
               border: '1px solid var(--border)',
               background: 'var(--field)',
               color: 'var(--t1)',
@@ -432,7 +432,7 @@ export default function LayoutShelf({
             style={{
               flex: 1,
               padding: '6px 8px',
-              borderRadius: 8,
+              borderRadius: 10,
               border: '1px solid var(--border)',
               background: 'var(--field)',
               color: 'var(--t1)',
@@ -618,7 +618,7 @@ function ShelfCard({
           gap: 5,
           padding: 6,
           width: '100%',
-          borderRadius: 8,
+          borderRadius: 10,
           border: highlight ? '1.5px solid var(--accent)' : '1px solid var(--border)',
           background: highlight ? 'var(--accent-soft)' : 'var(--card)',
           cursor: 'pointer',
@@ -628,7 +628,7 @@ function ShelfCard({
         <div
           style={{
             aspectRatio: '16 / 9',
-            borderRadius: 5,
+            borderRadius: 6,
             border: '1px solid var(--border)',
             overflow: 'hidden',
             background: preview ? `center/cover no-repeat url("${preview}")` : 'var(--field)',
@@ -723,7 +723,7 @@ const createBtn: React.CSSProperties = {
   alignItems: 'center',
   gap: 4,
   padding: '6px 10px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--accent)',
   background: 'var(--accent-soft)',
   color: 'var(--accent)',
@@ -738,7 +738,7 @@ const saveBtn: React.CSSProperties = {
   alignItems: 'center',
   gap: 4,
   padding: '6px 10px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--border)',
   background: 'var(--card)',
   color: 'var(--t2)',

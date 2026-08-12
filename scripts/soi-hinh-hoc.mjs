@@ -21,14 +21,13 @@ import { join, relative } from 'node:path';
 const ROOT = new URL('..', import.meta.url).pathname;
 const STRICT = process.argv.includes('--strict');
 
-// ---- THANG CHO PHÉP (tạm nạp cả 2 thang cũ — xem ghi chú đầu file) ----
+// ---- THANG CHO PHÉP — thang DUYỆT 12/08 (AUDIT-HINH-HOC §3, Hoà gật) ----
+// --r-1..--r-4 = 6/10/14/20 + --r-full 999. Dẫn xuất concentric hợp lệ khi
+// rInner = max(4, rOuter − pad) và pad ≤ 8 — khai bằng concentricRadius()/calc(),
+// KHÔNG khai số chết; số chết ngoài thang vẫn bị báo.
 const ALLOWED = new Set([
-  // thang SPEC-DESIGN-SYSTEM-IF
-  6, 9, 12, 16,
-  // thang globals.css (--radius-sm/md/lg/xl)
-  10, 14, 20, 28,
-  // dẫn xuất đồng tâm ĐÃ CHỐT §2c (bar 44/r22 đệm 5 → nút r17 → track r11)
-  22, 17, 11,
+  // thang duyệt: --r-1 / --r-2 / --r-3 / --r-4
+  6, 10, 14, 20,
   // vi mô: focus-ring, vạch, chấm — dưới ngưỡng cảm nhận "thang"
   0, 1, 2, 3, 4,
 ]);
@@ -89,7 +88,7 @@ for (const p of files) {
 
 // ---- In báo cáo ----
 console.log('\nSOI HÌNH HỌC BO GÓC — ' + new Date().toISOString().slice(0, 10) + (STRICT ? ' (strict)' : ' (báo cáo)'));
-console.log('Thang cho phép (TẠM — cả 2 thang cũ + dẫn xuất §2c): ' + [...ALLOWED].sort((a, b) => a - b).join(' / ') + ' + capsule 999');
+console.log('Thang cho phép (DUYỆT 12/08 — --r-1..4 + vi mô ≤4): ' + [...ALLOWED].sort((a, b) => a - b).join(' / ') + ' + capsule 999');
 console.log('─'.repeat(78));
 const rows = [...viPham.entries()].sort((a, b) => b[1] - a[1]);
 if (!rows.length) {

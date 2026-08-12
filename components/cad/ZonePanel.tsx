@@ -5,7 +5,7 @@
  *  - ZonePanel: cấu hình zone/arrow (6 nhóm chức năng VN hoá · kiểu biên oval/polygon · opacity
  *    · mũi tên 2 đầu) + lớp ảnh aerial site (upload/fit/scale/move/opacity) + nút "Xuất Trình
  *    chiếu" (render zone map + legend → slide mới ở chặng Trình chiếu — nhãn đổi 04/08
- *    [P7 ĐỔI TÊN], cũ là "Trình bày").
+ *    [P7 ĐỔI TÊN], cũ là Trình bày).
  *  - ZonesLegend: chú giải chấm màu tự sinh từ các zone đang có trong doc — KÉO ĐƯỢC quanh
  *    canvas, click 1 zone để chọn + zoom tới.
  * UI nội bộ theo ngôn ngữ panel sẵn có của CadEditor (var(--panel)/keyline mảnh) — TTT design

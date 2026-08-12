@@ -23,7 +23,7 @@ interface Dropped {
 const KIND_BY_EXT: Record<string, string> = {
   jpg: 'Ảnh', jpeg: 'Ảnh', png: 'Ảnh', webp: 'Ảnh', gif: 'Ảnh',
   dwg: 'Bản vẽ', dxf: 'Bản vẽ', idf: 'Dự án IF', idfc: 'Cấu kiện IF',
-  pdf: 'Tài liệu', docx: 'Tài liệu', pptx: 'Trình bày',
+  pdf: 'Tài liệu', docx: 'Tài liệu', pptx: 'Trình chiếu',
   xlsx: 'Bảng tính', csv: 'Bảng tính',
   mp4: 'Video', mov: 'Video', zip: 'Gói', ifpack: 'Gói dự án',
 };

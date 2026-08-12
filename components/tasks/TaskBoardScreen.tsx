@@ -110,7 +110,7 @@ const BOARD_CSS = `
 .tb-card:hover .tb-tools, .tb-card:focus-within .tb-tools { opacity: 1; }
 .tb-card:hover { border-color: var(--border-strong) !important; }
 .tb-tool { width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
-  border: 1px solid var(--border); border-radius: 7px; background: var(--field); color: var(--t3);
+  border: 1px solid var(--border); border-radius: 6px; background: var(--field); color: var(--t3);
   cursor: pointer; font-size: 12px; line-height: 1; padding: 0; }
 .tb-tool:hover:not(:disabled) { background: var(--hover); color: var(--t1); }
 .tb-tool:disabled { opacity: .35; cursor: not-allowed; }
@@ -118,7 +118,7 @@ const BOARD_CSS = `
 .tb-addbtn:hover { background: var(--hover) !important; color: var(--t1) !important; }
 /* Chip ngữ cảnh (TaskContext Link 11/08) — bấm là nhảy đúng chặng của dự án. */
 .tb-ctx { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 7px;
-  border: 1px solid var(--border); border-radius: 9px; background: var(--field); color: var(--t3);
+  border: 1px solid var(--border); border-radius: 10px; background: var(--field); color: var(--t3);
   font-size: 10px; font-weight: 600; line-height: 1; cursor: pointer; flex: none;
   transition: color .15s var(--ease-apple, ease), border-color .15s var(--ease-apple, ease); }
 .tb-ctx:hover { color: var(--accent); border-color: var(--accent); }
@@ -371,7 +371,7 @@ export function TaskBoardScreen() {
             onChange={(e) => setProjectId(e.target.value)}
             aria-label={tr('Lọc theo dự án', 'Filter by project')}
             style={{
-              marginLeft: 16, height: 30, borderRadius: 8, padding: '0 8px', fontSize: 12.5, fontWeight: 600,
+              marginLeft: 16, height: 30, borderRadius: 10, padding: '0 8px', fontSize: 12.5, fontWeight: 600,
               border: '1px solid var(--accent)', background: 'var(--accent-soft)', color: 'var(--accent)',
             }}
           >
@@ -381,7 +381,7 @@ export function TaskBoardScreen() {
           </select>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 30, padding: '0 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', minWidth: 200 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 30, padding: '0 10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', minWidth: 200 }}>
           <Search size={13} style={{ color: 'var(--t4)' }} />
           <input
             value={query}
@@ -392,7 +392,7 @@ export function TaskBoardScreen() {
         </div>
 
         {overdue > 0 && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 24, padding: '0 10px', borderRadius: 8, background: 'color-mix(in srgb, var(--danger) 14%, transparent)', color: 'var(--danger)', fontSize: 11, fontWeight: 600 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 24, padding: '0 10px', borderRadius: 6, background: 'color-mix(in srgb, var(--danger) 14%, transparent)', color: 'var(--danger)', fontSize: 11, fontWeight: 600 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--danger)' }} />
             {tr(`${overdue} việc trễ hạn`, `${overdue} overdue`)}
           </span>
@@ -405,7 +405,7 @@ export function TaskBoardScreen() {
             onClick={() => { if (firstStateId) { setAdding(firstStateId); setNewTitle(''); } }}
             style={{
               height: 30, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 6, cursor: firstStateId ? 'pointer' : 'not-allowed',
-              border: 0, borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'var(--accent)', color: '#fff', opacity: firstStateId ? 1 : 0.5,
+              border: 0, borderRadius: 10, fontSize: 12, fontWeight: 600, background: 'var(--accent)', color: '#fff', opacity: firstStateId ? 1 : 0.5,
             }}
           >
             <Plus size={13} /> {tr('Thêm việc', 'Add task')}
@@ -450,9 +450,9 @@ export function TaskBoardScreen() {
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
                   placeholder={tr('Tên dự án', 'Project name')}
-                  style={{ height: 32, padding: '0 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, outline: 'none', minWidth: 220 }}
+                  style={{ height: 32, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, outline: 'none', minWidth: 220 }}
                 />
-                <button type="submit" disabled={busy || !newProjectName.trim()} style={{ height: 32, padding: '0 14px', border: 0, borderRadius: 8, background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: busy || !newProjectName.trim() ? 0.5 : 1 }}>
+                <button type="submit" disabled={busy || !newProjectName.trim()} style={{ height: 32, padding: '0 14px', border: 0, borderRadius: 10, background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: busy || !newProjectName.trim() ? 0.5 : 1 }}>
                   {tr('Tạo dự án', 'Create project')}
                 </button>
               </form>
@@ -497,7 +497,7 @@ export function TaskBoardScreen() {
                   {/* preview mini: 3 cột board thu nhỏ — thuần token, không ảnh */}
                   <span aria-hidden style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, height: 34 }}>
                     {[3, 2, 1].map((rows, ci) => (
-                      <span key={ci} style={{ display: 'grid', alignContent: 'start', gap: 3, padding: 3, borderRadius: 5, background: 'var(--field)' }}>
+                      <span key={ci} style={{ display: 'grid', alignContent: 'start', gap: 3, padding: 3, borderRadius: 6, background: 'var(--field)' }}>
                         {Array.from({ length: rows }).map((_, ri) => (
                           <span key={ri} style={{ height: 5, borderRadius: 2, background: ci === 0 && ri === 0 ? 'var(--accent)' : 'var(--border-strong)', opacity: ci === 0 && ri === 0 ? 0.8 : 1 }} />
                         ))}
@@ -550,7 +550,7 @@ export function TaskBoardScreen() {
                     aria-label={tr('Thêm thẻ', 'Add card')}
                     title={tr(`Thêm thẻ vào ${col.state.name}`, `Add card to ${col.state.name}`)}
                     onClick={() => { setAdding(col.state.id); setNewTitle(''); }}
-                    style={{ marginLeft: 'auto', width: 24, height: 24, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--field)', color: 'var(--t3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    style={{ marginLeft: 'auto', width: 24, height: 24, border: '1px solid var(--border)', borderRadius: 10, background: 'var(--field)', color: 'var(--t3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <Plus size={11} />
                   </button>
@@ -561,7 +561,7 @@ export function TaskBoardScreen() {
                   {adding === col.state.id && (
                     <form
                       onSubmit={(e) => { e.preventDefault(); void addTask(col.state.id); }}
-                      style={{ borderRadius: 12, background: 'var(--card)', border: '1.5px dashed var(--accent)', padding: '9px 10px', display: 'flex', flexDirection: 'column', gap: 7 }}
+                      style={{ borderRadius: 10, background: 'var(--card)', border: '1.5px dashed var(--accent)', padding: '9px 10px', display: 'flex', flexDirection: 'column', gap: 7 }}
                     >
                       <input
                         ref={addInputRef}
@@ -572,10 +572,10 @@ export function TaskBoardScreen() {
                         style={{ border: 0, outline: 'none', background: 'transparent', fontSize: 12.5, fontWeight: 600, color: 'var(--t1)' }}
                       />
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button type="submit" disabled={busy || !newTitle.trim()} style={{ height: 24, padding: '0 10px', border: 0, borderRadius: 7, background: 'var(--accent)', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', opacity: busy || !newTitle.trim() ? 0.5 : 1 }}>
+                        <button type="submit" disabled={busy || !newTitle.trim()} style={{ height: 24, padding: '0 10px', border: 0, borderRadius: 6, background: 'var(--accent)', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', opacity: busy || !newTitle.trim() ? 0.5 : 1 }}>
                           {tr('Lưu', 'Save')}
                         </button>
-                        <button type="button" onClick={() => setAdding(null)} style={{ height: 24, padding: '0 10px', border: '1px solid var(--border)', borderRadius: 7, background: 'var(--field)', color: 'var(--t3)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                        <button type="button" onClick={() => setAdding(null)} style={{ height: 24, padding: '0 10px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--field)', color: 'var(--t3)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
                           {tr('Thôi', 'Cancel')}
                         </button>
                       </div>
@@ -588,7 +588,7 @@ export function TaskBoardScreen() {
                       className="tb-card"
                       draggable
                       onDragStart={(e) => e.dataTransfer.setData('text/plain', t.id)}
-                      style={{ borderRadius: 12, background: 'var(--card)', border: '1px solid var(--border)', padding: '11px 12px', cursor: 'grab', display: 'flex', flexDirection: 'column', gap: 8 }}
+                      style={{ borderRadius: 10, background: 'var(--card)', border: '1px solid var(--border)', padding: '11px 12px', cursor: 'grab', display: 'flex', flexDirection: 'column', gap: 8 }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 15 }}>
                         {contextChip(t)}
@@ -656,7 +656,7 @@ export function TaskBoardScreen() {
           </div>
 
           {orphans.length > 0 && (
-            <div style={{ margin: '0 16px 8px', padding: '6px 10px', borderRadius: 8, background: 'color-mix(in srgb, var(--warning) 14%, transparent)', fontSize: 11, color: 'var(--t2)' }}>
+            <div style={{ margin: '0 16px 8px', padding: '6px 10px', borderRadius: 10, background: 'color-mix(in srgb, var(--warning) 14%, transparent)', fontSize: 11, color: 'var(--t2)' }}>
               {tr(
                 `${orphans.length} việc có trạng thái không còn tồn tại — tải lại trang để đồng bộ.`,
                 `${orphans.length} task(s) reference a status that no longer exists — reload to sync.`,

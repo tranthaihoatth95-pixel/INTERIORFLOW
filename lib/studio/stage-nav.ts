@@ -12,6 +12,7 @@ import type { AppChromeActive } from '@/components/studio/AppChromeTypes';
 import { stageHrefFrom } from '@/lib/project-scope';
 import { stageSegmentForPhase } from '@/lib/scope-core';
 import { stashPresentHandoffWithIds, deckImagesWithIdsFromNodes } from '@/lib/present-editor/handoff';
+import { setLastStage } from '@/lib/shell/last-stage';
 import { useFlowStore } from '@/lib/store';
 
 export function activeToPhase(active: AppChromeActive): Phase {
@@ -35,6 +36,14 @@ interface StageNavDeps {
  * render. Origin cad/present/photo: samePane guard + ghi localStorage + stageHrefFrom.
  */
 export function pickStage(p: Phase, { active, pathname, router, begin }: StageNavDeps): void {
+  // [marker: lastStage] — điểm GHI duy nhất "chặng đang dở" per dự án (phiếu home-overview-card).
+  // Ghi cả 2 khoá (Project.id + Flow.id) để card Gallery đọc bằng khoá nào cũng trúng;
+  // ghi trước mọi nhánh (kể cả samePane — vẫn đúng là chặng đang đứng), best-effort localStorage.
+  {
+    const s = useFlowStore.getState();
+    setLastStage(s.currentProjectId, p);
+    setLastStage(s.currentFlowId, p);
+  }
   if (active === 'render') {
     if (p === 'present') {
       begin('present');

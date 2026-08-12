@@ -8,7 +8,7 @@
  *
  * Hình khối theo §2c "một-khối-một-bóng" (SPEC-DESIGN-SYSTEM-IF): một nền kính, một bóng.
  * Hàng 1 là công cụ; hàng 2 đổi theo mode: Sketch = thao tác cảm ứng, Chuyên = ngữ cảnh
- * Model/Paper/BIM. Cùng một khối bo 24, hairline ngăn hàng.
+ * Model/Paper/BIM. Cùng một khối bo 20 (--r-4), hairline ngăn hàng.
  *
  * Vị trí: slot ⑤ của AppShell đặt `bottom-4` của Stage — Stage chặng Vẽ còn `CommandLine` 34px
  * in-flow ở đáy (CadEditor), nên dock tự cộng marginBottom 34 để nổi TRÊN ô lệnh, không đè.
@@ -21,6 +21,7 @@
 import CadToolbar from './CadToolbar';
 import CadTouchDock from './CadTouchDock';
 import { useCadStore } from '@/lib/cad/store';
+import { RADIUS, concentricRadius } from '@/lib/geometry';
 import { useEffect, useState } from 'react';
 import { Eye, FileOutput, FileText, Focus, Layers3, Lock, LockOpen, Plus, Settings2, Terminal } from 'lucide-react';
 
@@ -42,7 +43,7 @@ export default function CadToolbelt() {
         minWidth: 0,
         overflow: 'hidden',
         marginBottom: 34,
-        borderRadius: 24,
+        borderRadius: RADIUS.r4,
         background: 'color-mix(in srgb, var(--panel) 78%, transparent)',
         backdropFilter: 'blur(18px) saturate(1.4)',
         WebkitBackdropFilter: 'blur(18px) saturate(1.4)',
@@ -80,7 +81,7 @@ function PaperToolbelt() {
     paperAction('report');
     return () => window.removeEventListener('cad:paper-selection-state', onState);
   }, []);
-  return <div className="cad-pill-scroll" style={{ display: 'flex', alignItems: 'center', gap: 5, minHeight: 52, padding: 6, maxWidth: 'calc(100vw - 40px)', overflowX: 'auto', borderRadius: 18, background: 'color-mix(in srgb, var(--panel) 82%, transparent)', backdropFilter: 'blur(18px) saturate(1.35)', WebkitBackdropFilter: 'blur(18px) saturate(1.35)', border: '1px solid var(--border)', boxShadow: '0 8px 28px rgba(0,0,0,.2)' }}>
+  return <div className="cad-pill-scroll" style={{ display: 'flex', alignItems: 'center', gap: 5, minHeight: 52, padding: 6, maxWidth: 'calc(100vw - 40px)', overflowX: 'auto', borderRadius: concentricRadius(RADIUS.r4, 0), background: 'color-mix(in srgb, var(--panel) 82%, transparent)', backdropFilter: 'blur(18px) saturate(1.35)', WebkitBackdropFilter: 'blur(18px) saturate(1.35)', border: '1px solid var(--border)', boxShadow: '0 8px 28px rgba(0,0,0,.2)' }}>
     <button type="button" onClick={() => setWorkspace('model')} style={paperToolBtn}><span style={paperModeBadge}>PAPER</span><span style={{ color: 'var(--t3)' }}>Model</span></button>
     <Divider />
     <button type="button" onClick={() => paperAction('add')} style={paperToolBtn} title="Thêm một ô nhìn"><Plus size={15} /> Ô nhìn</button>
@@ -99,10 +100,10 @@ function PaperToolbelt() {
 
 const PAPER_TOOL_SCALES = [20, 25, 50, 75, 100, 150, 200] as const;
 const Divider = () => <span aria-hidden style={{ width: 1, height: 24, flex: 'none', background: 'var(--border)' }} />;
-const paperToolBtn: React.CSSProperties = { height: 38, flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0 10px', borderRadius: 11, border: '1px solid transparent', background: 'transparent', color: 'var(--t2)', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 650, cursor: 'pointer', whiteSpace: 'nowrap' };
+const paperToolBtn: React.CSSProperties = { height: 38, flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0 10px', borderRadius: concentricRadius(RADIUS.r4, 6), border: '1px solid transparent', background: 'transparent', color: 'var(--t2)', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 650, cursor: 'pointer', whiteSpace: 'nowrap' };
 const paperToolActive: React.CSSProperties = { background: 'var(--accent-soft)', color: 'var(--accent)', borderColor: 'color-mix(in srgb, var(--accent) 30%, transparent)' };
-const paperModeBadge: React.CSSProperties = { padding: '4px 7px', borderRadius: 7, background: 'var(--accent)', color: '#fff', fontSize: 10, fontWeight: 800, letterSpacing: '.06em' };
-const paperScaleSelect: React.CSSProperties = { height: 38, flex: 'none', padding: '0 8px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 700 };
+const paperModeBadge: React.CSSProperties = { padding: '4px 7px', borderRadius: RADIUS.r1, background: 'var(--accent)', color: '#fff', fontSize: 10, fontWeight: 800, letterSpacing: '.06em' };
+const paperScaleSelect: React.CSSProperties = { height: 38, flex: 'none', padding: '0 8px', borderRadius: concentricRadius(RADIUS.r4, 6), border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 700 };
 
 /** Mode Chuyên phải lộ workflow, không chỉ "thêm nút": dòng này nói rõ đang ở Model Space,
  * đơn vị và tờ in hiện hành; hai CTA mở đúng dòng lệnh/thiết lập tờ đã có thật. */
@@ -135,12 +136,12 @@ function ProWorkspaceBar() {
 
 const modeActionBtn: React.CSSProperties = {
   display: 'inline-flex', alignItems: 'center', gap: 5, minHeight: 28, padding: '0 9px',
-  borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)',
+  borderRadius: RADIUS.r2, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)',
   fontFamily: 'inherit', fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
 };
 
 const workspaceTab = (active: boolean): React.CSSProperties => ({
-  minHeight: 26, padding: '0 8px', borderRadius: 7, border: '1px solid var(--border)',
+  minHeight: 26, padding: '0 8px', borderRadius: RADIUS.r1, border: '1px solid var(--border)',
   background: active ? 'var(--accent)' : 'var(--field)', color: active ? 'white' : 'var(--t2)',
   fontFamily: 'inherit', fontSize: 10.5, fontWeight: 750, letterSpacing: '.08em', cursor: 'pointer',
 });

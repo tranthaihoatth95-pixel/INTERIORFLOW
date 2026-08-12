@@ -71,7 +71,7 @@ export const FRONTIER = [
     bangChung: [{ dir: 'lib/cad', mau: 'labelInRoomBounds|dimOutsideRoom' }] },
   { id: 'hinh-hoc-dong-tam', vai: 'day', ten: 'Đồng bộ hình học toàn app (Hoà 12/08: bo góc phải PHÁT TRIỂN TỪ TÂM — trong = ngoài − đệm như Apple §2d; hiện đường nét không nhất quán từ hệ thống tới chi tiết). Phần AUDIT+MÁY SOI xong 12/08 (AUDIT-HINH-HOC: 35% radius lẻ, 10/15 cặp lồng vi phạm, 8px×259 lần không thuộc thang nào)', he: 'DocCore', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'scripts', mau: 'soi-hinh-hoc' }] },
-  { id: 'hinh-hoc-ap-thang', vai: 'do', ten: 'ÁP thang bo ĐÃ DUYỆT 12/08 (6/10/14/20 + --r-full 999 + rInner=max(4,rOuter−pad), concentric chỉ khi pad≤8) → token --r-* + sửa top 10 (CadToolbelt r24/r18 đệm 0, tấm Thư viện badge...) + siết soi-hinh-hoc --strict', he: 'DocCore', dot: 1, trangThai: 'chua',
+  { id: 'hinh-hoc-ap-thang', vai: 'do', ten: 'Áp thang bo v1 (12/08: token --r-* + concentricRadius + migrate top-10 khả dụng, 498→442 off-scale; hàng đợi v2 trong báo cáo H: LightTab/LoginBackdrop/MaterialImportWizard...)', he: 'DocCore', dot: 1, trangThai: 'xong',
     bangChung: [{ file: 'app/globals.css', mau: '--r-full' }] },
   { id: 'card-kinh-gradient', vai: 'do', ten: 'Khôi phục card kính lỏng viền gradient chạy màu ở chặng render (Hoà 12/08: "rất đẹp") — tái sinh dạng ÁNH SÁNG CÓ NGHĨA: viền gradient chỉ chạy khi card ĐANG render/sinh ảnh (hợp luật ánh-sáng-là-trạng-thái + G1/G9)', he: 'LightState', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'glass-gradient-run|GlassGradientCard' }] }, // 12/08: viền gradient chạy CHỈ khi status=running (2 chỗ, grep xác nhận), G1/G9 sạch

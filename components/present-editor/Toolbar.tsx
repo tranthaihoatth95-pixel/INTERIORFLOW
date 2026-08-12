@@ -572,7 +572,7 @@ function Btn({
         alignItems: 'center',
         gap: 6,
         padding: '8px 12px',
-        borderRadius: 8,
+        borderRadius: 10,
         fontSize: 13,
         cursor: disabled ? 'default' : 'pointer',
         border: primary ? '1px solid var(--accent)' : '1px solid var(--border)',
@@ -619,7 +619,7 @@ function IconOnly({
           height: 36,
           display: 'grid',
           placeItems: 'center',
-          borderRadius: 8,
+          borderRadius: 10,
           border: '1px solid var(--border)',
           background: 'var(--field)',
           color: 'var(--t2)',
@@ -677,7 +677,7 @@ function ArrangePopover({
         flexWrap: 'wrap',
         gap: 6,
         padding: 10,
-        borderRadius: 12,
+        borderRadius: 10,
         border: '1px solid var(--border)',
         background: 'var(--panel)',
         boxShadow: 'var(--shadow-lg, 0 12px 32px rgba(0,0,0,.18))',
@@ -832,13 +832,13 @@ function BoqXlsxImportDialog({ onClose, initialFile = null }: { onClose: () => v
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{ position: 'fixed', inset: 0, zIndex: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(10,8,6,0.4)' }}
     >
-      <div style={{ width: 760, maxWidth: 'calc(100vw - 24px)', maxHeight: '88vh', display: 'flex', flexDirection: 'column', background: 'var(--panel)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden' }}>
+      <div style={{ width: 760, maxWidth: 'calc(100vw - 24px)', maxHeight: '88vh', display: 'flex', flexDirection: 'column', background: 'var(--panel)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', height: 46, padding: '0 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
           <FileSpreadsheet size={15} style={{ color: 'var(--accent)' }} />
           <span style={{ marginLeft: 8, fontSize: 14, fontWeight: 600, color: 'var(--t1)' }}>
             {tr('Nhập .xlsx vào bảng khối lượng', 'Import .xlsx into the bill of quantities')}
           </span>
-          <button type="button" onClick={onClose} style={{ marginLeft: 'auto', width: 26, height: 26, display: 'grid', placeItems: 'center', border: 0, borderRadius: 8, background: 'transparent', color: 'var(--t4)', cursor: 'pointer' }}>
+          <button type="button" onClick={onClose} style={{ marginLeft: 'auto', width: 26, height: 26, display: 'grid', placeItems: 'center', border: 0, borderRadius: 6, background: 'transparent', color: 'var(--t4)', cursor: 'pointer' }}>
             <X size={14} />
           </button>
         </div>
@@ -880,7 +880,7 @@ function BoqXlsxImportDialog({ onClose, initialFile = null }: { onClose: () => v
                 onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files?.[0]) void openFile(e.dataTransfer.files[0]); }}
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '44px 20px',
-                  borderRadius: 12, border: `1.5px dashed ${dragOver ? 'var(--accent)' : 'var(--border)'}`,
+                  borderRadius: 10, border: `1.5px dashed ${dragOver ? 'var(--accent)' : 'var(--border)'}`,
                   background: dragOver ? 'var(--accent-soft, var(--field))' : 'var(--field)',
                 }}
               >
@@ -923,7 +923,7 @@ function BoqXlsxImportDialog({ onClose, initialFile = null }: { onClose: () => v
                     <select
                       value={columns[field] ?? ''}
                       onChange={(e) => setField(field, e.target.value === '' ? null : Number(e.target.value))}
-                      style={{ width: '100%', height: 30, borderRadius: 7, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, padding: '0 8px' }}
+                      style={{ width: '100%', height: 30, borderRadius: 6, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, padding: '0 8px' }}
                     >
                       <option value="">{tr('— không dùng —', '— unused —')}</option>
                       {sheet.headers.map((h, i) => (
@@ -935,7 +935,7 @@ function BoqXlsxImportDialog({ onClose, initialFile = null }: { onClose: () => v
               </div>
 
               {columns.matId == null && columns.ma == null && (
-                <div style={{ marginBottom: 12, padding: '8px 10px', borderRadius: 9, background: 'color-mix(in srgb, var(--danger) 12%, var(--field))', border: '1px solid var(--border)', fontSize: 11.5, color: 'var(--t2)' }}>
+                <div style={{ marginBottom: 12, padding: '8px 10px', borderRadius: 10, background: 'color-mix(in srgb, var(--danger) 12%, var(--field))', border: '1px solid var(--border)', fontSize: 11.5, color: 'var(--t2)' }}>
                   <AlertTriangle size={12} style={{ color: 'var(--danger)', verticalAlign: -2, marginRight: 5 }} />
                   {tr(
                     'Chưa chỉ được cột MÃ — không có mã thì không biết dòng Excel thuộc hạng mục nào. Khớp theo TÊN là cách chắc chắn nạp nhầm giá, nên app không làm.',
@@ -945,7 +945,7 @@ function BoqXlsxImportDialog({ onClose, initialFile = null }: { onClose: () => v
               )}
 
               {dropped.length > 0 && (
-                <div style={{ marginBottom: 12, padding: '8px 10px', borderRadius: 9, background: 'color-mix(in srgb, var(--warning) 12%, var(--field))', border: '1px solid var(--border)' }}>
+                <div style={{ marginBottom: 12, padding: '8px 10px', borderRadius: 10, background: 'color-mix(in srgb, var(--warning) 12%, var(--field))', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t2)' }}>
                     <AlertTriangle size={12} style={{ color: 'var(--warning)', verticalAlign: -2, marginRight: 5 }} />
                     {tr(`${dropped.length} cột trong file KHÔNG được nạp:`, `${dropped.length} column(s) in the file are NOT imported:`)}
@@ -1078,5 +1078,5 @@ function BoqXlsxImportDialog({ onClose, initialFile = null }: { onClose: () => v
 
 const boqTh: React.CSSProperties = { textAlign: 'left', padding: '5px 8px', fontSize: 10.5, fontWeight: 600, color: 'var(--t4)', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' };
 const boqTd: React.CSSProperties = { padding: '4px 8px', color: 'var(--t2)', borderBottom: '1px solid var(--border)' };
-const btnPrimary: React.CSSProperties = { height: 32, padding: '0 16px', borderRadius: 8, border: 0, background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' };
-const btnGhost: React.CSSProperties = { height: 32, padding: '0 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' };
+const btnPrimary: React.CSSProperties = { height: 32, padding: '0 16px', borderRadius: 10, border: 0, background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' };
+const btnGhost: React.CSSProperties = { height: 32, padding: '0 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' };

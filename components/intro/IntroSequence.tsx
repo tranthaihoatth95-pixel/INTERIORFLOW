@@ -230,7 +230,7 @@ function Scene2({ reduce }: { reduce: boolean }) {
 
 function Scene3({ reduce }: { reduce: boolean }) {
   // 03/08 CHỐT TÊN vòng cuối — bản header hẹp "2D/3D/Trình bày" (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md).
-  // 04/08 [P7 ĐỔI TÊN] — "Trình bày" → "Trình chiếu" (2D/3D giữ nguyên, đã là dạng rút gọn).
+  // 04/08 [P7 ĐỔI TÊN] — tên cũ Trình bày → Trình chiếu (2D/3D giữ nguyên, đã là dạng rút gọn).
   const stages = ['2D', '3D', 'Trình chiếu'];
   return (
     <motion.div
