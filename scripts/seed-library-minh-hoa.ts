@@ -25,6 +25,7 @@ import { PrismaClient } from '@prisma/client';
 import { execFileSync } from 'child_process';
 import { mkdirSync, writeFileSync, existsSync, unlinkSync } from 'fs';
 import path from 'path';
+import { buildGalleryTag, type GalleryIndustry } from '../lib/library/gallery-tags';
 
 const ROOT = path.resolve(__dirname, '..');
 const DB_PATH = path.join(ROOT, 'prisma', 'dev.db');
@@ -42,37 +43,51 @@ interface SeedItem {
   shelf: 'render-preset' | 'common-atlas' | 'common-asset';
   thumb: string; // ThumbKind — db-items.ts đọc tag thumb:<kind>
   code: string;
+  // ── Gallery liên ngành (K · 12/08, docs/phieu-giao/gallery-lien-nganh.md VIỆC 6) ──
+  /** Nhóm ngành THẬT — cả 17 ảnh của seed này đều là ảnh render/nội thất, nên đều `noi-that`.
+   * KHÔNG gắn kiến trúc/cảnh quan/graphic/art cho đủ 5 nhóm — sẽ là bịa (N4); seed khác ngành thì
+   * thêm sau bằng seed script riêng. */
+  nganh: GalleryIndustry;
+  /** Slug bộ sưu tập xu hướng (VIỆC 3) — chỉ 5 preset môi trường có, vì cùng chủ đề thật "ánh
+   * sáng tự nhiên cho render". Không gắn bừa cho nhóm vật liệu/nội thất (chúng không cùng 1 xu
+   * hướng thật nào). */
+  bosuutap?: string;
 }
 
 /** Mỗi ảnh đã tải bản 200px về xem MẮT THƯỜNG (phiên 12/08) — không chọn mù theo từ khoá. */
 const ITEMS: SeedItem[] = [
   // ── 5 preset MÔI TRƯỜNG / ánh sáng — ảnh trời đúng điều kiện sáng của preset ──
-  { key: 'preset-nang-trua', name: 'Nắng trưa · trời quang', photo: 'photo-1601297183305-6df142704ea2', usage: 'ref-render', category: 'Preset môi trường', shelf: 'render-preset', thumb: 'light-studio', code: 'ENV-NOON' },
-  { key: 'preset-hoang-hon', name: 'Hoàng hôn mặt nước', photo: 'photo-1495616811223-4d98c6e9c869', usage: 'ref-render', category: 'Preset môi trường', shelf: 'render-preset', thumb: 'light-gold', code: 'ENV-SUNSET' },
-  { key: 'preset-gio-vang', name: 'Giờ vàng xuyên mây', photo: 'photo-1504608524841-42fe6f032b4b', usage: 'ref-render', category: 'Preset môi trường', shelf: 'render-preset', thumb: 'light-dawn', code: 'ENV-GOLDEN' },
-  { key: 'preset-phu-may', name: 'Trời phủ mây', photo: 'photo-1534088568595-a066f410bcda', usage: 'ref-render', category: 'Preset môi trường', shelf: 'render-preset', thumb: 'light-overcast', code: 'ENV-OVERCAST' },
-  { key: 'preset-dem-sao', name: 'Đêm đầy sao', photo: 'photo-1419242902214-272b3f66ee7a', usage: 'ref-render', category: 'Preset môi trường', shelf: 'render-preset', thumb: 'light-night', code: 'ENV-NIGHT' },
+  // Cùng gắn `bosuutap:anh-sang-tu-nhien` — bộ sưu tập xu hướng ĐẦU TIÊN của Gallery, demo cho
+  // cơ chế "thiếu nguồn/giấy phép thì không vào được bộ sưu tập" (VIỆC 3): cả 5 đều đủ cả hai.
+  { key: 'preset-nang-trua', name: 'Nắng trưa · trời quang', photo: 'photo-1601297183305-6df142704ea2', usage: 'ref-render', category: 'Preset môi trường', shelf: 'render-preset', thumb: 'light-studio', code: 'ENV-NOON', nganh: 'noi-that', bosuutap: 'anh-sang-tu-nhien' },
+  { key: 'preset-hoang-hon', name: 'Hoàng hôn mặt nước', photo: 'photo-1495616811223-4d98c6e9c869', usage: 'ref-render', category: 'Preset môi trường', shelf: 'render-preset', thumb: 'light-gold', code: 'ENV-SUNSET', nganh: 'noi-that', bosuutap: 'anh-sang-tu-nhien' },
+  { key: 'preset-gio-vang', name: 'Giờ vàng xuyên mây', photo: 'photo-1504608524841-42fe6f032b4b', usage: 'ref-render', category: 'Preset môi trường', shelf: 'render-preset', thumb: 'light-dawn', code: 'ENV-GOLDEN', nganh: 'noi-that', bosuutap: 'anh-sang-tu-nhien' },
+  { key: 'preset-phu-may', name: 'Trời phủ mây', photo: 'photo-1534088568595-a066f410bcda', usage: 'ref-render', category: 'Preset môi trường', shelf: 'render-preset', thumb: 'light-overcast', code: 'ENV-OVERCAST', nganh: 'noi-that', bosuutap: 'anh-sang-tu-nhien' },
+  { key: 'preset-dem-sao', name: 'Đêm đầy sao', photo: 'photo-1419242902214-272b3f66ee7a', usage: 'ref-render', category: 'Preset môi trường', shelf: 'render-preset', thumb: 'light-night', code: 'ENV-NIGHT', nganh: 'noi-that', bosuutap: 'anh-sang-tu-nhien' },
 
   // ── 4 vật liệu — ảnh bề mặt chất liệu (close-up) ──
-  { key: 'mat-son-xam', name: 'Sơn hiệu ứng xám khói', photo: 'photo-1620812097331-ff636155488f', usage: 'material', category: 'Vật liệu/Texture', shelf: 'common-atlas', thumb: 'paint', code: 'PNT-SMOKE' },
-  { key: 'mat-gach-trang', name: 'Gạch men trắng ốp tường', photo: 'photo-1523413651479-597eb2da0ad6', usage: 'material', category: 'Vật liệu/Texture', shelf: 'common-atlas', thumb: 'stone', code: 'TIL-WHITE' },
-  { key: 'mat-da-be', name: 'Da màu be', photo: 'photo-1519972064555-542444e71b54', usage: 'material', category: 'Vật liệu/Texture', shelf: 'common-atlas', thumb: 'fabric', code: 'LTH-BEIGE' },
-  { key: 'mat-thep-xam', name: 'Kim loại xám xước', photo: 'photo-1516617442634-75371039cb3a', usage: 'material', category: 'Vật liệu/Texture', shelf: 'common-atlas', thumb: 'metal', code: 'MTL-GREY' },
+  { key: 'mat-son-xam', name: 'Sơn hiệu ứng xám khói', photo: 'photo-1620812097331-ff636155488f', usage: 'material', category: 'Vật liệu/Texture', shelf: 'common-atlas', thumb: 'paint', code: 'PNT-SMOKE', nganh: 'noi-that' },
+  { key: 'mat-gach-trang', name: 'Gạch men trắng ốp tường', photo: 'photo-1523413651479-597eb2da0ad6', usage: 'material', category: 'Vật liệu/Texture', shelf: 'common-atlas', thumb: 'stone', code: 'TIL-WHITE', nganh: 'noi-that' },
+  { key: 'mat-da-be', name: 'Da màu be', photo: 'photo-1519972064555-542444e71b54', usage: 'material', category: 'Vật liệu/Texture', shelf: 'common-atlas', thumb: 'fabric', code: 'LTH-BEIGE', nganh: 'noi-that' },
+  { key: 'mat-thep-xam', name: 'Kim loại xám xước', photo: 'photo-1516617442634-75371039cb3a', usage: 'material', category: 'Vật liệu/Texture', shelf: 'common-atlas', thumb: 'metal', code: 'MTL-GREY', nganh: 'noi-that' },
 
   // ── 8 nội thất / không gian — ảnh nền sạch ──
-  { key: 'fur-sofa-nhung', name: 'Sofa nhung xanh rêu', photo: 'photo-1555041469-a586c61ea9bc', usage: 'furniture', category: 'Ref nội thất', shelf: 'common-asset', thumb: 'furniture', code: 'SOFA-VEL' },
-  { key: 'fur-ghe-dau', name: 'Ghế đẩu gỗ studio', photo: 'photo-1503602642458-232111445657', usage: 'furniture', category: 'Ref nội thất', shelf: 'common-asset', thumb: 'furniture', code: 'STOOL-WD' },
-  { key: 'fur-den-cay', name: 'Đèn cây đọc sách', photo: 'photo-1507473885765-e6ed057f782c', usage: 'furniture', category: 'Ref nội thất', shelf: 'common-asset', thumb: 'furniture', code: 'LAMP-FLR' },
-  { key: 'fur-ban-tron', name: 'Bàn tròn + ghế trắng', photo: 'photo-1533090481720-856c6e3c1fdc', usage: 'furniture', category: 'Ref nội thất', shelf: 'common-asset', thumb: 'furniture', code: 'TBL-RND' },
-  { key: 'fur-ban-lam-viec', name: 'Bàn làm việc gỗ sáng', photo: 'photo-1611269154421-4e27233ac5c7', usage: 'furniture', category: 'Ref nội thất', shelf: 'common-asset', thumb: 'furniture', code: 'DESK-OAK' },
-  { key: 'fur-tu-treo', name: 'Tủ treo tường gỗ sồi', photo: 'photo-1595428774223-ef52624120d2', usage: 'furniture', category: 'Ref nội thất', shelf: 'common-asset', thumb: 'furniture', code: 'CAB-OAK' },
-  { key: 'ref-phong-ngu', name: 'Phòng ngủ vách gỗ', photo: 'photo-1586105251261-72a756497a11', usage: 'ref-render', category: 'Ref nội thất', shelf: 'common-asset', thumb: 'sheet', code: 'REF-BED' },
-  { key: 'ref-phong-khach', name: 'Phòng khách ốp gỗ mở', photo: 'photo-1604014237800-1c9102c219da', usage: 'ref-render', category: 'Ref nội thất', shelf: 'common-asset', thumb: 'sheet', code: 'REF-LIV' },
+  { key: 'fur-sofa-nhung', name: 'Sofa nhung xanh rêu', photo: 'photo-1555041469-a586c61ea9bc', usage: 'furniture', category: 'Ref nội thất', shelf: 'common-asset', thumb: 'furniture', code: 'SOFA-VEL', nganh: 'noi-that' },
+  { key: 'fur-ghe-dau', name: 'Ghế đẩu gỗ studio', photo: 'photo-1503602642458-232111445657', usage: 'furniture', category: 'Ref nội thất', shelf: 'common-asset', thumb: 'furniture', code: 'STOOL-WD', nganh: 'noi-that' },
+  { key: 'fur-den-cay', name: 'Đèn cây đọc sách', photo: 'photo-1507473885765-e6ed057f782c', usage: 'furniture', category: 'Ref nội thất', shelf: 'common-asset', thumb: 'furniture', code: 'LAMP-FLR', nganh: 'noi-that' },
+  { key: 'fur-ban-tron', name: 'Bàn tròn + ghế trắng', photo: 'photo-1533090481720-856c6e3c1fdc', usage: 'furniture', category: 'Ref nội thất', shelf: 'common-asset', thumb: 'furniture', code: 'TBL-RND', nganh: 'noi-that' },
+  { key: 'fur-ban-lam-viec', name: 'Bàn làm việc gỗ sáng', photo: 'photo-1611269154421-4e27233ac5c7', usage: 'furniture', category: 'Ref nội thất', shelf: 'common-asset', thumb: 'furniture', code: 'DESK-OAK', nganh: 'noi-that' },
+  { key: 'fur-tu-treo', name: 'Tủ treo tường gỗ sồi', photo: 'photo-1595428774223-ef52624120d2', usage: 'furniture', category: 'Ref nội thất', shelf: 'common-asset', thumb: 'furniture', code: 'CAB-OAK', nganh: 'noi-that' },
+  { key: 'ref-phong-ngu', name: 'Phòng ngủ vách gỗ', photo: 'photo-1586105251261-72a756497a11', usage: 'ref-render', category: 'Ref nội thất', shelf: 'common-asset', thumb: 'sheet', code: 'REF-BED', nganh: 'noi-that' },
+  { key: 'ref-phong-khach', name: 'Phòng khách ốp gỗ mở', photo: 'photo-1604014237800-1c9102c219da', usage: 'ref-render', category: 'Ref nội thất', shelf: 'common-asset', thumb: 'sheet', code: 'REF-LIV', nganh: 'noi-that' },
 ];
 
 const urlOf = (photo: string) => `https://images.unsplash.com/${photo}?w=640&q=70&auto=format&fit=crop`;
 const TAG_MARK = 'demo,minh-hoa,unsplash';
 const NAME_SUFFIX = ' · minh hoạ';
+/** Giấy phép THẬT của cả seed (đã ghi trong caption từ trước) — Unsplash License, không CC0 (hai
+ * giấy phép khác điều khoản, xem `lib/library/gallery-tags.ts`). */
+const GALLERY_LICENSE_TAG = buildGalleryTag('license', 'unsplash');
 
 /** BẮT BUỘC theo phiếu: từng URL phải HEAD 200 + content-type image/* trước khi ghi vào DB. */
 function verifyUrl(url: string): void {
@@ -130,12 +145,22 @@ async function seed(): Promise<void> {
     const dest = path.join(UPLOAD_DIR, filename);
     if (!existsSync(dest)) download(url, dest);
 
+    // Gallery liên ngành (VIỆC 6): `nganh:`/`license:`/`nguon:` cho MỌI ảnh; `bosuutap:` chỉ khi
+    // item có khai (5 preset môi trường). `nguon:` = chính URL Unsplash đã verify 200 phía trên —
+    // KHÔNG bịa nguồn khác, đây là nguồn thật đã tải ảnh về.
+    const galleryTags = [
+      buildGalleryTag('nganh', it.nganh),
+      GALLERY_LICENSE_TAG,
+      buildGalleryTag('nguon', url),
+      ...(it.bosuutap ? [buildGalleryTag('bosuutap', it.bosuutap)] : []),
+    ].join(',');
+
     await prisma.libraryAsset.create({
       data: {
         userId: user.id,
         name,
         category: it.category,
-        tags: `${TAG_MARK},shelf:${it.shelf},thumb:${it.thumb},code:${it.code}`,
+        tags: `${TAG_MARK},shelf:${it.shelf},thumb:${it.thumb},code:${it.code},${galleryTags}`,
         mime: 'image/jpeg',
         path: filename,
         usage: it.usage,
