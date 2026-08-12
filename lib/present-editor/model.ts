@@ -512,8 +512,13 @@ export interface EditorSlide {
  * màn chọn của chặng Trình chiếu. Chỉ `'deck'` và `'boq'` có editor thật hiện nay (BOQ dùng
  * `BoqScreen` riêng — KHÔNG đọc/ghi field này, đây chỉ là NHÃN để sheet nhớ mình thuộc loại
  * nào, cho màn chọn khỏi hỏi lại). 4 loại còn lại đang disabled trên màn chọn.
+ *
+ * (Đợt 4, `docs/phieu-giao/editor-bang-bieu-mau.md`) — thêm 3 giá trị họ ENGINE BẢNG
+ * (`lib/present-editor/table-doc-engine.ts`): `'schedule'` (Bảng thống kê — SỐNG THẬT, đi đường
+ * riêng như `'boq'`, KHÔNG đọc/ghi field này) · `'spec-sheet'`/`'approval-form'` (CHƯA có editor,
+ * vẫn khoá kèm lý do trên `PresentDocTypePicker`, cùng cách 4 loại cũ đang khoá).
  */
-export type PresentDocType = 'deck' | 'material-a3' | 'boq' | 'doc' | 'video' | 'html';
+export type PresentDocType = 'deck' | 'material-a3' | 'boq' | 'doc' | 'video' | 'html' | 'schedule' | 'spec-sheet' | 'approval-form';
 
 /** Deck = nhiều slide + brand + bộ chữ + palette gu. */
 export interface EditorDeck {

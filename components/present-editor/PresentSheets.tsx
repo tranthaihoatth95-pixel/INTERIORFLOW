@@ -89,6 +89,12 @@ interface Props {
    * trống = thẻ BOQ không hiện trên màn chọn (tránh nút giả bấm không ra gì, luật §9).
    */
   onRequestBoq?: () => void;
+  /**
+   * Đợt 4 (`docs/phieu-giao/editor-bang-bieu-mau.md`) — thẻ "Bảng thống kê" mở `ScheduleScreen`,
+   * đi ĐÚNG đường `onRequestBoq` (sống ở `PresentStageScreen`, ngoài `PresentSheets`). Bỏ trống =
+   * thẻ không hiện (cùng luật §9).
+   */
+  onRequestSchedule?: () => void;
 }
 
 interface Sheet extends SheetTab {
@@ -229,7 +235,7 @@ async function resolveAndSyncPresentDisk(
 let seq = 1;
 const nextId = () => `presheet-${seq++}`;
 
-export default function PresentSheets({ initialDeck: initialDeckProp, onRequestBoq }: Props) {
+export default function PresentSheets({ initialDeck: initialDeckProp, onRequestBoq, onRequestSchedule }: Props) {
   // 07/08 (M-EMPTY, Hoà chốt "bỏ hết dự án mẫu — app thật bắt đầu trống"): không truyền deck
   // khởi đầu ⇒ deck RỖNG 0 slide (khác `blankDeck` có sẵn 1 trang trắng — 0 slide để
   // PresentEditor hiện đúng màn "Chưa có slide" với lối đi tiếp, thay vì một trang trắng câm).
@@ -658,6 +664,7 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
             onChooseMaterialBoard={() => chooseDeck('blank', { docType: 'material-a3', stagePreset: 'a3-landscape' })}
             onChooseBoq={() => onRequestBoq?.()}
             onChooseStorySet={chooseStorySet}
+            onChooseSchedule={() => onRequestSchedule?.()}
           />
         ) : hydrated ? (
           <PresentEditor

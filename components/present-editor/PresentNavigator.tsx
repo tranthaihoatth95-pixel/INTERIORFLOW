@@ -17,10 +17,38 @@
  * không liệt kê Văn bản/Video vì hai editor đó chưa tồn tại — tránh tạo menu có nút giả.
  */
 
-import { FileSpreadsheet } from 'lucide-react';
+import { FileSpreadsheet, ListTree } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
-export function PresentNavigator({ boqActive, onOpenBoq }: { boqActive?: boolean; onOpenBoq?: () => void }) {
+export interface PresentNavigatorProps {
+  boqActive?: boolean;
+  onOpenBoq?: () => void;
+  /** Đợt 4 (`docs/phieu-giao/editor-bang-bieu-mau.md`) — lối tắt "Bảng thống kê", cùng khuôn
+   * `boqActive`/`onOpenBoq` (BOQ chỉ mở lại được từ màn chọn loại hồ sơ nếu không có lối tắt này). */
+  scheduleActive?: boolean;
+  onOpenSchedule?: () => void;
+}
+
+function NavShortcutButton({ active, onClick, icon, label }: { active?: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 8, width: 'calc(100% - 16px)', margin: '0 8px',
+        height: 'var(--row, 28px)', padding: '0 10px', borderRadius: 'var(--r-2)', cursor: 'pointer', textAlign: 'left',
+        border: 0, background: active ? 'var(--accent-soft)' : 'transparent',
+        color: active ? 'var(--accent)' : 'var(--t2)', fontWeight: active ? 600 : 400, fontSize: 12,
+      }}
+      title={label}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+export function PresentNavigator({ boqActive, onOpenBoq, scheduleActive, onOpenSchedule }: PresentNavigatorProps) {
   const tr = useT();
   return (
     <div>
@@ -31,20 +59,20 @@ export function PresentNavigator({ boqActive, onOpenBoq }: { boqActive?: boolean
         )}
       </div>
       {onOpenBoq && (
-        <button
-          type="button"
+        <NavShortcutButton
+          active={boqActive}
           onClick={onOpenBoq}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8, width: 'calc(100% - 16px)', margin: '0 8px',
-            height: 'var(--row, 28px)', padding: '0 10px', borderRadius: 8, cursor: 'pointer', textAlign: 'left',
-            border: 0, background: boqActive ? 'var(--accent-soft)' : 'transparent',
-            color: boqActive ? 'var(--accent)' : 'var(--t2)', fontWeight: boqActive ? 600 : 400, fontSize: 12,
-          }}
-          title={tr('Mở Bảng khối lượng (BOQ)', 'Open Bill of quantities')}
-        >
-          <FileSpreadsheet size={14} style={{ flexShrink: 0 }} />
-          {tr('Bảng khối lượng (BOQ)', 'Bill of quantities')}
-        </button>
+          icon={<FileSpreadsheet size={14} style={{ flexShrink: 0 }} />}
+          label={tr('Bảng khối lượng (BOQ)', 'Bill of quantities')}
+        />
+      )}
+      {onOpenSchedule && (
+        <NavShortcutButton
+          active={scheduleActive}
+          onClick={onOpenSchedule}
+          icon={<ListTree size={14} style={{ flexShrink: 0 }} />}
+          label={tr('Bảng thống kê', 'Schedule')}
+        />
       )}
     </div>
   );

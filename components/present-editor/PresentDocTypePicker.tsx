@@ -7,7 +7,7 @@
  */
 
 import { useState } from 'react';
-import { FileSpreadsheet, FileText, Film, Layers3, LockKeyhole, Plus, Presentation } from 'lucide-react';
+import { FileSpreadsheet, FileText, Film, Layers3, ListTree, LockKeyhole, Plus, Presentation } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
 export interface PresentDocTypePickerProps {
@@ -17,9 +17,15 @@ export interface PresentDocTypePickerProps {
   onChooseBoq: () => void;
   /** [storySet] Hero output — nạp deck "Bộ hồ sơ kể chuyện" 8 trang (lib/present-editor/story-set). */
   onChooseStorySet?: () => void;
+  /**
+   * Đợt 4 (`docs/phieu-giao/editor-bang-bieu-mau.md`) — mở màn `schedule` (Bảng thống kê), đi
+   * đường RIÊNG giống `onChooseBoq` (KHÔNG qua deck/slide). Bỏ trống = thẻ "Bảng thống kê" không
+   * hiện (tránh nút giả — luật §9, cùng lý do `onRequestBoq` optional ở `PresentSheets`).
+   */
+  onChooseSchedule?: () => void;
 }
 
-type Kind = 'deck' | 'material' | 'boq' | 'text' | 'video';
+type Kind = 'deck' | 'material' | 'boq' | 'schedule' | 'text' | 'video';
 
 type Template = {
   title: [string, string];
@@ -31,6 +37,8 @@ type Template = {
   unavailableReason?: [string, string];
   /** [storySet] thẻ hero — bấm nạp buildStorySetDeck thay vì deck trống. */
   storySet?: boolean;
+  /** Đợt 4 — thẻ mở màn `schedule` (Bảng thống kê, đi đường riêng như `boq`). */
+  schedule?: boolean;
 };
 
 const LIBRARY: Record<Kind, { label: [string, string]; count: string; lead: [string, string]; templates: Template[] }> = {
@@ -64,6 +72,18 @@ const LIBRARY: Record<Kind, { label: [string, string]; count: string; lead: [str
       { title: ['Đối chiếu vật tư', 'Procurement check'], caption: ['Đang bổ sung mẫu', 'Templates in progress'], tone: '#cbc4b5', enabled: false },
     ],
   },
+  // Đợt 4 (`docs/phieu-giao/editor-bang-bieu-mau.md`) — họ ENGINE BẢNG (`TableDocEngine`):
+  // schedule → spec-sheet → approval-form là 3 mặt tiền CÙNG một cỗ máy. v1: chỉ `schedule` sống
+  // thật, 2 thẻ còn lại khoá kèm lý do năng lực thật (không CTA giả, luật §9).
+  schedule: {
+    label: ['Bảng & biểu mẫu', 'Tables & forms'], count: '03',
+    lead: ['Đếm và trình bày số liệu đọc thẳng từ bản vẽ — sửa tay không lo bị ghi đè.', 'Tally and present figures read straight from the drawing — hand edits are never overwritten.'],
+    templates: [
+      { title: ['Bảng thống kê cửa & phòng', 'Door & room schedule'], caption: ['Đếm cửa, phòng từ bản vẽ 2D', 'Counts doors and rooms from the 2D drawing'], tone: '#e2ddce', enabled: true, schedule: true },
+      { title: ['Bảng thông số kỹ thuật', 'Specification sheet'], caption: ['Chưa có trình soạn bảng thông số', 'No spec-sheet editor yet'], tone: '#d7d1c4', enabled: false, unavailableReason: ['Chưa có bảng thông số kỹ thuật riêng cho từng cấu kiện.', 'There is no per-item specification sheet yet.'] },
+      { title: ['Phiếu trình duyệt', 'Approval form'], caption: ['Chưa có trình soạn phiếu trình duyệt', 'No approval-form editor yet'], tone: '#cbc4b5', enabled: false, unavailableReason: ['Chưa có phiếu trình duyệt lưu được vào dự án.', 'There is no project-backed approval form yet.'] },
+    ],
+  },
   text: {
     label: ['Văn bản', 'Documents'], count: '05',
     lead: ['Văn bản có cấu trúc riêng, không bị nhét vào trang slide.', 'Documents have their own structure, never squeezed into slides.'],
@@ -88,11 +108,12 @@ const KIND_ICON: Record<Kind, typeof Presentation> = {
   deck: Presentation,
   material: Layers3,
   boq: FileSpreadsheet,
+  schedule: ListTree,
   text: FileText,
   video: Film,
 };
 
-export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onChooseMaterialBoard, onChooseBoq, onChooseStorySet }: PresentDocTypePickerProps) {
+export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onChooseMaterialBoard, onChooseBoq, onChooseStorySet, onChooseSchedule }: PresentDocTypePickerProps) {
   const tr = useT();
   const [kind, setKind] = useState<Kind>('deck');
   const current = LIBRARY[kind];
@@ -101,6 +122,7 @@ export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onC
   const openTemplate = (template: Template) => {
     if (!template.enabled) return;
     if (template.storySet && onChooseStorySet) onChooseStorySet();
+    else if (template.schedule && onChooseSchedule) onChooseSchedule();
     else if (kind === 'boq') onChooseBoq();
     else if (kind === 'material') onChooseMaterialBoard();
     else onChooseMagicDeck();

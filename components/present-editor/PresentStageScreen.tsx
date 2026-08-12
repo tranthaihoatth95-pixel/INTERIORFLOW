@@ -25,6 +25,7 @@ import PresentSheets from '@/components/present-editor/PresentSheets';
 import { AppShell } from '@/components/studio/AppShell';
 import { PresentNavigator } from '@/components/present-editor/PresentNavigator';
 import { BoqScreen } from '@/components/present-editor/boq/BoqScreen';
+import { ScheduleScreen } from '@/components/present-editor/table/ScheduleScreen';
 import StatusBar from '@/components/studio/StatusBar';
 import { StageEnter } from '@/components/studio/StageTransition';
 import { CommentLayer } from '@/components/CommentLayer';
@@ -36,7 +37,9 @@ import { effectiveUserId } from '@/lib/resume';
 import { useT } from '@/lib/i18n';
 
 export default function PresentStageScreen() {
-  const [mode, setMode] = useState<'deck' | 'boq'>('deck');
+  // Đợt 4 (`docs/phieu-giao/editor-bang-bieu-mau.md`) — thêm 'schedule' (Bảng thống kê), ĐI ĐÚNG
+  // đường 'boq' đã có (state-lift tối thiểu ở component này, xem docstring B1 phía trên).
+  const [mode, setMode] = useState<'deck' | 'boq' | 'schedule'>('deck');
   // Route studio KHÔNG nạp `user` vào store khi vào bằng hard-reload/URL trực tiếp — rơi về
   // lastUserId (cùng pattern PresentSheets.tsx/ResumeTracker), nếu không StageIntroCard im
   // lặng không bao giờ hiện cho user mở thẳng `/projects/[id]/present`.
@@ -83,7 +86,14 @@ export default function PresentStageScreen() {
     <AppShell
       active="present"
       statusBar={<StatusBar stage="present" hidden={playing} />}
-      navigator={<PresentNavigator boqActive={mode === 'boq'} onOpenBoq={() => setMode(mode === 'boq' ? 'deck' : 'boq')} />}
+      navigator={
+        <PresentNavigator
+          boqActive={mode === 'boq'}
+          onOpenBoq={() => setMode(mode === 'boq' ? 'deck' : 'boq')}
+          scheduleActive={mode === 'schedule'}
+          onOpenSchedule={() => setMode(mode === 'schedule' ? 'deck' : 'schedule')}
+        />
+      }
       navigatorAddLabel={tr('Trang mới', 'New page')}
       navigatorCollapsedLabel={tr('Trang', 'Pages')}
     >
@@ -91,11 +101,13 @@ export default function PresentStageScreen() {
       <StageEnter style={{ display: 'block' }}>
         {mode === 'boq' && userId ? (
           <BoqScreen projectId={projectId} userId={userId} />
+        ) : mode === 'schedule' && userId ? (
+          <ScheduleScreen projectId={projectId} userId={userId} />
         ) : (
           /* Tầng multi-sheet (phụ-thêm): thanh tab + PresentEditor. 1 sheet ⇒ y hệt bản cũ.
            * 07/08 (M-EMPTY) — KHÔNG truyền initialDeck: màn Trình chiếu THẬT bắt đầu RỖNG
            * (trước đây chạy bằng makeSampleDeck — deck mẫu, vi phạm chốt "bỏ hết dự án mẫu"). */
-          <PresentSheets onRequestBoq={() => setMode('boq')} />
+          <PresentSheets onRequestBoq={() => setMode('boq')} onRequestSchedule={() => setMode('schedule')} />
         )}
       </StageEnter>
       <ChatPanel />
