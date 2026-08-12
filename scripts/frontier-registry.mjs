@@ -90,6 +90,8 @@ export const FRONTIER = [
     bangChung: [{ dir: 'scripts', mau: 'backup-offsite|backupOffsite' }] },
   { id: 'nguoi-dung-that', vai: 'do', ten: 'Vòng người dùng thật trước Cửa B: 2-3 người TTT chạy kịch bản Phiếu trên app, note về Cổng Duyệt/Dòng Hoạt Động', he: 'Workspace', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'docs/bao-cao-phien', mau: 'nguoi-dung-that|phan-hoi-ttt' }] },
+  { id: 'auto-define', vai: 'mvp', ten: 'TỰ ĐỊNH NGHĨA cấu kiện (Hoà đặt 12/08): intelligent core suy elementType/category/tham số từ hình học+ngữ cảnh thay vì bắt KTS nhập parametric tay — gắn cờ 3 nấc measured/inferred/verified (chốt 10/08); HUMAN-IN-LOOP 2 CHIỀU: máy suy→người xác nhận dần, người nhập→máy kiểm lệch — hai bên đỡ sai cho nhau, không bên nào là chân lý', he: 'TriTueDuAn', dot: 2, trangThai: 'chua',
+    bangChung: [{ dir: 'lib', mau: 'autoDefine|suyDinhNghia' }] },
   { id: 'hieu-nang-do', vai: 'do', ten: 'ĐO hiệu năng có số (trụ 7 đói — cảnh báo 12/08): bản vẽ 5.000 entity · scene 100k tam giác · kệ 1.500 ảnh ảo hoá — đo trước Cửa B, ra bảng số + điểm gãy', he: 'DocCore', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'docs/bao-cao-phien', mau: 'hieu-nang-do|benchmark-if' }] },
   { id: 'focus-entity-doc', vai: 'day', ten: 'Các chặng ĐỌC ?focusEntity từ deep-link TaskContext: 2D select đúng đối tượng, 3D chọn đúng khối (khép vòng bấm-việc-rơi-đúng-chỗ Phiếu 1)', he: 'Workspace', dot: 2, trangThai: 'chua',
@@ -114,7 +116,7 @@ export const FRONTIER = [
   // 11/08 tối — Hoà đặt bài "DNA công ty + smart transfer + nhãn trung tính để reset":
   { id: 'company-dna-pack', vai: 'mvp', ten: 'Hồ Sơ Công Ty (quy trình·quy định·gu·thư viện riêng — tham chiếu, không nhúng cứng)', he: 'TriTueDuAn', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'CompanyDnaPack|HoSoCongTy' }] },
-  { id: 'smart-ingest', vai: 'day', ten: 'Smart Ingest: bản gốc bất biến + proxy + định tuyến trích xuất theo yêu cầu (nâng Gateway/refingest sẵn có)', he: 'DocCore', dot: 2, trangThai: 'chua',
+  { id: 'smart-ingest', vai: 'day', ten: 'Smart Ingest/Transfer — XUẤT NHẬP ĐA ĐỊNH DẠNG CƯỠNG CHẾ (Hoà nâng 12/08): nhập bất kỳ → nền TỰ chuyển định dạng + nén proxy tối ưu cho môi trường IF (gốc bất biến, xuất/in về gốc) → xuất đa đích linh hoạt; card tiến trình Smart Transfer là mặt visual', he: 'DocCore', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'SmartIngest|IngestRouter' }] },
   { id: 'nhan-nguon-reset', vai: 'day', ten: 'Nhãn nguồn DataOrigin (app-core/studio/project/demo) trên mọi bản ghi + lệnh reset về trung tính', he: 'DocCore', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'DataOrigin|NHAN_NGUON' }] },
