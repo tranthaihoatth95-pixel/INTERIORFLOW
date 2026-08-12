@@ -83,5 +83,18 @@ for (const it of FRONTIER) {
 const pct = (v) => v[1] ? Math.round((v[0] / v[1]) * 100) : 0;
 console.log(`VAI — ⭐MVP ${byVai.mvp[0]}/${byVai.mvp[1]} (${pct(byVai.mvp)}%) · 🔗Kết nối ${byVai.day[0]}/${byVai.day[1]} (${pct(byVai.day)}%) · 🧰Đỡ ${byVai.do[0]}/${byVai.do[1]} (${pct(byVai.do)}%)`);
 if (pct(byVai.mvp) < pct(byVai.do)) console.log('⚠️  MVP đang ĐÓI hơn support — lệch trọng tâm (anti-pattern #3), đợt kế ưu tiên entry ⭐');
+// GROUP-BY GỢI Ý (12/08 — Hoà: máy tự phát hiện nhóm cùng thuộc tính → đề xuất gộp phiếu /
+// dùng chung engine lõi; máy chỉ GỢI theo trục hệ×vai, đẳng cấu ngữ nghĩa do T phán §9)
+const clusters = {};
+for (const it of FRONTIER) {
+  if (it.trangThai !== 'chua') continue;
+  const k = `${it.he} · ${it.vai || 'do'}`;
+  (clusters[k] ||= []).push(it.id);
+}
+const goiY = Object.entries(clusters).filter(([, ids]) => ids.length >= 3);
+if (goiY.length) {
+  console.log('💡 GROUP-BY GỢI Ý (≥3 việc chờ cùng hệ×vai → xét 1 phiếu chung / chung engine lõi):');
+  for (const [k, ids] of goiY) console.log(`   ${k}: ${ids.join(' · ')}`);
+}
 console.log(`👁 ${mat} qua mắt Hoà · ✅ ${mayOnly} xong-MÁY (NỢ NGHIỆM THU MẮT) · ⬜ ${todo} chờ · 🔴 ${red} LỆCH${red ? '  ← xử lệch TRƯỚC khi bàn việc mới' : ''}\n`);
 process.exit(red ? 1 : 0);
