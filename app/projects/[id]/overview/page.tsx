@@ -21,6 +21,7 @@ import Link from 'next/link';
 import { ChevronLeft, BookOpen, LayoutGrid, Users, Layers, ArrowRight, Loader2 } from 'lucide-react';
 import { useScope } from '@/lib/scope';
 import { useT } from '@/lib/i18n';
+import DesignDnaCardPanel from '@/components/dna/DesignDnaCardPanel';
 
 interface OverviewFlow {
   id: string;
@@ -302,6 +303,9 @@ export default function ProjectOverviewPage() {
                 ))}
               </ul>
             )}
+
+            {/* Thẻ DNA Thiết kế — phiếu docs/phieu-giao/dna-card.md, entry registry `dna-card`. */}
+            <DesignDnaCardPanel projectId={id} />
           </>
         )}
       </main>
