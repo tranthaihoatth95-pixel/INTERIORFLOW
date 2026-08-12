@@ -19,6 +19,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { RADIUS, concentricRadius } from '@/lib/geometry';
 import { Check } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import { useT } from '@/lib/i18n';
