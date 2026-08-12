@@ -13,14 +13,17 @@
  * ngoài những chỗ đã có sẵn trên viewport này (đã đếm: ModeSwitchBar + nút Dựng ảnh + ViewCube +
  * card chào + `.vitals-pop` Trình tự — thêm 1 style riêng khác sẽ vượt ngân sách hiệu năng WebGL).
  *
- * SỰ THẬT CẦN NÓI RÕ (đúng §9 "cấm nút giả"): mô hình thao tác của mock là kiểu AutoCAD/SketchUp
- * — bấm công cụ RỜI rồi mới thao tác trên khung nhìn. `Viewport3D` hôm nay KHÔNG có máy trạng
- * thái công cụ như vậy — chọn/kéo mặt (push-pull) chạy qua gizmo bám thẳng vào khối đang chọn,
- * không qua bước "bấm nút Kéo mặt trước". Nên trong dock này CHỈ 2 nút có hành vi thật (Thư viện,
- * Vật liệu — đều gọi thẳng hàm đã có, không tự chế); "Chọn" hiện luôn ở trạng thái đang bật vì đó
- * đúng là cách khung nhìn vận hành mặc định, không phải nút bấm được. Các nút còn lại (Vẽ đường/
- * Hình chữ nhật/Vòng tròn/Cùng loại/Bo cạnh/Cắt khối/Di chuyển/Xoay/Nhân bản/Thước đo/Đo góc)
- * `disabled` kèm lý do tại chỗ — không có lệnh dựng hình rời tương ứng trong engine hôm nay.
+ * [marker: Tool3DStateMachine] — dock nay nối MÁY TRẠNG THÁI CÔNG CỤ (`lib/render-studio/tool3d`,
+ * phiếu tool-state-3d 12/08): bấm tool → `Tool3DBar` hiện ô nhập số ở đáy khung nhìn → Enter áp ·
+ * Esc huỷ · Space về Chọn. Gizmo-first GIỮ NGUYÊN — tool rời là đường thêm, chọn/kéo mặt qua gizmo
+ * trên khối đang chọn chạy y như cũ bất kể tool nào bật.
+ *
+ * Nút CÓ ENGINE THẬT (tất cả gọi hàm sẵn có, không tự chế): Chọn · Đường/Chữ nhật/Vòng tròn
+ * (vẽ đáy → đùn, `wallSegmentOutline`/`ellipsePoints`) · Tường (lệnh hai điểm Command panel) ·
+ * Di chuyển/Xoay/Nhân bản (`translateEntity`/`rotateEntity` trên khối đang chọn) · Thước
+ * (`measureSelection`) · Thư viện · Vật liệu. Nút CHƯA có engine giữ `disabled` kèm lý do RIÊNG
+ * từng nút (§9 cấm nút giả): Cùng loại (chưa có chọn-theo-loại) · Bo cạnh/Cắt khối (bevel/boolean
+ * hôm nay ghi qua panel Sửa dạng tham số, chưa có thao tác rời) · Đo góc (chưa có engine đo góc).
  */
 
 import { useEffect, useState } from 'react';
@@ -29,11 +32,7 @@ import {
   Ruler, Triangle, Boxes, Palette, MoreHorizontal, ChevronDown,
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
-
-const CHUA_DUNG_DUOC = {
-  vi: 'Chưa dựng được — khung nhìn 3D hôm nay thao tác qua gizmo kéo-thả trên khối đang chọn, chưa có lệnh công cụ rời',
-  en: 'Not built yet — the 3D viewport works via drag gizmos on the selected block, no standalone tool command yet',
-};
+import { useTool3D, type Tool3DId } from '@/lib/render-studio/tool3d';
 
 interface ToolDock3DProps {
   open: boolean;
@@ -58,6 +57,10 @@ interface DockGroupItem {
 
 export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLibrary, onOpenMaterialTab }: ToolDock3DProps) {
   const tr = useT();
+  const activeTool = useTool3D((s) => s.active);
+  const setActiveTool = useTool3D((s) => s.setActive);
+  /** Nút tool = một dòng khai: active theo store, bấm là cầm tool (Tool3DBar tự hiện ô nhập). */
+  const tool = (id: Tool3DId) => ({ active: activeTool === id, onClick: () => setActiveTool(id) });
 
   // Tab mở/thu gọn dock — đúng phím mock (`onClick="{{ go4 }}" title="… — Tab"`), guard gõ chữ
   // như mọi hotkey khác của mode 3D (`Render3DModeSkeleton.tsx` đã làm cùng kiểu).
@@ -79,16 +82,16 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
     {
       title: 'Chọn', titleEn: 'Select',
       items: [
-        { key: 'select', label: 'Chọn', labelEn: 'Select', icon: <MousePointer2 size={18} />, shortcut: 'V', active: true, title: tr('Đang bật — bấm khối trên khung nhìn để chọn', 'On by default — click a block in the viewport to select') },
-        { key: 'select-same', label: 'Cùng loại', labelEn: 'Same type', icon: <Layers size={18} />, shortcut: '⇧V', disabled: true, title: tr(CHUA_DUNG_DUOC.vi, CHUA_DUNG_DUOC.en) },
+        { key: 'select', label: 'Chọn', labelEn: 'Select', icon: <MousePointer2 size={18} />, shortcut: 'V', ...tool('select'), title: tr('Về Chọn — gizmo trên khối đang chọn', 'Back to Select — gizmo on selection') },
+        { key: 'select-same', label: 'Cùng loại', labelEn: 'Same type', icon: <Layers size={18} />, shortcut: '⇧V', disabled: true, title: tr('Chưa có chọn-theo-loại — engine chưa tra cùng type', 'No select-by-type yet — engine cannot query same type') },
       ],
     },
     {
       title: 'Vẽ', titleEn: 'Draw',
       items: [
-        { key: 'line', label: 'Đường', labelEn: 'Line', icon: <Spline size={18} />, shortcut: 'L', disabled: true, title: tr(CHUA_DUNG_DUOC.vi, CHUA_DUNG_DUOC.en) },
-        { key: 'rect', label: 'Chữ nhật', labelEn: 'Rectangle', icon: <Square size={18} />, shortcut: 'R', disabled: true, title: tr(CHUA_DUNG_DUOC.vi, CHUA_DUNG_DUOC.en) },
-        { key: 'circle', label: 'Vòng tròn', labelEn: 'Circle', icon: <Circle size={18} />, shortcut: 'C', disabled: true, title: tr(CHUA_DUNG_DUOC.vi, CHUA_DUNG_DUOC.en) },
+        { key: 'line', label: 'Đường', labelEn: 'Line', icon: <Spline size={18} />, shortcut: 'L', ...tool('line'), title: tr('Dải khối hai điểm — nhập số, Enter dựng', 'Two-point strip — type numbers, Enter builds') },
+        { key: 'rect', label: 'Chữ nhật', labelEn: 'Rectangle', icon: <Square size={18} />, shortcut: 'R', ...tool('rect'), title: tr('Đáy chữ nhật đùn thành khối', 'Rectangle base extruded to a block') },
+        { key: 'circle', label: 'Vòng tròn', labelEn: 'Circle', icon: <Circle size={18} />, shortcut: 'C', ...tool('circle'), title: tr('Đáy tròn đùn thành khối', 'Circle base extruded to a block') },
       ],
     },
     {
@@ -96,16 +99,16 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
       items: [
         { key: 'wall', label: 'Tường', labelEn: 'Wall', icon: <Square size={18} />, shortcut: 'W', title: tr('Mở lệnh tường hai điểm', 'Open the two-point wall command'), onClick: onCreateWall },
         { key: 'pushpull', label: 'Kéo mặt', labelEn: 'Push/pull', icon: <Triangle size={18} />, shortcut: 'P', disabled: true, title: tr('Chọn khối tường rồi kéo mép trên ngay trên khung nhìn — không cần bấm nút này trước', 'Select a wall block then drag its top edge in the viewport — no need to press this first') },
-        { key: 'fillet', label: 'Bo cạnh', labelEn: 'Fillet', icon: <RotateCw size={18} />, shortcut: 'F', disabled: true, title: tr(CHUA_DUNG_DUOC.vi, CHUA_DUNG_DUOC.en) },
-        { key: 'cut', label: 'Cắt khối', labelEn: 'Cut', icon: <Scissors size={18} />, shortcut: 'X', disabled: true, title: tr(CHUA_DUNG_DUOC.vi, CHUA_DUNG_DUOC.en) },
+        { key: 'fillet', label: 'Bo cạnh', labelEn: 'Fillet', icon: <RotateCw size={18} />, shortcut: 'F', disabled: true, title: tr('Bo cạnh nhập ở panel Sửa — chưa có thao tác rời', 'Bevel lives in the Edit panel — no standalone tool yet') },
+        { key: 'cut', label: 'Cắt khối', labelEn: 'Cut', icon: <Scissors size={18} />, shortcut: 'X', disabled: true, title: tr('Khoét/boolean nhập ở panel Sửa — chưa có thao tác rời', 'Boolean cut lives in the Edit panel — no standalone tool yet') },
       ],
     },
     {
       title: 'Biến đổi', titleEn: 'Transform',
       items: [
-        { key: 'move', label: 'Di chuyển', labelEn: 'Move', icon: <Move size={18} />, shortcut: 'M', disabled: true, title: tr(CHUA_DUNG_DUOC.vi, CHUA_DUNG_DUOC.en) },
-        { key: 'rotate', label: 'Xoay', labelEn: 'Rotate', icon: <RotateCw size={18} />, shortcut: 'Q', disabled: true, title: tr(CHUA_DUNG_DUOC.vi, CHUA_DUNG_DUOC.en) },
-        { key: 'dup', label: 'Nhân bản', labelEn: 'Duplicate', icon: <Copy size={18} />, shortcut: 'D', disabled: true, title: tr(CHUA_DUNG_DUOC.vi, CHUA_DUNG_DUOC.en) },
+        { key: 'move', label: 'Di chuyển', labelEn: 'Move', icon: <Move size={18} />, shortcut: 'M', ...tool('move'), title: tr('Dời khối đang chọn theo dX·dY·dZ', 'Move selection by dX·dY·dZ') },
+        { key: 'rotate', label: 'Xoay', labelEn: 'Rotate', icon: <RotateCw size={18} />, shortcut: 'Q', ...tool('rotate'), title: tr('Xoay khối đang chọn quanh tâm nó', 'Rotate selection around its center') },
+        { key: 'dup', label: 'Nhân bản', labelEn: 'Duplicate', icon: <Copy size={18} />, shortcut: 'D', ...tool('dup'), title: tr('Chép khối đang chọn, dời dX·dY', 'Copy selection, offset by dX·dY') },
       ],
     },
     {
@@ -118,8 +121,8 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
     {
       title: 'Đo đạc', titleEn: 'Measure',
       items: [
-        { key: 'ruler', label: 'Thước', labelEn: 'Ruler', icon: <Ruler size={18} />, shortcut: 'T', disabled: true, title: tr(CHUA_DUNG_DUOC.vi, CHUA_DUNG_DUOC.en) },
-        { key: 'angle', label: 'Góc', labelEn: 'Angle', icon: <MoreHorizontal size={18} />, shortcut: 'G', disabled: true, title: tr(CHUA_DUNG_DUOC.vi, CHUA_DUNG_DUOC.en) },
+        { key: 'ruler', label: 'Thước', labelEn: 'Ruler', icon: <Ruler size={18} />, shortcut: 'T', ...tool('ruler'), title: tr('Đo rộng×sâu×cao khối đang chọn', 'Measure W×D×H of the selection') },
+        { key: 'angle', label: 'Góc', labelEn: 'Angle', icon: <MoreHorizontal size={18} />, shortcut: 'G', disabled: true, title: tr('Chưa có engine đo góc giữa hai cạnh', 'No angle-measuring engine yet') },
       ],
     },
   ];

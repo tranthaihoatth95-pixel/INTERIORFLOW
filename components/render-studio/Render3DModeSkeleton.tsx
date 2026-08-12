@@ -36,6 +36,7 @@ import { Viewport3D, EMPTY_SCENE_3D } from '@/components/three/Viewport3D';
 import ModeSwitchBar from '@/components/render-studio/ModeSwitchBar';
 import Command3DPanel, { type Command3DTab, type WallDraft3D } from '@/components/render-studio/Command3DPanel';
 import ToolDock3D from '@/components/render-studio/ToolDock3D';
+import Tool3DBar from '@/components/render-studio/Tool3DBar';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import PanelFlank from '@/components/ui/PanelFlank';
 import { SECTION_LAYER_KEYS, type SectionAcceptPayload } from '@/components/render-studio/SectionExtractPanel';
@@ -139,6 +140,31 @@ export default function Render3DModeSkeleton() {
   }, [welcomeHidden, dongCardChao]);
 
   const scene = useScene3D();
+
+  /**
+   * [marker: focusEntity] — nhánh 3D của TaskContext deep-link (phiếu tool-state-3d ô④(3), hợp
+   * đồng `lib/tasks/context.ts` `buildTaskDeepLink`): mở `/projects/{id}/render?focusEntity={id}`
+   * → chọn ĐÚNG khối đó trong cảnh (ghi vào `useTree3DUi` — cùng ổ chọn của cây/Inspector/gizmo).
+   * Đọc query bằng `window.location.search` (không `useSearchParams` — khỏi ép Suspense boundary
+   * lên cả trang). Áp MỘT lần cho mỗi giá trị param, chỉ khi tìm thấy — entity chưa vào cảnh
+   * (scene còn dựng dở) thì lần scene sau thử lại, không bịa chọn khối khác.
+   */
+  const focusAppliedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!scene) return;
+    let param: string | null = null;
+    try {
+      param = new URLSearchParams(window.location.search).get('focusEntity');
+    } catch {
+      return; // môi trường không có location — không có gì để focus
+    }
+    if (!param || focusAppliedRef.current === param) return;
+    const group = scene.groups.find((g) => g.entityId === param);
+    if (!group) return;
+    focusAppliedRef.current = param;
+    const ui = useTree3DUi.getState();
+    if (ui.selectedName !== group.name) ui.select(group.name);
+  }, [scene]);
 
   /* ── VIỆC 3 + VIỆC 4 (§0c mảng 1 & 3): cử chỉ BA NGÓN xoay mặt trời + phím tắt của mode ── */
   const hiddenLevels = useLevelUi((s) => s.hiddenLevels);
@@ -326,6 +352,48 @@ export default function Render3DModeSkeleton() {
   // chưa có gizmo thật.
   const selectedGroup = scene?.groups.find((g) => g.name === selectedGroupName) ?? null;
   const viewportSelectedId = selectedGroup?.entityId ?? null;
+
+  /**
+   * [marker: taoViecTuDay] — chiều NGƯỢC của TaskContext (phiếu tool-state-3d ô④(3)): đang đứng
+   * ở khối 3D → một nút tạo việc GẮN SẴN {stage:'render', entityId} qua POST /api/tasks (API thật,
+   * `app/api/tasks/route.ts`). Việc sinh ra bấm từ Bảng việc sẽ deep-link ngược về đúng khối này
+   * (nhánh focusEntity phía trên — vòng khép kín). Toast kèm link mở Bảng việc (`/tasks`).
+   */
+  const [taskToast, setTaskToast] = useState<{ text: string; href?: string; err?: boolean } | null>(null);
+  const [taskPosting, setTaskPosting] = useState(false);
+  const taoViecProjectId = pathname?.startsWith('/projects/') ? (pathname.split('/')[2] || null) : null;
+  useEffect(() => {
+    if (!taskToast) return;
+    const t = window.setTimeout(() => setTaskToast(null), 8000);
+    return () => window.clearTimeout(t);
+  }, [taskToast]);
+  async function taoViecTuDay() {
+    if (!taoViecProjectId || !selectedGroup?.entityId || taskPosting) return;
+    setTaskPosting(true);
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: taoViecProjectId,
+          // Tựa gợi từ entity — người dùng sửa lại ở Bảng việc (đích đến sửa được, luật nền §7②).
+          title: tr(`Xử lý khối ${selectedGroup.name}`, `Handle block ${selectedGroup.name}`),
+          stage: 'render',
+          entityId: selectedGroup.entityId,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof data?.error === 'string' ? data.error : `HTTP ${res.status}`);
+      setTaskToast({ text: tr('Đã tạo việc gắn khối này.', 'Task created for this block.'), href: '/tasks' });
+    } catch (e) {
+      setTaskToast({
+        text: tr('Tạo việc thất bại: ', 'Task creation failed: ') + (e instanceof Error ? e.message : String(e)),
+        err: true,
+      });
+    } finally {
+      setTaskPosting(false);
+    }
+  }
 
   // `updateEntities`/`addEntities` tạo Doc MỚI trong store → `doc` đổi reference → `scene` tự tính
   // lại → viewer dựng lại. Không ép remount tay (luật một nguồn).
@@ -646,6 +714,50 @@ export default function Render3DModeSkeleton() {
           onOpenLibrary={() => openLibrarySheet({ stage: 'render' })}
           onOpenMaterialTab={() => setTab('vatlieu')}
         />
+
+        {/* Máy trạng thái công cụ 3D — bar ô nhập số của tool đang cầm (Tool3DStateMachine).
+            Dock mở rộng cao hơn dạng thu gọn → nâng bar lên để hai tấm không đè nhau. */}
+        <Tool3DBar selectedEntityId={viewportSelectedId} bottomPx={dockOpen ? 264 : 130} />
+
+        {/* [marker: taoViecTuDay] — chỉ hiện khi khối đang chọn CÓ entityId thật (không nút giả);
+            đứng góc trái đáy, tránh dock (giữa) và dòng lệnh nhanh (phải). */}
+        {selectedGroup?.entityId && taoViecProjectId && (
+          <button
+            type="button"
+            onClick={taoViecTuDay}
+            disabled={taskPosting}
+            title={tr('Tạo việc gắn khối này, mở lại là nhảy về đúng đây', 'Create a task pinned to this block')}
+            style={{
+              position: 'absolute', left: 14, bottom: 76, zIndex: 6, height: 26, padding: '0 11px',
+              borderRadius: 999, border: '1px solid var(--mat-hairline)',
+              background: 'color-mix(in srgb, var(--panel) 96%, transparent)',
+              color: 'var(--t2)', fontFamily: 'inherit', fontSize: 11, fontWeight: 600,
+              cursor: taskPosting ? 'progress' : 'pointer', boxShadow: '0 8px 20px rgba(0, 0, 0, .18)',
+            }}
+          >
+            {taskPosting ? tr('Đang tạo việc…', 'Creating task…') : tr('＋ Tạo việc từ đây', '＋ Create task from here')}
+          </button>
+        )}
+        {taskToast && (
+          <div
+            role="status"
+            style={{
+              position: 'absolute', left: 14, bottom: 110, zIndex: 7, maxWidth: 320,
+              padding: '7px 12px', borderRadius: 10, fontSize: 11, lineHeight: 1.5,
+              background: 'color-mix(in srgb, var(--panel) 96%, transparent)',
+              border: `1px solid ${taskToast.err ? 'var(--danger, #e5484d)' : 'var(--border-strong)'}`,
+              color: taskToast.err ? 'var(--danger, #e5484d)' : 'var(--t1)',
+              boxShadow: '0 12px 30px rgba(0, 0, 0, .2)', display: 'flex', alignItems: 'center', gap: 10,
+            }}
+          >
+            <span>{taskToast.text}</span>
+            {taskToast.href && (
+              <a href={taskToast.href} style={{ color: 'var(--accent)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                {tr('Mở Bảng việc', 'Open task board')}
+              </a>
+            )}
+          </div>
+        )}
 
         <ModeSwitchBar />
       </div>

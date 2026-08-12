@@ -101,7 +101,7 @@ export const FRONTIER = [
   { id: 'camera-pro', vai: 'do', ten: 'Camera mức nghề (2 điểm tụ · tiêu cự mm · DOF · safe frame · tỉ lệ khung — chốt 03/08 "rất cần cho góc nhìn/view/video"): thay tab Camera placeholder', he: 'BuildRecipe', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'components/render-studio', mau: 'CameraPro|twoPointPerspective' }] },
   // ── ĐỢT 2 · LÕI DỰNG ────────────────────────────────────────────────────────
-  { id: 'tool-state-3d', vai: 'day', ten: 'Máy trạng thái công cụ 3D (mở 12 nút dock chờ)', he: 'NhapLenh', dot: 2, trangThai: 'chua',
+  { id: 'tool-state-3d', vai: 'day', ten: 'Máy trạng thái công cụ 3D (12/08: useTool3D + Tool3DBar nhập số, dock disabled 12→5, gizmo-first giữ nguyên; nhánh 3D focusEntity+tạo-việc luôn; còn click-điểm viewport = đề xuất đợt sau)', he: 'NhapLenh', dot: 2, trangThai: 'xong',
     bangChung: [{ file: 'components/render-studio/ToolDock3D.tsx', mau: 'CHUA_DUNG_DUOC', can: false }] },
   { id: 'build-recipe', vai: 'mvp', ten: 'Công Thức Khối — BuildOp thành stack sửa-lại-được', he: 'BuildRecipe', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'lib/three', mau: 'BuildRecipe' }] },
