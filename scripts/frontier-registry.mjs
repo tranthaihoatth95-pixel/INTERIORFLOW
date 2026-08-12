@@ -92,7 +92,7 @@ export const FRONTIER = [
     bangChung: [{ dir: 'docs/bao-cao-phien', mau: 'nguoi-dung-that|phan-hoi-ttt' }] },
   { id: 'auto-define', vai: 'mvp', ten: 'TỰ ĐỊNH NGHĨA cấu kiện (Hoà đặt 12/08): intelligent core suy elementType/category/tham số từ hình học+ngữ cảnh thay vì bắt KTS nhập parametric tay — gắn cờ 3 nấc measured/inferred/verified (chốt 10/08); HUMAN-IN-LOOP 2 CHIỀU: máy suy→người xác nhận dần, người nhập→máy kiểm lệch — hai bên đỡ sai cho nhau, không bên nào là chân lý', he: 'TriTueDuAn', dot: 2, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'autoDefine|suyDinhNghia' }] },
-  { id: 'hieu-nang-do', vai: 'do', ten: 'ĐO hiệu năng có số (trụ 7 đói — cảnh báo 12/08): bản vẽ 5.000 entity · scene 100k tam giác · kệ 1.500 ảnh ảo hoá — đo trước Cửa B, ra bảng số + điểm gãy', he: 'DocCore', dot: 2, trangThai: 'chua',
+  { id: 'hieu-nang-do', vai: 'do', ten: 'ĐO hiệu năng có số (13/08 P: bench tất định 500/2k/5k entity — điểm gãy pickHatchFace O(N²) hatch.ts:502 ×6,7 khi N×2,5; docToObjScene tuyến tính OK; 100k tam giác chưa chạm ở 5k entity nhưng recipe 10 bước nhân 660× tam giác/cấu kiện; kệ 1.500 ảnh cần browser = hàng đợi; việc SỬA pickHatchFace = entry mới đợt sau)', he: 'DocCore', dot: 2, trangThai: 'xong',
     bangChung: [{ dir: 'docs/bao-cao-phien', mau: 'hieu-nang-do|benchmark-if' }] },
   { id: 'focus-entity-doc', vai: 'day', ten: 'Chặng đọc ?focusEntity (12/08: 2D select+bay camera · Trình chiếu nhảy trang; round-trip test khoá chung hằng với deep-link; nhánh 3D theo phiếu D)', he: 'Workspace', dot: 2, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'focusEntity' }] },
@@ -106,7 +106,7 @@ export const FRONTIER = [
   { id: 'build-recipe', vai: 'mvp', ten: 'Công Thức Khối (12/08 Đợt 4: evalRecipe + Base.recipe additive không vỡ .idf cũ + UI ngăn xếp tab Sửa; ops[]/opsDisabled cũ giữ nguyên — recipe ưu tiên khi có; nợ D2 flag: opsDisabled 0 caller + hasOpsGeometry nhánh ops[] sót array/mirror/shape)', he: 'BuildRecipe', dot: 2, trangThai: 'xong',
     bangChung: [{ dir: 'lib/three', mau: 'BuildRecipe' }] },
   // 13/08 Đợt 5 — Hoà chốt kép: ĐỢT GIAO DIỆN THỐNG NHẤT + HOME "Dòng Studio" (00-CHOT 13/08):
-  { id: 'home-dong-studio', vai: 'mvp', ten: 'HOME "Dòng Studio" — dashboard widget live cuộn dọc 2 trang (①lời chào+Vitals pill+card dự án ②biểu đồ+thông tin từ các chặng+ghi chú nhanh+tin studio+lịch/mốc); cảm nhận "muốn trở về"; widget trống tự ẩn; v1 không schema mới', he: 'Workspace', dot: 5, trangThai: 'chua',
+  { id: 'home-dong-studio', vai: 'mvp', ten: 'HOME "Dòng Studio" (13/08 H1: 2 trang cuộn — ①ánh sáng-theo-giờ + lời chào dữ liệu thật + Vitals pill + card dự án giữ nguyên đợt 3 ②6 widget live: hôm-nay/biểu-đồ-chặng/lưới-tích-luỹ-không-streak/ghi-chú-Tot/tin-tự-sinh/mốc-DayTicker; ghi chú JSON per-user, 0 bảng mới, 53 test + 263 test repo 0 hồi quy; NỢ MẮT: chưa soi browser vì cần login tay)', he: 'Workspace', dot: 5, trangThai: 'xong',
     bangChung: [{ dir: 'components/home', mau: 'DongStudio|dong-studio' }] },
   { id: 'panel-handle-chung', vai: 'do', ten: 'Tay cầm thu/mở panel dùng chung — ĐÃ CÓ từ 07/08 dưới tên PanelFlank (ad2d23b): components/ui/PanelFlank.tsx lắp LibrarySheet + Render3DModeSkeleton + AppShell/FlankStrip; H2 13/08 phát hiện sổ ghi sai tên marker ("PanelHandle") nên soi lọt — đúng ca "khai chưa mà code có". Navigator 2D giữ cơ chế riêng CÓ CHỦ ĐÍCH (rail điều hướng có hàng nút đáy, không phải panel mép — T chốt 13/08)', he: 'DocCore', dot: 5, trangThai: 'xong',
     bangChung: [{ dir: 'components/ui', mau: 'PanelFlank' }] },
