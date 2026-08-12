@@ -43,7 +43,7 @@ import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
 import ModeShell from '@/components/shell/ModeShell';
 import { useStageMode, useHydrateRenderMode } from '@/lib/stage-mode';
 import PresentOverlay from '@/components/present/PresentOverlay';
-import { ProjectSelect } from '@/components/ProjectSelect';
+import DongStudioHome from '@/components/home/DongStudioHome';
 import { CommentLayer } from '@/components/CommentLayer';
 import { useFlowStore } from '@/lib/store';
 import { bootstrapWorkspace, openFlow } from '@/lib/workspace';
@@ -568,7 +568,10 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
             </button>
           </div>
         )}
-        <ProjectSelect
+        {/* Home "Dòng Studio" (13/08, docs/phieu-giao/home-dong-studio.md) — thay <ProjectSelect>
+            trực tiếp: DongStudioHome mount NGUYÊN VẸN ProjectSelect làm Tầng 2 "triển lãm" +
+            thêm dải ánh sáng-giờ-thật/lời chào (Tầng 1) + Trang 2 6 widget "studio đang thở". */}
+        <DongStudioHome
           onEnter={() => {
             setStageDone(true);
             // Ghi nhớ để lần quay về '/' vào thẳng canvas (thoát các studio route).
@@ -584,7 +587,7 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
           }}
         />
         {/* Onboarding Tầng 1 — modal căn giữa TRÊN gallery, thay bước 'gallery' cũ của
-            SmartTour. onEnter dùng CHUNG callback đưa cho ProjectSelect ở trên (nút
+            SmartTour. onEnter dùng CHUNG callback đưa cho DongStudioHome ở trên (nút
             "Tạo dự án của tôi" đi đúng đường "+ Dự án mới" cũ đi). */}
         {welcomeOpen && (
           <WelcomeIntro
