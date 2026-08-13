@@ -113,3 +113,13 @@ Ref: Figma UI3 tách file browser khỏi editor (P1).
 *NC lập 14/08/2026. Nguồn URL đầy đủ trong bảng mục 2; cách làm ghi ở
 `docs/bao-cao-phien/2026-08-14-NC-triet-ly-giao-dien.md`. Cụm K1-K12 có thể nối vào REF-VISUAL
 làm #16+ nếu T duyệt — file này không tự sửa REF-VISUAL (đúng trần vai).*
+
+---
+## PHỤ LỤC · Đợt ảnh bổ sung #2 (4 ảnh Hoà gửi chat 14/08, T đọc trực tiếp)
+
+| Ảnh | Cơ chế | Nạp vào cụm |
+|---|---|---|
+| Photo browser kiểu visionOS (search pill kính + rail kính icon tròn bên trái, card carousel chiều sâu trên nền blur) | chrome kính NỔI trên nền mờ, nội dung card SẠCH không kính | củng cố K6 (kính = lớp nổi) + card-stack-depth; gợi ý cho Gallery/trình duyệt ảnh IF |
+| "PROMPTS" folder kính sáng (3 ảnh ló + đúng 1 nút CTA tròn đậm) | một-hành-động-chính nổi bật trên card sưu tập | củng cố nguyên tắc 1-accent/màn (tầng ①); khuôn thẻ bộ sưu tập Gallery |
+| Canva dark mode (sidebar dọc icon+nhãn Design/Elements/Text/Brand · dải thumbnail ĐÁNH SỐ dưới · canvas tối bọc trong khung editor sáng) | sidebar 1 cột icon+chữ (không icon trần) · thumbnail strip số tabular · nền editor và nền NỘI DUNG tách nhiệt độ | nuôi KB-1 (nhãn kèm icon, không icon trần) + KB-3 (strip đánh số sạch) |
+| Planner tuần kem editorial (tab THÁNG dọc mép phải như tab giấy · ghi chú mực đỏ tay · số tabular · scrapbook sticky) | INDEX-TAB DỌC vật lý làm điều hướng cấp thời gian · annotation tay đè lên nội dung in | đúng gu Story Set/ArchiNote kem; xác nhận pattern nhãn-rail-dọc của IF là NGÔN NGỮ TAB GIẤY — nên chuẩn hoá thành tab bấm được thay vì chữ trang trí |
