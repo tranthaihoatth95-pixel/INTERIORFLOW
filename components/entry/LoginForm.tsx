@@ -220,7 +220,7 @@ export function LoginForm({
     <motion.form
       onSubmit={submit}
       // Kính lỏng nháy đục lúc vào màn (SO-KIEM-TONG §1) — KHÔNG được animate opacity trên
-      // `.lq-card` (mang backdrop-filter): opacity<1 tự tạo backdrop root cô lập (spec
+      // `.lq-card` (mang backdrop blur): opacity<1 tự tạo backdrop root cô lập (spec
       // filter-effects-2), mất nền thật trong lúc fade rồi đục ập vào khi opacity chạm 1.
       // Chỉ còn dịch chuyển y (transform, không tạo backdrop root) — card đục đúng ngay từ
       // khung hình đầu, không có giai đoạn trong-rồi-đục. Cùng nguyên tắc K1/K2 (P6c).

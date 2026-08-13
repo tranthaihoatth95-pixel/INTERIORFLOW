@@ -58,7 +58,7 @@ export function LibraryPanel() {
   const [tags, setTags] = useState('');
   const [usage, setUsage] = useState<string>('auto');
   const [uploading, setUploading] = useState(false);
-  // 27/07 — popover [+] gom "Tự động phân loại"/tag khi upload/"Nạp vào thư viện" (chỉ dùng
+  // 27/07 — popover [+] gom "Tự nhận loại"/tag khi upload/"Nạp vào thư viện" (chỉ dùng
   // lúc THÊM ảnh, không dùng lúc TÌM ảnh — xem SẮP LẠI bên dưới).
   const [addOpen, setAddOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -115,7 +115,7 @@ export function LibraryPanel() {
       {/* 27/07 — SẮP LẠI theo nguyên tắc "THẤY ẢNH TRƯỚC, LỌC SAU": trước đây 5 tab + tìm + checkbox
           + dropdown + tag + 2 nút (7 hàng chrome) đè hết chỗ trước khi thấy ảnh nào. Giờ còn 2 hàng:
           Hàng 1 = tìm + [+] (thêm ảnh) · Hàng 2 = 1 dropdown gộp mọi bộ lọc (category + xuyên category).
-          "Tự động phân loại"/tag khi upload/"Nạp vào thư viện" chỉ dùng lúc THÊM ảnh → giấu trong [+]. */}
+          "Tự nhận loại"/tag khi upload/"Nạp vào thư viện" chỉ dùng lúc THÊM ảnh → giấu trong [+]. */}
       <div className="space-y-1.5 p-2.5">
         {/* Hàng 1: tìm + [+] */}
         <div className="flex gap-1.5">
@@ -144,10 +144,10 @@ export function LibraryPanel() {
                 <select
                   value={usage}
                   onChange={(e) => setUsage(e.target.value)}
-                  title="Phân loại ảnh — Tự động: app tự nhận (dàn trang / không gian / bản vẽ / vật liệu / furniture). Hoặc chọn tay để ép."
+                  title="Phân loại ảnh — Tự nhận: app tự nhận loại (dàn trang / không gian / bản vẽ / vật liệu / furniture). Hoặc chọn tay để ép."
                   className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] outline-none transition-colors focus:border-[var(--accent-ring)]"
                 >
-                  <option value="auto">⚡ Tự động phân loại</option>
+                  <option value="auto">⚡ Tự nhận loại</option>
                   {USAGES.map((u) => (
                     <option key={u.id} value={u.id}>
                       {u.label}
@@ -190,7 +190,7 @@ export function LibraryPanel() {
                         } catch {
                           /* ảnh lỗi → vẫn upload, gu để trống */
                         }
-                        // ---- Auto phân loại (local, 0 AI) khi để "Tự động"; chọn tay thì ép ----
+                        // ---- Auto phân loại (local, 0 AI) khi để "Tự nhận"; chọn tay thì ép ----
                         const finalUsage =
                           usage === 'auto'
                             ? await classifyImage(dataUrl)

@@ -407,6 +407,9 @@ export default function DocCanvas(p: Props) {
   /* --------------- Space để pan --------------- */
   useEffect(() => {
     const kd = (e: KeyboardEvent) => {
+      // Né ô nhập (luật keydown-ne-o-nhap): gõ dấu cách trong input không được kích pan.
+      const el = document.activeElement;
+      if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
       if (e.code === 'Space') spaceRef.current = true;
     };
     const ku = (e: KeyboardEvent) => {

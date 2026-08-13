@@ -206,6 +206,9 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   // 05/08: `toggle()` không còn tham số anchor (panel chỉ mount ở đây) — mở đúng panel này.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      // Né ô nhập (luật keydown-ne-o-nhap) — cùng khuôn input-guard AppShell/AppChrome.
+      const el = document.activeElement;
+      if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
       if ((e.metaKey || e.ctrlKey) && (e.key === 'j' || e.key === 'J')) {
         e.preventDefault();
         useVitalsUi.getState().toggle();

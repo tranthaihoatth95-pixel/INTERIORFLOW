@@ -26,7 +26,7 @@ const LABEL_H = 28;
 const ROOM_NAME_PRESETS = ['Phòng khách', 'Bếp', 'Phòng ngủ', 'Phòng tắm', 'Phòng làm việc', 'Sân vườn', 'Ban công'];
 
 /** NÚT TỔNG mở ra xem bên trong (state ④ `mock-if-nut-tong.html`) — nền ĐẶC `var(--panel)`
- * (KHÔNG `mat-*`/backdrop-filter: mock ghi rõ "để không có kính lồng kính" — chính node con bên
+ * (KHÔNG `mat-*`/backdrop blur: mock ghi rõ "để không có kính lồng kính" — chính node con bên
  * trong đã dùng `mat-card` kính riêng, khung cha kính nữa sẽ chồng kính lên kính). Header 44px
  * pointer-events auto (icon/tên/"Thu gọn lại"), phần thân `pointerEvents:none` (không chặn kéo/
  * chọn node con render đè lên trên bởi lớp node bình thường của React Flow). */
@@ -155,7 +155,7 @@ function GroupRect({ group }: { group: NodeGroup }) {
       };
   const { minX, minY, maxX, maxY } = box;
 
-  // NÚT TỔNG mở ra xem bên trong (state ④ mock) — khung ĐẶC (var(--panel), không backdrop-filter)
+  // NÚT TỔNG mở ra xem bên trong (state ④ mock) — khung ĐẶC (var(--panel), không backdrop blur)
   // + header riêng (icon/tên/"Thu gọn lại"), tránh "kính lồng kính" (mock ghi rõ: "Khung mở là
   // mặt đặc, không phải kính"). Node con vẫn render Ở TRÊN bởi lớp node bình thường của React
   // Flow (khung này chỉ là NỀN, `pointerEvents:none` như khung group thường).

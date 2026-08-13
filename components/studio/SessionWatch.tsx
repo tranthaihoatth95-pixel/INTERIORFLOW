@@ -66,7 +66,7 @@ export default function SessionWatch() {
 
   if (!lost || !mounted) return null;
 
-  // AppChrome có backdrop-filter; `position:fixed` nằm bên trong nó sẽ lấy HEADER làm containing
+  // AppChrome có backdrop blur; `position:fixed` nằm bên trong nó sẽ lấy HEADER làm containing
   // block và bị ghim/cắt ở mép trên. Portal ra body để `bottom` thật sự theo viewport.
   return createPortal(
     <div

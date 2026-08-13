@@ -81,7 +81,7 @@ export function SectionPreviewOverlay({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onHuy(); } };
-    window.addEventListener('keydown', onKey, true);
+    window.addEventListener('keydown', onKey, true); // esc-only: chỉ xử Escape đóng lớp — đúng chuẩn dialog, không cần né ô nhập
     return () => window.removeEventListener('keydown', onKey, true);
   }, [onHuy]);
 

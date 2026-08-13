@@ -61,6 +61,9 @@ export default function PresentViewer({
   // phím tắt điều hướng — Esc tách riêng, xem useDismissable bên dưới.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Né ô nhập (luật keydown-ne-o-nhap): mũi tên/space trong input không được lật trang.
+      const el = document.activeElement;
+      if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
         e.preventDefault();
         next();

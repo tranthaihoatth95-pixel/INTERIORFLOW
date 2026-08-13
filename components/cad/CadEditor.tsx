@@ -418,7 +418,7 @@ export default function CadEditor() {
     void chooseBackupFolder().then((ok) => {
       if (ok) {
         setBackupOn(true);
-        useCadStore.getState().setStatus('Đã bật backup tự động — ghi mỗi 10 phút + mỗi lần lưu, giữ theo thang thời gian (phủ toàn bộ đời dự án).');
+        useCadStore.getState().setStatus('Đã bật backup định kỳ — ghi mỗi 10 phút + mỗi lần lưu, giữ theo thang thời gian (phủ toàn bộ đời dự án).');
       }
     });
   };
@@ -720,7 +720,7 @@ export default function CadEditor() {
             { id: 'to-present', label: 'Đưa ảnh bản vẽ sang Trình chiếu', sub: 'Chụp bản vẽ hiện tại thành 1 slide mới (không đè slide có sẵn)', icon: <ArrowRight size={15} />, onSelect: toPresent },
             {
               id: 'auto-backup',
-              label: backupOn ? 'Backup tự động: đang bật' : 'Bật backup tự động',
+              label: backupOn ? 'Backup định kỳ: đang bật' : 'Bật backup định kỳ',
               sub: backupOn
                 ? 'Ghi ra thư mục đã chọn mỗi 10 phút + mỗi lần lưu — giữ theo thang thời gian (mọi bản 1 giờ đầu, thưa dần về sau, phủ toàn bộ đời dự án)'
                 : 'Chọn 1 thư mục trên máy — tự ghi backup định kỳ, không cần nhớ bấm Sao lưu',
@@ -1818,10 +1818,10 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
                 const v = parseInt(e.target.value, 10);
                 setPrintSettings({ printScale: v > 0 ? v : null });
               }}
-              title="Tỉ lệ in chuẩn 1:N — lưu theo từng sheet; PDF xuất 'plot to scale' đúng 1:N (đo thước trên bản in đúng). Tự động = fit khổ giấy (hành vi cũ)."
+              title="Tỉ lệ in chuẩn 1:N — lưu theo từng sheet; PDF xuất 'plot to scale' đúng 1:N (đo thước trên bản in đúng). 'Vừa khổ giấy' = fit theo khổ (hành vi cũ)."
               style={field}
             >
-              <option value={0}>Tự động (fit)</option>
+              <option value={0}>Vừa khổ giấy (fit)</option>
               {STANDARD_SCALES.map((n) => (
                 <option key={n} value={n}>1:{n}{n === suggestedN ? ' — gợi ý' : ''}</option>
               ))}

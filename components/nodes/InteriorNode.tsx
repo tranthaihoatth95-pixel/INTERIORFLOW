@@ -296,7 +296,7 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
          chọn có viền 1.5px accent ĐẶC + quầng 4px accent-soft. Trước đây chỉ đổi màu viền sang
          --accent-ring (accent pha 55% alpha) — ở nền Kem gần như không thấy, nên lúc quét chọn
          5 nút để gom nút tổng không biết mình đang cầm những nút nào.
-         Quầng đi bằng box-shadow (thuộc tính paint), KHÔNG opacity — mat-card có backdrop-filter
+         Quầng đi bằng box-shadow (thuộc tính paint), KHÔNG opacity — mat-card có backdrop blur
          (luật G1). Lúc node chạy, `.node-running-halo` là animation nên vẫn thắng inline style
          này theo thứ tự tầng CSS — đúng ý: đang chạy thì tín hiệu "chạy" quan trọng hơn "chọn". */
       style={{ boxShadow: selected ? 'var(--shadow-pop), 0 0 0 4px var(--accent-soft)' : 'var(--shadow-pop)' }}

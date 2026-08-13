@@ -120,7 +120,7 @@ function formatDims(w: number | null, d: number | null, h: number | null): strin
  *  · PUBLISH  = bản của mình → template mới, PHẢI qua chủ studio duyệt (không tự lên kệ chung).
  *
  * Portal ra `body` — luật panel nổi (`docs/00-CHOT.md` K4: panel kính lồng trong chrome kính thì
- * backdrop-filter của cha chặn blur của con).
+ * backdrop blur của cha chặn blur của con).
  */
 export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   const tr = useT();
@@ -824,7 +824,7 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                     ) : (
                       <>
                         <label htmlFor="lib-spec-link-select">
-                          {tr('Mã không khớp tự động? Gán tay:', "Code didn't auto-match? Link it:")}
+                          {tr('Máy chưa khớp được mã? Gán tay:', "Code didn't auto-match? Link it:")}
                         </label>
                         <select
                           id="lib-spec-link-select"

@@ -87,7 +87,7 @@ export function useDismissable({ open, onDismiss, refs, outside = true, guard }:
     };
 
     if (outside) document.addEventListener('pointerdown', onPointerDown, true);
-    document.addEventListener('keydown', onKey, true);
+    document.addEventListener('keydown', onKey, true); // esc-only: onKey chỉ xử Escape đóng lớp trên cùng — đúng chuẩn dialog, không cần né ô nhập
 
     return () => {
       cancelAnimationFrame(rafId);

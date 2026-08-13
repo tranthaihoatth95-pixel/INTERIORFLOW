@@ -75,6 +75,7 @@ export default function ModeShell<M extends string>({
               display: 'flex',
               background: 'color-mix(in srgb, var(--panel) 92%, transparent)',
               backdropFilter: 'blur(14px)',
+              WebkitBackdropFilter: 'blur(14px)', // K3: thiếu prefix = tablet không blur
               border: '1px solid var(--border)',
               borderRadius: 999,
               padding: 2,

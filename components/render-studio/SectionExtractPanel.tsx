@@ -288,7 +288,7 @@ export function SectionExtractPanel({ scene, onNhan }: SectionExtractPanelProps)
  */
 const CHUA_CO: { vi: string; en: string; ly: [string, string] }[] = [
   {
-    vi: 'Ghi kích thước tự động', en: 'Auto-dimension',
+    vi: 'Tự ghi kích thước', en: 'Auto-dimension',
     ly: [
       'Chưa có bộ sinh kích thước từ nét cắt — `grep autoDimension` = 0. Hiện phải ghi tay bằng lệnh DIM ở chặng Thiết kế 2D.',
       'No dimension generator from cut lines yet (`grep autoDimension` = 0). Dimension by hand with DIM in the 2D stage for now.',

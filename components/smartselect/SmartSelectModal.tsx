@@ -317,7 +317,7 @@ export function SmartSelectModal() {
         fallbackGeometric();
         setNote('Chưa nối được model segmentation — tạm tạo vùng hình học từ điểm/khung bạn chỉ. Tinh chỉnh bằng brush.');
       } else {
-        setError(err instanceof Error ? err.message : 'Chọn vùng tự động thất bại.');
+        setError(err instanceof Error ? err.message : 'Magic chọn vùng thất bại.');
       }
     } finally {
       setBusy(false);
@@ -452,7 +452,7 @@ export function SmartSelectModal() {
                       className="flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[11px] font-medium text-white disabled:opacity-50"
                     >
                       {busy ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
-                      {busy ? `Đang chọn… ${Math.round(progress * 100)}%` : 'Chọn vùng tự động'}
+                      {busy ? `Đang chọn… ${Math.round(progress * 100)}%` : 'Magic chọn vùng'}
                     </motion.button>
                     <motion.button
                       {...pressable}

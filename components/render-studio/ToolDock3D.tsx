@@ -9,7 +9,7 @@
  * ⚠️ KHÔNG dùng `.glass-float` (luật G9 `globals.css` — trần CỨNG 4 chỗ trên canvas 3D đã dùng
  * hết: ModeSwitchBar · nút "Dựng ảnh" · ViewCube · Lightbox). Dock 6 nhóm mở rộng cũng thuộc diện
  * "panel >2 dòng chữ" mà G9 CẤM cho kính lỏng → dùng `.vitals-pop` (nền đặc ≥96%) cho CẢ 2 trạng
- * thái, không riêng trạng thái mở, để nhất quán và không phát sinh thêm tấm backdrop-filter nào
+ * thái, không riêng trạng thái mở, để nhất quán và không phát sinh thêm tấm backdrop blur nào
  * ngoài những chỗ đã có sẵn trên viewport này (đã đếm: ModeSwitchBar + nút Dựng ảnh + ViewCube +
  * card chào + `.vitals-pop` Trình tự — thêm 1 style riêng khác sẽ vượt ngân sách hiệu năng WebGL).
  *

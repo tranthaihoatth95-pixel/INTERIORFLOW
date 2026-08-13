@@ -138,7 +138,7 @@ export function AppCommandPalette({ active }: { active: AppChromeActive }) {
       { id: 'shell.shortcuts', label: tr('Bảng phím tắt', 'Keyboard shortcuts'), hint: '?', group: shellGroup, keywords: 'phim tat shortcut hotkey keyboard', run: act(() => window.dispatchEvent(new CustomEvent('shortcuts:open'))) },
       {
         id: 'shell.theme',
-        label: tr('Đổi theme (tự động → sáng → tối)', 'Cycle theme (auto → light → dark)'),
+        label: tr('Đổi theme (theo hệ thống → sáng → tối)', 'Cycle theme (auto → light → dark)'),
         group: shellGroup,
         keywords: 'theme sang toi dark light giao dien',
         run: act(() => {

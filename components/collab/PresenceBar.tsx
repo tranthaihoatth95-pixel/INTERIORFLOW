@@ -166,7 +166,7 @@ export function PresenceBar() {
               anchorY={r.bottom + 6}
               onDismiss={() => setInviteOpen(false)}
               className="w-60 rounded-[12px] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-xl"
-              style={{ backdropFilter: 'blur(14px)' }}
+              style={{ backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' }}
             >
               <p className="px-1 pb-1.5 text-[10px] leading-relaxed text-[var(--t4)]">
                 {tr('Thêm người đã có tài khoản IF vào dự án này.', 'Add someone who already has an IF account to this project.')}

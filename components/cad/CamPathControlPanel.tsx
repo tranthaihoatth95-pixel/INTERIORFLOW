@@ -23,6 +23,7 @@ export type LookAtChoice = PreviewLookAt['kind'];
 const panel: React.CSSProperties = {
   background: 'color-mix(in srgb, var(--panel) 92%, transparent)',
   backdropFilter: 'blur(14px)',
+  WebkitBackdropFilter: 'blur(14px)', // K3: thiếu prefix = tablet không blur
   border: '1px solid var(--border)',
   borderRadius: 12,
   padding: 10,

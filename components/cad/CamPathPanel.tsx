@@ -44,6 +44,7 @@ const headStyle: React.CSSProperties = {
   justifyContent: 'space-between',
   background: 'color-mix(in srgb, var(--panel) 92%, transparent)',
   backdropFilter: 'blur(14px)',
+  WebkitBackdropFilter: 'blur(14px)', // K3: thiếu prefix = tablet không blur
   border: '1px solid var(--border)',
   borderRadius: 12,
   padding: '8px 10px',
@@ -57,6 +58,7 @@ const miniBtn: React.CSSProperties = { display: 'grid', placeItems: 'center', wi
 const emptyHint: React.CSSProperties = {
   background: 'color-mix(in srgb, var(--panel) 92%, transparent)',
   backdropFilter: 'blur(14px)',
+  WebkitBackdropFilter: 'blur(14px)', // K3: thiếu prefix = tablet không blur
   border: '1px solid var(--border)',
   borderRadius: 12,
   padding: 12,

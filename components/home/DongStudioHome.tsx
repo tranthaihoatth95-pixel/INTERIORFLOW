@@ -157,6 +157,9 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   const [revealAll, setRevealAll] = useState(false);
   useEffect(() => {
     const onDown = (e: KeyboardEvent) => {
+      // Né ô nhập (luật keydown-ne-o-nhap): đang gõ thì Tab là chuyển focus, không bung lớp dữ liệu.
+      const el = document.activeElement;
+      if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
       if (e.key === 'Tab') setRevealAll(true);
     };
     const onUp = (e: KeyboardEvent) => {

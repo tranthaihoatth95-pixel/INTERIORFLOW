@@ -7,7 +7,7 @@
  * đổi tên hiển thị (mặc định = nhãn gốc). Tham số KHÔNG hiện vẫn chạy bình thường, chỉ không lộ
  * ra mặt nút tổng (đúng dòng chữ mock: "Tham số không hiện vẫn chạy, chỉ nằm bên trong").
  *
- * Overlay KHÔNG dùng `fade` trên khối có `backdrop-filter` (luật G1 `docs/00-BAT-DAU-DOC-DAY.md`
+ * Overlay KHÔNG dùng `fade` trên khối có backdrop blur (luật G1 `docs/00-BAT-DAU-DOC-DAY.md`
  * §4) — nền mờ ngoài cùng là scrim ĐẶC không blur (an toàn fade opacity), khối kính bên trong chỉ
  * animate y/scale, không opacity.
  */
@@ -30,7 +30,7 @@ const scrimFade: Variants = {
   visible: { opacity: 1, transition: tweenBase },
   exit: { opacity: 0, transition: tweenFast },
 };
-/** Khối kính (backdrop-filter) — CHỈ y/scale, không opacity (luật G1). */
+/** Khối kính (backdrop blur) — CHỈ y/scale, không opacity (luật G1). */
 const glassPop: Variants = {
   hidden: { y: 10, scale: 0.96 },
   visible: { y: 0, scale: 1, transition: springPop },

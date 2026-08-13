@@ -149,7 +149,7 @@ export function LoginScreen({ onAuthed, notice }: { onAuthed: () => void; notice
           )}
 
           {/* form kính (C-1) — element vừa, biên độ vừa.
-              SO-KIEM-TONG §1: wrapper này là TỔ TIÊN của `.lq-card` (backdrop-filter trong
+              SO-KIEM-TONG §1: wrapper này là TỔ TIÊN của `.lq-card` (backdrop blur trong
               LoginForm.tsx) — dùng `riseNoFade` (không opacity) thay `rise()`, tránh chính
               wrapper này tạo backdrop root cô lập làm kính đục lúc mount (cơ chế K1/K2 P6c).
               `.lq-card` tự lo phần dịch chuyển y của riêng nó, ở đây chỉ còn khoảng thở layout. */}

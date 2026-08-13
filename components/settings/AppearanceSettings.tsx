@@ -18,7 +18,7 @@ import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 const THEME_OPTIONS: { id: ThemePref; label: [string, string] }[] = [
-  { id: 'auto', label: ['Tự động', 'Auto'] },
+  { id: 'auto', label: ['Theo hệ thống', 'Auto'] },
   { id: 'light', label: ['Sáng', 'Light'] },
   { id: 'dark', label: ['Tối', 'Dark'] },
 ];
@@ -33,7 +33,7 @@ export function AppearanceSettings() {
       <h2 className="text-[15px] font-semibold text-[var(--t1)]">{tr('Giao diện', 'Appearance')}</h2>
 
       <div className="mt-4">
-        <p className="text-[12.5px] text-[var(--t3)]">{tr('Sáng / Tối / Tự động', 'Light / Dark / Auto')}</p>
+        <p className="text-[12.5px] text-[var(--t3)]">{tr('Sáng / Tối / Theo hệ thống', 'Light / Dark / Auto')}</p>
         <div className="mt-1.5 inline-flex rounded-[10px] border border-[var(--border)] bg-[var(--field)] p-0.5">
           {THEME_OPTIONS.map((opt) => (
             <button

@@ -107,7 +107,7 @@ export function ProjectInitBoard({ open, en, larkCode, larkName, onClose, onSkip
     const onEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !busy) onClose();
     };
-    window.addEventListener('keydown', onEsc);
+    window.addEventListener('keydown', onEsc); // esc-only: chỉ xử Escape đóng lớp — đúng chuẩn dialog, không cần né ô nhập
     return () => window.removeEventListener('keydown', onEsc);
   }, [open, busy, onClose]);
 

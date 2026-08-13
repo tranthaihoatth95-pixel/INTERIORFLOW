@@ -61,8 +61,10 @@ export const LUAT = [
   { id: 'keydown-ne-o-nhap', toiDanh: 3, loai: 'grep',
     luat: 'Phím tắt toàn cục không kích hoạt khi đang nhập chữ — listener keydown toàn cục phải né INPUT/TEXTAREA/contentEditable',
     nguon: 'Chốt hệ phím tắt toàn app 10/08 (00-CHOT)',
-    soi: [{ dir: 'components', mauCo: "(window|document)\\.addEventListener\\('keydown'", mauThieu: 'INPUT|TEXTAREA|isContentEditable|isTyping|isEditable' },
-          { dir: 'lib', mauCo: "(window|document)\\.addEventListener\\('keydown'", mauThieu: 'INPUT|TEXTAREA|isContentEditable|isTyping|isEditable' }] },
+    // `esc-only` (phán quyết T 13/08): Escape là lệnh ĐÓNG, không phải phím tắt chức năng — listener
+    // thật sự chỉ xử Escape thì ghi marker `esc-only` cạnh addEventListener thay vì guard (agent kiểm từng ca).
+    soi: [{ dir: 'components', mauCo: "(window|document)\\.addEventListener\\('keydown'", mauThieu: 'INPUT|TEXTAREA|isContentEditable|isTyping|isEditable|esc-only' },
+          { dir: 'lib', mauCo: "(window|document)\\.addEventListener\\('keydown'", mauThieu: 'INPUT|TEXTAREA|isContentEditable|isTyping|isEditable|esc-only' }] },
 
   { id: 'cam-chu-tu-dong', toiDanh: 4, loai: 'grep',
     luat: 'CẤM chữ "tự động" trong UI — AI đoán phải mang dấu Magic, không tự xưng chắc chắn',

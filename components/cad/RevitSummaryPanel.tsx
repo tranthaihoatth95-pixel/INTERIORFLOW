@@ -20,7 +20,7 @@ import { ELEMENT_TYPE_OPTIONS, type ElementType } from '@/lib/cad/model';
 // left:12,top:70 đã bị ZonePanel chiếm (hiện khi tool zone/arrow, có thể trùng lúc đang ở mode
 // Revit) — neo từ ĐÁY bên trái để không đè, đối xứng với CamPathPanel (đáy-phải, D5).
 // 07/08 M-UI-CAD sửa VIỆC 3+4: đây là panel NHIỀU CHỮ nổi trên canvas — không nằm trong 4 chỗ
-// kính lỏng cho phép (G9, `.glass-float`), nên bỏ hẳn backdrop-filter và nâng nền lên ĐẶC 96%
+// kính lỏng cho phép (G9, `.glass-float`), nên bỏ hẳn backdrop blur và nâng nền lên ĐẶC 96%
 // (đúng luật `.vitals-pop`/G2 cho lớp nổi nhiều chữ) thay vì chỉ chạm ngưỡng tối thiểu 92%.
 const panel: React.CSSProperties = {
   position: 'absolute',

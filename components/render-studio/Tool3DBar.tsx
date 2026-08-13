@@ -15,7 +15,7 @@
  * Phím: listener CAPTURE trên window — chạy TRƯỚC QuickCommandBox (bubble, `Viewport3D`) và
  * `stopPropagation` cho đúng các phím mình xử lý, để một cú Esc không vừa thoát tool vừa xoá dòng
  * lệnh. Đang gõ ở ô nhập NGOÀI bar (đặt tên layer, ô cao độ…) thì bar không cướp phím nào.
- * Nền đặc `--panel` ≥96%, KHÔNG backdrop-filter (G9 — trần kính trên WebGL đã dùng hết).
+ * Nền đặc `--panel` ≥96%, KHÔNG backdrop blur (G9 — trần kính trên WebGL đã dùng hết).
  */
 
 import { useEffect, useRef, useState } from 'react';

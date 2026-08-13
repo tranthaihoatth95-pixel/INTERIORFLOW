@@ -65,7 +65,7 @@ export const GALLERY_CSS = `
 .gal-badge{position:absolute;top:7px;right:7px;height:19px;padding:0 7px;border-radius:var(--r-full);
      font-size:9.5px;font-weight:var(--fw-semi);letter-spacing:.03em;text-transform:uppercase;
      display:inline-flex;align-items:center;background:color-mix(in srgb, var(--bg) 62%, transparent);
-     color:#fff;backdrop-filter:blur(6px)}
+     color:#fff;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .gal-badge.unknown{background:color-mix(in srgb, var(--warning) 78%, transparent)}
 .gal-card .body{padding:9px 10px 10px;display:flex;flex-direction:column;gap:6px;flex:1}
 .gal-card .name{font-size:var(--fs-xs);color:var(--t1);font-weight:var(--fw-semi);

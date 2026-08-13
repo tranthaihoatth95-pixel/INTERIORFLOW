@@ -74,7 +74,7 @@ export default function MaterialImpactPreview({ doc, specIds, nextName, onApply,
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel();
     };
-    window.addEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey); // esc-only: chỉ xử Escape đóng lớp — đúng chuẩn dialog, không cần né ô nhập
     return () => window.removeEventListener('keydown', onKey);
   }, [onCancel]);
 

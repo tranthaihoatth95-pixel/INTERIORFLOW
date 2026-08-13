@@ -330,6 +330,9 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
     const moveState = { forward: false, back: false, left: false, right: false };
     let hintEl: HTMLDivElement | null = null;
     function onKeyDown(e: KeyboardEvent) {
+      // Né ô nhập (luật keydown-ne-o-nhap): gõ chữ w/a/s/d trong input không được di chuyển camera.
+      const ae = document.activeElement;
+      if (ae instanceof HTMLElement && (ae.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(ae.tagName))) return;
       if (e.code === 'KeyW' || e.code === 'ArrowUp') moveState.forward = true;
       if (e.code === 'KeyS' || e.code === 'ArrowDown') moveState.back = true;
       if (e.code === 'KeyA' || e.code === 'ArrowLeft') moveState.left = true;
@@ -471,6 +474,9 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
       hoverSnapKind = null;
     }
     function onSnapKeyDown(e: KeyboardEvent) {
+      // Né ô nhập (luật keydown-ne-o-nhap): gõ x/y/z trong input không được khoá trục.
+      const ae = document.activeElement;
+      if (ae instanceof HTMLElement && (ae.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(ae.tagName))) return;
       if (e.key === 'Shift' && hoverSnapKind) snapLockKind = hoverSnapKind; // ⇧ khoá suy luận ĐANG bắt
       const k = e.key.toLowerCase();
       if ((k === 'x' || k === 'y' || k === 'z') && (dragging || draggingLight)) {
