@@ -204,6 +204,18 @@ hai lần. Các đẳng cấu ĐÃ NHẬN DIỆN (12/08 — mỗi cặp là mộ
 | xong-máy / xong-mắt | trạng thái bản vẽ WIP → Checked → Approved (tinh thần ISO 19650) | trạng thái deliverable trong IF dùng đúng cặp máy-kiểm/người-duyệt |
 | Phiếu 5 Ô — kịch bản hành vi | Nghiệm thu bàn giao / as-built | nghiệm thu dự án thật = làm theo kịch bản, không nghiệm thu bằng lời |
 
+**Bổ sung 13/08 (Hoà chốt sau review Grounded Render — `docs/REVIEW-DONG-BO-CO-CHE-2026-08-13.md`):**
+
+| Cơ chế | Các mặt tiền | Engine chung |
+|---|---|---|
+| Máy trình phiếu → người duyệt → cờ 3 nấc | phiếu 4 cấp render · Material Impact · Scaffolder · auto-define · meeting-distill · review-gate | **ProposalSheet** |
+| Định danh vùng/đơn vị | entityId (Doc/Scene) · matId · mảng wire-color · DataOrigin · tag gallery | **RegionId** (ảnh từ scene IF: mask = chiếu entity, không cần SAM) |
+| Núm-stack per-item | BuildRecipe · bảng ánh xạ mảng render · ThinkDial | **khuôn NÚM-STACK** (tái dùng UI BuildRecipeSection) |
+| Máy kiểm sau khi áp | CHUAN_DAU_RA · kiểm sắc độ B6 · soi build | **PostGate** (cắm lib/review) |
+| Đề xuất trộn nguồn có gia phả | dòng B4 · Scaffolder · góp ý concept · Magic sau này | **SuggestBlend(70 ngành/20 DNA KTS/10 gu dự án)** |
+
+LUẬT THI HÀNH: tính năng mới rơi vào 1 trong 5 khuôn mà tự chế cơ chế riêng = vi phạm đồng bộ — T chặn ở bước plan.
+
 Khi T thấy đẳng cấu MỚI → đề xuất vào bảng này (chốt của Hoà mới thành luật).
 
 *Lập 12/08/2026 theo lệnh Hoà. Sửa hợp đồng này = chốt mới, ghi 00-CHOT.*
