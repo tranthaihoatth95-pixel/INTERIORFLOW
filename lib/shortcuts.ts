@@ -63,7 +63,7 @@ export const SHORTCUTS: ShortcutEntry[] = [
     label: 'Bảng lệnh nhanh — AppCommandPalette.tsx, mount trong AppShell (mọi route dùng AppShell: Thiết kế 2D · Thiết kế 3D · Trình chiếu · Files · Cài đặt)',
   },
   { scope: 'toàn cục', keys: ['mod', 'J'], label: 'Chuyển chặng Thiết kế 2D ↔ Thiết kế 3D ↔ Trình chiếu' },
-  { scope: 'toàn cục', keys: ['mod', '0'], label: 'Về Thư viện dự án (Gallery) — hỏi trước nếu còn thay đổi chưa lưu' },
+  { scope: 'toàn cục', keys: ['mod', '0'], label: 'Về Home — hỏi trước nếu còn thay đổi chưa lưu' },
   { scope: 'toàn cục', keys: ['mod', 'B'], label: 'Ẩn/hiện khung Navigator (trái)' },
   { scope: 'toàn cục', keys: ['mod', 'L'], label: 'Mở sheet Thư viện (khối/vật liệu/template — tự lọc theo chặng đang mở)' },
   {

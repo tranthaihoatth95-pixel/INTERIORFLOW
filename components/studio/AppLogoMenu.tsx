@@ -47,10 +47,11 @@ export function AppLogoMenu({ open, anchorRect, onDismiss, menuRef, stage }: Pro
 
   // VIỆC 1 UI (04/08) — mục DUY NHẤT trong menu này thật sự RỜI chặng (4 mục còn lại chỉ mở
   // panel/sheet đè lên, ở nguyên route). Tách riêng khỏi mảng `items` dưới để vẽ có gạch phân
-  // cách — không lẫn với "Thư viện" (asset/vật liệu, item khác, ở lại route).
+  // cách. Nhãn "Home" (Hoà chốt 13/08 đêm): nhãn cũ (về-Thư-viện-dự-án) trùng ngữ nghĩa với
+  // mục "Thư viện" (sheet vật liệu/asset) ngay dưới — trang gốc `/` nay là Home Tổng quan (12/08).
   const goHomeItem = {
     icon: Home,
-    label: tr('Về Thư viện dự án', 'Back to project library'),
+    label: tr('Home', 'Home'),
     action: () => goHomeConfirmed(router),
   };
 

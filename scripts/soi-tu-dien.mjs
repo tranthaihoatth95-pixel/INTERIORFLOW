@@ -22,6 +22,9 @@ const TU_DIEN = [
   { sai: 'Thẻ gu|thẻ gu', dung: 'Thẻ DNA Thiết kế / Design DNA Card (chốt 11/08)', pham_vi: ['components', 'docs/mocks'] },
   { sai: "'tự động'|\"tự động\"|>[Tt]ự động<", dung: 'Magic ✨ (CHOT-TACH-AI: cấm chữ "tự động" trong UI)', pham_vi: ['components'] },
   { sai: "'Thẻ gu'|GuCard", dung: 'DnaCard (khoá code — hợp nhất Design DNA)', pham_vi: ['lib'] },
+  // 13/08 đêm (Hoà chốt khi duyệt mắt): trang gốc `/` là HOME Tổng quan (chốt 12/08) — nhãn cũ
+  // "Về Thư viện dự án" trùng ngữ nghĩa với "Thư viện" (sheet vật liệu/asset), gây lẫn 2 nghĩa.
+  { sai: 'Về Thư viện dự án|Back to project library', dung: 'Home (nhãn điều hướng về trang gốc — chốt 13/08 đêm)', pham_vi: ['components', 'app', 'lib'] },
 ];
 
 const EXT = new Set(['.ts', '.tsx', '.html', '.css']);

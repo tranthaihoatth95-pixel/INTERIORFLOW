@@ -249,9 +249,9 @@ export function AppChrome({ active, logoMenu }: Props) {
       {/* G-M22-03 (07/08, M-NHAN-OUT) — ĐÃ GỠ `<HomeButton compact />` từng đứng riêng ở đây
           (VIỆC 1 UI, 04/08). Lý do lúc đó: "4 mục trong menu chỉ mở panel đè lên, không mục nào
           rời chặng" — nhưng CÙNG NGÀY 04/08, `AppLogoMenu.tsx` cũng đã thêm mục đầu tiên
-          `goHomeItem` ("Về Thư viện dự án", gọi thẳng `goHomeConfirmed()`, đứng TRÊN vạch phân
-          cách, phía trên 4 mục Tổng quan/Dự án & Flow/Files/Thư viện) — làm ĐÚNG hành vi
-          HomeButton, tại ĐÚNG vị trí Hoà chốt 07/08 ("đặt PHÍA TRÊN mục Về Thư viện dự án" hoá ra
+          `goHomeItem` (nay nhãn "Home" — chốt 13/08 đêm, gọi thẳng `goHomeConfirmed()`, đứng TRÊN
+          vạch phân cách, phía trên 4 mục Tổng quan/Dự án & Flow/Files/Thư viện) — làm ĐÚNG hành vi
+          HomeButton, tại ĐÚNG vị trí Hoà chốt 07/08 ("đặt PHÍA TRÊN mục về-trang-gốc" hoá ra
           CHÍNH LÀ mục đó, không phải một mục thứ 6 riêng — đo lại bằng code, không theo số "6
           mục" ghi trong GAP-IF.md cũ, xem M-NHAN-OUT.md). Hai nút cùng gọi `goHomeConfirmed()`,
           đứng cạnh nhau — trùng vai thật (đúng HomeButton.tsx tự khai), gộp bằng cách XOÁ bản
@@ -347,7 +347,7 @@ export function AppChrome({ active, logoMenu }: Props) {
           chặng render) · avatar UserChip (avatar duy nhất ở RAIL, mở AccountMenu —
           CHOT-AVATAR-MEMOJI §2). Nút ⌂ Home từng cắt vì "TRÙNG logo góc trái" — ĐÚNG khi logo tự
           về Gallery (`logoMenu` false); khi logo mở `AppLogoMenu` thay vào đó (`logoMenu` true),
-          đường về Gallery nay sống trong CHÍNH menu đó (mục "Về Thư viện dự án", đầu danh sách —
+          đường về Gallery nay sống trong CHÍNH menu đó (mục "Home", đầu danh sách —
           xem comment ở nút logo phía trên, G-M22-03). */}
 
       {/* SessionWatch — universal (30/07, sửa lỗi: trước chỉ StudioBar có, route `/` không báo

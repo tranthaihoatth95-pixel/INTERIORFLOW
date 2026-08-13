@@ -105,7 +105,7 @@ export function ProjectScopeEmptyState({
           ghost="none"
           actions={[
             {
-              label: tr('Về Thư viện dự án', 'Back to project library'),
+              label: tr('Home', 'Home'),
               primary: true,
               onClick: () => goHomeConfirmed(router),
             },

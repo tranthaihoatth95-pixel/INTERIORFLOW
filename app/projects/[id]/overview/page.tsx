@@ -168,7 +168,7 @@ export default function ProjectOverviewPage() {
                 fontSize: 12.5,
               }}
             >
-              {t('Về Thư viện dự án', 'Back to Gallery')}
+              {t('Home', 'Home')}
             </button>
           </div>
         )}
