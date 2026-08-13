@@ -118,6 +118,11 @@ export const FRONTIER = [
     bangChung: [{ dir: 'docs/mocks', mau: 'Trình bày', can: false }] },
   { id: 'hotkey-registry', vai: 'day', ten: 'MỘT registry lệnh+phím toàn app (chốt 10/08): tooltip/⌘K/bảng ⌘/ đọc chung một nguồn, lệnh chưa đủ điều kiện hiện mờ kèm lý do — thi công đợt sau, entry mở để sổ không quên', he: 'NhapLenh', dot: 6, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'HotkeyRegistry|hotkey-registry' }] },
+  // 13/08 — DOGFOOD #1, Hoà chê thật "rối rắm, đang gấp không biết đường lần" (finding F1):
+  { id: 'present-task-first', vai: 'mvp', ten: 'Trình chiếu dẫn THEO VIỆC (sửa nóng F1 dogfood #1): empty-state 3 lối to giữa canvas (Nhập tệp·Dàn từ mẫu·Trang trống) · toolbar phân cấp ~6 nút chính + nhóm gộp · banner học-gu rời mặt tiền · panel phải chỉ hiện khi có nội dung/chọn', he: 'Workspace', dot: 5, trangThai: 'chua',
+    bangChung: [{ dir: 'components/present-editor', mau: 'task-first|TaskFirstStart' }] },
+  { id: 'luong-theo-viec', vai: 'mvp', ten: 'Chuẩn LUỒNG THEO VIỆC toàn app (bệnh gốc F1: UI liệt kê công cụ, không dẫn theo việc) — nghiên cứu + spec tầng "lối vào theo việc" cho người gấp, áp 2D/3D/Trình chiếu — thi công đợt kế', he: 'Workspace', dot: 6, trangThai: 'chua',
+    bangChung: [{ dir: 'docs', mau: 'SPEC-LUONG-THEO-VIEC' }] },
   // 13/08 — Hoà chốt Smart Convert (mở rộng smart-ingest, xem 00-CHOT 13/08):
   { id: 'smart-convert-pdf', vai: 'day', ten: 'Smart Convert bậc 1 — nhập PDF vector thành deck IF tách 3 lớp Nền·Ảnh·Chữ (chữ THẬT từ PDF qua unpdf sẵn có, toạ độ+cỡ giữ nguyên; trang scan → nền raster + ghi chú "cần OCR bậc 2"); xuất PPTX đường sẵn; phục vụ vòng người-dùng-thật #1', he: 'DocCore', dot: 5, trangThai: 'chua',
     bangChung: [{ dir: 'lib/present-editor', mau: 'pdf-import|pdfToDeck' }] },
