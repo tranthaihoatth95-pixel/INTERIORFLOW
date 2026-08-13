@@ -24,6 +24,7 @@ import { renderV2Nodes } from './render-v2';
 import { patternWarpNodes } from './pattern-warp';
 import { metrologyNodes } from './metrology';
 import { ffeTableNodes } from './ffe-table';
+import { groundedRenderNodes } from './grounded-render';
 
 export const EXTRA_NODES: NodeDefinition[] = [
   ...watermarkNodes,
@@ -37,4 +38,5 @@ export const EXTRA_NODES: NodeDefinition[] = [
   ...patternWarpNodes,
   ...metrologyNodes,
   ...ffeTableNodes,
+  ...groundedRenderNodes,
 ];

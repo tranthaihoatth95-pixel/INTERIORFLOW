@@ -50,6 +50,8 @@ export const NODE_GROUP: Record<string, NodeGroup> = {
   'input.guref': 'gu',
   'ai.pattern': 'gu',
   'ai.moodboard': 'gu',
+  // Phiếu đọc tham khảo (Grounded Render B3): đọc ảnh mẫu ra phiếu 4 cấp = khai GU có duyệt.
+  'ai.refsheet': 'gu',
   'util.palette': 'gu',
   // Chọn phong cách là KHAI GU (japandi/indochine…), không phải "đầu vào ảnh" → ② chứ không ①.
   'input.stylepreset': 'gu',
@@ -69,6 +71,8 @@ export const NODE_GROUP: Record<string, NodeGroup> = {
   // Video = một bản dựng khác của cùng cảnh (`CHOT-VIDEO-2-TANG-2026-08-02.md` ① Sinh phim).
   'ai.image2video': 'render',
   'ai.text2video': 'render',
+  // Render bám ý theo mảng (Grounded Render B5): bấm ra ảnh mới → nhóm Dựng ảnh.
+  'ai.regionrender': 'render',
   // So sánh ảnh trước/sau: việc của bước xem lại bản dựng, cùng chỗ với So sánh model.
   'util.compare': 'render',
 
