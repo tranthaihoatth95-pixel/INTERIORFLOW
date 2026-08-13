@@ -31,7 +31,7 @@ export interface GreetingInput {
 export interface GreetingResult {
   /** "Chào Hoà · Thứ Năm, 13/08" */
   headline: string;
-  /** "3 việc đến hạn hôm nay" | "Detech Complex vừa có chuyển động" | null (ẩn dòng). */
+  /** "3 việc đến hạn hôm nay" | "<tên dự án> vừa có chuyển động" | null (ẩn dòng). */
   signal: string | null;
 }
 
