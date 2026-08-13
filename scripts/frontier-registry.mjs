@@ -47,7 +47,7 @@ export const FRONTIER = [
     bangChung: [{ dir: 'components', mau: 'ThinkDial' }] },
   { id: 'light-arc', vai: 'do', ten: 'LightArc — cung sáng tiến độ (12/08: components/ui/LightArc + ExportPdfDialog indeterminate thật)', he: 'LightState', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'components/ui', mau: 'LightArc' }] },
-  { id: 'capture-nut', vai: 'do', ten: 'Nút xuất PNG sequence (rời route bench)', he: 'DocCore', dot: 1, trangThai: 'chua',
+  { id: 'capture-nut', vai: 'do', ten: 'Nút xuất PNG sequence (14/08 CS: tab Camera Command3DPanel thay placeholder — CameraExportTab, zip qua jszip, LightArc tiến độ khung i/n + Huỷ AbortSignal, thiếu campath nút mờ kèm lý do; captureSequenceAsync additive nhả event-loop; giới hạn thật: PNG xám 0-credit, 1920×1080/15fps, trần 600 khung)', he: 'DocCore', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'import \\{[^}]*captureSequence' }] },
 
   // ── ĐỢT 1b · CHẤT LƯỢNG ĐẦU RA (11/08 — soi MẮT file layout.pdf xuất thật, lần đầu

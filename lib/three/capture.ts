@@ -303,3 +303,45 @@ export function captureSequence(scene: Scene3DData, path: CamPathResult, opts: C
   }
   return { frameCount: rendered, aborted };
 }
+
+/**
+ * Bản ASYNC của `captureSequence` — CÙNG hợp đồng (plan/onFrame/AbortSignal/CaptureSequenceResult),
+ * chỉ khác: NHẢ event-loop (macrotask) giữa 2 khung. LÝ DO TỒN TẠI (phiếu capture-nut, 14/08):
+ * `captureSequence` là vòng `for` đồng bộ — gọi từ UI thì main thread bị chặn suốt dải khung, thanh
+ * tiến độ không vẽ được khung nào ([N1] tội ④ "tiến độ thật") và nút Huỷ không bấm được giữa chừng
+ * ([T5] "huỷ được" — signal có mà không ai flip được nó). Đây là "1 export additive" phiếu cho phép:
+ * KHÔNG sửa `captureSequence` hiện có (bench `app/dev-bench-3d-2` đo hiệu năng cần bản sync thuần,
+ * không lẫn chi phí setTimeout vào số đo).
+ */
+export async function captureSequenceAsync(scene: Scene3DData, path: CamPathResult, opts: CaptureSequenceOptions): Promise<CaptureSequenceResult> {
+  const plan = planCaptureSequenceFrames(path, opts.fps, opts.frameCount);
+  const canvas = document.createElement('canvas');
+  canvas.width = opts.w;
+  canvas.height = opts.h;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+  renderer.setSize(opts.w, opts.h, false);
+  const camera = new THREE.PerspectiveCamera(60, opts.w / opts.h, 0.05, 500);
+  const { three, dispose } = buildOffscreenScene(scene);
+
+  let rendered = 0;
+  let aborted = false;
+  try {
+    for (const frame of plan) {
+      // Nhả TRƯỚC khi kiểm signal: click "Huỷ" của người dùng chỉ chạy được khi main thread rảnh.
+      await new Promise((r) => setTimeout(r, 0));
+      if (opts.signal?.aborted) {
+        aborted = true;
+        break;
+      }
+      camera.position.copy(frame.pose.position);
+      camera.lookAt(frame.pose.target);
+      renderer.render(three, camera);
+      opts.onFrame({ index: frame.index, tSec: frame.tSec, dataUrl: canvas.toDataURL('image/png') });
+      rendered += 1;
+    }
+  } finally {
+    dispose();
+    renderer.dispose();
+  }
+  return { frameCount: rendered, aborted };
+}

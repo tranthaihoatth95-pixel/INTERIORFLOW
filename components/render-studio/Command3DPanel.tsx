@@ -47,6 +47,7 @@ import { cn } from '@/lib/utils';
 import Tooltip from '@/components/ui/Tooltip';
 import { WallTypePanel3D } from './WallTypePanel3D';
 import { LightTab } from './LightTab';
+import CameraExportTab from './CameraExportTab';
 import { entityBox, type BuildOp, type Entity } from '@/lib/cad/model';
 import { setEntityArrayRadial, setEntityMirror, setEntityBevelEx, setEntityTaper, setEntitySweep, entityFootprintMm } from '@/lib/cad/commands';
 import { newId } from '@/lib/cad/store';
@@ -217,7 +218,9 @@ export default function Command3DPanel({
         {tab === 'sua' && <EditTab scene={scene} />}
         {tab === 'den' && <LightTab />}
         {tab === 'banve' && <SectionExtractPanel scene={scene} onNhan={onNhanMatCat} />}
-        {tab === 'camera' && <PlaceholderTab tab={tab} />}
+        {/* phiếu capture-nut (14/08): tab Camera thôi placeholder — chở flow xuất chuỗi PNG
+            dọc đường cam (nối kho chờ-dây captureSequence). */}
+        {tab === 'camera' && <CameraExportTab scene={scene ?? null} />}
       </div>
     </div>
   );
@@ -1421,28 +1424,16 @@ function BuildRecipeSection({ scene }: { scene: Scene3DData | null }) {
   );
 }
 
-type PlaceholderKey = Exclude<Tab, 'vatlieu' | 'tao' | 'den' | 'banve'>;
-
-// Camera GIỮ placeholder (không bịa ô nhập số vô chủ — spec §6.2 cần model camera thật trong Doc
-// trước, hôm nay chưa có; input "sống nhưng không lưu gì" tệ hơn câu "sắp có" trung thực).
+// phiếu capture-nut (14/08): tab Camera thôi placeholder (nay là `CameraExportTab` — xuất chuỗi
+// PNG thật; phần "đặt camera trong cảnh" vẫn chờ model camera trong Doc, câu chờ nằm TRONG tab đó).
+// `PlaceholderTab` cũ chỉ còn phục vụ camera nên gỡ; câu "sua" giữ nguyên vì EditTab vẫn đọc.
 // VIỆC 1 (nối extrude/arrayLinear thật) — sửa lại câu "sua" ĐANG SAI: từng nói "Bevel... sắp có"
 // dù bản thân tab này không chứa nút bevel/khoét hốc/nhân bản dãy (3 nút đó nằm ở Inspector bên
 // phải khi chọn tường, cùng chỗ với `CutHoleAction` boolean đã xong trước đó — panel này chưa
 // từng cập nhật theo). Câu mới không hứa gì tab này KHÔNG chứa — chỉ TRỎ đúng nơi có thật.
-const PLACEHOLDER_COPY: Record<PlaceholderKey, [string, string]> = {
+const PLACEHOLDER_COPY: Record<'sua', [string, string]> = {
   sua: [
     'Đẩy-kéo cao độ dùng ngay trên khối (kéo mặt trên). Khoét hốc · vát cạnh (bevel) · nhân bản dãy — chọn 1 tường rồi mở panel bên phải. Nhập số tay — sắp có.',
     'Push-pull height works directly on the block (drag the top face). Cut a hole · bevel · linear array — select a wall, then open the right-side panel. Manual numeric input — coming soon.',
   ],
-  camera: ['Đặt camera · đường cam (campath) — sắp có.', 'Place camera · camera path — coming soon.'],
 };
-
-function PlaceholderTab({ tab }: { tab: PlaceholderKey }) {
-  const tr = useT();
-  const [vi, en] = PLACEHOLDER_COPY[tab];
-  return (
-    <div className="rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-3 text-center text-[11px] leading-relaxed text-[var(--t4)]">
-      {tr(vi, en)}
-    </div>
-  );
-}
