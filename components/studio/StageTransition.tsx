@@ -132,7 +132,7 @@ export function StageVeil({ show, target }: { show: boolean; target?: Phase | nu
               <motion.span
                 animate={reduce ? undefined : { opacity: [0.25, 1, 0.25] }}
                 transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-                style={{ width: 5, height: 5, borderRadius: 5, background: 'var(--accent)' }}
+                style={{ width: 5, height: 5, borderRadius: 6, background: 'var(--accent)' }}
               />
               Đang mở {label}
             </motion.span>

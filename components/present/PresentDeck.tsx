@@ -105,7 +105,7 @@ export default function PresentDeck({ deck, imageSlides, title, withMoodboard = 
           {onClose && (
             <button
               onClick={onClose}
-              style={{ marginTop: 18, padding: '8px 16px', fontSize: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)' }}
+              style={{ marginTop: 18, padding: '8px 16px', fontSize: 12, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)' }}
             >
               {tr('Đóng', 'Close')}
             </button>

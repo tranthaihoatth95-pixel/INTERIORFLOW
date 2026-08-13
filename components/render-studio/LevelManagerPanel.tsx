@@ -127,7 +127,7 @@ export function LevelManagerPanel() {
             type="button"
             onClick={addLevel}
             aria-label={tr('Thêm tầng', 'Add level')}
-            className="grid h-[var(--tap)] w-[var(--tap)] place-items-center rounded-[8px] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--accent)]"
+            className="grid h-[var(--tap)] w-[var(--tap)] place-items-center rounded-[10px] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--accent)]"
           >
             <Plus size={14} />
           </button>
@@ -146,7 +146,7 @@ export function LevelManagerPanel() {
             <button
               type="button"
               onClick={addLevel}
-              className="h-[var(--tap)] rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-2.5 text-[10.5px] font-semibold leading-[1.6] text-[var(--t1)] transition-colors hover:bg-[var(--hover)]"
+              className="h-[var(--tap)] rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 text-[10.5px] font-semibold leading-[1.6] text-[var(--t1)] transition-colors hover:bg-[var(--hover)]"
             >
               {tr('Thêm tầng', 'Add level')}
             </button>
@@ -161,7 +161,7 @@ export function LevelManagerPanel() {
                 <button
                   type="button"
                   onClick={buildFromStoreys}
-                  className="flex h-[var(--tap)] items-center gap-1.5 rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-2.5 text-[10.5px] font-semibold leading-[1.6] text-[var(--t1)] transition-colors hover:bg-[var(--hover)]"
+                  className="flex h-[var(--tap)] items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 text-[10.5px] font-semibold leading-[1.6] text-[var(--t1)] transition-colors hover:bg-[var(--hover)]"
                 >
                   <Wand2 size={12} />
                   {tr('Dựng từ nhãn có sẵn', 'Build from labels')}
@@ -183,7 +183,7 @@ export function LevelManagerPanel() {
               onDrop={() => dropOn(level.id)}
               onDragEnd={() => setDragId(null)}
               className={cn(
-                'flex flex-wrap items-center gap-1 rounded-[8px] px-1 py-0.5 transition-colors',
+                'flex flex-wrap items-center gap-1 rounded-[10px] px-1 py-0.5 transition-colors',
                 dragId === level.id ? 'bg-[var(--accent-soft)]' : 'hover:bg-[var(--hover)]',
               )}
             >
@@ -287,7 +287,7 @@ export function LevelManagerPanel() {
                 if (level) assignLevelToEntities([assignableId], level);
               }}
               aria-label={tr('Chọn tầng', 'Pick a level')}
-              className="mt-1 h-[var(--tap)] w-full rounded-[8px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
+              className="mt-1 h-[var(--tap)] w-full rounded-[10px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
             >
               <option value="">{tr('— chưa xếp tầng —', '— unassigned —')}</option>
               {levels.map((l) => (

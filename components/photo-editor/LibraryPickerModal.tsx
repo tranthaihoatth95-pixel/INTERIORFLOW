@@ -76,7 +76,7 @@ export default function LibraryPickerModal(p: Props) {
           overflow: 'auto',
           background: 'var(--card)',
           border: '1px solid var(--border)',
-          borderRadius: 16,
+          borderRadius: 14,
           padding: 18,
         }}
       >

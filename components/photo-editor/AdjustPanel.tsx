@@ -146,7 +146,7 @@ function CurveEditor({
       <svg
         width={SIZE}
         height={SIZE}
-        style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, touchAction: 'none' }}
+        style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, touchAction: 'none' }}
         onPointerDown={(e) => {
           (e.currentTarget as SVGElement).setPointerCapture(e.pointerId);
           handle(e);

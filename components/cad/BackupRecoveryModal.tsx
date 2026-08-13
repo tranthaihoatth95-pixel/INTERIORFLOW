@@ -63,7 +63,7 @@ export default function BackupRecoveryModal({ projectId, projectName, onClose }:
           maxHeight: '70vh',
           overflowY: 'auto',
           background: 'var(--panel, #1c1c1f)',
-          borderRadius: 12,
+          borderRadius: 14,
           border: '1px solid var(--border, #333)',
           padding: 18,
         }}
@@ -99,7 +99,7 @@ export default function BackupRecoveryModal({ projectId, projectName, onClose }:
                   width: '100%',
                   textAlign: 'left',
                   padding: '9px 10px',
-                  borderRadius: 8,
+                  borderRadius: 10,
                   border: '1px solid transparent',
                   background: 'transparent',
                   cursor: recoveringName ? 'wait' : 'pointer',
@@ -118,7 +118,7 @@ export default function BackupRecoveryModal({ projectId, projectName, onClose }:
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginTop: 14, padding: '8px 10px', borderRadius: 8, background: 'rgba(217,163,74,0.1)', border: '1px solid var(--warning, #d9a34a)' }}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginTop: 14, padding: '8px 10px', borderRadius: 10, background: 'rgba(217,163,74,0.1)', border: '1px solid var(--warning, #d9a34a)' }}>
           <AlertTriangle size={13} style={{ marginTop: 1, flexShrink: 0, color: 'var(--warning, #d9a34a)' }} />
           <span style={{ fontSize: 10.5, color: 'var(--warning, #d9a34a)' }}>
             Nếu 1 phần chuỗi backup bị hỏng/mất, app tự lùi về mốc gần nhất ráp được trước đó — sẽ báo rõ khi xảy ra, không âm thầm trả bản sai.

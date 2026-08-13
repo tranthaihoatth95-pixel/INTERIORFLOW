@@ -215,7 +215,7 @@ export function ChipButton({
   return (
     <button
       onClick={onClick}
-      className={`min-h-[44px] flex-1 rounded-[12px] border px-3 text-[13px] font-medium transition-colors ${
+      className={`min-h-[44px] flex-1 rounded-[14px] border px-3 text-[13px] font-medium transition-colors ${
         active
           ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
           : 'border-[var(--border)] bg-[var(--card)] text-[var(--t2)] hover:bg-[var(--hover)]'
@@ -248,7 +248,7 @@ export function ProgressBar({ value, label }: { value: number; label?: string })
 export function ErrorNote({ children }: { children: React.ReactNode }) {
   if (!children) return null;
   return (
-    <p className="rounded-[12px] border border-red-500/30 bg-red-500/10 px-3 py-2 text-[13px] text-red-300">
+    <p className="rounded-[14px] border border-red-500/30 bg-red-500/10 px-3 py-2 text-[13px] text-red-300">
       {children}
     </p>
   );
@@ -257,7 +257,7 @@ export function ErrorNote({ children }: { children: React.ReactNode }) {
 /** Card bọc mỗi bước — nền panel, bo tròn, tiêu đề số thứ tự. */
 export function StepCard({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-[16px] border border-[var(--border)] bg-[var(--panel)] p-3.5">
+    <section className="rounded-[14px] border border-[var(--border)] bg-[var(--panel)] p-3.5">
       <h3 className="mb-3 flex items-center gap-2 text-[14px] font-semibold text-[var(--t1)]">
         <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[12px] font-bold text-[var(--accent)]">
           {n}
@@ -313,7 +313,7 @@ export function ImagePicker({
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-0.5 rounded-[12px] border border-[var(--border)] bg-[var(--field)] p-0.5">
+      <div className="flex gap-0.5 rounded-[14px] border border-[var(--border)] bg-[var(--field)] p-0.5">
         <button
           onClick={() => setTab('library')}
           className={`flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-[10px] text-[13px] font-medium transition-colors ${
@@ -349,7 +349,7 @@ export function ImagePicker({
                   key={a.id}
                   onClick={() => onPick({ url: a.url, name: a.name, source: 'library', palette: a.palette })}
                   title={a.name}
-                  className={`relative aspect-square overflow-hidden rounded-[12px] border-2 transition-colors ${
+                  className={`relative aspect-square overflow-hidden rounded-[14px] border-2 transition-colors ${
                     on ? 'border-[var(--accent)]' : 'border-[var(--border)] hover:border-[var(--t4)]'
                   }`}
                 >

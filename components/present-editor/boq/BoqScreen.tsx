@@ -301,7 +301,7 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <div className="if-boq-no-print" style={{ height: 40, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', background: 'var(--panel)', borderBottom: '1px solid var(--border)' }}>
             <span style={{ fontSize: 14, fontWeight: 600 }}>{tr('Dự toán vật liệu', 'Bill of quantities')}</span>
-            <div style={{ display: 'flex', gap: 2, background: 'var(--field)', borderRadius: 8, padding: 2, marginLeft: 12 }}>
+            <div style={{ display: 'flex', gap: 2, background: 'var(--field)', borderRadius: 10, padding: 2, marginLeft: 12 }}>
               <button type="button" onClick={() => changeGroupMode('storey')} style={segStyle(groupMode === 'storey')}>{tr('Tầng', 'Storey')}</button>
               <button type="button" onClick={() => changeGroupMode('room')} style={segStyle(groupMode === 'room')}>{tr('Phòng', 'Room')}</button>
             </div>
@@ -321,7 +321,7 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
           {!coachDismissed && (
             <div className="if-boq-no-print" style={{ margin: '10px 14px 0', display: 'flex', alignItems: 'center', gap: 9, background: 'var(--accent-soft)', borderRadius: 10, padding: '8px 12px', fontSize: 13 }}>
               {tr('Số tự sinh từ vùng tô — không phải Excel.', 'Numbers are generated from painted regions — not a spreadsheet.')}
-              <button type="button" onClick={dismissCoach} style={{ marginLeft: 'auto', height: 26, padding: '0 11px', border: 0, borderRadius: 8, background: 'var(--accent)', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+              <button type="button" onClick={dismissCoach} style={{ marginLeft: 'auto', height: 26, padding: '0 11px', border: 0, borderRadius: 10, background: 'var(--accent)', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
                 {tr('Hiểu rồi', 'Got it')}
               </button>
             </div>
@@ -411,7 +411,7 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
                   <button
                     type="button"
                     onClick={() => selected && onRevert(selected.matId, selected.field)}
-                    style={{ marginTop: 8, height: 26, padding: '0 11px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--panel)', color: 'var(--t1)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+                    style={{ marginTop: 8, height: 26, padding: '0 11px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--panel)', color: 'var(--t1)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                   >
                     {tr('Lấy lại số từ mô hình', 'Reset to model value')}
                   </button>
@@ -421,7 +421,7 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t4)', marginBottom: 8 }}>{tr('Lấy từ', 'Sourced from')}</div>
                 <div
                   onClick={() => viewOnDrawing(selectedRow.entityIds)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, height: 30, padding: '0 9px', background: 'var(--field)', borderRadius: 8, cursor: 'pointer', fontSize: 11, color: 'var(--t1)' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, height: 30, padding: '0 9px', background: 'var(--field)', borderRadius: 10, cursor: 'pointer', fontSize: 11, color: 'var(--t1)' }}
                 >
                   {tr(`${selectedRow.entityIds.length} vùng tô`, `${selectedRow.entityIds.length} region(s)`)}
                 </div>
@@ -445,7 +445,7 @@ function segStyle(active: boolean): React.CSSProperties {
 function btnStyle(primary: boolean): React.CSSProperties {
   return {
     height: 28, padding: '0 11px', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
-    border: primary ? 0 : '1px solid var(--border)', borderRadius: 8, fontSize: 11.5, fontWeight: 600,
+    border: primary ? 0 : '1px solid var(--border)', borderRadius: 10, fontSize: 11.5, fontWeight: 600,
     background: primary ? 'var(--accent)' : 'var(--field)', color: primary ? '#fff' : 'var(--t2)',
   };
 }

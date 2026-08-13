@@ -284,7 +284,7 @@ export function RolloutGroup({ kindKey, children }: GroupProps) {
           type="button"
           onClick={allClosed ? openAll : closeAll}
           title={allClosed ? tr('Mở hết', 'Open all') : tr('Thu hết', 'Close all')}
-          className="grid h-6 w-6 place-items-center rounded-[8px] text-[var(--t4)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+          className="grid h-6 w-6 place-items-center rounded-[10px] text-[var(--t4)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
         >
           {allClosed ? <ChevronsUpDown size={13} /> : <ChevronsDownUp size={13} />}
         </button>
@@ -363,7 +363,7 @@ export function RolloutGroup({ kindKey, children }: GroupProps) {
         typeof document !== 'undefined' &&
         createPortal(
           <div
-            className="mat-panel pointer-events-none fixed left-auto z-[90] flex h-[var(--row)] w-48 items-center gap-1.5 rounded-[8px] border border-[var(--border)] px-2 opacity-80 shadow-[var(--shadow-pop)]"
+            className="mat-panel pointer-events-none fixed left-auto z-[90] flex h-[var(--row)] w-48 items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2 opacity-80 shadow-[var(--shadow-pop)]"
             style={{ top: drag.ghostY - 14, left: (listRef.current?.getBoundingClientRect().left ?? 0) + 8 }}
           >
             <GripVertical size={12} className="text-[var(--t4)]" />
@@ -398,7 +398,7 @@ export function RolloutGroup({ kindKey, children }: GroupProps) {
                   fn();
                   setMenu(null);
                 }}
-                className="flex w-full items-center rounded-[7px] px-2 py-1.5 text-left text-[11.5px] text-[var(--t2)] transition-colors duration-[100ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+                className="flex w-full items-center rounded-[6px] px-2 py-1.5 text-left text-[11.5px] text-[var(--t2)] transition-colors duration-[100ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
               >
                 {label}
               </button>

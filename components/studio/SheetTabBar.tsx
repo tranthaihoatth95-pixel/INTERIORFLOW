@@ -124,7 +124,7 @@ export default function SheetTabBar({
               gap: 6,
               height: 26,
               padding: '0 8px 0 10px',
-              borderRadius: 7,
+              borderRadius: 6,
               border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`,
               // chỉ báo kéo-thả bằng boxShadow inset (tránh trộn shorthand `border` + `borderLeft`)
               boxShadow: isOver ? 'inset 2px 0 0 var(--accent)' : undefined,
@@ -199,7 +199,7 @@ export default function SheetTabBar({
           placeItems: 'center',
           width: 26,
           height: 26,
-          borderRadius: 7,
+          borderRadius: 6,
           border: '1px solid var(--border)',
           background: 'var(--field)',
           color: canAdd ? 'var(--t2)' : 'var(--t4)',

@@ -775,7 +775,7 @@ export default function CadEditor() {
           aria-pressed={presentOn}
           style={{
             display: 'flex', alignItems: 'center', gap: 6, height: 30, padding: '0 10px',
-            borderRadius: 8, cursor: 'pointer', fontSize: 12.5, lineHeight: 1.5,
+            borderRadius: 10, cursor: 'pointer', fontSize: 12.5, lineHeight: 1.5,
             border: `1px solid ${presentOn ? 'var(--accent)' : 'var(--border)'}`,
             background: presentOn ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'transparent',
             color: presentOn ? 'var(--accent)' : 'var(--t3)',
@@ -810,7 +810,7 @@ export default function CadEditor() {
               onPointerDown={(event) => event.stopPropagation()}
               style={{
                 display: 'grid', justifyItems: 'center', gap: 10, maxWidth: 340, textAlign: 'center',
-                padding: '22px 26px 20px', borderRadius: 16, border: '1px solid var(--border)',
+                padding: '22px 26px 20px', borderRadius: 14, border: '1px solid var(--border)',
                 background: 'color-mix(in srgb, var(--panel) 92%, transparent)',
                 backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
                 boxShadow: '0 6px 22px rgba(0,0,0,.14)',
@@ -882,7 +882,7 @@ export default function CadEditor() {
             <button
               type="button"
               onClick={() => (dwgImportAbort ?? dxfImportAbort)?.abort()}
-              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--t1)', fontSize: 12, cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--t1)', fontSize: 12, cursor: 'pointer' }}
             >
               <X size={13} /> Huỷ
             </button>
@@ -944,7 +944,7 @@ function ConfirmBar({ message, onOk, onCancel }: { message: string; onOk: () => 
         <button
           type="button"
           onClick={onCancel}
-          style={{ borderRadius: 8, padding: '4px 12px', fontSize: 12, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
+          style={{ borderRadius: 10, padding: '4px 12px', fontSize: 12, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
         >
           Huỷ
         </button>
@@ -952,7 +952,7 @@ function ConfirmBar({ message, onOk, onCancel }: { message: string; onOk: () => 
           type="button"
           autoFocus
           onClick={onOk}
-          style={{ borderRadius: 8, padding: '4px 12px', fontSize: 12, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer' }}
+          style={{ borderRadius: 10, padding: '4px 12px', fontSize: 12, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer' }}
         >
           Tiếp tục
         </button>
@@ -996,7 +996,7 @@ function DxfExportCheckpoint({
       style={{
         position: 'absolute', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 40,
         width: 'min(520px, calc(100% - 32px))', maxHeight: 'calc(100% - 100px)', overflowY: 'auto',
-        background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 12,
+        background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 14,
         padding: 10, boxShadow: '0 8px 30px rgba(0,0,0,.22)',
       }}
     >
@@ -1158,7 +1158,7 @@ function DxfImportReportPanel({
       style={{
         position: 'absolute', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 40,
         width: 'min(520px, calc(100% - 32px))', maxHeight: 'calc(100% - 100px)', overflowY: 'auto',
-        background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 12,
+        background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 14,
         padding: 10, boxShadow: '0 8px 30px rgba(0,0,0,.22)',
       }}
     >
@@ -1355,7 +1355,7 @@ const dxfLoadBtn: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: 5,
-  borderRadius: 8,
+  borderRadius: 10,
   padding: '5px 12px',
   fontSize: 12,
   background: 'var(--surface)',
@@ -1441,7 +1441,7 @@ export function LayerPanel() {
         {doc.layers.map((l) => {
           const on = l.id === current;
           return (
-            <div key={l.id} style={{ padding: '5px 8px', borderRadius: 8, background: on ? 'var(--accent-soft)' : 'transparent' }}>
+            <div key={l.id} style={{ padding: '5px 8px', borderRadius: 10, background: on ? 'var(--accent-soft)' : 'transparent' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <input
                   type="color"
@@ -1541,7 +1541,7 @@ function FurniturePanel({ onClose }: { onClose: () => void }) {
   }, [tab, manifest]);
 
   const itemBtn = (active: boolean): React.CSSProperties => ({
-    display: 'block', width: '100%', textAlign: 'left', padding: '5px 8px', borderRadius: 7, border: 'none',
+    display: 'block', width: '100%', textAlign: 'left', padding: '5px 8px', borderRadius: 6, border: 'none',
     fontSize: 12, background: active ? 'var(--accent)' : 'transparent', color: active ? '#fff' : 'var(--t2)', cursor: 'pointer',
   });
 
@@ -1559,7 +1559,7 @@ function FurniturePanel({ onClose }: { onClose: () => void }) {
             key={id}
             type="button"
             onClick={() => setTab(id)}
-            style={{ flex: 1, padding: '4px 0', borderRadius: 7, border: '1px solid var(--border)', fontSize: 11, background: tab === id ? 'var(--accent)' : 'transparent', color: tab === id ? '#fff' : 'var(--t3)', cursor: 'pointer' }}
+            style={{ flex: 1, padding: '4px 0', borderRadius: 6, border: '1px solid var(--border)', fontSize: 11, background: tab === id ? 'var(--accent)' : 'transparent', color: tab === id ? '#fff' : 'var(--t3)', cursor: 'pointer' }}
           >
             {label}
           </button>
@@ -1648,7 +1648,7 @@ function TemplatePanel({ onClose }: { onClose: () => void }) {
           key={it.label}
           type="button"
           onClick={() => load(it.build, it.label)}
-          style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 8px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', cursor: 'pointer', marginBottom: 6 }}
+          style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 8px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', cursor: 'pointer', marginBottom: 6 }}
         >
           <div style={{ fontSize: 12.5, fontWeight: 600 }}>{it.label}</div>
           <div style={{ fontSize: 10.5, color: 'var(--t4)', marginTop: 2, lineHeight: 1.4 }}>{it.desc}</div>
@@ -1663,7 +1663,7 @@ function TemplatePanel({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={() => setConfirmTpl(null)}
-              style={{ borderRadius: 8, padding: '4px 10px', fontSize: 11.5, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
+              style={{ borderRadius: 10, padding: '4px 10px', fontSize: 11.5, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
             >
               Huỷ
             </button>
@@ -1675,7 +1675,7 @@ function TemplatePanel({ onClose }: { onClose: () => void }) {
                 setConfirmTpl(null);
                 doLoad(c.build, c.label);
               }}
-              style={{ borderRadius: 8, padding: '4px 10px', fontSize: 11.5, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer' }}
+              style={{ borderRadius: 10, padding: '4px 10px', fontSize: 11.5, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer' }}
             >
               Tiếp tục
             </button>
@@ -2114,7 +2114,7 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
 
 const reportLabel: React.CSSProperties = { display: 'block', fontSize: 9.5, color: 'var(--t4)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '4px 0 2px' };
 const reportField: React.CSSProperties = { width: '100%', boxSizing: 'border-box', fontSize: 11.5, padding: '5px 7px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--t1)' };
-const reportBtn: React.CSSProperties = { fontSize: 11.5, padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--t1)', cursor: 'pointer' };
+const reportBtn: React.CSSProperties = { fontSize: 11.5, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--t1)', cursor: 'pointer' };
 
 /* ───────── Panel Nhận diện phòng (G-M2-04, SPEC-TANG-DU-LIEU-CAU-KIEN §6.3) ─────────
  * Nhãn TEXT + biên dò được → đề xuất RoomEntity (cấu kiện phòng THẬT: biên đóng băng, m² sống).
@@ -2740,7 +2740,7 @@ function CommandLine({ status }: { status: string }) {
           <div
             style={{
               position: 'absolute', bottom: 'calc(100% + 5px)', left: 0, width: '100%',
-              background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 8,
+              background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 10,
               boxShadow: '0 8px 24px rgba(0,0,0,0.28)', overflow: 'hidden', zIndex: 50,
             }}
           >
@@ -2767,7 +2767,7 @@ function CommandLine({ status }: { status: string }) {
           onKeyDown={onInputKeyDown}
           onBlur={() => setAcOpen(false)}
           placeholder="Gõ lệnh: L · PL · REC · C · W 200 · ROOM · D · WIN · M · CO · RO · MI · O 150 · DIM · T · E · U…"
-          style={{ width: '100%', background: 'var(--field)', border: '1px solid var(--border)', borderRadius: 7, padding: '3px 8px', fontSize: 12, color: 'var(--t1)', outline: 'none', fontFamily: 'ui-monospace, monospace' }}
+          style={{ width: '100%', background: 'var(--field)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 8px', fontSize: 12, color: 'var(--t1)', outline: 'none', fontFamily: 'ui-monospace, monospace' }}
         />
       </div>
       <span style={{ fontSize: 11.5, color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{status}</span>
@@ -2929,7 +2929,7 @@ function InsertClusterBox({ selected }: { selected: Entity[] }) {
         title={more > 0 ? `Chọn trọn cụm này — thêm ${more} hình.` : 'Đã chọn trọn cụm này rồi.'}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-          fontSize: 11.5, padding: '5px 8px', borderRadius: 7, border: '1px solid var(--border)',
+          fontSize: 11.5, padding: '5px 8px', borderRadius: 6, border: '1px solid var(--border)',
           background: 'var(--field)', color: more > 0 ? 'var(--t1)' : 'var(--t4)',
           cursor: more > 0 ? 'pointer' : 'not-allowed',
         }}
@@ -3230,7 +3230,7 @@ const fileBtn: React.CSSProperties = {
   alignItems: 'center',
   gap: 6,
   padding: '5px 10px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--border)',
   background: 'var(--field)',
   color: 'var(--t2)',
@@ -3245,7 +3245,7 @@ const panel: React.CSSProperties = {
   backdropFilter: 'blur(16px)',
   WebkitBackdropFilter: 'blur(16px)',
   border: '1px solid var(--border)',
-  borderRadius: 12,
+  borderRadius: 14,
   padding: 8,
   boxShadow: '0 8px 30px rgba(0,0,0,.18)',
 };
@@ -3275,7 +3275,7 @@ const miniSelect: React.CSSProperties = {
   color: 'var(--t3)',
   background: 'var(--field)',
   border: '1px solid var(--border)',
-  borderRadius: 5,
+  borderRadius: 6,
   padding: '1px 3px',
   cursor: 'pointer',
 };

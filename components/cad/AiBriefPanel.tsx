@@ -438,7 +438,7 @@ export default function AiBriefPanel({ onClose }: Props) {
 
         {/* ═════════ BƯỚC 2 — CHECK HỒ SƠ (tự chạy khi có hiện trạng) ═════════ */}
         {baselineOn && (
-          <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, padding: '6px 8px', background: 'var(--field)' }}>
+          <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 10, padding: '6px 8px', background: 'var(--field)' }}>
             <div style={{ fontSize: 10.5, color: 'var(--t3)', marginBottom: 4 }}>2 · Check hồ sơ (tự chạy)</div>
             {!dossier && (
               <div style={{ fontSize: 10.5, color: 'var(--t4)' }}>Bản vẽ đang trống — chọn file DXF/DWG ở trên (hoặc vẽ) rồi checklist tự cập nhật.</div>
@@ -597,7 +597,7 @@ const panel: React.CSSProperties = {
   backdropFilter: 'blur(16px)',
   WebkitBackdropFilter: 'blur(16px)',
   border: '1px solid var(--border)',
-  borderRadius: 12,
+  borderRadius: 14,
   padding: 8,
   boxShadow: '0 8px 30px rgba(0,0,0,.22)',
 };
@@ -629,7 +629,7 @@ const label: React.CSSProperties = {
 };
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--border)',
   background: 'var(--field)',
   padding: '6px 8px',
@@ -643,7 +643,7 @@ const smallBtn: React.CSSProperties = {
   alignItems: 'center',
   gap: 5,
   padding: '5px 10px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--border)',
   background: 'var(--field)',
   color: 'var(--t2)',

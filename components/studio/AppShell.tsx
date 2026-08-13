@@ -224,7 +224,7 @@ function InspectorSlot({
                   type="button"
                   onClick={onClose}
                   title={hotkey ? `Đóng — ẩn/hiện bằng ${hotkey}` : 'Đóng'}
-                  className="ml-auto grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[8px] text-[var(--t4)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+                  className="ml-auto grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[10px] text-[var(--t4)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
                 >
                   <X size={14} />
                 </button>

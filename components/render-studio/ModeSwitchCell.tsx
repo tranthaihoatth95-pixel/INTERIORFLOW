@@ -31,7 +31,7 @@ export default function ModeSwitchCell() {
       onClick={() => setMode(active ? 'render' : 'model3d')}
       aria-pressed={active}
       title={active ? tr('Về Render + Mood + Collab', 'Back to Render + Mood + Collab') : tr('Vẽ 3D — khối đùn từ bản vẽ Thiết kế 2D, đẩy-kéo cao độ', 'Draw 3D — massing extruded from the 2D Design drawing')}
-      className="flex shrink-0 items-center gap-1.5 rounded-[17px] px-2 text-[12px] font-medium text-[var(--t2)]"
+      className="flex shrink-0 items-center gap-1.5 rounded-full px-2 text-[12px] font-medium text-[var(--t2)]"
       style={{ height: 34 }}
     >
       <Box size={15} className={active ? 'text-[var(--accent)]' : undefined} />
@@ -42,7 +42,7 @@ export default function ModeSwitchCell() {
         style={{
           width: 36,
           height: 22,
-          borderRadius: 11,
+          borderRadius: 999,
           background: active ? 'var(--accent)' : 'var(--border-strong)',
           transitionDuration: reduce ? '0ms' : '200ms',
         }}

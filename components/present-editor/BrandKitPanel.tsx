@@ -339,7 +339,7 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
                 width: 72,
                 height: 44,
                 border: '1px dashed var(--border)',
-                borderRadius: 8,
+                borderRadius: 10,
                 display: 'grid',
                 placeItems: 'center',
                 overflow: 'hidden',
@@ -463,7 +463,7 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
               fontSize: 12,
               marginTop: 8,
               padding: '8px 10px',
-              borderRadius: 8,
+              borderRadius: 10,
               lineHeight: 1.5,
               background: diskMsg.kind === 'error' ? 'color-mix(in srgb, #d33 15%, var(--field))' : 'var(--field)',
               color: diskMsg.kind === 'error' ? '#e0665a' : 'var(--accent)',
@@ -514,7 +514,7 @@ function Label({ children }: { children: React.ReactNode }) {
 const input: React.CSSProperties = {
   width: '100%',
   padding: '8px 10px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--border)',
   background: 'var(--field)',
   color: 'var(--t1)',
@@ -522,7 +522,7 @@ const input: React.CSSProperties = {
 };
 const btn: React.CSSProperties = {
   padding: '8px 12px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--border)',
   background: 'var(--field)',
   color: 'var(--t2)',

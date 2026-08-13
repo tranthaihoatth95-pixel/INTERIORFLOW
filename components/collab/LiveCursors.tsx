@@ -55,7 +55,7 @@ export function LiveCursors() {
               </svg>
               {/* pill tên */}
               <div
-                className="absolute left-4 top-4 whitespace-nowrap rounded-[8px] px-2 py-0.5 text-[11px] font-medium text-white shadow-sm"
+                className="absolute left-4 top-4 whitespace-nowrap rounded-[10px] px-2 py-0.5 text-[11px] font-medium text-white shadow-sm"
                 style={{ background: c.color }}
               >
                 {c.name}

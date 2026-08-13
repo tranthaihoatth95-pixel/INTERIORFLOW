@@ -129,7 +129,7 @@ export const VE3D_CSS = `
 /* PHIẾU ĐỢT 7 NHÓM B — 96×96 (spec), khung ViewCube3D thật (renderer riêng, xem ViewCube3D.tsx);
    không còn <button> con — cube tự vẽ nhãn bằng texture, tự bắt pointer trên canvas của nó. */
 .if-ve3d .viewcube{position:absolute;right:14px;top:14px;width:76px;height:76px;z-index:4;overflow:hidden;
-  border-radius:18px;background:rgba(20,22,26,.30);border:1px solid rgba(255,255,255,.10)}
+  border-radius:20px;background:rgba(20,22,26,.30);border:1px solid rgba(255,255,255,.10)}
 .if-ve3d .axisg{position:absolute;left:22px;bottom:22px;width:90px;height:90px;z-index:4;pointer-events:none}
 /* ⚠️ Overlay trong viewport KHÔNG dùng màu theo theme.
    Scene3DViewer.tsx:105 đặt nền cảnh CỨNG #2a2d33 — luôn TỐI ở cả 2 theme (code 3D-1..3D-5
@@ -164,7 +164,7 @@ export const VE3D_CSS = `
 .if-ve3d .kv .v.mono{font-family:ui-monospace,Menlo,monospace;color:var(--accent)}
 .if-ve3d .matline{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--border);
   border-radius:var(--radius-sm);background:var(--field)}
-.if-ve3d .matline .sw{width:26px;height:26px;border-radius:7px;flex:none;border:1px solid var(--border)}
+.if-ve3d .matline .sw{width:26px;height:26px;border-radius:6px;flex:none;border:1px solid var(--border)}
 .if-ve3d .matline .t{min-width:0;display:flex;flex-direction:column}
 .if-ve3d .matline .t b{font-size:11.5px;font-weight:var(--fw-semi);color:var(--t1);overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}

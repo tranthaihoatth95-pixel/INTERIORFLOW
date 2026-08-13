@@ -266,7 +266,7 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
           className="dock-icon-btn"
           onClick={onToggleOpen}
           style={{
-            marginLeft: 'auto', height: 24, padding: '0 10px', border: '1px solid var(--border)', borderRadius: 8,
+            marginLeft: 'auto', height: 24, padding: '0 10px', border: '1px solid var(--border)', borderRadius: 10,
             background: 'transparent', color: 'var(--t3)', fontFamily: 'inherit', fontSize: 11, fontWeight: 600,
             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
           }}

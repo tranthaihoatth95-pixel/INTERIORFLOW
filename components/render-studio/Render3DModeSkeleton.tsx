@@ -606,7 +606,7 @@ export default function Render3DModeSkeleton() {
                   style={{
                     position: 'absolute', top: 8, right: 8, width: 24, height: 24, display: 'grid',
                     placeItems: 'center', border: 0, background: 'none', color: 'var(--t4)',
-                    borderRadius: 7, cursor: 'pointer',
+                    borderRadius: 6, cursor: 'pointer',
                   }}
                 >
                   <X size={13} />

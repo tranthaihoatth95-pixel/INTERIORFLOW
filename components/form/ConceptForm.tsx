@@ -211,7 +211,7 @@ export function ConceptForm() {
             <button
               key={v.id}
               onClick={() => setVariant(v.id)}
-              className={`rounded-[12px] border-2 px-2.5 py-2.5 text-left transition-colors ${
+              className={`rounded-[14px] border-2 px-2.5 py-2.5 text-left transition-colors ${
                 variant === v.id
                   ? 'border-[var(--accent)] bg-[var(--accent-soft)]'
                   : 'border-[var(--border)] bg-[var(--field)] hover:border-[var(--t4)]'
@@ -254,7 +254,7 @@ export function ConceptForm() {
                 key={a.id}
                 onClick={() => toggle(a)}
                 title={a.name}
-                className={`relative aspect-square overflow-hidden rounded-[12px] border-2 transition-colors ${
+                className={`relative aspect-square overflow-hidden rounded-[14px] border-2 transition-colors ${
                   on ? 'border-[var(--accent)]' : 'border-[var(--border)] hover:border-[var(--t4)]'
                 }`}
               >
@@ -295,7 +295,7 @@ export function ConceptForm() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={defaultTitle(variant)}
-            className="w-full rounded-[12px] border border-[var(--border)] bg-[var(--field)] px-3 py-3 text-[14px] text-[var(--t1)] outline-none placeholder:text-[var(--t5)] focus:border-[var(--accent-ring)]"
+            className="w-full rounded-[14px] border border-[var(--border)] bg-[var(--field)] px-3 py-3 text-[14px] text-[var(--t1)] outline-none placeholder:text-[var(--t5)] focus:border-[var(--accent-ring)]"
           />
         </Field>
 
@@ -305,7 +305,7 @@ export function ConceptForm() {
               value={style}
               onChange={(e) => setStyle(e.target.value)}
               placeholder="Japandi ấm, đá travertine, gỗ sồi…"
-              className="w-full rounded-[12px] border border-[var(--border)] bg-[var(--field)] px-3 py-3 text-[14px] text-[var(--t1)] outline-none placeholder:text-[var(--t5)] focus:border-[var(--accent-ring)]"
+              className="w-full rounded-[14px] border border-[var(--border)] bg-[var(--field)] px-3 py-3 text-[14px] text-[var(--t1)] outline-none placeholder:text-[var(--t5)] focus:border-[var(--accent-ring)]"
             />
           </Field>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -353,7 +353,7 @@ export function ConceptForm() {
                     ? 'Vòng tuần hoàn vô cực — thiên nhiên · con người · công nghệ'
                     : 'Không gian mời gọi sự tĩnh lặng, nơi ánh sáng và vật liệu tự nhiên…'
                 }
-                className="w-full resize-none rounded-[12px] border border-[var(--border)] bg-[var(--field)] px-3 py-3 text-[14px] text-[var(--t1)] outline-none placeholder:text-[var(--t5)] focus:border-[var(--accent-ring)]"
+                className="w-full resize-none rounded-[14px] border border-[var(--border)] bg-[var(--field)] px-3 py-3 text-[14px] text-[var(--t1)] outline-none placeholder:text-[var(--t5)] focus:border-[var(--accent-ring)]"
               />
             </Field>
           </div>
@@ -368,7 +368,7 @@ export function ConceptForm() {
       </BigButton>
 
       {(palette.length > 0 || tags.length > 0 || board) && (
-        <section className="space-y-4 rounded-[16px] border border-[var(--border)] bg-[var(--panel)] p-3.5">
+        <section className="space-y-4 rounded-[14px] border border-[var(--border)] bg-[var(--panel)] p-3.5">
           {board && (
             <div>
               <h3 className="mb-2 text-[14px] font-semibold text-[var(--t1)]">Moodboard</h3>

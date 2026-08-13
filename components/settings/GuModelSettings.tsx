@@ -141,11 +141,11 @@ export function GuModelSettings() {
             type="button"
             onClick={onExport}
             disabled={busy}
-            className="rounded-[8px] border border-[var(--border)] px-2.5 py-1 text-[12px] font-medium text-[var(--t2)] transition-colors hover:text-[var(--t1)] disabled:opacity-50"
+            className="rounded-[10px] border border-[var(--border)] px-2.5 py-1 text-[12px] font-medium text-[var(--t2)] transition-colors hover:text-[var(--t1)] disabled:opacity-50"
           >
             {tr('Xuất .json', 'Export .json')}
           </button>
-          <label className="cursor-pointer rounded-[8px] border border-[var(--border)] px-2.5 py-1 text-[12px] font-medium text-[var(--t2)] transition-colors hover:text-[var(--t1)]">
+          <label className="cursor-pointer rounded-[10px] border border-[var(--border)] px-2.5 py-1 text-[12px] font-medium text-[var(--t2)] transition-colors hover:text-[var(--t1)]">
             {tr('Nhập .json', 'Import .json')}
             <input type="file" accept=".json,application/json" onChange={onFile} disabled={busy} className="hidden" />
           </label>

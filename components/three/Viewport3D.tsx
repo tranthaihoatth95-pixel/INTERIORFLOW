@@ -279,7 +279,7 @@ function QuickCommandBox({ scene }: { scene: Scene3DData }) {
         placeholder={tr('Lệnh · array 3x2 1200,900', 'Command · array 3x2 1200,900')}
         aria-label={tr('Dòng nhập lệnh nhanh', 'Quick command input')}
         style={{
-          width: 236, padding: '4px 8px', borderRadius: 7, fontSize: 11, lineHeight: 1.5,
+          width: 236, padding: '4px 8px', borderRadius: 6, fontSize: 11, lineHeight: 1.5,
           fontVariantNumeric: 'tabular-nums',
           background: 'color-mix(in srgb, var(--panel) 96%, transparent)',
           border: '1px solid var(--border-strong)', color: 'var(--t1)', outline: 'none',

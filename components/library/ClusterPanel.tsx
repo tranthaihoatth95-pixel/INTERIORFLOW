@@ -129,7 +129,7 @@ function ClusterPreview({
     <div>
       <svg
         viewBox={`${x0 - pad} ${-(y1 + pad)} ${w} ${h}`}
-        style={{ width: '100%', height: 230, display: 'block', background: 'var(--s2, rgba(127,127,127,0.06))', borderRadius: 8 }}
+        style={{ width: '100%', height: 230, display: 'block', background: 'var(--s2, rgba(127,127,127,0.06))', borderRadius: 10 }}
         role="img"
         aria-label="Xem trước cụm"
       >
@@ -145,7 +145,7 @@ function ClusterPreview({
       {meeting && (
         <p
           style={{
-            margin: '8px 0 0', fontSize: 11.5, lineHeight: 1.6, padding: '6px 9px', borderRadius: 8,
+            margin: '8px 0 0', fontSize: 11.5, lineHeight: 1.6, padding: '6px 9px', borderRadius: 10,
             border: `1px solid ${meeting.ok ? 'var(--border)' : 'var(--danger)'}`,
             color: meeting.ok ? 'var(--t2)' : 'var(--danger)',
           }}
@@ -235,7 +235,7 @@ export function ClusterPanel({ onInserted }: { onInserted?: () => void }) {
 
   const lbl: React.CSSProperties = { fontSize: 11, color: 'var(--t3)', display: 'block', marginBottom: 3 };
   const field: React.CSSProperties = {
-    width: '100%', padding: '5px 7px', borderRadius: 7, border: '1px solid var(--border)',
+    width: '100%', padding: '5px 7px', borderRadius: 6, border: '1px solid var(--border)',
     background: 'transparent', color: 'var(--t1)', fontSize: 12,
   };
 
@@ -265,7 +265,7 @@ export function ClusterPanel({ onInserted }: { onInserted?: () => void }) {
               onClick={() => setSpecId(s.id)}
               aria-pressed={on}
               style={{
-                textAlign: 'left', padding: '7px 9px', borderRadius: 9, cursor: 'pointer',
+                textAlign: 'left', padding: '7px 9px', borderRadius: 10, cursor: 'pointer',
                 border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`,
                 background: on ? 'color-mix(in srgb, var(--accent) 14%, transparent)' : 'transparent',
                 color: 'var(--t1)',

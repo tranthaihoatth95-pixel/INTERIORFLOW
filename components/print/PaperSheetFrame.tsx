@@ -349,7 +349,7 @@ function ViewportBox({ vp }: { vp: PaperSheetViewport }) {
           gap: 6,
           height: 17,
           padding: '0 6px',
-          borderRadius: 5,
+          borderRadius: 6,
           background: vp.selected ? 'var(--accent)' : 'var(--field)',
           color: vp.selected ? 'var(--on-accent)' : 'var(--t3)',
           fontFamily: MONO,
@@ -372,7 +372,7 @@ function ViewportBox({ vp }: { vp: PaperSheetViewport }) {
             gap: 4,
             height: 16,
             padding: '0 5px',
-            borderRadius: 5,
+            borderRadius: 6,
             // Chữ trên huy hiệu ok/warn cần TỐI trong theme tối (badge sáng), SÁNG trong theme
             // sáng (badge đậm hơn) — --bg đổi cực đúng chiều đó ở cả 2 theme (tối:#0c0c0e sáng:
             // #f2efe9), khớp giá trị mock hardcode #0c0c0e cho theme tối. Không có token "--on-ok"

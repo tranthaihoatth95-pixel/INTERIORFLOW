@@ -56,7 +56,7 @@ export function MaterialTable({
             return (
               <tr key={m.id} style={{ height: 46 }}>
                 <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 7, overflow: 'hidden', background: 'var(--field)', display: 'grid', placeItems: 'center', color: 'var(--t4)' }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 6, overflow: 'hidden', background: 'var(--field)', display: 'grid', placeItems: 'center', color: 'var(--t4)' }}>
                     {url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -123,6 +123,6 @@ export function MaterialTable({
 }
 
 const iconBtn: React.CSSProperties = {
-  width: 26, height: 26, display: 'grid', placeItems: 'center', border: 0, borderRadius: 7,
+  width: 26, height: 26, display: 'grid', placeItems: 'center', border: 0, borderRadius: 6,
   background: 'transparent', color: 'var(--t4)', cursor: 'pointer',
 };

@@ -303,7 +303,7 @@ export function BoqTable({ groups, errors, totalAmount, projectId, specExtra, on
                       onClick={() => addColumn(type)}
                       style={{
                         width: '100%', height: 28, display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px', border: 0,
-                        borderRadius: 8, background: 'transparent', color: 'var(--t2)', fontSize: 13, textAlign: 'left', font: 'inherit',
+                        borderRadius: 10, background: 'transparent', color: 'var(--t2)', fontSize: 13, textAlign: 'left', font: 'inherit',
                         cursor: customCols.length >= BOQ_CUSTOM_COLUMN_CAP ? 'not-allowed' : 'pointer',
                         opacity: customCols.length >= BOQ_CUSTOM_COLUMN_CAP ? 0.5 : 1,
                       }}

@@ -164,13 +164,13 @@ export function AnnotateModal() {
             <span className="flex-1">Còn thay đổi chưa lưu — nhấn Escape lần nữa để thoát, hoặc chọn bên dưới.</span>
             <button
               onClick={save}
-              className="rounded-[8px] bg-[var(--accent-strong)] px-2.5 py-1 text-[11px] font-medium text-white transition-colors hover:bg-[var(--accent)]"
+              className="rounded-[10px] bg-[var(--accent-strong)] px-2.5 py-1 text-[11px] font-medium text-white transition-colors hover:bg-[var(--accent)]"
             >
               Lưu &amp; đóng
             </button>
             <button
               onClick={forceClose}
-              className="rounded-[8px] border border-[var(--border)] px-2.5 py-1 text-[11px] text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
+              className="rounded-[10px] border border-[var(--border)] px-2.5 py-1 text-[11px] text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
             >
               Bỏ thay đổi
             </button>
@@ -182,7 +182,7 @@ export function AnnotateModal() {
             <canvas
               ref={displayRef}
               data-testid="annotate-canvas"
-              className={cn('max-h-[60vh] max-w-full rounded-[12px]', tool === 'brush' ? 'cursor-crosshair' : 'cursor-text')}
+              className={cn('max-h-[60vh] max-w-full rounded-[14px]', tool === 'brush' ? 'cursor-crosshair' : 'cursor-text')}
               style={{ touchAction: 'none' }}
               onPointerDown={(e) => {
                 if (!ready) return;

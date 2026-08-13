@@ -289,7 +289,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
               data-label={WIDEST_LABEL[p.id]}
               style={{
                 padding: '5px 15px',
-                borderRadius: 8,
+                borderRadius: 10,
                 border: 'none',
                 fontSize: 'var(--fs-xs)',
                 // mock `.seg button{color:t3} :hover{color:t2} .on{color:t1,fw:600}` — inline vì
@@ -309,7 +309,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
                   style={{
                     position: 'absolute',
                     inset: 0,
-                    borderRadius: 8,
+                    borderRadius: 10,
                     background: 'var(--panel)',
                     boxShadow: 'var(--shadow-node)',
                     zIndex: 0,

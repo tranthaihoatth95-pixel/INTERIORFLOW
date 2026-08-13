@@ -41,7 +41,7 @@ export function AppearanceSettings() {
               type="button"
               onClick={() => setThemePref(opt.id)}
               className={cn(
-                'rounded-[8px] px-3 py-1.5 text-[12.5px] font-medium transition-colors',
+                'rounded-[10px] px-3 py-1.5 text-[12.5px] font-medium transition-colors',
                 pref === opt.id
                   ? 'bg-[var(--card)] text-[var(--t1)] shadow-sm'
                   : 'text-[var(--t4)] hover:text-[var(--t2)]',

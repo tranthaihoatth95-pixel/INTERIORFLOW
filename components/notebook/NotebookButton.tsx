@@ -32,7 +32,7 @@ export function NotebookButton({ compact = false }: { compact?: boolean }) {
         gap: 6,
         height: compact ? 32 : 34,
         padding: compact ? '0 9px' : '0 11px',
-        borderRadius: 9,
+        borderRadius: 10,
         border: '1px solid var(--border)',
         background: 'var(--field)',
         color: 'var(--t2)',

@@ -335,7 +335,7 @@ function InputCard({ title, children }: { title: string; children: React.ReactNo
 
 const magicIntro: React.CSSProperties = {
   border: '1px solid var(--accent-ring)',
-  borderRadius: 12,
+  borderRadius: 14,
   background: 'var(--accent-soft)',
   padding: 12,
 };
@@ -360,7 +360,7 @@ const importBtn: React.CSSProperties = {
   justifyContent: 'center',
   gap: 6,
   padding: '10px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px dashed var(--border-strong)',
   background: 'var(--field)',
   color: 'var(--t2)',
@@ -373,7 +373,7 @@ const attachBtn: React.CSSProperties = {
   alignItems: 'center',
   gap: 6,
   padding: '8px 10px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--border)',
   background: 'var(--field)',
   color: 'var(--t2)',
@@ -398,7 +398,7 @@ const genBtn: React.CSSProperties = {
 const textArea: React.CSSProperties = {
   width: '100%',
   padding: '9px 10px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--border)',
   background: 'var(--field)',
   color: 'var(--t1)',
@@ -456,7 +456,7 @@ const pickerBox: React.CSSProperties = {
   gridTemplateColumns: 'repeat(4, 1fr)',
   gap: 6,
   padding: 8,
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--border)',
   background: 'var(--field)',
   maxHeight: 200,

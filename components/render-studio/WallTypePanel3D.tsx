@@ -104,7 +104,7 @@ export function WallTypePanel3D() {
             type="button"
             onClick={addType}
             aria-label={tr('Thêm loại tường', 'Add wall type')}
-            className="grid h-[var(--tap)] w-[var(--tap)] place-items-center rounded-[8px] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--accent)]"
+            className="grid h-[var(--tap)] w-[var(--tap)] place-items-center rounded-[10px] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--accent)]"
           >
             <Plus size={14} />
           </button>
@@ -129,7 +129,7 @@ export function WallTypePanel3D() {
                   type="button"
                   onClick={() => setEditingId(active ? null : t.id)}
                   className={cn(
-                    'flex min-h-[var(--row)] min-w-0 flex-1 items-center gap-2 rounded-[8px] border px-2 py-1 text-left transition-colors',
+                    'flex min-h-[var(--row)] min-w-0 flex-1 items-center gap-2 rounded-[10px] border px-2 py-1 text-left transition-colors',
                     active
                       ? 'border-[var(--accent)] bg-[var(--accent-soft)]'
                       : 'border-[var(--border)] bg-[var(--field)] hover:border-[var(--accent-ring)]',
@@ -173,7 +173,7 @@ export function WallTypePanel3D() {
             <input
               value={editing.name}
               onChange={(e) => patchType(editing.id, { name: e.target.value })}
-              className="mt-0.5 h-[var(--tap)] w-full rounded-[7px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
+              className="mt-0.5 h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
             />
           </label>
 
@@ -196,7 +196,7 @@ export function WallTypePanel3D() {
               <select
                 value={editing.kind}
                 onChange={(e) => patchType(editing.id, { kind: e.target.value as WallKind })}
-                className="mt-0.5 h-[var(--tap)] w-full rounded-[7px] border border-[var(--border)] bg-[var(--panel)] px-1 text-[10.5px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
+                className="mt-0.5 h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1 text-[10.5px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
               >
                 {WALL_KIND_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -246,7 +246,7 @@ export function WallTypePanel3D() {
                 : tr('Chọn một bức tường trong cây đối tượng trước đã', 'Select a wall in the object tree first')
             }
             className={cn(
-              'h-[var(--tap)] w-full rounded-[8px] border px-2 text-[11px] font-semibold leading-[1.6] transition-colors',
+              'h-[var(--tap)] w-full rounded-[10px] border px-2 text-[11px] font-semibold leading-[1.6] transition-colors',
               targetWall
                 ? 'cursor-pointer border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--hover)]'
                 : 'cursor-not-allowed border-dashed border-[var(--border)] text-[var(--t5)]',
@@ -332,7 +332,7 @@ function ParamRow({
   const tr = useT();
   const isOverridden = overridden.includes(field);
   return (
-    <div className="flex items-center gap-1.5 rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-2 py-1">
+    <div className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1">
       <span className="flex-none text-[10.5px] leading-[1.6] text-[var(--t4)]">{label}</span>
       {isOverridden && <span className="h-[6px] w-[6px] flex-none rounded-full bg-[var(--accent)]" aria-hidden />}
       <span className="min-w-0 flex-1 truncate text-right text-[11px] leading-[1.6] text-[var(--t1)]">{value}</span>

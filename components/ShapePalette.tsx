@@ -66,7 +66,7 @@ export default function ShapePalette({ blocks, pendingId, onPick, onDragStart }:
           placeholder='Tìm shape… (vd "giường")'
           aria-label="Tìm shape"
           style={{
-            width: '100%', boxSizing: 'border-box', padding: '5px 8px 5px 26px', borderRadius: 7,
+            width: '100%', boxSizing: 'border-box', padding: '5px 8px 5px 26px', borderRadius: 6,
             border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', fontSize: 12,
           }}
         />
@@ -98,7 +98,7 @@ export default function ShapePalette({ blocks, pendingId, onPick, onDragStart }:
                     title={`${b.name} — ${b.w}×${b.h}mm. Kéo thả vào bản vẽ, hoặc click rồi click canvas để đặt.`}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-                      width: '100%', textAlign: 'left', padding: '5px 8px', borderRadius: 7, border: 'none',
+                      width: '100%', textAlign: 'left', padding: '5px 8px', borderRadius: 6, border: 'none',
                       fontSize: 12, cursor: 'grab',
                       background: active ? 'var(--accent)' : 'transparent',
                       color: active ? '#fff' : 'var(--t2)',
@@ -196,7 +196,7 @@ const infoBox: React.CSSProperties = {
   backdropFilter: 'blur(16px)',
   WebkitBackdropFilter: 'blur(16px)',
   border: '1px solid var(--border)',
-  borderRadius: 12,
+  borderRadius: 14,
   padding: '10px 12px',
   minWidth: 200,
   boxShadow: '0 8px 30px rgba(0,0,0,.18)',

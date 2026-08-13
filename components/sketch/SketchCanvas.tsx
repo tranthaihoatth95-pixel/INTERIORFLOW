@@ -228,7 +228,7 @@ export const SketchCanvas = forwardRef<SketchCanvasHandle, SketchCanvasProps>(fu
       <canvas
         ref={canvasRef}
         data-testid="sketch-canvas"
-        className="absolute inset-0 rounded-[12px]"
+        className="absolute inset-0 rounded-[14px]"
         style={{ touchAction: 'none', cursor: 'crosshair' }}
         onPointerDown={(e) => {
           if (!ready.current) return;
@@ -269,7 +269,7 @@ export const SketchCanvas = forwardRef<SketchCanvasHandle, SketchCanvasProps>(fu
         }}
       />
       {/* overlay: xem trước hình khối (line/rect/ellipse) khi đang kéo, không nhận sự kiện */}
-      <canvas ref={overlayRef} className="pointer-events-none absolute inset-0 rounded-[12px]" />
+      <canvas ref={overlayRef} className="pointer-events-none absolute inset-0 rounded-[14px]" />
     </div>
   );
 });

@@ -107,7 +107,7 @@ export function AiDependencySettings() {
                   onClick={() => setOneAiEngine(e.id)}
                   title={e.blurb}
                   className={cn(
-                    'flex-1 rounded-[9px] border px-2.5 py-1.5 text-[12.5px] font-medium transition-colors',
+                    'flex-1 rounded-[10px] border px-2.5 py-1.5 text-[12.5px] font-medium transition-colors',
                     on
                       ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
                       : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
@@ -134,7 +134,7 @@ export function AiDependencySettings() {
                       onClick={() => setOneAiRuntime(r.id)}
                       title={r.blurb}
                       className={cn(
-                        'flex-1 rounded-[9px] border px-2.5 py-1.5 text-[12.5px] font-medium transition-colors',
+                        'flex-1 rounded-[10px] border px-2.5 py-1.5 text-[12.5px] font-medium transition-colors',
                         on
                           ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
                           : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',

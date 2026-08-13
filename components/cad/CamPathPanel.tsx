@@ -46,7 +46,7 @@ const headStyle: React.CSSProperties = {
   backdropFilter: 'blur(14px)',
   WebkitBackdropFilter: 'blur(14px)', // K3: thiếu prefix = tablet không blur
   border: '1px solid var(--border)',
-  borderRadius: 12,
+  borderRadius: 14,
   padding: '8px 10px',
   fontSize: 10.5,
   letterSpacing: '0.18em',
@@ -60,7 +60,7 @@ const emptyHint: React.CSSProperties = {
   backdropFilter: 'blur(14px)',
   WebkitBackdropFilter: 'blur(14px)', // K3: thiếu prefix = tablet không blur
   border: '1px solid var(--border)',
-  borderRadius: 12,
+  borderRadius: 14,
   padding: 12,
   fontSize: 11.5,
   color: 'var(--t3)',
@@ -183,7 +183,7 @@ export default function CamPathPanel({ onClose }: { onClose: () => void }) {
           <div
             style={{
               height: 220,
-              borderRadius: 12,
+              borderRadius: 14,
               border: '1px solid var(--border)',
               background: 'var(--field)',
               overflow: 'hidden',

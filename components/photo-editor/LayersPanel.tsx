@@ -117,7 +117,7 @@ function LayerRow(props: {
             placeItems: 'center',
             width: 20,
             height: 20,
-            borderRadius: 5,
+            borderRadius: 6,
             background: l.kind === 'adjustment' ? 'var(--accent-soft)' : 'transparent',
             flex: '0 0 auto',
           }}

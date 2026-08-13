@@ -67,7 +67,7 @@ export function ColorMatchPanel({ sources }: { sources: ColorSource[] }) {
         <input
           type="color" value={/^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '#000000'}
           onChange={(e) => setHex(e.target.value)} aria-label={tr('Chọn màu', 'Pick a colour')}
-          style={{ width: 34, height: 30, padding: 0, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--field)' }}
+          style={{ width: 34, height: 30, padding: 0, border: '1px solid var(--border)', borderRadius: 10, background: 'var(--field)' }}
         />
         <input
           value={hex} onChange={(e) => setHex(e.target.value)} placeholder="#rrggbb"
@@ -103,7 +103,7 @@ export function ColorMatchPanel({ sources }: { sources: ColorSource[] }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {result.matches.map((m, i) => (
               <div key={`${m.code}-${i}`} style={row}>
-                <div style={{ width: 40, height: 40, borderRadius: 8, background: m.hex, border: '1px solid var(--border)', flexShrink: 0 }} />
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: m.hex, border: '1px solid var(--border)', flexShrink: 0 }} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--t1)', fontWeight: 600 }}>
                     {m.name}{m.code && m.code !== m.name ? ` · ${m.code}` : ''}
@@ -158,7 +158,7 @@ function deltaLabel(d: number, tr: (vi: string, en: string) => string): string {
 }
 
 const fieldStyle: React.CSSProperties = {
-  height: 30, padding: '0 8px', borderRadius: 8, border: '1px solid var(--border)',
+  height: 30, padding: '0 8px', borderRadius: 10, border: '1px solid var(--border)',
   background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, lineHeight: 1.6, outline: 'none',
 };
 const row: React.CSSProperties = {
@@ -173,7 +173,7 @@ function btn(primary: boolean, disabled = false): React.CSSProperties {
   return {
     height: 30, padding: '0 12px', display: 'flex', alignItems: 'center', gap: 6,
     cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
-    border: primary ? 0 : '1px solid var(--border)', borderRadius: 8,
+    border: primary ? 0 : '1px solid var(--border)', borderRadius: 10,
     fontSize: 12, lineHeight: 1.5, fontWeight: 600,
     background: primary ? 'var(--accent)' : 'var(--field)', color: primary ? '#fff' : 'var(--t2)',
   };

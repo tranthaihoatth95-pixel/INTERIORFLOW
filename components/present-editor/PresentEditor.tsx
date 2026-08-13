@@ -1932,7 +1932,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
                       <div
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          gap: 8, marginBottom: 8, padding: '7px 10px', borderRadius: 8,
+                          gap: 8, marginBottom: 8, padding: '7px 10px', borderRadius: 10,
                           border: '1px solid var(--accent)', background: 'var(--accent-soft)',
                           fontSize: 11.5, color: 'var(--accent)',
                         }}

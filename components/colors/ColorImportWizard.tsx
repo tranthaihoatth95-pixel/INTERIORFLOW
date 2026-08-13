@@ -344,7 +344,7 @@ const box: React.CSSProperties = {
   borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--field)',
 };
 const field: React.CSSProperties = {
-  height: 30, padding: '0 8px', borderRadius: 8, border: '1px solid var(--border)',
+  height: 30, padding: '0 8px', borderRadius: 10, border: '1px solid var(--border)',
   background: 'var(--panel)', color: 'var(--t1)', fontSize: 12.5, lineHeight: 1.6, outline: 'none',
 };
 const hint: React.CSSProperties = { margin: 0, fontSize: 11.5, lineHeight: 1.6, color: 'var(--t4)' };
@@ -355,18 +355,18 @@ const errBox: React.CSSProperties = {
 };
 const ghostBtn: React.CSSProperties = {
   height: 26, width: 26, display: 'grid', placeItems: 'center', cursor: 'pointer',
-  border: '1px solid var(--border)', borderRadius: 8, background: 'var(--field)', color: 'var(--t3)',
+  border: '1px solid var(--border)', borderRadius: 10, background: 'var(--field)', color: 'var(--t3)',
 };
 
 function btn(primary: boolean, disabled = false): React.CSSProperties {
   return {
     height: 30, padding: '0 12px', display: 'flex', alignItems: 'center', gap: 6,
     cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
-    border: primary ? 0 : '1px solid var(--border)', borderRadius: 8,
+    border: primary ? 0 : '1px solid var(--border)', borderRadius: 10,
     fontSize: 12, lineHeight: 1.5, fontWeight: 600,
     background: primary ? 'var(--accent)' : 'var(--field)', color: primary ? '#fff' : 'var(--t2)',
   };
 }
 function swatch(hex: string): React.CSSProperties {
-  return { width: 34, height: 34, borderRadius: 8, background: hex, border: '1px solid var(--border)' };
+  return { width: 34, height: 34, borderRadius: 10, background: hex, border: '1px solid var(--border)' };
 }

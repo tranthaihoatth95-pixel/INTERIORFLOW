@@ -264,7 +264,7 @@ function GroupBtn({
         justifyContent: 'center',
         gap: 4,
         padding: '6px 4px',
-        borderRadius: 7,
+        borderRadius: 6,
         border: active ? '1px solid var(--accent)' : '1px solid var(--border)',
         background: active ? 'var(--accent-soft)' : 'var(--field)',
         color: active ? 'var(--accent)' : 'var(--t3)',
@@ -281,7 +281,7 @@ function GroupBtn({
 const inp: React.CSSProperties = {
   width: '100%',
   padding: '7px 9px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--border)',
   background: 'var(--field)',
   color: 'var(--t1)',
@@ -295,7 +295,7 @@ const uploadBtn: React.CSSProperties = {
   justifyContent: 'center',
   gap: 6,
   padding: '8px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--accent)',
   background: 'var(--accent-soft)',
   color: 'var(--accent)',
@@ -317,7 +317,7 @@ const groupHead: React.CSSProperties = {
 
 const cell: React.CSSProperties = {
   position: 'relative',
-  borderRadius: 8,
+  borderRadius: 10,
   overflow: 'hidden',
   border: '1px solid var(--border)',
   background: 'var(--field)',

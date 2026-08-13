@@ -47,7 +47,7 @@ export function LangToggle({
             aria-pressed={on}
             title={l === 'vi' ? 'Tiếng Việt' : 'English'}
             className={cn(
-              'rounded-[7px] px-2 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors',
+              'rounded-[6px] px-2 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors',
               on
                 ? ghost
                   ? 'bg-[rgba(106,87,245,0.16)] text-[var(--accent)]'

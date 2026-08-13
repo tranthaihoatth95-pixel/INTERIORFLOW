@@ -157,7 +157,7 @@ export function MacroNodeFace({ group }: { group: NodeGroup }) {
       style={{ transform: `translate(${cx - 150}px, ${cy - 60}px)`, zIndex: 5, pointerEvents: 'auto' }}
     >
       <div className="flex h-11 items-center gap-2.5 border-b border-[var(--mat-hairline)] px-3">
-        <span className="flex h-7 w-7 flex-none items-center justify-center rounded-[9px] bg-[var(--accent-soft)]">
+        <span className="flex h-7 w-7 flex-none items-center justify-center rounded-[10px] bg-[var(--accent-soft)]">
           <Icon size={16} className="text-[var(--accent)]" />
         </span>
         <span className="min-w-0 flex-1" title={group.description}>
@@ -170,7 +170,7 @@ export function MacroNodeFace({ group }: { group: NodeGroup }) {
           type="button"
           onClick={() => toggleGroupCollapse(group.id)}
           title={tr('Mở ra xem bên trong', 'Open to view inside')}
-          className="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-[8px] border border-[var(--mat-hairline)] bg-[var(--card)] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+          className="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-[10px] border border-[var(--mat-hairline)] bg-[var(--card)] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
         >
           <Maximize2 size={13} />
         </button>

@@ -3663,14 +3663,14 @@ export default function CadCanvas() {
                   useCadStore.getState().setStatus('Đã gỡ ảnh hiện trường.');
                   setViewPhoto(null);
                 }}
-                style={{ border: 'none', background: 'var(--accent-strong)', color: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
+                style={{ border: 'none', background: 'var(--accent-strong)', color: '#fff', borderRadius: 10, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
               >
                 Gỡ ảnh
               </button>
               <button
                 type="button"
                 onClick={() => setViewPhoto(null)}
-                style={{ border: '1px solid rgba(255,255,255,.4)', background: 'transparent', color: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
+                style={{ border: '1px solid rgba(255,255,255,.4)', background: 'transparent', color: '#fff', borderRadius: 10, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
               >
                 Không
               </button>
@@ -3681,14 +3681,14 @@ export default function CadCanvas() {
               <button
                 type="button"
                 onClick={() => setConfirmRemovePhoto(true)}
-                style={{ border: '1px solid rgba(255,255,255,.4)', background: 'transparent', color: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
+                style={{ border: '1px solid rgba(255,255,255,.4)', background: 'transparent', color: '#fff', borderRadius: 10, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
               >
                 Gỡ ảnh
               </button>
               <button
                 type="button"
                 onClick={() => setViewPhoto(null)}
-                style={{ border: '1px solid rgba(255,255,255,.4)', background: 'transparent', color: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
+                style={{ border: '1px solid rgba(255,255,255,.4)', background: 'transparent', color: '#fff', borderRadius: 10, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
               >
                 Đóng
               </button>
@@ -3730,13 +3730,13 @@ export default function CadCanvas() {
             }}
             placeholder="Tên phòng…"
             className="text-xs text-[var(--t1)]"
-            style={{ width: 140, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', padding: '5px 8px', outline: 'none' }}
+            style={{ width: 140, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', padding: '5px 8px', outline: 'none' }}
           />
           <button
             type="button"
             onClick={() => confirmRoomName()}
             title="Tạo phòng (Enter)"
-            style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 8, background: 'var(--accent-strong)', color: '#fff', border: 'none', cursor: 'pointer' }}
+            style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 10, background: 'var(--accent-strong)', color: '#fff', border: 'none', cursor: 'pointer' }}
           >
             ✓
           </button>
@@ -3744,7 +3744,7 @@ export default function CadCanvas() {
             type="button"
             onClick={cancelRoomName}
             title="Dùng tên mặc định (Esc)"
-            style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 8, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
+            style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 10, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
           >
             ✕
           </button>
@@ -3794,7 +3794,7 @@ export default function CadCanvas() {
                   }
                 }}
                 className="text-xs text-[var(--t1)]"
-                style={{ width: '100%', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', padding: '5px 8px', outline: 'none' }}
+                style={{ width: '100%', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', padding: '5px 8px', outline: 'none' }}
               />
             </label>
           ))}
@@ -3803,7 +3803,7 @@ export default function CadCanvas() {
               type="button"
               onClick={cancelInlineForm}
               title="Huỷ (Esc)"
-              style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 8, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
+              style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 10, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
             >
               ✕
             </button>
@@ -3811,7 +3811,7 @@ export default function CadCanvas() {
               type="button"
               onClick={commitInlineForm}
               title="Xác nhận (Enter)"
-              style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 8, background: 'var(--accent-strong)', color: '#fff', border: 'none', cursor: 'pointer' }}
+              style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 10, background: 'var(--accent-strong)', color: '#fff', border: 'none', cursor: 'pointer' }}
             >
               ✓
             </button>
@@ -3845,7 +3845,7 @@ export default function CadCanvas() {
             <button
               type="button"
               onClick={() => setInlineConfirm(null)}
-              style={{ borderRadius: 8, padding: '4px 10px', fontSize: 11.5, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
+              style={{ borderRadius: 10, padding: '4px 10px', fontSize: 11.5, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
             >
               Huỷ
             </button>
@@ -3854,7 +3854,7 @@ export default function CadCanvas() {
               ref={inlineConfirmOkRef}
               autoFocus
               onClick={commitInlineConfirm}
-              style={{ borderRadius: 8, padding: '4px 10px', fontSize: 11.5, background: 'var(--accent-strong)', color: '#fff', border: 'none', cursor: 'pointer' }}
+              style={{ borderRadius: 10, padding: '4px 10px', fontSize: 11.5, background: 'var(--accent-strong)', color: '#fff', border: 'none', cursor: 'pointer' }}
             >
               {inlineConfirm.okLabel}
             </button>
@@ -3872,7 +3872,7 @@ export default function CadCanvas() {
             width: 200,
             background: 'var(--panel)',
             border: '1px solid var(--border)',
-            borderRadius: 12,
+            borderRadius: 14,
             padding: 4,
             boxShadow: '0 8px 24px rgba(0,0,0,.35)',
             userSelect: 'none',
@@ -3998,7 +3998,7 @@ export default function CadCanvas() {
             color: '#fff',
             background: 'rgba(24,21,18,0.92)',
             border: '1px solid var(--accent-ring)',
-            borderRadius: 8,
+            borderRadius: 10,
             padding: '5px 9px',
             boxShadow: '0 8px 20px -6px rgba(0,0,0,.4)',
           }}
@@ -4063,7 +4063,7 @@ function CadMenuItem({
         height: 34,
         textAlign: 'left',
         padding: '0 12px',
-        borderRadius: 8,
+        borderRadius: 10,
         border: 'none',
         background: 'transparent',
         color: disabled ? 'var(--t4)' : danger ? '#e5674f' : 'var(--t2)',

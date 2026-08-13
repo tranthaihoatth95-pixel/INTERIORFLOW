@@ -325,7 +325,7 @@ export default function CadToolbar({
                       gap: 8,
                       width: '100%',
                       padding: '7px 10px',
-                      borderRadius: 8,
+                      borderRadius: 10,
                       border: 'none',
                       background: tool === it.tool ? 'var(--accent-soft)' : 'transparent',
                       color: tool === it.tool ? 'var(--accent)' : 'var(--t1)',

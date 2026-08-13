@@ -212,7 +212,7 @@ const panel: React.CSSProperties = {
   backdropFilter: 'blur(16px)',
   WebkitBackdropFilter: 'blur(16px)',
   border: '1px solid var(--border)',
-  borderRadius: 12,
+  borderRadius: 14,
   padding: 8,
   boxShadow: '0 8px 30px rgba(0,0,0,.18)',
 };
@@ -246,7 +246,7 @@ function actBtn(disabled: boolean): React.CSSProperties {
     justifyContent: 'center',
     gap: 6,
     padding: '7px 8px',
-    borderRadius: 8,
+    borderRadius: 10,
     border: 'none',
     background: disabled ? 'var(--field)' : 'var(--accent)',
     color: disabled ? 'var(--t4)' : '#fff',

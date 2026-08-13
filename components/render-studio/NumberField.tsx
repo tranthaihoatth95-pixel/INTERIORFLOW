@@ -90,7 +90,7 @@ export function NumberField({
           }
         }}
         className={cn(
-          'h-[var(--tap)] w-full rounded-[7px] border border-[var(--border)] bg-[var(--field)] text-right font-mono text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none disabled:opacity-45',
+          'h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--field)] text-right font-mono text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none disabled:opacity-45',
           suffix ? 'pl-1.5 pr-[30px]' : 'px-1.5',
         )}
       />

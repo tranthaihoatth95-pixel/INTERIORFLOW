@@ -102,7 +102,7 @@ export function BoqErrorRows({ errors, projectId, columns }: { errors: BoqError[
               type="button"
               onClick={() => onAction(err)}
               style={{
-                height: 22, padding: '0 9px', marginLeft: 8, border: 0, borderRadius: 7,
+                height: 22, padding: '0 9px', marginLeft: 8, border: 0, borderRadius: 6,
                 background: 'var(--danger)', color: '#fff', fontSize: 9.5, fontWeight: 600, cursor: 'pointer',
               }}
             >

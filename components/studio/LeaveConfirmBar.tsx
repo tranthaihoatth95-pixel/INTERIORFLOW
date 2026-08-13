@@ -34,7 +34,7 @@ export function LeaveConfirmBar() {
               transition={{ duration: 0.18, ease: easeApple }}
               onKeyDown={(e) => e.key === 'Escape' && cancel()}
               style={{ position: 'fixed', top: 56, left: '50%', transform: 'translateX(-50%)' }}
-              className="mat-panel z-[95] max-w-[420px] rounded-[12px] border border-[var(--border)] p-3 shadow-xl"
+              className="mat-panel z-[95] max-w-[420px] rounded-[14px] border border-[var(--border)] p-3 shadow-xl"
             >
               <div className="mb-2.5 text-[12.5px] text-[var(--t1)]">
                 {tr(
@@ -46,7 +46,7 @@ export function LeaveConfirmBar() {
                 <button
                   type="button"
                   onClick={cancel}
-                  className="rounded-[8px] border border-[var(--border)] px-3 py-1 text-[12px] text-[var(--t3)]"
+                  className="rounded-[10px] border border-[var(--border)] px-3 py-1 text-[12px] text-[var(--t3)]"
                 >
                   {tr('Ở lại', 'Stay')}
                 </button>
@@ -54,7 +54,7 @@ export function LeaveConfirmBar() {
                   type="button"
                   autoFocus
                   onClick={confirm}
-                  className="rounded-[8px] border-none bg-[var(--accent)] px-3 py-1 text-[12px] text-white"
+                  className="rounded-[10px] border-none bg-[var(--accent)] px-3 py-1 text-[12px] text-white"
                 >
                   {tr('Rời trang', 'Leave')}
                 </button>

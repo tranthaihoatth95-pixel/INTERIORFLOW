@@ -95,7 +95,7 @@ export function DraftBoard({
 
       <div
         ref={boxRef}
-        className="relative w-full overflow-hidden rounded-[12px] border border-[var(--border)] bg-[#141110]"
+        className="relative w-full overflow-hidden rounded-[14px] border border-[var(--border)] bg-[#141110]"
         style={{ aspectRatio: '16 / 9', touchAction: 'none' }}
         onPointerDown={() => setSel(-1)}
       >
@@ -149,13 +149,13 @@ export function DraftBoard({
           <span className="text-[12px] text-[var(--t4)]">Ảnh #{sel + 1}:</span>
           <button
             onClick={() => scale(sel, 0.88)}
-            className="flex items-center gap-1 rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-[12px] text-[var(--t2)] hover:bg-[var(--hover)]"
+            className="flex items-center gap-1 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-[12px] text-[var(--t2)] hover:bg-[var(--hover)]"
           >
             <Minus size={12} /> Nhỏ
           </button>
           <button
             onClick={() => scale(sel, 1.14)}
-            className="flex items-center gap-1 rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-[12px] text-[var(--t2)] hover:bg-[var(--hover)]"
+            className="flex items-center gap-1 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-[12px] text-[var(--t2)] hover:bg-[var(--hover)]"
           >
             <Plus size={12} /> To
           </button>

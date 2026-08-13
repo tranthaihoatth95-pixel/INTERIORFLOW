@@ -317,7 +317,7 @@ export function LarkRosterTab({ data, teamUsers, onMapped }: {
   }
 
   return (
-    <div className="mat-card divide-y divide-[var(--border)] overflow-hidden rounded-[16px] border border-[var(--mat-hairline)]">
+    <div className="mat-card divide-y divide-[var(--border)] overflow-hidden rounded-[14px] border border-[var(--mat-hairline)]">
       {data.persons.map((p) => {
         const mapped = data.userMap.find((m) => m.larkAccount === p.larkAccount);
         const mappedName = mapped ? teamUsers.find((u) => u.id === mapped.userId)?.name : null;
@@ -342,7 +342,7 @@ export function LarkRosterTab({ data, teamUsers, onMapped }: {
                 <select
                   value={picked[p.larkAccount] ?? ''}
                   onChange={(e) => setPicked((prev) => ({ ...prev, [p.larkAccount]: e.target.value }))}
-                  className="rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-[11px] text-[var(--t1)]"
+                  className="rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-[11px] text-[var(--t1)]"
                 >
                   <option value="">Chọn User…</option>
                   {teamUsers.map((u) => (
@@ -353,14 +353,14 @@ export function LarkRosterTab({ data, teamUsers, onMapped }: {
                   type="button"
                   disabled={!picked[p.larkAccount] || busy === p.larkAccount}
                   onClick={() => assign(p.larkAccount)}
-                  className="rounded-[8px] bg-[var(--accent-strong)] px-2 py-1 text-[11px] text-white disabled:opacity-50"
+                  className="rounded-[10px] bg-[var(--accent-strong)] px-2 py-1 text-[11px] text-white disabled:opacity-50"
                 >
                   {busy === p.larkAccount ? <Loader2 size={11} className="animate-spin" /> : 'Gán'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setAssigning(null)}
-                  className="rounded-[8px] border border-[var(--border)] px-2 py-1 text-[11px] text-[var(--t3)]"
+                  className="rounded-[10px] border border-[var(--border)] px-2 py-1 text-[11px] text-[var(--t3)]"
                 >
                   Huỷ
                 </button>

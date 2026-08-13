@@ -186,7 +186,7 @@ function PhaseRow({ active }: { active: AppChromeActive }) {
               key={p.id}
               onClick={() => pickStage(p.id, { active, pathname, router, begin })}
               className={cn(
-                'flex flex-col items-center gap-1 rounded-[12px] border px-2 py-2.5 text-[11px] font-medium transition-colors',
+                'flex flex-col items-center gap-1 rounded-[14px] border px-2 py-2.5 text-[11px] font-medium transition-colors',
                 isActive
                   ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
                   : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
@@ -276,7 +276,7 @@ function Tile({ icon, label, onClick, tone }: { icon: React.ReactNode; label: st
       {...pressable}
       onClick={onClick}
       className={cn(
-        'flex items-center gap-2 rounded-[12px] border border-[var(--border)] px-3 py-2.5 text-xs font-medium text-[var(--t2)] transition-colors hover:bg-[var(--hover)]',
+        'flex items-center gap-2 rounded-[14px] border border-[var(--border)] px-3 py-2.5 text-xs font-medium text-[var(--t2)] transition-colors hover:bg-[var(--hover)]',
         tone,
       )}
     >

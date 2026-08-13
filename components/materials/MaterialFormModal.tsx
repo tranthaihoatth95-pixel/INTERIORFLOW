@@ -40,7 +40,7 @@ function toFormValues(m: MaterialSpecDto | null): MaterialFormValues {
 }
 
 const inputStyle: React.CSSProperties = {
-  width: '100%', height: 32, padding: '0 10px', borderRadius: 8,
+  width: '100%', height: 32, padding: '0 10px', borderRadius: 10,
   border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', fontSize: 13,
 };
 const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: 'var(--t3)', display: 'block', marginBottom: 4 };
@@ -136,13 +136,13 @@ export function MaterialFormModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ width: 480, maxHeight: '86vh', overflowY: 'auto', background: 'var(--panel)', borderRadius: 16, border: '1px solid var(--border)', padding: 20 }}
+        style={{ width: 480, maxHeight: '86vh', overflowY: 'auto', background: 'var(--panel)', borderRadius: 14, border: '1px solid var(--border)', padding: 20 }}
       >
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--t1)' }}>
             {editing ? tr('Sửa vật liệu', 'Edit material') : tr('Thêm vật liệu', 'Add material')}
           </span>
-          <button type="button" onClick={onClose} style={{ marginLeft: 'auto', width: 26, height: 26, display: 'grid', placeItems: 'center', border: 0, borderRadius: 8, background: 'transparent', color: 'var(--t4)', cursor: 'pointer' }}>
+          <button type="button" onClick={onClose} style={{ marginLeft: 'auto', width: 26, height: 26, display: 'grid', placeItems: 'center', border: 0, borderRadius: 10, background: 'transparent', color: 'var(--t4)', cursor: 'pointer' }}>
             <X size={14} />
           </button>
         </div>
@@ -202,20 +202,20 @@ export function MaterialFormModal({
         />
 
         {error && (
-          <div style={{ marginBottom: 12, padding: '8px 10px', borderRadius: 8, background: 'color-mix(in srgb, var(--danger) 14%, var(--panel))', color: 'var(--t1)', fontSize: 12 }}>
+          <div style={{ marginBottom: 12, padding: '8px 10px', borderRadius: 10, background: 'color-mix(in srgb, var(--danger) 14%, var(--panel))', color: 'var(--t1)', fontSize: 12 }}>
             {error}
           </div>
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button type="button" onClick={onClose} style={{ height: 32, padding: '0 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--t2)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
+          <button type="button" onClick={onClose} style={{ height: 32, padding: '0 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--t2)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
             {tr('Huỷ', 'Cancel')}
           </button>
           <button
             type="button"
             onClick={() => void submit()}
             disabled={saving}
-            style={{ height: 32, padding: '0 16px', borderRadius: 8, border: 0, background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+            style={{ height: 32, padding: '0 16px', borderRadius: 10, border: 0, background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
           >
             {saving && <Loader2 size={13} className="animate-spin" />}
             {editing ? tr('Lưu', 'Save') : tr('Thêm', 'Add')}

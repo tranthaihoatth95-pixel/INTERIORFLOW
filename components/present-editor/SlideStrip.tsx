@@ -203,7 +203,7 @@ function IconBtn({
         height: 24,
         display: 'grid',
         placeItems: 'center',
-        borderRadius: 5,
+        borderRadius: 6,
         border: '1px solid var(--border)',
         background: 'var(--field)',
         color: 'var(--t2)',

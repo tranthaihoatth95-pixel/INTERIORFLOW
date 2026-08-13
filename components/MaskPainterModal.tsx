@@ -212,13 +212,13 @@ export function MaskPainterModal() {
             <span className="flex-1">Còn nét vẽ chưa lưu — nhấn Escape lần nữa để thoát, hoặc chọn bên dưới.</span>
             <button
               onClick={save}
-              className="rounded-[8px] bg-[var(--accent-strong)] px-2.5 py-1 text-[11px] font-medium text-white transition-colors hover:bg-[var(--accent)]"
+              className="rounded-[10px] bg-[var(--accent-strong)] px-2.5 py-1 text-[11px] font-medium text-white transition-colors hover:bg-[var(--accent)]"
             >
               Lưu &amp; đóng
             </button>
             <button
               onClick={forceClose}
-              className="rounded-[8px] border border-[var(--border)] px-2.5 py-1 text-[11px] text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
+              className="rounded-[10px] border border-[var(--border)] px-2.5 py-1 text-[11px] text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
             >
               Bỏ nét vẽ
             </button>
@@ -231,7 +231,7 @@ export function MaskPainterModal() {
             <canvas
               ref={displayRef}
               data-testid="mask-canvas"
-              className="max-h-[60vh] max-w-full cursor-crosshair rounded-[12px]"
+              className="max-h-[60vh] max-w-full cursor-crosshair rounded-[14px]"
               style={{ touchAction: 'none' }}
               onPointerDown={(e) => {
                 if (!ready) return;

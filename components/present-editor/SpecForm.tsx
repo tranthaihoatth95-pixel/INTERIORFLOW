@@ -47,7 +47,7 @@ export default function SpecForm({ spec, palette, onChange }: Props) {
                   flexDirection: 'column',
                   gap: 2,
                   padding: '7px 8px',
-                  borderRadius: 8,
+                  borderRadius: 10,
                   border: active ? '1px solid var(--accent)' : '1px solid var(--border)',
                   background: active ? 'var(--accent-soft)' : 'var(--field)',
                   color: active ? 'var(--accent)' : 'var(--t2)',
@@ -96,7 +96,7 @@ export default function SpecForm({ spec, palette, onChange }: Props) {
               style={{
                 flex: 1,
                 padding: '7px 4px',
-                borderRadius: 7,
+                borderRadius: 6,
                 border: spec.tone === t ? '1px solid var(--accent)' : '1px solid var(--border)',
                 background: spec.tone === t ? 'var(--accent-soft)' : 'var(--field)',
                 color: spec.tone === t ? 'var(--accent)' : 'var(--t3)',
@@ -122,7 +122,7 @@ export default function SpecForm({ spec, palette, onChange }: Props) {
               style={{
                 flex: 1,
                 padding: '7px 4px',
-                borderRadius: 7,
+                borderRadius: 6,
                 border: spec.background === b ? '1px solid var(--accent)' : '1px solid var(--border)',
                 background: spec.background === b ? 'var(--accent-soft)' : 'var(--field)',
                 color: spec.background === b ? 'var(--accent)' : 'var(--t3)',

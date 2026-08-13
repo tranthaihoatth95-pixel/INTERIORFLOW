@@ -17,7 +17,7 @@ function NoteNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
     // border-amber-500…) — đó LÀ hex cứng trá hình (không theo theme token), đổi sang color-mix
     // (khuôn đã dùng ở ProjectSelect.tsx/TaskBoardScreen.tsx/MaterialPbrEditor.tsx…).
     <div
-      className={cn('group relative w-52 rounded-lg border p-2')}
+      className={cn('group relative w-52 rounded-[10px] border p-2')}
       style={{
         background: 'color-mix(in srgb, var(--warning) 26%, var(--card))',
         borderColor: selected ? 'var(--accent-ring)' : 'color-mix(in srgb, var(--warning) 45%, transparent)',

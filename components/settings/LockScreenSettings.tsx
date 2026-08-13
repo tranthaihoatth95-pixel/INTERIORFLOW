@@ -44,7 +44,7 @@ export function LockScreenSettings() {
             max={180}
             value={minutes}
             onChange={(e) => commit(Number(e.target.value) || DEFAULT_LOCK_IDLE_MINUTES)}
-            className="w-16 rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-center text-[13px] text-[var(--t1)] outline-none"
+            className="w-16 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-center text-[13px] text-[var(--t1)] outline-none"
           />
           {tr('phút', 'minutes')}
         </label>

@@ -167,7 +167,7 @@ export default function ShortcutsPanel({
             type="button"
             onClick={onClose}
             title={tr('Đóng', 'Close')}
-            style={{ marginLeft: 'auto', display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 8, color: 'var(--t3)', background: 'transparent', border: 'none', cursor: 'pointer', alignSelf: 'center' }}
+            style={{ marginLeft: 'auto', display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 10, color: 'var(--t3)', background: 'transparent', border: 'none', cursor: 'pointer', alignSelf: 'center' }}
           >
             <X size={16} />
           </button>
@@ -186,7 +186,7 @@ export default function ShortcutsPanel({
               fontSize: 13,
               lineHeight: 1.5,
               border: '1px solid var(--border)',
-              borderRadius: 8,
+              borderRadius: 10,
               background: 'var(--field)',
               color: 'var(--t1)',
               outline: 'none',

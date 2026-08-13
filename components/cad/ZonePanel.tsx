@@ -25,7 +25,7 @@ const panel: React.CSSProperties = {
   backdropFilter: 'blur(14px)',
   WebkitBackdropFilter: 'blur(14px)', // K3: thiếu prefix = tablet không blur
   border: '1px solid var(--border)',
-  borderRadius: 12,
+  borderRadius: 14,
   padding: 8,
   boxShadow: '0 8px 24px rgba(0,0,0,.18)',
 };
@@ -115,7 +115,7 @@ export function ZonePanel({ onClose, onExportPresent }: { onClose: () => void; o
   const NUDGE = 500; // mm
 
   const segBtn = (active: boolean): React.CSSProperties => ({
-    flex: 1, padding: '4px 0', borderRadius: 7, border: '1px solid var(--border)', fontSize: 11,
+    flex: 1, padding: '4px 0', borderRadius: 6, border: '1px solid var(--border)', fontSize: 11,
     background: active ? 'var(--accent)' : 'transparent', color: active ? '#fff' : 'var(--t3)', cursor: 'pointer',
   });
 
@@ -148,7 +148,7 @@ export function ZonePanel({ onClose, onExportPresent }: { onClose: () => void; o
                   type="button"
                   onClick={() => setZoneGroup(g)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 8, padding: '5px 7px', borderRadius: 8,
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '5px 7px', borderRadius: 10,
                     border: on ? '1px solid var(--accent)' : '1px solid transparent',
                     background: on ? 'var(--accent-soft)' : 'transparent', cursor: 'pointer', textAlign: 'left',
                   }}
@@ -186,7 +186,7 @@ export function ZonePanel({ onClose, onExportPresent }: { onClose: () => void; o
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', justifyContent: 'center', padding: '6px 0', borderRadius: 8, border: '1px dashed var(--border)', background: 'transparent', color: 'var(--t2)', fontSize: 11.5, cursor: 'pointer' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', justifyContent: 'center', padding: '6px 0', borderRadius: 10, border: '1px dashed var(--border)', background: 'transparent', color: 'var(--t2)', fontSize: 11.5, cursor: 'pointer' }}
           >
             <Upload size={13} /> Tải ảnh vệ tinh / hiện trạng
           </button>
@@ -233,7 +233,7 @@ export function ZonePanel({ onClose, onExportPresent }: { onClose: () => void; o
         type="button"
         onClick={onExportPresent}
         title="Render zone map + legend thành 1 slide mới ở chặng Trình chiếu"
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 8, padding: '7px 0', borderRadius: 8, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 8, padding: '7px 0', borderRadius: 10, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
       >
         Xuất Trình chiếu <ArrowRight size={13} />
       </button>

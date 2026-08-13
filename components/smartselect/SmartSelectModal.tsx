@@ -396,7 +396,7 @@ export function SmartSelectModal() {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="flex max-h-full w-[min(96vw,1080px)] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl"
+            className="flex max-h-full w-[min(96vw,1080px)] flex-col overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--card)] shadow-2xl"
           >
             <div className="flex items-center gap-2 border-b border-[var(--border)] px-4 py-2.5">
               <Wand2 size={15} className="text-[var(--accent)]" />
@@ -449,7 +449,7 @@ export function SmartSelectModal() {
                       {...pressable}
                       disabled={busy}
                       onClick={() => void autoSelect()}
-                      className="flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[11px] font-medium text-white disabled:opacity-50"
+                      className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent)] px-3 py-1.5 text-[11px] font-medium text-white disabled:opacity-50"
                     >
                       {busy ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
                       {busy ? `Đang chọn… ${Math.round(progress * 100)}%` : 'Magic chọn vùng'}
@@ -457,7 +457,7 @@ export function SmartSelectModal() {
                     <motion.button
                       {...pressable}
                       onClick={clearAll}
-                      className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-[11px] text-[var(--t3)] hover:bg-[var(--hover)]"
+                      className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2.5 py-1.5 text-[11px] text-[var(--t3)] hover:bg-[var(--hover)]"
                     >
                       <Trash2 size={12} />
                       Xoá hết
@@ -474,7 +474,7 @@ export function SmartSelectModal() {
                     onPointerLeave={onPointerUp}
                     onContextMenu={(e) => e.preventDefault()}
                     className={cn(
-                      'mx-auto block max-h-[58vh] max-w-full rounded-lg',
+                      'mx-auto block max-h-[58vh] max-w-full rounded-[10px]',
                       tool === 'select' ? 'cursor-crosshair' : 'cursor-none',
                       busy && 'pointer-events-none opacity-70',
                     )}
@@ -499,7 +499,7 @@ export function SmartSelectModal() {
                       {...pressable}
                       onClick={save}
                       disabled={busy}
-                      className="flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3.5 py-2 text-[11px] font-medium text-white disabled:opacity-50"
+                      className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent)] px-3.5 py-2 text-[11px] font-medium text-white disabled:opacity-50"
                     >
                       <Check size={13} />
                       Dùng vùng chọn này
@@ -530,7 +530,7 @@ function ToolBtn({
     <button
       onClick={onClick}
       className={cn(
-        'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] transition-colors',
+        'flex items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-[11px] transition-colors',
         active
           ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
           : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',

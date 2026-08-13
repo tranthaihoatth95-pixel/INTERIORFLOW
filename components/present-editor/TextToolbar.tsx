@@ -387,7 +387,7 @@ function ColorPopover({
           style={{
             width: 22,
             height: 22,
-            borderRadius: 5,
+            borderRadius: 6,
             background: c,
             border:
               color.toLowerCase() === c.toLowerCase()
@@ -409,7 +409,7 @@ function ColorPopover({
         style={{
           width: 22,
           height: 22,
-          borderRadius: 5,
+          borderRadius: 6,
           border: '1px solid rgba(255,255,255,.3)',
           background: 'none',
           padding: 0,
@@ -526,7 +526,7 @@ const pillIcon: React.CSSProperties = {
 const noteStyle: React.CSSProperties = {
   maxWidth: 320,
   padding: '6px 10px',
-  borderRadius: 8,
+  borderRadius: 10,
   background: 'rgba(18,16,14,0.72)',
   backdropFilter: 'blur(24px) saturate(150%)',
   WebkitBackdropFilter: 'blur(24px) saturate(150%)',

@@ -25,18 +25,18 @@ const panel: React.CSSProperties = {
   backdropFilter: 'blur(14px)',
   WebkitBackdropFilter: 'blur(14px)', // K3: thiếu prefix = tablet không blur
   border: '1px solid var(--border)',
-  borderRadius: 12,
+  borderRadius: 14,
   padding: 10,
   display: 'flex',
   flexDirection: 'column',
   gap: 10,
 };
 const rowLabel: React.CSSProperties = { fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 650, color: 'var(--t4)' };
-const segmentWrap: React.CSSProperties = { display: 'flex', gap: 4, background: 'var(--field)', borderRadius: 8, padding: 3 };
+const segmentWrap: React.CSSProperties = { display: 'flex', gap: 4, background: 'var(--field)', borderRadius: 10, padding: 3 };
 const selectStyle: React.CSSProperties = {
   background: 'var(--field)',
   border: '1px solid var(--border)',
-  borderRadius: 8,
+  borderRadius: 10,
   color: 'var(--t1)',
   fontSize: 12,
   padding: '5px 8px',
@@ -221,7 +221,7 @@ export default function CamPathControlPanel({
       </div>
 
       {!!safetyWarnings?.length && (
-        <div role="status" style={{ border: '1px solid color-mix(in srgb, #e8a23a 50%, var(--border))', borderRadius: 8, padding: 8, color: 'var(--t2)', fontSize: 11, lineHeight: 1.45 }}>
+        <div role="status" style={{ border: '1px solid color-mix(in srgb, #e8a23a 50%, var(--border))', borderRadius: 10, padding: 8, color: 'var(--t2)', fontSize: 11, lineHeight: 1.45 }}>
           {safetyWarnings.map((warning) => <div key={warning}>• {warning}</div>)}
         </div>
       )}
@@ -229,7 +229,7 @@ export default function CamPathControlPanel({
       <button
         type="button"
         onClick={onApply}
-        style={{ minHeight: 36, border: 'none', borderRadius: 9, background: 'var(--accent-strong, #6a57f5)', color: '#fff', fontWeight: 650, cursor: 'pointer' }}
+        style={{ minHeight: 36, border: 'none', borderRadius: 10, background: 'var(--accent-strong, #6a57f5)', color: '#fff', fontWeight: 650, cursor: 'pointer' }}
       >
         Áp vào đường cam
       </button>

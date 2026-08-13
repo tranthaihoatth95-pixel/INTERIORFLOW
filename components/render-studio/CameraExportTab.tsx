@@ -161,7 +161,7 @@ export default function CameraExportTab({ scene }: { scene: Scene3DData | null }
               value={frameCountStr === '' ? defaultFrames : frameCountStr}
               onChange={(e) => setFrameCountStr(e.target.value)}
               disabled={dangChay}
-              className="h-7 w-20 rounded-[7px] border border-[var(--border)] bg-transparent px-2 text-right text-[11px] text-[var(--t1)] tabular-nums"
+              className="h-7 w-20 rounded-[6px] border border-[var(--border)] bg-transparent px-2 text-right text-[11px] text-[var(--t1)] tabular-nums"
             />
           </label>
         )}
@@ -179,7 +179,7 @@ export default function CameraExportTab({ scene }: { scene: Scene3DData | null }
             type="button"
             onClick={batDauXuat}
             disabled={!!lyDoMo}
-            className="mt-2 flex h-7 w-full items-center justify-center gap-1.5 rounded-[7px] border border-[var(--border)] bg-transparent px-2 text-[10px] font-semibold text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent"
+            className="mt-2 flex h-7 w-full items-center justify-center gap-1.5 rounded-[6px] border border-[var(--border)] bg-transparent px-2 text-[10px] font-semibold text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent"
           >
             <Images size={12} strokeWidth={1.8} />
             {tr('Xuất chuỗi ảnh (PNG)', 'Export image sequence (PNG)')}
@@ -193,7 +193,7 @@ export default function CameraExportTab({ scene }: { scene: Scene3DData | null }
             <button
               type="button"
               onClick={() => abortRef.current?.abort()}
-              className="flex h-6 items-center gap-1 rounded-[7px] border border-[var(--border)] bg-transparent px-2 text-[10px] font-semibold text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+              className="flex h-6 items-center gap-1 rounded-[6px] border border-[var(--border)] bg-transparent px-2 text-[10px] font-semibold text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
             >
               <Square size={10} strokeWidth={2} />
               {tr('Huỷ', 'Cancel')}

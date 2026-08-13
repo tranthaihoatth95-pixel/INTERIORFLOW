@@ -94,7 +94,7 @@ export function MaterialsScreen() {
         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--t1)' }}>{tr('Kho vật liệu', 'Materials warehouse')}</span>
         <span style={{ fontSize: 11.5, color: 'var(--t4)' }}>{items ? tr(`${items.length} mục`, `${items.length} item(s)`) : ''}</span>
 
-        <div style={{ marginLeft: 16, display: 'flex', alignItems: 'center', gap: 6, height: 30, padding: '0 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', minWidth: 200 }}>
+        <div style={{ marginLeft: 16, display: 'flex', alignItems: 'center', gap: 6, height: 30, padding: '0 10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', minWidth: 200 }}>
           <Search size={13} style={{ color: 'var(--t4)' }} />
           <input
             value={query}
@@ -111,7 +111,7 @@ export function MaterialsScreen() {
           value={kindFilter}
           onChange={(e) => setKindFilter(e.target.value)}
           aria-label={tr('Lọc theo loại', 'Filter by type')}
-          style={{ height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)', fontSize: 12.5, padding: '0 8px' }}
+          style={{ height: 30, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)', fontSize: 12.5, padding: '0 8px' }}
         >
           <option value="">{tr('Tất cả loại', 'All types')}</option>
           {Object.entries(IMPORT_KIND_LABEL).map(([k, label]) => (
@@ -123,7 +123,7 @@ export function MaterialsScreen() {
           <select
             value={brandFilter}
             onChange={(e) => setBrandFilter(e.target.value)}
-            style={{ height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)', fontSize: 12.5, padding: '0 8px' }}
+            style={{ height: 30, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)', fontSize: 12.5, padding: '0 8px' }}
           >
             <option value="">{tr('Tất cả hãng', 'All brands')}</option>
             {brands.map((b) => (
@@ -207,7 +207,7 @@ export function MaterialsScreen() {
 function btnStyle(primary: boolean): React.CSSProperties {
   return {
     height: 30, padding: '0 12px', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
-    border: primary ? 0 : '1px solid var(--border)', borderRadius: 8, fontSize: 12, fontWeight: 600,
+    border: primary ? 0 : '1px solid var(--border)', borderRadius: 10, fontSize: 12, fontWeight: 600,
     background: primary ? 'var(--accent)' : 'var(--field)', color: primary ? '#fff' : 'var(--t2)',
   };
 }

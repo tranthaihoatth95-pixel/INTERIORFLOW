@@ -119,7 +119,7 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
         <div style={hoverPreview} aria-hidden>
           <span
             style={{
-              width: 132, height: 132, borderRadius: 8, border: '1px solid rgba(0,0,0,.2)',
+              width: 132, height: 132, borderRadius: 10, border: '1px solid rgba(0,0,0,.2)',
               boxShadow: '0 6px 20px rgba(0,0,0,.22)',
               ...swatchBg(hovered),
             }}
@@ -179,7 +179,7 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
             >
               <span
                 style={{
-                  width: '100%', aspectRatio: '4 / 3', borderRadius: 7, border: '1px solid rgba(0,0,0,.15)',
+                  width: '100%', aspectRatio: '4 / 3', borderRadius: 6, border: '1px solid rgba(0,0,0,.15)',
                   ...swatchBg(m),
                 }}
               />
@@ -265,7 +265,7 @@ const panel: React.CSSProperties = {
   backdropFilter: 'blur(16px)',
   WebkitBackdropFilter: 'blur(16px)',
   border: '1px solid var(--border)',
-  borderRadius: 12,
+  borderRadius: 14,
   padding: 8,
   boxShadow: '0 8px 30px rgba(0,0,0,.18)',
 };
@@ -283,7 +283,7 @@ const hoverPreview: React.CSSProperties = {
   backdropFilter: 'blur(16px)',
   WebkitBackdropFilter: 'blur(16px)',
   border: '1px solid var(--border)',
-  borderRadius: 12,
+  borderRadius: 14,
   boxShadow: '0 8px 30px rgba(0,0,0,.24)',
   pointerEvents: 'none',
   zIndex: 16,

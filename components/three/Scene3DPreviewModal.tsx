@@ -72,7 +72,7 @@ export function Scene3DPreviewModal({
           width: 'min(1100px, 92vw)',
           height: 'min(720px, 86vh)',
           background: 'var(--bg)',
-          borderRadius: 12,
+          borderRadius: 14,
           border: '1px solid var(--border-strong)',
           display: 'flex',
           flexDirection: 'column',

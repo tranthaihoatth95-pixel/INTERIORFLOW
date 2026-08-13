@@ -998,8 +998,8 @@ function PaperViewport({ doc, viewport, paperW, paperH, selected, onSelect, onMo
   }, [doc, viewport]);
   return <div onPointerDown={onSelect} style={{ position: 'absolute', left: `${viewport.rectOnPaper.x / paperW * 100}%`, top: `${viewport.rectOnPaper.y / paperH * 100}%`, width: `${viewport.rectOnPaper.w / paperW * 100}%`, height: `${viewport.rectOnPaper.h / paperH * 100}%`, border: `${selected ? 2 : 1}px solid ${selected ? '#6455d9' : '#8d8880'}`, overflow: 'hidden', background: '#fcfcfb' }}>
     <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
-    {!hasVisibleContent && <button type="button" onClick={(event) => { event.stopPropagation(); onOpenModel(); }} style={{ position: 'absolute', left: '50%', top: '50%', translate: '-50% -50%', border: '1px solid #c8c4bc', borderRadius: 8, background: 'rgba(255,255,255,.94)', color: '#625d55', padding: '6px 9px', font: '600 10px Archivo, sans-serif', cursor: 'pointer' }}>Không thấy nội dung · Chọn vùng</button>}
-    <div style={{ position: 'absolute', right: 5, bottom: 4, padding: '2px 5px', borderRadius: 5, background: 'rgba(255,255,255,.9)', color: '#625d55', font: '600 9px Archivo, sans-serif' }}>1:{viewport.scale} · {viewport.locked ? 'Đã khóa' : 'Chưa khóa'}</div>
+    {!hasVisibleContent && <button type="button" onClick={(event) => { event.stopPropagation(); onOpenModel(); }} style={{ position: 'absolute', left: '50%', top: '50%', translate: '-50% -50%', border: '1px solid #c8c4bc', borderRadius: 10, background: 'rgba(255,255,255,.94)', color: '#625d55', padding: '6px 9px', font: '600 10px Archivo, sans-serif', cursor: 'pointer' }}>Không thấy nội dung · Chọn vùng</button>}
+    <div style={{ position: 'absolute', right: 5, bottom: 4, padding: '2px 5px', borderRadius: 6, background: 'rgba(255,255,255,.9)', color: '#625d55', font: '600 9px Archivo, sans-serif' }}>1:{viewport.scale} · {viewport.locked ? 'Đã khóa' : 'Chưa khóa'}</div>
     {selected && <><div onPointerDown={onMoveStart} title={viewport.locked ? 'Mở khóa để kéo' : 'Kéo ô nhìn'} style={{ ...paperHandle, left: 6, top: 6, cursor: viewport.locked ? 'not-allowed' : 'move' }}><Grip size={13} /></div><div onPointerDown={onResizeStart} title="Đổi kích thước ô nhìn" style={{ ...paperHandle, right: 2, bottom: 2, cursor: 'nwse-resize' }} /></>}
   </div>;
 }
@@ -1017,7 +1017,7 @@ function PaperInspector({ sheet, selected, doc, tab, onTab, onSheetChange, onVie
 }) {
   return <aside aria-label="Thuộc tính Paper" style={{ width: 252, flex: 'none', minHeight: 0, overflow: 'auto', padding: 12, borderLeft: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--t1)', font: '500 11px Archivo, sans-serif' }}>
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 3, padding: 3, borderRadius: 10, background: 'var(--field)', marginBottom: 12 }}>
-      {([['sheet', 'Tờ'], ['viewport', 'Ô nhìn'], ['layers', 'Lớp']] as const).map(([id, label]) => <button key={id} type="button" onClick={() => onTab(id)} style={{ border: 0, borderRadius: 8, minHeight: 30, background: tab === id ? 'var(--card)' : 'transparent', color: tab === id ? 'var(--t1)' : 'var(--t3)', font: '650 11px Archivo, sans-serif', boxShadow: tab === id ? '0 1px 4px rgba(0,0,0,.12)' : 'none', cursor: 'pointer' }}>{label}</button>)}
+      {([['sheet', 'Tờ'], ['viewport', 'Ô nhìn'], ['layers', 'Lớp']] as const).map(([id, label]) => <button key={id} type="button" onClick={() => onTab(id)} style={{ border: 0, borderRadius: 10, minHeight: 30, background: tab === id ? 'var(--card)' : 'transparent', color: tab === id ? 'var(--t1)' : 'var(--t3)', font: '650 11px Archivo, sans-serif', boxShadow: tab === id ? '0 1px 4px rgba(0,0,0,.12)' : 'none', cursor: 'pointer' }}>{label}</button>)}
     </div>
     {tab === 'sheet' && <div style={paperInspectorGrid}>
       <strong style={paperInspectorHeading}>Thông tin tờ</strong>
@@ -1050,8 +1050,8 @@ function PaperField({ label, children }: { label: string; children: React.ReactN
 
 const paperInspectorGrid: React.CSSProperties = { display: 'grid', gap: 9 };
 const paperInspectorHeading: React.CSSProperties = { color: 'var(--t1)', fontSize: 12 };
-const inspectorInput: React.CSSProperties = { width: '100%', minWidth: 0, height: 32, padding: '0 8px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--field)', color: 'var(--t1)', font: '550 11.5px Archivo, sans-serif' };
-const inspectorAction: React.CSSProperties = { minHeight: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, border: '1px solid var(--border)', borderRadius: 9, background: 'var(--field)', color: 'var(--t2)', font: '650 11px Archivo, sans-serif', cursor: 'pointer' };
+const inspectorInput: React.CSSProperties = { width: '100%', minWidth: 0, height: 32, padding: '0 8px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--field)', color: 'var(--t1)', font: '550 11.5px Archivo, sans-serif' };
+const inspectorAction: React.CSSProperties = { minHeight: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, border: '1px solid var(--border)', borderRadius: 10, background: 'var(--field)', color: 'var(--t2)', font: '650 11px Archivo, sans-serif', cursor: 'pointer' };
 
 const paperButton: React.CSSProperties = { border: 0, background: 'transparent', color: '#34312d', display: 'inline-flex', alignItems: 'center', gap: 4, padding: 2, font: '600 11px Archivo, sans-serif', cursor: 'pointer' };
 const paperHandle: React.CSSProperties = { position: 'absolute', zIndex: 2, width: 18, height: 18, display: 'grid', placeItems: 'center', borderRadius: 4, background: '#6455d9', color: '#fff' };

@@ -60,7 +60,7 @@ export default function ToolWindow({ cardId }: { cardId: string }) {
         height: 'min(720px, calc(100vh - 110px))',
         display: 'flex',
         flexDirection: 'column',
-        borderRadius: 16,
+        borderRadius: 14,
         overflow: 'hidden',
         border: '1px solid var(--border-strong)',
         boxShadow: '0 24px 64px rgba(0,0,0,0.28)',
@@ -89,11 +89,11 @@ export default function ToolWindow({ cardId }: { cardId: string }) {
             onClick={() => backToHome()}
             title={tr('Thu lại thành khối nhỏ', 'Collapse to a small block')}
             aria-label={tr('Thu lại', 'Collapse')}
-            style={{ padding: 6, borderRadius: 8, color: 'var(--t3)' }}
+            style={{ padding: 6, borderRadius: 10, color: 'var(--t3)' }}
           >
             <Minus size={14} />
           </button>
-          <button type="button" onClick={handleClose} title="Đóng" aria-label="Đóng" style={{ padding: 6, borderRadius: 8, color: 'var(--t3)' }}>
+          <button type="button" onClick={handleClose} title="Đóng" aria-label="Đóng" style={{ padding: 6, borderRadius: 10, color: 'var(--t3)' }}>
             <X size={14} />
           </button>
         </div>

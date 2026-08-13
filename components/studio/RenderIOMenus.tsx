@@ -184,7 +184,7 @@ export function RenderIOMenus() {
       {msg && (
         <div
           role="status"
-          className="absolute left-0 top-[calc(100%+6px)] z-40 whitespace-nowrap rounded-[8px] border px-3 py-1.5 text-[12.5px] shadow-xl"
+          className="absolute left-0 top-[calc(100%+6px)] z-40 whitespace-nowrap rounded-[10px] border px-3 py-1.5 text-[12.5px] shadow-xl"
           style={{
             borderColor: msg.ok ? 'var(--accent)' : '#c0392b',
             background: 'var(--panel)',
@@ -327,7 +327,7 @@ function FileMenuItem({ item, onDone }: { item: FileItem; onDone: () => void }) 
         item.onSelect();
       }}
       className={cn(
-        'flex w-full items-center gap-2.5 rounded-[7px] px-2.5 py-2 text-left transition-colors hover:enabled:bg-[var(--field)]',
+        'flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left transition-colors hover:enabled:bg-[var(--field)]',
         dim ? 'cursor-not-allowed opacity-55' : 'cursor-pointer',
       )}
     >

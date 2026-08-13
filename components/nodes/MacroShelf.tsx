@@ -35,7 +35,7 @@ export function MacroShelf() {
         type="button"
         onClick={() => setCollapsed(false)}
         title={tr('Nút tổng của tôi', 'My macro nodes')}
-        className="mat-card absolute right-3 top-3 z-[6] flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--mat-hairline)] px-3 text-[11px] font-semibold text-[var(--t2)] shadow-[var(--shadow-pop)] transition-colors hover:text-[var(--t1)]"
+        className="mat-card absolute right-3 top-3 z-[6] flex h-9 items-center gap-1.5 rounded-[14px] border border-[var(--mat-hairline)] px-3 text-[11px] font-semibold text-[var(--t2)] shadow-[var(--shadow-pop)] transition-colors hover:text-[var(--t1)]"
       >
         <Boxes size={14} className="text-[var(--accent)]" />
         {macros.length}
@@ -44,7 +44,7 @@ export function MacroShelf() {
   }
 
   return (
-    <div className="mat-card absolute right-3 top-3 z-[6] flex max-h-[70%] w-[236px] flex-col overflow-hidden rounded-[16px] border border-[var(--mat-hairline)] shadow-[var(--shadow-pop)]">
+    <div className="mat-card absolute right-3 top-3 z-[6] flex max-h-[70%] w-[236px] flex-col overflow-hidden rounded-[14px] border border-[var(--mat-hairline)] shadow-[var(--shadow-pop)]">
       <button
         type="button"
         onClick={() => setCollapsed(true)}
@@ -95,7 +95,7 @@ export function MacroShelf() {
                 }}
                 title={tr(g.shared ? 'Đã chia sẻ cho studio' : 'Chia sẻ cho studio', g.shared ? 'Shared with studio' : 'Share with studio')}
                 className={cn(
-                  'flex h-[26px] w-[26px] flex-none items-center justify-center rounded-[8px] transition-colors',
+                  'flex h-[26px] w-[26px] flex-none items-center justify-center rounded-[10px] transition-colors',
                   g.shared ? 'bg-[var(--field)] text-[var(--success)]' : 'text-[var(--t4)] hover:bg-[var(--field)] hover:text-[var(--t1)]',
                 )}
               >

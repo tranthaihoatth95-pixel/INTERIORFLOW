@@ -64,7 +64,7 @@ function MacroExpandedFrame({
         className="flex items-center gap-2.5 border-b border-[var(--border)] bg-[var(--card)] px-3.5"
         style={{ height: HEADER_H, pointerEvents: 'auto' }}
       >
-        <span className="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-[9px] bg-[var(--accent-soft)]">
+        <span className="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-[10px] bg-[var(--accent-soft)]">
           <Icon size={15} className="text-[var(--accent)]" />
         </span>
         <span className="text-[13px] font-semibold leading-[1.5] tracking-tight text-[var(--t1)]">{group.label}</span>
@@ -115,7 +115,7 @@ function GroupRect({ group }: { group: NodeGroup }) {
     const cy = group.center?.y ?? 0;
     return (
       <div
-        className="absolute flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 shadow-lg"
+        className="absolute flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 shadow-lg"
         style={{
           transform: `translate(${cx - 60}px, ${cy - 16}px)`,
           zIndex: 5,
@@ -166,7 +166,7 @@ function GroupRect({ group }: { group: NodeGroup }) {
   return (
     <div
       className={cn(
-        'absolute rounded-xl border bg-[var(--accent)]/[0.04]',
+        'absolute rounded-[14px] border bg-[var(--accent)]/[0.04]',
         group.rect ? 'border-solid border-[var(--accent-ring)]/60' : 'border-dashed border-[var(--accent-ring)]/40',
       )}
       style={{

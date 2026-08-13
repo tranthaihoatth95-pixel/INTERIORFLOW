@@ -115,11 +115,11 @@ export function Object3DTree() {
           <div key={storeyKey}>
             {/* Hai NÚT RỜI cạnh nhau (không lồng button trong button — HTML không cho, React cũng
                 cảnh báo): trái = gập/mở nhóm, phải = ẩn/hiện CẢ TẦNG trong khung nhìn 3D. */}
-            <div className="flex w-full items-center gap-1 rounded-[8px] pr-0.5 transition-colors hover:bg-[var(--hover)]">
+            <div className="flex w-full items-center gap-1 rounded-[10px] pr-0.5 transition-colors hover:bg-[var(--hover)]">
               <button
                 type="button"
                 onClick={() => toggleCollapse(storeyKey)}
-                className="flex min-w-0 flex-1 items-center gap-1.5 rounded-[8px] px-1.5 py-1 text-left"
+                className="flex min-w-0 flex-1 items-center gap-1.5 rounded-[10px] px-1.5 py-1 text-left"
               >
                 {isCollapsed ? <ChevronRight size={11} className="text-[var(--t4)]" /> : <ChevronDown size={11} className="text-[var(--t4)]" />}
                 <Layers size={11} className="text-[var(--t4)]" />
@@ -198,7 +198,7 @@ export function Object3DTree() {
               <button
                 type="button"
                 onClick={assignGroundStorey}
-                className="ml-6 mt-1 rounded-[8px] border border-dashed border-[var(--border)] px-2 py-1 text-[10px] font-medium text-[var(--t3)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
+                className="ml-6 mt-1 rounded-[10px] border border-dashed border-[var(--border)] px-2 py-1 text-[10px] font-medium text-[var(--t3)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
               >
                 {tr(`Gán tầng trệt cho ${rows.length} khối`, `Assign ground floor to ${rows.length} blocks`)}
               </button>

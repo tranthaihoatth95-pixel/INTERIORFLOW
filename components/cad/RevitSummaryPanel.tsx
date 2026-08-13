@@ -30,7 +30,7 @@ const panel: React.CSSProperties = {
   width: 240,
   background: 'color-mix(in srgb, var(--panel) 96%, transparent)',
   border: '1px solid var(--border)',
-  borderRadius: 12,
+  borderRadius: 14,
   padding: 10,
 };
 

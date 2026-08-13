@@ -95,7 +95,7 @@ export function StorageSettings() {
             type="button"
             onClick={onChoose}
             disabled={busy}
-            className="shrink-0 rounded-[9px] border border-[var(--border)] px-2.5 py-1.5 text-[12px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] disabled:opacity-50"
+            className="shrink-0 rounded-[10px] border border-[var(--border)] px-2.5 py-1.5 text-[12px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] disabled:opacity-50"
           >
             {folderName ? tr('Đổi thư mục', 'Change') : tr('Chọn thư mục', 'Choose folder')}
           </button>
@@ -108,14 +108,14 @@ export function StorageSettings() {
             type="button"
             onClick={onTestConnection}
             disabled={testing}
-            className="rounded-[9px] border border-[var(--border)] px-2.5 py-1.5 text-[12px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] disabled:opacity-50"
+            className="rounded-[10px] border border-[var(--border)] px-2.5 py-1.5 text-[12px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] disabled:opacity-50"
           >
             {testing ? tr('Đang kiểm tra…', 'Testing…') : tr('Kiểm tra kết nối thư mục', 'Test folder connection')}
           </button>
           {testResult && (
             <p
               role={testResult.ok ? undefined : 'alert'}
-              className="mt-2 max-w-md rounded-[8px] border px-2.5 py-2 text-[12px] leading-relaxed"
+              className="mt-2 max-w-md rounded-[10px] border px-2.5 py-2 text-[12px] leading-relaxed"
               style={{
                 borderColor: testResult.ok ? 'var(--border)' : '#d33',
                 background: testResult.ok ? 'var(--field)' : 'color-mix(in srgb, #d33 15%, var(--field))',

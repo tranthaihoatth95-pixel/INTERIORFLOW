@@ -73,7 +73,7 @@ export default function HistoryPanel({ onClose }: { onClose: () => void }) {
               justifyContent: 'space-between',
               padding: '6px 8px',
               margin: '0 2px 2px',
-              borderRadius: 7,
+              borderRadius: 6,
               cursor: r.current ? 'default' : 'pointer',
               background: r.current ? 'var(--accent-soft, rgba(139,124,247,.14))' : 'transparent',
               border: r.current ? '1px solid var(--accent-ring, rgba(139,124,247,.5))' : '1px solid transparent',
@@ -98,7 +98,7 @@ const panel: React.CSSProperties = {
   backdropFilter: 'blur(16px)',
   WebkitBackdropFilter: 'blur(16px)',
   border: '1px solid var(--border)',
-  borderRadius: 12,
+  borderRadius: 14,
   padding: 8,
   boxShadow: '0 8px 30px rgba(0,0,0,.18)',
 };

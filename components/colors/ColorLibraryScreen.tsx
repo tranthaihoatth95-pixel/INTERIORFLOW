@@ -247,7 +247,7 @@ const rowStyle: React.CSSProperties = {
   borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--field)',
 };
 const fieldStyle: React.CSSProperties = {
-  height: 30, padding: '0 8px', borderRadius: 8, border: '1px solid var(--border)',
+  height: 30, padding: '0 8px', borderRadius: 10, border: '1px solid var(--border)',
   background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, lineHeight: 1.6, outline: 'none',
 };
 const chip: React.CSSProperties = {
@@ -262,7 +262,7 @@ function btn(primary: boolean, disabled = false): React.CSSProperties {
   return {
     height: 30, padding: '0 12px', display: 'flex', alignItems: 'center', gap: 6,
     cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
-    border: primary ? 0 : '1px solid var(--border)', borderRadius: 8,
+    border: primary ? 0 : '1px solid var(--border)', borderRadius: 10,
     fontSize: 12, lineHeight: 1.5, fontWeight: 600,
     background: primary ? 'var(--accent)' : 'var(--field)', color: primary ? '#fff' : 'var(--t2)',
   };

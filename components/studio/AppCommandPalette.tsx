@@ -219,7 +219,7 @@ export function AppCommandPalette({ active }: { active: AppChromeActive }) {
     <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/50 pt-[14vh] backdrop-blur-sm">
       <div
         ref={cardRef}
-        className="w-[min(92vw,580px)] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl shadow-black/50"
+        className="w-[min(92vw,580px)] overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--card)] shadow-2xl shadow-black/50"
       >
         <div className="flex items-center gap-2.5 border-b border-[var(--border)] px-3.5">
           <Search size={16} className="shrink-0 text-[var(--t4)]" />

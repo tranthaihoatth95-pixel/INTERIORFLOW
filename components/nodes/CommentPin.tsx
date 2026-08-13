@@ -63,7 +63,7 @@ export default function CommentPin({ nodeId }: { nodeId: string }) {
               anchorX={r.right}
               anchorY={r.bottom + 6}
               onDismiss={() => setOpen(false)}
-              className="nodrag w-64 rounded-[12px] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-xl"
+              className="nodrag w-64 rounded-[14px] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-xl"
               /* Cùng loại vi phạm với badge Thư viện (q0b): số cứng + thiếu -webkit- (bài học K3
                  — tablet không blur). Lấy thẳng token kính của app. */
               style={{ backdropFilter: 'blur(var(--blur))', WebkitBackdropFilter: 'blur(var(--blur))' }}
@@ -75,7 +75,7 @@ export default function CommentPin({ nodeId }: { nodeId: string }) {
                   </p>
                 )}
                 {own.map((c) => (
-                  <div key={c.id} className="group/c rounded-[8px] bg-[var(--field)] px-2 py-1.5">
+                  <div key={c.id} className="group/c rounded-[10px] bg-[var(--field)] px-2 py-1.5">
                     <div className="flex items-center justify-between gap-2">
                       <span className="truncate text-[10.5px] font-medium text-[var(--t2)]">{c.author}</span>
                       <div className="flex shrink-0 items-center gap-1.5">
@@ -106,13 +106,13 @@ export default function CommentPin({ nodeId }: { nodeId: string }) {
                     }
                   }}
                   placeholder={tr('Viết bình luận…', 'Write a comment…')}
-                  className="h-12 flex-1 resize-none rounded-[8px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-[11px] text-[var(--t1)] outline-none focus:border-[var(--accent-ring)]"
+                  className="h-12 flex-1 resize-none rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-[11px] text-[var(--t1)] outline-none focus:border-[var(--accent-ring)]"
                 />
                 <button
                   type="button"
                   onClick={onSend}
                   disabled={!draft.trim()}
-                  className="shrink-0 rounded-[8px] border border-[var(--accent-ring)] bg-[var(--accent-soft)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--accent)] disabled:opacity-40"
+                  className="shrink-0 rounded-[10px] border border-[var(--accent-ring)] bg-[var(--accent-soft)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--accent)] disabled:opacity-40"
                 >
                   {tr('Gửi', 'Send')}
                 </button>

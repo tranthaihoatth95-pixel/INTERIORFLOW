@@ -98,7 +98,7 @@ function Row({ row, mono }: { row: LineweightRow; mono: boolean }) {
         alignItems: 'center',
         height: 'var(--tap)',
         padding: '0 6px',
-        borderRadius: 9,
+        borderRadius: 10,
         transition: 'background var(--dur-fast) var(--ease-apple)',
         background: hover ? 'var(--hover)' : 'transparent',
       }}

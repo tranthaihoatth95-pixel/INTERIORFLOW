@@ -41,7 +41,7 @@ export function AccountSettings() {
         <button
           type="button"
           onClick={() => router.push('/settings/avatar')}
-          className="shrink-0 rounded-[9px] border border-[var(--border)] px-2.5 py-1.5 text-[12px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+          className="shrink-0 rounded-[10px] border border-[var(--border)] px-2.5 py-1.5 text-[12px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
         >
           {tr('Đổi ảnh', 'Edit')}
         </button>

@@ -76,7 +76,7 @@ const panel: React.CSSProperties = {
   backdropFilter: 'blur(14px)',
   WebkitBackdropFilter: 'blur(14px)', // K3: thiếu prefix = tablet không blur
   border: '1px solid var(--border)',
-  borderRadius: 12,
+  borderRadius: 14,
   padding: 8,
   boxShadow: '0 8px 24px rgba(0,0,0,.18)',
 };
@@ -179,9 +179,9 @@ export default function PlanPresentPanel({ onClose }: { onClose: () => void }) {
     say(tr(`Đã ghi ${ids.length} nhãn vào bản vẽ.`, `Wrote ${ids.length} leaders into the drawing.`));
   };
 
-  const row = 'flex items-center justify-between gap-2 rounded-[9px] px-2 py-1.5 text-[11.5px] leading-[1.5]';
+  const row = 'flex items-center justify-between gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] leading-[1.5]';
   const chip = (on: boolean) =>
-    cn('rounded-[7px] border px-2 py-1 text-[10.5px] leading-[1.5] transition-colors',
+    cn('rounded-[6px] border px-2 py-1 text-[10.5px] leading-[1.5] transition-colors',
       on ? 'border-[var(--accent)] bg-[var(--accent)]/12 text-[var(--accent)] font-semibold' : 'border-[var(--border)] text-[var(--t4)] hover:text-[var(--t2)]');
 
   return (
@@ -199,7 +199,7 @@ export default function PlanPresentPanel({ onClose }: { onClose: () => void }) {
         onClick={st.toggle}
         aria-pressed={st.on}
         className={cn(
-          'flex w-full items-center justify-between rounded-[9px] border px-2.5 py-2 text-[12px] leading-[1.5] transition-colors',
+          'flex w-full items-center justify-between rounded-[10px] border px-2.5 py-2 text-[12px] leading-[1.5] transition-colors',
           st.on
             ? 'border-[var(--accent)] bg-[var(--accent)]/12 font-semibold text-[var(--accent)]'
             : 'border-[var(--border)] text-[var(--t2)] hover:border-[var(--t4)]',
@@ -255,7 +255,7 @@ export default function PlanPresentPanel({ onClose }: { onClose: () => void }) {
             disabled={!selection.length}
             onClick={chay}
             className={cn(
-              'flex w-full items-center gap-2 rounded-[9px] border px-2.5 py-2 text-[11.5px] leading-[1.5] transition-colors',
+              'flex w-full items-center gap-2 rounded-[10px] border px-2.5 py-2 text-[11.5px] leading-[1.5] transition-colors',
               selection.length
                 ? 'border-[var(--border)] text-[var(--t2)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
                 : 'cursor-not-allowed border-dashed border-[var(--border)] text-[var(--t5)]',
@@ -306,7 +306,7 @@ export default function PlanPresentPanel({ onClose }: { onClose: () => void }) {
               <button
                 type="button"
                 disabled
-                className="flex w-full cursor-not-allowed items-center gap-2 rounded-[9px] border border-dashed border-[var(--border)] px-2.5 py-2 text-[11.5px] leading-[1.5] text-[var(--t5)]"
+                className="flex w-full cursor-not-allowed items-center gap-2 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-2 text-[11.5px] leading-[1.5] text-[var(--t5)]"
               >
                 <Icon size={13} />
                 {tr(o.vi, o.en)}

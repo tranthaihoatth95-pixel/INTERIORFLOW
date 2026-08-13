@@ -143,7 +143,7 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
                 <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: 'var(--t1)' }}>{f.moTa}</p>
                 <p style={{ margin: '3px 0 0', fontSize: 10, lineHeight: 1.5, color: 'var(--t4)', wordBreak: 'break-word' }}>{f.nguon}</p>
                 {f.chuaKiemChung && (
-                  <span style={{ display: 'inline-block', marginTop: 4, padding: '1px 6px', borderRadius: 5, fontSize: 10, lineHeight: 1.5, fontWeight: 700, color: 'var(--warning)', border: '1px solid var(--warning)' }}>
+                  <span style={{ display: 'inline-block', marginTop: 4, padding: '1px 6px', borderRadius: 6, fontSize: 10, lineHeight: 1.5, fontWeight: 700, color: 'var(--warning)', border: '1px solid var(--warning)' }}>
                     {tr('CHƯA KIỂM CHỨNG VỚI VĂN BẢN GỐC', 'NOT VERIFIED AGAINST SOURCE TEXT')}
                   </span>
                 )}
@@ -198,6 +198,6 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
 
 const btnNho: React.CSSProperties = {
   display: 'inline-flex', alignItems: 'center', gap: 4, height: 24, padding: '0 9px',
-  borderRadius: 7, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)',
+  borderRadius: 6, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)',
   fontSize: 11, lineHeight: 1.5, fontWeight: 600, cursor: 'pointer',
 };

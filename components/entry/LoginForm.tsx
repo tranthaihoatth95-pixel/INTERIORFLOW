@@ -234,7 +234,7 @@ export function LoginForm({
         // Việc 1 — remap bộ chữ về hệ tông đạt ngưỡng (mọi var(--t*) trong card ăn theo)
         ...(cardPlan ? cardTextVars(cardPlan) : {}),
       }}
-      className="lq-card mt-7 w-full max-w-sm rounded-[24px] p-7"
+      className="lq-card mt-7 w-full max-w-sm rounded-[20px] p-7"
     >
       {/* Việc 1 — sương NỘI BỘ trong card (chỉ khi nền quá sáng): đặt SAU chữ, đậm giữa/
           tan rìa nên card vẫn trong ở viền. plan.scrim='' khi không cần → không render. */}
@@ -325,7 +325,7 @@ export function LoginForm({
             />
             <span
               aria-hidden
-              className="grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border transition-colors"
+              className="grid h-4 w-4 shrink-0 place-items-center rounded-[6px] border transition-colors"
               style={{
                 borderColor: remember ? 'var(--accent)' : 'var(--border)',
                 background: remember ? 'var(--accent)' : 'transparent',
@@ -487,7 +487,7 @@ function PasswordInput({
         aria-label={show ? (en ? 'Hide password' : 'Ẩn mật khẩu') : en ? 'Show password' : 'Xem mật khẩu'}
         aria-pressed={show}
         title={show ? (en ? 'Hide password' : 'Ẩn mật khẩu') : en ? 'Show password' : 'Xem mật khẩu'}
-        className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-[7px] text-[var(--t4)] transition-colors hover:text-[var(--t2)]"
+        className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-[6px] text-[var(--t4)] transition-colors hover:text-[var(--t2)]"
       >
         {show ? <EyeOff size={14} /> : <Eye size={14} />}
       </button>

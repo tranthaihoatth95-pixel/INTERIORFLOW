@@ -513,7 +513,7 @@ function SmallBtn({
       style={{
         fontSize: 12,
         padding: '6px 10px',
-        borderRadius: 8,
+        borderRadius: 10,
         border: '1px solid var(--border)',
         background: 'var(--field)',
         color: 'var(--t2)',

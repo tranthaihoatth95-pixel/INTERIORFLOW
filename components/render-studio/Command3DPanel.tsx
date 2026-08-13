@@ -142,14 +142,14 @@ function ContextQuickTools({ tab, onTaoTuong }: { tab: Command3DTab; onTaoTuong?
   return (
     <section className="mb-3 rounded-[10px] border border-[var(--mat-hairline)] bg-[var(--field)] p-2.5" aria-label={tr('Tác vụ theo ngữ cảnh', 'Contextual tasks')}>
       <div className="flex gap-2">
-        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] bg-[var(--accent-soft)] text-[var(--accent)]"><Icon size={14} strokeWidth={1.8} /></span>
+        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-[var(--accent-soft)] text-[var(--accent)]"><Icon size={14} strokeWidth={1.8} /></span>
         <span className="min-w-0">
           <b className="block text-[11px] font-semibold text-[var(--t1)]">{tr(item.title[0], item.title[1])}</b>
           <span className="mt-0.5 block text-[10px] leading-[1.5] text-[var(--t4)]">{tr(item.detail[0], item.detail[1])}</span>
         </span>
       </div>
       {item.action && (
-        <button type="button" onClick={item.action.run} className="mt-2 flex h-7 items-center gap-1 rounded-[7px] border border-[var(--border)] bg-transparent px-2 text-[10px] font-semibold text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]">
+        <button type="button" onClick={item.action.run} className="mt-2 flex h-7 items-center gap-1 rounded-[6px] border border-[var(--border)] bg-transparent px-2 text-[10px] font-semibold text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]">
           <Icon size={12} strokeWidth={1.8} />{tr(item.action.label[0], item.action.label[1])}<ArrowUpRight size={11} strokeWidth={1.8} />
         </button>
       )}
@@ -199,7 +199,7 @@ export default function Command3DPanel({
               aria-label={id === 'tao' ? tr('Tạo mới', 'Create new') : tr(label[0], label[1])}
               className={cn(
                 // mock `.cpt`: bo góc 8px, nền pill khi active (không phải gạch chân), hover đổi nền
-                'flex flex-1 flex-col items-center gap-1 rounded-[8px] px-0.5 py-1.5 text-[10px] transition-colors',
+                'flex flex-1 flex-col items-center gap-1 rounded-[10px] px-0.5 py-1.5 text-[10px] transition-colors',
                 active ? 'bg-[var(--accent-soft)] font-semibold text-[var(--accent)]' : 'text-[var(--t3)] hover:bg-[var(--hover)] hover:text-[var(--t1)]',
               )}
               /* `title=` gỡ 05/08 (VIỆC 2): nhãn tab ĐÃ hiện ngay dưới icon — `title=` chỉ lặp
@@ -432,7 +432,7 @@ function CreateTab({
           disabled={!lam}
           onClick={lam ? HANDLER[id] : undefined}
           className={cn(
-            'flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-[9px] border p-1 text-center transition-colors',
+            'flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-[10px] border p-1 text-center transition-colors',
             nhay
               ? 'animate-pulse cursor-pointer border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
               : lam
@@ -473,7 +473,7 @@ function CreateTab({
               <button
                 type="button"
                 onClick={() => veRoiDun(tool)}
-                className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-[9px] border border-[var(--border)] bg-[var(--panel)] p-1 text-center text-[var(--t2)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
+                className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border border-[var(--border)] bg-[var(--panel)] p-1 text-center text-[var(--t2)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
               >
                 <Square size={14} strokeWidth={1.7} />
                 <span className="text-[9.5px] font-semibold leading-[1.5]">{en}</span>
@@ -560,8 +560,8 @@ function WallBuilder({
         ))}
       </div>
       <div className="mt-2 flex items-center justify-between gap-2">
-        <button type="button" onClick={onCancel} className="h-7 rounded-[7px] px-2 text-[10px] font-semibold text-[var(--t3)] hover:bg-[var(--hover)]">{tr('Hủy', 'Cancel')}</button>
-        <button type="button" disabled={!hasLength} onClick={onCreate} className="h-7 rounded-[7px] bg-[var(--accent)] px-2.5 text-[10px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45">{tr('Tạo tường', 'Create wall')}</button>
+        <button type="button" onClick={onCancel} className="h-7 rounded-[6px] px-2 text-[10px] font-semibold text-[var(--t3)] hover:bg-[var(--hover)]">{tr('Hủy', 'Cancel')}</button>
+        <button type="button" disabled={!hasLength} onClick={onCreate} className="h-7 rounded-[6px] bg-[var(--accent)] px-2.5 text-[10px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45">{tr('Tạo tường', 'Create wall')}</button>
       </div>
     </section>
   );
@@ -584,7 +584,7 @@ function MaterialTab({ materials, onPick }: { materials: MaterialSpecLite[]; onP
       <button
         type="button"
         onClick={() => openLibrarySheet({ shelfId: 'common-atlas' })}
-        className="w-full rounded-[9px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-[10.5px] font-medium text-[var(--t2)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
+        className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-[10.5px] font-medium text-[var(--t2)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
       >
         {tr('Xem cả kho', 'Browse the full library')}
       </button>
@@ -605,7 +605,7 @@ function MaterialTab({ materials, onPick }: { materials: MaterialSpecLite[]; onP
             <button
               onClick={() => { setSelectedId(m.id); onPick?.(m.id); }}
               className={cn(
-                'w-full overflow-hidden rounded-[9px] border bg-[var(--field)] text-left transition-colors',
+                'w-full overflow-hidden rounded-[10px] border bg-[var(--field)] text-left transition-colors',
                 active ? 'border-[var(--accent)]' : 'border-[var(--border)] hover:border-[var(--accent-ring)]',
               )}
             >
@@ -702,7 +702,7 @@ function ArrayGridSection({ scene }: { scene: Scene3DData | null }) {
   };
 
   const num =
-    'w-full rounded-[7px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-right text-[11px] tabular-nums text-[var(--t1)] outline-none focus:border-[var(--accent-ring)]';
+    'w-full rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-right text-[11px] tabular-nums text-[var(--t1)] outline-none focus:border-[var(--accent-ring)]';
   const lab = 'text-[9px] font-medium leading-[1.5] text-[var(--t4)]';
 
   return (
@@ -718,7 +718,7 @@ function ArrayGridSection({ scene }: { scene: Scene3DData | null }) {
       </p>
       {!entityId ? (
         // LÝ DO KHOÁ LỘ MẶT — không tooltip (điều khoản phiếu p14 · bài học màn rỗng 07/08)
-        <p className="rounded-[8px] border border-dashed border-[var(--border)] px-2 py-2 text-[10.5px] leading-relaxed text-[var(--t4)]">
+        <p className="rounded-[10px] border border-dashed border-[var(--border)] px-2 py-2 text-[10.5px] leading-relaxed text-[var(--t4)]">
           {group
             ? tr(
                 'Khối đang chọn chưa nhân bản được — hiện chỉ áp cho khối đùn có cao độ (tường, khối dựng).',
@@ -752,7 +752,7 @@ function ArrayGridSection({ scene }: { scene: Scene3DData | null }) {
               disabled={cols <= 1 && rows <= 1}
               onClick={() => apply(true)}
               className={cn(
-                'flex-1 rounded-[8px] border px-2 py-1.5 text-[10.5px] font-semibold transition-colors',
+                'flex-1 rounded-[10px] border px-2 py-1.5 text-[10.5px] font-semibold transition-colors',
                 cols <= 1 && rows <= 1
                   ? 'cursor-not-allowed border-dashed border-[var(--border)] text-[var(--t5)]'
                   : 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)] hover:border-[var(--accent)]',
@@ -766,7 +766,7 @@ function ArrayGridSection({ scene }: { scene: Scene3DData | null }) {
                 type="button"
                 onClick={() => apply(false)}
                 title={tr('gỡ lưới đã áp', 'remove the applied grid')}
-                className="rounded-[8px] border border-[var(--border)] px-2 py-1.5 text-[10.5px] font-medium text-[var(--t3)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
+                className="rounded-[10px] border border-[var(--border)] px-2 py-1.5 text-[10.5px] font-medium text-[var(--t3)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
               >
                 Remove
               </button>
@@ -807,7 +807,7 @@ function useSelected3DEntity(scene: Scene3DData | null) {
  * trong tooltip). */
 function NoSelectionNote({ group, tr }: { group: unknown; tr: (vi: string, en: string) => string }) {
   return (
-    <p className="rounded-[8px] border border-dashed border-[var(--border)] px-2 py-2 text-[10.5px] leading-relaxed text-[var(--t4)]">
+    <p className="rounded-[10px] border border-dashed border-[var(--border)] px-2 py-2 text-[10.5px] leading-relaxed text-[var(--t4)]">
       {group
         ? tr(
             'Khối đang chọn chưa áp được — hiện chỉ áp cho khối đùn có cao độ (tường, khối dựng).',
@@ -819,20 +819,20 @@ function NoSelectionNote({ group, tr }: { group: unknown; tr: (vi: string, en: s
 }
 
 const numCls =
-  'w-full rounded-[7px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-right text-[11px] tabular-nums text-[var(--t1)] outline-none focus:border-[var(--accent-ring)]';
+  'w-full rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-right text-[11px] tabular-nums text-[var(--t1)] outline-none focus:border-[var(--accent-ring)]';
 const labCls = 'text-[9px] font-medium leading-[1.5] text-[var(--t4)]';
 const sectionTitle = (en: string) => (
   <p className="px-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--t2)]">{en}</p>
 );
 const applyBtnCls = (enabled: boolean) =>
   cn(
-    'flex-1 rounded-[8px] border px-2 py-1.5 text-[10.5px] font-semibold transition-colors',
+    'flex-1 rounded-[10px] border px-2 py-1.5 text-[10.5px] font-semibold transition-colors',
     enabled
       ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)] hover:border-[var(--accent)]'
       : 'cursor-not-allowed border-dashed border-[var(--border)] text-[var(--t5)]',
   );
 const removeBtnCls =
-  'rounded-[8px] border border-[var(--border)] px-2 py-1.5 text-[10.5px] font-medium text-[var(--t3)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]';
+  'rounded-[10px] border border-[var(--border)] px-2 py-1.5 text-[10.5px] font-medium text-[var(--t3)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]';
 
 /** Array Radial — mảng vòng tròn quanh trục đứng. Tâm mặc định = TÂM bbox của khối đang chọn
  * (`entityBox`, không bắt gõ tay — cùng cách `ArrayAction` Object3DInspector suy trục dài tường). */

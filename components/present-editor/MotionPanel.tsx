@@ -183,7 +183,7 @@ function ElementRevealList({
               flexDirection: 'column',
               gap: 6,
               padding: '7px 8px',
-              borderRadius: 8,
+              borderRadius: 10,
               border: '1px solid var(--border)',
               background: isOver ? 'var(--hover)' : 'var(--field)',
             }}
@@ -290,7 +290,7 @@ function OptBtn({
       title={hint}
       style={{
         padding: '8px 6px',
-        borderRadius: 8,
+        borderRadius: 10,
         border: active ? '1.5px solid var(--accent)' : '1px solid var(--border)',
         background: active ? 'var(--accent-soft)' : 'var(--field)',
         color: active ? 'var(--accent)' : 'var(--t2)',
@@ -309,7 +309,7 @@ const playBtn: React.CSSProperties = {
   justifyContent: 'center',
   gap: 6,
   padding: '9px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--accent)',
   background: 'var(--accent)',
   color: '#fff',
@@ -323,7 +323,7 @@ const deckBtn: React.CSSProperties = {
   justifyContent: 'center',
   gap: 6,
   padding: '8px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--border)',
   background: 'var(--field)',
   color: 'var(--t2)',

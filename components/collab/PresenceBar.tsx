@@ -165,7 +165,7 @@ export function PresenceBar() {
               anchorX={r.right}
               anchorY={r.bottom + 6}
               onDismiss={() => setInviteOpen(false)}
-              className="w-60 rounded-[12px] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-xl"
+              className="w-60 rounded-[14px] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-xl"
               style={{ backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' }}
             >
               <p className="px-1 pb-1.5 text-[10px] leading-relaxed text-[var(--t4)]">
@@ -184,7 +184,7 @@ export function PresenceBar() {
                     type="button"
                     disabled={inviting === u.id}
                     onClick={() => addMember(u.id)}
-                    className="flex w-full items-center justify-between rounded-[8px] px-2 py-1.5 text-left text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] disabled:opacity-40"
+                    className="flex w-full items-center justify-between rounded-[10px] px-2 py-1.5 text-left text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] disabled:opacity-40"
                   >
                     <span className="truncate">{u.name}</span>
                     <span className="shrink-0 text-[10px] text-[var(--t4)]">{inviting === u.id ? tr('Đang thêm…', 'Adding…') : tr('Thêm', 'Add')}</span>
