@@ -124,6 +124,9 @@ export const FRONTIER = [
     bangChung: [{ file: 'docs/TRIET-LY-IF.md', mau: 'Đ3' }, { file: 'docs/HOP-DONG-PHOI-HOP-T.md', mau: 'TRIET-LY-IF' }] },
   { id: 'nhip-van-hanh-p2', vai: 'day', ten: 'P2 nhịp vận hành (13/08: BƯỚC 0 soi tổng→chi tiết mỗi đợt [T4][Đ1] + THẺ VAI tự chứa 4 dòng [Đ4] + điều kiện nghiệm thu phân loại [Đ6] — vá HOP-DONG; đợt kế là ca chạy thử, V kiểm thêm mục làm-ngoài-vai)', he: 'DocCore', dot: 7, trangThai: 'xong',
     bangChung: [{ file: 'docs/HOP-DONG-PHOI-HOP-T.md', mau: 'BƯỚC 0|THẺ VAI TỰ CHỨA' }] },
+  // 14/08 — Hoà chê khi duyệt mắt: "giao diện rất xấu, không thống nhất theo design system" — T ghi entry ngay:
+  { id: 'dong-bo-ds-mat', vai: 'day', ten: 'ĐỒNG BỘ DESIGN SYSTEM BẰNG MẮT toàn app (Hoà đặt 14/08): T tự chụp mọi stage → bảng chẩn theo luật DS (thang bo 6/10/14/20 + đồng tâm §2d · thẳng hàng · nhịp 44/34/15/5 · một-khối-một-bóng §2c · token màu) → đợt sửa đồng bộ; mock chuẩn qua Claude Design/Figma theo ảnh tham khảo Hoà gửi; máy đo kèm: hàng đợi 331 giá trị ngoài thang của soi:hinh-hoc phải rút', he: 'DocCore', dot: 7, trangThai: 'chua',
+    bangChung: [{ dir: 'docs', mau: 'CHAN-DOAN-DS-MAT|chan-doan-ds' }] },
   // 13/08 đêm — finding LÔ DUYỆT MẮT #1 của Hoà (điều hướng về Home lag) — T ghi entry ngay:
   { id: 'home-nav-lag', vai: 'do', ten: 'Điều hướng về Home lag — ĐO RỒI SỬA (14/08 NL: 15 component gated sang dynamic ssr:false qua heavy-panels.tsx — chunk route / 28,6→24,2 MB dev, −274 module, three-bvh ra hẳn, load warm 1209→1041ms; first-paint giữ tĩnh LoginScreen·DongStudioHome·AppShell·FlowCanvas) — cảm nhận hậu-login chờ MẮT Hoà; nếu vẫn lag thì nghi phạm kế là chuỗi fetch sau mount, phiếu riêng; 14/08 Hoà bấm lại XÁC NHẬN HẾT LAG', he: 'Workspace', dot: 7, trangThai: 'xong-mat',
     bangChung: [{ file: 'components/home/heavy-panels.tsx', mau: "dynamic\\(" }, { file: 'components/home/HomeScreen.tsx', mau: 'heavy-panels' }] },
