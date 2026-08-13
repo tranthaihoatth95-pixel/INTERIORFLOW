@@ -1,4 +1,9 @@
-# STATUS — InteriorFlow (13/08)
+# STATUS — InteriorFlow (13/08 chiều)
+
+## MỞ PHIÊN MỚI: dán câu lệnh §5 HOP-DONG-PHOI-HOP-T + `npm run soi:frontier`. Đọc thêm: TRIET-LY-IF.md (hiến pháp, TRÍCH MÃ ĐIỀU KHOẢN vào mọi phiếu) · 00-CHOT 2 dòng cuối (đề xuất treo). Nhịp chuỗi nền: P3 Hệ-Luật-Thao-Tác → P4 Gói-Hồ-Sơ-Sống → P5 FeatureContract-máy → P6 IF-RNA-v0 (mỗi phiên 1 món + ≥1 món nhìn-thấy song song).
+
+## Chờ tay HOÀ (xếp hàng)
+1. Phán câu video chặng 2/3 (kiến trúc tool 3 lớp — 00-CHOT dòng cuối) 2. Duyệt phác Home v5 (mock đã gửi chat, SPEC-HOME-BENTO-V5) 3. Chọn ảnh render ST5 → T upscale 300dpi 4. Lô duyệt mắt #1+#2 (nợ mắt 45) 5. Gật lộ trình P5-P6.
 
 > Lịch sử ở `CHANGELOG.md`. Code, schema và test là nguồn kiểm chứng. IF là sản phẩm global: **2D Kỹ thuật · 3D Thiết kế · Trình bày**; Brand Kit thuộc từng dự án.
 
@@ -17,33 +22,5 @@
 
 ## Vừa xong
 
-- **13/08 — ĐỢT 5 (Hoà chốt kép: GIAO DIỆN THỐNG NHẤT + HOME; 4 agent, T audit từng cụm):** ⭐**HOME "Dòng Studio"** — 2 trang cuộn: ①ánh sáng theo giờ thật + lời chào dữ liệu thật + Vitals pill + card dự án ②6 widget live (hôm-nay · biểu đồ chặng · lưới tích luỹ KHÔNG streak · ghi chú Tot · tin tự sinh · mốc DayTicker), 0 bảng DB mới, widget trống tự ẩn (cf3b5ec; NC nền: `docs/nc/NC-HOME-CAM-NHAN` + `NC-HOME-DELIGHT`) · **Dọn giao diện v2** — radius 442→**335**, từ điển mocks 77→**0**, đủ 5 token mật độ (d00de01) · **Phát hiện quý H2**: tay cầm panel ĐÃ CÓ từ 07/08 (`PanelFlank`, 3 chỗ) — sổ ghi sai marker nên soi lọt, đã sửa sổ, 0 dòng code thừa; Navigator 2D khác biệt CÓ CHỦ ĐÍCH · 🔴→✅ **Trụ hiệu năng có số đầu tiên** — bench tất định: điểm gãy `pickHatchFace` O(N²) (hatch.ts:502), recipe 10 bước nhân 660× tam giác/cấu kiện (e16546f; việc SỬA = entry đợt kế). Sổ: 40 xong-MÁY · 25 chờ · 0 lệch. **LÔ DUYỆT MẮT #1 + #2 chờ Hoà** (`docs/duyet-mat/` — app giờ ở cổng 3000, cần login tay). Va chạm ghi nhận: `ProjectSelect.tsx` nằm 2 vùng phiếu (H3 radius + H1 mount) → commit d00de01 cuốn theo phần H1 — lỗi chia vùng của T, vô hại, rút kinh nghiệm khai vùng loại trừ file cụ thể.
-- 12/08 khuya — ĐỢT 4: build-recipe · dna-card · gallery-lien-nganh · editor-bang-bieu-mau (4 commit, chi tiết chuyển CHANGELOG). 12/08 chiều — ĐỢT 3: tool-state 3D · thang bo v1 · TaskContext 2 chiều · Home=Tổng quan · backup offsite.
+- **13/08 (phiên T dài — ngày dày nhất từ đầu dự án):** ⭐**ĐỢT 5** giao diện thống nhất + Home (chi tiết CHANGELOG): Home bento v4 co-giãn-theo-dữ-liệu · radius 442→335 · từ điển mocks 77→0 · PanelFlank phát hiện có sẵn · bench hiệu năng (điểm gãy pickHatchFace O(N²), recipe ×660 tam giác) · ⭐**DOGFOOD #1 task ST5 thật**: Smart Convert bậc 1 (nhập PDF→deck lớp chữ thật) + sửa nóng F1 Trình chiếu (TaskFirstStart 3 lối, toolbar gộp) + fix F2 node render (guidance 15→3.5 + image_size — công thức từ 15 job làn máy) + bộ render sảnh thang/hành lang/cab giao Hoà + sổ findings F1-F5 · ⭐**NỀN MÓNG**: TRIET-LY-IF.md ban hành (P1) + P2 nhịp HOP-DONG (bước-0, thẻ vai, phân loại) + SPEC-GROUNDED-RENDER (chốt) + REVIEW-DONG-BO (5 engine chung thành luật) + SPEC-HOME-BENTO-V5 (chờ duyệt phác) + BAN-THIET-KE-HE-THONG + DOI-CHIEU-3-TRUONG-PHAI + NC-GU-BENTRAN (gu Pinterest) + 2 NC Home. Sổ: 45 xong-MÁY · 27 chờ · 0 lệch.
 
-- Nền 11/08 (R1 hardening · Present ma trận năng lực · 3D scene provenance · Master Library · Photo Editor Crop…) đã chuyển CHANGELOG mục 11/08.
-
-## Năng lực hiện có — nói đúng mức
-
-- **2D:** mở `.idf/.dwg/.dxf`, backup `.ifpack`, xuất DXF/PDF. IFC chỉ metadata.
-- **3D:** ảnh, GLB/glTF/OBJ-MTL `lossy`; chưa native SKP/MAX/FBX/IFC/RVT và chưa đủ dựng hình chuyên nghiệp.
-- **Present:** nhập PPTX cơ bản, ảnh, IDFP; BOQ nhận XLSX/CSV; xuất PDF/PPTX/PNG/IDFP/XLSX. Chưa có editor Văn bản/Video/HTML; PDF deck/DOCX chưa nhập.
-- **Lighting:** lux/quang thông/độ đồng đều là ước tính, chưa IES/LDT/trắc quang chuẩn.
-
-## Cổng R1 nội bộ còn lại
-
-1. Pass test/type/build/package và smoke máy sạch; backup, nâng cấp, khôi phục DB có dữ liệu.
-2. Quyết giấy phép `libredwg-web` GPL cho phạm vi nội bộ; chưa chốt thì không phân phối DWG trong installer.
-3. Hoàn thiện 3D M1 và cùng một Doc 2D↔3D, không chặn khi thiếu bước trước.
-4. Library có metadata/provenance thật; Material Impact preview; Vitals chỉ gọi hành động có preview/undo.
-5. Không mở route/file/output app chưa hỗ trợ; revision/version output rõ ràng.
-6. Quét trung tính cuối: không tên/logo/asset/dữ liệu khách hay studio trong UI, mẫu, output, config, installer. Lịch sử Git chỉ cần dọn trước khi giao repo ra ngoài.
-
-## Sau R1
-
-Mesh editor, IFC/BIM thật, IES/LDT, realtime collab, marketplace, cloud/mobile, ký/notarize public, SKP/MAX/FBX/RVT native và video editor hoàn chỉnh.
-
-## Rủi ro / quy tắc
-
-- `libredwg-web` GPL và lịch sử Git: xem `docs/LICENSE-NOTES.md`, `docs/RESEARCH-DWG-LICENSE.md`, `docs/AUDIT-BRAND-PII.md`.
-- `findHatchBoundary` có thể chậm ở bản vẽ dày; xem `docs/TECH-DEBT.md`.
-- Không push khi chưa có lệnh; không chạy Prisma/SQLite repair trực tiếp; code theo worktree `interiorflow-wt-*`; STATUS dưới 800 từ.
