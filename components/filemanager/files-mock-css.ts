@@ -206,6 +206,21 @@ export const FILES_MOCK_CSS = `
 
 .if-files-outer{height:100%;background:var(--bg)}
 
+/* A3 (DS-A 14/08) — khổ hẹp ≤900px (732px ≈ tablet dọc, LỚP THAO TÁC đã chốt):
+   trước đây .insp 308px đứng CẠNH .main → main còn ~80px, mô tả wrap 1-từ-1-dòng,
+   card dung lượng đè tiêu đề "Files", toggle grid/list đè card. Sửa: xếp CHỒNG —
+   cột inspector (card dung lượng + chi tiết) xuống DƯỚI nội dung chính, ăn hết bề
+   ngang; hàng tiêu đề cho phép wrap để cụm toggle/Tải lên rơi xuống dòng riêng
+   thay vì chen đè. Desktop >900px giữ nguyên layout 2 cột. */
+@media (max-width:900px){
+  .if-files-app{flex-direction:column;height:auto;min-height:100%;overflow-y:auto}
+  .if-files-app .main{flex:none;padding:20px 18px 16px}
+  .if-files-app .insp{width:auto;padding:0 18px 22px}
+  .if-files-app .crumbrow{flex-wrap:wrap;gap:10px}
+  .if-files-app .toolrow{margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+  .if-files-app .empty{min-height:280px}
+}
+
 /* SPEC-HOVER-FOCUS-IDF §3.8 — reduced-motion: bỏ scale/lift, chỉ giữ đổi nền ≤100ms */
 @media (prefers-reduced-motion:reduce){
   .if-files-app .fol:hover,.if-files-app .fol:active,.if-files-app .upbtn:active,

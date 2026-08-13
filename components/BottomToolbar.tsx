@@ -158,7 +158,8 @@ export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
         <Maximize size={15} />
       </Btn>
       <Divider />
-      <Btn title="Tự sắp xếp graph (auto-layout)" onClick={() => autoLayout()}>
+      {/* A5 (DS-A 14/08, SPEC-NGON-NGU): bỏ jargon "graph/auto-layout" khỏi UI */}
+      <Btn title="Tự dàn bảng" onClick={() => autoLayout()}>
         <LayoutGrid size={15} />
       </Btn>
       <Btn title={`Snap lưới: ${snapGrid ? 'đang bật' : 'đang tắt'}`} active={snapGrid} onClick={() => toggleSnap()}>

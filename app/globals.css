@@ -283,9 +283,11 @@ body {
 body {
   color: var(--t1);
   background: var(--bg);
-  /* Font cục bộ InteriorFlow + fallback hệ thống (không tải font ngoài khi build/chạy). */
-  font-family: var(--font-sans), -apple-system, 'SF Pro Text', system-ui,
-    'Segoe UI', Roboto, sans-serif;
+  /* Font cục bộ InteriorFlow + fallback hệ thống (không tải font ngoài khi build/chạy).
+     A1 (DS-A 14/08): var() PHẢI có giá trị dự phòng — nếu biến chưa gán mà var() trần thì
+     CẢ khai báo font-family vô hiệu ("invalid at computed-value time") → rơi về serif (Times). */
+  font-family: var(--font-sans, -apple-system), -apple-system, 'SF Pro Text',
+    'Segoe UI', Roboto, system-ui, sans-serif;
   /* Chỉnh chữ tinh kiểu Apple */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

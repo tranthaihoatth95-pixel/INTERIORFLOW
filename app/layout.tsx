@@ -10,10 +10,14 @@ import { CanvasWallpaper } from '@/app/settings/_components/CanvasWallpaper';
 
 // Font cục bộ để build/installer không phụ thuộc Google Fonts. Hệ điều hành
 // tự fallback glyph tiếng Việt khi Geist không có ký tự tương ứng.
+// A1 (DS-A 14/08): khai `fallback` tường minh — next/font nối các family này vào
+// NGAY TRONG biến --font-sans, nên khi GeistVF.woff tải chậm/hỏng (Electron offline,
+// first paint) chữ vẫn là SANS hệ thống, không rơi về serif.
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
   variable: '--font-sans',
   weight: '100 900',
+  fallback: ['-apple-system', 'Segoe UI', 'Roboto', 'system-ui', 'sans-serif'],
 });
 
 export const metadata: Metadata = {

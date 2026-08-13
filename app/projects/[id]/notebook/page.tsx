@@ -44,7 +44,7 @@ export default function ProjectNotebookPage() {
         height: '100dvh',
         background: 'var(--surface-page)',
         color: 'var(--t1, #1E1B16)',
-        fontFamily: 'var(--font-sans), system-ui, sans-serif',
+        fontFamily: 'var(--font-sans, system-ui), system-ui, sans-serif', // A1: var() có fallback, biến chưa gán không làm vô hiệu cả khai báo
       }}
     >
       {/* Header */}

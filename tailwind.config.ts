@@ -17,17 +17,19 @@ const config: Config = {
           strong: "var(--accent-strong)",
         },
       },
-      // Font hệ thống TTT — Be Vietnam Pro trước tiên, fallback hệ + Geist
+      // A1 (DS-A 14/08) — chuỗi font PHẢI hợp lệ kể cả khi biến chưa kịp gán:
+      // bản cũ chèn `var(--font-geist-sans)` KHÔNG ĐƯỢC ĐỊNH NGHĨA ở đâu cả → cả
+      // khai báo font-family của class `.font-sans` (đè rule `body{}` vì specificity)
+      // thành "invalid at computed-value time" → body rơi về serif mặc định (Times).
+      // Sửa: chỉ dùng `--font-sans` (layout.tsx gán) + fallback ngay trong var().
       fontFamily: {
         sans: [
-          "var(--font-sans)",
-          '"Be Vietnam Pro"',
+          "var(--font-sans, -apple-system)",
           "-apple-system",
           '"SF Pro Text"',
-          "system-ui",
-          "var(--font-geist-sans)",
           '"Segoe UI"',
           "Roboto",
+          "system-ui",
           "sans-serif",
         ],
       },

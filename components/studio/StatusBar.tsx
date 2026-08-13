@@ -28,7 +28,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Loader2, Save, ShieldAlert, HardDriveDownload, Users } from 'lucide-react';
+import { Loader2, Save, ShieldAlert, HardDriveDownload, Eye } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { useT } from '@/lib/i18n';
 import { getDefinition } from '@/lib/nodes/registry';
@@ -177,8 +177,9 @@ export default function StatusBar({ stage, hidden }: Props) {
         zIndex: 20,
       }}
     >
-      {/* TRÁI — ngữ cảnh */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
+      {/* TRÁI — ngữ cảnh. A2 (DS-A 14/08): `overflow:hidden` — con nowrap không được tràn ra
+          ngoài cánh rồi chui xuống dưới pill Vitals ở khổ hẹp (bug "ĐãVlialsúc" 732px). */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1, overflow: 'hidden' }}>
         <span
           style={{
             overflow: 'hidden',
@@ -291,8 +292,10 @@ export default function StatusBar({ stage, hidden }: Props) {
             bản sao của panel. */}
       </div>
 
-      {/* PHẢI — trạng thái hệ thống */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'flex-end', flex: 1, minWidth: 0 }}>
+      {/* PHẢI — trạng thái hệ thống. A2 (DS-A 14/08): `overflow:hidden` cùng lý do cánh trái —
+          justify flex-end làm nội dung thừa tràn về PHÍA TRÁI, đè lên pill Vitals; mỗi mục con
+          tự ellipsis (minWidth:0 + overflow hidden) thay vì đứng nguyên chiều rộng nowrap. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'flex-end', flex: 1, minWidth: 0, overflow: 'hidden' }}>
         {showBoardCount && (
           <span
             style={{ whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}
@@ -322,9 +325,12 @@ export default function StatusBar({ stage, hidden }: Props) {
           // riêng (7.1.23 ⑤c, ≥12px/≥1.5) — CHỈ cho dòng này, KHÔNG đổi `fontSize:11.5` chung
           // của cả StatusBar (thuộc đợt sửa token 7.1.23 riêng, đang chờ Hoà gật, ngoài phạm vi
           // việc gấp này).
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', fontSize: 12, lineHeight: 1.5 }}>
-            <Save size={12} />
-            {saveState === 'saving' ? 'Đang lưu…' : lastSavedAt ? `Đã lưu lúc ${formatHHMM(lastSavedAt)}` : 'Đã lưu'}
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', fontSize: 12, lineHeight: 1.5, minWidth: 0 }}>
+            <Save size={12} style={{ flexShrink: 0 }} />
+            {/* A2 — khổ hẹp: chữ tự cụt bằng ellipsis thay vì tràn đè pill Vitals */}
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {saveState === 'saving' ? 'Đang lưu…' : lastSavedAt ? `Đã lưu lúc ${formatHHMM(lastSavedAt)}` : 'Đã lưu'}
+            </span>
           </span>
         )}
         {showDisk && (
@@ -348,12 +354,16 @@ export default function StatusBar({ stage, hidden }: Props) {
         )}
         {otherTabOpen && (stage === 'concept' || stage === 'present') && (
           // ④ — CHỈ cảnh báo, không khoá/gộp (phạm vi B4 đã chốt với Hoà).
+          // A6 (DS-A 14/08, luật LightState): đây là THÔNG TIN (dự án đang mở thêm ở tab khác),
+          // không phải nguy hiểm → màu trung tính --t3 + icon mắt, KHÔNG đỏ. Đỏ chỉ dành cho
+          // xung đột ghi thật — hiện chưa có state đó (chỉ có cờ `otherTabOpen`), khi nào có
+          // thì phân nhánh màu ở đây.
           <span
-            style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', color: '#c0392b' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', color: 'var(--t3)', minWidth: 0 }}
             title="Dự án này đang mở ở tab/cửa sổ khác — sửa đồng thời có thể ghi đè lẫn nhau"
           >
-            <Users size={12} />
-            Đang mở nơi khác
+            <Eye size={12} style={{ flexShrink: 0 }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>Đang mở nơi khác</span>
           </span>
         )}
         {showStandards && (

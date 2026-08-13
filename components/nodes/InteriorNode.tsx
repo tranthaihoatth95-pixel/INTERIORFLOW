@@ -341,7 +341,8 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
         <StatusIcon status={status} />
         <motion.button
           {...pressableIcon}
-          title={status === 'error' ? 'Retry' : 'Run node (+ upstream)'}
+          // A5 (DS-A 14/08, SPEC-NGON-NGU): VI trước, không lộ jargon "node/upstream"
+          title={status === 'error' ? tr('Chạy lại', 'Retry') : tr('Chạy khối (kèm khối nguồn)', 'Run block (with source blocks)')}
           disabled={busy}
           onClick={() => runNode(id)}
           className="nodrag grid h-6 w-6 place-items-center rounded-md bg-[var(--accent-strong)] text-white transition-colors hover:bg-[var(--accent)] disabled:opacity-40"

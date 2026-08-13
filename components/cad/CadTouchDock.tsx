@@ -94,7 +94,9 @@ export default function CadTouchDock() {
         label="Số liệu"
         active={dynInput}
         onPress={() => synthKey('F12')}
-        title={`Dynamic Input ${dynInput ? 'BẬT' : 'tắt'} — hiện độ dài/toạ độ cạnh con trỏ (phím F12)`}
+        // A5 (DS-A 14/08, SPEC-NGON-NGU): "Dynamic Input" là jargon AutoCAD — nhãn người dùng
+        // là tiếng Việt; tên nghề giữ trong comment/code, không lộ UI.
+        title={`Nhập số theo con trỏ ${dynInput ? 'BẬT' : 'tắt'} — hiện độ dài/toạ độ cạnh con trỏ (phím F12)`}
       />
       <DockBtn
         icon={Terminal}

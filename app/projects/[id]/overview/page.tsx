@@ -95,7 +95,7 @@ export default function ProjectOverviewPage() {
         minHeight: '100dvh',
         background: 'var(--bg)',
         color: 'var(--t1)',
-        fontFamily: 'var(--font-sans), system-ui, sans-serif',
+        fontFamily: 'var(--font-sans, system-ui), system-ui, sans-serif', // A1: var() có fallback, biến chưa gán không làm vô hiệu cả khai báo
       }}
     >
       {/* Header */}
