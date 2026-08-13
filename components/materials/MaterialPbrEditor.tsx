@@ -10,19 +10,27 @@
  * Lưu theo matId (= `ProductSpec.sku`) vào kho studio `lib/materials/pbr-store.ts`. Khuôn modal
  * chép theo `MaterialFormModal.tsx` cùng thư mục (inputStyle/labelStyle/khung dialog) — một
  * ngôn ngữ giao diện, không sáng tác khung mới.
+ *
+ * IfRna v0 (14/08, phiếu if-rna-v0): phần Ô NHẬP không còn code tay từng trường — nhãn/miền/
+ * bước/nhóm đọc từ `MATERIAL_PBR_RNA` (lib/rna), UI sinh bởi `RnaPanel`. Sửa 1 dòng trong
+ * registry là panel đổi theo [T2]. GIỮ TAY (khai thật, [T0]): khối ①②+quả cầu (layout ghép +
+ * options/transform), hàng khoá vật lý, các trường giá trị object (qua renderer tuỳ chỉnh —
+ * nhãn vẫn từ registry), badge suy đoán, nút xuất V-Ray/D5, footer.
  */
-import { useMemo, useRef, useState } from 'react';
-import { X, Lock, Upload, ChevronRight, Sparkles, RotateCcw, Download } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { X, Lock, Sparkles, RotateCcw, Download } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import type { MaterialPbr } from '@/lib/materials/schema';
 import { DEFAULT_PBR } from '@/lib/materials/schema';
+import { MATERIAL_PBR_RNA, NHOM_NANG_CAO } from '@/lib/rna/material-pbr.rna';
+import { ifRnaField } from '@/lib/rna/types';
+import { RnaPanel, rnaInputStyle, rnaLabelStyle, type RnaRenderer } from './RnaPanel';
 import { toVRayMtl } from '@/lib/materials/export-vray';
 import { toD5Material } from '@/lib/materials/export-d5';
 import {
   MATERIAL_TYPES,
   materialTypeOf,
   applyMaterialType,
-  setRoughness,
   setBaseColor,
   setTransparency,
   type MaterialTypeId,
@@ -33,22 +41,15 @@ import MaterialSphere from '@/components/three/MaterialSphere';
 import type { PreviewSpec } from '@/components/three/material-preview';
 import { pbrCacheKey } from '@/lib/three/pbr-three';
 
-const inputStyle: React.CSSProperties = {
-  width: '100%', height: 'var(--tap)', padding: '0 10px', borderRadius: 10,
-  border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', fontSize: 'var(--fs-ui)',
-};
-const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: 'var(--t3)', display: 'block', marginBottom: 4 };
+// Khuôn ô nhập dời sang RnaPanel.tsx (một nguồn style) — alias giữ tên cũ cho phần giữ tay.
+const inputStyle = rnaInputStyle;
+const labelStyle = rnaLabelStyle;
 const lockRow: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--t3)' };
 
-/** Đọc 1 file ảnh → data-URI (map lưu thẳng trong pbr, không upload server — kho studio cục bộ). */
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result));
-    r.onerror = () => reject(r.error);
-    r.readAsDataURL(file);
-  });
-}
+// Nhãn phần GIỮ TAY cũng đọc từ registry RNA — chuỗi không chép đôi, sửa 1 chỗ lan cả tay lẫn máy.
+const F_TYPE = ifRnaField(MATERIAL_PBR_RNA, 'typeId');
+const F_COLOR = ifRnaField(MATERIAL_PBR_RNA, 'baseColor');
+const F_UV = ifRnaField(MATERIAL_PBR_RNA, 'uvScaleMm');
 
 export function MaterialPbrEditor({
   matId,
@@ -70,7 +71,6 @@ export function MaterialPbrEditor({
     // chưa từng chỉnh — khởi tạo bằng SUY ĐOÁN từ danh mục/tên, GIỮ cờ suyDoan để UI hiện rõ
     return { ...inferPbrFromCategory(categoryHint ?? name) };
   });
-  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   /**
    * §1#7 (08/08) — bản PBR ĐÃ LƯU trong pbr-store: nguồn duy nhất cho 2 nút Xuất V-Ray/D5.
@@ -79,12 +79,6 @@ export function MaterialPbrEditor({
    * lưu (chỉ có suy đoán) → nút khoá kèm lý do (luật §9: disabled phải nói vì sao).
    */
   const [savedPbr, setSavedPbr] = useState<MaterialPbr | null>(() => getPbr(matId));
-  const normalRef = useRef<HTMLInputElement>(null);
-  const aoRef = useRef<HTMLInputElement>(null);
-  const heightRef = useRef<HTMLInputElement>(null);
-  const baseMapRef = useRef<HTMLInputElement>(null);
-  const roughMapRef = useRef<HTMLInputElement>(null);
-  const metalMapRef = useRef<HTMLInputElement>(null);
 
   const typeDef = materialTypeOf(pbr.typeId);
 
@@ -97,12 +91,6 @@ export function MaterialPbrEditor({
   }, [matId, pbr, typeDef]);
 
   const update = (next: MaterialPbr) => { setPbr(next); setSavedFlash(false); };
-
-  type MapField = 'normalUrl' | 'aoUrl' | 'heightUrl' | 'baseColorMapUrl' | 'roughnessMapUrl' | 'metallicMapUrl';
-  const pickMap = async (which: MapField, file: File) => {
-    const url = await fileToDataUrl(file);
-    update({ ...pbr, [which]: url });
-  };
 
   const save = () => {
     savePbr(matId, pbr);
@@ -140,18 +128,68 @@ export function MaterialPbrEditor({
     URL.revokeObjectURL(a.href);
   };
 
-  const mapBtn = (which: MapField, ref: React.RefObject<HTMLInputElement>, label: string) => (
-    <div>
-      <label style={labelStyle}>{label}</label>
-      <button type="button" onClick={() => ref.current?.click()}
-        style={{ ...inputStyle, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: pbr[which] ? 'var(--t1)' : 'var(--t4)' }}>
-        <Upload size={13} />
-        {pbr[which] ? tr('Đã nạp — bấm đổi', 'Loaded — click to replace') : tr('Nạp ảnh…', 'Load image…')}
-      </button>
-      <input ref={ref} type="file" accept="image/*" className="hidden"
-        onChange={(e) => e.target.files?.[0] && void pickMap(which, e.target.files[0])} />
-    </div>
-  );
+  /**
+   * IfRna v0 — renderer TUỲ CHỈNH cho field panel chưa tự sinh được [T0 khai thật]:
+   * trường giá trị OBJECT (ghi sub-path giữ mảnh còn lại) + điều kiện hiển thị. Nhãn nhận từ
+   * registry qua ctx.nhan — logic ghi vẫn là các hàm cũ (setTransparency…), hành vi giữ nguyên.
+   */
+  const anyMap = !!(pbr.baseColorMapUrl || pbr.roughnessMapUrl || pbr.metallicMapUrl || pbr.normalUrl || pbr.aoUrl || pbr.heightUrl);
+  const tuyChinh: Partial<Record<keyof MaterialPbr & string, RnaRenderer<MaterialPbr>>> = {
+    // ④ chỉ hiện với loại trong suốt — setTransparency giữ ior, xoá cờ suy đoán (như cũ).
+    transmission: ({ nhan }) => !typeDef?.transparent ? null : (
+      <div>
+        <label style={labelStyle}>{nhan} · {(pbr.transmission?.value ?? 0).toFixed(2)}</label>
+        <input type="range" min={0} max={1} step={0.01} value={pbr.transmission?.value ?? 0}
+          onChange={(e) => update(setTransparency(pbr, Number(e.target.value)))} style={{ width: '100%' }} />
+      </div>
+    ),
+    // 2 khoá vật lý — HIỆN để người dùng hiểu, KHÔNG có control chỉnh (Hoà chốt: cho kéo là sai
+    // vật lý). Một hàng gộp cả metallic + specular; def `specular` nằm trong danh sách `an`.
+    metallic: () => (
+      <div style={{ display: 'flex', gap: 16, padding: '8px 10px', borderRadius: 10, background: 'var(--field)' }}>
+        <span style={lockRow}><Lock size={11} /> metallic = {pbr.metallic ?? 0} {tr('(theo loại)', '(by type)')}</span>
+        <span style={lockRow}><Lock size={11} /> specular = {DEFAULT_PBR.specular} (IOR 1.5)</span>
+      </div>
+    ),
+    // Bước lặp vân mm — cặp {w,h}, chỉ hiện khi đã có ít nhất 1 map (như cũ).
+    uvScaleMm: ({ nhan }) => !anyMap ? null : (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--gap)' }}>
+        <label style={{ ...labelStyle, marginBottom: 0, flex: 'none' }}>{nhan}</label>
+        <input style={{ ...inputStyle, width: 90 }} inputMode="numeric" placeholder={tr('rộng', 'w')}
+          value={pbr.uvScaleMm?.w ?? ''}
+          onChange={(e) => { const w = Number(e.target.value); update({ ...pbr, uvScaleMm: { w: Number.isFinite(w) && w > 0 ? w : 0, h: pbr.uvScaleMm?.h ?? (Number.isFinite(w) && w > 0 ? w : 0) } }); }} />
+        <span style={{ color: 'var(--t4)', fontSize: 12 }}>×</span>
+        <input style={{ ...inputStyle, width: 90 }} inputMode="numeric" placeholder={tr('cao', 'h')}
+          value={pbr.uvScaleMm?.h ?? ''}
+          onChange={(e) => { const h = Number(e.target.value); update({ ...pbr, uvScaleMm: { w: pbr.uvScaleMm?.w ?? (Number.isFinite(h) && h > 0 ? h : 0), h: Number.isFinite(h) && h > 0 ? h : 0 } }); }} />
+        <span style={{ color: 'var(--t4)', fontSize: 11.5, lineHeight: 1.5 }}>{F_UV.moTa ? tr(F_UV.moTa.vi, F_UV.moTa.en) : null}</span>
+      </div>
+    ),
+    clearcoat: ({ nhan }) => (
+      <div>
+        <label style={labelStyle}>{nhan} · {(pbr.clearcoat?.value ?? 0).toFixed(2)}</label>
+        <input type="range" min={0} max={1} step={0.01} value={pbr.clearcoat?.value ?? 0}
+          onChange={(e) => update({ ...pbr, clearcoat: { value: Number(e.target.value), roughness: pbr.clearcoat?.roughness ?? 0.1 } })} style={{ width: '100%' }} />
+      </div>
+    ),
+    emissive: ({ nhan }) => (
+      <div>
+        <label style={labelStyle}>{nhan} · {(pbr.emissive?.intensity ?? 0).toFixed(1)}</label>
+        <input type="range" min={0} max={10} step={0.1} value={pbr.emissive?.intensity ?? 0}
+          onChange={(e) => update({ ...pbr, emissive: { color: pbr.emissive?.color ?? (pbr.baseColor ?? '#ffffff'), intensity: Number(e.target.value) } })} style={{ width: '100%' }} />
+      </div>
+    ),
+    opacity: ({ nhan }) => (
+      <div>
+        <label style={labelStyle}>{nhan}</label>
+        <select style={{ ...inputStyle, cursor: 'pointer' }} value={pbr.opacity?.mode ?? 'blend'}
+          onChange={(e) => update({ ...pbr, opacity: { value: pbr.opacity?.value ?? 1, mode: e.target.value as 'cutout' | 'blend' } })}>
+          <option value="blend">blend</option>
+          <option value="cutout">cutout</option>
+        </select>
+      </div>
+    ),
+  };
 
   return (
     <div role="dialog" aria-modal
@@ -183,7 +221,7 @@ export function MaterialPbrEditor({
             style={{ width: 96, height: 96, borderRadius: 10, flexShrink: 0, border: '1px solid var(--border)' }} />
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div>
-              <label style={labelStyle}>{tr('① Loại vật liệu', '① Material type')}</label>
+              <label style={labelStyle}>{tr(F_TYPE.label.vi, F_TYPE.label.en)}</label>
               <select style={{ ...inputStyle, cursor: 'pointer' }} value={pbr.typeId ?? ''}
                 onChange={(e) => e.target.value && update(applyMaterialType(pbr, e.target.value as MaterialTypeId))}>
                 <option value="" disabled>{tr('— chọn loại —', '— pick a type —')}</option>
@@ -191,7 +229,7 @@ export function MaterialPbrEditor({
               </select>
             </div>
             <div>
-              <label style={labelStyle}>{tr('② Màu', '② Color')}</label>
+              <label style={labelStyle}>{tr(F_COLOR.label.vi, F_COLOR.label.en)}</label>
               <input type="color" value={pbr.baseColor ?? '#9a9a9a'}
                 onChange={(e) => update(setBaseColor(pbr, e.target.value))}
                 style={{ ...inputStyle, padding: 2, cursor: 'pointer' }} />
@@ -199,92 +237,21 @@ export function MaterialPbrEditor({
           </div>
         </div>
 
-        <div style={{ marginBottom: 10 }}>
-          <label style={labelStyle}>
-            {tr('③ Độ nhám', '③ Roughness')} · {(pbr.roughness ?? DEFAULT_PBR.roughness).toFixed(2)}
-          </label>
-          <input type="range" min={0} max={1} step={0.01} value={pbr.roughness ?? DEFAULT_PBR.roughness}
-            onChange={(e) => update(setRoughness(pbr, Number(e.target.value)))} style={{ width: '100%' }} />
-        </div>
-
-        {typeDef?.transparent && (
-          <div style={{ marginBottom: 10 }}>
-            <label style={labelStyle}>
-              {tr('④ Độ trong', '④ Transparency')} · {(pbr.transmission?.value ?? 0).toFixed(2)}
-            </label>
-            <input type="range" min={0} max={1} step={0.01} value={pbr.transmission?.value ?? 0}
-              onChange={(e) => update(setTransparency(pbr, Number(e.target.value)))} style={{ width: '100%' }} />
-          </div>
-        )}
-
-        {/* 2 khoá vật lý — HIỆN để người dùng hiểu, KHÔNG có control chỉnh (Hoà chốt: cho kéo là sai vật lý) */}
-        <div style={{ display: 'flex', gap: 16, marginBottom: 14, padding: '8px 10px', borderRadius: 10, background: 'var(--field)' }}>
-          <span style={lockRow}><Lock size={11} /> metallic = {pbr.metallic ?? 0} {tr('(theo loại)', '(by type)')}</span>
-          <span style={lockRow}><Lock size={11} /> specular = {DEFAULT_PBR.specular} (IOR 1.5)</span>
-        </div>
-
-        {/* G-M17-03: hàng đầu = 3 map người dùng CẦN NHẤT (ảnh vân màu — thiếu nó mọi vật liệu
-            thật đều ra cầu trơn); hàng hai = 3 map kỹ thuật cũ. Cùng khuôn mapBtn, nạp ảnh không
-            nhập số. Màu vân nạp sRGB, 5 map còn lại linear — colorSpace gán ở pbr-three.ts. */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
-          {mapBtn('baseColorMapUrl', baseMapRef, tr('Ảnh vân màu', 'Color map'))}
-          {mapBtn('roughnessMapUrl', roughMapRef, tr('Ảnh nhám', 'Roughness map'))}
-          {mapBtn('metallicMapUrl', metalMapRef, tr('Ảnh kim loại', 'Metallic map'))}
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
-          {mapBtn('normalUrl', normalRef, 'Normal')}
-          {mapBtn('aoUrl', aoRef, 'AO')}
-          {mapBtn('heightUrl', heightRef, 'Height')}
-        </div>
-        {/* Bước lặp vân bằng MM THẬT — không có nó viên gạch 600mm hiện thành 3m (schema.ts). Chỉ
-            hiện khi đã có ít nhất 1 map (chưa có ảnh thì số này chưa có nghĩa gì để chỉnh). */}
-        {(pbr.baseColorMapUrl || pbr.roughnessMapUrl || pbr.metallicMapUrl || pbr.normalUrl || pbr.aoUrl || pbr.heightUrl) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--gap)', marginBottom: 14 }}>
-            <label style={{ ...labelStyle, marginBottom: 0, flex: 'none' }}>{tr('Bước lặp vân (mm)', 'Pattern repeat (mm)')}</label>
-            <input style={{ ...inputStyle, width: 90 }} inputMode="numeric" placeholder={tr('rộng', 'w')}
-              value={pbr.uvScaleMm?.w ?? ''}
-              onChange={(e) => { const w = Number(e.target.value); update({ ...pbr, uvScaleMm: { w: Number.isFinite(w) && w > 0 ? w : 0, h: pbr.uvScaleMm?.h ?? (Number.isFinite(w) && w > 0 ? w : 0) } }); }} />
-            <span style={{ color: 'var(--t4)', fontSize: 12 }}>×</span>
-            <input style={{ ...inputStyle, width: 90 }} inputMode="numeric" placeholder={tr('cao', 'h')}
-              value={pbr.uvScaleMm?.h ?? ''}
-              onChange={(e) => { const h = Number(e.target.value); update({ ...pbr, uvScaleMm: { w: pbr.uvScaleMm?.w ?? (Number.isFinite(h) && h > 0 ? h : 0), h: Number.isFinite(h) && h > 0 ? h : 0 } }); }} />
-            <span style={{ color: 'var(--t4)', fontSize: 11.5, lineHeight: 1.5 }}>{tr('1 chu kỳ ảnh phủ bao nhiêu mm thật', 'real mm covered by one image tile')}</span>
-          </div>
-        )}
-
-        <button type="button" onClick={() => setAdvancedOpen((v) => !v)}
-          style={{ display: 'flex', alignItems: 'center', gap: 4, border: 0, background: 'transparent', color: 'var(--t3)', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0, marginBottom: advancedOpen ? 10 : 14 }}>
-          <ChevronRight size={13} style={{ transform: advancedOpen ? 'rotate(90deg)' : undefined, transition: 'transform 120ms' }} />
-          {tr('Nâng cao', 'Advanced')}
-        </button>
-
-        {advancedOpen && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
-            <div>
-              <label style={labelStyle}>Clearcoat · {(pbr.clearcoat?.value ?? 0).toFixed(2)}</label>
-              <input type="range" min={0} max={1} step={0.01} value={pbr.clearcoat?.value ?? 0}
-                onChange={(e) => update({ ...pbr, clearcoat: { value: Number(e.target.value), roughness: pbr.clearcoat?.roughness ?? 0.1 } })} style={{ width: '100%' }} />
-            </div>
-            <div>
-              <label style={labelStyle}>Sheen · {(pbr.sheen ?? 0).toFixed(2)}</label>
-              <input type="range" min={0} max={1} step={0.01} value={pbr.sheen ?? 0}
-                onChange={(e) => update({ ...pbr, sheen: Number(e.target.value) })} style={{ width: '100%' }} />
-            </div>
-            <div>
-              <label style={labelStyle}>{tr('Tự phát sáng', 'Emissive')} · {(pbr.emissive?.intensity ?? 0).toFixed(1)}</label>
-              <input type="range" min={0} max={10} step={0.1} value={pbr.emissive?.intensity ?? 0}
-                onChange={(e) => update({ ...pbr, emissive: { color: pbr.emissive?.color ?? (pbr.baseColor ?? '#ffffff'), intensity: Number(e.target.value) } })} style={{ width: '100%' }} />
-            </div>
-            <div>
-              <label style={labelStyle}>{tr('Chế độ đục', 'Opacity mode')}</label>
-              <select style={{ ...inputStyle, cursor: 'pointer' }} value={pbr.opacity?.mode ?? 'blend'}
-                onChange={(e) => update({ ...pbr, opacity: { value: pbr.opacity?.value ?? 1, mode: e.target.value as 'cutout' | 'blend' } })}>
-                <option value="blend">blend</option>
-                <option value="cutout">cutout</option>
-              </select>
-            </div>
-          </div>
-        )}
+        {/* IfRna v0 — TOÀN BỘ Ô NHẬP dưới đây sinh từ MATERIAL_PBR_RNA. Sửa nhãn/miền/nhóm ở
+            lib/rna/material-pbr.rna.ts là UI đổi theo — file này không còn chuỗi nhãn nào của
+            các trường. `an` = phần giữ tay/không có control (khai thật): ①② ở khối trên,
+            specular gộp vào hàng khoá của metallic, suyDoan là badge, reflectance chưa từng có
+            ô nhập. `tuyChinh` = trường object/điều kiện (logic ghi giữ nguyên hàm cũ). */}
+        <RnaPanel
+          defs={MATERIAL_PBR_RNA}
+          value={pbr}
+          onChange={update}
+          an={['typeId', 'baseColor', 'suyDoan', 'specular', 'reflectance']}
+          tuyChinh={tuyChinh}
+          soMacDinh={{ roughness: DEFAULT_PBR.roughness }}
+          soCot={{ [NHOM_NANG_CAO.vi]: 2 }}
+          nhomDong={[NHOM_NANG_CAO.vi]}
+        />
 
         {/* §1#7 — 2 cửa xuất engine, đứng NGAY trong lớp chỉnh PBR (đây là nơi duy nhất người
             dùng nhìn thấy/sửa PBR của matId đang chọn — xuất phải đứng cạnh nguồn, không rải ra

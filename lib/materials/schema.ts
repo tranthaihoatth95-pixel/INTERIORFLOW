@@ -107,6 +107,31 @@ export interface MaterialPbr {
 }
 
 /**
+ * IfRna P6 (14/08) — DANH SÁCH KEY của MaterialPbr, máy canh drift 2 chiều cho hệ thuộc tính
+ * tự mô tả (`lib/rna/material-pbr.rna.ts`):
+ *  · chiều "thừa": `satisfies readonly (keyof MaterialPbr)[]` — gõ sai/thêm key lạ là tsc đỏ.
+ *  · chiều "thiếu": `MaterialPbrKeyDriftCheck` bên dưới — MaterialPbr thêm trường mới mà quên
+ *    khai vào đây là tsc đỏ NGAY, không đợi test.
+ * CHỈ là export thêm — không đổi shape `MaterialPbr`, file .idf/.idfc cũ đọc y nguyên.
+ */
+export const MATERIAL_PBR_KEYS = [
+  'baseColor', 'roughness', 'metallic', 'specular',
+  'normalUrl', 'heightUrl', 'aoUrl',
+  'baseColorMapUrl', 'roughnessMapUrl', 'metallicMapUrl', 'uvScaleMm',
+  'emissive', 'opacity', 'transmission', 'clearcoat', 'sheen',
+  'reflectance', 'suyDoan', 'typeId',
+] as const satisfies readonly (keyof MaterialPbr)[];
+
+export type MaterialPbrKey = (typeof MATERIAL_PBR_KEYS)[number];
+
+/** Thiếu key nào thì kiểu này thành `{ thieuKey: ... }` ⇒ dòng const bên dưới ĐỎ lúc tsc. */
+export type MaterialPbrKeyDriftCheck =
+  Exclude<keyof MaterialPbr, MaterialPbrKey> extends never
+    ? true
+    : { thieuKey: Exclude<keyof MaterialPbr, MaterialPbrKey> };
+export const MATERIAL_PBR_KEY_DRIFT_OK: MaterialPbrKeyDriftCheck = true;
+
+/**
  * Mặc định trung tính khi 1 trường PBR bị bỏ trống — dùng ở export-vray.ts/export-d5.ts để mỗi
  * hàm export luôn ra đủ tham số, không phải tự đoán rải rác nhiều chỗ. Giá trị chọn theo vật
  * liệu điện môi (dielectric) thường gặp nhất, không phải "trung bình cộng" của bảng suy đoán
