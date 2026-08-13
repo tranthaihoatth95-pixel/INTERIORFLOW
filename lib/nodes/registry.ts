@@ -1,9 +1,9 @@
 import type { ExecContext, NodeDefinition, PortValue } from '@/lib/types';
 import { runImageJob, checkProviders, AiJobError } from '@/lib/ai/client';
 import { webgpuGenerate } from '@/lib/ai/webgpu';
-import type { AiTask } from '@/lib/ai/models';
+import { CONTROL_GUIDANCE_DEFAULT, type AiTask } from '@/lib/ai/models';
 import { providerForTier } from '@/lib/ai/tiers';
-import { extractPalette, composeBoard, adjustImage } from '@/lib/imaging';
+import { extractPalette, composeBoard, adjustImage, loadImage } from '@/lib/imaging';
 import { saveToGallery } from '@/lib/gallery';
 import { parseContent, themeFromRef, renderSlide, type FontPairing, type SlideLayout } from '@/lib/slides';
 import { EXTRA_NODES } from '@/lib/nodes/defs';
@@ -185,6 +185,41 @@ function stylePrompt(style: string, extra: string) {
   return extra ? `${extra}, ${base}` : base;
 }
 
+/**
+ * [fix-f2-node-render] F2 phần 2/2: scale (w,h) về ≤max cạnh dài, GIỮ TỈ LỆ, làm tròn bội 8
+ * (yêu cầu phổ biến của model diffusion khi nhận width/height tuỳ ý). Hàm thuần, export để
+ * kiểm tra được. ⚠️ CHƯA có file `*.test.ts` tự chạy: registry.ts value-import `@/lib/ai/client`
+ * (+ chuỗi `@/...` khác) khiến `sucrase-node` (resolver Node thuần, không đọc `paths` của
+ * tsconfig) báo `Cannot find module '@/lib/ai/client'` — hạn chế CÓ SẴN từ trước (macro.test.ts
+ * đã né registry.ts cùng lý do), không phải do lần sửa F2 này. Đã verify tay 12 case (khớp/áp
+ * min-8/không phóng to/bội-8) — xem báo cáo `docs/bao-cao-phien/2026-08-13-R-fix-f2.md`.
+ */
+export function scaleToMaxSide(w: number, h: number, max: number): { width: number; height: number } {
+  const long = Math.max(w, h);
+  const scale = long > max ? max / long : 1;
+  const round8 = (n: number) => Math.max(8, Math.round((n * scale) / 8) * 8);
+  return { width: round8(w), height: round8(h) };
+}
+
+/**
+ * [fix-f2-node-render] F2: đọc kích thước THẬT của ảnh control (dataURL/URL, client-side Image
+ * load) → `image_size` khớp tỉ lệ, ≤1024 cạnh dài. Không truyền field này thì fal ép
+ * `landscape_4_3`, méo depth/canny map → mất bám khối (bằng chứng: 15 job thật 13/08, xem
+ * docs/bao-cao-phien/2026-08-13-DOGFOOD-1-findings.md mục F2). Đọc thất bại (URL hỏng/CORS/hết
+ * hạn) → trả undefined, KHÔNG throw — node vẫn submit job như hành vi cũ (không chặn job).
+ */
+async function controlImageSize(url: string): Promise<{ width: number; height: number } | undefined> {
+  try {
+    const img = await loadImage(url);
+    const w = img.naturalWidth || img.width;
+    const h = img.naturalHeight || img.height;
+    if (!w || !h) return undefined;
+    return scaleToMaxSide(w, h, 1024);
+  } catch {
+    return undefined;
+  }
+}
+
 const ROOM_TYPES: Record<string, string> = {
   'Phòng khách': 'living room',
   'Phòng ngủ': 'bedroom',
@@ -302,7 +337,9 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
     outputs: [{ id: 'image', label: 'Render', dataType: 'image' }],
     params: [
       { kind: 'select', id: 'style', label: 'Style', options: STYLE_OPTIONS },
-      { kind: 'slider', id: 'guidance', label: 'Guidance', min: 1, max: 20, step: 0.5, default: 15 },
+      // [fix-f2-node-render] F2: default cũ 15 phá control (FLUX Canny chuẩn 3.5-4) — số lấy
+      // từ CONTROL_GUIDANCE_DEFAULT (lib/ai/models.ts), colocate cạnh AI_TASKS.
+      { kind: 'slider', id: 'guidance', label: 'Guidance', min: 1, max: 20, step: 0.5, default: CONTROL_GUIDANCE_DEFAULT.sketch2render ?? 4 },
       // Bám sketch: thoáng 0.4 · vừa 0.6 · chặt 0.8 (SDXL canny tự-host đọc qua IF_STRENGTH).
       { kind: 'slider', id: 'adherence', label: 'Bám sketch', min: 0.4, max: 0.8, step: 0.2, default: 0.6 },
     ],
@@ -312,6 +349,9 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
       if (!inputs.image) throw new Error('Thiếu ảnh sketch ở input.');
       const gu = await guRenderPrompt();
       const prompt = withGu(stylePrompt(String(params.style), inputs.prompt ? String(inputs.prompt.value) : ''), gu);
+      // [fix-f2-node-render] F2: image_size khớp tỉ lệ ảnh control — đọc thất bại thì bỏ qua,
+      // không chặn job (hành vi cũ).
+      const image_size = await controlImageSize(String(inputs.image.value));
       const image = await aiImage(
         'sketch2render',
         {
@@ -322,6 +362,7 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
           // Bám sketch (SDXL canny tự-host đọc IF_STRENGTH); 3 mức thoáng/vừa/chặt = 0.4/0.6/0.8.
           strength: Number(params.adherence),
           num_images: 1,
+          ...(image_size ? { image_size } : {}),
         },
         String(params.style),
         ctx,
@@ -343,7 +384,9 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
     params: [
       { kind: 'select', id: 'style', label: 'Style', options: STYLE_OPTIONS },
       // cao = bám khối gốc chặt hơn (depth guidance)
-      { kind: 'slider', id: 'preserve', label: 'Bám khối', min: 1, max: 20, step: 0.5, default: 16 },
+      // [fix-f2-node-render] F2: default cũ 16 phá control (FLUX Depth chuẩn 3.5-4) — số lấy
+      // từ CONTROL_GUIDANCE_DEFAULT (lib/ai/models.ts), colocate cạnh AI_TASKS.
+      { kind: 'slider', id: 'preserve', label: 'Bám khối', min: 1, max: 20, step: 0.5, default: CONTROL_GUIDANCE_DEFAULT.clay2render ?? 4 },
     ],
     creditCost: 4,
     async execute(ctx) {
@@ -355,6 +398,9 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
         `${stylePrompt(String(params.style), extra)}, keep exact same geometry, layout and camera, only add realistic materials, lighting and atmosphere`,
         gu,
       );
+      // [fix-f2-node-render] F2: image_size khớp tỉ lệ ảnh control — đọc thất bại thì bỏ qua,
+      // không chặn job (hành vi cũ).
+      const image_size = await controlImageSize(String(inputs.image.value));
       const image = await aiImage(
         'clay2render',
         {
@@ -363,6 +409,7 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
           control_image_url: inputs.image.value,
           guidance_scale: Number(params.preserve),
           num_images: 1,
+          ...(image_size ? { image_size } : {}),
         },
         `${params.style} clay→photoreal`,
         ctx,
@@ -383,6 +430,10 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
     outputs: [{ id: 'image', label: 'Staged', dataType: 'image' }],
     params: [
       { kind: 'select', id: 'style', label: 'Style', options: STYLE_OPTIONS },
+      // [fix-f2-node-render] F2 review: node img2img (image_url, không có control_image_url) —
+      // KHÔNG set guidance_scale trong input, provider dùng default riêng của model
+      // (fal-ai/flux/dev/image-to-image). Không phải bệnh F2 (guidance 15 chỉ phá control
+      // canny/depth) → không đổi bừa, giữ nguyên `strength` làm tham số chính.
       { kind: 'slider', id: 'strength', label: 'Strength', min: 0.6, max: 0.95, step: 0.05, default: 0.85 },
     ],
     creditCost: 3,
@@ -413,6 +464,9 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
     outputs: [{ id: 'image', label: 'Image', dataType: 'image' }],
     params: [
       { kind: 'select', id: 'style', label: 'Style', options: STYLE_OPTIONS },
+      // [fix-f2-node-render] F2 review: node img2img (image_url, không có control_image_url) —
+      // KHÔNG set guidance_scale trong input, provider dùng default riêng của model. Không phải
+      // bệnh F2 → không đổi bừa, giữ nguyên `strength` làm tham số chính.
       { kind: 'slider', id: 'strength', label: 'Strength', min: 0.3, max: 0.9, step: 0.05, default: 0.65 },
     ],
     creditCost: 3,
@@ -484,9 +538,19 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
       };
       const extra = inputs.prompt ? `${inputs.prompt.value}, ` : '';
       const prompt = `${extra}photorealistic architectural exterior render, modern facade, ${times[String(params.time)]}, landscaping, high detail, professional architecture photography`;
+      // [fix-f2-node-render] F2: guidance_scale cũ hardcode 15 phá control (FLUX Canny chuẩn
+      // 3.5-4, số lấy từ CONTROL_GUIDANCE_DEFAULT); image_size khớp tỉ lệ ảnh control, đọc
+      // thất bại thì bỏ qua, không chặn job.
+      const image_size = await controlImageSize(String(inputs.image.value));
       const image = await aiImage(
         'exterior',
-        { prompt, control_image_url: inputs.image.value, guidance_scale: 15, num_images: 1 },
+        {
+          prompt,
+          control_image_url: inputs.image.value,
+          guidance_scale: CONTROL_GUIDANCE_DEFAULT.exterior ?? 4,
+          num_images: 1,
+          ...(image_size ? { image_size } : {}),
+        },
         'Exterior',
         ctx,
       );

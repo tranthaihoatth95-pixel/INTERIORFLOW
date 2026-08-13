@@ -128,6 +128,22 @@ export const AI_TASKS = {
 
 export type AiTask = keyof typeof AI_TASKS;
 
+/**
+ * [fix-f2-node-render] F2 (2026-08-13-DOGFOOD-1-findings.md): guidance mặc định cho node CÓ
+ * ẢNH CONTROL (control_image_url → FLUX Pro Canny/Depth) — khác hẳn guidance của text2img
+ * (7–15 bình thường). guidance=15 (số cũ, copy nhầm từ text2img) PHÁ control — 15 job thật
+ * chạy tay 13/08 kiểm chứng 3.5–4 mới bám khối/đường nét đúng (v1 lệch bố cục hoàn toàn,
+ * v4–v6 sau khi hạ guidance mới bám chuẩn). Đặt CẠNH `AI_TASKS` (không rải số ma thuật trong
+ * registry.ts) — `lib/nodes/registry.ts` đọc từ đây cho default của slider/tham số cố định.
+ * Task img2img (styleTransfer/staging) KHÔNG có trong bảng này — chúng không set guidance_scale,
+ * không dính bệnh F2 (xem comment tại chỗ khai báo param trong registry.ts).
+ */
+export const CONTROL_GUIDANCE_DEFAULT: Partial<Record<AiTask, number>> = {
+  sketch2render: 3.5,
+  clay2render: 3.5,
+  exterior: 3.5,
+};
+
 /** Kiểu media task trả về; mặc định 'image' khi không khai báo. */
 export type MediaType = 'image' | 'video';
 
