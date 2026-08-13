@@ -123,3 +123,9 @@ làm #16+ nếu T duyệt — file này không tự sửa REF-VISUAL (đúng tr�
 | "PROMPTS" folder kính sáng (3 ảnh ló + đúng 1 nút CTA tròn đậm) | một-hành-động-chính nổi bật trên card sưu tập | củng cố nguyên tắc 1-accent/màn (tầng ①); khuôn thẻ bộ sưu tập Gallery |
 | Canva dark mode (sidebar dọc icon+nhãn Design/Elements/Text/Brand · dải thumbnail ĐÁNH SỐ dưới · canvas tối bọc trong khung editor sáng) | sidebar 1 cột icon+chữ (không icon trần) · thumbnail strip số tabular · nền editor và nền NỘI DUNG tách nhiệt độ | nuôi KB-1 (nhãn kèm icon, không icon trần) + KB-3 (strip đánh số sạch) |
 | Planner tuần kem editorial (tab THÁNG dọc mép phải như tab giấy · ghi chú mực đỏ tay · số tabular · scrapbook sticky) | INDEX-TAB DỌC vật lý làm điều hướng cấp thời gian · annotation tay đè lên nội dung in | đúng gu Story Set/ArchiNote kem; xác nhận pattern nhãn-rail-dọc của IF là NGÔN NGỮ TAB GIẤY — nên chuẩn hoá thành tab bấm được thay vì chữ trang trí |
+
+## PHỤ LỤC · Đợt ảnh bổ sung #3 (2 ảnh chat 14/08)
+| Ảnh | Cơ chế | Nạp |
+|---|---|---|
+| Miro board họp (canvas trắng khung màu theo vùng · sticky vàng · video call = DẢI THUMBNAIL người góc phải TRÊN canvas, không màn riêng · con trỏ mang tên màu) | videocall nhúng VÀO workspace làm lớp nổi nhỏ, canvas vẫn là vua; presence = con trỏ có tên | nuôi hệ workspace/collab chặng 2 (Mood+Collab) — khớp P1 |
+| Editor 3D kiểu Spline (toolbar kính NỔI giữa-trên · trái Objects/Assets 2 tab + cây scene · phải inspector rollout theo nhóm Frame/Scene/Light/Effects có toggle · chip chọn nhanh Skin/Hair/Eyes NỔI cạnh đối tượng · gizmo màu + switch Ortho/Perspective capsule đáy) | tool 3D chuẩn mới: 3 vùng trái-cây/giữa-canvas/phải-rollout + control NỔI THEO ĐỐI TƯỢNG trên canvas | nuôi trực tiếp KB-1 + Vẽ 3D (Command3DPanel đã cùng hướng); chip-nổi-theo-đối-tượng = tầng ③ cử chỉ |
