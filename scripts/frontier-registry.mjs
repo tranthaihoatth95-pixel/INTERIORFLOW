@@ -124,6 +124,8 @@ export const FRONTIER = [
     bangChung: [{ file: 'docs/TRIET-LY-IF.md', mau: 'Đ3' }, { file: 'docs/HOP-DONG-PHOI-HOP-T.md', mau: 'TRIET-LY-IF' }] },
   { id: 'nhip-van-hanh-p2', vai: 'day', ten: 'P2 nhịp vận hành (13/08: BƯỚC 0 soi tổng→chi tiết mỗi đợt [T4][Đ1] + THẺ VAI tự chứa 4 dòng [Đ4] + điều kiện nghiệm thu phân loại [Đ6] — vá HOP-DONG; đợt kế là ca chạy thử, V kiểm thêm mục làm-ngoài-vai)', he: 'DocCore', dot: 7, trangThai: 'xong',
     bangChung: [{ file: 'docs/HOP-DONG-PHOI-HOP-T.md', mau: 'BƯỚC 0|THẺ VAI TỰ CHỨA' }] },
+  { id: 'nc-triet-ly-giao-dien', vai: 'day', ten: 'NC triết lý giao diện (Hoà giao 14/08 kèm 19 ảnh chat + 51 ảnh ~/Downloads/tham khao ui): cụm cơ chế từ ảnh ref + nguyên lý top-tier có nguồn + trả lời bài PHÂN LUỒNG (chung hiện · group-by · cử chỉ mở sâu) + chống không-biết-bắt-đầu-từ-đâu — nuôi khuôn nhóm B CHAN-DOAN-DS + spec luong-theo-viec', he: 'DocCore', dot: 7, trangThai: 'chua',
+    bangChung: [{ file: 'docs/nc/NC-TRIET-LY-GIAO-DIEN-2026-08-14.md', mau: 'PHÂN LUỒNG|phân luồng' }] },
   // 14/08 — Hoà chê khi duyệt mắt: "giao diện rất xấu, không thống nhất theo design system" — T ghi entry ngay:
   { id: 'dong-bo-ds-mat', vai: 'day', ten: 'ĐỒNG BỘ DS BẰNG MẮT — đợt A XONG (14/08: T chụp 7 màn + CHAN-DOAN-DS-MAT 6 bug hệ thống/6 lệch cấu trúc; DA sửa GỐC BỆNH FONT var chết → Times thường trực + statusbar đè + Files hẹp vỡ + jargon + đỏ sai nghĩa; DR rút radius 334→10 ngoài thang −97%, 107 file thuần radius) — NHÓM B cấu trúc (một khuôn thanh công cụ 3 stage · EmptyState chung · thumbnail strip) CHỜ ảnh tham khảo Hoà → mock Claude Design/Figma rồi mở phiếu riêng', he: 'DocCore', dot: 7, trangThai: 'xong',
     bangChung: [{ file: 'docs/CHAN-DOAN-DS-MAT-2026-08-14.md', mau: 'GỐC BỆNH|A1' }] },
