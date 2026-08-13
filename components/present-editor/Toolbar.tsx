@@ -48,6 +48,7 @@ import {
   EyeOff,
   FileSpreadsheet,
   Upload,
+  Archive,
   AlertTriangle,
   CheckCircle2,
   Loader2,
@@ -65,6 +66,7 @@ import { useT, useLang } from '@/lib/i18n';
 import { useFlowStore } from '@/lib/store';
 import { effectiveUserId } from '@/lib/resume';
 import { getProjectDoc } from '@/lib/present-editor/project-doc';
+import { useSheetsBucketId } from '@/lib/scope';
 import { loadBoqOverrides, saveBoqOverrides } from '@/lib/present-editor/boq-overrides-persist';
 import {
   readBoqSheetFile, guessBoqColumns, buildBoqImportPlan, planToOverrides, describeBoqImportRow,
@@ -172,6 +174,17 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
   // trang. LightArc DETERMINATE (nuôi bằng `pdfToDeck`'s onProgress) — khác `p.busy` (chuỗi rỗng/
   // đầy, dùng cho export) vì đây có % thật theo trang, không phải "đang chạy" mờ.
   const [pdfProgress, setPdfProgress] = useState<{ fileName: string; done: number; total: number } | null>(null);
+
+  /* Gói Hồ Sơ Sống (P4, docs/phieu-giao/goi-ho-so-song.md ④.4) — ngữ cảnh cho `exportHoSoSong`
+   * bên dưới. userId/projectId CÙNG đường `BoqXlsxImportDialog` trong file này; bucketId CÙNG
+   * đường PresentSheets.tsx nạp sheet (`useSheetsBucketId` + route '/present-editor').
+   * MARKER: HoSoSong. */
+  const hoSoParams = useParams<{ id?: string }>();
+  const hoSoProjectId = hoSoParams?.id ?? '';
+  const hoSoStoreUserId = useFlowStore((s) => s.user?.id);
+  const hoSoUserId = effectiveUserId(hoSoStoreUserId) ?? '';
+  const hoSoBucketId = useSheetsBucketId();
+  const [hoSoBusy, setHoSoBusy] = useState(false);
 
   // P6b bước 1 — gating cụm "Sắp xếp", CÙNG công thức Inspector.tsx đang dùng (không bịa công
   // thức khác cho 2 chỗ hiện cùng 1 khái niệm) — xem Inspector.tsx dòng ~204-213/425-431.
@@ -340,6 +353,133 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
     window.dispatchEvent(new CustomEvent('present:pptx-import-done', { detail: { ok: false, text: reason } }));
   }
 
+  /**
+   * 13/08 — GÓI HỒ SƠ SỐNG (.zip) — P4 chuỗi nền DocCore (docs/phieu-giao/goi-ho-so-song.md).
+   * GOM artifact ĐÃ SINH SẴN từ các đường hiện có rồi gọi `lib/ho-so-song/pack.ts` đóng thùng —
+   * KHÔNG render engine mới [T2]:
+   *   · ruột JSON  = `.idfp` đầy đủ mọi sheet (exportIdfp — chính đường nút "Toàn bộ project")
+   *   · ảnh trang  = renderEditorSlide từng slide deck ĐANG MỞ (chính engine PDF/PNG đang dùng)
+   *   · BOQ        = CÙNG đường `BoqXlsxImportDialog` bên dưới (getProjectDoc + POST /api/boq)
+   *                  → boqResultToXlsxBuffer; KHÔNG mở được thì BỎ QUA kênh đó, không chặn [T0]
+   *   · PDF        = CHƯA GÓI — `exportDeckToPdf` hiện `doc.save()` thẳng, không trả Blob;
+   *                  sửa nó là ngoài vùng phiếu. Viewer ghi rõ kênh vắng, không giả.
+   * Toast đi kênh `present:idfp-export-done` (PresentEditor.tsx#onDone — kênh toast xuất CHUNG,
+   * cùng cách .pptx nhập mượn kênh, không viết toast mới). Mọi import ĐỘNG — người không bấm
+   * thì bundle chặng Trình chiếu không phải tải jszip/render. MARKER: HoSoSong.
+   */
+  async function exportHoSoSong() {
+    if (hoSoBusy) return;
+    const say = (ok: boolean, text: string) =>
+      window.dispatchEvent(new CustomEvent('present:idfp-export-done', { detail: { ok, text } }));
+    setHoSoBusy(true);
+    say(true, 'Đang đóng Gói Hồ Sơ (.zip)…');
+    try {
+      const [{ packHoSoSong, hoSoSongFileName }, { exportIdfp }, { getActiveBrandKit }, { renderEditorSlide }, { stageFor }, { loadSheets }] =
+        await Promise.all([
+          import('@/lib/ho-so-song/pack'),
+          import('@/lib/present-editor/idfp'),
+          import('@/lib/present-editor/brand-kit'),
+          import('@/lib/present-editor/render'),
+          import('@/lib/present-editor/stage-presets'),
+          import('@/lib/sheets-persist'),
+        ]);
+
+      // 1. Deck mọi sheet từ persist — CÙNG bucket/route PresentSheets.tsx đang autosave vào.
+      type PersistedPresentSheet = { id: string; name: string; deck: import('@/lib/present-editor/model').EditorDeck };
+      const record = hoSoUserId
+        ? await loadSheets<PersistedPresentSheet & { [k: string]: unknown }>(hoSoUserId, '/present-editor', hoSoBucketId)
+        : null;
+      const sheets = (record?.sheets ?? []).filter((s) => s?.deck && Array.isArray(s.deck.slides));
+      const activeSheet = sheets.find((s) => s.id === record?.activeId) ?? sheets[0];
+      const tenDuAn = activeSheet?.deck.project || activeSheet?.deck.brand || hoSoProjectId || 'Hồ sơ';
+      const taoLuc = new Date().toISOString();
+
+      const deckJson = sheets.length
+        ? (JSON.parse(exportIdfp(
+            sheets.map((s) => ({ id: s.id, name: s.name, deck: s.deck })),
+            getActiveBrandKit(),
+            { projectName: tenDuAn },
+          )) as unknown)
+        : undefined;
+
+      // 2. Ảnh từng trang của deck ĐANG MỞ — chính engine render PDF/PNG đang dùng.
+      const images: Array<{ name: string; data: Uint8Array }> = [];
+      if (activeSheet) {
+        const deck = activeSheet.deck;
+        const stage = stageFor(deck.stagePreset);
+        for (let i = 0; i < deck.slides.length; i++) {
+          const dataUrl = await renderEditorSlide(deck.slides[i], deck.fonts, deck.watermark, stage);
+          const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+          const bin = atob(b64);
+          const arr = new Uint8Array(bin.length);
+          for (let j = 0; j < bin.length; j++) arr[j] = bin.charCodeAt(j);
+          images.push({ name: `trang-${String(i + 1).padStart(2, '0')}.jpg`, data: arr });
+        }
+      }
+
+      // 3. BOQ best-effort — hỏng/thiếu Doc thì BỎ QUA kênh, không chặn cả gói.
+      let boqXlsx: Uint8Array | undefined;
+      let boqTomTat: { rows: Array<{ ten: string; qty: number; unit: string; thanhTien: number }>; tong: number } | undefined;
+      if (hoSoProjectId && hoSoUserId) {
+        try {
+          const { doc, source } = await getProjectDoc(hoSoUserId, hoSoProjectId);
+          if (source !== 'none' && doc.entities.length > 0) {
+            const res = await fetch(`/api/boq/${hoSoProjectId}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ doc }),
+            });
+            if (res.ok) {
+              const data = await res.json();
+              const rows: BoqRow[] = Array.isArray(data?.rows) ? data.rows : [];
+              if (rows.length) {
+                const totalAmount = rows.reduce((s, r) => s + (Number(r.thanhTien) || 0), 0);
+                const { boqResultToXlsxBuffer } = await import('@/lib/boq/xlsx');
+                boqXlsx = await boqResultToXlsxBuffer({
+                  rows,
+                  errors: Array.isArray(data?.errors) ? data.errors : [],
+                  totalAmount,
+                });
+                boqTomTat = {
+                  rows: rows.map((r) => ({ ten: r.ten, qty: r.qty, unit: r.unit, thanhTien: r.thanhTien })),
+                  tong: totalAmount,
+                };
+              }
+            }
+          }
+        } catch {
+          // BOQ là kênh KÈM THÊM — lỗi mạng/Doc không được giết cả gói; viewer sẽ ghi kênh vắng.
+        }
+      }
+
+      const blob = await packHoSoSong({
+        projectId: hoSoProjectId || hoSoBucketId,
+        tenDuAn,
+        taoLuc,
+        nguoiXuat: hoSoUserId || undefined,
+        deckJson,
+        boqXlsx,
+        boqTomTat,
+        images,
+      });
+      const fileName = hoSoSongFileName(tenDuAn, taoLuc);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+      const vang = [!deckJson && 'deck', !images.length && 'ảnh', !boqXlsx && 'BOQ', 'PDF']
+        .filter(Boolean)
+        .join(', ');
+      say(true, `Đã xuất ${fileName} — ${images.length} trang ảnh${boqXlsx ? ' + BOQ' : ''}${deckJson ? ' + ruột JSON' : ''}. Kênh vắng: ${vang}.`);
+    } catch (err) {
+      say(false, err instanceof Error ? err.message : 'Không đóng được Gói Hồ Sơ (.zip).');
+    } finally {
+      setHoSoBusy(false);
+    }
+  }
+
   // Thoát Canva mode: quay lại trang trước, không có lịch sử thì về app chính '/'.
   function onBack() {
     if (typeof window === 'undefined') return;
@@ -440,6 +580,15 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
             sub: 'Chọn khổ/hướng giấy · xem trước tờ · kiểm bảng nét in trước khi xuất',
             icon: <FileDown size={15} />,
             onSelect: () => setPdfSheetsOpen(true),
+          },
+          {
+            id: 'ho-so-song',
+            label: 'Gói Hồ Sơ (.zip) · Living Dossier',
+            sub: 'Một file giao khách: trang xem mở mọi trình duyệt + ảnh/BOQ + dữ liệu máy-đọc nhập lại được',
+            icon: <Archive size={15} />,
+            onSelect: () => { void exportHoSoSong(); },
+            disabled: hoSoBusy,
+            disabledReason: 'Đang đóng gói — chờ xong lượt trước.',
           },
         ]}
       />
