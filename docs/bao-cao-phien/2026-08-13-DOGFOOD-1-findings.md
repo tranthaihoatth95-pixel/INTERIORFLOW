@@ -27,3 +27,22 @@
 - Spec vật liệu thật cho prompt render: inox hộp xám xước mờ · gạch Viglacera NY18 GC15904
   150×900 · cửa gỗ EP-02 · sơn EPA-04.
 - FAL_KEY đã cấu hình (node Sketch→Ảnh thật chạy được thật).
+
+## LÀN MÁY — render ST5 (13/08 sáng, 11 job fal qua đúng hàm submitJob của app)
+
+**F2 🔴 [bug app · chốt được] Node sketch2render/clay2render hỏng control:** field `control_image_url` đúng,
+nhưng ① node truyền `guidance_scale` mặc định **15** — FLUX chuẩn 3.5-4, mức 15 phá control;
+② không truyền `image_size` khớp ảnh → fal ép landscape_4_3, depth/canny map méo → mất bám khối
+(tái hiện: v1 làn máy lệch bố cục hoàn toàn; sửa 2 tham số → v4-v6 bám chuẩn). → mở phiếu sửa
+`lib/nodes/registry.ts` (guidance theo model + image_size từ ảnh control).
+**F3 [kỹ thuật] img2img strength 0.6-0.84 bị NEO tông clay tối** (v2-v3) — với clay tối muốn ra sáng
+phải đi control-net, không đi img2img. **F4 [quy trình] clay phẳng ít cạnh → depth yếu**: lobby cần
+canny; corridor depth ổn; **wireframe TỰ DỰNG (hộp 1 điểm tụ, chỉ đường thẳng) làm control canny =
+chế độ "tham khảo THIẾT KẾ"** — đổi thiết kế giữ tỉ lệ không gian, chạy đẹp ngay v1 (cab).
+**Spec bổ sung node tổng (Hoà chốt miệng trong buổi):** 2 CHẾ ĐỘ THAM KHẢO — ①tham khảo TONE (giữ
+vật liệu/hình khối, lấy sắc độ-ánh sáng-nước hình) ②tham khảo THIẾT KẾ (wireframe giữ không gian,
+đổi đường nét theo ref); + KHOÁ SẮC ĐỘ 3 LỚP (sàn đậm nhất · vách trung gian · trần trắng nhất)
+là tham số cấp đợt; + seed chung cả đợt. **F5 [giới hạn model] "đậm" dễ bị gán nhầm lên tường**
+(v6/v7 corridor ra wainscot dù prompt cấm) — node tổng nên có preset "khoá sắc độ" viết sẵn đã test.
+Kết quả giao Hoà: sảnh thang v6 · hành lang v5 · cab 2 view v1. Nợ kế: upscale 300dpi ảnh được chọn
++ Sửa vùng xoá lỗi nhỏ (số 3 lặp) + import kết quả vào kho ST5.
