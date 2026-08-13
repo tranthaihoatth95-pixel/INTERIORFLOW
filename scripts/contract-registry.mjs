@@ -48,7 +48,7 @@ export const CONTRACTS = [
     trangThai: 'co-day' },
 
   { id: 'capture-sequence',
-    ten: 'captureSequence() xuất PNG sequence — CHỜ DÂY: chỉ route bench tạm (app/dev-bench-3d-2) gọi, chưa có nút xuất thật (entry frontier capture-nut còn chua)',
+    ten: 'captureSequence() xuất PNG sequence — CÓ DÂY 14/08: CameraExportTab (tab Camera Command3DPanel) gọi captureSequenceAsync, zip + LightArc + Huỷ',
     doc: 'Scene three.js + đường camera IF_CAMPATH (camPathSampleToThree — cùng hàm khung xem = khung xuất)',
     ghi: 'Dãy PNG từng khung theo duration đường cam — không đụng Doc',
     congThuc: 'planCaptureSequenceFrames tất định: cùng path + duration + fps → cùng dãy khung',
@@ -57,7 +57,7 @@ export const CONTRACTS = [
     // mau import-based: Scene3DViewer import capture.ts nhưng KHÔNG import captureSequence
     // (chỉ comment nhắc tên) — pattern from-path sẽ báo sổ-quên giả.
     day: { dirs: ['components'], mau: 'import \\{[^}]*captureSequence' },
-    trangThai: 'cho-day' },
+    trangThai: 'co-day' },
 
   { id: 'tasks-api',
     ten: '/api/tasks + lib/server/tasks.ts — ĐÃ MỞ (12/08): TaskBoardScreen · ProjectInitBoard · Render3DModeSkeleton · focus-entity gọi thật',
