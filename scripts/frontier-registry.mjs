@@ -126,7 +126,7 @@ export const FRONTIER = [
     bangChung: [{ file: 'docs/HOP-DONG-PHOI-HOP-T.md', mau: 'BƯỚC 0|THẺ VAI TỰ CHỨA' }] },
   // 14/08 — Hoà chê khi duyệt mắt: "giao diện rất xấu, không thống nhất theo design system" — T ghi entry ngay:
   { id: 'dong-bo-ds-mat', vai: 'day', ten: 'ĐỒNG BỘ DS BẰNG MẮT — đợt A XONG (14/08: T chụp 7 màn + CHAN-DOAN-DS-MAT 6 bug hệ thống/6 lệch cấu trúc; DA sửa GỐC BỆNH FONT var chết → Times thường trực + statusbar đè + Files hẹp vỡ + jargon + đỏ sai nghĩa; DR rút radius 334→10 ngoài thang −97%, 107 file thuần radius) — NHÓM B cấu trúc (một khuôn thanh công cụ 3 stage · EmptyState chung · thumbnail strip) CHỜ ảnh tham khảo Hoà → mock Claude Design/Figma rồi mở phiếu riêng', he: 'DocCore', dot: 7, trangThai: 'xong',
-    bangChung: [{ dir: 'docs', mau: 'CHAN-DOAN-DS-MAT|chan-doan-ds' }] },
+    bangChung: [{ file: 'docs/CHAN-DOAN-DS-MAT-2026-08-14.md', mau: 'GỐC BỆNH|A1' }] },
   // 13/08 đêm — finding LÔ DUYỆT MẮT #1 của Hoà (điều hướng về Home lag) — T ghi entry ngay:
   { id: 'home-nav-lag', vai: 'do', ten: 'Điều hướng về Home lag — ĐO RỒI SỬA (14/08 NL: 15 component gated sang dynamic ssr:false qua heavy-panels.tsx — chunk route / 28,6→24,2 MB dev, −274 module, three-bvh ra hẳn, load warm 1209→1041ms; first-paint giữ tĩnh LoginScreen·DongStudioHome·AppShell·FlowCanvas) — cảm nhận hậu-login chờ MẮT Hoà; nếu vẫn lag thì nghi phạm kế là chuỗi fetch sau mount, phiếu riêng; 14/08 Hoà bấm lại XÁC NHẬN HẾT LAG', he: 'Workspace', dot: 7, trangThai: 'xong-mat',
     bangChung: [{ file: 'components/home/heavy-panels.tsx', mau: "dynamic\\(" }, { file: 'components/home/HomeScreen.tsx', mau: 'heavy-panels' }] },
