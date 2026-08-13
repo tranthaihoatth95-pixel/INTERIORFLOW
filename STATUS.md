@@ -3,7 +3,7 @@
 ## MỞ PHIÊN MỚI: dán câu lệnh §5 HOP-DONG-PHOI-HOP-T + `npm run soi:frontier`. Đọc thêm: TRIET-LY-IF.md (hiến pháp, TRÍCH MÃ ĐIỀU KHOẢN vào mọi phiếu) · 00-CHOT 2 dòng cuối. **CHUỖI NỀN P1→P6 ĐÓNG TRỌN 14/08.** Kế tiếp theo lộ trình BAN-THIET-KE §5: vá 3 lỗ ❌ (telemetry local-first đếm-bấm ghi file cục bộ [T3] · a11y audit 1 lượt · error-log + nút gửi-log tự nguyện). Món nhìn-thấy sẵn hàng: GR v1 bảng ánh xạ + núm per-mảng · lux-l6 (kho chờ dây cuối) · focus-visible (mắt design) · sửa pickHatchFace O(N²).
 
 ## Chờ tay HOÀ (xếp hàng)
-0. **DUYỆT BẢN NC GIAO DIỆN + 4 KHUÔN KB** — docs/nc/NC-TRIET-LY-GIAO-DIEN (từ 70 ảnh Hoà + top-tier có nguồn): gật khuôn nào T mock khuôn đó (KB-1 thanh công cụ một khuôn 3 stage đề xuất làm đầu). 1. **ĐI LÔ DUYỆT MẮT #1** — `docs/duyet-mat/LO-1-2026-08-13.md`: 48 mục gộp 7 trạm ~20 phút, trả lời "Trạm N ok/lệch" là T flip loạt 2. Duyệt phác Home v5 (SPEC-HOME-BENTO-V5) 3. Chọn ảnh render ST5 → T upscale 300dpi. (Preview Gói Hồ Sơ Sống + .zip mẫu — nay có cả kênh PDF — đã gửi trong chat.)
+0. **DUYỆT BỘ NGUYÊN TẮC NT-1..18** (docs/nc/NC-NGUYEN-TAC-GIAO-DIEN-TOAN-APP — từ 70 ảnh + 3 board Pinterest + top-tier) **+ gật khuôn KB-1..5** — duyệt xong NT thành CHUẨN nghiệm thu mọi UI, T mock KB theo thứ tự (đề xuất: KB-1 toolbar một khuôn trước). 1. **ĐI LÔ DUYỆT MẮT #1** — `docs/duyet-mat/LO-1-2026-08-13.md`: 48 mục gộp 7 trạm ~20 phút, trả lời "Trạm N ok/lệch" là T flip loạt 2. Duyệt phác Home v5 (SPEC-HOME-BENTO-V5) 3. Chọn ảnh render ST5 → T upscale 300dpi. (Preview Gói Hồ Sơ Sống + .zip mẫu — nay có cả kênh PDF — đã gửi trong chat.)
 
 > Lịch sử ở `CHANGELOG.md`. Code, schema và test là nguồn kiểm chứng. IF là sản phẩm global: **2D Kỹ thuật · 3D Thiết kế · Trình bày**; Brand Kit thuộc từng dự án.
 

@@ -1692,3 +1692,7 @@ AI ở Settings không ăn" — nghi đúng nguyên nhân này (route không qua
 ## 14/08/2026 — NC triết lý giao diện (Hoà giao kèm 19 ảnh chat + 51 ảnh tham khảo)
 
 - NC (3 agent con đọc 51 ảnh theo lô + web có nguồn): `docs/nc/NC-TRIET-LY-GIAO-DIEN-2026-08-14.md` — 12 cụm cơ chế (sidebar-filter 23/51 · glass CHỈ ở lớp nổi 8/8 · node-graph khớp master node · dark 36/50) + 7 nguyên lý P1-P7 (content-first Figma/Blender/Apple · progressive disclosure NN/g · kính-lớp-nổi HIG · keyboard-first Linear · bắt-đầu-từ-việc Notion · mặc-định-là-bản-chưng-cất [N2] · thêm-tính-năng-không-thêm-bề-mặt bài học Adobe) + TRẢ LỜI PHÂN LUỒNG 3 tầng (①≤9 lệnh chung luôn hiện ②group-by gói tác vụ ③cử chỉ/collapse — cùng MỘT registry) + 4 khuôn KB-1..4 sẵn mock + 3 cảnh báo. T audit: nguồn đủ (domain trần), cột IF-đạt/chưa đối chiếu đúng chẩn đoán. CHỜ HOÀ GẬT KHUÔN → mock Claude Design/Figma → phiếu áp.
+
+## 14/08/2026 — NC-2 Bộ nguyên tắc giao diện toàn app (3 board Pinterest Bentran_tth)
+
+- NB đọc mắt 43 pin lớp mới nhất/3 board (khai mẫu trung thực) + web D5/Corona/Twinmotion/Miro có nguồn → `docs/nc/NC-NGUYEN-TAC-GIAO-DIEN-TOAN-APP-2026-08-14.md`: cụm mới K13-K17 (⭐K14 chrome kỹ thuật đánh số 10 pin — đề xuất thành chữ ký thị giác IF; K6 kính 0/43 củng cố "kính là vỏ") + 18 nguyên tắc NT-1..18 theo cấp app/stage/nút-phím-ký-hiệu + visual 3 loại trình bày (technical/mood/vật liệu-fur) + tool 3D-render + 3 lệch nặng (L1 toolbar 3 khuôn · L2 đường bàn phím ≈0 · L3 kho thiếu lưới thật). CHỜ HOÀ DUYỆT NT thành chuẩn → mock KB.
