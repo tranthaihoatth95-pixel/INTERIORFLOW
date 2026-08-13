@@ -126,6 +126,10 @@ export const FRONTIER = [
     bangChung: [{ file: 'docs/HOP-DONG-PHOI-HOP-T.md', mau: 'BƯỚC 0|THẺ VAI TỰ CHỨA' }] },
   { id: 'fix-f2-node-render', vai: 'do', ten: 'Fix F2 (13/08 R: CONTROL_GUIDANCE_DEFAULT 3.5 cho sketch2render/clay2render/exterior + controlImageSize ≤1024 bội-8 fail-open; styleTransfer/staging kiểm không dính; test scaleToMaxSide bị gỡ vì sucrase không đọc tsconfig paths — nợ hạ tầng test đã có từ trước, verify tay 12/12)', he: 'DocCore', dot: 5, trangThai: 'xong',
     bangChung: [{ file: 'lib/nodes/registry.ts', mau: 'image_size' }] },
+  { id: 'kien-truc-tool-3-lop', vai: 'mvp', ten: 'Kiến trúc tool 3 lớp (Hoà chốt 13/08): thanh chung luôn hiện · gói group-by chọn được · master node = mini-tool sâu; chặng 2 chỉ Canvas+Vẽ 3D; video tạo+dựng về chặng 2, chặng 3 chỉ trình chiếu+filter — spec + thi công đợt Giao-diện-thống-nhất phần LUỒNG', he: 'Workspace', dot: 6, trangThai: 'chua',
+    bangChung: [{ file: 'docs/SPEC-TOOL-3-LOP.md', mau: 'LỚP 1' }] },
+  { id: 'dan-y-cho-san', vai: 'mvp', ten: 'Dàn Ý Chờ Sẵn (Hoà chốt 13/08): ý đã chốt ở chặng 2 (storyline·moodboard·Thẻ DNA·notes) → máy gói thành dàn ý deck đợi ở chặng 3 (trang + nội dung + asset + Brand Kit map) — mặt tiền thứ 4 DistillEngine, trình qua ProposalSheet; giết painpoint take-note-rồi-quên', he: 'TriTueDuAn', dot: 6, trangThai: 'chua',
+    bangChung: [{ dir: 'lib', mau: 'DanYChoSan|deckOutline' }] },
   // 13/08 — DOGFOOD #1, Hoà chê thật "rối rắm, đang gấp không biết đường lần" (finding F1):
   { id: 'present-task-first', vai: 'mvp', ten: 'Trình chiếu dẫn THEO VIỆC (13/08 H4 sửa nóng F1: TaskFirstStart 3 lối + lối phụ ảnh-đã-dựng · toolbar 6 nút chính + nhóm Hình/⋯ · banner học-gu → toast 6s · cột phải chỉ hiện khi có nội dung — agent verify browser thật; toast chưa bắt được bằng mắt = nợ nhỏ)', he: 'Workspace', dot: 5, trangThai: 'xong',
     bangChung: [{ dir: 'components/present-editor', mau: 'task-first|TaskFirstStart' }] },

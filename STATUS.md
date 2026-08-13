@@ -3,7 +3,7 @@
 ## MỞ PHIÊN MỚI: dán câu lệnh §5 HOP-DONG-PHOI-HOP-T + `npm run soi:frontier`. Đọc thêm: TRIET-LY-IF.md (hiến pháp, TRÍCH MÃ ĐIỀU KHOẢN vào mọi phiếu) · 00-CHOT 2 dòng cuối (đề xuất treo). Nhịp chuỗi nền: P3 Hệ-Luật-Thao-Tác → P4 Gói-Hồ-Sơ-Sống → P5 FeatureContract-máy → P6 IF-RNA-v0 (mỗi phiên 1 món + ≥1 món nhìn-thấy song song).
 
 ## Chờ tay HOÀ (xếp hàng)
-1. Phán câu video chặng 2/3 (kiến trúc tool 3 lớp — 00-CHOT dòng cuối) 2. Duyệt phác Home v5 (mock đã gửi chat, SPEC-HOME-BENTO-V5) 3. Chọn ảnh render ST5 → T upscale 300dpi 4. Lô duyệt mắt #1+#2 (nợ mắt 45) 5. Gật lộ trình P5-P6.
+1. Duyệt phác Home v5 (mock đã gửi chat, SPEC-HOME-BENTO-V5) 3. Chọn ảnh render ST5 → T upscale 300dpi 4. Lô duyệt mắt #1+#2 (nợ mắt 45) 4. Gật lộ trình P5-P6. (Video/tool-3-lớp ĐÃ PHÁN 13/08 — entry kien-truc-tool-3-lop + dan-y-cho-san mở.)
 
 > Lịch sử ở `CHANGELOG.md`. Code, schema và test là nguồn kiểm chứng. IF là sản phẩm global: **2D Kỹ thuật · 3D Thiết kế · Trình bày**; Brand Kit thuộc từng dự án.
 
