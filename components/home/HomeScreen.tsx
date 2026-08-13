@@ -23,26 +23,31 @@ import { WelcomeIntro } from '@/components/entry/WelcomeIntro';
 import { StageIntroCard } from '@/components/onboarding/StageIntroCard';
 import { AppShell } from '@/components/studio/AppShell';
 import { RenderDocBar } from '@/components/studio/RenderDocBar';
-import { NodeLibraryPanel } from '@/components/NodeLibraryPanel';
-import { GalleryPanel } from '@/components/GalleryPanel';
-import { LibraryPanel } from '@/components/LibraryPanel';
-import { ChatPanel } from '@/components/ChatPanel';
 import { FlowCanvas } from '@/components/FlowCanvas';
-import { MoodboardModal } from '@/components/MoodboardModal';
-import { CommandPalette } from '@/components/CommandPalette';
-import { MaskPainterModal } from '@/components/MaskPainterModal';
-import { AnnotateModal } from '@/components/AnnotateModal';
-import { Lightbox } from '@/components/Lightbox';
-import { Dashboard } from '@/components/Dashboard';
 import StatusBar from '@/components/studio/StatusBar';
-import RenderToolModeOverlay from '@/components/render-studio/RenderToolModeOverlay';
-import Render3DModeSkeleton from '@/components/render-studio/Render3DModeSkeleton';
-import { Object3DTree } from '@/components/render-studio/Object3DTree';
-import { Object3DInspector } from '@/components/render-studio/Object3DInspector';
+// Dàn panel/modal NẶNG chỉ-render-theo-điều-kiện → `next/dynamic` (ssr:false) qua wrapper
+// `heavy-panels.tsx` — tách khỏi chunk route `/` (28,6 MB dev → xem phiếu home-nav-lag).
+// Tên + prop giữ NGUYÊN, chỉ đổi nguồn import; hành vi/thứ tự render có điều kiện không đổi.
+import {
+  NodeLibraryPanel,
+  GalleryPanel,
+  LibraryPanel,
+  ChatPanel,
+  MoodboardModal,
+  CommandPalette,
+  MaskPainterModal,
+  AnnotateModal,
+  Lightbox,
+  Dashboard,
+  RenderToolModeOverlay,
+  Render3DModeSkeleton,
+  Object3DTree,
+  Object3DInspector,
+  PresentOverlay,
+} from '@/components/home/heavy-panels';
 import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
 import ModeShell from '@/components/shell/ModeShell';
 import { useStageMode, useHydrateRenderMode } from '@/lib/stage-mode';
-import PresentOverlay from '@/components/present/PresentOverlay';
 import DongStudioHome from '@/components/home/DongStudioHome';
 import { CommentLayer } from '@/components/CommentLayer';
 import { useFlowStore } from '@/lib/store';
