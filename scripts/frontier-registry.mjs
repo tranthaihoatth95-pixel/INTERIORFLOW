@@ -119,12 +119,12 @@ export const FRONTIER = [
   { id: 'hotkey-registry', vai: 'day', ten: 'MỘT registry lệnh+phím toàn app (chốt 10/08): tooltip/⌘K/bảng ⌘/ đọc chung một nguồn, lệnh chưa đủ điều kiện hiện mờ kèm lý do — thi công đợt sau, entry mở để sổ không quên', he: 'NhapLenh', dot: 6, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'HotkeyRegistry|hotkey-registry' }] },
   // 13/08 — DOGFOOD #1, Hoà chê thật "rối rắm, đang gấp không biết đường lần" (finding F1):
-  { id: 'present-task-first', vai: 'mvp', ten: 'Trình chiếu dẫn THEO VIỆC (sửa nóng F1 dogfood #1): empty-state 3 lối to giữa canvas (Nhập tệp·Dàn từ mẫu·Trang trống) · toolbar phân cấp ~6 nút chính + nhóm gộp · banner học-gu rời mặt tiền · panel phải chỉ hiện khi có nội dung/chọn', he: 'Workspace', dot: 5, trangThai: 'chua',
+  { id: 'present-task-first', vai: 'mvp', ten: 'Trình chiếu dẫn THEO VIỆC (13/08 H4 sửa nóng F1: TaskFirstStart 3 lối + lối phụ ảnh-đã-dựng · toolbar 6 nút chính + nhóm Hình/⋯ · banner học-gu → toast 6s · cột phải chỉ hiện khi có nội dung — agent verify browser thật; toast chưa bắt được bằng mắt = nợ nhỏ)', he: 'Workspace', dot: 5, trangThai: 'xong',
     bangChung: [{ dir: 'components/present-editor', mau: 'task-first|TaskFirstStart' }] },
   { id: 'luong-theo-viec', vai: 'mvp', ten: 'Chuẩn LUỒNG THEO VIỆC toàn app (bệnh gốc F1: UI liệt kê công cụ, không dẫn theo việc) — nghiên cứu + spec tầng "lối vào theo việc" cho người gấp, áp 2D/3D/Trình chiếu — thi công đợt kế', he: 'Workspace', dot: 6, trangThai: 'chua',
     bangChung: [{ dir: 'docs', mau: 'SPEC-LUONG-THEO-VIEC' }] },
   // 13/08 — Hoà chốt Smart Convert (mở rộng smart-ingest, xem 00-CHOT 13/08):
-  { id: 'smart-convert-pdf', vai: 'day', ten: 'Smart Convert bậc 1 — nhập PDF vector thành deck IF tách 3 lớp Nền·Ảnh·Chữ (chữ THẬT từ PDF qua unpdf sẵn có, toạ độ+cỡ giữ nguyên; trang scan → nền raster + ghi chú "cần OCR bậc 2"); xuất PPTX đường sẵn; phục vụ vòng người-dùng-thật #1', he: 'DocCore', dot: 5, trangThai: 'chua',
+  { id: 'smart-convert-pdf', vai: 'day', ten: 'Smart Convert bậc 1 (13/08 SC: pdfToDeck — lớp CHỮ thật toạ độ+cỡ giữ nguyên, dấu Việt chuẩn, trang scan badge OCR-bậc-2, cắm cửa Mở tệp, verify browser 1→3 slide; lớp Nền raster CHƯA làm — cần @napi-rs/canvas bị cấm dep, nợ bậc 1b; fix detached ArrayBuffer)', he: 'DocCore', dot: 5, trangThai: 'xong',
     bangChung: [{ dir: 'lib/present-editor', mau: 'pdf-import|pdfToDeck' }] },
   // 12/08 Đợt 4 — T mở entry theo uỷ quyền plan (docType đầu = schedule "Bảng thống kê"):
   { id: 'editor-bang-bieu-mau', vai: 'mvp', ten: 'Engine bảng chung (12/08 Đợt 4: TableDocEngine trừu tượng từ boq-overrides/boq-group + schedule "Bảng thống kê" cửa/phòng giữ entityId + re-sync không đè ô tay + thẻ thật trong picker, BOQ 0 hồi quy; BoqScreen chưa rewire qua engine — chủ đích, chờ verify browser; spec-sheet/approval-form là mặt tiền sau)', he: 'Workspace', dot: 4, trangThai: 'xong',
