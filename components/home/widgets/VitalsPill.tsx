@@ -11,6 +11,14 @@
  * gửi docContext — Home không mở một Doc cụ thể nào, xem comment gốc ở ProjectSelect.tsx).
  * v1: lịch sử chat sống trong state cục bộ, mất khi đóng pill — chấp nhận được (bản gốc dòng
  * to cũng chỉ giữ trong state, không lưu DB).
+ *
+ * v4 (13/08, phiếu home-bento-v4.md ④.4) — GỠ tự định vị `fixed right-5 top-5` khỏi root: giờ
+ * `DongStudioHome.tsx` bọc component này trong MỘT cụm `fixed` chung ở góc màn cùng nút "Chi
+ * tiết" (i) + `LangToggle` (trước đây 2 nút đó neo LẠC bên trong ô A nhỏ của ProjectSelect —
+ * lỗi #4 "VI/EN·(i) lơ lửng"). Cụm dùng `flex` nên khi panel chat mở rộng ra 300px, cả cụm tự
+ * giãn sang trái (element `fixed right:…` không set `left` → rộng theo nội dung, neo phải cố
+ * định) — Info/LangToggle tự dạt theo, không đè lên panel. Root ở đây chỉ còn `shrink-0` để
+ * không bị 2 nút cạnh nó bóp hẹp khi cụm tính flex-basis.
  */
 
 import { useCallback, useRef, useState, useEffect } from 'react';
@@ -77,7 +85,7 @@ export default function VitalsPill() {
   }, [input, messages, sending, tr]);
 
   return (
-    <div className="fixed right-5 top-5 z-50" data-vitals-pill="">
+    <div className="shrink-0" data-vitals-pill="">
       {!open ? (
         <button
           type="button"

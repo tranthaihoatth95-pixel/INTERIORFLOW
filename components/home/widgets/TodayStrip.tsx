@@ -18,6 +18,11 @@
  * Chấm pulse — PresenceRow (`components/ui/PresenceRow.tsx`) NGOÀI vùng file được sửa của phiếu
  * này nên không chèn pulse vào TỪNG avatar; thay bằng 1 chấm pulse ĐỒNG HÀNH cạnh nhãn "đang
  * online" (cùng ý nghĩa — có người đang sống — không cần đúng pixel từng avatar).
+ *
+ * v4 (13/08, phiếu home-bento-v4.md ④.1) — ngưỡng SIẾT lại: "≥2 tín hiệu thật (việc đến hạn/xong
+ * + người online NGOÀI bản thân)". Đọc là HAI phạm trù bắt buộc CÙNG có mặt (không phải đếm rời
+ * 3 cờ) — một mình mở app không tạo ra "hôm nay của studio" chỉ vì `today.online` (mọi User, kể
+ * cả chính mình) luôn có tên mình trong đó. `currentUserId` lọc bản thân ra khỏi phạm trù online.
  */
 
 import PresenceRow, { type PresenceMember } from '@/components/ui/PresenceRow';
@@ -26,20 +31,30 @@ import { useT } from '@/lib/i18n';
 import WidgetCard from './WidgetCard';
 import type { HomeSummary } from './types';
 
-/** MỘT nơi định nghĩa "ô C có gì để hiện" — DongStudioHome.tsx gọi lại đúng hàm này để quyết
- * ô lân cận có cần giãn chiếm chỗ không (luật ④ "ô trống tự ẩn, ô lân cận giãn"), tránh chép 2
- * lần cùng điều kiện rồi lệch nhau. */
-export function todayHasSignal(summary: HomeSummary): boolean {
-  return summary.greeting.dueTodayCount > 0 || summary.today.tasksDoneToday > 0 || summary.today.online.length > 0;
+export function todayHasSignal(summary: HomeSummary, currentUserId?: string | null): boolean {
+  const taskSignal = summary.greeting.dueTodayCount > 0 || summary.today.tasksDoneToday > 0;
+  const onlineOthersSignal = summary.today.online.some((u) => u.id !== currentUserId);
+  return taskSignal && onlineOthersSignal;
 }
 
-export default function TodayStrip({ summary, index }: { summary: HomeSummary; index?: string }) {
+export default function TodayStrip({
+  summary,
+  index,
+  currentUserId = null,
+}: {
+  summary: HomeSummary;
+  index?: string;
+  /** id user đang xem Home — loại khỏi danh sách "đang online" hiển thị (chính mình luôn "online"
+   * với chính mình, hiện lại vô nghĩa). */
+  currentUserId?: string | null;
+}) {
   const tr = useT();
   const reduce = useReducedMotion();
 
   const dueTodayCount = summary.greeting.dueTodayCount;
-  const { tasksDoneToday, online } = summary.today;
-  if (!todayHasSignal(summary)) return null;
+  const { tasksDoneToday } = summary.today;
+  const online = summary.today.online.filter((u) => u.id !== currentUserId);
+  if (!todayHasSignal(summary, currentUserId)) return null;
 
   const onlineMembers: PresenceMember[] = online.map((u) => ({ id: u.id, name: u.name, online: true }));
 

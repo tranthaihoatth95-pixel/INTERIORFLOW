@@ -29,14 +29,16 @@
  * bảng đầy đủ ở báo cáo ⑦).
  */
 
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { Info } from 'lucide-react';
 import { ProjectSelect } from '@/components/ProjectSelect';
+import { LangToggle } from '@/components/LangToggle';
 import { useFlowStore } from '@/lib/store';
 import { useLang, useT } from '@/lib/i18n';
 import { timeOfDayNow } from '@/lib/home/time-of-day';
 import { buildGreeting } from '@/lib/home/greeting';
 import { shouldShowActivityGrid } from '@/lib/home/aggregate';
-import { pickWeeklyItem, pickWeeklyImages } from '@/lib/home/weekly-picks';
+import { pickWeeklyItem, pickWeeklyImages, isSeedLibraryAsset } from '@/lib/home/weekly-picks';
 import VitalsPill from './widgets/VitalsPill';
 import LightClock from './widgets/LightClock';
 import TodayStrip, { todayHasSignal } from './widgets/TodayStrip';
@@ -48,6 +50,17 @@ import UpcomingList, { upcomingHasSignal } from './widgets/UpcomingList';
 import WeeklyImage, { type WeeklyImageItem } from './widgets/WeeklyImage';
 import WeeklyMaterial, { type WeeklyMaterialItem } from './widgets/WeeklyMaterial';
 import type { HomeSummary } from './widgets/types';
+
+/** Pill kính nhỏ — cùng công thức nút đóng/mở của `VitalsPill.tsx` (button trạng thái đóng), tái
+ * dùng cho nút "Chi tiết" (i) đứng cạnh nó trong cụm góc-phải-trên (④.4, xem cụm `fixed right-5
+ * top-5` ở cuối component, ngay trước phần `return` render lưới). */
+const CORNER_PILL: CSSProperties = {
+  background: 'var(--mat-header, var(--panel))',
+  border: '1px solid var(--border)',
+  backdropFilter: 'blur(var(--blur)) saturate(150%)',
+  WebkitBackdropFilter: 'blur(var(--blur)) saturate(150%)',
+  boxShadow: '0 10px 28px -14px rgba(0,0,0,0.4)',
+};
 
 /** Shape rỗng hợp lệ — QuickNotes render ngay cả trước khi `/api/home/summary` trả lời. */
 const EMPTY_SUMMARY: HomeSummary = {
@@ -77,6 +90,8 @@ function area(col: [number, number], row: [number, number]): CSSProperties {
 
 export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   const user = useFlowStore((s) => s.user);
+  const openDashboardTab = useFlowStore((s) => s.openDashboardTab);
+  const currentUserId = user?.id ?? null;
   const en = useLang() === 'en';
   const tr = useT();
   const [summary, setSummary] = useState<HomeSummary | null>(null);
@@ -194,15 +209,20 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   });
 
   // ---------- widget sáng tạo #2/#3 — chọn TẤT ĐỊNH/lọc từ /api/library (thuần, có test) ----------
+  // v4 (13/08, phiếu home-bento-v4.md ④.1, lỗi #3 "ăn ảnh SEED Unsplash") — loại HẲN asset seed
+  // minh hoạ (`scripts/seed-library-minh-hoa.ts`, tag `minh-hoa`) khỏi NGUỒN trước khi 2 widget
+  // sáng tạo chọn — seed là dữ liệu MINH HOẠ kệ Thư viện, không phải "tuần này của studio", lên
+  // Home là giả trân (đúng bẫy NC-HOME-DELIGHT). Lọc MỘT chỗ, cả 2 widget dùng chung `realAssets`.
+  const realAssets = useMemo(() => (libraryAssets ?? []).filter((a) => !isSeedLibraryAsset(a.tags)), [libraryAssets]);
   const weeklyImages: WeeklyImageItem[] = useMemo(() => {
     if (!libraryAssets) return [];
-    return pickWeeklyImages(libraryAssets, 'ref-render', 6).map((a) => ({ id: a.id, url: a.url, name: a.name }));
-  }, [libraryAssets]);
+    return pickWeeklyImages(realAssets, 'ref-render', 6).map((a) => ({ id: a.id, url: a.url, name: a.name }));
+  }, [libraryAssets, realAssets]);
   const weeklyMaterial: WeeklyMaterialItem | null = useMemo(() => {
     if (!libraryAssets) return null;
-    const pool = libraryAssets.filter((a) => a.usage === 'material');
+    const pool = realAssets.filter((a) => a.usage === 'material');
     return pickWeeklyItem(pool, new Date());
-  }, [libraryAssets]);
+  }, [libraryAssets, realAssets]);
 
   // ---------- ④ "widget trống tự ẩn, ô lân cận giãn" — cờ rỗng của 5 ô CÓ THỂ rỗng ----------
   const s = summary ?? EMPTY_SUMMARY;
@@ -214,7 +234,14 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   // này thay vì "thêm hàng" vì thêm hàng phá luật "một màn không cuộn" ở desktop, xem báo cáo ⑦).
   const showActivityInI = shouldShowActivityGrid(s.activityDays);
   const hasI = showActivityInI || newsHasSignal(s);
-  const hasC = todayHasSignal(s);
+  const hasC = todayHasSignal(s, currentUserId);
+
+  // ---------- v4 (phiếu home-bento-v4.md ④.2) — NẤC bố cục theo ĐỘ DÀY dữ liệu ----------
+  // Đếm bao nhiêu trong 6 ô "có thể rỗng" (C/D/E/G/H/I) đang THẬT SỰ có dữ liệu. A (Dự án) · B
+  // (Chào+ánh sáng) · F (Ghi chú) LUÔN sống nên không tính vào đây — chúng là 3 ô của nấc MỎNG.
+  const optionalLiveCount = [hasC, hasD, hasE, hasG, hasH, hasI].filter(Boolean).length;
+  // MỎNG (0 ô phụ sống, chỉ còn A/B/F) · VỪA (1-3 ô phụ, tổng 4-6 ô) · ĐẦY (4-6 ô phụ, tổng 7-9 ô)
+  const tier: 'mong' | 'vua' | 'day' = optionalLiveCount === 0 ? 'mong' : optionalLiveCount <= 3 ? 'vua' : 'day';
 
   const openTasksByProject = summary?.openTasksByProject;
 
@@ -231,6 +258,32 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   const hArea = area(hasI ? [8, 11] : [8, 13], rightRow);
   const iArea = area(hasH ? [11, 13] : [8, 13], rightRow);
 
+  // v4 (13/08, phiếu home-bento-v4.md ④.2) — ô A tách thành JSX dùng chung CẢ 4 layout (ĐẦY ·
+  // VỪA · MỎNG · stackedList mobile) — trước đây chép văn y nguyên 2 lần (bentoGrid + stackedList),
+  // nay 4 lần nếu không tách. `boxShadow: var(--shadow-node)` thêm mới (lỗi #6, đồng bộ WidgetCard).
+  const projectTile: ReactNode = (
+    <div
+      className="flex h-full flex-col overflow-hidden rounded-[var(--r-3)]"
+      style={{ background: 'var(--card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-node)' }}
+    >
+      <div className="shrink-0 px-3.5 pb-1 pt-3 font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-[var(--t4)]">
+        <span style={{ color: 'var(--t5)' }}>01</span> {tr('Dự án', 'Projects')}
+      </div>
+      <div className="min-h-0 flex-1">
+        <ProjectSelect
+          onEnter={onEnter}
+          hideHeroCopy
+          hideVitalsBar
+          bentoBox
+          openTasksByProject={openTasksByProject}
+          onNoteDrop={handleNoteDrop}
+          armedNoteId={armedNoteId}
+          revealAll={revealAll}
+        />
+      </div>
+    </div>
+  );
+
   const bentoGrid = (
     <div
       className="grid h-full w-full"
@@ -238,26 +291,7 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
     >
       {/* Ô A · DỰ ÁN — 7c × 2h, luôn hiện (never rỗng: "+ Dự án mới" luôn có trong ProjectSelect) */}
       <div style={area([1, 8], [1, 3])} className="flex h-full flex-col overflow-hidden">
-        <div
-          className="flex h-full flex-col overflow-hidden rounded-[var(--r-3)]"
-          style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
-        >
-          <div className="shrink-0 px-3.5 pb-1 pt-3 font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-[var(--t4)]">
-            <span style={{ color: 'var(--t5)' }}>01</span> {tr('Dự án', 'Projects')}
-          </div>
-          <div className="min-h-0 flex-1">
-            <ProjectSelect
-              onEnter={onEnter}
-              hideHeroCopy
-              hideVitalsBar
-              bentoBox
-              openTasksByProject={openTasksByProject}
-              onNoteDrop={handleNoteDrop}
-              armedNoteId={armedNoteId}
-              revealAll={revealAll}
-            />
-          </div>
-        </div>
+        {projectTile}
       </div>
 
       {/* Ô B · CHÀO + ĐỒNG HỒ ÁNH SÁNG — luôn hiện; C rỗng thì B giãn hết 5 cột (`bArea`) */}
@@ -268,7 +302,7 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
       {/* Ô C · HÔM NAY — tự ẩn */}
       {hasC && (
         <div style={area([11, 13], [1, 2])}>
-          <TodayStrip summary={s} index="03" />
+          <TodayStrip summary={s} index="03" currentUserId={currentUserId} />
         </div>
       )}
 
@@ -308,31 +342,72 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
     </div>
   );
 
-  const stackedList = (
-    <div className="flex w-full flex-col gap-[var(--gap)] px-3 pb-6 pt-3">
-      <div className="flex h-[440px] flex-col overflow-hidden rounded-[var(--r-3)]" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
-        <div className="shrink-0 px-3.5 pb-1 pt-3 font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-[var(--t4)]">
-          <span style={{ color: 'var(--t5)' }}>01</span> {tr('Dự án', 'Projects')}
+  // v4 (13/08, phiếu home-bento-v4.md ④.2, lỗi #1+#2) — NẤC VỪA (1-3 ô phụ sống, tổng 4-6 ô).
+  // KHÔNG tái dùng thuật toán area-giãn của bentoGrid ở trên: thuật toán đó chỉ tránh lỗ trống
+  // KHI ít nhất 1 trong {D,H,I} sống (đảm bảo được vì ĐẦY yêu cầu ≥4/6 ô phụ — tối đa 3 ô nằm
+  // trong {C,E,G} nên luôn cần ít nhất 1 ô ở {D,H,I} mới đạt 4). Ở VỪA (≤3 ô phụ) điều đó KHÔNG
+  // còn đúng — vd chỉ mỗi E sống thì {D,H,I} đều rỗng, cột phải (8-13, hàng 2-3) sẽ trống trơn
+  // nếu dùng lại cách tính area cũ (chính là lỗi #1 "9 hộp rỗng ruột"/khoảng trắng đã bắt được).
+  // Giải pháp ĐƠN GIẢN, KHÔNG cần bảng tổ hợp: hàng 1 cố định (A cao 2 phần · B), hàng dưới là
+  // MỘT dải cột chia ĐỀU cho đúng số ô phụ sống + F (Ghi chú luôn sống) — số cột = số ô, không ô
+  // nào có thể "rỗng" vì mảng chỉ chứa ô ĐÃ lọc `hasX`.
+  const vuaExtras: { node: ReactNode }[] = [];
+  if (hasC) vuaExtras.push({ node: <TodayStrip summary={s} index="03" currentUserId={currentUserId} /> });
+  if (hasD) vuaExtras.push({ node: <WeeklyImage images={weeklyImages} eightSecTick={eightSecTick} index="04" /> });
+  if (hasE) vuaExtras.push({ node: <StageChart summary={s} index="05" /> });
+  if (hasG) vuaExtras.push({ node: <UpcomingList summary={s} index="07" /> });
+  if (hasH) vuaExtras.push({ node: <WeeklyMaterial item={weeklyMaterial} index="08" /> });
+  if (hasI) vuaExtras.push({ node: showActivityInI ? <ContributionGrid summary={s} /> : <NewsFeed summary={s} index="09" /> });
+  const vuaBottomCount = 1 + vuaExtras.length; // + ô F (Ghi chú, luôn sống)
+
+  const vuaGrid = (
+    <div className="flex h-full w-full flex-col gap-[var(--gap)]">
+      <div className="grid shrink-0" style={{ gridTemplateColumns: 'repeat(12, minmax(0,1fr))', gap: 'var(--gap)', height: '46%' }}>
+        <div style={{ gridColumn: '1 / 8' }} className="min-h-0">
+          {projectTile}
         </div>
-        <div className="min-h-0 flex-1">
-          <ProjectSelect
-            onEnter={onEnter}
-            hideHeroCopy
-            hideVitalsBar
-            bentoBox
-            openTasksByProject={openTasksByProject}
-            onNoteDrop={handleNoteDrop}
-            armedNoteId={armedNoteId}
-            revealAll={revealAll}
-          />
+        <div style={{ gridColumn: '8 / 13' }} className="min-h-0">
+          <LightClock headline={greeting.headline} signal={greeting.signal} tick={minuteTick} index="02" />
         </div>
       </div>
+      <div className="grid min-h-0 flex-1" style={{ gridTemplateColumns: `repeat(${vuaBottomCount}, minmax(0,1fr))`, gap: 'var(--gap)' }}>
+        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index="06" />
+        {vuaExtras.map((e, i) => (
+          <div key={i} className="min-h-0">
+            {e.node}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // v4 — NẤC MỎNG (0 ô phụ sống — đúng máy Hoà hôm nay: 1 dự án · 0 việc · 1 người). Phiếu ④.2
+  // đòi hỏi ĐÂY LÀ NẤC ĐẸP NHẤT (dữ liệu máy Hoà đang mỏng): chỉ 3 ô THẬT SỰ có nội dung — Dự án
+  // (lớn, 2 phần cao) + Chào/ánh-sáng gộp (cùng hàng) + Ghi chú (hàng dưới, cả chiều rộng) — thay
+  // vì lưới 3 hàng cũ để lại 2 hàng-cột rỗng bên phải (chính là lỗi #1+#4 "khoảng trắng mênh mông").
+  const mongGrid = (
+    <div className="grid h-full w-full" style={{ gridTemplateRows: '2fr 1fr', gap: 'var(--gap)' }}>
+      <div className="grid min-h-0" style={{ gridTemplateColumns: '7fr 5fr', gap: 'var(--gap)' }}>
+        <div className="min-h-0">{projectTile}</div>
+        <div className="min-h-0">
+          <LightClock headline={greeting.headline} signal={greeting.signal} tick={minuteTick} index="02" />
+        </div>
+      </div>
+      <div className="min-h-0">
+        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index="06" />
+      </div>
+    </div>
+  );
+
+  const stackedList = (
+    <div className="flex w-full flex-col gap-[var(--gap)] px-3 pb-6 pt-3">
+      <div className="h-[440px]">{projectTile}</div>
       <div className="h-[170px]">
         <LightClock headline={greeting.headline} signal={greeting.signal} tick={minuteTick} index="02" />
       </div>
       {hasC && (
         <div className="h-[150px]">
-          <TodayStrip summary={s} index="03" />
+          <TodayStrip summary={s} index="03" currentUserId={currentUserId} />
         </div>
       )}
       {hasD && (
@@ -371,10 +446,29 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
       <div className="pointer-events-none absolute inset-0" style={{ background: 'var(--bg)' }} aria-hidden />
       <div className="pointer-events-none absolute inset-0 opacity-[0.16]" style={{ background: tod.gradient }} aria-hidden />
 
-      <VitalsPill />
+      {/* v4 (13/08, phiếu home-bento-v4.md ④.4, lỗi #4 "VI/EN·(i) lơ lửng") — cụm góc-phải-trên
+          DUY NHẤT của toàn trang Home: "Chi tiết" (dashboard tất cả dự án) + đổi ngôn ngữ +
+          Vitals, đứng CÙNG một hàng cố định. Trước đây 2 nút đầu bị neo BÊN TRONG ô A nhỏ
+          (`ProjectSelect` — `absolute right-6 top-6` tính theo góc của CHÍNH ô A, không phải góc
+          màn) nên trông "lơ lửng" giữa card — nay cả cụm neo ĐÚNG MỘT LẦN ở góc màn thật, ô A
+          không tự vẽ cụm này nữa (`bentoBox` gate trong ProjectSelect.tsx). */}
+      <div className="fixed right-5 top-5 z-50 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => openDashboardTab('board', null)}
+          aria-label={en ? 'Details (all projects)' : 'Chi tiết (toàn bộ dự án)'}
+          title={en ? 'Details (all projects)' : 'Chi tiết (toàn bộ dự án)'}
+          className="grid h-9 w-9 place-items-center rounded-full text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
+          style={CORNER_PILL}
+        >
+          <Info size={15} aria-hidden="true" />
+        </button>
+        <LangToggle variant="ghost" />
+        <VitalsPill />
+      </div>
 
       <div className={isWide ? 'relative z-10 h-full w-full p-3' : 'relative z-10 w-full'}>
-        {isWide ? bentoGrid : stackedList}
+        {isWide ? (tier === 'mong' ? mongGrid : tier === 'vua' ? vuaGrid : bentoGrid) : stackedList}
       </div>
     </div>
   );

@@ -27,9 +27,18 @@ const W = 64;
 const H = 88;
 const GAP = 28;
 
-/** Cùng lý do `todayHasSignal` (TodayStrip.tsx) — MỘT nơi định nghĩa "ô E có gì để hiện". */
+/**
+ * Cùng lý do `todayHasSignal` (TodayStrip.tsx) — MỘT nơi định nghĩa "ô E có gì để hiện".
+ *
+ * v4 (13/08, phiếu home-bento-v4.md ④.1) — ngưỡng SIẾT lại: "≥2 dự án có hoạt động". Dữ liệu
+ * hiện có (`stageChart[].projects`, từ `buildStageCounts`) chỉ đếm dự án theo `currentStage`,
+ * KHÔNG có cờ "có hoạt động" riêng theo từng dự án (không bịa thêm trường mới ngoài vùng file
+ * phiếu này cho phép sửa) — mỗi dự án chỉ rơi vào ĐÚNG MỘT chặng nên TỔNG `projects` qua 3 chặng
+ * = tổng số dự án của studio; dùng số đó làm ngưỡng gần đúng cho "đủ dự án để biểu đồ đáng một ô"
+ * (một biểu đồ phân bố 3 cột với 1 dự án duy nhất không nói lên điều gì — luôn dồn hết vào 1 cột).
+ */
 export function stageChartHasSignal(summary: HomeSummary): boolean {
-  return summary.stageChart.reduce((s, r) => s + r.projects, 0) > 0;
+  return summary.stageChart.reduce((s, r) => s + r.projects, 0) >= 2;
 }
 
 export default function StageChart({ summary, index }: { summary: HomeSummary; index?: string }) {

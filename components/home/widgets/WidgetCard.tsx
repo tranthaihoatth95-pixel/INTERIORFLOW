@@ -15,6 +15,12 @@
  * — `index` là số thứ tự ô (đúng chữ Hoà pin nhiều lần: "SỐ THỨ TỰ to làm nhân vật, nhãn mono nhỏ
  * uppercase") — hiện TRƯỚC tiêu đề, `font-mono`, KHÔNG phải badge/pill riêng (giữ hairline, tránh
  * bo bubbly). border hairline `1px solid var(--border)` + `--r-3` (14px) đã đúng gu — không đổi.
+ *
+ * v4 (13/08, phiếu home-bento-v4.md ④.6, lỗi #6 "theme sáng trắng-trên-trắng thiếu phân tầng") —
+ * thêm `box-shadow: var(--shadow-node)` (token SẴN CÓ, đủ cả 2 theme — `globals.css`, không đụng
+ * file đó). Ở theme tối card gần như không đổi (nền đã tối, viền đã đủ); ở theme sáng `--card`
+ * (#fff) đứng trên `--bg` (#f2efe9, giấy ấm) chỉ cách nhau ~14 điểm sáng — viền `--border` mỏng
+ * dễ chìm, bóng 1 lớp là thứ TÁCH card ra khỏi nền rõ ràng nhất (đúng "một-khối-một-bóng" §2c).
  */
 
 import type { ReactNode } from 'react';
@@ -45,7 +51,7 @@ export default function WidgetCard({
     return (
       <div
         className={`relative h-full overflow-hidden rounded-[var(--r-3)] ${className}`}
-        style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+        style={{ background: 'var(--card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-node)' }}
       >
         {children}
       </div>

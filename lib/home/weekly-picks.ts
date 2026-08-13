@@ -72,3 +72,17 @@ export function guessMaterialKind(category: string, tags: string): 'wood' | 'sto
   for (const { kind, re } of KIND_KEYWORDS) if (re.test(hay)) return kind;
   return 'paint'; // mặc định an toàn — sơn/matte trung tính, không bịa một loại cụ thể hơn
 }
+
+/**
+ * v4 (13/08, phiếu home-bento-v4.md ④.1) — nhận diện ảnh SEED minh hoạ (`scripts/seed-library-
+ * minh-hoa.ts`, tag chuẩn `demo,minh-hoa,unsplash`) để loại khỏi 2 widget "sáng tạo" trên Home:
+ * ảnh/vật liệu minh hoạ KHÔNG PHẢI dữ liệu thật của studio, hiện lên Home là "giả trân" (đúng
+ * bẫy đã ghi ở NC-HOME-DELIGHT). Nhận diện qua đúng MỘT tag `minh-hoa` (tách theo dấu phẩy, so
+ * khớp CHÍNH XÁC — không dùng `includes` chuỗi thô để tránh khớp nhầm tag khác chứa chữ con).
+ */
+export function isSeedLibraryAsset(tags: string): boolean {
+  return (tags ?? '')
+    .split(',')
+    .map((t) => t.trim().toLowerCase())
+    .includes('minh-hoa');
+}

@@ -1,5 +1,5 @@
 /** Test `weekly-picks.ts` — chạy: node_modules/.bin/sucrase-node lib/home/weekly-picks.test.ts */
-import { isoWeekNumber, pickWeeklyItem, pickWeeklyImages, guessMaterialKind } from './weekly-picks';
+import { isoWeekNumber, pickWeeklyItem, pickWeeklyImages, guessMaterialKind, isSeedLibraryAsset } from './weekly-picks';
 
 let pass = 0;
 let fail = 0;
@@ -57,6 +57,14 @@ console.log('guessMaterialKind() — đoán loại từ chuỗi tự do VI/EN, m
   eq('kính cường lực', guessMaterialKind('Kính cường lực', ''), 'glass');
   eq('sơn matte', guessMaterialKind('Sơn tường matte', ''), 'paint');
   eq('không khớp gì → paint mặc định', guessMaterialKind('Đồ trang trí lạ', 'misc'), 'paint');
+}
+
+console.log('isSeedLibraryAsset() — nhận diện đúng MỘT tag "minh-hoa" (seed script), không khớp nhầm');
+{
+  ok('tag seed đầy đủ → true', isSeedLibraryAsset('demo,minh-hoa,unsplash,shelf:common-atlas'));
+  ok('tag thường không seed → false', !isSeedLibraryAsset('shelf:common-asset,thumb:furniture'));
+  ok('chuỗi rỗng → false', !isSeedLibraryAsset(''));
+  ok('tag chứa chữ con "minh-hoa-x" KHÔNG khớp nhầm (so khớp chính xác)', !isSeedLibraryAsset('minh-hoa-xyz,demo'));
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);

@@ -33,7 +33,7 @@ import { applyCadHandoff } from '@/lib/cad/handoff';
 import { ProjectInitBoard } from '@/components/project-init/ProjectInitBoard';
 import ProjectOverviewCard from '@/components/home/ProjectOverviewCard';
 import { NOTE_DRAG_MIME } from '@/components/home/widgets/QuickNotes';
-import PresenceRow, { type PresenceMember } from '@/components/ui/PresenceRow';
+import type { PresenceMember } from '@/components/ui/PresenceRow';
 import { getLastStage } from '@/lib/shell/last-stage';
 import { stageRoutePath, stageSegmentForPhase } from '@/lib/scope-core';
 import { PHASE_MAP } from '@/lib/phases';
@@ -632,6 +632,12 @@ export function ProjectSelect({
     if (focused && focused.kind === 'flow') setAmbientSrc(coverOf(focused.flow));
   }, [active, items]);
   const showAmbient = !loadError && flows !== null && !effectiveGrid && !reduce;
+
+  /** v4 (13/08, phiếu home-bento-v4.md ④.4, lỗi #4) — khối "chào + đồng bộ tiến độ" chỉ đáng
+   * chiếm chỗ khi có ÍT NHẤT MỘT trong ba: hero copy (`!hideHeroCopy`) · hàng đồng bộ/toggle
+   * (điều kiện y hệt JSX bên dưới, tách ra đây để dùng chung) · thông điệp đồng bộ vừa chạy. */
+  const showSyncRow = larkConfigured === true || (!loadError && flows !== null && !effectiveGrid);
+  const hasHeaderContent = !hideHeroCopy || showSyncRow || !!syncMsg;
 
   /** Kế hoạch tương phản cho hero (pill chào/tiêu đề/mô tả/2 nút/Vitals AI) — CHỈ đo khi
    * ambient thật sự hiện (carousel + có ảnh); grid/mobile/reduce dùng nền phẳng var(--bg),
@@ -1857,7 +1863,6 @@ export function ProjectSelect({
     // trong scope này (stageMeta ở trên, presence dưới đây dùng lại đúng nguồn ProjectOverviewCard
     // đang fetch, `openTasksByProject` từ prop mới). Không thêm request nào.
     const openTasks = openTasksByProject?.[group.projectId];
-    const overlayPresence = presenceMembersOfGroup(group.flows);
     const noteArmed = !!armedNoteId;
     return (
       <div
@@ -1905,9 +1910,12 @@ export function ProjectSelect({
         className={`group cursor-pointer overflow-hidden text-left ${reduce ? '' : 'transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:scale-[1.02]'}`}
         style={{
           borderRadius: 'var(--radius-xl)',
-          border: noteArmed ? '1px solid var(--accent)' : '1px solid rgba(127,127,127,0.25)',
-          background: '#141210',
-          boxShadow: noteArmed ? '0 0 0 3px var(--accent-soft), 0 18px 44px -20px rgba(0,0,0,0.55)' : '0 18px 44px -20px rgba(0,0,0,0.55)',
+          // v4 (13/08, phiếu home-bento-v4.md ④.3, lỗi #6) — trước hardcode '#141210' (đen bất kể
+          // theme, đúng bug "theme sáng không đen thui" Hoà chê); nay theo token card/border/bóng
+          // sẵn có — card THEO ĐÚNG theme app, không còn khối đen lạc giữa nền giấy sáng.
+          border: noteArmed ? '1px solid var(--accent)' : '1px solid var(--border)',
+          background: 'var(--card)',
+          boxShadow: noteArmed ? '0 0 0 3px var(--accent-soft), var(--shadow-node)' : 'var(--shadow-node)',
           opacity: busy ? 0.6 : 1,
         }}
       >
@@ -1924,36 +1932,53 @@ export function ProjectSelect({
               {en ? stageMeta.labelEn : stageMeta.label}
             </span>
           )}
-          {/* BENTO v3 (④.2 ô A "hover → lớp kính dữ liệu trượt lên", ③ "giữ Tab bung TẤT CẢ") —
-              transform-CHỈ (luật G1 "kính không animate opacity" + ràng buộc ⑤ phiếu), KHÔNG
-              backdrop-filter (đè lên ảnh cả khối, tránh chi phí blur lặp trên nhiều card cùng
-              lúc). `revealAll` ép mở qua inline style (thắng class Tailwind vì cùng thuộc tính). */}
+          {/* v4 (13/08, phiếu home-bento-v4.md ④.3, lỗi #6 "mất tên") — TÊN DỰ ÁN LUÔN HIỆN, đè
+              lớp scrim tối cố định dưới ảnh bìa (KHÔNG phụ thuộc hover/theme — chữ trắng ở đây ăn
+              chắc vì luôn có gradient tối riêng ngay dưới nó, khác khối card bên ngoài giờ theo
+              theme). Trước đây tên chỉ nằm ở khối chữ bên dưới ảnh — đủ khi card nền luôn đen, vỡ
+              khi card chuyển theo theme sáng (chữ trắng/gần-trắng trên card trắng). Khối này đã
+              là `absolute` nên tự làm điểm neo cho con `bottom-full` bên trong (định vị NGAY TRÊN
+              khối tên) — tránh 2 lớp cùng `bottom-0` chồng đè chữ lên nhau (bug cũ). */}
           <div
-            className={`pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-1 px-3 py-2.5 ${
-              reduce
-                ? ''
-                : 'translate-y-full transition-transform duration-[140ms] ease-out group-hover:translate-y-0 group-hover:duration-200 group-hover:ease-[cubic-bezier(0.32,0.72,0,1)] group-focus-visible:translate-y-0'
-            }`}
-            style={{
-              background: 'linear-gradient(to top, rgba(10,9,8,0.94) 0%, rgba(10,9,8,0.62) 65%, transparent 100%)',
-              transform: revealAll || reduce ? 'translateY(0)' : undefined,
-            }}
+            className="pointer-events-none absolute inset-x-0 bottom-0 px-3 pb-2 pt-6"
+            style={{ background: 'linear-gradient(to top, rgba(10,9,8,0.85) 0%, rgba(10,9,8,0.35) 60%, transparent 100%)' }}
           >
-            {stageMeta && (
-              <span className="font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-white/70">
-                {en ? stageMeta.labelEn : stageMeta.label}
-              </span>
-            )}
-            {typeof openTasks === 'number' && openTasks > 0 && (
-              <span className="text-[length:var(--fs-xs)] text-white/90">
-                {en ? `${openTasks} open ${openTasks === 1 ? 'task' : 'tasks'}` : `${openTasks} việc mở`}
-              </span>
-            )}
-            {overlayPresence.length > 0 && (
-              <div className="mt-0.5">
-                <PresenceRow members={overlayPresence} max={5} />
+            {/* BENTO v3 (④.2 ô A "hover → lớp kính dữ liệu trượt lên", ③ "giữ Tab bung TẤT CẢ") —
+                transform+opacity CHỈ (KHÔNG backdrop-filter — tránh lỗi K1 "fade kính = self-
+                opacity, KHÔNG fade cha" đã ghi ở docs/00-CHOT.md, không dùng glass ở đây nên
+                không phạm). `bottom-full` neo khối này NGAY TRÊN khối tên (luôn hiện phía dưới),
+                không còn 2 lớp cùng `bottom-0` chồng lên nhau. `revealAll` ép mở qua inline style.
+                v4 — CHỈ còn chặng + việc mở (thông tin PHỤ, hợp lý chỉ hiện khi hover/giữ Tab); tên
+                đã dời xuống khối luôn-hiện bên dưới nó. PresenceRow ở đây đã GỠ (lỗi #4 "avatar
+                lặp 2 lần") — `ProjectOverviewCard` bên dưới card đã có MỘT PresenceRow luôn-hiện,
+                đây là nguồn presence DUY NHẤT của card (không cần bản hover trùng lặp). */}
+            {(stageMeta || (typeof openTasks === 'number' && openTasks > 0)) && (
+              <div
+                className={`pointer-events-none absolute inset-x-3 bottom-full mb-1 flex items-center gap-2 ${
+                  reduce
+                    ? ''
+                    : 'translate-y-1.5 opacity-0 transition-[transform,opacity] duration-150 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100'
+                }`}
+                style={
+                  revealAll || reduce ? { transform: 'translateY(0)', opacity: 1 } : undefined
+                }
+              >
+                {stageMeta && (
+                  <span
+                    className="rounded-full px-2 py-0.5 font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-white/85"
+                    style={{ background: 'rgba(10,9,8,0.72)' }}
+                  >
+                    {en ? stageMeta.labelEn : stageMeta.label}
+                  </span>
+                )}
+                {typeof openTasks === 'number' && openTasks > 0 && (
+                  <span className="rounded-full px-2 py-0.5 text-[length:var(--fs-2xs)] text-white/85" style={{ background: 'rgba(10,9,8,0.72)' }}>
+                    {en ? `${openTasks} open ${openTasks === 1 ? 'task' : 'tasks'}` : `${openTasks} việc mở`}
+                  </span>
+                )}
               </div>
             )}
+            <div className="truncate text-[length:var(--fs-sm)] font-semibold text-white">{group.projectName}</div>
           </div>
           <div className="absolute right-2 top-2 flex flex-col items-end gap-1.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
             <button
@@ -1994,12 +2019,13 @@ export function ProjectSelect({
             </button>
           </div>
         </div>
+        {/* v4 (13/08, phiếu home-bento-v4.md ④.3) — tên dự án đã dời lên khối scrim luôn-hiện
+            TRÊN ảnh (xem trên); khối dưới ảnh giờ CHỈ còn dòng meta phụ (số bản vẽ · lúc cập
+            nhật) + tổng quan — cả hai giờ theo token `--t*` (trước hardcode `text-white/*`, chỉ
+            đọc được khi card nền luôn đen; giờ card theo theme nên chữ cũng phải theo theme). */}
         <div className="px-3 pb-2.5 pt-2">
-          <div className="truncate text-[length:var(--fs-sm)] font-semibold text-white">
-            {group.projectName}
-          </div>
-          <div className="mt-1.5 flex items-center justify-between gap-2">
-            <span className="min-w-0 truncate text-[length:var(--fs-xs)] text-white/50">
+          <div className="flex items-center justify-between gap-2">
+            <span className="min-w-0 truncate text-[length:var(--fs-xs)] text-[var(--t4)]">
               {en
                 ? `${group.flows.length} ${group.flows.length === 1 ? 'drawing' : 'drawings'}`
                 : `${group.flows.length} bản vẽ`}{' '}
@@ -2014,7 +2040,6 @@ export function ProjectSelect({
               en={en}
               fallbackMembers={presenceMembersOfGroup(group.flows)}
               onlineOf={onlineOf}
-              textMutedStyle={{ color: 'rgba(255,255,255,0.6)' }}
             />
           </div>
         </div>
@@ -2244,41 +2269,47 @@ export function ProjectSelect({
         </div>
       )}
 
-      {/* Cụm tiện ích góc phải trên: "Chi tiết" (Dashboard toàn bộ, không lọc) + đổi ngôn ngữ.
-          v2 (13/08 home-dong-studio-v2.md ④.2 lỗi #2) — "Chi tiết" dời từ hàng nút giữa-màn về
-          ĐÂY: khi `hideHeroCopy` bật (DongStudioHome), pill chào/tiêu đề/mô tả biến mất nên hàng
-          nút cũ hoá "lơ lửng" một mình ngay dưới dải ánh sáng — không thuộc khu vực nào. Gộp vào
-          cụm góc-phải-trên (nơi nó VỐN thuộc về: điều khiển toàn cục, không gắn 1 dự án cụ thể),
-          cùng hàng với LangToggle — icon-only + tooltip, không chiếm chỗ giữa màn. Per-card "Chi
-          tiết"/"Tổng quan" (mỗi thẻ dự án) GIỮ NGUYÊN, không đụng. */}
-      <div className="absolute right-6 top-6 z-20 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => openDashboardTab('board', null)}
-          aria-label={en ? 'Details (all projects)' : 'Chi tiết (toàn bộ dự án)'}
-          title={en ? 'Details (all projects)' : 'Chi tiết (toàn bộ dự án)'}
-          className="grid h-9 w-9 place-items-center rounded-full text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
-          style={glass}
-        >
-          <Info size={15} aria-hidden="true" />
-        </button>
-        <LangToggle variant="ghost" />
-      </div>
+      {/* v4 (13/08, phiếu home-bento-v4.md ④.4, lỗi #4 "VI/EN·(i) lơ lửng" + "gradient tím lạc")
+          — CẢ HAI khối dưới đây được vẽ cho trang ProjectSelect ĐẦY MÀN (hero/carousel toàn màn):
+          cụm "Chi tiết + đổi ngôn ngữ" neo `absolute right-6 top-6` theo GÓC MÀN THẬT, và quầng
+          sáng/vignette phủ `inset-0` theo VIEWPORT THẬT. Nhét nguyên cả hai vào ô A bento (chỉ
+          ~720×400px) khiến cụm nút neo sai chỗ ("lơ lửng" giữa card nhỏ, không theo góc nào của
+          NÓ) và quầng sáng bị cắt xén thành một mảng gradient lạc lõng không có lý do xuất hiện
+          ("gradient tím lạc"). `bentoBox` GATE cả hai — DongStudioHome.tsx tự vẽ cụm VI/EN·(i)
+          RIÊNG cạnh VitalsPill (đúng "dời về góc thống nhất" của phiếu); ô A không cần quầng sáng
+          trang trí (nó đã có nền + viền + bóng riêng của WidgetCard/khối 01). */}
+      {!bentoBox && (
+        <div className="absolute right-6 top-6 z-20 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => openDashboardTab('board', null)}
+            aria-label={en ? 'Details (all projects)' : 'Chi tiết (toàn bộ dự án)'}
+            title={en ? 'Details (all projects)' : 'Chi tiết (toàn bộ dự án)'}
+            className="grid h-9 w-9 place-items-center rounded-full text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
+            style={glass}
+          >
+            <Info size={15} aria-hidden="true" />
+          </button>
+          <LangToggle variant="ghost" />
+        </div>
+      )}
 
       {/* nền đêm ấm — quầng đồng tĩnh + vignette (đồng bộ StageSelect/TitleSequence) */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <motion.div
-          className="absolute -left-40 -top-32 h-[34rem] w-[34rem] rounded-full"
-          style={{ background: `radial-gradient(circle, ${ACCENT} 0%, transparent 64%)`, filter: 'blur(90px)' }}
-          initial={{ opacity: 0.1 }}
-          animate={reduce || !visible ? { opacity: 0.1 } : { opacity: [0.08, 0.13, 0.08], x: [0, 24, 0] }}
-          transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{ background: 'radial-gradient(130% 100% at 50% 30%, transparent 45%, rgba(0,0,0,0.5) 100%)' }}
-        />
-      </div>
+      {!bentoBox && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <motion.div
+            className="absolute -left-40 -top-32 h-[34rem] w-[34rem] rounded-full"
+            style={{ background: `radial-gradient(circle, ${ACCENT} 0%, transparent 64%)`, filter: 'blur(90px)' }}
+            initial={{ opacity: 0.1 }}
+            animate={reduce || !visible ? { opacity: 0.1 } : { opacity: [0.08, 0.13, 0.08], x: [0, 24, 0] }}
+            transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{ background: 'radial-gradient(130% 100% at 50% 30%, transparent 45%, rgba(0,0,0,0.5) 100%)' }}
+          />
+        </div>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: reduce ? 0 : 14 }}
@@ -2290,7 +2321,16 @@ export function ProjectSelect({
             ambient khi carousel hiện, nên MÀU CHỮ đi qua heroPlan (đo nền thật) thay vì
             token --t1/--t4 cứng theo theme (bug: wallpaper tối làm --t4 chìm mất chữ). Khi
             không có ambient (grid/mobile/reduce), giữ nguyên token cũ — không có gì để
-            thích ứng trên nền phẳng var(--bg). */}
+            thích ứng trên nền phẳng var(--bg).
+            v4 (13/08, phiếu home-bento-v4.md ④.4, lỗi #4 "khoảng trắng mênh mông") — khối này
+            TRƯỚC ĐÂY luôn render dù rỗng: `hideHeroCopy` (DongStudioHome truyền true) ẩn hết pill
+            chào/tiêu đề/mô tả, và khi Lark chưa cấu hình + đang ở grid (đúng trường hợp bentoBox,
+            `effectiveGrid` luôn true) thì hàng "Đồng bộ tiến độ"/toggle cũng rỗng nốt — còn lại
+            MỘT div trống với `mb-8`/`sm:mb-10` (32-40px) + `py-3` chiếm chỗ vô nghĩa ngay đầu ô A.
+            `hasHeaderContent` gộp đúng 3 điều kiện nội dung thật của khối (hero copy · hàng đồng
+            bộ/toggle · thông điệp đồng bộ) — rỗng cả ba thì KHÔNG render cả wrapper, không chỉ ẩn
+            nội dung bên trong. */}
+        {hasHeaderContent && (
         <div
           className="relative mb-8 flex flex-col items-center rounded-[20px] px-4 py-3 text-center sm:mb-10"
           style={showAmbient ? { background: heroPlan.scrim } : undefined}
@@ -2332,7 +2372,7 @@ export function ProjectSelect({
               rồi mới disabled+tooltip khi chưa cấu hình, tức luôn có một nút chết trên màn cho
               phần lớn người dùng (studio chưa nối Lark). "Chi tiết" đã dời lên cụm góc-phải-trên
               (cùng LangToggle) — xem trên. Toggle Carousel↔Grid GIỮ chỗ cũ, không phụ thuộc Lark. */}
-          {(larkConfigured === true || (!loadError && flows !== null && !effectiveGrid)) && (
+          {showSyncRow && (
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
               {larkConfigured === true && (
                 <button
@@ -2361,6 +2401,7 @@ export function ProjectSelect({
             </p>
           )}
         </div>
+        )}
 
         {/* DÒNG STUDIO (13/08) — toàn khối Vitals AI bên dưới CHỈ hiện khi !hideVitalsBar
             (HomeScreen.tsx bật cờ này — DongStudioHome dùng VitalsPill góc màn thay thế, luật

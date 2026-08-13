@@ -22,9 +22,13 @@ import WidgetCard from './WidgetCard';
 import { goToProjectStage } from './nav';
 import type { HomeSummary } from './types';
 
-/** Cùng lý do `todayHasSignal` (TodayStrip.tsx) — MỘT nơi định nghĩa "ô I có gì để hiện". */
+/**
+ * Cùng lý do `todayHasSignal` (TodayStrip.tsx) — MỘT nơi định nghĩa "ô I có gì để hiện".
+ * v4 (13/08, phiếu home-bento-v4.md ④.1) — ngưỡng SIẾT lại: "≥2 sự kiện 7 ngày" (1 sự kiện đơn
+ * lẻ không đủ gọi là "bảng tin" — `buildNewsFeed` phía route đã tự giới hạn cửa sổ 7 ngày).
+ */
 export function newsHasSignal(summary: HomeSummary): boolean {
-  return summary.news.length > 0;
+  return summary.news.length >= 2;
 }
 
 export default function NewsFeed({ summary, index }: { summary: HomeSummary; index?: string }) {
