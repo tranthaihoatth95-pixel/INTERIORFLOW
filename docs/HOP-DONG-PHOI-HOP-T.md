@@ -79,7 +79,7 @@ Mọi plan của T tóm về MỘT BẢNG TÍNH NĂNG đủ cột phả hệ, m�
 **Đ** = lệnh ĐƠN LẺ chính xác (một thao tác, một kết quả đúng) · **F** = FLOW/PIPELINE cấp
 chặng (chuỗi Đ nối trong một chặng) · **L** = LIÊN CHẶNG (quy trình phối hợp xuyên chặng).
 
-Khuôn bảng (cột bắt buộc):
+Khuôn bảng (cột bắt buộc — từ 13/08 thêm 2 cột theo TRIET-LY-IF [Đ1][Đ2]: «Đứng tầng nào/hệ quả điều nào» và «NỘI LỰC ĐÃ CÓ — nhìn vào trong trước khi chốt build»):
 | Tên (global) | Cấp Đ/F/L | Phả hệ (hệ CẤP 1 · workspace/chặng) | Painpoint + persona | Đối thủ có? IF hơn gì | ĐỌC ← / NUÔI → | registry-id |
 
 Nguyên tắc ra quyết định (áp cho MỌI dòng của bảng):
@@ -111,6 +111,7 @@ Nguyên tắc ra quyết định (áp cho MỌI dòng của bảng):
 ③ VÙNG FILE: được đụng gì — ngoài vùng là vi phạm dù sửa đúng
 ④ VIỆC: đầu mục đánh số, mỗi mục có MARKER code (registry soi được)
 ⑤ RÀNG BUỘC: không git · không server · token/luật UI liên quan (G1/G9/ngôn ngữ/nhãn chặng)
+   + TRÍCH MÃ ĐIỀU KHOẢN `docs/TRIET-LY-IF.md` liên quan việc này ([T_]/[N_]/[Đ_]) — thẻ vai tự chứa [Đ4]
 ⑥ NGHIỆM THU TỰ LÀM: lệnh cụ thể (tsc, test file nào, sinh file gì)
 ⑦ BÁO CÁO: lưu docs/bao-cao-phien/<ngày>-<tên>.md — khuôn: file sửa/tạo · kết quả
    lệnh THẬT dán nguyên văn · quyết định tự chọn + lý do · CHƯA LÀM nói thẳng
