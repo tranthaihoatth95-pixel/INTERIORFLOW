@@ -1688,3 +1688,7 @@ AI ở Settings không ăn" — nghi đúng nguyên nhân này (route không qua
 - **DR** (`1ce242a`): radius toàn app về thang 6/10/14/20 + đồng tâm — ngoài thang **334→10 (−97%)**, 107 file thuần radius (324+/324−), capsule xác minh → --r-full; 10 chỗ giữ có sổ (9 chờ sau DA + AvatarBuilder 28px chờ mắt).
 - **Nhóm B chờ ảnh tham khảo Hoà** → chốt khuôn (một khuôn thanh công cụ 3 stage · EmptyState chung · thumbnail strip · tab chặng ở trang cấp app) → mock Claude Design/Figma → phiếu áp.
 - Kết: tsc 0 · frontier 52/27/0 · hinh-hoc 10 ngoài thang có sổ · tu-dien 0 · thao-tac 2 hàng đợi cũ · contract 21/1/0.
+
+## 14/08/2026 — NC triết lý giao diện (Hoà giao kèm 19 ảnh chat + 51 ảnh tham khảo)
+
+- NC (3 agent con đọc 51 ảnh theo lô + web có nguồn): `docs/nc/NC-TRIET-LY-GIAO-DIEN-2026-08-14.md` — 12 cụm cơ chế (sidebar-filter 23/51 · glass CHỈ ở lớp nổi 8/8 · node-graph khớp master node · dark 36/50) + 7 nguyên lý P1-P7 (content-first Figma/Blender/Apple · progressive disclosure NN/g · kính-lớp-nổi HIG · keyboard-first Linear · bắt-đầu-từ-việc Notion · mặc-định-là-bản-chưng-cất [N2] · thêm-tính-năng-không-thêm-bề-mặt bài học Adobe) + TRẢ LỜI PHÂN LUỒNG 3 tầng (①≤9 lệnh chung luôn hiện ②group-by gói tác vụ ③cử chỉ/collapse — cùng MỘT registry) + 4 khuôn KB-1..4 sẵn mock + 3 cảnh báo. T audit: nguồn đủ (domain trần), cột IF-đạt/chưa đối chiếu đúng chẩn đoán. CHỜ HOÀ GẬT KHUÔN → mock Claude Design/Figma → phiếu áp.
