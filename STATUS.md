@@ -1,9 +1,9 @@
 # STATUS — InteriorFlow (13/08 đêm)
 
-## MỞ PHIÊN MỚI: dán câu lệnh §5 HOP-DONG-PHOI-HOP-T + `npm run soi:frontier`. Đọc thêm: TRIET-LY-IF.md (hiến pháp, TRÍCH MÃ ĐIỀU KHOẢN vào mọi phiếu) · 00-CHOT 2 dòng cuối. Nhịp chuỗi nền: ~~P3~~ ~~P4~~ ✅✅ → **P5 FeatureContract-máy → P6 IF-RNA-v0 (CHỜ HOÀ GẬT lộ trình)**; mỗi phiên 1 món + ≥1 món nhìn-thấy. Món nhìn-thấy sẵn hàng: GR v1 bảng ánh xạ · sửa nốt thao-tac present-editor (7 chỗ) + focus-visible · kênh PDF cho Gói Hồ Sơ (export.ts biến thể Blob, additive).
+## MỞ PHIÊN MỚI: dán câu lệnh §5 HOP-DONG-PHOI-HOP-T + `npm run soi:frontier`. Đọc thêm: TRIET-LY-IF.md (hiến pháp, TRÍCH MÃ ĐIỀU KHOẢN vào mọi phiếu) · 00-CHOT 2 dòng cuối. Nhịp chuỗi nền: ~~P3 P4 P5~~ ✅✅✅ (Hoà gật P5-P6 qua chat 13/08 đêm) → **P6 IF-RNA v0 MaterialPbr** (entry `if-rna-v0` mở) → vá 3 lỗ ❌ (telemetry local-first · a11y · error-log). Món nhìn-thấy sẵn hàng: GR v1 bảng ánh xạ + núm per-mảng · 2 kho chờ dây thật (capture-sequence · lux-l6) · focus-visible (mắt design).
 
 ## Chờ tay HOÀ (xếp hàng)
-1. **ĐI LÔ DUYỆT MẮT #1** — `docs/duyet-mat/LO-1-2026-08-13.md`: 48 mục gộp 7 trạm ~20 phút, trả lời "Trạm N ok/lệch" là T flip loạt 2. Duyệt phác Home v5 (SPEC-HOME-BENTO-V5) 3. Chọn ảnh render ST5 → T upscale 300dpi 4. Gật lộ trình P5-P6. (Preview Gói Hồ Sơ Sống + .zip mẫu đã gửi trong chat.)
+1. **ĐI LÔ DUYỆT MẮT #1** — `docs/duyet-mat/LO-1-2026-08-13.md`: 48 mục gộp 7 trạm ~20 phút, trả lời "Trạm N ok/lệch" là T flip loạt 2. Duyệt phác Home v5 (SPEC-HOME-BENTO-V5) 3. Chọn ảnh render ST5 → T upscale 300dpi 4. Gật lộ trình P5-P6. (Preview Gói Hồ Sơ Sống + .zip mẫu — nay có cả kênh PDF — đã gửi trong chat.)
 
 > Lịch sử ở `CHANGELOG.md`. Code, schema và test là nguồn kiểm chứng. IF là sản phẩm global: **2D Kỹ thuật · 3D Thiết kế · Trình bày**; Brand Kit thuộc từng dự án.
 
