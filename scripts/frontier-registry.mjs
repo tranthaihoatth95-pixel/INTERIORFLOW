@@ -118,6 +118,9 @@ export const FRONTIER = [
     bangChung: [{ dir: 'docs/mocks', mau: 'Trình bày', can: false }] },
   { id: 'hotkey-registry', vai: 'day', ten: 'MỘT registry lệnh+phím toàn app (chốt 10/08): tooltip/⌘K/bảng ⌘/ đọc chung một nguồn, lệnh chưa đủ điều kiện hiện mờ kèm lý do — thi công đợt sau, entry mở để sổ không quên', he: 'NhapLenh', dot: 6, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'HotkeyRegistry|hotkey-registry' }] },
+  // 13/08 — Hoà chốt Smart Convert (mở rộng smart-ingest, xem 00-CHOT 13/08):
+  { id: 'smart-convert-pdf', vai: 'day', ten: 'Smart Convert bậc 1 — nhập PDF vector thành deck IF tách 3 lớp Nền·Ảnh·Chữ (chữ THẬT từ PDF qua unpdf sẵn có, toạ độ+cỡ giữ nguyên; trang scan → nền raster + ghi chú "cần OCR bậc 2"); xuất PPTX đường sẵn; phục vụ vòng người-dùng-thật #1', he: 'DocCore', dot: 5, trangThai: 'chua',
+    bangChung: [{ dir: 'lib/present-editor', mau: 'pdf-import|pdfToDeck' }] },
   // 12/08 Đợt 4 — T mở entry theo uỷ quyền plan (docType đầu = schedule "Bảng thống kê"):
   { id: 'editor-bang-bieu-mau', vai: 'mvp', ten: 'Engine bảng chung (12/08 Đợt 4: TableDocEngine trừu tượng từ boq-overrides/boq-group + schedule "Bảng thống kê" cửa/phòng giữ entityId + re-sync không đè ô tay + thẻ thật trong picker, BOQ 0 hồi quy; BoqScreen chưa rewire qua engine — chủ đích, chờ verify browser; spec-sheet/approval-form là mặt tiền sau)', he: 'Workspace', dot: 4, trangThai: 'xong',
     bangChung: [{ dir: 'lib/present-editor', mau: 'TableDocEngine' }] },
