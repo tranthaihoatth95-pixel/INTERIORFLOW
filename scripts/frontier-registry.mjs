@@ -118,6 +118,8 @@ export const FRONTIER = [
     bangChung: [{ dir: 'docs/mocks', mau: 'Trình bày', can: false }] },
   { id: 'hotkey-registry', vai: 'day', ten: 'MỘT registry lệnh+phím toàn app (chốt 10/08): tooltip/⌘K/bảng ⌘/ đọc chung một nguồn, lệnh chưa đủ điều kiện hiện mờ kèm lý do — thi công đợt sau, entry mở để sổ không quên', he: 'NhapLenh', dot: 6, trangThai: 'chua',
     bangChung: [{ dir: 'lib', mau: 'HotkeyRegistry|hotkey-registry' }] },
+  { id: 'grounded-render', vai: 'mvp', ten: 'GROUNDED RENDER — render bám ý KTS (13/08): khung hình học metrology + wire-color mảng cấp pixel + phiếu đọc tham khảo 4 cấp KTS duyệt + bảng ánh xạ mảng·núm mức bám (70 chuẩn ngành/20 DNA KTS/10 gu CĐT) + sinh từng mảng qua mask cứng + pass ánh sáng; định vị concept-không-technical; v0 = mask bán tự động + fix F2 node (guidance 15→3.5-4 + image_size khớp)', he: 'TriTueDuAn', dot: 6, trangThai: 'chua',
+    bangChung: [{ dir: 'lib', mau: 'GroundedRender|grounded-render' }] },
   // 13/08 — DOGFOOD #1, Hoà chê thật "rối rắm, đang gấp không biết đường lần" (finding F1):
   { id: 'present-task-first', vai: 'mvp', ten: 'Trình chiếu dẫn THEO VIỆC (13/08 H4 sửa nóng F1: TaskFirstStart 3 lối + lối phụ ảnh-đã-dựng · toolbar 6 nút chính + nhóm Hình/⋯ · banner học-gu → toast 6s · cột phải chỉ hiện khi có nội dung — agent verify browser thật; toast chưa bắt được bằng mắt = nợ nhỏ)', he: 'Workspace', dot: 5, trangThai: 'xong',
     bangChung: [{ dir: 'components/present-editor', mau: 'task-first|TaskFirstStart' }] },
