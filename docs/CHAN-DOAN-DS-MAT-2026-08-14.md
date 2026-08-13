@@ -34,3 +34,9 @@ Gallery đứng vững khổ hẹp (chip wrap gọn, card nguồn/giấy phép r
 1. **DS-A (agent, chạy ngay):** A1 font-fallback + A2 statusbar + A3 Files hẹp + A5 chuỗi EN + A6 hạ đỏ→trung tính. Không đổi hình dáng gì khác.
 2. **DS-R (agent, chạy ngay):** A4 rút 331 radius ngoài thang về thang 6/10/14/20 + concentric (rInner = max(4, rOuter − pad), concentric chỉ khi pad ≤ 8 — chốt 12/08), đổi THẬN TRỌNG theo nấc gần nhất, soi:hinh-hoc làm thước.
 3. **Nhóm B:** đợi ảnh tham khảo Hoà gửi → chốt khuôn (thanh công cụ một khuôn 3 stage · EmptyState chung · thumbnail strip) → mock Claude Design/Figma (file Figma `InteriorFlow · Design System` y421AJBWVpqGVvJ3vTn2wO có sẵn) → phiếu áp.
+
+## BỔ SUNG 14/08 tối — 2 finding Hoà nêu trực tiếp (tội ③ lỗi thao tác)
+| # | Finding | Chẩn |
+|---|---|---|
+| B7 | **Vị trí nút/toolbar chưa smart — thao tác rời rạc, di chuột khắp màn mới xong việc** (Hoà) | Đúng hệ quả L1 (3 khuôn toolbar) + chưa áp NT-1 (tool nổi SÁT VẬT theo selection) + chưa quy hoạch quãng đường chuột (Fitts: lệnh hay dùng phải gần nơi đang làm). Vào phạm vi mock KB-1: toolbar một khuôn + floating-tools-theo-chọn + đo quãng chuột trước/sau trên 3 tác vụ mẫu |
+| B8 | **MVP chặng 3 chôn sâu: "800 bước mới tới AI", ô AI nửa prompt nửa form** (Hoà) | Đường thật hiện nay: mở chặng → picker loại → TaskFirstStart (3 lối, KHÔNG có lối Magic) → editor → panel phải tab Thiết kế → cuộn card "Magic tạo hồ sơ" (GenerateFlow.tsx:148) → thêm ảnh → chạy = 6-7 bước. Chốt 07/08 đã cho auto-deck-1-click + người duyệt ⇒ Magic phải là MỘT LỐI NGAY TaskFirstStart; ô nhập tách 2 vai rõ: PROMPT-BAR AI đúng nghĩa (ref K12/C9 — 3 pin AI-prompt-bar) ≠ form dữ liệu. Entry `present-magic-cua-vao` |
