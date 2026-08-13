@@ -122,6 +122,10 @@ export const FRONTIER = [
     bangChung: [{ dir: 'lib', mau: 'GroundedRender|grounded-render' }] },
   { id: 'triet-ly-if', vai: 'day', ten: 'TRIẾT LÝ IF thành văn bản lập hiến (13/08 P1: cây T0-T8 + 2 trục N1-N2 + 6 điều hành Đ1-Đ6, mã điều khoản trích được; nối dây khuôn phiếu §3 + khuôn plan §2b; KPI: số vòng làm-lại do lệch định hướng phải giảm — V đếm; 2 đợt không phiếu nào trích = chết lâm sàng, V báo)', he: 'DocCore', dot: 7, trangThai: 'xong',
     bangChung: [{ file: 'docs/TRIET-LY-IF.md', mau: 'Đ3' }, { file: 'docs/HOP-DONG-PHOI-HOP-T.md', mau: 'TRIET-LY-IF' }] },
+  { id: 'nhip-van-hanh-p2', vai: 'day', ten: 'P2 nhịp vận hành (13/08: BƯỚC 0 soi tổng→chi tiết mỗi đợt [T4][Đ1] + THẺ VAI tự chứa 4 dòng [Đ4] + điều kiện nghiệm thu phân loại [Đ6] — vá HOP-DONG; đợt kế là ca chạy thử, V kiểm thêm mục làm-ngoài-vai)', he: 'DocCore', dot: 7, trangThai: 'xong',
+    bangChung: [{ file: 'docs/HOP-DONG-PHOI-HOP-T.md', mau: 'BƯỚC 0|THẺ VAI TỰ CHỨA' }] },
+  { id: 'fix-f2-node-render', vai: 'do', ten: 'Fix F2 — node control render: guidance 15→3.5-4 per-task + image_size khớp tỉ lệ ảnh control (công thức kiểm chứng 15 job dogfood)', he: 'DocCore', dot: 5, trangThai: 'chua',
+    bangChung: [{ file: 'lib/nodes/registry.ts', mau: 'image_size' }] },
   // 13/08 — DOGFOOD #1, Hoà chê thật "rối rắm, đang gấp không biết đường lần" (finding F1):
   { id: 'present-task-first', vai: 'mvp', ten: 'Trình chiếu dẫn THEO VIỆC (13/08 H4 sửa nóng F1: TaskFirstStart 3 lối + lối phụ ảnh-đã-dựng · toolbar 6 nút chính + nhóm Hình/⋯ · banner học-gu → toast 6s · cột phải chỉ hiện khi có nội dung — agent verify browser thật; toast chưa bắt được bằng mắt = nợ nhỏ)', he: 'Workspace', dot: 5, trangThai: 'xong',
     bangChung: [{ dir: 'components/present-editor', mau: 'task-first|TaskFirstStart' }] },

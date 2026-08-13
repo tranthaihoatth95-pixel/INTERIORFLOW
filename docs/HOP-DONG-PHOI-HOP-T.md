@@ -42,7 +42,24 @@ theo [TÍNH NĂNG] và [GIAO DIỆN] để dễ theo dõi:
    nói bằng hành vi, không nói bằng tên kỹ thuật.
 Sub-agent báo cáo cùng khuôn 2 giá trị nhưng trong phạm vi chặng/luồng của mình.
 
+## §1d · THẺ VAI TỰ CHỨA — luật GHIM CỨNG AGENT–VAI TRÒ [Đ4] (Hoà ban 13/08, P2 thi hành)
+
+Mỗi agent được phóng PHẢI mang THẺ VAI tự chứa ngay đầu prompt, khuôn 4 dòng:
+  VAI: <một câu — là ai, giữ nhánh gia phả nào>
+  PHẠM VI/TRẦN: <vùng file + cấp Đ/F, trần = cấp chặng/luồng>
+  BIÊN → DỪNG: <chạm gì thì dừng + đề xuất lên T — không tự nới vai>
+  ĐIỀU KHOẢN RUỘT: <2-4 mã TRIET-LY-IF liên quan nhất việc này>
+Agent chỉ cần đọc thẻ là hành xử đúng — không cần lịch sử chat. Làm ngoài vai (dù sửa đúng)
+= lệch, V soi mục riêng "có làm ngoài vai không?". Tiền lệ chuẩn: H2/PanelFlank 13/08 —
+phát hiện việc đã tồn tại, DỪNG, 0 dòng code thừa.
+
 ## §2 · FLOW CHUẨN — 8 bước, bắt đầu từ trao đổi, kết thúc ở file đầu ra
+
+0. **BƯỚC 0 · SOI TỔNG→CHI TIẾT [T4][Đ1] (P2, 13/08)** — mở MỖI ĐỢT bằng một lượt nhìn từ trên
+   xuống TRƯỚC khi nhận việc chi tiết: ①cấp APP (8 trụ §6 có trụ nào đói/anti-pattern chớm?)
+   ②cấp LIÊN CHẶNG (dây ĐỌC/NUÔI nào đứt? 5 engine chung có bị tự-chế-riêng?) ③cấp CHẶNG đang
+   đụng (kịch bản Phiếu 5 Ô còn hở đâu?). Ra ≤5 dòng ghi vào đầu bảng plan của đợt. Lệch phát
+   hiện ở bước 0 = rẻ nhất; bỏ qua bước 0 là vi phạm hợp đồng.
 
 1. **TRAO ĐỔI** — Hoà và T bàn tự do (ý tưởng, ảnh ref, lời chê). T được đóng vai đa ngành
    (KTS · designer nội thất · kỹ sư M&E · drafter · 3D artist · chủ xưởng · CĐT) để phản biện.
@@ -151,6 +168,10 @@ Một công cụ chuyên nghiệp đạt chuẩn ngành phải ĐỦ 8 trụ, kh
 | 6 | **Vận hành & an toàn** (release · backup/restore · trung tính · license) | R1 gates còn gì? dữ liệu người dùng có đường lùi không? |
 | 7 | **Hiệu năng & bền** (viewport · file dày · undo/revision) | bản vẽ dày/scene lớn có gục không? |
 | 8 | **Tri thức ngành** (kiểm chuẩn · kho chuẩn · gói dữ liệu) | luật ngành có được máy thi hành, hay chỉ nằm trong docs? |
+
+**ĐIỀU KIỆN NGHIỆM THU PHÂN LOẠI [Đ6] (P2, 13/08):** mọi MÀN/SỔ/DANH SÁCH mới hoặc sửa lớn
+phải khai cách phân loại lớn→nhỏ + group-by/filter của nó (gọn mặc định, sâu khi cần) —
+không khai được = chưa qua plan; duyệt-mắt có mục soi riêng cho điều này.
 
 **5 KIỂU LỆCH CẤM (anti-pattern — Hoà nêu đích danh 12/08):**
 1. Lõi dày, tính năng lẻ tẻ, KHÔNG sợi dây liên kết (trụ 2 đói).
