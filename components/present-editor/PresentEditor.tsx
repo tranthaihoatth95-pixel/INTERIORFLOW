@@ -77,7 +77,7 @@ import {
   setLinkedAssetSrc,
   listLinkedAssets,
 } from '@/lib/present-editor/linked-assets';
-import Toolbar from './Toolbar';
+import Toolbar, { type ToolbarHandle } from './Toolbar';
 import EditorCanvas from './EditorCanvas';
 import Inspector from './Inspector';
 import SlideStrip from './SlideStrip';
@@ -97,7 +97,7 @@ import { alignFrames, distributeFrames, type AlignMode as GroupAlignMode, type D
 import { groupBoundingBox, scaleGroupByCorner, scaleMemberFrame, type GroupFrame } from '@/lib/present-editor/resize-group';
 import { reorderZOrderGroup } from '@/lib/present-editor/zorder-group';
 import { stageFor, PAPER_SIZE_MM, type StagePresetId } from '@/lib/present-editor/stage-presets';
-import { LayoutTemplate, Images, Wand2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
+import { LayoutTemplate, Images, Wand2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, FileUp, FilePlus2, Sparkles } from 'lucide-react';
 
 interface Props {
   initialDeck: EditorDeck;
@@ -167,6 +167,9 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
 
   const [tab, setTab] = useState<LeftTab>(initialTab ?? 'layout');
   const [panelOpen, setPanelOpen] = useState(true);
+  // H4 (13/08, dogfood F1) — TaskFirstStart "Nhập tệp" gọi ĐÚNG cửa Mở tệp của Toolbar qua ref,
+  // KHÔNG đẻ input file thứ hai. MARKER: TaskFirstStart.
+  const toolbarRef = useRef<ToolbarHandle>(null);
   // "Thay ảnh…" (VIỆC 2d, 28/07): replaceDialogId = đang hiện hộp thoại 2 lựa chọn cho ảnh này;
   // replaceTarget = đã chọn "Từ thư viện", đang chờ user bấm 1 ảnh trong tab Reference.
   const [replaceDialogId, setReplaceDialogId] = useState<string | null>(null);
@@ -242,10 +245,14 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
     window.addEventListener('present:idfp-import-done', onDone);
     // 09/08 — nhập .pptx dùng CHUNG kênh toast này (Toolbar.tsx#onOpenPptxFile báo lỗi/tiến độ).
     window.addEventListener('present:pptx-import-done', onDone);
+    // 13/08 — Smart Convert PDF bậc 1 (Toolbar.tsx#openPdfFile) — kênh toast RIÊNG (không đè lên
+    // pptx, dù cùng mẫu) vì lỗi PDF có nội dung khác hẳn (mật khẩu/hỏng/trang scan).
+    window.addEventListener('present:pdf-import-done', onDone);
     return () => {
       window.removeEventListener('present:idfp-export-done', onDone);
       window.removeEventListener('present:idfp-import-done', onDone);
       window.removeEventListener('present:pptx-import-done', onDone);
+      window.removeEventListener('present:pdf-import-done', onDone);
     };
   }, []);
   const [libAssets, setLibAssets] = useState<GuAsset[]>([]);
@@ -415,6 +422,26 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
     };
     window.addEventListener('present:pptx-import-request', onImportPptx);
     return () => window.removeEventListener('present:pptx-import-request', onImportPptx);
+  }, [ed.deck.slides.length, ed.update, ed.selectSlide]);
+
+  /**
+   * 13/08 — NHẬP `.pdf` (Smart Convert bậc 1, Toolbar.tsx#openPdfFile đọc bằng lib/present-editor/
+   * pdf-import.ts rồi bắc cầu sang đây). CÙNG KHUÔN với `.pptx` ngay trên: nối vào CUỐI deck đang
+   * mở (không thay thế), nhảy tới slide mới đầu tiên, báo qua `exportMsg`.
+   */
+  useEffect(() => {
+    const onImportPdf = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ slides: EditorSlide[]; message: string }>).detail;
+      if (!detail?.slides?.length) return;
+      const insertAt = ed.deck.slides.length;
+      ed.update((d) => {
+        d.slides.push(...detail.slides);
+      });
+      ed.selectSlide(insertAt);
+      setExportMsg({ ok: true, text: detail.message });
+    };
+    window.addEventListener('present:pdf-import-request', onImportPdf);
+    return () => window.removeEventListener('present:pdf-import-request', onImportPdf);
   }, [ed.deck.slides.length, ed.update, ed.selectSlide]);
 
   const templates: EditorTemplate[] = useMemo(
@@ -1135,11 +1162,17 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
   const trEmpty = useT();
   const flowNodes = useFlowStore((s) => s.nodes);
   const builtImages = useMemo(() => deckImagesWithIdsFromNodes(flowNodes), [flowNodes]);
+  /* H4 (13/08, sửa nóng dogfood F1) — id slide vừa được "Trang trống" tạo/xác nhận, để
+   * TaskFirstStart (bên dưới) tự ẩn cho ĐÚNG slide đó mà không cần đụng vào schema Deck (state
+   * cục bộ thuần UI, không lưu vào .idfp). MARKER: TaskFirstStart. */
+  const [taskFirstDismissedId, setTaskFirstDismissedId] = useState<string | null>(null);
   const onAddBlankSlide = useCallback(() => {
+    const id = newId('sld');
     ed.update((d) => {
-      d.slides.push({ id: newId('sld'), background: '#ffffff', elements: [] });
+      d.slides.push({ id, background: '#ffffff', elements: [] });
     });
     ed.selectSlide(ed.deck.slides.length);
+    setTaskFirstDismissedId(id);
   }, [ed]);
   const EMPTY_FROM_RENDER_CAP = 12;
   const onAddSlidesFromRenders = useCallback(() => {
@@ -1156,6 +1189,41 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
     });
     ed.selectSlide(ed.deck.slides.length);
   }, [ed, builtImages]);
+
+  /* H4 (13/08, dogfood F1 "canvas trắng không dẫn lối") — TaskFirstStart: 3 LỐI TO thay canvas
+   * trắng khi hồ sơ THỰC SỰ trống — ①0 slide (deck mới) HOẶC ②đúng 1 slide, 0 phần tử, 0 ảnh nền
+   * (vừa "Trang trống"/chưa từng đụng gì). Deck có nội dung/nhiều trang → KHÔNG hiện, không đụng
+   * luồng đang làm dở. `taskFirstDismissedId` chỉ tự tắt lối ② cho ĐÚNG slide vừa xác nhận —
+   * MARKER: TaskFirstStart. */
+  const showTaskFirstStart =
+    !ed.slide ||
+    (ed.deck.slides.length === 1 &&
+      ed.slide.elements.length === 0 &&
+      !ed.slide.backgroundImage &&
+      ed.slide.id !== taskFirstDismissedId);
+  const onTaskFirstImport = useCallback(() => {
+    toolbarRef.current?.openGatewayPicker();
+  }, []);
+  const onTaskFirstFromTemplate = useCallback(() => {
+    setPanelOpen(true);
+    setTab('layout');
+  }, []);
+  const onTaskFirstBlank = useCallback(() => {
+    if (ed.slide) {
+      // Đã có đúng 1 slide trống (scenario ②) — "vào thẳng", không tạo thêm slide mới.
+      setTaskFirstDismissedId(ed.slide.id);
+    } else {
+      onAddBlankSlide();
+    }
+  }, [ed.slide, onAddBlankSlide]);
+
+  /* H4 (13/08, dogfood F1 "LỚP/NỀN SLIDE/Tạo việc hiện cả khi slide trống, chưa có gì để
+   * chỉnh") — cột phải (Inspector: Lớp · Nền slide · Tạo việc từ đây) chỉ có LÝ DO tồn tại khi
+   * có phần tử để liệt kê HOẶC đang chọn gì đó. Slide trống + không chọn gì → thu gọn về tay cầm
+   * mép (cùng mẫu PanelHandle app dùng ở chặng Trình chiếu, chốt 07/08 mục 10) — KHÔNG đụng state
+   * `inspectorOpen` đã lưu (localStorage) nên khi slide có nội dung trở lại, panel tự hiện đúng
+   * như người dùng đã chọn trước đó. */
+  const hasInspectorContent = !!ed.slide && (ed.slide.elements.length > 0 || ed.selectedIds.length > 0);
 
   const onDuplicateSlide = useCallback(
     (i: number) => {
@@ -1775,6 +1843,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
         </div>
       )}
       <Toolbar
+        ref={toolbarRef}
         onAddText={onAddText}
         onAddImageUrl={onAddImageUrl}
         onAddShape={onAddShape}
@@ -1963,7 +2032,67 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
             background: 'var(--bg)',
           }}
         >
-          {ed.slide ? (
+          {showTaskFirstStart ? (
+            /* H4 (13/08, sửa nóng dogfood F1 "canvas trắng không dẫn lối") — TaskFirstStart:
+             * 3 LỐI TO đúng việc người dùng ĐANG GẤP cần làm ngay — Nhập tệp (đúng cửa Mở tệp
+             * sẵn có, qua `toolbarRef`) · Dàn từ mẫu (mở panel Thiết kế) · Trang trống (vào
+             * thẳng). THAY cho M-EMPTY-2 cũ (2 lối) — "Tạo từ ảnh đã dựng" giữ nguyên năng lực,
+             * hạ xuống thành lối phụ bên dưới (không xoá, chỉ đổi bậc — CLAUDE.md luật 4).
+             * MARKER: TaskFirstStart. */
+            <div style={{ textAlign: 'center', color: 'var(--t4)', maxWidth: 460 }}>
+              <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--t1)', marginBottom: 2, lineHeight: 1.5 }}>
+                {trEmpty('Bắt đầu hồ sơ trình khách', 'Start a client presentation')}
+              </p>
+              <p style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 18, color: 'var(--t2)' }}>
+                {trEmpty(
+                  'Chọn một lối để bắt đầu — có thể đổi ý bất cứ lúc nào.',
+                  'Pick a way to start — you can change your mind any time.',
+                )}
+              </p>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'stretch' }}>
+                <TaskFirstBtn
+                  icon={<FileUp size={18} />}
+                  label={trEmpty('Nhập tệp', 'Import a file')}
+                  sub={trEmpty('PDF · PPTX · ảnh', 'PDF · PPTX · image')}
+                  primary
+                  onClick={onTaskFirstImport}
+                />
+                <TaskFirstBtn
+                  icon={<LayoutTemplate size={18} />}
+                  label={trEmpty('Dàn từ mẫu', 'Start from a template')}
+                  sub={trEmpty('Mở kệ Thiết kế', 'Open the Design shelf')}
+                  onClick={onTaskFirstFromTemplate}
+                />
+                <TaskFirstBtn
+                  icon={<FilePlus2 size={18} />}
+                  label={trEmpty('Trang trống', 'Blank page')}
+                  sub={trEmpty('Tự dàn từ đầu', 'Start from scratch')}
+                  onClick={onTaskFirstBlank}
+                />
+              </div>
+              <div style={{ marginTop: 16 }}>
+                <button
+                  type="button"
+                  onClick={onAddSlidesFromRenders}
+                  disabled={builtImages.length === 0}
+                  title={
+                    builtImages.length === 0
+                      ? trEmpty('Chưa có ảnh nào từ chặng Thiết kế 3D', 'No renders from the 3D stage yet')
+                      : undefined
+                  }
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6, border: 'none', background: 'transparent',
+                    color: builtImages.length === 0 ? 'var(--t4)' : 'var(--accent)', fontSize: 12, fontWeight: 600,
+                    cursor: builtImages.length === 0 ? 'not-allowed' : 'pointer', opacity: builtImages.length === 0 ? 0.6 : 1,
+                  }}
+                >
+                  <Sparkles size={13} />
+                  {trEmpty('Hoặc tạo từ ảnh đã dựng', 'Or build from renders')}
+                  {builtImages.length > 0 && ` (${builtImages.length})`}
+                </button>
+              </div>
+            </div>
+          ) : ed.slide ? (
             <EditorCanvas
               slide={ed.slide}
               widthPx={stageWidth}
@@ -1995,73 +2124,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
               palette={ed.deck.palette}
               watermark={ed.deck.watermark}
             />
-          ) : (
-            /* M-EMPTY-2 (07/08) — màn TRỐNG chặng Trình chiếu theo mock [BẢN CHỐT]
-             * `Bốn trạng thái rỗng.dc.html` màn 1d: tiêu đề/mô tả đúng chữ đã duyệt, 2 nút có
-             * CHỮ (G6); "Tạo từ ảnh đã dựng" KHOÁ kèm lý do khi flow chưa có ảnh render (đúng
-             * ngữ nghĩa khoá-kèm-lý-do của mock); nút còn bấm được mang accent. Song ngữ. */
-            <div style={{ textAlign: 'center', color: 'var(--t4)', maxWidth: 420 }}>
-              <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--t1)', marginBottom: 2, lineHeight: 1.5 }}>
-                {trEmpty('Hồ sơ trình khách', 'Client presentation')}
-              </p>
-              <p style={{ fontSize: 11.5, color: 'var(--t4)', marginBottom: 8, lineHeight: 1.5 }}>
-                {trEmpty('Client presentation', 'Hồ sơ trình khách')}
-              </p>
-              <p style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 16, color: 'var(--t2)' }}>
-                {trEmpty(
-                  'Ảnh đã dựng, mặt bằng và bảng vật liệu xếp thành một bộ khách xem được trên trình duyệt và ghi nhận xét thẳng lên slide.',
-                  'Renders, plans and material boards, in one set your client can comment on.',
-                )}
-              </p>
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                  <button
-                    onClick={onAddSlidesFromRenders}
-                    disabled={builtImages.length === 0}
-                    style={
-                      builtImages.length === 0
-                        ? {
-                            padding: '10px 18px', borderRadius: 12, background: 'var(--field)', color: 'var(--t4)',
-                            fontSize: 14, fontWeight: 600, border: '1px solid var(--border)', cursor: 'not-allowed', lineHeight: 1.5,
-                          }
-                        : {
-                            padding: '10px 18px', borderRadius: 12, background: 'var(--accent-strong)', color: '#fff',
-                            fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', lineHeight: 1.5,
-                          }
-                    }
-                  >
-                    {trEmpty('Tạo từ ảnh đã dựng', 'Build from renders')}
-                  </button>
-                  <span style={{ fontSize: 11, lineHeight: 1.6, color: builtImages.length === 0 ? 'var(--warning)' : 'var(--t4)' }}>
-                    {builtImages.length === 0
-                      ? trEmpty('Chưa có ảnh nào từ chặng Thiết kế 3D', 'No renders from the 3D stage yet')
-                      : trEmpty(`${builtImages.length} ảnh sẵn sàng`, `${builtImages.length} renders ready`)}
-                  </span>
-                </span>
-                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                  <button
-                    onClick={onAddBlankSlide}
-                    style={
-                      builtImages.length === 0
-                        ? {
-                            padding: '10px 18px', borderRadius: 12, background: 'var(--accent-strong)', color: '#fff',
-                            fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', lineHeight: 1.5,
-                          }
-                        : {
-                            padding: '10px 18px', borderRadius: 12, background: 'var(--field)', color: 'var(--t1)',
-                            fontSize: 14, fontWeight: 600, border: '1px solid var(--border)', cursor: 'pointer', lineHeight: 1.5,
-                          }
-                    }
-                  >
-                    {trEmpty('Bắt đầu bằng slide trắng', 'Start with a blank slide')}
-                  </button>
-                  <span style={{ fontSize: 11, lineHeight: 1.6, color: 'var(--t4)' }}>
-                    {trEmpty('Thêm ảnh và mặt bằng sau', 'Add images and plans later')}
-                  </span>
-                </span>
-              </div>
-            </div>
-          )}
+          ) : null}
 
           {/* zoom canvas — kiểu Photoshop/Figma: -/+ + % + Fit-to-view. */}
           {ed.slide && (
@@ -2104,8 +2167,8 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
           )}
         </main>
 
-        {/* phải: inspector "LỚP" (kéo dãn + ẩn/hiện) */}
-        {inspectorOpen ? (
+        {/* phải: inspector "LỚP" (kéo dãn + ẩn/hiện) — ẨN khi slide trống, xem hasInspectorContent */}
+        {inspectorOpen && hasInspectorContent ? (
           <>
             <div
               className="pe-splitter"
@@ -2328,6 +2391,48 @@ function TabBtn({
     >
       {icon}
       {children}
+    </button>
+  );
+}
+
+/** H4 (13/08) — 1 trong 3 lối to của TaskFirstStart (canvas trống, xem trên). `primary` = viền/
+ * icon nhấn màu accent (dùng cho lối khớp việc Hoà đang gấp nhất — Nhập tệp), 2 lối còn lại
+ * trung tính ngang hàng, KHÔNG xám/khoá — cả 3 luôn bấm được (khác "Tạo từ ảnh đã dựng" bên
+ * dưới, có thể khoá vì phụ thuộc dữ liệu chặng 3D). */
+function TaskFirstBtn({
+  icon,
+  label,
+  sub,
+  primary,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  sub: string;
+  primary?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 8,
+        width: 148,
+        padding: '18px 14px',
+        borderRadius: 'var(--r-3, 14px)',
+        border: `1px solid ${primary ? 'var(--accent)' : 'var(--border)'}`,
+        background: primary ? 'var(--accent-soft)' : 'var(--card)',
+        color: primary ? 'var(--accent)' : 'var(--t1)',
+        cursor: 'pointer',
+      }}
+    >
+      {icon}
+      <span style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.3 }}>{label}</span>
+      <span style={{ fontSize: 10.5, color: 'var(--t4)', lineHeight: 1.3 }}>{sub}</span>
     </button>
   );
 }

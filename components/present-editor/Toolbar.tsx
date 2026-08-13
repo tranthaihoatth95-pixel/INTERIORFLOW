@@ -5,7 +5,7 @@
  * Thêm chữ / ảnh / hình, mở template, undo/redo, xuất PDF & PPTX.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams } from 'next/navigation';
 import {
@@ -52,8 +52,10 @@ import {
   CheckCircle2,
   Loader2,
   X,
+  MoreHorizontal,
 } from 'lucide-react';
 import IOMenu from '@/components/ui/IOMenu';
+import LightArc from '@/components/ui/LightArc';
 import { useDismissable } from '@/lib/useDismissable';
 import Tooltip from '@/components/ui/Tooltip';
 import type { EditorSlide, ShapeKind } from '@/lib/present-editor/model';
@@ -132,13 +134,33 @@ interface Props {
   onToggleHide: () => void;
 }
 
-export default function Toolbar(p: Props) {
+/**
+ * H4 (13/08, sửa nóng dogfood F1) — handle imperative để TaskFirstStart (empty-state MỚI ở
+ * PresentEditor.tsx canvas trống) gọi ĐÚNG cửa "Mở tệp" đang có, KHÔNG đẻ input file thứ hai.
+ * MARKER: TaskFirstStart.
+ */
+export interface ToolbarHandle {
+  /** mở hộp thoại chọn tệp (đặc cách PDF/PPTX/ảnh/IDFP/XLSX ở `onGatewayFile` bên dưới). */
+  openGatewayPicker: () => void;
+}
+
+const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
   const fileRef = useRef<HTMLInputElement>(null);
   const gatewayFileRef = useRef<HTMLInputElement>(null);
   const [libOpen, setLibOpen] = useState(false);
   // L4 — cụm Sắp xếp gom vào popover (xem chú thích tại nút).
+  // H4 (13/08): neo ĐỔI sang nút "Bố cục" (layoutMenuBtnRef) — Sắp xếp giờ là 1 mục trong đó.
   const [arrangeOpen, setArrangeOpen] = useState(false);
-  const arrangeBtnRef = useRef<HTMLSpanElement>(null);
+  // H4 (13/08, gộp toolbar theo dogfood F1): "Hình" (6 shape) và "Bố cục" (Sắp xếp·Brand Kit·
+  // Khổ·Xem lưới) — gộp KHÔNG xoá năng lực, chỉ đổi nơi đứng. Xem JSX bên dưới.
+  const [shapeOpen, setShapeOpen] = useState(false);
+  const shapeBtnRef = useRef<HTMLSpanElement>(null);
+  const [layoutMenuOpen, setLayoutMenuOpen] = useState(false);
+  const layoutMenuBtnRef = useRef<HTMLSpanElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    openGatewayPicker: () => gatewayFileRef.current?.click(),
+  }), []);
   // Cửa nhập .xlsx vào BẢNG KHỐI LƯỢNG (BOQ) — xem docblock `BoqXlsxImportDialog` bên dưới.
   const [boqImportOpen, setBoqImportOpen] = useState(false);
   const [boqInitialFile, setBoqInitialFile] = useState<File | null>(null);
@@ -146,6 +168,10 @@ export default function Toolbar(p: Props) {
   // của chặng Trình chiếu trong props hiện tại — dùng placeholder tối thiểu (1 "tờ" = trang đang
   // mở, checklist rỗng thay vì bịa mục giả) cho tới khi có phiên nối dữ liệu thật sâu hơn.
   const [pdfSheetsOpen, setPdfSheetsOpen] = useState(false);
+  // Smart Convert bậc 1 (13/08, docs/phieu-giao/smart-convert-pdf.md) — tiến độ đọc `.pdf` nhiều
+  // trang. LightArc DETERMINATE (nuôi bằng `pdfToDeck`'s onProgress) — khác `p.busy` (chuỗi rỗng/
+  // đầy, dùng cho export) vì đây có % thật theo trang, không phải "đang chạy" mờ.
+  const [pdfProgress, setPdfProgress] = useState<{ fileName: string; done: number; total: number } | null>(null);
 
   // P6b bước 1 — gating cụm "Sắp xếp", CÙNG công thức Inspector.tsx đang dùng (không bịa công
   // thức khác cho 2 chỗ hiện cùng 1 khái niệm) — xem Inspector.tsx dòng ~204-213/425-431.
@@ -217,12 +243,79 @@ export default function Toolbar(p: Props) {
     }
   }
 
+  /**
+   * 13/08 — Smart Convert BẬC 1 (`docs/phieu-giao/smart-convert-pdf.md`). Đọc `.pdf` bằng
+   * `lib/present-editor/pdf-import.ts` (unpdf, đã có sẵn — KHÔNG thêm dependency), bắc cầu sang
+   * PresentEditor CÙNG PATTERN `openPptxFile` ngay trên (nối vào CUỐI deck đang mở, không hỏi
+   * trước — PDF là tài liệu nguồn khác, không phải project `.idfp` của chính mình).
+   *
+   * ⚠️ ĐẶC CÁCH GATEWAY (ghi rõ để phiên sau khỏi ngỡ ngàng): `lib/gateway/capabilities.ts` hiện
+   * khai `present.pdf.import = 'unavailable'` (đúng lúc viết ticket này — chặng Trình chiếu CHƯA
+   * đọc được PDF) và `route.ts#STATIC_ROUTE` CHƯA có khoá `pdf` (dù dòng comment kiểu `RouteAction`
+   * ở đó ĐÃ ghi sẵn ý định `// .pptx / .pdf — nhập làm slide`, `route.ts:18`). VÙNG FILE của ticket
+   * này CẤM sửa `lib/gateway/**` — nên `onGatewayFile` bên dưới ĐẶC CÁCH bắt `format === 'pdf'`
+   * NGAY TRƯỚC khi gọi `routeFormat`, không đụng gateway. Việc dọn nợ này (ngoài phạm vi ticket):
+   * thêm `pdf: { kind: 'present-import-deck' }` vào `STATIC_ROUTE` + đổi
+   * `capabilities.ts` `present.pdf.import` thành `'lossy'` rồi BỎ đặc cách này.
+   *
+   * Số trang > `PDF_RANGE_PROMPT_THRESHOLD` (30) → hỏi phạm vi trước khi convert (phiếu ③) bằng
+   * `window.prompt` — cùng mức tương tác `window.confirm` của `openIdfpFile` phía trên, không
+   * dựng dialog mới cho một lần hỏi đơn giản. Tiến độ nuôi `LightArc` (state `pdfProgress` local
+   * — không cần bắc cầu CustomEvent vì thanh tiến độ hiện NGAY TẠI ĐÂY, Toolbar sở hữu nút Nhập).
+   */
+  async function openPdfFile(f: File) {
+    const say = (ok: boolean, text: string) =>
+      window.dispatchEvent(new CustomEvent('present:pdf-import-done', { detail: { ok, text } }));
+    try {
+      const { pdfToDeck, pdfPageCount, pdfImportSummary, parsePageRangeInput, PDF_RANGE_PROMPT_THRESHOLD } =
+        await import('@/lib/present-editor/pdf-import');
+      const buf = await f.arrayBuffer();
+      const total = await pdfPageCount(buf);
+      let pageRange: { start: number; end: number } | undefined;
+      if (total > PDF_RANGE_PROMPT_THRESHOLD) {
+        const input = window.prompt(
+          `"${f.name}" có ${total} trang — nhập phạm vi muốn chuyển (vd "1-20"), để trống = cả ${total} trang:`,
+          '',
+        );
+        if (input === null) {
+          say(false, `Đã huỷ nhập "${f.name}".`);
+          return;
+        }
+        pageRange = parsePageRangeInput(input, total) ?? undefined;
+      }
+      const rangeTotal = pageRange ? pageRange.end - pageRange.start + 1 : total;
+      setPdfProgress({ fileName: f.name, done: 0, total: rangeTotal });
+      const res = await pdfToDeck(buf, {
+        fileName: f.name,
+        pageRange,
+        onProgress: (done, tot) => setPdfProgress({ fileName: f.name, done, total: tot }),
+      });
+      if (!res.slides.length) {
+        say(false, `Không nhập được trang nào từ "${f.name}".`);
+        return;
+      }
+      window.dispatchEvent(
+        new CustomEvent('present:pdf-import-request', {
+          detail: { slides: res.slides, message: pdfImportSummary(f.name, res) },
+        }),
+      );
+    } catch (err) {
+      say(false, err instanceof Error ? err.message : `Không mở được "${f.name}".`);
+    } finally {
+      setPdfProgress(null);
+    }
+  }
+
   async function onGatewayFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f) return;
     const bytes = new Uint8Array(await f.slice(0, 8192).arrayBuffer());
     const format = detectFormat({ name: f.name, bytes });
+    if (format === 'pdf') {
+      await openPdfFile(f);
+      return;
+    }
     const action = routeFormat(format, 'present');
     if (action.kind === 'place-image') {
       addImageFile(f);
@@ -281,12 +374,26 @@ export default function Toolbar(p: Props) {
           {
             id: 'gateway',
             label: 'Chọn tệp — tự nhận định dạng',
-            sub: 'Ảnh · PPTX · IDFP · XLSX/CSV; định dạng chưa hỗ trợ sẽ nói rõ lý do',
+            sub: 'Ảnh · PPTX · PDF (chữ sống, bậc 1) · IDFP · XLSX/CSV; định dạng chưa hỗ trợ sẽ nói rõ lý do',
             icon: <FileUp size={15} />,
             onSelect: () => gatewayFileRef.current?.click(),
           },
         ]}
       />
+      {pdfProgress && (
+        <span
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--muted)' }}
+          title={`Đang chuyển "${pdfProgress.fileName}" — trang ${pdfProgress.done}/${pdfProgress.total}`}
+        >
+          <LightArc
+            value={pdfProgress.total > 0 ? (pdfProgress.done / pdfProgress.total) * 100 : undefined}
+            size={16}
+            strokeWidth={2}
+            label="Đang chuyển PDF"
+          />
+          Trang {pdfProgress.done}/{pdfProgress.total}
+        </span>
+      )}
       {boqImportOpen && (
         <BoqXlsxImportDialog
           initialFile={boqInitialFile}
@@ -366,37 +473,99 @@ export default function Toolbar(p: Props) {
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
 
       <Divider />
-      <IconOnly onClick={() => p.onAddShape('rect')} title="Hình chữ nhật (chuột phải shape trên slide để chỉnh cạnh/góc)">
-        <Square size={15} />
+      {/* H4 (13/08, sửa nóng dogfood F1 "toolbar 2 hàng ~20 nút ngang cấp") — 6 lệnh
+          rect/ellipse/triangle/polygon/arrow/line GỘP vào 1 nhóm "Hình" mở popover. KHÔNG bớt
+          lệnh nào, chỉ đổi nơi đứng — cùng luật §0d đã áp cho "Sắp xếp" bên dưới. */}
+      <span ref={shapeBtnRef} style={{ display: 'inline-flex' }}>
+        <Btn onClick={() => setShapeOpen((v) => !v)} active={shapeOpen} title="Hình — chữ nhật · elip · tam giác · đa giác · mũi tên · đường thẳng">
+          <Square size={15} /> Hình
+        </Btn>
+      </span>
+      {shapeOpen && (
+        <AnchoredPopover anchorRef={shapeBtnRef} onDismiss={() => setShapeOpen(false)} width={168}>
+          <IconOnly onClick={() => { p.onAddShape('rect'); setShapeOpen(false); }} title="Hình chữ nhật (chuột phải shape trên slide để chỉnh cạnh/góc)">
+            <Square size={15} />
+          </IconOnly>
+          <IconOnly onClick={() => { p.onAddShape('ellipse'); setShapeOpen(false); }} title="Hình elip">
+            <Circle size={15} />
+          </IconOnly>
+          <IconOnly onClick={() => { p.onAddShape('triangle'); setShapeOpen(false); }} title="Tam giác">
+            <Triangle size={15} />
+          </IconOnly>
+          <IconOnly onClick={() => { p.onAddShape('polygon'); setShapeOpen(false); }} title="Đa giác (chỉnh số cạnh khi chuột phải)">
+            <Pentagon size={15} />
+          </IconOnly>
+          <IconOnly onClick={() => { p.onAddShape('arrow'); setShapeOpen(false); }} title="Mũi tên">
+            <MoveRight size={15} />
+          </IconOnly>
+          <IconOnly onClick={() => { p.onAddShape('line'); setShapeOpen(false); }} title="Đường thẳng">
+            <Minus size={15} />
+          </IconOnly>
+        </AnchoredPopover>
+      )}
+
+      <Divider />
+      {/* 07/08 (p12, chốt 01/08 §3c): TemplatePicker + LayoutShelf đã gộp làm MỘT — tên chính
+          thức "Bố cục" (nhãn cũ trên nút + tab panel ghi "Magic" là hai tên cho một thứ;
+          không nhắc nguyên văn nhãn cũ ở đây để cửa kiểm PHEU-AI-TEN-MAGIC quét chuỗi không
+          báo nhầm vào comment lịch sử). */}
+      <Btn onClick={p.onToggleTemplates} active={p.templatesOpen} title="Thiết kế — Magic và các mẫu dàn trang">
+        <LayoutTemplate size={15} /> Thiết kế
+      </Btn>
+
+      <Divider />
+      <IconOnly onClick={p.onUndo} title="Hoàn tác" disabled={!p.canUndo}>
+        <Undo2 size={15} />
       </IconOnly>
-      <IconOnly onClick={() => p.onAddShape('ellipse')} title="Hình elip">
-        <Circle size={15} />
-      </IconOnly>
-      <IconOnly onClick={() => p.onAddShape('triangle')} title="Tam giác">
-        <Triangle size={15} />
-      </IconOnly>
-      <IconOnly onClick={() => p.onAddShape('polygon')} title="Đa giác (chỉnh số cạnh khi chuột phải)">
-        <Pentagon size={15} />
-      </IconOnly>
-      <IconOnly onClick={() => p.onAddShape('arrow')} title="Mũi tên">
-        <MoveRight size={15} />
-      </IconOnly>
-      <IconOnly onClick={() => p.onAddShape('line')} title="Đường thẳng">
-        <Minus size={15} />
+      <IconOnly onClick={p.onRedo} title="Làm lại" disabled={!p.canRedo}>
+        <Redo2 size={15} />
       </IconOnly>
 
       <Divider />
-      {/* L4 (phiếu 03/08): 14 nút căn-lề/thứ-tự/nhóm/khoá/ẩn từng trải ngang làm toolbar tràn
-          xuống HÀNG THỨ HAI và đè cả Inspector. Nay gom vào MỘT nút "Sắp xếp" mở popover —
-          §0d: không bỏ nút nào, mọi lệnh vẫn tới được trong 2 thao tác (mở popover → bấm), và
-          Inspector vẫn giữ nguyên bản sao của cụm này cho ai quen dùng bên phải. */}
-      <span ref={arrangeBtnRef} style={{ display: 'inline-flex' }}>
-        <Btn onClick={() => setArrangeOpen((v) => !v)} active={arrangeOpen} title="Sắp xếp — căn lề · thứ tự lớp · nhóm · khoá · ẩn">
-          <AlignCenterHorizontal size={15} /> Sắp xếp
+      {/* H4 (13/08) — Sắp xếp/Brand Kit/Khổ trình bày/Xem lưới GỘP vào 1 menu "⋯". Đặt tên "⋯"
+          (không phải "Bố cục") để KHÔNG trùng tên với nút Thiết kế ngay trên (comment 07/08 gọi
+          cụm mẫu dàn trang là "Bố cục" — 2 nút cùng tên trên 1 toolbar đúng là thứ đang gây rối,
+          nên tránh). Không bớt lệnh nào — "Sắp xếp" bên trong vẫn mở ĐÚNG AnchoredPopover cũ
+          (căn lề · thứ tự lớp · nhóm · khoá · ẩn), chỉ đổi điểm neo. */}
+      <span ref={layoutMenuBtnRef} style={{ display: 'inline-flex' }}>
+        <Btn
+          onClick={() => setLayoutMenuOpen((v) => !v)}
+          active={layoutMenuOpen || arrangeOpen}
+          title="Thêm — Sắp xếp · Brand Kit · Khổ trình bày · Xem lưới"
+        >
+          <MoreHorizontal size={15} />
         </Btn>
       </span>
+      {layoutMenuOpen && (
+        <AnchoredPopover anchorRef={layoutMenuBtnRef} onDismiss={() => setLayoutMenuOpen(false)} width={216} layout="list">
+          <MenuRow
+            icon={<AlignCenterHorizontal size={14} />}
+            label="Sắp xếp"
+            sub="Căn lề · thứ tự lớp · nhóm · khoá · ẩn"
+            onClick={() => { setLayoutMenuOpen(false); setArrangeOpen(true); }}
+          />
+          <MenuRow
+            icon={<Palette size={14} />}
+            label="Brand Kit"
+            sub="Logo · màu · font · watermark"
+            onClick={() => { setLayoutMenuOpen(false); p.onBrandKit(); }}
+          />
+          <MenuRow
+            icon={<Proportions size={14} />}
+            label={`Khổ trình bày — ${p.stageLabel}`}
+            sub="16:9 · A4/A3 ngang/dọc"
+            onClick={() => { setLayoutMenuOpen(false); p.onStagePreset(); }}
+          />
+          <MenuRow
+            icon={<LayoutGrid size={14} />}
+            label="Xem lưới"
+            sub="Toàn bộ slide dạng lưới thu nhỏ"
+            onClick={() => { setLayoutMenuOpen(false); p.onOpenSorter(); }}
+          />
+        </AnchoredPopover>
+      )}
       {arrangeOpen && (
-        <ArrangePopover anchorRef={arrangeBtnRef} onDismiss={() => setArrangeOpen(false)}>
+        <AnchoredPopover anchorRef={layoutMenuBtnRef} onDismiss={() => setArrangeOpen(false)} width={236}>
       {/* P6b bước 1 — cụm "Sắp xếp": căn theo nhau · thứ tự lớp · nhóm/bỏ nhóm · khoá. Logic
        * NGUYÊN VẸN từ PresentEditor.tsx (đã dùng cho Inspector.tsx) — chỉ nối thêm 1 lối gọi. */}
       <IconOnly
@@ -501,41 +670,12 @@ export default function Toolbar(p: Props) {
         {anyVisible ? <EyeOff size={15} /> : <Eye size={15} />}
       </IconOnly>
 
-      </ArrangePopover>
+        </AnchoredPopover>
       )}
-      <Divider />
-      {/* 07/08 (p12, chốt 01/08 §3c): TemplatePicker + LayoutShelf đã gộp làm MỘT — tên chính
-          thức "Bố cục" (nhãn cũ trên nút + tab panel ghi "Magic" là hai tên cho một thứ;
-          không nhắc nguyên văn nhãn cũ ở đây để cửa kiểm PHEU-AI-TEN-MAGIC quét chuỗi không
-          báo nhầm vào comment lịch sử). */}
-      <Btn onClick={p.onToggleTemplates} active={p.templatesOpen} title="Thiết kế — Magic và các mẫu dàn trang">
-        <LayoutTemplate size={15} /> Thiết kế
-      </Btn>
-
-      <Divider />
-      <IconOnly onClick={p.onUndo} title="Hoàn tác" disabled={!p.canUndo}>
-        <Undo2 size={15} />
-      </IconOnly>
-      <IconOnly onClick={p.onRedo} title="Làm lại" disabled={!p.canRedo}>
-        <Redo2 size={15} />
-      </IconOnly>
-
-      <Divider />
-      <Btn onClick={p.onBrandKit} title="Brand Kit của dự án — logo · màu · font · watermark">
-        <Palette size={15} /> Brand Kit
-      </Btn>
-      <Btn
-        onClick={p.onStagePreset}
-        title="Khổ trình bày (màn hình/chiếu) — 16:9 · A4 ngang/dọc · A3 ngang/dọc. Đổi khổ tự dàn lại bố cục."
-      >
-        <Proportions size={15} /> {p.stageLabel}
-      </Btn>
-
       <div style={{ flex: 1 }} />
 
-      <Btn onClick={p.onOpenSorter} title="Xem lưới toàn bộ slide (Slide Sorter) — chọn/kéo-thả đổi thứ tự/xoá/nhân bản">
-        <LayoutGrid size={15} /> Xem lưới
-      </Btn>
+      {/* H4 (13/08): "Xem lưới" dời vào menu "⋯" phía trên (xem AnchoredPopover layout="list") —
+          Trình chiếu giữ nguyên vị trí cuối cùng, luôn thấy được (1 trong 6 việc chính). */}
       <Btn onClick={p.onPlay} title="Trình chiếu (xem hiệu ứng động)">
         <Play size={15} /> Trình chiếu
       </Btn>
@@ -544,7 +684,9 @@ export default function Toolbar(p: Props) {
       {libOpen && <span hidden onClick={() => setLibOpen(false)} />}
     </div>
   );
-}
+});
+
+export default Toolbar;
 
 function Btn({
   children,
@@ -634,19 +776,27 @@ function IconOnly({
 }
 
 /**
- * L4 — bảng "Sắp xếp" nổi dưới nút cùng tên. PORTAL ra `body` theo LUẬT PANEL NỔI (docs/00-CHOT
- * K4: panel kính lồng trong chrome kính thì `backdrop-filter` của cha chặn blur của con). Đóng
- * bằng Escape / bấm ra ngoài qua `useDismissable` — cùng họ sự kiện với mọi lớp đóng-mở của app,
- * không tự chế listener riêng.
+ * L4 (đổi tên AnchoredPopover ở H4 13/08 — dùng chung cho "Hình" · "Sắp xếp" · menu "⋯", không
+ * chỉ riêng Sắp xếp nữa) — bảng nổi dưới nút neo. PORTAL ra `body` theo LUẬT PANEL NỔI (docs/
+ * 00-CHOT K4: panel kính lồng trong chrome kính thì `backdrop-filter` của cha chặn blur của con).
+ * Đóng bằng Escape / bấm ra ngoài qua `useDismissable` — cùng họ sự kiện với mọi lớp đóng-mở của
+ * app, không tự chế listener riêng.
+ *
+ * `layout`: 'grid' (mặc định) = lưới icon bọc dòng (Hình · Sắp xếp) · 'list' = cột dọc, mỗi dòng
+ * 1 mục có icon+nhãn+mô tả (menu "⋯" — dùng `MenuRow` bên dưới).
  */
-function ArrangePopover({
+function AnchoredPopover({
   anchorRef,
   onDismiss,
   children,
+  width = 236,
+  layout = 'grid',
 }: {
   anchorRef: React.RefObject<HTMLSpanElement | null>;
   onDismiss: () => void;
   children: React.ReactNode;
+  width?: number;
+  layout?: 'grid' | 'list';
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
@@ -655,9 +805,8 @@ function ArrangePopover({
     const r = anchorRef.current?.getBoundingClientRect();
     if (!r) return;
     // ghim mép trái theo nút, tự lùi vào trong nếu sát mép phải màn hình
-    const width = 236;
     setPos({ left: Math.min(r.left, window.innerWidth - width - 12), top: r.bottom + 6 });
-  }, [anchorRef]);
+  }, [anchorRef, width]);
 
   useDismissable({ open: true, onDismiss, refs: [panelRef, anchorRef] });
 
@@ -666,18 +815,18 @@ function ArrangePopover({
     <div
       ref={panelRef}
       role="group"
-      aria-label="Sắp xếp"
       style={{
         position: 'fixed',
         left: pos.left,
         top: pos.top,
         zIndex: 80,
-        width: 236,
+        width,
         display: 'flex',
-        flexWrap: 'wrap',
-        gap: 6,
-        padding: 10,
-        borderRadius: 10,
+        flexDirection: layout === 'list' ? 'column' : 'row',
+        flexWrap: layout === 'list' ? 'nowrap' : 'wrap',
+        gap: layout === 'list' ? 2 : 6,
+        padding: layout === 'list' ? 6 : 10,
+        borderRadius: 'var(--r-3, 14px)',
         border: '1px solid var(--border)',
         background: 'var(--panel)',
         boxShadow: 'var(--shadow-lg, 0 12px 32px rgba(0,0,0,.18))',
@@ -686,6 +835,52 @@ function ArrangePopover({
       {children}
     </div>,
     document.body,
+  );
+}
+
+/** 1 dòng trong menu "⋯" (layout="list" của AnchoredPopover) — icon + nhãn đậm + mô tả nhỏ,
+ * cùng khuôn `Item` của `components/ui/IOMenu.tsx` (KHÔNG import trực tiếp — file đó dùng chung
+ * cho cả 3 chặng, ngoài VÙNG FILE của ticket này) nhưng chỉ 1 hành động, không có trạng thái
+ * disabled. */
+function MenuRow({
+  icon,
+  label,
+  sub,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  sub?: string;
+  onClick: () => void;
+}) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 9,
+        width: '100%',
+        padding: '8px 9px',
+        borderRadius: 'var(--r-2, 10px)',
+        border: 'none',
+        background: hover ? 'var(--field)' : 'transparent',
+        color: 'var(--t2)',
+        cursor: 'pointer',
+        textAlign: 'left',
+      }}
+    >
+      <span style={{ display: 'grid', placeItems: 'center', flexShrink: 0, color: 'var(--accent)' }}>{icon}</span>
+      <span style={{ minWidth: 0, flex: 1 }}>
+        <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--t1)' }}>{label}</span>
+        {sub && <span style={{ display: 'block', fontSize: 10.5, color: 'var(--t4)', marginTop: 1 }}>{sub}</span>}
+      </span>
+    </button>
   );
 }
 

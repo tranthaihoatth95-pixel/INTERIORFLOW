@@ -12,6 +12,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { EditorTemplate, LayoutShelf as Shelf } from '@/lib/present-editor/templates';
 import { SHELF_LABEL, SHELF_ORDER, shelfOf, makeVariants } from '@/lib/present-editor/templates';
 import type { EditorSlide } from '@/lib/present-editor/model';
@@ -185,6 +186,16 @@ export default function LayoutShelf({
     if (!existed) setGuFreshStart(true); // lần đầu thấy khoá này → báo cho người dùng biết
   }, [modelKey]);
 
+  /* H4 (13/08, sửa nóng dogfood F1 "banner chiếm mặt tiền panel trái") — banner cũ đứng NGAY
+   * ĐẦU panel Thiết kế, chắn hết nội dung thật (kệ mẫu) đúng lúc người dùng đang gấp cần thấy
+   * mẫu ngay. Chuyển thành TOAST tự tắt sau 6s (đơn giản nhất — không thêm cơ chế đóng theo
+   * tài khoản/ngày, giữ NGUYÊN điều kiện hiện cũ `guFreshStart`, chỉ đổi NƠI + THỜI GIAN hiện). */
+  useEffect(() => {
+    if (!guFreshStart) return;
+    const t = setTimeout(() => setGuFreshStart(false), 6000);
+    return () => clearTimeout(t);
+  }, [guFreshStart]);
+
   const paletteKeyForTraits = (palette ?? []).join(',');
   // traits tĩnh mỗi template (build thử 1 lần) — cache theo id + palette.
   const traitsMap = useMemo(() => {
@@ -343,24 +354,45 @@ export default function LayoutShelf({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 }}>
-      {/* (0a, 31/07) thông báo bộ học Gu bắt đầu lại cho tài khoản này — 1 lần, tự đóng được */}
-      {guFreshStart && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid var(--accent-ring)', borderRadius: 10, background: 'var(--accent-soft)', padding: '7px 11px' }}>
-          <Sparkles size={12} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-          <span style={{ fontSize: 10.5, color: 'var(--t2)', lineHeight: 1.4, flex: 1 }}>
-            Máy học &quot;gu&quot; bắt đầu lại cho tài khoản này — dữ liệu học cũ trên máy này (nếu có) thuộc
-            người dùng khác, không mang sang.
-          </span>
-          <button
-            type="button"
-            onClick={() => setGuFreshStart(false)}
-            title="Đã hiểu"
-            style={{ display: 'flex', border: 'none', background: 'transparent', color: 'var(--t3)', cursor: 'pointer', flexShrink: 0 }}
+      {/* (0a, 31/07 → H4 13/08) thông báo bộ học Gu bắt đầu lại — DỜI khỏi mặt tiền panel (không
+       * còn chắn kệ mẫu), giờ là TOAST fixed góc dưới-trái màn hình, tự tắt sau 6s hoặc bấm X. */}
+      {guFreshStart &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            role="status"
+            style={{
+              position: 'fixed',
+              left: 16,
+              bottom: 16,
+              zIndex: 200,
+              maxWidth: 340,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              border: '1px solid var(--accent-ring)',
+              borderRadius: 'var(--r-3, 14px)',
+              background: 'var(--panel)',
+              boxShadow: '0 10px 30px rgba(0,0,0,.28)',
+              padding: '9px 12px',
+            }}
           >
-            <X size={12} />
-          </button>
-        </div>
-      )}
+            <Sparkles size={12} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+            <span style={{ fontSize: 10.5, color: 'var(--t2)', lineHeight: 1.4, flex: 1 }}>
+              Máy học &quot;gu&quot; bắt đầu lại cho tài khoản này — dữ liệu học cũ trên máy này (nếu có) thuộc
+              người dùng khác, không mang sang.
+            </span>
+            <button
+              type="button"
+              onClick={() => setGuFreshStart(false)}
+              title="Đã hiểu"
+              style={{ display: 'flex', border: 'none', background: 'transparent', color: 'var(--t3)', cursor: 'pointer', flexShrink: 0 }}
+            >
+              <X size={12} />
+            </button>
+          </div>,
+          document.body,
+        )}
       {/* dòng máy-học-được + generate lại */}
       {learnedNotes && (
         <div style={{ border: '1px solid var(--accent-ring)', borderRadius: 10, background: 'var(--accent-soft)', padding: '9px 11px' }}>
