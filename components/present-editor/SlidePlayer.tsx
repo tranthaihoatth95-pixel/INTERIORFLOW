@@ -48,8 +48,13 @@ export default function SlidePlayer({ deck, startIndex = 0, onClose }: Props) {
   );
 
   // Điều hướng ← → / Space — tách riêng khỏi Escape (nay đi qua useDismissable bên dưới).
+  // Guard né ô nhập (luật keydown-ne-o-nhap, khuôn PresentViewer.tsx): overlay trình chiếu hiện
+  // KHÔNG có ô nhập thật nên hành vi không đổi — guard đứng đây để listener capture toàn cục này
+  // không nuốt Space/mũi tên nếu mai sau có input (ghi chú, nhảy trang) sống cùng overlay.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      const el = document.activeElement;
+      if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
       if (e.key === 'ArrowRight' || e.key === ' ') {
         e.preventDefault();
         go(1);

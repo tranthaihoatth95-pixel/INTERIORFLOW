@@ -656,7 +656,7 @@ function TextInspector({
         <Toggle
           active={listOf(el) === 'number'}
           onClick={() => setListStyle(el, onUpdate, listOf(el) === 'number' ? 'none' : 'number')}
-          title="Danh sách đánh số tự động"
+          title="Danh sách đánh số"
         >
           <ListOrdered size={14} />
         </Toggle>
@@ -1165,7 +1165,7 @@ function ImageInspector({
         type="button"
         onClick={() => diskPathInputRef.current?.click()}
         style={ghostBtn}
-        title="Chọn lại file thật trên máy — cập nhật ảnh này theo file vừa chọn (thủ công, không tự động)"
+        title="Chọn lại file thật trên máy — cập nhật ảnh này theo file vừa chọn (thao tác tay một lần — máy không theo dõi file)"
       >
         <RefreshCw size={12} /> {el.diskPath ? 'Cập nhật liên kết' : 'Liên kết với file trên máy'}
       </button>

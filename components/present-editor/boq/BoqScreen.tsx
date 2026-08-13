@@ -193,6 +193,10 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Guard né ô nhập (luật keydown-ne-o-nhap): đang gõ trong ô sửa số của bảng BOQ thì ⌘Z
+      // phải là undo CỦA Ô NHẬP (native), không được cướp về lịch sử overrides toàn màn.
+      const el = document.activeElement;
+      if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
         const prev = historyRef.current.pop();
         if (prev) { e.preventDefault(); persistOverrides(prev); }

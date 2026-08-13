@@ -269,7 +269,7 @@ export default function TextToolbar({
         <Toggle active={list === 'bullet'} onClick={() => setList(list === 'bullet' ? 'none' : 'bullet')} title="Gạch đầu dòng">
           <List size={14} />
         </Toggle>
-        <Toggle active={list === 'number'} onClick={() => setList(list === 'number' ? 'none' : 'number')} title="Đánh số tự động">
+        <Toggle active={list === 'number'} onClick={() => setList(list === 'number' ? 'none' : 'number')} title="Danh sách đánh số">
           <ListOrdered size={14} />
         </Toggle>
 

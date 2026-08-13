@@ -361,8 +361,9 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
    *   · ảnh trang  = renderEditorSlide từng slide deck ĐANG MỞ (chính engine PDF/PNG đang dùng)
    *   · BOQ        = CÙNG đường `BoqXlsxImportDialog` bên dưới (getProjectDoc + POST /api/boq)
    *                  → boqResultToXlsxBuffer; KHÔNG mở được thì BỎ QUA kênh đó, không chặn [T0]
-   *   · PDF        = CHƯA GÓI — `exportDeckToPdf` hiện `doc.save()` thẳng, không trả Blob;
-   *                  sửa nó là ngoài vùng phiếu. Viewer ghi rõ kênh vắng, không giả.
+   *   · PDF        = `exportDeckToPdfBlob` (13/08, phiếu present-editor-hoan-thien-1 — biến thể
+   *                  Blob CÙNG builder với nút "Xuất PDF"); lỗi → kênh vắng + viewer khai rõ,
+   *                  fail-open không chặn gói [T0].
    * Toast đi kênh `present:idfp-export-done` (PresentEditor.tsx#onDone — kênh toast xuất CHUNG,
    * cùng cách .pptx nhập mượn kênh, không viết toast mới). Mọi import ĐỘNG — người không bấm
    * thì bundle chặng Trình chiếu không phải tải jszip/render. MARKER: HoSoSong.
@@ -452,6 +453,18 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
         }
       }
 
+      // 4. PDF deck ĐANG MỞ — biến thể Blob của chính đường "Xuất PDF" (exportDeckToPdfBlob).
+      // Best-effort như BOQ: hỏng thì kênh vắng (viewer khai rõ), KHÔNG giết cả gói [T0].
+      let pdf: Blob | undefined;
+      if (activeSheet) {
+        try {
+          const { exportDeckToPdfBlob } = await import('@/lib/present-editor/export');
+          pdf = await exportDeckToPdfBlob(activeSheet.deck);
+        } catch {
+          // kênh KÈM THÊM — render/ảnh hỏng không được chặn các kênh còn lại.
+        }
+      }
+
       const blob = await packHoSoSong({
         projectId: hoSoProjectId || hoSoBucketId,
         tenDuAn,
@@ -460,6 +473,7 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
         deckJson,
         boqXlsx,
         boqTomTat,
+        pdf,
         images,
       });
       const fileName = hoSoSongFileName(tenDuAn, taoLuc);
@@ -469,10 +483,10 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
       a.download = fileName;
       a.click();
       URL.revokeObjectURL(url);
-      const vang = [!deckJson && 'deck', !images.length && 'ảnh', !boqXlsx && 'BOQ', 'PDF']
+      const vang = [!deckJson && 'deck', !images.length && 'ảnh', !boqXlsx && 'BOQ', !pdf && 'PDF']
         .filter(Boolean)
         .join(', ');
-      say(true, `Đã xuất ${fileName} — ${images.length} trang ảnh${boqXlsx ? ' + BOQ' : ''}${deckJson ? ' + ruột JSON' : ''}. Kênh vắng: ${vang}.`);
+      say(true, `Đã xuất ${fileName} — ${images.length} trang ảnh${pdf ? ' + PDF' : ''}${boqXlsx ? ' + BOQ' : ''}${deckJson ? ' + ruột JSON' : ''}.${vang ? ` Kênh vắng: ${vang}.` : ''}`);
     } catch (err) {
       say(false, err instanceof Error ? err.message : 'Không đóng được Gói Hồ Sơ (.zip).');
     } finally {
@@ -927,7 +941,7 @@ function IconOnly({
 /**
  * L4 (đổi tên AnchoredPopover ở H4 13/08 — dùng chung cho "Hình" · "Sắp xếp" · menu "⋯", không
  * chỉ riêng Sắp xếp nữa) — bảng nổi dưới nút neo. PORTAL ra `body` theo LUẬT PANEL NỔI (docs/
- * 00-CHOT K4: panel kính lồng trong chrome kính thì `backdrop-filter` của cha chặn blur của con).
+ * 00-CHOT K4: panel kính lồng trong chrome kính thì backdrop blur của cha chặn blur của con).
  * Đóng bằng Escape / bấm ra ngoài qua `useDismissable` — cùng họ sự kiện với mọi lớp đóng-mở của
  * app, không tự chế listener riêng.
  *

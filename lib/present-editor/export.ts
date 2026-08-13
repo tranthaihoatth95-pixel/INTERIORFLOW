@@ -24,6 +24,10 @@
  *     dpi đó (P3 phần 2, chưa làm) — xem JSDoc hàm.
  *
  * Cả bốn đọc EditorDeck. jsPDF/pptx import động (client-only).
+ *
+ * 13/08 — thêm `exportDeckToPdfBlob` (ADDITIVE, phiếu present-editor-hoan-thien-1): cùng builder
+ *     với `exportDeckToPdf` nhưng trả `Blob` cho Gói Hồ Sơ Sống thay vì save-file. Hành vi các
+ *     hàm cũ giữ nguyên.
  */
 
 import type { EditorDeck, EditorSlide, TextElement, ImageElement, FillOverlay } from './model';
@@ -37,8 +41,16 @@ import type { AiTier } from '@/lib/ai/tiers';
 
 /* --------------------------------- PDF --------------------------------- */
 
-export async function exportDeckToPdf(deck: EditorDeck): Promise<void> {
-  if (typeof window === 'undefined') return;
+/**
+ * 13/08 (phiếu present-editor-hoan-thien-1 ④.1) — TÁCH phần DỰNG jsPDF khỏi phần save-file để
+ * Gói Hồ Sơ Sống lấy được Blob (kênh `out/ho-so.pdf`). Thân vòng lặp CHÉP NGUYÊN từ
+ * `exportDeckToPdf` cũ — không đổi một tham số render nào; hàm cũ nay gọi builder này rồi
+ * `doc.save()` y như trước (0 đổi hành vi). Vẫn browser-only: `renderEditorSlide` cần
+ * canvas/DOM thật — node/test không chạy được nhánh này (nói thật, không giả lập).
+ */
+async function buildDeckPdfDoc(
+  deck: EditorDeck,
+): Promise<{ doc: import('jspdf').jsPDF; name: string }> {
   if (!deck.slides.length) throw new Error('Deck rỗng — cần ít nhất 1 slide.');
   const stage = stageFor(deck.stagePreset);
   const orientation = stage.w >= stage.h ? 'landscape' : 'portrait';
@@ -49,7 +61,27 @@ export async function exportDeckToPdf(deck: EditorDeck): Promise<void> {
     if (i > 0) doc.addPage([stage.w, stage.h], orientation);
     doc.addImage(img, 'JPEG', 0, 0, stage.w, stage.h);
   }
-  doc.save(`${safeName(deck.project || deck.brand || 'deck')}.pdf`);
+  return { doc, name: safeName(deck.project || deck.brand || 'deck') };
+}
+
+export async function exportDeckToPdf(deck: EditorDeck): Promise<void> {
+  if (typeof window === 'undefined') return;
+  const { doc, name } = await buildDeckPdfDoc(deck);
+  doc.save(`${name}.pdf`);
+}
+
+/**
+ * Biến thể ADDITIVE trả `Blob` thay vì save-file — cho Gói Hồ Sơ Sống (Toolbar#exportHoSoSong)
+ * nhét vào `packHoSoSong({ pdf })`. CÙNG builder với `exportDeckToPdf` (một cỗ máy hai mặt
+ * tiền [T2]) — byte PDF y hệt bản người dùng bấm "Xuất PDF". Ngoài browser thì NÉM lỗi rõ
+ * (không trả Blob rỗng giả) — caller fail-open, kênh PDF vắng chứ gói không chết.
+ */
+export async function exportDeckToPdfBlob(deck: EditorDeck): Promise<Blob> {
+  if (typeof window === 'undefined') {
+    throw new Error('exportDeckToPdfBlob chỉ chạy trong browser (render slide cần canvas).');
+  }
+  const { doc } = await buildDeckPdfDoc(deck);
+  return doc.output('blob');
 }
 
 /**

@@ -154,7 +154,7 @@ export default function EditorCanvas({
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') setPaintFormat(null);
     }
-    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keydown', onKeyDown); // esc-only: chỉ xử Escape huỷ Format Painter — lệnh đóng/huỷ, không cần né ô nhập
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [paintFormat]);
 
