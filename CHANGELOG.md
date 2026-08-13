@@ -1680,3 +1680,11 @@ AI ở Settings không ăn" — nghi đúng nguyên nhân này (route không qua
 - **capture-nut** (CS, `2260f33`): CameraExportTab thay placeholder tab Camera Command3DPanel — xuất chuỗi PNG theo campath, zip jszip, LightArc tiến độ thật + Huỷ AbortSignal, thiếu campath nút mờ kèm lý do; `captureSequenceAsync` additive nhả event-loop. Contract capture-sequence cho-day→co-day (`4296aac`) — kho chờ dây chỉ còn lux-l6.
 - **P6 if-rna-v0** (RN, `8cb0859`): lib/rna + MATERIAL_PBR_RNA 19/19 + RnaPanel generic; editor 332→299 dòng, 0 chuỗi nhãn field; lan-1-chỗ chứng minh trên app thật; drift-guard tsc 2 chiều; T soi mắt panel trên /materials ĐẠT. Điều kiện nhân rộng BuildOp ghi trong báo cáo RN (4 điều kiện, chưa làm).
 - Kết: tsc 0 · frontier 51 xong-MÁY + 1 xong-mắt / 27 chờ / 0 lệch · contract 21/1/0 · thao-tac 2 hàng đợi mắt-design · hinh-hoc 0 · tu-dien 0 · check:chot 0. **CHUỖI NỀN P1(hiến pháp)→P2(nhịp)→P3(luật thao tác)→P4(gói hồ sơ)→P5(contract)→P6(RNA proof) ĐÓNG TRỌN trong 2 ngày 13-14/08.**
+
+## 14/08/2026 — Đợt DS #1 (Hoà chê "giao diện rất xấu, không thống nhất" → T tự chụp toàn stage)
+
+- **Chẩn đoán bằng mắt** (`docs/CHAN-DOAN-DS-MAT-2026-08-14.md`, `aa8b5db`): T chụp 7 màn qua browser pane — 6 bug hệ thống (A) + 6 lệch cấu trúc (B) + mục C ghi nhận đúng.
+- **DA** (`25d276c`): ⭐GỐC BỆNH FONT — tailwind khai `var(--font-geist-sans)` không định nghĩa → `.font-sans` chết → **cả app render Times THƯỜNG TRỰC** (cảnh "xấu" Hoà thấy chính là bug này); sửa 4 file font + fallback sans đầy đủ (Geist fail → system-ui, đo thật). Kèm: statusbar hết đè chữ khổ hẹp (đo 732/600px) · Files hẹp breakpoint 900 hết đè header · 3 chuỗi jargon EN→VI · "Đang mở nơi khác" đỏ→trung tính+icon mắt.
+- **DR** (`1ce242a`): radius toàn app về thang 6/10/14/20 + đồng tâm — ngoài thang **334→10 (−97%)**, 107 file thuần radius (324+/324−), capsule xác minh → --r-full; 10 chỗ giữ có sổ (9 chờ sau DA + AvatarBuilder 28px chờ mắt).
+- **Nhóm B chờ ảnh tham khảo Hoà** → chốt khuôn (một khuôn thanh công cụ 3 stage · EmptyState chung · thumbnail strip · tab chặng ở trang cấp app) → mock Claude Design/Figma → phiếu áp.
+- Kết: tsc 0 · frontier 52/27/0 · hinh-hoc 10 ngoài thang có sổ · tu-dien 0 · thao-tac 2 hàng đợi cũ · contract 21/1/0.

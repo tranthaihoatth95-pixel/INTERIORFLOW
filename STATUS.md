@@ -3,7 +3,7 @@
 ## MỞ PHIÊN MỚI: dán câu lệnh §5 HOP-DONG-PHOI-HOP-T + `npm run soi:frontier`. Đọc thêm: TRIET-LY-IF.md (hiến pháp, TRÍCH MÃ ĐIỀU KHOẢN vào mọi phiếu) · 00-CHOT 2 dòng cuối. **CHUỖI NỀN P1→P6 ĐÓNG TRỌN 14/08.** Kế tiếp theo lộ trình BAN-THIET-KE §5: vá 3 lỗ ❌ (telemetry local-first đếm-bấm ghi file cục bộ [T3] · a11y audit 1 lượt · error-log + nút gửi-log tự nguyện). Món nhìn-thấy sẵn hàng: GR v1 bảng ánh xạ + núm per-mảng · lux-l6 (kho chờ dây cuối) · focus-visible (mắt design) · sửa pickHatchFace O(N²).
 
 ## Chờ tay HOÀ (xếp hàng)
-1. **ĐI LÔ DUYỆT MẮT #1** — `docs/duyet-mat/LO-1-2026-08-13.md`: 48 mục gộp 7 trạm ~20 phút, trả lời "Trạm N ok/lệch" là T flip loạt 2. Duyệt phác Home v5 (SPEC-HOME-BENTO-V5) 3. Chọn ảnh render ST5 → T upscale 300dpi. (Preview Gói Hồ Sơ Sống + .zip mẫu — nay có cả kênh PDF — đã gửi trong chat.)
+0. **GỬI ẢNH THAM KHẢO GIAO DIỆN** (Hoà hứa 14/08) → T chốt khuôn nhóm B + mock. 1. **ĐI LÔ DUYỆT MẮT #1** — `docs/duyet-mat/LO-1-2026-08-13.md`: 48 mục gộp 7 trạm ~20 phút, trả lời "Trạm N ok/lệch" là T flip loạt 2. Duyệt phác Home v5 (SPEC-HOME-BENTO-V5) 3. Chọn ảnh render ST5 → T upscale 300dpi. (Preview Gói Hồ Sơ Sống + .zip mẫu — nay có cả kênh PDF — đã gửi trong chat.)
 
 > Lịch sử ở `CHANGELOG.md`. Code, schema và test là nguồn kiểm chứng. IF là sản phẩm global: **2D Kỹ thuật · 3D Thiết kế · Trình bày**; Brand Kit thuộc từng dự án.
 
@@ -22,6 +22,7 @@
 
 ## Vừa xong
 
+- **14/08 (đợt DS #1 — Hoà chê giao diện):** ⭐GỐC BỆNH FONT bắt được: var font khai mà không định nghĩa → cả app render TIMES thường trực từ trước tới nay — đã sửa + fallback sans đo thật. Radius 334→10 ngoài thang (−97%, 107 file). Statusbar/Files hết vỡ khổ hẹp. Bảng chẩn docs/CHAN-DOAN-DS-MAT (6 bug A đã sửa · 6 lệch cấu trúc B CHỜ ẢNH THAM KHẢO HOÀ để chốt khuôn + mock Figma/Claude Design).
 - **14/08 (đợt T #4):** ⭐**CHUỖI NỀN P1→P6 ĐÓNG TRỌN** — P6 IF-RNA v0: panel MaterialPbr TỰ SINH từ định nghĩa (editor 332→299 dòng, lan-1-chỗ chứng minh trên app, drift-guard) · nút Xuất chuỗi PNG (kho captureSequence có dây, kho chờ chỉ còn lux-l6) · 2 finding duyệt mắt Hoà xử tại trận (nhãn Home + lag −4,4MB, Hoà xác nhận = mục xong-mắt đầu tiên 👁1). Chi tiết CHANGELOG.
 - **13/08 khuya (đợt T #3):** ⭐**P5 FeatureContract máy XONG** — 22 hợp đồng 4 câu + `soi:contract` 3 chiều; phát hiện 12/14 kho sổ 08/08 ĐÃ MỞ (sổ giấy mốc 5 ngày, nay máy canh dây); còn 2 kho chờ thật: capture-sequence · lux-l6. **Kênh PDF Gói Hồ Sơ ĐÃ NỐI** (exportDeckToPdfBlob additive, fail-open) + trả 7 chỗ thao-tac present-editor → 3 luật cơ khí VỀ 0 toàn app. Chuỗi nền chỉ còn P6 IF-RNA v0.
 - **13/08 đêm (đợt T #2):** P4 Gói Hồ Sơ Sống v0 (.zip 3 tầng thoái lui, viewer tự chứa, preview gửi chat) · sửa lệch thao-tac đợt 1 (41 chỗ) · Lô duyệt mắt #1 soạn 48 mục/7 trạm. Chi tiết CHANGELOG.
