@@ -126,7 +126,7 @@ export const FRONTIER = [
     bangChung: [{ file: 'docs/HOP-DONG-PHOI-HOP-T.md', mau: 'BƯỚC 0|THẺ VAI TỰ CHỨA' }] },
   // 13/08 đêm — finding LÔ DUYỆT MẮT #1 của Hoà (điều hướng về Home lag) — T ghi entry ngay:
   { id: 'home-nav-lag', vai: 'do', ten: 'Điều hướng về Home lag — ĐO RỒI SỬA (14/08 NL: 15 component gated sang dynamic ssr:false qua heavy-panels.tsx — chunk route / 28,6→24,2 MB dev, −274 module, three-bvh ra hẳn, load warm 1209→1041ms; first-paint giữ tĩnh LoginScreen·DongStudioHome·AppShell·FlowCanvas) — cảm nhận hậu-login chờ MẮT Hoà; nếu vẫn lag thì nghi phạm kế là chuỗi fetch sau mount, phiếu riêng', he: 'Workspace', dot: 7, trangThai: 'xong',
-    bangChung: [{ file: 'components/home/HomeScreen.tsx', mau: "dynamic\\(" }] },
+    bangChung: [{ file: 'components/home/heavy-panels.tsx', mau: "dynamic\\(" }, { file: 'components/home/HomeScreen.tsx', mau: 'heavy-panels' }] },
   // 13/08 đêm — Hoà gật lộ trình P5-P6 ("ok tiếp" sau tổng kết đợt #2) — T ghi entry ngay lúc chốt:
   { id: 'feature-contract-may', vai: 'day', ten: 'P5 FeatureContract máy XONG (13/08 FC: contract-registry 22 entry đủ 4 câu = 20 có-dây + 2 chờ-dây capture-sequence·lux-l6; soi:contract 3 chiều regress/mất-dây/sổ-quên, day-pattern import-based né comment; PHÁT HIỆN LỚN: 12/14 kho sổ 08/08 hoá ra ĐÃ MỞ — eyedropper·vcb·export V-Ray/D5·brief-PDF·T2-recipe·build-ops union·registry lệnh·accent-warm·GuProfile 2 caller thật + 4 kho đã biết; sổ giấy mốc trong 5 ngày, từ nay máy canh)', he: 'DocCore', dot: 7, trangThai: 'xong',
     bangChung: [{ file: 'scripts/soi-contract.mjs', mau: 'anTheo' }, { file: 'scripts/contract-registry.mjs', mau: 'anTheo' }] },
