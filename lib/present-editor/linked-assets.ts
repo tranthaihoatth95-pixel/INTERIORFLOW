@@ -126,7 +126,9 @@ export function setLinkedAssetSrc(deck: EditorDeck, assetId: string, src: string
   // (không tồn tại) nên hành vi CŨ (asset không recipe) không đổi; recipe.fingerprint chỉ được
   // cập nhật CÓ CHỦ Ý qua applyRecipeRefresh() (lib/present-editor/linked-asset-recipe.ts), không
   // phải ở đây — đổi src bằng đường khác (vd sửa tay) KHÔNG ngầm coi là "đã làm mới theo công thức".
-  const asset: LinkedAsset = { id: assetId, name: prev?.name, src, updatedAt: Date.now(), recipe: prev?.recipe };
+  // DF2 (14/08, đề xuất D2) — GIỮ `provenance` như đang giữ `recipe`: gia phả (pdf/grounded-render)
+  // không được rơi chỉ vì một lần đổi src qua đường khác; bước gia phả MỚI do caller ghi có chủ ý.
+  const asset: LinkedAsset = { id: assetId, name: prev?.name, src, updatedAt: Date.now(), recipe: prev?.recipe, provenance: prev?.provenance };
   return {
     ...deck,
     linkedAssets: { ...(deck.linkedAssets ?? {}), [assetId]: asset },

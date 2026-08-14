@@ -89,6 +89,8 @@ import {
   AlertTriangle,
   Group,
   Ungroup,
+  Sparkles,
+  ImageDown,
 } from 'lucide-react';
 import type { AlignMode as GroupAlignMode, DistributeAxis } from '@/lib/present-editor/align';
 
@@ -142,6 +144,13 @@ interface Props {
    * dùng chung asset — KHÔNG phải nút giả, chỉ hẹp phạm vi hơn dự tính đầy đủ của T2.
    */
   onRefreshAsset?: (assetId: string, dataUrl: string, fingerprint: string) => void;
+  /* ---- [marker: magic-phoi-canh] vòng "Chỉnh phối cảnh" liên chặng (phiếu D2) ----
+   * Chỉ dùng khi selected là ảnh CÓ assetId. `onMagicPerspective` = bước ② (gieo node
+   * ai.regionrender chặng 2 rồi nhảy sang); `magicResult` + `onReceiveMagicResult` =
+   * bước ④ bán tự động (node đã chạy xong → người bấm nhận ảnh về asset). */
+  onMagicPerspective?: (id: string) => void;
+  magicResult?: { nodeId: string; src: string } | null;
+  onReceiveMagicResult?: () => void;
   /* ---- ô quản lý layer ---- */
   selectedIds: string[];
   onSelect: (id: string) => void;
@@ -174,6 +183,9 @@ export default function Inspector({
   onAttachAsset,
   onDetachAsset,
   onRefreshAsset,
+  onMagicPerspective,
+  magicResult,
+  onReceiveMagicResult,
   selectedIds,
   onSelect,
   onReorderElement,
@@ -370,6 +382,9 @@ export default function Inspector({
           onAttachAsset={onAttachAsset}
           onDetachAsset={onDetachAsset}
           onRefreshAsset={onRefreshAsset}
+          onMagicPerspective={onMagicPerspective}
+          magicResult={magicResult}
+          onReceiveMagicResult={onReceiveMagicResult}
         />
       )}
       {selected.kind === 'shape' && (
@@ -1079,6 +1094,9 @@ function ImageInspector({
   onAttachAsset,
   onDetachAsset,
   onRefreshAsset,
+  onMagicPerspective,
+  magicResult,
+  onReceiveMagicResult,
 }: {
   el: ImageElement;
   palette: string[];
@@ -1090,6 +1108,9 @@ function ImageInspector({
   onAttachAsset?: (assetId: string) => void;
   onDetachAsset?: () => void;
   onRefreshAsset?: (assetId: string, dataUrl: string, fingerprint: string) => void;
+  onMagicPerspective?: (id: string) => void;
+  magicResult?: { nodeId: string; src: string } | null;
+  onReceiveMagicResult?: () => void;
 }) {
   const crop = el.crop;
   // asset khác (không phải asset chính ảnh này) — để gợi ý "dùng lại" trong dropdown.
@@ -1148,6 +1169,43 @@ function ImageInspector({
       {onOpenAdvanced && (
         <button type="button" onClick={() => onOpenAdvanced(el.id)} style={ghostBtn} title="Layers · mask · clone (mở /photo-editor)">
           <Wand2 size={12} /> Chỉnh ảnh nâng cao (Photoshop)
+        </button>
+      )}
+      {/* [marker: magic-phoi-canh] — vòng "Chỉnh phối cảnh" liên chặng (phiếu D2). Chỉ ảnh
+          CÓ assetId (tài sản liên kết) mới có đường về đúng chỗ; ảnh chưa liên kết thì bấm
+          "Đặt làm tài sản dùng chung" bên dưới trước. */}
+      {el.assetId && onMagicPerspective && (
+        <button
+          type="button"
+          onClick={() => onMagicPerspective(el.id)}
+          style={ghostBtn}
+          title="Gieo node Render bám ý (mảng) ở chặng Thiết kế 3D — chỉnh mask + phiếu duyệt + inpaint rồi nhận ảnh về đúng vị trí này"
+        >
+          <Sparkles size={12} /> Chỉnh phối cảnh ✨
+        </button>
+      )}
+      {el.assetId && magicResult && onReceiveMagicResult && (
+        <button
+          type="button"
+          onClick={onReceiveMagicResult}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            width: '100%',
+            marginTop: 6,
+            padding: '9px',
+            borderRadius: 10,
+            border: '1px solid var(--accent)',
+            background: 'var(--accent-soft)',
+            color: 'var(--accent)',
+            fontSize: 12,
+            cursor: 'pointer',
+          }}
+          title="Node Render bám ý đã chạy xong — bấm để thay ruột ảnh ở MỌI slide dùng chung tài sản này (giữ nguyên vị trí/kích thước, undo được)"
+        >
+          <ImageDown size={14} /> Nhận ảnh đã chỉnh
         </button>
       )}
       <Sub>Liên kết file trên máy</Sub>

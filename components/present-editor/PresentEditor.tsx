@@ -68,8 +68,16 @@ import {
   PHOTO_EDITOR_RETURN_KEY,
 } from '@/lib/photo-editor/handoff';
 import { stageHrefFrom } from '@/lib/project-scope';
+import { useRouter } from 'next/navigation';
 // [marker: focusEntity] — đọc `?focusEntity=` từ deep-link Bảng việc (lib/tasks/context.ts sinh).
 import { parseFocusEntity } from '@/lib/tasks/focus-entity';
+// [marker: magic-phoi-canh] — vòng "Chỉnh phối cảnh" liên chặng (phiếu demo-d2-vong-chinh):
+// gieo node ai.regionrender ở chặng 2 + nhận ảnh kết quả về đúng asset.
+import { seedPerspectiveEdit } from '@/lib/nodes/magic-perspective';
+import {
+  findPerspectiveResult,
+  appendPerspectiveProvenance,
+} from '@/lib/nodes/magic-perspective-core';
 import {
   createAssetFromElement,
   attachElementToAsset,
@@ -1775,6 +1783,53 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
     });
   }, [ed]);
 
+  /* ---- [marker: magic-phoi-canh] — vòng "Chỉnh phối cảnh" liên chặng (phiếu D2) ----
+   * ② Bấm nút (Inspector/menu chuột phải, chỉ ảnh CÓ assetId) → gieo node ai.regionrender
+   *   mang {assetId, deckId} vào flow chặng 2 (store zustand chung, đã đồng bộ đúng dự án
+   *   qua useProjectScopeSync) rồi điều hướng client-side sang /projects/[id]/render —
+   *   node được select sẵn, canvas fitView lúc mount là thấy.
+   * ④ Chiều VỀ (bán tự động trung thực — engine node KHÔNG có completion hook để cắm):
+   *   subscribe flow-store nodes; node magic chạy xong + ảnh khác src asset hiện tại →
+   *   Inspector hiện nút "Nhận ảnh đã chỉnh". Người bấm [T5] → setLinkedAssetSrc: MỌI
+   *   element cùng assetId giữ nguyên frame/vị trí, chỉ đổi ruột ảnh [T1].
+   * ⑤ Asset ghi thêm bước gia phả {loai:'grounded-render', nodeId, luc}. */
+  const router = useRouter();
+  // `flowNodes` đã subscribe sẵn ở trên (M-EMPTY-2) — dùng lại, không subscribe lần hai.
+  const onMagicPerspective = useCallback(
+    (elementId: string) => {
+      const el = ed.slide?.elements.find((e) => e.id === elementId);
+      if (!el || el.kind !== 'image' || !el.assetId) return;
+      seedPerspectiveEdit({ assetId: el.assetId, deckId: ed.deck.id, src: el.src });
+      // Điều hướng client-side (giữ store trong bộ nhớ — node vừa gieo còn nguyên; autosave
+      // flow tự chạy nền). Cùng dự án nên ensureProjectScope bên kia trả 'ready' ngay.
+      if (typeof window !== 'undefined') {
+        router.push(stageHrefFrom(window.location.pathname, 'render'));
+      }
+    },
+    [ed, router],
+  );
+  // Kết quả chờ nhận cho ảnh ĐANG CHỌN (memo theo nodes + deck — đổi node/đổi asset tự tính lại).
+  const magicResult = useMemo(() => {
+    const el = ed.selected;
+    if (!el || el.kind !== 'image' || !el.assetId) return null;
+    const asset = ed.deck.linkedAssets?.[el.assetId];
+    return findPerspectiveResult(flowNodes, el.assetId, ed.deck.id, asset?.src ?? el.src);
+  }, [flowNodes, ed.deck, ed.selected]);
+  const onReceiveMagicResult = useCallback(() => {
+    const el = ed.selected;
+    if (!magicResult || !el || el.kind !== 'image' || !el.assetId) return;
+    const assetId = el.assetId;
+    const { nodeId, src } = magicResult;
+    ed.update((d) => {
+      const prevProv = (d.linkedAssets?.[assetId] as { provenance?: unknown } | undefined)?.provenance;
+      const next = setLinkedAssetSrc(d, assetId, src);
+      d.linkedAssets = next.linkedAssets;
+      d.slides = next.slides;
+      const asset = d.linkedAssets?.[assetId] as ({ provenance?: unknown } & Record<string, unknown>) | undefined;
+      if (asset) asset.provenance = appendPerspectiveProvenance(prevProv, nodeId);
+    });
+  }, [ed, magicResult]);
+
   // Brand Kit (PS-1): mở panel Nhận diện + áp lại theme cho cả deck.
   const [brandKitOpen, setBrandKitOpen] = useState(false);
   const onApplyBrandKit = useCallback(
@@ -2109,6 +2164,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
               onEditTextCommit={onEditTextCommit}
               onEditImage={(id) => setImageEditId(id)}
               onEditImageAdvanced={openAdvancedEditor}
+              onMagicPerspective={onMagicPerspective}
               onReplaceImage={(id) => setReplaceDialogId(id)}
               onDropRefImage={onAddImageUrl}
               onDuplicate={onDuplicateSelected}
@@ -2252,6 +2308,9 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
                   onCreateAsset={onCreateAsset}
                   onAttachAsset={onAttachAsset}
                   onDetachAsset={onDetachAsset}
+                  onMagicPerspective={onMagicPerspective}
+                  magicResult={magicResult}
+                  onReceiveMagicResult={onReceiveMagicResult}
                   selectedIds={ed.selectedIds}
                   onSelect={ed.select}
                   onReorderElement={onReorderElement}

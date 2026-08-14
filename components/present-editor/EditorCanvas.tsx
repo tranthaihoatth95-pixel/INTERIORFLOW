@@ -60,6 +60,10 @@ interface Props {
   onEditImage: (id: string) => void;
   /** mở trình chỉnh ảnh nâng cao (Photoshop-level, /photo-editor) cho đúng ảnh `id`. */
   onEditImageAdvanced?: (id: string) => void;
+  /** [marker: magic-phoi-canh] — gieo node Render bám ý (mảng) ở chặng 2 cho ảnh CÓ assetId
+   * (vòng "Chỉnh phối cảnh" liên chặng, phiếu D2). Menu chỉ hiện mục này khi element là ảnh
+   * đã liên kết tài sản (có đường về đúng chỗ). */
+  onMagicPerspective?: (id: string) => void;
   /** mở hộp thoại "Thay ảnh…" (VIỆC 2d) cho đúng ảnh `id`. */
   onReplaceImage?: (id: string) => void;
   /** thả ảnh Reference (drag từ panel) lên sân khấu → thêm image element. */
@@ -119,6 +123,7 @@ export default function EditorCanvas({
   onEditTextCommit,
   onEditImage,
   onEditImageAdvanced,
+  onMagicPerspective,
   onDropRefImage,
   onDuplicate,
   onDelete,
@@ -518,6 +523,15 @@ export default function EditorCanvas({
               {onEditImageAdvanced && (
                 <MenuItem onClick={() => { onEditImageAdvanced(menu.id); setMenu(null); }}>Chỉnh nâng cao (Photoshop)</MenuItem>
               )}
+              {/* [marker: magic-phoi-canh] — chỉ ảnh CÓ assetId (tài sản liên kết) mới có
+                  đường về đúng chỗ sau khi chỉnh ở chặng 2. */}
+              {onMagicPerspective && (() => {
+                const im = slide.elements.find((e) => e.id === menu.id);
+                if (!im || im.kind !== 'image' || !im.assetId) return null;
+                return (
+                  <MenuItem onClick={() => { onMagicPerspective(menu.id); setMenu(null); }}>Chỉnh phối cảnh ✨</MenuItem>
+                );
+              })()}
               <MenuSep />
               <MenuItem shortcut="⌘D" onClick={() => { onDuplicate(); setMenu(null); }}>Nhân bản</MenuItem>
               <MenuItem shortcut="⌫" danger onClick={() => { onDelete(); setMenu(null); }}>Xoá</MenuItem>
