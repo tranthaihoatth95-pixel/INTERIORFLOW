@@ -75,5 +75,7 @@ Ràng buộc này cũng chữa đúng lời sếp trong DF2: *"các sắc độ 
 
 ## D · CẦN ĐỂ CHẠY MÁY
 1. Hoà chọn **M1/M2/M3** (và sửa dòng nào trong mục A nếu T đọc sai ý).
-2. Thả file vào `~/Downloads/IF-LOAT-ANH/`: 4-5 screenshot vào `loat-A-screenshot/`, 2 ảnh D5 vào `tham-chieu-B/`.
+2. Thả file vào **`~/Downloads/WESTLAKE-C4-RENDER/`** (đặt theo tên dự án — Hoà chốt 14/08):
+   `loat-A-screenshot/` 4-5 screenshot · `tham-chieu-B/` gồm `CHUAN-TONE-*` (2 ảnh D5 hoàn chỉnh) +
+   `VATLIEU-V2-*` (ảnh khách-sofa tone còn xám) + `THAM-*` (ảnh thảm) · kết quả máy ghi vào `ket-qua/`.
 Có 2 thứ đó là máy: đo tham chiếu ra số → áp CÙNG preset + CÙNG seed cho cả loạt → đo lại kiểm nhất quán → trình bảng lệch.
