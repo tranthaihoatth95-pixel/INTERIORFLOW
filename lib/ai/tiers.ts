@@ -144,6 +144,10 @@ export const TASK_CREDIT_COST: Record<AiTask, number> = {
   image2video: 8,
   image2videoMaster: 8,
   text2video: 8,
+  // imageTo3d: task này KHÔNG đi qua /api/jobs (output GLB, xem models.ts) nên giá ở đây chưa
+  // bao giờ bị trừ; khai 6 (giữa render 4 và video 8, theo giá fal TRELLIS ~0.1-0.3$/lượt) để
+  // Record<AiTask> đủ khoá + sẵn số khi có route riêng. Giá CHƯA chốt với Hoà — tạm, có ghi sổ.
+  imageTo3d: 6,
 };
 
 /**

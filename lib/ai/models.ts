@@ -104,6 +104,21 @@ export const AI_TASKS = {
     typicalMs: 9000,
   },
 
+  // ===== IMAGE → 3D MESH (pipeline import-ghe-tu-hinh, phiếu GI 14/08) =====
+  // [imageTo3d] Ảnh sản phẩm (nền trắng studio 1 góc) → mesh GLB có texture. Model: TRELLIS
+  // (Microsoft, host trên fal) — chọn vì rẻ + nhanh hơn hunyuan3d/v2 và ĐÃ PROOF THẬT 14/08
+  // bằng ghế Lincoln 327 (docs/bao-cao-phien/2026-08-14-GI-ghe-3d.md); hunyuan3d/v2 là ứng
+  // viên nâng chất lượng sau, CHƯA kiểm bằng call thật nên không khai bừa vào đây [T0].
+  // ⚠️ Output là FILE GLB (`model_mesh.url`), KHÔNG phải ảnh/video — `providers/fal.ts`
+  // jobStatus chỉ biết trích image/video nên task này KHÔNG đi qua /api/jobs + runImageJob;
+  // đường chạy thật là `lib/idfc-import/from-photo.ts` (server-only, subscribe queue fal trực
+  // tiếp, đọc model_mesh). Khai ở đây để MỘT bảng task→model (không rải model id trong code).
+  // Mesh là ƯỚC-HÌNH suy từ 1 ảnh (cờ inferred) — không phải hình học kỹ thuật đo được.
+  imageTo3d: {
+    falModel: 'fal-ai/trellis',
+    typicalMs: 60000,
+  },
+
   // ===== VIDEO (image/text → video) =====
   // Kling image-to-video: mượt cho pan/flythrough nội thất. Job lâu → mediaType 'video'.
   // Turbo Pro: nhanh + rẻ hơn (mặc định). Master: chất lượng cao hơn, chậm hơn.

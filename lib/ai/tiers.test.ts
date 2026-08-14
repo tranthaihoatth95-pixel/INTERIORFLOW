@@ -44,6 +44,7 @@ console.log('TASK_CREDIT_COST — đủ mọi AiTask, khớp đúng creditCost c
     image2video: 8, // registry.ts ai.image2video
     image2videoMaster: 8, // registry.ts ai.image2video (model Master)
     text2video: 8, // registry.ts ai.text2video
+    imageTo3d: 6, // lib/idfc-import/from-photo.ts (không qua /api/jobs — giá giữ chỗ, xem tiers.ts)
   };
   for (const t of allTasks) {
     ok(`giá "${t}" = ${expected[t]}`, costOfTask(t) === expected[t]);
