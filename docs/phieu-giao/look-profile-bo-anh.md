@@ -16,6 +16,12 @@
 - ĐIỀU KHOẢN RUỘT: [T6] "ánh xạ giá trị về thông số" = SỐ ĐO ĐƯỢC, cấm mô tả chữ suông ·
   [T5] phiếu trình người duyệt TRƯỚC khi áp loạt · [T2] tái dùng phiếu-4-cấp + mask sẵn có.
 
+## ①b ƯU TIÊN SỐ 1 — ẢNH THẬT CỦA HOÀ (nếu đã có)
+`~/Downloads/IF-LOAT-ANH/loat-A-screenshot/` (5 screenshot SketchUp cùng 1 căn: khách-TV ·
+khách-sofa · phòng ăn · bếp ×2 — Hoà gửi 14/08) + `~/Downloads/IF-LOAT-ANH/tham-chieu-B/`
+(đúng 1 ảnh tham chiếu). CÓ ảnh ở đây thì DÙNG BỘ NÀY, bỏ qua ① dưới. Thư mục rỗng = Hoà chưa
+thả, dùng ① để xây+kiểm engine, KHÔNG tự chọn ảnh tham chiếu thay Hoà [bài học 14/08].
+
 ## ① NGUYÊN LIỆU PROOF (có sẵn trên đĩa, KHÔNG cần Hoà gửi thêm)
 - Ảnh tham chiếu B: chọn 1 ảnh nội thất chất lượng cao trong `~/Downloads/ANH-THAM-KHAO/` (chọn ảnh
   có đủ trần/tường/sàn + ánh sáng rõ; ghi tên file đã chọn).
