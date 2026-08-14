@@ -38,6 +38,7 @@ import { RawStyle } from '@/components/filemanager/RawStyle';
 import { ClusterPanel } from './ClusterPanel';
 import { ItemThumb } from './ItemThumb';
 import { MaterialFormModal } from '@/components/materials/MaterialFormModal';
+import { Object3DToggle } from './Object3DToggle';
 import { LIBRARY_SHEET_CSS } from './library-sheet-css';
 import { LibraryToastHost, pushLibraryToast } from './LibraryToast';
 import { PublishModal } from './PublishModal';
@@ -78,6 +79,19 @@ const CARD_SIZE_OPTIONS: { id: LibCardSize; label: [string, string] }[] = [
   { id: 'md', label: ['Vừa', 'Medium'] },
   { id: 'lg', label: ['Lớn', 'Large'] },
 ];
+
+/** Cửa sổ xem 3D (Object3DWindow) cho asset "Ghế bar Lincoln 327" (proof CW 14/08,
+ * `docs/phieu-giao/ghe-3d-window-app.md`) — hình học CHUẨN-NÉT (`chuanNet`, `.obj`+`.mtl`) ưu tiên
+ * hơn GLB Trellis thô theo biên phiếu ("có bản chuẩn-nét thì dùng bản đó"). Nhận diện qua TÊN món
+ * — kho `LibraryAsset` chưa có cờ "có model 3D xem được" riêng; khi có cấu kiện 3D thứ hai, đường
+ * đúng là đọc tag `has3d:` từ `LibraryApiAsset` (`lib/library/db-items.ts`) thay vì so tên ở đây. */
+const OBJECT_3D_MODELS: { match: RegExp; glbUrl: string; mtlUrl?: string }[] = [
+  { match: /lincoln 327/i, glbUrl: '/library-assets/lincoln-327/lincoln-327-chuannet.obj', mtlUrl: '/library-assets/lincoln-327/lincoln-327-chuannet.mtl' },
+];
+function object3dModelFor(item: SheetItem): { glbUrl: string; mtlUrl?: string } | null {
+  const hit = OBJECT_3D_MODELS.find((m) => m.match.test(item.name));
+  return hit ? { glbUrl: hit.glbUrl, mtlUrl: hit.mtlUrl } : null;
+}
 
 const BAY_ICON: Record<string, LucideIcon> = {
   'cau-kien': Box,
@@ -718,6 +732,17 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                         {tr('Tham số', 'Param')}
                       </span>
                     )}
+                    {(() => {
+                      const model3d = object3dModelFor(it);
+                      return model3d ? (
+                        <Object3DToggle
+                          title={it.name}
+                          subtitle={tr('Hình học chuẩn-nét · mesh AI-sinh', 'Cleaned-up geometry · AI-generated mesh')}
+                          glbUrl={model3d.glbUrl}
+                          mtlUrl={model3d.mtlUrl}
+                        />
+                      ) : null;
+                    })()}
                   </ItemThumb>
                   <span className="mt">
                     <span className="a" style={{ display: 'block' }}>{it.name}</span>

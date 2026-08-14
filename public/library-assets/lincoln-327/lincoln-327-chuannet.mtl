@@ -1,0 +1,10 @@
+# InteriorFlow chuanNet MTL
+newmtl mat_primitive
+Kd 0.72 0.70 0.66
+Ks 0.04 0.04 0.04
+Ns 24
+newmtl mat_mesh
+Kd 1.0 1.0 1.0
+Ks 0.02 0.02 0.02
+Ns 10
+map_Kd lincoln-327-basecolor.png

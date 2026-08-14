@@ -237,6 +237,18 @@ export const LIBRARY_SHEET_CSS = `
 /* VIỆC 7 (08/08) — dấu hiệu "có tham số": GÓC ĐỐI DIỆN badge phạm vi (dưới-trái, không đè lên
    nhau) + tông --success (đặc tính TỐT của món, khác badge phạm vi chỉ là metadata trung tính). */
 .if-lib-root .badge.param{top:auto;right:auto;bottom:6px;left:6px;color:var(--success)}
+/* 14/08 (CW, docs/phieu-giao/ghe-3d-window-app.md) — nút bật/tắt cửa sổ Object3DWindow, GÓC RẢNH
+   duy nhất (badge phạm vi chiếm trên-phải, badge.param chiếm dưới-trái) ⇒ trên-trái. span
+   role=button (KHÔNG button — thẻ cha .it đã là button, cấm lồng interactive-trong-interactive),
+   cùng công thức blur token nửa --blur như .badge phía trên. CẤM backtick trong comment file
+   *-css.ts (đã tự phạm rồi tự sửa lúc viết dòng này — vỡ build 1 lần, y hệt bài học ghi ở :218). */
+.if-lib-root .obj3d-toggle{position:absolute;top:6px;left:6px;height:20px;padding:0 7px;
+       border-radius:max(4px, calc(var(--r-3) - 6px));background:var(--mat-card);
+       backdrop-filter:blur(calc(var(--blur) / 2));-webkit-backdrop-filter:blur(calc(var(--blur) / 2));
+       border:1px solid var(--border);color:var(--t2);font-size:9px;font-weight:700;letter-spacing:.03em;
+       display:flex;align-items:center;gap:3px;cursor:pointer;transition:color .15s,border-color .15s}
+.if-lib-root .obj3d-toggle:hover,.if-lib-root .obj3d-toggle[aria-pressed="true"]{color:var(--accent);border-color:var(--accent)}
+.if-lib-root .obj3d-toggle:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
 .if-lib-root .libft{flex:none;height:38px;display:flex;align-items:center;gap:10px;padding:0 14px;
        border-top:1px solid var(--mat-hairline);font-size:var(--fs-2xs);color:var(--t4)}
 /* "N mục trong kệ …" — dồn về phải, đứng trước nút "Đưa lên kệ". Cách dồn: CHỈ dòng gợi ý đầu
