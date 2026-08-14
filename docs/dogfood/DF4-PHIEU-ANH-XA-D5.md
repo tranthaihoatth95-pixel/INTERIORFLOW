@@ -38,17 +38,22 @@
 | V4+V5 Bếp (2 góc) | tủ trắng, đảo đá | ánh sáng bên · sắc độ tủ ≠ tường · đèn ray/hắt tủ bật |
 
 ## B2 · ⭐CẶP ĐỐI CHỨNG THẬT (Hoà gửi thêm 14/08) — quý nhất bộ dữ liệu
-Ảnh D5 mới = **CHÍNH view V2 (khách sofa)** của loạt screenshot → có **before/after cùng một
-view**: SketchUp thô ↔ D5 hoàn chỉnh. Đây là GROUND TRUTH, dùng 2 việc:
+⚠️ **HOÀ ĐÍNH CHÍNH 14/08: ảnh V2 này MỚI CHUẨN BỊ RENDER — TONE CÒN XÁM XỊT, KHÔNG PHẢI ĐÍCH.**
+⇒ Phân vai TÁCH BẠCH, cấm trộn:
+- **Ảnh V2 (mới) = tham khảo VẬT LIỆU + BỐ TRÍ ÁNH SÁNG** (đúng view, đúng đồ, đúng vị trí đèn/cửa) — **KHÔNG lấy tone/sắc độ/độ ấm của nó**.
+- **2 ảnh D5 hoàn chỉnh (phòng ngủ master + phòng khách đèn thả) = CHUẨN TONE/ÁNH SÁNG/NƯỚC HÌNH** — mọi thông số màu-sắc độ-nhiệt độ lấy từ đây.
+Máy khi đo: `LookProfile` (tone/WB/sắc độ/tương phản) CHỈ trích từ 2 ảnh hoàn chỉnh; ảnh V2 chỉ dùng
+để đối chiếu bố cục/vật liệu/vị trí nguồn sáng. Trộn nhầm = học phải tone xám, hỏng cả loạt.
+
+Ảnh V2 vẫn có giá trị hiếm — **cùng một view với screenshot**, dùng 2 việc:
 1. **ĐO ánh xạ chính xác** thay vì ước: cùng khung hình, cùng bố cục → sai khác luminance từng
    lớp/WB/tương phản/độ bão hoà giữa 2 ảnh CHÍNH LÀ hàm ánh xạ cần áp cho 4 view còn lại.
-2. **THƯỚC CHẤM ĐIỂM**: chạy thuật toán IF trên screenshot V2 → so kết quả với bản D5 thật này
-   → ra số "IF đạt bao nhiêu % so người render D5" — lần đầu đo được chất lượng engine, không cãi cảm tính.
+2. **THƯỚC ĐỐI CHIẾU BỐ CỤC/VẬT LIỆU** (không phải chấm điểm tone): kiểm IF có giữ đúng đồ, đúng vị trí, đúng chất vật liệu như bản dựng thật hay không.
 
 Đọc nhanh cặp này (T soi mắt): D5 thêm — cảnh ngoài cửa THẬT (trời + cỏ, thay trắng bệt) ·
 đèn cầu BẬT ấm · thảm từ mảng phẳng thành sợi dệt có chiều · rèm có nếp và bắt sáng · tường
 có texture hạt mịn · sàn đá phản chiếu mềm · tổng thể ấm lên rõ, sắc độ 3 lớp tách bạch.
-⇒ Củng cố M2: giữ nguyên bố cục/vật liệu, chỉ áp ÁNH SÁNG + CHẤT + SẮC ĐỘ.
+⇒ Củng cố M2: giữ nguyên bố cục/vật liệu (theo V2), áp ÁNH SÁNG + SẮC ĐỘ + NƯỚC HÌNH (theo 2 ảnh hoàn chỉnh).
 
 ## C · BA MỨC CƯỜNG ĐỘ ÁP — **HOÀ CHỌN 1**
 | Mức | Làm gì | Được / Mất |
