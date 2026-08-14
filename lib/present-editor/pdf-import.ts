@@ -407,16 +407,18 @@ function bytesToBase64(bytes: Uint8Array): string {
 }
 
 /**
- * Pixel thô (từ pdf.js: 1=grayscale · 3=RGB · 4=RGBA, 8-bit) → PNG dataURL LOSSLESS.
+ * Pixel thô (từ pdf.js: 1=grayscale · 3=RGB · 4=RGBA, 8-bit) → BYTE PNG LOSSLESS.
  * KHÔNG canvas (chạy được trong test Node lẫn browser), KHÔNG nén (deflate stored) — giữ nguyên
  * từng pixel [T0], tất định từng byte [T6]. Giá phải trả: file to (xem docstring đầu file, mục 2).
+ * D1b: TÁCH RA từ `rawPixelsToPngDataUrl` để đường `storeImage` (ảnh ra KHO ngoài deck — luật
+ * Smart Ingest) nhận thẳng byte, không phải giải base64 ngược lại.
  */
-export function rawPixelsToPngDataUrl(
+export function rawPixelsToPngBytes(
   data: Uint8Array | Uint8ClampedArray,
   width: number,
   height: number,
   channels: 1 | 3 | 4,
-): string {
+): Uint8Array {
   const colorType = channels === 1 ? 0 : channels === 3 ? 2 : 6;
   const rowBytes = width * channels;
   // mỗi scanline PNG mở đầu bằng 1 byte filter (0 = None).
@@ -444,7 +446,18 @@ export function rawPixelsToPngDataUrl(
     png.set(c, off);
     off += c.length;
   }
-  return `data:image/png;base64,${bytesToBase64(png)}`;
+  return png;
+}
+
+/** Vỏ dataURL của `rawPixelsToPngBytes` — đường NHÚNG THẲNG vào deck (hành vi cũ, giữ cho fixture
+ * nhỏ/test/fallback khi không có `storeImage` — xem `PdfImportOptions.storeImage`). */
+export function rawPixelsToPngDataUrl(
+  data: Uint8Array | Uint8ClampedArray,
+  width: number,
+  height: number,
+  channels: 1 | 3 | 4,
+): string {
+  return `data:image/png;base64,${bytesToBase64(rawPixelsToPngBytes(data, width, height, channels))}`;
 }
 
 /* ---- assetId tất định theo NỘI DUNG ảnh (phiếu ④.1: trùng ảnh 2 trang = CÙNG asset) ---- */
@@ -572,14 +585,51 @@ export interface PdfPageRange {
   end: number;
 }
 
+/** D1b — metadata kèm theo mỗi lần gọi `storeImage` (đủ để caller đặt tên/ghi nguồn ở kho). */
+export interface PdfStoredImageMeta {
+  /** assetId tất định theo nội dung pixel (`pdfImageAssetId`) — caller muốn khử trùng lặp ở kho
+   * thì dùng khoá này. */
+  assetId: string;
+  /** tên gợi nhớ, vd `Ảnh PDF trang 15 — hồ-sơ.pdf`. */
+  name: string;
+  /** trang 1-based nơi ảnh xuất hiện LẦN ĐẦU. */
+  page: number;
+  width: number;
+  height: number;
+  /** luôn `image/png` ở bậc 1 (PNG lossless thuần — xem `rawPixelsToPngBytes`). */
+  mime: 'image/png';
+}
+
 export interface PdfImportOptions {
   /** phạm vi trang 1-based, 2 đầu bao gồm — bỏ trống = TẤT CẢ trang. */
   pageRange?: PdfPageRange;
+  /**
+   * D1b — DANH SÁCH trang 1-based tuỳ ý (vd [15,16,22] — chọn đúng trang bếp/khách, không phải
+   * dải liên tục). CÓ `pages` thì `pageRange` BỊ BỎ QUA (2 cách khai cùng lúc là mơ hồ — ưu tiên
+   * cách cụ thể hơn). Lọc qua `normalizePages`: số lẻ/lặp/ngoài [1,total] bị loại; lọc xong RỖNG
+   * thì coi như không khai (cả file) — cùng triết lý `clampPageRange` "đầu vào rỗng/lạ → cả file,
+   * không chặn".
+   */
+  pages?: number[];
+  /**
+   * D1b — vá DF2-F1 theo luật Smart Ingest (chốt 11/08: gốc bất biến + proxy hiển thị): ảnh nhúng
+   * ĐẨY RA KHO qua callback này thay vì nhúng dataURL vào deck (file 47 trang toàn raster → deck
+   * JSON >1GB, "Invalid string length"). Lib này THUẦN — KHÔNG tự gọi API/fs; CALLER truyền hàm
+   * upload (Toolbar dùng POST /api/library sẵn có; script Node ghi file). Nhận byte PNG + meta,
+   * trả URL → `LinkedAsset.src`. NÉM LỖI ở 1 ảnh → ảnh đó fallback dataURL + ghi `imageWarnings`
+   * (khai thật, không nuốt); KHÔNG truyền → hành vi cũ y nguyên (dataURL, test cũ không vỡ) +
+   * cảnh báo tổng dung lượng nhúng khi vượt `EMBEDDED_IMAGE_WARN_BYTES`.
+   */
+  storeImage?: (bytes: Uint8Array, meta: PdfStoredImageMeta) => Promise<string>;
   /** gọi sau mỗi trang xử lý xong (`done` luôn ≤ `total` của phạm vi đã chọn) — nuôi LightArc. */
   onProgress?: (done: number, total: number) => void;
   /** tên file gốc — CHỈ dùng để ghi provenance (xem `provenanceNote`). Bỏ trống = "PDF" chung chung. */
   fileName?: string;
 }
+
+/** D1b — tổng byte ảnh NHÚNG dataURL vào deck vượt ngưỡng này (~20MB) thì ghi 1 dòng
+ * `imageWarnings` cảnh báo deck nặng (chỉ khi KHÔNG có đường `storeImage` hoặc nó fail). */
+export const EMBEDDED_IMAGE_WARN_BYTES = 20 * 1024 * 1024;
 
 /** Trên ngưỡng này (số trang CỦA FILE, không phải phạm vi), UI phải hỏi phạm vi trước khi convert
  * (phiếu ③, SPEC-NGON-NGU) — hằng số DÙNG CHUNG giữa module này và UI, 1 nguồn duy nhất. */
@@ -593,6 +643,47 @@ export function clampPageRange(range: PdfPageRange | undefined, total: number): 
   const endRaw = Math.floor(range.end) || total;
   const end = Math.max(start, Math.min(endRaw, total));
   return { start, end };
+}
+
+/**
+ * D1b — chuẩn hoá danh sách trang tuỳ ý: giữ số NGUYÊN trong [1,total], bỏ lặp, SẮP TĂNG DẦN
+ * (slide ra đúng thứ tự trang trong file — cùng bất biến "ĐÚNG thứ tự trang" của `PdfImportResult`).
+ * Lọc xong rỗng → `[]` (caller `pdfToDeck` hiểu là "không khai" = cả file, xem `PdfImportOptions.pages`).
+ */
+export function normalizePages(pages: number[] | undefined, total: number): number[] {
+  if (!pages || total <= 0) return [];
+  const seen = new Set<number>();
+  for (const p of pages) {
+    const n = Math.floor(p);
+    if (Number.isFinite(n) && n >= 1 && n <= total) seen.add(n);
+  }
+  return [...seen].sort((a, b) => a - b);
+}
+
+/**
+ * D1b — phân tích chuỗi CHỌN TRANG dạng danh sách: "15-22", "5", "1,3,7-9" (dấu phẩy/chấm phẩy
+ * tách cụm, mỗi cụm là 1 số hoặc 1 dải a-b). Trả danh sách đã `normalizePages`; rỗng/không hiểu
+ * cụm nào → null (caller coi như "tất cả" — cùng triết lý `parsePageRangeInput`, không chặn vì
+ * gõ sai cú pháp). Cụm hiểu được thì giữ, cụm rác thì bỏ qua (khoan dung từng phần).
+ */
+export function parsePagesInput(input: string, total: number): number[] | null {
+  const t = (input ?? '').trim();
+  if (!t) return null;
+  const out: number[] = [];
+  for (const part of t.split(/[,;]/)) {
+    const p = part.trim();
+    if (!p) continue;
+    const range = /^(\d+)\s*-\s*(\d+)$/.exec(p);
+    if (range) {
+      const r = clampPageRange({ start: Number(range[1]), end: Number(range[2]) }, total);
+      for (let n = r.start; n <= r.end; n += 1) out.push(n);
+      continue;
+    }
+    const single = /^(\d+)$/.exec(p);
+    if (single) out.push(Number(single[1]));
+  }
+  const norm = normalizePages(out, total);
+  return norm.length > 0 ? norm : null;
 }
 
 /**
@@ -785,8 +876,14 @@ export async function pdfToDeck(
 
   const total = pdf.numPages;
   if (total <= 0) throw new Error('PDF không có trang nào.');
+  // D1b — `pages` (danh sách tuỳ ý) thắng `pageRange` (dải liên tục); cả hai vắng/rỗng = cả file.
+  const explicitPages = normalizePages(opts.pages, total);
   const range = clampPageRange(opts.pageRange, total);
-  const rangeCount = range.end - range.start + 1;
+  const pageList: number[] =
+    explicitPages.length > 0
+      ? explicitPages
+      : Array.from({ length: range.end - range.start + 1 }, (_, i) => range.start + i);
+  const rangeCount = pageList.length;
 
   let itemsByPage: PdfTextItem[][];
   try {
@@ -804,11 +901,13 @@ export async function pdfToDeck(
   const pendingAttach: Array<{ slideId: string; elementId: string; assetId: string }> = [];
   const fileLabel = opts.fileName || 'PDF';
   let done = 0;
+  // D1b — tổng byte PNG NHÚNG dataURL vào deck (đường storeImage KHÔNG tính — ảnh đã ra kho).
+  let embeddedBytes = 0;
 
   // D1 — bảng mã toán tử pdf.js, lấy 1 lần cho cả file (extractImagesWithBbox cần so `fnArray`).
   const { OPS } = await unpdf.getResolvedPDFJS();
 
-  for (let n = range.start; n <= range.end; n += 1) {
+  for (const n of pageList) {
     try {
       const page = await pdf.getPage(n);
       const view = page.view; // [x0, y0, x1, y1] point — KHÔNG giả định A4/16:9 (xem docstring)
@@ -835,10 +934,36 @@ export async function pdfToDeck(
           if (!linkedAssets[assetId]) {
             // ảnh mới gặp lần đầu — encode PNG 1 LẦN cho mỗi nội dung (trang sau trùng ảnh
             // dùng lại src qua asset, không encode lại — trùng ảnh 2 trang = CÙNG asset [T1]).
+            const pngBytes = rawPixelsToPngBytes(im.data, im.width, im.height, im.channels);
+            const assetName = `Ảnh PDF trang ${n}`;
+            // D1b — đường KHO (Smart Ingest): có storeImage thì src = URL kho, deck chỉ giữ con
+            // trỏ; lỗi/thiếu → fallback dataURL (hành vi cũ) + khai vào imageWarnings.
+            let src = '';
+            if (opts.storeImage) {
+              try {
+                src = await opts.storeImage(pngBytes, {
+                  assetId,
+                  name: assetName,
+                  page: n,
+                  width: im.width,
+                  height: im.height,
+                  mime: 'image/png',
+                });
+              } catch (err) {
+                imageWarnings.push({
+                  page: n,
+                  reason: `không lưu được ảnh ra kho (${err instanceof Error ? err.message : String(err)}) — nhúng dataURL thay thế, deck sẽ nặng hơn`,
+                });
+              }
+            }
+            if (!src) {
+              src = `data:image/png;base64,${bytesToBase64(pngBytes)}`;
+              embeddedBytes += pngBytes.length;
+            }
             linkedAssets[assetId] = {
               id: assetId,
-              src: rawPixelsToPngDataUrl(im.data, im.width, im.height, im.channels),
-              name: `Ảnh PDF trang ${n}`,
+              src,
+              name: assetName,
               updatedAt: Date.now(),
               provenance: {
                 loai: 'pdf',
@@ -911,6 +1036,16 @@ export async function pdfToDeck(
 
   if (slides.length > 0) {
     slides[0] = { ...slides[0], elements: [provenanceNote(fileLabel), ...slides[0].elements] };
+  }
+
+  // D1b — deck ôm quá nhiều byte ảnh nhúng (không có/không dùng được đường kho) → cảnh báo 1 dòng,
+  // khai thật thay vì để người dùng gặp "Invalid string length"/tab chết mà không biết vì sao.
+  // page: 0 = cảnh báo CẤP FILE, không thuộc trang nào.
+  if (embeddedBytes > EMBEDDED_IMAGE_WARN_BYTES) {
+    imageWarnings.push({
+      page: 0,
+      reason: `tổng ảnh nhúng thẳng vào deck ~${Math.round(embeddedBytes / 1048576)}MB (ngưỡng ${Math.round(EMBEDDED_IMAGE_WARN_BYTES / 1048576)}MB) — nên nhập qua app (ảnh tự đẩy ra Thư viện) hoặc chọn ít trang hơn`,
+    });
   }
 
   return { slides, total, converted: slides.length + warnings.length, scanPages, warnings, linkedAssets, imageWarnings };

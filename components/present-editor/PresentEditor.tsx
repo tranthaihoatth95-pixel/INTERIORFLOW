@@ -439,11 +439,26 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
    */
   useEffect(() => {
     const onImportPdf = (ev: Event) => {
-      const detail = (ev as CustomEvent<{ slides: EditorSlide[]; message: string }>).detail;
+      const detail = (
+        ev as CustomEvent<{
+          slides: EditorSlide[];
+          linkedAssets?: Record<string, import('@/lib/present-editor/model').LinkedAsset>;
+          message: string;
+        }>
+      ).detail;
       if (!detail?.slides?.length) return;
       const insertAt = ed.deck.slides.length;
       ed.update((d) => {
         d.slides.push(...detail.slides);
+        // D1b — merge registry ảnh trích từ PDF vào deck (hợp đồng PdfImportResult.linkedAssets).
+        // assetId là hash NỘI DUNG pixel → id trùng = cùng ảnh; GIỮ bản đang có (người dùng có thể
+        // đã sửa src qua panel linked-assets — không ghi đè sau lưng, luật L5).
+        if (detail.linkedAssets) {
+          d.linkedAssets = d.linkedAssets ?? {};
+          for (const [id, asset] of Object.entries(detail.linkedAssets)) {
+            if (!d.linkedAssets[id]) d.linkedAssets[id] = asset;
+          }
+        }
       });
       ed.selectSlide(insertAt);
       setExportMsg({ ok: true, text: detail.message });

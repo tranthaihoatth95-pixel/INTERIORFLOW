@@ -280,27 +280,61 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
     const say = (ok: boolean, text: string) =>
       window.dispatchEvent(new CustomEvent('present:pdf-import-done', { detail: { ok, text } }));
     try {
-      const { pdfToDeck, pdfPageCount, pdfImportSummary, parsePageRangeInput, PDF_RANGE_PROMPT_THRESHOLD } =
+      const { pdfToDeck, pdfPageCount, pdfImportSummary, parsePagesInput, PDF_RANGE_PROMPT_THRESHOLD } =
         await import('@/lib/present-editor/pdf-import');
       const buf = await f.arrayBuffer();
       const total = await pdfPageCount(buf);
-      let pageRange: { start: number; end: number } | undefined;
+      // D1b — chọn TRANG TUỲ Ý (danh sách "15-22,30"), không chỉ dải liên tục: hồ sơ thật 47
+      // trang thường chỉ cần vài trang bếp/khách/vệ sinh nằm rải rác (DF2-C4 Westlake).
+      let pages: number[] | undefined;
       if (total > PDF_RANGE_PROMPT_THRESHOLD) {
         const input = window.prompt(
-          `"${f.name}" có ${total} trang — nhập phạm vi muốn chuyển (vd "1-20"), để trống = cả ${total} trang:`,
+          `"${f.name}" có ${total} trang — nhập trang muốn chuyển (vd "1-20" hoặc "15-22,30"), để trống = cả ${total} trang:`,
           '',
         );
         if (input === null) {
           say(false, `Đã huỷ nhập "${f.name}".`);
           return;
         }
-        pageRange = parsePageRangeInput(input, total) ?? undefined;
+        pages = parsePagesInput(input, total) ?? undefined;
       }
-      const rangeTotal = pageRange ? pageRange.end - pageRange.start + 1 : total;
+      const rangeTotal = pages ? pages.length : total;
       setPdfProgress({ fileName: f.name, done: 0, total: rangeTotal });
+      /**
+       * D1b — vá DF2-F1 (luật Smart Ingest): ảnh nhúng PDF đẩy ra KHO Thư viện qua POST
+       * /api/library SẴN CÓ (cùng đường LibraryPanel/ProjectSelect upload — không route mới),
+       * deck chỉ giữ URL `/api/library/{id}/file` ⇒ deck JSON còn cỡ KB thay vì >1GB dataURL
+       * (file 47 trang raster từng làm chết tab). Lib pdf-import THUẦN — nó không biết API,
+       * mình truyền hàm; ném lỗi (chưa đăng nhập/ảnh >25MB bị 413…) thì lib tự fallback dataURL
+       * + ghi imageWarnings, người dùng vẫn nhập được (khai thật trong summary, không hộp đen).
+       */
+      const storeImage = async (bytes: Uint8Array, meta: { assetId: string; name: string; mime: string }) => {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(reader.error ?? new Error('đọc bytes ảnh thất bại'));
+          reader.readAsDataURL(new Blob([bytes as BlobPart], { type: meta.mime }));
+        });
+        const r = await fetch('/api/library', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: `${meta.name} — ${f.name}`,
+            category: 'Style dàn trang',
+            tags: 'pdf-import',
+            usage: 'slide',
+            dataUrl,
+          }),
+        });
+        if (!r.ok) throw new Error(`kho Thư viện trả ${r.status}`);
+        const j = (await r.json()) as { url?: string };
+        if (!j.url) throw new Error('kho Thư viện không trả url');
+        return j.url;
+      };
       const res = await pdfToDeck(buf, {
         fileName: f.name,
-        pageRange,
+        pages,
+        storeImage,
         onProgress: (done, tot) => setPdfProgress({ fileName: f.name, done, total: tot }),
       });
       if (!res.slides.length) {
@@ -309,7 +343,10 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
       }
       window.dispatchEvent(
         new CustomEvent('present:pdf-import-request', {
-          detail: { slides: res.slides, message: pdfImportSummary(f.name, res) },
+          // D1b — kèm linkedAssets: hợp đồng của pdf-import.ts (docstring PdfImportResult) bắt
+          // caller merge registry vào deck — trước đây quên, element hiển thị đúng nhưng mất tính
+          // "sửa 1 lần đổi mọi nơi". PresentEditor#onImportPdf nhận và merge.
+          detail: { slides: res.slides, linkedAssets: res.linkedAssets, message: pdfImportSummary(f.name, res) },
         }),
       );
     } catch (err) {

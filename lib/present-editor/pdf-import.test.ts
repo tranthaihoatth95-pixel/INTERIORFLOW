@@ -36,6 +36,10 @@ import {
   clampPageRange,
   parsePageRangeInput,
   rawPixelsToPngDataUrl,
+  rawPixelsToPngBytes,
+  normalizePages,
+  parsePagesInput,
+  EMBEDDED_IMAGE_WARN_BYTES,
   pdfImageAssetId,
   ctmToImageBbox,
   mtxConcat,
@@ -390,6 +394,91 @@ function buildImagePdf(): Uint8Array {
     ok('[ảnh] PDF không ảnh → linkedAssets rỗng', Object.keys(res.linkedAssets).length === 0);
     ok('[ảnh] PDF không ảnh → imageWarnings rỗng', res.imageWarnings.length === 0);
     ok('[ảnh] summary PDF không ảnh vẫn "CHỈ lớp CHỮ"', pdfImportSummary('x.pdf', res).includes('CHỈ lớp CHỮ'));
+  }
+
+  /* ══════════════ D1b — pages tuỳ ý + storeImage (vá DF2-F1, phiếu demo-d1b-proxy-pages) ══════════════ */
+
+  /* ── normalizePages / parsePagesInput thuần ── */
+  {
+    ok('[D1b] normalizePages lọc + dedupe + sắp tăng', JSON.stringify(normalizePages([22, 15, 15, 999, -1, 16.7], 47)) === '[15,16,22]');
+    ok('[D1b] normalizePages undefined → []', normalizePages(undefined, 47).length === 0);
+    ok('[D1b] parsePagesInput "15-22" ra dải đủ 8 trang', JSON.stringify(parsePagesInput('15-22', 47)) === '[15,16,17,18,19,20,21,22]');
+    ok('[D1b] parsePagesInput "1,3,7-9" ra danh sách rời', JSON.stringify(parsePagesInput('1,3,7-9', 47)) === '[1,3,7,8,9]');
+    ok('[D1b] parsePagesInput "5" ra [5]', JSON.stringify(parsePagesInput('5', 47)) === '[5]');
+    ok('[D1b] parsePagesInput rỗng = null (tất cả)', parsePagesInput('', 47) === null);
+    ok('[D1b] parsePagesInput rác = null (không chặn)', parsePagesInput('lung tung', 47) === null);
+    ok('[D1b] parsePagesInput khoan dung từng phần ("3,rác,5" → [3,5])', JSON.stringify(parsePagesInput('3,rác,5', 47)) === '[3,5]');
+  }
+
+  /* ── pdfToDeck với pages: chọn đúng trang, thắng pageRange ── */
+  {
+    const fixturePath = join(process.cwd(), 'lib/present-editor/__fixtures__/pdf-import-sample.pdf');
+    const bytes = new Uint8Array(readFileSync(fixturePath));
+    const progressCalls: Array<[number, number]> = [];
+    const res = await pdfToDeck(bytes, {
+      pages: [2],
+      onProgress: (done, total) => progressCalls.push([done, total]),
+    });
+    ok('[D1b] pages [2] → 1 slide (trang scan), total vẫn = 2', res.slides.length === 1 && res.total === 2);
+    ok('[D1b] pages [2] → đúng trang scan số 2', res.scanPages.length === 1 && res.scanPages[0] === 2);
+    ok('[D1b] onProgress total = số trang ĐÃ CHỌN (1)', progressCalls.length === 1 && progressCalls[0][1] === 1);
+
+    const res2 = await pdfToDeck(bytes, { pages: [1], pageRange: { start: 1, end: 2 } });
+    ok('[D1b] pages thắng pageRange (chỉ 1 slide trang 1)', res2.slides.length === 1 && res2.scanPages.length === 0);
+
+    const res3 = await pdfToDeck(bytes, { pages: [999, -4] });
+    ok('[D1b] pages toàn số rác → coi như không khai = cả file', res3.slides.length === 2);
+  }
+
+  /* ── storeImage: ảnh ra kho, deck chỉ giữ URL ── */
+  {
+    const calls: Array<{ bytes: Uint8Array; meta: { assetId: string; name: string; page: number; width: number; height: number; mime: string } }> = [];
+    const res = await pdfToDeck(buildImagePdf(), {
+      fileName: 'concept-anh.pdf',
+      storeImage: async (bytes, meta) => {
+        calls.push({ bytes, meta });
+        return `/api/library/fake-${meta.assetId}/file`;
+      },
+    });
+    ok('[D1b] storeImage gọi ĐÚNG 1 lần (ảnh trùng 2 trang = 1 asset, encode/lưu 1 lần)', calls.length === 1);
+    ok('[D1b] bytes đưa cho storeImage là PNG thật (chữ ký \\x89PNG)',
+      calls[0]?.bytes[0] === 0x89 && calls[0]?.bytes[1] === 0x50 && calls[0]?.bytes[2] === 0x4e && calls[0]?.bytes[3] === 0x47);
+    ok('[D1b] meta.mime = image/png + meta.page = 1 + kích thước 2×2',
+      calls[0]?.meta.mime === 'image/png' && calls[0]?.meta.page === 1 && calls[0]?.meta.width === 2 && calls[0]?.meta.height === 2);
+    const assetId = Object.keys(res.linkedAssets)[0];
+    ok('[D1b] meta.assetId = assetId trong registry', calls[0]?.meta.assetId === assetId);
+    const asset = res.linkedAssets[assetId];
+    ok('[D1b] asset.src = URL kho (KHÔNG phải dataURL)', asset?.src === `/api/library/fake-${assetId}/file`);
+    ok('[D1b] không imageWarnings khi kho nhận đủ', res.imageWarnings.length === 0);
+    const s1img = res.slides[0].elements.find((e) => e.kind === 'image') as ImageElement | undefined;
+    ok('[D1b] element.src đồng bộ = URL kho qua attachElementToAsset', s1img?.src === asset?.src);
+    ok('[D1b] deck JSON không còn ôm dataURL ảnh nào',
+      !JSON.stringify({ slides: res.slides, linkedAssets: res.linkedAssets }).includes('data:image/png'));
+  }
+
+  /* ── storeImage NÉM LỖI → fallback dataURL + khai imageWarnings (không chết, không nuốt) ── */
+  {
+    const res = await pdfToDeck(buildImagePdf(), {
+      fileName: 'concept-anh.pdf',
+      storeImage: async () => {
+        throw new Error('kho Thư viện trả 401');
+      },
+    });
+    const asset = res.linkedAssets[Object.keys(res.linkedAssets)[0]];
+    ok('[D1b] storeImage lỗi → src fallback dataURL', (asset?.src ?? '').startsWith('data:image/png;base64,iVBOR'));
+    ok('[D1b] storeImage lỗi → có imageWarning nêu rõ nguyên nhân',
+      res.imageWarnings.some((w) => w.reason.includes('không lưu được ảnh ra kho') && w.reason.includes('401')));
+    ok('[D1b] slide vẫn ra đủ (lỗi kho không giết trang)', res.slides.length === 2 && res.warnings.length === 0);
+  }
+
+  /* ── rawPixelsToPngBytes ↔ rawPixelsToPngDataUrl nhất quán ── */
+  {
+    const px = new Uint8Array([255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 255]);
+    const bytes = rawPixelsToPngBytes(px, 2, 2, 3);
+    const url = rawPixelsToPngDataUrl(px, 2, 2, 3);
+    ok('[D1b] dataURL là đúng base64 của bytes (1 encoder, 2 vỏ)',
+      url === `data:image/png;base64,${Buffer.from(bytes).toString('base64')}`);
+    ok('[D1b] ngưỡng cảnh báo nhúng = 20MB', EMBEDDED_IMAGE_WARN_BYTES === 20 * 1024 * 1024);
   }
 
   console.log(`\n${pass} pass · ${fail} fail`);
