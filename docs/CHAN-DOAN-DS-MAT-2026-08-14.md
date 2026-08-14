@@ -40,3 +40,14 @@ Gallery đứng vững khổ hẹp (chip wrap gọn, card nguồn/giấy phép r
 |---|---|---|
 | B7 | **Vị trí nút/toolbar chưa smart — thao tác rời rạc, di chuột khắp màn mới xong việc** (Hoà) | Đúng hệ quả L1 (3 khuôn toolbar) + chưa áp NT-1 (tool nổi SÁT VẬT theo selection) + chưa quy hoạch quãng đường chuột (Fitts: lệnh hay dùng phải gần nơi đang làm). Vào phạm vi mock KB-1: toolbar một khuôn + floating-tools-theo-chọn + đo quãng chuột trước/sau trên 3 tác vụ mẫu |
 | B8 | **MVP chặng 3 chôn sâu: "800 bước mới tới AI", ô AI nửa prompt nửa form** (Hoà) | Đường thật hiện nay: mở chặng → picker loại → TaskFirstStart (3 lối, KHÔNG có lối Magic) → editor → panel phải tab Thiết kế → cuộn card "Magic tạo hồ sơ" (GenerateFlow.tsx:148) → thêm ảnh → chạy = 6-7 bước. Chốt 07/08 đã cho auto-deck-1-click + người duyệt ⇒ Magic phải là MỘT LỐI NGAY TaskFirstStart; ô nhập tách 2 vai rõ: PROMPT-BAR AI đúng nghĩa (ref K12/C9 — 3 pin AI-prompt-bar) ≠ form dữ liệu. Entry `present-magic-cua-vao` |
+
+## BỔ SUNG 14/08 đêm — loạt chỉ đạo kiến trúc UI của Hoà (B9-B12 + khung 4 vùng)
+| # | Finding/Chỉ đạo | Chẩn |
+|---|---|---|
+| B9 | **Điều hướng workspace "1 nơi 3 chặng ngã, bấm lui hơi điên"** | luồng back/chuyển chặng không nhất quán — cần mô hình điều hướng một khuôn (breadcrumb + Về-chặng-đang-dở + ⌘K), vào phạm vi khung |
+| B10 | **Tool "trưng bày icon ngoài chợ, tràn ra hết — không group-by/collapse"**; đối thủ "list hoá đơn tiền điện" cũng tệ — IF phải NHÓM như đối thủ làm nhưng gọn hơn | đúng NT-4 + N2: nhóm tool collapse theo danh mục quen tay (mental model đối thủ), pro mở sâu |
+| B11 | **Màu nhấn rải rác** | trái NT-2/NT-6: mỗi màn ĐÚNG 1 hành động chính mang accent — cần audit accent khi áp khung |
+| B12 | **Tổng thể không canh grid, xô lệch cấp chi tiết** | cần lưới đặt-phần-tử (spacing tokens áp theo khung mới) + máy soi thẳng hàng bổ sung vào soi:hinh-hoc (đợt sau) |
+
+### KHUNG 4 VÙNG (Hoà vẽ 14/08 đêm — nguồn cho mock KB-KHUNG)
+TOP = tác vụ CƠ BẢN (tệp/xuất/undo/tìm) · TRÁI = sidebar NHÓM TOOL group-by collapse (icon+nhãn, thứ tự quen tay đối thủ) · PHẢI = MỘT ô CÂY QUẢN LÝ thống nhất 3 chặng (layer 2D / scene 3D / trang Present — cùng chỗ, cùng khuôn) · cạnh đáy = CỤM CHAT NHÓM + LM **thay ô Vitals** (bỏ pill Vitals riêng — Vitals hoà vào cụm chat, đúng CHOT-VITALS-LM-CHAT 2 kênh).
