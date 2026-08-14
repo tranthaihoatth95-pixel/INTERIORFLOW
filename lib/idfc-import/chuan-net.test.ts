@@ -9,6 +9,7 @@
 import {
   chuanNet,
   chuanNetGeometry,
+  circumCircle3,
   fitCylinderPts,
   fitTorusPts,
   parseGlbGeometry,
@@ -16,6 +17,9 @@ import {
   rebuildTorusMm,
   type GlbGeometry,
 } from './chuan-net';
+
+/** bộ ba toạ độ — khớp kiểu V3 nội bộ của chuan-net (module không xuất kiểu đó ra ngoài) */
+type V3T = [number, number, number];
 
 let pass = 0;
 let fail = 0;
@@ -49,6 +53,16 @@ function torusAt(soup: Soup, cy: number, R: number, r: number, nu = 40, nv = 12)
     const rho = R + r * Math.cos(b);
     return [rho * Math.cos(a), cy + r * Math.sin(b), rho * Math.sin(a)];
   }, nu, nv, true);
+}
+/** Xuyến trục X (mặt phẳng vòng ĐỨNG) — khuôn của vòng tay vịn. `gapDeg` cắt bớt cung để dựng ca
+ * "vòng hở", thứ mà luật phủ ≥300° phải từ chối. */
+function ringXInto(soup: Soup, cx: number, cy: number, R: number, r: number, gapDeg: number) {
+  const span = (360 - gapDeg) / 360;
+  addQuadGrid(soup, (u, v) => {
+    const a = u * span * 2 * Math.PI; const b = v * 2 * Math.PI;
+    const rho = R + r * Math.cos(b);
+    return [cx + r * Math.sin(b), cy + rho * Math.cos(a), rho * Math.sin(a)];
+  }, 56, 12, gapDeg === 0);
 }
 function boxAt(soup: Soup, cx: number, cy: number, cz: number, w: number, h: number, d: number) {
   const base = soup.positions.length / 3;
@@ -204,6 +218,113 @@ console.log('chuanNetGeometry — mesh tổng hợp: 4 chân + vòng + nệm + b
   const recipe = JSON.parse(res.recipeJson) as { marker: string; parts: Array<{ loai: string; buildOp?: { op: string } }> };
   ok('recipe marker chuanNet', recipe.marker === 'chuanNet');
   ok('recipe: mảnh primitive mang buildOp revolve', recipe.parts.filter((p) => p.buildOp?.op === 'revolve').length === cyls.length + tors.length);
+}
+
+/* ── ⑤ CN-F1 — dedupe KHÔNG lệch chỉ số vt, và trục V lật đúng quy ước OBJ ──
+ * Hai khẳng định trong MỘT fixture, vì chúng dễ che nhau: nếu chỉ kiểm "có vt" thì cả hai lỗi
+ * đều lọt. Fixture cố ý có SEAM UV (hai tam giác dùng chung vị trí nhưng KHÁC UV) — đúng ca mà
+ * dedupe theo-vị-trí-suông sẽ gộp nhầm rồi kéo lệch mọi chỉ số phía sau. */
+console.log('CN-F1 — dedupe giữ nguyên UV từng mặt + trục V lật sang quy ước OBJ');
+{
+  // 2 tam giác, đỉnh 1 và 2 TRÙNG VỊ TRÍ đỉnh 4 và 5 nhưng UV khác ⇒ không được gộp
+  const positions = new Float32Array([
+    0, 0, 0, /**/ 1, 0, 0, /**/ 1, 1, 0,
+    0, 0, 0, /**/ 1, 1, 0, /**/ 0, 1, 0,
+  ]);
+  const uvs = new Float32Array([
+    0.10, 0.20, /**/ 0.30, 0.40, /**/ 0.50, 0.60,
+    0.70, 0.80, /**/ 0.15, 0.25, /**/ 0.35, 0.45,
+  ]);
+  const geom: GlbGeometry = { positions, uvs, indices: new Uint32Array([0, 1, 2, 3, 4, 5]) };
+  const res = chuanNetGeometry(geom, { hMm: 1000 });
+
+  // đọc lại OBJ như một trình xem sẽ đọc
+  const vt: [number, number][] = [];
+  const faces: number[][] = [];
+  for (const line of res.obj.split('\n')) {
+    if (line.startsWith('vt ')) { const p = line.slice(3).trim().split(/\s+/).map(Number); vt.push([p[0], p[1]]); }
+    else if (line.startsWith('f ')) faces.push(line.slice(2).trim().split(/\s+/).map((t) => Number(t.split('/')[1])));
+  }
+  ok('2 mặt ghi ra OBJ', faces.length === 2);
+  ok('SEAM giữ nguyên: 6 vt riêng, không gộp nhầm', vt.length === 6);
+
+  let lechUv = 0; let lechFlip = 0;
+  for (let t = 0; t < 2; t++) for (let k = 0; k < 3; k++) {
+    const src = geom.indices[3 * t + k];
+    const got = vt[faces[t][k] - 1];
+    if (!got) { lechUv += 1; continue; }
+    if (Math.abs(got[0] - uvs[2 * src]) > 1e-4) lechUv += 1;            // U phải y nguyên
+    if (Math.abs(got[1] - (1 - uvs[2 * src + 1])) > 1e-4) lechFlip += 1; // V phải là 1 − v
+  }
+  ok('chỉ số vt trỏ ĐÚNG UV nguồn của từng mặt (dedupe vô can)', lechUv === 0);
+  ok('trục V đã lật 1−v cho quy ước OBJ/MTL (map.flipY=true)', lechFlip === 0);
+  ok('không mặt nào trỏ vt ngoài biên', faces.every((f) => f.every((i) => i >= 1 && i <= vt.length)));
+}
+
+/* ── ⑥ CN-F2 — primitive KẾ THỪA Kd từ texel mảng mesh nó thay ── */
+console.log('CN-F2 — Kd trung vị từ atlas thay cho xám cứng');
+{
+  const soup: Soup = { positions: [], indices: [] };
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) cylinderAt(soup, 0.2 * sx, 0.2 * sz, 0.02, -0.5, 0.15, 20, 24);
+  boxAt(soup, 0, 0.225, 0, 0.45, 0.15, 0.45);
+  const nV = soup.positions.length / 3;
+  // atlas 2×1: nửa TRÁI nâu (128,80,40), nửa PHẢI xanh (0,200,0). Mọi đỉnh UV u<0.5 ⇒ chỉ nâu.
+  const uvs = new Float32Array(nV * 2);
+  for (let i = 0; i < nV; i++) { uvs[2 * i] = 0.25; uvs[2 * i + 1] = 0.5; }
+  const texRgba = { width: 2, height: 1, channels: 4, data: new Uint8Array([128, 80, 40, 255, 0, 200, 0, 255]) };
+  const geom: GlbGeometry = { positions: new Float32Array(soup.positions), uvs, indices: new Uint32Array(soup.indices) };
+  const res = chuanNetGeometry(geom, { hMm: 800, texRgba });
+  const cyls = res.parts.filter((p) => p.loai === 'cylinder');
+  ok('vẫn tách được 4 chân', cyls.length === 4);
+  const kd = cyls.every((p) => p.loai === 'cylinder' && p.kdSrgb !== null
+    && Math.abs(p.kdSrgb[0] - 128 / 255) < 0.02
+    && Math.abs(p.kdSrgb[1] - 80 / 255) < 0.02
+    && Math.abs(p.kdSrgb[2] - 40 / 255) < 0.02);
+  ok('mỗi chân mang Kd nâu của atlas (KHÔNG phải xám 0.72)', kd);
+  const matNamed = cyls.every((p) => p.loai === 'cylinder' && p.matName !== 'mat_primitive' && res.mtl.includes(`newmtl ${p.matName}`));
+  ok('MTL có material RIÊNG từng chân', matNamed);
+  ok('OBJ dùng đúng material riêng đó', cyls.every((p) => p.loai === 'cylinder' && res.obj.includes(`usemtl ${p.matName}`)));
+
+  // không đưa atlas ⇒ giữ xám dự phòng + KHAI THẬT
+  const res2 = chuanNetGeometry(geom, { hMm: 800 });
+  ok('không có atlas ⇒ Kd null + mat_primitive', res2.parts.every((p) => p.loai !== 'cylinder' || (p.kdSrgb === null && p.matName === 'mat_primitive')));
+  ok('không có atlas ⇒ ghi chú khai thật', res2.ghiChu.some((g) => g.includes('texRgba')));
+}
+
+/* ── ⑦ vòng TRỤC NGANG (tay vịn) — RANSAC tách được khi dính khối, và KHÔNG ép khi vòng hở ── */
+console.log('fitRingRansac + ④c2 — vòng trục ngang dính nệm');
+{
+  const p1: V3T = [1, 0, 0]; const p2: V3T = [0, 1, 0]; const p3: V3T = [-1, 0, 0];
+  const cc = circumCircle3(p1, p2, p3);
+  ok('circumCircle3: R=1 tâm gốc', cc !== null && within(cc.radius, 1, 0.1) && Math.abs(cc.center[0]) < 1e-9 && Math.abs(cc.center[1]) < 1e-9);
+  ok('circumCircle3: 3 điểm thẳng hàng → null', circumCircle3([0, 0, 0], [1, 0, 0], [2, 0, 0]) === null);
+
+  // xuyến trục X R=0.12 r=0.011 tại (0.25, 0.30, 0) — DÍNH liền khối nệm, đúng ca CN cũ chịu thua
+  const soup: Soup = { positions: [], indices: [] };
+  ringXInto(soup, 0.25, 0.30, 0.12, 0.006, 0);
+  boxAt(soup, 0, 0.28, 0, 0.42, 0.30, 0.42);   // nệm ôm sát vòng
+  boxAt(soup, 0, 0.60, 0, 0.42, 0.24, 0.10);   // lưng tựa
+  const geom: GlbGeometry = { positions: new Float32Array(soup.positions), uvs: null, indices: new Uint32Array(soup.indices) };
+  const res = chuanNetGeometry(geom, { hMm: 1000 });
+  const rings = res.parts.filter((p) => p.loai === 'torus' && p.id.includes('vong-tay-vin'));
+  ok('vòng trục NGANG dính khối vẫn tách được', rings.length === 1);
+  if (rings.length === 1 && rings[0].loai === 'torus') {
+    const mm = res.scaleMmPerUnit;
+    ok('R ±5%', within(rings[0].thamSo.rMajorMm, 0.12 * mm, 5));
+    ok('trục ≈ X (ngang)', Math.abs(rings[0].thamSo.axis[0]) > 0.95);
+    ok('phủ ≥ 300°', (rings[0].phuDo ?? 0) >= 300);
+    ok('sai số < 2%', rings[0].saiSoPct < 2);
+  }
+
+  // CUNG HỞ 140° (như thanh gác chân cong) ⇒ CẤM ÉP thành xuyến, phải giữ mesh
+  const soupHo: Soup = { positions: [], indices: [] };
+  ringXInto(soupHo, 0.25, 0.30, 0.12, 0.006, 220); // cắt 220° ⇒ còn 140°
+  boxAt(soupHo, 0, 0.28, 0, 0.42, 0.30, 0.42);
+  boxAt(soupHo, 0, 0.60, 0, 0.42, 0.24, 0.10);
+  const gHo: GlbGeometry = { positions: new Float32Array(soupHo.positions), uvs: null, indices: new Uint32Array(soupHo.indices) };
+  const rHo = chuanNetGeometry(gHo, { hMm: 1000 });
+  ok('cung hở 140° KHÔNG bị ép thành xuyến', !rHo.parts.some((p) => p.loai === 'torus'));
+  ok('… và phần đó nằm lại trong mảnh mesh giữ', rHo.parts.some((p) => p.loai === 'mesh'));
 }
 
 console.log(`\n${pass} pass · ${fail} fail`);

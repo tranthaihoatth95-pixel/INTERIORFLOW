@@ -230,6 +230,151 @@ export function fitTorusPts(pts: Float64Array): TorusFit {
   return best!;
 }
 
+/* ───────── ②b VÒNG (tay vịn): RANSAC circle-in-3D — đường hình học THUẦN thay lát-vành-khuyên ─────────
+
+ * Vì sao KHÔNG dùng được đường lát-cắt của ④c cho vòng tay vịn (đo thật 14/08, ghi ở báo cáo CN):
+ * vòng tay vịn nằm trong MẶT PHẲNG ĐỨNG (trục vòng NGANG) và DÍNH LIỀN mép nệm — mọi lát cắt chứa
+ * vòng đều chứa cả nệm ⇒ tỉ lệ rỗng-tâm rMin/rMax ≈ 0,2, luật vành-khuyên tự từ chối.
+ * Đường mới: KHÔNG cắt lát, KHÔNG giả định trục. Lấy 3 điểm bất kỳ → đường tròn ngoại tiếp trong
+ * KHÔNG GIAN (cho luôn tâm + trục + R) → đếm điểm nằm trong ống bán kính `tube` quanh đường tròn đó.
+ * Nệm là NHIỄU: nó không nằm trên ống nên không thành inlier — đó chính là điểm mạnh của RANSAC so
+ * với lát cắt (lát cắt buộc phải gom cả cụm, RANSAC chỉ lấy điểm hợp mô hình).
+ * Cửa nhận (phiếu CN2): RMS < 2% đường chéo bbox mảnh **VÀ** góc phủ ≥ 300° — vòng hở/cung cong
+ * (thanh gác chân chéo) không lọt. Không đạt ⇒ GIỮ MESH, không ép [T0].
+ */
+
+/** PRNG tất định (mulberry32) — RANSAC phải cho CÙNG kết quả mỗi lần chạy, nếu không test và bản
+ * xuất sẽ nhảy số giữa các lần. Không dùng Math.random. */
+function rng32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const cross = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const len = (a: V3) => Math.hypot(a[0], a[1], a[2]);
+
+/** Tâm + trục + bán kính đường tròn ngoại tiếp 3 điểm trong không gian. null khi 3 điểm gần thẳng hàng. */
+export function circumCircle3(p1: V3, p2: V3, p3: V3): { center: V3; axis: V3; radius: number } | null {
+  const a = sub(p1, p3); const b = sub(p2, p3);
+  const axb = cross(a, b);
+  const d = len(axb);
+  if (d < 1e-12) return null;
+  const la = dot(a, a); const lb = dot(b, b);
+  const num = cross([la * b[0] - lb * a[0], la * b[1] - lb * a[1], la * b[2] - lb * a[2]], axb);
+  const k = 1 / (2 * d * d);
+  const center: V3 = [p3[0] + num[0] * k, p3[1] + num[1] * k, p3[2] + num[2] * k];
+  const radius = len(sub(p1, center));
+  if (!isFinite(radius) || radius <= 0) return null;
+  return { center, axis: norm(axb), radius };
+}
+
+export interface RingFit {
+  axis: V3; center: V3; rMajor: number; rMinor: number;
+  /** RMS của (khoảng cách tới đường tròn − rMinor) trên tập inlier */
+  rms: number;
+  /** góc phủ inlier quanh vòng (độ, 36 ô 10°) */
+  coverageDeg: number;
+  inliers: number[];
+}
+
+/** Khoảng cách từ điểm tới ĐƯỜNG TRÒN (tâm c, trục ax, bán kính R) = √((ρ−R)² + t²). */
+function distToCircle(p: V3, c: V3, ax: V3, R: number): number {
+  const d = sub(p, c);
+  const t = dot(d, ax);
+  const rho = Math.hypot(d[0] - t * ax[0], d[1] - t * ax[1], d[2] - t * ax[2]);
+  return Math.hypot(rho - R, t);
+}
+
+function coverageOf(pts: Float64Array, idx: number[], c: V3, ax: V3): number {
+  // hai vector đơn vị vuông góc trục để đo góc
+  const tmp: V3 = Math.abs(ax[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+  const e1 = norm(cross(ax, tmp));
+  const e2 = cross(ax, e1);
+  const bins = new Uint8Array(36);
+  for (const i of idx) {
+    const d = sub([pts[3 * i], pts[3 * i + 1], pts[3 * i + 2]], c);
+    const ang = Math.atan2(dot(d, e2), dot(d, e1));
+    bins[Math.min(35, Math.floor(((ang + Math.PI) / (2 * Math.PI)) * 36))] = 1;
+  }
+  let n = 0; for (const b of bins) n += b;
+  return n * 10;
+}
+
+/**
+ * Tìm MỘT vòng trong đám điểm bằng RANSAC. `rMinAbs`/`rMaxAbs`/`tube` theo đơn vị của `pts`.
+ * Trả null khi không có ứng viên nào đạt số inlier tối thiểu — caller GIỮ MESH.
+ */
+export function fitRingRansac(
+  pts: Float64Array,
+  o: { rMinAbs: number; rMaxAbs: number; tube: number; iters?: number; seed?: number; minInliers?: number },
+): RingFit | null {
+  const n = pts.length / 3;
+  if (n < 40) return null;
+  const rnd = rng32(o.seed ?? 20260814);
+  const iters = o.iters ?? 4000;
+  const minInliers = o.minInliers ?? 40;
+  const at = (i: number): V3 => [pts[3 * i], pts[3 * i + 1], pts[3 * i + 2]];
+  // tập chấm điểm (giữ chi phí tuyến tính khi mesh lớn) — bước nhảy tất định, không random
+  const step = Math.max(1, Math.floor(n / 2500));
+  const scoreIdx: number[] = [];
+  for (let i = 0; i < n; i += step) scoreIdx.push(i);
+
+  let best: { center: V3; axis: V3; R: number; cnt: number } | null = null;
+  for (let it = 0; it < iters; it++) {
+    const i1 = Math.floor(rnd() * n); const i2 = Math.floor(rnd() * n); const i3 = Math.floor(rnd() * n);
+    if (i1 === i2 || i2 === i3 || i1 === i3) continue;
+    const cc = circumCircle3(at(i1), at(i2), at(i3));
+    if (!cc || cc.radius < o.rMinAbs || cc.radius > o.rMaxAbs) continue;
+    let cnt = 0;
+    for (const i of scoreIdx) if (distToCircle(at(i), cc.center, cc.axis, cc.radius) <= o.tube) cnt++;
+    if (!best || cnt > best.cnt) best = { center: cc.center, axis: cc.axis, R: cc.radius, cnt };
+  }
+  if (!best) return null;
+
+  // TINH CHỈNH: 3 vòng — lấy inlier trên TOÀN tập → PCA cho trục (trục vòng = phương phân tán NHỎ
+  // nhất) → bán kính = trung bình ρ. Chỉ RANSAC thô thì trục lệch theo 3 điểm may rủi.
+  let { center, axis, R } = best;
+  let inliers: number[] = [];
+  for (let pass = 0; pass < 3; pass++) {
+    inliers = [];
+    for (let i = 0; i < n; i++) if (distToCircle(at(i), center, axis, R) <= o.tube) inliers.push(i);
+    if (inliers.length < minInliers) return null;
+    const sub3 = new Float64Array(inliers.length * 3);
+    inliers.forEach((i, k) => { sub3[3 * k] = pts[3 * i]; sub3[3 * k + 1] = pts[3 * i + 1]; sub3[3 * k + 2] = pts[3 * i + 2]; });
+    const { c, axes } = centroidAndAxes(sub3);
+    // trục vòng = trục PCA có phân tán NHỎ nhất (vòng gần phẳng)
+    let bestAx = axes[0]; let bestSpread = Infinity;
+    for (const a of axes) {
+      let s = 0;
+      for (let k = 0; k < sub3.length; k += 3) { const t = dot(sub([sub3[k], sub3[k + 1], sub3[k + 2]], c), a); s += t * t; }
+      if (s < bestSpread) { bestSpread = s; bestAx = a; }
+    }
+    axis = bestAx; center = c;
+    let sr = 0;
+    for (let k = 0; k < sub3.length; k += 3) {
+      const d = sub([sub3[k], sub3[k + 1], sub3[k + 2]], c);
+      const t = dot(d, axis);
+      sr += Math.hypot(d[0] - t * axis[0], d[1] - t * axis[1], d[2] - t * axis[2]);
+    }
+    R = sr / (sub3.length / 3);
+  }
+  if (R < o.rMinAbs || R > o.rMaxAbs) return null;
+
+  let sd = 0; const ds: number[] = [];
+  for (const i of inliers) { const d = distToCircle(at(i), center, axis, R); ds.push(d); sd += d; }
+  const rMinor = sd / ds.length;
+  let sq = 0; for (const d of ds) sq += (d - rMinor) * (d - rMinor);
+  return {
+    axis, center, rMajor: R, rMinor, rms: Math.sqrt(sq / ds.length),
+    coverageDeg: coverageOf(pts, inliers, center, axis), inliers,
+  };
+}
+
 /* ─────────────── ③ dựng lại primitive QUA build-ops (CHỈ GỌI) + đặt vào chỗ ─────────────── */
 
 /** Trụ tham số → tam giác mm (Y-up không gian mesh): gọi `revolveProfile` (kho build-ops) với tiết
@@ -279,6 +424,50 @@ export interface ChuanNetOpts {
   slabs?: number;
   /** ngưỡng nhận fit: RMS < fitTolPct % đường chéo bbox mảnh (mặc định 2 — theo phiếu) */
   fitTolPct?: number;
+  /**
+   * Atlas baseColor đã GIẢI MÃ (RGBA hàng-đầu-là-đỉnh-ảnh) — dùng để primitive KẾ THỪA màu của
+   * mảng mesh mà nó thay (CN-F2: chân trụ từng ăn Kd xám cứng 0.72 ⇒ nhìn như nhựa, lạc khỏi ghế
+   * gỗ). Module này THUẦN (không đụng fs/không decode PNG) nên caller đưa pixel vào — proof Node
+   * dùng `sharp`, app dùng canvas/ImageBitmap. Không đưa ⇒ giữ Kd xám cũ + ghi chú khai thật.
+   */
+  texRgba?: { width: number; height: number; data: Uint8Array | Uint8ClampedArray; channels?: number };
+}
+
+/** Lấy texel tại UV theo quy ước glTF (v=0 là HÀNG TRÊN của ảnh — xem ghi chú UV_FLIP_V). */
+function sampleTex(tex: NonNullable<ChuanNetOpts['texRgba']>, u: number, v: number): V3 {
+  const ch = tex.channels ?? 4;
+  const x = Math.min(tex.width - 1, Math.max(0, Math.floor((u - Math.floor(u)) * tex.width)));
+  const y = Math.min(tex.height - 1, Math.max(0, Math.floor((v - Math.floor(v)) * tex.height)));
+  const i = (y * tex.width + x) * ch;
+  return [tex.data[i], tex.data[i + 1], tex.data[i + 2]];
+}
+
+/** Màu TRUNG VỊ (median từng kênh) của các texel mà một tập tam giác tham chiếu qua UV → Kd 0..1
+ * (sRGB, đúng thang `Kd` của MTL — MTLLoader tự đưa về không gian làm việc).
+ * Trung vị chứ không trung bình: mảng chân gỗ luôn dính vài texel bóng đen ở rìa, trung bình bị
+ * chúng kéo tối; trung vị bỏ qua. Trả null khi không có UV/texture — caller khai thật. */
+export function medianKdOfTris(
+  triIdx: number[],
+  indices: Uint32Array,
+  uvs: Float32Array | null,
+  tex: ChuanNetOpts['texRgba'],
+): V3 | null {
+  if (!tex || !uvs || !triIdx.length) return null;
+  const R: number[] = []; const G: number[] = []; const B: number[] = [];
+  for (const t of triIdx) {
+    let cu = 0; let cv = 0;
+    for (let k = 0; k < 3; k++) {
+      const vtx = indices[3 * t + k];
+      const u = uvs[2 * vtx]; const v = uvs[2 * vtx + 1];
+      cu += u / 3; cv += v / 3;
+      const c = sampleTex(tex, u, v);
+      R.push(c[0]); G.push(c[1]); B.push(c[2]);
+    }
+    const c = sampleTex(tex, cu, cv); // thêm trọng tâm — mảng trong lòng tam giác, không chỉ mép
+    R.push(c[0]); G.push(c[1]); B.push(c[2]);
+  }
+  const med = (a: number[]) => { a.sort((x, y) => x - y); return a[a.length >> 1] / 255; };
+  return [med(R), med(G), med(B)];
 }
 
 export type ChuanNetPart =
@@ -288,6 +477,8 @@ export type ChuanNetPart =
       thamSo: { radiusMm: number; heightMm: number; centerMm: V3; axis: V3 };
       buildOp: { op: 'revolve'; profileMm: { x: number; y: number }[]; centerXMm: number; centerYMm: number; segments: number };
       saiSoMm: number; saiSoPct: number; trisTruoc: number; trisSau: number;
+      /** Kd kế thừa (sRGB 0..1) từ texel mảng mesh bị thay — null khi caller không đưa texture. */
+      kdSrgb: V3 | null; matName: string;
     }
   | {
       loai: 'torus';
@@ -295,6 +486,9 @@ export type ChuanNetPart =
       thamSo: { rMajorMm: number; rMinorMm: number; centerMm: V3; axis: V3 };
       buildOp: { op: 'revolve'; profileMm: { x: number; y: number }[]; centerXMm: number; centerYMm: number; segments: number };
       saiSoMm: number; saiSoPct: number; trisTruoc: number; trisSau: number;
+      kdSrgb: V3 | null; matName: string;
+      /** góc phủ của điểm inlier quanh vòng (độ) — vòng hở <300° bị loại, xem fitRingRansac. */
+      phuDo?: number;
     }
   | { loai: 'mesh'; id: string; trisTruoc: number; trisSau: number; dinhTruoc: number; dinhSau: number; lyDoGiu: string }
   | { loai: 'shadow-removed'; id: string; trisTruoc: number; trisSau: 0; lyDo: string };
@@ -312,6 +506,26 @@ export interface ChuanNetResult {
   texture: { mime: string; bytes: Uint8Array } | null;
   ghiChu: string[];
 }
+
+/**
+ * ĐỔI TRỤC V glTF → OBJ. **Đây là lỗi CN-F1 (T soi mắt 14/08: nệm/lưng ra ĐEN BÓNG loang lổ).**
+ *
+ * Đo thật, không đoán (kịch bản `cn2-diag.ts` + đọc trạng thái vật liệu ngay trong trình xem):
+ *  · glTF quy ước gốc UV ở MÉP TRÊN ảnh, và GLTFLoader nạp texture với `flipY = false`.
+ *  · OBJ/MTL quy ước gốc UV ở MÉP DƯỚI; MTLLoader → TextureLoader để `flipY = true` mặc định
+ *    (đo trong trình xem: `material.map.flipY === true`).
+ *  ⇒ chép NGUYÊN VĂN v của glTF sang OBJ thì ảnh bị LẬT DỌC so với UV: mặt ngồi/lưng tra vào
+ *    đúng mảng ĐEN lớn giữa atlas. Đo tỉ lệ texel tối: quy ước đúng 8,5% · quy ước lật 16,2%.
+ *
+ * Nghi phạm số 1 của phiếu (dedupe làm lệch chỉ số `vt`) đã ĐO VÀ LOẠI: đọc lại file OBJ đã xuất
+ * rồi tra atlas theo chính chỉ số `vt` của từng mặt, màu trung vị 73,52,34 so với 67,48,33 của UV
+ * GLB gốc — cùng một chỗ trên atlas. Ánh xạ vt/face KHÔNG lệch. (Test `chuan-net.test.ts` giữ
+ * kết luận này: sau dedupe, UV mỗi mặt phải trùng UV nguồn.)
+ *
+ * `1 − v` cũng chính là phép mọi bộ chuyển glTF↔OBJ dùng, nên đúng cho cả 3ds Max (Max cũng lấy
+ * gốc bitmap ở mép dưới).
+ */
+export const UV_FLIP_V = (v: number): number => 1 - v;
 
 interface Tri { i: number; cx: number; cy: number; cz: number }
 
@@ -441,6 +655,8 @@ export function chuanNetGeometry(geom: GlbGeometry, opts: ChuanNetOpts = {}): Ch
 
   const parts: ChuanNetPart[] = [];
   const outTris: { positionsMm: Float32Array; group: string; mat: string; uvIdx?: number[] }[] = [];
+  /** vật liệu RIÊNG từng primitive (CN-F2) — Kd kế thừa từ texel mảng mesh bị thay */
+  const primMats: { name: string; kd: V3 }[] = [];
   let polySau = 0;
   let pid = 0;
 
@@ -514,8 +730,12 @@ export function chuanNetGeometry(geom: GlbGeometry, opts: ChuanNetOpts = {}): Ch
       const rebuilt = rebuildCylinderMm({ axis: thamSo.axis, center: thamSo.centerMm, radius: thamSo.radiusMm, height: thamSo.heightMm }, 32);
       const trisSau = rebuilt.length / 9;
       polySau += trisSau;
-      parts.push({ loai: 'cylinder', id, thamSo, buildOp, saiSoMm: fit.rms * scaleMmPerUnit, saiSoPct, trisTruoc: legTris.length, trisSau });
-      outTris.push({ positionsMm: rebuilt, group: `${id}_cylinder`, mat: 'mat_primitive' });
+      // CN-F2: chân KẾ THỪA màu gỗ của mảng mesh nó thay, không ăn Kd xám cứng
+      const kdSrgb = medianKdOfTris(legTris, indices, uvs, opts.texRgba);
+      const matName = kdSrgb ? `mat_${id}` : 'mat_primitive';
+      if (kdSrgb) primMats.push({ name: matName, kd: kdSrgb });
+      parts.push({ loai: 'cylinder', id, thamSo, buildOp, saiSoMm: fit.rms * scaleMmPerUnit, saiSoPct, trisTruoc: legTris.length, trisSau, kdSrgb, matName });
+      outTris.push({ positionsMm: rebuilt, group: `${id}_cylinder`, mat: matName });
     } else {
       ghiChu.push(`chuỗi chân tại (${(lc[0] * scaleMmPerUnit).toFixed(0)},${(lc[2] * scaleMmPerUnit).toFixed(0)})mm fit trụ RMS ${saiSoPct.toFixed(1)}% > ${fitTolPct}% — GIỮ mesh, không ép.`);
     }
@@ -612,16 +832,88 @@ export function chuanNetGeometry(geom: GlbGeometry, opts: ChuanNetOpts = {}): Ch
         const rebuilt = rebuildTorusMm({ axis: thamSo.axis, center: thamSo.centerMm, rMajor: thamSo.rMajorMm, rMinor: thamSo.rMinorMm }, 48, 16);
         const trisSau = rebuilt.length / 9;
         polySau += trisSau;
+        const kdSrgb = medianKdOfTris(ringTris, indices, uvs, opts.texRgba);
+        const matName = kdSrgb ? `mat_${id}` : 'mat_primitive';
+        if (kdSrgb) primMats.push({ name: matName, kd: kdSrgb });
         parts.push({
           loai: 'torus', id, thamSo,
           buildOp: { op: 'revolve', profileMm, centerXMm: 0, centerYMm: 0, segments: 48 },
           saiSoMm: fit.rms * scaleMmPerUnit, saiSoPct, trisTruoc: ringTris.length, trisSau,
+          kdSrgb, matName,
         });
-        outTris.push({ positionsMm: rebuilt, group: `${id}_torus`, mat: 'mat_primitive' });
+        outTris.push({ positionsMm: rebuilt, group: `${id}_torus`, mat: matName });
       } else {
         ghiChu.push(`dải vành khuyên y=[${(yLo * scaleMmPerUnit).toFixed(0)},${(yHi * scaleMmPerUnit).toFixed(0)}]mm fit torus RMS ${saiSoPct.toFixed(1)}%${fit.rMajor <= 1.8 * fit.rMinor ? ' (R/r quá nhỏ)' : ''} — GIỮ mesh, không ép.`);
       }
     }
+  }
+
+  /* — ④c2 VÒNG TRỤC NGANG (tay vịn) — RANSAC circle-in-3D, xem khối ②b —
+   * Phân vai rõ với ④c: ④c bắt vòng trục ĐỨNG (lát cắt ngang thấy vành khuyên); ④c2 bắt vòng trục
+   * NGANG (lát cắt ngang KHÔNG bao giờ thấy vành khuyên vì luôn dính mép nệm — lý do CN cũ khai
+   * không tách nổi). Chặn |trục·Y| ≤ 0,4 để hai đường không giành nhau một mảnh, và để cụm gác
+   * chân (vòng trục ĐỨNG R lớn, thực chất là các THANH THẲNG bắt chéo) không lọt sang đây. */
+  const ringTube = 0.012 * bb.diag;
+  for (let ringNo = 0; ringNo < 3; ringNo++) {
+    const freeTris: number[] = [];
+    for (let t = 0; t < nTri; t++) if (!claimed[t]) freeTris.push(t);
+    if (freeTris.length < 60) break;
+    const freePts = uniquePtsOf(freeTris, indices, positions);
+    const fit = fitRingRansac(freePts, {
+      rMinAbs: 0.06 * bb.diag, rMaxAbs: 0.16 * bb.diag, tube: ringTube, iters: 12000, seed: 20260814 + ringNo,
+    });
+    if (!fit) break;
+    if (Math.abs(fit.axis[1]) > 0.4) break; // trục không ngang ⇒ việc của ④c, không lấn sân
+    // Tam giác thuộc vòng = CẢ BA đỉnh nằm trong ống. Bán kính THU rộng hơn bán kính CHẤM ĐIỂM
+    // 1,35× (không đổi phép fit, chỉ đổi phép gom): lấy đúng `ringTube` thì mép ngoài vỏ ống rơi
+    // lại thành mảnh vụn đen bám quanh xuyến mới — nhìn thấy rõ ở ảnh nghiệm thu vòng 1.
+    const claimTube = ringTube * 1.35;
+    const ringTris = freeTris.filter((t) => {
+      for (let k = 0; k < 3; k++) {
+        const v = indices[3 * t + k];
+        if (distToCircle([positions[3 * v], positions[3 * v + 1], positions[3 * v + 2]], fit.center, fit.axis, fit.rMajor) > claimTube) return false;
+      }
+      return true;
+    });
+    if (ringTris.length < 40) break;
+    const rPts = uniquePtsOf(ringTris, indices, positions);
+    const partDiag = bboxOf(rPts).diag;
+    const saiSoPct = (fit.rms / partDiag) * 100;
+    const dat = `R=${(fit.rMajor * scaleMmPerUnit).toFixed(0)}mm r=${(fit.rMinor * scaleMmPerUnit).toFixed(1)}mm tâm(${fit.center.map((v) => (v * scaleMmPerUnit).toFixed(0)).join(',')})`;
+    if (saiSoPct > fitTolPct || fit.coverageDeg < 300 || fit.rMajor <= 1.8 * fit.rMinor) {
+      ghiChu.push(`vòng trục ngang ${dat}: RMS ${saiSoPct.toFixed(2)}% (cửa ${fitTolPct}%) · phủ ${fit.coverageDeg}° (cửa 300°) · R/r ${(fit.rMajor / fit.rMinor).toFixed(1)} — KHÔNG đạt, GIỮ mesh, không ép.`);
+      break;
+    }
+    for (const t of ringTris) claimed[t] = 3;
+    pid++;
+    const id = `p${pid}-vong-tay-vin`;
+    const thamSo = {
+      rMajorMm: fit.rMajor * scaleMmPerUnit,
+      rMinorMm: fit.rMinor * scaleMmPerUnit,
+      centerMm: fit.center.map((v) => v * scaleMmPerUnit) as V3,
+      axis: fit.axis,
+    };
+    // 48 nhịp quanh vòng (đường tròn LỚN nhìn thấy rõ, thiếu nhịp là ra đa giác) × 10 điểm tiết
+    // diện (ống chỉ ~11mm, không ai soi mặt cắt) = 960 tam giác — vẫn NHẸ hơn 1005 tris mesh nó thay.
+    const RING_SEG = 48; const RING_PROFILE = 10;
+    const profileMm: { x: number; y: number }[] = [];
+    for (let i = 0; i <= RING_PROFILE; i++) {
+      const a = (i / RING_PROFILE) * Math.PI * 2;
+      profileMm.push({ x: thamSo.rMajorMm + thamSo.rMinorMm * Math.cos(a), y: thamSo.rMinorMm * Math.sin(a) });
+    }
+    const rebuilt = rebuildTorusMm({ axis: thamSo.axis, center: thamSo.centerMm, rMajor: thamSo.rMajorMm, rMinor: thamSo.rMinorMm }, RING_SEG, RING_PROFILE);
+    const trisSau = rebuilt.length / 9;
+    polySau += trisSau;
+    const kdSrgb = medianKdOfTris(ringTris, indices, uvs, opts.texRgba);
+    const matName = kdSrgb ? `mat_${id}` : 'mat_primitive';
+    if (kdSrgb) primMats.push({ name: matName, kd: kdSrgb });
+    parts.push({
+      loai: 'torus', id, thamSo,
+      buildOp: { op: 'revolve', profileMm, centerXMm: 0, centerYMm: 0, segments: 48 },
+      saiSoMm: fit.rms * scaleMmPerUnit, saiSoPct, trisTruoc: ringTris.length, trisSau,
+      kdSrgb, matName, phuDo: fit.coverageDeg,
+    });
+    outTris.push({ positionsMm: rebuilt, group: `${id}_torus`, mat: matName });
   }
 
   /* — ④d PHẦN CÒN LẠI: mesh giữ, bỏ đỉnh trùng (theo cặp vị trí+UV — không phá seam texture) — */
@@ -647,7 +939,7 @@ export function chuanNetGeometry(geom: GlbGeometry, opts: ChuanNetOpts = {}): Ch
         id = vOut.length / 3;
         key2id.set(kk, id);
         vOut.push(x, y, z);
-        vtOut.push(u, w);
+        vtOut.push(u, UV_FLIP_V(w));
       }
       fOut.push(id);
     }
@@ -699,15 +991,27 @@ export function chuanNetGeometry(geom: GlbGeometry, opts: ChuanNetOpts = {}): Ch
       vBase += p.length / 3;
     }
   }
-  const mtl = [
-    '# InteriorFlow chuanNet MTL',
-    'newmtl mat_primitive',
-    'Kd 0.72 0.70 0.66', 'Ks 0.04 0.04 0.04', 'Ns 24',
+  const mtlLines = ['# InteriorFlow chuanNet MTL'];
+  // ① vật liệu RIÊNG từng primitive — Kd = màu trung vị texel của mảng mesh bị thay (CN-F2).
+  //    `Ka = Kd` để trình xem có đèn môi trường không dựng mảnh thành khối đen.
+  for (const m of primMats) {
+    const k = m.kd.map((v) => v.toFixed(3)).join(' ');
+    mtlLines.push(`newmtl ${m.name}`, `Kd ${k}`, `Ka ${k}`, 'Ks 0.05 0.05 0.05', 'Ns 32', 'illum 2');
+  }
+  // ② dự phòng: chỉ dùng khi caller KHÔNG đưa texture ⇒ không suy được màu (khai thật ở ghiChu)
+  if (primMats.length < parts.filter((p) => p.loai === 'cylinder' || p.loai === 'torus').length) {
+    mtlLines.push('newmtl mat_primitive', 'Kd 0.72 0.70 0.66', 'Ka 0.72 0.70 0.66', 'Ks 0.04 0.04 0.04', 'Ns 24', 'illum 2');
+  }
+  mtlLines.push(
     'newmtl mat_mesh',
-    'Kd 1.0 1.0 1.0', 'Ks 0.02 0.02 0.02', 'Ns 10',
+    'Kd 1.0 1.0 1.0', 'Ka 1.0 1.0 1.0', 'Ks 0.02 0.02 0.02', 'Ns 10', 'illum 2',
     'map_Kd chuannet-basecolor.png',
     '',
-  ].join('\n');
+  );
+  const mtl = mtlLines.join('\n');
+  if (!opts.texRgba) {
+    ghiChu.push('KHÔNG có atlas giải mã (opts.texRgba) — primitive giữ Kd xám dự phòng, KHÔNG kế thừa được màu vật liệu thật.');
+  }
 
   const recipe = {
     marker: 'chuanNet',
@@ -717,8 +1021,12 @@ export function chuanNetGeometry(geom: GlbGeometry, opts: ChuanNetOpts = {}): Ch
     polySau,
     parts: parts.map((p) => {
       if (p.loai === 'cylinder' || p.loai === 'torus') {
-        const { loai, id, thamSo, buildOp, saiSoMm, saiSoPct, trisTruoc, trisSau } = p;
-        return { loai, id, thamSo, buildOp, datMm: { centerMm: thamSo.centerMm, axis: thamSo.axis }, saiSoMm, saiSoPct, trisTruoc, trisSau };
+        const { loai, id, thamSo, buildOp, saiSoMm, saiSoPct, trisTruoc, trisSau, kdSrgb, matName } = p;
+        return {
+          loai, id, thamSo, buildOp, datMm: { centerMm: thamSo.centerMm, axis: thamSo.axis },
+          vatLieu: { matName, kdSrgb, nguon: kdSrgb ? 'trung vị texel atlas của mảng mesh bị thay' : 'không có atlas — Kd xám dự phòng' },
+          saiSoMm, saiSoPct, trisTruoc, trisSau,
+        };
       }
       if (p.loai === 'mesh') return { loai: p.loai, id: p.id, ref: `obj:o ${p.id}_mesh`, trisTruoc: p.trisTruoc, trisSau: p.trisSau, lyDoGiu: p.lyDoGiu };
       return { loai: p.loai, id: p.id, trisTruoc: p.trisTruoc, lyDo: p.lyDo };
