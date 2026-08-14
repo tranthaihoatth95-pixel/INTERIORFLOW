@@ -66,7 +66,19 @@ Giữ nguyên: chất dệt có hạt, hoa văn khung viền, họ màu kem-be.
 ⇒ Máy phải KIỂM lại sau khi áp (PostGate): nếu luminance thảm ≥ luminance vách thì BÁO LỆCH, không ship.
 Ràng buộc này cũng chữa đúng lời sếp trong DF2: *"các sắc độ cứ dính nhau, không sang"*.
 
-## C · BA MỨC CƯỜNG ĐỘ ÁP — **HOÀ CHỌN 1**
+## ✅ HOÀ CHỐT 14/08 — LUẬT CỨNG CHO MỌI JOB
+> *"Giữ nguyên, không đổi bất cứ gì từ thiết kế. Chỉ render dựa theo ảnh ánh xạ để hiểu
+> ánh sáng, chi tiết vật liệu thật."*
+
+**⛔ CẤM (mọi job, không ngoại lệ):** đổi/thêm/bớt đồ đạc · đổi bố cục · đổi vật liệu đã chọn ·
+đổi hình dạng tủ-bếp-trần-vách · đổi màu vật liệu sang họ khác.
+**✅ CHỈ ĐƯỢC nâng:** ánh sáng thật (hướng · GI · bóng đổ mềm · đèn BẬT có quầng) · chất vật
+liệu thật (vân gỗ, sợi vải, hạt đá, phản chiếu satin) · sắc độ 3 lớp tách bạch · nước hình sạch.
+⇒ Kỹ thuật: control image = CHÍNH screenshot (giữ hình học), denoise/strength THẤP, prompt chỉ
+tả ánh sáng + chất liệu, KHÔNG tả đồ vật mới. Ảnh ra phải nhận ra ngay là cùng căn phòng đó.
+⇒ Tương đương mức **M2 nghiêm** — mục C dưới giữ để tham khảo, KHÔNG cần chọn nữa.
+
+## C · BA MỨC CƯỜNG ĐỘ ÁP — (đã chốt M2 nghiêm ở trên)
 | Mức | Làm gì | Được / Mất |
 |---|---|---|
 | **M1 · Bám sát 100%** | ép cả sắc độ, nhiệt màu, vật liệu, ánh sáng theo tham chiếu | Giống nhất; RỦI RO đổi cả vật liệu Hoà đã chọn trong SketchUp |
