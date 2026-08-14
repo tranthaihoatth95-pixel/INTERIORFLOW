@@ -4,6 +4,8 @@
  * ② parseGlbGeometry đọc đúng GLB nhị phân tự dựng tay (có chunk BIN)
  * ③ dựng lại qua build-ops → bbox khớp tham số
  * ④ pipeline đủ trên mesh tổng hợp (4 chân + vòng + khối nệm + bóng sàn) → tách/xoá/fit đúng loại
+ * ⑧⑨ mirror-completion (14/08): đối xứng SINH kích thước — cặp/cụm part cùng vai trò hội tụ về
+ *     bên RMS thấp hơn, tâm giữ nguyên, part lẻ (không đối tác) không bị đụng
  * Chạy: node_modules/.bin/sucrase-node lib/idfc-import/chuan-net.test.ts
  */
 import {
@@ -12,10 +14,12 @@ import {
   circumCircle3,
   fitCylinderPts,
   fitTorusPts,
+  mirrorCompleteShapes,
   parseGlbGeometry,
   rebuildCylinderMm,
   rebuildTorusMm,
   type GlbGeometry,
+  type MirrorableShape,
 } from './chuan-net';
 
 /** bộ ba toạ độ — khớp kiểu V3 nội bộ của chuan-net (module không xuất kiểu đó ra ngoài) */
@@ -325,6 +329,84 @@ console.log('fitRingRansac + ④c2 — vòng trục ngang dính nệm');
   const rHo = chuanNetGeometry(gHo, { hMm: 1000 });
   ok('cung hở 140° KHÔNG bị ép thành xuyến', !rHo.parts.some((p) => p.loai === 'torus'));
   ok('… và phần đó nằm lại trong mảnh mesh giữ', rHo.parts.some((p) => p.loai === 'mesh'));
+}
+
+/* ── ⑧ MIRROR-COMPLETION (hàm THUẦN) — đối xứng SINH kích thước, không chỉ TỪ CHỐI (14/08) ── */
+console.log('mirrorCompleteShapes — copy kích thước theo RMS thấp hơn qua mặt đối xứng');
+{
+  // ⑧a cặp đối xứng qua x=0 (RMS khác nhau) + 1 part LẺ vai trò khác (không đối tác)
+  const pairA: MirrorableShape = { id: 'p1-chan', loai: 'cylinder', kind: 'chan', centerMm: [100, 0, 50], rms: 0.4, shape: [38, 300] };
+  const pairB: MirrorableShape = { id: 'p2-chan', loai: 'cylinder', kind: 'chan', centerMm: [-100, 0, 50], rms: 3.1, shape: [41, 305] };
+  const lone: MirrorableShape = { id: 'p3-vong', loai: 'torus', kind: 'vong', centerMm: [0, 0, 0], rms: 0.2, shape: [280, 15] };
+  const res1 = mirrorCompleteShapes([pairA, pairB, lone]);
+  ok('cặp đối xứng ⇒ đúng 1 kết quả (bên RMS cao hơn bị sửa)', res1.length === 1);
+  const rB = res1.find((r) => r.id === 'p2-chan');
+  ok('bên RMS cao hơn nhận đúng kích thước bên RMS thấp hơn', !!rB && rB.shape[0] === 38 && rB.shape[1] === 300);
+  ok('ghi rõ mirroredFrom = bên gốc', rB?.mirroredFrom === 'p1-chan');
+  ok('part LẺ (không đối tác cùng vai trò) không xuất hiện trong kết quả — giữ nguyên', !res1.some((r) => r.id === 'p3-vong'));
+
+  // ⑧b 4 chân hình chữ nhật (2 mặt đối xứng trái-phải + trước-sau) → union-find gộp cả 4 vào MỘT
+  // cụm liên thông dù mỗi part chỉ khớp trực tiếp qua MỘT trục. p1 RMS thấp nhất ⇒ làm gốc cho cả 3.
+  const legs4: MirrorableShape[] = [
+    { id: 'p1-chan', loai: 'cylinder', kind: 'chan', centerMm: [120, 0, 80], rms: 0.1, shape: [20, 400] },
+    { id: 'p2-chan', loai: 'cylinder', kind: 'chan', centerMm: [-120, 0, 80], rms: 0.5, shape: [21, 402] },
+    { id: 'p3-chan', loai: 'cylinder', kind: 'chan', centerMm: [120, 0, -80], rms: 0.6, shape: [22, 398] },
+    { id: 'p4-chan', loai: 'cylinder', kind: 'chan', centerMm: [-120, 0, -80], rms: 0.9, shape: [19, 405] },
+  ];
+  const res2 = mirrorCompleteShapes(legs4);
+  ok('4 chân hình chữ nhật ⇒ 3 part được sửa (1 làm gốc)', res2.length === 3);
+  ok('CẢ BA đều nhận kích thước của p1 (RMS thấp nhất toàn cụm)', res2.every((r) => r.shape[0] === 20 && r.shape[1] === 400 && r.mirroredFrom === 'p1-chan'));
+
+  // ⑧c 3 tâm LỆCH, KHÔNG có mặt đối xứng chung nào cho cả nhóm (2 điểm bất kỳ LUÔN có một mặt
+  // phẳng trung trực — phản chiếu-khớp tầm thường — nên phép thử "không đối xứng" phải dùng ≥3
+  // điểm: với số lẻ, không thể ghép hết thành cặp qua BẤT KỲ trục nào, nên mọi trục đều bị loại)
+  // ⇒ không sửa gì — luật "không đạt thì giữ, cấm ép" [T0] áp cả ở tầng mirror-completion.
+  const lech: MirrorableShape[] = [
+    { id: 'p1-chan', loai: 'cylinder', kind: 'chan', centerMm: [100, 0, 0], rms: 0.1, shape: [20, 400] },
+    { id: 'p2-chan', loai: 'cylinder', kind: 'chan', centerMm: [-40, 0, 77], rms: 0.5, shape: [25, 410] },
+    { id: 'p3-chan', loai: 'cylinder', kind: 'chan', centerMm: [60, 0, -90], rms: 0.3, shape: [30, 420] },
+  ];
+  ok('3 tâm lệch, không mặt đối xứng chung ⇒ không sửa gì (giữ nguyên)', mirrorCompleteShapes(lech).length === 0);
+}
+
+/* ── ⑨ MIRROR-COMPLETION trong pipeline thật — mesh 2 chân (1 sạch, 1 lượn sóng) đối xứng qua
+ * x=0 + 1 vòng (vai trò khác, không đối tác) ── */
+console.log('chuanNetGeometry — mirror-completion: 2 chân hội tụ kích thước, tâm giữ nguyên, vòng không bị đụng');
+{
+  const soup: Soup = { positions: [], indices: [] };
+  // chân SẠCH tại x=+0.2 — trụ tròn hoàn hảo, RMS gần 0
+  cylinderAt(soup, 0.2, 0, 0.02, -0.5, 0.15, 24, 20);
+  // chân LƯỢN SÓNG tại x=-0.2 — bán kính dao động ±0.0006 quanh 0.02 (4 múi) ⇒ RMS đo được > 0,
+  // nhưng vẫn đạt ngưỡng 2% nên KHÔNG bị đẩy về giữ-mesh (đúng ca "khác nhau do noise", không phải
+  // "hình khác hẳn nhau").
+  addQuadGrid(soup, (u, v) => {
+    const rr = 0.02 + 0.0006 * Math.sin(4 * u * 2 * Math.PI);
+    return [-0.2 + rr * Math.cos(u * 2 * Math.PI), -0.5 + 0.65 * v, rr * Math.sin(u * 2 * Math.PI)];
+  }, 24, 20, true);
+  // vòng gác chân — vai trò KHÁC ("vong"), không có đối tác cùng vai trò ⇒ mirror-completion bỏ qua
+  torusAt(soup, -0.15, 0.28, 0.015, 48, 12);
+
+  const geom: GlbGeometry = { positions: new Float32Array(soup.positions), uvs: null, indices: new Uint32Array(soup.indices) };
+  const res = chuanNetGeometry(geom, { hMm: 800 });
+  const cyls = res.parts.filter((p) => p.loai === 'cylinder');
+  const tors = res.parts.filter((p) => p.loai === 'torus');
+  ok('2 chân tách được', cyls.length === 2);
+  ok('1 vòng tách được', tors.length === 1);
+  if (cyls.length === 2 && cyls[0].loai === 'cylinder' && cyls[1].loai === 'cylinder') {
+    const a = cyls[0]; const b = cyls[1];
+    ok('sau mirror-completion: radius 2 chân GIỐNG HỆT nhau', a.thamSo.radiusMm === b.thamSo.radiusMm);
+    ok('sau mirror-completion: height 2 chân GIỐNG HỆT nhau', a.thamSo.heightMm === b.thamSo.heightMm);
+    ok('đúng 1 trong 2 mang mirroredFrom (bên kia là gốc)', [a.mirroredFrom, b.mirroredFrom].filter(Boolean).length === 1);
+    // tâm KHÔNG bị đổi/hoán vị — mỗi chân vẫn đứng đúng bên X của nó trong mesh gốc
+    const posX = [a, b].find((c) => c.thamSo.centerMm[0] > 0);
+    const negX = [a, b].find((c) => c.thamSo.centerMm[0] < 0);
+    ok('chân +X vẫn ở +X (tâm không dịch chuyển)', !!posX && within(posX.thamSo.centerMm[0], 0.2 * res.scaleMmPerUnit, 5));
+    ok('chân -X vẫn ở -X (tâm không dịch chuyển)', !!negX && within(Math.abs(negX.thamSo.centerMm[0]), 0.2 * res.scaleMmPerUnit, 5));
+  }
+  if (tors.length === 1 && tors[0].loai === 'torus') {
+    ok('vòng (vai trò khác, không đối tác) KHÔNG mang mirroredFrom', tors[0].mirroredFrom === undefined);
+    ok('vòng vẫn đúng bán kính như trước (không bị mirror-completion đụng)', within(tors[0].thamSo.rMajorMm, 0.28 * res.scaleMmPerUnit, 3));
+  }
 }
 
 console.log(`\n${pass} pass · ${fail} fail`);

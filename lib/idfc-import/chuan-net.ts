@@ -375,6 +375,139 @@ export function fitRingRansac(
   };
 }
 
+/* ───────── ②c MIRROR-COMPLETION: đối xứng phải SINH, không chỉ TỪ CHỐI ─────────
+
+ * Tới đây trục đối xứng CHỈ dùng để LOẠI (annularity check ở ④c/④c2) — vật đối xứng THẬT (4 chân
+ * ghế đúc cùng khuôn, 2 vòng tay vịn cùng cỡ) vẫn bị fit ĐỘC LẬP từng bên, cộng dồn sai số HAI LẦN:
+ * chân trái đo ra 38mm, chân phải 41mm, dù thực tế phải giống hệt. `mirrorCompleteShapes` sửa việc
+ * này SAU khi mọi part đã fit xong: dò mặt phẳng đối xứng bằng PCA trên TÂM của các part CÙNG VAI
+ * TRÒ (cùng hậu tố id, vd "-chan"), rồi COPY kích thước (KHÔNG fit lại) từ part có RMS THẤP HƠN
+ * sang part kia. Vị trí (center/axis) GIỮ NGUYÊN — đây không phải phép dịch chuyển: cylinder/torus
+ * có radius/height (hay rMajor/rMinor) là ĐẠI LƯỢNG VÔ HƯỚNG, mirror hình học của chúng qua bất kỳ
+ * mặt phẳng nào cũng ra đúng số đó — nên "mirror hình dạng" ở đây tương đương "tin số đo chắc hơn".
+ */
+
+export interface MirrorableShape {
+  id: string;
+  loai: 'cylinder' | 'torus';
+  /** vai trò vật lý (hậu tố id sau "pN-", vd "chan" · "vong" · "vong-tay-vin") — CHỈ so trong cùng vai trò */
+  kind: string;
+  centerMm: V3;
+  /** RMS fit gốc (mm) — bên thấp hơn được tin làm gốc */
+  rms: number;
+  /** cylinder: [radiusMm, heightMm] · torus: [rMajorMm, rMinorMm] */
+  shape: [number, number];
+}
+
+export interface MirrorResult {
+  /** id part BỊ SỬA (RMS cao hơn trong cặp/cụm đối xứng) */
+  id: string;
+  /** kích thước mới — COPY nguyên văn từ part gốc, không tính lại */
+  shape: [number, number];
+  /** id part LÀM GỐC (RMS thấp hơn) */
+  mirroredFrom: string;
+}
+
+/** Hậu tố vai trò từ id dạng `p<pid>-<vai trò>` (vd "p3-chan" → "chan"). Không khớp mẫu ⇒ dùng
+ * nguyên id — an toàn (mỗi part rơi vào một nhóm riêng của chính nó, không ghép nhầm). */
+function partKindOf(id: string): string {
+  const m = /^p\d+-(.+)$/.exec(id);
+  return m ? m[1] : id;
+}
+
+/**
+ * Dò đối xứng + copy kích thước — hàm THUẦN (không đụng ChuanNetPart) để test độc lập không cần
+ * dựng mesh.
+ *
+ * Thuật toán, cho từng nhóm CÙNG (loai, kind):
+ *  1. PCA trên tâm (centroidAndAxes, hàm sẵn có ở ②) → tâm nhóm `gc` + 3 trục trực chuẩn.
+ *  2. Với mỗi trục: phản chiếu MỌI tâm qua mặt phẳng (gc, trục) — nếu quan hệ khớp là ĐỐI XỨNG 1-1
+ *     THẬT (mọi tâm khớp đúng một tâm khác, và khớp đó soi ngược lại đúng chính nó — loại trục giả
+ *     may rủi khớp một cặp mà không khớp cả nhóm), trục này là MẶT ĐỐI XỨNG THẬT của cả nhóm.
+ *  3. Union-find gom các cặp khớp qua NHIỀU trục hợp lệ thành một cụm (4 chân ghế: mặt đối xứng
+ *     trái-phải + mặt trước-sau gộp cả 4 chân vào MỘT cụm liên thông qua 2 lượt hợp).
+ *  4. Mỗi cụm ≥2 phần tử: phần tử RMS THẤP NHẤT làm gốc, các phần còn lại NHẬN kích thước của nó.
+ *
+ * Không tìm được trục hợp lệ nào (hình không đối xứng thật, hoặc chỉ có 1 part trong vai trò đó)
+ * ⇒ nhóm GIỮ NGUYÊN, không có kết quả cho nhóm đó — đúng luật "không đạt thì giữ, cấm ép" xuyên
+ * suốt file này [T0].
+ */
+export function mirrorCompleteShapes(
+  items: MirrorableShape[],
+  opts: { matchTolRatio?: number } = {},
+): MirrorResult[] {
+  const matchTolRatio = opts.matchTolRatio ?? 0.12;
+  const out: MirrorResult[] = [];
+  const groups = new Map<string, MirrorableShape[]>();
+  for (const it of items) {
+    const key = `${it.loai}:${it.kind}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(it);
+  }
+
+  for (const group of groups.values()) {
+    const n = group.length;
+    if (n < 2) continue; // lẻ loi — không có đối tác, giữ nguyên [T0]
+
+    const centers = new Float64Array(n * 3);
+    group.forEach((g, i) => { centers[3 * i] = g.centerMm[0]; centers[3 * i + 1] = g.centerMm[1]; centers[3 * i + 2] = g.centerMm[2]; });
+    const { c: gc, axes } = centroidAndAxes(centers);
+
+    let minPairDist = Infinity;
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+      const d = Math.hypot(
+        group[i].centerMm[0] - group[j].centerMm[0],
+        group[i].centerMm[1] - group[j].centerMm[1],
+        group[i].centerMm[2] - group[j].centerMm[2],
+      );
+      if (d < minPairDist) minPairDist = d;
+    }
+    if (!isFinite(minPairDist) || minPairDist < 1e-6) continue; // tâm trùng nhau — suy biến, bỏ qua an toàn
+    const tol = minPairDist * matchTolRatio;
+
+    const par = group.map((_, i) => i);
+    const find = (a: number): number => { while (par[a] !== a) { par[a] = par[par[a]]; a = par[a]; } return a; };
+    const uni = (a: number, b: number) => { const ra = find(a); const rb = find(b); if (ra !== rb) par[ra] = rb; };
+
+    for (const axis of axes) {
+      const matched = new Array<number>(n).fill(-1);
+      let axisOk = true;
+      for (let i = 0; i < n && axisOk; i++) {
+        const d = sub(group[i].centerMm, gc);
+        const t = dot(d, axis);
+        const refl: V3 = [
+          group[i].centerMm[0] - 2 * t * axis[0],
+          group[i].centerMm[1] - 2 * t * axis[1],
+          group[i].centerMm[2] - 2 * t * axis[2],
+        ];
+        let bestJ = -1; let bestD = Infinity;
+        for (let j = 0; j < n; j++) {
+          if (j === i) continue;
+          const dj = Math.hypot(refl[0] - group[j].centerMm[0], refl[1] - group[j].centerMm[1], refl[2] - group[j].centerMm[2]);
+          if (dj < bestD) { bestD = dj; bestJ = j; }
+        }
+        if (bestJ === -1 || bestD > tol) { axisOk = false; break; }
+        matched[i] = bestJ;
+      }
+      // đối xứng 1-1 THẬT: quan hệ khớp phải soi ngược lại đúng chính nó — loại trục giả may rủi
+      if (axisOk) for (let i = 0; i < n && axisOk; i++) if (matched[matched[i]] !== i) axisOk = false;
+      if (!axisOk) continue;
+      for (let i = 0; i < n; i++) uni(i, matched[i]);
+    }
+
+    const comps = new Map<number, number[]>();
+    for (let i = 0; i < n; i++) { const r = find(i); if (!comps.has(r)) comps.set(r, []); comps.get(r)!.push(i); }
+    for (const comp of comps.values()) {
+      if (comp.length < 2) continue;
+      let rootI = comp[0];
+      for (const i of comp) if (group[i].rms < group[rootI].rms) rootI = i;
+      const root = group[rootI];
+      for (const i of comp) if (i !== rootI) out.push({ id: group[i].id, shape: root.shape, mirroredFrom: root.id });
+    }
+  }
+  return out;
+}
+
 /* ─────────────── ③ dựng lại primitive QUA build-ops (CHỈ GỌI) + đặt vào chỗ ─────────────── */
 
 /** Trụ tham số → tam giác mm (Y-up không gian mesh): gọi `revolveProfile` (kho build-ops) với tiết
@@ -479,6 +612,9 @@ export type ChuanNetPart =
       saiSoMm: number; saiSoPct: number; trisTruoc: number; trisSau: number;
       /** Kd kế thừa (sRGB 0..1) từ texel mảng mesh bị thay — null khi caller không đưa texture. */
       kdSrgb: V3 | null; matName: string;
+      /** id part LÀM GỐC nếu radius/height của part này được COPY qua mirror-completion (②c) —
+       * không có ⇒ part tự đứng bằng fit của chính nó. */
+      mirroredFrom?: string;
     }
   | {
       loai: 'torus';
@@ -489,6 +625,8 @@ export type ChuanNetPart =
       kdSrgb: V3 | null; matName: string;
       /** góc phủ của điểm inlier quanh vòng (độ) — vòng hở <300° bị loại, xem fitRingRansac. */
       phuDo?: number;
+      /** xem ghi chú cùng tên ở nhánh 'cylinder' — cùng cơ chế cho rMajor/rMinor. */
+      mirroredFrom?: string;
     }
   | { loai: 'mesh'; id: string; trisTruoc: number; trisSau: number; dinhTruoc: number; dinhSau: number; lyDoGiu: string }
   | { loai: 'shadow-removed'; id: string; trisTruoc: number; trisSau: 0; lyDo: string };
@@ -916,6 +1054,52 @@ export function chuanNetGeometry(geom: GlbGeometry, opts: ChuanNetOpts = {}): Ch
     outTris.push({ positionsMm: rebuilt, group: `${id}_torus`, mat: matName });
   }
 
+  /* — ④c3 MIRROR-COMPLETION: cặp part cùng vai trò (chân trái/phải, vòng…) đối chiếu qua mặt đối
+   * xứng — bên RMS thấp hơn áp kích thước sang bên kia, xoá sai số cộng dồn của fit độc lập từng
+   * bên. Thuật toán đầy đủ ở khối ②c phía trên `mirrorCompleteShapes`. Chạy SAU khi mọi part
+   * cylinder/torus đã fit (④a/④c/④c2) và TRƯỚC khi gom phần mesh còn lại (④d) — sửa `parts` +
+   * viết lại geometry tương ứng trong `outTris` để OBJ xuất ra khớp con số mới. — */
+  const partOutIdx = new Map<string, number>(); // id part → chỉ số outTris (để viết lại geometry khi mirror)
+  for (let i = 0; i < outTris.length; i++) {
+    const m = /^(.+)_(cylinder|torus)$/.exec(outTris[i].group);
+    if (m) partOutIdx.set(m[1], i);
+  }
+  const mirrorItems: MirrorableShape[] = [];
+  for (const p of parts) {
+    if (p.loai === 'cylinder') mirrorItems.push({ id: p.id, loai: 'cylinder', kind: partKindOf(p.id), centerMm: p.thamSo.centerMm, rms: p.saiSoMm, shape: [p.thamSo.radiusMm, p.thamSo.heightMm] });
+    else if (p.loai === 'torus') mirrorItems.push({ id: p.id, loai: 'torus', kind: partKindOf(p.id), centerMm: p.thamSo.centerMm, rms: p.saiSoMm, shape: [p.thamSo.rMajorMm, p.thamSo.rMinorMm] });
+  }
+  for (const r of mirrorCompleteShapes(mirrorItems)) {
+    const pi = parts.findIndex((p) => p.id === r.id);
+    if (pi < 0) continue;
+    const p = parts[pi];
+    if (p.loai === 'cylinder') {
+      const [radiusMm, heightMm] = r.shape;
+      const h2 = heightMm / 2;
+      const buildOp = {
+        op: 'revolve' as const,
+        profileMm: [{ x: 0, y: -h2 }, { x: radiusMm, y: -h2 }, { x: radiusMm, y: h2 }, { x: 0, y: h2 }],
+        centerXMm: 0, centerYMm: 0, segments: p.buildOp.segments,
+      };
+      parts[pi] = { ...p, thamSo: { ...p.thamSo, radiusMm, heightMm }, buildOp, mirroredFrom: r.mirroredFrom };
+      const oi = partOutIdx.get(p.id);
+      if (oi != null) outTris[oi].positionsMm = rebuildCylinderMm({ axis: p.thamSo.axis, center: p.thamSo.centerMm, radius: radiusMm, height: heightMm }, p.buildOp.segments);
+    } else if (p.loai === 'torus') {
+      const [rMajorMm, rMinorMm] = r.shape;
+      const profilePts = p.buildOp.profileMm.length - 1;
+      const profileMm: { x: number; y: number }[] = [];
+      for (let k = 0; k <= profilePts; k++) {
+        const a = (k / profilePts) * Math.PI * 2;
+        profileMm.push({ x: rMajorMm + rMinorMm * Math.cos(a), y: rMinorMm * Math.sin(a) });
+      }
+      const buildOp = { op: 'revolve' as const, profileMm, centerXMm: 0, centerYMm: 0, segments: p.buildOp.segments };
+      parts[pi] = { ...p, thamSo: { ...p.thamSo, rMajorMm, rMinorMm }, buildOp, mirroredFrom: r.mirroredFrom };
+      const oi = partOutIdx.get(p.id);
+      if (oi != null) outTris[oi].positionsMm = rebuildTorusMm({ axis: p.thamSo.axis, center: p.thamSo.centerMm, rMajor: rMajorMm, rMinor: rMinorMm }, p.buildOp.segments, profilePts);
+    }
+    ghiChu.push(`mirror-completion: ${r.id} nhận kích thước từ ${r.mirroredFrom} (RMS thấp hơn) — đối xứng, không fit lại.`);
+  }
+
   /* — ④d PHẦN CÒN LẠI: mesh giữ, bỏ đỉnh trùng (theo cặp vị trí+UV — không phá seam texture) — */
   const restTris: number[] = [];
   for (let t = 0; t < nTri; t++) if (!claimed[t]) restTris.push(t);
@@ -1021,11 +1205,12 @@ export function chuanNetGeometry(geom: GlbGeometry, opts: ChuanNetOpts = {}): Ch
     polySau,
     parts: parts.map((p) => {
       if (p.loai === 'cylinder' || p.loai === 'torus') {
-        const { loai, id, thamSo, buildOp, saiSoMm, saiSoPct, trisTruoc, trisSau, kdSrgb, matName } = p;
+        const { loai, id, thamSo, buildOp, saiSoMm, saiSoPct, trisTruoc, trisSau, kdSrgb, matName, mirroredFrom } = p;
         return {
           loai, id, thamSo, buildOp, datMm: { centerMm: thamSo.centerMm, axis: thamSo.axis },
           vatLieu: { matName, kdSrgb, nguon: kdSrgb ? 'trung vị texel atlas của mảng mesh bị thay' : 'không có atlas — Kd xám dự phòng' },
           saiSoMm, saiSoPct, trisTruoc, trisSau,
+          mirroredFrom: mirroredFrom ?? null,
         };
       }
       if (p.loai === 'mesh') return { loai: p.loai, id: p.id, ref: `obj:o ${p.id}_mesh`, trisTruoc: p.trisTruoc, trisSau: p.trisSau, lyDoGiu: p.lyDoGiu };
