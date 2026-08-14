@@ -1,10 +1,44 @@
 # InteriorFlow chuanNet MTL
-newmtl mat_primitive
-Kd 0.72 0.70 0.66
-Ks 0.04 0.04 0.04
-Ns 24
+newmtl mat_p1-chan
+Kd 0.263 0.188 0.133
+Ka 0.263 0.188 0.133
+Ks 0.05 0.05 0.05
+Ns 32
+illum 2
+newmtl mat_p2-chan
+Kd 0.259 0.184 0.137
+Ka 0.259 0.184 0.137
+Ks 0.05 0.05 0.05
+Ns 32
+illum 2
+newmtl mat_p3-chan
+Kd 0.227 0.165 0.122
+Ka 0.227 0.165 0.122
+Ks 0.05 0.05 0.05
+Ns 32
+illum 2
+newmtl mat_p4-chan
+Kd 0.259 0.188 0.137
+Ka 0.259 0.188 0.137
+Ks 0.05 0.05 0.05
+Ns 32
+illum 2
+newmtl mat_p6-vong-tay-vin
+Kd 0.314 0.243 0.173
+Ka 0.314 0.243 0.173
+Ks 0.05 0.05 0.05
+Ns 32
+illum 2
+newmtl mat_p7-vong-tay-vin
+Kd 0.333 0.259 0.180
+Ka 0.333 0.259 0.180
+Ks 0.05 0.05 0.05
+Ns 32
+illum 2
 newmtl mat_mesh
 Kd 1.0 1.0 1.0
+Ka 1.0 1.0 1.0
 Ks 0.02 0.02 0.02
 Ns 10
+illum 2
 map_Kd lincoln-327-basecolor.png
