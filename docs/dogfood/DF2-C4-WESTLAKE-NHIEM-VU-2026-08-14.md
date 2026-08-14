@@ -41,6 +41,14 @@
 
 Luật áp xuyên suốt (không phải mục riêng): không gian hẹp xử MẢNG LỚN, đồng nhất 1 vật liệu trên vách (C4-7) · chất lượng > số lượng (C4-9).
 
+## ⚠️ PHÊ BÌNH 14/08 (Hoà) — GHI LUẬT, HẠ KẾT QUẢ
+Comment sếp CHUNG CHUNG mà T tự dịch thành ý định vật liệu cụ thể rồi cho agent chạy job luôn
+— agent kiêm cả vai người-duyệt-phiếu = trái [T5]. Kết quả ảnh bếp "không đúng ý, tào lao".
+**Xử lý:** ảnh bếp đã chỉnh = NHÁP THỬ MÁY (chứng minh vòng chạy, KHÔNG phải deliverable) —
+mục 2 hạ về "vòng máy ✓ / nội dung ✗ chờ ý định Hoà". Từ nay: mỗi mục checklist C4 phải có
+Ý ĐỊNH CỤ THỂ do Hoà chốt (máy trình 2-3 phương án/khu kèm căn cứ, Hoà chọn) rồi mới đốt job.
+Luật ghi memory vĩnh viễn: hoi-y-dinh-truoc-khi-ap-gu. MVP hôm nay Hoà chốt = GHẾ TỪ HÌNH → 3D.
+
 ## CHỜ HOÀ
 (hết — 2 câu cũ đã trả lời: đèn ray dùng mọi khu · phạm vi = checklist trên, xong đâu gạch đó)
 
