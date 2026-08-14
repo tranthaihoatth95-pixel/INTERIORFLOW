@@ -235,8 +235,9 @@ hai lần. Các đẳng cấu ĐÃ NHẬN DIỆN (12/08 — mỗi cặp là mộ
 | Núm-stack per-item | BuildRecipe · bảng ánh xạ mảng render · ThinkDial | **khuôn NÚM-STACK** (tái dùng UI BuildRecipeSection) |
 | Máy kiểm sau khi áp | CHUAN_DAU_RA · kiểm sắc độ B6 · soi build | **PostGate** (cắm lib/review) |
 | Đề xuất trộn nguồn có gia phả | dòng B4 · Scaffolder · góp ý concept · Magic sau này | **SuggestBlend(70 ngành/20 DNA KTS/10 gu dự án)** |
+| **Cấu kiện lắp ghép, khoá từng phần** (Hoà chốt 14/08 — LUẬT NGÀNH: "sản phẩm sinh ra phải tinh chỉnh được ở cấp chi tiết, khoá phần không đổi, chỉ động phần cần đổi, không cấm khách hàng comment") | ghế Lincoln (seat/back/legs/rings) · mọi `.idfc` furniture/millwork sau này · Grounded Render (bản 3D của cùng nguyên tắc — 2D là mask ảnh, 3D là mask-part) | **PartLock** (mở rộng RegionId sang hình học 3D — mỗi cấu kiện có `id/ten/khoa`, tái sinh CHỈ phần chưa khoá) |
 
-LUẬT THI HÀNH: tính năng mới rơi vào 1 trong 5 khuôn mà tự chế cơ chế riêng = vi phạm đồng bộ — T chặn ở bước plan.
+LUẬT THI HÀNH: tính năng mới rơi vào 1 trong 6 khuôn mà tự chế cơ chế riêng = vi phạm đồng bộ — T chặn ở bước plan.
 
 Khi T thấy đẳng cấu MỚI → đề xuất vào bảng này (chốt của Hoà mới thành luật).
 
