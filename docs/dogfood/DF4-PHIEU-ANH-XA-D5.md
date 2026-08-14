@@ -55,6 +55,17 @@ Máy khi đo: `LookProfile` (tone/WB/sắc độ/tương phản) CHỈ trích t�
 có texture hạt mịn · sàn đá phản chiếu mềm · tổng thể ấm lên rõ, sắc độ 3 lớp tách bạch.
 ⇒ Củng cố M2: giữ nguyên bố cục/vật liệu (theo V2), áp ÁNH SÁNG + SẮC ĐỘ + NƯỚC HÌNH (theo 2 ảnh hoàn chỉnh).
 
+## B3 · OPT THẢM (Hoà chốt 14/08) — kèm RÀNG BUỘC SẮC ĐỘ
+Thêm phương án thảm: **dệt sợi kem-be, hoa văn khung viền mờ, bề mặt nhám có hạt** (ảnh Hoà gửi
+14/08 — thả file vào `tham-chieu-B/THAM-*.jpg`).
+⛔ **RÀNG BUỘC BẮT BUỘC khi áp:** *"tương quan sắc độ vật liệu ĐẬM HƠN VÁCH"* — thảm sau khi áp
+phải có luminance THẤP HƠN mảng tường/vách trong cùng khung hình (đủ tách bạch, không dính sắc độ).
+Nghĩa là KHÔNG bê nguyên độ sáng của ảnh mẫu (ảnh mẫu chụp phẳng, sáng đều) mà phải hạ tông/tăng
+độ sâu cho khớp thứ tự sắc độ 3 lớp: **trần sáng nhất > tường trung > sàn+thảm đậm nhất**.
+Giữ nguyên: chất dệt có hạt, hoa văn khung viền, họ màu kem-be.
+⇒ Máy phải KIỂM lại sau khi áp (PostGate): nếu luminance thảm ≥ luminance vách thì BÁO LỆCH, không ship.
+Ràng buộc này cũng chữa đúng lời sếp trong DF2: *"các sắc độ cứ dính nhau, không sang"*.
+
 ## C · BA MỨC CƯỜNG ĐỘ ÁP — **HOÀ CHỌN 1**
 | Mức | Làm gì | Được / Mất |
 |---|---|---|
