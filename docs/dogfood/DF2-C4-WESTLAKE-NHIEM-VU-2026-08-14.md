@@ -28,5 +28,18 @@
 5. **Xuất PDF mới từ deck** (exportDeckToPdf sẵn) — file giá trị cuối, so trang-đối-trang với bản gốc.
 6. Sổ findings DF2-F* như ST5; C4-2 chờ Hoà trả lời khu nào được dùng đèn ray.
 
+## ✅ CHECKLIST THI HÀNH — xếp theo MỨC ĐỘ (Hoà chốt 14/08: xong cái nào gạch cái đó)
+
+- [ ] **1 · PHÒNG KHÁCH (nặng nhất — "đem bán hàng chắc ko bán dc")**: bố trí lại fur + bộ fur mix cho ăn nhau theo MỘT định hướng (C4-3)
+- [ ] **2 · BẾP/KHÁCH BẾP ĂN ("chưa thấy góc này cải thiện")**: tách sắc độ 3 lớp, bộ màu phối sang lên — sắc độ hết dính nhau (C4-1) · ràng buộc: GIỮ ĐÈN RAY (Hoà 14/08: mọi không gian C4 đều dùng)
+- [ ] **3 · NỀN ĐỊNH HƯỚNG ("phong cách là gì anh ko nhận biết được")**: lập Thẻ DNA C4 từ 2 không gian được khen — làm chuẩn cho mọi phiếu chỉnh (C4-6; làm TRƯỚC 1-2 về mặt thứ tự thi công dù mức độ xếp 3)
+- [ ] **4 · VỆ SINH**: trẻ hoá vật liệu + trục nhấn chính-phụ (C4-4)
+- [ ] **5 · PASS THỐNG NHẤT CẤP BỘ**: hết cảnh view bóng bẩy ↔ view mộc thô, hài hoà toàn tập (C4-8)
+- [ ] **6 · CLOSET ("như 1 cái hẻm")**: cần đổi VIEW — ngoài vòng inpaint cục bộ → đề xuất ẨN theo chỉ đạo a T., ghi rõ trong PDF cuối (C4-5)
+- [ ] **7 · XUẤT PDF CHUẨN CHỈNH**: deck → PDF mới, so trang-đối-trang, ảnh sửa thay đúng vị trí đúng khung — GIÁ TRỊ CUỐI
+- [x] **Đèn ray (C4-2)** — ĐÃ CHỐT 14/08: các không gian C4 ĐỀU DÙNG → không xoá đèn ray ở bất kỳ khu nào khi chỉnh trần
+
+Luật áp xuyên suốt (không phải mục riêng): không gian hẹp xử MẢNG LỚN, đồng nhất 1 vật liệu trên vách (C4-7) · chất lượng > số lượng (C4-9).
+
 ## CHỜ HOÀ
-① Danh sách khu ĐƯỢC/KHÔNG được dùng đèn ray (C4-2) ② gật phạm vi "sửa 4-6 ảnh + ẩn phần chưa đạt" theo chỉ đạo a T. (C4-9).
+(hết — 2 câu cũ đã trả lời: đèn ray dùng mọi khu · phạm vi = checklist trên, xong đâu gạch đó)
