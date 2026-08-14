@@ -21,21 +21,33 @@
  *      "KHÔNG thêm dependency mới". Không có cách nào rasterize cả trang PDF (đường nét vector +
  *      màu) chỉ bằng `unpdf` không kèm canvas backend. ⇒ Slide KHÔNG có element ảnh "Nền gốc" đáy
  *      dưới như phiếu mô tả — nền slide là màu trắng phẳng (`background: '#ffffff'`).
- *   2. **Không có lớp ẢNH (XObject nhúng).** `unpdf.extractImages(pdf, pageNumber)` CÓ trích được
- *      pixel thô của ảnh nhúng, nhưng KHÔNG trả toạ độ/kích thước ĐẶT trên trang (không có ma
- *      trận biến đổi `cm`/transform của khối `Do`) — API chỉ cho biết "trang này có ảnh gì",
- *      không cho biết "ảnh đó nằm ở đâu". Đặt bừa ảnh lên slide (vd full-bleed) là ĐOÁN, không
- *      phải TẤT ĐỊNH — đúng câu phiếu ①.3 cho phép: "không moi được thì bỏ qua (nền đã chứa) —
- *      KHÔNG cố, ghi thật trong báo cáo." ⇒ Đã bỏ, không làm lớp Ảnh ở bậc 1 này.
+ *   2. **Lớp ẢNH (XObject nhúng) — ĐÃ CÓ từ D1 (14/08, phiếu `docs/phieu-giao/demo-d1-pdf-anh.md`,
+ *      bậc 1c).** Ghi chú cũ ở đây từng nói toạ độ ảnh "không moi được" — đúng với WRAPPER
+ *      `unpdf.extractImages` (nó vứt transform đi), nhưng toạ độ vẫn moi được TẤT ĐỊNH từ chính
+ *      operator-list mà hàm đó đang duyệt: bám `save`/`restore`/`transform` (ma trận `cm`) tới lúc
+ *      gặp `paintImageXObject` thì CTM hiện hành chính là phép đặt ảnh (ô vuông đơn vị → vùng trên
+ *      trang). Xem `extractImagesWithBbox` — CÙNG vòng lặp + CÙNG phép kiểm hợp lệ với
+ *      `unpdf.extractImages` (đọc từ node_modules/unpdf/dist/index.mjs#extractImages$1), chỉ thêm
+ *      bám CTM; không dep mới, chỉ gọi API sẵn của unpdf (`getResolvedPDFJS` để lấy bảng `OPS`).
+ *      Ảnh XOAY/NGHIÊNG (ma trận có thành phần b/c đáng kể) → bbox chữ-nhật-thẳng-trục không còn
+ *      thật → đặt FULL-SLIDE dưới đáy + cờ `inferred` trong provenance (khai thật, không đoán mò).
+ *      `paintImageXObjectRepeat`/ảnh inline: unpdf cũng không trích — ghi vào `imageWarnings`.
+ *      Pixel trích là pixel ĐÃ GIẢI MÃ của pdf.js (byte JPEG nén gốc KHÔNG lấy lại được qua API
+ *      này) — đóng gói LOSSLESS thành PNG thuần (`rawPixelsToPngDataUrl`, không canvas, không dep):
+ *      không mất thêm chất lượng, KHÔNG downscale [T0]; đổi lại dataURL có thể NẶNG (PNG không
+ *      nén deflate-stored + base64 ≈ ×4 so với JPEG gốc — cảnh báo trong báo cáo phiếu D1).
+ *      Mỗi ảnh = 1 `ImageElement` (z DƯỚI lớp chữ) + 1 `LinkedAsset` trong `PdfImportResult.
+ *      linkedAssets` — assetId TẤT ĐỊNH theo hash NỘI DUNG pixel (`pdfImageAssetId`): cùng ảnh
+ *      xuất hiện 2 trang = CÙNG asset [T1], provenance ghi file/trang-đầu-thấy/bbox [T0]. Caller
+ *      (Toolbar/PresentEditor) phải merge `linkedAssets` vào `deck.linkedAssets` khi nhận slides.
  *   3. **Hệ quả trực tiếp lên lớp Chữ:** phiếu ①.2 định "mặc định lớp chữ ẨN vì nền raster đã có
  *      chữ sẵn" — giả định đó KHÔNG còn đúng vì không có nền raster nào để nhìn thấy chữ. Nếu vẫn
  *      ẩn lớp Chữ theo đúng câu chữ phiếu, slide sẽ TRẮNG TRƠN, vô dụng. Quyết định: **lớp Chữ
  *      MẶC ĐỊNH HIỆN** — đây là lựa chọn ĐƠN GIẢN NHẤT giữ đúng tinh thần "nhập PDF ra deck nhìn
  *      thấy được, sửa tiếp trong IF" (luật nền §7②) khi tiền đề "đã có nền" không còn.
  *
- * Những phần này (raster nền thật, đặt ảnh đúng vị trí, OCR trang scan) CẦN: (a) gói
- * `@napi-rs/canvas` HOẶC một backend render PDF khác, (b) đọc operator-list của PDF.js (biến đổi
- * `cm`/`Do`) để suy toạ độ ảnh — cả hai NGOÀI PHẠM VI bậc 1 (⑤ cấm dependency mới), để dành bậc 2.
+ * Phần còn nợ (raster NỀN cả trang, OCR trang scan) CẦN gói `@napi-rs/canvas` HOẶC một backend
+ * render PDF khác — NGOÀI PHẠM VI bậc 1 (⑤ cấm dependency mới), vẫn để dành bậc 2 (nợ 1b).
  *
  * ─────────────────────────────────────────────────────────────────────────────────────────
  * CÁCH GOM CHỮ THÀNH KHỐI (SỐNG đúng vị trí/cỡ)
@@ -74,7 +86,18 @@
  * thấy/không lọt vào export, vẫn đi theo dữ liệu deck, xem được qua panel Lớp nếu bật hiện).
  */
 
-import { makeText, newId, type EditorSlide, type Frame, type TextElement } from './model';
+import {
+  makeImage,
+  makeText,
+  newId,
+  type EditorDeck,
+  type EditorSlide,
+  type Frame,
+  type ImageElement,
+  type LinkedAsset,
+  type TextElement,
+} from './model';
+import { attachElementToAsset } from './linked-assets';
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════
  * ①  GOM TEXT ITEM → DÒNG → KHỐI (THUẦN — không đụng unpdf/PDF thật, test được bằng tay)
@@ -286,6 +309,231 @@ function blockToTextElement(b: TextBlock, pageW: number, pageH: number, isTitle:
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ②b  D1 — LỚP ẢNH, phần THUẦN (PNG encoder · hash tất định · ma trận CTM → bbox)
+ *     Không DOM, không canvas, không dep — test bằng sucrase-node y như tầng ①②.
+ * ════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* ---- PNG encoder thuần (deflate STORED — không nén nhưng là PNG hợp lệ, tất định 100%) ---- */
+
+let CRC_TABLE: Uint32Array | null = null;
+function crc32(bytes: Uint8Array, start: number, end: number): number {
+  if (!CRC_TABLE) {
+    CRC_TABLE = new Uint32Array(256);
+    for (let n = 0; n < 256; n += 1) {
+      let c = n;
+      for (let k = 0; k < 8; k += 1) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      CRC_TABLE[n] = c >>> 0;
+    }
+  }
+  let crc = 0xffffffff;
+  for (let i = start; i < end; i += 1) crc = CRC_TABLE[(crc ^ bytes[i]) & 0xff] ^ (crc >>> 8);
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function adler32(bytes: Uint8Array): number {
+  // chuẩn zlib RFC 1950 — mod 65521; cộng dồn từng byte (đủ nhanh cho ảnh vài MB, thuần tất định).
+  let a = 1;
+  let b = 0;
+  for (let i = 0; i < bytes.length; i += 1) {
+    a = (a + bytes[i]) % 65521;
+    b = (b + a) % 65521;
+  }
+  return ((b << 16) | a) >>> 0;
+}
+
+function writeU32BE(buf: Uint8Array, off: number, v: number): void {
+  buf[off] = (v >>> 24) & 0xff;
+  buf[off + 1] = (v >>> 16) & 0xff;
+  buf[off + 2] = (v >>> 8) & 0xff;
+  buf[off + 3] = v & 0xff;
+}
+
+/** 1 chunk PNG: [len BE32][type 4 ký tự][body][crc32(type+body)]. */
+function pngChunk(type: string, body: Uint8Array): Uint8Array {
+  const out = new Uint8Array(12 + body.length);
+  writeU32BE(out, 0, body.length);
+  for (let i = 0; i < 4; i += 1) out[4 + i] = type.charCodeAt(i);
+  out.set(body, 8);
+  writeU32BE(out, 8 + body.length, crc32(out, 4, 8 + body.length));
+  return out;
+}
+
+/** zlib stream KHÔNG nén (deflate stored blocks ≤65535 byte) — hợp lệ mọi trình đọc PNG. */
+function zlibStored(raw: Uint8Array): Uint8Array {
+  const blocks = Math.max(1, Math.ceil(raw.length / 65535));
+  const out = new Uint8Array(2 + raw.length + blocks * 5 + 4);
+  out[0] = 0x78;
+  out[1] = 0x01;
+  let o = 2;
+  for (let i = 0; i < blocks; i += 1) {
+    const start = i * 65535;
+    const len = Math.min(65535, raw.length - start);
+    out[o] = i === blocks - 1 ? 1 : 0; // BFINAL
+    out[o + 1] = len & 0xff;
+    out[o + 2] = (len >>> 8) & 0xff;
+    out[o + 3] = ~len & 0xff;
+    out[o + 4] = (~len >>> 8) & 0xff;
+    out.set(raw.subarray(start, start + len), o + 5);
+    o += 5 + len;
+  }
+  writeU32BE(out, o, adler32(raw));
+  return out;
+}
+
+const B64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+/** base64 thuần (không Buffer/btoa — chạy y hệt Node lẫn browser, tất định). */
+function bytesToBase64(bytes: Uint8Array): string {
+  const parts: string[] = [];
+  let chunk = '';
+  let i = 0;
+  for (; i + 2 < bytes.length; i += 3) {
+    const n = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2];
+    chunk +=
+      B64_ALPHABET[n >>> 18] + B64_ALPHABET[(n >>> 12) & 63] + B64_ALPHABET[(n >>> 6) & 63] + B64_ALPHABET[n & 63];
+    if (chunk.length >= 24000) {
+      parts.push(chunk);
+      chunk = '';
+    }
+  }
+  if (i < bytes.length) {
+    const b0 = bytes[i];
+    const b1 = i + 1 < bytes.length ? bytes[i + 1] : 0;
+    chunk += B64_ALPHABET[b0 >>> 2] + B64_ALPHABET[((b0 & 3) << 4) | (b1 >>> 4)];
+    chunk += i + 1 < bytes.length ? B64_ALPHABET[(b1 & 15) << 2] : '=';
+    chunk += '=';
+  }
+  parts.push(chunk);
+  return parts.join('');
+}
+
+/**
+ * Pixel thô (từ pdf.js: 1=grayscale · 3=RGB · 4=RGBA, 8-bit) → PNG dataURL LOSSLESS.
+ * KHÔNG canvas (chạy được trong test Node lẫn browser), KHÔNG nén (deflate stored) — giữ nguyên
+ * từng pixel [T0], tất định từng byte [T6]. Giá phải trả: file to (xem docstring đầu file, mục 2).
+ */
+export function rawPixelsToPngDataUrl(
+  data: Uint8Array | Uint8ClampedArray,
+  width: number,
+  height: number,
+  channels: 1 | 3 | 4,
+): string {
+  const colorType = channels === 1 ? 0 : channels === 3 ? 2 : 6;
+  const rowBytes = width * channels;
+  // mỗi scanline PNG mở đầu bằng 1 byte filter (0 = None).
+  const raw = new Uint8Array((rowBytes + 1) * height);
+  for (let y = 0; y < height; y += 1) {
+    const o = y * (rowBytes + 1);
+    raw[o] = 0;
+    for (let x = 0; x < rowBytes; x += 1) raw[o + 1 + x] = data[y * rowBytes + x];
+  }
+  const ihdr = new Uint8Array(13);
+  writeU32BE(ihdr, 0, width);
+  writeU32BE(ihdr, 4, height);
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = colorType;
+  ihdr[10] = 0; // compression
+  ihdr[11] = 0; // filter method
+  ihdr[12] = 0; // interlace
+  const sig = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+  const chunks = [sig, pngChunk('IHDR', ihdr), pngChunk('IDAT', zlibStored(raw)), pngChunk('IEND', new Uint8Array(0))];
+  let total = 0;
+  for (const c of chunks) total += c.length;
+  const png = new Uint8Array(total);
+  let off = 0;
+  for (const c of chunks) {
+    png.set(c, off);
+    off += c.length;
+  }
+  return `data:image/png;base64,${bytesToBase64(png)}`;
+}
+
+/* ---- assetId tất định theo NỘI DUNG ảnh (phiếu ④.1: trùng ảnh 2 trang = CÙNG asset) ---- */
+
+/**
+ * Hash FNV-1a kép 32-bit (2 seed khác nhau → 16 hex) trên pixel + kích thước + số kênh — thuần,
+ * tất định, không crypto (không cần chống chủ đích, chỉ cần trùng-nội-dung ⇒ trùng-id và xác suất
+ * va chạm ngẫu nhiên ~2⁻⁶⁴ đủ nhỏ cho registry 1 deck). Tiền tố `img_pdf_` chỉ để người đọc debug
+ * nhận ra nguồn — KHÔNG nơi nào parse tiền tố assetId (xem linked-assets.ts#newAssetId).
+ */
+export function pdfImageAssetId(
+  data: Uint8Array | Uint8ClampedArray,
+  width: number,
+  height: number,
+  channels: number,
+): string {
+  let h1 = (0x811c9dc5 ^ width) >>> 0;
+  let h2 = (0xcbf29ce4 ^ height) >>> 0;
+  for (let i = 0; i < data.length; i += 1) {
+    const b = data[i];
+    h1 = Math.imul(h1 ^ b, 16777619) >>> 0;
+    h2 = Math.imul(h2 ^ b, 0x85ebca6b) >>> 0;
+  }
+  h1 = Math.imul(h1 ^ channels, 16777619) >>> 0;
+  h2 = Math.imul(h2 ^ channels, 0x85ebca6b) >>> 0;
+  return `img_pdf_${h1.toString(16).padStart(8, '0')}${h2.toString(16).padStart(8, '0')}`;
+}
+
+/* ---- ma trận CTM của PDF (toán tử `cm`) → bbox điểm đặt ảnh ---- */
+
+/** [a, b, c, d, e, f] — điểm (x,y) ↦ (ax + cy + e, bx + dy + f). */
+export type PdfMatrix = [number, number, number, number, number, number];
+const MTX_ID: PdfMatrix = [1, 0, 0, 1, 0, 0];
+
+/** Ghép `cm` vào CTM: điểm đi qua `m` TRƯỚC rồi `ctm` — đúng ngữ nghĩa toán tử `cm` của PDF. */
+export function mtxConcat(ctm: PdfMatrix, m: PdfMatrix): PdfMatrix {
+  return [
+    m[0] * ctm[0] + m[1] * ctm[2],
+    m[0] * ctm[1] + m[1] * ctm[3],
+    m[2] * ctm[0] + m[3] * ctm[2],
+    m[2] * ctm[1] + m[3] * ctm[3],
+    m[4] * ctm[0] + m[5] * ctm[2] + ctm[4],
+    m[4] * ctm[1] + m[5] * ctm[3] + ctm[5],
+  ];
+}
+
+/** bbox điểm PDF (gốc DƯỚI-trái, như text item) của 1 ảnh đặt qua CTM. */
+export interface PdfImageBboxPt {
+  left: number;
+  bottom: number;
+  right: number;
+  top: number;
+}
+
+/**
+ * `paintImageXObject` vẽ ảnh vào Ô VUÔNG ĐƠN VỊ (0,0)–(1,1) rồi CTM đặt nó lên trang. Ma trận có
+ * xoay/nghiêng (|b|+|c| đáng kể so với |a|+|d|) → hình đặt KHÔNG còn là chữ nhật thẳng trục, bbox
+ * min/max sẽ NÓI DỐI về vị trí thật ⇒ trả null để caller đặt full-slide + cờ `inferred` (phiếu
+ * ④.2 — khai thật). Lật/scale âm (d<0 rất phổ biến vì PDF y hướng lên) thì bbox 4 góc vẫn CHÍNH
+ * XÁC — xử lý bằng min/max, không phải ca inferred.
+ */
+export function ctmToImageBbox(m: PdfMatrix): PdfImageBboxPt | null {
+  const skew = Math.abs(m[1]) + Math.abs(m[2]);
+  const scale = Math.abs(m[0]) + Math.abs(m[3]);
+  if (!(scale > 0) || skew > scale * 0.001) return null;
+  const x0 = m[4];
+  const x1 = m[0] + m[4]; // c ≈ 0 nên bỏ qua thành phần c/b trong 4 góc
+  const y0 = m[5];
+  const y1 = m[3] + m[5];
+  const left = Math.min(x0, x1);
+  const right = Math.max(x0, x1);
+  const bottom = Math.min(y0, y1);
+  const top = Math.max(y0, y1);
+  if (right - left < 0.01 || top - bottom < 0.01) return null; // suy biến — không tin
+  return { left, bottom, right, top };
+}
+
+/** Quy đổi bbox điểm PDF → `Frame` % sân khấu (KHÔNG đệm — ảnh không có vấn đề font thay thế). */
+export function imageBboxToFrame(b: PdfImageBboxPt, pageW: number, pageH: number): Frame {
+  return {
+    x: (b.left / pageW) * 100,
+    y: ((pageH - b.top) / pageH) * 100,
+    w: Math.max(0.5, ((b.right - b.left) / pageW) * 100),
+    h: Math.max(0.5, ((b.top - b.bottom) / pageH) * 100),
+    rotation: 0,
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
  * ③  LỚP UNPDF (đụng file thật — nạp động, không nặng cold-start các route không dùng PDF import)
  * ════════════════════════════════════════════════════════════════════════════════════════ */
 
@@ -304,6 +552,19 @@ export interface PdfImportResult {
   /** số trang trong `slides` là trang SCAN (0 chữ — badge OCR bậc 2), theo số trang 1-based. */
   scanPages: number[];
   warnings: PdfImportWarning[];
+  /**
+   * D1 — registry tài sản ảnh trích từ PDF: key = assetId TẤT ĐỊNH theo nội dung pixel
+   * (`pdfImageAssetId` — trùng ảnh nhiều trang = 1 asset [T1]), value mang `provenance`
+   * file/trang/bbox [T0]. CALLER (Toolbar/PresentEditor) PHẢI merge vào `deck.linkedAssets`
+   * khi nhận slides — không merge thì element vẫn hiển thị đúng (src đã gán) nhưng mất tính
+   * "sửa 1 lần đổi mọi nơi" của linked asset.
+   */
+  linkedAssets: Record<string, LinkedAsset>;
+  /**
+   * D1 — sự cố TRÍCH ẢNH lẻ (ảnh lặp/inline/mask không hỗ trợ, lỗi giải mã…). TÁCH KHỎI
+   * `warnings` vì trang vẫn ra slide chữ bình thường — không được tính vào `converted` 2 lần.
+   */
+  imageWarnings: PdfImportWarning[];
 }
 
 export interface PdfPageRange {
@@ -350,24 +611,18 @@ export function parsePageRangeInput(input: string, total: number): PdfPageRange 
   return null;
 }
 
-function scanBadgeSlide(pageNumber: number): EditorSlide {
-  return {
-    id: newId('sld'),
-    background: '#ffffff',
-    backgroundImage: null,
-    templateId: 'pdf-import-scan',
-    elements: [
-      makeText({
-        text: `Trang ${pageNumber} — trang scan, chữ cần OCR (bậc 2)`,
-        frame: { x: 8, y: 44, w: 84, h: 12, rotation: 0 },
-        fontSize: 2.8,
-        color: IF_DEFAULT_INK,
-        colorAuto: false,
-        align: 'center',
-        role: 'body',
-      }),
-    ],
-  };
+/** Badge trang scan — D1 tách khỏi hàm dựng slide vì trang scan giờ CÓ THỂ kèm ảnh trích được
+ * (trang scan điển hình = 1 ảnh raster cả trang: ảnh hiện được ngay, chữ trong ảnh vẫn cần OCR). */
+function scanBadgeText(pageNumber: number): TextElement {
+  return makeText({
+    text: `Trang ${pageNumber} — trang scan, chữ cần OCR (bậc 2)`,
+    frame: { x: 8, y: 44, w: 84, h: 12, rotation: 0 },
+    fontSize: 2.8,
+    color: IF_DEFAULT_INK,
+    colorAuto: false,
+    align: 'center',
+    role: 'body',
+  });
 }
 
 function provenanceNote(fileName: string): TextElement {
@@ -402,6 +657,93 @@ function ownedCopy(data: ArrayBuffer | Uint8Array): Uint8Array {
   return view.slice();
 }
 
+/* ---- D1: trích ảnh nhúng + bbox từ operator-list (xem docstring đầu file, mục 2) ---- */
+
+/** Ảnh nhúng đã trích từ 1 trang — pixel ĐÃ GIẢI MÃ + vị trí đặt (null = không tin cậy). */
+export interface PdfPageImage {
+  data: Uint8Array | Uint8ClampedArray;
+  width: number;
+  height: number;
+  channels: 1 | 3 | 4;
+  /** khoá XObject trong operator-list (vd "img_p0_1") — chỉ để debug/đối chiếu. */
+  key: string;
+  /** null = transform xoay/nghiêng/suy biến → caller đặt full-slide + `inferred` (phiếu ④.2). */
+  bboxPt: PdfImageBboxPt | null;
+}
+
+/** Tập con PDFPageProxy (pdf.js) mà việc trích ảnh cần — structural typing để test/tsc không phải
+ * kéo nguyên bộ type pdf.js vào đây (cùng lý do `PdfTextItem` ở tầng ①). */
+interface PdfPageLike {
+  getOperatorList(): Promise<{ fnArray: number[]; argsArray: unknown[][] }>;
+  objs: { get(key: string, callback: (obj: unknown) => void): unknown };
+  commonObjs: { get(key: string, callback: (obj: unknown) => void): unknown };
+}
+
+interface RawPdfImage {
+  data?: Uint8Array | Uint8ClampedArray;
+  width?: number;
+  height?: number;
+}
+
+/**
+ * CÙNG vòng lặp + CÙNG phép kiểm hợp lệ với `unpdf.extractImages` (đọc thật từ
+ * node_modules/unpdf/dist/index.mjs#extractImages$1: duyệt operator-list, gặp `paintImageXObject`
+ * thì lấy object đã giải mã từ `page.objs`/`page.commonObjs`, bỏ qua ảnh thiếu data/kênh lạ) —
+ * KHÁC duy nhất: bám CTM qua `save`/`restore`/`transform` để biết ảnh ĐẶT Ở ĐÂU (thứ wrapper của
+ * unpdf vứt đi). `skipped` = toán tử ảnh KHÔNG trích được (repeat/inline — unpdf cũng bỏ).
+ */
+export async function extractImagesWithBbox(
+  page: PdfPageLike,
+  OPS: Record<string, number | undefined>,
+): Promise<{ images: PdfPageImage[]; skipped: string[] }> {
+  const list = await page.getOperatorList();
+  let ctm: PdfMatrix = MTX_ID;
+  const stack: PdfMatrix[] = [];
+  const images: PdfPageImage[] = [];
+  const skipped: string[] = [];
+  for (let i = 0; i < list.fnArray.length; i += 1) {
+    const fn = list.fnArray[i];
+    if (fn === OPS.save) {
+      stack.push(ctm);
+    } else if (fn === OPS.restore) {
+      ctm = stack.pop() ?? MTX_ID;
+    } else if (fn === OPS.transform) {
+      ctm = mtxConcat(ctm, list.argsArray[i] as PdfMatrix);
+    } else if (fn === OPS.paintImageXObject) {
+      const key = String((list.argsArray[i] ?? [])[0] ?? '');
+      if (!key) continue;
+      // getOperatorList đã resolve xong mọi obj của trang — callback get() gọi đồng bộ/ngay sau.
+      const image = await new Promise<RawPdfImage | null>((resolve) =>
+        (key.startsWith('g_') ? page.commonObjs : page.objs).get(key, (obj) => resolve(obj as RawPdfImage | null)),
+      );
+      if (!image || !image.data || !image.width || !image.height) {
+        skipped.push(`${key}: pdf.js không trả pixel giải mã (mask/pattern hoặc dạng bitmap không data)`);
+        continue;
+      }
+      const calculated = image.data.length / (image.width * image.height);
+      if (calculated !== 1 && calculated !== 3 && calculated !== 4) {
+        skipped.push(`${key}: số kênh lạ (${calculated}) — cùng phép loại của unpdf.extractImages`);
+        continue;
+      }
+      images.push({
+        data: image.data,
+        width: image.width,
+        height: image.height,
+        channels: calculated,
+        key,
+        bboxPt: ctmToImageBbox(ctm),
+      });
+    } else if (fn === OPS.paintImageXObjectRepeat || fn === OPS.paintInlineImageXObject) {
+      skipped.push(
+        fn === OPS.paintImageXObjectRepeat
+          ? 'ảnh lặp (paintImageXObjectRepeat) — chưa hỗ trợ, unpdf cũng bỏ'
+          : 'ảnh inline (paintInlineImageXObject) — chưa hỗ trợ, unpdf cũng bỏ',
+      );
+    }
+  }
+  return { images, skipped };
+}
+
 /**
  * Đếm nhanh số trang (KHÔNG trích chữ) — UI gọi trước để quyết định có cần hỏi phạm vi trang hay
  * không (`PDF_RANGE_PROMPT_THRESHOLD`), tránh phải chạy `pdfToDeck` đầy đủ chỉ để biết tổng trang.
@@ -432,7 +774,11 @@ export async function pdfToDeck(
 
   let pdf: Awaited<ReturnType<typeof unpdf.getDocumentProxy>>;
   try {
-    pdf = await unpdf.getDocumentProxy(bytes);
+    // D1: `isOffscreenCanvasSupported:false` — trong BROWSER pdf.js mặc định giải mã ảnh thành
+    // ImageBitmap (không có `.data`) khi OffscreenCanvas sẵn có ⇒ vòng trích ảnh (cùng phép kiểm
+    // với unpdf.extractImages: `!image.data → bỏ`) sẽ RỖNG dù PDF đầy ảnh. Tắt cờ này ép pdf.js
+    // trả pixel dạng typed-array ở CẢ Node lẫn browser — một đường chạy duy nhất, test được thật.
+    pdf = await unpdf.getDocumentProxy(bytes, { isOffscreenCanvasSupported: false });
   } catch (err) {
     throw new Error(openDocFailedMessage(err));
   }
@@ -452,8 +798,15 @@ export async function pdfToDeck(
 
   const slides: EditorSlide[] = [];
   const warnings: PdfImportWarning[] = [];
+  const imageWarnings: PdfImportWarning[] = [];
   const scanPages: number[] = [];
+  const linkedAssets: Record<string, LinkedAsset> = {};
+  const pendingAttach: Array<{ slideId: string; elementId: string; assetId: string }> = [];
+  const fileLabel = opts.fileName || 'PDF';
   let done = 0;
+
+  // D1 — bảng mã toán tử pdf.js, lấy 1 lần cho cả file (extractImagesWithBbox cần so `fnArray`).
+  const { OPS } = await unpdf.getResolvedPDFJS();
 
   for (let n = range.start; n <= range.end; n += 1) {
     try {
@@ -464,20 +817,76 @@ export async function pdfToDeck(
       const rawItems = itemsByPage[n - 1] ?? [];
       const blocks = groupItemsIntoBlocks(rawItems);
 
+      // ── D1 lớp ẢNH: trích ảnh nhúng + bbox. Sự cố ảnh KHÔNG giết trang — chữ vẫn ra,
+      // ghi `imageWarnings` (khai thật, không nuốt lỗi im lặng).
+      const imageEls: ImageElement[] = [];
+      const imageAssetIds: string[] = []; // song song imageEls — nuôi pendingAttach khi có slideId
+      try {
+        const { images, skipped } = await extractImagesWithBbox(
+          page as unknown as Parameters<typeof extractImagesWithBbox>[0],
+          OPS as unknown as Record<string, number | undefined>,
+        );
+        for (const s of skipped) imageWarnings.push({ page: n, reason: s });
+        for (const im of images) {
+          const assetId = pdfImageAssetId(im.data, im.width, im.height, im.channels);
+          const frame: Frame = im.bboxPt
+            ? imageBboxToFrame(im.bboxPt, pageW, pageH)
+            : { x: 0, y: 0, w: 100, h: 100, rotation: 0 }; // không bbox tin cậy → full-slide (phiếu ④.2)
+          if (!linkedAssets[assetId]) {
+            // ảnh mới gặp lần đầu — encode PNG 1 LẦN cho mỗi nội dung (trang sau trùng ảnh
+            // dùng lại src qua asset, không encode lại — trùng ảnh 2 trang = CÙNG asset [T1]).
+            linkedAssets[assetId] = {
+              id: assetId,
+              src: rawPixelsToPngDataUrl(im.data, im.width, im.height, im.channels),
+              name: `Ảnh PDF trang ${n}`,
+              updatedAt: Date.now(),
+              provenance: {
+                loai: 'pdf',
+                file: fileLabel,
+                page: n,
+                bbox: { x: frame.x, y: frame.y, w: frame.w, h: frame.h },
+                ...(im.bboxPt ? {} : { inferred: true }),
+              },
+            };
+          }
+          // src gán tạm bằng src asset — pass `attachElementToAsset` cuối hàm mới là đường gán
+          // CHÍNH THỨC (API chuẩn linked-assets, phiếu ④.1); ở đây chỉ để element tự đứng được.
+          imageEls.push(makeImage(linkedAssets[assetId].src, { frame, name: `Ảnh PDF trang ${n}` }));
+          imageAssetIds.push(assetId);
+        }
+      } catch (err) {
+        imageWarnings.push({
+          page: n,
+          reason: `không trích được ảnh nhúng — ${err instanceof Error ? err.message : String(err)}`,
+        });
+      }
+
+      const slideId = newId('sld');
       if (blocks.length === 0) {
-        slides.push(scanBadgeSlide(n));
+        // trang scan: ảnh (nếu trích được) nằm DƯỚI, badge OCR đè trên — xem `scanBadgeText`.
+        slides.push({
+          id: slideId,
+          background: '#ffffff',
+          backgroundImage: null,
+          templateId: 'pdf-import-scan',
+          elements: [...imageEls, scanBadgeText(n)],
+        });
         scanPages.push(n);
       } else {
         let maxFontSize = -Infinity;
         for (const b of blocks) maxFontSize = Math.max(maxFontSize, b.fontSize);
-        const elements = blocks.map((b) => blockToTextElement(b, pageW, pageH, b.fontSize === maxFontSize));
+        const textEls = blocks.map((b) => blockToTextElement(b, pageW, pageH, b.fontSize === maxFontSize));
         slides.push({
-          id: newId('sld'),
+          id: slideId,
           background: '#ffffff',
           backgroundImage: null,
           templateId: 'pdf-import',
-          elements,
+          // thứ tự mảng = thứ tự vẽ (model.ts) — ảnh TRƯỚC chữ ⇒ ảnh DƯỚI chữ (phiếu ④.2).
+          elements: [...imageEls, ...textEls],
         });
+      }
+      for (let k = 0; k < imageEls.length; k += 1) {
+        pendingAttach.push({ slideId, elementId: imageEls[k].id, assetId: imageAssetIds[k] });
       }
     } catch (err) {
       warnings.push({ page: n, reason: `không đọc được, bỏ qua — ${err instanceof Error ? err.message : String(err)}` });
@@ -490,27 +899,44 @@ export async function pdfToDeck(
     if (done % 5 === 0) await new Promise((resolve) => setTimeout(resolve, 0));
   }
 
-  if (slides.length > 0) {
-    slides[0] = { ...slides[0], elements: [provenanceNote(opts.fileName || 'PDF'), ...slides[0].elements] };
+  // D1 — gắn element ↔ asset qua API CHUẨN `attachElementToAsset` (phiếu ④.1): đồng bộ src từ
+  // asset + reset crop, đúng một đường với mọi chỗ khác của app. Deck "vỏ" chỉ mượn 2 field
+  // slides + linkedAssets — 2 field DUY NHẤT hàm đó đọc/ghi (đã đọc linked-assets.ts xác nhận);
+  // cast có chủ ý, không rò ra ngoài hàm này.
+  if (pendingAttach.length > 0) {
+    let shell = { slides: [...slides], linkedAssets } as unknown as EditorDeck;
+    for (const p of pendingAttach) shell = attachElementToAsset(shell, p.slideId, p.elementId, p.assetId);
+    slides.splice(0, slides.length, ...shell.slides);
   }
 
-  return { slides, total, converted: slides.length + warnings.length, scanPages, warnings };
+  if (slides.length > 0) {
+    slides[0] = { ...slides[0], elements: [provenanceNote(fileLabel), ...slides[0].elements] };
+  }
+
+  return { slides, total, converted: slides.length + warnings.length, scanPages, warnings, linkedAssets, imageWarnings };
 }
 
 /**
  * Câu báo kết quả cho người dùng — 1 nguồn duy nhất (Toolbar gọi), khuôn giống hệt
- * `pptx-import.ts#importSummary`. Nói THẲNG giới hạn "chỉ lớp chữ" ngay trong câu đầu — không giấu.
+ * `pptx-import.ts#importSummary`. Nói THẲNG giới hạn còn lại (nền raster nợ 1b) — không giấu.
+ * D1: có lớp ảnh rồi thì câu chữ phải nói đúng — "CHỈ lớp CHỮ" chỉ còn đúng khi file 0 ảnh.
  */
 export function pdfImportSummary(fileName: string, res: PdfImportResult): string {
   const rangeNote = res.slides.length + res.warnings.length < res.total ? ` (đã chọn ${res.slides.length + res.warnings.length}/${res.total} trang)` : '';
+  let imgCount = 0;
+  for (const s of res.slides) for (const e of s.elements) if (e.kind === 'image') imgCount += 1;
+  const layerNote = imgCount > 0 ? `lớp CHỮ sống + ${imgCount} ảnh nhúng` : 'CHỈ lớp CHỮ sống';
   const scanNote = res.scanPages.length
     ? ` ${res.scanPages.length} trang scan cần OCR (bậc 2): trang ${res.scanPages.join(', ')}.`
     : '';
   const warnNote = res.warnings.length
     ? ` Bỏ qua ${res.warnings.length} trang lỗi: ${res.warnings.map((w) => w.page).join(', ')}.`
     : '';
+  const imgWarnNote = res.imageWarnings.length
+    ? ` ${res.imageWarnings.length} ảnh nhúng không trích được (trang vẫn giữ nguyên phần chữ).`
+    : '';
   return (
-    `Đã nhập ${res.slides.length} trang từ "${fileName}"${rangeNote} — CHỈ lớp CHỮ sống ` +
-    `(chưa raster hoá nền gốc, cần thêm bộ render ảnh — xem báo cáo).${scanNote}${warnNote}`
+    `Đã nhập ${res.slides.length} trang từ "${fileName}"${rangeNote} — ${layerNote} ` +
+    `(chưa raster hoá nền gốc, cần thêm bộ render ảnh — xem báo cáo).${scanNote}${warnNote}${imgWarnNote}`
   );
 }

@@ -449,6 +449,27 @@ export interface LinkedAssetRecipe {
 }
 
 /**
+ * D1 (phiếu `docs/phieu-giao/demo-d1-pdf-anh.md`) — PHẢ HỆ của 1 asset trích từ tài liệu nhập
+ * (Smart Convert). Ghi THẬT nguồn gốc: file nào · trang nào · nằm ở đâu trên trang [T0].
+ * Additive — asset cũ không có field này hoạt động y nguyên (ảnh không rõ nguồn, hợp lệ).
+ */
+export interface LinkedAssetProvenance {
+  /** loại nguồn — hiện chỉ 'pdf' (Smart Convert bậc 1c); định dạng khác thêm sau qua union. */
+  loai: 'pdf';
+  /** tên file gốc người dùng nhập (KHÔNG phải path hệ điều hành — xem ghi chú `diskPath`). */
+  file: string;
+  /** trang 1-based nơi ảnh này xuất hiện LẦN ĐẦU (trùng ảnh nhiều trang = cùng asset, ghi trang đầu). */
+  page: number;
+  /**
+   * vị trí đặt trên trang, đơn vị % TRANG (cùng hệ `Frame`: x/y từ góc trên-trái, 0..100).
+   * Khi `inferred=true` thì bbox là ĐOÁN (full trang), không phải toạ độ đọc được từ PDF.
+   */
+  bbox: { x: number; y: number; w: number; h: number };
+  /** true = KHÔNG đọc được toạ độ tin cậy (ảnh xoay/nghiêng/lặp) — bbox chỉ là suy đoán, khai thật. */
+  inferred?: boolean;
+}
+
+/**
  * Tài sản liên kết (PS-3) — gộp "smart object" (Photoshop) + "component instance"
  * (Figma) làm MỘT khái niệm: nhiều `ImageElement.assetId` (ở nhiều slide khác nhau) trỏ
  * chung 1 bản ghi ở đây. Sửa `src` một lần (qua `setLinkedAssetSrc`, lib/present-editor/
@@ -469,6 +490,11 @@ export interface LinkedAsset {
    * (mọi asset trước 08/08) không có field này vẫn hoạt động y nguyên như trước.
    */
   recipe?: LinkedAssetRecipe;
+  /**
+   * D1 — phả hệ nguồn nhập (Smart Convert): asset này trích từ file/trang/bbox nào. Bỏ trống =
+   * asset không sinh từ tài liệu nhập (kéo tay/Brand Kit/render — hợp lệ). Additive.
+   */
+  provenance?: LinkedAssetProvenance;
 }
 
 /**

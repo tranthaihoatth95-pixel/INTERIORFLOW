@@ -14,6 +14,13 @@
  * đúng ranh giới hasEOL/khoảng cách Y; (b) `pdfToDeck` chạy THẬT trên fixture — soi số trang, số
  * khối, text/frame/fontSize từng khối, trang scan ra badge, dấu tiếng Việt giữ nguyên, provenance
  * ẩn ở slide đầu; (c) `parsePageRangeInput`/`clampPageRange` thuần.
+ *
+ * D1 (phiếu `docs/phieu-giao/demo-d1-pdf-anh.md`) thêm tầng ②b + round-trip ẢNH: (d) unit PNG
+ * encoder/hash/CTM thuần; (e) fixture PDF CÓ ẢNH NHÚNG dựng NGAY TRONG TEST (`buildImagePdf` —
+ * PDF viết tay bằng code, ảnh 2×2 DeviceRGB không filter, KHÔNG file nhị phân mới, KHÔNG mạng):
+ * trang 1 = ảnh đặt `200 0 0 100 50 600 cm` + 1 dòng chữ; trang 2 = CÙNG ảnh (XObject dùng
+ * chung), KHÔNG chữ → trang scan có ảnh. Kiểm: n ảnh vào → n element, assetId TẤT ĐỊNH (2 trang
+ * trùng ảnh = 1 asset, 2 lần chạy = cùng id), provenance file/trang/bbox đúng, z ảnh dưới chữ.
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -28,10 +35,16 @@ import {
   fontSizeToPct,
   clampPageRange,
   parsePageRangeInput,
+  rawPixelsToPngDataUrl,
+  pdfImageAssetId,
+  ctmToImageBbox,
+  mtxConcat,
+  imageBboxToFrame,
   PDF_RANGE_PROMPT_THRESHOLD,
+  type PdfMatrix,
   type PdfTextItem,
 } from './pdf-import';
-import type { TextElement } from './model';
+import type { ImageElement, TextElement } from './model';
 
 let pass = 0;
 let fail = 0;
@@ -60,6 +73,59 @@ function item(partial: Partial<PdfTextItem>): PdfTextItem {
     hasEOL: false,
     ...partial,
   };
+}
+
+/* ══════════════ D1 — fixture PDF CÓ ẢNH, dựng ngay trong test ══════════════
+ * PDF viết tay bằng code (không file nhị phân mới, không mạng): 2 trang 400×800pt dùng CHUNG một
+ * XObject ảnh 2×2 DeviceRGB 8-bit KHÔNG filter (12 byte pixel thô — pdf.js giải mã tất định).
+ *   trang 1: `q 200 0 0 100 50 600 cm /Im1 Do Q` (bbox 50,600→250,700) + chữ "Tieu de anh" 20pt.
+ *   trang 2: `q 100 0 0 50 150 200 cm /Im1 Do Q` — KHÔNG chữ → trang scan CÓ ảnh.
+ * Offset xref tính thật từng byte (pdf.js vẫn tự phục hồi được nếu lệch, nhưng ta không dựa vào đó). */
+function latin1(s: string): Uint8Array {
+  const out = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i += 1) out[i] = s.charCodeAt(i) & 0xff;
+  return out;
+}
+
+function buildImagePdf(): Uint8Array {
+  const pixels = new Uint8Array([255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 255]); // 2×2 RGB
+  const content1 = 'q\n200 0 0 100 50 600 cm\n/Im1 Do\nQ\nBT /F1 20 Tf 72 300 Td (Tieu de anh) Tj ET\n';
+  const content2 = 'q\n100 0 0 50 150 200 cm\n/Im1 Do\nQ\n';
+  const chunks: Uint8Array[] = [];
+  let offset = 0;
+  const offsets: number[] = [];
+  const push = (b: Uint8Array | string) => {
+    const u = typeof b === 'string' ? latin1(b) : b;
+    chunks.push(u);
+    offset += u.length;
+  };
+  const obj = (n: number, body: string) => {
+    offsets[n] = offset;
+    push(`${n} 0 obj\n${body}\nendobj\n`);
+  };
+  push('%PDF-1.4\n');
+  obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2, '<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >>');
+  obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 800] /Resources << /XObject << /Im1 7 0 R >> /Font << /F1 8 0 R >> >> /Contents 4 0 R >>');
+  obj(4, `<< /Length ${content1.length} >>\nstream\n${content1}endstream`);
+  obj(5, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 800] /Resources << /XObject << /Im1 7 0 R >> >> /Contents 6 0 R >>');
+  obj(6, `<< /Length ${content2.length} >>\nstream\n${content2}endstream`);
+  offsets[7] = offset; // obj 7 chứa byte NHỊ PHÂN — ghép tay, không đi qua template chuỗi
+  push(`7 0 obj\n<< /Type /XObject /Subtype /Image /Width 2 /Height 2 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Length ${pixels.length} >>\nstream\n`);
+  push(pixels);
+  push('\nendstream\nendobj\n');
+  obj(8, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+  const xrefOff = offset;
+  let xref = 'xref\n0 9\n0000000000 65535 f \n';
+  for (let n = 1; n <= 8; n += 1) xref += `${String(offsets[n]).padStart(10, '0')} 00000 n \n`;
+  push(`${xref}trailer\n<< /Size 9 /Root 1 0 R >>\nstartxref\n${xrefOff}\n%%EOF\n`);
+  const out = new Uint8Array(offset);
+  let o = 0;
+  for (const c of chunks) {
+    out.set(c, o);
+    o += c.length;
+  }
+  return out;
 }
 
 (async () => {
@@ -228,6 +294,102 @@ function item(partial: Partial<PdfTextItem>): PdfTextItem {
       threw = err instanceof Error && /Không mở được PDF/.test(err.message);
     }
     ok('bytes rác → ném lỗi tiếng Việt rõ ràng', threw);
+  }
+
+  /* ══════════════ D1 — LỚP ẢNH ══════════════ */
+
+  /* ── ②b PNG encoder thuần: tất định + đúng khuôn PNG ── */
+  {
+    const px = new Uint8Array([255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 255]); // 2×2 RGB
+    const url1 = rawPixelsToPngDataUrl(px, 2, 2, 3);
+    const url2 = rawPixelsToPngDataUrl(px, 2, 2, 3);
+    ok('PNG dataURL đúng tiền tố chữ ký PNG (iVBOR = \\x89PNG)', url1.startsWith('data:image/png;base64,iVBOR'));
+    ok('PNG encoder tất định — 2 lần encode y hệt nhau', url1 === url2);
+    ok('grayscale 1 kênh cũng encode được', rawPixelsToPngDataUrl(new Uint8Array([0, 128, 200, 255]), 2, 2, 1).startsWith('data:image/png;base64,iVBOR'));
+  }
+
+  /* ── ②b hash assetId tất định theo NỘI DUNG ── */
+  {
+    const a = new Uint8Array([1, 2, 3, 4, 5, 6]);
+    const b = new Uint8Array([1, 2, 3, 4, 5, 7]);
+    ok('cùng pixel → cùng assetId', pdfImageAssetId(a, 2, 1, 3) === pdfImageAssetId(a.slice(), 2, 1, 3));
+    ok('khác pixel → khác assetId', pdfImageAssetId(a, 2, 1, 3) !== pdfImageAssetId(b, 2, 1, 3));
+    ok('assetId đúng khuôn img_pdf_ + 16 hex', /^img_pdf_[0-9a-f]{16}$/.test(pdfImageAssetId(a, 2, 1, 3)));
+  }
+
+  /* ── ②b CTM → bbox ── */
+  {
+    const bb = ctmToImageBbox([200, 0, 0, 100, 50, 600]);
+    ok('CTM thẳng trục → bbox chính xác', !!bb && bb.left === 50 && bb.bottom === 600 && bb.right === 250 && bb.top === 700);
+    const flipped = ctmToImageBbox([200, 0, 0, -100, 50, 700]); // d âm (lật dọc — rất phổ biến)
+    ok('CTM lật dọc (d<0) vẫn ra bbox đúng qua min/max', !!flipped && flipped.bottom === 600 && flipped.top === 700);
+    ok('CTM xoay 90° → null (không tin bbox thẳng trục)', ctmToImageBbox([0, 100, -200, 0, 50, 600]) === null);
+    ok('CTM suy biến (w=0) → null', ctmToImageBbox([0, 0, 0, 100, 50, 600]) === null);
+    // ghép q/cm lồng nhau: dịch (10,20) rồi scale 2× → điểm (1,1) phải ra (12,22)... kiểm qua bbox
+    const nested = mtxConcat([1, 0, 0, 1, 10, 20] as PdfMatrix, [2, 0, 0, 2, 0, 0] as PdfMatrix);
+    const nbb = ctmToImageBbox(nested);
+    ok('mtxConcat đúng thứ tự PDF (cm sau áp trước)', !!nbb && nbb.left === 10 && nbb.right === 12 && nbb.bottom === 20 && nbb.top === 22);
+    const fr = imageBboxToFrame({ left: 50, bottom: 600, right: 250, top: 700 }, 400, 800);
+    ok('imageBboxToFrame quy % đúng (x12.5 y12.5 w50 h12.5)', near(fr.x, 12.5, 0.01) && near(fr.y, 12.5, 0.01) && near(fr.w, 50, 0.01) && near(fr.h, 12.5, 0.01));
+  }
+
+  /* ── (e) round-trip ẢNH trên fixture dựng trong test ── */
+  {
+    const bytes = buildImagePdf();
+    const res = await pdfToDeck(bytes, { fileName: 'concept-anh.pdf' });
+
+    ok('[ảnh] 2 trang → 2 slide, 0 trang lỗi', res.slides.length === 2 && res.warnings.length === 0);
+    ok('[ảnh] không sự cố trích ảnh (imageWarnings rỗng)', res.imageWarnings.length === 0);
+
+    const assetIds = Object.keys(res.linkedAssets);
+    ok('[ảnh] CÙNG ảnh 2 trang → đúng 1 asset trong registry [T1]', assetIds.length === 1);
+    const asset = res.linkedAssets[assetIds[0]];
+    ok('[ảnh] assetId tất định theo hash nội dung (img_pdf_…)', /^img_pdf_[0-9a-f]{16}$/.test(asset?.id ?? ''));
+    ok('[ảnh] asset.src là PNG dataURL', (asset?.src ?? '').startsWith('data:image/png;base64,iVBOR'));
+
+    const prov = asset?.provenance;
+    ok('[ảnh] provenance loai=pdf + đúng tên file [T0]', prov?.loai === 'pdf' && prov?.file === 'concept-anh.pdf');
+    ok('[ảnh] provenance ghi trang ĐẦU TIÊN thấy ảnh (1)', prov?.page === 1);
+    ok('[ảnh] provenance bbox đọc THẬT từ cm (12.5/12.5/50/12.5), không inferred',
+      !!prov && !prov.inferred && near(prov.bbox.x, 12.5, 0.01) && near(prov.bbox.y, 12.5, 0.01) && near(prov.bbox.w, 50, 0.01) && near(prov.bbox.h, 12.5, 0.01));
+
+    // slide 1: ảnh + chữ — ảnh phải DƯỚI chữ (index nhỏ hơn = vẽ trước = nằm dưới)
+    const s1 = res.slides[0];
+    const imgIdx = s1.elements.findIndex((e) => e.kind === 'image');
+    const txtIdx = s1.elements.findIndex((e) => e.kind === 'text' && !(e as TextElement).hidden);
+    ok('[ảnh] slide 1 có đúng 1 element ảnh', s1.elements.filter((e) => e.kind === 'image').length === 1);
+    ok('[ảnh] z-order: ảnh DƯỚI chữ (phiếu ④.2)', imgIdx >= 0 && txtIdx >= 0 && imgIdx < txtIdx);
+    const img1 = s1.elements[imgIdx] as ImageElement;
+    ok('[ảnh] element gắn đúng assetId qua attachElementToAsset', img1.assetId === asset?.id);
+    ok('[ảnh] element.src = src của asset (instance đồng bộ)', img1.src === asset?.src);
+    ok('[ảnh] frame slide 1 đặt ĐÚNG bbox trang (x12.5 y12.5 w50 h12.5)',
+      near(img1.frame.x, 12.5, 0.05) && near(img1.frame.y, 12.5, 0.05) && near(img1.frame.w, 50, 0.05) && near(img1.frame.h, 12.5, 0.05));
+
+    // slide 2: KHÔNG chữ → vẫn là trang scan, nhưng giờ CÓ ảnh dưới badge
+    const s2 = res.slides[1];
+    ok('[ảnh] trang 2 (0 chữ) vẫn tính scan', res.scanPages.length === 1 && res.scanPages[0] === 2);
+    ok('[ảnh] slide scan = ảnh + badge OCR (ảnh dưới, badge trên)',
+      s2.elements.length === 2 && s2.elements[0].kind === 'image' && s2.elements[1].kind === 'text');
+    const img2 = s2.elements[0] as ImageElement;
+    ok('[ảnh] trang 2 dùng CÙNG assetId (trùng nội dung = trùng asset)', img2.assetId === asset?.id);
+    ok('[ảnh] frame slide 2 đúng bbox riêng của nó (x37.5 y68.75 w25 h6.25)',
+      near(img2.frame.x, 37.5, 0.05) && near(img2.frame.y, 68.75, 0.05) && near(img2.frame.w, 25, 0.05) && near(img2.frame.h, 6.25, 0.05));
+
+    // tất định giữa 2 LẦN CHẠY [T6]
+    const res2 = await pdfToDeck(buildImagePdf(), { fileName: 'concept-anh.pdf' });
+    ok('[ảnh] chạy lần 2 → CÙNG assetId (tất định)', Object.keys(res2.linkedAssets)[0] === asset?.id);
+
+    const summary = pdfImportSummary('concept-anh.pdf', res);
+    ok('[ảnh] summary nêu số ảnh nhúng', summary.includes('2 ảnh nhúng'));
+  }
+
+  /* ── fixture CŨ (không ảnh) — lớp ảnh mới KHÔNG đổi hành vi cũ ── */
+  {
+    const fixturePath = join(process.cwd(), 'lib/present-editor/__fixtures__/pdf-import-sample.pdf');
+    const res = await pdfToDeck(new Uint8Array(readFileSync(fixturePath)));
+    ok('[ảnh] PDF không ảnh → linkedAssets rỗng', Object.keys(res.linkedAssets).length === 0);
+    ok('[ảnh] PDF không ảnh → imageWarnings rỗng', res.imageWarnings.length === 0);
+    ok('[ảnh] summary PDF không ảnh vẫn "CHỈ lớp CHỮ"', pdfImportSummary('x.pdf', res).includes('CHỈ lớp CHỮ'));
   }
 
   console.log(`\n${pass} pass · ${fail} fail`);
