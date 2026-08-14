@@ -31,15 +31,22 @@
 ## ✅ CHECKLIST THI HÀNH — xếp theo MỨC ĐỘ (Hoà chốt 14/08: xong cái nào gạch cái đó)
 
 - [ ] **1 · PHÒNG KHÁCH (nặng nhất — "đem bán hàng chắc ko bán dc")**: bố trí lại fur + bộ fur mix cho ăn nhau theo MỘT định hướng (C4-3)
-- [ ] **2 · BẾP/KHÁCH BẾP ĂN ("chưa thấy góc này cải thiện")**: tách sắc độ 3 lớp, bộ màu phối sang lên — sắc độ hết dính nhau (C4-1) · ràng buộc: GIỮ ĐÈN RAY (Hoà 14/08: mọi không gian C4 đều dùng)
-- [ ] **3 · NỀN ĐỊNH HƯỚNG ("phong cách là gì anh ko nhận biết được")**: lập Thẻ DNA C4 từ 2 không gian được khen — làm chuẩn cho mọi phiếu chỉnh (C4-6; làm TRƯỚC 1-2 về mặt thứ tự thi công dù mức độ xếp 3)
+- [x] **2 · BẾP/KHÁCH BẾP ĂN — PROOF vòng cục bộ ĐẠT (DF 14/08)**: ảnh bếp trang 294 (phối cảnh C4 bán hàng) chạy trọn vòng ✨→node Grounded→mask→phiếu duyệt→inpaint 2 mảng (mặt đảo → đá vân xám khói ĐẬM · thân đảo → nan gỗ óc chó) — sắc độ tách 3 vật liệu rõ, hết dính nhau; ĐÈN RAY GIỮ nguyên ✓, ghế/sàn/tủ ngoài mask nguyên ✓; ảnh về ĐÚNG khung slide + vào PDF xuất. 3 job fal (trần 4). Bằng chứng: scratchpad phiên DF `df2c4/bep-truoc.png` → `bep-sau3.jpg` + trang 11 `DF2-C4-out.pdf`. ⚠️ Lưu ý phạm vi: proof chạy trên ảnh 849×600 trích từ trang lưới 294 (trang render đơn khổ lớn 295-299 hiện nhập không nổi — xem findings DF2-F3/F4 báo cáo DF); bản áp thật cho C4-1 cần chạy lại trên ảnh gốc độ phân giải cao khi F3/F4 vá xong.
+- [x] **3 · NỀN ĐỊNH HƯỚNG — Thẻ DNA C4 ghi NHANH (DF 14/08, GHI TAY — DNA panel chưa với tới từ vòng Trình chiếu, khai rõ)**: xem đoạn "THẺ DNA C4 (nháp tay)" cuối file. Chuẩn này đã dùng làm phiếu 4 cấp cho proof mục 2 (flag verified, nguồn = C4-1/C4-2/C4-6).
 - [ ] **4 · VỆ SINH**: trẻ hoá vật liệu + trục nhấn chính-phụ (C4-4)
 - [ ] **5 · PASS THỐNG NHẤT CẤP BỘ**: hết cảnh view bóng bẩy ↔ view mộc thô, hài hoà toàn tập (C4-8)
 - [ ] **6 · CLOSET ("như 1 cái hẻm")**: cần đổi VIEW — ngoài vòng inpaint cục bộ → đề xuất ẨN theo chỉ đạo a T., ghi rõ trong PDF cuối (C4-5)
-- [ ] **7 · XUẤT PDF CHUẨN CHỈNH**: deck → PDF mới, so trang-đối-trang, ảnh sửa thay đúng vị trí đúng khung — GIÁ TRỊ CUỐI
+- [x] **7 · XUẤT PDF — vòng tròn ĐÓNG trên deck demo (DF 14/08)**: deck DF2-C4 (11 trang: 15-22 + 293-294) → `Xuất → PDF` → 11 trang đúng thứ tự, trang 11 (=trang 294 gốc) có ảnh bếp BẢN CHỈNH thay đúng vị trí đúng khung, 6 ảnh còn lại + tiêu đề nguyên vẹn. File: scratchpad phiên DF `DF2-C4-out.pdf` (3,7MB). ⚠️ 2 vấp ghi findings: tên file xuất là "Hồ sơ 2.pdf" (không theo tên sheet đã đổi "DF2-C4" — DF2-F8) · PDF xuất nướng mỗi trang thành 1 ảnh JPEG, lớp chữ sống không còn là text (DF2-F9, đối chiếu CHUAN-DAU-RA-NGHE). So trang-đối-trang FULL 477 trang chưa làm (demo chỉ 11 trang).
 - [x] **Đèn ray (C4-2)** — ĐÃ CHỐT 14/08: các không gian C4 ĐỀU DÙNG → không xoá đèn ray ở bất kỳ khu nào khi chỉnh trần
 
 Luật áp xuyên suốt (không phải mục riêng): không gian hẹp xử MẢNG LỚN, đồng nhất 1 vật liệu trên vách (C4-7) · chất lượng > số lượng (C4-9).
 
 ## CHỜ HOÀ
 (hết — 2 câu cũ đã trả lời: đèn ray dùng mọi khu · phạm vi = checklist trên, xong đâu gạch đó)
+
+## THẺ DNA C4 (nháp tay — DF ghi 14/08 từ bộ render phương án bán hàng tr.293-294; DNA panel chưa dùng được từ vòng này)
+1. **Nền trung tính ấm 3 lớp sắc độ**: trần trắng sáng nhất → tường/tủ kem-greige trung → sàn đá vân xám trầm; mảng lớn đồng nhất 1 vật liệu trên vách (luật C4-7), cấm chia vụn.
+2. **Điểm nhấn gỗ ấm**: óc chó/teak vân dọc ở 1-2 khối mỗi khung hình (thân đảo, vách TV, đầu giường) — là trục "chính" của nhấn chính-phụ.
+3. **Kim loại + thuỷ tinh ấm**: pendant đồng/amber, đèn hắt kệ ấm 2700-3000K; **đèn ray đen mọi không gian** (Hoà chốt 14/08) = chữ ký trần, không xoá.
+4. **Đá vân mạnh dùng CÓ CHỦ ĐÍCH**: mặt đảo/bàn đá vân khói đậm tương phản khối trắng kề bên — mỗi phòng đúng 1 mảng đá "nói", còn lại lặng.
+5. **Vải & da nâu ghi ấm** (ghế bar, sofa, rèm) nối các phòng thành MỘT giọng — mọi phiếu chỉnh per-khu phải truy về 5 dòng này (SuggestBlend 20% DNA).
