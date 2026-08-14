@@ -1,0 +1,210 @@
+/**
+ * lib/idfc-import/chuan-net.test.ts — test THUẦN bước chuẩn nét (marker `chuanNet`, 0 mạng 0 AI):
+ * ① fit trụ/xuyến trên điểm tham số tự sinh → đúng tham số ±1% (phiếu ⑤)
+ * ② parseGlbGeometry đọc đúng GLB nhị phân tự dựng tay (có chunk BIN)
+ * ③ dựng lại qua build-ops → bbox khớp tham số
+ * ④ pipeline đủ trên mesh tổng hợp (4 chân + vòng + khối nệm + bóng sàn) → tách/xoá/fit đúng loại
+ * Chạy: node_modules/.bin/sucrase-node lib/idfc-import/chuan-net.test.ts
+ */
+import {
+  chuanNet,
+  chuanNetGeometry,
+  fitCylinderPts,
+  fitTorusPts,
+  parseGlbGeometry,
+  rebuildCylinderMm,
+  rebuildTorusMm,
+  type GlbGeometry,
+} from './chuan-net';
+
+let pass = 0;
+let fail = 0;
+function ok(label: string, cond: boolean) {
+  if (cond) { pass += 1; console.log(`  ok  - ${label}`); }
+  else { fail += 1; console.log(`  FAIL - ${label}`); }
+}
+const within = (a: number, b: number, pct: number) => Math.abs(a - b) <= Math.abs(b) * pct / 100 + 1e-12;
+
+/* ── dựng mesh tham số làm fixture (triangle soup indexed) ── */
+type Soup = { positions: number[]; indices: number[] };
+function addQuadGrid(soup: Soup, f: (u: number, v: number) => [number, number, number], nu: number, nv: number, wrapU: boolean) {
+  const base = soup.positions.length / 3;
+  for (let i = 0; i <= (wrapU ? nu - 1 : nu); i++) for (let j = 0; j <= nv; j++) {
+    const p = f(i / nu, j / nv);
+    soup.positions.push(p[0], p[1], p[2]);
+  }
+  const cols = (wrapU ? nu : nu + 1);
+  const at = (i: number, j: number) => base + (i % cols) * (nv + 1) + j;
+  for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) {
+    soup.indices.push(at(i, j), at(i + 1, j), at(i + 1, j + 1));
+    soup.indices.push(at(i, j), at(i + 1, j + 1), at(i, j + 1));
+  }
+}
+function cylinderAt(soup: Soup, cx: number, cz: number, r: number, y0: number, y1: number, nu = 24, nv = 12) {
+  addQuadGrid(soup, (u, v) => [cx + r * Math.cos(u * 2 * Math.PI), y0 + (y1 - y0) * v, cz + r * Math.sin(u * 2 * Math.PI)], nu, nv, true);
+}
+function torusAt(soup: Soup, cy: number, R: number, r: number, nu = 40, nv = 12) {
+  addQuadGrid(soup, (u, v) => {
+    const a = u * 2 * Math.PI; const b = v * 2 * Math.PI;
+    const rho = R + r * Math.cos(b);
+    return [rho * Math.cos(a), cy + r * Math.sin(b), rho * Math.sin(a)];
+  }, nu, nv, true);
+}
+function boxAt(soup: Soup, cx: number, cy: number, cz: number, w: number, h: number, d: number) {
+  const base = soup.positions.length / 3;
+  const s = [[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]];
+  for (const [x, y, z] of s) soup.positions.push(cx + x * w / 2, cy + y * h / 2, cz + z * d / 2);
+  const quads = [[0, 1, 2, 3], [4, 5, 6, 7], [0, 1, 5, 4], [2, 3, 7, 6], [0, 3, 7, 4], [1, 2, 6, 5]];
+  for (const [a, b, c, d2] of quads) { soup.indices.push(base + a, base + b, base + c, base + a, base + c, base + d2); }
+}
+
+/* ── ① fit trụ / xuyến ±1% ── */
+console.log('fitCylinderPts — trụ tham số (kể cả trục nghiêng)');
+{
+  const soup: Soup = { positions: [], indices: [] };
+  cylinderAt(soup, 0, 0, 0.02, -0.3, 0.3, 32, 20);
+  const fit = fitCylinderPts(new Float64Array(soup.positions));
+  ok('bán kính ±1% (0.02)', within(fit.radius, 0.02, 1));
+  ok('cao ±1% (0.6)', within(fit.height, 0.6, 1));
+  ok('trục ≈ Y', Math.abs(fit.axis[1]) > 0.999);
+  ok('RMS ≈ 0', fit.rms < 1e-6);
+
+  // trục nghiêng 30° quanh Z
+  const c = Math.cos(Math.PI / 6); const s = Math.sin(Math.PI / 6);
+  const tilted = new Float64Array(soup.positions.length);
+  for (let i = 0; i < soup.positions.length; i += 3) {
+    const x = soup.positions[i]; const y = soup.positions[i + 1];
+    tilted[i] = c * x - s * y; tilted[i + 1] = s * x + c * y; tilted[i + 2] = soup.positions[i + 2];
+  }
+  const f2 = fitCylinderPts(tilted);
+  ok('nghiêng 30°: bán kính ±1%', within(f2.radius, 0.02, 1));
+  ok('nghiêng 30°: trục đúng (dot ≈ 1)', Math.abs(f2.axis[0] * -s + f2.axis[1] * c) > 0.999);
+}
+
+console.log('fitTorusPts — xuyến tham số');
+{
+  const soup: Soup = { positions: [], indices: [] };
+  torusAt(soup, 0.1, 0.15, 0.012, 64, 24);
+  const fit = fitTorusPts(new Float64Array(soup.positions));
+  ok('R lớn ±1% (0.15)', within(fit.rMajor, 0.15, 1));
+  ok('r nhỏ ±1% (0.012)', within(fit.rMinor, 0.012, 1));
+  ok('trục ≈ Y', Math.abs(fit.axis[1]) > 0.999);
+  ok('tâm y ≈ 0.1', within(fit.center[1], 0.1, 1));
+  ok('RMS nhỏ (<5% r nhỏ)', fit.rms < 0.012 * 0.05);
+}
+
+/* ── ② parseGlbGeometry — GLB tự dựng có BIN ── */
+console.log('parseGlbGeometry — GLB nhị phân tự dựng');
+{
+  const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]);
+  const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
+  const bin = new Uint8Array(positions.byteLength + indices.byteLength + 2); // +2 pad 4B
+  bin.set(new Uint8Array(positions.buffer), 0);
+  bin.set(new Uint8Array(indices.buffer), positions.byteLength);
+  const json = {
+    asset: { version: '2.0' },
+    accessors: [
+      { componentType: 5126, type: 'VEC3', bufferView: 0, count: 4 },
+      { componentType: 5123, type: 'SCALAR', bufferView: 1, count: 6 },
+    ],
+    bufferViews: [
+      { buffer: 0, byteOffset: 0, byteLength: positions.byteLength },
+      { buffer: 0, byteOffset: positions.byteLength, byteLength: indices.byteLength },
+    ],
+    meshes: [{ primitives: [{ attributes: { POSITION: 0 }, indices: 1, mode: 4 }] }],
+    buffers: [{ byteLength: bin.byteLength }],
+  };
+  let jsonBytes = new TextEncoder().encode(JSON.stringify(json));
+  while (jsonBytes.byteLength % 4) jsonBytes = new Uint8Array([...jsonBytes, 0x20]);
+  const total = 12 + 8 + jsonBytes.byteLength + 8 + bin.byteLength;
+  const glb = new Uint8Array(total);
+  const dv = new DataView(glb.buffer);
+  dv.setUint32(0, 0x46546c67, true); dv.setUint32(4, 2, true); dv.setUint32(8, total, true);
+  dv.setUint32(12, jsonBytes.byteLength, true); dv.setUint32(16, 0x4e4f534a, true);
+  glb.set(jsonBytes, 20);
+  const binOff = 20 + jsonBytes.byteLength;
+  dv.setUint32(binOff, bin.byteLength, true); dv.setUint32(binOff + 4, 0x004e4942, true);
+  glb.set(bin, binOff + 8);
+
+  const g = parseGlbGeometry(glb);
+  ok('parse được', g !== null);
+  ok('4 đỉnh', g?.positions.length === 12);
+  ok('2 tam giác', g?.indices.length === 6);
+  ok('đỉnh[1] đúng (1,0,0)', g?.positions[3] === 1 && g?.positions[4] === 0);
+  ok('chỉ số cuối = 3', g?.indices[5] === 3);
+  ok('không phải GLB → null', parseGlbGeometry(new TextEncoder().encode('x'.repeat(64))) === null);
+  ok('chuanNet mặt tiền cũng chạy (mesh bé → 1 mảnh mesh)', chuanNet(glb, { hMm: 1000 }) !== null);
+}
+
+/* ── ③ dựng lại qua build-ops → bbox khớp ── */
+console.log('rebuild qua build-ops (CHỈ GỌI revolveProfile)');
+{
+  const cyl = rebuildCylinderMm({ axis: [0, 1, 0], center: [100, 200, 300], radius: 20, height: 400 }, 32);
+  let mn = [Infinity, Infinity, Infinity]; let mx = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < cyl.length; i += 3) for (let d = 0; d < 3; d++) {
+    mn[d] = Math.min(mn[d], cyl[i + d]); mx[d] = Math.max(mx[d], cyl[i + d]);
+  }
+  ok('trụ: cao 400 dọc Y quanh 200', within(mx[1] - mn[1], 400, 2) && within((mx[1] + mn[1]) / 2, 200, 2));
+  ok('trụ: đường kính ≈ 40 (đa giác 32 cạnh hơi hụt)', mx[0] - mn[0] > 38 && mx[0] - mn[0] <= 40.1);
+  ok('trụ: tâm XZ = (100,300)', within((mx[0] + mn[0]) / 2, 100, 2) && within((mx[2] + mn[2]) / 2, 300, 2));
+
+  const tor = rebuildTorusMm({ axis: [0, 1, 0], center: [0, 50, 0], rMajor: 150, rMinor: 12 }, 48, 16);
+  mn = [Infinity, Infinity, Infinity]; mx = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < tor.length; i += 3) for (let d = 0; d < 3; d++) {
+    mn[d] = Math.min(mn[d], tor[i + d]); mx[d] = Math.max(mx[d], tor[i + d]);
+  }
+  ok('xuyến: rộng ≈ 2(R+r)=324', within(mx[0] - mn[0], 324, 3));
+  ok('xuyến: dày ≈ 2r=24 quanh y=50', within(mx[1] - mn[1], 24, 5) && within((mx[1] + mn[1]) / 2, 50, 5));
+}
+
+/* ── ④ pipeline đủ trên mesh tổng hợp — ghế giả lập ── */
+console.log('chuanNetGeometry — mesh tổng hợp: 4 chân + vòng + nệm + bóng sàn');
+{
+  const soup: Soup = { positions: [], indices: [] };
+  // 4 chân trụ r=0.02, y -0.5..0.15 tại (±0.2, ±0.2)
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) cylinderAt(soup, 0.2 * sx, 0.2 * sz, 0.02, -0.5, 0.15, 20, 24);
+  // vòng gác chân R=0.28 r=0.015 tại y=-0.15
+  torusAt(soup, -0.15, 0.28, 0.015, 48, 12);
+  // khối nệm (mesh hữu cơ giả lập bằng box) y 0.15..0.3
+  boxAt(soup, 0, 0.225, 0, 0.45, 0.15, 0.45);
+  // bóng sàn: đĩa phẳng mỏng sát đáy (box dẹt cao 0.004, rộng 0.5)
+  boxAt(soup, 0, -0.498, 0, 0.55, 0.004, 0.55);
+
+  const geom: GlbGeometry = {
+    positions: new Float32Array(soup.positions),
+    uvs: null,
+    indices: new Uint32Array(soup.indices),
+  };
+  const polyTruoc = soup.indices.length / 3;
+  const res = chuanNetGeometry(geom, { hMm: 800 });
+  const cyls = res.parts.filter((p) => p.loai === 'cylinder');
+  const tors = res.parts.filter((p) => p.loai === 'torus');
+  const shadows = res.parts.filter((p) => p.loai === 'shadow-removed');
+  const meshes = res.parts.filter((p) => p.loai === 'mesh');
+  ok('4 chân → 4 mảnh cylinder', cyls.length === 4);
+  ok('1 vòng → 1 mảnh torus', tors.length === 1);
+  ok('bóng sàn bị XOÁ (≥1 mảnh shadow-removed)', shadows.length >= 1);
+  ok('nệm giữ mesh (≥1 mảnh mesh)', meshes.length >= 1);
+  ok('polyTruoc đúng', res.polyTruoc === polyTruoc);
+  ok('polySau > 0 và không tính bóng', res.polySau > 0);
+  if (cyls.length === 4 && cyls[0].loai === 'cylinder') {
+    // scale: yExt = 0.804 (đáy bóng -0.5 .. nệm 0.3) → mmPerUnit = 800/0.8004
+    const mm = res.scaleMmPerUnit;
+    ok('bán kính chân ≈ 0.02×scale ±2%', within(cyls[0].thamSo.radiusMm, 0.02 * mm, 2));
+    ok('sai số fit chân < 2%', cyls[0].saiSoPct < 2);
+  }
+  if (tors.length === 1 && tors[0].loai === 'torus') {
+    const mm = res.scaleMmPerUnit;
+    ok('R vòng ≈ 0.28×scale ±3%', within(tors[0].thamSo.rMajorMm, 0.28 * mm, 3));
+    ok('r vòng ≈ 0.015×scale ±10%', within(tors[0].thamSo.rMinorMm, 0.015 * mm, 10));
+    ok('sai số fit vòng < 2%', tors[0].saiSoPct < 2);
+  }
+  ok('OBJ có group + usemtl + mtllib', res.obj.includes('mtllib') && res.obj.includes('usemtl') && /(^|\n)o /.test(res.obj));
+  ok('MTL có 2 material', res.mtl.includes('mat_primitive') && res.mtl.includes('mat_mesh'));
+  const recipe = JSON.parse(res.recipeJson) as { marker: string; parts: Array<{ loai: string; buildOp?: { op: string } }> };
+  ok('recipe marker chuanNet', recipe.marker === 'chuanNet');
+  ok('recipe: mảnh primitive mang buildOp revolve', recipe.parts.filter((p) => p.buildOp?.op === 'revolve').length === cyls.length + tors.length);
+}
+
+console.log(`\n${pass} pass · ${fail} fail`);
+if (fail) process.exit(1);
