@@ -64,6 +64,12 @@ tách vẽ diện đồ nội thất...) đều là mặt tiền của MỘT eng
   làm trong ngày). Cuối phiên lớn → ghi đè `docs/memory/LATEST.md` (bản NÉN, 1 file duy nhất,
   dòng đầu là ngày mới nhất) — KHÔNG thay thế STATUS.md/00-CHOT.md/CHANGELOG.md, là lớp tổng hợp
   nhanh thêm vào. Không di dời `docs/bao-cao-phien/` cũ — quy ước mới chỉ áp dụng từ 15/08 trở đi.
+- **HỎI GỘP BẰNG TRẮC NGHIỆM (Hoà chốt 15/08)** — KHÔNG rải câu hỏi ở cuối từng lượt. Dồn lại,
+  đợi một lượt rồi hỏi GỘP: tối đa 4 câu, mỗi câu 2-4 phương án bấm được, khuyến nghị đặt đầu,
+  **luôn có ô "ý khác" cuối**. Lý do Hoà nêu: *"câu hỏi bạn hỏi mình chưa trả lời, sang lượt tiếp
+  theo nữa là trôi thông tin"* — hỏi văn xuôi cuối lượt bị lượt sau đè lên, coi như chưa hỏi, rồi
+  máy tự suy diễn đi tiếp trên giả định chưa duyệt. Trong lúc làm cứ ghi câu hỏi vào báo cáo/sổ,
+  đừng hỏi ngay.
 - **KHÔNG tự push lên `origin/main`** trừ khi được yêu cầu rõ ràng trong phiên đó.
 - File gói `.md`/`.txt` dán tạm ở gốc repo (kiểu IF-DOCS-BATCH-*.md, PROMPT-*.txt) → xử lý xong
   thì XOÁ, không giữ lại làm rác.
