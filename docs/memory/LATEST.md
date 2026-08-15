@@ -27,6 +27,7 @@ thu mọi UI từ nay.
 | 03 | Mirror-completion cho chuan-net | ✅ Code xong, 178 test pass, đã commit `f423652`, chưa push |
 | 04 | Toolbar 3 chặng + màn khoá + đi tay QA + phát hiện lỗ V | 🟡 LockScreen xong; ToolbarChip mới dựng component chưa nối; QA đi tay dừng giữa luồng |
 | 05 | Dựng hệ trí nhớ 2 lớp (chính việc này) | 🟡 Đang làm |
+| 07 | T đóng 2 lệch đỏ + nghiệm thu hàng đợi render trên app thật | ✅ Xong — 4 commit, kết phiên 0 lệch; nút thắt thật là **64 nợ mắt / 1 đã duyệt** |
 
 ## Việc DANG DỞ — phiên sau nhặt lại ở đây, theo thứ tự ưu tiên
 1. Áp `components/ui/ToolbarChip.tsx` (đã dựng) vào 3 nơi thật: `CadToolbar.tsx`, `ToolDock3D.tsx`,
