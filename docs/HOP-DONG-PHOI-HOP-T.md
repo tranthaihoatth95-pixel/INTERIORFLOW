@@ -120,9 +120,21 @@ Nguyên tắc ra quyết định (áp cho MỌI dòng của bảng):
 6. Trong phạm vi được giao, agent có quyền + nghĩa vụ ĐỀ XUẤT tính năng còn thiếu và MVP của
    nhánh mình — T gom về bảng, không để sót hạng mục cốt lõi nào cấu thành app.
 
-## §3 · KHUÔN HỢP ĐỒNG GIAO VIỆC (T → sub-agent) — 8 ô bắt buộc
+## §3 · KHUÔN HỢP ĐỒNG GIAO VIỆC (T → sub-agent) — ô ⓪ + 8 ô bắt buộc
+
+> **Bổ sung 15/08 — 3 ô ⓪/⑦b/⑦c** lấy từ bản tư vấn ngoài (`TU-VAN-PROMPT-VAI-TU-VAN-VAN-HANH`,
+> T kiểm chứng rồi mới nhận — xem `docs/00-CHOT.md` mục "Xử bản tư vấn vai vận hành 15/08").
+> Ba ô này vá đúng 3 lỗ khuôn 8 ô cũ không có: agent **không có nghĩa vụ nghi ngờ phiếu**,
+> **không có nghĩa vụ khai không-biết**, **kết luận không có hạn dùng**. Cả ba đều là cơ chế
+> đẻ ra "trả lời mù" — thứ đắt nhất vì nó trôi qua audit dễ nhất.
 
 ```
+⓪ TIỀN ĐỀ — trả lời TRƯỚC khi làm, đúng một dòng:
+   TIỀN ĐỀ CỦA PHIẾU: "<câu T đang giả định là đúng>"
+   → [XÁC NHẬN | BÁC BỎ | KHÔNG CÓ BẰNG CHỨNG] + nguồn (file:dòng)
+   Bác bỏ thì DỪNG, báo T — không làm tiếp theo tiền đề sai. T sai thì T sửa phiếu,
+   agent làm đúng một phiếu sai vẫn là hỏng việc (nhân bản lỗi ra toàn hệ).
+
 ① BỐI CẢNH NGÀNH: painpoint gì, của persona nào, tại sao tận gốc (1 đoạn)
 ② ĐỌC TRƯỚC: danh sách file chốt/spec/code PHẢI đọc (kèm dòng nếu biết)
 ③ VÙNG FILE: được đụng gì — ngoài vùng là vi phạm dù sửa đúng
@@ -130,10 +142,20 @@ Nguyên tắc ra quyết định (áp cho MỌI dòng của bảng):
 ⑤ RÀNG BUỘC: không git · không server · token/luật UI liên quan (G1/G9/ngôn ngữ/nhãn chặng)
    + TRÍCH MÃ ĐIỀU KHOẢN `docs/TRIET-LY-IF.md` liên quan việc này ([T_]/[N_]/[Đ_]) — thẻ vai tự chứa [Đ4]
 ⑥ NGHIỆM THU TỰ LÀM: lệnh cụ thể (tsc, test file nào, sinh file gì)
-⑦ BÁO CÁO: lưu docs/bao-cao-phien/<ngày>-<tên>.md — khuôn: file sửa/tạo · kết quả
-   lệnh THẬT dán nguyên văn · quyết định tự chọn + lý do · CHƯA LÀM nói thẳng
+⑦ BÁO CÁO: lưu docs/bao-cao-phien/<ngày>-<tên>.md — khuôn 6 phần (docs/CLAUDE.md) + file
+   sửa/tạo · kết quả lệnh THẬT dán nguyên văn · quyết định tự chọn + lý do · CHƯA LÀM nói thẳng
+⑦b CHƯA CHẮC / CHƯA KIỂM — mục BẮT BUỘC trong báo cáo, trống cũng phải ghi "không có":
+   · điều gì đang SUY LUẬN chứ không đo · file nào chưa đọc mà có thể lật kết luận
+   · hai nguồn mâu thuẫn → nêu CẢ HAI, KHÔNG chọn hộ T
+   Thà nộp bản có lỗ được đánh dấu, còn hơn bản kín mà mù.
+⑦c HẠN DÙNG KẾT LUẬN: "kết luận này hết đúng khi <điều gì> xảy ra".
+   Không có hạn dùng thì phiên sau đọc lại kết luận cũ như sự thật vĩnh viễn — đúng cơ chế
+   đã làm sổ giấy mốc trong 5 ngày (phát hiện P5 FeatureContract 13/08).
 ⑧ DÂY MÁY: entry registry tương ứng (id có sẵn — agent KHÔNG tự sửa registry, T flip sau audit)
 ```
+
+**T tự ràng buộc:** ⓪ chỉ có nghĩa nếu T thật sự viết ra tiền đề của mình. Phiếu nào T không
+nêu nổi tiền đề = phiếu T chưa nghĩ xong, không được phóng.
 
 ## §4 · CHỐNG RƠI RỚT — 4 chốt máy (không dựa trí nhớ ai)
 

@@ -12,13 +12,15 @@
 0. `docs/memory/LATEST.md` — bản NÉN trí nhớ phiên gần nhất (đọc trước tiên, rẻ nhất) — cần chi
    tiết đầy đủ 1 nhánh việc thì mở đúng thư mục `docs/memory/sessions/<ngày>/<nhánh>/`
 1. `docs/IF-MASTER-BLUEPRINT.md` — kiến trúc tổng, hệ `.idf`, cây mã số, lệnh giao diện
-2. `docs/IF-MASTER-TREE.md` — cây 461 mục, có cột trạng thái CODE THẬT
+2. `docs/IF-FEATURE-TREE.md` — cây 461 mục, có cột trạng thái CODE THẬT
+   ⚠️ Tên cũ `IF-MASTER-TREE.md` **đã đổi từ 28/07**; file cũ nay chỉ còn 862 byte chuyển hướng.
+   Ai đọc trúng nó sẽ tưởng đã kiểm cây (thật ra chưa) — T sửa tham chiếu 15/08.
 3. `docs/IF-ARCHITECTURE-BLUEPRINT-v1.md` — 8 luật vận hành (hiến pháp)
 4. `STATUS.md` — trạng thái hiện tại
 5. `docs/IDEAS-BACKLOG.md` — ý mới chưa vào cây
 
 ## LUẬT ĐÓNG BĂNG (quan trọng nhất)
-1. **Tính năng không có mã trong IF-MASTER-TREE → KHÔNG code.**
+1. **Tính năng không có mã trong `IF-FEATURE-TREE` (tên cũ: IF-MASTER-TREE) → KHÔNG code.**
 2. Ý mới phát sinh giữa chừng → ghi vào `docs/IDEAS-BACKLOG.md`, KHÔNG code ngay.
 3. **KHÁM TRƯỚC KHI SPEC.** Không viết spec/tài liệu mô tả "code có gì" mà chưa đọc code thật.
    Nếu cần mô tả kiến trúc mới → đọc code liên quan trước, ghi rõ cái nào đã có/chưa có.

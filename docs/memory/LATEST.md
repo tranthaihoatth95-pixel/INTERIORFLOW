@@ -28,6 +28,7 @@ thu mọi UI từ nay.
 | 04 | Toolbar 3 chặng + màn khoá + đi tay QA + phát hiện lỗ V | 🟡 LockScreen xong; ToolbarChip mới dựng component chưa nối; QA đi tay dừng giữa luồng |
 | 05 | Dựng hệ trí nhớ 2 lớp (chính việc này) | 🟡 Đang làm |
 | 07 | T đóng 2 lệch đỏ + nghiệm thu hàng đợi render trên app thật | ✅ Xong — 4 commit, kết phiên 0 lệch; nút thắt thật là **64 nợ mắt / 1 đã duyệt** |
+| 08 | T xử bản tư vấn vai vận hành (Hoà giao quyền chốt) | ✅ NHẬN 4 (⓪TIỀN ĐỀ+⑦b+⑦c vào khuôn phiếu · AGENTS.md thành symlink · 2 entry mới) · BÁC 2 (SIM-LEDGER · agent thứ 6) · đóng dấu ⛔LỖI THỜI lên SPIRAL |
 
 ## Việc DANG DỞ — phiên sau nhặt lại ở đây, theo thứ tự ưu tiên
 1. Áp `components/ui/ToolbarChip.tsx` (đã dựng) vào 3 nơi thật: `CadToolbar.tsx`, `ToolDock3D.tsx`,
@@ -49,3 +50,11 @@ thu mọi UI từ nay.
 - **Hệ trí nhớ 2 lớp này** — quy ước mới cho MỌI phiên từ nay: viết chi tiết vào
   `docs/memory/sessions/<ngày>/<NN-nhánh-việc>/README.md`, cập nhật `docs/memory/LATEST.md`
   cuối phiên lớn.
+- **Khuôn phiếu §3 nay là ⓪ + 8 ô** — thêm ⓪ TIỀN ĐỀ · ⑦b CHƯA CHẮC/CHƯA KIỂM · ⑦c HẠN DÙNG
+  KẾT LUẬN (T chốt 15/08 sau khi kiểm chứng bản tư vấn ngoài).
+- **`AGENTS.md` = symlink vào `CLAUDE.md`** — một nguồn duy nhất, cấm dựng bản sao thứ hai của
+  luật nền.
+- **`QUY_TRINH_SPIRAL_v1.md` đã đóng dấu ⛔LỖI THỜI** — không phải quy trình đang chạy. Luật
+  chung: văn bản quy trình bị thay PHẢI đóng dấu tại chỗ, không im lặng bỏ hoang.
+- **BÁC vĩnh viễn: khởi tạo SIM-LEDGER · đẻ agent thứ 6 vai tư vấn vận hành** (lý do đầy đủ ở
+  `00-CHOT` 15/08) — phiên sau định làm 1 trong 2, đọc lại dòng đó trước.

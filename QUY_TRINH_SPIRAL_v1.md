@@ -1,5 +1,30 @@
 # QUY TRÌNH SPIRAL — Vòng lặp khép kín Design ⇄ IDF
 
+> # ⛔ LỖI THỜI — KHÔNG PHẢI QUY TRÌNH ĐANG CHẠY (T đóng dấu 15/08)
+>
+> **File này là bản 28/07, commit cuối 29/07 (`8e096a8`), CHƯA từng chạy trọn một vòng.**
+> Quy trình vận hành THẬT hiện nay:
+> `docs/HOP-DONG-PHOI-HOP-T.md` (mô hình T/V, 12/08) + `docs/TRIET-LY-IF.md` (hiến pháp, 13/08)
+> + sổ máy `scripts/frontier-registry.mjs` + 5 máy soi (`soi:frontier` · `soi:tu-dien` ·
+> `soi:thao-tac` · `soi:hinh-hoc` · `soi:contract`) + `docs/bao-cao-phien/`.
+>
+> **Đối chiếu 15/08:** `STATUS.md` · `00-CHOT.md` · `HOP-DONG-PHOI-HOP-T` · `TRIET-LY-IF` nhắc
+> "SPIRAL" **0 lần**; chỉ 3 file cùng thời 28/07 còn trỏ tới đây. Hai hệ không biết nhau tồn tại.
+>
+> **Vì sao đóng dấu chứ không xoá:** 15/08 một bản tư vấn ngoài đọc file này, tưởng đang chạy,
+> rồi kê đơn sửa nó — trong đó có "khởi tạo SIM LEDGER" (đã BÁC, xem `docs/00-CHOT.md` mục
+> "Xử bản tư vấn vai vận hành 15/08"). File không có dấu lỗi-thời thì người/agent sau còn mắc
+> tiếp. Nội dung dưới giữ nguyên làm lịch sử — 3 thứ ĐÃ CHUYỂN SANG hệ mới, tra bảng:
+>
+> | Cơ chế SPIRAL | Bản đang sống thay nó |
+> |---|---|
+> | SIM LEDGER (§0) | `scripts/frontier-registry.mjs` + `docs/bao-cao-phien/` + `soi:contract` |
+> | Audit 2 lớp G7 | T audit (§2 bước 6) + **agent V** kiểm chéo độc lập (§2 bước 7) |
+> | Chưng cất SOP G8A | `docs/HOP-DONG-PHOI-HOP-T.md` §9 + `docs/he-luat-thao-tac` |
+> | Hạm đội NHÃ/KIẾN/VŨ/TRỤ | T (kiến trúc xuyên chặng) + sub-agent cấp chặng + V (§1c) |
+>
+> ⛔ **Cấm dùng file này làm căn cứ chẩn đoán hiện trạng.** Đọc `docs/memory/LATEST.md` trước.
+
 > **Mục đích kép:** vừa tạo ra sản phẩm design/tool A&D thật, vừa dùng chính quá trình đó để phát hiện IDF còn thiếu gì → đề xuất code cải tiến.
 > **Nguyên lý:** không đoán xem IDF cần tính năng gì. **Làm việc thật trong môi trường giả lập, cái gì thiếu sẽ tự lộ ra.**
 > Version: v1.0 · 2026-07-28

@@ -1,3 +1,9 @@
+> **MỘT NGUỒN — `AGENTS.md` là SYMLINK trỏ vào chính file này (T gộp 15/08).** Trước đó hai file
+> là hai bản sao gần y hệt, đã bắt đầu phân kỳ: bản `AGENTS.md` ghi sai `.Codex/launch.json`
+> (repo thật là `.claude/launch.json`) + đeo thêm 3 dòng phụ lục cụt. Sửa một bên quên bên kia là
+> chuyện chắc chắn xảy ra, nên **cấm dựng lại bản sao thứ hai của luật nền** — công cụ nào cần
+> `AGENTS.md` thì đọc qua symlink. Sửa luật: sửa `CLAUDE.md`, hết.
+
 ## Bắt đầu session
 Đọc @STATUS.md rồi @docs/00-CHOT.md TRƯỚC TIÊN. Cập nhật nó cuối mỗi task.
 
