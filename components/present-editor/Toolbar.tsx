@@ -57,8 +57,9 @@ import {
 } from 'lucide-react';
 import IOMenu from '@/components/ui/IOMenu';
 import LightArc from '@/components/ui/LightArc';
+import { ToolbarChip } from '@/components/ui/ToolbarChip';
+import { RADIUS } from '@/lib/geometry';
 import { useDismissable } from '@/lib/useDismissable';
-import Tooltip from '@/components/ui/Tooltip';
 import type { EditorSlide, ShapeKind } from '@/lib/present-editor/model';
 import type { AlignMode as GroupAlignMode } from '@/lib/present-editor/align';
 // Nhập .xlsx vào BẢNG KHỐI LƯỢNG (BOQ) — logic thuần ở lib, component này chỉ là mặt tiền.
@@ -714,10 +715,10 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
       </Btn>
 
       <Divider />
-      <IconOnly onClick={p.onUndo} title="Hoàn tác" disabled={!p.canUndo}>
+      <IconOnly onClick={p.onUndo} label="Hoàn tác" title={p.canUndo ? 'Hoàn tác' : 'Chưa có thao tác nào để hoàn tác'} disabled={!p.canUndo}>
         <Undo2 size={15} />
       </IconOnly>
-      <IconOnly onClick={p.onRedo} title="Làm lại" disabled={!p.canRedo}>
+      <IconOnly onClick={p.onRedo} label="Làm lại" title={p.canRedo ? 'Làm lại' : 'Chưa hoàn tác gì để làm lại'} disabled={!p.canRedo}>
         <Redo2 size={15} />
       </IconOnly>
 
@@ -888,6 +889,18 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
 
 export default Toolbar;
 
+/**
+ * 15/08 (`toolbar-mot-khuon`) — CHƯA đổi sang `ToolbarChip`: `Btn` là pill NGANG icon+CHỮ LUÔN
+ * HIỆN (nav "Quay lại", CTA đặc "Trình chiếu"/primary), khác ngữ pháp với `ToolbarChip` (chip
+ * TRÒN, chữ ẩn dưới tooltip trừ khi `showLabel` xếp CỘT) — ép vào sẽ làm mất chữ luôn-hiện của
+ * nav/CTA hoặc làm "Trình chiếu" (nút primary duy nhất) hết tô đặc, đổi ý nghĩa hình học của
+ * chính nó (primary CTA CHỦ Ý tô đặc, khác nút TOGGLE mà luật 2.1.8.l nhắm tới).
+ *
+ * ⇒ T audit 15/08 GIỮ NGUYÊN lập luận này (đúng: pill-chữ ≠ chip-tròn là hai ngữ pháp thật), chỉ
+ * đi nốt bước cuối: bo `RADIUS.r2` (10) → `RADIUS.full` — vì r10 để lại hậu quả nặng hơn cả hai
+ * lựa chọn thuần: CÙNG một hàng có 2 chip r999 cạnh 8 pill r10, Trình chiếu tự mâu thuẫn. Capsule
+ * giữ được HẾT (chữ luôn hiện · primary vẫn đặc) mà vẫn về đúng họ hình KB-1. Kèm `#fff` → `--on-accent`.
+ */
 function Btn({
   children,
   onClick,
@@ -914,7 +927,13 @@ function Btn({
         alignItems: 'center',
         gap: 6,
         padding: '8px 12px',
-        borderRadius: 10,
+        // 15/08 T audit `toolbar-mot-khuon`: r10 → capsule. Giữ nguyên lập luận đúng của TB
+        // (Btn là pill NGANG icon+chữ, KHÔNG ép thành chip tròn — nav mất chữ, CTA mất tô đặc),
+        // nhưng r10 để lại hậu quả nặng hơn: trong CÙNG một hàng có 2 chip r999 đứng cạnh 8 pill
+        // r10, tức Trình chiếu tự mâu thuẫn với chính nó — tệ hơn cả hai lựa chọn thuần. KB-1
+        // chốt họ hình là CAPSULE, và pill chữ vẫn capsule được: chữ vẫn hiện, primary vẫn đặc,
+        // chỉ đổi đúng một thuộc tính. Đây là chỗ "cùng họ nút" của 3 chặng thật sự khép lại.
+        borderRadius: RADIUS.full,
         fontSize: 13,
         cursor: disabled ? 'default' : 'pointer',
         border: primary ? '1px solid var(--accent)' : '1px solid var(--border)',
@@ -923,7 +942,9 @@ function Btn({
           : active
             ? 'var(--accent-soft)'
             : 'var(--field)',
-        color: primary ? '#fff' : active ? 'var(--accent)' : 'var(--t2)',
+        // '#fff' cũ là hex cứng giữa rừng token — `--on-accent` đã có sẵn (globals.css:160,
+        // đo 4,89:1 trên nền accent) và chính ToolDock3D đang dùng. Không đẻ màu ngoài hệ.
+        color: primary ? 'var(--on-accent)' : active ? 'var(--accent)' : 'var(--t2)',
         opacity: disabled ? 0.45 : 1,
       }}
     >
@@ -937,41 +958,37 @@ function shortLabel(title: string): string {
   return title.split(' (')[0].split(' — ')[0].trim();
 }
 
+/**
+ * 15/08 (`toolbar-mot-khuon`, KB-1) — ĐỔI RUỘT sang `ToolbarChip` (component nền dùng chung 3
+ * chặng), GIỮ NGUYÊN chữ ký gọi CŨ (children/onClick/title/disabled) để 22+ nơi gọi `<IconOnly>`
+ * trong file này không phải sửa. `title` đã luôn mang sẵn lý do khi mờ (vd "Căn trái theo nhau
+ * (cần ≥2 đối tượng)") → dùng làm cả `desc` (bật) lẫn `disabledReason` (mờ), đúng §9.
+ * `label` (MỚI, optional) — tên NGẮN ổn định cho aria-label/tag hover khi `title` đổi hẳn nội
+ * dung lúc mờ (vd Hoàn tác/Làm lại: title đổi thành cả câu lý do) — mặc định vẫn suy từ `title`
+ * như trước nên các nơi gọi cũ không cần đổi gì.
+ */
 function IconOnly({
   children,
   onClick,
   title,
   disabled,
+  label,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   title: string;
   disabled?: boolean;
+  label?: string;
 }) {
   return (
-    <Tooltip label={shortLabel(title)}>
-      <button
-        type="button"
-        title={title}
-        onClick={onClick}
-        disabled={disabled}
-        className="pe-tool-btn"
-        style={{
-          width: 38,
-          height: 36,
-          display: 'grid',
-          placeItems: 'center',
-          borderRadius: 10,
-          border: '1px solid var(--border)',
-          background: 'var(--field)',
-          color: 'var(--t2)',
-          cursor: disabled ? 'default' : 'pointer',
-          opacity: disabled ? 0.4 : 1,
-        }}
-      >
-        {children}
-      </button>
-    </Tooltip>
+    <ToolbarChip
+      icon={children}
+      label={label ?? shortLabel(title)}
+      desc={disabled ? undefined : title}
+      disabled={disabled}
+      disabledReason={disabled ? title : undefined}
+      onClick={onClick}
+    />
   );
 }
 

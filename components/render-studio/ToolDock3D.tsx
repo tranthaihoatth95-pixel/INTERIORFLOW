@@ -24,6 +24,11 @@
  * (`measureSelection`) · Thư viện · Vật liệu. Nút CHƯA có engine giữ `disabled` kèm lý do RIÊNG
  * từng nút (§9 cấm nút giả): Cùng loại (chưa có chọn-theo-loại) · Bo cạnh/Cắt khối (bevel/boolean
  * hôm nay ghi qua panel Sửa dạng tham số, chưa có thao tác rời) · Đo góc (chưa có engine đo góc).
+ *
+ * 15/08 (`toolbar-mot-khuon`, KB-1) — nút tự vẽ `itemBtnStyle` ĐỔI sang `ToolbarChip` dùng chung
+ * với 2D/Trình bày: sửa 2 vi phạm cũ — nút bật `background: var(--accent)` tô đặc (trái 2.1.8.l
+ * "ghost khi bật") và màu chữ `t3/t5` (ngoài thang chuẩn ToolbarChip dùng `t2`). Hành vi thu/mở
+ * + luật "thu gọn chỉ hiện nút có hành vi thật" GIỮ NGUYÊN.
  */
 
 import { useEffect, useState } from 'react';
@@ -33,6 +38,7 @@ import {
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { useTool3D, type Tool3DId } from '@/lib/render-studio/tool3d';
+import { ToolbarChip } from '@/components/ui/ToolbarChip';
 
 interface ToolDock3DProps {
   open: boolean;
@@ -127,28 +133,6 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
     },
   ];
 
-  // 08/08 — port ĐÚNG mock (đọc trọn docs/mocks/"3D Dựng khối.dc.html" trước khi sửa, luật L1):
-  // mock định nghĩa hover CHO MỌI nút kể cả disabled-trên-mock (nó không có khái niệm disabled,
-  // engine hôm nay có) — `.dock-icon-btn` (globals.css) làm phần hover thật CSS làm được mà JSX
-  // inline style không làm được. Nút `active` vẫn tô nền accent tĩnh, không cần hover riêng.
-  const itemBtnStyle = (item: DockGroupItem, compact: boolean): React.CSSProperties => ({
-    width: compact ? 32 : 66,
-    height: compact ? 32 : undefined,
-    padding: compact ? 0 : '6px 2px 4px',
-    border: 0,
-    borderRadius: 10,
-    background: item.active ? 'var(--accent)' : 'transparent',
-    color: item.active ? 'var(--on-accent)' : item.disabled ? 'var(--t5)' : 'var(--t3)',
-    cursor: item.disabled ? 'not-allowed' : item.onClick ? 'pointer' : 'default',
-    display: 'flex',
-    flexDirection: compact ? 'row' : 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: compact ? 0 : 3,
-    fontFamily: 'inherit',
-    opacity: item.disabled ? 0.45 : 1,
-  });
-
   if (!open) {
     // Trạng thái 03 (thu gọn) — 1 hàng, chỉ icon. 11/08 Hoà soi: bản cũ bày CẢ 12 nút disabled
     // không nhãn không lý do → "hầu như chẳng sử dụng được". Ở dạng thu gọn icon câm không tải
@@ -172,16 +156,14 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
             {i > 0 && item.groupIdx !== flat[i - 1].groupIdx && (
               <span style={{ width: 1, height: 20, background: 'var(--mat-hairline)', margin: '0 5px' }} />
             )}
-            <button
-              type="button"
-              className="dock-icon-btn"
-              title={item.title}
-              disabled={item.disabled}
+            <ToolbarChip
+              icon={item.icon}
+              label={tr(item.label, item.labelEn)}
+              desc={item.title}
+              active={item.active}
               onClick={item.onClick}
-              style={itemBtnStyle(item, true)}
-            >
-              {item.icon}
-            </button>
+              shortcutHint={item.shortcut}
+            />
           </span>
         ))}
         <span style={{ width: 1, height: 20, background: 'var(--mat-hairline)', margin: '0 5px' }} />
@@ -231,25 +213,18 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
                   </div>
                   <div style={{ display: 'flex', gap: 1 }}>
                     {g.items.map((item) => (
-                      <button
+                      <ToolbarChip
                         key={item.key}
-                        type="button"
-                        className="dock-icon-btn"
-                        title={item.title}
+                        icon={item.icon}
+                        label={tr(item.label, item.labelEn)}
+                        desc={item.disabled ? undefined : item.title}
+                        active={item.active}
                         disabled={item.disabled}
+                        disabledReason={item.disabled ? item.title : undefined}
                         onClick={item.onClick}
-                        style={itemBtnStyle(item, false)}
-                      >
-                        {item.icon}
-                        <span style={{ fontSize: 10, lineHeight: 1.5, whiteSpace: 'nowrap', color: item.active ? 'var(--on-accent)' : 'var(--t3)' }}>
-                          {tr(item.label, item.labelEn)}
-                        </span>
-                        {item.shortcut && (
-                          <span style={{ fontSize: 9, lineHeight: 1.5, color: item.active ? 'var(--on-accent)' : 'var(--t4)', opacity: item.active ? 0.75 : 1 }}>
-                            {item.shortcut}
-                          </span>
-                        )}
-                      </button>
+                        shortcutHint={item.shortcut}
+                        showLabel
+                      />
                     ))}
                   </div>
                 </div>

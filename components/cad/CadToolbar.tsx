@@ -23,6 +23,7 @@ import { useModKey, useModShiftKey } from '@/lib/kbd';
 import { useT } from '@/lib/i18n';
 import Tooltip from '@/components/ui/Tooltip';
 import Popover from '@/components/ui/Popover';
+import { ToolbarChip } from '@/components/ui/ToolbarChip';
 
 /** Rút gọn nhãn nút (bỏ mô tả dài sau " (" / " — ") thành nhãn ngắn cho tag hover. */
 function shortLabel(title: string): string {
@@ -101,7 +102,7 @@ const VE_DIRECT_PRO: ToolBtn[] = [DRAW[0], DRAW[2], DRAW[3], DRAW[4], DRAW_PRO[0
 const VE_MORE: ToolBtn[] = [DRAW_PRO[1], DRAW_PRO[3], ...SHAPES2];
 
 /** VIỆC 2 — 6 lệnh dùng nhiều nhất (Chọn·Đường·Đường gấp·Tường·Phòng·Hatch) nút TO hơn ~1.4 lần,
- * còn lại giữ cỡ hiện tại — xem btnSize()/btn(). */
+ * còn lại giữ cỡ hiện tại — xem `btnSize()` + `Group`/`ToolbarChip size="tap-lg"`. */
 const BIG_TOOLS = new Set<Tool>(['select', 'line', 'polyline', 'wall', 'room', 'hatch']);
 /** Pro-only (Sprint 9) — 6 lệnh ghi kích thước kiểu bản vẽ kỹ thuật, không thuộc "sketch nhanh". */
 const DIMENSION: ToolBtn[] = [
@@ -171,16 +172,19 @@ export default function CadToolbar({
   const undoLabel = useModKey('Z');
   const redoLabel = useModShiftKey('Z');
   // Hai khác biệt "cầm nắm" giữa 2 mode, gom về đúng 2 biến:
-  //  - b()/icoS : Sketch nút 44px (chuẩn vùng chạm) · Pro nút 36px (mật độ gọn cho chuột — nâng
-  //               34→36 theo nghiệm thu ticket "THANH TOOL 2D DESIGN": nút thường ≥36px).
+  //  - btnSize()/icoS : Sketch nút 44px (chuẩn vùng chạm, `ToolbarChip size="tap-lg"`) · Pro nút
+  //               32px (mật độ gọn cho chuột — 15/08 KB-1: 36→32, đổi sang `var(--tap)` qua
+  //               ToolbarChip; số 34 của KB-1 làm tròn về token `--tap` sẵn có, xem ghi chú trong
+  //               `ToolbarChip.tsx`).
   //  - phím tắt : Pro truyền `shortcut` cho Tooltip (tay quen bàn phím thấy ngay phím cần gõ);
   //               Sketch bỏ đi vì trên cảm ứng không có bàn phím để mà gõ phím tắt.
-  // `big` (VIỆC 2) — 6 lệnh hay dùng TO hơn ~1.4 lần, luôn ≥44px dù mode nào.
-  const b = (active: boolean, disabled = false, big = false) => btn(active, disabled, isPro, big);
+  // `big` (VIỆC 2) — 6 lệnh hay dùng, luôn ≥44px dù mode nào (`ToolbarChip size="tap-lg"`).
   // 11/08 Hoà chê "lệch bento, không chuyên nghiệp": nút to 1.4× (62px) đứng cạnh nút 44px phá
   // nhịp 44/34 của chính design system (§2c một-nhịp). Sketch: MỌI nút đồng 44/icon 20 — phân
-  // cấp bằng accent khi active, không bằng cỡ. Pro: 44 (big) / 36 (thường) — đúng hai nấc.
+  // cấp bằng accent khi active, không bằng cỡ. Pro: 44 (big) / 32 (thường) — đúng hai nấc.
   const icoS = isPro ? 17 : 20;
+  /** Nút thường (không "big") — Pro co theo `var(--tap)` (32 desktop/44 chạm), Sketch ghim 44. */
+  const toolSize: 'tap' | 'tap-lg' = isPro ? 'tap' : 'tap-lg';
   const icoBig = isPro ? 19 : 20;
   const rowH = btnSize(isPro, false);
   // 05/08 VIỆC 2 — helper `tip()` cũ (nhét phím tắt vào CHUỖI nhãn: "Đường (L)") đã bỏ: Tooltip
@@ -235,21 +239,19 @@ export default function CadToolbar({
         const Icon = it.icon;
         const on = tool === it.tool;
         const isBig = BIG_TOOLS.has(it.tool);
+        // 15/08 (`toolbar-mot-khuon`) — ToolbarChip TỰ bọc Tooltip (label/desc/shortcut), không
+        // cần <Tooltip> rời nữa như trước.
         return (
-          /* 05/08 VIỆC 2 — bỏ `title=` trùng: nút này ĐÃ có Tooltip bọc ngoài, để thêm `title=`
-             thì trình duyệt vẫn bồi thêm tooltip chậm-xấu của nó sau ~1s, chồng lên tag đẹp.
-             Phím tắt tách khỏi nhãn (trước nhét vào chuỗi qua `tip()`) → ô phím riêng bên phải;
-             `it.label` bản ĐẦY ĐỦ nay thành dòng mô tả thay vì chỉ nằm trong `title=` câm. */
-          <Tooltip
+          <ToolbarChip
             key={it.tool}
+            icon={<Icon size={isBig ? icoBig : icoS} />}
             label={shortLabel(it.label)}
             desc={labelDesc(it.label)}
-            shortcut={isPro ? it.key : undefined}
-          >
-            <button type="button" onClick={() => setTool(it.tool)} style={b(on, false, isBig)}>
-              <Icon size={isBig ? icoBig : icoS} />
-            </button>
-          </Tooltip>
+            shortcutHint={isPro ? it.key : undefined}
+            active={on}
+            onClick={() => setTool(it.tool)}
+            size={isBig || !isPro ? 'tap-lg' : 'tap'}
+          />
         );
       })}
     </>
@@ -260,27 +262,24 @@ export default function CadToolbar({
    * viewport — không viết positioning riêng lần 2). */
   const MoreDrawButton = () => {
     const [open, setOpen] = useState(false);
-    const btnRef = useRef<HTMLButtonElement>(null);
+    const btnRef = useRef<HTMLSpanElement>(null);
     const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
     return (
       <>
-        <Tooltip
-          label="Còn nữa"
-          desc="Lệnh vẽ ít dùng: Tròn 3 điểm, Cung tâm+góc, Đa giác, Elip, Donut, Cong, Xline, Divide"
-        >
-          <button
-            ref={btnRef}
-            type="button"
+        <span ref={btnRef} style={{ display: 'inline-flex' }}>
+          <ToolbarChip
+            icon={<ArrowDownRight size={icoS} />}
+            label="Còn nữa"
+            desc="Lệnh vẽ ít dùng: Tròn 3 điểm, Cung tâm+góc, Đa giác, Elip, Donut, Cong, Xline, Divide"
+            active={open}
             onClick={() => {
               const r = btnRef.current?.getBoundingClientRect();
               if (r) setAnchor({ x: r.left, y: r.bottom + 6 });
               setOpen((v) => !v);
             }}
-            style={b(open)}
-          >
-            <ArrowDownRight size={icoS} />
-          </button>
-        </Tooltip>
+            size={isPro ? 'tap' : 'tap-lg'}
+          />
+        </span>
         {open && anchor && (
           <Popover anchorX={anchor.x} anchorY={anchor.y} onDismiss={() => setOpen(false)}>
             <div
@@ -390,16 +389,22 @@ export default function CadToolbar({
         <Group items={ARCH} />
       </GroupBlock>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: rowH }}>
-        <Tooltip label="Vật liệu" desc="Chọn preset gạch/gỗ/đá/sơn cho vùng Hatch">
-          <button type="button" onClick={onToggleMaterial} style={b(false)}>
-            <Palette size={icoS} />
-          </button>
-        </Tooltip>
-        <Tooltip label="Cửa đi" desc="Đặt cửa bằng block cửa có sẵn" shortcut={isPro ? 'D' : undefined}>
-          <button type="button" onClick={() => setPendingBlock('door')} style={b(pendingBlock === 'door')}>
-            <DoorOpen size={icoS} />
-          </button>
-        </Tooltip>
+        <ToolbarChip
+          icon={<Palette size={icoS} />}
+          label="Vật liệu"
+          desc="Chọn preset gạch/gỗ/đá/sơn cho vùng Hatch"
+          onClick={onToggleMaterial}
+          size={toolSize}
+        />
+        <ToolbarChip
+          icon={<DoorOpen size={icoS} />}
+          label="Cửa đi"
+          desc="Đặt cửa bằng block cửa có sẵn"
+          shortcutHint={isPro ? 'D' : undefined}
+          active={pendingBlock === 'door'}
+          onClick={() => setPendingBlock('door')}
+          size={toolSize}
+        />
       </div>
       <Divider h={rowH} />
       <GroupBlock label="SỬA">
@@ -417,60 +422,81 @@ export default function CadToolbar({
       <Group items={ANNOTATE} />
       {isPro && <Group items={DIAGRAM} />}
       <Divider h={rowH} />
-      <Tooltip label="Nội thất" desc="Mở thư viện block nội thất để đặt vào bản vẽ">
-        <button type="button" onClick={onToggleFurniture} style={b(tool === 'block')}>
-          <Sofa size={icoS} />
-        </button>
-      </Tooltip>
+      <ToolbarChip
+        icon={<Sofa size={icoS} />}
+        label="Nội thất"
+        desc="Mở thư viện block nội thất để đặt vào bản vẽ"
+        active={tool === 'block'}
+        onClick={onToggleFurniture}
+        size={toolSize}
+      />
       <Divider h={rowH} />
       {/* snap + grid toggle — auto-snap là hành vi mặc định của "Sketch" (IF tự chỉnh), giữ hiện
           ở cả 2 mode. Polar tracking (bắt góc theo độ) là khái niệm CAD hơn → Pro-only. */}
-      <Tooltip
+      <ToolbarChip
+        icon={<Magnet size={icoS} />}
         label={`Bắt điểm: ${snap.enabled ? 'BẬT' : 'tắt'}`}
         desc="Bám điểm đầu/giữa/tâm/góc phần tư/nút/giao/vuông góc/tiếp tuyến/lưới"
-      >
-        <button type="button" onClick={() => setSnap({ enabled: !snap.enabled })} style={b(snap.enabled)}>
-          <Magnet size={icoS} />
-        </button>
-      </Tooltip>
-      <Tooltip label={`Snap lưới: ${snap.grid ? 'BẬT' : 'tắt'}`} desc="Ép con trỏ về mắt lưới khi vẽ">
-        <button type="button" onClick={() => setSnap({ grid: !snap.grid })} style={b(snap.grid)}>
-          <Grid2x2 size={icoS} />
-        </button>
-      </Tooltip>
+        active={snap.enabled}
+        onClick={() => setSnap({ enabled: !snap.enabled })}
+        size={toolSize}
+      />
+      <ToolbarChip
+        icon={<Grid2x2 size={icoS} />}
+        label={`Snap lưới: ${snap.grid ? 'BẬT' : 'tắt'}`}
+        desc="Ép con trỏ về mắt lưới khi vẽ"
+        active={snap.grid}
+        onClick={() => setSnap({ grid: !snap.grid })}
+        size={toolSize}
+      />
       {isPro && (
-        <Tooltip
+        <ToolbarChip
+          icon={<Compass size={icoS} />}
           label={`Bắt góc: ${polarTracking ? 'BẬT' : 'tắt'}`}
           desc={`Bám bội số ${polarStep}° khi kéo. Giữ Shift = ngang/dọc tuyệt đối, ưu tiên hơn.`}
-          shortcut="Shift"
-        >
-          <button type="button" onClick={() => setPolarTracking(!polarTracking)} style={b(polarTracking)}>
-            <Compass size={icoS} />
-          </button>
-        </Tooltip>
+          shortcutHint="Shift"
+          active={polarTracking}
+          onClick={() => setPolarTracking(!polarTracking)}
+          size={toolSize}
+        />
       )}
       <Divider h={rowH} />
-      <Tooltip label="Kéo màn hình" desc="Giữ phím cách rồi kéo chuột cũng được" shortcut="Space">
-        <button type="button" onClick={() => setTool('pan')} style={b(tool === 'pan')}>
-          <Hand size={icoS} />
-        </button>
-      </Tooltip>
-      <Tooltip label="Xem vừa màn" desc="Thu phóng để thấy trọn bản vẽ" shortcut="F">
-        <button type="button" onClick={() => fire('cad:zoom-extents')} style={b(false)}>
-          <Maximize size={icoS} />
-        </button>
-      </Tooltip>
+      <ToolbarChip
+        icon={<Hand size={icoS} />}
+        label="Kéo màn hình"
+        desc="Giữ phím cách rồi kéo chuột cũng được"
+        shortcutHint="Space"
+        active={tool === 'pan'}
+        onClick={() => setTool('pan')}
+        size={toolSize}
+      />
+      <ToolbarChip
+        icon={<Maximize size={icoS} />}
+        label="Xem vừa màn"
+        desc="Thu phóng để thấy trọn bản vẽ"
+        shortcutHint="F"
+        onClick={() => fire('cad:zoom-extents')}
+        size={toolSize}
+      />
       <Divider h={rowH} />
-      <Tooltip label="Hoàn tác" shortcut={undoLabel}>
-        <button type="button" onClick={undo} disabled={!past} style={b(false, !past)}>
-          <Undo2 size={icoS} />
-        </button>
-      </Tooltip>
-      <Tooltip label="Làm lại" shortcut={redoLabel}>
-        <button type="button" onClick={redo} disabled={!future} style={b(false, !future)}>
-          <Redo2 size={icoS} />
-        </button>
-      </Tooltip>
+      <ToolbarChip
+        icon={<Undo2 size={icoS} />}
+        label="Hoàn tác"
+        shortcutHint={undoLabel}
+        disabled={!past}
+        disabledReason="Chưa có thao tác nào để hoàn tác"
+        onClick={undo}
+        size={toolSize}
+      />
+      <ToolbarChip
+        icon={<Redo2 size={icoS} />}
+        label="Làm lại"
+        shortcutHint={redoLabel}
+        disabled={!future}
+        disabledReason="Chưa hoàn tác gì để làm lại"
+        onClick={redo}
+        size={toolSize}
+      />
     </div>
     </div>
   );
@@ -531,18 +557,17 @@ function EyedropperButton({ isPro }: { isPro: boolean }) {
   }, []);
   const icoS = isPro ? 17 : 19;
   return (
-    <Tooltip label="Ống hút thuộc tính" desc="Copy lớp · nét · vật liệu từ 1 đối tượng sang nhiều đối tượng khác (MATCHPROP)">
-      <button
-        type="button"
-        onClick={() => {
-          setOn((v) => !v);
-          fire('cad:eyedropper-toggle');
-        }}
-        style={btn(on, false, isPro)}
-      >
-        <Pipette size={icoS} />
-      </button>
-    </Tooltip>
+    <ToolbarChip
+      icon={<Pipette size={icoS} />}
+      label="Ống hút thuộc tính"
+      desc="Copy lớp · nét · vật liệu từ 1 đối tượng sang nhiều đối tượng khác (MATCHPROP)"
+      active={on}
+      onClick={() => {
+        setOn((v) => !v);
+        fire('cad:eyedropper-toggle');
+      }}
+      size={isPro ? 'tap' : 'tap-lg'}
+    />
   );
 }
 
@@ -574,7 +599,7 @@ function ModeSwitch({ mode, onChange, pro }: { mode: CadMode; onChange: (m: CadM
     fontFamily: 'inherit',
     fontSize: 12,
     fontWeight: 650,
-    // Cùng luật với btn(): công tắc mode cũng phải đủ to để bấm bằng ngón ở Sketch.
+    // Cùng luật với ToolbarChip: công tắc mode cũng phải đủ to để bấm bằng ngón ở Sketch.
     height: pro ? 30 : 40,
     padding: pro ? '0 12px' : '0 18px',
     borderRadius: 999,
@@ -613,33 +638,15 @@ function ModeSwitch({ mode, onChange, pro }: { mode: CadMode; onChange: (m: CadM
 }
 
 /** Cạnh nút theo chế độ — Sketch ưu tiên NGÓN TAY (≥44px, chuẩn vùng chạm Apple HIG/Material),
- * Pro ưu tiên chuột nên gọn hơn nhưng vẫn ≥36px (nâng từ 34px — nghiệm thu ticket "THANH TOOL
- * 2D DESIGN" 04/08: "nút thường ≥36px"). Đây là khác biệt "cầm nắm" rõ nhất giữa 2 mode; mọi nút
- * trên pill đều đi qua hàm này nên chỉ cần đổi một chỗ.
- * `big` (VIỆC 2, cùng ticket) — 6 lệnh hay dùng nhất TO hơn ~1.4 lần, luôn ≥44px dù mode nào. */
+ * Pro ưu tiên chuột nên gọn hơn (15/08 KB-1: 36→32, `ToolbarChip size="tap"` = `var(--tap)`).
+ * Đây là khác biệt "cầm nắm" rõ nhất giữa 2 mode. `big` — 6 lệnh hay dùng nhất, luôn ≥44px dù
+ * mode nào (`ToolbarChip size="tap-lg"`).
+ *
+ * 15/08 — hàm style `btn()` (React.CSSProperties) ĐÃ XOÁ: mọi nút trong file này nay là
+ * `<ToolbarChip>` (component nền dùng chung 3 chặng, `docs/nc/NC-TRIET-LY-GIAO-DIEN…md` KB-1),
+ * tự lo style/ghost-khi-bật/disabledReason. `btnSize()` vẫn giữ — chỉ dùng để tính SỐ (px) cho
+ * `Divider`/layout cha ăn theo, việc mà một chuỗi CSS var như `'tap'`/`'tap-lg'` không làm được. */
 function btnSize(pro: boolean, big = false): number {
-  // 11/08 — bỏ hệ số 1.4× (ra 62px lạc nhịp, Hoà chê "lệch bento"): big nay = nấc 44 chuẩn,
-  // thường = 44 (Sketch, đồng nhất) hoặc 36 (Pro). Hai nấc, không số lẻ.
-  const base = pro ? 36 : 44;
+  const base = pro ? 32 : 44;
   return big ? 44 : base;
-}
-
-function btn(active: boolean, disabled = false, pro = false, big = false): React.CSSProperties {
-  const s = btnSize(pro, big);
-  return {
-    display: 'grid',
-    placeItems: 'center',
-    width: s,
-    height: s,
-    borderRadius: 999,
-    // 2.1.8.l (30/07) — ghost khi bật, không tô đặc (xem ghi chú segBtn() phía trên, cùng lý do).
-    border: active ? '1px solid var(--accent-ring)' : '1px solid transparent',
-    background: active ? 'var(--accent-soft)' : 'transparent',
-    color: active ? 'var(--accent)' : 'var(--t2)',
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.35 : 1,
-    // Cảm ứng: bỏ trễ 300ms + chặn phóng to 2-chạm khi bấm nhanh liên tiếp (mode Sketch).
-    touchAction: 'manipulation',
-    transition: 'background .15s, color .15s',
-  };
 }
