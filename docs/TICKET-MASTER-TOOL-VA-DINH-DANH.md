@@ -11,9 +11,57 @@
 
 | Điều anh mô tả | Sự thật đo được | Làm được cách nào |
 |---|---|---|
-| **"gắn id vật liệu lên phối cảnh để thống nhất khối lượng tổng"** | 🔴 **Không tính được khối lượng từ ảnh ở mức dám báo giá.** BOQ hiện chỉ tính từ **bản vẽ 2D** (hatch + block có `specId`, `lib/boq/compute.ts:1-30`); từ model 3D **chưa có engine** (chính file tự khai `:16-20`); từ ảnh **chỉ đếm được MÓN RỜI**, không ra m² (`lib/vision/to-cad.ts:20-24`). Đo m² từ một tấm ảnh phẳng là ước lượng có sai số lớn — đưa vào bảng giá là nguy hiểm | **Đảo chiều**: ảnh render **từ scene IF** thì mask = chiếu entity xuống, **khối lượng lấy từ MÔ HÌNH (chính xác)**, ảnh chỉ là mặt để bấm chọn. Đúng ghi chú sẵn trong `lib/grounded-render/types.ts:56-70`. Ảnh ngoài (khách gửi) thì chỉ được gán id **định tính**, dán nhãn "ước tính", KHÔNG vào BOQ |
+| **"gắn id vật liệu lên phối cảnh để thống nhất khối lượng tổng"** ✅ **HOÀ ĐÃ CHỐT 15/08 — xem §0b, mục này giữ làm bằng chứng** | 🔴 **Không tính được khối lượng từ ảnh ở mức dám báo giá.** BOQ hiện chỉ tính từ **bản vẽ 2D** (hatch + block có `specId`, `lib/boq/compute.ts:1-30`); từ model 3D **chưa có engine** (chính file tự khai `:16-20`); từ ảnh **chỉ đếm được MÓN RỜI**, không ra m² (`lib/vision/to-cad.ts:20-24`). Đo m² từ một tấm ảnh phẳng là ước lượng có sai số lớn — đưa vào bảng giá là nguy hiểm | **Đảo chiều**: ảnh render **từ scene IF** thì mask = chiếu entity xuống, **khối lượng lấy từ MÔ HÌNH (chính xác)**, ảnh chỉ là mặt để bấm chọn. Đúng ghi chú sẵn trong `lib/grounded-render/types.ts:56-70`. Ảnh ngoài (khách gửi) thì chỉ được gán id **định tính**, dán nhãn "ước tính", KHÔNG vào BOQ |
 | **"đường gióng + id vật liệu"** hiểu như một cơ chế | 🔴 **Hai đường khác nhau, không gộp được.** ControlNet đang dùng canny/depth (`lib/ai/models.ts:28,42-43`) — nó khoá **NÉT**, không neo **màu/vật liệu**. Bằng chứng thực nghiệm chính ta có: lượt render Westlake 14/08 chạy canny đã **đổi travertine thành gỗ, thêm nguyên bộ sofa không có trong thiết kế** (`docs/bao-cao-phien/2026-08-14-RW-render-loat.md` §4) | **Tách hai kênh**: đường gióng → nhập vào **control image** (khoá hình học) · id vật liệu → nhập vào **mask + inpaint từng mảng** (khoá chất liệu, đường Grounded Render `ai.regionrender` đã chạy v0) |
 | **"3 kích thước cửa sổ"** | 🟡 **Chưa tồn tại ở đâu — cả code lẫn spec.** `ToolWindow.tsx` có **đúng 1 cỡ cứng**, **1 cửa sổ/lượt**, không kéo, không resize, nút `−` thực chất **đóng hẳn** (docstring `:15-17` tự thú). Chốt 01/08 hứa "tối đa 3 window, cái thứ 4 tự thu" — **chưa bao giờ code** | Làm được, nhưng là **xây mới thật**, không phải chỉnh. Xem §1 |
+
+---
+
+## 0b · HOÀ CHỐT 15/08 — RANH GIỚI "ID PHỐI CẢNH" vs "CON SỐ"
+
+Câu hỏi §0 mục 1 đã có lời đáp, và sắc hơn phương án T đưa:
+
+> *"Gắn id ở bước này chỉ để tạo sinh những giá trị nội dung hệ quả cùng hệ phục vụ cho nhu cầu
+> trình bày, thẩm mỹ deck… Còn những giá trị ước tính đúng sai con số thì phải tạo sinh từ chặng
+> CAD/Revit hoặc có thông từ khối được dựng và đo lường trong IF."*
+> *"BOQ chỉ lấy giá trị chính xác đến từ con số, muốn gì thì người edit chỉnh theo ý mình sau."*
+
+### Hai đường, tách hẳn — không đường nào giả làm đường kia
+```
+   ẢNH PHỐI CẢNH + id vật liệu          KHỐI DỰNG (CAD/Revit/3D IF)
+            │  ĐỊNH TÍNH                          │  ĐỊNH LƯỢNG
+            ▼                                     ▼
+   bảng vật liệu · bảng spec              số đo thật  →  BOQ
+   (trình bày · thẩm mỹ deck)                          →  người sửa tay sau
+            └── KHÔNG rót số vào BOQ ──┘
+```
+
+**Việc thật của id-trên-phối-cảnh** (rõ ràng, làm được, không dính sai số):
+biết id/texture này là vật liệu nào **và đang nằm đâu trong khung hình** ⇒ tự gom thành
+**nhóm spec + nhóm bảng vật liệu**. Yêu cầu hình thức Hoà nêu:
+· các mẫu **xếp chồng đè lên nhau**, bố cục đầy đủ (không phải lưới ô đều buồn tẻ)
+· **trỏ vào mẫu nào hiện thông tin mẫu đó**
+· ⭐ **bảng mẫu THẬT lúc nộp phải y chang bố cục trên màn** — bản xem = bản nộp, không dựng hai lần
+  *(đúng luật đích-đến-sửa-được [T5] + một-nguồn [T1])*
+
+**Mảnh đã có để ráp**: `lib/moodboard-boards.ts` · `lib/present-editor/templates.ts` ·
+`story-set.ts` · `lib/materials/impact.ts` · `MaterialImpactPreview.tsx` ·
+`lib/render-studio/measurement-spec-sheet.ts` · `lib/ffe/sheet.ts` · `table-doc-engine.ts`.
+**Mảnh phải làm**: bố cục xếp chồng + hover-hiện-thông-tin + dây từ RegionId → nhóm mẫu.
+
+### Luật BOQ — và tin tốt
+BOQ **chỉ nhận số đo được**: không cột "tạm tính", không số ước tính, không cờ độ tin cậy.
+✅ **Phần "người edit chỉnh sau" KHÔNG phải xây**: `lib/present-editor/boq-overrides.ts` đã có,
+khoá theo `matId`, lưu IndexedDB (`lib/boq/model.ts:55-57` ghi rõ, kèm cảnh báo đổi tên trường là
+vỡ dữ liệu override người dùng đã lưu).
+
+### 🆕 Đơn vị đo + tỉ lệ ở cấp TOÀN APP — Hoà nhắc, và app CHƯA CÓ
+🔴 Đo 15/08: `unitSystem`/metric-imperial **grep 0**. `mm` gõ cứng rải rác (vd `chuan-net.ts:1202`
+`donVi:'mm'`). Tỉ lệ chỉ sống ở khung tên/xuất PDF (`'1:50'`) và nút "Tỉ lệ" trong thanh 2D —
+**không có cài đặt cấp app**; `components/settings/` có 7 màn, không màn nào về đơn vị.
+⇒ Cần: một nơi khai **hệ đơn vị** (mm/cm/m · inch/feet) + **tỉ lệ mặc định**, mọi chỗ hiện số đọc
+từ đó. ⚠️ Ràng buộc: **lưu trữ luôn là mm** (không đổi dữ liệu gốc theo cài đặt) — chỉ đổi lớp
+HIỂN THỊ và lớp NHẬP, nếu không sẽ vỡ mọi bản vẽ cũ.
 
 ---
 
