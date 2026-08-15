@@ -20,19 +20,68 @@ import { getActiveBrandKit } from '@/lib/present-editor/brand-kit';
 import {
   ANCHOR_CONFIG,
   FURNITURE_SIZE_PRIORS,
+  calibrateFromImage,
   type TieredMeasurement,
   type AnchorKind,
   type Pt2D,
   type FurnitureCategory,
   type MeasurementResult,
+  type CameraCalib,
 } from '@/lib/vision/single-view-metrology';
 import { buildFurnitureFromMeasurement, orthoViewsToEntities, measurementToTarget } from '@/lib/vision/to-cad';
 import { matchTemplate, readTemplateQueue, writeTemplateQueue, mergeTemplateRequests } from '@/lib/vision/match-template';
+import {
+  horizonFromCalib,
+  applyUserHorizon,
+  horizonConfidenceLabel,
+  addGuideLine,
+  updateGuideLineEndpoint,
+  removeGuideLine,
+  canAddGuideLine,
+  MAX_GUIDE_LINES,
+  type HorizonLine,
+  type GuideLine,
+} from '@/lib/vision/horizon';
 import { loadManifest } from '@/lib/cad/block-library';
 import { useCadStore } from '@/lib/cad/store';
 import { screenToWorld } from '@/lib/cad/model';
+import { loadImage } from '@/lib/imaging';
 import type { ParamDef } from '@/lib/types';
 import { useT } from '@/lib/i18n';
+
+/** 2.2.89 (HZ, 15/08, docs/phieu-giao/duong-chan-troi.md) — đọc `--tap` (cỡ chạm chuẩn, 32
+ * desktop/44 cảm ứng, `app/globals.css:105`) TẠI THỜI ĐIỂM VẼ thay vì hard-code, để tay nắm kéo
+ * đường chân trời/đường gióng luôn đúng cỡ chạm hiện hành — không viết số riêng. */
+function tapPx(): number {
+  if (typeof window === 'undefined') return 32;
+  const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tap'));
+  return Number.isFinite(v) && v > 0 ? v : 32;
+}
+
+/** Hình học hiển thị của `<img>` (object-fit:contain, có letterbox) — CÙNG công thức đã có trong
+ * `onImageClick()`/vẽ chấm neo bên dưới, viết riêng ở module scope để overlay đường chân trời +
+ * đường gióng dùng lại, KHÔNG sửa `onImageClick()` cũ (đúng phạm vi phiếu — chỉ thêm). */
+function imgDisplayGeometry(img: HTMLImageElement) {
+  const rect = img.getBoundingClientRect();
+  const scale = Math.min(rect.width / img.naturalWidth, rect.height / img.naturalHeight);
+  const dispW = img.naturalWidth * scale;
+  const dispH = img.naturalHeight * scale;
+  const offX = (rect.width - dispW) / 2;
+  const offY = (rect.height - dispH) / 2;
+  return { rect, scale, dispW, dispH, offX, offY };
+}
+/** Toạ độ pixel TỰ NHIÊN của ảnh → toạ độ hiển thị (relative tới khung `<img>`). */
+function natToDisp(img: HTMLImageElement, p: Pt2D): Pt2D {
+  const g = imgDisplayGeometry(img);
+  return { x: g.offX + p.x * g.scale, y: g.offY + p.y * g.scale };
+}
+/** Toạ độ con trỏ chuột (client, viewport) → toạ độ pixel TỰ NHIÊN của ảnh — dùng khi kéo tay nắm. */
+function dispClientToNat(img: HTMLImageElement, clientX: number, clientY: number): Pt2D {
+  const g = imgDisplayGeometry(img);
+  return { x: (clientX - g.rect.left - g.offX) / g.scale, y: (clientY - g.rect.top - g.offY) / g.scale };
+}
+
+type HorizonDragTarget = { kind: 'horizon'; end: 'y0' | 'y1' } | { kind: 'guide'; id: string; end: 'a' | 'b' };
 
 /** Tham số của node "Đo món đồ" GOM vào "Tinh chỉnh" thu gọn — người dùng bấm Render trước, ra
  * kết quả rồi mới cần sờ tới (30/07, Hoà chỉ ra bản trước bày cả 2 slider ra trước khi chạy). */
@@ -61,6 +110,10 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
   const setNodeRefs = useToolModeUi((s) => s.setSessionNodeRefs);
 
   const def = card ? getDefinition(card.nodeType) : null;
+  // `card` có thể còn null lúc render đầu (trước early-return dưới `if (!card||!def)`) — bản
+  // "sớm" này dùng optional chaining để hook đường chân trời (chạy TRƯỚC early-return, đúng luật
+  // Hooks) không vỡ; `isMeasureCard` (không optional) vẫn khai lại y hệt ở dưới cho phần JSX cũ.
+  const isMeasureCardEarly = card?.id === 'measureobject';
   const [values, setValues] = useState<Record<string, string | number>>(() => (def ? defaultParams(def) : {}));
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,6 +126,17 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
   const [anchorKind, setAnchorKind] = useState<AnchorKind>('bed');
   const [anchorMm, setAnchorMm] = useState<number>(ANCHOR_CONFIG.bed.typicalMm);
 
+  // 2.2.89 (HZ, 15/08) — đường chân trời + đường gióng phụ. `calib` tính RIÊNG ở đây (không đợi
+  // bấm Render/không đụng node "Đo món đồ") bằng ĐÚNG engine đã có (`calibrateFromImage`, không
+  // viết lại phép tính — [Đ2]), vì `TieredMeasurement` (kết quả node) không mang `CameraCalib` ra
+  // ngoài (`tryTier4()` ở single-view-metrology.ts tính xong rồi vứt). `userHorizon` khác null =
+  // KTS đã đè tay, thắng máy [T5]; null = đang dùng bản suy từ `calib`.
+  const [calib, setCalib] = useState<CameraCalib | null>(null);
+  const [userHorizon, setUserHorizon] = useState<HorizonLine | null>(null);
+  const [guideLines, setGuideLines] = useState<GuideLine[]>([]);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [dragTarget, setDragTarget] = useState<HorizonDragTarget | null>(null);
+
   // Đổi thẻ → chỉ reset THAM SỐ (node AI khác thì params cũ không còn hợp lệ nữa) — KHÔNG đụng
   // `imageDataUrl`/`nodeRefs` (ở store, tự sống sót qua unmount/remount). Việc thay node AI thật
   // sự (xoá node cũ, dựng node mới, nối lại vào ĐÚNG node ảnh nguồn) xảy ra lười (lazy) trong
@@ -80,8 +144,84 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
   useEffect(() => {
     if (def) setValues(defaultParams(def));
     setAnchorPoints([]);
+    setUserHorizon(null);
+    setGuideLines([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cardId]);
+
+  // Tính `CameraCalib` riêng cho UI đường chân trời — CÙNG cách `decodeToRgba()` của
+  // `lib/nodes/defs/metrology.ts` (canvas + `loadImage`), viết lại tối thiểu tại đây vì node đó
+  // không nằm trong phạm vi sửa của phiếu này. Chỉ chạy cho thẻ "Đo món đồ" có ảnh.
+  useEffect(() => {
+    if (!isMeasureCardEarly || !imageDataUrl) {
+      setCalib(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const img = await loadImage(imageDataUrl);
+        const iw = img.naturalWidth || img.width;
+        const ih = img.naturalHeight || img.height;
+        const maxSide = 1400; // cùng ngưỡng dò cạnh của node đo — đủ chi tiết, không nặng máy
+        const s = Math.min(1, maxSide / Math.max(iw, ih));
+        const w = Math.max(1, Math.round(iw * s));
+        const h = Math.max(1, Math.round(ih * s));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          if (!cancelled) setCalib(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        const id = ctx.getImageData(0, 0, w, h);
+        const result = calibrateFromImage({ width: w, height: h, data: id.data });
+        if (!cancelled) setCalib('needsManualScale' in result ? null : result);
+      } catch {
+        if (!cancelled) setCalib(null); // ảnh CORS/hỏng — không có calib, KHÔNG đoán đường chân trời
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isMeasureCardEarly, imageDataUrl]);
+
+  // Kéo tay nắm (đường chân trời hoặc đường gióng phụ) — nghe ở `window` vì con trỏ có thể trượt
+  // ra ngoài vòng tròn nhỏ lúc kéo nhanh; state cập nhật qua callback (không đọc closure cũ).
+  useEffect(() => {
+    if (!dragTarget) return;
+    const onMove = (e: PointerEvent) => {
+      const img = imgRef.current;
+      if (!img || !img.naturalWidth) return;
+      const nat = dispClientToNat(img, e.clientX, e.clientY);
+      if (dragTarget.kind === 'horizon') {
+        const fracY = nat.y / img.naturalHeight; // applyUserHorizon() tự kẹp [0,1]
+        setUserHorizon((prev) => {
+          const base = prev ?? horizonFromCalib(calib) ?? { y0: 0.5, y1: 0.5 };
+          const next = dragTarget.end === 'y0' ? { y0: fracY, y1: base.y1 } : { y0: base.y0, y1: fracY };
+          return applyUserHorizon(next);
+        });
+      } else {
+        const point: Pt2D = {
+          x: Math.min(img.naturalWidth, Math.max(0, nat.x)),
+          y: Math.min(img.naturalHeight, Math.max(0, nat.y)),
+        };
+        setGuideLines((prev) => updateGuideLineEndpoint(prev, dragTarget.id, dragTarget.end, point));
+      }
+    };
+    const onUp = () => setDragTarget(null);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+  }, [dragTarget, calib]);
+
+  const derivedHorizon = horizonFromCalib(calib);
+  const horizon = userHorizon ?? derivedHorizon;
 
   // Kết quả hiện ĐÚNG khi refs trong store khớp thẻ đang mở (mở lại đúng thẻ vừa render trước
   // đó) — thẻ khác thì chưa có kết quả CHO THẺ NÀY (dù node AI của thẻ cũ vẫn còn tới lúc bấm
@@ -98,6 +238,9 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
       if (typeof reader.result === 'string') {
         setImageDataUrl(reader.result);
         setAnchorPoints([]); // ảnh mới — 2 điểm khoanh cũ (nếu có) không còn nghĩa gì trên ảnh này.
+        setUserHorizon(null); // đường chân trời đè tay cũ cũng không còn nghĩa gì trên ảnh mới.
+        setGuideLines([]);
+        setImgLoaded(false);
       }
     };
     reader.readAsDataURL(file);
@@ -244,9 +387,94 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
                     src={imageDataUrl}
                     alt="Ảnh gốc"
                     onClick={isMeasureCard ? onImageClick : () => fileInputRef.current?.click()}
+                    onLoad={() => setImgLoaded(true)}
                     title={isMeasureCard ? 'Bấm 2 điểm trên 1 vật chuẩn (vd 2 đầu giường) để neo thang đo tay' : undefined}
                     style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: 'pointer' }}
                   />
+                  {/* 2.2.89 (HZ, 15/08) — đường chân trời + đường gióng phụ, chồng lên ảnh. Toạ độ
+                      dùng lại `imgDisplayGeometry()`/`natToDisp()` (module scope, cùng công thức
+                      object-fit:contain đã có ở `onImageClick()`/chấm neo dưới đây — không sửa
+                      chúng, chỉ thêm lớp vẽ mới). */}
+                  {isMeasureCard &&
+                    imgLoaded &&
+                    imgRef.current &&
+                    (() => {
+                      const img = imgRef.current!;
+                      const hitR = tapPx() / 2; // cỡ chạm chuẩn (⑤ ràng buộc phiếu)
+                      return (
+                        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+                          {horizon &&
+                            (() => {
+                              const p0 = natToDisp(img, { x: 0, y: horizon.y0 * img.naturalHeight });
+                              const p1 = natToDisp(img, { x: img.naturalWidth, y: horizon.y1 * img.naturalHeight });
+                              return (
+                                <g>
+                                  <line
+                                    x1={p0.x}
+                                    y1={p0.y}
+                                    x2={p1.x}
+                                    y2={p1.y}
+                                    stroke="var(--accent)"
+                                    strokeWidth={2}
+                                    // Nét ĐỨT = máy suy [derived] · nét LIỀN = KTS đã chỉnh tay [user] — khác nhau
+                                    // nhìn là biết, không cùng 1 kiểu nét (đúng ④.3 của phiếu).
+                                    strokeDasharray={horizon.source === 'derived' ? '7 6' : undefined}
+                                  />
+                                  {([
+                                    ['y0', p0],
+                                    ['y1', p1],
+                                  ] as const).map(([end, p]) => (
+                                    <circle
+                                      key={end}
+                                      cx={p.x}
+                                      cy={p.y}
+                                      r={hitR}
+                                      fill="var(--accent)"
+                                      fillOpacity={0.18}
+                                      stroke="var(--accent)"
+                                      strokeWidth={2}
+                                      style={{ cursor: 'ns-resize', pointerEvents: 'auto' }}
+                                      onPointerDown={(e) => {
+                                        e.stopPropagation();
+                                        setDragTarget({ kind: 'horizon', end });
+                                      }}
+                                    />
+                                  ))}
+                                </g>
+                              );
+                            })()}
+                          {guideLines.map((g) => {
+                            const pa = natToDisp(img, g.a);
+                            const pb = natToDisp(img, g.b);
+                            return (
+                              <g key={g.id}>
+                                <line x1={pa.x} y1={pa.y} x2={pb.x} y2={pb.y} stroke="var(--warning)" strokeWidth={1.5} strokeDasharray="3 4" />
+                                {([
+                                  ['a', pa],
+                                  ['b', pb],
+                                ] as const).map(([end, p]) => (
+                                  <circle
+                                    key={end}
+                                    cx={p.x}
+                                    cy={p.y}
+                                    r={hitR * 0.8}
+                                    fill="var(--warning)"
+                                    fillOpacity={0.18}
+                                    stroke="var(--warning)"
+                                    strokeWidth={2}
+                                    style={{ cursor: 'grab', pointerEvents: 'auto' }}
+                                    onPointerDown={(e) => {
+                                      e.stopPropagation();
+                                      setDragTarget({ kind: 'guide', id: g.id, end });
+                                    }}
+                                  />
+                                ))}
+                              </g>
+                            );
+                          })}
+                        </svg>
+                      );
+                    })()}
                   {isMeasureCard &&
                     anchorPoints.map((p, i) => {
                       const img = imgRef.current;
@@ -335,6 +563,93 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
                   >
                     Xoá
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* 2.2.89 (HZ, 15/08) — bảng điều khiển đường chân trời + đường gióng phụ (④.3/④.4). */}
+            {isMeasureCard && imageDataUrl && (
+              <div style={{ marginTop: 10, padding: 12, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <div style={{ fontSize: 11, color: 'var(--t2)', fontWeight: 600 }}>Đường chân trời</div>
+                  {userHorizon && (
+                    <button
+                      type="button"
+                      onClick={() => setUserHorizon(null)}
+                      title="Bỏ đường đã chỉnh tay, quay về đường máy suy từ điểm tụ ảnh"
+                      style={{ fontSize: 11, color: 'var(--accent)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+                    >
+                      ↺ Về đường máy suy
+                    </button>
+                  )}
+                </div>
+                {horizon ? (
+                  <div style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.5 }}>
+                    {horizonConfidenceLabel(horizon)} — nét {horizon.source === 'derived' ? 'đứt' : 'liền'} trên ảnh. Kéo 2 chấm 2
+                    đầu đường để chỉnh tay.
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 11, color: 'var(--t4)', lineHeight: 1.5 }}>
+                    Ảnh không đủ cạnh thẳng theo 2 phương để tự suy đường chân trời.{' '}
+                    <button
+                      type="button"
+                      onClick={() => setUserHorizon(applyUserHorizon({ y0: 0.5, y1: 0.5 }))}
+                      style={{ fontSize: 11, color: 'var(--accent)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                    >
+                      Đặt đường chân trời bằng tay
+                    </button>
+                  </div>
+                )}
+
+                <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div style={{ fontSize: 11, color: 'var(--t2)', fontWeight: 600 }}>
+                      Đường gióng phụ ({guideLines.length}/{MAX_GUIDE_LINES})
+                    </div>
+                    <button
+                      type="button"
+                      disabled={!canAddGuideLine(guideLines) || !imgRef.current}
+                      title={!canAddGuideLine(guideLines) ? `Đã đủ tối đa ${MAX_GUIDE_LINES} đường — xoá bớt để thêm mới.` : 'Thêm 1 đường gióng, kéo tay để đặt vị trí'}
+                      onClick={() => {
+                        const img = imgRef.current;
+                        if (!img || !img.naturalWidth) return;
+                        const w = img.naturalWidth;
+                        const h = img.naturalHeight;
+                        setGuideLines((prev) =>
+                          addGuideLine(prev, { id: crypto.randomUUID(), a: { x: w * 0.3, y: h * 0.5 }, b: { x: w * 0.7, y: h * 0.5 } }),
+                        );
+                      }}
+                      style={{
+                        fontSize: 11,
+                        color: canAddGuideLine(guideLines) ? 'var(--accent)' : 'var(--t4)',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: canAddGuideLine(guideLines) ? 'pointer' : 'not-allowed',
+                        padding: 0,
+                      }}
+                    >
+                      + Thêm đường gióng
+                    </button>
+                  </div>
+                  {guideLines.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {guideLines.map((g, i) => (
+                        <div key={g.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: 'var(--t3)' }}>
+                          <span>Đường gióng {i + 1} — kéo 2 chấm vàng trên ảnh</span>
+                          <button
+                            type="button"
+                            onClick={() => setGuideLines((prev) => removeGuideLine(prev, g.id))}
+                            style={{ color: 'var(--t4)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+                          >
+                            Xoá
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ marginTop: 8, fontSize: 10.5, color: 'var(--t4)', lineHeight: 1.5 }}>
+                    Chỉ hiển thị + lưu ở lượt này — CHƯA áp vào ảnh AI. Kéo đường xong ảnh KHÔNG tự đổi.
+                  </div>
                 </div>
               </div>
             )}

@@ -602,10 +602,18 @@ export function detectLineSegments(img: RgbaImage, opts: { maxLines?: number; ma
       const m = mag[y * w + x];
       if (m < magThreshold) continue;
       edgePts.push({ x, y });
-      // đường thẳng qua (x,y) VUÔNG GÓC hướng gradient (biên) — θ_line = dir + 90°
-      const thetaLine = dir[y * w + x] + Math.PI / 2;
-      const thetaDeg = (((thetaLine * 180) / Math.PI) % 180 + 180) % 180;
-      const rho = x * Math.cos(thetaLine) + y * Math.sin(thetaLine) + diag;
+      // 🔴 SỬA 15/08 — BUG GỐC làm Hough KHÔNG BAO GIỜ tạo được đỉnh:
+      // bản cũ vote bằng góc TIẾP TUYẾN (`dir + 90°`) rồi lại tính rho theo công thức
+      // `x·cosθ + y·sinθ` — công thức đó CHỈ đúng khi θ là góc PHÁP TUYẾN. Hệ quả: các điểm
+      // trên CÙNG một đường cho rho KHÁC NHAU (đo thật: đường pháp-tuyến-30°/rho-100 cho ra
+      // −50/0/50/120 thay vì 100,100,100,100) ⇒ phiếu rải khắp bin, không đỉnh nào hình thành,
+      // `detectLineSegments` trả rỗng, `calibrateFromImage` luôn rơi `needsManualScale`.
+      // Phần DỰNG LẠI đoạn thẳng phía dưới (`:645-658`) vốn đã diễn giải θ là PHÁP TUYẾN
+      // ("hướng vuông góc pháp tuyến (cosT,sinT)") — nên hai nửa cùng file hiểu ngược nhau.
+      // Sửa theo nửa đúng: gradient ảnh CHÍNH LÀ pháp tuyến của biên ⇒ θ = dir.
+      const thetaNormal = dir[y * w + x];
+      const thetaDeg = (((thetaNormal * 180) / Math.PI) % 180 + 180) % 180;
+      const rho = x * Math.cos(thetaNormal) + y * Math.sin(thetaNormal) + diag;
       const tBin = Math.min(thetaBins - 1, Math.floor(thetaDeg));
       const rBin = Math.min(rhoBins - 1, Math.max(0, Math.floor(rho)));
       acc[tBin * rhoBins + rBin] += 1;
