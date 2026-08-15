@@ -1,14 +1,16 @@
 /**
  * lib/commands/registry.test.ts — kiểm Sổ lệnh (Trụ 2, SPEC-HA-TANG-UI-IF §2 §5 bước 2).
  *
- * 4 nhóm: [1] đối chiếu alias 1:1 với CAD_COMMANDS (không mất lệnh nào, không bịa alias),
+ * 6 nhóm: [1] đối chiếu alias 1:1 với CAD_COMMANDS (không mất lệnh nào, không bịa alias),
  * [2] parser `when` (==, !=, &&, thiếu key), [3] `cmdsFor` selector (gate Pro đúng theo
  * PRO_ONLY_TOOLS thật), [4] `run()` — spot-check từng KIỂU dispatch (activate thường / arg-
- * preseed / pendingBlock / config-only / action trực tiếp) đối chiếu store thật, KHÔNG mock.
+ * preseed / pendingBlock / config-only / action trực tiếp) đối chiếu store thật, KHÔNG mock,
+ * [5] findByAlias, [6] B1 (15/08) — 9 LỆNH CHUNG: `stages` đủ 3, `icon` có, phím không trùng
+ * trong cùng một chặng, `CAD_OR_RENDER` (undo/redo thật ở 'render').
  *
  * Chạy: node_modules/.bin/sucrase-node lib/commands/registry.test.ts
  */
-import { COMMANDS, cmdsFor, findByAlias, allAliases, when } from './registry';
+import { COMMANDS, cmdsFor, findByAlias, allAliases, when, type Stage } from './registry';
 import { CAD_COMMANDS } from '../cad/command-aliases';
 import { useCadStore, PRO_ONLY_TOOLS } from '../cad/store';
 
@@ -81,7 +83,13 @@ function testCmdsFor() {
   const withPro = cmdsFor({ stage: 'cad', proToolsAllowed: true });
   const wrongStage = cmdsFor({ stage: 'render' });
 
-  ok('stage khác cad → rỗng (mọi lệnh CAD đều when stage==cad)', wrongStage.length === 0);
+  // B1 (15/08) — ĐÍNH CHÍNH: câu khẳng định gốc "mọi lệnh CAD đều when stage==cad" KHÔNG CÒN
+  // ĐÚNG kể từ khi undo/redo dùng `CAD_OR_RENDER` (2 lệnh trong 9 LỆNH CHUNG thật ở 'render' —
+  // xem nhóm [6] testSharedCommands, "CAD_OR_RENDER"). Sửa lại đúng thực tế mới, không xoá ý gốc.
+  ok(
+    "stage='render' → CHỈ chứa đúng 2 lệnh chung thật (undo/redo), 53 lệnh CAD-only khác vẫn rỗng ở đây",
+    wrongStage.length === 2 && wrongStage.every((c) => c.id === 'cad.sel.undo' || c.id === 'cad.sel.redo'),
+  );
   ok('cad + không Pro → CHỨA line (tool cơ bản)', basicOnly.some((c) => c.id === 'cad.draw.line'));
   ok('cad + không Pro → KHÔNG chứa polyline (tool Pro, PRO_ONLY_TOOLS có "polyline")', !basicOnly.some((c) => c.id === 'cad.draw.polyline'));
   ok('cad + proToolsAllowed=true → CHỨA polyline', withPro.some((c) => c.id === 'cad.draw.polyline'));
@@ -247,11 +255,66 @@ function testRun() {
   reset();
 }
 
+/* ── 6) B1 (15/08) — 9 LỆNH CHUNG: stages · icon · phím không trùng chặng · CAD_OR_RENDER ── */
+function testSharedCommands() {
+  console.log('\n[6] B1 15/08 — 9 lệnh chung (10 CommandDef): stages · icon · no key clash · render thật cho undo/redo');
+
+  // Đúng 10 id đã khai stages đủ 3 (9 bullet ticket, "Hoàn tác/Làm lại" = 2 CommandDef).
+  const SHARED_IDS = [
+    'cad.sel.select', 'cad.edit.move', 'cad.edit.rotate', 'cad.edit.copy', 'cad.edit.mirror',
+    'cad.sel.delete', 'cad.sel.undo', 'cad.sel.redo', 'cad.dim.measure', 'cad.draw.text',
+  ];
+  const ALL_STAGES: Stage[] = ['cad', 'render', 'present'];
+
+  ok(`đúng 10 CommandDef có stages đủ 3 chặng (SHARED_IDS)`, SHARED_IDS.every((id) => {
+    const c = COMMANDS.find((x) => x.id === id);
+    return !!c && !!c.stages && c.stages.length === 3 && ALL_STAGES.every((s) => c.stages!.includes(s));
+  }));
+  ok(`KHÔNG có CommandDef nào khác ngoài SHARED_IDS khai đủ 3 stages (không lan tràn ẩu)`, COMMANDS.filter((c) => c.stages && c.stages.length === 3).length === SHARED_IDS.length);
+  ok(`đúng 10 CommandDef có icon (SHARED_IDS)`, SHARED_IDS.every((id) => {
+    const c = COMMANDS.find((x) => x.id === id);
+    return !!c && typeof c.icon === 'string' && c.icon.length > 0;
+  }));
+  ok(`45 lệnh còn lại KHÔNG có icon (chưa có UI thật, đúng luật §9 không đoán)`, COMMANDS.filter((c) => !SHARED_IDS.includes(c.id)).every((c) => c.icon === undefined));
+
+  // "Đủ 3 chặng" (stages) KHÔNG có nghĩa "chạy thật ở cả 3" — khớp đúng cách đọc ④.4: khai đủ,
+  // `when` mới là cổng thật, có quyền mờ. Đối chiếu ĐÚNG bảng thật đã quyết trong report B1:
+  // 'cad' → tất cả 10 thật; 'render' → CHỈ undo/redo thật, 8 lệnh còn lại mờ; 'present' → cả 10 mờ.
+  const REAL_AT_RENDER = new Set(['cad.sel.undo', 'cad.sel.redo']);
+  for (const id of SHARED_IDS) {
+    const c = COMMANDS.find((x) => x.id === id)!;
+    ok(`${id}: thật ở stage='cad'`, c.when({ stage: 'cad', proToolsAllowed: true }) === true);
+    const expectRender = REAL_AT_RENDER.has(id);
+    ok(`${id}: ${expectRender ? 'THẬT' : 'mờ'} ở stage='render' (đúng bảng report B1)`, c.when({ stage: 'render' }) === expectRender);
+    ok(`${id}: mờ ở stage='present' (không store toàn cục nào registry.ts với tới)`, c.when({ stage: 'present' }) === false);
+  }
+
+  // Không lệnh nào trùng phím TRONG CÙNG MỘT CHẶNG — chỉ xét lệnh THẬT (when(ctx)===true) ở
+  // chặng đó, vì lệnh mờ vốn không hiện/không bấm được (không thể "đụng phím" với cái không hiện).
+  for (const stage of ALL_STAGES) {
+    const real = COMMANDS.filter((c) => c.when({ stage, proToolsAllowed: true }) && c.key);
+    const keyStrs = real.map((c) => c.key!.join('+'));
+    const dup = keyStrs.filter((k, i) => keyStrs.indexOf(k) !== i);
+    ok(`stage='${stage}': không 2 lệnh THẬT nào trùng key (trùng: ${dup.join(',') || 'none'})`, dup.length === 0);
+  }
+
+  // cad.sel.select — phím thắng Esc (ticket §4 B1), chỉ khai ở đây, không đụng 3D dock thật (V vẫn
+  // sống nguyên trong ToolDock3D.tsx — file đó KHÔNG thuộc phạm vi B1).
+  ok("cad.sel.select có key=['Esc'] (phím thắng đã chốt)", JSON.stringify(COMMANDS.find((c) => c.id === 'cad.sel.select')?.key) === JSON.stringify(['Esc']));
+
+  // alias/aliases 3 lệnh phân kỳ còn lại GIỮ NGUYÊN (đã sẵn đúng, không cần đổi code) — regression
+  // chống ai lỡ tay đổi khi refactor sau này.
+  ok("cad.edit.rotate: alias thắng RO đứng ĐẦU mảng aliases", COMMANDS.find((c) => c.id === 'cad.edit.rotate')?.aliases[0] === 'RO');
+  ok("cad.edit.copy: alias thắng CO đứng ĐẦU mảng aliases", COMMANDS.find((c) => c.id === 'cad.edit.copy')?.aliases[0] === 'CO');
+  ok("cad.dim.measure: alias thắng DI đứng ĐẦU mảng aliases", COMMANDS.find((c) => c.id === 'cad.dim.measure')?.aliases[0] === 'DI');
+}
+
 testParity();
 testWhenParser();
 testCmdsFor();
 testFindByAlias();
 testRun();
+testSharedCommands();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

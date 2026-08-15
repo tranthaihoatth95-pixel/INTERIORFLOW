@@ -26,6 +26,23 @@ Không phải tại bo góc. Tại **năm cuốn sổ lệnh sống song song, k
 Và **hai bảng ⌘K cùng sống**: `AppCommandPalette` (`AppShell:185`) đọc registry · `CommandPalette`
 (`HomeScreen:724`) đọc node.
 
+> ## ⚠️ ĐÍNH CHÍNH 15/08 SAU KHI THI CÔNG B1 — T ghi sai bản chất phân kỳ
+> Bảng dưới nói "cùng lệnh khác PHÍM". Sai. Đo lại khi làm B1: **hai chặng dùng hai CƠ CHẾ NHẬP
+> khác hẳn nhau**, không phải cùng cơ chế mà lệch giá trị:
+> · **2D = GÕ LỆNH** kiểu AutoCAD (`RO` + Enter) — alias gõ tay, `lib/shortcuts.ts` **không có**
+>   phím đơn nào cho rotate.
+> · **3D = PHÍM ĐƠN** — bấm `Q` là xoay ngay (`lib/render-studio/tool3d.ts`,
+>   `tool3dKeyTransition('line','q')==='rotate'`; `ToolDock3D.tsx:116` khai `shortcut:'Q'`).
+>
+> ⇒ **Không thể "hợp nhất phím" bằng cách chọn một bên thắng.** Và đây là lý do B1 CỐ Ý không tạo
+> alias `Q/D/T/V`: nhét phím đơn vào ô alias-gõ-tay là trộn hai cơ chế, sai kiểu dữ liệu.
+>
+> **Việc B2 phải quyết (chưa quyết):** mỗi lệnh chung mang **CẢ HAI** — một alias gõ + một phím
+> đơn, giống nhau ở mọi chặng. Cạm bẫy phải xử trước: ở 2D, phím đơn sẽ **cướp ký tự đang gõ**
+> (bấm `R` để xoay thì không gõ được `REC`). AutoCAD giải bằng: đang gõ ở dòng lệnh thì phím đơn
+> không ăn. IF đã có luật họ hàng đang ở 0 vi phạm (`keydown né ô nhập`, `soi:thao-tac`) — **B2
+> phải mở rộng luật đó sang dòng lệnh, làm trước khi gán phím đơn.**
+
 ### Hậu quả đo được — CÙNG một lệnh, ba cái tên, ba cái phím
 | Lệnh | Sổ lệnh chuẩn | 2D toolbar | 3D dock |
 |---|---|---|---|

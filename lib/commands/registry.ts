@@ -35,14 +35,23 @@
  * CadRole/CadStage — 2 khái niệm "vai trò/chặng dự án" không liên quan trực tiếp lệnh CAD).
  *
  * `key` — CHỈ điền cho lệnh thật sự có phím tắt toàn cục hôm nay (đối chiếu lib/shortcuts.ts):
- * Hoàn tác/Làm lại/Xoá/Zoom-Extents. Các lệnh vẽ/biến đổi (L, W, F, TRIM…) KHÔNG có phím tắt
- * trực tiếp — chỉ gõ được ở status-bar (xác nhận: lib/shortcuts.ts dòng 14-16 nói rõ lệnh gõ
- * tay CAD không khai ở đó). Đặc biệt: phím 'F' rời (không gõ) = Zoom Extents (đã có từ trước,
- * xem comment gốc ở CadEditor.tsx dòng ~1704), còn gõ "F"+Enter ở ô lệnh = FILLET — 2 nghĩa
- * khác nhau theo 2 MẶT HIỆN khác nhau, KHÔNG được gán `key:['F']` cho lệnh Fillet kẻo đụng.
+ * Hoàn tác/Làm lại/Xoá/Zoom-Extents/**Chọn (Esc, thêm ở B1 15/08 — xem `cad.sel.select`)**. Các
+ * lệnh vẽ/biến đổi (L, W, F, TRIM…) KHÔNG có phím tắt trực tiếp — chỉ gõ được ở status-bar (xác
+ * nhận: lib/shortcuts.ts dòng 14-16 nói rõ lệnh gõ tay CAD không khai ở đó). Đặc biệt: phím 'F'
+ * rời (không gõ) = Zoom Extents (đã có từ trước, xem comment gốc ở CadEditor.tsx dòng ~1704), còn
+ * gõ "F"+Enter ở ô lệnh = FILLET — 2 nghĩa khác nhau theo 2 MẶT HIỆN khác nhau, KHÔNG được gán
+ * `key:['F']` cho lệnh Fillet kẻo đụng.
  *
- * `icon` — CHƯA điền (không có trong phạm vi việc này — UI dock/palette thật chưa tồn tại,
- * chọn icon là quyết định thiết kế của người làm UI, không phải việc của registry dữ liệu).
+ * `icon` — B1 (15/08) ĐÃ điền cho ĐÚNG 10 CommandDef thuộc 9 LỆNH CHUNG (tầng ① `docs/TICKET-
+ * KIEN-TRUC-LENH-3-TANG.md` §2) — lấy icon THẬT đang chạy ở `CadToolbar.tsx`/`ToolDock3D.tsx`,
+ * không bịa. 45 lệnh còn lại VẪN để trống — UI dock/palette thật cho chúng chưa tồn tại, chọn
+ * icon là quyết định thiết kế người làm UI (B2/B3), không phải việc registry dữ liệu.
+ *
+ * `stages` — B1 (15/08) thêm field mới, xem docstring tại chỗ khai `CommandDef.stages`. Field
+ * KHAI BÁO (chặng nào lệnh "sống"), KHÔNG PHẢI cổng thật — cổng thật luôn là `when`, có thể mờ
+ * (trả `false`) ở một chặng dù `stages` liệt kê chặng đó (lý do ghi ngay tại mỗi dòng lệnh chung
+ * bên dưới — §9 cấm nút giả: không để `when` trả `true` cho chặng nào `run()` không làm đúng việc
+ * thấy được ở chặng đó).
  *
  * `surfaces` — chỉ khai `'statusbar'` (mọi lệnh, hành vi ĐÃ có) + `'shortcut'` (đúng 4 lệnh có
  * phím thật ở trên). KHÔNG tự gán `'dock'/'palette'/'contextmenu'` cho lệnh nào — chưa có UI
@@ -62,6 +71,17 @@ import { CAD_COMMANDS } from '../cad/command-aliases';
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
 export type Surface = 'statusbar' | 'shortcut' | 'dock' | 'palette' | 'contextmenu' | 'llm';
+
+/** 3 chặng THẬT — giá trị runtime, khớp `AppCommandPalette.tsx:154` (nơi DUY NHẤT hôm nay dựng
+ * `WhenCtx` thật): `active==='cad' ? 'cad' : active==='present' ? 'present' : 'render'`.
+ * ⚠️ ĐÍNH CHÍNH B1 (15/08): `docs/TICKET-KIEN-TRUC-LENH-3-TANG.md` §2 ghi kiểu
+ * `('concept'|'render'|'present')[]` — SAI so với code thật. `'concept'` là ID chặng 2D ở
+ * `lib/phases.ts` (một hệ khác, "Trụ 1 danh nghĩa"), còn `WhenCtx.stage`/`when()` của CHÍNH FILE
+ * NÀY (và nơi gọi thật duy nhất) luôn dùng chữ `'cad'`. Hai chữ khác nhau cho cùng một chặng —
+ * việc B1 SỬA đúng theo CODE THẬT (không chép nguyên văn ticket), giữ `'cad'` để không vỡ 55
+ * lệnh cũ + `AppCommandPalette` đang chạy. Xem báo cáo `docs/bao-cao-phien/2026-08-15-B1-so-lenh-
+ * chung.md` ⓪. */
+export type Stage = 'cad' | 'render' | 'present';
 
 /** Token phím — cùng quy ước KeyToken của lib/shortcuts.ts ('mod'/'shift' dịch theo nền tảng
  * lúc render, token khác hiển thị y nguyên). Không import trực tiếp từ shortcuts.ts để tránh
@@ -101,6 +121,18 @@ export interface CommandDef {
   group: string;
   surfaces: Surface[];
   run: (args?: RunArgs) => void;
+  /** B1 (15/08, `docs/TICKET-KIEN-TRUC-LENH-3-TANG.md` §2/§4) — chặng nào lệnh này SỐNG, theo
+   * NGHĨA KHAI BÁO (declarative), KHÔNG PHẢI cổng thật — cổng thật vẫn là `when` (có thể mờ ở một
+   * chặng dù nằm trong `stages`, xem docstring `when` từng dòng bên dưới). Optional: vắng mặt =
+   * ngầm định lệnh chỉ sống ở 'cad' (mọi lệnh CAD sẵn có, chưa xét đa chặng — 45/55 lệnh không
+   * đổi gì trong việc B1 này). CHỈ 9 LỆNH CHUNG (tầng ① ticket) khai đủ 3 phần tử. */
+  stages?: Stage[];
+  /** B1 (15/08) — tên icon lucide-react (string, KHÔNG import component ở đây — chọn icon render
+   * ra gì là việc UI của B2/B3). CHỈ điền cho 9 LỆNH CHUNG, lấy ĐÚNG icon đang chạy thật ở
+   * `CadToolbar.tsx`/`ToolDock3D.tsx` hôm nay (đối chiếu từng dòng, không đoán) để 3 mặt tiền vẽ
+   * cùng một icon — đúng tinh thần "sổ lệnh duy nhất". Lệnh khác để trống, UI dock/palette thật
+   * chưa tồn tại cho chúng (xem TODO#2 cuối file, giữ nguyên từ bản gốc). */
+  icon?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -143,6 +175,18 @@ export function when(expr: string): (ctx: WhenCtx) => boolean {
 const CAD_BASIC = when('stage==cad');
 const CAD_PRO = when('stage==cad && proToolsAllowed==true');
 
+/** B1 (15/08) — dùng cho Hoàn tác/Làm lại: THẬT sống ở CẢ 'cad' LẪN 'render' (không phải chỉ
+ * 'cad'). Viết PREDICATE TRỰC TIẾP (không qua `when('stage==cad || stage==render')`) vì
+ * `parseWhen()` cố ý CHỈ hỗ trợ `&&` (docstring đầu file "when — parser nhỏ, KHÔNG eval" + luật
+ * ⑤ "KHÔNG nâng parser thành ngôn ngữ biểu thức") — `CommandDef.when` vốn chỉ là
+ * `(ctx: WhenCtx) => boolean`, không bắt buộc phải dựng qua `when()`, nên viết hàm thường vẫn
+ * đúng khuôn, không đụng parser.
+ * VÌ SAO undo/redo THẬT (không phải mờ) ở 'render': `useCadStore` là MỘT store DÙNG CHUNG cho cả
+ * 2D lẫn 3D (K1 — Doc một nguồn); `components/render-studio/Render3DModeSkeleton.tsx:310-329` đã
+ * tự gắn listener ⌘Z/⌘⇧Z gọi ĐÚNG `useCadStore.getState().undo()/redo()` — cùng hàm `run()` của
+ * `cad.sel.undo`/`cad.sel.redo` bên dưới gọi. Xác nhận bằng đọc code, không suy đoán. */
+const CAD_OR_RENDER = (ctx: WhenCtx): boolean => ctx.stage === 'cad' || ctx.stage === 'render';
+
 /** Chọn CAD_PRO nếu toolId thuộc PRO_ONLY_TOOLS (lib/cad/store.ts), ngược lại CAD_BASIC — tránh
  * gõ tay đúng/sai cho từng dòng, một nguồn duy nhất (PRO_ONLY_TOOLS) quyết định. */
 function gateFor(toolId: Tool): (ctx: WhenCtx) => boolean {
@@ -184,7 +228,14 @@ export const COMMANDS: CommandDef[] = [
   { id: 'cad.draw.circle3p', label: ['Đường tròn 3-điểm', 'Circle (3-point)'], aliases: ['C3P', 'CIRCLE3P'], when: gateFor('circle3p'), group: 'draw@5', surfaces: ['statusbar'], run: activate('circle3p') },
   { id: 'cad.draw.arc', label: ['Cung tròn (3 điểm)', 'Arc (3-point)'], aliases: ['A', 'ARC'], when: gateFor('arc'), group: 'draw@6', surfaces: ['statusbar'], run: activate('arc') },
   { id: 'cad.draw.arccenter', label: ['Cung tròn tâm+góc', 'Arc (center+angle)'], aliases: ['ARCC', 'ARCCENTER'], when: gateFor('arccenter'), group: 'draw@7', surfaces: ['statusbar'], run: activate('arccenter') },
-  { id: 'cad.draw.text', label: ['Chữ', 'Text'], aliases: ['T', 'TEXT'], when: gateFor('text'), group: 'draw@8', surfaces: ['statusbar'], run: activate('text') },
+  {
+    id: 'cad.draw.text', label: ['Chữ', 'Text'], aliases: ['T', 'TEXT'], when: gateFor('text'),
+    group: 'draw@8', surfaces: ['statusbar'], run: activate('text'), stages: ['cad', 'render', 'present'], icon: 'Type',
+    // B1 (15/08) — lệnh chung "Chữ". MỜ ở 'render': `TOOL3D_IDS` không có 'text' — 3D hôm nay
+    // không có công cụ đặt chữ nào (đối chiếu `ToolDock3D.tsx` + `tool3d.ts`, không đoán). MỜ ở
+    // 'present': `onAddText` là callback cục bộ của `PresentEditor.tsx` (props, không phải store
+    // toàn cục) — registry.ts không với tới được, dù chức năng THẬT SỰ tồn tại ở màn đó.
+  },
   {
     id: 'cad.draw.wall', label: ['Tường (W 200)', 'Wall (W 200)'], aliases: ['W', 'WALL'], when: gateFor('wall'), group: 'draw@9', surfaces: ['statusbar'],
     run: (args = {}) => {
@@ -225,7 +276,15 @@ export const COMMANDS: CommandDef[] = [
   // DIM + DAL: 2 label khác nhau trong CAD_COMMANDS ("Ghi kích thước"/"Kích thước thẳng") nhưng
   // CÙNG dispatch setTool('dimension') — gộp 1 CommandDef, 2 alias (xem docstring đầu file).
   { id: 'cad.dim.linear', label: ['Ghi kích thước', 'Dimension'], aliases: ['DIM', 'DAL'], when: gateFor('dimension'), group: 'dim@1', surfaces: ['statusbar'], run: activate('dimension') },
-  { id: 'cad.dim.measure', label: ['Đo khoảng cách', 'Measure distance'], aliases: ['DI'], when: gateFor('measure'), group: 'dim@2', surfaces: ['statusbar'], run: activate('measure') },
+  {
+    id: 'cad.dim.measure', label: ['Đo khoảng cách', 'Measure distance'], aliases: ['DI'], when: gateFor('measure'),
+    group: 'dim@2', surfaces: ['statusbar'], run: activate('measure'), stages: ['cad', 'render', 'present'], icon: 'MoveDiagonal',
+    // B1 (15/08) — lệnh chung "Đo". Phím thắng (ticket §4 B1): DI — đã là alias duy nhất, không
+    // đổi. 3D dock gọi khái niệm GẦN GIỐNG (không hệt) là "Thước" phím T, tool3d id 'ruler'
+    // (`ToolDock3D.tsx:130`) — đo W×D×H của khối đang chọn, KHÁC "đo khoảng cách 2 điểm" của DI ở
+    // 2D — 2 khái niệm gần nhau nhưng không phải 1-1, gộp ẩu sẽ sai; GIỮ NGUYÊN 3D, không sửa.
+    // MỜ ở 'render'/'present': cùng lý do store khác/không có store (xem cad.edit.move).
+  },
   { id: 'cad.dim.radius', label: ['Kích thước bán kính', 'Radius dimension'], aliases: ['DRA'], when: gateFor('dimradius'), group: 'dim@3', surfaces: ['statusbar'], run: activate('dimradius') },
   { id: 'cad.dim.diameter', label: ['Kích thước đường kính', 'Diameter dimension'], aliases: ['DDI'], when: gateFor('dimdiameter'), group: 'dim@4', surfaces: ['statusbar'], run: activate('dimdiameter') },
   { id: 'cad.dim.angular', label: ['Kích thước góc', 'Angular dimension'], aliases: ['DAN'], when: gateFor('dimangular'), group: 'dim@5', surfaces: ['statusbar'], run: activate('dimangular') },
@@ -263,10 +322,40 @@ export const COMMANDS: CommandDef[] = [
   },
 
   // ── Biến đổi ────────────────────────────────────────────────────────────────────────────
-  { id: 'cad.edit.move', label: ['Di chuyển', 'Move'], aliases: ['M', 'MOVE'], when: gateFor('move'), group: 'edit@1', surfaces: ['statusbar'], run: activate('move') },
-  { id: 'cad.edit.copy', label: ['Sao chép', 'Copy'], aliases: ['CO', 'COPY'], when: gateFor('copy'), group: 'edit@2', surfaces: ['statusbar'], run: activate('copy') },
-  { id: 'cad.edit.rotate', label: ['Xoay', 'Rotate'], aliases: ['RO', 'ROTATE'], when: gateFor('rotate'), group: 'edit@3', surfaces: ['statusbar'], run: activate('rotate') },
-  { id: 'cad.edit.mirror', label: ['Đối xứng', 'Mirror'], aliases: ['MI', 'MIRROR'], when: gateFor('mirror'), group: 'edit@4', surfaces: ['statusbar'], run: activate('mirror') },
+  // B1 (15/08) — 4 LỆNH CHUNG khác nằm ở đây (Dời·Chép·Xoay·Lật). `gateFor()` cho cả 4 đã là
+  // CAD_BASIC hôm nay (move/copy/rotate/mirror KHÔNG nằm trong PRO_ONLY_TOOLS, `store.ts:187-193`)
+  // — giữ nguyên, chỉ thêm stages/icon.
+  {
+    id: 'cad.edit.move', label: ['Di chuyển', 'Move'], aliases: ['M', 'MOVE'], when: gateFor('move'),
+    group: 'edit@1', surfaces: ['statusbar'], run: activate('move'), stages: ['cad', 'render', 'present'], icon: 'Move',
+    // MỜ ở 'render': `tool3d.ts` CÓ 'move' thật nhưng ở `useTool3D` (store khác `useCadStore`) —
+    // cùng lý do cad.sel.select phía trên, nối 2 store là việc B5. MỜ ở 'present': phần tử dời
+    // được bằng kéo chuột/mũi tên (`PresentEditor.tsx` onNudge cục bộ), không có "tool Dời" nào
+    // để kích hoạt qua registry.
+  },
+  {
+    id: 'cad.edit.copy', label: ['Sao chép', 'Copy'], aliases: ['CO', 'COPY'], when: gateFor('copy'),
+    group: 'edit@2', surfaces: ['statusbar'], run: activate('copy'), stages: ['cad', 'render', 'present'], icon: 'Copy',
+    // Phím thắng (ticket §4 B1): CO — đã là alias chính ở đây, không đổi. 3D dock gọi khái niệm
+    // này là "Nhân bản" phím D (`ToolDock3D.tsx:117`, tool3d id 'dup') — GIỮ NGUYÊN ở 3D, không
+    // sửa. MỜ ở 'render'/'present': cùng lý do move (store khác/không có store).
+  },
+  {
+    id: 'cad.edit.rotate', label: ['Xoay', 'Rotate'], aliases: ['RO', 'ROTATE'], when: gateFor('rotate'),
+    group: 'edit@3', surfaces: ['statusbar'], run: activate('rotate'), stages: ['cad', 'render', 'present'], icon: 'RotateCw',
+    // Phím thắng (ticket §4 B1): RO — đã là alias chính, không đổi. 3D dock dùng phím Q
+    // (`ToolDock3D.tsx:116`) — GIỮ NGUYÊN ở 3D. MỜ ở 'render'/'present': cùng lý do move.
+  },
+  {
+    id: 'cad.edit.mirror', label: ['Đối xứng', 'Mirror'], aliases: ['MI', 'MIRROR'], when: gateFor('mirror'),
+    group: 'edit@4', surfaces: ['statusbar'], run: activate('mirror'), stages: ['cad', 'render', 'present'], icon: 'FlipHorizontal2',
+    // MỜ ở 'render': 3D KHÔNG có tool "Lật" rời (`TOOL3D_IDS` không có 'mirror') — mirror ở 3D là
+    // MỘT BƯỚC BuildOp áp qua form tab "Sửa" (`Command3DPanel.tsx:917-967`, chọn mặt phẳng + Áp),
+    // khác cơ chế "cầm tool rồi click" hoàn toàn — không có hàm 1-lệnh nào để `run()` gọi thay
+    // form đó. Đây CHÍNH LÀ lỗ trống ticket §2b(b) đã chỉ ra ("3D thiếu Đối xứng… dạng tool"), để
+    // nguyên mờ, không tự chế cầu nối. MỜ ở 'present': không có "Lật" nào (đối chiếu
+    // `components/present-editor/*.tsx`, `grep flip/mirror` = 0 kết quả).
+  },
   {
     id: 'cad.edit.offset', label: ['Offset (O 150)', 'Offset (O 150)'], aliases: ['O', 'OFFSET'], when: gateFor('offset'), group: 'edit@5', surfaces: ['statusbar'],
     run: (args = {}) => {
@@ -332,10 +421,47 @@ export const COMMANDS: CommandDef[] = [
   },
 
   // ── Chọn, xoá, hoàn tác ─────────────────────────────────────────────────────────────────
-  { id: 'cad.sel.select', label: ['Chọn', 'Select'], aliases: ['SEL'], when: CAD_BASIC, group: 'sel@1', surfaces: ['statusbar'], run: activate('select') },
-  { id: 'cad.sel.delete', label: ['Xoá', 'Delete'], aliases: ['E', 'DEL', 'ERASE'], key: ['Delete'], when: CAD_BASIC, group: 'sel@2', surfaces: ['statusbar', 'shortcut'], run: () => store().deleteSelected() },
-  { id: 'cad.sel.undo', label: ['Hoàn tác', 'Undo'], aliases: ['U', 'UNDO'], key: ['mod', 'Z'], when: CAD_BASIC, group: 'sel@3', surfaces: ['statusbar', 'shortcut'], run: () => store().undo() },
-  { id: 'cad.sel.redo', label: ['Làm lại', 'Redo'], aliases: ['RE', 'REDO'], key: ['mod', 'shift', 'Z'], when: CAD_BASIC, group: 'sel@4', surfaces: ['statusbar', 'shortcut'], run: () => store().redo() },
+  // B1 (15/08) — 4 trong 9 LỆNH CHUNG nằm ở nhóm này. `stages` khai đủ 3 (tầng ① ticket); `when`
+  // GIỮ NGUYÊN `CAD_BASIC` (mờ ở 'render'/'present') TRỪ undo/redo — xem lý do từng dòng.
+  {
+    id: 'cad.sel.select', label: ['Chọn', 'Select'], aliases: ['SEL'],
+    // Phím thắng (ticket §4 B1): Esc — đã THẬT ở 'cad' (`CadCanvas.tsx:2583-2607`, Esc →
+    // `st.setTool('select')`, đúng hàm `run()` dưới gọi). 3D dock dùng 'V' (`ToolDock3D.tsx:91`,
+    // `tool3d.ts` TOOL3D_HOTKEYS) — GIỮ NGUYÊN ở 3D (không xoá, không sửa file đó, ngoài phạm vi
+    // B1); khi B2 nối registry vào dock, 'V' xuống hàng alias phụ, Esc lên hàng chính.
+    key: ['Esc'], when: CAD_BASIC, group: 'sel@1', surfaces: ['statusbar'], run: activate('select'),
+    stages: ['cad', 'render', 'present'], icon: 'MousePointer2',
+    // MỜ ở 'render': `tool3d.ts` CÓ tool 'select' thật (và Escape cũng đưa 3D về select qua
+    // `tool3dKeyTransition`) nhưng đó là store KHÁC (`useTool3D`, không phải `useCadStore`) — `run()`
+    // ở đây chỉ gọi được `useCadStore`, gọi từ palette lúc đang ở 3D sẽ KHÔNG đổi gì thấy được
+    // trên khung nhìn 3D (nút giả, §9 cấm) ⇒ cố tình để `when` chặn, không tự nối 2 store (đó là
+    // việc B5, "runFor theo ngữ cảnh", ticket §2b(b)/(c)). MỜ ở 'present': không có store toàn
+    // cục nào lộ ra (`useEditor()` ở `PresentEditor.tsx:149` là React hook cục bộ component,
+    // registry.ts không với tới được).
+  },
+  {
+    id: 'cad.sel.delete', label: ['Xoá', 'Delete'], aliases: ['E', 'DEL', 'ERASE'], key: ['Delete'],
+    when: CAD_BASIC, group: 'sel@2', surfaces: ['statusbar', 'shortcut'], run: () => store().deleteSelected(),
+    stages: ['cad', 'render', 'present'], icon: 'Trash2',
+    // MỜ ở 'render': `deleteSelected()` xoá theo `useCadStore.selection` — 3D dùng
+    // `viewportSelectedId` cục bộ (`Render3DModeSkeleton.tsx:720`, KHÔNG đồng bộ vào
+    // `useCadStore.selection`), gọi sẽ xoá NHẦM/xoá KHÔNG GÌ thay vì khối đang chọn trên khung
+    // nhìn 3D — đúng loại lỗi §9 cảnh báo, không nối. MỜ ở 'present': không có store toàn cục.
+  },
+  {
+    id: 'cad.sel.undo', label: ['Hoàn tác', 'Undo'], aliases: ['U', 'UNDO'], key: ['mod', 'Z'],
+    when: CAD_OR_RENDER, group: 'sel@3', surfaces: ['statusbar', 'shortcut'], run: () => store().undo(),
+    stages: ['cad', 'render', 'present'], icon: 'Undo2',
+    // THẬT ở 'render' (không mờ) — xem docstring `CAD_OR_RENDER` phía trên. MỜ ở 'present': đúng
+    // lý do chung (không có store toàn cục) — `PresentEditor.tsx` có `ed.undo()` riêng nhưng đó
+    // là state cục bộ của `useEditor()`, không phải store registry.ts nhìn thấy được.
+  },
+  {
+    id: 'cad.sel.redo', label: ['Làm lại', 'Redo'], aliases: ['RE', 'REDO'], key: ['mod', 'shift', 'Z'],
+    when: CAD_OR_RENDER, group: 'sel@4', surfaces: ['statusbar', 'shortcut'], run: () => store().redo(),
+    stages: ['cad', 'render', 'present'], icon: 'Redo2',
+    // THẬT ở 'render', MỜ ở 'present' — cùng lý do với cad.sel.undo ngay trên.
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -391,8 +517,20 @@ if (process.env.NODE_ENV !== 'production') {
  *    object riêng — xoá trùng lặp logic dispatch. Rủi ro: phải test kỹ KHÔNG đổi hành vi status-
  *    bar hiện tại (autocomplete, gợi ý lỗi "Lệnh không rõ…" liệt kê alias).
  * 2. Khi có UI dock/palette/contextmenu thật (SPEC-HA-TANG-UI-IF §5 bước 4-5), gán `surfaces`
- *    + `icon` cho từng lệnh theo quyết định thiết kế của Hoà — KHÔNG đoán ở đây.
- * 3. `WhenCtx.stage`/`mode` hiện chưa có nơi gọi thật nào truyền vào (AppShell/Trụ 1 chưa xây) —
- *    khi xây, nhớ đối chiếu giá trị 'cad'/'render'/'present' cho khớp Trụ 1 thật, không tự đặt
- *    tên khác.
+ *    + `icon` cho 45 lệnh CÒN LẠI theo quyết định thiết kế của Hoà — KHÔNG đoán ở đây. (10 lệnh
+ *    thuộc 9 LỆNH CHUNG đã có `icon` từ B1 15/08, xem trên.)
+ * 3. `WhenCtx.stage`/`mode` — ĐÍNH CHÍNH B1 (15/08): dòng này TỪNG ghi "chưa có nơi gọi thật nào
+ *    truyền vào" — SAI, đã có: `components/studio/AppCommandPalette.tsx:153-157` dựng ctx thật
+ *    (`stage: active==='cad'?'cad':active==='present'?'present':'render'`), đúng khớp `'cad'/
+ *    'render'/'present'` — không phải `'concept'` như `docs/TICKET-KIEN-TRUC-LENH-3-TANG.md` §2
+ *    ghi (xem `Stage` type ở trên). Việc B5 (ticket) mới thật sự CHƯA làm: `run()` chưa phân
+ *    biệt được ĐANG GỌI TỪ chặng nào để dispatch đúng store 3D/Present (xem comment "MỜ ở
+ *    'render'/'present'" ở 10 lệnh chung — B1 cố tình để `when` chặn thay vì giả vờ chạy được).
+ * 4. B1 (15/08) đã khai 9 LỆNH CHUNG (10 CommandDef: cad.sel.select/delete/undo/redo,
+ *    cad.edit.move/copy/rotate/mirror, cad.dim.measure, cad.draw.text) với `stages` đủ 3 —
+ *    `when` CHỈ THẬT ở 'cad' (+ 'render' riêng cho undo/redo, xem `CAD_OR_RENDER`), còn lại mờ vì
+ *    engine nằm ở STORE KHÁC (`useTool3D`, `lib/render-studio/tool3d.ts`) hoặc KHÔNG store toàn
+ *    cục nào (Present, `useEditor()` cục bộ component). Nối thật (đọc `runFor` theo ngữ cảnh —
+ *    ticket §2b(b)) là việc **B5**, không phải B1 — xem báo cáo `docs/bao-cao-phien/2026-08-15-
+ *    B1-so-lenh-chung.md`.
  */
