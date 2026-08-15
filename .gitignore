@@ -50,6 +50,12 @@ docs/DEMO-CLAY-2407/
 # Thư mục tạm Cowork (screenshot/note quan sát UI, không commit)
 .cowork-tmp/
 
+# File scratch/debug tạm (viewer 2-pane so sánh mesh, thử nghiệm nhanh) — quy ước tên "__xxx.html"
+# đã dùng nhiều lần trong docs/bao-cao-phien (vd __cn2-compare.html, __lincoln-viewer.html, đã
+# dọn tay 15/08 vì lỡ track git) — chặn cả họ để không lặp lại, không cần nhớ tay dọn mỗi lần.
+public/__*.html
+public/__*.glb
+
 # Worktree phụ cho phiên Cowork song song (feat/7.1.19-lark-wiki) — không commit
 .worktrees/
 

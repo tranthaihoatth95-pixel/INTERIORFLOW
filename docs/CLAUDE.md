@@ -9,6 +9,8 @@
 - App song song: ArchiNote (hiện trường, mobile) — không gọi nhau, chỉ cùng đọc/ghi Lark Base (ATLAS).
 
 ## Nguồn sự thật — ĐỌC TRƯỚC KHI LÀM BẤT KỲ VIỆC GÌ
+0. `docs/memory/LATEST.md` — bản NÉN trí nhớ phiên gần nhất (đọc trước tiên, rẻ nhất) — cần chi
+   tiết đầy đủ 1 nhánh việc thì mở đúng thư mục `docs/memory/sessions/<ngày>/<nhánh>/`
 1. `docs/IF-MASTER-BLUEPRINT.md` — kiến trúc tổng, hệ `.idf`, cây mã số, lệnh giao diện
 2. `docs/IF-MASTER-TREE.md` — cây 461 mục, có cột trạng thái CODE THẬT
 3. `docs/IF-ARCHITECTURE-BLUEPRINT-v1.md` — 8 luật vận hành (hiến pháp)
@@ -55,6 +57,11 @@ tách vẽ diện đồ nội thất...) đều là mặt tiền của MỘT eng
   không im lặng sửa cho khớp. Hoà muốn biết sự thật, không muốn tài liệu đẹp.
 - Sau mỗi batch việc lớn: cập nhật `CHANGELOG.md` (append-only, không xoá lịch sử cũ) và
   `STATUS.md` (dưới 800 từ, phản ánh đúng thực tế — không giữ thông tin cũ đã lỗi thời).
+- **Hệ trí nhớ 2 lớp (Hoà chốt 15/08)**: mỗi nhánh việc trong phiên → viết chi tiết ĐẦY ĐỦ không
+  cắt vào `docs/memory/sessions/<YYYY-MM-DD>/<NN-nhánh-việc>/README.md` (số thứ tự theo trình tự
+  làm trong ngày). Cuối phiên lớn → ghi đè `docs/memory/LATEST.md` (bản NÉN, 1 file duy nhất,
+  dòng đầu là ngày mới nhất) — KHÔNG thay thế STATUS.md/00-CHOT.md/CHANGELOG.md, là lớp tổng hợp
+  nhanh thêm vào. Không di dời `docs/bao-cao-phien/` cũ — quy ước mới chỉ áp dụng từ 15/08 trở đi.
 - **KHÔNG tự push lên `origin/main`** trừ khi được yêu cầu rõ ràng trong phiên đó.
 - File gói `.md`/`.txt` dán tạm ở gốc repo (kiểu IF-DOCS-BATCH-*.md, PROMPT-*.txt) → xử lý xong
   thì XOÁ, không giữ lại làm rác.
@@ -63,8 +70,23 @@ tách vẽ diện đồ nội thất...) đều là mặt tiền của MỘT eng
 ## Ngôn ngữ & phong cách
 - Giao tiếp bằng tiếng Việt trong báo cáo/commit message. Code/biến/hàm tiếng Anh như chuẩn.
 - Commit message ngắn, rõ, tiếng Việt: `"fix(login): ..."`, `"feat(cad): ..."`, `"docs: ..."`.
-- Báo cáo cuối luôn gồm: bảng tóm tắt việc đã làm (commit hash) · việc nào lệch nghiệm thu và
-  vì sao · quyết định tự chọn khi gặp mơ hồ · đề xuất 3 việc tiếp theo.
+
+### LUẬT CỨNG BÁO CÁO (Hoà chốt 15/08) — KẾT QUẢ làm trọng tâm, không tường thuật diễn biến
+Mọi báo cáo của Claude Code / agent con — dù dài hay ngắn — PHẢI đi theo đúng khuôn 6 phần dưới,
+không được kể lại quá trình làm (bước 1 tôi làm gì, bước 2 tôi làm gì...) trừ khi phần đó CHÍNH
+LÀ bằng chứng cần thiết cho kết luận. Chữ nhiều mà nội dung lan man = vi phạm luật này.
+
+1. **Tổng quan** — 1-3 câu: việc gì, kết quả gì, ngay đầu report.
+2. **Chi tiết từng mục** — bảng/gạch đầu dòng, mỗi mục ngắn gọn, có bằng chứng cụ thể (số đo/
+   file:dòng/commit hash) — không phải câu chuyện.
+3. **Tổng kết lại vấn đề** — gom các mục rời rạc thành 1 bức tranh chung, trả lời "vậy rốt cuộc
+   là gì".
+4. **Đánh giá khách quan** — cái gì tốt, cái gì chưa, có rủi ro gì, đừng chỉ khoe kết quả tốt.
+5. **Hướng xử lý nhiều góc độ** — nêu ít nhất 2 hướng khả dĩ khác nhau (không phải 1 con đường
+   duy nhất) kèm ưu/nhược mỗi hướng.
+6. **Đề xuất hướng tốt nhất** — chọn 1, nói rõ vì sao chọn hướng đó thay vì các hướng còn lại.
+
+Áp dụng cho MỌI báo cáo — kể cả báo cáo của agent con gửi về T, và báo cáo T trình Hoà.
 
 ## An toàn dữ liệu
 - KHÔNG commit `.env`, secret, API key thật. `.env.example` là file mẫu, được phép commit.
