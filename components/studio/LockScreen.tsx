@@ -29,7 +29,7 @@ import { useFlowStore } from '@/lib/store';
 import { useLockScreen } from '@/lib/lockscreen';
 import { LoginForm } from '@/components/entry/LoginForm';
 import { useLang, useT } from '@/lib/i18n';
-import { easeApple } from '@/lib/motion';
+import { easeApple, springPop } from '@/lib/motion';
 
 function useClock(): string {
   const [now, setNow] = useState<Date | null>(null);
@@ -42,6 +42,35 @@ function useClock(): string {
   return now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
+/**
+ * Dòng động lực trong ngày (Hoà đặt 14/08) — cố định theo NGÀY TRONG NĂM (không random mỗi lần
+ * khoá, để cả ngày thấy 1 câu, đổi qua ngày mới mới đổi câu). Tuyển 12 câu ngắn đúng tông
+ * "quiet luxury" của gu Hoà (docs bên trong: user_gu-hoa-visual) — về nghề, không sáo rỗng kiểu
+ * poster động lực chung chung.
+ */
+const DAILY_LINES: [string, string][] = [
+  ['Bản vẽ đẹp nhất là bản vẽ đo được.', 'The most beautiful drawing is the one that measures true.'],
+  ['Ánh sáng kể giờ, vật liệu kể chất.', 'Light tells the hour, material tells the truth.'],
+  ['Chi tiết là nơi sự tôn trọng hiện ra.', 'Detail is where respect becomes visible.'],
+  ['Một nguồn sự thật, ba cách nhìn.', 'One source of truth, three ways of seeing.'],
+  ['Không gian tốt bắt đầu từ ràng buộc rõ.', 'Good space begins with a clear constraint.'],
+  ['Sự đơn giản là kết quả, không phải điểm xuất phát.', 'Simplicity is a result, not a starting point.'],
+  ['Đo hai lần, dựng một lần.', 'Measure twice, build once.'],
+  ['Vật liệu thật không cần tô vẽ thêm.', 'True material needs no further ornament.'],
+  ['Tỉ lệ đúng thắng mọi trang trí.', 'Right proportion outlasts every decoration.'],
+  ['Bản vẽ là lời hứa với người thi công.', 'A drawing is a promise kept to the builder.'],
+  ['Nghề nội thất là quản lý ánh sáng và bóng đổ.', 'Interior design is the management of light and shadow.'],
+  ['Chậm mà đúng, còn hơn nhanh mà phải sửa lại.', 'Slow and right beats fast and redone.'],
+];
+function dailyLine(): [string, string] {
+  const dayOfYear = Math.floor(
+    (Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()) -
+      Date.UTC(new Date().getFullYear(), 0, 0)) /
+      86_400_000,
+  );
+  return DAILY_LINES[dayOfYear % DAILY_LINES.length];
+}
+
 export function LockScreen() {
   const locked = useLockScreen((s) => s.locked);
   const unlock = useLockScreen((s) => s.unlock);
@@ -50,6 +79,10 @@ export function LockScreen() {
   const lang = useLang();
   const tr = useT();
   const time = useClock();
+  const [line, setLine] = useState<[string, string] | null>(null);
+  useEffect(() => {
+    if (locked) setLine(dailyLine());
+  }, [locked]);
 
   if (typeof document === 'undefined') return null;
 
@@ -76,11 +109,23 @@ export function LockScreen() {
             <div className="mt-1 text-[13px] text-[var(--t3)]">
               {tr('Đã khoá', 'Locked')} · <span className="text-[var(--t2)]">{flowName || tr('Dự án', 'Project')}</span>
             </div>
+            {/* Dòng động lực trong ngày (Hoà đặt 14/08) — cố định theo ngày, không sáo rỗng.
+             * ⚠️ Chỗ icon thông báo/mail Hoà nhắc CHƯA thêm ở đây — app chưa có hệ Notification/Mail
+             * thật (grep model Notification/Mail = 0), gắn icon lúc này sẽ là nút giả không nối gì
+             * cả — trái luật cứng "không có nút thì không có AI/không hiện nút giả". Chờ Hoà xác
+             * nhận icon đó nối vào hệ thật nào rồi mới thêm. */}
+            {line && <div className="mt-3 max-w-[280px] text-[12px] italic leading-snug text-[var(--t3)]">{tr(line[0], line[1])}</div>}
           </div>
 
-          <div className="mt-8">
+          <motion.div
+            className="mt-8"
+            style={{ transformPerspective: 1000 }}
+            initial={{ opacity: 0, rotateX: -55, scale: 0.94 }}
+            animate={{ opacity: 1, rotateX: 0, scale: 1 }}
+            transition={reduce ? { duration: 0 } : springPop}
+          >
             <LoginForm onAuthed={unlock} reduce={!!reduce} lang={lang} />
-          </div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>,
