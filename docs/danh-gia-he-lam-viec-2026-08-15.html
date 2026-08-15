@@ -1,0 +1,275 @@
+<title>Cỗ Máy Làm Việc IF</title>
+<style>
+  :root{
+    --paper:#F5F7F8; --panel:#FFFFFF; --ink:#12161B; --ink-2:#3D4650; --ink-3:#6B7681;
+    --rule:#D3DBE0; --rule-2:#E7ECEF;
+    --blue:#1B5FA6;  --blue-soft:#E6EFF7;
+    --red:#AE3529;   --red-soft:#F8E9E7;
+    --green:#2F6B52; --green-soft:#E6F0EA;
+    --shadow:0 1px 2px rgba(18,22,27,.06), 0 8px 24px rgba(18,22,27,.05);
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#0E1216; --panel:#161B21; --ink:#E8EDF1; --ink-2:#B4BEC7; --ink-3:#7C8894;
+      --rule:#2A333C; --rule-2:#1E252C;
+      --blue:#77ADE4; --blue-soft:#152430;
+      --red:#E3897C;  --red-soft:#2A1B19;
+      --green:#79C3A0; --green-soft:#15241D;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0E1216; --panel:#161B21; --ink:#E8EDF1; --ink-2:#B4BEC7; --ink-3:#7C8894;
+    --rule:#2A333C; --rule-2:#1E252C;
+    --blue:#77ADE4; --blue-soft:#152430;
+    --red:#E3897C;  --red-soft:#2A1B19;
+    --green:#79C3A0; --green-soft:#15241D;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--serif); font-size:17px; line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:48px 28px 96px; display:flex; flex-direction:column; gap:44px}
+
+  .eyebrow{
+    font-family:var(--sans); font-size:11px; font-weight:700; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--ink-3); margin:0 0 10px;
+  }
+  h1{
+    font-family:var(--sans); font-weight:800; letter-spacing:-.025em; line-height:1.05;
+    font-size:clamp(30px,4.4vw,46px); margin:0; text-wrap:balance;
+  }
+  h2{
+    font-family:var(--sans); font-weight:700; letter-spacing:-.015em;
+    font-size:22px; margin:0 0 14px; text-wrap:balance;
+  }
+  h2 .n{font-family:var(--mono); font-size:13px; color:var(--ink-3); font-weight:500; margin-right:10px; letter-spacing:0}
+  p{margin:0 0 14px; max-width:66ch}
+  p:last-child{margin-bottom:0}
+  strong{font-weight:700}
+  code{font-family:var(--mono); font-size:.85em; background:var(--rule-2); padding:1px 5px; border-radius:4px; color:var(--ink-2)}
+  section{border-top:1px solid var(--rule); padding-top:28px}
+
+  header .lede{font-size:19px; color:var(--ink-2); max-width:62ch; margin-top:16px}
+
+  /* ── số lớn ── */
+  .scores{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:10px; overflow:hidden; margin-top:26px}
+  .score{background:var(--panel); padding:16px 18px}
+  .score .v{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:30px; font-weight:600; line-height:1.1; letter-spacing:-.02em}
+  .score .k{font-family:var(--sans); font-size:11.5px; color:var(--ink-3); margin-top:6px; letter-spacing:.02em}
+  .score.warn .v{color:var(--red)}
+  .score.good .v{color:var(--green)}
+
+  figure{margin:0; background:var(--panel); border:1px solid var(--rule); border-radius:12px; padding:22px 20px 16px; box-shadow:var(--shadow); overflow-x:auto}
+  figure svg{display:block; width:100%; min-width:760px; max-width:100%; height:auto; color:var(--ink)}
+  figcaption{font-family:var(--sans); font-size:12.5px; color:var(--ink-3); margin-top:14px; line-height:1.5; max-width:70ch}
+
+  table{width:100%; border-collapse:collapse; font-size:14.5px; font-family:var(--sans)}
+  .tw{overflow-x:auto; border:1px solid var(--rule); border-radius:10px; background:var(--panel)}
+  th{
+    text-align:left; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3);
+    font-weight:700; padding:11px 14px; border-bottom:1px solid var(--rule); white-space:nowrap;
+  }
+  td{padding:11px 14px; border-bottom:1px solid var(--rule-2); vertical-align:top; line-height:1.5}
+  tr:last-child td{border-bottom:0}
+  td.who{white-space:nowrap; font-family:var(--mono); font-size:12.5px; color:var(--ink-2)}
+
+  .tag{display:inline-block; font-family:var(--sans); font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:2px 7px; border-radius:4px; white-space:nowrap}
+  .tag.machine{background:var(--blue-soft); color:var(--blue)}
+  .tag.human{background:var(--red-soft); color:var(--red)}
+  .tag.agent{background:var(--green-soft); color:var(--green)}
+
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px}
+  .card{background:var(--panel); border:1px solid var(--rule); border-left:3px solid var(--red); border-radius:10px; padding:16px 18px}
+  .card h3{font-family:var(--sans); font-size:15px; margin:0 0 8px; font-weight:700; letter-spacing:-.01em}
+  .card p{font-size:14.5px; margin:0; color:var(--ink-2)}
+  .card.ok{border-left-color:var(--green)}
+
+  ol.steps{margin:0; padding-left:0; list-style:none; counter-reset:s; display:flex; flex-direction:column; gap:14px}
+  ol.steps li{counter-increment:s; display:grid; grid-template-columns:30px 1fr; gap:14px; align-items:start}
+  ol.steps li::before{
+    content:counter(s); font-family:var(--mono); font-size:13px; font-weight:600; color:var(--blue);
+    background:var(--blue-soft); border-radius:6px; text-align:center; padding:3px 0; line-height:1.5;
+  }
+  ol.steps p{margin:0}
+  ol.steps b{font-family:var(--sans); font-size:15.5px; display:block; margin-bottom:3px}
+
+  footer{border-top:1px solid var(--rule); padding-top:18px; font-family:var(--sans); font-size:12.5px; color:var(--ink-3)}
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Đánh giá vận hành · 15/08/2026 · T</p>
+    <h1>Cỗ máy làm việc IF</h1>
+    <p class="lede">Hệ này có hai vòng kiểm chạy ở hai tốc độ khác nhau. Vòng máy chạy trong vài phút và hôm nay bắt được bảy lỗi thật. Vòng mắt người chạy theo tuần — và đang là chỗ tắc duy nhất của cả cỗ máy.</p>
+
+    <div class="scores">
+      <div class="score"><div class="v">109</div><div class="k">việc trong sổ</div></div>
+      <div class="score good"><div class="v">66</div><div class="k">xong-máy</div></div>
+      <div class="score warn"><div class="v">1</div><div class="k">qua mắt Hoà</div></div>
+      <div class="score"><div class="v">42</div><div class="k">chưa làm</div></div>
+      <div class="score good"><div class="v">0</div><div class="k">lệch sổ ↔ code</div></div>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="n">01</span>Đường đi của một việc</h2>
+    <figure>
+      <svg viewBox="0 0 1000 430" role="img" aria-label="Sơ đồ: việc đi từ Hoà chốt qua phiếu, sub-agent, T audit rồi ghi sổ; cổng máy gồm năm máy soi chặn trong vài phút ở ba điểm; cổng mắt Hoà ở cuối có 66 việc xếp hàng và mới 1 việc đi qua.">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+          <marker id="arb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#1B5FA6"/>
+          </marker>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#AE3529"/>
+          </marker>
+        </defs>
+
+        <!-- chuỗi sản xuất -->
+        <g font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+          <g fill="none" stroke="currentColor" stroke-width="1.25">
+            <rect x="12"  y="40" width="168" height="58" rx="7"/>
+            <rect x="200" y="40" width="168" height="58" rx="7"/>
+            <rect x="388" y="40" width="168" height="58" rx="7"/>
+            <rect x="576" y="40" width="168" height="58" rx="7"/>
+            <rect x="764" y="40" width="168" height="58" rx="7"/>
+          </g>
+          <g text-anchor="middle" fill="currentColor">
+            <text x="96"  y="65" font-size="13" font-weight="700">HOÀ CHỐT</text>
+            <text x="284" y="65" font-size="13" font-weight="700">T · PHIẾU</text>
+            <text x="472" y="65" font-size="13" font-weight="700">SUB-AGENT</text>
+            <text x="660" y="65" font-size="13" font-weight="700">T AUDIT</text>
+            <text x="848" y="65" font-size="13" font-weight="700">GHI SỔ</text>
+          </g>
+          <g text-anchor="middle" font-size="11" opacity=".62" fill="currentColor">
+            <text x="96"  y="83">một câu</text>
+            <text x="284" y="83">⓪ tiền đề + 8 ô</text>
+            <text x="472" y="83">code + báo cáo</text>
+            <text x="660" y="83">đo lại, không tin</text>
+            <text x="848" y="83">commit + flip</text>
+          </g>
+          <g stroke="currentColor" stroke-width="1.25" marker-end="url(#ar)">
+            <line x1="180" y1="69" x2="196" y2="69"/>
+            <line x1="368" y1="69" x2="384" y2="69"/>
+            <line x1="556" y1="69" x2="572" y2="69"/>
+            <line x1="744" y1="69" x2="760" y2="69"/>
+          </g>
+
+          <!-- cổng máy -->
+          <rect x="12" y="168" width="716" height="62" rx="8" fill="#1B5FA6" fill-opacity=".07" stroke="#1B5FA6" stroke-width="1.25"/>
+          <text x="30" y="192" font-size="12.5" font-weight="700" fill="#1B5FA6">CỔNG MÁY · chặn trong vài phút</text>
+          <text x="30" y="212" font-size="11.5" fill="#1B5FA6" fill-opacity=".85" font-family="ui-monospace,SFMono-Regular,Menlo,monospace">soi:frontier · từ-điển · thao-tác · hình-học · hợp-đồng · tsc · test</text>
+          <g stroke="#1B5FA6" stroke-width="1.25" marker-end="url(#arb)">
+            <line x1="284" y1="168" x2="284" y2="102"/>
+            <line x1="472" y1="168" x2="472" y2="102"/>
+            <line x1="660" y1="168" x2="660" y2="102"/>
+          </g>
+
+          <!-- cổng mắt -->
+          <rect x="760" y="168" width="228" height="118" rx="8" fill="#AE3529" fill-opacity=".07" stroke="#AE3529" stroke-width="1.25"/>
+          <text x="874" y="192" font-size="12.5" font-weight="700" text-anchor="middle" fill="#AE3529">CỔNG MẮT · Hoà</text>
+          <text x="874" y="234" font-size="30" font-weight="700" text-anchor="middle" fill="#AE3529" font-family="ui-monospace,SFMono-Regular,Menlo,monospace">66</text>
+          <text x="874" y="252" font-size="11" text-anchor="middle" fill="#AE3529" fill-opacity=".9">đang xếp hàng</text>
+          <text x="874" y="272" font-size="11" text-anchor="middle" fill="#AE3529" fill-opacity=".9">1 đã đi qua</text>
+          <line x1="874" y1="102" x2="874" y2="164" stroke="#AE3529" stroke-width="1.25" marker-end="url(#arr)"/>
+
+          <!-- vòng về -->
+          <polyline points="760,300 96,300 96,106" fill="none" stroke="currentColor" stroke-width="1.25" stroke-dasharray="5 4" opacity=".55" marker-end="url(#ar)"/>
+          <text x="428" y="292" font-size="11.5" text-anchor="middle" fill="currentColor" opacity=".6">sửa theo mắt — vòng chậm, tính bằng tuần</text>
+
+          <!-- ghi chú hai tốc độ -->
+          <text x="30" y="352" font-size="11.5" fill="currentColor" opacity=".62">Vòng máy khép lại trong cùng một phiên: lệch là chặn ngay, không đợi ai.</text>
+          <text x="30" y="372" font-size="11.5" fill="currentColor" opacity=".62">Vòng mắt chỉ khép khi Hoà ngồi xuống nhìn — nên hàng đợi dài ra mỗi phiên.</text>
+        </g>
+      </svg>
+      <figcaption>Việc chạy qua năm chặng, nhưng chỉ có hai chỗ thật sự là <em>cổng</em>. Cổng máy đứng dưới ba chặng giữa và chặn trong vài phút. Cổng mắt đứng ở cuối, và mọi thứ qua được cổng máy đều dừng lại đó chờ.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2><span class="n">02</span>Hôm nay máy bắt được gì</h2>
+    <p>Đây là bằng chứng cỗ máy có tác dụng thật, không phải nghi thức. Bảy lỗi dưới đây đều bị bắt trong <strong>một phiên</strong>, và đáng chú ý là <strong>ba trong bảy là lỗi của chính T</strong> — cơ chế bắt được người dựng ra nó.</p>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Ai bắt</th><th>Bắt được gì</th><th>Nếu lọt thì sao</th></tr></thead>
+        <tbody>
+          <tr><td class="who"><span class="tag machine">máy</span></td><td><code>soi:frontier</code> báo 2 lệch đầu phiên — code đã có mà sổ chưa ghi</td><td>Hai việc xong nằm im, phiên sau làm lại từ đầu</td></tr>
+          <tr><td class="who"><span class="tag machine">máy</span></td><td>Bắt <strong>T</strong> ngay lúc chốt: <code>effectiveFrom</code> tưởng là ý mới, hoá ra đã sống ở <code>standards/registry.ts</code></td><td>Xây lại thứ đã có — đúng tội N8 mà bản tư vấn vừa cảnh báo</td></tr>
+          <tr><td class="who"><span class="tag human">ô ⓪</span></td><td>Ngay phiếu đầu tiên dùng ô Tiền đề: ToolbarChip trích kiểu từ 2D, trong khi chốt KB-1 lấy dock 3D làm gốc</td><td>Đóng đinh sai chốt vào cả ba chặng, sửa sau đắt gấp ba</td></tr>
+          <tr><td class="who"><span class="tag agent">agent</span></td><td>Agent B1 bắt lỗi trong ticket của T: <code>stages</code> phải là <code>'cad'</code>, không phải <code>'concept'</code></td><td>Sổ lệnh khai sai chặng, mọi thứ đọc nó về sau đều lệch</td></tr>
+          <tr><td class="who"><span class="tag agent">agent</span></td><td>Agent HZ ngờ <code>detectLineSegments</code> hỏng → T chứng minh bằng số: Hough vote sai góc</td><td>Bậc 4 đo đạc từ ảnh chết âm thầm, không ai biết</td></tr>
+          <tr><td class="who"><span class="tag human">T audit</span></td><td>Agent TB dừng nửa đường: cùng một hàng có 2 chip bo tròn cạnh 8 nút bo 10</td><td>Trình chiếu tự mâu thuẫn — tệ hơn cả hai lựa chọn thuần</td></tr>
+          <tr><td class="who"><span class="tag human">V</span></td><td>Phiên trước: V kiểm chéo, chứng minh vẽ tường <em>không</em> hỏng — lỗi nằm ở công cụ đo của T</td><td>Một nghi vấn sai lọt vào sổ, phiên sau đi sửa thứ không hỏng</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">03</span>Chỗ máy không bắt được</h2>
+    <p>Bốn lỗ dưới đây không có cổng nào canh. Ba cái đầu đã gây hậu quả thật trong hôm nay.</p>
+    <div class="cards">
+      <div class="card">
+        <h3>Test có thể che bug thay vì bắt bug</h3>
+        <p>Test duy nhất chạm tới hiệu chỉnh camera lại <em>khẳng định</em> nó trả về đường thoái lui. Test xanh suốt, bug sống nguyên. Không máy soi nào phát hiện được kiểu này.</p>
+      </div>
+      <div class="card">
+        <h3>Hai agent song song đọc trạng thái dở của nhau</h3>
+        <p>HZ báo một test hỏng; kiểm lại không tái hiện — nó chạy trúng lúc B1 đang ghi file. Không có khoá phạm vi máy-đọc-được, ô ③ trong phiếu chỉ là chữ cho người.</p>
+      </div>
+      <div class="card">
+        <h3>Agent không tự chụp được màn hình</h3>
+        <p>Ba lượt liên tiếp agent không lưu nổi ảnh nghiệm thu. Khâu bằng chứng thị giác — thứ nuôi đúng cái cổng đang tắc — lại là khâu yếu nhất.</p>
+      </div>
+      <div class="card ok">
+        <h3>Sổ phình, tra cứu hết rẻ</h3>
+        <p>674 file · 32MB trong <code>docs/</code>. Luật “gọi đúng đường dẫn, không cần quét” đã bất khả thi. Đã có entry đặt trần, chưa thi công.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">04</span>Bệnh chung tìm thấy ở ba chỗ khác nhau</h2>
+    <p>Đây là phần đáng lo hơn từng lỗi lẻ. Cùng một dạng hỏng xuất hiện độc lập ở ba vùng không liên quan gì nhau — nghĩa là nó là <strong>bệnh của cách xây</strong>, không phải tai nạn:</p>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Vùng</th><th>Có bao nhiêu nguồn song song</th><th>Hậu quả đo được</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Lệnh</strong></td><td>5 sổ lệnh — <code>grep</code> thư viện lệnh trong cả 3 thanh công cụ ra <strong>0</strong></td><td>Xoay là <code>RO</code> ở 2D nhưng <code>Q</code> ở 3D; học phím xong đổi chặng là bấm sai</td></tr>
+          <tr><td><strong>Tệp vào app</strong></td><td>4 lối vào — một lối chỉ ghi localStorage, một lối bấm “đưa vào kho” xong <em>không lưu đi đâu</em></td><td>Không màn nào bắt khai tệp là gì; không phân biệt tệp để sửa với tệp tham chiếu</td></tr>
+          <tr><td><strong>Tên chặng</strong></td><td>2 hệ tên — <code>'cad'</code> ở sổ lệnh, <code>'concept'</code> ở <code>phases.ts</code></td><td>Chính T viết sai trong ticket vì tin nhầm hệ tên</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:16px">Điểm chung: <strong>không ai cấm dựng nguồn thứ hai.</strong> Máy soi hiện canh được “sổ nói khác code”, nhưng chưa canh được “hai chỗ trong code cùng nói một chuyện”.</p>
+  </section>
+
+  <section>
+    <h2><span class="n">05</span>Ba việc nên sửa, theo thứ tự</h2>
+    <ol class="steps">
+      <li><p><b>Nới cổng mắt — không phải bằng cách làm nhanh hơn</b>Tỉ lệ 66 trên 1 không sửa được bằng cách viết thêm code. Lô duyệt mắt gộp 48 mục trong 20 phút là công cụ đúng: một lượt ngồi của Hoà flip được cả loạt. Mọi việc khác đều xếp sau việc này, vì làm thêm chỉ nâng 66 thành 67.</p></li>
+      <li><p><b>Cho máy canh “nguồn thứ hai”</b>Thêm một máy soi bắt <em>trùng lặp trong code</em>, không chỉ lệch sổ-với-code: hai nơi cùng khai một danh sách lệnh, hai hệ tên cho cùng một chặng, hai lối làm cùng một việc. Ba ca hôm nay đều sẽ bị bắt bởi cùng một cơ chế này.</p></li>
+      <li><p><b>Khoá phạm vi máy-đọc-được cho agent chạy song song</b>Ô “vùng file” trong phiếu hiện là chữ cho người đọc. Cho nó thành khoá máy kiểm được thì hai agent trùng vùng bị chặn ngay lúc soạn phiếu, thay vì phát hiện qua một báo cáo nhiễu.</p></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2><span class="n">06</span>Đánh giá thẳng</h2>
+    <p><strong>Cỗ máy này đang làm đúng việc của nó.</strong> Bằng chứng mạnh nhất không phải là số việc xong, mà là nó <em>bắt được người dựng ra nó</em> — ba trong bảy lỗi hôm nay là lỗi của T, và không cái nào do T tự nhận ra trước. Một quy trình mà người điều phối có thể tự cho mình qua thì không phải quy trình.</p>
+    <p><strong>Nhưng nó đang mất cân đối nặng.</strong> Vòng máy khép trong vài phút; vòng mắt tính bằng tuần. Kết quả là 66 việc đứng chờ sau một cánh cổng, và cái giá không phải là chậm — là <em>rủi ro dồn lại</em>: mỗi việc chưa qua mắt đều có thể sai theo cách máy không đo được, và càng dồn thì mỗi lần phát hiện càng phải sửa ngược nhiều thứ.</p>
+    <p><strong>Chỗ yếu nhất là chỗ ít ai nhìn:</strong> khâu bằng chứng thị giác. Agent không chụp được ảnh, nên thứ nuôi cổng đang tắc lại phải làm bằng tay. Sửa được khâu này thì cổng mắt tự thông một phần — quan trọng hơn bất kỳ tính năng nào trong hàng đợi.</p>
+  </section>
+
+  <footer>T lập 15/08/2026 · số liệu lấy trực tiếp từ <code>npm run soi:frontier</code> và <code>npm run ship:map</code> cùng ngày · các ca dẫn chứng đều có commit trong nhánh <code>main</code>.</footer>
+</div>
