@@ -2,13 +2,10 @@
 
 ## MỞ PHIÊN MỚI: đọc `docs/memory/LATEST.md` trước (bản nén, rẻ nhất) — rồi dán câu lệnh §5 HOP-DONG-PHOI-HOP-T + `npm run soi:frontier`. Đọc thêm: TRIET-LY-IF.md (hiến pháp, TRÍCH MÃ ĐIỀU KHOẢN vào mọi phiếu) · 00-CHOT 2 dòng cuối. **CHUỖI NỀN P1→P6 ĐÓNG TRỌN 14/08.** Kế tiếp theo lộ trình BAN-THIET-KE §5: vá 3 lỗ ❌ (telemetry local-first đếm-bấm ghi file cục bộ [T3] · a11y audit 1 lượt · error-log + nút gửi-log tự nguyện). Món nhìn-thấy sẵn hàng: GR v1 bảng ánh xạ + núm per-mảng · lux-l6 (kho chờ dây cuối) · focus-visible (mắt design) · sửa pickHatchFace O(N²). **⚠️ 15/08 — nút thắt thật là NỢ NGHIỆM THU MẮT: 64 mục xong-máy đối lại đúng 1 mục qua mắt Hoà.** T đề xuất chạy song song: Hoà đi Lô duyệt mắt #1 · T lắp ToolbarChip vào 3 thanh công cụ (L1).
 
-## 4 CÂU CHỜ HOÀ CHỐT (ghim 15/08 — trả lời lúc nào cũng được, T không tự suy diễn đi tiếp)
-| # | Câu | Phương án T đề xuất |
-|---|---|---|
-| 1 | **Chặng 2 "quy về 1"** — T đọc là MỘT bộ lệnh, HAI lối thao tác (node ComfyUI ↔ tool truyền thống), KHÔNG bỏ mode. Đúng chưa? | đúng-như-T-đọc · bỏ hẳn 1 mode · gộp 1 màn + công tắc đổi lối |
-| 2 | **2 chỗ T bác gợi ý Hoà**: nấc nhỏ nhất = PILL trạng thái (không icon trần) · định danh = DẢI MÀU ĐẶC 2px (không neon ửng đáy) | nhận cả hai *(khuyến nghị)* · chỉ nhận 1 · giữ nguyên ý ban đầu (T ghi là ngoại lệ đè NT-11) |
-| ~~3~~ | ✅ **HOÀ ĐÃ CHỐT 15/08** — id phối cảnh chỉ phục vụ TRÌNH BÀY (bảng vật liệu + spec, xếp chồng, hover hiện thông tin, bản nộp y chang bố cục màn); CON SỐ chỉ từ CAD/Revit/khối đo được; **BOQ chỉ nhận số đo được, người edit chỉnh tay sau** (cơ chế `boq-overrides` đã có sẵn). +2 entry: `bang-vat-lieu-tu-phoi-canh` · `don-vi-ty-le-toan-app` (đơn vị+tỉ lệ cấp app hiện KHÔNG CÓ) | — |
-| 4 | **Việc kế tiếp** (chọn nhiều) | đường chân trời + kéo sửa *(rẻ nhất)* · dây macro↔tool window + 3 nấc · nối né-nhãn sang ảnh render · B1 sổ lệnh chung + hợp nhất phím |
+## ✅ HOÀ ĐÃ CHỐT HẾT 15/08 (T từng hỏi lại 3 thứ Hoà đã nói — lỗi bắt-quyết-hai-lần, xem 00-CHOT)
+1. **Chặng 2**: MỘT bộ lệnh, HAI lối thao tác (node ComfyUI ↔ tool truyền thống) — KHÔNG bỏ mode nào. Cấm mỗi lối một tập lệnh riêng. Thi công = B5 ticket lệnh.
+2. **Hình thức** (Hoà uỷ quyền sẵn "bạn nghiên cứu có gì hay thì đề xuất"): nấc nhỏ nhất = **pill trạng thái 44px** · định danh = **dải màu đặc 2px đáy card**, hover đậm lên. Không icon trần, không neon.
+3. **Ranh giới số**: id phối cảnh = TRÌNH BÀY (bảng vật liệu + spec xếp chồng, hover hiện thông tin, bản nộp y chang bố cục màn) · con số = CAD/Revit/khối đo được · **BOQ chỉ nhận số đo được**, người edit sửa sau (`boq-overrides` đã có).
 > Chi tiết + bằng chứng file:dòng: `docs/TICKET-MASTER-TOOL-VA-DINH-DANH.md` · `docs/TICKET-KIEN-TRUC-LENH-3-TANG.md`.
 
 ## Chờ tay HOÀ (xếp hàng — Hoà chốt 14/08 đêm: bỏ mục chọn ảnh ST5, thu gọn còn đúng 2 việc)
