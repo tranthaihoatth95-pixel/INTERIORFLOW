@@ -44,6 +44,7 @@ import {
   Object3DTree,
   Object3DInspector,
   PresentOverlay,
+  RenderQueuePanel,
 } from '@/components/home/heavy-panels';
 import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
 import ModeShell from '@/components/shell/ModeShell';
@@ -712,6 +713,11 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
         </AppShell>
         <MaskPainterModal />
         <AnnotateModal />
+        {/* RQ — hàng đợi render theo view. Mount NGOÀI <AppShell> (cửa sổ nổi `position:fixed`,
+            góc phải-dưới) nên sống chung cho CẢ hai mode 'render'/'model3d' của chặng 3D: loạt
+            view chạy tiếp khi người dùng gạt sang Vẽ 3D, hàng đợi không bị ngắt theo mode.
+            Tự ẩn hoàn toàn khi hàng đợi rỗng. */}
+        <RenderQueuePanel />
         <Lightbox />
         <MoodboardModal />
         {presentModeOpen && <PresentOverlay onClose={() => setPresentModeOpen(false)} />}

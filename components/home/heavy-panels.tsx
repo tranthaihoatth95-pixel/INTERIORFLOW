@@ -82,6 +82,11 @@ export const RenderToolModeOverlay = dynamic(
 export const PresentOverlay = dynamic(() => import('@/components/present/PresentOverlay'), {
   ssr: false,
 });
+/** Hàng đợi render (RQ) — cửa sổ nổi tự gate: hàng đợi rỗng thì component trả null. */
+export const RenderQueuePanel = dynamic(
+  () => import('@/components/render-studio/RenderQueuePanel'),
+  { ssr: false },
+);
 
 // ── Nhánh mode 'model3d' (3d/3d) — nơi kéo three-mesh-bvh/three-bvh-csg ──────────────────
 export const Object3DTree = dynamic(
