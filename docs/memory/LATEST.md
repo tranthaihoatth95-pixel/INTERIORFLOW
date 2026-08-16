@@ -1,70 +1,60 @@
 # LATEST — bản nén trí nhớ bối cảnh IF (ghi đè mỗi phiên lớn)
 
-> **Đọc file này ĐẦU TIÊN.** Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
-> Không thay `STATUS.md` / `docs/00-CHOT.md` / `CHANGELOG.md` — là lớp tổng hợp nhanh thêm vào.
+> **Đọc file này ĐẦU TIÊN**, rồi **`docs/IF-KIEN-TRUC.md`** (bản đồ — mới lập 16/08, thay bản mồ côi).
+> Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-16 (đợt T #2 — bàn giao diện)**
+**Cập nhật lần cuối: 2026-08-16 (đợt giao diện #2 + lập bản đồ kiến trúc)**
 
-## Đang ở đâu
-Đợt giao diện lượt 2. **T đã đổi vai thật sự**: không build, chỉ nghiên cứu · kiểm chứng · điều phối —
-phóng **5 phiên phụ** (P-G ô giải nghĩa · P-H thanh tiến trình · P-I từ đa nghĩa · P-J bàn thử màu ·
-P-K từ điển máy). Kết phiên **0 lệch** · `tsc` 0 · `npm test` 0 fail.
+## ⭐ Việc lớn nhất phiên: PHÁT HIỆN BẢN ĐỒ MỒ CÔI
+`IF-ARCHITECTURE-COMPASS.md` sửa cuối 29/07, **19 ngày không phiên nào đọc** — `CLAUDE.md` trỏ vào
+tên cũ đã thành mẩu cụt 774 byte. ⇒ Lập **`docs/IF-KIEN-TRUC.md`** (cốt lõi 11 mục không tách +
+cập nhật theo `docs/memory/sessions/<ngày>/`), nối lại con trỏ, đóng dấu lỗi thời bản cũ.
+**Bài học:** nén ngữ cảnh + lưu chi tiết đều là cơ chế cho **nhật ký**; thứ thiếu suốt là **QUAN HỆ**,
+và bản đồ **không nén ra được từ nhật ký**.
 
-## ⭐ Việc đáng nhớ nhất phiên: CƠ CHẾ "AGENT ĐƯỢC PHÉP SOI NGƯỢC T" SINH LỜI ĐẬM
-**Sáu lỗi của T, cả sáu do agent bắt, T verify rồi nhận** — không lỗi nào máy soi bắt được:
-mã `[Đ1]`↔`[Đ2]` trích sai diện rộng · dẫn NT-8 thay vì NT-10 · sai lý do `<button disabled>` ·
-xếp nhầm `module` vào từ đa nghĩa · số dòng `:69/:71` thay vì `:70/:72` (**ngay trong dòng ban luật
-cấm nhớ hộ**) · gán `[N1]` cho *"người quyết cuối"* (thật ra **[T5]**).
-⇒ Ô ⓪ TIỀN ĐỀ + quyền bác bỏ trong khuôn phiếu là thứ đáng giữ nhất của mô hình T.
+## Chốt lớn của Hoà trong phiên (nguyên văn ở `00-CHOT` ngày 16/08)
+Kiến trúc **canvas + cửa sổ công cụ** (canvas=sơ đồ · cửa sổ=xưởng · chặng=khung nhìn · sidebar=bản đồ) ·
+**sidebar là router toàn app**, một trục **hai cụm** · **Files là phần thô** (bỏ nghĩa *chợ đầu mối*) ·
+**màu là bước chọn vật liệu**, không có "thư viện vật liệu" riêng · **ba nấc = ba công năng**, nấc to
+là **mặt nhìn** · **đồng bộ = không tách ra ngay từ đầu** · **dock neo theo ngữ cảnh** · 5 bộ hình nền
+động sinh bằng mã · dashboard là cửa vào.
 
-## Bốn chốt của Hoà trong phiên
-1. **Màu nhấn thứ hai: dựng CẢ HAI để so bằng mắt** — mòng két ↔ mận. 🔴 T từng đọc chữ "1" thành
-   "Hoà chốt mòng két" → **sai**, đã đính chính. *Hoà nói ngắn ≠ Hoà đã chốt.*
-2. **Từ đa nghĩa: duyệt cả 9 dòng đỏ** (không chỉ 3 dòng T đề xuất).
-3. **Loại icon: Hoà giao T quyết** → T chốt **7 loại, có sửa**.
-4. **Nút mờ 2,54:1: Hoà giao T quyết** → T chốt **sửa ngay bằng TOKEN**, không bằng con số.
-5. Giữa phiên Hoà thêm: *"phần hiệu ứng tiến trình nên thêm sáng"* → đã làm, và nó **sửa luôn lỗ a11y**.
+## Code đã ship (3 commit: `0471b54` · `544999f` · `45e79a2`)
+`Tooltip` prop `hinh` + `lib/ui/thao-tac-glyph.tsx` · `ToolbarChip` bỏ `title` → `aria-disabled` ·
+`lib/ui/tien-trinh.ts` + `LightBar` (**bịa % là tsc đỏ**) · `components/nodes/HopCongCuBamVat.tsx` +
+`CuaSoCongCu.tsx` (`NodeToolbar` thật, nhiều cụm cùng lúc) · `soi:tu-dien` hết mù `.md` ·
+`--mat-*`→`--nen-mo-*` (114 dòng/43 tệp) · `--nen-mo-hairline`→`--vien-mo` (573/93) · token `--mo-vo-hieu`.
 
-## Việc tiếp — nợ còn lại
-1. **Đóng khe hở token**: `docs/mocks/` còn **622 dòng `--mat-`** trong khi code đã sang `--nen-mo-*`
-   ⇒ mock và code lệch tên, mà mock là nguồn sự thật. Kèm class `.mat-*` (~60 nơi) + `--nen-mo-hairline`
-   **tên cấn** (nó là đường kẻ, không phải nền).
-2. **`simpleCoChiTiet`** — thước chấm lại 3 phương án chữ ký (nợ #3 chưa mở).
-3. **Mục biểu tượng tệp** — 2-3 cách xử màu (nợ #5 chưa mở).
-4. **PH-3**: `--success` bản tối `#46b876` chữ trắng chỉ **2,51:1** — chưa quét app xem chỗ nào dính.
-5. **8 cụm đổi tên bàn giao** (P-K liệt kê, cố ý không thi hành) — nặng nhất `measured|inferred|verified`
-   509 nơi **chạm `.idf`/`.idfc` đã ghi ra đĩa** ⇒ bắt buộc bảng nâng cấp; `khối`→`bước` **đụng chốt
-   02/08 Hoà đã ký** ⇒ Hoà tự bấm.
+## Bản vẽ chờ mắt Hoà — Claude Design, project `b7dc14ba-1752-4821-8fc7-d519f737ac09`
+`mock-o-giai-nghia` · `mock-thanh-tien-trinh` · `mock-ban-thu-2-huong-mau` · `mock-chu-ky-va-bieu-tuong-tep` ·
+`mock-kich-ban-sidebar` (🔴 **phải dựng lại** — dựng trên danh sách stage cũ) · `mock-5-bo-hinh-nen` ·
+`mock-widget-viec-dang-do`.
+
+## Nghiên cứu mới sinh
+`docs/nc/NC-TU-DA-NGHIA-2026-08-16.md` (8 từ, Hoà duyệt 9 dòng đỏ) · `NC-DIEU-HUONG-APP-TUONG-TU`
+(10 app, 6 ranh giới) · `NC-CAD-REVIT-MOT-APP` (**được** — vướng đúng 3 dây chưa nối) ·
+`NC-SOI-3-CHANG` ("3 chặng như 3 app" nay có số: khớp ổ 3/7 · chia sẻ code 5,7%).
+
+## ⛔ VIỆC ĐỨNG ĐẦU HÀNG — không phải giao diện
+1. **Máy đối chiếu SỔ ↔ CODE** — thứ duy nhất bắt được `master tool` · `KB-5` · `.idfnotes`.
+   Quét riêng từng bên thì mỗi bên đều nhất quán. **Bản đồ vừa lập do chính T viết ⇒ không có máy
+   canh thì nó mốc y bản trước.**
+2. **Nối vật liệu ba mảnh** — `lib/materials`↔`ProductSpec` = **0 code**, đo 07/08 và 16/08 không đổi.
+   Hoà gọi đây là *phần đẹp nhất của IF*.
+3. Ba việc từ soi 3 chặng: phím tắt hiện đủ 3 chặng → **gói 22 lệnh thanh 2D** (tầng ② còn trống,
+   giết ca **49% thanh nằm ngoài màn**) → trả 4 chỗ cắm Trình chiếu về ổ chung.
 
 ## ⛔ CHỜ HOÀ
-1. **Duyệt mắt 3 bản vẽ trên Claude Design** — ô giải nghĩa · thanh tiến trình · bàn thử màu.
-2. **Chọn màu**: mòng két (sạch, nhưng đúng góc ai cũng dùng) ↔ mận (khác biệt, nhưng ngồi cạnh vùng đỏ).
-3. **Một câu ở mục 6 bản vẽ thanh tiến trình**: hai thanh cùng 62% khác độ dài vệt — Hoà đọc ra
-   *tốc độ* không? Không đọc ra thì **cắt** (dưới 10 dòng).
-4. Nợ nghiệm thu mắt: **70 xong-máy đối 1 qua mắt**.
+① duyệt mắt 6 bản vẽ ② chọn màu **mòng két ↔ mận** ③ xác nhận **Files có ngăn riêng cho phần thô
+dùng chung?** (sai thì cả nhánh Files vẽ lại) ④ *Tổng quan dự án* và *Sổ tay* đứng đâu ⑤ nợ nghiệm
+thu mắt **70 xong-máy đối 1 qua mắt**.
 
-## Tài liệu / bản vẽ mới sinh trong phiên
-| Đường dẫn | Một câu |
-|---|---|
-| `docs/CHOT-16-08-BAN-DUNG.md` | ⭐ **bảng đè chồng** — 6 chủ đề bị chốt 2-5 lượt trong ngày 16/08, bản nào đang dùng |
-| `docs/nc/NC-TU-DA-NGHIA-2026-08-16.md` | 8 từ đo được + bảng 13 dòng, Hoà duyệt 9 dòng đỏ |
-| `docs/mocks/mock-o-giai-nghia.html` · `mock-thanh-tien-trinh.html` · `mock-ban-thu-2-huong-mau.html` | 3 bản vẽ, **đã đẩy lên Claude Design** |
-| `docs/phieu-giao/P-G…P-K` | 5 phiếu theo khuôn ⓪+⓪b+8 ô |
+## Lỗi của T trong phiên — 9 lỗi, **agent bắt cả 9**, máy soi bắt 0
+mã `[Đ1]`↔`[Đ2]` sai diện rộng · dẫn NT-8 thay NT-10 · sai lý do `<button disabled>` · xếp nhầm
+`module` · số dòng `:69` thay `:70` (ngay trong dòng ban luật cấm nhớ hộ) · gán `[N1]` cho *người
+quyết cuối* (thật ra `[T5]`) · **đo sketch/pro sai TRỤC** (`isPro` chứ không `cadMode`) · lấy số tệp
+đã đẩy Design System (9) làm số tệp thư mục (106) · mượn luật ngành cho thứ khác bản chất.
+⇒ **Ô ⓪ TIỀN ĐỀ + quyền agent bác T là cơ chế sinh lời đậm nhất — giữ bằng mọi giá.**
 
-## Code đã ship
-`components/ui/Tooltip.tsx` prop `hinh` + `lib/ui/thao-tac-glyph.tsx` (6 hình, **cấm-làm-nút khoá bằng
-test**) · `ToolbarChip` bỏ `title` → `aria-disabled` + `aria-describedby` · `lib/ui/tien-trinh.ts` +
-`components/ui/LightBar.tsx` (64 test, **bịa số là tsc đỏ**) · `soi:tu-dien` hết mù `.md` (+62 tệp) ·
-`--mat-*` → `--nen-mo-*` (114 dòng/43 tệp) · token `--mo-vo-hieu` theo theme.
-
-## Luật/cơ chế MỚI trong phiên (chi tiết `docs/00-CHOT.md` ngày 16/08)
-Không dùng worktree isolation, thay bằng **khoá phạm vi file rời nhau trong cây chính** (⓪c thi hành thật) ·
-**giảm chói cắt ánh kim, không bao giờ cắt độ đọc** · **duyệt CÁI TÊN ≠ duyệt cú đổi hàng loạt** ·
-**siết máy soi theo TỪNG TỪ** (*số đứng yên là máy soi đã chết mà chưa ai tuyên bố*) · **cấm trích số góc
-màu từ sổ**, đọc sống từ `globals.css` · **OKLCH là không gian màu chuẩn** (HSL chỉ đối chiếu) ·
-**ban một luật xong không miễn cho người ban khỏi luật đó**.
-
-## Lỗi của T trong phiên — ghi để không lặp
-① sáu lỗi mã điều khoản/số dòng, gốc chung là **nhớ hộ máy thay vì mở file đọc** ② đọc ý Hoà từ một ký
-tự rồi ghi vào sổ như đã chốt (lần thứ hai trong ngày) ③ ghi sai lý do kỹ thuật của `<button disabled>`
-mà không đo ④ xếp nhầm một từ vô hại vào danh sách đa nghĩa.
+## Dọn dẹp còn nợ
+3 worktree rác `.claude/worktrees/agent-*` (đã merged, lệnh xoá bị classifier chặn — Hoà chạy tay).
