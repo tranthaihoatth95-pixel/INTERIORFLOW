@@ -1111,3 +1111,14 @@ chạm sau khi kiểm scene thật. Xem `docs/CHOT-DESIGN-DNA-CAMERA-2026-08-10.
 · **TAB Essentials / Advanced** đúng nhịp **hai tầng** IF đã chốt (người mới dùng gói · người thạo gọi lệnh đơn — cùng MỘT sổ lệnh, §2b.1). Không phải hai bộ lệnh.
 · **HÌNH THỨC**: hiện **BÊN CẠNH**, không che mục đang trỏ. ⚠️ [Đ1] IF đã có `components/ui/Tooltip.tsx` (kèm `TOOLTIP_LONG_PRESS_MS` 500/8) — **mở rộng cái đó**, cấm đẻ cơ chế thứ hai.
 · Nối: bộ nền chung (mục mới `oGiaiNghia`) · `kien-truc-tool-3-lop` (trục phải giữ vai Inspector edit sâu + BuildRecipe create/stack).
+
+[16/08 Hoà chốt — DROPDOWN CÓ Ô TÌM + GÕ-TIẾP · PHÍM TẮT HIỆN TRONG MENU] Ảnh: menu ngữ cảnh (Fullscreen `F` · Copy list `⌘⌥C` · Share `⌥S` · Due date › · Priority › · Subscribe) + submenu Priority mở ra là **ô TÌM có GỢI Ý GÕ TIẾP** (gõ "nice to" thì phần còn lại hiện mờ) + danh sách có chấm tròn ở mục đang chọn.
+· **PHÍM TẮT HIỆN NGAY TRONG MENU** — dạy phím tắt **tại chỗ dùng**, không bắt đi tra bảng. ⭐ Nối `hotkey-registry`: menu là **MẶT TIỀN THỨ TƯ** của sổ lệnh chung (cùng tooltip · ⌘K · bảng ⌘/), **đọc chung một nguồn**, cấm gõ tay phím tắt vào menu.
+· **DROPDOWN DÀI PHẢI CÓ Ô TÌM, không bắt cuộn.** Kèm **GÕ-TIẾP** (gõ vài chữ, phần còn lại hiện mờ để Enter là xong). ⚠️ IF **CHƯA CÓ** — chốt 03/08 đã đo: *"thiếu hẳn từ vựng chuột+bàn phím... type-ahead"*, grep = 0. Đây là món nhỏ mà đúng chỗ đau của người dùng thạo việc.
+· Mục có submenu thì có mũi tên › · mục đang chọn có **chấm tròn** (dấu hiệu hình dạng, không chỉ màu — đúng luật màu-không-là-kênh-duy-nhất).
+
+[16/08 Hoà chốt — CHO PHÉP KÉO THẢ MODULE NỘI DUNG] Ảnh: bảng kanban đang kéo một card — card nhấc lên có bóng đổ + con trỏ nắm tay, **chỗ cũ để lại Ô TRỐNG NÉT ĐỨT**; cột có nhãn màu đầu cột + số đếm + "＋ Add new" cuối cột.
+· **NỘI DUNG LÀ MODULE KÉO THẢ ĐƯỢC, không phải bố cục chết.** Nối thẳng: **Home bento widget tuỳ biến** (chọn widget · đặt chỗ · cỡ định sẵn 1×1/2×1/2×2 — chốt 16/08) · **card ba nấc** · **Present editor** (kéo thả bố cục). ⇒ cùng một cơ chế, đừng đẻ ba kiểu kéo thả.
+· ⭐ **Ô TRỐNG NÉT ĐỨT LÀ CHI TIẾT MANG TIN**, đúng nguyên tắc *simple-nhưng-có-chi-tiết* chốt cùng ngày: nó không phải hiệu ứng cho đẹp mà là **câu trả lời cho "thả ra thì nó nằm đâu"**. Thiếu nó thì người dùng thả mù.
+· 🔴 **RÀNG BUỘC TRỢ NĂNG — chỗ hầu hết app làm sai**: kéo thả PHẢI làm được **bằng bàn phím** (chọn → phím mũi tên dời → Enter thả), nếu không thì người không dùng chuột mất hẳn tính năng. Nối lỗ ❌ *a11y audit* đang mở ở STATUS.
+· ⚠️ Giữ ràng buộc đã chốt: widget **cỡ định sẵn**, KHÔNG kéo giãn tự do — đó là điều kiện để cùng một widget chạy trên máy tính · tablet · điện thoại.
