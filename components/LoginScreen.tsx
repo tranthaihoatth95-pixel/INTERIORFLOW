@@ -1,3 +1,22 @@
+/**
+ * ⛔⛔ TỆP NÀY LÀ MÃ CHẾT — ĐỪNG SỬA. Đóng dấu 17/08 (T).
+ *
+ * `grep` toàn repo: **0 nơi import**. Màn đăng nhập THẬT là
+ * `components/entry/LoginScreen.tsx` (`app/login/page.tsx:13` · `components/home/HomeScreen.tsx:21`),
+ * và nền của nó là `components/entry/LoginBackdrop.tsx` (1.033 dòng: 4 preset · 5 nền động ·
+ * ảnh người dùng · Unsplash/Openverse · trình chiếu Ken Burns · đo tương phản theo từng ảnh).
+ *
+ * 🔴 VÌ SAO PHẢI ĐÓNG DẤU, KHÔNG IM LẶNG BỎ HOANG: 17/08 tệp này đã **bẫy trọn một phiếu**.
+ * T soi "màn khoá không có hình nền", grep ra đúng tệp này (`SystemWallpaper` = 0 chỗ,
+ * `COPPER` gõ cứng), viết phiếu bảo agent sửa nó. Sửa xong thì **màn hình không đổi một pixel**.
+ * Agent bác ở ô ⓪ và dừng — nếu không có ô ⓪ thì cả phiếu đã chạy vào hư không.
+ *
+ * Nó đọc ra như đang sống vì **3 commit gần nhất đều chạm nó** — nhưng cả 3 là quét đổi tên
+ * token hàng loạt, không phải ai đó đang dùng nó. **Dấu hiệu sống giả**: commit gần đây ≠ đang chạy.
+ * Cách kiểm đúng là đếm NƠI IMPORT, không nhìn ngày commit.
+ *
+ * ⇒ Giữ lại chỉ để làm dấu vết. Ai định xoá: kiểm lại `grep -rn "components/LoginScreen"` trước.
+ */
 'use client';
 
 import { useState } from 'react';
