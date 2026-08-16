@@ -1,0 +1,969 @@
+<!-- @dsCard group="Nhận diện" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>InteriorFlow · Bàn thử màu nhận diện</title>
+<style>
+/* ═══ TOKEN THẬT — chép app/globals.css, KHÔNG đổi số (luật L4) ═══ */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --accent-warm:#c79a63;
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --tap:32px; --tap-lg:44px;
+  --focus-ring:2px solid #8f7dfa;
+}
+:root,[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --mat-hairline:rgba(255,255,255,.06);
+}
+[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --mat-hairline:rgba(0,0,0,.05);
+  --focus-ring:2px solid #553ff3;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);padding:32px 32px 80px;
+  font:var(--fw-normal) var(--fs-sm)/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto}
+h1{font-size:var(--fs-xl);letter-spacing:-.02em;margin:0 0 6px}
+.sub{color:var(--t3);font-size:var(--fs-xs);max-width:78ch;line-height:1.6;margin-bottom:8px}
+.subtag{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-2xs);color:var(--t4);
+  border:1px solid var(--border);border-radius:var(--r-full);padding:3px 10px;margin-right:8px;margin-top:6px}
+h2.sec{font-size:var(--fs-lg);font-weight:var(--fw-semi);letter-spacing:-.01em;margin:44px 0 4px;
+  display:flex;align-items:center;gap:9px}
+h2.sec .num{font:var(--fw-semi) 12px ui-monospace,Menlo,monospace;color:var(--t4);
+  border:1px solid var(--border);border-radius:var(--r-1);padding:1px 6px}
+p.secdesc{color:var(--t3);font-size:var(--fs-xs);max-width:80ch;margin:0 0 16px;line-height:1.6}
+h3.sub3{font-size:12.5px;font-weight:var(--fw-semi);color:var(--t2);margin:18px 0 8px;
+  text-transform:uppercase;letter-spacing:.04em}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-3);padding:16px 18px;margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+
+/* ── khối khoá ── */
+.khoa-card{background:var(--panel);border:1px dashed var(--border-strong);border-radius:var(--r-3);padding:16px 18px;margin-bottom:14px}
+.khoa-head{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:var(--fw-semi);color:var(--t2);margin-bottom:4px}
+.khoa-ly-do{color:var(--t4);font-size:11.5px;line-height:1.6;margin:0 0 14px;max-width:80ch}
+.khoa-ly-do b{color:var(--t3)}
+.swrow{display:flex;flex-wrap:wrap;gap:10px}
+.sw{display:flex;flex-direction:column;gap:5px;width:88px}
+.sw i{height:44px;border-radius:var(--r-2);border:1px solid var(--mat-hairline);display:block;position:relative}
+.sw i .lock{position:absolute;top:3px;right:3px;font-size:9px;opacity:.55}
+.sw b{font-size:10.5px;font-weight:var(--fw-semi);color:var(--t2)}
+.sw span{font-size:9px;color:var(--t4);font-family:ui-monospace,Menlo,monospace}
+.rscale{display:flex;align-items:flex-end;gap:8px;margin-top:6px}
+.rscale .rb{background:var(--field);border:1px solid var(--border)}
+.rscale .rb b{display:block;text-align:center;margin-top:4px;font-size:9.5px;color:var(--t4);font-weight:400}
+
+/* ── section ① màu của IF (khoá) ── */
+.ifbrand-grid{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center}
+.logo-demo{display:flex;gap:8px}
+.logo-sq{width:56px;height:56px;border-radius:var(--r-2);display:grid;place-items:center;font-weight:800;font-size:22px;letter-spacing:-.02em}
+.mancoa-mini{background:#0c0c0e;border-radius:var(--r-3);padding:16px;color:#f5f5f7;max-width:260px}
+.mancoa-mini .t{font-size:11px;color:#9e9ea8;margin-bottom:8px}
+.btn-vaoxuong{background:var(--accent-warm);color:#1a1305;border:0;border-radius:var(--r-2);height:34px;padding:0 16px;font-size:12.5px;font-weight:var(--fw-semi);cursor:default}
+
+/* ── section ③ dự án ── */
+.info-note{display:flex;gap:10px;align-items:flex-start;font-size:12px;color:var(--t3);line-height:1.6}
+.info-note .ic{flex-shrink:0;color:var(--t4);margin-top:1px}
+
+/* ── section ② núm sống ── */
+.preset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:700px){.preset-grid{grid-template-columns:1fr 1fr}}
+.preset{display:flex;align-items:center;gap:10px;background:var(--field);border:2px solid transparent;
+  border-radius:var(--r-2);padding:9px 12px;cursor:pointer;text-align:left;transition:border-color var(--dur-fast) var(--ease-apple),background var(--dur-fast) var(--ease-apple)}
+.preset:hover{background:var(--hover)}
+.preset.on{border-color:var(--t1)}
+.preset .dot{width:26px;height:26px;border-radius:var(--r-full);flex-shrink:0;border:1px solid var(--mat-hairline)}
+.preset .meta{min-width:0}
+.preset .name{font-size:12.5px;font-weight:var(--fw-semi);color:var(--t1);display:flex;align-items:center;gap:5px}
+.preset .hex{font-size:10px;color:var(--t4);font-family:ui-monospace,Menlo,monospace}
+.warm-badge{font-size:9px;color:var(--warning);border:1px solid var(--warning);border-radius:4px;padding:0 4px;font-weight:var(--fw-semi)}
+.zone-badge{font-size:9px;color:var(--danger);border:1px solid var(--danger);border-radius:4px;padding:0 4px;font-weight:var(--fw-semi)}
+.preset:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+
+.slot-tabs{display:flex;gap:6px;margin-bottom:14px}
+.slot-tab{flex:1;height:34px;border-radius:var(--r-2);border:1px solid var(--border);background:transparent;
+  color:var(--t3);font-size:11.5px;cursor:pointer;transition:background var(--dur-fast) var(--ease-apple)}
+.slot-tab.on{background:var(--hover);color:var(--t1);border-color:var(--border-strong);font-weight:var(--fw-semi)}
+.slot-tab:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+.toggle-tudo{margin-top:14px}
+.toggle-tudo summary{cursor:pointer;font-size:12px;color:var(--t3);list-style:none;display:flex;align-items:center;gap:6px;user-select:none}
+.toggle-tudo summary::-webkit-details-marker{display:none}
+.toggle-tudo summary::before{content:"▸";display:inline-block;transition:transform .15s}
+.toggle-tudo[open] summary::before{transform:rotate(90deg)}
+.tudo-body{margin-top:12px;padding:14px;background:var(--field);border-radius:var(--r-2)}
+.slider-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.slider-row label{width:110px;flex-shrink:0;font-size:11.5px;color:var(--t3)}
+.slider-row input[type=range]{flex:1;accent-color:var(--t1)}
+.slider-row .val{width:64px;text-align:right;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--t2)}
+.huemap-wrap{position:relative;height:22px;margin:2px 0 4px 122px}
+.huemap-bar{position:relative;height:14px;border-radius:var(--r-1);overflow:hidden}
+.huemap-zone{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,rgba(0,0,0,.55) 0 4px,transparent 4px 8px);
+  border-left:1px solid rgba(0,0,0,.4);border-right:1px solid rgba(0,0,0,.4)}
+.huemap-marker{position:absolute;top:0;width:2px;height:22px;background:var(--t1);transform:translateX(-1px);
+  box-shadow:0 0 0 1px var(--bg)}
+.hue-distance{margin:0 0 0 122px;font-size:11px;color:var(--t3);font-family:ui-monospace,Menlo,monospace}
+.hue-distance b{color:var(--t2)}
+.hue-distance.warn{color:var(--danger)}
+
+.readout{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--t3)}
+.readout b{color:var(--t1);font-family:ui-monospace,Menlo,monospace;font-weight:var(--fw-semi)}
+
+.banner{display:none;align-items:flex-start;gap:8px;border-radius:var(--r-2);padding:9px 12px;font-size:11.5px;
+  line-height:1.5;margin-top:10px}
+.banner.show{display:flex}
+.banner.clamp{background:color-mix(in srgb,var(--warning) 14%,transparent);color:var(--warning)}
+.banner.warm{background:color-mix(in srgb,var(--danger) 12%,transparent);color:var(--danger)}
+.banner.forbidden{background:color-mix(in srgb,var(--danger) 18%,transparent);color:var(--danger);font-weight:var(--fw-semi)}
+
+/* ── thang tông ── */
+.ramp{display:flex;gap:6px}
+.ramp .step{flex:1;border-radius:var(--r-2);height:64px;position:relative;display:flex;flex-direction:column;
+  justify-content:flex-end;padding:6px;overflow:hidden}
+.ramp .step b{font-size:9.5px;font-family:ui-monospace,Menlo,monospace}
+.ramp .step span{font-size:8.5px;opacity:.85;font-family:ui-monospace,Menlo,monospace}
+
+/* ── vai trò màu (bảng) ── */
+table.vairo{width:100%;border-collapse:collapse;font-size:12px}
+table.vairo th{text-align:left;color:var(--t4);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;
+  font-weight:var(--fw-semi);padding:6px 8px;border-bottom:1px solid var(--border)}
+table.vairo td{padding:8px;border-bottom:1px solid var(--mat-hairline);vertical-align:middle}
+.vairo-sw{width:46px;height:26px;border-radius:var(--r-1);border:1px solid var(--mat-hairline);display:inline-block;vertical-align:middle}
+.badge-ok{display:inline-flex;align-items:center;gap:4px;color:var(--success);font-weight:var(--fw-semi);font-size:11.5px}
+.badge-bad{display:inline-flex;align-items:center;gap:4px;color:var(--danger);font-weight:var(--fw-semi);font-size:11.5px}
+.ratio{font-family:ui-monospace,Menlo,monospace}
+
+/* ── khối mẫu thật ── */
+.demo-panel{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-3);padding:14px;color:var(--t1)}
+.demo-theme-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--t4);margin-bottom:10px}
+.demo-toolbar{display:flex;gap:4px;align-items:center;background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--r-full);padding:5px;width:fit-content;margin-bottom:12px}
+.demo-chip{width:30px;height:30px;border-radius:var(--r-full);border:0;background:transparent;display:grid;place-items:center;color:var(--t2)}
+.demo-chip svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.demo-chip.on{color:#fff}
+.demo-chip.mo{opacity:.4}
+.demo-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-2);padding:11px;margin-bottom:10px;position:relative;overflow:hidden}
+.demo-card::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px}
+.demo-card .ten{font-weight:var(--fw-semi);font-size:13px;margin-bottom:2px}
+.demo-card .phu{color:var(--t3);font-size:11px}
+.demo-pill{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--r-full);
+  font-size:11px;font-weight:var(--fw-semi);margin-top:8px}
+.demo-cham{width:6px;height:6px;border-radius:50%}
+.demo-thanh{height:5px;border-radius:var(--r-full);background:var(--field);overflow:hidden;margin-top:10px}
+.demo-thanh i{display:block;height:100%;width:58%;border-radius:inherit}
+.demo-btns{display:flex;gap:8px;margin-top:4px}
+.demo-btn{height:32px;padding:0 13px;border-radius:var(--r-2);font-size:12px;font-weight:var(--fw-semi);border:0;cursor:default}
+.demo-btn.vien{background:transparent;border:1px solid var(--border-strong);color:var(--t2)}
+/* Duyệt/Huỷ — KHÔNG dùng màu nhấn đang kéo (Hoà chốt 16/08): Duyệt = màu nghĩa "đạt" KHOÁ, hình
+   capsule đặc, đứng TRÁI; Huỷ = viền vuông góc r-1 (không capsule), đứng PHẢI, không màu. Phân
+   biệt bằng chữ + vị trí + hình dạng, không phải chỉ bằng màu — kể cả khi màu nhấn đổi liên tục. */
+.demo-duyethuy{display:flex;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
+.demo-btn-duyet{height:32px;padding:0 14px;border-radius:var(--r-full);border:0;color:#fff;font-size:12px;font-weight:var(--fw-semi);cursor:default}
+.demo-btn-huy{height:32px;padding:0 14px;border-radius:var(--r-1);background:transparent;border:1px solid var(--border-strong);font-size:12px;font-weight:400;cursor:default}
+
+/* ── máy soi chất IF ── */
+.soi-list{display:flex;flex-direction:column;gap:10px}
+.soi-row{display:flex;align-items:flex-start;gap:10px;background:var(--field);border-radius:var(--r-2);padding:10px 12px}
+.soi-icon{flex-shrink:0;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;margin-top:1px}
+.soi-icon.ok{background:color-mix(in srgb,var(--success) 18%,transparent);color:var(--success)}
+.soi-icon.warn{background:color-mix(in srgb,var(--warning) 18%,transparent);color:var(--warning)}
+.soi-icon.lock{background:var(--hover);color:var(--t4)}
+.soi-text b{display:block;font-size:12.5px;color:var(--t1);margin-bottom:2px}
+.soi-text span{font-size:11px;color:var(--t3);line-height:1.5}
+
+/* ── bảng so sánh cuối ── */
+table.sosanh{width:100%;border-collapse:collapse;font-size:11.5px}
+table.sosanh th,table.sosanh td{padding:7px 8px;border-bottom:1px solid var(--mat-hairline);text-align:center}
+table.sosanh th{color:var(--t4);text-transform:uppercase;font-size:10px;letter-spacing:.03em;font-weight:var(--fw-semi)}
+table.sosanh td:first-child,table.sosanh th:first-child{text-align:left}
+.dot-sw{width:16px;height:16px;border-radius:50%;display:inline-block;vertical-align:middle;margin-right:6px;border:1px solid var(--mat-hairline)}
+
+.themebtn{position:fixed;top:18px;right:18px;height:var(--tap);padding:0 14px;border:1px solid var(--border);
+  background:var(--panel);color:var(--t2);border-radius:var(--r-2);font-size:var(--fs-2xs);cursor:pointer;z-index:10}
+button:focus-visible,summary:focus-visible,input:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+
+.foot{margin-top:48px;border-top:1px solid var(--border);padding-top:16px;font-size:11px;color:var(--t4);line-height:1.7;max-width:86ch}
+.foot b{color:var(--t3)}
+</style>
+</head>
+<body>
+<button class="themebtn" id="themeBtn">Đổi Sáng/Tối · Light/Dark</button>
+
+<div class="wrap">
+  <h1>Bàn thử màu nhận diện</h1>
+  <p class="sub">
+    Không phải bảng màu để chọn — đây là <b style="color:var(--t2)">bàn thử để kéo, đo, và thấy hậu quả trước khi quyết</b>.
+    Hoà kéo núm, xem con số tương phản đo được ngay tại chỗ đổi. T không kết luận màu nào đúng.
+  </p>
+  <p class="sub" id="introZoneNote" style="color:var(--t3)">
+    <!-- MARKER vungCamMau — điền số thật lúc render() chạy lần đầu -->
+    Vòng màu 360° đã bị <b style="color:var(--t2)">màu nghĩa nghề</b> (đỏ sai chuẩn · vàng cần xem lại · xanh đạt)
+    chiếm khoảng <span id="introZonePct">—</span> quanh 3 điểm cố định — phần còn trống nằm ở phía
+    lam · mòng két · tím/mận. Đó là lý do phần lớn phần mềm chọn lam hoặc tím làm màu nhấn, và cũng là lý do
+    tím thấy "quen tay" chứ không phải ngẫu nhiên.
+  </p>
+  <div>
+    <span class="subtag">Hướng Apple: tự custom trong phạm vi cho phép</span>
+    <span class="subtag">Máy giữ hệ — người chọn hướng</span>
+    <span class="subtag">Không sửa app/globals.css · không sửa component</span>
+  </div>
+
+  <!-- ══════════════ KHỐI KHOÁ — MARKER khoiKhoa ══════════════ -->
+  <h2 class="sec"><span class="num">🔒</span>Khối khoá — không kéo được ở đây</h2>
+  <p class="secdesc">Bốn thứ này đứng NGOÀI bàn thử màu. Đổi chúng là việc khác, phiếu khác.</p>
+  <div class="khoa-card">
+    <div class="khoa-head">🔒 Màu nền &amp; màu chữ</div>
+    <p class="khoa-ly-do">Token nền/chữ của app (<code>--bg/--panel/--card/--t1..t4</code>) đứng ngoài bàn thử màu nhấn — đổi chúng đổi cả hệ đọc-được của app, không phải việc "chọn màu nhấn".</p>
+    <div class="swrow">
+      <div class="sw"><i style="background:#0c0c0e"><span class="lock">🔒</span></i><b>bg tối</b><span>#0c0c0e</span></div>
+      <div class="sw"><i style="background:#f2efe9;border-color:#e3ded4"><span class="lock">🔒</span></i><b>bg sáng</b><span>#f2efe9</span></div>
+      <div class="sw"><i style="background:#f5f5f7"><span class="lock">🔒</span></i><b>chữ trên tối</b><span>#f5f5f7</span></div>
+      <div class="sw"><i style="background:#211e19"><span class="lock">🔒</span></i><b>chữ trên sáng</b><span>#211e19</span></div>
+    </div>
+
+    <div class="khoa-head" style="margin-top:18px">🔒 Màu mang nghĩa nghề — cấm đổi</div>
+    <p class="khoa-ly-do">
+      <b>Vì sao khoá:</b> đỏ/vàng/xanh ở đây không phải trang trí — chúng LÀ kết quả của luật kiểm chuẩn
+      (<code>lib/cad/standards</code>). Ai đó đổi đỏ thành hồng nhạt "cho dịu mắt" thì cảnh báo
+      <i>"hành lang thiếu 150mm"</i> mất hết trọng lượng — đây là hỏng <b>nghề</b>, không phải hỏng thẩm mỹ.
+      Bàn thử màu nhấn không được phép chạm tới ba màu này.
+    </p>
+    <div class="swrow">
+      <div class="sw"><i style="background:#e5674f"><span class="lock">🔒</span></i><b>Sai chuẩn</b><span>#e5674f</span></div>
+      <div class="sw"><i style="background:#d9a34a"><span class="lock">🔒</span></i><b>Cần xem lại</b><span>#d9a34a</span></div>
+      <div class="sw"><i style="background:#46b876"><span class="lock">🔒</span></i><b>Đạt</b><span>#46b876</span></div>
+    </div>
+
+    <div class="khoa-head" style="margin-top:18px">🔒 Thang bo góc</div>
+    <p class="khoa-ly-do">Thang 6/10/14/20 + tròn 999 (duyệt 12/08, <code>hinh-hoc-ap-thang</code>) — bàn thử màu không đổi hình học.</p>
+    <div class="rscale">
+      <div class="rb" style="width:24px;height:24px;border-radius:6px"><b>6</b></div>
+      <div class="rb" style="width:30px;height:30px;border-radius:10px"><b>10</b></div>
+      <div class="rb" style="width:36px;height:36px;border-radius:14px"><b>14</b></div>
+      <div class="rb" style="width:42px;height:42px;border-radius:20px"><b>20</b></div>
+      <div class="rb" style="width:30px;height:30px;border-radius:999px"><b>999</b></div>
+    </div>
+  </div>
+
+  <!-- ══════════════ ① MÀU CỦA IF — khoá cứng ══════════════ -->
+  <h2 class="sec"><span class="num">①</span>Màu của IF <span class="lock" style="font-size:13px">🔒</span></h2>
+  <p class="secdesc">Logo · màn khoá · bộ cài · trang giới thiệu. <b style="color:var(--t2)">KHOÁ CỨNG — không đổi được ở bàn thử này.</b>
+    Logo dùng <code>currentColor</code>, cấm dùng accent (chốt 08/08 <code>docs/00-CHOT.md</code>).</p>
+  <div class="card">
+    <div class="ifbrand-grid">
+      <div class="logo-demo">
+        <div class="logo-sq" style="background:#141417;color:#f5f5f7">|F</div>
+        <div class="logo-sq" style="background:#faf8f4;color:#211e19;border:1px solid #e3ded4">|F</div>
+      </div>
+      <div class="mancoa-mini">
+        <div class="t">Màn khoá — chỉ-xem</div>
+        <button class="btn-vaoxuong">Vào xưởng</button>
+        <div style="font-size:10px;color:#6e6e78;margin-top:8px">Đồng #c79a63 — NGOẠI LỆ DUY NHẤT giữ nguyên, không đổi theo bàn thử bên dưới.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ ③ MÀU CỦA DỰ ÁN — chỉ nhắc, không dựng ══════════════ -->
+  <h2 class="sec"><span class="num">③</span>Màu của dự án</h2>
+  <p class="secdesc">Brand Kit — tự do hoàn toàn, KHÔNG bị bàn thử này chi phối.</p>
+  <div class="card">
+    <div class="info-note">
+      <span class="ic">ℹ</span>
+      <span>Mỗi dự án có Brand Kit riêng (logo · màu · font · watermark của khách hàng — chốt 01/08
+      <code>CHOT-BRAND-KIT-2026-08-01.md</code>) — hiện trên bản vẽ/deck/hồ sơ giao khách. Lớp này ĐÃ CÓ SẴN trong IF,
+      nằm ở màn Brand Kit của từng dự án, không phải việc của bàn thử này — bàn thử chỉ nhắc để Hoà biết nó tồn tại
+      và tách hẳn khỏi hai lớp trên/dưới.</span>
+    </div>
+  </div>
+
+  <!-- ══════════════ ② MÀU VỎ LÀM VIỆC — NÚM SỐNG — MARKER haiLopMau + MARKER coCheBien ══════════════ -->
+  <h2 class="sec"><span class="num">②</span>Màu vỏ làm việc — MỘT CẶP, đảo vai theo theme</h2>
+  <p class="secdesc">
+    [16/08 Hoà chốt] Không còn "chọn một màu tự do" — là MỘT CẶP cố định, vai trò chủ/nhấn <b style="color:var(--t2)">hoán
+    đổi khi theme đổi</b> (đúng cơ chế ánh-sáng-theo-giờ đã có ở Home — <code>LightClock.tsx</code>/<code>LightArc.tsx</code>,
+    KHÔNG đẻ cơ chế mới, bàn thử chỉ mô phỏng bằng nút "Đổi Sáng/Tối" góc trên). Theme Tối → <b>A là chủ</b>, B điểm xuyết.
+    Theme Sáng → <b>B là chủ</b>, A điểm xuyết. Tại một thời điểm vẫn đúng MỘT màu chủ.
+  </p>
+
+  <div class="card">
+    <h3 class="sub3">Cặp đặt sẵn — bấm một cái là xong</h3>
+    <div class="preset-grid" id="presetGrid" role="radiogroup" aria-label="Cặp màu đặt sẵn"></div>
+
+    <details class="toggle-tudo" id="tudoDetails">
+      <summary>Màu khác — tự chọn (kéo từng màu trong cặp)</summary>
+      <div class="tudo-body">
+        <div class="slot-tabs">
+          <button type="button" class="slot-tab on" id="slotABtn">Đang chỉnh: Màu A — chủ khi Tối</button>
+          <button type="button" class="slot-tab" id="slotBBtn">Đang chỉnh: Màu B — chủ khi Sáng</button>
+        </div>
+        <div class="slider-row">
+          <label for="hueSlider">Góc màu (H)</label>
+          <input type="range" id="hueSlider" min="0" max="360" step="1" />
+          <span class="val" id="hueVal">0°</span>
+        </div>
+        <div class="huemap-wrap" id="huemapWrap" aria-hidden="true">
+          <div class="huemap-bar" id="huemapBar"></div>
+          <div class="huemap-marker" id="huemapMarker"></div>
+        </div>
+        <div class="hue-distance" id="hueDistance">cách màu nghĩa gần nhất: —</div>
+        <div class="slider-row" style="margin-top:14px">
+          <label for="chromaSlider">Độ đậm (C)</label>
+          <input type="range" id="chromaSlider" min="0" max="37" step="1" />
+          <span class="val" id="chromaVal">0.00</span>
+        </div>
+        <div class="readout">
+          <span>hex: <b id="roHex">—</b></span>
+          <span>oklch: <b id="roOklch">—</b></span>
+        </div>
+      </div>
+    </details>
+
+    <div class="banner forbidden" id="bannerForbidden">⛔ <span id="bannerForbiddenText">Trùng họ với màu nghĩa — nút nhấn sẽ mất nghĩa.</span></div>
+    <div class="banner clamp" id="bannerClampChroma">⚠ <span>Đã hạ độ đậm — màu bạn kéo vượt ngưỡng độ rực cho phép của hệ (giữ 1 accent, không mở bảng cầu vồng).</span></div>
+    <div class="banner clamp" id="bannerClampTone">⚠ <span>Đã đổi tông (sáng/tối) — tông bạn chọn không đủ tương phản cho chữ, máy tự dò tông gần nhất đọc được.</span></div>
+    <div class="banner warm" id="bannerWarm">🌡 <span>Màu này ấm — lấn sang vùng nhiệt độ của ArchiNote. Vẫn dùng được nhưng phá chốt 03/08 "hai app hai nhiệt độ màu" nếu áp cho <b>giao diện làm việc</b>.</span></div>
+  </div>
+
+  <!-- ══════════════ ĐIỂM NGHIỆM THU #1 — đồng cạnh cảnh báo, theme SÁNG (Hoà chốt 16/08) ══════════════ -->
+  <h2 class="sec" style="color:var(--danger)"><span class="num" style="border-color:var(--danger);color:var(--danger)">🔴</span>Điểm nghiệm thu quan trọng nhất — đồng cạnh cảnh báo</h2>
+  <p class="secdesc">
+    Khi theme Sáng, <b style="color:var(--t2)">đồng #c79a63 làm màu CHỦ</b> — và đồng gần như CÙNG GÓC MÀU với
+    <code>--warning</code> (cần xem lại). Không tách được bằng góc màu, chỉ tách bằng độ sáng/độ đậm. Nhìn hai khối
+    dưới đây, tự hỏi: <b style="color:var(--t2)">bấm nhầm được không?</b> T không kết luận — chỉ dựng đúng ca để Hoà nhìn.
+  </p>
+  <div class="card" style="background:#faf8f4;border-color:#e3ded4">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#9a938a;margin-bottom:10px">Ép cứng theme Sáng cho đúng ca Hoà nêu</div>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <button style="height:40px;padding:0 20px;border-radius:10px;border:0;background:#c79a63;color:#1a1305;font-size:13px;font-weight:600;cursor:default">Lưu thay đổi</button>
+      <span style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 12px;border-radius:999px;background:color-mix(in srgb,#9a6304 16%,transparent);color:#9a6304;font-size:12px;font-weight:600">
+        <span style="width:7px;height:7px;border-radius:50%;background:#9a6304"></span>Cần xem lại</span>
+    </div>
+    <div id="dongWarnDist" style="margin-top:12px;font-size:11.5px;color:#726c62;font-family:ui-monospace,Menlo,monospace"></div>
+    <p style="margin:12px 0 0;font-size:11.5px;color:#47423a;line-height:1.6">
+      <b>Đường ra nếu Hoà thấy dễ nhầm</b> (chỉ nêu, KHÔNG tự sửa <code>app/globals.css</code>): dời
+      <code>--warning</code> sang vàng chanh hơn (H cao hơn, ~85-95°) để tách khỏi vùng nâu-đồng — hoặc đổi
+      chiến lược, không dùng đồng làm màu CHỦ toàn diện mà chỉ làm nhấn cục bộ (nút "Vào xưởng" như hiện tại,
+      không lan ra nút chính khắp app). Hai hướng, Hoà chọn.
+    </p>
+  </div>
+
+  <!-- ══════════════ THANG TÔNG — MARKER thangTong ══════════════ -->
+  <h2 class="sec"><span class="num">2a</span>Thang tông — 8 nấc</h2>
+  <p class="secdesc">Sinh từ MỘT màu gốc bằng OKLCH — giữ độ sáng đều tay khi đổi góc màu (đúng nguyên lý Google Material,
+    không chép HCT, dùng thẳng <code>oklch()</code> trình duyệt hỗ trợ sẵn). Rất sáng → rất tối, trái sang phải.</p>
+  <div class="card">
+    <div class="ramp" id="rampRow"></div>
+  </div>
+
+  <!-- ══════════════ VAI TRÒ MÀU — MARKER vaiTroMau ══════════════ -->
+  <h2 class="sec"><span class="num">2b</span>Vai trò màu</h2>
+  <p class="secdesc">6 vai trò gán TỪ thang tông — mỗi vai hiện số tương phản ĐO ĐƯỢC, tô đỏ khi dưới ngưỡng WCAG AA
+    (chữ ≥4.5:1 · viền/vòng focus ≥3:1). Máy tự dò nấc đạt chuẩn — bạn không cần biết vai nào dùng nấc nào.</p>
+  <div class="card">
+    <table class="vairo">
+      <thead><tr><th>Vai trò</th><th>Theme</th><th>Mẫu</th><th>So với</th><th>Tương phản</th><th>Ngưỡng</th><th>Kết quả</th></tr></thead>
+      <tbody id="vaiTroBody"></tbody>
+    </table>
+  </div>
+
+  <!-- ══════════════ KHỐI MẪU THẬT ══════════════ -->
+  <h2 class="sec"><span class="num">2c</span>Khối mẫu thật</h2>
+  <p class="secdesc">Đúng phần tử đang sống trong app — thanh công cụ · thẻ dự án (dải màu đáy 2px) · nút chính/viền ·
+    nhãn trạng thái · thanh tiến độ. Cả 2 theme.</p>
+  <div class="grid2" id="demoPanels"></div>
+
+  <!-- ══════════════ MÁY SOI CHẤT IF — MARKER maySoiChatIF ══════════════ -->
+  <h2 class="sec"><span class="num">④.8</span>Máy soi — còn chất IF không</h2>
+  <p class="secdesc">5 điều đo được, không phải cảm tính. Chấm SỐNG cho màu đang chọn.</p>
+  <div class="card"><div class="soi-list" id="soiList"></div></div>
+
+  <!-- ══════════════ ④.10 LẤY MÀU TỪ HÌNH NỀN — MARKER mauTuHinhNen ══════════════ -->
+  <h2 class="sec"><span class="num">④.10</span>Lấy màu từ hình nền</h2>
+  <p class="secdesc">[16/08 Hoà chốt] Quy tắc — KHÔNG phải bộ trích màu sống (không có ảnh dự án thật để thử trong bàn thử này),
+    chỉ dựng luật + một ví dụ minh hoạ tĩnh.</p>
+  <div class="card">
+    <table class="vairo" style="margin-bottom:16px">
+      <thead><tr><th>Loại nền</th><th>Máu app</th></tr></thead>
+      <tbody>
+        <tr><td>Nền <b>TĨNH</b> — một ảnh cố định KTS chọn</td><td>Máy <b style="color:var(--t2)">ĐỀ XUẤT</b> màu theo ảnh đó → KTS duyệt rồi mới áp</td></tr>
+        <tr><td>Nền <b>ĐỘNG</b> hoặc trình chiếu nhiều ảnh</td><td><b style="color:var(--t2)">GIỮ NGUYÊN</b> màu hệ thống — nền đã đủ thú vị, màu đổi theo nữa thì loạn</td></tr>
+      </tbody>
+    </table>
+    <h3 class="sub3">Ba ràng buộc</h3>
+    <ol style="margin:0 0 16px;padding-left:18px;color:var(--t3);font-size:12px;line-height:1.8">
+      <li><b style="color:var(--t2)">Đề xuất, không áp thẳng</b> — máy trình 2-3 phương án, người bấm chọn (khuôn phiếu duyệt của IF).</li>
+      <li><b style="color:var(--t2)">Không lấy màu chiếm nhiều nhất</b> — ảnh nội thất phần lớn be-nâu-gỗ, màu chủ đạo sẽ rơi trúng vùng vàng cảnh báo (xem ④.9). Phải lấy <b>màu nhấn</b> trong ảnh (gối, cây, mảng trời qua cửa) và vẫn chạy qua bộ lọc vùng cấm.</li>
+      <li>Ảnh nền đổi thì <b style="color:var(--t2)">hỏi lại</b>, không tự đổi màu sau lưng người dùng.</li>
+    </ol>
+    <h3 class="sub3">Minh hoạ tĩnh (không phải trích màu sống)</h3>
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+      <div style="width:96px;height:64px;border-radius:var(--r-2);background:linear-gradient(160deg,#8a7a63 0%,#6b5844 45%,#3d5a52 75%,#8a9a6a 100%);flex-shrink:0" title="Ảnh nền minh hoạ — be/nâu chiếm nhiều nhất, mảng xanh lá nhỏ là chỗ máy nên lấy"></div>
+      <span style="font-size:16px;color:var(--t4)">→</span>
+      <div style="display:flex;gap:8px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+          <span style="width:34px;height:34px;border-radius:50%;background:#6b5844;border:2px solid var(--danger)" title="SAI — màu chiếm nhiều nhất, rơi vào vùng cảnh báo"></span>
+          <span style="font-size:9px;color:var(--danger)">✕ chiếm nhiều nhất</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+          <span style="width:34px;height:34px;border-radius:50%;background:#5a7a52;border:2px solid var(--success)" title="ĐÚNG — màu nhấn (mảng lá cây), qua được bộ lọc vùng cấm"></span>
+          <span style="font-size:9px;color:var(--success)">✓ màu nhấn, đã lọc</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ BẢNG SO SÁNH ══════════════ -->
+  <h2 class="sec"><span class="num">⑥</span>Bảng so sánh</h2>
+  <p class="secdesc">3 cặp đặt sẵn × 2 theme (dark đọc từ A, light đọc từ B) × 6 vai trò — đạt/không đạt SAU KHI máy đã kẹp.</p>
+  <div class="card" style="overflow-x:auto">
+    <table class="sosanh">
+      <thead><tr><th>Cặp</th><th>Theme</th><th>nền-nhấn</th><th>chữ-trên-nhấn</th><th>khối-chứa</th><th>chữ-trên-khối-chứa</th><th>viền-nhấn</th><th>vòng-focus</th><th>Máy có kẹp?</th><th>Ấm?</th></tr></thead>
+      <tbody id="sosanhBody"></tbody>
+    </table>
+  </div>
+
+  <div class="foot">
+    <b>Vì sao chỉ đo, không kết luận:</b> việc của bàn thử là làm cho lựa chọn thấy được và đo được — chọn là việc
+    của Hoà (chốt 16/08). T chỉ nêu nhận xét nghề khi được hỏi, không tự chốt màu nào đúng.<br><br>
+    <b>Markers cho máy audit:</b> <code>thangTong</code> · <code>vaiTroMau</code> · <code>haiLopMau</code> ·
+    <code>khoiKhoa</code> · <code>coCheBien</code> · <code>maySoiChatIF</code> · <code>vungCamMau</code> ·
+    <code>mauTuHinhNen</code>.<br><br>
+    <b>Vùng cấm tính từ đâu:</b> góc màu của <code>--danger/--warning/--success</code> theme TỐI (mặc định) trong
+    <code>app/globals.css</code>, ±20° do T tự chọn (chỉnh được sau) — không phải số bịa. Bộ đặt sẵn "Rêu sâu" đã
+    BỎ (H≈167° cách thành công 12°, cùng họ) thay bằng "Mòng két trầm" #226363 (H≈195°, cách 40° — đúng khoảng Hoà
+    yêu cầu 35–45°). "Đồng" và "Đất nung" đeo nhãn cảnh báo trong bảng vai trò vì đo ra nằm sát/trong vùng cấm.<br><br>
+    <b>Đính chính số của T so với chỉ đạo 16/08:</b> Hoà nêu accent-warm 33° cách warning 37° (4°) — T đo lại bằng
+    đúng công thức đã kiểm chứng ra <b>accent-warm H=71.2° · warning SÁNG H=71.3° (cách 0.1°, gần như trùng tuyệt
+    đối) · warning TỐI H=77.3° (cách 6.1°)</b>. Số khác nhưng kết luận CÀNG đúng hơn — xem thẻ đỏ đầu trang.<br><br>
+    <b>Chưa làm ở đây (đúng vùng ③ được giao):</b> không sửa <code>app/globals.css</code>, không sửa component nào,
+    không đổi màu thật trong app, không dựng bộ trích màu sống từ ảnh (④.10 chỉ là luật + minh hoạ tĩnh).
+    Chọn xong mới có phiếu thi công riêng.
+  </div>
+</div>
+
+<script>
+/* ═══════════ TOÁN OKLCH↔sRGB + WCAG contrast — đã kiểm chứng bằng node trước khi nhúng ═══════════
+   Test: #6a57f5 round-trip đúng tuyệt đối · contrast(white,#6a57f5)=4.890 khớp đúng comment
+   app/globals.css ("4.89:1"). */
+function srgbToLinear(c){ c/=255; return c<=0.04045? c/12.92 : Math.pow((c+0.055)/1.055,2.4); }
+function linearToSrgb(c){ c=Math.min(1,Math.max(0,c)); return c<=0.0031308? c*12.92 : 1.055*Math.pow(c,1/2.4)-0.055; }
+function hexToRgb(hex){ hex=hex.replace('#',''); return [parseInt(hex.slice(0,2),16),parseInt(hex.slice(2,4),16),parseInt(hex.slice(4,6),16)]; }
+function rgbToHex(r,g,b){ const h=v=>Math.round(Math.min(255,Math.max(0,v))).toString(16).padStart(2,'0'); return '#'+h(r)+h(g)+h(b); }
+function linearRgbToOklab(r,g,b){
+  const l=0.4122214708*r+0.5363325363*g+0.0514459929*b;
+  const m=0.2119034982*r+0.6806995451*g+0.1073969566*b;
+  const s=0.0883024619*r+0.2817188376*g+0.6299787005*b;
+  const l_=Math.cbrt(l),m_=Math.cbrt(m),s_=Math.cbrt(s);
+  return [0.2104542553*l_+0.7936177850*m_-0.0040720468*s_, 1.9779984951*l_-2.4285922050*m_+0.4505937099*s_, 0.0259040371*l_+0.7827717662*m_-0.8086757660*s_];
+}
+function oklabToLinearRgb(L,a,b){
+  const l_=L+0.3963377774*a+0.2158037573*b, m_=L-0.1055613458*a-0.0638541728*b, s_=L-0.0894841775*a-1.2914855480*b;
+  const l=l_**3,m=m_**3,s=s_**3;
+  return [+4.0767416621*l-3.3077115913*m+0.2309699292*s, -1.2684380046*l+2.6097574011*m-0.3413193965*s, -0.0041960863*l-0.7034186147*m+1.7076147010*s];
+}
+function hexToOklch(hex){
+  const [r,g,b]=hexToRgb(hex).map(srgbToLinear);
+  const [L,a,bb]=linearRgbToOklab(r,g,b);
+  const C=Math.sqrt(a*a+bb*bb); let H=Math.atan2(bb,a)*180/Math.PI; if(H<0)H+=360;
+  return {L,C,H};
+}
+function oklchToHex(L,C,H){
+  const hr=H*Math.PI/180, a=C*Math.cos(hr), b=C*Math.sin(hr);
+  const [r,g,bl]=oklabToLinearRgb(L,a,b).map(linearToSrgb);
+  return rgbToHex(r*255,g*255,bl*255);
+}
+function relLum(hex){ const [r,g,b]=hexToRgb(hex).map(srgbToLinear); return 0.2126*r+0.7152*g+0.0722*b; }
+function contrastRatio(hexA,hexB){ const L1=relLum(hexA),L2=relLum(hexB); const [hi,lo]=L1>L2?[L1,L2]:[L2,L1]; return (hi+0.05)/(lo+0.05); }
+
+/* ═══════════ Hằng số hệ ═══════════ */
+const RAMP_L=[0.97,0.90,0.81,0.70,0.58,0.46,0.33,0.20];
+const MAX_C=0.24, MIN_C_FLOOR=0.02, C_STEP=0.03;
+const WARM_MIN=15, WARM_MAX=95;
+const BG_DARK='#0c0c0e', BG_LIGHT='#f2efe9', CARD_DARK='#1a1a1e', CARD_LIGHT='#ffffff';
+const T1_DARK='#f5f5f7', T1_LIGHT='#211e19';
+
+/* MARKER vungCamMau — Hoà chốt 16/08: màu nhấn trùng họ màu nghĩa thì nút mất chức năng nhấn
+   (vd rêu #3f6b5a cách success dark chỉ 12° — mắt đọc thành cùng họ). Lấy hex THẬT của app
+   (--danger/--warning/--success, theme TỐI = mặc định) rồi TÍNH góc màu bằng đúng hàm hexToOklch
+   ở trên — KHÔNG gõ số cứng. Biên mỗi dải = ±ZONE_MARGIN° quanh góc màu đó; T tự chọn 20°, có thể
+   chỉnh sau nếu Hoà thấy hẹp/rộng quá. */
+const SEMANTIC_HEX_DARK = { 'sai chuẩn (đỏ)':'#e5674f', 'cần xem lại (vàng)':'#d9a34a', 'đạt (xanh)':'#46b876' };
+const ZONE_MARGIN = 20;
+function tinhVungCam(){
+  return Object.entries(SEMANTIC_HEX_DARK).map(([ten,hex])=>{
+    const {H} = hexToOklch(hex);
+    return { ten, hex, center:H, lo:H-ZONE_MARGIN, hi:H+ZONE_MARGIN };
+  });
+}
+const VUNG_CAM = tinhVungCam();
+
+/** Khoảng cách góc CIRCULAR (0-360 vòng tròn, không phải hiệu số thẳng) — 350° và 10° cách nhau 20°, không phải 340°. */
+function khoangCachGoc(H1,H2){ const d=Math.abs(H1-H2)%360; return d>180? 360-d : d; }
+
+function trongVungCam(H){
+  return VUNG_CAM.find(z=>{
+    // vùng có thể tràn qua mốc 0/360 (vd center gần 0 hoặc 360) — kiểm bằng khoảng cách circular thay vì so lo/hi thẳng
+    return khoangCachGoc(H, z.center) <= ZONE_MARGIN;
+  }) || null;
+}
+function ganNhatVungCam(H){
+  let best=null;
+  for (const z of VUNG_CAM){ const d=khoangCachGoc(H,z.center); if(!best||d<best.d) best={...z,d}; }
+  return best;
+}
+/** Đẩy H ra khỏi vùng cấm gần nhất — chọn biên GẦN HƠN (trên/dưới), lùi thêm 1° cho chắc. */
+function daySangGoc(H){
+  const z = trongVungCam(H);
+  if (!z) return H;
+  const lo = z.center - ZONE_MARGIN - 1, hi = z.center + ZONE_MARGIN + 1;
+  const dLo = khoangCachGoc(H, ((lo%360)+360)%360), dHi = khoangCachGoc(H, ((hi%360)+360)%360);
+  const out = dLo<=dHi ? lo : hi;
+  return ((out%360)+360)%360;
+}
+
+/* [16/08 Hoà chốt lần 2] MỘT CẶP màu, ĐẢO VAI theo theme — không còn "1 màu tự do", mà "1 cặp cố
+ * định, chỉ vai trò chủ/nhấn hoán đổi khi theme đổi (đúng cơ chế ánh-sáng-theo-giờ đã có ở
+ * LightClock.tsx/LightArc.tsx — KHÔNG đẻ cơ chế mới, chỉ NHẮC ở đây). Cặp đầu = bộ THẬT của IF hôm
+ * nay: tím #6a57f5 (chủ khi Tối) ↔ đồng #c79a63 (chủ khi Sáng). */
+const PAIRS=[
+  {name:'Tím ↔ Đồng (bộ hiện tại của IF)', a:'#6a57f5', b:'#c79a63'},
+  {name:'Tím mực ↔ Đất nung', a:'#4a3f8c', b:'#b5613f'},
+  {name:'Xanh mực ↔ Mòng két trầm', a:'#34547d', b:'#226363'},
+];
+
+function isWarm(H){ return H>=WARM_MIN && H<=WARM_MAX; }
+
+/* MARKER coCheBien — máy giữ hệ: dò tông (liên tục, không chỉ 8 nấc hiển thị) vừa đạt chữ ≥4.5
+ * vừa đạt nổi-trên-nền ≥3.0, hết dư địa mới hạ độ đậm. Luôn báo rõ khi can thiệp.
+ * `bgMode`: 'both' (mặc định, cũ) = một màu phải sống được ở CẢ hai nền · 'dark'/'light' = chỉ cần
+ * sống ở một nền — dùng khi màu A/B giờ có VAI RIÊNG mỗi theme (không còn dùng chung cả hai theme
+ * như bản 1-màu trước đó). */
+function timTongDatChuan(H, Creq, bgMode){
+  bgMode = bgMode || 'both';
+  const needDark = bgMode==='both' || bgMode==='dark';
+  const needLight = bgMode==='both' || bgMode==='light';
+  let C = Math.min(Creq, MAX_C);
+  const chromaClamped = Creq > MAX_C;
+  for (let round=0; round<8; round++){
+    let best=null;
+    for (let L=0.20; L<=0.85; L+=0.01){
+      const hex = oklchToHex(L,C,H);
+      const cw = contrastRatio(hex,'#ffffff');
+      const cbDark = contrastRatio(hex,BG_DARK);
+      const cbLight = contrastRatio(hex,BG_LIGHT);
+      if (cw>=4.5 && (!needDark||cbDark>=3.0) && (!needLight||cbLight>=3.0)){
+        const score = Math.abs(L-0.55);
+        if (!best || score<best.score) best={L,hex,cw,cbDark,cbLight,score};
+      }
+    }
+    if (best){
+      return {hex:best.hex, L:best.L, C, cw:best.cw, cbDark:best.cbDark, cbLight:best.cbLight,
+        chromaClamped, toneClamped: Math.abs(best.L-0.55)>0.05};
+    }
+    C = Math.max(MIN_C_FLOOR, C-C_STEP);
+  }
+  // fallback — không tìm được điểm nào thoả, lấy nấc tốt nhất ở C sàn
+  let bestFallback=null, bestScore=-1;
+  for (let L=0.20; L<=0.85; L+=0.01){
+    const hex=oklchToHex(L,C,H);
+    const cw=contrastRatio(hex,'#ffffff'), cbDark=contrastRatio(hex,BG_DARK), cbLight=contrastRatio(hex,BG_LIGHT);
+    const score = Math.min(cw/4.5, needDark?cbDark/3.0:99, needLight?cbLight/3.0:99);
+    if (score>bestScore){bestScore=score;bestFallback={L,hex,cw,cbDark,cbLight};}
+  }
+  return {...bestFallback, C, chromaClamped:true, toneClamped:true, gaveUp:true};
+}
+
+/* state.A = màu CHỦ khi theme Tối · state.B = màu CHỦ khi theme Sáng (đảo vai làm NHẤN khi theme
+ * kia). `slot` = núm sống đang chỉnh A hay B — MỘT bộ núm, có tab chọn đang sửa màu nào (đúng câu
+ * Hoà "núm kéo giữ nguyên", không nhân đôi UI). */
+let state = { A:{H:0,C:0}, B:{H:0,C:0}, slot:'A', pairIndex:0, blocked:{A:null,B:null} };
+function resolveChuNham(){
+  const dark = document.documentElement.dataset.theme !== 'light';
+  return dark ? {chu:state.A, nham:state.B, chuLabel:'A (Tối)', nhamLabel:'B (Sáng)'}
+              : {chu:state.B, nham:state.A, chuLabel:'B (Sáng)', nhamLabel:'A (Tối)'};
+}
+
+/** requestedH = góc người vừa kéo tới cho SLOT đang chỉnh (có thể rơi trong vùng cấm).
+ * `enforceZone=true` (mặc định, dùng cho thanh trượt) thì TỰ ĐẨY ra ngoài, không im lặng — ghi lại
+ * đã chặn ở đâu để render() hiện banner ⛔. Cặp đặt sẵn gọi `enforceZone:false` cho CẢ hai màu —
+ * GIỮ NGUYÊN màu đã đặt tên (đồng #c79a63 vẫn phải là #c79a63) nhưng renderPairs() vẫn tự đeo nhãn
+ * cảnh báo tại nút nếu một trong hai màu rơi trong/sát vùng cấm. */
+function applyOklch(requestedH, C, opts){
+  const enforceZone = !opts || opts.enforceZone !== false;
+  const z = enforceZone ? trongVungCam(((requestedH%360)+360)%360) : null;
+  const H = z ? daySangGoc(requestedH) : requestedH;
+  state[state.slot] = {H,C};
+  state.blocked[state.slot] = z;
+  state.pairIndex = -1;
+  document.getElementById('hueSlider').value = Math.round(H);
+  document.getElementById('chromaSlider').value = Math.round(C*100);
+  render();
+}
+
+/** Áp cả cặp cùng lúc (bấm preset) — GIỮ NGUYÊN 2 hex đã đặt tên, không đẩy qua vùng cấm (chỉ
+ * đánh dấu cảnh báo ở nút, xem renderPairs). */
+function applyPair(i){
+  const p = PAIRS[i];
+  state.A = hexToOklch(p.a);
+  state.B = hexToOklch(p.b);
+  state.blocked.A = null; state.blocked.B = null;
+  state.pairIndex = i;
+  syncSliderToSlot();
+  render();
+}
+function syncSliderToSlot(){
+  const s = state[state.slot];
+  document.getElementById('hueSlider').value = Math.round(s.H);
+  document.getElementById('chromaSlider').value = Math.round(s.C*100);
+}
+
+/* ═══ Đổi slot đang chỉnh (A = chủ khi Tối / B = chủ khi Sáng) — MỘT bộ núm, có tab chọn ═══ */
+function setSlot(slot){
+  state.slot = slot;
+  syncSliderToSlot();
+  render();
+}
+document.getElementById('slotABtn').addEventListener('click', ()=>setSlot('A'));
+document.getElementById('slotBBtn').addEventListener('click', ()=>setSlot('B'));
+
+/* ═══ Cặp đặt sẵn ═══ */
+function renderPairs(){
+  const grid = document.getElementById('presetGrid');
+  grid.innerHTML='';
+  PAIRS.forEach((p,i)=>{
+    const oa = hexToOklch(p.a), ob = hexToOklch(p.b);
+    const badgeFor = (o)=>{
+      const zone = trongVungCam(o.H);
+      const near = !zone ? ganNhatVungCam(o.H) : null;
+      const sat = near && near.d <= ZONE_MARGIN + 15;
+      if (zone) return `<span class="zone-badge" title="Trong vùng cấm — cách tâm ${zone.center.toFixed(0)}° (${zone.ten}) chỉ ${khoangCachGoc(o.H,zone.center).toFixed(0)}°">TRÙNG HỌ</span>`;
+      if (sat) return `<span class="zone-badge" title="Sát vùng cấm ${near.ten} — cách ${near.d.toFixed(0)}°">SÁT VÙNG CẤM</span>`;
+      if (isWarm(o.H)) return `<span class="warm-badge">ẤM</span>`;
+      return '';
+    };
+    const btn = document.createElement('button');
+    btn.type='button'; btn.className='preset'+(i===state.pairIndex?' on':''); btn.role='radio';
+    btn.setAttribute('aria-checked', i===state.pairIndex?'true':'false');
+    btn.innerHTML = `<span style="display:flex">
+        <span class="dot" style="background:${p.a};margin-right:-8px;z-index:1"></span>
+        <span class="dot" style="background:${p.b}"></span>
+      </span>
+      <span class="meta"><span class="name">${p.name}</span>
+      <span class="hex">A ${p.a}${badgeFor(oa)} · B ${p.b}${badgeFor(ob)}</span></span>`;
+    btn.addEventListener('click', ()=>applyPair(i));
+    grid.appendChild(btn);
+  });
+}
+
+/* ═══ Sliders (Màu khác) — sửa SLOT đang chọn, enforceZone mặc định true, tự đẩy khỏi vùng cấm ═══ */
+document.getElementById('hueSlider').addEventListener('input', (e)=>{ applyOklch(+e.target.value, state[state.slot].C); });
+document.getElementById('chromaSlider').addEventListener('input', (e)=>{ applyOklch(state[state.slot].H, +e.target.value/100); });
+
+/* ═══ Vai trò màu — 6 vai, tính từ tông đã kẹp ═══ */
+const ROLES = [
+  {id:'nen-nhan', ten:'nền-nhấn', mota:'nền nút chính'},
+  {id:'chu-tren-nhan', ten:'chữ-trên-nhấn', mota:'chữ trên nút chính (luôn trắng)'},
+  {id:'khoi-chua', ten:'khối-chứa', mota:'nền vùng chọn/pill (14% màu nhấn phủ lên nền)'},
+  {id:'chu-tren-khoi-chua', ten:'chữ-trên-khối-chứa', mota:'chữ trong pill/vùng chọn'},
+  {id:'vien-nhan', ten:'viền-nhấn', mota:'viền 1px trên thẻ/card'},
+  {id:'vong-focus', ten:'vòng-focus', mota:'vòng focus bàn phím'},
+];
+
+function mixOver(hexTint, hexBg, alpha){
+  const [r1,g1,b1]=hexToRgb(hexTint), [r2,g2,b2]=hexToRgb(hexBg);
+  return rgbToHex(r1*alpha+r2*(1-alpha), g1*alpha+g2*(1-alpha), b1*alpha+b2*(1-alpha));
+}
+
+/** Vai trò của MỘT theme, đọc từ MÀU CHỦ của theme đó (dark←A · light←B — đảo vai, không phải
+ * một màu chung cho cả hai như bản trước 16/08). `bgMode` truyền đúng tên theme để
+ * timTongDatChuan() chỉ cần đạt chuẩn ở NỀN CỦA THEME ĐÓ, không ép sống được ở cả hai như trước. */
+function computeRolesForTheme(theme,H,C){
+  const bg = theme==='dark'?BG_DARK:BG_LIGHT, card = theme==='dark'?CARD_DARK:CARD_LIGHT, t1 = theme==='dark'?T1_DARK:T1_LIGHT;
+  const tone = timTongDatChuan(H,C,theme);
+  const nen = tone.hex;
+  const chuTrenNhan = contrastRatio(nen,'#ffffff');
+  const khoiChua = mixOver(nen,bg,0.14);
+  const chuTrenKhoiChua = contrastRatio(khoiChua,t1);
+  const vienNhan = contrastRatio(nen,card);
+  const vongFocus = contrastRatio(nen,bg);
+  const nenVsBg = theme==='dark'?tone.cbDark:tone.cbLight;
+  const row = {theme, tone,
+    'nen-nhan': {sw:nen, so:theme==='dark'?'nền tối':'nền sáng', val:nenVsBg, min:3.0},
+    'chu-tren-nhan': {sw:'#ffffff', bgFor:nen, so:'nền-nhấn', val:chuTrenNhan, min:4.5},
+    'khoi-chua': {sw:khoiChua, so:'—', val:null, note:true},
+    'chu-tren-khoi-chua': {sw:t1, bgFor:khoiChua, so:'khối-chứa', val:chuTrenKhoiChua, min:4.5},
+    'vien-nhan': {sw:nen, so:'thẻ/card', val:vienNhan, min:3.0},
+    'vong-focus': {sw:nen, so:theme==='dark'?'nền tối':'nền sáng', val:vongFocus, min:3.0},
+  };
+  return {tone, row};
+}
+/** Cặp A/B → 2 hàng vai trò (dark từ A, light từ B) — đúng cơ chế đảo vai. */
+function computeRoles(A,B){
+  const {tone:toneDark, row:rowDark} = computeRolesForTheme('dark',A.H,A.C);
+  const {tone:toneLight, row:rowLight} = computeRolesForTheme('light',B.H,B.C);
+  return {toneDark, toneLight, rows:[rowDark,rowLight]};
+}
+
+function renderVaiTro(A,B){
+  const {toneDark, toneLight, rows} = computeRoles(A,B);
+  const body = document.getElementById('vaiTroBody');
+  body.innerHTML='';
+  const order = ['nen-nhan','chu-tren-nhan','khoi-chua','chu-tren-khoi-chua','vien-nhan','vong-focus'];
+  rows.forEach(row=>{
+    order.forEach((rid,idx)=>{
+      const roleDef = ROLES.find(r=>r.id===rid);
+      const cell = row[rid];
+      const tr = document.createElement('tr');
+      const swStyle = cell.bgFor ? `background:${cell.bgFor}` : `background:${cell.sw}`;
+      // 'khối-chứa' không có ngưỡng WCAG riêng (chỉ là tấm nền tinh chỉnh thị giác) — cell.val null
+      // là CHỦ Ý, không phải lỗi thiếu dữ liệu; guard ở đây để không .toFixed() lên null.
+      const ratioCell = cell.val==null
+        ? `<span style="color:var(--t4)">— không áp dụng</span>`
+        : `${cell.val.toFixed(2)}:1`;
+      const nguongCell = cell.val==null ? '—' : `≥${cell.min}:1`;
+      const ketQuaCell = cell.val==null
+        ? `<span style="color:var(--t4);font-size:11px">chỉ để mắt xem</span>`
+        : (cell.val>=cell.min ? '<span class="badge-ok">✓ đạt</span>' : '<span class="badge-bad">✕ dưới ngưỡng</span>');
+      tr.innerHTML = `
+        <td>${idx===0?`<b>${row.theme==='dark'?'— theme tối —':''}</b>`:''}${roleDef.ten}<br><span style="color:var(--t4);font-size:10.5px">${roleDef.mota}</span></td>
+        <td style="color:var(--t4);font-size:11px;text-transform:capitalize">${row.theme}</td>
+        <td><span class="vairo-sw" style="${swStyle}"></span> <span style="font-size:10px;color:var(--t4)">${cell.bgFor?'chữ '+cell.sw:''}</span></td>
+        <td style="color:var(--t3);font-size:11px">${cell.so}</td>
+        <td class="ratio">${ratioCell}</td>
+        <td style="color:var(--t4);font-size:11px">${nguongCell}</td>
+        <td>${ketQuaCell}</td>`;
+      body.appendChild(tr);
+    });
+  });
+  return {toneDark, toneLight};
+}
+
+/* ═══ Thang tông ═══ */
+function renderRamp(H,C){
+  const row = document.getElementById('rampRow');
+  row.innerHTML='';
+  RAMP_L.forEach((L,i)=>{
+    const hex = oklchToHex(L,Math.min(C,MAX_C),H);
+    const txt = L>0.55 ? '#000000' : '#ffffff';
+    const div = document.createElement('div');
+    div.className='step';
+    div.style.background=hex; div.style.color=txt;
+    div.innerHTML = `<b>${hex}</b><span>L ${L.toFixed(2)}</span>`;
+    row.appendChild(div);
+  });
+}
+
+/* ═══ Khối mẫu thật ═══ */
+function chipSvg(path){ return `<svg viewBox="0 0 24 24">${path}</svg>`; }
+const ICONS = [
+  'M3 3l7 17 2-7 7-2z',
+  'M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20',
+  'M21 2v6h-6M3 12a9 9 0 0115-6.7L21 8',
+  'M4 7h16M4 12h16M4 17h10',
+];
+function renderDemoPanels(toneDark, toneLight){
+  const wrap = document.getElementById('demoPanels');
+  wrap.innerHTML='';
+  // dark panel: chủ = A (tone từ A) · nhấn điểm xuyết = B thô. light panel: chủ = B · nhấn = A thô.
+  [['dark','Tối · mặc định', BG_DARK, CARD_DARK, T1_DARK, '#9e9ea8', toneDark, state.B.H!=null?oklchToHex(0.6,state.B.C,state.B.H):'#c79a63', 'A (chủ) · B (nhấn)'],
+   ['light','Sáng', BG_LIGHT, CARD_LIGHT, T1_LIGHT, '#726c62', toneLight, oklchToHex(0.6,state.A.C,state.A.H), 'B (chủ) · A (nhấn)']].forEach(([key,label,bg,card,t1,t3,tone,nhamHex,vaiLabel])=>{
+    const panel = document.createElement('div');
+    panel.className='demo-panel';
+    panel.style.background=bg; panel.style.color=t1;
+    const nen = tone.hex;
+    panel.innerHTML = `
+      <div class="demo-theme-label">${label} — <span style="color:${nen}">${vaiLabel}</span></div>
+      <div class="demo-toolbar" style="background:${key==='dark'?'#141417':'#faf8f4'};border-color:${key==='dark'?'#2a2a31':'#e3ded4'}">
+        ${ICONS.map((p,i)=>`<button class="demo-chip${i===0?' on':''}${i===3?' mo':''}" style="${i===0?`background:color-mix(in srgb, ${nen} 18%, transparent);color:${nen}`:`color:${t3}`}">${chipSvg(p)}</button>`).join('')}
+      </div>
+      <div class="demo-card" style="background:${card};border-color:${key==='dark'?'#2a2a31':'#e3ded4'}">
+        <div class="ten">Căn hộ Thảo Điền</div>
+        <div class="phu" style="color:${t3}">78 m² · đang dựng phối cảnh</div>
+        <span class="demo-pill" style="background:color-mix(in srgb, ${nen} 16%, transparent);color:${nen}">
+          <span class="demo-cham" style="background:${nen}"></span>Đang render</span>
+        <div class="demo-thanh" style="background:${key==='dark'?'#202024':'#f4f1eb'}"><i style="background:${nen}"></i></div>
+      </div>
+      <div class="demo-card::after"></div>
+      <div class="demo-btns">
+        <button class="demo-btn" style="background:${nen};color:#fff">Xuất hồ sơ</button>
+        <button class="demo-btn vien" style="color:${t1};border-color:${key==='dark'?'#3d3d45':'#cbc4b6'}">Xem trước</button>
+        <span style="display:inline-flex;align-items:center;gap:5px;margin-left:4px;font-size:10px;color:${t3}">
+          <span style="width:9px;height:9px;border-radius:50%;background:${nhamHex};display:inline-block"></span>nhấn điểm xuyết</span>
+      </div>
+      <div class="demo-duyethuy" title="Duyệt/Huỷ KHÔNG dùng màu nhấn đang kéo — dùng màu nghĩa KHOÁ + khác hình dạng/vị trí/chữ, để đổi màu nhấn không bao giờ làm hai nút này lẫn vào nhau">
+        <button class="demo-btn-duyet" style="background:${key==='dark'?'#46b876':'#107043'}">✓ Duyệt</button>
+        <button class="demo-btn-huy" style="color:${t1};border-color:${key==='dark'?'#3d3d45':'#cbc4b6'}">✕ Huỷ</button>
+      </div>`;
+    // dải màu đáy 2px cho .demo-card (định danh — chốt 15/08)
+    const cardEl = panel.querySelector('.demo-card');
+    cardEl.style.setProperty('--stripe', nen);
+    const styleTag = document.createElement('style');
+    styleTag.textContent = `.demo-panel .demo-card::after{background:${nen}}`;
+    panel.appendChild(styleTag);
+    wrap.appendChild(panel);
+  });
+}
+
+/* ═══ Máy soi chất IF — MARKER maySoiChatIF ═══ */
+function renderSoiChatIF(H,C,tone,warm){
+  const list = document.getElementById('soiList');
+  const chuOk = tone.cw>=4.5 && tone.cbDark>=3.0 && tone.cbLight>=3.0;
+  const items = [
+    {icon:'🔒', cls:'lock', ten:'Nền trầm + khoảng thở rộng', mo:'Nền/khoảng cách KHOÁ ở bàn thử này (xem khối khoá phía trên) — không phụ thuộc màu đang chọn, luôn đạt.'},
+    {icon:'🔒', cls:'lock', ten:'Đúng MỘT màu nhấn tại một thời điểm', mo:'Một CẶP cố định (A↔B), chỉ vai trò chủ/nhấn hoán đổi khi theme đổi giờ — không phải chọn tự do nhiều màu, không mở bảng cầu vồng.'},
+    {icon:'🔒', cls:'lock', ten:'Hình học bo đồng tâm theo thang token', mo:'Bo góc dùng thẳng 6/10/14/20/999 ở mọi khối mẫu — khoá, không đổi theo màu.'},
+    {icon: chuOk?'✓':'⚠', cls: chuOk?'ok':'warn', ten:'Chữ tương phản cao, không màu mè', mo: chuOk
+      ? `Đạt — chữ trên nhấn ${tone.cw.toFixed(2)}:1, nhấn nổi trên nền tối ${tone.cbDark.toFixed(2)}:1 / nền sáng ${tone.cbLight.toFixed(2)}:1 (đều ≥ ngưỡng).`
+      : `Chưa đạt hết — máy đã cố kẹp nhưng vẫn còn nấc dưới ngưỡng, xem bảng Vai trò màu phía trên.`},
+    {icon: warm?'⚠':'✓', cls: warm?'warn':'ok', ten:'Màu luôn mang nghĩa, không trang trí', mo: warm
+      ? 'Màu đang chọn ấm — vẫn gắn với vai trò thật (nút/pill/thanh tiến độ), nhưng lấn nhiệt độ ArchiNote nên cần cân nhắc nếu dùng cho giao diện làm việc lâu dài.'
+      : 'Đạt — mọi chỗ dùng màu nhấn trong bàn thử đều gắn vai trò thật (nút chính, trạng thái, tiến độ), không có mảng màu trang trí thuần.'},
+  ];
+  list.innerHTML = items.map(it=>`
+    <div class="soi-row">
+      <div class="soi-icon ${it.cls}">${it.icon}</div>
+      <div class="soi-text"><b>${it.ten}</b><span>${it.mo}</span></div>
+    </div>`).join('');
+}
+
+/* ═══ Banner kẹp + ấm ═══ */
+function renderBanners(tone, H){
+  document.getElementById('bannerClampChroma').classList.toggle('show', !!tone.chromaClamped);
+  document.getElementById('bannerClampTone').classList.toggle('show', !!tone.toneClamped);
+  document.getElementById('bannerWarm').classList.toggle('show', isWarm(H));
+  const fb = document.getElementById('bannerForbidden');
+  fb.classList.toggle('show', !!state.hueBlocked);
+  if (state.hueBlocked && state.hueBlockedZone){
+    document.getElementById('bannerForbiddenText').textContent =
+      `Trùng họ với màu "${state.hueBlockedZone.ten}" — nút nhấn sẽ mất nghĩa. Máy đã đẩy góc màu ra ngoài dải cấm, dừng ở ${Math.round(state.H)}°.`;
+  }
+}
+
+/* MARKER vungCamMau — dải hue-map (0-360°) hiện 3 vùng cấm gạch chéo + vạch đánh dấu vị trí hiện tại */
+function renderHuemap(H){
+  const bar = document.getElementById('huemapBar');
+  if (!bar.dataset.built){
+    // Nền gradient hue thật (24 mốc, tính bằng chính hàm oklchToHex — không đoán bằng hsl()).
+    const stops = [];
+    for (let h=0; h<=360; h+=15) stops.push(`${oklchToHex(0.60,0.15,h)} ${(h/360*100).toFixed(2)}%`);
+    bar.style.background = `linear-gradient(90deg, ${stops.join(',')})`;
+    VUNG_CAM.forEach(z=>{
+      const zoneDiv = document.createElement('div');
+      zoneDiv.className='huemap-zone';
+      const loPct = ((z.lo%360+360)%360)/360*100, hiPct = ((z.hi%360+360)%360)/360*100;
+      zoneDiv.style.left = loPct+'%'; zoneDiv.style.width = (ZONE_MARGIN*2/360*100)+'%';
+      zoneDiv.title = `Vùng cấm — ${z.ten} (${z.lo.toFixed(0)}°–${z.hi.toFixed(0)}°)`;
+      bar.appendChild(zoneDiv);
+    });
+    bar.dataset.built='1';
+  }
+  document.getElementById('huemapMarker').style.left = (H/360*100)+'%';
+}
+
+function renderHueDistance(H){
+  const near = ganNhatVungCam(H);
+  const el = document.getElementById('hueDistance');
+  el.classList.toggle('warn', near.d < ZONE_MARGIN+10);
+  el.innerHTML = `cách màu "<b>${near.ten}</b>" gần nhất: <b>${near.d.toFixed(0)}°</b>`;
+}
+
+/* ═══ Readout ═══ */
+function renderReadout(H,C,slot){
+  const hex = oklchToHex(0.569, C, H); // tham chiếu ở L gần mặc định để đọc hex sống động
+  document.getElementById('hueVal').textContent = Math.round(H)+'°';
+  document.getElementById('chromaVal').textContent = C.toFixed(2);
+  document.getElementById('roHex').textContent = hex;
+  document.getElementById('roOklch').textContent = `oklch(${(0.569).toFixed(2)} ${C.toFixed(3)} ${Math.round(H)}) — đang chỉnh màu ${slot} (${slot==='A'?'chủ khi Tối':'chủ khi Sáng'})`;
+}
+
+/* ═══ Bảng so sánh cuối trang — mỗi CẶP × 6 vai, cột dark đọc từ A, cột light đọc từ B ═══ */
+function renderSosanh(){
+  const body = document.getElementById('sosanhBody');
+  body.innerHTML='';
+  PAIRS.forEach(p=>{
+    const oa = hexToOklch(p.a), ob = hexToOklch(p.b);
+    const {toneDark, toneLight, rows} = computeRoles(oa, ob);
+    const [dark, light] = rows;
+    const cellHtml = (row,rid)=>{
+      const cell = row[rid];
+      if (cell.val==null) return '—';
+      const ok = cell.val>=cell.min;
+      return `<span title="${cell.val.toFixed(2)}:1">${ok?'✓':'✕'}</span>`;
+    };
+    const kep = (t)=> (t.chromaClamped||t.toneClamped) ? (t.chromaClamped&&t.toneClamped?'Cả 2':t.chromaClamped?'Hạ độ đậm':'Đổi tông') : 'Không';
+    const order = ['nen-nhan','chu-tren-nhan','khoi-chua','chu-tren-khoi-chua','vien-nhan','vong-focus'];
+    const trDark = document.createElement('tr');
+    trDark.innerHTML = `
+      <td rowspan="2" style="vertical-align:middle"><span class="dot-sw" style="background:${p.a}"></span><span class="dot-sw" style="background:${p.b};margin-left:-6px"></span>${p.name}</td>
+      <td style="color:var(--t4);font-size:10px">Tối (A chủ)</td>
+      ${order.map(rid=>`<td>${cellHtml(dark,rid)}</td>`).join('')}
+      <td style="color:${(toneDark.chromaClamped||toneDark.toneClamped)?'var(--warning)':'var(--t4)'}">${kep(toneDark)}</td>
+      <td style="color:${isWarm(oa.H)?'var(--danger)':'var(--t4)'}">${isWarm(oa.H)?'Ấm':'Lạnh'}</td>`;
+    const trLight = document.createElement('tr');
+    trLight.innerHTML = `
+      <td style="color:var(--t4);font-size:10px">Sáng (B chủ)</td>
+      ${order.map(rid=>`<td>${cellHtml(light,rid)}</td>`).join('')}
+      <td style="color:${(toneLight.chromaClamped||toneLight.toneClamped)?'var(--warning)':'var(--t4)'}">${kep(toneLight)}</td>
+      <td style="color:${isWarm(ob.H)?'var(--danger)':'var(--t4)'}">${isWarm(ob.H)?'Ấm':'Lạnh'}</td>`;
+    body.appendChild(trDark); body.appendChild(trLight);
+  });
+}
+
+/* ═══ Test bắt buộc — đồng cạnh cảnh báo, theme SÁNG (điểm nghiệm thu #1, Hoà chốt 16/08) ═══ */
+function renderDongCanhCanhBao(){
+  const dAw = hexToOklch('#c79a63'), dWarn = hexToOklch('#9a6304');
+  const dist = khoangCachGoc(dAw.H, dWarn.H);
+  document.getElementById('dongWarnDist').innerHTML =
+    `cách góc màu: <b>${dist.toFixed(1)}°</b> (gần như trùng — KHÁC bằng L/C: đồng L=${dAw.L.toFixed(2)} C=${dAw.C.toFixed(2)} · cảnh báo L=${dWarn.L.toFixed(2)} C=${dWarn.C.toFixed(2)})`;
+}
+
+/* ═══ Render tổng — chạy lại mọi lần đổi màu HOẶC đổi theme ═══ */
+function render(){
+  const slotState = state[state.slot];
+  renderReadout(slotState.H, slotState.C, state.slot);
+  const {toneDark, toneLight} = renderVaiTro(state.A, state.B);
+  renderRamp(slotState.H, slotState.C);
+  renderDemoPanels(toneDark, toneLight);
+  renderBanners(slotState, slotState.H);
+  renderHuemap(slotState.H);
+  renderHueDistance(slotState.H);
+  const {chu} = resolveChuNham();
+  const chuTone = timTongDatChuan(chu.H, chu.C, document.documentElement.dataset.theme==='light'?'light':'dark');
+  renderSoiChatIF(chu.H, chu.C, chuTone, isWarm(chu.H));
+  renderPairs();
+  const pct = Math.round(VUNG_CAM.length*ZONE_MARGIN*2/360*100);
+  document.getElementById('introZonePct').textContent = `~${pct}% (3 dải ±${ZONE_MARGIN}°)`;
+  document.getElementById('slotABtn').classList.toggle('on', state.slot==='A');
+  document.getElementById('slotBBtn').classList.toggle('on', state.slot==='B');
+}
+
+/* ═══ Theme toggle — ĐÂY LÀ NÚT ĐẢO VAI (đúng cơ chế Hoà chốt: theme đổi → chủ/nhấn hoán đổi) ═══ */
+document.getElementById('themeBtn').addEventListener('click', ()=>{
+  const cur = document.documentElement.dataset.theme;
+  document.documentElement.dataset.theme = cur==='light' ? 'dark' : 'light';
+  render();
+});
+
+/* ═══ Khởi tạo — mặc định cặp "Tím ↔ Đồng (bộ hiện tại của IF)" ═══ */
+(function init(){
+  applyPair(0);
+  renderSosanh();
+  renderDongCanhCanhBao();
+})();
+</script>
+</body>
+</html>

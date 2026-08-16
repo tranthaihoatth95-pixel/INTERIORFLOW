@@ -21,9 +21,18 @@
  * trường của đúng lệnh đó.
  */
 import { chromium } from 'playwright';
-import { mkdirSync, writeFileSync, readdirSync } from 'fs';
+import { mkdirSync, writeFileSync, readdirSync, appendFileSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
+
+/* NHẬT KÝ RA TỆP — để T đọc được khi có sự cố, kể cả lúc Hoà đã đóng cửa sổ.
+   Thêm 16/08 sau ca chạy đầu không ra ảnh mà không ai biết hỏng ở đâu. */
+const NHAT_KY = join(process.cwd(), 'nhat-ky-chup-man.txt');
+try { writeFileSync(NHAT_KY, `— phiên chụp ${new Date().toLocaleString('vi-VN')} —\n`); } catch {}
+const goc = console.log, gocLoi = console.error;
+console.log = (...a) => { goc(...a); try { appendFileSync(NHAT_KY, a.join(' ') + '\n'); } catch {} };
+console.error = (...a) => { gocLoi(...a); try { appendFileSync(NHAT_KY, 'LỖI: ' + a.join(' ') + '\n'); } catch {} };
+process.on('uncaughtException', (e) => { console.error(String(e?.stack || e)); process.exit(1); });
 
 const URL_GOC = process.env.IF_URL ?? 'http://localhost:3000';
 const EMAIL = process.env.IF_EMAIL ?? '';
@@ -88,37 +97,71 @@ const KHUNG = [
   { ten: '50-04-cai-dat-giay-phep', url: '/settings/licenses' },
 ];
 
+/* PHIÊN ĐĂNG NHẬP LƯU SẴN — Hoà gõ mật khẩu MỘT LẦN vào đúng ô đăng nhập của app,
+   không bao giờ phải đặt nó vào dòng lệnh (dòng lệnh còn bị lưu vào lịch sử gõ). */
+const PHIEN = join(homedir(), '.if-phien-chup-man');
+const MO_DANG_NHAP = process.argv.includes('--dang-nhap');
+
 async function main() {
-  if (!EMAIL || !MATKHAU) {
-    console.error(
-      '\n⛔ Thiếu tài khoản. Chạy lại:\n' +
-        "   IF_EMAIL='<email>' IF_PASSWORD='<mật khẩu>' node scripts/chup-man-duyet-mat.mjs\n",
-    );
-    process.exit(1);
-  }
-
   mkdirSync(OUT, { recursive: true });
-  console.log(`📂 Đổ ảnh vào: ${OUT}\n`);
 
-  const browser = await chromium.launch();
-  const ctx = await browser.newContext({
+  const ctx = await chromium.launchPersistentContext(PHIEN, {
+    headless: !MO_DANG_NHAP,
     viewport: { width: 1440, height: 900 },
     deviceScaleFactor: 2, // ảnh nét khi Hoà zoom trên điện thoại
     locale: 'vi-VN',
   });
-  const page = await ctx.newPage();
+  const browser = ctx.browser() ?? { close: () => ctx.close() };
+  const page = ctx.pages()[0] ?? (await ctx.newPage());
 
-  // ── Đăng nhập một lần, dùng chung cho mọi khung ───────────────────────────
+  // ── Lối 1: mở cửa sổ thật cho Hoà đăng nhập tay, rồi ghi nhớ phiên ────────
+  if (MO_DANG_NHAP) {
+    console.log('\n🔓 Cửa sổ vừa mở — Hoà đăng nhập như bình thường.');
+    console.log('   Vào được rồi thì ĐÓNG CỬA SỔ. Phiên sẽ được ghi nhớ cho lần sau.\n');
+    await page.goto(URL_GOC, { waitUntil: 'domcontentloaded' }).catch(() => {});
+    await page.waitForEvent('close', { timeout: 0 }).catch(() => {});
+    await ctx.close().catch(() => {});
+    console.log('✅ Đã ghi nhớ phiên. Giờ chạy lại KHÔNG kèm --dang-nhap là máy tự chụp.\n');
+    return;
+  }
+
+  console.log(`📂 Đổ ảnh vào: ${OUT}\n`);
+
+  // ── Lối 2: dùng phiên đã nhớ; chỉ dùng biến môi trường nếu Hoà cố ý đặt ───
   await page.goto(URL_GOC, { waitUntil: 'domcontentloaded' });
-  const res = await page.request.post(`${URL_GOC}/api/auth/login`, {
-    data: { identifier: EMAIL, password: MATKHAU, remember: true },
-  });
-  if (!res.ok()) {
-    console.error(`⛔ Đăng nhập hỏng (${res.status()}): ${await res.text()}`);
-    await browser.close();
+  if (EMAIL && MATKHAU) {
+    const res = await page.request.post(`${URL_GOC}/api/auth/login`, {
+      data: { identifier: EMAIL, password: MATKHAU, remember: true },
+    });
+    if (!res.ok()) {
+      console.error(`⛔ Đăng nhập hỏng (${res.status()}): ${await res.text()}`);
+      await ctx.close();
+      process.exit(1);
+    }
+    console.log('✅ Đăng nhập bằng tài khoản đưa qua lệnh\n');
+  }
+
+  // Kiểm phiên bằng API — chắc chắn hơn soi URL, vì màn intro render ngay tại `/`
+  // nên URL không đổi và cách soi cũ không bắt được (ca thật 16/08: chụp trọn lô
+  // ở trạng thái chưa đăng nhập, kho nào cũng 0 mục mà không ai biết).
+  let chuaDangNhap = true;
+  try {
+    const me = await page.request.get(`${URL_GOC}/api/auth/me`);
+    chuaDangNhap = !me.ok();
+  } catch {
+    /* không gọi được thì cứ coi như chưa, thà dừng còn hơn chụp cả lô rỗng */
+  }
+  if (chuaDangNhap) {
+    console.error(
+      '\n⛔ CHƯA ĐĂNG NHẬP — app đang đứng ở màn khoá nên không chụp được bên trong.\n' +
+        '   Chạy MỘT LẦN lệnh này, đăng nhập bằng tay rồi đóng cửa sổ:\n' +
+        '     node scripts/chup-man-duyet-mat.mjs --dang-nhap\n' +
+        '   Sau đó chạy lại lệnh chụp bình thường.\n',
+    );
+    await ctx.close();
     process.exit(1);
   }
-  console.log('✅ Đăng nhập xong\n');
+  console.log('✅ Phiên đăng nhập còn hiệu lực\n');
 
   // ── Lấy một dự án thật để chụp các màn cần dự án ──────────────────────────
   let duAnId = process.env.IF_PROJECT_ID ?? '';
@@ -150,10 +193,17 @@ async function main() {
     }
     await page.waitForTimeout(k.cho ?? 1200);
 
+    // Một khung hỏng KHÔNG được làm chết cả lô — ghi lại rồi đi tiếp.
     const tep = join(OUT, `${k.ten}.png`);
-    await page.screenshot({ path: tep, fullPage: false });
-    n++;
-    console.log(`  📸 ${k.ten}`);
+    try {
+      await page.screenshot({ path: tep, timeout: 20000, animations: 'disabled' });
+      n++;
+      console.log(`  📸 ${k.ten}`);
+    } catch (e) {
+      const ly = String(e?.message ?? e).split('\n')[0];
+      bo.push(`${k.ten} — ${ly}`);
+      console.error(`  ⚠️  bỏ ${k.ten}: ${ly}`);
+    }
   }
 
   // ── Tờ mục lục để Hoà biết đang xem gì, đối chiếu tên khi note ────────────
