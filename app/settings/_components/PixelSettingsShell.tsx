@@ -9,6 +9,7 @@ import { AiDependencySettings } from '@/components/settings/AiDependencySettings
 import { GuModelSettings } from '@/components/settings/GuModelSettings';
 import { ExperienceSettings } from '@/components/settings/ExperienceSettings';
 import { LockScreenSettings } from '@/components/settings/LockScreenSettings';
+import { UnitsScaleSettings } from '@/components/settings/UnitsScaleSettings';
 import { RawStyle } from '@/components/filemanager/RawStyle';
 import { SETTINGS_MOCK_CSS } from '../_lib/settings-mock-css';
 import { useSettingsLocalState } from '../_lib/local-state';
@@ -215,6 +216,9 @@ export function PixelSettingsShell() {
               <GuModelSettings />
               <ExperienceSettings />
               <LockScreenSettings />
+              {/* Phiếu P-A `docs/phieu-giao/P-A-don-vi-ty-le.md` — cùng khuôn <section>+tr() với
+                  4 nhóm phía trên, đặt cuối vì là bổ sung mới nhất trong "Nâng cao". */}
+              <UnitsScaleSettings />
             </div>
           </div>
         </div>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>InteriorFlow · Cài đặt — Đơn vị &amp; Tỉ lệ</title>
+<style>
+/* ═══ TOKEN THẬT của app — CHÉP TỪ app/globals.css, KHÔNG đổi số (luật L4) ═══
+   Thang bo hiện hành 12/08 (hinh-hoc-ap-thang): 6/10/14/20 + --r-full 999, rInner = max(4, rOuter − pad).
+   Màu/tap/font: đúng token app/globals.css:19-22,68-78,93,105-118,175-207,230-259 — đối chiếu file thật
+   trước khi vẽ (luật L1 NGHIÊN CỨU TRƯỚC). */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --radius-sm:var(--r-2); --radius-md:var(--r-3); --radius-lg:var(--r-4);
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --blur:22px;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --tap:32px; --tap-lg:44px; --pad-card:12px 16px; --fs-ui:13px;
+}
+@media (hover:none) and (pointer:coarse){ :root{ --tap:44px; --pad-card:12px 16px; --fs-ui:15px; } }
+:root,[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --mat-panel:rgba(20,20,23,.68); --mat-hairline:rgba(255,255,255,.06);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65); --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --focus-ring: 2px solid #8f7dfa;
+}
+[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --mat-panel:rgba(250,248,244,.7); --mat-hairline:rgba(0,0,0,.05);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22); --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --focus-ring: 2px solid #553ff3;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);padding:36px;
+  font:var(--fw-normal) var(--fs-sm)/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased}
+h1{font-size:var(--fs-xl);letter-spacing:-.02em;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+.sub{color:var(--t3);margin-bottom:24px;font-size:var(--fs-xs)}
+h2.grouplabel{font-size:var(--fs-2xs);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t4);margin:0 0 3px;display:flex;align-items:center;gap:6px}
+.help{font-size:var(--fs-2xs);color:var(--t4);margin:2px 0 12px;line-height:1.5}
+
+/* ── shell da hai theme, chỉ để soi mock — không phải khung 6 ổ thật ── */
+.themebtn{position:fixed;top:18px;right:18px;height:var(--tap);padding:0 14px;border:1px solid var(--border);
+  background:var(--panel);color:var(--t2);border-radius:var(--r-2);font-size:var(--fs-2xs);cursor:pointer}
+.themebtn:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+
+.wrap{max-width:640px}
+.backlink{display:inline-flex;align-items:center;gap:5px;background:none;border:0;color:var(--t3);font-size:var(--fs-2xs);cursor:pointer;padding:4px 0;margin-bottom:14px}
+.backlink:hover{color:var(--t1)}
+.backlink:focus-visible{outline:var(--focus-ring);outline-offset:3px;border-radius:4px}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-3);padding:var(--pad-card);margin-bottom:14px}
+
+/* dãy chip lựa chọn — TÁI DÙNG .chip đã có trong seed/app, KHÔNG chế token mới.
+   role=radiogroup + mỗi chip role=radio — 1 lựa chọn tại 1 thời điểm (WCAG 4.1.2 name/role/value). */
+.chiprow{display:flex;flex-wrap:wrap;gap:7px}
+.chip{
+  display:inline-flex;align-items:center;justify-content:center;
+  height:var(--tap);min-width:var(--tap);padding:0 13px;
+  border-radius:var(--r-full);background:var(--field);border:1px solid transparent;
+  color:var(--t2);font-size:var(--fs-xs);font-weight:var(--fw-normal);cursor:pointer;
+  transition:background var(--dur-fast) var(--ease-apple),color var(--dur-fast) var(--ease-apple),border-color var(--dur-fast) var(--ease-apple);
+}
+.chip:hover{background:var(--hover)}
+.chip[aria-checked="true"]{background:var(--accent);color:#fff;font-weight:var(--fw-semi)}
+.chip:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+
+/* preview — kính nhẹ NT-4 (chỉ lớp nổi), giá trị số dùng mono+tabular (luật rules seed mục 3) */
+.preview{
+  margin-top:4px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(var(--blur));-webkit-backdrop-filter:saturate(180%) blur(var(--blur));
+  border:1px solid var(--mat-hairline);border-radius:var(--r-3);padding:14px 16px;
+}
+.preview .row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:5px 0}
+.preview .row + .row{border-top:1px solid var(--mat-hairline)}
+.preview .k{font-size:var(--fs-2xs);color:var(--t3)}
+.preview .v{font-family:ui-monospace,Menlo,"SF Mono",monospace;font-variant-numeric:tabular-nums;font-size:var(--fs-sm);color:var(--t1);font-weight:var(--fw-semi)}
+
+/* ô gõ thử — label THẬT, không placeholder-là-label (WCAG 3.3.2/1.3.1) */
+.tryfield{margin-top:12px}
+.tryfield label{display:block;font-size:var(--fs-2xs);color:var(--t3);margin-bottom:5px}
+.tryfield .inputrow{display:flex;gap:8px;align-items:center}
+.tryfield input{
+  flex:1;height:var(--tap-lg);background:var(--field);border:1px solid var(--border);border-radius:var(--r-2);
+  padding:0 12px;color:var(--t1);font-size:var(--fs-sm);font-family:ui-monospace,Menlo,monospace;
+}
+.tryfield input:focus-visible{outline:var(--focus-ring);outline-offset:1px;border-color:var(--accent)}
+.tryfield .result{font-size:var(--fs-xs);color:var(--t2);min-width:120px;text-align:right;font-variant-numeric:tabular-nums}
+.tryfield .result.err{color:var(--danger)}
+.tryfield .errmsg{margin-top:6px;font-size:var(--fs-2xs);color:var(--danger);display:none}
+.tryfield .errmsg.show{display:block}
+
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+</style>
+</head>
+<body>
+<button class="themebtn" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='light'?'dark':'light'">Đổi Sáng/Tối · Light/Dark</button>
+
+<div class="wrap">
+  <button class="backlink" type="button" aria-label="Quay lại Cài đặt">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+    Quay lại
+  </button>
+
+  <h1>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14.5 12.5 2-2a2.12 2.12 0 1 1 3 3l-2 2"/><path d="m8.5 18.5 2-2"/><path d="m2 22 2.5-2.5"/><path d="M3.5 20.5l6.5-6.5"/><path d="m17 5-2 2"/><path d="M11.5 11.5 5 18l1 1 6.5-6.5"/><path d="m2.5 21.5 3-3"/><rect x="2" y="2" width="20" height="20" rx="0" opacity="0" /></svg>
+    Đơn vị &amp; Tỉ lệ · Units &amp; Scale
+  </h1>
+  <div class="sub">Đổi cách hiển thị và cách gõ số đo — dữ liệu bên trong luôn lưu bằng mm, đổi ở đây không sửa bản vẽ.</div>
+
+  <!-- ĐƠN VỊ HIỂN THỊ -->
+  <div class="card">
+    <h2 class="grouplabel">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M4 4h16"/><path d="M4 4v16"/><path d="M12 4v4"/><path d="M20 4v4"/></svg>
+      Đơn vị hiển thị · Display unit
+    </h2>
+    <p class="help" id="help-display">Áp dụng cho mọi con số đo hiện trên bản vẽ, bảng vật liệu, BOQ.</p>
+    <div class="chiprow" role="radiogroup" aria-labelledby="help-display" id="row-display">
+      <button class="chip" role="radio" aria-checked="true" data-unit="mm">Milimét (mm)</button>
+      <button class="chip" role="radio" aria-checked="false" data-unit="cm">Centimét (cm)</button>
+      <button class="chip" role="radio" aria-checked="false" data-unit="m">Mét (m)</button>
+      <button class="chip" role="radio" aria-checked="false" data-unit="in">Inch (in)</button>
+      <button class="chip" role="radio" aria-checked="false" data-unit="ft-in">Feet-inch (5′6″)</button>
+    </div>
+  </div>
+
+  <!-- CÁCH NHẬP -->
+  <div class="card">
+    <h2 class="grouplabel">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      Cách nhập số đo · Input unit
+    </h2>
+    <p class="help" id="help-input">Gõ số KHÔNG kèm đơn vị thì hiểu theo lựa chọn này. Gõ kèm hậu tố (12cm · 3′ · 1m) thì luôn ưu tiên hậu tố đã gõ.</p>
+    <div class="chiprow" role="radiogroup" aria-labelledby="help-input" id="row-input">
+      <button class="chip" role="radio" aria-checked="true" data-unit="mm">Milimét (mm)</button>
+      <button class="chip" role="radio" aria-checked="false" data-unit="cm">Centimét (cm)</button>
+      <button class="chip" role="radio" aria-checked="false" data-unit="m">Mét (m)</button>
+      <button class="chip" role="radio" aria-checked="false" data-unit="in">Inch (in)</button>
+      <button class="chip" role="radio" aria-checked="false" data-unit="ft-in">Feet-inch (5′6″)</button>
+    </div>
+
+    <div class="tryfield">
+      <label for="tryinput">Gõ thử một số đo để xem quy đổi</label>
+      <div class="inputrow">
+        <input type="text" id="tryinput" inputmode="decimal" value="3250" aria-describedby="try-result" />
+        <span class="result" id="try-result" aria-live="polite">= 3 250mm</span>
+      </div>
+      <p class="errmsg" id="try-err" role="alert">Không đọc được số này. Gõ số kèm đơn vị (vd 320cm) hoặc theo dạng feet-inch (vd 5'6").</p>
+    </div>
+  </div>
+
+  <!-- TỈ LỆ IN MẶC ĐỊNH -->
+  <div class="card">
+    <h2 class="grouplabel">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+      Tỉ lệ in mặc định · Default print scale
+    </h2>
+    <p class="help" id="help-scale">Chỉ nhận đúng các nấc chuẩn ISO — không sinh tỉ lệ lẻ kiểu "1:47".</p>
+    <div class="chiprow" role="radiogroup" aria-labelledby="help-scale" id="row-scale">
+      <button class="chip" role="radio" aria-checked="false" data-scale="1">1:1</button>
+      <button class="chip" role="radio" aria-checked="false" data-scale="2">1:2</button>
+      <button class="chip" role="radio" aria-checked="false" data-scale="5">1:5</button>
+      <button class="chip" role="radio" aria-checked="false" data-scale="10">1:10</button>
+      <button class="chip" role="radio" aria-checked="false" data-scale="20">1:20</button>
+      <button class="chip" role="radio" aria-checked="false" data-scale="25">1:25</button>
+      <button class="chip" role="radio" aria-checked="true" data-scale="50">1:50</button>
+      <button class="chip" role="radio" aria-checked="false" data-scale="100">1:100</button>
+      <button class="chip" role="radio" aria-checked="false" data-scale="200">1:200</button>
+      <button class="chip" role="radio" aria-checked="false" data-scale="500">1:500</button>
+    </div>
+  </div>
+
+  <!-- Ô XEM TRƯỚC SỐNG — luôn hiện, cập nhật NGAY khi đổi lựa chọn ở trên (aria-live) -->
+  <div class="preview" aria-label="Xem trước đổi đơn vị và tỉ lệ" role="region">
+    <div class="row"><span class="k">Chiều dài tường mẫu</span><span class="v" id="pv-length">3 250mm</span></div>
+    <div class="row"><span class="k">Tỉ lệ đang chọn</span><span class="v" id="pv-scale">1:50 — 1m ngoài đời = 20mm trên giấy</span></div>
+  </div>
+</div>
+
+<script>
+// Demo THUẦN cho mock — không phải nguồn logic thật (nguồn thật: lib/units/index.ts + scale.ts).
+const MM_PER_UNIT = { mm:1, cm:10, m:1000, in:25.4 };
+// Luật rules seed mục 3: số đo kỹ thuật cách nghìn bằng KHOẢNG TRẮNG (5 200), KHÔNG dùng dấu chấm
+// kiểu vi-VN mặc định (3.250 dễ đọc nhầm số thập phân). toLocaleString('vi-VN') SAI luật này.
+function groupThousands(numStr){
+  const [intPart, dec] = numStr.split('.');
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return dec !== undefined ? grouped + '.' + dec : grouped;
+}
+function fmt(mm, unit){
+  if (unit === 'ft-in') {
+    const totalIn = mm/25.4, neg = totalIn<0, abs=Math.abs(totalIn);
+    let ft = Math.floor(abs/12), inch = Math.round((abs-ft*12)*100)/100;
+    if (inch>=12){ft+=1; inch-=12;}
+    const inchStr = Number.isInteger(inch)?String(inch):inch.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
+    return (neg?'-':'')+ft+'′'+inchStr+'″';
+  }
+  const v = mm/MM_PER_UNIT[unit];
+  const p = unit==='m'?2:unit==='in'?2:0;
+  const num = p>0? groupThousands(v.toFixed(p)) : groupThousands(String(Math.round(v)));
+  const suf = {mm:'mm',cm:'cm',m:'m',in:'"'}[unit];
+  return num+suf;
+}
+function parseLen(raw, inputUnit){
+  raw = raw.trim();
+  if (!raw) return null;
+  let m = raw.match(/^(-?\d+(?:[.,]\d+)?)\s*(?:'|′|ft)\s*(\d+(?:[.,]\d+)?)?\s*(?:"|″|in)?\s*$/i);
+  if (m && (raw.includes("'")||raw.includes('′')||/ft/i.test(raw))) {
+    const ft = parseFloat(m[1].replace(',','.')), inch = m[2]?parseFloat(m[2].replace(',','.')):0;
+    if (!isFinite(ft)) return null;
+    const sign = ft<0?-1:1;
+    return sign*(Math.abs(ft)*304.8 + (inch||0)*25.4);
+  }
+  m = raw.match(/^(-?\d+(?:[.,]\d+)?)\s*(mm|cm|m|in|"|″)$/i);
+  if (m) {
+    const num = parseFloat(m[1].replace(',','.'));
+    const suf = m[2].toLowerCase();
+    const unit = (suf==='"'||suf==='″')?'in':suf;
+    return num*MM_PER_UNIT[unit];
+  }
+  const bare = raw.replace(',', '.');
+  if (!/^-?\d+(\.\d+)?$/.test(bare)) return null;
+  const num = parseFloat(bare);
+  if (inputUnit==='ft-in') return num*25.4;
+  return num*MM_PER_UNIT[inputUnit];
+}
+
+let displayUnit='mm', inputUnit='mm', scale=50;
+const SAMPLE_MM = 3250;
+
+function wireGroup(id, attr, onPick){
+  const row = document.getElementById(id);
+  row.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      row.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-checked','false'));
+      chip.setAttribute('aria-checked','true');
+      onPick(chip.dataset[attr]);
+    });
+  });
+}
+wireGroup('row-display','unit', (u)=>{ displayUnit=u; renderPreview(); tryConvert(); });
+wireGroup('row-input','unit', (u)=>{ inputUnit=u; tryConvert(); });
+wireGroup('row-scale','scale', (s)=>{ scale=Number(s); renderPreview(); });
+
+function renderPreview(){
+  document.getElementById('pv-length').textContent = fmt(SAMPLE_MM, displayUnit);
+  const oneMeterOnPaper = 1000/scale;
+  document.getElementById('pv-scale').textContent = '1:'+scale+' — 1m ngoài đời = '+ (Math.round(oneMeterOnPaper*100)/100) +'mm trên giấy';
+}
+function tryConvert(){
+  const raw = document.getElementById('tryinput').value;
+  const mm = parseLen(raw, inputUnit);
+  const resultEl = document.getElementById('try-result');
+  const errEl = document.getElementById('try-err');
+  if (mm===null || !isFinite(mm)) {
+    resultEl.textContent = '= —';
+    resultEl.classList.add('err');
+    errEl.classList.add('show');
+    return;
+  }
+  resultEl.classList.remove('err');
+  errEl.classList.remove('show');
+  resultEl.textContent = '= ' + groupThousands(String(Math.round(mm))) + 'mm';
+}
+document.getElementById('tryinput').addEventListener('input', tryConvert);
+renderPreview();
+tryConvert();
+</script>
+</body>
+</html>
