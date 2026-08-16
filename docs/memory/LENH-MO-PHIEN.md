@@ -42,3 +42,41 @@ Nút thắt thật của dự án: 66 việc xong-máy đối 1 việc qua mắt
 
 Việc hôm nay: [Hoà điền — hoặc để trống thì T báo cáo trạng thái rồi chờ]
 ```
+
+---
+
+## KHUÔN BÁO CÁO KẾT PHIÊN (Hoà chốt 15/08) — bắt buộc, chống ngựa-quen-đường-cũ
+
+> Lý do Hoà nêu: *"các phiên nắm tổng quát hơn, thay vì tiếp nối đào sâu một vấn đề với bối cảnh
+> phiên trước… chỉ cây tính năng không mà chất lượng handoff không điều hướng đúng thì thế nào
+> cũng ngựa quen đường cũ."*
+
+### BẢY MẢNH CẤU THÀNH IF — không phải hai
+Hoà hỏi "còn phần nào ngang backend/frontier không". Có. Backend/frontend chỉ phủ phần **code**:
+
+| # | Mảnh | Là gì | Hỏng thì |
+|---|---|---|---|
+| 1 | **Mặt thấy** | giao diện người dùng chạm vào | khó dùng |
+| 2 | **Lõi vận hành** | logic, engine, tính toán chạy ngầm | sai kết quả |
+| 3 | **Nền dữ liệu** | schema · đĩa · định dạng `.idf`/`.idfc` | **mất dữ liệu — không lùi được** |
+| 4 | **Tri thức ngành** | 12 bộ luật · chuẩn · thư viện vật liệu | hồ sơ sai chuẩn, rủi ro pháp lý |
+| 5 | **Khớp nối ngoài** | AI providers · DWG · Lark | bị cắt là chết |
+| 6 | **Hạ tầng phát hành** | Electron · build · bộ cài · giấy phép | không giao được sản phẩm |
+| 7 | **Sổ & máy canh** | registry · 5 máy soi · docs | mất trí nhớ, xây lại thứ đã có |
+
+### BẢNG BẮT BUỘC — mỗi việc một dòng
+| Việc | Mảnh (1-7) | Nhánh | Phạm vi | Trạng thái |
+|---|---|---|---|---|
+| … | mặt thấy / lõi / nền dữ liệu / tri thức / khớp nối / hạ tầng / sổ-máy | giao diện · tính năng · thuật toán | **toàn app** hay **chặng nào** | ghi-sổ-chưa-xây · đã-xây · xong-máy · qua-mắt |
+
+### ⭐ BẢNG PHỦ TẦNG — phần chống tunnel, quan trọng hơn bảng trên
+Liệt kê **cả 7 mảnh**, đánh dấu mảnh nào phiên nay **KHÔNG đụng tới**.
+Báo cáo chỉ kể việc đã làm thì **củng cố đường mòn**; chỉ khi thấy mảnh nào bỏ trống nhiều phiên
+liền mới lộ ra lệch. Mảnh nào **2 phiên liên tiếp không ai đụng** ⇒ ghi cảnh báo, phiên sau cân lại.
+
+### BA MỤC CÒN LẠI
+· **Điểm nổi bật** — tối đa 5 gạch đầu dòng, cái đáng nhớ nhất, không phải cái tốn công nhất.
+· **Chốt mới trong phiên** — kèm **tình trạng**: ghi-sổ-chưa-xây hay đã-xây. Chốt mà không ghi
+  tình trạng là mầm cho phiên sau tưởng đã xong.
+· **T tự soi** — chỗ nào T tự quyết (`git log --grep="xu-ly-tai-cho"`), chỗ nào T hiểu sai bị Hoà
+  bắt, chỗ nào còn nợ nghiệm thu mắt.
