@@ -239,6 +239,36 @@ chỉ nhận số đo được từ CAD hoặc khối dựng.
 > KTS: bấm **OK** — hoặc **gõ số đúng** vào
 > ⇒ thuật toán **đồng bộ theo cách hiểu đã xác nhận**. Định nghĩa xong.
 
+### Đường ra khi cần TUYỆT ĐỐI — sửa tại chỗ, hoặc hỏi Vitals
+> **Hoà chốt:** *"còn nếu muốn tuyệt đối — ngay **khoảnh khắc** đó, tag dim 750, hay list liệt kê
+> đối tượng được định nghĩa, chỗ chi tiết phần kích thước — KTS có quyền chỉnh sửa lại, hoặc chuột
+> phải hỏi nhanh Vitals tra cứu + tư vấn."*
+
+⏱ **"Ngay khoảnh khắc đó"** là ràng buộc về THỜI ĐIỂM, không chỉ về chỗ đứng: tay cầm để sửa phải
+hiện ra **đúng lúc máy vừa suy ra**, không dồn lại bắt soát sau. Hai lý do: lúc đó ngữ cảnh còn
+nguyên trong đầu KTS, và **các bước sau chưa kịp xây lên trên con số sai**. Dồn lại soát cuối là
+sửa khi nhà đã xây xong móng lệch.
+
+Hai chỗ sửa, **cùng một cơ chế**:
+| Sửa ở đâu | Khi nào dùng |
+|---|---|
+| **Ngay tag dim trên hình** (`750`) | đang nhìn hình, thấy sai là sửa liền |
+| **Cột kích thước trong bản kê** (§7) | soát cả loạt một lượt |
+
+Hai đường ra, **chuột phải là có cả hai**:
+| Đường | Nghĩa | Thuộc lớp nào |
+|---|---|---|
+| **Gõ số đúng** | *"tôi biết rồi"* | người xác nhận — thắng máy tuyệt đối |
+| **Hỏi Vitals: TRA CỨU** | *"số chuẩn của cái này là bao nhiêu"* → dẫn nguồn, **trích nguyên văn** | **lớp LUẬT** |
+| **Hỏi Vitals: TƯ VẤN** | *"ca này nên bao nhiêu"* → khuyên theo bối cảnh | **lớp GÓP Ý** |
+
+⚠️ Hai đường Vitals phải **hiện khác dấu** — tra cứu dẫn được điều khoản, tư vấn thì không. Gộp
+chung một giọng là vi phạm ranh giới hai-lớp đã chốt 07/08.
+
+**Sau khi sửa:** con số chuyển cờ từ *máy suy* → **người đã xác nhận**, và **các bước sau CẤM suy
+lại chỗ đó** — đúng luật tim cốt. Đây là chỗ *"AI nhớ cho lần sau"* thành thật: không phải huấn
+luyện gì cả, chỉ là **không được đoán lại thứ người đã chốt**.
+
 ---
 
 ## 9 · VÌ SAO LÀM — cái được ở cuối
