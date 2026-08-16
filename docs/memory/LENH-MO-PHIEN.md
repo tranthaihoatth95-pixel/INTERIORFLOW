@@ -69,7 +69,26 @@ Hoà hỏi "còn phần nào ngang backend/frontier không". Có. Backend/fronte
 |---|---|---|---|---|
 | … | mặt thấy / lõi / nền dữ liệu / tri thức / khớp nối / hạ tầng / sổ-máy | giao diện · tính năng · thuật toán | **toàn app** hay **chặng nào** | ghi-sổ-chưa-xây · đã-xây · xong-máy · qua-mắt |
 
-### ⭐ BẢNG PHỦ TẦNG — phần chống tunnel, quan trọng hơn bảng trên
+### ⭐ BẢNG PHỦ TẦNG — MÁY SINH, không điền tay (Hoà chốt 15/08)
+> *"áp máy check đồng bộ, vì tôi chắc chắn 7 mảnh cấu thành sẽ liên quan mật thiết với nhau. Nếu
+> đúng thì những liên quan của các mảnh còn lại TỰ SINH — chỉ cần liệt kê ra vào cuối phiên."*
+
+Bảng điền tay thì vài phiên là mục. Máy làm được **tất định**, chỉ cần `git diff` + một bảng tra:
+1. **Bản đồ đường dẫn → mảnh**: `components/**`→mặt thấy · `lib/**`→lõi · `prisma/**`+`disk-sync`+
+   `idfc*`→nền dữ liệu · `lib/cad/standards/**`+`lib/review/**`→tri thức ngành ·
+   `lib/ai/providers/**`+DWG→khớp nối · `electron/**`+cấu hình build→hạ tầng ·
+   `docs/**`+`scripts/soi-*`+registry→sổ & máy canh.
+2. **Đọc diff của phiên** → ra file đụng → ra mảnh đụng. Không ai phải nhớ.
+3. **Bảng LIÊN ĐỚI** (phần Hoà nói "tự sinh"): khai quan hệ giữa các mảnh một lần, rồi máy suy —
+   vd *đổi nền dữ liệu ⇒ lõi và mặt thấy phải kiểm lại* · *đổi tri thức ngành ⇒ cửa nghiệm thu đổi
+   theo* · *đổi khớp nối ⇒ hạ tầng phát hành phải kiểm giấy phép*. Máy liệt kê **liên đới CHƯA
+   kiểm**, đó mới là thứ hay quên.
+4. **Cảnh báo bỏ trống**: mảnh nào 2 phiên liên tiếp không ai đụng → báo.
+
+⇒ Cùng họ `may-soi-dong-dang`: một máy tìm *cùng bản chất khác tên*, một máy tìm *đụng chỗ này thì
+phải ngó chỗ kia*. Cả hai đều thuần `git`+bảng tra, **không dùng AI** (đúng luật kiểm-bằng-máy).
+
+### Bảng phủ tầng gồm gì
 Liệt kê **cả 7 mảnh**, đánh dấu mảnh nào phiên nay **KHÔNG đụng tới**.
 Báo cáo chỉ kể việc đã làm thì **củng cố đường mòn**; chỉ khi thấy mảnh nào bỏ trống nhiều phiên
 liền mới lộ ra lệch. Mảnh nào **2 phiên liên tiếp không ai đụng** ⇒ ghi cảnh báo, phiên sau cân lại.
