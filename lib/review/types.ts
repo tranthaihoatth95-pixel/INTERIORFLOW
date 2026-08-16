@@ -48,6 +48,28 @@ export interface FindingLuat {
   /** Số liệu CHƯA kiểm chứng với văn bản gốc (mang từ `StandardRule.verified=false` qua) —
    * UI phải hiện rõ, người dùng tự cân nhắc. */
   chuaKiemChung?: boolean;
+
+  /* ── P-B (16/08) — ba trường ADDITIVE nuôi chế độ hiển thị ĐẦY ĐỦ. Tất cả TUỲ CHỌN: bộ luật
+     nào chưa khai thì thẻ vẫn dựng đủ ở chế độ Ngắn y như trước, không migrate, không vỡ. ── */
+
+  /**
+   * TRỤC NGUỒN — *ai ban hành* (luật nhà nước · tiêu chuẩn ngành · xu hướng).
+   * ⚠️ ĐỘC LẬP với mức đỏ/vàng ở trên (mức nói *chặt tới đâu*). Không khai = chưa phân loại;
+   * KHÔNG hàm nào được suy nó ra từ `muc` hay từ chuỗi `nguon` (CHOT-PHIEN-15-08 B3).
+   */
+  loaiNguon?: import('../cad/standards/types').LoaiNguon;
+
+  /**
+   * NGUYÊN VĂN điều khoản, chép đúng từng chữ. `nguon` ở trên chỉ là SỐ HIỆU — đủ để tra tay,
+   * không đủ để trích khi bảo vệ hồ sơ trước thẩm duyệt.
+   * ⛔ Thiếu thì để trống, UI hiện "chưa có nguyên văn". CẤM diễn giải · tóm tắt · để AI viết
+   * thay (ba rào an toàn, `lib/cad/standards/types.ts` đầu file).
+   */
+  nguyenVan?: string;
+
+  /** Ngày rule bắt đầu có hiệu lực, ISO `'YYYY-MM-DD'` (mang từ `StandardRule.effectiveFrom`) —
+   * người làm hồ sơ cần biết mình đang bị kiểm bằng bản quy chuẩn nào. */
+  ngayHieuLuc?: string;
 }
 
 /**

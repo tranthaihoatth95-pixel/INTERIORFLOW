@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · Thẻ vi phạm 2 chế độ (Ngắn ↔ Đầy đủ) + trục nguồn — mock hợp đồng</title>
+<!--
+  MOCK 16/08 · THẺ VI PHẠM HAI CHẾ ĐỘ HIỂN THỊ — phiếu P-B `docs/phieu-giao/P-B-hien-thi-luat.md`.
+
+  NGUỒN LUẬT (đọc trước khi sửa mock này):
+  · 00-CHOT.md 07/08 §12 — HAI LỚP KIỂM, "trộn hai lớp là hỏng cả hai"; góp ý KHÔNG BAO GIỜ chặn.
+  · 00-CHOT.md 15/08 — "kiểm tiêu chuẩn là việc của MÁY, AI chỉ đứng ở lớp góp ý" (Hoà duyệt).
+  · lib/review/types.ts — FindingLuat vs FindingGopy đã tách bằng KIỂU DỮ LIỆU từ 07/08.
+  · NT-8 (NC-NGUYEN-TAC-GIAO-DIEN-TOAN-APP) — icon LUÔN có nhãn chữ.
+  · Thang bo duyệt 12/08: 6/10/14/20 + --r-full 999; concentric rInner = max(4, rOuter − pad).
+
+  ĐIỂM NGHIỆM THU QUAN TRỌNG NHẤT (phiếu ⑤.3): nhìn phát phải phân biệt được
+  LUẬT (cứng, dẫn nguồn, có mức) với GÓP Ý (mềm, không mức, không chặn).
+  Bốn kênh phân biệt CÙNG LÚC — không kênh nào đứng một mình:
+    ① KHỐI riêng, tiêu đề riêng, vạch ngăn ở giữa (dữ liệu đã tách sẵn từ tầng type).
+    ② HÌNH DẠNG icon khác hẳn: bát giác (luật đỏ) · tam giác (luật vàng) · tia Magic (góp ý).
+    ③ NHÃN CHỮ luôn đi kèm icon: "Bắt buộc" · "Khuyến nghị" · "gợi ý".
+    ④ ĐƯỜNG VIỀN: luật = viền liền + vạch mức bên trái · góp ý = viền ĐỨT NÉT, không vạch mức.
+  ⇒ Bỏ hết màu đi (in trắng đen, hoặc người mù màu) vẫn đọc ra được — đó là yêu cầu a11y,
+    không phải trang trí.
+
+  QUYẾT ĐỊNH TỰ CHỌN (ghi để phiên code khỏi đoán lại):
+  - Núm đổi chế độ là SEGMENTED 2 nấc "Ngắn | Đầy đủ" đặt ở đầu khối LUẬT, không phải menu:
+    chế độ đổi liên tục theo tình huống (chạy deadline ↔ bảo vệ hồ sơ), giấu sau menu là mất.
+  - Chế độ NGẮN vẫn giữ nhãn mức + nguồn số hiệu: bỏ nguồn đi thì thẻ hết là "luật".
+  - Rule KHÔNG khai `loaiNguon` ⇒ hiện thẳng "Chưa phân loại nguồn", KHÔNG suy từ severity
+    hay từ chuỗi `source` (một tiêu chuẩn ngành có thể thành bắt buộc khi hợp đồng viện dẫn —
+    suy ra là sai, phiếu ④.2).
+  - Rule KHÔNG có nguyên văn ⇒ ô nguyên văn hiện "Chưa có nguyên văn — chỉ có số hiệu điều
+    khoản.", KHÔNG để AI viết thay. Đây là chỗ rủi ro pháp lý cao nhất của phiếu.
+  - Khối GÓP Ý mang sẵn một dòng cố định "Không chặn xuất hồ sơ" — người dùng không phải đoán.
+  - Bo góc: thẻ 10 (--r-2) · chip/pill 6 (--r-1) · ô nguyên văn 6 · nút 6. Đệm thẻ 10 ⇒ ô
+    trong dùng 6 (max(4, 10−4)=6) — đúng luật đồng tâm, không khai số ngoài thang.
+-->
+<style>
+:root{
+  /* ── token chép nguyên văn app/globals.css — CẤM tự chế màu (LUAT-GIAO-DIEN ③④) ── */
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --radius-sm:var(--r-2); --radius-md:var(--r-3); --radius-lg:var(--r-4);
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s;
+}
+/* Hai khối dưới CHÉP NGUYÊN VĂN app/globals.css (:168-207 tối · :229-259 sáng) — kiểm lại
+   từng byte 16/08. Lần dựng đầu tiên tôi ĐOÁN 9 giá trị theme sáng vì worktree lúc đó thiếu
+   file gốc; đã sửa hết cho khớp (--hover · --t1..--t5 · --danger · --warning · --success).
+   Đây đúng là kiểu lỗi LUẬT-GIAO-DIEN ④ cấm: tự chế màu thì mock trông "gần đúng" mà độ
+   tương phản lệch — và mức đỏ/vàng là chỗ độ tương phản KHÔNG được phép lệch. */
+:root,:root[data-theme='dark']{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --on-accent:#ffffff;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --on-accent:#ffffff;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--t1);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter','Helvetica Neue',Arial,sans-serif;
+  font-size:13px; line-height:1.5;
+}
+/* LUAT-CHU-VIET-7.1.23: line-height ≥1.5 mọi nơi, không tracking âm, không hoa toàn phần
+   cho câu — chỉ nhãn hệ thống ngắn mới được uppercase. */
+.wrap{max-width:1440px; margin:0 auto; padding:24px 28px 56px}
+.topbar{display:flex; align-items:center; gap:12px; margin-bottom:6px}
+h1{font-size:20px; line-height:1.5; font-weight:700; margin:0}
+.sub{color:var(--t3); font-size:12px; line-height:1.5; margin:0 0 20px}
+.themebtn{
+  margin-left:auto; height:32px; padding:0 12px; border-radius:var(--r-1);
+  border:1px solid var(--border); background:var(--field); color:var(--t2);
+  font-size:12px; line-height:1.5; font-weight:600; cursor:pointer;
+}
+.themebtn:hover{background:var(--hover)}
+
+.cols{display:grid; grid-template-columns:340px 340px 1fr; gap:20px; align-items:start}
+.colhead{
+  font-size:11px; line-height:1.5; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--t3); margin:0 0 8px;
+}
+.colnote{font-size:11px; line-height:1.5; color:var(--t4); margin:0 0 10px}
+
+/* ── PANEL — khuôn ReviewPanel thật: 300px, nền đặc var(--panel), viền trái ── */
+.panel{
+  width:340px; border:1px solid var(--border); border-radius:var(--r-2);
+  background:var(--panel); overflow:hidden;
+}
+.panelhead{
+  display:flex; align-items:center; gap:8px; padding:10px 12px;
+  border-bottom:1px solid var(--border);
+}
+.panelhead .title{
+  font-size:12px; line-height:1.5; font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--t3);
+}
+/* Mỗi số đi kèm ĐÚNG hình dạng của mức nó đếm. Trước 16/08 hai số đứng trần cạnh nhau —
+   "2" đỏ và "1" vàng đọc lướt thành "21". Hình dạng vừa tách hai số, vừa là kênh a11y thứ hai. */
+.count{margin-left:auto; display:inline-flex; align-items:center; gap:7px; font-size:11px; line-height:1.5; color:var(--t3); font-variant-numeric:tabular-nums}
+.count>span{display:inline-flex; align-items:center; gap:3px; font-weight:700}
+.count .do{color:var(--danger)}
+.count .vang{color:var(--warning)}
+
+.secthead{
+  padding:10px 12px 4px; font-size:11px; line-height:1.5; font-weight:700;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--t3);
+}
+/* Dấu Magic tím sống ở GLYPH + viền đứt của thẻ, KHÔNG ở màu chữ: --accent trên --card chỉ
+   3,55:1 ở theme tối, trượt 4,5:1 cho chữ 11-12px. Icon giữ màu accent (là hình, không phải chữ). */
+.secthead.gopy{display:flex; align-items:center; gap:6px; text-transform:uppercase}
+.secthead.gopy svg{color:var(--accent)}
+
+/* ── SEGMENTED đổi chế độ — capsule ngoài r-full, nút trong r-full, đệm 3 ── */
+.seg{
+  display:inline-flex; gap:3px; margin:0 12px 8px; padding:3px;
+  border:1px solid var(--border); border-radius:var(--r-full); background:var(--field);
+}
+.seg button{
+  height:26px; padding:0 12px; border:0; border-radius:var(--r-full); cursor:pointer;
+  background:transparent; color:var(--t3); font-size:11px; line-height:1.5; font-weight:600;
+  font-family:inherit; transition:background var(--dur-fast) var(--ease-apple);
+}
+.seg button[aria-pressed='true']{background:var(--card); color:var(--t1); box-shadow:0 1px 2px rgba(0,0,0,.18)}
+.seg button:hover{color:var(--t1)}
+
+/* ── THẺ LUẬT — viền LIỀN + vạch mức bên trái (kênh phân biệt ④) ── */
+.the{
+  position:relative; margin:0 10px 8px; padding:9px 10px 9px 12px;
+  border:1px solid var(--border); border-radius:var(--r-2); background:var(--card);
+}
+.the::before{
+  content:''; position:absolute; left:0; top:8px; bottom:8px; width:3px;
+  border-radius:0 2px 2px 0; background:var(--muc);
+}
+.the.do{--muc:var(--danger)}
+.the.vang{--muc:var(--warning)}
+
+/* Hàng nhãn mức: HÌNH DẠNG + CHỮ, không dựa vào màu (a11y) */
+.mucrow{display:flex; align-items:center; gap:6px; margin-bottom:5px; flex-wrap:wrap}
+.mucnhan{
+  display:inline-flex; align-items:center; gap:5px; padding:1px 7px 1px 5px;
+  border-radius:var(--r-1); border:1px solid var(--muc); color:var(--muc);
+  font-size:10px; line-height:1.5; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+}
+.mucnhan svg{display:block; flex-shrink:0}
+
+/* Chip trục NGUỒN — trung tính, KHÔNG mượn màu mức (hai trục độc lập) */
+.chip-nguon{
+  display:inline-flex; align-items:center; gap:5px; padding:1px 7px;
+  border-radius:var(--r-1); border:1px solid var(--border-strong);
+  color:var(--t3); font-size:10px; line-height:1.5; font-weight:600;
+}
+/* "Chưa phân loại" phân biệt bằng KIỂU VIỀN (đứt), KHÔNG bằng độ mờ — làm mờ thì --t4 rơi
+   xuống 3,04:1 ở theme sáng, trượt WCAG 1.4.3, mà đây lại đúng là dòng người biên tập cần thấy. */
+.chip-nguon.trong{border-style:dashed}
+
+.mota{margin:0; font-size:12px; line-height:1.5; color:var(--t1)}
+/* ĐO 16/08 — --t4 trên --card chỉ 3,44:1 (tối) / 3,04:1 (sáng), TRƯỢT 4,5:1. Số hiệu điều khoản
+   không phải chữ phụ: chính nó làm thẻ này là "luật". Dùng --t3 (6,53 / 5,20). */
+.nguon{
+  margin:4px 0 0; font-size:10px; line-height:1.5; color:var(--t3);
+  word-break:break-word; font-variant-numeric:tabular-nums;
+}
+
+/* Khối chỉ hiện ở chế độ ĐẦY ĐỦ */
+.daydu{margin-top:8px; padding-top:8px; border-top:1px dashed var(--border)}
+.nhan-nho{
+  font-size:10px; line-height:1.5; font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--t3); margin:0 0 3px; /* --t4 trượt 4,5:1 */
+}
+.nguyenvan{
+  margin:0 0 8px; padding:7px 9px; border-radius:var(--r-1);
+  background:var(--field); border-left:2px solid var(--border-strong);
+  font-size:11px; line-height:1.5; color:var(--t2);
+}
+/* Câu "chưa có nguyên văn" là câu QUAN TRỌNG NHẤT của tính năng — nó ngăn người dùng tưởng app
+   đã trích luật hộ. --t4 trên --field chỉ 2,69:1 ở theme sáng ⇒ tự bịt cảnh báo của chính mình.
+   Dùng --t3, giữ chữ nghiêng + viền đứt làm kênh phân biệt. */
+.nguyenvan.thieu{color:var(--t3); font-style:italic; border-left-style:dashed}
+.dong-phu{margin:0 0 6px; font-size:11px; line-height:1.5; color:var(--t2)}
+.dong-phu b{color:var(--t3); font-weight:700}
+.canhbao-verify{
+  display:inline-flex; align-items:center; gap:5px; margin-top:2px; padding:1px 7px;
+  border-radius:var(--r-1); border:1px solid var(--warning); color:var(--warning);
+  font-size:10px; line-height:1.5; font-weight:700;
+}
+
+.hangnut{display:flex; gap:6px; margin-top:7px; flex-wrap:wrap}
+.nut{
+  display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 9px;
+  border-radius:var(--r-1); border:1px solid var(--border); background:var(--field);
+  color:var(--t2); font-size:11px; line-height:1.5; font-weight:600; cursor:pointer;
+  font-family:inherit;
+}
+.nut:hover{background:var(--hover); color:var(--t1)}
+
+.vachngan{height:1px; background:var(--border); margin:6px 0 0}
+
+/* ── THẺ GÓP Ý — viền ĐỨT NÉT, KHÔNG vạch mức, KHÔNG màu cảnh báo ── */
+.the-gopy{
+  margin:0 10px 8px; padding:9px 10px; border-radius:var(--r-2); background:var(--card);
+  border:1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.gopy-tien{font-weight:700}
+.the-gopy .mota svg{color:var(--accent); vertical-align:-1px; margin-right:3px}
+.gopy-khongchan{
+  display:inline-flex; align-items:center; gap:5px; margin-top:6px;
+  font-size:10px; line-height:1.5; color:var(--t3);
+}
+.trong-noi{margin:2px 12px 12px; font-size:12px; line-height:1.5; color:var(--t3)}
+
+/* ── cột ghi chú ── */
+.ghichu{border:1px solid var(--border); border-radius:var(--r-2); background:var(--panel); padding:16px 18px}
+.ghichu h3{margin:0 0 10px; font-size:13px; line-height:1.5; font-weight:700}
+.ghichu h3+p{margin-top:0}
+.ghichu p{margin:0 0 10px; font-size:12px; line-height:1.5; color:var(--t2)}
+.ghichu ul{margin:0 0 14px; padding-left:18px}
+.ghichu li{font-size:12px; line-height:1.5; color:var(--t2); margin-bottom:5px}
+.ghichu code{
+  background:var(--field); border:1px solid var(--border); border-radius:4px;
+  padding:0 4px; font-size:11px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+.bang{width:100%; border-collapse:collapse; margin-bottom:14px}
+.bang th,.bang td{
+  text-align:left; padding:6px 8px; border-bottom:1px solid var(--border);
+  font-size:11px; line-height:1.5; vertical-align:top;
+}
+.bang th{color:var(--t3); font-weight:700; text-transform:uppercase; letter-spacing:.06em}
+.bang td{color:var(--t2)}
+.den-trang{filter:grayscale(1)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <h1>Thẻ vi phạm · hai chế độ hiển thị</h1>
+    <button class="themebtn" id="btn-theme" type="button">Đổi theme (đang: Tối)</button>
+  </div>
+  <p class="sub">
+    Mock hợp đồng cho phiếu P-B. Hai panel dưới là CÙNG một dữ liệu, khác đúng một thứ: chế độ hiển thị.
+    Khối dưới vạch ngăn là lớp góp ý — cùng bảng, khác dấu.
+  </p>
+
+  <div class="cols">
+
+    <!-- ══════════════════ CỘT 1 · CHẾ ĐỘ NGẮN ══════════════════ -->
+    <div>
+      <p class="colhead">Chế độ NGẮN — đang chạy deadline</p>
+      <p class="colnote">Chỉ cần biết: đỏ ở đâu, sửa cái gì. Một thẻ = một dòng đọc hết trong 2 giây.</p>
+
+      <div class="panel">
+        <div class="panelhead">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--t3)"><path d="M20 13c0 5-3.5 7.5-7.7 8.9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1 1 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+          <span class="title">Bảng kiểm</span>
+          <span class="count" aria-label="2 bắt buộc, 1 khuyến nghị"><span class="do"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M8.6 3h6.8l4.6 4.6v6.8L15.4 21H8.6L4 16.4V7.6z"/><path d="M12 8v4.5"/><path d="M12 16h.01"/></svg>2</span><span class="vang"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 4 2.5 20h19z"/><path d="M12 10v4"/><path d="M12 17.5h.01"/></svg>1</span></span>
+        </div>
+
+        <div class="secthead">Luật — theo chuẩn, dẫn được điều khoản</div>
+        <div class="seg" role="group" aria-label="Chế độ hiển thị luật">
+          <button type="button" aria-pressed="true">Ngắn</button>
+          <button type="button" aria-pressed="false">Đầy đủ</button>
+        </div>
+
+        <!-- thẻ đỏ -->
+        <div class="the do">
+          <div class="mucrow">
+            <span class="mucnhan">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M8.6 3h6.8l4.6 4.6v6.8L15.4 21H8.6L4 16.4V7.6z"/><path d="M12 8v4.5"/><path d="M12 16h.01"/></svg>
+              Bắt buộc
+            </span>
+          </div>
+          <p class="mota">Hành lang thoát nạn rộng 1.050 mm — thiếu 150 mm so với mức tối thiểu 1.200 mm.</p>
+          <p class="nguon">QCVN 06:2022/BXD §3.2.1</p>
+          <div class="hangnut">
+            <button class="nut" type="button">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+              Tới chỗ này
+            </button>
+            <button class="nut" type="button">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a4 4 0 0 0 5 5l-9.7 9.7a2.1 2.1 0 0 1-3-3z"/></svg>
+              Cách sửa
+            </button>
+          </div>
+        </div>
+
+        <!-- thẻ đỏ 2 -->
+        <div class="the do">
+          <div class="mucrow">
+            <span class="mucnhan">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M8.6 3h6.8l4.6 4.6v6.8L15.4 21H8.6L4 16.4V7.6z"/><path d="M12 8v4.5"/><path d="M12 16h.01"/></svg>
+              Bắt buộc
+            </span>
+          </div>
+          <p class="mota">Cửa phòng ngủ 2 rộng 700 mm — dưới mức tối thiểu 800 mm.</p>
+          <p class="nguon">QCVN 06:2022/BXD §3.2.5</p>
+          <div class="hangnut">
+            <button class="nut" type="button">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+              Tới chỗ này
+            </button>
+          </div>
+        </div>
+
+        <!-- thẻ vàng -->
+        <div class="the vang">
+          <div class="mucrow">
+            <span class="mucnhan">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 4 2.5 20h19z"/><path d="M12 10v4"/><path d="M12 17.5h.01"/></svg>
+              Khuyến nghị
+            </span>
+          </div>
+          <p class="mota">Lối đi bếp còn 850 mm — hai người tránh nhau sẽ vướng, mức thoải mái là 1.200 mm.</p>
+          <p class="nguon">Neufert · lối đi bếp (nhân trắc, điều chỉnh được)</p>
+          <div class="hangnut">
+            <button class="nut" type="button">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+              Tới chỗ này
+            </button>
+          </div>
+        </div>
+
+        <div class="vachngan"></div>
+
+        <div class="secthead gopy">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m12 3 2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"/></svg>
+          Gợi ý — Magic, chỉ là ý kiến
+        </div>
+        <div class="the-gopy">
+          <p class="mota"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m12 3 2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"/></svg><span class="gopy-tien">gợi ý · </span>Ba phối cảnh liền nhau đều ngang tầm mắt; thêm một góc từ trên xuống sẽ cho khách thấy tổng thể mặt bằng.</p>
+          <span class="gopy-khongchan">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 11V8a5 5 0 0 1 10 0v3"/><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M9 15.5h6"/></svg>
+            Không chặn xuất hồ sơ
+          </span>
+          <div class="hangnut"><button class="nut" type="button">Bỏ qua</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ CỘT 2 · CHẾ ĐỘ ĐẦY ĐỦ ══════════════════ -->
+    <div>
+      <p class="colhead">Chế độ ĐẦY ĐỦ — bảo vệ hồ sơ</p>
+      <p class="colnote">Thêm nguyên văn điều khoản · trục nguồn · cách sửa · ngày hiệu lực · cờ chưa đối chiếu.</p>
+
+      <div class="panel">
+        <div class="panelhead">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--t3)"><path d="M20 13c0 5-3.5 7.5-7.7 8.9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1 1 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+          <span class="title">Bảng kiểm</span>
+          <span class="count" aria-label="2 bắt buộc, 1 khuyến nghị"><span class="do"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M8.6 3h6.8l4.6 4.6v6.8L15.4 21H8.6L4 16.4V7.6z"/><path d="M12 8v4.5"/><path d="M12 16h.01"/></svg>2</span><span class="vang"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 4 2.5 20h19z"/><path d="M12 10v4"/><path d="M12 17.5h.01"/></svg>1</span></span>
+        </div>
+
+        <div class="secthead">Luật — theo chuẩn, dẫn được điều khoản</div>
+        <div class="seg" role="group" aria-label="Chế độ hiển thị luật">
+          <button type="button" aria-pressed="false">Ngắn</button>
+          <button type="button" aria-pressed="true">Đầy đủ</button>
+        </div>
+
+        <!-- thẻ đỏ · CÓ nguyên văn -->
+        <div class="the do">
+          <div class="mucrow">
+            <span class="mucnhan">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M8.6 3h6.8l4.6 4.6v6.8L15.4 21H8.6L4 16.4V7.6z"/><path d="M12 8v4.5"/><path d="M12 16h.01"/></svg>
+              Bắt buộc
+            </span>
+            <span class="chip-nguon">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21h16"/><path d="M6 21V9l6-4 6 4v12"/><path d="M10 21v-6h4v6"/></svg>
+              Luật nhà nước
+            </span>
+          </div>
+          <p class="mota">Hành lang thoát nạn rộng 1.050 mm — thiếu 150 mm so với mức tối thiểu 1.200 mm.</p>
+          <p class="nguon">QCVN 06:2022/BXD §3.2.1</p>
+
+          <div class="daydu">
+            <p class="nhan-nho">Nguyên văn điều khoản</p>
+            <p class="nguyenvan">“Chiều rộng thông thuỷ của đường thoát nạn theo phương ngang không nhỏ hơn 1,2 m đối với hành lang chung dùng để thoát nạn cho hơn 15 người.”</p>
+            <p class="dong-phu"><b>Cách sửa:</b> dời tim tường trục B ra 150 mm về phía phòng kho.</p>
+            <p class="dong-phu"><b>Hiệu lực từ:</b> 16/01/2022</p>
+          </div>
+
+          <div class="hangnut">
+            <button class="nut" type="button">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+              Tới chỗ này
+            </button>
+            <button class="nut" type="button">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a4 4 0 0 0 5 5l-9.7 9.7a2.1 2.1 0 0 1-3-3z"/></svg>
+              Cách sửa
+            </button>
+          </div>
+        </div>
+
+        <!-- thẻ đỏ 2 · CHƯA có nguyên văn — chỗ chống bịa -->
+        <div class="the do">
+          <div class="mucrow">
+            <span class="mucnhan">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M8.6 3h6.8l4.6 4.6v6.8L15.4 21H8.6L4 16.4V7.6z"/><path d="M12 8v4.5"/><path d="M12 16h.01"/></svg>
+              Bắt buộc
+            </span>
+            <span class="chip-nguon trong">Chưa phân loại nguồn</span>
+          </div>
+          <p class="mota">Cửa phòng ngủ 2 rộng 700 mm — dưới mức tối thiểu 800 mm.</p>
+          <p class="nguon">QCVN 06:2022/BXD §3.2.5</p>
+
+          <div class="daydu">
+            <p class="nhan-nho">Nguyên văn điều khoản</p>
+            <p class="nguyenvan thieu">Chưa có nguyên văn — chỉ có số hiệu điều khoản. Tra bản gốc trước khi trích vào hồ sơ.</p>
+            <span class="canhbao-verify">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 4 2.5 20h19z"/><path d="M12 10v4"/><path d="M12 17.5h.01"/></svg>
+              Số liệu chưa đối chiếu bản gốc
+            </span>
+          </div>
+
+          <div class="hangnut">
+            <button class="nut" type="button">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+              Tới chỗ này
+            </button>
+          </div>
+        </div>
+
+        <!-- thẻ vàng · tiêu chuẩn ngành -->
+        <div class="the vang">
+          <div class="mucrow">
+            <span class="mucnhan">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 4 2.5 20h19z"/><path d="M12 10v4"/><path d="M12 17.5h.01"/></svg>
+              Khuyến nghị
+            </span>
+            <span class="chip-nguon">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+              Tiêu chuẩn ngành
+            </span>
+          </div>
+          <p class="mota">Lối đi bếp còn 850 mm — hai người tránh nhau sẽ vướng, mức thoải mái là 1.200 mm.</p>
+          <p class="nguon">Neufert · lối đi bếp (nhân trắc, điều chỉnh được)</p>
+
+          <div class="daydu">
+            <p class="nhan-nho">Nguyên văn điều khoản</p>
+            <p class="nguyenvan thieu">Chưa có nguyên văn — chỉ có số hiệu điều khoản. Tra bản gốc trước khi trích vào hồ sơ.</p>
+            <p class="dong-phu"><b>Cách sửa:</b> nới khoảng giữa hai dãy tủ bếp lên 1.200 mm.</p>
+            <span class="canhbao-verify">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 4 2.5 20h19z"/><path d="M12 10v4"/><path d="M12 17.5h.01"/></svg>
+              Số liệu chưa đối chiếu bản gốc
+            </span>
+          </div>
+
+          <div class="hangnut">
+            <button class="nut" type="button">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+              Tới chỗ này
+            </button>
+          </div>
+        </div>
+
+        <div class="vachngan"></div>
+
+        <div class="secthead gopy">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m12 3 2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"/></svg>
+          Gợi ý — Magic, chỉ là ý kiến
+        </div>
+        <p class="trong-noi">
+          Chưa có đề bài đã ghi cho dự án — góp ý concept cần đề bài làm mốc, không có thì máy sẽ tự bịa
+          một concept rồi chấm theo nó. Ghi đề bài ở màn “Nhận đề bài”.
+        </p>
+      </div>
+    </div>
+
+    <!-- ══════════════════ CỘT 3 · HỢP ĐỒNG CHO PHIÊN CODE ══════════════════ -->
+    <div class="ghichu">
+      <h3>Bốn kênh phân biệt luật ↔ góp ý (không kênh nào đứng một mình)</h3>
+      <table class="bang">
+        <tr><th>Kênh</th><th>Lớp LUẬT</th><th>Lớp GÓP Ý</th></tr>
+        <tr><td>Khối</td><td>trên vạch ngăn</td><td>dưới vạch ngăn</td></tr>
+        <tr><td>Hình dạng</td><td>bát giác (đỏ) · tam giác (vàng)</td><td>tia Magic 4 cánh</td></tr>
+        <tr><td>Nhãn chữ</td><td>Bắt buộc · Khuyến nghị</td><td>gợi ý</td></tr>
+        <tr><td>Viền thẻ</td><td>liền + vạch mức trái</td><td>đứt nét, không vạch mức</td></tr>
+        <tr><td>Dẫn nguồn</td><td>bắt buộc có</td><td>không có</td></tr>
+        <tr><td>Chặn</td><td>đỏ chặn nghiệm thu</td><td>không bao giờ chặn</td></tr>
+      </table>
+
+      <h3>Ba rào an toàn — chỗ rủi ro pháp lý cao nhất</h3>
+      <ul>
+        <li><b>Không bịa nguyên văn.</b> Rule chưa có nguyên văn thì ô đó hiện đúng câu “Chưa có nguyên văn — chỉ có số hiệu điều khoản.”, tuyệt đối không để AI viết thay.</li>
+        <li><b>Với loại <code>luat</code>: chỉ TÌM và TRÍCH.</b> Cấm diễn giải, cấm tóm tắt, cấm rút gọn cho vừa thẻ — thẻ dài thì cho cuộn.</li>
+        <li><b>AI không sửa bộ luật.</b> Nhiều nhất là báo “có vẻ có bản mới, đây là link”; mọi cập nhật đi qua người duyệt.</li>
+      </ul>
+
+      <h3>Hai trục ĐỘC LẬP — cấm suy trục này ra trục kia</h3>
+      <p>
+        Trục <b>NGUỒN</b> (<code>loaiNguon</code>: luật · tiêu chuẩn · xu hướng) trả lời “ai ban hành”.
+        Trục <b>RÀNG BUỘC</b> (<code>RuleBinding</code>: mandatory · adjustable · advisory) trả lời “chặt tới đâu”.
+        Một tiêu chuẩn ngành thành bắt buộc khi hợp đồng viện dẫn; một luật vẫn có điều khoản chỉ khuyến nghị.
+        Rule chưa khai <code>loaiNguon</code> ⇒ chip hiện “Chưa phân loại nguồn” (viền đứt), không đoán.
+      </p>
+
+      <h3>Đọc được khi bỏ hết màu</h3>
+      <p class="den-trang" style="border:1px solid var(--border); border-radius:var(--r-1); padding:8px 10px">
+        <span class="mucnhan" style="--muc:var(--danger)">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8.6 3h6.8l4.6 4.6v6.8L15.4 21H8.6L4 16.4V7.6z"/><path d="M12 8v4.5"/><path d="M12 16h.01"/></svg>
+          Bắt buộc
+        </span>
+        <span class="mucnhan" style="--muc:var(--warning); margin-left:6px">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 4 2.5 20h19z"/><path d="M12 10v4"/><path d="M12 17.5h.01"/></svg>
+          Khuyến nghị
+        </span>
+        <span style="margin-left:6px; color:var(--t2); font-weight:700; font-size:11px"><span style="color:var(--accent)">✦</span> gợi ý</span>
+      </p>
+      <p style="color:var(--t3)">Ảnh trên đã lọc xám hoàn toàn. Ba loại vẫn tách nhau bằng hình dạng và chữ.</p>
+
+      <h3>Độ tương phản — đo thật 16/08, không ước lượng</h3>
+      <table class="bang">
+        <tr><th>Chỗ</th><th>Tối</th><th>Sáng</th><th>Cần</th></tr>
+        <tr><td>Nhãn mức đỏ</td><td>5,27</td><td>5,26</td><td>4,5</td></tr>
+        <tr><td>Nhãn mức vàng</td><td>7,67</td><td>5,05</td><td>4,5</td></tr>
+        <tr><td>Số hiệu điều khoản</td><td>6,53</td><td>5,20</td><td>4,5</td></tr>
+        <tr><td>Nguyên văn</td><td>11,21</td><td>8,84</td><td>4,5</td></tr>
+        <tr><td>Câu “chưa có nguyên văn”</td><td>6,53</td><td>5,20</td><td>4,5</td></tr>
+      </table>
+      <p>
+        Ba chỗ trên TỪNG dùng <code>--t4</code> và trượt (3,44 / 3,04 / 2,69) — đã đổi sang
+        <code>--t3</code>. Còn hai nợ NGOÀI phiếu này, ghi để không ai tưởng đã sạch:
+        <code>--accent</code> làm màu CHỮ trên <code>--card</code> chỉ 3,55:1 ở theme tối (nợ cấp
+        token, cả app dùng); và <code>focus-visible</code> chưa có ở nút — nợ chung 31 chỗ đã ghi
+        trong STATUS.
+      </p>
+
+      <h3>Máy tự soi mâu thuẫn hai trục</h3>
+      <p>
+        Rule khai nguồn <b>Xu hướng</b> mà lại đặt ở mức <b>Bắt buộc</b> ⇒ thẻ hiện thêm một dòng
+        cảnh báo (xu hướng không bao giờ được chặn nghiệm thu). Máy <b>BÁO</b>, KHÔNG tự hạ mức —
+        hạ giúp là máy quyết thay người ở chỗ pháp lý. Dòng này nói với người biên tập bộ luật,
+        không phải với người đang vẽ.
+      </p>
+
+      <h3>Chế độ nhớ theo người dùng</h3>
+      <p>
+        Khoá <code>interiorflow.review.cheDoHienThi.v1</code> trong localStorage. Mặc định
+        <b>Ngắn</b> — phần lớn thời gian là lúc đang vẽ. Đổi được bất cứ lúc nào, không hỏi lại.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Đổi theme — mock phải xem được CẢ HAI (LUAT-GIAO-DIEN-BAT-BUOC ②). Phím D cũng đổi.
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('btn-theme');
+  function set(t) {
+    root.setAttribute('data-theme', t);
+    btn.textContent = 'Đổi theme (đang: ' + (t === 'dark' ? 'Tối' : 'Sáng') + ')';
+  }
+  btn.addEventListener('click', function () {
+    set(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'd' || e.key === 'D') btn.click();
+  });
+})();
+</script>
+</body>
+</html>
