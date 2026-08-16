@@ -1,0 +1,224 @@
+<title>Tầng AI Của IF</title>
+<style>
+  :root{
+    --paper:#F5F7F8; --panel:#FFFFFF; --ink:#12161B; --ink-2:#3D4650; --ink-3:#6B7681;
+    --rule:#D3DBE0; --rule-2:#E7ECEF;
+    --blue:#1B5FA6; --blue-soft:#E6EFF7;
+    --red:#AE3529;  --red-soft:#F8E9E7;
+    --green:#2F6B52; --green-soft:#E6F0EA;
+    --amber:#8A6212; --amber-soft:#F6EEDC;
+    --shadow:0 1px 2px rgba(18,22,27,.06), 0 8px 24px rgba(18,22,27,.05);
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#0E1216; --panel:#161B21; --ink:#E8EDF1; --ink-2:#B4BEC7; --ink-3:#7C8894;
+      --rule:#2A333C; --rule-2:#1E252C;
+      --blue:#77ADE4; --blue-soft:#152430;
+      --red:#E3897C;  --red-soft:#2A1B19;
+      --green:#79C3A0; --green-soft:#15241D;
+      --amber:#D9B063; --amber-soft:#2A2317;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0E1216; --panel:#161B21; --ink:#E8EDF1; --ink-2:#B4BEC7; --ink-3:#7C8894;
+    --rule:#2A333C; --rule-2:#1E252C;
+    --blue:#77ADE4; --blue-soft:#152430;
+    --red:#E3897C;  --red-soft:#2A1B19;
+    --green:#79C3A0; --green-soft:#15241D;
+    --amber:#D9B063; --amber-soft:#2A2317;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:48px 28px 96px;display:flex;flex-direction:column;gap:42px}
+  .eyebrow{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
+  h1{font-family:var(--sans);font-weight:800;letter-spacing:-.025em;line-height:1.05;font-size:clamp(30px,4.4vw,46px);margin:0;text-wrap:balance}
+  h2{font-family:var(--sans);font-weight:700;letter-spacing:-.015em;font-size:22px;margin:0 0 14px;text-wrap:balance}
+  h2 .n{font-family:var(--mono);font-size:13px;color:var(--ink-3);font-weight:500;margin-right:10px;letter-spacing:0}
+  h3{font-family:var(--sans);font-size:16px;margin:24px 0 8px;font-weight:700;letter-spacing:-.01em}
+  p{margin:0 0 14px;max-width:66ch} p:last-child{margin-bottom:0}
+  code{font-family:var(--mono);font-size:.85em;background:var(--rule-2);padding:1px 5px;border-radius:4px;color:var(--ink-2)}
+  section{border-top:1px solid var(--rule);padding-top:28px}
+  header .lede{font-size:19px;color:var(--ink-2);max-width:62ch;margin-top:16px}
+  figure{margin:0;background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:22px 20px 16px;box-shadow:var(--shadow);overflow-x:auto}
+  figure svg{display:block;width:100%;min-width:800px;height:auto;color:var(--ink)}
+  figcaption{font-family:var(--sans);font-size:12.5px;color:var(--ink-3);margin-top:14px;line-height:1.5;max-width:70ch}
+  .tw{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+  table{width:100%;border-collapse:collapse;font-size:14.5px;font-family:var(--sans)}
+  th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:700;padding:11px 14px;border-bottom:1px solid var(--rule);white-space:nowrap}
+  td{padding:11px 14px;border-bottom:1px solid var(--rule-2);vertical-align:top;line-height:1.5}
+  tr:last-child td{border-bottom:0}
+  td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tag{display:inline-block;font-family:var(--sans);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:4px;white-space:nowrap}
+  .tag.ok{background:var(--green-soft);color:var(--green)}
+  .tag.gap{background:var(--red-soft);color:var(--red)}
+  .tag.part{background:var(--amber-soft);color:var(--amber)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+  .card{background:var(--panel);border:1px solid var(--rule);border-left:3px solid var(--red);border-radius:10px;padding:16px 18px}
+  .card.no{border-left-color:var(--ink-3)}
+  .card h4{font-family:var(--sans);font-size:15px;margin:0 0 8px;font-weight:700}
+  .card p{font-size:14.5px;margin:0;color:var(--ink-2)}
+  blockquote{margin:18px 0;padding:14px 18px;background:var(--blue-soft);border-left:3px solid var(--blue);border-radius:0 8px 8px 0;font-size:16px}
+  blockquote p{margin:0;max-width:62ch}
+  footer{border-top:1px solid var(--rule);padding-top:18px;font-family:var(--sans);font-size:12.5px;color:var(--ink-3)}
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">Tư vấn kỹ thuật · 15/08/2026 · T</p>
+  <h1>Tầng AI của IF</h1>
+  <p class="lede">Hoà giao: tư vấn toàn bộ phần kỹ thuật lõi — thị giác, VLM, LLM, máy học, quy trình agentic. Tài liệu này đo trước, khuyên sau. Kết luận ngắn nhất: <strong>IF đã có kiến trúc AI tốt hơn anh nghĩ, và thiếu ít hơn anh lo — nhưng đang thiếu đúng bốn mắt xích.</strong></p>
+</header>
+
+<section>
+  <h2><span class="n">01</span>Bản đồ hiện tại</h2>
+  <figure>
+    <svg viewBox="0 0 1000 560" role="img" aria-label="Bản đồ tầng AI của IF: cột ảnh có bốn mức từ lõi tất định tới AI cao trên mây; cột chữ có cloud NVIDIA tự tụt xuống Ollama cục bộ, RAG rỗng, và perceptron học trên máy; nền dưới cùng là luật ngành tất định; bốn ô đỏ là bốn mắt xích còn thiếu.">
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2F6B52"/></marker>
+      </defs>
+      <g font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+        <text x="40" y="24" font-size="12" font-weight="700" fill="currentColor" opacity=".62">ẢNH · HÌNH</text>
+        <text x="530" y="24" font-size="12" font-weight="700" fill="currentColor" opacity=".62">CHỮ · TRI THỨC</text>
+
+        <!-- cột ảnh -->
+        <g fill="none" stroke="currentColor" stroke-width="1.2">
+          <rect x="40" y="36" width="430" height="50" rx="6"/>
+          <rect x="40" y="94" width="430" height="50" rx="6"/>
+          <rect x="40" y="152" width="430" height="50" rx="6"/>
+        </g>
+        <rect x="40" y="210" width="430" height="50" rx="6" fill="#2F6B52" fill-opacity=".08" stroke="#2F6B52" stroke-width="1.2"/>
+        <g fill="currentColor">
+          <text x="56" y="58" font-size="12.5" font-weight="700">Mức 4 · AI Cao</text>
+          <text x="56" y="76" font-size="11" opacity=".62">19 model trên mây — Flux · SAM2 · BiRefNet · Kling · TRELLIS</text>
+          <text x="56" y="116" font-size="12.5" font-weight="700">Mức 3 · AI Vừa</text>
+          <text x="56" y="134" font-size="11" opacity=".62">biến thể rẻ/nhanh của cùng nhà cung cấp</text>
+          <text x="56" y="174" font-size="12.5" font-weight="700">Mức 2 · Tự-host</text>
+          <text x="56" y="192" font-size="11" opacity=".62">ComfyUI · Stable Diffusion — máy mình, chưa dùng nhiều</text>
+        </g>
+        <text x="56" y="232" font-size="12.5" font-weight="700" fill="#2F6B52">Mức 1 · Lõi tất định — 0 đồng</text>
+        <text x="56" y="250" font-size="11" fill="#2F6B52" fill-opacity=".85">idmask · local-edit · furniture-extract · text2image-core</text>
+
+        <!-- cột chữ -->
+        <g fill="none" stroke="currentColor" stroke-width="1.2">
+          <rect x="530" y="36" width="430" height="50" rx="6"/>
+        </g>
+        <rect x="530" y="94" width="430" height="50" rx="6" fill="#2F6B52" fill-opacity=".08" stroke="#2F6B52" stroke-width="1.2"/>
+        <rect x="530" y="152" width="430" height="50" rx="6" fill="#AE3529" fill-opacity=".07" stroke="#AE3529" stroke-width="1.2" stroke-dasharray="5 3"/>
+        <rect x="530" y="210" width="430" height="50" rx="6" fill="#2F6B52" fill-opacity=".08" stroke="#2F6B52" stroke-width="1.2"/>
+        <g fill="currentColor">
+          <text x="546" y="58" font-size="12.5" font-weight="700">Trên mây · NVIDIA</text>
+          <text x="546" y="76" font-size="11" opacity=".62">sinh chữ + sinh vector nhúng (1024 chiều)</text>
+        </g>
+        <text x="546" y="116" font-size="12.5" font-weight="700" fill="#2F6B52">Cục bộ · Ollama — tự dò, tự tụt tầng</text>
+        <text x="546" y="134" font-size="11" fill="#2F6B52" fill-opacity=".85">mất mạng / hết lượt → tự chạy máy mình, 0 đồng</text>
+        <text x="546" y="174" font-size="12.5" font-weight="700" fill="#AE3529">RAG — máy dựng xong, KHO RỖNG</text>
+        <text x="546" y="192" font-size="11" fill="#AE3529" fill-opacity=".9">NotebookChunk = 0 dòng · nhúng vẫn phải gọi ra mây</text>
+        <text x="546" y="232" font-size="12.5" font-weight="700" fill="#2F6B52">Học trên máy · perceptron gu</text>
+        <text x="546" y="250" font-size="11" fill="#2F6B52" fill-opacity=".85">0 GPU · 0 khoá · học từ lựa chọn của chính KTS</text>
+
+        <!-- mũi tên tụt tầng -->
+        <line x1="745" y1="86" x2="745" y2="90" stroke="#2F6B52" stroke-width="1.4" marker-end="url(#a2)"/>
+
+        <!-- nền tất định -->
+        <rect x="40" y="290" width="920" height="58" rx="8" fill="currentColor" fill-opacity=".05" stroke="currentColor" stroke-width="1.2"/>
+        <text x="56" y="314" font-size="12.5" font-weight="700" fill="currentColor">NỀN TẤT ĐỊNH — chạy bằng máy, luôn ra cùng một kết quả, 0 đồng</text>
+        <text x="56" y="332" font-size="11" fill="currentColor" opacity=".66">3.094 dòng luật ngành (12 bộ) · thị giác cổ điển: điểm tụ · hiệu chỉnh camera · đo vật · né nhãn · BOQ</text>
+
+        <!-- bốn mắt xích thiếu -->
+        <text x="40" y="386" font-size="12" font-weight="700" fill="#AE3529">BỐN MẮT XÍCH CÒN THIẾU</text>
+        <g>
+          <rect x="40" y="398" width="220" height="62" rx="6" fill="#AE3529" fill-opacity=".07" stroke="#AE3529" stroke-width="1.2" stroke-dasharray="5 3"/>
+          <rect x="273" y="398" width="220" height="62" rx="6" fill="#AE3529" fill-opacity=".07" stroke="#AE3529" stroke-width="1.2" stroke-dasharray="5 3"/>
+          <rect x="506" y="398" width="220" height="62" rx="6" fill="#AE3529" fill-opacity=".07" stroke="#AE3529" stroke-width="1.2" stroke-dasharray="5 3"/>
+          <rect x="739" y="398" width="221" height="62" rx="6" fill="#AE3529" fill-opacity=".07" stroke="#AE3529" stroke-width="1.2" stroke-dasharray="5 3"/>
+        </g>
+        <g fill="#AE3529">
+          <text x="54" y="420" font-size="12" font-weight="700">Backbone thị giác</text>
+          <text x="54" y="438" font-size="10.5" fill-opacity=".9">một bộ trích đặc trưng</text>
+          <text x="54" y="452" font-size="10.5" fill-opacity=".9">dùng chung, chạy máy mình</text>
+
+          <text x="287" y="420" font-size="12" font-weight="700">Nhúng chữ cục bộ</text>
+          <text x="287" y="438" font-size="10.5" fill-opacity=".9">mắt xích cuối buộc RAG</text>
+          <text x="287" y="452" font-size="10.5" fill-opacity=".9">còn phải gọi ra mây</text>
+
+          <text x="520" y="420" font-size="12" font-weight="700">Máy soạn đồ thị</text>
+          <text x="520" y="438" font-size="10.5" fill-opacity=".9">ý định → chuỗi việc;</text>
+          <text x="520" y="452" font-size="10.5" fill-opacity=".9">engine chạy đã có sẵn</text>
+
+          <text x="753" y="420" font-size="12" font-weight="700">Bậc theo cấu hình máy</text>
+          <text x="753" y="438" font-size="10.5" fill-opacity=".9">máy nào chạy nổi model nào</text>
+          <text x="753" y="452" font-size="10.5" fill-opacity=".9">— hiện chưa dò gì cả</text>
+        </g>
+
+        <text x="40" y="500" font-size="11.5" fill="currentColor" opacity=".62">Xanh = đã chạy thật · Viền đứt đỏ = còn thiếu · Nền xám = chạy bằng máy, không phải AI.</text>
+        <text x="40" y="520" font-size="11.5" fill="currentColor" opacity=".62">Mỗi mức ảnh tụt được xuống mức dưới; cột chữ tự tụt từ mây xuống máy khi mất mạng hoặc hết lượt.</text>
+      </g>
+    </svg>
+    <figcaption>Bản đồ đo trực tiếp từ mã nguồn và cơ sở dữ liệu ngày 15/08. Điều đáng chú ý là <em>tầng dưới cùng</em>: phần lớn giá trị kỹ thuật của IF nằm ở lớp tất định, không phải ở AI.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2><span class="n">02</span>Điều tôi phải nói trước: kiến trúc này đã tốt</h2>
+  <p>Anh nói không rành nên tôi nói thẳng cả phần khen, vì nó ảnh hưởng tới quyết định: <strong>IF đang có hai thứ mà phần lớn app AI không có.</strong></p>
+  <p><strong>Thang bốn mức và đường tụt tầng.</strong> Mỗi tác vụ ảnh khai sẵn bốn nấc từ lõi-chạy-máy tới AI-cao-trên-mây; cột chữ tự dò máy có Ollama không, hết lượt hoặc mất mạng thì <em>tự tụt xuống chạy cục bộ</em>. Hầu hết sản phẩm AI hiện nay chết cứng khi mất mạng hoặc hết credit. IF thì tụt xuống nấc thấp hơn và vẫn làm được việc.</p>
+  <p><strong>Lớp tất định làm nền.</strong> 3.094 dòng luật ngành, hình học điểm tụ, đo đạc, né nhãn, bóc khối lượng — <em>không dòng nào cần AI</em>, và tất cả đều cho cùng một kết quả mỗi lần chạy. Đây mới là chỗ IF hơn đối thủ: Canva đẹp mà không đúng, Revit đúng mà không đẹp — phần "đúng" của IF nằm ở lớp này chứ không nằm ở model.</p>
+  <blockquote><p><strong>Hệ quả cho mọi quyết định sau:</strong> AI trong IF không phải để <em>thay</em> lớp tất định, mà để <em>đề xuất đầu vào</em> cho nó và <em>diễn giải đầu ra</em> của nó. Chỗ nào máy tính được chắc chắn thì đừng để model đoán.</p></blockquote>
+</section>
+
+<section>
+  <h2><span class="n">03</span>Bốn mắt xích thiếu, xếp theo giá trị trên chi phí</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Mắt xích</th><th>Vì sao thiếu nó thì tắc</th><th>Chi phí</th><th>Giá trị</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Nhúng chữ cục bộ</strong><br><span class="tag part">nửa đường</span></td><td>RAG đã dựng xong nhưng còn phải gọi ra mây để hiểu tài liệu — trái local-first, và tốn tiền mỗi lần đọc</td><td class="num">1 phiên</td><td class="num">Cao</td></tr>
+      <tr><td><strong>Máy soạn đồ thị</strong><br><span class="tag gap">chưa có</span></td><td>Engine chạy chuỗi việc đã có (ước credit, cache, huỷ, tiến độ thật) nhưng <em>không ai soạn chuỗi</em> — người dùng phải tự nối từng node</td><td class="num">2–3 phiên</td><td class="num">Rất cao</td></tr>
+      <tr><td><strong>Backbone thị giác</strong><br><span class="tag gap">chưa có</span></td><td>Mỗi việc nhìn ảnh lại gọi một model khác ở xa, không cái nào chia sẻ đặc trưng; cùng một ảnh tính lại từ đầu mỗi lượt</td><td class="num">~197 MB + 2–3 phiên</td><td class="num">Cao</td></tr>
+      <tr><td><strong>Bậc theo cấu hình máy</strong><br><span class="tag gap">chưa có</span></td><td>Máy không biết nó đang chạy trên cấu hình nào; chọn model theo biến môi trường rồi lấy đại cái đầu tiên</td><td class="num">1 phiên</td><td class="num">Vừa</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2><span class="n">04</span>Quy trình agentic — lời khuyên quan trọng nhất</h2>
+  <p>Đây là chỗ dễ tiêu tiền nhất mà không ra gì, nên tôi nói kỹ.</p>
+  <p><strong>IF đã có nền agentic rồi, chỉ là chưa gọi tên.</strong> Đồ thị node <em>chính là</em> bộ chạy chuỗi việc: có thứ tự phụ thuộc, có ước tính chi phí trước khi chạy, có bỏ qua bước đã xong bằng vân tay đầu vào, có huỷ giữa chừng, có tiến độ thật. Đó là thứ mà các khung agent bên ngoài phải xây lại từ đầu.</p>
+  <p><strong>Thứ thiếu là người soạn, không phải người chạy.</strong> Hiện KTS phải tự kéo từng node và tự nối. Máy soạn đồ thị nghĩa là: nói ý định → máy <em>đề xuất một chuỗi việc</em> → người xem và sửa → engine chạy.</p>
+  <blockquote><p><strong>Đừng xây agent tự chạy.</strong> Một agent tự quyết rồi tự làm sẽ đốt credit theo cách không đoán được, và khi sai thì sai cả chuỗi. Hãy xây <strong>máy soạn đồ thị + cửa duyệt</strong>: máy trình ra chuỗi việc kèm chi phí dự tính, người bấm duyệt, engine chạy đúng cái đã duyệt. Cùng một khuôn với <em>thiết kế bằng mã</em> — máy sinh ý định có cấu trúc, máy tất định thi hành.</p></blockquote>
+  <p>Khuôn này không phải tôi nghĩ ra: nó chính là <strong>luật 8</strong> trong hiến pháp IF — <em>“AI không ghi trực tiếp vào hình học; AI ra ý định có cấu trúc, code tính toán, code kiểm tra, sai thì tự sửa tối đa ba vòng, vẫn sai thì báo lỗi chứ không giao bản sai.”</em> Luật đó viết cho hình học, nhưng áp nguyên vẹn cho chuỗi việc.</p>
+</section>
+
+<section>
+  <h2><span class="n">05</span>Máy học — cái gì đáng, cái gì không</h2>
+  <p>Anh hỏi thêm về máy học, và câu trả lời thật có thể trái với kỳ vọng: <strong>gần như không có chỗ nào trong IF đáng bỏ công huấn luyện một model.</strong> Lý do không phải máy yếu — mà là thiếu dữ liệu có nhãn, và vì thứ cần học phần lớn đã là luật viết được.</p>
+  <div class="cards">
+    <div class="card no"><h4>Huấn luyện model từ đầu</h4><p>Không. Cần hàng trăm nghìn mẫu có nhãn và một dàn GPU. IF không có, và cũng không cần.</p></div>
+    <div class="card no"><h4>Tinh chỉnh model lớn theo gu</h4><p>Chạy được trên máy anh (khoảng 15–20 phút cho model cỡ vừa) nhưng <strong>vô nghĩa lúc này</strong>: chưa có dữ liệu nhãn để dạy. Máy đủ mạnh, kho thì rỗng.</p></div>
+    <div class="card"><h4>Học nhẹ trên máy — nên, và đã có</h4><p>Bộ học gu bằng so-sánh-từng-cặp đang chạy thật, không GPU, không khoá. Đây mới là dạng “học” hợp IF: học từ chính lựa chọn của KTS, ngay trên máy, lộ ra được để người sửa.</p></div>
+    <div class="card"><h4>Nhúng và truy hồi — nên, ưu tiên cao</h4><p>Không phải huấn luyện, nhưng cho hiệu quả “AI hiểu dự án của tôi” rõ nhất, và rẻ nhất. Đây là chỗ nên bỏ công trước.</p></div>
+  </div>
+  <h3>Một ranh giới phải giữ</h3>
+  <p>Tri thức giá trị nhất của IF — luật ngành — <strong>không nên nhét vào lớp truy hồi</strong>. Để một model “nhớ” rằng hành lang phải rộng tối thiểu 1.200mm là bước lùi so với việc máy <em>biết chắc</em> điều đó và đo được. Đúng chốt hai-lớp-kiểm ngày 07/08: lớp luật khác lớp góp ý, cấm trộn. Truy hồi chỉ nên nuốt tri thức mềm — sách, spec, biên bản họp, ghi chú.</p>
+</section>
+
+<section>
+  <h2><span class="n">06</span>Đề xuất thứ tự — và cái không nên làm</h2>
+  <p>Nếu chỉ làm được một việc: <strong>nhúng chữ cục bộ</strong>. Một phiên, đóng nốt mắt xích cuối để RAG hết phụ thuộc mạng, và mở đường cho mọi thứ “AI hiểu dự án này” về sau.</p>
+  <p>Nếu làm được ba: thêm <strong>máy soạn đồ thị có cửa duyệt</strong> (giá trị nhìn thấy rõ nhất với KTS — nói một câu, hiện ra chuỗi việc kèm giá tiền), rồi <strong>backbone thị giác</strong> nhưng <em>bắt đầu bằng một phép thử</em>, không phải bằng một bản ship: đo xem model có phân biệt nổi gỗ sồi với gỗ óc chó trên chính thư viện vật liệu của IF, trước khi cam kết nhúng gần 200MB vào bộ cài.</p>
+  <h3>Bốn thứ tôi khuyên không làm</h3>
+  <div class="cards">
+    <div class="card no"><h4>Agent tự chạy không cửa duyệt</h4><p>Đốt credit không đoán được, sai thì sai cả chuỗi, và trái luật 8.</p></div>
+    <div class="card no"><h4>Cho model sinh mã tự do rồi chạy</h4><p>IF chưa có sandbox nào. Mã do model viết sẽ đọc được file dự án và gọi được mạng.</p></div>
+    <div class="card no"><h4>Nhét luật ngành vào truy hồi</h4><p>Biến thứ đang chắc chắn thành thứ phải đoán. Giữ luật ở lớp tất định.</p></div>
+    <div class="card no"><h4>Chạy theo model mới nhất</h4><p>Model đổi từng quý. Cái không đổi là lớp tất định và hợp đồng dữ liệu. Đầu tư vào chỗ không đổi.</p></div>
+  </div>
+</section>
+
+<footer>T lập 15/08/2026 · mọi con số đo trực tiếp từ mã nguồn và <code>prisma/dev.db</code> cùng ngày · chi tiết kỹ thuật kèm nguồn ở <code>docs/nc/NC-VISION-BACKBONE-CUC-BO-2026-08-15.md</code> và <code>docs/nc/NC-AI-LOCAL-TRI-THUC-2026-08-15.md</code>.</footer>
+</div>
