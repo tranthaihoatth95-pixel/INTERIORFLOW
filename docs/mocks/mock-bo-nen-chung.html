@@ -161,21 +161,42 @@ h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-t
 .canh-nen[data-dim="1"]{filter:brightness(.9) saturate(.9)}
 .canh-nen[data-dim="2"]{filter:brightness(.72) saturate(.72)}
 .tren{position:relative}
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   CARD KIỂU MỚI — KHÔNG ĐƯỜNG KẺ · LỚP PHỦ CHUYỂN SẮC CỤC BỘ · BẤM THÌ SỔ RA
+   Vệt tối CHỈ ở dải có chữ (đỉnh + đáy); khoảng giữa ảnh KHÔNG bị dìm chút nào.
+   Card này là RUỘT (nội dung) nên KHÔNG dùng kính — đúng luật 00-CHOT:39.
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+.c3{position:relative;width:232px;height:172px;border-radius:var(--r-3);overflow:hidden;
+  border:1px solid var(--mat-hairline);box-shadow:var(--shadow);flex-shrink:0;cursor:pointer;
+  transition:height var(--dur-fast) var(--ease-apple)}
+.c3.mo{height:268px}
+.anh3{position:absolute;inset:0;background:
+  radial-gradient(circle at 68% 34%,#ffe7ba 0%,#e0a86a 18%,rgba(224,168,106,0) 46%),
+  linear-gradient(#2a3550 0%,#5c4a5e 34%,#a46a4e 62%,#e3a86c 84%,#f5d6a4 100%)}
+.p[data-nen] .anh3{background:
+  radial-gradient(circle at 68% 34%,#fff4de 0%,#f0d3a6 20%,rgba(240,211,166,0) 48%),
+  linear-gradient(#c3d6e8 0%,#dde4ea 40%,#ecdcc4 72%,#f4e8d4 100%)}
+/* dải ĐỈNH — cho tiêu đề. Chuyển dần về 0, KHÔNG có cạnh cứng nào. */
+.tren3{position:absolute;inset:0 0 auto 0;padding:10px 11px 22px;
+  background:linear-gradient(180deg,rgba(0,0,0,.72) 0%,rgba(0,0,0,.44) 46%,rgba(0,0,0,0) 100%)}
+.tren3 b{font-size:var(--fs-xs);font-weight:var(--fw-semi);color:#fff;letter-spacing:.01em}
+/* dải ĐÁY — cho dãy số. Cùng cơ chế, ngược chiều. */
+.duoi3{position:absolute;inset:auto 0 0 0;padding:26px 11px 10px;
+  background:linear-gradient(0deg,rgba(0,0,0,.78) 0%,rgba(0,0,0,.5) 42%,rgba(0,0,0,0) 100%)}
+/* Dãy số — VẠCH DỌC mảnh giữa các số VẪN GIỮ (đúng ảnh tham chiếu). Cấm là cấm kẻ NGANG. */
+.so-hang{display:flex;align-items:baseline;gap:0}
+.so-hang span{flex:1;display:flex;align-items:baseline;gap:3px;font-size:9px;color:rgba(255,255,255,.82);
+  padding-left:9px;border-left:1px solid rgba(255,255,255,.22)}
+.so-hang span:first-child{padding-left:0;border-left:0}
+.so-hang i{font-style:normal;font-size:var(--fs-sm);font-weight:var(--fw-bold);color:#fff;
+  font-variant-numeric:tabular-nums}
+/* phần SỔ RA — nền đặc dần, vẫn không đường kẻ ngang nào */
+.them{margin-top:10px;padding-top:8px;
+  background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.34) 26%,rgba(0,0,0,.34) 100%)}
+.d-hang{display:flex;justify-content:space-between;gap:10px;font-size:9px;padding:3px 0}
+.d-hang span{color:rgba(255,255,255,.66)}
+.d-hang b{color:#fff;font-weight:var(--fw-semi)}
 
-/* CARD HAI VÙNG — vùng ảnh TRONG · vùng chữ ĐẶC */
-.c2{border-radius:var(--r-3);overflow:hidden;border:1px solid var(--mat-hairline);
-  box-shadow:var(--shadow);width:100%}
-.c2 .anh{height:80px;position:relative;
-  background:rgba(255,255,255,.1);
-  backdrop-filter:saturate(160%) blur(10px);-webkit-backdrop-filter:saturate(160%) blur(10px)}
-.p[data-nen] .c2 .anh{background:rgba(255,255,255,.16)}
-.c2 .anh span{position:absolute;left:10px;bottom:8px;font-size:10px;font-weight:var(--fw-bold);
-  letter-spacing:.08em;text-transform:uppercase;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
-.p[data-nen] .c2 .anh span{color:#1a1c1b;text-shadow:0 1px 3px rgba(255,255,255,.7)}
-.c2 .chu{padding:10px 11px;background:var(--mat-card);
-  backdrop-filter:saturate(180%) blur(var(--blur));-webkit-backdrop-filter:saturate(180%) blur(var(--blur))}
-.c2 .chu b{display:block;font-size:var(--fs-ui,13px);font-weight:var(--fw-semi);color:var(--t1)}
-.c2 .chu em{display:block;font-style:normal;font-size:var(--fs-2xs);color:var(--t2);margin-top:2px}
 .nhan-vung{position:absolute;right:8px;top:7px;font-size:9px;font-weight:var(--fw-bold);
   letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:var(--r-full);
   background:rgba(0,0,0,.45);color:#fff}
@@ -416,43 +437,98 @@ ul.luat b{color:#f5f5f7}
 </div>
 <p class="note">Cả ba đều dùng <b>bản SÁNG</b> của màu (nút trên nền ảnh tối cần nổi) và <b>chữ mực đậm</b> trên nút. Đây cũng là chỗ đồng từng làm tốt nhất — nên nếu hướng nào ở đây trông yếu hơn đồng rõ rệt thì đáng cân nhắc lại.</p>
 
-<!-- ═════════ 2 · CARD HAI ĐỘ TRONG ═════════ -->
-<h2>2 · Card hai độ trong — và nền dìm tới đâu thì card được trong tới đó</h2>
-<p class="h2sub"><b>Một card, hai vùng:</b> phần trên ôm ảnh thì <b>trong</b> để ảnh sống · phần dưới chứa chữ thì <b>đặc</b> để đọc được. ⚠️ <b>Chỗ dễ hiểu sai nhất: ngưỡng độ đặc CHỈ áp cho vùng CÓ CHỮ.</b> Vùng ảnh được trong tự do — không có chữ thì không có gì để mà đọc hỏng.</p>
-<div class="doi" data-doi>
-  <button type="button" data-dim="0" aria-pressed="true">Nền nét · card đặc</button>
-  <button type="button" data-dim="1" aria-pressed="false">Nền dìm vừa · card vừa</button>
-  <button type="button" data-dim="2" aria-pressed="false">Nền dìm mạnh · card trong</button>
-</div>
-<div class="hai">
-  <div class="p" data-nhan="teal" data-theme="dark" style="padding:0;min-height:210px">
-    <div class="canh-nen" data-nen-anh><i class="sky"></i><i class="sun"></i><i class="nui"></i><i class="nuoc"></i></div>
-    <div class="tren" style="padding:16px"><div class="tag">Theme tối</div>
-      <div class="c2" style="max-width:260px">
-        <div class="anh"><span class="nhan-vung">vùng ảnh · trong</span><span>Phòng khách · chiều</span></div>
-        <div class="chu"><span class="nhan-vung" style="position:static;float:right">vùng chữ · đặc</span><b>Gỗ óc chó · vân dọc</b><em>12 tấm · 2,4 m² · đã duyệt mẫu</em></div>
-      </div>
-    </div>
-  </div>
-  <div class="p" data-nhan="teal" data-nen="C" style="padding:0;min-height:210px">
-    <div class="canh-nen" data-nen-anh><i class="sky"></i><i class="sun"></i><i class="nui"></i><i class="nuoc"></i></div>
-    <div class="tren" style="padding:16px"><div class="tag">Theme sáng · bản C</div>
-      <div class="c2" style="max-width:260px">
-        <div class="anh"><span class="nhan-vung">vùng ảnh · trong</span><span>Phòng khách · chiều</span></div>
-        <div class="chu"><span class="nhan-vung" style="position:static;float:right">vùng chữ · đặc</span><b>Gỗ óc chó · vân dọc</b><em>12 tấm · 2,4 m² · đã duyệt mẫu</em></div>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- ═════════ 2 · NGUYÊN TẮC DÙNG KÍNH ═════════ -->
+<h2>2 · Nguyên tắc dùng kính — kính là VỎ, không là RUỘT</h2>
+<p class="h2sub">Câu hỏi <i>“có ai có nguyên tắc chưa”</i> — <b>có, và IF đã có từ đầu tháng 8</b>, tự rút ra bằng đường đau thương chứ không chép ai. Trích đúng hai dòng để phiên sau biết đây là <b>luật cũ</b>:</p>
 <table class="bang">
-  <thead><tr><th>Nấc</th><th>Nền</th><th>Vùng ảnh</th><th>Vùng chữ</th><th>Sàn tương phản chữ</th><th>Đánh đổi</th></tr></thead>
+  <thead><tr><th>Luật của IF</th><th>Ở đâu</th><th>Vì sao có</th></tr></thead>
   <tbody>
-    <tr><td><b>1 · nền nét</b></td><td>không dìm</td><td>0,10</td><td><b>0,82</b></td><td class="ok">9,1:1</td><td>Ảnh đẹp nhất, card nặng tay nhất</td></tr>
-    <tr><td><b>2 · dìm vừa</b></td><td>−10% sáng</td><td>0,10</td><td><b>0,72</b></td><td class="ok">6,4:1</td><td>Cân — card nhẹ đi thấy rõ, ảnh vẫn nét</td></tr>
-    <tr><td><b>3 · dìm mạnh</b></td><td>−28% sáng</td><td>0,10</td><td><b>0,62</b></td><td class="mid">4,8:1</td><td>Card nhẹ nhất, nhưng ảnh mất một phần sức</td></tr>
-    <tr><td colspan="6" style="color:#6e6e78">Sàn dưới cùng đã đo ở bản vẽ trước: <b>0,60 (tối) · 0,53 (sáng)</b> là ngưỡng thấp nhất còn đọc được với MỌI tấm ảnh. <b>0,35 thì trượt hẳn (2,1:1)</b> — kế thừa, không đo lại.</td></tr>
+    <tr><td><b>“Kính là VỎ không là RUỘT”</b></td><td><code>docs/00-CHOT.md:39</code> — chốt 01/08</td><td>Vỏ bọc thì được kính; ruột chứa nội dung thì đặc.</td></tr>
+    <tr><td><b>“Panel kính nổi PHẢI portal ra ngoài, không lồng trong chrome kính”</b></td><td><code>docs/00-CHOT.md:44</code> — luật K4, 02/08</td><td>Sự cố thật: dropdown nằm trong khung kính của thanh tiêu đề ⇒ <b>xuyên thấu, nhìn không ra</b>.</td></tr>
   </tbody>
 </table>
+<p class="note">Apple nói đúng ba điều y hệt: ① kính dành cho <b>lớp điều hướng nổi trên nội dung</b>, không dùng cho lớp nội dung ② <b>cấm kính chồng kính</b> — đặt gì lên kính thì lớp trên <b>chỉ dùng màu tô + độ trong</b> ③ hai biến thể (thường ↔ trong suốt) <b>không bao giờ trộn</b>. IF đi tới cùng kết luận đó trước, bằng một lần vỡ giao diện.</p>
+
+<h3 style="font-size:var(--fs-xs);color:#d6d6db;margin:18px 0 8px">Tiêu chí một câu — của chính chủ dự án</h3>
+<p class="h2sub"><i>“Chiếm chỗ thì xuất hiện để mọi thứ không ngộp.”</i> ⇒ <b>Kính chỉ dành cho thứ ĐÈ LÊN nội dung khác.</b> Thứ không đè lên gì thì cứ đặc. Đây là cách kiểm nhanh nhất, không cần tra bảng.</p>
+<table class="bang">
+  <thead><tr><th>DÙNG KÍNH — vì nó đè lên nội dung</th><th>KHÔNG DÙNG KÍNH — vì nó LÀ nội dung</th></tr></thead>
+  <tbody>
+    <tr><td>Thanh công cụ nổi trên khung nhìn (dock 3D, thanh 2D)</td><td><b>Thẻ số liệu</b> · widget Home</td></tr>
+    <tr><td>Panel nổi · popover · menu xổ · tool window</td><td><b>Dòng việc</b> · danh sách · bảng</td></tr>
+    <tr><td>Thanh tìm nổi trên nền ảnh</td><td><b>Vùng ảnh · phối cảnh · bản vẽ</b></td></tr>
+    <tr><td>Sidebar khi nó <b>đè</b> lên canvas (chế độ nổi)</td><td>Sidebar khi nó <b>chiếm chỗ riêng</b> (chế độ ghim)</td></tr>
+    <tr><td>Lớp phủ hộp thoại · lightbox</td><td>Nền trang · panel cố định</td></tr>
+    <tr><td colspan="2" style="color:#6e6e78">⛔ <b>Và không bao giờ: kính đặt trên kính.</b> Nút nằm trên thanh kính thì nút chỉ được <b>tô màu + độ trong</b>, không được là kính lần nữa.</td></tr>
+  </tbody>
+</table>
+<p class="note">🔧 <b>Bản vẽ này đã tự sửa theo luật trên:</b> card mẫu trước đó cho <b>mỗi vùng một lớp vật liệu</b> ⇒ đúng ca kính-chồng-kính. Nay <b>một tấm vỏ duy nhất</b>, hai vùng bên trong chỉ là màu tô. ⚠️ Bản vẽ Home (<code>mock-sidebar-3-nac-home.html</code>) <b>còn nguyên bệnh này</b> — thẻ số liệu và dòng việc ở đó đang là kính dù chúng là ruột. Chưa sửa, khai ở báo cáo.</p>
+
+<!-- ═════════ 3 · CARD ═════════ -->
+<h2>3 · Card — không đường kẻ, lớp phủ chuyển sắc cục bộ, bấm thì sổ ra</h2>
+<p class="h2sub">⛔ <b>Bỏ đường kẻ ngang chia card.</b> Tách vùng bằng <b>chuyển sắc</b>, không bằng một cái rẹt. <br>⚠️ Ranh giới: chỉ cấm <b>đường kẻ NGANG chia card thành khối</b>. <b>Vạch dọc mảnh</b> phân tách các con số cùng một hàng thì <b>vẫn dùng</b> — hai thứ khác nhau.</p>
+<p class="h2sub">⭐ <b>Lớp phủ CỤC BỘ — cách thứ ba, và là cách duy nhất giữ được ảnh:</b> vệt tối chuyển dần <b>chỉ ở dải có chữ</b> (đỉnh cho tiêu đề, đáy cho dãy số), <b>khoảng giữa ảnh sống trọn, không dìm chút nào</b>. Hai cách trước đều dìm cả tấm — cách này không.</p>
+
+<div class="hai">
+  <div class="p" data-nhan="teal" data-theme="dark">
+    <div class="tag">Theme tối · thu gọn ↔ đã sổ</div>
+    <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+      <div class="c3"><div class="anh3"></div>
+        <div class="tren3"><b>Phòng khách · chiều</b></div>
+        <div class="duoi3"><div class="so-hang"><span><i>2,4</i>m²</span><span><i>12</i>tấm</span><span><i>4</i>chờ</span></div></div>
+      </div>
+      <div class="c3 mo"><div class="anh3"></div>
+        <div class="tren3"><b>Phòng khách · chiều</b></div>
+        <div class="duoi3"><div class="so-hang"><span><i>2,4</i>m²</span><span><i>12</i>tấm</span><span><i>4</i>chờ</span></div>
+          <div class="them"><div class="d-hang"><span>Vật liệu</span><b>Gỗ óc chó · vân dọc</b></div>
+            <div class="d-hang"><span>Nguồn số</span><b>đo từ khối</b></div>
+            <div class="d-hang"><span>Cập nhật</span><b>2 giờ trước</b></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="p" data-nhan="teal" data-nen="C">
+    <div class="tag">Theme sáng · thu gọn ↔ đã sổ</div>
+    <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+      <div class="c3"><div class="anh3"></div>
+        <div class="tren3"><b>Phòng khách · chiều</b></div>
+        <div class="duoi3"><div class="so-hang"><span><i>2,4</i>m²</span><span><i>12</i>tấm</span><span><i>4</i>chờ</span></div></div>
+      </div>
+      <div class="c3 mo"><div class="anh3"></div>
+        <div class="tren3"><b>Phòng khách · chiều</b></div>
+        <div class="duoi3"><div class="so-hang"><span><i>2,4</i>m²</span><span><i>12</i>tấm</span><span><i>4</i>chờ</span></div>
+          <div class="them"><div class="d-hang"><span>Vật liệu</span><b>Gỗ óc chó · vân dọc</b></div>
+            <div class="d-hang"><span>Nguồn số</span><b>đo từ khối</b></div>
+            <div class="d-hang"><span>Cập nhật</span><b>2 giờ trước</b></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<p class="note">Chú ý ba điều trên card: <b>không một đường kẻ ngang nào</b> · vệt tối <b>chỉ ở đỉnh và đáy</b>, giữa ảnh nguyên vẹn · <b>vạch dọc giữa ba con số vẫn còn</b> (đúng ảnh tham chiếu).</p>
+
+<h3 style="font-size:var(--fs-xs);color:#d6d6db;margin:18px 0 8px">Điểm nghiệm thu — đo TẠI CHÂN CHỮ, không đo trung bình cả card</h3>
+<table class="bang">
+  <thead><tr><th>Vị trí</th><th>Độ đặc lớp phủ</th><th>Chữ trắng trên ảnh sáng nhất</th><th>Kết</th></tr></thead>
+  <tbody>
+    <tr><td><b>Chân chữ tiêu đề</b> (dải đỉnh)</td><td>0,72</td><td><b>9,3:1</b></td><td class="ok">ĐẠT</td></tr>
+    <tr><td><b>Chân dãy số</b> (dải đáy)</td><td>0,78</td><td><b>11,1:1</b></td><td class="ok">ĐẠT</td></tr>
+    <tr><td><b>Giữa ảnh</b></td><td>0 — không dìm</td><td>không có chữ</td><td class="ok">ảnh sống trọn</td></tr>
+    <tr><td colspan="4" style="color:#6e6e78"><b>Sàn rút ra:</b> lớp phủ <b>tại chân chữ</b> phải <b>≥ 0,54</b> thì chữ trắng mới đạt 4,5:1 với <i>mọi</i> tấm ảnh (tính theo ca xấu nhất — ảnh trắng tinh). Hai số 0,72 và 0,78 ở trên vượt sàn thoải mái. <b>Đo trung bình cả card là sai cách</b> — trung bình đẹp mà chân chữ mỏng thì chữ vẫn mất.</td></tr>
+  </tbody>
+</table>
+
+<h3 style="font-size:var(--fs-xs);color:#d6d6db;margin:18px 0 8px">Cái gì là cốt lõi, cái gì để dành lúc sổ — phần khó, không phải phần hiệu ứng</h3>
+<table class="bang">
+  <thead><tr><th>Luôn thấy (cốt lõi)</th><th>Chỉ hiện khi sổ</th></tr></thead>
+  <tbody>
+    <tr><td>Tên · ảnh nhận diện</td><td>Vật liệu · thông số đầy đủ</td></tr>
+    <tr><td><b>Một con số quyết định</b> + hai số phụ</td><td><b>Nguồn của số</b> (đo từ khối / người nhập)</td></tr>
+    <tr><td>Trạng thái (còn chờ bao nhiêu)</td><td>Lần cập nhật · người sửa · thao tác</td></tr>
+    <tr><td colspan="2" style="color:#6e6e78"><b>Tiêu chí một câu:</b> cốt lõi = <b>vừa đủ để quyết định có cần mở ra hay không</b>. Nhiều hơn thế là nhồi; ít hơn thế là bắt người ta mở mò.</td></tr>
+  </tbody>
+</table>
+<p class="note">⭐ <b>Đây cũng là lời giải cho “thừa trống + widget bị giãn”</b>, nên mục này và mục lưới bên dưới <b>là một việc chứ không phải hai</b>: card nhồi ít thì cao đều nhau, lưới xếp chặt được theo nhịp cột; card nhồi nhiều thì cái cao cái thấp, và chỗ hụt thành mảng trống. <b>Bấm-thì-sổ-ra chính là thứ giữ cho card đủ gọn để lưới có nhịp.</b></p>
 
 <!-- ═════════ 3 · LƯỚI ═════════ -->
 <h2>3 · Lưới &amp; nhịp — chữa đúng lỗi “thừa trống mà lại có widget bị giãn”</h2>
@@ -602,21 +678,19 @@ ul.luat b{color:#f5f5f7}
 </ul>
 
 <script>
+/* Bấm card thì SỔ RA — mặc định chỉ hiện phần cốt lõi. Bản thật nhớ trạng thái theo phiên. */
 (function(){
-  var wrap=document.querySelector('[data-doi]');
-  var CARD={0:{anh:'.10',chu:'.82'},1:{anh:'.10',chu:'.72'},2:{anh:'.10',chu:'.62'}};
-  wrap.querySelectorAll('button[data-dim]').forEach(function(b){
-    b.addEventListener('click',function(){
-      var d=b.dataset.dim;
-      document.querySelectorAll('[data-nen-anh]').forEach(function(s){s.dataset.dim=d});
-      document.querySelectorAll('.c2 .chu').forEach(function(c){
-        var tối=c.closest('[data-theme="dark"]');
-        var a=CARD[d].chu;
-        c.style.background = tối ? 'rgba(26,26,30,'+a+')' : 'rgba(252,253,252,'+a+')';
-      });
-      wrap.querySelectorAll('button[data-dim]').forEach(function(x){
-        x.setAttribute('aria-pressed',String(x===b));
-      });
+  document.querySelectorAll('.c3').forEach(function(c){
+    c.setAttribute('role','button');
+    c.setAttribute('tabindex','0');
+    function lat(){
+      var mo=c.classList.toggle('mo');
+      c.setAttribute('aria-expanded',String(mo));
+    }
+    c.setAttribute('aria-expanded',String(c.classList.contains('mo')));
+    c.addEventListener('click',lat);
+    c.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();lat();}
     });
   });
 })();

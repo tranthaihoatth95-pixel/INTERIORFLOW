@@ -91,19 +91,60 @@ xa cả tím lẫn ba màu nghĩa. **Không chọn hộ.**
 + chữ mực đậm. Kèm ghi chú: đây là chỗ đồng từng làm tốt nhất, nên hướng nào trông yếu hơn đồng rõ
 rệt thì đáng cân nhắc lại.
 
-### 2.5 · Card hai độ trong (④.2) · Lưới (④.3) · Sidebar (④.4) · Chữ ký (④.5)
+### 2.5 · ⚠️ NGUYÊN TẮC DÙNG KÍNH — sửa giữa chừng, tôi đã làm SAI trước đó
 
-**Card** — đo bằng cách bấm ba nấc trên trang:
+**Câu hỏi *"có ai có nguyên tắc chưa"* — CÓ, và IF đã có từ đầu tháng 8.** Trích vào trang:
 
-| Nấc | Nền | Vùng ảnh | Vùng chữ | Sàn tương phản |
-|---|---|---|---|---|
-| 1 · nền nét | không dìm | 0,10 | **0,82** | 9,1:1 |
-| 2 · dìm vừa | `brightness(.9)` | 0,10 | **0,72** | 6,4:1 |
-| 3 · dìm mạnh | `brightness(.72)` | 0,10 | **0,62** | 4,8:1 |
+| Luật IF | Ở đâu | Vì sao có |
+|---|---|---|
+| **“Kính là VỎ không là RUỘT”** | `docs/00-CHOT.md:39` — chốt 01/08 | vỏ bọc thì được kính; ruột chứa nội dung thì đặc |
+| **“Panel kính nổi PHẢI portal ra ngoài, không lồng trong chrome kính”** | `docs/00-CHOT.md:44` — luật K4, 02/08 | sự cố thật: dropdown trong khung kính tiêu đề ⇒ **xuyên thấu, nhìn không ra** |
 
-⭐ **Vùng ảnh giữ nguyên 0,10 qua cả ba nấc** — chính là điều phiếu bảo phải nói rõ vì dễ hiểu sai
-nhất: **ngưỡng đọc CHỈ áp cho vùng có chữ**. Trang ghi nhãn "vùng ảnh · trong" / "vùng chữ · đặc"
-ngay trên card.
+Apple nói đúng ba điều y hệt (kính cho lớp điều hướng · cấm kính chồng kính · hai biến thể không
+trộn). **IF đi tới cùng kết luận đó trước, bằng một lần vỡ giao diện** — đã ghi rõ trong trang để
+phiên sau biết đây là luật cũ chứ không phải luật mới chép về.
+
+🔴 **Bản vẽ của tôi đã vi phạm và đã sửa:** card mẫu cho **mỗi vùng một `backdrop-filter`** ⇒ đúng
+ca **kính chồng kính**, phạm K4. Đo lại sau sửa: **`backdrop-filter` trong toàn tệp = 0**, vì card
+là **ruột** nên không dùng kính chút nào.
+
+Trang có bảng hai cột **DÙNG KÍNH ↔ KHÔNG DÙNG KÍNH** theo tiêu chí một câu của chủ dự án
+(*“chiếm chỗ thì xuất hiện để mọi thứ không ngộp”* ⇒ **kính chỉ cho thứ ĐÈ LÊN nội dung khác**).
+
+⚠️ **Khai thẳng:** bản vẽ Home (`mock-sidebar-3-nac-home.html`) **còn nguyên bệnh này** — thẻ số
+liệu và dòng việc ở đó đang là kính dù chúng là ruột. **Chưa sửa** (ưu tiên phiếu này trước theo
+đúng chỉ đạo). Đây là nợ, không phải sót.
+
+### 2.6 · Card — đọc lại theo cách thứ BA (④.2, dựng lại)
+
+Ba cách, và chỉ cách 3 giữ được ảnh:
+· cách 1 (kính đặc) → **dìm cả tấm** · cách 2 (dìm nền + card trong) → **vẫn dìm cả tấm**
+· ⭐ **cách 3 — lớp phủ chuyển sắc CỤC BỘ**: vệt tối **chỉ ở dải có chữ**, khoảng giữa ảnh **sống trọn**.
+
+**Điểm nghiệm thu — đo TẠI CHÂN CHỮ, không đo trung bình cả card:**
+
+| Vị trí | Độ đặc | Chữ trắng trên ảnh sáng nhất | Kết |
+|---|---|---|---|
+| Chân chữ tiêu đề (dải đỉnh) | **0,72** | **9,3:1** | ĐẠT |
+| Chân dãy số (dải đáy) | **0,78** | **11,1:1** | ĐẠT |
+| Giữa ảnh | **0** | không có chữ | ảnh sống trọn |
+
+**Sàn rút ra: lớp phủ tại chân chữ phải ≥ 0,54** thì chữ trắng mới đạt 4,5:1 với *mọi* ảnh (tính
+theo ca xấu nhất — ảnh trắng tinh). **Đo trung bình cả card là sai cách** — trung bình đẹp mà chân
+chữ mỏng thì chữ vẫn mất.
+
+**Không đường kẻ** — đo trên trang: `hr` trong card = **0**; tách vùng hoàn toàn bằng chuyển sắc.
+Giữ đúng ranh giới: **vạch dọc mảnh giữa ba con số VẪN CÒN** (đúng ảnh tham chiếu) — chỉ cấm kẻ ngang.
+
+**Card sổ ra** — đo: thu gọn **172px** ↔ đã sổ **268px**. Phần khó không phải hiệu ứng mà là
+**chia cốt lõi ↔ để dành**, trang có bảng riêng, tiêu chí một câu: *cốt lõi = vừa đủ để quyết định
+có cần mở ra hay không*.
+
+⭐ **Nối với lưới, không tách rời**: card gọn thì cao đều nhau, lưới xếp chặt theo nhịp cột; card
+nhồi thì cái cao cái thấp và chỗ hụt thành mảng trống. **Bấm-thì-sổ-ra chính là thứ giữ cho card đủ
+gọn để lưới có nhịp** — nên "thừa trống + widget bị giãn" và "card sổ ra" là **một việc**.
+
+### 2.7 · Lưới (④.3) · Sidebar (④.4) · Chữ ký (④.5)
 
 **Lưới** — TRƯỚC/SAU cùng lượng nội dung. Bản SAU đo được **4 cột đều đúng 154,5px**, ô chiếm số
 cột nguyên. Bản TRƯỚC dùng co-giãn-tự-do để thấy đúng bệnh: ô ít chữ bị **kéo dài ngang**, hàng
@@ -222,11 +263,17 @@ Bản C: nền=rgb(227,229,228) | cảnh báo=rgb(154,99,4)
 $ Đo lưới bản SAU:
 cols = 154.5px 154.5px 154.5px 154.5px      (4 cột đều, không ô nào co giãn tự do)
 
-$ Bấm thử 3 nấc card hai độ trong:
-nấc 0: filter=none                            | ảnh=rgba(255,255,255,0.1) | chữ=rgba(26,26,30,0.82)
-nấc 1: filter=brightness(0.9) saturate(0.9)   | ảnh=rgba(255,255,255,0.1) | chữ=rgba(26,26,30,0.72)
-nấc 2: filter=brightness(0.72) saturate(0.72) | ảnh=rgba(255,255,255,0.1) | chữ=rgba(26,26,30,0.62)
-# Vùng ảnh GIỮ NGUYÊN 0,10 — đúng luật "ngưỡng chỉ áp cho vùng có chữ".
+$ Đo card kiểu mới (sau khi sửa theo nguyên tắc kính):
+thu gọn cao: 172px          |  đã sổ cao: 268px
+card có backdrop-filter?  KHÔNG (đúng — card là ruột, không phải vỏ)
+dải đỉnh: linear-gradient(rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.44) 46%, rgba(0,0,0,0) 100%)
+dải đáy : linear-gradient(0deg, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.5) 42%, rgba(0,0,0,0) 100%)
+số đường kẻ ngang trong card: 0
+# Giữa hai dải KHÔNG có lớp phủ nào → ảnh sống trọn.
+
+$ grep -c "backdrop-filter" docs/mocks/mock-bo-nen-chung.html
+0
+# Trước khi sửa: 2 (hai vùng của card mỗi vùng một lớp) = ca KÍNH CHỒNG KÍNH, phạm K4.
 
 $ Cân bằng thẻ HTML sau khi thay cả một khối lớn: lệch = 0
 ```
