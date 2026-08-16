@@ -211,11 +211,13 @@ h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-t
 .k1::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(255,255,255,.55) 22%,rgba(255,255,255,.7) 50%,rgba(255,255,255,.55) 78%,transparent)}
 .p[data-nen] .k1::before{background:linear-gradient(90deg,transparent,rgba(255,255,255,.95) 30%,#fff 50%,rgba(255,255,255,.95) 70%,transparent)}
-/* ② GRADIENT KHI TRỎ VÀO — KHẢ NĂNG. Chỉ lúc rê chuột, buông ra về như cũ. */
+/* ② QUẦNG SÁNG QUANH VIỀN — KHẢ NĂNG. Sáng LAN RA NGOÀI mép, mềm và ấm.
+   ⚠️ MẶT CARD KHÔNG ĐỔI — không phủ gradient lên bề mặt. Sáng ở VIỀN, không ở RUỘT.
+   Và nó ĐỨNG YÊN — đó là chỗ tách khỏi tầng ③, xem ghi chú kênh chuyển động. */
 .k2{background:var(--card);border:1px solid var(--border);
-  transition:background var(--dur-fast) var(--ease-apple),border-color var(--dur-fast) var(--ease-apple)}
+  transition:box-shadow var(--dur-fast) var(--ease-apple),border-color var(--dur-fast) var(--ease-apple)}
 .k2:hover,.k2.is-hover{border-color:var(--nhan-vien);
-  background:linear-gradient(135deg,var(--nhan-mem) 0%,var(--card) 62%)}
+  box-shadow:0 0 0 1px var(--nhan-vien),0 0 22px 3px var(--nhan-mem),0 0 44px 8px var(--nhan-mem)}
 /* ③ VIỀN CHẠY LIÊN TỤC — TRẠNG THÁI đang render. Chỉ khi đang chạy. */
 .k3{background:var(--card);border:1px solid transparent;position:relative;isolation:isolate}
 .k3::after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;z-index:-1;
@@ -495,8 +497,8 @@ ul.luat b{color:#f5f5f7}
   <thead><tr><th>Tầng</th><th>Khi nào</th><th>Mang nghĩa</th><th>Hình thức</th></tr></thead>
   <tbody>
     <tr><td><b>① Kính nhận sáng</b></td><td>luôn luôn</td><td><b>CHẤT LIỆU</b> — “đây là vật liệu thật, có chiều sâu”</td><td>mép trên bắt sáng · bề mặt đổi theo thứ nằm dưới · <b>đứng yên</b></td></tr>
-    <tr><td><b>② Gradient khi trỏ vào</b></td><td>lúc rê chuột</td><td><b>KHẢ NĂNG</b> — “cái này bấm được”</td><td>chuyển sắc nổi nhẹ, buông ra về như cũ</td></tr>
-    <tr><td><b>③ Viền chạy liên tục</b></td><td>lúc đang render</td><td><b>TRẠNG THÁI</b> — “đang chạy”</td><td>ánh sáng chạy vòng viền, không dừng</td></tr>
+    <tr><td><b>② Quầng sáng quanh viền</b></td><td>lúc rê chuột</td><td><b>KHẢ NĂNG</b> — “cái này bấm được”</td><td>viền sáng lan ra ngoài, mềm · <b>ĐỨNG YÊN</b> · mặt card không đổi</td></tr>
+    <tr><td><b>③ Viền chạy liên tục</b></td><td>lúc đang render</td><td><b>TRẠNG THÁI</b> — “đang chạy”</td><td>ánh sáng <b>CHẠY</b> vòng viền, không dừng</td></tr>
   </tbody>
 </table>
 <div class="hai">
@@ -505,8 +507,8 @@ ul.luat b{color:#f5f5f7}
     <div class="tren" style="padding:16px"><div class="tag">Theme tối</div>
       <div style="display:flex;gap:11px;flex-wrap:wrap">
         <div class="k-demo k1"><b>① Nhận sáng</b><em>chất liệu · luôn có</em></div>
-        <div class="k-demo k2 is-hover"><b>② Trỏ vào</b><em>bấm được · chỉ lúc rê</em></div>
-        <div class="k-demo k3"><span class="dang"><i></i>Đang dựng ảnh</span><b>③ Viền chạy</b><em>trạng thái · chỉ khi chạy</em></div>
+        <div class="k-demo k2 is-hover"><b>② Quầng sáng viền</b><em>bấm được · đứng yên</em></div>
+        <div class="k-demo k3"><span class="dang"><i></i>Đang dựng ảnh</span><b>③ Viền CHẠY</b><em>trạng thái · đang chuyển động</em></div>
       </div>
     </div>
   </div>
@@ -515,15 +517,21 @@ ul.luat b{color:#f5f5f7}
     <div class="tren" style="padding:16px"><div class="tag">Theme sáng</div>
       <div style="display:flex;gap:11px;flex-wrap:wrap">
         <div class="k-demo k1"><b>① Nhận sáng</b><em>chất liệu · luôn có</em></div>
-        <div class="k-demo k2 is-hover"><b>② Trỏ vào</b><em>bấm được · chỉ lúc rê</em></div>
-        <div class="k-demo k3"><span class="dang"><i></i>Đang dựng ảnh</span><b>③ Viền chạy</b><em>trạng thái · chỉ khi chạy</em></div>
+        <div class="k-demo k2 is-hover"><b>② Quầng sáng viền</b><em>bấm được · đứng yên</em></div>
+        <div class="k-demo k3"><span class="dang"><i></i>Đang dựng ảnh</span><b>③ Viền CHẠY</b><em>trạng thái · đang chuyển động</em></div>
       </div>
     </div>
   </div>
 </div>
-<p class="note"><b>Vì sao ba tầng KHÔNG được lẫn:</b> nếu kính nhận sáng mà cũng lấp lánh chạy thì người dùng <b>không biết card đang render hay chỉ là kính đẹp</b> — mất luôn nghĩa của tầng ③, thứ duy nhất trong ba cái mang tin cần hành động. Nên tầng ① <b>đứng yên tuyệt đối</b> (chỉ bắt sáng tĩnh ở mép), tầng ② <b>chỉ sống lúc con trỏ nằm trên</b>, tầng ③ <b>chỉ sống lúc máy đang chạy thật</b>. Ba khoảng thời gian rời nhau ⇒ không bao giờ thấy hai cái cùng lúc trên một card.
-<br><b>Tầng ① “nhận ánh sáng” nghĩa là gì cho đúng:</b> kính <b>đổi theo thứ nằm dưới</b> (nền sáng thì sáng lên, nền tối thì tối đi) — đó là việc <code>backdrop-filter</code> làm, khác hẳn phủ một màu chết; cộng vệt <b>bắt sáng mảnh ở mép trên</b> mô phỏng ánh sáng liếm vào rìa vật liệu. Đây là chỗ khác nhau giữa <i>kính thật</i> và <i>ô mờ mờ</i>. ⚠️ Nhưng vẫn đúng luật vừa chốt: <b>kính chỉ ở lớp VỎ</b> — làm kính thật hơn không có nghĩa là dùng kính nhiều hơn.
-<br><b>Giảm chuyển động:</b> tầng ③ là thứ <b>đầu tiên phải tắt</b> — viền thôi chạy, thành viền tĩnh màu nhấn, và chữ “Đang dựng ảnh” giữ nguyên nên <b>không mất nghĩa</b>.</p>
+<p class="note">🔴 <b>② và ③ VỀ CÙNG MỘT CHỖ — cả hai đều ở VIỀN.</b> Nên khoảng-thời-gian-rời-nhau không còn đủ để tách chúng; phải cộng thêm một kênh nữa, và kênh đó là <b>CHUYỂN ĐỘNG</b>:
+<br>· tầng ② — viền sáng <b>ĐỨNG YÊN</b> ⇒ “con trỏ đang ở đây”
+<br>· tầng ③ — viền <b>CHẠY vòng</b> ⇒ “đang render”
+<br><b>Mắt phân biệt chuyển động nhanh hơn phân biệt màu</b>, nên đây là kênh đúng để tách hai thứ cùng chỗ đứng. Dựng cạnh nhau ở trên để soi: hai card kề nhau, một đứng yên một chạy — không lẫn được.
+<br><b>Ba khoảng thời gian rời nhau vẫn đúng và vẫn cần</b> (① luôn · ② chỉ khi con trỏ nằm trên · ③ chỉ khi máy chạy thật), chỉ là nay nó là lớp bảo vệ thứ hai chứ không phải lớp duy nhất.</p>
+<p class="note"><b>Tầng ① “nhận ánh sáng” nghĩa là gì cho đúng:</b> kính <b>đổi theo thứ nằm dưới</b> (nền sáng thì sáng lên, nền tối thì tối đi) — việc <code>backdrop-filter</code> làm, khác hẳn phủ một màu chết; cộng vệt <b>bắt sáng mảnh ở mép trên</b>. ⚠️ Vẫn đúng luật vừa chốt: <b>kính chỉ ở lớp VỎ</b> — làm kính thật hơn không có nghĩa là dùng kính nhiều hơn.
+<br>⚠️ <b>Mặt card KHÔNG đổi ở tầng ②</b> — sáng ở <b>viền</b>, không ở <b>ruột</b>. Phủ gradient lên mặt card là quay lại đúng lỗi vừa sửa.
+<br><b>Giảm chuyển động:</b> tầng ③ tắt đầu tiên — viền thôi chạy, thành viền tĩnh màu nhấn, chữ “Đang dựng ảnh” giữ nguyên nên <b>không mất nghĩa</b>. ⚠️ Lúc đó ② và ③ trông gần giống nhau ⇒ <b>chữ trạng thái trở thành kênh phân biệt chính</b>, không được bỏ.</p>
+<p class="note">📌 <b>CHỖ NÀY ĐÃ KÍN — ghi cho phiên sau:</b> trong ảnh tham chiếu, quầng sáng quanh card thực ra đang nói <b>“người khác đang ở node này”</b> (có nhãn tên kèm theo). IF nay đã dùng viền sáng cho <b>khả năng</b> và viền chạy cho <b>trạng thái</b> ⇒ khi làm cộng tác thật, <b>presence phải có kênh THỨ BA</b> (vd avatar nhỏ ghim ở góc + tên), <b>không được lấy lại viền sáng</b>. Đây là chỗ dễ va nhất về sau.</p>
 <p class="note">📌 <b>Đây là NỢ CŨ đang trả, không phải ý mới</b> — hai entry mở từ 12/08 chưa ai làm: <code>hover-gradient-kem</code> (“nội dung chọn được thì hover nổi gradient — ánh sáng có nghĩa khả-tương-tác”) · <code>card-kinh-gradient</code> (“khôi phục card kính viền gradient chạy màu chặng render — tái sinh dạng ánh sáng CÓ NGHĨA, không trang trí tĩnh”).
 <br>🔴 <b>ĐÍNH CHÍNH chốt cũ:</b> entry hover ghi gradient màu <b>KEM</b> ấm — nhưng <b>kem/vàng vừa bị bỏ chiều nay</b> vì trên nền xám ra xỉn. ⇒ Gradient hover đổi sang <b>màu nhấn mới (mòng két)</b>. Ghi rõ ở đây là đính chính, không im lặng đổi.</p>
 

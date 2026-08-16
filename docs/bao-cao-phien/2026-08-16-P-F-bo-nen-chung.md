@@ -120,13 +120,30 @@ liệu và dòng việc ở đó đang là kính dù chúng là ruột. **Chưa 
 | Tầng | Khi nào | Nghĩa | Hình thức |
 |---|---|---|---|
 | ① Kính nhận sáng | **luôn luôn** | **CHẤT LIỆU** | mép trên bắt sáng + `backdrop-filter` đổi theo nền · **đứng yên** |
-| ② Gradient khi trỏ vào | lúc rê chuột | **KHẢ NĂNG** | chuyển sắc nổi nhẹ, buông ra về như cũ |
-| ③ Viền chạy liên tục | lúc đang render | **TRẠNG THÁI** | ánh sáng chạy vòng viền |
+| ② **Quầng sáng quanh viền** | lúc rê chuột | **KHẢ NĂNG** | viền sáng lan ra ngoài, mềm · **ĐỨNG YÊN** · mặt card không đổi |
+| ③ Viền chạy liên tục | lúc đang render | **TRẠNG THÁI** | ánh sáng **CHẠY** vòng viền |
 
-⭐ **Lý do ba tầng không lẫn — cơ chế, không phải lời hứa:** ba tầng sống ở **ba khoảng thời gian
-rời nhau** (① luôn · ② chỉ khi con trỏ nằm trên · ③ chỉ khi máy chạy thật) ⇒ **không bao giờ thấy
-hai cái cùng lúc trên một card**. Nếu ① cũng lấp lánh thì mất luôn nghĩa của ③ — thứ duy nhất
-trong ba cái mang tin *cần hành động*.
+🔴 **SỬA lượt cuối — T mô tả tầng ② sai và tôi đã dựng theo bản sai.** T dặn *"gradient nổi trên
+bề mặt"*; đúng ra là **quầng sáng lan quanh VIỀN**, mềm, **mặt card không đổi**. Đã sửa CSS: bỏ
+`background: linear-gradient(...)` trên mặt, thay bằng `box-shadow` toả ra ngoài mép.
+
+⭐ **Và cái sửa đó đẻ ra xung đột mới — đã giải:** ② và ③ nay **về cùng một chỗ (đều ở viền)**, nên
+lập luận "ba khoảng thời gian rời nhau" của tôi **không còn đủ** để tách chúng. Kênh phân biệt phải
+là **CHUYỂN ĐỘNG**: ② **đứng yên** ⇒ *con trỏ đang ở đây* · ③ **chạy vòng** ⇒ *đang render*. Mắt
+phân biệt chuyển động nhanh hơn phân biệt màu, nên đây là kênh đúng. Đã dựng hai card kề nhau —
+một đứng yên một chạy — để soi tận mắt là không lẫn.
+
+Khoảng-thời-gian-rời-nhau **vẫn đúng và vẫn cần**, chỉ là nay nó là **lớp bảo vệ thứ hai** chứ
+không phải lớp duy nhất.
+
+⚠️ **Một hệ quả tôi tự thấy và đã ghi vào trang:** khi bật *giảm chuyển động*, ③ thôi chạy ⇒ ② và ③
+trông **gần giống nhau**. Lúc đó **chữ trạng thái ("Đang dựng ảnh") thành kênh phân biệt chính** —
+không được bỏ. Nếu bỏ, chế độ giảm chuyển động sẽ mất khả năng phân biệt hai tầng.
+
+📌 **Chỗ này đã KÍN — ghi cho phiên sau:** trong ảnh tham chiếu, quầng sáng đó thực ra nói *"người
+khác đang ở node này"* (có nhãn tên). IF nay đã dùng viền sáng cho **khả năng** và viền chạy cho
+**trạng thái** ⇒ khi làm cộng tác thật, **presence phải có kênh THỨ BA** (vd avatar nhỏ ghim ở góc
++ tên), **không được lấy lại viền sáng**.
 
 **Giảm chuyển động:** ③ tắt đầu tiên → viền tĩnh màu nhấn, chữ "Đang dựng ảnh" giữ nguyên nên
 **không mất nghĩa**.
