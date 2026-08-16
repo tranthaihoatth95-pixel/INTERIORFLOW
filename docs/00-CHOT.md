@@ -1069,3 +1069,15 @@ chạm sau khi kiểm scene thật. Xem `docs/CHOT-DESIGN-DNA-CAMERA-2026-08-10.
 · Ví dụ IF: thu gọn `🕐 2 ngày · 📐 78 m² · ✓ 3/5` ↔ sổ ra *"**Căn hộ Thảo Điền** — dở từ 2 ngày trước · 78 m² · đã xong 3 trong 5 bước. Đang dựng phối cảnh phòng khách, còn chờ duyệt vật liệu sàn."* Cùng một thông tin, hai cách mã hoá.
 · **BA RÀNG BUỘC**: ① thu gọn là **NÉN CÁCH NÓI**, không phải **CẮT NỘI DUNG** — thứ chỉ hiện lúc sổ ra phải khai rõ là thông tin phụ ② chuyển liền mạch: icon mờ dần và chữ hiện lên **CÙNG VỊ TRÍ**, để người dùng thấy *nó nở ra* chứ không phải *nó đổi thành cái khác* ③ giữ tiêu chí *thu gọn = vừa đủ để quyết định có cần mở hay không* — nay áp cho CÁCH NÓI, không chỉ cho lượng nội dung.
 · ⇒ Phần khó của việc này là **bảng cốt-lõi ↔ để-dành**: mục nào ở thu gọn thành ICON GÌ, ở sổ ra thành CÂU CHỮ NÀO. Không phải phần chiều cao hay hiệu ứng.
+
+[16/08 Hoà chốt — BA TẦNG ÁNH SÁNG CỦA KÍNH, BA NGHĨA KHÁC NHAU] Nguyên văn: *"kính muốn thật thì phải nhận ánh sáng và bị ảnh hưởng nhé. Và 1 số kính có thể cho phép trỏ vào gradient màu hiện lên nhấn nhẹ, buông ra bình thường lại. Render thì ánh sáng card chạy viền liên tục biểu thị cảm giác đang render."*
+| Tầng | Khi nào | NGHĨA | Hình thức |
+|---|---|---|---|
+| ① **kính nhận sáng** | luôn luôn | *vật liệu thật, có chiều sâu* — **CHẤT LIỆU** | mép trên bắt sáng · bề mặt đổi theo thứ nằm dưới |
+| ② **gradient khi trỏ vào** | rê chuột | *cái này bấm được* — **KHẢ NĂNG** | chuyển sắc nổi nhẹ, buông ra về như cũ |
+| ③ **viền chạy liên tục** | đang render | *đang chạy* — **TRẠNG THÁI** | ánh sáng chạy vòng viền, không dừng |
+· 🔴 **BA TẦNG KHÔNG ĐƯỢC LẪN NHAU** — kính nhận sáng mà cũng lấp lánh chạy thì không ai biết card đang render hay chỉ là kính đẹp. Bản vẽ phải dựng cả ba cạnh nhau chứng minh nhìn phát phân biệt được. **Đây là điểm nghiệm thu**, không phải trang trí.
+· **① LÀ PHẦN MỚI**: *"nhận ánh sáng và bị ảnh hưởng"* = kính KHÔNG phải lớp mờ tĩnh — phải **đổi theo thứ nằm dưới** (đúng việc `backdrop-filter` làm, không phải phủ màu cố định) + **bắt sáng ở mép** (vệt sáng mảnh cạnh trên, ánh sáng liếm rìa vật liệu). Đây là khác biệt giữa *kính thật* và *ô mờ mờ*. ⚠️ Vẫn giữ **kính chỉ ở lớp VỎ** — làm kính thật hơn ≠ dùng kính nhiều hơn.
+· ✅ **② VÀ ③ ĐÃ CÓ ENTRY TỪ 12/08, CHƯA AI LÀM** — `hover-gradient-kem` (*"nội dung chọn được hover nổi gradient — ánh sáng có nghĩa khả-tương-tác"*) và `card-kinh-gradient` (*"card kính viền gradient chạy màu chặng render, Hoà khen 'rất đẹp' — tái sinh dạng ánh sáng CÓ NGHĨA, không trang trí tĩnh"*). ⇒ Đây là **nợ cũ đang trả**, không phải ý mới. Hoà nhất quán suốt 4 ngày.
+· 🔴 **CHỐT CŨ LỖI THỜI, ĐÍNH CHÍNH**: entry hover ghi *"gradient **KEM** ấm"* — **kem/vàng đã bị bỏ chiều 16/08** (trên nền xám ra xỉn) ⇒ gradient hover đổi sang **màu nhấn mới (mòng két)**. Ghi rõ là đính chính, không im lặng đổi.
+· Tuân `prefers-reduced-motion`: tầng ③ chạy liên tục là thứ **đầu tiên phải tắt** khi bật giảm chuyển động, thay bằng dấu hiệu tĩnh.
