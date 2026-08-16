@@ -1103,3 +1103,11 @@ chạm sau khi kiểm scene thật. Xem `docs/CHOT-DESIGN-DNA-CAMERA-2026-08-10.
 · **GHÉP VỚI CHỐT "HAI NGÔN NGỮ" cùng ngày** ra thang đầy đủ: **mặc định** = ký hiệu (icon + số), lướt nắm tổng quát · **vừa** = tiêu đề + một hai dòng chữ, dừng lại muốn biết thêm · **full** = đoạn văn đầy đủ, đọc kỹ. Luật *icon mất khi có chữ* áp **từ nấc VỪA trở đi**.
 · 🔴 **RÀNG BUỘC QUAN TRỌNG NHẤT — "luôn GỌN và TƯƠM TẤT ở lớp mặc định"**: nấc mặc định phải **ĐẸP và ĐỦ TỰ THÂN**, KHÔNG được là bản cắt xén chờ mở ra mới thành hình. Đây là cửa nghiệm thu: che hai nấc kia đi, nấc mặc định vẫn phải đứng được một mình.
 · Nối: `cardSoRa` (dựng lại thành 3 nấc) · sidebar 3 nấc · `kien-truc-tool-3-lop`.
+
+[16/08 Hoà chốt — TRỤC PHẢI VÀO BỘ NỀN, CÓ Ô GIẢI NGHĨA] Nguyên văn: *"trục phải tính, có ô giải nghĩa."* (ảnh: menu After-Effects-like — tab Essentials/Advanced + danh sách lệnh, trỏ vào một mục thì **ô giải nghĩa hiện BÊN CẠNH** gồm tiêu đề + **HÌNH MINH HOẠ THAO TÁC** + câu mô tả *"Move, scale, rotate, or change the anchor point of the layer."*).
+· **TRỤC PHẢI (panel thông số) vào bộ nền chung** — không để nó ngoài hệ như trước.
+· ⭐ **Ô GIẢI NGHĨA CÓ HÌNH — đây mới là điểm khác biệt, không phải tooltip chữ**: có **hình minh hoạ thao tác** trước, rồi mới tới câu mô tả. Với app hàng chục lệnh dựng hình, đây là khác biệt giữa *phải học* và *nhìn là biết*. KTS nhìn hình hiểu ngay.
+· ⭐ **GIẢI MỘT CHỖ IF ĐANG VƯỚNG**: luật đã chốt *"lệnh chưa đủ điều kiện hiện MỜ KÈM LÝ DO"* — nhưng lý do nhét vào đâu? Nhãn không đủ chỗ, và luật ngôn ngữ chỉ dẫn cấm nhãn quá 12 từ. ⇒ **Ô giải nghĩa CHÍNH LÀ chỗ lý do sống.** Nối `hotkey-registry` (lệnh mờ kèm lý do) + NT-8 (icon luôn có nhãn).
+· **TAB Essentials / Advanced** đúng nhịp **hai tầng** IF đã chốt (người mới dùng gói · người thạo gọi lệnh đơn — cùng MỘT sổ lệnh, §2b.1). Không phải hai bộ lệnh.
+· **HÌNH THỨC**: hiện **BÊN CẠNH**, không che mục đang trỏ. ⚠️ [Đ1] IF đã có `components/ui/Tooltip.tsx` (kèm `TOOLTIP_LONG_PRESS_MS` 500/8) — **mở rộng cái đó**, cấm đẻ cơ chế thứ hai.
+· Nối: bộ nền chung (mục mới `oGiaiNghia`) · `kien-truc-tool-3-lop` (trục phải giữ vai Inspector edit sâu + BuildRecipe create/stack).
