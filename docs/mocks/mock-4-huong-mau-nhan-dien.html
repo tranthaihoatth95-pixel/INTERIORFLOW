@@ -1,0 +1,186 @@
+<!-- @dsCard group="Nhận diện" -->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>InteriorFlow · Bốn hướng màu nhận diện — chọn bằng mắt</title>
+<style>
+/* ── Token nền, chép nguyên văn app/globals.css ───────────────────────────── */
+:root{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78;
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-xl:20px; --r-full:999px;
+  --tap:32px;
+  font-synthesis-weight:none;
+}
+.sang{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a;
+}
+
+/* ── BỐN HƯỚNG — chỉ đổi 2 biến, không đụng gì khác ───────────────────────── */
+.h-A{ --a:#6a57f5; --a2:#553ff3; --w:#c79a63; }              /* nay */
+.h-B{ --a:#4a3f8c; --a2:#3b3170; --w:#c79a63; }              /* tím mực trầm */
+.h-C{ --a:#b5854a; --a2:#9a6d38; --w:#6a57f5; }              /* đảo vai */
+.h-D{ --a:#3f6b5a; --a2:#31564a; --w:#c79a63; }              /* rêu sâu */
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#08080a;color:#f5f5f7;font:14px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;padding:32px}
+h1{font-size:22px;font-weight:640;letter-spacing:-.01em;margin-bottom:6px}
+.sub{color:#9e9ea8;font-size:13px;max-width:78ch;margin-bottom:28px;line-height:1.6}
+.eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#6e6e78;margin-bottom:10px}
+
+.huong{margin-bottom:34px;border-top:1px solid #2a2a31;padding-top:18px}
+.huong-dau{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
+.huong-ten{font-size:16px;font-weight:620}
+.huong-hex{font:11.5px ui-monospace,SFMono-Regular,Menlo,monospace;color:#6e6e78}
+.huong-mo{color:#9e9ea8;font-size:12.5px;max-width:80ch;margin-bottom:14px;line-height:1.6}
+.canh{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* ── Khối mẫu: đúng phần tử thật của app ──────────────────────────────────── */
+.khung{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;color:var(--t1)}
+.nhan-theme{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t4);margin-bottom:10px}
+
+.bar{display:flex;gap:6px;align-items:center;background:var(--panel);border:1px solid var(--border);
+     border-radius:var(--r-full);padding:6px;width:fit-content;margin-bottom:12px}
+.chip{width:var(--tap);height:var(--tap);border-radius:var(--r-full);border:0;background:transparent;
+      color:var(--t2);display:grid;place-items:center;cursor:pointer}
+.chip svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.chip.bat{background:color-mix(in srgb,var(--a) 16%,transparent);color:var(--a)}
+.chip.mo{opacity:.5}
+
+.the{background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;margin-bottom:10px;position:relative;overflow:hidden}
+.the::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--a)}
+.the-ten{font-weight:600;font-size:13.5px;margin-bottom:3px}
+.the-phu{color:var(--t3);font-size:11.5px}
+.hang{display:flex;gap:8px;align-items:center;margin-top:10px}
+
+.nut{border:0;border-radius:var(--r-md);padding:0 14px;height:34px;font:inherit;font-size:13px;font-weight:560;cursor:pointer}
+.nut-chinh{background:var(--a);color:#fff}
+.nut-am{background:var(--w);color:#1a1305}
+.nut-vien{background:transparent;color:var(--t2);border:1px solid var(--border-strong)}
+
+.pill{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:var(--r-full);
+      font-size:11.5px;background:color-mix(in srgb,var(--a) 14%,transparent);color:var(--a);font-weight:560}
+.cham{width:6px;height:6px;border-radius:50%;background:var(--a)}
+
+.thanh{height:5px;border-radius:var(--r-full);background:var(--field);overflow:hidden;margin-top:12px}
+.thanh i{display:block;height:100%;width:62%;background:var(--a);border-radius:inherit}
+
+.ghi{margin-top:12px;font-size:11.5px;color:var(--t3);display:flex;gap:14px;flex-wrap:wrap}
+.ghi b{color:var(--t2);font-weight:560}
+
+.cuoi{border-top:1px solid #2a2a31;margin-top:34px;padding-top:16px;font-size:12.5px;color:#9e9ea8;line-height:1.7;max-width:86ch}
+.cuoi b{color:#d6d6db;font-weight:600}
+.canh-bao{color:#d9a34a}
+</style>
+</head>
+<body>
+
+<div class="eyebrow">InteriorFlow · phác thảo — chưa code</div>
+<h1>Bốn hướng màu nhận diện</h1>
+<p class="sub">
+  Cùng một khối giao diện thật (thanh công cụ · thẻ dự án · nút chính · nhãn trạng thái · thanh tiến độ),
+  chỉ đổi <b>đúng hai biến màu</b>. Mọi thứ khác giữ nguyên token app. Xem hướng nào không còn
+  “mùi phần mềm AI”, hướng nào hợp một công cụ của người làm nội thất.
+</p>
+
+<!-- A -->
+<section class="huong h-A">
+  <div class="huong-dau"><span class="huong-ten">A · Giữ nguyên hôm nay</span><span class="huong-hex">#6a57f5 tím · #c79a63 đồng</span></div>
+  <p class="huong-mo">Mốc so sánh. Đây chính là màu mặc định của hầu hết bộ giao diện dựng sẵn và của phần lớn sản phẩm AI đời này — nguồn gốc cảm giác “trông như app AI”. 169 tệp đang dùng.</p>
+  <div class="canh">
+    <div class="khung"><div class="nhan-theme">Tối · mặc định</div>
+      <div class="bar"><button class="chip bat"><svg viewBox="0 0 24 24"><path d="M3 3l7 17 2-7 7-2z"/></svg></button><button class="chip"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button><button class="chip"><svg viewBox="0 0 24 24"><path d="M21 2v6h-6M3 12a9 9 0 0115-6.7L21 8"/></svg></button><button class="chip mo"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button></div>
+      <div class="the"><div class="the-ten">Căn hộ Thảo Điền</div><div class="the-phu">78 m² · đang dựng phối cảnh</div>
+        <div class="hang"><span class="pill"><i class="cham"></i>Đang render</span></div><div class="thanh"><i></i></div></div>
+      <div class="hang"><button class="nut nut-chinh">Xuất hồ sơ</button><button class="nut nut-vien">Xem trước</button><button class="nut nut-am">Vào xưởng</button></div>
+    </div>
+    <div class="khung sang"><div class="nhan-theme">Sáng</div>
+      <div class="bar"><button class="chip bat"><svg viewBox="0 0 24 24"><path d="M3 3l7 17 2-7 7-2z"/></svg></button><button class="chip"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button><button class="chip"><svg viewBox="0 0 24 24"><path d="M21 2v6h-6M3 12a9 9 0 0115-6.7L21 8"/></svg></button><button class="chip mo"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button></div>
+      <div class="the"><div class="the-ten">Căn hộ Thảo Điền</div><div class="the-phu">78 m² · đang dựng phối cảnh</div>
+        <div class="hang"><span class="pill"><i class="cham"></i>Đang render</span></div><div class="thanh"><i></i></div></div>
+      <div class="hang"><button class="nut nut-chinh">Xuất hồ sơ</button><button class="nut nut-vien">Xem trước</button><button class="nut nut-am">Vào xưởng</button></div>
+    </div>
+  </div>
+  <div class="ghi"><span><b>Đổi:</b> không</span><span><b>Rủi ro:</b> giữ nguyên cảm giác hiện tại</span></div>
+</section>
+
+<!-- B -->
+<section class="huong h-B">
+  <div class="huong-dau"><span class="huong-ten">B · Tím mực trầm</span><span class="huong-hex">#4a3f8c · giữ đồng #c79a63</span></div>
+  <p class="huong-mo">Vẫn là tím, nhưng hạ độ rực và kéo sâu xuống — thành màu mực chứ không phải màu neon. Vẫn lạnh nên vẫn tách bạch với ArchiNote ấm (chốt 03/08 giữ nguyên). Rẻ nhất: đổi đúng 2 biến, 169 tệp không phải sửa dòng nào.</p>
+  <div class="canh">
+    <div class="khung"><div class="nhan-theme">Tối · mặc định</div>
+      <div class="bar"><button class="chip bat"><svg viewBox="0 0 24 24"><path d="M3 3l7 17 2-7 7-2z"/></svg></button><button class="chip"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button><button class="chip"><svg viewBox="0 0 24 24"><path d="M21 2v6h-6M3 12a9 9 0 0115-6.7L21 8"/></svg></button><button class="chip mo"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button></div>
+      <div class="the"><div class="the-ten">Căn hộ Thảo Điền</div><div class="the-phu">78 m² · đang dựng phối cảnh</div>
+        <div class="hang"><span class="pill"><i class="cham"></i>Đang render</span></div><div class="thanh"><i></i></div></div>
+      <div class="hang"><button class="nut nut-chinh">Xuất hồ sơ</button><button class="nut nut-vien">Xem trước</button><button class="nut nut-am">Vào xưởng</button></div>
+    </div>
+    <div class="khung sang"><div class="nhan-theme">Sáng</div>
+      <div class="bar"><button class="chip bat"><svg viewBox="0 0 24 24"><path d="M3 3l7 17 2-7 7-2z"/></svg></button><button class="chip"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button><button class="chip"><svg viewBox="0 0 24 24"><path d="M21 2v6h-6M3 12a9 9 0 0115-6.7L21 8"/></svg></button><button class="chip mo"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button></div>
+      <div class="the"><div class="the-ten">Căn hộ Thảo Điền</div><div class="the-phu">78 m² · đang dựng phối cảnh</div>
+        <div class="hang"><span class="pill"><i class="cham"></i>Đang render</span></div><div class="thanh"><i></i></div></div>
+      <div class="hang"><button class="nut nut-chinh">Xuất hồ sơ</button><button class="nut nut-vien">Xem trước</button><button class="nut nut-am">Vào xưởng</button></div>
+    </div>
+  </div>
+  <div class="ghi"><span><b>Đổi:</b> 2 biến</span><span><b>Giữ:</b> chốt hai-nhiệt-độ-màu 03/08</span><span><b>Yếu:</b> vẫn là tím — chưa chắc hết “mùi AI”</span></div>
+</section>
+
+<!-- C -->
+<section class="huong h-C">
+  <div class="huong-dau"><span class="huong-ten">C · Đảo vai — đồng lên chính, tím xuống phụ</span><span class="huong-hex">#b5854a chính · tím còn dùng cho trạng thái</span></div>
+  <p class="huong-mo">Đúng gu quiet-luxury Hoà đang theo, và đúng thế giới của nghề: đồng, gỗ, đá ấm. Nút “Vào xưởng” ở màn khoá thôi lạc lõng vì cả app cùng một nhiệt độ. <span class="canh-bao">Đụng chốt 03/08 “hai app hai nhiệt độ màu”</span> — IF sẽ ấm giống ArchiNote, cần Hoà quyết lại ranh giới hai app.</p>
+  <div class="canh">
+    <div class="khung"><div class="nhan-theme">Tối · mặc định</div>
+      <div class="bar"><button class="chip bat"><svg viewBox="0 0 24 24"><path d="M3 3l7 17 2-7 7-2z"/></svg></button><button class="chip"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button><button class="chip"><svg viewBox="0 0 24 24"><path d="M21 2v6h-6M3 12a9 9 0 0115-6.7L21 8"/></svg></button><button class="chip mo"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button></div>
+      <div class="the"><div class="the-ten">Căn hộ Thảo Điền</div><div class="the-phu">78 m² · đang dựng phối cảnh</div>
+        <div class="hang"><span class="pill"><i class="cham"></i>Đang render</span></div><div class="thanh"><i></i></div></div>
+      <div class="hang"><button class="nut nut-chinh">Xuất hồ sơ</button><button class="nut nut-vien">Xem trước</button></div>
+    </div>
+    <div class="khung sang"><div class="nhan-theme">Sáng</div>
+      <div class="bar"><button class="chip bat"><svg viewBox="0 0 24 24"><path d="M3 3l7 17 2-7 7-2z"/></svg></button><button class="chip"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button><button class="chip"><svg viewBox="0 0 24 24"><path d="M21 2v6h-6M3 12a9 9 0 0115-6.7L21 8"/></svg></button><button class="chip mo"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button></div>
+      <div class="the"><div class="the-ten">Căn hộ Thảo Điền</div><div class="the-phu">78 m² · đang dựng phối cảnh</div>
+        <div class="hang"><span class="pill"><i class="cham"></i>Đang render</span></div><div class="thanh"><i></i></div></div>
+      <div class="hang"><button class="nut nut-chinh">Xuất hồ sơ</button><button class="nut nut-vien">Xem trước</button></div>
+    </div>
+  </div>
+  <div class="ghi"><span><b>Đổi:</b> 2 biến + rà lại chỗ chữ trên nền đồng</span><span class="canh-bao"><b>Cần Hoà quyết:</b> ranh giới màu IF ↔ ArchiNote</span></div>
+</section>
+
+<!-- D -->
+<section class="huong h-D">
+  <div class="huong-dau"><span class="huong-ten">D · Rêu sâu</span><span class="huong-hex">#3f6b5a chính · đồng #c79a63 nhấn</span></div>
+  <p class="huong-mo">Rời hẳn khỏi tím. Xanh rêu trầm là màu của giới kiến trúc — bảng vẽ, mặt bằng cảnh quan, da thuộc xanh — và gần như không sản phẩm AI nào dùng, nên hết sạch cảm giác đó. Vẫn là màu lạnh nên vẫn giữ được chốt hai-nhiệt-độ. Cặp rêu + đồng là cặp bổ túc kinh điển, sắc nhấn mạnh hơn hẳn tím + đồng.</p>
+  <div class="canh">
+    <div class="khung"><div class="nhan-theme">Tối · mặc định</div>
+      <div class="bar"><button class="chip bat"><svg viewBox="0 0 24 24"><path d="M3 3l7 17 2-7 7-2z"/></svg></button><button class="chip"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button><button class="chip"><svg viewBox="0 0 24 24"><path d="M21 2v6h-6M3 12a9 9 0 0115-6.7L21 8"/></svg></button><button class="chip mo"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button></div>
+      <div class="the"><div class="the-ten">Căn hộ Thảo Điền</div><div class="the-phu">78 m² · đang dựng phối cảnh</div>
+        <div class="hang"><span class="pill"><i class="cham"></i>Đang render</span></div><div class="thanh"><i></i></div></div>
+      <div class="hang"><button class="nut nut-chinh">Xuất hồ sơ</button><button class="nut nut-vien">Xem trước</button><button class="nut nut-am">Vào xưởng</button></div>
+    </div>
+    <div class="khung sang"><div class="nhan-theme">Sáng</div>
+      <div class="bar"><button class="chip bat"><svg viewBox="0 0 24 24"><path d="M3 3l7 17 2-7 7-2z"/></svg></button><button class="chip"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button><button class="chip"><svg viewBox="0 0 24 24"><path d="M21 2v6h-6M3 12a9 9 0 0115-6.7L21 8"/></svg></button><button class="chip mo"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button></div>
+      <div class="the"><div class="the-ten">Căn hộ Thảo Điền</div><div class="the-phu">78 m² · đang dựng phối cảnh</div>
+        <div class="hang"><span class="pill"><i class="cham"></i>Đang render</span></div><div class="thanh"><i></i></div></div>
+      <div class="hang"><button class="nut nut-chinh">Xuất hồ sơ</button><button class="nut nut-vien">Xem trước</button><button class="nut nut-am">Vào xưởng</button></div>
+    </div>
+  </div>
+  <div class="ghi"><span><b>Đổi:</b> 2 biến</span><span><b>Giữ:</b> chốt hai-nhiệt-độ (vẫn lạnh)</span><span><b>Được:</b> sắc nhấn rêu↔đồng mạnh nhất</span></div>
+</section>
+
+<div class="cuoi">
+  <b>Vì sao chỉ đổi hai biến mà cả app đổi theo:</b> 169 tệp không viết mã màu, chúng gọi <code>var(--accent)</code>.
+  Đổi ở một chỗ là đổi hết — không tệp nào phải sửa. Đây là phần đã trả giá trước từ đợt dọn màu, giờ hưởng.<br><br>
+  <b>Việc còn phải làm sau khi Hoà chọn:</b> đo lại độ tương phản chữ trên nền màu mới (hướng C đưa màu ấm lên
+  làm nền nút nên phải kiểm kỹ nhất) · rà 12 tệp đang dùng đồng ấm trái luật “chỉ nút login” · và quyết định
+  <b>logo</b> có theo màu mới hay giữ đen/kem như hiện nay.<br><br>
+  <span class="canh-bao"><b>T nói thẳng một điều:</b></span> hướng B rẻ và an toàn nhưng có thể không giải được
+  đúng thứ Hoà thấy khó chịu — vì gốc của cảm giác “AI” là <i>tím</i>, hạ độ rực chỉ làm nó nhạt đi chứ không
+  đổi bản chất. Nếu mục tiêu là rời hẳn cảm giác đó thì D là hướng thẳng nhất mà vẫn không phá chốt nào.
+</div>
+
+</body>
+</html>
