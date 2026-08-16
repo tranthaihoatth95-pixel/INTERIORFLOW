@@ -87,7 +87,7 @@ trục thứ ba biến số ngữ cảnh · ký ức nằm trên đĩa, 3 tầng
 
 ## Code đã ship trong phiên
 hàng đợi render (`RenderQueuePanel`) · một-họ-nút 3 chặng (`ToolbarChip`) · sổ lệnh chung B1
-(`lib/commands/registry.ts` +stages+icon) · đường chân trời kéo sửa (`lib/vision/horizon.ts`) ·
+(`lib/commands/registry.ts` +stages+icon) · đường chân trời kéo sửa (`lib/vision/horizon.ts`) — **mới 1/3**, còn điểm tụ + đường gióng neo-vào-điểm-tụ, xem entry `diem-tu-duong-giong-sua-tay` ·
 **sửa bug Hough** làm chết hiệu chỉnh camera từ ảnh (`single-view-metrology.ts:605` + test mới) ·
 vá lỗi đăng nhập nói tiếng người · màn khoá dòng-trong-ngày.
 
