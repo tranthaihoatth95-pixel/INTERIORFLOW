@@ -104,7 +104,36 @@ Nam) chạy song song. Phải chọn dân số MỘT LẦN ở cấp dự án, r
 ⇒ Việc: **một chỗ khai dân số cấp dự án** (giới · vùng · nhóm tuổi), neo và luật cùng đọc từ đó.
 Cùng họ với việc đơn-vị-đo/tỉ-lệ cấp app — nên gộp làm một cửa cài đặt, không đẻ hai chỗ.
 
-⚠️ **T bổ sung một ranh giới nghề, xin ghi kèm: TRUNG BÌNH ĐỂ SUY — BIÊN ĐỂ KIỂM.**
+### ⭐ LUẬT ĐỒNG BỘ HỌ CHUẨN (Hoà chốt 15/08) — luật cứng, không phải khuyến nghị
+> *"Cái sai không đến từ tuyệt đối hay tương đối — cái sai đến từ sự KHÔNG ĐỒNG BỘ TRONG CÁCH HIỂU.
+> Đã chốt châu Âu cho mặt bàn mà lấy châu Á cho mặt bếp, rồi giường thấp kiểu Nhật áp lên cái chung…
+> **một công trình mà đủ các chuẩn không cùng họ là TỰ HUỶ.**"*
+
+Ba hệ quả bắt buộc:
+
+**① KHÔNG NEO CỨNG MỘT CON SỐ — neo là KHOẢNG.** `750` chỉ là **bản chung làm quy ước**, không phải
+sự thật. Code hiện đã đúng hình dạng (`min 720 · typical 750 · max 780`); cái thiếu là **cho chọn
+khoảng theo chủng loại người**.
+
+**② ĐÃ CHUNG THÌ CHUNG, ĐÃ RIÊNG THÌ RIÊNG — không nửa nọ nửa kia.**
+· *Chung* = global trung tính, **chấp nhận không tuyệt đối**.
+· *Riêng* = riêng **trọn bộ**, và phân loại sao cho **phủ được phần đông nhất trong nhóm đồng dạng**.
+
+**③ MỘT DỰ ÁN — MỘT HỌ CHUẨN.** Mọi neo và mọi luật đang hiệu lực phải **cùng một họ**. Trộn họ là
+lỗi hệ thống, không phải chuyện thẩm mỹ.
+
+⚠️ **T bổ sung phần thực tế, xin ghi kèm: cấm TRỘN ÂM THẦM, không phải cấm trộn.**
+Ngoài đời có ca **buộc phải trộn**: phòng cháy Việt Nam là luật bắt buộc, trong khi công thái học đồ
+rời thì Việt Nam chưa có chuẩn nên phải mượn Neufert. Ca đó hợp lệ. Ranh giới đúng là:
+> **Trộn có khai báo và có lý do = nghề. Trộn im lặng = tự huỷ.**
+⇒ Mỗi lần lấy số khác họ phải **ghi rõ lấy từ đâu và vì sao** — đúng cơ chế `source` + `region` +
+`note` mà `StandardRule` đã có sẵn.
+
+**Máy kiểm được, và nên kiểm:** một máy soi đối chiếu **toàn bộ neo + luật đang hiệu lực của dự
+án** — khác họ mà **không khai lý do** thì báo đỏ. Đây là loại lỗi người không tự thấy: từng con số
+đều đúng ở quê nó, chỉ khi đứng cạnh nhau mới lộ.
+
+⚠️ **T bổ sung một ranh giới nghề nữa: TRUNG BÌNH ĐỂ SUY — BIÊN ĐỂ KIỂM.**
 Trung bình che mất phương sai: người cao người thấp, trẻ em, người ngồi xe lăn. Dùng trung bình để
 **suy ra bối cảnh** thì đúng và là chuẩn nghề (Neufert vốn là sách trung bình). Nhưng **nghiệm thu
 thì phải soi ở BIÊN** — đó chính là việc của bộ luật tiếp cận (`vn-accessibility.ts` đã có trong
