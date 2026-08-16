@@ -138,25 +138,61 @@ Nếu Vitals nói *"TCVN X đã đổi thành Y"* mà sai, và KTS xuất hồ s
 
 ---
 
-## D · QUY TRÌNH LÀM VIỆC — thống nhất lại
+## D · QUY TRÌNH LÀM VIỆC — bản sửa sau khi Hoà bắt lỗi + 2 mũi nghiên cứu
 
-**D1 · Hoà chỉ chạm 3 lần mỗi việc**: ① nói chốt → ② duyệt bảng plan → ③ duyệt bằng mắt ở cửa cuối.
-Mọi thứ giữa ba lần đó là việc của T.
+> **D2 bản cũ SAI, đã bỏ.** Nó viết *"Hoà nói bằng lời là đã chốt, T ghi thẳng rồi đi tiếp, không
+> hỏi lại"*. T viết câu đó sau khi bị trách hỏi lại thừa — và **sửa quá tay**, từ "hỏi thừa" nhảy
+> sang "không kiểm gì cả". Hai lỗi khác hẳn nhau: *hỏi thừa* bắt Hoà quyết hai lần; *không kiểm*
+> để T hiểu sai rồi ghi vào sổ như thể Hoà đã chốt, cả chuỗi sau chạy trên cái sai đó — **và không
+> ai bắt được vì bằng chứng duy nhất là code, thứ Hoà không đọc.** Trong chính phiên 15/08 việc này
+> xảy ra 2 lần (`stages:'concept'` sai · ghi sai bản chất phân kỳ phím 2D/3D).
 
-**D2 · Hoà nói bằng lời xong là ĐÃ CHỐT.** T ghi thẳng vào sổ dạng khẳng định rồi đi tiếp — **không
-dựng thành câu hỏi bắt Hoà bấm lần hai**. Chỉ hỏi lại khi hai cách hiểu dẫn tới hai việc khác hẳn.
+### 🔬 Điều nghiên cứu chỉ ra — trái với phản xạ thông thường
+**Không thêm nghi thức.** RG1 quét GitHub: 6 dự án sản xuất lớn (openai/codex · sentry · airflow ·
+temporal · cloudflare/workers-sdk · coder) **đều chỉ dùng MỘT file `AGENTS.md` ngắn**, không dùng
+pipeline nặng. Các khung nhiều nghi thức (spec-kit ~120K sao) có phản biện rõ là overhead vượt lợi
+ích với dự án một người.
+⚠️ **Đo IF ngày 15/08: 537 file `.md` · 32MB · luật nền trải 4 file ~1.335 dòng.**
+⇒ **Vấn đề của IF KHÔNG phải thiếu quy trình — nhiều khả năng là THỪA.** Cách chữa đúng là **thêm
+đúng 2 thứ, bỏ 1 thứ sai**, không phải dựng thêm tầng.
 
-**D3 · Câu hỏi thì dồn lại, hỏi gộp bằng trắc nghiệm**, luôn có ô "ý khác". Không rải câu hỏi cuối
-mỗi lượt.
+### Thêm đúng hai thứ
 
-**D4 · Mỗi đợt phải có ≥1 việc nhìn-thấy-được + ≥1 việc giàu cốt lõi**, và cái nhìn-thấy phải nối
-vào cốt lõi.
+**D-MỚI-1 · NHẮC LẠI TRƯỚC KHI LÀM.** Trước khi soạn phiếu, T nhắc lại ý Hoà **bằng ngôn ngữ nhìn
+thấy được**, không bằng ngôn ngữ kỹ thuật. Hoà chỉ cần trả lời *"ok"* hoặc *"sai chỗ X"*.
+Chọn khuôn theo **độ khó lùi**:
 
-**D5 · T tự kiểm lại mọi báo cáo của agent** — chạy lệnh thật, mở file thật, không chép.
+| Khuôn | Dùng khi | Tốn của Hoà |
+|---|---|---|
+| **So sánh + phản ví dụ** — "giống A, **KHÔNG phải** B đang có ở màn C" | mặc định, việc hằng ngày | 30–60 giây |
+| **Phác thảo hình**, dán nhãn *"PHÁC THẢO — chưa code"* | **bắt buộc** khi chạm giao diện | 15–40 giây |
+| **Given-When-Then có số thật** | chỉ khi khó lùi / rủi ro cao (đụng dữ liệu, tiền, giấy phép) | 2–3 phút |
 
-**D6 · Chốt mới = một dòng vào sổ máy ngay lúc chốt.** Chốt không vào sổ coi như chưa chốt.
+Vì sao khuôn phản-ví-dụ rẻ mà hiệu quả: nó nói luôn thứ **KHÔNG phải**, và neo vào cái Hoà **đã
+thấy trong app** — nên sai là lộ ngay.
+Nền bằng chứng: kỹ thuật *nhắc-lại-lệnh* của hàng không (bắt được 34% lỗi lọt) và *teach-back* y
+khoa. ⚠️ RG2 khai thật: **không tra ra số liệu định lượng cho ngành phần mềm** — đây là bắc cầu từ
+ngành khác, không phải đo trực tiếp.
 
-**D7 · Kết phiên 0 lệch**: `soi:frontier` · `soi:tu-dien` · tsc · test đều sạch mới đóng phiên.
+**D-MỚI-2 · DẤU VẾT AI TRONG COMMIT.** Mọi commit mang trailer
+`Assisted-by: T (autonomous)` hoặc `(supervised)`.
+Giải đúng câu Hoà nêu — *"không đọc code nhưng cần lật lại xem T tự quyết ở đâu"*: sau này gõ một
+lệnh git là ra hết những chỗ T tự quyết không hỏi. **0 dòng code, chỉ là kỷ luật viết commit.**
 
-**D8 · Nợ nghiệm thu mắt là nút thắt thật** — hiện 66 việc xong-máy đối 1 việc qua mắt Hoà. Lô duyệt
-mắt gộp là công cụ đúng để giải.
+### RANH GIỚI QUYỀN CỦA T — chưa từng viết rõ, đây là phần quan trọng nhất
+
+| T ĐƯỢC tự quyết | T PHẢI nhắc lại và chờ gật | T KHÔNG BAO GIỜ tự quyết |
+|---|---|---|
+| cách làm · thư viện · cấu trúc code · thứ tự kỹ thuật · sửa lỗi · đặt tên biến/hàm | bất cứ gì đụng **Ý ĐỊNH**: cái gì hiện ra · xếp thế nào · gọi tên là gì · luồng đi ra sao · nhìn ra sao | bỏ/hoãn một tính năng · đổi định nghĩa đã chốt · đụng tiền, giấy phép, dữ liệu khách · viết lại lịch sử git |
+
+Vai không ai thay được của Hoà: **người chấm ý đồ gốc**. AI đóng thay hai vai còn lại (phân tích
+nghiệp vụ + phản biện chất lượng) — theo khuôn "Three Amigos with AI" RG2 tìm được.
+
+### Giữ nguyên (đang chạy tốt, không đụng)
+**D3** hỏi gộp bằng trắc nghiệm, luôn có ô "ý khác" · **D4** mỗi đợt ≥1 việc nhìn-thấy + ≥1 việc cốt
+lõi · **D5** T tự kiểm lại mọi báo cáo agent, chạy lệnh thật · **D6** chốt là vào sổ máy ngay ·
+**D7** kết phiên 0 lệch · **D8** nợ nghiệm thu mắt là nút thắt thật (66 đối 1).
+
+### Việc dọn kèm theo
+537 file `.md` là quá nhiều để tra. Entry `tran-kich-thuoc-kho` đã mở — nay có thêm căn cứ từ RG1
+để làm: gom luật nền về **một file ngắn** làm cửa vào, phần còn lại thành tra-cứu-khi-cần.
