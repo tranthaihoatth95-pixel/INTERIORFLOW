@@ -29,7 +29,96 @@ máy làm tốt, để máy làm.
 
 ---
 
-## 2 · HỆ QUY CHIẾU KHÔNG GIAN — quy ước gốc
+## 2 · HỆ QUY CHIẾU — BA MẶT LÀ CÁI CHỨA, CON NGƯỜI LÀ CÁI ĐO
+
+> **Hoà chốt 15/08:** *"một công cụ thiết kế theo nguyên lý lấy con người làm trung tâm thì hệ quy
+> chiếu nên xoay quanh con người."*
+
+Ba mặt (mục dưới) chỉ trả lời *"không gian hình dạng thế nào"*. Câu hỏi thật của nghề là *"người ở
+trong đó ra sao"*. Nên **gốc toạ độ không phải góc phòng — mà là NGƯỜI ĐỨNG**:
+
+| Trục | Gốc | Nghĩa |
+|---|---|---|
+| Cao độ | **sàn nơi người đứng = 0** | trên là với tới, dưới là cúi xuống |
+| Tầm nhìn | **tầm mắt** | chính là **đường chân trời** trong phối cảnh |
+| Chiều sâu | **tầm với · tầm đi** | với tới được · đi qua được · nhìn thấy được |
+
+⭐ **Hệ quả trực tiếp lên thuật toán ở spec này:** đường chân trời **KHÔNG chỉ là một đường hình
+học** — nó là **cao độ mắt người xem**. Kéo nó tức là khai *"người đứng ở đây, cao chừng này"*.
+Một câu hình học biến thành một câu về con người, và mọi kích thước suy ra sau đó có nghĩa nghề.
+
+⚠️ **Hai con số tầm mắt, đừng lẫn** (đã ghi `00-CHOT`): metrology dùng **tầm mắt máy ảnh 1500–1600**
+(mặc định 1550) — nơi ống kính đứng; đường cam video dùng **tầm mắt người ~1650** — nơi mắt người
+nhìn. Máy đo thì lấy số máy ảnh; đánh giá thiết kế thì lấy số người.
+
+### Con người đang là thước đo ở BA TẦNG — mà chưa ai gọi tên
+| Tầng | Thước người |
+|---|---|
+| **Luật ngành** | Neufert vốn là sách nhân trắc; lối đi 1200 = hai người tránh nhau · bàn 750 · ghế 450 · tay nắm 900-1100 |
+| **Thị giác** | 9 loại neo vật chuẩn (`AnchorKind`) đều là **vật do cơ thể người quy định kích thước** — đó chính là lý do chúng làm neo được |
+| **Giao diện** | `--tap` 32→44 khi chạm (cỡ đầu ngón tay) · `--row` · `--fs-ui` |
+
+⇒ Ba tầng đang dùng **cùng một nguyên lý** mà đứng rời nhau. Đặt tên nó là **hệ quy chiếu con
+người** thì ba tầng thành một.
+
+### Lấy TRUNG BÌNH làm neo — rồi suy ra cả tầng liên đới quanh nó
+> **Hoà chốt:** *"lấy giá trị trung bình, sau đó soi chiếu ra tầng liên đới thuộc bối cảnh xung quanh."*
+
+Một con số trung bình của cơ thể đủ để **kéo theo cả dây** — vì mọi kích thước nội thất vốn sinh ra
+từ cơ thể, không phải từ hư không:
+
+```
+   tầm mắt TB ~1650  ─┬─→ sàn = 0  ─→ mặt bàn 750 ─→ ghế ngồi 450
+                      ├─→ tay nắm · công tắc 900–1100
+                      ├─→ kệ với tới ~1800
+                      ├─→ lối đi 1200 (hai người tránh nhau)
+                      └─→ trần 2700 · cửa 2100
+```
+
+**Trong ảnh:** ghim được tầm mắt (chính là đường chân trời) thì **mọi mặt phẳng ngang trong khung
+hình có cao độ**, và mọi vật có kích thước suy ra được. Một neo → cả bối cảnh đo được. Đó là lý do
+neo phải là **vật do cơ thể quy định** — và 9 loại neo trong code đều đúng loại đó.
+
+### Neo là KHOẢNG, và khoảng đó theo DÂN SỐ
+> **Hoà:** *"bàn ước tính cao 750 dựa vào chiều cao của người nam/nữ, châu Á/Âu/Phi, trẻ con hay
+> người lớn."* · *"giá trị lấy từ người sẽ không tuyệt đối, nhưng mọi thiết kế áp theo sẽ phù hợp
+> cho tất cả người dùng trung bình đó."*
+
+⭐ **Đây là chỗ hay nhất của nguyên lý, và cần nói rõ vì sao nó ĐÚNG dù không chính xác tuyệt đối:**
+sai số của neo **không lan thành sai số của thiết kế** — vì thiết kế cũng phục vụ đúng nhóm người
+mà neo lấy ra từ đó. Neo lệch 3% thì cả hệ lệch 3% **cùng chiều**, và vẫn vừa vặn với nhóm người
+đó. Hệ **tự nhất quán**. Đó là lý do nghề này chạy được bằng số trung bình suốt trăm năm.
+
+🔴 **Nguy hiểm nằm ở chỗ TRỘN, không nằm ở sai số.** Neo lấy theo người châu Á mà luật lại lấy chuẩn
+châu Âu ⇒ hệ mất nhất quán, và lúc đó sai số **cộng dồn thay vì triệt tiêu**.
+⚠️ **Rủi ro này đang SỐNG trong IF**: bộ luật có cả `neufert.ts` (gốc châu Âu) lẫn `vn-*.ts` (Việt
+Nam) chạy song song. Phải chọn dân số MỘT LẦN ở cấp dự án, rồi **cả neo lẫn luật cùng đọc một chỗ**.
+
+**Hiện trạng đo 15/08:**
+| Tầng | Biết "vùng nào" chưa |
+|---|---|
+| Luật ngành | ✅ `StandardRegion = VN · US · EU · INTL` + `getRulesByRegion()` |
+| Neo vật chuẩn | 🔴 **chưa** — `tableTop` cứng 720/750/780, `cameraHeight` cứng 1500/1550/1600 cho cả thế giới |
+| Giao diện | 🟡 có token thân người nhưng theo con trỏ, không theo dân số |
+
+⇒ Việc: **một chỗ khai dân số cấp dự án** (giới · vùng · nhóm tuổi), neo và luật cùng đọc từ đó.
+Cùng họ với việc đơn-vị-đo/tỉ-lệ cấp app — nên gộp làm một cửa cài đặt, không đẻ hai chỗ.
+
+⚠️ **T bổ sung một ranh giới nghề, xin ghi kèm: TRUNG BÌNH ĐỂ SUY — BIÊN ĐỂ KIỂM.**
+Trung bình che mất phương sai: người cao người thấp, trẻ em, người ngồi xe lăn. Dùng trung bình để
+**suy ra bối cảnh** thì đúng và là chuẩn nghề (Neufert vốn là sách trung bình). Nhưng **nghiệm thu
+thì phải soi ở BIÊN** — đó chính là việc của bộ luật tiếp cận (`vn-accessibility.ts` đã có trong
+12 bộ luật). Suy bằng trung bình mà cũng kiểm bằng trung bình là bỏ lọt đúng nhóm người mà luật
+sinh ra để bảo vệ.
+
+### Khi trong cảnh KHÔNG có người
+Không bỏ hệ quy chiếu — **đổi vai người**: từ *người trong không gian* sang *người đang nhìn*. Với
+một mẫu vật liệu chụp cận hay một tấm đồ hoạ, thước đo là **khoảng cách đọc · cỡ chữ đọc được · tầm
+mắt trước màn hình**. Vẫn là con người, chỉ khác chỗ đứng.
+
+---
+
+## 2b · BA MẶT — cái chứa
 
 ```
         ▲  BẦU TRỜI            (từ đường chân trời trở lên)
