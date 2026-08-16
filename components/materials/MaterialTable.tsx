@@ -8,16 +8,16 @@
 import { Image as ImageIcon, Pencil, Trash2, Orbit } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { dimensionLabel, imageUrlOf, materialSourceLabel, type MaterialSpecDto } from '@/lib/materials/warehouse/dto';
-
-function fmtVnd(n: number): string {
-  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-}
+import { dinhDangVnd, type BaMat } from '@/lib/materials/ba-mat';
+import { ChiBaoBaMat } from './ChiBaoBaMat';
 
 export function MaterialTable({
   items,
   onEdit,
   onDelete,
   onEditPbr,
+  baMatCua,
+  onMoBaMat,
 }: {
   items: MaterialSpecDto[];
   onEdit: (m: MaterialSpecDto) => void;
@@ -25,6 +25,9 @@ export function MaterialTable({
   /** VIỆC 5 PHẦN B — mở lớp chỉnh chất liệu render (4 núm). Chỉ gọi được khi món CÓ SKU
    * (matId = sku, xem `lib/materials/pbr-store.ts`); món không mã thì nút không render. */
   onEditPbr?: (m: MaterialSpecDto) => void;
+  /** [marker: vatLieuBaMat] ba mặt đã đọc sẵn cho từng dòng — bảng chỉ VẼ, không tự tra. */
+  baMatCua: (m: MaterialSpecDto) => BaMat;
+  onMoBaMat: (m: MaterialSpecDto) => void;
 }) {
   const tr = useT();
 
@@ -34,13 +37,13 @@ export function MaterialTable({
         <thead>
           <tr style={{ position: 'sticky', top: 0, background: 'var(--panel)', zIndex: 1 }}>
             {[
-              '', tr('Mã', 'Code'), tr('Tên', 'Name'), tr('Hãng', 'Brand'), tr('Kích thước', 'Size'),
+              '', tr('Mã', 'Code'), tr('Tên', 'Name'), tr('Ba mặt', 'Three faces'), tr('Hãng', 'Brand'), tr('Kích thước', 'Size'),
               tr('Giá', 'Price'), tr('Đơn vị', 'Unit'), tr('Phòng', 'Room'), tr('Nguồn', 'Source'), '',
             ].map((h, i) => (
               <th
                 key={h + i}
                 style={{
-                  textAlign: i === 5 ? 'right' : 'left', padding: '0 10px', height: 30, fontWeight: 600, fontSize: 11,
+                  textAlign: i === 6 ? 'right' : 'left', padding: '0 10px', height: 30, fontWeight: 600, fontSize: 11,
                   color: 'var(--t4)', borderBottom: '1px solid var(--border-strong, var(--border))', whiteSpace: 'nowrap',
                 }}
               >
@@ -80,10 +83,15 @@ export function MaterialTable({
                     </span>
                   )}
                 </td>
+                {/* [marker: vatLieuBaMat] — cột đứng NGAY SAU tên: đây là câu trả lời cho
+                    "món này dùng được ở chặng nào rồi", đọc trước khi quan tâm hãng/kích thước. */}
+                <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)' }}>
+                  <ChiBaoBaMat baMat={baMatCua(m)} onMo={() => onMoBaMat(m)} />
+                </td>
                 <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t3)' }}>{m.brand || '—'}</td>
                 <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>{dimensionLabel(m)}</td>
                 <td style={{ padding: '0 10px', textAlign: 'right', borderBottom: '1px solid var(--border)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>
-                  {m.priceVnd != null ? `${fmtVnd(m.priceVnd)} ₫` : (m.priceNote || '—')}
+                  {m.priceVnd != null ? `${dinhDangVnd(m.priceVnd)} ₫` : (m.priceNote || '—')}
                 </td>
                 <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t3)' }}>{m.unit || '—'}</td>
                 {/* 06/08 VÒNG 2 (G-M3-08) — cột PHÒNG. Đây là chỗ NHÌN THẤY được rằng phòng đã
@@ -111,7 +119,7 @@ export function MaterialTable({
           })}
           {items.length === 0 && (
             <tr>
-              <td colSpan={10} style={{ padding: '32px 10px', textAlign: 'center', color: 'var(--t4)', fontSize: 12.5 }}>
+              <td colSpan={11} style={{ padding: '32px 10px', textAlign: 'center', color: 'var(--t4)', fontSize: 12.5 }}>
                 {tr('Không có vật liệu nào khớp.', 'No materials match.')}
               </td>
             </tr>

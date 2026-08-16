@@ -40,16 +40,21 @@ DỪNG) · ①–⑧ · **⑥b đích + trần 5 vòng** · **⑦b CHƯA CHẮC*
 ## VIỆC ĐANG XẾP HÀNG — thứ tự đã chốt
 1. **Máy đối chiếu SỔ ↔ CODE** — quét riêng từng bên thì bên nào cũng nhất quán; chỉ đối chiếu mới
    lộ khái niệm ma. **Bản đồ vừa lập do chính T viết ⇒ không có máy canh thì nó mốc.**
-2. **Nối vật liệu ba mảnh** — `lib/materials` ↔ `ProductSpec` = **0 code**, đứng yên 9 ngày.
-   Hoà gọi đây là *phần đẹp nhất của IF*.
-3. **Nối 5 bộ hình nền vào Home** — đã dựng xong, chưa cắm; đang là gốc của dải đen trên/dưới.
-4. **Thang chiều cao khối** cho design system — đang thiếu, và là gốc kỹ thuật của mục 3.
-5. Ba việc từ soi 3 chặng · dựng lại 4 kịch bản sidebar theo cấu trúc **hai cụm**.
+2. **CẮM ĐIỆN vật liệu** — hàm nối ba mảnh **đã có** (`lib/materials/resolve.ts:52`, từ 07/08)
+   nhưng **0 nơi gọi ngoài test**. Hoà gọi đây là *phần đẹp nhất của IF*.
+   🔴 Sổ từng ghi *"= 0 code"* — **sai, đã đính chính 17/08**. Việc là cắm điện, không phải kéo dây.
+3. ~~Nối 5 bộ hình nền vào Home~~ — **ĐÃ XONG 16/08** (`DongStudioHome.tsx:543`, mặc định bật).
+   Giao phiếu này là dựng lại thứ đã có. ⇒ **Dải đen phải chẩn lại từ đầu trên app thật.**
+4. **Thang chiều cao khối** cho design system — đang thiếu (lưới Home còn `279/220/112/97px` gõ tay).
+5. Ba việc từ soi 3 chặng · dựng lại 4 kịch bản sidebar theo cấu trúc **hai cụm** + **Files hai ngăn**.
 
 ## ĐANG CHỜ HOÀ
-① duyệt mắt (**70 xong-máy đối 1 qua mắt** — nút thắt lớn nhất dự án) ② chọn màu **mòng két ↔ mận**
-③ **Files có ngăn riêng cho phần thô dùng chung?** (sai thì cả nhánh Files vẽ lại) ④ *Tổng quan dự án*
-và *Sổ tay* đứng đâu trên rail.
+① duyệt mắt (**70 xong-máy đối 1 qua mắt** — nút thắt lớn nhất dự án; **24 ảnh đã lên Drive
+`IF-duyet-mat/01-anh`, `02-note-cua-Hoa` còn trống**) ② chọn màu **mòng két ↔ mận** (17/08 Hoà nói
+*"để tôi xem bản vẽ đã"* ⇒ **cấm thi công gì dính `--accent*`**) ③ *Tổng quan dự án* và *Sổ tay*
+đứng đâu trên rail.
+✅ **ĐÃ ĐÓNG 17/08:** Files **CÓ hai ngăn khác bản chất** (dự án ↔ phần thô dùng chung) —
+`IF-KIEN-TRUC.md` §5.
 
 Đọc xong, chạy `soi:frontier`, rồi báo cáo trạng thái. Chưa rõ thì **hỏi, đừng đoán**.
 

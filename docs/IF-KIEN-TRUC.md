@@ -92,6 +92,9 @@ của một cửa sổ là asset **mang sẵn định nghĩa** (*"định nghĩa
 - **Files** = **phần THÔ**, thứ **ai cũng thấy**, một trường thông tin **chung**: map texture ·
   nhà cung cấp · **range giá**. **Không render được** vì thiếu đúng thông số V-Ray/D5 luôn phải đặt.
   ⛔ Nghĩa **"chợ đầu mối"** đã **BỎ** (16/08).
+  ⭐ **HAI NGĂN KHÁC BẢN CHẤT** (Hoà chốt 17/08): ① **tệp của dự án này** · ② **phần thô DÙNG CHUNG,
+  nhiều người góp**. Khác bản chất ⇒ **phải thấy được trên giao diện**, không phải một bộ lọc.
+  Ngăn ② là nơi *"thông tin chưng cất của hệ thống, của nhiều người dùng"* sống trước khi có định nghĩa.
 - **Thư viện** = **Master Library**, một cái duy nhất, **hiểu ngữ cảnh và đề xuất đúng** — không
   phải kho để đi tìm. Đứng ở 2D nó đưa ký hiệu · ở 3D đưa PBR + quả cầu · ở Trình chiếu đưa bảng +
   giá. **Cùng một `matId`, ba mặt.**
@@ -112,10 +115,17 @@ Một vật liệu mang **cả hai nửa** — render được **và** biết m�
 texture thì không. *"Hiểu được thông tin"* = **trỏ tới được**. **Range giá** thuộc kho chung, **giá
 chốt** thuộc từng dự án.
 
-🔴 **Hiện trạng: CHƯA NỐI.** Vật liệu vẫn chẻ ba — `MaterialPbr` (14 thông số, **0** trường giá/NCC)
-· `ProductSpec` (NCC · giá · hao hụt, **0** thông số render) · `MaterialDef` (hatch/màu).
-`lib/materials` nối `ProductSpec` = **0 code**, đo 07/08 và đo lại 16/08 **không đổi**.
-**Đây là món đáng làm nhất của toàn sản phẩm.**
+🔴 **Hiện trạng: DÂY CÓ, CHƯA CẮM ĐIỆN.** Vật liệu vẫn chẻ ba — `MaterialPbr` (14 thông số, **0**
+trường giá/NCC) · `ProductSpec` (NCC · giá · hao hụt, **0** thông số render) · `MaterialDef` (hatch/màu).
+Hàm nối **đã có**: `getMaterial()` (`lib/materials/resolve.ts:52`, từ 07/08) trả đủ ba mặt, khoá nối
+`matId = ProductSpec.sku`, có test — **nhưng 0 nơi gọi ngoài chính test của nó** (đo 17/08).
+**Đây là món đáng làm nhất của toàn sản phẩm**, và việc còn lại là **cắm điện**, không phải kéo dây.
+
+⚠️ **Đính chính 17/08:** dòng này trước ghi *"`lib/materials` nối `ProductSpec` = **0 code**, đo 07/08
+và đo lại 16/08 không đổi"* — **sai**. Số "0 code" đúng cho phép đo **sáng** 07/08; `resolve.ts` sinh
+**chiều cùng ngày** (commit `ad2d23b`). Câu *"đo lại 16/08"* là **số chép lại, không phải phép đo** ⇒
+vi phạm chính luật 1 (*đo tại nguồn, đừng nhớ hộ máy*). Ca này là bằng chứng sống cho §10: cần
+**máy đối chiếu sổ ↔ code**, vì bản đồ tự nó không tự kiểm được.
 
 ## 7 · BA NẤC = ba CÔNG NĂNG, không phải ba cỡ
 
@@ -217,6 +227,7 @@ dữ liệu full của ngày đó**, để lý do và chứng cứ nằm cạnh 
 
 | Ngày | Đổi gì ở CỐT LÕI | Dữ liệu full |
 |---|---|---|
+| 2026-08-17 | **§5** Files có **hai ngăn khác bản chất** (Hoà chốt) · **§6 đính chính**: hàm nối ba mảnh **đã có** (`resolve.ts:52`, 07/08), chưa cắm điện — câu "0 code, đo lại 16/08" là số chép lại, không phải phép đo | `docs/memory/sessions/2026-08-17/` |
 | 2026-08-16 | Lập bản này thay `IF-ARCHITECTURE-COMPASS` (29/07, mồ côi 19 ngày). Mới: §2 bốn bề mặt · §3 sidebar hai cụm · §5 dòng chảy Files→Thư viện · §6 định nghĩa Đồng bộ · §7 ba nấc ba công năng · §9 luật lưu chung↔máy · §10 từ vựng ba tầng · §11 bảng chống hiểu lệch | `docs/memory/sessions/2026-08-16/` |
 
 **Luật giữ:**

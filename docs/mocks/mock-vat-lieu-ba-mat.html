@@ -1,0 +1,291 @@
+<!-- @dsCard group="Vật liệu" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>InteriorFlow · Vật liệu — Một vật, ba mặt</title>
+<style>
+/* ═══ TOKEN THẬT của app — CHÉP TỪ app/globals.css, KHÔNG đổi số (luật L4) ═══
+   Nguồn: app/globals.css:68-78 (thang bo 6/10/14/20 + 999) · :84-118 (chữ, mật độ)
+          :175-207 (theme Tối) · :239-241 (màu nghĩa Tối) · :266-300 (theme Sáng + màu nghĩa Sáng).
+   0 hex gõ tay ngoài khối token này — mọi chỗ dùng đều qua var().
+   ⛔ KHÔNG dùng --accent* ở bản vẽ này: màu nhấn thứ hai Hoà chưa chốt (mòng két ↔ mận), và ba
+   mặt vốn nói bằng MÀU NGHĨA (đạt / cần xem lại / trung tính), không phải bằng màu nhấn. */
+:root{
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s;
+  --tap:32px; --tap-lg:44px; --pad-card:12px 16px; --fs-ui:13px;
+}
+@media (hover:none) and (pointer:coarse){ :root{ --tap:44px; --pad-card:12px 16px; --fs-ui:15px; } }
+:root,[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --vien-mo:rgba(255,255,255,.06);
+  --nen-mo-overlay:rgba(6,6,8,.56);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --focus-ring:2px solid #8f7dfa;
+}
+[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --vien-mo:rgba(0,0,0,.05);
+  --nen-mo-overlay:rgba(60,52,40,.38);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --focus-ring:2px solid #553ff3;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);padding:36px;
+  font:var(--fw-normal) var(--fs-sm)/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased}
+h1{font-size:var(--fs-xl);letter-spacing:-.02em;margin:0 0 4px}
+.sub{color:var(--t3);margin-bottom:8px;font-size:var(--fs-xs);max-width:70ch}
+.cau{color:var(--t2);font-size:var(--fs-xs);margin:0 0 26px;max-width:70ch;
+  border-left:2px solid var(--border-strong);padding-left:12px}
+h2{font-size:var(--fs-2xs);font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--t3);margin:30px 0 3px}
+.help{font-size:var(--fs-2xs);color:var(--t3);margin:2px 0 12px;line-height:1.55;max-width:78ch}
+.wrap{max-width:1080px}
+.themebtn{position:fixed;top:18px;right:18px;height:var(--tap);padding:0 14px;border:1px solid var(--border);
+  background:var(--panel);color:var(--t2);border-radius:var(--r-2);font-size:var(--fs-2xs);cursor:pointer}
+.themebtn:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+
+/* ── BẢNG KHO — chỉ chép đủ cột để soi cột "Ba mặt" đứng đúng chỗ (ngay sau Tên) ── */
+.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:var(--fs-ui);
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--r-3);overflow:hidden}
+.tbl th{text-align:left;padding:0 10px;height:30px;font-weight:var(--fw-semi);font-size:var(--fs-2xs);
+  color:var(--t3);border-bottom:1px solid var(--border-strong);white-space:nowrap}
+.tbl td{padding:0 10px;height:46px;border-bottom:1px solid var(--border);color:var(--t3);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.ma{font-family:ui-monospace,Menlo,monospace;font-size:var(--fs-2xs);color:var(--t3)}
+.ten{color:var(--t1);font-weight:500}
+.so{font-variant-numeric:tabular-nums;color:var(--t1)}
+.thumb{width:32px;height:32px;border-radius:var(--r-1);background:var(--field);display:grid;place-items:center;color:var(--t3)}
+
+/* ── CHỈ BÁO BA MẶT — ba kênh chồng nhau: CHỮ · DẤU · màu (màu là kênh thứ ba, bỏ đi vẫn đọc) ── */
+.bamat{display:flex;align-items:center;gap:4px;height:var(--tap);padding:0 2px;border:0;background:transparent;cursor:pointer;border-radius:var(--r-1)}
+.bamat:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+/* nền ô là --card chứ KHÔNG --field: đo được — chữ 11px màu --warning trên --field ở theme SÁNG
+   chỉ 4,48:1, hụt ngưỡng 4,5. Trên --card là 5,05:1. Đổi NỀN, không đổi màu nghĩa. */
+.o{display:inline-flex;align-items:center;gap:3px;height:20px;padding:0 6px;border-radius:var(--r-1);
+  background:var(--card);font-size:var(--fs-2xs);font-weight:var(--fw-semi);line-height:1;white-space:nowrap}
+.o svg{width:11px;height:11px;flex-shrink:0}
+.o .dau{font-variant-numeric:tabular-nums}
+/* mặt ĐỦ thì viền TRONG SUỐT — giữ kích thước ô nhưng im lặng. Viền vẽ ở mọi trạng thái là viền
+   không mang tin, tức trang trí; mười hàng × ba ô là ba mươi khung kêu như nhau. */
+.o.du{color:var(--success);border:1px solid transparent}
+.o.chuadu{color:var(--warning);border:1px solid var(--warning)}
+.o.chuaco{color:var(--t3);border:1px dashed var(--t3)}
+.bamat:hover .o{background:var(--hover)}
+
+/* ── PANEL "MỘT VẬT, BA MẶT" ── */
+.scrim{background:var(--nen-mo-overlay);border-radius:var(--r-3);padding:26px;display:grid;place-items:center}
+.tam{width:460px;max-width:100%;background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--r-3);padding:20px;box-shadow:var(--shadow-pop)}
+.tam-dau{display:flex;align-items:center;margin-bottom:4px}
+.tam-dau b{font-size:var(--fs-sm);font-weight:var(--fw-semi);color:var(--t1)}
+.x{margin-left:auto;width:26px;height:26px;display:grid;place-items:center;border:0;border-radius:var(--r-1);
+  background:transparent;color:var(--t3);cursor:pointer}
+.x:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+.tam-phu{font-size:var(--fs-xs);color:var(--t3);line-height:1.5;margin-bottom:4px}
+.tam-tong{font-size:var(--fs-xs);color:var(--t3);line-height:1.5;margin-bottom:14px}
+.mat{padding:12px;border-radius:var(--r-2);background:var(--card);border:1px solid var(--border);margin-bottom:10px}
+.mat.chuaco{border-style:dashed}
+.mat-dau{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.mat-dau b{font-size:var(--fs-xs);font-weight:var(--fw-semi);color:var(--t1)}
+.mat-dau .dau{font-size:var(--fs-xs);font-weight:700}
+.mat-dau .chang{margin-left:auto;font-size:var(--fs-2xs);color:var(--t3);font-weight:var(--fw-normal)}
+.gt{font-size:var(--fs-ui);color:var(--t1);line-height:1.5;font-variant-numeric:tabular-nums}
+.thieu{font-size:var(--fs-xs);color:var(--t2);line-height:1.5;margin-top:6px}
+.thieu i{font-style:normal;color:var(--t3)}
+.suy{display:flex;align-items:center;gap:5px;margin-top:6px;font-size:var(--fs-2xs);color:var(--t2);line-height:1.5}
+.suy svg{width:12px;height:12px;color:var(--warning);flex-shrink:0}
+.viec{margin-top:8px;height:var(--tap);padding:0 12px;border:1px solid var(--border);border-radius:var(--r-2);
+  background:var(--field);color:var(--t2);font-size:var(--fs-xs);font-weight:var(--fw-semi);cursor:pointer}
+.viec:hover{background:var(--hover);color:var(--t1)}
+.viec:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+.chan{margin-top:14px;font-size:var(--fs-2xs);color:var(--t3);line-height:1.55}
+
+/* ── HÀNG BỎ HẾT MÀU — bằng chứng kênh CHỮ + DẤU tự đứng được ── */
+.khongmau{filter:grayscale(1)}
+.doi{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+@media (max-width:900px){ .doi{grid-template-columns:1fr} }
+.nhannho{font-size:var(--fs-2xs);color:var(--t3);margin:0 0 6px}
+.bang-chu{width:100%;border-collapse:collapse;font-size:var(--fs-xs);margin-top:6px}
+.bang-chu th,.bang-chu td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--border);color:var(--t2);vertical-align:top}
+.bang-chu th{color:var(--t3);font-size:var(--fs-2xs);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.bang-chu td:first-child{white-space:nowrap;font-weight:var(--fw-semi);color:var(--t1)}
+</style>
+</head>
+<body>
+<button class="themebtn" id="doiTheme" type="button">Đổi theme</button>
+
+<div class="wrap">
+  <h1>Vật liệu — một vật, ba mặt</h1>
+  <p class="sub">Cột <b>Ba mặt</b> trong kho vật liệu + panel chi tiết. Cùng một mã, ba chặng đọc ba phía của nó.</p>
+  <p class="cau">Đồng bộ KHÔNG PHẢI nối hai thứ lại. Đồng bộ là KHÔNG TÁCH chúng ra ngay từ đầu.<br>
+  <span style="color:var(--t3)">— IF-KIEN-TRUC §6. Giá được ĐỌC từ bản ghi thương mại, không chép sang chất liệu render.</span></p>
+
+  <h2>① Cột Ba mặt trong bảng kho — bốn ca thật</h2>
+  <p class="help">Ba kênh chồng lên nhau: <b>chữ</b> (2D · 3D · Giá — luôn hiện) · <b>dấu</b> (✓ đủ · ≈ máy suy đoán · ! có mà chưa đủ · – chưa có) · <b>màu</b> chỉ là kênh thứ ba. Nét viền đứt cũng nói “chưa có”. Ký hiệu đầu mỗi ô là ký hiệu nén tin — nó chỉ nói <i>chữ bên cạnh nói về cái gì</i>, nên không bao giờ đứng một mình.</p>
+  <table class="tbl">
+    <thead><tr><th></th><th>Mã</th><th>Tên</th><th>Ba mặt</th><th>Hãng</th><th>Giá</th><th>Đơn vị</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><div class="thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.6-4.6a2 2 0 0 0-2.8 0L3 21"/></svg></div></td>
+        <td class="ma">SW-TRV-BE</td><td class="ten">Đá travertine be</td>
+        <td>
+          <button class="bamat" type="button" aria-label="Đủ 3 trên 3 mặt. Ký hiệu 2D: Đá travertine · ANSI32. Chất liệu render 3D: nhám 0.50 · phi kim. Giá kho chung và đơn vị: 850 000 ₫ trên m2. Bấm để xem ba mặt">
+            <span class="o du" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4Z"/><path d="m7.5 10.5 2 2M10.5 7.5l2 2M13.5 4.5l2 2M4.5 13.5l2 2"/></svg>2D<span class="dau">✓</span></span>
+            <span class="o du" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M10.4 21.9a10 10 0 0 0 9.941-15.416M13.6 2.1A10 10 0 0 0 3.66 17.516"/></svg>3D<span class="dau">✓</span></span>
+            <span class="o du" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>Giá<span class="dau">✓</span></span>
+          </button>
+        </td>
+        <td>Stoneworld</td><td class="so">850 000 ₫</td><td>m2</td>
+      </tr>
+      <tr>
+        <td><div class="thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.6-4.6a2 2 0 0 0-2.8 0L3 21"/></svg></div></td>
+        <td class="ma">OAK-NAT-19</td><td class="ten">Sàn gỗ sồi tự nhiên</td>
+        <td>
+          <button class="bamat" type="button" aria-label="Đủ 2 trên 3 mặt. Ký hiệu 2D: Ván sàn gỗ · ANSI31. Chất liệu render 3D: chưa có thông số render — mở cửa sổ chất liệu render và đặt độ nhám, kim loại, ảnh vân. Giá kho chung và đơn vị: 1 240 000 ₫ trên m2. Bấm để xem ba mặt">
+            <span class="o du" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4Z"/><path d="m7.5 10.5 2 2M10.5 7.5l2 2M13.5 4.5l2 2M4.5 13.5l2 2"/></svg>2D<span class="dau">✓</span></span>
+            <span class="o chuaco" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M10.4 21.9a10 10 0 0 0 9.941-15.416M13.6 2.1A10 10 0 0 0 3.66 17.516"/></svg>3D<span class="dau">–</span></span>
+            <span class="o du" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>Giá<span class="dau">✓</span></span>
+          </button>
+        </td>
+        <td>Woodhouse</td><td class="so">1 240 000 ₫</td><td>m2</td>
+      </tr>
+      <tr>
+        <td><div class="thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.6-4.6a2 2 0 0 0-2.8 0L3 21"/></svg></div></td>
+        <td class="ma">BR-TER-07</td><td class="ten">Đồng thau xước</td>
+        <td>
+          <button class="bamat" type="button" aria-label="Đủ 1 trên 3 mặt. Ký hiệu 2D: chưa có ký hiệu 2D cho mã này — gán mã này cho một mẫu vật liệu 2D. Chất liệu render 3D: nhám 0.30 · kim loại, máy suy đoán chưa ai xác nhận. Giá kho chung và đơn vị: có bản ghi thương mại nhưng bỏ trống giá — điền giá kho chung. Bấm để xem ba mặt">
+            <span class="o chuaco" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4Z"/><path d="m7.5 10.5 2 2M10.5 7.5l2 2M13.5 4.5l2 2M4.5 13.5l2 2"/></svg>2D<span class="dau">–</span></span>
+            <span class="o du" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M10.4 21.9a10 10 0 0 0 9.941-15.416M13.6 2.1A10 10 0 0 0 3.66 17.516"/></svg>3D<span class="dau">≈</span></span>
+            <span class="o chuadu" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>Giá<span class="dau">!</span></span>
+          </button>
+        </td>
+        <td>Brassline</td><td class="so">—</td><td>tấm</td>
+      </tr>
+      <tr>
+        <td><div class="thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.6-4.6a2 2 0 0 0-2.8 0L3 21"/></svg></div></td>
+        <td class="ma">—</td><td class="ten">Vải bọc chưa đặt mã</td>
+        <td>
+          <button class="bamat" type="button" aria-label="Đủ 0 trên 3 mặt. Món chưa có mã nên không tra được mặt nào — đặt Mã vật liệu cho món này, mã là khoá nối cả ba mặt. Bấm để xem ba mặt">
+            <span class="o chuaco" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4Z"/><path d="m7.5 10.5 2 2M10.5 7.5l2 2M13.5 4.5l2 2M4.5 13.5l2 2"/></svg>2D<span class="dau">–</span></span>
+            <span class="o chuaco" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M10.4 21.9a10 10 0 0 0 9.941-15.416M13.6 2.1A10 10 0 0 0 3.66 17.516"/></svg>3D<span class="dau">–</span></span>
+            <span class="o chuaco" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>Giá<span class="dau">–</span></span>
+          </button>
+        </td>
+        <td>—</td><td class="so">—</td><td>—</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>② Bỏ hết màu — bằng chứng chữ + dấu tự đứng được</h2>
+  <p class="help">Cùng bốn hàng trên, ép <code>grayscale(1)</code>. Nếu phải nhìn màu mới hiểu thì thiết kế đã sai — người mù màu, màn để độ sáng thấp, và bản in trắng đen đều rơi vào ca này.</p>
+  <div class="khongmau" style="display:flex;flex-direction:column;gap:10px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r-3)">
+    <div style="display:flex;align-items:center;gap:12px"><span class="ma" style="width:96px">SW-TRV-BE</span>
+      <span class="o du"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4Z"/></svg>2D<span class="dau">✓</span></span>
+      <span class="o du"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M10.4 21.9a10 10 0 0 0 9.941-15.416M13.6 2.1A10 10 0 0 0 3.66 17.516"/></svg>3D<span class="dau">✓</span></span>
+      <span class="o du"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/></svg>Giá<span class="dau">✓</span></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px"><span class="ma" style="width:96px">OAK-NAT-19</span>
+      <span class="o du"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4Z"/></svg>2D<span class="dau">✓</span></span>
+      <span class="o chuaco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M10.4 21.9a10 10 0 0 0 9.941-15.416M13.6 2.1A10 10 0 0 0 3.66 17.516"/></svg>3D<span class="dau">–</span></span>
+      <span class="o du"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/></svg>Giá<span class="dau">✓</span></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px"><span class="ma" style="width:96px">BR-TER-07</span>
+      <span class="o chuaco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4Z"/></svg>2D<span class="dau">–</span></span>
+      <span class="o du"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M10.4 21.9a10 10 0 0 0 9.941-15.416M13.6 2.1A10 10 0 0 0 3.66 17.516"/></svg>3D<span class="dau">≈</span></span>
+      <span class="o chuadu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/></svg>Giá<span class="dau">!</span></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px"><span class="ma" style="width:96px">chưa có mã</span>
+      <span class="o chuaco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4Z"/></svg>2D<span class="dau">–</span></span>
+      <span class="o chuaco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M10.4 21.9a10 10 0 0 0 9.941-15.416M13.6 2.1A10 10 0 0 0 3.66 17.516"/></svg>3D<span class="dau">–</span></span>
+      <span class="o chuaco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/></svg>Giá<span class="dau">–</span></span>
+    </div>
+  </div>
+  <table class="bang-chu">
+    <thead><tr><th>Dấu</th><th>Nghĩa</th><th>Kênh dự phòng khi mất màu</th></tr></thead>
+    <tbody>
+      <tr><td>✓</td><td>đủ, dùng được ngay ở chặng đó</td><td>viền liền + dấu tick</td></tr>
+      <tr><td>≈</td><td>đủ nhưng do máy suy đoán, chưa ai xác nhận</td><td>viền liền + dấu xấp xỉ</td></tr>
+      <tr><td>!</td><td>có mảnh nhưng thiếu đúng thứ chặng đó cần</td><td>viền liền + dấu chấm than</td></tr>
+      <tr><td>–</td><td>chưa có mảnh nào cho mã này</td><td>viền ĐỨT + dấu gạch</td></tr>
+    </tbody>
+  </table>
+
+  <h2>③ Panel “một vật, ba mặt” — hai ca đối nhau</h2>
+  <p class="help">Mặt thiếu nói thẳng <b>thiếu gì</b> và <b>làm sao có</b>, không để ô trống câm và không bịa giá trị mặc định. Mặt nào không có việc làm được ngay tại màn này thì <b>không mọc nút</b> — cấm nút giả bấm không ra gì.</p>
+  <div class="doi">
+    <div>
+      <p class="nhannho">Ca đủ ba mặt</p>
+      <div class="scrim">
+        <div class="tam">
+          <div class="tam-dau"><b>Một vật, ba mặt</b><button class="x" type="button" aria-label="Đóng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+          <div class="tam-phu">Đá travertine be · <span class="ma">SW-TRV-BE</span></div>
+          <div class="tam-tong">Đủ 3 trên 3 mặt. Cùng một mã này, ba chặng đọc ba phía của nó.</div>
+
+          <div class="mat">
+            <div class="mat-dau"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="color:var(--success)"><path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4Z"/><path d="m7.5 10.5 2 2M10.5 7.5l2 2M13.5 4.5l2 2M4.5 13.5l2 2"/></svg><b>Ký hiệu 2D</b><span class="dau" style="color:var(--success)">✓</span><span class="chang">Đứng ở 2D Kỹ thuật</span></div>
+            <div class="gt">Đá travertine · ANSI32</div>
+          </div>
+          <div class="mat">
+            <div class="mat-dau"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="color:var(--success)"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M10.4 21.9a10 10 0 0 0 9.941-15.416M13.6 2.1A10 10 0 0 0 3.66 17.516"/></svg><b>Chất liệu render 3D</b><span class="dau" style="color:var(--success)">✓</span><span class="chang">Đứng ở 3D Thiết kế</span></div>
+            <div class="gt">nhám 0.50 · phi kim · có ảnh vân</div>
+          </div>
+          <div class="mat">
+            <div class="mat-dau"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="color:var(--success)"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg><b>Giá kho chung &amp; đơn vị</b><span class="dau" style="color:var(--success)">✓</span><span class="chang">Đứng ở Trình bày</span></div>
+            <div class="gt">850 000 ₫/m2</div>
+          </div>
+          <div class="chan">Giá đọc thẳng từ bản ghi thương mại của kho chung, không chép sang chất liệu render — giá đổi hằng ngày, vân vật liệu thì không. Giá chốt của từng dự án là chuyện riêng của dự án đó.</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <p class="nhannho">Ca thiếu — mỗi mặt thiếu một kiểu</p>
+      <div class="scrim">
+        <div class="tam">
+          <div class="tam-dau"><b>Một vật, ba mặt</b><button class="x" type="button" aria-label="Đóng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+          <div class="tam-phu">Đồng thau xước · <span class="ma">BR-TER-07</span></div>
+          <div class="tam-tong">Đủ 1 trên 3 mặt. Cùng một mã này, ba chặng đọc ba phía của nó.</div>
+
+          <div class="mat chuaco">
+            <div class="mat-dau"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="color:var(--t3)"><path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4Z"/><path d="m7.5 10.5 2 2M10.5 7.5l2 2M13.5 4.5l2 2M4.5 13.5l2 2"/></svg><b>Ký hiệu 2D</b><span class="dau" style="color:var(--t3)">–</span><span class="chang">Đứng ở 2D Kỹ thuật</span></div>
+            <div class="thieu">chưa có ký hiệu 2D cho mã này <i>— gán mã này cho một mẫu vật liệu 2D, bản vẽ mới có hoạ tiết đúng</i></div>
+          </div>
+          <div class="mat">
+            <div class="mat-dau"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="color:var(--success)"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M10.4 21.9a10 10 0 0 0 9.941-15.416M13.6 2.1A10 10 0 0 0 3.66 17.516"/></svg><b>Chất liệu render 3D</b><span class="dau" style="color:var(--success)">≈</span><span class="chang">Đứng ở 3D Thiết kế</span></div>
+            <div class="gt">nhám 0.30 · kim loại</div>
+            <div class="suy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.9 2.6 12 8l5.4 2.1a.5.5 0 0 1 0 .9L12 13l-2.1 5.4a.5.5 0 0 1-.9 0L7 13l-5.4-2.1a.5.5 0 0 1 0-.9L7 8l2.1-5.4a.5.5 0 0 1 .9 0Z"/></svg>Máy suy đoán từ tên/danh mục — chưa ai xác nhận.</div>
+            <button class="viec" type="button">Mở cửa sổ chất liệu render</button>
+          </div>
+          <div class="mat">
+            <div class="mat-dau"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="color:var(--warning)"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg><b>Giá kho chung &amp; đơn vị</b><span class="dau" style="color:var(--warning)">!</span><span class="chang">Đứng ở Trình bày</span></div>
+            <div class="gt">có bản ghi — Brassline</div>
+            <div class="thieu">có bản ghi thương mại nhưng bỏ trống giá <i>— điền giá kho chung; bảng khối lượng chỉ nhận số đo được, không nhận số ước tính</i></div>
+            <button class="viec" type="button">Sửa bản ghi thương mại</button>
+          </div>
+          <div class="chan">Mặt 2D không mọc nút vì màn này không có cửa gán hoạ tiết — nói thẳng phải làm ở đâu còn hơn một nút bấm không ra gì.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('doiTheme').addEventListener('click', function () {
+  var r = document.documentElement;
+  r.setAttribute('data-theme', r.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+});
+</script>
+</body>
+</html>

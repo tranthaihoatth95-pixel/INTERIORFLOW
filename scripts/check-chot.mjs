@@ -26,12 +26,29 @@ import { join, extname } from 'node:path'
 
 const ROOT = process.cwd()
 const SKIP_DIR = new Set(['node_modules', '.next', '.git', 'dist', 'dist-installer', '.worktrees', 'coverage'])
+
+/**
+ * VÁ 17/08 (T) — CÙNG BUG với `soi-that.mjs`, và tệp này NẶNG HƠN vì nó chạy trong `npm test`.
+ * `SKIP_DIR` chỉ có chuỗi `.worktrees` (có dấu chấm), nhưng đường THẬT Claude Code đặt worktree
+ * là `.claude/worktrees/` — không tên nào trên đường đó khớp ⇒ `walk(ROOT)` bò vào và đọc
+ * **4.042 / 8.098 tệp = 50% là bản sao cũ** (đo 17/08 bằng chính vòng lặp của nó).
+ * Hệ quả: mọi `file:dòng` nó in có thể trỏ nhầm cây, và 9 luật chốt được kiểm trên mã của
+ * agent khác chứ không phải mã đang chạy.
+ *
+ * VÁ CHO BỀN, KHÔNG VÁ ĐÚNG MỘT CHUỖI — loại theo *tên thư mục có chứa chữ `worktrees`*, để
+ * đổi chỗ đặt (`.worktrees` · `.claude/worktrees` · `x/y/worktrees`) đều không thủng lại.
+ *
+ * ⚠️ Đây là lần thứ BA cùng một bug: `package.json` (vá 16/08) → `soi-that.mjs` (vá 17/08,
+ * P-S2) → tệp này. Hai lần đầu đều không ai đi soi chỗ khác cùng mắc. Nếu sau này thêm máy
+ * duyệt cây từ gốc repo, **soi lại cả họ** thay vì vá lẻ.
+ */
+const laWorktree = (name) => name.includes('worktrees')
 const CODE_EXT = new Set(['.ts', '.tsx', '.js', '.mjs', '.json', '.svg', '.css'])
 
 /** Duyệt cây tệp, bỏ thư mục sinh ra tự động. */
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {
-    if (SKIP_DIR.has(name)) continue
+    if (SKIP_DIR.has(name) || laWorktree(name)) continue
     const p = join(dir, name)
     let st
     try { st = statSync(p) } catch { continue }

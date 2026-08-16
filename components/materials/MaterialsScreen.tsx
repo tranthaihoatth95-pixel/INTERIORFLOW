@@ -4,17 +4,30 @@
  * components/materials/MaterialsScreen.tsx — VIỆC 3 (`docs/PHIEU-CODE-IF-KHO-VAT-LIEU-V1.md`):
  * màn quản lý vật liệu — thêm/sửa/xoá/tìm/lọc/gắn ảnh + cửa nhập Excel/CSV (VIỆC 4). Đọc/ghi qua
  * API sẵn có `GET/POST /api/specs`, `PATCH/DELETE /api/specs/:id` — không route riêng.
+ *
+ * ⚡ [marker: vatLieuBaMat] 17/08 — ĐÂY LÀ NƠI CẮM ĐIỆN. `getMaterial()` (`lib/materials/
+ * resolve.ts`, viết 07/08) nối ba mảnh vật liệu nhưng suốt 10 ngày **0 nơi gọi ngoài test của
+ * chính nó** — tsc xanh, test xanh, người dùng không thấy gì. Màn này đã sẵn mặt ② (thương mại,
+ * `/api/specs`); nay thêm ① PBR (`loadPbrMap()`) + ③ hoạ tiết 2D (`MATERIALS`) rồi đưa cả ba vào
+ * `getMaterial` ⇒ mỗi dòng kho nói được nó **đủ mặt nào, thiếu mặt nào, và làm sao có mặt thiếu**.
+ * ⛔ Chỉ ĐỌC hợp ba mặt để hiển thị — không đường ghi nào chép giá sang bên thị giác (luật 2.1.9.i).
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, FileSpreadsheet, Search, Loader2, Palette } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import type { MaterialSpecDto } from '@/lib/materials/warehouse/dto';
 import { IMPORT_KIND_LABEL } from '@/lib/materials/warehouse/dto';
+import { getMaterial } from '@/lib/materials/resolve';
+import { loadPbrMap } from '@/lib/materials/pbr-store';
+import { baMatChuaCoMa, baMatCuaVatLieu, type BaMat } from '@/lib/materials/ba-mat';
+import type { MaterialPbr } from '@/lib/materials/schema';
+import { MATERIALS } from '@/lib/cad/materials';
 import { MaterialTable } from './MaterialTable';
 import { MaterialFormModal } from './MaterialFormModal';
 import { MaterialPbrEditor } from './MaterialPbrEditor';
 import { MaterialImportWizard } from './MaterialImportWizard';
+import { BaMatPanel } from './BaMatPanel';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 export function MaterialsScreen() {
@@ -31,6 +44,10 @@ export function MaterialsScreen() {
   const [importing, setImporting] = useState(false);
   /** VIỆC 5 PHẦN B — món đang mở lớp chỉnh chất liệu render (4 núm, `MaterialPbrEditor`). */
   const [pbrEditing, setPbrEditing] = useState<MaterialSpecDto | null>(null);
+  /** [marker: vatLieuBaMat] mặt ① THỊ GIÁC — kho PBR cục bộ, chỉ đọc được ở client. */
+  const [pbrMap, setPbrMap] = useState<Record<string, MaterialPbr>>({});
+  /** món đang mở panel "một vật, ba mặt". */
+  const [baMatCua, setBaMatCua] = useState<MaterialSpecDto | null>(null);
 
   /**
    * 06/08 VÒNG 2 — BỎ `?kind=material` HARD-CODE. Bắt được khi nghiệm thu G-M3-07: cửa nhập cho
@@ -53,6 +70,33 @@ export function MaterialsScreen() {
   };
 
   useEffect(() => { void load(); }, []);
+
+  /* [marker: vatLieuBaMat] kho PBR sống trong localStorage ⇒ chỉ đọc sau khi đã lên client (SSR
+     `loadPbrMap()` trả {}). Nạp lại sau mỗi lần đóng cửa sổ chất liệu render, nếu không thì người
+     dùng vừa đặt xong thông số mà chỉ báo vẫn nói "chưa có" — đúng kiểu lỗi khiến người ta thôi
+     tin cả bảng. */
+  const napPbr = useCallback(() => setPbrMap(loadPbrMap()), []);
+  useEffect(() => { napPbr(); }, [napPbr]);
+
+  /**
+   * ⚡ NƠI GỌI THẬT của `getMaterial()`. Ba nguồn: ① `pbrMap` (thị giác) · ② `items` (thương mại,
+   * đã fetch ở trên) · ③ `MATERIALS` (hoạ tiết 2D). Món CHƯA CÓ MÃ thì không có khoá nối — nói
+   * thẳng bằng `baMatChuaCoMa()`, KHÔNG tra bừa rồi hiện ba ô trống.
+   */
+  const baMatTheoId = useMemo(() => {
+    const bang = new Map<string, BaMat>();
+    for (const m of items ?? []) {
+      bang.set(m.id, m.sku
+        ? baMatCuaVatLieu(getMaterial(m.sku, { pbrMap, specs: items ?? [], defs: MATERIALS }))
+        : baMatChuaCoMa());
+    }
+    return bang;
+  }, [items, pbrMap]);
+
+  const layBaMat = useCallback(
+    (m: MaterialSpecDto): BaMat => baMatTheoId.get(m.id) ?? baMatChuaCoMa(),
+    [baMatTheoId],
+  );
 
   const brands = useMemo(() => {
     const set = new Set<string>();
@@ -176,7 +220,26 @@ export function MaterialsScreen() {
           />
         </div>
       ) : (
-        <MaterialTable items={filtered} onEdit={setEditing} onDelete={(m) => void onDelete(m)} onEditPbr={setPbrEditing} />
+        <MaterialTable
+          items={filtered}
+          onEdit={setEditing}
+          onDelete={(m) => void onDelete(m)}
+          onEditPbr={setPbrEditing}
+          baMatCua={layBaMat}
+          onMoBaMat={setBaMatCua}
+        />
+      )}
+
+      {baMatCua && (
+        <BaMatPanel
+          baMat={layBaMat(baMatCua)}
+          ten={baMatCua.name}
+          onClose={() => setBaMatCua(null)}
+          /* món chưa có mã thì KHÔNG mở được cửa chất liệu render (matId = mã vật liệu) — không
+             truyền hàm ⇒ panel không mọc nút giả bấm không ra gì. */
+          onMoChatLieu={baMatCua.sku ? () => { setPbrEditing(baMatCua); setBaMatCua(null); } : undefined}
+          onMoSuaThuongMai={() => { setEditing(baMatCua); setBaMatCua(null); }}
+        />
       )}
 
       {pbrEditing?.sku && (
@@ -185,7 +248,7 @@ export function MaterialsScreen() {
           name={pbrEditing.name}
           /* gợi ý loại khi chưa từng chỉnh: ghép note + tên — nguồn chữ duy nhất mô tả món có sẵn */
           categoryHint={[pbrEditing.note, pbrEditing.name].filter(Boolean).join(' ')}
-          onClose={() => setPbrEditing(null)}
+          onClose={() => { setPbrEditing(null); napPbr(); }}
         />
       )}
 
