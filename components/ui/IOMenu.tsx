@@ -20,6 +20,7 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { Upload, Download, ChevronDown } from 'lucide-react';
 import { useDismissable } from '@/lib/useDismissable';
+import { RADIUS } from '@/lib/geometry';
 
 /** 1 định dạng trong menu — vd DXF / PDF / .pptx / Ảnh PNG. */
 export interface IOFormatItem {
@@ -103,7 +104,7 @@ export default function IOMenu({
           alignItems: 'center',
           gap: 6,
           padding: pad,
-          borderRadius: 10,
+          borderRadius: RADIUS.r2,
           fontSize,
           cursor: busy ? 'default' : 'pointer',
           border: `1px solid ${accent ? 'var(--accent)' : 'var(--border)'}`,
@@ -132,7 +133,7 @@ export default function IOMenu({
             minWidth: 236,
             background: 'var(--panel)',
             border: '1px solid var(--border)',
-            borderRadius: 10,
+            borderRadius: RADIUS.r2,
             padding: 5,
             boxShadow: '0 10px 30px rgba(0,0,0,.28)',
           }}
@@ -157,7 +158,7 @@ export default function IOMenu({
             zIndex: 40,
             whiteSpace: 'nowrap',
             padding: '7px 12px',
-            borderRadius: 10,
+            borderRadius: RADIUS.r2,
             fontSize: 12.5,
             border: `1px solid ${resultMsg.ok ? 'var(--accent)' : '#c0392b'}`,
             background: 'var(--panel)',
@@ -194,7 +195,7 @@ function Item({ item, onDone }: { item: IOFormatItem; onDone: () => void }) {
         gap: 10,
         width: '100%',
         padding: '9px 10px',
-        borderRadius: 6,
+        borderRadius: RADIUS.r1,
         border: 'none',
         background: hover && !dim ? 'var(--field)' : 'transparent',
         color: dim ? 'var(--t3)' : 'var(--t2)',

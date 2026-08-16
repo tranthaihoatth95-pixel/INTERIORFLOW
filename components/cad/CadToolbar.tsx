@@ -19,11 +19,13 @@ import {
   Blend, MoveUpRight, Video, ArrowDownRight, Pipette, Pencil,
 } from 'lucide-react';
 import { useCadStore, type Tool, type CadMode } from '@/lib/cad/store';
-import { useModKey, useModShiftKey } from '@/lib/kbd';
+import { useMacAfterMount } from '@/lib/kbd';
 import { useT } from '@/lib/i18n';
 import Tooltip from '@/components/ui/Tooltip';
 import Popover from '@/components/ui/Popover';
 import { ToolbarChip } from '@/components/ui/ToolbarChip';
+import { commonCommandsFor, bindStage } from '@/lib/commands/toolbar-source';
+import { CommandIcon } from '@/components/ui/command-icon';
 
 /** Rút gọn nhãn nút (bỏ mô tả dài sau " (" / " — ") thành nhãn ngắn cho tag hover. */
 function shortLabel(title: string): string {
@@ -52,9 +54,11 @@ interface ToolBtn {
   key: string;
 }
 
-/** Sprint 9 — Sketch: bộ vẽ tối thiểu đúng triết lý Phase 1 ("Sketch, không phải Draft"). */
+/** Sprint 9 — Sketch: bộ vẽ tối thiểu đúng triết lý Phase 1 ("Sketch, không phải Draft").
+ * B2 16/08 — dòng `select` ĐÃ RỜI khỏi đây: "Chọn" là LỆNH CHUNG, nay đọc từ
+ * `lib/commands/registry.ts` (xem `chung` trong component) để 2D/3D/Trình chiếu không thể vẽ
+ * khác nhau. Nó vẫn đứng ĐẦU nhóm VẼ như trước, chỉ đổi nguồn khai. */
 const DRAW: ToolBtn[] = [
-  { tool: 'select', icon: MousePointer2, label: 'Chọn', key: 'Esc' },
   { tool: 'freehand', icon: Pencil, label: 'Nét tay — kéo bằng bút hoặc ngón, nhấc để tự nắn', key: '—' },
   { tool: 'line', icon: Minus, label: 'Đường', key: 'L' },
   { tool: 'rect', icon: Square, label: 'Chữ nhật', key: 'REC' },
@@ -81,16 +85,10 @@ const ARCH: ToolBtn[] = [
   { tool: 'room', icon: LayoutPanelTop, label: 'Phòng chữ nhật + nhãn diện tích', key: 'ROOM' },
   { tool: 'hatch', icon: PaintBucket, label: 'Hatch — pick-point tô vùng kín (H ANSI31/ANSI32/ANSI37/SOLID/DOTS)', key: 'H' },
 ];
-const EDIT: ToolBtn[] = [
-  { tool: 'move', icon: Move, label: 'Dời', key: 'M' },
-  { tool: 'copy', icon: Copy, label: 'Chép', key: 'CO' },
-  { tool: 'rotate', icon: RotateCw, label: 'Xoay', key: 'RO' },
-  { tool: 'mirror', icon: FlipHorizontal2, label: 'Lật', key: 'MI' },
-];
-const MEASURE: ToolBtn[] = [
-  { tool: 'measure', icon: MoveDiagonal, label: 'Đo nhanh', key: 'DI' },
-  { tool: 'text', icon: Type, label: 'Chữ', key: 'T' },
-];
+/* ⛔ B2 16/08 — HAI MẢNG `EDIT` (Dời·Chép·Xoay·Lật) và `MEASURE` (Đo·Chữ) ĐÃ XOÁ.
+   Sáu lệnh đó là LỆNH CHUNG, nay đọc từ `lib/commands/registry.ts` qua `commonCommandsFor()`.
+   Giữ lại mảng ở đây = hai nguồn cùng khai một lệnh, đúng gốc bệnh "3 chặng như 3 app":
+   trước nay `EDIT` gọi Đo là "Đo nhanh" còn dock 3D gọi là "Thước", cùng một việc hai cái tên. */
 
 /** VIỆC 3 (ticket "THANH TOOL 2D DESIGN", 04/08) — nhóm "VẼ" gộp DRAW+DRAW_PRO+SHAPES2 (14 lệnh),
  * chỉ phơi 6 lệnh hay dùng (Chọn·Đường·Chữ nhật·Tròn·Đường gấp·Cung) trực tiếp trên toolbelt —
@@ -98,12 +96,17 @@ const MEASURE: ToolBtn[] = [
  * nấp sau hover — SPEC-HOVER §3.7), mở qua Popover dùng chung (components/ui/Popover.tsx).
  * Sketch mode KHÔNG có nút ↘ vì DRAW_PRO/SHAPES2 vốn đã ẩn ở Sketch (triết lý "vẽ tối thiểu"
  * giữ nguyên — xem comment DRAW phía trên), nên không có gì để "còn nữa". */
-const VE_DIRECT_PRO: ToolBtn[] = [DRAW[0], DRAW[2], DRAW[3], DRAW[4], DRAW_PRO[0], DRAW_PRO[2]];
+/* Chỉ số dịch 1 so với trước vì `select` đã rời `DRAW` (xem chú thích ở `DRAW`): nay
+   DRAW = [freehand, line, rect, circle]. "Chọn" render riêng từ sổ lệnh, vẫn đứng trước cụm này. */
+const VE_DIRECT_PRO: ToolBtn[] = [DRAW[1], DRAW[2], DRAW[3], DRAW_PRO[0], DRAW_PRO[2]];
 const VE_MORE: ToolBtn[] = [DRAW_PRO[1], DRAW_PRO[3], ...SHAPES2];
 
 /** VIỆC 2 — 6 lệnh dùng nhiều nhất (Chọn·Đường·Đường gấp·Tường·Phòng·Hatch) nút TO hơn ~1.4 lần,
  * còn lại giữ cỡ hiện tại — xem `btnSize()` + `Group`/`ToolbarChip size="tap-lg"`. */
-const BIG_TOOLS = new Set<Tool>(['select', 'line', 'polyline', 'wall', 'room', 'hatch']);
+const BIG_TOOLS = new Set<Tool>(['line', 'polyline', 'wall', 'room', 'hatch']);
+/** Cùng luật "6 lệnh hay dùng nút to" nhưng cho lệnh chung — khoá là `CommandDef.id` chứ không
+ * phải `Tool`, vì nhóm này nay đến từ sổ lệnh. `select` chuyển từ `BIG_TOOLS` sang đây. */
+const BIG_COMMON = new Set<string>(['cad.sel.select']);
 /** Pro-only (Sprint 9) — 6 lệnh ghi kích thước kiểu bản vẽ kỹ thuật, không thuộc "sketch nhanh". */
 const DIMENSION: ToolBtn[] = [
   { tool: 'dimension', icon: Ruler, label: 'Dimension aligned', key: 'DAL' },
@@ -168,9 +171,20 @@ export default function CadToolbar({
   const redo = useCadStore((s) => s.redo);
   const past = useCadStore((s) => s.past.length);
   const future = useCadStore((s) => s.future.length);
+  // B2 — "Xoá" là lệnh chung, nay có mặt ở thanh 2D (trước đây thanh này KHÔNG có nút Xoá, chỉ có
+  // phím Delete + gõ E). Đọc số đối tượng đang chọn để nói đúng lý do khi nút mờ.
+  const deleteSelected = useCadStore((s) => s.deleteSelected);
+  const selectionCount = useCadStore((s) => s.selection.length);
+  const tr = useT();
+  const isMac = useMacAfterMount();
+  /** `KeyToken[]` của sổ lệnh → chuỗi hiện được, dịch `mod`/`shift` theo nền tảng. Dùng CHUNG một
+   * bảng với `lib/kbd.ts` để tooltip không nói khác bảng ⌘/. */
+  const fmtKey = (k?: string[]) =>
+    k?.map((t) => (t === 'mod' ? (isMac ? '⌘' : 'Ctrl') : t === 'shift' ? (isMac ? '⇧' : 'Shift') : t)).join('');
   const isPro = cadMode === 'pro' || cadMode === 'revit';
-  const undoLabel = useModKey('Z');
-  const redoLabel = useModShiftKey('Z');
+  // `useModKey('Z')`/`useModShiftKey('Z')` ĐÃ BỎ ở B2 — nhãn phím của Hoàn tác/Làm lại nay dựng từ
+  // `CommandDef.key` (`['mod','Z']` / `['mod','shift','Z']`) qua `fmtKey`, cùng một nguồn với bảng
+  // ⌘/ và ⌘K. Trước đây chuỗi phím gõ tay ở đây có thể lệch sổ lệnh mà không ai biết.
   // Hai khác biệt "cầm nắm" giữa 2 mode, gom về đúng 2 biến:
   //  - btnSize()/icoS : Sketch nút 44px (chuẩn vùng chạm, `ToolbarChip size="tap-lg"`) · Pro nút
   //               32px (mật độ gọn cho chuột — 15/08 KB-1: 36→32, đổi sang `var(--tap)` qua
@@ -232,6 +246,57 @@ export default function CadToolbar({
       window.removeEventListener('resize', measure);
     };
   }, [cadMode]);
+
+  /* ══ TẦNG ① — LỆNH CHUNG, ĐỌC TỪ SỔ LỆNH (B2) ══
+     Thanh 2D THÔI sở hữu danh sách lệnh chung; tên · icon · alias · thứ tự đến từ
+     `lib/commands/registry.ts`. Ở 2D `CommandDef.run()` vốn ĐÃ đúng (nó gọi thẳng `useCadStore`),
+     nên binding ở đây chỉ để nói thêm hai thứ sổ lệnh không giữ: nút nào ĐANG BẬT, và lệnh nào
+     LÚC NÀY chưa bấm được kèm lý do (lịch sử trống / chưa chọn gì). */
+  const chung = bindStage(commonCommandsFor({ stage: 'cad', mode: cadMode, proToolsAllowed: isPro }), {
+    'cad.sel.select': { run: () => setTool('select'), active: tool === 'select' },
+    'cad.edit.move': { run: () => setTool('move'), active: tool === 'move' },
+    'cad.edit.copy': { run: () => setTool('copy'), active: tool === 'copy' },
+    'cad.edit.rotate': { run: () => setTool('rotate'), active: tool === 'rotate' },
+    'cad.edit.mirror': { run: () => setTool('mirror'), active: tool === 'mirror' },
+    'cad.dim.measure': { run: () => setTool('measure'), active: tool === 'measure' },
+    'cad.draw.text': { run: () => setTool('text'), active: tool === 'text' },
+    'cad.sel.delete': {
+      run: deleteSelected,
+      unavailableReason: selectionCount ? undefined : 'Chưa chọn đối tượng nào để xoá',
+    },
+    'cad.sel.undo': { run: undo, unavailableReason: past ? undefined : 'Chưa có thao tác nào để hoàn tác' },
+    'cad.sel.redo': { run: redo, unavailableReason: future ? undefined : 'Chưa hoàn tác gì để làm lại' },
+  });
+  const chungById = new Map(chung.map((c) => [c.id, c]));
+
+  /** Vẽ một cụm lệnh chung theo id. Lệnh nào KHÔNG khớp `when` ở chặng này vẫn hiện, mờ kèm lý do
+   * — không lọc bỏ (§9: ô trống là bằng chứng còn việc, giấu đi là lại đẻ "mỗi chặng một bộ nút").
+   * Ở 2D hiện ALIAS GÕ (`RO`, `CO`, `DI`) chứ không hiện phím đơn: chặng này nhập bằng dòng lệnh,
+   * khoe `Q` ở đây là bày một phím không bấm được. */
+  const CommonGroup = ({ ids }: { ids: string[] }) => (
+    <>
+      {ids.map((id) => {
+        const c = chungById.get(id);
+        if (!c) return null;
+        return (
+          <ToolbarChip
+            key={c.id}
+            icon={<CommandIcon name={c.icon} size={BIG_COMMON.has(c.id) ? icoBig : icoS} />}
+            label={tr(c.label[0], c.label[1])}
+            /* Lệnh CÓ phím tắt thật thì hiện phím ở CẢ Sketch (⌘Z/Delete vẫn bấm được trên máy có
+               bàn phím); lệnh chỉ có alias GÕ thì chỉ hiện ở Pro — Sketch là chế độ ngón tay,
+               không có dòng lệnh để gõ `RO`. */
+            shortcutHint={c.key ? fmtKey(c.key) : isPro ? c.aliases[0] : undefined}
+            active={c.active}
+            disabled={!c.enabled}
+            disabledReason={c.disabledReason}
+            onClick={c.run}
+            size={BIG_COMMON.has(c.id) || !isPro ? 'tap-lg' : 'tap'}
+          />
+        );
+      })}
+    </>
+  );
 
   const Group = ({ items }: { items: ToolBtn[] }) => (
     <>
@@ -375,6 +440,8 @@ export default function CadToolbar({
           VẼ = DRAW+DRAW_PRO+SHAPES2 gộp (VIỆC 3): Sketch chỉ có 4 lệnh nền tảng (không dư gì để
           "còn nữa"); Pro/Revit phơi 6 lệnh hay dùng + nút ↘ mở 8 lệnh còn lại. */}
       <GroupBlock label="VẼ">
+        {/* "Chọn" từ sổ lệnh, vẫn đứng đầu nhóm VẼ y như trước — chỉ đổi NGUỒN khai, không đổi chỗ. */}
+        <CommonGroup ids={['cad.sel.select']} />
         {isPro ? (
           <>
             <Group items={VE_DIRECT_PRO} />
@@ -408,14 +475,15 @@ export default function CadToolbar({
       </div>
       <Divider h={rowH} />
       <GroupBlock label="SỬA">
-        <Group items={isPro ? EDIT : [EDIT[0]]} />
+        {/* Sketch chỉ phơi "Dời" như trước; Pro đủ bốn. Danh sách từ sổ lệnh, không khai lại. */}
+        <CommonGroup ids={isPro ? ['cad.edit.move', 'cad.edit.copy', 'cad.edit.rotate', 'cad.edit.mirror'] : ['cad.edit.move']} />
         <EyedropperButton isPro={isPro} />
       </GroupBlock>
       {isPro && <Divider h={rowH} />}
       {isPro && <Group items={MODIFY} />}
       <Divider h={rowH} />
       <GroupBlock label="ĐO & GHI CHÚ">
-        <Group items={isPro ? MEASURE : [MEASURE[0]]} />
+        <CommonGroup ids={isPro ? ['cad.dim.measure', 'cad.draw.text'] : ['cad.dim.measure']} />
       </GroupBlock>
       {isPro && <Group items={DIMENSION} />}
       <Divider h={rowH} />
@@ -479,24 +547,10 @@ export default function CadToolbar({
         size={toolSize}
       />
       <Divider h={rowH} />
-      <ToolbarChip
-        icon={<Undo2 size={icoS} />}
-        label="Hoàn tác"
-        shortcutHint={undoLabel}
-        disabled={!past}
-        disabledReason="Chưa có thao tác nào để hoàn tác"
-        onClick={undo}
-        size={toolSize}
-      />
-      <ToolbarChip
-        icon={<Redo2 size={icoS} />}
-        label="Làm lại"
-        shortcutHint={redoLabel}
-        disabled={!future}
-        disabledReason="Chưa hoàn tác gì để làm lại"
-        onClick={redo}
-        size={toolSize}
-      />
+      {/* Xoá · Hoàn tác · Làm lại — cả ba từ sổ lệnh. Trước B2, thanh này tự khai Hoàn tác/Làm lại
+          và KHÔNG có nút Xoá; dock 3D thì ngược lại. Nay cùng một nguồn nên không lệch được nữa.
+          Nhãn phím vẫn hiện đúng của hệ điều hành: `key:['mod','Z']` → `useModKey` dịch ⌘/Ctrl. */}
+      <CommonGroup ids={['cad.sel.delete', 'cad.sel.undo', 'cad.sel.redo']} />
     </div>
     </div>
   );

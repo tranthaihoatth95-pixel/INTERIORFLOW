@@ -125,14 +125,28 @@ export interface CommandDef {
    * NGHĨA KHAI BÁO (declarative), KHÔNG PHẢI cổng thật — cổng thật vẫn là `when` (có thể mờ ở một
    * chặng dù nằm trong `stages`, xem docstring `when` từng dòng bên dưới). Optional: vắng mặt =
    * ngầm định lệnh chỉ sống ở 'cad' (mọi lệnh CAD sẵn có, chưa xét đa chặng — 45/55 lệnh không
-   * đổi gì trong việc B1 này). CHỈ 9 LỆNH CHUNG (tầng ① ticket) khai đủ 3 phần tử. */
+   * đổi gì trong việc B1 này). CHỈ 9 LỆNH CHUNG / 10 CommandDef (tầng ① ticket) khai đủ 3 phần tử — 9 lệnh vì Hoàn tác+Làm lại là MỘT lệnh chung hai chiều, 10 dòng khai vì mỗi chiều là một CommandDef. */
   stages?: Stage[];
   /** B1 (15/08) — tên icon lucide-react (string, KHÔNG import component ở đây — chọn icon render
-   * ra gì là việc UI của B2/B3). CHỈ điền cho 9 LỆNH CHUNG, lấy ĐÚNG icon đang chạy thật ở
+   * ra gì là việc UI của B2/B3). CHỈ điền cho 9 LỆNH CHUNG / 10 CommandDef, lấy ĐÚNG icon đang chạy thật ở
    * `CadToolbar.tsx`/`ToolDock3D.tsx` hôm nay (đối chiếu từng dòng, không đoán) để 3 mặt tiền vẽ
    * cùng một icon — đúng tinh thần "sổ lệnh duy nhất". Lệnh khác để trống, UI dock/palette thật
    * chưa tồn tại cho chúng (xem TODO#2 cuối file, giữ nguyên từ bản gốc). */
   icon?: string;
+  /**
+   * B2 (16/08) — PHÍM ĐƠN: bấm MỘT phát là chạy, khuôn `TOOL3D_HOTKEYS`
+   * (`lib/render-studio/tool3d.ts:42`).
+   *
+   * ⚠️ KHÁC BẢN CHẤT với `aliases`, đừng gộp hai trường: `aliases` là chuỗi GÕ vào dòng lệnh rồi
+   * Enter (khuôn AutoCAD, sống ở 2D), `directKey` là keydown bắt thẳng (khuôn 3ds Max/SketchUp,
+   * sống ở 3D). B1 đã CỐ Ý không nhét 'Q'/'D'/'T' vào `aliases` vì làm thế là trộn hai cơ chế,
+   * sai kiểu dữ liệu. Sổ lệnh giữ CẢ HAI đường; **chặng nào bật đường nào** do
+   * `inputPathsFor(stage)` (`toolbar-source.ts`) quyết, không phải do lệnh quyết.
+   *
+   * CHỈ điền khi phím đó ĐANG chạy thật hôm nay (đối chiếu từng dòng `ToolDock3D.tsx` +
+   * `TOOL3D_HOTKEYS`) — 5/10 lệnh chung có, 5 lệnh còn lại 3D chưa có tool nên KHÔNG bịa phím
+   * (§9 cấm nút giả; bịa phím còn tệ hơn nút giả vì nó câm, không có chỗ nào hiện lý do). */
+  directKey?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -278,7 +292,7 @@ export const COMMANDS: CommandDef[] = [
   { id: 'cad.dim.linear', label: ['Ghi kích thước', 'Dimension'], aliases: ['DIM', 'DAL'], when: gateFor('dimension'), group: 'dim@1', surfaces: ['statusbar'], run: activate('dimension') },
   {
     id: 'cad.dim.measure', label: ['Đo khoảng cách', 'Measure distance'], aliases: ['DI'], when: gateFor('measure'),
-    group: 'dim@2', surfaces: ['statusbar'], run: activate('measure'), stages: ['cad', 'render', 'present'], icon: 'MoveDiagonal',
+    group: 'dim@2', surfaces: ['statusbar'], run: activate('measure'), stages: ['cad', 'render', 'present'], icon: 'MoveDiagonal', directKey: 'T',
     // B1 (15/08) — lệnh chung "Đo". Phím thắng (ticket §4 B1): DI — đã là alias duy nhất, không
     // đổi. 3D dock gọi khái niệm GẦN GIỐNG (không hệt) là "Thước" phím T, tool3d id 'ruler'
     // (`ToolDock3D.tsx:130`) — đo W×D×H của khối đang chọn, KHÁC "đo khoảng cách 2 điểm" của DI ở
@@ -327,7 +341,7 @@ export const COMMANDS: CommandDef[] = [
   // — giữ nguyên, chỉ thêm stages/icon.
   {
     id: 'cad.edit.move', label: ['Di chuyển', 'Move'], aliases: ['M', 'MOVE'], when: gateFor('move'),
-    group: 'edit@1', surfaces: ['statusbar'], run: activate('move'), stages: ['cad', 'render', 'present'], icon: 'Move',
+    group: 'edit@1', surfaces: ['statusbar'], run: activate('move'), stages: ['cad', 'render', 'present'], icon: 'Move', directKey: 'M',
     // MỜ ở 'render': `tool3d.ts` CÓ 'move' thật nhưng ở `useTool3D` (store khác `useCadStore`) —
     // cùng lý do cad.sel.select phía trên, nối 2 store là việc B5. MỜ ở 'present': phần tử dời
     // được bằng kéo chuột/mũi tên (`PresentEditor.tsx` onNudge cục bộ), không có "tool Dời" nào
@@ -335,14 +349,14 @@ export const COMMANDS: CommandDef[] = [
   },
   {
     id: 'cad.edit.copy', label: ['Sao chép', 'Copy'], aliases: ['CO', 'COPY'], when: gateFor('copy'),
-    group: 'edit@2', surfaces: ['statusbar'], run: activate('copy'), stages: ['cad', 'render', 'present'], icon: 'Copy',
+    group: 'edit@2', surfaces: ['statusbar'], run: activate('copy'), stages: ['cad', 'render', 'present'], icon: 'Copy', directKey: 'D',
     // Phím thắng (ticket §4 B1): CO — đã là alias chính ở đây, không đổi. 3D dock gọi khái niệm
     // này là "Nhân bản" phím D (`ToolDock3D.tsx:117`, tool3d id 'dup') — GIỮ NGUYÊN ở 3D, không
     // sửa. MỜ ở 'render'/'present': cùng lý do move (store khác/không có store).
   },
   {
     id: 'cad.edit.rotate', label: ['Xoay', 'Rotate'], aliases: ['RO', 'ROTATE'], when: gateFor('rotate'),
-    group: 'edit@3', surfaces: ['statusbar'], run: activate('rotate'), stages: ['cad', 'render', 'present'], icon: 'RotateCw',
+    group: 'edit@3', surfaces: ['statusbar'], run: activate('rotate'), stages: ['cad', 'render', 'present'], icon: 'RotateCw', directKey: 'Q',
     // Phím thắng (ticket §4 B1): RO — đã là alias chính, không đổi. 3D dock dùng phím Q
     // (`ToolDock3D.tsx:116`) — GIỮ NGUYÊN ở 3D. MỜ ở 'render'/'present': cùng lý do move.
   },
@@ -421,7 +435,7 @@ export const COMMANDS: CommandDef[] = [
   },
 
   // ── Chọn, xoá, hoàn tác ─────────────────────────────────────────────────────────────────
-  // B1 (15/08) — 4 trong 9 LỆNH CHUNG nằm ở nhóm này. `stages` khai đủ 3 (tầng ① ticket); `when`
+  // B1 (15/08) — 4 CommandDef của 9 LỆNH CHUNG / 10 CommandDef nằm ở nhóm này. `stages` khai đủ 3 (tầng ① ticket); `when`
   // GIỮ NGUYÊN `CAD_BASIC` (mờ ở 'render'/'present') TRỪ undo/redo — xem lý do từng dòng.
   {
     id: 'cad.sel.select', label: ['Chọn', 'Select'], aliases: ['SEL'],
@@ -430,7 +444,7 @@ export const COMMANDS: CommandDef[] = [
     // `tool3d.ts` TOOL3D_HOTKEYS) — GIỮ NGUYÊN ở 3D (không xoá, không sửa file đó, ngoài phạm vi
     // B1); khi B2 nối registry vào dock, 'V' xuống hàng alias phụ, Esc lên hàng chính.
     key: ['Esc'], when: CAD_BASIC, group: 'sel@1', surfaces: ['statusbar'], run: activate('select'),
-    stages: ['cad', 'render', 'present'], icon: 'MousePointer2',
+    stages: ['cad', 'render', 'present'], icon: 'MousePointer2', directKey: 'V',
     // MỜ ở 'render': `tool3d.ts` CÓ tool 'select' thật (và Escape cũng đưa 3D về select qua
     // `tool3dKeyTransition`) nhưng đó là store KHÁC (`useTool3D`, không phải `useCadStore`) — `run()`
     // ở đây chỉ gọi được `useCadStore`, gọi từ palette lúc đang ở 3D sẽ KHÔNG đổi gì thấy được
@@ -518,7 +532,7 @@ if (process.env.NODE_ENV !== 'production') {
  *    bar hiện tại (autocomplete, gợi ý lỗi "Lệnh không rõ…" liệt kê alias).
  * 2. Khi có UI dock/palette/contextmenu thật (SPEC-HA-TANG-UI-IF §5 bước 4-5), gán `surfaces`
  *    + `icon` cho 45 lệnh CÒN LẠI theo quyết định thiết kế của Hoà — KHÔNG đoán ở đây. (10 lệnh
- *    thuộc 9 LỆNH CHUNG đã có `icon` từ B1 15/08, xem trên.)
+ *    thuộc 9 LỆNH CHUNG / 10 CommandDef đã có `icon` từ B1 15/08, xem trên.)
  * 3. `WhenCtx.stage`/`mode` — ĐÍNH CHÍNH B1 (15/08): dòng này TỪNG ghi "chưa có nơi gọi thật nào
  *    truyền vào" — SAI, đã có: `components/studio/AppCommandPalette.tsx:153-157` dựng ctx thật
  *    (`stage: active==='cad'?'cad':active==='present'?'present':'render'`), đúng khớp `'cad'/
@@ -526,7 +540,7 @@ if (process.env.NODE_ENV !== 'production') {
  *    ghi (xem `Stage` type ở trên). Việc B5 (ticket) mới thật sự CHƯA làm: `run()` chưa phân
  *    biệt được ĐANG GỌI TỪ chặng nào để dispatch đúng store 3D/Present (xem comment "MỜ ở
  *    'render'/'present'" ở 10 lệnh chung — B1 cố tình để `when` chặn thay vì giả vờ chạy được).
- * 4. B1 (15/08) đã khai 9 LỆNH CHUNG (10 CommandDef: cad.sel.select/delete/undo/redo,
+ * 4. B1 (15/08) đã khai 9 LỆNH CHUNG / 10 CommandDef (cad.sel.select/delete/undo/redo,
  *    cad.edit.move/copy/rotate/mirror, cad.dim.measure, cad.draw.text) với `stages` đủ 3 —
  *    `when` CHỈ THẬT ở 'cad' (+ 'render' riêng cho undo/redo, xem `CAD_OR_RENDER`), còn lại mờ vì
  *    engine nằm ở STORE KHÁC (`useTool3D`, `lib/render-studio/tool3d.ts`) hoặc KHÔNG store toàn

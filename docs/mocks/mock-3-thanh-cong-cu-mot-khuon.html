@@ -1,0 +1,380 @@
+<!-- @dsCard group="InteriorFlow" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InteriorFlow · Ba thanh công cụ một khuôn (B2 — sổ lệnh chung)</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+   TOKEN THẬT — chép nguyên văn từ app/globals.css. KHÔNG đổi số, KHÔNG đẻ số mới.
+   Khai thành CLASS (.pane) thay vì :root để bày ĐƯỢC CẢ 2 THEME cạnh nhau trong một ảnh
+   (luật L5 "nghiệm thu ảnh đủ 2 theme" — không bắt người duyệt bấm toggle rồi chụp 2 lần).
+   ═══════════════════════════════════════════════════════════════════════════════════════════ */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  /* thang bo DUYỆT 12/08 — 6/10/14/20 + capsule 999 */
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s;
+  /* mật độ desktop — cảm ứng nở qua (hover:none) and (pointer:coarse), xem cuối file */
+  --tap:32px; --tap-lg:44px;
+}
+.pane[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78;
+  --mat-hairline:rgba(255,255,255,.06);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+}
+.pane[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a;
+  --mat-hairline:rgba(0,0,0,.05);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:#0c0c0e;color:#f5f5f7;padding:32px 28px 56px;
+  font:var(--fw-normal) var(--fs-sm)/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased}
+h1{font-size:var(--fs-xl);letter-spacing:-.02em;margin:0 0 6px}
+.sub{color:#9e9ea8;margin:0 0 4px;font-size:var(--fs-xs);max-width:78ch}
+.sub b{color:#f5f5f7}
+h2{font-size:var(--fs-2xs);font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:#6e6e78;margin:34px 0 12px}
+
+/* hai khung theme cạnh nhau */
+.panes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:1180px){.panes{grid-template-columns:1fr}}
+.pane{background:var(--bg);color:var(--t1);border:1px solid var(--border);
+  border-radius:var(--r-4);padding:18px 16px 16px}
+.pane-tag{font-size:var(--fs-2xs);font-weight:var(--fw-semi);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--t4);margin-bottom:14px}
+
+/* ── hàng chặng ─────────────────────────────────────────────────────────────────────────── */
+.stage{margin-bottom:16px}
+.stage-name{font-size:var(--fs-2xs);font-weight:var(--fw-semi);color:var(--t3);
+  margin-bottom:6px;letter-spacing:.02em}
+
+/* ═══ VỎ CAPSULE — KB-1 "lấy dock capsule 3D làm gốc" ═══
+   bar cao var(--tap-lg)=44 · bo --r-full · đệm 6 · gap 2.
+   Bo ĐỒNG TÂM tự đúng: --r-full kẹp về nửa cạnh ngắn ⇒ ngoài 44/2=22, trong 32/2=16,
+   22 − đệm 6 = 16. Không cần khai thêm con số nào. */
+.bar{display:inline-flex;align-items:center;gap:2px;height:var(--tap-lg);padding:0 6px;
+  border-radius:var(--r-full);background:var(--panel);border:1px solid var(--border);
+  box-shadow:var(--shadow-pop);max-width:100%;overflow-x:auto;
+  scrollbar-width:none}
+.bar::-webkit-scrollbar{display:none}
+
+/* ═══ CHIP LỆNH — một họ nút duy nhất cho cả 3 chặng ═══ */
+.chip{display:grid;place-items:center;width:var(--tap);height:var(--tap);flex-shrink:0;
+  border-radius:var(--r-full);border:1px solid transparent;background:transparent;
+  color:var(--t2);cursor:pointer;padding:0;
+  transition:background var(--dur-fast) var(--ease-apple),color var(--dur-fast) var(--ease-apple)}
+.chip svg{width:17px;height:17px;stroke:currentColor;fill:none;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.chip:hover,.chip.is-hover{background:var(--hover);color:var(--t1)}
+/* ĐANG BẬT = GHOST (luật 2.1.8.l) — viền + nền accent nhạt, KHÔNG tô đặc */
+.chip.is-on{background:var(--accent-soft);border-color:var(--accent-ring);color:var(--accent)}
+.chip:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px}
+/* MỜ KÈM LÝ DO (§9 cấm nút giả) — lý do vào title + aria-describedby, không chỉ mờ cho có.
+   opacity .5 chứ KHÔNG .35: ở .35 chữ/nét tụt xuống ~2,2:1 trên nền panel — dưới cả ngưỡng 3:1
+   của WCAG 1.4.11 cho thành phần giao diện. Mờ là để nói "chưa dùng được", không phải để
+   "đọc không ra" — chính luật §9 đòi người dùng THẤY nút và hiểu vì sao nó chưa chạy. */
+.chip[aria-disabled="true"]{opacity:.5;cursor:not-allowed}
+.chip[aria-disabled="true"]:hover{background:transparent;color:var(--t2)}
+.pack:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px}
+/* Lý do nút mờ — ẩn khỏi mắt, KHÔNG ẩn khỏi trình đọc màn hình (display:none là mất hẳn). */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* separator KB-1: "bỏ gạch | lửng" — vạch cao 20 canh giữa */
+.sep{width:1px;height:20px;background:var(--border);margin:0 4px;flex-shrink:0}
+
+/* ═══ GÓI LỆNH tầng ② — 1 dòng + icon + chevron (KB-1) ═══ */
+.pack{display:inline-flex;align-items:center;gap:6px;height:var(--tap);flex-shrink:0;
+  padding:0 10px 0 8px;border-radius:var(--r-full);border:1px solid transparent;
+  background:transparent;color:var(--t3);cursor:pointer;
+  font:var(--fw-semi) var(--fs-2xs)/1.5 inherit;white-space:nowrap;
+  transition:background var(--dur-fast) var(--ease-apple)}
+.pack:hover{background:var(--hover);color:var(--t1)}
+.pack svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+.pack .chev{width:11px;height:11px;opacity:.7}
+
+/* ── chú giải hai đường nhập ─────────────────────────────────────────────────────────────── */
+/* --t3 chứ không --t4: #6e6e78 trên nền --bg chỉ ~4,3:1, hụt ngưỡng 4.5:1 của WCAG 1.4.3
+   cho chữ thường 11px. --t3 lên ~7,4:1. */
+.paths{display:flex;gap:14px;flex-wrap:wrap;margin-top:7px;padding-left:8px;
+  font-size:var(--fs-2xs);color:var(--t3)}
+.paths span{display:inline-flex;align-items:center;gap:5px}
+kbd{font:var(--fw-semi) 10px/1 ui-monospace,Menlo,monospace;color:var(--t2);
+  background:var(--field);border:1px solid var(--border);border-bottom-width:2px;
+  border-radius:var(--r-1);padding:3px 5px}
+.paths .off{opacity:.6;font-style:italic}
+
+/* ── bảng trạng thái ─────────────────────────────────────────────────────────────────────── */
+.states{display:flex;align-items:flex-start;gap:22px;flex-wrap:wrap}
+.state{display:flex;flex-direction:column;align-items:center;gap:7px}
+.state small{font-size:10px;color:var(--t3);text-align:center;max-width:15ch;line-height:1.45}
+
+/* ── khối TRƯỚC (bằng chứng cho lời phàn nàn) ───────────────────────────────────────────── */
+.before{display:grid;gap:9px;background:#141417;border:1px solid #2a2a31;
+  border-radius:var(--r-3);padding:14px 15px}
+.before .row{display:flex;align-items:center;gap:9px;font-size:var(--fs-2xs);color:#9e9ea8}
+.before .row b{color:#d6d6db;min-width:104px;font-weight:var(--fw-semi)}
+.sk{display:flex;align-items:center;gap:3px}
+.sk i{display:block;background:#2a2a31;border:1px solid #3d3d45}
+.sk.a i{width:26px;height:26px;border-radius:var(--r-1)}          /* 2D — chip ngang bo nhỏ */
+.sk.b i{width:30px;height:30px;border-radius:var(--r-full)}       /* 3D — dock capsule tròn */
+.sk.c i{width:36px;height:22px;border-radius:var(--r-2)}          /* Present — chip wrap dẹt */
+.diff{color:#e5674f;font-size:10px;margin-left:4px}
+
+.note{margin-top:10px;font-size:var(--fs-2xs);color:#6e6e78;max-width:88ch}
+.note b{color:#d6d6db}
+ul.rules{margin:8px 0 0;padding-left:18px}
+ul.rules li{font-size:var(--fs-2xs);color:#9e9ea8;margin:5px 0}
+ul.rules b{color:#f5f5f7}
+
+/* Cảm ứng: nút nở 44 — ĐÚNG điều kiện app đang dùng, không viết breakpoint mới.
+   Bo vẫn --r-full nên vẫn tự đồng tâm ở cỡ mới (22 − 6 = 16 → 44/2 = 22). */
+@media (hover:none) and (pointer:coarse){ :root{ --tap:44px } }
+@media (prefers-reduced-motion:reduce){ *{transition:none !important} }
+</style>
+</head>
+<body>
+
+<h1>Ba thanh công cụ · một khuôn</h1>
+<p class="sub">Bước <b>B2</b> của <b>TICKET-KIEN-TRUC-LENH-3-TANG</b>. Ba chặng thôi tự khai danh sách lệnh,
+cùng đọc <b>một sổ lệnh</b> (<code>lib/commands/registry.ts</code>). Khuôn lấy <b>dock capsule 3D làm gốc</b> theo KB-1.</p>
+<p class="sub">Đây là bằng chứng trực tiếp cho câu <b>“3 chặng như 3 app · khó dùng”</b>: xem khối TRƯỚC rồi xem khối SAU.</p>
+
+<h2>Trước — ba chặng ba khuôn (hiện trạng đo 16/08)</h2>
+<div class="before">
+  <div class="row"><b>2D Kỹ thuật</b><span class="sk a"><i></i><i></i><i></i><i></i><i></i></span>
+    <span>chip ngang, bo <code>r-1</code>, cao 32/44 tuỳ mode<span class="diff">← khuôn 1</span></span></div>
+  <div class="row"><b>3D Thiết kế</b><span class="sk b"><i></i><i></i><i></i><i></i></span>
+    <span>dock capsule nổi, bo tròn, có nhãn dưới icon<span class="diff">← khuôn 2</span></span></div>
+  <div class="row"><b>Trình chiếu</b><span class="sk c"><i></i><i></i><i></i><i></i></span>
+    <span>chip wrap nhiều hàng, bo <code>r-2</code>, cỡ khác<span class="diff">← khuôn 3</span></span></div>
+  <div class="row" style="border-top:1px solid #2a2a31;padding-top:9px;margin-top:2px">
+    <b style="color:#e5674f">Hậu quả</b>
+    <span>Xoay = <kbd>RO</kbd> ở 2D nhưng <kbd>Q</kbd> ở 3D · Chép <kbd>CO</kbd>/<kbd>D</kbd> · Đo <kbd>DI</kbd>/<kbd>T</kbd>
+      — <b style="color:#d6d6db">chi phí học lại mỗi lần đổi chặng</b></span></div>
+</div>
+
+<h2>Sau — một khuôn, đủ hai theme</h2>
+<div class="panes">
+
+  <!-- ══════════════ THEME TỐI ══════════════ -->
+  <div class="pane" data-theme="dark">
+    <div class="pane-tag">Theme tối · mặc định</div>
+
+    <div class="stage">
+      <div class="stage-name">2D Kỹ thuật</div>
+      <div class="bar" role="toolbar" aria-label="Thanh công cụ 2D Kỹ thuật">
+        <button class="chip is-on" type="button" aria-pressed="true" aria-label="Chọn"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 4 7.07 17 2.51-7.39L21 11.07z"/></svg></button>
+        <button class="chip" type="button" aria-label="Dời"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9 2 12l3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button>
+        <button class="chip" type="button" aria-label="Xoay"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button>
+        <button class="chip" type="button" aria-label="Chép"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
+        <button class="chip" type="button" aria-label="Lật"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 7 5 5-5 5V7M21 7l-5 5 5 5V7M12 20v2M12 14v2M12 8v2M12 2v2"/></svg></button>
+        <button class="chip" type="button" aria-label="Xoá"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="chip" type="button" aria-label="Hoàn tác"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+        <button class="chip" type="button" aria-label="Làm lại"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="chip" type="button" aria-label="Đo"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 19H5v-6M13 5h6v6M19 5 5 19"/></svg></button>
+        <button class="chip" type="button" aria-label="Chữ"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="pack" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 19l7-7 3 3-7 7-3-3zM18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5zM2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>Vẽ<svg class="chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+        <button class="pack" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 9v6M3 3v18h18M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>Cấu kiện<svg class="chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      <div class="paths">
+        <span>Đường nhập: <kbd>RO</kbd> <kbd>⏎</kbd> gõ ở dòng lệnh</span>
+        <span class="off">phím đơn — tắt ở chặng này (đang gõ <kbd>REC</kbd> thì <kbd>R</kbd> không cướp)</span>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-name">3D Thiết kế</div>
+      <div class="bar" role="toolbar" aria-label="Thanh công cụ 3D Thiết kế">
+        <button class="chip" type="button" aria-label="Chọn"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 4 7.07 17 2.51-7.39L21 11.07z"/></svg></button>
+        <button class="chip is-on" type="button" aria-pressed="true" aria-label="Dời"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9 2 12l3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button>
+        <button class="chip" type="button" aria-label="Xoay"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button>
+        <button class="chip" type="button" aria-label="Chép"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
+        <button class="chip" type="button" aria-label="Lật" aria-disabled="true" aria-describedby="r3d-lat"
+          title="Chưa có Đối xứng ở 3D — lệnh dựng nội thất còn thiếu, đang xếp hàng">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 7 5 5-5 5V7M21 7l-5 5 5 5V7M12 20v2M12 14v2M12 8v2M12 2v2"/></svg></button>
+        <span class="sr-only" id="r3d-lat">Chưa có Đối xứng ở 3D — lệnh dựng nội thất còn thiếu, đang xếp hàng</span>
+        <button class="chip" type="button" aria-label="Xoá" aria-disabled="true" aria-describedby="r3d-xoa"
+          title="Xoá đọc vùng chọn 2D — khối 3D đang chọn nằm ở store khác, bấm sẽ xoá nhầm">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></svg></button>
+        <span class="sr-only" id="r3d-xoa">Xoá đọc vùng chọn 2D — khối 3D đang chọn nằm ở store khác, bấm sẽ xoá nhầm</span>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="chip" type="button" aria-label="Hoàn tác"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+        <button class="chip" type="button" aria-label="Làm lại"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="chip" type="button" aria-label="Đo"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 19H5v-6M13 5h6v6M19 5 5 19"/></svg></button>
+        <button class="chip" type="button" aria-label="Chữ" aria-disabled="true" aria-describedby="r3d-chu"
+          title="Chưa có công cụ Chữ ở khung nhìn 3D — chưa có engine đặt chữ trong không gian">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="pack" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>Dựng khối<svg class="chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+        <button class="pack" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42ZM7 16.5 2.26 13.4M7 16.5v5.17M12 13.5 7 16.5"/></svg>Đồ đạc<svg class="chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      <div class="paths">
+        <span>Đường nhập: <kbd>Q</kbd> phím đơn, bấm là chạy</span>
+        <span><kbd>RO</kbd> <kbd>⏎</kbd> <span class="off">— chặng này chưa có dòng lệnh</span></span>
+      </div>
+    </div>
+
+    <div class="stage" style="margin-bottom:0">
+      <div class="stage-name">Trình chiếu</div>
+      <div class="bar" role="toolbar" aria-label="Thanh công cụ Trình chiếu">
+        <button class="chip" type="button" aria-label="Chọn"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 4 7.07 17 2.51-7.39L21 11.07z"/></svg></button>
+        <button class="chip" type="button" aria-label="Dời"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9 2 12l3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button>
+        <button class="chip" type="button" aria-label="Xoay"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button>
+        <button class="chip" type="button" aria-label="Chép"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
+        <button class="chip" type="button" aria-label="Lật"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 7 5 5-5 5V7M21 7l-5 5 5 5V7M12 20v2M12 14v2M12 8v2M12 2v2"/></svg></button>
+        <button class="chip" type="button" aria-label="Xoá"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="chip" type="button" aria-label="Hoàn tác"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+        <button class="chip" type="button" aria-label="Làm lại"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="chip" type="button" aria-label="Đo" aria-disabled="true" aria-describedby="rp-do"
+          title="Chưa có thước đo trên trang trình chiếu — chưa có engine đo trên khổ giấy">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 19H5v-6M13 5h6v6M19 5 5 19"/></svg></button>
+        <button class="chip" type="button" aria-label="Chữ"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="pack" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></svg>Ảnh<svg class="chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+        <button class="pack" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Trang<svg class="chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      <div class="paths">
+        <span class="off">Chưa có đường bàn phím nào ở chặng này — sổ lệnh vẫn giữ sẵn <kbd>RO</kbd>/<kbd>Q</kbd> cho lúc mở</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ THEME SÁNG ══════════════ -->
+  <div class="pane" data-theme="light">
+    <div class="pane-tag">Theme sáng</div>
+
+    <div class="stage">
+      <div class="stage-name">2D Kỹ thuật</div>
+      <div class="bar" role="toolbar" aria-label="Thanh công cụ 2D Kỹ thuật (sáng)">
+        <button class="chip is-on" type="button" aria-pressed="true" aria-label="Chọn"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 4 7.07 17 2.51-7.39L21 11.07z"/></svg></button>
+        <button class="chip" type="button" aria-label="Dời"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9 2 12l3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button>
+        <button class="chip" type="button" aria-label="Xoay"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button>
+        <button class="chip" type="button" aria-label="Chép"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
+        <button class="chip" type="button" aria-label="Lật"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 7 5 5-5 5V7M21 7l-5 5 5 5V7M12 20v2M12 14v2M12 8v2M12 2v2"/></svg></button>
+        <button class="chip" type="button" aria-label="Xoá"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="chip" type="button" aria-label="Hoàn tác"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+        <button class="chip" type="button" aria-label="Làm lại"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="chip" type="button" aria-label="Đo"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 19H5v-6M13 5h6v6M19 5 5 19"/></svg></button>
+        <button class="chip" type="button" aria-label="Chữ"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="pack" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 19l7-7 3 3-7 7-3-3z"/><circle cx="11" cy="11" r="2"/></svg>Vẽ<svg class="chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      <div class="paths"><span>Đường nhập: <kbd>RO</kbd> <kbd>⏎</kbd> gõ ở dòng lệnh</span></div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-name">3D Thiết kế</div>
+      <div class="bar" role="toolbar" aria-label="Thanh công cụ 3D Thiết kế (sáng)">
+        <button class="chip" type="button" aria-label="Chọn"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 4 7.07 17 2.51-7.39L21 11.07z"/></svg></button>
+        <button class="chip is-on" type="button" aria-pressed="true" aria-label="Dời"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9 2 12l3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button>
+        <button class="chip" type="button" aria-label="Xoay"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button>
+        <button class="chip" type="button" aria-label="Chép"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
+        <button class="chip" type="button" aria-label="Lật" aria-disabled="true"
+          title="Chưa có Đối xứng ở 3D — lệnh dựng nội thất còn thiếu, đang xếp hàng">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 7 5 5-5 5V7M21 7l-5 5 5 5V7M12 20v2M12 14v2M12 8v2M12 2v2"/></svg></button>
+        <button class="chip" type="button" aria-label="Xoá" aria-disabled="true"
+          title="Xoá đọc vùng chọn 2D — khối 3D đang chọn nằm ở store khác, bấm sẽ xoá nhầm">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="chip" type="button" aria-label="Hoàn tác"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+        <button class="chip" type="button" aria-label="Làm lại"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="chip" type="button" aria-label="Đo"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 19H5v-6M13 5h6v6M19 5 5 19"/></svg></button>
+        <button class="chip" type="button" aria-label="Chữ" aria-disabled="true"
+          title="Chưa có công cụ Chữ ở khung nhìn 3D — chưa có engine đặt chữ trong không gian">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="pack" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>Dựng khối<svg class="chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      <div class="paths"><span>Đường nhập: <kbd>Q</kbd> phím đơn, bấm là chạy</span></div>
+    </div>
+
+    <div class="stage" style="margin-bottom:0">
+      <div class="stage-name">Trình chiếu</div>
+      <div class="bar" role="toolbar" aria-label="Thanh công cụ Trình chiếu (sáng)">
+        <button class="chip" type="button" aria-label="Chọn"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 4 7.07 17 2.51-7.39L21 11.07z"/></svg></button>
+        <button class="chip" type="button" aria-label="Dời"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9 2 12l3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button>
+        <button class="chip" type="button" aria-label="Xoay"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button>
+        <button class="chip" type="button" aria-label="Chép"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
+        <button class="chip" type="button" aria-label="Lật"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 7 5 5-5 5V7M21 7l-5 5 5 5V7M12 20v2M12 14v2M12 8v2M12 2v2"/></svg></button>
+        <button class="chip" type="button" aria-label="Xoá"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="chip" type="button" aria-label="Hoàn tác"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+        <button class="chip" type="button" aria-label="Làm lại"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="chip" type="button" aria-label="Đo" aria-disabled="true"
+          title="Chưa có thước đo trên trang trình chiếu — chưa có engine đo trên khổ giấy">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 19H5v-6M13 5h6v6M19 5 5 19"/></svg></button>
+        <button class="chip" type="button" aria-label="Chữ"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="pack" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></svg>Ảnh<svg class="chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      <div class="paths"><span class="off">Chưa có đường bàn phím nào ở chặng này</span></div>
+    </div>
+  </div>
+</div>
+
+<h2>Bốn trạng thái của một chip</h2>
+<div class="panes">
+  <div class="pane" data-theme="dark">
+    <div class="pane-tag">Theme tối</div>
+    <div class="states">
+      <div class="state"><span class="bar"><button class="chip" type="button" aria-label="Xoay"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button></span><small>Thường</small></div>
+      <div class="state"><span class="bar"><button class="chip is-hover" type="button" aria-label="Xoay"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button></span><small>Trỏ vào — chỉ đổi nền, không phóng to</small></div>
+      <div class="state"><span class="bar"><button class="chip is-on" type="button" aria-pressed="true" aria-label="Xoay"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button></span><small>Đang bật — ghost, không tô đặc</small></div>
+      <div class="state"><span class="bar"><button class="chip" type="button" aria-label="Lật" aria-disabled="true" title="Chưa có Đối xứng ở 3D — lệnh dựng nội thất còn thiếu, đang xếp hàng"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 7 5 5-5 5V7M21 7l-5 5 5 5V7M12 20v2M12 14v2M12 8v2M12 2v2"/></svg></button></span><small>Mờ — trỏ vào là hiện lý do thật</small></div>
+    </div>
+  </div>
+  <div class="pane" data-theme="light">
+    <div class="pane-tag">Theme sáng</div>
+    <div class="states">
+      <div class="state"><span class="bar"><button class="chip" type="button" aria-label="Xoay"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button></span><small>Thường</small></div>
+      <div class="state"><span class="bar"><button class="chip is-hover" type="button" aria-label="Xoay"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button></span><small>Trỏ vào</small></div>
+      <div class="state"><span class="bar"><button class="chip is-on" type="button" aria-pressed="true" aria-label="Xoay"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button></span><small>Đang bật</small></div>
+      <div class="state"><span class="bar"><button class="chip" type="button" aria-label="Đo" aria-disabled="true" title="Chưa có thước đo trên trang trình chiếu — chưa có engine đo trên khổ giấy"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 19H5v-6M13 5h6v6M19 5 5 19"/></svg></button></span><small>Mờ kèm lý do</small></div>
+    </div>
+  </div>
+</div>
+
+<h2>Luật khuôn này giữ</h2>
+<ul class="rules">
+  <li><b>Vỏ capsule KB-1</b> — bar <code>var(--tap-lg)</code> 44 · bo <code>--r-full</code> · đệm 6 · gap 2. Bo đồng tâm
+    <b>tự đúng</b> vì <code>--r-full</code> kẹp về nửa cạnh ngắn: ngoài 22, trong 16, đúng <code>22 − 6</code>. Không đẻ số mới.</li>
+  <li><b>Nút <code>var(--tap)</code></b> 32 desktop → <b>44 khi chạm</b> qua đúng điều kiện <code>(hover:none) and (pointer:coarse)</code>
+    app đang dùng — không viết breakpoint thứ hai.</li>
+  <li><b>Bật = ghost</b> (viền <code>--accent-ring</code> + nền <code>--accent-soft</code> + chữ <code>--accent</code>), <b>không tô đặc</b> — luật 2.1.8.l.</li>
+  <li><b>Mờ phải kèm lý do THẬT</b>, nói rõ vì sao chưa chạy được — §9 cấm nút giả. Không giấu nút đi:
+    giấu là lại đẻ ra “mỗi chặng một bộ nút”.</li>
+  <li><b>Hai đường nhập, không chọn phe</b> — mỗi lệnh mang cả alias gõ (<kbd>RO</kbd>+<kbd>⏎</kbd>) lẫn phím đơn (<kbd>Q</kbd>).
+    Chặng nào bật đường nào là việc của chặng đó; sổ lệnh giữ cả hai.</li>
+  <li><b>Separator là vạch</b> cao 20 canh giữa — không phải ký tự <code>|</code> lửng (KB-1).</li>
+  <li><b>Icon có nhãn</b> — mỗi chip mang <code>aria-label</code>; tooltip hiện nhãn + phím tắt (NT-8).</li>
+</ul>
+<p class="note"><b>Đọc bằng bàn phím:</b> mỗi bar là <code>role="toolbar"</code> có nhãn; chip là <code>&lt;button&gt;</code> thật
+(Tab tới được, Enter/Space chạy), trạng thái bật báo qua <code>aria-pressed</code>, nút mờ báo qua <code>aria-disabled</code>
+<b>chứ không dùng thuộc tính <code>disabled</code></b> — nút <code>disabled</code> rơi khỏi vòng Tab nên trình đọc màn hình
+không bao giờ đọc được lý do vì sao nó mờ.</p>
+
+</body>
+</html>
