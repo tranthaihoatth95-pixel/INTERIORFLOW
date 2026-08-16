@@ -155,30 +155,27 @@ h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-t
 .c3{position:relative;width:236px;height:176px;border-radius:var(--r-3);overflow:hidden;
   border:1px solid var(--mat-hairline);box-shadow:var(--shadow);flex-shrink:0;cursor:pointer;
   transition:height var(--dur-fast) var(--ease-apple)}
-.c3.mo{height:280px}
+.c3.vua{height:236px} .c3.full{height:310px}
 .anh3{position:absolute;inset:0;background:
   radial-gradient(circle at 68% 34%,#ffe7ba 0%,#e0a86a 18%,rgba(224,168,106,0) 46%),
   linear-gradient(#2a3550 0%,#5c4a5e 34%,#a46a4e 62%,#e3a86c 84%,#f5d6a4 100%)}
 .p[data-nen] .anh3{background:
   radial-gradient(circle at 68% 34%,#fff4de 0%,#f0d3a6 20%,rgba(240,211,166,0) 48%),
   linear-gradient(#c3d6e8 0%,#dde4ea 40%,#ecdcc4 72%,#f4e8d4 100%)}
-/* dải ĐỈNH — cho tiêu đề. Chuyển dần về 0, KHÔNG có cạnh cứng nào. */
 .tren3{position:absolute;inset:0 0 auto 0;padding:10px 11px 22px;
   background:linear-gradient(180deg,rgba(0,0,0,.72) 0%,rgba(0,0,0,.44) 46%,rgba(0,0,0,0) 100%)}
 .tren3 b{font-size:var(--fs-xs);font-weight:var(--fw-semi);color:#fff}
-/* dải ĐÁY — cho nội dung. Cùng cơ chế, ngược chiều. */
 .duoi3{position:absolute;inset:auto 0 0 0;padding:26px 11px 11px;
   background:linear-gradient(0deg,rgba(0,0,0,.78) 0%,rgba(0,0,0,.5) 42%,rgba(0,0,0,0) 100%)}
 
-/* ══ HAI NGÔN NGỮ TRÌNH BÀY — không phải hai chiều cao ══
-   THU GỌN nói bằng KÝ HIỆU (icon + số) · SỔ RA nói bằng VĂN BẢN (tiêu đề + đoạn chữ).
-   ⭐ Khi sổ ra thì ICON BIẾN MẤT — có chữ rồi thì icon thành thừa, giữ lại là nói hai lần
-   cùng một điều. Hai khối XẾP CHỒNG CÙNG MỘT Ô LƯỚI nên chữ hiện lên ĐÚNG CHỖ icon vừa mờ đi:
-   người dùng thấy nó NỞ RA, không phải thấy nó đổi thành cái khác. */
+/* ══ BA NẤC — MỘT NHỊP CHUNG VỚI SIDEBAR VÀ TOOL ══
+   mặc định (ký hiệu) → vừa (câu ngắn) → full (đoạn văn).
+   Ba khối XẾP CHỒNG CÙNG MỘT Ô LƯỚI ⇒ chữ hiện đúng chỗ icon vừa mờ đi: mắt đọc ra NỞ RA.
+   Luật "icon mất khi có chữ" áp TỪ NẤC VỪA trở đi. */
 .stack{display:grid}
 .stack > *{grid-area:1/1;transition:opacity var(--dur-fast) var(--ease-apple)}
 .kyhieu{display:flex;align-items:center;gap:0}
-.c3.mo .kyhieu{opacity:0;pointer-events:none}
+.c3.vua .kyhieu,.c3.full .kyhieu{opacity:0;pointer-events:none}
 .kyhieu span{flex:1;display:flex;align-items:center;gap:5px;padding-left:9px;
   border-left:1px solid rgba(255,255,255,.22)}
 .kyhieu span:first-child{padding-left:0;border-left:0}
@@ -186,10 +183,18 @@ h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-t
   stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 .kyhieu i{font-style:normal;font-size:var(--fs-xs);font-weight:var(--fw-bold);color:#fff;
   font-variant-numeric:tabular-nums;white-space:nowrap}
-.vanban{opacity:0;pointer-events:none}
-.c3.mo .vanban{opacity:1;pointer-events:auto}
-.vanban b{display:block;font-size:var(--fs-ui,13px);font-weight:var(--fw-semi);color:#fff;
-  margin-bottom:4px}
+.vanban,.vanban-full{opacity:0;pointer-events:none}
+.c3.vua .vanban{opacity:1;pointer-events:auto}
+.c3.full .vanban-full{opacity:1;pointer-events:auto}
+.vanban b,.vanban-full b{display:block;font-size:var(--fs-ui,13px);font-weight:var(--fw-semi);
+  color:#fff;margin-bottom:4px}
+.vanban p,.vanban-full p{margin:0;font-size:10px;line-height:1.62;color:rgba(255,255,255,.86)}
+.vanban-full p+p{margin-top:6px}
+.nac-chi{position:absolute;right:9px;top:9px;display:flex;gap:3px}
+.nac-chi i{width:4px;height:4px;border-radius:var(--r-full);background:rgba(255,255,255,.34);display:block}
+.c3 .nac-chi i:nth-child(1){background:#fff}
+.c3.vua .nac-chi i:nth-child(2){background:#fff}
+.c3.full .nac-chi i:nth-child(3){background:#fff}
 .vanban p{margin:0;font-size:10px;line-height:1.62;color:rgba(255,255,255,.86)}
 
 .nhan-vung{position:absolute;right:8px;top:7px;font-size:9px;font-weight:var(--fw-bold);
@@ -544,7 +549,7 @@ ul.luat b{color:#f5f5f7}
   <div class="p" data-nhan="teal" data-theme="dark">
     <div class="tag">Theme tối · thu gọn ↔ đã sổ</div>
     <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
-      <div class="c3"><div class="anh3"></div>
+      <div class="c3"><div class="anh3"></div><span class="nac-chi" aria-hidden="true"><i></i><i></i><i></i></span>
         <div class="tren3"><b>Căn hộ Thảo Điền</b></div>
         <div class="duoi3"><div class="stack">
           <div class="kyhieu">
@@ -554,11 +559,16 @@ ul.luat b{color:#f5f5f7}
           </div>
           <div class="vanban">
             <b>Căn hộ Thảo Điền</b>
-            <p>Dở từ 2 ngày trước · 78 m² · đã xong 3 trong 5 bước. Đang dựng phối cảnh phòng khách, còn chờ duyệt vật liệu sàn.</p>
+            <p>Dở 2 ngày · 78 m² · xong 3/5 bước.</p>
+          </div>
+          <div class="vanban-full">
+            <b>Căn hộ Thảo Điền</b>
+            <p>Dở từ 2 ngày trước · 78 m² · đã xong 3 trong 5 bước.</p>
+            <p>Đang dựng phối cảnh phòng khách. Còn chờ duyệt vật liệu sàn trước khi chốt bảng khối lượng.</p>
           </div>
         </div></div>
       </div>
-      <div class="c3 mo"><div class="anh3"></div>
+      <div class="c3 vua"><div class="anh3"></div><span class="nac-chi" aria-hidden="true"><i></i><i></i><i></i></span>
         <div class="tren3"><b>Căn hộ Thảo Điền</b></div>
         <div class="duoi3"><div class="stack">
           <div class="kyhieu">
@@ -568,7 +578,12 @@ ul.luat b{color:#f5f5f7}
           </div>
           <div class="vanban">
             <b>Căn hộ Thảo Điền</b>
-            <p>Dở từ 2 ngày trước · 78 m² · đã xong 3 trong 5 bước. Đang dựng phối cảnh phòng khách, còn chờ duyệt vật liệu sàn.</p>
+            <p>Dở 2 ngày · 78 m² · xong 3/5 bước.</p>
+          </div>
+          <div class="vanban-full">
+            <b>Căn hộ Thảo Điền</b>
+            <p>Dở từ 2 ngày trước · 78 m² · đã xong 3 trong 5 bước.</p>
+            <p>Đang dựng phối cảnh phòng khách. Còn chờ duyệt vật liệu sàn trước khi chốt bảng khối lượng.</p>
           </div>
         </div></div>
       </div>
@@ -577,7 +592,7 @@ ul.luat b{color:#f5f5f7}
   <div class="p" data-nhan="teal" data-nen="C">
     <div class="tag">Theme sáng · thu gọn ↔ đã sổ</div>
     <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
-      <div class="c3"><div class="anh3"></div>
+      <div class="c3"><div class="anh3"></div><span class="nac-chi" aria-hidden="true"><i></i><i></i><i></i></span>
         <div class="tren3"><b>Căn hộ Thảo Điền</b></div>
         <div class="duoi3"><div class="stack">
           <div class="kyhieu">
@@ -587,11 +602,16 @@ ul.luat b{color:#f5f5f7}
           </div>
           <div class="vanban">
             <b>Căn hộ Thảo Điền</b>
-            <p>Dở từ 2 ngày trước · 78 m² · đã xong 3 trong 5 bước. Đang dựng phối cảnh phòng khách, còn chờ duyệt vật liệu sàn.</p>
+            <p>Dở 2 ngày · 78 m² · xong 3/5 bước.</p>
+          </div>
+          <div class="vanban-full">
+            <b>Căn hộ Thảo Điền</b>
+            <p>Dở từ 2 ngày trước · 78 m² · đã xong 3 trong 5 bước.</p>
+            <p>Đang dựng phối cảnh phòng khách. Còn chờ duyệt vật liệu sàn trước khi chốt bảng khối lượng.</p>
           </div>
         </div></div>
       </div>
-      <div class="c3 mo"><div class="anh3"></div>
+      <div class="c3 vua"><div class="anh3"></div><span class="nac-chi" aria-hidden="true"><i></i><i></i><i></i></span>
         <div class="tren3"><b>Căn hộ Thảo Điền</b></div>
         <div class="duoi3"><div class="stack">
           <div class="kyhieu">
@@ -601,7 +621,12 @@ ul.luat b{color:#f5f5f7}
           </div>
           <div class="vanban">
             <b>Căn hộ Thảo Điền</b>
-            <p>Dở từ 2 ngày trước · 78 m² · đã xong 3 trong 5 bước. Đang dựng phối cảnh phòng khách, còn chờ duyệt vật liệu sàn.</p>
+            <p>Dở 2 ngày · 78 m² · xong 3/5 bước.</p>
+          </div>
+          <div class="vanban-full">
+            <b>Căn hộ Thảo Điền</b>
+            <p>Dở từ 2 ngày trước · 78 m² · đã xong 3 trong 5 bước.</p>
+            <p>Đang dựng phối cảnh phòng khách. Còn chờ duyệt vật liệu sàn trước khi chốt bảng khối lượng.</p>
           </div>
         </div></div>
       </div>
@@ -621,23 +646,22 @@ ul.luat b{color:#f5f5f7}
   </tbody>
 </table>
 
-<h3 style="font-size:var(--fs-xs);color:#d6d6db;margin:18px 0 8px">⭐ Bảng ánh xạ — cùng MỘT thông tin, hai cách mã hoá (đây mới là phần khó)</h3>
-<p class="h2sub">Thu gọn là <b>nén CÁCH NÓI</b>, không phải <b>cắt NỘI DUNG</b>. Mỗi dòng dưới đây là một mẩu tin, đọc ngang để thấy nó biến hình thế nào.</p>
+<h3 style="font-size:var(--fs-xs);color:#d6d6db;margin:18px 0 8px">⭐ Bảng dịch BA CỘT — cùng một thông tin, ba cách mã hoá</h3>
+<p class="h2sub">Lên nấc là <b>đổi CÁCH NÓI</b>, không phải <b>thêm NỘI DUNG</b>. Đọc ngang từng dòng để thấy một mẩu tin biến hình qua ba nấc.</p>
 <table class="bang">
-  <thead><tr><th>Mẩu tin</th><th>THU GỌN — ký hiệu</th><th>SỔ RA — văn bản (icon đã mất)</th></tr></thead>
+  <thead><tr><th>Mẩu tin</th><th>MẶC ĐỊNH — ký hiệu</th><th>VỪA — câu ngắn</th><th>FULL — đoạn văn</th></tr></thead>
   <tbody>
-    <tr><td>Tên dự án</td><td>chỉ ở dải đỉnh, chữ nhỏ</td><td><b>“Căn hộ Thảo Điền”</b> — thành tiêu đề thật của khối chữ</td></tr>
-    <tr><td>Đã dở bao lâu</td><td>🕐 <b>2 ngày</b> <span style="color:#6e6e78">(icon đồng hồ)</span></td><td>“<b>Dở từ 2 ngày trước</b>”</td></tr>
-    <tr><td>Quy mô</td><td>📐 <b>78 m²</b> <span style="color:#6e6e78">(icon mặt bằng)</span></td><td>“<b>78 m²</b>”</td></tr>
-    <tr><td>Tiến độ</td><td>✓ <b>3/5</b> <span style="color:#6e6e78">(icon dấu tích)</span></td><td>“<b>đã xong 3 trong 5 bước</b>”</td></tr>
-    <tr><td>Đang làm gì · vướng gì</td><td><b>không nói</b> — đây là phần PHỤ</td><td>“Đang dựng phối cảnh phòng khách, còn chờ duyệt vật liệu sàn.”</td></tr>
-    <tr><td colspan="3" style="color:#6e6e78"><b>Bốn dòng đầu: cùng một thông tin, hai cách nói</b> — không giấu gì. <b>Dòng cuối là thông tin PHỤ thật sự</b>, chỉ có ở bản sổ ra, và phải khai ra như thế này chứ không lặng lẽ thêm vào.</td></tr>
+    <tr><td>Tên dự án</td><td>dải đỉnh, chữ nhỏ</td><td colspan="2"><b>“Căn hộ Thảo Điền”</b> — thành tiêu đề thật của khối chữ</td></tr>
+    <tr><td>Đã dở bao lâu</td><td>🕐 <b>2 ngày</b></td><td>“Dở 2 ngày”</td><td>“<b>Dở từ 2 ngày trước</b>”</td></tr>
+    <tr><td>Quy mô</td><td>📐 <b>78 m²</b></td><td>“78 m²”</td><td>“78 m²”</td></tr>
+    <tr><td>Tiến độ</td><td>✓ <b>3/5</b></td><td>“xong 3/5 bước”</td><td>“<b>đã xong 3 trong 5 bước</b>”</td></tr>
+    <tr><td>Đang làm gì</td><td class="no">không nói</td><td class="no">không nói</td><td>“Đang dựng phối cảnh phòng khách.”</td></tr>
+    <tr><td>Vướng gì</td><td class="no">không nói</td><td class="no">không nói</td><td>“Còn chờ duyệt vật liệu sàn trước khi chốt bảng khối lượng.”</td></tr>
+    <tr><td colspan="4" style="color:#6e6e78"><b>Bốn dòng đầu: cùng thông tin, ba cách nói</b> — không giấu gì. <b>Hai dòng cuối là tin PHỤ thật sự</b>, chỉ có ở nấc full, và phải khai ra như thế này chứ không lặng lẽ thêm vào.</td></tr>
   </tbody>
 </table>
-<p class="note">⭐ <b>Ba điều làm nên cơ chế này, thiếu một là hỏng:</b>
-<br>① <b>Icon BIẾN MẤT khi sổ ra</b> — không phải icon ở lại rồi thêm chữ bên cạnh. Có chữ rồi thì icon thành thừa; giữ lại là <b>nói hai lần cùng một điều</b>.
-<br>② <b>Chữ hiện lên ĐÚNG CHỖ icon vừa mờ đi</b> — hai khối xếp chồng cùng một ô lưới, nên mắt đọc ra <b>“nó nở ra”</b>, không phải “nó đổi thành cái khác”.
-<br>③ <b>Tiêu chí cũ vẫn đúng</b> — <i>thu gọn = vừa đủ để quyết định có cần mở ra hay không</i> — nhưng nay nó áp cho <b>CÁCH NÓI</b>, không chỉ cho lượng nội dung. Ba ký hiệu đủ để biết có đáng mở hay không; đoạn chữ mới trả lời “vì sao”.</p>
+<p class="note">⭐ <b>BA NẤC LÀ MỘT NHỊP CHUNG CỦA TOÀN APP, không phải ba giải pháp rời:</b> <b>sidebar 3 nấc</b> (28/240/320) · <b>kiến trúc tool 3 lớp</b> (thanh chung / gói lệnh / master node, chốt 13/08) · nay <b>card 3 nấc</b>. Cùng một câu hỏi — <i>người dùng đang lướt, đang dừng lại, hay đang đọc kỹ</i> — nên cùng một câu trả lời. <b>Phiếu sau gặp thứ thứ tư cần phân nấc thì dùng lại nhịp này, đừng đẻ nhịp thứ hai.</b></p>
+<p class="note">🔴 <b>CỬA NGHIỆM THU — “tươm tất ở lớp mặc định”:</b> che hai nấc kia đi, <b>nấc mặc định phải đứng được một mình</b> — không hụt, không cụt, không chỗ nào trông như đang thiếu. Đây là chỗ dễ hỏng nhất vì người dựng <b>biết còn hai nấc nữa</b> nên vô thức để nấc đầu thiếu thốn. Cách tôi giữ: nấc mặc định mang <b>đủ ba con số quan trọng nhất</b> (bao lâu · quy mô · tiến độ) + tên + ảnh — <b>đủ để quyết định có cần mở ra hay không mà không cần mở</b>. Ba chấm nhỏ góc phải cho biết còn nấc nữa, <b>nhưng không phải là lời hứa rằng nấc này chưa đủ.</b></p>
 <p class="note">⭐ <b>Đây cũng là lời giải cho “thừa trống + widget bị giãn”</b>, nên mục này và mục lưới bên dưới <b>là một việc chứ không phải hai</b>: card nhồi ít thì cao đều nhau, lưới xếp chặt được theo nhịp cột; card nhồi nhiều thì cái cao cái thấp, và chỗ hụt thành mảng trống. <b>Bấm-thì-sổ-ra chính là thứ giữ cho card đủ gọn để lưới có nhịp.</b></p>
 
 <!-- ═════════ 3 · LƯỚI ═════════ -->
@@ -788,19 +812,23 @@ ul.luat b{color:#f5f5f7}
 </ul>
 
 <script>
-/* Bấm card thì SỔ RA — mặc định chỉ hiện phần cốt lõi. Bản thật nhớ trạng thái theo phiên. */
+/* Bấm card thì lên nấc: mặc định → vừa → full → mặc định.
+   Ba nấc, cùng NHỊP với sidebar 3 nấc và kiến trúc tool 3 lớp. */
 (function(){
+  var NAC=['','vua','full'];
   document.querySelectorAll('.c3').forEach(function(c){
-    c.setAttribute('role','button');
-    c.setAttribute('tabindex','0');
-    function lat(){
-      var mo=c.classList.toggle('mo');
-      c.setAttribute('aria-expanded',String(mo));
+    c.setAttribute('role','button'); c.setAttribute('tabindex','0');
+    function dat(i){
+      c.classList.remove('vua','full');
+      if(NAC[i]) c.classList.add(NAC[i]);
+      c.dataset.nac=String(i);
+      c.setAttribute('aria-label','Thẻ dự án — nấc '+['mặc định','vừa','đầy đủ'][i]+' (bấm để đổi nấc)');
     }
-    c.setAttribute('aria-expanded',String(c.classList.contains('mo')));
-    c.addEventListener('click',lat);
+    dat(c.classList.contains('full')?2:c.classList.contains('vua')?1:0);
+    function toi(){ dat((parseInt(c.dataset.nac,10)+1)%3); }
+    c.addEventListener('click',toi);
     c.addEventListener('keydown',function(e){
-      if(e.key==='Enter'||e.key===' '){e.preventDefault();lat();}
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();toi();}
     });
   });
 })();
