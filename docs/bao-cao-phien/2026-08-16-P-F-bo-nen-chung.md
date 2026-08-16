@@ -115,6 +115,49 @@ Trang có bảng hai cột **DÙNG KÍNH ↔ KHÔNG DÙNG KÍNH** theo tiêu ch�
 liệu và dòng việc ở đó đang là kính dù chúng là ruột. **Chưa sửa** (ưu tiên phiếu này trước theo
 đúng chỉ đạo). Đây là nợ, không phải sót.
 
+### 2.5b · Ba tầng ánh sáng (`baTangAnhSang`) — thêm ở lượt cuối
+
+| Tầng | Khi nào | Nghĩa | Hình thức |
+|---|---|---|---|
+| ① Kính nhận sáng | **luôn luôn** | **CHẤT LIỆU** | mép trên bắt sáng + `backdrop-filter` đổi theo nền · **đứng yên** |
+| ② Gradient khi trỏ vào | lúc rê chuột | **KHẢ NĂNG** | chuyển sắc nổi nhẹ, buông ra về như cũ |
+| ③ Viền chạy liên tục | lúc đang render | **TRẠNG THÁI** | ánh sáng chạy vòng viền |
+
+⭐ **Lý do ba tầng không lẫn — cơ chế, không phải lời hứa:** ba tầng sống ở **ba khoảng thời gian
+rời nhau** (① luôn · ② chỉ khi con trỏ nằm trên · ③ chỉ khi máy chạy thật) ⇒ **không bao giờ thấy
+hai cái cùng lúc trên một card**. Nếu ① cũng lấp lánh thì mất luôn nghĩa của ③ — thứ duy nhất
+trong ba cái mang tin *cần hành động*.
+
+**Giảm chuyển động:** ③ tắt đầu tiên → viền tĩnh màu nhấn, chữ "Đang dựng ảnh" giữ nguyên nên
+**không mất nghĩa**.
+
+📌 **Nợ cũ đang trả**, đã trích vào trang: `hover-gradient-kem` · `card-kinh-gradient` (mở 12/08,
+chưa ai làm). 🔴 **Đính chính ghi rõ trong trang**: entry hover ghi gradient **KEM** — kem/vàng
+vừa bị bỏ cùng ngày vì trên nền xám ra xỉn ⇒ đổi sang **mòng két**. Không im lặng đổi.
+
+### 2.5c · Theme sáng canh theo Apple (lượt cuối, thay ba bản A/B/C)
+
+⭐ **Con số giải thích chữ "sến"** — bằng chứng đắt nhất của cả đợt:
+
+| Nền | R | G | B | Hướng sắc |
+|---|---|---|---|---|
+| Apple `#F2F2F7` | 242 | 242 | **247** | ngả **LAM** |
+| IF hiện tại `#f2efe9` | 242 | 239 | **233** | ngả **VÀNG** |
+
+**Cùng độ sáng, ngược hướng sắc — chênh đúng 14 điểm ở kênh lam.** Đó là toàn bộ khoảng cách
+giữa "sạch" và "rẻ tiền", và nó **đo được**.
+
+⚠️ **Khai thật trong trang**: Apple **cố ý không công bố hex**; số dùng là **giá trị đo được** từ
+màu hệ thống iOS, không phải bảng Apple phát hành.
+
+**Điều thứ hai mượn:** nền chính là **TRẮNG**, xám `#f2f2f7` chỉ làm **nền nhóm** để lùi ra sau.
+**IF trước đây làm ngược** — lấy kem làm nền chính nên nội dung không có gì để nổi lên.
+
+🔧 **Một chỗ tôi cố ý lệch Apple, nói rõ**: `secondaryLabel` của Apple (đen 60%) trên `#f2f2f7`
+chỉ đạt **3,3:1 — trượt WCAG AA**. Apple sống được vì có nấc tăng tương phản của hệ điều hành;
+IF thì không ⇒ đậm lên `#6c6c70` để đạt **4,7:1**. Canh theo Apple về *hướng sắc và cách xếp lớp*,
+**không chép mù độ mờ**.
+
 ### 2.6 · Card — đọc lại theo cách thứ BA (④.2, dựng lại)
 
 Ba cách, và chỉ cách 3 giữ được ảnh:
