@@ -18,7 +18,7 @@
   --bg:#f6f1e6; --paper:#fbf8f1; --card:#fffdf8; --field:#efe8da; --hover:#e7dfd0;
   --border:#e2d9c7; --border-strong:#9c917b;
   --t1:#241f16; --t2:#4a4234; --t3:#6f6553; --t4:#8d8270; --t5:#a89d89;
-  --mat-panel:rgba(251,248,241,.78); --mat-card:rgba(255,253,248,.86); --mat-hairline:rgba(36,31,22,.10);
+  --nen-mo-panel:rgba(251,248,241,.78); --nen-mo-card:rgba(255,253,248,.86); --vien-mo:rgba(36,31,22,.10);
   --shadow-pop:0 10px 30px -10px rgba(70,58,34,.26); --shadow-node:0 6px 18px -8px rgba(70,58,34,.22);
   --danger:#c2492f; --warning:#b8801a; --success:#3f7d4e;
   --shell:#cfc7b6; --shell-edge:#a89d89; --crease:rgba(36,31,22,.12);
@@ -29,7 +29,7 @@
   --bg:#17140f; --paper:#1e1a14; --card:#241f18; --field:#2b251c; --hover:#372f24;
   --border:#332c22; --border-strong:#6b6151;
   --t1:#f6f1e6; --t2:#ded5c4; --t3:#b0a793; --t4:#8d8270; --t5:#6b6151;
-  --mat-panel:rgba(30,26,20,.74); --mat-card:rgba(36,31,24,.84); --mat-hairline:rgba(246,241,230,.10);
+  --nen-mo-panel:rgba(30,26,20,.74); --nen-mo-card:rgba(36,31,24,.84); --vien-mo:rgba(246,241,230,.10);
   --shadow-pop:0 10px 30px -10px rgba(0,0,0,.7); --shadow-node:0 6px 18px -8px rgba(0,0,0,.6);
   --danger:#e5674f; --warning:#d9a34a; --success:#5fa872;
   --shell:#221d16; --shell-edge:#3a3227; --crease:rgba(246,241,230,.10);
@@ -300,11 +300,11 @@ a:hover{text-decoration-color:var(--amber-deep)}
             <path d="M18 30C60 6 150 4 250 10c110 7 190 20 196 60 6 40-40 78-140 90-96 12-230 12-274-16-40-26-32-88-14-114Z" style="fill:rgba(232,181,61,.14);stroke:var(--t1);stroke-width:2;stroke-dasharray:9 7;animation:gv-march .9s linear infinite"></path>
           </svg>
 
-          <div style="position:absolute;left:96px;top:250px;display:flex;align-items:center;gap:2px;padding:5px;border-radius:16px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
+          <div style="position:absolute;left:96px;top:250px;display:flex;align-items:center;gap:2px;padding:5px;border-radius:16px;background:var(--nen-mo-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
             <button title="Sao chép vùng" style="height:44px;padding:0 14px;display:flex;align-items:center;gap:8px;border:0;border-radius:12px;background:transparent;color:var(--t1);font:600 12px inherit;cursor:pointer;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.4" y="2.4" width="8" height="8" rx="1.6"></rect><rect x="5.6" y="5.6" width="8" height="8" rx="1.6"></rect></svg>Sao chép</button>
             <button title="Đổi nét tay thành chữ máy" style="height:44px;padding:0 14px;display:flex;align-items:center;gap:8px;border:0;border-radius:12px;background:var(--amber);color:var(--t1);font:600 12px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--amber-deep)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 4h10M8 4v9M6 13h4"></path></svg>Đổi thành chữ</button>
             <button title="Đổi thành việc cần làm" style="height:44px;padding:0 14px;display:flex;align-items:center;gap:8px;border:0;border-radius:12px;background:transparent;color:var(--t1);font:600 12px inherit;cursor:pointer;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="11" height="11" rx="2.6"></rect><path d="M5.4 8.2 7.2 10l3.4-3.6"></path></svg>Đổi thành việc</button>
-            <span style="width:1px;height:22px;background:var(--mat-hairline);margin:0 5px"></span>
+            <span style="width:1px;height:22px;background:var(--vien-mo);margin:0 5px"></span>
             <button title="Xoá vùng" style="width:44px;height:44px;border:0;border-radius:12px;background:transparent;color:var(--danger);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 4.5h10M6.4 4.5V3h3.2v1.5M4.6 4.5l.7 8.4h5.4l.7-8.4"></path></svg></button>
           </div>
 
@@ -335,7 +335,7 @@ a:hover{text-decoration-color:var(--amber-deep)}
             <text x="195" y="208" text-anchor="middle" style="font:600 13px ui-monospace,Menlo,monospace;fill:var(--t2)">3 780</text>
           </svg>
 
-          <div style="position:absolute;left:470px;top:96px;width:264px;border-radius:20px;padding:6px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
+          <div style="position:absolute;left:470px;top:96px;width:264px;border-radius:20px;padding:6px;background:var(--nen-mo-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
             <div style="padding:10px 10px 12px;display:flex;align-items:flex-start;gap:10px">
               <span style="width:26px;height:26px;flex:none;border-radius:9px;background:var(--amber-wash);border:1px solid var(--amber);display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--t1)" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 13.5 13.5 2.5"></path></svg></span>
               <span style="flex:1;min-width:0">

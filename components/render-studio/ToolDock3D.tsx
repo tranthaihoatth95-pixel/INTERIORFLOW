@@ -217,7 +217,7 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
       className="if-3d-tool-dock"
       style={{
         position: 'absolute', left: '50%', bottom: 76, transform: 'translateX(-50%)', zIndex: 6, padding: 6,
-        borderRadius: 14, border: '1px solid var(--nen-mo-hairline)', boxShadow: '0 12px 30px rgba(0, 0, 0, .2)',
+        borderRadius: 14, border: '1px solid var(--vien-mo)', boxShadow: '0 12px 30px rgba(0, 0, 0, .2)',
         // B2 — hàng "Lệnh chung" mang 11 nút CÓ NHÃN nên hàng 1 dài hơn trước. Kẹp bề rộng theo
         // khung nhìn + cho cuộn ngang, để dock không bao giờ tràn ra ngoài mép màn hẹp (bệnh
         // "vỡ khổ hẹp" đã phải sửa một lần ở Statusbar/Files 14/08 — không tái diễn ở đây).
@@ -230,12 +230,12 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
             key={ri}
             style={{
               display: 'flex', alignItems: 'stretch',
-              ...(ri > 0 ? { borderTop: '1px solid var(--nen-mo-hairline)', paddingTop: 9 } : {}),
+              ...(ri > 0 ? { borderTop: '1px solid var(--vien-mo)', paddingTop: 9 } : {}),
             }}
           >
             {row.map((g, gi) => (
               <span key={g.title} style={{ display: 'flex' }}>
-                {gi > 0 && <span style={{ width: 1, background: 'var(--nen-mo-hairline)', margin: '4px 0' }} />}
+                {gi > 0 && <span style={{ width: 1, background: 'var(--vien-mo)', margin: '4px 0' }} />}
                 <div style={{ padding: '0 9px', display: 'flex', flexDirection: 'column', gap: 5 }}>
                   <div style={{ fontSize: 11, lineHeight: 1.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t3)', paddingLeft: 3 }}>
                     {tr(g.title, g.titleEn)}
@@ -262,7 +262,7 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
           </div>
         ))}
       </div>
-      <div style={{ borderTop: '1px solid var(--nen-mo-hairline)', padding: '7px 11px 3px', display: 'flex', alignItems: 'center', gap: 16, fontSize: 11, lineHeight: 1.5, color: 'var(--t3)', whiteSpace: 'nowrap' }}>
+      <div style={{ borderTop: '1px solid var(--vien-mo)', padding: '7px 11px 3px', display: 'flex', alignItems: 'center', gap: 16, fontSize: 11, lineHeight: 1.5, color: 'var(--t3)', whiteSpace: 'nowrap' }}>
         <span>{tr('Gõ số bất cứ lúc nào để nhập chính xác', 'Type a number any time for precise input')}</span>
         <span>{tr('Giữ Alt để nhân bản', 'Hold Alt to duplicate')}</span>
         <button

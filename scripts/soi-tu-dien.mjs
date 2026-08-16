@@ -84,7 +84,7 @@ const TU_DA_NGHIA = [
     tu: 'kính',
     v5: '#2 🔴',
     ten: ['kính (VẬT LIỆU nội thất — GIỮ chữ, có giá + vào BOQ)', 'nền mờ (vibrancy giao diện)'],
-    dinh_ngu: /nền mờ|kính cường lực|kính trong|kính mờ|vật liệu|transmission|vibrancy|backdrop-filter|--nen-mo|mat-panel|mat-card|mat-header/i,
+    dinh_ngu: /nền mờ|kính cường lực|kính trong|kính mờ|vật liệu|transmission|vibrancy|backdrop-filter|--nen-mo|nen-mo-panel|nen-mo-card|vien-mo/i,
     pham_vi: ['docs/phieu-giao'],
     ngoai_le: [],
   },

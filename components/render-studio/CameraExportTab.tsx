@@ -150,7 +150,7 @@ export default function CameraExportTab({ scene }: { scene: Scene3DData | null }
 
   return (
     <div className="space-y-3">
-      <section className="rounded-[10px] border border-[var(--nen-mo-hairline)] bg-[var(--field)] p-2.5" aria-label={tr('Xuất chuỗi ảnh', 'Export image sequence')}>
+      <section className="rounded-[10px] border border-[var(--vien-mo)] bg-[var(--field)] p-2.5" aria-label={tr('Xuất chuỗi ảnh', 'Export image sequence')}>
         <b className="block text-[11px] font-semibold text-[var(--t1)]">{tr('Xuất chuỗi ảnh (PNG)', 'Export image sequence (PNG)')}</b>
         <span className="mt-0.5 block text-[10px] leading-[1.5] text-[var(--t4)]">
           {tr(

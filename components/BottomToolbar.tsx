@@ -111,7 +111,7 @@ export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
       initial={{ opacity: 0, y: 20, x: '-50%' }}
       animate={{ opacity: 1, y: 0, x: '-50%' }}
       transition={springSheet}
-      className="if-bottombar mat-card no-scrollbar pointer-events-auto absolute bottom-3 left-1/2 z-20 flex max-w-[calc(100%-1.5rem)] items-center gap-[5px] overflow-x-auto border border-[var(--nen-mo-hairline)] shadow-[0_8px_24px_rgba(40,38,35,.14)]"
+      className="if-bottombar nen-mo-card no-scrollbar pointer-events-auto absolute bottom-3 left-1/2 z-20 flex max-w-[calc(100%-1.5rem)] items-center gap-[5px] overflow-x-auto border border-[var(--vien-mo)] shadow-[0_8px_24px_rgba(40,38,35,.14)]"
       style={{ height: 44, borderRadius: 22, padding: 5 }}
     >
       <Btn title="Select (V)" active={tool === 'select'} onClick={() => setTool('select')}>

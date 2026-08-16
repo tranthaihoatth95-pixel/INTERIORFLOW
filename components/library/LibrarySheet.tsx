@@ -432,7 +432,7 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
       />
 
       <div
-        className="lib mat-sheet"
+        className="lib nen-mo-sheet"
         data-open={open}
         role="dialog"
         aria-modal={open}

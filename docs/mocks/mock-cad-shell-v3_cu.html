@@ -26,8 +26,8 @@
   --border:#2a2a31; --border-strong:#3d3d45;
   --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
   --dots:#26262d;
-  --mat-header:rgba(20,20,23,.72); --mat-panel:rgba(20,20,23,.68);
-  --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --nen-mo-header:rgba(20,20,23,.72); --nen-mo-panel:rgba(20,20,23,.68);
+  --nen-mo-card:rgba(26,26,30,.82); --vien-mo:rgba(255,255,255,.06);
   --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
   --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
   --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
@@ -39,8 +39,8 @@
   --border:#e3ded4; --border-strong:#cbc4b6;
   --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
   --dots:#ddd8ce;
-  --mat-header:rgba(250,248,244,.72); --mat-panel:rgba(250,248,244,.7);
-  --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --nen-mo-header:rgba(250,248,244,.72); --nen-mo-panel:rgba(250,248,244,.7);
+  --nen-mo-card:rgba(255,255,255,.82); --vien-mo:rgba(0,0,0,.05);
   --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
   --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
   --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
@@ -56,8 +56,8 @@ body{margin:0;background:var(--bg);color:var(--t1);overflow:hidden;
   transition:background-color var(--dur-base) var(--ease-apple),color var(--dur-base) var(--ease-apple)}
 svg{display:block}
 button{font:inherit;color:inherit}
-.mat-header{background:var(--mat-header);backdrop-filter:saturate(180%) blur(var(--blur));-webkit-backdrop-filter:saturate(180%) blur(var(--blur))}
-.mat-panel{background:var(--mat-panel);backdrop-filter:saturate(180%) blur(var(--blur));-webkit-backdrop-filter:saturate(180%) blur(var(--blur))}
+.nen-mo-header{background:var(--nen-mo-header);backdrop-filter:saturate(180%) blur(var(--blur));-webkit-backdrop-filter:saturate(180%) blur(var(--blur))}
+.nen-mo-panel{background:var(--nen-mo-panel);backdrop-filter:saturate(180%) blur(var(--blur));-webkit-backdrop-filter:saturate(180%) blur(var(--blur))}
 .i{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .i.s{width:13px;height:13px}
 /* Luật 6 — bàn phím = chuột */
@@ -67,7 +67,7 @@ button{font:inherit;color:inherit}
 
 /* ══ ĐẦU — logo · tên · 3 chặng · 2 nút ══ */
 .top{height:42px;flex:none;display:flex;align-items:center;gap:10px;padding:0 10px;
-     border-bottom:1px solid var(--mat-hairline)}
+     border-bottom:1px solid var(--vien-mo)}
 .logo{width:24px;height:24px;border-radius:var(--radius-sm);background:var(--t1);color:var(--bg);
       display:flex;align-items:center;justify-content:center;font-size:var(--fs-2xs);font-weight:800;
       cursor:pointer;border:0;transition:background var(--dur-fast) var(--ease-apple)}
@@ -96,7 +96,7 @@ button{font:inherit;color:inherit}
 /* ══ SIDEBAR — một việc: Lớp ══ */
 .side{width:214px;flex:none;background:var(--panel);border-right:1px solid var(--border);
       display:flex;flex-direction:column;min-height:0}
-.state{padding:var(--gap);border-bottom:1px solid var(--mat-hairline)}
+.state{padding:var(--gap);border-bottom:1px solid var(--vien-mo)}
 .statebtn{width:100%;height:30px;display:flex;align-items:center;gap:7px;padding:0 9px;
           background:var(--field);border:1px solid var(--border);border-radius:var(--radius-sm);
           font-size:var(--fs-xs);cursor:pointer;
@@ -119,7 +119,7 @@ button{font:inherit;color:inherit}
 .lay:hover{background:var(--hover)}
 .lay.on{background:var(--accent-soft);border-left-color:var(--accent)}
 .lay.on .nm{color:var(--accent);font-weight:var(--fw-semi)}
-.dot{width:10px;height:10px;border-radius:3px;flex:none;box-shadow:inset 0 0 0 1px var(--mat-hairline)}
+.dot{width:10px;height:10px;border-radius:3px;flex:none;box-shadow:inset 0 0 0 1px var(--vien-mo)}
 .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-xs)}
 /* progressive disclosure — nhưng luật 7: trạng thái TẮT/KHOÁ hiện thường trực, không giấu sau hover */
 .acts{display:flex;gap:1px;opacity:0;transition:opacity .12s var(--ease-apple)}
@@ -131,7 +131,7 @@ button{font:inherit;color:inherit}
 .lay.mut .nm,.lay.mut .dot{opacity:.4}
 .lay.lok .act.lk{color:var(--warning)}
 
-.sideft{flex:none;border-top:1px solid var(--mat-hairline);padding:5px 6px;display:flex;gap:2px}
+.sideft{flex:none;border-top:1px solid var(--vien-mo);padding:5px 6px;display:flex;gap:2px}
 .sf{height:28px;flex:1;border:0;background:transparent;color:var(--t3);border-radius:var(--radius-sm);
     display:flex;align-items:center;justify-content:center;gap:6px;font-size:var(--fs-2xs);cursor:pointer;
     transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
@@ -170,14 +170,14 @@ button{font:inherit;color:inherit}
 /* ══ DOCK — kính, bo 14, đệm 4 ⇒ nút trong bo 10 (§2d đồng tâm) ══ */
 .dock{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
       display:flex;align-items:center;gap:1px;padding:4px;
-      border:1px solid var(--mat-hairline);border-radius:var(--radius-md);box-shadow:var(--shadow-pop)}
+      border:1px solid var(--vien-mo);border-radius:var(--radius-md);box-shadow:var(--shadow-pop)}
 .dk{width:var(--tap);height:var(--tap);border:0;background:transparent;color:var(--t3);
     border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;cursor:pointer;
     transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
 .dk:hover{background:var(--hover);color:var(--t1)}
 .dk:active{transform:scale(.97);transition:transform .08s}
 .dk.on{background:var(--accent);color:#fff}
-.dkdiv{width:1px;height:18px;background:var(--mat-hairline);margin:0 5px}
+.dkdiv{width:1px;height:18px;background:var(--vien-mo);margin:0 5px}
 .dkt{height:var(--tap);border:0;background:transparent;color:var(--t3);border-radius:var(--radius-sm);
      padding:0 11px;display:flex;align-items:center;font-size:var(--fs-xs);cursor:pointer;
      transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
@@ -190,7 +190,7 @@ button{font:inherit;color:inherit}
       display:flex;flex-direction:column;min-height:0;transform-origin:right center;
       animation:ramp var(--dur-base) var(--ease-apple)}
 .ihead{height:34px;flex:none;display:flex;align-items:baseline;gap:7px;padding:0 6px 0 12px;
-       border-bottom:1px solid var(--mat-hairline)}
+       border-bottom:1px solid var(--vien-mo)}
 .ihead h2{margin:0;font-size:var(--fs-sm);font-weight:var(--fw-semi);letter-spacing:-.01em;align-self:center}
 .ihead .sub{font-size:var(--fs-2xs);color:var(--t3);font-family:ui-monospace,Menlo,monospace;align-self:center}
 .ihead .x{margin-left:auto;width:26px;height:26px;border:0;background:transparent;color:var(--t4);
@@ -198,7 +198,7 @@ button{font:inherit;color:inherit}
           transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
 .ihead .x:hover{background:var(--hover);color:var(--t1)}
 .iscroll{flex:1;overflow-y:auto;scrollbar-width:thin}
-.grp{padding:11px 12px;border-bottom:1px solid var(--mat-hairline)}
+.grp{padding:11px 12px;border-bottom:1px solid var(--vien-mo)}
 .grp h4{margin:0 0 8px;font-size:var(--fs-2xs);font-weight:700;letter-spacing:.07em;
         text-transform:uppercase;color:var(--t4)}
 .f2{display:grid;grid-template-columns:1fr 1fr;gap:5px}
@@ -226,7 +226,7 @@ button{font:inherit;color:inherit}
 .kv{display:flex;justify-content:space-between;align-items:baseline;font-size:var(--fs-xs);
     padding:3px 0;color:var(--t3)}
 .kv b{color:var(--t1);font-weight:var(--fw-semi);font-variant-numeric:tabular-nums}
-.kv.big{padding-top:8px;margin-top:6px;border-top:1px solid var(--mat-hairline)}
+.kv.big{padding-top:8px;margin-top:6px;border-top:1px solid var(--vien-mo)}
 .kv.big b{color:var(--accent);font-size:var(--fs-sm)}
 
 /* ══ CHÂN ══ */
@@ -257,7 +257,7 @@ button{font:inherit;color:inherit}
 
 <div class="app">
 
-  <header class="top mat-header">
+  <header class="top nen-mo-header">
     <button class="logo" title="Tổng quan · Dự án · Tệp · Thư viện">IF</button>
     <button class="doc">Căn hộ Thảo Điền · 128m²<svg class="i s car" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
     <div class="seg"><button class="on">Vẽ</button><button>Dựng ảnh</button><button>Trình chiếu</button></div>
@@ -339,7 +339,7 @@ button{font:inherit;color:inherit}
           </div>
         </div>
 
-        <div class="dock mat-panel">
+        <div class="dock nen-mo-panel">
           <button class="dk on" title="Chọn — V"><svg class="i" viewBox="0 0 24 24"><path d="M4 3l7 17 2.5-6.5L20 11z"/></svg></button>
           <button class="dk" title="Đường — L"><svg class="i" viewBox="0 0 24 24"><path d="M4 20L20 4"/></svg></button>
           <button class="dk" title="Đa tuyến — PL"><svg class="i" viewBox="0 0 24 24"><path d="M3 18l5-8 4 5 3-6 6 9"/></svg></button>

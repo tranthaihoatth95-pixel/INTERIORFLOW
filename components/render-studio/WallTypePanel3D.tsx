@@ -259,7 +259,7 @@ export function WallTypePanel3D() {
 
       {/* ── Ba tham số của tường đang chọn: giá trị cuối + NGUỒN + đường trả về Type ── */}
       {targetWall && resolved && (
-        <div className="space-y-1.5 border-t border-[var(--nen-mo-hairline)] pt-2.5">
+        <div className="space-y-1.5 border-t border-[var(--vien-mo)] pt-2.5">
           <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">
             {tr('Tường đang chọn', 'Selected wall')}
           </span>

@@ -243,7 +243,7 @@ export function AppChrome({ active, logoMenu }: Props) {
       // đã tự deselect khi click nền, không cần marker (thêm vào sẽ vô nghĩa, không hại nhưng
       // cũng không lợi — bỏ qua cho đúng phạm vi "chỉ nơi cần").
       {...(active !== 'render' ? { 'data-if-deselect-zone': 'true' } : {})}
-      className={`mat-header relative z-30 flex items-center gap-2 border-b border-[var(--border)] px-2 sm:gap-3 sm:px-3 ${logoMenu ? 'h-[42px]' : 'h-12'}`}
+      className={`nen-mo-header relative z-30 flex items-center gap-2 border-b border-[var(--border)] px-2 sm:gap-3 sm:px-3 ${logoMenu ? 'h-[42px]' : 'h-12'}`}
       style={{ borderBottomColor: `color-mix(in srgb, ${tint} 55%, var(--border))` }}
     >
       {/* G-M22-03 (07/08, M-NHAN-OUT) — ĐÃ GỠ `<HomeButton compact />` từng đứng riêng ở đây

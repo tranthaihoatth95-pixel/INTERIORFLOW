@@ -117,11 +117,11 @@ export const FILES_MOCK_CSS = `
 
 /* Toast tải lên — GỘP THÀNH 1 khối (trước đây mỗi file 1 div cùng toạ độ tuyệt đối, chồng
    lấn khi tải ≥2 file cùng lúc — bug thật, không chỉ thẩm mỹ, xem báo cáo so sánh). */
-.if-files-app .uptoast{position:absolute;right:20px;bottom:20px;display:flex;flex-direction:column;background:var(--nen-mo-panel);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid var(--nen-mo-hairline);border-radius:var(--radius-lg);box-shadow:var(--shadow-pop);min-width:320px;max-width:360px;z-index:6;overflow:hidden}
-.if-files-app .uphead{padding:11px 14px;font-size:11.5px;font-weight:600;color:var(--t2);border-bottom:1px solid var(--nen-mo-hairline)}
+.if-files-app .uptoast{position:absolute;right:20px;bottom:20px;display:flex;flex-direction:column;background:var(--nen-mo-panel);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid var(--vien-mo);border-radius:var(--radius-lg);box-shadow:var(--shadow-pop);min-width:320px;max-width:360px;z-index:6;overflow:hidden}
+.if-files-app .uphead{padding:11px 14px;font-size:11.5px;font-weight:600;color:var(--t2);border-bottom:1px solid var(--vien-mo)}
 .if-files-app .uplist{display:flex;flex-direction:column;max-height:260px;overflow-y:auto}
 .if-files-app .upitem{display:flex;align-items:center;gap:12px;padding:10px 14px}
-.if-files-app .upitem+.upitem{border-top:1px solid var(--nen-mo-hairline)}
+.if-files-app .upitem+.upitem{border-top:1px solid var(--vien-mo)}
 .if-files-app .upitem .fic{width:38px;height:44px;border-radius:var(--radius-sm);background:var(--field);border:1px solid var(--border);position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;flex:none}
 .if-files-app .upitem .badge{font-size:7.5px;font-weight:800;letter-spacing:.05em;background:var(--t1);color:var(--panel);border-radius:4px;padding:1px 5px}
 .if-files-app .upitem .meta{flex:1;min-width:0}
@@ -193,7 +193,7 @@ export const FILES_MOCK_CSS = `
 
 /* Menu chuột phải (FmContextMenu.tsx) — SPEC-MAT-DO-CON-TRO §4#1. Portal ra body nên KHÔNG
    nằm trong .if-files-app, phải tự khai nền/màu (không thừa hưởng .if-files-app *{box-sizing}). */
-.fm-ctxmenu{position:fixed;z-index:70;min-width:168px;padding:5px;border-radius:var(--radius-md);background:var(--nen-mo-panel);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid var(--nen-mo-hairline);box-shadow:var(--shadow-pop);display:flex;flex-direction:column;gap:1px;box-sizing:border-box}
+.fm-ctxmenu{position:fixed;z-index:70;min-width:168px;padding:5px;border-radius:var(--radius-md);background:var(--nen-mo-panel);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop);display:flex;flex-direction:column;gap:1px;box-sizing:border-box}
 .fm-ctxmenu button{display:flex;align-items:center;gap:9px;width:100%;border:0;background:none;border-radius:var(--radius-sm);padding:7px 9px;font-size:12px;color:var(--t1);text-align:left;cursor:pointer;transition:background-color .1s}
 .fm-ctxmenu button:hover:not(:disabled){background:var(--hover)}
 .fm-ctxmenu button:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--accent)}

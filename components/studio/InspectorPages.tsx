@@ -40,7 +40,7 @@ export function InspectorPages({ pages }: { pages: InspectorPage[] }) {
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Dải icon trang — chỉ hiện khi có ≥2 trang (1 trang thì dải là noise). */}
       {pages.length > 1 && (
-        <div className="flex h-[34px] shrink-0 items-center gap-0.5 border-b border-[var(--nen-mo-hairline)] px-1.5">
+        <div className="flex h-[34px] shrink-0 items-center gap-0.5 border-b border-[var(--vien-mo)] px-1.5">
           {pages.map((p) => {
             const on = p.id === current?.id;
             return (

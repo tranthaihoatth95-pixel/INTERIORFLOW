@@ -13,7 +13,7 @@
  * ③ Stage — children, chiếm hết chỗ còn lại.
  * ④ Inspector 236px — CHỈ render khung khi có `inspector` truyền vào (không CSS-ẩn) + animation
  *   ramp .96→1.008→1 (`docs/SPEC-CAD-SHELL-V3.md` §4) + nút ✕ đóng (gọi `onCloseInspector`).
- * ⑤ Toolbelt — dock kính nổi giữa-dưới Stage, chặng tự truyền nội dung (đã có class `.mat-panel`
+ * ⑤ Toolbelt — dock kính nổi giữa-dưới Stage, chặng tự truyền nội dung (đã có class `.nen-mo-panel`
  *   từ trong dock, AppShell chỉ định vị + z-index).
  * ⑥ Status 26px — statusBar slot (Vitals sống trong đó, không đổi).
  *
@@ -216,7 +216,7 @@ function InspectorSlot({
           className="flex min-h-0 shrink-0 flex-col overflow-hidden border-l border-[var(--border)] bg-[var(--panel)]"
         >
           {(title || onClose) && (
-            <div className="flex h-[34px] shrink-0 items-center gap-1.5 border-b border-[var(--nen-mo-hairline)] px-3">
+            <div className="flex h-[34px] shrink-0 items-center gap-1.5 border-b border-[var(--vien-mo)] px-3">
               {title && <h2 className="min-w-0 flex-1 truncate text-[14px] font-semibold tracking-tight text-[var(--t1)]">{title}</h2>}
               {sub && <span className="shrink-0 text-[11px] text-[var(--t3)]">{sub}</span>}
               {onClose && (

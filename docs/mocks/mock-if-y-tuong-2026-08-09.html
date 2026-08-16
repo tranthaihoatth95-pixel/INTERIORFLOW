@@ -37,8 +37,8 @@
   --border:#2a2a31; --border-strong:#3d3d45;
   --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
   --dots:#26262d;
-  --mat-header:rgba(20,20,23,.72); --mat-panel:rgba(20,20,23,.68);
-  --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --nen-mo-header:rgba(20,20,23,.72); --nen-mo-panel:rgba(20,20,23,.68);
+  --nen-mo-card:rgba(26,26,30,.82); --vien-mo:rgba(255,255,255,.06);
   --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
   --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
   --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
@@ -50,8 +50,8 @@
   --border:#e3ded4; --border-strong:#cbc4b6;
   --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
   --dots:#ddd8ce;
-  --mat-header:rgba(250,248,244,.72); --mat-panel:rgba(250,248,244,.7);
-  --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --nen-mo-header:rgba(250,248,244,.72); --nen-mo-panel:rgba(250,248,244,.7);
+  --nen-mo-card:rgba(255,255,255,.82); --vien-mo:rgba(0,0,0,.05);
   --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
   --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
   --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
@@ -78,8 +78,8 @@ button{font:inherit;color:inherit}
 
 /* ① Header 42 */
 .top{height:42px;flex:none;display:flex;align-items:center;gap:10px;padding:0 10px;
-  background:var(--mat-header);backdrop-filter:saturate(180%) blur(var(--blur));
-  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));border-bottom:1px solid var(--mat-hairline)}
+  background:var(--nen-mo-header);backdrop-filter:saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));border-bottom:1px solid var(--vien-mo)}
 .logo{width:24px;height:24px;border-radius:var(--radius-sm);background:var(--t1);color:var(--bg);
   display:flex;align-items:center;justify-content:center;font-size:var(--fs-2xs);font-weight:800;border:0;cursor:pointer}
 .doc{display:flex;align-items:center;gap:5px;padding:5px 9px;border:0;background:transparent;
@@ -107,7 +107,7 @@ button{font:inherit;color:inherit}
 .lay .nest{width:14px;height:14px;color:var(--t5);flex:none;margin-right:-4px}
 .lay.child{padding-left:24px}
 .list{flex:1;overflow-y:auto;padding-bottom:8px}
-.sideft{flex:none;border-top:1px solid var(--mat-hairline);padding:8px;display:flex;flex-direction:column;gap:6px}
+.sideft{flex:none;border-top:1px solid var(--vien-mo);padding:8px;display:flex;flex-direction:column;gap:6px}
 .sideft button{height:32px;border-radius:9px;font-size:var(--fs-xs);display:flex;align-items:center;
   justify-content:center;gap:6px;cursor:pointer;border:0}
 .add{background:var(--accent-soft);color:var(--accent);font-weight:var(--fw-semi)}
@@ -170,34 +170,34 @@ button{font:inherit;color:inherit}
 .card.swrow{width:150px;padding:9px 10px}
 .card.swrow .th2{font-size:10.5px;color:var(--t4);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
 .swset{display:flex;gap:4px}
-.sw{flex:1;height:22px;border-radius:6px;border:1px solid var(--mat-hairline)}
+.sw{flex:1;height:22px;border-radius:6px;border:1px solid var(--vien-mo)}
 
 /* mũi tên nối — SVG lớp phủ canvas */
 .arrows{position:absolute;inset:0;pointer-events:none}
 
 /* toolbar canvas nổi (thu/mở kiểu chuẩn 07/08 mục 10) */
 .ctools{position:absolute;left:16px;bottom:16px;display:flex;flex-direction:column;gap:6px;
-  background:var(--mat-panel);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
-  border:1px solid var(--mat-hairline);border-radius:var(--radius-md);box-shadow:var(--shadow-pop);padding:6px;z-index:20}
+  background:var(--nen-mo-panel);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+  border:1px solid var(--vien-mo);border-radius:var(--radius-md);box-shadow:var(--shadow-pop);padding:6px;z-index:20}
 .ctools button{width:32px;height:32px;border:0;background:transparent;border-radius:9px;color:var(--t2);
   display:flex;align-items:center;justify-content:center;cursor:pointer}
 .ctools button:hover{background:var(--hover)}
 .ctools button.on{background:var(--accent-soft);color:var(--accent)}
-.ctools .sep{height:1px;background:var(--mat-hairline);margin:2px 4px}
+.ctools .sep{height:1px;background:var(--vien-mo);margin:2px 4px}
 
 /* toggle collab — bậc P khoá kèm lý do */
 .lockchip{position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:7px;height:30px;padding:0 11px;
-  border-radius:999px;background:var(--mat-panel);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
-  border:1px solid var(--mat-hairline);font-size:var(--fs-2xs);color:var(--t4);z-index:20;cursor:not-allowed}
+  border-radius:999px;background:var(--nen-mo-panel);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+  border:1px solid var(--vien-mo);font-size:var(--fs-2xs);color:var(--t4);z-index:20;cursor:not-allowed}
 .lockchip .i{width:13px;height:13px}
 .lockchip b{color:var(--t3);font-weight:var(--fw-semi)}
 
 /* ⑤ Panel phải 280 — Trích xuất + Gu radar */
 .insp{width:280px;flex:none;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
-.ihead{height:34px;flex:none;display:flex;align-items:center;gap:7px;padding:0 6px 0 12px;border-bottom:1px solid var(--mat-hairline)}
+.ihead{height:34px;flex:none;display:flex;align-items:center;gap:7px;padding:0 6px 0 12px;border-bottom:1px solid var(--vien-mo)}
 .ihead h2{margin:0;font-size:var(--fs-sm);font-weight:var(--fw-semi)}
 .ihead .sub{font-size:var(--fs-2xs);color:var(--t3)}
-.grp2{padding:11px 12px;border-bottom:1px solid var(--mat-hairline)}
+.grp2{padding:11px 12px;border-bottom:1px solid var(--vien-mo)}
 .grp2 h4{margin:0 0 8px;font-size:var(--fs-2xs);font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t4);
   display:flex;align-items:center;gap:6px}
 .grp2 h4 .badge0{margin-left:auto;font-size:9px;padding:2px 6px;border-radius:999px;background:var(--success);color:#06210f;font-weight:800}

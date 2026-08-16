@@ -17,7 +17,7 @@
   --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
   --border:#2a2a31; --border-strong:#3d3d45;
   --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
-  --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --nen-mo-card:rgba(26,26,30,.82); --vien-mo:rgba(255,255,255,.06);
   --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65); --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
   --success:#46b876; --warning:#d9a34a; --dots:rgba(255,255,255,.07); --desk:#101014;
 }
@@ -25,7 +25,7 @@
   --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
   --border:#e3ded4; --border-strong:#cbc4b6;
   --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
-  --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --nen-mo-card:rgba(255,255,255,.82); --vien-mo:rgba(0,0,0,.05);
   --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22); --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
   --dots:rgba(33,30,25,.1); --desk:#e6e1d8;
 }
@@ -152,11 +152,11 @@ a:hover{color:var(--accent-strong)}
           
           
           
-          <div style="position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:1px;padding:4px;border-radius:16px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
+          <div style="position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:1px;padding:4px;border-radius:16px;background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
             <button title="Chọn — V" style="width:var(--tap-lg);height:var(--tap-lg);border:0;border-radius:12px;background:var(--accent);color:var(--on-accent);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M3 2l9 5.6-4 1L6.6 13z"></path></svg></button>
             <button title="Khung nhìn mới — MV" style="width:var(--tap-lg);height:var(--tap-lg);border:0;border-radius:12px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background var(--dur-fast) var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="3.5" width="11" height="9" rx="1"></rect><path d="M2.5 6.5h11"></path></svg></button>
             <button title="Khoá khung nhìn — L" style="width:var(--tap-lg);height:var(--tap-lg);border:0;border-radius:12px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background var(--dur-fast) var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.5" y="7" width="9" height="6.5" rx="1"></rect><path d="M5.6 7V5.2a2.4 2.4 0 0 1 4.8 0V7"></path></svg></button>
-            <span style="width:1px;height:22px;background:var(--mat-hairline);margin:0 4px"></span>
+            <span style="width:1px;height:22px;background:var(--vien-mo);margin:0 4px"></span>
             <button title="Khung tên — TB" style="width:var(--tap-lg);height:var(--tap-lg);border:0;border-radius:12px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background var(--dur-fast) var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="2.5" width="11" height="11" rx="1"></rect><path d="M8.5 13.5v-4h5"></path></svg></button>
             <button title="Xuất PDF — ⌘P" style="width:var(--tap-lg);height:var(--tap-lg);border:0;border-radius:12px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background var(--dur-fast) var(--ease-apple)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 2.5h5l3 3v8H4z"></path><path d="M6 9h4M6 11h4"></path></svg></button>
           </div>

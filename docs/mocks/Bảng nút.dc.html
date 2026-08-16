@@ -15,7 +15,7 @@
   --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
   --border:#2a2a31; --border-strong:#3d3d45;
   --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
-  --mat-panel:rgba(20,20,23,.68); --mat-card:rgba(26,26,30,.62); --mat-hairline:rgba(255,255,255,.10);
+  --nen-mo-panel:rgba(20,20,23,.68); --nen-mo-card:rgba(26,26,30,.62); --vien-mo:rgba(255,255,255,.10);
   --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65); --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
   --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
   --dots:rgba(255,255,255,.07); --hatch:repeating-linear-gradient(45deg,#202024 0 9px,#1a1a1e 9px 18px);
@@ -24,7 +24,7 @@
   --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
   --border:#e3ded4; --border-strong:#cbc4b6;
   --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
-  --mat-panel:rgba(250,248,244,.7); --mat-card:rgba(255,255,255,.66); --mat-hairline:rgba(33,30,25,.10);
+  --nen-mo-panel:rgba(250,248,244,.7); --nen-mo-card:rgba(255,255,255,.66); --vien-mo:rgba(33,30,25,.10);
   --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22); --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
   --dots:rgba(33,30,25,.10); --hatch:repeating-linear-gradient(45deg,#f4f1eb 0 9px,#ffffff 9px 18px);
 }
@@ -146,8 +146,8 @@ a:hover{color:var(--accent-strong)}
                 <span style="font-size:11px;color:var(--danger)">Cổng này chỉ nhận mặt nạ</span>
               </div>
 
-              <div style="position:absolute;left:20px;top:40px;width:190px;border-radius:14px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
-                <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--mat-hairline)">
+              <div style="position:absolute;left:20px;top:40px;width:190px;border-radius:14px;background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
+                <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--vien-mo)">
                   <span style="width:7px;height:7px;border-radius:2px;background:var(--p-img)"></span>
                   <span style="font-size:11px;font-weight:600;color:var(--t2)">Ảnh từ mô hình 3D</span>
                 </div>
@@ -160,8 +160,8 @@ a:hover{color:var(--accent-strong)}
                 <span title="Ra: ảnh" style="position:absolute;right:-5px;top:55px;width:10px;height:10px;border-radius:50%;background:var(--p-img);border:2px solid var(--bg)"></span>
               </div>
 
-              <div style="position:absolute;left:250px;top:40px;width:180px;border-radius:14px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
-                <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--mat-hairline)">
+              <div style="position:absolute;left:250px;top:40px;width:180px;border-radius:14px;background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
+                <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--vien-mo)">
                   <span style="width:7px;height:7px;border-radius:2px;background:var(--p-img)"></span>
                   <span style="font-size:11px;font-weight:600;color:var(--t2)">Nét dựng hình</span>
                 </div>
@@ -174,12 +174,12 @@ a:hover{color:var(--accent-strong)}
                   <div style="display:flex;justify-content:space-between;margin-top:7px;font-size:10px;color:var(--t4)"><span>Độ dày nét</span><span style="font-family:ui-monospace,Menlo,monospace">1.4</span></div>
                 </div>
                 <span title="Vào: ảnh" style="position:absolute;left:-5px;top:55px;width:10px;height:10px;border-radius:50%;background:var(--p-img);border:2px solid var(--bg)"></span>
-                <span title="Vào: mặt nạ" style="position:absolute;left:-5px;top:95px;width:10px;height:10px;border-radius:50%;background:var(--mat-card);border:2px solid var(--p-mask)"></span>
+                <span title="Vào: mặt nạ" style="position:absolute;left:-5px;top:95px;width:10px;height:10px;border-radius:50%;background:var(--nen-mo-card);border:2px solid var(--p-mask)"></span>
                 <span title="Ra: ảnh" style="position:absolute;right:-5px;top:55px;width:10px;height:10px;border-radius:50%;background:var(--p-img);border:2px solid var(--bg)"></span>
               </div>
 
-              <div style="position:absolute;left:250px;top:250px;width:200px;border-radius:14px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
-                <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--mat-hairline)">
+              <div style="position:absolute;left:250px;top:250px;width:200px;border-radius:14px;background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
+                <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--vien-mo)">
                   <span style="width:7px;height:7px;border-radius:2px;background:var(--p-num)"></span>
                   <span style="font-size:11px;font-weight:600;color:var(--t2)">Phong cách</span>
                 </div>
@@ -199,8 +199,8 @@ a:hover{color:var(--accent-strong)}
                 <span title="Ra: tham số" style="position:absolute;right:-5px;top:75px;width:10px;height:10px;border-radius:50%;background:var(--p-num);border:2px solid var(--bg)"></span>
               </div>
 
-              <div style="position:absolute;left:20px;top:270px;width:190px;border-radius:14px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
-                <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--mat-hairline)">
+              <div style="position:absolute;left:20px;top:270px;width:190px;border-radius:14px;background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
+                <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--vien-mo)">
                   <span style="width:7px;height:7px;border-radius:2px;background:var(--p-mat)"></span>
                   <span style="font-size:11px;font-weight:600;color:var(--t2)">Vật liệu</span>
                 </div>
@@ -214,8 +214,8 @@ a:hover{color:var(--accent-strong)}
                 <span title="Ra: vật liệu" style="position:absolute;right:-5px;top:55px;width:10px;height:10px;border-radius:50%;background:var(--p-mat);border:2px solid var(--bg)"></span>
               </div>
 
-              <div style="position:absolute;left:20px;top:430px;width:190px;border-radius:14px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
-                <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--mat-hairline)">
+              <div style="position:absolute;left:20px;top:430px;width:190px;border-radius:14px;background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
+                <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--vien-mo)">
                   <span style="width:7px;height:7px;border-radius:2px;background:var(--p-num)"></span>
                   <span style="font-size:11px;font-weight:600;color:var(--t2)">Ánh sáng</span>
                 </div>
@@ -230,8 +230,8 @@ a:hover{color:var(--accent-strong)}
                 <span title="Ra: tham số" style="position:absolute;right:-5px;top:35px;width:10px;height:10px;border-radius:50%;background:var(--p-num);border:2px solid var(--bg)"></span>
               </div>
 
-              <div style="position:absolute;left:490px;top:110px;width:230px;border-radius:14px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--accent);box-shadow:var(--shadow-pop),0 0 0 4px var(--accent-soft)">
-                <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--mat-hairline)">
+              <div style="position:absolute;left:490px;top:110px;width:230px;border-radius:14px;background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--accent);box-shadow:var(--shadow-pop),0 0 0 4px var(--accent-soft)">
+                <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--vien-mo)">
                   <span style="width:7px;height:7px;border-radius:2px;background:var(--accent)"></span>
                   <span style="flex:1;font-size:11px;font-weight:600;color:var(--t1)">Dựng ảnh</span>
                   <span style="font-weight:600;font-size:9px;line-height:1.45;font-family:ui-monospace,Menlo,monospace;color:var(--t4)">8 cr</span>
@@ -239,7 +239,7 @@ a:hover{color:var(--accent-strong)}
                 <div style="padding:9px">
                   <div style="position:relative;height:150px;border-radius:10px;background:var(--hatch);border:1px solid var(--border);display:flex;align-items:center;justify-content:center">
                     <span style="font-size:8px;font-weight:700;letter-spacing:.06em;color:var(--t4);background:var(--card);padding:2px 6px;border-radius:4px">PLACEHOLDER</span>
-                    <button title="Phóng to — Space" style="position:absolute;right:7px;bottom:7px;width:26px;height:26px;border:1px solid var(--mat-hairline);border-radius:8px;background:var(--card);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">
+                    <button title="Phóng to — Space" style="position:absolute;right:7px;bottom:7px;width:26px;height:26px;border:1px solid var(--vien-mo);border-radius:8px;background:var(--card);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">
                       <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 2.5H2.5V6M10 13.5h3.5V10"></path></svg>
                     </button>
                   </div>
@@ -255,8 +255,8 @@ a:hover{color:var(--accent-strong)}
                 <span title="Ra: ảnh" style="position:absolute;right:-5px;top:75px;width:10px;height:10px;border-radius:50%;background:var(--p-img);border:2px solid var(--bg)"></span>
               </div>
 
-              <div style="position:absolute;left:760px;top:180px;width:170px;border-radius:14px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
-                <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--mat-hairline)">
+              <div style="position:absolute;left:760px;top:180px;width:170px;border-radius:14px;background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
+                <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--vien-mo)">
                   <span style="width:7px;height:7px;border-radius:2px;background:var(--p-img)"></span>
                   <span style="font-size:11px;font-weight:600;color:var(--t2)">Nâng nét</span>
                 </div>
@@ -345,8 +345,8 @@ a:hover{color:var(--accent-strong)}
           <path d="M620 210 C 660 210, 660 210, 700 210" style="fill:none;stroke:var(--p-img);stroke-width:2;stroke-dasharray:6 6;opacity:.5;animation:bn-dash 1s linear infinite"></path>
         </svg>
 
-        <div style="position:absolute;left:60px;top:96px;width:190px;border-radius:14px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
-          <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--mat-hairline)">
+        <div style="position:absolute;left:60px;top:96px;width:190px;border-radius:14px;background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
+          <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--vien-mo)">
             <span style="width:7px;height:7px;border-radius:2px;background:var(--p-img)"></span>
             <span style="font-size:11px;font-weight:600;color:var(--t2)">Nét dựng hình</span>
             <span style="margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--success)"><span style="width:5px;height:5px;border-radius:50%;background:var(--success)"></span>Xong</span>
@@ -361,8 +361,8 @@ a:hover{color:var(--accent-strong)}
 
         <div style="position:absolute;left:360px;top:60px;width:260px;padding:1.5px;border-radius:15.5px;box-shadow:var(--shadow-pop);overflow:hidden">
           <span style="position:absolute;left:50%;top:50%;width:420px;height:420px;margin:-210px 0 0 -210px;background:conic-gradient(from 0deg,transparent 0deg,var(--accent) 60deg,#ffffff 84deg,var(--accent) 108deg,transparent 170deg);animation:bn-spin 1.9s linear infinite"></span>
-          <div style="position:relative;border-radius:14px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px)">
-            <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--mat-hairline)">
+          <div style="position:relative;border-radius:14px;background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px)">
+            <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--vien-mo)">
               <span style="width:7px;height:7px;border-radius:2px;background:var(--accent)"></span>
               <span style="flex:1;font-size:11px;font-weight:600;color:var(--t1)">Dựng ảnh</span>
               <span style="font-weight:600;font-size:10px;line-height:1.45;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--accent)">64%</span>
@@ -374,7 +374,7 @@ a:hover{color:var(--accent-strong)}
               <div style="height:4px;border-radius:2px;background:var(--field);margin-top:9px;overflow:hidden"><span style="display:block;width:64%;height:100%;background:var(--accent)"></span></div>
               <div style="display:flex;align-items:center;gap:8px;margin-top:9px">
                 <span style="flex:1;font-size:10px;color:var(--t4)">Ảnh 3 trên 4 · còn 42 giây</span>
-                <button style="height:26px;padding:0 11px;border:1px solid var(--mat-hairline);border-radius:8px;background:var(--card);color:var(--t2);font-weight:600;font-size:10px;line-height:1.45;font-family:inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">Huỷ</button>
+                <button style="height:26px;padding:0 11px;border:1px solid var(--vien-mo);border-radius:8px;background:var(--card);color:var(--t2);font-weight:600;font-size:10px;line-height:1.45;font-family:inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">Huỷ</button>
               </div>
             </div>
           </div>
@@ -382,8 +382,8 @@ a:hover{color:var(--accent-strong)}
           <span style="position:absolute;right:-5px;top:75px;width:10px;height:10px;border-radius:50%;background:var(--p-img);border:2px solid var(--bg);z-index:1"></span>
         </div>
 
-        <div style="position:absolute;left:700px;top:156px;width:170px;border-radius:14px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop);opacity:.6">
-          <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--mat-hairline)">
+        <div style="position:absolute;left:700px;top:156px;width:170px;border-radius:14px;background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop);opacity:.6">
+          <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--vien-mo)">
             <span style="width:7px;height:7px;border-radius:2px;background:var(--p-img)"></span>
             <span style="flex:1;font-size:11px;font-weight:600;color:var(--t2)">Nâng nét</span>
             <span style="font-size:10px;color:var(--t4)">Chờ</span>
@@ -406,8 +406,8 @@ a:hover{color:var(--accent-strong)}
           <circle cx="470" cy="196" r="5" style="fill:var(--p-img)"></circle>
         </svg>
 
-        <div style="position:absolute;left:60px;top:96px;width:190px;border-radius:14px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
-          <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--mat-hairline)">
+        <div style="position:absolute;left:60px;top:96px;width:190px;border-radius:14px;background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
+          <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--vien-mo)">
             <span style="width:7px;height:7px;border-radius:2px;background:var(--p-img)"></span>
             <span style="font-size:11px;font-weight:600;color:var(--t2)">Ảnh từ mô hình 3D</span>
           </div>
@@ -419,8 +419,8 @@ a:hover{color:var(--accent-strong)}
           <span style="position:absolute;right:-6px;top:54px;width:12px;height:12px;border-radius:50%;background:var(--p-img);border:2px solid var(--bg);box-shadow:0 0 0 4px var(--accent-soft)"></span>
         </div>
 
-        <div style="position:absolute;left:490px;top:120px;width:210px;border-radius:14px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
-          <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--mat-hairline)">
+        <div style="position:absolute;left:490px;top:120px;width:210px;border-radius:14px;background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
+          <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--vien-mo)">
             <span style="width:7px;height:7px;border-radius:2px;background:var(--accent)"></span>
             <span style="flex:1;font-size:11px;font-weight:600;color:var(--t1)">Dựng ảnh</span>
           </div>
@@ -440,8 +440,8 @@ a:hover{color:var(--accent-strong)}
           <span style="position:absolute;left:-5px;top:120px;width:10px;height:10px;border-radius:50%;background:var(--p-mat);border:2px solid var(--bg);opacity:.3"></span>
         </div>
 
-        <div style="position:absolute;left:740px;top:150px;width:180px;border-radius:14px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
-          <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--mat-hairline)">
+        <div style="position:absolute;left:740px;top:150px;width:180px;border-radius:14px;background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
+          <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--vien-mo)">
             <span style="width:7px;height:7px;border-radius:2px;background:var(--p-mat)"></span>
             <span style="flex:1;font-size:11px;font-weight:600;color:var(--t2)">Vật liệu</span>
           </div>
@@ -449,7 +449,7 @@ a:hover{color:var(--accent-strong)}
           <span style="position:absolute;left:-5px;top:55px;width:10px;height:10px;border-radius:50%;background:var(--p-mat);border:2px solid var(--bg);opacity:.28"></span>
         </div>
 
-        <div style="position:absolute;left:470px;top:210px;display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:12px;background:var(--card);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-node);font-size:11px;color:var(--t2)">
+        <div style="position:absolute;left:470px;top:210px;display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:12px;background:var(--card);border:1px solid var(--vien-mo);box-shadow:var(--shadow-node);font-size:11px;color:var(--t2)">
           <span style="width:6px;height:6px;border-radius:50%;background:var(--p-img)"></span>
           Thả vào cổng Ảnh nét
         </div>
@@ -464,8 +464,8 @@ a:hover{color:var(--accent-strong)}
       </div>
       <div style="position:relative;height:480px;border:1px solid var(--border);border-radius:20px;overflow:hidden;background:var(--bg);background-image:radial-gradient(circle,var(--dots) 0 1px,transparent 1.4px);background-size:22px 22px">
 
-        <div style="position:absolute;left:60px;top:70px;width:190px;border-radius:14px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop);opacity:.75">
-          <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--mat-hairline)">
+        <div style="position:absolute;left:60px;top:70px;width:190px;border-radius:14px;background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop);opacity:.75">
+          <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--vien-mo)">
             <span style="width:7px;height:7px;border-radius:2px;background:var(--p-img)"></span>
             <span style="font-size:11px;font-weight:600;color:var(--t2)">Ảnh từ mô hình 3D</span>
           </div>
@@ -474,7 +474,7 @@ a:hover{color:var(--accent-strong)}
           </div>
         </div>
 
-        <div style="position:absolute;left:390px;top:44px;width:296px;border-radius:20px;padding:6px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(40px);-webkit-backdrop-filter:saturate(180%) blur(40px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
+        <div style="position:absolute;left:390px;top:44px;width:296px;border-radius:20px;padding:6px;background:var(--nen-mo-panel);backdrop-filter:saturate(180%) blur(40px);-webkit-backdrop-filter:saturate(180%) blur(40px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
           <div style="display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;border-radius:14px;background:var(--field);margin-bottom:6px">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5 14 14" stroke-linecap="round"></path></svg>
             <span style="flex:1;font-size:12px;color:var(--t4)">Tìm nút để thêm</span>
@@ -527,7 +527,7 @@ a:hover{color:var(--accent-strong)}
             <span style="font-weight:600;font-size:10px;line-height:1.45;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">8 cr</span>
           </div>
 
-          <div style="border-top:1px solid var(--mat-hairline);margin-top:6px;padding:7px 10px 3px;display:flex;gap:14px;font-size:10px;color:var(--t5)">
+          <div style="border-top:1px solid var(--vien-mo);margin-top:6px;padding:7px 10px 3px;display:flex;gap:14px;font-size:10px;color:var(--t5)">
             <span>Enter để thêm</span><span>Esc để đóng</span>
           </div>
         </div>

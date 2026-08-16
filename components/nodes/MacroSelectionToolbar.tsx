@@ -27,7 +27,7 @@ export function MacroSelectionToolbar() {
         style={{ bottom: 'calc(var(--tap, 44px) + 24px)' }}
       >
         {/* `gap-px` = `gap:1px` của mock (trước là gap-1 = 4px, 3 nút rời rạc hơn mock). */}
-        <div className="mat-panel pointer-events-auto flex items-center gap-px rounded-[14px] border border-[var(--nen-mo-hairline)] p-1 shadow-[var(--shadow-pop)]">
+        <div className="nen-mo-panel pointer-events-auto flex items-center gap-px rounded-[14px] border border-[var(--vien-mo)] p-1 shadow-[var(--shadow-pop)]">
           <span className="flex h-8 items-center px-3 text-[11px] leading-[1.5] text-[var(--t3)]">
             {tr(`Đã chọn ${selectedIds.length} nút`, `${selectedIds.length} nodes selected`)}
           </span>

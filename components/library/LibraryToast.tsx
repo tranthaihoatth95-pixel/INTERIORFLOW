@@ -50,7 +50,7 @@ export function LibraryToastHost() {
           style={{
             background: 'var(--nen-mo-panel)',
             color: 'var(--t1)',
-            border: '1px solid var(--nen-mo-hairline)',
+            border: '1px solid var(--vien-mo)',
           }}
         >
           <Check size={14} style={{ color: '#3fb984' }} />

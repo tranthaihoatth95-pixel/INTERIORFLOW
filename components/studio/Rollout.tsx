@@ -312,7 +312,7 @@ export function RolloutGroup({ kindKey, children }: GroupProps) {
                   e.preventDefault();
                   setMenu({ x: e.clientX, y: e.clientY, id: it.id });
                 }}
-                className="group flex h-[var(--row)] w-full cursor-pointer select-none items-center gap-1.5 border-b border-[var(--nen-mo-hairline)] px-2 transition-colors duration-[120ms] hover:bg-[var(--hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent-ring)]"
+                className="group flex h-[var(--row)] w-full cursor-pointer select-none items-center gap-1.5 border-b border-[var(--vien-mo)] px-2 transition-colors duration-[120ms] hover:bg-[var(--hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent-ring)]"
               >
                 <ChevronDown
                   size={12}
@@ -363,7 +363,7 @@ export function RolloutGroup({ kindKey, children }: GroupProps) {
         typeof document !== 'undefined' &&
         createPortal(
           <div
-            className="mat-panel pointer-events-none fixed left-auto z-[90] flex h-[var(--row)] w-48 items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2 opacity-80 shadow-[var(--shadow-pop)]"
+            className="nen-mo-panel pointer-events-none fixed left-auto z-[90] flex h-[var(--row)] w-48 items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2 opacity-80 shadow-[var(--shadow-pop)]"
             style={{ top: drag.ghostY - 14, left: (listRef.current?.getBoundingClientRect().left ?? 0) + 8 }}
           >
             <GripVertical size={12} className="text-[var(--t4)]" />
@@ -380,7 +380,7 @@ export function RolloutGroup({ kindKey, children }: GroupProps) {
         createPortal(
           <div
             ref={menuRef}
-            className="mat-panel fixed z-[90] w-44 rounded-[10px] border border-[var(--border)] p-1 shadow-[var(--shadow-pop)]"
+            className="nen-mo-panel fixed z-[90] w-44 rounded-[10px] border border-[var(--border)] p-1 shadow-[var(--shadow-pop)]"
             style={{ top: menu.y, left: menu.x }}
           >
             {(

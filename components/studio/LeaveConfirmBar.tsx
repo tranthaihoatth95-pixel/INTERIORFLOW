@@ -34,7 +34,7 @@ export function LeaveConfirmBar() {
               transition={{ duration: 0.18, ease: easeApple }}
               onKeyDown={(e) => e.key === 'Escape' && cancel()}
               style={{ position: 'fixed', top: 56, left: '50%', transform: 'translateX(-50%)' }}
-              className="mat-panel z-[95] max-w-[420px] rounded-[14px] border border-[var(--border)] p-3 shadow-xl"
+              className="nen-mo-panel z-[95] max-w-[420px] rounded-[14px] border border-[var(--border)] p-3 shadow-xl"
             >
               <div className="mb-2.5 text-[12.5px] text-[var(--t1)]">
                 {tr(

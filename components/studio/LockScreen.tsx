@@ -14,7 +14,7 @@
  * `useLockScreen` cũng được đọc để bật/tắt phím ⌃⌘Q + hẹn giờ tự khoá — xem AppChrome.tsx).
  *
  * PORTAL RA document.body (bắt buộc, đúng luật K4 `docs/00-CHOT.md`: "panel kính nổi PHẢI
- * portal, không lồng trong chrome kính") — `<header className="mat-header">` có
+ * portal, không lồng trong chrome kính") — `<header className="nen-mo-header">` có
  * `backdrop-filter` (app/globals.css), mà `backdrop-filter`/`filter` trên tổ tiên biến nó
  * thành containing block MỚI cho mọi con `position:fixed` (đặc tả CSS) — lồng trực tiếp trong
  * header sẽ bị bó khung theo header thay vì phủ hết viewport (bắt được lúc verify browser thật:

@@ -42,8 +42,8 @@
   --border:#2a2a31; --border-strong:#3d3d45;
   --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
   --dots:#26262d;
-  --mat-header:rgba(20,20,23,.72); --mat-panel:rgba(20,20,23,.68);
-  --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --nen-mo-header:rgba(20,20,23,.72); --nen-mo-panel:rgba(20,20,23,.68);
+  --nen-mo-card:rgba(26,26,30,.82); --vien-mo:rgba(255,255,255,.06);
   --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
   --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
   --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
@@ -55,8 +55,8 @@
   --border:#e3ded4; --border-strong:#cbc4b6;
   --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
   --dots:#ddd8ce;
-  --mat-header:rgba(250,248,244,.72); --mat-panel:rgba(250,248,244,.7);
-  --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --nen-mo-header:rgba(250,248,244,.72); --nen-mo-panel:rgba(250,248,244,.7);
+  --nen-mo-card:rgba(255,255,255,.82); --vien-mo:rgba(0,0,0,.05);
   --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
   --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
   --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
@@ -80,8 +80,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* Header mock */
 .top{height:42px;display:flex;align-items:center;gap:10px;padding:0 14px;
-  background:var(--mat-header);backdrop-filter:saturate(180%) blur(var(--blur));
-  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));border-bottom:1px solid var(--mat-hairline);
+  background:var(--nen-mo-header);backdrop-filter:saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));border-bottom:1px solid var(--vien-mo);
   position:sticky;top:0;z-index:50}
 .logo{width:24px;height:24px;border-radius:var(--radius-sm);background:var(--t1);color:var(--bg);
   display:flex;align-items:center;justify-content:center;font-size:var(--fs-2xs);font-weight:800}
@@ -122,7 +122,7 @@ kbd{background:var(--field);border:1px solid var(--border);border-radius:6px;pad
 .glass{background:color-mix(in srgb, var(--panel) 55%, transparent);
   backdrop-filter:saturate(160%) blur(var(--blur));
   -webkit-backdrop-filter:saturate(160%) blur(var(--blur));
-  border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop);
+  border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop);
   transition:transform var(--dur-fast) var(--ease-apple),background-color var(--dur-base) var(--ease-apple)}
 
 /* ══ CẤP ① — pill kết quả tại chỗ ══ */

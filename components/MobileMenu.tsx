@@ -92,7 +92,7 @@ function Sheet({ close, active }: { close: () => void; active: AppChromeActive }
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={springSheet}
-        className="mat-panel absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-[22px] border-t border-[var(--border)] shadow-pop"
+        className="nen-mo-panel absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-[22px] border-t border-[var(--border)] shadow-pop"
         style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
       >
         {/* grab handle */}

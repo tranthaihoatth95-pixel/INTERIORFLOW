@@ -35,8 +35,8 @@
   --border:#2a2a31; --border-strong:#3d3d45;
   --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
   --dots:#26262d;
-  --mat-header:rgba(20,20,23,.72); --mat-panel:rgba(20,20,23,.68);
-  --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --nen-mo-header:rgba(20,20,23,.72); --nen-mo-panel:rgba(20,20,23,.68);
+  --nen-mo-card:rgba(26,26,30,.82); --vien-mo:rgba(255,255,255,.06);
   --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
   --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
   --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
@@ -47,8 +47,8 @@
   --border:#e3ded4; --border-strong:#cbc4b6;
   --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
   --dots:#ddd8ce;
-  --mat-header:rgba(250,248,244,.72); --mat-panel:rgba(250,248,244,.7);
-  --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --nen-mo-header:rgba(250,248,244,.72); --nen-mo-panel:rgba(250,248,244,.7);
+  --nen-mo-card:rgba(255,255,255,.82); --vien-mo:rgba(0,0,0,.05);
   --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
   --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
   --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
@@ -75,8 +75,8 @@ button{font:inherit;color:inherit}
 
 /* ① Header 42 — kênh + avatar dãy + toggle AI */
 .top{height:42px;flex:none;display:flex;align-items:center;gap:10px;padding:0 10px;
-  background:var(--mat-header);backdrop-filter:saturate(180%) blur(var(--blur));
-  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));border-bottom:1px solid var(--mat-hairline)}
+  background:var(--nen-mo-header);backdrop-filter:saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));border-bottom:1px solid var(--vien-mo)}
 .logo{width:24px;height:24px;border-radius:var(--radius-sm);background:var(--t1);color:var(--bg);
   display:flex;align-items:center;justify-content:center;font-size:var(--fs-2xs);font-weight:800;border:0;cursor:pointer}
 .doc{display:flex;align-items:center;gap:5px;padding:5px 9px;border:0;background:transparent;
@@ -123,7 +123,7 @@ button{font:inherit;color:inherit}
 .src .m{min-width:0}
 .src .nm{display:block;color:var(--t1);font-size:var(--fs-xs);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .src .ty{display:block;color:var(--t4);font-size:var(--fs-2xs);margin-top:1px}
-.sideft{flex:none;border-top:1px solid var(--mat-hairline);padding:8px;display:flex;flex-direction:column;gap:6px}
+.sideft{flex:none;border-top:1px solid var(--vien-mo);padding:8px;display:flex;flex-direction:column;gap:6px}
 .sideft button{height:32px;border-radius:9px;font-size:var(--fs-xs);display:flex;align-items:center;
   justify-content:center;gap:6px;cursor:pointer;border:0}
 .add{background:var(--accent-soft);color:var(--accent);font-weight:var(--fw-semi)}
@@ -133,8 +133,8 @@ button{font:inherit;color:inherit}
 .stage{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
 /* dải ĐANG HỌP thu nhỏ — không phải màn video call */
 .meet{flex:none;display:flex;align-items:center;gap:10px;height:38px;margin:8px 14px 0;padding:0 12px;
-  background:var(--mat-card);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
-  border:1px solid var(--mat-hairline);border-radius:var(--radius-md);box-shadow:var(--shadow-node);
+  background:var(--nen-mo-card);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+  border:1px solid var(--vien-mo);border-radius:var(--radius-md);box-shadow:var(--shadow-node);
   font-size:var(--fs-2xs);color:var(--t2)}
 .rec{width:8px;height:8px;border-radius:50%;background:var(--danger);flex:none;animation:blink 1.6s infinite}
 @keyframes blink{0%,100%{transform:scale(1)}50%{transform:scale(.6)}}
@@ -163,8 +163,8 @@ button{font:inherit;color:inherit}
 .cite:hover{background:var(--hover);color:var(--t1)}
 .cite .i{width:10px;height:10px}
 /* card file DWG — ref #10: kính · badge loại · cung tiến độ phát sáng nhẹ */
-.fcard{width:330px;background:var(--mat-card);backdrop-filter:blur(var(--blur));
-  -webkit-backdrop-filter:blur(var(--blur));border:1px solid var(--mat-hairline);border-radius:var(--radius-md);
+.fcard{width:330px;background:var(--nen-mo-card);backdrop-filter:blur(var(--blur));
+  -webkit-backdrop-filter:blur(var(--blur));border:1px solid var(--vien-mo);border-radius:var(--radius-md);
   box-shadow:var(--shadow-node);padding:10px 12px;display:flex;align-items:center;gap:11px}
 .fbad{width:38px;height:38px;flex:none;border-radius:var(--radius-sm);background:var(--field);
   border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:var(--t3)}
@@ -187,8 +187,8 @@ button{font:inherit;color:inherit}
   font-size:var(--fs-2xs);font-weight:var(--fw-semi);cursor:pointer;flex:none}
 /* thanh nhập — text + voice capsule (ref #4) + gọi họp */
 .inbar{flex:none;display:flex;align-items:center;gap:8px;margin:6px 14px 10px;padding:6px 8px;
-  background:var(--mat-panel);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
-  border:1px solid var(--mat-hairline);border-radius:var(--radius-lg);box-shadow:var(--shadow-node)}
+  background:var(--nen-mo-panel);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+  border:1px solid var(--vien-mo);border-radius:var(--radius-lg);box-shadow:var(--shadow-node)}
 .inbar input{flex:1;height:30px;border:0;background:transparent;color:var(--t1);font:inherit;outline:none;padding:0 6px}
 .inbar input::placeholder{color:var(--t4)}
 .ib{width:30px;height:30px;flex:none;border:0;border-radius:10px;background:transparent;color:var(--t3);
@@ -205,11 +205,11 @@ button{font:inherit;color:inherit}
 
 /* ④ Cột PHẢI 236 — Chưng cất (AI gom · người duyệt) */
 .insp{width:236px;flex:none;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column}
-.ihead{height:34px;flex:none;display:flex;align-items:center;gap:7px;padding:0 12px;border-bottom:1px solid var(--mat-hairline)}
+.ihead{height:34px;flex:none;display:flex;align-items:center;gap:7px;padding:0 12px;border-bottom:1px solid var(--vien-mo)}
 .ihead h2{margin:0;font-size:var(--fs-sm);font-weight:var(--fw-semi)}
 .ihead .gl{color:var(--accent)}
 .ibody{flex:1;overflow-y:auto}
-.grp2{padding:11px 12px;border-bottom:1px solid var(--mat-hairline)}
+.grp2{padding:11px 12px;border-bottom:1px solid var(--vien-mo)}
 .grp2 h4{margin:0 0 8px;font-size:var(--fs-2xs);font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t4)}
 .pt{display:flex;gap:7px;padding:3px 0;font-size:var(--fs-xs);color:var(--t2);line-height:1.5}
 .pt::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent);flex:none;margin-top:6px}

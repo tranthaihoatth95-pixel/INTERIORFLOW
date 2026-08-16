@@ -91,7 +91,7 @@ export function AppLogoMenu({ open, anchorRect, onDismiss, menuRef, stage }: Pro
               exit={{ opacity: 0, y: -4, scale: 0.98 }}
               transition={{ duration: 0.18, ease: easeApple }}
               style={{ position: 'fixed', ...anchorRect }}
-              className="mat-panel z-[80] w-52 rounded-[14px] border border-[var(--border)] p-1.5 shadow-xl"
+              className="nen-mo-panel z-[80] w-52 rounded-[14px] border border-[var(--border)] p-1.5 shadow-xl"
             >
               <div ref={menuRef} style={{ display: 'contents' }}>
                 <button

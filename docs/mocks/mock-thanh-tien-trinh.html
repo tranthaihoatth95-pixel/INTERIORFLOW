@@ -28,7 +28,7 @@
   --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
   --border:#2a2a31; --border-strong:#3d3d45;
   --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78;
-  --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --nen-mo-card:rgba(26,26,30,.82); --vien-mo:rgba(255,255,255,.06);
   --shadow:0 8px 30px -8px rgba(0,0,0,.65);
   --accent:#7c3aed; --accent-mem:rgba(124,58,237,.20); --accent-vien:rgba(124,58,237,.55);
   --accent-warm:#c79a63;
@@ -40,7 +40,7 @@
   --bg:#f2f2f7; --panel:#ffffff; --card:#ffffff; --field:#e5e5ea; --hover:#e5e5ea;
   --border:#d1d1d6; --border-strong:#c7c7cc;
   --t1:#1c1c1e; --t2:#3c3c43; --t3:#6c6c70; --t4:#8e8e93;
-  --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --nen-mo-card:rgba(255,255,255,.82); --vien-mo:rgba(0,0,0,.05);
   --shadow:0 10px 30px -10px rgba(28,28,30,.16);
   --accent:#6d28d9; --accent-mem:rgba(109,40,217,.14); --accent-vien:rgba(109,40,217,.5);
   --accent-warm:#8a6a44;
@@ -155,9 +155,9 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:1em;color:#c4b5fd}  /* 1
 .k b{font-size:var(--fs-xs);font-weight:var(--fw-semi);color:var(--t1);line-height:1.5}
 .k em{font-style:normal;font-size:var(--fs-2xs);color:var(--t2);line-height:1.6;display:block;margin-top:3px}
 /* ① kính nhận sáng — CHẤT LIỆU. Luôn có, KHÔNG chuyển động. */
-.k1{background:var(--mat-card);backdrop-filter:saturate(180%) blur(var(--blur));
+.k1{background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(var(--blur));
   -webkit-backdrop-filter:saturate(180%) blur(var(--blur));
-  border:1px solid var(--mat-hairline);box-shadow:var(--shadow);overflow:hidden}
+  border:1px solid var(--vien-mo);box-shadow:var(--shadow);overflow:hidden}
 .k1::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(255,255,255,.55) 22%,rgba(255,255,255,.7) 50%,rgba(255,255,255,.55) 78%,transparent)}
 .p[data-theme="light"] .k1::before{background:linear-gradient(90deg,transparent,rgba(255,255,255,.95) 30%,#fff 50%,rgba(255,255,255,.95) 70%,transparent)}

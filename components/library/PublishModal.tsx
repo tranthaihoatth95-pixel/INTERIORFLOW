@@ -59,7 +59,7 @@ export function PublishModal({ open, defaultStage, onClose, onSubmit }: Props) {
           background: 'var(--nen-mo-panel)',
           backdropFilter: `blur(var(--blur))`,
           WebkitBackdropFilter: `blur(var(--blur))`,
-          border: '1px solid var(--nen-mo-hairline)',
+          border: '1px solid var(--vien-mo)',
           boxShadow: 'var(--shadow-sheet)',
         }}
       >

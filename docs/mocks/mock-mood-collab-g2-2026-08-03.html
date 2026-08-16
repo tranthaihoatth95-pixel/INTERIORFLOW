@@ -34,9 +34,9 @@
     --border:#2a2a31; --border-strong:#3d3d45;
     --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
     --dots:#26262d; --minimap-mask:rgba(12,12,14,.7);
-    --mat-header:rgba(20,20,23,.72); --mat-panel:rgba(20,20,23,.68);
-    --mat-card:rgba(26,26,30,.82); --mat-overlay:rgba(6,6,8,.56);
-    --mat-hairline:rgba(255,255,255,.06);
+    --nen-mo-header:rgba(20,20,23,.72); --nen-mo-panel:rgba(20,20,23,.68);
+    --nen-mo-card:rgba(26,26,30,.82); --nen-mo-overlay:rgba(6,6,8,.56);
+    --vien-mo:rgba(255,255,255,.06);
     --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
     --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
     --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
@@ -50,9 +50,9 @@
     --border:#e3ded4; --border-strong:#cbc4b6;
     --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
     --dots:#ddd8ce; --minimap-mask:rgba(242,239,233,.72);
-    --mat-header:rgba(250,248,244,.72); --mat-panel:rgba(250,248,244,.7);
-    --mat-card:rgba(255,255,255,.82); --mat-overlay:rgba(60,55,48,.28);
-    --mat-hairline:rgba(0,0,0,.05);
+    --nen-mo-header:rgba(250,248,244,.72); --nen-mo-panel:rgba(250,248,244,.7);
+    --nen-mo-card:rgba(255,255,255,.82); --nen-mo-overlay:rgba(60,55,48,.28);
+    --vien-mo:rgba(0,0,0,.05);
     --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
     --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
     --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
@@ -92,8 +92,8 @@
 
   /* ① Header 42 */
   .hd{height:42px;display:flex;align-items:center;gap:10px;padding:0 10px;
-    background:var(--mat-header);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
-    border-bottom:1px solid var(--mat-hairline);position:relative;z-index:20}
+    background:var(--nen-mo-header);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+    border-bottom:1px solid var(--vien-mo);position:relative;z-index:20}
   .logo{width:26px;height:26px;border-radius:8px;border:1.5px solid var(--t1);display:flex;align-items:center;
     justify-content:center;font-size:12px;font-weight:700;cursor:pointer}
   .docname{display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--t2);cursor:pointer;
@@ -127,9 +127,9 @@
   .me{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#57b58a,#2e7a58);border:2px solid var(--panel)}
 
   /* Share popover — panel kính nổi PHẢI portal (TICKET-FIX-KINH-HEADER K4) */
-  .share-pop{position:absolute;top:46px;right:44px;width:264px;background:var(--mat-panel);
+  .share-pop{position:absolute;top:46px;right:44px;width:264px;background:var(--nen-mo-panel);
     backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
-    border:1px solid var(--mat-hairline);border-radius:var(--radius-md);box-shadow:var(--shadow-pop);
+    border:1px solid var(--vien-mo);border-radius:var(--radius-md);box-shadow:var(--shadow-pop);
     padding:10px;z-index:30}
   .share-pop .ti{font-size:12.5px;font-weight:600;margin-bottom:8px}
   .inv-row{display:flex;gap:6px;margin-bottom:8px}
@@ -195,13 +195,13 @@
 
   /* Toolbar bút tablet (trái) — nút 34, panel kính bo 14/9 */
   .pen{position:absolute;left:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px;
-    background:var(--mat-panel);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
-    border:1px solid var(--mat-hairline);border-radius:var(--radius-md);padding:5px;box-shadow:var(--shadow-pop);z-index:7}
+    background:var(--nen-mo-panel);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+    border:1px solid var(--vien-mo);border-radius:var(--radius-md);padding:5px;box-shadow:var(--shadow-pop);z-index:7}
   .pt{width:34px;height:34px;border-radius:9px;border:0;background:transparent;color:var(--t2);display:flex;
     align-items:center;justify-content:center;cursor:pointer;transition:background .12s,color .12s}
   .pt:hover{background:var(--hover)}
   .pt.on{background:var(--accent-soft);color:var(--accent)}
-  .pen .sep{height:1px;background:var(--mat-hairline);margin:1px 4px}
+  .pen .sep{height:1px;background:var(--vien-mo);margin:1px 4px}
 
   /* Frame theo PHÒNG */
   .frame{position:absolute;border:1.5px solid var(--border-strong);border-radius:var(--radius-sm)}
@@ -217,8 +217,8 @@
   .imgc .im{height:74px}
   .imgc .cap{font-size:9.5px;color:var(--t3);padding:4px 7px}
   .react{position:absolute;right:5px;top:5px;display:flex;gap:3px;z-index:4}
-  .rc{display:flex;align-items:center;gap:3px;background:var(--mat-card);backdrop-filter:blur(8px);
-    border:1px solid var(--mat-hairline);border-radius:10px;padding:1px 6px;font-size:9.5px;color:var(--t2);
+  .rc{display:flex;align-items:center;gap:3px;background:var(--nen-mo-card);backdrop-filter:blur(8px);
+    border:1px solid var(--vien-mo);border-radius:10px;padding:1px 6px;font-size:9.5px;color:var(--t2);
     cursor:pointer;transition:transform 150ms var(--ease-apple)}
   .rc:hover{transform:scale(1.04)}
   .rc .lucide{width:10px;height:10px}
@@ -247,8 +247,8 @@
   .cpin{width:24px;height:24px;border-radius:50% 50% 50% 4px;background:var(--c-comment);color:#fff;
     display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-node);cursor:pointer}
   .cpin .lucide{width:12px;height:12px}
-  .thr{position:absolute;left:30px;top:-6px;width:172px;background:var(--mat-card);backdrop-filter:blur(var(--blur));
-    -webkit-backdrop-filter:blur(var(--blur));border:1px solid var(--mat-hairline);border-radius:var(--radius-sm);
+  .thr{position:absolute;left:30px;top:-6px;width:172px;background:var(--nen-mo-card);backdrop-filter:blur(var(--blur));
+    -webkit-backdrop-filter:blur(var(--blur));border:1px solid var(--vien-mo);border-radius:var(--radius-sm);
     padding:8px 9px;box-shadow:var(--shadow-pop);font-size:10.5px}
   .thr .who{font-weight:700;font-size:10px;color:var(--t2);display:flex;align-items:center;gap:5px}
   .thr .who .res{margin-left:auto;width:18px;height:18px;border-radius:50%;background:var(--field);color:var(--t3);
@@ -290,14 +290,14 @@
 
   /* ⑤ Toolbelt — capsule 44/r22 · nút 34/r17 · switch 22/r11 · núm 18 (bo đồng tâm) */
   .belt{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);height:44px;border-radius:22px;
-    display:flex;align-items:center;gap:2px;padding:0 5px;background:var(--mat-panel);
+    display:flex;align-items:center;gap:2px;padding:0 5px;background:var(--nen-mo-panel);
     backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
-    border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop);z-index:9}
+    border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop);z-index:9}
   .bt{width:34px;height:34px;border-radius:17px;border:0;background:transparent;color:var(--t2);display:flex;
     align-items:center;justify-content:center;cursor:pointer;transition:background .12s,color .12s}
   .bt:hover{background:var(--hover)}
   .bt.on{background:var(--accent-soft);color:var(--accent)}
-  .belt .sep{width:1px;height:20px;background:var(--mat-hairline);margin:0 3px}
+  .belt .sep{width:1px;height:20px;background:var(--vien-mo);margin:0 3px}
   .zoom{font-size:11.5px;color:var(--t2);min-width:44px;text-align:center;font-variant-numeric:tabular-nums}
   .m3d{display:flex;align-items:center;gap:7px;padding:0 10px 0 8px;font-size:12px;color:var(--t2);cursor:pointer}
   .m3d .track{width:34px;height:22px;border-radius:11px;background:var(--field);border:1px solid var(--border);

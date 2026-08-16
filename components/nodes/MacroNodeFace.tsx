@@ -151,12 +151,12 @@ export function MacroNodeFace({ group }: { group: NodeGroup }) {
   return (
     <div
       className={cn(
-        'nodrag mat-card absolute w-[300px] overflow-hidden rounded-[20px] border-[1.5px] border-[var(--accent)] shadow-[var(--shadow-pop),0_0_0_5px_var(--accent-soft)]',
+        'nodrag nen-mo-card absolute w-[300px] overflow-hidden rounded-[20px] border-[1.5px] border-[var(--accent)] shadow-[var(--shadow-pop),0_0_0_5px_var(--accent-soft)]',
         busy && 'nt-macro-halo glass-gradient-run',
       )}
       style={{ transform: `translate(${cx - 150}px, ${cy - 60}px)`, zIndex: 5, pointerEvents: 'auto' }}
     >
-      <div className="flex h-11 items-center gap-2.5 border-b border-[var(--nen-mo-hairline)] px-3">
+      <div className="flex h-11 items-center gap-2.5 border-b border-[var(--vien-mo)] px-3">
         <span className="flex h-7 w-7 flex-none items-center justify-center rounded-[10px] bg-[var(--accent-soft)]">
           <Icon size={16} className="text-[var(--accent)]" />
         </span>
@@ -170,7 +170,7 @@ export function MacroNodeFace({ group }: { group: NodeGroup }) {
           type="button"
           onClick={() => toggleGroupCollapse(group.id)}
           title={tr('Mở ra xem bên trong', 'Open to view inside')}
-          className="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-[10px] border border-[var(--nen-mo-hairline)] bg-[var(--card)] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+          className="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-[10px] border border-[var(--vien-mo)] bg-[var(--card)] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
         >
           <Maximize2 size={13} />
         </button>

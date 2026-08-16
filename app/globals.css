@@ -188,17 +188,32 @@
   --minimap-mask: rgba(12, 12, 14, 0.7);
 
   /* NỀN MỜ — vật liệu trong suốt (vibrancy) cho header / panel / modal.
-     16/08: đổi tên từ tiền tố cũ `mat-` (Hoà duyệt §V5 dòng #3, `docs/nc/NC-TU-DA-NGHIA-2026-08-16.md`).
-     Lý do: tên cũ `mat-card` chỉ cách `matId` ĐÚNG MỘT DẤU GẠCH, mà `matId` là mã vật liệu nội thất
-     nối thẳng tới giá + nhà cung cấp (`lib/cad/materials.ts:58` khai `matId = ProductSpec.sku`).
-     Một bên là MÀU, một bên là TIỀN — cùng tiền tố là mời người sau đọc nhầm. Giá trị giữ nguyên,
-     chỉ đổi tên. ⚠️ Tên CLASS `.mat-header/.mat-panel/.mat-card/.mat-overlay` (59 nơi dùng) CHƯA
-     đổi — ngoài phạm vi dòng #3, chờ phiếu riêng. */
+     16/08: đổi tên từ tiền tố cũ (chữ `mat`, viết tắt *material*) — Hoà duyệt §V5 dòng #3,
+     `docs/nc/NC-TU-DA-NGHIA-2026-08-16.md`. Lý do: tên cũ của biến card chỉ cách `matId` ĐÚNG MỘT
+     DẤU GẠCH, mà `matId` là mã vật liệu nội thất nối thẳng tới giá + nhà cung cấp
+     (`lib/cad/materials.ts:58` khai `matId = ProductSpec.sku`). Một bên là MÀU, một bên là TIỀN —
+     cùng tiền tố là mời người sau đọc nhầm. Giá trị giữ nguyên, chỉ đổi tên.
+     16/08 lượt sau (P-L): tên CLASS đi nốt cùng lối — `.nen-mo-header/.nen-mo-panel/.nen-mo-card/
+     .nen-mo-overlay/.nen-mo-sheet`. Class và biến nay TRÙNG TÊN có chủ ý: `.nen-mo-card` chỉ làm
+     đúng một việc là bôi `var(--nen-mo-card)` + blur, nên trùng tên là ánh xạ 1-1, không phải lẫn.
+     Cùng lượt: `docs/mocks/` (905 chỗ) đổi theo để mock và code lại nói chung một thứ tiếng —
+     mock là nguồn sự thật giao diện, hở tên ở đây là hở đúng chỗ luật một-nguồn được tuyên mạnh nhất. */
   --nen-mo-header: rgba(20, 20, 23, 0.72);
   --nen-mo-panel: rgba(20, 20, 23, 0.68);
   --nen-mo-card: rgba(26, 26, 30, 0.82);
   --nen-mo-overlay: rgba(6, 6, 8, 0.56);
-  --nen-mo-hairline: rgba(255, 255, 255, 0.06);
+
+  /* VIỀN MỜ — màu của ĐƯỜNG KẺ mảnh 1px (mép panel kính, gạch ngăn hàng, vạch dọc chia nhóm nút).
+     16/08 (P-L): tách khỏi họ `--nen-mo-*`, tên cũ mang chữ "nền" là SAI NGHĨA — đo 80 chỗ dùng thì
+     76 nằm trong `border-*`/`divide-*`, chỗ duy nhất đi qua `background` là `ToolDock3D.tsx:238`
+     `<span style={{width:1}}>` — tức vẫn là một đường kẻ, chỉ vẽ bằng nền. 0/80 dùng làm MẶT NỀN.
+     Đặt "viền" vì đó đúng là màu viền; giữ "mờ" vì giá trị là màu bán trong suốt (alpha .06/.05),
+     ăn theo nền phía dưới thay vì đè một màu đặc — cùng tính chất với họ `--nen-mo-*` nó vừa rời.
+     Ba tên đã cân rồi loại, ghi lại để phiên sau khỏi mở lại: `nét` (đụng `lib/cad/chuan-net.ts` +
+     `BangNetIn` — "nét" trong IF là bề dày nét bản vẽ) · `vạch` (đã bận ở dãy vạch thanh tiến trình,
+     chốt 16/08) · `mảnh` (chỉ khác `mảng` một chữ cái, mà `mảng` đang bận nặng ở Grounded Render —
+     đó đúng là loại lỗi cả đợt từ-đa-nghĩa sinh ra để diệt, không được tự đẻ thêm một ca). */
+  --vien-mo: rgba(255, 255, 255, 0.06);
 
   /* ĐỘ MỜ CỦA THÀNH PHẦN VÔ HIỆU (nút chưa dùng được, §9 "cấm nút giả").
      Khai theo VAI TRÒ ở đây thay vì gõ con số tại chỗ dùng — cùng luật với màu (`he-mau-2-lop`).
@@ -265,7 +280,10 @@
   --nen-mo-panel: rgba(250, 248, 244, 0.7);
   --nen-mo-card: rgba(255, 255, 255, 0.82);
   --nen-mo-overlay: rgba(60, 55, 48, 0.28);
-  --nen-mo-hairline: rgba(0, 0, 0, 0.05);
+
+  /* viền mờ — xem lý do tách tên ở khối Tối. Nền tối thì viền là ánh sáng trắng loãng,
+     nền sáng thì viền là bóng đen loãng: cùng vai "mép bắt sáng", đảo cực theo nền. */
+  --vien-mo: rgba(0, 0, 0, 0.05);
 
   /* Nền sáng cần đậm hơn nền tối — xem bảng số ở khối Tối. 0.62 cho biên an toàn trên cả ba
      nền (--panel 3.36 · --card 3.45 · --bg 3.25), trong khi 0.6 chỉ còn 3.11 trên --bg. */
@@ -389,12 +407,12 @@ body {
 }
 
 /* Materials — class tiện dùng lại cho header/panel/modal (vibrancy) */
-.mat-header {
+.nen-mo-header {
   background: var(--nen-mo-header);
   backdrop-filter: saturate(180%) blur(var(--blur));
   -webkit-backdrop-filter: saturate(180%) blur(var(--blur));
 }
-.mat-panel {
+.nen-mo-panel {
   background: var(--nen-mo-panel);
   backdrop-filter: saturate(180%) blur(var(--blur));
   -webkit-backdrop-filter: saturate(180%) blur(var(--blur));
@@ -410,12 +428,12 @@ body {
   background: var(--hover);
   color: var(--t1);
 }
-.mat-card {
+.nen-mo-card {
   background: var(--nen-mo-card);
   backdrop-filter: saturate(180%) blur(var(--blur-strong));
   -webkit-backdrop-filter: saturate(180%) blur(var(--blur-strong));
 }
-.mat-overlay {
+.nen-mo-overlay {
   background: var(--nen-mo-overlay);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -423,7 +441,7 @@ body {
 
 /* Node đang chạy — viền phát sáng lặp lại (port mock-if-bang-nut.html màn 02, InteriorNode.tsx).
    Cùng công thức box-shadow-pulse với .vitals-state-ring bên dưới — KHÔNG animate opacity trên
-   phần tử có backdrop-filter (mat-card có backdrop-filter, luật G1 SO-KIEM-TONG.md §6b). */
+   phần tử có backdrop-filter (nen-mo-card có backdrop-filter, luật G1 SO-KIEM-TONG.md §6b). */
 .node-running-halo {
   animation: node-running-ring 1.6s ease-in-out infinite;
 }
@@ -453,7 +471,7 @@ body {
    đầu = cuối nên vòng lặp liền mạch.
    Luật G1: chỉ animate background-position (thuộc tính paint) — KHÔNG animate opacity trên
    card có backdrop-filter. Luật G9: KHÔNG thêm backdrop-filter mới — card dùng lớp kính
-   SẴN CÓ (mat-card), ::before này chỉ là lớp màu mỏng, không blur.
+   SẴN CÓ (nen-mo-card), ::before này chỉ là lớp màu mỏng, không blur.
    2 theme tự ăn theo token. `overflow-hidden` trên card (MacroNodeFace) không cắt vì inset: 0. */
 .glass-gradient-run {
   position: relative;
@@ -532,7 +550,7 @@ body {
    trạng thái CÓ THẬT gần nhất — mặt nút tổng lúc node con của nó đang chạy/xếp hàng
    (`MacroNodeFace.tsx`), thay vì để keyframe chết trong CSS.
    Chỉ animate box-shadow (thuộc tính paint) — cùng luật G1 với .node-running-halo:
-   KHÔNG animate opacity trên phần tử có backdrop-filter (mặt nút tổng là mat-card). */
+   KHÔNG animate opacity trên phần tử có backdrop-filter (mặt nút tổng là nen-mo-card). */
 @keyframes nt-halo {
   0%,
   100% {
@@ -1677,7 +1695,7 @@ body[data-if-library-open='true'] .if-bottombar {
   margin: 7px 0 2px;
   border-radius: 4px;
   background: var(--bg);
-  border: 1px solid var(--nen-mo-hairline);
+  border: 1px solid var(--vien-mo);
   color: var(--t1);
   overflow: hidden;
 }

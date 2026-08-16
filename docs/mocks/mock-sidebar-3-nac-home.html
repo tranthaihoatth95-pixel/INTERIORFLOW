@@ -25,10 +25,10 @@
   --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
   --border:#2a2a31; --border-strong:#3d3d45;
   --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78;
-  --mat-panel:rgba(20,20,23,.68); --mat-card:rgba(26,26,30,.82);   /* globals.css:192-193 */
-  --mat-hairline:rgba(255,255,255,.06);
+  --nen-mo-panel:rgba(20,20,23,.68); --nen-mo-card:rgba(26,26,30,.82);   /* globals.css:192-193 */
+  --vien-mo:rgba(255,255,255,.06);
   --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
-  --mat-thanh:rgba(20,20,23,.62);                 /* kính MỎNG — xem §5, ngưỡng đo được */
+  --nen-mo-thanh:rgba(20,20,23,.62);                 /* kính MỎNG — xem §5, ngưỡng đo được */
   /* CHỐT 16/08 — cặp màu ĐẢO VAI: TỐI thì tím chủ, đồng điểm xuyết. */
   --chu:var(--accent); --chu-soft:var(--accent-soft); --chu-ring:var(--accent-ring);
   --diem:var(--accent-warm);
@@ -37,10 +37,10 @@
   --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
   --border:#e3ded4; --border-strong:#cbc4b6;
   --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a;
-  --mat-panel:rgba(250,248,244,.7); --mat-card:rgba(255,255,255,.82); /* globals.css:246-247 */
-  --mat-hairline:rgba(0,0,0,.05);
+  --nen-mo-panel:rgba(250,248,244,.7); --nen-mo-card:rgba(255,255,255,.82); /* globals.css:246-247 */
+  --vien-mo:rgba(0,0,0,.05);
   --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
-  --mat-thanh:rgba(250,248,244,.66);
+  --nen-mo-thanh:rgba(250,248,244,.66);
   /* SÁNG thì đồng lên làm chủ, tím lui về điểm xuyết. Mỗi lúc vẫn ĐÚNG MỘT màu chủ. */
   --chu:var(--accent-warm); --chu-soft:rgba(199,154,99,.16); --chu-ring:rgba(199,154,99,.6);
   --diem:var(--accent);
@@ -104,16 +104,16 @@ h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-t
 .scene[data-nen="diu"]{filter:blur(3px) saturate(.72) brightness(.72)}
 .scene[data-nen="tat"]{display:none}
 
-/* ══ KÍNH ══ tái dùng đúng công thức .mat-card của app (globals.css:371-377), không chế mới.
+/* ══ KÍNH ══ tái dùng đúng công thức .nen-mo-card của app (globals.css:371-377), không chế mới.
    Luật K1 (fade kính = self-opacity, cấm fade ở cha) — nên KHÔNG bọc lớp cha có opacity. */
-.kinh{background:var(--mat-card);
+.kinh{background:var(--nen-mo-card);
   backdrop-filter:saturate(180%) blur(var(--blur));
   -webkit-backdrop-filter:saturate(180%) blur(var(--blur));
-  border:1px solid var(--mat-hairline);border-radius:var(--r-3);box-shadow:var(--shadow-pop)}
-.kinh-mong{background:var(--mat-thanh);
+  border:1px solid var(--vien-mo);border-radius:var(--r-3);box-shadow:var(--shadow-pop)}
+.kinh-mong{background:var(--nen-mo-thanh);
   backdrop-filter:saturate(180%) blur(var(--blur));
   -webkit-backdrop-filter:saturate(180%) blur(var(--blur));
-  border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)}
+  border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)}
 .scene[data-nen="tat"]~.khung .kinh,.scene[data-nen="tat"]~.khung .kinh-mong{
   background:var(--panel);backdrop-filter:none;-webkit-backdrop-filter:none;border-color:var(--border)}
 /* nấc giảm chói: kính ĐẶC HƠN (NT-16 — độ đọc thắng) */
@@ -182,7 +182,7 @@ h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-t
    Ít chữ nên kính của thanh được TRONG hơn thẻ số liệu (§5 nói trong tới đâu thì dừng). */
 .thanh-tren{display:flex;align-items:center;gap:9px}
 .tim{flex:1;min-width:0;display:flex;align-items:center;gap:9px;height:var(--tap-lg);
-  padding:0 14px;border-radius:var(--r-full);border:1px solid var(--mat-hairline)}
+  padding:0 14px;border-radius:var(--r-full);border:1px solid var(--vien-mo)}
 .tim svg.kinh-lup{width:15px;height:15px;stroke:var(--t3);fill:none;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 .tim .o{flex:1;min-width:0;font-size:var(--fs-ui);color:var(--t3);white-space:nowrap;
@@ -197,7 +197,7 @@ h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-t
    năng và mất luôn nghĩa "đây là chỗ hỏi khi bí").
    CÙNG MỘT HÌNH DẠNG ở mọi chỗ, và MỖI MÀN ĐÚNG MỘT CÁI — không bao giờ hiện hai. */
 .vit{width:var(--tap-lg);height:var(--tap-lg);border-radius:var(--r-full);
-  border:1px solid var(--mat-hairline);background:var(--mat-thanh);
+  border:1px solid var(--vien-mo);background:var(--nen-mo-thanh);
   backdrop-filter:saturate(180%) blur(var(--blur));
   -webkit-backdrop-filter:saturate(180%) blur(var(--blur));
   display:grid;place-items:center;cursor:pointer;flex-shrink:0;padding:0;
@@ -236,7 +236,7 @@ h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-t
 .chuoi .b .g{font-variant-numeric:tabular-nums;color:var(--t3);flex-shrink:0}
 .chuoi .noi-b{width:1px;height:7px;background:var(--border);margin-left:9px}
 .tong{display:flex;align-items:center;justify-content:space-between;gap:10px;
-  padding-top:9px;border-top:1px solid var(--mat-hairline);font-size:var(--fs-2xs);color:var(--t2)}
+  padding-top:9px;border-top:1px solid var(--vien-mo);font-size:var(--fs-2xs);color:var(--t2)}
 .tong b{color:var(--t1);font-variant-numeric:tabular-nums}
 .nut-nho{height:30px;padding:0 14px;border-radius:var(--r-full);border:1px solid var(--chu-ring);
   background:var(--chu-soft);color:var(--chu);font-size:var(--fs-2xs);font-weight:var(--fw-semi);
@@ -247,8 +247,8 @@ h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-t
 .chang-mini{display:flex;gap:0;height:172px;border-radius:var(--r-3);overflow:hidden;
   border:1px solid var(--border);background:var(--panel);position:relative}
 .chang-mini .canvas{flex:1;background:
-  repeating-linear-gradient(0deg,var(--mat-hairline) 0 1px,transparent 1px 22px),
-  repeating-linear-gradient(90deg,var(--mat-hairline) 0 1px,transparent 1px 22px),var(--bg)}
+  repeating-linear-gradient(0deg,var(--vien-mo) 0 1px,transparent 1px 22px),
+  repeating-linear-gradient(90deg,var(--vien-mo) 0 1px,transparent 1px 22px),var(--bg)}
 .chang-mini .truc{width:132px;border-left:1px solid var(--border);background:var(--panel);padding:9px}
 .chang-mini .truc h5{margin:0 0 7px;font-size:10px;font-weight:var(--fw-bold);letter-spacing:.1em;
   text-transform:uppercase;color:var(--t4)}
@@ -279,7 +279,7 @@ h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-t
    đang có. Cả cụm đứng trên MỘT tấm kính ⇒ chữ luôn trên nền đồng nhất. */
 .viec{display:flex;flex-direction:column;padding:2px;overflow:hidden}
 .viec a{display:flex;align-items:center;gap:11px;padding:11px 10px;text-decoration:none;
-  border-top:1px solid var(--mat-hairline);color:inherit;border-radius:var(--r-2);
+  border-top:1px solid var(--vien-mo);color:inherit;border-radius:var(--r-2);
   transition:background var(--dur-fast) var(--ease-apple)}
 .viec a:first-child{border-top:0}
 .viec a:hover{background:var(--hover)}
@@ -310,7 +310,7 @@ h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-t
 .w .cotmau{display:flex;gap:4px;align-items:flex-end;height:34px;margin-top:4px}
 .w .cotmau i{flex:1;background:var(--chu-soft);border-radius:var(--r-1) var(--r-1) 0 0;display:block}
 .w .cotmau i.cao{background:var(--chu)}
-.swatch{width:100%;height:34px;border-radius:var(--r-2);border:1px solid var(--mat-hairline);
+.swatch{width:100%;height:34px;border-radius:var(--r-2);border:1px solid var(--vien-mo);
   background:linear-gradient(135deg,var(--diem),var(--field));margin-bottom:5px}
 
 /* ══ TRẠNG THÁI TRỐNG ══ */
@@ -630,7 +630,7 @@ ul.luat b{color:#f5f5f7}
       <div class="thanh-tren"><div class="tim kinh-mong"><svg class="kinh-lup" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="o">Tìm trong dự án, tệp, thư viện…</span></div><button class="vit" type="button" aria-label="Hỏi Vitals"><b></b></button></div>
       <div class="home-shell">
         <div class="rail-kinh kinh">
-          <div class="rail vua" data-rail="d" style="background:transparent;border-right-color:var(--mat-hairline)">
+          <div class="rail vua" data-rail="d" style="background:transparent;border-right-color:var(--vien-mo)">
             <div class="thu-doc" data-chi-thu style="display:none"><span>Dự án &amp; việc</span></div>
             <div class="rail-head" data-an-thu><span class="spine" aria-hidden="true"><i class="on"></i><i></i><i></i></span><b>Studio</b></div>
             <nav class="nav" data-an-thu>
@@ -689,7 +689,7 @@ ul.luat b{color:#f5f5f7}
       <div class="thanh-tren"><div class="tim kinh-mong"><svg class="kinh-lup" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="o">Tìm trong dự án, tệp, thư viện…</span></div><button class="vit" type="button" aria-label="Hỏi Vitals"><b></b></button></div>
       <div class="home-shell">
         <div class="rail-kinh kinh">
-          <div class="rail vua" data-rail="s" style="background:transparent;border-right-color:var(--mat-hairline)">
+          <div class="rail vua" data-rail="s" style="background:transparent;border-right-color:var(--vien-mo)">
             <div class="thu-doc" data-chi-thu style="display:none"><span>Dự án &amp; việc</span></div>
             <div class="rail-head" data-an-thu><span class="spine" aria-hidden="true"><i class="on"></i><i></i><i></i></span><b>Studio</b></div>
             <nav class="nav" data-an-thu>
@@ -772,14 +772,14 @@ ul.luat b{color:#f5f5f7}
 <table class="bang">
   <thead><tr><th>Lớp kính</th><th>Độ đặc</th><th>Nền trắng tinh</th><th>Nền đen tuyền</th><th>Kết</th></tr></thead>
   <tbody>
-    <tr><td><b>Thẻ số liệu</b> · <code>--mat-card</code> tối</td><td>0,82</td><td>9,1:1</td><td>18,5:1</td><td class="dat">ĐẠT — dư nhiều</td></tr>
-    <tr><td><b>Panel</b> · <code>--mat-panel</code> tối</td><td>0,68</td><td>5,9:1</td><td>17,7:1</td><td class="dat">ĐẠT</td></tr>
+    <tr><td><b>Thẻ số liệu</b> · <code>--nen-mo-card</code> tối</td><td>0,82</td><td>9,1:1</td><td>18,5:1</td><td class="dat">ĐẠT — dư nhiều</td></tr>
+    <tr><td><b>Panel</b> · <code>--nen-mo-panel</code> tối</td><td>0,68</td><td>5,9:1</td><td>17,7:1</td><td class="dat">ĐẠT</td></tr>
     <tr><td><b>Thanh tìm</b> · kính mỏng tối</td><td>0,62</td><td>4,8:1</td><td>17,5:1</td><td class="dat">ĐẠT — sát sàn</td></tr>
     <tr><td>Kính rất trong (kiểu thanh nổi trên mây)</td><td>0,35</td><td><b>2,1:1</b></td><td>16,8:1</td><td class="truot">TRƯỢT khi nền sáng</td></tr>
-    <tr><td><b>Thẻ số liệu</b> · <code>--mat-card</code> sáng</td><td>0,82</td><td>13,9:1</td><td>5,6:1</td><td class="dat">ĐẠT</td></tr>
+    <tr><td><b>Thẻ số liệu</b> · <code>--nen-mo-card</code> sáng</td><td>0,82</td><td>13,9:1</td><td>5,6:1</td><td class="dat">ĐẠT</td></tr>
   </tbody>
 </table>
-<p class="ghi-chu"><b>Ngưỡng rút ra:</b> để chữ đạt 4,5:1 với <i>mọi</i> tấm ảnh, độ đặc tối thiểu là <b>0,60 ở theme tối</b> và <b>0,53 ở theme sáng</b>. Hai token app đang dùng (<code>--mat-card</code> 0,82 · <code>--mat-panel</code> 0,68/0,70) <b>đã vượt ngưỡng sẵn</b> — không phải chế token mới, chỉ là nay biết vì sao chúng đủ. <b>Kính 0,35 trượt hẳn</b> (2,1:1 khi nền sáng) — đó là lý do kính rất trong chỉ được dùng cho chỗ <i>ít chữ và chữ lớn</i>, không dùng cho thẻ số liệu. Thanh tìm ở 0,62 là <b>mức trong nhất còn hợp lệ</b>: trông nhẹ hơn hẳn thẻ số liệu mà vẫn qua sàn.</p>
+<p class="ghi-chu"><b>Ngưỡng rút ra:</b> để chữ đạt 4,5:1 với <i>mọi</i> tấm ảnh, độ đặc tối thiểu là <b>0,60 ở theme tối</b> và <b>0,53 ở theme sáng</b>. Hai token app đang dùng (<code>--nen-mo-card</code> 0,82 · <code>--nen-mo-panel</code> 0,68/0,70) <b>đã vượt ngưỡng sẵn</b> — không phải chế token mới, chỉ là nay biết vì sao chúng đủ. <b>Kính 0,35 trượt hẳn</b> (2,1:1 khi nền sáng) — đó là lý do kính rất trong chỉ được dùng cho chỗ <i>ít chữ và chữ lớn</i>, không dùng cho thẻ số liệu. Thanh tìm ở 0,62 là <b>mức trong nhất còn hợp lệ</b>: trông nhẹ hơn hẳn thẻ số liệu mà vẫn qua sàn.</p>
 <p class="ghi-chu">Số tính theo công thức tương phản WCAG, lấy ca xấu nhất của nền (trắng tinh #ffffff và đen tuyền #000000) trộn qua lớp kính rồi so với màu chữ thật của theme (<code>--t1</code>). <b>Chưa đo trên máy đo màu</b> — xem mục “chưa chắc” trong báo cáo.</p>
 
 <!-- ═══════════════ 6 · TRẠNG THÁI TRỐNG ═══════════════ -->
@@ -831,7 +831,7 @@ ul.luat b{color:#f5f5f7}
   <li><b>Nền để NÉT, kính lo phần đọc được</b> — không bôi mờ ảnh để cứu chữ. Vùng có chữ và số thì kính đặc; lề và khe giữa thẻ thì nền hiện rõ. Thẻ <b>cố ý không phủ kín</b>: phủ kín thì ảnh nền thành vô nghĩa, thà bỏ hẳn còn hơn.</li>
   <li><b>Tương phản là SÀN, không phải biến số</b> — độ đặc tối thiểu 0,60 (tối) · 0,53 (sáng). Hai token app đang dùng đã vượt sẵn. Kính 0,35 trượt hẳn nên chỉ dùng cho chỗ ít chữ.</li>
   <li><b>Ba trạng thái nền</b>: có ảnh · giảm chói (ảnh dịu, kính đặc thêm) · tắt hẳn về màu trơn. Nhớ lựa chọn. Đây là nghĩa vụ NT-16 — chính iOS 27 đã phải tự sửa lại kính vì khó đọc.</li>
-  <li><b>Tái dùng kính sẵn có</b>, không dựng hệ mới: đúng công thức <code>.mat-card</code> của app; không bọc lớp cha có <code>opacity</code> (bài học K1 — fade ở cha giết luôn hiệu ứng kính).</li>
+  <li><b>Tái dùng kính sẵn có</b>, không dựng hệ mới: đúng công thức <code>.nen-mo-card</code> của app; không bọc lớp cha có <code>opacity</code> (bài học K1 — fade ở cha giết luôn hiệu ứng kính).</li>
   <li><b>Vitals là MỘT vật di chuyển theo ngữ cảnh</b> — không còn pill riêng lơ lửng. Ở Home nó đứng cạnh ô tìm; ở chặng làm việc nó nổi rời cạnh trục phải, để trợ giúp tới chỗ tay đang đặt. Cùng một hình dạng ở mọi chỗ, và <b>mỗi màn đúng một cái</b>. Ô tìm và Vitals là hai vật riêng — ô tìm cứ là ô tìm.</li>
   <li><b>Chuột rê vào · cảm ứng nhấn giữ</b> — cùng một kết quả, hai đường vào. Rê chuột phải có trễ (đi ngang không kích hoạt); nhấn giữ 500ms cho nhích 8px, nở dần trong lúc giữ. Số lấy từ hệ sẵn có, không đặt mới. Đĩa lệnh giữ trên mặt canvas, Vitals giữ trên chính nút — không tranh cử chỉ.</li>
   <li><b>Nấc lớn của Vitals không phải chat phóng to</b> — nó là đồ thị chuỗi việc kèm giá và nút duyệt. Máy soạn chuỗi, người bấm duyệt, engine chỉ chạy đúng cái đã duyệt.</li>
@@ -852,7 +852,7 @@ ul.luat b{color:#f5f5f7}
     if (!rail) return;
     rail.className = 'rail ' + NAC[nac];
     rail.style.background = 'transparent';
-    rail.style.borderRightColor = 'var(--mat-hairline)';
+    rail.style.borderRightColor = 'var(--vien-mo)';
     rail.querySelectorAll('[data-an-thu]').forEach(function (el) {
       el.style.display = nac === 'thu' ? 'none' : '';
     });

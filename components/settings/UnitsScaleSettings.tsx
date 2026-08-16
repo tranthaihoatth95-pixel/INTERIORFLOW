@@ -194,7 +194,7 @@ export function UnitsScaleSettings() {
       <div
         role="region"
         aria-label={tr('Xem trước đổi đơn vị và tỉ lệ', 'Unit and scale preview')}
-        className="mt-4 rounded-[var(--r-3,14px)] border border-[var(--nen-mo-hairline,var(--border))] bg-[var(--field)] px-4 py-3.5"
+        className="mt-4 rounded-[var(--r-3,14px)] border border-[var(--vien-mo,var(--border))] bg-[var(--field)] px-4 py-3.5"
       >
         <div className="flex items-baseline justify-between gap-2.5 py-1">
           <span className="text-[11px] text-[var(--t3)]">{tr('Chiều dài tường mẫu', 'Sample wall length')}</span>

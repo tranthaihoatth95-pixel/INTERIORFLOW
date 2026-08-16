@@ -224,7 +224,7 @@ export default function Tool3DBar({ selectedEntityId, bottomPx = 130 }: Tool3DBa
         position: 'absolute', left: '50%', bottom: bottomPx, transform: 'translateX(-50%)', zIndex: 6,
         display: 'flex', alignItems: 'center', gap: 10, padding: '7px 12px', borderRadius: RADIUS.r3, // thang bo 12/08
         background: 'color-mix(in srgb, var(--panel) 96%, transparent)',
-        border: '1px solid var(--nen-mo-hairline)', boxShadow: '0 12px 30px rgba(0, 0, 0, .2)',
+        border: '1px solid var(--vien-mo)', boxShadow: '0 12px 30px rgba(0, 0, 0, .2)',
         fontSize: 11, lineHeight: 1.5, color: 'var(--t2)', whiteSpace: 'nowrap',
       }}
     >

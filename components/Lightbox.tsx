@@ -27,7 +27,7 @@ export function Lightbox() {
           initial="hidden"
           animate="visible"
           exit="exit"
-          className="mat-overlay fixed inset-0 z-[60] grid place-items-center p-8"
+          className="nen-mo-overlay fixed inset-0 z-[60] grid place-items-center p-8"
         >
           <motion.button
             {...pressableIcon}

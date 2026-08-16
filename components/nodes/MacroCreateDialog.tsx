@@ -121,13 +121,13 @@ export function MacroCreateDialog({ selectedIds, onClose }: { selectedIds: strin
           ref={wrapRef}
           variants={glassPop}
           /* Bo 28px (`--radius-xl`) đúng mock màn 02 — trước là 20px.
-             Nền GIỮ `mat-card` (không đổi sang `mat-panel` như mock): blur khớp (cả hai 40px)
-             nhưng mat-card đục hơn (.82 vs .68), và hộp này dày chữ ⇒ luật G2 "lớp nổi nhiều
+             Nền GIỮ `nen-mo-card` (không đổi sang `nen-mo-panel` như mock): blur khớp (cả hai 40px)
+             nhưng nen-mo-card đục hơn (.82 vs .68), và hộp này dày chữ ⇒ luật G2 "lớp nổi nhiều
              chữ phải nền đặc" thắng con số của mock. */
-          className="mat-card flex max-h-[85vh] w-full max-w-[760px] flex-col overflow-hidden rounded-[var(--radius-xl)] border border-[var(--nen-mo-hairline)] shadow-[var(--shadow-pop)]"
+          className="nen-mo-card flex max-h-[85vh] w-full max-w-[760px] flex-col overflow-hidden rounded-[var(--radius-xl)] border border-[var(--vien-mo)] shadow-[var(--shadow-pop)]"
         >
           {/* Header */}
-          <div className="flex h-[52px] shrink-0 items-center gap-2.5 border-b border-[var(--nen-mo-hairline)] px-5">
+          <div className="flex h-[52px] shrink-0 items-center gap-2.5 border-b border-[var(--vien-mo)] px-5">
             <span className="text-[16px] font-semibold leading-[1.5] tracking-tight text-[var(--t1)]">
               {tr('Gom thành nút tổng', 'Combine into a macro node')}
             </span>
@@ -146,7 +146,7 @@ export function MacroCreateDialog({ selectedIds, onClose }: { selectedIds: strin
 
           <div className="min-h-0 flex-1 overflow-y-auto">
             {/* Tên + mô tả + icon */}
-            <div className="grid grid-cols-[1fr_230px] gap-5 border-b border-[var(--nen-mo-hairline)] p-5">
+            <div className="grid grid-cols-[1fr_230px] gap-5 border-b border-[var(--vien-mo)] p-5">
               <div className="flex flex-col gap-3">
                 <div>
                   <div className="mb-1.5 text-[11px] font-bold uppercase leading-[1.5] tracking-wide text-[var(--t4)]">
@@ -207,8 +207,8 @@ export function MacroCreateDialog({ selectedIds, onClose }: { selectedIds: strin
                   {tr(`${exposedCount} trên ${rows.length} đang hiện`, `${exposedCount} of ${rows.length} shown`)}
                 </span>
               </div>
-              <div className="overflow-hidden rounded-[14px] border border-[var(--nen-mo-hairline)] bg-[var(--card)]">
-                <div className="grid h-[30px] grid-cols-[150px_1fr_1fr_58px] items-center gap-3 border-b border-[var(--nen-mo-hairline)] bg-[var(--field)] px-3 text-[11px] font-bold uppercase leading-[1.5] tracking-wide text-[var(--t4)]">
+              <div className="overflow-hidden rounded-[14px] border border-[var(--vien-mo)] bg-[var(--card)]">
+                <div className="grid h-[30px] grid-cols-[150px_1fr_1fr_58px] items-center gap-3 border-b border-[var(--vien-mo)] bg-[var(--field)] px-3 text-[11px] font-bold uppercase leading-[1.5] tracking-wide text-[var(--t4)]">
                   <span>{tr('Nút con', 'Child node')}</span>
                   <span>{tr('Tham số gốc', 'Original param')}</span>
                   <span>{tr('Tên hiện ra ngoài', 'Exposed name')}</span>
@@ -225,7 +225,7 @@ export function MacroCreateDialog({ selectedIds, onClose }: { selectedIds: strin
                       key={`${row.nodeId}.${row.paramId}`}
                       className={cn(
                         'grid h-11 grid-cols-[150px_1fr_1fr_58px] items-center gap-3 px-3 transition-opacity',
-                        i < rows.length - 1 && 'border-b border-[var(--nen-mo-hairline)]',
+                        i < rows.length - 1 && 'border-b border-[var(--vien-mo)]',
                         !row.exposed && 'opacity-50',
                       )}
                     >

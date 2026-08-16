@@ -18,7 +18,7 @@
   --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
   --border:#2a2a31; --border-strong:#3d3d45;
   --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
-  --mat-panel:rgba(20,20,23,.68); --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --nen-mo-panel:rgba(20,20,23,.68); --nen-mo-card:rgba(26,26,30,.82); --vien-mo:rgba(255,255,255,.06);
   --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65); --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
   --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
   --hatch:repeating-linear-gradient(45deg,#202024 0 9px,#1a1a1e 9px 18px);
@@ -27,7 +27,7 @@
   --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
   --border:#e3ded4; --border-strong:#cbc4b6;
   --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
-  --mat-panel:rgba(250,248,244,.7); --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --nen-mo-panel:rgba(250,248,244,.7); --nen-mo-card:rgba(255,255,255,.82); --vien-mo:rgba(0,0,0,.05);
   --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22); --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
   --hatch:repeating-linear-gradient(45deg,#f4f1eb 0 9px,#ffffff 9px 18px);
 }
@@ -222,10 +222,10 @@ a:hover{color:var(--accent-strong)}
 
                 <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .2s var(--ease-apple),box-shadow .2s var(--ease-apple)" style-hover="transform:translateY(-2px) scale(1.02);box-shadow:var(--shadow-pop)">
                   <div style="position:relative;height:118px;border-bottom:1px solid var(--border);background:var(--hatch);display:flex;align-items:center;justify-content:center">
-                    <span style="width:38px;height:38px;border-radius:50%;background:var(--mat-card);border:1px solid var(--mat-hairline);display:flex;align-items:center;justify-content:center">
+                    <span style="width:38px;height:38px;border-radius:50%;background:var(--nen-mo-card);border:1px solid var(--vien-mo);display:flex;align-items:center;justify-content:center">
                       <svg width="15" height="15" viewBox="0 0 16 16"><path d="M5.5 3.4 12.4 8 5.5 12.6z" style="fill:var(--t1)"></path></svg>
                     </span>
-                    <span style="position:absolute;left:8px;bottom:8px;font-size:8px;font-weight:700;letter-spacing:.06em;color:var(--t4);background:var(--mat-card);padding:3px 6px;border-radius:5px">PLACEHOLDER</span>
+                    <span style="position:absolute;left:8px;bottom:8px;font-size:8px;font-weight:700;letter-spacing:.06em;color:var(--t4);background:var(--nen-mo-card);padding:3px 6px;border-radius:5px">PLACEHOLDER</span>
                   </div>
                   <div style="padding:11px 12px 13px">
                     <div style="font-size:13px;font-weight:600">Video</div>
@@ -279,15 +279,15 @@ a:hover{color:var(--accent-strong)}
               </div>
             </div>
 
-            <div style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:1px;padding:4px;border-radius:14px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
+            <div style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:1px;padding:4px;border-radius:14px;background:var(--nen-mo-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
               <button title="Tạo hồ sơ mới — N" style="height:var(--tap);padding:0 13px;display:flex;align-items:center;gap:7px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;font-size:12px;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg>
                 Hồ sơ mới
               </button>
-              <div style="width:1px;height:20px;background:var(--mat-hairline);margin:0 5px"></div>
+              <div style="width:1px;height:20px;background:var(--vien-mo);margin:0 5px"></div>
               <button title="Xem dạng lưới — 1" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:var(--field);color:var(--t1);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="5" height="5" rx="1"></rect><rect x="9" y="2" width="5" height="5" rx="1"></rect><rect x="2" y="9" width="5" height="5" rx="1"></rect><rect x="9" y="9" width="5" height="5" rx="1"></rect></svg></button>
               <button title="Xem dạng danh sách — 2" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 4.5h10M3 8h10M3 11.5h10"></path></svg></button>
-              <div style="width:1px;height:20px;background:var(--mat-hairline);margin:0 5px"></div>
+              <div style="width:1px;height:20px;background:var(--vien-mo);margin:0 5px"></div>
               <button title="Chia sẻ cho khách — S" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V3M5 6l3-3 3 3"></path><path d="M3 10v3h10v-3"></path></svg></button>
               <button title="Xuất tệp — E" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v8M5 8l3 3 3-3"></path><path d="M3 13h10"></path></svg></button>
             </div>
@@ -528,14 +528,14 @@ a:hover{color:var(--accent-strong)}
               </div>
             </div>
 
-            <div style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:1px;padding:4px;border-radius:14px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
+            <div style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:1px;padding:4px;border-radius:14px;background:var(--nen-mo-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
               <button title="Thêm dòng — Enter" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg></button>
               <button title="Thêm nhóm hạng mục — G" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h7M2.5 11.5h7"></path></svg></button>
-              <div style="width:1px;height:20px;background:var(--mat-hairline);margin:0 5px"></div>
+              <div style="width:1px;height:20px;background:var(--vien-mo);margin:0 5px"></div>
               <button title="Lấy lại số từ mô hình — R" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8a5 5 0 1 1-1.8-3.8"></path><path d="M13 1.8V5H9.8"></path></svg></button>
               <button title="Công thức — F" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4 13c1.6 0 2-1 2.2-2.6L7.4 3.9C7.6 2.6 8.4 2 9.6 2M4.6 7.4h5.2"></path></svg></button>
               <button title="Định dạng số — ," style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 4.5h10M3 8h10M3 11.5h6"></path></svg></button>
-              <div style="width:1px;height:20px;background:var(--mat-hairline);margin:0 5px"></div>
+              <div style="width:1px;height:20px;background:var(--vien-mo);margin:0 5px"></div>
               <button title="Xuất bảng tính — E" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v8M5 8l3 3 3-3M3 13h10"></path></svg></button>
             </div>
           </main>

@@ -27,7 +27,7 @@ const ROOM_NAME_PRESETS = ['Phòng khách', 'Bếp', 'Phòng ngủ', 'Phòng t�
 
 /** NÚT TỔNG mở ra xem bên trong (state ④ `mock-if-nut-tong.html`) — nền ĐẶC `var(--panel)`
  * (KHÔNG `mat-*`/backdrop blur: mock ghi rõ "để không có kính lồng kính" — chính node con bên
- * trong đã dùng `mat-card` kính riêng, khung cha kính nữa sẽ chồng kính lên kính). Header 44px
+ * trong đã dùng `nen-mo-card` kính riêng, khung cha kính nữa sẽ chồng kính lên kính). Header 44px
  * pointer-events auto (icon/tên/"Thu gọn lại"), phần thân `pointerEvents:none` (không chặn kéo/
  * chọn node con render đè lên trên bởi lớp node bình thường của React Flow). */
 function MacroExpandedFrame({

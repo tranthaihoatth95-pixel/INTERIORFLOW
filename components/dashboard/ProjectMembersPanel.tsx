@@ -126,7 +126,7 @@ export function ProjectMembersPanel({ projects, teamUsers }: {
           <Loader2 size={18} className="animate-spin" />
         </div>
       ) : data ? (
-        <div className="mat-card divide-y divide-[var(--border)] overflow-hidden rounded-[14px] border border-[var(--nen-mo-hairline)]">
+        <div className="nen-mo-card divide-y divide-[var(--border)] overflow-hidden rounded-[14px] border border-[var(--vien-mo)]">
           {data.members.map((m) => (
             <div key={m.userId} className="flex items-center gap-3 px-4 py-2.5">
               <div className="min-w-0 flex-1">

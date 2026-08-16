@@ -81,7 +81,7 @@ function Avatar({ id, name, size = 32, online }: { id: string; name: string; siz
 
 function StatCard({ icon: Icon, label, value, sub }: { icon: typeof FolderKanban; label: string; value: string | number; sub?: string }) {
   return (
-    <motion.div variants={staggerItem} className="mat-card rounded-[14px] border border-[var(--nen-mo-hairline)] p-4">
+    <motion.div variants={staggerItem} className="nen-mo-card rounded-[14px] border border-[var(--vien-mo)] p-4">
       <div className="flex items-center gap-2 text-[var(--t4)]">
         <Icon size={15} />
         <span className="text-[11px] font-medium uppercase tracking-wider">{label}</span>
@@ -213,7 +213,7 @@ export function Dashboard({
   const inner = (
     <>
       {/* thanh trên */}
-      <div className="mat-header flex h-14 shrink-0 items-center gap-3 border-b border-[var(--border)] px-4 sm:px-6">
+      <div className="nen-mo-header flex h-14 shrink-0 items-center gap-3 border-b border-[var(--border)] px-4 sm:px-6">
         <FolderKanban size={18} className="text-[var(--accent)]" />
         <h1 className="text-base font-semibold tracking-tight text-[var(--t1)]">Tổng quan</h1>
         <span className="hidden text-xs text-[var(--t4)] sm:block">Dự án · Team · Hoạt động</span>
@@ -417,7 +417,7 @@ export function Dashboard({
                           <motion.div
                             key={p.id}
                             variants={staggerItem}
-                            className="mat-card rounded-[14px] border border-[var(--nen-mo-hairline)] p-4 transition-colors hover:border-[var(--accent-ring)]"
+                            className="nen-mo-card rounded-[14px] border border-[var(--vien-mo)] p-4 transition-colors hover:border-[var(--accent-ring)]"
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
@@ -443,7 +443,7 @@ export function Dashboard({
                     <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--t2)]">
                       <Users size={15} /> Team ({data.stats.online}/{data.stats.members} online)
                     </h2>
-                    <div className="mat-card divide-y divide-[var(--border)] overflow-hidden rounded-[14px] border border-[var(--nen-mo-hairline)]">
+                    <div className="nen-mo-card divide-y divide-[var(--border)] overflow-hidden rounded-[14px] border border-[var(--vien-mo)]">
                       {data.team.map((m) => (
                         <div key={m.id} className="flex items-center gap-3 px-4 py-2.5">
                           <Avatar id={m.id} name={m.name} size={34} online={m.online} />
@@ -479,7 +479,7 @@ export function Dashboard({
                   {data.flows.length === 0 ? (
                     <p className="text-sm text-[var(--t4)]">Chưa có flow nào.</p>
                   ) : (
-                    <div className="mat-card divide-y divide-[var(--border)] overflow-hidden rounded-[14px] border border-[var(--nen-mo-hairline)]">
+                    <div className="nen-mo-card divide-y divide-[var(--border)] overflow-hidden rounded-[14px] border border-[var(--vien-mo)]">
                       {data.flows.map((f) => (
                         <button
                           key={f.id}

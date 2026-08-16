@@ -43,7 +43,7 @@ Bo góc **10 / 14 / 20 / 28** (`--radius-sm/md/lg/xl`) — ⚠️ **SỬA 02/08:
 ✅ **Kiểm chứng 02/08 (Hoà hỏi "cái nào đúng Apple hơn?")**: thang **10/14/20/28 ĐÚNG Apple** — 10 = sheet iOS/cửa sổ macOS · 14 = hộp thoại cảnh báo iOS · 20/28 = thẻ lớn/widget. Thang 6/9/12/16 mà Cowork từng ghi là nhịp **Material/Tailwind**, không phải Apple. Code `globals.css` đúng ngay từ đầu.
 
 ## 2e · LUẬT PORT MOCK → CODE (bài học /settings tối 02/08)
-1. Hex trong mock = giá trị của THEME SÁNG. Khi port, **map hết sang CSS var app** (`globals.css`): #edebe7→nền · #fff→panel/--mat-card · #e4e1db→--border · #26262b→--t1 · #8f8f97→--t2 · #6a57f5→--accent · #efeafe→--accent-soft. **Cấm hardcode hex trong component.**
+1. Hex trong mock = giá trị của THEME SÁNG. Khi port, **map hết sang CSS var app** (`globals.css`): #edebe7→nền · #fff→panel/--nen-mo-card · #e4e1db→--border · #26262b→--t1 · #8f8f97→--t2 · #6a57f5→--accent · #efeafe→--accent-soft. **Cấm hardcode hex trong component.**
 2. Theme Tối = tự ăn qua biến — **cấm tự chế bảng màu tối riêng**. Test cả 2 theme, chữ phải đạt tương phản.
 3. Kích thước phần tử = px cố định như mock trong container 1440 — cấm 1fr/vw làm phình theo màn.
 4. Icon trong mock là placeholder → thay lucide đích danh (mock mới sẽ nhúng SVG lucide thật).

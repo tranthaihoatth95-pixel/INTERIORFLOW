@@ -190,11 +190,11 @@ export function MaskPainterModal() {
           initial="hidden"
           animate="visible"
           exit="exit"
-          className="mat-overlay fixed inset-0 z-50 grid place-items-center p-6"
+          className="nen-mo-overlay fixed inset-0 z-50 grid place-items-center p-6"
         >
           <motion.div
             variants={modalScale}
-            className="mat-card flex max-h-full w-full max-w-4xl flex-col overflow-hidden rounded-[20px] border border-[var(--nen-mo-hairline)] shadow-2xl"
+            className="nen-mo-card flex max-h-full w-full max-w-4xl flex-col overflow-hidden rounded-[20px] border border-[var(--vien-mo)] shadow-2xl"
           >
         {/* header */}
         <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3">

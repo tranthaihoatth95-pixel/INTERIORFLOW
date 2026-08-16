@@ -58,7 +58,7 @@ export function FlowsPanel() {
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="mat-panel z-20 flex w-72 flex-col border-r border-[var(--border)]"
+      className="nen-mo-panel z-20 flex w-72 flex-col border-r border-[var(--border)]"
     >
       <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2.5">
         <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--t3)]">

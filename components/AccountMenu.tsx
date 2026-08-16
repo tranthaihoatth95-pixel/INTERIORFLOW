@@ -65,7 +65,7 @@ export function AccountMenu({ open, anchorRect, onDismiss, menuRef }: Props) {
               exit={{ opacity: 0, y: -4, scale: 0.98 }}
               transition={{ duration: 0.18, ease: easeApple }}
               style={{ position: 'fixed', ...anchorRect }}
-              className="mat-panel z-[80] w-52 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
+              className="nen-mo-panel z-[80] w-52 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
             >
               <div ref={menuRef} style={{ display: 'contents' }}>
                 <div className="truncate px-2 py-1.5 text-xs text-[var(--t3)]" title={`${user.name} · ${user.email}`}>

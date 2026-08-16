@@ -17,7 +17,7 @@
   --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
   --border:#2a2a31; --border-strong:#3d3d45;
   --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
-  --mat-card:rgba(26,26,30,.86); --mat-hairline:rgba(255,255,255,.08);
+  --nen-mo-card:rgba(26,26,30,.86); --vien-mo:rgba(255,255,255,.08);
   --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65); --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
   --success:#46b876; --warning:#d9a34a; --dots:rgba(255,255,255,.06);
   --sheet:#15151a; --stroke:#f0efe9; --guide:rgba(139,124,247,.6);
@@ -26,7 +26,7 @@
   --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
   --border:#e3ded4; --border-strong:#cbc4b6;
   --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
-  --mat-card:rgba(255,255,255,.88); --mat-hairline:rgba(0,0,0,.06);
+  --nen-mo-card:rgba(255,255,255,.88); --vien-mo:rgba(0,0,0,.06);
   --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22); --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
   --dots:rgba(33,30,25,.08); --sheet:#fbf9f4; --stroke:#26221b; --guide:rgba(106,87,245,.5);
 }
@@ -141,7 +141,7 @@ a:hover{color:var(--accent-strong)}
           
           
           
-          <div style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:1px;padding:4px;border-radius:18px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
+          <div style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:1px;padding:4px;border-radius:18px;background:var(--nen-mo-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--vien-mo);box-shadow:var(--shadow-pop)">
             <button title="Hai ngón — hoàn tác" style="width:var(--tap-lg);height:var(--tap-lg);border:0;border-radius:14px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:background var(--dur-fast) var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 8H11a3 3 0 1 1 0 6H7"></path><path d="M6.6 5.4L4 8l2.6 2.6"></path></svg>
               <span style="font-size:7.5px;font-weight:700;letter-spacing:.06em">2 NGÓN</span>
@@ -150,7 +150,7 @@ a:hover{color:var(--accent-strong)}
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 8H5a3 3 0 1 0 0 6h4"></path><path d="M9.4 5.4L12 8l-2.6 2.6"></path></svg>
               <span style="font-size:7.5px;font-weight:700;letter-spacing:.06em">3 NGÓN</span>
             </button>
-            <span style="width:1px;height:24px;background:var(--mat-hairline);margin:0 5px"></span>
+            <span style="width:1px;height:24px;background:var(--vien-mo);margin:0 5px"></span>
             <button title="Đầu kia bút là gôm" style="width:var(--tap-lg);height:var(--tap-lg);border:0;border-radius:14px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:background var(--dur-fast) var(--ease-apple)">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 12.5h10"></path><path d="M5.5 10.5l4.5-4.5 3 3-4.5 4.5z"></path></svg>
               <span style="font-size:7.5px;font-weight:700;letter-spacing:.06em">GÔM</span>

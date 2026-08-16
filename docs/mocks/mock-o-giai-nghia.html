@@ -32,7 +32,7 @@
   --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
   --border:#2a2a31; --border-strong:#3d3d45;
   --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
-  --mat-hairline:rgba(255,255,255,.06);
+  --vien-mo:rgba(255,255,255,.06);
   --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
   --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
 }
@@ -41,7 +41,7 @@
   --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
   --border:#e3ded4; --border-strong:#cbc4b6;
   --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
-  --mat-hairline:rgba(0,0,0,.05);
+  --vien-mo:rgba(0,0,0,.05);
   --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
   --danger:#c9341d; --warning:#9a6304; --success:#107043;
 }
@@ -78,7 +78,7 @@ h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-t
 .tt-kbd{flex:none;padding:0 5px;border-radius:4px;background:color-mix(in srgb,var(--bg) 22%,transparent);
   font-family:inherit;font-size:10px;font-weight:var(--fw-semi);line-height:1.6;letter-spacing:.02em;white-space:nowrap}
 .tt-hinh{display:block;width:220px;height:110px;margin:7px 0 2px;border-radius:4px;
-  background:var(--bg);border:1px solid var(--mat-hairline);color:var(--t1);overflow:hidden}
+  background:var(--bg);border:1px solid var(--vien-mo);color:var(--t1);overflow:hidden}
 .tt-hinh svg{display:block;width:100%;height:100%}
 .tt-desc{display:block;margin-top:3px;font-size:11px;font-weight:500;line-height:1.5;opacity:.78}
 /* nút mờ: lý do vẫn là .tt-desc — KHÔNG đổi màu đỏ. Mờ nghĩa "chưa dùng được",
@@ -156,7 +156,7 @@ h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-t
 /* kho hình */
 .kho{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .o{background:var(--card);border:1px solid var(--border);border-radius:var(--r-3);padding:10px}
-.o .khung{height:110px;border-radius:4px;background:var(--bg);border:1px solid var(--mat-hairline);
+.o .khung{height:110px;border-radius:4px;background:var(--bg);border:1px solid var(--vien-mo);
   color:var(--t1);overflow:hidden;margin-bottom:8px}
 .o .khung svg{display:block;width:100%;height:100%}
 .o b{font-size:var(--fs-xs);font-weight:var(--fw-semi)}

@@ -1,0 +1,601 @@
+<!-- @dsCard group="Chữ ký & biểu tượng tệp" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark" data-nhan="teal">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InteriorFlow · Thước simpleCoChiTiet — chấm 3 chữ ký + biểu tượng tệp</title>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   MÃ MÀU CHỈ ĐƯỢC VIẾT TRONG KHỐI NÀY. Mọi chỗ khác gọi biến hoặc currentColor.
+   Tên nền mờ dùng --nen-mo-* (§V5 #3 đã thi hành) — KHÔNG dùng tên cũ.
+   Đường kẻ mảnh dùng --vien-mo, KHÔNG nằm trong họ --nen-mo-* (P-L đổi 16/08: nó là ĐƯỜNG KẺ,
+   đọc 80/80 chỗ dùng trong code thì 0 chỗ làm mặt nền).
+   Giá trị theme TỐI + màu nghĩa = chép nguyên app/globals.css.
+   Giá trị theme SÁNG = bản canh-Apple (A4 · CHOT-16-08-BAN-DUNG.md:103).
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+:root{
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-3xs:10px; --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  /* DẢI PHỔ MÀU — ngoại lệ DUY NHẤT của luật "màu chỉ trong khối token", khai ở đây cho đúng
+     luật. Nó KHÔNG phải màu giao diện mà là DỮ LIỆU: bánh xe góc màu 0→360° dùng làm thước đo.
+     Không thể tokenise vì bản chất nó là toàn bộ phổ. */
+  --pho-dai:linear-gradient(90deg,
+    hsl(0 70% 50%),hsl(60 70% 50%),hsl(120 70% 40%),hsl(180 60% 40%),
+    hsl(240 70% 55%),hsl(300 65% 50%),hsl(360 70% 50%));
+  --fw-normal:400; --fw-semi:600; --fw-bold:700;
+  --lh:1.6; --lh-chat:1.5;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s;
+  --le:20px; --khe:12px;
+  /* CẶP MÀU NHẤN — tím là màu chủ; màu thứ hai CHƯA CHỐT (A3⑤).
+     Trang này dựng CẢ HAI ứng viên + một bản KHÔNG MÀU để chứng minh
+     kết luận của thước không đổi theo màu. */
+  --tim:#7c3aed; --tim-sau:#6d28d9; --tim-nhat:#c4b5fd;
+}
+
+/* ─────────── THEME TỐI ─────────── */
+[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --net:#6e6e78;
+  --nen-mo-card:rgba(26,26,30,.82); --nen-mo-panel:rgba(20,20,23,.68);
+  --vien-mo:rgba(255,255,255,.06);
+  --shadow:0 8px 30px -8px rgba(0,0,0,.65);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --danger-mem:rgba(229,103,79,.14); --success-mem:rgba(70,184,118,.14);
+  --pho-cam:rgba(12,12,14,.88);
+  --chu:var(--tim-sau);            /* nền khối màu chủ */
+  --chu-text:var(--tim-nhat);      /* màu chủ khi làm CHỮ — 9,4:1 */
+  --chu-chu:#ffffff;
+  --chu-mem:rgba(109,40,217,.20); --chu-vien:rgba(124,58,237,.55);
+}
+/* ─────────── THEME SÁNG · canh Apple ─────────── */
+[data-theme="light"]{
+  --bg:#f2f2f7; --panel:#ffffff; --card:#ffffff; --field:#e5e5ea; --hover:#e5e5ea;
+  --border:#d1d1d6; --border-strong:#c7c7cc;
+  --t1:#1c1c1e; --t2:#3c3c43; --t3:#6c6c70; --net:#8e8e93;
+  --nen-mo-card:rgba(255,255,255,.82); --nen-mo-panel:rgba(242,242,247,.72);
+  --vien-mo:rgba(0,0,0,.05);
+  --shadow:0 10px 30px -10px rgba(28,28,30,.16);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --danger-mem:rgba(201,52,29,.12); --success-mem:rgba(16,112,67,.12);
+  --pho-cam:rgba(255,255,255,.9);
+  --chu:var(--nhan); --chu-text:var(--nhan-text); --chu-chu:#ffffff;
+  --chu-mem:var(--nhan-mem); --chu-vien:var(--nhan-vien);
+}
+/* ─────────── HAI ỨNG VIÊN MÀU NHẤN THỨ HAI + MỘT BẢN KHÔNG MÀU ─────────── */
+[data-nhan="teal"]{ --nhan:#1f7a82; --nhan-text:#1f7a82; --nhan-toi:#3aa8b4;
+  --nhan-mem:rgba(31,122,130,.18); --nhan-vien:rgba(31,122,130,.6); }
+[data-nhan="man"]{ --nhan:#8f3a5c; --nhan-text:#8f3a5c; --nhan-toi:#c4718f;
+  --nhan-mem:rgba(143,58,92,.18); --nhan-vien:rgba(143,58,92,.6); }
+[data-nhan="none"]{ --nhan:#5c5c66; --nhan-text:#4a4a52; --nhan-toi:#a8a8b2;
+  --nhan-mem:rgba(92,92,102,.18); --nhan-vien:rgba(92,92,102,.6); }
+[data-theme="dark"][data-nhan="teal"]{ --nhan-text:#3aa8b4; }
+[data-theme="dark"][data-nhan="man"]{ --nhan-text:#c4718f; }
+[data-theme="dark"][data-nhan="none"]{ --nhan-text:#a8a8b2; }
+
+/* ══════════════════════ NỀN TRANG ══════════════════════ */
+*{box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--t1);padding:26px 22px 70px;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  font-size:var(--fs-sm);line-height:var(--lh);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1360px;margin:0 auto}
+h1{font-size:var(--fs-xl);margin:0 0 6px;font-weight:var(--fw-bold);line-height:1.5}
+h2{font-size:var(--fs-md);font-weight:var(--fw-bold);margin:38px 0 4px;line-height:1.5;
+  color:var(--t1);letter-spacing:.01em}
+h3{font-size:var(--fs-xs);font-weight:var(--fw-bold);margin:0 0 8px;color:var(--t2);line-height:1.5}
+p{margin:0 0 10px}
+.sub{color:var(--t2);font-size:var(--fs-xs);max-width:96ch;margin:0 0 14px;line-height:var(--lh)}
+.sub b,.note b{color:var(--t1)}
+.note{background:var(--card);border:1px solid var(--border);border-radius:var(--r-2);
+  padding:11px 13px;font-size:var(--fs-xs);color:var(--t2);line-height:var(--lh);margin:12px 0 0}
+code{font-family:ui-monospace,Menlo,monospace;font-size:.92em;color:var(--t2)}
+
+/* thanh điều khiển */
+.dieu{display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  background:var(--nen-mo-panel);border:1px solid var(--border);border-radius:var(--r-full);
+  padding:6px;margin:0 0 22px;position:sticky;top:8px;z-index:5;backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px)}
+.dieu span.nh{font-size:var(--fs-2xs);color:var(--t3);padding:0 6px 0 10px;line-height:1.6}
+button.gat{height:32px;padding:0 14px;border-radius:var(--r-full);cursor:pointer;
+  border:1px solid var(--border);background:var(--field);color:var(--t2);
+  font-size:var(--fs-2xs);font-weight:var(--fw-semi);font-family:inherit;line-height:1.5;
+  transition:background var(--dur-fast) var(--ease-apple)}
+button.gat:hover{background:var(--hover);color:var(--t1)}
+button.gat[aria-pressed="true"]{background:var(--chu);color:var(--chu-chu);border-color:transparent}
+button.gat:focus-visible{outline:2px solid var(--chu-vien);outline-offset:2px}
+
+/* lưới chung */
+.ba{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--khe)}
+.bon{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--khe)}
+@media (max-width:1180px){.ba,.bon{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:720px){.ba,.bon{grid-template-columns:minmax(0,1fr)}}
+.khoi{background:var(--card);border:1px solid var(--border);border-radius:var(--r-3);
+  padding:14px;min-width:0}
+.khoi h4{margin:0 0 3px;font-size:var(--fs-sm);font-weight:var(--fw-bold);line-height:1.5}
+.ma-hoa{font-size:var(--fs-2xs);color:var(--t2);margin:8px 0 0;line-height:var(--lh)}
+.vs{font-size:var(--fs-2xs);color:var(--t3);margin:0 0 10px;line-height:var(--lh)}
+.vs b{color:var(--t2)}
+
+/* bảng */
+table.bang{width:100%;border-collapse:collapse;font-size:var(--fs-2xs);line-height:var(--lh);
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-2);overflow:hidden}
+.cuon{overflow-x:auto;max-width:100%}
+.bang th,.bang td{padding:8px 10px;text-align:left;vertical-align:top;
+  border-bottom:1px solid var(--vien-mo)}
+.bang th{color:var(--t2);font-weight:var(--fw-bold);background:var(--field);white-space:nowrap}
+.bang td{color:var(--t2)}
+.bang td b{color:var(--t1)}
+.bang tr:last-child td{border-bottom:none}
+.bang code{white-space:nowrap}
+
+/* dấu kết quả — HÌNH + CHỮ, màu chỉ là kênh thứ ba */
+.dau{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-3xs);
+  font-weight:var(--fw-semi);white-space:nowrap;line-height:1.6}
+.dau i{width:13px;height:13px;border-radius:var(--r-full);display:inline-block;flex:none;
+  border:1.5px solid currentColor;position:relative}
+.dat{color:var(--success)}
+.dat i{background:currentColor}
+.dat i::after{content:"";position:absolute;inset:2px 3px;border-left:1.5px solid var(--card);
+  border-bottom:1.5px solid var(--card);transform:rotate(-45deg) translate(1px,-1px)}
+.nua{color:var(--warning)}
+.nua i{background:linear-gradient(90deg,currentColor 50%,transparent 50%)}
+.truot{color:var(--danger)}
+.truot i{border-style:dashed}
+.truot i::after{content:"";position:absolute;left:1.5px;right:1.5px;top:4.2px;height:1.5px;
+  background:currentColor}
+
+/* ══════════ DEMO · PA1 sống lưng ba chặng ══════════ */
+.spine{display:inline-flex;gap:3px;vertical-align:-1px;margin-right:7px}
+.spine i{width:5px;height:13px;border-radius:2px;border:1.5px solid var(--net);display:block}
+.spine i.on{background:var(--chu-text);border-color:var(--chu-text)}
+.dong{font-size:var(--fs-2xs);line-height:2.2;color:var(--t2)}
+
+/* ══════════ DEMO · PA2 số có neo ══════════ */
+.so{font-variant-numeric:tabular-nums;color:var(--t1);font-weight:var(--fw-semi);
+  padding-bottom:2px;border-bottom:2px solid var(--t2)}
+.so.tay{border-bottom-style:dashed;border-bottom-color:var(--t3)}
+.so.suy{border-bottom-style:dotted;border-bottom-color:var(--t3)}
+.ghi{color:var(--t3);font-size:var(--fs-3xs)}
+.hangso{display:grid;grid-template-columns:1fr auto auto;gap:5px 9px;align-items:baseline;
+  font-size:var(--fs-2xs);line-height:2.1;color:var(--t2)}
+
+/* ══════════ DEMO · PA3 cặp màu kể giờ ══════════ */
+.cung{height:46px;border-radius:var(--r-2);border:1px solid var(--border);
+  background:linear-gradient(90deg,var(--chu) 0%,var(--nhan-mem) 34%,var(--nhan) 66%,var(--chu) 100%)}
+.gio{display:flex;justify-content:space-between;font-size:var(--fs-3xs);color:var(--t3);
+  margin-top:5px;line-height:1.7}
+
+/* ══════════ DEMO · PA4 ngữ pháp nét ══════════ */
+.o{display:flex;gap:8px;align-items:center;font-size:var(--fs-2xs);color:var(--t2);
+  line-height:2.1}
+.mieng{width:34px;height:24px;border-radius:var(--r-1);border:2px solid var(--t2);flex:none;
+  background:var(--field)}
+.mieng.suy{border-style:dotted;border-color:var(--t3)}
+.mieng.tay{border-style:dashed;border-color:var(--t3)}
+.tick{display:inline-block;width:13px;height:13px;border-radius:var(--r-full);
+  border:1.5px solid var(--chu-text);position:relative;vertical-align:-2px}
+.tick::after{content:"";position:absolute;left:3px;top:3px;width:5px;height:2.5px;
+  border-left:1.5px solid var(--chu-text);border-bottom:1.5px solid var(--chu-text);
+  transform:rotate(-45deg)}
+
+/* ══════════ BIỂU TƯỢNG TỆP ══════════ */
+.ketep{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;margin:2px 0 0}
+.tep{width:46px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.tep .hinh{width:36px;height:44px;border-radius:var(--r-1);position:relative;
+  border:1.5px solid var(--vien,var(--net));background:var(--nen,transparent);
+  display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px}
+.tep .hinh::before{content:"";position:absolute;top:-1.5px;right:-1.5px;width:11px;height:11px;
+  background:var(--card);border-left:1.5px solid var(--vien,var(--net));
+  border-bottom:1.5px solid var(--vien,var(--net));border-bottom-left-radius:2px}
+.tep .hinh.goi::before{display:none}
+.tep .hinh.goi::after{content:"";position:absolute;left:4px;top:-5px;right:4px;height:5px;
+  border:1.5px solid var(--vien,var(--net));border-bottom:none;border-radius:3px 3px 0 0;
+  background:var(--card)}
+.tep .hinh.bang{border-style:double;border-width:3px}
+.tep .duoi{font-size:var(--fs-3xs);font-weight:var(--fw-bold);color:var(--t1);
+  letter-spacing:.02em;line-height:1.6;font-variant-numeric:tabular-nums}
+.tep .ten{font-size:var(--fs-3xs);color:var(--t3);line-height:1.6;text-align:center}
+.hangnhan{font-size:var(--fs-3xs);color:var(--t3);margin:0 0 6px;line-height:1.7}
+.hangnhan b{color:var(--t2)}
+
+/* dải phổ màu */
+.pho{position:relative;height:38px;border-radius:var(--r-1);border:1px solid var(--border);
+  overflow:hidden;background:var(--pho-dai)}
+.pho i{position:absolute;top:0;bottom:0;background:var(--pho-cam);
+  border-left:1px solid var(--t1);border-right:1px solid var(--t1)}
+.pho i::after{content:attr(data-t);position:absolute;left:0;right:0;top:10px;text-align:center;
+  font-size:var(--fs-3xs);color:var(--t1);line-height:1.6}
+.thang{display:flex;justify-content:space-between;font-size:var(--fs-3xs);color:var(--t3);
+  margin-top:4px;line-height:1.7;font-variant-numeric:tabular-nums}
+
+.luat{margin:10px 0 0;padding-left:18px;font-size:var(--fs-2xs);color:var(--t2);line-height:var(--lh)}
+.luat li{margin-bottom:5px}
+.luat b{color:var(--t1)}
+.nguon{display:inline-block;font-size:var(--fs-3xs);font-weight:var(--fw-semi);padding:1px 6px;
+  border-radius:var(--r-full);border:1px solid var(--border-strong);color:var(--t2);
+  line-height:1.7;white-space:nowrap}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Thước <code>simpleCoChiTiet</code> — và ba chữ ký đi qua nó</h1>
+<p class="sub">Hoà chốt 16/08: <b>“simple nhưng luôn có những chi tiết thú vị”</b>, và điểm chung của mọi chi tiết đáng giữ là <b>chúng mang thông tin, không phải hoa văn</b> (<code>CHOT-16-08-BAN-DUNG.md:190</code>). Câu đó là một cái <b>thước</b>. Trang này biến nó thành thứ chấm được, rồi chấm lại ba chữ ký đã bày ở <code>mock-bo-nen-chung.html:752</code> — <b>không xếp hạng, không chấm điểm</b> (§12.3: <i>“bố cục 7/10 vô nghĩa, người dùng sẽ cãi”</i>). Kết quả là bảng đối chiếu, mắt Hoà quyết.</p>
+
+<div class="dieu" role="group" aria-label="Điều khiển bản vẽ">
+  <span class="nh">Nền</span>
+  <button class="gat" id="g-toi" aria-pressed="true">Tối</button>
+  <button class="gat" id="g-sang" aria-pressed="false">Sáng</button>
+  <span class="nh">Màu nhấn thứ hai (chưa chốt)</span>
+  <button class="gat n-btn" data-n="teal" aria-pressed="true">Mòng két</button>
+  <button class="gat n-btn" data-n="man" aria-pressed="false">Mận</button>
+  <button class="gat n-btn" data-n="none" aria-pressed="false">Bỏ hết màu nhấn</button>
+</div>
+<p class="sub">⚠️ Nút <b>“Bỏ hết màu nhấn”</b> không phải trò chơi: màu nhấn thứ hai <b>chưa được chốt</b> (A3⑤ — mòng két ↔ mận đang chờ mắt Hoà). Chữ ký nào <b>đổi kết luận</b> khi bấm ba nút này thì nó phụ thuộc một màu cụ thể, và <b>đó là một điểm trượt</b>, không phải chuyện gu.</p>
+
+<!-- ═══════════════════ 1 · THƯỚC ═══════════════════ -->
+<h2>1 · Thước — bảy câu hỏi trả lời được bằng có/không</h2>
+<p class="sub">Mỗi câu kèm <b>cách kiểm</b> làm được trên app thật, không phải cảm nhận. Cột <b>Nguồn</b> khai rõ câu nào suy từ lời Hoà, câu nào phiên này tự thêm — để Hoà bác được đúng câu mình không đặt ra.</p>
+<div class="cuon">
+<table class="bang">
+  <thead><tr>
+    <th style="width:52px">Câu</th><th style="width:26%">Hỏi gì</th><th>Cách kiểm — làm được ngay</th>
+    <th style="width:15%">Trượt thì nghĩa là</th><th style="width:88px">Nguồn</th>
+  </tr></thead>
+  <tbody>
+    <tr><td><b>H1</b></td><td><b>Nói được một câu?</b> Viết ra câu người dùng đọc được từ chi tiết đó, ≤10 từ, có chủ ngữ.</td>
+      <td>Che mọi nhãn quanh nó, chỉ chừa chi tiết. Bảo một người khác đọc thành câu. Không viết ra được câu nào.</td>
+      <td>hoa văn</td><td><span class="nguon">lời Hoà</span></td></tr>
+    <tr><td><b>H2</b></td><td><b>Bỏ đi thì mất tin gì?</b> Tin đó còn nằm ở chỗ nào khác <i>trên cùng màn</i> không.</td>
+      <td>Dựng bản “đã bỏ chữ ký” cạnh bản có. Liệt kê tin mất. Nếu chỗ khác nói lại y hệt thì nó là bản sao, không phải tin.</td>
+      <td>hoa văn <i>hoặc</i> nói hai lần</td><td><span class="nguon">lời Hoà</span></td></tr>
+    <tr><td><b>H3</b></td><td><b>Đổi theo dữ liệu thật?</b> Hai bản ghi khác nhau phải làm nó <i>trông khác nhau</i>.</td>
+      <td>Lấy hai hàng dữ liệu thật, dựng cạnh nhau, chụp. Trông y hệt nhau ⇒ nó không đọc dữ liệu.</td>
+      <td>trang trí</td><td><span class="nguon">lời Hoà</span></td></tr>
+    <tr><td><b>H4</b></td><td><b>Người dùng đọc ra, không cần ai dạy?</b> Nghĩa suy được từ quy ước nghề sẵn có.</td>
+      <td>Hỏi một kiến trúc sư chưa xem tài liệu: <i>“vạch này nói gì?”</i>. Sai thì kiểm tiếp: có ô giải nghĩa nói hộ không.</td>
+      <td>chưa đạt — có đường sửa</td><td><span class="nguon">lời Hoà</span></td></tr>
+    <tr><td><b>H5</b></td><td><b>Còn sống ở nấc chi tiết gọn nhất?</b> Nấc mặc định nói bằng ký hiệu, không có chữ.</td>
+      <td>Dựng nấc mặc định. Chi tiết còn ở đó và còn nói được điều cũ không.</td>
+      <td>chỉ dùng được ở nấc sâu</td><td><span class="nguon">lời Hoà</span></td></tr>
+    <tr><td><b>H6</b></td><td><b>Bỏ hết màu vẫn đọc được?</b> Và kết luận không đổi khi màu nhấn đổi.</td>
+      <td>Bấm ba nút màu ở đầu trang. Rồi in đen trắng. Chi tiết còn phân biệt được bằng <i>hình dạng</i> không.</td>
+      <td>trượt — màu là kênh duy nhất</td><td><span class="nguon">phiên này thêm</span></td></tr>
+    <tr><td><b>H7</b></td><td><b>Đứng được trong một khung hình tĩnh?</b> Một ảnh chụp, một trang in.</td>
+      <td>Chụp màn hình một lần duy nhất, đưa cho người chưa dùng app. Họ có thấy chi tiết đó không.</td>
+      <td>là <i>cơ chế</i>, chưa phải <i>dấu</i></td><td><span class="nguon">phiên này thêm</span></td></tr>
+  </tbody>
+</table>
+</div>
+<div class="note">
+<b>Vì sao thêm H6 và H7 — nói rõ để Hoà bác được:</b><br>
+<b>H6</b> đến từ hai ràng buộc đã có, không phải ý riêng: ① luật <i>màu không được là kênh duy nhất</i> ② màu nhấn thứ hai <b>chưa chốt</b> ⇒ chữ ký nào chỉ sống với một màu thì hôm nay chưa dựng được, mà cũng không nên chờ.<br>
+<b>H7</b> đến từ chỗ sản phẩm: hero output của IF là <b>bộ hồ sơ in ra và gửi đi</b>. Chi tiết chỉ tồn tại lúc app đang chạy thì nó không đi theo hồ sơ tới tay khách — nó là bầu không khí, không phải chữ ký.
+</div>
+
+<!-- ═══════════════════ 1b · HIỆU CHUẨN ═══════════════════ -->
+<h2>1b · Hiệu chuẩn thước — chấm ba thứ đã biết trước kết luận</h2>
+<p class="sub">Thước chỉ hợp thức hoá cái sẵn có thì vô dụng. Trước khi chấm ba chữ ký, chấm thử <b>hai chi tiết Hoà đã khen</b> (phải ra <i>đạt</i>) và <b>một hoa văn thuần</b> (phải ra <i>trượt</i>). Ra cùng một kết quả cho cả ba thì thước hỏng, phải làm lại.</p>
+<div class="ba">
+  <div class="khoi">
+    <h4>Đường dọc “hôm nay”</h4>
+    <p class="vs">Hoà khen hai lần trong ngày <span class="nguon">phải ra đạt</span></p>
+    <p class="ma-hoa">H1 <b>có</b> — “mốc này ở trước/sau hôm nay”. H2 <b>có</b> — bỏ đi thì phải nhẩm ngày. H3 <b>có</b> — nó chạy mỗi ngày. H4 <b>có</b>. H5 <b>có</b>. H6 <b>có</b> — là một đường, không phải một màu. H7 <b>có</b>.<br>⇒ <span class="dau dat"><i></i>đạt cả bảy</span></p>
+  </div>
+  <div class="khoi">
+    <h4>Ô trống nét đứt lúc kéo thả</h4>
+    <p class="vs">Hoà chốt là chi tiết mang tin <span class="nguon">phải ra đạt</span></p>
+    <p class="ma-hoa">H1 <b>có</b> — “thả ra thì nó nằm đây”. H2 <b>có</b> — bỏ đi là thả mù. H3 <b>có</b> — dời chỗ thì ô dời theo. H4 <b>có</b>. H5 <b>có</b>. H6 <b>có</b> — nét đứt là hình. H7 <b>không</b> — nó chỉ tồn tại trong lúc kéo.<br>⇒ <span class="dau dat"><i></i>đạt 6/7</span>, trượt H7 <b>một cách hợp lệ</b>: nó là <i>phản hồi thao tác</i>, không dự thi chức chữ ký.</p>
+  </div>
+  <div class="khoi">
+    <h4>Quầng sáng tĩnh quanh mọi khung thẻ</h4>
+    <p class="vs">Hoa văn thuần <span class="nguon">phải ra trượt</span></p>
+    <p class="ma-hoa">H1 <b>không</b> — không viết ra được câu nào. H2 <b>không</b> — bỏ đi không mất gì. H3 <b>không</b> — mọi thẻ giống nhau. H6 <b>không</b> — bỏ màu là mất sạch.<br>⇒ <span class="dau truot"><i></i>trượt</span>. Đúng luật NT-11 <i>cấm quầng sáng tĩnh trang trí</i> — thước và luật cũ ra cùng một kết quả, đây là bằng chứng thước không tự chế.</p>
+  </div>
+</div>
+<div class="note"><b>Thước có phân biệt được không:</b> ba cột trên ra <b>ba kết quả khác nhau</b> (đạt cả bảy · đạt có lý do trượt · trượt). Nếu sau này ai sửa thước mà làm ba cột này ra giống nhau thì thước đó đã hỏng, không phải mấy cột này sai.</div>
+
+<!-- ═══════════════════ 2 · BA PHƯƠNG ÁN ═══════════════════ -->
+<h2>2 · Ba chữ ký — hình thật, chấm song song</h2>
+<p class="sub">Ba phương án gốc giữ nguyên như đã bày ở mục 5 của bộ nền chung. Phần thêm ở đây là <b>hàng bỏ màu</b>, <b>chỗ trượt nói thẳng</b>, và một phương án thứ tư mà chính cái thước gợi ra.</p>
+
+<div class="ba">
+  <!-- PA1 -->
+  <div class="khoi">
+    <h4>PA1 · Sống lưng ba chặng</h4>
+    <p class="vs">Mã hoá: <b>ba chặng soi vào một nguồn</b></p>
+    <div class="dong">
+      <span class="spine"><i class="on"></i><i></i><i></i></span> Tiếp bản vẽ mặt bằng<br>
+      <span class="spine"><i></i><i class="on"></i><i></i></span> Dựng khối tủ bếp<br>
+      <span class="spine"><i></i><i></i><i class="on"></i></span> Chốt bảng vật liệu
+    </div>
+    <p class="hangnhan" style="margin-top:10px"><b>Hàng bỏ màu</b> — vạch đầy ↔ vạch rỗng, đọc bằng hình:</p>
+    <div class="dong" style="filter:grayscale(1)">
+      <span class="spine"><i class="on"></i><i></i><i></i></span> vẫn phân biệt được
+    </div>
+    <p class="ma-hoa"><b>Chỗ trượt — H2.</b> Cùng màn đã có thanh chặng và nhãn chữ nói y hệt điều đó. Bỏ sống lưng đi thì <b>không mất tin</b>, chỉ mất tốc độ đọc ⇒ nó là <b>bản sao</b> chứ chưa phải nguồn tin mới.<br>
+    <b>Chỗ trượt thứ hai — không đo bằng thước, mà bằng định vị.</b> Nó mã hoá <b>cách bày màn hình</b>. App nào có ba chặng cũng vẽ được thứ này ⇒ nhìn thấy nó, người ta nhận ra <i>“app có ba bước”</i>, không nhận ra <i>InteriorFlow</i>.</p>
+  </div>
+
+  <!-- PA2 -->
+  <div class="khoi">
+    <h4>PA2 · Số có neo</h4>
+    <p class="vs">Mã hoá: <b>mọi con số truy được về một nguồn</b></p>
+    <div class="hangso">
+      <span>Diện tích sàn</span><span class="so">24,6 m²</span><span class="ghi">đo từ khối</span>
+      <span>Cao trần</span><span class="so">2 700</span><span class="ghi">đo từ khối</span>
+      <span>Đơn giá</span><span class="so tay">1 250 000</span><span class="ghi">người nhập</span>
+    </div>
+    <p class="hangnhan" style="margin-top:10px"><b>Hàng bỏ màu</b> — nét liền ↔ nét đứt, màu không tham gia:</p>
+    <div class="hangso" style="filter:grayscale(1)">
+      <span>Diện tích sàn</span><span class="so">24,6 m²</span><span class="ghi">đo</span>
+      <span>Đơn giá</span><span class="so tay">1 250 000</span><span class="ghi">nhập</span>
+    </div>
+    <p class="ma-hoa"><b>Chỗ trượt — H1, và nó đo được.</b> Cờ tin cậy trong code có <b>ba</b> giá trị <code>measured | inferred | verified</code> (<code>lib/dna/types.ts:88</code>), mà chữ ký chỉ có <b>hai</b> hình. Gộp <i>máy suy</i> vào <i>người nhập</i> là <b>nói sai</b>: máy suy chưa ai chịu trách nhiệm, người nhập thì có. ⇒ H1 chỉ đạt cho hai trong ba trạng thái thật.<br>
+    Vướng nhỏ: vạch dưới số dễ bị đọc thành gạch chân hoặc “ô đang sửa”.</p>
+  </div>
+
+  <!-- PA3 -->
+  <div class="khoi">
+    <h4>PA3 · Cặp màu kể giờ</h4>
+    <p class="vs">Mã hoá: <b>ánh sáng kể giờ</b> — nghề nội thất</p>
+    <div class="cung" role="img" aria-label="Dải màu chuyển theo giờ trong ngày: đêm màu tím, chiều màu nhấn thứ hai"></div>
+    <div class="gio"><span>đêm</span><span>trưa</span><span>chiều</span><span>đêm</span></div>
+    <p class="hangnhan" style="margin-top:10px"><b>Hàng bỏ màu</b> — đây là chỗ nó chết:</p>
+    <div class="cung" style="filter:grayscale(1)" role="img" aria-label="Cùng dải màu đó khi bỏ màu: gần như một mảng đều, không còn đọc được"></div>
+    <p class="ma-hoa"><b>Chỗ trượt — bốn câu.</b> H2: bỏ đi <b>không mất tin</b>, giờ có ở đồng hồ và ngoài cửa sổ. H4: đổi quá chậm, ngồi cả buổi không thấy nó nói gì. H6: <b>là màu, chỉ là màu</b> — và màu nhấn thứ hai còn chưa chốt nên hôm nay chưa dựng nổi. H7: một ảnh chụp không nói được <i>“màu này vì đang chiều”</i>.<br>
+    ⚠️ <b>Trượt với tư cách CHỮ KÝ không có nghĩa bỏ cơ chế.</b> Nền đổi theo giờ vẫn là bầu không khí tốt và đã có sẵn ở Home — nó chỉ không phải cái <b>dấu</b>.</p>
+  </div>
+</div>
+
+<!-- PA4 -->
+<h2>2b · PA4 — phương án chính cái thước gợi ra <span class="nguon">phiên này thêm, không phải chốt của Hoà</span></h2>
+<p class="sub">Thước thưởng cho: <b>hình dạng chứ không phải màu</b> (H6) · <b>sống ở nấc gọn</b> (H5) · <b>đổi theo dữ liệu dự án</b> (H3) · <b>đọc bằng quy ước nghề</b> (H4) · <b>in ra vẫn còn</b> (H7). Gộp năm điều đó lại thì PA2 không sai hướng — nó chỉ <b>làm chưa hết</b>: nó áp ngữ pháp nét cho <i>riêng con số</i>, trong khi cái sự thật nó mã hoá đúng cho <i>mọi thứ</i> trong IF.</p>
+<div class="ba">
+  <div class="khoi">
+    <h4>Nét nói <b>nguồn</b> — hai hình, không màu</h4>
+    <div class="o"><span class="mieng"></span> ảnh dựng từ khối trong IF</div>
+    <div class="o"><span class="mieng suy"></span> máy suy từ ảnh, chưa ai xem</div>
+    <div class="o"><span class="mieng tay"></span> người nhập tay / nhập từ ngoài</div>
+    <p class="ma-hoa">Ba nét là quy ước có sẵn của bản vẽ: <b>liền</b> = thấy được · <b>chấm</b> = trục, thứ dựng ra chứ không sờ được · <b>đứt</b> = khuất, phải tin lời. Kiến trúc sư đọc được trước khi mở IF ⇒ H4 đạt mà không cần dạy.</p>
+  </div>
+  <div class="khoi">
+    <h4>Dấu tick nói <b>đã có người duyệt</b></h4>
+    <div class="hangso">
+      <span>Diện tích sàn</span><span class="so">24,6 m²</span><span class="ghi">đo</span>
+      <span>Chiều cao tủ</span><span class="so suy">2 340</span><span class="ghi">máy suy</span>
+      <span>Đơn giá</span><span class="so tay">1 250 000</span><span class="ghi">nhập</span>
+    </div>
+    <p class="ma-hoa" style="margin-top:8px">Cùng ngữ pháp đó, thêm <span class="tick" role="img" aria-label="dấu đã duyệt"></span> = <b>đã có người xác nhận</b>. Vá đúng lỗ H1 của PA2: ba trạng thái thật, ba hình thật.</p>
+  </div>
+  <div class="khoi">
+    <h4>Cùng ngữ pháp, áp cho thứ không phải số</h4>
+    <div class="o"><span class="spine"><i class="on"></i><i></i><i></i></span> hạng mục đã đo</div>
+    <div class="o"><span class="mieng suy"></span> ảnh phối cảnh máy sinh</div>
+    <div class="o"><span class="so tay">Gỗ óc chó</span> <span class="ghi">— người chọn</span></div>
+    <p class="ma-hoa"><b>Chỗ trượt của chính PA4 — nói thẳng.</b> ① Ba nét là <b>ba thứ phải học</b>, PA2 chỉ có hai; luật <i>đơn giản ngoài</i> [N2] không thích điều này. ② Nét chấm 1px trên màn thường bị nhìn thành nét liền mờ — phải đo trên máy thật, chưa đo. ③ <b>Lệch với code</b>: mã nguồn coi <code>verified</code> là <b>trạng thái thứ ba loại trừ</b>, còn hình vẽ ở đây coi nó là <b>trục thứ hai</b> chồng lên nguồn. Hai cách hiểu này phải chốt một, không tự suy.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════ 2c · BẢNG ĐỐI CHIẾU ═══════════════════ -->
+<h2>2c · Bảng đối chiếu — không xếp hạng, không cho điểm</h2>
+<p class="sub">Đọc theo <b>hàng</b>, không đọc theo cột. Mỗi hàng là một câu hỏi; cột nào trượt hàng nào là chuyện của hàng đó, không cộng lại thành thứ hạng. Dấu có <b>hình + chữ</b>, màu chỉ là kênh thứ ba.</p>
+<div class="cuon">
+<table class="bang">
+  <thead><tr>
+    <th style="width:210px">Câu hỏi</th>
+    <th>PA1 · sống lưng</th><th>PA2 · số có neo</th><th>PA3 · màu kể giờ</th>
+    <th>PA4 · ngữ pháp nét <span class="nguon">thêm</span></th>
+  </tr></thead>
+  <tbody>
+    <tr><td><b>H1</b> nói được một câu</td>
+      <td><span class="dau dat"><i></i>có</span> — “việc này ở chặng 2”</td>
+      <td><span class="dau nua"><i></i>một nửa</span> — hai hình cho ba trạng thái</td>
+      <td><span class="dau nua"><i></i>một nửa</span> — “đang chiều”, tin người dùng đã có</td>
+      <td><span class="dau dat"><i></i>có</span> — nguồn + ai duyệt</td></tr>
+    <tr><td><b>H2</b> bỏ đi mất tin gì</td>
+      <td><span class="dau truot"><i></i>không mất</span> — thanh chặng nói rồi</td>
+      <td><span class="dau dat"><i></i>mất hẳn</span> — không chỗ nào khác nói xuất xứ số</td>
+      <td><span class="dau truot"><i></i>không mất</span> — giờ ở khắp nơi</td>
+      <td><span class="dau dat"><i></i>mất hẳn</span></td></tr>
+    <tr><td><b>H3</b> đổi theo dữ liệu thật</td>
+      <td><span class="dau dat"><i></i>có</span></td>
+      <td><span class="dau dat"><i></i>có</span> — đọc cờ tin cậy thật</td>
+      <td><span class="dau nua"><i></i>có, nhưng</span> — dữ liệu là giờ, không thuộc dự án</td>
+      <td><span class="dau dat"><i></i>có</span></td></tr>
+    <tr><td><b>H4</b> đọc ra không cần dạy</td>
+      <td><span class="dau nua"><i></i>phải học một lần</span> — chấm nào là chặng nào</td>
+      <td><span class="dau dat"><i></i>có</span> — liền/đứt là quy ước bản vẽ</td>
+      <td><span class="dau truot"><i></i>không</span> — đổi quá chậm để nhận ra</td>
+      <td><span class="dau nua"><i></i>hai hình thì có, ba thì phải học</span></td></tr>
+    <tr><td><b>H5</b> sống ở nấc gọn nhất</td>
+      <td><span class="dau dat"><i></i>có</span> — điểm mạnh nhất của nó</td>
+      <td><span class="dau dat"><i></i>có</span> — còn số là còn vạch</td>
+      <td><span class="dau nua"><i></i>không thuộc nấc nào</span> — nó là nền</td>
+      <td><span class="dau dat"><i></i>có</span></td></tr>
+    <tr><td><b>H6</b> bỏ màu vẫn đọc được</td>
+      <td><span class="dau dat"><i></i>có</span> — đầy ↔ rỗng</td>
+      <td><span class="dau dat"><i></i>có</span> — màu không tham gia</td>
+      <td><span class="dau truot"><i></i>không</span> — <b>là màu, chỉ là màu</b></td>
+      <td><span class="dau dat"><i></i>có</span></td></tr>
+    <tr><td><b>H7</b> đứng trong khung hình tĩnh</td>
+      <td><span class="dau dat"><i></i>có</span></td>
+      <td><span class="dau dat"><i></i>có</span> — in vào hồ sơ vẫn còn</td>
+      <td><span class="dau truot"><i></i>không</span></td>
+      <td><span class="dau dat"><i></i>có</span></td></tr>
+    <tr><td><b>Đổi kết luận khi đổi màu nhấn?</b></td>
+      <td>không</td><td>không</td>
+      <td><b>có</b> — chưa dựng được cho tới khi màu chốt</td>
+      <td>không</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="note">
+<b>Đọc bảng này thế nào — và cái gì bảng KHÔNG nói:</b><br>
+① Bảng <b>không nói phương án nào tốt hơn</b>. PA1 trượt H2 nhưng đạt H5 <i>mạnh hơn cả ba cái kia</i> — nếu điều Hoà muốn nhớ là <i>cách IF bày việc</i> thì H2 trượt cũng chấp nhận được, và đó là quyền của Hoà chứ không phải của thước.<br>
+② <b>PA1 và PA2 không tranh chỗ</b> — một cái đứng đầu dòng việc, một cái nằm dưới con số. Chọn cả hai là một lựa chọn hợp lệ, không phải né tránh.<br>
+③ <b>PA3 trượt bốn câu, nhưng đừng đọc thành “bỏ”</b> — bỏ nó khỏi vai <i>chữ ký</i>, giữ nó ở vai <i>bầu không khí</i>. Hai vai khác nhau.<br>
+④ <b>PA4 là đề xuất của phiên này</b>, chưa qua mắt Hoà, và nó có ba chỗ trượt tự khai ở trên. Đừng đọc như phương án đã được ai duyệt.
+</div>
+
+<!-- ═══════════════════ 3 · BIỂU TƯỢNG TỆP ═══════════════════ -->
+<h2>3 · Biểu tượng tệp — ba cách, không chọn hộ</h2>
+<p class="sub">Ca thật đầu tiên thử vào luật <b>màu luôn mang nghĩa</b> (B16 · <code>CHOT-16-08-BAN-DUNG.md:194</code>): bộ biểu tượng nhiều màu <i>đẹp</i>, nhưng ăn hết phần phổ màu còn sạch. Trước khi bày ba cách, <b>đo</b> xem còn bao nhiêu chỗ trống thật.</p>
+
+<h3>3a · Phổ màu — đo, không trích lại từ sổ</h3>
+<div class="pho" role="img" aria-label="Dải phổ màu 0 đến 360 độ, ba vùng bị màu nghĩa chiếm được che tối">
+  <i style="left:3.3%;width:11.4%" data-t="đỏ · sai/huỷ"></i>
+  <i style="left:14.2%;width:12.8%" data-t="vàng · xem lại"></i>
+  <i style="left:37.4%;width:11.6%" data-t="xanh · đạt"></i>
+  <i style="left:64.7%;width:33.3%" data-t="tím · màu chủ — chắn ±60°"></i>
+</div>
+<div class="thang"><span>0°</span><span>60°</span><span>120°</span><span>180°</span><span>240°</span><span>300°</span><span>360°</span></div>
+<p class="hangnhan" style="margin-top:6px">Ba mảng sáng còn lại là ba khoảng trống: <b>176°–233°</b> (57°, lam ngả mòng két) · <b>97°–135°</b> (38°, vàng chanh — trống về số, chết về nghĩa) · và một mảnh <b>vắt qua hai đầu dải</b>, 353°–360° cộng 0°–12° (19°, rìa hồng-đỏ, chỗ mận đứng).</p>
+<p class="sub" style="margin-top:8px">Đo bằng <b>OKLCH</b> đọc thẳng từ <code>app/globals.css</code>, không gõ số nhớ (luật A3). Vùng cấm ±20° quanh mỗi màu nghĩa; màu chủ cần cách ≥60°.</p>
+<div class="cuon">
+<table class="bang">
+  <thead><tr><th>Màu nghĩa</th><th>Nền tối</th><th>Nền sáng</th><th>Vùng cấm ±20°</th><th>Ghi chú</th></tr></thead>
+  <tbody>
+    <tr><td><b>Sai / huỷ</b> <code>--danger</code></td><td>32,5°</td><td>31,7°</td><td>12° – 53°</td><td>hai theme lệch 0,8° — coi như một</td></tr>
+    <tr><td><b>Cần xem lại</b> <code>--warning</code></td><td>77,3°</td><td>71,3°</td><td>51° – 97°</td><td>vùng rộng nhất vì hai theme lệch 6°</td></tr>
+    <tr><td><b>Đạt</b> <code>--success</code></td><td>154,6°</td><td>156,3°</td><td>135° – 176°</td><td>—</td></tr>
+    <tr><td><b>Màu chủ</b> tím <code>#7c3aed</code></td><td colspan="2">293,0°</td><td>cần cách ≥60° ⇒ chắn 233° – 353°</td><td>vùng chắn rộng nhất, vì ngưỡng là 60° chứ không phải 20°</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="note">
+<b>Còn lại đúng bao nhiêu — và một chỗ sổ nói gọn hơn thực tế:</b><br>
+Trừ hết ra thì <b>số học cho ba khoảng trống</b>, không phải hai:<br>
+• <b>176° – 233°</b> (57°) — lam ngả mòng két. Ứng viên <b>mòng két</b> nằm ở <b>203,8°</b>, giữa khoảng.<br>
+• <b>353° – 12°</b> (19°) — rìa hồng-đỏ. Ứng viên <b>mận</b> nằm ở <b>357,7°</b>, sát mép.<br>
+• <b>97° – 135°</b> (38°) — vàng chanh ngả lục. <b>Số học thì trống, dùng thì không được</b>: nó kẹp giữa <i>cần xem lại</i> và <i>đạt</i>, nên mắt đọc nó là “gần cảnh báo” hoặc “gần đạt” tuỳ nền. Cửa này hỏng vì <b>ngữ nghĩa</b>, không phải vì góc.<br>
+⇒ Câu <i>“chỉ còn hai cửa hue sạch”</i> trong sổ <b>đúng về mặt dùng được</b>. Phiên này đo lại và giữ nguyên kết luận, chỉ nói rõ thêm cửa thứ ba tồn tại về số mà chết về nghĩa.<br>
+🔴 <b>Hệ quả thẳng cho biểu tượng tệp:</b> một bộ 5 đuôi tệp cần 5 góc màu cách nhau ~25° mới nhìn ra khác nhau ⇒ cần ~125°. Sau khi màu nhấn thứ hai lấy một cửa, phần dùng được còn <b>chưa tới 40°</b>. <b>Không đủ chỗ.</b> Bộ nhiều màu Hoà gửi làm được vì app đó không có hệ màu mang nghĩa để phải né.
+</div>
+
+<h3 style="margin-top:26px">3b · Ba cách — cùng một bộ đuôi tệp để so được</h3>
+<div class="ba">
+  <!-- CÁCH A -->
+  <div class="khoi">
+    <h4>Cách A · Chữ + hình dạng, màu một dải</h4>
+    <p class="vs">Đuôi tệp in trên thân · góc gấp khác nhau · <b>0 cửa hue tiêu</b></p>
+    <div class="ketep">
+      <div class="tep"><div class="hinh"><span class="duoi">dwg</span></div><span class="ten">bản vẽ</span></div>
+      <div class="tep"><div class="hinh goi"><span class="duoi">idfc</span></div><span class="ten">cấu kiện</span></div>
+      <div class="tep"><div class="hinh"><span class="duoi">pdf</span></div><span class="ten">hồ sơ</span></div>
+      <div class="tep"><div class="hinh"><span class="duoi">jpg</span></div><span class="ten">ảnh</span></div>
+      <div class="tep"><div class="hinh bang"><span class="duoi">xlsx</span></div><span class="ten">bảng</span></div>
+    </div>
+    <p class="hangnhan" style="margin-top:10px"><b>Hàng bỏ màu</b> — không đổi gì, vì nó vốn không dùng màu:</p>
+    <div class="ketep" style="filter:grayscale(1)">
+      <div class="tep"><div class="hinh"><span class="duoi">dwg</span></div></div>
+      <div class="tep"><div class="hinh goi"><span class="duoi">idfc</span></div></div>
+      <div class="tep"><div class="hinh bang"><span class="duoi">xlsx</span></div></div>
+    </div>
+    <p class="ma-hoa"><b>Được:</b> không tiêu cửa hue nào · thêm đuôi tệp mới không phải xin màu · đúng <i>ưu tiên ký hiệu hơn chữ</i> vì đuôi tệp là ký hiệu 3–4 ký tự dân nghề đọc lướt, không phải câu chữ.<br>
+    <b>Mất:</b> năm biểu tượng cùng một dải màu ⇒ quét mắt qua 40 tệp thì phải <b>đọc</b>, không <b>nhìn</b>. Ba hình dạng là trần thật — đuôi thứ sáu, thứ bảy sẽ phải dùng lại hình cũ.<br>
+    <b>Rủi ro luật:</b> gần như không. Đây là cách duy nhất trong ba cách không phải xin ngoại lệ nào.</p>
+  </div>
+
+  <!-- CÁCH B -->
+  <div class="khoi">
+    <h4>Cách B · Nhiều màu, ngoại lệ có phạm vi</h4>
+    <p class="vs">Màu chỉ sống trong ô 36×44 của biểu tượng · khai tường minh là ngoại lệ</p>
+    <div class="ketep">
+      <div class="tep"><div class="hinh" style="--vien:var(--success);--nen:var(--success-mem)"><span class="duoi">dwg</span></div><span class="ten">bản vẽ</span></div>
+      <div class="tep"><div class="hinh goi" style="--vien:var(--chu-text);--nen:var(--chu-mem)"><span class="duoi">idfc</span></div><span class="ten">cấu kiện</span></div>
+      <div class="tep"><div class="hinh" style="--vien:var(--danger);--nen:var(--danger-mem)"><span class="duoi">pdf</span></div><span class="ten">hồ sơ</span></div>
+      <div class="tep"><div class="hinh" style="--vien:var(--nhan-text);--nen:var(--nhan-mem)"><span class="duoi">jpg</span></div><span class="ten">ảnh</span></div>
+      <div class="tep"><div class="hinh bang" style="--vien:var(--warning)"><span class="duoi">xlsx</span></div><span class="ten">bảng</span></div>
+    </div>
+    <p class="hangnhan" style="margin-top:10px"><b>Hàng bỏ màu</b> — vẫn đọc được nhờ đuôi chữ vẫn ở đó:</p>
+    <div class="ketep" style="filter:grayscale(1)">
+      <div class="tep"><div class="hinh" style="--vien:var(--success)"><span class="duoi">dwg</span></div></div>
+      <div class="tep"><div class="hinh" style="--vien:var(--danger)"><span class="duoi">pdf</span></div></div>
+      <div class="tep"><div class="hinh bang" style="--vien:var(--warning)"><span class="duoi">xlsx</span></div></div>
+    </div>
+    <p class="ma-hoa"><b>Được:</b> quét 40 tệp nhanh nhất · giống thứ người dùng đã quen ở mọi trình quản lý tệp ⇒ không phải học.<br>
+    <b>Mất — đo được, không phải lo xa:</b> để có 5 màu phân biệt thì <b>bắt buộc</b> lấn vào ba vùng nghĩa (bản vẽ ở trên đang mượn đúng màu <i>đạt</i> · hồ sơ mượn màu <i>sai</i> · bảng mượn màu <i>cần xem lại</i>). Trong một danh sách tệp, <code>pdf</code> đỏ đứng cạnh một tệp hỏng thật thì <b>hai cái đỏ nói hai chuyện khác nhau</b>.<br>
+    <b>Rủi ro luật:</b> thủng <i>màu luôn mang nghĩa</i>. Muốn dùng thì phải khai thành luật: <b>trong ô biểu tượng, màu không mang nghĩa trạng thái</b> — và nhận rằng ranh giới đó nằm trong đầu người thiết kế, không nằm trên màn hình.<br>
+    ⚠️ <b>Một ràng buộc đo được trong lúc dựng:</b> bản đầu tô màu cho <i>cả chữ đuôi tệp</i>, đo ra <b>3,96 – 4,50:1</b> ở cỡ 10px — dưới ngưỡng. ⇒ <b>Màu chỉ được ở khung và nền, chữ đuôi phải giữ màu mực.</b> Không phải chuyện gu: chữ 10px tô màu nhấn thì không đủ tương phản, ở bất kỳ màu nào.</p>
+  </div>
+
+  <!-- CÁCH C -->
+  <div class="khoi">
+    <h4>Cách C · Màu mã hoá một trục có nghĩa thật <span class="nguon">phiên này thêm</span></h4>
+    <p class="vs">Không phải 5 màu cho 5 đuôi — <b>1 màu cho một câu hỏi</b>: mở sửa được ngay ↔ phải nhập vào đã</p>
+    <div class="ketep">
+      <div class="tep"><div class="hinh goi" style="--vien:var(--chu-text);--nen:var(--chu-mem)"><span class="duoi">idfc</span></div><span class="ten">sửa ngay</span></div>
+      <div class="tep"><div class="hinh" style="--vien:var(--chu-text);--nen:var(--chu-mem)"><span class="duoi">idf</span></div><span class="ten">sửa ngay</span></div>
+      <div class="tep"><div class="hinh"><span class="duoi">dwg</span></div><span class="ten">nhập vào</span></div>
+      <div class="tep"><div class="hinh"><span class="duoi">pdf</span></div><span class="ten">chỉ xem</span></div>
+      <div class="tep"><div class="hinh bang"><span class="duoi">xlsx</span></div><span class="ten">nhập vào</span></div>
+    </div>
+    <p class="hangnhan" style="margin-top:10px"><b>Hàng bỏ màu</b> — trục vẫn đọc được vì nhóm “sửa ngay” còn nét đậm + nền:</p>
+    <div class="ketep" style="filter:grayscale(1)">
+      <div class="tep"><div class="hinh goi" style="--vien:var(--t1);--nen:var(--field)"><span class="duoi">idfc</span></div></div>
+      <div class="tep"><div class="hinh"><span class="duoi">dwg</span></div></div>
+      <div class="tep"><div class="hinh"><span class="duoi">pdf</span></div></div>
+    </div>
+    <p class="ma-hoa"><b>Được:</b> tiêu <b>0 cửa hue mới</b> (dùng chính màu chủ) · màu <b>vẫn mang nghĩa</b> nên không phải xin ngoại lệ · trả lời đúng câu người dùng thật sự hỏi khi mở kho tệp: <i>“cái nào tôi mở ra sửa được luôn?”</i><br>
+    <b>Mất:</b> không cho tốc độ quét <i>theo từng loại</i>; nhóm “nhập vào” vẫn phải đọc đuôi để phân biệt. Nó giải một câu hỏi khác với câu mà cách A và B đang giải.<br>
+    <b>Rủi ro luật:</b> màu chủ trong IF đang mang nghĩa <i>bấm được / đang chọn</i>. Tô nó lên biểu tượng tệp có thể bị đọc thành <i>“tệp này đang được chọn”</i> ⇒ nếu chọn cách C thì phải kiểm riêng ca <b>một tệp .idfc nằm cạnh một tệp đang được chọn</b>.</p>
+  </div>
+</div>
+
+<div class="note">
+<b>Ba cách trả lời ba câu hỏi khác nhau — đây mới là chỗ Hoà quyết, không phải chuyện đẹp xấu:</b><br>
+A hỏi <i>“tệp này là loại gì?”</i> · B cũng hỏi thế nhưng trả lời bằng màu · C hỏi <i>“tệp này tôi làm gì được?”</i>.<br>
+Cả ba đều qua ràng buộc không nới: <b>bỏ hết màu vẫn đọc được</b> — hàng bỏ màu ở mỗi cột là bằng chứng.<br>
+Chấm bằng thước mục 1: cả ba đạt H1 · H3 · H5 · H7. Khác nhau ở <b>H6</b> (A và C giữ nguyên khi bỏ màu, B mất một kênh) và ở <b>H2</b> (A và B nói <i>loại tệp</i> — tin đã có trong tên tệp ở cột bên cạnh; C nói <i>quyền làm gì</i> — tin <b>không có ở đâu khác</b>).
+</div>
+
+<!-- ═══════════════════ 4 · LUẬT & HẠN DÙNG ═══════════════════ -->
+<h2>4 · Luật bản vẽ này giữ, và lúc nào nó hết đúng</h2>
+<ul class="luat">
+  <li><b>Không xếp hạng, không cho điểm.</b> Bảng đối chiếu đọc theo hàng. Ai cộng các ô lại thành thứ hạng là đang dùng sai bảng.</li>
+  <li><b>Thước không được nới cho một phương án qua cửa.</b> Nới được thì nó không phải thước. PA2 trượt H1 dù nó là phương án phiên trước nghiêng về — đó là toàn bộ lý do có cái thước này.</li>
+  <li><b>Mã màu chỉ nằm trong khối khai token</b> ở đầu tệp; mọi chỗ khác gọi biến hoặc <code>currentColor</code>.</li>
+  <li><b>Nền mờ dùng tên <code>--nen-mo-*</code></b> — tên cũ đã chết trong code (§V5 #3, đã đổi 114 dòng / 43 tệp). Đường kẻ mảnh tách riêng thành <code>--vien-mo</code>: nó là <b>đường kẻ</b>, không phải nền, nên không được ở trong họ nền mờ.</li>
+  <li><b>Không chữ nào dùng <code>--net</code></b>: đo được 3,44:1 nền tối và 3,26:1 nền sáng — dưới ngưỡng. Nó chỉ làm <b>đường nét</b>, đúng như tên.</li>
+  <li><b>Tím không bao giờ làm chữ trên nền tối</b> — 3,04:1. Trên nền tối dùng bản nhạt (9,4:1); trên nền sáng dùng bản đậm (5,7:1). Đây là một token đổi theo theme, không phải hai màu.</li>
+  <li><b>Dấu kết quả có hình + chữ</b>, màu là kênh thứ ba: đạt = tròn đặc có tick · một nửa = tròn nửa đặc · trượt = viền đứt có gạch ngang.</li>
+  <li><b>Số góc màu đọc từ <code>app/globals.css</code></b>, không trích từ sổ (luật A3 sau ca bộ-số-pha).</li>
+  <li><b>Chữ đuôi tệp giữ màu mực ở cả ba cách</b> — đo được 3,96–4,50:1 khi tô màu ở cỡ 10px, dưới ngưỡng. Màu sống ở khung và nền, không sống ở chữ.</li>
+  <li><b>Trang này tự chạy máy đo tương phản</b> trên toàn bộ chữ, ở 2 nền × 3 màu nhấn, có cộng gộp lớp trong suốt. Hai lỗi tìm được bằng máy đo chứ không bằng mắt — mắt không bắt được chênh 4,16 với 4,50.</li>
+</ul>
+<div class="note">
+<b>Hết đúng khi:</b><br>
+① <b>Màu nhấn thứ hai được chốt</b> — PA3 phải chấm lại (hôm nay nó trượt H6 <i>một phần vì màu chưa có</i>, một phần vì bản chất; hai lý do đó phải tách ra khi đã có màu). Cách B và C phải đo lại vùng cấm vì một cửa hue vừa bị lấy.<br>
+② <b>Theme sáng đổi sang bản canh-Apple thật trong code</b> — mọi số tương phản trên trang này đo trên bản nền sáng đề xuất, chưa phải bản đang chạy.<br>
+③ <b>Hoà chọn một chữ ký</b> — hai cái còn lại thành nợ chết. Phải <b>khai tử tường minh</b> ở sổ (“PA… bỏ, vì…”), không bỏ hoang; bỏ hoang thì sáu tuần nữa có người dựng lại nó và tưởng là ý mới.<br>
+④ <b>Cờ tin cậy trong code đổi hình dạng</b> — cả PA2 lẫn PA4 neo vào <code>measured | inferred | verified</code>; union đó đổi thì hai phương án đổi theo.
+</div>
+
+</div>
+<script>
+(function(){
+  var html=document.documentElement;
+  var bToi=document.getElementById('g-toi'), bSang=document.getElementById('g-sang');
+  function datTheme(t){
+    html.setAttribute('data-theme',t);
+    bToi.setAttribute('aria-pressed', String(t==='dark'));
+    bSang.setAttribute('aria-pressed', String(t==='light'));
+  }
+  bToi.addEventListener('click',function(){datTheme('dark');});
+  bSang.addEventListener('click',function(){datTheme('light');});
+
+  var nut=[].slice.call(document.querySelectorAll('.n-btn'));
+  nut.forEach(function(b){
+    b.addEventListener('click',function(){
+      html.setAttribute('data-nhan', b.dataset.n);
+      nut.forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    });
+  });
+})();
+</script>
+</body>
+</html>

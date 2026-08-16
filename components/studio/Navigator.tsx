@@ -167,7 +167,7 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
       </div>
 
       {/* Đáy Navigator — 2 hàng CỐ ĐỊNH, y hệt mọi chặng mọi mode (Trụ 1 luật B). */}
-      <div className="flex shrink-0 gap-0.5 border-t border-[var(--nen-mo-hairline)] p-1.5">
+      <div className="flex shrink-0 gap-0.5 border-t border-[var(--vien-mo)] p-1.5">
         <button
           type="button"
           onClick={onAdd}
