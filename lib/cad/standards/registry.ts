@@ -50,7 +50,13 @@ export type StandardRegion = 'VN' | 'US' | 'EU' | 'INTL';
  */
 export type RuleBinding = 'mandatory' | 'adjustable' | 'advisory';
 
-export interface StandardRule {
+/** P-B (16/08) — trục NGUỒN + NGUYÊN VĂN điều khoản, tách file vì nói về XUẤT XỨ chứ không
+ * phải phép đo. Cả hai trường TUỲ CHỌN ⇒ 12 bộ luật ngành sẵn có chạy y nguyên, không migrate.
+ * Ba rào an toàn pháp lý ghi ở đầu `./types.ts` — đọc trước khi đụng `nguyenVan`. */
+import type { RuleSourceMeta } from './types';
+export type { LoaiNguon, RuleSourceMeta } from './types';
+
+export interface StandardRule extends RuleSourceMeta {
   /** slug duy nhất toàn cục, VD 'vn-res-bedroom-min-area'. Trùng id ⇒ rule sau ghi đè rule trước
    * (dùng để user override 1 rule built-in bằng rule tuỳ biến cùng id nếu muốn). */
   id: string;

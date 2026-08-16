@@ -23,6 +23,21 @@ import { luat3d } from './luat/rules-3d';
 import { gopy, type DeBaiDaGhi } from './gopy';
 
 export type { Finding, FindingLuat, FindingGopy, ReviewChang, ReviewResult, ViTri } from './types';
+/** P-B (16/08) — hai chế độ hiển thị + trục nguồn. UI gọi `dungTheLuat`/`dungTheGopy` rồi VẼ,
+ * không tự quyết chế độ nào hiện gì (gom quyết định một chỗ để test khoá được). */
+export {
+  CHE_DO_MAC_DINH,
+  CHE_DO_STORAGE_KEY,
+  CHUA_PHAN_LOAI_NGUON,
+  THIEU_NGUYEN_VAN,
+  datCheDoHienThi,
+  dungTheGopy,
+  dungTheLuat,
+  layCheDoHienThi,
+  nhanLoaiNguon,
+  nhanMuc,
+} from './hien-thi-luat';
+export type { CheDoHienThi, DongPhu, HinhDangMuc, Nhan, TheGopy, TheLuat } from './hien-thi-luat';
 export { luatCad } from './luat/cad';
 export { luatDeck } from './luat/deck';
 export { luat3d, luatDenHinhHoc, luatDoRoi, luatKhoiHo } from './luat/rules-3d';
