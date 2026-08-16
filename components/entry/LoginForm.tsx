@@ -98,6 +98,7 @@ export function LoginForm({
 }) {
   const [mode, setMode] = useState<Mode>('login');
   const [identifier, setIdentifier] = useState(''); // email hoặc SĐT
+  // (hàm `loiNguoiDoc` khai ở cuối file — xem lý do tại chỗ khai)
   const [password, setPassword] = useState('');
   const [name, setName] = useState(''); // chỉ dùng ở tab đăng ký
   // B-2: mặc định TICK — giữ đúng hành vi cũ (cookie 30 ngày) trừ khi user chủ động bỏ.
@@ -167,7 +168,7 @@ export function LoginForm({
         await afterAuth(body.user);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(loiNguoiDoc(err, en));
     } finally {
       setBusy(false);
     }
@@ -538,4 +539,31 @@ function AppleMark({ size = 14 }: { size?: number }) {
       <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
     </svg>
   );
+}
+
+/**
+ * Đổi lỗi kỹ thuật thành câu người đọc được — dùng cho MỌI đường bắt lỗi của form này.
+ *
+ * VÌ SAO CÓ (ca thật 15/08, Hoà gặp): tab IF mở sẵn từ trước, server dev đã dừng. Trang vẫn sống
+ * trong bộ nhớ nên GÕ CHỮ ĐƯỢC, nhưng `fetch('/api/auth/login')` reject bằng `TypeError` — không
+ * có response nào để đọc `body.error`. Bản cũ `setError(err.message)` nên đổ thẳng chuỗi trình
+ * duyệt **"Failed to fetch"** (Safari: "Load failed") ra giữa form tiếng Việt. Hoà đọc ra thành
+ * "bấm Vào xưởng không phản ứng" — đúng cảm nhận, vì dòng chữ đó vừa là tiếng Anh vừa không nói
+ * được phải làm gì.
+ *
+ * Trái 2 luật đang có: `SPEC-NGON-NGU-CHI-DAN` (CẤM jargon nội bộ lộ ra UI · câu lỗi phải nói
+ * CÁCH SỬA) và luật song ngữ VI/EN (chuỗi Anh rò ra bất kể ngôn ngữ giao diện).
+ *
+ * ⚠️ Nhận diện lỗi TẦNG MẠNG phải bắt cả `TypeError` LẪN chuỗi, vì mỗi trình duyệt một câu khác
+ * nhau (Chrome "Failed to fetch" · Safari "Load failed" · Firefox "NetworkError when attempting
+ * to fetch resource") — bắt bằng `instanceof` một mình là lọt trên bản build đã minify.
+ */
+function loiNguoiDoc(err: unknown, en: boolean): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  const laLoiMang =
+    err instanceof TypeError || /failed to fetch|load failed|networkerror|network request failed/i.test(raw);
+  if (laLoiMang) {
+    return en ? 'Cannot reach the server. Start it, then press again.' : 'Không nối được máy chủ. Bật lại máy chủ rồi bấm lại.';
+  }
+  return raw;
 }
