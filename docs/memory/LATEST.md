@@ -58,3 +58,30 @@ quyết cuối* (thật ra `[T5]`) · **đo sketch/pro sai TRỤC** (`isPro` ch�
 
 ## Dọn dẹp còn nợ
 3 worktree rác `.claude/worktrees/agent-*` (đã merged, lệnh xoá bị classifier chặn — Hoà chạy tay).
+
+---
+
+# 2026-08-17 — bổ sung cuối phiên
+
+## Xong hôm nay
+`4e967f2` — **4 lỗi Home Hoà soi từ ẢNH CHỤP THẬT** (lần đầu lô duyệt-mắt sinh finding):
+lời chào `hoa`→`Hoa` + nút sửa tên · số ô **01→07 liền mạch** (bỏ gán cứng, 256 ca test) ·
+thừa trống trong ô `50,3→34,5%` · `37,2→~2%` · `65,2→~0%` · thẻ dự án phân biệt được ·
+`--t4/--t5`→`--t3` ở `WidgetCard` (một chỗ ăn cho **cả 10 widget**, 1,98→7,24).
+**Máy chụp màn** hết bỏ khung: **24 ảnh, 0 bỏ** (trước 17, thiếu hẳn ba chặng).
+
+## 🔴 CÒN LẠI — đọc trước khi làm tiếp
+1. **Dải đen trên/dưới Home.** Sửa thừa-trống-trong-ô xong thì lưới co lại và **trôi giữa nền đen** —
+   đổi *trống trong ô* lấy *trống quanh lưới*. Gốc: lưới trả phần dư **cho hình nền** (chốt A2)
+   nhưng **hình nền CHƯA nối vào Home**. ⇒ hai đường: **nối 5 bộ hình nền đã dựng** (T nghiêng
+   đường này) hoặc cho lưới cao trở lại.
+2. **Design system CHƯA CÓ THANG CHIỀU CAO KHỐI.** Đo phần sửa: 0 hex cứng, bo đúng thang, màu/cỡ
+   chữ/khoảng cách đều token — nhưng **chiều cao lưới là số gõ tay** (`279/220/112/97px`), và đó
+   **chính là gốc của dải đen**. Đáng thêm vào bộ nền, cùng họ thang bo + thang mật độ.
+3. **Tên hiển thị lưu localStorage** — đổi máy là mất. Bản bền cần cột DB + màn Cài đặt.
+4. **24 ảnh mới đã lên Drive** `IF-duyet-mat/01-anh` — gồm **ba chặng lần đầu chụp được**.
+   Hoà chưa soi 2D/3D/Trình chiếu.
+
+## Nhắc lại thứ tự đã chốt (chưa đụng)
+① **máy đối chiếu sổ ↔ code** ② **nối vật liệu ba mảnh** (`lib/materials`↔`ProductSpec` = 0 code,
+đứng yên 9 ngày) ③ ba việc từ soi 3 chặng ④ dựng lại **4 kịch bản sidebar** theo cấu trúc hai cụm.
