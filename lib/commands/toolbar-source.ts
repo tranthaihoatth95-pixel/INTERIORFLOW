@@ -8,7 +8,7 @@
  * `CO`/`CO`/`D` · Đo `DI`/`DI`/`T` · Chọn `Esc`/`V`). Người dùng học phím ở 2D, sang 3D bấm sai —
  * đó là **chi phí học lại**, đúng cái Hoà gọi là "3 chặng như 3 app · khó dùng".
  *
- * ▚ CÁCH GIẢI — "một cỗ máy, nhiều mặt tiền": KHÔNG viết registry thứ sáu ([Đ1] "nhìn vào trong
+ * ▚ CÁCH GIẢI — "một cỗ máy, nhiều mặt tiền": KHÔNG viết registry thứ sáu ([Đ2] "nhìn vào trong
  * trước"). File này chỉ là lớp ĐỌC mỏng trên `registry.ts` (B1 đã nâng: `stages` + `icon`), lọc ra
  * tầng ① và trả về một mô tả mà cả ba mặt tiền vẽ được y hệt nhau.
  *

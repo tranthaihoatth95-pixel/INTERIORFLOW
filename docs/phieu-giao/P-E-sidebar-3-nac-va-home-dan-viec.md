@@ -90,7 +90,7 @@ Lưu `docs/mocks/mock-sidebar-3-nac-home.html`, dòng đầu `<!-- @dsCard group
 - **KHÔNG git · KHÔNG mở dev server · KHÔNG sửa code app.**
 - Chữ theo từ điển (`npm run soi:tu-dien` 0 lệch), cấm chữ "tự động", cấm jargon lộ UI.
 - **Không chọn hộ Hoà** — được nêu nhận xét nghề, không được chốt.
-- TRIẾT LÝ: **[N1]** người quyết cuối · **[N2]** đơn giản ngoài sâu trong · **[Đ1]** nhìn vào trong
+- TRIẾT LÝ: **[T5]** người quyết cuối · **[N2]** đơn giản ngoài sâu trong · **[Đ2]** nhìn vào trong
   trước (dùng token + khuôn sẵn có, cấm đẻ hệ mới).
 
 ## ⑦ NGHIỆM THU — ĐIỀU KIỆN ĐÍCH (⑥b), trần 5 vòng

@@ -302,7 +302,7 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
       style={{ boxShadow: selected ? 'var(--shadow-pop), 0 0 0 4px var(--accent-soft)' : 'var(--shadow-pop)' }}
       className={cn(
         'group relative mat-card w-64 rounded-[14px] border transition-colors',
-        selected ? 'border-[1.5px] border-[var(--accent)]' : 'border-[var(--mat-hairline)]',
+        selected ? 'border-[1.5px] border-[var(--accent)]' : 'border-[var(--nen-mo-hairline)]',
         status === 'error' && 'border-red-500/60',
         status === 'running' && 'node-running-halo glass-gradient-run',
       )}

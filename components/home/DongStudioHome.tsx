@@ -55,7 +55,7 @@ import type { HomeSummary } from './widgets/types';
  * dùng cho nút "Chi tiết" (i) đứng cạnh nó trong cụm góc-phải-trên (④.4, xem cụm `fixed right-5
  * top-5` ở cuối component, ngay trước phần `return` render lưới). */
 const CORNER_PILL: CSSProperties = {
-  background: 'var(--mat-header, var(--panel))',
+  background: 'var(--nen-mo-header, var(--panel))',
   border: '1px solid var(--border)',
   backdropFilter: 'blur(var(--blur)) saturate(150%)',
   WebkitBackdropFilter: 'blur(var(--blur)) saturate(150%)',

@@ -1,0 +1,533 @@
+<!-- @dsCard group="Thanh tiến trình" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InteriorFlow · Thanh tiến trình — hai loại, cấm bịa phần trăm</title>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   MÃ MÀU CHỈ ĐƯỢC VIẾT TRONG KHỐI NÀY. Mọi chỗ khác gọi biến.
+   Tên biến = TÊN THẬT trong app/globals.css (--accent · --border · --t1..t4 · --r-* · --fs-*
+   · --ease-apple · --success · --danger · --warning) ⇒ bản vẽ và code nói cùng một thứ tiếng,
+   không phải dịch qua lại. Giá trị theme TỐI chép nguyên globals.css; theme SÁNG lấy đúng bản
+   "canh theo Apple" của `mock-bo-nen-chung.html` (chờ Hoà duyệt cùng lượt).
+   ⚠️ MÀU NHẤN THỨ HAI (mòng két) CHƯA CHỐT HEX — bản vẽ này dùng --accent tím làm màu tiến
+   trình. Chốt mòng két xong thì đổi ĐÚNG MỘT DÒNG `--accent`, không phải vẽ lại.
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+:root{
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-ui:13px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600; --fw-bold:700;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s;
+  --blur:22px; --tap:32px; --tap-lg:44px;
+  /* nhịp thanh — khai một chỗ, không rắc số */
+  --vach-cao:10px; --vach-khe:1.2%; --vach-rong:5px; --vach-so:48;
+  /* KHE THEO TỈ LỆ, không px cứng: 3px × 47 khe = 141px sẽ TRÀN thanh hẹp 160px. */
+}
+.p[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78;
+  --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --shadow:0 8px 30px -8px rgba(0,0,0,.65);
+  --accent:#7c3aed; --accent-mem:rgba(124,58,237,.20); --accent-vien:rgba(124,58,237,.55);
+  --accent-warm:#c79a63;
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --lien:#3aa8b4;                 /* màu phụ dùng cho viền chạy — cùng cặp với tím */
+  --anh-a:#2a3550; --anh-b:#a46a4e; --anh-c:#f5d6a4;
+}
+.p[data-theme="light"]{
+  --bg:#f2f2f7; --panel:#ffffff; --card:#ffffff; --field:#e5e5ea; --hover:#e5e5ea;
+  --border:#d1d1d6; --border-strong:#c7c7cc;
+  --t1:#1c1c1e; --t2:#3c3c43; --t3:#6c6c70; --t4:#8e8e93;
+  --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --shadow:0 10px 30px -10px rgba(28,28,30,.16);
+  --accent:#6d28d9; --accent-mem:rgba(109,40,217,.14); --accent-vien:rgba(109,40,217,.5);
+  --accent-warm:#8a6a44;
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --lien:#1f7a82;
+  --anh-a:#c3d6e8; --anh-b:#ecdcc4; --anh-c:#f4e8d4;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:#0c0c0e;color:#f5f5f7;padding:30px 26px 70px;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  font-size:var(--fs-sm);line-height:1.5;-webkit-font-smoothing:antialiased}
+h1{font-size:var(--fs-xl);letter-spacing:-.01em;margin:0 0 6px;font-weight:var(--fw-bold)}
+h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-transform:uppercase;
+  color:#9e9ea8;margin:38px 0 4px}  /* #6e6e78 trên nền #0c0c0e chỉ 3,88:1 — dưới 4,5:1 */
+h3{font-size:var(--fs-xs);color:#d6d6db;margin:16px 0 8px;font-weight:var(--fw-semi)}
+.sub{color:#9e9ea8;margin:0 0 4px;font-size:var(--fs-xs);max-width:94ch;line-height:1.62}
+.sub b{color:#f5f5f7}
+.h2sub{color:#9e9ea8;font-size:var(--fs-xs);margin:0 0 14px;max-width:94ch;line-height:1.62}
+.h2sub b{color:#f5f5f7}
+code{font-family:ui-monospace,Menlo,monospace;font-size:1em;color:#c4b5fd}  /* 1em, không .94em: trong khối 11px thì .94em rơi xuống 10,3px — dưới sàn --fs-2xs */
+
+/* ── thanh điều khiển bản vẽ ── */
+.doi{display:flex;gap:6px;margin:14px 0 18px;flex-wrap:wrap;align-items:center;
+  position:sticky;top:0;z-index:5;background:#0c0c0e;padding:10px 0;border-bottom:1px solid #2a2a31}
+.doi button{height:var(--tap);padding:0 13px;border-radius:var(--r-full);border:1px solid #2a2a31;
+  background:#202024;color:#d6d6db;font-size:var(--fs-2xs);font-weight:var(--fw-semi);
+  cursor:pointer;font-family:inherit;line-height:1.5}
+.doi button[aria-pressed="true"]{background:rgba(124,58,237,.22);border-color:rgba(124,58,237,.55);color:#c4b5fd}
+.doi button:focus-visible{outline:2px solid rgba(124,58,237,.55);outline-offset:2px}
+.doi span{font-size:var(--fs-2xs);color:#9e9ea8;margin-left:6px}
+
+/* ── khung mẫu ── */
+.p{background:var(--bg);color:var(--t1);border:1px solid var(--border);border-radius:var(--r-4);
+  padding:16px;position:relative;overflow:hidden}
+.hai{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ba{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:1180px){.hai,.ba{grid-template-columns:1fr}}
+.tag{font-size:var(--fs-2xs);font-weight:var(--fw-semi);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--t3);margin-bottom:10px}
+.tag em{font-style:normal;color:var(--t3);letter-spacing:0;text-transform:none;font-weight:var(--fw-normal)}
+.ghi{font-size:var(--fs-2xs);color:var(--t3);margin:9px 0 0;line-height:1.62;max-width:60ch}
+.ghi b{color:var(--t2)}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   THANH TIẾN TRÌNH — hai loại, hai HÌNH THÁI khác hẳn
+   ① ĐO ĐƯỢC      = vạch RỜI, ĐẾM ĐƯỢC, sáng dần từ trái, có ĐIỂM SÁNG ĐẦU MÚT, kèm %
+   ② KHÔNG ĐO ĐƯỢC = rai LIỀN, KHÔNG đếm được, thấp hơn, cụm sáng trôi, KHÔNG có số nào
+   Khác nhau ở chỗ "đếm được ↔ không đếm được" nên giảm chuyển động vẫn phân biệt được.
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+.tt{display:inline-flex;align-items:center;gap:8px;width:100%;font-size:var(--fs-2xs);line-height:1.5}
+
+/* ① đo được */
+.vach{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--vach-khe);
+  flex:1;height:var(--vach-cao);min-width:0;overflow:hidden}
+/* max-width chặn vạch phình thành KHỐI khi thanh rộng; phần dư được space-between rải đều */
+.vach i{flex:1 1 0;min-width:0;max-width:var(--vach-rong);height:100%;border-radius:var(--r-full);
+  background:var(--border);opacity:.75;display:block;
+  /* ⭐ Ranh giới đã-chạy/chưa-chạy nói bằng CẢ CHIỀU CAO, không chỉ bằng màu.
+     Đo 16/08 theme tối: vạch sáng so vạch tắt chỉ 2,64:1 — DƯỚI ngưỡng 3:1 (WCAG 1.4.11
+     cho hình đồ hoạ mang thông tin). Bậc chiều cao .62 → 1 → 1.28 là kênh thứ hai: đọc được
+     khi in đen trắng, đọc được với người mù màu, và không phụ thuộc hex màu nhấn còn đang chờ chốt. */
+  transform:scaleY(.62);transform-origin:50% 100%;
+  transition:background 200ms var(--ease-apple),transform 200ms var(--ease-apple)}
+/* Vạch ĐÃ CHẠY: màu + quầng do JS gán theo CƯỜNG ĐỘ VỆT (cùng công thức với LightBar.tsx —
+   pha về --t1, PHA_NEN 16 + PHA_THEM 30). Pha về --t1 (MỰC của theme) chứ KHÔNG pha về trắng:
+   nền tối --t1 gần trắng ⇒ mút SÁNG lên; nền sáng --t1 gần đen ⇒ mút ĐẬM lên. Cả hai chiều đều
+   TĂNG tương phản với nền — pha về trắng thì nền sáng mất chữ. Cảm giác "phát sáng" ở nền sáng
+   do QUẦNG màu nhấn gánh. Chỉ gọi token ⇒ đúng bất kể màu nhấn thứ hai chốt hex nào.
+   Nền dự phòng dưới đây dùng cho trình duyệt không có color-mix. */
+.vach i.on{opacity:1;transform:none;background:var(--accent)}
+.vach i.mut{transform:scaleY(1.28)}
+/* BẢN CŨ (trước lượt "thêm sáng") — giữ để so trước ↔ sau ở mục 6. Màu phẳng, chỉ mút có quầng. */
+.vach[data-cu="1"] i.on{background:var(--accent);filter:none}
+.vach[data-cu="1"] i.mut{filter:drop-shadow(0 0 4px var(--accent)) drop-shadow(0 0 9px var(--accent))}
+.tt .so{color:var(--t2);font-variant-numeric:tabular-nums;font-weight:var(--fw-semi);flex:none}
+.tt .con{color:var(--t3);font-variant-numeric:tabular-nums;flex:none}
+
+/* ② không đo được — CỐ Ý không có phần tử rời để đếm */
+.rai{position:relative;flex:1;min-width:0;height:6px;border-radius:var(--r-full);overflow:hidden;
+  background:repeating-linear-gradient(90deg,var(--border) 0 2px,transparent 2px 5px);opacity:.9}
+/* Cụm trôi dùng CHUNG NGÔN NGỮ ÁNH SÁNG với loại đo được: chói ở MÉP DẪN ĐẦU (phải), nhạt dần
+   về đuôi. Hai loại nói cùng thứ tiếng về ánh sáng nhưng vẫn khác hẳn về HÌNH THÁI. */
+.rai i{position:absolute;inset:0 auto 0 0;width:18%;display:block;
+  background:repeating-linear-gradient(90deg,color-mix(in oklab,var(--accent),var(--t1) calc(16% + 30% * var(--choi,1))) 0 2px,transparent 2px 5px);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.45) 45%,#000 100%);
+  mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.45) 45%,#000 100%);
+  filter:drop-shadow(0 0 calc(6px * var(--choi,1)) var(--accent));
+  animation:troi 1.5s linear infinite}
+.rai[data-cu="1"] i{background:repeating-linear-gradient(90deg,var(--accent) 0 2px,transparent 2px 5px);
+  width:13%;-webkit-mask-image:none;mask-image:none;filter:drop-shadow(0 0 5px var(--accent))}
+@keyframes troi{from{transform:translateX(-115%)}to{transform:translateX(760%)}}
+
+/* kết thúc: MÀU + HÌNH + CHỮ — màu không bao giờ là kênh duy nhất */
+.ket{display:inline-flex;align-items:center;gap:4px;flex:none;font-weight:var(--fw-semi)}
+.ket.xong{color:var(--success)} .ket.loi{color:var(--danger)}
+.ket svg{width:11px;height:11px;display:block;stroke:currentColor;stroke-width:1.9;fill:none;
+  stroke-linecap:round;stroke-linejoin:round}
+
+/* ── ô demo ── */
+.o{background:var(--card);border:1px solid var(--border);border-radius:var(--r-3);padding:12px 13px}
+.o .oh{margin:0 0 3px;font-size:var(--fs-2xs);font-weight:var(--fw-bold);color:var(--t1);line-height:1.5}
+.o .vi{margin:0 0 10px;font-size:var(--fs-2xs);color:var(--t3);line-height:1.6}
+.o + .o{margin-top:9px}
+.dong{display:flex;align-items:center;gap:10px;margin:11px 0}
+.dong .nh{width:74px;flex:none;font-size:var(--fs-2xs);color:var(--t3);font-variant-numeric:tabular-nums;line-height:1.5}
+
+/* ══ BA TẦNG ÁNH SÁNG — ba nghĩa khác nhau, CẤM lẫn nhau (chốt 16/08) ══
+   Lấy nguyên cơ chế .k1/.k2/.k3 của `mock-bo-nen-chung.html`, không chế lại. */
+.k{width:100%;min-height:132px;border-radius:var(--r-3);padding:12px 13px;position:relative;
+  display:flex;flex-direction:column;justify-content:space-between;overflow:visible}
+.k b{font-size:var(--fs-xs);font-weight:var(--fw-semi);color:var(--t1);line-height:1.5}
+.k em{font-style:normal;font-size:var(--fs-2xs);color:var(--t2);line-height:1.6;display:block;margin-top:3px}
+/* ① kính nhận sáng — CHẤT LIỆU. Luôn có, KHÔNG chuyển động. */
+.k1{background:var(--mat-card);backdrop-filter:saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));
+  border:1px solid var(--mat-hairline);box-shadow:var(--shadow);overflow:hidden}
+.k1::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.55) 22%,rgba(255,255,255,.7) 50%,rgba(255,255,255,.55) 78%,transparent)}
+.p[data-theme="light"] .k1::before{background:linear-gradient(90deg,transparent,rgba(255,255,255,.95) 30%,#fff 50%,rgba(255,255,255,.95) 70%,transparent)}
+/* khung ẢNH nằm DƯỚI kính — để backdrop-filter có thứ thật mà làm nhoè, không phải phủ màu chết */
+.anh-khung{padding:13px;border-radius:var(--r-4);
+  background:linear-gradient(122deg,var(--anh-a) 0%,var(--anh-b) 58%,var(--anh-c) 100%)}
+.anh-khung .k1{min-height:106px}
+/* ② quầng sáng ĐỨNG YÊN — KHẢ NĂNG. Sáng ở VIỀN, mặt card KHÔNG đổi. */
+.k2{background:var(--card);border:1px solid var(--border);
+  transition:box-shadow var(--dur-fast) var(--ease-apple),border-color var(--dur-fast) var(--ease-apple)}
+.k2:hover,.k2.is-hover{border-color:var(--accent-vien);
+  box-shadow:0 0 0 1px var(--accent-vien),0 0 22px 3px var(--accent-mem),0 0 44px 8px var(--accent-mem)}
+/* ③ viền CHẠY vòng — TRẠNG THÁI đang chạy. Chỉ khi đang chạy. */
+.k3{background:var(--card);border:1px solid transparent;isolation:isolate}
+.k3::after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;z-index:-1;
+  background:conic-gradient(from var(--goc),transparent 0deg,var(--lien) 60deg,var(--accent) 120deg,transparent 200deg,transparent 360deg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;animation:vong 2.4s linear infinite}
+@property --goc{syntax:'<angle>';initial-value:0deg;inherits:false}
+@keyframes vong{to{--goc:360deg}}
+.dang{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-2xs);font-weight:var(--fw-bold);
+  letter-spacing:.08em;text-transform:uppercase;color:var(--t2);line-height:1.5}
+/* CHỮ dùng --t2 (11,98:1), CHẤM giữ --accent: accent trên card chỉ được 3,04:1 — không đủ cho
+   chữ, mà đây lại đúng là kênh CHỮ thay cho viền chạy lúc giảm chuyển động. */
+.dang i{width:5px;height:5px;border-radius:var(--r-full);background:var(--accent);display:block}
+
+/* ══ GIẢM CHUYỂN ĐỘNG — nút gạt giả lập + media query thật ══
+   Cụm trôi vô hạn là thứ ĐẦU TIÊN tắt: rai sáng ĐỀU một mức ⇒ nghĩa "đang chạy, chưa biết tới
+   đâu", KHÁC hẳn "đứng lại ở chỗ X". Viền chạy → viền tĩnh. Vạch bỏ transition. */
+/* Bản TĨNH phải SÁNG ĐÚNG MỨC, không xám xịt: rai sáng đều toàn dải + GỠ mặt nạ (giữ mặt nạ thì
+   nửa trái tắt ngóm, đọc nhầm thành "đứng ở chỗ X"). Cấm nhấp nháy: đúng một trạng thái tĩnh. */
+body[data-rm="1"] .rai i{animation:none;transform:none;left:0;right:0;width:auto;opacity:.78;
+  -webkit-mask-image:none;mask-image:none}
+body[data-rm="1"] .k3::after{animation:none;background:var(--accent-vien)}
+body[data-rm="1"] .vach i{transition:none}
+body[data-rm="1"] *{transition:none!important}
+@media (prefers-reduced-motion:reduce){
+  .rai i{animation:none;transform:none;left:0;right:0;width:auto;opacity:.78;
+    -webkit-mask-image:none;mask-image:none}
+  .k3::after{animation:none;background:var(--accent-vien)}
+  *{transition:none!important}
+}
+
+/* ── bảng ── */
+.bang{width:100%;border-collapse:collapse;font-size:var(--fs-2xs);margin-top:10px}
+.bang th,.bang td{text-align:left;padding:7px 10px;border-bottom:1px solid #2a2a31;color:#9e9ea8;
+  vertical-align:top;line-height:1.6}
+.bang th{color:#9e9ea8;font-weight:var(--fw-bold);letter-spacing:.06em;text-transform:uppercase;font-size:var(--fs-2xs)}
+.bang td b{color:#f5f5f7}
+.bang td.ok{color:#46b876}.bang td.no{color:#e5674f}
+ul.luat{margin:8px 0 0;padding-left:19px}
+ul.luat li{font-size:var(--fs-2xs);color:#9e9ea8;margin:6px 0;max-width:100ch;line-height:1.62}
+ul.luat b{color:#f5f5f7}
+.note{margin-top:10px;font-size:var(--fs-2xs);color:#9e9ea8;max-width:100ch;line-height:1.62}
+.note b{color:#d6d6db}
+</style>
+</head>
+<body>
+
+<h1>Thanh tiến trình — hai loại, cấm bịa phần trăm</h1>
+<p class="sub">Chủ dự án chốt 16/08: <i>“cái gì đang chạy cũng phải có thanh thể hiện tiến trình, thanh đó là cái mà người dùng hay nhìn chăm chăm vào nên phải có hiệu ứng, cảm giác light nhẹ, fast.”</i></p>
+<p class="sub"><b>Ranh giới đắt nhất:</b> việc <b>đo được</b> chạy theo số thật và hiện %; việc <b>không đo được</b> phải có <b>hình thái khác hẳn</b>, không con số nào. Bịa % là vi phạm khai-thật — người dùng bắt được một lần thì mất niềm tin vào <b>mọi con số khác</b> trong app, mà IF bán đúng cái “con số truy được về một nguồn”.</p>
+
+<div class="doi">
+  <button type="button" id="btn-theme" aria-pressed="false">Theme: Tối</button>
+  <button type="button" id="btn-rm" aria-pressed="false">Giảm chuyển động: tắt</button>
+  <button type="button" id="btn-choi" aria-pressed="false">Nấc giảm chói: tắt</button>
+  <span>Bản vẽ chụp ở 1440×900. Hai nút này để xem đủ trạng thái mà không phải đổi cài đặt máy.</span>
+</div>
+
+<!-- ═════════ 1 · HAI LOẠI CẠNH NHAU ═════════ -->
+<h2>1 · Hai loại — nhìn là phân biệt được, không cần đọc chữ</h2>
+<p class="h2sub">Đây là <b>điểm nghiệm thu số một</b>. Che hết chữ đi, hai thanh vẫn phải nói được hai chuyện khác nhau. Cách tách <b>không phải</b> “cùng thanh đó nhưng giấu số” — mà là <b>đếm được ↔ không đếm được</b>.</p>
+
+<div class="hai">
+  <div class="p" data-theme="dark">
+    <p class="tag">Đo được <em>· tải tệp · xuất PDF · hàng đợi render</em></p>
+    <div class="o">
+      <p class="oh">Xuất hồ sơ PDF</p>
+      <p class="vi">Có tổng số trang ⇒ có tiến trình thật để nói.</p>
+      <span class="tt" role="progressbar" aria-label="Xuất hồ sơ PDF"
+            aria-valuemin="0" aria-valuemax="100" aria-valuenow="62">
+        <span class="vach" data-pct="62" aria-hidden="true"></span>
+        <span class="so">62%</span><span class="con">còn 40 giây</span>
+      </span>
+      <p class="ghi"><b>Vạch RỜI, đếm được</b> — mỗi vạch một đơn vị đọc được. Vạch sáng cuối cùng có <b>điểm sáng đầu mút</b>: nó nói <i>đang ở đâu</i>, không phải hoa văn. Chữ “còn 40 giây” chỉ hiện khi nơi gọi <b>có sẵn</b> con số đó — component không tự ước lượng.</p>
+    </div>
+  </div>
+  <div class="p" data-theme="dark">
+    <p class="tag">Không đo được <em>· gọi AI · dò tệp · chờ máy chủ</em></p>
+    <div class="o">
+      <p class="oh">Vitals đang trả lời</p>
+      <p class="vi">Không biết tổng ⇒ không có gì để chia phần trăm.</p>
+      <!-- KHÔNG có aria-valuenow — đúng chuẩn WAI-ARIA cho indeterminate. Đưa 0 vào là nói dối
+           trình đọc màn hình y như in "0%" lên màn là nói dối mắt. -->
+      <span class="tt" role="progressbar" aria-label="Vitals đang trả lời"
+            aria-valuemin="0" aria-valuemax="100">
+        <span class="rai" aria-hidden="true"><i></i></span>
+      </span>
+      <p class="ghi"><b>Rai LIỀN, không đếm được</b> — vạch vẽ bằng gradient lặp, <b>thấp hơn</b>, không mốc đầu-cuối; cụm sáng trôi ra khỏi mép rồi vào lại nên mắt không tìm thấy điểm bắt đầu. <b>Khe bên phải trống hoàn toàn</b> — không có chỗ nào để lỡ tay in một con số.</p>
+    </div>
+  </div>
+</div>
+
+<h3>Cùng hai loại đó ở theme sáng</h3>
+<div class="hai">
+  <div class="p" data-theme="light" data-fix="1">
+    <p class="tag">Đo được</p>
+    <div class="o">
+      <p class="oh">Xuất hồ sơ PDF</p>
+      <span class="tt" role="progressbar" aria-label="Xuất hồ sơ PDF" aria-valuemin="0" aria-valuemax="100" aria-valuenow="62"><span class="vach" data-pct="62" aria-hidden="true"></span><span class="so">62%</span><span class="con">còn 40 giây</span></span>
+    </div>
+  </div>
+  <div class="p" data-theme="light" data-fix="1">
+    <p class="tag">Không đo được</p>
+    <div class="o">
+      <p class="oh">Vitals đang trả lời</p>
+      <span class="tt" role="progressbar" aria-label="Vitals đang trả lời" aria-valuemin="0" aria-valuemax="100"><span class="rai" aria-hidden="true"><i></i></span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ 2 · THANG % ═════════ -->
+<h2>2 · Thang phần trăm — chứng minh điểm sáng đầu mút chạy đúng</h2>
+<p class="h2sub">Bốn ca dễ sai nhất nằm ở hai đầu thang. <b>1%</b> phải sáng ít nhất một vạch (“vừa bắt đầu” khác hẳn “chưa bắt đầu”). <b>99,9%</b> <b>không</b> được làm tròn thành đầy. <b>100%</b> không còn mút — xong rồi thì không còn chuyện “đang ở đâu”.</p>
+<div class="hai">
+  <div class="p" data-theme="dark">
+    <div class="o">
+      <div class="dong"><span class="nh">0%</span><span class="tt"><span class="vach" data-pct="0"></span><span class="so">0%</span></span></div>
+      <div class="dong"><span class="nh">1%</span><span class="tt"><span class="vach" data-pct="1"></span><span class="so">1%</span></span></div>
+      <div class="dong"><span class="nh">37%</span><span class="tt"><span class="vach" data-pct="37"></span><span class="so">37%</span></span></div>
+      <div class="dong"><span class="nh">99,9%</span><span class="tt"><span class="vach" data-pct="99.9"></span><span class="so">100%</span></span></div>
+      <div class="dong"><span class="nh">100%</span><span class="tt"><span class="vach" data-pct="100"></span><span class="ket xong"><svg viewBox="0 0 12 12" aria-hidden><path d="M2.5 6.4l2.4 2.4L9.5 3.6"/></svg>Xong</span></span></div>
+      <div class="dong"><span class="nh">lỗi</span><span class="tt"><span class="vach" data-pct="46" data-warm="1"></span><span class="ket loi"><svg viewBox="0 0 12 12" aria-hidden><path d="M3 3l6 6M9 3l-6 6"/></svg>Lỗi</span></span></div>
+      <div class="dong" style="max-width:210px"><span class="nh">hẹp · 16</span><span class="tt"><span class="vach" data-pct="62" data-vach="16"></span><span class="so">62%</span></span></div>
+      <div class="dong" style="max-width:210px"><span class="nh">hẹp · 48</span><span class="tt"><span class="vach" data-pct="62"></span><span class="so">62%</span></span></div>
+      <p class="ghi">Hai dòng <b>hẹp</b> là ca khổ nhỏ, thanh chỉ còn ~92px. <b>16 vạch</b> = dùng đúng: vạch vẫn ra nét. <b>48 vạch</b> = khai quá dày cho khổ này: vạch mảnh gần như mất nét — nhưng <b>không đẩy vỡ hàng bên cạnh</b>, vì khe khai theo <b>tỉ lệ</b> và thanh có chốt chặn cắt bớt. Hỏng thì hỏng ở chính nó, không lây. ⇒ <b>Luật dùng: thanh hẹp thì hạ số vạch.</b></p>
+      <p class="ghi">⚠️ Dòng <b>99,9%</b> cố ý để lộ một cái bẫy: vạch dừng ở áp chót nhưng chữ đã làm tròn thành “100%”. Đó là lý do <b>vạch mới là kênh chính</b>, con số chỉ đi kèm — mắt tin cái hình trước.</p>
+      <p class="ghi">Hàng <b>Xong</b> và <b>Lỗi</b> có <b>chữ + hình</b> (dấu tích ↔ chữ thập), không chỉ khác màu — người mù màu vẫn đọc được.</p>
+    </div>
+  </div>
+  <div class="p" data-theme="light" data-fix="1">
+    <div class="o">
+      <div class="dong"><span class="nh">0%</span><span class="tt"><span class="vach" data-pct="0"></span><span class="so">0%</span></span></div>
+      <div class="dong"><span class="nh">1%</span><span class="tt"><span class="vach" data-pct="1"></span><span class="so">1%</span></span></div>
+      <div class="dong"><span class="nh">37%</span><span class="tt"><span class="vach" data-pct="37"></span><span class="so">37%</span></span></div>
+      <div class="dong"><span class="nh">99,9%</span><span class="tt"><span class="vach" data-pct="99.9"></span><span class="so">100%</span></span></div>
+      <div class="dong"><span class="nh">100%</span><span class="tt"><span class="vach" data-pct="100"></span><span class="ket xong"><svg viewBox="0 0 12 12" aria-hidden><path d="M2.5 6.4l2.4 2.4L9.5 3.6"/></svg>Xong</span></span></div>
+      <div class="dong"><span class="nh">lỗi</span><span class="tt"><span class="vach" data-pct="46" data-warm="1"></span><span class="ket loi"><svg viewBox="0 0 12 12" aria-hidden><path d="M3 3l6 6M9 3l-6 6"/></svg>Lỗi</span></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ 3 · BA TẦNG ÁNH SÁNG ═════════ -->
+<h2>3 · Ba tầng ánh sáng không lẫn nhau — và thanh nằm ở đâu trong đó</h2>
+<p class="h2sub">Chốt 16/08: kính có <b>ba tầng, ba nghĩa</b>. Tầng ② và ③ <b>cùng ở viền</b>, nên tách nhau bằng <b>CHUYỂN ĐỘNG</b>: viền <b>đứng yên</b> = con trỏ đang ở đây · viền <b>chạy</b> = đang render. Thanh tiến trình nằm <b>trong ruột</b> card, không tranh chỗ với viền.</p>
+<div class="ba">
+  <div class="p" data-theme="dark">
+    <p class="tag">① Kính nhận sáng <em>· luôn có · CHẤT LIỆU</em></p>
+    <div class="anh-khung"><div class="k k1">
+      <div><b>Phối cảnh phòng khách</b><em>Mép trên bắt sáng, bề mặt đổi theo thứ nằm dưới. Không chuyển động, không mang trạng thái.</em></div>
+    </div></div>
+    <p class="ghi">Kính chỉ ở <b>lớp vỏ</b>. Ruột (nội dung, thẻ số liệu) thì đặc — luật 00-CHOT “kính là VỎ không là RUỘT”.</p>
+  </div>
+  <div class="p" data-theme="dark">
+    <p class="tag">② Viền sáng ĐỨNG YÊN <em>· trỏ vào · KHẢ NĂNG</em></p>
+    <div class="k k2 is-hover">
+      <div><b>Phối cảnh phòng ăn</b><em>Quầng sáng lan quanh viền, <b>mặt card không đổi</b>. Đứng yên — đó là chỗ tách khỏi tầng ③.</em></div>
+    </div>
+    <p class="ghi">Không có thanh tiến trình ở đây: card này <b>không chạy gì cả</b>, nó chỉ đang được trỏ vào.</p>
+  </div>
+  <div class="p" data-theme="dark">
+    <p class="tag">③ Viền CHẠY vòng <em>· đang render · TRẠNG THÁI</em></p>
+    <div class="k k3">
+      <div><span class="dang"><i></i>Đang render</span><br><b>Phối cảnh phòng ngủ</b></div>
+      <span class="tt"><span class="vach" data-pct="41"></span><span class="so">41%</span></span>
+    </div>
+    <p class="ghi"><b>Cả hai cùng lúc, không đánh nhau:</b> viền chạy = “card này đang chạy”, đọc <b>từ xa</b>, lướt màn là thấy cái nào bận. Thanh = “còn bao lâu nữa”, đọc <b>gần</b>, khi đã chú ý vào card. Khác việc, khác chỗ đứng, khác khoảng cách nhìn.</p>
+  </div>
+</div>
+
+<h3>Cùng ba tầng ở theme sáng</h3>
+<div class="ba">
+  <div class="p" data-theme="light" data-fix="1"><p class="tag">①</p><div class="anh-khung"><div class="k k1"><div><b>Phối cảnh phòng khách</b><em>chất liệu</em></div></div></div></div>
+  <div class="p" data-theme="light" data-fix="1"><p class="tag">②</p><div class="k k2 is-hover"><div><b>Phối cảnh phòng ăn</b><em>bấm được</em></div></div></div>
+  <div class="p" data-theme="light" data-fix="1"><p class="tag">③</p><div class="k k3"><div><span class="dang"><i></i>Đang render</span><br><b>Phối cảnh phòng ngủ</b></div><span class="tt"><span class="vach" data-pct="41"></span><span class="so">41%</span></span></div></div>
+</div>
+
+<!-- ═════════ 4 · GIẢM CHUYỂN ĐỘNG ═════════ -->
+<h2>4 · Giảm chuyển động — bật nút ở đầu trang để xem bản tĩnh</h2>
+<p class="h2sub">Loại <b>chạy vô hạn</b> là thứ <b>đầu tiên phải tắt</b>. Nhưng tắt xong vẫn phải nói được “đang chạy”, và <b>vẫn phải phân biệt được hai loại</b> — đây là chỗ nhiều app hỏng: tắt chuyển động rồi thì thanh indeterminate trông y hệt thanh đứng ở 0%.</p>
+<div class="hai">
+  <div class="p" data-theme="dark">
+    <div class="o">
+      <p class="oh">Không đo được — bản tĩnh</p>
+      <p class="vi">Rai sáng <b>đều một mức trên toàn dải</b> ⇒ nghĩa “đang chạy, chưa biết tới đâu”. Khác hẳn “đứng lại ở chỗ X”.</p>
+      <span class="tt"><span class="rai"><i></i></span></span>
+      <p class="ghi">Vì hình thái vốn đã khác (rai liền, thấp hơn), tắt chuyển động <b>không làm mất</b> khả năng phân biệt. Đó là lý do chọn cách tách bằng hình thái chứ không bằng chuyển động.</p>
+    </div>
+    <div class="o">
+      <p class="oh">Đo được — bản tĩnh</p>
+      <p class="vi">Bỏ transition, nhảy thẳng tới đúng %. Không mất thông tin nào.</p>
+      <span class="tt"><span class="vach" data-pct="62"></span><span class="so">62%</span></span>
+    </div>
+  </div>
+  <div class="p" data-theme="dark">
+    <div class="o">
+      <p class="oh">Viền chạy — bản tĩnh</p>
+      <p class="vi">Viền thôi chạy, thành <b>viền tĩnh màu nhấn</b> + chữ “Đang render”. Nghĩa giữ nguyên, chỉ đổi kênh.</p>
+      <div class="k k3" style="min-height:104px">
+        <div><span class="dang"><i></i>Đang render</span><br><b>Phối cảnh phòng ngủ</b></div>
+        <span class="tt"><span class="vach" data-pct="41"></span><span class="so">41%</span></span>
+      </div>
+      <p class="ghi">⚠️ Lúc này viền tĩnh của tầng ③ <b>gần giống</b> quầng sáng tĩnh của tầng ②. Kênh phân biệt còn lại là <b>chữ trạng thái + thanh trong ruột</b> — nên chữ “Đang render” <b>không phải phần trang trí</b>, nó là kênh dự phòng bắt buộc.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ 6 · TRƯỚC ↔ SAU ═════════ -->
+<h2>6 · Thêm sáng — trước ↔ sau</h2>
+<p class="h2sub">Chủ dự án 16/08: <i>“phần hiệu ứng tiến trình nên thêm sáng.”</i> Luật NT-11 + LightState: <b>ánh sáng CHỈ mang nghĩa, cấm glow tĩnh trang trí</b> ⇒ “thêm sáng” ở đây phải đọc là <b>ánh sáng nói thêm được điều gì</b>, không phải tăng độ chói.</p>
+<p class="h2sub"><b>Cách giải: sáng nhất ở ĐẦU MÚT, nguội dần về sau</b> — như vệt sao chổi. Nhìn <b>một khung hình đứng yên</b>, không cần xem chuyển động, vẫn đọc ra <b>ba tin</b>: ① chỗ chói nhất = <b>việc đang diễn ra ngay lúc này</b> · ② vệt nằm <b>phía sau</b> mút ⇒ biết <b>đi hướng nào</b> · ③ vệt <b>dài</b> = chạy nhanh, vệt ngắn = ì ạch (mượn quy ước nhoè-chuyển-động).</p>
+
+<div class="hai">
+  <div class="p" data-theme="dark" data-fix="1">
+    <p class="tag">TRƯỚC <em>· màu phẳng, chỉ mút có quầng</em></p>
+    <div class="o">
+      <div class="dong"><span class="nh">chạy</span><span class="tt"><span class="vach" data-pct="62" data-cu="1"></span><span class="so">62%</span></span></div>
+      <div class="dong"><span class="nh">không đo</span><span class="tt"><span class="rai" data-cu="1"><i></i></span></span></div>
+      <p class="ghi">Phần đã chạy <b>sáng đều một mức</b>. Đúng luật, nhưng <b>khô</b>: nhìn một khung đứng yên chỉ biết được <b>một</b> tin — đã đi tới đâu. Không biết hướng, không biết nhanh chậm.</p>
+    </div>
+  </div>
+  <div class="p" data-theme="dark" data-fix="1">
+    <p class="tag">SAU <em>· vệt sáng nguội dần, mang ba tin</em></p>
+    <div class="o">
+      <div class="dong"><span class="nh">chạy chậm</span><span class="tt"><span class="vach" data-pct="62" data-vet="2"></span><span class="so">62%</span></span></div>
+      <div class="dong"><span class="nh">chạy nhanh</span><span class="tt"><span class="vach" data-pct="62" data-vet="9"></span><span class="so">62%</span></span></div>
+      <div class="dong"><span class="nh">không đo</span><span class="tt"><span class="rai"><i></i></span></span></div>
+      <p class="ghi">Hai dòng đầu <b>cùng ở 62%</b> — khác nhau ở <b>độ dài vệt</b>, và đó là <b>tốc độ</b>. Tin mới hoàn toàn, đọc được mà không cần con số nào.</p>
+    </div>
+  </div>
+</div>
+
+<h3>⭐ Vì sao nó không tụt thành trang trí: XONG thì TẮT HẲN</h3>
+<div class="p" data-theme="dark">
+  <div class="o">
+    <div class="dong"><span class="nh">0%</span><span class="tt"><span class="vach" data-pct="0"></span><span class="so">0%</span></span></div>
+    <div class="dong"><span class="nh">đang chạy</span><span class="tt"><span class="vach" data-pct="62"></span><span class="so">62%</span></span></div>
+    <div class="dong"><span class="nh">100%</span><span class="tt"><span class="vach" data-pct="100"></span><span class="ket xong"><svg viewBox="0 0 12 12" aria-hidden><path d="M2.5 6.4l2.4 2.4L9.5 3.6"/></svg>Xong</span></span></div>
+    <p class="ghi"><b>Chỉ dòng giữa có vệt.</b> Vệt là dấu hiệu <b>đang có việc xảy ra</b> — chưa bắt đầu thì chưa có gì, xong rồi thì không còn gì. Trang trí thì lúc nào cũng sáng; cái này <b>tự tắt</b>, nên nó là <b>trạng thái</b>, không phải hoa văn. Có test canh điều đó (tổng cường độ vệt phải bằng 0 ở cả 0% lẫn 100%).</p>
+  </div>
+</div>
+
+<h3>Ba tầng ánh sáng vẫn KHÔNG lẫn nhau sau khi thêm sáng</h3>
+<p class="h2sub">Đây vẫn là điểm nghiệm thu. Quầng của thanh cố ý giữ <b>bán kính ≤ 7px</b> quanh một vạch rộng 5px — quầng to lan ra sẽ đọc nhầm thành tầng ② (hover) hoặc ③ (viền card đang chạy). Thanh sáng <b>trong ruột, theo một đường ngang</b>; hai tầng kia sáng <b>ở viền, quanh chu vi</b>.</p>
+<div class="ba">
+  <div class="p" data-theme="dark"><p class="tag">② viền đứng yên <em>· hover</em></p><div class="k k2 is-hover"><div><b>Phối cảnh phòng ăn</b><em>không chạy gì — không có thanh</em></div></div></div>
+  <div class="p" data-theme="dark"><p class="tag">③ viền chạy + thanh <em>· đang render</em></p><div class="k k3"><div><span class="dang"><i></i>Đang render</span><br><b>Phối cảnh phòng ngủ</b></div><span class="tt"><span class="vach" data-pct="41"></span><span class="so">41%</span></span></div></div>
+  <div class="p" data-theme="light" data-fix="1"><p class="tag">③ ở nền sáng</p><div class="k k3"><div><span class="dang"><i></i>Đang render</span><br><b>Phối cảnh phòng ngủ</b></div><span class="tt"><span class="vach" data-pct="41"></span><span class="so">41%</span></span></div></div>
+</div>
+<p class="note"><b>Nấc giảm chói</b> (nút thứ ba ở đầu trang, NT-16 — bài học iOS 27 tự sửa Liquid Glass vì khó đọc): hạ quầng và mức pha xuống một nửa, <b>giữ nguyên mọi kênh thông tin</b> — bậc chiều cao, vị trí mút, hướng vệt đều còn. Độ đọc thắng độ đẹp. Bật thử để thấy nó vẫn nói đủ ba tin.</p>
+
+<!-- ═════════ 5 · API ═════════ -->
+<h2>7 · Vì sao việc bịa số KHÓ XẢY RA — thiết kế, không phải lời hứa</h2>
+<p class="h2sub">Luật “cấm bịa %” chỉ sống được nếu <b>máy chặn</b>, chứ nhắc nhau thì vài phiên là quên. Lõi <code>lib/ui/tien-trinh.ts</code> dựng năm cái chốt:</p>
+<div class="p" data-theme="dark" data-fix="1">
+<table class="bang">
+<thead><tr><th>Chốt</th><th>Cơ chế</th><th>Bịa số kiểu gì thì bị chặn</th></tr></thead>
+<tbody>
+<tr><td><b>① Union phân biệt</b></td><td><code>{doDuoc:true; pct}</code> ↔ <code>{doDuoc:false}</code> — nhánh không đo được <b>không có</b> trường <code>pct</code></td><td class="ok">Đọc <code>t.pct</code> mà chưa hẹp kiểu ⇒ <b>không biên dịch được</b></td></tr>
+<tr><td><b>② Chia phân số</b></td><td><code>tuPhanSo(done,total)</code> với <code>total ≤ 0</code> trả <b>không đo được</b></td><td class="ok">Mẹo <code>done / Math.max(1,total)</code> cho ra <b>0% giả</b> khi chưa biết tổng — nay không còn đường đó</td></tr>
+<tr><td><b>③ Chuỗi hiển thị</b></td><td><code>phanTramHienThi()</code> trả <code>null</code> khi không đo được</td><td class="ok">Không có chuỗi nào để in vào khe số ⇒ khe trống thật</td></tr>
+<tr><td><b>④ ARIA</b></td><td><code>ariaTienTrinh()</code> tự bỏ <code>aria-valuenow</code> khi không đo được</td><td class="ok">Không lỡ tay đọc “0 phần trăm” cho trình đọc màn hình</td></tr>
+<tr><td><b>⑤ Không có ETA</b></td><td>Lõi <b>cố ý không có</b> hàm ước lượng thời gian còn lại; có test canh điều đó</td><td class="ok">Muốn hiện “còn 2 phút” thì nơi gọi phải <b>có sẵn</b> con số — lõi không suy hộ</td></tr>
+</tbody>
+</table>
+<h3 style="font-size:var(--fs-xs);color:var(--t2);margin:16px 0 6px;font-weight:var(--fw-semi)">Trình đọc màn hình nghe được gì</h3>
+<table class="bang">
+<thead><tr><th>Loại</th><th>Thuộc tính phát ra</th><th>Đọc thành</th></tr></thead>
+<tbody>
+<tr><td><b>Đo được</b></td><td><code>role=progressbar</code> · <code>aria-label="Xuất hồ sơ PDF"</code> · <code>aria-valuemin=0</code> · <code>aria-valuemax=100</code> · <code>aria-valuenow=62</code></td><td class="ok">“Xuất hồ sơ PDF, thanh tiến trình, 62 phần trăm”</td></tr>
+<tr><td><b>Không đo được</b></td><td>y hệt, <b>trừ <code>aria-valuenow</code></b> — bỏ hẳn khoá đó</td><td class="ok">“Vitals đang trả lời, thanh tiến trình” — <b>không con số nào</b></td></tr>
+</tbody>
+</table>
+<p class="note">Phần vẽ (<code>.vach</code> · <code>.rai</code>) mang <code>aria-hidden</code>: nó là <b>bản vẽ lại</b> của con số đã có trong ARIA, đọc hai lần là nhiễu. Cả hai ví dụ ở mục 1 gắn ARIA thật — bấm thử bằng trình đọc màn hình ngay trên trang này được.</p>
+<ul class="luat">
+  <li><b>Cửa duy nhất để khai “chưa biết”</b> là <b>không truyền <code>value</code></b>. Không có cờ <code>indeterminate</code> riêng — thêm cờ là thêm đường cho hai nguồn sự thật cãi nhau.</li>
+  <li><b>Một lõi, hai mặt tiền</b>: <code>LightArc</code> (vòng cung, đã có, 4 nơi đang dùng) và <code>LightBar</code> (thanh, mới) đọc <b>chung</b> lõi. API công khai của <code>LightArc</code> <b>không đổi một dòng</b>.</li>
+  <li><b>Song ngữ VI/EN</b>: nhãn mặc định đi qua <code>useT()</code>; nơi gọi truyền nhãn riêng thì tự lo hai thứ tiếng.</li>
+</ul>
+<p class="note"><b>Còn treo, khai thật:</b> ① màu nhấn thứ hai (mòng két) <b>chưa chốt hex</b> — bản vẽ dùng <code>--accent</code> tím, chốt xong đổi một dòng. ② Bộ nền <code>mock-bo-nen-chung.html</code> <b>chưa được duyệt</b> — theme sáng ở đây ăn theo bộ nền đó, bộ nền đổi thì trang này đổi theo. ③ Viền chạy (tầng ③) hiện <b>chỉ có trong bản vẽ</b>, code app chưa thi công — entry <code>card-kinh-gradient</code>.</p>
+</div>
+
+<script>
+/* Dựng dãy vạch từ data-pct — CÙNG công thức với `chiaVach()` trong lib/ui/tien-trinh.ts.
+   Chép công thức ở đây là cố ý và có giới hạn: bản vẽ là HTML tĩnh, không import được TS.
+   Nếu công thức đổi thì đổi CẢ HAI — ghi ra để không ai tưởng bản vẽ tự động theo code. */
+var SO_VACH = 48;
+var PHA_NEN = 16, PHA_THEM = 30;   // khớp hằng số trong LightBar.tsx
+function chiaVach(pct, n){
+  if (pct == null || !isFinite(pct)) return {sang:0, mut:null};
+  if (pct <= 0)   return {sang:0, mut:null};
+  if (pct >= 100) return {sang:n, mut:null};
+  var sang = Math.max(1, Math.min(n-1, Math.floor(pct/100*n)));
+  return {sang:sang, mut:sang-1};
+}
+/* Cường độ vệt: 1 ở đúng mút, nguội đều về sau, 0 ngoài vệt. Bản vẽ mô phỏng vệt ở một độ dài
+   CỐ ĐỊNH; trong app độ dài đó suy từ TỐC ĐỘ thật giữa hai lần đo (doDaiVet). */
+function cuongDoVach(i, mut, dai){
+  if (mut == null) return 0;
+  var d = mut - i;
+  if (d < 0 || d >= dai) return 0;
+  return 1 - d/dai;
+}
+var VACH_ALL = [];
+function veVach(el){
+  var pct = parseFloat(el.getAttribute('data-pct'));
+  var n = parseInt(el.getAttribute('data-vach') || SO_VACH, 10);   // thanh hẹp khai số vạch riêng
+  var dai = parseInt(el.getAttribute('data-vet') || 5, 10);
+  var cu = el.getAttribute('data-cu') === '1';                     // bản TRƯỚC, để so trước ↔ sau
+  var choi = document.body.getAttribute('data-choi') === '1' ? 0.5 : 1;  // nấc giảm chói
+  var r = chiaVach(pct, n);
+  if (el.getAttribute('data-warm') === '1') el.style.setProperty('--accent','var(--accent-warm)');
+  var h = '';
+  for (var i=0;i<n;i++){
+    var on = i < r.sang, mut = i === r.mut;
+    var st = '';
+    if (on && !cu){
+      var c = cuongDoVach(i, r.mut, dai);
+      // Nấc giảm chói CHỈ hạ PHA_THEM + quầng, KHÔNG hạ PHA_NEN: PHA_NEN là thứ giữ tương phản
+      // vạch-đã-chạy ↔ vạch-tắt trên ngưỡng 3:1 ở nền tối. Giảm chói cắt ÁNH KIM, không cắt ĐỘ ĐỌC.
+      var pha = PHA_NEN + PHA_THEM*c*choi;
+      var bk  = c * 7 * choi;
+      st = ' style="background:color-mix(in oklab,var(--accent),var(--t1) '+pha.toFixed(1)+'%)'
+         + (bk > 0.4 ? ';filter:drop-shadow(0 0 '+bk.toFixed(1)+'px var(--accent))' : '') + '"';
+    }
+    h += '<i class="'+(on?'on':'')+(mut?' mut':'')+'"'+st+'></i>';
+  }
+  el.innerHTML = h;
+}
+document.querySelectorAll('.vach').forEach(function(el){ VACH_ALL.push(el); veVach(el); });
+
+var bt = document.getElementById('btn-theme');
+var toi = true;
+bt.addEventListener('click', function(){
+  toi = !toi;
+  // Bỏ qua panel data-fix — đó là các cặp CỐ Ý ghim theme để so sáng ↔ tối cạnh nhau.
+  document.querySelectorAll('.p:not([data-fix])').forEach(function(p){ p.setAttribute('data-theme', toi?'dark':'light'); });
+  bt.textContent = 'Theme: ' + (toi?'Tối':'Sáng');
+  bt.setAttribute('aria-pressed', String(!toi));
+});
+var bc = document.getElementById('btn-choi');
+var choiDiu = false;
+bc.addEventListener('click', function(){
+  choiDiu = !choiDiu;
+  document.body.setAttribute('data-choi', choiDiu?'1':'0');
+  document.documentElement.style.setProperty('--choi', choiDiu?'0.5':'1');
+  VACH_ALL.forEach(veVach);                       // vẽ lại vạch theo nấc chói mới
+  bc.textContent = 'Nấc giảm chói: ' + (choiDiu?'BẬT':'tắt');
+  bc.setAttribute('aria-pressed', String(choiDiu));
+});
+
+var br = document.getElementById('btn-rm');
+var rm = false;
+br.addEventListener('click', function(){
+  rm = !rm;
+  document.body.setAttribute('data-rm', rm?'1':'0');
+  br.textContent = 'Giảm chuyển động: ' + (rm?'BẬT':'tắt');
+  br.setAttribute('aria-pressed', String(rm));
+});
+</script>
+</body>
+</html>

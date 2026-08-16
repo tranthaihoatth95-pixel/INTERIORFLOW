@@ -194,7 +194,7 @@ export function MaskPainterModal() {
         >
           <motion.div
             variants={modalScale}
-            className="mat-card flex max-h-full w-full max-w-4xl flex-col overflow-hidden rounded-[20px] border border-[var(--mat-hairline)] shadow-2xl"
+            className="mat-card flex max-h-full w-full max-w-4xl flex-col overflow-hidden rounded-[20px] border border-[var(--nen-mo-hairline)] shadow-2xl"
           >
         {/* header */}
         <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3">

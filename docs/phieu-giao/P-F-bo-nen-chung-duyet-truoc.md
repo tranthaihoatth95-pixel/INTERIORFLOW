@@ -113,7 +113,7 @@ biến. Lưu `docs/mocks/mock-bo-nen-chung.html`, dòng đầu `<!-- @dsCard gro
   bóng đổ nhiều tầng · bo góc quá tròn · màu ấm bão hoà cao · hiệu ứng lấp lánh.
 - **Không chọn hộ Hoà** ở mục có nhiều phương án (theme sáng, chữ ký). Nêu nhận xét nghề, không chốt.
 - Nội dung mẫu **trung tính** — tên dự án bịa, không tên khách thật.
-- TRIẾT LÝ: **[N1]** người quyết cuối · **[N2]** đơn giản ngoài sâu trong · **[Đ1]** nhìn vào trong trước.
+- TRIẾT LÝ: **[T5]** người quyết cuối · **[N2]** đơn giản ngoài sâu trong · **[Đ2]** nhìn vào trong trước.
 
 ## ⑦ NGHIỆM THU — ĐIỀU KIỆN ĐÍCH (⑥b), trần 5 vòng
 `npm run soi:tu-dien` 0 lệch · `npm run check:mocks` không thêm đỏ so với baseline · mở trang bằng

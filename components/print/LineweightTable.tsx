@@ -50,7 +50,7 @@ export default function LineweightTable({ rows = DEMO_LINEWEIGHT_ROWS }: Props) 
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0, fontFamily: FONT }}>
-      <div style={{ padding: '12px 12px 10px', borderBottom: '1px solid var(--mat-hairline)' }}>
+      <div style={{ padding: '12px 12px 10px', borderBottom: '1px solid var(--nen-mo-hairline)' }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t4)' }}>
           Bảng nét khi in
         </div>
@@ -68,7 +68,7 @@ export default function LineweightTable({ rows = DEMO_LINEWEIGHT_ROWS }: Props) 
         ))}
       </div>
 
-      <div style={{ padding: '10px 12px', borderTop: '1px solid var(--mat-hairline)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ padding: '10px 12px', borderTop: '1px solid var(--nen-mo-hairline)', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
           <ModeButton active={mode === 'color'} onClick={() => setMode('color')}>
             Bản màu

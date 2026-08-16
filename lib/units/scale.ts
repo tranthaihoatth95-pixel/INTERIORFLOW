@@ -3,7 +3,7 @@
  *
  * Dãy tỉ lệ chuẩn ISO cấp app (Phiếu P-A). TÁI DÙNG `PRINT_SCALE_STEPS` đã có ở `lib/cad/model.ts`
  * (việc `ty-le-chuan`, kiểm ở `docs/CHUAN-DAU-RA-NGHE.md` §1: 1:1·1:2·1:5·1:10·1:20·1:25·1:50·
- * 1:100·1:200·1:500) — KHÔNG định nghĩa dãy số thứ hai. Đúng luật [Đ1] "nhìn vào trong trước,
+ * 1:100·1:200·1:500) — KHÔNG định nghĩa dãy số thứ hai. Đúng luật [Đ2] "nhìn vào trong trước,
  * cấm đẻ khuôn mới", và tránh đúng bệnh "5 sổ lệnh song song" mà `docs/00-CHOT.md` 15/08 ghi lại
  * (nhiều nơi tự khai cùng một danh sách rồi phân kỳ âm thầm).
  *

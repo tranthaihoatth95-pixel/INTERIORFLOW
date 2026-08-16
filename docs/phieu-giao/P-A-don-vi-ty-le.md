@@ -63,7 +63,7 @@ tỉ lệ lẻ kiểu "1:47" là hồ sơ bị trả về (đã bắt được l
 - Ngôn ngữ UI song ngữ VI/EN theo hệ i18n sẵn có; cấm chữ "tự động" (luật thao tác).
 - Trung tính tuyệt đối: không brand/tên khách trong UI hay ví dụ.
 - TRIẾT LÝ `docs/TRIET-LY-IF.md` — trích mã điều khoản vào báo cáo: **[N2]** đơn giản ngoài ·
-  sâu trong · **[Đ1]** nhìn vào trong trước (dùng lại khuôn settings sẵn có, cấm đẻ khuôn mới).
+  sâu trong · **[Đ2]** nhìn vào trong trước (dùng lại khuôn settings sẵn có, cấm đẻ khuôn mới).
 
 ## ⑦ NGHIỆM THU TỰ LÀM
 ```

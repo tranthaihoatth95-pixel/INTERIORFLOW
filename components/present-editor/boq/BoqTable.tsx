@@ -279,8 +279,8 @@ export function BoqTable({ groups, errors, totalAmount, projectId, specExtra, on
                   ref={addColPopRef}
                   style={{
                     position: 'absolute', top: '100%', right: 0, marginTop: 4, width: 196, zIndex: 30,
-                    background: 'var(--mat-panel)', backdropFilter: 'blur(var(--blur))', WebkitBackdropFilter: 'blur(var(--blur))',
-                    border: '1px solid var(--mat-hairline)', borderRadius: 14, boxShadow: 'var(--shadow-pop)', padding: 8,
+                    background: 'var(--nen-mo-panel)', backdropFilter: 'blur(var(--blur))', WebkitBackdropFilter: 'blur(var(--blur))',
+                    border: '1px solid var(--nen-mo-hairline)', borderRadius: 14, boxShadow: 'var(--shadow-pop)', padding: 8,
                   }}
                 >
                   <div style={{ fontSize: 11, fontWeight: 600, padding: '2px 4px 6px', color: 'var(--t2)', textAlign: 'left' }}>
@@ -430,8 +430,8 @@ export function BoqTable({ groups, errors, totalAmount, projectId, specExtra, on
           tổng (hạng mục hợp lệ · khối lượng · vùng lỗi ngoài tổng), KHÔNG chỉ mỗi tổng tiền. */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 18, height: 40, padding: '0 16px',
-        background: 'var(--mat-panel)', backdropFilter: 'blur(var(--blur))', WebkitBackdropFilter: 'blur(var(--blur))',
-        borderTop: '1px solid var(--mat-hairline)', fontSize: 12, color: 'var(--t3)', position: 'sticky', bottom: 0,
+        background: 'var(--nen-mo-panel)', backdropFilter: 'blur(var(--blur))', WebkitBackdropFilter: 'blur(var(--blur))',
+        borderTop: '1px solid var(--nen-mo-hairline)', fontSize: 12, color: 'var(--t3)', position: 'sticky', bottom: 0,
       }}>
         <span>{tr('Hạng mục hợp lệ', 'Valid items')} <b style={sumBoldStyle}>{flat.length}</b></span>
         <span>{tr('Khối lượng', 'Quantity')} <b style={sumBoldStyle}>{fmtM2(totalM2)} m²</b></span>

@@ -1,0 +1,892 @@
+<!-- @dsCard group="Bàn thử màu" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>InteriorFlow · Bàn thử hai hướng màu — mòng két ↔ mận trầm</title>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════════
+   KHỐI KHAI TOKEN — hex CHỈ được xuất hiện trong khối này (luật L4 "cấm tự chế hex").
+   Mọi giá trị dưới đây chép NGUYÊN VĂN từ app/globals.css, kèm số dòng để đối chứng.
+   Script bên dưới ĐỌC các biến này bằng getComputedStyle — không gõ lại số nào.
+   ══════════════════════════════════════════════════════════════════════════════ */
+:root{
+  /* --- accent tím: globals.css:19-22. CHỈ khai ở :root, KHÔNG override ở light
+         ⇒ tím giống hệt nhau ở cả hai theme. --- */
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+
+  /* --- MÀU NGHĨA NGHỀ, khai TƯỜNG MINH cả hai theme để script đọc được đồng thời.
+         Tối:  globals.css:205-207 · Sáng: globals.css:257-259.
+         Đây là 3 vùng phổ đã bị chiếm — màu nhấn không được lấn. --- */
+  --sem-danger-dark:#e5674f;  --sem-warning-dark:#d9a34a;  --sem-success-dark:#46b876;
+  --sem-danger-light:#c9341d; --sem-warning-light:#9a6304; --sem-success-light:#107043;
+
+  /* --- Nền/chữ GHIM theo theme: bàn thử phải hiện CẢ HAI theme cùng lúc, nên không
+         thể dựa vào [data-theme]. Tối: globals.css khối :root dark. Sáng: xem ghi chú. --- */
+  --pin-bg-dark:#0c0c0e; --pin-panel-dark:#141417; --pin-card-dark:#1a1a1e;
+  --pin-field-dark:#202024; --pin-border-dark:#2a2a31; --pin-borders-dark:#3d3d45;
+  --pin-t1-dark:#f5f5f7; --pin-t3-dark:#9e9ea8; --pin-t4-dark:#6e6e78;
+  /* Sáng — A4 (CHOT-16-08-BAN-DUNG) chốt canh Apple: TRẮNG THUẦN là nền chính,
+     xám chỉ là nền NHÓM. globals.css:238 hiện vẫn là kem #f2efe9 (chưa thi công A4);
+     bàn thử dùng bản A4 vì đây là bản đang có hiệu lực, và vì trắng là ràng buộc CHẶT hơn. */
+  --pin-bg-light:#ffffff; --pin-card-light:#ffffff; --pin-border-light:#e3ded4;
+  --pin-borders-light:#cbc4b6; --pin-t1-light:#211e19; --pin-t3-light:#726c62; --pin-t4-light:#9a938a;
+  --pin-kem-cu:#f2efe9;  /* nền sáng CŨ trong globals.css:238 — để đối chiếu, không dùng làm nền */
+
+  /* --- NỀN XÁM (ca khó số 2). Sáng: xám nhóm đo được từ hệ Apple — Apple CỐ Ý không
+         công bố hex, đây là số ĐO, phải khai đúng như vậy (cảnh báo A4).
+         Tối: --hover của globals.css (xám trung tính sáng nhất trong thang tối). --- */
+  --pin-gray-light:#f2f2f7; --pin-gray-dark:#2a2a30;
+
+  --pin-white:#ffffff; --pin-black:#000000;
+
+  /* --- Thang bo góc: duyệt 12/08, entry hinh-hoc-ap-thang --- */
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:13.5px; --fs-md:16px; --fs-lg:19px; --fs-xl:27px;
+  --fw-n:400; --fw-s:600;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s;
+  --tap:44px;
+}
+/* Vỏ TRANG (chrome) đổi theo nút gạt. Các ô mẫu bên trong dùng biến --pin-* nên
+   luôn hiện đủ CẢ HAI theme bất kể nút gạt đang ở đâu — đúng yêu cầu "mỗi ca ở cả hai theme". */
+:root,[data-theme="dark"]{
+  --bg:var(--pin-bg-dark); --panel:var(--pin-panel-dark); --card:var(--pin-card-dark);
+  --field:var(--pin-field-dark); --hover:#2a2a30;
+  --border:var(--pin-border-dark); --border-strong:var(--pin-borders-dark);
+  --t1:var(--pin-t1-dark); --t2:#d6d6db; --t3:var(--pin-t3-dark); --t4:var(--pin-t4-dark);
+  --danger:var(--sem-danger-dark); --warning:var(--sem-warning-dark); --success:var(--sem-success-dark);
+  --hairline:rgba(255,255,255,.06);
+  --focus-ring:2px solid #8f7dfa;
+}
+[data-theme="light"]{
+  --bg:var(--pin-kem-cu); --panel:#faf8f4; --card:var(--pin-white);
+  --field:#f4f1eb; --hover:#e9e5dd;
+  --border:var(--pin-border-light); --border-strong:var(--pin-borders-light);
+  --t1:var(--pin-t1-light); --t2:#47423a; --t3:var(--pin-t3-light); --t4:var(--pin-t4-light);
+  --danger:var(--sem-danger-light); --warning:var(--sem-warning-light); --success:var(--sem-success-light);
+  --hairline:rgba(0,0,0,.05);
+  --focus-ring:2px solid #553ff3;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);padding:30px 30px 72px;
+  font:var(--fw-n) var(--fs-sm)/1.6 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+.wrap{max-width:1340px;margin:0 auto}
+h1{font-size:var(--fs-xl);letter-spacing:-.02em;margin:0 0 8px;line-height:1.25}
+.sub{color:var(--t3);font-size:var(--fs-xs);max-width:92ch;line-height:1.65;margin:0 0 8px}
+.sub b{color:var(--t2)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-2xs);color:var(--t3);
+  border:1px solid var(--border);border-radius:var(--r-full);padding:3px 10px;margin:6px 8px 0 0;line-height:1.6}
+h2.sec{font-size:var(--fs-lg);font-weight:var(--fw-s);letter-spacing:-.01em;margin:40px 0 4px;
+  display:flex;align-items:center;gap:9px;line-height:1.4}
+h2.sec .num{font:var(--fw-s) 12px ui-monospace,Menlo,monospace;color:var(--t3);
+  border:1px solid var(--border);border-radius:var(--r-1);padding:1px 7px}
+p.secdesc{color:var(--t3);font-size:var(--fs-xs);max-width:96ch;margin:0 0 14px;line-height:1.65}
+h3.sub3{font-size:12.5px;font-weight:var(--fw-s);color:var(--t2);margin:16px 0 8px;letter-spacing:.01em}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-3);padding:15px 17px;margin-bottom:13px}
+.num-t{font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,monospace}
+
+/* ── §0 vùng cấm ── */
+.tokgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:1000px){.tokgrid{grid-template-columns:repeat(2,1fr)}}
+.tok{background:var(--field);border-radius:var(--r-2);padding:9px 11px;display:flex;gap:10px;align-items:center}
+.tok i{width:34px;height:34px;border-radius:var(--r-1);flex-shrink:0;border:1px solid var(--hairline)}
+.tok .m b{display:block;font-size:11.5px;font-weight:var(--fw-s);color:var(--t1);line-height:1.5}
+.tok .m span{display:block;font-size:10px;color:var(--t3);line-height:1.6}
+.huemap{position:relative;height:26px;margin:14px 0 4px}
+.huebar{position:relative;height:16px;border-radius:var(--r-1);overflow:hidden}
+.huezone{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,rgba(0,0,0,.6) 0 4px,transparent 4px 8px);
+  border-left:1px solid rgba(0,0,0,.45);border-right:1px solid rgba(0,0,0,.45)}
+.huepin{position:absolute;top:-3px;width:2px;height:22px;background:var(--t1);box-shadow:0 0 0 1px var(--bg);border-radius:1px}
+.huepin.b{background:var(--t3)}
+.huelegend{display:flex;gap:14px;flex-wrap:wrap;font-size:10.5px;color:var(--t3);margin-top:6px;line-height:1.6}
+
+/* ── §1 hai hướng cạnh nhau ── */
+.hai{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.hai{grid-template-columns:1fr}}
+.huong{background:var(--card);border:1px solid var(--border);border-radius:var(--r-3);padding:15px 17px}
+.huong .hd{display:flex;align-items:center;gap:11px;margin-bottom:10px}
+.huong .hd i{width:44px;height:44px;border-radius:var(--r-2);border:1px solid var(--hairline);flex-shrink:0}
+.huong .hd b{font-size:15px;font-weight:var(--fw-s);display:block;line-height:1.45}
+.huong .hd span{font-size:11px;color:var(--t3);line-height:1.6}
+.ramp{display:flex;gap:5px;margin-top:4px}
+.ramp .st{flex:1;height:52px;border-radius:var(--r-1);display:flex;align-items:flex-end;padding:4px;overflow:hidden}
+.ramp .st b{font:var(--fw-n) 8.5px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+.kv{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:11px;font-size:11px;color:var(--t3);line-height:1.7}
+.kv b{color:var(--t1);font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;font-weight:var(--fw-s)}
+.verdict{margin-top:11px;border-radius:var(--r-2);padding:9px 11px;font-size:11.5px;line-height:1.6}
+/* Nền TRUNG TÍNH + vạch màu bên trái, KHÔNG phủ màu lên nền: phủ 13-15% màu nghĩa lên nền
+   sáng kéo tương phản chữ xuống 3,4:1 (đo được). Vạch giữ nguyên kênh màu, nền giữ chữ đọc được. */
+.verdict.pass{background:var(--panel);color:var(--success);border-left:3px solid var(--success)}
+.verdict.fail{background:var(--panel);color:var(--danger);border-left:3px solid var(--danger)}
+.verdict ul{margin:5px 0 0;padding-left:17px}
+.verdict li{margin:3px 0}
+
+/* ── §2 núm kéo ── */
+.tabs{display:flex;gap:6px;margin-bottom:13px}
+.tab{flex:1;height:var(--tap);border-radius:var(--r-2);border:1px solid var(--border);background:transparent;
+  color:var(--t3);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:background var(--dur-fast) var(--ease-apple);line-height:1.5}
+.tab.on{background:var(--hover);color:var(--t1);border-color:var(--border-strong);font-weight:var(--fw-s)}
+.tab .dot{width:14px;height:14px;border-radius:var(--r-full);border:1px solid var(--hairline)}
+.srow{display:flex;align-items:center;gap:12px;margin-bottom:9px}
+.srow label{width:120px;flex-shrink:0;font-size:11.5px;color:var(--t3);line-height:1.6}
+/* Vùng bấm của núm kéo phải đủ 44px (WCAG 2.5.5) — dựng chiều cao bằng vùng chạm,
+   vệt track vẫn mảnh nhờ nền vẽ ở ::-webkit-slider-runnable-track. */
+.srow input[type=range]{flex:1;accent-color:var(--t1);height:var(--tap);background:transparent;margin:0}
+.srow .val{width:96px;text-align:right;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--t2);font-variant-numeric:tabular-nums}
+.banner{display:none;align-items:flex-start;gap:8px;border-radius:var(--r-2);padding:9px 12px;font-size:11.5px;line-height:1.6;margin-top:10px}
+.banner.show{display:flex}
+.banner.stop{background:var(--panel);color:var(--danger);border-left:3px solid var(--danger);font-weight:var(--fw-s)}
+.banner.warn{background:var(--panel);color:var(--warning);border-left:3px solid var(--warning)}
+
+/* ── §3 ca khó: 2 cột (hướng) × 2 hàng (theme) ── */
+.calabel{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--t3);margin:0 0 7px;line-height:1.6}
+.ca4{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:900px){.ca4{grid-template-columns:1fr}}
+.cell{border-radius:var(--r-3);border:1px solid;padding:13px 14px}
+.cell .ch{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10.5px;margin-bottom:11px;line-height:1.6}
+.cell .ch em{font-style:normal;font-weight:var(--fw-s);font-size:11.5px}
+.btnp{height:36px;padding:0 16px;border-radius:var(--r-2);border:0;font-size:12.5px;font-weight:var(--fw-s);cursor:default;line-height:1}
+.chipx{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 11px;border-radius:var(--r-full);
+  font-size:11.5px;font-weight:var(--fw-s);line-height:1}
+.chipx i{width:7px;height:7px;border-radius:var(--r-full);flex-shrink:0}
+.rowwrap{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.dh{display:flex;gap:9px;margin-top:11px;padding-top:11px;border-top:1px dashed}
+.btn-duyet{height:36px;padding:0 16px;border-radius:var(--r-full);border:0;font-size:12.5px;font-weight:var(--fw-s);cursor:default;line-height:1}
+.btn-huy{height:36px;padding:0 16px;border-radius:var(--r-1);background:transparent;border:1px solid;font-size:12.5px;font-weight:var(--fw-n);cursor:default;line-height:1}
+.mini{font-size:10.5px;line-height:1.65;margin-top:10px}
+.mini b{font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+/* ca 4 — diện tích nhỏ */
+.small-lab{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end}
+.small-one{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:9.5px;text-align:center;line-height:1.5;width:88px}
+.focusbox{width:64px;height:30px;border-radius:var(--r-2);border:1px solid;display:grid;place-items:center;font-size:10px}
+.stripe-card{width:88px;height:46px;border-radius:var(--r-2);border:1px solid;position:relative;overflow:hidden}
+.stripe-card i{position:absolute;left:0;right:0;bottom:0;height:2px}
+.vach{display:flex;gap:2px;align-items:center;height:12px}
+.vach s{width:3px;height:11px;border-radius:1px;display:block;text-decoration:none}
+/* ca 5 — chữ trên nền màu */
+.textblock{border-radius:var(--r-2);padding:13px 14px;line-height:1.6}
+.textblock p{margin:0 0 5px;font-size:12.5px}
+.textblock .r{font-size:10.5px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+
+/* ── §4 bảng số ── */
+.tblwrap{overflow-x:auto}
+table.so{width:100%;border-collapse:collapse;font-size:11.5px;min-width:940px}
+table.so th{text-align:left;color:var(--t3);font-size:10.5px;letter-spacing:.02em;font-weight:var(--fw-s);
+  padding:7px 8px;border-bottom:1px solid var(--border);line-height:1.5}
+table.so td{padding:8px;border-bottom:1px solid var(--hairline);vertical-align:middle;line-height:1.55}
+table.so td.n{font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+.ok{color:var(--success);font-weight:var(--fw-s)}
+.bad{color:var(--danger);font-weight:var(--fw-s)}
+.mid{color:var(--warning);font-weight:var(--fw-s)}
+
+/* ── §5 kết luận ── */
+.ketluan{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.ketluan{grid-template-columns:1fr}}
+.kl{background:var(--card);border:1px solid var(--border);border-radius:var(--r-3);padding:15px 17px}
+.kl h3.klt{margin:0 0 9px;font-size:14px;font-weight:var(--fw-s);display:flex;align-items:center;gap:9px;line-height:1.45}
+.kl h3.klt i{width:22px;height:22px;border-radius:var(--r-1);border:1px solid var(--hairline)}
+.kl dt{font-size:10.5px;color:var(--t3);margin-top:9px;line-height:1.6}
+.kl dd{margin:2px 0 0;font-size:12px;color:var(--t2);line-height:1.65}
+
+.themebtn{position:fixed;top:16px;right:16px;height:var(--tap);padding:0 15px;border:1px solid var(--border);
+  background:var(--panel);color:var(--t2);border-radius:var(--r-2);font-size:var(--fs-2xs);cursor:pointer;z-index:10;line-height:1.5}
+button:focus-visible,summary:focus-visible,input:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+.foot{margin-top:44px;border-top:1px solid var(--border);padding-top:15px;font-size:11px;color:var(--t3);line-height:1.75;max-width:104ch}
+.foot b{color:var(--t3)}
+.foot code,.sub code,p.secdesc code,.mini code{font-family:ui-monospace,Menlo,monospace;font-size:.94em}
+</style>
+</head>
+<body>
+<button class="themebtn" id="themeBtn">Đổi vỏ trang: Sáng / Tối</button>
+
+<main class="wrap">
+  <h1>Bàn thử hai hướng màu — mòng két ↔ mận trầm</h1>
+  <p class="sub">
+    Hoà đã bỏ tím-độc-diễn và bỏ hẳn vàng đồng. Còn hai ứng viên, và Hoà chọn
+    <b>dựng cả hai để so bằng mắt, không chọn bằng số</b>. Bàn thử này bày ra — nó không kết luận hộ.
+  </p>
+  <p class="sub">
+    Điểm khác bàn thử trước: ở đây màu được bày đúng <b>năm chỗ nó dễ chết nhất</b>, không phải chỗ nó đẹp nhất.
+    Mỗi ca hiện đủ <b>cả hai theme cùng lúc</b> — nút gạt góc trên chỉ đổi vỏ trang, các ô mẫu luôn ghim theme của chúng.
+  </p>
+  <div>
+    <span class="tag">Hai ứng viên · chưa màu nào được chốt</span>
+    <span class="tag">Góc màu đọc từ token thật, không gõ số nhớ</span>
+    <span class="tag">Không sửa globals.css · không sửa component</span>
+  </div>
+
+  <!-- ═══════════ §0 · RÀNG BUỘC ĐỌC TỪ TOKEN — marker: soDoiChieu ═══════════ -->
+  <h2 class="sec"><span class="num">§0</span>Phổ còn trống — đọc thẳng từ token</h2>
+  <p class="secdesc">
+    Bảy hex dưới đây là token thật của app (<code>app/globals.css</code>, số dòng ghi ngay dưới mỗi ô). Góc màu
+    <b>không</b> gõ tay — script đọc biến CSS rồi tự tính. Ba màu nghĩa có <b>hai bản khác nhau theo theme</b>,
+    nên vùng cấm cũng phải tính hai lần; bàn thử lấy <b>hợp của cả hai</b> cho chắc.
+  </p>
+  <div class="card">
+    <div class="tokgrid" id="tokGrid"></div>
+    <div class="huemap">
+      <div class="huebar" id="hueBar"></div>
+      <div class="huepin" id="pinA" title="Mòng két"></div>
+      <div class="huepin b" id="pinB" title="Mận trầm"></div>
+    </div>
+    <div class="huelegend">
+      <span>▨ dải gạch chéo = vùng cấm (±<span class="num-t" id="zmarg">20</span>° quanh góc màu của màu nghĩa, hợp cả hai theme)</span>
+      <span>│ vạch đậm = mòng két &nbsp; │ vạch nhạt = mận trầm &nbsp; │ vạch mờ = tím hiện tại</span>
+      <span>✂ vòng màu bị cắt ở <span class="num-t">240°</span> để trải phẳng — <b>mép trái và mép phải là cùng một chỗ</b>. Cắt ở đó để hai cặp nguy hiểm (mận ↔ đỏ · mòng két ↔ xanh đạt) nằm cạnh nhau thay vì bị đẩy ra hai đầu.</span>
+    </div>
+    <p class="mini" id="phoNote" style="color:var(--t3)"></p>
+  </div>
+
+  <!-- ═══════════ §1 · HAI HƯỚNG CẠNH NHAU — marker: haiHuongMau ═══════════ -->
+  <h2 class="sec"><span class="num">§1</span>Hai hướng, cùng bố cục, chỉ khác màu</h2>
+  <p class="secdesc">
+    Thang tông <b>sinh ra từ một màu gốc</b> bằng OKLCH (không đặt tay từng hex) — đổi góc màu thì độ sáng giữ đều,
+    nên hai cột dưới đây so được với nhau. Tông của nút chính do máy dò, không phải nấc chọn sẵn: máy tìm độ sáng
+    vừa đủ cho chữ trắng đọc được vừa đủ nổi trên nền của theme đó.
+  </p>
+  <div class="hai" id="huongWrap"></div>
+
+  <!-- ═══════════ §2 · NÚM KÉO + VÙNG CẤM — marker: vungCam ═══════════ -->
+  <h2 class="sec"><span class="num">§2</span>Kéo thử quanh hai hướng</h2>
+  <p class="secdesc">
+    Kéo tự do. Vào vùng cấm là máy chặn và <b>nói lý do bằng tiếng người</b>, không im lặng đẩy đi.
+    Một bộ núm dùng chung, chọn đang chỉnh hướng nào bằng hai nút dưới đây — không nhân đôi giao diện.
+  </p>
+  <div class="card">
+    <div class="tabs" aria-label="Chọn hướng màu đang chỉnh">
+      <button type="button" class="tab on" id="tabA" aria-pressed="true">
+        <span class="dot" id="tabAdot"></span>Đang chỉnh: hướng A — mòng két</button>
+      <button type="button" class="tab" id="tabB" aria-pressed="false">
+        <span class="dot" id="tabBdot"></span>Đang chỉnh: hướng B — mận trầm</button>
+    </div>
+    <div class="srow">
+      <label for="hueS">Góc màu</label>
+      <input type="range" id="hueS" min="0" max="360" step="1" />
+      <span class="val" id="hueV">—</span>
+    </div>
+    <div class="srow">
+      <label for="chromaS">Độ đậm</label>
+      <input type="range" id="chromaS" min="2" max="24" step="1" />
+      <span class="val" id="chromaV">—</span>
+    </div>
+    <div class="kv" id="kvLive"></div>
+    <div class="banner stop" id="bnStop">⛔ <span id="bnStopTxt"></span></div>
+    <div class="banner warn" id="bnWarm">🌡 <span id="bnWarmTxt"></span></div>
+    <div class="banner warn" id="bnTim">↔ <span id="bnTimTxt"></span></div>
+  </div>
+
+  <!-- ═══════════ §3 · NĂM CA KHÓ — marker: caKho ═══════════ -->
+  <h2 class="sec"><span class="num">§3</span>Năm ca màu dễ chết</h2>
+  <p class="secdesc">
+    Không bày chỗ màu đẹp. Năm ca dưới là năm chỗ một màu nhấn thường hỏng — và hỏng theo cách chỉ nhìn mới thấy,
+    con số không nói hết. Mỗi ca: <b>trái là mòng két, phải là mận</b>; <b>hàng trên theme tối, hàng dưới theme sáng</b>.
+    Các nút trong ô mẫu là <b>vật trưng bày</b>, không bấm được và cố ý đứng ngoài thứ tự phím Tab — bàn phím chỉ đi qua
+    hai nút chọn hướng và hai núm kéo ở §2.
+  </p>
+  <div id="caWrap"></div>
+
+  <!-- ═══════════ §4 · BẢNG SỐ — marker: soDoiChieu ═══════════ -->
+  <h2 class="sec"><span class="num">§4</span>Số nằm cạnh mắt, không thay mắt</h2>
+  <p class="secdesc">
+    Ba ràng buộc phải qua: ngoài ±<span class="num-t" id="zmarg2">20</span>° quanh mọi màu nghĩa · cách tím
+    <span class="num-t">≥ 60</span>° · chữ trên nền nhấn đạt ngưỡng đọc-được (<span class="num-t">≥ 4,5:1</span>).
+    Cột <b>HSL</b> có mặt vì các con số trong sổ (đỏ ~25° · vàng ~37° · xanh ~145° · tím 262°) được ghi ở
+    <b>một không gian màu khác</b> với không gian bàn thử này dùng — xem ghi chú cuối trang trước khi so số.
+  </p>
+  <div class="card tblwrap">
+    <table class="so">
+      <thead><tr>
+        <th>Hướng</th><th>Theme</th><th>Tông máy chọn</th>
+        <th>Góc OKLCH</th><th>Góc HSL</th>
+        <th>→ đỏ</th><th>→ vàng</th><th>→ xanh</th><th>→ tím</th>
+        <th>Chữ trắng</th><th>Nổi trên nền</th><th>Kết quả</th>
+      </tr></thead>
+      <tbody id="soBody"></tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════ §5 · KẾT LUẬN NGẮN ═══════════ -->
+  <h2 class="sec"><span class="num">§5</span>Mạnh ở đâu, chết ở đâu</h2>
+  <p class="secdesc">Không chấm điểm, không xếp hạng. Hai ô dưới chỉ nói mỗi hướng khoẻ chỗ nào, đuối chỗ nào, và ca nào đáng ngồi lâu hơn.</p>
+  <div class="ketluan" id="klWrap"></div>
+
+  <div class="foot">
+    <b>Trích điều khoản</b> — <code>docs/TRIET-LY-IF.md</code>, đọc số tại chỗ:<br>
+    · <b>[T5] CON NGƯỜI QUYẾT CUỐI — PIPELINE HUMAN-IN-LOOP</b> (dòng 32): <i>“AI hai vai (sản xuất/tham vấn)
+    nhưng đích đến LUÔN sửa được; máy trình PHIẾU người duyệt; sửa tay không bao giờ bị đè…”</i><br>
+    · <b>[Đ2] NHÌN VÀO TRONG TRƯỚC</b> (dòng 72): <i>“mọi bảng plan có cột ‘NỘI LỰC ĐÃ CÓ’ — IF có gì rồi mới
+    chốt build mới; build = ưu tiên chưng cất/nối dây, không sáng tác trùng.”</i><br>
+    🔧 <b>Đính chính mã</b>: phiếu ghi <i>“[N1] người quyết cuối”</i>. Mở file thì <b>[N1]</b> là
+    <i>“HUMAN-CENTRIC CHO NGƯỜI SÁNG TẠO LAI KỸ THUẬT”</i> (dòng 53) — <b>người quyết cuối là [T5]</b>.
+    Cả hai đều đúng chỗ ở bàn thử này, nhưng mã phải gọi đúng tên.<br><br>
+
+    <b>Hai không gian màu — đọc kỹ trước khi so số với sổ.</b> Bàn thử tính bằng <b>OKLCH</b> (giống bàn thử
+    <code>mock-ban-thu-mau.html</code> — một cơ chế, không đẻ cơ chế thứ hai). Ràng buộc “trùng họ thì mắt đọc lẫn nhau”
+    là chuyện <i>cảm nhận</i>, mà OKLCH là không gian đều theo cảm nhận, nên nó là chỗ đúng để đo.
+    Nhưng bộ số trong <code>docs/CHOT-16-08-BAN-DUNG.md</code> §A3 (đỏ ~25° · vàng ~37° · xanh ~145° · tím 262°)
+    <b>không khớp OKLCH, và cũng không khớp trọn HSL</b>: đo thật thì vàng HSL 37,3° ✓ · xanh HSL 145,3° ✓ nhưng
+    đỏ HSL chỉ 9,6° (sổ ghi 25) và tím HSL 247,2° (sổ ghi 262). ⇒ bộ số cũ là <b>bộ pha, không nhất quán</b> —
+    đúng lý do phiếu bắt “đọc ra, cấm gõ số nhớ”. Bàn thử vì thế hiện <b>cả hai cột</b> và báo khi hai không gian
+    cho hai kết luận khác nhau.<br><br>
+
+    <b>Markers cho máy audit:</b> <code>haiHuongMau</code> · <code>caKho</code> · <code>soDoiChieu</code> ·
+    <code>vungCam</code>.<br>
+    <b>Không làm ở đây</b> (đúng vùng được giao): không sửa <code>app/globals.css</code>, không sửa component nào,
+    không đổi màu thật trong app, không đụng <code>mock-ban-thu-mau.html</code> — cơ chế kéo và vùng cấm được
+    <b>chép sang</b> bản này chứ không sửa bản cũ.
+  </div>
+</main>
+
+<script>
+/* ═══════════════════ Toán màu — cùng bộ hàm đã kiểm chứng ở mock-ban-thu-mau.html ═══════════════════
+   Mốc kiểm: #6a57f5 round-trip đúng · contrast(white,#6a57f5)=4,89 khớp comment globals.css:19-22. */
+function s2l(c){c/=255;return c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4);}
+function l2s(c){c=Math.min(1,Math.max(0,c));return c<=0.0031308?c*12.92:1.055*Math.pow(c,1/2.4)-0.055;}
+function hex2rgb(h){h=h.trim().replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function rgb2hex(r,g,b){const f=v=>Math.round(Math.min(255,Math.max(0,v))).toString(16).padStart(2,'0');return '#'+f(r)+f(g)+f(b);}
+function lin2oklab(r,g,b){
+  const l=0.4122214708*r+0.5363325363*g+0.0514459929*b,
+        m=0.2119034982*r+0.6806995451*g+0.1073969566*b,
+        s=0.0883024619*r+0.2817188376*g+0.6299787005*b;
+  const L=Math.cbrt(l),M=Math.cbrt(m),S=Math.cbrt(s);
+  return [0.2104542553*L+0.7936177850*M-0.0040720468*S,
+          1.9779984951*L-2.4285922050*M+0.4505937099*S,
+          0.0259040371*L+0.7827717662*M-0.8086757660*S];
+}
+function oklab2lin(L,a,b){
+  const l_=L+0.3963377774*a+0.2158037573*b, m_=L-0.1055613458*a-0.0638541728*b, s_=L-0.0894841775*a-1.2914855480*b;
+  const l=l_**3,m=m_**3,s=s_**3;
+  return [4.0767416621*l-3.3077115913*m+0.2309699292*s,
+         -1.2684380046*l+2.6097574011*m-0.3413193965*s,
+         -0.0041960863*l-0.7034186147*m+1.7076147010*s];
+}
+function toOklch(hex){const [r,g,b]=hex2rgb(hex).map(s2l);const [L,a,bb]=lin2oklab(r,g,b);
+  let H=Math.atan2(bb,a)*180/Math.PI; if(H<0)H+=360; return {L,C:Math.hypot(a,bb),H};}
+function toHex(L,C,H){const hr=H*Math.PI/180;
+  const [r,g,b]=oklab2lin(L,C*Math.cos(hr),C*Math.sin(hr)).map(l2s); return rgb2hex(r*255,g*255,b*255);}
+function lum(hex){const [r,g,b]=hex2rgb(hex).map(s2l);return 0.2126*r+0.7152*g+0.0722*b;}
+function contrast(a,b){const A=lum(a),B=lum(b);const [hi,lo]=A>B?[A,B]:[B,A];return (hi+0.05)/(lo+0.05);}
+function hslHue(hex){const [r,g,b]=hex2rgb(hex).map(v=>v/255);
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn; if(!d) return 0;
+  let h; if(mx===r)h=((g-b)/d)%6; else if(mx===g)h=(b-r)/d+2; else h=(r-g)/d+4;
+  h*=60; return h<0?h+360:h;}
+/** khoảng cách góc trên vòng tròn — 350° và 10° cách nhau 20°, không phải 340°. */
+function dGoc(a,b){const d=Math.abs(a-b)%360;return d>180?360-d:d;}
+function mixOver(tint,bg,alpha){const [r1,g1,b1]=hex2rgb(tint),[r2,g2,b2]=hex2rgb(bg);
+  return rgb2hex(r1*alpha+r2*(1-alpha),g1*alpha+g2*(1-alpha),b1*alpha+b2*(1-alpha));}
+
+/* ═══════════════════ ĐỌC TOKEN — không gõ hex nào trong script ═══════════════════ */
+const CS = getComputedStyle(document.documentElement);
+const TOK = n => CS.getPropertyValue(n).trim();
+const T = {
+  accent:TOK('--accent'),
+  semDark:{ 'sai chuẩn':TOK('--sem-danger-dark'), 'cần xem lại':TOK('--sem-warning-dark'), 'đạt':TOK('--sem-success-dark') },
+  semLight:{ 'sai chuẩn':TOK('--sem-danger-light'), 'cần xem lại':TOK('--sem-warning-light'), 'đạt':TOK('--sem-success-light') },
+  dark:{ bg:TOK('--pin-bg-dark'), panel:TOK('--pin-panel-dark'), card:TOK('--pin-card-dark'),
+         field:TOK('--pin-field-dark'), border:TOK('--pin-border-dark'), borderS:TOK('--pin-borders-dark'),
+         t1:TOK('--pin-t1-dark'), t3:TOK('--pin-t3-dark'), t4:TOK('--pin-t4-dark'), gray:TOK('--pin-gray-dark') },
+  light:{ bg:TOK('--pin-bg-light'), panel:TOK('--pin-white'), card:TOK('--pin-card-light'),
+          field:TOK('--pin-gray-light'), border:TOK('--pin-border-light'), borderS:TOK('--pin-borders-light'),
+          t1:TOK('--pin-t1-light'), t3:TOK('--pin-t3-light'), t4:TOK('--pin-t4-light'), gray:TOK('--pin-gray-light') },
+  white:TOK('--pin-white'), black:TOK('--pin-black'), kemCu:TOK('--pin-kem-cu'),
+};
+const OK_ACCENT = toOklch(T.accent);
+
+/* ═══════════════════ Vùng cấm — hợp của HAI theme ═══════════════════
+   Màu nghĩa đổi theo theme (globals.css:205-207 ↔ 257-259) nên góc màu cũng đổi.
+   Bàn thử lấy HỢP của hai bản: một màu nhấn phải sống được ở CẢ hai theme, nên
+   chỉ cần đụng một bản là đã đủ nguy hiểm. */
+const ZONE_MARGIN = 20;                 // T chọn, chưa có chốt riêng — xem ⑦b báo cáo
+const NGUONG_TIM  = 60;                 // sổ 16/08 §A3: "cách tím tối thiểu 60°"
+const NGUONG_CHU  = 4.5, NGUONG_NEN = 3.0;
+const AM_LO = 15, AM_HI = 95;           // dải "ấm" OKLCH, chép từ mock-ban-thu-mau.html (WARM_MIN/MAX)
+
+const VUNG_CAM = [];
+for (const [theme, bo] of [['tối',T.semDark],['sáng',T.semLight]])
+  for (const [ten,hex] of Object.entries(bo))
+    VUNG_CAM.push({ ten, theme, hex, H:toOklch(hex).H, Hhsl:hslHue(hex) });
+
+function gonNhat(H, key){ // key: 'H' (oklch) | 'Hhsl'
+  let best=null;
+  for (const z of VUNG_CAM){ const d=dGoc(H,z[key]); if(!best||d<best.d) best={...z,d}; }
+  return best;
+}
+function trongVungCam(H,key){ const g=gonNhat(H,key||'H'); return g.d<=ZONE_MARGIN ? g : null; }
+function dayRaKhoiVung(H){
+  const z = trongVungCam(H,'H'); if(!z) return H;
+  const lo=z.H-ZONE_MARGIN-1, hi=z.H+ZONE_MARGIN+1;
+  const out = dGoc(H,((lo%360)+360)%360) <= dGoc(H,((hi%360)+360)%360) ? lo : hi;
+  return ((out%360)+360)%360;
+}
+/** Khoảng cách tới TỪNG loại màu nghĩa (lấy bản gần hơn trong hai theme). */
+function dTungLoai(H){
+  const out={};
+  for (const ten of ['sai chuẩn','cần xem lại','đạt']){
+    let best=null;
+    for (const z of VUNG_CAM) if(z.ten===ten){ const d=dGoc(H,z.H); if(!best||d<best.d) best={d,theme:z.theme}; }
+    out[ten]=best;
+  }
+  return out;
+}
+
+/* ═══════════════════ Máy giữ hệ: dò tông đạt chuẩn cho MỘT theme ═══════════════════
+   Không phải nấc chọn sẵn — quét độ sáng liên tục, tìm điểm gần giữa thang nhất mà vẫn
+   đủ chữ trắng ≥4,5 và đủ nổi trên nền của theme đó ≥3,0. Hết dư địa mới hạ độ đậm. */
+function doTong(H, C, theme){
+  const bg = theme==='dark' ? T.dark.bg : T.light.bg;
+  let c = C, hadamped = false;
+  for (let v=0; v<8; v++){
+    let best=null;
+    for (let L=0.20; L<=0.85; L+=0.005){
+      const hex = toHex(L,c,H);
+      const cw = contrast(hex,T.white), cb = contrast(hex,bg);
+      if (cw>=NGUONG_CHU && cb>=NGUONG_NEN){
+        const sc=Math.abs(L-0.55); if(!best||sc<best.sc) best={L,hex,cw,cb,sc};
+      }
+    }
+    if (best) return {hex:best.hex,L:best.L,C:c,cw:best.cw,cb:best.cb,hadamped,doiTong:Math.abs(best.L-0.55)>0.06};
+    c = Math.max(0.02, c-0.03); hadamped = true;
+  }
+  const hex = toHex(0.5,c,H);
+  return {hex,L:0.5,C:c,cw:contrast(hex,T.white),cb:contrast(hex,bg),hadamped:true,doiTong:true,botTay:true};
+}
+
+/* ═══════════════════ Hai hướng ═══════════════════
+   Hai hex mầm chọn ở GIỮA dải phiếu giao (mòng két HSL 180–190 → lấy 185 ·
+   mận HSL 330–340 → lấy 335), sinh bằng chính hàm toHex ở trên, không đặt tay. */
+const HUONG = {
+  A:{ id:'A', ten:'Mòng két', mo:'teal trầm', hslMam:185 },
+  B:{ id:'B', ten:'Mận trầm', mo:'plum trầm', hslMam:335 },
+};
+/** dò góc OKLCH cho ra đúng góc HSL mong muốn ở L/C cho trước (dải phiếu ghi theo HSL). */
+function okHueTuHsl(hslTarget, C, L){
+  let best=null;
+  for (let H=0; H<360; H+=0.25){
+    const d = dGoc(hslHue(toHex(L,C,H)), hslTarget);
+    if(!best||d<best.d) best={H,d};
+  }
+  return best.H;
+}
+const C_MAM = 0.085, L_THAM_CHIEU = 0.55;
+let state = { A:{H:0,C:C_MAM}, B:{H:0,C:C_MAM}, dang:'A', chan:{A:null,B:null} };
+state.A.H = okHueTuHsl(HUONG.A.hslMam, C_MAM, L_THAM_CHIEU);
+state.B.H = okHueTuHsl(HUONG.B.hslMam, C_MAM, L_THAM_CHIEU);
+
+/* ═══════════════════ §0 — bảng token + dải phổ ═══════════════════ */
+function veTokGrid(){
+  const rows = [
+    ['Nhấn hiện tại — tím', T.accent, 'globals.css:19 · chỉ khai ở :root nên hai theme giống hệt'],
+    ['Sai chuẩn · tối', T.semDark['sai chuẩn'], 'globals.css:205'],
+    ['Cần xem lại · tối', T.semDark['cần xem lại'], 'globals.css:206'],
+    ['Đạt · tối', T.semDark['đạt'], 'globals.css:207'],
+    ['Nền sáng cũ — kem', T.kemCu, 'globals.css:238 · A4 thay bằng trắng thuần'],
+    ['Sai chuẩn · sáng', T.semLight['sai chuẩn'], 'globals.css:257'],
+    ['Cần xem lại · sáng', T.semLight['cần xem lại'], 'globals.css:258'],
+    ['Đạt · sáng', T.semLight['đạt'], 'globals.css:259'],
+  ];
+  document.getElementById('tokGrid').innerHTML = rows.map(([ten,hex,ghi])=>{
+    const o = toOklch(hex);
+    return `<div class="tok"><i style="background:${hex}"></i><div class="m">
+      <b>${ten}</b>
+      <span class="num-t">${hex} · OKLCH ${o.H.toFixed(1)}° · HSL ${hslHue(hex).toFixed(1)}°</span>
+      <span>${ghi}</span></div></div>`;
+  }).join('');
+}
+/* Vòng màu là VÒNG, dải này là ĐƯỜNG THẲNG — chỗ cắt luôn bóp méo một cặp khoảng cách.
+   Cắt mặc định ở 0° đặt mận (~353°) ở mép phải và “sai chuẩn” (~32°) ở mép trái ⇒ hai thứ chỉ
+   cách nhau 38° mà nhìn như ở hai đầu bàn — hỏng đúng ca quan trọng nhất của hướng B.
+   Cắt ở 240° (khoảng trống giữa “đạt” và tím) đưa cả hai cặp nguy hiểm về cạnh nhau. */
+const CUT = 240;
+const pctH = H => (((H-CUT)%360+360)%360)/360*100;
+function veHueBar(){
+  const bar = document.getElementById('hueBar');
+  if (!bar.dataset.xong){
+    const stops=[]; for(let i=0;i<=30;i++){ const h=(CUT+i*12)%360; stops.push(`${toHex(0.60,0.14,h)} ${(i/30*100).toFixed(2)}%`); }
+    bar.style.background = `linear-gradient(90deg,${stops.join(',')})`;
+    VUNG_CAM.forEach(z=>{
+      const d=document.createElement('div'); d.className='huezone';
+      d.style.left = pctH(z.H-ZONE_MARGIN)+'%';
+      d.style.width = (ZONE_MARGIN*2/360*100)+'%';
+      d.title = `Vùng cấm — “${z.ten}” bản ${z.theme} (tâm ${z.H.toFixed(1)}°)`;
+      bar.appendChild(d);
+    });
+    const tim=document.createElement('div'); tim.className='huepin';
+    tim.style.left=pctH(OK_ACCENT.H)+'%'; tim.style.opacity='.5';
+    tim.title=`Tím hiện tại ${OK_ACCENT.H.toFixed(1)}°`; bar.parentElement.appendChild(tim);
+    bar.dataset.xong='1';
+  }
+  document.getElementById('pinA').style.left=pctH(state.A.H)+'%';
+  document.getElementById('pinB').style.left=pctH(state.B.H)+'%';
+}
+
+/* ═══════════════════ §1 — hai hướng cạnh nhau ═══════════════════ */
+const RAMP_L=[0.94,0.86,0.77,0.67,0.57,0.47,0.36,0.25];
+function kiemRangBuoc(H,C){
+  const loi=[];
+  const vc = trongVungCam(H,'H');
+  if (vc) loi.push(`nằm TRONG vùng cấm của “${vc.ten}” bản ${vc.theme} — cách tâm chỉ ${vc.d.toFixed(1)}°`);
+  const dTim = dGoc(H,OK_ACCENT.H);
+  if (dTim < NGUONG_TIM) loi.push(`cách tím chỉ ${dTim.toFixed(1)}° — dưới ngưỡng ${NGUONG_TIM}°`);
+  for (const th of ['dark','light']){
+    const t = doTong(H,C,th);
+    if (t.cw < NGUONG_CHU) loi.push(`chữ trắng trên nhấn theme ${th==='dark'?'tối':'sáng'} chỉ ${t.cw.toFixed(2)}:1`);
+    if (t.cb < NGUONG_NEN) loi.push(`nhấn không nổi trên nền theme ${th==='dark'?'tối':'sáng'} (${t.cb.toFixed(2)}:1)`);
+  }
+  /* Đối chiếu ở KHÔNG GIAN THỨ HAI — nếu HSL cho kết luận khác thì phải nói ra, không giấu. */
+  const canh = [];
+  const hexTC = toHex(L_THAM_CHIEU,C,H), Hhsl = hslHue(hexTC);
+  const vcHsl = trongVungCam(Hhsl,'Hhsl');
+  if (!!vcHsl !== !!vc) canh.push(`hai không gian màu không đồng ý về vùng cấm: OKLCH nói ${vc?'trong':'ngoài'}, HSL nói ${vcHsl?'trong':'ngoài'} (${vcHsl?vcHsl.ten:''})`);
+  const dTimHsl = dGoc(Hhsl, hslHue(T.accent));
+  if ((dTimHsl<NGUONG_TIM) !== (dTim<NGUONG_TIM)) canh.push(`khoảng cách tới tím: OKLCH ${dTim.toFixed(1)}° ${dTim<NGUONG_TIM?'trượt':'đạt'} · HSL ${dTimHsl.toFixed(1)}° ${dTimHsl<NGUONG_TIM?'trượt':'đạt'}`);
+  const dAm = Math.min(dGoc(H,AM_LO),dGoc(H,AM_HI));
+  const trongAm = H>=AM_LO && H<=AM_HI;
+  if (trongAm) canh.push(`góc màu nằm trong dải ẤM (${AM_LO}–${AM_HI}°) — phá chốt 03/08 “IF lạnh ↔ ArchiNote ấm”`);
+  else if (dAm<=25) canh.push(`sát biên dải ấm — cách mép ${dAm.toFixed(1)}°; đọc ra hơi ấm dù chưa vào dải`);
+  return {loi, canh, dTim, dTimHsl, Hhsl};
+}
+function veHuong(){
+  const wrap=document.getElementById('huongWrap'); wrap.innerHTML='';
+  for (const k of ['A','B']){
+    const h=HUONG[k], s=state[k];
+    const tD=doTong(s.H,s.C,'dark'), tL=doTong(s.H,s.C,'light');
+    const kt=kiemRangBuoc(s.H,s.C);
+    const d=dTungLoai(s.H);
+    const el=document.createElement('div'); el.className='huong';
+    el.innerHTML=`
+      <div class="hd">
+        <i style="background:${tD.hex}"></i>
+        <div><b>Hướng ${k} — ${h.ten}</b>
+        <span>${h.mo} · mầm đặt ở giữa dải phiếu giao (HSL ${h.hslMam}°)</span></div>
+      </div>
+      <div class="ramp">${RAMP_L.map(L=>{const hx=toHex(L,Math.min(s.C,0.24),s.H);
+        return `<div class="st" style="background:${hx};color:${L>0.55?T.black:T.white}"><b>${hx}</b></div>`;}).join('')}</div>
+      <div class="kv">
+        <span>góc OKLCH <b>${s.H.toFixed(1)}°</b></span>
+        <span>góc HSL <b>${kt.Hhsl.toFixed(1)}°</b></span>
+        <span>độ đậm <b>${s.C.toFixed(3)}</b></span>
+        <span>tông tối <b>${tD.hex}</b></span>
+        <span>tông sáng <b>${tL.hex}</b></span>
+      </div>
+      <div class="kv">
+        <span>cách “sai chuẩn” <b>${d['sai chuẩn'].d.toFixed(1)}°</b></span>
+        <span>cách “cần xem lại” <b>${d['cần xem lại'].d.toFixed(1)}°</b></span>
+        <span>cách “đạt” <b>${d['đạt'].d.toFixed(1)}°</b></span>
+        <span>cách tím <b>${kt.dTim.toFixed(1)}°</b></span>
+      </div>
+      <div class="verdict ${kt.loi.length?'fail':'pass'}">
+        ${kt.loi.length
+          ? `✕ Trượt ${kt.loi.length} ràng buộc:<ul>${kt.loi.map(x=>`<li>${x}</li>`).join('')}</ul>`
+          : `✓ Qua cả ba ràng buộc bắt buộc.`}
+        ${kt.canh.length?`<ul style="margin-top:6px;color:var(--warning)">${kt.canh.map(x=>`<li>⚠ ${x}</li>`).join('')}</ul>`:''}
+      </div>`;
+    wrap.appendChild(el);
+  }
+}
+
+/* ═══════════════════ §3 — năm ca khó ═══════════════════ */
+const ICON_CHECK='M20 6L9 17l-5-5', ICON_X='M18 6L6 18M6 6l12 12';
+function svg(d,c){return `<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;}
+
+const CA = [
+  { id:1, ten:'Ca 1 · Nút chính đứng cạnh cả ba màu nghĩa',
+    mo:'Ca Hoà lo nhất: “xanh vs đỏ dễ nhầm với duyệt và cancel”. Cặp Duyệt ↔ Huỷ ở đây cố ý <b>không</b> mang màu nhấn — phân biệt bằng chữ + vị trí + hình dạng, để đổi màu nhấn không bao giờ làm hai nút này lẫn nhau.' },
+  { id:2, ten:'Ca 2 · Trên nền xám',
+    mo:'Đây đúng chỗ vàng đồng chết: màu ấm bão hoà thấp trên nền xám ra <b>xỉn</b>, không ra trầm. Hướng nào xỉn ở đây thì loại, dù chỗ khác đẹp.' },
+  { id:3, ten:'Ca 3 · Trên nền trắng thuần',
+    mo:'Nền sáng canh Apple: trắng là nền <b>chính</b>, xám chỉ là nền nhóm. Trắng là nền khắt khe nhất cho màu sáng — dễ lộ chỗ màu bị nhạt mất.' },
+  { id:4, ten:'Ca 4 · Diện tích nhỏ',
+    mo:'Màu nhấn phần lớn đời nó sống ở diện tích nhỏ: vòng focus · chấm trạng thái · dải 2px đáy card · vạch thanh tiến trình. Ở cỡ này màu mất no, dễ tụt thành xám.' },
+  { id:5, ten:'Ca 5 · Chữ trên nền màu nhấn',
+    mo:'Cặp nền/chữ phải đọc được ở cả hai theme. Bảng dưới hiện cả chữ trắng lẫn chữ đen để thấy chữ nào là chữ đúng cho tông máy chọn.' },
+];
+
+function noiDungCa(caId, huongKey, theme){
+  const P = theme==='dark'?T.dark:T.light;
+  const s = state[huongKey], tone = doTong(s.H,s.C,theme);
+  const nen = tone.hex;
+  const sem = theme==='dark'?T.semDark:T.semLight;
+  /* Dấu đạt/không-đạt bên trong ô GHIM theme phải lấy màu nghĩa CỦA THEME ĐÓ, không dùng
+     class .ok/.bad — hai class đó chạy theo theme của VỎ TRANG, nên ô sáng đứng trong vỏ tối
+     (hoặc ngược lại) sẽ ra chữ xanh nhạt trên nền trắng, không đọc được. */
+  const dau = (ok,txt) => `<span style="color:${ok?sem['đạt']:sem['sai chuẩn']};font-weight:600">${txt}</span>`;
+  /* Chữ trên MẢNG màu: chọn trắng hay đen theo số đo, không mặc định trắng.
+     Ca thật bắt được ở đây: --success bản tối (#46b876) là màu vốn để LÀM CHỮ trên nền tối —
+     lấy nó làm nền nút với chữ trắng thì chỉ còn 2,5:1. Đen trên nó mới đọc được. */
+  const chuTren = hex => contrast(hex,T.white) >= contrast(hex,T.black) ? T.white : T.black;
+  /* Pill: hạ dần độ phủ tới khi chữ cùng màu đọc được trên chính nền pill.
+     Hết dư địa (đúng ca nền XÁM: màu nhấn dùng làm CHỮ trên xám không bao giờ đủ 4,5:1)
+     thì ĐỔI KIỂU — pill đặc, chữ trắng/đen theo số đo. Đây là lời giải thật cho ca 2,
+     không phải mẹo qua máy soi: chữ màu nhấn trên xám là thứ không nên ship. */
+  const pill = (hex,bg) => {
+    for (const a of [0.16,0.12,0.09,0.06,0.03]){ const m=mixOver(hex,bg,a); if(contrast(hex,m)>=NGUONG_CHU) return {bg:m,fg:hex,dot:hex,dac:false}; }
+    return {bg:hex, fg:chuTren(hex), dot:chuTren(hex), dac:true};
+  };
+
+  if (caId===1){
+    const d = dTungLoai(s.H);
+    return `
+      <div class="rowwrap">
+        <button class="btnp" tabindex="-1" style="background:${nen};color:${chuTren(nen)}">Xuất hồ sơ</button>
+        ${Object.entries(sem).map(([ten,hex])=>{const p=pill(hex,P.bg); return `
+          <span class="chipx" style="background:${p.bg};color:${p.fg}">
+            <i style="background:${p.dot}"></i>${ten}</span>`;}).join('')}
+      </div>
+      <div class="dh" style="border-color:${P.border}">
+        <button class="btn-duyet" tabindex="-1" style="background:${sem['đạt']};color:${chuTren(sem['đạt'])}">${svg(ICON_CHECK,chuTren(sem['đạt']))}&nbsp;Duyệt</button>
+        <button class="btn-huy" tabindex="-1" style="color:${P.t1};border-color:${P.borderS}">${svg(ICON_X,P.t1)}&nbsp;Huỷ</button>
+      </div>
+      <p class="mini" style="color:${P.t3}">Màu nhấn cách “sai chuẩn” <b>${d['sai chuẩn'].d.toFixed(1)}°</b> ·
+        “cần xem lại” <b>${d['cần xem lại'].d.toFixed(1)}°</b> · “đạt” <b>${d['đạt'].d.toFixed(1)}°</b>.
+        Nút Duyệt dùng màu “đạt” đã khoá, hình viên thuốc, đứng trái; Huỷ viền vuông hơn, đứng phải.</p>`;
+  }
+  if (caId===2 || caId===3){
+    const nenO = caId===2 ? P.gray : T.white;
+    /* Ca 3 ép nền TRẮNG cho cả hai theme ⇒ chữ phải lấy bản của theme SÁNG, không lấy
+       theo theme của ô — lấy nhầm là chữ gần trắng nằm trên nền trắng. */
+    const chuO = caId===2 ? P.t1 : T.light.t1;
+    const chuPhu = caId===2 ? P.t3 : T.light.t3;
+    const tren = contrast(nen,nenO);
+    const ten = caId===2 ? (theme==='dark'?'xám tối':'xám nhóm') : 'trắng thuần';
+    return `
+      <div style="background:${nenO};border-radius:var(--r-2);padding:13px 14px">
+        <div style="font-size:10.5px;color:${chuPhu};margin-bottom:10px;line-height:1.6">Nền ${ten} — <span class="num-t">${nenO}</span></div>
+        <div class="rowwrap">
+          ${(()=>{const p=pill(nen,nenO); return `
+          <button class="btnp" tabindex="-1" style="background:${nen};color:${chuTren(nen)}">Xuất hồ sơ</button>
+          <span class="chipx" style="background:${p.bg};color:${p.fg}"><i style="background:${p.dot}"></i>Đang dựng</span>
+          ${p.dac?`<span style="font-size:10px;color:${chuPhu};max-width:190px;line-height:1.55">pill phải chuyển sang <b>đặc</b> — chữ màu nhấn trên nền này không đủ đọc</span>`:''}`;})()}
+          <span style="width:34px;height:34px;border-radius:var(--r-1);background:${nen};display:inline-block"></span>
+        </div>
+        <div style="margin-top:11px;font-size:11px;color:${chuO};line-height:1.6">
+          Chữ thường trên nền này, và
+          <span style="color:${nen};font-weight:600"${contrast(nen,nenO)<NGUONG_CHU?' data-demo-tuong-phan="1"':''}>một đoạn tô màu nhấn</span>
+          để xem nó có xỉn đi không — đoạn đó đo được <b class="num-t">${contrast(nen,nenO).toFixed(2)}:1</b>,
+          ${contrast(nen,nenO)>=NGUONG_CHU?'đủ dùng làm chữ':'<b>không đủ dùng làm chữ</b> trên nền này'}.
+        </div>
+      </div>
+      <p class="mini" style="color:${P.t3}">Nhấn nổi trên nền này <b>${tren.toFixed(2)}:1</b>
+        ${dau(tren>=NGUONG_NEN, tren>=NGUONG_NEN?'✓ đạt':'✕ dưới '+NGUONG_NEN+':1')} ·
+        con số chỉ nói được nó có <i>tách khỏi nền</i> hay không — <b>xỉn hay không thì phải nhìn</b>.</p>`;
+  }
+  if (caId===4){
+    const vien = contrast(nen,P.card), vong = contrast(nen,P.bg);
+    return `
+      <div class="small-lab">
+        <div class="small-one">
+          <div class="focusbox" style="border-color:${P.borderS};color:${P.t3};box-shadow:0 0 0 2px ${nen}">Nút</div>
+          <span style="color:${P.t3}">vòng focus 2px</span>
+        </div>
+        <div class="small-one">
+          <div style="display:flex;gap:7px;align-items:center;height:30px">
+            <span style="width:7px;height:7px;border-radius:var(--r-full);background:${nen};display:block"></span>
+            <span style="width:7px;height:7px;border-radius:var(--r-full);background:${sem['đạt']};display:block"></span>
+            <span style="width:7px;height:7px;border-radius:var(--r-full);background:${P.t3};display:block"></span>
+          </div>
+          <span style="color:${P.t3}">chấm 7px — nhấn · đạt · tắt</span>
+        </div>
+        <div class="small-one" style="width:100px">
+          <div class="stripe-card" style="background:${P.card};border-color:${P.border}"><i style="background:${nen}"></i></div>
+          <span style="color:${P.t3}">dải 2px đáy card</span>
+        </div>
+        <div class="small-one" style="width:120px">
+          <div class="vach">${Array.from({length:22},(_,i)=>`<s style="background:${i<13?nen:P.border};${i===12?`box-shadow:0 0 5px 1px ${nen}`:''}"></s>`).join('')}</div>
+          <span style="color:${P.t3}">thanh tiến trình — dãy vạch</span>
+        </div>
+      </div>
+      <p class="mini" style="color:${P.t3}">Nhấn so với mặt card <b>${vien.toFixed(2)}:1</b>
+        ${dau(vien>=NGUONG_NEN, vien>=NGUONG_NEN?'✓ đạt':'✕ chưa đạt')} ·
+        so với nền <b>${vong.toFixed(2)}:1</b> ${dau(vong>=NGUONG_NEN, vong>=NGUONG_NEN?'✓ đạt':'✕ chưa đạt')}
+        — ngưỡng <b>${NGUONG_NEN}:1</b> cho phần tử phi-văn-bản.</p>`;
+  }
+  /* ca 5 */
+  const cw = contrast(nen,T.white), cb = contrast(nen,T.black);
+  /* data-demo-tuong-phan: ô nào TRƯỢT ngưỡng ở đây là NỘI DUNG của ca, không phải lỗi —
+     cả bàn thử này tồn tại để bày ra chữ nào không đọc được trên nền nào. Đánh dấu để máy
+     soi tương phản đếm riêng, không lẫn với chữ trượt ngoài ý muốn. */
+  const oChu = (mau,ten,r) => `
+    <div class="textblock" style="background:${nen};color:${mau}"${r<NGUONG_CHU?' data-demo-tuong-phan="1"':''}>
+      <p>Chữ ${ten} trên nền nhấn — Căn hộ Thảo Điền</p>
+      <span class="r">${r.toFixed(2)}:1 ${r>=NGUONG_CHU?'✓ đạt':'✕ dưới '+NGUONG_CHU+' — ca này cố ý bày ra để thấy'}</span>
+    </div>`;
+  return `
+    ${oChu(T.white,'trắng',cw)}
+    <div style="height:8px"></div>
+    ${oChu(T.black,'đen',cb)}
+    <p class="mini" style="color:${P.t3}">Chữ đúng cho tông này là
+      <b>${cw>=cb?'trắng':'đen'}</b>. Nếu cả hai đều đạt thì màu đang ở giữa thang — dễ dùng nhưng nhạt nghĩa;
+      nếu chỉ một đạt thì phải khoá cứng chữ đó ở mọi nơi dùng nhấn.</p>`;
+}
+
+function veCa(){
+  const wrap=document.getElementById('caWrap'); wrap.innerHTML='';
+  CA.forEach(ca=>{
+    const h=document.createElement('h3'); h.className='sub3'; h.textContent=ca.ten;
+    const p=document.createElement('p'); p.className='secdesc'; p.innerHTML=ca.mo;
+    const g=document.createElement('div'); g.className='ca4';
+    for (const theme of ['dark','light'])
+      for (const k of ['A','B']){
+        const P = theme==='dark'?T.dark:T.light;
+        const cell=document.createElement('div'); cell.className='cell';
+        cell.style.background=P.bg; cell.style.borderColor=P.border; cell.style.color=P.t1;
+        cell.innerHTML=`<div class="ch" style="color:${P.t3}">
+            <em style="color:${P.t1}">${HUONG[k].ten}</em>
+            <span>theme ${theme==='dark'?'tối':'sáng'}</span></div>
+          ${noiDungCa(ca.id,k,theme)}`;
+        g.appendChild(cell);
+      }
+    wrap.appendChild(h); wrap.appendChild(p); wrap.appendChild(g);
+  });
+}
+
+/* ═══════════════════ §4 — bảng số ═══════════════════ */
+function veBangSo(){
+  const body=document.getElementById('soBody'); body.innerHTML='';
+  for (const k of ['A','B']){
+    const s=state[k], kt=kiemRangBuoc(s.H,s.C), d=dTungLoai(s.H);
+    const dTimHsl=kt.dTimHsl;
+    for (const theme of ['dark','light']){
+      const t=doTong(s.H,s.C,theme);
+      const dat = t.cw>=NGUONG_CHU && t.cb>=NGUONG_NEN && !trongVungCam(s.H,'H') && kt.dTim>=NGUONG_TIM;
+      const cell=(v,min)=>`<td class="n ${v>=min?'ok':'bad'}">${v.toFixed(2)}:1</td>`;
+      const dc=(v)=>`<td class="n ${v<=ZONE_MARGIN?'bad':(v<=ZONE_MARGIN+10?'mid':'')}">${v.toFixed(1)}°</td>`;
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td><span style="display:inline-block;width:13px;height:13px;border-radius:3px;background:${t.hex};vertical-align:-2px;margin-right:7px"></span>${HUONG[k].ten}</td>
+        <td style="color:var(--t3)">${theme==='dark'?'tối':'sáng'}</td>
+        <td class="n">${t.hex}${t.hadamped?' <span class="mid" title="máy đã hạ độ đậm để đạt chuẩn">↓đậm</span>':''}</td>
+        <td class="n">${s.H.toFixed(1)}°</td>
+        <td class="n">${kt.Hhsl.toFixed(1)}°</td>
+        ${dc(d['sai chuẩn'].d)}${dc(d['cần xem lại'].d)}${dc(d['đạt'].d)}
+        <td class="n ${kt.dTim>=NGUONG_TIM?'ok':'bad'}">${kt.dTim.toFixed(1)}°</td>
+        ${cell(t.cw,NGUONG_CHU)}${cell(t.cb,NGUONG_NEN)}
+        <td>${dat?'<span class="ok">✓ qua</span>':'<span class="bad">✕ trượt</span>'}</td>`;
+      body.appendChild(tr);
+    }
+  }
+  const note=document.createElement('tr');
+  note.innerHTML=`<td colspan="12" style="color:var(--t3);font-size:10.5px;padding-top:10px">
+    Khoảng cách góc lấy <b>bản gần hơn</b> trong hai theme của mỗi màu nghĩa — vì màu nhấn phải sống được ở cả hai.
+    Ô tô đỏ = trong vùng cấm ±${ZONE_MARGIN}° · tô vàng = ngoài nhưng còn sát (dưới ${ZONE_MARGIN+10}°).</td>`;
+  document.getElementById('soBody').appendChild(note);
+}
+
+/* ═══════════════════ §5 — kết luận ═══════════════════ */
+const KL = {
+  A:{ manh:'Vùng lam–mòng két gần như trống hẳn trong app: kiểm cả tệp chỉ có màu lớp đường camera đứng ở đó, không màu nghĩa nào. Trên nền xám nó ra <b>sạch</b> — ngược hẳn chỗ vàng đồng vừa chết. Gốc nghề cũng có thật: bản vẽ in xanh, đồng ngả patina.',
+      chet:'Đây là góc phổ mà cả ngành đang đứng — chọn nó thì hết lo đụng nghĩa nhưng cũng khó thoát cảm giác “phần mềm kỹ thuật nào cũng thế”, đúng thứ Hoà vừa chê ở tím. Càng kéo về phía 190° HSL thì càng gần tím, và ở không gian HSL nó <b>tụt xuống dưới ngưỡng 60°</b> dù OKLCH vẫn báo đạt.',
+      lo:'Ca 4 — ở cỡ chấm 7px và vạch tiến trình, teal trầm dễ đọc thành xám xanh, mất tính “nhấn”.' },
+  B:{ manh:'Cách xa hẳn hai vùng lam/tím mà cả ngành đang chen nhau, nên nó là hướng duy nhất trong hai hướng có cơ hội trả lời được lời chê “quen tay, giống AI”. Ở diện tích nhỏ nó giữ được sắc tốt hơn teal vì màu đỏ-tía no hơn ở độ sáng thấp.',
+      chet:'Nó ngồi ngay cạnh vùng <b>đỏ = sai chuẩn / huỷ</b>. Ca 1 là chỗ phải nhìn kỹ nhất: nút chính màu mận đứng cạnh chip đỏ “sai chuẩn” và nút Huỷ — hai thứ đều mang nghĩa tiêu cực. Kéo về phía 340° HSL là khoảng cách tới đỏ tụt nhanh.',
+      lo:'Ca 1 và ca 2 — trên nền xám, mận trầm dễ ngả sang nâu-tím và đọc như một sắc độ của đỏ.' },
+};
+function veKetLuan(){
+  const wrap=document.getElementById('klWrap'); wrap.innerHTML='';
+  for (const k of ['A','B']){
+    const s=state[k], kt=kiemRangBuoc(s.H,s.C), t=doTong(s.H,s.C,'dark');
+    const el=document.createElement('div'); el.className='kl';
+    el.innerHTML=`
+      <h3 class="klt"><i style="background:${t.hex}"></i>Hướng ${k} — ${HUONG[k].ten}</h3>
+      <dl style="margin:0">
+        <dt>Mạnh ở đâu</dt><dd>${KL[k].manh}</dd>
+        <dt>Chết ở đâu</dt><dd>${KL[k].chet}</dd>
+        <dt>Ca đáng ngồi lâu</dt><dd>${KL[k].lo}</dd>
+        <dt>Máy nói gì ở góc đang đặt</dt>
+        <dd>${kt.loi.length
+          ? `<span class="bad">✕ trượt: ${kt.loi.join(' · ')}</span>`
+          : `<span class="ok">✓ qua cả ba ràng buộc</span>`}${kt.canh.length?` <span class="mid">⚠ ${kt.canh.join(' · ')}</span>`:''}</dd>
+      </dl>`;
+    wrap.appendChild(el);
+  }
+}
+
+/* ═══════════════════ §2 — núm kéo ═══════════════════ */
+function apGoc(Hyc, C){
+  const k = state.dang;
+  const z = trongVungCam(((Hyc%360)+360)%360,'H');
+  const H = z ? dayRaKhoiVung(Hyc) : Hyc;
+  state[k] = {H,C}; state.chan[k] = z;
+  document.getElementById('hueS').value = Math.round(H);
+  document.getElementById('chromaS').value = Math.round(C*100);
+  veTatCa();
+}
+function doiHuong(k){ state.dang=k; dongBoNum(); veTatCa(); }
+function dongBoNum(){
+  const s=state[state.dang];
+  document.getElementById('hueS').value=Math.round(s.H);
+  document.getElementById('chromaS').value=Math.round(s.C*100);
+}
+document.getElementById('tabA').addEventListener('click',()=>doiHuong('A'));
+document.getElementById('tabB').addEventListener('click',()=>doiHuong('B'));
+document.getElementById('hueS').addEventListener('input',e=>apGoc(+e.target.value, state[state.dang].C));
+document.getElementById('chromaS').addEventListener('input',e=>apGoc(state[state.dang].H, +e.target.value/100));
+
+function veNum(){
+  const k=state.dang, s=state[k], kt=kiemRangBuoc(s.H,s.C);
+  const gn=gonNhat(s.H,'H'), tD=doTong(s.H,s.C,'dark');
+  document.getElementById('hueV').textContent = s.H.toFixed(1)+'° · HSL '+kt.Hhsl.toFixed(1)+'°';
+  document.getElementById('chromaV').textContent = s.C.toFixed(3);
+  document.getElementById('tabA').classList.toggle('on',k==='A');
+  document.getElementById('tabB').classList.toggle('on',k==='B');
+  document.getElementById('tabA').setAttribute("aria-pressed",k==="A");
+  document.getElementById('tabB').setAttribute("aria-pressed",k==="B");
+  document.getElementById('tabAdot').style.background=doTong(state.A.H,state.A.C,'dark').hex;
+  document.getElementById('tabBdot').style.background=doTong(state.B.H,state.B.C,'dark').hex;
+  document.getElementById('kvLive').innerHTML=`
+    <span>đang chỉnh <b>${HUONG[k].ten}</b></span>
+    <span>tông tối <b>${tD.hex}</b></span>
+    <span>gần nhất là “${gn.ten}” bản ${gn.theme}: <b>${gn.d.toFixed(1)}°</b></span>
+    <span>cách tím <b>${kt.dTim.toFixed(1)}°</b></span>`;
+
+  const z=state.chan[k];
+  const bs=document.getElementById('bnStop'); bs.classList.toggle('show',!!z);
+  if (z) document.getElementById('bnStopTxt').textContent =
+    `Trùng họ với màu báo “${z.ten}” (bản ${z.theme}) — nút nhấn sẽ mất nghĩa, và nút duyệt ↔ huỷ dễ bấm nhầm. Máy đã dừng góc màu ở ${s.H.toFixed(0)}°, ngay ngoài mép dải cấm.`;
+
+  const trongAm = s.H>=AM_LO && s.H<=AM_HI;
+  const dAm = Math.min(dGoc(s.H,AM_LO),dGoc(s.H,AM_HI));
+  const bw=document.getElementById('bnWarm'); bw.classList.toggle('show',trongAm||dAm<=25);
+  if (trongAm||dAm<=25) document.getElementById('bnWarmTxt').innerHTML = trongAm
+    ? `Góc màu nằm trong dải ấm (${AM_LO}–${AM_HI}°) — phá chốt 03/08 “IF lạnh ↔ ArchiNote ấm”. Vẫn kéo được, nhưng phải biết là đang đổi cả định vị hai app.`
+    : `Sát biên dải ấm — cách mép <b class="num-t">${dAm.toFixed(1)}°</b>. Chưa phá chốt “hai nhiệt độ”, nhưng mắt có thể đã đọc ra hơi ấm. Dải ấm ${AM_LO}–${AM_HI}° là số chép từ bàn thử trước, chưa có chốt riêng của Hoà.`;
+
+  const bt=document.getElementById('bnTim'); const lech=(kt.dTimHsl<NGUONG_TIM)!==(kt.dTim<NGUONG_TIM);
+  bt.classList.toggle('show',lech||kt.dTim<NGUONG_TIM);
+  if (lech||kt.dTim<NGUONG_TIM) document.getElementById('bnTimTxt').innerHTML = lech
+    ? `Hai không gian màu không đồng ý: cách tím <b class="num-t">${kt.dTim.toFixed(1)}°</b> theo OKLCH (${kt.dTim<NGUONG_TIM?'trượt':'đạt'}) nhưng <b class="num-t">${kt.dTimHsl.toFixed(1)}°</b> theo HSL (${kt.dTimHsl<NGUONG_TIM?'trượt':'đạt'}). Ngưỡng 60° trong sổ được ghi ở không gian nào thì chưa khai — cần Hoà chốt, bàn thử không tự chọn hộ.`
+    : `Cách tím chỉ <b class="num-t">${kt.dTim.toFixed(1)}°</b>, dưới ngưỡng ${NGUONG_TIM}° — hai màu sẽ đọc thành cùng một họ, mất luôn ý nghĩa “đổi màu nhấn”.`;
+}
+
+/* ═══════════════════ Vẽ tổng ═══════════════════ */
+function veTatCa(){
+  veTokGrid(); veHueBar(); veHuong(); veNum(); veCa(); veBangSo(); veKetLuan();
+  document.getElementById('zmarg').textContent=ZONE_MARGIN;
+  document.getElementById('zmarg2').textContent=ZONE_MARGIN;
+  const pct = Math.round(VUNG_CAM.length*ZONE_MARGIN*2/360*100);
+  const gop = [];
+  ['sai chuẩn','cần xem lại','đạt'].forEach(ten=>{
+    const hs=VUNG_CAM.filter(z=>z.ten===ten).map(z=>z.H);
+    gop.push(`${ten} ${Math.min(...hs).toFixed(1)}–${Math.max(...hs).toFixed(1)}°`);
+  });
+  document.getElementById('phoNote').innerHTML =
+    `Ba màu nghĩa × hai theme = <b class="num-t">${VUNG_CAM.length}</b> tâm cấm (${gop.join(' · ')}), tổng bề rộng danh nghĩa
+     <b class="num-t">~${pct}%</b> vòng màu — thực tế hẹp hơn vì hai bản của cùng một màu chồng lên nhau, và dải “sai chuẩn”
+     với “cần xem lại” cũng dính mép nhau. Tím hiện tại đứng ở <b class="num-t">${OK_ACCENT.H.toFixed(1)}°</b>.
+     Phần còn trống thật sự nằm ở phía lam → mòng két và phía mận — đúng hai hướng đang thử.`;
+}
+
+document.getElementById('themeBtn').addEventListener('click',()=>{
+  const cur=document.documentElement.dataset.theme;
+  document.documentElement.dataset.theme = cur==='light'?'dark':'light';
+});
+
+dongBoNum();
+veTatCa();
+</script>
+</body>
+</html>

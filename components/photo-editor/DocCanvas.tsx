@@ -468,7 +468,7 @@ export default function DocCanvas(p: Props) {
           bottom: 12,
           fontSize: 11,
           color: 'var(--t4)',
-          background: 'var(--mat-overlay, rgba(0,0,0,.5))',
+          background: 'var(--nen-mo-overlay, rgba(0,0,0,.5))',
           padding: '3px 8px',
           borderRadius: 6,
           pointerEvents: 'none',

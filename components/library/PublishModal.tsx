@@ -51,15 +51,15 @@ export function PublishModal({ open, defaultStage, onClose, onSubmit }: Props) {
   if (!open || !mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[190] flex items-center justify-center px-4" style={{ background: 'var(--mat-overlay)' }}>
+    <div className="fixed inset-0 z-[190] flex items-center justify-center px-4" style={{ background: 'var(--nen-mo-overlay)' }}>
       <div
         ref={panelRef}
         className="flex w-full max-w-[420px] flex-col gap-4 rounded-[var(--radius-xl)] p-5 animate-apple-in"
         style={{
-          background: 'var(--mat-panel)',
+          background: 'var(--nen-mo-panel)',
           backdropFilter: `blur(var(--blur))`,
           WebkitBackdropFilter: `blur(var(--blur))`,
-          border: '1px solid var(--mat-hairline)',
+          border: '1px solid var(--nen-mo-hairline)',
           boxShadow: 'var(--shadow-sheet)',
         }}
       >

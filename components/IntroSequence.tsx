@@ -269,7 +269,7 @@ function SketchStage({ stage, reduce, sceneKey }: { stage: Stage; reduce: boolea
   return (
     <motion.div
       className="relative mx-auto aspect-[4/3] w-full max-w-[560px] overflow-hidden rounded-[var(--radius-lg)]"
-      style={{ boxShadow: 'var(--shadow-sheet)', border: '1px solid var(--mat-hairline)' }}
+      style={{ boxShadow: 'var(--shadow-sheet)', border: '1px solid var(--nen-mo-hairline)' }}
       initial={{ opacity: 0, y: reduce ? 0 : 20 }}
       animate={{ opacity: 1, y: drift }}
       transition={{ duration: 0.8, ease: easeApple }}

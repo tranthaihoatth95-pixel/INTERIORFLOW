@@ -134,7 +134,7 @@ export function PresenceBar() {
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={springPop}
-      className="mat-card pointer-events-auto absolute right-4 top-4 z-30 flex items-center gap-1.5 rounded-[14px] border border-[var(--mat-hairline)] px-2 py-1.5 shadow-xl shadow-black/20"
+      className="mat-card pointer-events-auto absolute right-4 top-4 z-30 flex items-center gap-1.5 rounded-[14px] border border-[var(--nen-mo-hairline)] px-2 py-1.5 shadow-xl shadow-black/20"
     >
       {/* 12/08 — thay stack avatar tự chế bằng PresenceRow dùng chung (components/ui/PresenceRow.tsx):
           online = màu đủ + chấm --success · offline = grayscale + mờ 0.7 (không chấm) · "+n" khi quá

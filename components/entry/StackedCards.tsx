@@ -67,7 +67,7 @@ export function StackedCards({
             style={{ zIndex: i }}
           >
             <div
-              className="overflow-hidden rounded-[var(--radius-md)] ring-1 ring-[var(--mat-hairline)]"
+              className="overflow-hidden rounded-[var(--radius-md)] ring-1 ring-[var(--nen-mo-hairline)]"
               style={{ boxShadow: 'var(--shadow-pop)' }}
             >
               {face}

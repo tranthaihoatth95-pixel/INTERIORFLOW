@@ -158,7 +158,7 @@ export default function ExportPdfDialog({
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'var(--mat-overlay)',
+        background: 'var(--nen-mo-overlay)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

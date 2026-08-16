@@ -93,7 +93,7 @@ export default function VitalsPill() {
           aria-label={tr('Mở Vitals', 'Open Vitals')}
           className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors hover:bg-[var(--hover)]"
           style={{
-            background: 'var(--mat-header, var(--panel))',
+            background: 'var(--nen-mo-header, var(--panel))',
             border: '1px solid var(--border)',
             backdropFilter: 'blur(var(--blur)) saturate(150%)',
             WebkitBackdropFilter: 'blur(var(--blur)) saturate(150%)',

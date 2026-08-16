@@ -43,10 +43,10 @@
      Nguồn: :root của `docs/mocks/Nút tổng.dc.html` (dùng ở màn 02) và
      `docs/mocks/Thư viện.dc.html` (dùng ở màn 01) — cả 2 mock khai `--scrim`
      (Tối rgba(6,6,8,.58) · Sáng rgba(120,110,95,.26–.28)). Giá trị đó TRÙNG gần như từng
-     byte với `--mat-overlay` ĐÃ CÓ SẴN (Tối rgba(6,6,8,.56) · Sáng rgba(60,55,48,.28))
+     byte với `--nen-mo-overlay` ĐÃ CÓ SẴN (Tối rgba(6,6,8,.56) · Sáng rgba(60,55,48,.28))
      ⇒ khai BÍ DANH, KHÔNG đẻ token thứ hai gần-giống (hai token gần bằng nhau chắc chắn
      sẽ lệch nhau sau vài lần sửa). */
-  --scrim: var(--mat-overlay);
+  --scrim: var(--nen-mo-overlay);
 
   /* ---------- CHẤM MÀU LOẠI KỆ (Thư viện) ----------
      Nguồn: `docs/mocks/Thư viện.dc.html` màn 01, cột kệ 214px — 6 kệ chấm bằng
@@ -187,12 +187,31 @@
   --dots: #26262d;
   --minimap-mask: rgba(12, 12, 14, 0.7);
 
-  /* Materials trong suốt (vibrancy) cho header / panel / modal */
-  --mat-header: rgba(20, 20, 23, 0.72);
-  --mat-panel: rgba(20, 20, 23, 0.68);
-  --mat-card: rgba(26, 26, 30, 0.82);
-  --mat-overlay: rgba(6, 6, 8, 0.56);
-  --mat-hairline: rgba(255, 255, 255, 0.06);
+  /* NỀN MỜ — vật liệu trong suốt (vibrancy) cho header / panel / modal.
+     16/08: đổi tên từ tiền tố cũ `mat-` (Hoà duyệt §V5 dòng #3, `docs/nc/NC-TU-DA-NGHIA-2026-08-16.md`).
+     Lý do: tên cũ `mat-card` chỉ cách `matId` ĐÚNG MỘT DẤU GẠCH, mà `matId` là mã vật liệu nội thất
+     nối thẳng tới giá + nhà cung cấp (`lib/cad/materials.ts:58` khai `matId = ProductSpec.sku`).
+     Một bên là MÀU, một bên là TIỀN — cùng tiền tố là mời người sau đọc nhầm. Giá trị giữ nguyên,
+     chỉ đổi tên. ⚠️ Tên CLASS `.mat-header/.mat-panel/.mat-card/.mat-overlay` (59 nơi dùng) CHƯA
+     đổi — ngoài phạm vi dòng #3, chờ phiếu riêng. */
+  --nen-mo-header: rgba(20, 20, 23, 0.72);
+  --nen-mo-panel: rgba(20, 20, 23, 0.68);
+  --nen-mo-card: rgba(26, 26, 30, 0.82);
+  --nen-mo-overlay: rgba(6, 6, 8, 0.56);
+  --nen-mo-hairline: rgba(255, 255, 255, 0.06);
+
+  /* ĐỘ MỜ CỦA THÀNH PHẦN VÔ HIỆU (nút chưa dùng được, §9 "cấm nút giả").
+     Khai theo VAI TRÒ ở đây thay vì gõ con số tại chỗ dùng — cùng luật với màu (`he-mau-2-lop`).
+     ⭐ Vì sao token chứ không phải sửa con số: theme SÁNG sắp đổi sang bản canh-Apple; lúc đó
+     chỉ đổi token này, component KHÔNG phải đụng lần hai. Gõ `0.5` trong `ToolbarChip.tsx` là
+     tự hẹn mình sửa lại đúng chỗ đó một lần nữa.
+     Số đo (WCAG 2.x, --t2 hoà lên nền theo alpha rồi so với chính nền đó):
+       Tối  0.5  → 4.01 : 1 trên --panel · 3.95 trên --card · 4.02 trên --bg  ✅ ≥3:1
+       Sáng 0.5  → 2.55 : 1 · 2.59 · 2.49  ❌ DƯỚI ngưỡng 3:1 của WCAG 1.4.11 (thành phần giao diện)
+       Sáng 0.62 → 3.36 : 1 · 3.45 · 3.25  ✅ (alpha tối thiểu để đạt 3:1 ở nền sáng là 0.585)
+     Nền sáng phải ĐẬM HƠN nền tối mới đọc ra: chữ tối trên nền sáng mất tương phản nhanh hơn
+     khi hoà loãng. Mờ là để nói "chưa dùng được", không phải để biến mất khỏi mắt. */
+  --mo-vo-hieu: 0.5;
 
   /* Bóng đổ mềm kiểu Apple, sâu theo tầng */
   --shadow-sheet: 0 12px 40px -12px rgba(0, 0, 0, 0.7);
@@ -242,11 +261,15 @@
   --dots: #ddd8ce;
   --minimap-mask: rgba(242, 239, 233, 0.72);
 
-  --mat-header: rgba(250, 248, 244, 0.72);
-  --mat-panel: rgba(250, 248, 244, 0.7);
-  --mat-card: rgba(255, 255, 255, 0.82);
-  --mat-overlay: rgba(60, 55, 48, 0.28);
-  --mat-hairline: rgba(0, 0, 0, 0.05);
+  --nen-mo-header: rgba(250, 248, 244, 0.72);
+  --nen-mo-panel: rgba(250, 248, 244, 0.7);
+  --nen-mo-card: rgba(255, 255, 255, 0.82);
+  --nen-mo-overlay: rgba(60, 55, 48, 0.28);
+  --nen-mo-hairline: rgba(0, 0, 0, 0.05);
+
+  /* Nền sáng cần đậm hơn nền tối — xem bảng số ở khối Tối. 0.62 cho biên an toàn trên cả ba
+     nền (--panel 3.36 · --card 3.45 · --bg 3.25), trong khi 0.6 chỉ còn 3.11 trên --bg. */
+  --mo-vo-hieu: 0.62;
 
   --shadow-sheet: 0 12px 40px -14px rgba(60, 52, 40, 0.28);
   --shadow-pop: 0 10px 30px -10px rgba(60, 52, 40, 0.22);
@@ -367,12 +390,12 @@ body {
 
 /* Materials — class tiện dùng lại cho header/panel/modal (vibrancy) */
 .mat-header {
-  background: var(--mat-header);
+  background: var(--nen-mo-header);
   backdrop-filter: saturate(180%) blur(var(--blur));
   -webkit-backdrop-filter: saturate(180%) blur(var(--blur));
 }
 .mat-panel {
-  background: var(--mat-panel);
+  background: var(--nen-mo-panel);
   backdrop-filter: saturate(180%) blur(var(--blur));
   -webkit-backdrop-filter: saturate(180%) blur(var(--blur));
 }
@@ -388,12 +411,12 @@ body {
   color: var(--t1);
 }
 .mat-card {
-  background: var(--mat-card);
+  background: var(--nen-mo-card);
   backdrop-filter: saturate(180%) blur(var(--blur-strong));
   -webkit-backdrop-filter: saturate(180%) blur(var(--blur-strong));
 }
 .mat-overlay {
-  background: var(--mat-overlay);
+  background: var(--nen-mo-overlay);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
@@ -1468,7 +1491,7 @@ body[data-if-library-open='true'] .if-bottombar {
   gap: 2px;
   padding: 3px;
   border-radius: var(--r-2);
-  background: var(--mat-panel);
+  background: var(--nen-mo-panel);
   border: 1px solid var(--border);
   backdrop-filter: saturate(160%) blur(14px);
   -webkit-backdrop-filter: saturate(160%) blur(14px);
@@ -1631,6 +1654,52 @@ body[data-if-library-open='true'] .if-bottombar {
   font-weight: 500;
   line-height: 1.5;
   opacity: 0.78;
+}
+
+/* ------------------------------------------------------------
+   Ô GIẢI NGHĨA — HÌNH MINH HOẠ THAO TÁC (`giaiNghia`, 16/08).
+   Thứ tự trong thẻ: tiêu đề (+phím tắt) → HÌNH → câu mô tả. Hình đứng TRƯỚC chữ vì KTS
+   nhìn là làm, không đọc tài liệu (NT-10 "học bằng hình": lệnh dựng có minh hoạ trước→sau).
+   Khối cố định 220×110 để mọi lệnh có cùng khuôn hình — hình lệch cỡ nhau thì lướt qua
+   một danh sách lệnh là thấy thẻ nhảy giật. 220 + đệm 10×2 = 240 ≤ 260 (max-width của
+   .if-tooltip-rich) ⇒ KHÔNG phải nới max-width.
+   Nền: --bg (nền app) trên thẻ đã đảo màu (nền --t1) ⇒ hình nằm trên một mảng SÁNG, nét SVG
+   `currentColor` kế thừa color:--bg của thẻ nên phải đảo lại về --t1 ở đây, nếu không nét
+   trùng màu nền và hình biến mất.
+   Bo góc: thẻ ngoài bo --radius-sm (= --r-2 = 10px), đệm ngang 10px ⇒ theo §2d
+   rInner = max(4, 10 − 10) = 4px. Không tự chọn số cho đẹp mắt — đây là hệ quả của hình
+   ngoài, đúng luật bo đồng tâm.
+   ------------------------------------------------------------ */
+.if-tooltip-hinh {
+  display: block;
+  width: 220px;
+  height: 110px;
+  margin: 7px 0 2px;
+  border-radius: 4px;
+  background: var(--bg);
+  border: 1px solid var(--nen-mo-hairline);
+  color: var(--t1);
+  overflow: hidden;
+}
+.if-tooltip-hinh > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Phần tử ẩn mang LÝ DO của nút mờ — đích của `aria-describedby` (xem ToolbarChip.tsx).
+   `title=` HTML không đi được đường này: nó câm trên cảm ứng và trình đọc màn hình đọc
+   không nhất quán. Kỹ thuật clip chuẩn: vẫn nằm trong cây a11y, không chiếm một pixel nào. */
+.if-tooltip-a11y {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ------------------------------------------------------------

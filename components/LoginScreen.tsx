@@ -192,7 +192,7 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
         <form
           onSubmit={submit}
           style={{ ['--fc' as string]: 'rgba(199,154,99,0.6)', boxShadow: 'var(--shadow-sheet)' }}
-          className="mat-card mx-auto w-full max-w-sm space-y-3 rounded-[var(--radius-lg)] border border-[var(--mat-hairline)] p-6"
+          className="mat-card mx-auto w-full max-w-sm space-y-3 rounded-[var(--radius-lg)] border border-[var(--nen-mo-hairline)] p-6"
         >
           {authMode === 'register' && (
             <input

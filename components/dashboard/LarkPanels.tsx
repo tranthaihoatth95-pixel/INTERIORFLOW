@@ -257,7 +257,7 @@ export function LarkKanbanTab({ data, filterCode, onMoved }: { data: LarkData; f
                     }}
                     onDragEnd={() => setDragId(null)}
                     className={cn(
-                      'mat-card cursor-grab rounded-[10px] border border-[var(--mat-hairline)] p-2 text-xs active:cursor-grabbing',
+                      'mat-card cursor-grab rounded-[10px] border border-[var(--nen-mo-hairline)] p-2 text-xs active:cursor-grabbing',
                       busyId === t.larkRecordId && 'opacity-50',
                     )}
                     aria-busy={busyId === t.larkRecordId}
@@ -317,7 +317,7 @@ export function LarkRosterTab({ data, teamUsers, onMapped }: {
   }
 
   return (
-    <div className="mat-card divide-y divide-[var(--border)] overflow-hidden rounded-[14px] border border-[var(--mat-hairline)]">
+    <div className="mat-card divide-y divide-[var(--border)] overflow-hidden rounded-[14px] border border-[var(--nen-mo-hairline)]">
       {data.persons.map((p) => {
         const mapped = data.userMap.find((m) => m.larkAccount === p.larkAccount);
         const mappedName = mapped ? teamUsers.find((u) => u.id === mapped.userId)?.name : null;

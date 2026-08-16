@@ -312,7 +312,7 @@ export function RolloutGroup({ kindKey, children }: GroupProps) {
                   e.preventDefault();
                   setMenu({ x: e.clientX, y: e.clientY, id: it.id });
                 }}
-                className="group flex h-[var(--row)] w-full cursor-pointer select-none items-center gap-1.5 border-b border-[var(--mat-hairline)] px-2 transition-colors duration-[120ms] hover:bg-[var(--hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent-ring)]"
+                className="group flex h-[var(--row)] w-full cursor-pointer select-none items-center gap-1.5 border-b border-[var(--nen-mo-hairline)] px-2 transition-colors duration-[120ms] hover:bg-[var(--hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent-ring)]"
               >
                 <ChevronDown
                   size={12}

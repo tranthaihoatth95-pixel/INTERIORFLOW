@@ -41,7 +41,7 @@ export default function DrawToolbar() {
     <motion.div
       initial={{ opacity: 0, x: -12 }}
       animate={{ opacity: 1, x: 0 }}
-      className="mat-card pointer-events-auto absolute left-3 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-1.5 rounded-full border border-[var(--mat-hairline)] p-2 shadow-[0_8px_24px_rgba(40,38,35,.14)]"
+      className="mat-card pointer-events-auto absolute left-3 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-1.5 rounded-full border border-[var(--nen-mo-hairline)] p-2 shadow-[0_8px_24px_rgba(40,38,35,.14)]"
     >
       {DRAW_TOOLS.map(({ tool: t, icon: Icon, label }) => {
         const active = tool === t;

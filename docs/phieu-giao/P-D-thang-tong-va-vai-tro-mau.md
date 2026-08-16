@@ -66,7 +66,7 @@ Lưu `docs/mocks/mock-ban-thu-mau.html` + dòng đầu `<!-- @dsCard group="Nh�
   được**; chọn là việc của Hoà. Được nêu nhận xét nghề, không được chốt.
 - Giữ chốt 03/08 hai-nhiệt-độ: nếu một màu đặt sẵn làm IF thành ấm giống ArchiNote thì **ghi cảnh
   báo ngay tại nút đó**, không im lặng.
-- TRIẾT LÝ: **[N1]** người quyết cuối · **[Đ1]** nhìn vào trong trước (dùng token sẵn có, không đẻ hệ mới).
+- TRIẾT LÝ: **[T5]** người quyết cuối · **[Đ2]** nhìn vào trong trước (dùng token sẵn có, không đẻ hệ mới).
 
 ## ⑦ NGHIỆM THU — ĐIỀU KIỆN ĐÍCH (⑥b), trần 5 vòng
 `npx tsc --noEmit` 0 · `npm run soi:tu-dien` 0 lệch · `npm run check:mocks` 0 vi phạm ·

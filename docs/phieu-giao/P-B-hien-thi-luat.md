@@ -70,7 +70,7 @@ khoản mà KTS xuất hồ sơ theo đó, hậu quả là thật.
 - Mọi trường mới **optional/additive** — rule cũ phải chạy y nguyên, không migrate.
 - Trung tính: ví dụ trong code/mock không mang tên khách thật.
 - TRIẾT LÝ `docs/TRIET-LY-IF.md` — trích mã: **[N1]** human-centric (máy không được đoán thay
-  người ở chỗ pháp lý) · **[Đ1]** nhìn vào trong trước (tận dụng `effectiveFrom`/`verified`/
+  người ở chỗ pháp lý) · **[Đ2]** nhìn vào trong trước (tận dụng `effectiveFrom`/`verified`/
   `region` đã có, cấm dựng cơ chế song song).
 
 ## ⑦ NGHIỆM THU TỰ LÀM

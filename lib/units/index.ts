@@ -6,7 +6,7 @@
  *
  * RÀNG BUỘC CỨNG: lưu trữ nội bộ (Doc, entity, CAD) LUÔN LÀ mm — file này KHÔNG đổi đơn vị lưu,
  * chỉ đổi lớp HIỂN THỊ (`formatLength`) và lớp NHẬP (`parseLength`). Không có nơi nào khác được
- * tự chế công thức quy đổi mm↔đơn vị khác — đúng luật [Đ1] "nhìn vào trong trước, cấm đẻ khuôn mới".
+ * tự chế công thức quy đổi mm↔đơn vị khác — đúng luật [Đ2] "nhìn vào trong trước, cấm đẻ khuôn mới".
  *
  * `formatLength`/`parseLength` là HAI MẶT của MỘT quy đổi — sửa hằng số ở đây thì cả app đổi theo.
  */

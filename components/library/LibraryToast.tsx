@@ -48,9 +48,9 @@ export function LibraryToastHost() {
           key={m.id}
           className="pointer-events-auto flex items-center gap-2 rounded-[var(--radius-lg)] px-4 py-2.5 text-[13px] font-medium shadow-[var(--shadow-pop)] backdrop-blur-[var(--blur)] animate-apple-rise"
           style={{
-            background: 'var(--mat-panel)',
+            background: 'var(--nen-mo-panel)',
             color: 'var(--t1)',
-            border: '1px solid var(--mat-hairline)',
+            border: '1px solid var(--nen-mo-hairline)',
           }}
         >
           <Check size={14} style={{ color: '#3fb984' }} />

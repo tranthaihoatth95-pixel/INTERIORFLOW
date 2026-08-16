@@ -95,10 +95,10 @@ export default function RadialToolMenu({
           position: 'absolute',
           inset: 0,
           borderRadius: '50%',
-          background: 'var(--mat-card)',
+          background: 'var(--nen-mo-card)',
           backdropFilter: 'saturate(180%) blur(22px)',
           WebkitBackdropFilter: 'saturate(180%) blur(22px)',
-          border: '1px solid var(--mat-hairline)',
+          border: '1px solid var(--nen-mo-hairline)',
           boxShadow: 'var(--shadow-pop)',
         }}
       />
@@ -112,7 +112,7 @@ export default function RadialToolMenu({
           height: 58,
           transform: 'translate(-50%,-50%)',
           borderRadius: '50%',
-          border: '1px solid var(--mat-hairline)',
+          border: '1px solid var(--nen-mo-hairline)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

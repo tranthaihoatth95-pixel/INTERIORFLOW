@@ -39,6 +39,7 @@ import type { Scene3DData } from '@/lib/three/cad-to-obj';
 import { captureSequenceAsync } from '@/lib/three/capture';
 import { useT } from '@/lib/i18n';
 import LightArc from '@/components/ui/LightArc';
+import { tuPhanSo } from '@/lib/ui/tien-trinh';
 import { hoSoSongSlug } from '@/lib/ho-so-song/pack';
 
 /** fps kế hoạch khung — cùng con số bench 3D-2 (`app/dev-bench-3d-2`), đủ mượt cho dựng phim ngoài. */
@@ -97,6 +98,13 @@ export default function CameraExportTab({ scene }: { scene: Scene3DData | null }
       : null;
 
   const dangChay = trangThai.kind === 'dang-chay';
+  // Đọc qua lõi chung `lib/ui/tien-trinh` để LUẬT "chưa biết tổng thì không có phần trăm" chỉ khai
+  // MỘT chỗ — chép lại điều kiện `total > 0` ở đây là đẻ nguồn thứ hai, đúng bệnh [Đ2] cấm.
+  const phanTramXuat = (() => {
+    if (trangThai.kind !== 'dang-chay') return undefined;
+    const tt = tuPhanSo(trangThai.done, trangThai.total);
+    return tt.doDuoc ? tt.pct : undefined;
+  })();
 
   const batDauXuat = async () => {
     if (!scene || !path || dangChay || frameCount < 1) return;
@@ -142,7 +150,7 @@ export default function CameraExportTab({ scene }: { scene: Scene3DData | null }
 
   return (
     <div className="space-y-3">
-      <section className="rounded-[10px] border border-[var(--mat-hairline)] bg-[var(--field)] p-2.5" aria-label={tr('Xuất chuỗi ảnh', 'Export image sequence')}>
+      <section className="rounded-[10px] border border-[var(--nen-mo-hairline)] bg-[var(--field)] p-2.5" aria-label={tr('Xuất chuỗi ảnh', 'Export image sequence')}>
         <b className="block text-[11px] font-semibold text-[var(--t1)]">{tr('Xuất chuỗi ảnh (PNG)', 'Export image sequence (PNG)')}</b>
         <span className="mt-0.5 block text-[10px] leading-[1.5] text-[var(--t4)]">
           {tr(
@@ -186,7 +194,11 @@ export default function CameraExportTab({ scene }: { scene: Scene3DData | null }
           </button>
         ) : (
           <div className="mt-2 flex items-center gap-2">
-            <LightArc value={(trangThai.done / Math.max(1, trangThai.total)) * 100} size={22} strokeWidth={2.5} label={tr('Tiến độ xuất chuỗi ảnh', 'Sequence export progress')} />
+            {/* 16/08 — SỬA BỊA SỐ (T audit đợt thanh-tien-trinh): `done / Math.max(1, total)` cho ra
+                0% khi `total === 0`, tức KHAI MỘT CON SỐ mà thật ra chưa biết gì. Đúng loại lỗi mà
+                đợt này sinh ra để diệt. `tuPhanSo` trả "không đo được" khi `total ≤ 0` ⇒ LightArc
+                tự chuyển sang cung quay, KHÔNG có `aria-valuenow`, không có con số nào. */}
+            <LightArc value={phanTramXuat} size={22} strokeWidth={2.5} label={tr('Tiến độ xuất chuỗi ảnh', 'Sequence export progress')} />
             <span className="flex-1 text-[10px] text-[var(--t3)] tabular-nums">
               {tr(`Khung ${trangThai.done}/${trangThai.total}`, `Frame ${trangThai.done}/${trangThai.total}`)}
             </span>

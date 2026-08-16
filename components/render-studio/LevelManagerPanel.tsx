@@ -117,7 +117,7 @@ export function LevelManagerPanel() {
   };
 
   return (
-    <section className="border-b border-[var(--mat-hairline)] px-1.5 pb-2.5 pt-2">
+    <section className="border-b border-[var(--nen-mo-hairline)] px-1.5 pb-2.5 pt-2">
       <header className="flex items-center gap-1.5 px-1">
         <span className="flex-1 text-[10.5px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">
           {tr('Tầng', 'Levels')}

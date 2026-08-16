@@ -69,7 +69,7 @@ không phải chuyện thẩm mỹ. Mọi app nghề (AutoCAD · Blender · Phot
   — không xoá trước rồi vá.
 - Chữ hiển thị theo từ điển (`npm run soi:tu-dien` phải 0 lệch); cấm chữ "tự động".
 - TRIẾT LÝ `docs/TRIET-LY-IF.md` — trích mã: **[N2]** đơn giản ngoài · sâu trong ·
-  **[Đ1]** nhìn vào trong trước (B1 đã làm nền, cấm dựng registry thứ sáu).
+  **[Đ2]** nhìn vào trong trước (B1 đã làm nền, cấm dựng registry thứ sáu).
 
 ## ⑦ NGHIỆM THU TỰ LÀM
 ```

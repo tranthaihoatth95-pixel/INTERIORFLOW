@@ -7,7 +7,7 @@
  *
  * Port NGUYÊN VĂN theo mock `docs/mocks/mock-cai-dat-don-vi-ty-le.html` (luật QUY TRÌNH DESIGN
  * 02/08 — mock là nguồn sự thật, phiên code chỉ port, không sáng tác thêm). Khuôn `<section>` +
- * `tr()` giống `ExperienceSettings.tsx`/`AppearanceSettings.tsx` sẵn có trong cùng thư mục — [Đ1]
+ * `tr()` giống `ExperienceSettings.tsx`/`AppearanceSettings.tsx` sẵn có trong cùng thư mục — [Đ2]
  * nhìn vào trong trước, cấm đẻ khuôn mới.
  *
  * RÀNG BUỘC CỨNG A7: lưu trữ số đo LUÔN LÀ mm — màn này chỉ đổi lớp HIỂN THỊ/NHẬP
@@ -194,7 +194,7 @@ export function UnitsScaleSettings() {
       <div
         role="region"
         aria-label={tr('Xem trước đổi đơn vị và tỉ lệ', 'Unit and scale preview')}
-        className="mt-4 rounded-[var(--r-3,14px)] border border-[var(--mat-hairline,var(--border))] bg-[var(--field)] px-4 py-3.5"
+        className="mt-4 rounded-[var(--r-3,14px)] border border-[var(--nen-mo-hairline,var(--border))] bg-[var(--field)] px-4 py-3.5"
       >
         <div className="flex items-baseline justify-between gap-2.5 py-1">
           <span className="text-[11px] text-[var(--t3)]">{tr('Chiều dài tường mẫu', 'Sample wall length')}</span>

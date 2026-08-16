@@ -140,7 +140,7 @@ function ContextQuickTools({ tab, onTaoTuong }: { tab: Command3DTab; onTaoTuong?
   if (!item) return null;
   const Icon = item.action?.icon ?? CircleDot;
   return (
-    <section className="mb-3 rounded-[10px] border border-[var(--mat-hairline)] bg-[var(--field)] p-2.5" aria-label={tr('Tác vụ theo ngữ cảnh', 'Contextual tasks')}>
+    <section className="mb-3 rounded-[10px] border border-[var(--nen-mo-hairline)] bg-[var(--field)] p-2.5" aria-label={tr('Tác vụ theo ngữ cảnh', 'Contextual tasks')}>
       <div className="flex gap-2">
         <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-[var(--accent-soft)] text-[var(--accent)]"><Icon size={14} strokeWidth={1.8} /></span>
         <span className="min-w-0">
@@ -189,7 +189,7 @@ export default function Command3DPanel({
     // Lightbox, sidebar KHÔNG nằm trong danh sách đó). Trước là `.mat-panel` (kính) + `w-64`(256px).
     <div className="flex h-full w-[214px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--panel)]">
       {/* mock `.cptabs`: gap 1px, padding 5px 6px, viền dưới mat-hairline (không phải --border đặc) */}
-      <div className="flex gap-px border-b border-[var(--mat-hairline)] p-[5px]">
+      <div className="flex gap-px border-b border-[var(--nen-mo-hairline)] p-[5px]">
         {TABS.map(({ id, icon: Icon, label }) => {
           const active = tab === id;
           return (

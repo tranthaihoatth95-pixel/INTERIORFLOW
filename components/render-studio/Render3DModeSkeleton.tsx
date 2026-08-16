@@ -695,7 +695,7 @@ export default function Render3DModeSkeleton() {
               aria-label="Hiện lại gợi ý bắt đầu"
               style={{
                 position: 'absolute', right: 14, bottom: 74, zIndex: 6, width: 26, height: 26,
-                borderRadius: 999, border: '1px solid var(--mat-hairline)',
+                borderRadius: 999, border: '1px solid var(--nen-mo-hairline)',
                 background: 'color-mix(in srgb, var(--panel) 82%, transparent)',
                 backdropFilter: 'blur(var(--blur))', WebkitBackdropFilter: 'blur(var(--blur))',
                 color: 'var(--t3)', fontSize: 12, fontWeight: 700, cursor: 'pointer',
@@ -729,7 +729,7 @@ export default function Render3DModeSkeleton() {
             title={tr('Tạo việc gắn khối này, mở lại là nhảy về đúng đây', 'Create a task pinned to this block')}
             style={{
               position: 'absolute', left: 14, bottom: 76, zIndex: 6, height: 26, padding: '0 11px',
-              borderRadius: 999, border: '1px solid var(--mat-hairline)',
+              borderRadius: 999, border: '1px solid var(--nen-mo-hairline)',
               background: 'color-mix(in srgb, var(--panel) 96%, transparent)',
               color: 'var(--t2)', fontFamily: 'inherit', fontSize: 11, fontWeight: 600,
               cursor: taskPosting ? 'progress' : 'pointer', boxShadow: '0 8px 20px rgba(0, 0, 0, .18)',

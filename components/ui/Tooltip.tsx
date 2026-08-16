@@ -48,6 +48,19 @@ interface TooltipProps {
   desc?: string;
   /** phím tắt hiện dạng phím bấm ở góc phải tiêu đề (vd 'L', '⌘Z', 'Space'). */
   shortcut?: string;
+  /**
+   * `giaiNghia` (16/08) — HÌNH MINH HOẠ THAO TÁC, đứng GIỮA tiêu đề và câu mô tả (đúng thứ tự
+   * Hoà chốt: tiêu đề → hình → chữ). Truyền một glyph của `lib/ui/thao-tac-glyph.tsx`.
+   *
+   * Vì sao hình đứng TRƯỚC chữ: KTS không đọc tài liệu, họ nhìn là làm — với app hàng chục lệnh
+   * dựng hình, hình là khác biệt giữa *phải học* và *nhìn là biết* (NT-10 "học bằng hình").
+   *
+   * `aria-hidden` ở đây là CỐ Ý: hình chỉ MINH HOẠ lại điều `desc` đã nói bằng lời, không mang
+   * tin độc lập. Đọc hai lần cho người dùng trình đọc màn hình là nhiễu, không phải giàu thông tin.
+   * ⇒ Có `hinh` thì BẮT BUỘC có `desc`: bỏ `desc` là cắt luôn kênh chữ, người không thấy hình
+   * mất trắng nội dung.
+   */
+  hinh?: React.ReactNode;
   /** trễ trước khi hiện (ms). Mặc định `TOOLTIP_DEFAULT_DELAY_MS`; 0 = hiện ngay. */
   delayMs?: number;
   children: React.ReactNode;
@@ -96,6 +109,7 @@ export default function Tooltip({
   label,
   desc,
   shortcut,
+  hinh,
   delayMs = TOOLTIP_DEFAULT_DELAY_MS,
   children,
   side = 'top',
@@ -223,7 +237,12 @@ export default function Tooltip({
 
   if (disabled || !label) return <>{children}</>;
 
-  const rich = Boolean(desc || shortcut);
+  const rich = Boolean(desc || shortcut || hinh);
+  if (hinh && !desc && process.env.NODE_ENV !== 'production') {
+    // Hình `aria-hidden` mà không có `desc` ⇒ người dùng trình đọc màn hình chỉ nghe được cái TÊN,
+    // mất hẳn phần giải nghĩa. Báo lúc phát triển thay vì im lặng giao thiếu một kênh.
+    console.warn(`Tooltip "${label}": có \`hinh\` nhưng thiếu \`desc\` — hình aria-hidden, mất kênh chữ.`);
+  }
 
   return (
     <span
@@ -280,6 +299,12 @@ export default function Tooltip({
                   <span className="if-tooltip-title">{label}</span>
                   {shortcut && <kbd className="if-tooltip-kbd">{shortcut}</kbd>}
                 </span>
+                {/* `giaiNghia` — hình đứng GIỮA tiêu đề và chữ (thứ tự Hoà chốt 16/08). */}
+                {hinh && (
+                  <span className="if-tooltip-hinh" aria-hidden="true">
+                    {hinh}
+                  </span>
+                )}
                 {desc && <span className="if-tooltip-desc">{desc}</span>}
               </>
             ) : (

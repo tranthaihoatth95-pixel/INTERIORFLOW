@@ -15,6 +15,7 @@
  */
 
 import { useId } from 'react';
+import { ariaTienTrinh, tuPhanTram } from '@/lib/ui/tien-trinh';
 
 export interface LightArcProps {
   /** 0–100. Bỏ trống = indeterminate (quay đều, không hiện %). */
@@ -37,8 +38,11 @@ export default function LightArc({
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const r = (size - strokeWidth) / 2;
   const c = 2 * Math.PI * r;
-  const indeterminate = value == null || !Number.isFinite(value);
-  const pct = indeterminate ? 0 : Math.max(0, Math.min(100, value as number));
+  // Lõi chung với LightBar — cùng một luật "có số thật hay không" ([T2] một cỗ máy nhiều mặt
+  // tiền). API công khai của LightArc KHÔNG đổi; chỉ phần ruột thôi tự tính.
+  const tt = tuPhanTram(value);
+  const indeterminate = !tt.doDuoc;
+  const pct = tt.doDuoc ? tt.pct : 0;
   const color = state === 'warn' ? 'var(--accent-warm)' : 'var(--accent)';
   // Indeterminate: cung ~28% chu vi quay đều. Determinate: dashoffset theo %.
   const dashOffset = indeterminate ? c * 0.72 : c * (1 - pct / 100);
@@ -46,11 +50,7 @@ export default function LightArc({
 
   return (
     <span
-      role="progressbar"
-      aria-label={label}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      {...(indeterminate ? {} : { 'aria-valuenow': Math.round(pct) })}
+      {...ariaTienTrinh(tt, label)}
       style={{ display: 'inline-flex', width: size, height: size, flex: 'none' }}
     >
       {/* keyframes cục bộ theo instance — không đụng globals.css, tự tắt khi reduce-motion */}

@@ -19,9 +19,25 @@
  * cho bo góc.
  *
  * Nhãn kèm icon (tuỳ chọn `label`) đúng luật K14/NT-8 "icon luôn có chữ".
- * §9 "cấm nút giả": `disabled` BẮT BUỘC đi kèm `disabledReason` hiện trong `title`.
+ * §9 "cấm nút giả": `disabled` BẮT BUỘC đi kèm `disabledReason`.
+ *
+ * 16/08 (`disabledReason`) — ĐỔI ĐƯỜNG ĐI CỦA LÝ DO. Trước: nút mờ bị trả về SỚM, không bọc
+ * Tooltip, lý do nhét vào `title=`. Ba chỗ hỏng, đo trên Chromium 151 (playwright, chuột và
+ * bàn phím THẬT — số đo trong `docs/bao-cao-phien/2026-08-16-P-G-o-giai-nghia.md`):
+ *   ① `<button disabled>` KHÔNG nhận focus và bị Tab BỎ QUA hẳn ⇒ người dùng bàn phím / trình
+ *      đọc màn hình KHÔNG CÓ ĐƯỜNG NÀO tới được lý do. Không phải "khó đọc" — là không tồn tại.
+ *   ② `title=` câm trên cảm ứng (đã ghi ngay trong `Tooltip.tsx`) và trình đọc màn hình đọc
+ *      không nhất quán ⇒ đúng cái ca cần giải thích nhất lại là ca mất kênh giải thích.
+ *   ③ Nút mờ đi vòng qua Tooltip nên ô giải nghĩa (hình + chữ) dựng xong vẫn không bao giờ
+ *      hiện cho nó.
+ * Nay: dùng `aria-disabled="true"` thay thuộc tính `disabled` (nút VẪN focus được, VẪN bắn
+ * hover/focus ⇒ Tooltip chạy), chặn kích hoạt bằng cách không gắn `onClick`, và nối lý do vào
+ * nút bằng `aria-describedby` trỏ tới một phần tử ẩn (`.if-tooltip-a11y`).
+ * ⚠️ Hệ quả phải biết: nút mờ nay CHIẾM một chặng Tab. Đó là chủ ý — mờ là "chưa dùng được",
+ * không phải "biến mất khỏi bàn phím" ([T5] đích đến luôn sửa được / không hộp đen một chiều).
  */
 
+import { useId } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { RADIUS } from '@/lib/geometry';
 import Tooltip from './Tooltip';
@@ -47,6 +63,11 @@ export interface ToolbarChipProps {
   /** Hiện nhãn chữ cạnh icon (khuôn dock mở rộng) thay vì chỉ icon tròn. */
   showLabel?: boolean;
   shortcutHint?: string;
+  /**
+   * `giaiNghia` — HÌNH minh hoạ thao tác cho ô giải nghĩa (`lib/ui/thao-tac-glyph.tsx`).
+   * Hình đứng giữa tiêu đề và câu mô tả. Chỉ truyền cho lệnh mà một hình nói nhanh hơn một câu.
+   */
+  hinh?: ReactNode;
 }
 
 export function ToolbarChip({
@@ -60,7 +81,10 @@ export function ToolbarChip({
   size = 'tap',
   showLabel = false,
   shortcutHint,
+  hinh,
 }: ToolbarChipProps) {
+  // id ổn định giữa server/client cho phần tử ẩn mang lý do (đích của aria-describedby).
+  const reasonId = useId();
   if (disabled && !disabledReason) {
     // Phát triển sai luật §9 — báo ngay thay vì render nút câm lặng không giải thích được vì sao mờ.
     console.warn(`ToolbarChip "${label}": disabled=true nhưng thiếu disabledReason — trái luật §9.`);
@@ -86,10 +110,13 @@ export function ToolbarChip({
         background: active ? 'var(--accent-soft)' : 'transparent',
         color: active ? 'var(--accent)' : 'var(--t2)',
         cursor: disabled ? 'not-allowed' : 'pointer',
-        // 16/08 (B2, a11y): 0.35 → 0.5. Ở 0.35 nét icon tụt xuống ~2,2:1 trên nền panel — dưới cả
-        // ngưỡng 3:1 của WCAG 1.4.11 cho thành phần giao diện, tức nút mờ thành nút ĐỌC KHÔNG RA.
-        // Trái đúng ý §9: mờ là để nói "chưa dùng được", không phải để biến mất khỏi mắt.
-        opacity: disabled ? 0.5 : 1,
+        // 16/08 (B2, a11y): 0.35 → 0.5 → TOKEN `--mo-vo-hieu`. Hằng số `0.5` chỉ đúng cho nền TỐI
+        // (4,01:1); nền SÁNG cùng con số đó rơi xuống 2,55:1 — dưới ngưỡng 3:1 của WCAG 1.4.11
+        // cho thành phần giao diện, tức nút mờ thành nút ĐỌC KHÔNG RA ở đúng một nửa số người dùng.
+        // Một con số không phục vụ nổi hai nền ⇒ khai theo VAI TRÒ trong globals.css, mỗi theme
+        // một giá trị (Tối .5 · Sáng .62). Bảng số đo đầy đủ nằm ngay tại chỗ khai.
+        // ⭐ Và vì theme sáng sắp đổi sang bản canh-Apple: lúc đó chỉ đổi token, tệp này đứng yên.
+        opacity: disabled ? 'var(--mo-vo-hieu)' : 1,
         touchAction: 'manipulation',
         transition: 'background .15s, color .15s',
         fontSize: 10.5,
@@ -105,23 +132,32 @@ export function ToolbarChip({
         background: active ? 'var(--accent-soft)' : 'transparent',
         color: active ? 'var(--accent)' : 'var(--t2)',
         cursor: disabled ? 'not-allowed' : 'pointer',
-        // 16/08 (B2, a11y): 0.35 → 0.5. Ở 0.35 nét icon tụt xuống ~2,2:1 trên nền panel — dưới cả
-        // ngưỡng 3:1 của WCAG 1.4.11 cho thành phần giao diện, tức nút mờ thành nút ĐỌC KHÔNG RA.
-        // Trái đúng ý §9: mờ là để nói "chưa dùng được", không phải để biến mất khỏi mắt.
-        opacity: disabled ? 0.5 : 1,
+        // 16/08 (B2, a11y): 0.35 → 0.5 → TOKEN `--mo-vo-hieu`. Hằng số `0.5` chỉ đúng cho nền TỐI
+        // (4,01:1); nền SÁNG cùng con số đó rơi xuống 2,55:1 — dưới ngưỡng 3:1 của WCAG 1.4.11
+        // cho thành phần giao diện, tức nút mờ thành nút ĐỌC KHÔNG RA ở đúng một nửa số người dùng.
+        // Một con số không phục vụ nổi hai nền ⇒ khai theo VAI TRÒ trong globals.css, mỗi theme
+        // một giá trị (Tối .5 · Sáng .62). Bảng số đo đầy đủ nằm ngay tại chỗ khai.
+        // ⭐ Và vì theme sáng sắp đổi sang bản canh-Apple: lúc đó chỉ đổi token, tệp này đứng yên.
+        opacity: disabled ? 'var(--mo-vo-hieu)' : 1,
         touchAction: 'manipulation',
         transition: 'background .15s, color .15s',
         flexShrink: 0,
       };
+
+  const coLyDo = disabled && Boolean(disabledReason);
 
   const button = (
     <button
       type="button"
       aria-pressed={active}
       aria-label={label}
-      disabled={disabled}
+      // KHÔNG dùng thuộc tính `disabled`: nó gạt nút khỏi thứ tự Tab và chặn luôn `focus`
+      // (đo được, xem đầu file) ⇒ lý do trở thành thứ chỉ chuột mới đọc nổi.
+      aria-disabled={disabled || undefined}
+      aria-describedby={coLyDo ? reasonId : undefined}
+      // Chặn kích hoạt: không gắn `onClick` thì cả chuột lẫn Enter/Space đều không chạy được
+      // (bàn phím kích hoạt nút bằng chính sự kiện click). `type="button"` sẵn có chặn submit form.
       onClick={disabled ? undefined : onClick}
-      title={disabled ? disabledReason : undefined}
       style={style}
     >
       {icon}
@@ -134,11 +170,16 @@ export function ToolbarChip({
     </button>
   );
 
-  if (disabled) return button; // Tooltip không cần cho nút mờ — title đã có lý do.
-
+  // Nút mờ đi CÙNG một đường với nút thường — chỉ đổi NỘI DUNG ô giải nghĩa thành lý do.
+  // (Trước 16/08 chỗ này `return button` sớm, cắt nút mờ khỏi Tooltip — xem đầu file.)
   return (
-    <Tooltip label={label} desc={desc} shortcut={shortcutHint}>
+    <Tooltip label={label} desc={disabled ? disabledReason : desc} shortcut={shortcutHint} hinh={hinh}>
       {button}
+      {coLyDo && (
+        <span id={reasonId} className="if-tooltip-a11y">
+          {disabledReason}
+        </span>
+      )}
     </Tooltip>
   );
 }

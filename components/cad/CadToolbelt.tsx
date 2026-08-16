@@ -55,9 +55,9 @@ export default function CadToolbelt() {
         onToggleFurniture={() => fire('cad:toggle-furniture')}
         onToggleMaterial={() => fire('cad:toggle-material')}
       />
-      {!twoRows && <div style={{ borderTop: '1px solid var(--mat-hairline)' }}><ProWorkspaceBar /></div>}
+      {!twoRows && <div style={{ borderTop: '1px solid var(--nen-mo-hairline)' }}><ProWorkspaceBar /></div>}
       {twoRows && (
-        <div style={{ borderTop: '1px solid var(--mat-hairline)', minWidth: 0, overflow: 'hidden' }}>
+        <div style={{ borderTop: '1px solid var(--nen-mo-hairline)', minWidth: 0, overflow: 'hidden' }}>
           <CadTouchDock />
         </div>
       )}

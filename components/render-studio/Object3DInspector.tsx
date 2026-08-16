@@ -42,10 +42,10 @@ export function Object3DInspector() {
     // mock `.iscroll`/`.grp` dùng padding 11-12px quanh nội dung — nâng p-2.5(10px)→p-3(12px).
     <div className="space-y-3 p-3">
       {/* mock `.ihead`: viền dưới mat-hairline tách tên/mã khỏi phần thân cuộn — trước không có. */}
-      <div className="flex items-center gap-2 border-b border-[var(--mat-hairline)] pb-2.5">
+      <div className="flex items-center gap-2 border-b border-[var(--nen-mo-hairline)] pb-2.5">
         <span className="h-[10px] w-[10px] flex-none rounded-[3px]" style={{ background: KIND_DOT[kind] }} />
         <span className="flex-1 truncate text-[13px] font-semibold text-[var(--t1)]">{labelOfGroup(selected, tr)}</span>
-        <span className="rounded-[6px] bg-[var(--mat-card)] px-1.5 py-[1px] text-[9px] font-bold uppercase text-[var(--t3)]">
+        <span className="rounded-[6px] bg-[var(--nen-mo-card)] px-1.5 py-[1px] text-[9px] font-bold uppercase text-[var(--t3)]">
           {tr(KIND_LABEL_VI[kind], KIND_LABEL_EN[kind])}
         </span>
       </div>
@@ -58,7 +58,7 @@ export function Object3DInspector() {
       )}
       <LevelRow storey={selected.storey} entityId={selected.entityId} />
 
-      <div className="space-y-2 border-t border-[var(--mat-hairline)] pt-3">
+      <div className="space-y-2 border-t border-[var(--nen-mo-hairline)] pt-3">
         {/* mock `.grp h4`: 11px (fs-2xs), letter-spacing .07em — trước 10.5px/tracking-wide(.025em) */}
         <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-[var(--t4)]">{tr('Vật liệu', 'Material')}</span>
         <div className="flex items-center gap-2.5">
@@ -103,7 +103,7 @@ export function Object3DInspector() {
       {/* Trung thực (luật §0): chỉ tường có entityId hôm nay → chỉ tường có gizmo thật trong
           khung nhìn khi chọn ở đây (xem cảnh báo tại cad-to-obj.ts vì sao nội thất/cửa sổ chưa
           nối). Không giấu giới hạn này. */}
-      <p className="border-t border-[var(--mat-hairline)] pt-2.5 text-[10px] leading-relaxed text-[var(--t5)]">
+      <p className="border-t border-[var(--nen-mo-hairline)] pt-2.5 text-[10px] leading-relaxed text-[var(--t5)]">
         {kind === 'wall'
           ? tr('Đã chọn trong khung nhìn 3D (gizmo).', 'Selected in the 3D view (gizmo).')
           : tr('Chưa chọn được trong khung nhìn 3D — chỉ xem thuộc tính.', 'Not selectable in the 3D view yet — properties only.')}

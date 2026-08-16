@@ -216,7 +216,7 @@ function InspectorSlot({
           className="flex min-h-0 shrink-0 flex-col overflow-hidden border-l border-[var(--border)] bg-[var(--panel)]"
         >
           {(title || onClose) && (
-            <div className="flex h-[34px] shrink-0 items-center gap-1.5 border-b border-[var(--mat-hairline)] px-3">
+            <div className="flex h-[34px] shrink-0 items-center gap-1.5 border-b border-[var(--nen-mo-hairline)] px-3">
               {title && <h2 className="min-w-0 flex-1 truncate text-[14px] font-semibold tracking-tight text-[var(--t1)]">{title}</h2>}
               {sub && <span className="shrink-0 text-[11px] text-[var(--t3)]">{sub}</span>}
               {onClose && (

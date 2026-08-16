@@ -10,16 +10,16 @@
 //     khi unmount) ⇒ dùng `[data-open="true"]` trên chính 2 phần tử. Giá trị CSS y hệt.
 //  2. Mock khai `--fs-2xs:11px` trong `:root` của riêng nó; `app/globals.css` (NGOÀI vùng code
 //     G4, không được sửa) chưa có biến này ⇒ khai trong phạm vi sheet, không đụng file chung.
-//     Các biến còn lại (--mat-card/--blur-strong/--shadow-sheet/--mat-overlay/--mat-hairline/
+//     Các biến còn lại (--nen-mo-card/--blur-strong/--shadow-sheet/--nen-mo-overlay/--nen-mo-hairline/
 //     --border-strong/--accent-warm/--field/--hover/--radius-*/--fw-semi/--ease-apple/--dur-base)
 //     ĐÃ CÓ THẬT trong globals.css — đã kiểm từng biến, dùng thẳng.
 //  Ngoài ra `.mat-sheet` chưa có trong globals.css nên khai ở đây đúng công thức mock
-//  (= công thức `.mat-card` sẵn có: nền --mat-card + blur-strong).
+//  (= công thức `.mat-card` sẵn có: nền --nen-mo-card + blur-strong).
 export const LIBRARY_SHEET_CSS = `
 /* G4 (00-BAT-DAU-DOC-DAY §4): mọi cỡ chữ phải có line-height ≥1.5 — khai MỘT LẦN ở gốc để
    các rule con chỉ khai font-size vẫn kế thừa đủ, không cắt dấu tiếng Việt. */
 .if-lib-root{--fs-2xs:11px;line-height:1.5}
-/* 🔴 SỬA 04/08 (Hoà chê "không thấy tầng"): sheet cũ nền --mat-card = trắng .82 ở theme Sáng,
+/* 🔴 SỬA 04/08 (Hoà chê "không thấy tầng"): sheet cũ nền --nen-mo-card = trắng .82 ở theme Sáng,
    card lại nền --field #f4f1eb ⇒ hai lớp gần trùng, nhìn phẳng lì. Đổi sang thang 3 tầng
    nền(--bg) < sheet(--panel) < card(--card).
    🔴 SỬA 05/08 (Hoà, VIỆC 2 "card rời"): BỎ HẲN kính. Luật G9 liệt kê ".glass-float" CHỈ 4 chỗ và
@@ -33,13 +33,13 @@ export const LIBRARY_SHEET_CSS = `
    trong app THẬT .mat-header là z-30 nên header ĐỨNG TRÊN scrim, nửa màn không hề tối (đo bằng
    elementFromPoint). Sheet là lớp modal ⇒ vào đúng dải modal của app (Lightbox/MoodboardModal
    z-60, menu z-80) nhưng dưới PublishModal z-190 + toast z-200 của chính Thư viện. */
-/* Đậm thêm 12% so với token: --mat-overlay (Sáng chỉ .28) hợp với modal NHỎ; sheet này chiếm
+/* Đậm thêm 12% so với token: --nen-mo-overlay (Sáng chỉ .28) hợp với modal NHỎ; sheet này chiếm
    74% chiều cao nên nền còn lại phải lùi hẳn ra sau mới đọc được lớp trên. Vẫn lấy token làm
    MÀU gốc để đồng bộ theme, chỉ chồng thêm một lớp tối mỏng. */
 /* Lớp phủ: TỐI HƠN MỘT BẬC so với bản dính đáy (12% → 22%). Card nay rời hẳn khỏi 4 mép màn,
    nền quanh nó lộ ra cả bốn phía nên phải lùi sâu hơn thì card mới "nổi" thành vật thể riêng. */
 .if-lib-root .scrim{position:fixed;inset:0;
-       background:linear-gradient(rgba(0,0,0,.22),rgba(0,0,0,.22)),var(--mat-overlay);opacity:0;pointer-events:none;z-index:90;
+       background:linear-gradient(rgba(0,0,0,.22),rgba(0,0,0,.22)),var(--nen-mo-overlay);opacity:0;pointer-events:none;z-index:90;
        transition:opacity var(--dur-base) var(--ease-apple);border:0;padding:0}
 .if-lib-root .scrim[data-open="true"]{opacity:1;pointer-events:auto}
 /* ═══ CARD RỜI (detached sheet, chuẩn iOS 15+) — Hoà chốt 05/08, cách VÀO chốt lại 07/08 ═══
@@ -64,7 +64,7 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .lib{position:fixed;left:50%;
      bottom:calc(14px + env(safe-area-inset-bottom, 0px));
      width:min(960px, calc(100vw - 24px));height:min(560px,74vh);
-     border-radius:var(--radius-lg);border:1px solid var(--mat-hairline);
+     border-radius:var(--radius-lg);border:1px solid var(--nen-mo-hairline);
      box-shadow:0 12px 40px rgba(0,0,0,.34);z-index:91;display:flex;flex-direction:column;overflow:hidden;
      transform-origin:50% 50%;
      transform:translate(-50%,10px) scale(.97);
@@ -106,7 +106,7 @@ export const LIBRARY_SHEET_CSS = `
 /* 🔴 SỬA 07/08 (Hoà chốt "PHƯƠNG ÁN A"): 186px chỉ là số chép nguyên văn từ mock CŨ
    (mock-if-3chang.html) — KHÔNG phải chốt của Hoà. Mock MỚI (Thư viện.dc.html, 06/08) và
    bảng chốt 07/08 đều ghi 214px — đổi theo, không giữ số cũ "cho tiện tay". */
-.if-lib-root .shelf{width:214px;flex:none;border-right:1px solid var(--mat-hairline);padding:7px 6px;overflow-y:auto;
+.if-lib-root .shelf{width:214px;flex:none;border-right:1px solid var(--nen-mo-hairline);padding:7px 6px;overflow-y:auto;
        display:flex;flex-direction:column}
 .if-lib-root .shrow{width:100%;height:30px;flex:none;display:flex;align-items:center;gap:9px;padding:0 9px;border-radius:var(--radius-sm);
        color:var(--t2);font-size:var(--fs-xs);text-align:left;transition:background .12s var(--ease-apple);border:0;background:none;cursor:pointer}
@@ -136,13 +136,13 @@ export const LIBRARY_SHEET_CSS = `
    vào mép NHÌN THẤY của cột, danh sách vẫn cuộn phía sau. Nền phải ĐẶC (cùng nền sheet) không thì
    hàng kệ trôi lộ qua nút. Cột ngắn thì "margin-top:auto" vẫn đẩy nút xuống đáy như mock. */
 .if-lib-root .shelfcta{margin-top:auto;flex:none;position:sticky;bottom:0;z-index:1;
-       padding:10px 3px 2px;border-top:1px solid var(--mat-hairline);background:var(--panel)}
+       padding:10px 3px 2px;border-top:1px solid var(--nen-mo-hairline);background:var(--panel)}
 .if-lib-root .shelfcta .pub{margin-left:0;width:100%;height:var(--tap);justify-content:center}
 .if-lib-root .create-quiet{width:30px;height:30px;border-radius:var(--r-2);border:1px dashed var(--border-strong);background:transparent;color:var(--t4);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:color .12s var(--ease-apple),border-color .12s var(--ease-apple),background .12s var(--ease-apple)}
 .if-lib-root .create-quiet:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
 .if-lib-root .create-quiet:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
 .if-lib-root .libmain{flex:1;min-width:0;display:flex;flex-direction:column}
-.if-lib-root .chips{flex:none;display:flex;gap:5px;padding:9px 14px;border-bottom:1px solid var(--mat-hairline);overflow-x:auto;scrollbar-width:none}
+.if-lib-root .chips{flex:none;display:flex;gap:5px;padding:9px 14px;border-bottom:1px solid var(--nen-mo-hairline);overflow-x:auto;scrollbar-width:none}
 .if-lib-root .discoverbar{flex:none;display:flex;align-items:center;gap:2px;padding:8px 14px 3px}
 .if-lib-root .discoverbar button{height:27px;border:0;border-radius:var(--r-1);background:transparent;color:var(--t4);padding:0 8px;display:flex;align-items:center;gap:5px;cursor:pointer;font:inherit;font-size:var(--fs-2xs);transition:color .12s var(--ease-apple),background .12s var(--ease-apple)}
 .if-lib-root .discoverbar button:hover{background:var(--hover);color:var(--t1)}
@@ -150,7 +150,7 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .discoverbar button:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
 .if-lib-root .library-spotlight{margin:5px 14px 8px;width:calc(100% - 28px);min-height:82px;border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;background:var(--card);display:grid;grid-template-columns:116px 1fr 28px;align-items:stretch;padding:0;text-align:left;color:var(--t1);cursor:pointer;transition:transform .2s var(--ease-apple),border-color .15s var(--ease-apple),box-shadow .2s var(--ease-apple)}
 .if-lib-root .library-spotlight:hover{transform:translateY(-1px);border-color:var(--border-strong);box-shadow:var(--shadow-pop)}
-.if-lib-root .library-spotlight .th{height:auto;border:0;border-right:1px solid var(--mat-hairline)}
+.if-lib-root .library-spotlight .th{height:auto;border:0;border-right:1px solid var(--nen-mo-hairline)}
 .if-lib-root .spotlight-copy{display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0;padding:10px 12px}
 .if-lib-root .spotlight-copy strong{font-size:var(--fs-xs);font-weight:var(--fw-semi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .if-lib-root .spotlight-copy small{font-size:var(--fs-2xs);line-height:1.45;color:var(--t4);max-width:50ch}
@@ -175,7 +175,7 @@ export const LIBRARY_SHEET_CSS = `
    chung sẽ đẩy nấc-cỡ ra ngoài tầm nhìn ở màn hẹp). Đứng ngay trên lưới, dồn phải — cùng ngôn ngữ
    segmented với .modeseg/.sizeseg dùng chung style bên dưới. */
 .if-lib-root .densitybar{flex:none;display:flex;justify-content:flex-end;padding:7px 14px;
-      border-bottom:1px solid var(--mat-hairline)}
+      border-bottom:1px solid var(--nen-mo-hairline)}
 .if-lib-root .sizeseg{display:flex;gap:3px;background:var(--field);border-radius:var(--r-full);padding:3px;flex:none}
 .if-lib-root .sizeseg button{height:22px;padding:0 10px;border-radius:var(--r-full);border:0;background:none;cursor:pointer;
       color:var(--t3);font-size:var(--fs-2xs);transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
@@ -229,7 +229,7 @@ export const LIBRARY_SHEET_CSS = `
    kính đi từ token". Nay suy từ --blur (22px): badge chỉ cao 15px nên lấy MỘT NỬA token, blur
    nguyên 22px trên vệt 15px thì nhoè hết chữ. Chia từ token nên đổi token là đổi theo, không
    còn con số rời. Kèm -webkit- (bài học K3: thiếu prefix ⇒ tablet không blur). */
-.if-lib-root .badge{position:absolute;top:6px;right:6px;height:15px;padding:0 5px;border-radius:max(4px, calc(var(--r-3) - 6px));background:var(--mat-card);
+.if-lib-root .badge{position:absolute;top:6px;right:6px;height:15px;padding:0 5px;border-radius:max(4px, calc(var(--r-3) - 6px));background:var(--nen-mo-card);
        backdrop-filter:blur(calc(var(--blur) / 2));-webkit-backdrop-filter:blur(calc(var(--blur) / 2));
        color:var(--t3);font-size:9px;font-weight:700;display:flex;align-items:center;
        letter-spacing:.03em}
@@ -243,14 +243,14 @@ export const LIBRARY_SHEET_CSS = `
    cùng công thức blur token nửa --blur như .badge phía trên. CẤM backtick trong comment file
    *-css.ts (đã tự phạm rồi tự sửa lúc viết dòng này — vỡ build 1 lần, y hệt bài học ghi ở :218). */
 .if-lib-root .obj3d-toggle{position:absolute;top:6px;left:6px;height:20px;padding:0 7px;
-       border-radius:max(4px, calc(var(--r-3) - 6px));background:var(--mat-card);
+       border-radius:max(4px, calc(var(--r-3) - 6px));background:var(--nen-mo-card);
        backdrop-filter:blur(calc(var(--blur) / 2));-webkit-backdrop-filter:blur(calc(var(--blur) / 2));
        border:1px solid var(--border);color:var(--t2);font-size:9px;font-weight:700;letter-spacing:.03em;
        display:flex;align-items:center;gap:3px;cursor:pointer;transition:color .15s,border-color .15s}
 .if-lib-root .obj3d-toggle:hover,.if-lib-root .obj3d-toggle[aria-pressed="true"]{color:var(--accent);border-color:var(--accent)}
 .if-lib-root .obj3d-toggle:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
 .if-lib-root .libft{flex:none;height:38px;display:flex;align-items:center;gap:10px;padding:0 14px;
-       border-top:1px solid var(--mat-hairline);font-size:var(--fs-2xs);color:var(--t4)}
+       border-top:1px solid var(--nen-mo-hairline);font-size:var(--fs-2xs);color:var(--t4)}
 /* "N mục trong kệ …" — dồn về phải, đứng trước nút "Đưa lên kệ". Cách dồn: CHỈ dòng gợi ý đầu
    hàng giãn ra ("margin-right:auto"), mọi thứ sau nó bám phải theo đúng thứ tự DOM. KHÔNG dùng hai
    "margin-left:auto" trên cùng một hàng flex — hai "auto" thì khoảng trống CHIA ĐÔI chứ không dồn
@@ -285,15 +285,15 @@ export const LIBRARY_SHEET_CSS = `
       chọn (đợi onTransitionEnd) để có khung hình đóng — xem LibrarySheet.tsx. */
 .if-lib-root .specwrap{width:0;flex:none;overflow:hidden;transition:width 200ms cubic-bezier(.32,.72,0,1)}
 .if-lib-root .specwrap[data-open="true"]{width:236px}
-.if-lib-root .speccol{width:236px;flex:none;border-left:1px solid var(--mat-hairline);
+.if-lib-root .speccol{width:236px;flex:none;border-left:1px solid var(--nen-mo-hairline);
        display:flex;flex-direction:column;height:100%;min-height:0;overflow-y:auto}
-.if-lib-root .speccol .sphead{padding:14px 12px 12px;border-bottom:1px solid var(--mat-hairline)}
+.if-lib-root .speccol .sphead{padding:14px 12px 12px;border-bottom:1px solid var(--nen-mo-hairline)}
 .if-lib-root .speccol .spprev{height:150px;border-radius:var(--radius-md);overflow:hidden;
        display:flex;align-items:center;justify-content:center;background:var(--field)}
 .if-lib-root .speccol .spname{display:flex;align-items:center;gap:8px;margin-top:11px}
 .if-lib-root .speccol .spname b{flex:1;min-width:0;font-size:var(--fs-sm,14px);font-weight:var(--fw-semi);
        letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--t1)}
-.if-lib-root .speccol .spsec{padding:12px;border-bottom:1px solid var(--mat-hairline)}
+.if-lib-root .speccol .spsec{padding:12px;border-bottom:1px solid var(--nen-mo-hairline)}
 .if-lib-root .speccol .spcap{font-size:var(--fs-2xs);font-weight:700;letter-spacing:.07em;
        text-transform:uppercase;color:var(--t5);margin-bottom:8px}
 .if-lib-root .speccol .sprow{display:flex;align-items:center;justify-content:space-between;gap:8px;
@@ -308,12 +308,12 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .speccol .spbar{height:3px;border-radius:2px;background:var(--field);margin-top:5px;overflow:hidden}
 .if-lib-root .speccol .spbar i{display:block;height:100%;border-radius:2px;background:var(--accent)}
 .if-lib-root .speccol .spwhy{padding:10px 12px;font-size:var(--fs-2xs);line-height:1.5;color:var(--t4);
-       border-bottom:1px solid var(--mat-hairline)}
+       border-bottom:1px solid var(--nen-mo-hairline)}
 /* VIỆC 4 (08/08) — hàng gán mã tay, cùng viền dưới với .spwhy (cùng vùng "chưa nối kho"). Line-
    height 1,5 đúng G4 (chữ Việt có dấu chồng). select/button dùng --tap cho vùng chạm ≥44 theo
    G8 (không phải đường duy nhất — kéo thả vẫn còn, đây chỉ là lối thay thế khi khớp tự động thua). */
 .if-lib-root .speccol .splink{padding:10px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;
-       font-size:var(--fs-2xs);line-height:1.5;color:var(--t3);border-bottom:1px solid var(--mat-hairline)}
+       font-size:var(--fs-2xs);line-height:1.5;color:var(--t3);border-bottom:1px solid var(--nen-mo-hairline)}
 .if-lib-root .speccol .splink select{height:var(--tap);max-width:100%;border-radius:var(--r-2);border:1px solid var(--border);
        background:var(--field);color:var(--t1);font:inherit;font-size:var(--fs-2xs);padding:0 8px}
 .if-lib-root .speccol .splink button{height:26px;padding:0 9px;border-radius:var(--r-1);border:1px solid var(--border);
@@ -354,7 +354,7 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .droplist{flex:1;min-height:0;overflow-y:auto;margin-top:10px;border:1px solid var(--border);
       border-radius:var(--radius-md);background:var(--field)}
 .if-lib-root .droprow{display:grid;grid-template-columns:16px 1fr 74px 62px 22px;align-items:center;gap:8px;
-      padding:7px 10px;font-size:var(--fs-2xs);color:var(--t2);border-bottom:1px solid var(--mat-hairline)}
+      padding:7px 10px;font-size:var(--fs-2xs);color:var(--t2);border-bottom:1px solid var(--nen-mo-hairline)}
 .if-lib-root .droprow:last-child{border-bottom:0}
 .if-lib-root .droprow .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t1)}
 .if-lib-root .droprow .k{color:var(--t4)}
@@ -363,7 +363,7 @@ export const LIBRARY_SHEET_CSS = `
       background:none;color:var(--t4);border-radius:var(--r-1);cursor:pointer;transition:background .12s,color .12s}
 .if-lib-root .droprow .rm:hover{background:var(--hover);color:var(--t1)}
 .if-lib-root .ingestft{flex:none;height:38px;display:flex;align-items:center;gap:10px;
-      border-top:1px solid var(--mat-hairline);margin-top:10px;font-size:var(--fs-2xs);color:var(--t4)}
+      border-top:1px solid var(--nen-mo-hairline);margin-top:10px;font-size:var(--fs-2xs);color:var(--t4)}
 .if-lib-root .ingestft .pub{margin-left:auto}
 .if-lib-root .pub:disabled{opacity:.45;cursor:not-allowed}
 .if-lib-root .hidden{display:none}
