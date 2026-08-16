@@ -133,6 +133,42 @@ rời thì Việt Nam chưa có chuẩn nên phải mượn Neufert. Ca đó h�
 án** — khác họ mà **không khai lý do** thì báo đỏ. Đây là loại lỗi người không tự thấy: từng con số
 đều đúng ở quê nó, chỉ khi đứng cạnh nhau mới lộ.
 
+### TRỤC THỨ BA — BIẾN SỐ NGỮ CẢNH (tuỳ chọn, máy gợi ý, người thêm)
+> **Hoà chốt 15/08:** *"chi tiết cá biệt về tiêu chuẩn, ảnh hưởng bởi môi trường / đặc trưng vị trí
+> địa lý vùng miền, có thể là MỘT BIẾN SỐ TUỲ CHỌN cho phép hiểu đúng ngữ cảnh và định nghĩa chính
+> xác hơn — biến số được GỢI Ý cho người dùng thêm vào quy ước để tăng giá trị cho thuật toán."*
+
+Hai trục cũ chưa phủ được cái này: **nguồn** (luật/tiêu chuẩn/xu hướng) nói *ai ban hành*; **ràng
+buộc** (bắt buộc/điều chỉnh/khuyến nghị) nói *chặt tới đâu*. Cả hai đều **không nói NƠI NÀY khác gì**.
+
+| Biến số | Kéo theo điều gì |
+|---|---|
+| **Ven biển** | hơi muối ăn mòn → phụ kiện inox mác cao, sơn hệ khác |
+| **Vùng ngập** | cao độ sàn, vật liệu chịu nước ở chân tường |
+| **Miền Bắc có mùa đông** | đệm khe cửa, sưởi, vật liệu ấm chân |
+| **Nóng ẩm quanh năm** | thông gió, chống mốc, kỵ vật liệu giữ ẩm |
+| **Hướng Tây nắng gắt** | che nắng, kính, độ bền màu |
+| **Tập quán địa phương** | bàn thờ, hướng bếp — ràng buộc thật trong hồ sơ Việt Nam |
+| **Vật liệu sẵn có tại chỗ** | thay thế khả thi, giá, thời gian đặt hàng |
+
+**Nuôi CẢ HAI tầng, đây mới là chỗ đáng giá:**
+· **Tầng luật** — bật thêm/siết thêm rule đúng ngữ cảnh (ven biển ⇒ thêm luật chống ăn mòn).
+· **Tầng hiểu bối cảnh** — thuật toán ở spec này **đoán đúng hơn**: biết dự án ven biển thì khi
+  đọc ảnh, một mảng kim loại xỉn màu là **ăn mòn**, không phải "chọn sai vật liệu".
+
+**Cơ chế: MÁY GỢI Ý — NGƯỜI THÊM.** Máy suy từ vị trí dự án rồi **trình ra để KTS bấm nhận**, không
+tự áp. Đúng khuôn tim cốt lần nữa: máy vạch, người chốt, rồi mới chạy tiếp.
+
+🔴 **T bổ sung một chặn an toàn, bắt buộc:** biến số ngữ cảnh **CHỈ được SIẾT THÊM hoặc THÊM MỚI —
+TUYỆT ĐỐI KHÔNG được NỚI LỎNG luật bắt buộc.** Cờ "ven biển" được phép thêm yêu cầu chống ăn mòn;
+**không bao giờ** được phép hạ chuẩn phòng cháy. Không có chặn này thì biến số tuỳ chọn thành cửa
+sau để lách luật.
+
+**Chỗ đựng — đo 15/08:** `ProjectProfile` (`schema.prisma:150`) hiện có loại hình · diện tích · ngân
+sách · mốc bàn giao · hiện trạng — **không trường nào về vị trí/khí hậu/vùng miền**. Và 12 bộ luật
+ngành có **0 luật theo khí hậu**. ⇒ Thêm vào `ProjectProfile` (additive, không đẻ model mới), và
+đây là **nhóm luật mới** cần viết.
+
 ⚠️ **T bổ sung một ranh giới nghề nữa: TRUNG BÌNH ĐỂ SUY — BIÊN ĐỂ KIỂM.**
 Trung bình che mất phương sai: người cao người thấp, trẻ em, người ngồi xe lăn. Dùng trung bình để
 **suy ra bối cảnh** thì đúng và là chuẩn nghề (Neufert vốn là sách trung bình). Nhưng **nghiệm thu
