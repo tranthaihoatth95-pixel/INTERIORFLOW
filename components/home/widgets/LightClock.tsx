@@ -23,7 +23,10 @@
  * rạc) — chuyển `flex flex-col gap-2.5` để 2 phần dính liền thành MỘT khối kể chuyện.
  */
 
+import { useEffect, useRef, useState } from 'react';
+import { Pencil } from 'lucide-react';
 import { timeOfDayNow, sunPosition } from '@/lib/home/time-of-day';
+import { DISPLAY_NAME_MAX } from '@/lib/home/greeting';
 import { useT } from '@/lib/i18n';
 import WidgetCard from './WidgetCard';
 
@@ -36,14 +39,38 @@ export default function LightClock({
   signal,
   tick,
   index,
+  displayName,
+  onDisplayNameChange,
 }: {
   headline: string;
   signal: string | null;
   /** đổi giá trị này (mốc phút) là component tính lại giờ — xem comment đầu file. */
   tick: number;
   index?: string;
+  /** V1 (17/08, P-X ④.V1) — tên người dùng TỰ ĐẶT; `null` = đang dùng tên tài khoản. */
+  displayName?: string | null;
+  /** Bỏ trống = không cho sửa tên tại đây (ô chào vẫn chạy y nguyên). */
+  onDisplayNameChange?: (raw: string) => void;
 }) {
   const tr = useT();
+  // ---- V1 · sửa TÊN HIỂN THỊ ngay tại lời chào ----------------------------------------------
+  // Vì sao đặt ở đây mà không ở /settings: đây là chỗ cái tên sai ĐẬP VÀO MẮT. Sửa ngay chỗ nhìn
+  // thấy lỗi là đường ngắn nhất; /settings vẫn nên có (bàn giao lên T, xem `useDisplayName.ts`).
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (editing) inputRef.current?.focus();
+  }, [editing]);
+
+  const moSua = () => {
+    setDraft(displayName ?? '');
+    setEditing(true);
+  };
+  const luu = () => {
+    onDisplayNameChange?.(draft);
+    setEditing(false);
+  };
   void tick; // chỉ dùng để ép re-render đúng nhịp phút — không đọc trực tiếp giá trị
   const now = new Date();
   const tod = timeOfDayNow(now);
@@ -73,14 +100,53 @@ export default function LightClock({
       <div className="flex h-full flex-col gap-2.5">
         <div className="min-w-0">
           {index && (
-            <span className="font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide" style={{ color: 'var(--t5)' }}>
-              {index}
-            </span>
+            // P-X ⑤ — `--t5` đo được 1,98/2,21 (dưới 4,5:1) → lên `--t3` (7,24/5,20).
+            <span className="font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-[var(--t3)]">{index}</span>
           )}
-          <h2 className="truncate text-[length:var(--fs-md)] font-semibold leading-tight text-[var(--t1)]">
-            {headline}
-          </h2>
-          {signal && <p className="mt-0.5 truncate text-[length:var(--fs-2xs)] text-[var(--t4)]">{signal}</p>}
+          {editing ? (
+            <div className="mt-0.5 flex items-center gap-1.5">
+              <input
+                ref={inputRef}
+                value={draft}
+                maxLength={DISPLAY_NAME_MAX}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { e.preventDefault(); luu(); }
+                  if (e.key === 'Escape') { e.preventDefault(); setEditing(false); }
+                }}
+                aria-label={tr('Tên hiển thị', 'Display name')}
+                placeholder={tr('Gõ tên có dấu…', 'Type your name…')}
+                className="min-w-0 flex-1 rounded-[var(--r-2)] px-2.5 py-1 text-[length:var(--fs-sm)] text-[var(--t1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                style={{ background: 'var(--field)', border: '1px solid var(--border)' }}
+              />
+              <button
+                type="button"
+                onClick={luu}
+                className="shrink-0 rounded-[var(--r-2)] px-2.5 py-1 text-[length:var(--fs-xs)] font-medium text-[var(--t1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                style={{ background: 'var(--field)', border: '1px solid var(--border)' }}
+              >
+                {tr('Lưu', 'Save')}
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <h2 className="min-w-0 flex-1 truncate text-[length:var(--fs-md)] font-semibold leading-tight text-[var(--t1)]">
+                {headline}
+              </h2>
+              {onDisplayNameChange && (
+                <button
+                  type="button"
+                  onClick={moSua}
+                  aria-label={tr('Đổi tên hiển thị', 'Change display name')}
+                  title={tr('Đổi tên hiển thị', 'Change display name')}
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-[var(--r-2)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                >
+                  <Pencil size={13} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          )}
+          {signal && <p className="mt-0.5 truncate text-[length:var(--fs-2xs)] text-[var(--t3)]">{signal}</p>}
         </div>
 
         <div>

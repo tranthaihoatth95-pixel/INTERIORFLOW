@@ -102,6 +102,35 @@ const KHUNG = [
 const PHIEN = join(homedir(), '.if-phien-chup-man');
 const MO_DANG_NHAP = process.argv.includes('--dang-nhap');
 
+/**
+ * Dọn lớp che trước khi bấm máy — sửa 16/08 sau khi Hoà mở lô đầu trên điện thoại.
+ *
+ * 🔴 VÌ SAO CẦN: cả lô 17 ảnh đầu đều có hộp chào "InteriorFlow — từ bản vẽ tới hồ sơ trình
+ * khách" nằm GIỮA màn, kèm scrim làm TỐI TOÀN BỘ nền. Ảnh vẫn là app thật, đã đăng nhập —
+ * nhưng soi qua lớp mờ thì KHÔNG đánh giá được màu, tương phản hay nhịp, tức mất đúng thứ
+ * lô ảnh này sinh ra để soi. Chụp mà không dọn lớp che = chụp một lô không dùng được.
+ *
+ * Cách dọn: bấm đúng nút "Bỏ qua"/"Đóng" nếu có (giữ nguyên đường người dùng thật), không
+ * xoá DOM bằng tay — xoá tay thì ảnh không còn phản ánh app thật nữa.
+ * Không thấy lớp che nào thì trả về ngay, không chờ, không báo lỗi.
+ */
+async function donLopChe(page) {
+  const nhan = ['Bỏ qua', 'Skip', 'Đóng', 'Close', 'Để sau'];
+  for (const t of nhan) {
+    const nut = page.getByRole('button', { name: t, exact: false }).first();
+    try {
+      if (await nut.isVisible({ timeout: 250 })) {
+        await nut.click({ timeout: 1500 });
+        await page.waitForTimeout(400); // chờ scrim tan hẳn, kẻo chụp trúng lúc đang mờ dần
+        return true;
+      }
+    } catch {
+      /* không có nút đó — thử nhãn kế */
+    }
+  }
+  return false;
+}
+
 async function main() {
   mkdirSync(OUT, { recursive: true });
 
@@ -164,17 +193,48 @@ async function main() {
   console.log('✅ Phiên đăng nhập còn hiệu lực\n');
 
   // ── Lấy một dự án thật để chụp các màn cần dự án ──────────────────────────
+  /* Lấy id dự án — sửa 17/08 sau khi lô đầu BỎ 7 KHUNG.
+     🔴 GỐC BỆNH: bản cũ gọi `GET /api/projects` — **route đó KHÔNG TỒN TẠI**
+     (`app/api/projects/` chỉ có `[id]/`, không có endpoint danh sách) ⇒ luôn rỗng ⇒ lặng lẽ bỏ
+     đúng 7 khung QUAN TRỌNG NHẤT: 2D · 3D · Trình chiếu · Tổng quan · Sổ tay. Máy chạy "thành
+     công" 17 ảnh mà thiếu hẳn ba chặng — kiểu hỏng tệ nhất vì nó KHÔNG kêu.
+     Nay thử ba đường, và **NÓI RÕ đường nào ăn** để lần sau hỏng thì biết hỏng ở đâu. */
   let duAnId = process.env.IF_PROJECT_ID ?? '';
+  let nguon = duAnId ? 'biến môi trường' : '';
+
   if (!duAnId) {
-    const r = await page.request.get(`${URL_GOC}/api/projects`);
-    if (r.ok()) {
+    // ① /api/flows — route CÓ THẬT (`app/api/flows/route.ts`), dùng cookie của trình duyệt.
+    const r = await page.request.get(`${URL_GOC}/api/flows`).catch(() => null);
+    if (r?.ok()) {
       const js = await r.json().catch(() => null);
-      const ds = Array.isArray(js) ? js : (js?.projects ?? js?.items ?? []);
-      duAnId = ds?.[0]?.id ?? '';
+      const ds = Array.isArray(js) ? js : (js?.flows ?? js?.items ?? js?.projects ?? []);
+      const it = ds?.[0];
+      duAnId = it?.projectId ?? it?.project?.id ?? it?.id ?? '';
+      if (duAnId) nguon = '/api/flows';
     }
   }
-  if (duAnId) console.log(`📁 Dùng dự án: ${duAnId}\n`);
-  else console.log('⚠️  Không lấy được dự án — bỏ qua các màn cần dự án\n');
+
+  if (!duAnId) {
+    // ② Vét từ chính trang Home — thứ NGƯỜI DÙNG thật sự thấy. Chậm hơn nhưng không phụ thuộc
+    //    hình dạng API, nên không chết lặng khi API đổi.
+    await page.goto(URL_GOC, { waitUntil: 'domcontentloaded' }).catch(() => {});
+    await page.waitForTimeout(2500);
+    duAnId = await page
+      .evaluate(() => {
+        const a = document.querySelector('a[href*="/projects/"]');
+        const m = a?.getAttribute('href')?.match(/\/projects\/([^/?#]+)/);
+        return m?.[1] ?? '';
+      })
+      .catch(() => '');
+    if (duAnId) nguon = 'vét từ trang Home';
+  }
+
+  if (duAnId) console.log(`📁 Dùng dự án: ${duAnId}  (nguồn: ${nguon})\n`);
+  else {
+    console.log('⚠️  KHÔNG lấy được id dự án — sẽ bỏ 7 khung của ba chặng.');
+    console.log('    Chạy lại kèm:  IF_PROJECT_ID=<id> node scripts/chup-man-duyet-mat.mjs');
+    console.log('    (mở app, vào một dự án, chép id trên thanh địa chỉ)\n');
+  }
 
   const ds = CHI_THU ? KHUNG.slice(0, 4) : KHUNG;
   const bo = [];
@@ -192,6 +252,7 @@ async function main() {
       // networkidle không tới được (app có polling) — vẫn chụp cái đang thấy
     }
     await page.waitForTimeout(k.cho ?? 1200);
+    await donLopChe(page);
 
     // Một khung hỏng KHÔNG được làm chết cả lô — ghi lại rồi đi tiếp.
     const tep = join(OUT, `${k.ten}.png`);

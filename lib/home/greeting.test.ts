@@ -1,5 +1,5 @@
 /** Test `greeting.ts` — chạy: node_modules/.bin/sucrase-node lib/home/greeting.test.ts */
-import { buildGreeting } from './greeting';
+import { buildGreeting, normalizeDisplayName, capitalizeFirst, DISPLAY_NAME_MAX } from './greeting';
 
 let pass = 0;
 let fail = 0;
@@ -54,6 +54,56 @@ console.log('buildGreeting() — dueTodayCount âm/NaN không throw, coi như 0'
   const r2 = buildGreeting({ name: 'Hoà', now: NOW, en: false, dueTodayCount: NaN });
   ok('âm → null', r1.signal === null);
   ok('NaN → null', r2.signal === null);
+}
+
+/* ─── v5 (17/08, phiếu P-X ④.V1) — TÊN HIỂN THỊ ────────────────────────────────────────────
+ * Ảnh chụp màn thật ra "Chào hoa": tên tài khoản lưu là `hoa` (thường + MẤT DẤU). Hai nửa:
+ * viết hoa thì máy làm được, dấu thì KHÔNG — nên có `displayName` do người dùng gõ. */
+
+console.log('buildGreeting() — viết hoa chữ cái đầu: "hoa" KHÔNG còn ra "Chào hoa"');
+{
+  const r = buildGreeting({ name: 'hoa', now: NOW, en: false, dueTodayCount: 0 });
+  ok('ra "Chào Hoa" (viết hoa)', r.headline.startsWith('Chào Hoa'));
+  ok('KHÔNG còn "Chào hoa" chữ thường', !r.headline.startsWith('Chào hoa'));
+  ok('KHÔNG tự bịa dấu thành "Hoà"', !r.headline.includes('Hoà'));
+}
+
+console.log('buildGreeting() — chữ CÓ DẤU vẫn lên hoa đúng, không vỡ dấu');
+{
+  const r = buildGreeting({ name: 'nguyễn ánh', now: NOW, en: false, dueTodayCount: 0 });
+  ok('"ánh" → "Ánh"', r.headline.startsWith('Chào Ánh'));
+}
+
+console.log('buildGreeting() — tên người dùng TỰ ĐẶT thắng tên tài khoản, giữ nguyên từng chữ');
+{
+  const r = buildGreeting({ name: 'hoa', displayName: 'Hoà', now: NOW, en: false, dueTodayCount: 0 });
+  ok('dùng đúng tên đã gõ', r.headline.startsWith('Chào Hoà'));
+  const r2 = buildGreeting({ name: 'hoa', displayName: 'Trần Thái Hoà', now: NOW, en: false, dueTodayCount: 0 });
+  ok('gõ cả họ tên thì giữ NGUYÊN VĂN, không cắt lấy từ cuối', r2.headline.startsWith('Chào Trần Thái Hoà'));
+}
+
+console.log('buildGreeting() — tên tự đặt rỗng/toàn khoảng trắng → rơi về tên tài khoản, KHÔNG rỗng');
+{
+  const r = buildGreeting({ name: 'hoa', displayName: '   ', now: NOW, en: false, dueTodayCount: 0 });
+  ok('rơi về tên tài khoản đã viết hoa', r.headline.startsWith('Chào Hoa'));
+  const r2 = buildGreeting({ name: null, displayName: null, now: NOW, en: false, dueTodayCount: 0 });
+  ok('không tên nào cả → vẫn "InteriorFlow", không bịa', r2.headline.includes('InteriorFlow'));
+}
+
+console.log('normalizeDisplayName() — gọt khoảng trắng, cắt trần, rỗng thành null');
+{
+  ok('gộp khoảng trắng giữa', normalizeDisplayName('  Trần   Thái  Hoà ') === 'Trần Thái Hoà');
+  ok('rỗng → null', normalizeDisplayName('') === null);
+  ok('toàn khoảng trắng → null', normalizeDisplayName('\n\t  ') === null);
+  ok('null/undefined không throw', normalizeDisplayName(null) === null && normalizeDisplayName(undefined) === null);
+  ok(`cắt đúng trần ${DISPLAY_NAME_MAX} ký tự`, (normalizeDisplayName('x'.repeat(200)) ?? '').length === DISPLAY_NAME_MAX);
+}
+
+console.log('capitalizeFirst() — không đụng phần còn lại, không vỡ với chuỗi rỗng');
+{
+  ok('chỉ chữ đầu lên hoa', capitalizeFirst('hoa lan') === 'Hoa lan');
+  ok('đã hoa sẵn thì giữ nguyên', capitalizeFirst('Hoà') === 'Hoà');
+  ok('chuỗi rỗng không throw', capitalizeFirst('') === '');
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);

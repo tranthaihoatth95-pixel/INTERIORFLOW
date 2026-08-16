@@ -64,8 +64,13 @@ export default function WidgetCard({
     >
       {title && (
         <div className={`flex items-center justify-between gap-2 ${dense ? 'mb-1.5' : 'mb-2.5'} shrink-0`}>
-          <h3 className="flex items-baseline gap-1.5 font-mono text-[length:var(--fs-xs)] font-semibold uppercase tracking-wide text-[var(--t4)]">
-            {index && <span style={{ color: 'var(--t5)' }}>{index}</span>}
+          {/* P-X ⑤ (17/08) — tương phản: tiêu đề `--t4` đo được 3,44 (tối) / 3,26 (sáng) và số
+              `--t5` 1,98 / 2,21, ĐỀU dưới ngưỡng 4,5:1 — mà đây là tiêu đề của CẢ 10 widget Home.
+              Cả hai lên `--t3` (7,24 / 5,20 ✓). Số vẫn tách khỏi nhãn, nhưng bằng CÂN NẶNG chữ
+              (`font-normal` cạnh `font-semibold`) chứ không bằng màu nhạt — màu/độ nhạt không
+              được là kênh phân biệt duy nhất. Đổi TOKEN, không tự chế màu. */}
+          <h3 className="flex items-baseline gap-1.5 font-mono text-[length:var(--fs-xs)] font-semibold uppercase tracking-wide text-[var(--t3)]">
+            {index && <span className="font-normal">{index}</span>}
             {title}
           </h3>
           {action}

@@ -36,6 +36,14 @@ import { LangToggle } from '@/components/LangToggle';
 import { useFlowStore } from '@/lib/store';
 import { useLang, useT } from '@/lib/i18n';
 import { buildGreeting } from '@/lib/home/greeting';
+import { useDisplayName } from './useDisplayName';
+import {
+  bentoFillPercent,
+  cellIndexMap,
+  duAnTileRows,
+  type HomeCellFlags,
+  type HomeLayout,
+} from './widgets/bento-layout';
 import { shouldShowActivityGrid } from '@/lib/home/aggregate';
 import { pickWeeklyItem, pickWeeklyImages, isSeedLibraryAsset } from '@/lib/home/weekly-picks';
 import VitalsPill from './widgets/VitalsPill';
@@ -205,8 +213,13 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
 
   // (`timeOfDayNow()` không còn gọi ở đây từ 16/08 — nền đã chuyển sang `SystemWallpaper`,
   //  nó tự đọc giờ và tự hẹn nhịp. Ô B `LightClock` vẫn đọc giờ riêng của nó như cũ.)
+  // ---------- V1 (17/08, phiếu P-X ④.V1) — lời chào: tên tự đặt thắng tên tài khoản ----------
+  // Ảnh chụp màn 17/08 ra "Chào hoa" (chữ thường + mất dấu). `buildGreeting` nay tự viết hoa chữ
+  // đầu; phần DẤU thì chỉ người dùng gõ được nên có `displayName` (xem `useDisplayName.ts`).
+  const { displayName, setDisplayName } = useDisplayName();
   const greeting = buildGreeting({
     name: user?.name ?? null,
+    displayName,
     now: new Date(),
     en,
     dueTodayCount: summary?.greeting.dueTodayCount ?? 0,
@@ -247,6 +260,24 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   // MỎNG (0 ô phụ sống, chỉ còn A/B/F) · VỪA (1-3 ô phụ, tổng 4-6 ô) · ĐẦY (4-6 ô phụ, tổng 7-9 ô)
   const tier: 'mong' | 'vua' | 'day' = optionalLiveCount === 0 ? 'mong' : optionalLiveCount <= 3 ? 'vua' : 'day';
 
+  // ---------- V2 (17/08, phiếu P-X ④.V2) — SỐ Ô TỰ TÍNH, không còn gán cứng ----------
+  // Trước đây `index="03"`/`"05"`/`"07"`… gán tại chỗ gọi trong khi widget render CÓ ĐIỀU KIỆN ⇒
+  // ẩn cái nào là dãy đứt (ảnh 17/08: 01·02·04·05·06·08, và ô Lưới tích luỹ KHÔNG có số). Nay số
+  // sinh từ THỨ TỰ Ô THẬT SỰ HIỆN RA của đúng bố cục đang dùng — luật + test ở
+  // `./widgets/bento-layout.ts` (256 ca: 64 tổ hợp cờ × 4 bố cục).
+  const layout: HomeLayout = !isWide ? 'stacked' : tier === 'mong' ? 'mong' : tier === 'vua' ? 'vua' : 'bento';
+  const cellFlags: HomeCellFlags = {
+    homNay: hasC, anhTuan: hasD, bieuDo: hasE, mocToi: hasG, vatLieu: hasH, dongTin: hasI,
+  };
+  const cellIdx = cellIndexMap(layout, cellFlags);
+
+  // ---------- V3 (17/08, phiếu P-X ④.V3) — CỠ Ô THEO LƯỢNG TIN, không kéo dãn ----------
+  // Ô "Dự án" cao 2/3 màn nhưng lưới tile chỉ cần 1 hàng khi studio còn ít dự án ⇒ nửa dưới trống
+  // trơn (đúng chỗ Hoà chỉ). Lưới lùi về `bentoFillPercent(...)`% chiều cao và đứng giữa màn;
+  // phần dư trả cho HÌNH NỀN (chốt A2 16/08 "chừa lề cho nền thở"), không nhồi vào ô.
+  const projectCount = s.stageChart.reduce((acc, r) => acc + r.projects, 0);
+  const bentoFill = bentoFillPercent(duAnTileRows(projectCount));
+
   const openTasksByProject = summary?.openTasksByProject;
 
   // ---- vùng trên-phải (B/C, row1) — C rỗng thì B (luôn có) giãn hết 5 cột ----
@@ -255,12 +286,14 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   const eArea = area([1, 4], [3, 4]);
   const fAreaLeft: [number, number] = hasE && hasG ? [4, 6] : hasE ? [4, 8] : hasG ? [1, 6] : [1, 8];
   const gArea = area([6, 8], [3, 4]);
-  // ---- vùng dưới-phải (D trên, H/I dưới, cols 8-12) — D rỗng thì H/I giãn LÊN chiếm cả 2 hàng;
-  //      trong hàng dưới, H/I rỗng thì bên còn lại giãn NGANG hết 5 cột. Bảng đủ 8 tổ hợp ở
-  //      báo cáo ⑦ (comment đầu file dẫn tới đó) — ở đây chỉ tính 2 trục độc lập cho gọn. */
+  // ---- vùng dưới-phải (D trên, H/I dưới, cols 8-12) — D rỗng thì H/I giãn LÊN chiếm cả 2 hàng.
+  //      V3 (17/08): H và I KHÔNG còn đứng CẠNH nhau nữa mà XẾP CHỒNG trong MỘT ô —
+  //      `gridTemplateRows: 'auto minmax(0,1fr)'`. `auto` là mấu chốt: ô "Vật liệu của tuần" chỉ
+  //      có 1 quả cầu + 1 dòng tên (~97px) nhưng trước đây bị kéo cao bằng cả hàng (~279px) ⇒
+  //      65% trống, đúng ô 08 Hoà chỉ. Nay nó lấy ĐÚNG chiều cao nội dung, phần dư về ô Bảng tin
+  //      (danh sách — càng cao càng hiện được nhiều tin, không có chỗ chết). Chỉ còn H mà không
+  //      có I thì `alignContent:'start'` để phần dư là NỀN, không phải ruột card rỗng.
   const rightRow: [number, number] = hasD ? [3, 4] : [2, 4];
-  const hArea = area(hasI ? [8, 11] : [8, 13], rightRow);
-  const iArea = area(hasH ? [11, 13] : [8, 13], rightRow);
 
   // v4 (13/08, phiếu home-bento-v4.md ④.2) — ô A tách thành JSX dùng chung CẢ 4 layout (ĐẦY ·
   // VỪA · MỎNG · stackedList mobile) — trước đây chép văn y nguyên 2 lần (bentoGrid + stackedList),
@@ -270,8 +303,11 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
       className="flex h-full flex-col overflow-hidden rounded-[var(--r-3)]"
       style={{ background: 'var(--card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-node)' }}
     >
-      <div className="shrink-0 px-3.5 pb-1 pt-3 font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-[var(--t4)]">
-        <span style={{ color: 'var(--t5)' }}>01</span> {tr('Dự án', 'Projects')}
+      {/* ⑤ P-X — tiêu đề ô đổi `--t4`→`--t3` và số đổi `--t5`→`--t3`: đo được 3,44/3,26 và
+          1,98/2,21 (dưới ngưỡng 4,5:1). `--t3` đạt 7,24 (tối) / 5,20 (sáng). Số phân biệt với
+          nhãn bằng CÂN NẶNG chữ, không bằng màu — màu không được là kênh duy nhất. */}
+      <div className="shrink-0 px-3.5 pb-1 pt-3 font-mono text-[length:var(--fs-2xs)] font-semibold uppercase tracking-wide text-[var(--t3)]">
+        <span className="font-normal">{cellIdx.duAn}</span> {tr('Dự án', 'Projects')}
       </div>
       <div className="min-h-0 flex-1">
         <ProjectSelect
@@ -289,60 +325,84 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   );
 
   const bentoGrid = (
-    <div
-      className="grid h-full w-full"
-      style={{ gridTemplateColumns: 'repeat(12, minmax(0,1fr))', gridTemplateRows: 'repeat(3, minmax(0,1fr))', gap: 'var(--gap)' }}
-    >
-      {/* Ô A · DỰ ÁN — 7c × 2h, luôn hiện (never rỗng: "+ Dự án mới" luôn có trong ProjectSelect) */}
-      <div style={area([1, 8], [1, 3])} className="flex h-full flex-col overflow-hidden">
-        {projectTile}
+    // V3 (17/08, P-X ④.V3) — lưới KHÔNG còn ép cao 100% màn. `bentoFill` co lưới lại khi ô Dự án
+    // chỉ cần 1 hàng tile; wrapper `items-center` đặt lưới giữa màn, phần dư là HÌNH NỀN.
+    <div className="flex h-full w-full items-center">
+      <div
+        className="grid w-full"
+        style={{
+          height: `${bentoFill}%`,
+          gridTemplateColumns: 'repeat(12, minmax(0,1fr))',
+          gridTemplateRows: 'repeat(3, minmax(0,1fr))',
+          gap: 'var(--gap)',
+        }}
+      >
+        {/* Ô 01 · DỰ ÁN — 7c × 2h, luôn hiện (never rỗng: "+ Dự án mới" luôn có trong ProjectSelect) */}
+        <div style={area([1, 8], [1, 3])} className="flex h-full flex-col overflow-hidden">
+          {projectTile}
+        </div>
+
+        {/* Ô CHÀO + ĐỒNG HỒ ÁNH SÁNG — luôn hiện; Hôm nay rỗng thì giãn hết 5 cột (`bArea`) */}
+        <div style={bArea}>
+          <LightClock
+            headline={greeting.headline}
+            signal={greeting.signal}
+            tick={minuteTick}
+            index={cellIdx.chao}
+            displayName={displayName}
+            onDisplayNameChange={setDisplayName}
+          />
+        </div>
+
+        {/* Ô HÔM NAY — tự ẩn */}
+        {hasC && (
+          <div style={area([11, 13], [1, 2])}>
+            <TodayStrip summary={s} index={cellIdx.homNay} currentUserId={currentUserId} />
+          </div>
+        )}
+
+        {/* Ô ẢNH ĐẸP TUẦN NÀY — tự ẩn; rỗng thì cụm Vật liệu/Bảng tin giãn LÊN cả 2 hàng (`rightRow`) */}
+        {hasD && (
+          <div style={area([8, 13], [2, 3])}>
+            <WeeklyImage images={weeklyImages} eightSecTick={eightSecTick} index={cellIdx.anhTuan} />
+          </div>
+        )}
+
+        {/* ---- Hàng 3 trái (dưới ô Dự án): BIỂU ĐỒ CHẶNG · GHI CHÚ · MỐC SẮP TỚI ---- */}
+        {hasE && (
+          <div style={eArea}>
+            <StageChart summary={s} index={cellIdx.bieuDo} />
+          </div>
+        )}
+        <div style={area(fAreaLeft, [3, 4])}>
+          <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index={cellIdx.ghiChu} />
+        </div>
+        {hasG && (
+          <div style={gArea}>
+            <UpcomingList summary={s} index={cellIdx.mocToi} />
+          </div>
+        )}
+
+        {/* ---- Hàng 3 phải: VẬT LIỆU (cao đúng nội dung) XẾP CHỒNG trên BẢNG TIN / LƯỚI TÍCH LUỸ ---- */}
+        {(hasH || hasI) && (
+          <div
+            style={{
+              ...area([8, 13], rightRow),
+              display: 'grid',
+              gridTemplateRows: hasH && hasI ? 'auto minmax(0,1fr)' : hasH ? 'auto' : 'minmax(0,1fr)',
+              gap: 'var(--gap)',
+              alignContent: 'start',
+            }}
+          >
+            {hasH && <WeeklyMaterial item={weeklyMaterial} index={cellIdx.vatLieu} />}
+            {hasI && (
+              <div className="min-h-0">
+                {showActivityInI ? <ContributionGrid summary={s} index={cellIdx.dongTin} /> : <NewsFeed summary={s} index={cellIdx.dongTin} />}
+              </div>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* Ô B · CHÀO + ĐỒNG HỒ ÁNH SÁNG — luôn hiện; C rỗng thì B giãn hết 5 cột (`bArea`) */}
-      <div style={bArea}>
-        <LightClock headline={greeting.headline} signal={greeting.signal} tick={minuteTick} index="02" />
-      </div>
-
-      {/* Ô C · HÔM NAY — tự ẩn */}
-      {hasC && (
-        <div style={area([11, 13], [1, 2])}>
-          <TodayStrip summary={s} index="03" currentUserId={currentUserId} />
-        </div>
-      )}
-
-      {/* Ô D · ẢNH ĐẸP TUẦN NÀY — tự ẩn; rỗng thì H/I (hàng dưới, cùng cột) giãn LÊN chiếm cả 2 hàng (`rightRow`) */}
-      {hasD && (
-        <div style={area([8, 13], [2, 3])}>
-          <WeeklyImage images={weeklyImages} eightSecTick={eightSecTick} index="04" />
-        </div>
-      )}
-
-      {/* ---- Hàng 3 trái (dưới ô A): E · BIỂU ĐỒ CHẶNG · F · GHI CHÚ · G · MỐC SẮP TỚI ---- */}
-      {hasE && (
-        <div style={eArea}>
-          <StageChart summary={s} index="05" />
-        </div>
-      )}
-      <div style={area(fAreaLeft, [3, 4])}>
-        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index="06" />
-      </div>
-      {hasG && (
-        <div style={gArea}>
-          <UpcomingList summary={s} index="07" />
-        </div>
-      )}
-
-      {/* ---- Hàng 3 phải (dưới ô D): H · VẬT LIỆU CỦA TUẦN · I · BẢNG TIN / LƯỚI TÍCH LUỸ ---- */}
-      {hasH && (
-        <div style={hArea}>
-          <WeeklyMaterial item={weeklyMaterial} index="08" />
-        </div>
-      )}
-      {hasI && (
-        <div style={iArea}>
-          {showActivityInI ? <ContributionGrid summary={s} /> : <NewsFeed summary={s} index="09" />}
-        </div>
-      )}
     </div>
   );
 
@@ -356,12 +416,16 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   // MỘT dải cột chia ĐỀU cho đúng số ô phụ sống + F (Ghi chú luôn sống) — số cột = số ô, không ô
   // nào có thể "rỗng" vì mảng chỉ chứa ô ĐÃ lọc `hasX`.
   const vuaExtras: { node: ReactNode }[] = [];
-  if (hasC) vuaExtras.push({ node: <TodayStrip summary={s} index="03" currentUserId={currentUserId} /> });
-  if (hasD) vuaExtras.push({ node: <WeeklyImage images={weeklyImages} eightSecTick={eightSecTick} index="04" /> });
-  if (hasE) vuaExtras.push({ node: <StageChart summary={s} index="05" /> });
-  if (hasG) vuaExtras.push({ node: <UpcomingList summary={s} index="07" /> });
-  if (hasH) vuaExtras.push({ node: <WeeklyMaterial item={weeklyMaterial} index="08" /> });
-  if (hasI) vuaExtras.push({ node: showActivityInI ? <ContributionGrid summary={s} /> : <NewsFeed summary={s} index="09" /> });
+  if (hasC) vuaExtras.push({ node: <TodayStrip summary={s} index={cellIdx.homNay} currentUserId={currentUserId} /> });
+  if (hasD) vuaExtras.push({ node: <WeeklyImage images={weeklyImages} eightSecTick={eightSecTick} index={cellIdx.anhTuan} /> });
+  if (hasE) vuaExtras.push({ node: <StageChart summary={s} index={cellIdx.bieuDo} /> });
+  if (hasG) vuaExtras.push({ node: <UpcomingList summary={s} index={cellIdx.mocToi} /> });
+  if (hasH) vuaExtras.push({ node: <WeeklyMaterial item={weeklyMaterial} index={cellIdx.vatLieu} /> });
+  if (hasI) {
+    vuaExtras.push({
+      node: showActivityInI ? <ContributionGrid summary={s} index={cellIdx.dongTin} /> : <NewsFeed summary={s} index={cellIdx.dongTin} />,
+    });
+  }
   const vuaBottomCount = 1 + vuaExtras.length; // + ô F (Ghi chú, luôn sống)
 
   const vuaGrid = (
@@ -371,11 +435,18 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
           {projectTile}
         </div>
         <div style={{ gridColumn: '8 / 13' }} className="min-h-0">
-          <LightClock headline={greeting.headline} signal={greeting.signal} tick={minuteTick} index="02" />
+          <LightClock
+            headline={greeting.headline}
+            signal={greeting.signal}
+            tick={minuteTick}
+            index={cellIdx.chao}
+            displayName={displayName}
+            onDisplayNameChange={setDisplayName}
+          />
         </div>
       </div>
       <div className="grid min-h-0 flex-1" style={{ gridTemplateColumns: `repeat(${vuaBottomCount}, minmax(0,1fr))`, gap: 'var(--gap)' }}>
-        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index="06" />
+        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index={cellIdx.ghiChu} />
         {vuaExtras.map((e, i) => (
           <div key={i} className="min-h-0">
             {e.node}
@@ -394,11 +465,18 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
       <div className="grid min-h-0" style={{ gridTemplateColumns: '7fr 5fr', gap: 'var(--gap)' }}>
         <div className="min-h-0">{projectTile}</div>
         <div className="min-h-0">
-          <LightClock headline={greeting.headline} signal={greeting.signal} tick={minuteTick} index="02" />
+          <LightClock
+            headline={greeting.headline}
+            signal={greeting.signal}
+            tick={minuteTick}
+            index={cellIdx.chao}
+            displayName={displayName}
+            onDisplayNameChange={setDisplayName}
+          />
         </div>
       </div>
       <div className="min-h-0">
-        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index="06" />
+        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index={cellIdx.ghiChu} />
       </div>
     </div>
   );
@@ -407,38 +485,48 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
     <div className="flex w-full flex-col gap-[var(--gap)] px-3 pb-6 pt-3">
       <div className="h-[440px]">{projectTile}</div>
       <div className="h-[170px]">
-        <LightClock headline={greeting.headline} signal={greeting.signal} tick={minuteTick} index="02" />
+        <LightClock
+          headline={greeting.headline}
+          signal={greeting.signal}
+          tick={minuteTick}
+          index={cellIdx.chao}
+          displayName={displayName}
+          onDisplayNameChange={setDisplayName}
+        />
       </div>
       {hasC && (
         <div className="h-[150px]">
-          <TodayStrip summary={s} index="03" currentUserId={currentUserId} />
+          <TodayStrip summary={s} index={cellIdx.homNay} currentUserId={currentUserId} />
         </div>
       )}
       {hasD && (
         <div className="h-[220px]">
-          <WeeklyImage images={weeklyImages} eightSecTick={eightSecTick} index="04" />
+          <WeeklyImage images={weeklyImages} eightSecTick={eightSecTick} index={cellIdx.anhTuan} />
         </div>
       )}
       {hasE && (
         <div className="h-[190px]">
-          <StageChart summary={s} index="05" />
+          <StageChart summary={s} index={cellIdx.bieuDo} />
         </div>
       )}
       <div className="h-[220px]">
-        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index="06" />
+        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index={cellIdx.ghiChu} />
       </div>
       {hasG && (
         <div className="h-[200px]">
-          <UpcomingList summary={s} index="07" />
+          <UpcomingList summary={s} index={cellIdx.mocToi} />
         </div>
       )}
+      {/* V3 — ô Vật liệu ở bản xếp dọc vốn đã cao đúng nội dung (110px), giữ nguyên. */}
       {hasH && (
         <div className="h-[110px]">
-          <WeeklyMaterial item={weeklyMaterial} index="08" />
+          <WeeklyMaterial item={weeklyMaterial} index={cellIdx.vatLieu} />
         </div>
       )}
       {hasI && (
-        <div className="h-[220px]">{showActivityInI ? <ContributionGrid summary={s} /> : <NewsFeed summary={s} index="09" />}</div>
+        <div className="h-[220px]">
+          {showActivityInI ? <ContributionGrid summary={s} index={cellIdx.dongTin} /> : <NewsFeed summary={s} index={cellIdx.dongTin} />}
+        </div>
       )}
     </div>
   );

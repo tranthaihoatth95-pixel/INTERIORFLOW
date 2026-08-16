@@ -31,7 +31,7 @@ function cellColor(count: number, max: number): string {
   return 'var(--accent-soft)';
 }
 
-export default function ContributionGrid({ summary }: { summary: HomeSummary }) {
+export default function ContributionGrid({ summary, index }: { summary: HomeSummary; index?: string }) {
   const tr = useT();
   const lang = useLang();
   const days = summary.activityDays;
@@ -58,7 +58,10 @@ export default function ContributionGrid({ summary }: { summary: HomeSummary }) 
   };
 
   return (
-    <WidgetCard title={tr('Lưới tích luỹ studio', 'Studio activity')}>
+    // V2 (17/08, P-X ④.V2) — ô này TRƯỚC ĐÂY không nhận `index` nên là ô DUY NHẤT trên màn không
+    // có số (ảnh chụp 17/08 của Hoà bắt đúng chỗ này). Đứng giữa "có số" và "không số" là bất
+    // nhất; nay mọi ô đều được đánh số theo thứ tự ô thật (`./bento-layout.ts`).
+    <WidgetCard index={index} title={tr('Lưới tích luỹ studio', 'Studio activity')}>
       <div className="overflow-x-auto">
         <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} role="img" aria-label={tr('Lưới tích luỹ studio', 'Studio activity')}>
           {cells.map((c, i) => {

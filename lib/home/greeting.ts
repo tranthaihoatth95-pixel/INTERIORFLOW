@@ -20,12 +20,46 @@
  */
 
 export interface GreetingInput {
-  /** Tên hiển thị — rỗng/undefined → chỉ chào "InteriorFlow" chung chung. */
+  /** Tên tài khoản (`User.name`) — rỗng/undefined → chỉ chào "InteriorFlow" chung chung. */
   name: string | null | undefined;
+  /**
+   * v5 (17/08, phiếu P-X ④.V1) — TÊN HIỂN THỊ do CHÍNH người dùng gõ. Thắng `name` khi có.
+   * Đây là đường DUY NHẤT đúng cho dấu tiếng Việt: `hoa` KHÔNG suy ra được `Hoà` (còn Hoa · Hoá
+   * · Hoạ) — máy đoán dấu là bịa. Máy chỉ được làm phần luôn đúng: viết hoa chữ cái đầu.
+   */
+  displayName?: string | null;
   now: Date;
   en: boolean;
   /** Số việc (Task) chưa xong, hạn hôm nay — 0/âm/NaN đều coi như "không có". */
   dueTodayCount: number;
+}
+
+/** Khoá localStorage của tên hiển thị (per-user, khai ở `components/home/useDisplayName.ts`).
+ * Cùng họ khoá `interiorflow.*` của các cài đặt cục bộ sẵn có (vd `lib/units/settings.ts`). */
+export const DISPLAY_NAME_KEY = 'interiorflow.display_name_v1';
+
+/** Trần độ dài tên hiển thị — đủ cho họ tên đầy đủ, chặn dán cả đoạn văn vào lời chào. */
+export const DISPLAY_NAME_MAX = 40;
+
+/**
+ * Gọt tên hiển thị người dùng gõ: bỏ khoảng trắng thừa, gộp khoảng trắng giữa, cắt trần.
+ * KHÔNG viết hoa, KHÔNG đoán dấu — người dùng gõ sao giữ vậy (đó là lý do trường này tồn tại).
+ * Rỗng → `null` (đường thoái lui về `name`, rồi về 'InteriorFlow').
+ */
+export function normalizeDisplayName(raw: string | null | undefined): string | null {
+  const s = (raw ?? '').replace(/\s+/g, ' ').trim().slice(0, DISPLAY_NAME_MAX);
+  return s.length > 0 ? s : null;
+}
+
+/**
+ * Viết hoa chữ cái đầu — phần DUY NHẤT máy suy được mà luôn đúng (`hoa` → `Hoa`, không đụng dấu).
+ * Dùng `toLocaleUpperCase()` để chữ có dấu lên hoa đúng (`ánh` → `Ánh`), và tách bằng spread để
+ * không cắt đôi cặp mã (emoji/ký tự ngoài BMP).
+ */
+export function capitalizeFirst(raw: string): string {
+  const chars = [...raw];
+  if (chars.length === 0) return raw;
+  return chars[0].toLocaleUpperCase() + chars.slice(1).join('');
 }
 
 export interface GreetingResult {
@@ -59,7 +93,13 @@ function formatWeekdayDate(now: Date, en: boolean): string {
 }
 
 export function buildGreeting(input: GreetingInput): GreetingResult {
-  const firstName = (input.name ?? '').trim().split(/\s+/).pop() || null;
+  // v5 (17/08, P-X ④.V1) — thứ tự thoái lui: tên người dùng TỰ ĐẶT → từ cuối của tên tài khoản
+  // (đã viết hoa chữ đầu) → 'InteriorFlow'. Ảnh chụp màn 17/08 ra "Chào hoa" vì tên tài khoản
+  // lưu là `hoa`: chữ thường + mất dấu. Viết hoa chữ đầu sửa được nửa đầu; nửa dấu thì CHỈ người
+  // dùng gõ được, nên `displayName` đứng trước.
+  const custom = normalizeDisplayName(input.displayName);
+  const lastWord = (input.name ?? '').trim().split(/\s+/).pop() || '';
+  const firstName = custom ?? (lastWord ? capitalizeFirst(lastWord) : null);
   const dateLine = formatWeekdayDate(input.now, input.en);
   const namePart = firstName ? (input.en ? `Hi ${firstName}` : `Chào ${firstName}`) : 'InteriorFlow';
   const headline = dateLine ? `${namePart} · ${dateLine}` : namePart;

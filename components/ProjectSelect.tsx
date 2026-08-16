@@ -20,6 +20,7 @@ import {
   Link2,
   Send,
   FolderPlus,
+  Layers,
   LayoutGrid,
   GalleryHorizontal,
 } from 'lucide-react';
@@ -2112,11 +2113,18 @@ export function ProjectSelect({
             }
           }}
           className="grid cursor-pointer place-items-center"
+          /* V4 (17/08, phiếu P-X ④.V4) — Hoà soi ảnh chụp thật: thẻ này và thẻ "Nháp" dùng CÙNG
+             một mảng be trơn nên nhìn không tách được. Luật hình đặt ra ở đây, áp cho cả lưới:
+               · NÉT ĐỨT + KHÔNG NỀN = Ô TRỐNG, một HÀNH ĐỘNG (tạo mới / thu gọn)
+               · NỀN ĐẶC + VIỀN LIỀN + BÓNG = thẻ CÓ NỘI DUNG (dự án thật, ngăn Nháp)
+             Bỏ hết màu vẫn phân biệt được (kiểu viền + độ đặc + bóng), đúng luật màu-không-là-
+             kênh-duy-nhất. Nền be `rgba(127,127,127,0.06)` GỠ HẲN — chính nó làm ô trống trông
+             như một thẻ đặc. */
           style={{
             aspectRatio: '4 / 4.1',
             borderRadius: 'var(--radius-xl)',
             border: '1.5px dashed rgba(106,87,245,0.53)',
-            background: 'rgba(127,127,127,0.06)',
+            background: 'transparent',
             opacity: busy ? 0.6 : 1,
           }}
         >
@@ -2144,7 +2152,9 @@ export function ProjectSelect({
           <div
             role="button"
             tabIndex={0}
-            aria-label={en ? `Drafts (${draftFlows.length})` : `Nháp (${draftFlows.length})`}
+            /* WCAG 2.5.3 Label in Name — tên đọc được phải CHỨA chữ nhìn thấy; nhãn hiện trên thẻ
+               nay là "Bản nháp" nên aria-label đổi theo, không để lệch "Nháp" ↔ "Bản nháp". */
+            aria-label={en ? `Drafts (${draftFlows.length})` : `Bản nháp (${draftFlows.length})`}
             onClick={() => setDraftExpanded(true)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -2153,24 +2163,31 @@ export function ProjectSelect({
               }
             }}
             className="grid cursor-pointer place-items-center transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:scale-[1.02]"
+            /* V4 (17/08, P-X ④.V4) — ngăn Nháp CÓ NỘI DUNG THẬT (n bản nháp) nên phải đọc ra là
+               một NGĂN CHỨA, không phải ô trống: nền `--card` đặc + viền LIỀN + bóng, y như thẻ
+               dự án thật. Ba dấu hiệu mang tin, không cái nào là màu: ① viền liền (≠ nét đứt của
+               ô trống) ② icon `Layers` — nhiều lớp xếp chồng, nói đúng bản chất "nhiều bản nháp"
+               (`FolderPlus` cũ nghĩa là THÊM thư mục, sai nghĩa và trùng dấu ＋ của thẻ tạo mới)
+               ③ SỐ bản nháp tách ra dòng riêng, chữ số mono to — số là tin, không phải trang trí. */
             style={{
               aspectRatio: '4 / 4.1',
               borderRadius: 'var(--radius-xl)',
-              border: '1.5px dashed rgba(127,127,127,0.4)',
-              background: 'rgba(127,127,127,0.06)',
+              border: '1px solid var(--border)',
+              background: 'var(--card)',
+              boxShadow: 'var(--shadow-node)',
             }}
           >
-            <div className="flex flex-col items-center gap-2 px-3 text-center">
-              <span
-                className="grid h-10 w-10 place-items-center rounded-full"
-                style={{ border: '1.5px dashed rgba(127,127,127,0.55)', color: 'var(--t3)' }}
-              >
-                <FolderPlus size={17} />
+            <div className="flex flex-col items-center gap-1.5 px-3 text-center">
+              <span className="grid h-10 w-10 place-items-center rounded-full text-[var(--t3)]" style={{ background: 'var(--field)' }}>
+                <Layers size={17} />
+              </span>
+              <span className="font-mono text-[length:var(--fs-md)] font-semibold leading-none text-[var(--t1)]">
+                {draftFlows.length}
               </span>
               <span className="text-[length:var(--fs-sm)] font-semibold text-[var(--t1)]">
-                {en ? `Drafts (${draftFlows.length})` : `Nháp (${draftFlows.length})`}
+                {en ? 'Drafts' : 'Bản nháp'}
               </span>
-              <span className="text-[length:var(--fs-2xs)] text-[var(--t4)]">
+              <span className="text-[length:var(--fs-2xs)] text-[var(--t3)]">
                 {en ? 'No project yet' : 'Chưa gắn dự án'}
               </span>
             </div>
@@ -2194,11 +2211,13 @@ export function ProjectSelect({
               }
             }}
             className="grid cursor-pointer place-items-center transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:scale-[1.02]"
+            /* V4 — "Thu gọn" là HÀNH ĐỘNG, không có nội dung ⇒ theo cùng luật với "+ Dự án mới":
+               nét đứt, không nền. Giữ đúng MỘT ngôn ngữ hình cho cả lưới. */
             style={{
               aspectRatio: '4 / 4.1',
               borderRadius: 'var(--radius-xl)',
               border: '1.5px dashed rgba(127,127,127,0.4)',
-              background: 'rgba(127,127,127,0.06)',
+              background: 'transparent',
             }}
           >
             <div className="flex flex-col items-center gap-2 px-3 text-center">

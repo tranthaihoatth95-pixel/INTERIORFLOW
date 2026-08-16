@@ -1,0 +1,514 @@
+<!-- @dsCard group="Home" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InteriorFlow · Home — bốn lỗi Hoà soi từ ảnh chụp màn 17/08</title>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   MÃ MÀU CHỈ ĐƯỢC VIẾT TRONG KHỐI NÀY. Mọi chỗ khác gọi biến.
+   Tên biến = TÊN THẬT trong app/globals.css (--bg --card --field --border --t1..t5 --r-*
+   --fs-* --accent --nen-mo-* --vien-mo) ⇒ bản vẽ và code nói cùng một thứ tiếng.
+   ⚠️ Họ --mat-* ĐÃ CHẾT (16/08) → dùng --nen-mo-*; đường kẻ mảnh là --vien-mo.
+   ⚠️ Màu nhấn thứ hai (mòng két) CHƯA CHỐT hex — bản vẽ dùng --accent tím như app đang chạy.
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+:root{
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600; --fw-bold:700;
+  --gap:12px; --ease-apple:cubic-bezier(.32,.72,0,1);
+}
+.p[data-theme="dark"]{
+  --bg:#0c0c0e; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --nen-mo-card:rgba(26,26,30,.82); --vien-mo:rgba(255,255,255,.06);
+  --shadow-node:0 8px 30px -8px rgba(0,0,0,.65);
+  --accent:#7c3aed; --accent-mem:rgba(124,58,237,.20); --accent-vien:rgba(124,58,237,.53);
+  --danger:#e5674f; --success:#46b876;
+  --nen-a:#243040; --nen-b:#3c2f42;
+}
+.p[data-theme="light"]{
+  --bg:#f2f2f7; --card:#ffffff; --field:#e5e5ea; --hover:#e5e5ea;
+  --border:#d1d1d6;
+  --t1:#1c1c1e; --t2:#3c3c43; --t3:#6c6c70; --t4:#8e8e93; --t5:#aeaeb2;
+  --nen-mo-card:rgba(255,255,255,.82); --vien-mo:rgba(0,0,0,.05);
+  --shadow-node:0 10px 30px -10px rgba(28,28,30,.16);
+  --accent:#6d28d9; --accent-mem:rgba(109,40,217,.14); --accent-vien:rgba(109,40,217,.5);
+  --danger:#c9341d; --success:#107043;
+  --nen-a:#cdd8e6; --nen-b:#e0d4e8;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:#0c0c0e;color:#f5f5f7;padding:28px 24px 72px;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  font-size:var(--fs-sm);line-height:1.5;-webkit-font-smoothing:antialiased}
+/* 1360 + lề 24×2 = 1408 < 1440 ⇒ khung 1440×900 KHÔNG cuộn ngang (bản đầu để 1400 thì tràn 8px). */
+.wrap{max-width:1360px;margin:0 auto}
+h1{font-size:var(--fs-xl);letter-spacing:-.01em;margin:0 0 6px;font-weight:var(--fw-bold)}
+h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-transform:uppercase;
+  color:#9e9ea8;margin:40px 0 6px}
+.sub{color:#9e9ea8;margin:0 0 10px;font-size:var(--fs-xs);max-width:100ch;line-height:1.65}
+.sub b{color:#d6d6db;font-weight:var(--fw-semi)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:var(--fs-2xs);
+  background:rgba(255,255,255,.07);padding:1px 5px;border-radius:var(--r-1);color:#d6d6db}
+
+/* ── nút gạt theme ─────────────────────────────────────────────────────────────────────── */
+.gat{display:flex;gap:6px;align-items:center;margin:14px 0 6px;
+  position:sticky;top:0;z-index:9;background:#0c0c0e;padding:10px 0}
+.gat button{font:inherit;font-size:var(--fs-xs);cursor:pointer;color:#d6d6db;
+  background:#1a1a1e;border:1px solid #2a2a31;border-radius:var(--r-full);padding:7px 15px;
+  min-height:32px;transition:background .18s var(--ease-apple)}
+.gat button[aria-pressed="true"]{background:#7c3aed;border-color:#7c3aed;color:#fff;font-weight:var(--fw-semi)}
+.gat button:focus-visible{outline:2px solid #7c3aed;outline-offset:2px}
+.gat .ghi{color:#9e9ea8;font-size:var(--fs-2xs);margin-left:8px}
+
+/* ── cặp trước/sau ─────────────────────────────────────────────────────────────────────── */
+.doi{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:10px 0 4px}
+@media (max-width:1100px){.doi{grid-template-columns:1fr}}
+.p{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-4);padding:16px;
+  color:var(--t1);overflow:hidden}
+body[data-view="dark"] .p[data-theme="light"]{display:none}
+body[data-view="light"] .p[data-theme="dark"]{display:none}
+body:not([data-view="ca-hai"]) .doi{grid-template-columns:1fr}
+.nhan{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:var(--fs-2xs);
+  text-transform:uppercase;letter-spacing:.09em;font-weight:var(--fw-bold);color:var(--t3)}
+.cham{width:8px;height:8px;border-radius:var(--r-full);flex:none}
+.cham.xau{background:var(--danger)} .cham.tot{background:var(--success)}
+.p .theme-ten{margin-left:auto;font-weight:var(--fw-normal);letter-spacing:.04em;color:var(--t4)}
+
+/* ── vỏ card widget (khuôn WidgetCard.tsx) ─────────────────────────────────────────────── */
+.w{background:var(--card);border:1px solid var(--border);border-radius:var(--r-3);
+  box-shadow:var(--shadow-node);padding:12px;display:flex;flex-direction:column;min-height:0}
+.w-tt{display:flex;align-items:baseline;gap:6px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:var(--fs-xs);font-weight:var(--fw-semi);text-transform:uppercase;letter-spacing:.05em;
+  margin:0 0 6px}
+.w-tt .so{font-weight:var(--fw-normal)}
+/* TRƯỚC: tiêu đề --t4 (3,44 tối / 3,26 sáng) · số --t5 (1,98 / 2,21) — đều dưới 4,5:1 */
+.truoc .w-tt{color:var(--t4)} .truoc .w-tt .so{color:var(--t5)}
+/* SAU: cả hai lên --t3 (7,24 / 5,20) — số tách bằng CÂN NẶNG chữ, không bằng màu */
+.sau .w-tt{color:var(--t3)} .sau .w-tt .so{color:var(--t3)}
+.trong{background:repeating-linear-gradient(135deg,transparent 0 7px,var(--vien-mo) 7px 8px);
+  border:1px dashed var(--border);border-radius:var(--r-2);
+  display:grid;place-items:center;font-size:var(--fs-2xs);color:var(--t3);text-align:center;padding:4px}
+
+/* ── V1 lời chào ───────────────────────────────────────────────────────────────────────── */
+.chao-h{font-size:var(--fs-md);font-weight:var(--fw-semi);line-height:1.25;margin:0;color:var(--t1)}
+.chao-tin{font-size:var(--fs-2xs);margin:3px 0 0}
+.truoc .chao-tin{color:var(--t4)} .sau .chao-tin{color:var(--t3)}
+.hang{display:flex;align-items:center;gap:6px}
+.but{flex:none;width:28px;height:28px;display:grid;place-items:center;border-radius:var(--r-2);
+  border:0;background:transparent;color:var(--t3);cursor:pointer}
+.but:hover{background:var(--hover);color:var(--t1)}
+.but:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.o-nhap{flex:1;min-width:0;background:var(--field);border:1px solid var(--border);
+  border-radius:var(--r-2);padding:5px 10px;color:var(--t1);font:inherit;font-size:var(--fs-sm)}
+.o-nhap:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.nut-luu{flex:none;background:var(--field);border:1px solid var(--border);border-radius:var(--r-2);
+  padding:5px 10px;color:var(--t1);font:inherit;font-size:var(--fs-xs);font-weight:500;cursor:pointer}
+.nut-luu:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cung{margin-top:10px;height:56px;border-radius:var(--r-2);
+  background:linear-gradient(to top,var(--accent-mem),transparent);
+  border-bottom:1px solid var(--border);position:relative}
+.cung::after{content:"";position:absolute;left:52%;top:26%;width:10px;height:10px;border-radius:var(--r-full);
+  background:var(--accent);box-shadow:0 0 0 2px var(--card)}
+
+/* ── V2 dãy số ô ───────────────────────────────────────────────────────────────────────── */
+.day{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.o-so{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:var(--fs-2xs);
+  border:1px solid var(--border);border-radius:var(--r-1);padding:5px 9px;color:var(--t3);
+  background:var(--card);white-space:nowrap}
+.o-so.thieu{border-style:dashed;border-color:var(--danger);color:var(--danger);background:transparent}
+.o-so.khong{border-color:var(--danger);color:var(--danger)}
+.o-so.on{border-color:var(--accent-vien);color:var(--t1)}
+
+/* ── V3 thừa trống ─────────────────────────────────────────────────────────────────────── */
+.ba{display:grid;grid-template-columns:1.35fr 1fr 1fr;gap:10px;align-items:start}
+.cot-cao{height:300px;display:flex;flex-direction:column}
+.thanh-do{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:var(--fs-2xs);color:var(--t3)}
+.thanh-do .vach{height:6px;border-radius:var(--r-full);background:var(--danger);flex:none}
+.thanh-do .vach.ok{background:var(--success)}
+.tile{border:1px dashed var(--border);border-radius:var(--r-2);aspect-ratio:4/4.1;
+  display:grid;place-items:center;font-size:var(--fs-2xs);color:var(--t3)}
+.tile.that{border-style:solid;background:linear-gradient(135deg,var(--nen-a),var(--nen-b));color:var(--t1)}
+.luoi-tile{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cot-bd{display:flex;gap:14px;align-items:flex-end;height:100%;justify-content:center;padding-bottom:2px}
+.bo{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:var(--fs-2xs);color:var(--t3)}
+.bo .so-tren{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--t2);font-weight:var(--fw-semi)}
+.cap{display:flex;gap:3px;align-items:flex-end}
+.cap i{display:block;width:14px;border-radius:3px 3px 0 0;background:var(--accent)}
+.cap i.mo{opacity:.34}
+.goc{border-top:1px solid var(--border);width:100%;margin-top:2px}
+.vl{display:flex;align-items:center;gap:10px}
+.qua-cau{width:40px;height:40px;border-radius:var(--r-full);flex:none;
+  background:radial-gradient(circle at 34% 30%,var(--nen-b),var(--nen-a) 74%)}
+
+/* ── V4 hai thẻ ────────────────────────────────────────────────────────────────────────── */
+.hai{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:420px}
+.the{aspect-ratio:4/4.1;border-radius:var(--r-4);display:grid;place-items:center;text-align:center;padding:10px}
+.the .cum{display:flex;flex-direction:column;align-items:center;gap:6px}
+.the .vong{width:40px;height:40px;border-radius:var(--r-full);display:grid;place-items:center;color:var(--t3)}
+.the .ten{font-size:var(--fs-sm);font-weight:var(--fw-semi);color:var(--t1)}
+.the .phu{font-size:var(--fs-2xs);color:var(--t3)}
+.the .dem{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:var(--fs-md);
+  font-weight:var(--fw-semi);line-height:1;color:var(--t1)}
+/* TRƯỚC — cả hai cùng một mảng be trơn + nét đứt: nhìn không tách được */
+.the.cu{border:1.5px dashed rgba(127,127,127,.4);background:rgba(127,127,127,.06)}
+.the.cu.moi{border-color:var(--accent-vien)}
+.the.cu .vong{border:1.5px dashed rgba(127,127,127,.55)}
+/* SAU — nét đứt + KHÔNG nền = ô trống (hành động) · nền đặc + viền liền + bóng = có nội dung */
+.the.trong-slot{border:1.5px dashed var(--accent-vien);background:transparent}
+.the.trong-slot .vong{border:1.5px dashed var(--accent-vien);color:var(--accent)}
+.the.day-ruot{border:1px solid var(--border);background:var(--card);box-shadow:var(--shadow-node)}
+.the.day-ruot .vong{background:var(--field)}
+
+.bang{width:100%;border-collapse:collapse;margin:10px 0 0;font-size:var(--fs-xs)}
+.bang th,.bang td{border-bottom:1px solid #2a2a31;padding:7px 9px;text-align:left;vertical-align:top}
+.bang th{color:#9e9ea8;font-weight:var(--fw-semi);font-size:var(--fs-2xs);text-transform:uppercase;letter-spacing:.07em}
+.bang td{color:#d6d6db}
+.bang td.n{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
+.tot-tx{color:#46b876} .xau-tx{color:#e5674f}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body data-view="ca-hai">
+<div class="wrap">
+
+<h1>Home · bốn lỗi soi từ ảnh chụp màn thật</h1>
+<p class="sub">Hoà mở ảnh chụp màn Home trên điện thoại ngày 17/08 và chỉ đúng bốn chỗ. Đây là lần đầu lô ảnh
+duyệt-mắt sinh ra lỗi thật, nên bản vẽ này bày <b>trước ↔ sau</b> từng chỗ, kèm số đo. Vẽ theo đúng biến màu của
+<code>app/globals.css</code>; phần chưa chốt (màu nhấn thứ hai) giữ nguyên tím như app đang chạy.</p>
+
+<div class="gat" role="group" aria-label="Chọn theme để xem">
+  <button type="button" data-v="ca-hai" aria-pressed="true">Cả hai</button>
+  <button type="button" data-v="dark" aria-pressed="false">Tối</button>
+  <button type="button" data-v="light" aria-pressed="false">Sáng</button>
+  <span class="ghi">Mỗi cặp: trái là hiện trạng, phải là bản sửa.</span>
+</div>
+
+<!-- ═══════════════ V1 ═══════════════ -->
+<h2>① Lời chào — “Chào hoa”</h2>
+<p class="sub">Tên tài khoản đang lưu là <code>hoa</code>: chữ thường và <b>mất dấu</b>. Máy sửa được chữ thường
+(luôn đúng, không đoán gì). Dấu thì <b>không suy ra được</b> — <code>hoa</code> có thể là Hoa · Hoà · Hoá · Hoạ ⇒
+phải có đường cho người dùng tự gõ. Nút bút chì đứng ngay cạnh lời chào, tức ngay chỗ cái tên sai đập vào mắt.</p>
+
+<div class="doi">
+  <div class="p truoc" data-theme="dark">
+    <p class="nhan"><span class="cham xau"></span>Trước<span class="theme-ten">tối</span></p>
+    <div class="w">
+      <p class="w-tt"><span class="so">02</span></p>
+      <h3 class="chao-h" style="margin:0">Chào hoa · Thứ Hai, 17/08</h3>
+      <p class="chao-tin">2 việc đến hạn hôm nay</p>
+      <div class="cung"></div>
+    </div>
+  </div>
+  <div class="p sau" data-theme="dark">
+    <p class="nhan"><span class="cham tot"></span>Sau<span class="theme-ten">tối</span></p>
+    <div class="w">
+      <p class="w-tt"><span class="so">02</span></p>
+      <div class="hang">
+        <h3 class="chao-h" style="flex:1;min-width:0">Chào Hoà · Thứ Hai, 17/08</h3>
+        <button type="button" class="but" aria-label="Đổi tên hiển thị" title="Đổi tên hiển thị">✎</button>
+      </div>
+      <p class="chao-tin">2 việc đến hạn hôm nay</p>
+      <div class="cung"></div>
+    </div>
+    <div class="w" style="margin-top:10px">
+      <p class="w-tt"><span class="so">02</span></p>
+      <div class="hang">
+        <input class="o-nhap" value="Hoà" aria-label="Tên hiển thị">
+        <button type="button" class="nut-luu">Lưu</button>
+      </div>
+      <p class="chao-tin">Đang sửa — Enter để lưu, Esc để bỏ</p>
+    </div>
+  </div>
+  <div class="p truoc" data-theme="light">
+    <p class="nhan"><span class="cham xau"></span>Trước<span class="theme-ten">sáng</span></p>
+    <div class="w">
+      <p class="w-tt"><span class="so">02</span></p>
+      <h3 class="chao-h" style="margin:0">Chào hoa · Thứ Hai, 17/08</h3>
+      <p class="chao-tin">2 việc đến hạn hôm nay</p>
+      <div class="cung"></div>
+    </div>
+  </div>
+  <div class="p sau" data-theme="light">
+    <p class="nhan"><span class="cham tot"></span>Sau<span class="theme-ten">sáng</span></p>
+    <div class="w">
+      <p class="w-tt"><span class="so">02</span></p>
+      <div class="hang">
+        <h3 class="chao-h" style="flex:1;min-width:0">Chào Hoà · Thứ Hai, 17/08</h3>
+        <button type="button" class="but" aria-label="Đổi tên hiển thị" title="Đổi tên hiển thị">✎</button>
+      </div>
+      <p class="chao-tin">2 việc đến hạn hôm nay</p>
+      <div class="cung"></div>
+    </div>
+    <div class="w" style="margin-top:10px">
+      <p class="w-tt"><span class="so">02</span></p>
+      <div class="hang">
+        <input class="o-nhap" value="Hoà" aria-label="Tên hiển thị">
+        <button type="button" class="nut-luu">Lưu</button>
+      </div>
+      <p class="chao-tin">Đang sửa — Enter để lưu, Esc để bỏ</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ V2 ═══════════════ -->
+<h2>② Số thứ tự ô — dãy đứt</h2>
+<p class="sub">Số gán cứng tại chỗ gọi, trong khi widget tự ẩn khi không có dữ liệu ⇒ ẩn cái nào là dãy thủng đúng
+chỗ đó. Ảnh chụp thật ra <b>01 · 02 · 04 · 05 · 06 · 08</b>, và ô <i>Lưới tích luỹ studio</i> thì không có số nào —
+đứng giữa “có số” và “không số” là bất nhất. Bản sửa đánh số theo <b>thứ tự ô thật sự hiện ra</b>, ẩn cái nào thì
+cái sau dồn lên. Số ở đây mang tin: nó là <b>địa chỉ ô</b> để chỉ chỗ khi duyệt bằng mắt.</p>
+
+<div class="doi">
+  <div class="p truoc" data-theme="dark">
+    <p class="nhan"><span class="cham xau"></span>Trước<span class="theme-ten">tối</span></p>
+    <div class="day">
+      <span class="o-so">01 Dự án</span><span class="o-so">02 Chào</span>
+      <span class="o-so thieu">03 ✕ ẩn</span><span class="o-so">04 Ảnh tuần</span>
+      <span class="o-so">05 Biểu đồ</span><span class="o-so">06 Ghi chú</span>
+      <span class="o-so thieu">07 ✕ ẩn</span><span class="o-so">08 Vật liệu</span>
+      <span class="o-so khong">— Lưới tích luỹ (không số)</span>
+    </div>
+  </div>
+  <div class="p sau" data-theme="dark">
+    <p class="nhan"><span class="cham tot"></span>Sau<span class="theme-ten">tối</span></p>
+    <div class="day">
+      <span class="o-so on">01 Dự án</span><span class="o-so on">02 Chào</span>
+      <span class="o-so on">03 Ảnh tuần</span><span class="o-so on">04 Biểu đồ</span>
+      <span class="o-so on">05 Ghi chú</span><span class="o-so on">06 Vật liệu</span>
+      <span class="o-so on">07 Lưới tích luỹ</span>
+    </div>
+  </div>
+  <div class="p truoc" data-theme="light">
+    <p class="nhan"><span class="cham xau"></span>Trước<span class="theme-ten">sáng</span></p>
+    <div class="day">
+      <span class="o-so">01 Dự án</span><span class="o-so">02 Chào</span>
+      <span class="o-so thieu">03 ✕ ẩn</span><span class="o-so">04 Ảnh tuần</span>
+      <span class="o-so">05 Biểu đồ</span><span class="o-so">06 Ghi chú</span>
+      <span class="o-so thieu">07 ✕ ẩn</span><span class="o-so">08 Vật liệu</span>
+      <span class="o-so khong">— Lưới tích luỹ (không số)</span>
+    </div>
+  </div>
+  <div class="p sau" data-theme="light">
+    <p class="nhan"><span class="cham tot"></span>Sau<span class="theme-ten">sáng</span></p>
+    <div class="day">
+      <span class="o-so on">01 Dự án</span><span class="o-so on">02 Chào</span>
+      <span class="o-so on">03 Ảnh tuần</span><span class="o-so on">04 Biểu đồ</span>
+      <span class="o-so on">05 Ghi chú</span><span class="o-so on">06 Vật liệu</span>
+      <span class="o-so on">07 Lưới tích luỹ</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ V3 ═══════════════ -->
+<h2>③ Thừa trống — ô giãn cho vừa khung thay vì khung co theo nội dung</h2>
+<p class="sub">Ba ô Hoà chỉ: <b>Dự án</b> chiếm nửa màn mà phân nửa dưới trống · <b>Biểu đồ chặng</b> chỉ một cột,
+dưới là khoảng trắng lớn · <b>Vật liệu của tuần</b> một quả cầu rồi trống. Cùng một gốc: lưới ép cao 100% màn và
+chia đều ba hàng, nên ô phải giãn ra cho vừa. Bản sửa <b>chọn đúng cỡ ô theo lượng tin</b> — vẫn khai bằng ô lưới,
+không khai px: lưới lùi về 76% chiều cao khi ô Dự án chỉ cần một hàng thẻ (phần dư trả cho hình nền), ô Vật liệu
+xếp chồng trên ô Bảng tin và lấy đúng chiều cao nội dung, biểu đồ lấp đầy ô và đưa số ra ngoài.</p>
+
+<div class="doi">
+  <div class="p truoc" data-theme="dark">
+    <p class="nhan"><span class="cham xau"></span>Trước<span class="theme-ten">tối</span></p>
+    <div class="ba">
+      <div class="w cot-cao">
+        <p class="w-tt"><span class="so">01</span> Dự án</p>
+        <div class="luoi-tile">
+          <div class="tile">＋ mới</div><div class="tile that">Thảo Điền</div><div class="tile that">Sun Bay</div><div class="tile">Nháp</div>
+        </div>
+        <div class="trong" style="flex:1;margin-top:8px">trống 50,3%</div>
+      </div>
+      <div class="w cot-cao">
+        <p class="w-tt"><span class="so">05</span> Biểu đồ chặng</p>
+        <div class="cot-bd" style="height:112px">
+          <div class="bo"><span class="cap"><i style="height:56px"></i><i class="mo" style="height:22px"></i></span><span class="goc"></span>2D</div>
+          <div class="bo"><span class="cap"><i style="height:0"></i><i class="mo" style="height:0"></i></span><span class="goc"></span>3D</div>
+          <div class="bo"><span class="cap"><i style="height:0"></i><i class="mo" style="height:0"></i></span><span class="goc"></span>Trình bày</div>
+        </div>
+        <div class="trong" style="flex:1;margin-top:8px">trống 37,2%</div>
+      </div>
+      <div class="w cot-cao">
+        <p class="w-tt"><span class="so">08</span> Vật liệu của tuần</p>
+        <div class="vl"><span class="qua-cau"></span><span style="font-size:var(--fs-xs)">Sồi trắng lau dầu</span></div>
+        <div class="trong" style="flex:1;margin-top:8px">trống 65,2%</div>
+      </div>
+    </div>
+    <div class="thanh-do"><span class="vach" style="width:150px"></span> tổng khoảng trống ba ô ≈ 51%</div>
+  </div>
+
+  <div class="p sau" data-theme="dark">
+    <p class="nhan"><span class="cham tot"></span>Sau<span class="theme-ten">tối</span></p>
+    <div class="ba">
+      <div class="w" style="height:226px;display:flex;flex-direction:column">
+        <p class="w-tt"><span class="so">01</span> Dự án</p>
+        <div class="luoi-tile">
+          <div class="tile">＋ mới</div><div class="tile that">Thảo Điền</div><div class="tile that">Sun Bay</div><div class="tile">Nháp</div>
+        </div>
+        <div class="trong" style="flex:1;margin-top:8px">trống 34,5%</div>
+      </div>
+      <div class="w" style="height:226px;display:flex;flex-direction:column">
+        <p class="w-tt"><span class="so">04</span> Biểu đồ chặng</p>
+        <div class="cot-bd" style="flex:1">
+          <div class="bo"><span class="so-tren">2/4</span><span class="cap"><i style="height:96px"></i><i class="mo" style="height:38px"></i></span><span class="goc"></span>2D</div>
+          <div class="bo"><span class="so-tren">0/0</span><span class="cap"><i style="height:0"></i><i class="mo" style="height:0"></i></span><span class="goc"></span>3D</div>
+          <div class="bo"><span class="so-tren">0/0</span><span class="cap"><i style="height:0"></i><i class="mo" style="height:0"></i></span><span class="goc"></span>Trình bày</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;height:226px">
+        <div class="w">
+          <p class="w-tt"><span class="so">06</span> Vật liệu của tuần</p>
+          <div class="vl"><span class="qua-cau"></span><span style="font-size:var(--fs-xs)">Sồi trắng lau dầu</span></div>
+        </div>
+        <div class="w" style="flex:1">
+          <p class="w-tt"><span class="so">07</span> Lưới tích luỹ studio</p>
+          <div class="trong" style="flex:1">phần dư về ô danh sách — càng cao càng hiện nhiều</div>
+        </div>
+      </div>
+    </div>
+    <div class="thanh-do"><span class="vach ok" style="width:36px"></span> tổng khoảng trống ba ô ≈ 12%</div>
+  </div>
+
+  <div class="p truoc" data-theme="light">
+    <p class="nhan"><span class="cham xau"></span>Trước<span class="theme-ten">sáng</span></p>
+    <div class="ba">
+      <div class="w cot-cao">
+        <p class="w-tt"><span class="so">01</span> Dự án</p>
+        <div class="luoi-tile">
+          <div class="tile">＋ mới</div><div class="tile that">Thảo Điền</div><div class="tile that">Sun Bay</div><div class="tile">Nháp</div>
+        </div>
+        <div class="trong" style="flex:1;margin-top:8px">trống 50,3%</div>
+      </div>
+      <div class="w cot-cao">
+        <p class="w-tt"><span class="so">05</span> Biểu đồ chặng</p>
+        <div class="cot-bd" style="height:112px">
+          <div class="bo"><span class="cap"><i style="height:56px"></i><i class="mo" style="height:22px"></i></span><span class="goc"></span>2D</div>
+          <div class="bo"><span class="cap"><i style="height:0"></i><i class="mo" style="height:0"></i></span><span class="goc"></span>3D</div>
+          <div class="bo"><span class="cap"><i style="height:0"></i><i class="mo" style="height:0"></i></span><span class="goc"></span>Trình bày</div>
+        </div>
+        <div class="trong" style="flex:1;margin-top:8px">trống 37,2%</div>
+      </div>
+      <div class="w cot-cao">
+        <p class="w-tt"><span class="so">08</span> Vật liệu của tuần</p>
+        <div class="vl"><span class="qua-cau"></span><span style="font-size:var(--fs-xs)">Sồi trắng lau dầu</span></div>
+        <div class="trong" style="flex:1;margin-top:8px">trống 65,2%</div>
+      </div>
+    </div>
+    <div class="thanh-do"><span class="vach" style="width:150px"></span> tổng khoảng trống ba ô ≈ 51%</div>
+  </div>
+
+  <div class="p sau" data-theme="light">
+    <p class="nhan"><span class="cham tot"></span>Sau<span class="theme-ten">sáng</span></p>
+    <div class="ba">
+      <div class="w" style="height:226px;display:flex;flex-direction:column">
+        <p class="w-tt"><span class="so">01</span> Dự án</p>
+        <div class="luoi-tile">
+          <div class="tile">＋ mới</div><div class="tile that">Thảo Điền</div><div class="tile that">Sun Bay</div><div class="tile">Nháp</div>
+        </div>
+        <div class="trong" style="flex:1;margin-top:8px">trống 34,5%</div>
+      </div>
+      <div class="w" style="height:226px;display:flex;flex-direction:column">
+        <p class="w-tt"><span class="so">04</span> Biểu đồ chặng</p>
+        <div class="cot-bd" style="flex:1">
+          <div class="bo"><span class="so-tren">2/4</span><span class="cap"><i style="height:96px"></i><i class="mo" style="height:38px"></i></span><span class="goc"></span>2D</div>
+          <div class="bo"><span class="so-tren">0/0</span><span class="cap"><i style="height:0"></i><i class="mo" style="height:0"></i></span><span class="goc"></span>3D</div>
+          <div class="bo"><span class="so-tren">0/0</span><span class="cap"><i style="height:0"></i><i class="mo" style="height:0"></i></span><span class="goc"></span>Trình bày</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;height:226px">
+        <div class="w">
+          <p class="w-tt"><span class="so">06</span> Vật liệu của tuần</p>
+          <div class="vl"><span class="qua-cau"></span><span style="font-size:var(--fs-xs)">Sồi trắng lau dầu</span></div>
+        </div>
+        <div class="w" style="flex:1">
+          <p class="w-tt"><span class="so">07</span> Lưới tích luỹ studio</p>
+          <div class="trong" style="flex:1">phần dư về ô danh sách — càng cao càng hiện nhiều</div>
+        </div>
+      </div>
+    </div>
+    <div class="thanh-do"><span class="vach ok" style="width:36px"></span> tổng khoảng trống ba ô ≈ 12%</div>
+  </div>
+</div>
+
+<table class="bang">
+  <thead><tr><th>Ô</th><th>Trống trước</th><th>Trống sau</th><th>Đổi cái gì</th></tr></thead>
+  <tbody>
+    <tr><td>01 Dự án</td><td class="n xau-tx">50,3%</td><td class="n tot-tx">34,5%</td>
+      <td>Lưới lùi về 76% chiều cao màn khi ô Dự án chỉ cần một hàng thẻ; phần dư trả cho hình nền.</td></tr>
+    <tr><td>05 → 04 Biểu đồ chặng</td><td class="n xau-tx">37,2%</td><td class="n tot-tx">≈2%</td>
+      <td>Biểu đồ lấp đầy ô thay vì khoá cứng 112px; số luôn hiện thay vì giấu sau hover; thêm đường gốc để chặng 0 dự án vẫn đọc được.</td></tr>
+    <tr><td>08 → 06 Vật liệu của tuần</td><td class="n xau-tx">65,2%</td><td class="n tot-tx">≈0%</td>
+      <td>Xếp chồng trên ô Bảng tin, lấy đúng chiều cao nội dung; phần dư về ô danh sách bên dưới.</td></tr>
+  </tbody>
+</table>
+<p class="sub" style="margin-top:8px">Số đo tính trên khung 1440×900, khe 12px, lề trang 20px — <b>tính từ mã, chưa mở app thật</b>.</p>
+
+<!-- ═══════════════ V4 ═══════════════ -->
+<h2>④ Hai thẻ không phân biệt được</h2>
+<p class="sub">“Nháp” và “Dự án mới” dùng cùng một mảng be trơn với nét đứt như nhau. Bản sửa đặt <b>một luật hình
+cho cả lưới</b>: nét đứt và không nền là <b>ô trống — một hành động</b>; nền đặc, viền liền, có bóng là <b>thẻ có
+nội dung</b>. Thêm hai dấu hiệu mang tin cho ngăn Nháp: biểu tượng nhiều lớp xếp chồng (đúng bản chất “nhiều bản
+nháp”, thay biểu tượng thêm-thư-mục vốn trùng nghĩa với dấu cộng của thẻ tạo mới) và <b>số bản nháp</b> tách thành
+một dòng riêng. Bỏ hết màu vẫn phân biệt được — kiểu viền, độ đặc, bóng và biểu tượng đều không phải màu.</p>
+
+<div class="doi">
+  <div class="p truoc" data-theme="dark">
+    <p class="nhan"><span class="cham xau"></span>Trước<span class="theme-ten">tối</span></p>
+    <div class="hai">
+      <div class="the cu moi"><span class="cum"><span class="vong" aria-hidden="true">＋</span><span class="ten">Dự án mới</span></span></div>
+      <div class="the cu"><span class="cum"><span class="vong" aria-hidden="true">⊕</span><span class="ten">Nháp (3)</span><span class="phu">Chưa gắn dự án</span></span></div>
+    </div>
+  </div>
+  <div class="p sau" data-theme="dark">
+    <p class="nhan"><span class="cham tot"></span>Sau<span class="theme-ten">tối</span></p>
+    <div class="hai">
+      <div class="the trong-slot"><span class="cum"><span class="vong" aria-hidden="true">＋</span><span class="ten">Dự án mới</span></span></div>
+      <div class="the day-ruot"><span class="cum"><span class="vong" aria-hidden="true">▤</span><span class="dem">3</span><span class="ten">Bản nháp</span><span class="phu">Chưa gắn dự án</span></span></div>
+    </div>
+  </div>
+  <div class="p truoc" data-theme="light">
+    <p class="nhan"><span class="cham xau"></span>Trước<span class="theme-ten">sáng</span></p>
+    <div class="hai">
+      <div class="the cu moi"><span class="cum"><span class="vong" aria-hidden="true">＋</span><span class="ten">Dự án mới</span></span></div>
+      <div class="the cu"><span class="cum"><span class="vong" aria-hidden="true">⊕</span><span class="ten">Nháp (3)</span><span class="phu">Chưa gắn dự án</span></span></div>
+    </div>
+  </div>
+  <div class="p sau" data-theme="light">
+    <p class="nhan"><span class="cham tot"></span>Sau<span class="theme-ten">sáng</span></p>
+    <div class="hai">
+      <div class="the trong-slot"><span class="cum"><span class="vong" aria-hidden="true">＋</span><span class="ten">Dự án mới</span></span></div>
+      <div class="the day-ruot"><span class="cum"><span class="vong" aria-hidden="true">▤</span><span class="dem">3</span><span class="ten">Bản nháp</span><span class="phu">Chưa gắn dự án</span></span></div>
+    </div>
+  </div>
+</div>
+
+<h2>Tương phản chữ — sửa kèm</h2>
+<p class="sub">Tiêu đề của cả mười widget Home đang dùng <code>--t4</code> và số ô dùng <code>--t5</code>. Đo được
+đều dưới ngưỡng 4,5:1, tức là chữ nhỏ nhất trên màn lại là chữ khó đọc nhất. Đổi <b>token</b>, không tự chế màu.</p>
+<table class="bang">
+  <thead><tr><th>Chỗ</th><th>Token trước</th><th>Tối</th><th>Sáng</th><th>Token sau</th><th>Tối</th><th>Sáng</th></tr></thead>
+  <tbody>
+    <tr><td>Tiêu đề widget</td><td class="n">--t4</td><td class="n xau-tx">3,44</td><td class="n xau-tx">3,26</td>
+      <td class="n">--t3</td><td class="n tot-tx">7,24</td><td class="n tot-tx">5,20</td></tr>
+    <tr><td>Số thứ tự ô</td><td class="n">--t5</td><td class="n xau-tx">1,98</td><td class="n xau-tx">2,21</td>
+      <td class="n">--t3</td><td class="n tot-tx">7,24</td><td class="n tot-tx">5,20</td></tr>
+  </tbody>
+</table>
+<p class="sub" style="margin-top:8px">Số ô nay cùng màu với nhãn nên tách nhau bằng <b>cân nặng chữ</b> — độ nhạt
+không còn là kênh phân biệt duy nhất.</p>
+
+</div>
+<script>
+(function () {
+  var nut = document.querySelectorAll('.gat button');
+  nut.forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.body.setAttribute('data-view', b.getAttribute('data-v'));
+      nut.forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    });
+  });
+})();
+</script>
+</body>
+</html>
