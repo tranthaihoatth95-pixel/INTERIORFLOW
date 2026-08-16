@@ -1,0 +1,625 @@
+<!-- @dsCard group="Nền hệ thống" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InteriorFlow · Bộ nền chung — màu · card · lưới · sidebar · chữ ký</title>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   MÃ MÀU CHỈ ĐƯỢC VIẾT TRONG KHỐI NÀY. Mọi chỗ khác gọi biến.
+   THEME TỐI = chép nguyên globals.css, KHÔNG đụng (Hoà: "tone tối ok").
+   THEME SÁNG = ba bản đề xuất, Hoà chọn.
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+:root{
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600; --fw-bold:700;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s;
+  --blur:22px;
+  --tap:32px; --tap-lg:44px; --gap:8px;
+  /* CẶP MÀU NHẤN — tím ↔ [màu thứ hai], đảo vai theo theme.
+     ⛔ ĐỒNG #c79a63 ĐÃ BỊ BỎ khỏi vai màu nhấn (16/08) — xem mục 1b để biết vì sao. */
+  --tim:#7c3aed;          /* 262° — thay #6a57f5 */
+  --tim-sau:#6d28d9;      /* bản sâu cho nền tối */
+  --tim-nhat:#c4b5fd;     /* nấc nhạt, dùng cho phương án ③ */
+  /* NHỊP LƯỚI — khai một chỗ, không rắc số */
+  --cot:4; --khe:12px; --le:20px; --o-cao:74px;
+}
+
+/* ─────────── THEME TỐI · GIỮ NGUYÊN ─────────── */
+.p[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78;
+  --mat-card:rgba(26,26,30,.82); --mat-panel:rgba(20,20,23,.68);
+  --mat-hairline:rgba(255,255,255,.06);
+  --shadow:0 8px 30px -8px rgba(0,0,0,.65);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --chu:var(--tim-sau); --chu-mem:rgba(109,40,217,.22); --chu-vien:rgba(124,58,237,.55);
+  --diem:var(--nhan-toi);
+  --chu-chu:#ffffff;      /* màu CHỮ đứng trên nền màu chủ */
+}
+
+/* ─────────── BA HƯỚNG MÀU NHẤN THỨ HAI (thay đồng) ─────────── */
+/* ① MÒNG KÉT TRẦM — 185°. Sạch trên nền xám, đây đúng chỗ vàng chết. */
+.p[data-nhan="teal"]{ --nhan:#1f7a82; --nhan-toi:#3aa8b4;
+  --nhan-mem:rgba(31,122,130,.18); --nhan-vien:rgba(31,122,130,.6); }
+/* ② MẬN TRẦM — 336°. Sang, tương phản mạnh với tím. */
+.p[data-nhan="man"]{ --nhan:#8f3a5c; --nhan-toi:#c4718f;
+  --nhan-mem:rgba(143,58,92,.18); --nhan-vien:rgba(143,58,92,.6); }
+/* ③ MỘT TÍM HAI NẤC — không có màu thứ hai. "Màu thứ hai" là ĐỘ ĐẬM của chính tím. */
+.p[data-nhan="mono"]{ --nhan:#6d28d9; --nhan-toi:var(--tim-nhat);
+  --nhan-mem:rgba(109,40,217,.16); --nhan-vien:rgba(109,40,217,.55); }
+
+/* ─────────── BA BẢN THEME SÁNG ─────────── */
+/* A · TRUNG TÍNH LẠNH — bỏ hẳn sắc vàng, ngả xám-lam rất nhạt */
+.p[data-nen="A"]{
+  --bg:#f2f3f5; --panel:#f8f9fa; --card:#ffffff; --field:#eaecef; --hover:#e4e7eb;
+  --border:#e0e3e8; --border-strong:#c8cdd4;
+  --t1:#1a1c1f; --t2:#3f444b; --t3:#63696f; --t4:#8b9198;
+  --mat-card:rgba(255,255,255,.82); --mat-panel:rgba(248,249,250,.7);
+  --mat-hairline:rgba(0,0,0,.05);
+  --shadow:0 10px 30px -10px rgba(30,38,50,.18);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --chu:var(--nhan); --chu-mem:var(--nhan-mem); --chu-vien:var(--nhan-vien);
+  --diem:var(--tim); --chu-chu:#ffffff;
+}
+/* B · NGÀ TRẦM — vẫn ấm nhưng hạ hẳn độ vàng, chất GIẤY CŨ thay vì KEM */
+.p[data-nen="B"]{
+  --bg:#eceae5; --panel:#f4f2ee; --card:#fbfaf8; --field:#e4e1db; --hover:#dedad3;
+  --border:#ddd9d2; --border-strong:#c3bdb3;
+  --t1:#1f1d1a; --t2:#4a4640; --t3:#645f57; --t4:#8d877d;
+  --mat-card:rgba(251,250,248,.84); --mat-panel:rgba(244,242,238,.72);
+  --mat-hairline:rgba(0,0,0,.05);
+  --shadow:0 10px 30px -10px rgba(60,52,40,.2);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --chu:var(--nhan); --chu-mem:var(--nhan-mem); --chu-vien:var(--nhan-vien);
+  --diem:var(--tim); --chu-chu:#ffffff;
+}
+/* C · NỀN TRẦM BAN NGÀY (bản tôi đề xuất) — sáng nhưng nền HẠ HẲN một bậc */
+.p[data-nen="C"]{
+  --bg:#e3e5e4; --panel:#f3f4f3; --card:#fcfdfc; --field:#dcdedd; --hover:#d5d8d6;
+  --border:#cdd0ce; --border-strong:#b0b4b2;
+  --t1:#1a1c1b; --t2:#414443; --t3:#5c605e; --t4:#868a88;
+  --mat-card:rgba(252,253,252,.86); --mat-panel:rgba(243,244,243,.74);
+  --mat-hairline:rgba(0,0,0,.05);
+  --shadow:0 12px 32px -12px rgba(28,36,32,.22);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --chu:var(--nhan); --chu-mem:var(--nhan-mem); --chu-vien:var(--nhan-vien);
+  --diem:var(--tim); --chu-chu:#ffffff;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:#0c0c0e;color:#f5f5f7;padding:30px 26px 60px;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  font-size:var(--fs-sm);line-height:1.5;-webkit-font-smoothing:antialiased}
+h1{font-size:var(--fs-xl);letter-spacing:-.02em;margin:0 0 6px;font-weight:var(--fw-bold)}
+h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-transform:uppercase;
+  color:#6e6e78;margin:40px 0 4px}
+.sub{color:#9e9ea8;margin:0 0 3px;font-size:var(--fs-xs);max-width:86ch}
+.sub b{color:#f5f5f7}
+.h2sub{color:#9e9ea8;font-size:var(--fs-xs);margin:0 0 14px;max-width:86ch}
+.h2sub b{color:#f5f5f7}
+
+/* khung mẫu */
+.p{background:var(--bg);color:var(--t1);border:1px solid var(--border);border-radius:var(--r-4);
+  padding:16px;position:relative;overflow:hidden}
+.ba{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:1180px){.ba{grid-template-columns:1fr}}
+.hai{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:1180px){.hai{grid-template-columns:1fr}}
+.tag{font-size:var(--fs-2xs);font-weight:var(--fw-semi);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--t4);margin-bottom:10px}
+.tag em{font-style:normal;color:var(--t3);letter-spacing:0;text-transform:none;font-weight:var(--fw-normal)}
+
+/* ── mảng màu ── */
+.dai{display:flex;border-radius:var(--r-2);overflow:hidden;border:1px solid var(--border);margin-bottom:9px}
+.dai i{flex:1;height:34px;display:block}
+.ma{display:grid;grid-template-columns:auto 1fr auto;gap:4px 9px;font-size:10px;
+  font-variant-numeric:tabular-nums;color:var(--t3);align-items:center}
+.ma b{color:var(--t2);font-weight:var(--fw-semi)}
+.ma code{font-family:ui-monospace,Menlo,monospace;color:var(--t2)}
+.ma .dat{color:var(--success);font-weight:var(--fw-semi)}
+.ma .truot{color:var(--danger);font-weight:var(--fw-semi)}
+
+/* ── mẫu giao diện dùng để so 3 bản ── */
+.mau{background:var(--card);border:1px solid var(--border);border-radius:var(--r-3);
+  padding:12px;margin-bottom:9px}
+.mau h4{margin:0 0 8px;font-size:10px;font-weight:var(--fw-bold);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--t3)}
+.mau .so{font-size:var(--fs-lg);font-weight:var(--fw-bold);font-variant-numeric:tabular-nums}
+.mau p{margin:4px 0 0;font-size:var(--fs-2xs);color:var(--t2)}
+.hang{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.nut{height:var(--tap);padding:0 15px;border-radius:var(--r-full);border:1px solid transparent;
+  background:var(--chu);color:var(--chu-chu);font-size:var(--fs-2xs);font-weight:var(--fw-semi);
+  cursor:pointer;font-family:inherit;display:inline-flex;align-items:center}
+.nut.phu{background:transparent;border-color:var(--border);color:var(--t2)}
+.nut:focus-visible{outline:2px solid var(--chu-vien);outline-offset:2px}
+.canh{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-2xs);
+  font-weight:var(--fw-semi);color:var(--warning)}
+.canh::before{content:"";width:9px;height:9px;border-radius:2px;background:var(--warning);flex-shrink:0}
+.chip{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px;border-radius:var(--r-full);
+  background:var(--chu-mem);border:1px solid var(--chu-vien);color:var(--t1);font-size:10px;
+  font-weight:var(--fw-semi)}
+
+/* ── card HAI ĐỘ TRONG ── */
+.canh-nen{position:absolute;inset:0;border-radius:var(--r-4);overflow:hidden}
+.canh-nen i{position:absolute;display:block}
+.sky{inset:0;background:linear-gradient(#20304a 0%,#4a3c58 36%,#95604a 64%,#dda066 82%,#f2ca92 100%)}
+.p[data-nen] .sky{background:linear-gradient(#b9cfe4 0%,#d8e0e8 42%,#e9dcc8 72%,#f2e6d2 100%)}
+.sun{width:110px;height:110px;border-radius:var(--r-full);left:62%;top:50%;
+  background:radial-gradient(circle,#ffe7ba 0%,#ffd08c 40%,rgba(255,190,110,0) 72%)}
+.nui{inset:auto 0 18% 0;height:26%;background:#2c2438;
+  clip-path:polygon(0 60%,10% 38%,19% 54%,29% 20%,38% 44%,49% 12%,60% 40%,70% 26%,81% 48%,91% 30%,100% 46%,100% 100%,0 100%)}
+.p[data-nen] .nui{background:#8ea3b6}
+.nuoc{inset:auto 0 0 0;height:18%;background:
+  repeating-linear-gradient(180deg,rgba(255,255,255,.15) 0 1px,transparent 1px 5px),
+  linear-gradient(#101825,#26334a)}
+.p[data-nen] .nuoc{background:
+  repeating-linear-gradient(180deg,rgba(255,255,255,.5) 0 1px,transparent 1px 5px),
+  linear-gradient(#9db4c8,#c5d3df)}
+.canh-nen[data-dim="1"]{filter:brightness(.9) saturate(.9)}
+.canh-nen[data-dim="2"]{filter:brightness(.72) saturate(.72)}
+.tren{position:relative}
+
+/* CARD HAI VÙNG — vùng ảnh TRONG · vùng chữ ĐẶC */
+.c2{border-radius:var(--r-3);overflow:hidden;border:1px solid var(--mat-hairline);
+  box-shadow:var(--shadow);width:100%}
+.c2 .anh{height:80px;position:relative;
+  background:rgba(255,255,255,.1);
+  backdrop-filter:saturate(160%) blur(10px);-webkit-backdrop-filter:saturate(160%) blur(10px)}
+.p[data-nen] .c2 .anh{background:rgba(255,255,255,.16)}
+.c2 .anh span{position:absolute;left:10px;bottom:8px;font-size:10px;font-weight:var(--fw-bold);
+  letter-spacing:.08em;text-transform:uppercase;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.p[data-nen] .c2 .anh span{color:#1a1c1b;text-shadow:0 1px 3px rgba(255,255,255,.7)}
+.c2 .chu{padding:10px 11px;background:var(--mat-card);
+  backdrop-filter:saturate(180%) blur(var(--blur));-webkit-backdrop-filter:saturate(180%) blur(var(--blur))}
+.c2 .chu b{display:block;font-size:var(--fs-ui,13px);font-weight:var(--fw-semi);color:var(--t1)}
+.c2 .chu em{display:block;font-style:normal;font-size:var(--fs-2xs);color:var(--t2);margin-top:2px}
+.nhan-vung{position:absolute;right:8px;top:7px;font-size:9px;font-weight:var(--fw-bold);
+  letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:var(--r-full);
+  background:rgba(0,0,0,.45);color:#fff}
+.p[data-nen] .nhan-vung{background:rgba(255,255,255,.7);color:#1a1c1b}
+
+/* ── lưới trước/sau ── */
+.luoi{display:grid;grid-template-columns:repeat(var(--cot),1fr);gap:var(--khe)}
+.o{background:var(--card);border:1px solid var(--border);border-radius:var(--r-2);
+  padding:9px 10px;min-height:var(--o-cao);display:flex;flex-direction:column;justify-content:space-between}
+.o.w2{grid-column:span 2}.o.h2{grid-row:span 2}
+.o h5{margin:0;font-size:9px;font-weight:var(--fw-bold);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.o .n{font-size:var(--fs-lg);font-weight:var(--fw-bold);font-variant-numeric:tabular-nums;color:var(--t1)}
+.o .g{font-size:10px;color:var(--t2)}
+/* TRƯỚC — co giãn tự do: ô ít nội dung bị KÉO DÀI, khe hở lung tung */
+.truoc{display:flex;flex-wrap:wrap;gap:18px 26px}
+.truoc .o{flex:1 1 auto;min-width:120px;border-style:dashed}
+
+/* ── sidebar ── */
+.sb{background:var(--panel);border:1px solid var(--border);border-radius:var(--r-3);
+  padding:8px;width:238px;flex-shrink:0}
+.sb .nh{font-size:9px;font-weight:var(--fw-bold);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--t4);padding:9px 8px 4px}
+.sb a{display:flex;align-items:center;gap:8px;height:var(--tap);padding:0 8px;border-radius:var(--r-2);
+  color:var(--t2);text-decoration:none;font-size:13px;border:1px solid transparent}
+.sb a:hover{background:var(--hover);color:var(--t1)}
+.sb a:focus-visible{outline:2px solid var(--chu-vien);outline-offset:-1px}
+.sb a.on{background:var(--chu-mem);border-color:var(--chu-vien);color:var(--t1)}
+.sb a.mo{opacity:.55;cursor:not-allowed}
+.sb .d{margin-left:auto;font-size:10px;font-weight:var(--fw-semi);font-variant-numeric:tabular-nums;
+  background:var(--field);border:1px solid var(--border);border-radius:var(--r-full);padding:1px 7px;color:var(--t2)}
+.sb .dot{width:6px;height:6px;border-radius:var(--r-full);background:var(--chu);flex-shrink:0}
+.sb .ico{width:15px;height:15px;flex-shrink:0;border-radius:3px;background:var(--field);border:1px solid var(--border)}
+
+/* ── chữ ký ── */
+.ky{background:var(--card);border:1px solid var(--border);border-radius:var(--r-3);padding:13px}
+.ky h4{margin:0 0 3px;font-size:var(--fs-xs);font-weight:var(--fw-bold);color:var(--t1)}
+.ky .vs{font-size:10px;color:var(--t3);margin:0 0 10px}
+.ky .demo{padding:11px;background:var(--field);border-radius:var(--r-2);margin-bottom:9px}
+.ky p.ma-hoa{margin:0;font-size:10px;color:var(--t2);line-height:1.55}
+.ky p.ma-hoa b{color:var(--t1)}
+.spine{display:inline-flex;gap:2px;align-items:center;vertical-align:-3px}
+.spine i{display:block;width:3px;height:13px;border-radius:2px;background:var(--border-strong)}
+.spine i.on{background:var(--chu);height:17px}
+/* PA2 — số CÓ NEO */
+.neo{font-variant-numeric:tabular-nums;font-weight:var(--fw-semi);color:var(--t1);
+  border-bottom:1.5px solid var(--chu);padding-bottom:1px;position:relative}
+.neo::before{content:"";position:absolute;left:0;bottom:-1.5px;width:1.5px;height:6px;background:var(--chu)}
+.neo.tay{border-bottom-style:dashed;border-bottom-color:var(--t4)}
+.neo.tay::before{background:var(--t4)}
+/* PA3 — cung giờ */
+.cung{width:100%;height:34px;border-radius:var(--r-1);
+  background:linear-gradient(90deg,var(--tim-sau) 0%,var(--tim) 34%,var(--nhan-toi) 68%,var(--tim-sau) 100%)}
+
+.bang{width:100%;border-collapse:collapse;font-size:var(--fs-2xs);margin-top:8px}
+.bang th,.bang td{text-align:left;padding:6px 9px;border-bottom:1px solid #2a2a31;color:#9e9ea8;vertical-align:top}
+.bang th{color:#6e6e78;font-weight:var(--fw-bold);letter-spacing:.06em;text-transform:uppercase;font-size:10px}
+.bang td b{color:#f5f5f7}
+.bang td.ok{color:#46b876}.bang td.no{color:#e5674f}.bang td.mid{color:#d9a34a}
+.doi{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.doi button{height:26px;padding:0 11px;border-radius:var(--r-full);border:1px solid #2a2a31;
+  background:#202024;color:#d6d6db;font-size:var(--fs-2xs);font-weight:var(--fw-semi);cursor:pointer;font-family:inherit}
+.doi button[aria-pressed="true"]{background:rgba(124,58,237,.22);border-color:rgba(124,58,237,.55);color:#c4b5fd}
+.doi button:focus-visible{outline:2px solid rgba(124,58,237,.55);outline-offset:2px}
+ul.luat{margin:8px 0 0;padding-left:18px}
+ul.luat li{font-size:var(--fs-2xs);color:#9e9ea8;margin:5px 0;max-width:96ch}
+ul.luat b{color:#f5f5f7}
+.note{margin-top:9px;font-size:var(--fs-2xs);color:#6e6e78;max-width:96ch}
+.note b{color:#d6d6db}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<h1>Bộ nền chung — duyệt trước, áp vào màn sau</h1>
+<p class="sub">Năm mục xem liền một mạch: <b>màu · card hai độ trong · lưới &amp; nhịp · sidebar thông minh · chữ ký thị giác</b>. Duyệt xong thì mọi màn về sau chỉ là áp vào, không phải cãi lại về màu hay khoảng cách.</p>
+<p class="sub"><b>Theme tối giữ nguyên</b> — không đụng một giá trị nào. Chỉ theme sáng làm lại, và làm <b>ba bản để so</b>.</p>
+
+<!-- ═════════ 1 · MÀU ═════════ -->
+<h2>1 · Ba bản theme sáng — cùng một khối giao diện, đổi mỗi bộ màu</h2>
+<p class="h2sub">Gốc của chữ <b>“sến”</b> đo được: nền kem hiện tại <code>#f2efe9</code> có <b>độ vàng 32%</b> — rất cao cho một mặt nền. Nền càng bão hoà thì càng đọc ra “rẻ”, không ra trầm. Cả ba bản dưới đều <b>hạ độ vàng xuống 0–12%</b>, khác nhau ở chỗ hạ theo hướng nào.</p>
+
+<div class="ba">
+  <div class="p" data-nhan="teal" data-nen="A">
+    <div class="tag">Bản A · Trung tính lạnh <em>— bỏ hẳn sắc vàng</em></div>
+    <div class="dai"><i style="background:var(--bg)"></i><i style="background:var(--panel)"></i><i style="background:var(--card)"></i><i style="background:var(--field)"></i><i style="background:var(--border)"></i></div>
+    <div class="ma">
+      <b>Nền</b><code>#f2f3f5</code><span>xám-lam 12%</span>
+      <b>Chữ</b><code>#1a1c1f</code><span class="dat">17,1:1</span>
+      <b>Chữ mờ</b><code>#63696f</code><span class="dat">5,0:1</span>
+      <b>Viền</b><code>#e0e3e8</code><span>—</span>
+    </div>
+    <div class="mau">
+      <h4>Đến hạn tuần này</h4><div class="so">3</div>
+      <p>Chữ phụ đọc trên nền thẻ.</p>
+      <div class="hang"><button class="nut">Duyệt</button><button class="nut phu">Huỷ</button><span class="canh">Cần xem lại</span></div>
+    </div>
+    <div style="font-size:10px;color:var(--t3)">Sạch, chuyên nghiệp. Nhưng lạnh — dễ đọc ra “phần mềm văn phòng”, mất chất ấm của nghề.</div>
+  </div>
+
+  <div class="p" data-nhan="teal" data-nen="B">
+    <div class="tag">Bản B · Ngà trầm <em>— chất giấy cũ, không phải kem</em></div>
+    <div class="dai"><i style="background:var(--bg)"></i><i style="background:var(--panel)"></i><i style="background:var(--card)"></i><i style="background:var(--field)"></i><i style="background:var(--border)"></i></div>
+    <div class="ma">
+      <b>Nền</b><code>#eceae5</code><span>vàng 10%</span>
+      <b>Chữ</b><code>#1f1d1a</code><span class="dat">16,4:1</span>
+      <b>Chữ mờ</b><code>#645f57</code><span class="dat">5,3:1</span>
+      <b>Viền</b><code>#ddd9d2</code><span>—</span>
+    </div>
+    <div class="mau">
+      <h4>Đến hạn tuần này</h4><div class="so">3</div>
+      <p>Chữ phụ đọc trên nền thẻ.</p>
+      <div class="hang"><button class="nut">Duyệt</button><button class="nut phu">Huỷ</button><span class="canh">Cần xem lại</span></div>
+    </div>
+    <div style="font-size:10px;color:var(--t3)">Giữ hơi ấm mà không vàng. Gần gu bản vẽ in. Rủi ro: vẫn cùng họ với bản đang chê, có thể còn thấy “kem”.</div>
+  </div>
+
+  <div class="p" data-nhan="teal" data-nen="C">
+    <div class="tag">Bản C · Nền trầm ban ngày <em>— tôi đề xuất</em></div>
+    <div class="dai"><i style="background:var(--bg)"></i><i style="background:var(--panel)"></i><i style="background:var(--card)"></i><i style="background:var(--field)"></i><i style="background:var(--border)"></i></div>
+    <div class="ma">
+      <b>Nền</b><code>#e3e5e4</code><span>gần như 0% màu</span>
+      <b>Chữ</b><code>#1a1c1b</code><span class="dat">16,9:1</span>
+      <b>Chữ mờ</b><code>#5c605e</code><span class="dat">5,0:1</span>
+      <b>Viền</b><code>#cdd0ce</code><span>—</span>
+    </div>
+    <div class="mau">
+      <h4>Đến hạn tuần này</h4><div class="so">3</div>
+      <p>Chữ phụ đọc trên nền thẻ.</p>
+      <div class="hang"><button class="nut">Duyệt</button><button class="nut phu">Huỷ</button><span class="canh">Cần xem lại</span></div>
+    </div>
+    <div style="font-size:10px;color:var(--t3)">Nền <b>hạ hẳn một bậc</b> (89% thay vì 93%) nên thẻ trắng NỔI LÊN thật, và kính có chỗ để trong hơn.</div>
+  </div>
+</div>
+
+<p class="note"><b>Vì sao tôi đề xuất bản C — hai lý do nghề, không phải lý do gu:</b>
+① <b>Nền màu làm sai màu vật liệu.</b> IF là chỗ người ta ngồi chọn gỗ, đá, sơn. Nền ngả vàng thì mọi mẫu vật liệu và mọi ảnh render trông ấm hơn thực tế — cùng lý do phòng in và phần mềm ảnh dùng nền xám trung tính. Bản A và B đều còn màu; bản C gần như không.
+② <b>Nền hạ một bậc là điều kiện để card được trong hơn</b> — đúng thứ chủ dự án vừa yêu cầu. Nền 93% sáng gần bằng thẻ trắng, thẻ chìm, nên phải tô đặc thẻ mới thấy. Nền 89% thì thẻ tự nổi, kính được nhẹ tay. <b>Xin nói thẳng cái mất:</b> bản C ít “tính cách” nhất trong ba bản — chất riêng phải đến từ chữ ký và ảnh, không đến từ nền.</p>
+
+<h2>1b · ⛔ ĐỒNG ĐÃ BỊ BỎ — và ba hướng thay nó</h2>
+<p class="h2sub"><b>Bỏ hẳn màu vàng đồng <code>#c79a63</code> khỏi vai màu nhấn</b> (chốt 16/08). Lý do đúng về mặt màu: <b>màu ấm bão hoà thấp đặt trên nền xám thì ra XỈN, ra Ố — không ra trầm</b>. Đồng chỉ sống được trên nền kem ấm, mà nền kem ấm chính là thứ vừa bị loại vì sến ⇒ <b>giữ đồng trong khi làm theme sáng trung tính là mâu thuẫn tự thân</b>. Ghi rõ ở đây để phiên sau đọc bản vẽ không tưởng là quên.</p>
+<p class="h2sub"><b>Ca soi 4° cũ không còn cần</b> — bỏ đồng thì ca đụng đồng ↔ cảnh báo tự tan. Thay bằng kiểm mới ở mục 1c: <b>màu mới đứng cạnh CẢ BA màu nghĩa</b>.</p>
+
+<p class="h2sub" style="margin-top:14px"><b>Phổ màu còn lại hẹp hơn ta tưởng — đo ra chỉ còn hai cửa sạch.</b> Ba màu nghĩa chiếm ba vùng, tím chiếm vùng thứ tư, mỗi vùng phải chừa ±20°, và màu mới phải cách tím ≥60°:</p>
+<table class="bang">
+  <thead><tr><th>Vùng phổ</th><th>Ai chiếm</th><th>Dùng được?</th></tr></thead>
+  <tbody>
+    <tr><td>~8–10°</td><td><b>Đỏ · sai chuẩn / huỷ</b> (<code>#e5674f</code> tối · <code>#c9341d</code> sáng)</td><td class="no">cấm</td></tr>
+    <tr><td>~37–38°</td><td><b>Vàng · cần xem lại</b> (<code>#d9a34a</code> tối · <code>#9a6304</code> sáng)</td><td class="no">cấm</td></tr>
+    <tr><td>57–125°</td><td>trống — vàng-lục / ô-liu</td><td class="no">loại: ám vàng, trên nền xám ra ố — <b>đúng lỗi vừa bỏ đồng</b></td></tr>
+    <tr><td>~145–152°</td><td><b>Xanh · đạt</b> (<code>#46b876</code> tối · <code>#107043</code> sáng)</td><td class="no">cấm</td></tr>
+    <tr><td>168–202°</td><td>TRỐNG</td><td class="ok">✔ cửa 1 — mòng két</td></tr>
+    <tr><td>202–322°</td><td>tím <code>#7c3aed</code> 262° ± 60</td><td class="no">quá gần tím</td></tr>
+    <tr><td>322–349°</td><td>TRỐNG</td><td class="ok">✔ cửa 2 — mận</td></tr>
+  </tbody>
+</table>
+<p class="note">⇒ Chỉ còn <b>đúng hai cửa hue sạch</b>. Nên phương án ③ tôi đề xuất <b>không đi tìm hue thứ ba</b> (không còn chỗ) mà đổi sang hướng khác hẳn — xem dưới.</p>
+
+<h2>1c · Ba hướng — mỗi hướng đứng cạnh cả ba màu nghĩa</h2>
+<p class="h2sub">Mỗi khung: <b>nút chính màu mới</b> đứng cạnh <b>sai chuẩn · cần xem lại · đạt</b>. Nếu không họ nào lẫn nhau thì màu đó qua cửa.</p>
+
+<div class="ba">
+  <div class="p" data-nhan="teal" data-nen="C">
+    <div class="tag">① Mòng két trầm <em>— 185°</em></div>
+    <div class="dai" style="margin-bottom:7px"><i style="background:var(--nhan)"></i><i style="background:var(--nhan-toi)"></i><i style="background:var(--danger)"></i><i style="background:var(--warning)"></i><i style="background:var(--success)"></i></div>
+    <div class="ma" style="margin-bottom:9px">
+      <b>Sáng</b><code>#1f7a82</code><span class="dat">5,0:1</span>
+      <b>Tối</b><code>#3aa8b4</code><span class="dat">6,1:1</span>
+      <b>Cách tím</b><span>262° → 185°</span><span>77°</span>
+      <b>Gần nhất</b><span>xanh đạt 145°</span><span>40°</span>
+    </div>
+    <div class="mau">
+      <div class="hang" style="margin:0"><button class="nut">Duyệt hồ sơ</button></div>
+      <div class="hang"><span class="canh" style="color:var(--danger)">Sai chuẩn</span><span class="canh">Cần xem lại</span><span class="canh" style="color:var(--success)">Đạt</span></div>
+    </div>
+    <div style="font-size:10px;color:var(--t3)"><b>Sạch trên nền xám</b> — đúng chỗ vàng chết. Làm được cả <b>chữ lẫn mảng tô</b>. Gốc nghề: bản vẽ in xanh.</div>
+  </div>
+
+  <div class="p" data-nhan="man" data-nen="C">
+    <div class="tag">② Mận trầm <em>— 336°</em></div>
+    <div class="dai" style="margin-bottom:7px"><i style="background:var(--nhan)"></i><i style="background:var(--nhan-toi)"></i><i style="background:var(--danger)"></i><i style="background:var(--warning)"></i><i style="background:var(--success)"></i></div>
+    <div class="ma" style="margin-bottom:9px">
+      <b>Sáng</b><code>#8f3a5c</code><span class="dat">7,2:1</span>
+      <b>Tối</b><code>#c4718f</code><span class="dat">6,0:1</span>
+      <b>Cách tím</b><span>262° → 336°</span><span>74°</span>
+      <b>Gần nhất</b><span>đỏ sai chuẩn 9°</span><span class="truot">33°</span>
+    </div>
+    <div class="mau">
+      <div class="hang" style="margin:0"><button class="nut">Duyệt hồ sơ</button></div>
+      <div class="hang"><span class="canh" style="color:var(--danger)">Sai chuẩn</span><span class="canh">Cần xem lại</span><span class="canh" style="color:var(--success)">Đạt</span></div>
+    </div>
+    <div style="font-size:10px;color:var(--t3)">Sang, tương phản chữ mạnh nhất. <b>Nhưng gần đỏ nhất trong ba hướng (33°)</b> — soi kỹ cặp nút chính ↔ sai chuẩn.</div>
+  </div>
+
+  <div class="p" data-nhan="mono" data-nen="C">
+    <div class="tag">③ Một tím, hai nấc <em>— tôi đề xuất</em></div>
+    <div class="dai" style="margin-bottom:7px"><i style="background:var(--nhan)"></i><i style="background:var(--nhan-toi)"></i><i style="background:var(--danger)"></i><i style="background:var(--warning)"></i><i style="background:var(--success)"></i></div>
+    <div class="ma" style="margin-bottom:9px">
+      <b>Đậm</b><code>#6d28d9</code><span class="dat">8,6:1</span>
+      <b>Nhạt</b><code>#c4b5fd</code><span>nền/viền</span>
+      <b>Cách tím</b><span>cùng hue</span><span>0°</span>
+      <b>Gần nhất</b><span>không hue nào</span><span class="dat">—</span>
+    </div>
+    <div class="mau">
+      <div class="hang" style="margin:0"><button class="nut">Duyệt hồ sơ</button></div>
+      <div class="hang"><span class="canh" style="color:var(--danger)">Sai chuẩn</span><span class="canh">Cần xem lại</span><span class="canh" style="color:var(--success)">Đạt</span></div>
+    </div>
+    <div style="font-size:10px;color:var(--t3)"><b>Không có màu thứ hai</b> — "màu thứ hai" là ĐỘ ĐẬM của chính tím. Không thể đụng vùng cấm vì không thêm hue nào.</div>
+  </div>
+</div>
+
+<p class="note"><b>Vì sao tôi đề xuất ③ — lý do đến từ chính bảng phổ ở trên.</b> Phổ chỉ còn hai cửa hue, tức mỗi lần thêm một màu là <b>đóng thêm một cửa</b> và ép ba màu nghĩa vào thế chật hơn. Hướng ③ <b>không tiêu cửa nào</b>: trên màn chỉ còn <b>bốn hue</b> — tím của app, và đỏ/vàng/xanh của nghề. Hệ quả đúng điều đã chốt <i>"màu luôn mang nghĩa"</i>: <b>bất kỳ mảng màu nào không phải tím thì chắc chắn đang nói một điều gì đó</b>. Đây là mức mạnh nhất mà luật đó có thể đạt tới.
+<br><b>Cái mất, nói thẳng:</b> ③ <b>không có "cặp màu đảo vai theo giờ"</b> — cơ chế tím-đêm ↔ đồng-ngày mất luôn. Đổi lại được sự rành mạch. Nếu chủ dự án tiếc cơ chế kể-giờ thì ① là hướng đúng, vì mòng két là hue duy nhất vừa sạch trên nền xám vừa đủ xa cả tím lẫn ba màu nghĩa.</p>
+
+<h2>1d · Nút “Vào xưởng” ở màn khoá — đổi theo</h2>
+<p class="h2sub">Nút này đang là màu đồng (<code>--accent-warm</code> vốn tự khai <i>“chỉ dùng cho nút chính trên nền ảnh — vd Vào xưởng”</i>). Bỏ đồng thì nó đổi theo. Vẽ trên nền ảnh thật để thấy màn khoá sẽ ra sao.</p>
+<div class="ba">
+  <div class="p" data-nhan="teal" data-theme="dark" style="padding:0;min-height:150px">
+    <div class="canh-nen"><i class="sky"></i><i class="sun"></i><i class="nui"></i><i class="nuoc"></i></div>
+    <div class="tren" style="padding:16px;display:flex;flex-direction:column;height:150px;justify-content:space-between">
+      <div class="tag" style="color:#fff;opacity:.85">① Mòng két</div>
+      <div><button class="nut" style="background:var(--nhan-toi);color:#0c0c0e;height:var(--tap-lg);padding:0 22px">Vào xưởng</button></div>
+    </div>
+  </div>
+  <div class="p" data-nhan="man" data-theme="dark" style="padding:0;min-height:150px">
+    <div class="canh-nen"><i class="sky"></i><i class="sun"></i><i class="nui"></i><i class="nuoc"></i></div>
+    <div class="tren" style="padding:16px;display:flex;flex-direction:column;height:150px;justify-content:space-between">
+      <div class="tag" style="color:#fff;opacity:.85">② Mận</div>
+      <div><button class="nut" style="background:var(--nhan-toi);color:#0c0c0e;height:var(--tap-lg);padding:0 22px">Vào xưởng</button></div>
+    </div>
+  </div>
+  <div class="p" data-nhan="mono" data-theme="dark" style="padding:0;min-height:150px">
+    <div class="canh-nen"><i class="sky"></i><i class="sun"></i><i class="nui"></i><i class="nuoc"></i></div>
+    <div class="tren" style="padding:16px;display:flex;flex-direction:column;height:150px;justify-content:space-between">
+      <div class="tag" style="color:#fff;opacity:.85">③ Một tím hai nấc</div>
+      <div><button class="nut" style="background:var(--nhan-toi);color:#0c0c0e;height:var(--tap-lg);padding:0 22px">Vào xưởng</button></div>
+    </div>
+  </div>
+</div>
+<p class="note">Cả ba đều dùng <b>bản SÁNG</b> của màu (nút trên nền ảnh tối cần nổi) và <b>chữ mực đậm</b> trên nút. Đây cũng là chỗ đồng từng làm tốt nhất — nên nếu hướng nào ở đây trông yếu hơn đồng rõ rệt thì đáng cân nhắc lại.</p>
+
+<!-- ═════════ 2 · CARD HAI ĐỘ TRONG ═════════ -->
+<h2>2 · Card hai độ trong — và nền dìm tới đâu thì card được trong tới đó</h2>
+<p class="h2sub"><b>Một card, hai vùng:</b> phần trên ôm ảnh thì <b>trong</b> để ảnh sống · phần dưới chứa chữ thì <b>đặc</b> để đọc được. ⚠️ <b>Chỗ dễ hiểu sai nhất: ngưỡng độ đặc CHỈ áp cho vùng CÓ CHỮ.</b> Vùng ảnh được trong tự do — không có chữ thì không có gì để mà đọc hỏng.</p>
+<div class="doi" data-doi>
+  <button type="button" data-dim="0" aria-pressed="true">Nền nét · card đặc</button>
+  <button type="button" data-dim="1" aria-pressed="false">Nền dìm vừa · card vừa</button>
+  <button type="button" data-dim="2" aria-pressed="false">Nền dìm mạnh · card trong</button>
+</div>
+<div class="hai">
+  <div class="p" data-nhan="teal" data-theme="dark" style="padding:0;min-height:210px">
+    <div class="canh-nen" data-nen-anh><i class="sky"></i><i class="sun"></i><i class="nui"></i><i class="nuoc"></i></div>
+    <div class="tren" style="padding:16px"><div class="tag">Theme tối</div>
+      <div class="c2" style="max-width:260px">
+        <div class="anh"><span class="nhan-vung">vùng ảnh · trong</span><span>Phòng khách · chiều</span></div>
+        <div class="chu"><span class="nhan-vung" style="position:static;float:right">vùng chữ · đặc</span><b>Gỗ óc chó · vân dọc</b><em>12 tấm · 2,4 m² · đã duyệt mẫu</em></div>
+      </div>
+    </div>
+  </div>
+  <div class="p" data-nhan="teal" data-nen="C" style="padding:0;min-height:210px">
+    <div class="canh-nen" data-nen-anh><i class="sky"></i><i class="sun"></i><i class="nui"></i><i class="nuoc"></i></div>
+    <div class="tren" style="padding:16px"><div class="tag">Theme sáng · bản C</div>
+      <div class="c2" style="max-width:260px">
+        <div class="anh"><span class="nhan-vung">vùng ảnh · trong</span><span>Phòng khách · chiều</span></div>
+        <div class="chu"><span class="nhan-vung" style="position:static;float:right">vùng chữ · đặc</span><b>Gỗ óc chó · vân dọc</b><em>12 tấm · 2,4 m² · đã duyệt mẫu</em></div>
+      </div>
+    </div>
+  </div>
+</div>
+<table class="bang">
+  <thead><tr><th>Nấc</th><th>Nền</th><th>Vùng ảnh</th><th>Vùng chữ</th><th>Sàn tương phản chữ</th><th>Đánh đổi</th></tr></thead>
+  <tbody>
+    <tr><td><b>1 · nền nét</b></td><td>không dìm</td><td>0,10</td><td><b>0,82</b></td><td class="ok">9,1:1</td><td>Ảnh đẹp nhất, card nặng tay nhất</td></tr>
+    <tr><td><b>2 · dìm vừa</b></td><td>−10% sáng</td><td>0,10</td><td><b>0,72</b></td><td class="ok">6,4:1</td><td>Cân — card nhẹ đi thấy rõ, ảnh vẫn nét</td></tr>
+    <tr><td><b>3 · dìm mạnh</b></td><td>−28% sáng</td><td>0,10</td><td><b>0,62</b></td><td class="mid">4,8:1</td><td>Card nhẹ nhất, nhưng ảnh mất một phần sức</td></tr>
+    <tr><td colspan="6" style="color:#6e6e78">Sàn dưới cùng đã đo ở bản vẽ trước: <b>0,60 (tối) · 0,53 (sáng)</b> là ngưỡng thấp nhất còn đọc được với MỌI tấm ảnh. <b>0,35 thì trượt hẳn (2,1:1)</b> — kế thừa, không đo lại.</td></tr>
+  </tbody>
+</table>
+
+<!-- ═════════ 3 · LƯỚI ═════════ -->
+<h2>3 · Lưới &amp; nhịp — chữa đúng lỗi “thừa trống mà lại có widget bị giãn”</h2>
+<p class="h2sub">Hai lời chê nghe ngược nhau nhưng <b>cùng một gốc: lưới không có nhịp cột cố định</b>. Widget co giãn tự do thì ô ít nội dung bị kéo dài ra, còn khoảng giữa lại hở — thừa trống và bị giãn <b>xảy ra cùng lúc, do cùng một nguyên nhân</b>.</p>
+<div class="hai">
+  <div class="p" data-nhan="teal" data-nen="C">
+    <div class="tag">TRƯỚC · co giãn tự do <em>— cùng lượng nội dung</em></div>
+    <div class="truoc">
+      <div class="o"><h5>Đến hạn</h5><div class="n">3</div><div class="g">việc, tuần này</div></div>
+      <div class="o"><h5>Chờ duyệt</h5><div class="n">5</div><div class="g">phối cảnh</div></div>
+      <div class="o"><h5>Nhịp tuần</h5><div class="n">62%</div><div class="g">so tuần trước</div></div>
+      <div class="o"><h5>Vật liệu</h5><div class="n">18</div><div class="g">mẫu đang dùng</div></div>
+      <div class="o"><h5>Ghi chú</h5><div class="g">Chưa có ghi chú nào</div></div>
+    </div>
+    <p class="note" style="color:var(--t3)">Ô “Ghi chú” ít chữ nên bị <b>kéo dài ngang</b>; hàng dưới hụt nên <b>hở một mảng trống</b>. Không ô nào sai — cái sai là không có nhịp.</p>
+  </div>
+  <div class="p" data-nhan="teal" data-nen="C">
+    <div class="tag">SAU · nhịp cột nguyên <em>— 4 cột · khe 12 · lề 20</em></div>
+    <div class="luoi">
+      <div class="o"><h5>Đến hạn</h5><div class="n">3</div><div class="g">việc, tuần này</div></div>
+      <div class="o"><h5>Chờ duyệt</h5><div class="n">5</div><div class="g">phối cảnh</div></div>
+      <div class="o w2"><h5>Nhịp tuần</h5><div class="n">62%</div><div class="g">so tuần trước</div></div>
+      <div class="o w2"><h5>Vật liệu đang dùng</h5><div class="n">18</div><div class="g">mẫu · 4 nhóm</div></div>
+      <div class="o w2"><h5>Ghi chú</h5><div class="g">Chưa có ghi chú nào</div></div>
+    </div>
+    <p class="note" style="color:var(--t3)">Cùng 5 ô, cùng nội dung. Mỗi ô chiếm <b>số cột nguyên</b> (1 hoặc 2), không ô nào bị kéo dài, không mảng hở nào lạc lõng.</p>
+  </div>
+</div>
+<p class="note">⚠️ <b>Phân biệt hai thứ dễ lẫn:</b> <b>khoảng trống CÓ CHỦ Ý</b> (lề 20px và khe 12px — đều đặn, lặp lại, là chỗ nền thở) khác hẳn <b>thừa trống</b> (mảng hở lạc lõng do ô không vừa hàng). Chủ dự án vừa chê thừa trống vừa muốn thấy nền — hai điều đó không mâu thuẫn, vì <b>một cái có nhịp, một cái không</b>. Và vì widget khai bằng <b>số cột</b> chứ không bằng pixel, lưới hẹp lại trên máy tính bảng hay điện thoại là chúng tự xếp lại — không phải viết bản riêng.</p>
+
+<!-- ═════════ 4 · SIDEBAR ═════════ -->
+<h2>4 · Sidebar thông minh — năm cơ chế, mỗi cơ chế đỡ một việc cụ thể</h2>
+<p class="h2sub">Ba nấc 28/240/320 đã dựng ở bản vẽ trước, không dựng lại. Đây là phần <b>thông minh</b> — thứ còn thiếu.</p>
+<div class="hai">
+  <div class="p" data-nhan="teal" data-nen="C">
+    <div class="tag">Theme sáng · bản C</div>
+    <div style="display:flex;gap:12px">
+      <nav class="sb">
+        <div class="nh">Đang làm</div>
+        <a href="#0" class="on"><span class="dot"></span>Căn hộ Thảo Điền<span class="d">4</span></a>
+        <a href="#0"><span class="ico"></span>Tiếp bản vẽ tầng 2</a>
+        <a href="#0"><span class="ico"></span>Duyệt 5 phối cảnh<span class="d">5</span></a>
+        <div class="nh">Chung</div>
+        <a href="#0"><span class="ico"></span>Tổng quan</a>
+        <a href="#0"><span class="ico"></span>Tệp<span class="d">3</span></a>
+        <a href="#0"><span class="ico"></span>Thư viện</a>
+        <a href="#0" class="mo" title="Chưa có bản vẽ nào để xuất hồ sơ"><span class="ico"></span>Xuất hồ sơ</a>
+      </nav>
+      <div style="flex:1;min-width:0;font-size:10px;color:var(--t3);line-height:1.7">
+        <b style="color:var(--t2)">① Gom theo VIỆC ĐANG LÀM, không theo tên chức năng.</b><br>
+        Đỡ: khỏi nhớ “bản vẽ tầng 2 nằm ở mục nào” — nó nằm ngay dưới dự án đang mở.<br><br>
+        <b style="color:var(--t2)">② Mục dùng nhiều NỔI LÊN, mục chưa dùng được thì MỜ KÈM LÝ DO.</b><br>
+        Đỡ: khỏi bấm vào rồi mới biết chưa làm được. Trỏ vào “Xuất hồ sơ” là thấy vì sao.<br><br>
+        <b style="color:var(--t2)">③ Số đếm chỉ hiện khi &gt; 0.</b><br>
+        Đỡ: mắt chỉ dừng ở chỗ có việc; bày số 0 khắp nơi thì số mất hết trọng lượng.<br><br>
+        <b style="color:var(--t2)">④ Nấc thu vẫn GIỮ THẤY mục đang mở.</b><br>
+        Đỡ: thu gọn không làm mất dấu vị trí — mở lại không phải dò lại từ đầu.<br><br>
+        <b style="color:var(--t2)">⑤ Nhóm “Đang làm” tự dọn khi đóng dự án.</b> <em style="color:var(--t4)">(tôi đề thêm)</em><br>
+        Đỡ: sidebar không phình theo thời gian. Không có bước “dọn sidebar” nào bắt người dùng làm.
+      </div>
+    </div>
+  </div>
+  <div class="p" data-nhan="teal" data-theme="dark">
+    <div class="tag">Theme tối · giữ nguyên</div>
+    <div style="display:flex;gap:12px">
+      <nav class="sb">
+        <div class="nh">Đang làm</div>
+        <a href="#0" class="on"><span class="dot"></span>Căn hộ Thảo Điền<span class="d">4</span></a>
+        <a href="#0"><span class="ico"></span>Tiếp bản vẽ tầng 2</a>
+        <a href="#0"><span class="ico"></span>Duyệt 5 phối cảnh<span class="d">5</span></a>
+        <div class="nh">Chung</div>
+        <a href="#0"><span class="ico"></span>Tổng quan</a>
+        <a href="#0"><span class="ico"></span>Tệp<span class="d">3</span></a>
+        <a href="#0"><span class="ico"></span>Thư viện</a>
+        <a href="#0" class="mo" title="Chưa có bản vẽ nào để xuất hồ sơ"><span class="ico"></span>Xuất hồ sơ</a>
+      </nav>
+      <div style="flex:1;min-width:0;font-size:10px;color:var(--t3);line-height:1.7">
+        Cùng một sidebar, chỉ đổi bộ màu. Đây là điểm của việc duyệt nền trước: <b style="color:var(--t2)">cấu trúc không đổi theo theme</b>.<br><br>
+        Số đếm dùng <b style="color:var(--t2)">nền trung tính</b>, không mượn màu nghĩa nghề — “còn 4 việc” không phải một cảnh báo.<br><br>
+        Mục đang mở có <b style="color:var(--t2)">chấm màu chủ</b> + nền mềm, không tô đặc.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ 5 · CHỮ KÝ ═════════ -->
+<h2>5 · Chữ ký thị giác — ba phương án, không chọn hộ</h2>
+<p class="h2sub">Ràng buộc: chữ ký phải <b>mã hoá một sự thật của sản phẩm</b>, không được là hoa văn. Ba phương án dưới đều qua được cửa đó, nhưng mã hoá <b>ba sự thật khác nhau</b> — nên chọn cái nào là chọn <i>muốn người ta nhớ IF vì điều gì</i>.</p>
+<div class="ba">
+  <div class="p" data-nhan="teal" data-nen="C"><div class="ky">
+    <h4>PA1 · Sống lưng ba chặng</h4>
+    <p class="vs">Mã hoá: <b>ba chặng soi vào một nguồn</b></p>
+    <div class="demo" style="font-size:11px;line-height:2.1">
+      <span class="spine"><i class="on"></i><i></i><i></i></span> Tiếp bản vẽ mặt bằng<br>
+      <span class="spine"><i></i><i class="on"></i><i></i></span> Dựng khối tủ bếp<br>
+      <span class="spine"><i></i><i></i><i class="on"></i></span> Chốt bảng vật liệu
+    </div>
+    <p class="ma-hoa"><b>Được:</b> trả lời ngay “việc này đang ở đâu”, lặp được ở mọi danh sách. <b>Mất:</b> chỉ nói về điều hướng, không nói gì về chất lượng dữ liệu.</p>
+  </div></div>
+
+  <div class="p" data-nhan="teal" data-nen="C"><div class="ky">
+    <h4>PA2 · Số có neo <em style="font-style:normal;font-size:10px;color:var(--t3)">— tôi nghiêng về cái này</em></h4>
+    <p class="vs">Mã hoá: <b>mọi con số truy được về một nguồn</b></p>
+    <div class="demo" style="font-size:11px;line-height:2.3">
+      Diện tích sàn <span class="neo">24,6 m²</span> <span style="color:var(--t3)">— đo từ khối</span><br>
+      Cao trần <span class="neo">2 700</span> <span style="color:var(--t3)">— đo từ khối</span><br>
+      Đơn giá <span class="neo tay">1 250 000</span> <span style="color:var(--t3)">— người nhập</span>
+    </div>
+    <p class="ma-hoa"><b>Được:</b> mã hoá đúng thứ không đối thủ nào có — <b>số đo được</b> có vạch neo liền, <b>số người nhập</b> có vạch đứt. Nhìn một bảng biết ngay chỗ nào là sự thật, chỗ nào là ý người. Xuất hiện ở khắp nơi có số: bản vẽ, bảng vật liệu, dự toán. <b>Mất:</b> kín đáo, không “đập vào mắt” bằng PA1.</p>
+  </div></div>
+
+  <div class="p" data-nhan="teal" data-nen="C"><div class="ky">
+    <h4>PA3 · Cặp màu kể giờ</h4>
+    <p class="vs">Mã hoá: <b>ánh sáng kể giờ</b> — nghề nội thất</p>
+    <div class="demo"><div class="cung"></div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t3);margin-top:5px">
+        <span>đêm · tím</span><span>trưa</span><span>chiều · màu thứ hai</span><span>đêm</span></div></div>
+    <p class="ma-hoa"><b>Được:</b> màu app tự đổi theo giờ thật, đúng thứ dân nội thất sống bằng. Đã có sẵn cơ chế giờ ở Home. <b>Mất:</b> là một <b>cơ chế</b> chứ chưa phải một <b>dấu</b> — không in lên tài liệu được, không nhận ra qua ảnh chụp tĩnh.</p>
+  </div></div>
+</div>
+<p class="note"><b>Nhận xét nghề, không phải quyết định:</b> PA1 và PA2 <b>ghép được với nhau</b> (một cái đứng đầu dòng việc, một cái nằm dưới con số — không tranh chỗ), PA3 thì chạy nền nên cũng không chọi ai. Nếu phải giữ đúng một thứ để nhớ, tôi nghiêng PA2 vì nó mã hoá <b>lời hứa lõi</b> của IF chứ không phải cách bày màn hình — nhưng đây là chỗ chủ dự án quyết.</p>
+
+<!-- ═════════ 6 · TỰ CHẤM ═════════ -->
+<h2>6 · Tự chấm bộ nền theo 5 điều “chất IF”</h2>
+<table class="bang">
+  <thead><tr><th>Điều đã chốt</th><th>Bản vẽ này làm gì</th><th>Đạt?</th></tr></thead>
+  <tbody>
+    <tr><td><b>Nền trầm + khoảng thở rộng</b></td><td>Cả ba bản hạ độ vàng xuống 0–12%; bản C hạ hẳn độ sáng nền. Lề 20 · khe 12 khai bằng token.</td><td class="ok">Đạt</td></tr>
+    <tr><td><b>Đúng MỘT màu nhấn</b></td><td>Mỗi thời điểm đúng một màu chủ. Hướng ③ mạnh nhất ở điều này: trên màn chỉ còn tím + ba màu nghĩa.</td><td class="ok">Đạt</td></tr>
+    <tr><td><b>Bo góc đồng tâm theo thang</b></td><td>Chỉ dùng 6/10/14/20 + capsule. Card hai vùng bo ngoài 14, trong không bo lại (một khối liền).</td><td class="ok">Đạt</td></tr>
+    <tr><td><b>Chữ tương phản cao, không màu mè</b></td><td>Chữ chính 16,4–17,1:1 · chữ mờ 5,0–5,3:1 ở cả ba bản. Không chữ màu trên nền màu.</td><td class="ok">Đạt</td></tr>
+    <tr><td><b>Màu luôn mang nghĩa</b></td><td>Số đếm dùng nền trung tính; đồng chỉ làm mảng tô, cảnh báo giữ vai chữ/dấu.</td><td class="mid">Đạt có điều kiện — xem cửa hỏng “đồng làm viền/icon nhỏ” ở mục 1b</td></tr>
+  </tbody>
+</table>
+
+<h2>Luật bản vẽ này giữ</h2>
+<ul class="luat">
+  <li><b>Theme tối không đụng một giá trị nào</b> — chép nguyên globals.css.</li>
+  <li><b>Mã màu chỉ nằm trong khối định nghĩa token</b>, mọi chỗ khác gọi biến.</li>
+  <li><b>Ngưỡng đọc chỉ áp cho vùng CÓ CHỮ</b> — vùng ảnh của card được trong tự do. Đây là chỗ dễ hiểu sai nhất của “card hai độ trong”.</li>
+  <li><b>Dìm nền thì card được trong hơn</b> — hai thứ đi ngược chiều nhau trên cùng một cán cân; bảng nấc ở mục 2 cho thấy đổi bao nhiêu lấy bao nhiêu.</li>
+  <li><b>Widget khai bằng SỐ CỘT, không bằng pixel</b> — nhờ vậy cùng một bộ chạy được cả desktop, máy tính bảng và điện thoại.</li>
+  <li><b>Số đếm không mượn màu nghĩa nghề</b> — đỏ sai chuẩn · vàng cần xem lại · xanh đạt là ba màu đã có việc, không dùng để đếm.</li>
+  <li><b>Đồng <code>#c79a63</code> đã bị BỎ khỏi vai màu nhấn</b> — màu ấm bão hoà thấp trên nền xám ra xỉn, ra ố. Số kèm theo: đồng làm chữ chỉ đạt <b>2,6:1 — trượt</b>, nên nó vốn đã chỉ làm được nền khối. Cả ba màu thay đều làm được <b>cả chữ lẫn mảng tô</b> (5,0 · 7,2 · 8,6:1).</li>
+  <li><b>Phổ màu chỉ còn hai cửa hue sạch</b> — thêm một màu là đóng thêm một cửa. Đây là lý do phương án ③ không đi tìm hue thứ ba.</li>
+  <li><b>Không chuyển sắc loè loẹt · không bóng nhiều tầng · không bo quá tròn · không lấp lánh</b> — mỗi khối đúng một bóng, mỗi mặt đúng một màu.</li>
+</ul>
+
+<script>
+(function(){
+  var wrap=document.querySelector('[data-doi]');
+  var CARD={0:{anh:'.10',chu:'.82'},1:{anh:'.10',chu:'.72'},2:{anh:'.10',chu:'.62'}};
+  wrap.querySelectorAll('button[data-dim]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var d=b.dataset.dim;
+      document.querySelectorAll('[data-nen-anh]').forEach(function(s){s.dataset.dim=d});
+      document.querySelectorAll('.c2 .chu').forEach(function(c){
+        var tối=c.closest('[data-theme="dark"]');
+        var a=CARD[d].chu;
+        c.style.background = tối ? 'rgba(26,26,30,'+a+')' : 'rgba(252,253,252,'+a+')';
+      });
+      wrap.querySelectorAll('button[data-dim]').forEach(function(x){
+        x.setAttribute('aria-pressed',String(x===b));
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>
