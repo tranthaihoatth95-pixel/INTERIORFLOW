@@ -26,7 +26,7 @@
    b. MOOD/ĐỊNH HƯỚNG (ảnh cảm hứng, moodboard, storyline): full-bleed, chữ đè ảnh, nhịp thở, ambient.
    c. VẬT LIỆU/SPEC/FUR: quả cầu-swatch-macro texture, bảng thông số cạnh ảnh, spec sheet.
 4. **TOOL 3D + RENDER** (mở rộng NC 3D đã có): viewport chrome, control nổi theo đối tượng, hàng đợi render, LightMix/so sánh A/B — map vào mode Vẽ 3D + Render Studio hiện có.
-5. **BỘ NGUYÊN TẮC GIAO DIỆN IF v1** — TỔNG HỢP CUỐI: ~12-18 nguyên tắc đánh số NT-1…, mỗi cái 1 câu + phạm vi áp + nguồn (ảnh board/top-tier/spec có sẵn) — đây là văn bản Hoà sẽ duyệt để thành CHUẨN trước khi mock; nối các khuôn KB-1..5 của NC-1 vào dưới nguyên tắc tương ứng.
+5. **BỘ NGUYÊN TẮC GIAO DIỆN IF v1** — TỔNG HỢP CUỐI: ~12-18 nguyên tắc đánh số NT-1…, mỗi cái 1 câu + phạm vi áp + nguồn (ảnh board/top-tier/spec có sẵn) — đây là văn bản Hoà sẽ duyệt để thành CHUẨN trước khi mock; nối các khuôn KB-1..4 của NC-1 vào dưới nguyên tắc tương ứng.
 6. **LỆCH HIỆN TẠI** — 5-8 chỗ app đang trái nguyên tắc nào (đối chiếu CHAN-DOAN-DS-MAT, không lặp cái đã sửa).
 
 ## ⑤⑥⑦⑧

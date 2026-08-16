@@ -1,261 +1,42 @@
 'use client';
 
-import { memo, useRef, useState } from 'react';
+import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Play, Loader2, CircleAlert, CircleCheck, RotateCcw, ImagePlus, Paintbrush, X, Wand2, Frame } from 'lucide-react';
+import { Handle, NodeResizer, Position, type NodeProps } from '@xyflow/react';
+import { Play, Loader2, CircleAlert, CircleCheck, RotateCcw, X } from 'lucide-react';
 import { getDefinition } from '@/lib/nodes/registry';
 import { useFlowStore, type FlowNode } from '@/lib/store';
 import { nodeIconFor } from '@/components/nodes/NodeIcons';
 import { runNode } from '@/lib/execution';
-import { CATEGORY_META, DATA_TYPE_COLORS, type ParamDef } from '@/lib/types';
+import { CATEGORY_META, DATA_TYPE_COLORS } from '@/lib/types';
 import { NodeExtras } from '@/components/nodes/NodeExtras';
+import { ParamField } from '@/components/nodes/ParamField';
+import { HopCongCuBamVat } from '@/components/nodes/HopCongCuBamVat';
 import { nodePop, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
-import { smartImportImage, SmartImportError } from '@/lib/images/smart-ingest';
-import { useSketchStore } from '@/lib/sketch/sketchStore';
-import { useSmartSelectStore } from '@/lib/smartselect/smartSelectStore';
-import { useWarpStore } from '@/lib/warp/warpStore';
-import { useSourceImage } from '@/lib/nodes/source-image';
 import CommentPin from '@/components/nodes/CommentPin';
 import { useT } from '@/lib/i18n';
+import {
+  KHUNG_VUA,
+  KHUNG_VUA_MIN,
+  khoaCuaSoNode,
+  theViecChoDefType,
+} from '@/lib/nodes/cua-so-cong-cu';
+import { useCuaSoCongCuUi } from '@/lib/nodes/cua-so-cong-cu-ui';
+import { dinhNghiaKetQua, dongDinhNghia } from '@/lib/nodes/dinh-nghia-ket-qua';
+import ToolWindow from '@/components/render-studio/ToolWindow';
 
 const PORT_GAP = 26;
 const PORT_TOP = 46;
 
-/** Export cho `MacroNodeFace.tsx` (VIỆC "Nút tổng") — mặt nút tổng lộ tham số của NHIỀU node con
- * khác nhau, tái dùng đúng control này thay vì viết lại slider/select/text riêng (tránh 2 bản
- * lệch nhau). Hành vi/props giữ nguyên 100% cho InteriorNode. */
-export function ParamField({
-  nodeId,
-  param,
-  value,
-}: {
-  nodeId: string;
-  param: ParamDef;
-  value: string | number;
-}) {
-  const updateParam = useFlowStore((s) => s.updateParam);
-  const setConnectError = useFlowStore((s) => s.setConnectError);
-  const setNotice = useFlowStore((s) => s.setNotice);
-  const fileRef = useRef<HTMLInputElement>(null);
-  // Có ảnh ở input 'image' chưa — quyết định enable nút mở modal (mask / smart select / warp).
-  const hasSourceImage = Boolean(useSourceImage(nodeId));
-  // G-M20-05: smartImportImage() decode ảnh lớn (TIFF/PSD/HEIC) có thể mất >1s — trước đây nút
-  // upload vẫn nhận click trong lúc đang decode (bấm lặp = 2 lượt import đua nhau ghi param).
-  const [importing, setImporting] = useState(false);
+/**
+ * `ParamField` ĐÃ DỜI sang `components/nodes/ParamField.tsx` (16/08) để cắt vòng import
+ * `InteriorNode → ToolWindow → ThanCuaSoNode → ParamField`. Re-export nguyên tên để 13 chỗ gọi
+ * cũ (`MacroNodeFace.tsx`…) không phải sửa một dòng nào — đổi đường import hàng loạt chỉ để dọn
+ * là rủi ro không đổi lấy gì.
+ */
+export { ParamField };
 
-  if (param.kind === 'text') {
-    return (
-      <label className="block">
-        <span className="mb-1 block text-[10px] uppercase tracking-wider text-[var(--t4)]">{param.label}</span>
-        {param.multiline ? (
-          <textarea
-            className="nodrag w-full resize-none rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none focus:border-[var(--accent-ring)]"
-            rows={3}
-            placeholder={param.placeholder}
-            value={String(value)}
-            onChange={(e) => updateParam(nodeId, param.id, e.target.value)}
-          />
-        ) : (
-          <input
-            className="nodrag w-full rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none focus:border-[var(--accent-ring)]"
-            placeholder={param.placeholder}
-            value={String(value)}
-            onChange={(e) => updateParam(nodeId, param.id, e.target.value)}
-          />
-        )}
-      </label>
-    );
-  }
-
-  if (param.kind === 'select') {
-    return (
-      <label className="block">
-        <span className="mb-1 block text-[10px] uppercase tracking-wider text-[var(--t4)]">{param.label}</span>
-        <select
-          className="nodrag w-full rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] outline-none focus:border-[var(--accent-ring)]"
-          value={String(value)}
-          onChange={(e) => updateParam(nodeId, param.id, e.target.value)}
-        >
-          {param.options.map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
-        </select>
-      </label>
-    );
-  }
-
-  if (param.kind === 'slider') {
-    // node cũ (autosave) có thể thiếu param mới → value undefined → NaN. Fallback về default.
-    const sv = value == null || Number.isNaN(Number(value)) ? param.default : Number(value);
-    return (
-      <label className="block">
-        <span className="mb-1 flex justify-between text-[10px] uppercase tracking-wider text-[var(--t4)]">
-          {param.label}
-          <span className="text-[var(--t3)]">{sv.toFixed(2)}</span>
-        </span>
-        <input
-          type="range"
-          className="nodrag w-full accent-[var(--accent)]"
-          min={param.min}
-          max={param.max}
-          step={param.step}
-          value={sv}
-          onChange={(e) => updateParam(nodeId, param.id, Number(e.target.value))}
-        />
-      </label>
-    );
-  }
-
-  if (param.kind === 'mask' || param.kind === 'annotate' || param.kind === 'smartmask') {
-    const isMask = param.kind === 'mask';
-    const isSmart = param.kind === 'smartmask';
-    const has = typeof value === 'string' && value.startsWith('data:');
-    // Modal cần ảnh nguồn ở input 'image'. Trước đây modal MỞ ĐƯỢC khi chưa nối input rồi
-    // mới báo "chưa có ảnh nguồn" — user gặp thật, rất khó hiểu. Giờ chặn ngay ở nút.
-    const needsSource = isMask || isSmart || param.kind === 'annotate';
-    const disabled = needsSource && !hasSourceImage;
-    const open = () => {
-      if (disabled) return;
-      if (isSmart) useSmartSelectStore.getState().open(nodeId);
-      else if (isMask) useFlowStore.getState().setMaskEditorNodeId(nodeId);
-      else useFlowStore.getState().setAnnotateNodeId(nodeId);
-    };
-    const label = isSmart
-      ? has
-        ? 'Sửa vùng chọn'
-        : 'Chọn vùng thông minh'
-      : isMask
-        ? has
-          ? 'Sửa mask'
-          : 'Vẽ mask'
-        : has
-          ? 'Sửa chú thích'
-          : 'Chú thích lên ảnh';
-    return (
-      <div>
-        {has && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={String(value)} alt={param.kind} className="mb-1.5 h-20 w-full rounded-md object-cover" loading="lazy" />
-        )}
-        <button
-          disabled={disabled}
-          title={disabled ? 'Nối ảnh vào input Image trước' : undefined}
-          className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[var(--border-strong)] py-2 text-[11px] text-[var(--t3)] transition hover:border-[var(--accent-ring)] hover:text-[var(--t1)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[var(--border-strong)] disabled:hover:text-[var(--t3)]"
-          onClick={open}
-        >
-          {isSmart ? <Wand2 size={13} /> : <Paintbrush size={13} />}
-          {disabled ? 'Nối ảnh vào input Image trước' : label}
-        </button>
-      </div>
-    );
-  }
-
-  // 4 góc phối cảnh (util.warp) — mở modal kéo góc, xem trước ngay trên ảnh phối cảnh.
-  if (param.kind === 'corners') {
-    const set = typeof value === 'string' && value.trim().startsWith('[');
-    return (
-      <div>
-        <button
-          disabled={!hasSourceImage}
-          title={!hasSourceImage ? 'Nối ảnh vào input Image trước' : undefined}
-          className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[var(--border-strong)] py-2 text-[11px] text-[var(--t3)] transition hover:border-[var(--accent-ring)] hover:text-[var(--t1)] disabled:cursor-not-allowed disabled:opacity-40"
-          onClick={() => hasSourceImage && useWarpStore.getState().open(nodeId)}
-        >
-          <Frame size={13} />
-          {!hasSourceImage ? 'Nối ảnh vào input Image trước' : set ? 'Sửa 4 góc' : 'Kéo 4 góc phối cảnh'}
-        </button>
-      </div>
-    );
-  }
-
-  // vẽ tay tự do (Sketch Studio — components/sketch/**) — cùng UI pattern mask/annotate
-  // nhưng mở modal RIÊNG (useSketchStore), không dùng chung state với mask/annotate.
-  if (param.kind === 'sketch') {
-    const has = typeof value === 'string' && value.startsWith('data:');
-    return (
-      <div>
-        {has && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={String(value)} alt="sketch" className="mb-1.5 h-20 w-full rounded-md object-cover" loading="lazy" />
-        )}
-        <button
-          className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[var(--border-strong)] py-2 text-[11px] text-[var(--t3)] transition hover:border-[var(--accent-ring)] hover:text-[var(--t1)]"
-          onClick={() => useSketchStore.getState().open(nodeId)}
-        >
-          <Paintbrush size={13} />
-          {has ? 'Sửa vẽ' : 'Vẽ tay'}
-        </button>
-      </div>
-    );
-  }
-
-  // image upload — nhận cả data-URI (upload thật) LẪN URL ('/demo/…', '/covers/…', http…)
-  const hasImage =
-    typeof value === 'string' &&
-    value.length > 0 &&
-    (value.startsWith('data:') || value.startsWith('/') || value.startsWith('http'));
-  return (
-    <div>
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/tiff,.tif,.tiff,.psd,image/heic,image/heif"
-        className="hidden"
-        onChange={async (e) => {
-          const file = e.target.files?.[0];
-          e.target.value = ''; // cho phép chọn lại cùng file sau khi lỗi
-          if (!file || importing) return;
-          setImporting(true);
-          try {
-            const { dataUrl, meta } = await smartImportImage(file);
-            updateParam(nodeId, param.id, dataUrl);
-            setConnectError(null);
-            setNotice(`✓ ${meta.note}`);
-          } catch (err) {
-            setConnectError(
-              err instanceof SmartImportError ? err.message : 'Không nạp được ảnh vào node.',
-            );
-          } finally {
-            setImporting(false);
-          }
-        }}
-      />
-      {hasImage ? (
-        <div className="relative">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={String(value)}
-            alt="input"
-            className={cn(
-              'nodrag h-28 w-full rounded-md object-cover',
-              importing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
-            )}
-            onClick={() => !importing && fileRef.current?.click()}
-            loading="lazy"
-          />
-          {importing && (
-            <div className="pointer-events-none absolute inset-0 grid place-items-center">
-              <Loader2 size={18} className="animate-spin text-[var(--accent)]" />
-            </div>
-          )}
-        </div>
-      ) : (
-        <button
-          disabled={importing}
-          className="nodrag flex h-24 w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed border-[var(--border-strong)] text-[var(--t4)] transition hover:border-[var(--accent-ring)] hover:text-[var(--t2)] disabled:cursor-not-allowed disabled:opacity-60"
-          onClick={() => fileRef.current?.click()}
-        >
-          {importing ? <Loader2 size={18} className="animate-spin" /> : <ImagePlus size={18} />}
-          <span className="text-[11px]">{importing ? 'Đang nạp…' : 'Upload / drag ảnh'}</span>
-        </button>
-      )}
-    </div>
-  );
-}
 
 function StatusIcon({ status }: { status: string }) {
   if (status === 'running' || status === 'queued')
@@ -265,13 +46,26 @@ function StatusIcon({ status }: { status: string }) {
   return null;
 }
 
-function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
+function InteriorNodeInner({ id, data, selected, width, height }: NodeProps<FlowNode>) {
   const tr = useT();
   const def = getDefinition(data.defType);
   const meta = CATEGORY_META[def.category];
   const deleteNode = useFlowStore((s) => s.deleteNode);
   const { status, progress, error } = data.run;
   const busy = status === 'running' || status === 'queued';
+
+  /* ── CỬA SỔ CÔNG CỤ NEO VÀO NODE (entry `master-tool-cong-dan-canvas`).
+     Node nào có thẻ việc tương ứng thì mở ra được thành cụm cửa sổ NGAY TẠI CHỖ — không phải hộp
+     thoại nổi trên canvas như trước. Nấc lưu ngoài `data` (xem `cua-so-cong-cu-ui.ts`): nó là
+     CÁCH NHÌN, không phải nội dung tài liệu, nên không được đi theo bản lưu/chia sẻ/xuất. */
+  const cardId = theViecChoDefType(data.defType);
+  const khoaCua = khoaCuaSoNode(id);
+  const capCua = useCuaSoCongCuUi((s) => s.bang[khoaCua]?.cap ?? 'thu');
+  const moRong = cardId !== null && capCua !== 'thu';
+  /* Dây nối — chỉ để dựng ĐỊNH NGHĨA của kết quả ("định nghĩa file = kết quả", Hoà 15/08):
+     phần "nuôi bởi" cần biết node nào đang chảy vào node này. */
+  const edges = useFlowStore((s) => s.edges);
+  const dinhNghia = dinhNghiaKetQua(id, data.defType, def.outputs, data.run.outputs, edges);
   /* Đang kéo dây từ MỘT cổng nguồn ở đâu đó trên canvas (FlowCanvas onConnectStart/onConnectEnd
      ghi vào store) — sáng cổng NHẬN cùng kiểu dữ liệu, mờ cổng khác kiểu (mock-if-bang-nut.html
      màn 03). CHỈ áp cho cổng target (input) — cổng nguồn không phải đích thả dây. */
@@ -299,17 +93,55 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
          Quầng đi bằng box-shadow (thuộc tính paint), KHÔNG opacity — nen-mo-card có backdrop blur
          (luật G1). Lúc node chạy, `.node-running-halo` là animation nên vẫn thắng inline style
          này theo thứ tự tầng CSS — đúng ý: đang chạy thì tín hiệu "chạy" quan trọng hơn "chọn". */
-      style={{ boxShadow: selected ? 'var(--shadow-pop), 0 0 0 4px var(--accent-soft)' : 'var(--shadow-pop)' }}
+      /* Lúc MỞ RỘNG, bọc ngoài phải TRONG SUỐT và KHÔNG đổ bóng: cụm cửa sổ tự mang kính + bóng
+         của nó. Giữ bóng ở đây nữa là hai lớp bóng chồng, và giữ `nen-mo-card` nữa là kính chồng
+         kính — đúng lỗi K4 đã trả giá 02/08. */
+      style={
+        moRong
+          ? { width: width ?? KHUNG_VUA.w, height: height ?? KHUNG_VUA.h }
+          : { boxShadow: selected ? 'var(--shadow-pop), 0 0 0 4px var(--accent-soft)' : 'var(--shadow-pop)' }
+      }
       className={cn(
-        'group relative nen-mo-card w-64 rounded-[14px] border transition-colors',
-        selected ? 'border-[1.5px] border-[var(--accent)]' : 'border-[var(--vien-mo)]',
-        status === 'error' && 'border-red-500/60',
+        'group relative rounded-[14px] transition-colors',
+        !moRong && 'nen-mo-card w-64 border',
+        !moRong && (selected ? 'border-[1.5px] border-[var(--accent)]' : 'border-[var(--vien-mo)]'),
+        !moRong && status === 'error' && 'border-red-500/60',
         status === 'running' && 'node-running-halo glass-gradient-run',
       )}
     >
+      {/* V1 — hộp công cụ nổi cạnh vật đang chọn. `NodeToolbar` tự bám node, tự đi theo pan/zoom,
+          tự ẩn khi chọn nhiều node (không thành rừng hộp chồng nhau). */}
+      <HopCongCuBamVat
+        nodeId={id}
+        hien={Boolean(selected)}
+        laCuaSo={cardId !== null}
+        dangChay={busy}
+        loi={status === 'error'}
+      />
+
+      {/* Đổi cỡ cụm cửa sổ — `NodeResizer` có sẵn trong gói, chỉ hiện lúc đang mở VÀ đang chọn
+          (hiện thường trực là tám tay nắm bám lấy mọi node, rối mắt vô ích). */}
+      {moRong && (
+        <NodeResizer
+          isVisible={Boolean(selected)}
+          minWidth={KHUNG_VUA_MIN.w}
+          minHeight={KHUNG_VUA_MIN.h}
+          color="var(--accent)"
+        />
+      )}
+
       {/* G2 phần (2) — comment neo vào node này (badge góc phải-trên, xem CommentPin.tsx). */}
       <CommentPin nodeId={id} />
 
+      {/* ── NẤC MỞ: thân node LÀ cụm cửa sổ công cụ. Không portal, không `position:fixed` — nó
+          THUỘC canvas nên pan/zoom theo, kéo theo node, và giữ nguyên cổng vào/ra bên dưới để
+          nối sang cửa sổ kế (Hoà 15/08). Ruột là chính node này nhìn gần, không phải màn khác. */}
+      {moRong && cardId && <ToolWindow cardId={cardId} nodeId={id} />}
+
+      {/* ── NẤC THU: khối nhỏ như cũ. Phải ĐỦ TỰ THÂN — che hai nấc kia đi vẫn đứng được một mình
+          (Hoà 16/08: *"luôn gọn và tươm tất ở lớp mặc định"*). */}
+      {!moRong && (
+      <>
       {/* header — icon flat, nhãn dùng font hệ thống app (2.2.85, 30/07: bỏ font mono —
           SF Mono/Cascadia Code/Fira Code thiếu glyph dấu tiếng Việt tổ hợp, xung khắc với
           luật thoại 2.2.69 "Việt dẫn · Anh theo") */}
@@ -387,6 +219,8 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
 
         <NodeExtras nodeId={id} data={data} />
       </div>
+      </>
+      )}
 
       {/* ports — MÀU THEO KIỂU DỮ LIỆU. `DATA_TYPE_COLORS` (lib/types.ts) nay trả BIẾN token
           `var(--p-img)`/`var(--p-mask)`/`var(--p-num)` (`app/globals.css`, port ① mock
@@ -414,6 +248,9 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
           />
         );
       })}
+      {/* CỔNG RA MANG ĐỊNH NGHĨA ("định nghĩa file = kết quả", Hoà 15/08): nhãn cổng nay đọc ra
+          tiếng người — *"Ảnh · Kết quả render · chờ chạy"* — thay vì lộ khoá kỹ thuật `image`.
+          Ba mảnh (loại · vai trò · nguồn gốc) ghép từ dữ liệu ĐÃ CÓ, không thêm trường nào. */}
       {def.outputs.map((port, i) => (
         <Handle
           key={port.id}
@@ -427,7 +264,7 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
             height: 10,
             border: '2px solid var(--bg)',
           }}
-          title={`${port.label} · ${port.dataType}`}
+          title={dongDinhNghia(dinhNghia[i], tr('vi', 'en') === 'vi')}
         />
       ))}
     </motion.div>

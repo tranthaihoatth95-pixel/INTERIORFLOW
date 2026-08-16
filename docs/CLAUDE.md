@@ -11,7 +11,15 @@
 ## Nguồn sự thật — ĐỌC TRƯỚC KHI LÀM BẤT KỲ VIỆC GÌ
 0. `docs/memory/LATEST.md` — bản NÉN trí nhớ phiên gần nhất (đọc trước tiên, rẻ nhất) — cần chi
    tiết đầy đủ 1 nhánh việc thì mở đúng thư mục `docs/memory/sessions/<ngày>/<nhánh>/`
-1. `docs/IF-MASTER-BLUEPRINT.md` — kiến trúc tổng, hệ `.idf`, cây mã số, lệnh giao diện
+1. ⭐ **`docs/IF-KIEN-TRUC.md` — BẢN ĐỒ KIẾN TRÚC. ĐỌC THẬT, KHÔNG LƯỚT.**
+   Kiến trúc tổng · hệ sinh thái `.idf` (là gì · ai đọc ai ghi · vòng đời · 4 ràng buộc) · lệnh giao diện.
+   🔴 **Tên cũ `IF-MASTER-BLUEPRINT.md` chỉ còn là mẩu chuyển hướng 774 byte** (đổi tên 28/07).
+   Dòng này TRƯỚC ĐÂY trỏ vào mẩu cụt đó ⇒ **suốt 19 ngày mọi phiên đọc mẩu cụt rồi đi tiếp,
+   tưởng đã đọc kiến trúc**; `COMPASS` được nhắc **0 lần** trong `CLAUDE.md`/`STATUS.md`/`00-CHOT`/`LATEST`.
+   ⚠️ Đây là loại tài liệu **KHÁC** nhật ký: `00-CHOT` trả lời *"cái gì được quyết, khi nào"*,
+   `COMPASS` trả lời *"thứ này LÀ GÌ và nằm ở đâu trong cây"*. **Nén nhật ký không bao giờ ra bản đồ.**
+   Mọi lỗi hiểu-sai-khái niệm ngày 16/08 (`master tool`↔`ToolWindow` · vật liệu chẻ ba ·
+   Thư viện đứng đâu) đều là **thiếu quan hệ, không thiếu dữ kiện** — tức thiếu đúng file này.
 2. `docs/IF-FEATURE-TREE.md` — cây 461 mục, có cột trạng thái CODE THẬT
    ⚠️ Tên cũ `IF-MASTER-TREE.md` **đã đổi từ 28/07**; file cũ nay chỉ còn 862 byte chuyển hướng.
    Ai đọc trúng nó sẽ tưởng đã kiểm cây (thật ra chưa) — T sửa tham chiếu 15/08.

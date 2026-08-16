@@ -52,7 +52,9 @@ import { useStageMode, useHydrateRenderMode } from '@/lib/stage-mode';
 import DongStudioHome from '@/components/home/DongStudioHome';
 import { CommentLayer } from '@/components/CommentLayer';
 import { useFlowStore } from '@/lib/store';
-import { bootstrapWorkspace, openFlow } from '@/lib/workspace';
+// [marker: cuaVaoDashboard] `bootstrapWorkspace`/`openFlow` ĐÃ BỎ khỏi file này (16/08): nơi gọi
+// duy nhất là nhánh auto-resume "vào thẳng canvas" vừa cắt. Việc mở flow nay do `ProjectSelect`
+// (người dùng bấm dự án) và `ensureProjectScope` (route scope dự án) lo — không mất đường nào.
 import { applyCadHandoff } from '@/lib/cad/handoff';
 import { fade } from '@/lib/motion';
 import {
@@ -194,18 +196,18 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
       return true;
     }
   });
-  const [stageDone, setStageDone] = useState(() => {
-    if (projectRouteId) return true;
-    if (typeof window === 'undefined') return false;
-    try {
-      const flag = localStorage.getItem('interiorflow.stageDone');
-      if (!flag) return false;
-      const u = useFlowStore.getState().user;
-      return !!(u && u.id === flag);
-    } catch {
-      return false;
-    }
-  });
+  //
+  // 🟢 [marker: cuaVaoDashboard] 16/08 (Hoà chốt, phiếu P-N) — ĐĂNG NHẬP LUÔN DỪNG Ở DASHBOARD.
+  //    Khối đọc `localStorage 'interiorflow.stageDone'` ở đây ĐÃ GỠ: nó là nhánh "returning-user
+  //    thì vào thẳng canvas, bỏ qua Home" — chính thứ Hoà bảo đổi. Nay route TOÀN CỤC '/' luôn
+  //    khởi tạo `false` ⇒ luôn dựng `<DongStudioHome/>`. Việc đang dở KHÔNG mất: nó nuôi widget
+  //    "Việc đang dở" (components/home/widgets/ResumeWork.tsx) — đổi từ ÉP sang MỜI.
+  //    Bug flash 21/07 (ghi ở khối comment trên) KHÔNG tái phát: nó xảy ra vì Gallery là màn
+  //    TRUNG GIAN nháy qua trước khi nhảy canvas; nay Gallery/dashboard LÀ ĐÍCH, không có cú
+  //    nhảy nào sau nó nên không còn gì để nháy.
+  //    Route SCOPE DỰ ÁN `/projects/[id]/render` giữ nguyên `true` — URL đã nói rõ dự án nào,
+  //    đó là người dùng CHỦ ĐỘNG mở một chặng, không phải "tự nhảy" lúc đăng nhập.
+  const [stageDone, setStageDone] = useState(() => !!projectRouteId);
   // Onboarding Tầng 1 (thay Smart Tour cũ) — WelcomeIntro bật cho user CHƯA có dấu chân
   // (không resume, không stageDone, chưa tourDone). Bỏ qua/hoàn tất → markTourDone theo
   // user.id, không hiện lại (help menu "Xem lại hướng dẫn" là cách DUY NHẤT hiện lại).
@@ -246,13 +248,16 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
   }, [router, projectRouteId]);
 
   /**
-   * Điều phối SAU-AUTH (B-3/B-4) — gọi khi có user (session cũ qua /api/auth/me
-   * hoặc vừa login qua LoginScreen):
-   *   · FIRST-TIME (không resume, chưa qua ProjectSelect): ở lại gallery + bật Smart
-   *     Tour (nếu user chưa từng xem/bỏ qua).
-   *   · RETURNING: khôi phục đúng chỗ đã thoát — route studio (/cad-editor…) thì
-   *     push sang; canvas '/' thì khôi phục chặng (workspace) + mở đúng flowId đã lưu
-   *     (fallback bootstrapWorkspace như hành vi C1 cũ nếu flow mở lỗi/không lưu id).
+   * Điều phối SAU-AUTH — gọi khi có user (session cũ qua /api/auth/me hoặc vừa login).
+   *
+   * 🟢 [marker: cuaVaoDashboard] 16/08 — VIẾT LẠI: **mọi lối đều dừng ở dashboard.**
+   *   · SCOPE DỰ ÁN (`/projects/[id]/render`): URL là chân lý, vào thẳng chặng đó (không đổi).
+   *   · Bấm "Home" (`consumeForceGallery`): dashboard (không đổi).
+   *   · LẦN ĐẦU: dashboard + WelcomeIntro.
+   *   · QUAY LẠI: **dashboard** — trước 16/08 nhánh này tự `router.push(resume.route)` hoặc tự
+   *     `setStageDone(true)` để vào thẳng canvas. Việc đang dở nay là **widget** trên dashboard
+   *     (`widgets/ResumeWork.tsx`), người tự bấm khi muốn vào.
+   * Bản mô tả B-3/B-4 cũ ở chỗ này đã lỗi thời — thay hẳn, không để hai bản song song.
    */
   const enterAfterAuth = useCallback(
     (userId: string) => {
@@ -291,58 +296,30 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
       }
 
       const resume = loadResume(userId);
-      let stageFlag = false;
-      try {
-        // C1: cờ "đã qua ProjectSelect" gắn theo user id (không phải '1' gắn máy).
-        stageFlag = localStorage.getItem('interiorflow.stageDone') === userId;
-      } catch {
-        /* localStorage chặn — coi như chưa */
-      }
 
-      // B-4 first-time → gallery (mặc định stageDone=false) + WelcomeIntro (Tầng 1).
-      if (!resume && !stageFlag) {
-        if (!isTourDone(userId)) setWelcomeOpen(true);
-        return;
-      }
-
-      // B-3 returning — thoát ở route studio → quay lại đúng route đó, nhưng CHỈ
-      // 1 lần cho mỗi phiên trình duyệt (sessionStorage): lần đầu mở app thì
-      // auto-resume; sau đó user chủ động quay về '/' (StudioBar → canvas) thì
-      // KHÔNG bật ngược lại studio nữa — tránh kẹt vòng lặp không về được canvas.
-      let resumedThisSession = false;
-      try {
-        resumedThisSession = sessionStorage.getItem('interiorflow.sessionResumed') === '1';
-        sessionStorage.setItem('interiorflow.sessionResumed', '1');
-      } catch {
-        /* sessionStorage chặn — coi như đã resume, bỏ redirect */
-        resumedThisSession = true;
-      }
-      if (resume && resume.route !== '/' && !resumedThisSession) {
-        router.push(resume.route);
-        return;
-      }
-
-      // Returning trên canvas '/': khôi phục chặng + vào thẳng canvas với đúng flow.
+      // 🟢 [marker: cuaVaoDashboard] 16/08 — DASHBOARD LÀ CỬA VÀO, không còn nhánh tự-nhảy nào.
+      //
+      // ĐÃ GỠ Ở ĐÂY (cả hai đều là "tự điều hướng thay người dùng lúc đăng nhập"):
+      //   ① `if (resume && resume.route !== '/' && !resumedThisSession) router.push(resume.route)`
+      //      — nhảy thẳng sang route studio đã thoát (kèm khoá `sessionStorage
+      //      'interiorflow.sessionResumed'`; khoá đó nay KHÔNG CÒN AI ĐỌC nên gỡ luôn, không
+      //      để cờ chết).
+      //   ② `if (resume?.flowId || stageFlag) setStageDone(true) + openFlow(...)` — bỏ qua
+      //      dashboard, vào thẳng canvas chặng 3D. Cùng với nó là `stageFlag`
+      //      (`localStorage 'interiorflow.stageDone'`) — đọc ở đây và ở khối `useState` trên là
+      //      HAI nơi đọc duy nhất, cắt cả hai nên cờ đó cũng hết vai (xem ⑦ báo cáo: còn 1 nơi
+      //      GHI ngoài vùng phiếu này, `components/ProjectSelect.tsx:786`, cần T dọn nốt).
+      //      `openFlow()` không mất đi đâu: `ProjectSelect` vẫn tự gọi khi người dùng bấm vào
+      //      dự án, và widget "Việc đang dở" đưa thẳng về route chặng (ensureProjectScope nạp).
+      //
+      // CÒN LẠI ĐÚNG MỘT VIỆC: khôi phục CHẶNG đã lưu vào store. Đây KHÔNG phải điều hướng —
+      // nó chỉ đảm bảo khi người dùng tự bấm vào canvas thì đứng đúng chặng cũ, không văng về
+      // mặc định. Người vẫn là người quyết lúc nào bước vào ([T5] con người quyết cuối).
       if (resume?.phase) useFlowStore.getState().setWorkspace(resume.phase);
-      if (resume?.flowId || stageFlag) {
-        setStageDone(true);
-        // ProjectSelect bị bỏ qua nên openFlow() của nó không chạy → tự nạp ở đây để
-        // currentFlowId có giá trị (autosave vào DB thay vì rơi xuống localStorage).
-        if (!bootRan.current) {
-          bootRan.current = true;
-          const boot = resume?.flowId
-            ? openFlow(resume.flowId).catch(() => bootstrapWorkspace())
-            : bootstrapWorkspace();
-          void boot.then(() => {
-            applyCadHandoff();
-            // Task #21: flow đã nạp → biết dự án nào → NÂNG URL lên scope dự án
-            // (`/projects/[id]/render`) để URL thành nguồn sự thật. `replace` (không push)
-            // nên nút Back của trình duyệt vẫn về đúng chỗ trước đó, bookmark `/` không vỡ.
-            toProjectRender();
-          });
-        }
-      }
-      // resume tồn tại nhưng không flowId & chưa stageFlag → rơi về gallery (an toàn).
+
+      // Người dùng LẦN ĐẦU (chưa có dấu chân nào) → thêm WelcomeIntro trên dashboard, đúng
+      // hành vi cũ. Người đã dùng rồi → dashboard trơn, việc dở nằm ở widget.
+      if (!resume && !isTourDone(userId)) setWelcomeOpen(true);
     },
     [router, projectRouteId, toProjectRender],
   );
@@ -580,13 +557,10 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
         <DongStudioHome
           onEnter={() => {
             setStageDone(true);
-            // Ghi nhớ để lần quay về '/' vào thẳng canvas (thoát các studio route).
-            // C1: lưu user id để cờ chỉ đúng cho chính user này (không gắn máy).
-            try {
-              localStorage.setItem('interiorflow.stageDone', user.id);
-            } catch {
-              /* bỏ qua */
-            }
+            // [marker: cuaVaoDashboard] 16/08 — ĐÃ BỎ `localStorage.setItem('interiorflow.stageDone')`
+            // ở đây: cờ đó chỉ có MỘT tác dụng là "lần sau về '/' thì vào thẳng canvas", đúng
+            // hành vi Hoà bảo đổi. Cắt xong thì không còn nơi nào ĐỌC nó nữa ⇒ thôi ghi luôn,
+            // không nuôi cờ chết (xem 2 nơi đọc đã gỡ ở `useState` + `enterAfterAuth` trên).
             // Task #21: ProjectSelect đã openFlow/createFlow xong → store biết dự án nào →
             // đưa URL sang `/projects/[id]/render` (URL = nguồn sự thật, F5 vào đúng dự án).
             toProjectRender();
@@ -600,11 +574,7 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
             userId={user.id}
             onEnter={() => {
               setStageDone(true);
-              try {
-                localStorage.setItem('interiorflow.stageDone', user.id);
-              } catch {
-                /* bỏ qua */
-              }
+              // [marker: cuaVaoDashboard] — cùng lý do nút onEnter của DongStudioHome ở trên.
               toProjectRender();
             }}
             onDismiss={closeWelcome}

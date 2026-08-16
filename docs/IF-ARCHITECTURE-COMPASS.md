@@ -1,4 +1,11 @@
-# IF ARCHITECTURE COMPASS — Kiến trúc · Hệ sinh thái .idf · Lệnh giao diện
+# ⛔ LỖI THỜI — xem `docs/IF-KIEN-TRUC.md`
+
+> Bản này sửa lần cuối 29/07 và MỒ CÔI 19 ngày (con trỏ trong CLAUDE.md chỉ vào một mẩu cụt).
+> Bản đang dùng: **`docs/IF-KIEN-TRUC.md`** (lập 16/08). Giữ file này làm dấu vết lịch sử, KHÔNG đọc để làm việc.
+
+---
+
+# (bản cũ) IF ARCHITECTURE COMPASS
 *(trước gọi `IF-MASTER-BLUEPRINT.md`, đổi tên 28/07 — hết trùng chữ "MASTER" với
 `docs/IF-FEATURE-TREE.md`, tránh nhầm vai trò giữa 2 file)*
 

@@ -1,0 +1,444 @@
+<!-- @dsCard group="Tool bám vật" -->
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hộp công cụ bám vật · Cụm cửa sổ công cụ</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════════════════
+   TOKEN — CHÉP NGUYÊN VĂN từ app/globals.css (16/08). Đây là KHỐI KHAI TOKEN, chỗ DUY NHẤT
+   trong tệp này được phép có hex. Mọi chỗ khác dùng var(). Luật L4 "cấm tự chế màu".
+   ⚠️ --mat-* ĐÃ CHẾT → --nen-mo-*; đường kẻ mảnh là --vien-mo.
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
+:root, [data-theme="dark"] {
+  --accent: #6a57f5; --accent-strong: #553ff3; --accent-soft: rgba(106,87,245,.14);
+  --accent-ring: rgba(106,87,245,.55);
+  --bg: #0c0c0e; --panel: #141417; --field: #202024;
+  --hover: #2a2a30; --border: #2a2a31; --border-strong: #3d3d45;
+  --t1: #f5f5f7; --t2: #d6d6db; --t3: #9e9ea8; --t4: #6e6e78; --t5: #4e4e57;
+  --dots: #26262d;
+  --nen-mo-card: rgba(26,26,30,.82);
+  --vien-mo: rgba(255,255,255,.06);
+  --mo-vo-hieu: .5;
+  --shadow-pop: 0 8px 30px -8px rgba(0,0,0,.65);
+  --warning: #d9a34a; --success: #46b876;
+  --p-img: var(--accent); --p-mask: var(--warning);
+  --tap: 32px; --tap-lg: 44px;
+}
+[data-theme="light"] {
+  --bg: #f2efe9; --panel: #faf8f4; --field: #f4f1eb;
+  --hover: #e9e5dd; --border: #e3ded4; --border-strong: #cbc4b6;
+  --t1: #211e19; --t2: #47423a; --t3: #726c62; --t4: #9a938a; --t5: #b8b1a7;
+  --dots: #ddd8ce;
+  --nen-mo-card: rgba(255,255,255,.82);
+  --vien-mo: rgba(0,0,0,.05);
+  --mo-vo-hieu: .62;
+  --shadow-pop: 0 10px 30px -10px rgba(60,52,40,.22);
+  --warning: #9a6304; --success: #107043;
+}
+
+/* Thang bo — token hình học đã duyệt 12/08: 6/10/14/20 + full 999. */
+:root { --r1: 6px; --r2: 10px; --r3: 14px; --r4: 20px; --r-full: 999px; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--t1);
+  font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 13px; font-weight: 400; line-height: 1.55;
+  padding: 24px; overflow-x: hidden;
+}
+h1 { font-size: 19px; font-weight: 600; letter-spacing: -.01em; }
+h2 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.phu { color: var(--t3); font-size: 12px; line-height: 1.6; }
+.rat-phu { color: var(--t3); font-size: 11px; } /* --t4 chỉ 3,88:1 trên --bg (đo) — dưới 4,5:1 WCAG 1.4.3 */
+
+.dau { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 20px; }
+.gat {
+  display: flex; gap: 2px; padding: 4px; border-radius: var(--r-full);
+  background: var(--panel); border: 1px solid var(--border); flex-shrink: 0;
+}
+.gat button {
+  height: 32px; padding: 0 14px; border: none; border-radius: var(--r-full);
+  background: transparent; color: var(--t3); font-family: inherit; font-size: 12px; cursor: pointer;
+}
+.gat button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+.gat button:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 2px; }
+
+section { margin-bottom: 26px; }
+.muc-dau { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.so {
+  width: 20px; height: 20px; border-radius: var(--r-full); flex-shrink: 0;
+  background: var(--accent-soft); color: var(--accent);
+  font-size: 11px; font-weight: 600; display: grid; place-items: center;
+}
+
+/* ── MẶT CANVAS giả lập (nền chấm như FlowCanvas) ───────────────────────────────────── */
+.canvas {
+  position: relative; border-radius: var(--r3); border: 1px solid var(--border);
+  background: var(--bg);
+  background-image: radial-gradient(var(--dots) 1.2px, transparent 1.2px);
+  background-size: 22px 22px;
+  overflow: hidden;
+}
+
+/* ── VỎ KÍNH — công thức y hệt CuaSoCongCu.tsx voKinh() ──────────────────────────────── */
+.kinh {
+  border: 1px solid var(--border-strong); border-radius: var(--r3);
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-pop);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.kinh.nho { border-radius: var(--r2); }
+
+/* ── KHỐI NHỎ (nấc thu) ─────────────────────────────────────────────────────────────── */
+.khoi {
+  width: 200px; border-radius: var(--r3); border: 1px solid var(--vien-mo);
+  background: var(--nen-mo-card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-pop);
+}
+.khoi.chon { border: 1.5px solid var(--accent); box-shadow: var(--shadow-pop), 0 0 0 4px var(--accent-soft); }
+.khoi-dau {
+  display: flex; align-items: center; gap: 7px; padding: 7px 10px;
+  border-bottom: 1px solid var(--border); font-size: 11.5px; font-weight: 500;
+}
+.khoi-than { padding: 9px 10px; display: flex; flex-direction: column; gap: 7px; }
+.o-anh { height: 62px; border-radius: var(--r1); background: var(--field); border: 1px dashed var(--border-strong); }
+.hang { height: 22px; border-radius: var(--r1); background: var(--field); }
+
+/* ── HỘP CÔNG CỤ BÁM VẬT (V1) — vỏ ToolbarBar: h44 · r-full · đệm 6 · gap 2 ──────────── */
+.hop {
+  display: inline-flex; align-items: center; gap: 2px; height: var(--tap-lg); padding: 0 6px;
+  border-radius: var(--r-full); background: var(--panel);
+  border: 1px solid var(--border); box-shadow: var(--shadow-pop);
+}
+.chip {
+  width: var(--tap); height: var(--tap); border-radius: var(--r-full);
+  display: grid; place-items: center; border: 1px solid transparent;
+  background: transparent; color: var(--t2); cursor: pointer; flex-shrink: 0;
+}
+.chip.bat { border-color: var(--accent-ring); background: var(--accent-soft); color: var(--accent); }
+.chip.mo { opacity: var(--mo-vo-hieu); cursor: not-allowed; }
+.chip:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 2px; }
+.sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
+svg { display: block; }
+
+/* ── CỤM: khung môi trường + vệ tinh ─────────────────────────────────────────────────── */
+.cum { position: relative; }
+.cua-dau {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 12px;
+  border-bottom: 1px solid var(--vien-mo); flex-shrink: 0;
+}
+.cua-ten { font-size: 13px; font-weight: 600; color: var(--t1); }
+.cua-mo-ta { font-size: 11px; color: var(--t3); }
+.cua-ruot { flex: 1; min-height: 0; background: var(--bg); display: flex; }
+.cot-trai { width: 150px; border-right: 1px solid var(--vien-mo); padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.cot-phai { flex: 1; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.cua-chan {
+  border-top: 1px solid var(--vien-mo); padding: 6px 12px; background: var(--panel);
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap; flex-shrink: 0;
+}
+.nhan-nho { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--t3); }
+.dinh-nghia { font-size: 11px; color: var(--t2); display: inline-flex; align-items: center; gap: 5px; }
+.dinh-nghia.cho { color: var(--t4); }
+.cham { width: 8px; height: 8px; border-radius: var(--r-full); flex-shrink: 0; }
+
+.ve-tinh { position: absolute; width: 150px; }
+.ve-tinh-dau {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--t3);
+  padding: 5px 9px; border-bottom: 1px solid var(--vien-mo);
+}
+.ve-tinh-than { padding: 5px; background: var(--bg); display: flex; flex-direction: column; gap: 2px; }
+.lenh {
+  font-size: 11px; padding: 4px 7px; border-radius: var(--r1); color: var(--t2);
+  opacity: var(--mo-vo-hieu); text-align: left; border: none; background: transparent; cursor: not-allowed;
+}
+/* Nút mờ ở đây dùng aria-disabled (không phải thuộc tính `disabled`) nên VẪN vào được thứ tự
+   Tab — cùng cách ToolbarChip đã chốt 16/08 để bàn phím tới được lý do. Đã focus được thì
+   BẮT BUỘC thấy vòng focus (WCAG 2.4.7). */
+.lenh:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 1px; opacity: 1; }
+
+/* ── CỔNG + DÂY ─────────────────────────────────────────────────────────────────────── */
+.cong {
+  position: absolute; width: 10px; height: 10px; border-radius: var(--r-full);
+  border: 2px solid var(--bg);
+}
+.cong.vao { left: -6px; } .cong.ra { right: -6px; }
+
+/* ── BẢNG so sánh ranh giới ─────────────────────────────────────────────────────────── */
+table { border-collapse: collapse; width: 100%; font-size: 12px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--vien-mo); vertical-align: top; }
+th { color: var(--t4); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+td.chung { color: var(--t2); } td.trong { color: var(--t2); }
+
+.ghi-chu {
+  border-left: 2px solid var(--accent); padding: 8px 12px; background: var(--accent-soft);
+  border-radius: 0 var(--r1) var(--r1) 0; font-size: 12px; color: var(--t2); margin-top: 10px;
+}
+.cuon { overflow-x: auto; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="dau">
+  <div>
+    <h1>Hộp công cụ bám vật · Cụm cửa sổ công cụ</h1>
+    <p class="phu" style="max-width:760px;margin-top:6px">
+      Hai tầng giải hai bài toán ngược nhau. <b>Thanh chung</b> giải “mỗi công cụ một phím tắt, ai mà nhớ” —
+      ít, ổn định, mọi nơi giống nhau. <b>Cửa sổ công cụ</b> giải “phải đúng Photoshop, đúng D5, đúng Blender” —
+      nhiều, sâu, chỉ đúng một môi trường. Ranh giới: <b>cửa sổ đóng khung phạm vi</b>, lệnh chuyên sâu
+      không tràn ra thanh chung.
+    </p>
+  </div>
+  <div class="gat" role="group" aria-label="Chọn theme">
+    <button type="button" aria-pressed="true"  onclick="datTheme('dark',this)">Tối</button>
+    <button type="button" aria-pressed="false" onclick="datTheme('light',this)">Sáng</button>
+  </div>
+</div>
+
+<!-- ═══ ① HỘP CÔNG CỤ BÁM VẬT ═══════════════════════════════════════════════════════ -->
+<section>
+  <div class="muc-dau"><span class="so">1</span><div>
+    <h2>Hộp công cụ nổi cạnh vật đang chọn</h2>
+    <p class="phu">Chưa chọn thì không có gì. Chọn thì hộp hiện phía trên, không che thân khối.</p>
+  </div></div>
+
+  <div class="canvas" style="height:230px">
+    <!-- chưa chọn -->
+    <div style="position:absolute;left:40px;top:56px">
+      <div class="khoi">
+        <div class="khoi-dau"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg><span>Sketch → Ảnh thật</span></div>
+        <div class="khoi-than"><div class="o-anh"></div><div class="hang"></div></div>
+      </div>
+      <p class="rat-phu" style="margin-top:7px">Chưa chọn — khối gọn, tự thân đọc được</p>
+    </div>
+
+    <!-- đang chọn + hộp -->
+    <div style="position:absolute;left:320px;top:12px">
+      <div class="hop" style="margin-bottom:10px;margin-left:6px">
+        <button class="chip" type="button" title="Chạy" aria-label="Chạy"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+        <span class="sep"></span>
+        <button class="chip mo" type="button" aria-disabled="true" aria-label="Thu gọn" aria-describedby="ld1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></button>
+        <span id="ld1" hidden>Đang là khối nhỏ rồi</span>
+        <button class="chip" type="button" aria-label="Mở cửa sổ"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
+        <span class="sep"></span>
+        <button class="chip" type="button" aria-label="Nhân bản"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
+        <button class="chip" type="button" aria-label="Xoá"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
+      </div>
+      <div class="khoi chon" style="position:relative">
+        <div class="khoi-dau"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg><span>Sketch → Ảnh thật</span></div>
+        <div class="khoi-than"><div class="o-anh"></div><div class="hang"></div></div>
+        <span class="cong vao" style="top:46px;background:var(--p-img)"></span>
+        <span class="cong ra"  style="top:46px;background:var(--p-img)"></span>
+      </div>
+      <p class="rat-phu" style="margin-top:7px">Đang chọn — hộp bám vật, đi theo pan/zoom</p>
+    </div>
+  </div>
+
+  <div class="ghi-chu">
+    Trong hộp chỉ có lệnh <b>cùng bản chất ở mọi công cụ</b>: chạy · mở cửa sổ · nhân bản · xoá.
+    Lệnh chuyên sâu (lớp ảnh, dòng thời gian, công thức khối) <b>không có mặt ở đây</b> — chúng sống
+    trong vệ tinh của cụm. Nút mờ luôn kèm lý do, đi đường <code>aria-describedby</code> chứ không phải <code>title</code>.
+  </div>
+</section>
+
+<!-- ═══ ② BA NẤC ════════════════════════════════════════════════════════════════════ -->
+<section>
+  <div class="muc-dau"><span class="so">2</span><div>
+    <h2>Ba nấc — thu · mở tại chỗ · toàn màn</h2>
+    <p class="phu">Nấc mặc định phải <b>đủ tự thân</b>: che hai nấc kia đi vẫn đứng được một mình.</p>
+  </div></div>
+
+  <div class="cuon"><div style="display:flex;gap:18px;align-items:flex-start;min-width:900px">
+    <div>
+      <div class="khoi"><div class="khoi-dau"><span>Sketch → Ảnh thật</span></div><div class="khoi-than"><div class="o-anh"></div></div></div>
+      <p class="rat-phu" style="margin-top:6px">Thu — khối nhỏ</p>
+    </div>
+
+    <div>
+      <div class="kinh" style="width:380px;height:212px">
+        <div class="cua-dau">
+          <div style="flex:1;min-width:0"><div class="cua-ten">Sketch → Ảnh thật</div><div class="cua-mo-ta">Ảnh — lớp, vùng chọn, sáng tối</div></div>
+          <button class="chip" type="button" aria-label="Thu gọn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></button>
+          <button class="chip" type="button" aria-label="Mở rộng"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6"/></svg></button>
+        </div>
+        <div class="cua-ruot">
+          <div class="cot-trai"><span class="nhan-nho">Đầu vào</span><div class="o-anh" style="height:52px"></div><div class="hang"></div></div>
+          <div class="cot-phai"><span class="nhan-nho">Kết quả</span><div class="o-anh" style="height:82px"></div></div>
+        </div>
+        <div class="cua-chan">
+          <span class="nhan-nho">Cổng ra</span>
+          <span class="dinh-nghia cho"><span class="cham" style="background:var(--p-img)"></span>Ảnh · Kết quả render · chờ chạy</span>
+        </div>
+      </div>
+      <p class="rat-phu" style="margin-top:6px">Mở tại chỗ — vẫn thuộc canvas</p>
+    </div>
+
+    <div>
+      <div class="kinh" style="width:300px;height:212px;border-radius:0">
+        <div class="cua-dau"><div style="flex:1"><div class="cua-ten">Sketch → Ảnh thật</div><div class="cua-mo-ta">Toàn màn — soi kỹ</div></div>
+          <button class="chip" type="button" aria-label="Thoát toàn màn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3v6H3M15 21v-6h6"/></svg></button></div>
+        <div class="cua-ruot"><div class="cot-phai"><div class="o-anh" style="flex:1"></div></div></div>
+      </div>
+      <p class="rat-phu" style="margin-top:6px">Toàn màn — bo góc về 0</p>
+    </div>
+  </div></div>
+</section>
+
+<!-- ═══ ③ HAI MÔI TRƯỜNG KHÁC LOẠI, MỘT THANH CHUNG ═════════════════════════════════ -->
+<section>
+  <div class="muc-dau"><span class="so">3</span><div>
+    <h2>Hai môi trường khác loại đứng cùng canvas — cùng một thanh chung</h2>
+    <p class="phu">
+      Đây là chỗ chứng minh “không đá nhau”: cụm <b>Ảnh</b> và cụm <b>Khối 3D</b> có bộ tool
+      <b>khác hẳn</b> nhau, nhưng thanh chung bên ngoài <b>y hệt</b> và không phình thêm dòng nào.
+      Hai cụm nối dây với nhau — kết quả cụm trước là đầu vào đã-định-nghĩa của cụm sau.
+    </p>
+  </div></div>
+
+  <div class="canvas" style="height:430px;padding:0">
+    <!-- THANH CHUNG — nằm NGOÀI mọi cụm, không đổi theo môi trường -->
+    <div style="position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:5">
+      <div class="hop">
+        <button class="chip bat" type="button" aria-label="Chọn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 3 7 18 2-8 8-2z"/></svg></button>
+        <button class="chip" type="button" aria-label="Hoàn tác"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg></button>
+        <button class="chip" type="button" aria-label="Làm lại"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 15-6.7l3 2.7"/></svg></button>
+        <button class="chip" type="button" aria-label="Xoá"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
+        <button class="chip" type="button" aria-label="Nhìn vừa khung"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H3v6M15 21h6v-6M21 9V3h-6M3 15v6h6"/></svg></button>
+      </div>
+      <p class="rat-phu" style="text-align:center;margin-top:5px">Thanh chung — 5 lệnh, không đổi theo môi trường</p>
+    </div>
+
+    <!-- CỤM ẢNH -->
+    <div class="cum" style="position:absolute;left:186px;top:126px;width:250px;height:180px">
+      <div class="kinh" style="width:100%;height:100%">
+        <div class="cua-dau" style="cursor:grab">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t4)" stroke-width="2"><path d="M3 9h18M3 15h18"/></svg>
+          <div style="flex:1;min-width:0"><div class="cua-ten">Ảnh</div><div class="cua-mo-ta">Sửa ảnh: lớp, vùng chọn</div></div>
+        </div>
+        <div class="cua-ruot"><div class="cot-phai"><div class="o-anh" style="flex:1"></div></div></div>
+        <div class="cua-chan"><span class="dinh-nghia"><span class="cham" style="background:var(--p-img)"></span>Ảnh · Kết quả render · đã có</span></div>
+      </div>
+      <aside class="kinh nho ve-tinh" style="right:calc(100% + 8px);top:0">
+        <div class="ve-tinh-dau">Vùng chọn</div>
+        <div class="ve-tinh-than"><button class="lenh" type="button">Chọn thông minh</button><button class="lenh" type="button">Co giãn vùng</button></div>
+      </aside>
+      <aside class="kinh nho ve-tinh" style="left:calc(100% + 8px);top:0">
+        <div class="ve-tinh-dau">Lớp</div>
+        <div class="ve-tinh-than"><button class="lenh" type="button">Thêm lớp</button><button class="lenh" type="button">Gộp lớp</button><button class="lenh" type="button">Chế độ hoà</button></div>
+      </aside>
+      <span class="cong ra" style="top:88px;background:var(--p-img);right:-5px"></span>
+    </div>
+
+    <!-- DÂY NỐI + nút chèn bước -->
+    <svg style="position:absolute;left:436px;top:210px;width:274px;height:8px;overflow:visible" aria-hidden="true">
+      <path d="M0 4 C 90 4, 184 4, 274 4" fill="none" stroke="var(--p-img)" stroke-width="1.6"/>
+    </svg>
+    <div style="position:absolute;left:562px;top:196px;text-align:center">
+      <button class="chip" type="button" aria-label="Chèn một bước vào giữa"
+        style="background:var(--panel);border:1px solid var(--border-strong);box-shadow:var(--shadow-pop)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <p class="rat-phu" style="margin-top:3px;white-space:nowrap">chèn bước</p>
+    </div>
+
+    <!-- CỤM 3D -->
+    <div class="cum" style="position:absolute;left:710px;top:126px;width:250px;height:180px">
+      <div class="kinh" style="width:100%;height:100%">
+        <div class="cua-dau" style="cursor:grab">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t4)" stroke-width="2"><path d="M3 9h18M3 15h18"/></svg>
+          <div style="flex:1;min-width:0"><div class="cua-ten">Khối 3D</div><div class="cua-mo-ta">Dựng khối: công thức, vật liệu</div></div>
+        </div>
+        <div class="cua-ruot"><div class="cot-phai"><div class="o-anh" style="flex:1"></div></div></div>
+        <div class="cua-chan"><span class="dinh-nghia cho"><span class="cham" style="background:var(--p-mask)"></span>Ảnh · Khối đã dựng · chờ chạy</span></div>
+      </div>
+      <aside class="kinh nho ve-tinh" style="right:calc(100% + 8px);top:0">
+        <div class="ve-tinh-dau">Khung nhìn</div>
+        <div class="ve-tinh-than"><button class="lenh" type="button">Tiêu cự ống kính</button><button class="lenh" type="button">Chỉnh đứng 2 điểm tụ</button></div>
+      </aside>
+      <aside class="kinh nho ve-tinh" style="left:calc(100% + 8px);top:0">
+        <div class="ve-tinh-dau">Công thức khối</div>
+        <div class="ve-tinh-than"><button class="lenh" type="button">Extrude</button><button class="lenh" type="button">Mirror</button><button class="lenh" type="button">Array</button></div>
+      </aside>
+      <span class="cong vao" style="top:88px;background:var(--p-img);left:-5px"></span>
+    </div>
+  </div>
+
+  <div class="ghi-chu">
+    Chỉ được bằng ngón tay: <b>ở ngoài</b> là thanh chung — 5 lệnh, giống hệt nhau dù đang làm ảnh
+    hay làm khối. <b>Ở trong</b> là vệ tinh — “Thêm lớp / Gộp lớp” chỉ có ở cụm Ảnh, “Extrude /
+    Mirror / Array” chỉ có ở cụm 3D. Hai bộ không giao nhau một lệnh nào, và ranh giới đó có
+    <b>test canh bằng máy</b> (<code>lenhDamChan()</code> phải luôn trả rỗng).
+  </div>
+</section>
+
+<!-- ═══ ④ BẢNG RANH GIỚI ════════════════════════════════════════════════════════════ -->
+<section>
+  <div class="muc-dau"><span class="so">4</span><div>
+    <h2>Cái gì ở thanh chung · cái gì ở trong cửa sổ</h2>
+  </div></div>
+  <div class="cuon"><table>
+    <thead><tr><th style="width:130px"></th><th>Thanh chung — ngoài</th><th>Trong cửa sổ — vệ tinh</th></tr></thead>
+    <tbody>
+      <tr><td class="rat-phu">Giải bài gì</td><td class="chung">Mỗi công cụ một phím tắt, ai mà nhớ</td><td class="trong">Phải đúng Photoshop, đúng D5, đúng Blender</td></tr>
+      <tr><td class="rat-phu">Giá trị</td><td class="chung">Quen tay</td><td class="trong">Đúng nghề</td></tr>
+      <tr><td class="rat-phu">Số lượng</td><td class="chung">Ít · ổn định · mọi nơi giống nhau</td><td class="trong">Nhiều · sâu · chỉ đúng một môi trường</td></tr>
+      <tr><td class="rat-phu">Ví dụ</td><td class="chung">Chọn · Hoàn tác · Làm lại · Xoá · Nhìn vừa khung</td><td class="trong">Thêm lớp · Đường cong · Cắt cảnh · Extrude · Gán vật liệu</td></tr>
+      <tr><td class="rat-phu">Đổi theo chặng</td><td class="chung">Không bao giờ</td><td class="trong">Đổi — vì mở cửa sổ khác thì có tool khác</td></tr>
+    </tbody>
+  </table></div>
+  <div class="ghi-chu">
+    Hệ quả: <b>chặng thôi là thứ quyết định giao diện.</b> 2D · 3D · Trình chiếu khác nhau ở chỗ
+    <b>mở cửa sổ nào</b>, không phải ở chỗ đổi cả bộ vỏ.
+  </div>
+</section>
+
+<!-- ═══ ⑤ CỬA SỔ KHÔNG CÓ CỔNG RA ═══════════════════════════════════════════════════ -->
+<section>
+  <div class="muc-dau"><span class="so">5</span><div>
+    <h2>Không phải cửa sổ nào cũng đẻ ra sản phẩm</h2>
+    <p class="phu">
+      Cửa sổ <b>thảo luận</b> (moodboard · khung tư duy) là mặt để <b>nghĩ</b>, không phải trạm để
+      <b>sản xuất</b>. Đầu ra thật là một <b>quyết định</b>, không phải một tệp ⇒ <b>không có cổng ra</b>,
+      và chân cửa sổ không bịa ra dòng “chưa có kết quả” để lấp chỗ.
+    </p>
+  </div></div>
+
+  <div class="canvas" style="height:220px">
+    <div class="cum" style="position:absolute;left:220px;top:26px;width:250px;height:160px">
+      <div class="kinh" style="width:100%;height:100%">
+        <div class="cua-dau" style="cursor:grab">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t4)" stroke-width="2"><path d="M3 9h18M3 15h18"/></svg>
+          <div style="flex:1;min-width:0"><div class="cua-ten">Bàn bạc</div><div class="cua-mo-ta">Concept: moodboard, khung tư duy</div></div>
+        </div>
+        <div class="cua-ruot"><div class="cot-phai">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+            <div class="o-anh" style="height:40px"></div><div class="o-anh" style="height:40px"></div><div class="o-anh" style="height:40px"></div>
+          </div>
+          <div class="hang"></div>
+        </div></div>
+        <!-- KHÔNG có .cua-chan: không cổng ra thì không có dải định nghĩa -->
+      </div>
+      <aside class="kinh nho ve-tinh" style="right:calc(100% + 8px);top:0">
+        <div class="ve-tinh-dau">Khung tư duy</div>
+        <div class="ve-tinh-than"><button class="lenh" type="button">Chọn khung mẫu</button><button class="lenh" type="button">Gom nhóm ý</button></div>
+      </aside>
+      <aside class="kinh nho ve-tinh" style="left:calc(100% + 8px);top:0">
+        <div class="ve-tinh-dau">Chốt</div>
+        <div class="ve-tinh-than"><button class="lenh" type="button">Ghi quyết định</button></div>
+      </aside>
+    </div>
+    <p class="rat-phu" style="position:absolute;left:220px;top:192px">Không cổng ra — và đó là đúng, không phải thiếu sót</p>
+  </div>
+</section>
+
+<script>
+function datTheme(t, nut) {
+  document.documentElement.setAttribute('data-theme', t);
+  for (const b of nut.parentElement.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b === nut));
+}
+</script>
+</body>
+</html>

@@ -35,7 +35,6 @@ import { ProjectSelect } from '@/components/ProjectSelect';
 import { LangToggle } from '@/components/LangToggle';
 import { useFlowStore } from '@/lib/store';
 import { useLang, useT } from '@/lib/i18n';
-import { timeOfDayNow } from '@/lib/home/time-of-day';
 import { buildGreeting } from '@/lib/home/greeting';
 import { shouldShowActivityGrid } from '@/lib/home/aggregate';
 import { pickWeeklyItem, pickWeeklyImages, isSeedLibraryAsset } from '@/lib/home/weekly-picks';
@@ -49,6 +48,7 @@ import NewsFeed, { newsHasSignal } from './widgets/NewsFeed';
 import UpcomingList, { upcomingHasSignal } from './widgets/UpcomingList';
 import WeeklyImage, { type WeeklyImageItem } from './widgets/WeeklyImage';
 import WeeklyMaterial, { type WeeklyMaterialItem } from './widgets/WeeklyMaterial';
+import SystemWallpaper from '@/components/wallpaper/SystemWallpaper';
 import type { HomeSummary } from './widgets/types';
 
 /** Pill kính nhỏ — cùng công thức nút đóng/mở của `VitalsPill.tsx` (button trạng thái đóng), tái
@@ -203,7 +203,8 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  const tod = timeOfDayNow();
+  // (`timeOfDayNow()` không còn gọi ở đây từ 16/08 — nền đã chuyển sang `SystemWallpaper`,
+  //  nó tự đọc giờ và tự hẹn nhịp. Ô B `LightClock` vẫn đọc giờ riêng của nó như cũ.)
   const greeting = buildGreeting({
     name: user?.name ?? null,
     now: new Date(),
@@ -444,10 +445,14 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
 
   return (
     <div className={isWide ? 'relative h-[100dvh] w-full overflow-hidden' : 'relative min-h-[100dvh] w-full overflow-y-auto'} data-dong-studio="">
-      {/* Nền toàn trang = ánh sáng theo giờ thật (giữ v2) nhưng MỜ/TRẦM (④.1 phiếu v3) — thẻ
-          bento nổi trên nền, nền không còn "là" nội dung như hero v2 nữa. */}
+      {/* NỀN — phiếu P-O (16/08). Trước đây: `--bg` đặc + gradient `tod.gradient` phủ mờ 0.16.
+          Nay là HÌNH NỀN HỆ THỐNG sinh bằng mã (`components/wallpaper/SystemWallpaper.tsx`):
+          năm bộ, đổi ánh sáng theo giờ, chậm dần rồi DỪNG HẲN khi vào.
+          ⚠️ Thi hành chốt A2 (16/08): nền để **NÉT**, KHÔNG bôi mờ — thứ làm chữ đọc được là
+          thẻ đủ đặc, không phải nền mờ. Lớp `--bg` giữ lại làm đáy (nền hệ thống có thể bị
+          tắt trong Cài đặt, lúc đó nó là nền trơn như trước). */}
       <div className="pointer-events-none absolute inset-0" style={{ background: 'var(--bg)' }} aria-hidden />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.16]" style={{ background: tod.gradient }} aria-hidden />
+      <SystemWallpaper />
 
       {/* v4 (13/08, phiếu home-bento-v4.md ④.4, lỗi #4 "VI/EN·(i) lơ lửng") — cụm góc-phải-trên
           DUY NHẤT của toàn trang Home: "Chi tiết" (dashboard tất cả dự án) + đổi ngôn ngữ +
@@ -470,7 +475,9 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
         <VitalsPill />
       </div>
 
-      <div className={isWide ? 'relative z-10 h-full w-full p-3' : 'relative z-10 w-full'}>
+      {/* Lề ngoài 20px (p-5, trước là p-3) — chốt A2 16/08: *"thẻ kính KHÔNG phủ kín màn —
+          chừa lề cho nền thở"*. Nền chỉ hiện ở lề + khe giữa thẻ; đó là chỗ nó sống. */}
+      <div className={isWide ? 'relative z-10 h-full w-full p-5' : 'relative z-10 w-full'}>
         {isWide ? (tier === 'mong' ? mongGrid : tier === 'vua' ? vuaGrid : bentoGrid) : stackedList}
       </div>
     </div>

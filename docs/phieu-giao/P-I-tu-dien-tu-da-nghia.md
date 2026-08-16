@@ -37,7 +37,7 @@ Chữ "icon" chắc chắn không phải chữ duy nhất bị thế. **Việc c
 |---|---|
 | `docs/00-CHOT.md` — **toàn bộ mục ngày 16/08** (~20 chốt, đọc hết, nhiều cái ĐÈ LÊN NHAU — luôn lấy **bản mới nhất**) | nguồn chính của các từ cần rà |
 | `scripts/soi-tu-dien.mjs` | cỗ máy phải mở rộng, xem nó khai từ điển kiểu gì |
-| `docs/nc/NC-NGUYEN-TAC-GIAO-DIEN-TOAN-APP-2026-08-14.md` (NT-1..18) + `docs/nc/NC-TRIET-LY-GIAO-DIEN-2026-08-14.md` (KB-1..5) | hiến pháp giao diện — nhiều từ được định nghĩa ở đây |
+| `docs/nc/NC-NGUYEN-TAC-GIAO-DIEN-TOAN-APP-2026-08-14.md` (NT-1..18) + `docs/nc/NC-TRIET-LY-GIAO-DIEN-2026-08-14.md` (KB-1..4) | hiến pháp giao diện — nhiều từ được định nghĩa ở đây |
 | `docs/mocks/mock-bo-nen-chung.html` | bộ nền dùng các từ này làm tên mục |
 | `scripts/frontier-registry.mjs` entry `may-soi-dong-dang` · `chong-lech-dinh-nghia` | họ máy soi |
 

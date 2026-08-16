@@ -1,0 +1,341 @@
+<!-- @dsCard group="Hình nền hệ thống" -->
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Năm bộ hình nền hệ thống — sinh bằng mã, ánh sáng theo giờ</title>
+<style>
+/* ============================================================
+   TOKEN — chép nguyên văn từ app/globals.css (luật ③: màu qua biến, cấm hex rời rạc
+   ngoài khối khai token này). --mat-* ĐÃ CHẾT → --nen-mo-*; đường kẻ mảnh = --vien-mo.
+   ============================================================ */
+:root, :root[data-theme='dark'] {
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --nen-mo-header:rgba(20,20,23,0.72); --nen-mo-panel:rgba(20,20,23,0.68);
+  --nen-mo-card:rgba(26,26,30,0.82); --nen-mo-overlay:rgba(6,6,8,0.56);
+  --vien-mo:rgba(255,255,255,0.06);
+  --accent:#6a57f5; --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --blur:22px; --blur-strong:40px;
+}
+:root[data-theme='light'] {
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --nen-mo-header:rgba(250,248,244,0.72); --nen-mo-panel:rgba(250,248,244,0.7);
+  --nen-mo-card:rgba(255,255,255,0.82); --nen-mo-overlay:rgba(60,55,48,0.28);
+  --vien-mo:rgba(0,0,0,0.05);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+}
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { max-width:100%; overflow-x:hidden; }
+body {
+  background:var(--bg); color:var(--t1);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,'Helvetica Neue',Arial,sans-serif;
+  font-size:13px; line-height:1.55; padding:22px 26px 56px;
+}
+.wrap { max-width:1388px; margin:0 auto; }
+h1 { font-size:19px; font-weight:600; letter-spacing:-0.01em; }
+h2 { font-size:14px; font-weight:600; margin:26px 0 4px; }
+.sub { color:var(--t3); font-size:12px; max-width:96ch; }
+.mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+
+/* ---------- thanh điều khiển ---------- */
+.bar {
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  margin:14px 0 4px; padding:9px 11px;
+  border:1px solid var(--border); border-radius:var(--r-3); background:var(--panel);
+}
+.bar .lbl { font-size:11px; color:var(--t3); text-transform:uppercase; letter-spacing:.09em; }
+button.tg {
+  border:1px solid var(--border); background:transparent; color:var(--t3);
+  border-radius:var(--r-2); padding:5px 11px; font-size:12px; cursor:pointer;
+  font-family:inherit;
+}
+button.tg[aria-pressed='true'] { border-color:var(--accent); color:var(--accent); }
+.sep { width:1px; height:20px; background:var(--vien-mo); }
+
+/* ---------- lưới 5 bộ × 4 thời điểm ---------- */
+.grid { display:grid; grid-template-columns:132px repeat(4, 1fr); gap:9px; margin-top:10px; }
+.head { font-size:11px; color:var(--t3); text-transform:uppercase; letter-spacing:.09em;
+        display:flex; align-items:flex-end; padding-bottom:3px; }
+.rowname { font-size:12px; color:var(--t2); display:flex; flex-direction:column; justify-content:center; gap:2px; }
+.rowname em { font-style:normal; font-size:11px; color:var(--t3); line-height:1.4; }
+.tile {
+  position:relative; height:104px; border-radius:var(--r-2);
+  border:1px solid var(--border); overflow:hidden;
+}
+/* pill kính đè lên nền — ĐÂY là chỗ tương phản phụ thuộc hình nền */
+.pill {
+  position:absolute; left:7px; bottom:7px;
+  display:inline-flex; align-items:center; gap:6px;
+  padding:3px 8px; border-radius:var(--r-full);
+  border:1px solid var(--vien-mo);
+  background:var(--nen-mo-header);
+  backdrop-filter:saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));
+  font-size:10.5px; color:var(--t3);
+}
+.pill b { color:var(--t1); font-weight:600; }
+.ratio { position:absolute; right:7px; top:7px; font-size:10px; padding:2px 6px;
+         border-radius:var(--r-1); background:var(--nen-mo-header); color:var(--t3);
+         backdrop-filter:blur(var(--blur)); -webkit-backdrop-filter:blur(var(--blur)); }
+.ratio.bad { color:var(--danger); }
+
+/* ---------- ô lớn: dashboard thật ---------- */
+.stage {
+  position:relative; margin-top:10px; height:470px; overflow:hidden;
+  border:1px solid var(--border); border-radius:var(--r-3);
+}
+.stage .bgl { position:absolute; inset:0; }
+.stage .inner {
+  position:relative; height:100%; padding:20px;      /* p-5 — chừa lề cho nền THỞ */
+  display:grid; grid-template-columns:repeat(12,minmax(0,1fr));
+  grid-template-rows:repeat(3,minmax(0,1fr)); gap:12px;
+}
+/* thẻ số liệu: RUỘT ĐẶC (luật B1 "kính là VỎ, ruột ĐẶC") ⇒ tương phản là hằng số */
+.wcard {
+  background:var(--card); border:1px solid var(--border); border-radius:var(--r-3);
+  padding:11px 13px; overflow:hidden;
+}
+.wcard .idx { font-size:10px; color:var(--t5); letter-spacing:.09em; }
+.wcard .ttl { font-size:13px; font-weight:600; color:var(--t1); margin-top:2px; }
+.wcard .sml { font-size:11.5px; color:var(--t3); margin-top:3px; }
+.wcard .big { font-size:22px; font-weight:600; color:var(--t1); margin-top:6px;
+              font-variant-numeric:tabular-nums; }
+/* cụm kính góc phải trên — VỎ, đúng chỗ kính được phép */
+.corner { position:absolute; right:18px; top:18px; display:flex; gap:7px; z-index:5; }
+.gpill {
+  display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 11px;
+  border-radius:var(--r-full); border:1px solid var(--vien-mo);
+  background:var(--nen-mo-header); color:var(--t3); font-size:11.5px;
+  backdrop-filter:saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));
+}
+
+/* ---------- CHẬM DẦN RỒI DỪNG HẲN ---------- */
+.settling { transform:scale(1.045) translate3d(0,8px,0); will-change:transform; }
+.settled  { transform:none; transition:transform 2400ms cubic-bezier(.16,1,.3,1); }
+.stopped  { transform:none; transition:none; animation:none; will-change:auto; }
+@media (prefers-reduced-motion: reduce) {
+  .settled { transition:none; }
+}
+
+/* ---------- bảng số ---------- */
+table { border-collapse:collapse; width:100%; margin-top:8px; font-size:11.5px; }
+th, td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--vien-mo); }
+th { color:var(--t3); font-weight:500; font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; }
+td.num { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-variant-numeric:tabular-nums; }
+td.fail { color:var(--danger); font-weight:600; }
+.note { border-left:2px solid var(--warning); padding:7px 11px; margin-top:12px;
+        background:var(--panel); border-radius:0 var(--r-2) var(--r-2) 0;
+        font-size:11.5px; color:var(--t2); }
+.note b { color:var(--t1); }
+.tag { display:inline-block; font-size:11px; padding:1px 6px; border-radius:var(--r-1);
+       border:1px solid var(--border); color:var(--t3); margin-left:6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Năm bộ hình nền hệ thống</h1>
+<p class="sub">
+  Sinh bằng <b>mã</b>, không tệp ảnh nào — 0 byte thêm vào bộ cài, mọi độ phân giải, chạy offline,
+  và <b>không có đường nào để ảnh dự án của một studio lọt vào</b>. Ánh sáng đổi theo giờ như hình nền
+  động của macOS (đổi ánh sáng của <em>cùng một cảnh</em>, không phải video chạy vòng).
+  Mọi ô dưới đây vẽ bằng <span class="mono">lib/wallpaper/css.ts · nenCss()</span> — <b>cùng một hàm mà app dùng</b>,
+  nên bản vẽ và code không có đường nào phân kỳ.
+</p>
+
+<div class="bar">
+  <span class="lbl">Xem</span>
+  <button class="tg" id="btnTheme" aria-pressed="false">Theme: Tối</button>
+  <span class="sep"></span>
+  <span class="lbl">Chuyển động</span>
+  <button class="tg" id="btnReplay">Chạy lại hiệu ứng vào</button>
+  <button class="tg" id="btnReduce" aria-pressed="false">Giảm chuyển động</button>
+  <span class="mono" id="motionState" style="font-size:11px;color:var(--t3)">data-wp-motion = —</span>
+  <span class="sep"></span>
+  <span class="lbl">Nấc giảm chói</span>
+  <button class="tg nac" data-nac="0" aria-pressed="true">Kính như thường</button>
+  <button class="tg nac" data-nac="1" aria-pressed="false">Giảm chói</button>
+  <button class="tg nac" data-nac="2" aria-pressed="false">Tắt kính</button>
+</div>
+
+<h2>Lưới 5 bộ × 4 thời điểm <span class="tag">quét một mắt</span></h2>
+<p class="sub">Số ở góc phải mỗi ô là tương phản <b>tại chân chữ</b> của bậc chữ mờ nhất (<span class="mono">--t3</span>)
+  trên <b>pill kính</b> — bề mặt duy nhất mà nền thật sự lọt vào. Đỏ = dưới 4.5.</p>
+<div class="grid" id="grid"></div>
+
+<h2>Dashboard thật, thẻ đè lên nền <span class="tag">nền để NÉT, không bôi mờ</span></h2>
+<p class="sub">
+  Thi hành chốt A2 (16/08): nền <b>sắc nét</b>; thứ làm chữ đọc được là <b>thẻ đủ đặc</b>, không phải nền mờ.
+  Thẻ số liệu là <b>ruột ĐẶC</b> (luật B1 “kính là VỎ, ruột ĐẶC”) ⇒ tương phản trong thẻ là hằng số, không đổi theo bộ.
+  Kính chỉ dùng ở cụm góc phải trên — chỗ <b>ít chữ</b>. Lề ngoài 20px để nền <b>thở</b>.
+</p>
+<div class="stage">
+  <div class="bgl" id="stageBg"></div>
+  <div class="corner">
+    <span class="gpill">Chi tiết</span>
+    <span class="gpill">VI / EN</span>
+    <span class="gpill">Vitals</span>
+  </div>
+  <div class="inner">
+    <div class="wcard" style="grid-column:1/8;grid-row:1/3">
+      <span class="idx mono">01</span><div class="ttl">Dự án</div>
+      <div class="sml">Bốn dự án đang mở · hai chờ duyệt vật liệu</div>
+      <div class="big">4</div>
+    </div>
+    <div class="wcard" style="grid-column:8/11;grid-row:1/2">
+      <span class="idx mono">02</span><div class="ttl">Chào buổi chiều</div>
+      <div class="sml" id="todLine">Ánh sáng chiều ấm · 3200K</div>
+    </div>
+    <div class="wcard" style="grid-column:11/13;grid-row:1/2">
+      <span class="idx mono">03</span><div class="ttl">Hôm nay</div>
+      <div class="big">7</div><div class="sml">việc đã xong</div>
+    </div>
+    <div class="wcard" style="grid-column:8/13;grid-row:2/3">
+      <span class="idx mono">04</span><div class="ttl">Ảnh đẹp tuần này</div>
+      <div class="sml">Chưa có ảnh mới — widget trống sẽ tự ẩn trong app thật</div>
+    </div>
+    <div class="wcard" style="grid-column:1/4;grid-row:3/4">
+      <span class="idx mono">05</span><div class="ttl">Biểu đồ chặng</div>
+      <div class="sml">2D 40% · 3D 35% · Trình bày 25%</div>
+    </div>
+    <div class="wcard" style="grid-column:4/8;grid-row:3/4">
+      <span class="idx mono">06</span><div class="ttl">Ghi chú nhanh</div>
+      <div class="sml">Kéo ghi chú thả vào một dự án để gắn ngữ cảnh</div>
+    </div>
+    <div class="wcard" style="grid-column:8/13;grid-row:3/4">
+      <span class="idx mono">07</span><div class="ttl">Mốc sắp tới</div>
+      <div class="sml">Bàn giao hồ sơ kỹ thuật · còn 6 ngày</div>
+    </div>
+  </div>
+</div>
+
+<h2>Bảng tương phản tại chân chữ — pill kính, mọi tổ hợp</h2>
+<p class="sub">Đo <b>ca xấu nhất</b> (chặng màu cực trị của bảng), không lấy trung bình. Ngưỡng 4.5 (WCAG AA).</p>
+<table id="tbl"></table>
+
+<div class="note" id="canhBao"></div>
+
+</div>
+
+<script>
+const DATA = {"sets": [{"id": "chan-troi", "ten": ["Chân trời", "Horizon"], "cau": ["Bầu trời một ngày — quầng sáng chạy dọc chân trời theo đúng vị trí mặt trời.", "A sky through one day — the glow tracks the real position of the sun."], "layer": "horizon", "hue": 215, "sat": 0.11, "spread": 1}, {"id": "o-cua", "ten": ["Ô cửa", "Aperture"], "cau": ["Nắng lọt qua ô cửa — góc vệt sáng nghiêng theo giờ trong ngày.", "Daylight through an opening — the shaft tilts with the hour."], "layer": "aperture", "hue": 232, "sat": 0.07, "spread": 0.92}, {"id": "binh-do", "ten": ["Bình độ", "Contours"], "cau": ["Bản vẽ — chỉ có nét, ánh sáng làm nét lộ ra hay chìm đi.", "A drawing — only lines; light decides which ones surface."], "layer": "contour", "hue": 205, "sat": 0.05, "spread": 0.42}, {"id": "tang-sau", "ten": ["Tầng sâu", "Strata"], "cau": ["Chiều sâu khí quyển — các lớp lùi dần, sương dày lên về đêm.", "Atmospheric depth — planes recede, haze thickens toward night."], "layer": "strata", "hue": 248, "sat": 0.09, "spread": 0.74}, {"id": "mat-phang", "ten": ["Mặt phẳng", "Plane"], "cau": ["Một tấm vật liệu — ánh sáng liếm qua mép, hạt mịn nổi lên.", "A single material surface — light grazes the edge, grain rises."], "layer": "plane", "hue": 222, "sat": 0.035, "spread": 0.34}], "css": {"chan-troi|dawn|dark": "radial-gradient(64% 42% at 8.0% 79.0%, rgba(60,64,72,0.850) 0%, rgba(45,48,55,0.320) 46%, transparent 74%),linear-gradient(180deg, rgb(16,17,20) 0%, rgb(30,32,38) 46%, rgb(45,48,55) 78%, rgb(60,64,72) 100%)", "chan-troi|dawn|light": "radial-gradient(64% 42% at 8.0% 79.0%, rgba(246,246,247,0.850) 0%, rgba(238,239,242,0.320) 46%, transparent 74%),linear-gradient(180deg, rgb(224,226,231) 0%, rgb(231,233,236) 46%, rgb(238,239,242) 78%, rgb(246,246,247) 100%)", "chan-troi|day|dark": "radial-gradient(64% 42% at 50.0% 58.0%, rgba(82,86,91,0.850) 0%, rgba(62,65,69,0.320) 46%, transparent 74%),linear-gradient(180deg, rgb(21,23,25) 0%, rgb(41,44,47) 46%, rgb(62,65,69) 78%, rgb(82,86,91) 100%)", "chan-troi|day|light": "radial-gradient(64% 42% at 50.0% 58.0%, rgba(254,254,255,0.850) 0%, rgba(248,249,249,0.320) 46%, transparent 74%),linear-gradient(180deg, rgb(236,237,238) 0%, rgb(242,243,244) 46%, rgb(248,249,249) 78%, rgb(254,254,255) 100%)", "chan-troi|dusk|dark": "radial-gradient(64% 42% at 89.3% 76.8%, rgba(51,57,61,0.850) 0%, rgba(38,43,47,0.320) 46%, transparent 74%),linear-gradient(180deg, rgb(13,16,17) 0%, rgb(26,29,32) 46%, rgb(38,43,47) 78%, rgb(51,57,61) 100%)", "chan-troi|dusk|light": "radial-gradient(64% 42% at 89.3% 76.8%, rgba(241,242,243,0.850) 0%, rgba(234,236,238,0.320) 46%, transparent 74%),linear-gradient(180deg, rgb(219,224,227) 0%, rgb(227,230,232) 46%, rgb(234,236,238) 78%, rgb(241,242,243) 100%)", "chan-troi|night|dark": "linear-gradient(180deg, rgb(11,13,14) 0%, rgb(21,23,25) 46%, rgb(30,33,36) 78%, rgb(40,43,47) 100%)", "chan-troi|night|light": "linear-gradient(180deg, rgb(216,220,223) 0%, rgb(223,226,229) 46%, rgb(230,232,234) 78%, rgb(237,238,240) 100%)", "o-cua|dawn|dark": "linear-gradient(123.4deg, transparent 0%, transparent 28%, rgba(61,61,68,0.550) 42%, rgba(61,61,68,0.620) 52%, transparent 68%, transparent 100%),linear-gradient(123.4deg, transparent 0%, transparent 58%, rgba(46,46,53,0.340) 72%, transparent 88%),linear-gradient(150deg, rgb(32,32,37) 0%, rgb(18,18,21) 55%, rgb(32,32,37) 100%)", "o-cua|dawn|light": "linear-gradient(123.4deg, transparent 0%, transparent 28%, rgba(245,245,246,0.550) 42%, rgba(245,245,246,0.620) 52%, transparent 68%, transparent 100%),linear-gradient(123.4deg, transparent 0%, transparent 58%, rgba(239,239,241,0.340) 72%, transparent 88%),linear-gradient(150deg, rgb(232,232,236) 0%, rgb(226,226,230) 55%, rgb(232,232,236) 100%)", "o-cua|day|dark": "linear-gradient(152.0deg, transparent 0%, transparent 28%, rgba(81,82,87,0.550) 42%, rgba(81,82,87,0.620) 52%, transparent 68%, transparent 100%),linear-gradient(152.0deg, transparent 0%, transparent 58%, rgba(62,63,67,0.340) 72%, transparent 88%),linear-gradient(150deg, rgb(43,44,47) 0%, rgb(24,25,27) 55%, rgb(43,44,47) 100%)", "o-cua|day|light": "linear-gradient(152.0deg, transparent 0%, transparent 28%, rgba(254,254,254,0.550) 42%, rgba(254,254,254,0.620) 52%, transparent 68%, transparent 100%),linear-gradient(152.0deg, transparent 0%, transparent 58%, rgba(248,248,249,0.340) 72%, transparent 88%),linear-gradient(150deg, rgb(243,243,244) 0%, rgb(237,237,239) 55%, rgb(243,243,244) 100%)", "o-cua|dusk|dark": "linear-gradient(178.7deg, transparent 0%, transparent 28%, rgba(51,53,58,0.550) 42%, rgba(51,53,58,0.620) 52%, transparent 68%, transparent 100%),linear-gradient(178.7deg, transparent 0%, transparent 58%, rgba(39,41,45,0.340) 72%, transparent 88%),linear-gradient(150deg, rgb(27,29,31) 0%, rgb(16,16,18) 55%, rgb(27,29,31) 100%)", "o-cua|dusk|light": "linear-gradient(178.7deg, transparent 0%, transparent 28%, rgba(241,241,242,0.550) 42%, rgba(241,241,242,0.620) 52%, transparent 68%, transparent 100%),linear-gradient(178.7deg, transparent 0%, transparent 58%, rgba(234,235,237,0.340) 72%, transparent 88%),linear-gradient(150deg, rgb(228,229,231) 0%, rgb(221,223,226) 55%, rgb(228,229,231) 100%)", "o-cua|night|dark": "radial-gradient(72% 46% at 50% 108%, rgba(40,41,44,0.500) 0%, transparent 68%),linear-gradient(168deg, rgb(13,13,15) 0%, rgb(22,23,25) 60%, rgb(13,13,15) 100%)", "o-cua|night|light": "radial-gradient(72% 46% at 50% 108%, rgba(237,237,239,0.500) 0%, transparent 68%),linear-gradient(168deg, rgb(218,219,223) 0%, rgb(225,225,228) 60%, rgb(218,219,223) 100%)", "binh-do|dawn|dark": "repeating-linear-gradient(96deg, rgba(50,52,54,0.500) 0px, rgba(50,52,54,0.500) 1px, transparent 1px, transparent 34px),repeating-linear-gradient(6deg, rgba(43,45,48,0.260) 0px, rgba(43,45,48,0.260) 1px, transparent 1px, transparent 96px),radial-gradient(78% 62% at 8.0% 34%, rgba(43,45,48,0.420) 0%, transparent 72%),linear-gradient(160deg, rgb(37,38,41) 0%, rgb(30,32,34) 100%)", "binh-do|dawn|light": "repeating-linear-gradient(96deg, rgba(240,241,241,0.500) 0px, rgba(240,241,241,0.500) 1px, transparent 1px, transparent 34px),repeating-linear-gradient(6deg, rgba(237,238,239,0.260) 0px, rgba(237,238,239,0.260) 1px, transparent 1px, transparent 96px),radial-gradient(78% 62% at 8.0% 34%, rgba(237,238,239,0.420) 0%, transparent 72%),linear-gradient(160deg, rgb(235,235,237) 0%, rgb(232,233,234) 100%)", "binh-do|day|dark": "repeating-linear-gradient(96deg, rgba(67,68,70,0.500) 0px, rgba(67,68,70,0.500) 1px, transparent 1px, transparent 34px),repeating-linear-gradient(6deg, rgba(58,60,61,0.260) 0px, rgba(58,60,61,0.260) 1px, transparent 1px, transparent 96px),radial-gradient(78% 62% at 50.0% 34%, rgba(58,60,61,0.420) 0%, transparent 72%),linear-gradient(160deg, rgb(49,51,52) 0%, rgb(40,42,43) 100%)", "binh-do|day|light": "repeating-linear-gradient(96deg, rgba(249,249,250,0.500) 0px, rgba(249,249,250,0.500) 1px, transparent 1px, transparent 34px),repeating-linear-gradient(6deg, rgba(247,247,247,0.260) 0px, rgba(247,247,247,0.260) 1px, transparent 1px, transparent 96px),radial-gradient(78% 62% at 50.0% 34%, rgba(247,247,247,0.420) 0%, transparent 72%),linear-gradient(160deg, rgb(244,245,245) 0%, rgb(242,242,243) 100%)", "binh-do|dusk|dark": "repeating-linear-gradient(96deg, rgba(42,45,46,0.500) 0px, rgba(42,45,46,0.500) 1px, transparent 1px, transparent 34px),repeating-linear-gradient(6deg, rgba(37,39,40,0.260) 0px, rgba(37,39,40,0.260) 1px, transparent 1px, transparent 96px),radial-gradient(78% 62% at 89.3% 34%, rgba(37,39,40,0.420) 0%, transparent 72%),linear-gradient(160deg, rgb(31,34,34) 0%, rgb(26,28,29) 100%)", "binh-do|dusk|light": "repeating-linear-gradient(96deg, rgba(236,237,237,0.500) 0px, rgba(236,237,237,0.500) 1px, transparent 1px, transparent 34px),repeating-linear-gradient(6deg, rgba(233,234,235,0.260) 0px, rgba(233,234,235,0.260) 1px, transparent 1px, transparent 96px),radial-gradient(78% 62% at 89.3% 34%, rgba(233,234,235,0.420) 0%, transparent 72%),linear-gradient(160deg, rgb(230,232,232) 0%, rgb(227,229,230) 100%)", "binh-do|night|dark": "repeating-linear-gradient(96deg, rgba(33,35,36,0.500) 0px, rgba(33,35,36,0.500) 1px, transparent 1px, transparent 34px),repeating-linear-gradient(6deg, rgba(29,31,31,0.260) 0px, rgba(29,31,31,0.260) 1px, transparent 1px, transparent 96px),radial-gradient(78% 62% at 100.0% 34%, rgba(29,31,31,0.420) 0%, transparent 72%),linear-gradient(160deg, rgb(25,26,27) 0%, rgb(21,22,23) 100%)", "binh-do|night|light": "repeating-linear-gradient(96deg, rgba(232,233,234,0.500) 0px, rgba(232,233,234,0.500) 1px, transparent 1px, transparent 34px),repeating-linear-gradient(6deg, rgba(229,231,231,0.260) 0px, rgba(229,231,231,0.260) 1px, transparent 1px, transparent 96px),radial-gradient(78% 62% at 100.0% 34%, rgba(229,231,231,0.420) 0%, transparent 72%),linear-gradient(160deg, rgb(227,228,229) 0%, rgb(224,226,227) 100%)", "tang-sau|dawn|dark": "linear-gradient(178deg, transparent 0%, transparent 52%, rgba(23,22,27,0.900) 52.4%, rgba(23,22,27,0.900) 100%),linear-gradient(174deg, transparent 0%, transparent 38%, rgba(35,33,40,0.820) 38.4%, rgba(35,33,40,0.820) 100%),linear-gradient(182deg, transparent 0%, transparent 26%, rgba(46,44,52,0.700) 26.4%, rgba(46,44,52,0.700) 100%),radial-gradient(90% 54% at 8.0% 16%, rgba(58,55,65,0.800) 0%, transparent 70%),linear-gradient(180deg, rgb(46,44,52) 0%, rgb(35,33,40) 100%)", "tang-sau|dawn|light": "linear-gradient(178deg, transparent 0%, transparent 52%, rgba(229,227,233,0.900) 52.4%, rgba(229,227,233,0.900) 100%),linear-gradient(174deg, transparent 0%, transparent 38%, rgba(234,233,236,0.820) 38.4%, rgba(234,233,236,0.820) 100%),linear-gradient(182deg, transparent 0%, transparent 26%, rgba(239,238,241,0.700) 26.4%, rgba(239,238,241,0.700) 100%),radial-gradient(90% 54% at 8.0% 16%, rgba(243,243,245,0.800) 0%, transparent 70%),linear-gradient(180deg, rgb(239,238,241) 0%, rgb(234,233,236) 100%)", "tang-sau|day|dark": "linear-gradient(178deg, transparent 0%, transparent 52%, rgba(30,29,33,0.900) 52.4%, rgba(30,29,33,0.900) 100%),linear-gradient(174deg, transparent 0%, transparent 38%, rgba(45,45,49,0.820) 38.4%, rgba(45,45,49,0.820) 100%),linear-gradient(182deg, transparent 0%, transparent 26%, rgba(61,60,66,0.700) 26.4%, rgba(61,60,66,0.700) 100%),radial-gradient(90% 54% at 50.0% 16%, rgba(76,75,82,0.800) 0%, transparent 70%),linear-gradient(180deg, rgb(61,60,66) 0%, rgb(45,45,49) 100%)", "tang-sau|day|light": "linear-gradient(178deg, transparent 0%, transparent 52%, rgba(239,239,240,0.900) 52.4%, rgba(239,239,240,0.900) 100%),linear-gradient(174deg, transparent 0%, transparent 38%, rgba(243,243,244,0.820) 38.4%, rgba(243,243,244,0.820) 100%),linear-gradient(182deg, transparent 0%, transparent 26%, rgba(248,248,248,0.700) 26.4%, rgba(248,248,248,0.700) 100%),radial-gradient(90% 54% at 50.0% 16%, rgba(252,252,252,0.800) 0%, transparent 70%),linear-gradient(180deg, rgb(248,248,248) 0%, rgb(243,243,244) 100%)", "tang-sau|dusk|dark": "linear-gradient(178deg, transparent 0%, transparent 52%, rgba(19,19,23,0.900) 52.4%, rgba(19,19,23,0.900) 100%),linear-gradient(174deg, transparent 0%, transparent 38%, rgba(28,28,33,0.820) 38.4%, rgba(28,28,33,0.820) 100%),linear-gradient(182deg, transparent 0%, transparent 26%, rgba(37,38,44,0.700) 26.4%, rgba(37,38,44,0.700) 100%),radial-gradient(90% 54% at 89.3% 16%, rgba(47,47,54,0.800) 0%, transparent 70%),linear-gradient(180deg, rgb(37,38,44) 0%, rgb(28,28,33) 100%)", "tang-sau|dusk|light": "linear-gradient(178deg, transparent 0%, transparent 52%, rgba(222,223,228,0.900) 52.4%, rgba(222,223,228,0.900) 100%),linear-gradient(174deg, transparent 0%, transparent 38%, rgba(228,228,232,0.820) 38.4%, rgba(228,228,232,0.820) 100%),linear-gradient(182deg, transparent 0%, transparent 26%, rgba(233,233,237,0.700) 26.4%, rgba(233,233,237,0.700) 100%),radial-gradient(90% 54% at 89.3% 16%, rgba(239,239,241,0.800) 0%, transparent 70%),linear-gradient(180deg, rgb(233,233,237) 0%, rgb(228,228,232) 100%)", "tang-sau|night|dark": "linear-gradient(0deg, rgba(23,22,26,0.340) 0%, rgba(23,22,26,0.340) 100%),linear-gradient(178deg, transparent 0%, transparent 52%, rgba(15,15,18,0.900) 52.4%, rgba(15,15,18,0.900) 100%),linear-gradient(174deg, transparent 0%, transparent 38%, rgba(23,22,26,0.820) 38.4%, rgba(23,22,26,0.820) 100%),linear-gradient(182deg, transparent 0%, transparent 26%, rgba(30,30,34,0.700) 26.4%, rgba(30,30,34,0.700) 100%),radial-gradient(90% 54% at 100.0% 16%, rgba(37,37,42,0.800) 0%, transparent 70%),linear-gradient(180deg, rgb(30,30,34) 0%, rgb(23,22,26) 100%)", "tang-sau|night|light": "linear-gradient(0deg, rgba(225,225,229,0.340) 0%, rgba(225,225,229,0.340) 100%),linear-gradient(178deg, transparent 0%, transparent 52%, rgba(220,220,225,0.900) 52.4%, rgba(220,220,225,0.900) 100%),linear-gradient(174deg, transparent 0%, transparent 38%, rgba(225,225,229,0.820) 38.4%, rgba(225,225,229,0.820) 100%),linear-gradient(182deg, transparent 0%, transparent 26%, rgba(230,230,233,0.700) 26.4%, rgba(230,230,233,0.700) 100%),radial-gradient(90% 54% at 100.0% 16%, rgba(235,235,237,0.800) 0%, transparent 70%),linear-gradient(180deg, rgb(230,230,233) 0%, rgb(225,225,229) 100%)", "mat-phang|dawn|dark": "repeating-linear-gradient(0deg, rgba(49,49,52,0.050) 0px, rgba(49,49,52,0.050) 1px, transparent 1px, transparent 3px),repeating-linear-gradient(90deg, rgba(32,33,35,0.050) 0px, rgba(32,33,35,0.050) 1px, transparent 1px, transparent 4px),linear-gradient(100.8deg, rgba(49,49,52,0.600) 0%, transparent 34%),linear-gradient(158deg, rgb(43,44,46) 0%, rgb(38,38,41) 48%, rgb(32,33,35) 100%)", "mat-phang|dawn|light": "repeating-linear-gradient(0deg, rgba(240,240,241,0.050) 0px, rgba(240,240,241,0.050) 1px, transparent 1px, transparent 3px),repeating-linear-gradient(90deg, rgba(233,233,235,0.050) 0px, rgba(233,233,235,0.050) 1px, transparent 1px, transparent 4px),linear-gradient(100.8deg, rgba(240,240,241,0.600) 0%, transparent 34%),linear-gradient(158deg, rgb(237,238,239) 0%, rgb(235,235,237) 48%, rgb(233,233,235) 100%)", "mat-phang|day|dark": "repeating-linear-gradient(0deg, rgba(65,65,67,0.050) 0px, rgba(65,65,67,0.050) 1px, transparent 1px, transparent 3px),repeating-linear-gradient(90deg, rgba(43,44,45,0.050) 0px, rgba(43,44,45,0.050) 1px, transparent 1px, transparent 4px),linear-gradient(126.0deg, rgba(65,65,67,0.600) 0%, transparent 34%),linear-gradient(158deg, rgb(57,58,60) 0%, rgb(50,51,52) 48%, rgb(43,44,45) 100%)", "mat-phang|day|light": "repeating-linear-gradient(0deg, rgba(249,249,249,0.050) 0px, rgba(249,249,249,0.050) 1px, transparent 1px, transparent 3px),repeating-linear-gradient(90deg, rgba(243,243,243,0.050) 0px, rgba(243,243,243,0.050) 1px, transparent 1px, transparent 4px),linear-gradient(126.0deg, rgba(249,249,249,0.600) 0%, transparent 34%),linear-gradient(158deg, rgb(247,247,247) 0%, rgb(245,245,245) 48%, rgb(243,243,243) 100%)", "mat-phang|dusk|dark": "repeating-linear-gradient(0deg, rgba(41,43,44,0.050) 0px, rgba(41,43,44,0.050) 1px, transparent 1px, transparent 3px),repeating-linear-gradient(90deg, rgba(28,29,30,0.050) 0px, rgba(28,29,30,0.050) 1px, transparent 1px, transparent 4px),linear-gradient(149.6deg, rgba(41,43,44,0.600) 0%, transparent 34%),linear-gradient(158deg, rgb(37,38,39) 0%, rgb(32,33,35) 48%, rgb(28,29,30) 100%)", "mat-phang|dusk|light": "repeating-linear-gradient(0deg, rgba(235,236,236,0.050) 0px, rgba(235,236,236,0.050) 1px, transparent 1px, transparent 3px),repeating-linear-gradient(90deg, rgba(228,229,230,0.050) 0px, rgba(228,229,230,0.050) 1px, transparent 1px, transparent 4px),linear-gradient(149.6deg, rgba(235,236,236,0.600) 0%, transparent 34%),linear-gradient(158deg, rgb(233,234,234) 0%, rgb(231,231,232) 48%, rgb(228,229,230) 100%)", "mat-phang|night|dark": "repeating-linear-gradient(0deg, rgba(32,33,34,0.050) 0px, rgba(32,33,34,0.050) 1px, transparent 1px, transparent 3px),repeating-linear-gradient(90deg, rgba(22,23,24,0.050) 0px, rgba(22,23,24,0.050) 1px, transparent 1px, transparent 4px),linear-gradient(4.0deg, rgba(32,33,34,0.600) 0%, transparent 34%),linear-gradient(158deg, rgb(29,30,31) 0%, rgb(26,26,27) 48%, rgb(22,23,24) 100%)", "mat-phang|night|light": "repeating-linear-gradient(0deg, rgba(232,232,233,0.050) 0px, rgba(232,232,233,0.050) 1px, transparent 1px, transparent 3px),repeating-linear-gradient(90deg, rgba(225,226,227,0.050) 0px, rgba(225,226,227,0.050) 1px, transparent 1px, transparent 4px),linear-gradient(4.0deg, rgba(232,232,233,0.600) 0%, transparent 34%),linear-gradient(158deg, rgb(230,230,231) 0%, rgb(227,228,229) 48%, rgb(225,226,227) 100%)"}, "ratio": {"chan-troi|dawn|dark": [6.12, 6.6, 6.93], "chan-troi|dawn|light": [4.65, 4.78, 4.9], "chan-troi|day|dark": [5.69, 6.42, 6.93], "chan-troi|day|light": [4.77, 4.85, 4.9], "chan-troi|dusk|dark": [6.27, 6.67, 6.93], "chan-troi|dusk|light": [4.6, 4.77, 4.9], "chan-troi|night|dark": [6.53, 6.75, 6.93], "chan-troi|night|light": [4.56, 4.77, 4.9], "o-cua|dawn|dark": [6.18, 6.61, 6.93], "o-cua|dawn|light": [4.65, 4.78, 4.9], "o-cua|day|dark": [5.75, 6.47, 6.93], "o-cua|day|light": [4.77, 4.85, 4.9], "o-cua|dusk|dark": [6.33, 6.67, 6.93], "o-cua|dusk|light": [4.61, 4.78, 4.9], "o-cua|night|dark": [6.54, 6.75, 6.93], "o-cua|night|light": [4.57, 4.77, 4.9], "binh-do|dawn|dark": [6.35, 6.67, 6.93], "binh-do|dawn|light": [4.73, 4.82, 4.9], "binh-do|day|dark": [6.05, 6.54, 6.93], "binh-do|day|light": [4.83, 4.86, 4.9], "binh-do|dusk|dark": [6.49, 6.74, 6.93], "binh-do|dusk|light": [4.69, 4.81, 4.9], "binh-do|night|dark": [6.67, 6.8, 6.93], "binh-do|night|light": [4.65, 4.78, 4.9], "tang-sau|dawn|dark": [6.24, 6.65, 6.93], "tang-sau|dawn|light": [4.66, 4.78, 4.9], "tang-sau|day|dark": [5.88, 6.47, 6.93], "tang-sau|day|light": [4.78, 4.86, 4.9], "tang-sau|dusk|dark": [6.4, 6.73, 6.93], "tang-sau|dusk|light": [4.61, 4.78, 4.9], "tang-sau|night|dark": [6.61, 6.8, 6.93], "tang-sau|night|light": [4.58, 4.77, 4.9], "mat-phang|dawn|dark": [6.4, 6.74, 6.93], "mat-phang|dawn|light": [4.73, 4.82, 4.9], "mat-phang|day|dark": [6.05, 6.61, 6.93], "mat-phang|day|light": [4.86, 4.86, 4.9], "mat-phang|dusk|dark": [6.54, 6.74, 6.93], "mat-phang|dusk|light": [4.69, 4.81, 4.9], "mat-phang|night|dark": [6.69, 6.82, 6.93], "mat-phang|night|light": [4.65, 4.78, 4.9]}};
+const PERIODS = ['dawn','day','dusk','night'];
+const TEN_KY = { dawn:'Bình minh', day:'Ban ngày', dusk:'Hoàng hôn', night:'Ban đêm' };
+let theme = 'dark', nac = 0, reduce = false;
+
+const css = (id,p) => DATA.css[id+'|'+p+'|'+theme];
+const ratio = (id,p) => DATA.ratio[id+'|'+p+'|'+theme][nac];
+
+function veLuoi() {
+  const g = document.getElementById('grid');
+  g.innerHTML = '';
+  g.insertAdjacentHTML('beforeend', '<div class="head">Bộ</div>' +
+    PERIODS.map(p => '<div class="head">'+TEN_KY[p]+'</div>').join(''));
+  for (const s of DATA.sets) {
+    g.insertAdjacentHTML('beforeend',
+      '<div class="rowname"><span>'+s.ten[0]+'</span><em>'+s.cau[0]+'</em></div>');
+    for (const p of PERIODS) {
+      const r = ratio(s.id,p);
+      g.insertAdjacentHTML('beforeend',
+        '<div class="tile" style="background:'+css(s.id,p)+'">' +
+          '<span class="ratio mono'+(r<4.5?' bad':'')+'">'+(r<4.5?'⚠ ':'')+r.toFixed(2)+'</span>' +
+          '<span class="pill"><b>'+s.ten[0]+'</b> · '+TEN_KY[p]+'</span>' +
+        '</div>');
+    }
+  }
+}
+
+function veBang() {
+  const t = document.getElementById('tbl');
+  let h = '<tr><th>Bộ</th>' + PERIODS.map(p=>'<th>'+TEN_KY[p]+'</th>').join('') + '<th>Thấp nhất</th></tr>';
+  for (const s of DATA.sets) {
+    const rs = PERIODS.map(p=>ratio(s.id,p));
+    const min = Math.min(...rs);
+    h += '<tr><td>'+s.ten[0]+'</td>' +
+      rs.map(r=>'<td class="num'+(r<4.5?' fail':'')+'">'+(r<4.5?'⚠ ':'')+r.toFixed(2)+'</td>').join('') +
+      '<td class="num'+(min<4.5?' fail':'')+'">'+(min<4.5?'⚠ ':'')+min.toFixed(2)+'</td></tr>';
+  }
+  t.innerHTML = h;
+
+  const all = DATA.sets.flatMap(s=>PERIODS.map(p=>ratio(s.id,p)));
+  const min = Math.min(...all);
+  const yeu = DATA.sets.map(s=>({id:s.ten[0], m:Math.min(...PERIODS.map(p=>ratio(s.id,p)))}))
+                       .sort((a,b)=>a.m-b.m)[0];
+  document.getElementById('canhBao').innerHTML =
+    '<b>Đọc bảng này thế nào.</b> Thấp nhất đang là <b class="mono">'+min.toFixed(2)+'</b> ' +
+    '(theme ' + (theme==='dark'?'tối':'sáng') + ', nấc '+nac+') — bộ mỏng biên nhất: <b>'+yeu.id+'</b>. ' +
+    (theme==='light'
+      ? 'Theme <b>SÁNG là chỗ mỏng nhất của cả hệ</b>: biên chỉ ~0.07 trên ngưỡng. Nếu sau này theme sáng đổi sang bản canh-Apple thì <b>mọi số cột sáng phải đo lại</b>.'
+      : 'Theme tối dư biên rất rộng (≥6.4). Bấm sang theme sáng để thấy chỗ hẹp thật.') +
+    ' <br><b>Nhiệt độ màu:</b> cả năm bộ đều ở nửa <b>LẠNH</b> (193–268°) — đúng chốt 03/08 “InteriorFlow lạnh”. ' +
+    '<b>Không bộ nào ấm</b>, và không bộ nào lấn phổ màu nghĩa (đỏ 10° · vàng 37° · xanh đạt 145°).';
+}
+
+function veStage() {
+  const p = ['dawn','day','dusk','night'][2];
+  document.getElementById('stageBg').style.background = css(DATA.sets[0].id, p);
+  document.getElementById('todLine').textContent = 'Ánh sáng chiều ấm · 3200K';
+}
+
+/* ---------- chậm dần rồi DỪNG HẲN ---------- */
+function chayHieuUngVao() {
+  const el = document.getElementById('stageBg');
+  const st = document.getElementById('motionState');
+  el.className = 'bgl';
+  if (reduce) {           /* 🔴 KHÔNG chuyển động chút nào — vào thẳng khung cuối */
+    el.classList.add('stopped');
+    st.textContent = 'data-wp-motion = stopped (reduced-motion: 0 chuyển động)';
+    return;
+  }
+  el.classList.add('settling');
+  st.textContent = 'data-wp-motion = entering';
+  requestAnimationFrame(() => {
+    el.classList.remove('settling');
+    el.classList.add('settled');
+    st.textContent = 'data-wp-motion = landing (2400ms)';
+  });
+  el.addEventListener('transitionend', function once(e) {
+    if (e.propertyName !== 'transform') return;
+    el.removeEventListener('transitionend', once);
+    el.classList.remove('settled');
+    el.classList.add('stopped');   /* gỡ HẲN transition + will-change */
+    st.textContent = 'data-wp-motion = stopped — 0 transition, 0 animation, will-change:auto';
+  }, false);
+}
+
+function veHet() { veLuoi(); veBang(); veStage(); }
+
+document.getElementById('btnTheme').onclick = (e) => {
+  theme = theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = theme;
+  e.target.textContent = 'Theme: ' + (theme === 'dark' ? 'Tối' : 'Sáng');
+  e.target.setAttribute('aria-pressed', theme === 'light');
+  veHet();
+};
+document.getElementById('btnReduce').onclick = (e) => {
+  reduce = !reduce;
+  e.target.setAttribute('aria-pressed', String(reduce));
+  chayHieuUngVao();
+};
+document.getElementById('btnReplay').onclick = chayHieuUngVao;
+for (const b of document.querySelectorAll('.nac')) {
+  b.onclick = () => {
+    nac = Number(b.dataset.nac);
+    for (const x of document.querySelectorAll('.nac')) x.setAttribute('aria-pressed', String(Number(x.dataset.nac) === nac));
+    veHet();
+  };
+}
+
+veHet();
+chayHieuUngVao();
+</script>
+</body>
+</html>

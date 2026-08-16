@@ -501,7 +501,7 @@ phải nền (đã thi hành, tên hơi cấn).
 **Quét bằng grep, KHÔNG đọc toàn văn:** `components/**` · `lib/**` · `app/**` cho 8 từ khảo sát.
 
 **BỎ QUA HẲN:** `docs/nc/NC-NGUYEN-TAC-GIAO-DIEN-TOAN-APP-2026-08-14.md` (NT-1..18) và
-`docs/nc/NC-TRIET-LY-GIAO-DIEN-2026-08-14.md` (KB-1..5) — ② phiếu bảo đọc, tôi **không đọc**,
+`docs/nc/NC-TRIET-LY-GIAO-DIEN-2026-08-14.md` (KB-1..4) — ② phiếu bảo đọc, tôi **không đọc**,
 vì đã có đủ ca thật từ code và 00-CHOT, và hai tệp đó là nơi ĐỊNH NGHĨA từ chứ không phải nơi
 từ bị dùng lệch. **Rủi ro của việc bỏ qua:** nếu NT/KB đã định nghĩa sẵn tên riêng cho `card`
 hay `nấc`, thì đề xuất tên ở V5 có thể trùng hoặc chọi — **phải đối chiếu trước khi thi hành.**

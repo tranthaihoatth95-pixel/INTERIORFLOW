@@ -13,6 +13,7 @@ import { LockKeyhole } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { getLastUserId } from '@/lib/resume';
 import { DEFAULT_LOCK_IDLE_MINUTES, getLockIdleMinutes, setLockIdleMinutes, lockScreenNow } from '@/lib/lockscreen';
+import { WallpaperSettings } from '@/components/wallpaper/WallpaperSettings';
 import { useT } from '@/lib/i18n';
 
 export function LockScreenSettings() {
@@ -27,6 +28,7 @@ export function LockScreenSettings() {
   };
 
   return (
+    <>
     <section>
       <h2 className="text-[15px] font-semibold text-[var(--t1)]">{tr('Khoá màn', 'Lock screen')}</h2>
       <p className="mt-1 text-[12px] text-[var(--t2)]">
@@ -58,5 +60,13 @@ export function LockScreenSettings() {
         </button>
       </div>
     </section>
+
+    {/* Phiếu P-O `docs/phieu-giao/P-O-5-bo-hinh-nen-dong.md` việc ⑤ — HÌNH NỀN HỆ THỐNG.
+     * 📍 Vì sao đứng ở đây: đây là tệp DUY NHẤT vừa nằm trong vùng ghi của phiếu P-O vừa đã
+     * được mount thật (`app/settings/_components/PixelSettingsShell.tsx:218`). Chỗ đúng về
+     * nghĩa lâu dài là `AppearanceSettings` — đường may cần dọn, đã khai ở báo cáo ⑦, đừng
+     * để phiên sau tưởng là cố ý xếp nhầm. */}
+    <WallpaperSettings />
+    </>
   );
 }

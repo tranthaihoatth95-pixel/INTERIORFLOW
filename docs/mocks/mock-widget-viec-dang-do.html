@@ -1,0 +1,273 @@
+<!-- @dsCard group="Widget việc đang dở" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InteriorFlow · Widget "Việc đang dở" — ba nấc + trạng thái tự ẩn</title>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   MÃ MÀU CHỈ ĐƯỢC VIẾT TRONG KHỐI NÀY. Mọi chỗ khác gọi biến hoặc currentColor.
+   Nền mờ = --nen-mo-*  ·  đường kẻ mảnh = --vien-mo (P-L đổi 16/08, --mat-* đã CHẾT).
+   Theme TỐI = chép nguyên app/globals.css. Theme SÁNG = bản canh-Apple (CHOT-16-08-BAN-DUNG).
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+:root{
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-3xs:10px; --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --lh:1.6;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s;
+  --gap:12px; --le:20px;
+  --tim:#7c3aed; --tim-sau:#6d28d9; --tim-nhat:#c4b5fd;
+}
+[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4a4a52;
+  --nen-mo-card:rgba(26,26,30,.82); --nen-mo-panel:rgba(20,20,23,.68);
+  --vien-mo:rgba(255,255,255,.06);
+  --shadow-node:0 8px 30px -8px rgba(0,0,0,.65);
+  --success:#46b876; --warning:#d9a34a; --danger:#e5674f;
+  --nhan:var(--tim-sau); --nhan-chu:var(--tim-nhat);
+}
+[data-theme="light"]{
+  --bg:#f2f2f7; --panel:#ffffff; --card:#ffffff; --field:#e5e5ea; --hover:#e5e5ea;
+  --border:#d1d1d6;
+  --t1:#1c1c1e; --t2:#3c3c43; --t3:#6c6c70; --t4:#8e8e93; --t5:#aeaeb2;
+  --nen-mo-card:rgba(255,255,255,.82); --nen-mo-panel:rgba(242,242,247,.72);
+  --vien-mo:rgba(0,0,0,.05);
+  --shadow-node:0 10px 30px -10px rgba(28,28,30,.16);
+  --success:#107043; --warning:#9a6304; --danger:#c9341d;
+  --nhan:var(--tim); --nhan-chu:#ffffff;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--bg); color:var(--t2);
+  font-family:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;
+  font-size:var(--fs-sm); line-height:var(--lh);
+  padding:var(--le); max-width:100%; overflow-x:hidden;
+}
+h1{font-size:var(--fs-lg); color:var(--t1); margin:0 0 4px; font-weight:var(--fw-semi);}
+h2{font-size:var(--fs-xs); color:var(--t3); margin:26px 0 10px; font-weight:var(--fw-semi);
+   text-transform:uppercase; letter-spacing:.06em; font-family:ui-monospace,monospace;}
+p.dan{margin:0 0 6px; color:var(--t3); font-size:var(--fs-xs); max-width:74ch;}
+.doi-theme{
+  position:fixed; right:var(--le); top:var(--le); z-index:9;
+  display:flex; gap:6px; padding:4px; border-radius:var(--r-full);
+  background:var(--nen-mo-panel); border:1px solid var(--border);
+  backdrop-filter:blur(12px) saturate(150%); -webkit-backdrop-filter:blur(12px) saturate(150%);
+}
+.doi-theme button{
+  border:none; background:transparent; color:var(--t3); cursor:pointer;
+  font:inherit; font-size:var(--fs-2xs); padding:5px 13px; border-radius:var(--r-full);
+  transition:background var(--dur-fast) var(--ease-apple), color var(--dur-fast) var(--ease-apple);
+}
+.doi-theme button[aria-pressed="true"]{background:var(--nhan); color:var(--nhan-chu);}
+
+/* ─────────── VỎ CARD — chép công thức WidgetCard.tsx (một nơi định nghĩa) ─────────── */
+.the{
+  display:flex; flex-direction:column; height:100%; padding:12px;
+  border-radius:var(--r-3); background:var(--card); border:1px solid var(--border);
+  box-shadow:var(--shadow-node);
+}
+.the-dau{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; flex-shrink:0;}
+.the-ten{
+  display:flex; align-items:baseline; gap:6px; margin:0;
+  font-family:ui-monospace,monospace; font-size:var(--fs-2xs); font-weight:var(--fw-semi);
+  text-transform:uppercase; letter-spacing:.05em; color:var(--t3);
+}
+.the-ten .so{color:var(--t3); font-weight:var(--fw-normal);}
+.num{
+  display:grid; place-items:center; width:24px; height:24px; padding:0;
+  border:none; border-radius:var(--r-1); background:transparent; color:var(--t3); cursor:pointer;
+  transition:background var(--dur-fast) var(--ease-apple), color var(--dur-fast) var(--ease-apple);
+}
+.num:hover{background:var(--hover); color:var(--t2);}
+.the-than{min-height:0; flex:1;}
+
+/* ─────────── VÙNG BẤM — cả thân card là MỘT nút, 1 cú bấm là về chỗ cũ ─────────── */
+.mo-lai{
+  display:flex; flex-direction:column; justify-content:space-between; gap:8px;
+  width:100%; height:100%; padding:4px; text-align:left; cursor:pointer;
+  border:none; border-radius:var(--r-2); background:transparent; color:inherit; font:inherit;
+  transition:background var(--dur-fast) var(--ease-apple);
+}
+.mo-lai:hover{background:var(--hover);}
+.mo-lai:focus-visible{outline:2px solid var(--nhan); outline-offset:2px;}
+.ten-da{
+  font-size:var(--fs-sm); font-weight:var(--fw-semi); color:var(--t1);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.chips{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:6px;}
+.chip{
+  display:inline-flex; align-items:center; gap:4px;
+  padding:2px 6px; border-radius:var(--r-1); background:var(--field);
+  color:var(--t3); font-size:var(--fs-2xs);
+}
+.chip.so{font-family:ui-monospace,monospace; font-variant-numeric:tabular-nums;}
+.chip svg{width:11px; height:11px; flex-shrink:0;}
+.cau{margin:6px 0 0; font-size:var(--fs-xs); line-height:var(--lh); color:var(--t3);}
+.di{font-size:var(--fs-2xs); color:var(--t3);}
+
+/* ─────────── BÀN BÀY ─────────── */
+.hang{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--gap); align-items:stretch;}
+.o{min-width:0;}
+.nhan-nac{
+  margin:0 0 6px; font-family:ui-monospace,monospace; font-size:var(--fs-2xs);
+  text-transform:uppercase; letter-spacing:.05em; color:var(--t3);
+}
+.nhan-nac b{color:var(--t2); font-weight:var(--fw-semi);}
+.cao-gon{height:132px;} .cao-vua{height:132px;} .cao-day{height:132px;}
+
+/* Lưới bento rút gọn — chứng minh "tự ẩn thì ô lân cận GIÃN chiếm chỗ", không để lỗ trống */
+.bento{display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:var(--gap); height:300px;}
+.gia{
+  display:flex; align-items:center; justify-content:center; height:100%;
+  border-radius:var(--r-3); border:1px dashed var(--border); background:var(--panel);
+  color:var(--t3); font-size:var(--fs-2xs); font-family:ui-monospace,monospace;
+  text-transform:uppercase; letter-spacing:.05em; text-align:center; padding:8px;
+}
+.ghi{
+  margin-top:8px; padding:10px 12px; border-radius:var(--r-2);
+  border:1px solid var(--vien-mo); background:var(--nen-mo-card);
+  font-size:var(--fs-xs); color:var(--t3);
+}
+.ghi b{color:var(--t2); font-weight:var(--fw-semi);}
+@media (prefers-reduced-motion:reduce){*{transition:none !important; animation:none !important;}}
+</style>
+</head>
+<body>
+
+<div class="doi-theme" role="group" aria-label="Đổi giao diện">
+  <button type="button" data-t="dark"  aria-pressed="true">Tối</button>
+  <button type="button" data-t="light" aria-pressed="false">Sáng</button>
+</div>
+
+<h1>Widget “Việc đang dở”</h1>
+<p class="dan">
+  Đăng nhập nay <b>luôn dừng ở dashboard</b> thay vì tự nhảy về trang đang làm dở. Việc đang dở
+  không mất — nó thành ô này. Bấm một lần là về đúng chỗ cũ.
+</p>
+
+<h2>Ba nấc — cùng một tin, hai ngôn ngữ trình bày</h2>
+<p class="dan">
+  Nấc <b>gọn</b> nói bằng ký hiệu + số (đọc lướt). Từ nấc <b>vừa</b> trở đi <b>icon biến mất</b>,
+  chữ thay chỗ — có chữ rồi thì icon là nhiễu. Nấc gọn phải đủ tự thân: che hai nấc kia đi vẫn
+  đứng được một mình.
+</p>
+
+<div class="hang">
+  <!-- ── NẤC GỌN ── -->
+  <div class="o">
+    <p class="nhan-nac">Nấc <b>gọn</b> · mặc định</p>
+    <div class="cao-gon">
+      <div class="the">
+        <div class="the-dau">
+          <h3 class="the-ten"><span class="so">10</span> Việc đang dở</h3>
+          <button type="button" class="num" aria-label="Xem nấc Vừa" title="Xem nấc Vừa">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+        </div>
+        <div class="the-than">
+          <button type="button" class="mo-lai" aria-label="Mở lại Căn hộ Thảo Điền ở Thiết kế 2D, 2 ngày trước">
+            <span>
+              <span class="ten-da">Căn hộ Thảo Điền</span>
+              <span class="chips">
+                <span class="chip">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5 4 4"/><path d="M13 7 8.7 2.7a2.4 2.4 0 0 0-3.4 0L2.7 5.3a2.4 2.4 0 0 0 0 3.4L7 13"/><path d="m8 6 2-2"/><path d="M18 16l2-2"/><path d="M17 11l4.3 4.3c.9.9.9 2.5 0 3.4l-2.6 2.6c-.9.9-2.5.9-3.4 0L11 17"/></svg>
+                  Thiết kế 2D
+                </span>
+                <span class="chip so">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  2 ngày trước
+                </span>
+              </span>
+            </span>
+            <span class="di">Mở lại →</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── NẤC VỪA ── -->
+  <div class="o">
+    <p class="nhan-nac">Nấc <b>vừa</b> · trỏ vào là thấy</p>
+    <div class="cao-vua">
+      <div class="the">
+        <div class="the-dau">
+          <h3 class="the-ten"><span class="so">10</span> Việc đang dở</h3>
+          <button type="button" class="num" aria-label="Xem nấc Đầy đủ" title="Xem nấc Đầy đủ">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+        </div>
+        <div class="the-than">
+          <button type="button" class="mo-lai" aria-label="Mở lại Căn hộ Thảo Điền ở Thiết kế 2D, 2 ngày trước">
+            <span>
+              <span class="ten-da">Căn hộ Thảo Điền</span>
+              <p class="cau">Thiết kế 2D · dở từ 2 ngày trước</p>
+            </span>
+            <span class="di">Mở lại →</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── NẤC ĐẦY ĐỦ ── -->
+  <div class="o">
+    <p class="nhan-nac">Nấc <b>đầy đủ</b></p>
+    <div class="cao-day">
+      <div class="the">
+        <div class="the-dau">
+          <h3 class="the-ten"><span class="so">10</span> Việc đang dở</h3>
+          <button type="button" class="num" aria-label="Thu về nấc Gọn" title="Thu về nấc Gọn">
+            <svg viewBox="0 0 24 24" width="13" height="13" style="transform:rotate(180deg)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+        </div>
+        <div class="the-than">
+          <button type="button" class="mo-lai" aria-label="Mở lại Căn hộ Thảo Điền ở Thiết kế 2D, 2 ngày trước">
+            <span>
+              <span class="ten-da">Căn hộ Thảo Điền</span>
+              <p class="cau">Bạn đang dở ở Thiết kế 2D, lần cuối 2 ngày trước. Bấm để mở lại đúng chỗ cũ.</p>
+            </span>
+            <span class="di">Mở lại →</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ghi">
+  <b>Không có trong bản vẽ vì chưa có nguồn:</b> ảnh xem trước của việc đang dở. Dữ liệu resume
+  hiện chỉ mang route · dự án · chặng · thời điểm — không có ảnh chụp canvas. Thiếu thì nói thiếu,
+  không vẽ một khung xám giả làm ảnh.
+</div>
+
+<h2>Không có việc dở → widget tự ẩn, ô lân cận giãn chiếm chỗ</h2>
+<p class="dan">
+  Người dùng lần đầu chưa có việc dở nào. Widget <b>biến mất hẳn</b>, không để lại khung rỗng —
+  và ô bên cạnh nới ra lấp chỗ, không chừa lỗ trống trên lưới.
+</p>
+
+<div class="bento">
+  <div class="gia" style="grid-column:1 / 8; grid-row:1 / 3;">Ô 01 · Dự án</div>
+  <div class="gia" style="grid-column:8 / 13; grid-row:1 / 2;">Ô 02 · Chào + đồng hồ ánh sáng</div>
+  <div class="gia" style="grid-column:8 / 13; grid-row:2 / 3;">Ô 06 · Ghi chú nhanh <em style="font-style:normal;color:var(--t3);">— giãn hết 5 cột vì ô 10 vắng</em></div>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  document.querySelectorAll('.doi-theme button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      root.setAttribute('data-theme', b.dataset.t);
+      document.querySelectorAll('.doi-theme button').forEach(function (x) {
+        x.setAttribute('aria-pressed', String(x === b));
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

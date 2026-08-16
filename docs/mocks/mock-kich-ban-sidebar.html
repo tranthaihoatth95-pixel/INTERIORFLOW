@@ -1,0 +1,1202 @@
+<!-- @dsCard group="Kịch bản sidebar" -->
+<!doctype html>
+<html lang="vi" data-theme="toi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>InteriorFlow · Kịch bản sidebar — hệ router toàn app (P-P)</title>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   TOKEN — chép nguyên văn khối khai của docs/mocks/mock-bo-nen-chung.html
+   ⚠️ `--mat-*` ĐÃ CHẾT (544999f) → `--nen-mo-*`; đường kẻ mảnh = `--vien-mo`.
+   Đây là KHỐI KHAI DUY NHẤT được phép chứa hex. Ngoài khối này: cấm hex.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600; --fw-bold:700;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s; --dur-nac:.2s;
+  --blur:22px;
+  --tap:32px; --tap-lg:44px; --gap:8px;
+
+  /* ba nấc — kế thừa mock-sidebar-3-nac-home.html:22, KHÔNG đẻ nhịp thứ hai */
+  --nac-thu:28px; --nac-vua:240px; --nac-rong:320px;
+
+  --tim:#7c3aed; --tim-sau:#6d28d9; --tim-nhat:#c4b5fd;
+
+  /* màu nhấn thứ hai — hướng ① MÒNG KÉT TRẦM 185° (chốt 16/08; đồng #c79a63 đã bỏ) */
+  --nhan:#1f7a82; --nhan-toi:#3aa8b4;
+  --nhan-mem:rgba(31,122,130,.18); --nhan-vien:rgba(31,122,130,.6);
+
+  /* ── THEME TỐI (mặc định) ── */
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78;
+  --nen-mo-card:rgba(26,26,30,.82); --nen-mo-panel:rgba(20,20,23,.68);
+  --vien-mo:rgba(255,255,255,.06);
+  --shadow:0 8px 30px -8px rgba(0,0,0,.65);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --chu:var(--tim-sau); --chu-mem:rgba(109,40,217,.22); --chu-vien:rgba(124,58,237,.55);
+  --diem:var(--nhan-toi); --chu-chu:#ffffff;
+  /* chấm định danh dự án = LỚP ③ Brand Kit, KHÔNG phải màu hệ thống (ràng buộc ⑥) */
+  --bk-1:#c2703f; --bk-2:#4a7fb5; --bk-3:#7a9a52;
+}
+/* ── THEME SÁNG · canh theo Apple: ngả LAM không ngả vàng; nền chính TRẮNG ── */
+[data-theme="sang"]{
+  --bg:#f2f2f7; --panel:#ffffff; --card:#ffffff; --field:#e5e5ea; --hover:#e5e5ea;
+  --border:#d1d1d6; --border-strong:#c7c7cc;
+  --t1:#1c1c1e; --t2:#3c3c43; --t3:#6c6c70; --t4:#8e8e93;
+  --nen-mo-card:rgba(255,255,255,.82); --nen-mo-panel:rgba(242,242,247,.72);
+  --vien-mo:rgba(0,0,0,.05);
+  --shadow:0 10px 30px -10px rgba(28,28,30,.16);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --chu:var(--nhan); --chu-mem:var(--nhan-mem); --chu-vien:var(--nhan-vien);
+  --diem:var(--tim); --chu-chu:#ffffff;
+  --bk-1:#a85a2c; --bk-2:#35659b; --bk-3:#5e7d38;
+}
+
+/* ══════════════════ NỀN TRANG ══════════════════ */
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;
+  font-size:var(--fs-sm);line-height:1.55;overflow-x:hidden}
+.wrap{max-width:1400px;margin:0 auto;padding:26px 20px 90px}
+h1{font-size:var(--fs-xl);margin:0 0 6px;letter-spacing:-.02em}
+h2{font-size:var(--fs-lg);margin:44px 0 6px;letter-spacing:-.01em;
+   padding-top:18px;border-top:1px solid var(--vien-mo)}
+h3{font-size:var(--fs-sm);margin:22px 0 8px;font-weight:var(--fw-bold)}
+p{margin:0 0 10px;color:var(--t2);max-width:96ch}
+.lead{color:var(--t3);font-size:var(--fs-xs);max-width:100ch}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:var(--fs-2xs);
+  background:var(--field);padding:1px 5px;border-radius:var(--r-1);color:var(--t2)}
+b,strong{color:var(--t1)}
+
+/* nút gạt theme */
+.bar{position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:10px;
+  padding:10px 0 12px;background:var(--bg);border-bottom:1px solid var(--vien-mo);margin-bottom:18px}
+.gat{display:inline-flex;align-items:center;gap:7px;height:var(--tap);padding:0 14px;
+  border-radius:var(--r-full);border:1px solid var(--border);background:var(--card);
+  color:var(--t1);font-size:var(--fs-xs);font-weight:var(--fw-semi);cursor:pointer;
+  transition:background var(--dur-fast) var(--ease-apple)}
+.gat:hover{background:var(--hover)}
+.gat:focus-visible{outline:2px solid var(--chu-vien);outline-offset:2px}
+
+/* bảng */
+table{width:100%;border-collapse:collapse;margin:10px 0 16px;font-size:var(--fs-xs)}
+th,td{text-align:left;padding:8px 10px;vertical-align:top;border-bottom:1px solid var(--vien-mo)}
+th{color:var(--t3);font-weight:var(--fw-semi);font-size:var(--fs-2xs);
+   text-transform:uppercase;letter-spacing:.06em}
+td{color:var(--t2)}
+tbody tr:hover{background:var(--hover)}
+
+/* thẻ ghi chú */
+.note{border:1px solid var(--border);border-radius:var(--r-3);padding:13px 15px;
+  margin:12px 0;background:var(--card);font-size:var(--fs-xs);color:var(--t2)}
+.note.canh{border-color:var(--chu-vien);background:var(--chu-mem)}
+.note .tit{display:block;font-weight:var(--fw-bold);color:var(--t1);margin-bottom:5px;
+  font-size:var(--fs-xs)}
+
+/* ══════════════════ KHUNG SO KỊCH BẢN ══════════════════
+   MỖI kịch bản dùng CHUNG khuôn này — cùng nội dung, cùng bố cục, chỉ khác CƠ CHẾ.
+   Khác nội dung thì mắt không so được (ràng buộc V5). */
+.kb{border:1px solid var(--border);border-radius:var(--r-4);background:var(--panel);
+  padding:18px;margin:14px 0 8px}
+.kb-dau{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.kb-ma{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;
+  color:var(--chu-chu);background:var(--chu);padding:3px 8px;border-radius:var(--r-1)}
+.kb-ten{font-size:var(--fs-sm);font-weight:var(--fw-bold);color:var(--t1)}
+.kb-co{font-size:var(--fs-xs);color:var(--t3)}
+
+.doi{display:flex;gap:26px;flex-wrap:wrap;margin-top:16px}
+.tt{flex:0 0 auto}
+.tt-nhan{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--t3);margin-bottom:9px}
+.hang{display:flex;gap:12px;align-items:flex-start}
+.mau{display:flex;flex-direction:column;gap:6px}
+.mau-nhan{font-size:var(--fs-2xs);color:var(--t3);text-align:center;letter-spacing:.03em}
+
+/* ── THÂN SIDEBAR (chung mọi kịch bản) ── */
+.sb{background:var(--nen-mo-panel);backdrop-filter:blur(var(--blur));
+  -webkit-backdrop-filter:blur(var(--blur));
+  border:1px solid var(--border);border-radius:var(--r-3);
+  height:398px;overflow:hidden;display:flex;flex-direction:column;
+  transition:width var(--dur-nac) var(--ease-apple)}
+.sb.thu{width:var(--nac-thu)} .sb.vua{width:var(--nac-vua)} .sb.rong{width:var(--nac-rong)}
+
+/* mục stage */
+.m{display:flex;align-items:center;gap:9px;height:var(--tap);padding:0 8px;margin:1px 5px;
+  border-radius:var(--r-2);color:var(--t2);font-size:var(--fs-xs);cursor:pointer;
+  white-space:nowrap;overflow:hidden;transition:background var(--dur-fast) var(--ease-apple)}
+.sb.thu .m{margin:1px 2px;padding:0;justify-content:center;gap:0}
+.m:hover{background:var(--hover);color:var(--t1)}
+.m:focus-visible{outline:2px solid var(--chu-vien);outline-offset:-2px}
+.m.on{background:var(--chu-mem);color:var(--t1);font-weight:var(--fw-semi);
+  box-shadow:inset 2px 0 0 var(--chu)}
+.sb.thu .m.on{box-shadow:inset 0 0 0 1px var(--chu-vien)}
+.m .ic{flex:0 0 16px}
+.m .tx{overflow:hidden;text-overflow:ellipsis}
+.sb.thu .m .tx{display:none}
+/* mục MỜ — kèm dấu HÌNH DẠNG (ổ khoá), vì độ mờ là kênh ĐỘ SÁNG, không đủ một mình */
+.m.mo{color:var(--t3);cursor:not-allowed}
+.m.mo:hover{background:transparent}
+.m .khoa{margin-left:auto;flex:0 0 12px;opacity:.85}
+.sb.thu .m .khoa{display:none}
+/* dấu "chưa dựng" — chữ, không chỉ màu */
+.m .sap{margin-left:auto;font-size:var(--fs-2xs);color:var(--t3);
+  border:1px solid var(--border);padding:0 5px;border-radius:var(--r-full)}
+.sb.thu .m .sap{display:none}
+
+/* nhãn nhóm — nấc rộng mới có */
+.nh{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.09em;
+  text-transform:uppercase;color:var(--t3);padding:12px 13px 5px}
+.sb.thu .nh,.sb.vua .nh{display:none}
+.sb.rong .nh{display:block}
+/* phụ đề mục — chỉ nấc rộng (nấc rộng = "thêm nhóm phụ + xem trước") */
+.m .phu{display:none;font-size:var(--fs-2xs);color:var(--t3)}
+.sb.rong .m{height:auto;padding:7px 8px;align-items:flex-start}
+.sb.rong .m .ic{margin-top:1px}
+.sb.rong .m .col{display:flex;flex-direction:column;min-width:0}
+.sb.rong .m .phu{display:block}
+
+/* ── RANH GIỚI HAI CẤP = CHUYỂN SẮC, KHÔNG ĐƯỜNG KẺ (luật B2 16/08) ── */
+.ngan{height:26px;flex:0 0 26px;
+  background:linear-gradient(to bottom,transparent,var(--nen-mo-card))}
+.ngan.dam{height:34px;flex:0 0 34px}
+
+/* ── NEO DỰ ÁN (hàng tên dự án + chấm Brand Kit) ── */
+.neo{display:flex;align-items:center;gap:9px;margin:5px;padding:7px 8px;
+  border-radius:var(--r-2);background:var(--nen-mo-card);cursor:pointer;
+  white-space:nowrap;overflow:hidden}
+.neo:hover{background:var(--hover)}
+.neo:focus-visible{outline:2px solid var(--chu-vien);outline-offset:-2px}
+.sb.thu .neo{margin:5px 2px;padding:0;justify-content:center;background:transparent}
+.cham{flex:0 0 10px;height:10px;border-radius:var(--r-full);background:var(--bk-1)}
+.cham.b2{background:var(--bk-2)} .cham.b3{background:var(--bk-3)}
+/* chấm dự án phải có KÊNH HÌNH DẠNG kèm: viền dày = đang mở */
+.cham.mo-{box-shadow:0 0 0 2px var(--panel),0 0 0 3px var(--t3)}
+.neo .col{display:flex;flex-direction:column;min-width:0}
+.neo .ten{font-size:var(--fs-xs);font-weight:var(--fw-semi);color:var(--t1);
+  overflow:hidden;text-overflow:ellipsis}
+.neo .kieu{font-size:var(--fs-2xs);color:var(--t3)}
+.sb.thu .neo .col,.sb.thu .neo .mui{display:none}
+.neo .mui{margin-left:auto;flex:0 0 12px;color:var(--t3)}
+
+/* ── Ô MỜI (thay 5 mục chết khi chưa mở dự án) ── */
+.moi{margin:5px;padding:11px 10px;border-radius:var(--r-2);
+  border:1px dashed var(--border-strong);color:var(--t3);font-size:var(--fs-2xs);
+  line-height:1.45}
+.moi b{display:block;color:var(--t2);font-size:var(--fs-xs);margin-bottom:3px}
+.moi .nut{display:inline-block;margin-top:7px;padding:4px 9px;border-radius:var(--r-1);
+  background:var(--chu);color:var(--chu-chu);font-size:var(--fs-2xs);
+  font-weight:var(--fw-semi);cursor:pointer}
+.sb.thu .moi{margin:5px 2px;padding:6px 0;text-align:center;border-style:dashed}
+.sb.thu .moi b,.sb.thu .moi span,.sb.thu .moi .nut{display:none}
+.sb.thu .moi::after{content:'+';color:var(--t3);font-size:var(--fs-sm)}
+
+/* ── ĐỈNH THANH: nút quay ra / chỉ báo cõi (KB-B) ── */
+.dinh{display:flex;align-items:center;gap:8px;margin:5px;padding:7px 8px;
+  border-radius:var(--r-2);background:var(--nen-mo-card);color:var(--t2);
+  font-size:var(--fs-xs);font-weight:var(--fw-semi);cursor:pointer;white-space:nowrap;
+  overflow:hidden}
+.dinh:hover{background:var(--hover)}
+.dinh:focus-visible{outline:2px solid var(--chu-vien);outline-offset:-2px}
+.sb.thu .dinh{margin:5px 2px;padding:0;height:26px;justify-content:center}
+.sb.thu .dinh .tx{display:none}
+
+/* ── KB-C: hai cột trong một thanh ── */
+.sb.hai{flex-direction:row;padding:0}
+.coi{flex:0 0 var(--nac-thu);display:flex;flex-direction:column;gap:3px;
+  padding:5px 0;background:var(--nen-mo-card)}
+.coi .c{width:22px;height:22px;margin:0 auto;border-radius:var(--r-1);
+  display:flex;align-items:center;justify-content:center;color:var(--t3);cursor:pointer}
+.coi .c:hover{background:var(--hover);color:var(--t2)}
+.coi .c:focus-visible{outline:2px solid var(--chu-vien);outline-offset:1px}
+.coi .c.on{background:var(--chu);color:var(--chu-chu)}
+.coi .du{margin:3px auto 0}
+.cot{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+.cot-tit{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.09em;
+  text-transform:uppercase;color:var(--t3);padding:11px 13px 5px;white-space:nowrap}
+
+/* tay cầm thu/mở — mẫu chung PanelFlank (chốt 07/08 mục 10) */
+.tay{margin-top:auto;display:flex;align-items:center;justify-content:center;
+  height:26px;flex:0 0 26px;color:var(--t3);cursor:pointer;
+  border-top:1px solid var(--vien-mo)}
+.tay:hover{color:var(--t2);background:var(--hover)}
+.tay:focus-visible{outline:2px solid var(--chu-vien);outline-offset:-2px}
+
+/* icon */
+.ic{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round;display:block}
+.ic.s{width:12px;height:12px}
+.ic.xs{width:13px;height:13px}
+
+/* bảng trả lời 5 câu — nằm trong thẻ kịch bản */
+.tl{margin-top:16px;font-size:var(--fs-2xs)}
+.tl td,.tl th{padding:6px 9px}
+.tl th{width:23%}
+
+/* thước */
+/* ⚠️ ĐO ĐƯỢC rồi mới thêm: nền PHỚT MÀU (--chu-mem) nâng độ sáng nền ở theme sáng, kéo chữ
+   bậc --t3 xuống 3,3–3,7 (dưới 4,5). Chữ đứng trên nền phớt màu phải lên một bậc. */
+.note.canh th,.note.canh td{color:var(--t2)}
+.m.on .phu{color:var(--t2)}
+
+.dat{color:var(--success);font-weight:var(--fw-semi)}
+.truot{color:var(--danger);font-weight:var(--fw-semi)}
+.mapme{color:var(--warning);font-weight:var(--fw-semi)}
+/* H6: kết luận phải đọc được KHI BỎ MÀU ⇒ mỗi ô có KÝ HIỆU CHỮ đi kèm, không chỉ màu */
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ KHO KÝ HIỆU — khai MỘT lần, dùng lại 100+ chỗ ═══════════ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10l9-7 9 7v10a1 1 0 01-1 1h-5v-7H9v7H4a1 1 0 01-1-1z"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></symbol>
+<symbol id="i-box" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></symbol>
+<symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 10.5A6 6 0 016 13.5C6 9.5 12 3 12 3z"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 12l3 3 5-6"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-8 8H7l-4 3v-5.5A8 8 0 1121 12z"/></symbol>
+<symbol id="i-layer" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+<symbol id="i-ruler" viewBox="0 0 24 24"><path d="M3 16.5L16.5 3 21 7.5 7.5 21z"/><path d="M7 12.5l2 2M10.5 9l2 2M14 5.5l2 2"/></symbol>
+<symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 2.5l8.5 4.8v9.4L12 21.5 3.5 16.7V7.3z"/><path d="M3.5 7.3L12 12.1l8.5-4.8M12 12.1v9.4"/></symbol>
+<symbol id="i-deck" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 21h8"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5A1.5 1.5 0 015.5 3H19v16H5.5A1.5 1.5 0 004 20.5z"/><path d="M4 17.5A1.5 1.5 0 015.5 16H19"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+<symbol id="i-img" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-8 8"/></symbol>
+<symbol id="i-in" viewBox="0 0 24 24"><path d="M12 3v11M8 10.5l4 4 4-4"/><path d="M4 17v3h16v-3"/></symbol>
+<symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+<symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10" width="15" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></symbol>
+<symbol id="i-updown" viewBox="0 0 24 24"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></symbol>
+<symbol id="i-studio" viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></symbol>
+</defs></svg>
+
+<div class="wrap">
+
+<div class="bar">
+  <button class="gat" id="gat" aria-label="Đổi giữa hai chế độ sáng và tối">
+    <svg class="ic xs"><use href="#i-drop"/></svg><span id="gat-tx">Chế độ sáng</span>
+  </button>
+  <span class="lead">Cả bốn kịch bản dùng <b>cùng nội dung, cùng bố cục khung</b> — chỉ khác CƠ CHẾ. Khác nội dung thì mắt không so được.</span>
+</div>
+
+<h1>Kịch bản sidebar — hệ router toàn app</h1>
+<p class="lead">
+  Chốt gốc của Hoà: <i>“chốt về side bar hết, nó là hệ router toàn app, 3 chặng là 1 trong những
+  stage làm việc của app. dựng cho mình 1 vài kịch bản sidebar bao gồm tất cả những stage ở cấp
+  toàn app.”</i><br>
+  Đây là phiếu <b>BÀY PHƯƠNG ÁN</b> — bốn cơ chế đặt cạnh nhau để mắt Hoà quyết, <b>không xếp
+  hạng, không chấm điểm</b> (§12.3). Mã điều khoản thi hành: <b>[T5] con người quyết cuối</b>
+  (<code>TRIET-LY-IF.md:32</code>) · <b>[Đ2] nhìn vào trong trước</b> (<code>:72</code>) — cả bốn
+  kịch bản dựng trên thứ IF <i>đã có</i>, không sáng tác trục điều hướng mới.
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §1 · danhSachStage — ĐI TỪ ROUTE THẬT
+     ══════════════════════════════════════════════════════════════════ -->
+<h2 id="danhSachStage">1 · Danh sách stage — đi từ <code>find app -name page.tsx</code></h2>
+<p class="lead">
+  <b>25 tệp <code>page.tsx</code></b> (khớp con số T đưa). Nhưng 25 route <b>không phải</b> 25
+  stage: 3 là redirect lịch sử, 1 tự khai là bench chờ xoá, 3 nằm ngoài vỏ app, và 1 route
+  (<code>/library</code>) <b>không phải trang</b> mà là lệnh mở sheet.
+</p>
+
+<h3>A · Cấp APP — sống không cần dự án nào</h3>
+<p class="lead">
+  🔴 Cột <b>LOẠI</b> là phần quan trọng nhất bảng này: <b>màn thật</b> (có <code>Navigator</code> +
+  <code>Screen</code> riêng, bọc <code>AppShell</code>) · <b>tấm đè</b> (mở chồng lên thứ đang làm,
+  không rời màn) · <b>panel</b> (ô trong <code>/</code>). <b>Ba loại này KHÔNG được xếp ngang hàng
+  trên sidebar</b> — xếp ngang là sai ở tầng cơ chế, không phải sai tên.
+</p>
+<table>
+<thead><tr><th style="width:19%">Tên hiển thị (VI / EN)</th><th style="width:18%">Route</th><th style="width:13%">LOẠI</th><th>Bằng chứng đo được</th></tr></thead>
+<tbody>
+<tr><td>Home · Tổng quan studio / <i>Home</i></td><td><code>/</code></td><td><b>màn thật</b></td><td><code>HomeScreen.tsx</code> → <code>AppShell</code> (<code>:634</code>)</td></tr>
+<tr><td>Tổng quan / <i>Overview</i></td><td>— <b>không có route</b></td><td><b>panel</b></td><td><code>setDashboardOpen(true)</code> — <code>AppLogoMenu.tsx:63</code></td></tr>
+<tr><td>Dự án &amp; Flow / <i>Projects &amp; Flows</i></td><td>— <b>không có route</b></td><td><b>panel</b></td><td><code>setPanel('flows')</code> — <code>AppLogoMenu.tsx:68</code></td></tr>
+<tr><td>Files / <i>Files</i></td><td><code>/files</code></td><td><b>màn thật</b></td><td><code>FilesNavigator</code> + <code>FileManagerShell</code></td></tr>
+<tr><td>Thư viện / <i>Library</i></td><td><code>/library</code> = <b>redirect</b></td><td><b>tấm đè</b></td><td><code>markOpenLibraryOnLoad()</code> rồi <code>return null</code> (<code>:27,32</code>) — Hoà chốt 03/08 “Thư viện là MỘT NƠI DUY NHẤT, và nó là SHEET”</td></tr>
+<tr><td>Gallery liên ngành / <i>Gallery</i></td><td><code>/library/gallery</code></td><td><b>màn thật</b></td><td>route riêng, 12/08</td></tr>
+<tr><td>Nhập kho / <i>Ingest</i></td><td><code>/library/ingest</code></td><td><b>màn thật</b></td><td>371 dòng</td></tr>
+<tr><td>Kho vật liệu / <i>Materials</i></td><td><code>/materials</code></td><td><b>màn thật</b><br><span style="color:var(--warning)">chốt nói phải là KỆ</span></td><td><code>MaterialsNavigator</code> + <code>MaterialsScreen</code> — nhưng xem Lệch 8</td></tr>
+<tr><td>Bảng màu / <i>Colors</i></td><td><code>/colors</code></td><td><b>màn thật</b><br><span style="color:var(--warning)">chốt nói phải là GÓI</span></td><td><code>ColorLibraryScreen</code>; lối vào thật nằm <b>trong header Vật liệu</b> — xem Lệch 8</td></tr>
+<tr><td>Bảng việc / <i>Tasks</i></td><td><code>/tasks</code></td><td><b>màn thật</b></td><td><code>TasksNavigator</code> + <code>TaskBoardScreen</code></td></tr>
+<tr><td>Cài đặt / <i>Settings</i></td><td><code>/settings</code> +3 con</td><td><b>màn thật</b><br><span style="color:var(--warning)">có phải stage?</span></td><td><code>about</code> · <code>avatar</code> · <code>licenses</code> — xem Lệch 9</td></tr>
+<tr><td>Chat nhóm / <i>Chat</i></td><td>— <b>không có route</b></td><td><b>tấm đè</b></td><td><code>ChatPanel.tsx</code> 171 dòng, mount <code>HomeScreen:117</code> + <code>PresentStageScreen:113</code></td></tr>
+</tbody></table>
+
+<h3>B · Cấp DỰ ÁN — chỉ có nghĩa khi đang mở một dự án</h3>
+<table>
+<thead><tr><th style="width:20%">Tên hiển thị</th><th style="width:26%">Route</th><th>Trạng thái</th></tr></thead>
+<tbody>
+<tr><td>Tổng quan dự án</td><td><code>/projects/[id]/overview</code></td><td>Thật — 314 dòng</td></tr>
+<tr><td>Sổ tay</td><td><code>/projects/[id]/notebook</code></td><td>Thật — 221 dòng, 3 cột</td></tr>
+<tr><td>Thiết kế 2D</td><td><code>/projects/[id]/cad</code></td><td>Thật — <code>CadStageScreen</code></td></tr>
+<tr><td>Thiết kế 3D</td><td><code>/projects/[id]/render</code></td><td>Thật — <code>HomeScreen</code> + <code>projectRouteId</code></td></tr>
+<tr><td>Trình chiếu</td><td><code>/projects/[id]/present</code></td><td>Thật — <code>PresentStageScreen</code></td></tr>
+<tr><td>Chỉnh ảnh</td><td><code>/projects/[id]/photo</code></td><td>Thật — con của chặng 3D</td></tr>
+</tbody></table>
+
+<h3>C · Bảy route KHÔNG phải stage — không được lên sidebar</h3>
+<table>
+<thead><tr><th style="width:30%">Route</th><th style="width:18%">Loại</th><th>Bằng chứng</th></tr></thead>
+<tbody>
+<tr><td><code>/intro</code> · <code>/login</code></td><td>ngoài vỏ</td><td>public, trước khi vào app</td></tr>
+<tr><td><code>/share/[token]</code></td><td>ngoài vỏ</td><td>khách xem qua link, không có sidebar</td></tr>
+<tr><td><code>/cad-editor</code> · <code>/photo-editor</code> · <code>/present-editor</code></td><td>redirect lịch sử</td><td>tự khai “ROUTE CŨ … nay là REDIRECT”, <code>LegacyStageRedirect</code></td></tr>
+<tr><td><code>/dev-bench-3d-2</code></td><td>rác chờ xoá</td><td>tự khai “BENCH TẠM … KHÔNG phải sản phẩm — xoá sau khi đo xong”</td></tr>
+</tbody></table>
+
+<h3>🔴 Bảy chỗ lệch giữa SỔ và ROUTE — phát hiện, không phải lỗi ai</h3>
+
+<div class="note canh">
+  <span class="tit">Lệch 1 — “stage cấp app” hôm nay được thi công BA KIỂU không tương thích</span>
+  Đây là <b>độ sâu thật</b> của bài toán, sâu hơn chuyện app-vs-dự-án:
+  <b>①ROUTE</b> (Files · Gallery · Ingest · Vật liệu · Màu · Bảng việc · Cài đặt) ·
+  <b>②SHEET đè</b> (Thư viện · Chat) ·
+  <b>③PANEL trong <code>/</code></b> (Tổng quan · Dự án &amp; Flow).<br>
+  ⇒ Một sidebar-router phải hoà giải cả ba, nên mỗi kịch bản phải trả lời thêm <b>câu thứ năm</b>:
+  <i>bấm một mục thì đổi route, hay đè sheet, hay mở panel?</i> Câu này phiếu chưa nêu — P-P thêm vào.
+</div>
+
+<div class="note canh">
+  <span class="tit">Lệch 2 — tiền đề ② của T đúng một nửa: Chat KHÔNG phải “chưa dựng mặt”</span>
+  T ghi <i>“Chat có API nhưng KHÔNG có trang ⇒ stage chưa dựng mặt”</i>. Đo lại:
+  <code>components/ChatPanel.tsx</code> <b>171 dòng và ĐÃ MOUNT</b> ở <code>HomeScreen.tsx:117</code>
+  và <code>PresentStageScreen.tsx:113</code>, gate bằng <code>chatOpen</code> trong store.<br>
+  ⇒ Đúng là <b>không có route</b>, nhưng <b>có mặt</b> — vấn đề thật là nó chỉ sống ở <b>2 trên 25 màn</b>
+  và <b>không địa chỉ hoá được</b> (không link tới được, không nhớ được, bàn phím không tới thẳng).
+  Cách hiện của Chat trên sidebar vì thế <b>không phải</b> “mục sắp có”, mà là “mục có thật nhưng chưa phổ cập”.
+</div>
+
+<div class="note">
+  <span class="tit">Lệch 3 — 4 trên 6 workspace mà sổ khai ở CẤP 0.5 không có route</span>
+  Sổ 11/08 khai 6 workspace cấp app: <i>Tổng quan · Dự án&amp;Flow · Files · Master Library ·
+  Bảng việc/Lịch/Gantt · Chat</i>. Đối chiếu route: chỉ <b>Files</b> và <b>Bảng việc</b> khớp
+  thẳng một route. Bốn cái còn lại là panel hoặc sheet.
+</div>
+
+<div class="note">
+  <span class="tit">Lệch 4 — 5 stage có route thật mà sổ không nhắc trong danh sách workspace</span>
+  <code>/materials</code> · <code>/colors</code> · <code>/library/gallery</code> ·
+  <code>/library/ingest</code> · <code>/settings</code>. Chúng chạy thật hằng ngày nhưng vắng mặt
+  ở danh sách CẤP 0.5 ⇒ ai dựng sidebar theo sổ sẽ bỏ sót đúng 5 mục này.
+</div>
+
+<div class="note">
+  <span class="tit">Lệch 5 — comment trong <code>AppLogoMenu.tsx:48-49</code> sai với code ngay dưới nó</span>
+  Comment khai <i>“mục DUY NHẤT trong menu này thật sự RỜI chặng (4 mục còn lại chỉ mở panel/sheet
+  đè lên, ở nguyên route)”</i> — nhưng <code>:72</code> mục <b>Files</b> gọi
+  <code>router.push('/files')</code>, tức rời route thật. Comment lỗi thời.
+</div>
+
+<div class="note">
+  <span class="tit">Lệch 6 — <code>[id]</code> nhận CẢ <code>Flow.id</code> LẪN <code>Project.id</code></span>
+  <code>resolveFlowForRouteId</code> (<code>lib/scope-core.ts</code>), ghi rõ trong docstring
+  <code>ProjectScopeEmptyState.tsx</code>. ⇒ <b>không đọc thẳng được “đang mở dự án nào” từ URL</b>.
+  Ảnh hưởng trực tiếp bộ chọn dự án của mọi kịch bản: nó phải hỏi qua <code>scope</code>, không parse URL.
+</div>
+
+<div class="note">
+  <span class="tit">Lệch 7 — nền <code>soi:tu-dien</code> phiếu ghi 212, đo thật <b>243</b></span>
+  <code>soi:hinh-hoc</code> = <b>10</b>, khớp phiếu. Chênh 31 chỗ nhiều khả năng do phiếu giao của
+  hai phiên phụ đang chạy vừa vào phạm vi quét (<code>docs/phieu-giao</code>). Mốc P-P tự đối chiếu
+  là <b>243</b>, không phải 212.
+</div>
+
+<div class="note canh">
+  <span class="tit">Lệch 8 — 🔴 CODE VÀ CHỐT PHÂN KỲ: Vật liệu · Màu đang là stage, chốt nói phải là KỆ</span>
+  Chốt 07/08 (<code>00-CHOT.md</code>, mục <i>“Gộp THƯ VIỆN về MỘT TẤM DUY NHẤT”</i>):
+  <i>“gộp HẾT về một tấm, chia kệ theo loại — Cấu kiện · Vật liệu · Node · Ảnh tham chiếu”</i>.
+  Entry <code>color-system-packs</code> còn nói rõ Pantone/Jotun/Dulux là <b>gói nạp</b> map
+  <code>matId</code>, không phải kho đứng riêng.<br>
+  Nhưng code hôm nay: <code>/materials</code> và <code>/colors</code> là <b>hai màn thật</b>,
+  ngang hàng Files. Và lối vào <code>/colors</code> lại nằm <b>trong header Vật liệu</b> — tức
+  code đã tự thừa nhận Màu là <i>ngăn của Vật liệu</i>, chỉ chưa đi hết đường.<br>
+  ⇒ <b>Nêu cả hai, không chọn hộ.</b> Nếu theo chốt thì sidebar mất 2 mục và Thư viện mọc thêm 2 kệ;
+  nếu theo code thì phải sửa chốt 07/08. <b>Đây có thể chính là “mục sai lệch” Hoà nhìn thấy.</b>
+</div>
+
+<div class="note canh">
+  <span class="tit">Lệch 9 — “Cài đặt” có phải một STAGE LÀM VIỆC không?</span>
+  Nó là <b>màn thật</b> về cơ chế (có <code>AppShell</code>, có route con), nhưng về nghiệp vụ nó
+  là <b>tiện ích</b>: không sản xuất gì, không đọc/ghi <code>.idf</code>, không nằm trong luồng
+  0→3. Ba stage kia (Files · Thư viện · Bảng việc) đều <i>nuôi</i> công việc thiết kế; Cài đặt thì không.<br>
+  ⇒ Bản vẽ này vẫn <b>vẽ nó ở đáy thanh, tách khỏi nhóm việc</b> (KB-B, KB-C đặt nó dưới cùng
+  cột) — nhưng <b>P-P không tự quyết</b> nó là stage hay là tiện ích. Chưa có bằng chứng nào
+  trong sổ trả lời câu này.
+</div>
+
+<div class="note canh">
+  <span class="tit">Lệch 10 — “Tổng quan” mang HAI nghĩa, đúng bệnh một-chữ-hai-nghĩa</span>
+  <b>①</b> <code>/</code> = tổng quan <i>studio</i> (mọi dự án) · <b>②</b>
+  <code>/projects/[id]/overview</code> = tổng quan <i>một dự án</i>. Hai cấp khác nhau, cùng một chữ.<br>
+  Tệ hơn: còn có <b>nghĩa thứ ba</b> — mục “Tổng quan” trong <code>AppLogoMenu:61</code> mở một
+  <b>panel</b>, không phải cái nào trong hai cái trên.<br>
+  ⇒ Bản vẽ này đặt tên phân biệt: <b>“Home”</b> cho cấp app, <b>“Tổng quan”</b> cho cấp dự án.
+  Đây là <b>đề xuất đặt tên</b>, chưa vào từ điển máy — cần vào <code>soi:tu-dien</code> nếu Hoà gật.
+</div>
+
+<div class="note canh">
+  <span class="tit">Hệ quả cho việc dựng — <code>/library</code> là cái bẫy lớn nhất</span>
+  Dưới cùng tiền tố <code>/library</code> có <b>một sheet</b> (<code>/library</code>) và
+  <b>hai trang thật</b> (<code>gallery</code>, <code>ingest</code>). Mục “Thư viện” trên sidebar
+  bấm vào <b>không đổi route</b> — nó đè sheet lên màn đang làm việc. Đó là hành vi <i>cố ý</i>
+  (kéo-thả vào bàn đang mở), không phải lỗi. ⇒ Sidebar phải phân biệt được <b>mục-đi-tới</b> và
+  <b>mục-đè-lên</b>, nếu không người dùng bấm Thư viện rồi tưởng mình đã rời màn.
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §2 · Năm câu
+     ══════════════════════════════════════════════════════════════════ -->
+<h2>2 · Năm câu mỗi kịch bản phải trả lời</h2>
+<p class="lead">
+  Bốn câu đầu do phiếu đặt; câu ⑤ do P-P thêm sau khi đo được ba-cơ-chế-mount ở Lệch 1.
+  Bảng cuối mỗi kịch bản trả lời đúng năm câu này, cùng thứ tự — để so được theo cột.
+</p>
+<table>
+<tbody>
+<tr><th style="width:5%">①</th><td><b>Chưa mở dự án thì 5 stage dự án đi đâu?</b> — mất, mờ, hay đổi hình?</td></tr>
+<tr><th>②</th><td><b>Đổi dự án làm ở đâu?</b></td></tr>
+<tr><th>③</th><td><b>Stage chưa phổ cập (Chat) hiện thế nào?</b></td></tr>
+<tr><th>④</th><td><b>Thu về 28px thì còn đọc được gì?</b></td></tr>
+<tr><th>⑤</th><td><b>Mục-đi-tới ↔ mục-đè-lên phân biệt bằng gì?</b> (Thư viện, Chat là sheet)</td></tr>
+<tr><th>⑥</th><td><b>Sidebar sống ở đâu — chỉ cấp app, hay cả trong chặng?</b> (trục mới, xem dưới)</td></tr>
+<tr><th>⑦</th><td><b>Nếu bỏ dock thì Vitals đi đâu?</b> (ràng buộc CỨNG, xem dưới)</td></tr>
+</tbody></table>
+
+<div class="note canh">
+  <span class="tit">🔴 RÀNG BUỘC CỨNG — bỏ dock là GIẾT VITALS, không phải dọn giao diện</span>
+  P-P xác minh độc lập, <b>đúng cả bốn</b>:<br>
+  ① <code>StageSwitcher.tsx:80-81</code> ghi nguyên văn <i>“panel mount <b>DUY NHẤT</b> ở đây”</i>;
+  grep toàn repo: <code>&lt;VitalsGesturePanel&gt;</code> chỉ mount ở <code>StageSwitcher.tsx:435</code>.
+  <code>StatusBar.tsx:288</code> còn ghi rõ nó <b>đã bị GỠ</b> khỏi đó 05/08 vì Hoà chốt “không hai
+  Vitals cùng lúc”.<br>
+  ② Dock còn gánh <b>cử chỉ kéo-xuống-hỏi-Vitals</b> và phím <b>⌘J</b>
+  (<code>StageSwitcher.tsx:212</code>).<br>
+  ⇒ Kịch bản nào kết luận <i>“bỏ dock”</i> mà không nói Vitals đi đâu thì nó <b>giết một tính năng
+  cốt lõi mà không biết</b>. Hai kịch bản B và C trong bản vẽ này <b>bỏ dock</b> — cả hai đã bổ sung
+  câu trả lời ở dòng ⑦ bảng của mình. Đường ra rẻ nhất đã có sẵn trong sổ: chốt 16/08 <i>“Vitals neo
+  theo ngữ cảnh — nút tròn RỜI cạnh trục phải”</i>, tức Vitals <b>vốn đã được chốt là rời khỏi dock</b>;
+  việc này chỉ là <b>đẩy nhanh</b> chốt đó, không phải phát sinh mới.
+</div>
+
+<div class="note canh">
+  <span class="tit">🔴 TRỤC PHÂN LOẠI MỚI — sidebar sống ở đâu (phiếu chưa nêu)</span>
+  Đo được: <code>AppChrome</code> (chứa dock) <b>chỉ mount ở <code>AppShell.tsx:139</code></b>, và
+  <code>DongStudioHome</code> <b>không bọc <code>AppShell</code></b> ⇒ <b>trang dashboard hiện KHÔNG
+  hề có dock</b>. Tức sidebar và dock <b>hôm nay không đứng cạnh nhau</b> — chúng chỉ va nhau
+  <i>nếu</i> sidebar chạy cả trong chặng.
+  <table style="margin-top:9px">
+  <thead><tr><th style="width:26%">Phạm vi</th><th style="width:37%">Được</th><th>Trả giá</th></tr></thead>
+  <tbody>
+  <tr><td><b>P1 · chỉ cấp app</b><br>(ngoài chặng)</td>
+      <td>Dock giữ nguyên vai trong chặng ⇒ <b>không xung đột, không đụng Vitals</b>. Rẻ nhất.</td>
+      <td>Người dùng học <b>hai hệ điều hướng</b> — và đó đúng là thứ chốt “router toàn app” muốn đóng lại.</td></tr>
+  <tr><td><b>P2 · cả trong chặng</b></td>
+      <td><b>Một hệ duy nhất</b>, đúng chữ “hệ router toàn app”.</td>
+      <td>Phải trả lời Vitals đi đâu · <b>ăn chiều ngang của canvas</b> (thứ chặng 2D/3D thiếu nhất).</td></tr>
+  </tbody></table>
+</div>
+
+<div class="note">
+  <span class="tit">⚠️ Cạm bẫy đo đạc cho mọi kịch bản chọn P2</span>
+  <code>DongStudioHome.tsx:200</code> quyết định bố cục bằng <code>window.innerWidth &gt;= 1100</code>.
+  Sidebar <b>chiếm chiều ngang thật</b> nhưng <code>window.innerWidth</code> <b>không đổi</b> ⇒ mở
+  sidebar là dashboard tính sai bố cục. Sửa đúng: đo <b>bề rộng phần tử chứa</b>
+  (<code>ResizeObserver</code>) thay vì bề rộng cửa sổ. Đây là <b>việc thi công phải làm trước</b>,
+  không phải chi tiết nhỏ.
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §3 · kichBanSidebar
+     ══════════════════════════════════════════════════════════════════ -->
+<h2 id="kichBanSidebar">3 · Bốn kịch bản — bốn CƠ CHẾ, không phải bốn lớp sơn</h2>
+<p class="lead">
+  Cơ chế phân biệt chúng: <b>A</b> cả hai cấp cùng lúc, khác VÙNG · <b>B</b> một lúc một cõi, thanh
+  ĐỔI RUỘT · <b>C</b> cấp thành TRỤC KHÔNG GIAN (hai cột) · <b>D</b> cấp thành TRẠNG THÁI (bật/mờ)
+  trên một danh sách phẳng. Bốn cái cũng khác nhau ở việc <code>StageSwitcher</code> thành gì:
+  <b>đổi vai · bỏ · bỏ · giữ</b>.
+</p>
+
+<!-- ─────────────── KB-A ─────────────── -->
+<div class="kb">
+  <div class="kb-dau">
+    <span class="kb-ma">KB·A</span>
+    <span class="kb-ten">Hai khối cố định</span>
+    <span class="kb-co">Cơ chế: thanh LUÔN có cả hai cấp, tách bằng chuyển sắc. Chưa mở dự án → khối dưới thành một Ô MỜI, không phải 5 mục chết.</span>
+  </div>
+
+  <div class="doi">
+    <!-- CHƯA MỞ DỰ ÁN -->
+    <div class="tt">
+      <div class="tt-nhan">Chưa mở dự án</div>
+      <div class="hang">
+        <div class="mau"><div class="sb thu" role="navigation" aria-label="A · thu · chưa mở dự án">
+          <div class="m on" tabindex="0" title="Home"><svg class="ic"><use href="#i-home"/></svg></div>
+          <div class="m" tabindex="0" title="Files"><svg class="ic"><use href="#i-folder"/></svg></div>
+          <div class="m" tabindex="0" title="Gallery"><svg class="ic"><use href="#i-grid"/></svg></div>
+          <div class="m" tabindex="0" title="Vật liệu"><svg class="ic"><use href="#i-box"/></svg></div>
+          <div class="m" tabindex="0" title="Bảng màu"><svg class="ic"><use href="#i-drop"/></svg></div>
+          <div class="m" tabindex="0" title="Bảng việc"><svg class="ic"><use href="#i-check"/></svg></div>
+          <div class="ngan"></div>
+          <div class="moi" title="Chọn dự án"></div>
+          <div class="tay" tabindex="0" title="Mở rộng"><svg class="ic s"><use href="#i-right"/></svg></div>
+        </div><div class="mau-nhan">28</div></div>
+
+        <div class="mau"><div class="sb vua" role="navigation" aria-label="A · vừa · chưa mở dự án">
+          <div class="m on" tabindex="0"><svg class="ic"><use href="#i-home"/></svg><span class="tx">Home</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-folder"/></svg><span class="tx">Files</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-grid"/></svg><span class="tx">Gallery</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-box"/></svg><span class="tx">Kho vật liệu</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-drop"/></svg><span class="tx">Bảng màu</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-check"/></svg><span class="tx">Bảng việc</span></div>
+          <div class="ngan"></div>
+          <div class="moi"><b>Chưa mở dự án</b><span>Năm stage dự án nằm sau đây — 2D · 3D · Trình chiếu · Sổ tay · Tổng quan.</span><span class="nut" tabindex="0">Chọn dự án</span></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-updown"/></svg></div>
+        </div><div class="mau-nhan">240 · mặc định</div></div>
+
+        <div class="mau"><div class="sb rong" role="navigation" aria-label="A · rộng · chưa mở dự án">
+          <div class="nh">Studio</div>
+          <div class="m on" tabindex="0"><svg class="ic"><use href="#i-home"/></svg><span class="col"><span class="tx">Home</span><span class="phu">Tổng quan · 3 dự án đang chạy</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-folder"/></svg><span class="col"><span class="tx">Files</span><span class="phu">Chợ đầu mối · 41 tệp mới</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-grid"/></svg><span class="col"><span class="tx">Gallery</span><span class="phu">Ảnh tuyển liên ngành</span></span></div>
+          <div class="nh">Kho</div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-box"/></svg><span class="col"><span class="tx">Kho vật liệu</span><span class="phu">218 matId</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-drop"/></svg><span class="col"><span class="tx">Bảng màu</span><span class="phu">Gói hãng chưa nạp</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-check"/></svg><span class="col"><span class="tx">Bảng việc</span><span class="phu">7 việc tới hạn tuần này</span></span></div>
+          <div class="ngan"></div>
+          <div class="moi"><b>Chưa mở dự án</b><span>Năm stage dự án nằm sau đây.</span><span class="nut" tabindex="0">Chọn dự án</span></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-left"/></svg></div>
+        </div><div class="mau-nhan">320</div></div>
+      </div>
+    </div>
+
+    <!-- ĐANG MỞ DỰ ÁN -->
+    <div class="tt">
+      <div class="tt-nhan">Đang mở dự án</div>
+      <div class="hang">
+        <div class="mau"><div class="sb thu" role="navigation" aria-label="A · thu · đang mở dự án">
+          <div class="m" tabindex="0" title="Home"><svg class="ic"><use href="#i-home"/></svg></div>
+          <div class="m" tabindex="0" title="Files"><svg class="ic"><use href="#i-folder"/></svg></div>
+          <div class="m" tabindex="0" title="Gallery"><svg class="ic"><use href="#i-grid"/></svg></div>
+          <div class="m" tabindex="0" title="Vật liệu"><svg class="ic"><use href="#i-box"/></svg></div>
+          <div class="m" tabindex="0" title="Bảng việc"><svg class="ic"><use href="#i-check"/></svg></div>
+          <div class="ngan"></div>
+          <div class="neo" tabindex="0" title="Thảo Điền"><span class="cham mo-"></span></div>
+          <div class="m" tabindex="0" title="Tổng quan dự án"><svg class="ic"><use href="#i-info"/></svg></div>
+          <div class="m on" tabindex="0" title="Thiết kế 2D"><svg class="ic"><use href="#i-ruler"/></svg></div>
+          <div class="m" tabindex="0" title="Thiết kế 3D"><svg class="ic"><use href="#i-cube"/></svg></div>
+          <div class="m" tabindex="0" title="Trình chiếu"><svg class="ic"><use href="#i-deck"/></svg></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-right"/></svg></div>
+        </div><div class="mau-nhan">28</div></div>
+
+        <div class="mau"><div class="sb vua" role="navigation" aria-label="A · vừa · đang mở dự án">
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-home"/></svg><span class="tx">Home</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-folder"/></svg><span class="tx">Files</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-grid"/></svg><span class="tx">Gallery</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-box"/></svg><span class="tx">Kho vật liệu</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-check"/></svg><span class="tx">Bảng việc</span></div>
+          <div class="ngan"></div>
+          <div class="neo" tabindex="0"><span class="cham mo-"></span><span class="col"><span class="ten">Căn hộ Thảo Điền</span><span class="kieu">Đổi dự án</span></span><svg class="ic s mui"><use href="#i-updown"/></svg></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-info"/></svg><span class="tx">Tổng quan</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-book"/></svg><span class="tx">Sổ tay</span></div>
+          <div class="m on" tabindex="0"><svg class="ic"><use href="#i-ruler"/></svg><span class="tx">Thiết kế 2D</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-cube"/></svg><span class="tx">Thiết kế 3D</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-deck"/></svg><span class="tx">Trình chiếu</span></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-updown"/></svg></div>
+        </div><div class="mau-nhan">240 · mặc định</div></div>
+
+        <div class="mau"><div class="sb rong" role="navigation" aria-label="A · rộng · đang mở dự án">
+          <div class="nh">Studio</div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-home"/></svg><span class="col"><span class="tx">Home</span><span class="phu">3 dự án đang chạy</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-folder"/></svg><span class="col"><span class="tx">Files</span><span class="phu">41 tệp mới</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-box"/></svg><span class="col"><span class="tx">Kho vật liệu</span><span class="phu">218 matId</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-check"/></svg><span class="col"><span class="tx">Bảng việc</span><span class="phu">7 việc tới hạn</span></span></div>
+          <div class="ngan dam"></div>
+          <div class="neo" tabindex="0"><span class="cham mo-"></span><span class="col"><span class="ten">Căn hộ Thảo Điền</span><span class="kieu">78 m² · Đổi dự án</span></span><svg class="ic s mui"><use href="#i-updown"/></svg></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-info"/></svg><span class="col"><span class="tx">Tổng quan</span><span class="phu">3 trên 5 bước xong</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-book"/></svg><span class="col"><span class="tx">Sổ tay</span><span class="phu">12 nguồn</span></span></div>
+          <div class="m on" tabindex="0"><svg class="ic"><use href="#i-ruler"/></svg><span class="col"><span class="tx">Thiết kế 2D</span><span class="phu">Sơ phác · dở 2 ngày</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-cube"/></svg><span class="col"><span class="tx">Thiết kế 3D</span><span class="phu">2 job trong hàng đợi</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-deck"/></svg><span class="col"><span class="tx">Trình chiếu</span><span class="phu">Dàn ý chờ sẵn · 9 trang</span></span></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-left"/></svg></div>
+        </div><div class="mau-nhan">320</div></div>
+      </div>
+    </div>
+  </div>
+
+  <table class="tl">
+  <tbody>
+  <tr><th>① Chưa mở dự án</th><td>Khối dưới <b>đổi hình</b> thành một ô mời nét đứt — không có mục chết nào.</td></tr>
+  <tr><th>② Đổi dự án</th><td>Hàng NEO ở đầu khối dưới: chấm Brand Kit + tên + mũi tên lên/xuống.</td></tr>
+  <tr><th>③ Chat</th><td>Nằm trong khối app, hạng “có mặt chưa phổ cập” — hiện ở nấc 320 kèm phụ đề nói rõ.</td></tr>
+  <tr><th>④ Ở 28px</th><td>Hai khối vẫn tách bằng khoảng thở 26px + chấm dự án. <b>Mấp mé</b>: chuyển sắc ở 28px rất mảnh, phải dựa vào chấm.</td></tr>
+  <tr><th>⑤ Đi-tới ↔ đè-lên</th><td>Mục đè-lên (Thư viện, Chat) đặt <b>ngoài cả hai khối</b>, ở dải đáy cạnh tay cầm — vị trí là kênh phân biệt.</td></tr>
+  <tr><th>⑥ Phạm vi</th><td><b>P2 · cả trong chặng.</b> A cần nhìn thấy cả hai cấp cùng lúc, mà trong chặng mới có “cấp dự án” để nhìn ⇒ P1 làm A mất nửa lý do tồn tại.</td></tr>
+  <tr><th>⑦ Vitals</th><td><b>Không phải trả lời</b> — A giữ dock (đổi vai, không bỏ) ⇒ điểm mount <code>StageSwitcher:435</code> còn nguyên, ⌘J và cử chỉ kéo-xuống còn nguyên. <b>Kịch bản duy nhất không đụng vào Vitals.</b></td></tr>
+  <tr><th><code>StageSwitcher</code></th><td><b>ĐỔI VAI</b> — thôi làm trục điều hướng, thành dải chuyển nhanh 3 chặng bên trong khối dự án; <b>giữ nguyên thân dock</b> nên giữ nguyên ổ Vitals.</td></tr>
+  </tbody></table>
+</div>
+
+<!-- ─────────────── KB-B ─────────────── -->
+<div class="kb">
+  <div class="kb-dau">
+    <span class="kb-ma">KB·B</span>
+    <span class="kb-ten">Thanh đổi ruột</span>
+    <span class="kb-co">Cơ chế: thanh chỉ hiện MỘT cõi tại một lúc. Mở dự án → ruột trượt sang stage dự án, đỉnh mọc nút “‹ Studio” để quay ra. Không bao giờ tồn tại mục chết.</span>
+  </div>
+
+  <div class="doi">
+    <div class="tt">
+      <div class="tt-nhan">Chưa mở dự án — ruột STUDIO</div>
+      <div class="hang">
+        <div class="mau"><div class="sb thu" role="navigation" aria-label="B · thu · ruột studio">
+          <div class="dinh" tabindex="0" title="Đang ở Studio"><svg class="ic s"><use href="#i-studio"/></svg></div>
+          <div class="m on" tabindex="0" title="Home"><svg class="ic"><use href="#i-home"/></svg></div>
+          <div class="m" tabindex="0" title="Files"><svg class="ic"><use href="#i-folder"/></svg></div>
+          <div class="m" tabindex="0" title="Gallery"><svg class="ic"><use href="#i-grid"/></svg></div>
+          <div class="m" tabindex="0" title="Vật liệu"><svg class="ic"><use href="#i-box"/></svg></div>
+          <div class="m" tabindex="0" title="Bảng màu"><svg class="ic"><use href="#i-drop"/></svg></div>
+          <div class="m" tabindex="0" title="Bảng việc"><svg class="ic"><use href="#i-check"/></svg></div>
+          <div class="m" tabindex="0" title="Cài đặt"><svg class="ic"><use href="#i-gear"/></svg></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-right"/></svg></div>
+        </div><div class="mau-nhan">28</div></div>
+
+        <div class="mau"><div class="sb vua" role="navigation" aria-label="B · vừa · ruột studio">
+          <div class="dinh" tabindex="0"><svg class="ic s"><use href="#i-studio"/></svg><span class="tx">Studio</span></div>
+          <div class="m on" tabindex="0"><svg class="ic"><use href="#i-home"/></svg><span class="tx">Home</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-folder"/></svg><span class="tx">Files</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-grid"/></svg><span class="tx">Gallery</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-box"/></svg><span class="tx">Kho vật liệu</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-drop"/></svg><span class="tx">Bảng màu</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-check"/></svg><span class="tx">Bảng việc</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-chat"/></svg><span class="tx">Chat nhóm</span><span class="sap">sheet</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-gear"/></svg><span class="tx">Cài đặt</span></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-updown"/></svg></div>
+        </div><div class="mau-nhan">240 · mặc định</div></div>
+
+        <div class="mau"><div class="sb rong" role="navigation" aria-label="B · rộng · ruột studio">
+          <div class="dinh" tabindex="0"><svg class="ic s"><use href="#i-studio"/></svg><span class="tx">Studio · 3 dự án</span></div>
+          <div class="nh">Việc chung</div>
+          <div class="m on" tabindex="0"><svg class="ic"><use href="#i-home"/></svg><span class="col"><span class="tx">Home</span><span class="phu">Tổng quan studio</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-folder"/></svg><span class="col"><span class="tx">Files</span><span class="phu">41 tệp mới</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-check"/></svg><span class="col"><span class="tx">Bảng việc</span><span class="phu">7 việc tới hạn</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-chat"/></svg><span class="col"><span class="tx">Chat nhóm</span><span class="phu">Mở đè · chưa có địa chỉ riêng</span></span></div>
+          <div class="nh">Kho</div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-grid"/></svg><span class="col"><span class="tx">Gallery</span><span class="phu">Ảnh tuyển liên ngành</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-box"/></svg><span class="col"><span class="tx">Kho vật liệu</span><span class="phu">218 matId</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-drop"/></svg><span class="col"><span class="tx">Bảng màu</span><span class="phu">Gói hãng chưa nạp</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-gear"/></svg><span class="col"><span class="tx">Cài đặt</span><span class="phu">Hồ sơ · Giao diện · Nơi lưu</span></span></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-left"/></svg></div>
+        </div><div class="mau-nhan">320</div></div>
+      </div>
+    </div>
+
+    <div class="tt">
+      <div class="tt-nhan">Đang mở dự án — ruột DỰ ÁN</div>
+      <div class="hang">
+        <div class="mau"><div class="sb thu" role="navigation" aria-label="B · thu · ruột dự án">
+          <div class="dinh" tabindex="0" title="Quay ra Studio"><span class="cham mo-"></span></div>
+          <div class="m" tabindex="0" title="Tổng quan dự án"><svg class="ic"><use href="#i-info"/></svg></div>
+          <div class="m" tabindex="0" title="Sổ tay"><svg class="ic"><use href="#i-book"/></svg></div>
+          <div class="m on" tabindex="0" title="Thiết kế 2D"><svg class="ic"><use href="#i-ruler"/></svg></div>
+          <div class="m" tabindex="0" title="Thiết kế 3D"><svg class="ic"><use href="#i-cube"/></svg></div>
+          <div class="m" tabindex="0" title="Chỉnh ảnh"><svg class="ic"><use href="#i-img"/></svg></div>
+          <div class="m" tabindex="0" title="Trình chiếu"><svg class="ic"><use href="#i-deck"/></svg></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-right"/></svg></div>
+        </div><div class="mau-nhan">28</div></div>
+
+        <div class="mau"><div class="sb vua" role="navigation" aria-label="B · vừa · ruột dự án">
+          <div class="dinh" tabindex="0"><svg class="ic s"><use href="#i-left"/></svg><span class="tx">Studio</span></div>
+          <div class="neo" tabindex="0"><span class="cham mo-"></span><span class="col"><span class="ten">Căn hộ Thảo Điền</span><span class="kieu">Đổi dự án</span></span><svg class="ic s mui"><use href="#i-updown"/></svg></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-info"/></svg><span class="tx">Tổng quan</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-book"/></svg><span class="tx">Sổ tay</span></div>
+          <div class="m on" tabindex="0"><svg class="ic"><use href="#i-ruler"/></svg><span class="tx">Thiết kế 2D</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-cube"/></svg><span class="tx">Thiết kế 3D</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-img"/></svg><span class="tx">Chỉnh ảnh</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-deck"/></svg><span class="tx">Trình chiếu</span></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-updown"/></svg></div>
+        </div><div class="mau-nhan">240 · mặc định</div></div>
+
+        <div class="mau"><div class="sb rong" role="navigation" aria-label="B · rộng · ruột dự án">
+          <div class="dinh" tabindex="0"><svg class="ic s"><use href="#i-left"/></svg><span class="tx">Studio</span></div>
+          <div class="neo" tabindex="0"><span class="cham mo-"></span><span class="col"><span class="ten">Căn hộ Thảo Điền</span><span class="kieu">78 m² · Đổi dự án</span></span><svg class="ic s mui"><use href="#i-updown"/></svg></div>
+          <div class="nh">Chuẩn bị</div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-info"/></svg><span class="col"><span class="tx">Tổng quan</span><span class="phu">3 trên 5 bước xong</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-book"/></svg><span class="col"><span class="tx">Sổ tay</span><span class="phu">12 nguồn</span></span></div>
+          <div class="nh">Ba chặng</div>
+          <div class="m on" tabindex="0"><svg class="ic"><use href="#i-ruler"/></svg><span class="col"><span class="tx">Thiết kế 2D</span><span class="phu">Sơ phác · dở 2 ngày</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-cube"/></svg><span class="col"><span class="tx">Thiết kế 3D</span><span class="phu">2 job trong hàng đợi</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-img"/></svg><span class="col"><span class="tx">Chỉnh ảnh</span><span class="phu">Con của chặng 3D</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-deck"/></svg><span class="col"><span class="tx">Trình chiếu</span><span class="phu">Dàn ý chờ sẵn · 9 trang</span></span></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-left"/></svg></div>
+        </div><div class="mau-nhan">320</div></div>
+      </div>
+    </div>
+  </div>
+
+  <table class="tl">
+  <tbody>
+  <tr><th>① Chưa mở dự án</th><td>5 stage dự án <b>không tồn tại</b> trên thanh. Ruột Studio đầy đủ, không chỗ nào hụt.</td></tr>
+  <tr><th>② Đổi dự án</th><td>Hàng NEO ngay dưới nút Studio; hoặc quay ra Studio → Home chọn dự án khác.</td></tr>
+  <tr><th>③ Chat</th><td>Ở ruột Studio, gắn thẻ chữ <code>sheet</code> — nói thẳng nó đè lên chứ không đưa đi đâu.</td></tr>
+  <tr><th>④ Ở 28px</th><td>Chỉ thấy ruột đang hiện. <b>Đây là chỗ B yếu nhất</b>: nếu bỏ ô đỉnh thì không biết mình ở cõi nào. Ô đỉnh (biểu tượng studio ↔ chấm dự án) là thứ cứu nó, nên <b>không được cắt khi thu</b>.</td></tr>
+  <tr><th>⑤ Đi-tới ↔ đè-lên</th><td>Thẻ chữ <code>sheet</code> ở nấc 240 trở lên; nấc 28 <b>không phân biệt được</b> — nợ đã khai.</td></tr>
+  <tr><th>⑥ Phạm vi</th><td><b>P2 · cả trong chặng.</b> Ruột dự án chính là thanh công cụ điều hướng của chặng ⇒ B chỉ có nghĩa ở P2.</td></tr>
+  <tr><th>⑦ Vitals</th><td>🔴 <b>PHẢI TRẢ LỜI</b> — B bỏ dock, mà dock là ổ mount DUY NHẤT của <code>VitalsGesturePanel</code> (<code>:435</code>). Đường ra: <b>dời ổ mount sang nút Vitals rời cạnh trục phải</b> đúng chốt 16/08, giữ nguyên <code>useVitalsUi</code> nên <code>StatusBar</code> gọi <code>open()</code> vẫn chạy · <b>⌘J phải chuyển sang <code>hotkey-registry</code></b>, không để chết theo component · cử chỉ kéo-xuống đổi thành <b>nhấn-giữ 500ms</b> trên nút mới. <b>Ba việc, không phải một.</b></td></tr>
+  <tr><th><code>StageSwitcher</code></th><td><b>BỎ</b> — ba chặng nay là ba mục trong ruột dự án. Kèm ba việc ở dòng ⑦, không được bỏ trống.</td></tr>
+  </tbody></table>
+</div>
+
+<!-- ─────────────── KB-C ─────────────── -->
+<div class="kb">
+  <div class="kb-dau">
+    <span class="kb-ma">KB·C</span>
+    <span class="kb-ten">Hai cột — cõi và stage</span>
+    <span class="kb-co">Cơ chế: tách VẬT LÝ. Cột 28px luôn hiện = chọn CÕI (Studio · các dự án · Cài đặt). Cột 240/320 liệt kê stage của cõi đang chọn. Hai cấp thành hai trục không gian, không tranh chỗ của nhau.</span>
+  </div>
+
+  <div class="doi">
+    <div class="tt">
+      <div class="tt-nhan">Chưa mở dự án — cõi Studio</div>
+      <div class="hang">
+        <div class="mau"><div class="sb thu hai" role="navigation" aria-label="C · thu · cõi studio">
+          <div class="coi">
+            <div class="c on" tabindex="0" title="Studio"><svg class="ic s"><use href="#i-studio"/></svg></div>
+            <div class="c du" tabindex="0" title="Căn hộ Thảo Điền"><span class="cham"></span></div>
+            <div class="c du" tabindex="0" title="Văn phòng Q4"><span class="cham b2"></span></div>
+            <div class="c du" tabindex="0" title="Nhà phố Gò Vấp"><span class="cham b3"></span></div>
+            <div class="c" tabindex="0" title="Cài đặt" style="margin-top:auto"><svg class="ic s"><use href="#i-gear"/></svg></div>
+          </div>
+        </div><div class="mau-nhan">28 · chỉ cột cõi</div></div>
+
+        <div class="mau"><div class="sb vua hai" role="navigation" aria-label="C · vừa · cõi studio">
+          <div class="coi">
+            <div class="c on" tabindex="0" title="Studio"><svg class="ic s"><use href="#i-studio"/></svg></div>
+            <div class="c du" tabindex="0" title="Căn hộ Thảo Điền"><span class="cham"></span></div>
+            <div class="c du" tabindex="0" title="Văn phòng Q4"><span class="cham b2"></span></div>
+            <div class="c du" tabindex="0" title="Nhà phố Gò Vấp"><span class="cham b3"></span></div>
+            <div class="c" tabindex="0" title="Cài đặt" style="margin-top:auto"><svg class="ic s"><use href="#i-gear"/></svg></div>
+          </div>
+          <div class="cot">
+            <div class="cot-tit">Studio</div>
+            <div class="m on" tabindex="0"><svg class="ic"><use href="#i-home"/></svg><span class="tx">Home</span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-folder"/></svg><span class="tx">Files</span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-grid"/></svg><span class="tx">Gallery</span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-box"/></svg><span class="tx">Kho vật liệu</span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-drop"/></svg><span class="tx">Bảng màu</span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-check"/></svg><span class="tx">Bảng việc</span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-chat"/></svg><span class="tx">Chat nhóm</span><span class="sap">sheet</span></div>
+            <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-updown"/></svg></div>
+          </div>
+        </div><div class="mau-nhan">240 · mặc định</div></div>
+
+        <div class="mau"><div class="sb rong hai" role="navigation" aria-label="C · rộng · cõi studio">
+          <div class="coi">
+            <div class="c on" tabindex="0" title="Studio"><svg class="ic s"><use href="#i-studio"/></svg></div>
+            <div class="c du" tabindex="0" title="Căn hộ Thảo Điền"><span class="cham"></span></div>
+            <div class="c du" tabindex="0" title="Văn phòng Q4"><span class="cham b2"></span></div>
+            <div class="c du" tabindex="0" title="Nhà phố Gò Vấp"><span class="cham b3"></span></div>
+            <div class="c" tabindex="0" title="Cài đặt" style="margin-top:auto"><svg class="ic s"><use href="#i-gear"/></svg></div>
+          </div>
+          <div class="cot">
+            <div class="nh">Việc chung</div>
+            <div class="m on" tabindex="0"><svg class="ic"><use href="#i-home"/></svg><span class="col"><span class="tx">Home</span><span class="phu">Tổng quan studio</span></span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-folder"/></svg><span class="col"><span class="tx">Files</span><span class="phu">41 tệp mới</span></span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-check"/></svg><span class="col"><span class="tx">Bảng việc</span><span class="phu">7 việc tới hạn</span></span></div>
+            <div class="nh">Kho</div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-grid"/></svg><span class="col"><span class="tx">Gallery</span><span class="phu">Ảnh tuyển liên ngành</span></span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-box"/></svg><span class="col"><span class="tx">Kho vật liệu</span><span class="phu">218 matId</span></span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-drop"/></svg><span class="col"><span class="tx">Bảng màu</span><span class="phu">Gói hãng chưa nạp</span></span></div>
+            <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-left"/></svg></div>
+          </div>
+        </div><div class="mau-nhan">320</div></div>
+      </div>
+    </div>
+
+    <div class="tt">
+      <div class="tt-nhan">Đang mở dự án — cõi DỰ ÁN</div>
+      <div class="hang">
+        <div class="mau"><div class="sb thu hai" role="navigation" aria-label="C · thu · cõi dự án">
+          <div class="coi">
+            <div class="c" tabindex="0" title="Studio"><svg class="ic s"><use href="#i-studio"/></svg></div>
+            <div class="c du on" tabindex="0" title="Căn hộ Thảo Điền"><span class="cham mo-"></span></div>
+            <div class="c du" tabindex="0" title="Văn phòng Q4"><span class="cham b2"></span></div>
+            <div class="c du" tabindex="0" title="Nhà phố Gò Vấp"><span class="cham b3"></span></div>
+            <div class="c" tabindex="0" title="Cài đặt" style="margin-top:auto"><svg class="ic s"><use href="#i-gear"/></svg></div>
+          </div>
+        </div><div class="mau-nhan">28 · chỉ cột cõi</div></div>
+
+        <div class="mau"><div class="sb vua hai" role="navigation" aria-label="C · vừa · cõi dự án">
+          <div class="coi">
+            <div class="c" tabindex="0" title="Studio"><svg class="ic s"><use href="#i-studio"/></svg></div>
+            <div class="c du on" tabindex="0" title="Căn hộ Thảo Điền"><span class="cham mo-"></span></div>
+            <div class="c du" tabindex="0" title="Văn phòng Q4"><span class="cham b2"></span></div>
+            <div class="c du" tabindex="0" title="Nhà phố Gò Vấp"><span class="cham b3"></span></div>
+            <div class="c" tabindex="0" title="Cài đặt" style="margin-top:auto"><svg class="ic s"><use href="#i-gear"/></svg></div>
+          </div>
+          <div class="cot">
+            <div class="cot-tit">Căn hộ Thảo Điền</div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-info"/></svg><span class="tx">Tổng quan</span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-book"/></svg><span class="tx">Sổ tay</span></div>
+            <div class="m on" tabindex="0"><svg class="ic"><use href="#i-ruler"/></svg><span class="tx">Thiết kế 2D</span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-cube"/></svg><span class="tx">Thiết kế 3D</span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-img"/></svg><span class="tx">Chỉnh ảnh</span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-deck"/></svg><span class="tx">Trình chiếu</span></div>
+            <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-updown"/></svg></div>
+          </div>
+        </div><div class="mau-nhan">240 · mặc định</div></div>
+
+        <div class="mau"><div class="sb rong hai" role="navigation" aria-label="C · rộng · cõi dự án">
+          <div class="coi">
+            <div class="c" tabindex="0" title="Studio"><svg class="ic s"><use href="#i-studio"/></svg></div>
+            <div class="c du on" tabindex="0" title="Căn hộ Thảo Điền"><span class="cham mo-"></span></div>
+            <div class="c du" tabindex="0" title="Văn phòng Q4"><span class="cham b2"></span></div>
+            <div class="c du" tabindex="0" title="Nhà phố Gò Vấp"><span class="cham b3"></span></div>
+            <div class="c" tabindex="0" title="Cài đặt" style="margin-top:auto"><svg class="ic s"><use href="#i-gear"/></svg></div>
+          </div>
+          <div class="cot">
+            <div class="cot-tit">Căn hộ Thảo Điền · 78 m²</div>
+            <div class="nh">Chuẩn bị</div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-info"/></svg><span class="col"><span class="tx">Tổng quan</span><span class="phu">3 trên 5 bước xong</span></span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-book"/></svg><span class="col"><span class="tx">Sổ tay</span><span class="phu">12 nguồn</span></span></div>
+            <div class="nh">Ba chặng</div>
+            <div class="m on" tabindex="0"><svg class="ic"><use href="#i-ruler"/></svg><span class="col"><span class="tx">Thiết kế 2D</span><span class="phu">Sơ phác · dở 2 ngày</span></span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-cube"/></svg><span class="col"><span class="tx">Thiết kế 3D</span><span class="phu">2 job trong hàng đợi</span></span></div>
+            <div class="m" tabindex="0"><svg class="ic"><use href="#i-deck"/></svg><span class="col"><span class="tx">Trình chiếu</span><span class="phu">Dàn ý chờ sẵn · 9 trang</span></span></div>
+            <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-left"/></svg></div>
+          </div>
+        </div><div class="mau-nhan">320</div></div>
+      </div>
+    </div>
+  </div>
+
+  <table class="tl">
+  <tbody>
+  <tr><th>① Chưa mở dự án</th><td>Cột phải đổi <b>nội dung</b>, không đổi cấu trúc. Bấm một chấm dự án là cột phải liệt kê stage của nó — <b>không có trạng thái “chưa mở”</b>, vì cõi luôn được chọn.</td></tr>
+  <tr><th>② Đổi dự án</th><td>Ngay trên cột cõi — các dự án xếp dọc, một cú bấm, <b>không qua menu</b>. Rẻ nhất trong bốn kịch bản.</td></tr>
+  <tr><th>③ Chat</th><td>Ở cột phải của cõi Studio, thẻ chữ <code>sheet</code>.</td></tr>
+  <tr><th>④ Ở 28px</th><td><b>Nấc gọn nhất CHÍNH LÀ cơ chế của C</b>, không phải bản cắt xén của nó — cột cõi vốn đã 28px và vẫn nói đủ: đang ở cõi nào, có mấy dự án, cái nào đang mở.</td></tr>
+  <tr><th>⑤ Đi-tới ↔ đè-lên</th><td>Thẻ chữ như B. Thêm một điểm: mục đè-lên không bao giờ đổi cột cõi ⇒ có <b>kênh thứ hai</b> (cột cõi đứng yên) xác nhận “tôi chưa rời chỗ”.</td></tr>
+  <tr><th>⑥ Phạm vi</th><td><b>Chạy được CẢ HAI</b> — và đây là điểm riêng của C: ở <b>P1</b> thì chỉ cột cõi 28px theo vào chặng (dock giữ nguyên, không xung đột); ở <b>P2</b> thì cả hai cột vào. <b>Kịch bản duy nhất không phải chọn phạm vi ngay</b>, chọn được sau.</td></tr>
+  <tr><th>⑦ Vitals</th><td>Ở <b>P1</b>: không phải trả lời, dock còn nguyên. Ở <b>P2</b>: giống B — ba việc (dời ổ mount · ⌘J vào registry · cử chỉ thành nhấn-giữ). ⇒ C cho phép <b>làm P1 trước, trả nợ Vitals sau</b>, thay vì trả ngay.</td></tr>
+  <tr><th><code>StageSwitcher</code></th><td><b>BỎ ở P2 · GIỮ ở P1.</b> Không phải quyết ngay.</td></tr>
+  </tbody></table>
+</div>
+
+<!-- ─────────────── KB-D ─────────────── -->
+<div class="kb">
+  <div class="kb-dau">
+    <span class="kb-ma">KB·D</span>
+    <span class="kb-ten">Thanh phẳng + neo dự án ở đỉnh</span>
+    <span class="kb-co">Cơ chế: MỘT danh sách phẳng, không chia khối. Cấp thành TRẠNG THÁI: stage dự án mờ + dấu ổ khoá khi chưa mở dự án. Kịch bản duy nhất chấp nhận có mục mờ — đổi lại là kịch bản ít đụng code nhất.</span>
+  </div>
+
+  <div class="doi">
+    <div class="tt">
+      <div class="tt-nhan">Chưa mở dự án</div>
+      <div class="hang">
+        <div class="mau"><div class="sb thu" role="navigation" aria-label="D · thu · chưa mở dự án">
+          <div class="neo" tabindex="0" title="Chưa chọn dự án"><span class="cham" style="background:var(--t4)"></span></div>
+          <div class="m on" tabindex="0" title="Home"><svg class="ic"><use href="#i-home"/></svg></div>
+          <div class="m" tabindex="0" title="Files"><svg class="ic"><use href="#i-folder"/></svg></div>
+          <div class="m" tabindex="0" title="Gallery"><svg class="ic"><use href="#i-grid"/></svg></div>
+          <div class="m" tabindex="0" title="Vật liệu"><svg class="ic"><use href="#i-box"/></svg></div>
+          <div class="m" tabindex="0" title="Bảng việc"><svg class="ic"><use href="#i-check"/></svg></div>
+          <div class="m mo" aria-disabled="true" title="Tổng quan dự án — cần mở một dự án"><svg class="ic"><use href="#i-info"/></svg></div>
+          <div class="m mo" aria-disabled="true" title="Thiết kế 2D — cần mở một dự án"><svg class="ic"><use href="#i-ruler"/></svg></div>
+          <div class="m mo" aria-disabled="true" title="Thiết kế 3D — cần mở một dự án"><svg class="ic"><use href="#i-cube"/></svg></div>
+          <div class="m mo" aria-disabled="true" title="Trình chiếu — cần mở một dự án"><svg class="ic"><use href="#i-deck"/></svg></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-right"/></svg></div>
+        </div><div class="mau-nhan">28</div></div>
+
+        <div class="mau"><div class="sb vua" role="navigation" aria-label="D · vừa · chưa mở dự án">
+          <div class="neo" tabindex="0"><span class="cham" style="background:var(--t4)"></span><span class="col"><span class="ten">Chưa chọn dự án</span><span class="kieu">Bấm để chọn</span></span><svg class="ic s mui"><use href="#i-updown"/></svg></div>
+          <div class="m on" tabindex="0"><svg class="ic"><use href="#i-home"/></svg><span class="tx">Home</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-folder"/></svg><span class="tx">Files</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-grid"/></svg><span class="tx">Gallery</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-box"/></svg><span class="tx">Kho vật liệu</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-check"/></svg><span class="tx">Bảng việc</span></div>
+          <div class="m mo" aria-disabled="true"><svg class="ic"><use href="#i-info"/></svg><span class="tx">Tổng quan</span><svg class="ic s khoa"><use href="#i-lock"/></svg></div>
+          <div class="m mo" aria-disabled="true"><svg class="ic"><use href="#i-book"/></svg><span class="tx">Sổ tay</span><svg class="ic s khoa"><use href="#i-lock"/></svg></div>
+          <div class="m mo" aria-disabled="true"><svg class="ic"><use href="#i-ruler"/></svg><span class="tx">Thiết kế 2D</span><svg class="ic s khoa"><use href="#i-lock"/></svg></div>
+          <div class="m mo" aria-disabled="true"><svg class="ic"><use href="#i-cube"/></svg><span class="tx">Thiết kế 3D</span><svg class="ic s khoa"><use href="#i-lock"/></svg></div>
+          <div class="m mo" aria-disabled="true"><svg class="ic"><use href="#i-deck"/></svg><span class="tx">Trình chiếu</span><svg class="ic s khoa"><use href="#i-lock"/></svg></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-updown"/></svg></div>
+        </div><div class="mau-nhan">240 · mặc định</div></div>
+
+        <div class="mau"><div class="sb rong" role="navigation" aria-label="D · rộng · chưa mở dự án">
+          <div class="neo" tabindex="0"><span class="cham" style="background:var(--t4)"></span><span class="col"><span class="ten">Chưa chọn dự án</span><span class="kieu">Bấm để chọn · 3 dự án gần đây</span></span><svg class="ic s mui"><use href="#i-updown"/></svg></div>
+          <div class="nh">Studio</div>
+          <div class="m on" tabindex="0"><svg class="ic"><use href="#i-home"/></svg><span class="col"><span class="tx">Home</span><span class="phu">Tổng quan studio</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-folder"/></svg><span class="col"><span class="tx">Files</span><span class="phu">41 tệp mới</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-box"/></svg><span class="col"><span class="tx">Kho vật liệu</span><span class="phu">218 matId</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-check"/></svg><span class="col"><span class="tx">Bảng việc</span><span class="phu">7 việc tới hạn</span></span></div>
+          <div class="nh">Dự án</div>
+          <div class="m mo" aria-disabled="true"><svg class="ic"><use href="#i-info"/></svg><span class="col"><span class="tx">Tổng quan</span><span class="phu">Cần mở một dự án — chọn ở trên</span></span><svg class="ic s khoa"><use href="#i-lock"/></svg></div>
+          <div class="m mo" aria-disabled="true"><svg class="ic"><use href="#i-ruler"/></svg><span class="col"><span class="tx">Thiết kế 2D</span><span class="phu">Cần mở một dự án — chọn ở trên</span></span><svg class="ic s khoa"><use href="#i-lock"/></svg></div>
+          <div class="m mo" aria-disabled="true"><svg class="ic"><use href="#i-cube"/></svg><span class="col"><span class="tx">Thiết kế 3D</span><span class="phu">Cần mở một dự án — chọn ở trên</span></span><svg class="ic s khoa"><use href="#i-lock"/></svg></div>
+          <div class="m mo" aria-disabled="true"><svg class="ic"><use href="#i-deck"/></svg><span class="col"><span class="tx">Trình chiếu</span><span class="phu">Cần mở một dự án — chọn ở trên</span></span><svg class="ic s khoa"><use href="#i-lock"/></svg></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-left"/></svg></div>
+        </div><div class="mau-nhan">320</div></div>
+      </div>
+    </div>
+
+    <div class="tt">
+      <div class="tt-nhan">Đang mở dự án</div>
+      <div class="hang">
+        <div class="mau"><div class="sb thu" role="navigation" aria-label="D · thu · đang mở dự án">
+          <div class="neo" tabindex="0" title="Căn hộ Thảo Điền"><span class="cham mo-"></span></div>
+          <div class="m" tabindex="0" title="Home"><svg class="ic"><use href="#i-home"/></svg></div>
+          <div class="m" tabindex="0" title="Files"><svg class="ic"><use href="#i-folder"/></svg></div>
+          <div class="m" tabindex="0" title="Gallery"><svg class="ic"><use href="#i-grid"/></svg></div>
+          <div class="m" tabindex="0" title="Vật liệu"><svg class="ic"><use href="#i-box"/></svg></div>
+          <div class="m" tabindex="0" title="Bảng việc"><svg class="ic"><use href="#i-check"/></svg></div>
+          <div class="m" tabindex="0" title="Tổng quan dự án"><svg class="ic"><use href="#i-info"/></svg></div>
+          <div class="m on" tabindex="0" title="Thiết kế 2D"><svg class="ic"><use href="#i-ruler"/></svg></div>
+          <div class="m" tabindex="0" title="Thiết kế 3D"><svg class="ic"><use href="#i-cube"/></svg></div>
+          <div class="m" tabindex="0" title="Trình chiếu"><svg class="ic"><use href="#i-deck"/></svg></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-right"/></svg></div>
+        </div><div class="mau-nhan">28</div></div>
+
+        <div class="mau"><div class="sb vua" role="navigation" aria-label="D · vừa · đang mở dự án">
+          <div class="neo" tabindex="0"><span class="cham mo-"></span><span class="col"><span class="ten">Căn hộ Thảo Điền</span><span class="kieu">Đổi dự án</span></span><svg class="ic s mui"><use href="#i-updown"/></svg></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-home"/></svg><span class="tx">Home</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-folder"/></svg><span class="tx">Files</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-grid"/></svg><span class="tx">Gallery</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-box"/></svg><span class="tx">Kho vật liệu</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-check"/></svg><span class="tx">Bảng việc</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-info"/></svg><span class="tx">Tổng quan</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-book"/></svg><span class="tx">Sổ tay</span></div>
+          <div class="m on" tabindex="0"><svg class="ic"><use href="#i-ruler"/></svg><span class="tx">Thiết kế 2D</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-cube"/></svg><span class="tx">Thiết kế 3D</span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-deck"/></svg><span class="tx">Trình chiếu</span></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-updown"/></svg></div>
+        </div><div class="mau-nhan">240 · mặc định</div></div>
+
+        <div class="mau"><div class="sb rong" role="navigation" aria-label="D · rộng · đang mở dự án">
+          <div class="neo" tabindex="0"><span class="cham mo-"></span><span class="col"><span class="ten">Căn hộ Thảo Điền</span><span class="kieu">78 m² · Đổi dự án</span></span><svg class="ic s mui"><use href="#i-updown"/></svg></div>
+          <div class="nh">Studio</div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-home"/></svg><span class="col"><span class="tx">Home</span><span class="phu">Tổng quan studio</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-folder"/></svg><span class="col"><span class="tx">Files</span><span class="phu">41 tệp mới</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-box"/></svg><span class="col"><span class="tx">Kho vật liệu</span><span class="phu">218 matId</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-check"/></svg><span class="col"><span class="tx">Bảng việc</span><span class="phu">7 việc tới hạn</span></span></div>
+          <div class="nh">Dự án</div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-info"/></svg><span class="col"><span class="tx">Tổng quan</span><span class="phu">3 trên 5 bước xong</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-book"/></svg><span class="col"><span class="tx">Sổ tay</span><span class="phu">12 nguồn</span></span></div>
+          <div class="m on" tabindex="0"><svg class="ic"><use href="#i-ruler"/></svg><span class="col"><span class="tx">Thiết kế 2D</span><span class="phu">Sơ phác · dở 2 ngày</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-cube"/></svg><span class="col"><span class="tx">Thiết kế 3D</span><span class="phu">2 job trong hàng đợi</span></span></div>
+          <div class="m" tabindex="0"><svg class="ic"><use href="#i-deck"/></svg><span class="col"><span class="tx">Trình chiếu</span><span class="phu">Dàn ý chờ sẵn · 9 trang</span></span></div>
+          <div class="tay" tabindex="0"><svg class="ic s"><use href="#i-left"/></svg></div>
+        </div><div class="mau-nhan">320</div></div>
+      </div>
+    </div>
+  </div>
+
+  <table class="tl">
+  <tbody>
+  <tr><th>① Chưa mở dự án</th><td>5 stage <b>mờ + ổ khoá</b>, đứng nguyên chỗ. Vị trí mục không bao giờ nhảy — <b>đây là điểm mạnh riêng của D</b>: trí nhớ cơ bắp của người dùng không bị phá.</td></tr>
+  <tr><th>② Đổi dự án</th><td>Hàng NEO ở đỉnh thanh, luôn ở đó dù có dự án hay không.</td></tr>
+  <tr><th>③ Chat</th><td>Trong danh sách phẳng, thẻ <code>sheet</code>.</td></tr>
+  <tr><th>④ Ở 28px</th><td><b>Chỗ D gãy.</b> Icon mờ ở 28px không nói được <i>lý do</i> mờ, mà lý do nằm trong ô giải nghĩa cần rê chuột — tức nấc 28 <b>đứng một mình không đủ</b>.</td></tr>
+  <tr><th>⑤ Đi-tới ↔ đè-lên</th><td>Thẻ chữ. Yếu hơn C vì không có kênh thứ hai xác nhận “chưa rời chỗ”.</td></tr>
+  <tr><th>⑥ Phạm vi</th><td><b>P1 · chỉ cấp app.</b> D là kịch bản khớp đúng hiện trạng đo được (dashboard không có dock, chặng có dock) ⇒ lắp vào là chạy, không đụng gì.</td></tr>
+  <tr><th>⑦ Vitals</th><td><b>Không phải trả lời</b> — dock nguyên vẹn.</td></tr>
+  <tr><th><code>StageSwitcher</code></th><td><b>GIỮ NGUYÊN</b> — rẻ nhất về công thi công. Đổi lại: là kịch bản duy nhất <b>cố ý</b> giữ hai trục điều hướng song song, tức <b>giữ nguyên mâu thuẫn mà chốt “router toàn app” muốn đóng</b>. Nói thẳng để Hoà cân, không giấu.</td></tr>
+  </tbody></table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §4 · doiChieuKichBan
+     ══════════════════════════════════════════════════════════════════ -->
+<h2 id="doiChieuKichBan">4 · Đối chiếu — được gì · mất gì · gãy ở đâu khi app lớn thêm</h2>
+<p class="lead">
+  ⛔ Bảng này <b>không xếp hạng, không chấm điểm</b> (§12.3). Nói “X trượt ràng buộc Y” là sự thật
+  đo được — khác với nói X kém hơn Z.<br>
+  Phép thử “lớn thêm”: <b>thêm 5 stage</b> đang xếp hàng thật trong sổ — Chat có địa chỉ riêng ·
+  Lịch/Gantt tách khỏi Bảng việc · Company DNA Pack · Cổng duyệt (Review Gate) · Hồ sơ công ty.
+</p>
+<table>
+<thead><tr><th style="width:8%">KB</th><th style="width:29%">Được gì</th><th style="width:29%">Mất gì</th><th>Gãy ở đâu khi thêm 5 stage</th></tr></thead>
+<tbody>
+<tr>
+  <td><b>A</b><br>hai khối</td>
+  <td>Thấy cả hai cấp cùng lúc — biết mình có gì mà không phải bấm. Ô mời biến “mục chết” thành lời mời làm việc.</td>
+  <td>Tốn chiều cao gấp đôi. Ranh giới bằng chuyển sắc là kênh mảnh nhất trong bốn cách.</td>
+  <td><b>Gãy sớm nhất — ở CHIỀU CAO.</b> Khối app 11 mục đẩy khối dự án xuống dưới mép màn ⇒ phải cuộn, mà cuộn thì mất đúng khối dự án khỏi tầm mắt — tức mất luôn lý do tồn tại của A.</td>
+</tr>
+<tr>
+  <td><b>B</b><br>đổi ruột</td>
+  <td>Mỗi lúc chỉ một cõi ⇒ danh sách luôn ngắn. Chịu được nhiều stage nhất trong bốn cách.</td>
+  <td>Muốn tới stage app khi đang trong dự án thì phải quay ra rồi vào lại — <b>hai bước cho việc một bước</b>. Đây là giá thật, trả mỗi lần.</td>
+  <td><b>Gãy muộn, nhưng gãy sâu.</b> Ruột Studio 12 mục cần nhóm con ⇒ thành <b>ba tầng</b> điều hướng (cõi → nhóm → stage) trong một thanh đang đổi ruột. Ba tầng là chỗ người dùng bắt đầu lạc.</td>
+</tr>
+<tr>
+  <td><b>C</b><br>hai cột</td>
+  <td>Hai cấp không tranh chỗ nhau bao giờ. Đổi dự án rẻ nhất (một cú bấm). Nấc 28 là cơ chế chứ không phải bản rút gọn.</td>
+  <td>Chiếm 28px thường trực ngay cả khi thu. Tới một stage app khi đang trong dự án tốn <b>hai cú bấm</b> (đổi cõi rồi chọn).</td>
+  <td><b>Gãy ở CỘT CÕI, không ở cột stage.</b> Cột 28px chứa khoảng 8 biểu tượng trước khi phải cuộn dọc — mà nội dung nó là <i>số dự án</i>, thứ tăng nhanh hơn số stage. Studio 20 dự án là vỡ, không phải 5 stage mới.</td>
+</tr>
+<tr>
+  <td><b>D</b><br>phẳng + neo</td>
+  <td>Vị trí mục <b>không bao giờ nhảy</b> — trí nhớ cơ bắp được giữ. Ít đụng code nhất.</td>
+  <td>Chấp nhận mục chết. Và giữ <code>StageSwitcher</code> nghĩa là <b>vẫn còn hai trục điều hướng song song</b> — đúng thứ chốt của Hoà muốn đóng lại.</td>
+  <td><b>Gãy ở TỈ LỆ MỜ.</b> Nếu stage dự án tăng nhanh hơn stage app, người chưa mở dự án mở thanh ra thấy quá nửa là ổ khoá — thanh đọc như một danh sách thứ mình không được dùng.</td>
+</tr>
+</tbody></table>
+
+<div class="note canh">
+  <span class="tit">🔴 Bảng giá phải trả cho Vitals — đọc cùng bảng trên, đừng đọc rời</span>
+  <table style="margin-top:9px">
+  <thead><tr><th style="width:8%">KB</th><th style="width:16%">Phạm vi</th><th style="width:14%">Dock</th><th>Nợ Vitals phải trả TRƯỚC khi ship</th></tr></thead>
+  <tbody>
+  <tr><td><b>A</b></td><td>P2</td><td>đổi vai, <b>giữ thân</b></td><td><b>Không nợ.</b> Ổ mount <code>:435</code>, ⌘J, cử chỉ — còn nguyên cả ba.</td></tr>
+  <tr><td><b>B</b></td><td>P2</td><td><b>bỏ</b></td><td><b>Ba việc</b>: dời ổ mount sang nút Vitals cạnh trục phải · ⌘J vào <code>hotkey-registry</code> · cử chỉ kéo-xuống → nhấn-giữ 500ms.</td></tr>
+  <tr><td><b>C</b></td><td><b>P1 hoặc P2</b></td><td>giữ ở P1, bỏ ở P2</td><td><b>Hoãn được.</b> Làm P1 trước thì nợ bằng 0; trả ba việc khi nào lên P2.</td></tr>
+  <tr><td><b>D</b></td><td>P1</td><td>giữ</td><td><b>Không nợ</b> — nhưng đổi lại là giữ luôn hai trục song song.</td></tr>
+  </tbody></table>
+  ⇒ Đọc chéo hai bảng thấy một <b>đánh đổi thẳng</b>: kịch bản nào <b>đóng được</b> mâu thuẫn hai-trục
+  (B, và C ở P2) thì <b>phải trả nợ Vitals</b>; kịch bản nào <b>không nợ</b> (A, D) thì hoặc giữ dock
+  dưới tên khác (A), hoặc giữ nguyên mâu thuẫn (D). <b>C là cái duy nhất cho phép hoãn quyết định</b>
+  — đó là sự thật đo được, không phải lời khuyên chọn C.
+</div>
+
+<div class="note canh">
+  <span class="tit">Ràng buộc chung — cả bốn kịch bản đều phải đạt, không phải điểm phân biệt</span>
+  ① <b>Thu/mở nhớ giữa các phiên</b>, <b>cấm auto-hide</b> · ② mọi stage tới được <b>bằng bàn phím</b>
+  (mọi mục trong bản vẽ này đều <code>tabindex</code> + có vòng focus thấy được) · ③ nhãn 1–2 từ
+  <b>vẫn giữ</b> ở nấc 240/320, chỉ nấc 28 mới rút về ký hiệu (NT-8) · ④ chấm định danh dự án là
+  <b>lớp ③ Brand Kit</b>, và luôn kèm kênh hình dạng (viền dày = đang mở) vì màu không được là kênh duy nhất.<br>
+  ⑤ <b>Mục mờ KHÔNG được mờ tới mức khó đọc.</b> Bản vẽ này đo tương phản thật và <b>đã sửa một
+  vòng</b>: mọi chữ mang tin — phụ đề · nhãn nhóm · nhãn nấc · <b>và cả dòng lý do của mục bị
+  khoá</b> — rời khỏi bậc màu mờ nhất (<code>--t4</code> đo được 3,26 ở theme sáng, dưới ngưỡng).
+  Trạng thái “không dùng được” nay nói bằng <b>ổ khoá + <code>aria-disabled</code></b>,
+  <b>không nói bằng độ mờ</b> — vì độ mờ là kênh độ sáng, chết ở chế độ tăng tương phản.
+  Đây cũng chính là lý do KB-D trượt <b>H6</b> ở bảng thước: ổ khoá <i>biến mất</i> ở nấc 28px.
+</div>
+
+<div class="note">
+  <span class="tit">⚠️ Ký hiệu nghề — khai thật: đây là ĐỀ XUẤT MỚI, không phải tài sản sẵn có</span>
+  Ba chặng trong bản vẽ này dùng thước-ê-ke / khối / khung chiếu — gần ký hiệu bản vẽ hơn icon chung.
+  Nhưng IF <b>hiện chưa có bộ ký hiệu nghề nào</b> (thanh công cụ vẫn 11/11 lucide). Nếu Hoà chọn
+  hướng này thì đó là <b>việc mới phải dựng</b>, không phải thứ lắp vào là chạy.
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §5 · thước
+     ══════════════════════════════════════════════════════════════════ -->
+<h2>5 · Chấm bằng thước <code>simpleCoChiTiet</code> — 7 câu có sẵn</h2>
+<p class="lead">
+  Thước lấy nguyên từ <code>docs/mocks/mock-chu-ky-va-bieu-tuong-tep.html</code> — <b>không chế
+  thước thứ hai</b>. Vật được chấm là <b>chi tiết mang cơ chế</b> của mỗi kịch bản, tức thứ nói cho
+  người dùng biết một mục thuộc cấp nào:<br>
+  <b>A</b> = chuyển sắc ngăn hai khối + chấm dự án · <b>B</b> = ô đỉnh chỉ báo cõi + nút quay ra ·
+  <b>C</b> = cột cõi 28px thường trực · <b>D</b> = độ mờ của mục + neo dự án đỉnh.
+</p>
+<table>
+<thead><tr><th style="width:24%">Câu</th><th style="width:19%">A · chuyển sắc</th><th style="width:19%">B · ô đỉnh cõi</th><th style="width:19%">C · cột cõi</th><th>D · độ mờ</th></tr></thead>
+<tbody>
+<tr><td><b>H1</b> nói được một câu ≤10 từ</td>
+  <td><span class="dat">ĐẠT</span> “Nhóm dưới thuộc dự án đang mở.”</td>
+  <td><span class="dat">ĐẠT</span> “Thanh đang hiện ruột dự án này.”</td>
+  <td><span class="dat">ĐẠT</span> “Cột trái là cõi, cột phải là việc.”</td>
+  <td><span class="dat">ĐẠT</span> “Mục này cần một dự án đang mở.”</td></tr>
+
+<tr><td><b>H2</b> bỏ đi mất tin gì · tin đó còn ở đâu trên cùng màn</td>
+  <td><span class="mapme">MẤP MÉ</span> bỏ chuyển sắc thì mất ranh giới — nhưng tin đó <b>trùng</b> với hàng neo ngay trên khối.</td>
+  <td><span class="dat">ĐẠT</span> bỏ ô đỉnh là mất hẳn đường ra; không có ở đâu khác.</td>
+  <td><span class="dat">ĐẠT</span> bỏ cột cõi là mất hẳn cách đổi cõi.</td>
+  <td><span class="dat">ĐẠT</span> bỏ độ mờ thì bấm vào ra trang trống; không có ở đâu khác.</td></tr>
+
+<tr><td><b>H3</b> đổi theo dữ liệu thật</td>
+  <td><span class="dat">ĐẠT</span> tên + chấm Brand Kit đổi theo dự án.</td>
+  <td><span class="dat">ĐẠT</span> ô đỉnh mang danh tính dự án.</td>
+  <td><span class="dat">ĐẠT</span> cột cõi liệt kê dự án thật, dài ngắn theo kho.</td>
+  <td><span class="mapme">MẤP MÉ</span> độ mờ chỉ <b>hai trạng thái</b> — dữ liệu nhị phân, hai dự án khác nhau trông y hệt.</td></tr>
+
+<tr><td><b>H4</b> đọc ra không cần dạy</td>
+  <td><span class="dat">ĐẠT</span> khoảng thở chia nhóm là quy ước quen.</td>
+  <td><span class="dat">ĐẠT</span> “‹ Studio” là điều hướng phân cấp quen thuộc.</td>
+  <td><span class="dat">ĐẠT</span> hai cột là quy ước Slack/Finder — quen nhất trong bốn.</td>
+  <td><span class="dat">ĐẠT</span> mờ = không dùng được, quy ước phổ quát.</td></tr>
+
+<tr><td><b>H5</b> sống ở nấc gọn nhất (28px) — <b>soi kỹ</b></td>
+  <td><span class="mapme">MẤP MÉ</span> khoảng thở 26px ở thanh 28px rất mảnh; phải nhờ chấm dự án gánh.</td>
+  <td><span class="mapme">MẤP MÉ</span> sống <b>chỉ khi</b> ô đỉnh không bị cắt lúc thu. Cắt là mất dấu cõi hoàn toàn.</td>
+  <td><span class="dat">ĐẠT MẠNH</span> nấc 28 <b>chính là</b> cơ chế của C, không phải bản cắt xén của nó.</td>
+  <td><span class="truot">TRƯỢT</span> icon mờ không nói được <i>lý do</i>; lý do nằm trong ô giải nghĩa cần rê chuột.</td></tr>
+
+<tr><td><b>H6</b> bỏ hết màu vẫn đọc được</td>
+  <td><span class="dat">ĐẠT</span> còn khoảng thở (không gian) + tên (chữ).</td>
+  <td><span class="dat">ĐẠT</span> nút + mũi tên là kênh hình dạng.</td>
+  <td><span class="dat">ĐẠT</span> vị trí cột là kênh không gian, không dính màu.</td>
+  <td><span class="truot">TRƯỢT nếu chỉ dùng độ mờ</span> — mờ là kênh ĐỘ SÁNG, chết ở chế độ tăng tương phản. <b>Bản vẽ này đã vá</b> bằng ổ khoá, nhưng ổ khoá biến mất ở nấc 28.</td></tr>
+
+<tr><td><b>H7</b> đứng được trong khung hình tĩnh</td>
+  <td><span class="dat">ĐẠT</span> một ảnh thấy đủ hai khối.</td>
+  <td><span class="truot">TRƯỢT</span> cơ chế của B <b>là chuyển động</b>; một ảnh chỉ thấy một ruột, không kể được là có hai.</td>
+  <td><span class="dat">ĐẠT</span> một ảnh thấy đủ cả hai trục.</td>
+  <td><span class="dat">ĐẠT</span> một ảnh thấy đủ mờ ↔ sáng.</td></tr>
+</tbody></table>
+
+<div class="note">
+  <span class="tit">Đọc bảng cho đúng — thước không bầu chọn</span>
+  ① <b>Thước không được nới để cho một phương án qua cửa</b> (luật đã ghi ở mock gốc). D trượt H5
+  và H6 <i>là sự thật đo được</i>, không phải lời khuyên bỏ D — nếu điều Hoà cần là <b>vị trí mục
+  không bao giờ nhảy</b> thì trượt H5 vẫn có thể chấp nhận, và đó là quyền của Hoà chứ không phải
+  của thước.<br>
+  ② B trượt <b>H7</b> vì cơ chế của nó nằm ở chuyển động — điều này <b>không đo được qua ảnh chụp</b>,
+  nên nếu Hoà duyệt bằng ảnh trong thư mục Drive thì B là kịch bản <b>bị thiệt nhất bởi cách duyệt</b>,
+  không phải bởi bản thân nó. Nói ra để cách duyệt không âm thầm loại một phương án.<br>
+  ③ Ba trong bốn “MẤP MÉ” đều rơi vào <b>H5</b> — xác nhận đúng câu phiếu đã cảnh báo: nấc 28px là
+  chỗ sidebar hay chết.
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<h2>6 · Chưa chắc · Hạn dùng</h2>
+<table>
+<thead><tr><th style="width:26%">Mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td><b>Không mở app thật</b></td><td>Phiếu cấm dev server. Mọi kết luận về điều hướng hiện tại là <b>ĐỌC MÃ</b>, không phải quan sát màn hình chạy.</td></tr>
+<tr><td><b>Không chắc cấp</b></td><td><code>/library/ingest</code> — nhập kho có thể thuộc <i>một dự án</i> chứ không thuần cấp app; xếp cấp app theo route, <b>chưa xác minh nghiệp vụ</b>. · <code>/materials</code> + <code>/colors</code> — <b>code nói stage, chốt 07/08 nói kệ</b> (Lệch 8), P-P <b>không chọn hộ</b>. · <code>/settings</code> — màn thật về cơ chế nhưng có thể là <b>tiện ích</b> chứ không phải stage làm việc (Lệch 9), <b>không có bằng chứng trong sổ để quyết</b>.</td></tr>
+<tr><td><b>Số kịch bản không khoá</b></td><td>Bốn kịch bản <b>cố ý không khoá cứng vào con số 6+5</b>. Nếu Vật liệu · Màu rút về làm kệ thì cấp app còn 4–5 mục: <b>A</b> nhẹ đi (bớt áp lực chiều cao) · <b>B</b> ruột Studio ngắn lại, bớt nhu cầu nhóm con · <b>C</b> không đổi gì (cột cõi vốn không chứa stage) · <b>D</b> <b>xấu đi</b> vì tỉ lệ mục mờ tăng. Tức <b>chính câu hỏi “mục nào sai lệch” của Hoà cũng là một phép thử phân biệt bốn kịch bản.</b></td></tr>
+<tr><td><b>Số tự chọn</b></td><td>Chiều cao mẫu <b>398px</b> · khoảng ngăn <b>26/34px</b> · cột cõi <b>22px</b> nút trong dải 28px — <b>không có nguồn</b>, chọn để bốn kịch bản so được. Ba nấc 28/240/320 thì <b>có nguồn</b> (mock sidebar 3 nấc). Số liệu trong phụ đề (218 matId, 41 tệp, 7 việc) là <b>giả để minh hoạ H3</b>.</td></tr>
+<tr><td><b>Thước chấm không tới</b></td><td>Thước đo được <i>một chi tiết</i>, không đo được <b>chi phí thao tác lặp lại</b> — thứ phân biệt B và C rõ nhất (một bước ↔ hai bước, trả mỗi lần dùng). Muốn so chỗ đó phải đếm cú bấm trên đường đi thật, việc khác.</td></tr>
+</tbody></table>
+
+<div class="note">
+  <span class="tit">Hạn dùng — bản vẽ này hết đúng khi…</span>
+  ① <b>Hoà chọn một kịch bản</b> ⇒ ba cái còn lại phải <b>khai tử tường minh</b> trong sổ, không bỏ
+  hoang (bài học “văn bản bị thay phải đóng dấu tại chỗ”).<br>
+  ② <b>Chat được cấp route riêng</b> ⇒ mọi ô “③ Chat” trong bốn bảng đổi nghĩa, và Lệch 2 đóng.<br>
+  ③ <b>Ba cơ chế mount được hoà giải</b> (Lệch 1) ⇒ câu ⑤ mất lý do tồn tại và bốn kịch bản phải
+  chấm lại — vì lúc đó “mục-đè-lên” không còn là ngoại lệ.<br>
+  ④ <b>Bản tablet/điện thoại bắt đầu làm</b> ⇒ sidebar là thứ vỡ đầu tiên khi màn hẹp; riêng C có
+  hai cột nên phải đo lại trước nhất.<br>
+  ⑤ <b><code>/dev-bench-3d-2</code> bị xoá</b> ⇒ con số “25 route” trong bản vẽ này thành 24.<br>
+  ⑥ <b>Vitals được dời khỏi dock</b> (chốt 16/08 “nút tròn rời cạnh trục phải” thi công xong) ⇒
+  ràng buộc cứng ⑦ <b>tan biến</b>, và lúc đó B với C·P2 <b>hết nợ</b> — bảng giá phải chấm lại,
+  vì đánh đổi lớn nhất giữa bốn kịch bản hôm nay chính là khoản nợ đó.<br>
+  ⑦ <b>Vật liệu · Màu được quyết là kệ hay stage</b> (Lệch 8) ⇒ số mục cấp app đổi, và theo bảng
+  “số kịch bản không khoá” thì D là cái đổi nhiều nhất.
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+(function(){
+  var b=document.documentElement, g=document.getElementById('gat'), t=document.getElementById('gat-tx');
+  function set(v){ b.setAttribute('data-theme',v); t.textContent = v==='toi' ? 'Chế độ sáng' : 'Chế độ tối'; }
+  g.addEventListener('click', function(){ set(b.getAttribute('data-theme')==='toi'?'sang':'toi'); });
+})();
+</script>
+</body>
+</html>
