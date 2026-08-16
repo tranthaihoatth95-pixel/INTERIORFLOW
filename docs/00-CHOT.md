@@ -1038,3 +1038,11 @@ chạm sau khi kiểm scene thật. Xem `docs/CHOT-DESIGN-DNA-CAMERA-2026-08-10.
 · ② **SAI BẢN CHẤT, nặng hơn**: tên thật là `TOOLTIP_LONG_PRESS_MS` — tiền tố nói rõ nó **thuộc về Tooltip**, KHÔNG phải hằng số cử chỉ dùng chung. ⇒ IF **CHƯA CÓ** chuẩn nhấn-giữ chung; dùng lại hằng số của tooltip cho Vitals là **sai ngữ nghĩa** (Vitals không phải tooltip).
 · ✅ **CÁCH ĐÚNG**: tách thành cử chỉ chung (`lib/gesture/long-press.ts` hoặc token), giữ nguyên giá trị **500ms / 8px**, Tooltip và Vitals cùng đọc một nguồn. Đây đúng họ bệnh "cùng một thứ khai nhiều chỗ" mà `may-soi-dong-dang` sinh ra để bắt.
 · 📌 **BÀI HỌC CHO T**: T grep ra con số rồi suy địa chỉ theo trí nhớ thay vì đọc kết quả grep. Grep có trả đúng đường dẫn — T lướt qua. Luật: **đã grep thì đọc đường dẫn trong kết quả, đừng nhớ hộ máy.**
+
+[16/08 Hoà chốt — BỎ HẲN VÀNG ĐỒNG KHỎI VAI MÀU NHẤN] Nguyên văn: *"bỏ màu vàng đấy thay bằng màu khác, tone vàng mà thêm xám vào là thảm hoạ."*
+· **ĐÚNG VỀ MẶT MÀU**: màu ấm bão hoà thấp đặt trên nền XÁM thì ra **xỉn/ố**, không ra trầm. `--accent-warm #c79a63` chỉ sống được trên nền KEM ẤM — mà nền kem ấm chính là thứ vừa bị loại vì "sến, giống điện thoại Trung Quốc". Giữ đồng trong khi làm theme sáng trung tính là **mâu thuẫn tự thân**.
+· ⇒ **BỎ `--accent-warm` khỏi vai màu nhấn thứ hai.** Cặp mới: **tím `#7c3aed` ↔ [màu thay, chờ Hoà chọn]**.
+· ✅ **HỆ QUẢ TỐT — một vấn đề tự tan**: đồng (33°) chỉ cách `--warning` (37°) **4°** — ca đụng nghĩa T nêu sáng cùng ngày, nay không còn. Kiểm "nút đồng cạnh cảnh báo vàng" bỏ, thay bằng kiểm màu-mới cạnh cả 3 màu nghĩa.
+· **RÀNG BUỘC CHỌN MÀU THAY**: ngoài vùng cấm (đỏ 25° · vàng 37° · xanh đạt 145°) · cách tím 262° tối thiểu 60° · **phải SẠCH trên nền xám** (đây đúng chỗ vàng chết, đừng lặp) · không sến, không bão hoà cao.
+· **BA HƯỚNG T GỢI Ý, Hoà chọn qua bản vẽ**: ① **mòng két trầm 180–190°** (T xếp mạnh nhất — Hoà đã tự nghiêng về teal hôm nay khi bàn rêu; trên nền xám nó SẠCH, ngược hẳn vàng; cách tím 72–82°, cách xanh đạt 35–45°; gốc nghề: bản vẽ in xanh + đồng ngả patina) ② **mận trầm 330–340°** (sang, tương phản mạnh; rủi ro quá hồng là sến ngay) ③ hướng do phiên dựng tự đề xuất.
+· ⚠️ **KÉO THEO**: nút *"Vào xưởng"* ở màn khoá đang màu đồng → đổi theo, phải vẽ trong bản duyệt. Và 12 tệp đang dùng `accent-warm` phải rà lại khi thi công.
