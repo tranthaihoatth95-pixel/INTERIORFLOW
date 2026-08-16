@@ -58,6 +58,8 @@ import {
 import IOMenu from '@/components/ui/IOMenu';
 import LightArc from '@/components/ui/LightArc';
 import { ToolbarChip } from '@/components/ui/ToolbarChip';
+import { commonCommandsFor, bindStage } from '@/lib/commands/toolbar-source';
+import { CommandIcon } from '@/components/ui/command-icon';
 import { RADIUS } from '@/lib/geometry';
 import { useDismissable } from '@/lib/useDismissable';
 import type { EditorSlide, ShapeKind } from '@/lib/present-editor/model';
@@ -715,12 +717,27 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
       </Btn>
 
       <Divider />
-      <IconOnly onClick={p.onUndo} label="Hoàn tác" title={p.canUndo ? 'Hoàn tác' : 'Chưa có thao tác nào để hoàn tác'} disabled={!p.canUndo}>
-        <Undo2 size={15} />
-      </IconOnly>
-      <IconOnly onClick={p.onRedo} label="Làm lại" title={p.canRedo ? 'Làm lại' : 'Chưa hoàn tác gì để làm lại'} disabled={!p.canRedo}>
-        <Redo2 size={15} />
-      </IconOnly>
+      {/* ══ TẦNG ① — LỆNH CHUNG, ĐỌC TỪ SỔ LỆNH (B2) ══
+          Trước B2 chỗ này là hai nút Hoàn tác/Làm lại tự khai. Nay cả cụm đọc
+          `lib/commands/registry.ts`, nên Trình chiếu bày ĐÚNG bộ lệnh chung, ĐÚNG thứ tự, ĐÚNG
+          icon như 2D và 3D.
+          Tám lệnh chặng này chưa có engine vẫn HIỆN, mờ kèm lý do thật (§9 "cấm nút giả · cấm xoá
+          ô trống cho gọn mắt"): ô mờ là bằng chứng còn việc, và giấu đi thì ba chặng lại hiện ba
+          bộ nút khác nhau — đúng cái B2 sinh ra để dẹp. */}
+      {bindStage(commonCommandsFor({ stage: 'present' }), {
+        'cad.sel.undo': { run: p.onUndo, unavailableReason: p.canUndo ? undefined : 'Chưa có thao tác nào để hoàn tác' },
+        'cad.sel.redo': { run: p.onRedo, unavailableReason: p.canRedo ? undefined : 'Chưa hoàn tác gì để làm lại' },
+      }).map((c) => (
+        <IconOnly
+          key={c.id}
+          onClick={c.run}
+          label={c.label[0]}
+          title={c.enabled ? c.label[0] : (c.disabledReason ?? c.label[0])}
+          disabled={!c.enabled}
+        >
+          <CommandIcon name={c.icon} size={15} />
+        </IconOnly>
+      ))}
 
       <Divider />
       {/* H4 (13/08) — Sắp xếp/Brand Kit/Khổ trình bày/Xem lưới GỘP vào 1 menu "⋯". Đặt tên "⋯"

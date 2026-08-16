@@ -86,7 +86,10 @@ export function ToolbarChip({
         background: active ? 'var(--accent-soft)' : 'transparent',
         color: active ? 'var(--accent)' : 'var(--t2)',
         cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.35 : 1,
+        // 16/08 (B2, a11y): 0.35 → 0.5. Ở 0.35 nét icon tụt xuống ~2,2:1 trên nền panel — dưới cả
+        // ngưỡng 3:1 của WCAG 1.4.11 cho thành phần giao diện, tức nút mờ thành nút ĐỌC KHÔNG RA.
+        // Trái đúng ý §9: mờ là để nói "chưa dùng được", không phải để biến mất khỏi mắt.
+        opacity: disabled ? 0.5 : 1,
         touchAction: 'manipulation',
         transition: 'background .15s, color .15s',
         fontSize: 10.5,
@@ -102,7 +105,10 @@ export function ToolbarChip({
         background: active ? 'var(--accent-soft)' : 'transparent',
         color: active ? 'var(--accent)' : 'var(--t2)',
         cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.35 : 1,
+        // 16/08 (B2, a11y): 0.35 → 0.5. Ở 0.35 nét icon tụt xuống ~2,2:1 trên nền panel — dưới cả
+        // ngưỡng 3:1 của WCAG 1.4.11 cho thành phần giao diện, tức nút mờ thành nút ĐỌC KHÔNG RA.
+        // Trái đúng ý §9: mờ là để nói "chưa dùng được", không phải để biến mất khỏi mắt.
+        opacity: disabled ? 0.5 : 1,
         touchAction: 'manipulation',
         transition: 'background .15s, color .15s',
         flexShrink: 0,
@@ -139,19 +145,33 @@ export function ToolbarChip({
 
 /**
  * `ToolbarBar` — vỏ capsule dùng chung cho thanh công cụ (KB-1: h44 · r-full · đệm 6 · gap 2).
- * CHƯA wire vào 3 chặng ở phiếu này (việc 2-4 chỉ đổi NÚT bên trong, container mỗi chặng vẫn giữ
- * nguyên) — export sẵn cho phiếu kế nối container, tránh phải quay lại sửa component nền lần 2.
+ *
+ * 16/08 (B2) — ĐÃ WIRE, hết nợ 15/08. Nó nay mang cả MẶT (nền · viền · đổ bóng), không chỉ khung
+ * xếp: KB-1 gọi đây là "vỏ capsule", mà vỏ thì phải có mặt — để mỗi chặng tự vẽ nền là chỗ ba
+ * chặng lại trôi ra ba kiểu.
+ *
+ * ▸ BO ĐỒNG TÂM TỰ ĐÚNG, không cần khai số: `RADIUS.full` (999) bị trình duyệt kẹp về nửa cạnh
+ *   ngắn ⇒ vỏ 44 cho bo 22, nút 32 cho bo 16, mà `22 − đệm 6 = 16` — đúng công thức
+ *   `rInner = rOuter − pad` của luật §2d, ở MỌI cỡ, kể cả khi `--tap` nở lên 44 lúc chạm.
+ *   Vì thế KHÔNG được thay `RADIUS.full` bằng một con số cụ thể: thay là mất tính đồng tâm.
+ *
+ * `style` chỉ nhận phần ĐỊNH VỊ của nơi gọi (absolute/bottom/z-index…) — dock 3D nổi trên khung
+ * nhìn, thanh 2D nằm trong toolbelt; hình dạng thì tuyệt đối không cho ghi đè.
  */
-export function ToolbarBar({ children }: { children: ReactNode }) {
+export function ToolbarBar({ children, style }: { children: ReactNode; style?: CSSProperties }) {
   return (
     <div
       style={{
+        ...style,
         display: 'flex',
         alignItems: 'center',
         gap: 2,
         height: 'var(--tap-lg)',
         padding: '0 6px',
         borderRadius: RADIUS.full,
+        background: 'var(--panel)',
+        border: '1px solid var(--border)',
+        boxShadow: 'var(--shadow-pop)',
       }}
     >
       {children}

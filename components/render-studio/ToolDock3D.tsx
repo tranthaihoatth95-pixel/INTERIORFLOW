@@ -33,12 +33,14 @@
 
 import { useEffect, useState } from 'react';
 import {
-  MousePointer2, Spline, Square, Circle, Layers, Scissors, Move, RotateCw, Copy,
-  Ruler, Triangle, Boxes, Palette, MoreHorizontal, ChevronDown,
+  Spline, Square, Circle, Layers, Scissors, RotateCw,
+  Triangle, Boxes, Palette, MoreHorizontal, ChevronDown,
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { useTool3D, type Tool3DId } from '@/lib/render-studio/tool3d';
-import { ToolbarChip } from '@/components/ui/ToolbarChip';
+import { ToolbarChip, ToolbarBar } from '@/components/ui/ToolbarChip';
+import { commonCommandsFor, bindStage } from '@/lib/commands/toolbar-source';
+import { CommandIcon } from '@/components/ui/command-icon';
 
 interface ToolDock3DProps {
   open: boolean;
@@ -84,11 +86,39 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
     return () => window.removeEventListener('keydown', onKey);
   }, [onToggleOpen]);
 
+  /* ══ TẦNG ① — LỆNH CHUNG, ĐỌC TỪ SỔ LỆNH ══
+     B2 (`docs/TICKET-KIEN-TRUC-LENH-3-TANG.md`): dock THÔI sở hữu danh sách lệnh chung. Tên · icon ·
+     phím · thứ tự nay đến từ `lib/commands/registry.ts`, nên 2D/3D/Trình chiếu KHÔNG THỂ hiện khác
+     nhau nữa — đó là gốc của phàn nàn "3 chặng như 3 app".
+     Tay thi hành vẫn của 3D (`bindStage` → `useTool3D`) cho tới B5: `CommandDef.run()` gọi
+     `useCadStore`, đúng ở 2D nhưng SAI ở đây (khối đang chọn nằm ở `useTool3D`). Lệnh chung nào 3D
+     chưa có engine thì KHÔNG bịa binding — nó tự mờ kèm lý do lấy từ sổ (§9). */
+  const chung = bindStage(commonCommandsFor({ stage: 'render' }), {
+    'cad.sel.select': { run: () => setActiveTool('select'), active: activeTool === 'select' },
+    'cad.edit.move': { run: () => setActiveTool('move'), active: activeTool === 'move' },
+    'cad.edit.rotate': { run: () => setActiveTool('rotate'), active: activeTool === 'rotate' },
+    'cad.edit.copy': { run: () => setActiveTool('dup'), active: activeTool === 'dup' },
+    'cad.dim.measure': { run: () => setActiveTool('ruler'), active: activeTool === 'ruler' },
+  });
+
   const groups: { title: string; titleEn: string; items: DockGroupItem[] }[] = [
     {
-      title: 'Chọn', titleEn: 'Select',
+      title: 'Lệnh chung', titleEn: 'Shared',
       items: [
-        { key: 'select', label: 'Chọn', labelEn: 'Select', icon: <MousePointer2 size={18} />, shortcut: 'V', ...tool('select'), title: tr('Về Chọn — gizmo trên khối đang chọn', 'Back to Select — gizmo on selection') },
+        ...chung.map((c) => ({
+          key: c.id,
+          label: c.label[0], labelEn: c.label[1],
+          icon: <CommandIcon name={c.icon} size={18} />,
+          // Ở 3D hiện PHÍM ĐƠN (`directKey`), không hiện alias gõ — chặng này không có dòng lệnh
+          // để mà gõ. Cùng một lệnh, hai đường nhập, mỗi mặt tiền chỉ khoe đường mình bật.
+          shortcut: c.directKey,
+          active: c.active,
+          disabled: !c.enabled,
+          onClick: c.enabled ? c.run : undefined,
+          title: c.enabled
+            ? tr(`${c.label[0]} — dùng chung ở cả ba chặng`, `${c.label[1]} — shared across all three stages`)
+            : c.disabledReason,
+        })),
         { key: 'select-same', label: 'Cùng loại', labelEn: 'Same type', icon: <Layers size={18} />, shortcut: '⇧V', disabled: true, title: tr('Chưa có chọn-theo-loại — engine chưa tra cùng type', 'No select-by-type yet — engine cannot query same type') },
       ],
     },
@@ -109,14 +139,9 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
         { key: 'cut', label: 'Cắt khối', labelEn: 'Cut', icon: <Scissors size={18} />, shortcut: 'X', disabled: true, title: tr('Khoét/boolean nhập ở panel Sửa — chưa có thao tác rời', 'Boolean cut lives in the Edit panel — no standalone tool yet') },
       ],
     },
-    {
-      title: 'Biến đổi', titleEn: 'Transform',
-      items: [
-        { key: 'move', label: 'Di chuyển', labelEn: 'Move', icon: <Move size={18} />, shortcut: 'M', ...tool('move'), title: tr('Dời khối đang chọn theo dX·dY·dZ', 'Move selection by dX·dY·dZ') },
-        { key: 'rotate', label: 'Xoay', labelEn: 'Rotate', icon: <RotateCw size={18} />, shortcut: 'Q', ...tool('rotate'), title: tr('Xoay khối đang chọn quanh tâm nó', 'Rotate selection around its center') },
-        { key: 'dup', label: 'Nhân bản', labelEn: 'Duplicate', icon: <Copy size={18} />, shortcut: 'D', ...tool('dup'), title: tr('Chép khối đang chọn, dời dX·dY', 'Copy selection, offset by dX·dY') },
-      ],
-    },
+    // ⛔ Nhóm "Biến đổi" (Di chuyển · Xoay · Nhân bản) ĐÃ XOÁ ở B2 — ba lệnh đó là LỆNH CHUNG,
+    // nay đứng ở nhóm "Lệnh chung" đầu dock, lấy tên/icon/phím từ sổ. Giữ lại ở đây là để hai
+    // nguồn cùng khai một lệnh — đúng cái B2 sinh ra để dẹp. Thước cũng vậy (xem nhóm Đo đạc).
     {
       title: 'Đồ đạc', titleEn: 'Furnishing',
       items: [
@@ -127,7 +152,7 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
     {
       title: 'Đo đạc', titleEn: 'Measure',
       items: [
-        { key: 'ruler', label: 'Thước', labelEn: 'Ruler', icon: <Ruler size={18} />, shortcut: 'T', ...tool('ruler'), title: tr('Đo rộng×sâu×cao khối đang chọn', 'Measure W×D×H of the selection') },
+        // "Thước" đã lên nhóm Lệnh chung (`cad.dim.measure`, phím T) — không khai lại ở đây.
         { key: 'angle', label: 'Góc', labelEn: 'Angle', icon: <MoreHorizontal size={18} />, shortcut: 'G', disabled: true, title: tr('Chưa có engine đo góc giữa hai cạnh', 'No angle-measuring engine yet') },
       ],
     },
@@ -143,18 +168,17 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
       .flatMap((g, gi) => g.items.map((it) => ({ ...it, groupIdx: gi })))
       .filter((it) => !it.disabled);
     return (
-      <div
-        className="if-3d-tool-dock"
-        style={{
-          position: 'absolute', left: '50%', bottom: 76, transform: 'translateX(-50%)', zIndex: 6,
-          display: 'flex', alignItems: 'center', gap: 1, padding: 4, borderRadius: 14,
-          border: '1px solid var(--mat-hairline)', boxShadow: '0 12px 30px rgba(0, 0, 0, .2)',
-        }}
+      // B2 16/08 — vỏ dock thu gọn nay là `<ToolbarBar>` dùng chung (KB-1: h44 · r-full · đệm 6 ·
+      // gap 2), thay cho khung tự vẽ `gap 1 · padding 4 · borderRadius 14 · hairline` trước đây.
+      // Đây chính là khuôn GỐC mà 2D và Trình chiếu sẽ quy về (KB-1 "lấy dock capsule 3D làm gốc"),
+      // nên nó phải là component chung chứ không phải style riêng của file này.
+      <ToolbarBar
+        style={{ position: 'absolute', left: '50%', bottom: 76, transform: 'translateX(-50%)', zIndex: 6 }}
       >
         {flat.map((item, i) => (
           <span key={item.key} style={{ display: 'flex', alignItems: 'center' }}>
             {i > 0 && item.groupIdx !== flat[i - 1].groupIdx && (
-              <span style={{ width: 1, height: 20, background: 'var(--mat-hairline)', margin: '0 5px' }} />
+              <ToolbarBar.Sep />
             )}
             <ToolbarChip
               icon={item.icon}
@@ -166,7 +190,7 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
             />
           </span>
         ))}
-        <span style={{ width: 1, height: 20, background: 'var(--mat-hairline)', margin: '0 5px' }} />
+        <ToolbarBar.Sep />
         <button
           type="button"
           className="dock-icon-btn"
@@ -181,11 +205,12 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
           <MoreHorizontal size={15} />
           {tr('Thêm', 'More')}
         </button>
-      </div>
+      </ToolbarBar>
     );
   }
 
-  // Trạng thái 04 (mở rộng) — 6 nhóm có nhãn, đúng mock `dockOpen`.
+  // Trạng thái 04 (mở rộng) — 5 nhóm có nhãn (Lệnh chung + 4 nhóm riêng của chặng), khuôn mock
+  // `dockOpen`. Trước B2 là 6 nhóm; "Biến đổi" và "Thước" đã nhập vào nhóm Lệnh chung.
   const rows = [groups.slice(0, 3), groups.slice(3)];
   return (
     <div
@@ -193,6 +218,10 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
       style={{
         position: 'absolute', left: '50%', bottom: 76, transform: 'translateX(-50%)', zIndex: 6, padding: 6,
         borderRadius: 14, border: '1px solid var(--mat-hairline)', boxShadow: '0 12px 30px rgba(0, 0, 0, .2)',
+        // B2 — hàng "Lệnh chung" mang 11 nút CÓ NHÃN nên hàng 1 dài hơn trước. Kẹp bề rộng theo
+        // khung nhìn + cho cuộn ngang, để dock không bao giờ tràn ra ngoài mép màn hẹp (bệnh
+        // "vỡ khổ hẹp" đã phải sửa một lần ở Statusbar/Files 14/08 — không tái diễn ở đây).
+        maxWidth: 'calc(100vw - 32px)', overflowX: 'auto',
       }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9, padding: '2px 0 4px' }}>
