@@ -1,0 +1,924 @@
+<!-- @dsCard group="Khung app" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InteriorFlow · Sidebar 3 nấc + Home dẫn theo việc (P-E)</title>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   TOKEN — chép nguyên văn app/globals.css. KHÔNG đẻ số mới, KHÔNG hex ngoài khối này.
+   Khai thành CLASS (.pane) để bày ĐƯỢC CẢ 2 THEME cạnh nhau trong một ảnh (luật L5).
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --accent-warm:#c79a63;                          /* globals.css:26 */
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600; --fw-bold:700;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s; --dur-nac:.2s;
+  --blur:22px; --blur-strong:40px;                /* globals.css:93-94 */
+  --tap:32px; --tap-lg:44px; --row:28px; --gap:8px; --pad-card:8px 12px; --fs-ui:13px;
+  --nac-thu:28px; --nac-vua:240px; --nac-rong:320px;   /* ba nấc, khai một chỗ */
+}
+.pane[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78;
+  --mat-panel:rgba(20,20,23,.68); --mat-card:rgba(26,26,30,.82);   /* globals.css:192-193 */
+  --mat-hairline:rgba(255,255,255,.06);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --mat-thanh:rgba(20,20,23,.62);                 /* kính MỎNG — xem §5, ngưỡng đo được */
+  /* CHỐT 16/08 — cặp màu ĐẢO VAI: TỐI thì tím chủ, đồng điểm xuyết. */
+  --chu:var(--accent); --chu-soft:var(--accent-soft); --chu-ring:var(--accent-ring);
+  --diem:var(--accent-warm);
+}
+.pane[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a;
+  --mat-panel:rgba(250,248,244,.7); --mat-card:rgba(255,255,255,.82); /* globals.css:246-247 */
+  --mat-hairline:rgba(0,0,0,.05);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+  --mat-thanh:rgba(250,248,244,.66);
+  /* SÁNG thì đồng lên làm chủ, tím lui về điểm xuyết. Mỗi lúc vẫn ĐÚNG MỘT màu chủ. */
+  --chu:var(--accent-warm); --chu-soft:rgba(199,154,99,.16); --chu-ring:rgba(199,154,99,.6);
+  --diem:var(--accent);
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:#0c0c0e;color:#f5f5f7;padding:30px 26px 60px;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  font-size:var(--fs-sm);line-height:1.5;-webkit-font-smoothing:antialiased}
+h1{font-size:var(--fs-xl);letter-spacing:-.02em;margin:0 0 6px;font-weight:var(--fw-bold)}
+.sub{color:#9e9ea8;margin:0 0 3px;font-size:var(--fs-xs);max-width:82ch}
+.sub b{color:#f5f5f7}
+h2{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:.1em;text-transform:uppercase;
+  color:#6e6e78;margin:38px 0 4px}
+.h2sub{color:#9e9ea8;font-size:var(--fs-xs);margin:0 0 14px;max-width:82ch}
+.h2sub b{color:#f5f5f7}
+
+.panes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:1260px){.panes{grid-template-columns:1fr}}
+/* Màn Home cần BỀ RỘNG THẬT mới thấy được bố cục hai cột — bày hai theme cạnh nhau thì mỗi bên
+   chỉ còn ~690px, cột việc và cột widget dồn thành một, xem không ra cái gì. Nên riêng phần Home
+   xếp hai theme CHỒNG DỌC, mỗi bản một hàng đủ rộng. Phần so ba nấc vẫn để cạnh nhau. */
+.panes.doc{grid-template-columns:1fr}
+.pane{background:var(--bg);color:var(--t1);border:1px solid var(--border);
+  border-radius:var(--r-4);padding:16px;position:relative;overflow:hidden}
+.pane-tag{font-size:var(--fs-2xs);font-weight:var(--fw-semi);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--t4);margin-bottom:12px;position:relative}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   NỀN ẢNH — giữ NÉT, không bôi mờ. Ảnh là phần đẹp; bôi mờ đi thì còn gì.
+   Dựng bằng gradient thuần để mock TỰ ĐỦ (mở bằng file:// ở máy khác vẫn thấy y hệt) — bản
+   thật thay bằng ảnh render của chính người dùng, mọi luật dưới đây không đổi.
+   Cảnh cố ý có CẢ vùng rất sáng LẪN vùng rất tối để soi kính ở hai cực, không chọn ảnh dễ.
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+.scene{position:absolute;inset:0;overflow:hidden;border-radius:var(--r-4)}
+.scene i{position:absolute;display:block}
+.sky{inset:0;background:
+  linear-gradient(#1a2740 0%,#3c3350 34%,#8a5a49 62%,#d99a63 80%,#f0c48a 100%)}
+.pane[data-theme="light"] .sky{background:
+  linear-gradient(#bcd4e8 0%,#dbe3ea 40%,#efdcc4 70%,#f6e6cd 100%)}
+.sun{width:120px;height:120px;border-radius:var(--r-full);left:64%;top:52%;
+  background:radial-gradient(circle,#ffe6b8 0%,#ffcf86 42%,rgba(255,190,110,0) 72%)}
+/* dãy núi — cạnh CỨNG, đủ chi tiết để thấy rõ là ảnh nét */
+.nui1{inset:auto 0 22% 0;height:26%;background:#2b2438;
+  clip-path:polygon(0 62%,9% 40%,17% 55%,26% 22%,34% 44%,44% 12%,55% 40%,63% 26%,72% 48%,81% 30%,90% 52%,100% 36%,100% 100%,0 100%)}
+.nui2{inset:auto 0 14% 0;height:20%;background:#1d1a2a;
+  clip-path:polygon(0 48%,8% 66%,16% 44%,25% 70%,36% 40%,47% 64%,58% 38%,68% 60%,79% 42%,88% 64%,100% 46%,100% 100%,0 100%)}
+.pane[data-theme="light"] .nui1{background:#8fa2b4}
+.pane[data-theme="light"] .nui2{background:#6d8095}
+/* mặt nước — vạch ngang mảnh, đây là phần "chi tiết" chứng minh nền KHÔNG bị bôi mờ */
+.nuoc{inset:auto 0 0 0;height:14%;background:
+  repeating-linear-gradient(180deg,rgba(255,255,255,.16) 0 1px,transparent 1px 5px),
+  linear-gradient(#0f1520,#243043)}
+.pane[data-theme="light"] .nuoc{background:
+  repeating-linear-gradient(180deg,rgba(255,255,255,.5) 0 1px,transparent 1px 5px),
+  linear-gradient(#9fb6c9,#c3d2de)}
+/* dải TRẮNG TINH ↔ ĐEN TUYỀN — ca xấu nhất, cố ý đặt sau thẻ để soi sàn tương phản */
+.cuc{inset:0 auto 0 0;width:26%;background:linear-gradient(180deg,#ffffff 0 50%,#000000 50% 100%)}
+
+/* ba trạng thái nền */
+.scene[data-nen="diu"]{filter:blur(3px) saturate(.72) brightness(.72)}
+.scene[data-nen="tat"]{display:none}
+
+/* ══ KÍNH ══ tái dùng đúng công thức .mat-card của app (globals.css:371-377), không chế mới.
+   Luật K1 (fade kính = self-opacity, cấm fade ở cha) — nên KHÔNG bọc lớp cha có opacity. */
+.kinh{background:var(--mat-card);
+  backdrop-filter:saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));
+  border:1px solid var(--mat-hairline);border-radius:var(--r-3);box-shadow:var(--shadow-pop)}
+.kinh-mong{background:var(--mat-thanh);
+  backdrop-filter:saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));
+  border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)}
+.scene[data-nen="tat"]~.khung .kinh,.scene[data-nen="tat"]~.khung .kinh-mong{
+  background:var(--panel);backdrop-filter:none;-webkit-backdrop-filter:none;border-color:var(--border)}
+/* nấc giảm chói: kính ĐẶC HƠN (NT-16 — độ đọc thắng) */
+.scene[data-nen="diu"]~.khung .kinh{background:color-mix(in srgb,var(--card) 94%,transparent)}
+.scene[data-nen="diu"]~.khung .kinh-mong{background:color-mix(in srgb,var(--panel) 88%,transparent)}
+
+/* ══ CHỮ KÝ CỦA TRANG — SỐNG LƯNG BA CHẶNG ══ */
+.spine{display:inline-flex;gap:2px;flex-shrink:0;align-items:center}
+.spine i{display:block;width:3px;height:14px;border-radius:var(--r-1);background:var(--border-strong)}
+.spine i.on{background:var(--chu);height:18px}
+.spine.lg i{width:5px;height:26px}
+.spine.lg i.on{height:34px}
+
+/* ══════════════════ SIDEBAR BA NẤC ══════════════════ */
+.shell{display:flex;background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--r-3);overflow:hidden;min-height:330px}
+.rail{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;
+  flex-shrink:0;overflow:hidden;transition:width var(--dur-nac) var(--ease-apple)}
+.rail.thu{width:var(--nac-thu)} .rail.vua{width:var(--nac-vua)} .rail.rong{width:var(--nac-rong)}
+.thu-doc{flex:1;display:flex;align-items:center;justify-content:center;padding:10px 0}
+.thu-doc span{writing-mode:vertical-rl;transform:rotate(180deg);font-size:var(--fs-2xs);
+  font-weight:var(--fw-semi);letter-spacing:.16em;text-transform:uppercase;color:var(--t3);white-space:nowrap}
+.thu-cham{width:5px;height:5px;border-radius:var(--r-full);background:var(--chu);margin:8px auto 0;flex-shrink:0}
+.rail-head{padding:12px 12px 8px;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.rail-head b{font-size:var(--fs-xs);font-weight:var(--fw-bold)}
+.nav{padding:2px 8px 10px;display:flex;flex-direction:column;gap:1px;overflow:hidden}
+.navgroup{font-size:10px;font-weight:var(--fw-bold);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--t4);padding:12px 8px 5px;white-space:nowrap}
+.nav a{display:flex;align-items:center;gap:9px;height:var(--tap);padding:0 8px;
+  border-radius:var(--r-2);color:var(--t2);text-decoration:none;font-size:var(--fs-ui);
+  white-space:nowrap;border:1px solid transparent;transition:background var(--dur-fast) var(--ease-apple)}
+.nav a:hover{background:var(--hover);color:var(--t1)}
+.nav a:focus-visible{outline:2px solid var(--chu-ring);outline-offset:-1px}
+.nav a.on{background:var(--chu-soft);border-color:var(--chu-ring);color:var(--chu)}
+.nav svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.nav .nhan{flex:1;overflow:hidden;text-overflow:ellipsis}
+.dem{font-size:var(--fs-2xs);font-weight:var(--fw-semi);color:var(--t2);background:var(--field);
+  border:1px solid var(--border);border-radius:var(--r-full);padding:1px 7px;
+  font-variant-numeric:tabular-nums;flex-shrink:0}
+.nav a.on .dem{background:var(--chu-soft);border-color:var(--chu-ring);color:var(--chu)}
+.phu{display:none} .rong .phu{display:block}
+.nav .sub{display:flex;align-items:center;gap:9px;height:26px;padding:0 8px 0 33px;
+  border-radius:var(--r-2);color:var(--t3);text-decoration:none;font-size:var(--fs-xs);white-space:nowrap}
+.nav .sub:hover{background:var(--hover);color:var(--t2)}
+.nav .sub:focus-visible{outline:2px solid var(--chu-ring);outline-offset:-1px}
+.xem{padding:7px 9px;margin:2px 8px 0;border-radius:var(--r-2);background:var(--field);
+  border:1px solid var(--border);font-size:var(--fs-2xs);color:var(--t3);line-height:1.45}
+.xem b{color:var(--t2);font-weight:var(--fw-semi)}
+
+/* ══ TAY CẦM DÙNG CHUNG — PanelHandle ══ */
+.handle{width:14px;flex-shrink:0;border:0;padding:0;background:transparent;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:var(--t4);position:relative;
+  border-right:1px solid var(--border);align-self:stretch;
+  transition:background var(--dur-fast) var(--ease-apple),color var(--dur-fast) var(--ease-apple)}
+.handle:hover,.handle.is-hover{background:var(--hover);color:var(--t2)}
+.handle:active,.handle.is-drag{background:var(--chu-soft);color:var(--chu)}
+.handle:focus-visible{outline:2px solid var(--chu-ring);outline-offset:-2px;color:var(--chu)}
+.handle svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.2;
+  stroke-linecap:round;stroke-linejoin:round}
+.handle::before{content:"";position:absolute;width:2px;height:22px;border-radius:var(--r-full);
+  background:currentColor;opacity:.28;transform:translateY(-26px)}
+
+/* ══════════════════ THANH TRÊN — Ô TÌM + VITALS ══════════════════
+   HAI VẬT RIÊNG: ô tìm cứ là ô tìm; Vitals là nút tròn ĐỨNG CẠNH.
+   Ít chữ nên kính của thanh được TRONG hơn thẻ số liệu (§5 nói trong tới đâu thì dừng). */
+.thanh-tren{display:flex;align-items:center;gap:9px}
+.tim{flex:1;min-width:0;display:flex;align-items:center;gap:9px;height:var(--tap-lg);
+  padding:0 14px;border-radius:var(--r-full);border:1px solid var(--mat-hairline)}
+.tim svg.kinh-lup{width:15px;height:15px;stroke:var(--t3);fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.tim .o{flex:1;min-width:0;font-size:var(--fs-ui);color:var(--t3);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.tim .o.da-go{color:var(--t1)}
+.tim .con-tro{display:inline-block;width:1px;height:15px;background:var(--chu);
+  vertical-align:-3px;margin-left:1px}
+
+/* ══ VITALS — MỘT VẬT, DI CHUYỂN THEO NGỮ CẢNH ══
+   Ở Home tay đang ở thanh trên ⇒ nó đứng cạnh ô tìm. Ở chặng làm việc tay đang ở panel phải
+   ⇒ nó nổi RỜI cạnh panel đó (cạnh, KHÔNG nhét vào trong — nhét vào là lẫn với đám nút chức
+   năng và mất luôn nghĩa "đây là chỗ hỏi khi bí").
+   CÙNG MỘT HÌNH DẠNG ở mọi chỗ, và MỖI MÀN ĐÚNG MỘT CÁI — không bao giờ hiện hai. */
+.vit{width:var(--tap-lg);height:var(--tap-lg);border-radius:var(--r-full);
+  border:1px solid var(--mat-hairline);background:var(--mat-thanh);
+  backdrop-filter:saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));
+  display:grid;place-items:center;cursor:pointer;flex-shrink:0;padding:0;
+  box-shadow:var(--shadow-pop);
+  transition:transform var(--dur-fast) var(--ease-apple),background var(--dur-fast) var(--ease-apple)}
+.vit b{display:block;width:11px;height:11px;border-radius:var(--r-full);
+  background:radial-gradient(circle at 32% 30%,var(--diem),var(--chu))}
+.vit:focus-visible{outline:2px solid var(--chu-ring);outline-offset:2px}
+/* TAI THỎ — rê chuột vào thì THU LẠI nhẹ, nói "tôi biết bạn đang tới" trước khi bấm.
+   ⚠️ Phải có TRỄ: chuột đi ngang KHÔNG được kích hoạt, nếu không mỗi lần rê qua là nhấp nháy.
+   Dùng kiểu phản ứng TRỄ đã có trong luật hover của IF, không chế kiểu thứ tư. */
+.vit.tai-tho,.vit:hover{transform:scale(.92);background:var(--chu-soft)}
+/* Cảm ứng KHÔNG có hover ⇒ thay bằng NHẤN GIỮ trên chính nút, có phản hồi nở dần trong lúc giữ */
+.vit.dang-giu{transform:scale(1.12);background:var(--chu-soft)}
+.vit.dang-giu::after{content:"";position:absolute;inset:-4px;border-radius:var(--r-full);
+  border:2px solid var(--chu-ring)}
+.vit{position:relative}
+
+/* Ba nấc bung — khuôn Siri iOS 27 (SPEC-APPLE-MOTION §4b) */
+.nac{border-radius:var(--r-3);padding:11px 12px;max-width:330px}
+.nac .dau{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.nac .dau b{display:block;width:10px;height:10px;border-radius:var(--r-full);
+  background:radial-gradient(circle at 32% 30%,var(--diem),var(--chu));flex-shrink:0}
+.nac .dau span{font-size:10px;font-weight:var(--fw-bold);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--t3)}
+.nac p{margin:0;font-size:var(--fs-xs);color:var(--t1);line-height:1.5}
+.nac .goi{font-size:var(--fs-ui);color:var(--t3)}
+/* nấc LỚN — KHÔNG phải chat phóng to: đây là ĐỒ THỊ CHUỖI VIỆC kèm giá + nút duyệt.
+   Đúng chốt "không xây agent tự chạy — máy soạn đồ thị, người bấm duyệt, engine chạy cái đã duyệt". */
+.chuoi{display:flex;flex-direction:column;gap:0;margin:8px 0 10px}
+.chuoi .b{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:var(--fs-2xs);color:var(--t2)}
+.chuoi .b .n{width:18px;height:18px;border-radius:var(--r-full);background:var(--field);
+  border:1px solid var(--border);display:grid;place-items:center;font-size:9px;
+  font-weight:var(--fw-bold);color:var(--t3);flex-shrink:0;font-variant-numeric:tabular-nums}
+.chuoi .b .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t1)}
+.chuoi .b .g{font-variant-numeric:tabular-nums;color:var(--t3);flex-shrink:0}
+.chuoi .noi-b{width:1px;height:7px;background:var(--border);margin-left:9px}
+.tong{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding-top:9px;border-top:1px solid var(--mat-hairline);font-size:var(--fs-2xs);color:var(--t2)}
+.tong b{color:var(--t1);font-variant-numeric:tabular-nums}
+.nut-nho{height:30px;padding:0 14px;border-radius:var(--r-full);border:1px solid var(--chu-ring);
+  background:var(--chu-soft);color:var(--chu);font-size:var(--fs-2xs);font-weight:var(--fw-semi);
+  cursor:pointer;font-family:inherit;flex-shrink:0}
+.nut-nho:focus-visible{outline:2px solid var(--chu-ring);outline-offset:2px}
+
+/* Khung minh hoạ "chặng làm việc" — chỉ đủ để thấy CHỖ ĐỨNG của Vitals cạnh trục phải */
+.chang-mini{display:flex;gap:0;height:172px;border-radius:var(--r-3);overflow:hidden;
+  border:1px solid var(--border);background:var(--panel);position:relative}
+.chang-mini .canvas{flex:1;background:
+  repeating-linear-gradient(0deg,var(--mat-hairline) 0 1px,transparent 1px 22px),
+  repeating-linear-gradient(90deg,var(--mat-hairline) 0 1px,transparent 1px 22px),var(--bg)}
+.chang-mini .truc{width:132px;border-left:1px solid var(--border);background:var(--panel);padding:9px}
+.chang-mini .truc h5{margin:0 0 7px;font-size:10px;font-weight:var(--fw-bold);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--t4)}
+.chang-mini .truc .hang{height:20px;border-radius:var(--r-1);background:var(--field);margin-bottom:5px}
+/* nút Vitals nổi RỜI cạnh trục phải — không nằm trong panel */
+.chang-mini .vit{position:absolute;right:calc(132px + 10px);bottom:12px}
+
+/* ══════════════════ HOME ══════════════════ */
+/* Lề 20 + khe 14: đây là chỗ NỀN THỞ. Bóp sát lại thì thẻ phủ gần kín, ảnh nền thành vô nghĩa —
+   lúc đó thà bỏ hẳn ảnh còn hơn. Khoảng trống ở đây vừa là chuyện đẹp vừa là chuyện đọc được. */
+.khung{position:relative;padding:20px;display:flex;flex-direction:column;gap:14px}
+.home-shell{display:flex;gap:14px;align-items:stretch}
+.rail-kinh{border-radius:var(--r-3);overflow:hidden;flex-shrink:0;display:flex}
+.body{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+.chao{padding:2px 4px}
+.chao h3{margin:0;font-size:var(--fs-lg);font-weight:var(--fw-bold);letter-spacing:-.01em}
+.chao span{font-size:var(--fs-xs);color:var(--t2)}
+/* ⚠️ CỐ Ý CHỪA KHOẢNG — thẻ KHÔNG phủ kín. Nền ló ra ở lề và khe giữa thẻ; đó là chỗ ảnh sống.
+   Phủ kín thì ảnh nền thành vô nghĩa, thà bỏ hẳn còn hơn. */
+.hai-cot{display:grid;grid-template-columns:minmax(0,1.66fr) minmax(0,1fr);gap:12px;align-items:start}
+@media (max-width:900px){.hai-cot{grid-template-columns:1fr}}
+.cot-nhan{font-size:10px;font-weight:var(--fw-bold);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--t3);margin:0 0 6px 4px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cot-nhan em{font-style:normal;color:var(--t2);font-weight:var(--fw-semi);letter-spacing:.02em;
+  text-transform:none;font-size:var(--fs-2xs);font-variant-numeric:tabular-nums}
+
+/* DÒNG VIỆC — DẢI kẻ chỉ, KHÔNG phải thẻ rời: thẻ làm mọi thứ trông NGANG NHAU, đúng cái bệnh
+   đang có. Cả cụm đứng trên MỘT tấm kính ⇒ chữ luôn trên nền đồng nhất. */
+.viec{display:flex;flex-direction:column;padding:2px;overflow:hidden}
+.viec a{display:flex;align-items:center;gap:11px;padding:11px 10px;text-decoration:none;
+  border-top:1px solid var(--mat-hairline);color:inherit;border-radius:var(--r-2);
+  transition:background var(--dur-fast) var(--ease-apple)}
+.viec a:first-child{border-top:0}
+.viec a:hover{background:var(--hover)}
+.viec a:focus-visible{outline:2px solid var(--chu-ring);outline-offset:-2px}
+.viec .noi{flex:1;min-width:0}
+.viec .ten{font-size:var(--fs-ui);font-weight:var(--fw-semi);color:var(--t1);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.viec .duoi{display:flex;align-items:center;gap:7px;margin-top:2px;font-size:var(--fs-2xs);
+  color:var(--t2);white-space:nowrap;overflow:hidden}
+.viec .duoi .cham{width:3px;height:3px;border-radius:var(--r-full);background:var(--t4);flex-shrink:0}
+.viec .chang{font-size:10px;font-weight:var(--fw-bold);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.viec .lau{font-variant-numeric:tabular-nums}
+.viec .mui{color:var(--t4);flex-shrink:0;display:flex}
+.viec a:hover .mui{color:var(--chu)}
+.viec svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+.viec a.hom-nay{box-shadow:inset 2px 0 0 var(--chu)}
+
+/* WIDGET — giữ ba cỡ định sẵn 1×1 · 2×1 · 2×2, chỉ thôi làm nhân vật chính */
+.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)}
+.w{padding:10px 11px;min-width:0}
+.w.w2x1{grid-column:span 2}
+.w h4{margin:0 0 6px;font-size:10px;font-weight:var(--fw-bold);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--t3)}
+.w .so{font-size:var(--fs-lg);font-weight:var(--fw-bold);color:var(--t1);
+  font-variant-numeric:tabular-nums;line-height:1.2}
+.w .ghi{font-size:var(--fs-2xs);color:var(--t2)}
+.w .cotmau{display:flex;gap:4px;align-items:flex-end;height:34px;margin-top:4px}
+.w .cotmau i{flex:1;background:var(--chu-soft);border-radius:var(--r-1) var(--r-1) 0 0;display:block}
+.w .cotmau i.cao{background:var(--chu)}
+.swatch{width:100%;height:34px;border-radius:var(--r-2);border:1px solid var(--mat-hairline);
+  background:linear-gradient(135deg,var(--diem),var(--field));margin-bottom:5px}
+
+/* ══ TRẠNG THÁI TRỐNG ══ */
+.trong{display:flex;flex-direction:column;align-items:center;text-align:center;padding:32px 18px 28px;gap:5px}
+.trong .minh-hoa{margin-bottom:9px;opacity:.85}
+.trong h3{margin:0;font-size:var(--fs-lg);font-weight:var(--fw-bold);letter-spacing:-.01em}
+.trong p{margin:0 0 12px;font-size:var(--fs-xs);color:var(--t2);max-width:44ch}
+.nut-hang{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.nut{height:var(--tap-lg);padding:0 18px;border-radius:var(--r-full);border:1px solid var(--border);
+  background:var(--field);color:var(--t1);font-size:var(--fs-ui);font-weight:var(--fw-semi);
+  cursor:pointer;display:inline-flex;align-items:center;gap:7px;font-family:inherit;
+  transition:background var(--dur-fast) var(--ease-apple)}
+.nut:hover{background:var(--hover)}
+.nut:focus-visible{outline:2px solid var(--chu-ring);outline-offset:2px}
+.nut.chinh{background:var(--chu-soft);border-color:var(--chu-ring);color:var(--chu)}
+.nut svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+
+/* ══ nút điều khiển của trang mock ══ */
+.doi{display:flex;gap:5px;margin-bottom:9px;flex-wrap:wrap;align-items:center;position:relative}
+.doi button{height:26px;padding:0 11px;border-radius:var(--r-full);border:1px solid var(--border);
+  background:var(--field);color:var(--t2);font-size:var(--fs-2xs);font-weight:var(--fw-semi);
+  cursor:pointer;font-family:inherit}
+.doi button[aria-pressed="true"]{background:var(--chu-soft);border-color:var(--chu-ring);color:var(--chu)}
+.doi button:focus-visible{outline:2px solid var(--chu-ring);outline-offset:2px}
+.doi .do{margin-left:auto;font-size:10px;color:var(--t4);font-variant-numeric:tabular-nums}
+
+.bang{width:100%;border-collapse:collapse;font-size:var(--fs-2xs);margin-top:8px}
+.bang th,.bang td{text-align:left;padding:5px 8px;border-bottom:1px solid #2a2a31;color:#9e9ea8}
+.bang th{color:#6e6e78;font-weight:var(--fw-bold);letter-spacing:.06em;text-transform:uppercase;font-size:10px}
+.bang td b{color:#f5f5f7} .bang td.dat{color:#46b876} .bang td.truot{color:#e5674f}
+.bang td{font-variant-numeric:tabular-nums}
+
+ul.luat{margin:8px 0 0;padding-left:18px}
+ul.luat li{font-size:var(--fs-2xs);color:#9e9ea8;margin:5px 0;max-width:94ch}
+ul.luat b{color:#f5f5f7}
+.ghi-chu{margin-top:10px;font-size:var(--fs-2xs);color:#6e6e78;max-width:94ch}
+.ghi-chu b{color:#d6d6db}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+@media (hover:none) and (pointer:coarse){
+  :root{--tap:44px;--row:44px;--gap:12px;--pad-card:12px 16px;--fs-ui:15px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+
+<h1>Sidebar 3 nấc · Home dẫn theo việc</h1>
+<p class="sub">Bản vẽ phiếu <b>P-E</b>. Trả lời đúng câu chủ dự án nói: <b>“vào rồi xong không biết đi đâu tiếp theo luôn”</b>.</p>
+<p class="sub">Chẩn đoán: Home cũ bày <b>trạng thái</b> (bao nhiêu việc, mấy giờ, ghi chú) chứ không bày <b>việc</b>. Nhìn xong biết tình hình, vẫn không biết bấm vào đâu. Bản này đảo lại — <b>dòng việc đang dở là nhân vật chính</b>, widget lui về cột phải.</p>
+<p class="sub"><b>Chữ ký của trang — sống lưng ba chặng:</b> ba vạch = 2D · 3D · Trình chiếu, vạch sáng là chặng việc đang nằm. Lặp ở mọi dòng việc và thành nhịp của trang. Không phải hoạ tiết — đây đúng mô hình sản phẩm (ba chặng soi vào một nguồn), và nó trả lời ngay “việc này đang ở đâu”.</p>
+
+
+<!-- ═══════════════ 1 · VITALS — MỘT VẬT, ĐỨNG Ở CHỖ TAY ĐANG ĐẶT ═══════════════ -->
+<h2>1 · Vitals — một vật, đứng ở chỗ tay đang đặt</h2>
+<p class="h2sub">Vitals thôi làm pill riêng lơ lửng. Nó là <b>một nút tròn duy nhất</b>, nhưng <b>đứng ở đâu thì tuỳ tay người dùng đang ở đâu</b>: ở Home tay đang trên thanh trên nên nó đứng <b>cạnh ô tìm</b>; ở chặng làm việc tay đang ở panel thông số bên phải nên nó nổi <b>rời cạnh panel đó</b>. Đang chỉnh thông số mà bí thì không ai muốn rời chuột chạy lên đỉnh màn.</p>
+<p class="h2sub"><b>Hai ràng buộc cứng:</b> ① cùng một hình dạng ở mọi chỗ — nó là <b>một vật di chuyển</b>, không phải ba nút giống nhau, để người dùng khỏi học ba lần. ② <b>mỗi màn đúng một Vitals</b> — không bao giờ vừa có chấm ở thanh tìm vừa có nút ở trục phải, hai cái cùng hiện là người dùng phải đoán cái nào thật.</p>
+<p class="h2sub"><b>Ô tìm và Vitals là hai vật riêng</b> — ô tìm cứ là ô tìm, gõ vào là tìm trong dự án, tệp, thư viện. Vitals đứng cạnh, không nhập vào ô.</p>
+
+<div class="panes">
+  <div class="pane" data-theme="dark">
+    <div class="pane-tag">Theme tối · hai chỗ đứng của cùng một nút</div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <div class="thanh-tren">
+          <div class="tim kinh-mong"><svg class="kinh-lup" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="o">Tìm trong dự án, tệp, thư viện…</span></div>
+          <button class="vit" type="button" aria-label="Hỏi Vitals"><b></b></button>
+        </div>
+        <div style="font-size:10px;color:var(--t4);margin-top:6px;padding-left:4px">Ở HOME — chấm tròn cạnh ô tìm</div>
+      </div>
+      <div>
+        <div class="chang-mini">
+          <div class="canvas"></div>
+          <button class="vit" type="button" aria-label="Hỏi Vitals"><b></b></button>
+          <div class="truc"><h5>Thông số</h5><div class="hang"></div><div class="hang"></div><div class="hang"></div><div class="hang"></div><div class="hang"></div></div>
+        </div>
+        <div style="font-size:10px;color:var(--t4);margin-top:6px;padding-left:4px">Ở CHẶNG LÀM VIỆC — nút nổi <b style="color:var(--t3)">rời cạnh</b> trục phải, không nhét vào trong panel</div>
+      </div>
+    </div>
+  </div>
+  <div class="pane" data-theme="light">
+    <div class="pane-tag">Theme sáng · hai chỗ đứng của cùng một nút</div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <div class="thanh-tren">
+          <div class="tim kinh-mong"><svg class="kinh-lup" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="o">Tìm trong dự án, tệp, thư viện…</span></div>
+          <button class="vit" type="button" aria-label="Hỏi Vitals"><b></b></button>
+        </div>
+        <div style="font-size:10px;color:var(--t4);margin-top:6px;padding-left:4px">Ở HOME — chấm tròn cạnh ô tìm</div>
+      </div>
+      <div>
+        <div class="chang-mini">
+          <div class="canvas"></div>
+          <button class="vit" type="button" aria-label="Hỏi Vitals"><b></b></button>
+          <div class="truc"><h5>Thông số</h5><div class="hang"></div><div class="hang"></div><div class="hang"></div><div class="hang"></div><div class="hang"></div></div>
+        </div>
+        <div style="font-size:10px;color:var(--t4);margin-top:6px;padding-left:4px">Ở CHẶNG LÀM VIỆC — nút nổi rời cạnh trục phải</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>1b · Cách gọi Vitals — chuột rê vào · cảm ứng nhấn giữ</h2>
+<p class="h2sub"><b>Chuột: rê vào</b> thì nút <b>thu lại nhẹ</b> kiểu tai thỏ trên MacBook — nói “tôi biết bạn đang tới” trước khi bấm. Phải có <b>khoảng trễ</b>: chuột đi ngang qua thì không kích hoạt, nếu không mỗi lần rê qua là nó nhấp nháy, thành phiền.</p>
+<p class="h2sub"><b>Cảm ứng: nhấn giữ</b> trên chính nút — cảm ứng không có hover, nên đây là thi hành luật “tablet không giấu sau hover”, không phải ngoại lệ. Trong lúc giữ nút <b>nở dần theo thời gian</b>, để người biết mình đang giữ đúng chỗ và sắp tới; giữ mù nửa giây rồi bung ra là cảm giác máy đơ, không phải máy hiểu. Giữ <b>500ms</b>, cho ngón nhích <b>8px</b> vẫn tính là giữ — <b>số của IF, không đặt mới</b>.</p>
+<p class="h2sub">⚠️ <b>Không đụng đĩa lệnh:</b> đĩa lệnh giữ trên <b>mặt canvas</b>, Vitals giữ trên <b>chính nút nó</b> — hai vùng khác nhau, không tranh nhau cử chỉ. Ghi ra đây để phiên sau khỏi tưởng là xung đột rồi đi đổi.</p>
+<div class="panes">
+  <div class="pane" data-theme="dark">
+    <div class="pane-tag">Theme tối</div>
+    <div style="display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start">
+      <div style="text-align:center"><button class="vit" type="button" aria-label="Hỏi Vitals"><b></b></button><div style="font-size:10px;color:var(--t4);margin-top:7px;max-width:13ch">Nghỉ</div></div>
+      <div style="text-align:center"><button class="vit tai-tho" type="button" aria-label="Hỏi Vitals"><b></b></button><div style="font-size:10px;color:var(--t4);margin-top:7px;max-width:13ch">Rê chuột vào — thu lại, có trễ</div></div>
+      <div style="text-align:center"><button class="vit dang-giu" type="button" aria-label="Hỏi Vitals"><b></b></button><div style="font-size:10px;color:var(--t4);margin-top:7px;max-width:13ch">Cảm ứng đang giữ — nở dần</div></div>
+    </div>
+  </div>
+  <div class="pane" data-theme="light">
+    <div class="pane-tag">Theme sáng</div>
+    <div style="display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start">
+      <div style="text-align:center"><button class="vit" type="button" aria-label="Hỏi Vitals"><b></b></button><div style="font-size:10px;color:var(--t4);margin-top:7px;max-width:13ch">Nghỉ</div></div>
+      <div style="text-align:center"><button class="vit tai-tho" type="button" aria-label="Hỏi Vitals"><b></b></button><div style="font-size:10px;color:var(--t4);margin-top:7px;max-width:13ch">Rê chuột vào</div></div>
+      <div style="text-align:center"><button class="vit dang-giu" type="button" aria-label="Hỏi Vitals"><b></b></button><div style="font-size:10px;color:var(--t4);margin-top:7px;max-width:13ch">Cảm ứng đang giữ</div></div>
+    </div>
+  </div>
+</div>
+
+<h2>1c · Ba nấc bung — nhỏ hỏi đáp · vừa trả lời · lớn duyệt chuỗi việc</h2>
+<p class="h2sub">Khuôn Siri iOS 27 đã có trong hệ. ⭐ <b>Nấc lớn KHÔNG phải màn chat phóng to</b> — nó là chỗ bày <b>đồ thị chuỗi việc kèm giá và nút duyệt</b>, đúng chốt của IF: máy soạn chuỗi, <b>người bấm duyệt</b>, engine chỉ chạy đúng cái đã duyệt. Không có agent tự chạy.</p>
+<div class="panes">
+  <div class="pane" data-theme="dark">
+    <div class="pane-tag">Theme tối</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start">
+      <div>
+        <div class="nac kinh" style="width:190px"><div class="dau"><b></b><span>Hỏi</span></div><div class="goi">Hỏi Vitals…</div></div>
+        <div style="font-size:10px;color:var(--t4);margin-top:6px">Nhỏ · hỏi đáp</div>
+      </div>
+      <div>
+        <div class="nac kinh" style="width:250px"><div class="dau"><b></b><span>Trả lời</span></div><p>Hành lang giữa hai tủ đang 1.050mm. Chuẩn nội thất khuyên tối thiểu 1.200mm cho hai người tránh nhau.</p></div>
+        <div style="font-size:10px;color:var(--t4);margin-top:6px">Vừa · trả lời</div>
+      </div>
+      <div>
+        <div class="nac kinh" style="width:310px">
+          <div class="dau"><b></b><span>Chuỗi việc · chờ duyệt</span></div>
+          <div class="chuoi">
+            <div class="b"><span class="n">1</span><span class="t">Nới hành lang lên 1.200mm</span><span class="g">0đ</span></div>
+            <div class="noi-b"></div>
+            <div class="b"><span class="n">2</span><span class="t">Dựng lại khối tủ theo kích thước mới</span><span class="g">0đ</span></div>
+            <div class="noi-b"></div>
+            <div class="b"><span class="n">3</span><span class="t">Render lại 2 phối cảnh bếp</span><span class="g">8cr</span></div>
+          </div>
+          <div class="tong"><span>Tổng <b>8 credit</b> · 3 bước</span><button class="nut-nho" type="button">Duyệt chuỗi</button></div>
+        </div>
+        <div style="font-size:10px;color:var(--t4);margin-top:6px">Lớn · đồ thị chuỗi việc + giá + cửa duyệt</div>
+      </div>
+    </div>
+  </div>
+  <div class="pane" data-theme="light">
+    <div class="pane-tag">Theme sáng</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start">
+      <div>
+        <div class="nac kinh" style="width:190px"><div class="dau"><b></b><span>Hỏi</span></div><div class="goi">Hỏi Vitals…</div></div>
+        <div style="font-size:10px;color:var(--t4);margin-top:6px">Nhỏ · hỏi đáp</div>
+      </div>
+      <div>
+        <div class="nac kinh" style="width:250px"><div class="dau"><b></b><span>Trả lời</span></div><p>Hành lang giữa hai tủ đang 1.050mm. Chuẩn nội thất khuyên tối thiểu 1.200mm cho hai người tránh nhau.</p></div>
+        <div style="font-size:10px;color:var(--t4);margin-top:6px">Vừa · trả lời</div>
+      </div>
+      <div>
+        <div class="nac kinh" style="width:310px">
+          <div class="dau"><b></b><span>Chuỗi việc · chờ duyệt</span></div>
+          <div class="chuoi">
+            <div class="b"><span class="n">1</span><span class="t">Nới hành lang lên 1.200mm</span><span class="g">0đ</span></div>
+            <div class="noi-b"></div>
+            <div class="b"><span class="n">2</span><span class="t">Dựng lại khối tủ theo kích thước mới</span><span class="g">0đ</span></div>
+            <div class="noi-b"></div>
+            <div class="b"><span class="n">3</span><span class="t">Render lại 2 phối cảnh bếp</span><span class="g">8cr</span></div>
+          </div>
+          <div class="tong"><span>Tổng <b>8 credit</b> · 3 bước</span><button class="nut-nho" type="button">Duyệt chuỗi</button></div>
+        </div>
+        <div style="font-size:10px;color:var(--t4);margin-top:6px">Lớn · đồ thị chuỗi việc + giá + cửa duyệt</div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ═══════════════ 2 · SIDEBAR BA NẤC ═══════════════ -->
+<h2>2 · Ba nấc đứng cạnh nhau — Thu · Vừa · Rộng</h2>
+<p class="h2sub">Nấc hẹp nhất <b>vẫn đọc được là mục gì</b> (nhãn xoay đứng) và <b>không biến mất</b> — chốt 03/08 đã bỏ hẳn rail chỉ-icon-trần, luật rollout cấm auto-hide.</p>
+<div class="panes">
+  <div class="pane" data-theme="dark">
+    <div class="pane-tag">Theme tối · tím làm chủ</div>
+    <div style="display:flex;gap:10px;overflow-x:auto">
+      <div class="shell" style="flex:0 0 auto">
+        <div class="rail thu"><div class="thu-doc"><span>Dự án &amp; việc</span></div><div class="thu-cham" title="Còn việc đang chờ"></div></div>
+        <button class="handle" type="button" aria-label="Mở rộng thanh bên"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+        <div style="width:112px;padding:12px 10px"><div class="cot-nhan">Thu · 28px</div><div style="font-size:var(--fs-2xs);color:var(--t3)">Dải mỏng còn nhãn, còn tay cầm.</div></div>
+      </div>
+      <div class="shell" style="flex:0 0 auto">
+        <div class="rail vua">
+          <div class="rail-head"><span class="spine" aria-hidden="true"><i class="on"></i><i></i><i></i></span><b>Studio</b></div>
+          <nav class="nav">
+            <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg><span class="nhan">Tổng quan</span></a>
+            <a href="#0" class="on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="nhan">Dự án &amp; việc</span><span class="dem">12</span></a>
+            <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nhan">Tệp</span><span class="dem">3</span></a>
+            <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span class="nhan">Thư viện</span></a>
+            <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nhan">Trò chuyện</span><span class="dem">8</span></a>
+          </nav>
+        </div>
+        <button class="handle" type="button" aria-label="Thu gọn thanh bên"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+        <div style="width:100px;padding:12px 10px"><div class="cot-nhan">Vừa · 240px</div><div style="font-size:var(--fs-2xs);color:var(--t3)">Mặc định.</div></div>
+      </div>
+      <div class="shell" style="flex:0 0 auto">
+        <div class="rail rong">
+          <div class="rail-head"><span class="spine" aria-hidden="true"><i class="on"></i><i></i><i></i></span><b>Studio</b></div>
+          <nav class="nav">
+            <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg><span class="nhan">Tổng quan</span></a>
+            <a href="#0" class="on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="nhan">Dự án &amp; việc</span><span class="dem">12</span></a>
+            <div class="phu">
+              <a class="sub" href="#0">Đang dở<span class="dem" style="margin-left:auto">4</span></a>
+              <a class="sub" href="#0">Đến hạn tuần này<span class="dem" style="margin-left:auto">3</span></a>
+              <a class="sub" href="#0">Chờ duyệt<span class="dem" style="margin-left:auto">5</span></a>
+            </div>
+            <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nhan">Tệp</span><span class="dem">3</span></a>
+            <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span class="nhan">Thư viện</span></a>
+            <div class="navgroup phu">Việc chung</div>
+            <a href="#0" class="phu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4M16 2v4M3 10h18"/><path d="M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="nhan">Bảng việc</span><span class="dem">99+</span></a>
+            <div class="xem phu"><b>Mở gần nhất</b><br>Căn hộ Thảo Điền · 2D Kỹ thuật · 2 ngày trước</div>
+          </nav>
+        </div>
+        <button class="handle" type="button" aria-label="Thu gọn thanh bên"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+        <div style="width:96px;padding:12px 10px"><div class="cot-nhan">Rộng · 320px</div><div style="font-size:var(--fs-2xs);color:var(--t3)">Thêm nhóm phụ + xem trước.</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="pane" data-theme="light">
+    <div class="pane-tag">Theme sáng · đồng làm chủ</div>
+    <div style="display:flex;gap:10px;overflow-x:auto">
+      <div class="shell" style="flex:0 0 auto">
+        <div class="rail thu"><div class="thu-doc"><span>Dự án &amp; việc</span></div><div class="thu-cham"></div></div>
+        <button class="handle" type="button" aria-label="Mở rộng thanh bên"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+        <div style="width:106px;padding:12px 10px"><div class="cot-nhan">Thu · 28px</div></div>
+      </div>
+      <div class="shell" style="flex:0 0 auto">
+        <div class="rail vua">
+          <div class="rail-head"><span class="spine" aria-hidden="true"><i class="on"></i><i></i><i></i></span><b>Studio</b></div>
+          <nav class="nav">
+            <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg><span class="nhan">Tổng quan</span></a>
+            <a href="#0" class="on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="nhan">Dự án &amp; việc</span><span class="dem">12</span></a>
+            <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nhan">Tệp</span><span class="dem">3</span></a>
+            <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span class="nhan">Thư viện</span></a>
+            <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nhan">Trò chuyện</span><span class="dem">8</span></a>
+          </nav>
+        </div>
+        <button class="handle" type="button" aria-label="Thu gọn thanh bên"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+        <div style="width:96px;padding:12px 10px"><div class="cot-nhan">Vừa · 240px</div></div>
+      </div>
+      <div class="shell" style="flex:0 0 auto">
+        <div class="rail rong">
+          <div class="rail-head"><span class="spine" aria-hidden="true"><i class="on"></i><i></i><i></i></span><b>Studio</b></div>
+          <nav class="nav">
+            <a href="#0" class="on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="nhan">Dự án &amp; việc</span><span class="dem">12</span></a>
+            <div class="phu">
+              <a class="sub" href="#0">Đang dở<span class="dem" style="margin-left:auto">4</span></a>
+              <a class="sub" href="#0">Đến hạn tuần này<span class="dem" style="margin-left:auto">3</span></a>
+              <a class="sub" href="#0">Chờ duyệt<span class="dem" style="margin-left:auto">5</span></a>
+            </div>
+            <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nhan">Tệp</span><span class="dem">3</span></a>
+            <div class="navgroup phu">Việc chung</div>
+            <a href="#0" class="phu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4M16 2v4M3 10h18"/><path d="M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="nhan">Bảng việc</span><span class="dem">99+</span></a>
+            <div class="xem phu"><b>Mở gần nhất</b><br>Căn hộ Thảo Điền · 2D Kỹ thuật · 2 ngày trước</div>
+          </nav>
+        </div>
+        <button class="handle" type="button" aria-label="Thu gọn thanh bên"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+        <div style="width:92px;padding:12px 10px"><div class="cot-nhan">Rộng · 320px</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ 3 · TAY CẦM ═══════════════ -->
+<h2>3 · Tay cầm thu/mở — một khuôn dùng chung toàn app</h2>
+<p class="h2sub">Mẫu chủ dự án chốt 07/08 làm chuẩn chung. Hiện <b>chưa có component nào</b> — mỗi panel tự vẽ lại, và tấm Thư viện (panel to nhất) thì <b>0/7 tệp có cơ chế thu/mở</b>. Khuôn này lắp cho Thư viện · 2D · 3D · Trình chiếu.</p>
+<div class="panes">
+  <div class="pane" data-theme="dark">
+    <div class="pane-tag">Theme tối</div>
+    <div style="display:flex;gap:26px;flex-wrap:wrap">
+      <div style="text-align:center"><div class="shell" style="min-height:74px;width:96px"><div style="flex:1"></div><button class="handle" type="button" aria-label="Thu gọn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button></div><div style="font-size:10px;color:var(--t4);margin-top:6px">Thường</div></div>
+      <div style="text-align:center"><div class="shell" style="min-height:74px;width:96px"><div style="flex:1"></div><button class="handle is-hover" type="button" aria-label="Thu gọn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button></div><div style="font-size:10px;color:var(--t4);margin-top:6px">Trỏ vào</div></div>
+      <div style="text-align:center"><div class="shell" style="min-height:74px;width:96px"><div style="flex:1"></div><button class="handle is-drag" type="button" aria-label="Đang kéo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button></div><div style="font-size:10px;color:var(--t4);margin-top:6px">Đang kéo</div></div>
+      <div style="text-align:center"><div class="shell" style="min-height:74px;width:96px"><div style="flex:1"></div><button class="handle" type="button" style="outline:2px solid var(--chu-ring);outline-offset:-2px;color:var(--chu)" aria-label="Thu gọn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button></div><div style="font-size:10px;color:var(--t4);margin-top:6px">Bàn phím</div></div>
+    </div>
+  </div>
+  <div class="pane" data-theme="light">
+    <div class="pane-tag">Theme sáng</div>
+    <div style="display:flex;gap:26px;flex-wrap:wrap">
+      <div style="text-align:center"><div class="shell" style="min-height:74px;width:96px"><div style="flex:1"></div><button class="handle" type="button" aria-label="Thu gọn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button></div><div style="font-size:10px;color:var(--t4);margin-top:6px">Thường</div></div>
+      <div style="text-align:center"><div class="shell" style="min-height:74px;width:96px"><div style="flex:1"></div><button class="handle is-hover" type="button" aria-label="Thu gọn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button></div><div style="font-size:10px;color:var(--t4);margin-top:6px">Trỏ vào</div></div>
+      <div style="text-align:center"><div class="shell" style="min-height:74px;width:96px"><div style="flex:1"></div><button class="handle is-drag" type="button" aria-label="Đang kéo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button></div><div style="font-size:10px;color:var(--t4);margin-top:6px">Đang kéo</div></div>
+      <div style="text-align:center"><div class="shell" style="min-height:74px;width:96px"><div style="flex:1"></div><button class="handle" type="button" style="outline:2px solid var(--chu-ring);outline-offset:-2px;color:var(--chu)" aria-label="Thu gọn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button></div><div style="font-size:10px;color:var(--t4);margin-top:6px">Bàn phím</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ 4 · HOME TRÊN NỀN ẢNH ═══════════════ -->
+<h2>4 · Home dẫn theo việc — trên nền ảnh, bấm thử đủ ba nấc</h2>
+<p class="h2sub">Nền <b>để nét</b>: núi, mặt nước, quầng nắng đều rõ chi tiết — đó là phần đẹp, bôi mờ đi thì còn gì. Thứ làm chữ đọc được không phải bôi mờ ảnh mà là <b>tấm kính đủ đặc ở vùng có nội dung</b>. Thẻ <b>cố ý không phủ kín</b>: nền ló ra ở lề và khe giữa thẻ — đó là chỗ ảnh sống.</p>
+<div class="panes doc">
+  <div class="pane" data-theme="dark" style="padding:0">
+    <div class="scene" data-scene="d"><i class="sky"></i><i class="sun"></i><i class="nui1"></i><i class="nui2"></i><i class="nuoc"></i></div>
+    <div class="khung">
+      <div class="doi" data-doi="d" style="padding:2px 2px 0">
+        <button type="button" data-nac="thu" aria-pressed="false">Thu</button>
+        <button type="button" data-nac="vua" aria-pressed="true">Vừa</button>
+        <button type="button" data-nac="rong" aria-pressed="false">Rộng</button>
+        <span class="do">rộng đo được: <b data-do>—</b></span>
+      </div>
+      <div class="thanh-tren"><div class="tim kinh-mong"><svg class="kinh-lup" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="o">Tìm trong dự án, tệp, thư viện…</span></div><button class="vit" type="button" aria-label="Hỏi Vitals"><b></b></button></div>
+      <div class="home-shell">
+        <div class="rail-kinh kinh">
+          <div class="rail vua" data-rail="d" style="background:transparent;border-right-color:var(--mat-hairline)">
+            <div class="thu-doc" data-chi-thu style="display:none"><span>Dự án &amp; việc</span></div>
+            <div class="rail-head" data-an-thu><span class="spine" aria-hidden="true"><i class="on"></i><i></i><i></i></span><b>Studio</b></div>
+            <nav class="nav" data-an-thu>
+              <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg><span class="nhan">Tổng quan</span></a>
+              <a href="#0" class="on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="nhan">Dự án &amp; việc</span><span class="dem">12</span></a>
+              <div class="phu">
+                <a class="sub" href="#0">Đang dở<span class="dem" style="margin-left:auto">4</span></a>
+                <a class="sub" href="#0">Đến hạn tuần này<span class="dem" style="margin-left:auto">3</span></a>
+                <a class="sub" href="#0">Chờ duyệt<span class="dem" style="margin-left:auto">5</span></a>
+              </div>
+              <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nhan">Tệp</span><span class="dem">3</span></a>
+              <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span class="nhan">Thư viện</span></a>
+              <div class="navgroup phu">Việc chung</div>
+              <a href="#0" class="phu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4M16 2v4M3 10h18"/><path d="M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="nhan">Bảng việc</span><span class="dem">99+</span></a>
+              <div class="xem phu"><b>Mở gần nhất</b><br>Căn hộ Thảo Điền · 2D Kỹ thuật · 2 ngày trước</div>
+            </nav>
+          </div>
+          <button class="handle" type="button" data-cam="d" style="border-right:0" aria-label="Thu gọn thanh bên"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+        </div>
+        <div class="body">
+          <div class="chao"><h3>Chiều tốt lành, Hoà.</h3><span>4 việc đang dở · 3 việc đến hạn tuần này</span></div>
+          <div class="hai-cot">
+            <div>
+              <div class="cot-nhan">Đang dở <em>4 việc</em></div>
+              <div class="viec kinh">
+                <a href="#0" class="hom-nay"><span class="spine" aria-hidden="true"><i class="on"></i><i></i><i></i></span><span class="noi"><span class="ten">Tiếp bản vẽ mặt bằng tầng 2</span><span class="duoi"><span class="chang">2D</span><span class="cham"></span>Căn hộ Thảo Điền<span class="cham"></span><span class="lau">dở 2 ngày</span></span></span><span class="mui"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></a>
+                <a href="#0"><span class="spine" aria-hidden="true"><i></i><i class="on"></i><i></i></span><span class="noi"><span class="ten">Dựng khối tủ bếp dưới</span><span class="duoi"><span class="chang">3D</span><span class="cham"></span>Nhà phố An Phú<span class="cham"></span><span class="lau">dở 5 giờ</span></span></span><span class="mui"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></a>
+                <a href="#0"><span class="spine" aria-hidden="true"><i></i><i></i><i class="on"></i></span><span class="noi"><span class="ten">Chốt bảng vật liệu gửi chủ đầu tư</span><span class="duoi"><span class="chang">Trình chiếu</span><span class="cham"></span>Văn phòng Lê Lợi<span class="cham"></span><span class="lau">đến hạn hôm nay</span></span></span><span class="mui"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></a>
+                <a href="#0"><span class="spine" aria-hidden="true"><i></i><i class="on"></i><i></i></span><span class="noi"><span class="ten">Duyệt 5 phối cảnh phòng khách</span><span class="duoi"><span class="chang">3D</span><span class="cham"></span>Showroom Bến Thành<span class="cham"></span><span class="lau">dở 1 ngày</span></span></span><span class="mui"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></a>
+              </div>
+            </div>
+            <div>
+              <div class="cot-nhan">Trong tuần</div>
+              <div class="wgrid">
+                <div class="w kinh"><h4>Đến hạn</h4><div class="so">3</div><div class="ghi">việc, tuần này</div></div>
+                <div class="w kinh"><h4>Chờ duyệt</h4><div class="so">5</div><div class="ghi">phối cảnh</div></div>
+                <div class="w w2x1 kinh"><h4>Nhịp tuần</h4><div class="cotmau"><i style="height:38%"></i><i style="height:62%"></i><i class="cao" style="height:100%"></i><i style="height:54%"></i><i style="height:71%"></i></div></div>
+                <div class="w w2x1 kinh"><h4>Vật liệu của tuần</h4><div class="swatch"></div><div class="ghi">Gỗ óc chó · vân dọc</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pane" data-theme="light" style="padding:0">
+    <div class="scene" data-scene="s"><i class="sky"></i><i class="sun"></i><i class="nui1"></i><i class="nui2"></i><i class="nuoc"></i></div>
+    <div class="khung">
+      <div class="doi" data-doi="s" style="padding:2px 2px 0">
+        <button type="button" data-nac="thu" aria-pressed="false">Thu</button>
+        <button type="button" data-nac="vua" aria-pressed="true">Vừa</button>
+        <button type="button" data-nac="rong" aria-pressed="false">Rộng</button>
+        <span class="do">rộng đo được: <b data-do>—</b></span>
+      </div>
+      <div class="thanh-tren"><div class="tim kinh-mong"><svg class="kinh-lup" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="o">Tìm trong dự án, tệp, thư viện…</span></div><button class="vit" type="button" aria-label="Hỏi Vitals"><b></b></button></div>
+      <div class="home-shell">
+        <div class="rail-kinh kinh">
+          <div class="rail vua" data-rail="s" style="background:transparent;border-right-color:var(--mat-hairline)">
+            <div class="thu-doc" data-chi-thu style="display:none"><span>Dự án &amp; việc</span></div>
+            <div class="rail-head" data-an-thu><span class="spine" aria-hidden="true"><i class="on"></i><i></i><i></i></span><b>Studio</b></div>
+            <nav class="nav" data-an-thu>
+              <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg><span class="nhan">Tổng quan</span></a>
+              <a href="#0" class="on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="nhan">Dự án &amp; việc</span><span class="dem">12</span></a>
+              <div class="phu">
+                <a class="sub" href="#0">Đang dở<span class="dem" style="margin-left:auto">4</span></a>
+                <a class="sub" href="#0">Đến hạn tuần này<span class="dem" style="margin-left:auto">3</span></a>
+                <a class="sub" href="#0">Chờ duyệt<span class="dem" style="margin-left:auto">5</span></a>
+              </div>
+              <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nhan">Tệp</span><span class="dem">3</span></a>
+              <a href="#0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span class="nhan">Thư viện</span></a>
+              <div class="navgroup phu">Việc chung</div>
+              <a href="#0" class="phu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4M16 2v4M3 10h18"/><path d="M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="nhan">Bảng việc</span><span class="dem">99+</span></a>
+              <div class="xem phu"><b>Mở gần nhất</b><br>Căn hộ Thảo Điền · 2D Kỹ thuật · 2 ngày trước</div>
+            </nav>
+          </div>
+          <button class="handle" type="button" data-cam="s" style="border-right:0" aria-label="Thu gọn thanh bên"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+        </div>
+        <div class="body">
+          <div class="chao"><h3>Chiều tốt lành, Hoà.</h3><span>4 việc đang dở · 3 việc đến hạn tuần này</span></div>
+          <div class="hai-cot">
+            <div>
+              <div class="cot-nhan">Đang dở <em>4 việc</em></div>
+              <div class="viec kinh">
+                <a href="#0" class="hom-nay"><span class="spine" aria-hidden="true"><i class="on"></i><i></i><i></i></span><span class="noi"><span class="ten">Tiếp bản vẽ mặt bằng tầng 2</span><span class="duoi"><span class="chang">2D</span><span class="cham"></span>Căn hộ Thảo Điền<span class="cham"></span><span class="lau">dở 2 ngày</span></span></span><span class="mui"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></a>
+                <a href="#0"><span class="spine" aria-hidden="true"><i></i><i class="on"></i><i></i></span><span class="noi"><span class="ten">Dựng khối tủ bếp dưới</span><span class="duoi"><span class="chang">3D</span><span class="cham"></span>Nhà phố An Phú<span class="cham"></span><span class="lau">dở 5 giờ</span></span></span><span class="mui"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></a>
+                <a href="#0"><span class="spine" aria-hidden="true"><i></i><i></i><i class="on"></i></span><span class="noi"><span class="ten">Chốt bảng vật liệu gửi chủ đầu tư</span><span class="duoi"><span class="chang">Trình chiếu</span><span class="cham"></span>Văn phòng Lê Lợi<span class="cham"></span><span class="lau">đến hạn hôm nay</span></span></span><span class="mui"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></a>
+                <a href="#0"><span class="spine" aria-hidden="true"><i></i><i class="on"></i><i></i></span><span class="noi"><span class="ten">Duyệt 5 phối cảnh phòng khách</span><span class="duoi"><span class="chang">3D</span><span class="cham"></span>Showroom Bến Thành<span class="cham"></span><span class="lau">dở 1 ngày</span></span></span><span class="mui"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></a>
+              </div>
+            </div>
+            <div>
+              <div class="cot-nhan">Trong tuần</div>
+              <div class="wgrid">
+                <div class="w kinh"><h4>Đến hạn</h4><div class="so">3</div><div class="ghi">việc, tuần này</div></div>
+                <div class="w kinh"><h4>Chờ duyệt</h4><div class="so">5</div><div class="ghi">phối cảnh</div></div>
+                <div class="w w2x1 kinh"><h4>Nhịp tuần</h4><div class="cotmau"><i style="height:38%"></i><i style="height:62%"></i><i class="cao" style="height:100%"></i><i style="height:54%"></i><i style="height:71%"></i></div></div>
+                <div class="w w2x1 kinh"><h4>Vật liệu của tuần</h4><div class="swatch"></div><div class="ghi">Gỗ óc chó · vân dọc</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ 5 · BA TRẠNG THÁI NỀN + NGƯỠNG KÍNH ═══════════════ -->
+<h2>5 · Ba trạng thái nền — và ngưỡng độ đặc của kính</h2>
+<p class="h2sub">Đây là <b>điểm nghiệm thu đo được duy nhất</b> của cả việc này. Dải bên trái mỗi khung là <b>ca xấu nhất</b>: nửa trên trắng tinh, nửa dưới đen tuyền — nếu chữ vẫn đọc được ở cả hai nửa thì tương phản là <b>sàn</b>, không phải thứ đổi theo từng tấm ảnh.</p>
+<div class="panes">
+  <div class="pane" data-theme="dark" style="padding:0">
+    <div class="scene" data-nen="anh" data-stress="d"><i class="sky"></i><i class="sun"></i><i class="nui1"></i><i class="nui2"></i><i class="nuoc"></i><i class="cuc"></i></div>
+    <div class="khung">
+      <div class="doi" data-nenwrap="d" style="padding:2px 2px 0">
+        <button type="button" data-nen="anh" aria-pressed="true">Có ảnh</button>
+        <button type="button" data-nen="diu" aria-pressed="false">Giảm chói</button>
+        <button type="button" data-nen="tat" aria-pressed="false">Tắt ảnh</button>
+      </div>
+      <div class="w2x1 w kinh" style="max-width:none"><h4>Thẻ số liệu · kính đặc</h4><div class="so">3</div><div class="ghi">Chữ và số đứng trên kính — nền phía sau đổi thế nào cũng không đổi độ đọc.</div></div>
+      <div class="thanh-tren"><div class="tim kinh-mong"><svg class="kinh-lup" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="o">Thanh tìm · kính mỏng hơn vì ít chữ</span></div><button class="vit" type="button" aria-label="Hỏi Vitals"><b></b></button></div>
+      <div style="height:16px"></div>
+    </div>
+  </div>
+  <div class="pane" data-theme="light" style="padding:0">
+    <div class="scene" data-nen="anh" data-stress="s"><i class="sky"></i><i class="sun"></i><i class="nui1"></i><i class="nui2"></i><i class="nuoc"></i><i class="cuc"></i></div>
+    <div class="khung">
+      <div class="doi" data-nenwrap="s" style="padding:2px 2px 0">
+        <button type="button" data-nen="anh" aria-pressed="true">Có ảnh</button>
+        <button type="button" data-nen="diu" aria-pressed="false">Giảm chói</button>
+        <button type="button" data-nen="tat" aria-pressed="false">Tắt ảnh</button>
+      </div>
+      <div class="w2x1 w kinh" style="max-width:none"><h4>Thẻ số liệu · kính đặc</h4><div class="so">3</div><div class="ghi">Chữ và số đứng trên kính — nền phía sau đổi thế nào cũng không đổi độ đọc.</div></div>
+      <div class="thanh-tren"><div class="tim kinh-mong"><svg class="kinh-lup" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="o">Thanh tìm · kính mỏng hơn vì ít chữ</span></div><button class="vit" type="button" aria-label="Hỏi Vitals"><b></b></button></div>
+      <div style="height:16px"></div>
+    </div>
+  </div>
+</div>
+
+<table class="bang">
+  <thead><tr><th>Lớp kính</th><th>Độ đặc</th><th>Nền trắng tinh</th><th>Nền đen tuyền</th><th>Kết</th></tr></thead>
+  <tbody>
+    <tr><td><b>Thẻ số liệu</b> · <code>--mat-card</code> tối</td><td>0,82</td><td>9,1:1</td><td>18,5:1</td><td class="dat">ĐẠT — dư nhiều</td></tr>
+    <tr><td><b>Panel</b> · <code>--mat-panel</code> tối</td><td>0,68</td><td>5,9:1</td><td>17,7:1</td><td class="dat">ĐẠT</td></tr>
+    <tr><td><b>Thanh tìm</b> · kính mỏng tối</td><td>0,62</td><td>4,8:1</td><td>17,5:1</td><td class="dat">ĐẠT — sát sàn</td></tr>
+    <tr><td>Kính rất trong (kiểu thanh nổi trên mây)</td><td>0,35</td><td><b>2,1:1</b></td><td>16,8:1</td><td class="truot">TRƯỢT khi nền sáng</td></tr>
+    <tr><td><b>Thẻ số liệu</b> · <code>--mat-card</code> sáng</td><td>0,82</td><td>13,9:1</td><td>5,6:1</td><td class="dat">ĐẠT</td></tr>
+  </tbody>
+</table>
+<p class="ghi-chu"><b>Ngưỡng rút ra:</b> để chữ đạt 4,5:1 với <i>mọi</i> tấm ảnh, độ đặc tối thiểu là <b>0,60 ở theme tối</b> và <b>0,53 ở theme sáng</b>. Hai token app đang dùng (<code>--mat-card</code> 0,82 · <code>--mat-panel</code> 0,68/0,70) <b>đã vượt ngưỡng sẵn</b> — không phải chế token mới, chỉ là nay biết vì sao chúng đủ. <b>Kính 0,35 trượt hẳn</b> (2,1:1 khi nền sáng) — đó là lý do kính rất trong chỉ được dùng cho chỗ <i>ít chữ và chữ lớn</i>, không dùng cho thẻ số liệu. Thanh tìm ở 0,62 là <b>mức trong nhất còn hợp lệ</b>: trông nhẹ hơn hẳn thẻ số liệu mà vẫn qua sàn.</p>
+<p class="ghi-chu">Số tính theo công thức tương phản WCAG, lấy ca xấu nhất của nền (trắng tinh #ffffff và đen tuyền #000000) trộn qua lớp kính rồi so với màu chữ thật của theme (<code>--t1</code>). <b>Chưa đo trên máy đo màu</b> — xem mục “chưa chắc” trong báo cáo.</p>
+
+<!-- ═══════════════ 6 · TRẠNG THÁI TRỐNG ═══════════════ -->
+<h2>6 · Chưa có việc nào — màn đầu tiên người dùng mới gặp</h2>
+<p class="h2sub">Ca <b>chủ dự án gặp trước nhất</b> và cũng là ca dễ bỏ quên nhất. Không để trắng: sống lưng ba chặng phóng to làm hình, kèm <b>ba lối đi tiếp</b>. Màn trống là lời mời làm việc, không phải lời xin lỗi.</p>
+<div class="panes doc">
+  <div class="pane" data-theme="dark" style="padding:0">
+    <div class="scene"><i class="sky"></i><i class="sun"></i><i class="nui1"></i><i class="nui2"></i><i class="nuoc"></i></div>
+    <div class="khung">
+      <div class="thanh-tren"><div class="tim kinh-mong"><svg class="kinh-lup" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="o">Tìm trong dự án, tệp, thư viện…</span></div><button class="vit" type="button" aria-label="Hỏi Vitals"><b></b></button></div>
+      <div class="kinh">
+        <div class="trong">
+          <span class="spine lg minh-hoa" aria-hidden="true"><i></i><i></i><i></i></span>
+          <h3>Chưa có việc nào đang chạy</h3>
+          <p>Tạo dự án là có ngay ba chặng — vẽ 2D, dựng 3D, rồi trình bày. Bắt đầu ở đâu cũng được.</p>
+          <div class="nut-hang">
+            <button class="nut chinh" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Tạo dự án</button>
+            <button class="nut" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Mở tệp có sẵn</button>
+            <button class="nut" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Xem thư viện mẫu</button>
+          </div>
+        </div>
+      </div>
+      <div style="height:12px"></div>
+    </div>
+  </div>
+  <div class="pane" data-theme="light" style="padding:0">
+    <div class="scene"><i class="sky"></i><i class="sun"></i><i class="nui1"></i><i class="nui2"></i><i class="nuoc"></i></div>
+    <div class="khung">
+      <div class="thanh-tren"><div class="tim kinh-mong"><svg class="kinh-lup" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="o">Tìm trong dự án, tệp, thư viện…</span></div><button class="vit" type="button" aria-label="Hỏi Vitals"><b></b></button></div>
+      <div class="kinh">
+        <div class="trong">
+          <span class="spine lg minh-hoa" aria-hidden="true"><i></i><i></i><i></i></span>
+          <h3>Chưa có việc nào đang chạy</h3>
+          <p>Tạo dự án là có ngay ba chặng — vẽ 2D, dựng 3D, rồi trình bày. Bắt đầu ở đâu cũng được.</p>
+          <div class="nut-hang">
+            <button class="nut chinh" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Tạo dự án</button>
+            <button class="nut" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Mở tệp có sẵn</button>
+            <button class="nut" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Xem thư viện mẫu</button>
+          </div>
+        </div>
+      </div>
+      <div style="height:12px"></div>
+    </div>
+  </div>
+</div>
+
+<h2>Luật bản vẽ này giữ</h2>
+<ul class="luat">
+  <li><b>Nền để NÉT, kính lo phần đọc được</b> — không bôi mờ ảnh để cứu chữ. Vùng có chữ và số thì kính đặc; lề và khe giữa thẻ thì nền hiện rõ. Thẻ <b>cố ý không phủ kín</b>: phủ kín thì ảnh nền thành vô nghĩa, thà bỏ hẳn còn hơn.</li>
+  <li><b>Tương phản là SÀN, không phải biến số</b> — độ đặc tối thiểu 0,60 (tối) · 0,53 (sáng). Hai token app đang dùng đã vượt sẵn. Kính 0,35 trượt hẳn nên chỉ dùng cho chỗ ít chữ.</li>
+  <li><b>Ba trạng thái nền</b>: có ảnh · giảm chói (ảnh dịu, kính đặc thêm) · tắt hẳn về màu trơn. Nhớ lựa chọn. Đây là nghĩa vụ NT-16 — chính iOS 27 đã phải tự sửa lại kính vì khó đọc.</li>
+  <li><b>Tái dùng kính sẵn có</b>, không dựng hệ mới: đúng công thức <code>.mat-card</code> của app; không bọc lớp cha có <code>opacity</code> (bài học K1 — fade ở cha giết luôn hiệu ứng kính).</li>
+  <li><b>Vitals là MỘT vật di chuyển theo ngữ cảnh</b> — không còn pill riêng lơ lửng. Ở Home nó đứng cạnh ô tìm; ở chặng làm việc nó nổi rời cạnh trục phải, để trợ giúp tới chỗ tay đang đặt. Cùng một hình dạng ở mọi chỗ, và <b>mỗi màn đúng một cái</b>. Ô tìm và Vitals là hai vật riêng — ô tìm cứ là ô tìm.</li>
+  <li><b>Chuột rê vào · cảm ứng nhấn giữ</b> — cùng một kết quả, hai đường vào. Rê chuột phải có trễ (đi ngang không kích hoạt); nhấn giữ 500ms cho nhích 8px, nở dần trong lúc giữ. Số lấy từ hệ sẵn có, không đặt mới. Đĩa lệnh giữ trên mặt canvas, Vitals giữ trên chính nút — không tranh cử chỉ.</li>
+  <li><b>Nấc lớn của Vitals không phải chat phóng to</b> — nó là đồ thị chuỗi việc kèm giá và nút duyệt. Máy soạn chuỗi, người bấm duyệt, engine chỉ chạy đúng cái đã duyệt.</li>
+  <li><b>Nấc hẹp nhất không phải icon trần</b> — dải 28px mang nhãn xoay đứng + tay cầm + chấm báo còn việc; không auto-hide, thu là do người bấm.</li>
+  <li><b>Số đếm dẫn mắt</b> — 0 thì không hiện, quá 99 thì <b>99+</b>, nền trung tính. Không mượn màu nghĩa nghề: “còn 12 việc” không phải cảnh báo, mượn màu đó là làm nhoè thứ đang mang nghĩa thật.</li>
+  <li><b>Cặp màu đảo vai theo theme</b> — tối thì tím chủ, sáng thì đồng chủ; mỗi lúc vẫn đúng MỘT màu chủ.</li>
+  <li><b>Dòng việc là DẢI, không phải thẻ rời</b> — thẻ làm mọi thứ trông ngang nhau, đúng cái bệnh đang có. Cả cụm đứng trên MỘT tấm kính nên chữ luôn trên nền đồng nhất.</li>
+  <li><b>Widget giữ ba cỡ định sẵn</b> 1×1 · 2×1 · 2×2, khai theo ô lưới chứ không theo pixel — nhờ vậy lưới hẹp lại trên tablet và điện thoại là widget tự xếp lại, không phải viết bản riêng.</li>
+  <li><b>Đọc được bằng bàn phím</b> — tay cầm, chấm Vitals, mọi dòng việc đều là phần tử bấm được thật, có vòng focus rõ; icon luôn kèm chữ; chuyển nấc 200ms, máy tắt hiệu ứng thì đổi thẳng.</li>
+</ul>
+<p class="ghi-chu"><b>Ba lối đi này chạy được ngay, không cần thêm bảng dữ liệu nào:</b> việc đã mang sẵn ngữ cảnh <code>stage</code> · <code>workspaceId</code> · <code>entityId</code>; “chặng đang dở” của từng dự án đã được ghi lại; hàm nhảy tới đúng chặng đã có sẵn. Bản vẽ này không vẽ ra thứ chưa có đường về.</p>
+
+<script>
+(function () {
+  var NAC = { thu: 'thu', vua: 'vua', rong: 'rong' };
+  function apply(key, nac) {
+    var rail = document.querySelector('[data-rail="' + key + '"]');
+    if (!rail) return;
+    rail.className = 'rail ' + NAC[nac];
+    rail.style.background = 'transparent';
+    rail.style.borderRightColor = 'var(--mat-hairline)';
+    rail.querySelectorAll('[data-an-thu]').forEach(function (el) {
+      el.style.display = nac === 'thu' ? 'none' : '';
+    });
+    var doc = rail.querySelector('[data-chi-thu]');
+    if (doc) doc.style.display = nac === 'thu' ? '' : 'none';
+    var cam = document.querySelector('[data-cam="' + key + '"]');
+    if (cam) {
+      cam.setAttribute('aria-label', nac === 'thu' ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên');
+      cam.querySelector('path').setAttribute('d', nac === 'thu' ? 'm9 18 6-6-6-6' : 'm15 18-6-6 6-6');
+    }
+    var wrap = document.querySelector('[data-doi="' + key + '"]');
+    wrap.querySelectorAll('button[data-nac]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.nac === nac));
+    });
+    setTimeout(function () {
+      var o = wrap.querySelector('[data-do]');
+      if (o) o.textContent = Math.round(rail.getBoundingClientRect().width) + 'px';
+    }, 260);
+  }
+  document.querySelectorAll('[data-doi]').forEach(function (wrap) {
+    var key = wrap.dataset.doi;
+    wrap.querySelectorAll('button[data-nac]').forEach(function (b) {
+      b.addEventListener('click', function () { apply(key, b.dataset.nac); });
+    });
+    apply(key, 'vua');
+  });
+  document.querySelectorAll('[data-cam]').forEach(function (cam) {
+    cam.addEventListener('click', function () {
+      var key = cam.dataset.cam;
+      var rail = document.querySelector('[data-rail="' + key + '"]');
+      apply(key, rail.classList.contains('thu') ? 'vua' : 'thu');
+    });
+  });
+  /* Ba trạng thái nền */
+  document.querySelectorAll('[data-nenwrap]').forEach(function (wrap) {
+    var key = wrap.dataset.nenwrap;
+    wrap.querySelectorAll('button[data-nen]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        document.querySelector('[data-stress="' + key + '"]').dataset.nen = b.dataset.nen;
+        wrap.querySelectorAll('button[data-nen]').forEach(function (x) {
+          x.setAttribute('aria-pressed', String(x === b));
+        });
+      });
+    });
+  });
+  /* Nhấn giữ trên nút Vitals — cảm ứng không có hover nên đây là đường thay thế.
+     500ms + cho nhích 8px: SỐ CỦA IF (components/ui/Tooltip.tsx:33,37), không đặt mới.
+     Trong lúc giữ nút nở dần để người biết mình đang giữ đúng chỗ. */
+  var GIU_MS = 500, NHICH_PX = 8;
+  document.querySelectorAll('.vit').forEach(function (v) {
+    var hen = null, tu = null;
+    function thoi() { clearTimeout(hen); hen = null; tu = null; v.classList.remove('dang-giu'); }
+    v.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse') return;   // chuột đi đường rê-vào, không phải giữ
+      tu = { x: e.clientX, y: e.clientY };
+      v.classList.add('dang-giu');
+      hen = setTimeout(function () { v.classList.remove('dang-giu'); }, GIU_MS);
+    });
+    v.addEventListener('pointermove', function (e) {
+      if (!tu) return;
+      if (Math.abs(e.clientX - tu.x) > NHICH_PX || Math.abs(e.clientY - tu.y) > NHICH_PX) thoi();
+    });
+    v.addEventListener('pointerup', thoi);
+    v.addEventListener('pointercancel', thoi);
+  });
+})();
+</script>
+</body>
+</html>

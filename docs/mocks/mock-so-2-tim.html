@@ -1,0 +1,178 @@
+<!-- @dsCard group="Nhận diện" -->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>InteriorFlow · Tím hiện tại ↔ Tím shadcn</title>
+<style>
+:root{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78;
+  --warm:#c79a63; --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-xl:20px; --r-full:999px; --tap:32px;
+}
+.sang{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a;
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+}
+/* HAI ỨNG VIÊN — chỉ đổi đúng biến này */
+.nay  { --a:#6a57f5; --a2:#553ff3; }
+.shad { --a:#7c3aed; --a2:#6d28d9; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#08080a;color:#f5f5f7;font:14px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;padding:28px}
+h1{font-size:21px;font-weight:640;letter-spacing:-.01em;margin-bottom:5px}
+.sub{color:#9e9ea8;font-size:13px;max-width:80ch;margin-bottom:22px;line-height:1.6}
+.eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#6e6e78;margin-bottom:9px}
+
+.hang{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.cot-dau{font-size:13px;font-weight:620;margin-bottom:8px;display:flex;align-items:baseline;gap:9px}
+.hex{font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:#6e6e78}
+
+.khung{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:15px;color:var(--t1)}
+.nhan{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t4);margin-bottom:11px}
+
+.bar{display:flex;gap:6px;align-items:center;background:var(--panel);border:1px solid var(--border);
+     border-radius:var(--r-full);padding:6px;width:fit-content;margin-bottom:13px}
+.chip{width:var(--tap);height:var(--tap);border-radius:var(--r-full);border:0;background:transparent;
+      color:var(--t2);display:grid;place-items:center;cursor:pointer}
+.chip svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.chip.bat{background:color-mix(in srgb,var(--a) 16%,transparent);color:var(--a)}
+.chip.mo{opacity:.5}
+
+.the{background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;margin-bottom:11px;position:relative;overflow:hidden}
+.the::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--a)}
+.ten{font-weight:600;font-size:13.5px;margin-bottom:3px}
+.phu{color:var(--t3);font-size:11.5px}
+.d{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+
+.nut{border:0;border-radius:var(--r-md);padding:0 14px;height:34px;font:inherit;font-size:13px;font-weight:560;cursor:pointer}
+.chinh{background:var(--a);color:#fff}
+.am{background:var(--warm);color:#1a1305}
+.vien{background:transparent;color:var(--t2);border:1px solid var(--border-strong)}
+
+.pill{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:var(--r-full);
+      font-size:11.5px;background:color-mix(in srgb,var(--a) 14%,transparent);color:var(--a);font-weight:560}
+.cham{width:6px;height:6px;border-radius:50%;background:var(--a)}
+.thanh{height:5px;border-radius:var(--r-full);background:var(--field);overflow:hidden;margin-top:11px}
+.thanh i{display:block;height:100%;width:62%;background:var(--a);border-radius:inherit}
+.o{display:flex;align-items:center;gap:8px;background:var(--field);border:1px solid var(--border);
+   border-radius:var(--r-full);padding:0 12px;height:36px;margin-top:11px}
+.o .lup{width:15px;height:15px;stroke:var(--t3);fill:none;stroke-width:1.8}
+.o .goi{color:var(--t4);font-size:12.5px;flex:1}
+.o .vit{width:16px;height:16px;border-radius:50%;background:var(--a);flex-shrink:0}
+
+/* chỗ dễ nhầm: nút chính đứng cạnh 3 màu nghĩa */
+.nghia{display:flex;gap:7px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.tag{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:var(--r-sm);font-size:11px;font-weight:560}
+.tag.dg{background:color-mix(in srgb,var(--danger) 16%,transparent);color:var(--danger)}
+.tag.vg{background:color-mix(in srgb,var(--warning) 16%,transparent);color:var(--warning)}
+.tag.xl{background:color-mix(in srgb,var(--success) 16%,transparent);color:var(--success)}
+
+.so{margin-top:20px;border-top:1px solid #2a2a31;padding-top:14px;font-size:12.5px;color:#9e9ea8;line-height:1.75;max-width:88ch}
+.so b{color:#d6d6db;font-weight:600}
+table{border-collapse:collapse;margin:10px 0 14px;font-size:12.5px}
+th,td{text-align:left;padding:5px 16px 5px 0;border-bottom:1px solid #1e1e24}
+th{color:#6e6e78;font-weight:560;font-size:11px;letter-spacing:.05em;text-transform:uppercase}
+td b{color:#f5f5f7}
+</style>
+</head>
+<body>
+
+<div class="eyebrow">InteriorFlow · phác thảo — chưa code</div>
+<h1>Tím hiện tại ↔ Tím shadcn</h1>
+<p class="sub">
+  Cùng một khối giao diện thật, chỉ đổi <b>đúng một biến màu</b>. Nhìn hàng dưới cùng của mỗi khối:
+  nút chính đứng ngay cạnh ba màu nghĩa nghề — đó là chỗ dễ nhầm nhất, và cũng là chỗ quyết định.
+</p>
+
+<div class="hang">
+  <div>
+    <div class="cot-dau">A · Tím hiện tại của IF <span class="hex">#6a57f5</span></div>
+    <div class="khung nay">
+      <div class="nhan">Tối · mặc định</div>
+      <div class="bar">
+        <button class="chip bat"><svg viewBox="0 0 24 24"><path d="M3 3l7 17 2-7 7-2z"/></svg></button>
+        <button class="chip"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button>
+        <button class="chip"><svg viewBox="0 0 24 24"><path d="M21 2v6h-6M3 12a9 9 0 0115-6.7L21 8"/></svg></button>
+        <button class="chip mo"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
+      </div>
+      <div class="the"><div class="ten">Căn hộ Thảo Điền</div><div class="phu">78 m² · đang dựng phối cảnh</div>
+        <div class="d"><span class="pill"><i class="cham"></i>Đang render</span></div><div class="thanh"><i></i></div></div>
+      <div class="o"><svg class="lup" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span class="goi">Tìm trong dự án…</span><i class="vit"></i></div>
+      <div class="d"><button class="nut chinh">Xuất hồ sơ</button><button class="nut vien">Xem trước</button><button class="nut am">Vào xưởng</button></div>
+      <div class="nghia"><span class="tag dg">Sai chuẩn</span><span class="tag vg">Cần xem lại</span><span class="tag xl">Đạt</span></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="cot-dau">B · Tím shadcn <span class="hex">#7c3aed</span></div>
+    <div class="khung shad">
+      <div class="nhan">Tối · mặc định</div>
+      <div class="bar">
+        <button class="chip bat"><svg viewBox="0 0 24 24"><path d="M3 3l7 17 2-7 7-2z"/></svg></button>
+        <button class="chip"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button>
+        <button class="chip"><svg viewBox="0 0 24 24"><path d="M21 2v6h-6M3 12a9 9 0 0115-6.7L21 8"/></svg></button>
+        <button class="chip mo"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
+      </div>
+      <div class="the"><div class="ten">Căn hộ Thảo Điền</div><div class="phu">78 m² · đang dựng phối cảnh</div>
+        <div class="d"><span class="pill"><i class="cham"></i>Đang render</span></div><div class="thanh"><i></i></div></div>
+      <div class="o"><svg class="lup" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span class="goi">Tìm trong dự án…</span><i class="vit"></i></div>
+      <div class="d"><button class="nut chinh">Xuất hồ sơ</button><button class="nut vien">Xem trước</button><button class="nut am">Vào xưởng</button></div>
+      <div class="nghia"><span class="tag dg">Sai chuẩn</span><span class="tag vg">Cần xem lại</span><span class="tag xl">Đạt</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="hang">
+  <div>
+    <div class="khung sang nay">
+      <div class="nhan">Sáng</div>
+      <div class="bar">
+        <button class="chip bat"><svg viewBox="0 0 24 24"><path d="M3 3l7 17 2-7 7-2z"/></svg></button>
+        <button class="chip"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button>
+        <button class="chip mo"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
+      </div>
+      <div class="the"><div class="ten">Căn hộ Thảo Điền</div><div class="phu">78 m² · đang dựng phối cảnh</div>
+        <div class="d"><span class="pill"><i class="cham"></i>Đang render</span></div><div class="thanh"><i></i></div></div>
+      <div class="d"><button class="nut chinh">Xuất hồ sơ</button><button class="nut vien">Xem trước</button><button class="nut am">Vào xưởng</button></div>
+      <div class="nghia"><span class="tag dg">Sai chuẩn</span><span class="tag vg">Cần xem lại</span><span class="tag xl">Đạt</span></div>
+    </div>
+  </div>
+  <div>
+    <div class="khung sang shad">
+      <div class="nhan">Sáng</div>
+      <div class="bar">
+        <button class="chip bat"><svg viewBox="0 0 24 24"><path d="M3 3l7 17 2-7 7-2z"/></svg></button>
+        <button class="chip"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></button>
+        <button class="chip mo"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
+      </div>
+      <div class="the"><div class="ten">Căn hộ Thảo Điền</div><div class="phu">78 m² · đang dựng phối cảnh</div>
+        <div class="d"><span class="pill"><i class="cham"></i>Đang render</span></div><div class="thanh"><i></i></div></div>
+      <div class="d"><button class="nut chinh">Xuất hồ sơ</button><button class="nut vien">Xem trước</button><button class="nut am">Vào xưởng</button></div>
+      <div class="nghia"><span class="tag dg">Sai chuẩn</span><span class="tag vg">Cần xem lại</span><span class="tag xl">Đạt</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="so">
+  <b>Số đo — T lấy từ nguồn chính chủ shadcn, không đoán bằng mắt:</b>
+  <table>
+    <tr><th></th><th>Góc màu</th><th>Độ sáng</th><th>Độ rực</th></tr>
+    <tr><td>A · hiện tại <code>#6a57f5</code></td><td><b>247°</b></td><td><b>65%</b></td><td><b>89%</b></td></tr>
+    <tr><td>B · shadcn <code>#7c3aed</code></td><td><b>262°</b></td><td><b>58%</b></td><td><b>83%</b></td></tr>
+  </table>
+  Ba con số nói cùng một điều: B <b>tím thật hơn</b> (xoay 15° khỏi phía xanh), <b>tối hơn</b>, <b>bớt rực</b>.
+  Đó là lý do nó trông như mực chứ không như đèn.<br><br>
+  <b>Cả hai đều nằm ngoài vùng cấm</b> — cách xa đỏ (25°), vàng (37°), xanh đạt (145°). Không màu nào
+  đụng nghĩa nghề. Riêng theme tối shadcn dùng bản sâu hơn nữa <code>#6d28d9</code>, T để sẵn cho bước áp.<br><br>
+  <b>Việc còn lại nếu Hoà chọn B:</b> đổi đúng 2 biến trong <code>app/globals.css</code> — 169 tệp không
+  phải sửa dòng nào vì chúng gọi biến, không viết mã màu. Sau đó đo lại tương phản chữ trắng trên nút
+  chính: B tối hơn A nên chữ trắng <b>dễ đọc hơn</b>, không phải lo ngược lại.
+</div>
+
+</body>
+</html>
