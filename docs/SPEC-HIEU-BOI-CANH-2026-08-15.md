@@ -89,10 +89,40 @@ sai số của neo **không lan thành sai số của thiết kế** — vì thi
 mà neo lấy ra từ đó. Neo lệch 3% thì cả hệ lệch 3% **cùng chiều**, và vẫn vừa vặn với nhóm người
 đó. Hệ **tự nhất quán**. Đó là lý do nghề này chạy được bằng số trung bình suốt trăm năm.
 
-🔴 **Nguy hiểm nằm ở chỗ TRỘN, không nằm ở sai số.** Neo lấy theo người châu Á mà luật lại lấy chuẩn
-châu Âu ⇒ hệ mất nhất quán, và lúc đó sai số **cộng dồn thay vì triệt tiêu**.
-⚠️ **Rủi ro này đang SỐNG trong IF**: bộ luật có cả `neufert.ts` (gốc châu Âu) lẫn `vn-*.ts` (Việt
-Nam) chạy song song. Phải chọn dân số MỘT LẦN ở cấp dự án, rồi **cả neo lẫn luật cùng đọc một chỗ**.
+🔴 **Nguy hiểm nằm ở chỗ TRỘN, không nằm ở sai số.** Nhưng phải nói cho đúng "trộn" là gì.
+
+### ⚠️ T ĐÍNH CHÍNH — Neufert đứng cạnh luật VN KHÔNG phải trộn
+> **Hoà sửa 15/08:** *"đồng bộ/trộn phải hiểu và áp dụng TRONG CÙNG HỆ QUY CHIẾU. Công thái học là
+> A. Quy định PCCC Việt Nam là B. Hai thứ nói về hai vấn đề khác nhau, chỉ chung phần a' là mức độ
+> đo lường của A — ví dụ hành lang chung thoải mái cho 2 người qua lại là 1m2. Ông B lấy giá trị đó
+> soi xét rồi thiết lập chuẩn chung theo nhu cầu thực tế quốc gia, sau đó giữ nguyên cho PCCC hay
+> đổi tăng lên 1m5 tại riêng quốc gia mình."*
+
+T trước đó ghi *"rủi ro đang sống: neufert.ts chạy song song vn-*.ts"* — **SAI, đã gỡ**. Hai thứ đó
+**không cạnh tranh**, chúng là **hai BẬC của một chuỗi**:
+
+| Bậc | Là gì | Quan hệ |
+|---|---|---|
+| **A · Nền công thái học** | con số gốc từ cơ thể người (Neufert) — hành lang 1m2 cho 2 người tránh nhau | **lấp chỗ B không nói** |
+| **B · Chuẩn/luật quốc gia** | soi A theo nhu cầu thực tế nước mình, **giữ nguyên hoặc NÂNG** (1m2 → 1m5) | **THẮNG A khi B có nói** |
+| **C · Biến số ngữ cảnh** | ven biển, vùng ngập, tập quán vùng | **chỉ siết thêm**, không nới |
+
+**Luật đúng:** *B thắng A khi B có nói · A lấp chỗ B im lặng · C chỉ siết thêm.*
+✅ Cơ chế đã có sẵn: `registry.ts` cho **rule trùng id ghi đè rule trước**, cộng `getRulesByRegion()`.
+
+**Trộn THẬT là gì** — chỉ hai ca này mới là bệnh:
+· hai **luật quốc gia** cho cùng một việc (PCCC Việt + PCCC châu Âu)
+· hai **nền công thái học** cho cùng một kích thước (Neufert + một bộ nhân trắc khác cho cùng mặt bàn)
+⇒ Trộn là **cùng bậc, cùng vấn đề, hai nguồn**. Khác bậc thì là chồng tầng, hoàn toàn hợp lệ.
+
+### Lời giải Hoà đưa: VỊ TRÍ CÔNG TRÌNH quyết định cả bộ
+> *"vị trí dự án nằm đâu thì áp dụng quy chuẩn tiêu chuẩn đồng bộ tại đó thôi."*
+
+Một biến duy nhất — **vị trí** — kéo theo trọn bộ đồng bộ: luật quốc gia nào · nền công thái học
+nào · biến số ngữ cảnh nào. Không phải chọn từng thứ rồi lo chúng có hợp nhau không.
+⭐ Hoà ghi chú thêm: khai vị trí **"tạo sinh cả nguyên giai đoạn 1 của quá trình nghiên cứu dự án"**
+— luật áp dụng, khí hậu, vật liệu sẵn có, tập quán. Đây là **cửa vào rẻ nhất cho cả một pha nghiên
+cứu**, không chỉ là một trường dữ liệu.
 
 **Hiện trạng đo 15/08:**
 | Tầng | Biết "vùng nào" chưa |
