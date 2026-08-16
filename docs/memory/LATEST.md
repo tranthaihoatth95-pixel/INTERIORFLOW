@@ -58,3 +58,47 @@ thu mọi UI từ nay.
   chung: văn bản quy trình bị thay PHẢI đóng dấu tại chỗ, không im lặng bỏ hoang.
 - **BÁC vĩnh viễn: khởi tạo SIM-LEDGER · đẻ agent thứ 6 vai tư vấn vận hành** (lý do đầy đủ ở
   `00-CHOT` 15/08) — phiên sau định làm 1 trong 2, đọc lại dòng đó trước.
+
+---
+
+# PHIÊN 15/08 ĐỢT DÀI (T) — bản nén, chi tiết ở lá
+
+> Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung vào đây.**
+
+## Chốt của Hoà trong phiên — tất cả đã vào `docs/00-CHOT.md` (tra theo ngày 15/08)
+Ranh giới id-phối-cảnh vs con số · BOQ chỉ nhận số đo được · master tool là công dân canvas ·
+chặng 2 một-bộ-lệnh-hai-lối · vision backbone chạy cục bộ · IF tự mang runtime AI · kiểm chuẩn là
+việc của MÁY, AI chỉ góp ý · hệ quy chiếu lấy con người làm trung tâm · luật đồng bộ họ chuẩn ·
+trục thứ ba biến số ngữ cảnh · ký ức nằm trên đĩa, 3 tầng dự án/studio/app-core.
+
+## Tài liệu mới sinh trong phiên
+| Đường dẫn | Một câu |
+|---|---|
+| `docs/SPEC-HIEU-BOI-CANH-2026-08-15.md` | cách hiểu bối cảnh từ hình chiếu — 3 mặt, con người là thước đo, thang bậc A/B/C |
+| `docs/CHOT-PHIEN-15-08-CAN-SOAT.md` | 16 chốt + 7 mục luật + **bảng 20 việc chưa làm** + quy trình D sửa lại |
+| `docs/QUY-TRINH-THEO-NGON-NGU-NGHE.md` | 8 bước gọi theo dự án nội thất; trailer `Thi-cong: theo-phuong-an-duyet / xu-ly-tai-cho` |
+| `docs/TICKET-KIEN-TRUC-LENH-3-TANG.md` | 5 sổ lệnh song song; B1 xong, B2-B5 chờ |
+| `docs/TICKET-MASTER-TOOL-VA-DINH-DANH.md` | master tool 3 nấc · cửa định nghĩa file · định danh dải màu |
+| `docs/nc/NC-VISION-BACKBONE-CUC-BO-2026-08-15.md` | onnxruntime-node + MobileSAM + CLIP ~197MB, 2 bẫy giấy phép |
+| `docs/nc/NC-AI-LOCAL-TRI-THUC-2026-08-15.md` | RAG chứ không training; kho **0 dòng**; BGE-M3 trùng 1024 chiều |
+| `docs/nc/NC-QUY-TRINH-AGENT-GITHUB-2026-08-15.md` | 6 repo lớn chỉ dùng 1 file AGENTS.md — đừng thêm nghi thức |
+| `docs/nc/NC-CHONG-HIEU-SAI-Y-2026-08-15.md` | 3 khuôn nhắc lại theo độ khó lùi |
+| `docs/danh-gia-he-lam-viec-2026-08-15.html` · `docs/TU-VAN-TANG-AI-IF-2026-08-15.html` | 2 trang trình Hoà (sơ đồ vận hành · tầng AI) |
+
+## Code đã ship trong phiên
+hàng đợi render (`RenderQueuePanel`) · một-họ-nút 3 chặng (`ToolbarChip`) · sổ lệnh chung B1
+(`lib/commands/registry.ts` +stages+icon) · đường chân trời kéo sửa (`lib/vision/horizon.ts`) ·
+**sửa bug Hough** làm chết hiệu chỉnh camera từ ảnh (`single-view-metrology.ts:605` + test mới) ·
+vá lỗi đăng nhập nói tiếng người · màn khoá dòng-trong-ngày.
+
+## ⛔ CHỜ HOÀ — chưa gật thì chưa làm
+1. Soát **A/B/C** trong `CHOT-PHIEN-15-08-CAN-SOAT.md` rồi T mới chạy bảng 20 việc
+2. **Hai nhánh song song** (sáng tạo ↕ kỹ thuật) — đúng chưa
+3. Tài liệu gộp **6 nguồn luật** (Apple/Google/Samsung/Huawei/Anthropic/đồng-hành-không-chiều-lòng) — viết hay không
+4. Lô duyệt mắt #1 — **nút thắt thật: 66 xong-máy đối 1 qua mắt**
+
+## Luật mới cho chính T
+· Nhắc lại trước khi làm, chọn khuôn theo độ khó lùi (so sánh+phản ví dụ · phác thảo hình · GWT có số)
+· Trailer `Thi-cong:` mỗi commit — tra chỗ T tự quyết bằng `git log --grep="xu-ly-tai-cho"`
+· T được quyết kỹ thuật · PHẢI nhắc lại khi đụng Ý ĐỊNH · KHÔNG BAO GIỜ tự bỏ/hoãn tính năng
+· Bản nén này: chỉ tên + đường dẫn + một câu
