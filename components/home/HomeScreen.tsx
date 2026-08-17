@@ -513,9 +513,19 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
 
   // Đã đăng nhập nhưng chưa chọn dự án → MÀN CHỌN DỰ ÁN (gallery 3D visionOS).
   // ProjectSelect tự openFlow/createFlow trước khi gọi onEnter → không cần bootstrap.
+  //
+  // 17/08 (phiếu P-ROUTER-HOME) — bọc DongStudioHome trong `<AppShell active="home">` để rail
+  // điều hướng (RailDieuHuong V1) hiện ở '/' (Hoà chốt 16/08 "sidebar là hệ router toàn app,
+  // LUÔN hiện ở mọi chặng"). Trước: nhánh này render DongStudioHome trực tiếp ⇒ '/' là route
+  // DUY NHẤT trong app không có bản đồ.
+  // Ở home KHÔNG truyền toolbar/navigator/inspector/toolbelt — AppShell tự gate: rail + AppChrome
+  // + children (Ổ ③), các ổ khác ẩn hẳn. WelcomeIntro là modal z-cao nổi trên AppShell (z overlay
+  // của WelcomeIntro thuộc chính component đó, không phụ thuộc container). Dashboard tự mount
+  // BÊN TRONG AppShell (line 186 AppShell.tsx) — GỠ mount đôi cũ ở nhánh này để không có 2
+  // overlay chồng nhau khi mở panel Chi tiết.
   if (!stageDone) {
     return (
-      <>
+      <AppShell active="home">
         {chooseProjectNotice && (
           <div
             role="status"
@@ -580,15 +590,10 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
             onDismiss={closeWelcome}
           />
         )}
-        {/* Panel "Chi tiết" (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.2(b)) — Dashboard.tsx
-            overlay đã có sẵn (fixed inset-0 z-50), gated bởi store dashboardOpen. TRƯỚC ĐÂY
-            chỉ mount ở nhánh canvas bên dưới → 2 nút "Chi tiết"/"Đồng bộ tiến độ" mới thêm
-            trên Gallery gọi openDashboardTab() cập nhật store nhưng KHÔNG CÓ GÌ render, vì
-            Gallery (nhánh !stageDone) chưa từng mount <Dashboard/>. Mount thêm ở đây — mutually
-            exclusive với nhánh canvas (chỉ 1 trong 2 return chạy tại 1 thời điểm), không tạo 2
-            overlay chồng nhau. */}
-        <Dashboard />
-      </>
+        {/* Panel "Chi tiết" — Dashboard mount BÊN TRONG AppShell (line 186 AppShell.tsx) đã
+            đủ; comment cũ ("mutually exclusive với nhánh canvas") không còn đúng vì nay AppShell
+            là container chung ở cả hai nhánh, mount 2 lần cùng chỗ đẻ 2 subscription store. */}
+      </AppShell>
     );
   }
 

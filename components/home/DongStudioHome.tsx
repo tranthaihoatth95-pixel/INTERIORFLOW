@@ -298,10 +298,23 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   // v4 (13/08, phiếu home-bento-v4.md ④.2) — ô A tách thành JSX dùng chung CẢ 4 layout (ĐẦY ·
   // VỪA · MỎNG · stackedList mobile) — trước đây chép văn y nguyên 2 lần (bentoGrid + stackedList),
   // nay 4 lần nếu không tách. `boxShadow: var(--shadow-node)` thêm mới (lỗi #6, đồng bộ WidgetCard).
+  //
+  // P-DASHBOARD-DS (17/08) — chuyển vỏ từ `--card` đặc sang kính lỏng đồng bộ WidgetCard: class
+  // `.nen-mo-card` (globals.css:431, backdrop-filter blur-strong + saturate 180%, Webkit prefix có
+  // sẵn theo K3) + inline backdropFilter/WebkitBackdropFilter tường minh để `grep backdrop-filter`
+  // bắt được (ticket ⑥b) và bảo hiểm khi class bị override. Border `--vien-mo` (hairline token
+  // đảo cực theo theme) + `inset 0 1px 0 var(--vien-mo)` = MÉP BẮT SÁNG (ambient tint tầng ① ba
+  // tầng ánh sáng 16/08, "kính nhận sáng"). KHÔNG hex/token mới.
   const projectTile: ReactNode = (
     <div
-      className="flex h-full flex-col overflow-hidden rounded-[var(--r-3)]"
-      style={{ background: 'var(--card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-node)' }}
+      className="flex h-full flex-col overflow-hidden rounded-[var(--r-3)] nen-mo-card"
+      style={{
+        background: 'var(--nen-mo-card, var(--card))',
+        border: '1px solid var(--vien-mo, var(--border))',
+        backdropFilter: 'saturate(180%) blur(var(--blur-strong))',
+        WebkitBackdropFilter: 'saturate(180%) blur(var(--blur-strong))',
+        boxShadow: 'var(--shadow-node), inset 0 1px 0 var(--vien-mo)',
+      }}
     >
       {/* ⑤ P-X — tiêu đề ô đổi `--t4`→`--t3` và số đổi `--t5`→`--t3`: đo được 3,44/3,26 và
           1,98/2,21 (dưới ngưỡng 4,5:1). `--t3` đạt 7,24 (tối) / 5,20 (sáng). Số phân biệt với

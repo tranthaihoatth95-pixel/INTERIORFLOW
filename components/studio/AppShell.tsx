@@ -50,9 +50,15 @@ interface Props {
   active: AppChromeActive;
   children: ReactNode;
   /** Ổ ② — nội dung Navigator (vd `<LayerPanel/>`), khung/đáy do `AppShell` lo qua `Navigator`
-   * component riêng (chặng chỉ truyền phần list + 2 handler add/library). */
-  navigator: ReactNode;
-  navigatorAddLabel: string;
+   * component riêng (chặng chỉ truyền phần list + 2 handler add/library).
+   *
+   * 17/08 (phiếu P-ROUTER-HOME) — `optional` để `active='home'` bọc được (Home KHÔNG có ổ ②:
+   * rail đã là bản đồ, dựng thêm cột danh sách trống lúc chưa mở dự án là "kéo dãn giao diện
+   * cho đủ khuôn", đúng lỗi luật §6.2 rail của `HOP-DONG-CAU-TRUC-DIEU-HUONG.md` cảnh báo).
+   * Bốn mặt tiền chặng cũ (`cad`/`render`/`present`/`photo`) VẪN bắt buộc truyền — đó là ổ
+   * "Lớp/Node/Trang" của chặng, thiếu thì Navigator hiện khung trống 214px. */
+  navigator?: ReactNode;
+  navigatorAddLabel?: string;
   /** Nhãn dải mỏng khi Navigator thu gọn (§2f SPEC-PANEL-ROLLOUT-IDF) — "Lớp"/"Khối"/"Trang"… */
   navigatorCollapsedLabel?: string;
   onNavigatorAdd?: () => void;
@@ -147,9 +153,15 @@ export function AppShell({
       <AppChrome active={active} logoMenu />
       <div className="relative flex min-h-0 flex-1">
         <RailDieuHuong />
-        <Navigator addLabel={navigatorAddLabel} collapsedLabel={navigatorCollapsedLabel} onAdd={onNavigatorAdd} onOpenLibrary={openLibrary} width={navigatorWidth} shiftHotkeys={active === 'cad'}>
-          {navigator}
-        </Navigator>
+        {/* Ổ ② — chặng có nội dung (Lớp/Node/Trang) thì dựng Navigator 214px; Home KHÔNG có
+            (17/08, phiếu P-ROUTER-HOME): rail đã là bản đồ, không dựng thêm cột trống 214px.
+            Gate BẰNG `active`, không bằng `navigator !== undefined`, để chặng khác quên truyền
+            thì thấy khung Navigator trống — báo lỗi hiển thị sớm thay vì im lặng bỏ. */}
+        {active !== 'home' && (
+          <Navigator addLabel={navigatorAddLabel ?? ''} collapsedLabel={navigatorCollapsedLabel} onAdd={onNavigatorAdd} onOpenLibrary={openLibrary} width={navigatorWidth} shiftHotkeys={active === 'cad'}>
+            {navigator}
+          </Navigator>
+        )}
         <div className="relative flex min-w-0 flex-1 flex-col">
           {toolbar}
           {children}
