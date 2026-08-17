@@ -115,3 +115,15 @@ Gom **nguồn ngoài đã tra** (Apple Liquid Glass + màu · Material 3 · Cont
 còn 2 cửa · ngưỡng kính · lệch 14 điểm kênh lam giải thích chữ "sến") · **2 vị trí code phiên sau
 cần** (`Tooltip.tsx:33,37` · `ToolbarChip.tsx:137` nút mờ đi vòng Tooltip) · **cơ chế đã dựng**
 (⓪b/⓪c/⑥b · §10 · cửa Drive · máy chụp màn) · **6 lỗi của T** · **3 điều rút ra về phương pháp**.
+
+---
+
+## 📦 BÀN GIAO ĐỢT BÀN-GIAO-DIỆN + GALLERY (17/08 chiều) — `docs/memory/BAN-GIAO-T-2026-08-17-chieu.md`
+Phiên **bàn nhiều, code ít** — sản phẩm là chốt + bảng tình trạng.
+· **Khuôn mới**: bàn xong chủ đề nào phải ra bảng *có-nền / xịn-dỏm / dỏm-thì-build* → mô tả giao
+diện → Claude Design (`TAC-NHAN-T.md §2⑥`). · **Tác nhân T** đã chưng cất thành văn bản.
+· 🔴 **6 cảnh báo**: `ChatMessage` không có `projectId` (mâu thuẫn ghi 08/08, chưa xử) · video call
+**chốt 11/08 nói KHÔNG tự xây** · kho tri thức **0 bản ghi** — máy chạy không tải · ArchDaily +
+OfficeSnapshots **có bản quyền**, chỉ liên-kết-không-sao-chép · học gu sớm là học từ số không ·
+**todo list chưa rõ là bước-con hay việc-rời, phải hỏi Hoà**.
+· Pinterest **vào được** trong pane sau khi Hoà đăng nhập.
