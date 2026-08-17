@@ -1,0 +1,824 @@
+<!-- @dsCard group="Chặng 3D — Collab" -->
+<style>
+  /* === Tokens giả lập giống globals.css — CHỈ dùng để mock file:// đứng một mình.
+     Trong app thật, tokens đến từ globals.css. Mock KHÔNG khai `--accent*`
+     mới (§6.5 HOP-DONG); các khai dưới là để render trang chạy được, cùng giá trị
+     đã có trong app/globals.css:19-26,175-186,239-241,264-278. Nếu mở trong app
+     thật thì :root của app thắng, mock không đè. */
+  :root {
+    color-scheme: dark;
+    --bg: #0c0c0e;
+    --panel: #141417;
+    --card: #1a1a1e;
+    --field: #202024;
+    --hover: #2a2a30;
+    --border: #2a2a31;
+    --border-strong: #3d3d45;
+    --t1: #f5f5f7;
+    --t2: #d6d6db;
+    --t3: #9e9ea8;
+    --t4: #6e6e78;
+    --t5: #4e4e57;
+    --accent: #6a57f5;
+    --accent-strong: #553ff3;
+    --accent-soft: rgba(106, 87, 245, 0.14);
+    --accent-ring: rgba(106, 87, 245, 0.55);
+    --on-accent: #ffffff;
+    --danger: #e5674f;
+    --warning: #d9a34a;
+    --success: #46b876;
+    --nen-mo-panel: rgba(20, 20, 23, 0.68);
+    --nen-mo-card: rgba(26, 26, 30, 0.82);
+    --vien-mo: rgba(255, 255, 255, 0.06);
+    --mo-vo-hieu: 0.5;
+    --shadow-sheet: 0 12px 40px -12px rgba(0, 0, 0, 0.7);
+    --shadow-pop: 0 8px 30px -8px rgba(0, 0, 0, 0.65);
+    --shadow-node: 0 6px 20px -8px rgba(0, 0, 0, 0.6);
+    --r-2: 10px;
+    --r-3: 14px;
+    --blur: 22px;
+    --pad-card: 8px 12px;
+    --fs-ui: 13px;
+    --fs-2xs: 11px;
+    --tap-lg: 44px;
+  }
+  :root[data-theme='light'] {
+    color-scheme: light;
+    --bg: #f2efe9;
+    --panel: #faf8f4;
+    --card: #ffffff;
+    --field: #f4f1eb;
+    --hover: #e9e5dd;
+    --border: #e3ded4;
+    --border-strong: #cbc4b6;
+    --t1: #211e19;
+    --t2: #47423a;
+    --t3: #726c62;
+    --t4: #9a938a;
+    --t5: #b8b1a7;
+    --nen-mo-panel: rgba(250, 248, 244, 0.7);
+    --nen-mo-card: rgba(255, 255, 255, 0.82);
+    --vien-mo: rgba(0, 0, 0, 0.05);
+    --mo-vo-hieu: 0.62;
+    --shadow-sheet: 0 12px 40px -14px rgba(60, 52, 40, 0.28);
+    --shadow-pop: 0 10px 30px -10px rgba(60, 52, 40, 0.22);
+    --shadow-node: 0 6px 18px -8px rgba(60, 52, 40, 0.2);
+    --danger: #c9341d;
+    --warning: #9a6304;
+    --success: #107043;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
+    background: var(--bg);
+    color: var(--t1);
+    font-size: var(--fs-ui);
+    line-height: 1.5;
+  }
+
+  /* ====== Khung mock ====== */
+  .doi-theme {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 6px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--r-2);
+    width: fit-content;
+  }
+  .doi-theme button {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--t2);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font: inherit;
+  }
+  .doi-theme button.hoat { background: var(--accent-soft); border-color: var(--accent-ring); color: var(--t1); }
+
+  h1 {
+    font-size: 24px;
+    margin: 0 0 4px;
+    color: var(--t1);
+  }
+  .lead { color: var(--t3); margin: 0 0 24px; }
+
+  .ca {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--r-3);
+    margin-bottom: 32px;
+    overflow: hidden;
+  }
+  .ca-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+  .ca-header h2 {
+    margin: 0 0 4px;
+    font-size: 17px;
+    color: var(--t1);
+  }
+  .ca-header .kich-ban {
+    color: var(--t3);
+    font-size: var(--fs-ui);
+    margin: 0;
+  }
+  .ca-body {
+    display: grid;
+    grid-template-columns: 220px 1fr 300px;
+    gap: 0;
+    min-height: 500px;
+  }
+
+  /* Sidebar giả — chỉ vẽ đủ ngữ cảnh, KHÔNG đầy đủ (đây là mock Collab, không mock rail) */
+  .sidebar-gia {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 12px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .sidebar-gia .cum-nhan {
+    font-size: var(--fs-2xs);
+    color: var(--t4);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 8px 8px 4px;
+  }
+  .sidebar-gia .muc {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: 6px;
+    color: var(--t2);
+    cursor: pointer;
+  }
+  .sidebar-gia .muc:hover { background: var(--hover); color: var(--t1); }
+  .sidebar-gia .muc.dang { background: var(--accent-soft); color: var(--t1); }
+  .sidebar-gia .muc .ky-hieu { width: 16px; height: 16px; display: inline-block; }
+
+  /* Canvas Miro-like: nền chấm */
+  .canvas {
+    position: relative;
+    background:
+      radial-gradient(circle, var(--border) 1px, transparent 1px) 0 0 / 20px 20px,
+      var(--bg);
+    overflow: hidden;
+  }
+  .modes {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    padding: 5px;
+    background: var(--nen-mo-panel);
+    backdrop-filter: blur(var(--blur));
+    -webkit-backdrop-filter: blur(var(--blur));
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    box-shadow: var(--shadow-pop);
+    height: 44px;
+  }
+  .mode-nut {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    height: 34px;
+    border-radius: 17px;
+    border: none;
+    background: transparent;
+    color: var(--t2);
+    font-size: var(--fs-ui);
+    cursor: pointer;
+  }
+  .mode-nut.dang { background: var(--field); color: var(--t1); }
+
+  /* ==== Cửa sổ trong canvas ==== */
+  .cua-so {
+    position: absolute;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-3);
+    box-shadow: var(--shadow-node);
+    overflow: hidden;
+  }
+  .cua-so .thanh-tren {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    font-size: var(--fs-2xs);
+    color: var(--t3);
+  }
+  .cua-so .thanh-tren .ten { color: var(--t1); font-weight: 600; font-size: var(--fs-ui); }
+  .cua-so .thanh-tren .nut-nho {
+    background: transparent;
+    border: none;
+    color: var(--t3);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .cua-so .thanh-tren .nut-nho:hover { background: var(--hover); color: var(--t1); }
+
+  /* Cửa sổ Thảo luận (Collab) — có mep-bat-sang để phân biệt loại */
+  .cua-thao-luan { border-color: var(--border-strong); }
+  .cua-thao-luan .thanh-tren { background: linear-gradient(to right, var(--card), var(--panel)); }
+  .cua-thao-luan .thanh-tren::before {
+    content: "Thảo luận";
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--field);
+    border: 1px solid var(--vien-mo);
+    border-radius: 4px;
+    color: var(--t3);
+    font-size: var(--fs-2xs);
+    margin-right: 8px;
+  }
+
+  /* Cửa sổ Sản xuất (để so sánh trong ca b) */
+  .cua-san-xuat .thanh-tren::before {
+    content: "Sản xuất";
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-ring);
+    border-radius: 4px;
+    color: var(--t2);
+    font-size: var(--fs-2xs);
+    margin-right: 8px;
+  }
+
+  /* Sticky note (như NoteNode) — dùng color-mix(--warning + --card) */
+  .sticky {
+    position: absolute;
+    width: 180px;
+    background: color-mix(in srgb, var(--warning) 26%, var(--card));
+    border: 1px solid color-mix(in srgb, var(--warning) 45%, transparent);
+    border-radius: var(--r-2);
+    padding: 8px 10px;
+    font-size: var(--fs-2xs);
+    color: var(--t1);
+    box-shadow: var(--shadow-node);
+    line-height: 1.4;
+  }
+  .sticky .badge-cmt {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    height: 20px;
+    min-width: 20px;
+    padding: 0 6px;
+    background: var(--accent);
+    color: var(--on-accent);
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  /* Ảnh tham chiếu — chip trên canvas */
+  .anh-tham-chieu {
+    position: absolute;
+    width: 130px;
+    height: 90px;
+    background: var(--field);
+    border: 1px solid var(--border);
+    border-radius: var(--r-2);
+    box-shadow: var(--shadow-node);
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    padding: 6px 8px;
+    color: var(--t2);
+    font-size: 10px;
+  }
+  .anh-tham-chieu.gradient-sang {
+    background: linear-gradient(135deg, var(--field), color-mix(in srgb, var(--warning) 25%, var(--card)));
+  }
+  .anh-tham-chieu.gradient-mat {
+    background: linear-gradient(135deg, var(--field), color-mix(in srgb, var(--success) 22%, var(--card)));
+  }
+  .anh-tham-chieu.gradient-be {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--warning) 30%, var(--field)), var(--field));
+  }
+
+  /* Empty state */
+  .empty {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: var(--t3);
+    max-width: 380px;
+  }
+  .empty h3 { color: var(--t1); margin: 0 0 6px; font-size: 16px; }
+  .empty p { margin: 0 0 16px; line-height: 1.55; }
+  .empty .khuon-hang {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .khuon-the {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-3);
+    padding: 12px 14px;
+    text-align: left;
+    width: 150px;
+    cursor: pointer;
+    transition: border-color 0.18s ease, transform 0.18s ease;
+  }
+  .khuon-the:hover { border-color: var(--accent-ring); transform: translateY(-1px); }
+  .khuon-the .ten-khuon { font-weight: 600; color: var(--t1); font-size: var(--fs-ui); }
+  .khuon-the .mo-ta { font-size: var(--fs-2xs); color: var(--t3); margin-top: 4px; }
+
+  /* Panel phải — Thẻ DNA */
+  .panel-phai {
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+  }
+  .panel-phai h4 {
+    margin: 0;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--t4);
+  }
+  .the-dna {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-3);
+    padding: 14px;
+  }
+  .the-dna .lop {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--vien-mo);
+  }
+  .the-dna .lop:last-child { border-bottom: none; }
+  .the-dna .ten-lop {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--fs-2xs);
+    color: var(--t4);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .the-dna .noi-dung {
+    margin-top: 4px;
+    color: var(--t1);
+    font-size: var(--fs-ui);
+  }
+  .the-dna .noi-dung.trong { color: var(--t5); font-style: italic; font-size: var(--fs-2xs); }
+
+  /* Cờ 3 nấc */
+  .co {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+  .co-inferred { background: var(--warning); color: var(--panel); }
+  .co-verified { background: var(--success); color: var(--panel); }
+  .co-trong { color: var(--t5); font-size: 10px; font-style: italic; }
+
+  /* Palette */
+  .palette {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .palette span {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid var(--vien-mo);
+  }
+
+  /* Ô khuôn form trên canvas */
+  .form-tren-canvas {
+    width: 280px;
+    padding: 12px;
+  }
+  .form-tren-canvas .hang-so-cuc {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+    font-size: var(--fs-2xs);
+  }
+  .form-tren-canvas .cuc-trai,
+  .form-tren-canvas .cuc-phai { color: var(--t3); width: 72px; }
+  .form-tren-canvas .cuc-phai { text-align: right; }
+  .form-tren-canvas .rail {
+    flex: 1;
+    height: 4px;
+    background: var(--field);
+    border-radius: 2px;
+    position: relative;
+  }
+  .form-tren-canvas .rail::after {
+    content: "";
+    position: absolute;
+    top: -4px;
+    height: 12px;
+    width: 12px;
+    background: var(--accent);
+    border-radius: 6px;
+  }
+  .form-tren-canvas .rail.giua-trai::after { left: 20%; }
+  .form-tren-canvas .rail.giua-phai::after { left: 68%; }
+  .form-tren-canvas .rail.giua::after { left: 50%; }
+
+  /* Nút chưng cất */
+  .nut-chung-cat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--accent-soft);
+    color: var(--t1);
+    border: 1px solid var(--accent-ring);
+    border-radius: var(--r-2);
+    font-size: var(--fs-ui);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .nut-chung-cat:hover { background: var(--accent); color: var(--on-accent); }
+  .nut-chung-cat[aria-disabled="true"] {
+    opacity: var(--mo-vo-hieu);
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .goc-cua-so {
+    padding: 8px 12px;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .goc-cua-so .ghi-chu { color: var(--t4); font-size: var(--fs-2xs); }
+
+  /* Chú thích luật ở đáy mỗi ca */
+  .chu-thich {
+    padding: 10px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--field);
+    color: var(--t3);
+    font-size: var(--fs-2xs);
+    line-height: 1.5;
+  }
+  .chu-thich strong { color: var(--t1); }
+
+  /* Comment pin trên ảnh */
+  .pin {
+    position: absolute;
+    height: 20px;
+    min-width: 20px;
+    padding: 0 6px;
+    background: var(--accent);
+    color: var(--on-accent);
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  /* Nhãn KHÔNG khoá — ăn từ token */
+  .nhan-canh {
+    position: absolute;
+    padding: 4px 8px;
+    background: var(--nen-mo-card);
+    backdrop-filter: blur(var(--blur));
+    -webkit-backdrop-filter: blur(var(--blur));
+    border: 1px solid var(--vien-mo);
+    border-radius: var(--r-2);
+    font-size: var(--fs-2xs);
+    color: var(--t2);
+  }
+</style>
+
+<div class="doi-theme" role="tablist" aria-label="Đổi theme">
+  <button type="button" onclick="document.documentElement.removeAttribute('data-theme'); this.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('hoat')); this.classList.add('hoat');" class="hoat">Theme Tối</button>
+  <button type="button" onclick="document.documentElement.setAttribute('data-theme','light'); this.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('hoat')); this.classList.add('hoat');">Theme Sáng</button>
+</div>
+
+<h1>Cửa Sổ Thảo Luận — chặng 3D · mode Node</h1>
+<p class="lead">Ba ca (a/b/c) trên cùng một dự án <em>"Căn hộ Thảo Điền — Concept #1"</em>. KTS Hoà mở dự án mới → khởi Concept → nộp bản dàn ý cho phiên trình chủ đầu tư.</p>
+
+<!-- ==================== CA A ==================== -->
+<section class="ca">
+  <header class="ca-header">
+    <h2>Ca A · Canvas trống, có ba khuôn form gợi ý</h2>
+    <p class="kich-ban">Hoà mở dự án lần đầu, bấm "Bắt đầu Concept" từ Bảng việc → mở cửa sổ Thảo luận, chưa có ảnh/note/form.</p>
+  </header>
+  <div class="ca-body">
+    <aside class="sidebar-gia" aria-label="Sidebar giả">
+      <div class="cum-nhan">CỤM XƯỞNG</div>
+      <div class="muc"><span class="ky-hieu">◲</span>Bảng việc</div>
+      <div class="muc"><span class="ky-hieu">◈</span>Files</div>
+      <div class="muc"><span class="ky-hieu">◇</span>Thư viện</div>
+      <div class="cum-nhan" style="margin-top:12px">CỤM DỰ ÁN</div>
+      <div class="muc"><span class="ky-hieu">▤</span>2D</div>
+      <div class="muc dang" aria-current="page"><span class="ky-hieu">▣</span>3D</div>
+      <div class="muc"><span class="ky-hieu">▥</span>Trình chiếu</div>
+    </aside>
+    <div class="canvas" style="height:520px">
+      <div class="modes" role="group" aria-label="Chọn mode">
+        <button class="mode-nut dang" aria-pressed="true">◧ Node</button>
+        <button class="mode-nut" aria-pressed="false">▣ Vẽ 3D</button>
+      </div>
+      <div class="cua-so cua-thao-luan" style="top:32px; left:40px; width:600px;">
+        <div class="thanh-tren">
+          <div><span class="ten">Concept #1 — Bàn Bạc</span></div>
+          <div>
+            <button class="nut-nho" title="Thu">−</button>
+            <button class="nut-nho" title="Toàn màn">▢</button>
+            <button class="nut-nho" title="Đóng">×</button>
+          </div>
+        </div>
+        <div style="padding:40px 20px; text-align:center; min-height:260px; position:relative;">
+          <div class="empty">
+            <h3>Bắt đầu bằng một khuôn</h3>
+            <p>Chọn một khuôn khung tư duy hoặc kéo ảnh tham chiếu vào để bắt đầu bàn bạc.</p>
+            <div class="khuon-hang">
+              <div class="khuon-the" tabindex="0">
+                <div class="ten-khuon">Moodboard vật liệu</div>
+                <div class="mo-ta">Chọn ảnh + palette → collage tự dựng</div>
+              </div>
+              <div class="khuon-the" tabindex="0">
+                <div class="ten-khuon">Bảng so cực</div>
+                <div class="mo-ta">Bấm giữa hai cực để bắt gu (tối giản ↔ ấm áp…)</div>
+              </div>
+              <div class="khuon-the" tabindex="0">
+                <div class="ten-khuon">Câu chuyện 3 hồi</div>
+                <div class="mo-ta">Mở · xung đột · giải quyết</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="goc-cua-so">
+          <span class="ghi-chu">Đầu ra là <em>quyết định</em>, không tệp — bấm "Chưng cất" khi đủ chín</span>
+          <button class="nut-chung-cat" aria-disabled="true" title="Chưa có nguồn nào để chưng cất">✧ Chưng cất → Thẻ DNA</button>
+        </div>
+      </div>
+    </div>
+    <aside class="panel-phai" aria-label="Thẻ DNA">
+      <h4>Thẻ DNA — Concept #1</h4>
+      <div class="the-dna">
+        <div class="lop">
+          <div class="ten-lop"><span>Ngôn ngữ không gian</span><span class="co-trong">trống</span></div>
+        </div>
+        <div class="lop">
+          <div class="ten-lop"><span>Màu · tỷ lệ</span><span class="co-trong">trống</span></div>
+        </div>
+        <div class="lop">
+          <div class="ten-lop"><span>Vật liệu</span><span class="co-trong">trống</span></div>
+        </div>
+        <div class="lop">
+          <div class="ten-lop"><span>Ý đồ</span><span class="co-trong">trống</span></div>
+        </div>
+        <div class="lop">
+          <div class="ten-lop"><span>Ánh sáng</span><span class="co-trong">trống</span></div>
+        </div>
+      </div>
+      <p style="color:var(--t4); font-size:var(--fs-2xs); margin:0">Thẻ trống — chưa có nguồn nào chưng cất. Kéo ảnh vào canvas hoặc chọn một khuôn để bắt đầu.</p>
+    </aside>
+  </div>
+  <p class="chu-thich"><strong>Luật thi hành:</strong> Ca A theo Đ2 <em>[TRIET-LY-IF.md:72]</em> — nhìn vào trong trước: KHÔNG cửa sổ mới, tái dùng khuôn <code>CuaSoCongCu</code> đã có. Nút "Chưng cất" ở góc dưới — <code>aria-disabled</code> khi chưa có nguồn (đúng luật §9 <em>cấm nút giả</em>), độ mờ đi qua token <code>--mo-vo-hieu</code>.</p>
+</section>
+
+<!-- ==================== CA B ==================== -->
+<section class="ca">
+  <header class="ca-header">
+    <h2>Ca B · Đang làm việc — sticky + ảnh + form + Thẻ DNA dở</h2>
+    <p class="kich-ban">Hoà đã kéo 3 ảnh từ Gallery, thêm 2 sticky ghi chú, mở khuôn "Bảng so cực" và điền 4/6 hàng. Thẻ DNA đang thành hình dần.</p>
+  </header>
+  <div class="ca-body">
+    <aside class="sidebar-gia" aria-label="Sidebar giả">
+      <div class="cum-nhan">CỤM XƯỞNG</div>
+      <div class="muc"><span class="ky-hieu">◲</span>Bảng việc</div>
+      <div class="muc"><span class="ky-hieu">◈</span>Files</div>
+      <div class="muc"><span class="ky-hieu">◇</span>Thư viện</div>
+      <div class="cum-nhan" style="margin-top:12px">CỤM DỰ ÁN</div>
+      <div class="muc"><span class="ky-hieu">▤</span>2D</div>
+      <div class="muc dang" aria-current="page"><span class="ky-hieu">▣</span>3D</div>
+      <div class="muc"><span class="ky-hieu">▥</span>Trình chiếu</div>
+    </aside>
+    <div class="canvas" style="height:620px">
+      <div class="modes" role="group" aria-label="Chọn mode">
+        <button class="mode-nut dang" aria-pressed="true">◧ Node</button>
+        <button class="mode-nut" aria-pressed="false">▣ Vẽ 3D</button>
+      </div>
+
+      <!-- Cửa sổ Thảo luận + form đang mở -->
+      <div class="cua-so cua-thao-luan form-tren-canvas" style="top:24px; left:30px; width:280px;">
+        <div class="thanh-tren">
+          <div><span class="ten">Bảng so cực · gu KTS Hoà</span></div>
+          <button class="nut-nho" title="Thu">−</button>
+        </div>
+        <div style="padding:12px;">
+          <div class="hang-so-cuc"><span class="cuc-trai">Tối giản</span><span class="rail giua-phai"></span><span class="cuc-phai">Phong phú</span></div>
+          <div class="hang-so-cuc"><span class="cuc-trai">Kín</span><span class="rail giua"></span><span class="cuc-phai">Mở</span></div>
+          <div class="hang-so-cuc"><span class="cuc-trai">Nguội</span><span class="rail giua-phai"></span><span class="cuc-phai">Ấm</span></div>
+          <div class="hang-so-cuc"><span class="cuc-trai">Trơn</span><span class="rail giua-trai"></span><span class="cuc-phai">Có nhịp</span></div>
+          <div style="color:var(--t4); font-size:var(--fs-2xs); margin-top:8px;">2 hàng còn lại…</div>
+        </div>
+      </div>
+
+      <!-- Ảnh tham chiếu -->
+      <div class="anh-tham-chieu gradient-be" style="top:40px; left:340px;" title="Bàn ăn nắng chiếu qua vải lanh">
+        Nắng chiều · vải lanh
+        <span class="pin" style="top:6px; right:6px;">2</span>
+      </div>
+      <div class="anh-tham-chieu gradient-sang" style="top:40px; left:490px;" title="Gỗ sồi tự nhiên">
+        Gỗ sồi tự nhiên
+      </div>
+      <div class="anh-tham-chieu gradient-mat" style="top:180px; left:340px;" title="Đá terrazzo cream">
+        Terrazzo cream
+        <span class="pin" style="top:6px; right:6px;">1</span>
+      </div>
+
+      <!-- Sticky notes -->
+      <div class="sticky" style="top:180px; left:490px;">
+        Khách yêu Nhật — không sáng bóng, không hoa văn.
+        <span class="badge-cmt">1</span>
+      </div>
+      <div class="sticky" style="top:290px; left:340px;">
+        Bếp + phòng ăn dùng chung ánh sáng buổi chiều.
+      </div>
+
+      <!-- Nhãn góc mep bat sang -->
+      <div class="nhan-canh" style="top:24px; right:24px;">Ba Nguồn · Bốn Sticky · Một Form</div>
+
+      <!-- Cửa sổ Chưng cất — chưa bấm (nút sáng, chờ) -->
+      <div class="cua-so cua-thao-luan" style="bottom:80px; left:30px; width:600px;">
+        <div class="thanh-tren">
+          <div><span class="ten">Ba nguồn đang sống</span></div>
+          <div><button class="nut-nho" title="Thu">−</button></div>
+        </div>
+        <div style="padding:14px 16px; font-size:var(--fs-2xs); color:var(--t3);">
+          Máy đọc được: 3 ảnh (palette + tag) · 2 sticky · 1 form Bảng so cực đã điền 4/6 hàng.
+          Bấm "Chưng cất" khi cảm thấy đủ chín.
+        </div>
+        <div class="goc-cua-so">
+          <span class="ghi-chu">Chưng cất lại KHÔNG xoá lớp bạn đã xác nhận (verified)</span>
+          <button class="nut-chung-cat" title="Sinh Thẻ DNA từ các nguồn hiện có">✧ Chưng cất → Thẻ DNA</button>
+        </div>
+      </div>
+
+      <!-- Cửa sổ SẢN XUẤT ví dụ (Render preview) — để so sánh dấu định danh -->
+      <div class="cua-so cua-san-xuat" style="top:20px; right:24px; width:180px;">
+        <div class="thanh-tren">
+          <div><span class="ten">Render nháp</span></div>
+        </div>
+        <div style="height:100px; background:linear-gradient(160deg, color-mix(in srgb, var(--warning) 22%, var(--card)), color-mix(in srgb, var(--success) 12%, var(--field))); display:flex; align-items:flex-end; padding:8px; color:var(--t3); font-size:var(--fs-2xs);">Phòng khách · nắng 4h</div>
+      </div>
+
+    </div>
+    <aside class="panel-phai" aria-label="Thẻ DNA — dở">
+      <h4>Thẻ DNA — Concept #1 (dở)</h4>
+      <div class="the-dna">
+        <div class="lop">
+          <div class="ten-lop"><span>Màu · tỷ lệ</span><span class="co co-inferred">máy suy</span></div>
+          <div class="noi-dung">
+            <div class="palette" aria-label="Palette 5 màu từ 3 ảnh">
+              <span style="background:#c4a67a"></span>
+              <span style="background:#e3d4b5"></span>
+              <span style="background:#8a6e4b"></span>
+              <span style="background:#6d7d69"></span>
+              <span style="background:#f2eae0"></span>
+            </div>
+          </div>
+        </div>
+        <div class="lop">
+          <div class="ten-lop"><span>Vật liệu</span><span class="co co-inferred">máy suy</span></div>
+          <div class="noi-dung">gỗ sồi tự nhiên · terrazzo cream · vải lanh</div>
+        </div>
+        <div class="lop">
+          <div class="ten-lop"><span>Ngôn ngữ không gian</span><span class="co co-inferred">máy suy</span></div>
+          <div class="noi-dung">tối giản Nhật · ấm áp · nhịp nhẹ</div>
+        </div>
+        <div class="lop">
+          <div class="ten-lop"><span>Ý đồ</span><span class="co-trong">chưa điền</span></div>
+          <div class="noi-dung trong">Không suy được từ ảnh — điền tay ở "Câu chuyện 3 hồi"</div>
+        </div>
+        <div class="lop">
+          <div class="ten-lop"><span>Ánh sáng</span><span class="co co-inferred">máy suy</span></div>
+          <div class="noi-dung">nắng chiếu xiên qua vải lanh · buổi chiều</div>
+        </div>
+      </div>
+      <p style="color:var(--t4); font-size:var(--fs-2xs); margin:0">Máy suy từ 3 ảnh + 2 sticky. Duyệt lớp nào thì chuyển sang "đã xác nhận" — chưng cất lại KHÔNG ghi đè lớp đó.</p>
+    </aside>
+  </div>
+  <p class="chu-thich"><strong>Điểm cần chú ý:</strong> ① sticky/ảnh/form <em>chưa</em> đi vào <code>distiller</code> — cần mở <code>ProvenanceInput.kind: 'image' | 'note' | 'form' | 'pin'</code> (đây là VIỆC LÕI duy nhất, xem NC câu 3). ② hai loại cửa sổ phân biệt bằng dấu <em>"Thảo luận"</em> vs <em>"Sản xuất"</em> — cùng vỏ <code>CuaSoCongCu</code>, khác <code>moiTruong</code>. ③ Thẻ DNA lớp "Ý đồ" cố tình để trống — nó KHÔNG suy được từ ảnh (đúng chú thích <code>distiller.ts:78</code>).</p>
+</section>
+
+<!-- ==================== CA C ==================== -->
+<section class="ca">
+  <header class="ca-header">
+    <h2>Ca C · Chốt xong — Thẻ DNA đã lưu, một lớp đã xác nhận</h2>
+    <p class="kich-ban">Hoà bấm "Chưng cất" → duyệt Thẻ DNA v1 → xác nhận thủ công lớp "Ý đồ" từ form Câu chuyện 3 hồi. Đóng cửa sổ Thảo luận, sang mode Vẽ 3D dựng khối.</p>
+  </header>
+  <div class="ca-body">
+    <aside class="sidebar-gia" aria-label="Sidebar giả">
+      <div class="cum-nhan">CỤM XƯỞNG</div>
+      <div class="muc"><span class="ky-hieu">◲</span>Bảng việc</div>
+      <div class="muc"><span class="ky-hieu">◈</span>Files</div>
+      <div class="muc"><span class="ky-hieu">◇</span>Thư viện</div>
+      <div class="cum-nhan" style="margin-top:12px">CỤM DỰ ÁN</div>
+      <div class="muc"><span class="ky-hieu">▤</span>2D</div>
+      <div class="muc dang" aria-current="page"><span class="ky-hieu">▣</span>3D</div>
+      <div class="muc"><span class="ky-hieu">▥</span>Trình chiếu</div>
+    </aside>
+    <div class="canvas" style="height:520px">
+      <div class="modes" role="group" aria-label="Chọn mode">
+        <button class="mode-nut" aria-pressed="false">◧ Node</button>
+        <button class="mode-nut dang" aria-pressed="true">▣ Vẽ 3D</button>
+      </div>
+      <div class="empty">
+        <h3>Sân khấu 3D — sẵn sàng dựng khối</h3>
+        <p>Thẻ DNA "Concept #1" đã lưu ở phải. Slot furniture ở chặng 2D sẽ đọc Thẻ này để đề xuất bộ khớp gu khi bạn mở kệ Nội thất.</p>
+        <div class="khuon-hang">
+          <button class="nut-chung-cat" style="background:var(--accent); color:var(--on-accent); border-color:var(--accent)">▣ Đùn từ bản vẽ</button>
+          <button class="nut-chung-cat">＋ Dựng khối đầu tiên</button>
+        </div>
+      </div>
+      <div class="nhan-canh" style="bottom:80px; left:30px;">
+        ✓ Thẻ DNA v1 đã lưu · 1 lớp <em>đã xác nhận</em>, 4 lớp <em>máy suy</em>
+      </div>
+    </div>
+    <aside class="panel-phai" aria-label="Thẻ DNA — đã lưu">
+      <h4>Thẻ DNA — Concept #1 <span style="color:var(--success)">✓ v1</span></h4>
+      <div class="the-dna">
+        <div class="lop">
+          <div class="ten-lop"><span>Màu · tỷ lệ</span><span class="co co-inferred">máy suy</span></div>
+          <div class="noi-dung">
+            <div class="palette">
+              <span style="background:#c4a67a"></span>
+              <span style="background:#e3d4b5"></span>
+              <span style="background:#8a6e4b"></span>
+              <span style="background:#6d7d69"></span>
+              <span style="background:#f2eae0"></span>
+            </div>
+          </div>
+        </div>
+        <div class="lop">
+          <div class="ten-lop"><span>Vật liệu</span><span class="co co-inferred">máy suy</span></div>
+          <div class="noi-dung">gỗ sồi tự nhiên · terrazzo cream · vải lanh</div>
+        </div>
+        <div class="lop">
+          <div class="ten-lop"><span>Ngôn ngữ không gian</span><span class="co co-inferred">máy suy</span></div>
+          <div class="noi-dung">tối giản Nhật · ấm áp · nhịp nhẹ</div>
+        </div>
+        <div class="lop">
+          <div class="ten-lop"><span>Ý đồ</span><span class="co co-verified">đã xác nhận</span></div>
+          <div class="noi-dung">Ngôi nhà kể chuyện một buổi chiều — nắng, gỗ, và tiếng của vải.</div>
+        </div>
+        <div class="lop">
+          <div class="ten-lop"><span>Ánh sáng</span><span class="co co-inferred">máy suy</span></div>
+          <div class="noi-dung">nắng chiếu xiên qua vải lanh · buổi chiều</div>
+        </div>
+      </div>
+      <div style="padding:10px 12px; background:var(--field); border-radius:var(--r-2); font-size:var(--fs-2xs); color:var(--t3);">
+        Bấm <strong style="color:var(--t1)">Chưng cất lại</strong> khi bổ sung ảnh/note mới — lớp <em>đã xác nhận</em> giữ nguyên (<code>mergeDistilledIntoCard</code>).
+      </div>
+    </aside>
+  </div>
+  <p class="chu-thich"><strong>Ranh giới rõ:</strong> đóng cửa sổ Thảo luận KHÔNG buộc sinh Thẻ DNA (đúng chốt 16/08 <em>"cửa sổ thảo luận không cần cổng ra"</em>). Sinh khi và chỉ khi người bấm nút. Thẻ DNA nay là "quyết định đã chốt" — cụm 2D/3D/Trình chiếu đều đọc chung.</p>
+</section>
+
+<footer style="color:var(--t4); font-size:var(--fs-2xs); margin-top:24px; padding-top:16px; border-top:1px solid var(--border);">
+  Mock cho NC-COLLAB-CHANG-3D · 17/08. Ba ca minh hoạ hướng (b) của câu 1. Không dùng AI trong mock; palette/gradient dựng bằng <code>color-mix</code> ăn từ token warning/success/card của globals.css. Cấm hex mới, cấm <code>--accent*</code> mới.
+</footer>
