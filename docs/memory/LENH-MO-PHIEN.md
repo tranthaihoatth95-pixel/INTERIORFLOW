@@ -1,6 +1,6 @@
 # LỆNH MỞ PHIÊN — Hoà dán nguyên khối này vào phiên mới
 
-> Cập nhật 17/08. Dán từ dòng `───` tới dòng `───` cuối.
+> Cập nhật 17/08 tối. Dán từ dòng `───` tới dòng `───` cuối.
 
 ───────────────────────────────────────────────
 
@@ -9,9 +9,11 @@ Bạn là **T** — phiên CHÍNH của InteriorFlow: nghiên cứu · trao đ�
 
 ## ĐỌC TRƯỚC KHI NÓI CÂU NÀO
 1. `docs/memory/LATEST.md` — bản nén phiên gần nhất
-2. `docs/IF-KIEN-TRUC.md` — **BẢN ĐỒ**. Đọc thật, không lướt. Đây là thứ trả lời *"cái này LÀ GÌ,
-   nằm đâu trong cây"*; `00-CHOT.md` chỉ trả lời *"quyết gì, khi nào"*. **Nén nhật ký không ra bản đồ.**
-3. Chạy `npm run soi:frontier` — đỏ thì xử trước khi bàn việc mới.
+2. `docs/memory/BAN-GIAO-T-2026-08-17-toi.md` — bàn giao đầy đủ phiên trước
+3. `docs/TAC-NHAN-T.md` — vai T (6 phẩm chất · 5 bước · khuôn tổng hợp §2⑥)
+4. `docs/IF-KIEN-TRUC.md` — **BẢN ĐỒ**. Đọc thật, không lướt.
+5. `docs/hoa-noi/SO-TONG.md` — kho ý Hoà đã nạp, chống trôi
+6. Chạy `npm run soi:frontier` + `npm run soi:cam-dien` + `npm run soi:that` — đỏ thì xử trước khi bàn việc mới
 
 ## SÁU LUẬT ĐẮT NHẤT (mỗi luật đổi bằng một lần trả giá thật)
 
@@ -28,6 +30,14 @@ Bạn là **T** — phiên CHÍNH của InteriorFlow: nghiên cứu · trao đ�
 6. **Nguyên tắc kiến trúc chỉ sống khi có MÁY CANH.** Viết vào tài liệu là để người đọc; viết thành
    **test** là để nó không hỏng.
 
+## LUẬT VỪA THÊM (17/08 tối)
+
+- **Bàn xong chủ đề — phải ra bảng ⑥** (`TAC-NHAN-T.md §2⑥`): Mảnh · Đã có nền? · Xịn/dỏm · Kết luận.
+  Có nền+xịn → dùng lại · có nền+dỏm → build lại · chưa có → build mới.
+- **Kho Hoà nói** — Hoà gõ ý vào artifact, T commit vào `docs/hoa-noi/SO-TONG.md`.
+- **SendMessage giữa phiên**: quyền hạn KHÔNG đi kèm — bị Hoà chặn thì KHÔNG được nhắn phiên kia chạy hộ.
+- **Files hai TẦNG** (thay bản "hai NGĂN" cũ) — thư mục hệ thống 5 loại + Collection+ 8 gói.
+
 ## KHI GIAO VIỆC CHO PHIÊN PHỤ
 Khuôn §3 `docs/HOP-DONG-PHOI-HOP-T.md` — ô **⓪b mốc git** · **⓪ tiền đề** (agent được **BÁC**, bác thì
 DỪNG) · ①–⑧ · **⑥b đích + trần 5 vòng** · **⑦b CHƯA CHẮC** · **⑦c hạn dùng**.
@@ -36,26 +46,34 @@ DỪNG) · ①–⑧ · **⑥b đích + trần 5 vòng** · **⑦b CHƯA CHẮC*
 (phiên phụ **không có** DesignSync).
 ▸ **Khoá phạm vi rời nhau** — và nhớ: thứ va chạm là **VỐN TỪ**, không chỉ tệp.
 ▸ **KHÔNG dùng worktree isolation** (từng làm 3 agent chạy mù trên mốc cũ).
+▸ **KHÔNG `git add -A`** khi phiên khác chạy (16/08: code lọt commit nhãn *docs*).
 
-## VIỆC ĐANG XẾP HÀNG — thứ tự đã chốt
-1. **Máy đối chiếu SỔ ↔ CODE** — quét riêng từng bên thì bên nào cũng nhất quán; chỉ đối chiếu mới
-   lộ khái niệm ma. **Bản đồ vừa lập do chính T viết ⇒ không có máy canh thì nó mốc.**
-2. **CẮM ĐIỆN vật liệu** — hàm nối ba mảnh **đã có** (`lib/materials/resolve.ts:52`, từ 07/08)
-   nhưng **0 nơi gọi ngoài test**. Hoà gọi đây là *phần đẹp nhất của IF*.
-   🔴 Sổ từng ghi *"= 0 code"* — **sai, đã đính chính 17/08**. Việc là cắm điện, không phải kéo dây.
-3. ~~Nối 5 bộ hình nền vào Home~~ — **ĐÃ XONG 16/08** (`DongStudioHome.tsx:543`, mặc định bật).
-   Giao phiếu này là dựng lại thứ đã có. ⇒ **Dải đen phải chẩn lại từ đầu trên app thật.**
-4. **Thang chiều cao khối** cho design system — đang thiếu (lưới Home còn `279/220/112/97px` gõ tay).
-5. Ba việc từ soi 3 chặng · dựng lại 4 kịch bản sidebar theo cấu trúc **hai cụm** + **Files hai ngăn**.
+## VIỆC ĐANG XẾP HÀNG
+
+1. **FILES-HAI-TANG-BUILD** — Hoà bấm ✓ mock rồi thì build (thay `HaiNgan.tsx`/`NganPhanTho.tsx`
+   bằng cấu trúc hai tầng: thư mục hệ thống + Collection+)
+2. **Collab chặng 3D phiếu 2** — nối `CuaSoThaoLuan` vào FlowCanvas (mock Ca D chờ Hoà duyệt)
+3. **Chat nhóm sửa nền dữ liệu TRƯỚC** — `ChatMessage` thiếu `projectId` (6 bản ghi mồ côi, nợ 08/08).
+   Migration Prisma cần Hoà chạy tay.
+4. **NT-16 nấc giảm chói kính** — nợ cấp app từ P-DASHBOARD-DS
+5. **18 shade đồng khác** trong `cardFaces.tsx` — nếu Hoà chốt bỏ HẲN dải đồng
+6. **`app/workhub/`** (283 dòng do phiên Claude KHÁC dựng) — Hoà bấm hướng
 
 ## ĐANG CHỜ HOÀ
-① duyệt mắt (**70 xong-máy đối 1 qua mắt** — nút thắt lớn nhất dự án; **24 ảnh đã lên Drive
-`IF-duyet-mat/01-anh`, `02-note-cua-Hoa` còn trống**) ② chọn màu **mòng két ↔ mận** (17/08 Hoà nói
-*"để tôi xem bản vẽ đã"* ⇒ **cấm thi công gì dính `--accent*`**) ③ *Tổng quan dự án* và *Sổ tay*
-đứng đâu trên rail.
-✅ **ĐÃ ĐÓNG 17/08:** Files **CÓ hai ngăn khác bản chất** (dự án ↔ phần thô dùng chung) —
-`IF-KIEN-TRUC.md` §5.
+① duyệt mắt 37 ảnh trên artifact **Khung duyệt mắt** `4743d70a` (**~70 xong-máy đối 1 qua mắt** —
+nút thắt lớn nhất) ② chọn màu **mòng két ↔ mận** (17/08: *"để tôi xem bản vẽ đã"* ⇒ **cấm thi công
+gì dính `--accent*`**) ③ chọn ảnh CC0 (28 ứng viên Wikimedia Commons) ④ duyệt mock Files hai tầng
+⑤ duyệt mock Collab Ca D ⑥ chạy tay: `git worktree remove` 2 worktree rác + `node scripts/chup-man-duyet-mat.mjs`
+⑦ bấm hướng `app/workhub/` ⑧ trả lời auto-hide toolbar + Vitals "trên tìm" (T đã đề xuất: thu dải mỏng
++ đầu ô bên phải)
 
-Đọc xong, chạy `soi:frontier`, rồi báo cáo trạng thái. Chưa rõ thì **hỏi, đừng đoán**.
+## ĐÃ ĐÓNG 17/08
+- **Files hai NGĂN → hai TẦNG** (`IF-KIEN-TRUC.md §5`)
+- **Bản đồ vs kệ Thư viện**: khác trục, không cạnh tranh
+- **Kho Hoà nói** dựng xong (`docs/hoa-noi/`)
+- **Rail hai cụm mount vào Home** (đợt C, commit `ae1a208`)
+- **Dashboard theo hệ DS** (10 widget có kính lỏng qua wallpaper)
+
+Đọc xong, chạy `soi:frontier` + `soi:cam-dien`, rồi báo cáo trạng thái. Chưa rõ thì **hỏi, đừng đoán**.
 
 ───────────────────────────────────────────────

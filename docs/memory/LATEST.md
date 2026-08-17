@@ -1,129 +1,80 @@
 # LATEST — bản nén trí nhớ bối cảnh IF (ghi đè mỗi phiên lớn)
 
-> **Đọc file này ĐẦU TIÊN**, rồi **`docs/IF-KIEN-TRUC.md`** (bản đồ).
+> **Đọc file này ĐẦU TIÊN**, rồi **`docs/IF-KIEN-TRUC.md`** (bản đồ), rồi **`docs/TAC-NHAN-T.md`** (vai T).
 > Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-17 (đợt T #3 — cắm điện vật liệu · vá 2 máy soi · 2 lệch sổ)**
+**Cập nhật lần cuối: 2026-08-17 (tối — đợt A + Kho ghi nhớ + Files hai tầng + Đợt C dashboard)**
 
 ---
 
-# 2026-08-17 · đợt T #3 — commit `b34f2a9`
+# 2026-08-17 · tối · commit `ae1a208`
 
-## ⭐ Việc lớn nhất: HAI LỆCH CỦA CHÍNH SỔ, T đo lại tại nguồn mới lộ
-1. *"`lib/materials` ↔ `ProductSpec` = 0 code"* — **SAI**. `getMaterial()` (`lib/materials/resolve.ts:52`)
-   có từ 07/08, chỉ là **0 nơi gọi**. Câu *"đo lại 16/08"* là **số chép lại, không phải phép đo**.
-2. *"5 bộ hình nền chưa cắm vào Home"* — **SAI**. `SystemWallpaper` mount từ 16/08
-   (`DongStudioHome.tsx:543`), mặc định bật. ⇒ **dải đen phải chẩn lại** (đã chẩn, xem dưới).
+## Đọc kèm bàn giao đầy đủ
+- `docs/memory/BAN-GIAO-T-2026-08-17-toi.md` — phần tối (mới nhất, đọc trước)
+- `docs/memory/BAN-GIAO-T-2026-08-17-chieu.md` — phần chiều
+- `docs/hoa-noi/SO-TONG.md` — kho Hoà nói (T đọc đầu phiên, chống trôi)
+- `docs/TAC-NHAN-T.md` §2⑥ — khuôn tổng hợp bàn xong (bảng có nền/xịn-dỏm/kết luận)
 
-**Bằng chứng đầy đủ**: `docs/memory/sessions/2026-08-17/01-mo-phien-do-lai-hai-lech/`.
-⚠️ **Bản đồ lập tối 16/08 sai một dòng sau ĐÚNG MỘT NGÀY**, do chính T viết — luật *viết lại,
-không cộng dồn* giữ được **hình dạng** bản đồ, **không** giữ được tính đúng. Chỉ máy canh giữ được.
+## Chốt mới của Hoà (5)
+1. **Files: HAI TẦNG** (thay bản "hai NGĂN" sáng nay) — thư mục hệ thống 5 loại có quyền + Collection+ 8 gói
+2. **Collection+ = tầng dưới `/files`**, không tách route (T tư vấn, Hoà uỷ quyền)
+3. **Kho Hoà nói** — cơ chế Hoà nạp, T đọc, chống trôi (thay việc T tự chưng cất)
+4. **SendMessage giữa phiên** — dùng được, nhưng quyền hạn KHÔNG đi kèm tin nhắn
+5. **Dashboard sai hoàn toàn hệ DS** — đã sửa: rail hai cụm + kính lỏng 10 widget
 
-## ⭐⭐ Phiếu P-S bị agent BÁC BỎ — và bác đúng
-T định dựng *máy đối chiếu sổ↔code*. **Nó đã có**: `scripts/soi-that.mjs` (08/08) — *"ĐỐI CHIẾU
-57 SPEC ↔ CODE THẬT"*. **Phiếu đi bắt "code có mà sổ không biết" tự nó là một ca của đúng vế ấy.**
-T verify 5/5 điểm agent nêu → nhận sai → ra phiếu sửa **P-S2**.
+## Code đã ship (16 commit chiều-tối)
+- **Đợt A** `c6b9c32` — Cửa Sổ Thảo Luận chặng 3D + distill union + gỡ đồng + chốt worktree
+- **`soi:cam-dien`** `afb1ba2` — canh engine đã tới tay người dùng chưa (85 sống · 3 kho chưa mở)
+- **Kho Hoà nói** `9eee912` · **SO-TONG lần đầu** `f61fca7`
+- **Files hai TẦNG** `a29b3d7` (hợp đồng + bản đồ) · **mock** `e809074` · phiếu `550f41e`
+- **Đợt C** `ae1a208` — rail hai cụm mount vào Home + WidgetCard kính lỏng (10 widget)
 
-## Code đã ship
-- **Vật liệu (P-T)**: `MaterialsScreen.tsx:90` gọi `getMaterial()` thật · `lib/materials/ba-mat.ts`
-  + `ChiBaoBaMat` + `BaMatPanel` + cột *Ba mặt*. Giá **không** bị chép vào vật liệu (verify: `savePbr`
-  0 chỗ, `schema.prisma` diff rỗng). Mock `mock-vat-lieu-ba-mat.html` **đã lên Claude Design**.
-- **`soi-that.mjs` (P-S2)**: vá đường worktree (**27/27 dòng ✅ từng trỏ vào bản sao cũ**, bảng tổng
-  vẫn xanh) · `npm run soi:that` · nới 68 spec → **503 văn bản sống** · thêm 2 chiều **mảng CÂM** +
-  **khái niệm MA**. 3.436 → 881 tệp. Bắt đúng `.idfnotes` + `KB-5`.
-- **`check-chot.mjs` (T)**: mắc **y hệt** bug và **chạy trong `npm test`** — 4.042/8.098 tệp (50%)
-  là bản sao worktree. Đã vá. **Lần thứ BA cùng một bug** (`package.json` 16/08 → `soi-that` → đây).
-- **`npm run tsc`**: cửa được trích dẫn nhiều nhất toàn sổ **không có lối npm và không nằm trong
-  `npm test`**. Nay có cả hai; `npm test` vẫn exit 0.
+## Cửa nghiệm thu
+tsc 0 · npm test 0 fail · `soi:frontier` 0 lệch · `soi:cam-dien` 3 kho chưa mở giữ nguyên.
+Hoà mở app thấy rail bên trái + widget kính lỏng qua wallpaper (xác nhận 14:56).
 
-## Dải đen Home — chẩn lại bằng SỐ ĐO PIXEL (`sessions/2026-08-17/02-chan-lai-dai-den-home/`)
-Phần dư quanh lưới là **cố ý** (`bentoFillPercent(1) = 76%`). Nền **chạy đúng thiết kế**.
-🔴 **Gốc bệnh thật: dải sáng của nền ÔM TRỌN độ sáng card** (card đo thật 0,110; `night` = [0,05…0,17])
-⇒ nửa trên nền tối hơn card = lỗ đen · nửa dưới sáng hơn = card chìm.
-Tính cả ma trận 4 nấc × 5 bộ × 2 theme: **`night` cả 5 bộ cắt ngang**, `dusk` 4/5, `dawn` 3/5, `day` 2/5.
-**Luật T đề xuất (chờ Hoà)**: *nền phải nằm TRỌN một phía so với card* — đo được ⇒ thành test được.
-Ba hướng sửa trong file; T đề xuất **hạ trần dải đêm xuống dưới `--panel`**.
+## Bản vẽ chờ mắt Hoà
+- Artifact **Khung duyệt mắt** `4743d70a` — 37 ảnh (24 app + 13 mock, có mock Files hai tầng + Collab Ca D)
+- Claude Design project `b7dc14ba-1752-4821-8fc7-d519f737ac09` — 15 mock
 
-## Số đo mới đáng nhớ
-- `lib/cad/materials.ts` — **0/14** preset khai `matId` ⇒ mặt **2D gạch `–` cho TOÀN kho**.
-  Việc kế tiếp nhỏ và rõ: **gán `matId` cho preset 2D** (cần dữ liệu kho thật, T không đoán).
-- `/api/specs` — **0/10** bản ghi có `priceVnd` là **số**; thứ bảng đang hiện là `priceNote`
-  (*"≈ 3.200.000đ (tham khảo)"* — **chữ**). Chỉ báo `Giá !` **nói đúng**, và nó lộ ra rằng
-  bảng lâu nay hiện một con số trông như giá thật. Đúng chốt 15/08 *BOQ chỉ nhận số đo được*.
+## 🔴 Nợ cho phiên sau (8)
+1. **Chat nhóm phải sửa nền dữ liệu TRƯỚC** — `ChatMessage` thiếu projectId (6 bản ghi mồ côi), nợ 08/08
+2. **Kho tri thức RỖNG** — NotebookSource 0 · Chunk 0, việc là *có thứ để nạp*
+3. **Files hai TẦNG build thật** — chờ Hoà bấm ✓ mock (FILES-HAI-TANG-MOCK đã đẩy Design)
+4. **Collab chặng 3D** phiếu 2 (nối cửa sổ vào FlowCanvas) — chờ Hoà bấm ✓ mock Ca D
+5. **NT-16 nấc giảm chói kính** — nợ cấp app từ P-DASHBOARD-DS
+6. **`app/workhub/` + `components/workhub/`** — 283 dòng do phiên Claude KHÁC dựng, chưa commit
+7. **18 shade đồng khác** trong `cardFaces.tsx` — chưa dọn (nếu Hoà chốt bỏ HẲN dải đồng)
+8. **Auto-hide toolbar + Vitals "trên tìm"** — Hoà bỏ qua câu hỏi, T đã đề xuất (thu dải mỏng + đầu ô bên phải)
 
-## 🔴 Lỗi của T trong phiên
-- Tiền đề phiếu P-S sai (agent bắt) · **ghi đè mất ảnh `02-04-vat-lieu.png` trên Drive**: T tưởng
-  `/materials` không cần đăng nhập vì **pane trình duyệt đang có phiên** — đo ở **bản chiếu**,
-  không đo ở **nguồn**; playwright sạch phiên ra **HTTP 401**. Đã gỡ ảnh sai, lô còn **24**.
-  ⇒ **Chỉ Hoà chụp lại được** (script cần mật khẩu, T không nhập).
+## ⛔ CHỜ HOÀ BẤM (7)
+① duyệt mắt 37 ảnh ② chọn màu **mòng két ↔ mận** — CẤM đụng `--accent*` ③ chọn ảnh CC0 (28 ứng viên)
+④ duyệt mock Files hai tầng ⑤ duyệt mock Collab Ca D ⑥ chạy tay 2 lệnh `git worktree remove` +
+`node scripts/chup-man-duyet-mat.mjs` ⑦ bấm hướng `app/workhub/`
 
-## ⛔ CHỜ HOÀ
-① **duyệt mắt — 71 xong-máy đối 1 qua mắt**, nút thắt lớn nhất ② chọn màu **mòng két ↔ mận**
-(*"để tôi xem bản vẽ đã"* ⇒ **cấm thi công gì dính `--accent*`**) ③ *Tổng quan dự án* và *Sổ tay*
-đứng đâu trên rail ④ duyệt **luật nền-trọn-một-phía-so-với-card** ⑤ chạy tay: xoá **3 worktree rác**
-(chính chúng làm 2 máy soi quét nhầm cây) + chụp lại `02-04-vat-lieu.png`.
-✅ **ĐÃ ĐÓNG 17/08**: Files **CÓ hai ngăn khác bản chất** → `IF-KIEN-TRUC.md` §5.
+## Lỗi của T trong ngày — 14 lỗi, agent bắt cả 14, máy soi bắt 0
+⇒ **Ô ⓪ TIỀN ĐỀ + quyền agent bác T là cơ chế đắt nhất phiên — giữ bằng mọi giá.**
 
-## Hàng đợi kế
-1. **Vá `check-chot`-họ**: nếu thêm máy duyệt cây từ gốc repo thì **soi lại cả họ**, đừng vá lẻ.
-2. **Gán `matId` cho preset 2D** — mở nốt mặt thứ ba.
-3. **16 dòng ❌ mới của `soi:that`** chưa ai soi từng dòng; 1 ca thật đã lộ: spec viết thiếu chữ
-   `s` — `inferElementType` ↔ `inferElementTypes` (`lib/cad/element-infer.ts:138`), 3 tệp spec.
-4. Ba việc từ soi 3 chặng · dựng lại **4 kịch bản sidebar** theo **hai cụm + Files hai ngăn**.
+## Van an toàn phiên auto-chạy-dài
+- Không push `origin/main` · không đụng `--accent*` · không xoá worktree · không lệnh cần mật khẩu
+- Không `git add -A` khi phiên khác chạy (bài học 16/08)
+- Không nhắn phiên khác chạy hộ việc bị Hoà chặn (SendMessage 10ce7c2)
+- Ô ⓪ · ⑥b · ⑦b · ⑦c luôn bám khuôn phiếu
 
 ---
 
-# 2026-08-16 — đợt giao diện #2 + lập bản đồ kiến trúc
+# 2026-08-17 · chiều · commit `b34f2a9` · `58ef7be` · `bde99c4` · `fab1f9a`
 
-**Bản đồ mồ côi**: `IF-ARCHITECTURE-COMPASS.md` sửa cuối 29/07, **19 ngày không phiên nào đọc**
-(`CLAUDE.md` trỏ vào mẩu cụt 774 byte) ⇒ lập **`docs/IF-KIEN-TRUC.md`**.
-**Bài học:** nén ngữ cảnh + lưu chi tiết đều là cơ chế cho **nhật ký**; thứ thiếu là **QUAN HỆ**.
+**Đọc chi tiết**: `docs/memory/BAN-GIAO-T-2026-08-17-chieu.md`.
 
-**Chốt lớn của Hoà** (nguyên văn `00-CHOT` 16/08): kiến trúc **canvas + cửa sổ công cụ** ·
-**sidebar là router toàn app**, **hai cụm** · **Files là phần thô** (bỏ *chợ đầu mối*) · **màu là
-bước chọn vật liệu** · **ba nấc = ba công năng** · **đồng bộ = không tách ra ngay từ đầu** ·
-**dock neo theo ngữ cảnh** · 5 bộ hình nền sinh bằng mã.
-
-**Code**: `Tooltip` prop `hinh` · `ToolbarChip` → `aria-disabled` · `lib/ui/tien-trinh.ts` + `LightBar`
-(**bịa % là tsc đỏ**) · `HopCongCuBamVat` + `CuaSoCongCu` · `soi:tu-dien` hết mù `.md` ·
-`--mat-*`→`--nen-mo-*` · `--nen-mo-hairline`→`--vien-mo` · token `--mo-vo-hieu`.
-
-**Bản vẽ chờ mắt Hoà** — project `b7dc14ba-1752-4821-8fc7-d519f737ac09`: `mock-o-giai-nghia` ·
-`mock-thanh-tien-trinh` · `mock-ban-thu-2-huong-mau` · `mock-chu-ky-va-bieu-tuong-tep` ·
-`mock-kich-ban-sidebar` (🔴 **dựng lại** — theo hai cụm + Files hai ngăn) · `mock-5-bo-hinh-nen` ·
-`mock-widget-viec-dang-do` · `mock-vat-lieu-ba-mat` (17/08).
-
-**Nghiên cứu**: `NC-TU-DA-NGHIA-2026-08-16` · `NC-DIEU-HUONG-APP-TUONG-TU` · `NC-CAD-REVIT-MOT-APP` ·
-`NC-SOI-3-CHANG`.
-
-**Lỗi của T**: 9 lỗi, **agent bắt cả 9, máy soi bắt 0**.
-⇒ **Ô ⓪ TIỀN ĐỀ + quyền agent bác T là cơ chế sinh lời đậm nhất — giữ bằng mọi giá.**
-(17/08 xác nhận lại: lần thứ 10, và lần này nó chặn được cả một phiếu sai.)
-
-# 2026-08-17 (sáng, đợt trước) — commit `4e967f2`
-4 lỗi Home Hoà soi từ **ảnh chụp thật** (lần đầu lô duyệt-mắt sinh finding): lời chào `hoa`→`Hoa` ·
-số ô **01→07 liền mạch** · thừa trống trong ô · thẻ dự án phân biệt được · `--t4/--t5`→`--t3` ở
-`WidgetCard` (1,98→7,24). Máy chụp màn hết bỏ khung: **24 ảnh, 0 bỏ**.
-🔴 Còn: **design system CHƯA CÓ THANG CHIỀU CAO KHỐI** (`279/220/112/97px` gõ tay) ·
-tên hiển thị lưu localStorage, đổi máy là mất.
+**Việc lớn nhất:** Cắm điện vật liệu "một vật, ba mặt" (`MaterialsScreen.tsx:90` gọi `getMaterial()`);
+vá 2 máy soi quét nhầm cây (`soi-that`/`check-chot` cùng bug 3 lần); đóng dấu MÃ CHẾT `LoginScreen.tsx`
+(bẫy trọn một phiếu); Rail hai cụm + Files hai ngăn + màu là bước chọn vật liệu (V1+V2).
 
 ---
 
-## 📦 BÀN GIAO NGHIÊN CỨU PHIÊN 16/08 — `docs/nc/NC-BAN-GIAO-NGHIEN-CUU-2026-08-16.md`
-Gom **nguồn ngoài đã tra** (Apple Liquid Glass + màu · Material 3 · Context Engineering · shadcn ·
-3 kho GitHub chính chủ · Chrome DevTools MCP) · **phép đo dùng lại được** (bảng góc màu · phổ chỉ
-còn 2 cửa · ngưỡng kính · lệch 14 điểm kênh lam giải thích chữ "sến") · **2 vị trí code phiên sau
-cần** (`Tooltip.tsx:33,37` · `ToolbarChip.tsx:137` nút mờ đi vòng Tooltip) · **cơ chế đã dựng**
-(⓪b/⓪c/⑥b · §10 · cửa Drive · máy chụp màn) · **6 lỗi của T** · **3 điều rút ra về phương pháp**.
+# 2026-08-16 (đọc `IF-KIEN-TRUC.md` mục "Cập nhật")
 
----
-
-## 📦 BÀN GIAO ĐỢT BÀN-GIAO-DIỆN + GALLERY (17/08 chiều) — `docs/memory/BAN-GIAO-T-2026-08-17-chieu.md`
-Phiên **bàn nhiều, code ít** — sản phẩm là chốt + bảng tình trạng.
-· **Khuôn mới**: bàn xong chủ đề nào phải ra bảng *có-nền / xịn-dỏm / dỏm-thì-build* → mô tả giao
-diện → Claude Design (`TAC-NHAN-T.md §2⑥`). · **Tác nhân T** đã chưng cất thành văn bản.
-· 🔴 **6 cảnh báo**: `ChatMessage` không có `projectId` (mâu thuẫn ghi 08/08, chưa xử) · video call
-**chốt 11/08 nói KHÔNG tự xây** · kho tri thức **0 bản ghi** — máy chạy không tải · ArchDaily +
-OfficeSnapshots **có bản quyền**, chỉ liên-kết-không-sao-chép · học gu sớm là học từ số không ·
-**todo list chưa rõ là bước-con hay việc-rời, phải hỏi Hoà**.
-· Pinterest **vào được** trong pane sau khi Hoà đăng nhập.
+**Bản đồ mồ côi 19 ngày** — lập `docs/IF-KIEN-TRUC.md` thay `IF-ARCHITECTURE-COMPASS.md`.
+Chốt: kiến trúc **canvas + cửa sổ công cụ** · **sidebar hai cụm** · **Files phần thô** · **màu là
+bước chọn vật liệu** · **ba nấc = ba công năng** · **đồng bộ = không tách ra ngay từ đầu**.
