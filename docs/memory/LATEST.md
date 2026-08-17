@@ -106,3 +106,12 @@ số ô **01→07 liền mạch** · thừa trống trong ô · thẻ dự án p
 `WidgetCard` (1,98→7,24). Máy chụp màn hết bỏ khung: **24 ảnh, 0 bỏ**.
 🔴 Còn: **design system CHƯA CÓ THANG CHIỀU CAO KHỐI** (`279/220/112/97px` gõ tay) ·
 tên hiển thị lưu localStorage, đổi máy là mất.
+
+---
+
+## 📦 BÀN GIAO NGHIÊN CỨU PHIÊN 16/08 — `docs/nc/NC-BAN-GIAO-NGHIEN-CUU-2026-08-16.md`
+Gom **nguồn ngoài đã tra** (Apple Liquid Glass + màu · Material 3 · Context Engineering · shadcn ·
+3 kho GitHub chính chủ · Chrome DevTools MCP) · **phép đo dùng lại được** (bảng góc màu · phổ chỉ
+còn 2 cửa · ngưỡng kính · lệch 14 điểm kênh lam giải thích chữ "sến") · **2 vị trí code phiên sau
+cần** (`Tooltip.tsx:33,37` · `ToolbarChip.tsx:137` nút mờ đi vòng Tooltip) · **cơ chế đã dựng**
+(⓪b/⓪c/⑥b · §10 · cửa Drive · máy chụp màn) · **6 lỗi của T** · **3 điều rút ra về phương pháp**.
