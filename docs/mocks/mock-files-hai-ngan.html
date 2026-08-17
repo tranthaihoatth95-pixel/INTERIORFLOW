@@ -1,0 +1,204 @@
+<!-- @dsCard group="Files" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>InteriorFlow · Files — hai ngăn khác bản chất</title>
+<style>
+/* ═══ TOKEN THẬT của app — CHÉP TỪ app/globals.css, KHÔNG đổi số (luật L4) ═══
+   Đối chiếu file thật trước khi vẽ (luật L1): app/globals.css:19-22,68-78,84-90,105-118,175-207,216,229,272,286,290.
+   ⛔ KHÔNG đụng --accent* và KHÔNG thêm token màu — Hoà chưa chốt màu nhấn thứ hai (hợp đồng §6.5).
+      Bản vẽ này cố ý KHÔNG dùng --accent ở đâu cả: mọi trạng thái nói bằng CHỮ + HÌNH DẠNG. */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --tap:32px; --tap-lg:44px; --gap:8px; --pad-card:8px 12px; --fs-ui:13px;
+}
+@media (hover:none) and (pointer:coarse){ :root{ --tap:44px; --gap:12px; --pad-card:12px 16px; --fs-ui:15px; } }
+:root,[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --vien-mo:rgba(255,255,255,.06); --mo-vo-hieu:.5;
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --focus-ring: 2px solid #8f7dfa;
+}
+[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --vien-mo:rgba(0,0,0,.05); --mo-vo-hieu:.62;
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --focus-ring: 2px solid #553ff3;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);padding:36px;
+  font:var(--fw-normal) var(--fs-sm)/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased}
+h1{font-size:var(--fs-xl);letter-spacing:-.02em;margin:0 0 4px}
+.sub{color:var(--t3);margin-bottom:26px;font-size:var(--fs-xs);max-width:70ch}
+h2.grouplabel{font-size:var(--fs-2xs);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t4);margin:30px 0 3px}
+.help{font-size:var(--fs-2xs);color:var(--t4);margin:2px 0 12px;line-height:1.55;max-width:78ch}
+.themebtn{position:fixed;top:18px;right:18px;height:var(--tap);padding:0 14px;border:1px solid var(--border);
+  background:var(--panel);color:var(--t2);border-radius:var(--r-2);font-size:var(--fs-2xs);cursor:pointer}
+.themebtn:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+.wrap{max-width:900px}
+
+/* ── VỎ HAI NGĂN ─────────────────────────────────────────────────────────────
+   Vì sao đây KHÔNG phải bộ lọc (hợp đồng §3 cấm rút hai ngăn thành bộ lọc):
+   mỗi ngăn khai AI THẤY ngay dưới tên. Bộ lọc không bao giờ đổi tập người xem. */
+.shell{border:1px solid var(--border);border-radius:var(--r-4);background:var(--panel);overflow:hidden}
+.ngantabs{display:flex;gap:4px;padding:8px 14px 0;border-bottom:1px solid var(--border)}
+.ngan{display:grid;gap:1px;justify-items:start;text-align:left;min-height:var(--tap-lg);
+  padding:6px 12px 8px;border:0;background:none;cursor:pointer;color:var(--t3);
+  border-bottom:2px solid transparent;font-family:inherit}
+.ngan .ten{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-ui);font-weight:var(--fw-normal)}
+/* --t3 chứ KHÔNG phải --t4: đo được --t4 chỉ 3,65:1 (nền tối) / 2,86:1 (nền sáng) trên --panel,
+   trượt ngưỡng chữ 4,5:1 (WCAG 1.4.3). Đây là dòng mang nghĩa nặng nhất của vỏ. --t3 = 6,93 / 4,90. */
+.ngan .ai{font-size:var(--fs-2xs);color:var(--t3)}
+/* Ngăn đang mở: DẢI MỰC 2px + chữ đậm. Cả hai là HÌNH DẠNG, nên sống sót khi bỏ hết màu. */
+/* `[data-on]` cho bản minh hoạ ở hàng so sánh — nó là ẢNH của một trạng thái, không phải nút
+   bấm được, nên không đeo role="tab"/aria-selected (ARIA sai chỗ còn hại hơn không có). */
+.ngan[aria-selected="true"],.ngan[data-on="true"]{color:var(--t1);border-bottom-color:var(--t1)}
+.ngan[aria-selected="true"] .ten,.ngan[data-on="true"] .ten{font-weight:var(--fw-semi)}
+.ngan:focus-visible{outline:var(--focus-ring);outline-offset:-2px;border-radius:var(--r-1)}
+.mota{margin:0;padding:8px 14px;font-size:var(--fs-2xs);color:var(--t3);border-bottom:1px solid var(--vien-mo)}
+.than{padding:12px 14px;background:var(--bg)}
+.dongtong{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:var(--fs-ui);color:var(--t2)}
+.nutphu{margin-left:auto;display:inline-flex;align-items:center;gap:6px;min-height:var(--tap);padding:0 12px;
+  border:1px solid var(--border);border-radius:var(--r-2);background:var(--field);color:var(--t2);
+  font-size:var(--fs-2xs);cursor:pointer;font-family:inherit}
+.nutphu:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+
+/* ── MỘT MÓN THÔ ── */
+.ds{list-style:none;margin:0;padding:0;display:grid;gap:var(--gap)}
+.mon{display:grid;gap:6px;padding:var(--pad-card);border:1px solid var(--border);border-radius:var(--r-3);background:var(--card)}
+.dong1{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dau{font-size:15px;line-height:1;color:var(--t3)}
+.ten2{font-size:var(--fs-ui);font-weight:var(--fw-semi);color:var(--t1)}
+.ma{font-size:var(--fs-2xs);color:var(--t3);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.tt{margin-left:auto;font-size:var(--fs-2xs);color:var(--t2);border:1px solid var(--border);
+  border-radius:var(--r-full);padding:1px 8px}
+.thieu{margin:0;font-size:var(--fs-2xs);color:var(--t2)}
+.loira{margin:0;padding-left:14px;font-size:var(--fs-2xs);color:var(--t3)}
+.batlieu{display:flex;gap:12px;flex-wrap:wrap;font-size:var(--fs-2xs);color:var(--t3)}
+.rong{margin:0;padding:18px 14px;text-align:center;border:1px dashed var(--border);border-radius:var(--r-3);
+  font-size:var(--fs-2xs);color:var(--t3)}
+
+/* ── HÀNG BỎ-MÀU: đích nghiệm thu của phiếu ── */
+.bomau{filter:grayscale(1)}
+.doi{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:760px){ .doi{grid-template-columns:1fr} }
+.oso{border:1px solid var(--border);border-radius:var(--r-3);padding:10px;background:var(--panel)}
+.oso .cap{font-size:var(--fs-2xs);color:var(--t4);margin-bottom:8px}
+.ghi{border-left:2px solid var(--border);padding-left:12px;margin:14px 0;font-size:var(--fs-2xs);color:var(--t3);line-height:1.6}
+</style>
+</head>
+<body>
+<button class="themebtn" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme==='dark'?'light':'dark'">Đổi nền sáng / tối</button>
+
+<div class="wrap">
+<h1>Files — hai ngăn khác bản chất</h1>
+<p class="sub">Hoà chốt 17/08: Files chứa <b>hai thứ khác bản chất</b>, nên phải <b>thấy được là hai ngăn</b>, cấm rút thành một bộ lọc trong cùng danh sách. Ngăn ② là đầu vào của dòng chảy <i>Files → cửa sổ công cụ → Thư viện</i>.</p>
+
+<h2 class="grouplabel">① Vỏ hai ngăn — đang mở ngăn “Tệp dự án”</h2>
+<p class="help">Dòng nhỏ dưới mỗi tên là <b>ai thấy</b>. Đó là chỗ khác bản chất, và nó nằm trên mặt chứ không nằm trong tài liệu — một bộ lọc không bao giờ đổi tập người xem.</p>
+<div class="shell">
+  <div class="ngantabs" role="tablist" aria-label="Hai ngăn của Files">
+    <button class="ngan" role="tab" id="t-du-an" aria-controls="p-du-an" aria-selected="true" tabindex="0"><span class="ten">▤ Tệp dự án</span><span class="ai">người trong dự án này thấy</span></button>
+    <button class="ngan" role="tab" aria-selected="false" tabindex="-1"><span class="ten">▦ Phần thô dùng chung</span><span class="ai">ai cũng thấy · nhiều người góp</span></button>
+  </div>
+  <p class="mota">Bản vẽ, ảnh, tài liệu thuộc dự án đang mở.</p>
+  <div class="than" role="tabpanel" id="p-du-an" aria-labelledby="t-du-an">
+    <p class="rong">— vùng quản lý tệp hiện có giữ nguyên, không đổi một dòng —</p>
+  </div>
+</div>
+
+<h2 class="grouplabel">② Ngăn “Phần thô dùng chung” — còn món chưa đủ định nghĩa</h2>
+<p class="help">Mỗi món nói đúng ba thứ Hoà kể tên của phần thô: <b>ảnh vân</b> · <b>nhà cung cấp</b> · <b>khoảng giá</b>. Kèm hai dòng quan trọng nhất: <i>thiếu gì</i> và <i>làm sao có</i> — đọc thẳng từ chỉ báo ba mặt sẵn có, không thêm cờ mới.</p>
+<div class="shell">
+  <div class="ngantabs" role="tablist" aria-label="Hai ngăn của Files">
+    <button class="ngan" role="tab" aria-selected="false" tabindex="-1"><span class="ten">▤ Tệp dự án</span><span class="ai">người trong dự án này thấy</span></button>
+    <button class="ngan" role="tab" id="t-tho" aria-controls="p-tho" aria-selected="true" tabindex="0"><span class="ten">▦ Phần thô dùng chung</span><span class="ai">ai cũng thấy · nhiều người góp</span></button>
+  </div>
+  <p class="mota">Nguyên liệu chưa đủ định nghĩa để render — thêm thông số rồi mới lên Thư viện.</p>
+  <div class="than" role="tabpanel" id="p-tho" aria-labelledby="t-tho">
+    <p class="dongtong">2/4 món chưa đủ định nghĩa để render.<button class="nutphu">↻ Đọc lại</button></p>
+    <ul class="ds">
+      <li class="mon">
+        <div class="dong1"><span class="dau">◐</span><span class="ten2">Đá granite đen</span><code class="ma">GRA-DEN</code><span class="tt">Thiếu một phần</span></div>
+        <p class="thieu">⚠ có ảnh vân nhưng chưa khai bước lặp vân (mm)</p>
+        <p class="loira">→ khai bước lặp vân — thiếu nó thì vân sai tỉ lệ ngay khi nhìn</p>
+        <div class="batlieu"><span>▣ có ảnh vân</span><span>⌂ Stoneworld</span><span>₫ 850 000–1 200 000 ₫/m2 · khoảng trong kho chung</span></div>
+      </li>
+      <li class="mon">
+        <div class="dong1"><span class="dau">○</span><span class="ten2">Gỗ sồi tự nhiên</span><code class="ma">OAK-NT</code><span class="tt">Chưa có thông số</span></div>
+        <p class="thieu">⚠ chưa có thông số render</p>
+        <p class="loira">→ mở cửa sổ chất liệu render và đặt độ nhám, kim loại, ảnh vân</p>
+        <div class="batlieu"><span>▢ chưa có ảnh vân</span><span>⌂ Woodhouse</span><span>₫ nhóm này chưa món nào ghi giá</span></div>
+      </li>
+    </ul>
+  </div>
+</div>
+<p class="ghi"><b>Hai dấu, hai nghĩa — cố ý không gộp.</b> <span class="dau">◐</span> <i>thiếu một phần</i> là ca đắt nhất: món TRÔNG như đã xong nên không ai đi sửa. <span class="dau">○</span> <i>chưa có thông số</i> thì ai cũng thấy ngay. Gộp hai ca vào một dấu là đánh mất đúng ca cần bày mặt.</p>
+
+<h2 class="grouplabel">③ Ngăn thô RỖNG — hai ca, hai câu khác hẳn nhau</h2>
+<p class="help">Rỗng không phải lỗi. Ca “mọi món đều đủ” là <b>tin tốt</b>, nên câu chữ phải khác hẳn ca “kho chưa có gì”; dùng chung một khuôn “không có gì” là nói sai tình hình.</p>
+<div class="doi">
+  <div class="oso">
+    <div class="cap">Ca A — kho chung chưa có món nào</div>
+    <p class="dongtong" style="font-size:var(--fs-2xs)">Kho chung chưa có món nào — thả tệp vào đây để bắt đầu.</p>
+    <p class="rong">Chưa món nào trong kho chung. Thả tệp vật liệu vào đây để bắt đầu.</p>
+  </div>
+  <div class="oso">
+    <div class="cap">Ca B — mọi món đã đủ định nghĩa</div>
+    <p class="dongtong" style="font-size:var(--fs-2xs)">Cả 12 món trong kho chung đều đã đủ định nghĩa để render.</p>
+    <p class="rong">Không còn món thô nào — mọi món đều đã đủ định nghĩa để render.</p>
+  </div>
+</div>
+
+<h2 class="grouplabel">④ HÀNG BỎ-MÀU — đích nghiệm thu của phiếu</h2>
+<p class="help">Bên trái là bản thường, bên phải là <b>chính nó đã bỏ sạch màu</b>. Hai ngăn vẫn phân biệt được, vì thứ mang nghĩa là <b>chữ</b> (tên + ai thấy) và <b>hình dạng</b> (dải mực 2px đáy + chữ đậm) — không phải sắc độ.</p>
+<div class="doi">
+  <div class="oso">
+    <div class="cap">Bản thường</div>
+    <div class="ngantabs" style="border:0;padding-left:0">
+      <div class="ngan"><span class="ten">▤ Tệp dự án</span><span class="ai">người trong dự án này thấy</span></div>
+      <div class="ngan" data-on="true"><span class="ten">▦ Phần thô dùng chung</span><span class="ai">ai cũng thấy · nhiều người góp</span></div>
+    </div>
+  </div>
+  <div class="oso bomau">
+    <div class="cap">Đã bỏ hết màu</div>
+    <div class="ngantabs" style="border:0;padding-left:0">
+      <div class="ngan"><span class="ten">▤ Tệp dự án</span><span class="ai">người trong dự án này thấy</span></div>
+      <div class="ngan" data-on="true"><span class="ten">▦ Phần thô dùng chung</span><span class="ai">ai cũng thấy · nhiều người góp</span></div>
+    </div>
+  </div>
+</div>
+<p class="ghi">Cùng phép thử áp cho một món thô: dấu <span class="dau">◐</span>/<span class="dau">○</span> và nhãn chữ “Thiếu một phần”/“Chưa có thông số” đều không cần màu. Đây là lý do bản vẽ này <b>không dùng <code>--accent</code> ở đâu cả</b> — trạng thái nghề phải đọc được cả khi in đen trắng.</p>
+<div class="oso bomau" style="margin-top:12px">
+  <div class="cap">Một món thô, đã bỏ hết màu</div>
+  <ul class="ds"><li class="mon">
+    <div class="dong1"><span class="dau">◐</span><span class="ten2">Đá granite đen</span><code class="ma">GRA-DEN</code><span class="tt">Thiếu một phần</span></div>
+    <p class="thieu">⚠ có ảnh vân nhưng chưa khai bước lặp vân (mm)</p>
+    <p class="loira">→ khai bước lặp vân — thiếu nó thì vân sai tỉ lệ ngay khi nhìn</p>
+  </li></ul>
+</div>
+
+<h2 class="grouplabel">Đọc bản vẽ này cho đúng</h2>
+<p class="help"><b>Ký tự ▣ ▢ ⌂ ₫ ⚠ ◐ ○ ở đây là CHỖ ĐỨNG của biểu tượng, không phải biểu tượng.</b> Bản dựng thật dùng bộ lucide như cả app (<code>Image</code> · <code>ImageOff</code> · <code>Truck</code> · <code>Wallet</code> · <code>AlertTriangle</code>). Ghi ra vì mock là hợp đồng — phiên port sau đọc thẳng ký tự vào mã là sai bộ biểu tượng. Riêng <b>◐/○</b> thì cố ý là ký tự thật: nó phải in ra được trên giấy đen trắng.</p>
+
+<h2 class="grouplabel">Ranh giới đã giữ</h2>
+<p class="help">
+① <b>Khoảng giá thuộc kho chung, giá chốt thuộc dự án</b> — mọi số ở đây tính từ kho chung và mang sẵn chữ “khoảng trong kho chung”; không nơi nào đọc giá chốt của một dự án.<br>
+② <b>Không token màu mới, không đụng <code>--accent*</code></b> — Hoà chưa chốt màu nhấn thứ hai.<br>
+③ <b>Bàn phím</b>: dải hai ngăn là tablist chuẩn — mũi tên trái/phải, Home/End; ngăn đang mở nhớ giữa các phiên, không auto-hide.<br>
+④ <b>Không thêm cờ dữ liệu</b>: “thô” đọc ra từ chỉ báo ba mặt đã có, món đủ thì tự rời ngăn.
+</p>
+</div>
+</body>
+</html>

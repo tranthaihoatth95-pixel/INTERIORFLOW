@@ -1,0 +1,305 @@
+<!-- @dsCard group="Điều hướng" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InteriorFlow · Rail điều hướng hai cụm, ba nấc chi tiết (V1)</title>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   TOKEN — chép nguyên văn app/globals.css. Đây là KHỐI DUY NHẤT được phép có mã màu.
+   Ngoài khối này: chỉ var(). Khai thành CLASS (.pane) để bày CẢ HAI theme cạnh nhau (luật L5).
+   ⛔ Không đụng --accent* và không thêm màu mới — Hoà chưa chốt màu nhấn thứ hai.
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+:root{
+  --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-lg:20px;
+  --fw-semi:600; --fw-bold:700;
+  --ease-apple:cubic-bezier(.32,.72,0,1);
+  --tap:32px; --row:28px; --gap:8px; --fs-ui:13px;
+  /* Ba bề rộng — khai MỘT chỗ, đúng ba con số của hợp đồng §5. */
+  --w-dinh-vi:28px; --w-dieu-huong:240px; --w-duyet:320px;
+  /* Khung của CHÍNH trang bản vẽ (tiêu đề, chú thích, bảng). Trang phải giữ MỘT nền cố định vì
+     nó bày cả hai theme cạnh nhau — không thể theo theme nào. Giá trị mượn nguyên bản Tối. */
+  --trang-nen:#0c0c0e; --trang-khung:#141417; --trang-vien:#2a2a31;
+  --trang-muc-1:#f5f5f7; --trang-muc-2:#d6d6db; --trang-muc-3:#9e9ea8; --trang-muc-4:#6e6e78;
+}
+.pane[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --hover:#2a2a30;
+  --border:#2a2a31; --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78;
+  --vien-mo:rgba(255,255,255,.06);        /* globals.css:216 */
+  --mo-vo-hieu:.5;                         /* globals.css:229 — bản Tối */
+}
+/* Bản Sáng = KEM ẤM, chép nguyên văn globals.css:262-289. ⚠️ Bản vẽ này lúc đầu dùng một bảng
+   xám trung tính TỰ CHẾ — sai, và sai kiểu nguy hiểm: nó cho ra số tương phản đẹp hơn thực tế.
+   Hoà đã chê tông kem là "sến" và theme sáng sắp đổi sang bản canh-Apple, nhưng CHƯA đổi ⇒ bản vẽ
+   phải bày đúng thứ đang chạy, không bày thứ mình mong nó thành. */
+.pane[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --hover:#e9e5dd;
+  --border:#e3ded4; --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a;
+  --vien-mo:rgba(0,0,0,.05);               /* globals.css:285 */
+  --mo-vo-hieu:.62;                        /* globals.css:289 — .5 chỉ đạt 2,55:1, dưới ngưỡng 3:1 */
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  background:var(--trang-nen);color:var(--trang-muc-1);padding:28px;line-height:1.5;
+}
+h1{font-size:var(--fs-lg);font-weight:var(--fw-bold);margin-bottom:4px}
+.de{font-size:var(--fs-xs);color:var(--trang-muc-3);max-width:900px;margin-bottom:22px}
+.de b{color:var(--trang-muc-2)}
+h2{font-size:var(--fs-sm);font-weight:var(--fw-semi);margin:26px 0 10px;color:var(--trang-muc-2)}
+.ghi{font-size:var(--fs-2xs);color:var(--trang-muc-4);margin-bottom:10px;max-width:900px}
+
+.hang{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+.pane{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-3);overflow:hidden}
+.pane-ten{
+  font-size:var(--fs-2xs);color:var(--t4);padding:6px 10px;
+  border-bottom:1px solid var(--vien-mo);background:var(--panel);
+}
+/* Cao đủ để bày TRỌN cả hai cụm — bản vẽ mà cắt mất mấy mục cuối thì người duyệt không thấy
+   được thứ cần duyệt. Trong app thân rail cuộn (`overflow-y:auto`), ở đây không cần cuộn. */
+/* Bề rộng CHUNG cho mọi ô: ô giải nghĩa thò sang phải ~200px, ô hẹp quá thì nó bị mép ô cắt
+   cụt chữ (đo trên ảnh thật). Cùng bề rộng cũng dễ so ba nấc chi tiết cạnh nhau hơn. */
+.khung{display:flex;height:520px;width:540px;max-width:100%}
+
+/* ── RAIL ────────────────────────────────────────────────────────────────────────────────── */
+.rail{
+  display:flex;flex-direction:column;flex-shrink:0;
+  background:var(--panel);border-right:1px solid var(--border);
+  transition:width .2s var(--ease-apple);
+}
+.rail[data-nac="dinh-vi"]{width:var(--w-dinh-vi)}
+.rail[data-nac="dieu-huong"]{width:var(--w-dieu-huong)}
+.rail[data-nac="duyet"]{width:var(--w-duyet)}
+
+/* `overflow:visible` để ô giải nghĩa của bản vẽ thò ra được. Trong app thì NGƯỢC LẠI: thân rail
+   cuộn (`overflow-y:auto`) nên panel sẽ CẮT MẤT ô giải nghĩa — đó đúng là lý do
+   `components/ui/Tooltip.tsx` portal thẻ ra `document.body` thay vì đặt lồng bên trong. Bản vẽ
+   không có portal nên phải mở khoá ở đây; đừng chép dòng này vào mã. */
+.than{flex:1;min-height:0;overflow:visible;padding:8px 0;display:flex;flex-direction:column;gap:4px}
+/* Hai cụm tách bằng KHOẢNG THỞ, không đường kẻ (Hoà 16/08). */
+.cum + .cum{margin-top:18px}
+.cum{display:flex;flex-direction:column;gap:2px}
+.cum-ten{
+  padding:2px 12px 4px;font-size:var(--fs-2xs);font-weight:var(--fw-bold);
+  text-transform:uppercase;letter-spacing:.06em;color:var(--t3);
+}
+
+/* ⚠️ Mục MỜ là <button>, mục dùng được là <a>. Không dựng lại nền/viền/phông của nút thì nó ăn
+   kiểu mặc định của trình duyệt và hiện thành PILL TRẮNG giữa nền tối — lỗi chỉ thấy khi mở ảnh
+   thật, đọc mã không ra. `width:100%` + `text-align:left` để nút xếp hàng y hệt thẻ liên kết. */
+.muc{
+  display:flex;align-items:center;gap:10px;margin:0 4px;padding:5px 10px;
+  min-height:var(--row);border-radius:var(--r-2);color:var(--t2);
+  font-size:var(--fs-ui);text-decoration:none;
+  background:transparent;border:0;font-family:inherit;text-align:left;
+  width:calc(100% - 8px);cursor:pointer;
+  transition:background .12s,color .12s;
+}
+.muc:hover{background:var(--hover);color:var(--t1)}
+.muc[data-mo="1"]{background:var(--accent-soft);color:var(--t1)}
+.muc[data-mo="1"] .ico{color:var(--accent)}
+/* Dải màu đặc 2px — kênh THỨ HAI ngoài màu (hình dạng), khuôn định danh Hoà chốt 15/08. */
+.muc[data-mo="1"]::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:2px;
+  border-radius:var(--r-full);background:var(--accent)}
+/* Nút mờ: đi đường aria-disabled + aria-describedby (KHÔNG title, KHÔNG thuộc tính disabled) —
+   nút vẫn nhận Tab, vẫn hiện ô giải nghĩa. Bài học đo được 16/08, ToolbarChip.tsx:24-37. */
+.muc[aria-disabled="true"]{opacity:var(--mo-vo-hieu);cursor:not-allowed}
+.muc[aria-disabled="true"]:hover{background:transparent;color:var(--t2)}
+.muc,.nut{position:relative}
+.muc:focus-visible,.nut:focus-visible{outline:none;
+  box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}
+
+.ico{width:16px;height:16px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.75;
+  stroke-linecap:round;stroke-linejoin:round}
+.chu{min-width:0;flex:1}
+.ten{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Nấc chi tiết rộng nhất: dòng TÌNH TRẠNG — thứ hai nấc kia không mang nổi. */
+.tt{display:block;font-size:var(--fs-2xs);color:var(--t3);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.rail[data-nac="dinh-vi"] .cum-ten{display:none}
+.rail[data-nac="dinh-vi"] .chu{display:none}
+.rail[data-nac="dinh-vi"] .muc{justify-content:center;padding:5px 0}
+
+.day{display:flex;align-items:center;gap:4px;padding:6px;border-top:1px solid var(--vien-mo);
+  justify-content:flex-end}
+.rail[data-nac="dinh-vi"] .day{justify-content:center}
+.nut{width:var(--tap);height:var(--tap);flex-shrink:0;display:grid;place-items:center;border:0;
+  background:transparent;color:var(--t3);border-radius:var(--r-2);cursor:pointer}
+/* Nấc định vị rộng đúng 28px — nút --tap (32) không lọt, và thiếu flex-shrink:0 thì nó bị bóp
+   còn 16px (đo được trên trình duyệt, không đọc mã nào ra). Thu đệm + ghim 24px: vẫn đạt ngưỡng
+   24×24 của WCAG 2.2 AA (2.5.8), và là con số LỚN NHẤT nấc này chứa nổi. */
+.rail[data-nac="dinh-vi"] .day{padding:6px 2px}
+.rail[data-nac="dinh-vi"] .nut{width:24px}
+.nut:hover{background:var(--hover);color:var(--t1)}
+
+.san{flex:1;display:grid;place-items:center;color:var(--t4);font-size:var(--fs-2xs);
+  background:var(--bg);text-align:center;padding:12px}
+
+/* Ô giải nghĩa dựng SẴN trong bản vẽ (trong app là components/ui/Tooltip.tsx). */
+.co-o{position:relative}
+.o-nghia{
+  position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);
+  background:var(--t1);color:var(--bg);padding:6px 9px;border-radius:var(--r-2);
+  font-size:var(--fs-2xs);width:186px;z-index:5;pointer-events:none;line-height:1.45;
+}
+.o-nghia b{display:block;font-size:var(--fs-xs)}
+.o-nghia span{opacity:.78}
+
+.an-doc-duoc{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.bang{border-collapse:collapse;font-size:var(--fs-xs);margin-top:8px;max-width:940px}
+.bang th,.bang td{border:1px solid var(--trang-vien);padding:6px 10px;text-align:left;vertical-align:top}
+.bang th{background:var(--trang-khung);color:var(--trang-muc-2);font-weight:var(--fw-semi)}
+.bang td{color:var(--trang-muc-3)}
+.bang code{color:var(--trang-muc-2)}
+@media (prefers-reduced-motion:reduce){.rail{transition:none}}
+</style>
+</head>
+<body>
+
+<h1>Rail điều hướng — một trục dọc, hai cụm</h1>
+<p class="de">
+  Hoà chốt 16/08: <b>sidebar là hệ router toàn app</b>; ba chặng chỉ là một nhóm stage ngang hàng
+  với Tổng quan · Bảng việc · Chat · Họp · Files · Thư viện · Cài đặt. Nguồn cấu trúc:
+  <b>docs/HOP-DONG-CAU-TRUC-DIEU-HUONG.md</b>. Ba nấc chi tiết là <b>ba công năng</b>, không phải
+  ba cỡ — nấc rộng <b>bổ sung tin</b> cho nấc hẹp, không phóng to nó.
+</p>
+
+<h2>① Ba nấc chi tiết — theme Tối · đã mở một dự án</h2>
+<p class="ghi">
+  28 <b>tôi đang ở đâu</b> (chỉ hình) → 240 <b>tôi đi đâu được</b> (thêm chữ) →
+  320 <b>ở đó đang có gì</b> (thêm tình trạng). Che nấc rộng đi, nấc hẹp vẫn phải đứng được một mình.
+</p>
+<div class="hang" id="hang-toi"></div>
+
+<h2>② Cùng ba nấc chi tiết — theme Sáng</h2>
+<p class="ghi">Nút mờ ở theme Sáng dùng <code>--mo-vo-hieu: .62</code>; con số .5 của bản Tối rơi
+  xuống 2,55:1, dưới ngưỡng 3:1 của WCAG 1.4.11.</p>
+<div class="hang" id="hang-sang"></div>
+
+<h2>③ Ca CHƯA MỞ DỰ ÁN — cụm dưới mờ kèm lý do, KHÔNG ẩn</h2>
+<p class="ghi">
+  Ẩn thì người dùng không biết app có gì. Mờ mà không nói vì sao thì thành nút bấm-không-ra-gì (§9).
+  Ô giải nghĩa dưới đây vẽ sẵn trạng thái hover/focus — trong app nó tới cả bằng chuột, bàn phím
+  lẫn trình đọc màn hình.
+</p>
+<div class="hang" id="hang-trong"></div>
+
+<h2>④ Nấc rộng nhất bày gì — và chỗ nào CỐ Ý bỏ nó</h2>
+<p class="ghi">Ba nấc chi tiết là một <b>nhịp</b>, không phải <b>hạn ngạch</b>. Mục nào không có gì
+  để nhìn thì bỏ hẳn phần thêm — giữ lại một nấc chỉ to hơn mà không mang thêm tin chính là kéo dãn.</p>
+<table class="bang">
+  <tr><th>Mục</th><th>Nấc rộng nhất bày</th><th>Đã nối nguồn thật?</th></tr>
+  <tr><td>Tổng quan</td><td><i>bỏ</i> — Tổng quan chính là mặt nhìn của app; bày bản thu nhỏ của nó
+    ngay cạnh nó là nói cùng một điều hai lần</td><td>—</td></tr>
+  <tr><td>Bảng việc</td><td>việc tới hạn gần nhất</td><td>chưa — dòng này tự ẩn</td></tr>
+  <tr><td>Chat · Họp</td><td><i>bỏ</i> — chưa có trang thì chưa có gì để nhìn</td><td>—</td></tr>
+  <tr><td>Files</td><td>thư mục gần đây + ảnh xem trước</td><td>chưa — nguồn ở vùng phiên V2</td></tr>
+  <tr><td>Thư viện</td><td>cột ô tròn vật liệu (Hoà nêu đích danh 16/08)</td><td>chưa — nguồn ở vùng phiên V2</td></tr>
+  <tr><td>Cài đặt</td><td><i>bỏ</i> — chỉ có thứ để đọc và bấm, nấc rộng chỉ làm chữ xa nhau ra</td><td>—</td></tr>
+  <tr><td>Dự án này</td><td>tên bản đang mở</td><td><b>rồi</b> — đọc từ store</td></tr>
+  <tr><td>Sổ tay</td><td>ghi chú gần nhất</td><td>chưa — dòng này tự ẩn</td></tr>
+  <tr><td>Thiết kế 2D · 3D · Trình chiếu</td><td>chặng đang dở</td>
+    <td><b>rồi</b> — <code>lib/shell/last-stage.ts</code>, cùng khoá card Gallery đang đọc</td></tr>
+</table>
+
+<script>
+/* Dựng bằng JS để MỘT bảng khai sinh ra mọi ô — sửa một chỗ, cả bản vẽ đổi theo, không có
+   chỗ nào lệch chỗ nào. Bảng này là bản chiếu của components/nav/muc-dieu-huong.ts. */
+const P = {
+  luoi:'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z',
+  viec:'M3 5h2l1 1 2-2M3 12h2l1 1 2-2M3 19h2l1 1 2-2M13 6h8M13 13h8M13 20h8',
+  chat:'M4 4h16v11H8l-4 4z',
+  thumuc:'M3 6h6l2 2h10v10H3z',
+  kho:'M4 4h4v16H4zM10 4h4v16h-4zM17 5l3 14',
+  banhrang:'M12 9a3 3 0 100 6 3 3 0 000-6M19 12l2 1-2 4-2-1-2 1v2H9v-2l-2-1-2 1-2-4 2-1v-2l-2-1 2-4 2 1 2-1V3h6v2l2 1 2-1 2 4-2 1z',
+  toanha:'M4 21V6l6-3v18M14 21V10l6 3v8M7 9h.01M7 13h.01M17 15h.01',
+  sotay:'M5 3h11l3 3v15H5zM8 8h7M8 12h7M8 16h4',
+  thuoc:'M4 16L16 4l4 4L8 20zM10 6l2 2M7 9l2 2',
+  hop:'M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9',
+  chieu:'M3 4h18M5 4v9h14V4M12 13v4M9 21l3-4 3 4',
+};
+const MUC = [
+  {cum:'Xưởng', ds:[
+    {ten:'Tổng quan',  ico:'luoi',      tt:null},
+    {ten:'Bảng việc',  ico:'viec',      tt:null},
+    {ten:'Chat · Họp', ico:'chat',      tt:null, mo:'Chưa có trang — phần này đang dựng'},
+    {ten:'Files',      ico:'thumuc',    tt:null},
+    {ten:'Thư viện',   ico:'kho',       tt:null},
+    {ten:'Cài đặt',    ico:'banhrang',  tt:null},
+  ]},
+  {cum:'Dự án', duAn:true, ds:[
+    {ten:'Dự án này',   ico:'toanha', tt:'Căn hộ Thảo Điền'},
+    {ten:'Sổ tay',      ico:'sotay',  tt:null},
+    {ten:'Thiết kế 2D', ico:'thuoc',  tt:null},
+    {ten:'Thiết kế 3D', ico:'hop',    tt:'đang dở', dangMo:true},
+    {ten:'Trình chiếu', ico:'chieu',  tt:null},
+  ]},
+];
+const LY_DO_TRONG = 'Chưa mở dự án — chọn một dự án ở Tổng quan';
+
+function svg(d){return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;}
+
+let SO_O = 0;   // đếm ô đã vẽ — id phải duy nhất TOÀN TRANG, không chỉ trong một ô
+const slug = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+                   .replace(/[^a-zA-Z0-9]+/g,'-').toLowerCase();
+
+function veRail(nac, coDuAn, oNghiaTren){
+  const o = ++SO_O;
+  let h = `<div class="rail" data-nac="${nac}"><div class="than">`;
+  for (const c of MUC){
+    // role="group" + aria-label: ở nấc định vị tiêu đề cụm bị ẩn, nên tên cụm phải nằm ở
+    // aria-label chứ không trỏ vào phần tử ẩn — nếu không, cụm mất tên đúng ở nấc hẹp nhất.
+    h += `<div class="cum" role="group" aria-label="${c.cum}">
+            <div class="cum-ten" aria-hidden="true">${c.cum}</div>`;
+    for (const m of c.ds){
+      const moKhoa = m.mo || (c.duAn && !coDuAn ? LY_DO_TRONG : null);
+      const idLd   = `ld-${o}-${slug(m.ten)}`;
+      const hienO  = oNghiaTren === m.ten;
+      const dongTt = (nac==='duyet' && m.tt) ? `<span class="tt">${m.tt}</span>` : '';
+      const mo     = (m.dangMo && coDuAn) ? ' data-mo="1"' : '';
+      const cl     = 'muc' + (hienO ? ' co-o' : '');
+      const oNghia = hienO
+        ? `<span class="o-nghia"><b>${m.ten}</b><span>${moKhoa||''}</span></span>` : '';
+      h += moKhoa
+        ? `<button type="button" class="${cl}" aria-disabled="true" aria-describedby="${idLd}">
+             ${svg(P[m.ico])}<span class="chu"><span class="ten">${m.ten}</span>${dongTt}</span>
+             ${oNghia}</button>
+           <span id="${idLd}" class="an-doc-duoc">${moKhoa}</span>`
+        : `<a href="#" class="${cl}"${mo}>${svg(P[m.ico])}
+             <span class="chu"><span class="ten">${m.ten}</span>${dongTt}</span>${oNghia}</a>`;
+    }
+    h += `</div>`;
+  }
+  const lui = nac!=='dinh-vi', toi = nac!=='duyet';
+  h += `</div><div class="day">
+    ${lui?`<button class="nut" type="button" aria-label="Thu gọn">${svg('M15 6l-6 6 6 6')}</button>`:''}
+    ${toi?`<button class="nut" type="button" aria-label="Mở rộng">${svg('M9 6l6 6-6 6')}</button>`:''}
+  </div></div>`;
+  return h;
+}
+
+function veO(theme, nac, ten, coDuAn, oNghiaTren, moTaSan){
+  return `<div class="pane" data-theme="${theme}">
+    <div class="pane-ten">${ten}</div>
+    <div class="khung">${veRail(nac, coDuAn, oNghiaTren)}
+      <div class="san">${moTaSan}</div></div></div>`;
+}
+
+const SAN = 'màn đang mở<br>(rail không đổi theo chặng)';
+for (const [id, theme] of [['hang-toi','dark'],['hang-sang','light']]){
+  document.getElementById(id).innerHTML =
+      veO(theme,'dinh-vi','28 · định vị', true, null, SAN)
+    + veO(theme,'dieu-huong','240 · điều hướng', true, null, SAN)
+    + veO(theme,'duyet','320 · duyệt', true, null, SAN);
+}
+document.getElementById('hang-trong').innerHTML =
+    veO('dark','dieu-huong','Tối · chưa mở dự án', false, 'Thiết kế 3D', 'Tổng quan<br>(chưa chọn dự án nào)')
+  + veO('light','dieu-huong','Sáng · chưa mở dự án', false, 'Chat · Họp', 'Tổng quan<br>(chưa chọn dự án nào)');
+</script>
+</body>
+</html>

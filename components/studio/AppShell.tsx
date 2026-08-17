@@ -8,6 +8,13 @@
  * bottomExtra) nhưng thay `LeftRail` icon rail bằng `Navigator` 214px + `AppLogoMenu`, thêm ổ
  * Toolbelt riêng.
  *
+ * ⓪ Rail điều hướng — `components/nav/RailDieuHuong.tsx`, thêm 17/08 (phiếu V1, hợp đồng
+ *   `docs/HOP-DONG-CAU-TRUC-DIEU-HUONG.md`). Hoà chốt 16/08 "**sidebar là hệ router toàn app**";
+ *   trước đó chốt ấy có 0 dòng mã, app là các route rời không bản đồ chung.
+ *   ⚠️ ĐỪNG LẪN Ổ ⓪ VỚI Ổ ② — hai thứ khác bản chất, và lẫn là hỏng cả hai:
+ *     ⓪ RAIL = **bản đồ app**, nội dung Y HỆT ở mọi chặng, KHÔNG BAO GIỜ đổi theo chặng.
+ *     ② NAVIGATOR = **nội dung của chặng đang mở** (Lớp/Node/Trang), đổi theo chặng là đúng việc.
+ *   Ai thấy "hai cột trái, hơi thừa" mà định gộp: gộp là mất bản đồ, quay lại đúng bệnh cũ.
  * ① Header 42px — AppChrome (logo nay mở AppLogoMenu thay vì rail).
  * ② Navigator 214px — nội dung do chặng truyền qua prop `navigator`.
  * ③ Stage — children, chiếm hết chỗ còn lại.
@@ -25,6 +32,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { AppChrome, type AppChromeActive } from '@/components/studio/AppChrome';
+import { RailDieuHuong } from '@/components/nav/RailDieuHuong';
 import { Navigator } from '@/components/studio/Navigator';
 import { AppCommandPalette } from '@/components/studio/AppCommandPalette';
 import { Dashboard } from '@/components/Dashboard';
@@ -138,6 +146,7 @@ export function AppShell({
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden', background: 'var(--bg)' }}>
       <AppChrome active={active} logoMenu />
       <div className="relative flex min-h-0 flex-1">
+        <RailDieuHuong />
         <Navigator addLabel={navigatorAddLabel} collapsedLabel={navigatorCollapsedLabel} onAdd={onNavigatorAdd} onOpenLibrary={openLibrary} width={navigatorWidth} shiftHotkeys={active === 'cad'}>
           {navigator}
         </Navigator>

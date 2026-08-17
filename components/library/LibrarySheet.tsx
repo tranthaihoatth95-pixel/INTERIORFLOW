@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
+import { useRouter } from 'next/navigation';
 import {
   Search, X, ArrowUp, Plus, Box, Palette, Network, Images, LayoutTemplate,
   Compass, Star, TrendingUp, Folder, type LucideIcon,
@@ -43,6 +44,8 @@ import { LIBRARY_SHEET_CSS } from './library-sheet-css';
 import { LibraryToastHost, pushLibraryToast } from './LibraryToast';
 import { PublishModal } from './PublishModal';
 import { BulkIngestMode } from './BulkIngestMode';
+import { BUOC_LABEL, nhanBuocMauDangCho, type BuocVatLieu } from './buoc-mau';
+import { ColorLibraryScreen } from '@/components/colors/ColorLibraryScreen';
 import PanelFlank from '@/components/ui/PanelFlank';
 
 // 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md) — "Vẽ"/"Dựng ảnh" là tên
@@ -138,6 +141,7 @@ function formatDims(w: number | null, d: number | null, h: number | null): strin
  */
 export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   const tr = useT();
+  const router = useRouter();
   // CHINH-4: truyền stage để hook xử va phím L theo chặng (§4e — CAD: ⇧L, chặng khác: L trần).
   const { open, setOpen, shelfId: requestedShelf, stageOverride } = useLibrarySheetState(stage);
   const { state, addPublishDraft, linkSpec, unlinkSpec } = useLibraryLocalState();
@@ -153,6 +157,11 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
    * `matGroup` ở trên (chọn lại = bỏ lọc), khác Ở CHỖ trục lọc là `IdfcKind` (12 loại thật của
    * file), không phải `ThumbKind` (hình thức ô xem trước). */
   const [idfcKindFilter, setIdfcKindFilter] = useState<IdfcKind | null>(null);
+  /** [marker: mauLaMotBuoc] BƯỚC trong kệ vật liệu (Hoà chốt 16/08: *"màu là 1 BƯỚC chọn vật
+   *  liệu"*). Đây KHÔNG phải kệ thứ hai và KHÔNG phải bộ lọc — nó đổi cả vùng nội dung, vì chọn
+   *  theo màu là một CÁCH TÌM khác hẳn duyệt theo kệ. Chỉ sống trong kệ vật liệu; rời kệ là về
+   *  `duyet` (xem effect dưới) — giữ lại sẽ thành trạng thái ma ở kệ không liên quan. */
+  const [buoc, setBuoc] = useState<BuocVatLieu>('duyet');
   /** Món ĐANG CHỌN — mở cột thông số ④ (`docs/mocks/Thư viện.dc.html`, khối CotThongSo). */
   const [picked, setPicked] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -252,6 +261,25 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
     setMatGroup(null);
     setIdfcKindFilter(null);
   }, [shelfId]);
+
+  /* [marker: mauLaMotBuoc] Rời kệ vật liệu → về bước Duyệt. CHỈ reset khi đã sang kệ khác — nếu
+     reset vô điều kiện thì cú "vào thẳng bước Màu" ngay dưới sẽ bị chính effect này xoá trong cùng
+     lượt commit (đặt shelfId = kệ vật liệu ⇒ effect [shelfId] chạy ⇒ buoc về 'duyet'). */
+  useEffect(() => {
+    if (shelfId !== MATERIAL_GROUP_SHELF) setBuoc('duyet');
+  }, [shelfId]);
+
+  /* [marker: mauLaMotBuoc] Đến từ deep-link `/colors` (route cũ nay chỉ dẫn đường, xem
+     `app/colors/page.tsx`): mở thẳng kệ Vật liệu, dừng ở bước "Chọn theo màu". Đặt SAU effect
+     `activeStage` ở trên — effect chạy theo thứ tự khai báo, nên kệ mặc định của chặng được ghi
+     trước rồi mới bị đè bằng ý định cụ thể của người dùng. */
+  useEffect(() => {
+    if (!open) return;
+    if (nhanBuocMauDangCho()) {
+      setShelfId(MATERIAL_GROUP_SHELF);
+      setBuoc('mau');
+    }
+  }, [open]);
 
   /* VIỆC 1 M-IDFC — kệ "Cấu kiện (.idfc)" đọc KHO THẬT (idfc-store, localStorage), không phải
    * mock ITEMS_BY_SHELF. Nạp lại mỗi lần mở sheet (BulkIngestMode vừa nhập xong → đóng mode →
@@ -528,6 +556,29 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                       <span className="c">{s.id === 'common-idfc' ? idfcItems.length : shelfCount(s.id)}</span>
                     </button>
                   ))}
+                  {/* [marker: thuVienChiaKe] GALLERY LÀ **MẶT TUYỂN CHỌN CỦA KỆ ẢNH**, không phải
+                      kệ thứ sáu (`docs/HOP-DONG-CAU-TRUC-DIEU-HUONG.md` §4, và §1: Gallery ⛔ không
+                      lên rail). Trước 17/08 nó chỉ tới được qua route `/library/gallery` đứng rời,
+                      nên quan hệ "nó là một mặt của kệ này" không nhìn thấy ở đâu cả.
+                      Cố ý KHÔNG dựng thành `.shrow` và KHÔNG có số đếm: `.shrow` nghĩa là *một kệ
+                      chọn được*, đeo lên đây là biến nó thành đúng cái kệ riêng mà chốt vừa gỡ.
+                      Đây là một LỐI RA — chữ nhạt, có mũi tên, nằm dưới danh sách kệ của ngăn. */}
+                  {bay.id === 'anh' && (
+                    <button
+                      type="button"
+                      onClick={() => { setOpen(false); router.push('/library/gallery'); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6, width: '100%',
+                        minHeight: 'var(--tap)', padding: '0 8px', cursor: 'pointer',
+                        border: 'none', background: 'transparent', textAlign: 'left',
+                        fontSize: 'var(--fs-2xs)', color: 'var(--t3)',
+                      }}
+                    >
+                      <Images size={13} strokeWidth={1.65} aria-hidden />
+                      {tr('Gallery — bản tuyển chọn', 'Gallery — the curated view')}
+                      <ArrowUp size={12} strokeWidth={1.9} aria-hidden style={{ marginLeft: 'auto', transform: 'rotate(45deg)' }} />
+                    </button>
+                  )}
                   {clusterHere && (
                     <button
                       type="button"
@@ -597,7 +648,45 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
           </PanelFlank>
 
           <div className="libmain">
-            {shelfId === CLUSTER_SHELF_ID ? (
+            {/* [marker: mauLaMotBuoc] DẢI HAI BƯỚC — chỉ hiện ở kệ Vật liệu.
+                Vì sao nó ở ĐÂY chứ không nằm trong cột kệ bên trái: cột kệ là *chọn kho nào*, đứng
+                cạnh "Nhóm vật liệu" thì mắt đọc màu thành một BỘ LỌC nữa. Đặt trên thân, nó đọc
+                đúng nghĩa *cùng một việc — chọn vật liệu — làm theo hai đường*. Không token màu
+                mới: bước đang mở nhận diện bằng chữ đậm + dải mực đáy (hình dạng, không phải màu). */}
+            {shelfId === MATERIAL_GROUP_SHELF && (
+              <div
+                role="tablist"
+                aria-label={tr('Bước chọn vật liệu', 'Material selection step')}
+                style={{ display: 'flex', gap: 4, padding: '8px 12px 0', borderBottom: '1px solid var(--vien-mo)' }}
+              >
+                {(['duyet', 'mau'] as BuocVatLieu[]).map((b) => (
+                  <button
+                    key={b}
+                    type="button"
+                    role="tab"
+                    aria-selected={buoc === b}
+                    onClick={() => setBuoc(b)}
+                    style={{
+                      minHeight: 'var(--tap)', padding: '0 10px 6px', cursor: 'pointer',
+                      border: 'none', background: 'transparent', fontSize: 'var(--fs-ui)',
+                      borderBottom: buoc === b ? '2px solid var(--t1)' : '2px solid transparent',
+                      color: buoc === b ? 'var(--t1)' : 'var(--t3)',
+                      fontWeight: buoc === b ? 'var(--fw-semi)' : 'var(--fw-normal)',
+                    }}
+                  >
+                    {b === 'mau' ? <Palette size={13} strokeWidth={1.8} aria-hidden style={{ marginRight: 5, verticalAlign: -2 }} /> : null}
+                    {tr(BUOC_LABEL[b].vi, BUOC_LABEL[b].en)}
+                  </button>
+                ))}
+              </div>
+            )}
+            {shelfId === MATERIAL_GROUP_SHELF && buoc === 'mau' ? (
+              /* Màn Bảng màu cũ (`/colors`) render NGUYÊN VẸN ở đây — không chép lại, không dựng
+                 bản thứ hai. Route `/colors` giữ nguyên nhưng chỉ còn dẫn vào đúng bước này. */
+              <div style={{ minHeight: 0, flex: 1, overflowY: 'auto' }}>
+                <ColorLibraryScreen />
+              </div>
+            ) : shelfId === CLUSTER_SHELF_ID ? (
               /* Cụm bàn — panel riêng: có núm chỉnh + XEM TRƯỚC bắt buộc trước khi thả, nên không
                  dùng lưới thẻ `.it` (thẻ chỉ hợp với món tĩnh bấm-là-dùng). Thả xong đóng sheet để
                  KTS thấy ngay cụm vừa rơi xuống bản vẽ. */

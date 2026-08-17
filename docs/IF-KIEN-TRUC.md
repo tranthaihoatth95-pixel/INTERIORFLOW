@@ -64,8 +64,8 @@ Thư viện) · Gallery (mặt tiền tuyển chọn của kệ Ảnh).
 
 | | Việc | Mode |
 |---|---|---|
-| **2D Kỹ thuật** | bản vẽ · cấu kiện · hồ sơ kỹ thuật | Sơ phác ↔ Chuyên |
-| **3D Thiết kế** | dựng khối · vật liệu · ánh sáng · render | Node ↔ Vẽ 3D — *một bộ lệnh, hai lối thao tác* |
+| **Thiết kế 2D** | bản vẽ · cấu kiện · hồ sơ kỹ thuật | Sơ phác ↔ Chuyên |
+| **Thiết kế 3D** | dựng khối · vật liệu · ánh sáng · render | Node ↔ Vẽ 3D — *một bộ lệnh, hai lối thao tác* |
 | **Trình chiếu** | đóng gói: deck · bảng vật liệu · BOQ · văn bản · video | không mode |
 
 **Khoá kỹ thuật trong code GIỮ NGUYÊN** (`concept`/`render`/`present`, `sketch`/`pro`/`revit`) —

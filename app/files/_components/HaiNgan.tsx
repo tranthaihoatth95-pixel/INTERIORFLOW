@@ -24,10 +24,19 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { FolderOpen, Boxes } from 'lucide-react';
 import { useT } from '@/lib/i18n';
+import { RawStyle } from '@/components/filemanager/RawStyle';
 import { NGAN_LABEL, NGAN_MOTA, type NganKey } from '../_lib/ngan-tho';
 
 const NGAN_KEYS: NganKey[] = ['duAn', 'thoChung'];
 const NGAN_ICON = { duAn: FolderOpen, thoChung: Boxes } as const;
+
+/* Vòng focus KHÔNG khai được bằng style nội tuyến (`:focus-visible` là lớp giả). Bơm qua
+   `RawStyle` — đúng cách repo đã dùng cho lib G4, và là lý do nó tồn tại. Nút đây `border:none;
+   background:transparent` nên vòng mặc định của trình duyệt mờ trên nền tối; khai tường minh để
+   người dùng bàn phím luôn thấy mình đang ở đâu (WCAG 2.4.7). */
+const CSS_NGAN = `
+.if-ngan:focus-visible{outline:var(--focus-ring);outline-offset:-2px;border-radius:var(--r-1)}
+`;
 
 /** Nhớ theo MÁY, không vào `.idf` (§6.4 hợp đồng: nấc và cách bày là chuyện của từng máy). */
 const NHO_KEY = 'if.files.ngan_v1';
@@ -70,6 +79,7 @@ export function HaiNgan({ duAn, thoChung }: { duAn: ReactNode; thoChung: ReactNo
 
   return (
     <div style={{ display: 'flex', minHeight: 0, flex: 1, flexDirection: 'column' }}>
+      <RawStyle css={CSS_NGAN} />
       <div
         role="tablist"
         aria-label={tr('Hai ngăn của Files', 'The two Files drawers')}
@@ -94,6 +104,7 @@ export function HaiNgan({ duAn, thoChung }: { duAn: ReactNode; thoChung: ReactNo
               aria-controls={`ngan-panel-${k}`}
               tabIndex={on ? 0 : -1}
               onClick={() => chon(k)}
+              className="if-ngan"
               style={{
                 display: 'grid', gap: 1, justifyItems: 'start', textAlign: 'left',
                 minHeight: 'var(--tap-lg)', padding: '6px 12px 8px', cursor: 'pointer',
@@ -108,8 +119,12 @@ export function HaiNgan({ duAn, thoChung }: { duAn: ReactNode; thoChung: ReactNo
                 <Icon size={14} strokeWidth={1.8} aria-hidden />
                 {tr(nhan.ten.vi, nhan.ten.en)}
               </span>
-              {/* Dòng AI THẤY — thứ phân biệt BẢN CHẤT. Một bộ lọc không bao giờ có dòng này. */}
-              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--t4)' }}>
+              {/* Dòng AI THẤY — thứ phân biệt BẢN CHẤT. Một bộ lọc không bao giờ có dòng này.
+                  Màu `--t3` chứ KHÔNG phải `--t4`: đo được `--t4` chỉ đạt 3,65:1 (nền tối) và
+                  **2,86:1** (nền sáng) trên `--panel` — trượt ngưỡng chữ 4,5:1 của WCAG 1.4.3. Đây
+                  là dòng mang nghĩa nặng nhất của cả vỏ, không phải chữ trang trí, nên không được
+                  để nó mờ. `--t3` đo 6,93:1 / 4,90:1 — đạt cả hai nền. */}
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--t3)' }}>
                 {tr(nhan.aiThay.vi, nhan.aiThay.en)}
               </span>
             </button>

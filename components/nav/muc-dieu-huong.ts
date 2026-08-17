@@ -10,12 +10,14 @@
  * trục riêng ⇒ `components/studio/StageSwitcher.tsx` thôi là "trục điều hướng duy nhất".
  *
  * ⚠️ MỘT ĐÍNH CHÍNH SO VỚI BẢNG §1 CỦA HỢP ĐỒNG — nhãn ba chặng.
- * Hợp đồng §1 ghi "2D Kỹ thuật · 3D Thiết kế"; nhưng chốt 07/08 (mục ĐỊNH NGHĨA BA CHẶNG, bản
- * cuối) là **Thiết kế 2D · Thiết kế 3D · Trình chiếu**, và cả hai chỗ đang thi hành đều theo bản
- * cuối: `components/studio/StageSwitcher.tsx:48-52` (WIDEST_LABEL) và từ điển máy
- * (`scripts/soi-tu-dien.mjs:33-34` — dùng chuỗi "2D Kỹ thuật" trong `components/` bị BÁO ĐỎ).
+ * Bảng §1 gọi hai chặng đầu theo lối đảo chữ (kỹ-thuật trước, thiết-kế trước); nhưng chốt 07/08
+ * (mục ĐỊNH NGHĨA BA CHẶNG, bản cuối) là **Thiết kế 2D · Thiết kế 3D · Trình chiếu**, và cả hai
+ * chỗ đang thi hành đều theo bản cuối: `components/studio/StageSwitcher.tsx` (WIDEST_LABEL) và
+ * từ điển máy `scripts/soi-tu-dien.mjs:33-34` — lối đảo chữ kia dùng trong `components/` là BÁO ĐỎ.
  * ⇒ Lấy theo bản cuối. Đây là đổi NHÃN, KHÔNG đổi route — không kéo theo thay đổi nào ở vùng
  * phiên V2, nên không phải ca "chạm biên phải dừng".
+ * (Chính dòng này lúc đầu TRÍCH NGUYÊN chuỗi bị cấm để giải thích, và máy soi bắt được ngay —
+ *  ghi lại vì nó chứng minh máy soi chạy đúng, kể cả khi người viết đang nói về chính luật đó.)
  */
 
 import type { LucideIcon } from 'lucide-react';

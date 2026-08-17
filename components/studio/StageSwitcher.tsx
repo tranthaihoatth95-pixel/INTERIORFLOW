@@ -1,8 +1,19 @@
 'use client';
 
 /**
- * components/studio/StageSwitcher.tsx — TRỤC ĐIỀU HƯỚNG DUY NHẤT của app: 3 chặng
- * Concept · Render · Present.
+ * components/studio/StageSwitcher.tsx — bộ gạt nhanh giữa 3 chặng Concept · Render · Present,
+ * kèm cử chỉ kéo-xuống mở Vitals.
+ *
+ * 🔴 ĐÍNH CHÍNH 17/08 — dòng đầu file này TRƯỚC ĐÂY ghi *"TRỤC ĐIỀU HƯỚNG DUY NHẤT của app"*.
+ * Câu đó **HẾT HIỆU LỰC**. Hoà chốt 16/08: **sidebar là hệ router toàn app, ba chặng chỉ là MỘT
+ * nhóm stage** ngang hàng với Tổng quan · Bảng việc · Chat · Họp · Files · Thư viện · Cài đặt.
+ * Trục điều hướng nay là `components/nav/RailDieuHuong.tsx` ([marker: railHaiCum], mount ở ổ ⓪
+ * của `AppShell`); nguồn cấu trúc: `docs/HOP-DONG-CAU-TRUC-DIEU-HUONG.md`.
+ * ⇒ File này GIỮ NGUYÊN vai trò và giữ nguyên cử chỉ — nó là **lối tắt giữa ba chặng**, không
+ * còn là bản đồ. Đừng thêm mục cấp app (Files/Thư viện/Bảng việc…) vào đây: chỗ của chúng là rail.
+ *
+ * Vì sao đóng dấu tại chỗ thay vì im lặng sửa: văn bản bị thay mà bỏ hoang thì đọc ra như đang
+ * còn hiệu lực — đúng cách bản đồ kiến trúc cũ chết suốt 19 ngày (`docs/CLAUDE.md:14`).
  *
  * 23/07 — RESTORE GESTURE, KHÔNG VISUAL GIỌT KÍNH: user chốt "bỏ hiệu ứng giọt
  * kính nhưng phải chừa lại cho người ra cử chỉ kéo xuống hiện ô chat được tối

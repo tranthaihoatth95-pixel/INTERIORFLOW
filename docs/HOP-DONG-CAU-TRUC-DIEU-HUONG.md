@@ -23,8 +23,8 @@
 | | Cài đặt | `/settings` | luôn |
 | **DỰ ÁN** | Dự án này | `/projects/[id]/overview` | **chỉ khi đã mở dự án** |
 | | Sổ tay | `/projects/[id]/notebook` | nt |
-| | 2D Kỹ thuật | `/projects/[id]/cad` | nt |
-| | 3D Thiết kế | `/projects/[id]/render` | nt |
+| | Thiết kế 2D | `/projects/[id]/cad` | nt |
+| | Thiết kế 3D | `/projects/[id]/render` | nt |
 | | Trình chiếu | `/projects/[id]/present` | nt |
 
 Hai cụm tách bằng **một khoảng thở**, không phải đường kẻ (luật *bỏ đường kẻ ngang chia khối*).
@@ -105,7 +105,7 @@ Cửa nghiệm thu: ① che nấc to → nấc nhỏ vẫn đứng một mình �
 
 | Phiên | Vùng ghi | Làm gì |
 |---|---|---|
-| **V1 · vỏ điều hướng** | `components/nav/**` (mới) · `components/AppShell.tsx` · mock sidebar | rail hai cụm, ba nấc, thu/mở nhớ được, mờ-kèm-lý-do cho cụm dự án |
+| **V1 · vỏ điều hướng** | `components/nav/**` (mới) · `components/studio/AppShell.tsx` · mock sidebar | rail hai cụm, ba nấc, thu/mở nhớ được, mờ-kèm-lý-do cho cụm dự án |
 | **V2 · hai ngăn & kệ** | `app/files/**` · `components/library/**` · `app/colors/**` · mock Files + Thư viện | Files hai ngăn · Thư viện chia kệ · màu thành bước trong chọn vật liệu |
 
 **Cả hai đọc file này làm nguồn.** Chạm biên ngoài vùng ⇒ **DỪNG, báo T**, không tự quyết —

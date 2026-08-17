@@ -1,0 +1,185 @@
+<!-- @dsCard group="Thư viện" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>InteriorFlow · Thư viện — năm ngăn, và màu là một bước</title>
+<style>
+/* ═══ TOKEN THẬT của app — CHÉP TỪ app/globals.css, KHÔNG đổi số (luật L4) ═══
+   Đối chiếu file thật trước khi vẽ (luật L1): app/globals.css:19-22,68-78,84-90,105-118,175-207,216,229,272,286,290.
+   ⛔ KHÔNG đụng --accent* và KHÔNG thêm token màu (hợp đồng §6.5). Bản vẽ không dùng --accent. */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --tap:32px; --tap-lg:44px; --gap:8px; --pad-card:8px 12px; --fs-ui:13px;
+}
+@media (hover:none) and (pointer:coarse){ :root{ --tap:44px; --gap:12px; --pad-card:12px 16px; --fs-ui:15px; } }
+:root,[data-theme="dark"]{
+  --hatch:repeating-linear-gradient(45deg,var(--field) 0 9px,var(--card) 9px 18px);
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --vien-mo:rgba(255,255,255,.06); --mo-vo-hieu:.5;
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --focus-ring: 2px solid #8f7dfa;
+}
+[data-theme="light"]{
+  --hatch:repeating-linear-gradient(45deg,var(--field) 0 9px,var(--card) 9px 18px);
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --vien-mo:rgba(0,0,0,.05); --mo-vo-hieu:.62;
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --focus-ring: 2px solid #553ff3;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);padding:36px;
+  font:var(--fw-normal) var(--fs-sm)/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased}
+h1{font-size:var(--fs-xl);letter-spacing:-.02em;margin:0 0 4px}
+.sub{color:var(--t3);margin-bottom:26px;font-size:var(--fs-xs);max-width:72ch}
+h2.grouplabel{font-size:var(--fs-2xs);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t4);margin:30px 0 3px}
+.help{font-size:var(--fs-2xs);color:var(--t4);margin:2px 0 12px;line-height:1.55;max-width:80ch}
+.themebtn{position:fixed;top:18px;right:18px;height:var(--tap);padding:0 14px;border:1px solid var(--border);
+  background:var(--panel);color:var(--t2);border-radius:var(--r-2);font-size:var(--fs-2xs);cursor:pointer}
+.themebtn:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+.wrap{max-width:960px}
+
+.sheet{border:1px solid var(--border);border-radius:var(--r-4);background:var(--panel);overflow:hidden;
+  display:grid;grid-template-columns:230px 1fr}
+@media (max-width:760px){ .sheet{grid-template-columns:1fr} }
+.cotke{border-right:1px solid var(--border);padding:10px 8px;background:var(--panel)}
+.ngancap{display:flex;align-items:center;gap:6px;font-size:var(--fs-2xs);font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--t3);margin:12px 6px 4px}
+.ngancap:first-child{margin-top:0}
+.ke{display:flex;align-items:center;gap:8px;width:100%;min-height:var(--tap);padding:0 8px;border:0;
+  background:none;color:var(--t2);font-size:var(--fs-ui);border-radius:var(--r-2);cursor:pointer;
+  text-align:left;font-family:inherit}
+/* Số đếm và mã món là NỘI DUNG, không phải chữ trang trí ⇒ --t3 (đạt 4,5:1 cả hai nền),
+   không dùng --t4 (2,86:1 nền sáng — trượt WCAG 1.4.3). */
+.ke .dem{margin-left:auto;font-size:var(--fs-2xs);color:var(--t3);font-variant-numeric:tabular-nums}
+.ke[aria-current="true"]{background:var(--field);color:var(--t1);font-weight:var(--fw-semi)}
+.ke:focus-visible{outline:var(--focus-ring);outline-offset:-2px}
+/* LỐI RA Gallery — cố ý KHÔNG là .ke và KHÔNG có số đếm: .ke nghĩa là “một ngăn chọn được”,
+   đeo lên đây là biến Gallery thành đúng ngăn riêng mà chốt 17/08 vừa gỡ. */
+.loira{display:flex;align-items:center;gap:6px;width:100%;min-height:var(--tap);padding:0 8px;border:0;
+  background:none;color:var(--t3);font-size:var(--fs-2xs);cursor:pointer;text-align:left;font-family:inherit}
+.loira .mui{margin-left:auto}
+.loira:focus-visible{outline:var(--focus-ring);outline-offset:-2px;border-radius:var(--r-1)}
+
+.than{background:var(--bg);min-height:280px}
+/* DẢI HAI BƯỚC — đặt trên THÂN, không đặt trong cột ngăn bên trái. Lý do: cột trái là “chọn kho
+   nào”; đứng cạnh danh sách nhóm thì mắt đọc màu thành một bộ lọc nữa. */
+.buoctabs{display:flex;gap:4px;padding:8px 12px 0;border-bottom:1px solid var(--vien-mo)}
+.buoc{min-height:var(--tap);padding:0 10px 6px;border:0;background:none;cursor:pointer;color:var(--t3);
+  font-size:var(--fs-ui);border-bottom:2px solid transparent;font-family:inherit}
+.buoc[aria-selected="true"]{color:var(--t1);border-bottom-color:var(--t1);font-weight:var(--fw-semi)}
+.buoc:focus-visible{outline:var(--focus-ring);outline-offset:-2px;border-radius:var(--r-1)}
+.luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--gap);padding:12px}
+.o{border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden}
+.o .hinh{height:86px;background:var(--field);display:grid;place-items:center;color:var(--t3);font-size:var(--fs-2xs)}
+.o .chu{padding:8px 10px}
+.o .a{font-size:var(--fs-2xs);color:var(--t1)}
+.o .b{font-size:var(--fs-2xs);color:var(--t3);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.mauluoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:var(--gap);padding:12px}
+.chip{border:1px solid var(--border);border-radius:var(--r-2);padding:8px;background:var(--card);font-size:var(--fs-2xs);color:var(--t2)}
+/* Ô màu để GẠCH CHÉO (token --hatch thật, globals.css:125) chứ không để trơn: trơn thì đọc ra
+   "đang tải/hỏng"; gạch chéo là quy ước sẵn có của app cho *chỗ này chờ dữ liệu thật*. Vẫn không
+   vẽ màu bịa — bộ màu do studio nạp lúc chạy. */
+.chip .swatch{height:34px;border-radius:var(--r-1);border:1px solid var(--border);margin-bottom:6px;background:var(--hatch)}
+.ghi{border-left:2px solid var(--border);padding-left:12px;margin:14px 0;font-size:var(--fs-2xs);color:var(--t3);line-height:1.6;max-width:80ch}
+.bang{width:100%;border-collapse:collapse;font-size:var(--fs-2xs);margin-top:8px}
+.bang th,.bang td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--vien-mo);color:var(--t2);vertical-align:top}
+.bang th{color:var(--t4);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+</style>
+</head>
+<body>
+<button class="themebtn" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme==='dark'?'light':'dark'">Đổi nền sáng / tối</button>
+
+<div class="wrap">
+<h1>Thư viện — năm ngăn, và màu là một bước</h1>
+<p class="sub">Một Thư viện duy nhất, chia ngăn theo loại. <b>Gallery</b> là bản tuyển chọn của ngăn Ảnh, không phải ngăn thứ sáu. <b>Màu</b> là một <b>bước</b> bên trong chọn vật liệu, không phải ngăn và không phải mục điều hướng.</p>
+
+<h2 class="grouplabel">① Năm ngăn — bước “Duyệt vật liệu”</h2>
+<p class="help">Năm ngăn đã sống trong app từ 07/08 (<code>BAYS</code>, <code>lib/library/shelves.ts</code>). Việc của 17/08 không phải dựng lại chúng, mà là gắn đúng hai quan hệ còn thiếu: <b>Gallery thuộc ngăn Ảnh</b> và <b>màu là một bước của vật liệu</b>.</p>
+<div class="sheet">
+  <div class="cotke">
+    <div class="ngancap">▣ Cấu kiện</div>
+    <button class="ke">Ký hiệu · khối<span class="dem">12</span></button>
+    <button class="ke">Cấu kiện (.idfc)<span class="dem">4</span></button>
+    <div class="ngancap">◆ Vật liệu</div>
+    <button class="ke" aria-current="true">Vật liệu ATLAS<span class="dem">38</span></button>
+    <button class="ke">Hatch · vật liệu 2D<span class="dem">9</span></button>
+    <div class="ngancap">⌗ Node</div>
+    <button class="ke">Preset dựng ảnh<span class="dem">5</span></button>
+    <div class="ngancap">▤ Ảnh tham chiếu</div>
+    <button class="ke">Ảnh &amp; tài sản<span class="dem">64</span></button>
+    <button class="loira">▤ Gallery — bản tuyển chọn <span class="mui">↗</span></button>
+    <div class="ngancap">▥ Mẫu &amp; hồ sơ</div>
+    <button class="ke">Mẫu trang<span class="dem">7</span></button>
+  </div>
+  <div class="than">
+    <div class="buoctabs" role="tablist" aria-label="Bước chọn vật liệu">
+      <button class="buoc" role="tab" id="t-duyet" aria-controls="p-duyet" aria-selected="true" tabindex="0">Duyệt vật liệu</button>
+      <button class="buoc" role="tab" aria-selected="false" tabindex="-1">◐ Chọn theo màu</button>
+    </div>
+    <div class="luoi" role="tabpanel" id="p-duyet" aria-labelledby="t-duyet">
+      <div class="o"><div class="hinh">quả cầu vật liệu</div><div class="chu"><div class="a">Đá travertine be</div><div class="b">TRV-BE</div></div></div>
+      <div class="o"><div class="hinh">quả cầu vật liệu</div><div class="chu"><div class="a">Gỗ sồi tự nhiên</div><div class="b">OAK-NT</div></div></div>
+      <div class="o"><div class="hinh">quả cầu vật liệu</div><div class="chu"><div class="a">Đá granite đen</div><div class="b">GRA-DEN</div></div></div>
+      <div class="o"><div class="hinh">quả cầu vật liệu</div><div class="chu"><div class="a">Vải bố mộc</div><div class="b">FAB-1</div></div></div>
+    </div>
+  </div>
+</div>
+
+<h2 class="grouplabel">② Cùng chỗ đó — bước “Chọn theo màu”</h2>
+<p class="help">Đổi bước là đổi <b>cách tìm</b>, không phải lọc bớt danh sách đang xem: người dùng đi từ màu về vật liệu thay vì đi từ ngăn về vật liệu. Màn Bảng màu cũ render nguyên vẹn ở đây — không chép lại, không dựng bản thứ hai.</p>
+<div class="sheet">
+  <div class="cotke">
+    <div class="ngancap">◆ Vật liệu</div>
+    <button class="ke" aria-current="true">Vật liệu ATLAS<span class="dem">38</span></button>
+    <button class="ke">Hatch · vật liệu 2D<span class="dem">9</span></button>
+    <div class="ngancap">▤ Ảnh tham chiếu</div>
+    <button class="ke">Ảnh &amp; tài sản<span class="dem">64</span></button>
+    <button class="loira">▤ Gallery — bản tuyển chọn <span class="mui">↗</span></button>
+  </div>
+  <div class="than">
+    <div class="buoctabs" role="tablist" aria-label="Bước chọn vật liệu">
+      <button class="buoc" role="tab" aria-selected="false" tabindex="-1">Duyệt vật liệu</button>
+      <button class="buoc" role="tab" id="t-mau" aria-controls="p-mau" aria-selected="true" tabindex="0">◐ Chọn theo màu</button>
+    </div>
+    <div class="mauluoi" role="tabpanel" id="p-mau" aria-labelledby="t-mau">
+      <div class="chip"><div class="swatch"></div>NCS S 1002-Y</div>
+      <div class="chip"><div class="swatch"></div>NCS S 3010-G</div>
+      <div class="chip"><div class="swatch"></div>NCS S 5020-B</div>
+      <div class="chip"><div class="swatch"></div>NCS S 7500-N</div>
+      <div class="chip"><div class="swatch"></div>NCS S 2005-Y20R</div>
+    </div>
+  </div>
+</div>
+<p class="ghi"><b>Ô màu trong bản vẽ này cố ý để trống nền.</b> Màu thật đến từ bộ màu studio nạp vào lúc chạy — vẽ sẵn mấy ô màu đẹp ở đây là bịa dữ liệu, và còn kéo theo hex gõ tay mà luật cấm.</p>
+
+<p class="help"><b>Cột ngăn ở hình trên rút gọn cố ý</b> — chỉ giữ hai ngăn liên quan để mắt không phải lọc lại; bản thật vẫn đủ năm ngăn như hình ①.</p>
+
+<h2 class="grouplabel">③ Ba thứ ra khỏi thanh điều hướng — và chúng sống ở đâu</h2>
+<table class="bang">
+  <tr><th>Thứ</th><th>Vì sao không lên thanh điều hướng</th><th>Nay sống ở đâu</th></tr>
+  <tr><td>Bảng màu</td><td>là một <b>bước</b> trong chọn vật liệu, không phải một nơi để đi tới</td><td>bước “Chọn theo màu” ở ngăn Vật liệu; route <code>/colors</code> giữ nguyên nhưng chỉ còn dẫn đường</td></tr>
+  <tr><td>Kho vật liệu</td><td>là một <b>ngăn</b> của Thư viện</td><td>ngăn Vật liệu</td></tr>
+  <tr><td>Gallery</td><td>là <b>bản tuyển chọn</b> của ngăn Ảnh</td><td>lối ra ngay dưới ngăn Ảnh &amp; tài sản</td></tr>
+</table>
+
+<h2 class="grouplabel">Ranh giới đã giữ</h2>
+<p class="help">
+① <b>Không dựng lại năm ngăn</b> — chúng đã có; dựng lại là làm lại thứ đã có.<br>
+② <b>Không xoá route <code>/colors</code></b> — xoá là vỡ bookmark và link cũ; nó đổi vai chứ không biến mất.<br>
+③ <b>Không token màu mới, không đụng <code>--accent*</code></b>; bước đang mở nhận diện bằng chữ đậm + dải mực đáy.<br>
+④ <b>Gallery không có số đếm và không dùng kiểu của một ngăn</b> — nếu đeo vào thì nó lại thành ngăn riêng.
+</p>
+</div>
+</body>
+</html>
