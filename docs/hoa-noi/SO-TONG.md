@@ -43,3 +43,14 @@
   · Tìm bình thường → không có gì lạ
   · Bấm Vitals → thanh tìm chuyển sang chế độ "tối" + **effect viên linh sáng nhiều màu**
   · Đây là chi tiết hoá chốt 16/08 (Vitals cạnh ô tìm → nay cụ thể là "trên" + có effect chuyển chế độ)
+
+## bug  (1)
+
+- **Dashboard Home sai HOÀN TOÀN hệ design system** (Hoà chê 17/08 tối, ảnh chụp app thật cổng 3000):
+  · Card không kính lỏng (backdrop-filter = 0 chỗ)
+  · Không ambient tint chuyển sắc mép
+  · Chữ số ô 01/02/03 mono khai lộ, không mang tin
+  · Widget đè nhau, khoảng thở lệch
+  · Ảnh render (03 THIS WEEK'S FRAME) placeholder không khung
+  · Ghi chú: rail router V1 (vừa dựng chiều) CHƯA MOUNT vào HomeScreen → dashboard không có sidebar
+  · Đợt C đang chạy (2 phiên): P-ROUTER-HOME + P-DASHBOARD-DS
