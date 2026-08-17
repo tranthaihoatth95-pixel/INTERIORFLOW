@@ -41,6 +41,18 @@ Thứ tự này **không đảo**, nhưng bước nào rõ rồi thì lướt nh
 
 **⑤ Tư vấn** — trình phương án, **luôn có option**, nêu rõ đánh đổi. Hoà quyết.
 
+**⑥ TỔNG HỢP KHI BÀN XONG** (Hoà chốt 17/08) — mỗi chủ đề bàn xong phải ra **một bảng**:
+
+| Mảnh | Đã có nền? | Xịn hay dỏm | Kết luận |
+|---|---|---|---|
+
+· **có nền + xịn** → dùng lại, cấm dựng mới
+· **có nền + dỏm** → **đề xuất build lại**, nói rõ dỏm ở đâu
+· **chưa có** → build mới
+
+Rồi **mô tả giao diện + minh hoạ** để Hoà chốt → **đưa Claude Design dựng**.
+Không có bảng này thì chưa gọi là bàn xong.
+
 ---
 
 ## §3 · GIỌNG VÀ BỐ CỤC
