@@ -52,15 +52,33 @@ tên **Tổng quan** thuộc về Home, hai mặt kia phải nhường. Đây l�
 — Hoà lật lại sau tốn đúng một dòng, nên không đáng chặn cả cụm để chờ.
 ⚠️ **Route giữ nguyên** `/projects/[id]/overview` — đổi route là vỡ deep-link.
 
-## 3 · FILES — HAI NGĂN KHÁC BẢN CHẤT (Hoà chốt 17/08)
+## 3 · FILES — HAI TẦNG KHÁC CHỨC NĂNG (Hoà đưa mock 17/08 tối · thay bản "hai ngăn")
 
-| Ngăn | Chứa gì | Ai thấy |
+> 🔴 **Bản "hai NGĂN dự án ↔ phần thô"** (chốt sáng 17/08, V2 đã dựng) **hết hiệu lực** — bố cục
+> Hoà đưa chiều tối là **hai TẦNG khác chức năng** trong cùng một route `/files`. Logic "phần thô"
+> KHÔNG mất — nó gộp vào thư mục **"Nhà cung cấp"** ở tầng ①.
+
+### Tầng ① · THƯ MỤC HỆ THỐNG (có QUYỀN)
+5 thư mục cấp studio, mỗi thư mục 1 loại quyền truy cập:
+| Thư mục | Vai | Quyền |
 |---|---|---|
-| **Dự án** | tệp của dự án đang mở | người trong dự án |
-| **Phần thô dùng chung** | map texture · nhà cung cấp · **range giá** — nguyên liệu nhiều người góp, **chưa đủ định nghĩa để render** | ai cũng thấy |
+| **Dự án** | tệp theo từng dự án | Theo dự án |
+| **Studio dùng chung** | dùng khắp studio | Toàn studio |
+| **Nhà cung cấp** | map texture · NCC · **range giá** (thay ngăn "phần thô" cũ) | Biên tập giới hạn |
+| **Đã duyệt** | nội dung đã qua Review Gate | Chỉ đọc |
+| **Lưu trữ** | kho lạnh | Quản trị viên |
 
-**Khác bản chất ⇒ phải THẤY ĐƯỢC trên giao diện.** Cấm rút thành một bộ lọc trong cùng danh sách.
-Ngăn ② là đầu vào của dòng chảy §5 bản đồ: `Files → cửa sổ công cụ → Thư viện`.
+### Tầng ② · COLLECTION+ (kho nguồn của IF, chưng cất → dự án)
+8 gói component, mã `COL-<LOẠI>-NNN`, tổ chức theo LOẠI VẬT (không theo chặng):
+Vật liệu · Furniture · Chi tiết điển hình · Cây · người · Design DNA · Gói học từ dự án · Mẫu trình bày · Cách làm.
+Bộ lọc: Loại · Nguồn · Trạng thái · Cập nhật. Quyền: Cá nhân · Chia sẻ nhóm · Studio.
+
+**Vì sao KHÔNG tách route** (T tư vấn 17/08, Hoà uỷ quyền):
+1. Bản đồ §5 dòng chảy VẬT không đổi — Collection+ là **cách TỔ CHỨC của Files**, không phải mắt xích thứ ba.
+2. Rail cụm XƯỞNG đã 5 mục cân đối — thêm nữa là nhồi.
+3. Kệ Thư viện chia THEO CHẶNG (`lib/library/shelves.ts`), Collection+ chia THEO LOẠI VẬT — **khác trục**, không cạnh tranh.
+
+Files scroll dọc — tầng ② nối tiếp tầng ①. Có nút "Đến Collection+" ở đầu trang (jump link).
 
 ## 4 · THƯ VIỆN — một cái duy nhất, chia KỆ
 

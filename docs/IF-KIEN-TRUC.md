@@ -92,9 +92,10 @@ của một cửa sổ là asset **mang sẵn định nghĩa** (*"định nghĩa
 - **Files** = **phần THÔ**, thứ **ai cũng thấy**, một trường thông tin **chung**: map texture ·
   nhà cung cấp · **range giá**. **Không render được** vì thiếu đúng thông số V-Ray/D5 luôn phải đặt.
   ⛔ Nghĩa **"chợ đầu mối"** đã **BỎ** (16/08).
-  ⭐ **HAI NGĂN KHÁC BẢN CHẤT** (Hoà chốt 17/08): ① **tệp của dự án này** · ② **phần thô DÙNG CHUNG,
-  nhiều người góp**. Khác bản chất ⇒ **phải thấy được trên giao diện**, không phải một bộ lọc.
-  Ngăn ② là nơi *"thông tin chưng cất của hệ thống, của nhiều người dùng"* sống trước khi có định nghĩa.
+  ⭐ **HAI TẦNG** (Hoà đưa mock 17/08 tối): Tầng ① thư mục hệ thống 5 loại có quyền · Tầng ②
+  **Collection+** — 8 gói component (mã `COL-XXX-NNN`) tổ chức theo LOẠI VẬT, là **kho nguồn** chờ
+  chưng cất → Thư viện. Bản "hai ngăn dự án ↔ phần thô" (chốt sáng 17/08) hết hiệu lực. Logic phần
+  thô gộp vào thư mục "Nhà cung cấp".
 - **Thư viện** = **Master Library**, một cái duy nhất, **hiểu ngữ cảnh và đề xuất đúng** — không
   phải kho để đi tìm. Đứng ở 2D nó đưa ký hiệu · ở 3D đưa PBR + quả cầu · ở Trình chiếu đưa bảng +
   giá. **Cùng một `matId`, ba mặt.**
