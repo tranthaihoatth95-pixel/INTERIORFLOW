@@ -27,3 +27,19 @@
   · Bộ lọc: Loại · Nguồn · Trạng thái · Cập nhật.
   · Mã collection dạng `COL-<LOẠI>-NNN`.
   · Ảnh preview thư mục = folder + content peek (kiểu Apple Files).
+
+## design-system / toolbar  (1)
+
+- **Toolbar nên NỔI, không dính thành** (Hoà 17/08 tối):
+  · Neo TRÊN hoặc GIỮA (theo chiều dọc), tuỳ nhiều hay ít item
+  · **Auto grid** — tự sắp lưới theo số item
+  · **Kính lỏng** — liquid glass
+  · **Auto hide** — tự ẩn khi không dùng
+  · ⚠️ Có ảnh Hoà gửi kèm — chưa nhìn được (message chưa upload lên chat)
+
+## vitals  (1)
+
+- **Vitals thành icon TRÒN NHỎ nằm TRÊN thanh tìm kiếm** (Hoà 17/08 tối):
+  · Tìm bình thường → không có gì lạ
+  · Bấm Vitals → thanh tìm chuyển sang chế độ "tối" + **effect viên linh sáng nhiều màu**
+  · Đây là chi tiết hoá chốt 16/08 (Vitals cạnh ô tìm → nay cụ thể là "trên" + có effect chuyển chế độ)
