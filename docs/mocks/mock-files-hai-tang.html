@@ -1,0 +1,617 @@
+<!-- @dsCard group="Files" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>InteriorFlow · Files — hai TẦNG khác chức năng</title>
+<style>
+/* ═══ TOKEN THẬT của app — CHÉP TỪ app/globals.css, KHÔNG đổi số (luật L4) ═══
+   Đối chiếu file thật (luật L1): app/globals.css:19-22,68-78,84-90,105-118,175-207,216,272.
+   ⛔ KHÔNG đụng --accent* và KHÔNG thêm token màu — Hoà chưa chốt màu nhấn thứ hai
+      (HOP-DONG-CAU-TRUC-DIEU-HUONG.md §6.5). Bản vẽ này KHÔNG dùng --accent ở đâu:
+      trạng thái nói bằng CHỮ + HÌNH DẠNG (dải mực + chip viền + ký hiệu).
+   ⛔ KHÔNG dùng ảnh ngoài (CSP artifact chặn) — preview folder dựng bằng SVG tại chỗ. */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --tap:32px; --tap-lg:44px; --row:28px; --gap:8px; --pad-card:8px 12px; --fs-ui:13px;
+}
+@media (hover:none) and (pointer:coarse){ :root{ --tap:44px; --gap:12px; --pad-card:12px 16px; --fs-ui:15px; } }
+:root,[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --vien-mo:rgba(255,255,255,.06); --mo-vo-hieu:.5;
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --focus-ring: 2px solid #8f7dfa;
+}
+[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --vien-mo:rgba(0,0,0,.05); --mo-vo-hieu:.62;
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --focus-ring: 2px solid #553ff3;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--t1);padding:0 32px 60px;
+  font:var(--fw-normal) var(--fs-sm)/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto}
+:focus-visible{outline:var(--focus-ring);outline-offset:2px;border-radius:var(--r-1)}
+
+/* ── ĐẦU TRANG · thanh công cụ ────────────────────────────────────────────────
+   Nguyên tắc: đầu trang là VIỆC (nhập/tạo/tìm), KHÔNG chứa lối đi (hợp đồng §6.3).
+   Sticky top + nền mờ để hai tầng bên dưới scroll qua vẫn còn tay lấy công cụ. */
+.topbar{position:sticky;top:0;z-index:5;
+  display:flex;align-items:center;gap:12px;padding:14px 0;
+  background:linear-gradient(var(--bg) 82%, transparent);
+  border-bottom:1px solid var(--vien-mo)}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand h1{font-size:var(--fs-lg);margin:0;letter-spacing:-.01em}
+.brand .crumb{font-size:var(--fs-2xs);color:var(--t3)}
+.search{flex:1;min-width:220px;max-width:520px;display:flex;align-items:center;gap:8px;
+  height:var(--tap);padding:0 12px;border:1px solid var(--border);border-radius:var(--r-2);
+  background:var(--field);color:var(--t2)}
+.search input{flex:1;background:none;border:0;outline:0;color:inherit;font:inherit;font-size:var(--fs-ui)}
+.search .kbd{font-size:var(--fs-2xs);color:var(--t3);border:1px solid var(--border);border-radius:var(--r-1);
+  padding:1px 5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.icnbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:var(--tap);padding:0 12px;border:1px solid var(--border);border-radius:var(--r-2);
+  background:var(--field);color:var(--t2);cursor:pointer;font-family:inherit;font-size:var(--fs-ui)}
+.icnbtn:hover{background:var(--hover)}
+.icnbtn.primary{color:var(--t1);border-color:var(--border-strong)}
+.icnbtn .glyph{font-size:14px;line-height:1}
+.viewseg{display:inline-flex;border:1px solid var(--border);border-radius:var(--r-2);overflow:hidden}
+.viewseg button{min-height:var(--tap);padding:0 10px;border:0;background:var(--field);color:var(--t3);
+  cursor:pointer;font-family:inherit;font-size:var(--fs-ui);border-right:1px solid var(--border)}
+.viewseg button:last-child{border-right:0}
+.viewseg button[aria-pressed="true"]{background:var(--card);color:var(--t1)}
+.bellwrap{position:relative}
+.bell{position:relative;min-width:var(--tap);padding:0 10px}
+.bell .dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:var(--r-full);background:var(--warning)}
+.me{width:var(--tap);height:var(--tap);border-radius:var(--r-full);border:1px solid var(--border);
+  background:linear-gradient(135deg,#3a3644,#524a5c);display:flex;align-items:center;justify-content:center;
+  color:var(--t1);font-size:var(--fs-2xs);font-weight:var(--fw-semi);cursor:pointer}
+.themebtn{margin-left:auto;font-size:var(--fs-2xs);color:var(--t3)}
+
+/* ── TIÊU ĐỀ nhóm + phụ đề ── */
+h2.tang{font-size:var(--fs-lg);letter-spacing:-.01em;margin:32px 0 4px}
+h2.tang .num{font-size:var(--fs-2xs);font-weight:700;color:var(--t4);letter-spacing:.06em;text-transform:uppercase;margin-right:8px;vertical-align:2px}
+.help{font-size:var(--fs-2xs);color:var(--t3);margin:2px 0 14px;line-height:1.6;max-width:88ch}
+.jump{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-2xs);color:var(--t2);
+  border:1px solid var(--border);border-radius:var(--r-full);padding:4px 10px;text-decoration:none;background:var(--field)}
+.jump:hover{background:var(--hover)}
+
+/* ═══ TẦNG ① · THƯ MỤC HỆ THỐNG ═════════════════════════════════════════════
+   5 thẻ. Mỗi thẻ có: preview folder+peek (SVG tại chỗ) · tên · vai · số cập nhật ·
+   dãy avatar · badge QUYỀN. Layout: grid tự chảy, min 260px — không kéo giãn tự do
+   (luật nấc-là-công-năng: đây là NẤC 240-VỪA của thư mục, thêm "tình trạng" thay hình
+   vì thư mục hệ thống không có "hình chủ đạo"). */
+.grid5{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.tm{display:flex;flex-direction:column;gap:0;
+  border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden;
+  transition:transform var(--dur-fast) var(--ease-apple),border-color var(--dur-fast) var(--ease-apple)}
+.tm:hover{border-color:var(--border-strong);transform:translateY(-1px)}
+.tm .preview{aspect-ratio:16/9;background:var(--field);position:relative;overflow:hidden;
+  border-bottom:1px solid var(--vien-mo)}
+.tm .preview svg{width:100%;height:100%;display:block}
+.tm .body{padding:10px 12px 12px;display:grid;gap:6px}
+.tm .name{font-size:var(--fs-ui);font-weight:var(--fw-semi);color:var(--t1);display:flex;align-items:center;gap:6px}
+.tm .vai{font-size:var(--fs-2xs);color:var(--t3)}
+.tm .foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px}
+.avs{display:inline-flex}
+.avs .av{width:20px;height:20px;border-radius:var(--r-full);border:1.5px solid var(--card);
+  margin-left:-6px;display:inline-flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:var(--fw-semi);color:var(--t1)}
+.avs .av:first-child{margin-left:0}
+.avs .avN{background:var(--field);color:var(--t3);font-size:9px}
+.upd{font-size:var(--fs-2xs);color:var(--t3);white-space:nowrap}
+.quy{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-2xs);
+  border:1px solid var(--border);border-radius:var(--r-full);padding:1px 8px;color:var(--t2);background:var(--field)}
+.quy.rw{border-style:solid}
+.quy.ro{border-style:dashed}          /* Chỉ đọc = hình dạng nét đứt, đọc được khi in đen trắng */
+.quy.admin{border-color:var(--border-strong);color:var(--t1)}
+
+/* ═══ TẦNG ② · COLLECTION+ ═══════════════════════════════════════════════════
+   Header + thanh lọc + 8 thẻ. Mã COL-XXX-NNN monospace, sát dưới tên. Không dùng
+   `--accent` cho "nguồn" / "trạng thái" (chip viền + chữ). */
+.col-hd{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-top:6px}
+.col-hd .why{font-size:var(--fs-2xs);color:var(--t3);max-width:60ch}
+.toolbar2{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:10px 12px;margin:12px 0 14px;border:1px solid var(--border);border-radius:var(--r-3);background:var(--panel)}
+.filter{display:inline-flex;align-items:center;gap:6px;min-height:var(--tap);padding:0 10px;
+  border:1px solid var(--border);border-radius:var(--r-2);background:var(--field);color:var(--t2);
+  font-size:var(--fs-ui);cursor:pointer;font-family:inherit}
+.filter .lb{color:var(--t3);font-size:var(--fs-2xs);margin-right:2px}
+.filter[aria-expanded="true"]{border-color:var(--border-strong);color:var(--t1)}
+.filter .car{color:var(--t4);font-size:10px}
+.grid8{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.col{display:flex;flex-direction:column;gap:0;
+  border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden;
+  transition:transform var(--dur-fast) var(--ease-apple),border-color var(--dur-fast) var(--ease-apple)}
+.col:hover{border-color:var(--border-strong);transform:translateY(-1px)}
+.col .peek{aspect-ratio:4/3;background:var(--field);position:relative;overflow:hidden;
+  border-bottom:1px solid var(--vien-mo)}
+.col .peek svg{width:100%;height:100%;display:block}
+.col .b{padding:10px 12px 12px;display:grid;gap:5px}
+.col .t{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.col .tn{font-size:var(--fs-ui);font-weight:var(--fw-semi);color:var(--t1)}
+.col .cnt{font-size:var(--fs-2xs);color:var(--t3)}
+.col code.ma{font-size:var(--fs-2xs);color:var(--t3);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.col .meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-2xs);color:var(--t2);
+  border:1px solid var(--border);border-radius:var(--r-full);padding:1px 8px;background:var(--field)}
+.chip.dot::before{content:"";width:6px;height:6px;border-radius:var(--r-full);background:var(--t3)}
+.chip.ok::before{background:currentColor;color:var(--success)}
+.chip.warn::before{background:currentColor;color:var(--warning)}
+.chip.calm::before{background:currentColor;color:var(--t3)}
+
+/* ── Ghi chú "Đọc bản vẽ này cho đúng" ── */
+.ghi{border-left:2px solid var(--border);padding:10px 14px;margin:22px 0 0;
+  font-size:var(--fs-2xs);color:var(--t3);line-height:1.7;background:var(--panel);border-radius:0 var(--r-2) var(--r-2) 0}
+.ghi b{color:var(--t2)}
+.themebtn{position:fixed;top:16px;right:18px;z-index:9;height:32px;padding:0 12px;
+  border:1px solid var(--border);background:var(--panel);color:var(--t2);border-radius:var(--r-2);
+  font-size:var(--fs-2xs);cursor:pointer}
+</style>
+</head>
+<body>
+<button class="themebtn" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme==='dark'?'light':'dark'">Đổi nền sáng / tối</button>
+
+<div class="wrap">
+
+  <!-- ══════════ ĐẦU TRANG ══════════ -->
+  <header class="topbar" role="banner">
+    <div class="brand">
+      <h1>Files</h1>
+      <span class="crumb">/ hai TẦNG khác chức năng</span>
+    </div>
+    <label class="search" aria-label="Tìm trong Files">
+      <span aria-hidden="true">⌕</span>
+      <input type="search" placeholder="Tìm thư mục, collection, tệp…" />
+      <span class="kbd">⌘K</span>
+    </label>
+    <a href="#tang2" class="jump" title="Nhảy tới Collection+">↓ Đến Collection+</a>
+    <div class="viewseg" role="group" aria-label="Kiểu hiển thị">
+      <button aria-pressed="true" aria-label="Xem lưới">▦</button>
+      <button aria-pressed="false" aria-label="Xem danh sách">☰</button>
+    </div>
+    <button class="icnbtn"><span class="glyph">↑</span>Nhập tệp</button>
+    <button class="icnbtn primary"><span class="glyph">＋</span>Tạo thư mục</button>
+    <button class="icnbtn bell" aria-label="Thông báo (2 mới)">
+      <span class="glyph">◈</span><span class="dot" aria-hidden="true"></span>
+    </button>
+    <div class="me" role="img" aria-label="Trần Thái Hoà">TH</div>
+  </header>
+
+  <!-- ══════════ TẦNG ① · THƯ MỤC HỆ THỐNG ══════════ -->
+  <h2 class="tang" id="tang1"><span class="num">Tầng ①</span>Thư mục hệ thống</h2>
+  <p class="help">5 thư mục cấp studio, mỗi thư mục có <b>quyền truy cập riêng</b> — quyền là thứ khác bản chất, phải thấy được trên mặt. Ngăn "phần thô" cũ đã gộp vào <b>Nhà cung cấp</b> theo hợp đồng §3.</p>
+
+  <div class="grid5" role="list" aria-label="5 thư mục hệ thống">
+
+    <!-- 1 · Dự án -->
+    <article class="tm" role="listitem" tabindex="0" aria-label="Dự án · 24 thư mục · Theo dự án">
+      <div class="preview" aria-hidden="true">
+        <!-- SVG folder+peek: 3 ảnh dự án hé từ folder, gradient trung tính -->
+        <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <linearGradient id="f1a" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#3a3644"/><stop offset="1" stop-color="#1a1a1e"/>
+            </linearGradient>
+            <linearGradient id="p1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#524a5c"/><stop offset="1" stop-color="#2a2a30"/>
+            </linearGradient>
+            <linearGradient id="p2" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#6e6e78"/><stop offset="1" stop-color="#3d3d45"/>
+            </linearGradient>
+            <linearGradient id="p3" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#9e9ea8"/><stop offset="1" stop-color="#5b5b64"/>
+            </linearGradient>
+          </defs>
+          <rect width="320" height="180" fill="url(#f1a)"/>
+          <!-- 3 ảnh dự án peek -->
+          <rect x="60"  y="55" width="60" height="80" rx="4" fill="url(#p3)" transform="rotate(-6 90 95)"/>
+          <rect x="130" y="45" width="60" height="90" rx="4" fill="url(#p2)"/>
+          <rect x="200" y="55" width="60" height="80" rx="4" fill="url(#p1)" transform="rotate(6 230 95)"/>
+          <!-- folder tab -->
+          <path d="M40 138 L120 138 L128 128 L280 128 L280 165 L40 165 Z" fill="#2a2a30" opacity=".9"/>
+          <path d="M40 138 L120 138 L128 128 L280 128" fill="none" stroke="#3d3d45" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="body">
+        <div class="name">▤ Dự án</div>
+        <div class="vai">tệp theo từng dự án</div>
+        <div class="foot">
+          <div class="avs" aria-label="4 người, và 3 người khác">
+            <span class="av" style="background:#524a5c">TH</span>
+            <span class="av" style="background:#3d5c4a">NL</span>
+            <span class="av" style="background:#5c4a3d">PA</span>
+            <span class="av avN">+3</span>
+          </div>
+          <span class="upd">24 thư mục · cập nhật hôm nay</span>
+        </div>
+        <div class="foot" style="margin-top:0"><span class="quy rw">◆ Theo dự án</span></div>
+      </div>
+    </article>
+
+    <!-- 2 · Studio dùng chung -->
+    <article class="tm" role="listitem" tabindex="0" aria-label="Studio dùng chung · 186 tệp · Toàn studio">
+      <div class="preview" aria-hidden="true">
+        <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="f2" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2a3644"/><stop offset="1" stop-color="#141a1e"/></linearGradient></defs>
+          <rect width="320" height="180" fill="url(#f2)"/>
+          <!-- stack tệp -->
+          <g opacity=".95">
+            <rect x="90"  y="40" width="140" height="20" rx="3" fill="#3d4d55"/>
+            <rect x="80"  y="66" width="150" height="20" rx="3" fill="#4a5c66"/>
+            <rect x="100" y="92" width="120" height="20" rx="3" fill="#5a6d78"/>
+          </g>
+          <path d="M40 138 L120 138 L128 128 L280 128 L280 165 L40 165 Z" fill="#2a2a30" opacity=".9"/>
+          <path d="M40 138 L120 138 L128 128 L280 128" fill="none" stroke="#3d3d45" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="body">
+        <div class="name">▦ Studio dùng chung</div>
+        <div class="vai">dùng khắp studio</div>
+        <div class="foot">
+          <div class="avs" aria-label="Toàn studio, 12 người">
+            <span class="av" style="background:#3d5c66">MC</span>
+            <span class="av" style="background:#3d5c4a">NL</span>
+            <span class="av" style="background:#5c4a3d">PA</span>
+            <span class="av avN">+9</span>
+          </div>
+          <span class="upd">186 tệp · 3 giờ trước</span>
+        </div>
+        <div class="foot" style="margin-top:0"><span class="quy rw">◈ Toàn studio</span></div>
+      </div>
+    </article>
+
+    <!-- 3 · Nhà cung cấp -->
+    <article class="tm" role="listitem" tabindex="0" aria-label="Nhà cung cấp · 42 nguồn · Biên tập giới hạn">
+      <div class="preview" aria-hidden="true">
+        <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="f3" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#3d3a2a"/><stop offset="1" stop-color="#1e1a14"/></linearGradient></defs>
+          <rect width="320" height="180" fill="url(#f3)"/>
+          <!-- ba khối vân/mẫu peek -->
+          <rect x="70"  y="50" width="55" height="80" rx="4" fill="#7a6a4a"/>
+          <g transform="translate(70,50)"><path d="M0 20 L55 20 M0 40 L55 40 M0 60 L55 60" stroke="#5a4d38" stroke-width="1" opacity=".7"/></g>
+          <rect x="135" y="50" width="55" height="80" rx="4" fill="#8a7a5a"/>
+          <g transform="translate(135,50)"><circle cx="10" cy="15" r="4" fill="#5a4d38"/><circle cx="30" cy="35" r="6" fill="#5a4d38"/><circle cx="20" cy="60" r="3" fill="#5a4d38"/></g>
+          <rect x="200" y="50" width="55" height="80" rx="4" fill="#6a5a3d"/>
+          <g transform="translate(200,50)"><path d="M0 0 L55 80 M55 0 L0 80" stroke="#4a3d28" stroke-width="1" opacity=".5"/></g>
+          <path d="M40 138 L120 138 L128 128 L280 128 L280 165 L40 165 Z" fill="#2a2a30" opacity=".9"/>
+          <path d="M40 138 L120 138 L128 128 L280 128" fill="none" stroke="#3d3d45" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="body">
+        <div class="name">▤ Nhà cung cấp</div>
+        <div class="vai">map texture · NCC · <b>range giá</b></div>
+        <div class="foot">
+          <div class="avs" aria-label="4 người biên tập">
+            <span class="av" style="background:#66523d">SW</span>
+            <span class="av" style="background:#5c4a3d">WH</span>
+            <span class="av avN">+2</span>
+          </div>
+          <span class="upd">42 nguồn · hôm qua</span>
+        </div>
+        <div class="foot" style="margin-top:0"><span class="quy rw">◐ Biên tập giới hạn</span></div>
+      </div>
+    </article>
+
+    <!-- 4 · Đã duyệt -->
+    <article class="tm" role="listitem" tabindex="0" aria-label="Đã duyệt · 328 nội dung · Chỉ đọc">
+      <div class="preview" aria-hidden="true">
+        <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="f4" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2a3d38"/><stop offset="1" stop-color="#141e1a"/></linearGradient></defs>
+          <rect width="320" height="180" fill="url(#f4)"/>
+          <!-- dấu ✓ nét đứt = chỉ đọc -->
+          <g stroke="#5a7d70" stroke-width="1.5" fill="none">
+            <rect x="80" y="45" width="160" height="80" rx="6" stroke-dasharray="4 3"/>
+            <path d="M110 90 L145 115 L215 60" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+          <path d="M40 138 L120 138 L128 128 L280 128 L280 165 L40 165 Z" fill="#2a2a30" opacity=".9"/>
+          <path d="M40 138 L120 138 L128 128 L280 128" fill="none" stroke="#3d3d45" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="body">
+        <div class="name">▣ Đã duyệt</div>
+        <div class="vai">nội dung đã qua Review Gate</div>
+        <div class="foot">
+          <div class="avs" aria-label="Duyệt bởi giám đốc + 2 người">
+            <span class="av" style="background:#5c4a3d">TH</span>
+            <span class="av avN">+2</span>
+          </div>
+          <span class="upd">328 nội dung · 2 ngày trước</span>
+        </div>
+        <div class="foot" style="margin-top:0"><span class="quy ro">◇ Chỉ đọc</span></div>
+      </div>
+    </article>
+
+    <!-- 5 · Lưu trữ -->
+    <article class="tm" role="listitem" tabindex="0" aria-label="Lưu trữ · 1.204 tệp · Quản trị viên">
+      <div class="preview" aria-hidden="true">
+        <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="f5" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2a2a30"/><stop offset="1" stop-color="#141417"/></linearGradient></defs>
+          <rect width="320" height="180" fill="url(#f5)"/>
+          <!-- kho lạnh: cột dọc file cũ -->
+          <g fill="#3d3d45">
+            <rect x="70"  y="55" width="10" height="80"/><rect x="88" y="55" width="10" height="80"/>
+            <rect x="106" y="55" width="10" height="80"/><rect x="124" y="55" width="10" height="80"/>
+            <rect x="150" y="55" width="10" height="80"/><rect x="168" y="55" width="10" height="80"/>
+            <rect x="186" y="55" width="10" height="80"/><rect x="204" y="55" width="10" height="80"/>
+            <rect x="222" y="55" width="10" height="80"/><rect x="240" y="55" width="10" height="80"/>
+          </g>
+          <path d="M40 138 L120 138 L128 128 L280 128 L280 165 L40 165 Z" fill="#26262d" opacity=".9"/>
+        </svg>
+      </div>
+      <div class="body">
+        <div class="name">▥ Lưu trữ</div>
+        <div class="vai">kho lạnh</div>
+        <div class="foot">
+          <div class="avs" aria-label="Chỉ quản trị"><span class="av" style="background:#3d3d45">AD</span></div>
+          <span class="upd">1.204 tệp · tuần trước</span>
+        </div>
+        <div class="foot" style="margin-top:0"><span class="quy admin">◆ Quản trị viên</span></div>
+      </div>
+    </article>
+
+  </div>
+
+  <!-- ══════════ TẦNG ② · COLLECTION+ ══════════ -->
+  <h2 class="tang" id="tang2"><span class="num">Tầng ②</span>Collection+</h2>
+  <div class="col-hd">
+    <p class="help why"><b>Kho NGUỒN của IF</b> — nơi dữ liệu được <b>chưng cất</b> thành vật liệu/mẫu áp cho dự án. Chia theo LOẠI VẬT (khác trục với Thư viện chia theo chặng — hợp đồng §3). Mã <code>COL-&lt;LOẠI&gt;-NNN</code>. Bỏ tab "My" — đã nói bằng bộ lọc <i>Nguồn</i>.</p>
+  </div>
+
+  <div class="toolbar2" role="toolbar" aria-label="Bộ lọc Collection+">
+    <button class="filter" aria-expanded="false"><span class="lb">Loại</span>Tất cả<span class="car">▾</span></button>
+    <button class="filter" aria-expanded="false"><span class="lb">Nguồn</span>Tất cả<span class="car">▾</span></button>
+    <button class="filter" aria-expanded="false"><span class="lb">Trạng thái</span>Tất cả<span class="car">▾</span></button>
+    <button class="filter" aria-expanded="false"><span class="lb">Cập nhật</span>Bất kỳ<span class="car">▾</span></button>
+    <span style="flex:1"></span>
+    <div class="viewseg" role="group" aria-label="Kiểu hiển thị collection">
+      <button aria-pressed="true" aria-label="Xem lưới">▦</button>
+      <button aria-pressed="false" aria-label="Xem danh sách">☰</button>
+    </div>
+  </div>
+
+  <div class="grid8" role="list" aria-label="8 collection">
+
+    <!-- 1 · Vật liệu -->
+    <article class="col" role="listitem" tabindex="0" aria-label="Vật liệu · 126 mục · Cá nhân">
+      <div class="peek" aria-hidden="true">
+        <svg viewBox="0 0 240 180" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <radialGradient id="sph1"><stop offset="0" stop-color="#e0d8c8"/><stop offset="1" stop-color="#3a3126"/></radialGradient>
+            <radialGradient id="sph2"><stop offset="0" stop-color="#c8a878"/><stop offset="1" stop-color="#4a3820"/></radialGradient>
+            <radialGradient id="sph3"><stop offset="0" stop-color="#8a9a8a"/><stop offset="1" stop-color="#2a3a2e"/></radialGradient>
+            <radialGradient id="sph4"><stop offset="0" stop-color="#b8b0a8"/><stop offset="1" stop-color="#3a3630"/></radialGradient>
+          </defs>
+          <rect width="240" height="180" fill="#1a1a1e"/>
+          <circle cx="60"  cy="60"  r="34" fill="url(#sph1)"/>
+          <circle cx="150" cy="60"  r="34" fill="url(#sph2)"/>
+          <circle cx="60"  cy="130" r="34" fill="url(#sph3)"/>
+          <circle cx="150" cy="130" r="34" fill="url(#sph4)"/>
+        </svg>
+      </div>
+      <div class="b">
+        <div class="t"><span class="tn">Vật liệu</span><span class="cnt">126, PBR</span></div>
+        <code class="ma">COL-MAT-001</code>
+        <div class="meta">
+          <span class="chip">◐ Cá nhân</span>
+          <span class="chip dot ok">Đủ định nghĩa</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 2 · Furniture -->
+    <article class="col" role="listitem" tabindex="0" aria-label="Furniture · 54 mục · Chia sẻ nhóm">
+      <div class="peek" aria-hidden="true">
+        <svg viewBox="0 0 240 180" preserveAspectRatio="xMidYMid slice">
+          <rect width="240" height="180" fill="#1a1a1e"/>
+          <!-- ghế thumbnail line-art -->
+          <g stroke="#9e9ea8" stroke-width="1.5" fill="none">
+            <rect x="30"  y="40"  width="60" height="40" rx="4"/><path d="M30 80 L30 130 M90 80 L90 130 M40 130 L40 160 M80 130 L80 160"/>
+          </g>
+          <g stroke="#c8b078" stroke-width="1.5" fill="none">
+            <rect x="105" y="55" width="55" height="30" rx="3"/><path d="M105 85 L100 150 M160 85 L165 150 M115 85 L115 150 M150 85 L150 150"/>
+          </g>
+          <g stroke="#9e9ea8" stroke-width="1.5" fill="none">
+            <path d="M180 100 Q195 60 210 100 L210 130 L180 130 Z"/><path d="M185 130 L180 155 M205 130 L210 155"/>
+          </g>
+        </svg>
+      </div>
+      <div class="b">
+        <div class="t"><span class="tn">Furniture</span><span class="cnt">54 · 2D/3D</span></div>
+        <code class="ma">COL-FUR-003</code>
+        <div class="meta">
+          <span class="chip">◈ Chia sẻ nhóm</span>
+          <span class="chip dot warn">3 chờ duyệt</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 3 · Chi tiết điển hình -->
+    <article class="col" role="listitem" tabindex="0" aria-label="Chi tiết điển hình · 36 mục · Studio">
+      <div class="peek" aria-hidden="true">
+        <svg viewBox="0 0 240 180" preserveAspectRatio="xMidYMid slice">
+          <rect width="240" height="180" fill="#1a1a1e"/>
+          <!-- mặt cắt kiểu nét kỹ thuật -->
+          <g stroke="#d6d6db" stroke-width="1" fill="none">
+            <path d="M40 40 L200 40 L200 60 L120 60 L120 90 L200 90 L200 150 L40 150 Z"/>
+            <path d="M40 40 L40 150" stroke-width="2"/>
+            <path d="M50 50 L60 50 M50 60 L60 60 M50 70 L60 70 M50 80 L60 80" opacity=".6"/>
+            <path d="M130 100 L190 100 M130 110 L190 110 M130 120 L190 120 M130 130 L190 130" opacity=".6"/>
+          </g>
+          <text x="45" y="170" fill="#6e6e78" font-size="9" font-family="ui-monospace,SFMono-Regular,Menlo,monospace">CT-01 · 1:20</text>
+        </svg>
+      </div>
+      <div class="b">
+        <div class="t"><span class="tn">Chi tiết điển hình</span><span class="cnt">36</span></div>
+        <code class="ma">COL-DET-002</code>
+        <div class="meta">
+          <span class="chip">◈ Studio</span>
+          <span class="chip dot ok">Đã duyệt</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 4 · Cây · người -->
+    <article class="col" role="listitem" tabindex="0" aria-label="Cây và người · 22 mục · Chia sẻ nhóm">
+      <div class="peek" aria-hidden="true">
+        <svg viewBox="0 0 240 180" preserveAspectRatio="xMidYMid slice">
+          <rect width="240" height="180" fill="#1a1a1e"/>
+          <!-- cây -->
+          <g fill="#5c7d5a" opacity=".95">
+            <circle cx="70" cy="80" r="30"/><circle cx="55" cy="95" r="20"/><circle cx="88" cy="98" r="22"/>
+            <rect x="66" y="105" width="8" height="45" fill="#4a3d28"/>
+          </g>
+          <!-- người -->
+          <g fill="#9e9ea8">
+            <circle cx="160" cy="65" r="12"/>
+            <path d="M148 82 L172 82 L175 130 L165 130 L160 100 L155 130 L145 130 Z"/>
+          </g>
+        </svg>
+      </div>
+      <div class="b">
+        <div class="t"><span class="tn">Cây · người</span><span class="cnt">22</span></div>
+        <code class="ma">COL-PLC-001</code>
+        <div class="meta">
+          <span class="chip">◈ Chia sẻ nhóm</span>
+          <span class="chip dot ok">Đủ định nghĩa</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 5 · Design DNA -->
+    <article class="col" role="listitem" tabindex="0" aria-label="Design DNA · 8 thẻ · Studio">
+      <div class="peek" aria-hidden="true">
+        <svg viewBox="0 0 240 180" preserveAspectRatio="xMidYMid slice">
+          <rect width="240" height="180" fill="#1a1a1e"/>
+          <!-- 3 thẻ DNA xếp chồng -->
+          <g>
+            <rect x="30" y="35" width="90" height="120" rx="6" fill="#2a2a30" transform="rotate(-6 75 95)"/>
+            <rect x="75" y="30" width="90" height="120" rx="6" fill="#3d3d45"/>
+            <rect x="120" y="35" width="90" height="120" rx="6" fill="#524a5c" transform="rotate(6 165 95)"/>
+          </g>
+          <g stroke="#d6d6db" stroke-width=".7" fill="none" opacity=".5">
+            <circle cx="120" cy="80" r="14"/><path d="M90 55 L150 55 M90 105 L150 105 M120 55 L120 105"/>
+          </g>
+        </svg>
+      </div>
+      <div class="b">
+        <div class="t"><span class="tn">Design DNA</span><span class="cnt">8 thẻ</span></div>
+        <code class="ma">COL-DNA-001</code>
+        <div class="meta">
+          <span class="chip">◈ Studio</span>
+          <span class="chip dot calm">Bản 3</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 6 · Gói học từ dự án -->
+    <article class="col" role="listitem" tabindex="0" aria-label="Gói học từ dự án · 12 mục · Chia sẻ nhóm">
+      <div class="peek" aria-hidden="true">
+        <svg viewBox="0 0 240 180" preserveAspectRatio="xMidYMid slice">
+          <rect width="240" height="180" fill="#1a1a1e"/>
+          <!-- notebook + bookmark -->
+          <g>
+            <rect x="60" y="30" width="130" height="130" rx="4" fill="#3d3d45"/>
+            <rect x="60" y="30" width="8" height="130" fill="#2a2a30"/>
+            <path d="M155 30 L155 90 L170 78 L185 90 L185 30 Z" fill="#8a7a5a"/>
+          </g>
+          <g stroke="#9e9ea8" stroke-width="1" opacity=".7">
+            <path d="M80 60 L145 60 M80 78 L145 78 M80 96 L130 96 M80 114 L145 114 M80 132 L120 132"/>
+          </g>
+        </svg>
+      </div>
+      <div class="b">
+        <div class="t"><span class="tn">Gói học từ dự án</span><span class="cnt">12</span></div>
+        <code class="ma">COL-LEA-001</code>
+        <div class="meta">
+          <span class="chip">◈ Chia sẻ nhóm</span>
+          <span class="chip dot warn">2 cần rà</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 7 · Mẫu trình bày -->
+    <article class="col" role="listitem" tabindex="0" aria-label="Mẫu trình bày · 18 mẫu · Chia sẻ nhóm">
+      <div class="peek" aria-hidden="true">
+        <svg viewBox="0 0 240 180" preserveAspectRatio="xMidYMid slice">
+          <rect width="240" height="180" fill="#1a1a1e"/>
+          <!-- 3 slide bìa -->
+          <g>
+            <rect x="20" y="45" width="80" height="100" rx="4" fill="#2a2a30" transform="rotate(-4 60 95)"/>
+            <rect x="80" y="40" width="80" height="100" rx="4" fill="#3d3d45"/>
+            <rect x="140" y="45" width="80" height="100" rx="4" fill="#524a5c" transform="rotate(4 180 95)"/>
+          </g>
+          <g fill="#d6d6db" opacity=".6">
+            <rect x="88"  y="55"  width="55" height="8" rx="2"/>
+            <rect x="88"  y="70"  width="40" height="4" rx="2"/>
+            <rect x="88"  y="118" width="45" height="4" rx="2"/>
+          </g>
+        </svg>
+      </div>
+      <div class="b">
+        <div class="t"><span class="tn">Mẫu trình bày</span><span class="cnt">18</span></div>
+        <code class="ma">COL-PRE-001</code>
+        <div class="meta">
+          <span class="chip">◈ Chia sẻ nhóm</span>
+          <span class="chip dot ok">Đủ định nghĩa</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 8 · Cách làm -->
+    <article class="col" role="listitem" tabindex="0" aria-label="Cách làm · 7 quy trình · Cá nhân">
+      <div class="peek" aria-hidden="true">
+        <svg viewBox="0 0 240 180" preserveAspectRatio="xMidYMid slice">
+          <rect width="240" height="180" fill="#1a1a1e"/>
+          <!-- flow: node → node → node -->
+          <g fill="#3d3d45" stroke="#9e9ea8" stroke-width="1">
+            <rect x="30"  y="80" width="50" height="30" rx="4"/>
+            <rect x="100" y="45" width="50" height="30" rx="4"/>
+            <rect x="100" y="115" width="50" height="30" rx="4"/>
+            <rect x="170" y="80" width="50" height="30" rx="4"/>
+          </g>
+          <g stroke="#6e6e78" stroke-width="1.5" fill="none">
+            <path d="M80 95 L100 60"/><path d="M80 95 L100 130"/>
+            <path d="M150 60 L170 95"/><path d="M150 130 L170 95"/>
+          </g>
+        </svg>
+      </div>
+      <div class="b">
+        <div class="t"><span class="tn">Cách làm</span><span class="cnt">7 quy trình</span></div>
+        <code class="ma">COL-PRO-001</code>
+        <div class="meta">
+          <span class="chip">◐ Cá nhân</span>
+          <span class="chip dot calm">Nháp</span>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <p class="ghi"><b>Đọc bản vẽ này cho đúng.</b> Ký tự <code>▤ ▦ ▣ ▥ ◐ ◈ ◇ ◆ ⌕ ⌘ ↑ ＋ ◈</code> là <b>chỗ đứng của biểu tượng</b>, không phải biểu tượng. Bản dựng thật dùng bộ <code>lucide</code> như cả app: <code>Folder</code> · <code>FolderOpen</code> · <code>ShieldCheck</code> · <code>Archive</code> · <code>Search</code> · <code>Bell</code> · <code>Upload</code> · <code>FolderPlus</code>. Ghi ra vì mock là hợp đồng — phiên port sau đọc thẳng ký tự vào mã là sai bộ biểu tượng.<br>
+  <b>Cấm màu mới.</b> Không nơi nào đọc <code>--accent</code>: mọi trạng thái nói bằng CHỮ + HÌNH DẠNG. Quyền <i>Chỉ đọc</i> = viền <b>nét đứt</b> (đọc được khi in đen trắng). Trạng thái collection = chip có chấm ± sắc độ token <code>--success</code>/<code>--warning</code>/<code>--t3</code> (bản gốc, không thêm token).<br>
+  <b>Ba nấc — bản vẽ đang ở nấc VỪA (240)</b>: preview + chữ, đủ để lướt và ra quyết định mở. Nấc TO (320) sẽ thêm <i>lát cắt nội dung bên trong</i> (danh sách 3-5 dự án gần nhất cho "Dự án", 3 quả cầu vật liệu mới nhất cho "Vật liệu"…) — <b>KHÔNG kéo giãn ảnh preview to hơn</b>.<br>
+  <b>Ranh giới đã giữ.</b> ① Range giá thuộc kho chung, giá chốt thuộc dự án — thư mục "Nhà cung cấp" không đọc giá chốt.<br>
+  ② Sidebar không đổi theo chặng · thanh công cụ không chứa lối đi (hợp đồng §6.2, §6.3).<br>
+  ③ Bàn phím: mỗi thẻ là <code>tabindex="0"</code> có <code>aria-label</code> đầy đủ; bộ lọc dùng <code>aria-expanded</code>; view mode dùng <code>aria-pressed</code>. Kéo-thả bằng bàn phím sẽ nối ở phiên build.<br>
+  ④ Preview folder: SVG tại chỗ (CSP artifact cấm ảnh ngoài). Bản build sẽ thay bằng ảnh <b>thumbnail thật</b> của 3 tệp gần nhất — kiểu Apple Files.</p>
+
+</div>
+</body>
+</html>
