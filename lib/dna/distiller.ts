@@ -51,18 +51,82 @@ function byPrefix(prefixes: string[]): (s: ProvenanceInput) => string[] {
   };
 }
 
+/** Ép giá trị field form về mảng chuỗi — form.fields là `string | string[]`, ta gộp thẳng
+ * bỏ chuỗi rỗng để `distill()` khử trùng lặp/gộp nguồn đồng nhất. */
+function flatFormValues(v: string | string[] | undefined): string[] {
+  if (v == null) return [];
+  const arr = Array.isArray(v) ? v : [v];
+  return arr.map((s) => String(s).trim()).filter(Boolean);
+}
+
+/**
+ * Tuyến routing THEO NGUỒN (không đẻ trường kết quả mới, phiếu ③.2):
+ *  - anhNguon        ← image.caption/id · asset(image).label/id
+ *  - ngonNguKhongGian ← image tag `style:*` · form(poles) — mỗi trường của form thành 1 giá trị
+ *                       `<key>: <value>` để giữ ngữ cảnh cực đã bấm
+ *  - mauTyLe         ← image.palette (chỉ ảnh có palette hex thật, không suy)
+ *  - vatLieuMatId    ← image tag `material:*`|`mat:*` · asset(material).id
+ *  - anhSang         ← image tag `light:*`
+ *  - khungHinh       ← image tag `frame:*`
+ *  - yDo             ← sticky.text · form(ba-hoi) — mỗi trường (act1/act2/act3) thành 1 giá trị
+ *  - rangBuocDoTin   ← LUÔN trống ở rule-based (quyết định của người)
+ *
+ * Nguồn không quen ⇒ extractor trả `[]` — đúng luật *"thiếu nguồn để trống, không đoán bừa"*.
+ * sticky/form/asset chảy vào các lớp khác nhau THEO tuyến trên; nhiều nguồn cùng lớp thì
+ * `distill()` gộp + khử trùng lặp; trạng thái vẫn `'inferred'` cho tới khi người xác nhận.
+ */
 const SPECS: DistillFieldSpec<DnaLayerKey>[] = [
   {
     field: 'anhNguon',
-    extract: (s) => (s.kind === 'image' ? [s.caption && s.caption.trim() ? s.caption.trim() : s.id] : []),
+    extract: (s) => {
+      if (s.kind === 'image') return [s.caption && s.caption.trim() ? s.caption.trim() : s.id];
+      if (s.kind === 'asset' && s.assetKind === 'image') return [s.label && s.label.trim() ? s.label.trim() : s.id];
+      return [];
+    },
   },
-  { field: 'ngonNguKhongGian', extract: byPrefix(['style:']) },
+  {
+    field: 'ngonNguKhongGian',
+    extract: (s) => {
+      if (s.kind === 'image') return byPrefix(['style:'])(s);
+      if (s.kind === 'form' && s.formKind === 'poles') {
+        const out: string[] = [];
+        for (const key of Object.keys(s.fields)) {
+          for (const v of flatFormValues(s.fields[key])) out.push(`${key}: ${v}`);
+        }
+        return out;
+      }
+      return [];
+    },
+  },
   { field: 'mauTyLe', extract: (s) => (s.kind === 'image' ? s.palette ?? [] : []) },
-  { field: 'vatLieuMatId', extract: byPrefix(['material:', 'mat:']) },
+  {
+    field: 'vatLieuMatId',
+    extract: (s) => {
+      if (s.kind === 'image') return byPrefix(['material:', 'mat:'])(s);
+      if (s.kind === 'asset' && s.assetKind === 'material') return [s.id];
+      return [];
+    },
+  },
   { field: 'anhSang', extract: byPrefix(['light:']) },
   { field: 'khungHinh', extract: byPrefix(['frame:']) },
-  // Không extractor nào cho 2 lớp này — luôn trống ở rule-based, đúng ghi chú đầu file.
-  { field: 'yDo', extract: () => [] },
+  {
+    field: 'yDo',
+    extract: (s) => {
+      if (s.kind === 'sticky') {
+        const t = s.text.trim();
+        return t ? [t] : [];
+      }
+      if (s.kind === 'form' && s.formKind === 'ba-hoi') {
+        const out: string[] = [];
+        for (const key of Object.keys(s.fields)) {
+          for (const v of flatFormValues(s.fields[key])) out.push(v);
+        }
+        return out;
+      }
+      return [];
+    },
+  },
+  // rangBuocDoTin CỐ TÌNH trống ở rule-based — quyết định của người, không suy từ ảnh/note.
   { field: 'rangBuocDoTin', extract: () => [] },
 ];
 
@@ -73,7 +137,19 @@ function toProvenance(a: DnaSourceAsset): ProvenanceInput {
 /** Chưng cất rule-based từ danh sách ảnh ĐÃ CHỌN. Trả đủ 8 lớp (lớp không nguồn nào góp thì
  * trống — xem `emptyField()`). Không throw trên input rỗng. */
 export function distillDnaFromAssets(assets: readonly DnaSourceAsset[]): DesignDnaLayers {
-  const sources = assets.map(toProvenance);
+  return distillDnaFromSources(assets.map(toProvenance));
+}
+
+/**
+ * Chưng cất rule-based từ danh sách nguồn HỖN HỢP đã chuẩn hoá về `ProvenanceInput`.
+ * Đây là cửa mà cửa sổ Thảo Luận (Collab chặng 3D — xem `NC-COLLAB-CHANG-3D.md`) gọi thẳng
+ * để gom ảnh + sticky + form + asset trong một lượt bấm "Chưng cất → Thẻ DNA" — luật
+ * *[T5] CON NGƯỜI QUYẾT CUỐI* [TRIET-LY-IF.md:32]: hàm này chỉ chạy khi có nút bấm rõ ràng
+ * từ tầng gọi, KHÔNG tự chạy theo mỗi thao tác.
+ *
+ * Không throw trên input rỗng — trả về đúng 8 lớp trống.
+ */
+export function distillDnaFromSources(sources: readonly ProvenanceInput[]): DesignDnaLayers {
   const out = distill(sources, SPECS);
   // đảm bảo đủ đúng 8 khoá theo DNA_LAYER_KEYS (distill() đã trả đủ theo SPECS — ràng buộc
   // này chỉ là chốt kiểu tĩnh, không đổi hành vi runtime).

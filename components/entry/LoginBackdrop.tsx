@@ -71,7 +71,7 @@ export const BG_PRESETS: BgPreset[] = [
     vi: 'Đêm ấm',
     en: 'Warm night',
     tone: 'auto', // theo theme app (giữ hành vi màn login cũ)
-    swatch: 'radial-gradient(circle at 50% 55%, #c79a63 0%, #17130e 70%)',
+    swatch: 'radial-gradient(circle at 50% 55%, var(--accent) 0%, #17130e 70%)',
   },
   {
     id: 'ink',
@@ -593,7 +593,7 @@ export function LoginBackdropLayer({
               transition={{ duration: 0.6, ease: easeApple }}
             />
           ) : (
-            /* 'ember' mặc định — quầng đồng trôi chậm + nền theme (di sản intro cũ) */
+            /* 'ember' mặc định — quầng nhấn trôi chậm + nền theme (17/08: bỏ đồng, dùng var(--accent) theo chốt 16/08) */
             <motion.div
               key="preset:ember"
               className="absolute inset-0"
@@ -605,7 +605,7 @@ export function LoginBackdropLayer({
             >
               <motion.div
                 className="absolute left-1/2 top-1/2 h-[54rem] w-[54rem] -translate-x-1/2 -translate-y-1/2 rounded-full"
-                style={{ background: 'radial-gradient(circle, #c79a63 0%, transparent 62%)', filter: 'blur(90px)' }}
+                style={{ background: 'radial-gradient(circle, var(--accent) 0%, transparent 62%)', filter: 'blur(90px)' }}
                 initial={{ opacity: 0.06 }}
                 animate={reduce || !visible ? { opacity: 0.08 } : { opacity: [0.05, 0.11, 0.05], scale: [1, 1.06, 1] }}
                 transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}

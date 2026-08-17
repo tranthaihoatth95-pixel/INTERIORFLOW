@@ -76,12 +76,12 @@ export function StackedCards({
         ))}
       </div>
 
-      {/* vòng chọn khi selected — đồng ấm */}
+      {/* vòng chọn khi selected — accent app (17/08: bỏ đồng theo chốt 16/08) */}
       {selected && (
         <motion.div
           layoutId="ws-select-ring"
           className="pointer-events-none absolute -inset-3 rounded-[var(--radius-xl)]"
-          style={{ boxShadow: 'inset 0 0 0 2px #c79a63' }}
+          style={{ boxShadow: 'inset 0 0 0 2px var(--accent)' }}
           transition={springPop}
         />
       )}

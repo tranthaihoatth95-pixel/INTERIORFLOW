@@ -11,7 +11,7 @@
 
 ### Giới hạn cứng
 - **Tối đa 5 worktree cùng lúc** (= 5 agent song song, tăng từ 3 lên 5 sau 21/07). Nếu đã có 5, KHÔNG tạo thêm — hỏi chủ dự án worktree nào dọn trước.
-- Mỗi worktree PHẢI đặt tên theo pattern: `interiorflow-wt-{tên-nhánh}` (vd: `interiorflow-wt-ui-motion`).
+- **MỘT đường worktree duy nhất: `.claude/worktrees/`** (Claude Code tự tạo `agent-*` ở đó). Không tạo worktree ngoài repo (`~/Downloads/interiorflow-wt-*`) nữa — pattern cũ 07-08/07 đã hết dùng; ai muốn khôi phục phải sửa CLAUDE.md trước, không được vừa làm vừa thêm luật. Chỉ hai máy soi walk-từ-ROOT (`soi-that.mjs`, `check-chot.mjs`) và `package.json test` mới thực sự chạm đường này — cả ba đã dùng khuôn hàm `.includes('worktrees')`/cả `.worktrees` lẫn `.claude/worktrees` (bền với mọi chỗ đặt). Năm máy soi walk-từ-scan-dirs (`soi-frontier`, `soi-tu-dien`, `soi-contract`, `soi-thao-tac`, `soi-hinh-hoc`) không chạm; `SKIP` của chúng vẫn giữ `.worktrees` như phòng ngừa.
 
 ### Dọn cuối phiên — CƠ CHẾ AN TOÀN (21/07 rule mới)
 Cuối mỗi phiên (hoặc khi chủ dự án bảo dọn), tự động dọn worktree nhưng CHỈ khi đủ MỌI điều kiện an toàn dưới đây — thiếu 1 điều là DỪNG lại, báo chủ dự án, KHÔNG dùng force:
@@ -23,13 +23,13 @@ Nếu 4 điều kiện đủ: `git worktree remove <path>` (KHÔNG `--force`) + 
 
 ### Sau khi merge nhánh vào main
 1. Chạy test + tsc trên main — PASS mới tiếp.
-2. **Xoá worktree đã merge NGAY** — `git worktree remove interiorflow-wt-{tên}`.
+2. **Xoá worktree đã merge NGAY** — `git worktree remove .claude/worktrees/{tên}`.
 3. Xoá nhánh remote nếu đã push: `git branch -d feat/{tên} && git push origin --delete feat/{tên}`.
 4. Cập nhật STATUS.md: chuyển mục "đang chạy" sang "vừa xong" hoặc CHANGELOG.md.
 
 ### Trước khi bắt đầu sprint mới
 - Chạy `git worktree list` — nếu còn worktree cũ từ sprint trước → **DỪNG, báo chủ dự án**, không tự tạo worktree mới chồng lên.
-- Kiểm tra ~/Downloads (hoặc folder chứa repo) không có folder `interiorflow-*` rác.
+- Kiểm tra `.claude/worktrees/` không còn thư mục `agent-*` mồ côi (agent đã đóng nhưng worktree không được dọn).
 
 ### Chống tràn context
 - STATUS.md **dưới 800 từ**. Lịch sử đã xong chuyển sang CHANGELOG.md.

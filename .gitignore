@@ -56,7 +56,9 @@ docs/DEMO-CLAY-2407/
 public/__*.html
 public/__*.glb
 
-# Worktree phụ cho phiên Cowork song song (feat/7.1.19-lark-wiki) — không commit
+# Worktree phụ cho phiên song song — CHỐT 17/08 chỉ một đường: `.claude/worktrees/`
+# (Claude Code tự tạo `agent-*` ở đó). Giữ `.worktrees/` phòng lịch sử sót/khôi phục cây cũ.
+.claude/worktrees/
 .worktrees/
 
 # Lưới an toàn ĐỢT B (4.1.d, 31/07): nếu ai đó trỏ thư mục gốc InteriorFlow (Cài đặt → Lưu trữ)

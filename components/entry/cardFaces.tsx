@@ -115,8 +115,8 @@ export const presentationFaces = [
       ))}
     </div>
   </Card>,
-  // mặt trước: gradient đồng-hun ấm (trừu tượng, trung tính)
-  <CoverArt key="p-cover" art="linear-gradient(160deg, #c79a63 0%, #7d5a38 52%, #2e2318 100%)" label="Present · Deck" />,
+  // mặt trước: gradient accent → nâu tối (17/08: bỏ stop đồng theo chốt 16/08 — 2 stop nâu giữ nguyên vì là neutral bổ trợ)
+  <CoverArt key="p-cover" art="linear-gradient(160deg, var(--accent) 0%, #7d5a38 52%, #2e2318 100%)" label="Present · Deck" />,
 ];
 
 /* ---------- Concept: moodboard · vật liệu · pre-concept ---------- */
