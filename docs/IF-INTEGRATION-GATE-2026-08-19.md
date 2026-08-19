@@ -95,6 +95,17 @@ Cỡ: ~1 ngày. Đề xuất nằm chờ trong gate — **Hoà gật thì thành
 - Phát hiện ngoài phạm vi (R5): "Mở lại" khi resume thiếu routeId bị LegacyStageRedirect dội về
   Home + toast — hành vi cầu redirect cũ, đáng phiếu riêng.
 - Cập nhật §4: ORPHAN user-facing 7 → 4 (LightBar · ResumeWork · Tool3DBar-khuôn đã sống).
+- **Batch 1 ĐÓNG 19/08 khuya**:
+  · W1 browser-verify: **R4 BROWSER-PASS** (khuôn capsule đo DOM đúng G9/§2d, Enter/hotkey chạy) ·
+    **R8 BROWSER-PASS** (dựng `.idfc` synthetic qua UI Nhập kho → entity đúng geom2d, nhánh
+    `via:'idfc'` nói đúng câu; fallback blockdef + unresolvedMessage trung thực). 🔴 Finding
+    **R4-L1**: tool ≥5 ô số → bar 915px tràn viewport 678px @1440×900 (bệnh trước R4, nowrap).
+  · **R6 xong-máy**: một cửa upload `lib/gateway/upload.ts#planUpload` (EXTEND Format Router,
+    0 taxonomy mới) · đặc cách GATEWAY Toolbar:268 TRẢ NỢ (pdf@present → present-import-deck,
+    Smart Convert bậc 1) · /files ghi đĩa y cũ (gốc bất biến) · 74 test gateway + tsc gộp 0.
+    2 test cũ khẳng-định-hành-vi-hỏng đã sửa đúng luật 15/08. BROWSER-PENDING (5 kịch bản trong report).
+  · **R9b HUỶ — REFUSE đúng**: handle xoay ĐÃ CÓ (`Element.tsx:381-400`, snap 5°) — map §3 tự DRIFT;
+    đã đóng dấu sửa tại chỗ. Ý Shift-xoay → IDEAS-BACKLOG.
 - INTEGRATION_BASE_SHA hiện hành = `c7f3ac8` (+ toàn bộ trạng thái đã checkpoint ở backup branch).
 
 ## 6 · CHƯA CHẮC

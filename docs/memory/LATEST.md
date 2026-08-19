@@ -21,6 +21,11 @@
    schema Base, phiếu sau). MAIN spot-check + re-run test độc lập cả ba; tsc toàn repo 0 trạng thái gộp.
 5. Chính sách mới từ prompt MAIN Hoà: thang MACHINE→BROWSER→CHECKPOINTED→BACKED-UP→INTEGRATED→CLOSED.
 6. Nợ mới ghi: LegacyStageRedirect dội "Mở lại" thiếu routeId về Home (R5 phát hiện, ngoài phạm vi).
+7. **Batch 1 (cùng khuya)**: W1 browser-verify → R4 + R8 đều **BROWSER-PASS** (R8 exercise geom2d
+   thật bằng `.idfc` synthetic qua UI) · R6 một-cửa-upload xong-máy (`lib/gateway/upload.ts`,
+   đặc cách Toolbar:268 trả nợ, 74 test) · **R9b HUỶ — tiền đề map SAI, handle xoay đã có từ trước**
+   (DRIFT thứ 7, map đã đóng dấu). Finding mới: R4-L1 bar tràn khi ≥5 ô số (bệnh cũ) · dữ liệu thử
+   W1 để lại trong Doc+kho idfc (cách dọn trong report W1).
 
 ---
 

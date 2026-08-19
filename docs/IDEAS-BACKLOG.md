@@ -14,3 +14,5 @@ Hoà gửi (@aidev.repo). Chính chủ Google · 48,2K sao · Apache-2.0 · 52 t
 · **Bù đúng lỗ TRỤ 7 (hiệu năng & bền) đang đói**: cho trace CPU + bóp băng thông/CPU giả lập máy yếu + chỉ số tải trang. Ba bộ trình duyệt đang có (Claude Browser · Chrome thật · Playwright+webapp-testing) chỉ CHỤP và ĐỌC LOG, **không ĐO được**. Ca thật cần nó: lag về Home 14/08 (lúc đó đo bằng cách đếm module), `pickHatchFace` O(N²) chưa ai đo tốn bao nhiêu.
 · ⚠️ 3 rủi ro T nêu: 52 tool làm phình context (trái đúng nguyên tắc "giới hạn bộ công cụ" của bài Context Engineering cùng ngày) · trùng chức năng với 2 bộ browser sẵn có (agent phải đoán dùng cái nào) · lái Chrome THẬT của Hoà nơi đang đăng nhập mọi thứ.
 · ⇒ **Đề xuất: bật khi mở đợt hiệu năng, tắt lúc thường.** Cài MCP là đụng cấu hình máy — CHỜ HOÀ, T không tự làm.
+
+- [19/08 từ REFUSE R9b] Xoay Frame ở Present hiện LUÔN snap 5° (`Element.tsx:270`), không đọc Shift — cân nhắc: không Shift = xoay tự do, giữ Shift = bậc 15° (EXTEND ~2 dòng, chờ xếp hàng).

@@ -142,7 +142,7 @@ GAP duy nhất: review chưa gác cửa CHUYỂN CHẶNG (PostGate T4 — Wave 3
 | R7 | ✅ **XONG 19/08** — reviewDeck nhận slides (CustomEvent `present:*`, 0 store mới; +13 test; browser 5 kịch bản) | đã xong | không | panel Present | revert (event thuần, gỡ là về cũ) |
 | R8 | geom2d reader (.idfc → entity khi thả; DROPPABLE_ITEM_KINDS + resolveLibraryItem đọc idfc-store) | ~1-2 ngày | R1 (cùng vùng — làm SAU R1) | drop path | revert |
 | R9 | Lô nhãn nói thật: spotlight items[0] · "Top tuần" · PPTX 16:9 · toast BulkIngest + lô comment stale (7 file trỏ StageSwitcher, `resolve.ts` 0-caller note…) | ~1 ngày | R2 (comment StageSwitcher) | text-only | revert |
-| R9b | Frame.rotation — 1 handle xoay trên EditorCanvas | ~1 ngày | không | Present canvas | revert |
+| R9b | ⛔ **HUỶ 19/08 tối — TIỀN ĐỀ SAI, worker REFUSE đúng**: handle xoay ĐÃ TỒN TẠI (`Element.tsx:381-400` chấm tròn 14px, xoay quanh tâm `:266-270` snap 5°, undo qua `onFrame`). Dòng "0 handle xoay" là DRIFT của chính map này. Ý mới (Shift=bậc/tự do) → IDEAS-BACKLOG, không thuộc Đợt 0 | 0 | — | — | — |
 | R10 | CuaSoThaoLuan mount FlowCanvas + mergeDistilledIntoCard | ~1 ngày | **Hoà ✓ mock Ca D** | FlowCanvas 3D | revert |
 | R11 | lib/idfc-import: quyết sống/chết | tùy | **Hoà bấm** | 3.3k dòng | — |
 
