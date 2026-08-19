@@ -3,7 +3,17 @@
 > **Đọc file này ĐẦU TIÊN**, rồi **`docs/memory/RETRIEVAL-MAP.md`** (chỉ mục 11 topic → nguồn sâu, lập 19/08), rồi **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md`** (bản đồ chính tắc 19/08 — thay `IF-KIEN-TRUC.md`), rồi **`docs/TAC-NHAN-T.md`** (vai T).
 > Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-20 ~02:4x (MAIN — NIGHT SHIFT 4 LANE ĐÓNG TRỌN)**
+**Cập nhật lần cuối: 2026-08-20 ~03:1x (MAIN — UI ProjectFile→Promote LÊN MÀN + thiết kế hash chờ Hoà)**
+
+## ✅ CHUỖI REFERENCE ĐỦ MẶT NGƯỜI DÙNG (20/08, `922af7e`)
+UI trên /files: upload → xem/xác nhận → promote chọn usage → asset hiện ngay trong LibrarySheet
+(event `if:library-db-refresh` → refreshDb sẵn có) → bấm lại daCo không nhân bản → 415 hiện nguyên
+văn. Browser thật cả chuỗi + dọn sạch (LA 1613=1613). Drift-guard test khoá vocabulary client≡server.
+⚠️ POST /api/project-files nhận **JSON {dataUrl|url}**, KHÔNG multipart — phiếu cũ mô tả sai, code thắng.
+## 🔶 CHỜ HOÀ DUYỆT: thiết kế hash/dedupe (`edeb759`, `sessions/2026-08-20/04-hash-dedupe-design/`)
+5 câu đã trả lời bằng đo tại nguồn; đề xuất contentHash? nullable + @@index([userId,contentHash]),
+dedupe app-level tại cửa nhập, UNIQUE nhiều khả năng không bao giờ thêm (trùng-bytes-khác-license
+là ca hợp lệ; kho ĐÃ có trùng thật ×7 Westlake ⇒ UNIQUE mù fail lúc backfill).
 
 ## 🌙 NIGHT SHIFT 20/08 ĐÓNG — 5 checkpoint, backup tip `5bc0996` (push rồi), main nguyên `c7f3ac8`
 Chi tiết + bảng DONE/PARTIAL + nợ mở: `sessions/2026-08-20/03-night-shift-4-lane/README.md`.
