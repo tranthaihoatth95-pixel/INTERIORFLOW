@@ -54,6 +54,7 @@ import {
   type FindingLuat, type FindingGopy, type ReviewChang, type CheDoHienThi, type HinhDangMuc, type Nhan,
 } from '@/lib/review';
 import { useT, useLang } from '@/lib/i18n';
+import type { EditorSlide } from '@/lib/present-editor/model';
 
 export type ReviewPanelStage = 'cad' | 'render' | 'present';
 
@@ -88,19 +89,45 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
   useEffect(() => { setCheDo(layCheDoHienThi()); }, []);
   const doiCheDo = (m: CheDoHienThi) => { setCheDo(m); datCheDoHienThi(m); };
 
+  /* R7 (19/08) — SLIDES THẬT từ trình dàn trang, đóng nợ p3c "chờ mở cửa đọc slides".
+   * Truth deck vẫn của useEditor trong PresentEditor; đây chỉ giữ THAM CHIẾU mảng slides nhận
+   * qua cầu CustomEvent (PresentEditor.tsx cùng ngày) — không clone, không persist, không mutate.
+   * `null` = KHÔNG có hồ sơ nào đang mở (PresentEditor chưa mount / đã unmount) — trạng thái
+   * khác hẳn "deck 0 vi phạm", UI phải nói khác nhau (N5). */
+  const [deckSlides, setDeckSlides] = useState<EditorSlide[] | null>(null);
+  useEffect(() => {
+    if (chang !== 'deck') return;
+    const onState = (ev: Event) => {
+      const slides = (ev as CustomEvent<{ slides?: EditorSlide[] | null }>).detail?.slides;
+      setDeckSlides(Array.isArray(slides) ? slides : null);
+    };
+    window.addEventListener('present:deck-review-state', onState);
+    // Panel mặc định THU — mở ra mới mount ReviewBody, nên phải HỎI bản hiện tại (editor đã
+    // phát state từ trước khi mình nghe). Nghe trước, hỏi sau: trả lời là dispatch đồng bộ.
+    window.dispatchEvent(new CustomEvent('present:deck-review-request'));
+    return () => window.removeEventListener('present:deck-review-state', onState);
+  }, [chang]);
+
   /** Chọn nhãn theo ngôn ngữ giao diện — mọi nhãn từ engine đều song ngữ sẵn. */
   const n = (x: Nhan) => (lang === 'en' ? x.en : x.vi);
 
   const result = useMemo(() => {
     if (chang === '2d') return review2d({ doc, deBai: null });
     if (chang === '3d') return review3d({ doc, deBai: null });
-    // DECK: slides sống trong state nội bộ PresentEditor (vùng p12) — vỏ app không với tới nguồn
-    // sự thật đó, và đọc bản autosave là đẻ nguồn thứ hai. Trả kết quả rỗng + panel tự ghi chú
-    // "chưa nối nguồn deck" ở khối LUẬT (N5 — nói thẳng, không giả vờ đã kiểm).
-    return reviewDeck({ deBai: null });
-  }, [chang, doc]);
+    // DECK (R7 19/08): slides thật nhận qua cầu event ở trên. `null` (chưa có hồ sơ mở) thì
+    // reviewDeck nhận undefined → luat=[] — nhưng UI phân biệt bằng `deckSlides === null`,
+    // KHÔNG được đọc thành "0 vi phạm" (N5).
+    return reviewDeck({ slides: deckSlides ?? undefined, deBai: null });
+  }, [chang, doc, deckSlides]);
 
   const nhayToi = (f: FindingLuat) => {
+    // Deck: ViTri.slide (1-index) → chuyển slide đang mở trong PresentEditor (listener R7).
+    if (chang === 'deck') {
+      if (typeof f.viTri?.slide === 'number') {
+        window.dispatchEvent(new CustomEvent('present:goto-slide', { detail: { slide: f.viTri.slide } }));
+      }
+      return;
+    }
     const st = useCadStore.getState();
     const id = f.viTri?.entityId;
     const e = id ? st.doc.entities.find((x) => x.id === id) : undefined;
@@ -155,7 +182,10 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
               <TriangleAlert size={11} strokeWidth={2.2} aria-hidden />{vangCount}
             </span>
           )}
-          {result.luat.length === 0 && tr('0 vi phạm', '0 issues')}
+          {/* R7: deck chưa nối hồ sơ nào thì header nói "chưa kiểm" — "0 vi phạm" ở trạng thái
+              đó là nói dối (không có gì được kiểm cả). Hai trạng thái phải phân biệt được. */}
+          {result.luat.length === 0 &&
+            (chang === 'deck' && deckSlides === null ? tr('chưa kiểm', 'not checked') : tr('0 vi phạm', '0 issues'))}
         </span>
       </div>
 
@@ -192,12 +222,25 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
           ))}
         </div>
 
-        {chang === 'deck' && (
+        {/* R7 (19/08) — deck ĐÃ nối slides thật; câu "chưa nối" cũ chỉ còn cho đúng trạng thái
+            KHÔNG có hồ sơ nào đang mở (PresentEditor chưa mount: màn chọn loại hồ sơ / BOQ /
+            chưa vào chặng). Vẫn không phải "0 vi phạm" — không có gì được kiểm. */}
+        {chang === 'deck' && deckSlides === null && (
           <p style={{ margin: '2px 12px 10px', fontSize: 12, lineHeight: 1.5, color: 'var(--t4)' }}>
             {tr(
-              'Chưa nối được hồ sơ đang mở — dữ liệu deck sống trong trình dàn trang, phiếu sau nối. Không có gì được kiểm ở chặng này, đây không phải "0 vi phạm".',
-              'Deck data lives inside the layout editor — not wired to this board yet. Nothing was checked here; this is not "0 issues".',
+              'Không có hồ sơ nào đang mở trong trình dàn trang — mở một hồ sơ để kiểm. Không có gì được kiểm; đây không phải "0 vi phạm".',
+              'No deck is open in the layout editor — open one to run checks. Nothing was checked; this is not "0 issues".',
             )}
+          </p>
+        )}
+        {chang === 'deck' && deckSlides !== null && deckSlides.length === 0 && (
+          <p style={{ margin: '2px 12px 10px', fontSize: 12, lineHeight: 1.5, color: 'var(--t4)' }}>
+            {tr('Hồ sơ đang mở chưa có trang nào — chưa có gì để kiểm.', 'The open deck has no pages yet — nothing to check.')}
+          </p>
+        )}
+        {chang === 'deck' && deckSlides !== null && deckSlides.length > 0 && result.luat.length === 0 && (
+          <p style={{ margin: '2px 12px 10px', fontSize: 12, lineHeight: 1.5, color: 'var(--t4)' }}>
+            {tr('Không phát hiện vi phạm nào trên hồ sơ đang mở.', 'No violations found in the open deck.')}
           </p>
         )}
         {chang !== 'deck' && result.luat.length === 0 && (

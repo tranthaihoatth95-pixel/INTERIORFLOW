@@ -154,6 +154,39 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
     onDeckChange?.(ed.deck);
   }, [ed.deck, onDeckChange]);
 
+  /* R7 (19/08) — MỞ CỬA ĐỌC SLIDES cho Bảng kiểm (nợ p3c 08/08 "chờ mở cửa đọc slides").
+   * Truth deck vẫn MỘT owner là useEditor ở đây; ReviewPanel (AppShell, mép phải) chỉ ĐỌC qua
+   * cầu CustomEvent — đúng pattern `present:*` sẵn có phía trên (idfp/pptx/pdf), KHÔNG store mới.
+   *   · `present:deck-review-state`   — đẩy tham chiếu `slides` mỗi khi deck đổi (reducer clone
+   *     mỗi mutate nên tham chiếu đã phát ra là bất biến — bên nhận không mutate được truth).
+   *   · `present:deck-review-request` — ReviewPanel mở panel sau mới hỏi; trả lời bằng bản mới
+   *     nhất qua ref (không re-bind listener theo từng phím gõ).
+   *   · unmount → phát `slides: null` (đổi sheet/BOQ/đóng chặng): ReviewPanel về trạng thái
+   *     "không có hồ sơ đang mở" thật, không đông cứng bản cũ. */
+  const deckForReviewRef = useRef(ed.deck.slides);
+  deckForReviewRef.current = ed.deck.slides;
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('present:deck-review-state', { detail: { slides: ed.deck.slides } }));
+  }, [ed.deck.slides]);
+  useEffect(() => {
+    const onRequest = () => {
+      window.dispatchEvent(new CustomEvent('present:deck-review-state', { detail: { slides: deckForReviewRef.current } }));
+    };
+    // Nhảy-tới của thẻ luật deck (ViTri.slide, 1-index từ evaluateDeck) → chuyển slide đang mở.
+    const onGoto = (ev: Event) => {
+      const slide = (ev as CustomEvent<{ slide?: number }>).detail?.slide;
+      if (typeof slide === 'number' && Number.isFinite(slide)) ed.selectSlide(slide - 1);
+    };
+    window.addEventListener('present:deck-review-request', onRequest);
+    window.addEventListener('present:goto-slide', onGoto);
+    return () => {
+      window.removeEventListener('present:deck-review-request', onRequest);
+      window.removeEventListener('present:goto-slide', onGoto);
+      window.dispatchEvent(new CustomEvent('present:deck-review-state', { detail: { slides: null } }));
+    };
+    // ed.selectSlide memo hoá với deps [] trong useEditor — ổn định suốt đời instance.
+  }, [ed.selectSlide]);
+
   /* FONT TẢI LÊN (#1) — nhúng theo deck. Đăng ký lại vào document mỗi khi mở/đổi deck để
      chữ hiện ĐÚNG font ngay lần vẽ đầu (canvas render cho PDF cũng cần font đã sẵn sàng).
      Chỉ phụ thuộc `customFonts` — không phải cả deck — để không chạy lại mỗi lần gõ phím. */
