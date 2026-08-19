@@ -34,9 +34,12 @@
  * Tay cầm thu/mở = `PanelFlank` dùng chung (Hoà chốt 07/08 — không chế dải thứ hai); mặc định
  * THU (defaultOpen=false) để không chiếm 300px mọi màn, PanelFlank tự nhớ lựa chọn theo panel.
  *
- * Nhảy-tới-đối-tượng: bấm mục → `select([entityId])` của useCadStore + sự kiện `cad:goto-box`
- * CÓ SẴN (`CadCanvas.tsx` — fit camera vào box, cùng đường CadSheets dùng). Chặng deck CHƯA
- * nhảy được (dữ liệu deck sống trong PresentEditor — vùng p12 cấm đụng, xem ghi chú DECK dưới).
+ * Nhảy-tới-đối-tượng — BA MẶT TIỀN, một cho mỗi chặng (GOTO-3D 19/08 đóng nốt mặt tiền cuối):
+ *   2D    → `select([entityId])` của useCadStore + sự kiện `cad:goto-box` (`CadCanvas.tsx` —
+ *           fit camera vào box, cùng đường CadSheets dùng).
+ *   3D    → sự kiện `render:goto-entity` (`Viewport3D.tsx` nghe — chọn qua `useTree3DUi` +
+ *           `Scene3DCameraApi.fit(entityId)` khung camera quanh riêng khối đó).
+ *   deck  → sự kiện `present:goto-slide` (R7 19/08, `PresentEditor.tsx` nghe).
  *
  * G2: nền đặc `var(--panel)` 100% · G4: mọi chữ line-height ≥1.5 · G6: nút hành động có CHỮ ·
  * G8: PanelFlank là nút bấm, không kéo thả. Bo góc: thang duyệt 12/08 qua `lib/geometry`.
@@ -126,6 +129,15 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
       if (typeof f.viTri?.slide === 'number') {
         window.dispatchEvent(new CustomEvent('present:goto-slide', { detail: { slide: f.viTri.slide } }));
       }
+      return;
+    }
+    // GOTO-3D (19/08): 3D KHÔNG dùng đường CadStore/`cad:goto-box` bên dưới — đó là kênh của
+    // CadCanvas (2D), ở 3D nó không có ai nghe nên trước bản vá này bấm 1 finding 3D không làm
+    // gì cả. `Viewport3D.tsx` nghe `render:goto-entity` riêng (chọn qua `useTree3DUi` + khung
+    // camera qua `Scene3DCameraApi.fit(entityId)`).
+    if (chang === '3d') {
+      const id = f.viTri?.entityId;
+      if (id) window.dispatchEvent(new CustomEvent('render:goto-entity', { detail: { entityId: id } }));
       return;
     }
     const st = useCadStore.getState();

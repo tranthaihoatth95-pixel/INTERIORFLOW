@@ -65,8 +65,24 @@ export interface Scene3DCameraApi {
   controls: OrbitControls;
   /** G-M18-04 — đưa camera về khung bao trọn TOÀN CẢNH hiện tại (tính lại bbox mỗi lần gọi, không
    * chỉ dùng số đo lúc mount). Không làm gì ở mode `walk`/`campath` (camera do 2 mode đó tự lái
-   * mỗi khung, "toàn cảnh" vô nghĩa khi đang đứng trong phòng/bám đường quay). */
-  fit: () => void;
+   * mỗi khung, "toàn cảnh" vô nghĩa khi đang đứng trong phòng/bám đường quay).
+   * GOTO-3D (19/08) — truyền `entityId` để khung camera CHỈ bao khối đó (đọc `scene.groups`,
+   * dùng chung `positions` đã có sẵn — KHÔNG cần mesh riêng trong THREE scene, xem `frameBox`
+   * dưới). Không tìm thấy (entity chưa vào cảnh / rỗng) ⇒ rơi về toàn cảnh, không bịa vị trí. */
+  fit: (entityId?: string) => void;
+}
+
+/** Đưa camera+controls về khung bao trọn `box` — TÁCH khỏi `fitCameraToScene` để dùng lại được
+ * cho GOTO-3D (19/08, khung theo MỘT entity thay vì cả group). Toán giữ NGUYÊN VĂN công thức cũ
+ * (03/08, phán quyết PHU) — chỉ đổi chỗ ở, không đổi số. */
+function frameBox(camera: THREE.PerspectiveCamera, controls: OrbitControls, box: THREE.Box3) {
+  const c = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const halfDiag = Math.max(0.5, Math.hypot(size.x, size.y, size.z) / 2) * 1.15;
+  camera.position.set(c.x + halfDiag * 1.1, c.y + halfDiag * 0.9, c.z + halfDiag * 1.1);
+  controls.target.copy(c);
+  camera.updateProjectionMatrix();
+  controls.update();
 }
 
 /** Tính khung camera bao trọn `scene.bboxMm` — TÁCH RIÊNG khỏi effect mount để dùng lại được cho
@@ -85,13 +101,7 @@ function fitCameraToScene(scene: Scene3DData, camera: THREE.PerspectiveCamera, c
   // Giữ đường bboxMm làm fallback khi group rỗng (cảnh trống — vẫn cần đứng đúng chỗ 8×8m).
   const box = object ? new THREE.Box3().setFromObject(object) : null;
   if (box && !box.isEmpty()) {
-    const c = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    const halfDiag = Math.max(0.5, Math.hypot(size.x, size.y, size.z) / 2) * 1.15;
-    camera.position.set(c.x + halfDiag * 1.1, c.y + halfDiag * 0.9, c.z + halfDiag * 1.1);
-    controls.target.copy(c);
-    camera.updateProjectionMatrix();
-    controls.update();
+    frameBox(camera, controls, box);
     return;
   }
   const { minX, minY, maxX, maxY } = scene.bboxMm;
@@ -315,8 +325,23 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
       cameraApiRef.current = {
         camera,
         controls,
-        fit: () => {
+        fit: (entityId) => {
           if (walkActive || campathActive) return; // 2 mode này tự lái camera mỗi khung, fit vô nghĩa
+          // GOTO-3D (19/08): khung theo MỘT entity — đọc `positions` thẳng từ `scene.groups`
+          // (dữ liệu nguồn của `docToObjScene()`, cùng mảng dùng để dựng mesh), KHÔNG cần tìm
+          // mesh riêng trong THREE scene (`buildMergedGeometries` gộp mesh theo MÀU, không theo
+          // entity — không có mesh 1-1 với entityId trừ mode `massing`). Rỗng/không thấy ⇒ rơi
+          // xuống nhánh toàn cảnh bên dưới, không bịa vị trí.
+          if (entityId) {
+            const g = scene.groups.find((sg) => sg.entityId === entityId && sg.positions.length > 0);
+            if (g) {
+              const box = new THREE.Box3().setFromArray(g.positions);
+              if (!box.isEmpty()) {
+                frameBox(camera, controls, box);
+                return;
+              }
+            }
+          }
           fitCameraToScene(scene, camera, controls, fitTargetRef.group);
         },
       };

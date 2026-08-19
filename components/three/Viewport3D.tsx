@@ -105,6 +105,29 @@ export function Viewport3D({
   // không có khái niệm "toàn cảnh").
   const fitDisabled = mode === 'walk' || mode === 'campath';
 
+  /**
+   * GOTO-3D (19/08) — nhảy-tới-đối-tượng cho `ReviewPanel` (mặt tiền chặng 3D, cùng khuôn
+   * `cad:goto-box`/`present:goto-slide`). Nghe TRỰC TIẾP qua `window` (không props) — cùng cách
+   * `Render3DModeSkeleton.tsx` nghe `focusEntity` URL param, và cùng lý do `CadCanvas` nghe
+   * `cad:goto-box`: bên bấm (ReviewPanel) không biết/không cần biết Viewport3D đang mount ở đâu.
+   * `useTree3DUi.select` TOGGLE nếu gọi lại đúng tên đang chọn (xem store) — canh y hệt guard của
+   * nhánh `focusEntity` để bấm lại cùng một finding không vô tình BỎ chọn khối đó.
+   */
+  useEffect(() => {
+    const onGotoEntity = (ev: Event) => {
+      const id = (ev as CustomEvent<{ entityId?: string }>).detail?.entityId;
+      if (!id) return;
+      const g = scene.groups.find((x) => x.entityId === id);
+      if (g) {
+        const ui = useTree3DUi.getState();
+        if (ui.selectedName !== g.name) ui.select(g.name);
+      }
+      cameraApiRef.current?.fit(id);
+    };
+    window.addEventListener('render:goto-entity', onGotoEntity);
+    return () => window.removeEventListener('render:goto-entity', onGotoEntity);
+  }, [scene]);
+
   return (
     <div className="if-ve3d vp3d">
       <RawStyle css={VE3D_CSS} />
