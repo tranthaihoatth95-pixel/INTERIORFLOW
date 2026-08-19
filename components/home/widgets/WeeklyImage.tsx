@@ -13,7 +13,7 @@
  * tưởng nhầm là lọc theo ngày thật.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useT } from '@/lib/i18n';
 import WidgetCard from './WidgetCard';
 
@@ -33,7 +33,12 @@ export default function WeeklyImage({
   index?: string;
 }) {
   const tr = useT();
-  const current = useMemo(() => (images.length ? images[eightSecTick % images.length] : null), [images, eightSecTick]);
+  // Ảnh hỏng (URL trả 404/410 — asset đã bị dọn khỏi kho) thì LOẠI khỏi vòng xoay thay vì
+  // hiện khung vỡ: <img> không onError là ô này đứng hình vỡ + lỗi console lặp mỗi lần Home
+  // mount lại. Hết ảnh sống thì widget tự ẩn (đúng luật 13/08: thiếu dữ liệu thì ẩn).
+  const [hong, setHong] = useState<ReadonlySet<string>>(() => new Set());
+  const song = useMemo(() => images.filter((img) => !hong.has(img.id)), [images, hong]);
+  const current = useMemo(() => (song.length ? song[eightSecTick % song.length] : null), [song, eightSecTick]);
   if (!current) return null;
 
   return (
@@ -42,13 +47,14 @@ export default function WeeklyImage({
         {index && <span className="mr-1 opacity-70">{index}</span>}
         {tr('Ảnh đẹp tuần này', "This week's frame")}
       </div>
-      {images.map((img) => (
+      {song.map((img) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           key={img.id}
           src={img.url}
           alt={img.name}
           draggable={false}
+          onError={() => setHong((prev) => new Set(prev).add(img.id))}
           className="weekly-image-frame absolute inset-0 h-full w-full object-cover"
           style={{ opacity: img.id === current.id ? 1 : 0 }}
           aria-hidden={img.id !== current.id}

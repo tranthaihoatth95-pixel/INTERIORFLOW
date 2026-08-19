@@ -166,14 +166,21 @@ export default function QuickNotes({
           className="min-w-0 flex-1 rounded-full px-3.5 py-1.5 text-[length:var(--fs-sm)] text-[var(--t1)] outline-none"
           style={{ background: 'var(--field)' }}
         />
+        {/* aria-disabled (không phải disabled) — nút mờ vẫn focus được và LÝ DO tới được bàn phím/
+            screen-reader qua aria-describedby (khuôn ToolbarChip 16/08). save() đã tự chặn khi
+            text rỗng/đang lưu nên bấm lúc mờ vô hại. Độ mờ = token theo theme, không gõ số. */}
         <button
           type="submit"
-          disabled={!text.trim() || saving}
-          className="shrink-0 rounded-full px-3.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
+          aria-disabled={!text.trim() || saving || undefined}
+          aria-describedby={!text.trim() && !saving ? 'quicknotes-luu-lydo' : undefined}
+          className="shrink-0 rounded-full px-3.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-white aria-disabled:cursor-not-allowed aria-disabled:opacity-[var(--mo-vo-hieu)]"
           style={{ background: 'var(--accent)' }}
         >
           {tr('Lưu', 'Save')}
         </button>
+        <span id="quicknotes-luu-lydo" className="sr-only">
+          {tr('Gõ ghi chú trước rồi mới lưu được.', 'Type a note first, then save.')}
+        </span>
       </form>
 
       {notes && notes.length > 0 && (

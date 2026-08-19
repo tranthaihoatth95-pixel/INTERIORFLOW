@@ -204,8 +204,10 @@ export function Checkpoint(props: CheckpointProps) {
       {/* ── KS1 tham số + KS2 seed ── */}
       {(props.params?.length || seed !== undefined) && (
         <dl style={{ margin: '10px 0 0', display: 'grid', gap: 4 }}>
-          {props.params?.map((p) => (
-            <div key={p.label} style={rowKV}>
+          {props.params?.map((p, i) => (
+            // key kèm chỉ số: hai hàng CÙNG NHÃN là ca thật (ClusterPanel truyền param "Số chỗ"
+            // của spec LẪN hàng tính từ result) — key theo label trần là React trùng key.
+            <div key={`${p.label}#${i}`} style={rowKV}>
               <dt style={kvKey}>{p.label}</dt>
               <dd style={kvVal}>{p.value}</dd>
             </div>
