@@ -23,7 +23,7 @@
  * kiểu tab, xem cảnh báo trong báo cáo phiên này về phần CHƯA làm: dock công cụ nổi đáy viewport).
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useCadStore, type Tool } from '@/lib/cad/store';
 import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
@@ -380,6 +380,9 @@ function CreateTab({
   onTabChange?: (tab: Tab) => void;
 }) {
   const tr = useT();
+  // Gốc id ổn định cho phần tử ẩn mang LÝ DO của ô mờ (đích `aria-describedby`). Đặt ở đây chứ
+  // KHÔNG gọi useId() trong `cell` — `cell` chạy một lần mỗi ô, gọi hook trong vòng lặp là sai luật hook.
+  const lyDoBaseId = useId();
   const [wallBuilderOpen, setWallBuilderOpen] = useState(false);
   const [wallDraft, setWallDraft] = useState<WallDraft3D>(DEFAULT_WALL_DRAFT);
   useEffect(() => {
@@ -425,11 +428,19 @@ function CreateTab({
 
   const cell = ({ id, en, vi, icon: Icon, lam, reason }: CellDef) => {
     const nhay = id === 'tuong' && nhayNutTuong;
+    // 20/08 — ĐỔI ĐƯỜNG ĐI CỦA LÝ DO, đúng cách `ToolbarChip` đã sửa 16/08. Trước: `disabled` thật
+    // ⇒ Tab BỎ QUA nút, `focus` không bắn, và không có `aria-describedby` nào ⇒ lý do (vốn đã viết
+    // sẵn, tử tế, trong `reason`) KHÔNG BAO GIỜ tới người dùng bàn phím/trình đọc màn hình, và trên
+    // cảm ứng thì cũng câm vì không có hover. Nay `aria-disabled` giữ nút focus được, lý do đi qua
+    // phần tử ẩn `.if-tooltip-a11y`. Nút vẫn KHÔNG chạy gì: onClick chỉ gắn khi `lam`.
+    const lyDo = !lam ? tr(...(reason ?? ['Chưa dựng được', 'Not available yet'])) : undefined;
+    const lyDoId = `${lyDoBaseId}-${id}`;
     return (
       <Tooltip key={id} side="right" label={lam ? tr(...(TIP[id] ?? ['Sửa được sau', 'Editable afterwards'])) : tr(...(reason ?? ['Chưa dựng được', 'Not available yet']))}>
         <button
           type="button"
-          disabled={!lam}
+          aria-disabled={!lam || undefined}
+          aria-describedby={lyDo ? lyDoId : undefined}
           onClick={lam ? HANDLER[id] : undefined}
           className={cn(
             'flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-[10px] border p-1 text-center transition-colors',
@@ -444,6 +455,7 @@ function CreateTab({
           {/* ② — tên lệnh EN dòng chính, giải thích VI dòng nhỏ (line-height ≥1.5, G4) */}
           <span className="text-[9.5px] font-semibold leading-[1.5]">{en}</span>
           <span className="text-[8px] leading-[1.5] opacity-80">{vi}</span>
+          {lyDo && <span id={lyDoId} className="if-tooltip-a11y">{lyDo}</span>}
         </button>
       </Tooltip>
     );

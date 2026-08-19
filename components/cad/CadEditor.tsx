@@ -795,7 +795,13 @@ export default function CadEditor() {
         <CadCanvas />
         {/* Bàn trống đã tự là "Vẽ mới": chỉ giữ một lối nhập gọn. Chạm vùng ngoài nút đóng lớp
             gợi ý; lần chạm kế tiếp làm việc trực tiếp trên canvas, không còn bước "Vẽ mới". */}
-        {docIsEmpty && !emptyCardDismissed && (
+        {/* `cadTool === 'select'`: lớp phủ này che TRỌN canvas (inset 0, zIndex 5) và onPointerDown
+            của nó chỉ tự đóng chứ KHÔNG chuyển tiếp cú chạm xuống canvas — nên khi người dùng đã
+            bật một công cụ vẽ (gõ W/L…), cú click ĐẦU TIÊN bị nuốt: điểm 1 mất, Enter kết thúc
+            chuỗi 1 điểm ⇒ không có gì được vẽ, không báo lỗi. Đúng lúc đó chính card này đang bảo
+            "Gõ W để vẽ tường ngay tại chỗ" ⇒ lời chỉ dẫn không làm theo được. Bật công cụ vẽ là ẩn
+            lớp phủ, để cú chạm đầu rơi thẳng vào canvas. */}
+        {docIsEmpty && !emptyCardDismissed && cadTool === 'select' && (
           <div
             data-empty-drawing-overlay
             onPointerDown={() => setEmptyCardDismissed(true)}
@@ -820,7 +826,9 @@ export default function CadEditor() {
                 {t('Bàn vẽ đang trống', 'The drawing board is empty')}
               </div>
               <div style={{ fontSize: 12, color: 'var(--t3)', lineHeight: 1.5 }}>
-                {t('Gõ L để vẽ tường ngay tại chỗ, hoặc mở file có sẵn (.idf · .dxf · .dwg).', 'Type L to draw a wall right here, or open an existing file (.idf · .dxf · .dwg).')}
+                {/* W = cad.draw.wall (lib/commands/registry.ts:274, alias 'W'/'WALL'). KHÔNG đổi lại
+                    thành L — L là cad.draw.line ("Đường thẳng", registry.ts:258), không phải tường. */}
+                {t('Gõ W để vẽ tường ngay tại chỗ, hoặc mở file có sẵn (.idf · .dxf · .dwg).', 'Type W to draw a wall right here, or open an existing file (.idf · .dxf · .dwg).')}
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
                 <button
