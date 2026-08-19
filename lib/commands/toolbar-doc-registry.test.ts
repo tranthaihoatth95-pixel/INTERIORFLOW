@@ -202,12 +202,35 @@ function testKhongLech() {
   ok('5 lệnh chung có phím đơn thật, 5 lệnh còn lại để trống (không bịa phím)', keys.length === 5);
 }
 
+/* ── 7) R3 (19/08) — desc/hinh đi XUYÊN cửa đọc, mặt tiền không tự chế ───────────────────── */
+function testHinhXuyenCuaDoc() {
+  console.log('\n[7] R3 — desc/hinh pass-through');
+
+  const goc = new Map(COMMANDS.map((c) => [c.id, c]));
+  for (const stage of ['cad', 'render', 'present'] as const) {
+    const chung = commonCommandsFor({ stage, mode: 'pro', proToolsAllowed: true });
+    ok(
+      `stage='${stage}': desc/hinh của mọi lệnh chung Y HỆT sổ (không chế, không rơi)`,
+      chung.every((c) => goc.get(c.id)?.desc === c.desc && goc.get(c.id)?.hinh === c.hinh),
+    );
+  }
+
+  // bindStage đắp tay thi hành nhưng KHÔNG được làm rơi metadata giải nghĩa.
+  const chung2d = commonCommandsFor(CTX_2D);
+  const sauBind = bindStage(chung2d, { 'cad.edit.move': { run: () => {} } });
+  ok(
+    'bindStage giữ nguyên desc/hinh (cả lệnh có binding lẫn không)',
+    sauBind.every((c, i) => c.desc === chung2d[i].desc && c.hinh === chung2d[i].hinh),
+  );
+}
+
 testBaChangGiongNhau();
 testMoKemLyDo();
 testHaiDuongNhap();
 testKhongCuopKyTu();
 testBindStage();
 testKhongLech();
+testHinhXuyenCuaDoc();
 
 console.log(`\n${fail === 0 ? 'PASS' : 'FAIL'} — ${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

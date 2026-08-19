@@ -11,6 +11,7 @@
  * Chạy: node_modules/.bin/sucrase-node lib/commands/registry.test.ts
  */
 import { COMMANDS, cmdsFor, findByAlias, allAliases, when, type Stage } from './registry';
+import { THAO_TAC_KEYS } from '../ui/thao-tac-glyph';
 import { CAD_COMMANDS } from '../cad/command-aliases';
 import { useCadStore, PRO_ONLY_TOOLS } from '../cad/store';
 
@@ -309,12 +310,34 @@ function testSharedCommands() {
   ok("cad.dim.measure: alias thắng DI đứng ĐẦU mảng aliases", COMMANDS.find((c) => c.id === 'cad.dim.measure')?.aliases[0] === 'DI');
 }
 
+/* ── 7) R3 (19/08) — hình minh hoạ + giải nghĩa: MỘT nguồn ở sổ, bất biến hinh ⇒ desc ────── */
+function testHinhGiaiNghia() {
+  console.log('\n[7] R3 — hinh/desc trong sổ lệnh');
+
+  const coHinh = COMMANDS.filter((c) => c.hinh !== undefined);
+  // Khoá phải có thật trong kho hình — gõ sai khoá thì lộ ở đây, không phải lúc render trắng.
+  ok(
+    `mọi \`hinh\` là khoá hợp lệ của kho (${coHinh.map((c) => c.hinh).join(',')})`,
+    coHinh.every((c) => (THAO_TAC_KEYS as string[]).includes(c.hinh!)),
+  );
+  // Hợp đồng Tooltip: hình aria-hidden ⇒ thiếu desc là mất trắng kênh chữ với trình đọc màn hình.
+  ok(
+    'hinh ⇒ desc (đủ [vi, en], không chuỗi rỗng)',
+    coHinh.every((c) => Array.isArray(c.desc) && c.desc.length === 2 && c.desc.every((s) => s.trim().length > 0)),
+  );
+  // 6 hình của kho hiện MAP đúng 6 lệnh — đổi số này phải là quyết định, không phải tình cờ.
+  ok('đúng 6 lệnh mang hình (khớp 6 khoá của kho)', coHinh.length === 6);
+  const dupHinh = coHinh.map((c) => c.hinh).filter((h, i, a) => a.indexOf(h) !== i);
+  ok(`không hai lệnh nào dùng chung một hình (trùng: ${dupHinh.join(',') || 'none'})`, dupHinh.length === 0);
+}
+
 testParity();
 testWhenParser();
 testCmdsFor();
 testFindByAlias();
 testRun();
 testSharedCommands();
+testHinhGiaiNghia();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

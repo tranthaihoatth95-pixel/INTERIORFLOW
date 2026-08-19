@@ -14,6 +14,8 @@ import {
   MousePointer2, Move, RotateCw, Copy, FlipHorizontal2, Trash2,
   Undo2, Redo2, MoveDiagonal, Type, HelpCircle,
 } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { ThaoTacGlyph, type ThaoTacKey } from '@/lib/ui/thao-tac-glyph';
 
 const MAP = {
   MousePointer2, Move, RotateCw, Copy, FlipHorizontal2, Trash2,
@@ -27,4 +29,16 @@ export type CommandIconName = keyof typeof MAP;
 export function CommandIcon({ name, size = 17 }: { name: string; size?: number }) {
   const Ico = (MAP as Record<string, typeof MousePointer2>)[name] ?? HelpCircle;
   return <Ico size={size} />;
+}
+
+/**
+ * R3 (19/08) — đổi KHOÁ `hinh` trong sổ lệnh thành glyph minh hoạ thao tác, MỘT chỗ duy nhất
+ * (đúng vai file này: "sổ giữ chuỗi, việc dựng hình nằm ở đây"). Mặt tiền gọi
+ * `hinh={commandHinh(c.hinh)}` — KHÔNG tự import `ThaoTacGlyph` để mỗi toolbar một kiểu.
+ * Trả `undefined` khi lệnh không khai hình: Tooltip giữ nguyên khuôn cũ (fallback hiện hữu).
+ * ⛔ Glyph chỉ được đưa vào prop `hinh` của Tooltip/ToolbarChip (ô giải nghĩa) — cấm làm nút,
+ * ràng buộc đã khoá bằng test của kho hình (`lib/ui/thao-tac-glyph.test.ts` mục [6]).
+ */
+export function commandHinh(hinh: ThaoTacKey | undefined): ReactNode | undefined {
+  return hinh ? <ThaoTacGlyph ten={hinh} /> : undefined;
 }

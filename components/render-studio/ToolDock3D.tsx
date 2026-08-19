@@ -40,7 +40,7 @@ import { useT } from '@/lib/i18n';
 import { useTool3D, type Tool3DId } from '@/lib/render-studio/tool3d';
 import { ToolbarChip, ToolbarBar } from '@/components/ui/ToolbarChip';
 import { commonCommandsFor, bindStage } from '@/lib/commands/toolbar-source';
-import { CommandIcon } from '@/components/ui/command-icon';
+import { CommandIcon, commandHinh } from '@/components/ui/command-icon';
 
 interface ToolDock3DProps {
   open: boolean;
@@ -61,6 +61,9 @@ interface DockGroupItem {
   disabled?: boolean;
   title?: string;
   onClick?: () => void;
+  /** R3 — hình minh hoạ thao tác cho ô giải nghĩa, đến TỪ SỔ LỆNH qua `commandHinh()`;
+   * item tự khai của dock không có hình (chỉ lệnh chung mang metadata này). */
+  hinh?: React.ReactNode;
 }
 
 export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLibrary, onOpenMaterialTab }: ToolDock3DProps) {
@@ -115,9 +118,14 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
           active: c.active,
           disabled: !c.enabled,
           onClick: c.enabled ? c.run : undefined,
+          // R3 — câu giải nghĩa ưu tiên TỪ SỔ (`c.desc`, một nguồn với 2D); lệnh chung chưa khai
+          // desc mới rơi về câu mặt tiền cũ. Hình cũng từ sổ, đổi khoá → glyph ở `commandHinh`.
           title: c.enabled
-            ? tr(`${c.label[0]} — dùng chung ở cả ba chặng`, `${c.label[1]} — shared across all three stages`)
+            ? c.desc
+              ? tr(c.desc[0], c.desc[1])
+              : tr(`${c.label[0]} — dùng chung ở cả ba chặng`, `${c.label[1]} — shared across all three stages`)
             : c.disabledReason,
+          hinh: commandHinh(c.hinh),
         })),
         { key: 'select-same', label: 'Cùng loại', labelEn: 'Same type', icon: <Layers size={18} />, shortcut: '⇧V', disabled: true, title: tr('Chưa có chọn-theo-loại — engine chưa tra cùng type', 'No select-by-type yet — engine cannot query same type') },
       ],
@@ -184,6 +192,7 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
               icon={item.icon}
               label={tr(item.label, item.labelEn)}
               desc={item.title}
+              hinh={item.hinh}
               active={item.active}
               onClick={item.onClick}
               shortcutHint={item.shortcut}
@@ -247,6 +256,7 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
                         icon={item.icon}
                         label={tr(item.label, item.labelEn)}
                         desc={item.disabled ? undefined : item.title}
+                        hinh={item.hinh}
                         active={item.active}
                         disabled={item.disabled}
                         disabledReason={item.disabled ? item.title : undefined}

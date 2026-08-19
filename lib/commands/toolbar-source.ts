@@ -31,6 +31,7 @@
 
 import type { CommandDef, Stage, WhenCtx } from './registry';
 import { COMMANDS } from './registry';
+import type { ThaoTacKey } from '../ui/thao-tac-glyph';
 
 /* ─────────────────────────── tầng ① — lệnh chung ─────────────────────────── */
 
@@ -48,6 +49,11 @@ export interface CommonCommand {
   directKey?: string;
   /** Phím tắt toàn cục (`['mod','Z']`…) nếu có. */
   key?: string[];
+  /** R3 — câu giải nghĩa [vi, en] từ sổ; mặt tiền tự chọn theo ngôn ngữ, KHÔNG tự chế câu khác. */
+  desc?: [string, string];
+  /** R3 — khoá hình minh hoạ thao tác (kho `lib/ui/thao-tac-glyph.tsx`); đổi khoá → component ở
+   * `components/ui/command-icon.tsx` (`commandHinh`), cùng đường với `icon`. */
+  hinh?: ThaoTacKey;
   /** Chạy được ở chặng này không — đúng `when(ctx)` của registry, KHÔNG tự suy lại. */
   enabled: boolean;
   /** BẮT BUỘC khi `enabled=false` (§9 cấm nút giả): vì sao lệnh này chưa chạy được ở đây. */
@@ -137,6 +143,8 @@ export function commonCommandsFor(ctx: WhenCtx): CommonCommand[] {
       aliases: c.aliases,
       directKey: c.directKey,
       key: c.key,
+      desc: c.desc,
+      hinh: c.hinh,
       enabled,
       disabledReason: enabled ? undefined : reason[0],
       run: () => c.run(),

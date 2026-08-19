@@ -25,7 +25,7 @@ import Tooltip from '@/components/ui/Tooltip';
 import Popover from '@/components/ui/Popover';
 import { ToolbarChip } from '@/components/ui/ToolbarChip';
 import { commonCommandsFor, bindStage } from '@/lib/commands/toolbar-source';
-import { CommandIcon } from '@/components/ui/command-icon';
+import { CommandIcon, commandHinh } from '@/components/ui/command-icon';
 
 /** Rút gọn nhãn nút (bỏ mô tả dài sau " (" / " — ") thành nhãn ngắn cho tag hover. */
 function shortLabel(title: string): string {
@@ -283,6 +283,9 @@ export default function CadToolbar({
             key={c.id}
             icon={<CommandIcon name={c.icon} size={BIG_COMMON.has(c.id) ? icoBig : icoS} />}
             label={tr(c.label[0], c.label[1])}
+            /* R3 — giải nghĩa + hình đọc TỪ SỔ (một nguồn), không tự chế câu/hình tại toolbar. */
+            desc={c.desc ? tr(c.desc[0], c.desc[1]) : undefined}
+            hinh={commandHinh(c.hinh)}
             /* Lệnh CÓ phím tắt thật thì hiện phím ở CẢ Sketch (⌘Z/Delete vẫn bấm được trên máy có
                bàn phím); lệnh chỉ có alias GÕ thì chỉ hiện ở Pro — Sketch là chế độ ngón tay,
                không có dòng lệnh để gõ `RO`. */
