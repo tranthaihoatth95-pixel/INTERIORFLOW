@@ -6,6 +6,30 @@
 > main). 5 phiên peer vẫn sống. LOOK INSIDE xong, MAIN spot-check 3 claim — khớp 100%.
 > **STOP ở SPEC theo đúng điều kiện dừng của phiếu — đây là schema migration cần Hoà.**
 
+## A0 · ĐÍNH CHÍNH — chưa đọc ADR-Q4/Q5 trước khi viết spec ban đầu (lỗ LOOK INSIDE, peer Execution bắt)
+
+Round trước tôi viết spec KHÔNG đọc `docs/ADR-Q0-ARCHITECTURE-DECISIONS-2026-08-19.md`. Peer session
+"Execution" (đã làm Wave 0/Blueprint/ADR) chỉ ra đúng lỗ này. Đọc lại Q4/Q5:
+
+- **Q4 (Master Library sở hữu binary thế nào)**: bàn `AssetBlob` để dedupe theo hash — **KHÔNG
+  conflict**, orthogonal với join-table Project↔Asset (Q4 là tầng binary/storage, spec của tôi là
+  tầng usage/relation).
+- **Q5 (Files vs Master Library)**: quyết định *"Files = raw/project inputs. Master Library =
+  understood reusable content"*, pipeline `FILES → UNDERSTAND → NORMALIZE → PROMOTE → MASTER
+  LIBRARY`. Đề xuất model `ProjectFile { projectId (FK 1-N), name, mime, path, contentHash }` —
+  **1 file thô thuộc ĐÚNG 1 project TRƯỚC KHI promote**. Đây KHÁC bản chất với join-table tôi đề
+  xuất (N-N SAU KHI đã promote thành `LibraryAsset` — 1 asset đã "hiểu" được nhiều project THAM
+  CHIẾU/DÙNG). **Hai quyết định BỔ SUNG nhau, không thay thế nhau**: điểm nối là bước "Promote" —
+  đó chính xác là khoảnh khắc join-table của tôi sinh ra hàng đầu tiên (project promote 1
+  `ProjectFile` → `LibraryAsset` mới HOẶC gắn vào `LibraryAsset` đã có → tự động thêm 1 dòng join
+  `(projectId, assetId, usage='promoted')`).
+- Q5 CHƯA thấy trạng thái ACCEPTED tường minh trong đoạn đọc — cần đọc thêm để xác nhận trước khi
+  Hoà chốt join-table cuối cùng, tránh 2 quyết định đi hai hướng.
+
+⚠️ **Sửa mục E (READY/WAIT-H9/TRUE-MISSING) round trước**: câu hỏi "NEED HOÀ" phải bổ sung thêm
+④ **join-table Project↔Asset có nên đợi Q5 (ProjectFile/Promote) code trước không, hay làm độc lập
+rồi nối sau?** — đây là câu hỏi trình tự thi công, không phải xung đột kiến trúc.
+
 ## A · Negative evidence — vì sao đây là NEW, không REUSE/EXTEND
 
 | Primitive soi | Bản chất thật | Vì sao không dùng được |
