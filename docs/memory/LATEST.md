@@ -3,7 +3,35 @@
 > **Đọc file này ĐẦU TIÊN**, rồi **`docs/memory/RETRIEVAL-MAP.md`** (chỉ mục 11 topic → nguồn sâu, lập 19/08), rồi **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md`** (bản đồ chính tắc 19/08 — thay `IF-KIEN-TRUC.md`), rồi **`docs/TAC-NHAN-T.md`** (vai T).
 > Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — Batch 4-lane đóng: H9 · H11 · GOTO-3D · Guardian)**
+**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — Integration+Human Gate Batch: verify gộp + Golden Loop browser E2E + H6/H7 sẵn sàng cho Hoà)**
+
+---
+
+# 2026-08-19 · khuya muộn (tiếp #5) · MAIN — Integration + Human Gate Batch
+
+**Pre-integration verify GỘP (0 lệch)**: tsc 0 · `npm test` toàn repo exit 0 (0 fail thật) ·
+soi:frontier 0 lệch · soi:cam-dien khớp baseline.
+
+**Golden Loop Browser E2E (server 3001 sống, real click)**: Home→Resume→Present **LIVE, verified
+sống** — bấm "Mở lại" nhảy thẳng `/projects/<id>/present`, KHÔNG qua legacy redirect (CONTINUITY-1
+xác nhận hoạt động thật, không chỉ unit test). 2D/3D tải sạch console. Library-drop thao tác thật
+và GOTO-3D thao tác thật KHÔNG exercise được (cần dữ liệu populated hơn / drag thật) — để lô mắt
+Hoà, không tự dựng dữ liệu giả.
+
+**H6 runbook**: đóng gói thành 1 block copy-paste (backup→push→generate→backfill→verify+rollback)
+tại `docs/memory/sessions/2026-08-19/17-integration-human-gate-batch/README.md`.
+
+**H7 integration plan**: 26 commit là chuỗi tuyến tính sạch, đề xuất `git merge --ff-only` (không
+tạo merge commit, không rewrite history) — lệnh sẵn sàng cho Hoà, MAIN không tự push main.
+
+**Wave dependency graph** (candidate, chưa tự build): W1 Workspace additive (chờ H9-A/B) → W2 Q5
+ProjectFile → W3 Promote→LibraryAsset → W4 Project↔Asset N-N → W5 rev-enforcement 3 model còn lại
+(độc lập) → W6-W12 xa hơn.
+
+## ⛔ CHỜ HOÀ (gom, không hỏi lẻ)
+H6 (chạy block DB) · H7 (bấm merge --ff-only hoặc cấp quyền MAIN) · H9-A (route không wsId resolve
+Flow nào) · H9-B (tên model, tránh đồng âm `lib/workspace.ts`) · lô mắt gộp (Library-drop + GOTO-3D
+thao tác thật + 11 packet khác đang chờ).
 
 ---
 
