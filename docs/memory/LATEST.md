@@ -3,7 +3,31 @@
 > **Đọc file này ĐẦU TIÊN**, rồi **`docs/memory/RETRIEVAL-MAP.md`** (chỉ mục 11 topic → nguồn sâu, lập 19/08), rồi **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md`** (bản đồ chính tắc 19/08 — thay `IF-KIEN-TRUC.md`), rồi **`docs/TAC-NHAN-T.md`** (vai T).
 > Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — Project↔Asset ownership SPEC, chờ Hoà)**
+**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — CONNECT-1 đóng, peer coordination qua SendMessage)**
+
+---
+
+# 2026-08-19 · khuya muộn (tiếp #3) · MAIN — CONNECT-1 đóng + phối hợp 2 peer qua SendMessage
+
+**Phân loại peer đúng cách** (theo hướng dẫn mới: ListAgents thấy 5 peer ≠ 5 active-writing) —
+kiểm mtime dirty-tree (phẳng 1.5h ngoài chính MAIN) + hỏi trực tiếp `Execution`/`UX/UI` qua
+SendMessage thay vì mặc định coi peer là blocker.
+
+**2 phối hợp thật xảy ra trong round**:
+1. `UX/UI` xác nhận R3 (đã checkpoint `f25716e`) khớp byte-identical + phát hiện 1 file sót
+   (`docs/bao-cao-phien/2026-08-19-prompt01-ux-workspace-files-flow.md`) — đã vớt (`06739c5`).
+2. `Execution` bắt lỗ thật: spec ownership round trước viết KHÔNG đọc ADR-Q4/Q5. Đã đọc + sửa
+   (mục A0 trong file spec) — Q5 (`ProjectFile` raw→promote, 1-N trước-promote) BỔ SUNG chứ không
+   conflict với join-table N-N sau-promote của tôi. Cũng cảnh báo đúng lúc: `app/library/ingest/
+   page.tsx` mang `hydrateRefManifest()` (W0.3 của họ) đúng vùng CONNECT-1 đang sửa — đã chuyển
+   cảnh báo cho worker qua SendMessage, xác nhận sau đó KHÔNG bị đụng.
+
+**CONNECT-1 đóng** (`dee7ee8`): "Pick hình" Openverse/Unsplash ở `/library/ingest` hết dead-end —
+`saveLibraryAssetFromBuffer()` là cửa ghi DUY NHẤT (dùng chung upload+URL ngoài), route mới
+`POST /api/library/from-url` có SSRF guard REUSE `isFetchableImageUrl`. 7 test mới + tsc gộp 0.
+"Đề xuất nguồn mới" Gallery để lại phiếu sau.
+
+**21 commit trên `backup/2026-08-19-batch0a`, remote sync, `main` vẫn `c7f3ac8` không đổi.**
 
 ---
 
