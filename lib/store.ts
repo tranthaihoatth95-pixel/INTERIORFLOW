@@ -92,6 +92,14 @@ interface FlowState {
   user: SessionUser | null | undefined;
   currentFlowId: string | null;
   /**
+   * H11 (19/08) — `rev` của flow đang mở, NGUỒN DUY NHẤT client dùng để gửi kèm `expectedRev`
+   * khi autosave (persistNow). `null` = chưa mở flow nào từ server (flow local-only trước khi
+   * đăng nhập) — autosave lúc đó không gửi `expectedRev`, server xử y hệt trước giờ (không có
+   * gì để hoà giải khi chưa ai khác đọc được flow này). LUÔN cập nhật lại từ `rev` server trả
+   * về sau mỗi ghi thành công (xem persistNow) — KHÔNG tự tăng phía client, tránh lệch số với DB.
+   */
+  currentFlowRev: number | null;
+  /**
    * SCOPE (Task #18) — id DỰ ÁN của flow đang mở. `null` = flow chưa gán Project
    * (dự án tự do). Đây là NGUỒN SỰ THẬT về scope 'project' khi làm việc ở các chặng
    * chạy trên route toàn cục (`/`, `/cad-editor`, `/present-editor`): các chặng đó
@@ -170,6 +178,7 @@ interface FlowState {
     flowId: string,
     shareToken: string | null,
     projectId?: string | null,
+    rev?: number,
   ) => void;
 
   onNodesChange: (changes: NodeChange<FlowNode>[]) => void;
@@ -357,6 +366,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   lang: DEFAULT_LANG,
   user: undefined,
   currentFlowId: null,
+  currentFlowRev: null,
   currentProjectId: null,
   shareToken: null,
   chatOpen: false,
@@ -485,7 +495,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     } catch {/* localStorage bị chặn (chế độ riêng tư/iframe) — chỉ mất tiện nghi ghi nhớ, không chặn việc */}
   },
 
-  loadGraph: (graphJson, name, flowId, shareToken, projectId) => {
+  loadGraph: (graphJson, name, flowId, shareToken, projectId, rev) => {
     try {
       const graph = JSON.parse(graphJson) as {
         nodes?: FlowNode[];
@@ -524,6 +534,9 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         edges: graph.edges ?? [],
         flowName: name,
         currentFlowId: flowId,
+        // rev undefined (call-site cũ chưa truyền) → giữ rev cũ thay vì xoá về null; có giá trị
+        // (kể cả 0) → cập nhật, đây là lúc client "cầm" đúng rev server đang có.
+        ...(rev !== undefined ? { currentFlowRev: rev } : {}),
         // undefined (call-site cũ chưa truyền) → giữ nguyên scope hiện tại, không xoá nhầm.
         // Truyền tường minh (kể cả null = flow không gán dự án) → cập nhật scope.
         ...(projectId !== undefined ? { currentProjectId: projectId } : {}),
@@ -1186,15 +1199,39 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let quotaWarned = false;
 
 function persistNow() {
-  const { flowName, credits, nodes, edges, groups, comments, strokes, user, currentFlowId } = useFlowStore.getState();
+  const { flowName, credits, nodes, edges, groups, comments, strokes, user, currentFlowId, currentFlowRev } =
+    useFlowStore.getState();
 
   // Đã đăng nhập + có flow server → autosave lên DB
   if (user && currentFlowId) {
-    fetch(`/api/flows/${currentFlowId}`, {
+    // H11 (19/08) — gửi kèm rev đang cầm. `currentFlowRev == null` (chưa từng nạp rev từ server,
+    // vd flow local-only vừa lên đời) → KHÔNG gửi `expectedRev`, server coi như client cũ (xem
+    // app/api/flows/[id]/route.ts). Có giá trị → server chặn ghi nếu ai đó đã ghi trước ta.
+    const flowIdAtRequest = currentFlowId;
+    fetch(`/api/flows/${flowIdAtRequest}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ graphJson: JSON.stringify({ nodes, edges, groups, comments, strokes }), name: flowName }),
-    }).catch(() => {});
+      body: JSON.stringify({
+        graphJson: JSON.stringify({ nodes, edges, groups, comments, strokes }),
+        name: flowName,
+        ...(currentFlowRev !== null ? { expectedRev: currentFlowRev } : {}),
+      }),
+    })
+      .then(async (res) => {
+        // Người dùng có thể đã chuyển sang flow khác trong lúc request đang bay — đừng ghi rev
+        // của flow A vào state của flow B.
+        if (useFlowStore.getState().currentFlowId !== flowIdAtRequest) return;
+        if (res.status === 409) {
+          useFlowStore
+            .getState()
+            .setNotice('Ai đó vừa sửa flow này trước bạn — tải lại trang để lấy bản mới nhất.');
+          return;
+        }
+        if (!res.ok) return;
+        const body = await res.json().catch(() => null);
+        if (typeof body?.rev === 'number') useFlowStore.setState({ currentFlowRev: body.rev });
+      })
+      .catch(() => {});
     return;
   }
 

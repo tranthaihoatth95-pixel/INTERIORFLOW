@@ -1,9 +1,49 @@
 import { NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
 import { assertProjectAccess, accessErrorPayload } from '@/lib/server/access';
 import { planFlowVersionRetention } from '@/lib/flow-version-retention';
+
+/**
+ * H11 (19/08) — rev optimistic-concurrency. `rev` tăng ở MỌI lần ghi (schema.prisma:97 comment
+ * gốc) nhưng TRƯỚC ĐÂY không route nào dùng nó để CHẶN ghi đè: 2 tab cùng sửa 1 flow → tab ghi
+ * sau âm thầm đè tab ghi trước, không ai biết. Nay client (lib/store.ts persistNow, đã sửa cùng
+ * lượt) gửi kèm `expectedRev` = rev flow đang cầm trên máy. Có gửi + không khớp rev hiện tại
+ * trên DB → 409, KHÔNG ghi. Không gửi (client cũ, hoặc nhánh assignProject không đụng graphJson)
+ * → hành vi y hệt trước giờ, không breaking.
+ *
+ * `where: { id, rev }` là "extended whereUnique" (Prisma ≥4.5, xác nhận bản @prisma/client 6.19
+ * ở package.json) — Prisma tự sinh `UPDATE … WHERE id = ? AND rev = ?`, 0 hàng khớp → ném
+ * P2025 (không phải lỗi thật, là tín hiệu "ai đó ghi trước") — bắt riêng, đừng để lọt thành 500.
+ */
+class RevConflictError extends Error {}
+
+function revWhere(flowId: string, expectedRev: number | undefined) {
+  return expectedRev === undefined ? { id: flowId } : { id: flowId, rev: expectedRev };
+}
+
+async function updateFlowWithRevCheck(
+  flowId: string,
+  expectedRev: number | undefined,
+  data: Prisma.FlowUpdateInput,
+) {
+  try {
+    return await prisma.flow.update({ where: revWhere(flowId, expectedRev), data });
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+      throw new RevConflictError();
+    }
+    throw e;
+  }
+}
+
+const REV_CONFLICT_RESPONSE = () =>
+  NextResponse.json(
+    { error: 'Ai đó vừa sửa flow này trước bạn — tải lại rồi thử lại.', code: 'REV_CONFLICT' },
+    { status: 409 },
+  );
 
 async function ownFlow(id: string) {
   const user = await getSessionUser();
@@ -22,7 +62,9 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 }
 
 /**
- * PUT: autosave graph/name/project — body { graphJson?, name?, projectId? }
+ * PUT: autosave graph/name/project — body { graphJson?, name?, projectId?, expectedRev? }
+ * expectedRev (H11, 19/08, optional): rev flow client đang cầm — có gửi mà lệch rev thật trên
+ *   DB thì 409 REV_CONFLICT, không ghi. Không gửi → hành vi cũ (luôn ghi).
  * action=snapshot: tăng version + lưu FlowVersion, rồi tỉa theo thang lưu giữ (④ đổi cò, 01/08,
  *   docs/QUYET-DINH-HA-TANG-2026-07-31.md §④ phương án C) — CHỈ gọi khi người dùng bấm
  *   "Đánh dấu bản này" (CommandPalette.tsx qua lib/workspace.ts snapshotFlow()), KHÔNG còn tự
@@ -33,12 +75,20 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   const r = await ownFlow(params.id);
   if ('error' in r) return r.error;
   const body = await req.json().catch(() => ({}));
+  const expectedRev = typeof body.expectedRev === 'number' ? body.expectedRev : undefined;
 
   if (body.action === 'snapshot') {
-    const updated = await prisma.flow.update({
-      where: { id: r.flow.id },
-      data: { version: r.flow.version + 1, rev: { increment: 1 }, lastEditedBy: r.user.id },
-    });
+    let updated;
+    try {
+      updated = await updateFlowWithRevCheck(r.flow.id, expectedRev, {
+        version: r.flow.version + 1,
+        rev: { increment: 1 },
+        lastEditedBy: r.user.id,
+      });
+    } catch (e) {
+      if (e instanceof RevConflictError) return REV_CONFLICT_RESPONSE();
+      throw e;
+    }
     await prisma.flowVersion.create({
       data: { flowId: r.flow.id, version: r.flow.version, graphJson: r.flow.graphJson },
     });
@@ -60,19 +110,26 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     } catch {
       /* tỉa là dọn dẹp nền — lỗi ở đây không được làm hỏng việc đánh dấu bản vừa ghi thành công. */
     }
-    return NextResponse.json({ version: updated.version });
+    return NextResponse.json({ version: updated.version, rev: updated.rev });
   }
 
   if (body.action === 'share' || body.action === 'unshare') {
     const shareToken = body.action === 'share' ? randomBytes(12).toString('hex') : null;
-    await prisma.flow.update({
-      where: { id: r.flow.id },
-      data: { shareToken, rev: { increment: 1 }, lastEditedBy: r.user.id },
-    });
-    return NextResponse.json({ shareToken });
+    let updated;
+    try {
+      updated = await updateFlowWithRevCheck(r.flow.id, expectedRev, {
+        shareToken,
+        rev: { increment: 1 },
+        lastEditedBy: r.user.id,
+      });
+    } catch (e) {
+      if (e instanceof RevConflictError) return REV_CONFLICT_RESPONSE();
+      throw e;
+    }
+    return NextResponse.json({ shareToken: updated.shareToken, rev: updated.rev });
   }
 
-  const data: Record<string, unknown> = { rev: { increment: 1 }, lastEditedBy: r.user.id };
+  const data: Prisma.FlowUpdateInput = { rev: { increment: 1 }, lastEditedBy: r.user.id };
   if (typeof body.graphJson === 'string') data.graphJson = body.graphJson;
   if (typeof body.name === 'string') data.name = body.name;
   // 05/08 (`docs/AUDIT-BACKEND-2026-08-03.md` §2.5) — TRƯỚC ĐÂY gán `projectId` BẤT KỲ mà không
@@ -96,12 +153,21 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     } else if (target !== null) {
       return NextResponse.json({ error: 'projectId không hợp lệ.' }, { status: 400 });
     }
-    data.projectId = target;
+    // `data` giờ gõ kiểu `Prisma.FlowUpdateInput` (trước là `Record<string, unknown>`) — Prisma
+    // sinh input dùng quan hệ (`project: { connect/disconnect }`) chứ không cho gán thẳng scalar
+    // `projectId` khi model có declare `@relation`, dù cột DB vẫn là `projectId` bình thường.
+    data.project = target ? { connect: { id: target } } : { disconnect: true };
   }
   if (typeof body.coverUrl === 'string') data.coverUrl = body.coverUrl.slice(0, 500);
   if (typeof body.status === 'string') data.status = body.status.slice(0, 160);
-  const flow = await prisma.flow.update({ where: { id: r.flow.id }, data });
-  return NextResponse.json({ ok: true, updatedAt: flow.updatedAt });
+  let flow;
+  try {
+    flow = await updateFlowWithRevCheck(r.flow.id, expectedRev, data);
+  } catch (e) {
+    if (e instanceof RevConflictError) return REV_CONFLICT_RESPONSE();
+    throw e;
+  }
+  return NextResponse.json({ ok: true, updatedAt: flow.updatedAt, rev: flow.rev });
 }
 
 /** 26/07 local-first: xoá MỀM — set deletedAt thay vì delete() thật (chuẩn bị Pha 2/3 đồng bộ). */
