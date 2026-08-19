@@ -1,6 +1,15 @@
 # IF · CAPABILITY EXPOSURE MATRIX
 
 > **Lập 19/08/2026 khuya** · vai INTEGRATION COORDINATOR · Last verified HEAD: **`c7f3ac8`** + working tree **88 mục dirty** (re-verify độc lập, không chép audit).
+>
+> ⚠️ **DELTA 19/08 khuya muộn — MAIN Batch 0A-2 đóng 8/11 RECONNECT, bảng dưới CHƯA phản ánh** (chi tiết:
+> `IF-INTEGRATION-GATE-2026-08-19.md` §5b). Đọc bảng dưới kèm ghi đè này: **specId-drop** (R1) ·
+> **thao-tac-glyph** (R3) · **Tool3DBar/ToolbarChip** (R4+L1) · **LightBar+ResumeWork** (R5) ·
+> **2-đường-upload** (R6) · **reviewDeck-nguồn-rỗng** (R7) · **geom2d-reader** (R8) · **4 nhãn +
+> lux** (R9a) — tất cả chuyển **LIVE**, sống trên `backup/2026-08-19-batch0a` (14 commit, remote đã
+> push), CHƯA vào `main` (chờ H7). **Frame.rotation KHÔNG DISCONNECTED — ĐÃ CÓ handle xoay từ trước**
+> (R9b REFUSE phát hiện DRIFT chính bảng này — sửa dòng LANE 6 bên dưới). ORPHAN còn lại thật:
+> VitalsGesturePanel · web-lookup · lib/idfc-import (3 trong 7, không phải 7).
 > Trả lời MỘT câu hỏi: **mỗi capability đang ĐỨNG Ở ĐÂU trên dây ENGINE → CONTRACT → CALLER → SURFACE → USER ACTION → OUTPUT** — và nếu đứt, đứt ở mắt nào.
 >
 > **Status legend**: `LIVE` đủ dây tới người dùng · `PARTIAL` sống nhưng thiếu mảnh · `DISCONNECTED` engine + UI đều có, dây giữa đứt · `ORPHAN` engine có, 0 caller/0 mount · `BLOCKED` chờ quyết định/hạ tầng ngoài code · `TRUE-MISSING` chưa xây (có negative evidence) · `HEADLESS-OK` cố ý không UI (intentional).
@@ -92,7 +101,7 @@ Bảng chia theo LANE. Mức chi tiết: chỉ capability CÓ Ý NGHĨA tích h�
 |---|---|---|---|---|---|
 | PresentEditor + H4 6 loại + `.idfp` disk-sync | `PresentDocTypePicker.tsx` + `PresentSheets.tsx:136-419` | **LIVE** | 3 loại khoá kèm lý do = UI trung thực chuẩn | REUSE | UX §2.7 |
 | **reviewDeck nguồn rỗng** | `lib/review` evaluateDeck có thật | **DISCONNECTED** | `components/review/ReviewPanel.tsx:100` (⚠️ path MỚI — audit ghi components/studio/) vẫn `reviewDeck({deBai:null})` không slides — luatDeck không bao giờ chạy qua panel | **RECONNECT #7** | re-verify 19/08 khuya |
-| **Frame.rotation** | model + render sẵn (`EditorCanvas.tsx:492`) | **DISCONNECTED** | 0 UI setter (re-verify: mọi khởi tạo `rotation: 0`) — thiếu đúng 1 handle xoay | **RECONNECT #9b** | re-verify |
+| **Frame.rotation** | `Element.tsx:266-270,381-400` handle 'rot' chấm tròn, xoay quanh tâm, snap 5°, undo qua `onFrame` | **LIVE** | ⛔ dòng cũ "DISCONNECTED/0 UI setter" là DRIFT chính bảng này — R9b REFUSE 19/08 khuya muộn phát hiện, worker đo thấy `EditorCanvas.tsx:492` KHÔNG phải nơi sống (nhầm file) | REUSE — ý mới "Shift=bậc/tự do" vào IDEAS-BACKLOG | — |
 | BOQ XLSX + Gói Hồ Sơ Sống | `lib/ho-so-song/pack.ts:159` | **LIVE** | — | REUSE | — |
 | Brand Kit | `brand-kit.ts:8-11` | **PARTIAL** | per-máy, chưa per-project (lệch chốt 01/08) | EXTEND (Wave theo Q6) | UX P2 |
 | Nhãn PPTX "luôn 16:9" | `Toolbar.tsx:613` | **PARTIAL** | nhãn lệch code (code đã đọc stagePreset — DRIFT D6) | sửa nhãn (RECONNECT #9) | UX D6 |

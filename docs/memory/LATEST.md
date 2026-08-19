@@ -3,7 +3,21 @@
 > **Đọc file này ĐẦU TIÊN**, rồi **`docs/memory/RETRIEVAL-MAP.md`** (chỉ mục 11 topic → nguồn sâu, lập 19/08), rồi **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md`** (bản đồ chính tắc 19/08 — thay `IF-KIEN-TRUC.md`), rồi **`docs/TAC-NHAN-T.md`** (vai T).
 > Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-19 tối (MAIN foreman — Batch 0A durability + Batch 0B)**
+**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — Integrate→Home Reconciliation, phiếu mới nạp)**
+
+---
+
+# 2026-08-19 · khuya muộn · MAIN — phiếu "Integrate→Home→Golden Loop" nạp
+
+⓪ đo lại: **backup/2026-08-19-batch0a ĐÃ Ở REMOTE** (đồng bộ local, 14 commit — khác báo cáo cũ
+"push bị chặn", permission đã mở hoặc Hoà tự chạy). `main` vẫn `c7f3ac8`, H7 chưa chạy. Server
+3001 sống (dùng lại). Capability Matrix (viết 19/08 khuya, TRƯỚC batch work) đã lỗi thời — đã ghi
+delta đầu file + sửa dòng Frame.rotation (R9b: KHÔNG DISCONNECTED, DRIFT của chính bảng này).
+
+**Luật cứng phiếu mới**: CẤM build Home mới — đây là RECONCILIATION. Trước khi đụng Home phải nộp
+bảng LOOK INSIDE đủ cột (Mảnh·nền·nơi sống·dây·trạng thái·cặp bổ trợ·hành động). Đang chạy 2 audit
+read-only song song: Home/Project-Flow (+ xác minh continuity bug LegacyStageRedirect từ R5) ·
+Context-Pointer/Task-Review/External-model/MasterTool-vocab-check. Chưa mở packet code nào round này.
 
 ---
 
