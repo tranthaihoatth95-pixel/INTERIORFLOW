@@ -297,6 +297,15 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   /* 12/08 (`library-data-that`) — kệ đọc kho THẬT `LibraryAsset` qua `/api/library`
    * (lib/library/db-items.ts), trộn với món built-in trong `itemsFor`. */
   const { dbItems, dbLoaded, refreshDb } = useLibraryDbItems(open);
+  /* 20/08 — nơi khác vừa ghi vào kho `LibraryAsset` (vd Promote ở khu Tệp nguồn dự án,
+   * `components/filemanager/TepNguonDuAn.tsx`) thì bắn event này để kệ nạp lại — hook
+   * `useLibraryDbItems` cache theo phiên nên thiếu tín hiệu là kệ bày bản cũ. Cùng khuôn
+   * event `if:navigator-toggle` của AppShell, KHÔNG store mới. */
+  useEffect(() => {
+    const on = () => refreshDb();
+    window.addEventListener('if:library-db-refresh', on);
+    return () => window.removeEventListener('if:library-db-refresh', on);
+  }, [refreshDb]);
   const items = useMemo(() => {
     if (shelfId === 'common-idfc') {
       const q = query.trim().toLowerCase();

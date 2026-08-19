@@ -7,6 +7,7 @@ import { FileManagerShell } from '@/components/filemanager/FileManagerShell';
 import { CanvasWallpaper } from '@/app/settings/_components/CanvasWallpaper';
 import { HaiNgan } from './_components/HaiNgan';
 import { NganPhanTho } from './_components/NganPhanTho';
+import { TepNguonDuAn } from '@/components/filemanager/TepNguonDuAn';
 import { useT } from '@/lib/i18n';
 
 /**
@@ -45,6 +46,9 @@ export default function FilesPage() {
         <HaiNgan
           duAn={
             <div className="min-h-0 flex-1 overflow-y-auto">
+              {/* 20/08 — khu Tệp nguồn dự án (ProjectFile server thật) đứng TRÊN cây thư mục đĩa:
+                  mắt xích đầu của dòng chảy §5, xem docstring TepNguonDuAn.tsx. */}
+              <TepNguonDuAn />
               <FileManagerShell currentFolderId={currentFolderId} onSelectFolder={setCurrentFolderId} />
             </div>
           }
