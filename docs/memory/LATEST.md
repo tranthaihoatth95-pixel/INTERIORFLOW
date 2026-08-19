@@ -3,7 +3,14 @@
 > **Đọc file này ĐẦU TIÊN**, rồi **`docs/memory/RETRIEVAL-MAP.md`** (chỉ mục 11 topic → nguồn sâu, lập 19/08), rồi **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md`** (bản đồ chính tắc 19/08 — thay `IF-KIEN-TRUC.md`), rồi **`docs/TAC-NHAN-T.md`** (vai T).
 > Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — Q5-SCHEMA đóng, chạm migration execution gate)**
+**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — Cleanup + BUILD mode)**
+
+## AUTHORITATIVE — Reference/Asset contract (Hoà chốt, đè mọi bản cũ mâu thuẫn)
+`ProjectFile` = raw project-owned input (1-N) · `LibraryAsset` = reusable understood asset, KHÔNG
+projectId trực tiếp, dùng được bởi nhiều Project · `ProjectAssetUsage` = relation N-N (schema đã
+thêm text-only, chờ push) · `LibraryAsset.usage` = phân loại generic/default, KHÔNG deprecate ·
+`ProjectAssetUsage.usage` = cách project cụ thể dùng, REUSE cùng vocabulary · Q5/Promote = checkpoint
+nối raw→reusable. Bản spec 15/16 cũ nào mâu thuẫn điểm này → SUPERSEDED, đọc A0/A1/C2 của 16 làm chuẩn.
 
 ---
 
