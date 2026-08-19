@@ -13,9 +13,24 @@ sạch. **Một sự cố thật đã xảy ra và đã gỡ**: generate chạy 
 runtime `ProductSpec` cho MỌI phiên — MAIN bắt bằng query Prisma thật, không phải đoán; Hoà chạy
 push ngay sau, hết mismatch (đã verify lại bằng query thật lần 2).
 
-## Đang mở — chuỗi ProjectAssetUsage (2 writer song song, file rời)
-API (`app/api/project-asset-usage/**`) + UI attach/where-used (`components/library/LibrarySheet.tsx`
-+ `AssetWhereUsed.tsx`) — cả hai đang chạy, chưa checkpoint.
+## ✅ REFERENCE N-N = LIVE END-TO-END (20/08, `9d3d37f`) — không còn chỉ "API verified"
+Người dùng **bấm nút thật** → relation thật. Golden Journey 10/10 checkpoint browser :3001:
+attach A → where-used A → **cùng asset** sang B → where-used A+B → LibraryAsset **không nhân bản**
+(giữ 1613) → reopen persist → bấm lại khi đã gắn = 409 không nhân bản → remove A: asset + B sống.
+Chi tiết: `sessions/2026-08-20/01-golden-journey-asset-nn/` (API) + `02-reference-ui-golden-journey/` (UI).
+
+⚠️ **Bài học MAIN**: từng báo sai "nút Dùng cho dự án này không xuất hiện" — thật ra nút ở
+y=1169px NGOÀI viewport 900px (screenshot cắt) + lúc đó server còn 503. `dbAssetIdOf`/identity/
+context ĐỀU ĐÚNG, không có gì phải sửa. "Lincoln 327" là LibraryAsset DB thật, không phải hardcoded.
+⇒ Luật: **kết luận "UI thiếu X" phải dựa runtime evidence (fiber/DOM), không dựa screenshot**.
+
+**Bug UX thật đã sửa** (do bước REOPEN lộ ra): nút nói sai trạng thái sau reload → nay pre-fetch
+bằng REUSE hook `useAssetWhereUsed` (1 request nuôi 2 nơi, không API/store mới) + `da-gan-du-an.ts`
+7 test. 3 trạng thái không cái nào nói dối (đang tra / sự thật DB / lỗi thì lùi hành vi cũ).
+
+**39 commit trên backup, remote sync. `main` vẫn `c7f3ac8`.** Thứ tự kế tiếp (Hoà chốt):
+A. ProjectFile→Promote→LibraryAsset · B. provenance/source/license visibility · C. usage/context
+sâu hơn · D. personalization/ranking · E. UX polish.
 
 ## AUTHORITATIVE — Reference/Asset contract (Hoà chốt, đè mọi bản cũ mâu thuẫn)
 `ProjectFile` = raw project-owned input (1-N) · `LibraryAsset` = reusable understood asset, KHÔNG
