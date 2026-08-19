@@ -3,7 +3,32 @@
 > **Đọc file này ĐẦU TIÊN**, rồi **`docs/memory/RETRIEVAL-MAP.md`** (chỉ mục 11 topic → nguồn sâu, lập 19/08), rồi **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md`** (bản đồ chính tắc 19/08 — thay `IF-KIEN-TRUC.md`), rồi **`docs/TAC-NHAN-T.md`** (vai T).
 > Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — Integrate→Home Reconciliation, phiếu mới nạp)**
+**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — Reference/Image Reconciliation đóng)**
+
+---
+
+# 2026-08-19 · khuya muộn (tiếp) · MAIN — Reference/Image Intelligence Reconciliation
+
+⓪ đo lại: reality khớp 100%. **Phát hiện: 5 phiên peer sống song song** (UX/UI · Execution ·
+GUARDIAN · interiorflow-93 · tranben-12) — phạm vi không rõ ⇒ round này CHỈ audit read-only, hoãn
+packet ghi-file. 2 audit Explore song song, MAIN spot-check 8 claim — khớp 100%.
+
+**Kết luận một câu**: ảnh reference là **BỐN HÒN ĐẢO không nói chuyện với nhau** (LibraryAsset ·
+RefManifest/IndexedDB · Files ngăn① · Gallery-local-state), và đảo bền nhất (`LibraryAsset`)
+**KHÔNG có `projectId`** — đây là nút thắt sâu hơn H9: kể cả có Workspace model, LibraryAsset vẫn
+cần schema change THỨ HAI để nối được Reference Canvas 3D (hiện 0 dòng code, chỉ spec).
+
+Chi tiết đủ 8 mục (Capability Matrix · Ownership · Provider Reality · Personalization · License ·
+Golden Journey R0-R6 · Half-capability · What-not-to-build): `docs/memory/sessions/2026-08-19/
+15-reference-image-reconciliation/README.md`. READY-TO-IMPLEMENT (không cần H9): connect "Đề xuất
+nguồn mới" + Openverse/Unsplash picks → LibraryAsset thật · cầu nối RefUsage↔LibraryAsset.usage —
+CHƯA MỞ round này (chờ xác nhận không va 5 phiên peer). Unsplash/Openverse xác nhận CODE THẬT
+(fetch API thật); Pinterest CHẶN chủ động (quyết định có ý thức, không phải thiếu). Nợ mới:
+`from-photo.ts` (image→3D) ORPHAN xác nhận lại 0 caller thật.
+
+## ⛔ CHỜ HOÀ (thêm — H12)
+
+H12 — thêm `projectId` vào `LibraryAsset`: schema change song song H9, quyết cùng lúc.
 
 ---
 
