@@ -131,6 +131,36 @@ function testRealShelf() {
     }));
 }
 
+/** R1 (19/08) — specId phải đi XUYÊN từ kệ tới kết quả resolve (rồi DropBridge gán vào entity).
+ * Bốn luật canh: có mã khớp → mang đúng ProductSpec.id · không nguồn nào → KHÔNG bịa ·
+ * specId đã chốt ở tầng UI (gán tay) THẮNG khớp mã · hai món khác mã không lây identity. */
+function testSpecIdThroughDrop() {
+  console.log('\n[7] R1 — specId đi xuyên đường thả');
+  const SPECS = [
+    { id: 'spec_sofa', sku: 'SOFA-3S' },
+    { id: 'spec_win', sku: 'WIN-SL-1800' },
+  ];
+
+  const a = resolveLibraryItem({ name: 'Sofa 3 chỗ', code: 'SOFA-3S', kind: 'furniture' }, MANIFEST, SPECS);
+  ok('món có mã khớp sku → specId = ProductSpec.id', a?.via === 'blockdef' && a.specId === 'spec_sofa');
+
+  const b = resolveLibraryItem({ name: 'Sofa 3 chỗ', code: 'SOFA-3S', kind: 'furniture' }, MANIFEST);
+  ok('không specs + không specId tầng UI → KHÔNG bịa (undefined)', !!b && b.specId === undefined);
+
+  const c = resolveLibraryItem(
+    { name: 'Sofa 3 chỗ', code: 'SOFA-3S', kind: 'furniture', specId: 'spec_gan_tay' },
+    MANIFEST,
+    SPECS,
+  );
+  ok('specId gán tay ở tầng UI THẮNG khớp mã tự động', c?.specId === 'spec_gan_tay');
+
+  const d = resolveLibraryItem({ name: 'Cửa sổ trượt', code: 'WIN-SL-1800', kind: 'block' }, MANIFEST, SPECS);
+  ok('hai món khác mã → specId khác nhau, không lây', d?.specId === 'spec_win' && d.specId !== a?.specId);
+
+  const e = resolveLibraryItem({ name: 'Sofa 3 chỗ', code: 'MA-KHONG-CO-TRONG-KHO', kind: 'furniture' }, MANIFEST, SPECS);
+  ok('mã không khớp kho spec → specId trống nhưng món VẪN thả được', !!e && e.specId === undefined);
+}
+
 function main() {
   testNormalize();
   testPrefersIdentity();
@@ -139,6 +169,7 @@ function main() {
   testWrongMatchRegression();
   testMaterialsExcluded();
   testRealShelf();
+  testSpecIdThroughDrop();
   console.log(`\n${pass} ok, ${fail} fail`);
   if (fail > 0) process.exit(1);
 }

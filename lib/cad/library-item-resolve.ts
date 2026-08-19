@@ -36,6 +36,10 @@ export interface LibraryItemRef {
   /** loại ô xem trước trên kệ ('block' | 'furniture' | 'material' | …) — dùng để LOẠI SỚM món
    * không phải hình vẽ (vd vật liệu, preset), tránh cố khớp rồi khớp nhầm. */
   kind?: string;
+  /** R1 (19/08) — specId đã CHỐT ở tầng UI trước khi thả (gán tay `specLinks` thắng khớp mã,
+   * CÙNG thứ tự ưu tiên với cột thông số ④ của tấm Thư viện). Có nó ⇒ resolver dùng thẳng,
+   * KHÔNG matchSpec lại. Giá trị vẫn là `ProductSpec.id` (FK mềm) — KHÔNG phải matId UUID. */
+  specId?: string;
 }
 
 /** Bản ghi kho vật liệu tối thiểu cần để đối chiếu — khớp DTO thật của `GET /api/specs`
@@ -124,6 +128,11 @@ function matchByName<T extends { name: string; id: string }>(
  * viện đã dùng (`lib/library/spec-panel.ts`), để "món hiện thông số gì" và "món thả xuống mang
  * specId gì" LUÔN đồng nhất, không phải hai đường so khớp khác nhau ra hai kết quả lệch nhau.
  * Không truyền `specs` (caller cũ) ⇒ hành vi y nguyên, `specId` luôn `undefined`.
+ *
+ * ℹ️ 19/08 — `matchSpec(item.code, specs)` là lookup BUSINESS KEY (SheetItem.code ↔ ProductSpec.sku),
+ * KHÔNG phải material identity lookup. Chốt hòa giải Hoà 19/08 (matId = UUID riêng) KHÔNG áp cho
+ * hàm này — matchSpec giữ nguyên. `specId` output vẫn là ProductSpec.id (FK cứng). Material identity
+ * mới (entity.matId? = UUID) là field song song, sẽ thêm ở phiếu Slice 1A sau khi Prisma ready.
  */
 export function resolveLibraryItem(
   item: LibraryItemRef,
@@ -132,7 +141,9 @@ export function resolveLibraryItem(
 ): ResolvedLibraryItem | null {
   if (item.kind && !(DROPPABLE_ITEM_KINDS as readonly string[]).includes(item.kind)) return null;
 
-  const specId = specs?.length ? matchSpec(item.code, specs)?.id : undefined;
+  // R1: `item.specId` (đã chốt ở tầng UI — gán tay thắng) đứng trước khớp mã tự động; không có
+  // nguồn nào ⇒ để trống, KHÔNG bịa.
+  const specId = item.specId ?? (specs?.length ? matchSpec(item.code, specs)?.id : undefined);
 
   const def = matchByName(BLOCKS, item);
   if (def) return { via: 'blockdef', def: def.hit, keepsIdentity: true, approximate: def.approximate, specId };

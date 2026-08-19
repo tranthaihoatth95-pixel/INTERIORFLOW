@@ -28,7 +28,7 @@ import {
   type SheetItem,
 } from '@/lib/library/shelves';
 import { useLibraryDbItems } from '@/lib/library/db-items';
-import { loadIdfcStore, type StoredIdfc } from '@/lib/library/idfc-store';
+import { loadIdfcStore, hydrateIdfcStore, type StoredIdfc } from '@/lib/library/idfc-store';
 import { getPbr } from '@/lib/materials/pbr-store';
 import { exportIdfc, IDFC_KINDS, type IdfcKind } from '@/lib/cad/idfc';
 import { resolveLibraryItem } from '@/lib/cad/library-item-resolve';
@@ -287,7 +287,8 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
    * 'studio' (kho localStorage là tầng studio — xem idfc-store.ts). */
   const [idfcItems, setIdfcItems] = useState<StoredIdfc[]>([]);
   useEffect(() => {
-    if (open) setIdfcItems(loadIdfcStore());
+    // W0.3: kho `.idfc` nay ở IndexedDB — chờ hydrate xong mới đọc để không hiện bản cầu cũ.
+    if (open) void hydrateIdfcStore().then(() => setIdfcItems(loadIdfcStore()));
   }, [open, mode]);
   /* 12/08 (`library-data-that`) — kệ đọc kho THẬT `LibraryAsset` qua `/api/library`
    * (lib/library/db-items.ts), trộn với món built-in trong `itemsFor`. */
@@ -426,7 +427,15 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
    * nhận ⇒ nói thẳng là màn đang mở chưa đón được, kèm việc làm tiếp.
    */
   const instantiate = (item: SheetItem) => {
-    const detail: SheetItem & { claimed?: boolean } = { ...item, claimed: false };
+    /* R1 (19/08): specId đi kèm sự kiện thả — entity rơi xuống bản vẽ mang đúng FK mềm
+     * `ProductSpec.id` để BOQ hết `missing-specId-item` cho món có mã. Ưu tiên ĐÚNG như cột
+     * thông số ④: gán tay (`specLinks` — chỉ nhận khi spec còn tồn tại trong kho) thắng khớp mã
+     * tự động (`matchSpec`, CÙNG hàm — không đẻ đường so khớp thứ hai). Không có ⇒ để trống,
+     * KHÔNG bịa. */
+    const linked = state.specLinks[item.id];
+    const linkedOk = linked && specs?.some((s) => s.id === linked) ? linked : undefined;
+    const specId = linkedOk ?? (specs?.length ? matchSpec(item.code, specs)?.id : undefined);
+    const detail: SheetItem & { claimed?: boolean; specId?: string } = { ...item, specId, claimed: false };
     window.dispatchEvent(new CustomEvent(LIBRARY_INSTANTIATE_EVENT, { detail }));
     if (detail.claimed) return;
     pushLibraryToast(

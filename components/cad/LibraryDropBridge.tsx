@@ -73,6 +73,9 @@ async function dropItem(item: LibraryItemRef): Promise<void> {
       rot: 0,
       sx: 1,
       sy: 1,
+      // R1 (19/08): giữ FK mềm ProductSpec.id đi xuyên tới entity — món có mã lên được BOQ,
+      // hết `missing-specId-item` cho đúng ca thả từ Thư viện. Không có ⇒ KHÔNG khai field.
+      ...(hit.specId ? { specId: hit.specId } : {}),
     };
     useCadStore.getState().addEntities([e]);
     // Khớp gần đúng (tên kệ ≠ tên kho) PHẢI nói ra tên thứ thật sự vừa thả — vòng kiểm phản biện
@@ -107,7 +110,8 @@ export function LibraryDropBridge() {
       // Nhận việc NGAY (đồng bộ) để nơi phát không hiện câu "chưa thả xuống được"; kết quả thật
       // (thả được / chưa có hình) báo tiếp bằng toast + thanh trạng thái ngay sau đó.
       detail.claimed = true;
-      void dropItem({ name: detail.name, code: detail.code, kind: detail.kind });
+      // R1: chuyển tiếp specId đã chốt ở tầng UI (gán tay thắng khớp mã — xem LibrarySheet).
+      void dropItem({ name: detail.name, code: detail.code, kind: detail.kind, specId: detail.specId });
     };
     window.addEventListener(LIBRARY_INSTANTIATE_EVENT, onInstantiate);
     return () => window.removeEventListener(LIBRARY_INSTANTIATE_EVENT, onInstantiate);
