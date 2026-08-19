@@ -76,13 +76,13 @@ export function FlankStrip({ side, open, onClick, label, hotkey }: {
       aria-label={open ? `Thu ${label}` : `Mở ${label}`}
       title={(open ? `Thu ${label}` : `Mở ${label}`) + (hotkey ? ` — ${hotkey}` : '')}
       style={{
-        flex: '0 0 14px',
-        width: 14,
+        flex: '0 0 10px',
+        width: 10,
         alignSelf: 'stretch',
         border: 'none',
-        [side === 'left' ? 'borderRight' : 'borderLeft']: '1px solid var(--border)',
-        background: 'var(--panel)',
-        color: 'var(--t3)',
+        [side === 'left' ? 'borderRight' : 'borderLeft']: '1px solid var(--vien-mo)',
+        background: 'transparent',
+        color: 'var(--t4)',
         display: 'grid',
         placeItems: 'center',
         cursor: 'pointer',

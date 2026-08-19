@@ -28,7 +28,11 @@ const fakeWindow = { localStorage: new FakeLocalStorage() };
 
 // import SAU khi window đã có mặt — module đọc `typeof window` lúc hàm chạy (không phải lúc
 // import), nhưng gán trước cho chắc, đúng thứ tự thật của app (window luôn có sẵn khi React chạy).
-import { loadIdfcStore, saveIdfcItems, removeIdfc } from './idfc-store';
+// W0.3 (19/08): store nay cache-in-memory + IndexedDB (studio-persist); trong Node không có
+// indexedDB nên nhánh IDB tự no-op — test này kiểm phần CẦU localStorage + logic thuần.
+// Mỗi lần bơm __raw phải __resetIdfcStoreForTest() để cache đọc lại từ localStorage (mô phỏng
+// phiên trình duyệt mới) — không reset thì cache cũ che mất dữ liệu vừa bơm.
+import { loadIdfcStore, saveIdfcItems, removeIdfc, __resetIdfcStoreForTest } from './idfc-store';
 import type { ParsedIdfc } from '../cad/idfc';
 
 let pass = 0;
@@ -82,6 +86,7 @@ ok('chưa có key -> mảng rỗng, không throw', Array.isArray(loadIdfcStore()
 
 console.log('loadIdfcStore — JSON hỏng trong localStorage thì trả [] KHÔNG throw giữa render');
 fakeWindow.localStorage.__raw(LS_KEY, '{ dây rợ không phải json hợp lệ [[[');
+__resetIdfcStoreForTest();
 let threw = false;
 let brokenResult: unknown[] = [];
 try {
@@ -94,10 +99,12 @@ eq('JSON hỏng -> kho rỗng', brokenResult, []);
 
 console.log('loadIdfcStore — JSON hợp lệ nhưng KHÔNG PHẢI mảng (vd object) cũng trả [] an toàn');
 fakeWindow.localStorage.__raw(LS_KEY, JSON.stringify({ not: 'an array' }));
+__resetIdfcStoreForTest();
 eq('JSON hợp lệ nhưng không phải mảng -> []', loadIdfcStore(), []);
 
 // dọn sạch trước khối test upsert — mỗi khối test tự chủ, không phụ thuộc thứ tự chạy trước
 fakeWindow.localStorage.__raw(LS_KEY, JSON.stringify([]));
+__resetIdfcStoreForTest();
 
 console.log('saveIdfcItems — lưu 2 món 2 LOẠI KHÁC NHAU, kho không quan tâm kind');
 const now1 = new Date('2026-08-08T10:00:00.000Z');

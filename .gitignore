@@ -85,3 +85,11 @@ docs/mocks/*Ti Share*/
 docs/mocks/*so-do-to-chuc*
 docs/mocks/*Sơ đồ tổ chức*
 nhat-ky-chup-man.txt
+
+# Understand-Anything plugin — analysis data
+# Giữ .ua/knowledge-graph.json + meta.json + config.json + .understandignore + fingerprints.json (commit được, share team)
+# Bỏ .ua/intermediate/ (dữ liệu trung gian) + .ua/tmp/ (script tạm) + .ua/.trash-*/ (bin auto-dọn sau 7 ngày)
+.ua/intermediate/
+.ua/tmp/
+.ua/.trash-*/
+.ua/diff-overlay.json

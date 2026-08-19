@@ -130,8 +130,13 @@ export interface IdfcGeom2d {
 }
 
 /** ② mặt Thiết kế 3D — K1: KHÔNG lưu mesh rời, chỉ lưu THAM SỐ để tầng 3D suy từ `geom2d` giống
- * hệt cách `cad-to-obj.ts` đùn tường. `matId` (= ProductSpec.sku) ưu tiên; `pbr` nhúng chỉ khi
- * cấu kiện chưa có matId trong kho chung. */
+ * hệt cách `cad-to-obj.ts` đùn tường. `matId` ưu tiên; `pbr` nhúng chỉ khi cấu kiện chưa có
+ * matId trong kho chung.
+ *
+ * ⚠️ SUPERSEDED 19/08 (comment cũ ghi `matId (= ProductSpec.sku)`): matId nay là IF-owned
+ * immutable UUID (Hoà chốt hòa giải Decision Conflict). `.idfc` v3+ export ghi UUID; `.idfc` v1-v3
+ * cũ có thể có matId=sku legacy — importIdfc resolve qua `lib/materials/matid-identity.ts`
+ * `resolveInputMatId` khi bảng mapping có sẵn. Xem frontier `material-matid-uuid`. */
 export interface IdfcGeom3d {
   heightMm?: number;
   bevelMm?: number;

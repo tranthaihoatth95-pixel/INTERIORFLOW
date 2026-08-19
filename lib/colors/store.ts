@@ -22,31 +22,51 @@
 
 import { getProjectFolderHandle, writeTextFile, readTextFile, type FolderAccessFailure } from '../root-folder';
 import { parseColorSource, type ColorSource, type ProjectColorFile } from './types';
+import { createStudioBlobStore } from '../storage/studio-persist';
 
+/** Key localStorage CŨ — W0.3 (19/08): chỉ đọc làm cầu di trú sang IndexedDB, không ghi mới. */
 const STUDIO_KEY = 'interiorflow.colorSources';
 const PROJECT_FILE = 'colors.json';
 
-/* ═══════════════════════ TẦNG STUDIO (localStorage) ═══════════════════════ */
+/* ═══════════════════════ TẦNG STUDIO (IndexedDB, W0.3 — trước là localStorage) ═══════════════
+ * FINAL-AUDIT A-4: bảng màu studio là TÀI SẢN — clear-site-data trên localStorage là mất vĩnh
+ * viễn, và bảng vài nghìn màu vỡ trần ~5MB là chuyện thật (comment cũ tự khai). Dời xuống IDB
+ * qua `studio-persist` (tái dùng DB `interiorflow-sheets`). Chữ ký public GIỮ NGUYÊN (sync). */
+
+function parseList(v: unknown): ColorSource[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  return v.map(parseColorSource).filter((s): s is ColorSource => s !== null);
+}
+
+const studioStore = createStudioBlobStore<ColorSource[]>({
+  route: '/studio-colors',
+  readLegacy: () => {
+    if (typeof window === 'undefined') return undefined;
+    try {
+      return parseList(JSON.parse(localStorage.getItem(STUDIO_KEY) || 'null'));
+    } catch {
+      return undefined; // JSON hỏng — coi như chưa có, KHÔNG ném
+    }
+  },
+  empty: [],
+  parse: parseList,
+});
+
+/** Chờ IDB nạp xong (màn Thư viện màu await rồi đọc lại nếu cần dữ liệu tươi nhất). */
+export function hydrateStudioColorSources(): Promise<void> {
+  return studioStore.hydrate();
+}
 
 export function listStudioColorSources(): ColorSource[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = JSON.parse(localStorage.getItem(STUDIO_KEY) || '[]');
-    if (!Array.isArray(raw)) return [];
-    return raw.map(parseColorSource).filter((s): s is ColorSource => s !== null);
-  } catch {
-    return []; // JSON hỏng — coi như chưa có, KHÔNG ném (một tệp hỏng không được chặn cả app)
-  }
+  return studioStore.get();
 }
 
 function writeStudio(list: ColorSource[]): boolean {
   if (typeof window === 'undefined') return false;
-  try {
-    localStorage.setItem(STUDIO_KEY, JSON.stringify(list));
-    return true;
-  } catch {
-    return false; // localStorage đầy (bảng vài nghìn màu là thật) — caller PHẢI báo người dùng
-  }
+  studioStore.set(list);
+  // IDB trần theo đĩa — quota gần như không còn là ca thật; flush async, lỗi im lặng như
+  // sheets-persist. Trả true = đã nhận vào cache (caller cũ đọc lại thấy ngay).
+  return true;
 }
 
 /** Thêm/ghi đè theo `id`. Trả `false` khi không ghi được (quota) — caller phải hiện lỗi, đừng nuốt. */
@@ -58,6 +78,18 @@ export function saveStudioColorSource(source: ColorSource): boolean {
 
 export function removeStudioColorSource(id: string): boolean {
   return writeStudio(listStudioColorSources().filter((s) => s.id !== id));
+}
+
+/** Gói xuất bảng màu studio — versioned, để nút backup/đem-máy-khác gọi (W0.3, luật 7). */
+export interface StudioColorsExport {
+  version: 1;
+  exportedAt: number;
+  sources: ColorSource[];
+}
+
+export function exportStudioColorSourcesJson(): string {
+  const pkg: StudioColorsExport = { version: 1, exportedAt: Date.now(), sources: listStudioColorSources() };
+  return JSON.stringify(pkg, null, 2);
 }
 
 /* ═══════════════════════ TẦNG DỰ ÁN (tệp trong thư mục dự án) ═══════════════════════ */

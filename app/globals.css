@@ -765,14 +765,19 @@ body {
   animation: pe-fade-up 0.4s var(--ease-apple, ease) both;
 }
 
-/* Nút ẩn/hiện panel trái (mép trong) — quiet-luxury, hiện rõ khi hover. */
+/* Nút ẩn/hiện panel — quiet-luxury tan vào nền (18/08 Hoà chốt "Apple ko làm ranh giới rõ").
+ * Mặc định: nền trong suốt, viền `--vien-mo`, chữ `--t4` — dải mảnh không cắt cảm giác vùng.
+ * Hover: viền + chữ đậm lên để mời tương tác. Áp thẳng token DS (không mồ côi). */
 .pe-panel-toggle {
+  border-color: var(--vien-mo) !important;
   transition:
     background-color 0.15s ease,
+    border-color 0.15s ease,
     color 0.15s ease;
 }
 .pe-panel-toggle:hover {
   background: var(--hover);
+  border-color: var(--border) !important;
   color: var(--t1);
 }
 

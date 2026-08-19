@@ -47,6 +47,22 @@ export type BoqRowKind = 'area' | 'count';
 /** 1 dòng BOQ đã gộp theo vật liệu — tên field tiếng Việt khớp yêu cầu gốc
  * `{matId, tên, NCC, mã, m², đơn giá, hao hụt %, thành tiền}`. */
 export interface BoqRow {
+  /**
+   * ⭐ W0.2 (19/08, FINAL-AUDIT finding A-1) — KHOÁ THẬT của dòng: `ProductSpec.id` (khớp
+   * `entity.specId`). Đây là TÊN ĐÚNG BẢN CHẤT của thứ mà `matId` bên dưới vẫn đang chứa.
+   * BẤT BIẾN: `specId === matId` trên mọi dòng `computeBoq` sinh ra (test khoá ở compute.test.ts).
+   * Code MỚI đọc field này; code cũ đọc `matId` vẫn đúng trong compat window.
+   */
+  specId: string;
+  /**
+   * @deprecated dùng `specId`. ⚠️ ĐÂY KHÔNG PHẢI matId UUID canonical của
+   * `lib/materials/matid-identity.ts` — nó là `ProductSpec.id` (= `entity.specId`), đặt tên
+   * `matId` từ 02/08 TRƯỚC khi namespace matId-UUID ra đời (19/08). GIỮ LẠI vì: ① override
+   * sửa-tay persist trong IndexedDB key theo giá trị này (`boq-overrides-persist.ts`) ② header
+   * khớp XLSX import (`boq-xlsx-import.ts`) ③ UI/test bám tên này — đổi tên một cú là vỡ dữ liệu
+   * người dùng. LUÔN BẰNG `specId` (cùng khuôn cặp `m2`/`qty` ngay dưới). CẤM đưa giá trị này vào
+   * `getMaterial()`/pbr-store như thể nó là matId UUID.
+   */
   matId: string;
   ten: string;
   ncc: string;
@@ -133,7 +149,11 @@ export interface BoqError {
   reason: BoqErrorReason;
   /** id các HatchEntity liên quan tới lỗi này. */
   entityIds: string[];
-  /** specId liên quan (nếu có — thiếu hẳn specId thì undefined). */
+  /** ⭐ W0.2 (19/08) — tên đúng bản chất của khoá lỗi: `ProductSpec.id`. LUÔN BẰNG `matId` khi
+   * `matId` có mặt (computeBoq bảo đảm ở bước chuẩn hoá cuối). */
+  specId?: string;
+  /** @deprecated dùng `specId`. Là `ProductSpec.id`, KHÔNG phải matId UUID canonical — xem
+   * docblock `BoqRow.matId`. Giữ trong compat window vì UI (`BoqErrors.tsx`) còn đọc. */
   matId?: string;
   /** câu tiếng Việt giải thích, hiện thẳng cho Hoà/user — không mã lỗi trần trụi. */
   message: string;

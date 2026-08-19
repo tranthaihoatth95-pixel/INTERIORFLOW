@@ -1,9 +1,64 @@
 # LATEST — bản nén trí nhớ bối cảnh IF (ghi đè mỗi phiên lớn)
 
-> **Đọc file này ĐẦU TIÊN**, rồi **`docs/IF-KIEN-TRUC.md`** (bản đồ), rồi **`docs/TAC-NHAN-T.md`** (vai T).
+> **Đọc file này ĐẦU TIÊN**, rồi **`docs/memory/RETRIEVAL-MAP.md`** (chỉ mục 11 topic → nguồn sâu, lập 19/08), rồi **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md`** (bản đồ chính tắc 19/08 — thay `IF-KIEN-TRUC.md`), rồi **`docs/TAC-NHAN-T.md`** (vai T).
 > Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-17 (tối — đợt A + Kho ghi nhớ + Files hai tầng + Đợt C dashboard)**
+**Cập nhật lần cuối: 2026-08-19 khuya muộn (INTEGRATION GATE — vai Integration Coordinator)**
+
+---
+
+# 2026-08-19 · khuya muộn · INTEGRATION GATE (chi tiết: `sessions/2026-08-19/12-integration-gate/`)
+
+1. **Ghép bản đồ thi công cuối** (0 code, 0 commit) → 3 file + 1 artifact:
+   `IF-CAPABILITY-EXPOSURE-MATRIX.md` (43 cap, 9 lane, 6 status) ·
+   `IF-INTEGRATED-EXECUTION-MAP.md` (9 user flow trace 13 mắt + Đợt 0 R1-R11) ·
+   `IF-INTEGRATION-GATE-2026-08-19.md` (**GATE 6/7 ĐẠT — còn G7 = mắt Hoà trên artifact**) ·
+   artifact duyệt: https://claude.ai/code/artifact/e78137f0-3a4b-404c-ad9b-31d3e1fe72bf
+2. **Re-verify 11 reconnect tại HEAD `c7f3ac8`: CẢ 11 CÒN NGUYÊN.** 2 path đổi (LibraryDropBridge
+   → `components/cad/` · ReviewPanel → `components/review/`) — audit path cũ đã stale.
+3. Điểm sáng mới: nút XUẤT `.idfc` đủ 3 mặt đã sống (`LibrarySheet.tsx:975`) — đường DROP vẫn đứt.
+4. Đề xuất P-S: **`soi:mount`** (~150 dòng, REUSE walk soi-that) bắt lỗi "importer duy nhất là code
+   chết" + STALE-ANCHOR cho RETRIEVAL-MAP — 4 máy soi hiện có mù cả hai loại. Chờ Hoà gật thành entry.
+
+## ⛔ CHỜ HOÀ (gom ở Gate §3 — H1-H8)
+H1 duyệt artifact (mở toàn Đợt 0) · H2 vị trí Vitals · H3 ✓ mock Ca D · H4 quyết idfc-import ·
+H5 hướng workhub · H6 runbook DB · H7 commit 88 dirty · H8 lô DEPRECATE rẻ.
+
+---
+
+# 2026-08-19 · khuya · REPO ARCHAEOLOGY + MEMORY CONTRACT (chi tiết: `sessions/2026-08-19/11-repo-archaeology/`)
+
+1. **Audit orphan toàn repo (read-only, 0 code sửa)** → `docs/AUDIT-ORPHAN-CAPABILITIES-2026-08-19.md`:
+   38 orphan · 11 reconnect giá trị cao · 14 stale docs · 5 ca sổ-ghi-sai đã đính chính.
+2. 🔴 **P0 mới phát hiện**: ① `VitalsGesturePanel` 675 dòng MẤT HẲN lối vào (hệ quả gỡ StageSwitcher
+   17/08 uncommitted — chưa ai kiểm) ② `WorkHubShell` = ca nút-giả duy nhất toàn repo ③ `specId`
+   đứt lúc drop Thư viện → BOQ lỗi (sửa = 1 tham số) ④ `lib/idfc-import` 3.341 dòng 0 caller.
+3. **Hệ memory 3 tầng theo contract Hoà 19/08**: `RETRIEVAL-MAP.md` (Tầng B, lần đầu) +
+   `IF-MEMORY-RETRIEVAL-SYSTEM-2026-08-19.md` (hợp đồng đầy đủ + anti-loss checklist).
+   Luật mới: memory FIND THE PLACE · code CONFIRM THE REALITY · cấm MEMORY→CONCLUSION.
+4. **3/5 lượt quét có ≥1 khẳng định sai, T phân xử bằng grep** (bảng ở session README) —
+   củng cố: báo cáo agent phải cross-check + spot-check tại nguồn.
+
+## ⛔ CHỜ HOÀ (thêm vào hàng cũ)
+⑤ quyết `VitalsGesturePanel` cửa mới trước khi commit đợt gỡ StageSwitcher ⑥ bấm hướng
+`app/workhub/` (nút giả) ⑦ quyết sống/chết `lib/idfc-import` 3.3k dòng ⑧ duyệt danh sách
+DEPRECATE rẻ (IntroSequence gốc 493 dòng · dev-bench · _shot.mjs · cặp __lincoln).
+
+---
+
+# 2026-08-19 · HEAD `3da4b8c` (working tree chưa commit — Hoà tự bấm)
+
+## Chuỗi trong ngày (chi tiết: `docs/memory/sessions/2026-08-19/` + bao-cao-phien 19/08)
+1. **Slice 1A bước 2A** xong-máy (schema matId · DTO · resolver 2 đường · PBR helper · backfill script).
+2. **FINAL-ARCHITECTURE-AUDIT** → `docs/FINAL-ARCHITECTURE-AUDIT-2026-08-19.md` — phán **YES đóng khám**, 5 blocker thật, 0 conflict mới ngoài 9 ADR. Không audit lại nếu không có NEW EVIDENCE.
+3. **Wave 0 DATA SAFETY** xong-máy: bản đồ chính tắc `INTERIORFLOW-ARCHITECTURE-MAP.md` (24 direction có tag) · runbook DB `bao-cao-phien/2026-08-19-wave0-runbook-db.md` (**drift thật = 1 cột matId**; 3/4 nhóm pending đã migrate từ 06-08/08; ExternalRef chỉ còn flip cờ) · BOQ hết matId-đội-tên (`specId` required + alias @deprecated) · 4 kho studio rời localStorage→IDB bridge. tsc 0 · 309 test pass · soi:frontier 0 lệch. Browser verify PARTIAL (server 3001 bệnh .next của phiên khác + auth wall) — 6 ca IDB chờ mắt Hoà.
+4. **Reconciliation → `docs/IF-ARCHITECTURE-BLUEPRINT.md` v1.0** — gate cứng Hoà "MISSING=0 mới sinh Blueprint" ĐẠT (52 concept · 0 MISSING · NODE giữ [UNKNOWN]). **Hoà chốt 4 DECISION CONFLICT**: C1 Gateway=từ-điển (M-01 đóng) · C2 overrides thắng variant (M-03 đóng) · C3 Workspace=compose, CẤP 0.5=instances · C4 **Project → nhiều Workspace → nhiều Canvas + MỘT Project Flow/Timeline** (Canvas=working surface · Workspace=working context · Project=identity+truth+genealogy). ⚠️ Đừng nhầm `IF-ARCHITECTURE-BLUEPRINT-v1.md` (file cũ 8 luật).
+
+## ⛔ CHỜ HOÀ
+① chạy runbook DB (backup → db push → generate → backfill; lúc phiên agent nghỉ) ② duyệt mắt 6 ca IDB + BOQ/Materials ③ commit khi ưng ④ gật Wave 1 (chỉ thi công theo bản vẽ — không tranh luận lại vocabulary/tầng).
+
+## Luật mới trong ngày
+CẤM `prisma generate` sandbox khi schema lệch DB thật (phá Prisma Client shared — sự cố 2A) · Lark = OPTIONAL EXTERNAL ADAPTER (đè câu cũ CLAUDE.md) · 2 luật update-locality B-1/B-2 (FINAL-AUDIT §24, chờ máy soi `soi:ranh-gioi`) · **HEATMAP + NO-REBUILD (Hoà ban 19/08, áp MỌI đề xuất)**: LOOK INSIDE→…→NEW, NEW đòi negative evidence 6 mục, vùng dày REUSE/CONNECT/TUNE, vùng mỏng EXTEND NEAREST — bản thi hành Blueprint §B25, nguyên văn `memory/sessions/2026-08-19/09-blueprint-canonical/ADDENDUM-NO-REBUILD.md`.
 
 ---
 

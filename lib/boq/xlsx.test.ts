@@ -27,8 +27,8 @@ const PNG_1PX = new Uint8Array(
 async function main() {
   const result: BoqResult = {
     rows: [
-      { matId: 'spec-san-go', ten: 'Sàn gỗ công nghiệp', ncc: 'An Cường', ma: 'AC-SG-08', m2: 6, qty: 6, unit: 'm2', kind: 'area', donGia: 300_000, haoHutPhanTram: 5, thanhTien: 1_890_000, entityIds: ['h1'] },
-      { matId: 'spec-gach', ten: 'Gạch "ceramic" & sứ <đặc biệt>', ncc: '', ma: '', m2: 15, qty: 15, unit: 'm2', kind: 'area', donGia: 200_000, haoHutPhanTram: 0, thanhTien: 3_000_000, entityIds: ['h2', 'h3', 'h4'] },
+      { specId: 'spec-san-go', matId: 'spec-san-go', ten: 'Sàn gỗ công nghiệp', ncc: 'An Cường', ma: 'AC-SG-08', m2: 6, qty: 6, unit: 'm2', kind: 'area', donGia: 300_000, haoHutPhanTram: 5, thanhTien: 1_890_000, entityIds: ['h1'] },
+      { specId: 'spec-gach', matId: 'spec-gach', ten: 'Gạch "ceramic" & sứ <đặc biệt>', ncc: '', ma: '', m2: 15, qty: 15, unit: 'm2', kind: 'area', donGia: 200_000, haoHutPhanTram: 0, thanhTien: 3_000_000, entityIds: ['h2', 'h3', 'h4'] },
     ],
     errors: [],
     totalAmount: 4_890_000,
@@ -164,7 +164,7 @@ async function main() {
   /* ═══ [11] dòng MÓN RỜI (kind:'count') xuất đúng đơn vị + số nguyên ═══ */
   console.log('\n[11] dòng món rời trong xlsx');
   const countBuf = await boqResultToXlsxBuffer({
-    rows: [{ matId: 'spec-ghe', ten: 'Ghế ăn gỗ sồi', ncc: 'AA', ma: 'GH-01', m2: 8, qty: 8, unit: 'cai', kind: 'count', donGia: 1_200_000, haoHutPhanTram: 0, thanhTien: 9_600_000, entityIds: ['b1'] }],
+    rows: [{ specId: 'spec-ghe', matId: 'spec-ghe', ten: 'Ghế ăn gỗ sồi', ncc: 'AA', ma: 'GH-01', m2: 8, qty: 8, unit: 'cai', kind: 'count', donGia: 1_200_000, haoHutPhanTram: 0, thanhTien: 9_600_000, entityIds: ['b1'] }],
     errors: [],
     totalAmount: 9_600_000,
   });
@@ -180,7 +180,7 @@ async function main() {
   {
     const ctrlBuf = await boqResultToXlsxBuffer({
       rows: [{
-        matId: 'm1', ten: 'Ghế xoay', ncc: 'AB', ma: '', m2: 1, qty: 1, unit: 'm2',
+        specId: 'm1', matId: 'm1', ten: 'Ghế xoay', ncc: 'AB', ma: '', m2: 1, qty: 1, unit: 'm2',
         kind: 'area', donGia: 1, haoHutPhanTram: 0, thanhTien: 1, entityIds: [],
       }],
       errors: [],
@@ -195,7 +195,7 @@ async function main() {
     // Chốt ngược: tab/xuống dòng/emoji là ký tự HỢP LỆ, không được vạ lây.
     const okBuf = await boqResultToXlsxBuffer({
       rows: [{
-        matId: 'm2', ten: 'Gỗ sồi\tloại A\nlô 2 ✅', ncc: '', ma: '', m2: 1, qty: 1, unit: 'm2',
+        specId: 'm2', matId: 'm2', ten: 'Gỗ sồi\tloại A\nlô 2 ✅', ncc: '', ma: '', m2: 1, qty: 1, unit: 'm2',
         kind: 'area', donGia: 1, haoHutPhanTram: 0, thanhTien: 1, entityIds: [],
       }],
       errors: [],

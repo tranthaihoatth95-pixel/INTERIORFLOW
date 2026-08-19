@@ -19,7 +19,7 @@ function ok(label: string, cond: boolean) {
 }
 
 const row = (matId: string, ma: string, ten: string, m2: number, donGia: number): BoqRow => ({
-  matId, ten, ncc: 'An Cường', ma, m2, qty: m2, unit: 'm2', kind: 'area',
+  specId: matId, matId, ten, ncc: 'An Cường', ma, m2, qty: m2, unit: 'm2', kind: 'area',
   donGia, haoHutPhanTram: 5, thanhTien: Math.round(m2 * 1.05 * donGia), entityIds: [`h-${matId}`],
 });
 

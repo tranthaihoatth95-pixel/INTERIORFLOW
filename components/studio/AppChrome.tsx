@@ -33,8 +33,10 @@ import { motion } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { DEFAULT_PHASE, STAGE_TINT, type Phase } from '@/lib/phases';
-import StageSwitcher from '@/components/studio/StageSwitcher';
 import { MobileMenu } from '@/components/MobileMenu';
+// P-V 17/08 — ô tìm dự án + Vitals ở top bar (chỉ Home; chặng có Vitals cạnh trục phải riêng).
+import SearchProjectsInput from '@/components/SearchProjectsInput';
+import VitalsPill from '@/components/home/widgets/VitalsPill';
 import { pressable } from '@/lib/motion';
 import { useStageTransition } from '@/components/studio/StageTransitionProvider';
 import { stageHrefFrom } from '@/lib/project-scope';
@@ -329,10 +331,22 @@ export function AppChrome({ active, logoMenu }: Props) {
         )}
       </div>
 
-      <div className="shrink-0" data-tour="phase-switcher">
-        <StageSwitcher active={currentPhase} onPick={onPick} photoContext={active === 'photo'} />
-      </div>
+      {/* StageSwitcher đã gỡ 17/08 (Hoà chốt): chốt 16/08 hạ sidebar thành hệ router,
+          ba chặng chỉ là 1 nhóm stage trong cụm PROJECT của RailDieuHuong. 3 nút chặng ở
+          top trùng chức năng. Phím tắt ⌘1/⌘2/⌘3 GIỮ NGUYÊN (onPickRef ở effect trên vẫn
+          gọi onPick), lối bàn phím không mất. Không xoá StageSwitcher.tsx — giữ để có thể
+          dùng lại nếu quay đầu. */}
 
+      {/* P-V 17/08 — Ô TÌM DỰ ÁN + VITALS chỉ hiện ở Home. Chặng thiết kế (cad/render/present/
+          photo) có Vitals cạnh TRỤC PHẢI theo chốt 16/08 ("cùng một vật, di chuyển theo chỗ tay
+          đang đặt") — việc dời Vitals sang trục phải là phiếu KHÁC, không thuộc P-V; ở đây chỉ
+          bảo đảm KHÔNG mount đôi trên chặng. */}
+      {active === 'home' && (
+        <div className="flex shrink-0 items-center gap-2" data-tour="home-search-vitals">
+          <SearchProjectsInput />
+          <VitalsPill />
+        </div>
+      )}
 
       {/* 2.2.86 (30/07, Hoà chốt) — "Chạy flow" KHÔNG còn đứng riêng trên bar (~110px trả lại
           ngân sách bề rộng). Khởi chạy giờ CẠNH ĐỐI TƯỢNG: nút ▶ trên node, "Kết xuất" trên thẻ

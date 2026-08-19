@@ -9,7 +9,7 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import {
-  ingestFile, loadManifest, saveManifest, toAiManifest, byteSize, human,
+  ingestFile, loadManifest, saveManifest, hydrateRefManifest, toAiManifest, byteSize, human,
   USAGES, type RefAsset, type RefManifest, type RefUsage,
 } from '@/lib/refingest';
 
@@ -73,9 +73,12 @@ function IngestPageInner() {
   const mounted = useRef(false);
 
   useEffect(() => {
-    const m = loadManifest();
-    if (m) { setProject(m.project); setAssets(m.assets); }
-    mounted.current = true;
+    // W0.3: chờ IDB hydrate xong mới đọc — tránh nạp bản localStorage cũ rồi autosave đè ngược.
+    void hydrateRefManifest().then(() => {
+      const m = loadManifest();
+      if (m) { setProject(m.project); setAssets(m.assets); }
+      mounted.current = true;
+    });
   }, []);
 
   // autosave manifest (không thọc base64 gốc — chỉ thumbnail nhẹ)

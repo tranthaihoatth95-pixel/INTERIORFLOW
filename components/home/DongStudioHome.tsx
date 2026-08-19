@@ -46,7 +46,7 @@ import {
 } from './widgets/bento-layout';
 import { shouldShowActivityGrid } from '@/lib/home/aggregate';
 import { pickWeeklyItem, pickWeeklyImages, isSeedLibraryAsset } from '@/lib/home/weekly-picks';
-import VitalsPill from './widgets/VitalsPill';
+// P-V 17/08 — VitalsPill dời lên AppChrome top bar (không import ở đây nữa).
 import LightClock from './widgets/LightClock';
 import TodayStrip, { todayHasSignal } from './widgets/TodayStrip';
 import StageChart, { stageChartHasSignal } from './widgets/StageChart';
@@ -573,7 +573,8 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
           <Info size={15} aria-hidden="true" />
         </button>
         <LangToggle variant="ghost" />
-        <VitalsPill />
+        {/* P-V 17/08 (chốt 16/08 "Vitals ở Home = chấm cạnh ô tìm kiếm") — VitalsPill DỜI lên
+            AppChrome top bar cạnh SearchProjectsInput, không còn nằm ở góc-phải-trên của Home. */}
       </div>
 
       {/* Lề ngoài 20px (p-5, trước là p-3) — chốt A2 16/08: *"thẻ kính KHÔNG phủ kín màn —

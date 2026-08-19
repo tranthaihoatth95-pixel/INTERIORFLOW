@@ -791,7 +791,9 @@ export interface VatLieuSuy {
   /** preset MÀU gần nhất trong `lib/cad/materials` MATERIALS + khoảng cách RGB */
   presetGanNhat: string | null;
   deltaRgb: number;
-  /** matId thật (= ProductSpec.sku) nếu preset có khai — hôm nay chưa preset nào khai ⇒ null */
+  /** matId thật (⚠️ SUPERSEDED 19/08: nay là IF-owned immutable UUID, không phải ProductSpec.sku
+   * — Hoà chốt hòa giải Decision Conflict; xem lib/materials/matid-identity.ts + frontier
+   * material-matid-uuid) nếu preset có khai — hôm nay chưa preset nào khai ⇒ null */
   matId: string | null;
   pbr: MaterialPbr;
   /** LUÔN true — module này không có đường trả "chắc chắn" [T0] */

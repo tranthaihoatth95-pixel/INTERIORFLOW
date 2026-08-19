@@ -23,14 +23,46 @@ export type BoqOverrideField = 'm2' | 'donGia';
 
 /** 1 override đã lưu — `at` = epoch ms lúc sửa, hiện ở Inspector "Sửa lúc". */
 export interface BoqOverride {
+  /** ⭐ W0.2 (19/08) — tên đúng bản chất: `ProductSpec.id` (= `BoqRow.specId`). Optional vì bản
+   * ghi IDB CŨ chỉ có `matId`; `normalizePersistedOverride` điền đủ cả hai khi load. */
+  specId?: string;
+  /** @deprecated dùng `specId`. Thực chất là `ProductSpec.id`, KHÔNG phải matId UUID canonical
+   * (`lib/materials/matid-identity.ts`) — xem docblock `BoqRow.matId`. GIỮ vì đã persist xuống
+   * IndexedDB dưới tên này; compat window ghi CẢ HAI field (xem `setOverride`). */
   matId: string;
   field: BoqOverrideField;
   value: number;
   at: number;
 }
 
+/** Khoá map override. THAM SỐ là GIÁ TRỊ `ProductSpec.id` (`BoqRow.specId` — tên tham số giữ
+ * `matId` vì mọi caller UI đang truyền `row.matId`, cùng giá trị). Định dạng khoá `${id}::${field}`
+ * KHÔNG ĐỔI ở W0.2 — vì thế override đã lưu trước 19/08 áp đúng row mà không cần migrate khoá. */
 export function overrideKey(matId: string, field: BoqOverrideField): string {
   return `${matId}::${field}`;
+}
+
+/**
+ * ⭐ W0.2 (19/08) — chuẩn hoá 1 bản ghi override ĐỌC TỪ IDB về hình dạng compat-window (có ĐỦ
+ * `specId` lẫn `matId`, cùng giá trị). Nhận được:
+ *  · bản CŨ  `{matId, field, value, at}`            (persist trước 19/08)
+ *  · bản MỚI `{specId, matId, field, value, at}`     (persist từ 19/08)
+ *  · bản chỉ-specId (phòng xa — nguồn tương lai)
+ * Trả `null` cho bản ghi hỏng (thiếu id/field lạ/value không hữu hạn) — KHÔNG ném, kho hỏng 1
+ * dòng không được giết cả map. Idempotent: normalize(normalize(x)) ≡ normalize(x).
+ * THUẦN — persist (`boq-overrides-persist.ts`) gọi hàm này; test bằng sucrase-node tại đây.
+ */
+export function normalizePersistedOverride(raw: unknown): BoqOverride | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Partial<BoqOverride> & { specId?: unknown; matId?: unknown };
+  const id = typeof r.specId === 'string' && r.specId
+    ? r.specId
+    : typeof r.matId === 'string' && r.matId ? r.matId : null;
+  if (!id) return null;
+  if (r.field !== 'm2' && r.field !== 'donGia') return null;
+  if (typeof r.value !== 'number' || !Number.isFinite(r.value)) return null;
+  const at = typeof r.at === 'number' && Number.isFinite(r.at) ? r.at : 0;
+  return { specId: id, matId: id, field: r.field, value: r.value, at };
 }
 
 export type BoqOverrideMap = Record<string, BoqOverride>;
@@ -53,8 +85,11 @@ export interface BoqDisplayRow extends BoqRow {
  */
 export function applyBoqOverrides(rows: BoqRow[], overrides: BoqOverrideMap): BoqDisplayRow[] {
   return rows.map((row) => {
-    const m2Ov = overrides[overrideKey(row.matId, 'm2')];
-    const donGiaOv = overrides[overrideKey(row.matId, 'donGia')];
+    // W0.2 (19/08): tra bằng `specId` (tên đúng); `?? matId` phòng row deserialize từ nguồn cũ
+    // chưa có field mới. Hai field LUÔN cùng giá trị trên row do computeBoq sinh.
+    const rowKey = row.specId ?? row.matId;
+    const m2Ov = overrides[overrideKey(rowKey, 'm2')];
+    const donGiaOv = overrides[overrideKey(rowKey, 'donGia')];
     if (!m2Ov && !donGiaOv) return row;
 
     const m2 = m2Ov ? m2Ov.value : row.m2;
@@ -100,7 +135,10 @@ export function setOverride(
     const { [key]: _omit, ...rest } = map;
     return rest;
   }
-  return { ...map, [key]: { matId, field, value, at: now } };
+  // W0.2 (19/08) — ghi CẢ HAI field cùng giá trị trong compat window: code cũ đọc `matId` vẫn
+  // thấy, code mới đọc `specId` cũng thấy; bản IDB ghi ra tự thành hình dạng mới mà không cần
+  // một lượt migrate riêng. Rollback = code cũ đọc lại vẫn chạy nguyên (nó chỉ nhìn `matId`).
+  return { ...map, [key]: { specId: matId, matId, field, value, at: now } };
 }
 
 /** Revert 1 field về số máy — xoá override khỏi map. */

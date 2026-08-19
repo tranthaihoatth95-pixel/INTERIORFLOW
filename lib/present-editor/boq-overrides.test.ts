@@ -4,7 +4,8 @@
  */
 import {
   applyBoqOverrides, totalWithOverrides, countOverrideStatus,
-  setOverride, revertOverride, overrideKey, type BoqOverrideMap,
+  setOverride, revertOverride, overrideKey, normalizePersistedOverride,
+  type BoqOverrideMap, type BoqOverride,
 } from './boq-overrides';
 import type { BoqRow } from '../boq/model';
 
@@ -15,8 +16,8 @@ function ok(label: string, cond: boolean) {
   else { fail += 1; console.log(`  FAIL - ${label}`); }
 }
 
-const rowA: BoqRow = { matId: 'm1', ten: 'Gỗ óc chó', ncc: 'An Cường', ma: 'AC-1', m2: 42.5, qty: 42.5, unit: 'm2', kind: 'area', donGia: 1_240_000, haoHutPhanTram: 5, thanhTien: 55_335_000, entityIds: ['h1'] };
-const rowB: BoqRow = { matId: 'm2', ten: 'Sàn gỗ sồi', ncc: 'An Cường', ma: 'AC-2', m2: 24.6, qty: 24.6, unit: 'm2', kind: 'area', donGia: 1_250_000, haoHutPhanTram: 5, thanhTien: 32_287_500, entityIds: ['h2'] };
+const rowA: BoqRow = { specId: 'm1', matId: 'm1', ten: 'Gỗ óc chó', ncc: 'An Cường', ma: 'AC-1', m2: 42.5, qty: 42.5, unit: 'm2', kind: 'area', donGia: 1_240_000, haoHutPhanTram: 5, thanhTien: 55_335_000, entityIds: ['h1'] };
+const rowB: BoqRow = { specId: 'm2', matId: 'm2', ten: 'Sàn gỗ sồi', ncc: 'An Cường', ma: 'AC-2', m2: 24.6, qty: 24.6, unit: 'm2', kind: 'area', donGia: 1_250_000, haoHutPhanTram: 5, thanhTien: 32_287_500, entityIds: ['h2'] };
 
 console.log('\n[1] dòng KHÔNG override chạy qua nguyên vẹn (giữ identity)');
 {
@@ -67,6 +68,54 @@ console.log('\n[5] override donGia + cả hai field cùng dòng');
   const out = applyBoqOverrides([rowA], overrides);
   ok('thanhTien = 40×1.05×1.300.000 = 54.600.000', out[0].thanhTien === 54_600_000);
   ok('cả 2 override đều có mặt', !!out[0].m2Override && !!out[0].donGiaOverride);
+}
+
+/* ═══ [W0.2 19/08] compat window specId/matId — không orphan override cũ ═══ */
+console.log('\n[6] normalizePersistedOverride — bản IDB CŨ ({matId}) và MỚI ({specId}) đều về đủ 2 field');
+{
+  const legacy = normalizePersistedOverride({ matId: 'm1', field: 'm2', value: 40, at: 1000 });
+  ok('bản cũ: specId được điền = matId', legacy?.specId === 'm1' && legacy?.matId === 'm1');
+  ok('bản cũ: giữ nguyên field/value/at', legacy?.field === 'm2' && legacy?.value === 40 && legacy?.at === 1000);
+
+  const modern = normalizePersistedOverride({ specId: 'm9', matId: 'm9', field: 'donGia', value: 5, at: 2 });
+  ok('bản mới: đi qua nguyên vẹn', modern?.specId === 'm9' && modern?.matId === 'm9' && modern?.value === 5);
+
+  const onlySpec = normalizePersistedOverride({ specId: 'm7', field: 'm2', value: 1, at: 0 });
+  ok('bản chỉ-specId: matId được điền ngược', onlySpec?.matId === 'm7');
+
+  // idempotent — normalize(normalize(x)) ≡ normalize(x)
+  const twice = normalizePersistedOverride(legacy);
+  ok('idempotent: normalize 2 lần không đổi', JSON.stringify(twice) === JSON.stringify(legacy));
+
+  // bản hỏng → null từng-dòng, không ném
+  ok('thiếu id → null', normalizePersistedOverride({ field: 'm2', value: 1, at: 0 }) === null);
+  ok('field lạ → null', normalizePersistedOverride({ matId: 'x', field: 'ten', value: 1, at: 0 }) === null);
+  ok('value NaN → null', normalizePersistedOverride({ matId: 'x', field: 'm2', value: NaN, at: 0 }) === null);
+  ok('không phải object → null', normalizePersistedOverride('rác') === null);
+}
+
+console.log('\n[7] override lưu bằng KEY CŨ (trước 19/08) vẫn áp đúng row sau W0.2');
+{
+  // mô phỏng đúng đường load của boq-overrides-persist: items cũ → normalize → map theo overrideKey
+  const itemsCu = [{ matId: 'm1', field: 'm2' as const, value: 40, at: 1000 }];
+  const map: BoqOverrideMap = {};
+  for (const it of itemsCu) {
+    const ov = normalizePersistedOverride(it);
+    if (ov) map[overrideKey(ov.matId, ov.field)] = ov;
+  }
+  const out = applyBoqOverrides([rowA, rowB], map); // rowA có specId 'm1' (fixture đã mang cả 2 field)
+  ok('row specId=m1 nhận override cũ (m2=40)', out[0].m2 === 40 && out[0].m2Override?.machineValue === 42.5);
+  ok('rowB không đụng', out[1] === rowB);
+  // chạy lại lần 2 (rerun) — cùng kết quả, không tích luỹ
+  const out2 = applyBoqOverrides([rowA, rowB], map);
+  ok('rerun idempotent', out2[0].m2 === 40 && out2[0].thanhTien === out[0].thanhTien);
+}
+
+console.log('\n[8] setOverride ghi CẢ HAI field (compat window) — bản cũ vẫn đọc được bản mới');
+{
+  const map = setOverride({}, 'm1', 'donGia', 999, 7);
+  const ov: BoqOverride = map[overrideKey('m1', 'donGia')];
+  ok('specId và matId cùng giá trị', ov.specId === 'm1' && ov.matId === 'm1');
 }
 
 console.log(`\nKẾT QUẢ: ${pass} pass, ${fail} fail`);

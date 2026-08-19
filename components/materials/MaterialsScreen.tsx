@@ -19,7 +19,7 @@ import { useT } from '@/lib/i18n';
 import type { MaterialSpecDto } from '@/lib/materials/warehouse/dto';
 import { IMPORT_KIND_LABEL } from '@/lib/materials/warehouse/dto';
 import { getMaterial } from '@/lib/materials/resolve';
-import { loadPbrMap } from '@/lib/materials/pbr-store';
+import { loadPbrMap, ensurePbrCanonicalKeys } from '@/lib/materials/pbr-store';
 import { baMatChuaCoMa, baMatCuaVatLieu, type BaMat } from '@/lib/materials/ba-mat';
 import type { MaterialPbr } from '@/lib/materials/schema';
 import { MATERIALS } from '@/lib/cad/materials';
@@ -63,7 +63,15 @@ export function MaterialsScreen() {
       const res = await fetch('/api/specs');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const j = await res.json();
-      setItems(j.specs ?? []);
+      const specs: MaterialSpecDto[] = j.specs ?? [];
+      /* ⭐ W0.2 (19/08) — "đoạn dây cuối" PBR legacy→canonical (xem docstring
+         `ensurePbrCanonicalKeys`): spec nào đã backfill `matId` mà PBR còn nằm dưới khoá SKU cũ
+         thì copy sang khoá UUID, để bước 2B đổi callsite đọc sang UUID không làm mất công người
+         dùng đã đặt thông số. Idempotent, chỉ ghi localStorage khi có gì đổi; migrate xong nạp
+         lại pbrMap để chỉ báo "ba mặt" phản ánh ngay. */
+      const pbrReport = ensurePbrCanonicalKeys(specs);
+      if (pbrReport && pbrReport.migrated > 0) napPbr();
+      setItems(specs);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }

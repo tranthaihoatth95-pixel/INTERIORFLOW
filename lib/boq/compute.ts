@@ -455,6 +455,7 @@ export function computeBoq(doc: Doc, specs: MaterialSpecLite[]): BoqResult {
     }
 
     rows.push({
+      specId, // W0.2 (19/08) — tên đúng bản chất; `matId` dưới là alias deprecated, LUÔN BẰNG nó
       matId: specId,
       ten: spec.name,
       ncc: spec.vendor ?? '',
@@ -554,6 +555,7 @@ export function computeBoq(doc: Doc, specs: MaterialSpecLite[]): BoqResult {
     }
 
     rows.push({
+      specId, // W0.2 (19/08) — xem docblock `BoqRow.specId`
       matId: specId,
       ten: spec.name,
       ncc: spec.vendor ?? '',
@@ -580,6 +582,13 @@ export function computeBoq(doc: Doc, specs: MaterialSpecLite[]): BoqResult {
       matId: specId,
       message: `Mã "${spec?.name ?? specId}" đang được dùng vừa cho vùng tô (tính m²) vừa cho món rời (tính cái) — bảng sẽ có 2 dòng cùng mã và sửa tay 1 ô sẽ áp cho cả hai. Tách thành 2 mã riêng trong kho vật liệu để số liệu không dính nhau.`,
     });
+  }
+
+  /* W0.2 (19/08) — BẤT BIẾN NAMESPACE tại MỘT chỗ thay vì rải 12 chỗ push: mọi `BoqError` mang
+     `matId` (tên cũ, thực chất là ProductSpec.id) đều mang thêm `specId` (tên đúng bản chất) với
+     CÙNG giá trị. Lỗi push thêm về sau tự được phủ, không phụ thuộc người viết nhớ khai 2 field. */
+  for (const e of errors) {
+    if (e.matId !== undefined && e.specId === undefined) e.specId = e.matId;
   }
 
   const totalAmount = rows.reduce((sum, r) => sum + r.thanhTien, 0);

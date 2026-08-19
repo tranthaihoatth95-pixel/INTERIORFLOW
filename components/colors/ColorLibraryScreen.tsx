@@ -19,7 +19,7 @@ import { Palette, Plus, Trash2, Ban, ExternalLink, EyeOff } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { useFlowStore } from '@/lib/store';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { listStudioColorSources, removeStudioColorSource, readProjectColorSources, removeProjectColorSource } from '@/lib/colors/store';
+import { listStudioColorSources, hydrateStudioColorSources, removeStudioColorSource, readProjectColorSources, removeProjectColorSource } from '@/lib/colors/store';
 import { applyRegistryConfig, effectiveRegistryConfig, readLocalRegistryConfig, writeLocalRegistryConfig } from '@/lib/colors/registry';
 import { TREND_COLORS, TREND_MISSING_YEARS } from '@/lib/colors/trend';
 import type { ColorSource } from '@/lib/colors/types';
@@ -38,6 +38,7 @@ export function ColorLibraryScreen() {
   const [config, setConfig] = useState(() => ({ disabledSourceIds: [] as string[], blockedBrands: [] as string[] }));
 
   const load = useCallback(async () => {
+    await hydrateStudioColorSources(); // W0.3: kho studio nay ở IndexedDB — chờ nạp rồi mới đọc
     const studio = listStudioColorSources();
     const project = projectId ? await readProjectColorSources(projectId, projectName) : [];
     setRaw([...studio, ...project]);

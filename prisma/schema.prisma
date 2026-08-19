@@ -415,6 +415,19 @@ model ProductSpec {
   createdAt    DateTime  @default(now())
   syncedAt     DateTime?
 
+  // ── matId — IDENTITY của MATERIAL (19/08, Hoà chốt hòa giải Decision Conflict, SUPERSEDES
+  // luật cũ 07/08 "matId = ProductSpec.sku"). KHÁC HẲN `sku`: sku là business/external key
+  // (mutable — ATLAS được phép sync đổi sku mà KHÔNG đổi matId), matId là IF-owned immutable
+  // UUID sinh 1 lần, không phụ thuộc id/sku/ATLAS record id/.idfc meta.code. Domain: chỉ
+  // ProductSpec{kind:'material'} mang matId (registry `material-matid-uuid`) — furniture/
+  // lighting/millwork/fixture KHÔNG dùng trường này ở slice này (chưa có evidence cần).
+  // Quan hệ 1 UUID ↔ 1 ProductSpec.matId — KHÔNG có model mapping riêng cho tới khi có bằng
+  // chứng 1 material cần N ProductSpec (chưa có, xem docs/ADR-Q0-ARCHITECTURE-DECISIONS-2026-08-19.md).
+  // @unique GIỮ NULL cho nhiều dòng chưa backfill — SQLite/Prisma cho phép nhiều NULL trên cột
+  // @unique. Cột CHƯA MIGRATE — chủ dự án chạy `npx prisma db push && npx prisma generate` rồi
+  // mới chạy `scripts/backfill-material-matid.ts`. Xem lib/materials/matid-identity.ts.
+  matId        String?   @unique
+
   // ── 2.1.9.r (30/07) — mở rộng cho BOQ, THAY vì bảng AtlasMaterial riêng (Luật Đồng Bộ #6,
   // Hoà xác nhận): ProductSpec{kind:'material'} đã là "1 bảng duy nhất" theo Q-L2 trước đó, thêm
   // field còn thiếu thay vì tạo bảng cạnh tranh. priceNote (text tự do) GIỮ NGUYÊN cho hiển thị/

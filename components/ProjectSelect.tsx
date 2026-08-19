@@ -44,6 +44,7 @@ import { LangToggle } from '@/components/LangToggle';
 import { adaptiveTextStyle, useAdaptiveContrast } from '@/components/ui/AdaptiveContrast';
 import type { ContrastPlan } from '@/lib/adaptive-contrast';
 import { timeAgo } from '@/lib/home/format-time';
+import { useHomeSearch } from '@/lib/home/search-store';
 
 /**
  * Home/Gallery ↔ Larkbase (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md, M1) — BỔ SUNG dữ liệu vào
@@ -435,7 +436,11 @@ export function ProjectSelect({
   const [statusFor, setStatusFor] = useState<string | null>(null);
   const [statusDraft, setStatusDraft] = useState('');
   // Grid + tìm kiếm khi >8 dự án (J-4c)
-  const [query, setQuery] = useState('');
+  // P-V 17/08 — `query`/`setQuery` DỜI sang store chia sẻ `useHomeSearch` (`lib/home/search-store.ts`)
+  // để ô tìm ở AppChrome top bar cùng đọc/ghi. `projFilter` vẫn cục bộ (chỉ thấy trong searchGrid,
+  // không có mặt tiền thứ hai).
+  const query = useHomeSearch((s) => s.query);
+  const setQuery = useHomeSearch((s) => s.setQuery);
   const [projFilter, setProjFilter] = useState<string>(''); // '' = tất cả, '__none__' = chưa gắn dự án
   // v2 (13/08 home-dong-studio-v2.md ④.1 lỗi #1) — mặt tiền grid gom flow theo DỰ ÁN; flow chưa
   // gắn dự án gom vào MỘT ngăn "Nháp" thu gọn, bấm mới mở ra danh sách flow lẻ bên trong.
@@ -2050,27 +2055,33 @@ export function ProjectSelect({
 
   const searchGrid = flows && (
     <div className="w-full" data-tour="project-gallery">
-      {/* thanh tìm kiếm + lọc theo dự án */}
+      {/* thanh tìm kiếm + lọc theo dự án
+          P-V 17/08 — ô SEARCH TÁCH lên AppChrome top bar (SearchProjectsInput.tsx). Ở bento (ô A
+          của DongStudioHome, `bentoBox=true`) KHÔNG render pill ở đây nữa để tránh 2 ô tìm cùng
+          trang; nơi khác (nếu còn) vẫn giữ ô cũ. Store chung `useHomeSearch` nên filter khớp
+          thời gian thực dù đứng ở đâu. */}
       <div className="mb-5 flex flex-wrap items-center justify-center gap-2.5">
-        <div className="flex items-center gap-2 rounded-full px-3.5 py-2" style={glass}>
-          <Search size={14} className="shrink-0 text-[var(--t4)]" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={en ? 'Search name, note, project…' : 'Tìm tên, ghi chú, dự án…'}
-            className="w-48 bg-transparent text-[length:var(--fs-sm)] text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none sm:w-56"
-          />
-          {query && (
-            <button
-              type="button"
-              aria-label={en ? 'Clear search' : 'Xoá tìm kiếm'}
-              onClick={() => setQuery('')}
-              className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[var(--t4)] hover:text-[var(--t1)]"
-            >
-              <X size={12} />
-            </button>
-          )}
-        </div>
+        {!bentoBox && (
+          <div className="flex items-center gap-2 rounded-full px-3.5 py-2" style={glass}>
+            <Search size={14} className="shrink-0 text-[var(--t4)]" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={en ? 'Search name, note, project…' : 'Tìm tên, ghi chú, dự án…'}
+              className="w-48 bg-transparent text-[length:var(--fs-sm)] text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none sm:w-56"
+            />
+            {query && (
+              <button
+                type="button"
+                aria-label={en ? 'Clear search' : 'Xoá tìm kiếm'}
+                onClick={() => setQuery('')}
+                className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[var(--t4)] hover:text-[var(--t1)]"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+        )}
         <select
           value={projFilter}
           onChange={(e) => setProjFilter(e.target.value)}
