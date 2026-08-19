@@ -109,6 +109,10 @@ model Project {
   // Bảng khởi tạo dự án 12/08 (SPEC-KHOI-TAO-DU-AN-2026-08-11 mảnh PLAN) — hồ sơ 60s.
   profile ProjectProfile?
 
+  // ══ MỚI 19/08 (Q5-SCHEMA, chuỗi Understand/Review→Promote→ProjectAssetUsage→H9) ══
+  files       ProjectFile[]
+  assetUsages ProjectAssetUsage[]
+
   @@index([larkProjectCode])
   @@index([deletedAt])
 }
@@ -309,6 +313,9 @@ model LibraryAsset {
   lastEditedDevice String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // ══ MỚI 19/08 (Q5-SCHEMA) ══ — where-used: asset này đang được project nào REUSE.
+  usages ProjectAssetUsage[]
 
   @@index([deletedAt])
 }
@@ -632,4 +639,90 @@ model ExternalRef {
   /// chiều ngược: từ thực thể lõi tra ra mọi id ngoài của nó.
   @@index([entityType, entityId])
   @@index([system])
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Q5-SCHEMA (19/08, chuỗi Hoà chốt: Q5 ProjectFile → Understand/Review → Promote →
+// LibraryAsset → ProjectAssetUsage → H9 context → downstream). SCHEMA-ONLY — model này
+// CHƯA push/generate; KHÔNG có code nào gọi prisma.projectFile.*/prisma.projectAssetUsage.*
+// tính tới thời điểm ghi đoạn này (Prisma Client sinh từ DB đã push, không sinh từ text
+// schema.prisma — gọi trước khi push sẽ không tsc-pass, đó là tín hiệu cấm, không phải lỗi).
+// Xem migration-plan: docs/memory/sessions/2026-08-19/18-q5-schema-migration-plan/README.md
+// ══════════════════════════════════════════════════════════════════════════
+
+// ProjectFile — raw/project-owned input, 1-N TRƯỚC Promote (chưa đủ định nghĩa để render/BOQ).
+// Đây là "ngăn dự án" trong luật Files-hai-ngăn (17/08 sáng → 17/08 tối: hai TẦNG, ngăn
+// "phần thô dùng chung" gộp vào thư mục Nhà cung cấp ở tầng ①, KHÔNG phải model này).
+model ProjectFile {
+  id          String  @id @default(cuid())
+  projectId   String
+  name        String
+  mime        String
+  path        String
+  contentHash String?
+  uploadedBy  String
+
+  // ══ convention chung mọi model mutable của repo (xem Project/ProjectMember/LibraryAsset ở
+  // trên, docs/IF-CORE-SCHEMA.md §1D/§2C) — rev cho hoà giải xung đột, deletedAt = xoá mềm
+  // (mọi query PHẢI lọc deletedAt: null), lastEditedBy/lastEditedDevice = truy vết.
+  uploadedAt       DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  rev              Int       @default(0)
+  deletedAt        DateTime?
+  lastEditedBy     String?
+  lastEditedDevice String?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([deletedAt])
+}
+
+// ProjectAssetUsage — join N-N Project↔LibraryAsset. Trả lời câu KHÁC với ProjectFile: đây là
+// vật ĐÃ QUA Promote (đã đủ định nghĩa, sống trong LibraryAsset/Master Library), và câu hỏi ở
+// đây là "project cụ thể này dùng asset đó để làm gì" — không phải "vật này còn thô hay đã
+// định nghĩa" (đó là ranh giới ProjectFile ↔ LibraryAsset).
+model ProjectAssetUsage {
+  id          String  @id @default(cuid())
+  projectId   String
+  assetId     String
+
+  // ══ TRANSITIONAL (Hoà chốt 19/08 khuya) ── optional string, KHÔNG FK. Model Workspace/
+  // Canvas (H9 — CẤP 0.5, chốt 11/08 §CẤP 0.5 + Reconciliation 19/08 "Project → nhiều
+  // Workspace → nhiều Canvas") CHƯA tồn tại trong schema này. workspaceId/canvasId ở đây chỉ
+  // là con trỏ ngữ cảnh dạng chuỗi tự do (id logic phía ứng dụng), giữ chỗ để downstream (chat/
+  // task-context/deep-link) đọc được "asset này đang dùng ở đâu" mà KHÔNG chặn bởi việc H9
+  // chưa xong. SAU KHI H9 CHỐT: audit lại — nếu Workspace/Canvas trở thành bảng thật, cân nhắc
+  // nâng cấp hai cột này thành relation FK thật; KHÔNG tự động nâng cấp bây giờ (đây là quyết
+  // định cần đo lại tại thời điểm đó, không suy diễn trước).
+  workspaceId String?
+  canvasId    String?
+
+  // ══ `usage` ở ĐÂY là câu hỏi KHÁC với LibraryAsset.usage. LibraryAsset.usage (dòng ~293,
+  // RefUsage) là phân loại CẤP-KHO/generic-default của bản thân asset lúc Promote (nó vốn là
+  // loại gì). `usage` ở đây là "PROJECT CỤ THỂ này đang dùng asset đó để làm gì" — một asset
+  // material có thể được project A dùng làm 'material' và project B dùng làm 'ref-render' cho
+  // một khung hình khác, hai usage độc lập nhau dù cùng asset. REUSE cùng vocabulary
+  // LIBRARY_USAGES (lib/server/library-save.ts:17: 'ref-render'|'slide'|'material'|'layout'|
+  // 'cad'|'brief'|'furniture') — KHÔNG phải taxonomy thứ ba, KHÔNG deprecate LibraryAsset.usage.
+  usage String
+
+  note    String?
+  addedBy String
+
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  project Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  asset   LibraryAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  // ⚠️ Re-verify theo yêu cầu Hoà (đối chiếu ProjectMember.@@unique([projectId,userId]),
+  // dòng ~140 phía trên): CÙNG VẤN ĐỀ tồn tại ở đây — deletedAt KHÔNG nằm trong @@unique bên
+  // dưới, nên gỡ một usage rồi thêm lại CÙNG (projectId, assetId, usage) sẽ đụng unique
+  // constraint vì hàng cũ (deletedAt đã set) vẫn còn đó. Chỗ gọi (route POST sau này) PHẢI
+  // "hồi sinh" hàng cũ (deletedAt: null) thay vì create mới — cùng khuôn xử lý với
+  // ProjectMember, xem comment tại đó. Ghi rõ trong migration-plan để không quên khi thi công.
+  @@unique([projectId, assetId, usage])
+  @@index([assetId]) // where-used: asset này dùng ở project nào
+  @@index([projectId]) // truy vấn nóng: project này dùng asset nào
 }
