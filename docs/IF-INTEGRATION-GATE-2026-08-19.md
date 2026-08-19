@@ -72,6 +72,31 @@ Khi R1-R10 xong (R11 tùy Hoà), các con số này phải flip — đo bằng m
 
 Cỡ: ~1 ngày. Đề xuất nằm chờ trong gate — **Hoà gật thì thành entry registry** (`soi-mount`), làm TRƯỚC Wave 1 để Wave 1 không đẻ thêm orphan mới không ai biết.
 
+## 5b · DELTA 19/08 tối — MAIN Batch 0A (durability) + 0B (thi công)
+
+- **Chính sách git MỚI (prompt MAIN Hoà 19/08) ĐÈ luật §2.5 "không commit"**: phân biệt
+  MACHINE-PASS → BROWSER-PASS → CHECKPOINTED → BACKED-UP → INTEGRATED → CLOSED. Implementation
+  xong không được chết dạng dirty tree.
+- **R1 · R3 · R7 = CHECKPOINTED** trên nhánh `backup/2026-08-19-batch0a` (5 commit xếp chồng từ
+  HEAD `c7f3ac8`: R3 `f25716e` → R7 `355459d` → wave0-snapshot `5249447` → R1 `bcb13c5` → bổ sung
+  untracked `bb53eae`). Tip == working tree 100% (verify temp-index). Machine re-verify 19/08 tối:
+  224 test targeted pass. `main` KHÔNG đổi — H7 vẫn của Hoà.
+- **BACKED-UP một nửa**: bundle 205MB tại `~/Downloads/IF-git-backup/if-backup-2026-08-19-batch0a.bundle`
+  (main + backup branch, full history). ⛔ `git push origin backup/*` bị permission mode chặn —
+  cần Hoà mở rule hoặc tự push (LỆNH: `git push origin backup/2026-08-19-batch0a`).
+- **Batch 0B ĐÓNG 19/08 tối — R4 + R5 + R8 xong, CHECKPOINTED** (`a1a8533` · `073881e` · `388a893`):
+  · R4 Tool3DBar→ToolbarChip: MACHINE-PASS (tsc 0 · tool3d 34) · BROWSER-PENDING.
+  · R5 LightBar hàng đợi + ResumeWork vào Home: MACHINE + **BROWSER-PASS** (server 3001 thực tế
+    KHOẺ — đè note "bệnh" cũ; LightBar % thật, widget tự ẩn). Hết 2 ORPHAN.
+  · R8 geom2d reader: MACHINE-PASS (resolver 57 · idfc-store 21 · tsc toàn repo 0 ở trạng thái gộp)
+    · BROWSER-PENDING. UF-2 mắt đứt 2 có reader đầu tiên. ⚠️ Nợ khai: specId chưa gắn được lên nét
+    rời (schema Base chỉ cho Block/Hatch mang specId) — món idfc làm-phẳng chưa lên BOQ, phiếu sau.
+  R10 GIỮ chờ H3 (dòng "H3 ✓" trong LATEST chưa đủ bằng chứng Hoà đã bấm).
+- Phát hiện ngoài phạm vi (R5): "Mở lại" khi resume thiếu routeId bị LegacyStageRedirect dội về
+  Home + toast — hành vi cầu redirect cũ, đáng phiếu riêng.
+- Cập nhật §4: ORPHAN user-facing 7 → 4 (LightBar · ResumeWork · Tool3DBar-khuôn đã sống).
+- INTEGRATION_BASE_SHA hiện hành = `c7f3ac8` (+ toàn bộ trạng thái đã checkpoint ở backup branch).
+
 ## 6 · CHƯA CHẮC
 
 - Toàn bộ đo TĨNH — chưa browser verify (server 3001 bệnh theo LATEST). Các claim "bấm không ra gì" cần 1 lượt browser trước khi phiếu R2/R7 đóng.

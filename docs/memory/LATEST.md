@@ -3,7 +3,24 @@
 > **Đọc file này ĐẦU TIÊN**, rồi **`docs/memory/RETRIEVAL-MAP.md`** (chỉ mục 11 topic → nguồn sâu, lập 19/08), rồi **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md`** (bản đồ chính tắc 19/08 — thay `IF-KIEN-TRUC.md`), rồi **`docs/TAC-NHAN-T.md`** (vai T).
 > Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-19 khuya muộn (INTEGRATION GATE — vai Integration Coordinator)**
+**Cập nhật lần cuối: 2026-08-19 tối (MAIN foreman — Batch 0A durability + Batch 0B)**
+
+---
+
+# 2026-08-19 · tối · MAIN BATCH 0A+0B (chi tiết: Gate §5b + `sessions/2026-08-19/13-main-batch0a/`)
+
+1. **R1/R3/R7 verify còn nguyên trên đĩa + CHECKPOINTED**: nhánh `backup/2026-08-19-batch0a`
+   (R3 `f25716e` · R7 `355459d` · wave0 `5249447` · R1 `bcb13c5` · untracked `bb53eae`) — tip ==
+   working tree 100%, tạo bằng plumbing (KHÔNG đụng index thật/HEAD/checkout). `main` không đổi.
+2. Bundle chống mất: `~/Downloads/IF-git-backup/if-backup-2026-08-19-batch0a.bundle` (205MB).
+   ⛔ push remote bị permission chặn — Hoà chạy `git push origin backup/2026-08-19-batch0a` khi tiện.
+3. Machine re-verify: 224 test targeted (resolve 38 · registry 105 · toolbar-doc 51 · boq-group 30) pass.
+4. **Batch 0B ĐÓNG cùng tối**: R4 `a1a8533` (Tool3DBar→ToolbarChip, browser-pending) · R5 `073881e`
+   (LightBar+ResumeWork sống, **browser-PASS — server 3001 thực tế KHOẺ**, đè note bệnh cũ) ·
+   R8 `388a893` (geom2d reader `via:'idfc'`, resolver 57 test; ⚠️ specId chưa gắn lên nét rời —
+   schema Base, phiếu sau). MAIN spot-check + re-run test độc lập cả ba; tsc toàn repo 0 trạng thái gộp.
+5. Chính sách mới từ prompt MAIN Hoà: thang MACHINE→BROWSER→CHECKPOINTED→BACKED-UP→INTEGRATED→CLOSED.
+6. Nợ mới ghi: LegacyStageRedirect dội "Mở lại" thiếu routeId về Home (R5 phát hiện, ngoài phạm vi).
 
 ---
 
