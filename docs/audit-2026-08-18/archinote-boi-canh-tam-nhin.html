@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<title>IF Kiến trúc tổng hợp · 18/08</title>
+<style>
+  @page { size: A4; margin: 15mm 12mm; }
+  body { font: 11px/1.55 -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif; color: #1a1a1a; margin: 0; }
+  .doc { }
+  .doc-title { font-size: 24px; margin: 0 0 4px; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  .meta { color: #666; font-size: 10px; margin-bottom: 14px; font-family: ui-monospace, Menlo, monospace; }
+  h1 { font-size: 20px; margin: 22px 0 8px; }
+  h2 { font-size: 15px; margin: 18px 0 6px; border-bottom: 1px solid #ddd; padding-bottom: 3px; }
+  h3 { font-size: 12px; margin: 12px 0 4px; }
+  p { margin: 6px 0; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 10px; background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+  pre { background: #f5f5f5; border: 1px solid #e0e0e0; padding: 8px 10px; border-radius: 4px; overflow-x: auto; font-size: 9.5px; line-height: 1.4; break-inside: avoid; }
+  pre code { background: none; padding: 0; }
+  ul, ol { margin: 6px 0; padding-left: 20px; }
+  li { margin: 2px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 10px; margin: 8px 0; break-inside: avoid; }
+  th, td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; vertical-align: top; }
+  th { background: #f0f0f0; font-weight: 600; }
+  blockquote { border-left: 3px solid #6a57f5; margin: 8px 0; padding: 4px 10px; background: #f7f5ff; color: #333; }
+  .page-break { page-break-after: always; height: 0; }
+  strong { font-weight: 600; }
+</style>
+</head><body>
+
+<section class="doc">
+  <h1 class="doc-title">ArchiNote · Bối cảnh · Nỗi đau · Tư duy · Tầm nhìn · Trạng thái</h1>
+  <div class="meta">Nguồn: <code>docs/ARCHINOTE-BOI-CANH-TAM-NHIN.md</code></div>
+  <h1>ArchiNote · Bối cảnh · Nỗi đau · Tư duy · Tầm nhìn · Trạng thái</h1>
+<blockquote>Sản phẩm CHỊ EM với InteriorFlow. Chưa có dòng code. File này ghi tại sao Hoà đẻ ra ArchiNote, giải quyết nỗi đau gì trong nghề, tuyên ngôn nghề nghiệp làm nền, và trạng thái hiện tại. <strong>Chép nguyên văn khi Hoà đã nói bằng chữ trong sổ; T suy khi Hoà chưa nói — có đánh dấu ⚠️ T-SUY.</strong></blockquote>
+<p>---</p>
+<h2>1 · BỐI CẢNH NGÀNH — nỗi đau thật KTS gặp mỗi ngày</h2>
+<h3>1.1 · Hai nửa của người thiết kế nội thất</h3>
+KTS/designer nội thất SỐNG HAI ĐỜI:
+<table><tr><th>ĐỜI 1 · TRONG STUDIO</th><th>ĐỜI 2 · NGOÀI CÔNG TRƯỜNG</th></tr><tr><td>ngồi lâu, nhiều cửa sổ</td><td>đứng, một tay, mạng yếu</td></tr><tr><td>chuột + bút</td><td>ngón tay + camera + micro</td></tr><tr><td>tạo ra sản phẩm (bản vẽ, mô hình, deck)</td><td>THU DỮ LIỆU THẬT (số đo, hiện trạng, khách nói, thợ hỏi)</td></tr><tr><td>có màn hình lớn, đủ ánh sáng</td><td>ngoài trời chói / trong hầm tối</td></tr><tr><td>có thời gian nghĩ</td><td>phải quyết ngay</td></tr><tr><td><strong>InteriorFlow phục vụ</strong></td><td><strong>ArchiNote phục vụ</strong></td></tr></table>
+⚠️ T-SUY từ chốt 03/08: sự tách này CHÍNH là gốc để Hoà tách hai app — cùng một người thiết kế nhưng hai bối cảnh dùng công cụ khác nhau đến mức không thể ép chung một phần mềm.
+<h3>1.2 · Bảy nỗi đau ngoài công trường (⚠️ T-SUY dựa vào các chốt rải rác)</h3>
+<ol><li><strong>Số đo bằng tay thất lạc</strong> — ghi vào sổ giấy → về studio quên · nhập lại sai · không ai biết ai đo</li><li><strong>Ảnh hiện trạng lộn xộn</strong> — chụp 100 tấm, về không nhớ tấm nào phòng nào, không gắn cấu kiện được</li><li><strong>Khách nói tại chỗ không ai ghi</strong> — quyết định miệng ở công trường → về studio "khách bảo gì nhỉ?" → làm sai</li><li><strong>Vấn đề phát sinh không ai biết</strong> — thợ hỏi 1 chi tiết → designer trả lời qua điện thoại → không lưu, không truy được sau</li><li><strong>Đo lại nhiều lần</strong> — mỗi lần ra công trường lại đo lại vì lần trước không tin/không tìm</li><li><strong>Tri thức nghề rơi rớt</strong> — đọc sách/tài liệu tốt → không có chỗ ghim → 3 tháng sau quên</li><li><strong>Mạng yếu = không dùng được app studio</strong> — Revit/Enscape/Figma cần mạng → công trường 3G chập chờn → chịu</li></ol>
+<h3>1.3 · Ngành đã có gì</h3>
+<ul><li><strong>Sketch ứng dụng đo tay</strong>: Magic Plan · RoomScan · Canvas — đơn giản đo hình, không nối studio</li><li><strong>Note tổng dụng</strong>: Evernote · Notion · Obsidian — không phục vụ nghề đo/ảnh cấu kiện</li><li><strong>Chuyên nghiệp công trường</strong>: PlanGrid · Fieldwire · Procore — thiên xây dựng lớn (contractor), KHÔNG cho designer nội thất</li><li><strong>Bimx/BIMcollab</strong>: viewer BIM trên điện thoại, không thu</li></ul>
+<strong>Chỗ trống thật</strong>: KHÔNG có app cho <strong>designer nội thất</strong> đứng ngoài công trường thu dữ liệu THẬT rồi đẩy về studio.
+<p>---</p>
+<h2>2 · TƯ DUY GIẢI QUYẾT — cách Hoà nghĩ</h2>
+<h3>2.1 · CHỦ TRƯƠNG "MÁY PHÁT ↔ MÁY THU" (03/08, nguyên văn)</h3>
+<blockquote><strong>InteriorFlow = MÁY PHÁT, chạy trên MÁY TÍNH/TABLET</strong> — tạo ra sản phẩm (bản vẽ · mô hình · ảnh · hồ sơ), phiên làm việc dài, nhiều cửa sổ, chuột+bút.</blockquote>
+<blockquote><strong>ArchiNote = MÁY THU, chạy trên ĐIỆN THOẠI là chính</strong> — thu vào dữ liệu thật (số đo · ảnh hiện trường · ghi âm · ghi chú · tri thức từ sách), dùng đứng, một tay, ngoài công trường, mạng yếu.</blockquote>
+<blockquote>Cùng nhà · khác mục đích · bổ trợ nhau · <strong>CHUNG MỘT NGUỒN SỰ THẬT</strong> (qua ATLAS/Lark, không gọi thẳng nhau).</blockquote>
+<p>Đây là câu định vị <strong>kiến trúc HAI SẢN PHẨM</strong>. Không phải một app hai chế độ.</p>
+<h3>2.2 · CẢM ỨNG KHÁC MỤC ĐÍCH (03/08)</h3>
+<blockquote>Cơ chế cảm ứng nghiên cứu cho tablet IF chỉ <strong>HỌC</strong>, KHÔNG bê nguyên sang ArchiNote — IF cảm ứng là để <strong>VẼ CHÍNH XÁC</strong>; ArchiNote cảm ứng là để <strong>GHI NHANH</strong>.</blockquote>
+<p>⚠️ T-SUY hệ quả: mọi cử chỉ, mọi widget, mọi hằng số ms trong IF-touch KHÔNG được coi là chuẩn cho ArchiNote. Phải nghiên cứu riêng cử chỉ "một tay đứng ngoài công trường".</p>
+<h3>2.3 · NHIỆT ĐỘ MÀU CÙNG NHÀ KHÁC NHIỆT ĐỘ (03/08)</h3>
+<ul><li><strong>InteriorFlow</strong> = tím lạnh #6a57f5 · nền TỐI mặc định · công cụ kỹ thuật</li><li><strong>ArchiNote</strong> = KEM + VÀNG ẤM chủ đạo · nền SÁNG mặc định · <strong>cảm giác sổ tay/tri thức</strong></li><li>Tím CHỈ dùng làm nhấn RẤT NHẸ để nhận ra cùng nhà</li><li>Luật: vàng/kem KHÔNG bao giờ làm màu CHỮ trên nền sáng — chỉ nền khối/nhấn/vạch; chữ luôn dùng mực đậm ≥4.5:1</li></ul>
+⚠️ T-SUY: chọn nền SÁNG cho ArchiNote còn có lý do THỰC DỤNG — ngoài công trường nắng chói, nền tối không đọc được. Chỉ Hoà chưa nói rõ lý do này bằng chữ.
+<h3>2.4 · TRUNG TÍNH TUYỆT ĐỐI (01/08 — Hoà LẬT đề xuất T)</h3>
+Đợt duyệt 01/08 T đề xuất <em>"ArchiNote riêng cho TTT được, không cần trung tính như IF"</em> — Hoà LẬT.
+<p>Nguyên văn chốt: <em>"ArchiNote CŨNG trung tính"</em> — sản phẩm bán/tặng cho mọi studio, không có brand TTT bên trong.</p>
+<p>⚠️ Hệ quả: Tri thức nghề, template ghi chép, danh mục cấu kiện đều <strong>trung tính</strong> — không nạp gu TTT làm mặc định.</p>
+<h3>2.5 · CHUNG MỘT NGUỒN SỰ THẬT — không gọi thẳng nhau</h3>
+Cả IF và ArchiNote đều ĐỌC/GHI vào <strong>ATLAS/Lark Base</strong> (nguồn dữ liệu thật). Không có API IF → ArchiNote, không có API ngược lại.
+<p>⚠️ T-SUY vì sao: <br><ul><li>Tránh coupling — đổi một bên không phá bên kia</li><li>Cho phép hai đội phát triển độc lập</li><li>ATLAS/Lark có sẵn, không phải xây thêm hạ tầng đồng bộ</li></ul><br><h3>2.6 · CỬA đã CHỪA SẴN trong IF cho ArchiNote (07/08)</h3><br><blockquote><strong>Cửa cho ArchiNote đã chừa sẵn, miễn phí:</strong> <code>ExternalRef.system</code> (<code>schema.prisma:485</code>) là chuỗi tự do, cố ý KHÔNG enum. Sau này ArchiNote nối vào chỉ là thêm <code>system='archinote'</code> — 0 sửa lõi, 0 migrate.</blockquote></p>
+<p>Đây là lợi ích của luật §0v (<strong>lõi không mang tên nhà cung cấp</strong>) đã trả trước rồi.</p>
+<h3>2.7 · ĐIỀU KIỆN CẦN để ArchiNote thật sự bắt đầu (chốt trong <code>RANG-BUOC-IF2-CHO-IF1.md</code>)</h3>
+<blockquote><strong>Spec IF2 thật chờ đủ 3 điều kiện</strong>: (1) IF1 ship · (2) ATLAS chạy · (3) <strong>ArchiNote có dữ liệu</strong></blockquote>
+<p>⚠️ T-SUY: Hoà xếp ArchiNote không phải là "một app nữa để làm", mà là <strong>NGUỒN CUNG DỮ LIỆU</strong> cho các tầng năng lực cao của IF (IF2 BIM/IFC/va chạm). Không có ArchiNote thu dữ liệu thật thì IF2 không có gì để phân tích. Đây là quan hệ <strong>NHÂN QUẢ</strong>, không phải song song.</p>
+<p>---</p>
+<h2>3 · TUYÊN NGÔN VỀ NGHỀ — nền cho cả IF + ArchiNote</h2>
+<h3>T1 · Người thiết kế nội thất là NGƯỜI SÁNG TẠO LAI KỸ THUẬT</h3>
+Không phải nghệ sĩ thuần (thiếu số đo/tiêu chuẩn). Không phải kỹ sư thuần (thiếu gu/cảm xúc). Công cụ phải phục vụ CẢ HAI nửa cùng lúc, không ép chọn một.
+<h3>T2 · NGHỀ NỘI THẤT LÀ NGHỀ CỦA "MỘT NGUỒN"</h3>
+Đổi vật liệu ghế → bản vẽ 2D đổi + phối cảnh 3D đổi + deck khách đổi + BOQ đổi + tiến độ đổi. <strong>5 nơi từ 1 hành động.</strong> Công cụ nào bắt người thiết kế NHẬP LẠI cùng thông tin ở 5 nơi = công cụ phản nghề.
+<h3>T3 · DỮ LIỆU HIỆN TRƯỜNG LÀ TÀI SẢN LỚN NHẤT</h3>
+Không phải bản vẽ. Không phải model 3D. Là <strong>CÁI THẬT ĐO ĐƯỢC Ở CÔNG TRƯỜNG</strong>:
+<ul><li>Kích thước phòng thật (khác bản vẽ kiến trúc gốc 5-15cm là bình thường)</li><li>Vị trí ống nước / dây điện thật (giấy tờ và thực tế lệch)</li><li>Trần cao thật (khảo sát rồi mới biết dầm nào ẩn)</li><li>Ảnh chụp NGƯỜI Ở TRONG (mắt khách nhìn thế nào)</li></ul>
+Dữ liệu này thu ở CÔNG TRƯỜNG, không phải sinh ở studio. <strong>⇒ Phải có công cụ THU chuyên biệt.</strong>
+<h3>T4 · CHUNG NHÀ, KHÁC MÁY, KHÁC MỤC ĐÍCH</h3>
+IF ↔ ArchiNote là mô hình iPhone ↔ Apple Watch: cùng người dùng, cùng dữ liệu, khác mục đích, khác nơi dùng. Không ép cái nhỏ thành phiên bản rút gọn cái lớn.
+<h3>T5 · CHỐNG PHỤ THUỘC MẠNG là điều kiện SỐNG CÒN</h3>
+Ngoài công trường 3G chập chờn, hầm/basement không mạng, ngoại tỉnh không wifi. <strong>App công trường phải chạy được KHÔNG MẠNG</strong> — sync khi có mạng, không blocker khi không.
+<p>⚠️ T-SUY từ luật local-first IF: ArchiNote sẽ kế thừa nguyên tắc này, nhưng dữ liệu phải merge được với ATLAS khi lên mạng lại.</p>
+<h3>T6 · TRI THỨC NGHỀ CẦN NƠI GHIM</h3>
+Sách kiến trúc/nội thất/vật liệu/phong thuỷ đọc ở công trường lúc chờ khách/thợ. Nếu không ghim ngay → mất. <strong>ArchiNote còn là NƠI HỌC</strong> (đọc sách · ghim đoạn hay · chú thích · chia sẻ team) — không chỉ thu dữ liệu công việc.
+<p>---</p>
+<h2>4 · MÔ TẢ ARCHINOTE — làm gì, cho ai, trên gì</h2>
+<h3>4.1 · Tên</h3>
+<strong>ArchiNote</strong> — Hoà đã chốt <em>"mình thích archinote"</em> (03/08 ĐÍNH CHÍNH), không đổi tên nữa.
+<h3>4.2 · Người dùng</h3>
+<ul><li><strong>Chính</strong>: Kiến trúc sư / designer nội thất đang đi công trường</li><li><strong>Phụ</strong>: Kỹ sư giám sát · quản lý dự án · thợ trưởng (đọc yêu cầu designer)</li></ul>
+<h3>4.3 · Thiết bị</h3>
+<ul><li><strong>Chính</strong>: iPhone / Android (cầm tay, một tay)</li><li><strong>Phụ</strong>: iPad khi có (không phải yêu cầu)</li></ul>
+Không có bản desktop. Desktop = IF, đã có.
+<h3>4.4 · 5 việc chính (⚠️ T-SUY từ mô tả 03/08 + nỗi đau §1.2)</h3>
+<ol><li><strong>ĐO</strong> — nhập số đo tay/laser, gắn vào phòng/cấu kiện. Cho phép chụp ảnh + note.</li><li><strong>CHỤP</strong> — ảnh hiện trường, tự gắn vị trí/phòng/cấu kiện, đồng bộ về studio.</li><li><strong>GHI ÂM</strong> — cuộc họp/lời khách/thợ hỏi, tự chuyển văn bản (voice-to-text).</li><li><strong>NOTE</strong> — ghi chú nhanh, ghim vào project/room/cấu kiện.</li><li><strong>HỌC</strong> — đọc sách/tài liệu nghề, ghim đoạn hay, chú thích, tag theo chủ đề.</li></ol>
+<h3>4.5 · Cử chỉ dùng một tay</h3>
+<ul><li>Ngón cái vươn 60% màn hình (kém với 6.7"+)</li><li>CTA đặt vùng ngón cái (đáy màn)</li><li>Vuốt vs bấm — vuốt = hành động phổ biến (thu/mở, đánh dấu xong, chuyển ảnh)</li><li>Ghi nhanh = giữ nút Ghi âm/Chụp lâu, thả = xong (như Zalo voice)</li></ul>
+<h3>4.6 · Khác IF ở điểm nào</h3>
+<table><tr><th></th><th>InteriorFlow</th><th>ArchiNote</th></tr><tr><td>Cử chỉ</td><td>vẽ chính xác (bút, snap)</td><td>ghi nhanh (một tay)</td></tr><tr><td>Màu nền</td><td>tối mặc định</td><td>sáng mặc định (đọc ngoài trời)</td></tr><tr><td>Chủ đạo</td><td>tím lạnh</td><td>kem + vàng ấm</td></tr><tr><td>Phiên làm việc</td><td>dài (giờ)</td><td>ngắn (phút)</td></tr><tr><td>Mạng</td><td>có thể yêu cầu</td><td>phải chạy khi không mạng</td></tr><tr><td>Dữ liệu</td><td>TẠO RA</td><td>THU VÀO</td></tr><tr><td>Đầu ra</td><td>bản vẽ · deck · model</td><td>ghi chú · ảnh · số đo · audio</td></tr></table>
+<h3>4.7 · Cách nối với IF</h3>
+<ul><li><strong>KHÔNG gọi thẳng IF</strong> — không có API IF/ArchiNote</li><li>Cả hai ĐỌC/GHI vào ATLAS/Lark</li><li>IF thấy dữ liệu ArchiNote qua <code>ExternalRef.system='archinote'</code> (cửa đã chừa sẵn 07/08)</li></ul>
+---
+<h2>5 · TRẠNG THÁI HIỆN TẠI (19/08/2026)</h2>
+<h3>5.1 · Code</h3>
+<strong>0 dòng code.</strong> ArchiNote chưa có repo riêng, chưa có prototype, chưa có mock.
+<h3>5.2 · Tại sao chưa làm — Hoà chốt 07/08</h3>
+<blockquote><em>"archinote chưa code. xử if trước"</em></blockquote>
+<p>ArchiNote chưa có dòng code nào ⇒ <strong>không nằm trong đợt 2-6</strong>, không thiết kế trước cho nó, không thêm field "để dành". Làm thêm gì cho ArchiNote lúc này là <strong>NỢ KỸ THUẬT CHO MỘT THỨ CHƯA TỒN TẠI</strong>.</p>
+<h3>5.3 · Đã CHUẨN BỊ được gì ở IF cho ArchiNote sau này</h3>
+<ol><li><strong>Cửa nối sẵn</strong>: <code>ExternalRef.system</code> schema tự do</li><li><strong>Luật trung tính</strong> (<code>§0v</code> lõi không mang tên nhà cung cấp) đã trả giá cho cả hai app</li><li><strong>Luật màu</strong>: đã tách nhiệt độ hai app trong <code>SPEC-DESIGN-SYSTEM-IF</code></li><li><strong>ATLAS/Lark</strong> đã có mirror <code>LarkTaskRef</code>, <code>LarkPersonRef</code> — hạ tầng đồng bộ chung</li><li><strong>Tuyên ngôn nghề</strong> (T1-T6 ở §3) là chung, không phải đẻ lại</li></ol>
+<h3>5.4 · Điều kiện KHỞI ĐỘNG</h3>
+Ba điều kiện phải đủ trước khi bắt tay vào ArchiNote (chốt <code>RANG-BUOC-IF2-CHO-IF1.md</code>):
+<ol><li><strong>IF1 ship</strong> — bản desktop IF ổn định, dùng được nội bộ</li><li><strong>ATLAS chạy</strong> — Lark base có dữ liệu thật, không phải trống</li><li>Và ngược lại <strong>ArchiNote thu dữ liệu</strong> là điều kiện cho IF2 (BIM/IFC/va chạm)</li></ol>
+⇒ Thứ tự: IF1 → ATLAS đầy → ArchiNote → IF2.
+<h3>5.5 · Rủi ro / câu treo</h3>
+<ul><li>⚠️ Chưa có nghiên cứu người dùng ArchiNote thật (khảo sát KTS đi công trường hàng tuần dùng gì, thiếu gì)</li><li>⚠️ Chưa chọn framework mobile (React Native · Flutter · native iOS+Android riêng · PWA)</li><li>⚠️ Chưa quyết monetization (mua kèm IF · bán riêng · miễn phí như companion?)</li><li>⚠️ Chưa quyết định có làm iPad không (chốt 03/08 nói "điện thoại là chính", không rõ iPad = phụ tự-suy hay không có iPad)</li><li>⚠️ Chưa quyết ai là user CỐT — designer FREELANCE hay designer trong STUDIO 20+ người khác nhau về nhu cầu team</li></ul>
+<h3>5.6 · Nợ cho phiên sau</h3>
+<ul><li>Nghiên cứu 5 app đối thủ đi sâu (Magic Plan, Fieldwire, PlanGrid, Bimx, Morpholio Trace)</li><li>Khảo sát 3-5 KTS đi công trường (Hoà + đồng nghiệp) — 1 tuần dùng gì, đau gì</li><li>Mock 5 việc chính (§4.4) trên iPhone 15 (mock HTML trong <code>docs/mocks/</code>, dùng token của SPEC-DESIGN-SYSTEM-IF)</li><li>Chốt framework mobile</li></ul>
+---
+<h2>8 · BỐN Ý HOÀ BỔ SUNG 19/08 (chi tiết)</h2>
+<h3>8.1 · MAP / VỊ TRÍ — cơ chế xương sống cho cả ArchiNote và IF</h3>
+<p><strong>Với ArchiNote (phải có ngay từ v1)</strong>:<br><ul><li><strong>Vị trí công trình</strong> = neo mọi dữ liệu thu vào. Chụp ảnh → tự gắn toạ độ · số đo → gắn phòng · ghi âm → gắn thời điểm + vị trí. Không có map thì ảnh 100 tấm về studio thành ĐỐNG RỜI, không nhớ tấm nào phòng nào (đúng nỗi đau §1.2 #2).</li><li><strong>Chỉ đường tới công trường</strong> — Google Maps/Apple Maps deep link từ project.</li><li><strong>Nhật ký hiện trường theo NGÀY + VỊ TRÍ</strong> — mỗi lần đến ghi lại đã đi những đâu, đo những gì, dùng khi bàn giao/tranh chấp.</li><li><strong>Vị trí = biến kéo trọn bộ quy chuẩn</strong> (khớp chốt 15/08 F3 §BIẾN SỐ NGỮ CẢNH): công trình ven biển → tự bật cảnh báo ăn mòn; miền Bắc mùa đông → nhắc đệm khe cửa. Vị trí không chỉ là dấu chấm trên map, là <strong>cửa vào cả pha nghiên cứu dự án</strong>.</li></ul><br><strong>Với IF (nên có sau khi ATLAS chạy)</strong>:<br><ul><li><strong>Bản đồ dự án tổng quan</strong> — mọi dự án hiển thị trên map (miền Bắc mấy, miền Nam mấy, cụm nào đang chạy)</li><li><strong>Kho vật liệu theo vùng</strong> — vật liệu địa phương gợi ý theo vị trí công trình (đá Thanh Hoá gần Bắc, đá Bình Định gần Nam Trung Bộ)</li><li><strong>Tính toán chi phí vận chuyển sơ bộ</strong> — vật liệu chọn ở tỉnh nào, giao đến công trường bao xa</li><li><strong>BOQ có nguồn cung cấp gần nhất</strong> — không phải mọi nhà cung cấp trong nước</li></ul><br>⭐ <strong>Điểm chung</strong>: MAP là <strong>CƠ CHẾ CHÍNH cho ATLAS/Lark biết dữ liệu này thuộc đâu</strong>. ArchiNote thu → gắn vị trí → ATLAS lưu → IF đọc/hiển thị theo vùng. Không có vị trí = ATLAS không phân loại được theo địa lý = mất hẳn tầng thông tin đắt nhất.</p>
+<h3>8.2 · QUAN HỆ VỚI LARK BASE — TẦM NHÌN, không chỉ mirror</h3>
+<p><strong>Hiện tại</strong>: <code>LarkTaskRef</code> · <code>LarkPersonRef</code> là bảng mirror PULL-ONLY (IF chỉ đọc từ Lark, không ghi ngược).</p>
+<p><strong>Tầm nhìn</strong>:<br><ul><li><strong>Lark = NƠI DỮ LIỆU CÔNG TY SỐNG</strong> — nhân sự, dự án, tài chính, khách hàng đều ở Lark. Không phải IF quản. IF chỉ SOI vào Lark để hiển thị đúng cho vai KTS/designer.</li><li><strong>ArchiNote GHI THẲNG VÀO Lark</strong> (không qua IF) — công trường ghi trực tiếp Lark, IF sau đó đọc lại. Không có mắt xích IF ở giữa để hỏng.</li><li><strong>Lark = hạ tầng đồng bộ đa app</strong> — Zalo, Feishu, Slack, WhatsApp cũng làm được — nhưng Hoà chọn Lark vì đã có nền dùng ở TTT, ổn định, có Base + Docs + Calendar tích hợp.</li><li><strong>IF là MẶT TIỀN NGHỀ của Lark</strong> — Lark rất mạnh về task/project nhưng UI generic, không nghề. IF làm mặt tiền chuyên biệt cho nghề nội thất.</li></ul><br>⚠️ Rủi ro cần đối chiếu OS 18/08: Chốt <strong>Own your data</strong> nói dữ liệu người dùng, không nhà cung cấp. Nếu Lark chết/bị chặn → IF+ArchiNote mất nguồn. <strong>Cần đường THOÁT Lark</strong> (export định kỳ về .idf/.idfc local), không phải phụ thuộc vĩnh viễn.</p>
+<h3>8.3 · KHO VẬT LIỆU KẾT NỐI — nguồn dùng chung</h3>
+<p><strong>Vision</strong>:<br><ul><li><strong>Không mỗi studio đẻ kho vật liệu riêng</strong> — vì thế giới đã có Pantone, Jotun, Dulux, Kohler, Duravit... Studio chỉ CHỌN + THÊM VÀO gu riêng.</li><li><strong>IF cấp bộ khung + nhà cung cấp lớn nạp catalog theo chuẩn</strong> — nhà cung cấp có động lực (họ được exposure), designer có động lực (không phải nhập tay).</li><li><strong>ArchiNote thu bổ sung</strong> — designer chụp vật liệu MỚI tại showroom/công trường → nhận diện AI → gợi ý bảng vật liệu tương đương trong kho → thêm mới nếu chưa có.</li><li><strong>Kho vật liệu tại chỗ được ưu tiên</strong> (khớp §8.1): công trình ở đâu, kho vật liệu vùng đó lên đầu gợi ý.</li></ul><br><strong>Điểm khác biệt với đối thủ</strong>:<br><ul><li>Autodesk Content: đóng, phải trả tiền, không chuẩn địa phương</li><li>Building Product Library như BIMobject: có nhưng cho kiến trúc thương mại, không sâu nội thất</li><li>IF làm cho <strong>nội thất ĐỊA PHƯƠNG hoá</strong> — vật liệu VN, tiêu chuẩn VN, giá VNĐ, nhà cung cấp VN.</li></ul><br><strong>Cơ chế đề xuất</strong>:<br><ul><li>Studio nạp catalog qua <strong>Company DNA Pack</strong> (chốt 11/08) — 4 ngăn quy trình/quy định/gu/thư viện riêng</li><li>Nhà cung cấp có <strong>portal riêng</strong> đưa catalog lên (tương lai, sau IF1 ship)</li><li>Ai cũng có quyền THÊM vào kho — nhưng có nhãn DataOrigin (app-core/studio/project/demo)</li></ul><br><h3>8.4 · GIẢM PHỤ THUỘC — quan điểm</h3></p>
+<p><strong>Quan điểm</strong>: Càng ít phụ thuộc bên thứ ba càng tốt, VỚI ĐIỀU KIỆN không phải viết lại từ đầu những gì thế giới đã có.</p>
+<p><strong>Nguyên tắc phân loại</strong>:<br><table><tr><th>Loại phụ thuộc</th><th>Xử lý</th></tr><tr><td><strong>Data người dùng</strong> (dự án, vật liệu, khách)</td><td>❌ KHÔNG phụ thuộc — Own your data. Data phải Export/Restore được mà không cần app.</td></tr><tr><td><strong>AI model</strong></td><td>⚠️ Thay thế được — Ollama local · Qwen · Claude · Gemini · llama.cpp. AI Gateway đóng gói.</td></tr><tr><td><strong>Hạ tầng đồng bộ</strong> (Lark)</td><td>⚠️ Chấp nhận nhưng có đường thoát — Lark chết thì export .idf/.idfc local.</td></tr><tr><td><strong>Font, icon, thư viện UI</strong></td><td>✅ Chấp nhận — không đáng tự viết.</td></tr><tr><td><strong>Định dạng file</strong> (.idf, .idfc)</td><td>✅ TỰ ĐỊNH NGHĨA — mở, có tài liệu, ai cũng đọc được.</td></tr><tr><td><strong>Định dạng ngành</strong> (IFC, DXF, DWG, glTF, PBR)</td><td>✅ Chấp nhận CHUẨN NGÀNH — không đẻ format riêng cho cùng vấn đề.</td></tr></table><br><strong>Câu cứng</strong>:<br><blockquote><strong>Chấp nhận phụ thuộc CÔNG CỤ, không chấp nhận phụ thuộc DỮ LIỆU.</strong></blockquote></p>
+<p>Đúng bài học đắt: <code>libredwg-web</code> GPL-3.0 chưa quyết được vì gán mình vào "công cụ nội bộ" — nếu bán ra thì phải thay/chấp nhận GPL. Cân nhắc cost trước.</p>
+<h3>8.5 · CON NGƯỜI vs AI — quan điểm</h3>
+<p><strong>Câu nền</strong> (khớp chốt 18/08):<br><blockquote>Với người làm sáng tạo, đích đến <strong>không phải maximum automation</strong>, mà là <strong>maximum control with minimum friction</strong>.</blockquote><br><blockquote>AI <strong>không "làm thay". AI "làm cùng"</strong>, và người thiết kế <strong>luôn nhìn thấy · can thiệp được · quay lại được</strong>.</blockquote></p>
+<p><strong>Ba luật cứng</strong>:<br><ol><li><strong>CON NGƯỜI QUYẾT CUỐI</strong> — mọi output AI phải qua cửa duyệt người, mọi quyết định lớn phải có nút quay lại</li><li><strong>AI CHỈ ĐỀ XUẤT, KHÔNG GHI THẲNG</strong> vào hình học/số đo/toạ độ (luật 8 IF gốc) — AI ra Ý ĐỊNH có cấu trúc, CODE tính toán, CODE kiểm</li><li><strong>KIỂM CHUẨN = MÁY, GÓP Ý = AI</strong> (chốt 07/08 + 15/08) — không trộn</li></ol><br><strong>Ba vai của AI trong IF+ArchiNote</strong>:<br><ul><li><strong>NGƯỜI SẢN XUẤT</strong> — máy dựng trước, người duyệt (auto-deck, gợi ý bố cục, suy loại cấu kiện từ ảnh)</li><li><strong>NGƯỜI THAM VẤN</strong> — người dựng, máy góp ý (cảnh báo lệch chuẩn, gợi vật liệu, nhắc quy chuẩn địa phương)</li><li><strong>NGƯỜI GHI CHÉP</strong> — voice-to-text, tự tag ảnh, tự phân loại tài liệu (ArchiNote)</li></ul><br>Vai đổi theo NGỮ CẢNH, KHÔNG cố định cho cả app. Một tính năng có thể là "sản xuất" ở giai đoạn A và "tham vấn" ở giai đoạn B.</p>
+<p><strong>Con người còn LÀM GÌ khi có AI</strong>:<br><ul><li><strong>Quyết định GU</strong> — không AI nào biết trước gu studio này khác gu studio kia</li><li><strong>Cảm nhận cảm xúc khách</strong> — AI không nghe được đằng sau lời khách nói</li><li><strong>Nghề — kinh nghiệm</strong> — 10 năm đi công trường biết loại đá này thi công khó, AI đọc datasheet không biết</li><li><strong>Sáng tạo</strong> — AI kết hợp cái đã có, con người ĐẺ RA cái chưa có</li><li><strong>Trách nhiệm pháp lý</strong> — chữ ký kiến trúc sư là chữ ký NGƯỜI, không phải app</li></ul><br><strong>Điểm quan trọng</strong> — AI KHÔNG THAY được vai người ở 5 chỗ trên. Nhưng AI THAY được ở:<br><ul><li>Lặp lại (dựng 100 phương án nháp, người chọn 3)</li><li>Tra cứu (nhớ 10.000 quy chuẩn ISO)</li><li>Kiểm tra (soi lỗi mà mắt sót)</li><li>Diễn giải (viết mô tả deck từ dữ liệu)</li><li>Chuyển đổi (PDF → deck editable, ảnh → mesh 3D)</li></ul><br>⇒ Cân bằng: <strong>AI làm những gì máy làm tốt hơn người, người làm những gì máy không thay được</strong>. Cả IF và ArchiNote đều thiết kế theo cân bằng này.</p>
+<p><strong>Câu cuối</strong> — chốt vai:<br><blockquote>Người thiết kế đứng <strong>TRONG</strong> phần mềm, không phải <strong>TRÊN</strong> phần mềm. AI đứng <strong>CẠNH</strong> người, không phải <strong>THAY</strong> người. Phần mềm là XƯỞNG, không phải NHÀ MÁY tự động.</blockquote></p>
+<p>---</p>
+<h2>6 · TỔNG — 3 câu Hoà cần nhớ</h2>
+<ol><li><strong>ArchiNote là MÁY THU cho designer nội thất đi công trường</strong> — phần còn thiếu để IF thành "một nguồn thật", không chỉ "một nguồn ở studio".</li></ol>
+<ol><li><strong>CHƯA CODE là ĐÚNG</strong> — làm trước = nợ kỹ thuật cho thứ chưa tồn tại. IF1 ship và ATLAS đầy trước.</li></ol>
+<ol><li><strong>Cửa đã CHỪA SẴN</strong> — không phải chờ "bắt đầu từ 0", chỉ cần thêm <code>system='archinote'</code> vào ExternalRef là nối được. Chi phí kỹ thuật ban đầu thấp.</li></ol>
+---
+<h2>7 · CHƯA CHẮC — T khai thật</h2>
+<p>Nhiều phần ở §1.2 · §4.4 · §4.5 · §5.5 T SUY từ các chốt rải rác, chưa có Hoà nói thành lời. Đánh dấu ⚠️ T-SUY để Hoà sửa. Đặc biệt:<br><ul><li><strong>§1.2 · 7 nỗi đau</strong>: T suy từ nghề, chưa hỏi Hoà xếp thứ tự ưu tiên</li><li><strong>§4.4 · 5 việc chính</strong>: T suy từ <em>"số đo · ảnh · ghi âm · ghi chú · tri thức từ sách"</em> Hoà nói 03/08 — có thể thiếu/thừa</li><li><strong>§4.5 · cử chỉ một tay</strong>: T suy từ nghiên cứu UX chung, không phải từ chốt Hoà</li></ul><br>Nếu Hoà bay về, đọc thấy chỗ nào sai — sửa nguyên văn vào file, T ghi thành sổ.</p>
+<p>---</p>
+<p><em>Trích lập 19/08/2026. Nguồn: 00-CHOT.md grep ArchiNote/hiện-trường/máy-thu + <code>RANG-BUOC-IF2-CHO-IF1.md</code> + suy đoán T (có đánh dấu). File này CHƯA có tương đương trong repo — là văn bản đầu tiên gom bối cảnh ArchiNote lại một chỗ.</em></p>
+</section>
+
+
+</body></html>

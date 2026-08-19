@@ -1,0 +1,387 @@
+{
+  "results": [
+    {
+      "id": "00-home",
+      "url": "/",
+      "ten": "Home dashboard",
+      "cum": "app",
+      "redirect": "/intro",
+      "title": "InteriorFlow",
+      "consoleErrors": 1,
+      "ok": true,
+      "note": "",
+      "ms": 11375,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "01-tasks",
+      "url": "/tasks",
+      "ten": "Bảng việc",
+      "cum": "app",
+      "redirect": null,
+      "title": "InteriorFlow",
+      "consoleErrors": 3,
+      "ok": true,
+      "note": "",
+      "ms": 7017,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "02-files",
+      "url": "/files",
+      "ten": "Files",
+      "cum": "app",
+      "redirect": null,
+      "title": "InteriorFlow",
+      "consoleErrors": 3,
+      "ok": true,
+      "note": "",
+      "ms": 6451,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "03-library",
+      "url": "/library",
+      "ten": "Thư viện",
+      "cum": "app",
+      "redirect": "/files",
+      "title": "InteriorFlow",
+      "consoleErrors": 5,
+      "ok": true,
+      "note": "",
+      "ms": 6024,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "04-library-gallery",
+      "url": "/library/gallery",
+      "ten": "Gallery ảnh",
+      "cum": "app",
+      "redirect": null,
+      "title": "InteriorFlow",
+      "consoleErrors": 3,
+      "ok": true,
+      "note": "",
+      "ms": 4531,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "05-library-ingest",
+      "url": "/library/ingest",
+      "ten": "Nhập vào thư viện",
+      "cum": "app",
+      "redirect": null,
+      "title": "InteriorFlow",
+      "consoleErrors": 0,
+      "ok": true,
+      "note": "",
+      "ms": 3476,
+      "errs": []
+    },
+    {
+      "id": "06-materials",
+      "url": "/materials",
+      "ten": "Vật liệu (kệ ngoài)",
+      "cum": "app",
+      "redirect": null,
+      "title": "InteriorFlow",
+      "consoleErrors": 3,
+      "ok": true,
+      "note": "",
+      "ms": 5115,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "07-colors",
+      "url": "/colors",
+      "ten": "Bảng màu (kệ ngoài)",
+      "cum": "app",
+      "redirect": "/materials",
+      "title": "InteriorFlow",
+      "consoleErrors": 5,
+      "ok": true,
+      "note": "",
+      "ms": 5041,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "08-workhub",
+      "url": "/workhub",
+      "ten": "WorkHub (Chat)",
+      "cum": "app",
+      "redirect": null,
+      "title": "InteriorFlow",
+      "consoleErrors": 0,
+      "ok": true,
+      "note": "",
+      "ms": 4751,
+      "errs": []
+    },
+    {
+      "id": "09-settings",
+      "url": "/settings",
+      "ten": "Cài đặt",
+      "cum": "app",
+      "redirect": null,
+      "title": "InteriorFlow",
+      "consoleErrors": 3,
+      "ok": true,
+      "note": "",
+      "ms": 8357,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "10-settings-about",
+      "url": "/settings/about",
+      "ten": "Cài đặt · Giới thiệu",
+      "cum": "app",
+      "redirect": null,
+      "title": "InteriorFlow",
+      "consoleErrors": 0,
+      "ok": true,
+      "note": "",
+      "ms": 6609,
+      "errs": []
+    },
+    {
+      "id": "11-settings-avatar",
+      "url": "/settings/avatar",
+      "ten": "Cài đặt · Avatar",
+      "cum": "app",
+      "redirect": null,
+      "title": null,
+      "consoleErrors": 0,
+      "ok": false,
+      "note": "TIMEOUT/ERROR: page.goto: net::ERR_NETWORK_IO_SUSPENDED at http://localhost:3000/settings/avatar\nCall log:\n  - navigating to \"http://localhost:3000/settings/avatar\",",
+      "ms": 8840,
+      "errs": []
+    },
+    {
+      "id": "12-settings-licenses",
+      "url": "/settings/licenses",
+      "ten": "Cài đặt · Giấy phép",
+      "cum": "app",
+      "redirect": null,
+      "title": null,
+      "consoleErrors": 0,
+      "ok": false,
+      "note": "TIMEOUT/ERROR: page.goto: Navigation to \"http://localhost:3000/settings/licenses\" is interrupted by another navigation to \"chrome-error://chromewebdata/\"\nCall log:\n ",
+      "ms": 5455,
+      "errs": []
+    },
+    {
+      "id": "13-project-overview",
+      "url": "/projects/cmsl4b5ux0001w9jlrgo2q41t/overview",
+      "ten": "Dự án · Tổng quan",
+      "cum": "du-an",
+      "redirect": null,
+      "title": "InteriorFlow",
+      "consoleErrors": 2,
+      "ok": true,
+      "note": "",
+      "ms": 8670,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "14-project-notebook",
+      "url": "/projects/cmsl4b5ux0001w9jlrgo2q41t/notebook",
+      "ten": "Dự án · Notebook",
+      "cum": "du-an",
+      "redirect": null,
+      "title": "InteriorFlow",
+      "consoleErrors": 2,
+      "ok": true,
+      "note": "",
+      "ms": 5000,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "15-project-cad",
+      "url": "/projects/cmsl4b5ux0001w9jlrgo2q41t/cad",
+      "ten": "Dự án · 2D Kỹ thuật",
+      "cum": "du-an",
+      "redirect": null,
+      "title": "InteriorFlow",
+      "consoleErrors": 3,
+      "ok": true,
+      "note": "",
+      "ms": 18053,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "16-project-render",
+      "url": "/projects/cmsl4b5ux0001w9jlrgo2q41t/render",
+      "ten": "Dự án · 3D Thiết kế",
+      "cum": "du-an",
+      "redirect": "/intro",
+      "title": "InteriorFlow",
+      "consoleErrors": 1,
+      "ok": true,
+      "note": "",
+      "ms": 10193,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "17-project-present",
+      "url": "/projects/cmsl4b5ux0001w9jlrgo2q41t/present",
+      "ten": "Dự án · Trình bày",
+      "cum": "du-an",
+      "redirect": null,
+      "title": "InteriorFlow",
+      "consoleErrors": 7,
+      "ok": true,
+      "note": "",
+      "ms": 12385,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "18-project-photo",
+      "url": "/projects/cmsl4b5ux0001w9jlrgo2q41t/photo",
+      "ten": "Dự án · Photo editor",
+      "cum": "du-an",
+      "redirect": null,
+      "title": "InteriorFlow",
+      "consoleErrors": 3,
+      "ok": true,
+      "note": "",
+      "ms": 7050,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "19-cad-editor",
+      "url": "/cad-editor",
+      "ten": "CAD editor (đường tắt cũ)",
+      "cum": "legacy",
+      "redirect": "/intro",
+      "title": "InteriorFlow",
+      "consoleErrors": 1,
+      "ok": true,
+      "note": "",
+      "ms": 6822,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "20-present-editor",
+      "url": "/present-editor",
+      "ten": "Present editor (đường tắt cũ)",
+      "cum": "legacy",
+      "redirect": "/intro",
+      "title": "InteriorFlow",
+      "consoleErrors": 1,
+      "ok": true,
+      "note": "",
+      "ms": 5178,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "21-photo-editor",
+      "url": "/photo-editor",
+      "ten": "Photo editor (đường tắt cũ)",
+      "cum": "legacy",
+      "redirect": "/intro",
+      "title": "InteriorFlow",
+      "consoleErrors": 1,
+      "ok": true,
+      "note": "",
+      "ms": 9101,
+      "errs": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    {
+      "id": "22-dev-bench-3d-2",
+      "url": "/dev-bench-3d-2",
+      "ten": "Dev bench 3D",
+      "cum": "dev",
+      "redirect": null,
+      "title": "InteriorFlow",
+      "consoleErrors": 0,
+      "ok": true,
+      "note": "",
+      "ms": 4312,
+      "errs": []
+    },
+    {
+      "id": "23-intro",
+      "url": "/intro",
+      "ten": "Intro / đón khách",
+      "cum": "auth",
+      "redirect": null,
+      "title": "InteriorFlow",
+      "consoleErrors": 0,
+      "ok": true,
+      "note": "",
+      "ms": 1846,
+      "errs": []
+    },
+    {
+      "id": "24-login",
+      "url": "/login",
+      "ten": "Login",
+      "cum": "auth",
+      "redirect": null,
+      "title": "InteriorFlow",
+      "consoleErrors": 0,
+      "ok": true,
+      "note": "",
+      "ms": 6259,
+      "errs": []
+    }
+  ],
+  "pageErrors": [],
+  "at": "2026-08-18T03:08:38.580Z"
+}
