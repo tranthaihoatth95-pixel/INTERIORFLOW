@@ -3,7 +3,38 @@
 > **Đọc file này ĐẦU TIÊN**, rồi **`docs/memory/RETRIEVAL-MAP.md`** (chỉ mục 11 topic → nguồn sâu, lập 19/08), rồi **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md`** (bản đồ chính tắc 19/08 — thay `IF-KIEN-TRUC.md`), rồi **`docs/TAC-NHAN-T.md`** (vai T).
 > Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — CONNECT-1 đóng, peer coordination qua SendMessage)**
+**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — Batch 4-lane đóng: H9 · H11 · GOTO-3D · Guardian)**
+
+---
+
+# 2026-08-19 · khuya muộn (tiếp #4) · MAIN — Batch 4-lane (2 read-only + 2 writer)
+
+Theo mô hình mới: MAIN tự spawn sub-agent nội bộ, KHÔNG coi peer session ngoài là worker của mình.
+
+**Lane A (H9 read-only)**: xác nhận đường **ADDITIVE khả thi** — `Flow.projectId String?` đã
+optional sẵn (`onDelete: SetNull`), thêm bảng `Workspace` + cột `workspaceId?` song song KHÔNG phá
+dữ liệu cũ. 3 điểm cứng phải sửa nếu chen route (`lib/scope-core.ts`: `parseStageRoute` hardcode
+segment, `resolveFlowForRouteId` giả định phẳng 1 tầng). **Bẫy đặt tên**: `lib/workspace.ts`/
+`WorkspaceMode`/`Task.workspaceId` đã tồn tại, ĐỒNG ÂM với model `Workspace` mới — phải đặt tên
+khác. 15 điểm sửa lõi đo được nếu breaking. Chi tiết: `docs/memory/sessions/2026-08-19/
+16-project-asset-ownership-spec/README.md` mục D.
+
+**Lane B (H11 writer, `a2e1747`)**: `rev` optimistic-concurrency cho `Flow` (route đông nhất, 4/6
+điểm increment) — 409 REV_CONFLICT khi 2 người sửa cùng lúc, backward-compat khi không gửi
+`expectedRev`. 10 test tích hợp DB thật (self-cleaning) xác nhận Prisma ném P2025 thật. Phạm vi
+1 route — `ProjectMember`/`Project`/`LibraryAsset` còn treo (risk tương tự, phiếu sau).
+
+**Lane C (GOTO-3D writer, `42ab5c2`)**: ReviewPanel nhảy-tới-đối-tượng nay đủ cả 3 chặng (2D có
+sẵn · deck từ R7 · **3D mới xong** qua `render:goto-entity`, REUSE `fitCameraToScene()` +
+`SceneGroup.positions`). Rủi ro đã biết: RoomLight không có positions → rơi về khung toàn cảnh.
+
+**Lane D (Guardian read-only)**: self-audit 22 commit đầu — **4/5 PASS sạch** (0 duplicate
+primitive · 0 store/router/DS thứ hai vi phạm · 0 đổi persistence key · test thật 100%), **1
+WARNING** (Execution Map §3 + Capability Matrix lệch tiến độ so Gate) — đã sửa (`daf3073`).
+
+**25 commit trên `backup/2026-08-19-batch0a`, remote sync, `main` vẫn `c7f3ac8` không đổi.**
+Golden Loop: checkpoint "→ tới nguồn" (COORDINATE) nay LIVE đủ 3 chặng nhờ GOTO-3D; "→ sửa →
+downstream" (REVISE) một phần LIVE nhờ H11 (Flow — 1/4 model).
 
 ---
 
