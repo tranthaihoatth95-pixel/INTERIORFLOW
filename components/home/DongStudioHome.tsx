@@ -55,6 +55,12 @@ import QuickNotes from './widgets/QuickNotes';
 import NewsFeed, { newsHasSignal } from './widgets/NewsFeed';
 import UpcomingList, { upcomingHasSignal } from './widgets/UpcomingList';
 import WeeklyImage, { type WeeklyImageItem } from './widgets/WeeklyImage';
+// R5 (19/08) — widget "Việc đang dở" (P-N V2) trước nay MỒ CÔI (0 importer, chỉ được nhắc trong
+// comment HomeScreen). Mount vào Home sống tại đây; dữ liệu đọc qua `loadResume` (widget không
+// tự đụng localStorage — SSR-safe, đúng hợp đồng props của nó).
+import ResumeWork, { resumeWorkHasSignal } from './widgets/ResumeWork';
+import { buildResumeCard } from './widgets/resume-card';
+import { loadResume, type ResumeState } from '@/lib/resume';
 import WeeklyMaterial, { type WeeklyMaterialItem } from './widgets/WeeklyMaterial';
 import SystemWallpaper from '@/components/wallpaper/SystemWallpaper';
 import type { HomeSummary } from './widgets/types';
@@ -99,6 +105,7 @@ function area(col: [number, number], row: [number, number]): CSSProperties {
 export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   const user = useFlowStore((s) => s.user);
   const openDashboardTab = useFlowStore((s) => s.openDashboardTab);
+  const currentProjectId = useFlowStore((s) => s.currentProjectId);
   const currentUserId = user?.id ?? null;
   const en = useLang() === 'en';
   const tr = useT();
@@ -146,6 +153,13 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
       cancelled = true;
     };
   }, []);
+
+  // ---------- R5 (19/08) — "Việc đang dở": đọc resume MỘT lần trong effect (localStorage,
+  // client-only) rồi đưa xuống widget qua props; đổi user thì đọc lại theo user đó. ----------
+  const [resume, setResume] = useState<ResumeState | null>(null);
+  useEffect(() => {
+    setResume(currentUserId ? loadResume(currentUserId) : null);
+  }, [currentUserId]);
 
   // ---------- ⑤ MỘT interval toàn trang — cấp nhịp phút (ô B) + nhịp 8s (ô D crossfade) ----------
   const [minuteTick, setMinuteTick] = useState(() => Math.floor(Date.now() / 60000));
@@ -337,6 +351,40 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
     </div>
   );
 
+  // ---------- R5 (19/08) — Ô GHI CHÚ + "VIỆC ĐANG DỞ" xếp chồng ----------
+  // ResumeWork mount theo đúng khuôn tiền lệ H/I (WeeklyMaterial `auto` chồng trên NewsFeed):
+  // hàng `auto` cao đúng nội dung, phần dư về Ghi chú. KHÔNG đụng lưới 12 cột và KHÔNG sửa
+  // `bento-layout.ts` (ngoài phạm vi phiếu — 256 ca test): widget này CỐ Ý không mang số ô
+  // (`index` optional). Không có việc dở ⇒ `hasR=false` ⇒ ô Ghi chú y nguyên (widget thiếu
+  // dữ liệu TỰ ẨN, luật 13/08 — `buildResumeCard` trả null là không mount gì).
+  const hasR = resumeWorkHasSignal(
+    buildResumeCard(resume, { recentProjects: s.recentProjects, currentProjectId }),
+  );
+  const quickNotesNode = (
+    <QuickNotes
+      summary={s}
+      armedNoteId={armedNoteId}
+      onArmNote={setArmedNoteId}
+      refreshKey={notesRefreshKey}
+      index={cellIdx.ghiChu}
+    />
+  );
+  const notesStack: ReactNode = hasR ? (
+    <div
+      className="grid h-full min-h-0"
+      style={{ gridTemplateRows: 'auto minmax(0,1fr)', gap: 'var(--gap)' }}
+    >
+      <ResumeWork
+        resume={resume}
+        recentProjects={s.recentProjects}
+        currentProjectId={currentProjectId}
+      />
+      <div className="min-h-0">{quickNotesNode}</div>
+    </div>
+  ) : (
+    quickNotesNode
+  );
+
   const bentoGrid = (
     // V3 (17/08, P-X ④.V3) — lưới KHÔNG còn ép cao 100% màn. `bentoFill` co lưới lại khi ô Dự án
     // chỉ cần 1 hàng tile; wrapper `items-center` đặt lưới giữa màn, phần dư là HÌNH NỀN.
@@ -388,7 +436,7 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
           </div>
         )}
         <div style={area(fAreaLeft, [3, 4])}>
-          <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index={cellIdx.ghiChu} />
+          {notesStack}
         </div>
         {hasG && (
           <div style={gArea}>
@@ -459,7 +507,7 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
         </div>
       </div>
       <div className="grid min-h-0 flex-1" style={{ gridTemplateColumns: `repeat(${vuaBottomCount}, minmax(0,1fr))`, gap: 'var(--gap)' }}>
-        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index={cellIdx.ghiChu} />
+        {notesStack}
         {vuaExtras.map((e, i) => (
           <div key={i} className="min-h-0">
             {e.node}
@@ -489,7 +537,7 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
         </div>
       </div>
       <div className="min-h-0">
-        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index={cellIdx.ghiChu} />
+        {notesStack}
       </div>
     </div>
   );
@@ -523,7 +571,7 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
         </div>
       )}
       <div className="h-[220px]">
-        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index={cellIdx.ghiChu} />
+        {notesStack}
       </div>
       {hasG && (
         <div className="h-[200px]">
