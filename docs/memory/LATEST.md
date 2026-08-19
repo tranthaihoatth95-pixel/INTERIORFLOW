@@ -3,7 +3,19 @@
 > **Đọc file này ĐẦU TIÊN**, rồi **`docs/memory/RETRIEVAL-MAP.md`** (chỉ mục 11 topic → nguồn sâu, lập 19/08), rồi **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md`** (bản đồ chính tắc 19/08 — thay `IF-KIEN-TRUC.md`), rồi **`docs/TAC-NHAN-T.md`** (vai T).
 > Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — Cleanup + BUILD mode)**
+**Cập nhật lần cuối: 2026-08-20 (MAIN — H6 ĐÓNG THẬT, DB đã push, mở chuỗi ProjectAssetUsage)**
+
+## H6 ĐÓNG — DB THẬT ĐÃ ĐỔI (20/08, đè mọi ghi chú "chờ push" cũ)
+`db push`+`generate`+backfill đã chạy thật (Hoà chạy, MAIN verify độc lập bằng Prisma Client thật,
+không tin lời). `ProductSpec.matId` (2 hàng kind=material có UUID) · `ProjectFile` · `ProjectAssetUsage`
+đều sống trong `dev.db` thật. `EXTERNAL_REF_TABLE_READY` đã flip `true`. npm test + soi:frontier
+sạch. **Một sự cố thật đã xảy ra và đã gỡ**: generate chạy trước lúc DB chưa push → mismatch phá
+runtime `ProductSpec` cho MỌI phiên — MAIN bắt bằng query Prisma thật, không phải đoán; Hoà chạy
+push ngay sau, hết mismatch (đã verify lại bằng query thật lần 2).
+
+## Đang mở — chuỗi ProjectAssetUsage (2 writer song song, file rời)
+API (`app/api/project-asset-usage/**`) + UI attach/where-used (`components/library/LibrarySheet.tsx`
++ `AssetWhereUsed.tsx`) — cả hai đang chạy, chưa checkpoint.
 
 ## AUTHORITATIVE — Reference/Asset contract (Hoà chốt, đè mọi bản cũ mâu thuẫn)
 `ProjectFile` = raw project-owned input (1-N) · `LibraryAsset` = reusable understood asset, KHÔNG

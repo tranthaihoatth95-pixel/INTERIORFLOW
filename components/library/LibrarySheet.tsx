@@ -5,9 +5,11 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import {
   Search, X, ArrowUp, Plus, Box, Palette, Network, Images, LayoutTemplate,
-  Compass, Star, TrendingUp, Folder, type LucideIcon,
+  Compass, Star, TrendingUp, Folder, Check, Loader2, type LucideIcon,
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
+import { useFlowStore } from '@/lib/store';
+import { getLastUserId } from '@/lib/resume';
 import type { StageKey } from '@/lib/library/types';
 import { idfcKindOfThumb, IDFC_KIND_LABEL, THUMB_OF_IDFC_KIND, type ThumbKind } from '@/lib/library/thumb-kinds';
 import { buildSpecRows, missingSpecCount, matchSpec, type SpecSource } from '@/lib/library/spec-panel';
@@ -47,6 +49,7 @@ import { BulkIngestMode } from './BulkIngestMode';
 import { BUOC_LABEL, nhanBuocMauDangCho, type BuocVatLieu } from './buoc-mau';
 import { ColorLibraryScreen } from '@/components/colors/ColorLibraryScreen';
 import PanelFlank from '@/components/ui/PanelFlank';
+import { AssetWhereUsed } from './AssetWhereUsed';
 
 // 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md) — "Vẽ"/"Dựng ảnh" là tên
 // round trước, nay đồng bộ theo bộ tên chính thức.
@@ -363,6 +366,56 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
      POST tạo mới KHÔNG cần quyền admin (chỉ PATCH/DELETE sửa-xoá món có sẵn mới cần —
      app/api/specs/[id]/route.ts requireAdmin) — đã kiểm trước khi nối, an toàn cho mọi user. */
   const [showAddMaterial, setShowAddMaterial] = useState(false);
+
+  /* R? (20/08) — "Dùng ảnh này cho dự án" (phiếu Reference/Library UI, phần đầu Golden Journey
+   * Hoà chốt: asset X dùng Project A → reuse Project B → where-used thấy cả A/B). Gọi
+   * `POST /api/project-asset-usage` (route do worker khác dựng song song, KHÔNG đụng ở đây —
+   * chỉ fetch theo contract đã thống nhất). CHỈ hiện khi:
+   *  · đang mở MỘT dự án thật (`currentProjectId`, đọc REACTIVE qua hook — `activeProjectRouteId()`
+   *    là hàm thuần đọc `getState()` một lần, KHÔNG re-render khi store đổi trong lúc sheet mở).
+   *  · món đang xem là `LibraryAsset` THẬT trong DB (`SheetItem.id` tiền tố `db:` —
+   *    `lib/library/db-items.ts:87`; món built-in/mock KHÔNG có hàng `LibraryAsset` để trỏ tới).
+   * MVP: `usage` cố định `'ref-render'` (giá trị hợp lệ trong `LIBRARY_USAGES`,
+   * `lib/server/library-save.ts:17`) — CHƯA có picker chọn usage, xem báo cáo phiên. */
+  const projectId = useFlowStore((s) => s.currentProjectId);
+  const [attachedUsage, setAttachedUsage] = useState<Record<string, true>>({});
+  const [attachBusyId, setAttachBusyId] = useState<string | null>(null);
+  const [whereUsedRefresh, setWhereUsedRefresh] = useState(0);
+
+  const dbAssetIdOf = (item: SheetItem | null): string | null =>
+    item && item.id.startsWith('db:') ? item.id.slice(3) : null;
+
+  const attachToProject = async (item: SheetItem) => {
+    const assetId = dbAssetIdOf(item);
+    if (!assetId || !projectId) return;
+    setAttachBusyId(assetId);
+    try {
+      const addedBy = useFlowStore.getState().user?.id ?? getLastUserId() ?? '';
+      const r = await fetch('/api/project-asset-usage', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ projectId, assetId, usage: 'ref-render', addedBy }),
+      });
+      if (r.status === 409) {
+        // Đã gắn rồi (cùng project+asset+usage) — KHÔNG phải lỗi, chỉ nói nhẹ (§9: không báo đỏ
+        // cho việc người dùng bấm lại một thao tác đã thành công trước đó).
+        setAttachedUsage((prev) => ({ ...prev, [assetId]: true }));
+        pushLibraryToast(tr(`"${item.name}" đã gắn vào dự án này rồi`, `"${item.name}" is already linked to this project`));
+        return;
+      }
+      if (!r.ok) {
+        pushLibraryToast(tr(`Không gắn được "${item.name}" — thử lại sau`, `Couldn't link "${item.name}" — try again`));
+        return;
+      }
+      setAttachedUsage((prev) => ({ ...prev, [assetId]: true }));
+      setWhereUsedRefresh((n) => n + 1);
+      pushLibraryToast(tr(`Đã dùng "${item.name}" cho dự án này`, `"${item.name}" is now used in this project`));
+    } catch {
+      pushLibraryToast(tr(`Không gắn được "${item.name}" — kiểm tra mạng`, `Couldn't link "${item.name}" — check your connection`));
+    } finally {
+      setAttachBusyId(null);
+    }
+  };
 
   /** Cấu kiện .idfc đang xem (nếu món chọn thuộc kệ common-idfc) — nguồn commerce/pbr THẬT từ file. */
   const displayIdfc = useMemo(
@@ -926,6 +979,16 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                   ))}
                 </div>
 
+                {/* R? (20/08) — where-used, chỉ có nghĩa cho món DB thật (`db:` prefix). Hiện
+                    NGOÀI điều kiện đang mở dự án — "asset này dùng ở đâu" là câu hỏi hữu ích
+                    kể cả lúc đang duyệt kho không gắn dự án nào. */}
+                {dbAssetIdOf(displayItem) && (
+                  <div className="spsec">
+                    <div className="spcap">{tr('Đang dùng ở dự án', 'Used in projects')}</div>
+                    <AssetWhereUsed assetId={dbAssetIdOf(displayItem)!} refreshKey={whereUsedRefresh} />
+                  </div>
+                )}
+
                 {/* §9: ô trống phải KÈM LÝ DO, không giấu đi cho gọn mắt. */}
                 {missingSpecCount(displaySpecRows) > 0 && (
                   <div className="spwhy">
@@ -981,6 +1044,31 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                   <button type="button" className="ghost" onClick={() => instantiate(displayItem)}>
                     {tr('Sửa bản sao', 'Edit a copy')}
                   </button>
+                  {/* R? (20/08) — nút "Dùng cho dự án này" — CHỈ hiện khi có `projectId` context
+                      THẬT (đang mở một dự án, không phải màn duyệt kho rời) VÀ món là `LibraryAsset`
+                      thật trong DB. `disabled` khi đã gắn — không cho bấm lại vô ích, nhưng vẫn để
+                      NGƯỜI THẤY trạng thái (không ẩn nút, §9). */}
+                  {(() => {
+                    const assetId = dbAssetIdOf(displayItem);
+                    if (!assetId || !projectId) return null;
+                    const attached = attachedUsage[assetId];
+                    const busy = attachBusyId === assetId;
+                    return (
+                      <button
+                        type="button"
+                        className="ghost"
+                        disabled={attached || busy}
+                        onClick={() => attachToProject(displayItem)}
+                      >
+                        {busy ? (
+                          <Loader2 size={13} strokeWidth={2} className="animate-spin" style={{ marginRight: 5, verticalAlign: -2 }} />
+                        ) : attached ? (
+                          <Check size={13} strokeWidth={2.2} style={{ marginRight: 5, verticalAlign: -2, color: 'var(--success)' }} />
+                        ) : null}
+                        {attached ? tr('Đã dùng ✓', 'Already used ✓') : tr('Dùng cho dự án này', 'Use for this project')}
+                      </button>
+                    );
+                  })()}
                   {/* VIỆC 1 M-IDFC — XUẤT cấu kiện thành file .idfc gói đủ 3 mặt (G-M16-03):
                      ① geom2d từ BlockDef thật (resolveLibraryItem — chỉ hiện nút khi resolve được,
                      không hứa suông) · ② geom3d = PBR của matId=code nếu kho có · ③ commerce từ
