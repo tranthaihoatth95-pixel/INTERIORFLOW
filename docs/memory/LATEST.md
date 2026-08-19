@@ -3,7 +3,26 @@
 > **Đọc file này ĐẦU TIÊN**, rồi **`docs/memory/RETRIEVAL-MAP.md`** (chỉ mục 11 topic → nguồn sâu, lập 19/08), rồi **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md`** (bản đồ chính tắc 19/08 — thay `IF-KIEN-TRUC.md`), rồi **`docs/TAC-NHAN-T.md`** (vai T).
 > Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-20 (MAIN — H6 ĐÓNG THẬT, DB đã push, mở chuỗi ProjectAssetUsage)**
+**Cập nhật lần cuối: 2026-08-20 ~02:4x (MAIN — NIGHT SHIFT 4 LANE ĐÓNG TRỌN)**
+
+## 🌙 NIGHT SHIFT 20/08 ĐÓNG — 5 checkpoint, backup tip `5bc0996` (push rồi), main nguyên `c7f3ac8`
+Chi tiết + bảng DONE/PARTIAL + nợ mở: `sessions/2026-08-20/03-night-shift-4-lane/README.md`.
+- **B** `a25bb46`: `POST/GET/DELETE /api/project-files` + `lib/server/promote.ts` — Promote sinh
+  LibraryAsset (KHÔNG projectId) + ProjectAssetUsage trong transaction, idempotent qua tag
+  `nguon:projectfile:<id>`, không copy file. 16/16 test DB thật. 🔴 dedupe hash cần cột schema (phiếu riêng).
+- **C** `37a596e`: Home — Ghi chú nhanh bị nghiến 12,3px (R5 chồng 2 widget 1 ô) → tách ô, MAIN verify browser.
+- **D** `5b8f21c`: Golden Loop browser PASS trọn chuỗi; sửa **D2 P0 fake-success** (lớp phủ bàn-trống
+  nuốt click đầu khi đã bật tool vẽ — nay chỉ hiện khi tool='select'; MAIN accept sống: W→2click→Enter
+  ra tường lần đầu) + D1 hint sai phím + D3 12 nút 3D disabled câm → aria-disabled/describedby.
+- **MAIN** `eb43791`: D5 WeeklyImage onError (asset 410 hết khung vỡ, widget tự ẩn) · D6 nút Lưu
+  QuickNotes lý do focusable + token `--mo-vo-hieu` · D7 Checkpoint key trùng "Số chỗ".
+- **D4** `5bc0996`: selection ma KHÔNG phải do undo — cơ chế thật là `removeLayer` (mutation duy nhất
+  xoá entity không dọn selection, `store.ts:747`); fix gốc + defense `aliveSelection` ở CadStageScreen.
+Cuối ca: `npm test` EXIT=0 (~9000 ok) · tsc 0 · soi:frontier 0 lệch · không rác dữ liệu thử.
+Nợ mở: dedupe-hash schema (human gate) · upload v0 chỉ ảnh+PDF · D8 ToolDock3D title-câm ·
+dọn LibraryAsset ảnh chết 410 · a11y mới kiểm mức DOM attr.
+
+**(bản cũ bên dưới, 20/08 rạng sáng: H6 đóng + mở chuỗi ProjectAssetUsage)**
 
 ## H6 ĐÓNG — DB THẬT ĐÃ ĐỔI (20/08, đè mọi ghi chú "chờ push" cũ)
 `db push`+`generate`+backfill đã chạy thật (Hoà chạy, MAIN verify độc lập bằng Prisma Client thật,
