@@ -752,12 +752,20 @@ export const useCadStore = create<CadState>((set, get) => ({
       // sổ con" (expand trước khi lọc), rồi sync dọn cutter/ops mồ côi.
       const removedIds = new Set(s.doc.entities.filter((e) => e.layer === id).map((e) => e.id));
       const expanded = expandDeleteWithHostedChildren(removedIds, s.doc);
+      const doc = syncHostedOpenings({
+        ...s.doc,
+        entities: s.doc.entities.filter((e) => !expanded.has(e.id) && e.layer !== id),
+        layers: s.doc.layers.filter((l) => l.id !== id),
+      });
+      // Bug D4 (QA 19/08) — removeLayer là mutation DUY NHẤT xoá entity mà KHÔNG dọn selection:
+      // xoá layer đang chứa vật ĐANG CHỌN ⇒ selection giữ id ma ⇒ Inspector vẫn mở "N đối tượng"
+      // trên bản vẽ rỗng, vẫn cho gán IFC cho vật đã xoá. Lọc selection theo doc SAU sync
+      // (syncHostedOpenings có thể dọn thêm cutter mồ côi ngoài `expanded`), cùng khuôn
+      // deleteSelected/removeIds (chúng set selection: []).
+      const alive = new Set(doc.entities.map((e) => e.id));
       return {
-        doc: syncHostedOpenings({
-          ...s.doc,
-          entities: s.doc.entities.filter((e) => !expanded.has(e.id) && e.layer !== id),
-          layers: s.doc.layers.filter((l) => l.id !== id),
-        }),
+        doc,
+        selection: s.selection.filter((eid) => alive.has(eid)),
         currentLayer: s.currentLayer === id ? s.doc.layers.find((l) => l.id !== id)!.id : s.currentLayer,
       };
     }),
