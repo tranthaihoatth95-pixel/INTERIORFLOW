@@ -3,7 +3,28 @@
 > **Đọc file này ĐẦU TIÊN**, rồi **`docs/memory/RETRIEVAL-MAP.md`** (chỉ mục 11 topic → nguồn sâu, lập 19/08), rồi **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md`** (bản đồ chính tắc 19/08 — thay `IF-KIEN-TRUC.md`), rồi **`docs/TAC-NHAN-T.md`** (vai T).
 > Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — Reference/Image Reconciliation đóng)**
+**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — Project↔Asset ownership SPEC, chờ Hoà)**
+
+---
+
+# 2026-08-19 · khuya muộn (tiếp #2) · MAIN — Project↔Asset ownership (many-to-many), SPEC only
+
+⓪ đo lại: khớp 100%, 5 phiên peer vẫn sống. **Hoà đảo đề xuất H12 round trước**: một ảnh có thể
+dùng NHIỀU Project (N-N), không phải `projectId` trực tiếp trên `LibraryAsset` (1-N — sai).
+
+LOOK INSIDE join-table primitive: **xác nhận đây là quan hệ N-N ĐẦU TIÊN thật sự** giữa Project và
+Asset — 0 primitive REUSE/EXTEND được (`ProjectMember` chỉ học được hình dạng bảng, khác model;
+`ExternalRef` là mirror 1-1 ra ngoài; `TaskContext Link`/`ProductSpec.imageAssetId` đều 1-giá-trị).
+MAIN spot-check 3 claim — khớp 100%. Thiết kế TARGET CONTRACT ở dạng **SPEC, KHÔNG viết Prisma**
+— đúng STOP CONDITION (schema migration cần Hoà). Chi tiết đủ (negative evidence · field đề xuất ·
+Golden Journey R0-R8 · 2 taxonomy song song cần cầu nối): `docs/memory/sessions/2026-08-19/
+16-project-asset-ownership-spec/README.md`.
+
+## ⛔ CHỜ HOÀ (H12 SỬA LẠI — không còn là "thêm projectId", mà là:)
+
+H12 — chốt tên + field model join-table `Project↔LibraryAsset` (đề xuất: `projectId`+`assetId`+
+`workspaceId?`+`canvasId?` không-FK+`usage`+`addedBy`, hình theo `ProjectMember`) · câu hỏi taxonomy
+`RefUsage`↔`LibraryAsset.usage` có deprecate 1 bên không.
 
 ---
 
