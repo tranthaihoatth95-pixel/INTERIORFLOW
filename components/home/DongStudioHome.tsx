@@ -369,21 +369,43 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
       index={cellIdx.ghiChu}
     />
   );
+  const resumeNode = (
+    <ResumeWork
+      resume={resume}
+      recentProjects={s.recentProjects}
+      currentProjectId={currentProjectId}
+    />
+  );
+  // LANE C (20/08) — SÀN 96px CHO Ô GHI CHÚ + ngăn kẹp thì CUỘN, không nghiến.
+  // Đo trên app thật (1280×720, bố cục `bento`): hàng chồng `auto minmax(0,1fr)` cho ResumeWork
+  // lấy TRỌN chiều cao nội dung của nó (136px) trong một ô chỉ cao 156px ⇒ Ghi chú còn **12,3px**
+  // trong khi ô nhập của nó cao 33px — ô nhập TRÀN RA NGOÀI card, danh sách ghi chú biến mất.
+  // `minmax(0,1fr)` cho phép co về 0 nên không có sàn nào chặn. Sửa: hàng dưới có SÀN 96px (đủ
+  // tiêu đề + ô nhập + 1 dòng ghi chú) và cả ngăn `overflow-y-auto` — quá chật thì người dùng
+  // cuộn, KHÔNG có widget nào bị nghiến mất chức năng. (Bố cục `bento` còn được tách cạnh nhau,
+  // xem `notesCols`/`resumeCols` bên dưới — ngăn chồng này là đường lùi cho vua/mỏng/xếp-dọc.)
   const notesStack: ReactNode = hasR ? (
     <div
-      className="grid h-full min-h-0"
-      style={{ gridTemplateRows: 'auto minmax(0,1fr)', gap: 'var(--gap)' }}
+      className="grid h-full min-h-0 overflow-y-auto"
+      style={{ gridTemplateRows: 'auto minmax(96px,1fr)', gap: 'var(--gap)' }}
     >
-      <ResumeWork
-        resume={resume}
-        recentProjects={s.recentProjects}
-        currentProjectId={currentProjectId}
-      />
+      {resumeNode}
       <div className="min-h-0">{quickNotesNode}</div>
     </div>
   ) : (
     quickNotesNode
   );
+
+  // ---------- LANE C (20/08) — hàng 3 bố cục `bento`: TÁCH CẠNH NHAU khi còn cột trống ----------
+  // Ô Ghi chú đã hấp thụ cột của E/G khi chúng rỗng (`fAreaLeft`). Khi bề ngang ≥4 cột thì hai
+  // widget đứng CẠNH nhau — mỗi cái lấy trọn 156px chiều cao — thay vì chia nhau chiều cao của
+  // MỘT ô (chỗ đẻ ra lỗi nghiến ở trên). Còn 2 cột (E và G đều sống) thì không đủ chỗ tách ⇒ lùi
+  // về ngăn chồng có sàn + cuộn. Ghi chú giữ phần RỘNG HƠN: nó có danh sách + ô nhập.
+  const fSpan = fAreaLeft[1] - fAreaLeft[0];
+  const splitRow3 = hasR && fSpan >= 4;
+  const resumeSpan = Math.floor(fSpan / 2); // 4→2 · 5→2 · 7→3
+  const notesCols: [number, number] = splitRow3 ? [fAreaLeft[0], fAreaLeft[1] - resumeSpan] : fAreaLeft;
+  const resumeCols: [number, number] = [fAreaLeft[1] - resumeSpan, fAreaLeft[1]];
 
   const bentoGrid = (
     // V3 (17/08, P-X ④.V3) — lưới KHÔNG còn ép cao 100% màn. `bentoFill` co lưới lại khi ô Dự án
@@ -435,9 +457,14 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
             <StageChart summary={s} index={cellIdx.bieuDo} />
           </div>
         )}
-        <div style={area(fAreaLeft, [3, 4])}>
-          {notesStack}
+        <div style={area(notesCols, [3, 4])} className="min-h-0">
+          {splitRow3 ? quickNotesNode : notesStack}
         </div>
+        {splitRow3 && (
+          <div style={area(resumeCols, [3, 4])} className="min-h-0">
+            {resumeNode}
+          </div>
+        )}
         {hasG && (
           <div style={gArea}>
             <UpcomingList summary={s} index={cellIdx.mocToi} />
