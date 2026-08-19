@@ -131,3 +131,29 @@ W8-W12: xa hơn, chưa đủ evidence ưu tiên
 
 ## HẠN DÙNG
 Hết hạn khi: Hoà chạy H6, Hoà bấm/cấp quyền H7, hoặc bất kỳ Wave nào mở phiếu thật.
+
+## ⚠️ CẬP NHẬT 20/08 — điều tra warning Prisma "unique constraint [matId]" tại H6
+
+Hoà dừng đúng lúc thấy cảnh báo, KHÔNG push. Điều tra migration-gate hẹp (không đụng DB):
+
+**Kết luận: warning là boilerplate chuẩn của Prisma cho MỌI `@unique` mới — không phải phát hiện
+trùng lặp thật.** Bằng chứng:
+- `ProductSpec` 10 hàng thật (furniture=7 · lighting=1 · material=2), cột `matId` **chưa tồn tại**
+  trong `dev.db` — chưa backfill. Sau push, cả 10 hàng có `matId=NULL`.
+- Thực nghiệm SQLite 3.51.0 (đúng bản dev.db) trên DB TẠM riêng: 3 hàng cùng `matId=NULL` chèn
+  được dưới UNIQUE index, 0 lỗi — NULL ≠ NULL trong UNIQUE index, hành vi SQL chuẩn.
+- ⇒ Không thể có duplicate vì chưa có giá trị non-NULL nào. UNIQUE **đúng theo contract**
+  (matId = IF-owned identity, buộc phải unique) — schema KHÔNG khai nhầm.
+- `ProjectFile`/`ProjectAssetUsage`: đọc lại toàn văn schema — 2 bảng mới hoàn toàn, cascade chỉ
+  ảnh hưởng hành vi delete tương lai, không đụng dữ liệu `Project`/`LibraryAsset` hiện có.
+
+**Lệnh READ-ONLY để Hoà tự xác nhận trước khi push (không mutate)**:
+```bash
+sqlite3 prisma/dev.db "PRAGMA table_info(ProductSpec);" | grep matId
+# Mong đợi: KHÔNG in gì (cột chưa có — khớp điều tra trên)
+sqlite3 prisma/dev.db "SELECT kind, count(*) FROM ProductSpec GROUP BY kind;"
+# Mong đợi: furniture 7 · lighting 1 · material 2 (khớp số đã đo)
+```
+
+**Nếu 2 lệnh trên khớp đúng số** → warning là bình thường, an toàn tiếp tục `npx prisma db push`
+và gõ `y` khi được hỏi xác nhận. Không cần thao tác gì khác ngoài chạy lại đúng runbook H6 gốc.
