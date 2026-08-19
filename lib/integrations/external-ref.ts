@@ -43,8 +43,9 @@ import {
 export type { ExternalRefKey, CoreEntityKey, ExternalEntityType };
 export { normalizeExternalKey, isValidExternalKey, isValidCoreKey };
 
-/** Xem cửa chặn ① ở đầu file. `false` cho tới khi bảng có thật trong `dev.db`. */
-export const EXTERNAL_REF_TABLE_READY = false;
+/** Xem cửa chặn ① ở đầu file. Bảng đã có thật trong `dev.db` (xác nhận 20/08 sau H6 db push +
+ * generate — `prisma.externalRef` delegate đã sống trong client, verify bằng query thật). */
+export const EXTERNAL_REF_TABLE_READY = true;
 
 /** Hình dạng TỐI THIỂU của delegate — khai tay vì client chưa generate (cửa chặn ②). */
 interface ExternalRefRow {
