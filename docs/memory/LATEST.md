@@ -3,7 +3,31 @@
 > **Đọc file này ĐẦU TIÊN**, rồi **`docs/memory/RETRIEVAL-MAP.md`** (chỉ mục 11 topic → nguồn sâu, lập 19/08), rồi **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md`** (bản đồ chính tắc 19/08 — thay `IF-KIEN-TRUC.md`), rồi **`docs/TAC-NHAN-T.md`** (vai T).
 > Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — W5 đóng, writer FREEZE, HUMAN GATE BATCH cuối)**
+**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — Q5-SCHEMA đóng, chạm migration execution gate)**
+
+---
+
+# 2026-08-19 · khuya muộn (tiếp #7) · MAIN — Hoà chốt Reference/Asset contract, Q5-SCHEMA đóng
+
+**Hoà chốt đầy đủ contract** (10 điểm, xem message gốc): model tên `ProjectAssetUsage`, field tối
+thiểu, `workspaceId?`/`canvasId?` TRANSITIONAL (không FK trước H9), `usage` REUSE vocabulary
+KHÔNG deprecate `LibraryAsset.usage`, thứ tự Q5→Understand→Promote→LibraryAsset→
+ProjectAssetUsage→H9→downstream. Uỷ quyền MAIN tự chia packet end-to-end sau khi Q5 READY,
+không hỏi lẻ trừ migration-execution-gate/destructive/license/evidence-sai-tiền-đề.
+
+**Q5-SCHEMA đóng** (`f0696a9`): `ProjectFile` + `ProjectAssetUsage` thêm vào `prisma/schema.prisma`
+TEXT-ONLY (append 106 dòng, 0 sửa field khác) — KHÔNG push/generate (đúng luật CLAUDE.md). 0 code
+nào gọi 2 model mới (route sẽ không tsc-pass tới khi Hoà push+generate — ràng buộc kỹ thuật thật,
+không phải lựa chọn). tsc gộp vẫn 0.
+
+**Hit migration execution gate** — đây là điểm dừng hợp lệ theo đúng lời Hoà cho phép gọi lại.
+H6 nay gộp 2 slice (matId cũ + ProjectFile/ProjectAssetUsage mới), Hoà `db push` MỘT LẦN áp cả hai.
+
+**30 commit trên `backup/2026-08-19-batch0a`, remote sync, `main` vẫn `c7f3ac8`.**
+
+## ⛔ CHỜ HOÀ (bổ sung — không hỏi lẻ, chỉ thêm vào Human Gate Batch đã gộp)
+Sau khi push xong (H6): mở Promote-transaction + ProjectAssetUsage API + Reference UI attach/reuse
++ browser Golden Journey (asset X→Project A→reuse B→usage khác nhau→reopen giữ→where-used A+B).
 
 ---
 

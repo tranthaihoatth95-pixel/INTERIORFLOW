@@ -29,6 +29,19 @@ ahead · dirty 145 (toàn bộ có chủ, không file lạ) · 5 peer session, k
 2 checkpoint (Library-drop thao tác thật, GOTO-3D thao tác thật) cần dữ liệu populated hơn — để
 lại cho lô duyệt mắt của Hoà thay vì tự dựng dữ liệu giả tốn thời gian.
 
+## ⚠️ CẬP NHẬT 19/08 khuya muộn — H6 nay gồm 2 slice schema, PUSH MỘT LẦN
+
+Sau khi Hoà chốt contract Reference/Asset, đã thêm **Q5-SCHEMA** (`ProjectFile` +
+`ProjectAssetUsage`, text-only, checkpoint `f0696a9`) — CÙNG nằm trong diff `prisma/schema.prisma`
+chưa push với `matId` (Slice 1A). `npx prisma db push` chạy MỘT LẦN sẽ áp cả 2 slice cùng lúc
+(Prisma diff toàn bộ schema so DB, không phân biệt "slice nào"). Không cần Hoà chạy 2 lượt.
+Chi tiết migration-plan riêng cho Q5-SCHEMA (rollback nếu muốn tách): `docs/memory/sessions/
+2026-08-19/18-q5-schema-migration-plan/README.md`.
+
+**Sau khi Hoà push xong**, MAIN mở tiếp packet Promote-transaction + `ProjectAssetUsage` API +
+Reference UI attach/reuse + browser Golden Journey (asset X dùng Project A → reuse Project B →
+usage khác nhau → reopen giữ → where-used thấy cả A/B) — đúng thứ tự Hoà đã chốt, không hỏi lại.
+
 ## H6 — DB RUNBOOK, phân loại
 
 | Bước | Ai chạy |
