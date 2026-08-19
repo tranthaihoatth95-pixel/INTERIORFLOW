@@ -53,7 +53,9 @@ export const FORMAT_CAPABILITIES: Record<GatewayFormat, FormatCapability> = {
   pdf: { format: 'pdf', label: 'PDF', extensions: ['.pdf'], stages: {
     cad: stage('reference', 'lossy', 'PDF brief/ảnh tham chiếu; xuất hồ sơ PDF'),
     render: stage('reference', 'lossy', 'Đọc làm tài liệu tham chiếu; xuất deck ảnh thành PDF'),
-    present: stage('unavailable', 'lossy', 'Chưa nhập PDF thành slide; đã xuất deck PDF'),
+    // R6 19/08 — Smart Convert bậc 1 (13/08) ĐÃ nhập PDF → deck 3 lớp; bảng này từng khai
+    // 'unavailable' là hiện trạng CŨ, chính nó đẻ ra "ĐẶC CÁCH GATEWAY" ở present Toolbar.
+    present: stage('lossy', 'lossy', 'Nhập trang PDF thành slide (chữ thật + ảnh về kho Thư viện); đã xuất deck PDF'),
   } },
   xlsx: { format: 'xlsx', label: 'Excel', extensions: ['.xlsx'], stages: {
     cad: stage('lossy', 'unavailable', 'Nạp dữ liệu kho/thư viện, không mở thành bản vẽ'), render: no(),

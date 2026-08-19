@@ -86,12 +86,21 @@ function IngestPageInner() {
     if (mounted.current) saveManifest({ project, createdAt: new Date().toISOString(), assets });
   }, [project, assets]);
 
+  // R6 19/08 — nhận file đi qua MỘT CỬA Format Router (`ingestFile` → `classify` → `planUpload`,
+  // lib/gateway/upload.ts): hết cảnh trang này tự đoán đuôi riêng. Loại router chưa chưng cất
+  // được vẫn NHẬN (giữ tham chiếu metadata như cũ — không mất gì), nhưng NÓI THẬT qua notice.
   const add = async (files: FileList | File[]) => {
     setBusy(true);
     const arr = Array.from(files);
+    const chuaChungCat: string[] = [];
     for (const f of arr) {
       const a = await ingestFile(f);
+      if (a.type === 'other') chuaChungCat.push(a.name);
       setAssets((prev) => [...prev, a]);
+    }
+    if (chuaChungCat.length > 0) {
+      const vi = chuaChungCat.slice(0, 3).join(', ') + (chuaChungCat.length > 3 ? '…' : '');
+      setNotice(`${chuaChungCat.length} tệp chưa chưng cất được (${vi}) — vẫn giữ tham chiếu metadata, không mất bản gốc.`);
     }
     setBusy(false);
   };

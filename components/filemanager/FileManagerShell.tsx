@@ -16,6 +16,7 @@ import {
   type RealFsFailure,
 } from '@/lib/filemanager/real-fs';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
+import { planUpload } from '@/lib/gateway/upload';
 import {
   EMPTY_SELECTION,
   clickSelect,
@@ -132,6 +133,8 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
   const [dragOver, setDragOver] = useState(false);
   const [realFiles, setRealFiles] = useState<FmFile[]>([]);
   const [fsNote, setFsNote] = useState<string | null>(null);
+  /** R6 19/08 — ghi chú THẬT từ Format Router khi upload loại chưa chặng nào mở được (khác fsNote: fsNote = lỗi ghi đĩa). */
+  const [gwNote, setGwNote] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [kindFilter, setKindFilter] = useState<FmFileKind | 'all'>('all');
   const [sel, setSel] = useState<SelectionState>(EMPTY_SELECTION);
@@ -379,6 +382,25 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
     if (!currentFolderId) return;
     const items = Array.from(fileList);
     setFsNote(null);
+    setGwNote(null);
+
+    // R6 19/08 — MỌI file upload đi qua MỘT CỬA Format Router (`lib/gateway/upload.ts#planUpload`,
+    // cùng cửa với /library/ingest và present Toolbar). Router chỉ PHÂN LOẠI — bản GỐC vẫn ghi
+    // đĩa y như cũ (luật gốc-bất-biến); loại chưa chặng nào mở được thì NÓI THẬT, không im lặng.
+    const chuaMoDuoc: string[] = [];
+    for (const file of items) {
+      try {
+        const bytes = new Uint8Array(await file.slice(0, 8192).arrayBuffer());
+        const plan = planUpload({ name: file.name, bytes });
+        if (plan.importableStages.length === 0) chuaMoDuoc.push(file.name);
+      } catch {
+        // đọc đầu file lỗi → bỏ qua phân loại, upload vẫn chạy bình thường
+      }
+    }
+    if (chuaMoDuoc.length > 0) {
+      const vi = chuaMoDuoc.slice(0, 3).join(', ') + (chuaMoDuoc.length > 3 ? '…' : '');
+      setGwNote(`Đã giữ bản gốc trên đĩa; ${chuaMoDuoc.length} tệp (${vi}) hiện chưa chặng nào của IF mở được — sẽ mở được khi có importer, không cần tải lại.`);
+    }
 
     for (const file of items) {
       const id = `up-${Math.random().toString(36).slice(2, 8)}`;
@@ -504,6 +526,12 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
           {fsNote && (
             <p className="fsnote">
               <HardDriveDownload size={12} /> {fsNote}
+            </p>
+          )}
+
+          {gwNote && (
+            <p className="fsnote">
+              <HardDriveDownload size={12} /> {gwNote}
             </p>
           )}
 

@@ -20,7 +20,9 @@ for (const [name, expected] of [
 console.log('\n[2] Registry đủ mọi GatewayFormat và nói đúng fidelity');
 ok('IDF mở/chỉnh được ở 2D', capabilityFor('idf', 'cad').import === 'editable');
 ok('PPTX nhập có mất mát ở Trình bày', capabilityFor('pptx', 'present').import === 'lossy');
-ok('PDF chưa nhập thành slide', capabilityFor('pdf', 'present').import === 'unavailable');
+// R6 19/08 — Smart Convert bậc 1 (13/08) đã nhập PDF thành slide; test cũ khẳng định 'unavailable'
+// là ghi nhận HÀNH VI CŨ (chính lỗ này đẻ ra "ĐẶC CÁCH GATEWAY" ở present Toolbar).
+ok('PDF nhập thành slide có mất mát ở Trình bày', capabilityFor('pdf', 'present').import === 'lossy');
 ok('DWG chưa xuất được', capabilityFor('dwg', 'cad').export === 'unavailable');
 ok('ảnh là reference ở 3D', capabilityFor('image', 'render').import === 'reference');
 ok('GLB nhập hình học có mất mát ở Render', capabilityFor('glb', 'render').import === 'lossy' && canOperate('glb', 'render', 'import'));
@@ -32,7 +34,8 @@ console.log('\n[3] Router phải theo năng lực thật và theo đúng chặng
 ok('PPTX ở Present → import deck', routeFormat('pptx', 'present').kind === 'present-import-deck');
 ok('PPTX ở CAD → unsupported', routeFormat('pptx', 'cad').kind === 'unsupported');
 ok('IDFP ở Present → mở project', routeFormat('idfp', 'present').kind === 'present-open-project');
-ok('PDF ở Present → unsupported, không nói dối đã nhập được', routeFormat('pdf', 'present').kind === 'unsupported');
+ok('PDF ở Present → import deck (R6 trả nợ đặc cách)', routeFormat('pdf', 'present').kind === 'present-import-deck');
+ok('PDF ở CAD → unsupported như cũ (reference chưa có đường nhập riêng)', routeFormat('pdf', 'cad').kind === 'unsupported');
 ok('GLB ở Render → importer mô hình', routeFormat('glb', 'render').kind === 'render-import-model');
 ok('glTF ở Render → importer mô hình', routeFormat('gltf', 'render').kind === 'render-import-model');
 ok('OBJ ở Render → importer mô hình', routeFormat('obj', 'render').kind === 'render-import-model');

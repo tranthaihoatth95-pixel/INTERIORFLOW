@@ -11,6 +11,7 @@
  */
 import { loadImage, extractPalette } from '@/lib/imaging';
 import { createStudioBlobStore } from '@/lib/storage/studio-persist';
+import { planUpload } from '@/lib/gateway/upload';
 
 export type RefUsage = 'ref-render' | 'slide' | 'material' | 'layout' | 'cad' | 'brief' | 'furniture';
 export type RefType = 'image' | 'pdf' | 'excel' | 'cad' | 'other';
@@ -53,12 +54,22 @@ export const MOOD_USAGES: RefUsage[] = ['ref-render', 'slide', 'material'];
 
 const STORE_KEY = 'interiorflow.refManifest';
 
+/**
+ * R6 19/08 — phân loại đi qua Format Router (`lib/gateway/upload.ts#planUpload`), KHÔNG tự chế
+ * bộ đoán đuôi riêng nữa (trước đây đây là taxonomy thứ ba song song detect.ts). `RefType` giữ
+ * nguyên làm KHOÁ LƯU của manifest (đổi là vỡ manifest IDB cũ) — nó chỉ còn là ánh xạ thu hẹp
+ * từ `GatewayFormat`, không phải nguồn phân loại. Mime ảnh giữ làm lưới đỡ (file ảnh không đuôi).
+ */
 export function classify(mime: string, name: string): RefType {
-  const n = name.toLowerCase();
+  const { format } = planUpload({ name });
+  if (format === 'image') return 'image';
+  if (format === 'pdf') return 'pdf';
+  if (format === 'xlsx' || format === 'csv') return 'excel';
+  if (format === 'dxf' || format === 'dwg') return 'cad';
+  // Lưới đỡ giữ hành vi cũ cho ca router chưa phủ: ảnh không đuôi (mime) + .xls đời cũ
+  // (detect.ts chỉ nhận .xlsx — .xls vẫn nằm trong `accept` của trang ingest).
   if (mime.startsWith('image/')) return 'image';
-  if (mime === 'application/pdf' || n.endsWith('.pdf')) return 'pdf';
-  if (/sheet|excel|csv/.test(mime) || /\.(xlsx?|csv)$/.test(n)) return 'excel';
-  if (/\.(dxf|dwg)$/.test(n)) return 'cad';
+  if (/sheet|excel|csv/.test(mime) || name.toLowerCase().endsWith('.xls')) return 'excel';
   return 'other';
 }
 

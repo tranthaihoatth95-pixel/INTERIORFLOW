@@ -265,14 +265,11 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
    * PresentEditor CÙNG PATTERN `openPptxFile` ngay trên (nối vào CUỐI deck đang mở, không hỏi
    * trước — PDF là tài liệu nguồn khác, không phải project `.idfp` của chính mình).
    *
-   * ⚠️ ĐẶC CÁCH GATEWAY (ghi rõ để phiên sau khỏi ngỡ ngàng): `lib/gateway/capabilities.ts` hiện
-   * khai `present.pdf.import = 'unavailable'` (đúng lúc viết ticket này — chặng Trình chiếu CHƯA
-   * đọc được PDF) và `route.ts#STATIC_ROUTE` CHƯA có khoá `pdf` (dù dòng comment kiểu `RouteAction`
-   * ở đó ĐÃ ghi sẵn ý định `// .pptx / .pdf — nhập làm slide`, `route.ts:18`). VÙNG FILE của ticket
-   * này CẤM sửa `lib/gateway/**` — nên `onGatewayFile` bên dưới ĐẶC CÁCH bắt `format === 'pdf'`
-   * NGAY TRƯỚC khi gọi `routeFormat`, không đụng gateway. Việc dọn nợ này (ngoài phạm vi ticket):
-   * thêm `pdf: { kind: 'present-import-deck' }` vào `STATIC_ROUTE` + đổi
-   * `capabilities.ts` `present.pdf.import` thành `'lossy'` rồi BỎ đặc cách này.
+   * ✅ ĐẶC CÁCH GATEWAY ĐÃ TRẢ NỢ (R6 19/08): `lib/gateway` nay khai `present.pdf.import='lossy'`
+   * và `routeFormat('pdf','present')` trả `present-import-deck` — `onGatewayFile` bên dưới hết
+   * bắt `format === 'pdf'` trước khi gọi router; PDF đi CÙNG CỬA với mọi định dạng khác. Chọn
+   * importer nào (pdf-import ↔ pptx-import) vẫn quyết Ở ĐÂY theo `format` — đó là việc của bề
+   * mặt, router chỉ trả lời "đích là gì".
    *
    * Số trang > `PDF_RANGE_PROMPT_THRESHOLD` (30) → hỏi phạm vi trước khi convert (phiếu ③) bằng
    * `window.prompt` — cùng mức tương tác `window.confirm` của `openIdfpFile` phía trên, không
@@ -365,24 +362,23 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
     if (!f) return;
     const bytes = new Uint8Array(await f.slice(0, 8192).arrayBuffer());
     const format = detectFormat({ name: f.name, bytes });
-    if (format === 'pdf') {
-      await openPdfFile(f);
-      return;
-    }
     const action = routeFormat(format, 'present');
     if (action.kind === 'place-image') {
       addImageFile(f);
       return;
     }
     if (action.kind === 'present-import-deck') {
-      await openPptxFile(f);
+      // Cùng MỘT đích "nhập làm slide", hai importer theo định dạng (route.ts:18 khai sẵn ý này).
+      if (format === 'pdf') await openPdfFile(f);
+      else await openPptxFile(f);
       return;
     }
     if (action.kind === 'present-open-project') {
       openIdfpFile(f);
       return;
     }
-    if (format === 'xlsx' || format === 'csv') {
+    if (action.kind === 'library-bulk-ingest') {
+      // xlsx/csv — ở chặng Trình bày đích "nạp hàng loạt" nghĩa là nhập BOQ (dialog sẵn có).
       setBoqInitialFile(f);
       setBoqImportOpen(true);
       return;
