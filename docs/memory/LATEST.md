@@ -3,7 +3,38 @@
 > **Đọc file này ĐẦU TIÊN**, rồi **`docs/memory/RETRIEVAL-MAP.md`** (chỉ mục 11 topic → nguồn sâu, lập 19/08), rồi **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md`** (bản đồ chính tắc 19/08 — thay `IF-KIEN-TRUC.md`), rồi **`docs/TAC-NHAN-T.md`** (vai T).
 > Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — Integration+Human Gate Batch: verify gộp + Golden Loop browser E2E + H6/H7 sẵn sàng cho Hoà)**
+**Cập nhật lần cuối: 2026-08-19 khuya muộn (MAIN — W5 đóng, writer FREEZE, HUMAN GATE BATCH cuối)**
+
+---
+
+# 2026-08-19 · khuya muộn (tiếp #6) · MAIN — W5 đóng, WRITER FREEZE
+
+**W5 durable** (`61cdd16`): rev enforcement mở rộng ProjectMember+LibraryAsset qua
+`lib/server/rev-guard.ts` (generic, REUSE thật — `flows/[id]/route.ts` refactor để IMPORT, không
+giữ bản cục bộ song song). `Project.rev` xác nhận là field CHẾT (0 route update) — không thuộc
+phạm vi. 28 commit trên backup, remote sync, `main` vẫn `c7f3ac8`.
+
+**⛔ WRITER FREEZE từ đây** — không mở thêm packet ghi-file cho tới khi Hoà xử ít nhất 1 trong 5
+mục Human Gate Batch dưới. Mọi W1-W4 tiếp tục chờ đúng cổng (H6/H7/H9/Q5).
+
+## ⛔ HUMAN GATE BATCH — GỘP MỘT LẦN, KHÔNG HỎI LẺ
+
+**A · H6** — chạy block DB (backup→push→generate→backfill→verify), nguyên văn tại
+`docs/memory/sessions/2026-08-19/17-integration-human-gate-batch/README.md` mục H6.
+
+**B · H7** — bấm `git merge --ff-only backup/2026-08-19-batch0a` rồi `git push origin main` (lệnh
+đủ tại cùng file mục H7), HOẶC cấp quyền MAIN tự làm trong phạm vi rõ.
+
+**C · H9-A** — route không chỉ định `wsId` thì resolve Flow nào? (cần quyết định sản phẩm, code
+không tự trả lời — chi tiết + 2 option tại `docs/memory/sessions/2026-08-19/
+16-project-asset-ownership-spec/README.md` mục D).
+
+**D · H9-B** — tên model Workspace mới, tránh đồng âm `lib/workspace.ts`/`WorkspaceMode`/
+`Task.workspaceId` (3 thứ đã tồn tại, không liên quan model mới).
+
+**E · Lô mắt 15-20 phút** — gom theo TRẠM (Home/Resume · 2D · Library/Reference · 3D · Goto/Task/
+Review · Present · Error/Conflict), không hỏi riêng từng packet. 2 checkpoint chưa exercise được
+bằng thao tác thật (Library-drop, GOTO-3D) nên nằm trong trạm tương ứng để Hoà tự thử.
 
 ---
 
