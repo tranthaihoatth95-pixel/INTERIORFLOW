@@ -26,6 +26,7 @@
 
 import { BLOCKS, type BlockDef } from './furniture';
 import type { LibraryBlockMeta, LibraryManifest } from './block-library';
+import type { IdfcBody, IdfcGeom2d } from './idfc';
 import { matchSpec } from '../library/spec-panel';
 
 /** Hình lát tối thiểu của món trên kệ (`SheetItem` của `lib/library/shelves.ts`) — chỉ nhận 3
@@ -52,7 +53,17 @@ export interface SpecRef {
 
 export type ResolvedLibraryItem =
   | { via: 'blockdef'; def: BlockDef; keepsIdentity: true; approximate: boolean; specId?: string }
-  | { via: 'manifest'; meta: LibraryBlockMeta; keepsIdentity: false; approximate: boolean; specId?: string };
+  | { via: 'manifest'; meta: LibraryBlockMeta; keepsIdentity: false; approximate: boolean; specId?: string }
+  /** R8 (19/08) — món `.idfc` trong kho studio thả bằng CHÍNH `body.geom2d` của nó (UF-2 mắt đứt
+   * 2: geom2d trước nay 0 reader, món nhập kho đi vòng khớp-tên vào BLOCKS/manifest — tức thả ra
+   * hình CỦA MÓN KHÁC trùng tên, hoặc không thả được dù file mang đủ hình học).
+   * `keepsIdentity: false` khai THẬT: `.idfc` tự chứa không có `blockId` trong `BLOCK_MAP` nên
+   * không dựng được `BlockEntity` (đăng ký block động = mở lại bản vẽ mất hình — lý do đã ghi ở
+   * `block-library.ts:201`); đường thả là làm phẳng `prims` (`clusterPrimsToEntities` — primitive
+   * có sẵn, NO-REBUILD B25) + tầng UI gắn `srcBlock`/`srcInsertId` để cả cụm vẫn chọn/di chuyển/
+   * truy gốc được (Base đã có 2 field này, serialize vào `.idf`).
+   * `approximate: false` — đây là hình CỦA CHÍNH MÓN, không phải khớp gần đúng. */
+  | { via: 'idfc'; geom2d: IdfcGeom2d; keepsIdentity: false; approximate: false; specId?: string };
 
 /** Loại món trên kệ CÓ THỂ là hình vẽ thả xuống bản vẽ được. Vật liệu/hatch/preset/theme thì
  * KHÔNG (chúng đi đường "áp lên vật đang chọn" — `LIBRARY_APPLY_EVENT`, việc khác). */
@@ -134,16 +145,42 @@ function matchByName<T extends { name: string; id: string }>(
  * hàm này — matchSpec giữ nguyên. `specId` output vẫn là ProductSpec.id (FK cứng). Material identity
  * mới (entity.matId? = UUID) là field song song, sẽ thêm ở phiếu Slice 1A sau khi Prisma ready.
  */
+/**
+ * R8 — rút `IdfcGeom2d` từ ruột một file `.idfc` (nếu có). Đặt ở module THUẦN này (không đụng
+ * store) để test được bằng sucrase-node; caller (LibraryDropBridge) tự tra kho `idfc-store` rồi
+ * đưa `body` vào đây.
+ *  · ruột `component` → `geom2d` (bắt buộc theo union — importIdfc đã validate).
+ *  · ruột `material`  → `symbol2d` (ký hiệu 2D của vật liệu — nơi giữ geom2d file v1, xem idfc.ts).
+ *  · ruột khác (page/video/doc/asset/brandkit/preset) → không có hình 2D ⇒ undefined.
+ * Trả undefined khi prims rỗng — hình học không có nét thì thả ra bản vẽ trống, coi như không có.
+ */
+export function idfcGeom2dOf(body: IdfcBody): IdfcGeom2d | undefined {
+  const g = body.type === 'component' ? body.geom2d : body.type === 'material' ? body.symbol2d : undefined;
+  return g && Array.isArray(g.prims) && g.prims.length > 0 ? g : undefined;
+}
+
 export function resolveLibraryItem(
   item: LibraryItemRef,
   manifest?: LibraryManifest | null,
   specs?: readonly SpecRef[],
+  /** R8 — hình học 2D của CHÍNH món (từ `.idfc` trong kho, rút bằng `idfcGeom2dOf`). Có nó ⇒
+   * thắng mọi đường khớp-tên. Caller cũ không truyền ⇒ hành vi y nguyên. */
+  idfcGeom2d?: IdfcGeom2d | null,
 ): ResolvedLibraryItem | null {
-  if (item.kind && !(DROPPABLE_ITEM_KINDS as readonly string[]).includes(item.kind)) return null;
-
   // R1: `item.specId` (đã chốt ở tầng UI — gán tay thắng) đứng trước khớp mã tự động; không có
   // nguồn nào ⇒ để trống, KHÔNG bịa.
   const specId = item.specId ?? (specs?.length ? matchSpec(item.code, specs)?.id : undefined);
+
+  // R8 — geom2d của chính món ĐỨNG TRƯỚC CẢ bộ lọc kind: bộ lọc tồn tại để "loại sớm món không
+  // phải hình vẽ" khi chỉ có TÊN để đoán; đã cầm hình học thật trong tay thì không còn gì để
+  // đoán. (Ca thật cần điều này: `.idfc` kind `soft` hiện thumb 'fabric' — không nằm trong
+  // DROPPABLE_ITEM_KINDS vì 'fabric' còn là loại VẬT LIỆU trên kệ khác; nới danh sách chung sẽ
+  // mở nhầm cửa cho vật liệu khớp-tên, nên đi trước bộ lọc thay vì nới bộ lọc.)
+  if (idfcGeom2d && idfcGeom2d.prims.length > 0) {
+    return { via: 'idfc', geom2d: idfcGeom2d, keepsIdentity: false, approximate: false, specId };
+  }
+
+  if (item.kind && !(DROPPABLE_ITEM_KINDS as readonly string[]).includes(item.kind)) return null;
 
   const def = matchByName(BLOCKS, item);
   if (def) return { via: 'blockdef', def: def.hit, keepsIdentity: true, approximate: def.approximate, specId };
@@ -159,4 +196,11 @@ export function resolveLibraryItem(
  * (`docs/SPEC-NGON-NGU-CHI-DAN.md`: hành động trước, không jargon, luôn kèm việc làm được.) */
 export function unresolvedMessage(item: LibraryItemRef): string {
   return `Chưa có hình vẽ cho "${item.name}" — kho block chưa có món này. Dùng panel Nội thất để chọn block gần đúng.`;
+}
+
+/** R8 — câu báo khi món LÀ `.idfc` trong kho nhưng file KHÔNG mang hình 2D (video/mẫu trang/
+ * preset…, hoặc vật liệu chưa có ký hiệu). Nói thật đúng nguyên nhân — câu `unresolvedMessage`
+ * chung ("kho block chưa có món này") sẽ nói SAI cho ca này: kho có món, món không có hình. */
+export function idfcNoGeom2dMessage(item: LibraryItemRef): string {
+  return `"${item.name}" là mẫu .idfc không mang hình vẽ 2D — chưa thả xuống bản vẽ được. Nhập lại file có phần hình học 2D nếu cần.`;
 }
