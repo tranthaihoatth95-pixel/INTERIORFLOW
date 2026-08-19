@@ -98,13 +98,25 @@ async function main() {
     path.join(__dirname, 'route.ts'),
     'utf8',
   );
-  assert.match(routeSrc, /class RevConflictError/, 'route.ts phải khai RevConflictError');
+  // W5 (19/08) — RevConflictError/updateWithRevCheck/REV_CONFLICT_RESPONSE TRÍCH sang
+  // lib/server/rev-guard.ts (dùng chung ProjectMember/LibraryAsset). route.ts nay IMPORT, không
+  // còn khai class local — kiểm import + kiểm cơ chế P2025 THẬT nằm ở rev-guard.ts.
   assert.match(
     routeSrc,
-    /e instanceof Prisma\.PrismaClientKnownRequestError && e\.code === 'P2025'/,
-    'route.ts phải bắt riêng P2025 (không để lọt thành 500)',
+    /import \{ RevConflictError, updateWithRevCheck, REV_CONFLICT_RESPONSE \} from '@\/lib\/server\/rev-guard'/,
+    'route.ts phải IMPORT rev-guard dùng chung, không khai lại class local',
   );
-  ok('route.ts có RevConflictError + bắt P2025 đúng mã lỗi');
+  const revGuardSrc = fs.readFileSync(
+    path.join(__dirname, '../../../../lib/server/rev-guard.ts'),
+    'utf8',
+  );
+  assert.match(revGuardSrc, /class RevConflictError/, 'rev-guard.ts phải khai RevConflictError');
+  assert.match(
+    revGuardSrc,
+    /e instanceof Prisma\.PrismaClientKnownRequestError && e\.code === 'P2025'/,
+    'rev-guard.ts phải bắt riêng P2025 (không để lọt thành 500)',
+  );
+  ok('route.ts import rev-guard dùng chung; rev-guard.ts có RevConflictError + bắt P2025 đúng mã lỗi');
 
   const putBody = routeSrc.slice(routeSrc.indexOf('export async function PUT'), routeSrc.indexOf('export async function DELETE'));
   const revConflictReturns = (putBody.match(/return REV_CONFLICT_RESPONSE\(\);/g) ?? []).length;

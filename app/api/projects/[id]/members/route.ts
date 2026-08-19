@@ -7,6 +7,7 @@ import {
   assertProjectAccess,
   isProjectRole,
 } from '@/lib/server/access';
+import { RevConflictError, updateWithRevCheck, REV_CONFLICT_RESPONSE } from '@/lib/server/rev-guard';
 
 /**
  * app/api/projects/[id]/members — CRUD thành viên dự án (ACCESS-CONTROL M1).
@@ -18,6 +19,12 @@ import {
  * - POST/PATCH/DELETE: chỉ owner (hoặc User.isAdmin — assertProjectAccess coi admin là owner).
  * - Không bao giờ để dự án 0 owner: chặn đổi role/xoá owner CUỐI CÙNG.
  * - 404 thay 403 khi không phải member (không tiết lộ dự án tồn tại).
+ *
+ * W5 (19/08) — rev optimistic-concurrency, dùng chung `lib/server/rev-guard.ts` (trích từ H11).
+ * POST/PATCH nhận thêm `expectedRev?: number` trong body; DELETE nhận `?expectedRev=` trên query
+ * string (DELETE đã dùng query cho `userId`, giữ nhất quán). Khoá theo `ProjectMember.id` (PK
+ * riêng của hàng, KHÔNG phải cặp projectId_userId — rev-guard chỉ biết `id`+`rev`). Không gửi
+ * expectedRev → hành vi y hệt trước giờ (không breaking).
  */
 
 function errResponse(e: unknown) {
@@ -67,13 +74,14 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
   }
 }
 
-/** POST body {userId, role} — thêm thành viên. Chỉ owner/admin. */
+/** POST body {userId, role, expectedRev?} — thêm thành viên. Chỉ owner/admin. */
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const body = await req.json().catch(() => ({}));
   const targetId = typeof body.userId === 'string' ? body.userId : '';
   const role = body.role;
+  const expectedRev = typeof body.expectedRev === 'number' ? body.expectedRev : undefined;
   if (!targetId || !isProjectRole(role))
     return NextResponse.json(
       { error: `Cần userId + role hợp lệ (${ROLES.join('|')}).` },
@@ -93,35 +101,46 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     });
     if (existed && !existed.deletedAt)
       return NextResponse.json({ error: 'Đã là thành viên — dùng đổi vai (PATCH).' }, { status: 409 });
-    const member = existed
-      ? await prisma.projectMember.update({
-          where: { id: existed.id },
-          data: {
-            role,
-            deletedAt: null,
-            joinedAt: new Date(),
-            rev: { increment: 1 },
-            lastEditedBy: user.id,
-          },
-          select: { userId: true, role: true, joinedAt: true },
-        })
-      : await prisma.projectMember.create({
-          data: { projectId: params.id, userId: targetId, role, lastEditedBy: user.id },
-          select: { userId: true, role: true, joinedAt: true },
-        });
+    let member;
+    if (existed) {
+      try {
+        member = await updateWithRevCheck(existed.id, expectedRev, (where) =>
+          prisma.projectMember.update({
+            where,
+            data: {
+              role,
+              deletedAt: null,
+              joinedAt: new Date(),
+              rev: { increment: 1 },
+              lastEditedBy: user.id,
+            },
+            select: { userId: true, role: true, joinedAt: true },
+          }),
+        );
+      } catch (e) {
+        if (e instanceof RevConflictError) return REV_CONFLICT_RESPONSE();
+        throw e;
+      }
+    } else {
+      member = await prisma.projectMember.create({
+        data: { projectId: params.id, userId: targetId, role, lastEditedBy: user.id },
+        select: { userId: true, role: true, joinedAt: true },
+      });
+    }
     return NextResponse.json({ member });
   } catch (e) {
     return errResponse(e);
   }
 }
 
-/** PATCH body {userId, role} — đổi vai. Chỉ owner/admin. Không hạ owner cuối cùng. */
+/** PATCH body {userId, role, expectedRev?} — đổi vai. Chỉ owner/admin. Không hạ owner cuối cùng. */
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const body = await req.json().catch(() => ({}));
   const targetId = typeof body.userId === 'string' ? body.userId : '';
   const role = body.role;
+  const expectedRev = typeof body.expectedRev === 'number' ? body.expectedRev : undefined;
   if (!targetId || !isProjectRole(role))
     return NextResponse.json(
       { error: `Cần userId + role hợp lệ (${ROLES.join('|')}).` },
@@ -131,7 +150,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     await assertProjectAccess(user.id, params.id, 'owner');
     const m = await prisma.projectMember.findUnique({
       where: { projectId_userId: { projectId: params.id, userId: targetId }, deletedAt: null },
-      select: { role: true },
+      select: { id: true, role: true },
     });
     if (!m) return NextResponse.json({ error: 'Chưa phải thành viên.' }, { status: 404 });
     if (m.role === 'owner' && role !== 'owner' && (await ownerCount(params.id)) <= 1)
@@ -139,11 +158,19 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         { error: 'Không thể hạ vai owner cuối cùng — thêm owner khác trước.' },
         { status: 400 },
       );
-    const member = await prisma.projectMember.update({
-      where: { projectId_userId: { projectId: params.id, userId: targetId } },
-      data: { role, rev: { increment: 1 }, lastEditedBy: user.id },
-      select: { userId: true, role: true },
-    });
+    let member;
+    try {
+      member = await updateWithRevCheck(m.id, expectedRev, (where) =>
+        prisma.projectMember.update({
+          where,
+          data: { role, rev: { increment: 1 }, lastEditedBy: user.id },
+          select: { userId: true, role: true },
+        }),
+      );
+    } catch (e) {
+      if (e instanceof RevConflictError) return REV_CONFLICT_RESPONSE();
+      throw e;
+    }
     return NextResponse.json({ member });
   } catch (e) {
     return errResponse(e);
@@ -151,20 +178,26 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 }
 
 /**
- * DELETE ?userId=<id> — gỡ thành viên. Owner/admin gỡ được mọi người; member thường chỉ
- * tự rời (self-leave). Không gỡ owner cuối cùng.
+ * DELETE ?userId=<id>&expectedRev=<n> — gỡ thành viên. Owner/admin gỡ được mọi người; member
+ * thường chỉ tự rời (self-leave). Không gỡ owner cuối cùng. `expectedRev` optional (W5, 19/08).
  */
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  const targetId = new URL(req.url).searchParams.get('userId') ?? '';
+  const url = new URL(req.url);
+  const targetId = url.searchParams.get('userId') ?? '';
+  const expectedRevRaw = url.searchParams.get('expectedRev');
+  const expectedRev =
+    expectedRevRaw !== null && Number.isFinite(Number(expectedRevRaw))
+      ? Number(expectedRevRaw)
+      : undefined;
   if (!targetId) return NextResponse.json({ error: 'Thiếu userId.' }, { status: 400 });
   try {
     // self-leave chỉ cần là member; gỡ người khác cần owner.
     await assertProjectAccess(user.id, params.id, targetId === user.id ? 'viewer' : 'owner');
     const m = await prisma.projectMember.findUnique({
       where: { projectId_userId: { projectId: params.id, userId: targetId }, deletedAt: null },
-      select: { role: true },
+      select: { id: true, role: true },
     });
     if (!m) return NextResponse.json({ error: 'Chưa phải thành viên.' }, { status: 404 });
     if (m.role === 'owner' && (await ownerCount(params.id)) <= 1)
@@ -173,10 +206,17 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
         { status: 400 },
       );
     // 26/07 local-first: xoá MỀM — set deletedAt thay vì delete() thật (chuẩn bị Pha 2/3 đồng bộ).
-    await prisma.projectMember.update({
-      where: { projectId_userId: { projectId: params.id, userId: targetId } },
-      data: { deletedAt: new Date(), rev: { increment: 1 }, lastEditedBy: user.id },
-    });
+    try {
+      await updateWithRevCheck(m.id, expectedRev, (where) =>
+        prisma.projectMember.update({
+          where,
+          data: { deletedAt: new Date(), rev: { increment: 1 }, lastEditedBy: user.id },
+        }),
+      );
+    } catch (e) {
+      if (e instanceof RevConflictError) return REV_CONFLICT_RESPONSE();
+      throw e;
+    }
     return NextResponse.json({ ok: true });
   } catch (e) {
     return errResponse(e);

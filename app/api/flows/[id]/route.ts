@@ -5,6 +5,7 @@ import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
 import { assertProjectAccess, accessErrorPayload } from '@/lib/server/access';
 import { planFlowVersionRetention } from '@/lib/flow-version-retention';
+import { RevConflictError, updateWithRevCheck, REV_CONFLICT_RESPONSE } from '@/lib/server/rev-guard';
 
 /**
  * H11 (19/08) — rev optimistic-concurrency. `rev` tăng ở MỌI lần ghi (schema.prisma:97 comment
@@ -14,36 +15,19 @@ import { planFlowVersionRetention } from '@/lib/flow-version-retention';
  * trên DB → 409, KHÔNG ghi. Không gửi (client cũ, hoặc nhánh assignProject không đụng graphJson)
  * → hành vi y hệt trước giờ, không breaking.
  *
- * `where: { id, rev }` là "extended whereUnique" (Prisma ≥4.5, xác nhận bản @prisma/client 6.19
- * ở package.json) — Prisma tự sinh `UPDATE … WHERE id = ? AND rev = ?`, 0 hàng khớp → ném
- * P2025 (không phải lỗi thật, là tín hiệu "ai đó ghi trước") — bắt riêng, đừng để lọt thành 500.
+ * W5 (19/08, cùng ngày) — 4 hàm helper (RevConflictError/revWhere/updateWithRevCheck/
+ * REV_CONFLICT_RESPONSE) TRÍCH XUẤT sang `lib/server/rev-guard.ts` (dùng chung cho ProjectMember +
+ * LibraryAsset). File này nay chỉ IMPORT, không giữ bản local — tránh có "đường thứ hai" cho cùng
+ * cơ chế (B25). `where: { id, rev }` vẫn là "extended whereUnique" (Prisma ≥4.5) như comment gốc
+ * mô tả — chi tiết cơ chế xem `lib/server/rev-guard.ts`.
  */
-class RevConflictError extends Error {}
-
-function revWhere(flowId: string, expectedRev: number | undefined) {
-  return expectedRev === undefined ? { id: flowId } : { id: flowId, rev: expectedRev };
-}
-
-async function updateFlowWithRevCheck(
+function updateFlowWithRevCheck(
   flowId: string,
   expectedRev: number | undefined,
   data: Prisma.FlowUpdateInput,
 ) {
-  try {
-    return await prisma.flow.update({ where: revWhere(flowId, expectedRev), data });
-  } catch (e) {
-    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
-      throw new RevConflictError();
-    }
-    throw e;
-  }
+  return updateWithRevCheck(flowId, expectedRev, (where) => prisma.flow.update({ where, data }));
 }
-
-const REV_CONFLICT_RESPONSE = () =>
-  NextResponse.json(
-    { error: 'Ai đó vừa sửa flow này trước bạn — tải lại rồi thử lại.', code: 'REV_CONFLICT' },
-    { status: 409 },
-  );
 
 async function ownFlow(id: string) {
   const user = await getSessionUser();
