@@ -131,16 +131,23 @@ GAP duy nhất: review chưa gác cửa CHUYỂN CHẶNG (PostGate T4 — Wave 3
 
 Điều kiện chung: mỗi dây đứt MỘT phiếu có ô ⓪, cấm nhân tiện refactor vùng dày. Không phiếu nào phụ thuộc phiếu nào — chạy song song được, trừ ghi chú.
 
+> ⚠️ **DELTA 19/08 khuya muộn — 8/11 R ĐÃ XONG, CHECKPOINTED trên `backup/2026-08-19-batch0a`
+> (chưa vào `main`)**. Bảng dưới GIỮ NGUYÊN làm hồ sơ gốc — trạng thái thật xem Gate §5b:
+> R1 `bcb13c5` · R3 `f25716e` · R4 `a1a8533`+R4-L1 `0be972e` · R5 `073881e` · R6 `bf14485`
+> · R7 `355459d` (✅ đã đánh dấu dưới) · R8 `388a893` · R9a `3ba7b9e` · R9b **HUỶ** (tiền đề
+> map sai, đóng dấu). Còn treo: R2 (chờ H2) · R10 (chờ H3) · R11 (chờ H4).
+
 | # | Phiếu | Cỡ | Phụ thuộc | Blast radius | Rollback |
 |---|---|---|---|---|---|
-| R1 | specId lúc drop (`LibraryDropBridge.tsx:57` + LibrarySheet:789 truyền specs) | ~5 dòng | không | BOQ nhận món thả — kiểm `missing-specId-item` biến mất | revert 1 commit |
+| R1 | ✅ **XONG** `bcb13c5` — specId lúc drop (`LibraryDropBridge.tsx:57` + LibrarySheet:789 truyền specs) | ~5 dòng | không | BOQ nhận món thả — kiểm `missing-specId-item` biến mất | revert 1 commit |
 | R2 | Vitals cửa mới (mount VitalsGesturePanel theo chốt 16/08 + sửa/gỡ chip StatusBar) | ~1 ngày | **Hoà chốt vị trí mount** (đã có chốt 16/08 — chấm Home + nút RỜI trục phải; chỉ cần Hoà gật áp dụng) | AppChrome/AppShell | revert |
-| R3 | thao-tac-glyph → khai `hinh` một chỗ ở `lib/commands/registry.ts` | ~nửa ngày | không | Tooltip mọi toolbar | revert |
-| R4 | Tool3DBar lắp ToolbarChip (mảnh cuối toolbar-mot-khuon) | ~nửa ngày | không | thanh 3D | revert |
-| R5 | LightBar mount (hàng đợi render — luật "gì chạy cũng có thanh") + ResumeWork vào DongStudioHome | ~nửa ngày | không | Home + queue panel | revert |
-| R6 | Hợp nhất 2 đường upload qua Format Router (capabilityFor hết 0-caller; bỏ "ĐẶC CÁCH GATEWAY" Toolbar:268) | ~2-3 ngày | shape tối thiểu — KHÔNG chờ full Q5 | /files + ingest | revert |
+| R3 | ✅ **XONG** `f25716e` — thao-tac-glyph → khai `hinh` một chỗ ở `lib/commands/registry.ts` | ~nửa ngày | không | Tooltip mọi toolbar | revert |
+| R4 | ✅ **XONG** `a1a8533`+`0be972e` (R4-L1 hết tràn bar) — Tool3DBar lắp ToolbarChip (mảnh cuối toolbar-mot-khuon) | ~nửa ngày | không | thanh 3D | revert |
+| R5 | ✅ **XONG** `073881e` — LightBar mount (hàng đợi render — luật "gì chạy cũng có thanh") + ResumeWork vào DongStudioHome | ~nửa ngày | không | Home + queue panel | revert |
+| R6 | ✅ **XONG** `bf14485` — Hợp nhất 2 đường upload qua Format Router (capabilityFor hết 0-caller; bỏ "ĐẶC CÁCH GATEWAY" Toolbar:268) | ~2-3 ngày | shape tối thiểu — KHÔNG chờ full Q5 | /files + ingest | revert |
 | R7 | ✅ **XONG 19/08** — reviewDeck nhận slides (CustomEvent `present:*`, 0 store mới; +13 test; browser 5 kịch bản) | đã xong | không | panel Present | revert (event thuần, gỡ là về cũ) |
-| R8 | geom2d reader (.idfc → entity khi thả; DROPPABLE_ITEM_KINDS + resolveLibraryItem đọc idfc-store) | ~1-2 ngày | R1 (cùng vùng — làm SAU R1) | drop path | revert |
+| R8 | ✅ **XONG** `388a893` — geom2d reader (.idfc → entity khi thả; nhánh `via:'idfc'`, xây trên R1) | ~1-2 ngày | R1 (cùng vùng — làm SAU R1) | drop path | revert |
+| R9a | ✅ **XONG** `3ba7b9e` — 4 nhãn nói thật + lux về MỘT nguồn + 3 DRIFT sổ đóng dấu | ~1 ngày | R2 (comment StageSwitcher — phần đó vẫn treo) | text-only | revert |
 | R9 | Lô nhãn nói thật: spotlight items[0] · "Top tuần" · PPTX 16:9 · toast BulkIngest + lô comment stale (7 file trỏ StageSwitcher, `resolve.ts` 0-caller note…) | ~1 ngày | R2 (comment StageSwitcher) | text-only | revert |
 | R9b | ⛔ **HUỶ 19/08 tối — TIỀN ĐỀ SAI, worker REFUSE đúng**: handle xoay ĐÃ TỒN TẠI (`Element.tsx:381-400` chấm tròn 14px, xoay quanh tâm `:266-270` snap 5°, undo qua `onFrame`). Dòng "0 handle xoay" là DRIFT của chính map này. Ý mới (Shift=bậc/tự do) → IDEAS-BACKLOG, không thuộc Đợt 0 | 0 | — | — | — |
 | R10 | CuaSoThaoLuan mount FlowCanvas + mergeDistilledIntoCard | ~1 ngày | **Hoà ✓ mock Ca D** | FlowCanvas 3D | revert |

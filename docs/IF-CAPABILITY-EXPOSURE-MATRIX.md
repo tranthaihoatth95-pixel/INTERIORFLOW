@@ -159,7 +159,11 @@ Bảng chia theo LANE. Mức chi tiết: chỉ capability CÓ Ý NGHĨA tích h�
 
 - **LIVE**: 28 capability chính đủ dây.
 - **DISCONNECTED**: 6 (specId-drop · StatusBar-Vitals-chip · 2-đường-upload · geom2d-reader · reviewDeck-nguồn-rỗng · Frame.rotation · chuanNet↔BuildRecipe) — toàn CONNECT.
-- **ORPHAN**: 7 (VitalsGesturePanel · CuaSoThaoLuan · LightBar · ResumeWork · thao-tac-glyph · web-lookup · lib/idfc-import · Format-Router-capability).
+- **ORPHAN (con số gốc 19/08 khuya, TRƯỚC batch MAIN)**: 8 mục liệt kê (không phải 7 — tự mâu
+  thuẫn cũ, Guardian bắt 19/08 khuya muộn): VitalsGesturePanel · CuaSoThaoLuan · LightBar ·
+  ResumeWork · thao-tac-glyph · web-lookup · lib/idfc-import · Format-Router-capability.
+  **Sau batch MAIN (xem delta banner đầu file): chỉ còn 3 ORPHAN thật** — VitalsGesturePanel
+  (chờ H2) · CuaSoThaoLuan (chờ H3) · lib/idfc-import (chờ H4/WAIT-HOÀ #11). 5 mục còn lại đã LIVE.
 - **BLOCKED/WAIT-HOÀ**: 8 (matId DB · ATLAS · workhub · hatch-t-junction · GPL · intro-video · gopy-có-chủ-đích · mock Ca D).
 - **TRUE-MISSING**: 6 (đều có negative evidence — không cái nào bị đề xuất NEW sai luật).
 - **11 HIGH-VALUE RECONNECT: cả 11 còn nguyên tại HEAD `c7f3ac8`** — 0 cái đã được vá bởi phiên khác; 2 path file đổi (LibraryDropBridge → `components/cad/` · ReviewPanel → `components/review/`).

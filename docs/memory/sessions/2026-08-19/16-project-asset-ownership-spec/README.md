@@ -42,6 +42,59 @@ rồi nối sau?** — đây là câu hỏi trình tự thi công, không phải
 
 **Kết luận: cần model MỚI** (join-table), theo đúng hình dạng `ProjectMember` đã chứng minh repo biết làm đúng khi cần (id riêng, `@relation` cả 2 phía, `@@unique` composite, index theo chiều truy vấn nóng, soft-delete tách khỏi unique).
 
+## A1 · HOÀ CHỐT 3 ĐIỂM — bản dùng, đè các phần suy đoán ở trên
+
+1. **Xác nhận lại**: KHÔNG `projectId` đơn trên `LibraryAsset`. N-N sau Promote. (đúng spec cũ)
+2. **Field tối thiểu**: `projectId · assetId · usage · createdAt · createdBy? · note?`. KHÔNG FK
+   Workspace/Canvas trước H9. **REUSE ContextPointer/TaskContext nếu đã có** — LOOK INSIDE xác
+   nhận: không có type `ContextPointer` riêng (grep 0 kết quả), chỉ có **PATTERN** của
+   `Task.stage/workspaceId/entityId` (3 cột string optional, không FK) — đây là thứ được REUSE
+   (hình dạng field, không phải một type import được).
+3. **KHÔNG mặc định hợp nhất `RefUsage`↔`LibraryAsset.usage`** — xem bảng mapping mục C2 dưới.
+4. **Thứ tự thi công (Hoà chốt, không đổi)**: Q5 ProjectFile/raw-source → Understand/Review →
+   Promote → LibraryAsset → **Project↔Asset N-N usage** → H9 Workspace/Canvas context →
+   downstream genealogy/where-used. ⇒ **join-table này ĐỨNG SAU Q5 trong hàng đợi thi công** —
+   Q5 (`ProjectFile`) hiện **CHƯA CÓ CODE** (ADR-Q5 tự khai "CHƯA IMPLEMENT"), nên **implementation
+   của join-table CHƯA MỞ được round này**, đúng lệnh "mở implementation sau khi Q5/H9 dependency
+   cho phép".
+5. **Ngoại lệ xác nhận đã LÀM ĐÚNG**: nguồn ngoài (Unsplash/Openverse) tạo `LibraryAsset` trực
+   tiếp KHÔNG cần qua `ProjectFile` — đây chính xác là CONNECT-1 đã làm (`saveLibraryAssetFromBuffer`
+   + `POST /api/library/from-url`, checkpoint `dee7ee8`). Khi nhiều Project dùng cùng asset: thêm
+   nhiều hàng usage-relation, KHÔNG nhân bản `LibraryAsset` — đây là lý do CHÍNH mà join-table
+   phải là bảng riêng (không phải cột trên LibraryAsset).
+
+## C2 · Bảng mapping RefUsage ↔ LibraryAsset.usage — giá trị THẬT (không suy đoán)
+
+Xác nhận: **CÙNG một tập giá trị, cùng một câu hỏi** — cả hai đều trả lời *"loại nội dung này
+dùng chung cho việc gì"* (phân loại Ở CẤP KHO, không theo project nào).
+
+| Giá trị | `RefUsage` (`lib/refingest.ts:16`) | `LibraryAsset.usage` (`LIBRARY_USAGES`, `lib/server/library-save.ts:17`) | Nơi set thật (không phải test) |
+|---|---|---|---|
+| `ref-render` | ✅ | ✅ | mặc định POST, `library-save.ts:64` |
+| `slide` | ✅ | ✅ | `PresentEditor`/`ConceptForm` (grep `usage: 'slide'`) |
+| `material` | ✅ | ✅ | `lib/library/db-items.ts:77`, `ConceptForm` |
+| `layout` | ✅ | ✅ | khai trong schema comment, chưa thấy write-site thật ngoài default |
+| `cad` | ✅ | ✅ | khai trong schema comment, chưa thấy write-site thật |
+| `brief` | ✅ | ✅ | khai trong schema comment (PDF khách gửi) |
+| `furniture` | ✅ | ✅ | `db-items.ts:78` |
+
+**Kết luận: `RefUsage` và `LibraryAsset.usage` là MỘT taxonomy (cấp kho), không phải 2 taxonomy
+song song như tôi ghi sai ở round trước** — schema comment tự ghi "RefUsage:" ngay trên cột
+`usage`, và `LIBRARY_USAGES` const dùng LẠI đúng 7 giá trị. Đính chính: mục C (round trước) nói
+"0 cầu nối code" — ĐÚNG về mặt IndexedDB↔DB (2 nơi lưu vật lý khác nhau), nhưng SAI khi nói đó là
+2 taxonomy khác nhau — chúng là CÙNG MỘT từ vựng, chỉ khác NƠI LƯU (RefManifest/IndexedDB per-máy
+vs LibraryAsset/DB per-user).
+
+**Field `usage` trên join-table (relation-level) là CÂU HỎI KHÁC** — không phải "loại nội dung
+gì" mà là *"project này đang dùng nó trong bối cảnh nào"* (đúng câu hỏi Golden Journey R4
+USE-INTENT-KNOWN — brainstorm/render/material-reference/component-candidate/DNA/present...).
+Theo đúng chốt Hoà mục 3: **KHÔNG hợp nhất 2 cấp**. Đề xuất: field `usage` trên join-table
+**REUSE cùng chuỗi giá trị `LIBRARY_USAGES`** làm vốn từ khởi điểm (không bịa taxonomy thứ ba),
+nhưng là **CỘT ĐỘC LẬP** — 1 asset có `usage='material'` ở cấp kho vẫn có thể được project A gắn
+với `usage='ref-render'` (dùng làm cảm hứng render) trong khi project B gắn `usage='material'`
+(dùng thẳng làm vật liệu) — đúng ví dụ Hoà nêu ("Project A chỉ thích lighting, Project B chỉ lấy
+material").
+
 ## B · TARGET CONTRACT (SPEC — chưa đặt tên chính thức, chưa viết Prisma)
 
 Tách rõ 2 tầng theo đúng chỉ dẫn phiếu:
@@ -125,3 +178,24 @@ legal contract yêu cầu, KHÔNG bịa)
 CHƯA CHẮC: chưa xác minh Prisma provider (SQLite migration path) có ràng buộc gì đặc biệt cho
 composite unique 3 cột; chưa đọc `docs/IF-CORE-SCHEMA.md` đầy đủ (chỉ trích dẫn qua comment)
 HẠN DÙNG: hết hạn khi Hoà quyết mục B/C, hoặc bất kỳ ai bắt đầu viết migration.
+
+## D · H9 migration impact (audit riêng, MAIN spot-check khớp)
+
+**Kết luận: đường ADDITIVE khả thi kỹ thuật, không bắt buộc breaking.** Bằng chứng: `Flow.projectId
+String?` đã OPTIONAL sẵn (`prisma/schema.prisma:219`, `onDelete: SetNull`) — thêm bảng `Workspace`
+mới + cột `workspaceId?` song song trên `Flow` không phá dữ liệu cũ (Flow cũ tiếp tục chạy với
+`workspaceId=null`).
+
+**3 điểm cứng phải sửa nếu chen route** (`lib/scope-core.ts`): `AppScope = 'global'|'project'` (2
+giá trị cứng, vô hại — không dùng để routing chặng) · `parseStageRoute()` hardcode stage ở
+`segs[2]` (vỡ nếu chen `/workspaces/[wsId]/` vào giữa — PHẢI sửa) · `resolveFlowForRouteId()` giả
+định Project→Flow phẳng 1 tầng (PHẢI mở rộng chữ ký hàm).
+
+**Bẫy đặt tên đã có sẵn — PHẢI tránh khi code**: `lib/workspace.ts` (167 dòng, chỉ là hàm gọi API
+Flow, KHÔNG liên quan model Workspace) · `WorkspaceMode` (bí danh của `Phase`) · `Task.workspaceId`
+(string tự do, không FK) — 3 thứ ĐỒNG ÂM với model `Workspace` mới sẽ tạo. Model mới PHẢI đặt tên
+khác 3 thứ này, đúng bài học H10 (Review 2 nghĩa trùng tên).
+
+**15 điểm sửa lõi đo được** nếu breaking: 13 `prisma.flow.*` call site (server) + 2 client-core
+(`lib/workspace.ts:41`, `lib/scope-core.ts`). Quyết định SẢN PHẨM chưa trả lời được bằng grep:
+"route không chỉ định `wsId` thì resolve Flow nào?" — cần Hoà, không phải kỹ thuật thuần.
