@@ -21,7 +21,12 @@
    schema Base, phiếu sau). MAIN spot-check + re-run test độc lập cả ba; tsc toàn repo 0 trạng thái gộp.
 5. Chính sách mới từ prompt MAIN Hoà: thang MACHINE→BROWSER→CHECKPOINTED→BACKED-UP→INTEGRATED→CLOSED.
 6. Nợ mới ghi: LegacyStageRedirect dội "Mở lại" thiếu routeId về Home (R5 phát hiện, ngoài phạm vi).
-7. **Batch 1 (cùng khuya)**: W1 browser-verify → R4 + R8 đều **BROWSER-PASS** (R8 exercise geom2d
+7. **Batch 2 (khuya)**: R4-L1 `0be972e` (Tool3DBar chia capsule flex-wrap, hết tràn — tính toán,
+   browser-pending) · R9a `3ba7b9e` (Gate §4 "nhãn hứa-quá 4→0" ĐẠT: spotlight/Top-tuần/PPTX-16:9/
+   toast BulkIngest nói thật · lux về MỘT nguồn `roomLuxEstimate` — bản chép tay THIẾU MF=0.8 đã xoá,
+   số ước lượng nay ×0.8 · DRIFT D2/D3/D4 đóng dấu tại MAP). ⚠️ R9a phát hiện 2 DRIFT MAP còn:
+   #22 FfeApproval trong "5 signal sống" + #4 "CuaSoThaoLuan đã ship" (D1). W2 browser-verify R6 đang chạy.
+8. **Batch 1 (cùng khuya)**: W1 browser-verify → R4 + R8 đều **BROWSER-PASS** (R8 exercise geom2d
    thật bằng `.idfc` synthetic qua UI) · R6 một-cửa-upload xong-máy (`lib/gateway/upload.ts`,
    đặc cách Toolbar:268 trả nợ, 74 test) · **R9b HUỶ — tiền đề map SAI, handle xoay đã có từ trước**
    (DRIFT thứ 7, map đã đóng dấu). Finding mới: R4-L1 bar tràn khi ≥5 ô số (bệnh cũ) · dữ liệu thử

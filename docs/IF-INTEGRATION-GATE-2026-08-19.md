@@ -106,6 +106,13 @@ Cỡ: ~1 ngày. Đề xuất nằm chờ trong gate — **Hoà gật thì thành
     2 test cũ khẳng-định-hành-vi-hỏng đã sửa đúng luật 15/08. BROWSER-PENDING (5 kịch bản trong report).
   · **R9b HUỶ — REFUSE đúng**: handle xoay ĐÃ CÓ (`Element.tsx:381-400`, snap 5°) — map §3 tự DRIFT;
     đã đóng dấu sửa tại chỗ. Ý Shift-xoay → IDEAS-BACKLOG.
+- **Batch 2 ĐÓNG 19/08 khuya**: R4-L1 `0be972e` (Tool3DBar hết tràn — chia capsule + flex-wrap,
+  browser-pending) · R9a `3ba7b9e` — **§4 "nhãn hứa-quá-code 4→0" ĐẠT** (spotlight → "Mục đầu kệ" ·
+  "Top tuần" → "Gần đây trước" · PPTX → "đúng khổ đã chọn" · toast BulkIngest nói thật) + **lux về
+  MỘT nguồn** (`rules-3d.ts` gọi `roomLuxEstimate`, bản chép tay thiếu MF=0.8 đã xoá — số ước lượng
+  ×0.8 chính xác hơn) + DRIFT D2/D3/D4 đóng dấu tại MAP (D3 thật ra ở MAP #17, không phải Blueprint —
+  phiếu MAIN ghi sai, worker đo lại đúng). ⚠️ 2 DRIFT MAP mới ghi nhận chưa sửa: #22 FfeApproval
+  trong "5 signal sống" · #4 "CuaSoThaoLuan đã ship" (D1 — sẽ hết khi R10 chạy).
 - INTEGRATION_BASE_SHA hiện hành = `c7f3ac8` (+ toàn bộ trạng thái đã checkpoint ở backup branch).
 
 ## 6 · CHƯA CHẮC
