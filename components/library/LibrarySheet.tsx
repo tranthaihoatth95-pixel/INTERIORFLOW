@@ -710,14 +710,20 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                 <Star size={14} strokeWidth={1.75} />{tr('Nổi bật', 'Featured')}
               </button>
               <button type="button" role="tab" aria-selected={discoverMode === 'trending'} className={discoverMode === 'trending' ? 'on' : ''} onClick={() => setDiscoverMode('trending')}>
-                <TrendingUp size={14} strokeWidth={1.75} />{tr('Top tuần này', 'Top this week')}
+                {/* R9a (19/08) nhãn-nói-thật: trước là "Top tuần này" — code không có logic tuần
+                    (chỉ xếp món `recent` lên đầu, cờ này kho built-in chưa set). Nhãn nói đúng
+                    hành vi thật; có lịch sử dùng thật thì mới được gọi lại là "Top tuần". */}
+                <TrendingUp size={14} strokeWidth={1.75} />{tr('Gần đây trước', 'Recent first')}
               </button>
             </div>
             {spotlightItem && discoverMode !== 'browse' && (
               <button type="button" className="library-spotlight" onClick={() => setPicked(spotlightItem.id)}>
                 <ItemThumb item={spotlightItem} />
                 <span className="spotlight-copy">
-                  <span className="spotlight-kicker"><Compass size={13} strokeWidth={1.75} />{tr('Chọn cho dự án này', 'Picked for this project')}</span>
+                  {/* R9a (19/08) nhãn-nói-thật: trước là "Chọn cho dự án này" — spotlight chỉ là
+                      items[0] (dòng 414), không có logic ngữ cảnh dự án nào. Khi nào có máy chọn
+                      theo Thẻ DNA/ProjectProfile thật thì mới được hứa "cho dự án này". */}
+                  <span className="spotlight-kicker"><Compass size={13} strokeWidth={1.75} />{tr('Mục đầu kệ', 'First on the shelf')}</span>
                   <strong>{spotlightItem.name}</strong>
                   <small>{tr('Xem thông số, kéo vào bàn làm việc hoặc áp cho lựa chọn hiện tại.', 'Review specs, drag to the workspace, or apply to the current selection.')}</small>
                 </span>

@@ -606,7 +606,9 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
         resultMsg={p.exportMsg}
         items={[
           { id: 'pdf', label: 'PDF', sub: '1:1 với editor · đúng khổ đã chọn (màn hình/chiếu)', icon: <FileDown size={15} />, onSelect: p.onExportPdf },
-          { id: 'pptx', label: 'PowerPoint (.pptx)', sub: 'Chữ còn chỉnh được trong PPT · luôn khổ 16:9', icon: <FileText size={15} />, onSelect: p.onExportPptx },
+          /* R9a (19/08) nhãn-nói-thật: "luôn khổ 16:9" lỗi thời — export.ts đọc
+             deck.stagePreset (quyết định 16:9-cứng đã HUỶ 07/08 p12). */
+          { id: 'pptx', label: 'PowerPoint (.pptx)', sub: 'Chữ còn chỉnh được trong PPT · đúng khổ đã chọn', icon: <FileText size={15} />, onSelect: p.onExportPptx },
           { id: 'png', label: 'Ảnh PNG', sub: 'Mỗi slide 1 ảnh, tải lần lượt', icon: <ImageIcon size={15} />, onSelect: p.onExportPng },
           {
             id: 'idfp',

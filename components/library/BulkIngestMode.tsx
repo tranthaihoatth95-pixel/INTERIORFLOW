@@ -166,7 +166,12 @@ export function BulkIngestMode({ onDone }: { onDone: () => void }) {
             }
             const rest = files.length - good.length - files.filter((f) => f.error).length;
             if (rest > 0) {
-              pushLibraryToast(tr(`Đã đưa ${rest} tệp vào kho — chờ chủ studio duyệt`, `Sent ${rest} file(s) to the store — awaiting approval`));
+              // R9a (19/08) nhãn-nói-thật: trước hứa "Đã đưa vào kho — chờ chủ studio duyệt"
+              // trong khi code KHÔNG lưu gì và KHÔNG có luồng duyệt nào cho loại ngoài .idfc.
+              pushLibraryToast(tr(
+                `${rest} tệp chưa nhập được — loại này chưa có đường nhập`,
+                `${rest} file(s) not imported — no import path for this type yet`,
+              ));
             }
             setFiles([]);
             onDone();

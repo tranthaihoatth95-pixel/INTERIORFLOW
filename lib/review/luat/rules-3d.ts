@@ -14,8 +14,8 @@
  * (b) Độ rọi theo công năng — NỐI DÂY `vn-lighting.ts` (đã có `params.minLux/maxLux`, tự khai
  *     "KHÔNG có logic đo/tính lux nào trong checker.ts") vào phép ước lượng lumen: phòng dò
  *     biên bằng ĐÚNG bộ dò của checker (wallLikeDoc + hatch face — K1, không chép thuật toán),
- *     E ước lượng = Σ(lumens đèn có xy trong phòng) × UF / diện tích(m²). UF=0.4 (hệ số sử dụng
- *     quang thông, thực hành chiếu sáng phổ thông cho phòng ở trần sáng) — GHI RÕ trong nguồn
+ *     E ước lượng gọi engine `lib/lighting/lux.ts` (`roomLuxEstimate`, lumen method
+ *     E = Σlm·UF·MF/A — R9a 19/08: hết bản chép tay, MỘT nguồn công thức) — GHI RÕ trong nguồn
  *     là ƯỚC LƯỢNG, và mang `chuaKiemChung` theo đúng `verified:false` của bộ rule gốc.
  *
  * (c) Khối hở / mặt không kín — khối 3D của IF đùn từ hình 2D (`docToObjScene`): polyline CÓ
@@ -28,12 +28,14 @@ import { findRoomLabels, wallLikeDoc } from '../../cad/standards/checker';
 import { VN_LIGHTING } from '../../cad/standards/vn-lighting';
 import { collectBoundarySegments, buildHatchFaceIndex, pickHatchFace, polygonArea, pointInPolygon } from '../../cad/hatch';
 import { buildLightRig } from '../../three/lighting';
+import { roomLuxEstimate, DEFAULT_UTILIZATION_FACTOR, DEFAULT_MAINTENANCE_FACTOR } from '../../lighting/lux';
 import type { FindingLuat } from '../types';
 
-/** Hệ số sử dụng quang thông cho ước lượng độ rọi trung bình (phòng ở, trần/tường màu sáng,
- * đèn trần) — con số THỰC HÀNH phổ thông, không phải trích chuẩn ⇒ mọi finding nhóm (b) đều
- * `chuaKiemChung`. Khai hằng để test tất định trỏ vào cùng một số. */
-export const UF_UOC_LUONG = 0.4;
+/** R9a (19/08) MỘT NGUỒN CÔNG THỨC LUX: trước đây file này CHÉP TAY `Σlm×0.4/A` — thiếu hẳn
+ * MF=0.8 so với engine `lib/lighting/lux.ts` (lumen method E = Φ·UF·MF/A, nguồn IESNA/CIE 97
+ * ghi ở docblock engine). Nay gọi thẳng `roomLuxEstimate`, hằng UF chỉ còn là ALIAS của engine
+ * để test tất định + chuỗi `nguon` trỏ vào cùng một số. Mọi finding nhóm (b) vẫn `chuaKiemChung`. */
+export const UF_UOC_LUONG = DEFAULT_UTILIZATION_FACTOR;
 
 /** Ánh xạ rule vn-lighting ↔ công năng phòng của `classifyRoom` — chỉ 3 công năng bộ luật gốc
  * có số; phòng công năng khác KHÔNG kiểm (thà thiếu còn hơn bịa ngưỡng, K3). */
@@ -143,15 +145,15 @@ export function luatDoRoi(doc: Doc): FindingLuat[] {
     if (!poly) continue; // không dò được biên — bỏ qua, không đoán (nguyên tắc checker giữ nguyên)
     const areaM2 = Math.abs(polygonArea(poly)) / 1e6;
     if (areaM2 < 0.5) continue;
-    const lumens = rig.rooms
-      .filter((l) => pointInPolygon({ x: l.posCadMm.x, y: l.posCadMm.y }, poly))
-      .reduce((s, l) => s + Math.max(0, l.lumens), 0);
-    const lux = (lumens * UF_UOC_LUONG) / areaM2;
+    const inRoom = rig.rooms.filter((l) => pointInPolygon({ x: l.posCadMm.x, y: l.posCadMm.y }, poly));
+    const lumens = inRoom.reduce((s, l) => s + Math.max(0, l.lumens), 0);
+    // R9a: engine lib/lighting/lux.ts là nguồn công thức duy nhất (E = Σlm·UF·MF/A).
+    const lux = roomLuxEstimate(inRoom, areaM2);
     const { minLux } = (rule.params ?? {}) as { minLux?: number };
     if (typeof minLux === 'number' && lux < minLux) {
       out.push({
         lop: 'luat', muc: 'vang', ruleId: `r3d-do-roi-${room.kind}`,
-        nguon: `${rule.source} · ước lượng E = Σlumens×${UF_UOC_LUONG}/diện tích`,
+        nguon: `${rule.source} · ước lượng E = Σlumens×UF ${UF_UOC_LUONG}×MF ${DEFAULT_MAINTENANCE_FACTOR}/diện tích (lib/lighting/lux.ts)`,
         moTa: `${room.name}: độ rọi ước lượng ~${Math.round(lux)} lux, dưới mức tham khảo ${minLux} lux cho công năng này (${areaM2.toFixed(1)}m², ${Math.round(lumens)} lm trong phòng).`,
         viTri: { mm: room.at },
         cachSua: 'Thêm đèn phòng (Shift+N, tab Đèn) hoặc tăng quang thông bóng.',
