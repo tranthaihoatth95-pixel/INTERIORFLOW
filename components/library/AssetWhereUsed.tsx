@@ -12,20 +12,24 @@
  *
  * MVP: chỉ liệt kê TÊN project, không sửa/xoá tại đây (xoá 1 usage là việc của màn khác —
  * DELETE /api/project-asset-usage/[id] đã có trong contract nhưng chưa có nơi gọi ở UI này).
+ *
+ * 20/08 (PREFETCH-ATTACH) — MỘT REQUEST, HAI NƠI DÙNG. Nút "Dùng cho dự án này" cần đúng dữ
+ * liệu này để biết trạng thái ĐÃ GẮN ngay khi mở panel. Cách chọn: NÂNG chỗ fetch lên hook
+ * `useAssetWhereUsed` (cha gọi một lần, truyền kết quả xuống), thay vì callback báo-ngược.
+ * Lý do chọn lift-state thay vì callback:
+ *  · callback đồng bộ state hai chiều ⇒ có nhịp cha và con lệch nhau (con đã 'ready', cha còn
+ *    'loading') — đúng loại bug khó thấy mà phiếu này sinh ra để diệt;
+ *  · gọi hook ở CẢ hai nơi thì thành HAI request cho cùng một dữ liệu, phạm ràng buộc REUSE;
+ *  · lift lên cha giữ được đúng một nguồn sự thật, component này thành thuần trình bày.
+ * Component KHÔNG còn tự fetch — bên gọi bắt buộc truyền `state` + `rows`.
  */
 
 import { useEffect, useState } from 'react';
 import { Loader2, FolderOpen } from 'lucide-react';
 import { useT } from '@/lib/i18n';
+import type { WhereUsedRow } from './da-gan-du-an';
 
-interface WhereUsedRow {
-  id: string;
-  projectId: string;
-  usage: string;
-  project: { id: string; name: string };
-}
-
-type LoadState = 'loading' | 'ready' | 'error';
+export type LoadState = 'loading' | 'ready' | 'error';
 
 async function fetchWhereUsed(assetId: string): Promise<WhereUsedRow[]> {
   const r = await fetch(`/api/project-asset-usage?assetId=${encodeURIComponent(assetId)}`);
@@ -35,18 +39,30 @@ async function fetchWhereUsed(assetId: string): Promise<WhereUsedRow[]> {
 }
 
 /**
+ * Hook DUY NHẤT gọi mạng cho where-used. Gọi ở component CHA (LibrarySheet), kết quả dùng cho
+ * cả danh sách where-used lẫn trạng thái nút "Dùng cho dự án này" — một request, hai nơi dùng.
+ *
  * `assetId` là `LibraryAsset.id` THẬT (không phải `SheetItem.id` — bên gọi phải bóc tiền tố
- * `db:` trước, xem `LIBRARY_INSTANTIATE`/`db-items.ts:87`). `refreshKey` đổi thì fetch lại
- * (dùng sau khi vừa POST một usage mới — không tự poll).
+ * `db:` trước, xem `LIBRARY_INSTANTIATE`/`db-items.ts:87`); truyền `null` khi món đang xem
+ * không phải asset DB (built-in/mock) ⇒ không gọi mạng, trả 'ready' + rỗng.
+ * `refreshKey` đổi thì fetch lại (dùng sau khi vừa POST một usage mới — không tự poll).
  */
-export function AssetWhereUsed({ assetId, refreshKey }: { assetId: string; refreshKey?: number }) {
-  const tr = useT();
+export function useAssetWhereUsed(
+  assetId: string | null,
+  refreshKey?: number,
+): { state: LoadState; rows: WhereUsedRow[] } {
   const [state, setState] = useState<LoadState>('loading');
   const [rows, setRows] = useState<WhereUsedRow[]>([]);
 
   useEffect(() => {
+    if (!assetId) {
+      setRows([]);
+      setState('ready');
+      return;
+    }
     let cancelled = false;
     setState('loading');
+    setRows([]); // đổi món mà giữ rows cũ = nút nói về ASSET TRƯỚC trong một nhịp.
     fetchWhereUsed(assetId)
       .then((data) => {
         if (cancelled) return;
@@ -60,6 +76,13 @@ export function AssetWhereUsed({ assetId, refreshKey }: { assetId: string; refre
       cancelled = true;
     };
   }, [assetId, refreshKey]);
+
+  return { state, rows };
+}
+
+/** Thuần trình bày — dữ liệu do cha tải qua `useAssetWhereUsed`, ở đây KHÔNG gọi mạng. */
+export function AssetWhereUsed({ state, rows }: { state: LoadState; rows: WhereUsedRow[] }) {
+  const tr = useT();
 
   if (state === 'loading') {
     return (

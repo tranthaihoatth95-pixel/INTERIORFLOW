@@ -49,7 +49,8 @@ import { BulkIngestMode } from './BulkIngestMode';
 import { BUOC_LABEL, nhanBuocMauDangCho, type BuocVatLieu } from './buoc-mau';
 import { ColorLibraryScreen } from '@/components/colors/ColorLibraryScreen';
 import PanelFlank from '@/components/ui/PanelFlank';
-import { AssetWhereUsed } from './AssetWhereUsed';
+import { AssetWhereUsed, useAssetWhereUsed } from './AssetWhereUsed';
+import { daGanVaoDuAn } from './da-gan-du-an';
 
 // 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md) — "Vẽ"/"Dựng ảnh" là tên
 // round trước, nay đồng bộ theo bộ tên chính thức.
@@ -384,6 +385,14 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
 
   const dbAssetIdOf = (item: SheetItem | null): string | null =>
     item && item.id.startsWith('db:') ? item.id.slice(3) : null;
+
+  /* PREFETCH-ATTACH (20/08) — where-used tải MỘT LẦN tại đây, dùng cho HAI chỗ: danh sách
+     "Đang dùng ở dự án" và trạng thái nút "Dùng cho dự án này". Trước đó nút chỉ biết mình đã
+     gắn sau khi người dùng bấm thử (200/409) ⇒ reload trang là nút hiện lại "Dùng cho dự án
+     này" dù DB đã có quan hệ: dữ liệu không sai (409 xử đúng, không nhân bản) nhưng UI NÓI SAI.
+     Không thêm route, không thêm kho state, không fetch lần hai — xem `AssetWhereUsed.tsx`
+     phần chọn lift-state thay vì callback. */
+  const whereUsed = useAssetWhereUsed(dbAssetIdOf(displayItem), whereUsedRefresh);
 
   const attachToProject = async (item: SheetItem) => {
     const assetId = dbAssetIdOf(item);
@@ -985,7 +994,7 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                 {dbAssetIdOf(displayItem) && (
                   <div className="spsec">
                     <div className="spcap">{tr('Đang dùng ở dự án', 'Used in projects')}</div>
-                    <AssetWhereUsed assetId={dbAssetIdOf(displayItem)!} refreshKey={whereUsedRefresh} />
+                    <AssetWhereUsed state={whereUsed.state} rows={whereUsed.rows} />
                   </div>
                 )}
 
@@ -1047,25 +1056,41 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                   {/* R? (20/08) — nút "Dùng cho dự án này" — CHỈ hiện khi có `projectId` context
                       THẬT (đang mở một dự án, không phải màn duyệt kho rời) VÀ món là `LibraryAsset`
                       thật trong DB. `disabled` khi đã gắn — không cho bấm lại vô ích, nhưng vẫn để
-                      NGƯỜI THẤY trạng thái (không ẩn nút, §9). */}
+                      NGƯỜI THẤY trạng thái (không ẩn nút, §9).
+                      PREFETCH-ATTACH (20/08): trạng thái "đã gắn" nay đọc được NGAY khi mở panel
+                      từ where-used đã tải (`daGanVaoDuAn` — lọc theo ĐÚNG dự án đang mở, cùng
+                      asset ở dự án khác vẫn là chưa gắn). Ba trạng thái, không cái nào nói dối:
+                       · đang tra   → mờ + nhãn trung tính, KHÔNG hứa "Dùng cho dự án này";
+                       · tra xong   → đúng sự thật trong DB;
+                       · tra hỏng   → lùi về hành vi cũ, nút BẤM ĐƯỢC (409 vẫn xử đúng) — lỗi
+                                      phụ không được chặn việc chính. */}
                   {(() => {
                     const assetId = dbAssetIdOf(displayItem);
                     if (!assetId || !projectId) return null;
-                    const attached = attachedUsage[assetId];
+                    // Vừa bấm xong (200/409) thắng: nó mới hơn ảnh chụp where-used đang giữ.
+                    const attached = attachedUsage[assetId] || daGanVaoDuAn(whereUsed.rows, projectId);
                     const busy = attachBusyId === assetId;
+                    const dangTra = whereUsed.state === 'loading' && !attachedUsage[assetId];
                     return (
                       <button
                         type="button"
                         className="ghost"
-                        disabled={attached || busy}
+                        disabled={attached || busy || dangTra}
+                        aria-busy={busy || dangTra || undefined}
+                        /* Giữ bề rộng qua cả ba nhãn — đổi trạng thái không được làm hàng nút nhảy. */
+                        style={{ minWidth: '12.5em' }}
                         onClick={() => attachToProject(displayItem)}
                       >
-                        {busy ? (
+                        {busy || dangTra ? (
                           <Loader2 size={13} strokeWidth={2} className="animate-spin" style={{ marginRight: 5, verticalAlign: -2 }} />
                         ) : attached ? (
                           <Check size={13} strokeWidth={2.2} style={{ marginRight: 5, verticalAlign: -2, color: 'var(--success)' }} />
                         ) : null}
-                        {attached ? tr('Đã dùng ✓', 'Already used ✓') : tr('Dùng cho dự án này', 'Use for this project')}
+                        {dangTra
+                          ? tr('Đang tra…', 'Checking…')
+                          : attached
+                            ? tr('Đã dùng ✓', 'Already used ✓')
+                            : tr('Dùng cho dự án này', 'Use for this project')}
                       </button>
                     );
                   })()}
