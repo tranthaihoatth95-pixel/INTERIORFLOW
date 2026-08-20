@@ -38,6 +38,7 @@ import {
   type BacBeMat,
   type HopNguon,
 } from '@/lib/ui/nhip';
+import { useKeoBeMat } from './useKeoBeMat';
 
 /** Ba nấc độ đặc, chọn theo LƯỢNG CHỮ đứng trên — không theo cỡ hình. */
 export type DoDacKinh = 'mong' | 'vua' | 'dac';
@@ -64,6 +65,16 @@ export interface BeMatNoiProps {
   dangChay?: boolean;
   /** Nhãn cho trình đọc màn hình — bề mặt nổi luôn phải tự giới thiệu nó là gì. */
   nhan: string;
+  /**
+   * Ngữ cảnh NHỚ CHỖ (vd `du-an-42.chang-3d`). Có thì vị trí cửa sổ sống qua lần tải lại trang,
+   * lưu `localStorage` **theo máy** — luật 16/08: cách-bày-trên-màn không vào `.idf`/DB.
+   * Bỏ trống ⇒ bề mặt tạm thời, không nhớ gì.
+   */
+  nguCanhNho?: string;
+  /** Khoá riêng trong ngữ cảnh đó. Mặc định lấy theo `nhan`. */
+  khoaNho?: string;
+  /** Đóng bằng `Esc` / nút đóng. Có truyền thì cửa sổ mọc thêm thanh tiêu đề có nút ✕. */
+  onDong?: () => void;
   children: ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -96,6 +107,9 @@ export function BeMatNoi({
   rong = 360,
   dangChay = false,
   nhan,
+  nguCanhNho,
+  khoaNho,
+  onDong,
   children,
   className = '',
   style,
@@ -170,12 +184,52 @@ export function BeMatNoi({
     if (!mo) setViTri(null);
   }, [mo]);
 
+  /* ---------- CỬA SỔ NỔI DI CHUYỂN ĐƯỢC ----------
+     🔴 LUẬT: bề mặt nào TRÔNG NHƯ cửa sổ nổi thì KHÔNG được ghim cứng mặc định.
+     `bang`/`bangSau` là cửa sổ ⇒ kéo được. `vien` thì KHÔNG: nó là viên ngữ cảnh BÁM NGUỒN,
+     một dòng thông tin cạnh vật — cho kéo là biến nó thành cửa sổ, mà đó là vật khác.
+     ⛔ Không dùng bộ kéo riêng: `useKeoBeMat` là máy dùng chung với `CuaSoCongCu`. */
+  const laCuaSo = bac !== 'vien';
+  const coCuaSo = { w: rong, h: 320 };
+  const keo = useKeoBeMat({
+    nguCanh: nguCanhNho,
+    khoa: khoaNho ?? nhan,
+    co: coCuaSo,
+    batKeo: laCuaSo && conTrongDom,
+    viTriMoc: viTri ? { x: viTri.trai, y: viTri.tren } : null,
+  });
+
+  /* `Esc` đóng — chỉ khi nơi dùng có đường đóng thật. Gắn ở `document` vì tiêu điểm có thể đang
+     nằm trong một ô nhập bên trong cửa sổ. */
+  useEffect(() => {
+    if (!mo || !onDong) return;
+    const h = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.stopPropagation(); onDong(); }
+    };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [mo, onDong]);
+
   if (!conTrongDom || typeof document === 'undefined') return null;
 
   const hienRa = mo && daNo;
   const tl = hienRa ? 1 : tiLeDong(bac);
 
   const lopDoDac = LOP_DO_DAC[doDac ?? DO_DAC_THEO_BAC[bac]];
+
+  /** Người dùng đã kéo đi thì cửa sổ đứng ở chỗ họ đặt; chưa kéo thì đứng ở chỗ mọc từ nguồn. */
+  const choDung = keo.viTri ?? (viTri ? { x: viTri.trai, y: viTri.tren } : null);
+
+  /**
+   * ⭐ NGỮ PHÁP LÚC ĐÓNG — chỗ phải quyết, và tôi quyết thế này:
+   *   · CHƯA kéo ⇒ thu ngược về NGUỒN (giữ nguyên mọc-từ-nguồn, trí nhớ không gian còn đúng).
+   *   · ĐÃ kéo đi ⇒ thu về CHÍNH NÓ (gốc 50% 50%), KHÔNG bay ngang màn về nguồn cũ.
+   * Lý do: sau khi người dùng chủ động dời cửa sổ sang góc kia, "nguồn" thôi là chỗ họ nghĩ nó
+   * thuộc về — bay ngang cả màn hình về một cái nút xa lắc là đường bay lố, đọc ra như lỗi.
+   * Trí nhớ không gian lúc này neo vào CHỖ HỌ ĐẶT, nên co tại chỗ mới là đúng ngữ pháp.
+   */
+  const gocDong = keo.daTuKeo ? { originX: 50, originY: 50 } : goc;
+  const bamMep = keo.mep.trai || keo.mep.phai || keo.mep.tren;
 
   return createPortal(
     <div
@@ -186,18 +240,20 @@ export function BeMatNoi({
       className={`kinh-noi ${lopDoDac} ${dangChay ? 'kinh-noi--dang-chay' : ''} ${className}`.trim()}
       style={{
         position: 'fixed',
-        left: viTri?.trai ?? 0,
-        top: viTri?.tren ?? 0,
+        left: choDung?.x ?? 0,
+        top: choDung?.y ?? 0,
         width: `min(${rong}px, calc(100vw - 24px))`,
         borderRadius: BO_THEO_BAC[bac],
         zIndex: 60,
         // Bề mặt chưa đo xong chỗ đứng thì đừng vẽ ra — thà chậm một khung hình còn hơn nhảy.
-        visibility: viTri ? 'visible' : 'hidden',
-        transformOrigin: `${goc.originX}% ${goc.originY}%`,
+        visibility: choDung ? 'visible' : 'hidden',
+        transformOrigin: `${(hienRa ? goc : gocDong).originX}% ${(hienRa ? goc : gocDong).originY}%`,
         transform: `scale(${tl})`,
         opacity: hienRa ? 1 : 0,
         // ⚠️ Transition đặt ở CHÍNH phần tử kính, KHÔNG ở cha — bài học K1: `opacity` trên cha
         // làm `backdrop-filter` chết giữa chừng, kính thành ô xám.
+        // ⚠️ KHÔNG cho `left/top` vào transition: lúc kéo, mỗi khung hình một toạ độ mới ⇒
+        // cửa sổ chạy đuổi theo con trỏ, cảm giác trôi/dính. Kéo phải bám tay tức thì.
         transition:
           msMo === 0
             ? 'none'
@@ -207,6 +263,54 @@ export function BeMatNoi({
         ...style,
       }}
     >
+      {laCuaSo && (
+        <div
+          {...keo.thuocTinhTieuDe}
+          role="toolbar"
+          aria-label={`${nhan} — thanh tiêu đề, kéo hoặc dùng phím mũi tên để di chuyển`}
+          style={{
+            ...keo.thuocTinhTieuDe.style,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 10px 8px 12px',
+            borderBottom: '1px solid var(--vien-mo)',
+          }}
+        >
+          {/* Chấm nắm — nói bằng HÌNH rằng chỗ này kéo được, không chỉ bằng con trỏ (con trỏ
+              `grab` vô hình với cảm ứng và với người không rê chuột qua). */}
+          <span aria-hidden style={{ letterSpacing: 2, color: 'var(--t3)', fontSize: 11 }}>⠿</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)' }}>{nhan}</span>
+          {/* Bám mép phải NÓI RA — hút mà im lặng thì đọc ra là cửa sổ "tự nhảy". */}
+          {bamMep && (
+            <span style={{ fontSize: 10, color: 'var(--t3)' }}>
+              bám mép {keo.mep.trai ? 'trái' : keo.mep.phai ? 'phải' : 'trên'}
+            </span>
+          )}
+          {onDong && (
+            <button
+              type="button"
+              onClick={onDong}
+              aria-label={`Đóng ${nhan}`}
+              // `data-khong-keo`: bấm nút là BẤM, không phải bắt đầu kéo.
+              data-khong-keo
+              style={{
+                marginLeft: 'auto',
+                width: 22,
+                height: 22,
+                borderRadius: 'var(--r-1)',
+                border: '1px solid var(--vien-mo)',
+                background: 'transparent',
+                color: 'var(--t2)',
+                cursor: 'pointer',
+                lineHeight: 1,
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      )}
       {children}
     </div>,
     document.body,
