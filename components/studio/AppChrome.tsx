@@ -29,15 +29,17 @@
  */
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { DEFAULT_PHASE, STAGE_TINT, type Phase } from '@/lib/phases';
 import { MobileMenu } from '@/components/MobileMenu';
 // P-V 17/08 — ô tìm dự án + Vitals ở top bar (chỉ Home; chặng có Vitals cạnh trục phải riêng).
 import SearchProjectsInput from '@/components/SearchProjectsInput';
-import VitalsPill from '@/components/home/widgets/VitalsPill';
-import { pressable } from '@/lib/motion';
+// COHERENCE-SHELL 20/08 — mép trên có HAI thứ mới, cả hai sống ở MỌI màn (không còn "chỉ Home"):
+// dải ngữ cảnh (đang ở đâu) + khẩu độ Vitals (nên biết gì). `VitalsPill` (bản chỉ-Home) nay
+// KHÔNG mount ở đây nữa — khẩu độ dùng lại ĐÚNG bề mặt chat của nó (`VitalsChatSurface`).
+import { DaiNguCanh } from '@/components/studio/DaiNguCanh';
+import { VitalsAperture } from '@/components/studio/VitalsAperture';
 import { useStageTransition } from '@/components/studio/StageTransitionProvider';
 import { stageHrefFrom } from '@/lib/project-scope';
 import { useT } from '@/lib/i18n';
@@ -309,25 +311,33 @@ export function AppChrome({ active, logoMenu }: Props) {
           bị cấm overflow-hidden vì có Tệp/MoreMenu). Không có nó: khi flex bóp hộp này xuống gần
           0, nút tên dự án vẫn cần 1 mức rộng tối thiểu để vẽ (padding + 1 ký tự + "…") và TRÀN
           khỏi hộp — đè lên StageSwitcher (phát hiện 30/07, đo được 4px chồng ở 1024px). */}
+      {/* COHERENCE-SHELL 20/08 — Ô NÀY TRƯỚC ĐÂY CHỈ CÓ TÊN DỰ ÁN (bấm = đổi tên). Nay là DẢI
+          NGỮ CẢNH: tên dự án · chặng đang đứng, bấm mở bộ chuyển ngữ cảnh. Đổi tên KHÔNG MẤT —
+          nó thành một mục trong menu (`onDoiTen` bật đúng ô `<input>` cũ dưới đây), vì một chỗ
+          đứng không nên mang hai việc: trước kia bấm vào tên dự án là lập tức vào chế độ sửa,
+          người dùng muốn BIẾT mình đang ở đâu thì không có gì để bấm.
+          Vì sao dải chỉ có HAI tầng (không có "Không gian/Workspace"): đo tại nguồn — schema
+          KHÔNG có model Workspace, `lib/store.ts:33` `WorkspaceMode = Phase` tức "workspace"
+          hiện chính là chặng. Chi tiết + bằng chứng file:dòng ở đầu `DaiNguCanh.tsx`. */}
       <div className="flex min-w-0 flex-1 items-center overflow-hidden">
         {editing ? (
           <input
             autoFocus
-            className="w-36 shrink rounded-[10px] border border-[var(--accent-ring)] bg-[var(--field)] px-2 py-1 text-sm text-[var(--t1)] outline-none sm:w-56"
+            className="w-36 shrink rounded-[var(--r-2)] border border-[var(--accent-ring)] bg-[var(--field)] px-2 py-1 text-sm text-[var(--t1)] outline-none sm:w-56"
             value={flowName}
             onChange={(e) => setFlowName(e.target.value)}
             onBlur={() => setEditing(false)}
             onKeyDown={(e) => e.key === 'Enter' && setEditing(false)}
           />
         ) : (
-          <motion.button
-            {...pressable}
-            className="min-w-0 truncate rounded-[10px] px-2 py-1 text-sm text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
-            onClick={() => setEditing(true)}
-            title={tr('Đổi tên dự án', 'Rename project')}
-          >
-            {flowName}
-          </motion.button>
+          <DaiNguCanh
+            tenDuAn={flowName}
+            // Home là màn CẤP APP, không đứng trong chặng nào ⇒ dải chỉ nói tên dự án, không
+            // bịa ra một chặng "mặc định" mà người dùng chưa bước vào.
+            chang={active === 'home' ? null : currentPhase}
+            onChonChang={(p) => onPickRef.current(p)}
+            onDoiTen={() => setEditing(true)}
+          />
         )}
       </div>
 
@@ -337,16 +347,15 @@ export function AppChrome({ active, logoMenu }: Props) {
           gọi onPick), lối bàn phím không mất. Không xoá StageSwitcher.tsx — giữ để có thể
           dùng lại nếu quay đầu. */}
 
-      {/* P-V 17/08 — Ô TÌM DỰ ÁN + VITALS chỉ hiện ở Home. Chặng thiết kế (cad/render/present/
-          photo) có Vitals cạnh TRỤC PHẢI theo chốt 16/08 ("cùng một vật, di chuyển theo chỗ tay
-          đang đặt") — việc dời Vitals sang trục phải là phiếu KHÁC, không thuộc P-V; ở đây chỉ
-          bảo đảm KHÔNG mount đôi trên chặng. */}
-      {active === 'home' && (
-        <div className="flex shrink-0 items-center gap-2" data-tour="home-search-vitals">
-          <SearchProjectsInput />
-          <VitalsPill />
-        </div>
-      )}
+      {/* Ô TÌM DỰ ÁN — vẫn CHỈ Home (tìm giữa các dự án chỉ có nghĩa khi chưa mở dự án nào).
+          KHẨU ĐỘ VITALS thì ở MỌI màn: chốt 16/08 nói "cùng MỘT vật, di chuyển theo chỗ tay
+          đang đặt", và mép trên là chỗ vật đó đứng khi tay chưa ở trục phải. Vẫn đúng ràng buộc
+          "mỗi màn ĐÚNG MỘT Vitals" — `VitalsPill` bản chỉ-Home đã thôi mount, `VitalsGesture`
+          bản cũ thì đã mồ côi từ 17/08 (xem đầu `VitalsAperture.tsx`). */}
+      <div className="flex shrink-0 items-center gap-2" data-tour="home-search-vitals">
+        {active === 'home' && <SearchProjectsInput />}
+        <VitalsAperture />
+      </div>
 
       {/* 2.2.86 (30/07, Hoà chốt) — "Chạy flow" KHÔNG còn đứng riêng trên bar (~110px trả lại
           ngân sách bề rộng). Khởi chạy giờ CẠNH ĐỐI TƯỢNG: nút ▶ trên node, "Kết xuất" trên thẻ

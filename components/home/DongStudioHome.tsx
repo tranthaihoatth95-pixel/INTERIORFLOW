@@ -636,7 +636,14 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
           (`ProjectSelect` — `absolute right-6 top-6` tính theo góc của CHÍNH ô A, không phải góc
           màn) nên trông "lơ lửng" giữa card — nay cả cụm neo ĐÚNG MỘT LẦN ở góc màn thật, ô A
           không tự vẽ cụm này nữa (`bentoBox` gate trong ProjectSelect.tsx). */}
-      <div className="fixed right-5 top-5 z-50 flex items-center gap-2">
+      {/* 20/08 (COHERENCE-SHELL) — HẠ CỤM XUỐNG DƯỚI HEADER. Trước đây `top-5` + `z-50` đặt cụm
+          này ĐÈ LÊN thanh đầu 42px (đo trên app thật 1440×900: cụm chiếm y 20→56, x 1309→1420 —
+          phủ đúng chỗ ô tìm dự án và Vitals đứng, `elementFromPoint(1386,20)` trả về cụm này chứ
+          không phải nút Vitals ⇒ **bấm Vitals ở Trang chủ không ăn**). Lỗi có TRƯỚC phiếu này
+          (VitalsPill dời lên header từ 17/08 đã nằm dưới cụm), chỉ lộ ra khi đo bằng thao tác
+          thật. Sửa bằng cách cho cụm bắt đầu NGAY DƯỚI mép header thay vì nới z-index — nới
+          z-index chỉ đổi ai thắng, hai thứ vẫn chồng nhau về mặt thị giác. */}
+      <div className="fixed right-5 top-[50px] z-50 flex items-center gap-2">
         <button
           type="button"
           onClick={() => openDashboardTab('board', null)}
