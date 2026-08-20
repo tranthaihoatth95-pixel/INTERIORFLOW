@@ -1,13 +1,14 @@
 # IF · LIVE BRIDGE — điểm nối duy nhất MAIN ↔ ChatGPT
 
-> Cập nhật lần cuối: 20/08 đêm, sau Wave 2 (D·3D · E·Files/Library/Review) checkpoint. Wave 1
-> (A·2D · B·Home+Shell · C·Vitals+Activity+Present · QA) đã checkpoint trước đó. Chi tiết đầy đủ
-> + bằng chứng browser gốc: `docs/memory/sessions/2026-08-20/08-truth-map-ux-study/README.md`.
-> File này CHỈ tóm.
+> Cập nhật lần cuối: 20/08 đêm, sau Wave 3 (F·Demo Spine) checkpoint + MAIN tự tay bật ComfyUI
+> thật và chẩn ra gốc bệnh generation. Chi tiết đầy đủ + bằng chứng browser gốc:
+> `docs/memory/sessions/2026-08-20/08-truth-map-ux-study/README.md`. File này CHỈ tóm.
 
 ## CURRENT
-- Git: `main` (remote) `2dfed16`, KHÔNG nhập. Việc thật ở `backup/2026-08-19-batch0a`, tip sau Wave 2 (build từ Wave 1 tip + 3 file Lane D, cây >2000 file, diff hợp lý — checkpoint có guard chặn tree rỗng sau sự cố lần đầu trong phiên).
-- Server :3001, login `demo@if.local`/`demo1234`, demo project `cmsl8prn80001w9i2ud3bfdgr`. tsc 0 sau cả Wave 1+2 (verify độc lập từng lane, không tin báo cáo mù).
+- Git: `main` (remote) `2dfed16`, KHÔNG nhập. Việc thật ở `backup/2026-08-19-batch0a` tip `a3ff86a` (Wave 1+2+3, đủ 3 checkpoint có guard chặn tree rỗng).
+- Server app :3001, login `demo@if.local`/`demo1234`, demo project `cmsl8prn80001w9i2ud3bfdgr`. tsc 0.
+- **ComfyUI THẬT đang chạy** — `127.0.0.1:8188`, khởi bằng `.venv/bin/python3 main.py --listen 127.0.0.1 --port 8188` (KHÔNG qua Comfy Desktop.app — app đó treo ở bước kiểm tra mạng/cloud-capacity lúc khởi động, MAIN quit nó và gọi thẳng main.py). `.env.local` đã sẵn `COMFYUI_URL=http://127.0.0.1:8188`, khớp. `curl :8188/system_stats` → 200.
+- ⚠️ **GỐC BỆNH GENERATION THẬT (đo được, không phải đoán)**: kết nối ComfyUI KHÔNG còn là vấn đề — MAIN chạy thử node "Sketch → Ảnh thật" thật trên node canvas, request TỚI ĐƯỢC ComfyUI, nhưng ComfyUI TỪ CHỐI job vì THIẾU MODEL: `sd_xl_base_1.0.safetensors` (checkpoint SDXL, đang KHÔNG có — chỉ có `sd15-fp16.safetensors` 2GB) và `controlnet-canny-sdxl-1.0.safetensors` (ControlNet, thư mục controlnet RỖNG hoàn toàn). Log lịch sử máy (`~/comfyui-server.log`) xác nhận SDXL từng chạy THẬT trên máy này trước đây (26/26 bước, MPS) — file checkpoint đã bị dọn/mất sau đó, không phải chưa từng có. Đĩa còn 38GB trống — đủ chỗ tải lại (~9,4GB cho cả 2 file) nhưng MAIN KHÔNG tự tải (quyết định tốn băng thông/thời gian, để Hoà quyết).
 - Có 1 file test thật để lại trong demo project (Lane E, `lane-e-test-upload.png`) làm bằng chứng Promote chạy được — có nút Xoá nếu cần dọn.
 
 ## LIVE

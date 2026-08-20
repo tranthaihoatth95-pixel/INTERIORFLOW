@@ -34,10 +34,13 @@ import type { CardTextPlan } from '@/lib/adaptive-contrast';
  * GIỮ NGUYÊN logic auth lõi: POST /api/auth/{login,register} → setUser(body.user).
  */
 
-// 27/07 chốt design tokens: --accent (tím) là accent CHÍNH THỨC toàn app. Vàng đồng
-// chỉ còn NGOẠI LỆ ở nút submit "Vào xưởng"/"Enter the studio" — điểm nhấn duy nhất
-// trên nền ảnh gỗ, xem --accent-warm trong app/globals.css.
-const ACCENT_WARM = 'var(--accent-warm)';
+// 🔴 ĐÍNH CHÍNH 20/08 (Lane tự do, đóng nợ 16/08 "BỎ HẲN VÀNG ĐỒNG KHỎI VAI MÀU NHẤN" —
+// docs/00-CHOT.md): ngoại lệ --accent-warm dưới đây bị chính chốt đó khai tử — "nút 'Vào
+// xưởng' ở màn khoá đang màu đồng → đổi theo, phải vẽ trong bản duyệt". Màu thay thế cụ thể
+// (mòng két/mận) CHƯA chốt (Hoà: "DỰNG CẢ HAI ĐỂ SO, chưa xác nhận") — nên dùng --accent
+// (tím, accent CHÍNH THỨC toàn app, không bao giờ bị loại) thay vì đoán trước quyết định
+// chưa ra. Đổi lại nếu/khi Hoà chọn xong màu nhấn thứ hai.
+const ACCENT_WARM = 'var(--accent)';
 
 type Mode = 'login' | 'register';
 type Providers = { google: boolean; apple: boolean; microsoft: boolean };
