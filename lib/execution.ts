@@ -16,7 +16,16 @@ function isFlowNode(n: FlowNode) {
  */
 export function friendlyAiError(raw: string): string {
   const m = (raw || '').toLowerCase();
-  if (/fetch failed|econnrefused|failed to fetch|network|connect|timed out|timeout|socket/.test(m))
+  // 20/08 — PHẢI đứng TRƯỚC nhánh "không kết nối được" bên dưới: thông báo timeout của chính
+  // `runImageJob()` (lib/ai/client.ts, "Timeout N phút — job chưa xong…") tự nó CHỨA chữ
+  // "timeout", nên trước đây rơi thẳng vào nhánh mạng/kết nối và biến thành "Backend AI chưa
+  // chạy" — SAI: job vẫn đang chạy thật ở ComfyUI (đo được: một lượt tự-host nguội mất 25 phút
+  // vẫn chạy xong và ra ảnh thật SAU KHI client đã bỏ cuộc), không phải backend chết. Hai tình
+  // huống khác hẳn nhau, cần hai lời khuyên khác nhau — người dùng đọc "chưa chạy" sẽ đi tắt/bật
+  // lại ComfyUI giữa chừng, huỷ mất job đang tính gần xong.
+  if (/^timeout \d+ phút/.test(m))
+    return 'Việc dựng ảnh đang chạy lâu hơn dự kiến (máy tự-host không có GPU rời thường mất nhiều phút cho lượt đầu). Job VẪN ĐANG CHẠY ở ComfyUI — đừng tắt, thử lại sau vài phút để xem đã xong chưa.';
+  if (/fetch failed|econnrefused|failed to fetch|network|connect|timed out|socket/.test(m))
     return 'Backend AI chưa chạy / không kết nối được. Bật ComfyUI (cổng 8188) rồi thử lại, hoặc đổi Mức AI ở góc phải header.';
   if (/text2img|workflow|not found.*json|\.json/.test(m))
     return 'Engine tự-host (ComfyUI) chưa có workflow cho tác vụ này. Dùng mức AI khác, hoặc bổ sung workflow tương ứng.';
