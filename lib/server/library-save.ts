@@ -6,12 +6,20 @@
  *
  * Giữ nguyên hành vi gốc của route cũ: whitelist MIME đọc MAGIC BYTES thật (không tin nhãn client
  * khai — §6.2 `docs/AUDIT-BACKEND-2026-08-03.md`), trần 25MB, thư mục `./uploads`.
+ *
+ * ══ ĐỔI 20/08 (LANE B) — SERVER TỰ NHÌN VÀO TỆP, THÔI TIN LỜI CLIENT ═════════════════════════
+ * Trước: `w`/`h`/`palette` lấy NGUYÊN từ tham số caller — tức từ con số client tự đo bằng canvas.
+ * Client khai sai (hoặc không khai) thì DB sai theo, và không ai biết.
+ * Nay: cả `w`/`h`/`palette` LẪN `contentHash` do **`trichSieuDuLieu()`** (`asset-metadata.ts`)
+ * đọc thẳng từ buffer. Giá trị client gửi tụt xuống **đường lùi**, chỉ dùng khi trích thất bại.
+ * ⇒ Cùng MỘT cửa trích với `promote.ts` — hết cảnh hai cửa ghi cho ra hai chất lượng bản ghi.
  */
 import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 import { prisma } from './db';
 import { imgIdFromKey } from '../img-id';
 import { sniffKind, isRasterImageKind, SNIFFED_MIME } from './mime-sniff';
+import { trichSieuDuLieu, dungBanGhiLibraryAsset } from './asset-metadata';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 export const LIBRARY_USAGES = ['ref-render', 'slide', 'material', 'layout', 'cad', 'brief', 'furniture'];
@@ -53,22 +61,28 @@ export async function saveLibraryAssetFromBuffer(input: SaveLibraryAssetInput): 
   const ext = mime.split('/')[1]?.replace(/[^a-z0-9]/gi, '') || 'bin';
   const filename = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
   await writeFile(path.join(UPLOAD_DIR, filename), input.buf);
+
+  // Trích TRƯỚC khi ghi, và không để nó làm hỏng lượt lưu: `trichSieuDuLieu` đã nuốt lỗi sharp
+  // bên trong và trả `ghiChu`, nhưng bọc thêm một lớp cho ca ngoài dự kiến — mất siêu dữ liệu là
+  // bản ghi nghèo, mất cả tệp vừa upload mới là hỏng việc.
+  const meta = await trichSieuDuLieu(input.buf).catch(() => null);
+
   const asset = await prisma.libraryAsset.create({
-    data: {
+    data: dungBanGhiLibraryAsset({
       userId: input.userId,
-      name: String(input.name).slice(0, 120),
-      category: String(input.category),
-      tags: String(input.tags ?? ''),
+      name: input.name,
+      category: input.category,
+      tags: input.tags,
       mime,
       path: filename,
       usage: LIBRARY_USAGES.includes(input.usage ?? '') ? (input.usage as string) : 'ref-render',
-      palette: Array.isArray(input.palette) ? JSON.stringify(input.palette.slice(0, 8)) : '',
-      caption: typeof input.caption === 'string' ? input.caption.slice(0, 400) : '',
-      content: typeof input.content === 'string' ? input.content.slice(0, 20000) : null,
-      w: Number.isFinite(input.w) ? Math.round(input.w as number) : 0,
-      h: Number.isFinite(input.h) ? Math.round(input.h as number) : 0,
-      lastEditedBy: input.userId,
-    },
+      caption: input.caption,
+      content: input.content,
+      meta,
+      wDuPhong: input.w,
+      hDuPhong: input.h,
+      paletteDuPhong: input.palette,
+    }),
   });
   return { ok: true, id: asset.id, imgId: imgIdFromKey(asset.id), url: `/api/library/${asset.id}/file` };
 }

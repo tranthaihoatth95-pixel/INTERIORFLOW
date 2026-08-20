@@ -35,6 +35,12 @@ const PNG_DATA_URL = `data:image/png;base64,${PNG_1X1_B64}`;
 /** PDF tối thiểu — `%PDF-` là magic bytes `sniffKind` dùng. */
 const PDF_DATA_URL = `data:application/pdf;base64,${Buffer.from('%PDF-1.4\n% test\n').toString('base64')}`;
 
+/** PNG 4×3 ĐỎ ĐẶC (#c81e28) — cần một ảnh CÓ MÀU và CÓ KÍCH THƯỚC ĐỌC ĐƯỢC để nghiệm thu
+ *  `w`/`h`/`palette`; ảnh 1×1 ở trên không phân biệt được "trích đúng" với "trả 0 mặc định". */
+const PNG_4X3_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAIAAAA7ljmRAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEElEQVQImWM4IacBRww4OQD+cwypencvaAAAAABJRU5ErkJggg==';
+const PNG_4X3_DATA_URL = `data:image/png;base64,${PNG_4X3_B64}`;
+
 const filesDaGhi: string[] = [];
 
 async function withFixture<T>(fn: (ctx: { userId: string; projectId: string }) => Promise<T>): Promise<T> {
@@ -215,6 +221,101 @@ async function main() {
     assert.equal(pr5.ok, false);
     if (!pr5.ok) assert.equal(pr5.status, 404);
     ok('Promote tệp đã xoá mềm → 404 (không sinh gì thêm)');
+  });
+
+  /* ══════════════════════════════════════════════════════════════════════════════════════════
+   * FIXTURE RIÊNG cho SIÊU DỮ LIỆU + DEDUPE (LANE B, 20/08).
+   * Cố ý tách khỏi khối trên: các ca dưới thêm ProjectFile/asset, mà khối trên có assertion đếm
+   * chính xác ("chỉ còn tệp PDF") — trộn vào là làm hỏng phép đếm của người khác.
+   * ══════════════════════════════════════════════════════════════════════════════════════════ */
+  await withFixture(async ({ userId, projectId }) => {
+    /* ═══ ⑪ SIÊU DỮ LIỆU: promote PHẢI ghi w/h/palette/contentHash ═══
+     * Đây là lỗ được vá: trước 20/08 cửa promote KHÔNG ghi ba trường đầu ⇒ mọi tài sản 0×0. */
+    const upA = await simulateUpload({ projectId, userId, name: 'do-dac.png', dataUrl: PNG_4X3_DATA_URL });
+    assert.equal(upA.status, 200);
+    const pfA = upA.row!;
+
+    const prA = await promoteProjectFile({ projectFileId: pfA.id, userId });
+    assert.ok(prA.ok);
+    if (!prA.ok) return;
+    assert.equal(prA.dungLai, false);
+
+    const aA = await prisma.libraryAsset.findUniqueOrThrow({ where: { id: prA.assetId } });
+    assert.equal(aA.w, 4, 'w PHẢI là 4 (đọc từ IHDR), không phải 0');
+    assert.equal(aA.h, 3, 'h PHẢI là 3, không phải 0');
+    assert.equal(aA.contentHash, pfA.contentHash, 'hash DÙNG LẠI của ProjectFile — không băm lại');
+    assert.ok(aA.contentHash && aA.contentHash.length === 64);
+    const palA = JSON.parse(aA.palette || '[]');
+    assert.ok(Array.isArray(palA) && palA.length >= 1, 'ảnh đỏ đặc PHẢI ra ít nhất một màu');
+    assert.ok(/^#[0-9a-f]{6}$/.test(palA[0]), `palette phải là hex, nhận: ${palA[0]}`);
+    ok(`Promote ghi ĐỦ siêu dữ liệu: ${aA.w}×${aA.h} · palette ${palA.length} màu · contentHash 64 ký tự`);
+
+    // Hai cửa ghi nay cùng khuôn: hash của asset === hash của ProjectFile === băm lại từ bytes.
+    assert.equal(aA.contentHash, bamContentHash(Buffer.from(PNG_4X3_B64, 'base64')));
+    ok('contentHash của LibraryAsset khớp bamContentHash của chính bytes gốc (một định nghĩa hash)');
+
+    /* ═══ ⑫ DEDUPE — NHÁNH A: tệp KHÁC, TRÙNG bytes, CÙNG giấy phép ⇒ DÙNG LẠI ═══ */
+    const upB = await simulateUpload({ projectId, userId, name: 'ban-sao-khac-ten.png', dataUrl: PNG_4X3_DATA_URL });
+    assert.equal(upB.status, 200);
+    const pfB = upB.row!;
+    assert.equal(pfB.contentHash, pfA.contentHash, 'tiền đề: hai ProjectFile trùng hash');
+    assert.notEqual(pfB.id, pfA.id);
+
+    const prB = await promoteProjectFile({ projectFileId: pfB.id, userId, usage: 'material' });
+    assert.ok(prB.ok);
+    if (!prB.ok) return;
+    assert.equal(prB.dungLai, true, 'trùng nội dung ⇒ dungLai');
+    assert.equal(prB.daCo, false, 'KHÔNG phải `daCo` — đây là tệp khác, không phải bấm lại');
+    assert.equal(prB.assetId, prA.assetId, 'PHẢI dùng lại đúng asset cũ, không sinh hàng thứ hai');
+
+    const soAsset = await prisma.libraryAsset.count({ where: { userId, deletedAt: null } });
+    assert.equal(soAsset, 1, 'vẫn ĐÚNG 1 LibraryAsset dù đã promote 2 tệp trùng nội dung');
+
+    // Provenance phải mang CẢ HAI nguồn — mất một nhánh là mất đúng thứ promote sinh ra để giữ.
+    const aSau = await prisma.libraryAsset.findUniqueOrThrow({ where: { id: prA.assetId } });
+    assert.ok(aSau.tags.includes(tagNguonProjectFile(pfA.id)), 'giữ nguồn cũ');
+    assert.ok(aSau.tags.includes(tagNguonProjectFile(pfB.id)), 'thêm nguồn mới');
+    ok('DEDUPE nhánh A: trùng bytes + cùng giấy phép ⇒ 1 asset, tags mang CẢ HAI nguồn');
+
+    // Gắn thêm nguồn KHÔNG được nhân bản tag khi promote lại lần nữa.
+    const truocSoTag = aSau.tags.split(',').length;
+    await promoteProjectFile({ projectFileId: pfB.id, userId, usage: 'material' });
+    const aLai = await prisma.libraryAsset.findUniqueOrThrow({ where: { id: prA.assetId } });
+    assert.equal(aLai.tags.split(',').length, truocSoTag, 'promote lại KHÔNG nhân bản tag');
+    ok('promote lại tệp trùng: tags không phình (themTag idempotent)');
+
+    /* ═══ ⑬ DEDUPE — NHÁNH B: trùng bytes nhưng KHÁC GIẤY PHÉP ⇒ HÀNG MỚI ═══
+     * Đây là lý do `contentHash` CỐ Ý không `@unique`. Nếu nhánh này gộp, hồ sơ khách sẽ mang
+     * sai giấy phép — hỏng nặng hơn nhiều so với việc có hai hàng. */
+    await prisma.libraryAsset.update({
+      where: { id: prA.assetId },
+      data: { tags: aLai.tags.replace('license:user', 'license:studio') },
+    });
+    const upC = await simulateUpload({ projectId, userId, name: 'trung-bytes-khac-giay-phep.png', dataUrl: PNG_4X3_DATA_URL });
+    const prC = await promoteProjectFile({ projectFileId: upC.row!.id, userId });
+    assert.ok(prC.ok);
+    if (!prC.ok) return;
+    assert.equal(prC.dungLai, false, 'khác lớp license ⇒ KHÔNG được coi là một vật');
+    assert.notEqual(prC.assetId, prA.assetId, 'phải sinh asset MỚI');
+    assert.equal(await prisma.libraryAsset.count({ where: { userId, deletedAt: null } }), 2);
+    ok('DEDUPE nhánh B: trùng bytes + KHÁC giấy phép ⇒ hàng MỚI (vì sao cấm @unique)');
+
+    /* ═══ ⑭ TỆP CHẾT TRÊN ĐĨA ⇒ 410, không đẻ asset trỏ vào đường dẫn chết ═══ */
+    const pfChet = await prisma.projectFile.create({
+      data: {
+        projectId, name: 'mat-tren-dia.png', mime: 'image/png',
+        path: 'khong-ton-tai-tren-dia-0000.png',
+        contentHash: 'b'.repeat(64), uploadedBy: userId, lastEditedBy: userId,
+      },
+    });
+    const prD = await promoteProjectFile({ projectFileId: pfChet.id, userId });
+    assert.equal(prD.ok, false);
+    if (!prD.ok) {
+      assert.equal(prD.status, 410, '410 Gone — bản ghi tìm thấy, NỘI DUNG mới là thứ biến mất');
+      assert.ok(/không còn trên đĩa/i.test(prD.error));
+    }
+    assert.equal(await prisma.libraryAsset.count({ where: { userId, deletedAt: null } }), 2, 'không sinh asset hỏng');
+    ok('tệp chết trên đĩa → 410 (không phải 404, không phải 500), KHÔNG sinh asset trỏ đường dẫn chết');
   });
 
   /* ═══ dọn file vật lý đã ghi ═══ */
