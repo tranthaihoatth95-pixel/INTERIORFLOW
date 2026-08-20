@@ -1,0 +1,148 @@
+<!-- @dsCard group="Experience System" title="EXS-J · Auto Grid — capability của Present" -->
+<!--
+  EXS-J v2 — SỬA SCOPE theo lệnh Hoà 20/08: Auto Grid KHÔNG phải pattern toàn app.
+  Nó là MASTER CAPABILITY compose nội dung BÊN TRONG STAGE PRESENT, chạy NGAY TRÊN Present canvas.
+  Layout Ghost ("Khung Mọc") = feedback/motion CỦA capability này.
+  Bản v1 (generic 5 màn) + board EXS-K (5 ca) ĐÃ HUỶ — sai scope, không trích lại.
+  DESIGN ONLY. REUSE: LayoutShelf/suggestTemplate + evaluateDeck + ngôn ngữ ghost EmptyState. 0 hex mới.
+-->
+<div class="exj-root">
+<style>
+  .exj-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --success:#46b876; --warning:#d9a34a;
+    --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+    background:var(--bg); color:var(--t2); padding:36px;
+    font:13px/1.5 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exj-root *{box-sizing:border-box}
+  .h1{font-size:22px;font-weight:700;color:var(--t1);margin:0 0 4px}
+  .sub{color:var(--t3);margin:0 0 22px;max-width:920px}
+  .sec{margin:28px 0 10px;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--t4);text-transform:uppercase}
+  .film{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .fr h6{margin:0 0 5px;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--t5);font-weight:700}
+  .fr h6 b{color:var(--t2)}
+  .cv{height:130px;border-radius:11px;background:var(--card);border:1px solid var(--border);position:relative;overflow:hidden}
+  .fr p{margin:5px 0 0;font-size:10.5px;color:var(--t4)}
+  /* blocks */
+  .b{position:absolute;border-radius:5px;border:1px solid var(--border-strong)}
+  .render{background:linear-gradient(150deg,#2b2620,#191512)}
+  .plan{background:var(--panel);border-style:solid}
+  .plan:after{content:"";position:absolute;inset:14%;border:1px solid var(--t5)}
+  .mat1{background:#4a3d2e}.mat2{background:#37423c}
+  .cap{background:var(--field)}
+  .boq{background:var(--panel)}
+  .boq:after{content:"";position:absolute;left:10%;right:10%;top:24%;height:1px;background:var(--t5);box-shadow:0 6px var(--t5),0 12px var(--t5)}
+  .sel{outline:1.6px solid var(--accent-ring);outline-offset:1px}
+  .g{position:absolute;border:1.2px dashed var(--border-strong);border-radius:5px}
+  .g .t{position:absolute;left:3px;top:2px;font-size:6.5px;letter-spacing:.05em;color:var(--t4);text-transform:uppercase}
+  .capsule{position:absolute;display:flex;gap:5px;align-items:center;padding:4px 9px;border-radius:999px;background:var(--card);border:1px solid var(--accent-ring);box-shadow:var(--shadow-pop);font-size:9px;color:var(--t1);white-space:nowrap}
+  .capsule i{padding:1px 6px;border-radius:99px;border:1px solid var(--border-strong);font-style:normal;color:var(--t3);font-size:8.5px}
+  .pinicon{position:absolute;width:13px;height:13px;border-radius:99px;background:var(--t1);color:var(--bg);font-size:8px;display:grid;place-items:center}
+  .alt{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  .alt .cv{height:104px}
+  .alt h6{margin:0 0 5px;font-size:9.5px;color:var(--t3);font-weight:600}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  .pane{border:1px solid var(--border);border-radius:13px;background:var(--panel);padding:13px;font-size:11.5px;color:var(--t3)}
+  .pane b{color:var(--t1)}
+  .chip{display:inline-block;padding:2px 9px;border-radius:999px;border:1px solid var(--border);background:var(--card);font-size:10.5px;color:var(--t3);margin:2px 3px 0 0}
+  .note{font-size:11px;color:var(--t4);margin-top:6px}
+</style>
+
+  <div class="h1">EXS-J · AUTO GRID — capability bố cục tự động CỦA PRESENT</div>
+  <p class="sub">Chọn 2+ block trên Present canvas → <b style="color:var(--t1)">Auto Grid</b> → bố cục <b style="color:var(--t1)">HÌNH THÀNH ngay trên canvas</b> (không teleport, không loading screen) → tinh chỉnh → Apply/Compare/Undo. <b style="color:var(--t1)">Layout Ghost là motion của ĐÚNG capability này</b> — không phải framework auto-layout toàn app. Layout sau Apply = editable bình thường.</p>
+
+  <div class="sec">Sequence P0–P7 — trên MỘT Present workspace, một bộ content (render · mặt bằng · 2 vật liệu · caption · BOQ)</div>
+  <div class="film">
+    <div class="fr"><h6><b>P0</b> · block rời trước Auto Grid</h6><div class="cv">
+      <span class="b render" style="left:8%;top:10%;width:34%;height:42%"></span>
+      <span class="b plan" style="left:56%;top:8%;width:26%;height:34%"></span>
+      <span class="b mat1" style="left:14%;top:62%;width:12%;height:22%"></span>
+      <span class="b mat2" style="left:30%;top:66%;width:12%;height:22%"></span>
+      <span class="b cap" style="left:58%;top:56%;width:24%;height:12%"></span>
+      <span class="b boq" style="left:52%;top:74%;width:34%;height:20%"></span>
+    </div><p>bố cục tay đang lộn xộn — đúng hiện trạng thật của deck đang soạn</p></div>
+    <div class="fr"><h6><b>P1</b> · chọn 2+ block → contextual capsule</h6><div class="cv">
+      <span class="b render sel" style="left:8%;top:10%;width:34%;height:42%"></span>
+      <span class="b plan sel" style="left:56%;top:8%;width:26%;height:34%"></span>
+      <span class="b mat1 sel" style="left:14%;top:62%;width:12%;height:22%"></span>
+      <span class="b mat2 sel" style="left:30%;top:66%;width:12%;height:22%"></span>
+      <span class="b cap sel" style="left:58%;top:56%;width:24%;height:12%"></span>
+      <span class="b boq sel" style="left:52%;top:74%;width:34%;height:20%"></span>
+      <span class="capsule" style="left:26%;top:42%">▦ Auto Grid<i>hover = ghost mờ</i></span>
+    </div><p>hover nút → preview ghost RẤT NHẸ; click → bắt đầu hình thành</p></div>
+    <div class="fr"><h6><b>P2</b> · Layout Ghost xuất hiện</h6><div class="cv">
+      <span class="b render" style="left:8%;top:10%;width:34%;height:42%;opacity:.45"></span>
+      <span class="b plan" style="left:56%;top:8%;width:26%;height:34%;opacity:.45"></span>
+      <span class="b mat1" style="left:14%;top:62%;width:12%;height:22%;opacity:.45"></span>
+      <span class="b mat2" style="left:30%;top:66%;width:12%;height:22%;opacity:.45"></span>
+      <span class="b cap" style="left:58%;top:56%;width:24%;height:12%;opacity:.45"></span>
+      <span class="b boq" style="left:52%;top:74%;width:34%;height:20%;opacity:.45"></span>
+      <span class="g" style="inset:6%"></span>
+      <span class="g" style="left:6%;top:6%;width:55%;bottom:6%"></span>
+      <span class="g" style="right:6%;top:6%;width:33%;height:40%"></span>
+    </div><p>khung ngoài + trục chia mọc TRÊN block hiện có (block lùi mờ nhẹ)</p></div>
+    <div class="fr"><h6><b>P3</b> · cells rearrange — CÓ đường đi</h6><div class="cv">
+      <span class="g" style="left:6%;top:6%;width:55%;bottom:6%"><span class="t">hero</span></span>
+      <span class="b render" style="left:10%;top:12%;width:44%;height:70%;transition:none"></span>
+      <span class="b plan" style="right:8%;top:8%;width:30%;height:36%"></span>
+      <span class="b mat1" style="right:26%;top:52%;width:11%;height:18%"></span>
+      <span class="b mat2" style="right:12%;top:52%;width:11%;height:18%"></span>
+      <span class="b cap" style="right:8%;bottom:20%;width:30%;height:9%"></span>
+      <span class="b boq" style="right:8%;bottom:6%;width:30%;height:12%"></span>
+    </div><p>block TRƯỢT liên tục về ô — không teleport, canvas không bị thay bằng spinner</p></div>
+  </div>
+  <div class="film" style="margin-top:10px">
+    <div class="fr"><h6><b>P4</b> · semantic composition xong</h6><div class="cv">
+      <span class="b render" style="left:6%;top:6%;width:52%;bottom:6%"></span>
+      <span class="b plan" style="right:6%;top:6%;width:34%;height:38%"></span>
+      <span class="b mat1" style="right:23.5%;top:48%;width:16.5%;height:16%"></span>
+      <span class="b mat2" style="right:6%;top:48%;width:16.5%;height:16%"></span>
+      <span class="b cap" style="right:6%;top:67%;width:34%;height:9%"></span>
+      <span class="b boq" style="right:6%;bottom:6%;width:34%;height:14%"></span>
+    </div><p>hero = render (visual weight) · plan giữ tỉ lệ đọc được · vật liệu thành strip · caption cạnh nội dung · BOQ vùng đọc dữ liệu · gap chuẩn hoá</p></div>
+    <div class="fr"><h6><b>P5</b> · quick controls + cycle phương án</h6><div class="cv">
+      <span class="b render" style="left:6%;top:6%;width:52%;bottom:6%"></span>
+      <span class="b plan" style="right:6%;top:6%;width:34%;height:38%"></span>
+      <span class="b mat1" style="right:23.5%;top:48%;width:16.5%;height:16%"></span>
+      <span class="b mat2" style="right:6%;top:48%;width:16.5%;height:16%"></span>
+      <span class="b boq" style="right:6%;bottom:6%;width:34%;height:24%"></span>
+      <span class="capsule" style="left:50%;transform:translateX(-50%);bottom:5%">Layout 01<i>‹</i><i>›</i><i>⇄ Shuffle</i><i>Density</i><i>Gap</i><i>Align</i><i style="border-color:var(--accent-ring);color:var(--t1)">Apply</i></span>
+    </div><p>‹ › cycle qua phương án — cùng content, khung morph có continuity</p></div>
+    <div class="fr"><h6><b>P6</b> · Compare / Apply / Undo</h6><div class="cv">
+      <span style="position:absolute;left:4%;top:8%;width:44%;bottom:22%;border-radius:6px;background:var(--field);opacity:.55"></span>
+      <span style="position:absolute;right:4%;top:8%;width:44%;bottom:22%;border-radius:6px;border:1px solid var(--accent-ring);background:var(--accent-soft)"></span>
+      <span style="position:absolute;left:8%;top:12%;font-size:8px;color:var(--t4)">TRƯỚC</span>
+      <span style="position:absolute;right:22%;top:12%;font-size:8px;color:var(--t1)">ĐỀ XUẤT</span>
+      <span class="capsule" style="left:50%;transform:translateX(-50%);bottom:6%">So sánh<i style="border-color:var(--accent-ring);color:var(--t1)">Áp dụng</i><i>Giữ bản cũ</i><i>↶</i></span>
+    </div><p>không silent overwrite; Undo = về đúng arrangement trước Auto Grid</p></div>
+    <div class="fr"><h6><b>P7</b> · chỉnh tay sau Apply</h6><div class="cv">
+      <span class="b render" style="left:6%;top:6%;width:52%;bottom:6%"></span>
+      <span class="pinicon" style="left:8%;top:9%">📌</span>
+      <span class="b plan sel" style="right:10%;top:10%;width:34%;height:38%"></span>
+      <span class="b mat1" style="right:23.5%;top:52%;width:16.5%;height:16%"></span>
+      <span class="b mat2" style="right:6%;top:52%;width:16.5%;height:16%"></span>
+      <span class="b boq" style="right:6%;bottom:6%;width:34%;height:20%"></span>
+    </div><p>layout thành block THƯỜNG: kéo, resize, pin — quyền tác giả nguyên vẹn</p></div>
+  </div>
+
+  <div class="sec">6 phương án — CÙNG một bộ content, cycle bằng ‹ ›</div>
+  <div class="alt">
+    <div><h6>01 · Hero + Supporting ★</h6><div class="cv"><span class="b render" style="left:6%;top:6%;width:52%;bottom:6%"></span><span class="b plan" style="right:6%;top:6%;width:34%;height:38%"></span><span class="b mat1" style="right:23.5%;top:48%;width:16.5%;height:16%"></span><span class="b mat2" style="right:6%;top:48%;width:16.5%;height:16%"></span><span class="b boq" style="right:6%;bottom:6%;width:34%;height:22%"></span></div></div>
+    <div><h6>02 · Equal Grid</h6><div class="cv"><span class="b render" style="left:6%;top:8%;width:27%;height:38%"></span><span class="b plan" style="left:36.5%;top:8%;width:27%;height:38%"></span><span class="b boq" style="right:6%;top:8%;width:27%;height:38%"></span><span class="b mat1" style="left:6%;bottom:8%;width:27%;height:38%"></span><span class="b mat2" style="left:36.5%;bottom:8%;width:27%;height:38%"></span><span class="b cap" style="right:6%;bottom:8%;width:27%;height:38%"></span></div></div>
+    <div><h6>03 · Editorial</h6><div class="cv"><span class="b render" style="left:6%;top:6%;right:6%;height:52%"></span><span class="b cap" style="left:6%;bottom:24%;width:40%;height:12%"></span><span class="b mat1" style="right:24%;bottom:8%;width:16%;height:26%"></span><span class="b mat2" style="right:6%;bottom:8%;width:16%;height:26%"></span><span class="b plan" style="left:6%;bottom:8%;width:26%;height:12%"></span></div></div>
+    <div><h6>04 · Comparison</h6><div class="cv"><span class="b render" style="left:6%;top:8%;width:42%;height:62%"></span><span class="b plan" style="right:6%;top:8%;width:42%;height:62%"></span><span class="b cap" style="left:6%;bottom:8%;right:6%;height:16%"></span></div></div>
+    <div><h6>05 · Material Board</h6><div class="cv"><span class="b mat1" style="left:6%;top:8%;width:20%;height:34%"></span><span class="b mat2" style="left:29%;top:8%;width:20%;height:34%"></span><span class="b render" style="right:6%;top:8%;width:42%;bottom:8%"></span><span class="b boq" style="left:6%;bottom:8%;width:43%;height:44%"></span></div></div>
+    <div><h6>06 · Technical Sheet</h6><div class="cv"><span class="b plan" style="left:6%;top:6%;width:56%;bottom:30%"></span><span class="b boq" style="left:6%;bottom:6%;width:56%;height:20%"></span><span class="b render" style="right:6%;top:6%;width:30%;height:40%"></span><span class="b mat1" style="right:22%;top:52%;width:14%;height:18%"></span><span class="b mat2" style="right:6%;top:52%;width:14%;height:18%"></span></div></div>
+  </div>
+  <div class="note">Còn Story Sequence · Free Bento trong họ phương án — cùng cơ chế, không vẽ thêm để board gọn. Tất cả là LAYOUT OPTION bên trong Present, không màn nào khác.</div>
+
+  <div class="sec">Semantic composition + quyền tác giả</div>
+  <div class="two">
+    <div class="pane"><b>Máy hiểu LOẠI content (không chia đều mù):</b> render hero → weight lớn · floor plan → GIỮ TỈ LỆ đọc được (không ép méo) · swatch vật liệu → strip phụ · caption → dính cạnh content của nó · BOQ → vùng đọc dữ liệu · before/after → cặp có quan hệ.<div class="note">Nguồn nghĩa: block Present ĐÃ mang loại (image/text/table/spec) — REUSE `suggestTemplate`/`slidesFromContent` + `evaluateDeck` làm máy chấm bố cục; Auto Grid là mặt tiền mới của cỗ máy dàn trang sẵn có (LayoutShelf), không engine mới.</div></div>
+    <div class="pane"><b>User giữ quyền:</b> <span class="chip">📌 Pin block — không di chuyển</span><span class="chip">★ Set Hero</span><span class="chip">✕ Exclude</span><span class="chip">🔒 Lock tỉ lệ</span><span class="chip">Resize/drag sau generate</span><span class="chip">⟳ Regenerate selection</span><span class="chip">⟳ Regenerate MỘT vùng</span><div class="note">Vùng user đã custom: Auto Grid KHÔNG đè im lặng — vùng đó hiện viền "giữ nguyên?" phải gật mới đụng. Undo một bước = về nguyên arrangement cũ.</div></div>
+  </div>
+</div>

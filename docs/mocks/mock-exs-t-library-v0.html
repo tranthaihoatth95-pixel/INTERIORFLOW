@@ -1,0 +1,161 @@
+<!-- @dsCard group="Experience System" title="EXS-T · Library v0 — object-first" -->
+<div class="ext-root">
+<style>
+  .ext-root{
+    --paper:#f3f0eb; --paper2:#eceae4; --field:#e4e1da; --line:#d8d4cc; --line2:#c6c1b7;
+    --ink:#1b1a18; --ink2:#4a4741; --ink3:#8a857c; --ink4:#a9a49a;
+    --accent:#2f5d63;
+    background:#0c0c0e; padding:44px 40px 56px; color:#9e9ea8;
+    font:13px/1.6 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .ext-root *{box-sizing:border-box}
+  .meta{font:11.5px ui-monospace,monospace;color:#6e6e78;margin:0 0 6px;letter-spacing:.03em}
+  .meta b{color:#d6d6db;font-weight:500}
+  .meta.gap{margin-bottom:26px}
+  .screens{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;align-items:start}
+  .scr{background:var(--paper);border-radius:14px;overflow:hidden;color:var(--ink2);
+       font:13px/1.6 -apple-system,'SF Pro Text',sans-serif;min-height:920px;display:flex;flex-direction:column}
+  .scrlab{font:10.5px ui-monospace,monospace;letter-spacing:.14em;color:#6e6e78;margin:0 0 9px;text-transform:uppercase}
+  /* chrome tối giản */
+  .top{display:flex;align-items:baseline;gap:18px;padding:30px 30px 0}
+  .top h2{margin:0;font-size:19px;font-weight:500;letter-spacing:-.01em;color:var(--ink)}
+  .top .who{margin-left:auto;font:10.5px ui-monospace,monospace;color:var(--ink4)}
+  .filt{display:flex;gap:20px;padding:20px 30px 0;font-size:12.5px;color:var(--ink3)}
+  .filt s{text-decoration:none;color:var(--ink);border-bottom:1px solid var(--ink)}
+  /* ảnh thật = chỗ giữ chỗ, không vẽ tay */
+  .ph{background:var(--field);border:1px dashed var(--line2);display:grid;place-items:center;text-align:center;padding:14px}
+  .ph i{font-style:normal;font:9.5px ui-monospace,monospace;letter-spacing:.09em;color:var(--ink4);line-height:1.7}
+  .ph i b{display:block;color:var(--ink3);font-weight:500}
+  /* 1 · browse */
+  .grid{padding:26px 30px 34px;display:flex;flex-direction:column;gap:34px}
+  .item .cap{display:flex;justify-content:space-between;align-items:baseline;margin-top:11px}
+  .item .cap b{font-size:13px;font-weight:500;color:var(--ink)}
+  .item .cap s{text-decoration:none;font-size:11px;color:var(--ink4)}
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  /* 2 · passport */
+  .pbody{padding:24px 30px 34px;display:flex;flex-direction:column;gap:24px}
+  .pname h3{margin:0;font-size:22px;font-weight:500;letter-spacing:-.015em;color:var(--ink)}
+  .pname p{margin:3px 0 0;font-size:12px;color:var(--ink4)}
+  .facts{display:flex;flex-direction:column;gap:0}
+  .f{display:flex;gap:16px;padding:9px 0;border-top:1px solid var(--line);font-size:12.5px}
+  .f i{font-style:normal;width:96px;flex:none;color:var(--ink4);font-size:11px;letter-spacing:.05em;text-transform:uppercase}
+  .f span{color:var(--ink2)}
+  .f b{color:var(--ink);font-weight:500}
+  .sw{display:inline-block;width:12px;height:12px;border-radius:99px;vertical-align:-2px;margin-right:7px;box-shadow:0 0 0 1px var(--line2)}
+  .rows{border-top:1px solid var(--line)}
+  .r{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink2)}
+  .r b{color:var(--ink);font-weight:500}
+  .r em{font-style:normal;margin-left:auto;font:10.5px ui-monospace,monospace;color:var(--ink4)}
+  .r u{text-decoration:none;color:var(--ink4);font-size:15px;line-height:1}
+  /* 3 · verify */
+  .vbody{padding:24px 30px 34px;display:flex;flex-direction:column;gap:20px}
+  .vgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .vt{display:flex;flex-direction:column;gap:7px}
+  .vt .lb{font:9.5px ui-monospace,monospace;letter-spacing:.12em;color:var(--ink4);text-transform:uppercase}
+  .tag{display:inline-flex;align-items:center;gap:6px;font:9.5px ui-monospace,monospace;letter-spacing:.06em;
+       padding:2px 8px;border-radius:99px;border:1px solid var(--line2);color:var(--ink3)}
+  .tag.src{border-color:#2f5d63;color:#2f5d63}
+  .tech{display:flex;flex-direction:column;gap:0;margin-top:2px}
+  .t{display:flex;gap:14px;padding:8px 0;border-top:1px solid var(--line);font:11.5px ui-monospace,monospace;color:var(--ink3)}
+  .t i{font-style:normal;width:104px;flex:none;color:var(--ink4)}
+  .t b{color:var(--ink2);font-weight:500}
+  .foot{margin-top:auto;padding:16px 30px 22px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink4)}
+</style>
+
+  <p class="meta"><b>CLAUDE DESIGN USED:</b> YES</p>
+  <p class="meta"><b>Changed:</b> bỏ hẳn hướng cũ — nền giấy, vật là chính, ảnh lớn, chữ ít, dữ liệu kỹ thuật lùi xuống lớp sau. Không vẽ tay món nào; ảnh và bản vẽ để trống có ghi rõ là chỗ chờ nội dung thật.</p>
+  <p class="meta gap"><b>Need Hoà:</b> ① nền giấy hay giữ nền tối cho Library? ② một nguồn nội dung thật để cắm vào (ảnh + CAD của một hãng) — chưa có thì mọi khung vẫn là chỗ trống.</p>
+
+  <div class="screens">
+
+    <!-- ══════════ 1 · BROWSE ══════════ -->
+    <div>
+      <p class="scrlab">01 · Browse</p>
+      <div class="scr">
+        <div class="top"><h2>Library</h2><span class="who">Seating · 214</span></div>
+        <div class="filt"><s>Seating</s><span>Tables</span><span>Lighting</span><span>Outdoor</span><span>Storage</span></div>
+        <div class="grid">
+          <div class="item">
+            <div class="ph" style="aspect-ratio:4/3"><i><b>REAL-CONTENT PLACEHOLDER</b>manufacturer product photography</i></div>
+            <div class="cap"><b>Lounge chair, low</b><s>Manufacturer A</s></div>
+          </div>
+          <div class="duo">
+            <div class="item">
+              <div class="ph" style="aspect-ratio:3/4"><i><b>PLACEHOLDER</b>product photo</i></div>
+              <div class="cap"><b>Side table</b><s>Mfr B</s></div>
+            </div>
+            <div class="item">
+              <div class="ph" style="aspect-ratio:3/4"><i><b>PLACEHOLDER</b>product photo</i></div>
+              <div class="cap"><b>Stool</b><s>Mfr C</s></div>
+            </div>
+          </div>
+          <div class="item">
+            <div class="ph" style="aspect-ratio:16/9"><i><b>PLACEHOLDER</b>manufacturer 3D preview</i></div>
+            <div class="cap"><b>Daybed, outdoor</b><s>Manufacturer D</s></div>
+          </div>
+        </div>
+        <div class="foot">Chỉ tên và hãng. Mọi thứ khác chờ được hỏi tới.</div>
+      </div>
+    </div>
+
+    <!-- ══════════ 2 · PASSPORT ══════════ -->
+    <div>
+      <p class="scrlab">02 · Object passport</p>
+      <div class="scr">
+        <div class="ph" style="aspect-ratio:5/4;border-left:0;border-right:0;border-top:0">
+          <i><b>REAL-CONTENT PLACEHOLDER</b>hero — manufacturer photography hoặc 3D</i></div>
+        <div class="pbody">
+          <div class="pname">
+            <h3>Lounge chair, low</h3>
+            <p>Manufacturer A · mã hàng chờ nguồn thật</p>
+          </div>
+          <div class="facts">
+            <div class="f"><i>Kích thước</i><span><b>680</b> × <b>760</b> × <b>820</b> mm · ngồi <b>400</b></span></div>
+            <div class="f"><i>Vật liệu</i><span><span class="sw" style="background:#8c6b42"></span>Khung<span style="color:var(--ink4)"> · </span><span class="sw" style="background:#d3cab8"></span>Bọc<span style="color:var(--ink4)"> · </span><span class="sw" style="background:#3a352c"></span>Chân</span></div>
+          </div>
+          <div class="rows">
+            <div class="r"><b>CAD</b><em>chờ nguồn</em><u>›</u></div>
+            <div class="r"><b>3D</b><em>chờ nguồn</em><u>›</u></div>
+            <div class="r"><b>Spec</b><em>chờ nguồn</em><u>›</u></div>
+            <div class="r"><b>Source</b><em>chưa nối</em><u>↗</u></div>
+            <div class="r"><b>Where used</b><em>—</em><u>›</u></div>
+          </div>
+        </div>
+        <div class="foot">Mở ra mới hiện. Đóng lại thì chỉ còn cái vật.</div>
+      </div>
+    </div>
+
+    <!-- ══════════ 3 · TECHNICAL VERIFY ══════════ -->
+    <div>
+      <p class="scrlab">03 · Technical verify</p>
+      <div class="scr">
+        <div class="top"><h2>Lounge chair, low</h2><span class="who">Manufacturer A</span></div>
+        <div class="vbody">
+          <div class="vgrid">
+            <div class="vt"><span class="lb">Plan</span>
+              <div class="ph" style="aspect-ratio:4/3"><i><b>PLACEHOLDER</b>manufacturer CAD</i></div>
+              <span class="tag src">nguồn hãng</span></div>
+            <div class="vt"><span class="lb">Front</span>
+              <div class="ph" style="aspect-ratio:4/3"><i><b>PLACEHOLDER</b>manufacturer CAD</i></div>
+              <span class="tag src">nguồn hãng</span></div>
+            <div class="vt"><span class="lb">Side</span>
+              <div class="ph" style="aspect-ratio:4/3"><i><b>PLACEHOLDER</b>dẫn xuất</i></div>
+              <span class="tag">sinh từ khối</span></div>
+            <div class="vt"><span class="lb">3D</span>
+              <div class="ph" style="aspect-ratio:4/3"><i><b>PLACEHOLDER</b>manufacturer 3D</i></div>
+              <span class="tag src">nguồn hãng</span></div>
+          </div>
+          <div class="tech">
+            <div class="t"><i>anchor</i><span><b>center</b> · <b>back-center</b></span></div>
+            <div class="t"><i>bbox</i><span><b>680 × 760 × 820</b> mm</span></div>
+            <div class="t"><i>seat height</i><span><b>400</b> mm</span></div>
+            <div class="t"><i>material slots</i><span><b>Frame</b> · <b>Upholstery</b> · <b>Leg</b></span></div>
+            <div class="t"><i>revision</i><span><b>—</b> chờ nguồn</span></div>
+          </div>
+        </div>
+        <div class="foot">Bốn mặt phải là một vật. Cái nào của hãng, cái nào mình sinh ra — nói rõ.</div>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,125 @@
+<!-- @dsCard group="Experience System" title="EXS-C · Home = Personal Work OS" -->
+<!--
+  EXS-C — HOME PERSONAL WORK OS (deliverable C: H1..H6).
+  Không phải landing/KPI dashboard. Trả lời trong vài giây: đang làm gì · dở đâu · gì cần xử ·
+  làm gì tiếp · chuyển project đâu · bắt đầu mới đâu.
+  REUSE kho widget THẬT: ResumeWork (3 nấc, tự ẩn) · QuickNotes · LightClock · WeeklyMaterial ·
+  WeeklyImage · StageChart · TodayStrip · UpcomingList · VitalsPill · WidgetCard + bento-layout
+  (cỡ ô 1×1/2×1/2×2 — không kéo giãn tự do).
+-->
+<div class="exc-root">
+<style>
+  .exc-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --success:#46b876; --warning:#d9a34a; --danger:#e5674f;
+    --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+    background:var(--bg); color:var(--t2); padding:36px;
+    font:13px/1.5 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exc-root *{box-sizing:border-box}
+  .exc-h1{font-size:22px;font-weight:700;color:var(--t1);margin:0 0 4px}
+  .exc-sub{color:var(--t3);margin:0 0 22px}
+  .sec{margin:30px 0 10px;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--t4);text-transform:uppercase}
+  /* H1 hero frame */
+  .home{display:flex;height:430px;border:1px solid var(--border-strong);border-radius:16px;overflow:hidden;background:var(--bg)}
+  .rail{width:52px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:12px}
+  .isl{display:flex;flex-direction:column;gap:7px;padding:7px 6px;border-radius:11px;background:var(--card);border:1px solid var(--border)}
+  .ric{width:22px;height:22px;border-radius:7px;background:var(--field);border:1px solid var(--border);display:grid;place-items:center;font-size:11px;color:var(--t3)}
+  .ric.on{background:var(--accent-soft);border-color:var(--accent-ring);color:var(--t1)}
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .apbar{height:30px;display:flex;align-items:center;justify-content:center;gap:8px;border-bottom:1px solid var(--border);background:var(--panel);position:relative}
+  .apert{display:flex;align-items:center;gap:6px;padding:3px 12px;border-radius:999px;background:var(--card);border:1px solid var(--border);font-size:10.5px;color:var(--t3)}
+  .apert .d{width:6px;height:6px;border-radius:99px}
+  .grid{flex:1;padding:14px;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:88px;gap:12px;overflow:hidden}
+  .w{background:var(--panel);border:1px solid var(--border);border-radius:13px;padding:11px 13px;position:relative;font-size:11.5px;color:var(--t3)}
+  .w h5{margin:0 0 4px;font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--t4);font-weight:700}
+  .w .big{color:var(--t1);font-size:14px;font-weight:600}
+  .hero{grid-column:span 2;grid-row:span 2;border-color:var(--accent-ring);background:linear-gradient(160deg,var(--accent-soft),var(--panel) 55%)}
+  .hero .cta{position:absolute;left:13px;bottom:12px;padding:7px 16px;border-radius:999px;background:var(--accent);color:#fff;font-weight:600;font-size:12px;box-shadow:var(--shadow-pop)}
+  .hero .alt{position:absolute;left:150px;bottom:12px;padding:7px 12px;border-radius:999px;border:1px solid var(--border-strong);color:var(--t3);font-size:12px}
+  .chipline{display:flex;gap:6px;margin-top:6px}
+  .chip{padding:2px 9px;border-radius:999px;border:1px solid var(--border);background:var(--card);font-size:10.5px;color:var(--t3)}
+  .att{border-color:var(--warning)}
+  .att .n{color:var(--warning);font-weight:700}
+  .sw{width:26px;height:26px;border-radius:99px;background:#7d6a55;display:inline-block;border:2px solid var(--border-strong)}
+  .imgw{background:linear-gradient(150deg,#2c2620,#191512 70%);}
+  /* mode thumbnails */
+  .modes{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+  .mode{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--panel)}
+  .mode h5{margin:0;padding:6px 10px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t4);border-bottom:1px solid var(--border)}
+  .mgrid{height:104px;padding:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .mb{border-radius:7px;background:var(--card);border:1px solid var(--border)}
+  .mb.hot{border-color:var(--accent-ring);background:var(--accent-soft)}
+  .mode p{margin:0;padding:6px 10px 9px;font-size:10.5px;color:var(--t4)}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .pane{border:1px solid var(--border);border-radius:13px;background:var(--panel);padding:13px;font-size:11.5px;color:var(--t3)}
+  .pane b{color:var(--t1)}
+  .ghost{border:1.5px dashed var(--border-strong);border-radius:10px;height:54px;display:grid;place-items:center;color:var(--t5);font-size:11px;margin:8px 0}
+</style>
+
+  <div class="exc-h1">EXS-C · Home = Personal Work OS</div>
+  <p class="exc-sub">“Đây là bàn làm việc của tôi.” — Hero là <b style="color:var(--t1)">Resume</b>, không phải AI, không phải KPI. Lưới bento cỡ ô định sẵn (1×1 · 2×1 · 2×2) — chọn ô, không kéo pixel.</p>
+
+  <div class="sec">H1 · Studio Focus — mặc định (khung 1440×900 thu tỉ lệ)</div>
+  <div class="home">
+    <div class="rail">
+      <span class="isl"><span class="ric on">⌂</span><span class="ric">▤</span><span class="ric">🗀</span><span class="ric">▦</span><span class="ric">✓</span></span>
+      <span class="isl"><span class="ric">2D</span><span class="ric">3D</span><span class="ric">▶</span></span>
+      <span class="isl" style="margin-top:auto"><span class="ric">◔</span></span>
+    </div>
+    <div class="main">
+      <div class="apbar"><span class="apert"><span class="d" style="background:var(--warning)"></span><span class="d" style="background:var(--t5)"></span>2 điều đáng chú ý</span></div>
+      <div class="grid">
+        <div class="w hero">
+          <h5>Việc đang dở · ResumeWork</h5>
+          <div class="big">Căn hộ Thảo Điền — 3D Thiết kế</div>
+          <div class="chipline"><span class="chip">◫ 3D</span><span class="chip">🕐 2 ngày</span><span class="chip">✓ 3/5 bước</span></div>
+          <div style="margin-top:8px;font-size:11px">Đang dựng phối cảnh phòng khách · chờ duyệt vật liệu sàn</div>
+          <span class="cta">Tiếp tục ↵</span><span class="alt">Ngữ cảnh khác ▾</span>
+        </div>
+        <div class="w att"><h5>Cần tôi xử</h5><div class="big"><span class="n">2</span> mục</div>1 review chờ decision · 1 spec vật liệu thiếu</div>
+        <div class="w"><h5>Hôm nay · TodayStrip</h5>14:00 duyệt concept · 16:30 gửi CĐT</div>
+        <div class="w" style="grid-row:span 2"><h5>Dự án gần đây</h5>
+          <div class="chipline" style="flex-direction:column;align-items:flex-start;gap:7px;margin-top:4px">
+            <span class="chip" style="border-color:var(--accent-ring)">Thảo Điền · 3D ●</span>
+            <span class="chip">Villa Q2 · 2D</span>
+            <span class="chip">Café Landmark · Present</span>
+            <span class="chip" style="border-style:dashed;color:var(--t4)">＋ Dự án mới</span>
+          </div></div>
+        <div class="w"><h5>Vật liệu của tuần</h5><span class="sw"></span>&nbsp; Đá travertine <div style="font-size:10px;color:var(--t5)">kéo = dùng · bấm = inspect</div></div>
+        <div class="w imgw"><h5 style="color:var(--t3)">Ảnh đẹp tuần này</h5><div style="position:absolute;bottom:9px;left:13px;font-size:10.5px;color:var(--t3)">render được ghim ★</div></div>
+        <div class="w"><h5>Ghi chú nhanh · QuickNotes</h5>“hỏi NCC mẫu vải 40B…”<div class="chipline"><span class="chip">＋ ghi</span></div></div>
+        <div class="w"><h5>Vitals · gợi ý kế tiếp</h5>“Chốt vật liệu sàn trước khi render lại” <div class="chipline"><span class="chip">Xem vì sao</span></div></div>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:11.5px;color:var(--t4);margin:8px 2px 0">6 câu Home phải trả lời: đang làm gì (hero) · dở đâu (hero) · cần xử gì (Needs attention) · làm gì tiếp (Vitals) · chuyển project (Dự án gần đây) · bắt đầu mới (＋). Widget thiếu dữ liệu <b style="color:var(--t2)">tự ẩn</b> — luật đã có trong code.</p>
+
+  <div class="sec">H2..H3 + Modes — NĂM LENS của cùng một hệ modular (không phải 5 Home)</div>
+  <div class="modes">
+    <div class="mode"><h5>Focus ★ default</h5><div class="mgrid"><span class="mb hot" style="grid-column:span 2"></span><span class="mb"></span><span class="mb"></span></div><p>Resume + next action</p></div>
+    <div class="mode"><h5>Manage · Lead Control</h5><div class="mgrid"><span class="mb"></span><span class="mb hot"></span><span class="mb"></span><span class="mb"></span></div><p>Projects · Reviews · Team · Risk</p></div>
+    <div class="mode"><h5>Explore · Creative Flow</h5><div class="mgrid"><span class="mb hot"></span><span class="mb"></span><span class="mb"></span><span class="mb hot"></span></div><p>Reference · Files · Library</p></div>
+    <div class="mode"><h5>Review</h5><div class="mgrid"><span class="mb hot" style="grid-row:span 2"></span><span class="mb"></span><span class="mb"></span></div><p>Approvals · Comments · Decisions</p></div>
+    <div class="mode"><h5>Inspire</h5><div class="mgrid"><span class="mb" style="background:linear-gradient(140deg,#2c2620,#191512)"></span><span class="mb" style="background:linear-gradient(140deg,#20262c,#121519)"></span><span class="mb hot" style="grid-column:span 2"></span></div><p>Moodboard · References</p></div>
+  </div>
+
+  <div class="sec">H4 · Customize — “làm bàn này thành của tôi”, có lan can</div>
+  <div class="three">
+    <div class="pane"><b>Kéo-thả trên snap grid.</b> Ô đang kéo nhấc lên (+2), chỗ cũ để lại <span style="border:1.5px dashed var(--border-strong);border-radius:6px;padding:1px 8px;color:var(--t5)">ô nét đứt</span> — trả lời “thả ra nằm đâu”. Cỡ chỉ 1×1 · 2×1 · 2×2. Làm được bằng bàn phím (chọn → mũi tên → Enter).</div>
+    <div class="pane"><b>Guardrail.</b> Được: add/remove/reorder/resize/pin/hide/group/preset · density · image emphasis · variant soft/solid/elevated. Không được: phá typography · màu tuỳ hứng · spacing tự do · vỡ a11y.</div>
+    <div class="pane"><b>Luôn có lối về:</b> <span class="chip">Recommended default</span> <span class="chip">Reset</span> <span class="chip">Undo customization</span> <span class="chip">Preset của tôi</span></div>
+  </div>
+
+  <div class="sec">H5 · First run — mặc định phải tốt sẵn &nbsp;·&nbsp; H6 · Multi-project busy</div>
+  <div class="three">
+    <div class="pane"><b>H5 · Lần đầu mở.</b> Chưa có việc dở → hero KHÔNG giả vờ. EmptyState (component sẵn có) hiện cấu trúc thật + 2 việc làm được tại chỗ:
+      <div class="ghost">＋ Dự án đầu tiên &nbsp;·&nbsp; ⤓ Mở file mẫu</div>
+      Không “No data”. Không đá sang màn khác.</div>
+    <div class="pane"><b>H6 · 5 dự án cùng chạy.</b> Hero vẫn là MỘT resume (gần nhất); các dự án khác xếp hàng dọc kèm trạng thái: <span class="chip">Thảo Điền ● render</span> <span class="chip att" style="border-color:var(--warning)">Villa Q2 ⚠ 1 review</span> <span class="chip">Café LM ✓</span> — attention state là màu + ký hiệu + chữ, không chỉ màu.</div>
+    <div class="pane"><b>Behavior nhớ theo MÁY:</b> mở Home hay Resume thẳng · last mode · sidebar depth · Vitals preference. VẬT và bố cục chung của team thì lưu CHUNG (luật lưu chung↔máy đã chốt).</div>
+  </div>
+</div>

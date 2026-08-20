@@ -1,0 +1,126 @@
+<!-- @dsCard group="Experience System" title="EXS-I · Moodboard Collage + Vẽ 3D cubic" -->
+<!--
+  EXS-I — ref đợt 3 (R15+R16, sổ REF-VISUAL-EXS-2026-08-20.md).
+  ① Moodboard COLLAGE — Hoà chỉ định: tuỳ chọn bố cục đặc trưng (Lưới ↔ Collage), palette
+    TRÍCH TỪ ẢNH tái dùng refingest có sẵn.
+  ② Stage Vẽ 3D — Hoà chốt giữa lượt: "cubic nét, sang, đơn giản" = visual direction lúc DỰNG.
+  Màu trong collage là MÀU NỘI DUNG (trích từ ảnh) — UI quanh nó vẫn token hệ. 0 hex UI mới.
+-->
+<div class="exi-root">
+<style>
+  .exi-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --success:#46b876; --warning:#d9a34a; --danger:#e5674f;
+    --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+    background:var(--bg); color:var(--t2); padding:36px;
+    font:13px/1.5 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exi-root *{box-sizing:border-box}
+  .h1{font-size:22px;font-weight:700;color:var(--t1);margin:0 0 4px}
+  .sub{color:var(--t3);margin:0 0 24px}
+  .sec{margin:30px 0 10px;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--t4);text-transform:uppercase}
+  .two{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;align-items:start}
+  .pane{border:1px solid var(--border);border-radius:13px;background:var(--panel);padding:14px;font-size:11.5px;color:var(--t3)}
+  .pane b{color:var(--t1)}
+  .note{font-size:11px;color:var(--t4);margin-top:7px}
+  .chip{display:inline-block;padding:2px 9px;border-radius:999px;border:1px solid var(--border);background:var(--card);font-size:10.5px;color:var(--t3);margin:2px 3px 0 0}
+  /* ── R15 collage ── */
+  .stage{position:relative;height:340px;border-radius:14px;background:var(--card);border:1px solid var(--border);overflow:hidden}
+  .hero{position:absolute;left:33%;top:24px;width:38%;bottom:44px;border-radius:18px;border:4px solid var(--panel);box-shadow:var(--shadow-pop);background:
+    linear-gradient(180deg,#5a6675 0,#77693f 45%,#8a7a4a 60%,#4c4636 100%)}
+  .blobA{position:absolute;left:12%;top:34px;width:130px;height:130px;border-radius:99px;background:#33475c}
+  .blobB{position:absolute;right:8%;top:110px;width:150px;height:190px;border-radius:22px;background:#2e5c49}
+  .pal{position:absolute;left:6%;bottom:30px;width:172px;border-radius:16px;background:#16181d;border:1px solid var(--border-strong);padding:12px;transform:rotate(-5deg);box-shadow:var(--shadow-pop)}
+  .pal .ph{width:76px;height:76px;border-radius:99px;margin:0 auto 10px;background:radial-gradient(60% 60% at 40% 35%,#b0562b 0,#5c4a2e 55%,#27313a 100%)}
+  .sw{display:flex;gap:5px;justify-content:center;margin-bottom:10px}
+  .sw i{width:24px;height:24px;border-radius:99px;border:1px solid var(--border-strong)}
+  .copy{display:block;text-align:center;padding:6px 0;border-radius:999px;background:var(--t1);color:var(--bg);font-weight:600;font-size:11.5px}
+  .schip{position:absolute;left:24%;top:96px;display:flex;gap:7px;align-items:center;padding:6px 13px;border-radius:999px;background:var(--accent);color:#fff;font-size:11.5px;font-weight:600;box-shadow:var(--shadow-pop)}
+  .laytog{position:absolute;right:10px;top:10px;display:flex;gap:3px;padding:3px;border-radius:999px;background:var(--panel);border:1px solid var(--border);font-size:10px}
+  .laytog span{padding:3px 10px;border-radius:999px;color:var(--t4)}
+  .laytog .on{background:var(--accent-soft);border:1px solid var(--accent-ring);color:var(--t1)}
+  /* ── R16 cubic 3D ── */
+  .v3{position:relative;height:340px;border-radius:14px;background:linear-gradient(180deg,#131318 0,#0e0e12 100%);border:1px solid var(--border);overflow:hidden}
+  .v3 .grid{position:absolute;inset:55% 0 0 0;background:
+    linear-gradient(var(--border) 1px,transparent 1px) 0 0/44px 44px,
+    linear-gradient(90deg,var(--border) 1px,transparent 1px) 0 0/44px 44px;opacity:.35;transform:perspective(300px) rotateX(55deg);transform-origin:top}
+  .cube{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%)}
+  .cube svg{display:block}
+  .rot{position:absolute;left:50%;top:74%;transform:translateX(-50%);text-align:center}
+  .rot small{display:block;color:var(--t4);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+  .rot b{font-size:24px;color:var(--t1);font-weight:600;font-variant-numeric:tabular-nums}
+  .tools{position:absolute;left:14px;top:34px;font-size:11.5px}
+  .tools .gl{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--t5);margin-bottom:6px}
+  .trow{display:flex;gap:8px;align-items:center;padding:5px 10px;border-radius:8px;color:var(--t3);margin-bottom:2px}
+  .trow.on{background:var(--accent-soft);border:1px solid var(--accent-ring);color:var(--t1)}
+  .trow i{width:13px;height:13px;border:1.3px solid currentColor;border-radius:3px;flex:none}
+  .light{position:absolute;right:14px;top:34px;width:130px;font-size:10.5px}
+  .light .gl{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--t5);margin-bottom:6px}
+  .lgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:12px}
+  .lcell{border:1px solid var(--border-strong);border-radius:7px;padding:7px 7px 5px;color:var(--t3);background:var(--panel)}
+  .lcell.on{background:var(--field);border-color:var(--accent-ring);color:var(--t1)}
+  .lsl{margin-bottom:9px}
+  .lsl small{display:block;color:var(--t4);margin-bottom:3px}
+  .lsl .tk{display:flex;gap:2.5px;align-items:center}
+  .lsl .tk i{flex:1;height:7px;border-radius:99px;background:var(--t5);max-width:4px}
+  .lsl .tk i.on{background:var(--t2);height:12px}
+  .axis{position:absolute;left:40%;bottom:14px;color:var(--t5);font-size:9px}
+</style>
+
+  <div class="h1">EXS-I · Moodboard Collage + Vẽ 3D "cubic nét, sang, đơn giản"</div>
+  <p class="sub">Ref đợt 3 — cả hai đều có lời chỉ định của Hoà, board vẽ đích bằng token IF.</p>
+
+  <div class="sec">R15 · Concept moodboard — bố cục COLLAGE (tuỳ chọn đặc trưng, Lưới vẫn là mặc định)</div>
+  <div class="two">
+    <div class="stage">
+      <span class="laytog"><span>Lưới</span><span class="on">Collage</span></span>
+      <span class="blobA"></span><span class="blobB"></span>
+      <span class="hero"></span>
+      <span class="schip">◐ Bảng màu từ ảnh</span>
+      <span class="pal"><span class="ph"></span>
+        <span class="sw"><i style="background:#b0562b"></i><i style="background:#d8cbb4"></i><i style="background:#2e5c49"></i><i style="background:#33475c"></i></span>
+        <span class="copy">→ Thẻ DNA</span>
+      </span>
+    </div>
+    <div class="pane"><b>Cơ chế lấy nguyên:</b> collage = VẬT chồng lấn tự do (ảnh hero + mảng màu hình học + thẻ palette nghiêng) — đúng chất bàn moodboard của designer.<br><br>
+      <b>REUSE, 0 engine mới:</b> palette TRÍCH TỪ ẢNH đã có thật trong <code>refingest.ts:105-120</code> · moodboard đã có <code>MoodboardModal</code>/<code>out.moodboard</code> — việc là thêm <b>layout preset Lưới ↔ Collage</b>.<br><br>
+      <b>Dây nghề:</b> swatch bấm = bước CHỌN MÀU trong chọn vật liệu (chốt "màu là một BƯỚC") · "→ Thẻ DNA" đi qua ProposalSheet, người duyệt rồi mới nạp gu dự án.<br>
+      <span class="chip">Màu cam/navy/rêu = MÀU NỘI DUNG trích từ ảnh — không phải màu UI</span><span class="chip">Kéo-thả tự do TRONG khung moodboard; bento Home vẫn snap</span></div>
+  </div>
+
+  <div class="sec">R16 · Stage Vẽ 3D — visual direction Hoà chốt: CUBIC NÉT · SANG · ĐƠN GIẢN</div>
+  <div class="two">
+    <div class="v3">
+      <span class="grid"></span>
+      <span class="cube"><svg width="150" height="150" viewBox="0 0 150 150" fill="none" stroke="#d6d6db" stroke-width="1.6">
+        <path d="M75 12 L133 42 L133 106 L75 138 L17 106 L17 42 Z"/>
+        <path d="M75 12 L75 74 M17 42 L75 74 L133 42 M75 138 L75 74" opacity=".45"/>
+        <ellipse cx="75" cy="126" rx="52" ry="12" stroke="#4e4e57" stroke-width="1"/>
+        <path d="M40 135 A52 12 0 0 0 110 135" stroke="#6a57f5" stroke-width="2.5"/>
+      </svg></span>
+      <span class="rot"><small>Xoay</small><b>35°</b></span>
+      <div class="tools"><div class="gl">Dựng</div>
+        <div class="trow"><i></i>Đùn khối</div>
+        <div class="trow on"><i style="border-radius:99px"></i>Xoay</div>
+        <div class="trow"><i></i>Vật liệu</div>
+        <div class="trow"><i></i>Array</div>
+      </div>
+      <div class="light"><div class="gl">Chiếu sáng · Doc.lighting</div>
+        <div class="lgrid">
+          <span class="lcell on">◐ Spot</span><span class="lcell">▦ Area</span>
+          <span class="lcell">↙ Target</span><span class="lcell">○ Sun</span>
+        </div>
+        <div class="lsl"><small>Độ sáng</small><span class="tk"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+        <div class="lsl"><small>Đậm bóng</small><span class="tk"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+      </div>
+      <span class="axis">x ⌐ z · y</span>
+    </div>
+    <div class="pane"><b>Chất lúc DỰNG (khác Render mode):</b> khối = wireframe NÉT MẢNH, không tô đặc · nền tĩnh lặng, lưới sàn rất nhẹ · panel KHÔNG viền hộp — nhãn + giá trị đặt thẳng trên nền · canvas được bảo vệ tuyệt đối.<br><br>
+      <b>Số-tại-vật:</b> "Xoay 35°" hiện TO ngay dưới vật + cung dial quanh chân khối (tím = phần đã xoay) — gõ số đè trực tiếp, Enter chốt, Esc huỷ (§22, cùng khuôn numeric của flow H).<br><br>
+      <b>Chiếu sáng:</b> lưới Ô CHỌN Spot/Area/Target/Sun ghi vào <code>Doc.lighting</code> (chốt 10/08 — một nguồn, layout ↔ phối cảnh realtime); slider = thước vạch R1.<br>
+      <span class="chip">Active giữ ghost --accent-soft theo DS (không khối đen như ref)</span><span class="chip">Token 2 theme — chất "sang" không khoá vào nền xám</span></div>
+  </div>
+</div>
