@@ -44,15 +44,44 @@
 
 import type { LucideIcon } from 'lucide-react';
 import {
-  LayoutGrid,
+  House,
+  Briefcase,
   Folder,
-  Library,
-  ShieldCheck,
-  Building2,
-  PencilRuler,
+  LibraryBig,
+  FileCheck2,
+  Grid2x2,
   Box,
   Presentation,
 } from 'lucide-react';
+
+/* ─── TÁM BIỂU TƯỢNG CỦA THANH TRÁI — chọn như MỘT HỆ (Hoà chốt 20/08) ──────────────────────
+ * Khung/nét/màu là hằng số chung ở `components/ui/command-icon.tsx` (`HE_BIEU_TUONG`).
+ * Ở đây chỉ chọn NGHĨA. Cột "phần tử" = số hình vẽ trong `iconNode` của lucide — thước ĐO ĐƯỢC
+ * cho luật "hai icon cạnh nhau lệch hẳn độ phức tạp là TRƯỢT"; test nhóm [8] khoá dải này.
+ *
+ *  mục          icon         phần tử  vì sao chọn / vì sao BỎ cái cũ
+ *  Trang chủ    House          2      nghĩa nhà·xưởng. BỎ `LayoutGrid` (4): 4-ô là ngôn ngữ
+ *                                     dashboard, không nói "về xưởng"
+ *  Dự án        Briefcase      2      tập hồ sơ. BỎ `Building2` (4): toà nhà nhiều tầng nhiều cửa
+ *                                     sổ — chi tiết nhỏ, 16px không đọc kịp 1 giây
+ *  Files        Folder         1      thư mục/nguồn, đơn giản nhất bộ
+ *  Thư viện     LibraryBig     3      khối sách có gáy = bộ sưu tập vật. BỎ `Library` (4): bốn
+ *                                     vạch dọc cao thấp đọc ra THANH EQUALIZER, sai nghĩa hẳn
+ *  Soát duyệt   FileCheck2     3      tờ có dấu kiểm. BỎ `ShieldCheck` (1): khiên nói BẢO MẬT —
+ *                                     soát duyệt ở đây là duyệt hồ sơ, không phải an ninh
+ *  Thiết kế 2D  Grid2x2        3      mặt phẳng chia ô = mặt bằng. BỎ `PencilRuler` (3): là HAI
+ *                                     vật chồng nhau (bút + thước), rối ở 16px dù cùng số phần tử
+ *  Thiết kế 3D  Box            3      khối lập phương dây — giữ nguyên, vốn đã đúng
+ *  Trình chiếu  Presentation   3      khung hình trên chân = đầu ra/trình bày
+ *
+ * Dải phần tử **1-3**, cái rối nhất đúng 3× cái đơn giản nhất — chạm mép trần của luật, không
+ * vượt. ⛔ `Boxes` (9) từng được cân nhắc cho Thư viện: LOẠI vì gấp 9 lần cái đơn giản nhất
+ * trong bộ, tự nó là ca TRƯỢT của chính luật này.
+ * ⚠️ Con số ở bảng trên là ĐO bằng test nhóm [8], không phải đếm bằng mắt — bản nháp đầu của
+ * chính bảng này ghi sai 4/8 dòng vì regex đếm hụt icon một-phần-tử. Sửa icon thì chạy test rồi
+ * chép số ra, đừng ước.
+ * ⛔ Đừng "nâng cấp" một icon lẻ cho đẹp hơn: đổi một cái là phải đo lại cả tám.
+ */
 
 /* ─────────────────────────────────────────────────────────────────────────────────────────
    BA NẤC CHI TIẾT = BA CÔNG NĂNG (hợp đồng §5 · bản đồ §7 · CHOT-EXPERIENCE-SYSTEM điều 4)
@@ -148,7 +177,7 @@ export const MUC_RAIL: readonly MucRail[] = [
     vi: 'Trang chủ',
     en: 'Home',
     cum: 'viec',
-    icon: LayoutGrid,
+    icon: House,
     duong: '/',
     mat320: {
       kieu: 'khong',
@@ -161,7 +190,7 @@ export const MUC_RAIL: readonly MucRail[] = [
     vi: 'Dự án',
     en: 'Project',
     cum: 'viec',
-    icon: Building2,
+    icon: Briefcase,
     // Route GIỮ NGUYÊN `/projects/[id]/overview` — đổi route là vỡ deep-link (hợp đồng §2).
     // KHÔNG có route danh sách dự án riêng (đo 20/08: `app/projects/` chỉ có `[id]`; gallery
     // chọn dự án sống BÊN TRONG `/` qua `ProjectSelect`) ⇒ mục này trỏ vào dự án ĐANG MỞ, chưa
@@ -185,7 +214,7 @@ export const MUC_RAIL: readonly MucRail[] = [
     vi: 'Thư viện',
     en: 'Library',
     cum: 'viec',
-    icon: Library,
+    icon: LibraryBig,
     duong: '/library',
     // Hoà nêu đích danh 16/08: "thư viện vật liệu, size to nhất là cột dọc ô tròn vật liệu".
     mat320: { kieu: 'hinh', moTa: 'cột ô tròn vật liệu', daNoiNguon: false },
@@ -195,7 +224,7 @@ export const MUC_RAIL: readonly MucRail[] = [
     vi: 'Soát duyệt',
     en: 'Review',
     cum: 'viec',
-    icon: ShieldCheck,
+    icon: FileCheck2,
     // ⚠️ LÝ DO THẬT, đo tại nguồn 20/08 — KHÔNG phải "chưa làm": động cơ soát duyệt ĐANG CHẠY
     // (`lib/review/` + `components/review/ReviewPanel.tsx`), nhưng nó mount ở MÉP PHẢI của
     // AppShell (`AppShell.tsx:192`) theo luật "một chỗ ngồi cố định" — không có route riêng để
@@ -215,7 +244,7 @@ export const MUC_RAIL: readonly MucRail[] = [
     vi: 'Thiết kế 2D',
     en: '2D Design',
     cum: 'chang',
-    icon: PencilRuler,
+    icon: Grid2x2,
     duoi: 'cad',
     mat320: { kieu: 'tinhTrang', moTa: 'chặng đang dở', daNoiNguon: true },
   },

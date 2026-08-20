@@ -58,6 +58,7 @@ import { useT } from '@/lib/i18n';
 import { getLastStage } from '@/lib/shell/last-stage';
 import { RADIUS } from '@/lib/geometry';
 import Tooltip from '@/components/ui/Tooltip';
+import { HE_BIEU_TUONG } from '@/components/ui/command-icon';
 import {
   MUC_RAIL,
   NHAN_CUM,
@@ -74,7 +75,21 @@ import {
 
 /** Khoá nhớ nấc chi tiết. Lưu THEO MÁY, không vào `.idf` (§6.4 — cách bày trên màn của tôi ≠ tài sản). */
 const KHOA_NAC = 'interiorflow.rail.nac_v1';
-const NAC_MAC_DINH: NacRail = 'dieuHuong';
+/**
+ * MẶC ĐỊNH THEO NGỮ CẢNH — chỉ khi người dùng CHƯA từng chọn (Hoà chốt 20/08 + CHOT-EXPERIENCE
+ * điều 4 *"vào chặng mặc định rail gọn bảo vệ canvas"*).
+ *   đang trong CHẶNG → `dinhVi` (52): đang sáng tác, canvas phải áp đảo
+ *   ngoài chặng       → `dieuHuong` (240): đang đi tìm việc, cần đọc tên
+ * Vì sao 52 mà không 240 lúc sáng tác — số, không cảm tính: rail 240 + thềm Lớp 224 = **464px**,
+ * tức **32,2%** màn 1440 (đo thật 20/08), vượt xa trần ~20% Hoà chốt. Rail 52 + thềm 224 = **276**
+ * = **19,2%** ✓.
+ * ⚠️ KHÔNG mâu thuẫn luật ① "không auto-thu": đây là GIÁ TRỊ MỞ ĐẦU khi chưa có lựa chọn nào,
+ * không phải app tự đổi nấc sau lưng. Đã chọn một lần là lựa chọn đó thắng ở MỌI màn, mãi mãi —
+ * `localStorage` đọc TRƯỚC và ghi đè giá trị mở đầu này.
+ */
+function nacMoDau(dangTrongChang: boolean): NacRail {
+  return dangTrongChang ? 'dinhVi' : 'dieuHuong';
+}
 
 const laNac = (v: unknown): v is NacRail => v === 'dinhVi' || v === 'dieuHuong' || v === 'duyet';
 
@@ -86,14 +101,19 @@ export function RailDieuHuong() {
   const flowId = useFlowStore((s) => s.currentFlowId);
   const tenBan = useFlowStore((s) => s.flowName);
 
-  const [nac, setNac] = useState<NacRail>(NAC_MAC_DINH);
+  // `dangMo`/`dangTrongChang` tính trước state vì giá trị MỞ ĐẦU của nấc phụ thuộc ngữ cảnh.
+  const dangMo = mucDangMo(duong);
+  const dangTrongChang = MUC_RAIL.some((m) => m.id === dangMo && m.cum === 'chang');
+
+  const [nac, setNac] = useState<NacRail>('dieuHuong');
   const [daNap, setDaNap] = useState(false);
 
   // Nạp lựa chọn cũ MỘT lần. Không nghe `resize`: rail tuyệt đối không tự đổi nấc chi tiết (§6.1).
+  // Lựa chọn đã lưu THẮNG giá trị mở đầu theo ngữ cảnh — người dùng chọn rồi thì thôi đoán hộ.
   useEffect(() => {
     try {
       const cu = localStorage.getItem(KHOA_NAC);
-      if (laNac(cu)) setNac(cu);
+      setNac(laNac(cu) ? cu : nacMoDau(dangTrongChang));
     } catch {
       /* localStorage bị chặn — dùng mặc định, đây là tiện nghi không phải nguồn sự thật */
     }
@@ -112,7 +132,6 @@ export function RailDieuHuong() {
   const beRong = BE_RONG_NAC[nac];
   const hienChu = nac !== 'dinhVi';
   const hienTinhTrang = nac === 'duyet';
-  const dangMo = mucDangMo(duong);
   const daMoDuAn = Boolean(duAnId ?? flowId);
 
   // "Chặng đang dở" — dữ liệu THẬT, cùng khoá mà card Gallery đang đọc ([marker: lastStage]).
@@ -233,7 +252,15 @@ function NutNac({
         style={{ borderRadius: RADIUS.r2, width: hep ? 32 : 'var(--tap)', height: hep ? 32 : 'var(--tap)', flexShrink: 0 }}
         className="grid shrink-0 place-items-center text-[var(--t3)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
       >
-        {huong === 'hep' ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+        {/* Cùng hệ với 8 icon điều hướng: nét 1,5 (mặc định lucide là 2 — ngoài dải). Hình 16 chứ
+            không 18 vì đây là NÚT ĐIỀU KHIỂN nấc, không phải một mục của bản đồ; 16 vẫn trong dải
+            16-18, và nhỏ hơn một bậc là kênh phân biệt "điều khiển ≠ nội dung". Ô nút giữ 32 để
+            không tụt dưới ngưỡng chạm 24×24 của WCAG 2.2 AA. */}
+        {huong === 'hep' ? (
+          <ChevronLeft size={16} strokeWidth={HE_BIEU_TUONG.net} />
+        ) : (
+          <ChevronRight size={16} strokeWidth={HE_BIEU_TUONG.net} />
+        )}
       </button>
     </Tooltip>
   );
@@ -306,11 +333,24 @@ function HangRail({
           }}
         />
       )}
-      <Icon
-        size={16}
-        strokeWidth={dangMo ? 2 : 1.75}
-        style={{ flexShrink: 0, color: dangMo ? 'var(--accent)' : undefined }}
-      />
+      {/* Ô ĐẶT ICON 20×20 CỐ ĐỊNH, hình 18 bên trong (`HE_BIEU_TUONG`). Ô cố định chứ không để
+          icon tự chiếm chỗ: hình lucide có cái vuông có cái dẹt, thả trần thì mép trái chữ nhấp
+          nhô theo từng hàng. Có ô thì mọi hàng thẳng cột, và ở nấc định vị icon nằm đúng tâm.
+          Nét 1,5 → 1,75 khi đang mở: cả hai đầu vẫn trong dải hệ. Trước 20/08 chỗ này là
+          `strokeWidth={2}` — ngoài dải, làm mục đang mở đặc hơn hẳn hàng xóm. */}
+      <span
+        aria-hidden
+        style={{
+          width: HE_BIEU_TUONG.khung,
+          height: HE_BIEU_TUONG.khung,
+          flexShrink: 0,
+          display: 'grid',
+          placeItems: 'center',
+          color: dangMo ? 'var(--accent)' : undefined,
+        }}
+      >
+        <Icon size={HE_BIEU_TUONG.hinh} strokeWidth={dangMo ? HE_BIEU_TUONG.netNhan : HE_BIEU_TUONG.net} />
+      </span>
       {hienChu && (
         <span style={{ minWidth: 0, flex: 1 }}>
           <span className="block truncate">{nhan}</span>

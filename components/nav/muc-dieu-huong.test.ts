@@ -203,5 +203,72 @@ ok(
   THU_TU_NAC.every((n, i) => i === 0 || BE_RONG_NAC[n] > BE_RONG_NAC[THU_TU_NAC[i - 1]]),
 );
 
+console.log('\n[8] HỆ BIỂU TƯỢNG — tám icon phải đọc như MỘT BỘ (Hoà chốt 20/08)');
+/* Đo THẬT, không chấm bằng mắt: đếm số phần tử vẽ trong `iconNode` của chính lucide đã cài.
+ * Đây là thước cho luật *"hai icon cạnh nhau mà độ phức tạp lệch hẳn = TRƯỢT"* — trước nay luật
+ * đó không kiểm được nên icon cứ trôi mỗi lần ai đó thấy cái khác "đẹp hơn".
+ * Đọc tệp thay vì import: `lucide-react` là ESM, `sucrase-node` chạy CJS — đọc tệp là cách duy
+ * nhất lấy được số thật mà không kéo bundler vào một test thuần. */
+import { readFileSync, existsSync } from 'fs';
+
+/** mục rail → tên tệp icon trong lucide (kebab-case). Sai tên là test đỏ, không im lặng. */
+const TEP_ICON: Record<string, string> = {
+  'trang-chu': 'house',
+  'du-an': 'briefcase',
+  files: 'folder',
+  'thu-vien': 'library-big',
+  'soat-duyet': 'file-check-corner', // `FileCheck2` tái xuất từ tệp này
+  'thiet-ke-2d': 'grid-2x2',
+  'thiet-ke-3d': 'box',
+  'trinh-chieu': 'presentation',
+};
+function soPhanTu(ten: string): number | null {
+  const p = `node_modules/lucide-react/dist/esm/icons/${ten}.mjs`;
+  if (!existsSync(p)) return null;
+  // `\[\s*` chứ không `\[`: lucide xuống dòng sau dấu mở ngoặc ở icon một phần tử (vd `folder`),
+  // regex bám sát sẽ đếm nhầm thành 0 — bẫy làm cái ĐƠN GIẢN NHẤT trông như cái rỗng.
+  return (readFileSync(p, 'utf8').match(/\[\s*"(path|rect|line|circle|polyline|polygon|ellipse)"/g) ?? []).length;
+}
+ok('bảng tệp icon phủ đúng 8 mục của thanh trái', MUC_RAIL.every((m) => TEP_ICON[m.id]) && Object.keys(TEP_ICON).length === MUC_RAIL.length);
+const dem = MUC_RAIL.map((m) => ({ id: m.id, n: soPhanTu(TEP_ICON[m.id]) }));
+ok('mọi tệp icon tra được (tên lucide đúng)', dem.every((d) => d.n !== null));
+const sos = dem.map((d) => d.n ?? -1);
+console.log('    phần tử/icon:', dem.map((d) => `${d.id}=${d.n}`).join(' · '));
+ok(
+  'không icon nào quá 3 phần tử — trên 3 là cần chi tiết nhỏ mới đọc, trượt cửa "hiểu dưới 1 giây" ở 16-18px',
+  sos.every((n) => n >= 1 && n <= 3),
+);
+ok(
+  'độ phức tạp không lệch hẳn: cái rối nhất ≤ 3× cái đơn giản nhất',
+  Math.max(...sos) <= 3 * Math.min(...sos),
+);
+// Bốn hình Hoà loại đích danh. Khoá bằng TÊN TỆP chứ không bằng nhãn: đổi icon là đổi chỗ này,
+// và chỗ này phải cãi lại.
+for (const [cam, viSao] of [
+  ['layout-grid', 'Trang chủ không dùng icon 4-ô kiểu dashboard'],
+  ['building-2', 'Dự án không dùng hình toà nhà chi tiết'],
+  ['library', 'Thư viện không dùng bốn vạch dọc (đọc ra thanh equalizer)'],
+  ['shield-check', 'Soát duyệt không dùng khiên bảo mật'],
+] as const) {
+  ok(`${viSao} (${cam})`, !Object.values(TEP_ICON).includes(cam));
+}
+// Đọc `HE_BIEU_TUONG` bằng VĂN BẢN chứ không `import`: alias `@/` không sống trong sucrase-node
+// (test thuần, không bundler) — và test này vốn đã đọc tệp để đếm phần tử icon, cùng một lối.
+{
+  const src = readFileSync('components/ui/command-icon.tsx', 'utf8');
+  const so = (ten: string): number | null => {
+    const m = new RegExp(`${ten}:\\s*([0-9.]+)`).exec(src);
+    return m ? parseFloat(m[1]) : null;
+  };
+  const khung = so('khung');
+  const hinh = so('hinh');
+  const net = so('net');
+  const netNhan = so('netNhan');
+  ok('khung icon = 20', khung === 20);
+  ok('hình quang học trong dải 16-18', hinh !== null && hinh >= 16 && hinh <= 18);
+  ok('nét thường ≥ 1,5', net !== null && net >= 1.5);
+  ok('nét khi nhấn ≤ 1,75 — trần cứng, chặn ca strokeWidth=2 cũ', netNhan !== null && netNhan <= 1.75);
+}
+
 console.log(fail ? `\n❌ ${fail} kiểm HỎNG\n` : '\n✅ Tất cả kiểm ĐẠT\n');
 if (fail) process.exit(1);
