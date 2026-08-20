@@ -1,0 +1,556 @@
+<!-- @dsCard group="Experience System" title="Vỏ app · 3 nấc sidebar + mép dưới ngữ nghĩa" -->
+<!--
+  ⚠️ ĐÂY LÀ NGUYÊN MẪU KỸ THUẬT / TƯƠNG TÁC — KHÔNG PHẢI BẢN DUYỆT THỊ GIÁC.
+  Mục đích: bày ĐỦ 6 thứ trong CÙNG một khung nhìn để so sánh được và để chốt LUẬT HÀNH VI:
+    ① Rail 52–56  ② Thềm 220–280  ③ Bảng làm việc 320–440 (kéo giãn)
+    ④ Dải hành động (mép dưới)  ⑤ Viên ngữ cảnh  ⑥ Chế độ bản sửa
+  Chất thị giác (typography, nhịp, chất liệu) CHƯA chấm — chấm ở board thị giác riêng.
+
+  NGUỒN TOKEN: khối :root ngay dưới chép NGUYÊN VĂN từ `app/globals.css`
+  (dark mặc định + [data-theme='light']). Ngoài khối đó, TOÀN BỘ file dùng var(--…) — 0 hex gõ cứng.
+  Bo góc chỉ dùng thang --r-1/2/3/4/--r-full = 6/10/14/20/999.
+
+  KHÔNG mượn ngôn ngữ thị giác của board N/O/P/R/T (Hoà đã bác 20/08).
+  KHÔNG dựng nav thứ hai: mép dưới không phải thanh điều hướng, không phải Dock macOS.
+-->
+<div class="exv-root" data-theme="dark">
+<style>
+  /* ===== TOKEN — chép từ app/globals.css, không sửa giá trị ===== */
+  .exv-root{
+    --accent:#6a57f5; --accent-strong:#553ff3;
+    --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --on-accent:#ffffff;
+    --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+    --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px;
+    --tap:32px; --tap-lg:44px; --row:28px; --gap:8px; --fs-ui:13px;
+    --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+    --blur:22px;
+    /* dark */
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --danger:#e0563d; --warning:#d9a34a; --success:#46b876;
+    --nen-mo-panel:rgba(20,20,23,.72); --nen-mo-card:rgba(26,26,30,.76);
+    --vien-mo:rgba(255,255,255,.06); --mo-vo-hieu:.5;
+    --shadow-pop:0 10px 30px -10px rgba(0,0,0,.7);
+    --shadow-sheet:0 18px 50px -18px rgba(0,0,0,.75);
+    --dots:#26262d;
+  }
+  .exv-root[data-theme='light']{
+    --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+    --border:#e3ded4; --border-strong:#cbc4b6;
+    --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+    --danger:#c9341d; --warning:#9a6304; --success:#107043;
+    --nen-mo-panel:rgba(250,248,244,.7); --nen-mo-card:rgba(255,255,255,.82);
+    --vien-mo:rgba(0,0,0,.05); --mo-vo-hieu:.62;
+    --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+    --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
+    --dots:#ddd8ce;
+  }
+
+  /* ===== nền trang ===== */
+  .exv-root{
+    background:var(--bg); color:var(--t2); padding:28px;
+    font:var(--fs-ui)/1.6 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+    letter-spacing:0;
+  }
+  .exv-root *{box-sizing:border-box}
+  .exv-h1{font-size:var(--fs-lg);font-weight:600;color:var(--t1);margin:0 0 4px;line-height:1.5}
+  .exv-sub{color:var(--t3);margin:0 0 6px;max-width:96ch;line-height:1.6}
+  .exv-warn{
+    color:var(--t3);background:var(--field);border:1px solid var(--border);
+    border-left:3px solid var(--warning);
+    border-radius:var(--r-2);padding:8px 12px;margin:0 0 18px;max-width:96ch;line-height:1.6;
+    font-size:var(--fs-xs);
+  }
+
+  /* ===== hàng điều khiển bản mẫu (KHÔNG thuộc sản phẩm) ===== */
+  .ctl{display:flex;flex-wrap:wrap;gap:var(--gap);align-items:center;margin:0 0 14px}
+  .ctl .grp{display:flex;gap:4px;background:var(--panel);border:1px solid var(--border);
+    border-radius:var(--r-full);padding:4px}
+  .ctl .lb{font-size:var(--fs-2xs);color:var(--t4);margin-right:2px;line-height:1.6}
+  .btn{
+    appearance:none;border:1px solid transparent;background:transparent;color:var(--t3);
+    font:inherit;font-size:var(--fs-xs);line-height:1.5;
+    min-height:var(--tap);padding:0 12px;border-radius:var(--r-full);cursor:pointer;
+    transition:background var(--dur-fast) var(--ease-apple),color var(--dur-fast) var(--ease-apple);
+  }
+  .btn:hover{background:var(--hover);color:var(--t1)}
+  .btn[aria-pressed='true']{background:var(--accent-soft);border-color:var(--accent-ring);color:var(--t1)}
+  .btn:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px}
+
+  /* ===== KHUNG APP ===== */
+  .frame{
+    position:relative;display:grid;grid-template-rows:auto 1fr auto;
+    height:560px;border:1px solid var(--border);border-radius:var(--r-4);
+    background:var(--panel);overflow:hidden;box-shadow:var(--shadow-sheet);
+  }
+  /* MÉP TRÊN — Vitals */
+  .top{
+    display:flex;align-items:center;gap:var(--gap);
+    padding:0 14px;height:46px;
+    background:var(--nen-mo-panel);backdrop-filter:blur(var(--blur));
+    border-bottom:1px solid var(--vien-mo);
+  }
+  .brand{font-size:var(--fs-xs);color:var(--t4);line-height:1.6}
+  .aperture{
+    margin:0 auto;display:flex;align-items:center;gap:8px;
+    background:var(--field);border:1px solid var(--border);border-radius:var(--r-full);
+    padding:0 14px;height:var(--tap);color:var(--t3);font-size:var(--fs-xs);max-width:520px;
+  }
+  .aperture .dot{width:7px;height:7px;border-radius:var(--r-full);background:var(--success);flex:none}
+  .aperture b{color:var(--t2);font-weight:600}
+  .who{display:flex;align-items:center;gap:6px}
+  .av{width:24px;height:24px;border-radius:var(--r-full);background:var(--field);
+    border:1px solid var(--border-strong);display:grid;place-items:center;
+    font-size:var(--fs-2xs);color:var(--t3)}
+  .av.me{border-color:var(--accent-ring);color:var(--t1)}
+
+  /* THÂN: sidebar + canvas + cột phải */
+  .body{display:grid;grid-template-columns:auto 1fr auto;min-height:0}
+
+  /* ---- ① RAIL / ② THỀM / ③ BẢNG ---- */
+  .side{
+    position:relative;display:flex;flex-direction:column;
+    background:var(--panel);border-right:1px solid var(--border);
+    transition:width var(--dur-base) var(--ease-apple);
+    overflow:hidden;
+  }
+  .exv-root[data-nac='rail']  .side{width:56px}
+  .exv-root[data-nac='them']  .side{width:248px}
+  .exv-root[data-nac='bang']  .side{width:var(--w-bang,380px)}
+  .side .inner{flex:1;min-height:0;overflow:auto;padding:10px 8px}
+  /* HAI ĐẢO — giữ ở MỌI nấc, tách bằng khoảng thở, KHÔNG đường kẻ */
+  .island{display:flex;flex-direction:column;gap:2px}
+  .island + .island{margin-top:26px}
+  .island .cap{
+    font-size:var(--fs-2xs);color:var(--t5);padding:0 8px 6px;line-height:1.6;
+  }
+  .exv-root[data-nac='rail'] .island .cap{display:none}
+  .nav{
+    display:flex;align-items:center;gap:10px;min-height:var(--tap-lg);
+    padding:0 8px;border-radius:var(--r-2);color:var(--t3);cursor:pointer;
+    border:1px solid transparent;
+  }
+  .nav:hover{background:var(--hover);color:var(--t1)}
+  .nav[aria-current='true']{background:var(--accent-soft);border-color:var(--accent-ring);color:var(--t1)}
+  .nav .gl{
+    width:26px;height:26px;flex:none;border-radius:var(--r-1);
+    display:grid;place-items:center;font-size:var(--fs-xs);
+    background:var(--field);border:1px solid var(--border);color:inherit;
+  }
+  .nav[aria-current='true'] .gl{border-color:var(--accent-ring)}
+  .nav .tx{white-space:nowrap;font-size:var(--fs-ui);line-height:1.5}
+  .nav .meta{margin-left:auto;font-size:var(--fs-2xs);color:var(--t5);white-space:nowrap}
+  .exv-root[data-nac='rail'] .nav{justify-content:center;padding:0}
+  .exv-root[data-nac='rail'] .nav .tx,
+  .exv-root[data-nac='rail'] .nav .meta{display:none}
+  /* nấc ③ thêm MỘT LỚP TIN: khối chỉnh sâu, không phải chữ to hơn */
+  .deep{display:none;margin-top:18px}
+  .exv-root[data-nac='bang'] .deep{display:block}
+  .deep h6{margin:0 0 8px;padding:0 8px;font-size:var(--fs-2xs);color:var(--t5);
+    font-weight:600;line-height:1.6}
+  .fieldrow{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--r-2)}
+  .fieldrow:hover{background:var(--hover)}
+  .fieldrow .k{font-size:var(--fs-xs);color:var(--t3);width:96px;flex:none;line-height:1.5}
+  .fieldrow .v{flex:1;background:var(--field);border:1px solid var(--border);
+    border-radius:var(--r-1);padding:4px 8px;font-size:var(--fs-xs);color:var(--t2);line-height:1.5}
+  .fieldrow .v.acc{border-color:var(--accent-ring)}
+  /* tay kéo giãn — chỉ ở nấc ③ */
+  .grip{
+    position:absolute;top:0;right:0;width:8px;height:100%;cursor:col-resize;display:none;
+  }
+  .grip::after{content:'';position:absolute;top:50%;right:2px;width:2px;height:40px;
+    margin-top:-20px;border-radius:var(--r-full);background:var(--border-strong)}
+  .exv-root[data-nac='bang'] .grip{display:block}
+  .grip:hover::after{background:var(--accent)}
+
+  /* ---- MÉP GIỮA: canvas ---- */
+  .canvas{
+    position:relative;min-width:0;background:
+      radial-gradient(circle at 1px 1px, var(--dots) 1px, transparent 0) 0 0/22px 22px,
+      var(--bg);
+    display:grid;place-items:center;padding:22px;
+  }
+  .stage{
+    width:min(100%,460px);aspect-ratio:16/10;border-radius:var(--r-3);
+    background:var(--card);border:1px solid var(--border);
+    display:grid;place-items:center;color:var(--t4);font-size:var(--fs-xs);
+    position:relative;line-height:1.6;text-align:center;padding:16px;
+  }
+  .selbox{
+    position:absolute;left:14%;top:20%;width:34%;height:38%;
+    border:1px solid var(--accent);border-radius:var(--r-1);background:var(--accent-soft);
+  }
+  .selbox::after{content:'';position:absolute;right:-3px;bottom:-3px;width:6px;height:6px;
+    background:var(--accent);border-radius:var(--r-full)}
+
+  /* ---- ⑤ VIÊN NGỮ CẢNH — 2–5 hành động, không nhân bản Inspector ---- */
+  .capsule{
+    position:absolute;left:50%;bottom:74px;transform:translateX(-50%);
+    display:flex;align-items:center;gap:10px;
+    padding:0 8px 0 14px;height:var(--tap-lg);
+    background:var(--nen-mo-card);backdrop-filter:blur(var(--blur));
+    border:1px solid var(--border-strong);border-radius:var(--r-full);
+    box-shadow:var(--shadow-pop);font-size:var(--fs-xs);color:var(--t3);
+    white-space:nowrap;
+  }
+  .capsule b{color:var(--t1);font-weight:600}
+  .capsule .sep{width:1px;height:18px;background:var(--vien-mo)}
+  .capsule .tag{display:inline-flex;align-items:center;gap:5px;color:var(--t3)}
+  .capsule .tag .mk{width:7px;height:7px;border-radius:var(--r-full);background:var(--success);flex:none}
+  .capsule .act{
+    min-height:var(--tap);padding:0 12px;border-radius:var(--r-full);
+    border:1px solid var(--border);background:var(--field);color:var(--t2);
+    font:inherit;font-size:var(--fs-xs);cursor:pointer;line-height:1.5;
+  }
+  .capsule .act:hover{background:var(--hover);color:var(--t1)}
+  .capsule .act:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px}
+  .capsule[hidden]{display:none}
+
+  /* ---- MÉP PHẢI: cái gì đáng chú ý ---- */
+  .right{
+    width:210px;border-left:1px solid var(--border);background:var(--panel);
+    padding:12px 10px;overflow:auto;
+  }
+  .right h6{margin:0 0 8px;font-size:var(--fs-2xs);color:var(--t5);font-weight:600;line-height:1.6}
+  .lens{
+    border:1px solid var(--border);background:var(--card);border-radius:var(--r-2);
+    padding:8px 10px;margin-bottom:8px;font-size:var(--fs-xs);color:var(--t3);line-height:1.6;
+  }
+  .lens b{display:block;color:var(--t2);font-weight:600}
+  .truth{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-2xs);color:var(--t4)}
+  .truth .mk{width:6px;height:6px;border-radius:var(--r-full);flex:none}
+  .truth .mk.ok{background:var(--success)}
+  .truth .mk.inf{background:var(--warning)}
+  .truth .mk.stale{background:var(--t5)}
+
+  /* ---- ④ DẢI HÀNH ĐỘNG — mép dưới ---- */
+  .strip{
+    display:flex;align-items:center;gap:10px;height:52px;padding:0 14px;
+    background:var(--nen-mo-panel);backdrop-filter:blur(var(--blur));
+    border-top:1px solid var(--vien-mo);
+    font-size:var(--fs-xs);color:var(--t3);
+  }
+  .strip .msg{display:flex;align-items:center;gap:9px;min-width:0}
+  .strip .msg .mk{width:7px;height:7px;border-radius:var(--r-full);flex:none;background:var(--t5)}
+  .strip[data-kind='xong'] .msg .mk{background:var(--success)}
+  .strip[data-kind='kiem'] .msg .mk{background:var(--warning)}
+  .strip[data-kind='cu']   .msg .mk{background:var(--t4)}
+  .strip .msg b{color:var(--t1);font-weight:600}
+  .strip .msg .sub{color:var(--t4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .strip .sp{flex:1}
+  .strip .go{
+    min-height:var(--tap);padding:0 14px;border-radius:var(--r-full);
+    background:var(--field);border:1px solid var(--border);color:var(--t2);
+    font:inherit;font-size:var(--fs-xs);cursor:pointer;line-height:1.5;
+  }
+  .strip .go:hover{background:var(--hover);color:var(--t1)}
+  .strip .go:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px}
+  .strip .go.pri{background:var(--accent);border-color:var(--accent-strong);color:var(--on-accent)}
+  .strip .edge{
+    font-size:var(--fs-2xs);color:var(--t5);border:1px dashed var(--border-strong);
+    border-radius:var(--r-full);padding:2px 10px;line-height:1.6;
+  }
+
+  /* ---- ⑥ CHẾ ĐỘ BẢN SỬA ---- */
+  .revwrap{display:none}
+  .exv-root[data-rev='on'] .revwrap{display:block}
+  .rev{
+    display:flex;align-items:center;gap:12px;padding:10px 14px;
+    background:var(--card);border-top:1px solid var(--border);
+  }
+  .rev .track{display:flex;align-items:center;gap:6px}
+  .rev .stop{
+    display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;
+    padding:4px 8px;border-radius:var(--r-2);border:1px solid transparent;background:transparent;
+    font:inherit;color:var(--t4);font-size:var(--fs-2xs);line-height:1.6;
+  }
+  .rev .stop:hover{background:var(--hover)}
+  .rev .stop:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px}
+  .rev .stop .th{width:52px;height:34px;border-radius:var(--r-1);background:var(--field);
+    border:1px solid var(--border)}
+  .rev .stop[aria-pressed='true']{border-color:var(--accent-ring);background:var(--accent-soft);color:var(--t1)}
+  .rev .stop[aria-pressed='true'] .th{border-color:var(--accent)}
+  .rev .line{width:20px;height:1px;background:var(--border-strong)}
+  .rev .info{font-size:var(--fs-xs);color:var(--t3);line-height:1.6;min-width:0}
+  .rev .info b{color:var(--t1);display:block;font-weight:600}
+  .rev .sp{flex:1}
+
+  /* ===== chú giải mép + luật ===== */
+  .legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:16px}
+  .lg{border:1px solid var(--border);background:var(--panel);border-radius:var(--r-3);padding:10px 12px}
+  .lg b{display:block;color:var(--t1);font-size:var(--fs-xs);font-weight:600;line-height:1.5}
+  .lg span{font-size:var(--fs-xs);color:var(--t3);line-height:1.6}
+  .laws{margin-top:16px;border:1px solid var(--border);background:var(--panel);
+    border-radius:var(--r-3);padding:12px 16px}
+  .laws h3{margin:0 0 6px;font-size:var(--fs-sm);color:var(--t1);font-weight:600;line-height:1.5}
+  .laws ul{margin:0;padding-left:18px}
+  .laws li{font-size:var(--fs-xs);color:var(--t3);line-height:1.7;margin-bottom:3px}
+  .laws li b{color:var(--t2);font-weight:600}
+  .no{color:var(--danger)}
+
+  @media (prefers-reduced-motion: reduce){
+    .exv-root *,.exv-root *::before,.exv-root *::after{
+      transition-duration:0.01ms !important;animation-duration:0.01ms !important;
+    }
+  }
+</style>
+
+  <div class="exv-h1">Vỏ app · ba nấc sidebar + mép dưới mang nghĩa</div>
+  <p class="exv-sub">Sáu thứ trong cùng một khung nhìn: ① rail · ② thềm · ③ bảng làm việc (kéo giãn) · ④ dải hành động mép dưới · ⑤ viên ngữ cảnh · ⑥ chế độ bản sửa.</p>
+  <p class="exv-warn">Đây là <b>nguyên mẫu kỹ thuật / tương tác</b>, không phải bản duyệt thị giác. Cần chấm ở đây: <b>luật hành vi</b> (nấc nào nói gì · mép nào chịu trách nhiệm gì · thu/mở do ai gây ra), chưa chấm chất liệu và nhịp thị giác.</p>
+
+  <div class="ctl">
+    <span class="lb">Nấc sidebar</span>
+    <div class="grp" role="group">
+      <button class="btn" data-nac="rail" aria-pressed="true">① Rail 56 · ở đâu</button>
+      <button class="btn" data-nac="them" aria-pressed="false">② Thềm 248 · có gì</button>
+      <button class="btn" data-nac="bang" aria-pressed="false">③ Bảng 320–440 · sửa thế nào</button>
+    </div>
+    <span class="lb">Dải hành động</span>
+    <div class="grp" role="group">
+      <button class="btn" data-kind="ápvl" aria-pressed="true">Đã áp vật liệu</button>
+      <button class="btn" data-kind="kiem" aria-pressed="false">Spec cập nhật</button>
+      <button class="btn" data-kind="xong" aria-pressed="false">Kết xuất xong</button>
+      <button class="btn" data-kind="cu" aria-pressed="false">Đầu ra đã cũ</button>
+    </div>
+    <div class="grp" role="group">
+      <button class="btn" id="tgCap" aria-pressed="true">⑤ Viên ngữ cảnh</button>
+      <button class="btn" id="tgRev" aria-pressed="false">⑥ Chế độ bản sửa</button>
+      <button class="btn" id="tgTheme" aria-pressed="false">Nền sáng</button>
+    </div>
+  </div>
+
+  <div class="frame">
+
+    <!-- MÉP TRÊN · tôi nên biết gì (Vitals) -->
+    <div class="top">
+      <span class="brand">InteriorFlow — Căn hộ Thảo Điền</span>
+      <div class="aperture">
+        <span class="dot" aria-hidden="true"></span>
+        <span>Vitals · <b>3 mục cần biết</b> · vật liệu sàn chờ duyệt</span>
+      </div>
+      <div class="who">
+        <span class="av me" title="Bạn">H</span>
+        <span class="av" title="Đang xem: Minh">M</span>
+        <span class="av" title="+2 người">+2</span>
+      </div>
+    </div>
+
+    <!-- THÂN -->
+    <div class="body">
+
+      <!-- ①②③ SIDEBAR — hai đảo giữ ở mọi nấc -->
+      <nav class="side" aria-label="Điều hướng">
+        <div class="inner">
+
+          <div class="island">
+            <div class="cap">Nơi làm việc</div>
+            <a class="nav" role="link" tabindex="0"><span class="gl">⌂</span><span class="tx">Trang chủ</span></a>
+            <a class="nav" role="link" tabindex="0"><span class="gl">▤</span><span class="tx">Dự án</span><span class="meta">7</span></a>
+            <a class="nav" role="link" tabindex="0"><span class="gl">🗀</span><span class="tx">Files</span><span class="meta">2 ngăn</span></a>
+            <a class="nav" role="link" tabindex="0"><span class="gl">◫</span><span class="tx">Thư viện</span><span class="meta">148</span></a>
+            <a class="nav" role="link" tabindex="0"><span class="gl">✓</span><span class="tx">Soát duyệt</span><span class="meta">1 chờ</span></a>
+          </div>
+
+          <!-- tách bằng khoảng thở, KHÔNG đường kẻ -->
+          <div class="island">
+            <div class="cap">Chặng của dự án</div>
+            <a class="nav" role="link" tabindex="0"><span class="gl">2D</span><span class="tx">2D Kỹ thuật</span></a>
+            <a class="nav" role="link" tabindex="0" aria-current="true"><span class="gl">3D</span><span class="tx">3D Thiết kế</span><span class="meta">đang mở</span></a>
+            <a class="nav" role="link" tabindex="0"><span class="gl">▶</span><span class="tx">Trình chiếu</span></a>
+          </div>
+
+          <!-- nấc ③ THÊM MỘT LỚP TIN, không phải chữ to hơn -->
+          <div class="deep">
+            <h6>Vật liệu đang áp — Sồi tự nhiên · MAT-014</h6>
+            <div class="fieldrow"><span class="k">Độ nhám</span><span class="v acc">0,42</span></div>
+            <div class="fieldrow"><span class="k">Ánh kim</span><span class="v">0,00</span></div>
+            <div class="fieldrow"><span class="k">Khổ tấm</span><span class="v">1200 × 190 mm</span></div>
+            <div class="fieldrow"><span class="k">Hướng vân</span><span class="v">Dọc phòng</span></div>
+            <div class="fieldrow"><span class="k">Nguồn</span><span class="v">Nhà cung cấp · khoảng giá</span></div>
+            <h6 style="margin-top:14px">Đang dùng ở</h6>
+            <div class="fieldrow"><span class="k">2D</span><span class="v">4 mặt bằng</span></div>
+            <div class="fieldrow"><span class="k">Trình chiếu</span><span class="v">Bảng vật liệu A3</span></div>
+          </div>
+        </div>
+        <div class="grip" id="grip" title="Kéo để đổi bề rộng bảng (320–440)"></div>
+      </nav>
+
+      <!-- MÉP GIỮA · nội dung -->
+      <div class="canvas">
+        <div class="stage">
+          <div class="selbox" aria-hidden="true"></div>
+          Khung nhìn 3D — phòng khách<br><span style="color:var(--t5)">nội dung là vua, vỏ lùi ra sau</span>
+        </div>
+
+        <!-- ⑤ VIÊN NGỮ CẢNH -->
+        <div class="capsule" id="capsule">
+          <span class="tag"><span class="mk" aria-hidden="true"></span>Đã kiểm</span>
+          <b>Ghế F-01</b>
+          <span>3 nơi dùng</span>
+          <span class="sep" aria-hidden="true"></span>
+          <button class="act">Thay</button>
+          <button class="act">Nguồn</button>
+        </div>
+      </div>
+
+      <!-- MÉP PHẢI · cái gì đáng chú ý -->
+      <aside class="right" aria-label="Đáng chú ý">
+        <h6>Đáng chú ý</h6>
+        <div class="lens"><b>Chọn hiện tại</b>Ghế F-01 · 3 nơi dùng
+          <div class="truth"><span class="mk ok" aria-hidden="true"></span>Đã kiểm</div></div>
+        <div class="lens"><b>Vật liệu sàn</b>Chờ duyệt từ hôm qua
+          <div class="truth"><span class="mk inf" aria-hidden="true"></span>Máy suy</div></div>
+        <div class="lens"><b>Bảng vật liệu A3</b>Cũ hơn mô hình 2 giờ
+          <div class="truth"><span class="mk stale" aria-hidden="true"></span>Đã cũ</div></div>
+      </aside>
+    </div>
+
+    <!-- ⑥ CHẾ ĐỘ BẢN SỬA — chỉ nơi lịch sử có nghĩa -->
+    <div class="revwrap">
+      <div class="rev">
+        <div class="track" role="group" aria-label="Bản sửa">
+          <button class="stop" aria-pressed="false"><span class="th"></span>Trước đó</button>
+          <span class="line" aria-hidden="true"></span>
+          <button class="stop" aria-pressed="true"><span class="th"></span>Hiện tại</button>
+          <span class="line" aria-hidden="true"></span>
+          <button class="stop" aria-pressed="false"><span class="th"></span>Đề xuất</button>
+        </div>
+        <div class="info">
+          <b>Hiện tại · Bản 04</b>
+          Minh sửa lúc 14:20 · nguồn: bảng vật liệu · ảnh hưởng 3 đầu ra
+        </div>
+        <span class="sp"></span>
+        <button class="go">So sánh</button>
+      </div>
+    </div>
+
+    <!-- ④ DẢI HÀNH ĐỘNG · mép dưới -->
+    <div class="strip" id="strip" data-kind="ápvl" role="status" aria-live="polite">
+      <span class="msg">
+        <span class="mk" aria-hidden="true"></span>
+        <b id="stripT">Đã áp vật liệu</b>
+        <span class="sub" id="stripS">4 đối tượng</span>
+      </span>
+      <span class="sp"></span>
+      <span class="edge">mép dưới · vừa xảy ra gì</span>
+      <button class="go pri" id="stripB">Hoàn tác</button>
+    </div>
+  </div>
+
+  <!-- CHÚ GIẢI MÉP -->
+  <div class="legend">
+    <div class="lg"><b>Trái</b><span>Tôi làm việc ở đâu — rail · thềm · bảng, hai đảo giữ nguyên ở mọi nấc.</span></div>
+    <div class="lg"><b>Giữa</b><span>Nội dung. Vỏ lùi ra sau; nấc mặc định trong chặng sáng tác là rail.</span></div>
+    <div class="lg"><b>Phải</b><span>Cái gì đáng chú ý — chọn hiện tại · chờ duyệt · đã cũ, kèm mức tin cậy.</span></div>
+    <div class="lg"><b>Trên</b><span>Tôi nên biết gì — Vitals, biết im khi không có gì đáng nói.</span></div>
+    <div class="lg"><b>Dưới</b><span>Vừa xảy ra gì và hành động theo thời điểm. Không phải điều hướng.</span></div>
+    <div class="lg"><b>Phải-trên</b><span>Tôi là ai · ai đang ở đây · gì cần chú ý.</span></div>
+  </div>
+
+  <!-- LUẬT -->
+  <div class="laws">
+    <h3>Luật đọc ra được từ mẫu này</h3>
+    <ul>
+      <li><b>Ba nấc là ba nghĩa, không phải ba cỡ.</b> Rail trả lời <i>ở đâu</i> · thềm trả lời <i>ở đây có gì</i> · bảng trả lời <i>sửa thế nào</i>. Che nấc to đi, nấc nhỏ vẫn đứng được một mình; nấc to mang thứ nấc nhỏ không thể có (khối thông số + đang dùng ở đâu), không phải cùng nội dung phóng to.</li>
+      <li><b>Hai đảo giữ ở mọi nấc, kể cả lúc thu về rail.</b> Nơi làm việc (Trang chủ · Dự án · Files · Thư viện · Soát duyệt) và Chặng của dự án (2D · 3D · Trình chiếu) tách bằng khoảng thở 26px — không đường kẻ, không gộp.</li>
+      <li><b>Thu/mở luôn do người dùng gây ra hoặc đoán trước được.</b> Trong chặng sáng tác mặc định là rail; người làm trong canvas có thể lùi sidebar về rail có chủ đích; rê hoặc bấm mép mở lại <i>đúng thềm liên quan</i> tới việc đang làm. <span class="no">Không tự mở, không tự đóng.</span></li>
+      <li><b>Mép dưới mang nghĩa, không mang điều hướng.</b> Một câu về việc vừa xảy ra + một hành động theo thời điểm. <span class="no">Không phải thanh điều hướng thứ hai · không phải Dock macOS · không nhân bản điều hướng.</span></li>
+      <li><b>Viên ngữ cảnh chỉ hiện khi lựa chọn thật sự cần</b>, tối đa 2–5 hành động, và <span class="no">không nhân bản Inspector hay thanh công cụ</span> — nó nói danh tính + mức tin cậy + hai lối đi tiếp.</li>
+      <li><b>Chế độ bản sửa chỉ ở nơi lịch sử có nghĩa</b> (Soát duyệt · Trình chiếu · chỗ nhạy bản sửa): dải trượt gọn hiện tại / trước đó / đề xuất kèm ảnh nhỏ · nguồn · ảnh hưởng. <span class="no">Dòng thời gian không bày thường trực.</span></li>
+      <li><b>Trạng thái không bao giờ chỉ dựa vào màu:</b> mọi chấm đều đi kèm chữ (Đã kiểm · Máy suy · Đã cũ · 1 chờ). Chuyển động tuân <i>prefers-reduced-motion</i>.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+(function(){
+  var root = document.querySelector('.exv-root');
+  function press(list, el){ list.forEach(function(b){ b.setAttribute('aria-pressed', String(b===el)); }); }
+
+  var nacBtns = [].slice.call(root.querySelectorAll('[data-nac]'));
+  nacBtns.forEach(function(b){
+    b.addEventListener('click', function(){ root.dataset.nac = b.dataset.nac; press(nacBtns, b); });
+  });
+  root.dataset.nac = 'rail';
+
+  var STRIP = {
+    'ápvl': ['Đã áp vật liệu', '4 đối tượng', 'Hoàn tác', true],
+    'kiem': ['Spec đã cập nhật', '1 mục cần kiểm', 'Xem mục', false],
+    'xong': ['Kết xuất xong', 'Phòng khách · 3200 px', 'Mở', false],
+    'cu'  : ['3 đầu ra đã cũ', 'so với mô hình hiện tại', 'Xem lại', false]
+  };
+  var strip = document.getElementById('strip');
+  var kindBtns = [].slice.call(root.querySelectorAll('[data-kind]'));
+  kindBtns.forEach(function(b){
+    b.addEventListener('click', function(){
+      var k = b.dataset.kind, v = STRIP[k];
+      strip.dataset.kind = k;
+      document.getElementById('stripT').textContent = v[0];
+      document.getElementById('stripS').textContent = v[1];
+      var go = document.getElementById('stripB');
+      go.textContent = v[2];
+      go.classList.toggle('pri', v[3]);
+      press(kindBtns, b);
+    });
+  });
+
+  var cap = document.getElementById('capsule'), tgCap = document.getElementById('tgCap');
+  tgCap.addEventListener('click', function(){
+    var on = cap.hasAttribute('hidden');
+    if (on) cap.removeAttribute('hidden'); else cap.setAttribute('hidden','');
+    tgCap.setAttribute('aria-pressed', String(on));
+  });
+
+  var tgRev = document.getElementById('tgRev');
+  tgRev.addEventListener('click', function(){
+    var on = root.dataset.rev !== 'on';
+    root.dataset.rev = on ? 'on' : 'off';
+    tgRev.setAttribute('aria-pressed', String(on));
+  });
+
+  var tgTheme = document.getElementById('tgTheme');
+  tgTheme.addEventListener('click', function(){
+    var light = root.dataset.theme !== 'light';
+    root.dataset.theme = light ? 'light' : 'dark';
+    tgTheme.setAttribute('aria-pressed', String(light));
+    tgTheme.textContent = light ? 'Nền tối' : 'Nền sáng';
+  });
+
+  // bản sửa
+  var stops = [].slice.call(root.querySelectorAll('.rev .stop'));
+  var REV = {
+    'Trước đó': ['Trước đó · Bản 03', 'Hoà sửa lúc 09:05 · nguồn: bản vẽ 2D · ảnh hưởng 2 đầu ra'],
+    'Hiện tại': ['Hiện tại · Bản 04', 'Minh sửa lúc 14:20 · nguồn: bảng vật liệu · ảnh hưởng 3 đầu ra'],
+    'Đề xuất' : ['Đề xuất · chưa áp', 'Máy suy từ ảnh tham chiếu · chờ người duyệt · ảnh hưởng 3 đầu ra']
+  };
+  stops.forEach(function(s){
+    s.addEventListener('click', function(){
+      press(stops, s);
+      var key = s.textContent.trim(), v = REV[key];
+      if (!v) return;
+      var info = root.querySelector('.rev .info');
+      info.innerHTML = '';
+      var b = document.createElement('b'); b.textContent = v[0];
+      info.appendChild(b); info.appendChild(document.createTextNode(v[1]));
+    });
+  });
+
+  // kéo giãn bảng làm việc 320–440
+  var grip = document.getElementById('grip'), side = root.querySelector('.side');
+  grip.addEventListener('pointerdown', function(e){
+    if (root.dataset.nac !== 'bang') return;
+    grip.setPointerCapture(e.pointerId);
+    var x0 = e.clientX, w0 = side.getBoundingClientRect().width;
+    function mv(ev){
+      var w = Math.min(440, Math.max(320, w0 + (ev.clientX - x0)));
+      root.style.setProperty('--w-bang', w + 'px');
+    }
+    function up(){ grip.removeEventListener('pointermove', mv); grip.removeEventListener('pointerup', up); }
+    grip.addEventListener('pointermove', mv);
+    grip.addEventListener('pointerup', up);
+  });
+})();
+</script>

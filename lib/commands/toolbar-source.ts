@@ -325,11 +325,11 @@ function lyDoChuaBam(n: NangLucGop, ctx: NangLucCtx): [string, string] | undefin
     const cong = sanSangDung({ coAnhNguon: Boolean(ctx.coAnhNguon) });
     return cong.sanSang ? undefined : cong.lyDo;
   }
-  if (n.id === 'image-to-3d') {
-    return ctx.coAnhNguon
-      ? ['Đọc ảnh thành khối chưa nối ở lượt này', 'Image-to-3D is not wired in this build yet']
-      : ['Chưa có ảnh nguồn — chọn một ảnh hoặc khung nhìn', 'No source image — pick an image or a view'];
-  }
+  // 20/08 (LANE Ảnh→Spec) — ĐÃ NỐI: `components/ui/CuaAnhThanhSpec.tsx` chạy thẳng
+  // `deXuatKhoi3D()` trên ảnh trong Thư viện. Cửa này tự chọn ảnh nguồn của nó (danh tính
+  // `LibraryAsset` — cần cho việc gắn `AssetRepresentation`), nên KHÔNG phụ thuộc `coAnhNguon`
+  // của thanh: ảnh dán tạm từ máy không có id để gắn cách thể hiện vào.
+  if (n.id === 'image-to-3d') return undefined;
   if (n.id === 'render') return ['Chưa có khung nhìn 3D để kết xuất', 'No 3D view to render yet'];
   if (n.id === 'motion') {
     return ['Cần một ảnh đã nhận trước khi cho chuyển động', 'Accept an image first, then add motion'];

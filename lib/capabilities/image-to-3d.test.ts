@@ -86,6 +86,13 @@ console.log('\n③ từ chối ảnh không đủ điều kiện');
   const neoHong = deXuatKhoi3D({ ...CO_BAN, knownWidthMm: undefined, manualAnchor: { kind: 'door', points: [{ x: 0, y: 0 }, { x: 1, y: 1 }], realMm: -5 } });
   ok('neo tay ≤ 0 → từ chối', neoHong.ok === false);
   ok('bỏ trống thì KHÔNG bị coi là hỏng (chỉ mặt nạ vẫn chạy)', deXuatKhoi3D({ ...CO_BAN, knownWidthMm: undefined }).ok === true);
+
+  // Bậc 4 trả số rỗng (bắt trên app thật 20/08) → phải TỤT xuống bậc dưới, không chết ở cổng.
+  // Ảnh 2×2 trắng trơn: `calibrateFromImage` không dựng nổi hiệu chỉnh thật.
+  const anhTrang = { width: 2, height: 2, data: new Uint8ClampedArray(16).fill(255) };
+  const coAnh = deXuatKhoi3D({ ...CO_BAN, image: anhTrang, genId: () => 'i23_tut_bac' });
+  ok('kèm ảnh mà bậc 4 không ra số → tụt bậc, KHÔNG từ chối oan', coAnh.ok === true);
+  ok('  · số tụt bậc vẫn dùng được (không phải 0)', coAnh.ok && [coAnh.ungVien.rong, coAnh.ungVien.sau, coAnh.ungVien.cao].every((k) => k.valueMm > 0));
 }
 
 /* ═════════ ① CỜ inferred KHÔNG RÒ ═════════ */
@@ -106,12 +113,40 @@ console.log('\n① cờ 3 nấc không rò');
   ok('đề xuất chưa duyệt → KHÔNG vào BOQ', duocVaoBoq(uv).duoc === false);
   ok('  · lý do nói rõ là chưa duyệt', duocVaoBoq(uv).lyDo.includes('chưa duyệt'));
 
+  // 🔴 SỬA 20/08 — bản đầu khẳng định "người ký → CẢ BA chiều verified". Nó khoá đúng hành vi
+  // hỏng: một cú bấm nâng luôn chiều SÂU (thứ ảnh 2D không thể thấy) thành số đo được rồi thả
+  // vào BOQ. Nay khẳng định đúng luật: CHỈ chiều người GÕ LẠI SỐ mới lên verified.
   const daNhan = nhanUngVien(uv, { nguoiXacNhan: 'hoa' });
-  ok('người ký → cả ba chiều verified', daNhan.rong.flag === 'verified' && daNhan.sau.flag === 'verified' && daNhan.cao.flag === 'verified');
+  ok('chỉ bấm Nhận, không gõ số nào → KHÔNG chiều nào lên verified', [daNhan.rong, daNhan.sau, daNhan.cao].every((k) => k.flag !== 'verified'));
+  ok('  · cờ máy giữ nguyên từng chiều (suy vẫn là suy)', daNhan.sau.flag === 'inferred' && daNhan.rong.flag === uv.rong.flag);
   ok('  · flagMay GIỮ NGUYÊN dấu vết máy (không xoá lịch sử)', daNhan.sau.flagMay === 'inferred');
-  ok('  · basis ghi tên người ký', daNhan.sau.basis.includes('hoa'));
+  ok('  · basis ghi tên người đã xem', daNhan.sau.basis.includes('hoa'));
   ok('  · giá trị mm không đổi khi chỉ ký, không sửa', daNhan.rong.valueMm === uv.rong.valueMm);
-  ok('đã ký → vào được BOQ', duocVaoBoq(daNhan).duoc === true);
+  ok('  · SUY-RA KHÔNG LỌT VÀO BOQ dù đã bấm Nhận', duocVaoBoq(daNhan).duoc === false);
+  ok('  · lý do chặn nói đúng chiều nào còn suy', duocVaoBoq(daNhan).lyDo.includes('sâu'));
+
+  // Gõ lại đủ ba chiều mới mở được cổng BOQ.
+  const kyDu = nhanUngVien(uv, {
+    nguoiXacNhan: 'hoa',
+    sua: { rongMm: uv.rong.valueMm, sauMm: 620, caoMm: uv.cao.valueMm },
+  });
+  ok('gõ lại đủ ba chiều → cả ba verified', [kyDu.rong, kyDu.sau, kyDu.cao].every((k) => k.flag === 'verified'));
+  ok('  · gõ lại ĐÚNG số máy vẫn tính là đã kiểm', kyDu.rong.flag === 'verified' && kyDu.rong.basis.includes('xác nhận đúng số máy'));
+  ok('  · chiều sửa mang số mới', kyDu.sau.valueMm === 620);
+  ok('  · ba chiều đã kiểm → vào được BOQ', duocVaoBoq(kyDu).duoc === true);
+
+  // Ký lẻ MỘT chiều: chiều đó lên, hai chiều kia đứng yên.
+  const kyLe = nhanUngVien(uv, { nguoiXacNhan: 'hoa', sua: { sauMm: 600 } });
+  ok('ký lẻ: chiều gõ lên verified, chiều khác giữ nguyên cờ máy', kyLe.sau.flag === 'verified' && kyLe.rong.flag === uv.rong.flag && kyLe.cao.flag === uv.cao.flag);
+
+  // …và khi CHIỀU KHÁC còn suy thì ký lẻ KHÔNG mở được cổng BOQ. Dựng ca bằng bậc 2 (chỉ mặt
+  // nạ, không neo) — bậc đó suy cả ba chiều, đúng ca người dùng gặp nhiều nhất.
+  const bac2 = deXuatOk({ ...CO_BAN, knownWidthMm: undefined, genId: () => 'i23_test_bac2' });
+  const bac2KyLe = nhanUngVien(bac2, { nguoiXacNhan: 'hoa', sua: { caoMm: 900 } });
+  ok('bậc 2 (chỉ mặt nạ) vẫn để chiều sâu là suy', bac2.sau.flag === 'inferred');
+  ok('  · ký lẻ chiều CAO không đụng tới chiều sâu', bac2KyLe.cao.flag === 'verified' && bac2KyLe.sau.flag === 'inferred');
+  ok('  · ⇒ cả món vẫn đứng ngoài BOQ', duocVaoBoq(bac2KyLe).duoc === false);
+  ok('  · lý do chặn gọi đúng tên chiều còn suy', duocVaoBoq(bac2KyLe).lyDo.includes('sâu') && !duocVaoBoq(bac2KyLe).lyDo.includes('cao'));
 
   // Sửa tay
   const suaTay = nhanUngVien(uv, { nguoiXacNhan: 'hoa', sua: { caoMm: 880 } });

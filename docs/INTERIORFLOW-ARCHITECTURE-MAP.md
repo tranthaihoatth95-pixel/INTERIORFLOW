@@ -72,17 +72,28 @@ Luật ranh giới: **sidebar không bao giờ đổi nội dung theo chặng; t
 lối đi.** Cửa sổ công cụ (`ToolWindow` — code giữ tên này; "master tool" đã KHAI TỬ) = **cụm**
 khung môi trường + panel vệ tinh, sống trên canvas, 3 nấc thu/vừa/toàn màn.
 
-### 2.2 · Sidebar — một trục dọc, BA CỤM (⚠️ 20/08 ĐÈ bản HAI CỤM 16-17/08)
+### 2.2 · Sidebar — TRÁI CHỈ CÓ VIỆC, HAI ĐẢO (bản 20/08 muộn — ĐÈ cả bản ba-cụm cùng ngày)
 
-> [CHỐT 20/08 — IF EXPERIENCE SYSTEM điều 3+4, `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md`]
-> Bản HAI CỤM (XƯỞNG · DỰ ÁN) **SUPERSEDED**. Nội dung "cái gì KHÔNG lên sidebar" bên dưới
-> vẫn còn hiệu lực nguyên vẹn.
+> ⚠️ **HAI LẦN ĐÈ TRONG CÙNG NGÀY 20/08, đọc kỹ kẻo lấy nhầm bản giữa:**
+> HAI CỤM (16-17/08) → **BA CỤM** (Experience System điều 3, sáng 20/08) → **HAI ĐẢO + cụm
+> phải-trên** (Navigation Override, chiều 20/08). **Bản đang dùng là bản thứ ba.**
+> Vì sao đè tiếp: ba-cụm để Hồ sơ/Cài đặt Ở BÊN TRÁI; bản mới đưa chúng lên **mép phải-trên**
+> cùng thông báo và hiện diện, nên trái **chỉ còn VIỆC**. Hoà nêu thành tiêu chí TRƯỢT:
+> *"trượt nếu thanh trái còn chứa Hồ sơ/Credit/Cài đặt"* và *"trượt nếu danh tính/cộng tác
+> phải-trên bị lặp chỗ khác"*.
 
-| Cụm | Gồm | Sống khi |
+| Đảo | Gồm | Trả lời |
 |---|---|---|
-| **Workspace chung** | Dashboard/Home · Bảng việc · Chat/Họp · Files · Thư viện | không cần dự án |
-| **Ba chặng** | 2D · 3D · Trình chiếu | chỉ khi đã mở dự án |
-| **Cá nhân/hệ thống** | Cá nhân · Cài đặt | luôn |
+| **A · Xưởng/Việc** (trên) | Trang chủ · Dự án · Files · Thư viện · Soát duyệt | *tôi đang làm việc ở đâu* |
+| **B · Chặng** (dưới) | 2D · 3D · Trình chiếu | *tôi đang ở chặng nào* |
+
+Hai đảo tách bằng **khoảng thở có nghĩa**, KHÔNG phải một menu dài, và **giữ tách ở cả ba nấc
+kể cả khi thu về rail** (rail chỉ ẩn chữ, không gộp đảo).
+
+**Cụm phải-trên** (ra khỏi sidebar): `[Thông báo] [Hiện diện/Nhóm] [Ảnh đại diện]` — menu ảnh đại
+diện giữ Hồ sơ · Credit/Mức dùng · Cài đặt · Tài khoản · Đăng xuất. **Cấm lặp lại ở trái.**
+Chưa có nhóm/hiện diện thật thì **tự thu gọn**, không vẽ chỗ trống, không avatar giả.
+⚠️ Vitals ở **mép trên** và cụm **phải-trên** là hai hệ khác nhau — cấm nhập một.
 
 Ba độ sâu (điều 4): **Rail 52–56px icon-only · Context Shelf 220–280 · Work Panel 320–440
 resizable** — ba mức = ba năng lực (định vị · điều hướng · duyệt nội dung, giữ luật "ba nấc là

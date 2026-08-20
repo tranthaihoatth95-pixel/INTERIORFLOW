@@ -225,20 +225,33 @@ export function deXuatKhoi3D(input: DauVaoDeXuat): KetQuaDeXuat {
   const tuChoiSom = demXetDauVao(input);
   if (tuChoiSom) return { ok: false, tuChoi: tuChoiSom };
 
-  const do3 = measureObjectTiered({
+  const chung = {
     category: input.category,
     silhouette: input.silhouette,
-    image: input.image,
     cameraHeightMm: input.cameraHeightMm,
     knownWidthMm: input.knownWidthMm,
     manualAnchor: input.manualAnchor,
-  });
-
-  const measurement: MeasurementResult = { width: do3.width, depth: do3.depth, height: do3.height };
+  };
+  let do3 = measureObjectTiered({ ...chung, image: input.image });
+  let measurement: MeasurementResult = { width: do3.width, depth: do3.depth, height: do3.height };
 
   // Cổng số-đo-hỏng: DÙNG LẠI `dimsAreUsable` của to-cad.ts (đã trả giá 2 vòng phản biện 06/08),
   // không viết kiểm tra thứ hai ở đây — hai bộ kiểm là hai bộ sẽ phân kỳ.
-  const target = measurementToTarget(measurement);
+  let target = measurementToTarget(measurement);
+
+  // 🔴 TỤT BẬC KHI BẬC 4 TRẢ SỐ RỖNG — bắt được trên app thật 20/08, ảnh "Ghế bar Lincoln 327":
+  // `measureObjectTiered` hứa *"tự tụt phương pháp"*, nhưng `tryTier4` chỉ tụt khi hiệu chỉnh
+  // camera BÁO THẤT BẠI. Ca ở đây khác: nó báo THÀNH CÔNG rồi trả `rộng=0 · sâu=0 · cao=0`
+  // ⇒ không nhánh nào tụt, và cả dây chuyền chết ở cổng số-đo-hỏng dù bậc 2/3 thừa sức đo ảnh đó.
+  // Chữa ĐÚNG TẦNG: `lib/vision` là tầng phương pháp (ngoài vùng ghi của lượt này, và sửa ở đó
+  // đụng cả node `vision.measureobject`), nên tầng dây chuyền tự lo — thử lại KHÔNG kèm ảnh để
+  // rơi xuống bậc neo/mặt nạ. Không bịa số: nếu bậc dưới cũng hỏng thì vẫn TỪ CHỐI như cũ.
+  if (!dimsAreUsable(target) && input.image) {
+    do3 = measureObjectTiered({ ...chung, image: undefined });
+    measurement = { width: do3.width, depth: do3.depth, height: do3.height };
+    target = measurementToTarget(measurement);
+  }
+
   if (!dimsAreUsable(target)) {
     return {
       ok: false,
@@ -302,8 +315,22 @@ export interface SuaKichThuoc {
 }
 
 /**
- * NHẬN — người đã xem và ký. Cờ ba chiều lên `verified`, `flagMay` GIỮ NGUYÊN (luật ⑤).
- * Sửa số tay thì `basis` ghi rõ là người nhập, không mượn danh nghĩa máy đo.
+ * NHẬN — người đã xem và ký.
+ *
+ * 🔴 SỬA 20/08 (LANE Ảnh→Spec) — BẢN ĐẦU NÂNG **CẢ BA CHIỀU** LÊN `verified` CHỈ VÌ MỘT CÚ BẤM
+ * "Nhận". Đó là **suy-ra lọt thành đã-kiểm**: người duyệt nhìn ba con số, gật một cái, và chiều
+ * SÂU — thứ ảnh 2D **không thể** thấy (`tier3` ghi thẳng vào `basis`: *"ảnh 2D không thấy mặt
+ * sau"*) — bỗng thành số đo được và **đi thẳng vào BOQ**. Sai luật ở ba chỗ độc lập:
+ *   · luật ⑤ ngay đầu file này: người xác nhận KHÔNG xoá dấu vết máy;
+ *   · `prisma/schema.prisma` `AssetRepresentation.truthLevel`: *"bấm 'Nhận' KHÔNG tự nâng cả ba
+ *     chiều lên verified — chỉ chiều nào người GÕ LẠI SỐ mới được verified"*;
+ *   · Hoà chốt 15/08: *"BOQ chỉ lấy giá trị chính xác đến từ con số"*.
+ * Và test cũ (`:110` *"người ký → cả ba chiều verified"*) **khoá đúng hành vi hỏng** — đúng họ
+ * bệnh đã rút thành luật ở vụ Hough 15/08: test khẳng định một hình dạng sai thì nó che bug.
+ *
+ * ⇒ LUẬT NAY: **chỉ chiều người GÕ LẠI SỐ mới lên `verified`**. Chiều để nguyên GIỮ cờ máy
+ * (`inferred` vẫn là `inferred`), chỉ ghi thêm vào `basis` rằng người duyệt đã xem mà không sửa.
+ * Gõ lại ĐÚNG con số máy vẫn tính là kiểm — người đã đối chiếu với thực tế và ký tên vào nó.
  *
  * Thuần: trả BẢN MỚI, không đổi tại chỗ — ứng viên cũ vẫn còn để so/hoàn tác.
  */
@@ -317,15 +344,20 @@ export function nhanUngVien(
   if (!opts.nguoiXacNhan) throw new Error('Nhận ứng viên phải có người ký — verified không có chủ là verified giả.');
 
   const ky = (k: KichThuocCoNguon, moiMm?: number): KichThuocCoNguon => {
-    const doiSo = moiMm != null && Number.isFinite(moiMm) && moiMm > 0 && moiMm !== k.valueMm;
+    const goLai = moiMm != null && Number.isFinite(moiMm) && moiMm > 0;
+    if (!goLai) {
+      // KHÔNG đụng `flag`: xem qua không phải là đo. Chỉ ghi vết đã có người nhìn.
+      return { ...k, basis: `${k.basis} · người duyệt đã xem, không sửa: ${opts.nguoiXacNhan}` };
+    }
+    const doiSo = moiMm !== k.valueMm;
     return {
-      valueMm: doiSo ? moiMm : k.valueMm,
-      toleranceMm: doiSo ? 0 : k.toleranceMm,
+      valueMm: moiMm,
+      toleranceMm: 0,
       flag: 'verified',
       flagMay: k.flagMay,
       basis: doiSo
         ? `người nhập tay: ${opts.nguoiXacNhan} (máy trước đó: ${k.valueMm}mm — ${k.basis})`
-        : `${k.basis} · người xác nhận: ${opts.nguoiXacNhan}`,
+        : `người nhập tay xác nhận đúng số máy: ${opts.nguoiXacNhan} (${k.basis})`,
     };
   };
 
