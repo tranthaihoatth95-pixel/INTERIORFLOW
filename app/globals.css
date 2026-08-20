@@ -240,6 +240,25 @@
   --kinh-vua: rgba(24, 24, 28, 0.9);
   --kinh-dac: rgba(24, 24, 28, 0.95);
 
+  /* ⭐⭐ BA MỨC VẬT LIỆU — CHỌN THEO CHỨC NĂNG, không theo "chỗ này bôi kính cho đẹp".
+     Luật Hoà 20/08: KÍNH PHẢI ĐÁNG. Nó là NGOẠI LỆ có lý do, không phải mặc định.
+       ① ĐẶC       `--vl-dac`      biểu mẫu · cài đặt · thiết lập trang · spec · dữ liệu kỹ
+                                    thuật · vùng nhiều núm · chỗ đọc lâu.  KHÔNG nhoè gì cả.
+       ② GẦN ĐẶC   `--vl-gan-dac`  bảng làm việc thường trực · inspector · Object Passport ·
+                                    bề mặt xem chi tiết/soát duyệt.  Nhoè RẤT NHẸ, đủ nói
+                                    "tôi đang nổi", không đủ để nội dung mất nét.
+       ③ KÍNH MỎNG `--kinh-mong`   CHỈ: Vitals Peek · viên giọng nói · hành động nhanh theo
+                                    ngữ cảnh · công cụ nổi nhỏ · lớp phủ tạm thoáng qua.
+     🔴 Kính làm giảm ĐỌC-ĐƯỢC / THỨ BẬC / ĐỘ TIN CẬY NGHỀ ⇒ BỎ KÍNH, xuống ①.
+     ⛔ CẤM: mờ dày · phủ tím · acrylic dày · KÍNH CHỒNG KÍNH.
+     Hai khuôn hợp lệ: (A) kính mỏng toàn phần cho bề mặt nhỏ/thoáng qua ·
+     (B) VỎ KÍNH + RUỘT GẦN ĐẶC khi cần chiều sâu mà nội dung phải sắc nét. */
+  --vl-dac: var(--panel);
+  --vl-gan-dac: rgba(20, 20, 23, 0.97);
+  --vl-gan-dac-nhoe: 6px;
+  /* Kính MỎNG và QUANG HỌC: nhoè vừa phải (không phải acrylic dày 24px), bão hoà kiềm chế. */
+  --kinh-nhoe-mong: 12px;
+
   /* MÉP BẮT SÁNG — vệt sáng mảnh cạnh trên, thứ phân biệt "kính thật" với "ô mờ mờ".
      Đây là tầng ① của ba tầng ánh sáng (CHẤT LIỆU), tách hẳn tầng ② hover và tầng ③ đang chạy. */
   --kinh-mep-sang: rgba(255, 255, 255, 0.14);
@@ -341,6 +360,11 @@
   --kinh-mong: rgba(252, 251, 249, 0.88);
   --kinh-vua: rgba(252, 251, 249, 0.93);
   --kinh-dac: rgba(253, 252, 250, 0.96);
+
+  /* Ba mức vật liệu — xem bảng chức năng ở khối Tối. Nền sáng: gần-đặc lấy alpha cao hơn
+     một nhịp, cùng lý do chữ mực mất tương phản nhanh hơn chữ trắng. */
+  --vl-dac: var(--panel);
+  --vl-gan-dac: rgba(250, 248, 244, 0.975);
 
   /* Nền tối thì mép bắt sáng là ánh sáng trắng loãng; nền sáng thì là bóng đen loãng —
      cùng vai "ánh sáng liếm rìa vật liệu", đảo cực theo nền (giống lối `--vien-mo` đã đi). */
@@ -510,22 +534,24 @@ body {
 }
 
 /* ============================================================================
-   BỀ MẶT KÍNH NỔI — họ dùng chung, NƠI DUY NHẤT khai lớp kính cho vật nổi.
-   Component: components/ui/BeMatNoi.tsx · nhịp: lib/ui/nhip.ts
+   BỀ MẶT NỔI — họ dùng chung, NƠI DUY NHẤT khai vật liệu cho vật nổi.
+   Component: components/ui/BeMatNoi.tsx · nhịp: lib/ui/nhip.ts · luật: lib/ui/vat-lieu.ts
 
-   🔴 KHÔNG BIẾN MỌI THẺ THÀNH KÍNH. Kính ở đây MANG NGHĨA:
-      NỔI LÊN · THEO NGỮ CẢNH · TẠM THỜI · ĐANG HOẠT ĐỘNG.
-   Thẻ nội dung thường trực GIỮ ĐẶC (dùng `--card`). Dùng bừa là mất nghĩa, và lúc đó cái
-   thật sự đang nổi lên không còn cách nào nói ra là nó đang nổi.
+   🔴 VẬT LIỆU THEO CHỨC NĂNG. KÍNH PHẢI ĐÁNG, KHÔNG PHẢI BÔI LÊN (Hoà 20/08).
+   Base `.be-mat-noi` KHÔNG có nền — nền đến từ ĐÚNG MỘT trong ba mức dưới đây, và mức
+   MẶC ĐỊNH của một app nghề là ĐẶC. Kính là ngoại lệ hẹp, phải nêu được lý do.
+   ⛔ Kính làm giảm ĐỌC-ĐƯỢC / THỨ BẬC / ĐỘ TIN CẬY NGHỀ ⇒ BỎ KÍNH, xuống `--dac`.
+   Bảng ai-thuộc-mức-nào là bảng máy đọc được ở `lib/ui/vat-lieu.ts`, có test — không phải
+   lời dặn trong docstring này.
 
    Ba bài học K1-K4 đã trả giá bằng 4 vòng sửa, giữ nguyên ở đây (docs/00-CHOT.md):
    ① fade kính phải fade ở CHÍNH phần tử — `opacity` đặt ở cha thì `backdrop-filter` chết
-      giữa chừng (vì thế mọi transition dưới đây nằm trên chính `.kinh-noi`, không ở wrapper).
+      giữa chừng (vì thế mọi transition dưới đây nằm trên chính `.be-mat-noi`, không ở wrapper).
    ② panel kính nổi PHẢI portal ra ngoài — kính lồng trong chrome kính thì backdrop root
       chặn blur, menu xuyên thấu (BeMatNoi.tsx portal vào body, không phải tuỳ chọn).
    ③ luôn kèm tiền tố `-webkit-` — thiếu là tablet không blur.
    ============================================================================ */
-.kinh-noi {
+.be-mat-noi {
   position: relative;
   /* ⭐ CHẶN Ở GỐC, KHÔNG CHẶN BẰNG LỜI DẶN: trong lòng bề mặt kính, `--t3` trỏ về
      `--kinh-chu-phu`. Nơi dùng cứ viết `color: var(--t3)` như mọi chỗ khác trong app và
@@ -533,28 +559,66 @@ body {
      Vì sao làm thế thay vì cấm bằng văn bản: `--t3` đo được 3.83-4.08 trên kính mỏng, và
      nó là màu chữ phụ MẶC ĐỊNH của cả app — mọi lane sẽ gõ nó theo phản xạ. Một lời dặn
      trong tài liệu thua một dòng CSS ở đúng chỗ. Muốn màu khác thì khai đè tại chỗ dùng. */
-  --t3: var(--kinh-chu-phu);
-  background: var(--kinh-vua);
-  backdrop-filter: saturate(150%) blur(var(--kinh-nhoe));
-  -webkit-backdrop-filter: saturate(150%) blur(var(--kinh-nhoe));
   border: 1px solid var(--kinh-vien);
   color: var(--t1);
   box-shadow: var(--shadow-pop);
 }
-.kinh-noi--mong {
+
+/* ─── MỨC ③ KÍNH MỎNG — mép mảnh, khúc xạ NHẸ, highlight kiềm chế.
+   CHỈ: Vitals Peek · viên giọng nói · hành động nhanh · công cụ nổi nhỏ · lớp phủ thoáng qua.
+   ⚠️ Kính ÔM SÁT nội dung — đừng phình bề mặt kính thành thẻ to; kính to là kính mất lý do. */
+.be-mat-noi--kinh {
+  /* ⭐ CHẶN Ở GỐC, KHÔNG CHẶN BẰNG LỜI DẶN: chỉ TRONG LÒNG KÍNH thì `--t3` mới trỏ về
+     `--kinh-chu-phu`. Nơi dùng cứ viết `color: var(--t3)` như mọi chỗ khác và TỰ ĐỘNG đọc
+     được. Hai mức đặc/gần-đặc KHÔNG cần đổi vì chữ ở đó đứng trên nền đặc thật. */
+  --t3: var(--kinh-chu-phu);
   background: var(--kinh-mong);
+  backdrop-filter: saturate(140%) blur(var(--kinh-nhoe-mong));
+  -webkit-backdrop-filter: saturate(140%) blur(var(--kinh-nhoe-mong));
 }
-.kinh-noi--dac {
-  background: var(--kinh-dac);
-  backdrop-filter: saturate(150%) blur(var(--kinh-nhoe-sau));
-  -webkit-backdrop-filter: saturate(150%) blur(var(--kinh-nhoe-sau));
+
+/* ─── MỨC ② GẦN ĐẶC — bảng làm việc thường trực · inspector · Object Passport · soát duyệt.
+   Nhoè rất nhẹ: đủ nói "đang nổi", không đủ để nội dung mất nét. Chữ đọc như trên nền đặc. */
+.be-mat-noi--gan-dac {
+  background: var(--vl-gan-dac);
+  backdrop-filter: saturate(120%) blur(var(--vl-gan-dac-nhoe));
+  -webkit-backdrop-filter: saturate(120%) blur(var(--vl-gan-dac-nhoe));
+  border-color: var(--border);
   box-shadow: var(--shadow-sheet);
+}
+
+/* ─── MỨC ① ĐẶC — biểu mẫu · cài đặt · spec · dữ liệu kỹ thuật · vùng nhiều núm · đọc lâu.
+   KHÔNG `backdrop-filter` một dòng nào. Đây là MẶC ĐỊNH, không phải trường hợp đặc biệt:
+   phần lớn bề mặt của một app nghề thuộc về đây. */
+.be-mat-noi--dac {
+  background: var(--vl-dac);
+  border-color: var(--border);
+  box-shadow: var(--shadow-sheet);
+}
+
+/* KHUÔN (B) VỎ KÍNH + RUỘT GẦN ĐẶC — dùng khi cần chiều sâu mà nội dung phải sắc nét.
+   Vỏ là `--kinh`, ruột đeo class này. ⛔ Ruột KHÔNG được là kính lần nữa (kính chồng kính). */
+.be-mat-ruot-dac {
+  background: var(--vl-gan-dac);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* NHỊP ④ AN VỊ — bốn nhịp của một bề mặt: mọc từ nguồn → NỞ RA → **CẮM/AN VỊ** → thu về nguồn.
+   Nhịp an vị nói bằng BÓNG ĐỔ: lúc đang nở, bề mặt còn "trong không khí" (bóng nông); nở xong
+   nó ĂN XUỐNG nền và đứng hẳn (bóng đầy). ⚠️ Chỉ đổi BÓNG — dời chỗ ở nhịp này thì người dùng
+   đọc ra là "cửa sổ tự nhảy", đúng thứ luật đặt chỗ sinh ra để diệt. */
+.be-mat-noi {
+  transition: box-shadow var(--nhip-bam) var(--ease-apple);
+}
+.be-mat-noi:not(.be-mat-noi--an-vi) {
+  box-shadow: 0 6px 16px -10px rgba(0, 0, 0, 0.5);
 }
 
 /* TẦNG ① CHẤT LIỆU — mép trên bắt sáng. Tĩnh, luôn có, KHÔNG chuyển động.
    Là `::before` 1px chứ không phải `border-top` màu: viền trên sáng hơn viền quanh sẽ đọc ra
    như một đường kẻ; vệt gradient tắt dần ở hai đầu mới đọc ra như ánh sáng liếm qua rìa. */
-.kinh-noi::before {
+.be-mat-noi::before {
   content: '';
   position: absolute;
   inset: 0 0 auto 0;
@@ -568,18 +632,18 @@ body {
    ⚠️ Tầng ② và tầng ③ cùng ở VIỀN ⇒ phân biệt bằng CHUYỂN ĐỘNG, không bằng màu:
    sáng ĐỨNG YÊN = con trỏ đang ở đây · sáng CHẠY VÒNG = đang chạy. Mắt bắt chuyển động
    nhanh hơn bắt màu, và cách này còn sống khi người dùng không phân biệt được màu. */
-.kinh-noi--bam-duoc {
+.be-mat-noi--bam-duoc {
   transition: box-shadow var(--nhip-bam) var(--ease-apple);
 }
-.kinh-noi--bam-duoc:hover,
-.kinh-noi--bam-duoc:focus-visible {
+.be-mat-noi--bam-duoc:hover,
+.be-mat-noi--bam-duoc:focus-visible {
   box-shadow: var(--shadow-pop), 0 0 0 1px var(--kinh-mep-sang), 0 0 16px -2px var(--kinh-mep-sang);
 }
 
 /* TẦNG ③ TRẠNG THÁI — đang chạy: ánh sáng CHẠY liên tục quanh viền.
    Dùng box-shadow-pulse cùng công thức `.node-running-halo` (luật G1: KHÔNG animate opacity
-   trên phần tử có backdrop-filter — mà `.kinh-noi` thì luôn có). */
-.kinh-noi--dang-chay {
+   trên phần tử có backdrop-filter — mà `.be-mat-noi` thì luôn có). */
+.be-mat-noi--dang-chay {
   animation: kinh-vien-chay 1.6s ease-in-out infinite;
 }
 @keyframes kinh-vien-chay {
@@ -595,9 +659,26 @@ body {
 /* Giảm chuyển động: tầng ③ là thứ ĐẦU TIÊN phải tắt (nó chạy vô hạn). Thay bằng dấu hiệu
    TĨNH — không được im lặng bỏ đi, vì lúc đó "đang chạy" mất hẳn kênh thông báo. */
 @media (prefers-reduced-motion: reduce) {
-  .kinh-noi--dang-chay {
+  .be-mat-noi--dang-chay {
     animation: none;
     box-shadow: var(--shadow-pop), 0 0 0 1px var(--kinh-mep-sang);
+  }
+}
+
+/* QUỸ ĐẠO VITALS — quay CHẬM và ĐỀU khi đang chạy (components/studio/VitalsQuyDao.tsx).
+   Chậm là cố ý: đây là chuyển động nền, không phải thứ đòi mắt nhìn. Tuyến tính, không nảy. */
+.vitals-quy-dao--quay {
+  animation: vitals-quy-dao-quay 9s linear infinite;
+}
+@keyframes vitals-quy-dao-quay {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* ♿ Tắt quay, GIỮ độ sáng — trạng thái "đang chạy" không được mất kênh thông báo. */
+@media (prefers-reduced-motion: reduce) {
+  .vitals-quy-dao--quay {
+    animation: none;
   }
 }
 

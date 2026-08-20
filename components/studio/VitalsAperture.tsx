@@ -14,7 +14,9 @@
  *                (`VitalsChatSurface`, tách ra từ `VitalsPill.tsx` — không dựng tấm thứ hai).
  *
  * [Đ2] LOOK INSIDE trước khi dựng — bốn mảnh Vitals sẵn có, xử lý từng mảnh:
- *   · `VitalsIcon.tsx`        → DÙNG LẠI (glyph, mọi mức).
+ *   · `VitalsIcon.tsx`        → THÔI DÙNG ở khẩu độ (20/08): hình thái ambient nay là LÕI +
+ *                               QUỸ ĐẠO (`VitalsQuyDao.tsx`) vì cả ba mức phải mọc ra từ một
+ *                               TÂM nhìn thấy được. Glyph cũ vẫn sống ở `VitalsChatSurface`.
  *   · `VitalsStateBadge.tsx`  → DÙNG LẠI `VitalsStateDot` + bộ `VitalsState` (idle/answering/
  *                               alert) làm ngôn ngữ trạng thái. KHÔNG đẻ bảng trạng thái thứ hai.
  *   · `VitalsChatBubble.tsx`  → thuộc VitalsGesture, không đụng.
@@ -41,8 +43,9 @@ import { summarizeDoc } from '@/lib/ai/doc-context';
 import { topViolations } from '@/lib/ai/violations-context';
 import { useT } from '@/lib/i18n';
 import { useDismissable } from '@/lib/useDismissable';
-import VitalsIcon from '@/components/studio/VitalsIcon';
 import { VitalsStateDot } from '@/components/studio/VitalsStateBadge';
+import VitalsQuyDao from '@/components/studio/VitalsQuyDao';
+import { DUONG_CONG, giamChuyenDong, nhipToiBac, thoiLuong } from '@/lib/ui/nhip';
 import { VitalsChatSurface } from '@/components/home/widgets/VitalsPill';
 import { chonTinHieu, trangThaiAmbient, type TinHieu } from '@/components/studio/vitals-tin-hieu';
 import { NHAN_GIU_MS, SLOP_PX, TRE_RE_VAO_MS } from '@/components/studio/cu-chi-nhan-giu';
@@ -85,7 +88,9 @@ export function VitalsAperture() {
    * ĐÓNG NGAY (toggle), nhìn ra như "bấm không ra gì" — đúng loại lỗi chỉ lộ khi thao tác thật.
    */
   const [ghim, setGhim] = useState(false);
-  const [neo, setNeo] = useState<{ top: number; right: number } | null>(null);
+  const [neo, setNeo] = useState<{ top: number; right: number; tamPhai: number } | null>(null);
+  /** Đã sang khung hình thứ hai chưa — mốc để trạng thái "đóng" kịp vẽ trước khi nở ra. */
+  const [daNo, setDaNo] = useState(false);
   const [quyChuan, setQuyChuan] = useState<number | undefined>(undefined);
   const nutRef = useRef<HTMLButtonElement>(null);
   const tamRef = useRef<HTMLDivElement>(null);
@@ -118,7 +123,18 @@ export function VitalsAperture() {
     const el = nutRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    setNeo({ top: r.bottom + 8, right: Math.max(8, window.innerWidth - r.right) });
+    setNeo({
+      top: r.bottom + 8,
+      /* Kẹp để mép TRÁI của tấm không lọt ra ngoài màn hẹp: neo theo mép phải nút thì trên
+         khung 333px (pane hẹp) tấm 268px tràn sang trái −21px — đo được trên app thật 20/08. */
+      right: Math.min(
+        Math.max(8, window.innerWidth - r.right),
+        Math.max(8, window.innerWidth - RONG_TAM - 8),
+      ),
+      // Khoảng cách từ MÉP PHẢI của tấm tới TÂM LÕI quỹ đạo. Tấm neo mép phải trùng mép phải
+      // nút, nên đây chính là nửa bề rộng nút — và đó là gốc để bề mặt nở ra (§14).
+      tamPhai: r.width / 2,
+    });
   }, []);
 
   const moPeek = useCallback(
@@ -133,8 +149,29 @@ export function VitalsAperture() {
 
   const dong = useCallback(() => {
     setGhim(false);
+    setDaNo(false);
     setMuc('ambient');
   }, []);
+
+  /* §14 CHUYỂN ĐỘNG TỪ GỐC — bề mặt NỞ RA TỪ CHÍNH TÂM LÕI quỹ đạo, không mọc từ hư không.
+     Bật cờ ở khung hình SAU để trình duyệt có thế nội suy (không nhảy thẳng). */
+  useLayoutEffect(() => {
+    if (muc === 'ambient' || !neo) return;
+    const id = requestAnimationFrame(() => setDaNo(true));
+    return () => cancelAnimationFrame(id);
+  }, [muc, neo]);
+
+  const giam = giamChuyenDong();
+  const msNo = thoiLuong(nhipToiBac(muc === 'engage' ? 'bang' : 'vien'), giam);
+  const kieuMoc = (goc: number): React.CSSProperties => ({
+    transformOrigin: `calc(100% - ${goc}px) 0%`,
+    transform: daNo ? 'scale(1)' : 'scale(0.94)',
+    opacity: daNo ? 1 : 0,
+    transition:
+      msNo === 0
+        ? 'none'
+        : `transform ${msNo}ms ${DUONG_CONG}, opacity ${Math.round(msNo * 0.8)}ms ${DUONG_CONG}`,
+  });
 
   /** Chuột rời khỏi CẢ nút lẫn tấm: Peek chưa ghim thì thu lại. Có khoảng ân hạn vì tấm được
    * portal ra `body` (luật K4) nên nó KHÔNG phải con của nút — đi từ nút sang tấm là một lần
@@ -232,11 +269,13 @@ export function VitalsAperture() {
         className="flex items-center gap-1.5 rounded-[var(--r-full)] px-2.5 py-1 transition-colors duration-[120ms] hover:bg-[var(--hover)]"
         style={{ background: muc !== 'ambient' ? 'var(--hover)' : 'transparent' }}
       >
-        <VitalsIcon size={14} className="shrink-0" style={{ color: 'var(--accent)' }} />
+        {/* ⭐ AMBIENT = LÕI + QUỸ ĐẠO, gần như KHÔNG vật liệu: nền trong suốt, nét mảnh, đơn
+            sắc lúc nghỉ. Đây là chỗ cả ba mức mọc ra, nên nó phải là một TÂM nhìn thấy được.
+            Trạng thái đọc bằng ĐỘ SÁNG + CHUYỂN ĐỘNG của chính lõi (§18), không phải bằng một
+            chấm gắn thêm — chấm cũ đã bỏ vì nó nói lại đúng điều lõi đã nói. */}
+        <VitalsQuyDao trangThai={trangThai} co={18} className="shrink-0" />
         {/* NT-8: ký hiệu luôn có nhãn. "Vitals" là TÊN của thứ này, không phải "chữ nhiều". */}
         <span className="text-[length:var(--fs-xs)] font-medium text-[var(--t2)]">Vitals</span>
-        {/* Chấm ambient — cỗ máy trạng thái SẴN CÓ, không phải chấm tự vẽ. */}
-        <VitalsStateDot state={trangThai} size={6} />
         {/* Số chỉ hiện khi CÓ tín hiệu thật; kênh chữ đi kèm nằm trong `aria-label` ở trên nên
             người không phân biệt được chấm vẫn nghe được trạng thái. */}
         {tinHieu.length > 0 && (
@@ -256,49 +295,69 @@ export function VitalsAperture() {
               style={{ position: 'fixed', top: neo.top, right: neo.right, zIndex: 60 }}
             >
               {muc === 'peek' ? (
+                /* ⭐ PEEK — quỹ đạo nở ra từ ĐÚNG TÂM đó thành một VIÊN KÍNH MỎNG theo ngữ cảnh.
+                   Vật liệu: `kinh` (vai trò `vitals-peek`, một trong 5 vai trò duy nhất được
+                   đeo kính — `lib/ui/vat-lieu.ts`). Kính ÔM SÁT nội dung: không có nấc thứ hai,
+                   không nhồi thêm hàng cho đầy tấm.
+                   §17 — MỘT TÍN HIỆU LỚN + một dòng ngữ cảnh + một hành động nhỏ.
+                   ⛔ CẤM biến thành bảng phân tích doanh nghiệp: không biểu đồ, không %, không
+                   "so với tuần trước". Trần 3 dòng đã khoá ở `vitals-tin-hieu.ts`. */
                 <div
-                  style={{ width: RONG_TAM }}
-                  className="nen-mo-panel overflow-hidden rounded-[var(--r-3)] border border-[var(--border)] p-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.5)]"
+                  style={{ width: RONG_TAM, ...kieuMoc(neo.tamPhai) }}
+                  className="be-mat-noi be-mat-noi--kinh overflow-hidden rounded-[var(--r-3)] p-2"
                 >
-                  <div className="flex items-center gap-1.5 px-1 pb-1.5">
-                    <VitalsIcon size={12} style={{ color: 'var(--accent)' }} />
-                    <span className="text-[length:var(--fs-xs)] uppercase tracking-wide text-[var(--t4)]">Vitals</span>
-                  </div>
-
                   {tinHieu.length === 0 ? (
                     // Câu này nói về KHẨU ĐỘ, không nói về sức khoẻ hồ sơ. Cố ý KHÔNG viết
                     // "bản vẽ không có lỗi": bộ kiểm chỉ bắt được thứ đo được, "0 vi phạm" ≠
                     // "đạt chuẩn" (luật đã ghi thành chữ ở `violationsPromptBlock`).
-                    <p className="px-1 pb-1 text-[length:var(--fs-xs)] leading-relaxed text-[var(--t3)]">
+                    <p className="px-1.5 py-1 text-[length:var(--fs-xs)] leading-relaxed text-[var(--t3)]">
                       {tr('Không có tín hiệu nào.', 'No signals.')}
                     </p>
                   ) : (
-                    <ul className="space-y-0.5">
-                      {tinHieu.map((t) => (
-                        <li
-                          key={t.loai}
-                          className="flex items-start gap-2 rounded-[var(--r-2)] px-1.5 py-1.5"
-                          style={{ background: 'var(--field)' }}
-                        >
-                          <span className="mt-[3px] shrink-0">
-                            <VitalsStateDot state={t.loai === 'dang-chay' ? 'answering' : 'alert'} size={6} />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-[length:var(--fs-xs)] text-[var(--t1)]">{t.nhan}</span>
-                            {t.chiTiet && (
-                              <span className="block truncate text-[length:var(--fs-xs)] text-[var(--t4)]">{t.chiTiet}</span>
-                            )}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                    <>
+                      {/* TÍN HIỆU LỚN — số đứng riêng, cỡ lớn; chữ đi kèm ngắn. */}
+                      <div className="flex items-baseline gap-2 px-1.5 pt-0.5">
+                        <span className="text-[26px] font-semibold leading-none tabular-nums text-[var(--t1)]">
+                          {tinHieu[0].so}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-[length:var(--fs-xs)] text-[var(--t2)]">
+                          {tinHieu[0].nhan.replace(/^\d+\s*/, '')}
+                        </span>
+                      </div>
+                      {/* MỘT dòng ngữ cảnh — ưu tiên dữ kiện thật (tên lượt chạy), không có thì
+                          nói VÌ SAO BỊ GẮN CỜ. Cả hai đều là chuỗi từ nguồn, không bịa. */}
+                      <p className="mt-1 px-1.5 text-[length:var(--fs-xs)] leading-relaxed text-[var(--t3)]">
+                        {tinHieu[0].chiTiet ?? tinHieu[0].viSao}
+                      </p>
+
+                      {/* Tín hiệu còn lại (tối đa 2) — một dòng, nhỏ. Chúng có mặt để người dùng
+                          biết còn gì khác, không để so sánh. */}
+                      {tinHieu.length > 1 && (
+                        <ul className="mt-1.5 space-y-0.5">
+                          {tinHieu.slice(1).map((t) => (
+                            <li
+                              key={t.loai}
+                              title={t.viSao}
+                              className="flex items-center gap-2 rounded-[var(--r-2)] px-1.5 py-1"
+                            >
+                              <VitalsStateDot state={t.loai === 'dang-chay' ? 'answering' : 'alert'} size={5} />
+                              <span className="min-w-0 flex-1 truncate text-[length:var(--fs-xs)] text-[var(--t2)]">
+                                {t.nhan}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
                   )}
 
+                  {/* MỘT hành động nhỏ. Không phải hàng nút. */}
                   <button
                     type="button"
                     onClick={() => {
                       huyRoi();
                       setGhim(true);
+                      setDaNo(false);
                       setMuc('engage');
                     }}
                     className="mt-1.5 w-full rounded-[var(--r-2)] px-2 py-1.5 text-left text-[length:var(--fs-xs)] text-[var(--t2)] transition-colors duration-[120ms] hover:bg-[var(--hover)]"
@@ -307,7 +366,15 @@ export function VitalsAperture() {
                   </button>
                 </div>
               ) : (
-                <VitalsChatSurface onClose={dong} />
+                /* ⭐ ENGAGE — cùng tâm đó nở tiếp thành bề mặt ĐỌC ĐƯỢC. `VitalsChatSurface` đã
+                   là nền ĐẶC (`--card` + `--border`), đúng luật vật liệu: chỗ đọc lâu + có ô
+                   nhập thì KHÔNG đeo kính. Ở đây chỉ bọc một lớp CHUYỂN ĐỘNG, cố ý KHÔNG bọc
+                   `BeMatNoi` — bọc vào là kính chồng lên mặt đặc, đúng thứ luật cấm.
+                   ⛔ Nó không phải hộp thoại chatbot rời: không overlay, không giữa màn, mọc
+                   ra từ chính lõi quỹ đạo và thu về đó. */
+                <div style={kieuMoc(neo.tamPhai)}>
+                  <VitalsChatSurface onClose={dong} />
+                </div>
               )}
             </div>,
             document.body,

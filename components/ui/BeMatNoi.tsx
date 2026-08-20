@@ -1,17 +1,32 @@
 'use client';
 
 /**
- * components/ui/BeMatNoi.tsx — BỀ MẶT KÍNH NỔI, nguyên thể DÙNG CHUNG.
+ * components/ui/BeMatNoi.tsx — BỀ MẶT NỔI, nguyên thể DÙNG CHUNG. BA MỨC VẬT LIỆU.
  *
- * ⛔ ĐÂY LÀ NƠI DUY NHẤT ĐƯỢC DỰNG LỚP KÍNH NỔI. Mọi nơi cần một mặt nổi — Vitals Peek/Engage ·
+ * ⛔ ĐÂY LÀ NƠI DUY NHẤT ĐƯỢC DỰNG BỀ MẶT NỔI. Mọi nơi cần một mặt nổi — Vitals Peek/Engage ·
  * bảng năng lực · viên ngữ cảnh · inspector nổi · trạng thái nghe giọng · cổng Spec/Present ·
- * bề mặt so sánh tạm · phản hồi hành động — GỌI VÀO ĐÂY. Cấm tự chế kính riêng: ba agent tự chế
+ * bề mặt so sánh tạm · phản hồi hành động — GỌI VÀO ĐÂY. Cấm tự chế riêng: ba agent tự chế
  * ba hiện thực là ba cách nó hỏng, và lúc đó không sửa được ở một chỗ.
  *
- * 🔴 KÍNH MANG NGHĨA, KHÔNG PHẢI TRANG TRÍ: nổi lên · theo ngữ cảnh · tạm thời · đang hoạt động.
- * Thẻ nội dung THƯỜNG TRỰC giữ đặc (`--card`), đừng bọc vào đây cho đẹp.
+ * ⭐⭐ VẬT LIỆU THEO CHỨC NĂNG — KÍNH PHẢI ĐÁNG, KHÔNG PHẢI BÔI LÊN (Hoà chốt 20/08).
+ *   ① `dac`    ĐẶC/MỜ ĐỤC — **MẶC ĐỊNH** · biểu mẫu · cài đặt · thiết lập trang · spec ·
+ *              dữ liệu kỹ thuật · vùng nhiều núm · chỗ đọc lâu.
+ *   ② `ganDac` GẦN ĐẶC — bảng làm việc thường trực · inspector · Object Passport · bề mặt
+ *              xem chi tiết / soát duyệt.
+ *   ③ `kinh`   KÍNH MỎNG — CHỈ: Vitals Peek · viên giọng nói · hành động nhanh theo ngữ cảnh ·
+ *              công cụ nổi nhỏ · lớp phủ tạm thoáng qua.
  *
- * ⭐ HAI THỨ NÓ LÀM MÀ MỘT `<div className="kinh-noi">` KHÔNG LÀM ĐƯỢC:
+ * 🔴 KÍNH LÀM GIẢM ĐỌC-ĐƯỢC / THỨ BẬC / ĐỘ TIN CẬY NGHỀ ⇒ **BỎ KÍNH**, hạ xuống `dac`.
+ *   Đây là câu để lane sau đọc trước khi tiện tay bôi kính lên một bảng thông số: mặt kính
+ *   đẹp trên ảnh chụp và tệ trên một buổi làm việc bốn tiếng.
+ * ⛔ CẤM: mờ dày · phủ tím · acrylic dày · **KÍNH CHỒNG KÍNH** · phình bề mặt kính thành thẻ to
+ *   (kính phải ÔM SÁT nội dung — kính to là kính đã mất lý do tồn tại).
+ * Hai khuôn hợp lệ: **(A)** kính mỏng toàn phần cho bề mặt nhỏ/thoáng qua ·
+ *   **(B)** VỎ KÍNH + RUỘT GẦN ĐẶC (`className="be-mat-ruot-dac"` cho ruột) khi cần chiều sâu
+ *   mà nội dung phải sắc nét.
+ * Bảng vai-trò → vật-liệu là bảng MÁY ĐỌC ĐƯỢC, có test: `lib/ui/vat-lieu.ts`.
+ *
+ * ⭐ HAI THỨ NÓ LÀM MÀ MỘT `<div className="be-mat-noi">` KHÔNG LÀM ĐƯỢC:
  *   ① PORTAL ra `document.body` — bài học K4: kính lồng trong chrome kính thì backdrop root
  *     chặn blur, panel xuyên thấu. Không phải tuỳ chọn.
  *   ② MỌC TỪ NGUỒN — đo hộp của vật đã gọi rồi đặt `transform-origin` theo nó, nên bề mặt
@@ -38,9 +53,20 @@ import {
   type BacBeMat,
   type HopNguon,
 } from '@/lib/ui/nhip';
+import {
+  LOP_VAT_LIEU,
+  vatLieuTheoVaiTro,
+  type VaiTroBeMat,
+  type VatLieu,
+} from '@/lib/ui/vat-lieu';
+import { CAM_DUOI, CAM_TREN, datCho, type Hop, type KetQuaDatCho } from '@/lib/ui/dat-cho';
 import { useKeoBeMat } from './useKeoBeMat';
 
-/** Ba nấc độ đặc, chọn theo LƯỢNG CHỮ đứng trên — không theo cỡ hình. */
+/**
+ * ⚠️ CŨ — giữ để nơi gọi sẵn có không gãy. Trục thật bây giờ là `vatLieu` (chức năng),
+ * không phải "độ đặc của kính" (thẩm mỹ). Ánh xạ ở `DO_DAC_SANG_VAT_LIEU` bên dưới.
+ * @deprecated dùng `vatLieu` / `vaiTro`.
+ */
 export type DoDacKinh = 'mong' | 'vua' | 'dac';
 
 export interface BeMatNoiProps {
@@ -55,9 +81,13 @@ export interface BeMatNoiProps {
   /** Nấc — quyết định NHỊP mở và độ sâu thu về khi đóng. */
   bac: Exclude<BacBeMat, 'nguon'>;
   /**
-   * Độ đặc. Mặc định suy từ nấc: viên ít chữ → mỏng · bảng → vừa · bảng sâu (dày chữ/số) → đặc.
-   * Khai tay khi biết rõ nội dung dày hơn nấc gợi ý (vd một viên chứa bảng số liệu).
+   * ⭐ VAI TRÒ của bề mặt — *nó dùng để làm gì*. Cách khai ĐƯỢC KHUYẾN NGHỊ: khai vai trò rồi
+   * để bảng luật (`lib/ui/vat-lieu.ts`) chọn vật liệu, thay vì nơi dùng tự chọn mặt kính.
    */
+  vaiTro?: VaiTroBeMat;
+  /** Vật liệu khai thẳng. Thắng `vaiTro`. Chỉ dùng khi vai trò chưa có trong bảng. */
+  vatLieu?: VatLieu;
+  /** @deprecated Trục cũ theo "độ đặc kính". Chỉ còn để nơi gọi sẵn có không gãy. */
   doDac?: DoDacKinh;
   /** Bề rộng tối đa (px). Bề mặt luôn `min(rộng, 100vw - 24px)` để màn hẹp không tràn. */
   rong?: number;
@@ -73,6 +103,19 @@ export interface BeMatNoiProps {
   nguCanhNho?: string;
   /** Khoá riêng trong ngữ cảnh đó. Mặc định lấy theo `nhan`. */
   khoaNho?: string;
+  /**
+   * ⭐ VÙNG KHÔNG ĐƯỢC CHE, theo viewport (`getBoundingClientRect`). Sáu mục của luật đặt chỗ:
+   * canvas chính · vật đang chọn · vật nguồn · vùng con trỏ đang thao tác · **Vitals** ·
+   * **dải hành động mép dưới**. Ba mục sau cùng lo TỰ ĐỘNG (nguồn tự thêm; Vitals và dải
+   * hành động là hai dải cấm thường trực trong `dat-cho.ts`) — nơi gọi chỉ cần truyền vùng
+   * RIÊNG của màn mình: vật đang chọn, vùng con trỏ.
+   */
+  tranhChe?: Hop[];
+  /**
+   * Bề mặt này là quyết định NGẮN + CHẶN (xác nhận · xoá · cảnh báo nghiêm trọng · một câu hỏi
+   * gật/lắc) ⇒ được ra GIỮA MÀN. ⛔ CẤM bật cờ này cho biểu mẫu dài / cài đặt.
+   */
+  quyetDinhChan?: boolean;
   /** Đóng bằng `Esc` / nút đóng. Có truyền thì cửa sổ mọc thêm thanh tiêu đề có nút ✕. */
   onDong?: () => void;
   children: ReactNode;
@@ -80,16 +123,25 @@ export interface BeMatNoiProps {
   style?: CSSProperties;
 }
 
-const DO_DAC_THEO_BAC: Record<Exclude<BacBeMat, 'nguon'>, DoDacKinh> = {
-  vien: 'mong',
-  bang: 'vua',
+/**
+ * ⭐ MẶC ĐỊNH THEO NẤC — ĐỔI HẲN so với bản trước (bản trước: viên/bảng/bảng-sâu = ba độ KÍNH).
+ * Nay nấc nói lên CÔNG NĂNG, và công năng quyết vật liệu:
+ *   · `vien`    viên ngữ cảnh, một-hai dòng, thoáng qua        → KÍNH MỎNG
+ *   · `bang`    bảng làm việc / inspector, đứng lâu             → GẦN ĐẶC
+ *   · `bangSau` bảng sâu: dày chữ-số, nhiều núm, đọc lâu        → ĐẶC
+ * Tức mặc định của một cửa sổ làm việc thật KHÔNG còn là kính. Đó là điểm của luật này.
+ */
+const VAT_LIEU_THEO_BAC: Record<Exclude<BacBeMat, 'nguon'>, VatLieu> = {
+  vien: 'kinh',
+  bang: 'ganDac',
   bangSau: 'dac',
 };
 
-const LOP_DO_DAC: Record<DoDacKinh, string> = {
-  mong: 'kinh-noi--mong',
-  vua: '',
-  dac: 'kinh-noi--dac',
+/** Trục cũ → trục mới. `vua` từng là kính-vừa; theo luật mới nó là GẦN ĐẶC. */
+const DO_DAC_SANG_VAT_LIEU: Record<DoDacKinh, VatLieu> = {
+  mong: 'kinh',
+  vua: 'ganDac',
+  dac: 'dac',
 };
 
 /** Bo góc theo nấc — thang 6/10/14/20, bề mặt càng lớn bo càng lớn. */
@@ -103,12 +155,16 @@ export function BeMatNoi({
   mo,
   nguonRef,
   bac,
+  vaiTro,
+  vatLieu,
   doDac,
   rong = 360,
   dangChay = false,
   nhan,
   nguCanhNho,
   khoaNho,
+  tranhChe,
+  quyetDinhChan,
   onDong,
   children,
   className = '',
@@ -119,7 +175,10 @@ export function BeMatNoi({
   const [conTrongDom, setConTrongDom] = useState(mo);
   /** Đã sang khung hình thứ hai chưa — mốc để trạng thái "đóng" kịp vẽ trước khi đổi sang "mở". */
   const [daNo, setDaNo] = useState(false);
-  const [viTri, setViTri] = useState<{ trai: number; tren: number } | null>(null);
+  const [dat, setDat] = useState<KetQuaDatCho | null>(null);
+  /** Nhịp ④ AN VỊ — sau khi nở xong, bề mặt "cắm" lại chỗ của nó (bóng đổ đầy đủ), không
+   * lơ lửng nửa chừng. Bốn nhịp của luật: mọc từ nguồn → NỞ RA → CẮM/AN VỊ → thu về nguồn. */
+  const [daAnVi, setDaAnVi] = useState(false);
   const [goc, setGoc] = useState({ originX: 50, originY: 50 });
 
   const giam = giamChuyenDong();
@@ -145,43 +204,83 @@ export function BeMatNoi({
    * đo trong `useEffect` là người dùng thấy một khung hình bề mặt đứng sai chỗ rồi nhảy.
    */
   useLayoutEffect(() => {
-    if (!conTrongDom || !ref.current) return;
-    const hopNguon: HopNguon | null = (() => {
+    /* ⚠️ `mo` PHẢI có trong điều kiện, không chỉ `conTrongDom`. Bug browser QA 20/08 bắt được:
+       lúc ĐÓNG, `conTrongDom` còn true suốt nhịp thu về, mà `setDat(null)` chạy ngay ⇒ effect
+       này tính lại chỗ đặt NGAY LÚC ĐÓNG, bằng vị trí nguồn CŨ, rồi lần mở sau dùng lại kết quả
+       đó. Triệu chứng: mọi phép đo lệch ĐÚNG MỘT NHỊP — bề mặt đứng đúng chỗ của lần trước.
+       Loại lỗi này không lộ ra ở test thuần (lõi `datCho` vẫn đúng), chỉ lộ khi đo trên app thật. */
+    if (!mo || !conTrongDom || !ref.current) return;
+    const hopNguon: Hop | null = (() => {
       const el = nguonRef.current;
       if (!el) return null;
       const r = el.getBoundingClientRect();
       return { x: r.left, y: r.top, rong: r.width, cao: r.height };
     })();
     const r = ref.current.getBoundingClientRect();
+    /* 🔴 ĐO BẰNG `offsetWidth/Height`, KHÔNG bằng `getBoundingClientRect`. Lúc đo, bề mặt đang
+       ở `scale(0.96)` của nhịp chưa-nở ⇒ rect trả về kích thước ĐÃ CO. Sai 4% nghe như không
+       đáng kể, nhưng nó là 4px của một tấm 100px, và 4px đó đủ để tấm thò xuống dưới dải hành
+       động mép dưới — đúng ca vừa đo được trên app thật. `offset*` là kích thước LAYOUT, không
+       bị `transform` đụng vào. */
+    const coThat = { rong: ref.current.offsetWidth, cao: ref.current.offsetHeight };
 
-    // Chưa đặt chỗ lần nào ⇒ neo dưới nguồn, kẹp trong viewport (không để tràn mép).
-    if (!viTri && hopNguon) {
-      const le = 12;
-      const trai = Math.min(
-        Math.max(le, hopNguon.x + hopNguon.rong / 2 - r.width / 2),
-        Math.max(le, window.innerWidth - r.width - le),
+    /* ⭐ CHỖ ĐẶT DO **LUẬT** QUYẾT, KHÔNG DO TỆP NÀY TỰ TÍNH — bảy bước ở `lib/ui/dat-cho.ts`.
+       Trước đây đoạn này là ~12 dòng "neo dưới nguồn, lật nếu hết chỗ, kẹp viewport" viết tại
+       chỗ; nó đúng ba bước và bỏ qua bốn bước còn lại — trong đó có hai bước đắt nhất
+       (đổi LOẠI theo kích cỡ, và tránh che Vitals / dải hành động). Mỗi nơi tự tính là mỗi nơi
+       bỏ sót một bước khác nhau. */
+    /* Đo LẠI nếu chiều cao thật khác chiều cao lúc tính chỗ. Lượt đo đầu chạy khi bề mặt còn
+       `visibility:hidden` ở góc (0,0) — chữ có thể xuống dòng khác đi, và bề mặt cao hơn vài px
+       là đủ để nó thò xuống dưới dải cấm mép dưới. Browser QA 20/08 đo được lệch 6-10px đúng ở
+       hai ca sát mép; lõi `datCho` không sai, nó chỉ được cho một con số cao đã cũ. */
+    if (dat && dat.loai === 'popover' && Math.abs(coThat.cao - dat.cao) > 2) {
+      setDat(null);
+      return;
+    }
+    if (!dat) {
+      setDat(
+        datCho({
+          nguon: hopNguon,
+          beMat: { rong: Math.min(coThat.rong, window.innerWidth - 24), cao: coThat.cao },
+          khung: { rong: window.innerWidth, cao: window.innerHeight },
+          tranhChe,
+          quyetDinhChan,
+          camTren: CAM_TREN,
+          camDuoi: CAM_DUOI,
+        }),
       );
-      const duoi = hopNguon.y + hopNguon.cao + 10;
-      // Không đủ chỗ dưới thì lật lên trên — cùng lối Popover.tsx đã đi.
-      const tren = duoi + r.height + le > window.innerHeight ? Math.max(le, hopNguon.y - r.height - 10) : duoi;
-      setViTri({ trai, tren });
-      return; // lượt sau đo lại với vị trí thật rồi mới tính gốc
+      return; // lượt sau đo lại với chỗ đứng thật rồi mới tính gốc mọc
     }
 
     if (hopNguon) {
       setGoc(gocMocTuNguon(hopNguon, { x: r.left, y: r.top, rong: r.width, cao: r.height }));
     }
-  }, [conTrongDom, nguonRef, viTri]);
+  }, [mo, conTrongDom, nguonRef, dat, rong, tranhChe, quyetDinhChan]);
 
   /** Bật cờ "đã nở" ở khung hình SAU — có thế trình duyệt mới nội suy được, không nhảy thẳng. */
   useLayoutEffect(() => {
-    if (!conTrongDom || !mo || !viTri) return;
+    if (!conTrongDom || !mo || !dat) return;
     const id = requestAnimationFrame(() => setDaNo(true));
     return () => cancelAnimationFrame(id);
-  }, [conTrongDom, mo, viTri]);
+  }, [conTrongDom, mo, dat]);
+
+  /* Nhịp AN VỊ — bật SAU khi nhịp nở kết thúc. Nó không dời bề mặt (dời lúc này là "tự nhảy"),
+     nó làm bề mặt ĐỨNG HẲN: bóng đổ vào đầy đủ, cạnh ăn xuống nền. */
+  useEffect(() => {
+    if (!(mo && daNo)) {
+      setDaAnVi(false);
+      return;
+    }
+    if (msMo === 0) {
+      setDaAnVi(true);
+      return;
+    }
+    const t = window.setTimeout(() => setDaAnVi(true), msMo);
+    return () => window.clearTimeout(t);
+  }, [mo, daNo, msMo]);
 
   useEffect(() => {
-    if (!mo) setViTri(null);
+    if (!mo) setDat(null);
   }, [mo]);
 
   /* ---------- CỬA SỔ NỔI DI CHUYỂN ĐƯỢC ----------
@@ -196,7 +295,7 @@ export function BeMatNoi({
     khoa: khoaNho ?? nhan,
     co: coCuaSo,
     batKeo: laCuaSo && conTrongDom,
-    viTriMoc: viTri ? { x: viTri.trai, y: viTri.tren } : null,
+    viTriMoc: dat ? { x: dat.x, y: dat.y } : null,
   });
 
   /* `Esc` đóng — chỉ khi nơi dùng có đường đóng thật. Gắn ở `document` vì tiêu điểm có thể đang
@@ -215,10 +314,16 @@ export function BeMatNoi({
   const hienRa = mo && daNo;
   const tl = hienRa ? 1 : tiLeDong(bac);
 
-  const lopDoDac = LOP_DO_DAC[doDac ?? DO_DAC_THEO_BAC[bac]];
+  /* Thứ tự thắng: khai thẳng `vatLieu` → `vaiTro` (qua bảng luật) → trục cũ `doDac` → nấc. */
+  const vatLieuThat: VatLieu =
+    vatLieu ??
+    (vaiTro ? vatLieuTheoVaiTro(vaiTro) : undefined) ??
+    (doDac ? DO_DAC_SANG_VAT_LIEU[doDac] : undefined) ??
+    VAT_LIEU_THEO_BAC[bac];
+  const lopVatLieu = LOP_VAT_LIEU[vatLieuThat];
 
   /** Người dùng đã kéo đi thì cửa sổ đứng ở chỗ họ đặt; chưa kéo thì đứng ở chỗ mọc từ nguồn. */
-  const choDung = keo.viTri ?? (viTri ? { x: viTri.trai, y: viTri.tren } : null);
+  const choDung = keo.viTri ?? (dat ? { x: dat.x, y: dat.y } : null);
 
   /**
    * ⭐ NGỮ PHÁP LÚC ĐÓNG — chỗ phải quyết, và tôi quyết thế này:
@@ -237,12 +342,15 @@ export function BeMatNoi({
       role="dialog"
       aria-modal={false}
       aria-label={nhan}
-      className={`kinh-noi ${lopDoDac} ${dangChay ? 'kinh-noi--dang-chay' : ''} ${className}`.trim()}
+      className={`be-mat-noi ${lopVatLieu} ${daAnVi ? 'be-mat-noi--an-vi' : ''} ${dangChay ? 'be-mat-noi--dang-chay' : ''} ${className}`.trim()}
       style={{
         position: 'fixed',
         left: choDung?.x ?? 0,
         top: choDung?.y ?? 0,
-        width: `min(${rong}px, calc(100vw - 24px))`,
+        // Hạng `vua`/`lon` đã ĐỔI LOẠI (inspector cắm bên / toàn không gian) ⇒ bề rộng và
+        // chiều cao do luật đặt chỗ quyết, không do `rong` nơi gọi đề nghị.
+        width: dat && dat.loai !== 'popover' ? dat.rong : `min(${rong}px, calc(100vw - 24px))`,
+        ...(dat && dat.loai !== 'popover' && dat.loai !== 'giua-man' ? { height: dat.cao } : {}),
         borderRadius: BO_THEO_BAC[bac],
         zIndex: 60,
         // Bề mặt chưa đo xong chỗ đứng thì đừng vẽ ra — thà chậm một khung hình còn hơn nhảy.
