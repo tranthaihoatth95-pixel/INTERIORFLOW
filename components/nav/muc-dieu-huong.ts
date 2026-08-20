@@ -45,44 +45,74 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   House,
-  Briefcase,
+  Folders,
   Folder,
-  LibraryBig,
+  SquareStack,
   FileCheck2,
   Grid2x2,
   Box,
-  Presentation,
+  Monitor,
 } from 'lucide-react';
 
-/* ─── TÁM BIỂU TƯỢNG CỦA THANH TRÁI — chọn như MỘT HỆ (Hoà chốt 20/08) ──────────────────────
- * Khung/nét/màu là hằng số chung ở `components/ui/command-icon.tsx` (`HE_BIEU_TUONG`).
- * Ở đây chỉ chọn NGHĨA. Cột "phần tử" = số hình vẽ trong `iconNode` của lucide — thước ĐO ĐƯỢC
- * cho luật "hai icon cạnh nhau lệch hẳn độ phức tạp là TRƯỢT"; test nhóm [8] khoá dải này.
+/* ─── TÁM BIỂU TƯỢNG CỦA THANH TRÁI — MỘT HỌ, không phải tám cái hiểu được ───────────────────
+ * Khung/nét là hằng số chung ở `components/ui/command-icon.tsx` (`HE_BIEU_TUONG`). Ở đây chọn
+ * NGHĨA **và** SILHOUETTE.
  *
- *  mục          icon         phần tử  vì sao chọn / vì sao BỎ cái cũ
- *  Trang chủ    House          2      nghĩa nhà·xưởng. BỎ `LayoutGrid` (4): 4-ô là ngôn ngữ
- *                                     dashboard, không nói "về xưởng"
- *  Dự án        Briefcase      2      tập hồ sơ. BỎ `Building2` (4): toà nhà nhiều tầng nhiều cửa
- *                                     sổ — chi tiết nhỏ, 16px không đọc kịp 1 giây
- *  Files        Folder         1      thư mục/nguồn, đơn giản nhất bộ
- *  Thư viện     LibraryBig     3      khối sách có gáy = bộ sưu tập vật. BỎ `Library` (4): bốn
- *                                     vạch dọc cao thấp đọc ra THANH EQUALIZER, sai nghĩa hẳn
- *  Soát duyệt   FileCheck2     3      tờ có dấu kiểm. BỎ `ShieldCheck` (1): khiên nói BẢO MẬT —
- *                                     soát duyệt ở đây là duyệt hồ sơ, không phải an ninh
- *  Thiết kế 2D  Grid2x2        3      mặt phẳng chia ô = mặt bằng. BỎ `PencilRuler` (3): là HAI
- *                                     vật chồng nhau (bút + thước), rối ở 16px dù cùng số phần tử
- *  Thiết kế 3D  Box            3      khối lập phương dây — giữ nguyên, vốn đã đúng
- *  Trình chiếu  Presentation   3      khung hình trên chân = đầu ra/trình bày
+ * 🔴 Hoà 20/08: hiểu được từng cái nhưng **chưa cảm thấy là MỘT HỌ của IF** ⇒ siết NGỮ PHÁP HÌNH.
+ * TRỤC XUYÊN SUỐT: **chữ nhật → chữ nhật bo → viên nang → tròn**. Mọi icon phải đọc ra là biến
+ * thể trên trục đó: cùng bán kính góc · cùng kiểu đầu nét/góc nối · đơn sắc trung tính mặc định ·
+ * màu CHỈ hỗ trợ trạng thái.
+ * ⛔ Cấm trộn glyph đặc với glyph viền · bán kính góc tuỳ tiện · hình quá chi tiết · kiểu emoji.
  *
- * Dải phần tử **1-3**, cái rối nhất đúng 3× cái đơn giản nhất — chạm mép trần của luật, không
- * vượt. ⛔ `Boxes` (9) từng được cân nhắc cho Thư viện: LOẠI vì gấp 9 lần cái đơn giản nhất
- * trong bộ, tự nó là ca TRƯỢT của chính luật này.
- * ⚠️ Con số ở bảng trên là ĐO bằng test nhóm [8], không phải đếm bằng mắt — bản nháp đầu của
- * chính bảng này ghi sai 4/8 dòng vì regex đếm hụt icon một-phần-tử. Sửa icon thì chạy test rồi
- * chép số ra, đừng ước.
- * ⛔ Đừng "nâng cấp" một icon lẻ cho đẹp hơn: đổi một cái là phải đo lại cả tám.
+ * BÁN KÍNH GÓC — ĐO, không ước (đọc thẳng `iconNode` của lucide đã cài):
+ *   Grid2x2 `rx: 2` · Monitor `rx: 2` · SquareStack `rx: 2` · Folder/FolderKanban/FileCheck2/
+ *   House/Box dùng cung `a2 2` = **bán kính 2**. ⇒ cả tám đều r2, một bán kính duy nhất.
+ *   ⛔ `Blocks` bị LOẠI **bằng số**, không bằng cảm giác: `rx: 1` — lệch nửa bán kính so với cả
+ *   bộ. Đây đúng là loại lệch mà mắt thấy "sai sai" mà không chỉ ra được tên.
+ *
+ *  mục          icon           silhouette                       vì sao / vì sao BỎ cái cũ
+ *  Trang chủ    House          thân chữ nhật bo r2 + mái dốc    ⚠️ CÁI DUY NHẤT LỆCH TRỤC — xem ghi chú dưới
+ *  Dự án        Folders        HAI thư mục r2 xếp chồng         hộp chứa dự án, **cùng họ với Files**
+ *                                                               (đúng chữ Hoà) mà vẫn phân biệt
+ *                                                               được ở 18px. BỎ `Briefcase`: cặp
+ *                                                               có quai, họ khác hẳn Folder. BỎ
+ *                                                               `FolderKanban`: **4 phần tử** —
+ *                                                               vượt trần 3 của test [8], đúng
+ *                                                               cái luật này sinh ra để chặn
+ *  Files        Folder         THƯ MỤC r2                       hộp chứa, đơn giản nhất bộ
+ *  Thư viện     SquareStack    ba ô vuông r2 CHỒNG nhau         "chồng/khối/mô-đun" đúng chữ Hoà.
+ *                                                               BỎ `LibraryBig`: vẫn là SÁCH —
+ *                                                               Hoà nói thẳng "đừng dùng sách
+ *                                                               trang trí theo nghĩa đen nếu nó
+ *                                                               phá họ", và gáy sách nghiêng thì
+ *                                                               phá trục thật
+ *  Soát duyệt   FileCheck2     TỜ r2 góc gấp + dấu kiểm         tài liệu có quan hệ kiểm
+ *  Thiết kế 2D  Grid2x2        CHỮ NHẬT r2 chia ô               MẶT PHẲNG
+ *  Thiết kế 3D  Box            khối lập phương dây              KHỐI
+ *  Trình chiếu  Monitor        CHỮ NHẬT r2 + chân               MẶT ĐẦU RA. BỎ `Presentation`:
+ *                                                               bảng treo có chân xiên + nét
+ *                                                               nội dung — rời khỏi trục
+ *
+ * ⭐ ĐẢO CHẶNG PHẢI ĐỌC THÀNH MỘT TIẾN TRÌNH, không phải ba vật rời:
+ *      Grid2x2  →  Box  →  Monitor
+ *      PHẲNG       KHỐI     MẶT TRÌNH BÀY
+ *   Cả ba cùng bắt đầu từ MỘT hình chữ nhật: cái đầu chia ô (phẳng), cái giữa đùn lên có chiều sâu
+ *   (khối), cái cuối đặt lên chân (mặt xuất). Đứng cạnh nhau thấy được một câu chuyện.
+ *   ⛔ Đổi lẻ một trong ba là làm gãy câu chuyện — phải đổi cả ba hoặc không đổi.
+ *
+ * ⚠️ **TRANG CHỦ LÀ MỤC DUY NHẤT KHÔNG NẰM TRỌN TRÊN TRỤC** — khai thẳng, không giấu:
+ *   mái dốc của `House` là HAI ĐƯỜNG CHÉO; trục chữ-nhật→bo→viên-nang→tròn không có đường chéo.
+ *   Đã rà hết ứng viên trong lucide cho nghĩa "nhà/xưởng": `House` `Warehouse` `Building*` — cái
+ *   nào cũng có mái dốc hoặc mái cong, không cái nào ở trên trục. `LayoutGrid`/`LayoutDashboard`
+ *   thì đúng trục nhưng Hoà đã loại vì là ngôn ngữ dashboard.
+ *   ⇒ **KHÔNG có ứng viên trong họ. Muốn trục tuyệt đối thì cần GLYPH RIÊNG của IF** (khung chữ
+ *   nhật bo r2 + mái PHẲNG, hoặc khung cửa). Đó là việc của cửa thiết kế, KHÔNG tự vẽ ở lane code.
+ *   Tạm giữ `House` — nó vẫn r2, vẫn viền đơn sắc, chỉ lệch ở silhouette.
+ *
+ * Dải phần tử **1-3** (đo bằng test [8]) — không cái nào lệch hẳn.
+ * ⚠️ Con số là ĐO, không đếm mắt: bản nháp đầu của chính bảng này sai 4/8 dòng vì regex đếm hụt
+ * icon một-phần-tử. Sửa icon thì chạy test rồi chép số ra, đừng ước.
  */
-
 /* ─────────────────────────────────────────────────────────────────────────────────────────
    BA NẤC CHI TIẾT = BA CÔNG NĂNG (hợp đồng §5 · bản đồ §7 · CHOT-EXPERIENCE-SYSTEM điều 4)
 
@@ -91,12 +121,14 @@ import {
    320 "ở đó đang có gì"    — thêm HÌNH, hoặc TÌNH TRẠNG nếu thứ đó không có hình (Work Panel)
 
    VÌ SAO 52 (chốt điều 4 cho KHOẢNG 52-56, số chính xác chốt theo token):
-   52 = `--tap-lg` 44px (ô chạm LỚN, globals.css:110 — cỡ ngón tay, KHÔNG đổi theo con trỏ)
+   52 = `--tap-lg` 44px (ô chạm LỚN, globals.css — cỡ ngón tay, KHÔNG đổi theo con trỏ)
       + 2 × 4px lề hàng (mỗi hàng rail đã có `margin: 0 4px` sẵn).
-   Tức nút icon ở nấc này ăn TRỌN bề ngang 44px = đúng một ô chạm lớn — không số mới nào bịa ra.
    240 GIỮ: đã nằm trong khoảng 220-280 của chốt, đổi là churn không mang tin.
    320 GIỮ min: chốt cho resize tới trần 440 nhưng rail HIỆN CHƯA có cơ chế resize —
    ⛳ NỢ (phiếu riêng): thêm resize kéo tay nấc `duyet` trong khoảng [320, 440].
+
+   ⛔ Ba nấc chi tiết là một NHỊP, không phải HẠN NGẠCH: mục nào không có gì để nhìn ở 320 thì
+   BỎ nấc đó cho riêng mục ấy (`mat320.kieu === 'khong'` + lý do đọc được).
    ───────────────────────────────────────────────────────────────────────────────────────── */
 
 export const BE_RONG_NAC = { dinhVi: 52, dieuHuong: 240, duyet: 320 } as const;
@@ -128,11 +160,9 @@ export function nacKe(nac: NacRail, huong: 1 | -1): NacRail | null {
  *             ĐỊNH và QUEN TAY, thêm mục vào đây là làm mất tính đoán-trước của nó.
  * Đảo thứ ba (cá nhân/hệ thống) KHÔNG còn — nó sang cụm phải-trên. Xem docstring đầu file.
  *
- * ĐỔI KHOÁ CÓ AN TOÀN KHÔNG — đo trước khi đổi, không đoán: `grep -rn "CumRail\|'chung'\|'caNhan'"`
- * chỉ ra `CumRail` sống trong đúng ba tệp `components/nav/**`, và localStorage của rail chỉ có
- * MỘT khoá `interiorflow.rail.nac_v1` lưu **NacRail** (`RailDieuHuong.tsx:71`) — không khoá nào
- * lưu CumRail. ⇒ đổi `chung|duAn|caNhan` → `viec|chang` KHÔNG vỡ dữ liệu đã ghi, không cần
- * đường nâng cấp. (Nấc chi tiết vẫn nhớ nguyên như cũ.)
+ * ĐỔI KHOÁ CÓ AN TOÀN KHÔNG — đo trước khi đổi, không đoán: `CumRail` sống trong đúng ba tệp
+ * `components/nav/**`, và localStorage của rail chỉ có MỘT khoá `interiorflow.rail.nac_v1` lưu
+ * **NacRail** — không khoá nào lưu CumRail. ⇒ đổi tên cụm KHÔNG vỡ dữ liệu đã ghi.
  */
 export type CumRail = 'viec' | 'chang';
 
@@ -170,6 +200,7 @@ export interface MucRail {
  * một KỆ của Thư viện · Gallery là mặt tuyển chọn của kệ Ảnh. Ba thứ đó KHÔNG có mục riêng ở đây;
  * ai định thêm vào, đọc §1 trước.
  */
+
 export const MUC_RAIL: readonly MucRail[] = [
   // ── ĐẢO A · XƯỞNG/VIỆC — "tôi đang làm việc ở đâu" ───────────────────────────────────────
   {
@@ -190,7 +221,7 @@ export const MUC_RAIL: readonly MucRail[] = [
     vi: 'Dự án',
     en: 'Project',
     cum: 'viec',
-    icon: Briefcase,
+    icon: Folders,
     // Route GIỮ NGUYÊN `/projects/[id]/overview` — đổi route là vỡ deep-link (hợp đồng §2).
     // KHÔNG có route danh sách dự án riêng (đo 20/08: `app/projects/` chỉ có `[id]`; gallery
     // chọn dự án sống BÊN TRONG `/` qua `ProjectSelect`) ⇒ mục này trỏ vào dự án ĐANG MỞ, chưa
@@ -214,7 +245,7 @@ export const MUC_RAIL: readonly MucRail[] = [
     vi: 'Thư viện',
     en: 'Library',
     cum: 'viec',
-    icon: LibraryBig,
+    icon: SquareStack,
     duong: '/library',
     // Hoà nêu đích danh 16/08: "thư viện vật liệu, size to nhất là cột dọc ô tròn vật liệu".
     mat320: { kieu: 'hinh', moTa: 'cột ô tròn vật liệu', daNoiNguon: false },
@@ -262,7 +293,7 @@ export const MUC_RAIL: readonly MucRail[] = [
     vi: 'Trình chiếu',
     en: 'Presenting',
     cum: 'chang',
-    icon: Presentation,
+    icon: Monitor,
     duoi: 'present',
     mat320: { kieu: 'tinhTrang', moTa: 'chặng đang dở', daNoiNguon: true },
   },

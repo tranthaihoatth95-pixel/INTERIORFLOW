@@ -214,13 +214,13 @@ import { readFileSync, existsSync } from 'fs';
 /** mục rail → tên tệp icon trong lucide (kebab-case). Sai tên là test đỏ, không im lặng. */
 const TEP_ICON: Record<string, string> = {
   'trang-chu': 'house',
-  'du-an': 'briefcase',
+  'du-an': 'folders',
   files: 'folder',
-  'thu-vien': 'library-big',
+  'thu-vien': 'square-stack',
   'soat-duyet': 'file-check-corner', // `FileCheck2` tái xuất từ tệp này
   'thiet-ke-2d': 'grid-2x2',
   'thiet-ke-3d': 'box',
-  'trinh-chieu': 'presentation',
+  'trinh-chieu': 'monitor',
 };
 function soPhanTu(ten: string): number | null {
   const p = `node_modules/lucide-react/dist/esm/icons/${ten}.mjs`;
@@ -248,6 +248,10 @@ for (const [cam, viSao] of [
   ['layout-grid', 'Trang chủ không dùng icon 4-ô kiểu dashboard'],
   ['building-2', 'Dự án không dùng hình toà nhà chi tiết'],
   ['library', 'Thư viện không dùng bốn vạch dọc (đọc ra thanh equalizer)'],
+  ['library-big', 'Thư viện không dùng SÁCH theo nghĩa đen — gáy nghiêng phá trục hình'],
+  ['blocks', 'không dùng Blocks: rx=1, lệch nửa bán kính so với cả bộ r2'],
+  ['folder-kanban', 'Dự án không dùng FolderKanban: 4 phần tử, vượt trần độ phức tạp'],
+  ['presentation', 'Trình chiếu không dùng bảng-treo-chân-xiên — rời khỏi trục chữ nhật'],
   ['shield-check', 'Soát duyệt không dùng khiên bảo mật'],
 ] as const) {
   ok(`${viSao} (${cam})`, !Object.values(TEP_ICON).includes(cam));
@@ -268,6 +272,58 @@ for (const [cam, viSao] of [
   ok('hình quang học trong dải 16-18', hinh !== null && hinh >= 16 && hinh <= 18);
   ok('nét thường ≥ 1,5', net !== null && net >= 1.5);
   ok('nét khi nhấn ≤ 1,75 — trần cứng, chặn ca strokeWidth=2 cũ', netNhan !== null && netNhan <= 1.75);
+}
+
+console.log('\n[9] NGỮ PHÁP HÌNH — cả cột phải đọc ra là MỘT HỌ (Hoà chốt 20/08)');
+/* Trục: chữ nhật → chữ nhật bo → viên nang → tròn. Thứ khiến tám hình đọc ra cùng một bộ, và
+ * kiểm được bằng máy, là **BÁN KÍNH GÓC**. Đọc cả `rx` của <rect> lẫn bán kính cung `a<r> <r>`
+ * trong path — hai cách lucide bo góc. */
+function banKinh(ten: string): number[] {
+  const p = `node_modules/lucide-react/dist/esm/icons/${ten}.mjs`;
+  if (!existsSync(p)) return [];
+  const src = readFileSync(p, 'utf8');
+  // `"?` bắt buộc: lucide ghi `rx: "2"` CÓ NGOÁY KÉP. Bản nháp đầu của chính test này quên nó và
+  // báo "không có bán kính" cho đúng ba icon rect-thuần — tức im lặng bỏ qua thứ cần kiểm nhất.
+  const rx = [...src.matchAll(/rx:\s*"?([0-9.]+)"?/g)].map((m) => parseFloat(m[1]));
+  const cung = [...src.matchAll(/[aA]\s*([0-9.]+)[ ,]([0-9.]+)/g)].map((m) => parseFloat(m[1]));
+  return [...rx, ...cung];
+}
+const troi = (xs: number[]): number | null => {
+  if (!xs.length) return null;
+  const d = new Map<number, number>();
+  for (const x of xs) d.set(x, (d.get(x) ?? 0) + 1);
+  return [...d.entries()].sort((a, b) => b[1] - a[1])[0][0];
+};
+const bk = MUC_RAIL.map((m) => ({ id: m.id, r: troi(banKinh(TEP_ICON[m.id])) }));
+console.log('    bán kính trội/icon:', bk.map((x) => `${x.id}=${x.r}`).join(' · '));
+ok('mọi icon đều đọc được bán kính góc', bk.every((x) => x.r !== null));
+ok(
+  'CẢ TÁM cùng MỘT bán kính góc (r2) — đây là thứ làm cột đọc ra một họ',
+  bk.every((x) => x.r === 2),
+);
+ok(
+  '`blocks` vẫn phải bị loại — rx=1, lệch nửa bán kính so với cả bộ',
+  troi(banKinh('blocks')) === 2 ? !Object.values(TEP_ICON).includes('blocks') : true,
+);
+// TIẾN TRÌNH PHẲNG → KHỐI → MẶT: ba chặng phải đứng đúng thứ tự đó và KHÔNG được đổi lẻ.
+ok(
+  'đảo CHẶNG đúng bộ ba tiến trình: mặt phẳng chia ô → khối → mặt xuất',
+  MUC_RAIL.filter((m) => m.cum === 'chang')
+    .map((m) => TEP_ICON[m.id])
+    .join(',') === 'grid-2x2,box,monitor',
+);
+// TRẠNG THÁI ĐANG MỞ KHÔNG ĐƯỢC DỰA VÀO MÀU. Kiểm trên NGUỒN của rail: nét không được đổi theo
+// trạng thái (nét là thuộc tính của HỌ), và phải có dấu chỉ HÌNH DẠNG.
+{
+  const rail = readFileSync('components/nav/RailDieuHuong.tsx', 'utf8');
+  ok(
+    'nét icon KHÔNG đổi theo trạng thái — không còn ternary `dangMo ?` trên strokeWidth',
+    /strokeWidth=\{HE_BIEU_TUONG\.net\}/.test(rail) && !/strokeWidth=\{dangMo \?/.test(rail),
+  );
+  ok('có DẤU CHỈ hình dạng cho mục đang mở (kênh sống được khi bỏ màu)', /data-chi-dau="dang-mo"/.test(rail));
+  ok('có kênh trợ năng độc lập màu: aria-current', /aria-current=/.test(rail));
+  ok('có NỀN tông nhẹ bo tròn cho mục đang mở', /dangMo \? 'var\(--accent-soft\)'/.test(rail));
+  ok('ô đặt icon cố định để tâm quang học thẳng trục', /data-o-icon/.test(rail));
 }
 
 console.log(fail ? `\n❌ ${fail} kiểm HỎNG\n` : '\n✅ Tất cả kiểm ĐẠT\n');

@@ -322,6 +322,7 @@ function HangRail({
       {dangMo && (
         <span
           aria-hidden
+          data-chi-dau="dang-mo"
           style={{
             position: 'absolute',
             left: 0,
@@ -334,22 +335,30 @@ function HangRail({
         />
       )}
       {/* Ô ĐẶT ICON 20×20 CỐ ĐỊNH, hình 18 bên trong (`HE_BIEU_TUONG`). Ô cố định chứ không để
-          icon tự chiếm chỗ: hình lucide có cái vuông có cái dẹt, thả trần thì mép trái chữ nhấp
-          nhô theo từng hàng. Có ô thì mọi hàng thẳng cột, và ở nấc định vị icon nằm đúng tâm.
-          Nét 1,5 → 1,75 khi đang mở: cả hai đầu vẫn trong dải hệ. Trước 20/08 chỗ này là
-          `strokeWidth={2}` — ngoài dải, làm mục đang mở đặc hơn hẳn hàng xóm. */}
+          icon tự chiếm chỗ: hình lucide có cái vuông có cái dẹt, thả trần thì TÂM QUANG HỌC mỗi
+          hàng lệch một kiểu và cả cột đọc ra "nhặt từ nhiều bộ". Có ô thì tám tâm thẳng một trục
+          dọc — đo được, xem test [9] và số đo trong báo cáo.
+
+          🔴 NÉT KHÔNG ĐỔI THEO TRẠNG THÁI. Trước đó chỗ này là `strokeWidth={2}` rồi
+          `netNhan` khi đang mở — cả hai đều lấy ĐỘ DÀY NÉT làm kênh trạng thái, mà nét là thuộc
+          tính của HỌ: nét đổi thì icon đó thôi cùng bộ với hàng xóm. Trạng thái nay đi bằng
+          NỀN + DẤU CHỈ (xem trên), nét ở nguyên `HE_BIEU_TUONG.net` cho cả tám hàng.
+          `netNhan` vẫn còn trong hệ cho nơi khác cần nhấn TĨNH — không dùng ở đây. */}
       <span
         aria-hidden
+        data-o-icon=""
         style={{
           width: HE_BIEU_TUONG.khung,
           height: HE_BIEU_TUONG.khung,
           flexShrink: 0,
           display: 'grid',
           placeItems: 'center',
+          // Màu chỉ HỖ TRỢ trạng thái — không phải kênh duy nhất, và không phải danh tính icon.
+          // Bỏ hết màu đi thì nền bo + dấu chỉ mép trái vẫn nói được mục nào đang mở.
           color: dangMo ? 'var(--accent)' : undefined,
         }}
       >
-        <Icon size={HE_BIEU_TUONG.hinh} strokeWidth={dangMo ? HE_BIEU_TUONG.netNhan : HE_BIEU_TUONG.net} />
+        <Icon size={HE_BIEU_TUONG.hinh} strokeWidth={HE_BIEU_TUONG.net} />
       </span>
       {hienChu && (
         <span style={{ minWidth: 0, flex: 1 }}>
