@@ -204,6 +204,10 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
           type="button"
           className="dock-icon-btn"
           onClick={onToggleOpen}
+          // `title` là kênh CÂM trên cảm ứng và trình đọc màn hình đọc không nhất quán — nút này
+          // có nhãn chữ "Thêm" nên phần title mang thông tin THÊM (phím Tab) phải đi đường
+          // aria-label để tới được bàn phím/screen-reader. Giữ `title` cho hover chuột.
+          aria-label={tr('Mở rộng bảng công cụ — phím Tab', 'Expand the tool panel — Tab key')}
           title={tr('Mở rộng bảng công cụ — Tab', 'Expand the tool panel — Tab')}
           style={{
             height: 32, padding: '0 11px', border: 0, borderRadius: 10, background: 'transparent',

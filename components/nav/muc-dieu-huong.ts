@@ -1,11 +1,16 @@
 /**
  * components/nav/muc-dieu-huong.ts — [marker: railHaiCum] BẢNG KHAI của rail điều hướng.
+ * (Marker GIỮ NGUYÊN chuỗi `railHaiCum` làm ĐỊNH DANH ổn định dù rail nay là BA CỤM — đổi chuỗi
+ *  marker là vỡ mọi con trỏ trong phiếu/nhật ký cũ; tên marker là khoá kỹ thuật, không phải nhãn.)
  *
  * Vì sao tách khỏi component: đây là phần DUY NHẤT kiểm được bằng máy (đường đi · mục đang mở ·
  * lý do mờ · nấc chi tiết nào có gì để nhìn). Để chung trong `.tsx` thì muốn kiểm phải dựng DOM.
  *
- * NGUỒN CẤU TRÚC — `docs/HOP-DONG-CAU-TRUC-DIEU-HUONG.md` §1 (hai cụm) · §5 (ba nấc chi tiết =
- * ba công năng) · §6 (ràng buộc chung). Bản đồ: `docs/IF-KIEN-TRUC.md` §2 §3 §7.
+ * NGUỒN CẤU TRÚC — `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md` điều 3 (BA CỤM: Workspace chung ·
+ * ba chặng · cá nhân/hệ thống — ĐÈ chốt "hai cụm" 16-17/08) + điều 4 (ba độ sâu: Rail 52-56 ·
+ * Context Shelf 220-280 · Work Panel 320-440). Nền cũ vẫn đúng phần ràng buộc:
+ * `docs/HOP-DONG-CAU-TRUC-DIEU-HUONG.md` §5 (ba nấc chi tiết = ba công năng) · §6 (ràng buộc
+ * chung). Bản đồ: `docs/IF-KIEN-TRUC.md` §2 §3 §7.
  * Hoà chốt 16/08: **sidebar là hệ router toàn app**; ba chặng chỉ là MỘT nhóm stage, không phải
  * trục riêng ⇒ `components/studio/StageSwitcher.tsx` thôi là "trục điều hướng duy nhất".
  *
@@ -33,21 +38,26 @@ import {
   PencilRuler,
   Box,
   Presentation,
+  CircleUserRound,
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────────────────────────────────────────
-   BA NẤC CHI TIẾT = BA CÔNG NĂNG (hợp đồng §5 · bản đồ §7)
+   BA NẤC CHI TIẾT = BA CÔNG NĂNG (hợp đồng §5 · bản đồ §7 · CHOT-EXPERIENCE-SYSTEM điều 4)
 
-   28  "tôi đang ở đâu"     — định vị bằng vị trí + hình, KHÔNG chữ
-   240 "tôi đi đâu được"    — thêm CHỮ
-   320 "ở đó đang có gì"    — thêm HÌNH, hoặc TÌNH TRẠNG nếu thứ đó không có hình
+   52  "tôi đang ở đâu"     — định vị bằng vị trí + hình, KHÔNG chữ (Rail icon-only)
+   240 "tôi đi đâu được"    — thêm CHỮ (Context Shelf)
+   320 "ở đó đang có gì"    — thêm HÌNH, hoặc TÌNH TRẠNG nếu thứ đó không có hình (Work Panel)
 
-   ⛔ Ba nấc chi tiết là một NHỊP, không phải HẠN NGẠCH: mục nào không có gì để nhìn ở 320 thì
-   BỎ nấc đó cho riêng mục ấy (`mat320.kieu === 'khong'` + lý do đọc được). Giữ lại một nấc chỉ
-   to hơn mà không mang thêm tin chính là "kéo dãn" — thứ Hoà bác thẳng 16/08.
+   VÌ SAO 52 (chốt điều 4 cho KHOẢNG 52-56, số chính xác chốt theo token):
+   52 = `--tap-lg` 44px (ô chạm LỚN, globals.css:110 — cỡ ngón tay, KHÔNG đổi theo con trỏ)
+      + 2 × 4px lề hàng (mỗi hàng rail đã có `margin: 0 4px` sẵn).
+   Tức nút icon ở nấc này ăn TRỌN bề ngang 44px = đúng một ô chạm lớn — không số mới nào bịa ra.
+   240 GIỮ: đã nằm trong khoảng 220-280 của chốt, đổi là churn không mang tin.
+   320 GIỮ min: chốt cho resize tới trần 440 nhưng rail HIỆN CHƯA có cơ chế resize —
+   ⛳ NỢ (phiếu riêng): thêm resize kéo tay nấc `duyet` trong khoảng [320, 440].
    ───────────────────────────────────────────────────────────────────────────────────────── */
 
-export const BE_RONG_NAC = { dinhVi: 28, dieuHuong: 240, duyet: 320 } as const;
+export const BE_RONG_NAC = { dinhVi: 52, dieuHuong: 240, duyet: 320 } as const;
 
 export type NacRail = keyof typeof BE_RONG_NAC;
 
@@ -69,7 +79,18 @@ export function nacKe(nac: NacRail, huong: 1 | -1): NacRail | null {
 
 /* ───────────────────────────────────────────────────────────────────────────────────────── */
 
-export type CumRail = 'xuong' | 'duAn';
+/**
+ * BA CỤM (CHOT-EXPERIENCE-SYSTEM điều 3, ĐÈ chốt hai-cụm 16-17/08):
+ *   `chung`  — Workspace chung: sống không cần dự án nào.
+ *   `duAn`   — cụm ba chặng + hai mục dự án (Dự án này · Sổ tay): chỉ có nghĩa khi mở dự án.
+ *              Khoá GIỮ tên `duAn` chứ không đổi thành `chang` vì cụm chứa cả hai mục KHÔNG phải
+ *              chặng (du-an-nay · so-tay) — điều kiện sống của cả cụm là "đã mở dự án", đó mới là
+ *              bản chất; "ba chặng" là nhãn của chốt, không phải ranh giới kỹ thuật của cụm.
+ *   `caNhan` — cá nhân/hệ thống.
+ * Khoá cụm KHÔNG persist ở đâu (đo 20/08: localStorage chỉ lưu NẤC `interiorflow.rail.nac_v1`,
+ * giá trị là NacRail — không dính CumRail) ⇒ đổi/thêm khoá cụm an toàn, không cần đường nâng cấp.
+ */
+export type CumRail = 'chung' | 'duAn' | 'caNhan';
 
 /**
  * Nấc 320 của TỪNG mục — "ở đó đang có gì".
@@ -87,7 +108,7 @@ export interface MucRail {
   en: string;
   cum: CumRail;
   icon: LucideIcon;
-  /** Cụm XƯỞNG — đường tuyệt đối, sống không cần dự án nào. */
+  /** Cụm CHUNG / CÁ NHÂN — đường tuyệt đối, sống không cần dự án nào. */
   duong?: string;
   /** Cụm DỰ ÁN — đuôi sau `/projects/<id>/`; chỉ có nghĩa khi đã mở một dự án. */
   duoi?: string;
@@ -102,12 +123,12 @@ export interface MucRail {
  * ai định thêm vào, đọc §1 trước.
  */
 export const MUC_RAIL: readonly MucRail[] = [
-  // ── CỤM XƯỞNG — sống không cần dự án nào ─────────────────────────────────────────────────
+  // ── CỤM ① WORKSPACE CHUNG — sống không cần dự án nào (chốt điều 3) ───────────────────────
   {
     id: 'tong-quan',
     vi: 'Tổng quan',
     en: 'Overview',
-    cum: 'xuong',
+    cum: 'chung',
     icon: LayoutGrid,
     duong: '/',
     // Hợp đồng §2: tên "Tổng quan" thuộc về Home; hai mặt cùng tên kia đổi thành "Bảng chi tiết"
@@ -122,7 +143,7 @@ export const MUC_RAIL: readonly MucRail[] = [
     id: 'bang-viec',
     vi: 'Bảng việc',
     en: 'Tasks',
-    cum: 'xuong',
+    cum: 'chung',
     icon: ListTodo,
     duong: '/tasks',
     mat320: { kieu: 'tinhTrang', moTa: 'việc tới hạn gần nhất', daNoiNguon: false },
@@ -131,7 +152,7 @@ export const MUC_RAIL: readonly MucRail[] = [
     id: 'chat-hop',
     vi: 'Chat · Họp',
     en: 'Chat · Meetings',
-    cum: 'xuong',
+    cum: 'chung',
     icon: MessagesSquare,
     // Hợp đồng §7: có `app/api/chat/route.ts`, KHÔNG có trang. Mục vẫn hiện — ẩn thì người dùng
     // không biết app có gì; nhưng không được là nút bấm-không-ra-gì.
@@ -142,7 +163,7 @@ export const MUC_RAIL: readonly MucRail[] = [
     id: 'files',
     vi: 'Files',
     en: 'Files',
-    cum: 'xuong',
+    cum: 'chung',
     icon: Folder,
     duong: '/files',
     // Nguồn nằm trong vùng ghi của phiên V2 (`app/files/**`) ⇒ khai trước, KHÔNG tự nối và
@@ -153,28 +174,13 @@ export const MUC_RAIL: readonly MucRail[] = [
     id: 'thu-vien',
     vi: 'Thư viện',
     en: 'Library',
-    cum: 'xuong',
+    cum: 'chung',
     icon: Library,
     duong: '/library',
     // Hoà nêu đích danh 16/08: "thư viện vật liệu, size to nhất là cột dọc ô tròn vật liệu".
     mat320: { kieu: 'hinh', moTa: 'cột ô tròn vật liệu', daNoiNguon: false },
   },
-  {
-    id: 'cai-dat',
-    vi: 'Cài đặt',
-    en: 'Settings',
-    cum: 'xuong',
-    icon: Settings,
-    duong: '/settings',
-    mat320: {
-      kieu: 'khong',
-      // Bản đồ §7 / hợp đồng §5 nêu ĐÍCH DANH Cài đặt làm ví dụ cho luật "bỏ nấc khi không có gì
-      // để nhìn". Giữ nấc 320 ở đây là ca kéo dãn mẫu.
-      viSao: 'Cài đặt không có gì để NHÌN — chỉ có thứ để đọc và bấm; nấc rộng chỉ làm chữ xa nhau ra.',
-    },
-  },
-
-  // ── CỤM DỰ ÁN — chỉ có nghĩa khi đã mở một dự án ─────────────────────────────────────────
+  // ── CỤM ② DỰ ÁN (ba chặng + hai mục dự án) — chỉ có nghĩa khi đã mở một dự án ────────────
   {
     id: 'du-an-nay',
     vi: 'Dự án này',
@@ -221,17 +227,51 @@ export const MUC_RAIL: readonly MucRail[] = [
     duoi: 'present',
     mat320: { kieu: 'tinhTrang', moTa: 'chặng đang dở', daNoiNguon: true },
   },
+
+  // ── CỤM ③ CÁ NHÂN / HỆ THỐNG (chốt điều 3) ───────────────────────────────────────────────
+  {
+    id: 'ca-nhan',
+    vi: 'Cá nhân',
+    en: 'Personal',
+    cum: 'caNhan',
+    icon: CircleUserRound,
+    // Trang thật đã có: /settings/avatar (AvatarBuilder, route sống từ trước) — KHÔNG phải nút
+    // giả. `mucDangMo` bắt '/settings/avatar' TRƯỚC '/settings' nên hai mục không giẫm nhau.
+    duong: '/settings/avatar',
+    mat320: {
+      kieu: 'khong',
+      viSao: 'Trang cá nhân là chỗ SỬA (avatar, hồ sơ) — không có dòng tình trạng nào đáng bày.',
+    },
+  },
+  {
+    id: 'cai-dat',
+    vi: 'Cài đặt',
+    en: 'Settings',
+    cum: 'caNhan',
+    icon: Settings,
+    duong: '/settings',
+    mat320: {
+      kieu: 'khong',
+      // Bản đồ §7 / hợp đồng §5 nêu ĐÍCH DANH Cài đặt làm ví dụ cho luật "bỏ nấc khi không có gì
+      // để nhìn". Giữ nấc 320 ở đây là ca kéo dãn mẫu.
+      viSao: 'Cài đặt không có gì để NHÌN — chỉ có thứ để đọc và bấm; nấc rộng chỉ làm chữ xa nhau ra.',
+    },
+  },
 ] as const;
 
 export const NHAN_CUM: Record<CumRail, { vi: string; en: string }> = {
-  xuong: { vi: 'Xưởng', en: 'Studio' },
+  chung: { vi: 'Workspace chung', en: 'Shared workspace' },
   duAn: { vi: 'Dự án', en: 'Project' },
+  caNhan: { vi: 'Cá nhân', en: 'Personal' },
 };
+
+/** Thứ tự vẽ ba cụm — ba "đảo dọc" cùng một trục (chốt điều 3). */
+export const THU_TU_CUM: readonly CumRail[] = ['chung', 'duAn', 'caNhan'] as const;
 
 /** Đường đi thật của một mục — `null` khi mục chưa dùng được (chưa có trang / chưa mở dự án). */
 export function duongCua(muc: MucRail, duAnId: string | null): string | null {
   if (muc.chuaCoTrang) return null;
-  if (muc.cum === 'xuong') return muc.duong ?? null;
+  if (muc.cum !== 'duAn') return muc.duong ?? null;
   return duAnId ? `/projects/${duAnId}/${muc.duoi}` : null;
 }
 
@@ -248,6 +288,8 @@ export function mucDangMo(duong: string | null | undefined): string | null {
   if (duong.startsWith('/tasks')) return 'bang-viec';
   if (duong.startsWith('/files')) return 'files';
   if (duong.startsWith('/library') || duong.startsWith('/materials') || duong.startsWith('/colors')) return 'thu-vien';
+  // Avatar là trang của mục CÁ NHÂN — bắt TRƯỚC nhánh '/settings' chung, kẻo cả hai cùng sáng.
+  if (duong.startsWith('/settings/avatar')) return 'ca-nhan';
   if (duong.startsWith('/settings')) return 'cai-dat';
 
   const duAn = /^\/projects\/[^/]+\/([^/?#]+)/.exec(duong);

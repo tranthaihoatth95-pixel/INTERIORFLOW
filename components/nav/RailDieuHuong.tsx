@@ -1,14 +1,18 @@
 'use client';
 
 /**
- * components/nav/RailDieuHuong.tsx — [marker: railHaiCum] RAIL ĐIỀU HƯỚNG: một trục dọc, HAI CỤM.
+ * components/nav/RailDieuHuong.tsx — [marker: railHaiCum] RAIL ĐIỀU HƯỚNG: một trục dọc, BA CỤM.
+ * (Chuỗi marker giữ nguyên làm định danh — xem ghi chú đầu `./muc-dieu-huong.ts`.)
  *
  * Hoà chốt 16/08: **sidebar là hệ router toàn app**, ba chặng chỉ là MỘT nhóm stage ngang hàng
  * với Files · Thư viện · Bảng việc · Tổng quan. Đo 17/08: chốt đó có **0 dòng mã** — app vẫn là
  * các route rời không bản đồ chung. File này là bản đồ ấy.
+ * 20/08 nâng theo `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md` điều 3 (BA CỤM: Workspace chung ·
+ * dự án/ba chặng · cá nhân — ba "đảo dọc" cùng trục, tách bằng khoảng thở) + điều 4 (Rail
+ * icon-only 52px · Context Shelf 240 · Work Panel 320, trần resize 440 là NỢ phiếu riêng).
  *
- * Nguồn cấu trúc: `docs/HOP-DONG-CAU-TRUC-DIEU-HUONG.md` (§1 hai cụm · §5 ba nấc chi tiết · §6
- * ràng buộc). Danh sách mục + mọi quyết định "mục nào có gì" nằm ở `./muc-dieu-huong.ts` — file
+ * Nguồn cấu trúc: `docs/HOP-DONG-CAU-TRUC-DIEU-HUONG.md` (§5 ba nấc chi tiết · §6 ràng buộc).
+ * Danh sách mục + mọi quyết định "mục nào có gì" nằm ở `./muc-dieu-huong.ts` — file
  * này chỉ VẼ, không tự quyết cấu trúc.
  *
  * ── BỐN THỨ DỄ BỊ "SỬA CHO TIỆN TAY" VỀ SAU, ĐỪNG ─────────────────────────────────────────
@@ -52,6 +56,7 @@ import Tooltip from '@/components/ui/Tooltip';
 import {
   MUC_RAIL,
   NHAN_CUM,
+  THU_TU_CUM,
   NHAN_NAC,
   BE_RONG_NAC,
   nacKe,
@@ -135,7 +140,7 @@ export function RailDieuHuong() {
       }}
     >
       <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden py-2" style={{ scrollbarWidth: 'thin' }}>
-        {(['xuong', 'duAn'] as const).map((cum, i) => (
+        {THU_TU_CUM.map((cum, i) => (
           <div
             key={cum}
             role="group"
@@ -143,7 +148,8 @@ export function RailDieuHuong() {
             // (chỉ hình, không chữ) ⇒ trỏ vào một phần tử không tồn tại thì cụm mất tên với trình
             // đọc màn hình đúng ở nấc hẹp nhất. `aria-label` sống ở cả ba nấc chi tiết.
             aria-label={tr(NHAN_CUM[cum].vi, NHAN_CUM[cum].en)}
-            // Hai cụm tách bằng KHOẢNG THỞ — không đường kẻ (Hoà 16/08).
+            // Ba cụm = ba "đảo dọc" cùng trục, tách bằng KHOẢNG THỞ — không đường kẻ ngang
+            // (Hoà 16/08 "không thích đường kẻ ngăn một cái rẹt" + chốt điều 3 20/08).
             style={{ marginTop: i === 0 ? 0 : 18 }}
             className="flex flex-col gap-0.5"
           >
@@ -179,9 +185,7 @@ export function RailDieuHuong() {
         className="flex shrink-0 items-center gap-1 border-t border-[var(--vien-mo)]"
         style={{
           justifyContent: hienChu ? 'flex-end' : 'center',
-          // Nấc định vị rộng đúng 28px: đệm 6 hai bên chỉ chừa 16px, và nút bị BÓP còn 16 —
-          // lỗi này chỉ lộ khi đo trên trình duyệt thật, đọc mã không ra. Thu đệm ở nấc đó.
-          padding: hienChu ? 6 : '6px 2px',
+          padding: 6,
         }}
       >
         {hepHon && <NutNac huong="hep" toi={hepHon} onDoi={doiNac} hep={!hienChu} />}
@@ -203,8 +207,9 @@ function NutNac({
   huong: 'hep' | 'rong';
   toi: NacRail;
   onDoi: (n: NacRail) => void;
-  /** Nấc định vị (28px) không chứa nổi nút `--tap` (32) — ghim 24px, vẫn đạt ngưỡng 24×24 của
-   *  WCAG 2.2 AA (2.5.8) và là con số lớn nhất nấc đó chứa được. */
+  /** Nấc định vị nay 52px, chứa được nút 32px + đệm 6 hai bên (44 ≤ 52) — ghim 32px CỐ ĐỊNH
+   *  chứ không `var(--tap)` vì trên cảm ứng `--tap` nở thành 44 ⇒ 44+12 = 56 > 52 sẽ tràn.
+   *  32×32 vượt ngưỡng 24×24 của WCAG 2.2 AA (2.5.8). */
   hep?: boolean;
 }) {
   const tr = useT();
@@ -218,7 +223,7 @@ function NutNac({
         type="button"
         aria-label={nhan}
         onClick={() => onDoi(toi)}
-        style={{ borderRadius: RADIUS.r2, width: hep ? 24 : 'var(--tap)', height: 'var(--tap)', flexShrink: 0 }}
+        style={{ borderRadius: RADIUS.r2, width: hep ? 32 : 'var(--tap)', height: hep ? 32 : 'var(--tap)', flexShrink: 0 }}
         className="grid shrink-0 place-items-center text-[var(--t3)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
       >
         {huong === 'hep' ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
@@ -318,9 +323,12 @@ function HangRail({
   // nút vẫn nhận Tab và vẫn bắn hover/focus ⇒ lý do tới được cả chuột, bàn phím lẫn trình đọc
   // màn hình. Chặn kích hoạt bằng cách KHÔNG gắn `onClick` (bàn phím kích hoạt nút bằng chính
   // sự kiện click), nên không cần chặn phím riêng.
+  // `style width:100%` cho span bọc của Tooltip (cả hai nhánh dưới): span đó vốn inline-flex
+  // SHRINK-WRAP, làm `width: calc(100% - 8px)` của hàng tính trên fit-content ⇒ hàng co lại 32px
+  // thay vì ăn trọn 44px ở nấc định vị (đo trên trình duyệt thật 20/08, đọc mã không ra).
   if (!duongDi || lyDoChu) {
     return (
-      <Tooltip label={nhan} desc={lyDoChu ?? undefined}>
+      <Tooltip label={nhan} desc={lyDoChu ?? undefined} style={{ width: '100%' }}>
         <button
           type="button"
           aria-disabled="true"
@@ -340,7 +348,7 @@ function HangRail({
   }
 
   return (
-    <Tooltip label={nhan}>
+    <Tooltip label={nhan} style={{ width: '100%' }}>
       <Link
         href={duongDi}
         aria-current={dangMo ? 'page' : undefined}

@@ -2,8 +2,12 @@
  * components/nav/muc-dieu-huong.test.ts — khoá RÀNG BUỘC của bảng khai rail [marker: railHaiCum].
  * Chạy: `node_modules/.bin/sucrase-node components/nav/muc-dieu-huong.test.ts`
  *
+ * NGUỒN CHỐT: `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md` điều 3 (BA CỤM — ĐÈ chốt hai-cụm
+ * 16-17/08) + điều 4 (Rail 52 icon-only · Shelf 240 · Panel 320, trần resize 440 là nợ phiếu
+ * riêng). Ràng buộc còn lại vẫn theo `docs/HOP-DONG-CAU-TRUC-DIEU-HUONG.md` §5 §6.
+ *
  * Mỗi mục dưới đây là MỘT CÁCH HỎNG đã lường trước, không phải một dòng cho đủ lệ:
- *  1. Đúng hai cụm, đúng danh sách hợp đồng §1 — thêm/bớt mục lặng lẽ là lệch cấu trúc.
+ *  1. Đúng BA cụm, đúng danh sách chốt điều 3 — thêm/bớt mục lặng lẽ là lệch cấu trúc.
  *  2. Ba thứ Hoà đã GỠ khỏi rail (Bảng màu · Kho vật liệu · Gallery) không được bò trở lại.
  *  3. Đường đi: cụm dự án chưa mở dự án phải là `null`, không được ra `/projects/null/...`.
  *  4. Mục đang mở suy đúng từ đường — kể cả `/materials` và `/colors` (kệ/bước của Thư viện).
@@ -34,17 +38,18 @@ function ok(msg: string, cond: unknown) {
 }
 const byId = (id: string) => MUC_RAIL.find((m) => m.id === id) as MucRail;
 
-console.log('\nmuc-dieu-huong — bảng khai rail hai cụm');
+console.log('\nmuc-dieu-huong — bảng khai rail BA cụm (chốt EXS 20/08)');
 
-console.log('\n[1] Hai cụm, đúng danh sách hợp đồng §1');
-ok('cụm XƯỞNG đúng 6 mục', MUC_RAIL.filter((m) => m.cum === 'xuong').length === 6);
+console.log('\n[1] BA cụm, đúng danh sách chốt điều 3 (Workspace chung · dự án/ba chặng · cá nhân)');
+ok('cụm CHUNG đúng 5 mục', MUC_RAIL.filter((m) => m.cum === 'chung').length === 5);
 ok('cụm DỰ ÁN đúng 5 mục', MUC_RAIL.filter((m) => m.cum === 'duAn').length === 5);
+ok('cụm CÁ NHÂN đúng 2 mục', MUC_RAIL.filter((m) => m.cum === 'caNhan').length === 2);
 ok('không id nào trùng', new Set(MUC_RAIL.map((m) => m.id)).size === MUC_RAIL.length);
 ok(
-  'thứ tự cụm XƯỞNG đúng hợp đồng',
-  MUC_RAIL.filter((m) => m.cum === 'xuong')
+  'thứ tự cụm CHUNG đúng chốt (Cài đặt đã RỜI sang cụm cá nhân)',
+  MUC_RAIL.filter((m) => m.cum === 'chung')
     .map((m) => m.id)
-    .join(',') === 'tong-quan,bang-viec,chat-hop,files,thu-vien,cai-dat',
+    .join(',') === 'tong-quan,bang-viec,chat-hop,files,thu-vien',
 );
 ok(
   'thứ tự cụm DỰ ÁN đúng hợp đồng',
@@ -52,9 +57,18 @@ ok(
     .map((m) => m.id)
     .join(',') === 'du-an-nay,so-tay,thiet-ke-2d,thiet-ke-3d,trinh-chieu',
 );
-ok('hai cụm đứng liền khối, không đan xen', (() => {
+ok(
+  'thứ tự cụm CÁ NHÂN đúng chốt',
+  MUC_RAIL.filter((m) => m.cum === 'caNhan')
+    .map((m) => m.id)
+    .join(',') === 'ca-nhan,cai-dat',
+);
+ok('ba cụm đứng liền khối, không đan xen', (() => {
   const cums = MUC_RAIL.map((m) => m.cum);
-  return cums.indexOf('duAn') === cums.lastIndexOf('xuong') + 1;
+  return (
+    cums.indexOf('duAn') === cums.lastIndexOf('chung') + 1 &&
+    cums.indexOf('caNhan') === cums.lastIndexOf('duAn') + 1
+  );
 })());
 
 console.log('\n[2] Ba thứ Hoà GỠ khỏi rail không được bò lại');
@@ -87,7 +101,8 @@ ok('/files → files', mucDangMo('/files') === 'files');
 ok('/library/gallery → thu-vien', mucDangMo('/library/gallery') === 'thu-vien');
 ok('/materials → thu-vien (kệ của Thư viện, §1)', mucDangMo('/materials') === 'thu-vien');
 ok('/colors → thu-vien (bước trong chọn vật liệu, §1)', mucDangMo('/colors') === 'thu-vien');
-ok('/settings/avatar → cai-dat', mucDangMo('/settings/avatar') === 'cai-dat');
+ok('/settings/avatar → ca-nhan (trang của mục Cá nhân, bắt TRƯỚC /settings)', mucDangMo('/settings/avatar') === 'ca-nhan');
+ok('/settings → cai-dat', mucDangMo('/settings') === 'cai-dat');
 ok('/projects/abc/render → thiet-ke-3d', mucDangMo('/projects/abc/render') === 'thiet-ke-3d');
 ok('/projects/abc/notebook → so-tay', mucDangMo('/projects/abc/notebook') === 'so-tay');
 ok('/projects/abc/photo → null (không phải mục rail)', mucDangMo('/projects/abc/photo') === null);
@@ -104,7 +119,8 @@ console.log('\n[5] Mục mờ LUÔN có lý do đọc được — §9 cấm nú
 ok('Chat · Họp mờ kèm lý do dù đã mở dự án', Boolean(lyDoMo(byId('chat-hop'), true)?.vi));
 ok('cụm DỰ ÁN chưa mở dự án → mờ kèm lý do', Boolean(lyDoMo(byId('thiet-ke-2d'), false)?.vi));
 ok('cụm DỰ ÁN đã mở dự án → dùng được', lyDoMo(byId('thiet-ke-2d'), true) === null);
-ok('cụm XƯỞNG không bị dự án khoá', lyDoMo(byId('files'), false) === null);
+ok('cụm CHUNG không bị dự án khoá', lyDoMo(byId('files'), false) === null);
+ok('cụm CÁ NHÂN không bị dự án khoá', lyDoMo(byId('ca-nhan'), false) === null && lyDoMo(byId('cai-dat'), false) === null);
 ok(
   'HỄ không có đường đi thì PHẢI có lý do (và ngược lại)',
   MUC_RAIL.every((m) => {
@@ -149,7 +165,9 @@ ok(
 );
 
 console.log('\n[7] Bước nấc chi tiết — dừng ở hai đầu, KHÔNG cuộn vòng');
-ok('ba nấc chi tiết đúng 28 / 240 / 320', BE_RONG_NAC.dinhVi === 28 && BE_RONG_NAC.dieuHuong === 240 && BE_RONG_NAC.duyet === 320);
+// 52/240/320 — chốt điều 4: Rail 52-56 (chọn 52 = --tap-lg 44 + 2×4 lề hàng) · Shelf 220-280
+// (giữ 240) · Panel min 320 (trần resize 440 là NỢ phiếu riêng, chưa có cơ chế resize).
+ok('ba nấc chi tiết đúng 52 / 240 / 320', BE_RONG_NAC.dinhVi === 52 && BE_RONG_NAC.dieuHuong === 240 && BE_RONG_NAC.duyet === 320);
 ok('thứ tự từ hẹp tới rộng', THU_TU_NAC.join(',') === 'dinhVi,dieuHuong,duyet');
 ok('hẹp nhất không lui được nữa', nacKe('dinhVi', -1) === null);
 ok('rộng nhất không tiến được nữa', nacKe('duyet', 1) === null);
