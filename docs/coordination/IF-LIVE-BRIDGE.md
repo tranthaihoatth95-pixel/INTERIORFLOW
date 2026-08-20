@@ -1,42 +1,47 @@
 # IF · LIVE BRIDGE — điểm nối duy nhất MAIN ↔ ChatGPT
 
-> Cập nhật lần cuối: 20/08 đêm, sau UX/UI Coherence Pass (Lane 1 Shell/Home/Vitals/Activity ·
-> Lane 2 2D · Lane 3 3D/Present/Library/Review) checkpoint + ComfyUI models khôi phục thật.
-> Chi tiết đầy đủ: `docs/memory/sessions/2026-08-20/08-truth-map-ux-study/README.md`. File này CHỈ tóm.
+> Cập nhật lần cuối: 20/08 đêm khuya, bàn giao hết context. Chi tiết đầy đủ:
+> `docs/memory/sessions/2026-08-20/09-main-parallel-waves-handoff/README.md` (đọc file đó nếu
+> cần bằng chứng/lệnh chính xác). File này CHỈ tóm.
 
 ## CURRENT
-- Git: `main` (remote) `2dfed16`, KHÔNG nhập. Việc thật ở `backup/2026-08-19-batch0a` tip `7418ac8` (UX Coherence Pass) — checkpoint sửa timeout/lỗi generation đang chuẩn bị ngay sau file này.
-- ⭐ **BUG THẬT ĐÃ SỬA (không phải env/infra, không phải hot-reload)**: chạy generation thật đầu tiên trong phiên (Sketch→Ảnh thật, ComfyUI tự-host, lượt NGUỘI) mất **25 phút 38 giây** — ComfyUI xác nhận `status:success` + ảnh thật 1.2MB trên đĩa, NHƯNG `lib/ai/client.ts` `TIMEOUT_MS=180_000` (3 phút) khiến client bỏ cuộc từ lâu trước khi job xong, VÀ `lib/execution.ts` `friendlyAiError()` khớp nhầm chữ "timeout" vào nhánh "backend chưa chạy/không kết nối" — hiện SAI thông điệp, dễ khiến người dùng tắt ComfyUI giữa lúc job sắp xong. Đã sửa: thêm `COMFYUI_TIMEOUT_MS=2_400_000` (40 phút) CHỈ áp cho provider tự-host (cloud fal/sd giữ nguyên 180s) + thêm nhánh riêng cho thông điệp timeout thật ("job vẫn đang chạy, đừng tắt") tách khỏi nhánh mất-kết-nối. tsc 0, test liên quan pass.
-- Server app :3001, login `demo@if.local`/`demo1234`, project `cmsl8prn80001w9i2ud3bfdgr`. tsc 0 xuyên suốt cả 3 lane UX (verify độc lập từng lượt).
-- **ComfyUI THẬT chạy `127.0.0.1:8188`** — model SDXL + ControlNet-canny đã KHÔI PHỤC bằng symlink từ một bản cài ComfyUI khác trên CÙNG máy (không tải lại, không đổi workflow). Đã xác nhận qua chính API ComfyUI (`/object_info/CheckpointLoaderSimple`) rằng `sd_xl_base_1.0.safetensors` đã hiện diện. **Chưa chạy lại 1 job generation thật kể từ khi khôi phục model** — môi trường lúc đó đang bị 3 lane UX cùng hot-save, MAIN chủ động HOÃN test để tránh kết quả không tin cậy, đúng chỉ đạo "clean verification window".
-- **Migration `ProjectFile.reviewState`: CHƯA CHẠY** — đã kiểm trực tiếp `sqlite3 prisma/dev.db "PRAGMA table_info(ProjectFile)"`, 3 cột reviewState/reviewedAt/reviewedBy CHƯA có. Backup `prisma/dev.db.bak-20260820-pre-review-migration` đã sẵn sàng, integrity-check OK. Đợi Hoà chạy `npx prisma migrate dev --name add_project_file_review_state`.
+- Git: `main` (remote) `2dfed16`, KHÔNG nhập. `backup/2026-08-19-batch0a` tip **`2d7b962`**, đã push. 8 checkpoint sạch trong phiên, mỗi checkpoint có guard chặn tree rỗng.
+- App :3001 (đã restart 1 lần giữa phiên cho clean window), tsc 0. Login `demo@if.local`/`demo1234`, project `cmsl8prn80001w9i2ud3bfdgr`.
+- **ComfyUI THẬT chạy `127.0.0.1:8188`** (PID 18339, khởi trực tiếp qua `main.py`, không qua Comfy Desktop.app — app đó treo vô hạn lúc khởi động). Model SDXL+ControlNet khôi phục bằng SYMLINK từ bản cài ComfyUI khác trên cùng máy — **đã CHẠY THẬT 2 job generation thành công** (22:48 và 25:38, lượt nguội).
+- Migration `ProjectFile.reviewState` CHƯA CHẠY — backup DB sẵn (`prisma/dev.db.bak-20260820-pre-review-migration`), lệnh chờ Hoà: `npx prisma migrate dev --name add_project_file_review_state`.
 
-## LIVE (bổ sung sau UX pass — giữ nguyên phần LIVE của các checkpoint trước, xem git log)
-- **Rail 2-đảo grammar xác nhận đồng nhất qua Home/2D/3D** — active state là viền tint 5% + vạch accent trái 2px (`RailDieuHuong.tsx` `NEN_DANG_MO`), KHÔNG phải purple-fill. Cụm phải-trên (Vitals/Activity/Avatar) cùng vị trí xuyên suốt.
-- **Xoá 1 nguyên nhân thật của "auto-redirect"**: cờ `interiorflow.stageDone` localStorage — write cuối cùng còn sót trong `ProjectSelect.tsx` (0 chỗ đọc còn lại trong toàn repo) đã bị xoá. Không đóng hẳn hiện tượng (còn liên quan Zustand `currentProjectId`/`workspace` chia sẻ giữa các tab), nhưng giảm thật một nguồn.
-- **2D StatusBar bottom-edge hết dày**: danh sách "Bắt điểm: ..." dài giờ thu về icon nam châm (chấm mờ ở Sơ phác, icon+số ở Chuyên), mở đầy đủ qua Tooltip hover/focus có sẵn — không đẻ cơ chế thứ hai.
-- **Library Browse→Passport→Technical Verify**: click item mở "Hộ chiếu" nhẹ (ảnh lớn + 2-3 fact chính + nút "Xem thông số kỹ thuật →") trước khi vào cột spec dày đặc cũ — đúng phân tầng brief yêu cầu.
-- **3D Command3DPanel mặc định thu gọn** (`defaultOpen={false}`, cùng mẫu panel xuất bên phải) — viewport chiếm ưu thế hơn ngay từ đầu.
-- **Present Page Setup xác nhận ĐÃ ĐÚNG cấu trúc** (full-work-area, tờ giấy cột chính rộng + cài đặt cột phụ hẹp, KHÔNG phải modal giữa màn) — không cần sửa chrome, chỉ còn thiếu NỘI DUNG preview thật (data-wiring, không phải UX/chrome).
+## LIVE (mới trong phiên này)
+- **Generation thật hoạt động end-to-end** — Sketch→Ảnh thật qua ComfyUI tự-host, xác nhận bằng DOM (`naturalWidth:960, complete:true`, base64 PNG thật), không phải mock.
+- Activity/Flow (chuông→Peek→cột phải, dữ liệu thật) · 3D selection feedback · Image→Spec bấm được từ cả 2D/3D · Spec→Present handoff · Files→Promote→Library→Where-Used (verify UI thật) · Home cá nhân hoá (reorder/pin/hide, persist) · 2D StatusBar gọn · Library Browse→Passport→Technical-Verify · rail grammar đồng nhất Home/2D/3D.
 
-## PARTIAL / MISSING (không đổi nhiều so với trước, các mục chính còn treo)
-- Real generation chưa re-test sau khi model khôi phục (xem CURRENT).
+## ⭐ SỬA BUG GENERATION THẬT (checkpoint `2d7b962`) — không phải env/infra
+`lib/ai/client.ts` `TIMEOUT_MS=180_000` (3 phút) sai cho ComfyUI tự-host lượt nguội (đo thật 22-25 phút) + `lib/execution.ts` `friendlyAiError()` dịch nhầm timeout thành "backend chưa chạy". Đã sửa: `COMFYUI_TIMEOUT_MS=2_400_000` (40 phút, chỉ áp self-host) + nhánh thông điệp riêng cho timeout thật. **RE-TEST SỐNG THÀNH CÔNG** sau khi sửa — ảnh thật trả về UI, không lỗi sớm.
+
+## ⭐ P0 TIẾP THEO — Controlled Edit là vỏ không ruột
+Mở kết quả generation ra: 7 lệnh (Chọn thông minh/Co giãn vùng/Thêm lớp/Gộp lớp/Chế độ hoà/Đường cong/Cân trắng) đều có UI thật nhưng cùng title `"Lệnh của môi trường này — chưa nối bộ thi hành"`. 0 lệnh chạy được. Gợi ý bắt đầu từ lệnh biến-đổi-ảnh-thuần (Cân trắng/Đường cong) trước AI-based (Chọn thông minh) — rẻ hơn để chứng minh đường dây chạy.
+
+## PARTIAL / MISSING
+- Controlled Edit (xem trên) — P0.
+- Present live sheet preview — chrome đúng, thiếu nối data.
 - Gallery Home vẫn 1 ảnh/tuần.
-- 2D near-pointer contextual actions (Offset/Material cạnh vật chọn) — xác nhận lại là THẬT SỰ CHƯA CÓ (grep CadCanvas.tsx), là việc BUILD có phạm vi rõ, chưa làm.
-- Present Page Setup live sheet preview — chrome đúng rồi, chỉ thiếu nối dữ liệu slide thật.
-- `ProjectFile.reviewState` — chờ Hoà chạy migration.
-- Route-bounce / auto-redirect — CHƯA đóng hẳn, xem UX FINDINGS.
+- 2D near-pointer contextual actions — xác nhận thật sự chưa có.
+- `ProjectFile.reviewState` — chờ Hoà migrate.
+- Route-bounce/auto-redirect — xem UX FINDINGS.
 
 ## UX FINDINGS
-- Route bounce / auto-redirect-to-Home: xảy ra lặp lại trong CHÍNH lúc 3 lane UX đang hot-save đồng thời (giống hệt mẫu hình Wave 1). MỘT nguyên nhân thật đã xử (cờ `stageDone` chết) nhưng KHÔNG được khai là đã đóng — cần lượt QA cô lập (không lane nào chạy song song) mới kết luận được REPRODUCED hay NOT REPRODUCED thật sự.
-- Present từng bị crash TOÀN APP giữa phiên do lỗi tạm thời `ReferenceError: Cannot access 'specs' before initialization` trong `LibrarySheet.tsx` lúc Lane 3 đang sửa dở (LibrarySheet mount toàn cục qua AppShell) — ĐÃ TỰ HẾT khi Lane 3 hoàn tất, tsc xác nhận sạch sau đó. Phân loại: DEV HOT-RELOAD ARTIFACT (tạm thời trong lúc sửa file), không phải APP DEFECT tồn tại ở trạng thái nghỉ.
+- Route bounce: KHÔNG tái hiện suốt ~45 phút clean-window (0 lane song song, kể cả qua 1 lần khoá-màn-hình-do-idle rồi mở lại). Nghiêng "nhiễu đa-agent lúc hot-save" nhưng CHƯA đóng hẳn — cần lượt DÙNG THẬT (không phải đứng yên) để kết luận chắc. Một nguyên nhân thật đã xử: cờ `stageDone` chết trong `ProjectSelect.tsx`.
+- Present từng crash toàn app tạm thời giữa phiên do lỗi mid-edit của 1 lane trong `LibrarySheet.tsx` — tự hết khi lane xong, phân loại DEV HOT-RELOAD ARTIFACT, không phải lỗi ở trạng thái nghỉ.
 
 ## DECISIONS
-(Giữ nguyên các quyết định trước: naming "Chuyên", widget resize theo luật cũ, Motion Law ghi nhận chờ thi công.)
-- Model SDXL/ControlNet khôi phục bằng SYMLINK (không copy) — 0 byte tốn thêm đĩa, cùng file vật lý với bản cài ComfyUI cũ trên máy.
-- KHÔNG chạy `npx prisma migrate dev` — chờ đúng người (Hoà) chạy theo luật CLAUDE.md.
+- Naming "Chuyên" giữ nguyên · widget resize theo luật cũ (không lưới 9-ô tự do) · Motion Relationship Law ghi nhận chờ thi công.
+- Model khôi phục bằng SYMLINK, không copy, không tải lại, không đổi workflow.
+- KHÔNG tự chạy `prisma migrate` — chờ Hoà.
 
 ## NEXT 3
-1. Khi Hoà chạy migration xong: verify schema + tsc + browser-smoke Files/Review/Promote.
-2. Mở CLEAN VERIFICATION WINDOW thật (không lane nào chạy song song) → chạy 1 job generation thật (Sơ phác → vẽ → Sketch→Ảnh thật → ComfyUI → kết quả về IF) → nếu PASS, chạy tiếp spine đầy đủ.
-3. Sau spine xanh: full visual coherence walk 9 chặng (Home→Files→2D×2→3D→Image→Spec→Library/Review→Present→Home) đối chiếu 10 tiêu chí freeze, ra kết luận READY FOR HOÀ VISUAL REVIEW: YES/NO.
+1. **P0 Controlled Edit** — nối bộ thi hành thật cho ít nhất 1-2 lệnh.
+2. Một lượt QA DÙNG THẬT (không phải đứng yên chờ) để đóng hẳn câu hỏi route-bounce.
+3. Present live sheet preview → sau đó diễn tập demo loop đầu-cuối lần cuối → mới xét nhập `main`.
+
+## TO CHATGPT
+- "Plan branch" và phạm vi Credits UI vẫn UNKNOWN/DEFER, chưa đủ dữ kiện.
+- Phiên này bàn giao hết context — người kế tiếp nên đọc `docs/memory/sessions/2026-08-20/09-main-parallel-waves-handoff/README.md` mục 6 ("bài học đắt") trước khi tự tay checkpoint git, để không lặp lại lỗi `GIT_INDEX_FILE` đã gặp.
