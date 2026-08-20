@@ -48,6 +48,8 @@ const PNG_DATA_URL =
 const PDF_DATA_URL = `data:application/pdf;base64,${Buffer.from('%PDF-1.4\n% test\n').toString('base64')}`;
 
 const filesDaGhi: string[] = [];
+/** id ProjectFile do CHÍNH tệp test này tạo — dùng để kiểm rác của mình, không kiểm đếm toàn cục. */
+const pfDaTao: string[] = [];
 
 interface Ctx {
   userId: string;
@@ -88,7 +90,9 @@ async function taoTep(ctx: { projectId: string; userId: string; name: string; da
   assert.ok(luu.ok, 'luuProjectFile phải thành công');
   if (!luu.ok) throw new Error('unreachable');
   filesDaGhi.push(luu.path);
-  return prisma.projectFile.create({
+  /* Ghi lại id để cuối lượt kiểm đúng HÀNG CỦA MÌNH, không kiểm đếm toàn cục —
+     xem lý do ở khối dọn dẹp cuối `main()`. */
+  const pfMoi = await prisma.projectFile.create({
     data: {
       projectId: ctx.projectId,
       name: ctx.name,
@@ -99,14 +103,14 @@ async function taoTep(ctx: { projectId: string; userId: string; name: string; da
       lastEditedBy: ctx.userId,
     },
   });
+  pfDaTao.push(pfMoi.id);
+  return pfMoi;
 }
 
 async function main() {
   console.log('\n▶ project-files/[id]/file — route đọc nội dung\n');
 
   const pfTruoc = await prisma.projectFile.count();
-  const laTruoc = await prisma.libraryAsset.count();
-  const pauTruoc = await prisma.projectAssetUsage.count();
 
   /* ═══ ① phần THUẦN — chặn tên file, không cần DB ═══ */
   assert.equal(tenFileAnToan('m1abc_x9y8z7.png'), true);
@@ -204,13 +208,17 @@ async function main() {
     await unlink(path.join(process.cwd(), 'uploads', f)).then(() => { daDon += 1; }).catch(() => {});
   }
 
-  const pfSau = await prisma.projectFile.count();
-  const laSau = await prisma.libraryAsset.count();
-  const pauSau = await prisma.projectAssetUsage.count();
-  assert.equal(pfTruoc, pfSau, 'ProjectFile: đếm trước === đếm sau');
-  assert.equal(laTruoc, laSau, 'LibraryAsset: đếm trước === đếm sau');
-  assert.equal(pauTruoc, pauSau, 'ProjectAssetUsage: đếm trước === đếm sau');
-  ok(`dev.db sạch — ProjectFile ${pfTruoc}=${pfSau} · LibraryAsset ${laTruoc}=${laSau} · Usage ${pauTruoc}=${pauSau}`);
+  /* 🔴 SỬA 20/08 — trước đây ba dòng dưới khẳng định ĐẾM TOÀN CỤC trước === sau. Sai ở chỗ:
+     `npm test` chạy `-P8`, tức TÁM tệp test song song, và có tệp khác cũng ghi `dev.db`
+     (`project-asset-usage/route.test.ts`). Test này vì thế khẳng định một con số NÓ KHÔNG SỞ HỮU:
+     hàng của tệp khác sinh/xoá giữa chừng cũng làm nó đỏ. Chạy riêng thì 11/11 PASS — đúng dấu
+     hiệu test-đỏ-giả.
+     Test đỏ giả nguy hiểm hơn test thiếu: nó dạy người ta bỏ qua màu đỏ, và lần đỏ THẬT sẽ trôi.
+     ⇒ Chỉ khẳng định trên NHỮNG HÀNG TỆP NÀY TỰ TẠO (biết id, xoá xong phải hết), không đụng
+     tới đếm toàn cục nữa. Vẫn chứng minh đúng điều cần chứng minh: lượt này không để lại rác. */
+  const conSot = await prisma.projectFile.count({ where: { id: { in: pfDaTao } } });
+  assert.equal(conSot, 0, `ProjectFile của lượt này còn sót ${conSot} hàng`);
+  ok(`dev.db sạch — ${pfDaTao.length} ProjectFile của lượt này đã xoá hết (đếm toàn cục ${pfTruoc}→${await prisma.projectFile.count()} có thể đổi do tệp test khác chạy song song, KHÔNG phải rác của lượt này)`);
   ok(`đĩa sạch — đã dọn ${daDon} file trong ./uploads`);
 
   console.log(`\n${pass} assertions PASS`);
