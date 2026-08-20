@@ -317,6 +317,68 @@ model LibraryAsset {
   // ══ MỚI 19/08 (Q5-SCHEMA) ══ — where-used: asset này đang được project nào REUSE.
   usages ProjectAssetUsage[]
 
+  // ══ MỚI 20/08 (cửa duyệt 01, Hoà chốt) ══ VÂN TAY NỘI DUNG — sha256 hex của BINARY GỐC,
+  // CÙNG định nghĩa với `ProjectFile.contentHash` (hàm `bamContentHash`, app/api/project-files/
+  // _lib/luu-file.ts:63) ⇒ promote so trực tiếp, không tính lại.
+  // 🔴 CỐ Ý nullable và CỐ Ý KHÔNG @unique:
+  //  · nullable — asset cũ chưa backfill, và file mất trên đĩa (ca 410 có thật) thì để null,
+  //    chính báo cáo backfill là bản kiểm kê file chết.
+  //  · KHÔNG unique — hai tệp TRÙNG BYTES nhưng KHÁC GIẤY PHÉP là ca HỢP LỆ (license sống trong
+  //    `tags`, một hàng chỉ mang được một license). Và kho đang có trùng thật (đo 20/08: "Ảnh PDF
+  //    trang 15 — Westlake" ×7) ⇒ unique áp vào là đổ ngay lúc backfill.
+  //  ⇒ Chống trùng làm ở TẦNG CODE tại cửa nhập: cùng userId + cùng contentHash + cùng lớp
+  //    `license:` mới coi là một vật. Đừng "tiện tay" thêm @unique về sau — đọc lại đoạn này.
+  contentHash String?
+
+  // Nhiều cách thể hiện của CÙNG một danh tính (cửa duyệt 02) — xem model AssetRepresentation.
+  representations AssetRepresentation[]
+
+  @@index([deletedAt])
+  // Tra chống trùng LUÔN theo phạm vi người dùng (không có dedupe toàn cục — asset mang userId,
+  // dùng chung xuyên người là rò tài sản) ⇒ index GHÉP, không index contentHash trần.
+  @@index([userId, contentHash])
+}
+
+/// ══ MỚI 20/08 (cửa duyệt 02, Hoà chốt) ══ MỘT MÓN ĐỒ — NHIỀU CÁCH THỂ HIỆN.
+/// Ghế trong Thư viện là MỘT danh tính ngữ nghĩa; mặt bằng · mặt đứng · mặt cắt · khối 3D · ảnh
+/// là các CÁCH THỂ HIỆN của nó. Trước bảng này, khối 3D dựng từ ảnh không có chỗ lưu ⇒ mất khi
+/// đóng phiên (phát hiện của tuyến ảnh-thành-khối 20/08).
+/// ⛔ KHÔNG nhân bản LibraryAsset để chứa khối 3D — nhân bản là đẻ danh tính thứ hai cho cùng một vật.
+model AssetRepresentation {
+  id      String @id @default(cuid())
+  assetId String
+  /// plan | elevation | section | model3d | image — chuỗi tự do CÓ CHỦ ĐÍCH (cùng lối
+  /// `ExternalRef.system`): thêm kiểu thể hiện mới không phải migrate.
+  kind    String
+
+  /// Trỏ tới nơi chứa nội dung thật (đường dẫn uploads · id .idfc · khoá blob). KHÔNG nhúng
+  /// payload nặng vào cột — cùng luật `LibraryAsset.path` đang chạy.
+  payloadRef String
+
+  /// 🔴 MỨC SỰ THẬT — dùng lại NGUYÊN từ vựng ba nấc đang chạy (~509 chỗ trong code):
+  /// `measured` đo được · `inferred` máy suy · `verified` người đã ký.
+  /// LUẬT (Hoà chốt 15/08 + cửa duyệt 03): BOQ CHỈ nhận `measured`/`verified`.
+  /// Cửa duyệt 03: bấm "Nhận" KHÔNG tự nâng cả ba chiều lên `verified` — chỉ chiều nào người
+  /// GÕ LẠI SỐ mới được `verified`; chiều để nguyên vẫn là `inferred`.
+  truthLevel String @default("inferred")
+
+  /// Nguồn gốc: sinh từ đâu, bằng năng lực nào, tham số gì (JSON chuỗi — cùng lối `palette`).
+  provenance String @default("")
+
+  /// Ai đã ký xác nhận (null = chưa ai). Đi cùng `truthLevel = 'verified'`.
+  verifiedBy String?
+  verifiedAt DateTime?
+
+  createdBy String?
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  asset LibraryAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  // 🔴 CỐ Ý KHÔNG @@unique([assetId, kind]): một món CÓ THỂ có nhiều phương án cùng loại
+  // (hai khối 3D dựng từ hai ảnh khác nhau) — ràng buộc cứng sẽ cấm nhầm ca hợp lệ.
+  // Cùng bài học với `contentHash` ở trên.
+  @@index([assetId, kind])
   @@index([deletedAt])
 }
 
