@@ -98,6 +98,27 @@
   --dur-fast: 0.18s;
   --dur-base: 0.32s;
 
+  /* ---------- NHỊP BỀ MẶT NỔI (họ kính, theo VAI TRÒ) ----------
+     Bản CSS của thang trong `lib/ui/nhip.ts` — HAI NƠI PHẢI KHỚP NHAU. TS dùng cho phần tính
+     toán (mọc-từ-nguồn cần đo DOM); CSS dùng cho transition thuần. Sửa một bên phải sửa bên kia;
+     test `lib/ui/nhip.test.ts` canh đúng cặp này bằng cách đọc ngược file CSS.
+     Vì sao không bỏ một bên: bỏ CSS thì mọi hover/press phải chạy qua React (đắt và giật);
+     bỏ TS thì không tính được `transform-origin` theo hộp nguồn. */
+  --nhip-bam: 130ms; /* phản hồi bấm/rê — phải cảm thấy tức thì */
+  --nhip-vien: 170ms; /* viên ngữ cảnh hiện cạnh vật */
+  --nhip-bang: 220ms; /* bảng nở ra từ viên */
+  --nhip-ngu-canh: 300ms; /* chuyển ngữ cảnh sâu */
+  --nhip-bien-hinh: 460ms; /* biến hình lớn — CHỈ khi đáng */
+
+  /* ---------- ĐỘ NHOÈ CỦA BỀ MẶT NỔI ----------
+     Thấp hơn `--blur`/`--blur-strong` có chủ ý: hai biến đó phục vụ chrome thường trực
+     (header/panel dính mép, nền sau chúng gần như đứng yên). Bề mặt NỔI thì nằm trên nội dung
+     ĐANG ĐỌC (lưới 2D, viewport 3D, trang trình chiếu) — nhoè mạnh ở đó biến bản vẽ phía sau
+     thành vũng màu, mất luôn ngữ cảnh mà chính bề mặt đang nói tới. Kiến trúc · tĩnh lặng,
+     không phải mờ nhoè làm màu. */
+  --kinh-nhoe: 16px;
+  --kinh-nhoe-sau: 24px;
+
   /* Mật độ desktop vs cảm ứng (SPEC-MAT-DO-CON-TRO §5, SPEC-HA-TANG-UI-IF VIỆC 2) —
      AppShell/Navigator/Toolbelt dùng token này thay số cứng. Override cảm ứng ở
      media query `(hover: none) and (pointer: coarse)` ngay dưới — TÁI DÙNG đúng điều
@@ -203,6 +224,38 @@
   --nen-mo-card: rgba(26, 26, 30, 0.82);
   --nen-mo-overlay: rgba(6, 6, 8, 0.56);
 
+  /* ---------- BỀ MẶT KÍNH NỔI — 3 nấc theo LƯỢNG CHỮ ĐỨNG TRÊN ----------
+     ⭐ LUẬT: ĐỌC ĐƯỢC THẮNG TRONG SUỐT. Bề mặt nổi trôi trên 4 nền không đoán trước được
+     (ambient Home · lưới 2D · viewport 3D · trang Trình chiếu) ⇒ độ đặc phải đủ cao để
+     TƯƠNG PHẢN CHỮ KHÔNG CHẠY THEO NỀN. Kính quá trong thì tương phản thành biến số —
+     không kiểm được, và hỏng đúng chỗ luật a11y bảo vệ.
+     Ba nấc chọn theo LƯỢNG CHỮ, không theo cỡ hình:
+       • --kinh-mong .84 — ít chữ (thanh trạng thái, viên một dòng, phản hồi hành động)
+       • --kinh-vua  .90 — vài dòng (viên ngữ cảnh, bảng năng lực)
+       • --kinh-dac  .95 — DÀY CHỮ/SỐ (inspector nổi, cổng Spec/Present, bề mặt so sánh)
+     Số đo tương phản trên cả 4 nền × 2 theme: docs/bao-cao-phien/2026-08-20-SHELL-KINH-CHUYEN-DONG.md.
+     ⚠️ Nấc mỏng KHÔNG được mang chữ số liệu — đó là lý do nó tồn tại như một nấc riêng
+     chứ không phải "cùng thứ nhưng trong hơn". */
+  --kinh-mong: rgba(24, 24, 28, 0.84);
+  --kinh-vua: rgba(24, 24, 28, 0.9);
+  --kinh-dac: rgba(24, 24, 28, 0.95);
+
+  /* MÉP BẮT SÁNG — vệt sáng mảnh cạnh trên, thứ phân biệt "kính thật" với "ô mờ mờ".
+     Đây là tầng ① của ba tầng ánh sáng (CHẤT LIỆU), tách hẳn tầng ② hover và tầng ③ đang chạy. */
+  --kinh-mep-sang: rgba(255, 255, 255, 0.14);
+  --kinh-vien: rgba(255, 255, 255, 0.1);
+
+  /* ⛔ CHỮ PHỤ TRÊN KÍNH — dùng token này, KHÔNG dùng `--t3`.
+     Đo trên app thật 20/08 (4 nền × 2 theme, lấy nền XẤU NHẤT của mỗi môi trường):
+       --t3 trên kính mỏng → Tối 4.08 · Sáng 3.83  ❌ DƯỚI 4.5
+       --t3 trên nền ĐẶC   → Sáng 4.90            ⇒ chính token đã sát ngưỡng, KHÔNG CÒN BIÊN
+     ⇒ Gốc bệnh không phải kính: `--t3` là màu phụ vốn chỉ vừa đủ 4.5 trên nền đặc, mà kính
+     ăn mất ~0.5-1.0 điểm. Thêm độ đặc không cứu được (kính đặc nhất cũng chỉ lên 4.65 ở nền
+     Sáng) — phải đổi CHÍNH MÀU CHỮ. Giữ đúng thứ tự ưu tiên Hoà đặt: ĐỌC ĐƯỢC THẮNG TRONG SUỐT.
+     Giá trị dưới đây đo lại được 5.26 (Tối) · 5.34 (Sáng) ở nền xấu nhất trên kính MỎNG NHẤT —
+     vẫn đọc ra là chữ phụ (nhạt hơn hẳn --t1/--t2), nhưng có biên thật. */
+  --kinh-chu-phu: #b4b4bd;
+
   /* VIỀN MỜ — màu của ĐƯỜNG KẺ mảnh 1px (mép panel kính, gạch ngăn hàng, vạch dọc chia nhóm nút).
      16/08 (P-L): tách khỏi họ `--nen-mo-*`, tên cũ mang chữ "nền" là SAI NGHĨA — đo 80 chỗ dùng thì
      76 nằm trong `border-*`/`divide-*`, chỗ duy nhất đi qua `background` là `ToolDock3D.tsx:238`
@@ -280,6 +333,23 @@
   --nen-mo-panel: rgba(250, 248, 244, 0.7);
   --nen-mo-card: rgba(255, 255, 255, 0.82);
   --nen-mo-overlay: rgba(60, 55, 48, 0.28);
+
+  /* Bề mặt kính nổi — xem lý do 3 nấc ở khối Tối. Nền sáng dùng alpha CAO HƠN một nhịp:
+     chữ mực (--t1 #211e19) trên nền sáng mất tương phản nhanh hơn chữ trắng trên nền tối khi
+     nền sau lọt lên — một mảng render sáng chói lọt qua kính .84 là chữ mực tụt thấy rõ.
+     Cùng lý do đã ghi ở `--mo-vo-hieu` (nền sáng phải đậm hơn nền tối mới đọc ra). */
+  --kinh-mong: rgba(252, 251, 249, 0.88);
+  --kinh-vua: rgba(252, 251, 249, 0.93);
+  --kinh-dac: rgba(253, 252, 250, 0.96);
+
+  /* Nền tối thì mép bắt sáng là ánh sáng trắng loãng; nền sáng thì là bóng đen loãng —
+     cùng vai "ánh sáng liếm rìa vật liệu", đảo cực theo nền (giống lối `--vien-mo` đã đi). */
+  --kinh-mep-sang: rgba(255, 255, 255, 0.75);
+  --kinh-vien: rgba(0, 0, 0, 0.08);
+
+  /* Chữ phụ trên kính — xem bảng số + lý do ở khối Tối. Đo lại nền Sáng: 5.34 ở nền xấu nhất
+     trên kính mỏng nhất (so với 3.83 nếu dùng `--t3`). */
+  --kinh-chu-phu: #5c564d;
 
   /* viền mờ — xem lý do tách tên ở khối Tối. Nền tối thì viền là ánh sáng trắng loãng,
      nền sáng thì viền là bóng đen loãng: cùng vai "mép bắt sáng", đảo cực theo nền. */
@@ -437,6 +507,98 @@ body {
   background: var(--nen-mo-overlay);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+}
+
+/* ============================================================================
+   BỀ MẶT KÍNH NỔI — họ dùng chung, NƠI DUY NHẤT khai lớp kính cho vật nổi.
+   Component: components/ui/BeMatNoi.tsx · nhịp: lib/ui/nhip.ts
+
+   🔴 KHÔNG BIẾN MỌI THẺ THÀNH KÍNH. Kính ở đây MANG NGHĨA:
+      NỔI LÊN · THEO NGỮ CẢNH · TẠM THỜI · ĐANG HOẠT ĐỘNG.
+   Thẻ nội dung thường trực GIỮ ĐẶC (dùng `--card`). Dùng bừa là mất nghĩa, và lúc đó cái
+   thật sự đang nổi lên không còn cách nào nói ra là nó đang nổi.
+
+   Ba bài học K1-K4 đã trả giá bằng 4 vòng sửa, giữ nguyên ở đây (docs/00-CHOT.md):
+   ① fade kính phải fade ở CHÍNH phần tử — `opacity` đặt ở cha thì `backdrop-filter` chết
+      giữa chừng (vì thế mọi transition dưới đây nằm trên chính `.kinh-noi`, không ở wrapper).
+   ② panel kính nổi PHẢI portal ra ngoài — kính lồng trong chrome kính thì backdrop root
+      chặn blur, menu xuyên thấu (BeMatNoi.tsx portal vào body, không phải tuỳ chọn).
+   ③ luôn kèm tiền tố `-webkit-` — thiếu là tablet không blur.
+   ============================================================================ */
+.kinh-noi {
+  position: relative;
+  /* ⭐ CHẶN Ở GỐC, KHÔNG CHẶN BẰNG LỜI DẶN: trong lòng bề mặt kính, `--t3` trỏ về
+     `--kinh-chu-phu`. Nơi dùng cứ viết `color: var(--t3)` như mọi chỗ khác trong app và
+     TỰ ĐỘNG đọc được — không phải nhớ luật, không phải đọc docstring này.
+     Vì sao làm thế thay vì cấm bằng văn bản: `--t3` đo được 3.83-4.08 trên kính mỏng, và
+     nó là màu chữ phụ MẶC ĐỊNH của cả app — mọi lane sẽ gõ nó theo phản xạ. Một lời dặn
+     trong tài liệu thua một dòng CSS ở đúng chỗ. Muốn màu khác thì khai đè tại chỗ dùng. */
+  --t3: var(--kinh-chu-phu);
+  background: var(--kinh-vua);
+  backdrop-filter: saturate(150%) blur(var(--kinh-nhoe));
+  -webkit-backdrop-filter: saturate(150%) blur(var(--kinh-nhoe));
+  border: 1px solid var(--kinh-vien);
+  color: var(--t1);
+  box-shadow: var(--shadow-pop);
+}
+.kinh-noi--mong {
+  background: var(--kinh-mong);
+}
+.kinh-noi--dac {
+  background: var(--kinh-dac);
+  backdrop-filter: saturate(150%) blur(var(--kinh-nhoe-sau));
+  -webkit-backdrop-filter: saturate(150%) blur(var(--kinh-nhoe-sau));
+  box-shadow: var(--shadow-sheet);
+}
+
+/* TẦNG ① CHẤT LIỆU — mép trên bắt sáng. Tĩnh, luôn có, KHÔNG chuyển động.
+   Là `::before` 1px chứ không phải `border-top` màu: viền trên sáng hơn viền quanh sẽ đọc ra
+   như một đường kẻ; vệt gradient tắt dần ở hai đầu mới đọc ra như ánh sáng liếm qua rìa. */
+.kinh-noi::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--kinh-mep-sang) 22%, var(--kinh-mep-sang) 78%, transparent);
+  pointer-events: none;
+}
+
+/* TẦNG ② KHẢ NĂNG — trỏ vào thì QUẦNG SÁNG QUANH VIỀN, ĐỨNG YÊN. Mặt kính KHÔNG đổi.
+   ⚠️ Tầng ② và tầng ③ cùng ở VIỀN ⇒ phân biệt bằng CHUYỂN ĐỘNG, không bằng màu:
+   sáng ĐỨNG YÊN = con trỏ đang ở đây · sáng CHẠY VÒNG = đang chạy. Mắt bắt chuyển động
+   nhanh hơn bắt màu, và cách này còn sống khi người dùng không phân biệt được màu. */
+.kinh-noi--bam-duoc {
+  transition: box-shadow var(--nhip-bam) var(--ease-apple);
+}
+.kinh-noi--bam-duoc:hover,
+.kinh-noi--bam-duoc:focus-visible {
+  box-shadow: var(--shadow-pop), 0 0 0 1px var(--kinh-mep-sang), 0 0 16px -2px var(--kinh-mep-sang);
+}
+
+/* TẦNG ③ TRẠNG THÁI — đang chạy: ánh sáng CHẠY liên tục quanh viền.
+   Dùng box-shadow-pulse cùng công thức `.node-running-halo` (luật G1: KHÔNG animate opacity
+   trên phần tử có backdrop-filter — mà `.kinh-noi` thì luôn có). */
+.kinh-noi--dang-chay {
+  animation: kinh-vien-chay 1.6s ease-in-out infinite;
+}
+@keyframes kinh-vien-chay {
+  0%,
+  100% {
+    box-shadow: var(--shadow-pop), 0 0 0 1px var(--kinh-vien);
+  }
+  50% {
+    box-shadow: var(--shadow-pop), 0 0 0 1px var(--kinh-mep-sang), 0 0 20px -4px var(--kinh-mep-sang);
+  }
+}
+
+/* Giảm chuyển động: tầng ③ là thứ ĐẦU TIÊN phải tắt (nó chạy vô hạn). Thay bằng dấu hiệu
+   TĨNH — không được im lặng bỏ đi, vì lúc đó "đang chạy" mất hẳn kênh thông báo. */
+@media (prefers-reduced-motion: reduce) {
+  .kinh-noi--dang-chay {
+    animation: none;
+    box-shadow: var(--shadow-pop), 0 0 0 1px var(--kinh-mep-sang);
+  }
 }
 
 /* Node đang chạy — viền phát sáng lặp lại (port mock-if-bang-nut.html màn 02, InteriorNode.tsx).
