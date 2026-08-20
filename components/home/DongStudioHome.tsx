@@ -33,7 +33,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import { Info } from 'lucide-react';
+import { Info, ChevronUp, ChevronDown, Pin, EyeOff } from 'lucide-react';
 import { ProjectSelect } from '@/components/ProjectSelect';
 import { LangToggle } from '@/components/LangToggle';
 import { useFlowStore } from '@/lib/store';
@@ -42,6 +42,7 @@ import { buildGreeting } from '@/lib/home/greeting';
 import { useDisplayName } from './useDisplayName';
 import { cellIndexMap, type HomeCellFlags } from './widgets/bento-layout';
 import { bocCucXuong, cotXuong, hangPhu, type MucPhu } from './xuong-layout';
+import { useHomeWidgetPrefs, applyWidgetPrefs } from '@/lib/home/widget-prefs';
 import { shouldShowActivityGrid } from '@/lib/home/aggregate';
 import { pickWeeklyItem, pickWeeklyImages, isSeedLibraryAsset } from '@/lib/home/weekly-picks';
 // P-V 17/08 — VitalsPill dời lên AppChrome top bar (không import ở đây nữa).
@@ -66,6 +67,19 @@ import type { HomeSummary } from './widgets/types';
 /** Pill kính nhỏ — cùng công thức nút đóng/mở của `VitalsPill.tsx` (button trạng thái đóng), tái
  * dùng cho nút "Chi tiết" (i) đứng cạnh nó trong cụm góc-phải-trên (④.4, xem cụm `fixed right-5
  * top-5` ở cuối component, ngay trước phần `return` render lưới). */
+/** Nhãn song ngữ [vi, en] của từng mục cụm phụ — cho chip "Đã ẩn" + nhãn nút ẩn (LANE B,
+ * `lib/home/widget-prefs.ts`). Chỉ các mục TUỲ CHỌN cần nhãn — `chao`/`ghiChu` không có nút ẩn. */
+const MUC_PHU_LABEL: Record<MucPhu, [string, string]> = {
+  chao: ['Chào', 'Greeting'],
+  homNay: ['Hôm nay', 'Today'],
+  mocToi: ['Sắp tới', 'Upcoming'],
+  ghiChu: ['Ghi chú', 'Notes'],
+  vatLieu: ['Vật liệu của tuần', "This week's material"],
+  anhTuan: ['Ảnh đẹp tuần này', "This week's frame"],
+  bieuDo: ['Biểu đồ chặng', 'Stage chart'],
+  dongTin: ['Bảng tin studio', 'Studio feed'],
+};
+
 const CORNER_PILL: CSSProperties = {
   background: 'var(--nen-mo-header, var(--panel))',
   border: '1px solid var(--border)',
@@ -371,9 +385,27 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
     duLieu: { homNay: hasC, mocToi: hasG, vatLieu: hasH, anhTuan: hasD, bieuDo: hasE, dongTin: hasI },
   });
 
+  // ---------- CÁ NHÂN HOÁ cụm phụ (LANE B, `lib/home/widget-prefs.ts`) ----------
+  // Ẩn/hiện + thứ tự là lựa chọn CỦA MÁY NÀY (localStorage per-user) áp LÊN TRÊN `bc.cumPhu` đã
+  // lọc theo tín hiệu dữ liệu thật — mục hết dữ liệu vẫn biến mất bất kể prefs (đúng ràng buộc
+  // `applyWidgetPrefs`: cá nhân hoá không được làm sống lại mục không có gì để bày).
+  const widgetPrefs = useHomeWidgetPrefs(currentUserId);
+  const cumPhuFinal = useMemo(
+    () => applyWidgetPrefs(bc.cumPhu, widgetPrefs.prefs),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [bc.cumPhu.join(','), widgetPrefs.prefs],
+  );
+  // Số ô là ĐỊA CHỈ vị trí trên màn (docstring bento-layout.ts §V2) — sau khi người dùng sắp lại
+  // thứ tự, số phải theo đúng vị trí MỚI, không giữ số cũ đi lạc chỗ.
+  const soOFinal: Partial<Record<MucPhu | 'tieuDiem', string>> = { tieuDiem: '01' };
+  cumPhuFinal.forEach((m, i) => {
+    soOFinal[m] = String(i + 2).padStart(2, '0');
+  });
+  const hiddenList = widgetPrefs.prefs.hidden.filter((m) => bc.cumPhu.includes(m));
+
   /** Một mục của cụm phụ. Số ô do `bocCucXuong` cấp — dãy liền mạch, không đứt khi mục tự ẩn. */
   function mucPhuNode(m: MucPhu): ReactNode {
-    const so = bc.soO[m];
+    const so = soOFinal[m];
     switch (m) {
       case 'chao':
         return (
@@ -429,7 +461,7 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
           // và ở LỀ NGOÀI, không phải ở chỗ cả lưới co lại.
           height: '100%',
           gridTemplateRows: 'minmax(0, 1fr)',
-          gridTemplateColumns: cotXuong(bc.cumPhu.length),
+          gridTemplateColumns: cotXuong(cumPhuFinal.length),
           gap: 'calc(var(--gap) * 2)',
         }}
       >
@@ -451,11 +483,82 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
           className="flex min-h-0 flex-col overflow-y-auto"
           style={{ gap: 'var(--gap)' }}
         >
-          {bc.cumPhu.map((m) => (
-            <div key={m} style={hangPhu(m)}>
-              {mucPhuNode(m)}
+          {/* Dải khôi phục mục đã ẨN — cá nhân hoá không cho ẩn vĩnh viễn không lối quay lại
+              (luật §9 "MÁY MÌNH": người dùng vẫn phải kiểm soát được, không phải máy quyết
+              hộ). Chỉ hiện khi có mục thật sự bị ẩn tay. */}
+          {hiddenList.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 px-0.5">
+              <span className="text-[length:var(--fs-2xs)] text-[var(--t4)]">
+                {tr('Đã ẩn:', 'Hidden:')}
+              </span>
+              {hiddenList.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => widgetPrefs.toggleHidden(m)}
+                  className="rounded-[var(--r-1)] px-1.5 py-0.5 text-[length:var(--fs-2xs)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
+                  style={{ background: 'var(--field)' }}
+                  aria-label={tr(`Hiện lại ${MUC_PHU_LABEL[m][0]}`, `Show ${MUC_PHU_LABEL[m][1]} again`)}
+                >
+                  + {tr(...MUC_PHU_LABEL[m])}
+                </button>
+              ))}
             </div>
-          ))}
+          )}
+          {cumPhuFinal.map((m, i) => {
+            const locked = widgetPrefs.LOCKED.includes(m);
+            return (
+              <div key={m} className="group/widget relative" style={hangPhu(m)}>
+                {mucPhuNode(m)}
+                {!locked && (
+                  <div
+                    className="absolute right-1.5 top-1.5 z-20 flex items-center gap-0.5 rounded-[var(--r-1)] p-0.5 opacity-0 shadow-sm transition-opacity focus-within:opacity-100 group-hover/widget:opacity-100"
+                    style={{ background: 'var(--nen-mo-card, var(--card))' }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => widgetPrefs.move(m, -1, cumPhuFinal)}
+                      disabled={i === 0}
+                      aria-label={tr('Đưa lên trên', 'Move up')}
+                      title={tr('Đưa lên trên', 'Move up')}
+                      className="grid h-6 w-6 place-items-center rounded-[var(--r-1)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)] disabled:opacity-30"
+                    >
+                      <ChevronUp size={13} aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => widgetPrefs.move(m, 1, cumPhuFinal)}
+                      disabled={i === cumPhuFinal.length - 1}
+                      aria-label={tr('Đưa xuống dưới', 'Move down')}
+                      title={tr('Đưa xuống dưới', 'Move down')}
+                      className="grid h-6 w-6 place-items-center rounded-[var(--r-1)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)] disabled:opacity-30"
+                    >
+                      <ChevronDown size={13} aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => widgetPrefs.pinTop(m, cumPhuFinal)}
+                      disabled={i === 0}
+                      aria-label={tr('Ghim lên đầu', 'Pin to top')}
+                      title={tr('Ghim lên đầu', 'Pin to top')}
+                      className="grid h-6 w-6 place-items-center rounded-[var(--r-1)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)] disabled:opacity-30"
+                    >
+                      <Pin size={13} aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => widgetPrefs.toggleHidden(m)}
+                      aria-label={tr(`Ẩn ${MUC_PHU_LABEL[m][0]}`, `Hide ${MUC_PHU_LABEL[m][1]}`)}
+                      title={tr('Ẩn khỏi Home', 'Hide from Home')}
+                      className="grid h-6 w-6 place-items-center rounded-[var(--r-1)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
+                    >
+                      <EyeOff size={13} aria-hidden />
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

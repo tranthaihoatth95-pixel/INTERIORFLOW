@@ -18,12 +18,13 @@
  * ── VÌ SAO CHỖ NÀY HIỆN ÍT HƠN BA MÓN — CÓ Ý, KHÔNG PHẢI THIẾU ────────────────────────────────
  * Phiếu ghi rõ: *"chưa có nhóm/hiện diện thật ⇒ TỰ THU GỌN, không vẽ chỗ trống"*. Áp thẳng:
  *
- * ① THÔNG BÁO — **không render**. Đo tại nguồn 20/08: `grep -rin "notif" lib components` không
- *    ra một kho/hàng đợi thông báo nào; thứ gần nhất là hàng đợi job AI (`lib/execution.ts`) —
- *    mà đó đúng là *"tôi nên biết gì"*, tức đất của Vitals ở mép trên, không phải của cụm này.
- *    ⇒ Vẽ một cái chuông luôn-rỗng ở đây là nút giả (§9) VÀ là lấn hệ Vitals — hai lỗi một lúc.
- *    ⛳ NỢ: khi có kho thông báo thật (được giao việc · bị nhắc soát duyệt · khách phản hồi),
- *    cắm vào đúng khe đánh dấu ① trong phần vẽ bên dưới.
+ * ① HOẠT ĐỘNG (`HoatDongChuong.tsx`, LANE C 20/08) — chuông, KHÔNG PHẢI "thông báo" theo nghĩa
+ *    được-giao-việc/khách-phản-hồi (kho đó vẫn CHƯA CÓ, `grep -rin "notif" lib components` vẫn
+ *    ra 0). Đây là câu KHÁC: *"cái gì đang chạy/sắp tới"* (tiến độ) — đọc `flowRuns` +
+ *    `useRenderQueue`, hai nguồn job THẬT đã sống trong app. KHÔNG lấn hệ Vitals (mép trên —
+ *    *"tôi nên biết gì"*): hai chuông khác câu hỏi, khác chỗ đứng, không gộp.
+ *    ⛳ NỢ CÒN LẠI: kho thông báo xã hội (được giao việc · nhắc soát duyệt · khách phản hồi) —
+ *    khi có, thêm nhóm riêng vào `hoat-dong-luong.ts`, không dựng chuông thứ ba.
  *
  * ② HIỆN DIỆN — render khi CÓ NGƯỜI THẬT khác mình trong dự án đang mở, ngoài ra tự ẩn.
  *    Nguồn là `useCollabStore` (con trỏ sống, server tự dọn sau 6s) — dữ liệu ĐÃ CÓ SẴN trong bộ
@@ -51,6 +52,7 @@ import { UserAvatar } from '@/components/avatar/UserAvatar';
 import { AccountMenu } from '@/components/AccountMenu';
 import PresenceRow, { type PresenceMember } from '@/components/ui/PresenceRow';
 import { useDismissable } from '@/lib/useDismissable';
+import { HoatDongChuong } from '@/components/studio/HoatDongChuong';
 
 export function CumPhaiTren() {
   const tr = useT();
@@ -135,7 +137,8 @@ export function CumPhaiTren() {
       aria-label={tr('Tài khoản và cộng tác', 'Account and collaboration')}
       className="flex shrink-0 items-center gap-2"
     >
-      {/* ① THÔNG BÁO — chưa có kho thông báo thật trong repo ⇒ KHÔNG render. Xem docstring. */}
+      {/* ① HOẠT ĐỘNG — tiến độ job xuyên chặng. Xem docstring + HoatDongChuong.tsx. */}
+      <HoatDongChuong />
 
       {/* ② HIỆN DIỆN — neo vào dự án đang mở; một mình thì tự ẩn. */}
       {hienDien.length > 0 && (

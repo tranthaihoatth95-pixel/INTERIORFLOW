@@ -2868,7 +2868,10 @@ export default function CadCanvas() {
     drawPreview(ctx, v, accent);
     drawSelectionBox(ctx, v, accent);
     drawSnap(ctx, v, accent);
-    drawCrosshair(ctx, W, H, gridMinor);
+    // 2K (Lane A, 20/08) — crosshair đầy màn hình chỉ có nghĩa khi đang VẼ/CHỈNH (cần dóng theo
+    // trục X/Y qua toàn cảnh). Ở 'select'/'pan' nó chỉ là nhiễu che canvas — con trỏ OS mặc định
+    // (mũi tên) đã đủ nói "đây là chọn". Xem cursor CSS cùng lý do ở phần return JSX bên dưới.
+    if (st.tool !== 'select' && st.tool !== 'pan') drawCrosshair(ctx, W, H, gridMinor);
     drawDynInput(ctx, W, H);
 
     ctx.restore();
@@ -3611,7 +3614,15 @@ export default function CadCanvas() {
         onContextMenu={(e) => e.preventDefault()}
         onDragOver={onDragOver}
         onDrop={onDrop}
-        style={{ display: 'block', touchAction: 'none', cursor: 'crosshair' }}
+        // 2K (Lane A, 20/08) — con trỏ chuột THẬT theo Ý ĐỊNH: 'select' = mũi tên OS mặc định
+        // (đang CHỌN, không phải đang ĐẶT ĐIỂM); 'pan' = grab (đang giữ để kéo màn); mọi lệnh vẽ/
+        // chỉnh còn lại = crosshair mảnh (đang đặt điểm chính xác — đúng quy ước AutoCAD/Revit).
+        // cadTool đã reactive-subscribe ở trên (dòng ~303), không cần thêm state mới.
+        style={{
+          display: 'block',
+          touchAction: 'none',
+          cursor: cadTool === 'select' ? 'default' : cadTool === 'pan' ? 'grab' : 'crosshair',
+        }}
       />
       {cadRadial && (
         <RadialToolMenu

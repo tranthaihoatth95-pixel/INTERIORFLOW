@@ -320,7 +320,11 @@ export function AppChrome({ active, logoMenu }: Props) {
           Vì sao dải chỉ có HAI tầng (không có "Không gian/Workspace"): đo tại nguồn — schema
           KHÔNG có model Workspace, `lib/store.ts:33` `WorkspaceMode = Phase` tức "workspace"
           hiện chính là chặng. Chi tiết + bằng chứng file:dòng ở đầu `DaiNguCanh.tsx`. */}
-      <div className="flex min-w-0 flex-1 items-center overflow-hidden">
+      {/* ⓵ VÙNG TRÁI — DỰ ÁN · CHẶNG. `min-w-0` + `overflow-hidden` là bước ① của bậc thang
+          nhường va chạm (Hoà chốt 20/08): **đầu đề dự án nén/cắt TRƯỚC**, để ổ Vitals ở giữa
+          không bao giờ phải nhúc nhích. `data-if-cum-trai-tren` cho ổ đo được mép phải của cụm
+          này mà không phải đoán. */}
+      <div className="flex min-w-0 flex-1 items-center overflow-hidden" data-if-cum-trai-tren="">
         {editing ? (
           <input
             autoFocus
@@ -355,8 +359,19 @@ export function AppChrome({ active, logoMenu }: Props) {
           bản cũ thì đã mồ côi từ 17/08 (xem đầu `VitalsAperture.tsx`). */}
       <div className="flex shrink-0 items-center gap-2" data-tour="home-search-vitals">
         {active === 'home' && <SearchProjectsInput />}
-        <VitalsAperture />
       </div>
+
+      {/* ⓶ Ổ VITALS — VÙNG NGỮ NGHĨA GIỮA, chỗ DÀNH RIÊNG trong vỏ app.
+          🔴 ĐỔI TẦNG 20/08: trước đây `<VitalsAperture/>` đứng NGAY TRONG cụm phải-trên (cùng
+          `<div>` với ô tìm dự án) và tự tính `position:fixed` từ ref của chính cụm đó ⇒ nó
+          **bám vào hệ danh-tính**, đúng cái hệ nó không được sống trong. Đó là lý do nó đọc ra
+          như "gắn thêm vào sau": không phải neo sai chỗ, mà **neo nhầm hệ**.
+          Nay nó là con TRỰC TIẾP của `<header>` (đã `relative`), tự đặt mình bằng toạ độ tuyệt
+          đối theo **tâm vùng làm việc** (`useVungLamViec` → `viTriO`). Header thôi là một dòng
+          flex phẳng: trái = Dự án·Chặng · giữa = Ổ Vitals · phải = Thông báo·Hiện diện·Avatar.
+          ⛔ Đừng đưa nó trở lại vào một cụm flex nào — vào flex là mất chỗ dành riêng, và tâm
+          của nó lại chạy theo độ dài của thứ đứng cạnh. */}
+      <VitalsAperture />
 
       {/* NAV-HAI-DAO 20/08 — CỤM PHẢI TRÊN: "tôi là ai / ai đang ở đây".
           Hoà chốt thanh trái CHỈ CÒN VIỆC ⇒ Hồ sơ · Credit · Cài đặt · Tài khoản · Đăng xuất rời
@@ -366,6 +381,11 @@ export function AppChrome({ active, logoMenu }: Props) {
           Vitals → danh-tính; đảo lại thì avatar chen vào giữa ô tìm và khẩu độ.
           Cụm TỰ ẨN khi chưa đăng nhập, và phần hiện diện tự ẩn khi chỉ có một mình — không giữ
           chỗ trống (luật widget-thiếu-dữ-liệu-tự-ẩn, Hoà chốt 13/08). */}
+      {/* ⓷ VÙNG PHẢI — THÔNG BÁO · HIỆN DIỆN · AVATAR. Ổ Vitals đọc mép trái của cụm này qua
+          marker SẴN CÓ `data-marker="cumPhaiTren"` (`CumPhaiTren.tsx:132`) — [Đ2] CONNECT, không
+          đẻ marker thứ hai — và coi đó là BIÊN CỨNG: bước ④ chỉ được dịch trong vùng an toàn,
+          không bao giờ chạm vào cụm này. Hai hệ cạnh nhau về không gian, tách hẳn về nghĩa:
+          Vitals = *tôi nên biết gì* · cụm này = *ai gửi gì cho tôi / tôi là ai*. */}
       <CumPhaiTren />
 
       {/* 2.2.86 (30/07, Hoà chốt) — "Chạy flow" KHÔNG còn đứng riêng trên bar (~110px trả lại
