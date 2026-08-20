@@ -6,8 +6,14 @@
  * phép kiểm logic). Cùng lối `lib/print/radial.ts` vừa tách khỏi `.tsx`.
  */
 
-/** Loại thực thể LÕI IDF được phép nối ra hệ ngoài. Chuỗi, không enum DB — thêm loại không migrate. */
-export type ExternalEntityType = 'task' | 'project' | 'person' | 'material';
+/**
+ * Loại thực thể LÕI IDF được phép nối ra hệ ngoài. Chuỗi, không enum DB — thêm loại không migrate.
+ *
+ * `productspec` (thêm 20/08, đường NGUỒN HÃNG → IDFC): bản ghi sản phẩm hãng trong `ProductSpec`.
+ * Đây đúng là lý do `entityType` được để dạng chuỗi ngay từ §0v — thêm một loại là thêm một
+ * literal, KHÔNG đụng schema, KHÔNG migrate. Xem `lib/capabilities/manufacturer-import.ts`.
+ */
+export type ExternalEntityType = 'task' | 'project' | 'person' | 'material' | 'productspec';
 
 export interface ExternalRefKey {
   /** mã hệ ngoài do adapter khai (`lib/integrations/registry.ts`) — vd hệ bảng dữ liệu đang dùng. */
