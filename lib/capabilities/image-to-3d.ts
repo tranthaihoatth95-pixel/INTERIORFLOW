@@ -41,6 +41,31 @@
  *    (`bieuDienCuaUngVien().entityId === ungVien.nguon.id`), không phải một asset mới.
  *  ⑤ NGƯỜI XÁC NHẬN KHÔNG XOÁ DẤU VẾT MÁY. `nhanUngVien()` nâng cờ lên `verified` nhưng GIỮ
  *    `flagMay` (cờ máy gốc) và `basis` — sau này cãi nhau còn tra được máy đã nói gì.
+ *
+ * ── 🔴 SỬA NGHĨA 20/08 — BỎ NGHI THỨC "GÕ LẠI SỐ ĐỂ MỞ KHOÁ SỰ THẬT" ──────────────────────────
+ * Bản trước chốt *"chỉ chiều nào NGƯỜI GÕ LẠI SỐ mới thành `verified`"*, và test khoá đúng hành vi
+ * đó. Hoà bác: **gõ lại một con số KHÔNG PHẢI bằng chứng — nó chỉ là gõ lại.** Bắt người dùng gõ
+ * lại đúng con số máy vừa đưa để "mở khoá" là một nghi thức rỗng: nó không đối chiếu với thực tế
+ * nào, không để lại tham chiếu nào, mà lại cấp cho con số đó thẩm quyền cao nhất.
+ *
+ * BỐN NGHĨA CANONICAL (Hoà chốt) — mỗi nghĩa một CĂN CỨ, không nghĩa nào suy ra nghĩa kia:
+ *   · **MEASURED** — đo tất định, TRUY ĐƯỢC VẾT: hình học đáng tin · CAD · nguồn đã hiệu chỉnh.
+ *   · **VERIFIED** — được XÁC NHẬN TƯỜNG MINH bởi nguồn đáng tin, hoặc bởi quy trình xác minh của
+ *     con người (người ký phải nêu ĐỐI CHIẾU VỚI CÁI GÌ — không có tham chiếu thì không có xác
+ *     minh, chỉ có một cái gật đầu).
+ *   · **HUMAN OVERRIDE** — người CHỦ ĐỘNG cung cấp/ghi đè giá trị. Đủ thẩm quyền để dùng, nhưng
+ *     dấu vết phải TƯỜNG MINH và không bao giờ được đọc nhầm thành "máy đo được".
+ *   · **INFERRED** — ước lượng từ ảnh/AI/dựng lại, KHÔNG có phép đo tuyệt đối truy được vết.
+ *
+ * ── KIẾN TRÚC: CHỌN (b) — GIỮ BA NẤC, GHI ĐƯỜNG ĐI VÀO PROVENANCE ────────────────────────────────
+ * KHÔNG thêm giá trị thứ tư vào `measured|inferred|verified` (bộ đó ~509 chỗ dùng, và §11 cấm đẻ
+ * từ vựng thứ tư). Thay vào đó mỗi số mang thêm **CĂN CỨ** (`canCu: CanCuSuThat`) — *đường nào đưa
+ * nó tới nấc đó*. `flag` KHÔNG còn được gán tay ở bất cứ đâu: nó LUÔN là `nacTuCanCu(canCu)`, nên
+ * "human override bị dán nhãn measured" là chuyện **không biểu diễn nổi** trong kiểu dữ liệu, chứ
+ * không phải chuyện phải nhớ đừng làm. Ba nấc để trả lời *"tin được tới đâu"*; căn cứ để trả lời
+ * *"vì sao"* — hai câu hỏi khác nhau, và trước nay câu thứ hai chỉ nằm trong một chuỗi văn xuôi
+ * (`basis`) mà không máy nào kiểm được.
+ * `basis` GIỮ NGUYÊN vai chuỗi văn xuôi cho người đọc (mặt tiền đang hiện nó nguyên văn).
  */
 
 import type { Entity } from '../cad/model';
@@ -75,12 +100,92 @@ export interface NguonAnh {
   imageUrl?: string;
 }
 
-/** Một số đo kèm nguồn gốc. `flag` là cờ HIỆN HÀNH; `flagMay` là cờ MÁY nói lúc đầu (luật ⑤). */
+/* ─────────────────── CĂN CỨ SỰ THẬT — đường nào đưa một số tới nấc của nó ─────────────────── */
+
+/**
+ * KHÔNG phải nấc thứ tư. Đây là trục THỨ HAI, vuông góc với `ProvenanceFlag`:
+ * nấc nói *tin được tới đâu*, căn cứ nói *vì sao*.
+ *
+ * · ba căn cứ đầu → `measured` (đo tất định, truy được vết)
+ * · hai căn cứ người → `verified` (xác nhận tường minh / người cung cấp giá trị)
+ * · hai căn cứ cuối → `inferred` (ước lượng, không có phép đo tuyệt đối)
+ */
+export type CanCuSuThat =
+  /** phép đo tất định trên hình học đã hiệu chỉnh (bậc 4 — điểm tụ + thang đo neo). */
+  | 'deterministic-metrology'
+  /** thang đo lấy từ một neo/kích thước thật đã hiệu chỉnh, rồi suy các chiều còn lại theo nó. */
+  | 'calibrated'
+  /** hình học đáng tin sẵn có: khối CAD, `.idfc` đã có số, bản vẽ đã ký. */
+  | 'trusted-geometry'
+  /** người xác nhận TƯỜNG MINH, có nêu đối chiếu với tham chiếu đáng tin nào. */
+  | 'human-confirmed'
+  /** người CHỦ ĐỘNG cung cấp/ghi đè giá trị (Sửa · Nhập kích thước đã biết). */
+  | 'human-override'
+  /** ước lượng từ ảnh/AI/dựng lại — không có phép đo tuyệt đối truy được vết. */
+  | 'image-estimate'
+  /** dải chuẩn nghề theo loại đồ — một con số trong sách, không nhìn ảnh. */
+  | 'category-prior';
+
+/**
+ * ⛔ CHỖ DUY NHẤT quyết định nấc của một số. `flag` không được gán tay ở bất cứ đâu khác —
+ * nhờ vậy "human-override mang nhãn measured" là điều KHÔNG BIỂU DIỄN NỔI, chứ không phải điều
+ * phải nhớ để đừng làm.
+ */
+export const NAC_THEO_CAN_CU: Record<CanCuSuThat, ProvenanceFlag> = {
+  'deterministic-metrology': 'measured',
+  calibrated: 'measured',
+  'trusted-geometry': 'measured',
+  'human-confirmed': 'verified',
+  'human-override': 'verified',
+  'image-estimate': 'inferred',
+  'category-prior': 'inferred',
+};
+
+export function nacTuCanCu(canCu: CanCuSuThat): ProvenanceFlag {
+  return NAC_THEO_CAN_CU[canCu];
+}
+
+/** true khi con số này do NGƯỜI đưa ra, không phải máy đo. Dùng để giữ dấu vết nhìn thấy được. */
+export function laNguoiDuaRa(canCu: CanCuSuThat): boolean {
+  return canCu === 'human-override' || canCu === 'human-confirmed';
+}
+
+/**
+ * Chữ xuất xứ hiện cho người đọc. CHỖ DUY NHẤT đặt tên cho căn cứ — mặt tiền và BOQ đều gọi vào
+ * đây, để không nơi nào tự chế một cách gọi khác (nhất là không nơi nào gọi số người nhập là
+ * "đo được").
+ */
+export function nhanXuatXu(canCu: CanCuSuThat): string {
+  switch (canCu) {
+    case 'deterministic-metrology':
+      return 'đo tất định từ hình học đã hiệu chỉnh';
+    case 'calibrated':
+      return 'đo qua neo/kích thước đã hiệu chỉnh';
+    case 'trusted-geometry':
+      return 'lấy từ hình học đáng tin (CAD/.idfc)';
+    case 'human-confirmed':
+      return 'người xác nhận, có tham chiếu';
+    case 'human-override':
+      return 'người nhập tay';
+    case 'image-estimate':
+      return 'ước lượng từ ảnh';
+    case 'category-prior':
+      return 'dải chuẩn nghề theo loại đồ';
+  }
+}
+
+/**
+ * Một số đo kèm nguồn gốc.
+ * `canCu` là đường đi HIỆN HÀNH, `canCuMay` là đường máy đã đi lúc đầu (luật ⑤ — người ký không
+ * xoá dấu vết máy). `flag`/`flagMay` là hệ quả, luôn = `nacTuCanCu` của căn cứ tương ứng.
+ */
 export interface KichThuocCoNguon {
   valueMm: number;
   toleranceMm: number;
   flag: ProvenanceFlag;
   flagMay: ProvenanceFlag;
+  canCu: CanCuSuThat;
+  canCuMay: CanCuSuThat;
   /** neo/giả định máy đã dùng — nguyên văn `MeasurementValue.basis`, nối thêm vết người ký. */
   basis: string;
 }
@@ -205,9 +310,30 @@ export function demXetDauVao(input: DauVaoDeXuat): TuChoi | null {
 
 /* ═══════════════════════════ ② ĐỀ XUẤT KHỐI NHÁP ═══════════════════════════ */
 
-function toKichThuoc(v: MeasurementValue): KichThuocCoNguon {
-  // `MeasurementValue.kind` chỉ có 'measured'|'inferred' — ánh xạ 1-1, KHÔNG dịch sang từ khác.
-  return { valueMm: v.valueMm, toleranceMm: v.toleranceMm, flag: v.kind, flagMay: v.kind, basis: v.basis };
+/**
+ * Máy đi đường nào tới con số này. `MeasurementValue` chỉ mang `kind` (2 giá trị) + văn xuôi, nên
+ * căn cứ phải suy từ BẬC PHƯƠNG PHÁP — thứ nói đúng bản chất phép đo:
+ *   · bậc 4 = hiệu chỉnh điểm tụ + thang đo neo ⇒ phép đo tất định.
+ *   · bậc 2-3 `measured` = thang đo lấy từ một neo/kích thước thật rồi suy các chiều ⇒ `calibrated`.
+ *   · `inferred` = dải chuẩn nghề (một con số trong sách) hoặc ước lượng từ ảnh.
+ */
+function canCuTuMay(v: MeasurementValue, tier: 1 | 2 | 3 | 4): CanCuSuThat {
+  if (v.kind === 'measured') return tier >= 4 ? 'deterministic-metrology' : 'calibrated';
+  return /chuẩn nghề/.test(v.basis) ? 'category-prior' : 'image-estimate';
+}
+
+function toKichThuoc(v: MeasurementValue, tier: 1 | 2 | 3 | 4): KichThuocCoNguon {
+  const canCu = canCuTuMay(v, tier);
+  return {
+    valueMm: v.valueMm,
+    toleranceMm: v.toleranceMm,
+    // `flag` LUÔN suy từ căn cứ — không nơi nào trong file này gán nấc bằng tay.
+    flag: nacTuCanCu(canCu),
+    flagMay: nacTuCanCu(canCu),
+    canCu,
+    canCuMay: canCu,
+    basis: v.basis,
+  };
 }
 
 /** Nấc THẤP NHẤT thắng: inferred < measured < verified. Một chiều suy ⇒ cả món là suy. */
@@ -276,9 +402,9 @@ export function deXuatKhoi3D(input: DauVaoDeXuat): KetQuaDeXuat {
   // KHÔNG sinh mesh, KHÔNG lưu hình học derive (luật K1: một Doc, không kho thứ hai).
   const entities: Entity[] = built.entities.map((e) => ({ ...e, heightMm }));
 
-  const rong = toKichThuoc(do3.width);
-  const sau = toKichThuoc(do3.depth);
-  const cao = toKichThuoc(do3.height);
+  const rong = toKichThuoc(do3.width, do3.tier);
+  const sau = toKichThuoc(do3.depth, do3.tier);
+  const cao = toKichThuoc(do3.height, do3.tier);
 
   const gen = input.genId ?? (() => `i23_${(input.now ?? 0).toString(36)}_${input.nguon.id}`);
 
@@ -308,6 +434,7 @@ export function deXuatKhoi3D(input: DauVaoDeXuat): KetQuaDeXuat {
 
 /* ═══════════════════════════ ③ CỬA NGƯỜI DUYỆT ═══════════════════════════ */
 
+/** NGƯỜI CUNG CẤP GIÁ TRỊ — "Sửa" và "Nhập kích thước đã biết" là CÙNG MỘT việc: người đưa số. */
 export interface SuaKichThuoc {
   rongMm?: number;
   sauMm?: number;
@@ -315,55 +442,116 @@ export interface SuaKichThuoc {
 }
 
 /**
+ * NGƯỜI XÁC NHẬN TƯỜNG MINH — mỗi chiều một câu **đối chiếu với cái gì** (URL trang hãng · mã bản
+ * vẽ · số hợp đồng · "đo tay tại xưởng 20/08"). Chuỗi rỗng bị TỪ CHỐI: không có tham chiếu thì
+ * không có xác minh, chỉ có một cái gật đầu — và một cái gật đầu chính là nghi thức vừa bị bác.
+ */
+export interface XacNhanKichThuoc {
+  rong?: string;
+  sau?: string;
+  cao?: string;
+}
+
+/** Bốn hành động THẬT ở cửa duyệt — một nguồn cho mặt tiền, để không nơi nào tự chế nhãn khác. */
+export const HANH_DONG_DUYET = [
+  {
+    id: 'xacNhan',
+    nhan: 'Xác nhận',
+    mo: 'Đối chiếu với một tham chiếu đáng tin (trang hãng · bản vẽ · đo tay) rồi ký.',
+    canCu: 'human-confirmed' as CanCuSuThat,
+  },
+  {
+    id: 'sua',
+    nhan: 'Sửa',
+    mo: 'Ghi đè số máy bằng số của bạn.',
+    canCu: 'human-override' as CanCuSuThat,
+  },
+  {
+    id: 'nhapDaBiet',
+    nhan: 'Nhập kích thước đã biết',
+    mo: 'Cung cấp kích thước bạn đã biết sẵn của món này.',
+    canCu: 'human-override' as CanCuSuThat,
+  },
+  {
+    id: 'hieuChinhLai',
+    nhan: 'Hiệu chỉnh lại',
+    mo: 'Khoanh vật neo / nhập chiều rộng thật rồi chạy lại phép đo — số mới là số MÁY đo, không phải số người nhập.',
+    canCu: 'calibrated' as CanCuSuThat,
+  },
+] as const;
+
+/**
  * NHẬN — người đã xem và ký.
  *
- * 🔴 SỬA 20/08 (LANE Ảnh→Spec) — BẢN ĐẦU NÂNG **CẢ BA CHIỀU** LÊN `verified` CHỈ VÌ MỘT CÚ BẤM
- * "Nhận". Đó là **suy-ra lọt thành đã-kiểm**: người duyệt nhìn ba con số, gật một cái, và chiều
- * SÂU — thứ ảnh 2D **không thể** thấy (`tier3` ghi thẳng vào `basis`: *"ảnh 2D không thấy mặt
- * sau"*) — bỗng thành số đo được và **đi thẳng vào BOQ**. Sai luật ở ba chỗ độc lập:
- *   · luật ⑤ ngay đầu file này: người xác nhận KHÔNG xoá dấu vết máy;
- *   · `prisma/schema.prisma` `AssetRepresentation.truthLevel`: *"bấm 'Nhận' KHÔNG tự nâng cả ba
- *     chiều lên verified — chỉ chiều nào người GÕ LẠI SỐ mới được verified"*;
- *   · Hoà chốt 15/08: *"BOQ chỉ lấy giá trị chính xác đến từ con số"*.
- * Và test cũ (`:110` *"người ký → cả ba chiều verified"*) **khoá đúng hành vi hỏng** — đúng họ
- * bệnh đã rút thành luật ở vụ Hough 15/08: test khẳng định một hình dạng sai thì nó che bug.
+ * 🔴 SỬA NGHĨA 20/08 — BỎ NGHI THỨC "GÕ LẠI ĐÚNG SỐ MÁY ĐỂ MỞ KHOÁ".
+ * Bản trước: gõ lại con số máy vừa đưa ⇒ `verified`, `basis` ghi *"người nhập tay xác nhận đúng số
+ * máy"*. Hoà bác: **gõ lại một con số không phải bằng chứng — nó chỉ là gõ lại.** Người dùng không
+ * đối chiếu với gì cả, không để lại tham chiếu nào, mà con số lại lên nấc cao nhất. Và nó bắt gõ
+ * lại TỪNG CHIỀU, kể cả chiều ảnh 2D không thể thấy.
  *
- * ⇒ LUẬT NAY: **chỉ chiều người GÕ LẠI SỐ mới lên `verified`**. Chiều để nguyên GIỮ cờ máy
- * (`inferred` vẫn là `inferred`), chỉ ghi thêm vào `basis` rằng người duyệt đã xem mà không sửa.
- * Gõ lại ĐÚNG con số máy vẫn tính là kiểm — người đã đối chiếu với thực tế và ký tên vào nó.
+ * LUẬT NAY — ba đường, mỗi đường một CĂN CỨ khác nhau:
+ *   ① **người CUNG CẤP số** (`sua`, dùng cho cả "Sửa" lẫn "Nhập kích thước đã biết")
+ *      ⇒ `human-override` ⇒ `verified`. Dùng được, nhưng dấu vết là *người nhập*, VĨNH VIỄN không
+ *      bao giờ được đọc thành *máy đo được*.
+ *   ② **người XÁC NHẬN có tham chiếu** (`xacNhan`) ⇒ `human-confirmed` ⇒ `verified`. Giá trị GIỮ
+ *      NGUYÊN số máy — người không gõ lại gì cả, người nêu ra mình đối chiếu với cái gì.
+ *   ③ **để nguyên** ⇒ căn cứ máy GIỮ NGUYÊN (`inferred` vẫn là `inferred`), chỉ ghi vết đã có
+ *      người nhìn. Xem qua không phải là đo, cũng không phải là xác minh.
+ * Đường thứ tư — "Hiệu chỉnh lại" — KHÔNG nằm ở đây: nó quay lại `deXuatKhoi3D()` với neo mới, và
+ * số ra là số MÁY đo (`calibrated`/`deterministic-metrology`), không đi qua tay người.
  *
  * Thuần: trả BẢN MỚI, không đổi tại chỗ — ứng viên cũ vẫn còn để so/hoàn tác.
  */
 export function nhanUngVien(
   uv: UngVienKhoi3D,
-  opts: { nguoiXacNhan: string; sua?: SuaKichThuoc; ghiChu?: string },
+  opts: { nguoiXacNhan: string; sua?: SuaKichThuoc; xacNhan?: XacNhanKichThuoc; ghiChu?: string },
 ): UngVienKhoi3D {
   if (uv.trangThai === 'daBo') {
     throw new Error('Ứng viên đã bỏ — không nhận lại được. Chạy lại đề xuất nếu muốn dùng.');
   }
   if (!opts.nguoiXacNhan) throw new Error('Nhận ứng viên phải có người ký — verified không có chủ là verified giả.');
 
-  const ky = (k: KichThuocCoNguon, moiMm?: number): KichThuocCoNguon => {
-    const goLai = moiMm != null && Number.isFinite(moiMm) && moiMm > 0;
-    if (!goLai) {
-      // KHÔNG đụng `flag`: xem qua không phải là đo. Chỉ ghi vết đã có người nhìn.
-      return { ...k, basis: `${k.basis} · người duyệt đã xem, không sửa: ${opts.nguoiXacNhan}` };
+  const ky = (ten: string, k: KichThuocCoNguon, moiMm: number | undefined, thamChieu: string | undefined): KichThuocCoNguon => {
+    // Số người gõ mà hỏng: NÓI THẲNG. Nuốt im lặng rồi vẫn trả "đã nhận" là nói dối bằng sự im lặng.
+    if (moiMm != null && !(Number.isFinite(moiMm) && moiMm > 0)) {
+      throw new Error(`Số bạn nhập cho chiều ${ten} chưa dùng được — nhập số dương theo mm, hoặc để trống.`);
     }
-    const doiSo = moiMm !== k.valueMm;
-    return {
-      valueMm: moiMm,
-      toleranceMm: 0,
-      flag: 'verified',
-      flagMay: k.flagMay,
-      basis: doiSo
-        ? `người nhập tay: ${opts.nguoiXacNhan} (máy trước đó: ${k.valueMm}mm — ${k.basis})`
-        : `người nhập tay xác nhận đúng số máy: ${opts.nguoiXacNhan} (${k.basis})`,
-    };
+    if (moiMm != null) {
+      // ① NGƯỜI CUNG CẤP GIÁ TRỊ. Bằng hay khác số máy đều KHÔNG đổi bản chất: đây là số của người.
+      const canCu: CanCuSuThat = 'human-override';
+      return {
+        valueMm: moiMm,
+        toleranceMm: 0,
+        flag: nacTuCanCu(canCu),
+        flagMay: k.flagMay,
+        canCu,
+        canCuMay: k.canCuMay,
+        basis: `người nhập tay: ${opts.nguoiXacNhan} (máy trước đó: ${k.valueMm}mm — ${k.basis})`,
+      };
+    }
+    const tc = thamChieu?.trim();
+    if (thamChieu != null && !tc) {
+      throw new Error(
+        `Xác nhận chiều ${ten} phải nêu đối chiếu với cái gì (trang hãng · bản vẽ · đo tay) — gật đầu suông không phải xác minh.`,
+      );
+    }
+    if (tc) {
+      // ② NGƯỜI XÁC NHẬN TƯỜNG MINH. Số máy giữ nguyên; thứ được thêm vào là THAM CHIẾU.
+      const canCu: CanCuSuThat = 'human-confirmed';
+      return {
+        ...k,
+        flag: nacTuCanCu(canCu),
+        canCu,
+        basis: `${k.basis} · ${opts.nguoiXacNhan} xác nhận, đối chiếu: ${tc}`,
+      };
+    }
+    // ③ ĐỂ NGUYÊN — không đụng căn cứ, không đụng nấc.
+    return { ...k, basis: `${k.basis} · người duyệt đã xem, không sửa: ${opts.nguoiXacNhan}` };
   };
 
-  const rong = ky(uv.rong, opts.sua?.rongMm);
-  const sau = ky(uv.sau, opts.sua?.sauMm);
-  const cao = ky(uv.cao, opts.sua?.caoMm);
+  const rong = ky('rộng', uv.rong, opts.sua?.rongMm, opts.xacNhan?.rong);
+  const sau = ky('sâu', uv.sau, opts.sua?.sauMm, opts.xacNhan?.sau);
+  const cao = ky('cao', uv.cao, opts.sua?.caoMm, opts.xacNhan?.cao);
   const heightMm = Math.round(cao.valueMm);
 
   return {
@@ -392,22 +580,70 @@ export function duocDoVaoDoc(uv: UngVienKhoi3D): boolean {
 
 /* ═══════════════════════════ ④ CỔNG BOQ ═══════════════════════════ */
 
+/** Xuất xứ MỘT chiều, đã thành chữ — thứ phải đi kèm con số vào hồ sơ, không được rụng dọc đường. */
+export interface XuatXuChieu {
+  ten: 'rộng' | 'sâu' | 'cao';
+  canCu: CanCuSuThat;
+  flag: ProvenanceFlag;
+  /** ví dụ "người nhập tay" — CẤM nơi nào tự chế chữ khác, nhất là chữ "đo được". */
+  nhan: string;
+}
+
+export interface CongBoq {
+  duoc: boolean;
+  lyDo: string;
+  /** Luôn đủ ba chiều, kể cả khi `duoc === false` — hồ sơ phải nói được từng số ở đâu ra. */
+  xuatXu: XuatXuChieu[];
+  /** Có mặt khi trong số vào BOQ có số do NGƯỜI đưa ra. Hiện lên, đừng nuốt. */
+  canhBao?: string;
+}
+
+export function xuatXuBoq(uv: UngVienKhoi3D): XuatXuChieu[] {
+  return ([['rộng', uv.rong], ['sâu', uv.sau], ['cao', uv.cao]] as const).map(([ten, k]) => ({
+    ten,
+    canCu: k.canCu,
+    flag: k.flag,
+    nhan: nhanXuatXu(k.canCu),
+  }));
+}
+
 /**
  * Hoà chốt 15/08: *"BOQ chỉ lấy giá trị chính xác đến từ con số"* — không cột "tạm tính", không
  * cờ độ tin cậy trong BOQ. Một chiều còn `inferred` là CẢ MÓN đứng ngoài BOQ.
- * Muốn vào thì người sửa tay/ký (cơ chế sửa tay đã có: `lib/present-editor/boq-overrides.ts`).
+ *
+ * 🔴 SỬA NGHĨA 20/08 — hợp đồng này VẪN cho `verified` (gồm cả `human-override`) vào BOQ, và đó là
+ * đúng: người cung cấp giá trị thì giá trị đó dùng được. Thứ **CẤM TUYỆT ĐỐI** là để nó vào rồi
+ * **dán lại nhãn `measured`** — biến *"người bảo thế"* thành *"máy đo được"* là loại nói dối nguy
+ * hiểm nhất trong một bộ hồ sơ nghề, vì nó không còn chỗ nào để phát hiện ngược. ⇒ cổng này luôn
+ * trả kèm `xuatXu` đủ ba chiều, và `canhBao` khi có số của người — dấu vết NHÌN THẤY ĐƯỢC, không
+ * phải một trường ẩn trong provenance.
+ *
+ * ƯU TIÊN `MEASURED`: khi người ghi đè lên một chiều máy VỐN ĐÃ đo được, cảnh báo nói thẳng ra —
+ * đó là ca duy nhất mà việc người nhập tay làm chất lượng số đi XUỐNG.
  */
-export function duocVaoBoq(uv: UngVienKhoi3D): { duoc: boolean; lyDo: string } {
+export function duocVaoBoq(uv: UngVienKhoi3D): CongBoq {
+  const xuatXu = xuatXuBoq(uv);
   if (uv.trangThai !== 'daNhan') {
-    return { duoc: false, lyDo: 'Khối còn là đề xuất chưa duyệt — BOQ chỉ nhận số đã được người duyệt.' };
+    return { duoc: false, lyDo: 'Khối còn là đề xuất chưa duyệt — BOQ chỉ nhận số đã được người duyệt.', xuatXu };
   }
-  const suy = ([['rộng', uv.rong], ['sâu', uv.sau], ['cao', uv.cao]] as const)
-    .filter(([, k]) => k.flag === 'inferred')
-    .map(([t]) => t);
+  const suy = xuatXu.filter((x) => x.flag === 'inferred').map((x) => x.ten);
   if (suy.length) {
-    return { duoc: false, lyDo: `Số ${suy.join(' · ')} còn là suy từ ảnh — BOQ chỉ nhận số đo được.` };
+    return { duoc: false, lyDo: `Số ${suy.join(' · ')} còn là suy từ ảnh — BOQ chỉ nhận số đo được.`, xuatXu };
   }
-  return { duoc: true, lyDo: 'Ba chiều đã đo được hoặc đã có người xác nhận.' };
+  const nguoiDua = xuatXu.filter((x) => laNguoiDuaRa(x.canCu));
+  const deLen = ([['rộng', uv.rong], ['sâu', uv.sau], ['cao', uv.cao]] as const)
+    .filter(([, k]) => k.canCu === 'human-override' && k.flagMay === 'measured')
+    .map(([t]) => t);
+  const canhBao = nguoiDua.length
+    ? `Số ${nguoiDua.map((x) => `${x.ten} (${x.nhan})`).join(' · ')} đến từ người, không phải máy đo — giữ nguyên xuất xứ này trong hồ sơ.` +
+      (deLen.length ? ` Riêng ${deLen.join(' · ')} là ghi đè lên số máy VỐN ĐÃ đo được — ưu tiên số đo nếu không có lý do rõ.` : '')
+    : undefined;
+  return {
+    duoc: true,
+    lyDo: 'Ba chiều đã đo được hoặc đã có người đưa ra kèm dấu vết.',
+    xuatXu,
+    canhBao,
+  };
 }
 
 /* ═══════════════════════════ ⑤ BIỂU DIỄN — KHÔNG NHÂN BẢN DANH TÍNH ═══════════════════════════ */
@@ -453,7 +689,10 @@ export function tomTatUngVien(uv: UngVienKhoi3D): string {
   const r = Math.round(uv.rong.valueMm);
   const s = Math.round(uv.sau.valueMm);
   const c = Math.round(uv.cao.valueMm);
-  const nhan =
-    uv.mucSuThat === 'verified' ? 'người xác nhận' : uv.mucSuThat === 'measured' ? 'đo được' : 'suy từ ảnh';
-  return `${uv.categoryLabel} ${r}×${s}×${c}mm — ${nhan} · ${uv.tierLabel} ${uv.confidencePercent}%`;
+  // Nhãn lấy từ CĂN CỨ của chiều yếu nhất, không lấy từ nấc — hai chiều cùng `verified` có thể đến
+  // từ hai đường rất khác nhau (người nhập tay ↔ người xác nhận có tham chiếu).
+  const yeuNhat = ([uv.rong, uv.sau, uv.cao] as const).reduce((a, b) =>
+    THU_TU_NAC.indexOf(a.flag) <= THU_TU_NAC.indexOf(b.flag) ? a : b,
+  );
+  return `${uv.categoryLabel} ${r}×${s}×${c}mm — ${nhanXuatXu(yeuNhat.canCu)} · ${uv.tierLabel} ${uv.confidencePercent}%`;
 }
