@@ -1,15 +1,18 @@
 'use client';
 
 /**
- * components/nav/RailDieuHuong.tsx — [marker: railHaiCum] RAIL ĐIỀU HƯỚNG: một trục dọc, BA CỤM.
+ * components/nav/RailDieuHuong.tsx — [marker: railHaiCum] THANH TRÁI: một trục dọc, HAI ĐẢO.
  * (Chuỗi marker giữ nguyên làm định danh — xem ghi chú đầu `./muc-dieu-huong.ts`.)
  *
- * Hoà chốt 16/08: **sidebar là hệ router toàn app**, ba chặng chỉ là MỘT nhóm stage ngang hàng
- * với Files · Thư viện · Bảng việc · Tổng quan. Đo 17/08: chốt đó có **0 dòng mã** — app vẫn là
- * các route rời không bản đồ chung. File này là bản đồ ấy.
- * 20/08 nâng theo `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md` điều 3 (BA CỤM: Workspace chung ·
- * dự án/ba chặng · cá nhân — ba "đảo dọc" cùng trục, tách bằng khoảng thở) + điều 4 (Rail
- * icon-only 52px · Context Shelf 240 · Work Panel 320, trần resize 440 là NỢ phiếu riêng).
+ * Hoà chốt 16/08: **sidebar là hệ router toàn app**. Đo 17/08: chốt đó có **0 dòng mã** — app vẫn
+ * là các route rời không bản đồ chung. File này là bản đồ ấy.
+ * 20/08 (đợt NAV-HAI-DAO) Hoà chốt tiếp: **thanh trái CHỈ CÒN VIỆC** —
+ *   ĐẢO A · XƯỞNG/VIỆC : Trang chủ · Dự án · Files · Thư viện · Soát duyệt
+ *   ĐẢO B · CHẶNG      : 2D · 3D · Trình chiếu
+ * ⛔ **Cá nhân · Hồ sơ · Credit · Cài đặt KHÔNG được ở đây** — chúng sang cụm phải-trên
+ * (`components/studio/CumPhaiTren.tsx`). Hoà nêu đây là tiêu chí TRƯỢT của cả đợt.
+ * Giữ nguyên `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md` điều 4 (Rail icon-only 52px · Context
+ * Shelf 240 · Work Panel 320, trần resize 440 là NỢ phiếu riêng).
  *
  * Nguồn cấu trúc: `docs/HOP-DONG-CAU-TRUC-DIEU-HUONG.md` (§5 ba nấc chi tiết · §6 ràng buộc).
  * Danh sách mục + mọi quyết định "mục nào có gì" nằm ở `./muc-dieu-huong.ts` — file
@@ -25,17 +28,19 @@
  *    `disabled`. Lý do đo được ở `components/ui/ToolbarChip.tsx:24-37`: `<button disabled>` bị Tab
  *    BỎ QUA hẳn và `title=` câm trên cảm ứng ⇒ đúng cái nút cần giải thích nhất lại mất sạch kênh
  *    giải thích. Hệ quả cố ý: nút mờ VẪN chiếm một chặng Tab.
- * ④ Hai cụm tách bằng KHOẢNG THỞ, không phải đường kẻ (Hoà 16/08 "không thích đường kẻ ngăn một
- *    cái rẹt chia khối").
+ * ④ Hai ĐẢO tách bằng KHOẢNG THỞ, không phải đường kẻ (Hoà 16/08 "không thích đường kẻ ngăn một
+ *    cái rẹt chia khối") — và khoảng thở đó phải ĐỦ ĐỂ ĐỌC RA là hai khối, không phải gap cho
+ *    thoáng: 24px, gấp ~3 lần khoảng cách giữa hai hàng trong cùng đảo (6px). Gộp hai đảo thành
+ *    một danh sách dài là hỏng đúng thứ chốt 20/08 sinh ra để chữa.
  *
  * ── BA NẤC CHI TIẾT = BA CÔNG NĂNG, KHÔNG PHẢI BA CỠ ──────────────────────────────────────
  * Hoà 16/08: *"bỏ tư duy kéo dãn khi mình nói 3 size — size to là BỔ SUNG CHI TIẾT cho size nhỏ"*.
- *   28  định vị    → chỉ hình, không chữ
+ *   52  định vị    → chỉ hình, không chữ
  *   240 điều hướng → thêm CHỮ
  *   320 duyệt      → thêm TÌNH TRẠNG (thứ hai nấc kia không mang nổi)
  * Cửa nghiệm thu hai vế: ① che nấc rộng đi, nấc hẹp vẫn đứng được một mình ② nấc rộng phải có thứ
  * nấc hẹp KHÔNG THỂ có. Vế ② là vế chặn kéo dãn — nay do `mat320` giữ, và mục nào không có gì để
- * nhìn thì BỎ hẳn phần thêm ấy (Cài đặt · Chat · Họp · Tổng quan).
+ * nhìn thì BỎ hẳn phần thêm ấy (Trang chủ · Soát duyệt).
  *
  * ⚠️ Nguồn cho phần thêm ở nấc 320 mới nối được phần của CỤM DỰ ÁN (chặng đang dở + tên bản đang
  * mở — đều là dữ liệu THẬT, đọc từ `lib/shell/last-stage.ts` và store). Phần của Files và Thư
@@ -118,8 +123,8 @@ export function RailDieuHuong() {
 
   const tinhTrangCua = (muc: MucRail): string | null => {
     if (!hienTinhTrang || muc.mat320.kieu === 'khong') return null;
-    if (muc.id === 'du-an-nay') return tenBan || null;
-    if (muc.cum === 'duAn' && muc.duoi && muc.duoi === duoiDangDo) return tr('đang dở', 'in progress');
+    if (muc.id === 'du-an') return tenBan || null;
+    if (muc.cum === 'chang' && muc.duoi && muc.duoi === duoiDangDo) return tr('đang dở', 'in progress');
     // Chưa nối nguồn ⇒ KHÔNG vẽ gì. Bịa một con số ở đây là hỏng đúng thứ nấc này sinh ra để làm.
     return null;
   };
@@ -148,9 +153,11 @@ export function RailDieuHuong() {
             // (chỉ hình, không chữ) ⇒ trỏ vào một phần tử không tồn tại thì cụm mất tên với trình
             // đọc màn hình đúng ở nấc hẹp nhất. `aria-label` sống ở cả ba nấc chi tiết.
             aria-label={tr(NHAN_CUM[cum].vi, NHAN_CUM[cum].en)}
-            // Ba cụm = ba "đảo dọc" cùng trục, tách bằng KHOẢNG THỞ — không đường kẻ ngang
-            // (Hoà 16/08 "không thích đường kẻ ngăn một cái rẹt" + chốt điều 3 20/08).
-            style={{ marginTop: i === 0 ? 0 : 18 }}
+            // HAI ĐẢO cùng trục, tách bằng KHOẢNG THỞ CÓ NGHĨA — không đường kẻ ngang (Hoà 16/08
+            // "không thích đường kẻ ngăn một cái rẹt"). 24 > 18 cũ: còn ba cụm thì 18 đủ vì có
+            // tiêu đề cụm đỡ; nay ở nấc ĐỊNH VỊ (icon-only, tiêu đề không render) khoảng thở là
+            // KÊNH DUY NHẤT nói "đây là hai khối" ⇒ phải đọc được cả khi không có chữ nào.
+            style={{ marginTop: i === 0 ? 0 : 24 }}
             className="flex flex-col gap-0.5"
           >
             {hienChu && (

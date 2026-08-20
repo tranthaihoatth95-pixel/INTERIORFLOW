@@ -40,6 +40,7 @@ import SearchProjectsInput from '@/components/SearchProjectsInput';
 // KHÔNG mount ở đây nữa — khẩu độ dùng lại ĐÚNG bề mặt chat của nó (`VitalsChatSurface`).
 import { DaiNguCanh } from '@/components/studio/DaiNguCanh';
 import { VitalsAperture } from '@/components/studio/VitalsAperture';
+import { CumPhaiTren } from '@/components/studio/CumPhaiTren';
 import { useStageTransition } from '@/components/studio/StageTransitionProvider';
 import { stageHrefFrom } from '@/lib/project-scope';
 import { useT } from '@/lib/i18n';
@@ -356,6 +357,16 @@ export function AppChrome({ active, logoMenu }: Props) {
         {active === 'home' && <SearchProjectsInput />}
         <VitalsAperture />
       </div>
+
+      {/* NAV-HAI-DAO 20/08 — CỤM PHẢI TRÊN: "tôi là ai / ai đang ở đây".
+          Hoà chốt thanh trái CHỈ CÒN VIỆC ⇒ Hồ sơ · Credit · Cài đặt · Tài khoản · Đăng xuất rời
+          rail và về đây, sau khẩu độ Vitals. ⛔ HAI HỆ KHÁC NHAU, cấm nhập một: `VitalsAperture`
+          (mép trên) trả lời *tôi nên biết gì*; `CumPhaiTren` trả lời *tôi là ai / ai đang ở đây*.
+          Vì sao đứng ở đây mà không sớm hơn trong DOM: thứ tự đọc trái→phải phải là ngữ-cảnh →
+          Vitals → danh-tính; đảo lại thì avatar chen vào giữa ô tìm và khẩu độ.
+          Cụm TỰ ẨN khi chưa đăng nhập, và phần hiện diện tự ẩn khi chỉ có một mình — không giữ
+          chỗ trống (luật widget-thiếu-dữ-liệu-tự-ẩn, Hoà chốt 13/08). */}
+      <CumPhaiTren />
 
       {/* 2.2.86 (30/07, Hoà chốt) — "Chạy flow" KHÔNG còn đứng riêng trên bar (~110px trả lại
           ngân sách bề rộng). Khởi chạy giờ CẠNH ĐỐI TƯỢNG: nút ▶ trên node, "Kết xuất" trên thẻ
