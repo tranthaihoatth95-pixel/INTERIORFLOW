@@ -1,47 +1,41 @@
 # IF · LIVE BRIDGE — điểm nối duy nhất MAIN ↔ ChatGPT
 
-> Cập nhật lần cuối: 20/08 đêm, sau Wave 3 (F·Demo Spine) checkpoint + MAIN tự tay bật ComfyUI
-> thật và chẩn ra gốc bệnh generation. Chi tiết đầy đủ + bằng chứng browser gốc:
-> `docs/memory/sessions/2026-08-20/08-truth-map-ux-study/README.md`. File này CHỈ tóm.
+> Cập nhật lần cuối: 20/08 đêm, sau UX/UI Coherence Pass (Lane 1 Shell/Home/Vitals/Activity ·
+> Lane 2 2D · Lane 3 3D/Present/Library/Review) checkpoint + ComfyUI models khôi phục thật.
+> Chi tiết đầy đủ: `docs/memory/sessions/2026-08-20/08-truth-map-ux-study/README.md`. File này CHỈ tóm.
 
 ## CURRENT
-- Git: `main` (remote) `2dfed16`, KHÔNG nhập. Việc thật ở `backup/2026-08-19-batch0a` tip `a3ff86a` (Wave 1+2+3, đủ 3 checkpoint có guard chặn tree rỗng).
-- Server app :3001, login `demo@if.local`/`demo1234`, demo project `cmsl8prn80001w9i2ud3bfdgr`. tsc 0.
-- **ComfyUI THẬT đang chạy** — `127.0.0.1:8188`, khởi bằng `.venv/bin/python3 main.py --listen 127.0.0.1 --port 8188` (KHÔNG qua Comfy Desktop.app — app đó treo ở bước kiểm tra mạng/cloud-capacity lúc khởi động, MAIN quit nó và gọi thẳng main.py). `.env.local` đã sẵn `COMFYUI_URL=http://127.0.0.1:8188`, khớp. `curl :8188/system_stats` → 200.
-- ⚠️ **GỐC BỆNH GENERATION THẬT (đo được, không phải đoán)**: kết nối ComfyUI KHÔNG còn là vấn đề — MAIN chạy thử node "Sketch → Ảnh thật" thật trên node canvas, request TỚI ĐƯỢC ComfyUI, nhưng ComfyUI TỪ CHỐI job vì THIẾU MODEL: `sd_xl_base_1.0.safetensors` (checkpoint SDXL, đang KHÔNG có — chỉ có `sd15-fp16.safetensors` 2GB) và `controlnet-canny-sdxl-1.0.safetensors` (ControlNet, thư mục controlnet RỖNG hoàn toàn). Log lịch sử máy (`~/comfyui-server.log`) xác nhận SDXL từng chạy THẬT trên máy này trước đây (26/26 bước, MPS) — file checkpoint đã bị dọn/mất sau đó, không phải chưa từng có. Đĩa còn 38GB trống — đủ chỗ tải lại (~9,4GB cho cả 2 file) nhưng MAIN KHÔNG tự tải (quyết định tốn băng thông/thời gian, để Hoà quyết).
-- Có 1 file test thật để lại trong demo project (Lane E, `lane-e-test-upload.png`) làm bằng chứng Promote chạy được — có nút Xoá nếu cần dọn.
+- Git: `main` (remote) `2dfed16`, KHÔNG nhập. Việc thật ở `backup/2026-08-19-batch0a`, tip trước UX pass = `f3e6d89` — checkpoint UX pass đang chuẩn bị ngay sau file này.
+- Server app :3001, login `demo@if.local`/`demo1234`, project `cmsl8prn80001w9i2ud3bfdgr`. tsc 0 xuyên suốt cả 3 lane UX (verify độc lập từng lượt).
+- **ComfyUI THẬT chạy `127.0.0.1:8188`** — model SDXL + ControlNet-canny đã KHÔI PHỤC bằng symlink từ một bản cài ComfyUI khác trên CÙNG máy (không tải lại, không đổi workflow). Đã xác nhận qua chính API ComfyUI (`/object_info/CheckpointLoaderSimple`) rằng `sd_xl_base_1.0.safetensors` đã hiện diện. **Chưa chạy lại 1 job generation thật kể từ khi khôi phục model** — môi trường lúc đó đang bị 3 lane UX cùng hot-save, MAIN chủ động HOÃN test để tránh kết quả không tin cậy, đúng chỉ đạo "clean verification window".
+- **Migration `ProjectFile.reviewState`: CHƯA CHẠY** — đã kiểm trực tiếp `sqlite3 prisma/dev.db "PRAGMA table_info(ProjectFile)"`, 3 cột reviewState/reviewedAt/reviewedBy CHƯA có. Backup `prisma/dev.db.bak-20260820-pre-review-migration` đã sẵn sàng, integrity-check OK. Đợi Hoà chạy `npx prisma migrate dev --name add_project_file_review_state`.
 
-## LIVE
-Toàn bộ mục LIVE của Wave 1 (xem lịch sử file này qua git nếu cần đối chiếu) **cộng thêm**:
-- **3D selection feedback** — chọn tường trong khung nhìn 3D thật: mesh tint accent-purple + khung Box3Helper, tree row + Inspector mở cạnh đó (Cao/Tầng/Vật liệu/Đổi vật liệu/Khoét hốc/Vát cạnh/Nhân bản dãy) — sửa đúng lỗ hổng duy nhất mà truth-map từng flag ("3D PASS trừ phản hồi chọn").
-- **Image→Spec đã lên khung nhìn 3D** — `StageToolbelt stage="render"` được mount lần đầu trong `Render3DModeSkeleton.tsx`; capability `image-to-3d` đã khai `stages:['cad','render']` từ trước nhưng chưa có chỗ neo — nay bấm được từ cả 2D lẫn 3D.
-- **Files→Review→Promote→Library→Where-Used — xác nhận THẬT, không phải đọc code**: Lane E upload 1 file thật qua UI thật, tick "Đã xem" → "Đưa vào Thư viện" → xác nhận badge đổi đúng, reload vẫn giữ, "Đang dùng ở đâu" trả đúng dữ liệu, mở được trong Library sheet. Đây là lần đầu luồng này được click-through thật trong phiên.
-- Node-canvas ⇄ viewport 3D transition — xác nhận ĐÃ có crossfade thật (`ModeShell.tsx`, `AnimatePresence`/`springPop`, có guard `prefers-reduced-motion`) — KHÔNG phải teleport như nghi ngờ ban đầu, không cần sửa.
+## LIVE (bổ sung sau UX pass — giữ nguyên phần LIVE của các checkpoint trước, xem git log)
+- **Rail 2-đảo grammar xác nhận đồng nhất qua Home/2D/3D** — active state là viền tint 5% + vạch accent trái 2px (`RailDieuHuong.tsx` `NEN_DANG_MO`), KHÔNG phải purple-fill. Cụm phải-trên (Vitals/Activity/Avatar) cùng vị trí xuyên suốt.
+- **Xoá 1 nguyên nhân thật của "auto-redirect"**: cờ `interiorflow.stageDone` localStorage — write cuối cùng còn sót trong `ProjectSelect.tsx` (0 chỗ đọc còn lại trong toàn repo) đã bị xoá. Không đóng hẳn hiện tượng (còn liên quan Zustand `currentProjectId`/`workspace` chia sẻ giữa các tab), nhưng giảm thật một nguồn.
+- **2D StatusBar bottom-edge hết dày**: danh sách "Bắt điểm: ..." dài giờ thu về icon nam châm (chấm mờ ở Sơ phác, icon+số ở Chuyên), mở đầy đủ qua Tooltip hover/focus có sẵn — không đẻ cơ chế thứ hai.
+- **Library Browse→Passport→Technical Verify**: click item mở "Hộ chiếu" nhẹ (ảnh lớn + 2-3 fact chính + nút "Xem thông số kỹ thuật →") trước khi vào cột spec dày đặc cũ — đúng phân tầng brief yêu cầu.
+- **3D Command3DPanel mặc định thu gọn** (`defaultOpen={false}`, cùng mẫu panel xuất bên phải) — viewport chiếm ưu thế hơn ngay từ đầu.
+- **Present Page Setup xác nhận ĐÃ ĐÚNG cấu trúc** (full-work-area, tờ giấy cột chính rộng + cài đặt cột phụ hẹp, KHÔNG phải modal giữa màn) — không cần sửa chrome, chỉ còn thiếu NỘI DUNG preview thật (data-wiring, không phải UX/chrome).
 
-## PARTIAL
-Project overview (ngoài shell chung) · ToolWindow (chưa neo quanh viền) · Page Setup (chưa live preview lớn — Lane C không kịp, Wave 2 cũng không chạm) · Controlled Edit (region-mask node có, chưa verify UI vẽ mask) · Stale/Impact (chỉ cục bộ Present) · Widget resize/drag tự do (chỉ reorder qua nút, cố ý — xem DECISIONS Wave 1) · Gallery Home widget (vẫn 1 ảnh/tuần) · Activity progress % thật (còn dạng không-đo-được) · **Library Browse→Object Passport→Technical Verify** (hiện chỉ 1 cột chi tiết duy nhất khi click, chưa tách 2 tầng mật độ khác nhau — Lane E chẩn đúng chỗ, chưa sửa vì file đang có edit dở từ nơi khác) · **3D selection cho đồ nội thất/cửa sổ** (chỉ tường được — đồ khác gộp chung 1 draw-call theo màu, giới hạn kiến trúc thật, không phải bug nhỏ) · **Review verdict persistence** (schema `ProjectFile.reviewState/reviewedAt/reviewedBy` đã viết trong `prisma/schema.prisma`, uncommitted từ TRƯỚC phiên này — CHƯA migrate vào DB thật, checkbox "Đã xem" hiện vẫn chỉ là state phía client).
+## PARTIAL / MISSING (không đổi nhiều so với trước, các mục chính còn treo)
+- Real generation chưa re-test sau khi model khôi phục (xem CURRENT).
+- Gallery Home vẫn 1 ảnh/tuần.
+- 2D near-pointer contextual actions (Offset/Material cạnh vật chọn) — xác nhận lại là THẬT SỰ CHƯA CÓ (grep CadCanvas.tsx), là việc BUILD có phạm vi rõ, chưa làm.
+- Present Page Setup live sheet preview — chrome đúng rồi, chỉ thiếu nối dữ liệu slide thật.
+- `ProjectFile.reviewState` — chờ Hoà chạy migration.
+- Route-bounce / auto-redirect — CHƯA đóng hẳn, xem UX FINDINGS.
 
-## MISSING
-Live Sheet Preview lớn trong Page Setup · social-notification inbox · 2D near-pointer contextual actions (Offset/Align cạnh vật đang chọn) · **Spec Portal to Present** (không có nút "gửi sang Trình chiếu" nào cạnh dữ liệu Spec/BOQ — Lane D xác nhận gap thật, thuộc phạm vi Present, chưa ai nhận).
-
-## REJECTED
-Old synthetic specimen visual (FUR vẽ tay) — không hồi sinh. Widget resize lưới 9-ô tự do — bị luật 20/08 đè.
+## UX FINDINGS
+- Route bounce / auto-redirect-to-Home: xảy ra lặp lại trong CHÍNH lúc 3 lane UX đang hot-save đồng thời (giống hệt mẫu hình Wave 1). MỘT nguyên nhân thật đã xử (cờ `stageDone` chết) nhưng KHÔNG được khai là đã đóng — cần lượt QA cô lập (không lane nào chạy song song) mới kết luận được REPRODUCED hay NOT REPRODUCED thật sự.
+- Present từng bị crash TOÀN APP giữa phiên do lỗi tạm thời `ReferenceError: Cannot access 'specs' before initialization` trong `LibrarySheet.tsx` lúc Lane 3 đang sửa dở (LibrarySheet mount toàn cục qua AppShell) — ĐÃ TỰ HẾT khi Lane 3 hoàn tất, tsc xác nhận sạch sau đó. Phân loại: DEV HOT-RELOAD ARTIFACT (tạm thời trong lúc sửa file), không phải APP DEFECT tồn tại ở trạng thái nghỉ.
 
 ## DECISIONS
-(Giữ nguyên từ Wave 1: naming "Chuyên", widget resize theo luật mới, Motion Relationship Law ghi nhận chờ thi công.)
-- **KHÔNG chạy `prisma migrate`/`generate` cho `ProjectFile.reviewState` dù schema đã sẵn** — đúng luật CLAUDE.md (cấm agent tự chạy khi lệch DB thật, sự cố 19/08 làm mẫu). Đây là CỬA THẬT cần Hoà chạy tay.
-- StatusBar.tsx (bottom-edge dày ở 2D Chuyên, Lane A chẩn từ Wave 1) và Library 3-tầng mật độ (Lane E chẩn Wave 2) đều là fix ĐÃ CHẨN ĐÚNG CHỖ, chưa ai sửa — ưu tiên Wave 3.
-
-## UX FINDINGS (mới, ngoài các mục Wave 1 đã đóng)
-- Auto-redirect-về-Home: KHÔNG tái hiện trong Wave 2 (chỉ 2 lane chạy song song thay vì 3) — củng cố thêm giả thuyết "nhiễu môi trường đa-agent lúc lưu file đồng thời", chưa đủ mẫu để đóng hẳn nhưng không còn là chặn đường.
-- Lane E ghi nhận: click Library 2 lần liên tiếp từng nhảy lạc sang stage 3D của CÙNG dự án — nghi cùng họ với hiện tượng auto-redirect (trạng thái điều hướng client dễ vỡ khi nhiều tab/lane cùng origin), chưa điều tra riêng.
-
-## TO CHATGPT
-- Cần định nghĩa "Plan branch", phạm vi Credits UI — vẫn UNKNOWN/DEFER.
-- Đề xuất Wave 3: Lane F (Demo Spine nối thật đầu-cuối) là ưu tiên số 1 — mọi mảnh rời (Visual Generate, Controlled Edit, Image→Spec, Promote, Activity/Flow) giờ đã LIVE riêng lẻ, việc còn lại là NỐI chúng thành một luồng thật, không phải xây thêm mảnh mới. Song song có thể mở 1 lane nhỏ xử 2 gap đã-chẩn-đúng-chỗ (StatusBar bottom-edge · Library 2-tầng mật độ) nếu muốn giữ 3 lane bận.
-- Cửa thật cần Hoà: chạy migration cho `ProjectFile.reviewState` (lệnh cụ thể trong prisma/schema.prisma, agent không tự chạy).
+(Giữ nguyên các quyết định trước: naming "Chuyên", widget resize theo luật cũ, Motion Law ghi nhận chờ thi công.)
+- Model SDXL/ControlNet khôi phục bằng SYMLINK (không copy) — 0 byte tốn thêm đĩa, cùng file vật lý với bản cài ComfyUI cũ trên máy.
+- KHÔNG chạy `npx prisma migrate dev` — chờ đúng người (Hoà) chạy theo luật CLAUDE.md.
 
 ## NEXT 3
-1. Mở Wave 3 — Lane F Demo Spine (Sketch→Visual Generate→Controlled Edit→Accept→Image→Spec→Present→Home) là điều kiện duy nhất để nhập `main`; đây là việc lớn nhất còn lại.
-2. Hoà chạy migration `ProjectFile.reviewState` khi rảnh (không chặn Wave 3, review vẫn dùng được ở dạng client-only trong lúc chờ).
-3. Một lượt QA cô lập (không lane nào chạy song song) xác nhận đóng hẳn nghi vấn auto-redirect trước khi diễn tập demo loop cuối cùng.
+1. Khi Hoà chạy migration xong: verify schema + tsc + browser-smoke Files/Review/Promote.
+2. Mở CLEAN VERIFICATION WINDOW thật (không lane nào chạy song song) → chạy 1 job generation thật (Sơ phác → vẽ → Sketch→Ảnh thật → ComfyUI → kết quả về IF) → nếu PASS, chạy tiếp spine đầy đủ.
+3. Sau spine xanh: full visual coherence walk 9 chặng (Home→Files→2D×2→3D→Image→Spec→Library/Review→Present→Home) đối chiếu 10 tiêu chí freeze, ra kết luận READY FOR HOÀ VISUAL REVIEW: YES/NO.

@@ -785,9 +785,18 @@ export function ProjectSelect({
    * [marker: lastStage] — click card nhảy CHẶNG ĐANG DỞ của dự án đó (phiếu
    * home-overview-card ④.1); chưa từng ghi → mặc định 'concept'.
    * - 'render': đi đường cũ `onEnter()` (HomeScreen setStageDone + toProjectRender).
-   * - 'concept'/'present': vào thẳng route chặng `/projects/[id]/(cad|present)` —
-   *   tự ghi cờ `interiorflow.stageDone` y hệt HomeScreen.onEnter (cùng khoá + user.id)
-   *   để lần quay về '/' vẫn vào thẳng canvas, không rơi lại Gallery.
+   * - 'concept'/'present': vào thẳng route chặng `/projects/[id]/(cad|present)`.
+   *
+   * 🔴 20/08 (Lane 1 coherence pass) — GỠ `localStorage.setItem('interiorflow.stageDone', …)`
+   * từng nằm ở đây. Đó là tàn dư của kiến trúc TRƯỚC 16/08 ("vào thẳng canvas"); từ
+   * [marker: cuaVaoDashboard] (`HomeScreen.tsx`) app đã đổi luật thành **"mọi lối đều dừng ở
+   * dashboard"** — HomeScreen tự khai đã gỡ CẢ HAI nơi ĐỌC cờ này, chỉ còn đúng chỗ GHI này
+   * sống sót (comment cũ ở đây tự nhận là nợ: "cần T dọn nốt"). Hệ quả đo được: mở một dự án
+   * ở chặng 2D/Trình chiếu rồi bấm về '/' — hoặc mở tab MỚI cùng origin — sẽ đọc lại flag này
+   * (nay đã xoá) qua state hydrate và có thể văng thẳng vào canvas thay vì dashboard, đúng
+   * hiện tượng "auto-redirect" đang treo ở UX FINDINGS của IF-LIVE-BRIDGE.md. Ghi flag chết mà
+   * không ai đọc thì vô hại về mặt hiển thị NGAY LẬP TỨC, nhưng vẫn là nguồn rối khi có code
+   * khác (cũ hoặc mới) lỡ đọc lại — xoá dứt điểm, không để "cờ tiện nghi" mồ côi.
    */
   const enterAtLastStage = useCallback(
     (f: FlowRow) => {
@@ -797,11 +806,6 @@ export function ProjectSelect({
       if (stage === 'render') {
         onEnter();
         return;
-      }
-      try {
-        if (s.user) localStorage.setItem('interiorflow.stageDone', s.user.id);
-      } catch {
-        /* bỏ qua — chỉ là cờ tiện nghi */
       }
       router.push(stageRoutePath(f.project?.id ?? f.id, stageSegmentForPhase(stage)));
     },
@@ -1879,6 +1883,15 @@ export function ProjectSelect({
    * lời lỗi #5 "card nghèo" — trước đây hầu hết thẻ là flow rời KHÔNG có `projectId` thật nên
    * `ProjectOverviewCard` không có gì để fetch; nay thẻ LUÔN có `projectId` thật.
    */
+  /* ═══ VIỆC 1+2 (20/08) · MỘT KHỔ THẺ CHO CẢ LƯỚI ════════════════════════════════════════
+     Trước phiếu này lưới có BA khổ khác nhau đứng cạnh nhau: ô "Dự án mới" 4/4.1 · thẻ dự án
+     (ảnh 4/3 **+** một khối chữ nền `--card` cao thêm ~85px) · ngăn "Bản nháp" 4/4.1 ⇒ đỉnh
+     thẻ hàng dưới không bao giờ trùng nhau, và thẻ dự án đọc ra là HAI vật dán vào nhau.
+     Nay MỘT tỉ lệ khai một chỗ, cả ba loại thẻ dùng chung ⇒ đỉnh thẻ · chiều cao quang học
+     bằng nhau theo cấu tạo. `4 / 5` (không phải 4/4.1) vì thẻ dự án nay ôm TRỌN cả phần chữ
+     bên trong một mặt ảnh — cần thêm chiều cao, và khổ dọc là khổ editorial đúng gu. */
+  const THE_TY_LE = '4 / 5';
+
   const renderProjectTile = (group: ProjectGroup) => {
     const rep = group.flows[0];
     const stage = getLastStage(group.projectId) ?? getLastStage(rep.id);
@@ -1931,19 +1944,29 @@ export function ProjectSelect({
             onNoteDrop(noteId, group.projectId);
           }
         }}
-        className={`group cursor-pointer overflow-hidden text-left ${reduce ? '' : 'transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:scale-[1.02]'}`}
+        data-the-du-an=""
+        className={`group relative cursor-pointer overflow-hidden text-left ${reduce ? '' : 'transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:scale-[1.02]'}`}
+        /* ═══ VIỆC 2 (20/08) · THẺ DỰ ÁN LÀ **MỘT MẶT LIỀN** ══════════════════════════════
+           ⛔ BÁC bản cũ: khối ảnh 4/3 rồi một khối chữ nền `--card` đặc dán ngay dưới ⇒ mắt
+           đọc ra ĐƯỜNG NỐI NGANG CỨNG chia thẻ làm hai vật, mà đường nối đó KHÔNG mang nghĩa
+           gì (không phải ranh giới ngữ nghĩa — cùng một dự án ở cả hai nửa).
+           ⇒ Nay ảnh phủ TRỌN thẻ, và chữ đứng trên **lớp phủ chuyển sắc** dựng thẳng từ đáy
+           lên: đặc ở chân chữ, tan dần về 0 ở giữa thẻ. Không có mép nào cả — ảnh · không khí
+           · vùng chữ là một dải liên tục.
+           🔴 Chuyển sắc này TỒN TẠI VÌ TƯƠNG PHẢN, không phải vì đẹp: nó là thứ giữ chữ trắng
+           đọc được **bất kể ảnh bìa sáng tới đâu**. Vùng chữ nằm trọn trong dải α ≥ 0,90 nên
+           nền hiệu dụng dưới chân chữ ≈ #22211f kể cả khi ảnh là trắng tinh (0,9·10 + 0,1·255
+           = 34,5) ⇒ tương phản ~15:1, dư ngưỡng 4,5. Số đo thật ghi ở báo cáo phiên. */
         style={{
+          aspectRatio: THE_TY_LE,
           borderRadius: 'var(--radius-xl)',
-          // v4 (13/08, phiếu home-bento-v4.md ④.3, lỗi #6) — trước hardcode '#141210' (đen bất kể
-          // theme, đúng bug "theme sáng không đen thui" Hoà chê); nay theo token card/border/bóng
-          // sẵn có — card THEO ĐÚNG theme app, không còn khối đen lạc giữa nền giấy sáng.
           border: noteArmed ? '1px solid var(--accent)' : '1px solid var(--border)',
           background: 'var(--card)',
           boxShadow: noteArmed ? '0 0 0 3px var(--accent-soft), var(--shadow-node)' : 'var(--shadow-node)',
           opacity: busy ? 0.6 : 1,
         }}
       >
-        <div className="relative" style={{ aspectRatio: '4 / 3' }}>
+        <div className="absolute inset-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={coverOf(rep)} alt="" draggable={false} className="h-full w-full object-cover" />
           {/* chip chặng đang dở (lỗi #5) — badge nổi trên ảnh, GIỐNG dòng "Đang dở · …" mà
@@ -2072,13 +2095,27 @@ export function ProjectSelect({
   };
 
   const searchGrid = flows && (
-    <div className="w-full" data-tour="project-gallery">
+    /* ═══ VIỆC 1 (20/08) · MỘT LƯỚI DUY NHẤT ═══════════════════════════════════════════════
+       🔴 Đo trên app thật 1440×900 TRƯỚC phiếu này: đầu đề "01 · Dự án" đứng ở x = ô+14
+       (`px-3.5` do DongStudioHome cấp), hàng điều khiển CĂN GIỮA (`justify-center` — không
+       bám mép nào cả), lưới thẻ ở x = ô+16 (`px-3` của vỏ bentoBox + `px-1` của lưới). Ba
+       thứ thuộc CÙNG một khối mà mỗi thứ tự khai một mép ⇒ lệch nhìn thấy được.
+       ⇒ Nay MÉP TRÁI khai ĐÚNG MỘT CHỖ: biến `--xuong-mep` do khối tiêu điểm cấp
+       (DongStudioHome `projectTile`). Đầu đề · hàng điều khiển · lưới thẻ · thẻ nháp đều
+       đọc chung biến đó ⇒ lệch = 0px theo cấu tạo, không phải theo con mắt.
+       ⛔ CẤM dịch tay từng thẻ: mọi `px-*` ngang bên trong khối này đã gỡ; thêm lại một cái
+       là mép trái tách đôi trở lại. Ngoài Home (`bentoBox=false`) biến không tồn tại ⇒ rơi
+       về `4px`, đúng bằng `px-1` cũ, bố cục trang riêng KHÔNG đổi. */
+    <div className="w-full" data-tour="project-gallery" style={{ paddingInline: 'var(--xuong-mep, 4px)' }}>
       {/* thanh tìm kiếm + lọc theo dự án
           P-V 17/08 — ô SEARCH TÁCH lên AppChrome top bar (SearchProjectsInput.tsx). Ở bento (ô A
           của DongStudioHome, `bentoBox=true`) KHÔNG render pill ở đây nữa để tránh 2 ô tìm cùng
           trang; nơi khác (nếu còn) vẫn giữ ô cũ. Store chung `useHomeSearch` nên filter khớp
           thời gian thực dù đứng ở đâu. */}
-      <div className="mb-5 flex flex-wrap items-center justify-center gap-2.5">
+      <div
+        data-xuong-dieukhien=""
+        className={`mb-4 flex flex-wrap items-center gap-2.5 ${bentoBox ? 'justify-start' : 'justify-center'}`}
+      >
         {!bentoBox && (
           <div className="flex items-center gap-2 rounded-full px-3.5 py-2" style={glass}>
             <Search size={14} className="shrink-0 text-[var(--t4)]" />
@@ -2126,7 +2163,12 @@ export function ProjectSelect({
       {/* BENTO v3 — trong ô A, KHÔNG tự cuộn riêng (`max-h-[56vh]` tính theo VIEWPORT, sai khi
           nhét vào khung nhỏ) — nhường việc cuộn cho container ô A ở DongStudioHome.tsx (root
           wrapper bên dưới đặt `overflow-y-auto h-full`, MỘT vùng cuộn duy nhất cho cả card). */}
-      <div className={`grid grid-cols-2 gap-4 px-1 pb-2 sm:grid-cols-3 lg:grid-cols-4 ${bentoBox ? '' : 'max-h-[56vh] overflow-y-auto'}`}>
+      <div
+        data-xuong-luoi=""
+        /* VIỆC 1 — `px-1` GỠ: mép trái nay do `--xuong-mep` ở khối cha cấp (xem đầu searchGrid).
+           Rãnh ngang/dọc là MỘT giá trị `gap-4`, không có ngoại lệ nào. */
+        className={`grid grid-cols-2 gap-4 pb-2 sm:grid-cols-3 lg:grid-cols-4 ${bentoBox ? '' : 'max-h-[56vh] overflow-y-auto'}`}
+      >
         {/* tile "+ Dự án mới" luôn đứng đầu — không lệ thuộc filter */}
         <div
           role="button"

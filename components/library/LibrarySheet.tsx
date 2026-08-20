@@ -344,6 +344,16 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   }, [pickedItem]);
   const specOpen = !!pickedItem;
 
+  /* LANE 3 (20/08) — progressive disclosure: bấm món trước nay nhảy THẲNG vào một cột thông số
+   * dày (ma trận số + gán mã + where-used cùng lúc). Nay tách hai tầng: "Hộ chiếu" (Object
+   * Passport — ảnh lớn + vài sự thật chính, editorial) mở TRƯỚC, "Xác minh kỹ thuật" (Technical
+   * Verify — đúng ma trận cũ) là một bước sổ-ra riêng. Reset về Passport mỗi khi đổi món, không
+   * giữ "đã xác minh" cho món kế — mỗi món phải tự mở lại nếu muốn xem sâu. */
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  useEffect(() => {
+    setVerifyOpen(false);
+  }, [displayItem?.id]);
+
   /* G-A-01 (VIỆC 3, 07/08) — trước đây `buildSpecRows(displayItem)` gọi KHÔNG kèm `spec`, nên
    * Hãng/Đơn vị/Giá LUÔN hiện "chưa có nguồn" dù `ProductSpec` khớp mã đã có sẵn trong DB (kiểm
    * bằng `grep -n "buildSpecRows(displayItem)"` trước khi sửa: 1 tham số, xem lịch sử dòng này).
@@ -462,6 +472,11 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
     return { supplier: hit.brand, unit: hit.unit, priceVnd: hit.priceVnd };
   }, [displayItem, displayIdfc, specs, linkedSpec]);
 
+  const displayDims = useMemo(() => {
+    if (!displayItem || !specs?.length) return null;
+    const m = matchSpec(displayItem.code, specs);
+    return m ? formatDims(m.w, m.d, m.hUp) : null;
+  }, [displayItem, specs]);
   const displaySpecRows = useMemo(() => {
     if (!displayItem) return [];
     /* VIỆC 4 M-IDFC (G-M17-01 vòng 2) — nối tham số `surface` mà spec-panel.ts khai sẵn từ đầu
@@ -1004,8 +1019,8 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
               }}
             >
               <div className="speccol">
-                <div className="sphead">
-                  <div className="spprev">
+                <div className={verifyOpen ? 'sphead' : 'sphead pp'}>
+                  <div className={verifyOpen ? 'spprev' : 'spprev pp'}>
                     <ItemThumb item={displayItem} />
                   </div>
                   <div className="spname">
@@ -1016,6 +1031,31 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                   </div>
                 </div>
 
+                {!verifyOpen && (
+                  /* HỘ CHIẾU (mặc định) — vài sự thật chính, không phải ma trận. Kéo/dùng vẫn
+                     làm được ngay từ đây (spact bên dưới không đổi vị trí), "Xem thông số kỹ
+                     thuật" là lối rẽ RÕ sang tầng dày, không tự động mở. */
+                  <div className="sppass">
+                    <div className="ppfacts">
+                      {activeShelf && (
+                        <span className="ppf"><span className="k">{tr('Loại', 'Kind')}</span><span className="v">{tr(activeShelf.label[0], activeShelf.label[1])}</span></span>
+                      )}
+                      {displayDims && (
+                        <span className="ppf"><span className="k">{tr('Kích thước', 'Size')}</span><span className="v">{displayDims}</span></span>
+                      )}
+                      <span className="ppf"><span className="k">{tr('Mã', 'Code')}</span><span className="v">{displayItem.code}</span></span>
+                    </div>
+                    <button type="button" className="ppverify" onClick={() => setVerifyOpen(true)}>
+                      {tr('Xem thông số kỹ thuật →', 'View technical spec →')}
+                    </button>
+                  </div>
+                )}
+
+                {verifyOpen && (
+                <>
+                <button type="button" className="ppback" onClick={() => setVerifyOpen(false)}>
+                  {tr('← Tổng quan', '← Overview')}
+                </button>
                 <div className="spsec">
                   <div className="spcap">{tr('Thông số', 'Specs')}</div>
                   {displaySpecRows.map((r) => (
@@ -1087,6 +1127,8 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                       </>
                     )}
                   </div>
+                )}
+                </>
                 )}
 
                 <div className="spact">

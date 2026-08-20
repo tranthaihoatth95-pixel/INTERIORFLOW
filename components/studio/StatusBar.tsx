@@ -28,7 +28,7 @@
  */
 
 import { useMemo } from 'react';
-import { Loader2, Save, ShieldAlert, HardDriveDownload, Eye } from 'lucide-react';
+import { Loader2, Save, ShieldAlert, HardDriveDownload, Eye, Magnet } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { useT } from '@/lib/i18n';
 import { getDefinition } from '@/lib/nodes/registry';
@@ -39,6 +39,7 @@ import { useStageMode } from '@/lib/stage-mode';
 import { useSaveStatus } from '@/lib/save-status';
 import { useProjectPresence } from '@/lib/project-presence-ui';
 import type { Phase } from '@/lib/phases';
+import Tooltip from '@/components/ui/Tooltip';
 
 interface Props {
   stage: Phase;
@@ -67,6 +68,51 @@ function activeSnapKindsLabel(snap: SnapSettings): string {
   return active.length > 0 ? active.map((k) => SNAP_KIND_LABEL[k]).join(', ') : 'không loại nào';
 }
 
+/**
+ * `SnapIndicator` (2D-STATUSBAR-DENSITY, phiên 20/08 tiếp) — thay dòng chữ liệt kê đầy đủ
+ * ("Bắt điểm: Đầu mút, Giữa cạnh, …") vốn tràn/cụt ở Chuyên bằng MỘT badge gọn, mở đủ danh
+ * sách qua `Tooltip` sẵn có (hover/focus, [Đ2] — không dựng cơ chế hiện/ẩn thứ hai).
+ *
+ * Sơ phác (`dense=false`): chỉ 1 chấm nam châm mờ (`--t4`) — "barely register", đúng luật
+ * nhẹ hơn của mode này. Chuyên (`dense=true`): icon + SỐ LƯỢNG (tabular-nums, `--t3`) — đặc
+ * hơn nhưng vẫn 1 cụm ngắn, không phải chuỗi phẩy tràn dòng. Cả hai bấm/trỏ vào đều mở
+ * `Tooltip` liệt kê đủ tên — không mất thông tin, chỉ đổi MẬT ĐỘ mặc định.
+ */
+function SnapIndicator({ snap, dense }: { snap: SnapSettings; dense: boolean }) {
+  if (!snap.enabled) {
+    return (
+      <span style={{ whiteSpace: 'nowrap', color: 'var(--t4)', display: 'flex', alignItems: 'center', gap: 5 }}>
+        <Magnet size={11} style={{ opacity: 0.5 }} />
+        {dense && 'Bắt điểm: tắt'}
+      </span>
+    );
+  }
+  const activeKeys = (Object.keys(SNAP_KIND_LABEL) as (keyof typeof SNAP_KIND_LABEL)[]).filter((k) => snap[k]);
+  return (
+    <Tooltip
+      label="Bắt điểm"
+      desc={activeKeys.length > 0 ? activeSnapKindsLabel(snap) : 'không loại nào'}
+      side="top"
+    >
+      <span
+        tabIndex={0}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          whiteSpace: 'nowrap',
+          color: dense ? 'var(--t3)' : 'var(--t4)',
+          cursor: 'default',
+          outline: 'none',
+        }}
+      >
+        <Magnet size={dense ? 12 : 11} />
+        {dense && <span style={{ fontVariantNumeric: 'tabular-nums' }}>{activeKeys.length}</span>}
+      </span>
+    </Tooltip>
+  );
+}
+
 
 /** 2.1.8.n — "HH:MM" giờ lưu gần nhất, không giây (không cần chính xác tới giây cho mục đích
  * xác nhận thị giác "đã lưu chưa"). */
@@ -85,6 +131,7 @@ export default function StatusBar({ stage, hidden }: Props) {
   const cursorWorld = useCadLiveStatus((s) => s.cursorWorld);
   const lastViolationCount = useCadLiveStatus((s) => s.lastViolationCount);
   const snap = useCadStore((s) => s.snap);
+  const cadMode = useCadStore((s) => s.cadMode);
   const saveState = useSaveStatus((s) => s.status);
   const lastSavedAt = useSaveStatus((s) => s.lastSavedAt);
   const diskStatus = useSaveStatus((s) => s.diskStatus);
@@ -165,11 +212,7 @@ export default function StatusBar({ stage, hidden }: Props) {
             X {Math.round(cursorWorld.x)}&nbsp;&nbsp;Y {Math.round(cursorWorld.y)} mm
           </span>
         )}
-        {stage === 'concept' && (
-          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title="Cấu hình bắt điểm đang bật — đổi ở nút nam châm trên Toolbelt">
-            {snap.enabled ? `Bắt điểm: ${activeSnapKindsLabel(snap)}` : 'Bắt điểm: tắt'}
-          </span>
-        )}
+        {stage === 'concept' && <SnapIndicator snap={snap} dense={cadMode !== 'sketch'} />}
       </div>
 
       {/* GIỮA — 🔴 ĐÃ GỠ CHIP VITALS (20/08, phiếu COHERENCE-SHELL).

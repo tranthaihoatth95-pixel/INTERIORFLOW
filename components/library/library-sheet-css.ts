@@ -327,6 +327,28 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .speccol .spact .primary:hover{background:var(--accent-strong)}
 .if-lib-root .speccol .spact .ghost{background:var(--field);color:var(--t2);border:1px solid var(--border)}
 .if-lib-root .speccol .spact .ghost:hover{background:var(--hover);color:var(--t1)}
+
+/* LANE 3 (20/08) — HỘ CHIẾU món (Object Passport): ảnh lớn hơn, editorial, KHÔNG phải ma trận.
+   ".pp" là biến thể của .sphead/.spprev đã có sẵn (đổi mỗi chiều cao ảnh xem trước), không đẻ
+   khối mới cho phần đầu — chỉ phần thân bên dưới (.sppass) là mới. */
+.if-lib-root .speccol .sphead.pp{padding-bottom:14px}
+.if-lib-root .speccol .spprev.pp{height:200px}
+.if-lib-root .speccol .sppass{padding:0 12px 12px;display:flex;flex-direction:column;gap:10px}
+.if-lib-root .speccol .ppfacts{display:flex;flex-direction:column;gap:6px}
+.if-lib-root .speccol .ppf{display:flex;align-items:center;justify-content:space-between;gap:8px;
+       min-height:22px;font-size:var(--fs-xs)}
+.if-lib-root .speccol .ppf .k{color:var(--t4);white-space:nowrap}
+.if-lib-root .speccol .ppf .v{color:var(--t1);text-align:right;min-width:0;
+       overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,Menlo,monospace;
+       font-variant-numeric:tabular-nums}
+.if-lib-root .speccol .ppverify{height:var(--tap);border-radius:var(--r-2);border:1px solid var(--border);
+       background:var(--field);color:var(--t2);font:inherit;font-size:var(--fs-xs);font-weight:var(--fw-semi);
+       cursor:pointer;transition:background var(--dur-fast) var(--ease-apple)}
+.if-lib-root .speccol .ppverify:hover{background:var(--hover);color:var(--t1)}
+.if-lib-root .speccol .ppback{margin:10px 12px 0;align-self:flex-start;height:26px;padding:0 9px;
+       border-radius:var(--r-1);border:1px solid var(--border);background:var(--field);color:var(--t3);
+       font:inherit;font-size:var(--fs-2xs);cursor:pointer}
+.if-lib-root .speccol .ppback:hover{background:var(--hover);color:var(--t1)}
 /* Thẻ ĐANG CHỌN trong lưới — cùng ngôn ngữ "viền accent + quầng" với node đang chọn ở chặng 3D. */
 .if-lib-root .it.on{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
 

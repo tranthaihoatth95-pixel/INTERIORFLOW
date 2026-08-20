@@ -528,8 +528,14 @@ export default function Render3DModeSkeleton() {
   return (
     <div style={{ display: 'flex', width: '100%', height: '100%', minHeight: 0, background: 'var(--bg)' }}>
       {/* p3 (07/08) — tay cầm thu/mở dùng chung PanelFlank (Hoà chốt nhân bản mẫu Trình chiếu).
-          Bảng lệnh 256px là panel bên duy nhất của mode 3D chưa thu được (đo 2/18 render-studio). */}
-      <PanelFlank side="left" storageKey="render3d.command-panel" label={tr('bảng lệnh 3D', '3D command panel')}>
+          Bảng lệnh 256px là panel bên duy nhất của mode 3D chưa thu được (đo 2/18 render-studio).
+          LANE 3 (20/08) — "viewport is primary, no giant control chrome": trước nay panel này mở
+          SẴN 100% các phiên đầu (defaultOpen mặc định của PanelFlank là true), đứng cạnh khung
+          nhìn 3D ngay từ khung hình đầu ⇒ chiếm ~31% bề rộng màn trước khi người dùng làm gì.
+          Đổi về THU-MẶC-ĐỊNH (khớp panel kết xuất bên phải đã `defaultOpen={false}` — cùng mode,
+          hai bên lệch nhau không có lý do). Tay cầm PanelFlank luôn hiện + nhớ lựa chọn qua
+          localStorage — người bấm mở một lần thì phiên sau mở lại đúng ý họ, không mất chức năng. */}
+      <PanelFlank side="left" storageKey="render3d.command-panel" label={tr('bảng lệnh 3D', '3D command panel')} defaultOpen={false}>
         <Command3DPanel
           tab={tab}
           onTabChange={setTab}
