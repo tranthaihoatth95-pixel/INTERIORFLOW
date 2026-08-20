@@ -206,6 +206,50 @@ làm màn chờ Present.
 
 ---
 
+## ✅ MÀN CHỜ PRESENT — LÀM XONG (20/08)
+
+Cửa nghiệm thu: vào Present phải thấy *"mình có chỗ tĩnh để bắt đầu, chọn ngay được thứ muốn
+làm"*, TRƯỢT nếu thấy *"phải làm xong mấy bước này Present mới cho làm việc"*.
+
+**Trước**: đầu đề thư viện mẫu → **bốn thẻ nguồn to** (lưới 4 cột, mỗi thẻ một số to + câu giải
+thích, kể cả *"0 dòng"*) → dải 6 tab có số đếm → **lưới 4 cột ảnh lớn**. Vào là gặp một bức tường.
+
+**Sau** (`PresentDocTypePicker.tsx` + `NguonLienKet.tsx`):
+- **~80% thở**: một câu đầu đề + một dòng phụ, còn lại là khoảng trống.
+- **MỘT hành động chính**: *Bắt đầu trình bày* — mờ đục, `--accent`, không tranh chỗ với gì.
+- **6 lối tắt** = cửa vào, không phải bước: Bảng vật liệu A3 · Khối lượng (BOQ) · Bảng thống kê ·
+  Bộ hồ sơ kể chuyện · Dựng nhanh bằng Magic · Thư viện mẫu. Pill nhỏ, **kính mỏng**
+  (`kinh-noi--mong` — dùng lớp sẵn có, không tự chế kính), không đánh số, không thứ tự.
+- **Tín hiệu gọn**: `NguonLienKet` đổi từ bốn thẻ lớn thành **một dòng khẽ**
+  (`12 đối tượng 2D · 3 khối 3D · 2 vật liệu`), vai phụ, bấm được để sang chặng gốc.
+- **Thư viện mẫu KHÔNG mất** — lùi về sau một lối tắt, giữ nguyên 100% lưới cũ, có nút
+  *Về màn chờ*. Không xoá năng lực nào, chỉ đổi thứ tự gặp mặt.
+
+**Giữ đúng phần đúng của `NguonLienKet`**: engine đọc số **không đụng một dòng** — vẫn
+`getProjectDoc()` · `docToObjScene()` · `POST /api/boq/:id`. Chỉ đổi cách bày.
+
+### Ba điều cấm — khoá bằng cấu trúc, không bằng lời dặn
+1. ⛔ **Không "BOQ 0 dòng"**: danh sách tín hiệu `.filter((t) => t.so > 0)` — nguồn rỗng thì
+   **im lặng**, không chiếm chỗ. Màn chờ nói *bạn CÓ gì*, không kể lể *bạn THIẾU gì*.
+2. ⛔ **Không số đếm giả**: `so === null` là *chưa đo xong* (khác hẳn `0` = đo rồi, thật sự rỗng);
+   chưa đo xong thì component **trả `null`**, không phát ra con số nào, kể cả 0 tạm.
+3. ⛔ **Không thẻ nguồn to** + **màn chờ phải TĨNH**: bỏ luôn thanh tiến trình cũ — một thanh
+   chạy ở đây là thêm chuyển động vào đúng chỗ cần yên.
+
+### Đo trên app thật 1440×900 (dự án chưa có nội dung)
+- Màn chờ: đầu đề + 1 nút chính + **6 lối tắt**, `aria-disabled` **0/6** (mount này nối đủ handler).
+- **Dòng tín hiệu KHÔNG hiện** — đúng: dự án thật sự chưa có gì, nên không bịa "0".
+- *Thư viện mẫu* → lưới cũ nguyên vẹn → *Về màn chờ* → quay lại đúng màn chờ. Round-trip sạch.
+- Không còn `NguonLienKet` lặp trong thư viện mẫu (nói một tin hai chỗ là nói hai lần).
+
+⚠️ **Chưa làm, khai thẳng**: mục **"gần đây 1-3 mục nhỏ"** — app **chưa có nguồn "hồ sơ gần đây"**
+thật ở chặng này. Bày một danh sách rỗng hoặc bịa vài mục là phạm đúng luật vừa ban ⇒ **bỏ hẳn**
+thay vì làm giả. Có nguồn thật thì thêm sau, chỗ đã chừa (dưới lối tắt).
+⚠️ Hành động chính hiện luôn là *"Bắt đầu trình bày"* — **chưa có nhánh *"Tiếp tục trình bày"***
+vì chưa có tín hiệu "hồ sơ đang dở" đáng tin ở mount này. Cùng lý do trên: chờ nguồn thật.
+
+---
+
 ## 📌 VỀ TIN THỨ HAI — MÀN CHỜ PRESENT BỊ BÁC
 
 Đọc để không xây tiếp lên nền đã bị bác. **Không mở rộng phạm vi lượt này** theo đúng dặn dò.

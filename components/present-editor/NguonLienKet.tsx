@@ -19,8 +19,10 @@
  *     Đếm `groups` chứ không đoán theo loại entity ⇒ số ở đây và số khối thấy ở 3D là MỘT.
  *   · `POST /api/boq/:projectId`                                — CÙNG đường `BoqScreen` đi.
  *
- * ⛔ CẤM BỊA % (Hoà chốt 16/08): trong lúc chờ BOQ, thanh dùng nhánh **không đo được** của
- * `lib/ui/tien-trinh.ts` (LightBar bỏ trống `value`) — không có con số nào được phát ra.
+ * ⛔ CẤM BỊA % (Hoà chốt 16/08): trước đây lúc chờ BOQ có một thanh tiến trình dùng nhánh
+ * **không đo được**. Nay bỏ hẳn thanh đó — màn chờ phải TĨNH, một thanh chạy ở đây là thêm
+ * chuyển động vào đúng chỗ cần yên. Trong lúc chưa đo xong thì component **không phát ra gì**
+ * (xem `dangDo` cuối tệp), nên vẫn không có con số bịa nào lọt ra.
  *
  * ✅ LUẬT X2 "không màn nào được chặn": mỗi nguồn đang RỖNG vẫn là một **lối đi**, không phải
  * một lời từ chối — bấm vào là sang đúng chặng làm ra thứ còn thiếu. Nút không bấm được thì
@@ -30,28 +32,12 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { PencilRuler, Box, Palette, FileSpreadsheet } from 'lucide-react';
-import LightBar from '@/components/ui/LightBar';
 import { useT } from '@/lib/i18n';
 import { useFlowStore } from '@/lib/store';
 import { effectiveUserId } from '@/lib/resume';
 import { getProjectDoc } from '@/lib/present-editor/project-doc';
 import { docToObjScene } from '@/lib/three/cad-to-obj';
 import type { Doc } from '@/lib/cad/model';
-
-/** Một nguồn nuôi hồ sơ. `so === null` = CHƯA ĐO XONG (khác hẳn `0` = đo rồi, thật sự rỗng). */
-interface Nguon {
-  khoa: 'ban-ve' | 'khoi-3d' | 'vat-lieu' | 'boq';
-  icon: React.ReactNode;
-  ten: [string, string];
-  /** Nó góp GÌ vào hồ sơ — câu này mới là phần "liên kết", không phải con số. */
-  gop: [string, string];
-  so: number | null;
-  donVi: [string, string];
-  /** Chặng đi tới khi nguồn còn rỗng. */
-  di: string;
-  diNhan: [string, string];
-}
 
 /** Đếm mã vật liệu RIÊNG BIỆT đang dùng trong bản vẽ — cùng khoá `matId` mà BOQ gom theo. */
 function demMatId(doc: Doc): number {
@@ -110,111 +96,70 @@ export function NguonLienKet() {
     return () => { huy = true; };
   }, [userId, projectId]);
 
-  const nguon: Nguon[] = [
-    {
-      khoa: 'ban-ve', icon: <PencilRuler size={15} strokeWidth={1.7} aria-hidden="true" />,
-      ten: ['Bản vẽ 2D', '2D drawing'],
-      gop: ['mặt bằng, mặt cắt, ghi chú lên trang hồ sơ', 'plans, sections and notes on the sheet'],
-      so: demVe, donVi: ['đối tượng', 'objects'],
-      di: 'cad', diNhan: ['Sang Thiết kế 2D vẽ trước', 'Go to 2D Design and draw first'],
-    },
-    {
-      khoa: 'khoi-3d', icon: <Box size={15} strokeWidth={1.7} aria-hidden="true" />,
-      ten: ['Khối 3D', '3D blocks'],
-      gop: ['ảnh phối cảnh và góc nhìn dựng từ chính khối', 'renders and views built from the blocks'],
-      so: demKhoi, donVi: ['khối', 'blocks'],
-      di: 'render', diNhan: ['Sang Thiết kế 3D dựng khối', 'Go to 3D Design and build'],
-    },
-    {
-      khoa: 'vat-lieu', icon: <Palette size={15} strokeWidth={1.7} aria-hidden="true" />,
-      ten: ['Vật liệu', 'Materials'],
-      gop: ['bảng vật liệu A3 và thông số bày cho khách', 'the A3 material board and client specs'],
-      so: demMat, donVi: ['mã đang dùng', 'codes in use'],
-      di: 'cad', diNhan: ['Gán vật liệu ở Thiết kế 2D', 'Assign materials in 2D Design'],
-    },
-    {
-      khoa: 'boq', icon: <FileSpreadsheet size={15} strokeWidth={1.7} aria-hidden="true" />,
-      ten: ['Khối lượng (BOQ)', 'Bill of quantities'],
-      gop: ['bảng khối lượng — chỉ nhận số ĐO ĐƯỢC từ bản vẽ', 'quantities — measured numbers only'],
-      so: boqLoi ? 0 : demBoq, donVi: ['dòng', 'rows'],
-      di: 'cad', diNhan: ['Cần bản vẽ có vật liệu để ra số', 'Needs a drawing with materials'],
-    },
-  ];
+  /**
+   * 🔴 ĐỔI CÁCH BÀY (20/08, Hoà bác màn chờ cũ) — GIỮ NGUYÊN ENGINE ĐỌC SỐ Ở TRÊN, chỉ đổi cách
+   * nói. Trước đây bốn THẺ LỚN, mỗi thẻ một con số to + một câu giải thích, xếp thành lưới 4 cột
+   * ngay dưới đầu đề ⇒ vào Present là gặp một bức tường thẻ, đọc ra *"phải làm xong mấy bước này
+   * Present mới cho làm việc"*. Nay là MỘT DÒNG TÍN HIỆU khẽ, vai phụ.
+   *
+   * Ba luật khoá ở đây:
+   *  ① ⛔ **KHÔNG BÀY SỐ 0** — "BOQ 0 dòng" là thứ bị bác đích danh. Nguồn rỗng thì im lặng,
+   *    không chiếm chỗ. Màn chờ nói *bạn CÓ gì*, không kể lể *bạn THIẾU gì*.
+   *  ② ⛔ **CẤM SỐ ĐẾM GIẢ** — `so === null` là CHƯA ĐO XONG (khác hẳn `0` = đo rồi, thật sự
+   *    rỗng). Chưa đo xong thì không phát ra con số nào, kể cả 0 tạm.
+   *  ③ Không có gì thật ⇒ **trả `null`**, không để lại vỏ rỗng. Ô trống là bằng chứng còn việc,
+   *    nhưng một cái khung không nói gì thì chỉ là rác thị giác.
+   */
+  const tinHieu: { khoa: string; so: number; chu: string; di: string }[] = [
+    { khoa: 'ban-ve', so: demVe ?? 0, chu: tr('đối tượng 2D', '2D objects'), di: 'cad' },
+    { khoa: 'khoi-3d', so: demKhoi ?? 0, chu: tr('khối 3D', '3D blocks'), di: 'render' },
+    { khoa: 'vat-lieu', so: demMat ?? 0, chu: tr('vật liệu', 'materials'), di: 'cad' },
+    { khoa: 'boq', so: boqLoi ? 0 : demBoq ?? 0, chu: tr('dòng BOQ', 'BOQ rows'), di: 'cad' },
+  ].filter((t) => t.so > 0);
 
-  const dangDo = nguon.some((n) => n.so === null);
+  // Chưa đo xong thì im — thà chậm một nhịp còn hơn nhấp nháy một con số rồi đổi.
+  const dangDo = demVe === null || demKhoi === null || demMat === null || (demBoq === null && !boqLoi);
+  if (dangDo || tinHieu.length === 0) return null;
 
   return (
-    <section
-      aria-label={tr('Nguồn nuôi hồ sơ', 'What feeds this document')}
+    <p
+      aria-label={tr('Dự án này đang có gì', 'What this project already has')}
       style={{
-        maxWidth: 940, margin: '30px auto 0', padding: '16px 18px 14px',
-        border: '1px solid var(--border)', borderRadius: 'var(--r-3)', background: 'var(--card)',
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 4,
+        margin: '14px 0 0',
+        color: 'var(--t3)',
+        fontSize: 12,
       }}
     >
-      <header style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 4 }}>
-        <h2 style={{ margin: 0, color: 'var(--t2)', fontSize: 11, fontWeight: 750, letterSpacing: '.08em' }}>
-          {tr('HỒ SƠ NÀY LẤY TỪ ĐÂU', 'WHERE THIS DOCUMENT PULLS FROM')}
-        </h2>
-        <p style={{ margin: 0, color: 'var(--t4)', fontSize: 11.5 }}>
-          {tr('Liên kết, không sao chép — sửa ở chặng gốc là hồ sơ đổi theo.',
-              'Linked, not copied — edit at the source and the document follows.')}
-        </p>
-      </header>
-
-      {dangDo && !boqLoi ? (
-        <div style={{ margin: '10px 0 2px' }}>
-          {/* Không đo được: KHÔNG truyền `value` ⇒ không con số nào (lib/ui/tien-trinh.ts). */}
-          <LightBar height={6} soVach={28} label={tr('Đang đọc dữ liệu dự án', 'Reading project data')} />
-        </div>
-      ) : null}
-
-      <ul style={{ listStyle: 'none', display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10, margin: '12px 0 0', padding: 0 }} className="nguon-lk-grid">
-        {nguon.map((n) => {
-          const rong = n.so === 0;
-          const chuaDo = n.so === null;
-          const lyDoId = `nguon-lk-lydo-${n.khoa}`;
-          const soChu = chuaDo ? tr('đang đọc…', 'reading…') : `${n.so} ${tr(...n.donVi)}`;
-          return (
-            <li key={n.khoa} style={{ minWidth: 0 }}>
-              <button
-                type="button"
-                aria-disabled={chuaDo || undefined}
-                aria-describedby={rong ? lyDoId : undefined}
-                onClick={chuaDo ? undefined : () => projectId && router.push(`/projects/${projectId}/${n.di}`)}
-                style={{
-                  width: '100%', height: '100%', textAlign: 'left', cursor: chuaDo ? 'default' : 'pointer',
-                  padding: '11px 12px', border: '1px solid var(--border)', borderRadius: 'var(--r-2)',
-                  background: 'transparent', color: 'inherit',
-                  opacity: chuaDo ? 'var(--mo-vo-hieu)' : 1,
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: 7, color: rong ? 'var(--t3)' : 'var(--accent)' }}>
-                  {n.icon}
-                  <span style={{ color: 'var(--t1)', fontSize: 12.5, fontWeight: 650 }}>{tr(...n.ten)}</span>
-                </span>
-                <span style={{ display: 'block', marginTop: 6, color: rong ? 'var(--t4)' : 'var(--t1)', fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-                  {soChu}
-                </span>
-                <span style={{ display: 'block', marginTop: 4, color: 'var(--t3)', fontSize: 11.5, lineHeight: 1.4 }}>
-                  {tr(...n.gop)}
-                </span>
-                {rong ? (
-                  <span id={lyDoId} style={{ display: 'block', marginTop: 6, color: 'var(--t4)', fontSize: 11, lineHeight: 1.4 }}>
-                    {n.khoa === 'boq' && boqLoi
-                      ? tr('Chưa đọc được bảng khối lượng lúc này.', 'Could not read the bill of quantities right now.')
-                      : `${tr('Chưa có gì. ', 'Nothing yet. ')}${tr(...n.diNhan)} →`}
-                  </span>
-                ) : null}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-      <style jsx>{`
-        @media (max-width: 780px) { .nguon-lk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
-        @media (max-width: 420px) { .nguon-lk-grid { grid-template-columns: 1fr !important; } }
-      `}</style>
-    </section>
+      {tinHieu.map((t, i) => (
+        <span key={t.khoa} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          {i > 0 && (
+            <span aria-hidden style={{ margin: '0 4px', color: 'var(--t4)' }}>
+              ·
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => projectId && router.push(`/projects/${projectId}/${t.di}`)}
+            style={{
+              padding: '2px 4px',
+              border: 0,
+              borderRadius: 'var(--r-1, 6px)',
+              background: 'transparent',
+              color: 'var(--t2)',
+              font: 'inherit',
+              cursor: 'pointer',
+            }}
+          >
+            <strong style={{ color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{t.so}</strong> {t.chu}
+          </button>
+        </span>
+      ))}
+    </p>
   );
 }
 
