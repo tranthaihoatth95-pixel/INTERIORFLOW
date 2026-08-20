@@ -72,12 +72,22 @@ Luật ranh giới: **sidebar không bao giờ đổi nội dung theo chặng; t
 lối đi.** Cửa sổ công cụ (`ToolWindow` — code giữ tên này; "master tool" đã KHAI TỬ) = **cụm**
 khung môi trường + panel vệ tinh, sống trên canvas, 3 nấc thu/vừa/toàn màn.
 
-### 2.2 · Sidebar — một trục dọc, HAI CỤM
+### 2.2 · Sidebar — một trục dọc, BA CỤM (⚠️ 20/08 ĐÈ bản HAI CỤM 16-17/08)
+
+> [CHỐT 20/08 — IF EXPERIENCE SYSTEM điều 3+4, `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md`]
+> Bản HAI CỤM (XƯỞNG · DỰ ÁN) **SUPERSEDED**. Nội dung "cái gì KHÔNG lên sidebar" bên dưới
+> vẫn còn hiệu lực nguyên vẹn.
 
 | Cụm | Gồm | Sống khi |
 |---|---|---|
-| **XƯỞNG** | Cá nhân · Dashboard · Bảng việc · Chat/Họp · Files · Thư viện · Cài đặt | không cần dự án |
-| **DỰ ÁN** | 2D · 3D · Trình chiếu | chỉ khi đã mở dự án |
+| **Workspace chung** | Dashboard/Home · Bảng việc · Chat/Họp · Files · Thư viện | không cần dự án |
+| **Ba chặng** | 2D · 3D · Trình chiếu | chỉ khi đã mở dự án |
+| **Cá nhân/hệ thống** | Cá nhân · Cài đặt | luôn |
+
+Ba độ sâu (điều 4): **Rail 52–56px icon-only · Context Shelf 220–280 · Work Panel 320–440
+resizable** — ba mức = ba năng lực (định vị · điều hướng · duyệt nội dung, giữ luật "ba nấc là
+ba công năng" 16/08). 🟡 DRIFT code chờ thi công: `BE_RONG_NAC = 28/240/320`
+(`muc-dieu-huong.ts`) → 52-56 / 220-280 / trần 440.
 
 KHÔNG lên sidebar: Bảng màu (một *bước* trong chọn vật liệu) · Kho vật liệu (một *kệ* trong Thư
 viện) · Gallery (mặt tiền tuyển chọn của kệ Ảnh). Files và Thư viện đứng cạnh nhau **có lý do** (2.4).

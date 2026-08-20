@@ -14,13 +14,18 @@
 
 ## A · SÁU CHỦ ĐỀ BỊ CHỐT NHIỀU LƯỢT — đọc bảng này trước
 
-### A1 · Vitals đứng ở đâu — **3 lượt**
+### A1 · Vitals đứng ở đâu — **4 lượt** (⚠️ 20/08 đè tiếp)
 
 | Lượt | Nội dung | Trạng thái |
 |---|---|---|
 | ① | Vitals **nhập vào ô tìm kiếm**: một ô hai chế độ, bấm chấm là chuyển Tìm ↔ Hỏi | ⛔ **HẾT HIỆU LỰC** |
 | ② | *(cùng lượt)* bỏ pill Vitals riêng lơ lửng | ✅ giữ |
-| ③ | **NEO THEO NGỮ CẢNH** — Vitals đứng ở chỗ **tay đang đặt** | ✅ **BẢN DÙNG** |
+| ③ | **NEO THEO NGỮ CẢNH** — Vitals đứng ở chỗ **tay đang đặt** | ⛔ **HẾT HIỆU LỰC 20/08** |
+| ④ | **VITALS APERTURE TOP-EDGE** — nằm VẬT LÝ trong top edge như aperture sống, 3 mức Ambient→Peek→Engage, morph theo context (EXPERIENCE SYSTEM điều 7, `CHOT-EXPERIENCE-SYSTEM-2026-08-20.md`) | ✅ **BẢN DÙNG** |
+
+> Mô tả "bản dùng, đầy đủ" bên dưới là của lượt ③ — giữ làm sử liệu, KHÔNG thi công theo nữa.
+> Ràng buộc còn sống xuyên lượt: mỗi màn đúng MỘT Vitals · cùng một vật mọi chỗ · ba nấc
+> (nấc lớn = agentic, khớp Engage).
 
 **Bản dùng, đầy đủ:**
 - Ở **Home** (tay ở thanh trên) = **chấm tròn CẠNH ô tìm kiếm**. Ô tìm kiếm **cứ là ô tìm kiếm** — không kiêm hai chế độ. Hai vật riêng.
