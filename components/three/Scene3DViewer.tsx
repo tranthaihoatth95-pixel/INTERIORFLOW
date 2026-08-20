@@ -149,6 +149,12 @@ export interface Scene3DViewerProps {
    * `CHOT-HUONG-3D-2026-08-01.md`). Đọc qua ref (giống `onFrame`) — KHÔNG nằm trong deps effect
    * chính để đổi ref mỗi render không dựng lại toàn cảnh. */
   onPushPull?: (entityId: string, newHeightMm: number) => void;
+  /** LANE D (20/08) — khối đang chọn (entityId, cùng nguồn `useTree3DUi` qua Object3DTree/
+   * Object3DInspector). Chỉ tường (massing mesh có entityId) tô được — furniture/cửa sổ đi
+   * qua đường gộp-theo-màu `buildMergedGeometries`, không có mesh 1-1 để tô (giới hạn đã ghi
+   * ở Object3DInspector, KHÔNG bịa). Đưa vào deps effect chính — đổi chọn là 1 click rời rạc,
+   * không phải kéo liên tục như `lightMarkers`, nên KHÔNG cần đường ref né rebuild. */
+  selectedId?: string | null;
   /** SÂN KHẤU: lưới sàn + đường chân trời. Mở mode Vẽ 3D lúc CHƯA có khối nào vẫn phải thấy mình
    * đang đứng trong một không gian (chuẩn Blender/SketchUp mở file trống — Hoà chê 04/08 "rối
    * rắm, không hệ thống"). MẶC ĐỊNH TẮT vì mọi nơi CHỤP ẢNH (campath/capture/xuất) không được
@@ -175,7 +181,7 @@ export interface Scene3DViewerProps {
 const IMPLEMENTED_MODES: Scene3DMode[] = ['orbit', 'campath', 'section', 'walk', 'massing'];
 const WALK_SPEED_M_PER_SEC = 1.5; // ~tốc độ đi bộ chậm, cùng cảm giác tempo với campath 1200mm/s
 
-export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = EYE_HEIGHT_MM, lensMm = 35, lightingPreview = null, sectionMm, onFrame, onPushPull, lightMarkers, onLightMove, ground = false, className, cameraApiRef, snap3d }: Scene3DViewerProps) {
+export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = EYE_HEIGHT_MM, lensMm = 35, lightingPreview = null, sectionMm, onFrame, onPushPull, lightMarkers, onLightMove, ground = false, className, cameraApiRef, snap3d, selectedId = null }: Scene3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // T4 — snap qua REF (cùng lý do lightMarkersRef): đổi công tắc không dựng lại cảnh.
   const snap3dRef = useRef(snap3d ?? null);
@@ -435,14 +441,31 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
     const massingWalls = massingActive ? buildMassingWalls(scene) : [];
     const massingMeshes: THREE.Mesh[] = [];
     for (const w of massingWalls) {
+      const isSelected = !!selectedId && w.entityId === selectedId;
       const material = lightingPreview
-        ? new THREE.MeshStandardMaterial({ color: w.colorHex, roughness: 0.78, metalness: 0.02, side: THREE.DoubleSide })
+        ? new THREE.MeshStandardMaterial({ color: w.colorHex, roughness: 0.78, metalness: 0.02, side: THREE.DoubleSide, emissive: isSelected ? 0x6a57f5 : 0x000000, emissiveIntensity: isSelected ? 0.28 : 0 })
         : new THREE.MeshBasicMaterial({ color: w.colorHex, side: THREE.DoubleSide });
       const mesh = new THREE.Mesh(w.geometry, material);
       mesh.userData = { entityId: w.entityId, baseHeightMm: w.baseHeightMm, baseMm: w.baseMm };
       addEdges(mesh);
       massingMeshes.push(mesh);
       group.add(mesh);
+      if (isSelected) {
+        // ⭐ SELECTION FEEDBACK THẬT — thứ truth-map 20/08 gắn cờ "3D PASS trừ selection feedback".
+        // Gốc bệnh: `Viewport3D` gizmo trước đây LUÔN vẽ ở CHÍNH GIỮA khung nhìn bất kể khối
+        // đang chọn nằm đâu (SVG `left:50%,top:50%` cố định) — Hoà đúng, đó không phải phản hồi
+        // chọn thật. Sửa TẠI NGUỒN: viền hộp bao khối THẬT trong không gian (Box3Helper, màu
+        // accent `#6a57f5`, khớp `--accent` app), theo camera/orbit như mọi vật khác — không
+        // phải overlay 2D cố định. `renderOrder` cao để không bị mesh khác đè (không depth test
+        // tắt hẳn — vẫn muốn nó ẩn đúng khi bị khối khác che, giống Blender/SketchUp).
+        const box = new THREE.Box3().setFromObject(mesh);
+        const helper = new THREE.Box3Helper(box, new THREE.Color(0x6a57f5));
+        (helper.material as THREE.LineBasicMaterial).transparent = true;
+        (helper.material as THREE.LineBasicMaterial).opacity = 0.9;
+        helper.renderOrder = 998;
+        group.add(helper);
+        edgeJunk.push(helper.geometry, helper.material as THREE.Material);
+      }
     }
 
     // p14 — fit SAU khi mesh tồn tại, đo Box3 từ chính group (xem docstring fitCameraToScene).
@@ -858,7 +881,7 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
     // lần đổi (không incremental-update riêng clippingPlanes) — chấp nhận được ở V1 (rebuild
     // scene vài chục ms, xem bench 3D-1), tối ưu sau nếu UI thật thấy giật khi kéo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, mode, camPath, cameraHeightMm, lensMm, lightingPreview, sectionMm, ground]);
+  }, [scene, mode, camPath, cameraHeightMm, lensMm, lightingPreview, sectionMm, ground, selectedId]);
 
   return <div ref={containerRef} className={className} style={{ width: '100%', height: '100%', minHeight: 320, position: 'relative' }} />;
 }

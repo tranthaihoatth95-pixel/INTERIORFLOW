@@ -37,6 +37,7 @@ import ModeSwitchBar from '@/components/render-studio/ModeSwitchBar';
 import Command3DPanel, { type Command3DTab, type WallDraft3D } from '@/components/render-studio/Command3DPanel';
 import ToolDock3D from '@/components/render-studio/ToolDock3D';
 import Tool3DBar from '@/components/render-studio/Tool3DBar';
+import StageToolbelt from '@/components/ui/StageToolbelt';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import PanelFlank from '@/components/ui/PanelFlank';
 import KetXuatPanel from '@/components/render-studio/KetXuatPanel';
@@ -567,6 +568,17 @@ export default function Render3DModeSkeleton() {
           snap3d={{ settings: snapSettings, gridStepMm }}
           label={soKhoi > 0 ? 'Khối xám · chưa vật liệu' : 'Không gian trống'}
         >
+          {/* LANE D (20/08) — Toolbelt năng lực gộp cho chặng Vẽ 3D. Registry `compound.ts` đã
+              khai `image-to-3d.stages = ['cad','render']` từ trước (cửa Ảnh→Spec ĐÃ thiết kế
+              để bấm được ở đây) nhưng KHÔNG nơi nào mount `<StageToolbelt stage="render">` —
+              chỉ `CadToolbelt` (stage="cad") gọi nó. Cửa duyệt G1-G4 vì vậy mồ côi ở chặng 3D:
+              registry hứa, không ai mở cửa. Đặt top-center (mẫu vị trí switcher mặc định của
+              `ModeShell`, ở đây bị `hideBuiltInSwitcher`/`ModeSwitchBar` thay chỗ nên top đang
+              trống) — không đụng ToolDock3D/Tool3DBar/QuickCommandBox ở đáy. */}
+          <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 8 }}>
+            <StageToolbelt stage="render" coDoiTuongChon={!!viewportSelectedId} />
+          </div>
+
           {/* HUD giờ nắng — CHỈ hiện trong lúc 3 ngón đang quét (VIỆC 3.d). Nền đặc, không
               backdrop-filter (G9: trần 4 tấm kính trên WebGL đã dùng hết cho toolbelt/nút Dựng
               ảnh/ViewCube/Lightbox). */}

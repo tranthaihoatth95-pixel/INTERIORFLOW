@@ -145,6 +145,7 @@ export function Viewport3D({
       <Scene3DViewer
         scene={scene}
         mode={mode}
+        selectedId={selectedId}
         camPath={camPath}
         cameraHeightMm={cameraHeightMm}
         lensMm={lensMm}
