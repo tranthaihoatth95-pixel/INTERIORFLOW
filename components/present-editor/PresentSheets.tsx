@@ -54,6 +54,7 @@ const PresentEditor = dynamic(() => import('./PresentEditor'), {
   ),
 });
 const PresentDocTypePicker = dynamic(() => import('./PresentDocTypePicker'), { ssr: false });
+import { useHoSoStatus } from './ho-so-status';
 import type { EditorDeck, EditorSlide } from '@/lib/present-editor/model';
 import { newId } from '@/lib/present-editor/model';
 import { buildStorySetDeck } from '@/lib/present-editor/story-set';
@@ -540,6 +541,18 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
 
   const active = sheets.find((s) => s.id === activeId) ?? sheets[0];
 
+  /* [marker: nguonLienKet] Bắc cờ "đã có hồ sơ chưa" sang `PresentNavigator` (ANH EM, không
+     phải con — nó mount ở `PresentStageScreen`). CÙNG khuôn `usePlayStatus` đã dùng cho ca y
+     hệt của StatusBar; xem `ho-so-status.ts`. Điều kiện dưới đây CHÍNH LÀ điều kiện quyết định
+     mount `PresentDocTypePicker` ở phần render — khai một lần, dùng lại cả hai chỗ, không chép
+     công thức ra hai nơi rồi để chúng phân kỳ. */
+  const setCoHoSo = useHoSoStatus((s) => s.setCoHoSo);
+  const dangOThuVienMau = hydrated && active.deck.slides.length === 0 && !active.deck.docType;
+  useEffect(() => {
+    setCoHoSo(hydrated ? !dangOThuVienMau : null);
+    return () => setCoHoSo(null); // rời chặng ⇒ về "chưa biết", không để cờ cũ nói hộ màn khác
+  }, [hydrated, dangOThuVienMau, setCoHoSo]);
+
   /** Commit deck sống của sheet đang mở vào state sheets (gọi trước mỗi thao tác tab). */
   const commitActive = (list: Sheet[]): Sheet[] =>
     list.map((s) => (s.id === activeId ? { ...s, deck: liveDeck.current } : s));
@@ -657,7 +670,7 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
         {/* Chỉ mount editor SAU hydrate: deck khôi phục phải vào từ initialDeck (key=activeId).
             B2 (4.1.b) — `:importGen` ép remount sau khi nhập .idfp dù id sheet trùng (xem
             docstring importGen phía trên). */}
-        {hydrated && active.deck.slides.length === 0 && !active.deck.docType ? (
+        {dangOThuVienMau ? (
           <PresentDocTypePicker
             onChooseBlankDeck={() => chooseDeck('blank')}
             onChooseMagicDeck={() => chooseDeck('magic')}

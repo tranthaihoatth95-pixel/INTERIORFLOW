@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import { FileSpreadsheet, FileText, Film, Layers3, ListTree, LockKeyhole, Plus, Presentation } from 'lucide-react';
 import { useT } from '@/lib/i18n';
+import NguonLienKet from './NguonLienKet';
 
 export interface PresentDocTypePickerProps {
   onChooseBlankDeck: () => void;
@@ -141,6 +142,11 @@ export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onC
           </h1>
           <p style={{ maxWidth: 540, margin: '0 auto', color: 'var(--t3)', fontSize: 14.5, lineHeight: 1.55 }}>{tr(...current.lead)}</p>
         </div>
+
+        {/* [marker: nguonLienKet] Màn trống phải nói được hồ sơ LẤY SỐ TỪ ĐÂU, không chỉ bày mẫu
+            — xem docstring `NguonLienKet.tsx`. Đứng NGAY dưới đầu đề: người dùng đọc "lấy từ
+            đâu" TRƯỚC khi chọn mẫu, vì đó là thứ quyết định mẫu có nội dung hay không. */}
+        <NguonLienKet />
 
         <nav aria-label={tr('Loại hồ sơ', 'Document type')} style={{ display: 'flex', justifyContent: 'center', gap: 5, margin: '32px 0 24px', paddingBottom: 12, borderBottom: '1px solid var(--border)', overflowX: 'auto' }}>
           {(Object.keys(LIBRARY) as Kind[]).map((key) => {
