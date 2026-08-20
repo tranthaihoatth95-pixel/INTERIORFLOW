@@ -190,3 +190,89 @@ Số tương phản xám phụ thuộc `--accent` và `--accent-soft`: **lane v�
 - Ảnh cả cột 8 icon để duyệt mắt (pane hiện không chụp được).
 - Đo tâm quang học ở nấc 52 và 320; đo theme tối.
 - `HE_BIEU_TUONG` mới phủ rail + `CommandIcon`; toolbar khác vẫn gõ `size`/`strokeWidth` tại chỗ.
+
+---
+
+# PHỤ LỤC — LƯỢT 2: Hoà BÁC cách bày cụm CHẶNG (20/08, cùng ngày)
+
+> Hoà: 2D · 3D · Trình chiếu đang đọc ra **ba khối nặng rời rạc**, không phải một bộ.
+> Và: mục đang mở ở đảo VIỆC là **"ô vuông tím to"**.
+
+## A · ĐẢO CHẶNG ĐỌC THÀNH MỘT BỘ — làm gì, số bao nhiêu
+
+| cơ chế | trước | nay | đo được |
+|---|---|---|---|
+| **hộp quang học dùng chung** | không có — mỗi hàng tự đứng | MỘT trường tông ôm cả ba + bo r3 | `color(srgb .129 .118 .098 / 0.03)` — mực 3% |
+| **giãn dọc gọn** | nhịp 2px như đảo việc | **nhịp 0px** (khít hơn đảo việc) | `nhipDoc_chang: 0` ↔ `nhipDoc_viec: 2` |
+| **một trục canh** | — | tâm 8 icon một giá trị | `truc_canh: [24]` — **lệch 0,00px** |
+| nét · bán kính · đầu nét | — | không đổi | nét `1.5` toàn cột · r2 cả tám |
+
+⛔ Ba chặng **không** có nền dày riêng — nền chỉ còn ở hàng đang mở, và ở mức "rất nhẹ" (§B).
+
+🔧 **Nói thẳng một chỗ chưa trọn**: chiều cao hàng chặng và hàng việc **bằng nhau (30px)** — tôi
+đặt `gonDoc ? 30` mà `--row` cũng đang là 30, nên "giãn dọc gọn" hiện chỉ đến từ **nhịp giữa hàng
+(2→0)** + **hộp chung**, không đến từ hàng thấp hơn. Muốn gọn hơn nữa phải hạ hàng chặng xuống
+26-28, nhưng thế là tụt dưới ngưỡng chạm — nên tôi dừng ở đây thay vì đổi lấy một lỗi trợ năng.
+
+## B · NỀN TRẠNG THÁI — hạ còn bao nhiêu
+
+| | trước | **nay** |
+|---|---|---|
+| công thức | `var(--accent-soft)` = accent **14%** | `color-mix(in srgb, var(--accent) **5%**, transparent)` |
+| **tương phản XÁM với nền rail** | 1,20:1 | **1,12:1** |
+| vạch mép (không đổi) | 4,61:1 | **4,61:1** |
+
+Căn cứ hạ chính là số của lượt trước: **nền vốn không phải kênh mạnh** (1,20) còn **vạch mạnh gấp
+bội** (4,61). Giữ nền dày chỉ đổi lấy cảm giác nặng mà không thêm khả năng đọc. ⇒ nền lùi hẳn về
+vai "trường tông rất nhẹ", vạch mép gánh vai chính. Test khoá **trần 6%**.
+
+🆕 **Gỡ thêm một kênh hue**: icon hàng đang mở trước tô `var(--accent)` — tím ở nền **cộng** tím ở
+icon là thứ dựng nên "khối tím". Nay icon đang mở lên **`--t1`** (mực đậm nhất), hàng thường ở
+`--t2`: **cùng màu mực, khác độ đậm** ⇒ kênh sống nguyên khi in trắng đen. **Hue nay chỉ còn ở
+vạch mép** — đúng "màu chỉ hỗ trợ".
+
+Trạng thái đang mở đi **bốn kênh, ba không phải màu**: nền rất nhẹ · vạch 2×18 · tương phản icon ·
+`aria-current`.
+
+## C · VIÊN NHÃN KHI RÊ/FOCUS
+
+Ở nấc ĐỊNH VỊ, rê hoặc **focus bàn phím** → nhãn nở **từ tâm ô icon** ra phải (`transformOrigin:
+left center`, `scaleX` + `opacity`, **không** animate `width`), buông thì thu về. Là con của CHÍNH
+hàng — ⛔ không phải tấm nổi neo theo con trỏ. `prefers-reduced-motion` → hiện thẳng.
+Đo lúc chụp: `{ chu: "Trang chủ", rộng 49px, opacity .86, scaleX đang chạy }`.
+
+Hệ quả: ở nấc 52, hàng **dùng được** thôi bọc `Tooltip` (viên nhãn đã nói tên — hai tấm cùng lúc
+là thứ chốt cấm). Hàng **mờ** vẫn giữ `Tooltip` vì nó chở **LÝ DO**, thứ viên nhãn không chở.
+
+🔴 **HAI BẪY THẬT, phải chữa mới thấy được viên nhãn** — ghi lại vì cả hai đều "đúng mã, sai kết quả":
+1. **Thềm Lớp vẽ đè phần tràn.** Rail và thềm là anh em; thềm đứng sau trong DOM nên phủ lên phần
+   viên nhãn tràn ra. Chữa: nâng rail lên một tầng xếp lớp (`position: relative; zIndex: 5`).
+2. ⭐ **`overflow-y: auto` + `overflow-x: visible` KHÔNG cho tràn ngang.** Theo spec CSS, một trục
+   là scroll thì trục kia tự nâng `visible` → `auto` ⇒ **vẫn cắt**. Lần đầu tôi chỉ mở `overflowX`
+   và viên nhãn vẫn bị xén, chỉ ló đúng một chữ "T" — ảnh chụp cho thấy, đọc mã thì không.
+   Chữa: ở nấc 52 mở **cả hai trục** (8 icon × 30px không bao giờ tràn chiều cao).
+
+## D · ẢNH — `docs/duyet-mat/anh-nav-2026-08-20/`
+
+| tệp | nội dung |
+|---|---|
+| `01-ca-cot-240.png` | **cả cột** ở nấc điều hướng 240, hai đảo, 2D đang mở |
+| `02-cum-chang-dang-mo-240.png` | **cụm CHẶNG cận cảnh** — thấy hộp chung + nền rất nhẹ + vạch mép |
+| `03-ca-cot-52.png` | **cả cột ở nấc rail 52** |
+| `04-cum-chang-52.png` | cụm CHẶNG cận cảnh ở nấc 52 |
+| `05-vien-nhan-khi-re.png` | viên nhãn "Trang chủ" đang nở khi rê |
+
+Công thức chụp (MAIN cấp, chạy được — **không dò lại**): playwright qua đường dẫn tuyệt đối
+`node_modules/playwright/index.mjs` + `launchPersistentContext` profile `~/.if-phien-chup-man`
+(headless vào `/` là màn đăng nhập ⇒ `AppChrome` không mount ⇒ không có rail) +
+`locator(...).screenshot()`. Script: `scratchpad/chup.mjs`.
+
+## ⑦b — CHƯA CHẮC (lượt 2)
+
+1. **"Đọc thành một bộ" vẫn là mắt Hoà quyết.** Hộp chung · nhịp · trục là thước gián tiếp.
+2. **Ảnh chụp ở theme SÁNG, `/cad`, 1440.** Chưa chụp theme tối, chưa chụp `/render` `/present`.
+3. **Viên nhãn không có trên cảm ứng** (không hover). Nấc 52 trên cảm ứng còn Tooltip nhấn-giữ —
+   nhưng tôi **chưa thử trên thiết bị chạm thật**.
+4. **Ảnh `05` bắt được lúc đang nở** (scaleX ~0.3-0.7), không phải trạng thái nở trọn.
+5. **`zIndex: 5` trên rail là thay đổi xếp lớp toàn cục** — chưa soi xem có panel nổi nào của lane
+   khác từng dựa vào việc rail nằm dưới hay không.

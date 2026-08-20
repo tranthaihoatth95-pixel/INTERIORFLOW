@@ -91,6 +91,21 @@ function nacMoDau(dangTrongChang: boolean): NacRail {
   return dangTrongChang ? 'dinhVi' : 'dieuHuong';
 }
 
+/**
+ * NỀN CỦA HÀNG ĐANG MỞ — **rất nhẹ**, chỉ để GỢI Ý.
+ *
+ * 🔴 Hoà bác 20/08: `--accent-soft` (accent 14%) chạy hết bề ngang đọc ra **"ô vuông tím to"** —
+ * đúng thứ chốt cấm. Cường độ quá tay, không phải sai kênh.
+ * Số làm căn cứ hạ (đo ở lượt trước, thang XÁM tức đã vứt hết hue):
+ *   nền 14%  ↔ nền rail : **1,20:1**  — yếu, mà vẫn đủ nặng để đọc ra một khối màu
+ *   vạch mép ↔ nền rail : **4,61:1**  — mạnh gấp bội
+ * ⇒ Nền vốn KHÔNG phải kênh mạnh; giữ nó dày chỉ đổi lấy cảm giác nặng. Hạ về **5%** để nó lùi
+ * hẳn về vai "trường tông rất nhẹ", VẠCH MÉP gánh vai chính.
+ * ⛔ Đừng nâng lại vì "nhìn không rõ" — không rõ thì tăng vạch/tương phản icon, đừng tăng nền.
+ * Dùng `color-mix` tại chỗ chứ không thêm token: `app/globals.css` là vùng lane khác đang ghi.
+ */
+const NEN_DANG_MO = 'color-mix(in srgb, var(--accent) 5%, transparent)';
+
 const laNac = (v: unknown): v is NacRail => v === 'dinhVi' || v === 'dieuHuong' || v === 'duyet';
 
 export function RailDieuHuong() {
@@ -158,12 +173,30 @@ export function RailDieuHuong() {
       className="flex min-h-0 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--panel)]"
       style={{
         width: beRong,
+        // VIÊN NHÃN mọc RA NGOÀI bề ngang 52px, mà thềm Lớp là anh em ĐỨNG SAU trong DOM nên vẽ
+        // đè lên phần tràn (đo được: viên nhãn bị thềm che, chỉ ló một chữ). Nâng cả rail lên một
+        // tầng xếp lớp để phần tràn nằm trên. Rail chỉ rộng 52-320 nên không che gì của thềm.
+        position: 'relative',
+        zIndex: 5,
         // Ẩn tới khi biết nấc chi tiết đã lưu — nhấp nháy đổi bề rộng lúc mở app đọc ra như lỗi.
         visibility: daNap ? 'visible' : 'hidden',
         transition: reduceMotion ? 'none' : 'width .2s var(--ease-apple)',
       }}
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden py-2" style={{ scrollbarWidth: 'thin' }}>
+      {/* Ở nấc ĐỊNH VỊ khung cuộn phải VISIBLE **CẢ HAI TRỤC** — viên nhãn mọc ra ngoài 52px.
+          🔴 Bẫy CSS đã đo: `overflow-y: auto` + `overflow-x: visible` KHÔNG cho ra "tràn ngang
+          được" — theo spec, một trục là scroll thì trục kia tự nâng `visible` → `auto`, tức VẪN
+          CẮT. Lần đầu chỉ mở `overflowX` nên viên nhãn vẫn bị xén, chỉ ló một chữ.
+          Bỏ cuộn dọc ở nấc này không mất gì: 8 icon × ~30px không bao giờ tràn chiều cao màn.
+          Hai nấc rộng giữ `auto/hidden` như cũ. */}
+      <div
+        className="flex min-h-0 flex-1 flex-col gap-1 py-2"
+        style={{
+          scrollbarWidth: 'thin',
+          overflowY: hienChu ? 'auto' : 'visible',
+          overflowX: hienChu ? 'hidden' : 'visible',
+        }}
+      >
         {THU_TU_CUM.map((cum, i) => (
           <div
             key={cum}
@@ -176,8 +209,25 @@ export function RailDieuHuong() {
             // "không thích đường kẻ ngăn một cái rẹt"). 24 > 18 cũ: còn ba cụm thì 18 đủ vì có
             // tiêu đề cụm đỡ; nay ở nấc ĐỊNH VỊ (icon-only, tiêu đề không render) khoảng thở là
             // KÊNH DUY NHẤT nói "đây là hai khối" ⇒ phải đọc được cả khi không có chữ nào.
-            style={{ marginTop: i === 0 ? 0 : 24 }}
-            className="flex flex-col gap-0.5"
+            style={{
+              marginTop: i === 0 ? 0 : 24,
+              // ĐẢO CHẶNG = MỘT HỘP QUANG HỌC DÙNG CHUNG (Hoà bác 20/08: ba chặng đang đọc ra "ba
+              // khối nặng rời rạc"). Một trường tông rất nhẹ ôm CẢ BA + bo r3, thay vì mỗi chặng
+              // một nền riêng. Đây là thứ làm ba cái đọc thành MỘT bộ: chúng nằm chung một hộp,
+              // canh chung một trục, chứ không phải ba nút cạnh nhau.
+              // ⛔ Cấm cho từng hàng chặng một nền dày riêng — nền dày chỉ còn ở mức "rất nhẹ" và
+              // chỉ cho hàng đang mở (xem `NEN_DANG_MO`).
+              ...(cum === 'chang'
+                ? {
+                    background: 'color-mix(in srgb, var(--t1) 3%, transparent)',
+                    borderRadius: RADIUS.r3,
+                    padding: hienChu ? '3px 0' : 3,
+                  }
+                : null),
+            }}
+            // GIÃN DỌC GỌN cho đảo chặng: khoảng giữa ba hàng khít hơn đảo việc (0 vs 2px) — nhịp
+            // dày hơn đọc ra "một cụm liền", nhịp thưa đọc ra "các mục rời".
+            className={cum === 'chang' ? 'flex flex-col' : 'flex flex-col gap-0.5'}
           >
             {hienChu && (
               // `--t3` chứ không `--t4`: đo được 17/08 — --t4 trên --panel chỉ 3,65:1 (Tối) và
@@ -198,6 +248,7 @@ export function RailDieuHuong() {
                 lyDo={lyDoMo(muc, daMoDuAn)}
                 dangMo={dangMo === muc.id}
                 hienChu={hienChu}
+                gonDoc={cum === 'chang'}
                 tinhTrang={tinhTrangCua(muc)}
               />
             ))}
@@ -273,6 +324,7 @@ function HangRail({
   dangMo,
   hienChu,
   tinhTrang,
+  gonDoc,
 }: {
   muc: MucRail;
   duongDi: string | null;
@@ -280,24 +332,44 @@ function HangRail({
   dangMo: boolean;
   hienChu: boolean;
   tinhTrang: string | null;
+  /** Hàng thuộc ĐẢO CHẶNG — nhịp dọc khít hơn để ba cái đọc thành một cụm liền. */
+  gonDoc?: boolean;
 }) {
   const tr = useT();
+  const reduceMotion = useReducedMotion();
   const Icon = muc.icon;
   const nhan = tr(muc.vi, muc.en);
+  /**
+   * VIÊN NHÃN KHI RÊ/FOCUS — chỉ ở nấc ĐỊNH VỊ (icon-only), nơi hàng không có chữ.
+   * Hoà chốt 20/08: icon **nở từ TÂM thành viên nhãn nhỏ** rồi thu về icon — ⛔ KHÔNG phải
+   * tooltip nhảy ra chỗ khác. Nên viên nhãn là con của CHÍNH hàng, mọc từ tâm ô icon
+   * (`transformOrigin` đặt đúng tâm ô 20px + lề), không phải một tấm nổi neo theo con trỏ.
+   * Cả `mouseenter` lẫn `focus` đều mở: bàn phím phải thấy đúng thứ chuột thấy.
+   */
+  const [reVao, setReVao] = useState(false);
+  const hienVien = !hienChu && reVao;
   const lyDoChu = lyDo ? tr(lyDo.vi, lyDo.en) : null;
   const idLyDo = `rail-ly-do-${muc.id}`;
+  // Mở/đóng viên nhãn. Gắn cho CẢ chuột lẫn bàn phím — tablet không có hover nên ở đó viên nhãn
+  // không mọc, và đó là chấp nhận được: nấc định vị trên cảm ứng vẫn còn Tooltip nhấn-giữ.
+  const cuChi = {
+    onMouseEnter: () => setReVao(true),
+    onMouseLeave: () => setReVao(false),
+    onFocus: () => setReVao(true),
+    onBlur: () => setReVao(false),
+  };
 
   const chung: React.CSSProperties = {
     position: 'relative',
     display: 'flex',
     alignItems: 'center',
     gap: 10,
-    minHeight: 'var(--row)',
-    padding: hienChu ? '5px 10px' : '5px 0',
+    minHeight: gonDoc ? 30 : 'var(--row)',
+    padding: gonDoc ? (hienChu ? '3px 10px' : '3px 0') : hienChu ? '5px 10px' : '5px 0',
     margin: '0 4px',
     justifyContent: hienChu ? 'flex-start' : 'center',
     borderRadius: RADIUS.r2,
-    background: dangMo ? 'var(--accent-soft)' : 'transparent',
+    background: dangMo ? NEN_DANG_MO : 'transparent',
     // CHỮ của mục đang mở dùng `--t1`, KHÔNG dùng `--accent`. Đo 17/08: `--accent` trên nền
     // `--accent-soft` chỉ 3,32:1 (Tối) / 3,84:1 (Sáng) — đạt ngưỡng 3:1 cho HÌNH nhưng trượt
     // ngưỡng 4,5:1 cho CHỮ (WCAG 1.4.3). `--t1` cho 14,9 / 13,0. Màu nhấn ở lại đúng chỗ nó hợp
@@ -353,13 +425,44 @@ function HangRail({
           flexShrink: 0,
           display: 'grid',
           placeItems: 'center',
-          // Màu chỉ HỖ TRỢ trạng thái — không phải kênh duy nhất, và không phải danh tính icon.
-          // Bỏ hết màu đi thì nền bo + dấu chỉ mép trái vẫn nói được mục nào đang mở.
-          color: dangMo ? 'var(--accent)' : undefined,
+          // ĐỔI TƯƠNG PHẢN, KHÔNG ĐỔI HUE (Hoà chốt 20/08). Trước đây icon đang mở tô `--accent`
+          // ⇒ tím thành thứ đầu tiên mắt bắt được, cộng với nền tím thành "khối tím". Nay icon
+          // đang mở lên `--t1` (mực đậm nhất) còn hàng thường ở `--t2`: cùng một màu mực, khác
+          // ĐỘ ĐẬM ⇒ kênh sống nguyên vẹn khi in trắng đen. Hue nay chỉ còn ở VẠCH MÉP.
+          color: dangMo ? 'var(--t1)' : undefined,
         }}
       >
         <Icon size={HE_BIEU_TUONG.hinh} strokeWidth={HE_BIEU_TUONG.net} />
       </span>
+      {/* Viên nhãn: nở từ tâm ô icon ra phải. `scaleX` + `opacity` — không animate `width` (giật
+          layout). `prefers-reduced-motion` thắng: hiện thẳng, không nở. */}
+      {!hienChu && (
+        <span
+          aria-hidden
+          data-vien-nhan=""
+          style={{
+            position: 'absolute',
+            left: 'calc(50% + 12px)',
+            top: '50%',
+            transform: `translateY(-50%) scaleX(${hienVien ? 1 : 0})`,
+            transformOrigin: 'left center',
+            opacity: hienVien ? 1 : 0,
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+            padding: '3px 9px',
+            borderRadius: RADIUS.full,
+            background: 'var(--panel)',
+            border: '1px solid var(--vien-mo)',
+            boxShadow: '0 2px 10px rgba(0,0,0,.14)',
+            color: 'var(--t1)',
+            fontSize: 'var(--fs-2xs)',
+            transition: reduceMotion ? 'none' : 'transform .16s var(--ease-apple), opacity .12s linear',
+            zIndex: 2,
+          }}
+        >
+          {nhan}
+        </span>
+      )}
       {hienChu && (
         <span style={{ minWidth: 0, flex: 1 }}>
           <span className="block truncate">{nhan}</span>
@@ -387,6 +490,7 @@ function HangRail({
       <Tooltip label={nhan} desc={lyDoChu ?? undefined} style={{ width: '100%' }}>
         <button
           type="button"
+          {...cuChi}
           aria-disabled="true"
           aria-describedby={lyDoChu ? idLyDo : undefined}
           style={{ ...chung, opacity: 'var(--mo-vo-hieu)', cursor: 'not-allowed' }}
@@ -403,10 +507,29 @@ function HangRail({
     );
   }
 
+  // Ở nấc ĐỊNH VỊ hàng dùng được thì VIÊN NHÃN đã nói tên — bày thêm Tooltip là hai tấm cùng lúc,
+  // và tấm kia neo theo con trỏ đúng thứ chốt cấm. Hàng MỜ vẫn giữ Tooltip vì nó chở LÝ DO, thứ
+  // viên nhãn không chở.
+  if (!hienChu) {
+    return (
+      <Link
+        href={duongDi}
+        {...cuChi}
+        aria-current={dangMo ? 'page' : undefined}
+        aria-label={nhan}
+        style={chung}
+        className="transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
+      >
+        {ruot}
+      </Link>
+    );
+  }
+
   return (
     <Tooltip label={nhan} style={{ width: '100%' }}>
       <Link
         href={duongDi}
+        {...cuChi}
         aria-current={dangMo ? 'page' : undefined}
         style={chung}
         className="transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"

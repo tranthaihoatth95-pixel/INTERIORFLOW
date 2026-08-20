@@ -322,7 +322,23 @@ ok(
   );
   ok('có DẤU CHỈ hình dạng cho mục đang mở (kênh sống được khi bỏ màu)', /data-chi-dau="dang-mo"/.test(rail));
   ok('có kênh trợ năng độc lập màu: aria-current', /aria-current=/.test(rail));
-  ok('có NỀN tông nhẹ bo tròn cho mục đang mở', /dangMo \? 'var\(--accent-soft\)'/.test(rail));
+  // Nền phải là trường tông RẤT NHẸ, không phải "ô vuông tím to" (Hoà bác 20/08).
+  // Khoá bằng SỐ: `--accent-soft` là 14%; trần mới là 6%.
+  const mNen = /color-mix\(in srgb, var\(--accent\) ([0-9.]+)%/.exec(rail);
+  ok('nền hàng đang mở khai bằng color-mix, không dùng lại --accent-soft 14%', mNen !== null && !/dangMo \? 'var\(--accent-soft\)'/.test(rail));
+  ok('nền hàng đang mở ≤ 6% — trường tông rất nhẹ, vạch mép mới là kênh chính', mNen !== null && parseFloat(mNen[1]) <= 6);
+  ok(
+    'icon đang mở đổi TƯƠNG PHẢN (--t1), không đổi HUE (--accent) — hue chỉ còn ở vạch mép',
+    /color: dangMo \? 'var\(--t1\)'/.test(rail),
+  );
+  ok(
+    'ĐẢO CHẶNG có HỘP QUANG HỌC DÙNG CHUNG ôm cả ba, không phải ba nền riêng',
+    /cum === 'chang'/.test(rail) && /color-mix\(in srgb, var\(--t1\) 3%/.test(rail),
+  );
+  ok('đảo chặng giãn dọc GỌN hơn đảo việc', /gonDoc \? 30 :/.test(rail));
+  ok('có VIÊN NHÃN mọc từ tâm khi rê/focus ở nấc định vị', /data-vien-nhan/.test(rail) && /transformOrigin: 'left center'/.test(rail));
+  ok('viên nhãn mở bằng CẢ chuột lẫn bàn phím', /onFocus: \(\) => setReVao\(true\)/.test(rail));
+  ok('viên nhãn tuân prefers-reduced-motion', /reduceMotion \? 'none' : 'transform/.test(rail));
   ok('ô đặt icon cố định để tâm quang học thẳng trục', /data-o-icon/.test(rail));
 }
 
