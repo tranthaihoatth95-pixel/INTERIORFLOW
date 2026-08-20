@@ -39,6 +39,8 @@ import ToolDock3D from '@/components/render-studio/ToolDock3D';
 import Tool3DBar from '@/components/render-studio/Tool3DBar';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import PanelFlank from '@/components/ui/PanelFlank';
+import KetXuatPanel from '@/components/render-studio/KetXuatPanel';
+import type { Scene3DCameraApi } from '@/components/three/Scene3DViewer';
 import { SECTION_LAYER_KEYS, type SectionAcceptPayload } from '@/components/render-studio/SectionExtractPanel';
 import { SECTION_LAYERS } from '@/lib/three/section-entities';
 import { useLevelUi, UNASSIGNED_LEVEL, ROOM_LIGHT_KINDS, ROOM_LIGHT_DEFAULT_Z_MM } from '@/components/render-studio/scene3d-ui';
@@ -328,6 +330,9 @@ export default function Render3DModeSkeleton() {
     return () => window.removeEventListener('keydown', onUndoKey);
   }, [tr]);
 
+  // LANE C — ref camera SỐNG, mượn từ Viewport3D để `KetXuatPanel` chụp đúng góc đang nhìn.
+  const cameraApiRef = useRef<Scene3DCameraApi | null>(null);
+
   const soKhoi = scene?.groups.length ?? 0;
   soKhoiRef.current = soKhoi;
   const coBanVe = doc.entities.length > 0;
@@ -550,6 +555,7 @@ export default function Render3DModeSkeleton() {
       >
         <Viewport3D
           scene={visibleScene ?? EMPTY_SCENE_3D}
+          cameraApiRef={cameraApiRef}
           selectedId={viewportSelectedId}
           mode="massing"
           onNudge={handleNudge}
@@ -761,6 +767,13 @@ export default function Render3DModeSkeleton() {
 
         <ModeSwitchBar />
       </div>
+
+      {/* LANE C (20/08) — bảng Kết xuất + Chuyển động. Đứng mép PHẢI, cùng mẫu tay cầm PanelFlank
+          với bảng lệnh bên trái (chốt 07/08 mục 10: một mẫu thu/mở cho toàn app). Nó đọc camera
+          SỐNG qua `cameraApiRef` mượn từ Viewport3D — không dựng viewport thứ hai. */}
+      <PanelFlank side="right" storageKey="render3d.ketxuat-panel" label={tr('bảng kết xuất', 'render panel')} defaultOpen={false}>
+        <KetXuatPanel scene={visibleScene ?? null} cameraApiRef={cameraApiRef} soKhoi={soKhoi} />
+      </PanelFlank>
     </div>
   );
 }

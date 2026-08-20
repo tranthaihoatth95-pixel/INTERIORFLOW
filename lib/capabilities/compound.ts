@@ -64,10 +64,22 @@ export interface NangLucGop {
   stages: Stage[];
   beMat: BeMat[];
   /**
-   * Các node `ai.*`/lệnh nội bộ mà năng lực này điều phối. TRỎ tới `lib/nodes/registry.ts`,
-   * KHÔNG chép định nghĩa. Nhiều id ở đây = một icon ở kia — đó chính là điểm của "gộp".
+   * Các node mà năng lực này điều phối — **BẮT BUỘC là `type` CÓ THẬT trong
+   * `lib/nodes/registry.ts`**. TRỎ tới, KHÔNG chép định nghĩa. Nhiều id ở đây = một icon ở kia,
+   * đó chính là điểm của "gộp".
+   *
+   * 🔴 SỬA 20/08 — lỗi của chính bản đầu tiên, do lane thi công bắt được: ba id
+   * `vision.measureObjectTiered` · `idfc.fromPhoto` · `cad.campath` KHÔNG PHẢI node, chúng là
+   * TÊN HÀM trong `lib/vision`/`lib/idfc-import`/`lib/cad`. Trộn hai bộ từ vựng vào một trường
+   * ⇒ lane nào gọi `getDefinition(id)` theo khuôn sẽ ném lỗi. Nay tách: node ở đây, hàm ở
+   * `hamNoiBo`. Có test canh (`compound.test.ts`) — thêm id ma là test đỏ.
    */
   lenhNoiBo: string[];
+  /**
+   * Máy nội bộ KHÔNG phải node — hàm/module trong `lib/`. Khai riêng vì chúng không tra được
+   * qua registry node, và vì lẫn hai thứ này chính là lỗi vừa phải sửa ở trên.
+   */
+  hamNoiBo?: string[];
   /** Đầu ra mang mức sự thật nào (luật ⑤). */
   mucSuThat: MucSuThat;
   /** Luôn true ở tầng này (luật ④) — khai tường minh để ai bỏ nó phải cố ý. */
@@ -115,8 +127,10 @@ export const NANG_LUC_GOP: readonly NangLucGop[] = [
     icon: 'Box',
     stages: ['cad', 'render'],
     beMat: ['canhTro', 'toolbelt', 'toolWindow'],
-    // Trỏ vào máy THẬT đang có: single-view-metrology + idfc-import (xem lib/vision, lib/idfc-import).
-    lenhNoiBo: ['vision.measureObjectTiered', 'idfc.fromPhoto'],
+    // KHÔNG có node nào cho việc này — máy thật là HÀM trong lib/ (đó là lý do trường `hamNoiBo`
+    // tồn tại; bản đầu khai nhầm chúng thành node).
+    lenhNoiBo: [],
+    hamNoiBo: ['lib/vision/single-view-metrology#measureObjectTiered', 'lib/idfc-import/from-photo#buildIdfcFromPhoto'],
     mucSuThat: 'suyRa',
     deXuat: true,
     nacMacDinh: 'nhanh',
@@ -161,8 +175,10 @@ export const NANG_LUC_GOP: readonly NangLucGop[] = [
     icon: 'Film',
     stages: ['render', 'present'],
     beMat: ['toolbelt', 'toolWindow'],
-    // CamPath đã có thật (lib/cad/campath) — đây là CONNECT, không phải trình dựng phim mới.
-    lenhNoiBo: ['cad.campath', 'ai.image2video'],
+    // CamPath đã có thật nhưng là HÀM chứ không phải node — đây là CONNECT, không phải trình
+    // dựng phim mới.
+    lenhNoiBo: ['ai.image2video'],
+    hamNoiBo: ['lib/cad/campath'],
     mucSuThat: 'khongPhaiSoDo',
     deXuat: true,
     nacMacDinh: 'nhanh',

@@ -52,6 +52,13 @@ export interface Viewport3DProps {
   /** T4 (P14) — bắt điểm 3D: SnapSettings của useCadStore + bước lưới mm. Viewport chỉ CHUYỂN
    * TIẾP (cùng khuôn lightMarkers) — bỏ trống = không bắt, chỗ chụp ảnh không bị đụng. */
   snap3d?: { settings: import('@/lib/cad/store').SnapSettings; gridStepMm: number } | null;
+  /**
+   * LANE C (20/08) — mượn ref camera SỐNG ra ngoài. Bỏ trống thì Viewport tự giữ ref riêng y như
+   * trước (ViewCube vẫn chạy); truyền vào thì nơi mount đọc được `camera`/`controls` thật để CHỤP
+   * đúng góc đang nhìn (`components/three/capture-live.ts`). Chỉ MƯỢN, không đổi hành vi: cùng
+   * một ref được truyền tiếp xuống `Scene3DViewer` như cũ.
+   */
+  cameraApiRef?: React.MutableRefObject<Scene3DCameraApi | null>;
   /** lớp phủ riêng của nơi dùng (empty state, trình tự bước…) — nằm TRÊN cảnh, dưới ViewCube. */
   children?: React.ReactNode;
 }
@@ -94,11 +101,14 @@ export function Viewport3D({
   label = 'Khối xám · chưa vật liệu',
   ground = false,
   snap3d = null,
+  cameraApiRef: cameraApiRefNgoai,
   children,
 }: Viewport3DProps) {
   // PHIẾU ĐỢT 7 NHÓM B — cầu nối camera SỐNG cho ViewCube3D, xem comment `Scene3DCameraApi`
   // (`Scene3DViewer.tsx`). Viewport3D chỉ CHUYỂN TIẾP ref, không tự đọc/ghi vào đây.
-  const cameraApiRef = useRef<Scene3DCameraApi | null>(null);
+  // Ref nội bộ chỉ dùng khi nơi mount KHÔNG truyền ref của mình vào (giữ nguyên hành vi cũ).
+  const cameraApiRefNoi = useRef<Scene3DCameraApi | null>(null);
+  const cameraApiRef = cameraApiRefNgoai ?? cameraApiRefNoi;
   const tr = useT();
   // G-M18-04 — walk/campath tự lái camera mỗi khung (xem `Scene3DCameraApi.fit`), nút mờ đi kèm
   // lý do thay vì ẩn hẳn (đúng §9 "disabled kèm lý do", không phải nút giả vì 2 mode này thật sự

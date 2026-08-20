@@ -13,6 +13,7 @@
 import {
   MousePointer2, Move, RotateCw, Copy, FlipHorizontal2, Trash2,
   Undo2, Redo2, MoveDiagonal, Type, HelpCircle,
+  Sparkles, Box, Camera, Clapperboard, Film, LayoutGrid, ImagePlus,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ThaoTacGlyph, type ThaoTacKey } from '@/lib/ui/thao-tac-glyph';
@@ -20,6 +21,11 @@ import { ThaoTacGlyph, type ThaoTacKey } from '@/lib/ui/thao-tac-glyph';
 const MAP = {
   MousePointer2, Move, RotateCw, Copy, FlipHorizontal2, Trash2,
   Undo2, Redo2, MoveDiagonal, Type, HelpCircle,
+  // 20/08 (LANE A) — icon của NĂNG LỰC GỘP (`lib/capabilities/compound.ts`). Cùng bảng tra với
+  // lệnh đơn vì luật ① của bảng năng lực là "MỘT năng lực = MỘT icon xuyên toàn app": hai bảng
+  // icon sẽ cho phép hai chỗ vẽ cùng một năng lực bằng hai hình khác nhau.
+  // `ImagePlus` không thuộc bảng năng lực — nó là nút CHỌN NGUỒN của Toolbelt (bước SOURCE).
+  Sparkles, Box, Camera, Clapperboard, Film, LayoutGrid, ImagePlus,
 } as const;
 
 export type CommandIconName = keyof typeof MAP;

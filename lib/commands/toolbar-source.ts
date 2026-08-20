@@ -32,6 +32,8 @@
 import type { CommandDef, Stage, WhenCtx } from './registry';
 import { COMMANDS } from './registry';
 import type { ThaoTacKey } from '../ui/thao-tac-glyph';
+import { workingSet, type NacSau, type NangLucGop } from '../capabilities/compound';
+import { sanSangDung } from '../capabilities/visual-generate';
 
 /* ─────────────────────────── tầng ① — lệnh chung ─────────────────────────── */
 
@@ -273,4 +275,90 @@ export function findByDirectKey(rawKey: string, ctx: WhenCtx): CommandDef | unde
   const k = rawKey.trim().toLowerCase();
   if (!k) return undefined;
   return COMMANDS.find((c) => c.directKey?.toLowerCase() === k && (c.stages ?? ['cad']).includes(stage));
+}
+
+/* ═══════════════════════════ tầng ②′ — WORKING SET NĂNG LỰC GỘP ═══════════════════════════
+   19-20/08 (Frontier LANE A). Thanh công cụ chặng nay cấp HAI thứ, không phải một:
+     · tầng ①  `commonCommandsFor()` — LỆNH ĐƠN, hạt thao tác ("xoay", "chép", "đo").
+     · tầng ②′ `workingSetChips()`   — NĂNG LỰC GỘP, hạt Ý ĐỊNH ("dựng hình ảnh").
+   Hai hạt khác nhau nên KHÔNG trộn vào một danh sách: trộn thì "Xoay" đứng cạnh "Dựng hình ảnh"
+   như hai thứ ngang hàng, trong khi một cái là một cú bấm còn cái kia là cả một dây chuyền có
+   tiêu tiền và có cửa duyệt. Mặt tiền vẽ hai cụm, ngăn bằng `ToolbarBar.Sep`.
+
+   VÌ SAO ĐẶT Ở ĐÂY, KHÔNG PHẢI FILE MỚI (luật B25 — EXTEND NEAREST CONTRACT):
+   file này đã là **cửa duy nhất** để thanh công cụ đọc sổ. Mở thêm một cửa thứ hai cho năng lực
+   là làm lại đúng cái bệnh B2 sinh ra để chữa (5 sổ lệnh song song). `compound.ts` giữ nguyên vai
+   DỮ LIỆU THUẦN; ở đây chỉ ĐỌC nó qua `workingSet(stage)` (trần 8 do chính nó khai).
+   ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Ngữ cảnh quyết định một năng lực có bấm được LÚC NÀY không. Thuần dữ liệu ⇒ test được. */
+export interface NangLucCtx {
+  stage: Stage;
+  /** Đang có ảnh nguồn trong tay (ảnh chọn · khung nhìn đã chụp · kết quả vừa nhận). */
+  coAnhNguon?: boolean;
+  /** Đang chọn khối/đối tượng trên canvas. */
+  coDoiTuongChon?: boolean;
+}
+
+/** Một năng lực đã dọn sẵn cho mặt tiền vẽ — cùng khuôn `CommonCommand` để hai cụm trông như một. */
+export interface NangLucChip {
+  id: string;
+  label: [string, string];
+  desc: [string, string];
+  icon: string;
+  nacMacDinh: NacSau;
+  enabled: boolean;
+  /** BẮT BUỘC khi `enabled=false` (§9 cấm nút giả). */
+  disabledReason?: string;
+}
+
+/**
+ * Vì sao một năng lực chưa bấm được. Câu chữ theo `SPEC-NGON-NGU-CHI-DAN`: **hiện trạng trước ·
+ * lối ra sau · ≤12 từ · không lộ jargon nội bộ** (không có chữ "node", "provider", "registry").
+ *
+ * Trả `undefined` = năng lực này bấm được. Cổng của `visual-generate` KHÔNG khai lại ở đây mà gọi
+ * thẳng `sanSangDung()` — nút trên thanh và cửa duyệt phải nhận CÙNG một câu trả lời, nên chỉ
+ * được có MỘT chỗ quyết định.
+ */
+function lyDoChuaBam(n: NangLucGop, ctx: NangLucCtx): [string, string] | undefined {
+  if (n.id === 'visual-generate') {
+    const cong = sanSangDung({ coAnhNguon: Boolean(ctx.coAnhNguon) });
+    return cong.sanSang ? undefined : cong.lyDo;
+  }
+  if (n.id === 'image-to-3d') {
+    return ctx.coAnhNguon
+      ? ['Đọc ảnh thành khối chưa nối ở lượt này', 'Image-to-3D is not wired in this build yet']
+      : ['Chưa có ảnh nguồn — chọn một ảnh hoặc khung nhìn', 'No source image — pick an image or a view'];
+  }
+  if (n.id === 'render') return ['Chưa có khung nhìn 3D để kết xuất', 'No 3D view to render yet'];
+  if (n.id === 'motion') {
+    return ['Cần một ảnh đã nhận trước khi cho chuyển động', 'Accept an image first, then add motion'];
+  }
+  if (n.id === 'sequence') return ['Chưa có đường máy quay để ghép chuỗi', 'No camera path to sequence yet'];
+  if (n.id === 'auto-grid') {
+    return ctx.coDoiTuongChon ? undefined : ['Chưa chọn khối nào để dàn trang', 'Nothing selected to lay out'];
+  }
+  return ['Chặng này chưa dùng được năng lực đó', 'This capability is not available in this stage yet'];
+}
+
+/**
+ * Working set của Toolbelt cho một chặng — 4–8 năng lực, trần do `compound.ts` giữ.
+ *
+ * Năng lực chưa chạy được **vẫn trả về**, `enabled=false` kèm lý do — cùng luật với tầng ①: lọc
+ * bỏ là giấu, giấu thì mỗi chặng lại hiện một bộ nút khác nhau, và ô trống chính là bằng chứng
+ * "còn việc" (§9 cấm xoá ô trống cho gọn mắt).
+ */
+export function workingSetChips(ctx: NangLucCtx): NangLucChip[] {
+  return workingSet(ctx.stage).map((n) => {
+    const ly = lyDoChuaBam(n, ctx);
+    return {
+      id: n.id,
+      label: n.ten,
+      desc: n.yDinh,
+      icon: n.icon,
+      nacMacDinh: n.nacMacDinh,
+      enabled: !ly,
+      disabledReason: ly?.[0],
+    };
+  });
 }

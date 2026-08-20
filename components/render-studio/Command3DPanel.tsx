@@ -112,7 +112,12 @@ function ContextQuickTools({ tab, onTaoTuong }: { tab: Command3DTab; onTaoTuong?
     tao: {
       title: ['Bắt đầu từ cấu kiện', 'Start with components'],
       detail: ['Dựng nhanh hoặc kéo cấu kiện có sẵn vào cảnh.', 'Build quickly or place a saved component.'],
-      action: onTaoTuong ? { label: ['Thêm tường', 'Add wall'], icon: Plus, run: onTaoTuong } : { label: ['Mở cấu kiện', 'Browse components'], icon: Box, run: openParts },
+      // 🔴 BUG THẬT bắt lúc nghiệm thu 20/08 (LANE C): trước đây `run: onTaoTuong` truyền THẲNG
+      // hàm vào `onClick` ⇒ React gọi nó với MouseEvent làm tham số đầu ⇒ tham số mặc định
+      // `draft = FIRST_WALL` KHÔNG được áp ⇒ `taoTuongMau` đọc `draft.from.x` trên một event
+      // ⇒ "Cannot read properties of undefined (reading 'x')" và nút "Thêm tường" KHÔNG BAO GIỜ
+      // tạo được tường. Bọc lambda để gọi đúng chữ ký `(draft?: WallDraft3D)`.
+      action: onTaoTuong ? { label: ['Thêm tường', 'Add wall'], icon: Plus, run: () => onTaoTuong() } : { label: ['Mở cấu kiện', 'Browse components'], icon: Box, run: openParts },
     },
     vatlieu: {
       title: ['Gán vật liệu đúng chỗ', 'Assign material in context'],

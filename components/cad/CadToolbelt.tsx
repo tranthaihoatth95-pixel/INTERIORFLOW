@@ -20,6 +20,7 @@
 
 import CadToolbar from './CadToolbar';
 import CadTouchDock from './CadTouchDock';
+import StageToolbelt from '@/components/ui/StageToolbelt';
 import { useCadStore } from '@/lib/cad/store';
 import { RADIUS, concentricRadius } from '@/lib/geometry';
 import { useEffect, useState } from 'react';
@@ -35,6 +36,13 @@ export default function CadToolbelt() {
   const twoRows = cadMode === 'sketch';
   if (cadMode !== 'sketch' && workspace === 'paper') return <PaperToolbelt />;
   return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, maxWidth: '100%', minWidth: 0 }}>
+    {/* 20/08 (LANE A) — hàng NĂNG LỰC GỘP đứng RIÊNG, trên khối kính công cụ. Cố ý không nhét
+        chung một khối: lệnh đơn ("xoay", "đo") và năng lực gộp ("dựng hình ảnh") là hai HẠT khác
+        nhau — một cái là một cú bấm, một cái là cả dây chuyền có tiêu tiền và có cửa duyệt. Xếp
+        chung hàng là nói dối rằng chúng ngang giá. Danh sách đọc từ `workingSetChips()`, thanh 2D
+        không biết gì về nó. */}
+    <StageToolbelt stage="cad" />
     <div
       style={{
         display: 'flex',
@@ -61,6 +69,7 @@ export default function CadToolbelt() {
           <CadTouchDock />
         </div>
       )}
+    </div>
     </div>
   );
 }
