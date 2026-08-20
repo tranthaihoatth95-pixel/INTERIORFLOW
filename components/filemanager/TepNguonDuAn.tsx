@@ -18,10 +18,10 @@
  * engine review — gate ở đây là mắt người (đúng phạm vi phiếu). Nút mờ đi đường
  * `aria-disabled` + `aria-describedby` (khuôn ToolbarChip 16/08), độ mờ qua token `--mo-vo-hieu`.
  *
- * XEM TRƯỚC — nói thật về giới hạn: `ProjectFile` KHÔNG có route đọc nội dung (chỉ
- * `/api/library/[id]/file` cho asset ĐÃ promote). ⇒ ảnh thật chỉ hiện được cho ① tệp vừa upload
- * trong phiên (dataUrl còn trong bộ nhớ) và ② tệp đã promote (đọc qua asset). Tệp cũ chưa
- * promote hiện Ô LOẠI TỆP (badge PNG/PDF…) — không giả vờ là ảnh thật (cùng luật `FileThumb`).
+ * XEM TRƯỚC — 🔄 GIỚI HẠN CŨ ĐÃ GỠ 20/08. Đoạn này TRƯỚC ĐÂY ghi *"`ProjectFile` KHÔNG có route
+ * đọc nội dung ⇒ ảnh thật chỉ hiện cho tệp vừa upload trong phiên hoặc tệp đã promote"* — đúng
+ * lúc viết, nay SAI: `GET /api/project-files/[id]/file` đã live. Ảnh hiện được cho MỌI tệp ảnh,
+ * kể cả sau khi tải lại trang. PDF vẫn là badge loại tệp. Chi tiết ở `OXemTruoc` bên dưới.
  *
  * projectId: đọc `useFlowStore(s => s.currentProjectId)` (cùng nguồn `LibrarySheet.tsx:381`).
  * `/files` vào thẳng bằng URL thì store chưa có dự án ⇒ hiện <select> chọn từ `fetchFlows()`
@@ -85,21 +85,44 @@ function docFileDataUrl(file: File): Promise<string> {
   });
 }
 
-/** Ô xem trước 48px — ảnh thật khi CÓ THẬT (dataUrl phiên / asset đã promote), còn lại là badge
- *  loại tệp. Không bịa hình (cùng luật `FileThumb` của `FileManagerShell`). */
+/**
+ * Ô xem trước 48px — ảnh THẬT, còn lại là badge loại tệp. Không bịa hình (cùng luật `FileThumb`).
+ *
+ * Ba nguồn ảnh, xếp theo độ tươi: ① `dataUrl` của tệp vừa upload trong phiên ② `assetUrl` sau khi
+ * promote ③ **`/api/project-files/[id]/file`** — route đọc nội dung, live 20/08. ③ là thứ vá đúng
+ * ca hỏng: trước nay reload trang là mất ảnh vì `ProjectFile` không có đường đọc nội dung.
+ *
+ * ⚠️ `onError` BẮT BUỘC (bài học D5: asset chết làm VỠ KHUNG + spam console). Ảnh hỏng — file mất
+ * trên đĩa (410), mất mạng, hết phiên (401) — thì **rơi về badge loại tệp**, không để khung vỡ.
+ * PDF vẫn là badge: nhúng viewer là việc khác, không lén làm ở đây.
+ */
 function OXemTruoc({ tep, anhSan }: { tep: TepDuAn; anhSan: string | null }) {
+  const laAnh = loaiTep(tep.mime) === 'anh';
+  // Nguồn ③ chỉ dùng khi hai nguồn trong bộ nhớ không có. `id` là khoá ⇒ đổi tệp là reset.
+  const src = anhSan ?? (laAnh ? `/api/project-files/${encodeURIComponent(tep.id)}/file` : null);
+  const [hong, setHong] = useState(false);
+  useEffect(() => { setHong(false); }, [src]);
+
   const khung: React.CSSProperties = {
     width: 48, height: 48, flexShrink: 0, borderRadius: 'var(--r-2)',
     border: '1px solid var(--border)', background: 'var(--field)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   };
-  if (anhSan && loaiTep(tep.mime) === 'anh') {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <span style={khung}><img src={anhSan} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></span>;
+  if (src && laAnh && !hong) {
+    return (
+      <span style={khung}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src} alt="" data-testid={`tepnguon-anh-${tep.id}`}
+          onError={() => setHong(true)}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      </span>
+    );
   }
   const badge = loaiTep(tep.mime) === 'pdf' ? 'PDF' : (tep.mime.split('/')[1] ?? 'FILE').toUpperCase().slice(0, 4);
   return (
-    <span style={khung} aria-hidden>
+    <span style={khung} aria-hidden data-testid={`tepnguon-badge-${tep.id}`}>
       <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)', color: 'var(--t3)', letterSpacing: '.04em' }}>{badge}</span>
     </span>
   );
