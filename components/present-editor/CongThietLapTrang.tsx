@@ -16,7 +16,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { FileText } from 'lucide-react';
-import ThietLapTrang, { type KhaNang } from './ThietLapTrang';
+import ThietLapTrang from './ThietLapTrang';
+import ThietLapTrangDayDu, { type KhaNang } from './ThietLapTrangDayDu';
 import {
   nhanToTuChang,
   docDauVetNguon,
@@ -61,6 +62,10 @@ let toDaNhan: ToBanVe | null = null;
 export default function CongThietLapTrang({ onMoBangNet }: { onMoBangNet?: () => void }) {
   const [to, setTo] = useState<ToBanVe | null>(toDaNhan);
   const [mo, setMo] = useState(false);
+  // Hai bề mặt, HAI vai — không phải một panel to/nhỏ. `mo` = inspector NHANH bên cạnh;
+  // `dayDu` = chế độ toàn không gian làm việc. Mở đầy đủ thì thu NHANH lại: hai bề mặt cùng
+  // nói về một tờ, bày cả hai là nói hai lần.
+  const [dayDu, setDayDu] = useState(false);
   const nutRef = useRef<HTMLButtonElement | null>(null);
 
   // Consume-ONCE ngay khi chặng Trình chiếu dựng xong. Không có tờ ⇒ y hệt trước, không đổi gì.
@@ -146,15 +151,20 @@ export default function CongThietLapTrang({ onMoBangNet }: { onMoBangNet?: () =>
         <span style={{ fontSize: 10, color: 'var(--t3)' }}>{NHAN_TRANG_THAI[trangThai]}</span>
       </button>
       <ThietLapTrang
-        mo={mo}
-        nguonRef={nutRef}
+        mo={mo && !dayDu}
         onDong={() => setMo(false)}
         to={to}
         onDoiTo={(patch) => capNhat({ ...to, ...patch })}
         trangThai={trangThai}
         onXuLyNguonDoi={xuLy}
-        onMoBangNet={onMoBangNet}
+        onMoDayDu={() => setDayDu(true)}
+      />
+      <ThietLapTrangDayDu
+        mo={dayDu}
+        onDong={() => setDayDu(false)}
+        to={to}
         khaNang={KHA_NANG}
+        onMoBangNet={onMoBangNet}
       />
     </>
   );

@@ -1,27 +1,36 @@
 'use client';
 
 /**
- * components/present-editor/ThietLapTrang.tsx — THIẾT LẬP TRANG của chặng Trình chiếu.
+ * components/present-editor/ThietLapTrang.tsx — THIẾT LẬP TRANG · NHANH.
  *
- * ⭐ Đây là chỗ phân vai NHÌN THẤY ĐƯỢC: 2D/3D sáng tác nội dung · Trình chiếu dàn trang và phát
- * hành. Mọi quyết định về TRANG GIẤY (khổ · hướng · tỉ lệ · lề · khung tên · đầu ra) sống ở đây,
- * không rải mỗi chặng một hộp thoại.
+ * ⭐ Đây là bề mặt phân vai nhìn thấy được: 2D/3D sáng tác nội dung · Trình chiếu dàn trang và
+ * phát hành. Mọi quyết định về TRANG GIẤY sống ở chặng Trình chiếu, không rải mỗi chặng một hộp.
  *
- * Hai tầng theo nhịp ba nấc của app (nấc to = LỚP TIN MỚI, không phải chữ to hơn):
- *  · NHANH — thứ đụng tới mỗi lần dàn trang: khổ · hướng · tỉ lệ · lề · khung tên · preset đầu ra.
- *  · SÂU — thứ mỗi tháng đụng một lần, thu lại mặc định.
+ * 🔴 TÁCH VAI (Hoà chốt 20/08) — Thiết lập trang là HAI CHỖ, không phải một panel:
+ *   · **NHANH** (tệp này): khổ · hướng · tỉ lệ · lề · khung tên ⇒ **inspector BÊN CẠNH**, tờ giấy
+ *     và canvas VẪN THẤY.
+ *   · **ĐẦY ĐỦ** (`ThietLapTrangDayDu.tsx`): 11 mục sâu ⇒ **chế độ toàn không gian làm việc**.
+ * Trước đó tệp này ôm cả hai vai (mục "Thiết lập sâu" bung ngay trong panel) — sai luật *kích cỡ
+ * quyết định LOẠI bề mặt*: bảng lớn không được phép "vẫn là panel nhưng to hơn", nó phải ĐỔI LOẠI.
  *
- * ⛔ LUẬT CẤM BÀY NÚM CHO THỨ BACKEND KHÔNG LÀM ĐƯỢC: mọi núm ở tầng SÂU đều đi qua `KhaNang` —
- * `false` thì nút hiện MỜ kèm LÝ DO THẬT (`aria-disabled` + `aria-describedby`, KHÔNG dùng
- * `title` vì `title` câm trên cảm ứng và Tab bỏ qua nút disabled). Không có đường nào để một núm
- * bày ra mà không nói được nó làm gì.
+ * ⛔ SÁU VÙNG CẤM CHE — vì sao đây là cột NEO chứ không phải bề mặt nổi tự tìm chỗ:
+ *   canvas chính · vật đang chọn · vật nguồn · vùng con trỏ đang thao tác · **Vitals (mép trên)**
+ *   · **dải hành động (mép dưới)**. Hai cái cuối là vùng cấm CỨNG.
+ *   Bề mặt nổi mọc-từ-nguồn (`BeMatNoi`) đặt mình theo hộp nguồn rồi chỉ kẹp trong mép cửa sổ —
+ *   nó KHÔNG biết hai dải thường trực kia, nên hoàn toàn có thể đè lên. Cột neo có `top`/`bottom`
+ *   chừa sẵn thì **không có đường nào che được**, đúng nghĩa vùng cấm cứng chứ không phải ưu tiên
+ *   mềm. (Không sửa `BeMatNoi` — nó là nguyên thể dùng chung, ngoài vùng ghi của lượt này.)
  *
- * ⛔ Kính: gọi `BeMatNoi` (nguyên thể dùng chung), không tự chế lớp kính.
+ * 🔴 VẬT LIỆU: biểu mẫu kỹ thuật ⇒ nền ĐẶC (`--panel`), không kính, không lớp bán trong suốt —
+ * bảng số nhoè là mất uy tín nghề.
+ *
+ * Bốn nhịp: mọc từ nguồn → nở ra → an vị → trở về nguồn. Trượt vào từ mép phải (nơi nút nguồn
+ * đứng) rồi an vị; đóng thì thu ngược về đó. `prefers-reduced-motion` ⇒ hiện thẳng.
  */
 
-import { useRef, useState, type CSSProperties } from 'react';
-import { ChevronDown, ChevronRight, Ruler } from 'lucide-react';
-import { BeMatNoi } from '@/components/ui/BeMatNoi';
+import { useEffect, useState } from 'react';
+import { ChevronRight, X } from 'lucide-react';
+import { DUONG_CONG, giamChuyenDong, thoiLuong } from '@/lib/ui/nhip';
 import { paperSizeMm, type PaperKey, type PaperOrientation } from '@/lib/cad/model';
 import {
   TY_LE_BAN_VE,
@@ -30,92 +39,103 @@ import {
   tyLeApDung,
   vungInMm,
   type ToBanVe,
-  type TyLe,
   type TrangThaiNguon,
   type LoiXuNguonDoi,
 } from '@/lib/present-editor/to-ban-ve';
+import { Muc, HangNut, Chip, Ghi, OKhungTen, oNhap, MONO } from './thiet-lap-trang-parts';
 
 const PAPER_KEYS: PaperKey[] = ['A0', 'A1', 'A2', 'A3', 'A4'];
-const MONO = 'ui-monospace, Menlo, monospace';
 
-/**
- * Năng lực THẬT của đường xuất đang nối. Nơi gọi khai đúng những gì backend làm được; thứ chưa
- * có thì để `false` kèm lý do — panel tự bày mờ. Cấm khai `true` cho thứ chưa nối.
- */
-export interface KhaNang {
-  khoTuyChinh?: string | false;
-  tranLe?: string | false;
-  luoiDuongDan?: string | false;
-  vungIn?: string | false;
-  bangNetIn?: string | false;
-  mauInHoacXam?: string | false;
-  vectorHoacRaster?: string | false;
-  dpi?: string | false;
-  mayIn?: string | false;
-  daiTrang?: string | false;
-  soBan?: string | false;
-}
+/** Hai dải thường trực KHÔNG được che: Vitals mép trên · dải hành động mép dưới. */
+const DAI_TREN = 48;
+const DAI_DUOI = 44;
+const RONG = 300;
 
 export interface ThietLapTrangProps {
   mo: boolean;
-  nguonRef: React.RefObject<HTMLElement | null>;
   onDong: () => void;
   to: ToBanVe | null;
   onDoiTo: (patch: Partial<ToBanVe>) => void;
-  /** trạng thái nguồn tính từ `trangThaiNguon()` — panel chỉ HIỂN THỊ, không tự sửa tờ. */
+  /** trạng thái nguồn tính từ `trangThaiNguon()` — bề mặt này chỉ HIỂN THỊ, không tự sửa tờ. */
   trangThai: TrangThaiNguon;
   /** người chọn cách xử khi nguồn đổi. Không truyền = chưa nối, ba nút hiện mờ. */
   onXuLyNguonDoi?: (loi: LoiXuNguonDoi) => void;
-  /** mở bảng nét in (Màn 8) — có thật ở `components/print/LineweightTable.tsx`. */
-  onMoBangNet?: () => void;
-  khaNang?: KhaNang;
+  /** mở chế độ ĐẦY ĐỦ (toàn không gian làm việc). */
+  onMoDayDu: () => void;
 }
 
 export default function ThietLapTrang({
   mo,
-  nguonRef,
   onDong,
   to,
   onDoiTo,
   trangThai,
   onXuLyNguonDoi,
-  onMoBangNet,
-  khaNang = {},
+  onMoDayDu,
 }: ThietLapTrangProps) {
-  const [sauMo, setSauMo] = useState(false);
   const [tuyChinh, setTuyChinh] = useState('');
+  const [daNo, setDaNo] = useState(false);
+  const giam = giamChuyenDong();
+  const ms = thoiLuong(220, giam);
 
-  if (!to) return null;
+  useEffect(() => {
+    if (!mo) {
+      setDaNo(false);
+      return;
+    }
+    const id = requestAnimationFrame(() => setDaNo(true));
+    return () => cancelAnimationFrame(id);
+  }, [mo]);
 
-  const khoMm = paperMm(to.khoGiay, to.huong);
-  const ap = tyLeApDung(to.tyLe, to.noiDungMm, vungInMm(khoMm, to.le));
+  if (!mo || !to) return null;
+
+  const [rongMm, caoMm] = paperSizeMm(to.khoGiay, to.huong);
+  const ap = tyLeApDung(to.tyLe, to.noiDungMm, vungInMm({ rongMm, caoMm }, to.le));
 
   return (
-    <BeMatNoi
-      mo={mo}
-      nguonRef={nguonRef}
-      bac="bangSau"
-      /**
-       * 🔴 KHAI TAY, KHÔNG ĐỂ SUY TỪ `bac` — luật vật liệu 20/08: VẬT LIỆU THEO CHỨC NĂNG.
-       * Đây là BIỂU MẪU THIẾT LẬP KỸ THUẬT (khổ · tỉ lệ · lề · khung tên) — nhóm phải ĐẶC:
-       * đọc lâu, nhiều núm, và là hồ sơ nghề. Nền mờ nhoè sau bảng số là mất uy tín nghề.
-       * Khuôn dùng ở đây là **VỎ KÍNH + RUỘT GẦN ĐẶC**: `BeMatNoi` lo khung nổi/mọc-từ-nguồn,
-       * còn bề mặt thì `dac` (0.95–0.96). Khai tường minh để ai đổi `bac` về sau KHÔNG vô tình
-       * hạ độ đặc xuống `vua`/`mong` — đó là cách luật này bị phá mà không ai thấy.
-       */
-      doDac="dac"
-      rong={340}
-      nhan="Thiết lập trang"
-      nguCanhNho="present.thiet-lap-trang"
-      onDong={onDong}
+    <aside
+      aria-label="Thiết lập trang"
+      style={{
+        position: 'fixed',
+        top: DAI_TREN,
+        bottom: DAI_DUOI,
+        right: 0,
+        width: RONG,
+        zIndex: 30,
+        background: 'var(--panel)',
+        borderLeft: '1px solid var(--vien-mo)',
+        overflow: 'auto',
+        // nhịp: mọc từ nguồn (mép phải) → nở ra → an vị; đóng thu ngược về đó
+        transform: daNo ? 'translateX(0)' : `translateX(${RONG}px)`,
+        transition: giam ? 'none' : `transform ${ms}ms ${DUONG_CONG}`,
+      }}
     >
-      <div style={{ display: 'grid', gap: 14, padding: '4px 2px' }}>
-        {/* ── Trạng thái nguồn — VIỆC 7. Nguồn đổi thì ĐÁNH DẤU, không tự sửa tờ. ── */}
-        <TrangThaiNguonHang
-          trangThai={trangThai}
-          daPhatHanh={!!to.daPhatHanh}
-          onXuLy={onXuLyNguonDoi}
-        />
+      <div style={{ display: 'grid', gap: 14, padding: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <strong style={{ fontSize: 12, color: 'var(--t1)' }}>Thiết lập trang</strong>
+          <button
+            type="button"
+            onClick={onDong}
+            aria-label="Đóng thiết lập trang"
+            style={{
+              marginLeft: 'auto',
+              display: 'grid',
+              placeItems: 'center',
+              width: 'var(--tap, 32px)',
+              height: 'var(--tap, 32px)',
+              borderRadius: 'var(--r-2)',
+              border: '1px solid var(--vien-mo)',
+              background: 'var(--card)',
+              color: 'var(--t2)',
+              cursor: 'pointer',
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+
+        {/* VIỆC 7 — nguồn đổi thì ĐÁNH DẤU, không tự sửa tờ. */}
+        <TrangThaiNguonHang trangThai={trangThai} daPhatHanh={!!to.daPhatHanh} onXuLy={onXuLyNguonDoi} />
 
         <Muc nhan="Khổ giấy">
           <HangNut>
@@ -136,12 +156,11 @@ export default function ThietLapTrang({
             ))}
           </HangNut>
           <Ghi>
-            {khoMm.rongMm} × {khoMm.caoMm} mm
+            {rongMm} × {caoMm} mm
           </Ghi>
         </Muc>
 
-        {/* ── VIỆC 4 · TỈ LỆ BẢN VẼ. "Vừa khung" là LỰA CHỌN của người, không phải đường
-             thoái lui của máy — xem `tyLeApDung` trong lib/present-editor/to-ban-ve.ts. ── */}
+        {/* VIỆC 4 — "Vừa khung" là LỰA CHỌN của người, không phải đường thoái lui của máy. */}
         <Muc nhan="Tỉ lệ bản vẽ">
           <HangNut>
             {TY_LE_BAN_VE.map((n) => (
@@ -153,10 +172,7 @@ export default function ThietLapTrang({
                 1:{n}
               </Chip>
             ))}
-            <Chip
-              chon={to.tyLe.kieu === 'vua-khung'}
-              onClick={() => onDoiTo({ tyLe: { kieu: 'vua-khung' } })}
-            >
+            <Chip chon={to.tyLe.kieu === 'vua-khung'} onClick={() => onDoiTo({ tyLe: { kieu: 'vua-khung' } })}>
               Vừa khung
             </Chip>
           </HangNut>
@@ -208,67 +224,55 @@ export default function ThietLapTrang({
               aria-label="Lề trang, milimét"
               style={{ flex: 1, accentColor: 'var(--accent)' }}
             />
-            <span style={{ fontFamily: MONO, fontSize: 11, color: 'var(--t2)', minWidth: 34 }}>
-              {to.le} mm
-            </span>
+            <span style={{ fontFamily: MONO, fontSize: 11, color: 'var(--t2)', minWidth: 34 }}>{to.le} mm</span>
           </div>
         </Muc>
 
         <Muc nhan="Khung tên">
           <div style={{ display: 'grid', gap: 6 }}>
-            <OKhungTen nhan="Tên bản vẽ" gt={to.khungTen.tenBanVe} doi={(v) => onDoiTo({ khungTen: { ...to.khungTen, tenBanVe: v } })} />
+            <OKhungTen
+              nhan="Tên bản vẽ"
+              gt={to.khungTen.tenBanVe}
+              doi={(v) => onDoiTo({ khungTen: { ...to.khungTen, tenBanVe: v } })}
+            />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              <OKhungTen nhan="Số tờ" gt={to.khungTen.soTo} doi={(v) => onDoiTo({ khungTen: { ...to.khungTen, soTo: v } })} />
-              <OKhungTen nhan="Bản sửa" gt={to.khungTen.banSua} doi={(v) => onDoiTo({ khungTen: { ...to.khungTen, banSua: v } })} />
+              <OKhungTen
+                nhan="Số tờ"
+                gt={to.khungTen.soTo}
+                doi={(v) => onDoiTo({ khungTen: { ...to.khungTen, soTo: v } })}
+              />
+              <OKhungTen
+                nhan="Bản sửa"
+                gt={to.khungTen.banSua}
+                doi={(v) => onDoiTo({ khungTen: { ...to.khungTen, banSua: v } })}
+              />
             </div>
           </div>
         </Muc>
 
-        {/* ── TẦNG SÂU ── */}
+        {/* Cửa sang chế độ ĐẦY ĐỦ — người dùng CHỦ ĐỘNG mở, không tự bung. */}
         <button
           type="button"
-          onClick={() => setSauMo((s) => !s)}
-          aria-expanded={sauMo}
+          onClick={onMoDayDu}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 6,
-            background: 'transparent',
-            border: 0,
-            padding: '4px 0',
-            color: 'var(--t2)',
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: '.04em',
-            textTransform: 'uppercase',
+            padding: '8px 10px',
+            minHeight: 'var(--tap, 32px)',
+            borderRadius: 'var(--r-2)',
+            border: '1px solid var(--vien-mo)',
+            background: 'var(--card)',
+            color: 'var(--t1)',
+            fontSize: 12,
             cursor: 'pointer',
           }}
         >
-          {sauMo ? <ChevronDown size={13} /> : <ChevronRight size={13} />} Thiết lập sâu
+          Thiết lập đầy đủ
+          <ChevronRight size={14} style={{ marginLeft: 'auto' }} />
         </button>
-
-        {sauMo && (
-          <div style={{ display: 'grid', gap: 7 }}>
-            <NumSau nhan="Khổ tuỳ chỉnh" ly={khaNang.khoTuyChinh} />
-            <NumSau nhan="Tràn lề" ly={khaNang.tranLe} />
-            <NumSau nhan="Lưới · đường dẫn" ly={khaNang.luoiDuongDan} />
-            <NumSau nhan="Vùng in" ly={khaNang.vungIn} />
-            <NumSau
-              nhan="Chế độ độ dày nét"
-              ly={khaNang.bangNetIn}
-              onClick={onMoBangNet}
-              icon={<Ruler size={13} />}
-            />
-            <NumSau nhan="Màu · xám · đơn sắc" ly={khaNang.mauInHoacXam} />
-            <NumSau nhan="Vector hay raster" ly={khaNang.vectorHoacRaster} />
-            <NumSau nhan="DPI" ly={khaNang.dpi} />
-            <NumSau nhan="Máy in · máy vẽ" ly={khaNang.mayIn} />
-            <NumSau nhan="Dải trang" ly={khaNang.daiTrang} />
-            <NumSau nhan="Số bản" ly={khaNang.soBan} />
-          </div>
-        )}
       </div>
-    </BeMatNoi>
+    </aside>
   );
 }
 
@@ -290,22 +294,18 @@ function TrangThaiNguonHang({
       style={{
         padding: '8px 10px',
         borderRadius: 'var(--r-2)',
-        // ⛔ ĐẶC, không bán trong: trước đây là `color-mix(--panel 70%, transparent)` — một lớp
-        // trong suốt NẰM TRÊN bề mặt kính, tức kính-chồng-kính, và làm nhoè đúng hàng chữ mang
-        // trạng thái nguồn (Hiện hành/Có bản mới) — chỗ ít được phép nhoè nhất.
-        background: 'var(--panel)',
+        // ⛔ ĐẶC — dòng mang trạng thái nguồn là chỗ ít được phép nhoè nhất trong cả bề mặt.
+        background: 'var(--card)',
         border: '1px solid var(--vien-mo)',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-        {/* hình dạng + chữ, không chỉ màu — màu không bao giờ là kênh duy nhất */}
+        {/* chấm + CHỮ — màu không bao giờ là kênh duy nhất */}
         <span
           aria-hidden
           style={{ width: 8, height: 8, borderRadius: 'var(--r-full)', background: mau, flex: '0 0 auto' }}
         />
-        <strong style={{ fontSize: 12, color: 'var(--t1)' }}>
-          Nguồn: {NHAN_TRANG_THAI[trangThai]}
-        </strong>
+        <strong style={{ fontSize: 12, color: 'var(--t1)' }}>Nguồn: {NHAN_TRANG_THAI[trangThai]}</strong>
         {daPhatHanh && (
           <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--t3)', fontFamily: MONO }}>
             đã phát hành
@@ -328,7 +328,7 @@ function TrangThaiNguonHang({
                   : null
               }
             />
-            {/* ⛔ Chưa có màn so sánh hai bản ⇒ nút MỜ kèm lý do thật, không bày nút bấm-không-ra-gì. */}
+            {/* ⛔ Chưa có màn so sánh ⇒ nút MỜ kèm lý do thật, không bày nút bấm-không-ra-gì. */}
             <NutXu
               nhan="So sánh"
               loi="so-sanh"
@@ -343,10 +343,6 @@ function TrangThaiNguonHang({
   );
 }
 
-/**
- * Một lối xử khi nguồn đổi. `ly` khác `null` ⇒ lối đó CHƯA đi được, nút mờ kèm đúng lý do đó
- * (`aria-disabled` + `aria-describedby`, không dùng `title`).
- */
 function NutXu({
   nhan,
   loi,
@@ -369,6 +365,7 @@ function NutXu({
         onClick={ly ? undefined : () => onXuLy?.(loi)}
         style={{
           padding: '5px 9px',
+          minHeight: 'var(--tap, 32px)',
           borderRadius: 'var(--r-2)',
           border: '1px solid var(--vien-mo)',
           background: 'var(--card)',
@@ -387,159 +384,4 @@ function NutXu({
       )}
     </>
   );
-}
-
-/* ── mảnh nhỏ ───────────────────────────────────────────────────────────────────── */
-
-function Muc({ nhan, children }: { nhan: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <div
-        style={{
-          fontSize: 10,
-          fontWeight: 700,
-          letterSpacing: '.06em',
-          textTransform: 'uppercase',
-          color: 'var(--t3)',
-          marginBottom: 6,
-        }}
-      >
-        {nhan}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function HangNut({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>{children}</div>;
-}
-
-function Chip({ chon, onClick, children }: { chon: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={chon}
-      style={{
-        padding: '5px 10px',
-        minHeight: 28,
-        borderRadius: 'var(--r-2)',
-        border: `1px solid ${chon ? 'var(--accent)' : 'var(--vien-mo)'}`,
-        background: chon ? 'color-mix(in srgb, var(--accent) 16%, transparent)' : 'var(--card)',
-        color: chon ? 'var(--t1)' : 'var(--t2)',
-        fontSize: 11,
-        fontWeight: chon ? 600 : 500,
-        fontFamily: MONO,
-        cursor: 'pointer',
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
-function Ghi({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ marginTop: 5, fontFamily: MONO, fontSize: 10, color: 'var(--t3)' }}>{children}</div>
-  );
-}
-
-const oNhap: CSSProperties = {
-  width: 56,
-  padding: '4px 6px',
-  borderRadius: 'var(--r-2)',
-  border: '1px solid var(--vien-mo)',
-  background: 'var(--bg)',
-  color: 'var(--t1)',
-  fontFamily: MONO,
-  fontSize: 11,
-};
-
-function OKhungTen({ nhan, gt, doi }: { nhan: string; gt: string; doi: (v: string) => void }) {
-  return (
-    <label style={{ display: 'grid', gap: 3 }}>
-      <span style={{ fontSize: 10, color: 'var(--t3)' }}>{nhan}</span>
-      <input
-        value={gt}
-        onChange={(e) => doi(e.target.value)}
-        style={{ ...oNhap, width: '100%' }}
-        placeholder="—"
-      />
-    </label>
-  );
-}
-
-/**
- * Một núm ở tầng SÂU. `ly` là chuỗi ⇒ CHƯA LÀM ĐƯỢC, hiện mờ kèm lý do đó. `ly === false` ⇒
- * năng lực có thật, nút bấm được. Không có đường thứ ba: núm không khai năng lực thì mặc định
- * mờ kèm lý do chung — thà nói "chưa nối" còn hơn bày một nút bấm không ra gì.
- */
-function NumSau({
-  nhan,
-  ly,
-  onClick,
-  icon,
-}: {
-  nhan: string;
-  ly?: string | false;
-  onClick?: () => void;
-  icon?: React.ReactNode;
-}) {
-  /**
-   * 🐛 Bắt được lúc nghiệm thu 20/08: `ly === false` (năng lực CÓ THẬT) mà nơi gọi quên truyền
-   * `onClick` thì nút vẫn mờ nhưng ô lý do RỖNG — đúng thứ luật này sinh ra để cấm. Nay ca đó có
-   * câu riêng, nói đúng bản chất: năng lực có, dây chưa nối.
-   */
-  const lyDo =
-    ly === false
-      ? onClick
-        ? null
-        : 'Năng lực này có thật trong app nhưng màn Trình chiếu chưa nối nút mở.'
-      : ly || 'Chưa nối vào đường xuất — chưa bày núm cho thứ chưa chạy được.';
-  const moKhoa = !lyDo && !!onClick;
-  const id = `sau-${nhan.replace(/\s+/g, '-')}-ly`;
-  return (
-    <div>
-      <button
-        type="button"
-        aria-disabled={!moKhoa}
-        aria-describedby={!moKhoa ? id : undefined}
-        onClick={moKhoa ? onClick : undefined}
-        style={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 7,
-          padding: '7px 9px',
-          minHeight: 32,
-          borderRadius: 'var(--r-2)',
-          border: '1px solid var(--vien-mo)',
-          background: 'var(--card)',
-          color: 'var(--t1)',
-          fontSize: 11,
-          textAlign: 'left',
-          cursor: moKhoa ? 'pointer' : 'default',
-          opacity: moKhoa ? 1 : 'var(--mo-vo-hieu)',
-        }}
-      >
-        {icon}
-        {nhan}
-      </button>
-      {!moKhoa && (
-        <p id={id} style={{ margin: '3px 0 0 9px', fontSize: 10, lineHeight: 1.45, color: 'var(--t3)' }}>
-          {lyDo}
-        </p>
-      )}
-    </div>
-  );
-}
-
-/**
- * Khổ giấy mm — GỌI LẠI `paperSizeMm` của `lib/cad/model.ts`, KHÔNG khai bảng ISO thứ hai.
- * (Bản nháp đầu của tệp này có chép lại bảng A0-A4; đó đúng là kiểu "nguồn thứ hai" mà luật cấm.)
- */
-function paperMm(k: PaperKey, huong: PaperOrientation) {
-  const [rongMm, caoMm] = paperSizeMm(k, huong);
-  return { rongMm, caoMm };
 }

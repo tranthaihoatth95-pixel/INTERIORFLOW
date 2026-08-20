@@ -159,6 +159,53 @@ Kèm: bắt chính mình chép lại bảng ISO A0–A4 trong `ThietLapTrang` �
 
 ---
 
+## 🔴 ĐÍNH CHÍNH 2 — TÁCH VAI THIẾT LẬP TRANG (Hoà phán đích danh, 20/08)
+
+Luật: **Thiết lập trang là HAI CHỖ, không phải một panel** — NHANH ⇒ inspector **bên cạnh**
+(canvas/tờ vẫn thấy); ĐẦY ĐỦ ⇒ **chế độ toàn không gian làm việc**. Kèm luật chung: *kích cỡ
+quyết định LOẠI bề mặt* — bảng lớn **không được** "vẫn là panel nhưng to hơn", nó phải **đổi loại**.
+Và ⛔ **cấm biểu mẫu dài ra giữa màn**.
+
+**Đã tách vai, không viết lại logic** (đúng dặn dò):
+
+| | Trước | Sau |
+|---|---|---|
+| NHANH | mục trong panel nổi 340px | `ThietLapTrang.tsx` — **cột neo mép phải**, `top:48 / bottom:44` |
+| SÂU (11 mục) | mục xổ **trong cùng panel** | `ThietLapTrangDayDu.tsx` — **chế độ riêng**, header + đường quay về |
+| mảnh chung | — | `thiet-lap-trang-parts.tsx` (một chỗ khai, hai bề mặt gọi) |
+
+Logic NHANH giữ nguyên; 11 mục sâu **giữ nguyên cách mờ-kèm-lý-do-thật**, chỉ đổi chỗ ở.
+
+### ⛔ Sáu vùng cấm che — vì sao bỏ bề mặt nổi, dùng CỘT NEO
+
+`BeMatNoi` đặt mình theo hộp nguồn rồi **chỉ kẹp trong mép cửa sổ** — nó **không biết** Vitals
+(mép trên) và dải hành động (mép dưới), nên hoàn toàn có thể đè lên. Hai dải đó là **vùng cấm
+CỨNG**, không phải ưu tiên mềm ⇒ phải là thứ **không có đường nào che được**, không phải thứ
+"thường thì không che". Cột neo có `top`/`bottom` chừa sẵn thì đạt điều đó bằng cấu trúc.
+⚠️ **Không sửa `BeMatNoi`** — nguyên thể dùng chung, ngoài vùng ghi lane này. Cột neo nền **đặc**
+(`--panel`) nên **không phải tự chế kính**: biểu mẫu kỹ thuật vốn không được là kính.
+
+**Đo trên app thật 1440×900**:
+- NHANH: `x=1140 · w=300 · top=48 · bottom=44` ⇒ dính mép phải, **chừa đúng hai dải**, canvas còn
+  1140px vẫn thấy trọn. Nền `rgb(250,248,244)`, `backdrop-filter: none` — đặc thật.
+- ĐẦY ĐỦ: `0,48 · 1440×808` ⇒ **cũng chừa hai dải** (chiếm *không gian làm việc*, không chiếm cả app).
+- §13 thứ bậc: tờ giấy **640×453**, tỉ lệ **1.413** so với A3 thật **1.414** ⇒ tờ là hình học
+  đúng và **lớn hơn hẳn** cột núm 300px. Không phải hai cột bằng nhau.
+- Mở ĐẦY ĐỦ thì NHANH **tự ẩn** (`nhanhConHien: false`) — hai bề mặt cùng nói về một tờ, bày cả
+  hai là nói hai lần.
+- **Bốn nhịp**: mọc từ mép phải → nở ra → an vị → `Esc` **trở về ngữ cảnh** (đã đo: đầy đủ đóng,
+  NHANH trở lại). `prefers-reduced-motion` ⇒ `transition: none`.
+
+📌 **Câu panel-tự-mở nay đóng theo lời giải của MAIN**: giữ tự-mở, nhưng mở ra là **NHANH bên
+cạnh** — nối tiếp cú bấm "Gửi sang Trình chiếu", không che tờ, nên không đọc ra như ép bước.
+ĐẦY ĐỦ thì người dùng **chủ động** mở.
+
+⚠️ **Một quan sát cần MAIN biết**: cột NHANH đang **đè lên panel "BẢNG KIỂM"** ở mép phải Present.
+Không nằm trong sáu vùng cấm, nhưng là hai panel tranh một mép — cần chốt thứ tự/xếp chồng khi
+làm màn chờ Present.
+
+---
+
 ## 📌 VỀ TIN THỨ HAI — MÀN CHỜ PRESENT BỊ BÁC
 
 Đọc để không xây tiếp lên nền đã bị bác. **Không mở rộng phạm vi lượt này** theo đúng dặn dò.
