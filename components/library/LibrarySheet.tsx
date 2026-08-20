@@ -34,6 +34,7 @@ import { loadIdfcStore, hydrateIdfcStore, type StoredIdfc } from '@/lib/library/
 import { getPbr } from '@/lib/materials/pbr-store';
 import { exportIdfc, IDFC_KINDS, type IdfcKind } from '@/lib/cad/idfc';
 import { resolveLibraryItem } from '@/lib/cad/library-item-resolve';
+import { unavailableReason } from '@/lib/cad/library-code-map';
 import { useLibrarySheetState } from '@/lib/library/use-library-sheet';
 import { useLibraryLocalState } from '@/lib/library/local-state';
 import { CLUSTER_SPECS } from '@/lib/cad/workstation-clusters';
@@ -873,6 +874,16 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                    khái niệm biến thể nên không tính, KHÔNG đoán bừa "có tham số" cho nó. */
                 const paramHit = cardSize === 'lg' ? resolveLibraryItem({ name: it.name, code: it.code, kind: it.kind }, null) : null;
                 const hasVariants = paramHit?.via === 'blockdef' && !!paramHit.def.variants?.length;
+                /* 20/08 — §9 CẤM NÚT GIẢ: món kho THẬT SỰ chưa có hình (đo được: 'SCALE-H' —
+                   không có hình người tỉ lệ nào trong cả 46 `BLOCKS` lẫn 54 block .dxf) thì kệ
+                   phải NÓI THẲNG, không để người dùng kéo một thứ không bao giờ xuống được.
+                   Tra O(1) theo mã (`unavailableReason`) nên chạy được ở MỌI nấc thẻ, khác
+                   `paramHit` phải gate ở nấc lớn vì dò khớp tên tốn.
+                   Dùng `aria-disabled` chứ KHÔNG dùng `disabled`: nút `disabled` bị Tab bỏ qua
+                   ⇒ lý do gắn kèm không bao giờ tới được bàn phím và trình đọc màn hình — đúng
+                   bài học 16/08 ở `ToolbarChip`. */
+                const khongCo = unavailableReason(it.code);
+                const reasonId = khongCo ? `lib-khongco-${it.id}` : undefined;
                 return (
                 /* Bấm = CHỌN (mở cột thông số ④), KHÔNG dùng luôn như trước. Mock đặt hành động
                    vào cột thông số ("Dùng cho vật đang chọn"), và đó cũng là hành vi đúng: trước
@@ -884,18 +895,38 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                   type="button"
                   key={it.id}
                   className={it.id === picked ? 'it on' : 'it'}
-                  draggable
-                  title={tr('Bấm để xem thông số · bấm đúp để dùng', 'Click for specs · double-click to use')}
+                  draggable={!khongCo}
+                  style={khongCo ? { opacity: 'var(--mo-vo-hieu)' } : undefined}
+                  aria-disabled={khongCo ? true : undefined}
+                  aria-describedby={reasonId}
+                  title={
+                    khongCo
+                      ? tr(khongCo.vi, khongCo.en)
+                      : tr('Bấm để xem thông số · bấm đúp để dùng', 'Click for specs · double-click to use')
+                  }
                   onDragStart={(e) => {
+                    if (khongCo) {
+                      e.preventDefault();
+                      return;
+                    }
                     e.dataTransfer.setData('application/x-if-library-item', it.id);
                     e.dataTransfer.effectAllowed = 'copy';
                   }}
                   onDragEnd={(e) => {
                     // Thả ra ngoài sheet = dùng món (canvas thật nối sau — xem báo cáo).
-                    if (e.dataTransfer.dropEffect !== 'none') instantiate(it);
+                    if (!khongCo && e.dataTransfer.dropEffect !== 'none') instantiate(it);
                   }}
-                  onClick={() => setPicked((cur) => (cur === it.id ? null : it.id))}
-                  onDoubleClick={() => use(it)}
+                  onClick={() => {
+                    // Vẫn CHỌN được để đọc lý do ở cột thông số; chỉ chặn đường DÙNG.
+                    setPicked((cur) => (cur === it.id ? null : it.id));
+                  }}
+                  onDoubleClick={() => {
+                    if (khongCo) {
+                      pushLibraryToast(tr(khongCo.vi, khongCo.en));
+                      return;
+                    }
+                    use(it);
+                  }}
                   aria-pressed={picked === it.id}
                 >
                   {/* Ô xem trước theo BẬC THANG ảnh-thật → quả-cầu → vân-procedural (xem
@@ -924,6 +955,11 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                     <span className="b" style={{ display: 'block' }}>{it.code}</span>
                     {dimsLabel && <span className="dim" style={{ display: 'block' }}>{dimsLabel}</span>}
                   </span>
+                  {khongCo && (
+                    <span id={reasonId} className="if-tooltip-a11y">
+                      {tr(khongCo.vi, khongCo.en)}
+                    </span>
+                  )}
                 </button>
                 );
               })}
