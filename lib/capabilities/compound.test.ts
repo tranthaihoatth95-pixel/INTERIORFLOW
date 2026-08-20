@@ -9,8 +9,9 @@
  */
 
 import assert from 'node:assert';
+import fs from 'node:fs';
+import path from 'node:path';
 import { NANG_LUC_GOP, nangLucTheoStage, workingSet, TRAN_TOOLBELT } from './compound';
-import { NODE_DEFINITIONS } from '../nodes/registry';
 
 let pass = 0;
 function test(ten: string, fn: () => void) {
@@ -19,7 +20,18 @@ function test(ten: string, fn: () => void) {
   console.log(`  ✓ ${ten}`);
 }
 
-const NODE_TYPES = new Set(NODE_DEFINITIONS.map((d) => d.type));
+/**
+ * Danh sách `type` node đọc bằng cách QUÉT VĂN BẢN `registry.ts`, cố ý KHÔNG `import` nó.
+ *
+ * Lý do (đo 20/08, sự cố thật do chính test này gây ra): `lib/nodes/registry.ts` kéo theo
+ * `@/lib/ai/client`; bộ chạy test của repo không giải alias `@/` trong chuỗi import đó ⇒ `npm test`
+ * chết cả lượt dù chạy riêng bằng `tsx` thì xanh. Đây cũng là lối `external-ref.test.ts` đã dùng
+ * với `schema.prisma` — kiểm hình dạng nguồn thì đọc nguồn, đừng nạp cả cỗ máy vào để hỏi một câu.
+ */
+const REGISTRY_SRC = fs.readFileSync(path.resolve(__dirname, '../nodes/registry.ts'), 'utf8');
+const NODE_TYPES = new Set(
+  [...REGISTRY_SRC.matchAll(/^\s*type:\s*'([^']+)'/gm)].map((m) => m[1]),
+);
 
 console.log('[A] Bất biến chống id ma');
 

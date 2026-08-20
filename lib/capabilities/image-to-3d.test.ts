@@ -178,7 +178,19 @@ console.log('\n khớp khai báo năng lực trong compound.ts');
   ok('năng lực tồn tại', !!nl);
   ok('mucSuThat khai là suyRa — khớp cờ máy sinh của module này', nl?.mucSuThat === 'suyRa');
   ok('deXuat: true — máy sinh là đề xuất', nl?.deXuat === true);
-  ok('lenhNoiBo trỏ vào máy hiểu THẬT đang dùng', !!nl?.lenhNoiBo.includes('vision.measureObjectTiered'));
+  // 🔴 SỬA 20/08 — bản đầu của test này khẳng định `lenhNoiBo.includes('vision.measureObjectTiered')`,
+  // tức nó KHOÁ ĐÚNG HÌNH DẠNG SAI: `vision.measureObjectTiered` KHÔNG phải node (grep
+  // `lib/nodes/registry.ts` = 0), nó là TÊN HÀM. Khi contract tách `hamNoiBo` ra cho đúng, test này
+  // đỏ — và đỏ ĐÚNG. Đây là ca mẫu của luật rút từ vụ Hough 15/08: *test khẳng định một hình dạng
+  // hỏng thì nó che bug chứ không bảo vệ gì*. Nay khẳng định đúng chỗ máy thật nằm.
+  ok(
+    'máy hiểu THẬT khai ở hamNoiBo (KHÔNG phải lenhNoiBo — nó là hàm, không phải node)',
+    !!nl?.hamNoiBo?.some((h) => h.includes('measureObjectTiered')),
+  );
+  ok(
+    'lenhNoiBo rỗng — năng lực này chưa có node nào, khai thật thay vì trỏ id ma',
+    nl?.lenhNoiBo.length === 0,
+  );
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);
