@@ -156,6 +156,10 @@ export default function QuickNotes({
         className="flex items-center gap-2"
       >
         <input
+          /* LANE A (20/08) — mốc neo cho lối "Ghi chú nhanh" của màn Ngày-Số-Không
+             (`BatDauNgaySoKhong` đưa con trỏ về đây thay vì điều hướng đi đâu cả). Thuộc tính
+             dữ liệu, KHÔNG phải id — ô này mount nhiều lần được (bento + xếp dọc). */
+          data-ghi-chu-nhap=""
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={

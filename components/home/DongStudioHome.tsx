@@ -646,9 +646,18 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
       <div className="fixed right-5 top-[50px] z-50 flex items-center gap-2">
         <button
           type="button"
+          /* LANE A (20/08) — MỘT CỬA VÀO. Nhãn cũ là "Chi tiết (toàn bộ dự án)", tức nó tự
+             quảng cáo mình là **một danh sách dự án thứ hai** đứng cạnh Home — đúng thứ "hai mô
+             hình cửa vào cạnh tranh" phiếu cấm. Mà nút này thật ra mở `openDashboardTab('board')`
+             = tấm Lark Bảng/Kanban/Nhân sự, tức nhóm & hoạt động, KHÔNG phải kho dự án.
+             ⇒ Đổi nhãn cho khớp việc nó làm. Home là cửa vào dự án DUY NHẤT; tấm này là khung
+             nhìn chi tiết về NHÓM, mở từ Home chứ không thay Home.
+             🔴 CÒN LẠI, ngoài vùng ghi của lane này: `components/Dashboard.tsx:416` tab "Tổng
+             quan" vẫn dựng lưới dự án + danh sách flow + thẻ KPI ("Thành viên", "Credit dùng 30
+             ngày") ⇒ vẫn là cửa vào thứ hai, chỉ lùi một cú bấm. Xem báo cáo ⑦ mục VIỆC 4. */
           onClick={() => openDashboardTab('board', null)}
-          aria-label={en ? 'Details (all projects)' : 'Chi tiết (toàn bộ dự án)'}
-          title={en ? 'Details (all projects)' : 'Chi tiết (toàn bộ dự án)'}
+          aria-label={en ? 'Team & activity' : 'Nhóm & hoạt động'}
+          title={en ? 'Team & activity' : 'Nhóm & hoạt động'}
           className="grid h-9 w-9 place-items-center rounded-full text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
           style={CORNER_PILL}
         >

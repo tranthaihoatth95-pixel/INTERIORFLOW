@@ -170,7 +170,12 @@ export default function LightClock({
               </>
             )}
           </svg>
-          <div className="mt-1 flex items-center justify-between font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-[var(--t4)]">
+          {/* LANE A (20/08) — `--t4` → `--t3` cho hai mốc giờ. Đo trên app thật, chữ 11px trên vỏ
+              kính card: `--t4` chỉ đạt **3,04** (sáng) / **3,44** (tối), dưới ngưỡng 4,5 — trong
+              khi đây KHÔNG phải trang trí mà là hai đầu mút của trục thời gian (bỏ đi thì đường
+              cong mất thang đo, không đọc được là cung mặt trời từ mấy giờ tới mấy giờ). `--t3`
+              đo lại được **5,20** (sáng) / **6,53** (tối). Đổi TOKEN, không chế màu mới. */}
+          <div className="mt-1 flex items-center justify-between font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-[var(--t3)]">
             <span>{tr('05:00', '05:00')}</span>
             <span className="text-[var(--t3)]">{shortLabel}</span>
             <span>{tr('20:00', '20:00')}</span>

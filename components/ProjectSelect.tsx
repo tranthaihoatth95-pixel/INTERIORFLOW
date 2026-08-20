@@ -23,7 +23,12 @@ import {
   Layers,
   LayoutGrid,
   GalleryHorizontal,
+  WifiOff,
 } from 'lucide-react';
+// LANE A (20/08) — bốn trạng thái dùng chung: máy trạng thái THUẦN + lớp bày ra + màn Ngày-Số-Không.
+import { KhungXuong, OTrangThai } from '@/components/home/TrangThaiO';
+import BatDauNgaySoKhong from '@/components/home/BatDauNgaySoKhong';
+import { useTrangThaiMang } from '@/lib/home/trang-thai';
 import VitalsIcon from '@/components/studio/VitalsIcon';
 import { VitalsBubble, VitalsTyping } from '@/components/studio/VitalsChatBubble';
 import { easeApple, pressable, springStage } from '@/lib/motion';
@@ -549,6 +554,11 @@ export function ProjectSelect({
       setChatSending(false);
     }
   }, [chatInput, chatSending, chatMessages, en]);
+
+  /* LANE A (20/08) — MỘT chỗ duy nhất trong Home chạm `navigator.onLine`. Dùng để PHÂN BIỆT
+     NGUYÊN NHÂN khi `load()` đã hỏng (mất mạng ≠ máy chủ không trả lời), KHÔNG dùng để chặn
+     fetch: `onLine === true` chỉ nghĩa là có card mạng, không bảo đảm ra được Internet. */
+  const trucTuyen = useTrangThaiMang();
 
   const load = useCallback(() => {
     setLoadError(false);
@@ -1346,45 +1356,58 @@ export function ProjectSelect({
 
   /* ---------- Các khối trạng thái ---------- */
 
+  /* LANE A (20/08) — BỐN TRẠNG THÁI PHẢI KHÁC NHAU, và phải LẤP ĐẦY Ô.
+   *
+   * Đo trên app thật 1280×720 trước khi sửa: ô "01 DỰ ÁN" cao ~400px, còn `loadingBlock` cũ là
+   * một pill 44px căn giữa ⇒ đúng cái "vòng xoay trong hộp trắng khổng lồ" phiếu cấm. Và
+   * NGOẠI TUYẾN thì KHÔNG TỒN TẠI: rớt mạng → `load()` rơi vào `.catch` → hiện y hệt màn LỖI,
+   * mời người dùng bấm "Thử lại" — lời khuyên vô ích khi không có mạng.
+   *
+   * Nay cả bốn đi qua một máy trạng thái THUẦN (`lib/home/trang-thai.ts`, 16 tổ hợp có test) và
+   * một lớp bày ra dùng chung (`components/home/TrangThaiO.tsx`). Ba nút cũ GIỮ NGUYÊN hành vi
+   * (`load` · `onEnter`), chỉ đổi chỗ đứng và thêm nhánh ngoại tuyến. */
   const loadingBlock = (
-    <div className="flex items-center gap-2.5 rounded-full px-5 py-3" style={glass}>
-      <Loader2 size={15} className="animate-spin" style={{ color: ACCENT }} />
-      <span className="text-[length:var(--fs-sm)] text-[var(--t3,var(--t4))]">
-        {en ? 'Loading your projects…' : 'Đang tải dự án…'}
-      </span>
-    </div>
+    <KhungXuong
+      hinh="the"
+      soMang={4}
+      nhan={en ? 'Loading your projects…' : 'Đang tải dự án…'}
+    />
   );
 
-  const errorBlock = (
-    <div className="flex max-w-sm flex-col items-center gap-4 rounded-[var(--radius-xl)] px-7 py-7 text-center" style={glass}>
-      <p className="text-[length:var(--fs-sm)] leading-relaxed text-[var(--t4)]">
-        {en
-          ? 'Could not load your projects — check the connection and try again.'
-          : 'Không tải được danh sách dự án — kiểm tra kết nối rồi thử lại.'}
-      </p>
-      <div className="flex items-center gap-2.5">
-        <motion.button
-          {...pressable}
-          type="button"
-          onClick={load}
-          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[length:var(--fs-xs)] font-medium text-[var(--t1)]"
-          style={glass}
-        >
-          <RefreshCw size={13} />
-          {en ? 'Retry' : 'Thử lại'}
-        </motion.button>
-        <motion.button
-          {...pressable}
-          type="button"
-          onClick={onEnter}
-          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[length:var(--fs-xs)] font-semibold"
-          style={{ background: ACCENT, color: '#fff' }}
-        >
-          {en ? 'Enter empty canvas' : 'Vào canvas trống'}
-          <ArrowRight size={13} />
-        </motion.button>
-      </div>
-    </div>
+  const errorBlock = trucTuyen ? (
+    <OTrangThai
+      bieuTuong={<RefreshCw size={18} aria-hidden />}
+      tieuDe={en ? 'Could not load your projects' : 'Không tải được danh sách dự án'}
+      moTa={
+        en
+          ? 'The app is online but the project service did not answer. Your files on this machine are untouched.'
+          : 'Máy vẫn có mạng nhưng dịch vụ dự án không trả lời. Tệp trên máy bạn không bị đụng tới.'
+      }
+      hanhDong={[
+        { nhan: en ? 'Retry' : 'Thử lại', onClick: load, chinh: true },
+        { nhan: en ? 'Enter empty canvas' : 'Vào canvas trống', onClick: onEnter },
+      ]}
+    />
+  ) : (
+    /* NGOẠI TUYẾN — KHÔNG có nút "Thử lại": app tự nhận ra khi mạng về (sự kiện `online` trong
+       `useTrangThaiMang`). Thứ người dùng cần ở đây là biết việc CỤC BỘ nào vẫn hiểu được. */
+    <OTrangThai
+      bieuTuong={<WifiOff size={18} aria-hidden />}
+      tieuDe={en ? 'Offline — working locally' : 'Ngoại tuyến — đang làm việc cục bộ'}
+      moTa={
+        en
+          ? 'The project list lives on the server, so it is unavailable right now. Everything already on this machine still opens and still saves.'
+          : 'Danh sách dự án nằm trên máy chủ nên tạm thời không lấy được. Thứ đã có sẵn trên máy này vẫn mở được và vẫn lưu được.'
+      }
+      hanhDong={[{ nhan: en ? 'Enter empty canvas' : 'Vào canvas trống', onClick: onEnter, chinh: true }]}
+      duoi={
+        <ul className="mt-1 flex max-w-[46ch] flex-col gap-1 text-left text-[length:var(--fs-2xs)] leading-relaxed text-[var(--t4)]">
+          <li>{en ? '· Drawing, 3D and layout keep working — they write to the local document.' : '· Vẽ, dựng 3D và dàn trang vẫn chạy — chúng ghi vào hồ sơ cục bộ.'}</li>
+          <li>{en ? '· Quick notes are kept and sent when the connection returns.' : '· Ghi chú nhanh được giữ lại, gửi đi khi có mạng trở lại.'}</li>
+          <li>{en ? '· AI, sharing and the team roster need the network.' : '· AI, chia sẻ và danh sách nhóm cần mạng mới dùng được.'}</li>
+        </ul>
+      }
+    />
   );
 
   /* port mock-if-du-an-v2.html màn 02 "Chưa có dự án nào" — trước đây flows=[] chỉ còn lại
@@ -1395,46 +1418,41 @@ export function ProjectSelect({
      "Mở dự án từ máy" mock vẽ là nút bấm được, nhưng đường khôi phục .ifpack hiện chỉ sống trong
      chặng Thiết kế 2D (`cad:ifpack-import-request` — CadSheets.tsx xử lý; Gallery chưa có đường
      nạp tệp thành dự án) ⇒ theo luật §9/2c KHOÁ + LÝ DO thay vì nút chết. GAP ghi M-EMPTY-2-OUT. */
+  /* LANE A (20/08) — TRỐNG = HOME NGÀY-SỐ-KHÔNG, không phải một thẻ xin lỗi.
+   *
+   * Khối cũ đúng tinh thần nhưng thiếu hai thứ và sai một thứ:
+   *   · THIẾU cửa "Nhập nguồn" — `/library/ingest` là route THẬT, đang chạy, mà màn trống lại
+   *     không mời vào ⇒ người mới chỉ thấy 1 cửa rưỡi trong khi IF có 3.
+   *   · THIẾU lối xem trước (Thư viện · ghi chú · đường đi) nên màn đầu tiên không có gì để
+   *     làm ngoài "tạo dự án hoặc thôi".
+   *   · SAI cách khoá nút "Mở dự án từ máy": `disabled` + `title`. Tab BỎ QUA nút `disabled`
+   *     và `title` câm trên cảm ứng ⇒ cái LÝ DO (vốn viết rất đúng) không bao giờ tới người
+   *     dùng bàn phím hoặc trình đọc màn hình. Lý do giữ nguyên từng chữ, chỉ đổi sang đường
+   *     `aria-disabled` + `aria-describedby`.
+   * Hành vi "Tạo dự án" giữ nguyên `choose({kind:'new'})`. */
   const emptyBlock = (
-    <div className="flex max-w-md flex-col items-center gap-4 rounded-[var(--radius-xl)] px-8 py-10 text-center" style={glass}>
-      <div className="grid h-14 w-14 place-items-center rounded-full" style={{ background: 'rgba(106,87,245,0.14)', color: ACCENT }}>
-        <FolderPlus size={22} />
-      </div>
-      <div>
-        <p className="text-[length:var(--fs-sm)] font-semibold text-[var(--t1)]">
-          {en ? 'Your project workspace' : 'Không gian dự án của bạn'}
-        </p>
-        <p className="text-[11px] text-[var(--t4)]">{en ? 'Không gian dự án của bạn' : 'Your project workspace'}</p>
-        <p className="mt-1.5 text-[length:var(--fs-xs)] leading-relaxed text-[var(--t4)]">
-          {en
-            ? 'A project keeps drawings, 3D models and client files together.'
-            : 'Một dự án giữ bản vẽ, khối 3D và hồ sơ trình khách ở cùng một chỗ.'}
-        </p>
-      </div>
-      <div className="flex flex-wrap items-center justify-center gap-2.5">
-        <motion.button
-          {...pressable}
-          type="button"
-          disabled={busy}
-          onClick={() => void choose({ kind: 'new' })}
-          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[length:var(--fs-xs)] font-semibold disabled:opacity-60"
-          style={{ background: ACCENT, color: '#fff' }}
-        >
-          {busy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-          {en ? 'New project' : 'Tạo dự án mới'}
-        </motion.button>
-        <button
-          type="button"
-          disabled
-          title={en
-            ? 'Restoring a project from an .ifpack file currently lives in the 2D stage (File menu) — open a project first. Wiring it here is on the backlog.'
-            : 'Khôi phục dự án từ tệp .ifpack hiện nằm ở chặng Thiết kế 2D (menu Mở tệp) — mở một dự án trước. Nối thẳng vào đây đang trong hàng đợi.'}
-          className="cursor-not-allowed rounded-full border border-[var(--border)] px-4 py-2 text-[length:var(--fs-xs)] font-semibold text-[var(--t4)] opacity-70"
-        >
-          {en ? 'Open from disk' : 'Mở dự án từ máy'}
-        </button>
-      </div>
-    </div>
+    <BatDauNgaySoKhong
+      en={en}
+      onTaoDuAn={() => void choose({ kind: 'new' })}
+      lyDoMoTuMay={
+        en
+          ? 'Restoring a project from an .ifpack file currently lives in the 2D stage (File menu) — open a project first. Wiring it here is on the backlog.'
+          : 'Khôi phục dự án từ tệp .ifpack hiện nằm ở chặng Thiết kế 2D (menu Mở tệp) — mở một dự án trước. Nối thẳng vào đây đang trong hàng đợi.'
+      }
+      onNhapNguon={() => router.push('/library/ingest')}
+      onThuVien={() => router.push('/library')}
+      /* Ghi chú nhanh chỉ có thật khi ô Ghi chú đang ở trên màn (Home bento). Ngoài Home thì
+         truyền `undefined` ⇒ lối này tự hiện MỜ kèm lý do, không phải nút giả. */
+      onGhiChu={
+        bentoBox
+          ? () => {
+              const o = document.querySelector<HTMLInputElement>('[data-ghi-chu-nhap]');
+              o?.focus();
+              o?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+          : undefined
+      }
+    />
   );
 
   /* ---------- Gallery 3D (desktop, không reduce-motion) ---------- */
@@ -2345,7 +2363,15 @@ export function ProjectSelect({
         initial={{ opacity: 0, y: reduce ? 0 : 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: easeApple }}
-        className="relative z-10 flex w-full max-w-5xl flex-col items-center"
+        /* LANE A (20/08) — `flex-1 min-h-0` khi ở ô bento. Đo được: khối này là con của một cột
+           flex cao 386px nhưng KHÔNG có `flex-1` nên nó tự co về chiều cao nội dung (37px lúc
+           đang tải) ⇒ mọi khối trạng thái bên trong dù khai `h-full` cũng chỉ cao 37px, và đó
+           chính là "vòng xoay trong hộp trắng khổng lồ": không phải khối trạng thái nhỏ, mà là
+           nó KHÔNG ĐƯỢC CẤP chiều cao để lấp đầy. Chỉ bật ở `bentoBox` để không đổi bố cục màn
+           chọn dự án toàn màn (nơi khối căn giữa theo chiều dọc là đúng). */
+        className={
+          'relative z-10 flex w-full max-w-5xl flex-col items-center' + (bentoBox ? ' min-h-0 flex-1' : '')
+        }
       >
         {/* pill kính chào user + tiêu đề (kiểu thanh kính TitleSequence) — đè lên ẢNH NỀN
             ambient khi carousel hiện, nên MÀU CHỮ đi qua heroPlan (đo nền thật) thay vì
@@ -2595,12 +2621,14 @@ export function ProjectSelect({
 
         {/* thân màn theo trạng thái — reduce-motion THẮNG TẤT CẢ (kể cả override toggle,
             xem viewToggle), rồi mới tới effectiveGrid (J-4c mặc định HOẶC override thủ công). */}
+        {/* LANE A (20/08) — ba khối trạng thái đi qua MỘT ngăn `flex-1 min-h-0 w-full`: chúng
+            phải chiếm đúng chỗ mà nội dung thật sẽ chiếm, không đứng lơ lửng giữa ô. */}
         {loadError ? (
-          errorBlock
+          <div className="min-h-0 w-full flex-1">{errorBlock}</div>
         ) : flows === null ? (
-          loadingBlock
+          <div className="min-h-0 w-full flex-1">{loadingBlock}</div>
         ) : flows.length === 0 ? (
-          emptyBlock
+          <div className="min-h-0 w-full flex-1">{emptyBlock}</div>
         ) : reduce ? (
           flatList
         ) : effectiveGrid ? (
