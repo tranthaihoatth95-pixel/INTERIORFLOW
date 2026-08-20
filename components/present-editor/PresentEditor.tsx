@@ -61,6 +61,7 @@ import { slidesFromReference, detectGridFromUrl } from '@/lib/present-editor/ref
 import type { GridGeometryInput } from '@/lib/present-editor/suggest';
 import { consumePresentHandoffWithIds, deckImagesWithIdsFromNodes } from '@/lib/present-editor/handoff';
 import { consumeCadPresentHandoff } from '@/lib/cad/present-handoff';
+import { consumeSpecPresentHandoff } from '@/lib/present-editor/spec-present-handoff';
 import {
   stashPhotoEditorIn,
   readPhotoEditorReturn,
@@ -410,6 +411,50 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
           makeImage(dataUrl, { frame: { x: 5, y: 12, w: 90, h: 84, rotation: 0 } }),
         ],
         templateId: 'cad-handoff',
+      });
+    });
+    ed.selectSlide(insertAt);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Cầu nối Spec (G1-G4 CuaAnhThanhSpec) → Present — LANE F, đóng gap "Spec Portal to Present"
+  // (IF-LIVE-BRIDGE.md MISSING). Cùng pattern consume-once + chèn 1 SLIDE MỚI như cầu CAD→Present
+  // ở trên — KHÔNG content-model mới, chỉ makeText đã có. Chỉ tới đây khi spec đã DUYỆT VÀ LƯU
+  // THẬT (nút "Đưa sang Trình bày" ở G4 chỉ bật sau khi /api/asset-representation trả 200).
+  useEffect(() => {
+    const p = consumeSpecPresentHandoff();
+    if (!p) return;
+    const insertAt = ed.deck.slides.length;
+    ed.update((d) => {
+      d.slides.push({
+        id: newId('sld'),
+        background: '#F4F1EA',
+        backgroundImage: null,
+        elements: [
+          makeText({
+            text: p.doiTuong,
+            role: 'kicker',
+            frame: { x: 6, y: 5, w: 88, h: 8, rotation: 0 },
+            fontSize: 3,
+            bold: true,
+            color: '#221f1a',
+          }),
+          ...p.dongChu.map((line, i) =>
+            makeText({
+              text: line,
+              frame: { x: 6, y: 16 + i * 8, w: 88, h: 7, rotation: 0 },
+              fontSize: 1.8,
+              color: '#3a352c',
+            }),
+          ),
+          makeText({
+            text: p.boqNote,
+            frame: { x: 6, y: 16 + p.dongChu.length * 8 + 4, w: 88, h: 7, rotation: 0 },
+            fontSize: 1.6,
+            color: '#6a5f4e',
+          }),
+        ],
+        templateId: 'spec-handoff',
       });
     });
     ed.selectSlide(insertAt);
