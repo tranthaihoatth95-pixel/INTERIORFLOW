@@ -161,6 +161,102 @@ async function main() {
     let cx = box.x + box.w * 0.45;
     let cy = box.y + box.h * 0.45;
 
+    if (cmd === 'form') {
+      // CÔNG THỨC HÌNH: dựng vật nhiều bước → soi ngăn xếp → SỬA MỘT BƯỚC CŨ → hình đổi → hoàn tác.
+      let n0 = await entityCount(page);
+      if (!n0) {
+        const openCmd = page.locator('button[title="Mở bảng lệnh 3D"]').first();
+        if (await openCmd.count().catch(() => 0)) { await openCmd.click().catch(() => {}); await page.waitForTimeout(900); }
+        const w = page.locator('button', { hasText: /Thêm tường/ }).first();
+        if (await w.count().catch(() => 0)) { await w.click().catch(() => {}); await page.waitForTimeout(1600); }
+        const f = page.locator('button.fitbtn').first();
+        if (await f.count().catch(() => 0)) { await f.click().catch(() => {}); await page.waitForTimeout(1300); }
+      }
+      // chọn khối
+      for (const fy of [0.42, 0.5, 0.58]) {
+        let xong = false;
+        for (const fx of [0.5, 0.42, 0.58]) {
+          await page.mouse.click(box.x + box.w * fx, box.y + box.h * fy);
+          await page.waitForTimeout(420);
+          if (await inspectorText(page)) { xong = true; break; }
+        }
+        if (xong) break;
+      }
+      // dựng ngăn xếp NHIỀU Ý ĐỊNH bằng chính store (đúng hàm UI gọi), rồi soi UI
+      const dung = await page.evaluate(() => {
+        const st = window.__cadStore.getState();
+        const ents = st.doc.entities;
+        // Group hình học của tường sinh từ HATCH (poché) chứ không phải polyline — gắn recipe
+        // nhầm entity thì evaluator không bao giờ đọc tới. Bám đúng entity mang `ops`/hình.
+        const wall = ents.find((e) => e.type === 'hatch') || ents.find((e) => e.type === 'polyline') || ents[0];
+        if (!wall) return 'không có khối';
+        const ps = wall.points || [];
+        const xs = ps.map((p) => p.x), ys = ps.map((p) => p.y);
+        const poly = [
+          { x: Math.min(...xs), y: Math.min(...ys) }, { x: Math.max(...xs), y: Math.min(...ys) },
+          { x: Math.max(...xs), y: Math.max(...ys) }, { x: Math.min(...xs), y: Math.max(...ys) },
+        ];
+        const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+        const steps = [
+          { id: 'r1', enabled: true, label: 'Đùn', op: { op: 'extrude', h: 1050 } },
+          { id: 'r2', enabled: true, label: 'Thu đỉnh', op: { op: 'taper', polyMm: poly, topInsetMm: 80 } },
+          { id: 'r3', enabled: true, label: 'Bo cạnh', op: { op: 'bevelEx', polyMm: poly, radiusMm: 12, segments: 4, edges: 'top' } },
+          { id: 'r4', enabled: true, label: 'Lặp', op: { op: 'arrayLinear', n: 2, dx: 1800, dy: 0, dz: 0 } },
+        ];
+        st.updateEntities([{ ...wall, recipe: { steps } }]);
+        return { id: wall.id, soBuoc: steps.length };
+      });
+      log.push(`dựng ngăn xếp: ${JSON.stringify(dung)}`);
+      await page.waitForTimeout(1800);
+
+      // UI có bày theo Ý ĐỊNH không?
+      const tabSua = page.locator('button', { hasText: /^Sửa$/ }).first();
+      if (await tabSua.count().catch(() => 0)) { await tabSua.click().catch(() => {}); await page.waitForTimeout(1200); }
+      const nhanNhom = await page.evaluate(() => {
+        const t = document.body.innerText || '';
+        return ['HÌNH CHÍNH', 'KHOÉT', 'CHI TIẾT', 'HOA VĂN'].filter((k) => t.includes(k));
+      });
+      log.push(`nhóm ý định hiện trên UI: ${JSON.stringify(nhanNhom)}`);
+      const conMotVat = await page.evaluate(() => (window.__cadStore.getState().doc.entities || []).length);
+      log.push(`vẫn là MỘT vật chọn được: ${conMotVat} entity trong Doc (recipe không đẻ entity mới)`);
+
+      // SỬA MỘT BƯỚC CŨ (taper, bậc 2 — không phải bậc cuối) rồi xem hình có đổi
+      const h0 = await sceneHash(page);
+      await page.evaluate(() => {
+        const st = window.__cadStore.getState();
+        const e = st.doc.entities.find((x) => x.recipe);
+        const steps = e.recipe.steps.map((s) => (s.id === 'r2' ? { ...s, op: { ...s.op, topInsetMm: 420 } } : s));
+        st.updateEntities([{ ...e, recipe: { steps } }]);
+      });
+      await page.waitForTimeout(1800);
+      const h1 = await sceneHash(page);
+      log.push(`SỬA bậc CŨ (taper 80→420mm): hình đổi=${h0 !== h1}`);
+
+      // tắt một bước (không xoá tham số)
+      await page.evaluate(() => {
+        const st = window.__cadStore.getState();
+        const e = st.doc.entities.find((x) => x.recipe);
+        st.updateEntities([{ ...e, recipe: { steps: e.recipe.steps.map((s) => (s.id === 'r4' ? { ...s, enabled: false } : s)) } }]);
+      });
+      await page.waitForTimeout(1600);
+      const h2 = await sceneHash(page);
+      const giuThamSo = await page.evaluate(() => {
+        const e = window.__cadStore.getState().doc.entities.find((x) => x.recipe);
+        const s = e.recipe.steps.find((y) => y.id === 'r4');
+        return { enabled: s.enabled, conThamSo: s.op.n };
+      });
+      log.push(`TẮT bậc Lặp: hình đổi=${h1 !== h2} · tham số còn nguyên=${JSON.stringify(giuThamSo)}`);
+
+      const undo = page.locator('button[title*="Hoàn tác"], button[aria-label*="Hoàn tác"]').first();
+      if (await undo.count().catch(() => 0)) { await undo.click().catch(() => {}); await page.waitForTimeout(1500); }
+      const batLai = await page.evaluate(() => {
+        const e = window.__cadStore.getState().doc.entities.find((x) => x.recipe);
+        return e ? e.recipe.steps.find((y) => y.id === 'r4')?.enabled : null;
+      });
+      log.push(`HOÀN TÁC: bậc Lặp bật lại=${batLai}`);
+      await page.screenshot({ path: OUT + '/14-form-recipe.png' });
+    }
+
     if (cmd === 'boolean') {
       // BOOLEAN: đo tận Doc — op có được ghi lên `ops` không, cutter có sinh ra không, và hình
       // trong khung nhìn có đổi không. Ba câu hỏi tách bạch để biết đứt ở khâu nào.

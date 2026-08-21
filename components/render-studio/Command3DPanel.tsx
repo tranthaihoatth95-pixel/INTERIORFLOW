@@ -52,6 +52,7 @@ import { entityBox, type BuildOp, type Entity } from '@/lib/cad/model';
 import { setEntityArrayRadial, setEntityMirror, setEntityBevelEx, setEntityTaper, setEntitySweep, entityFootprintMm } from '@/lib/cad/commands';
 import { newId } from '@/lib/cad/store';
 import { evalRecipe, type BuildRecipeStep } from '@/lib/three/build-recipe';
+import { nhomTheoYDinh, NHAN_Y_DINH, Y_DINH_CHUA_CO } from '@/lib/render-studio/form-recipe';
 
 /**
  * Tab do NƠI MOUNT giữ (mode Vẽ 3D cần mở thẳng tab Tạo khi bấm "Dựng khối đầu tiên").
@@ -1335,7 +1336,17 @@ function BuildRecipeSection({ scene }: { scene: Scene3DData | null }) {
         <>
           {steps.length > 0 && (
             <div className="space-y-1.5">
-              {steps.map((step, i) => {
+              {/* 21/08 — GOM THEO Ý ĐỊNH (`lib/render-studio/form-recipe.ts`). Danh sách phẳng 8
+                  bước đọc ra như một chồng lệnh; KTS nghĩ theo "hình chính · khoét · chi tiết ·
+                  hoa văn". Chỉ đổi CÁCH BÀY: engine, thứ tự áp dụng (thứ tự mảng), bật/tắt, sửa
+                  tham số, lỗi từng bước GIỮ NGUYÊN — `index` gốc đi kèm nên mọi thao tác vẫn
+                  nhắm đúng bậc. Nén phức tạp vào ý định mà không giết khả năng sửa. */}
+              {nhomTheoYDinh(steps).map((nhom) => (
+                <div key={nhom.yDinh} className="space-y-1.5">
+                  <p className="px-0.5 pt-0.5 text-[8.5px] font-semibold tracking-[1.6px] text-[var(--t4)]">
+                    {tr(NHAN_Y_DINH[nhom.yDinh][0], NHAN_Y_DINH[nhom.yDinh][1]).toUpperCase()}
+                  </p>
+                  {nhom.buoc.map(({ step, index: i }) => {
                 const [label, detail] = recipeStepSummary(step.op, tr);
                 const error = stepErrors[step.id];
                 const editable = RECIPE_EDITABLE_KINDS.has(step.op.op);
@@ -1413,7 +1424,14 @@ function BuildRecipeSection({ scene }: { scene: Scene3DData | null }) {
                     )}
                   </div>
                 );
-              })}
+                  })}
+                </div>
+              ))}
+              {/* Khai THẲNG phần chưa có, thay vì để nó vắng mặt im lặng (§9). */}
+              <p className="px-0.5 pt-1 text-[9px] leading-[1.5] text-[var(--t5)]">
+                {tr('Chưa có: ', 'Not available yet: ')}
+                {Y_DINH_CHUA_CO.map((m) => tr(m.ten[0], m.ten[1])).join(' · ')}
+              </p>
             </div>
           )}
           <div className="flex flex-wrap gap-1.5">
