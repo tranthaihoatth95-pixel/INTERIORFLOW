@@ -164,7 +164,45 @@ export function RailDieuHuong() {
    * (resume rỗng) thì mục vẫn mờ kèm lý do — đó là khoá THẬT, không phải bệnh.
    */
   const duAnGanNhat = daNap ? (loadResume(getLastUserId() ?? '')?.flowId ?? null) : null;
-  const duAnHieuLuc = duAnId ?? flowId ?? duAnGanNhat;
+
+  /**
+   * P0 21/08 vòng 2 (Hoà: "bấm Trình chiếu không được — chỗ thanh sidebar") — đo trên tài khoản
+   * THẬT: `/api/flows` trả 3 dự án · 19 flow, nhưng `resume` của hồ sơ trình duyệt này RỖNG ⇒
+   * cả ba mục CHẶNG mờ kèm lý do "Chưa mở dự án". Giả định của vòng 1 ("resume rỗng = khoá
+   * THẬT") SAI: resume rỗng chỉ nói *chưa mở dự án nào TRÊN MÁY NÀY*, không nói *không có dự
+   * án*. Người vừa đăng nhập ở máy khác, vừa xoá cache, hay vừa mở tab mới đều rơi đúng vào đây
+   * — và họ gặp một thanh bên khoá 5/8 mục ngay khung hình đầu.
+   *
+   * Nấc lùi CUỐI: hỏi máy chủ flow mới sửa gần nhất. Chỉ chạy khi đã cạn cả ba nguồn cục bộ
+   * (URL · store · resume) nên phiên bình thường KHÔNG tốn thêm request nào. Dùng đúng
+   * `/api/flows` mà app vẫn gọi — không đẻ endpoint thứ hai.
+   * Còn khoá thật (tài khoản CHƯA có flow nào) thì vẫn mờ kèm lý do — lúc đó nó đúng là khoá.
+   */
+  const [duAnMayChu, setDuAnMayChu] = useState<string | null>(null);
+  const cankiemMayChu = daNap && !duAnId && !flowId && !duAnGanNhat;
+  useEffect(() => {
+    if (!cankiemMayChu || duAnMayChu) return;
+    let huy = false;
+    fetch('/api/flows')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (huy || !d?.flows?.length) return;
+        // Flow mới sửa gần nhất = thứ người dùng nhiều khả năng muốn quay lại.
+        const moiNhat = [...d.flows].sort(
+          (a: { updatedAt?: string }, b: { updatedAt?: string }) =>
+            new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime(),
+        )[0];
+        if (moiNhat?.id) setDuAnMayChu(moiNhat.id);
+      })
+      .catch(() => {
+        /* mất mạng/401 — giữ nguyên trạng thái mờ kèm lý do, không bịa đường vào */
+      });
+    return () => {
+      huy = true;
+    };
+  }, [cankiemMayChu, duAnMayChu]);
+
+  const duAnHieuLuc = duAnId ?? flowId ?? duAnGanNhat ?? duAnMayChu;
   const daMoDuAn = Boolean(duAnHieuLuc);
 
   // "Chặng đang dở" — dữ liệu THẬT, cùng khoá mà card Gallery đang đọc ([marker: lastStage]).
