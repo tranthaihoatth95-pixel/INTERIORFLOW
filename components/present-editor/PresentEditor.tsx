@@ -62,6 +62,7 @@ import type { GridGeometryInput } from '@/lib/present-editor/suggest';
 import { consumePresentHandoffWithIds, deckImagesWithIdsFromNodes } from '@/lib/present-editor/handoff';
 import { consumeCadPresentHandoff } from '@/lib/cad/present-handoff';
 import { consumeSpecPresentHandoff } from '@/lib/present-editor/spec-present-handoff';
+import { markDemoStep } from '@/lib/studio/demo-spine';
 import {
   stashPhotoEditorIn,
   readPhotoEditorReturn,
@@ -458,6 +459,8 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
       });
     });
     ed.selectSlide(insertAt);
+    // Chế độ hiển thị Demo — mốc CHỈ ghi khi slide thật vừa được chèn (đúng lúc, không sớm hơn).
+    markDemoStep('specPresent', p.doiTuong);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

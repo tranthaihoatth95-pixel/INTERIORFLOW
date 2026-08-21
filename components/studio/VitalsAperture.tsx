@@ -46,13 +46,22 @@ import { useDismissable } from '@/lib/useDismissable';
 import { VitalsStateDot } from '@/components/studio/VitalsStateBadge';
 import VitalsQuyDao from '@/components/studio/VitalsQuyDao';
 import { DUONG_CONG, giamChuyenDong, nhipToiBac, thoiLuong } from '@/lib/ui/nhip';
+import { useVungLamViec } from '@/components/ui/useVungLamViec';
+import { viTriO, viTriTamXo } from '@/lib/ui/vung-lam-viec';
 import { VitalsChatSurface } from '@/components/home/widgets/VitalsPill';
 import { chonTinHieu, trangThaiAmbient, type TinHieu } from '@/components/studio/vitals-tin-hieu';
+import { useDemoSpine, tomTatSpine, useCheDoDemo } from '@/lib/studio/demo-spine';
 import { NHAN_GIU_MS, SLOP_PX, TRE_RE_VAO_MS } from '@/components/studio/cu-chi-nhan-giu';
 
 type Muc = 'ambient' | 'peek' | 'engage';
 
 const RONG_TAM = 268;
+/** Bề rộng Ổ — chỗ DÀNH RIÊNG trong header. Cố định: ổ mà co giãn thì tâm nhảy theo nội dung. */
+const O_RONG = 112;
+/** Ổ thò lên quá mép trên vài pixel ⇒ mắt đọc ra là KHE CẮT VÀO vỏ, không phải nút đặt lên vỏ. */
+const O_THO = 3;
+/** Quãng rơi của Peek/Engage khi hé mở. Khe hở neo↔tấm vẫn = 0 — đây là quãng ĐI, không phải khe. */
+const ROI_PX = 10;
 
 /**
  * Đo số mục quy chuẩn cần xem trên bản vẽ ĐANG MỞ. Trả `undefined` = **chưa/không đo được**,
@@ -88,11 +97,14 @@ export function VitalsAperture() {
    * ĐÓNG NGAY (toggle), nhìn ra như "bấm không ra gì" — đúng loại lỗi chỉ lộ khi thao tác thật.
    */
   const [ghim, setGhim] = useState(false);
-  const [neo, setNeo] = useState<{ top: number; right: number; tamPhai: number } | null>(null);
+  /** Neo = hộp thật của Ổ. `tren` là mép DƯỚI của ổ ⇒ khe hở neo↔tấm = 0 theo định nghĩa. */
+  const [neo, setNeo] = useState<{ tren: number; trai: number; tam: number } | null>(null);
   /** Đã sang khung hình thứ hai chưa — mốc để trạng thái "đóng" kịp vẽ trước khi nở ra. */
   const [daNo, setDaNo] = useState(false);
   const [quyChuan, setQuyChuan] = useState<number | undefined>(undefined);
   const nutRef = useRef<HTMLButtonElement>(null);
+  /** Hộp của Ổ — nguồn DUY NHẤT của mọi toạ độ ở đây. */
+  const oRef = useRef<HTMLDivElement>(null);
   const tamRef = useRef<HTMLDivElement>(null);
   const dongHo = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dongHoRoi = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -102,11 +114,17 @@ export function VitalsAperture() {
   // chiếu khi có lượt chạy vào/ra, không đổi theo từng khung hình).
   const flowRuns = useFlowStore((s) => s.flowRuns);
   const dangChay = flowRuns.filter((r) => r.status === 'running' || r.status === 'queued');
+  // Chế độ hiển thị Demo (Hoà chốt 21/08) — TUỲ CHỌN, bật ở chuông Hoạt động. Tắt thì hai số này
+  // là undefined ⇒ `chonTinHieu` tự im (đúng luật "không đo không nói"), Vitals không đổi gì.
+  const [demoBat] = useCheDoDemo();
+  const spine = useDemoSpine();
+  const tomTat = tomTatSpine(spine);
   const tinHieu: TinHieu[] = chonTinHieu({
     dangChay: dangChay.length,
     nhanDangChay: dangChay.find((r) => r.status === 'running')?.label,
     chayLoi: flowRuns.filter((r) => r.status === 'error').length,
     chuanCanXem: quyChuan,
+    ...(demoBat ? { demoXong: tomTat.xong, demoTong: tomTat.tong } : {}),
   });
   const trangThai = trangThaiAmbient(tinHieu);
 
@@ -119,22 +137,17 @@ export function VitalsAperture() {
     dongHoRoi.current = null;
   };
 
+  /**
+   * ⭐ NEO ĐỌC TỪ CHÍNH Ổ, KHÔNG TỰ TÍNH TOẠ ĐỘ MÀN. Trước đây hàm này lấy `getBoundingClientRect`
+   * của nút rồi tính `top`/`right` — tức Vitals **bám vào cụm phải-trên**, đúng cái hệ Hoà nói nó
+   * không được sống trong. Nay ổ là một chỗ DÀNH RIÊNG trong header, và neo chỉ là *đọc lại* hộp
+   * của ổ đó. Không còn nhánh nào tự chế toạ độ.
+   */
   const doNeo = useCallback(() => {
-    const el = nutRef.current;
+    const el = oRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    setNeo({
-      top: r.bottom + 8,
-      /* Kẹp để mép TRÁI của tấm không lọt ra ngoài màn hẹp: neo theo mép phải nút thì trên
-         khung 333px (pane hẹp) tấm 268px tràn sang trái −21px — đo được trên app thật 20/08. */
-      right: Math.min(
-        Math.max(8, window.innerWidth - r.right),
-        Math.max(8, window.innerWidth - RONG_TAM - 8),
-      ),
-      // Khoảng cách từ MÉP PHẢI của tấm tới TÂM LÕI quỹ đạo. Tấm neo mép phải trùng mép phải
-      // nút, nên đây chính là nửa bề rộng nút — và đó là gốc để bề mặt nở ra (§14).
-      tamPhai: r.width / 2,
-    });
+    setNeo({ tren: r.bottom, trai: r.left, tam: r.left + r.width / 2 });
   }, []);
 
   const moPeek = useCallback(
@@ -163,9 +176,14 @@ export function VitalsAperture() {
 
   const giam = giamChuyenDong();
   const msNo = thoiLuong(nhipToiBac(muc === 'engage' ? 'bang' : 'vien'), giam);
-  const kieuMoc = (goc: number): React.CSSProperties => ({
-    transformOrigin: `calc(100% - ${goc}px) 0%`,
-    transform: daNo ? 'scale(1)' : 'scale(0.94)',
+  /**
+   * §14 — tấm nở ra từ CHÍNH TÂM Ổ và **rơi xuống** một quãng ngắn, như mép trên HÉ MỞ.
+   * ⚠️ `translateY` là quãng ĐI của nhịp mở, KHÔNG phải khe hở: `top` của tấm luôn đúng bằng mép
+   * dưới của ổ, nên lúc đứng yên khoảng cách neo↔tấm = 0. Có khe là nó đọc ra thành popover.
+   */
+  const kieuMoc = (): React.CSSProperties => ({
+    transformOrigin: '50% 0%',
+    transform: daNo ? 'translateY(0) scale(1)' : `translateY(-${ROI_PX}px) scale(0.97)`,
     opacity: daNo ? 1 : 0,
     transition:
       msNo === 0
@@ -215,6 +233,30 @@ export function VitalsAperture() {
     return () => window.removeEventListener('keydown', onEsc);
   }, [muc, dong]);
 
+  /* ⭐ Ổ NEO VÀO TÂM VÙNG LÀM VIỆC — không phải tâm cửa sổ. Bề rộng cột trái đọc từ hộp DOM
+     thật (`useVungLamViec`), nên nó tự đúng ở cả ba nấc sidebar và cả khi inspector phải mọc ra.
+     Không có mốc đo (màn chưa dùng `AppShell`, vd trang đăng nhập) ⇒ `vung === null` ⇒ ổ KHÔNG
+     hiện. Cố ý không lùi về tâm cửa sổ: đứng sai mà im lặng là thứ luật này sinh ra để diệt. */
+  const vung = useVungLamViec();
+  const oViTri = vung
+    ? viTriO({
+        trai: vung.trai,
+        rong: vung.rong,
+        khungRong: typeof window === 'undefined' ? 1440 : window.innerWidth,
+        oRong: O_RONG,
+        // Cụm phải-trên: đo thật nếu có mặt, không thì lùi về mép phải khung trừ một khoảng an toàn.
+        cumPhaiTrai:
+          (typeof document === 'undefined'
+            ? null
+            : document.querySelector('[data-marker="cumPhaiTren"]')?.getBoundingClientRect().left) ??
+          (typeof window === 'undefined' ? 1240 : window.innerWidth - 200),
+        cumTraiPhai:
+          (typeof document === 'undefined'
+            ? null
+            : document.querySelector('[data-if-cum-trai-tren]')?.getBoundingClientRect().right) ?? 0,
+      })
+    : null;
+
   const nhanTrangThai =
     trangThai === 'answering'
       ? tr('đang chạy', 'running')
@@ -222,8 +264,38 @@ export function VitalsAperture() {
         ? tr('có việc cần xem', 'needs attention')
         : tr('không có tín hiệu', 'no signals');
 
+  if (!oViTri) return null;
+
   return (
-    <div className="relative shrink-0" data-vitals-aperture="">
+    /* ⭐⭐ Ổ THẬT — CHỖ DÀNH RIÊNG trong vỏ app, KHÔNG phải một nút nhét vào cụm phải-trên.
+       · `position:absolute` trong `<header>` (header đã `relative`) ⇒ ổ có toạ độ RIÊNG, không
+         bị dòng flex của header đẩy đi khi cụm bên cạnh dài/ngắn ra.
+       · `top: -O_THO` ⇒ ổ **thò lên quá mép trên vài pixel**: mắt đọc ra là KHE CẮT VÀO vỏ,
+         không phải một nút đặt LÊN vỏ. Đây là điểm khác biệt giữa "gắn vật lý" và "gắn thêm".
+       · bo góc chỉ ở HAI GÓC DƯỚI ⇒ nó ăn thẳng vào mép trên, không có cạnh trên để nhìn thấy.
+       ⛔ Không có nhãn "Vitals" lơ lửng ở đây: nhãn nằm trong `aria-label` + trong tấm Peek. */
+    <div
+      ref={oRef}
+      data-vitals-aperture=""
+      data-if-o-vitals=""
+      style={{
+        position: 'absolute',
+        left: oViTri.trai,
+        top: -O_THO,
+        width: O_RONG,
+        bottom: 0,
+        zIndex: 31,
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+        paddingBottom: 3,
+        background: 'var(--field)',
+        borderLeft: '1px solid var(--vien-mo)',
+        borderRight: '1px solid var(--vien-mo)',
+        borderBottom: '1px solid var(--vien-mo)',
+        borderRadius: '0 0 var(--r-3) var(--r-3)',
+      }}
+    >
       <button
         ref={nutRef}
         type="button"
@@ -274,8 +346,11 @@ export function VitalsAperture() {
             Trạng thái đọc bằng ĐỘ SÁNG + CHUYỂN ĐỘNG của chính lõi (§18), không phải bằng một
             chấm gắn thêm — chấm cũ đã bỏ vì nó nói lại đúng điều lõi đã nói. */}
         <VitalsQuyDao trangThai={trangThai} co={18} className="shrink-0" />
-        {/* NT-8: ký hiệu luôn có nhãn. "Vitals" là TÊN của thứ này, không phải "chữ nhiều". */}
-        <span className="text-[length:var(--fs-xs)] font-medium text-[var(--t2)]">Vitals</span>
+        {/* ⛔ KHÔNG có nhãn chữ "Vitals" ở đây (Hoà chốt 20/08: cấm nhãn lơ lửng trong header).
+            Căng với NT-8 "ký hiệu luôn có nhãn" — giải bằng: chính Ổ là vật mang tên, và tên đó
+            đi qua `aria-label` (bàn phím/trình đọc màn hình vẫn nghe đủ) + hiện thành chữ ngay
+            khi Peek mở. Đây KHÔNG phải icon trần đặt bừa: nó ngồi trong một khe cắt vào vỏ,
+            khe đó là affordance mạnh hơn một chữ nhỏ cạnh icon. */}
         {/* Số chỉ hiện khi CÓ tín hiệu thật; kênh chữ đi kèm nằm trong `aria-label` ở trên nên
             người không phân biệt được chấm vẫn nghe được trạng thái. */}
         {tinHieu.length > 0 && (
@@ -292,7 +367,22 @@ export function VitalsAperture() {
               aria-label="Vitals"
               onPointerEnter={vaoVung}
               onPointerLeave={roiVung}
-              style={{ position: 'fixed', top: neo.top, right: neo.right, zIndex: 60 }}
+              /* ⭐ TẤM RƠI TỪ ĐÁY Ổ — `top` đúng bằng mép dưới ổ ⇒ **khe hở = 0**, và `left`
+                 lấy theo TÂM Ổ. Cả hai đến từ `viTriTamXo`, không tính tay tại chỗ.
+                 Đóng: Engage → Peek → Ambient, cùng một gốc — người dùng không bao giờ mất dấu
+                 chỗ nó thuộc về. */
+              style={{
+                position: 'fixed',
+                zIndex: 60,
+                ...(() => {
+                  const t = viTriTamXo(
+                    { tam: neo.tam, day: neo.tren },
+                    muc === 'engage' ? 300 : RONG_TAM,
+                    window.innerWidth,
+                  );
+                  return { top: t.tren, left: t.trai };
+                })(),
+              }}
             >
               {muc === 'peek' ? (
                 /* ⭐ PEEK — quỹ đạo nở ra từ ĐÚNG TÂM đó thành một VIÊN KÍNH MỎNG theo ngữ cảnh.
@@ -303,7 +393,7 @@ export function VitalsAperture() {
                    ⛔ CẤM biến thành bảng phân tích doanh nghiệp: không biểu đồ, không %, không
                    "so với tuần trước". Trần 3 dòng đã khoá ở `vitals-tin-hieu.ts`. */
                 <div
-                  style={{ width: RONG_TAM, ...kieuMoc(neo.tamPhai) }}
+                  style={{ width: RONG_TAM, ...kieuMoc() }}
                   className="be-mat-noi be-mat-noi--kinh overflow-hidden rounded-[var(--r-3)] p-2"
                 >
                   {tinHieu.length === 0 ? (
@@ -372,7 +462,7 @@ export function VitalsAperture() {
                    `BeMatNoi` — bọc vào là kính chồng lên mặt đặc, đúng thứ luật cấm.
                    ⛔ Nó không phải hộp thoại chatbot rời: không overlay, không giữa màn, mọc
                    ra từ chính lõi quỹ đạo và thu về đó. */
-                <div style={kieuMoc(neo.tamPhai)}>
+                <div style={kieuMoc()}>
                   <VitalsChatSurface onClose={dong} />
                 </div>
               )}

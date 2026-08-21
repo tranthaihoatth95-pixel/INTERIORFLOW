@@ -25,7 +25,8 @@
 
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Bell, ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Bell, ArrowRight, Check, Clock, AlertCircle, Circle } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { useRenderQueue } from '@/components/render-studio/render-queue-store';
 import { useT } from '@/lib/i18n';
@@ -41,9 +42,80 @@ import {
   NHAN_NHOM,
   type MucHoatDong,
 } from '@/components/studio/hoat-dong-luong';
+import { useDemoSpine, tomTatSpine, useCheDoDemo, type BuocDemo, type TrangThaiBuoc } from '@/lib/studio/demo-spine';
 import LightBar from '@/components/ui/LightBar';
 
 type Muc = 'gon' | 'peek' | 'day';
+type TabDay = 'hoatDong' | 'demo';
+
+const MAU_TRANG_THAI: Record<TrangThaiBuoc, string> = {
+  xong: 'var(--success)',
+  canXem: 'var(--danger)',
+  dangCho: 'var(--t4)',
+  sanSang: 'var(--t3)',
+};
+
+const ICON_TRANG_THAI: Record<TrangThaiBuoc, typeof Check> = {
+  xong: Check,
+  canXem: AlertCircle,
+  dangCho: Clock,
+  sanSang: Circle,
+};
+
+const NHAN_TRANG_THAI: Record<TrangThaiBuoc, { vi: string; en: string }> = {
+  xong: { vi: 'Xong', en: 'Done' },
+  canXem: { vi: 'Cần xem', en: 'Needs attention' },
+  dangCho: { vi: 'Đang chờ', en: 'Waiting' },
+  sanSang: { vi: 'Sẵn sàng', en: 'Ready' },
+};
+
+/**
+ * MỘT DÒNG kịch bản demo — huy hiệu trạng thái (hình + chữ, màu không phải kênh duy nhất) +
+ * nguồn/kết quả thật (không hiện dòng nếu không có) + cửa người kế tiếp (chỉ hiện khi có việc
+ * thật). Bấm cả dòng = "click-to-context": nhảy đúng route của bước đó, KHÔNG dựng dữ liệu demo
+ * thứ hai — href trỏ THẲNG vào chặng/route thật đang có dữ liệu thật.
+ */
+function DongBuoc({ b, tr, onDi }: { b: BuocDemo; tr: (vi: string, en: string) => string; onDi: (href: string) => void }) {
+  const Icon = ICON_TRANG_THAI[b.trangThai];
+  const noiDung = (
+    <>
+      <div className="flex items-center gap-2">
+        <Icon size={13} style={{ color: MAU_TRANG_THAI[b.trangThai], flexShrink: 0 }} />
+        <span className="min-w-0 flex-1 truncate text-[length:var(--fs-ui)] text-[var(--t1)]">
+          {tr(b.nhan.vi, b.nhan.en)}
+        </span>
+        <span className="shrink-0 text-[length:var(--fs-xs)]" style={{ color: MAU_TRANG_THAI[b.trangThai] }}>
+          {tr(NHAN_TRANG_THAI[b.trangThai].vi, NHAN_TRANG_THAI[b.trangThai].en)}
+        </span>
+      </div>
+      {b.nguon && <div className="mt-0.5 truncate pl-[21px] text-[length:var(--fs-xs)] text-[var(--t3)]">{b.nguon}</div>}
+      {b.ketQua && (
+        <div className="mt-0.5 truncate pl-[21px] text-[length:var(--fs-xs)] text-[var(--t2)]">
+          → {tr(b.ketQua.vi, b.ketQua.en)}
+        </div>
+      )}
+      {b.cuaNguoiKeTiep && (
+        <div className="mt-0.5 pl-[21px] text-[length:var(--fs-xs)] leading-relaxed text-[var(--accent)]">
+          {tr(b.cuaNguoiKeTiep.vi, b.cuaNguoiKeTiep.en)}
+        </div>
+      )}
+    </>
+  );
+  if (!b.href) {
+    return <li className="rounded-[var(--r-2)] px-2 py-1.5">{noiDung}</li>;
+  }
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => onDi(b.href!)}
+        className="w-full rounded-[var(--r-2)] px-2 py-1.5 text-left transition-colors duration-[120ms] hover:bg-[var(--hover)]"
+      >
+        {noiDung}
+      </button>
+    </li>
+  );
+}
 
 /** Mục demo — CHỈ khi cờ ngoài-production bật, KHÔNG có job thật nào chạy. Xem docstring trên. */
 function mucDemo(): MucHoatDong[] {
@@ -95,7 +167,9 @@ function DongMuc({ m, tr }: { m: MucHoatDong; tr: (vi: string, en: string) => st
 
 export function HoatDongChuong() {
   const tr = useT();
+  const router = useRouter();
   const [muc, setMuc] = useState<Muc>('gon');
+  const [tabDay, setTabDay] = useState<TabDay>('hoatDong');
   const nutRef = useRef<HTMLButtonElement>(null);
   const tamRef = useRef<HTMLDivElement>(null);
   const [neo, setNeo] = useState<{ top: number; right: number } | null>(null);
@@ -104,6 +178,16 @@ export function HoatDongChuong() {
   const flowRuns = useFlowStore((s) => s.flowRuns);
   const nodes = useFlowStore((s) => s.nodes);
   const jobs = useRenderQueue((s) => s.jobs);
+  // Chế độ hiển thị Demo (Hoà chốt 21/08) — TUỲ CHỌN: tab riêng trong panel "đầy đủ" đã có,
+  // KHÔNG mục điều hướng mới. `useDemoSpine` đọc THẲNG từ store toàn cục (2D/3D/node ảnh) — 0
+  // bản sao dữ liệu. Xem lib/studio/demo-spine.ts.
+  const [demoBat, datDemoBat] = useCheDoDemo();
+  const spine = useDemoSpine();
+  const tomTatDemo = tomTatSpine(spine);
+  const diToi = (href: string) => {
+    dong();
+    router.push(href);
+  };
 
   const loaiNode = useMemo(() => {
     const m = new Map(nodes.map((n) => [n.id, n.type ?? n.data?.defType]));
@@ -224,9 +308,37 @@ export function HoatDongChuong() {
                 style={{ width: 340 }}
               >
                 <div className="flex items-center justify-between border-b border-[var(--vien-mo)] px-3 py-2">
-                  <span className="text-[length:var(--fs-ui)] font-semibold text-[var(--t1)]">
-                    {tr('Hoạt động', 'Activity')}
-                  </span>
+                  {/* HAI TAB — "Hoạt động" (job thật đang chạy) · "Demo" (tiến độ kịch bản trình
+                      bày, TUỲ CHỌN — §5 "không phải chrome thường trực"). Cùng khuôn Ổ đã có,
+                      KHÔNG mục điều hướng mới, KHÔNG chuông thứ hai. */}
+                  <div role="tablist" className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={tabDay === 'hoatDong'}
+                      onClick={() => setTabDay('hoatDong')}
+                      className="rounded-[var(--r-2)] px-2 py-1 text-[length:var(--fs-ui)] font-semibold transition-colors duration-[120ms]"
+                      style={{
+                        color: tabDay === 'hoatDong' ? 'var(--t1)' : 'var(--t4)',
+                        background: tabDay === 'hoatDong' ? 'var(--hover)' : 'transparent',
+                      }}
+                    >
+                      {tr('Hoạt động', 'Activity')}
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={tabDay === 'demo'}
+                      onClick={() => setTabDay('demo')}
+                      className="rounded-[var(--r-2)] px-2 py-1 text-[length:var(--fs-ui)] font-semibold transition-colors duration-[120ms]"
+                      style={{
+                        color: tabDay === 'demo' ? 'var(--t1)' : 'var(--t4)',
+                        background: tabDay === 'demo' ? 'var(--hover)' : 'transparent',
+                      }}
+                    >
+                      {tr('Demo', 'Demo')}
+                    </button>
+                  </div>
                   <button
                     type="button"
                     onClick={dong}
@@ -235,27 +347,65 @@ export function HoatDongChuong() {
                     {tr('Đóng', 'Close')}
                   </button>
                 </div>
-                <div className="flex-1 overflow-y-auto px-2 py-2">
-                  {THU_TU_NHOM.map((n) =>
-                    gom[n].length === 0 ? null : (
-                      <div key={n} className="mb-3">
-                        <div className="px-1.5 pb-1 text-[length:var(--fs-xs)] font-semibold uppercase tracking-wide text-[var(--t3)]">
-                          {tr(NHAN_NHOM[n].vi, NHAN_NHOM[n].en)} · {gom[n].length}
+
+                {tabDay === 'hoatDong' ? (
+                  <div className="flex-1 overflow-y-auto px-2 py-2">
+                    {THU_TU_NHOM.map((n) =>
+                      gom[n].length === 0 ? null : (
+                        <div key={n} className="mb-3">
+                          <div className="px-1.5 pb-1 text-[length:var(--fs-xs)] font-semibold uppercase tracking-wide text-[var(--t3)]">
+                            {tr(NHAN_NHOM[n].vi, NHAN_NHOM[n].en)} · {gom[n].length}
+                          </div>
+                          <ul className="space-y-0.5">
+                            {gom[n].map((m) => (
+                              <DongMuc key={m.id} m={m} tr={tr} />
+                            ))}
+                          </ul>
                         </div>
-                        <ul className="space-y-0.5">
-                          {gom[n].map((m) => (
-                            <DongMuc key={m.id} m={m} tr={tr} />
-                          ))}
-                        </ul>
-                      </div>
-                    ),
-                  )}
-                  {tongDang === 0 && gom.sanSang.length === 0 && gom.vuaXong.length === 0 && (
-                    <p className="px-1.5 py-2 text-[length:var(--fs-xs)] leading-relaxed text-[var(--t3)]">
-                      {tr('Chưa có việc nào chạy trong dự án này.', 'Nothing has run in this project yet.')}
+                      ),
+                    )}
+                    {tongDang === 0 && gom.sanSang.length === 0 && gom.vuaXong.length === 0 && (
+                      <p className="px-1.5 py-2 text-[length:var(--fs-xs)] leading-relaxed text-[var(--t3)]">
+                        {tr('Chưa có việc nào chạy trong dự án này.', 'Nothing has run in this project yet.')}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex-1 overflow-y-auto px-2 py-2">
+                    <div className="mb-2 flex items-center justify-between px-1.5">
+                      <span className="text-[length:var(--fs-xs)] text-[var(--t3)]">
+                        {tr(
+                          `Chế độ hiển thị Demo — ${tomTatDemo.xong}/${tomTatDemo.tong} bước sẵn sàng`,
+                          `Demo visibility mode — ${tomTatDemo.xong}/${tomTatDemo.tong} steps ready`,
+                        )}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => datDemoBat(!demoBat)}
+                        role="switch"
+                        aria-checked={demoBat}
+                        className="shrink-0 rounded-[var(--r-full)] px-2 py-0.5 text-[length:var(--fs-xs)] font-semibold transition-colors duration-[120ms]"
+                        style={{
+                          background: demoBat ? 'var(--accent)' : 'var(--field)',
+                          color: demoBat ? '#fff' : 'var(--t3)',
+                        }}
+                      >
+                        {demoBat ? tr('Đang bật', 'On') : tr('Bật', 'Off')}
+                      </button>
+                    </div>
+                    <ul className="space-y-0.5">
+                      {spine.map((b) => (
+                        <DongBuoc key={b.id} b={b} tr={tr} onDi={diToi} />
+                      ))}
+                    </ul>
+                    <p className="mt-2 px-1.5 text-[length:var(--fs-xs)] leading-relaxed text-[var(--t4)]">
+                      {tr(
+                        'Bấm một bước để mở đúng chỗ đang chứa nó — không tạo dữ liệu demo mới.',
+                        'Click a step to open exactly where it lives — no new demo data is created.',
+                      )}
                     </p>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
           </div>,

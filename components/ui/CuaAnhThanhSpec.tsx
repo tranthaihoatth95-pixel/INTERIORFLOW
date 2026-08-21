@@ -32,6 +32,7 @@ import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import { RADIUS } from '@/lib/geometry';
+import { markDemoStep } from '@/lib/studio/demo-spine';
 import { CommandIcon } from './command-icon';
 import LightBar from './LightBar';
 import { loadImage } from '@/lib/imaging';
@@ -244,6 +245,9 @@ export default function CuaAnhThanhSpec({ onDong }: { onDong: () => void }) {
       const j = (await res.json().catch(() => ({}))) as { representation?: { id: string; truthLevel: string }; error?: string };
       if (!res.ok || !j.representation) throw new Error(j.error ?? `Máy chủ trả lỗi ${res.status}.`);
       setDaLuu({ id: j.representation.id, truthLevel: j.representation.truthLevel });
+      // Chế độ hiển thị Demo (lib/studio/demo-spine.ts) — ghi mốc ĐÚNG LÚC lưu thật thành công,
+      // không sớm hơn. Không import ngược gì từ đây, chỉ gọi một hàm ghi mốc thuần.
+      markDemoStep('imageToSpec', s.doiTuong);
     } catch (e) {
       setLoi(e instanceof Error ? e.message : 'Không lưu được spec.');
     } finally {

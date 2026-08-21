@@ -16,7 +16,7 @@
 
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { chonTinHieu, trangThaiAmbient, TRAN_TIN_HIEU, type NguonTinHieu } from './vitals-tin-hieu';
+import { chonTinHieu, trangThaiAmbient, TRAN_TIN_HIEU, VI_SAO, type NguonTinHieu } from './vitals-tin-hieu';
 
 let fail = 0;
 function ok(msg: string, cond: unknown) {
@@ -83,3 +83,42 @@ console.log('\n[7] Không có cửa sau cho chữ tự do (chống "insight AI")
 
 console.log(fail === 0 ? '\nTẤT CẢ ĐẠT\n' : `\n${fail} MỤC HỎNG\n`);
 if (fail > 0) process.exit(1);
+
+/* 8 — MỌI tín hiệu phải mang câu "vì sao bị gắn cờ", và câu đó phải đến từ bảng hằng số
+   `VI_SAO` (không có cửa nào cho chữ tự do / AI sinh lọt vào — cùng lý do mục 7). */
+{
+  const day = chonTinHieu({ dangChay: 2, chayLoi: 1, chuanCanXem: 4 });
+  const hopLe = Object.values(VI_SAO);
+  for (const t of day) {
+    if (!t.viSao || !hopLe.includes(t.viSao)) {
+      console.error('✗ tín hiệu thiếu/lệch câu vì sao:', t.loai, t.viSao);
+      process.exit(1);
+    }
+    if (t.viSao !== VI_SAO[t.loai]) {
+      console.error('✗ câu vì sao không khớp loại:', t.loai);
+      process.exit(1);
+    }
+  }
+  if (Object.keys(VI_SAO).length !== 4) {
+    console.error('✗ VI_SAO phải phủ đủ 4 loại tín hiệu');
+    process.exit(1);
+  }
+}
+console.log("  [8] ok  - mọi tín hiệu mang câu VÌ SAO, lấy từ bảng hằng số");
+
+console.log('\n[9] demo-flow — tiến độ, KHÔNG phải cảnh báo');
+ok('thiếu cả hai số ⇒ không có dòng demo-flow', !chonTinHieu({ ...RONG }).some((t) => t.loai === 'demo-flow'));
+ok('demoTong=0 ⇒ không có dòng (mẫu số rỗng)', !chonTinHieu({ ...RONG, demoXong: 0, demoTong: 0 }).some((t) => t.loai === 'demo-flow'));
+ok('đã xong hết (7/7) ⇒ im, không có gì để xem tiến độ nữa', !chonTinHieu({ ...RONG, demoXong: 7, demoTong: 7 }).some((t) => t.loai === 'demo-flow'));
+ok('còn dở (7/9) ⇒ CÓ dòng demo-flow', chonTinHieu({ ...RONG, demoXong: 7, demoTong: 9 }).some((t) => t.loai === 'demo-flow'));
+ok('nhãn mang đúng cặp số 7/9', /\b7\/9\b/.test(chonTinHieu({ ...RONG, demoXong: 7, demoTong: 9 }).find((t) => t.loai === 'demo-flow')?.nhan ?? ''));
+ok(
+  'demo-flow đứng SAU 3 loại kia (ưu tiên thấp nhất)',
+  chonTinHieu({ dangChay: 1, chayLoi: 1, chuanCanXem: 1, demoXong: 1, demoTong: 2 }).map((t) => t.loai).indexOf('demo-flow') === -1, // trần 3 cắt trước khi tới demo-flow — đúng luật ưu tiên
+);
+ok(
+  'demo-flow một mình (không gì khác) vẫn hiện — dưới trần 3',
+  chonTinHieu({ ...RONG, demoXong: 1, demoTong: 2 }).some((t) => t.loai === 'demo-flow'),
+);
+ok('demo-flow KHÔNG kéo ambient sang alert', trangThaiAmbient(chonTinHieu({ ...RONG, demoXong: 1, demoTong: 2 })) === 'idle');
+ok('demo-flow + lỗi thật thì ambient vẫn alert (lỗi thắng)', trangThaiAmbient(chonTinHieu({ dangChay: 0, chayLoi: 1, demoXong: 1, demoTong: 2 })) === 'alert');
