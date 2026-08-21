@@ -32,7 +32,7 @@ import { wallSegmentOutline, railingPosts } from '@/lib/cad/commands';
 import { translateEntity } from '@/lib/cad/geometry';
 import { useScene3D } from '@/lib/render-studio/use-scene3d';
 import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
-import { useTool3D } from '@/lib/render-studio/tool3d';
+import { useTool3D, rotateSelectionUpdates } from '@/lib/render-studio/tool3d';
 import { Viewport3D, EMPTY_SCENE_3D } from '@/components/three/Viewport3D';
 import ModeSwitchBar from '@/components/render-studio/ModeSwitchBar';
 import Command3DPanel, { type Command3DTab, type WallDraft3D } from '@/components/render-studio/Command3DPanel';
@@ -434,6 +434,20 @@ export default function Render3DModeSkeleton() {
     ));
   }
 
+  /**
+   * XOAY khối đang chọn quanh tâm bbox (21/08 — kéo vòng ngoài gizmo).
+   * TÁI DÙNG `rotateSelectionUpdates` sẵn có ở `lib/render-studio/tool3d.ts` (đã lo `linkedIds`
+   * qua hostId + `rotateEntity` của engine 2D) — không chép lại phép quay ở đây.
+   */
+  function handleRotate(deltaDeg: number) {
+    if (!viewportSelectedId) return;
+    const store = useCadStore.getState();
+    const updates = rotateSelectionUpdates(store.doc.entities, viewportSelectedId, deltaDeg);
+    if (!updates.length) return;
+    store.updateEntities(updates);
+    store.setStatus(tr(`Đã xoay ${Math.round(deltaDeg)}°.`, `Rotated ${Math.round(deltaDeg)}°.`));
+  }
+
   /** Đùn từ bản vẽ: cảnh 3D vốn tự suy từ Doc, nên việc thật ở đây là ĐẶT CAO ĐỘ cho các nét
    * tường chưa có `heightMm` — đúng nghĩa "đùn", và ghi thẳng vào Doc (một nguồn). */
   function dunTuBanVe() {
@@ -582,6 +596,7 @@ export default function Render3DModeSkeleton() {
           selectedId={viewportSelectedId}
           mode="massing"
           onNudge={handleNudge}
+          onRotate={handleRotate}
           onPushPull={handlePushPull}
           lightMarkers={lightMarkers}
           onLightMove={handleLightMove}
@@ -717,23 +732,23 @@ export default function Render3DModeSkeleton() {
             </div>
           )}
 
-          {/* Nút gọi lại card chào sau khi đã đóng (đường thoát #3 nói "nhớ", nên phải có lối
-              quay lại — SPEC-NGON-NGU: đóng thứ gì cũng phải mở lại được). */}
+          {/* Lối quay lại gợi ý bắt đầu — SPEC-NGON-NGU: đóng thứ gì cũng phải mở lại được.
+              21/08: hạ hẳn xuống CHỮ MỜ, bỏ viên kính + viền + nền mờ. Lý do: một viên nổi ở góc
+              là thêm MỘT VẬT trên khung nhìn cho việc chỉ dùng đúng một lần lúc cảnh còn trống —
+              đúng loại "capsule bí ẩn" đang phải cắt. Vẫn gate `soKhoi === 0` nên có khối là nó
+              biến mất hẳn, không lởn vởn suốt phiên dựng. Đường CHÍNH để tạo hình vẫn là tab Tạo
+              (mở sẵn) + dock công cụ; đây chỉ là lối quay lại lời mời. */}
           {soKhoi === 0 && welcomeHidden && (
             <button
               type="button"
               onClick={moLaiCardChao}
-              title="Hiện lại gợi ý bắt đầu"
-              aria-label="Hiện lại gợi ý bắt đầu"
               style={{
-                position: 'absolute', right: 14, bottom: 74, zIndex: 6, width: 26, height: 26,
-                borderRadius: 999, border: '1px solid var(--vien-mo)',
-                background: 'color-mix(in srgb, var(--panel) 82%, transparent)',
-                backdropFilter: 'blur(var(--blur))', WebkitBackdropFilter: 'blur(var(--blur))',
-                color: 'var(--t3)', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 74, zIndex: 6,
+                border: 0, background: 'none', padding: '4px 8px', color: 'var(--t4)',
+                fontSize: 'var(--fs-2xs)', cursor: 'pointer',
               }}
             >
-              ?
+              {tr('Gợi ý bắt đầu', 'Show start options')}
             </button>
           )}
 

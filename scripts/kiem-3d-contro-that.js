@@ -161,6 +161,75 @@ async function main() {
     let cx = box.x + box.w * 0.45;
     let cy = box.y + box.h * 0.45;
 
+    if (cmd === 'transform') {
+      // MOVE / ROTATE bằng KÉO GIZMO — khẳng định bằng Doc, không bằng pixel.
+      let n0 = await entityCount(page);
+      if (!n0) {
+        const openCmd = page.locator('button[title="Mở bảng lệnh 3D"]').first();
+        if (await openCmd.count().catch(() => 0)) { await openCmd.click().catch(() => {}); await page.waitForTimeout(900); }
+        const w = page.locator('button', { hasText: /Thêm tường/ }).first();
+        if (await w.count().catch(() => 0)) { await w.click().catch(() => {}); await page.waitForTimeout(1600); }
+        const f = page.locator('button.fitbtn').first();
+        if (await f.count().catch(() => 0)) { await f.click().catch(() => {}); await page.waitForTimeout(1300); }
+        n0 = await entityCount(page);
+      }
+      // chọn khối
+      let trung = false;
+      for (const fy of [0.42, 0.5, 0.58]) {
+        for (const fx of [0.5, 0.42, 0.58]) {
+          await page.mouse.click(box.x + box.w * fx, box.y + box.h * fy);
+          await page.waitForTimeout(450);
+          if (await inspectorText(page)) { trung = true; break; }
+        }
+        if (trung) break;
+      }
+      log.push(`chọn khối: ${trung}`);
+      if (!trung) return;
+
+      // `onVanh`: vòng xoay là <circle fill=none r=44> ⇒ tâm hộp bao KHÔNG nằm trên nét. Bấm ở
+      // tâm là bấm xuyên qua xuống canvas (đã đo: xoay không ăn). Phải bám ĐÚNG nét: tâm + r.
+      const keoTruc = async (nhan, dx, dy, onVanh = false) => {
+        const g = page.locator(`g[aria-label="${nhan}"], circle[aria-label="${nhan}"]`).first();
+        if (!(await g.count().catch(() => 0))) return `KHÔNG thấy "${nhan}"`;
+        const bb = await g.boundingBox();
+        if (!bb) return `"${nhan}" không có hộp`;
+        const cx0 = bb.x + bb.width / 2 + (onVanh ? bb.width / 2 - 2 : 0);
+        const cy0 = bb.y + bb.height / 2;
+        await page.mouse.move(cx0, cy0);
+        await page.mouse.down();
+        for (let i = 1; i <= 12; i++) { await page.mouse.move(cx0 + (dx * i) / 12, cy0 + (dy * i) / 12); await page.waitForTimeout(28); }
+        await page.mouse.up();
+        await page.waitForTimeout(1400);
+        return null;
+      };
+
+      const d0 = await docSnapshot(page);
+      const e1 = await keoTruc('Kéo theo trục X', 150, 0);
+      const d1 = await docSnapshot(page);
+      log.push(`DỜI trục X: ${e1 ?? ''} vị trí đổi=${JSON.stringify(d0.map((x) => x.p)) !== JSON.stringify(d1.map((x) => x.p))} · ${JSON.stringify(d0.map((x) => x.p))} → ${JSON.stringify(d1.map((x) => x.p))}`);
+
+      // chẩn: vòng xoay có nằm đúng chỗ ta bấm không?
+      const chanVanh = await page.evaluate(() => {
+        const c = document.querySelector('circle[aria-label="Kéo để xoay quanh trục đứng"]');
+        if (!c) return 'không có phần tử';
+        const r = c.getBoundingClientRect();
+        const px = r.x + r.width - 3;
+        const py = r.y + r.height / 2;
+        const tren = document.elementFromPoint(px, py);
+        return { hop: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], tren: tren ? tren.tagName + '/' + (tren.getAttribute('aria-label') || '') : null };
+      });
+      log.push(`  chẩn vòng xoay: ${JSON.stringify(chanVanh)}`);
+      const e2 = await keoTruc('Kéo để xoay quanh trục đứng', 140, 0, true);
+      const d2 = await docSnapshot(page);
+      log.push(`XOAY: ${e2 ?? ''} hình đổi=${JSON.stringify(d1.map((x) => x.p)) !== JSON.stringify(d2.map((x) => x.p))} · ${JSON.stringify(d2.map((x) => x.p))}`);
+
+      const undo = page.locator('button[title*="Hoàn tác"], button[aria-label*="Hoàn tác"]').first();
+      if (await undo.count().catch(() => 0)) { await undo.click().catch(() => {}); await page.waitForTimeout(1200); }
+      const d3 = await docSnapshot(page);
+      log.push(`HOÀN TÁC sau xoay: về lại vị trí trước xoay=${JSON.stringify(d3.map((x) => x.p)) === JSON.stringify(d1.map((x) => x.p))}`);
+      await page.screenshot({ path: OUT + '/10-3d-selection.png' });
+    }
+
     if (cmd === 'empty3d') {
       // CỬA VÀO 3D RỖNG: phải dựng được NGAY, không đòi mặt bằng 2D.
       const n0 = await entityCount(page);

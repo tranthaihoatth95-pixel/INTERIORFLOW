@@ -45,6 +45,9 @@ export interface Viewport3DProps {
   onViewChange?: (dir: ViewDir) => void;
   /** kéo gizmo theo 1 trục (mm). Viewport KHÔNG tự ghi vào Doc — luật một nguồn. */
   onNudge?: (axis: 'x' | 'y' | 'z', deltaMm: number) => void;
+  /** 21/08 — kéo vòng ngoài gizmo để XOAY quanh trục đứng (độ, dương = ngược kim đồng hồ theo hệ
+   *  Y-Bắc của Doc). Cùng luật với `onNudge`: Viewport KHÔNG tự ghi Doc, nơi gọi ghi. */
+  onRotate?: (deltaDeg: number) => void;
   onPushPull?: (entityId: string, newHeightMm: number) => void;
   /** VIỆC 3.c — dấu vị trí đèn kéo được (`Scene3DViewer.LightMarker`). Viewport chỉ CHUYỂN TIẾP,
    * không tự dựng/ghi gì — cùng khuôn `onPushPull`. */
@@ -99,6 +102,7 @@ export function Viewport3D({
   selectedId = null,
   onViewChange,
   onNudge,
+  onRotate,
   onPushPull,
   lightMarkers,
   onLightMove,
@@ -153,6 +157,106 @@ export function Viewport3D({
   }
   const cameraApiRef = cameraApiRefNgoai ?? cameraApiRefNoi;
   const tr = useT();
+
+  /* ── GIZMO BÁM VẬT + KÉO ĐƯỢC (21/08) ────────────────────────────────────────────────────
+     Trước: gizmo ghim giữa màn, mỗi trục chỉ là nút nhích 100mm ⇒ "Dời/Xoay" trên thực tế không
+     tồn tại như một thao tác kéo (đo bằng con trỏ thật: kéo chỉ xoay máy ảnh).                */
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [neoGizmo, setNeoGizmo] = useState<{ x: number; y: number } | null>(null);
+  const [keo, setKeo] = useState<{ truc: 'x' | 'y' | 'z' | 'xoay'; d: number } | null>(null);
+  const keoRef = useRef<{ truc: 'x' | 'y' | 'z' | 'xoay'; x0: number; y0: number; d: number } | null>(null);
+
+  /** Tâm khối đang chọn, chiếu ra toạ độ màn. Chạy mỗi khung: camera xoay/zoom là gizmo phải đi
+   *  theo, không thể tính một lần rồi thôi. Rẻ — vài phép nhân ma trận cho một điểm. */
+  useEffect(() => {
+    if (!selectedId) {
+      setNeoGizmo(null);
+      return;
+    }
+    let raf = 0;
+    const chay = () => {
+      raf = requestAnimationFrame(chay);
+      const cam = cameraApiRef.current?.camera;
+      const host = boxRef.current;
+      const g = scene.groups.find((x) => x.entityId === selectedId);
+      if (!cam || !host || !g || !g.positions.length) return;
+      // trọng tâm các đỉnh (three, mét) — đủ đúng cho một cái neo, không cần Box3 đầy đủ
+      let sx = 0;
+      let sy = 0;
+      let sz = 0;
+      const n = g.positions.length / 3;
+      for (let i = 0; i < g.positions.length; i += 3) {
+        sx += g.positions[i];
+        sy += g.positions[i + 1];
+        sz += g.positions[i + 2];
+      }
+      // Chiếu thủ công world → clip bằng CHÍNH ma trận của camera, KHÔNG `import * as THREE`:
+      // docstring đầu file cấm import tĩnh `three` (≈170KB gzip vào bundle chính; cả kiểu cũng
+      // chỉ `import type`). Camera là object three thật do Scene3DViewer giữ, nên đọc `.elements`
+      // là đủ — vài phép nhân, không cần thư viện.
+      const px = sx / n;
+      const py = sy / n;
+      const pz = sz / n;
+      const mv = cam.matrixWorldInverse.elements;
+      const pr = cam.projectionMatrix.elements;
+      const ap = (m: number[], x: number, y: number, z: number, w: number) => [
+        m[0] * x + m[4] * y + m[8] * z + m[12] * w,
+        m[1] * x + m[5] * y + m[9] * z + m[13] * w,
+        m[2] * x + m[6] * y + m[10] * z + m[14] * w,
+        m[3] * x + m[7] * y + m[11] * z + m[15] * w,
+      ];
+      const e = ap(mv as unknown as number[], px, py, pz, 1);
+      const c = ap(pr as unknown as number[], e[0], e[1], e[2], e[3]);
+      if (!c[3]) return;
+      const r = host.getBoundingClientRect();
+      setNeoGizmo({ x: ((c[0] / c[3] + 1) / 2) * r.width, y: ((1 - c[1] / c[3]) / 2) * r.height });
+    };
+    raf = requestAnimationFrame(chay);
+    return () => cancelAnimationFrame(raf);
+  }, [selectedId, scene, cameraApiRef]);
+
+  /**
+   * Bắt đầu kéo một trục (hoặc vòng xoay). GHI MỘT LẦN LÚC THẢ: trong lúc kéo chỉ cập nhật con
+   * số hiện trên gizmo, thả tay mới gọi `onNudge`/`onRotate` đúng một nhịp ⇒ một bước hoàn tác.
+   * Ghi từng khung sẽ mượt hơn nhưng đẻ hàng trăm bước Ctrl+Z rác — đổi lại không đáng.
+   * Kéo dưới 3px coi là CÚ BẤM: giữ nguyên hành vi nhích 100mm cũ, không cướp mất đường đó.
+   */
+  function batDauKeo(e: React.PointerEvent, truc: 'x' | 'y' | 'z' | 'xoay') {
+    e.preventDefault();
+    e.stopPropagation();
+    keoRef.current = { truc, x0: e.clientX, y0: e.clientY, d: 0 };
+    setKeo({ truc, d: 0 });
+    const el = e.currentTarget as Element;
+    el.setPointerCapture?.(e.pointerId);
+
+    const move = (ev: PointerEvent) => {
+      const k = keoRef.current;
+      if (!k) return;
+      const dx = ev.clientX - k.x0;
+      const dy = ev.clientY - k.y0;
+      // Quy đổi màn → thế giới: 1px ≈ 10mm (trục) / 0,5° (xoay). Hằng số thô có chủ ý — chính
+      // xác thì gõ số ở Inspector; ở đây cần CẢM GIÁC kéo, và số hiện ngay nên không ai đoán mò.
+      k.d = truc === 'xoay' ? dx * 0.5 : truc === 'z' ? -dy * 10 : (truc === 'x' ? dx : dy) * 10;
+      setKeo({ truc, d: k.d });
+    };
+    const up = () => {
+      const k = keoRef.current;
+      keoRef.current = null;
+      setKeo(null);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      if (!k) return;
+      if (Math.abs(k.d) < 30) {
+        // gần như không di chuyển ⇒ đối xử như CÚ BẤM (đường nhích cũ).
+        if (k.truc !== 'xoay') onNudge?.(k.truc, 100);
+        return;
+      }
+      if (k.truc === 'xoay') onRotate?.(k.d);
+      else onNudge?.(k.truc, Math.round(k.d));
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  }
   // G-M18-04 — walk/campath tự lái camera mỗi khung (xem `Scene3DCameraApi.fit`), nút mờ đi kèm
   // lý do thay vì ẩn hẳn (đúng §9 "disabled kèm lý do", không phải nút giả vì 2 mode này thật sự
   // không có khái niệm "toàn cảnh").
@@ -182,7 +286,7 @@ export function Viewport3D({
   }, [scene]);
 
   return (
-    <div className="if-ve3d vp3d">
+    <div className="if-ve3d vp3d" ref={boxRef}>
       <RawStyle css={VE3D_CSS} />
 
       <Scene3DViewer
@@ -249,28 +353,65 @@ export function Viewport3D({
         <circle cx="45" cy="60" r="3" fill="var(--t3)" />
       </svg>
 
-      {/* ── Gizmo di chuyển 3 trục trên khối đang chọn — kích thước/tỉ lệ port đúng mock `.gizmo`
-          (96×96, stroke 2.2, đầu mút r=3.4; trước 120×120/2.5/5 — chỉ số, không đổi hành vi kéo) ── */}
-      {selectedId && (
+      {/* ── GIZMO BIẾN ĐỔI — 21/08 dựng lại cho KÉO ĐƯỢC ─────────────────────────────────────
+          Bản cũ: SVG ghim cứng ở GIỮA MÀN (`left:50% top:50%`), mỗi trục chỉ `onPointerDown` gọi
+          `onNudge(axis, 100)` — tức "Dời" thật ra là NÚT NHÍCH 100mm, và nó không dính vào vật
+          đang chọn. Đo bằng con trỏ thật: kéo trên khối chỉ xoay máy ảnh, toạ độ trong Doc không
+          đổi.
+          Nay: gizmo BÁM VẬT (chiếu tâm khối đang chọn ra màn mỗi khung hình) và KÉO ĐƯỢC.
+          · kéo trục X/Y/Z → dời · kéo vòng ngoài → xoay quanh trục đứng;
+          · GHI MỘT LẦN lúc thả (không ghi từng khung) ⇒ đúng MỘT bước hoàn tác, không phải hàng
+            trăm bước rác — đây là lý do chọn commit-on-release thay vì hình chạy theo con trỏ;
+          · số mm/độ hiện ngay cạnh gizmo trong lúc kéo nên vẫn thấy mình đang làm gì;
+          · bấm (không kéo) vẫn nhích 100mm như cũ — đường phím/chính xác giữ nguyên. */}
+      {selectedId && neoGizmo && (
         <svg
-          style={{ position: 'absolute', left: '50%', top: '50%', width: 96, height: 96, transform: 'translate(-50%,-50%)', zIndex: 5 }}
-          viewBox="0 0 96 96"
-          aria-label="Gizmo di chuyển"
+          style={{
+            position: 'absolute', left: neoGizmo.x, top: neoGizmo.y, width: 128, height: 128,
+            transform: 'translate(-50%,-50%)', zIndex: 5, overflow: 'visible',
+          }}
+          viewBox="0 0 128 128"
+          aria-label="Gizmo biến đổi"
         >
+          {/* vòng XOAY — ngoài cùng để không tranh chỗ với 3 trục dời */}
+          <circle cx="64" cy="64" r="44" fill="none" stroke="var(--t4)" strokeWidth="1.6" strokeDasharray="3 5" pointerEvents="none" />
+          {/* Vùng bắt chuột RIÊNG, trong suốt, dày 16px. Nét vẽ 1,6px lại còn ĐỨT QUÃNG thì gần
+              như không thể kéo trúng — con trỏ rơi vào khe là sự kiện xuyên xuống canvas và biến
+              thành xoay máy ảnh. Đã đo thật: `elementFromPoint` ngay trên vành trả về <svg>, không
+              phải <circle>. Tách nét-để-nhìn khỏi vùng-để-bắt, cùng khuôn đã dùng cho 3 trục. */}
+          <circle
+            cx="64" cy="64" r="44" fill="none" stroke="transparent" strokeWidth="16"
+            style={{ cursor: 'grab' }} role="button"
+            aria-label="Kéo để xoay quanh trục đứng"
+            onPointerDown={(e) => batDauKeo(e, 'xoay')}
+          />
           {([
-            ['z', 48, 48, 48, 6, 'var(--ax-z)'],
-            ['x', 48, 48, 90, 62, 'var(--ax-x)'],
-            ['y', 48, 48, 10, 62, 'var(--ax-y)'],
+            ['z', 64, 64, 64, 14, 'var(--ax-z)'],
+            ['x', 64, 64, 112, 84, 'var(--ax-x)'],
+            ['y', 64, 64, 16, 84, 'var(--ax-y)'],
           ] as const).map(([axis, x1, y1, x2, y2, color]) => (
-            /* Dùng aria-label, KHÔNG <title> trong SVG: React 18 xử lý <title> khác giữa
-               server/client ⇒ hydration mismatch thật (bắt ở console lúc verify; đổi sang
-               template literal vẫn không hết, nên bỏ hẳn phần tử này). */
-            <g key={axis} style={{ cursor: 'grab' }} role="button" aria-label={`Kéo theo trục ${axis.toUpperCase()}`} onPointerDown={() => onNudge?.(axis, 100)}>
-              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth="2.2" />
-              <circle cx={x2} cy={y2} r="3.4" fill={color} />
+            /* aria-label chứ KHÔNG <title> trong SVG: React 18 xử lý <title> khác nhau giữa
+               server/client ⇒ hydration mismatch thật (đã bắt ở console lúc verify). */
+            <g
+              key={axis}
+              style={{ cursor: 'grab' }}
+              role="button"
+              aria-label={`Kéo theo trục ${axis.toUpperCase()}`}
+              onPointerDown={(e) => batDauKeo(e, axis)}
+            >
+              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth="2.4" />
+              <circle cx={x2} cy={y2} r="4.4" fill={color} />
+              {/* vùng bắt chuột rộng hơn nét vẽ — nét 2.4px thì gần như không kéo trúng */}
+              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="transparent" strokeWidth="16" />
             </g>
           ))}
-          <circle cx="48" cy="48" r="3" fill="var(--t2)" />
+          <circle cx="64" cy="64" r="3.4" fill="var(--t2)" />
+          {keo && (
+            <text x="72" y="52" fontSize="12" fill="var(--t1)" fontWeight="600" style={{ paintOrder: 'stroke' }}
+                  stroke="var(--bg)" strokeWidth="3">
+              {keo.truc === 'xoay' ? `${Math.round(keo.d)}°` : `${Math.round(keo.d)} mm`}
+            </text>
+          )}
         </svg>
       )}
 
