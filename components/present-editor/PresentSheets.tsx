@@ -70,6 +70,7 @@ import {
   type SheetsRecord,
 } from '@/lib/sheets-persist';
 import { useSaveStatus } from '@/lib/save-status';
+import { saoLuuDeckLenMayChu, taiDeckTuMayChu } from '@/lib/present-editor/luu-len-may-chu';
 import { useSheetsBucketId } from '@/lib/scope';
 import { useFlowStore } from '@/lib/store';
 import { rootFolderChosen, getProjectFolderHandle, writeTextFile, readTextFile } from '@/lib/root-folder';
@@ -355,6 +356,19 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
       if (diskSheets) {
         applyIdfpSheets(diskSheets);
         saverRef.current?.touch(); // đồng bộ ngược lại IndexedDB — cache luôn ấm cho lần mở kế
+      } else if (!rec || valid.length === 0) {
+        /**
+         * LƯỚI ĐỠ CUỐI (21/08) — MÁY CHỦ. Chạy KHI VÀ CHỈ KHI đĩa không thắng VÀ cache rỗng:
+         * trình duyệt mới, vừa xoá dữ liệu duyệt web, vừa đăng nhập máy khác. Trước bản này
+         * đúng ca đó là mất trắng deck (đã xảy ra thật 21/08) vì đồng bộ đĩa mặc định TẮT —
+         * nó đòi người dùng tự chọn thư mục gốc, còn bản sao máy chủ thì không cần cài gì.
+         * Không thấy bản sao ⇒ im lặng đi tiếp, KHÔNG dựng deck rỗng đè lên việc đang làm.
+         */
+        const tuMayChu = await taiDeckTuMayChu(bucketId);
+        if (tuMayChu?.length) {
+          applyIdfpSheets(tuMayChu);
+          saverRef.current?.touch();
+        }
       } else if (rec && valid.length > 0) {
         seq = Math.max(seq, nextSeqFrom(valid.map((s) => s.id), 'presheet'));
         // ⚠️ THỨ TỰ QUYỀN SỞ HỮU (sửa 21/08) — `rec.activeId` THẮNG `resume.sheetId`.
@@ -409,6 +423,24 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
     saverRef.current = saver;
 
     /**
+     * SAO LƯU MÁY CHỦ (21/08) — nhịp CHẬM 30s, khác hẳn IndexedDB (debounce ~1s).
+     * Vì sao chậm: mỗi lần ghi là một tệp `.idfp` vài chục KB đi qua mạng + ghi đĩa máy chủ;
+     * deck không đổi mỗi giây, và đây là BẢN SAO chứ không phải nguồn làm việc. Ghi đè cùng một
+     * tên tệp nên không rải hàng chục bản nháp vào Files.
+     * Im lặng khi hỏng: bản sao là lưới đỡ, tuyệt đối không được làm gãy editor.
+     */
+    const nhipSaoLuu = window.setInterval(() => {
+      const rec = getRecord();
+      if (!rec?.sheets.length || !bucketId) return;
+      void saoLuuDeckLenMayChu(
+        bucketId,
+        rec.sheets.map((x) => ({ id: x.id, name: x.name, deck: (x as unknown as { deck: EditorDeck }).deck })),
+        getActiveBrandKit(),
+        useFlowStore.getState().flowName || 'InteriorFlow project',
+      );
+    }, 30_000);
+
+    /**
      * B4 (4.1.d, bổ sung ③) — ghi đĩa THEO NHỊP RIÊNG, chậm hơn IndexedDB (throttle 10s, không
      * debounce) + ⌘S/rời trang ép ghi ngay. `reason:'off'` là cờ nội bộ (KHÔNG phải lỗi) khi dự
      * án chưa bật lưu trữ.
@@ -453,6 +485,7 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
       window.removeEventListener('present:force-save-request', onForceSave);
       saver.flush(); // rời route (client-nav) → không mất nhịp cuối
       saver.dispose();
+      window.clearInterval(nhipSaoLuu);
       saverRef.current = null;
       diskWriter.flushNow();
       diskWriter.dispose();

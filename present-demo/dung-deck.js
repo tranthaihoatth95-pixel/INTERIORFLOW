@@ -90,7 +90,12 @@
     const key = `${userId}::/present-editor::${projectId}`;
     const db = await new Promise((res, rej) => { const r = indexedDB.open('interiorflow-sheets', 1); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
     const cu = await new Promise((res) => { const q = db.transaction('sheets', 'readonly').objectStore('sheets').get(key); q.onsuccess = () => res(q.result); });
-    const to = { id: 'presheet-gioithieu', name: 'Giới thiệu IF', deck: { slides, fonts: '', transition: 'fade' } };
+        // ⚠️ `deck.id` BẮT BUỘC — `isValidDeck` (lib/present-editor/idfp.ts) đòi nó là chuỗi; thiếu
+    // thì `importIdfp` LOẠI SẠCH mọi tờ và trả null, tức deck KHÔNG xuất/nhập `.idfp` được và
+    // KHÔNG khôi phục được từ bản sao máy chủ. Bản dựng đầu 21/08 thiếu field này — bắt được khi
+    // thử khôi phục sau khi xoá IndexedDB.
+    const to = { id: 'presheet-gioithieu', name: 'Giới thiệu IF',
+      deck: { id: 'deck-gioithieu-if', slides, fonts: '', transition: 'fade' } };
     const rec = cu && cu.sheets ? cu : { v: 1, activeId: to.id, sheets: [], ts: Date.now() };
     const i = rec.sheets.findIndex((s) => s.id === to.id);
     if (i >= 0) rec.sheets[i] = { ...rec.sheets[i], ...to }; else rec.sheets.unshift(to);

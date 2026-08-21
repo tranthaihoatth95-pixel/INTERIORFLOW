@@ -44,6 +44,14 @@ export async function saoLuuDeckLenMayChu(
   projectName?: string,
 ): Promise<KetQuaSaoLuu> {
   if (!projectId || !sheets.length) return { ok: false, loi: 'thiếu dự án hoặc chưa có tờ nào' };
+  /**
+   * ⛔ CHẶN GHI ĐÈ BẰNG BẢN RỖNG — lỗi THẬT đã tự gây ra rồi bắt được 21/08: nhịp sao lưu định
+   * kỳ chạy NGAY SAU khi IndexedDB bị xoá, lúc deck trong bộ nhớ còn rỗng ⇒ ghi đè bản tốt
+   * 55.500 byte bằng bản 415 byte. Sao lưu mà giết mất bản sao thì tệ hơn không sao lưu.
+   * Tờ không có slide nào = KHÔNG phải trạng thái đáng lưu.
+   */
+  const tongSlide = sheets.reduce((n, s) => n + ((s.deck?.slides?.length as number) ?? 0), 0);
+  if (tongSlide === 0) return { ok: false, loi: 'deck rỗng — không ghi đè bản sao đang có' };
   try {
     const json = exportIdfp(sheets, brandKit, { projectName });
     // `dataUrl` là đường nhận tệp mà route đã có; mime do SERVER tự sniff (§6.2) nên nhãn ở đây
@@ -72,14 +80,27 @@ export async function taiDeckTuMayChu(projectId: string): Promise<IdfpSheetData[
     const ds = await fetch(`/api/project-files?projectId=${encodeURIComponent(projectId)}`)
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null);
-    const files: { id: string; name: string; updatedAt?: string }[] = ds?.files ?? [];
-    const hit = files
+    // Trường thời gian THẬT của API là `uploadedAt` (đo tại nguồn: id·projectId·name·mime·path·
+    // contentHash·uploadedBy·uploadedAt). Dùng `updatedAt` như bản đầu là luôn ra 0 ⇒ thứ tự tuỳ ý.
+    const files: { id: string; name: string; uploadedAt?: string }[] = ds?.files ?? [];
+    const ungVien = files
       .filter((f) => f.name === TEN_TEP_SAO_LUU)
-      .sort((a, b) => new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime())[0];
-    if (!hit) return null;
-    const json = await fetch(`/api/project-files/${hit.id}`).then((r) => (r.ok ? r.text() : ''));
-    if (!json) return null;
-    return importIdfp(json)?.sheets ?? null;
+      .sort((a, b) => new Date(b.uploadedAt ?? 0).getTime() - new Date(a.uploadedAt ?? 0).getTime());
+    /**
+     * Duyệt từ MỚI NHẤT xuống, lấy bản ĐẦU TIÊN CÓ SLIDE. Không lấy cứng bản mới nhất: nếu một
+     * bản rỗng từng lọt lên trên (đã xảy ra), lấy cứng là khôi phục ra deck trắng — tức mất bài
+     * lần thứ hai, ngay bằng chính cơ chế sinh ra để chống mất bài.
+     * Mỗi lần ghi tạo BẢN GHI MỚI (không ghi đè hàng cũ) nên lịch sử còn nguyên để lùi về.
+     */
+    for (const f of ungVien.slice(0, 8)) {
+      // Đường đọc nội dung là `/file`; `/api/project-files/<id>` trần trả 405 (đo thật).
+      const json = await fetch(`/api/project-files/${f.id}/file`).then((r) => (r.ok ? r.text() : ''));
+      if (!json) continue;
+      const sheets = importIdfp(json)?.sheets;
+      const co = sheets?.some((s) => ((s.deck?.slides?.length as number) ?? 0) > 0);
+      if (sheets && co) return sheets;
+    }
+    return null;
   } catch {
     return null;
   }
