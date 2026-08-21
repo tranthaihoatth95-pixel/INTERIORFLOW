@@ -62,6 +62,7 @@ import type { GridGeometryInput } from '@/lib/present-editor/suggest';
 import { consumePresentHandoffWithIds, deckImagesWithIdsFromNodes } from '@/lib/present-editor/handoff';
 import { consumeCadPresentHandoff } from '@/lib/cad/present-handoff';
 import { consumeSpecPresentHandoff } from '@/lib/present-editor/spec-present-handoff';
+import { consumePresentReturn, peekPresentReturn } from '@/lib/present-editor/present-return';
 import { markDemoStep } from '@/lib/studio/demo-spine';
 import {
   stashPhotoEditorIn,
@@ -307,6 +308,9 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
   // màn hình (SlidePlayer). Mọi lời gọi playing/setPlaying bên dưới giữ nguyên cú pháp cũ.
   const playing = usePlayStatus((s) => s.playing);
   const setPlaying = usePlayStatus((s) => s.setPlaying);
+  // QUAY VỀ TRÌNH BÀY (present-return.ts): index slide phải mở lại — GHIM RIÊNG, không dựa vào
+  // ed.currentSlide (deck có thể được PresentSheets bơm lại sau khi consume ⇒ reducer reset về 0).
+  const [returnStartIdx, setReturnStartIdx] = useState<number | null>(null);
   // "Xem lưới" (Slide Sorter) — overlay bổ sung cho SlideStrip, xem toàn deck dạng lưới.
   const [sorterOpen, setSorterOpen] = useState(false);
   // bảng hỏi số liệu (áp vào bố cục sinh ra).
@@ -463,6 +467,31 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
     markDemoStep('specPresent', p.doiTuong);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * QUAY VỀ TRÌNH BÀY (deep link demo, 21/08 — `present-return.ts`): rời trình chiếu bằng một
+   * deep link trên slide rồi quay lại đây ⇒ nhảy ĐÚNG slide đã đứng + tự vào lại chế độ trình
+   * chiếu. Consume-once; chờ deck nạp xong (slide index phải có thật) mới áp — deck chưa đủ
+   * slide thì không áp, mốc đã tiêu, không nhảy bậy.
+   */
+  useEffect(() => {
+    // PEEK trước, chỉ TIÊU khi áp được: PresentEditor mount với deck rỗng rồi PresentSheets mới
+    // bơm deck thật từ IndexedDB — tiêu mốc lúc deck chưa nạp là mất mốc mà không nhảy đâu cả.
+    // Effect chạy lại theo số slide; áp xong thì consume (mốc biến mất, không áp lần hai).
+    const m = peekPresentReturn();
+    if (!m) return;
+    if (m.slideIndex >= 0 && m.slideIndex < ed.deck.slides.length) {
+      consumePresentReturn();
+      ed.selectSlide(m.slideIndex);
+      // Ghim index quay-về RIÊNG (không chỉ qua ed.currentSlide): PresentSheets có thể bơm lại
+      // deck SAU effect này (hydrate nhiều nhịp) làm reducer reset currentSlide=0 đúng lúc
+      // SlidePlayer mount ⇒ mở nhầm slide 1. Đã thấy thật 1 lần trên browser; state riêng này
+      // sống qua mọi lần load deck, xoá khi đóng player.
+      setReturnStartIdx(m.slideIndex);
+      setPlaying(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ed.deck.slides.length]);
 
   /**
    * [marker: focusEntity] — chiều ĐỌC của TaskContext Link (phiếu focus-entity-2d-present):
@@ -2454,7 +2483,16 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
       )}
 
       {/* Trình chiếu với hiệu ứng động. */}
-      {playing && <SlidePlayer deck={ed.deck} startIndex={ed.currentSlide} onClose={() => setPlaying(false)} />}
+      {playing && (
+        <SlidePlayer
+          deck={ed.deck}
+          startIndex={returnStartIdx ?? ed.currentSlide}
+          onClose={() => {
+            setPlaying(false);
+            setReturnStartIdx(null);
+          }}
+        />
+      )}
 
       {/* "Xem lưới" (Slide Sorter) — overlay bổ sung cho SlideStrip, xem toàn deck dạng lưới.
           AnimatePresence để lưới còn chạy được `exit` lúc đóng (trước đây tắt phựt). */}

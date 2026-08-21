@@ -52,6 +52,7 @@ import { AppLogoMenu } from '@/components/studio/AppLogoMenu';
 import { LeaveConfirmBar } from '@/components/studio/LeaveConfirmBar';
 import { LockScreen } from '@/components/studio/LockScreen';
 import { LiveGuide } from '@/components/studio/LiveGuide';
+import { QuayVeTrinhBay } from '@/components/studio/QuayVeTrinhBay';
 import { useLockScreen, lockScreenNow, getLockIdleMinutes } from '@/lib/lockscreen';
 import { getLastUserId } from '@/lib/resume';
 import { useDismissable } from '@/lib/useDismissable';
@@ -418,6 +419,8 @@ export function AppChrome({ active, logoMenu }: Props) {
           chuông Hoạt động. Sống ở đây (mọi chặng) để guide đi theo qua điều hướng. Render null
           khi tắt — 0 chi phí. */}
       <LiveGuide />
+      {/* Viên "Quay về Trình bày" — chỉ hiện khi đang rời trình chiếu bằng deep link (demo). */}
+      <QuayVeTrinhBay />
     </header>
   );
 }
