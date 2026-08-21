@@ -63,6 +63,7 @@
 // bundler Next.js, không resolve trong `node_modules/.bin/sucrase-node` chạy trực tiếp.
 import type { Tool } from '../cad/store';
 import { useCadStore, PRO_ONLY_TOOLS } from '../cad/store';
+import { useTree3DUi } from '../render-studio/tree3d-ui';
 import type { HatchPattern } from '../cad/model';
 import { CAD_COMMANDS } from '../cad/command-aliases';
 // R3 (19/08) — CHỈ import KIỂU (erased lúc compile): sổ lệnh giữ `hinh` dạng KHOÁ CHUỖI đúng khuôn
@@ -220,6 +221,29 @@ const CAD_PRO = when('stage==cad && proToolsAllowed==true');
  * tự gắn listener ⌘Z/⌘⇧Z gọi ĐÚNG `useCadStore.getState().undo()/redo()` — cùng hàm `run()` của
  * `cad.sel.undo`/`cad.sel.redo` bên dưới gọi. Xác nhận bằng đọc code, không suy đoán. */
 const CAD_OR_RENDER = (ctx: WhenCtx): boolean => ctx.stage === 'cad' || ctx.stage === 'render';
+
+/**
+ * 21/08 — XOÁ: sống ở 'cad' như cũ, và sống ở 'render' KHI có khối đang chọn trên khung nhìn 3D.
+ * Đọc `useTree3DUi.selectedEntityId` (state CHỌN của 3D — cùng store Navigator/Inspector đang
+ * dùng, KHÔNG đẻ nguồn thứ hai). Chưa chọn gì ⇒ mờ kèm lý do, đúng §9 (cấm nút bấm-không-ra-gì).
+ */
+const CAD_OR_RENDER_SEL = (ctx: WhenCtx): boolean =>
+  ctx.stage === 'cad' || (ctx.stage === 'render' && !!useTree3DUi.getState().selectedEntityId);
+
+/**
+ * Xoá thứ ĐANG CHỌN, đúng theo chặng đang đứng: 3D có khối chọn ⇒ xoá đúng entity đó (một lệnh
+ * `updateDoc` để undo gộp một nhịp); còn lại ⇒ đường cũ `deleteSelected()` của 2D. Một lệnh, hai
+ * bộ thi hành — đúng khuôn "một sổ lệnh nhiều mặt tiền" (TICKET-KIEN-TRUC-LENH-3-TANG §B5).
+ */
+function xoaDangChon(): void {
+  const id3d = useTree3DUi.getState().selectedEntityId;
+  if (id3d) {
+    store().removeIds([id3d]);
+    useTree3DUi.getState().pick(null);
+    return;
+  }
+  store().deleteSelected();
+}
 
 /** Chọn CAD_PRO nếu toolId thuộc PRO_ONLY_TOOLS (lib/cad/store.ts), ngược lại CAD_BASIC — tránh
  * gõ tay đúng/sai cho từng dòng, một nguồn duy nhất (PRO_ONLY_TOOLS) quyết định. */
@@ -481,12 +505,13 @@ export const COMMANDS: CommandDef[] = [
   },
   {
     id: 'cad.sel.delete', label: ['Xoá', 'Delete'], aliases: ['E', 'DEL', 'ERASE'], key: ['Delete'],
-    when: CAD_BASIC, group: 'sel@2', surfaces: ['statusbar', 'shortcut'], run: () => store().deleteSelected(),
+    when: CAD_OR_RENDER_SEL, group: 'sel@2', surfaces: ['statusbar', 'shortcut'], run: xoaDangChon,
     stages: ['cad', 'render', 'present'], icon: 'Trash2',
-    // MỜ ở 'render': `deleteSelected()` xoá theo `useCadStore.selection` — 3D dùng
-    // `viewportSelectedId` cục bộ (`Render3DModeSkeleton.tsx:720`, KHÔNG đồng bộ vào
-    // `useCadStore.selection`), gọi sẽ xoá NHẦM/xoá KHÔNG GÌ thay vì khối đang chọn trên khung
-    // nhìn 3D — đúng loại lỗi §9 cảnh báo, không nối. MỜ ở 'present': không có store toàn cục.
+    // 21/08 — NAY THẬT ở 'render' khi có khối được chọn trên khung nhìn. Lý do mờ cũ ("3D dùng
+    // viewportSelectedId cục bộ, không đồng bộ useCadStore.selection") đã hết hiệu lực: bấm-vào-
+    // khối nay ghi `useTree3DUi.selectedEntityId` (state CHỌN, không phải kho sự thật thứ hai),
+    // nên xoá nhắm ĐÚNG khối đang chọn — xem `xoaDangChon`. Chưa chọn gì thì vẫn MỜ kèm lý do
+    // (`toolbar-source.ts`), KHÔNG có nút chạy-mà-không-làm-gì. MỜ ở 'present': không có store.
   },
   {
     id: 'cad.sel.undo', label: ['Hoàn tác', 'Undo'], aliases: ['U', 'UNDO'], key: ['mod', 'Z'],

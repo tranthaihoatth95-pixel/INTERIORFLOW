@@ -80,7 +80,9 @@ const LY_DO_MO: Record<string, Partial<Record<Stage, [string, string]>>> = {
     present: ['Chưa nối công cụ chọn cho trang trình chiếu', 'Select is not wired to slides yet'],
   },
   'cad.sel.delete': {
-    render: ['Xoá chưa đọc được khối đang chọn trong khung nhìn 3D', 'Delete cannot read the 3D selection yet'],
+    // 21/08 — xoá NAY chạy được ở 3D (đọc `useTree3DUi.selectedEntityId`); chỉ còn mờ khi CHƯA
+    // chọn khối nào, nên lý do phải nói đúng hiện trạng đó, không nói "chưa nối" nữa.
+    render: ['Chọn một khối trong khung nhìn rồi mới xoá được', 'Select a block in the viewport first'],
     present: ['Chưa nối lệnh xoá cho trang trình chiếu', 'Delete is not wired to slides yet'],
   },
   'cad.sel.undo': { present: ['Trang trình chiếu có lịch sử riêng, chưa nối', 'Slides keep their own history, not wired yet'] },

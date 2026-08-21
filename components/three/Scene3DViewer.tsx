@@ -176,12 +176,16 @@ export interface Scene3DViewerProps {
    * hành vi y như trước với campath/chụp ảnh/công trường. Đọc qua REF (như lightMarkers) —
    * đổi công tắc snap không dựng lại cảnh. */
   snap3d?: { settings: SnapSettings; gridStepMm: number } | null;
+  /** 21/08 — BẤM-VÀO-KHỐI ĐỂ CHỌN (viewport-first): pointerdown trúng mesh massing (mặt bất kỳ)
+   * gọi hàm này với `entityId` của mesh. Component KHÔNG tự ghi store chọn (một nguồn — nơi gọi
+   * map entityId→group rồi ghi `useTree3DUi`); bỏ trống = hành vi cũ (chỉ push-pull mặt trên). */
+  onPickEntity?: (entityId: string) => void;
 }
 
 const IMPLEMENTED_MODES: Scene3DMode[] = ['orbit', 'campath', 'section', 'walk', 'massing'];
 const WALK_SPEED_M_PER_SEC = 1.5; // ~tốc độ đi bộ chậm, cùng cảm giác tempo với campath 1200mm/s
 
-export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = EYE_HEIGHT_MM, lensMm = 35, lightingPreview = null, sectionMm, onFrame, onPushPull, lightMarkers, onLightMove, ground = false, className, cameraApiRef, snap3d, selectedId = null }: Scene3DViewerProps) {
+export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = EYE_HEIGHT_MM, lensMm = 35, lightingPreview = null, sectionMm, onFrame, onPushPull, lightMarkers, onLightMove, ground = false, className, cameraApiRef, snap3d, selectedId = null, onPickEntity }: Scene3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // T4 — snap qua REF (cùng lý do lightMarkersRef): đổi công tắc không dựng lại cảnh.
   const snap3dRef = useRef(snap3d ?? null);
@@ -192,6 +196,9 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
   const massingActive = mode === 'massing';
   const onPushPullRef = useRef(onPushPull);
   onPushPullRef.current = onPushPull;
+  // 21/08 — pick qua REF (cùng lý do onPushPullRef): đổi handler không dựng lại cảnh.
+  const onPickEntityRef = useRef(onPickEntity);
+  onPickEntityRef.current = onPickEntity;
   // VIỆC 3.c — đèn đi qua REF, KHÔNG qua deps của effect chính. Nếu cho `lightMarkers` vào deps
   // thì mỗi lần kéo đèn 1px sẽ dựng lại TOÀN BỘ cảnh (hình học + camera + controls) — vừa giật
   // vừa reset góc nhìn. Effect chính đăng ký `syncMarkersRef`, effect nhỏ bên dưới gọi lại nó.
@@ -635,6 +642,11 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
       const hit = raycaster.intersectObjects(massingMeshes, false)[0];
       if (!hit || !hit.face) return;
       const worldNormal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
+      // 21/08 — BẤM TRÚNG KHỐI = CHỌN KHỐI (mặt nào cũng chọn), viewport-first: trước đây chọn
+      // CHỈ đi qua cây Navigator, bấm thẳng vào khối trên khung nhìn không làm gì (đo thật) —
+      // sai kỳ vọng của mọi app 3D. Chọn ngay ở pointerdown; mặt KHÔNG-phải-đỉnh thì return như
+      // cũ (orbit vẫn xoay bình thường, không capture) — chỉ thêm tín hiệu chọn, không đổi camera.
+      onPickEntityRef.current?.((hit.object as THREE.Mesh).userData.entityId as string);
       if (worldNormal.y < 0.5) return; // chỉ mặt TRÊN (đỉnh tường) mới có nghĩa "cao tường"
       const mesh = hit.object as THREE.Mesh;
       const ud = mesh.userData as { entityId: string; baseHeightMm: number; baseMm?: number };

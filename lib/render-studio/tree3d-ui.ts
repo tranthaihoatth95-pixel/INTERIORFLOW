@@ -14,13 +14,24 @@ import { create } from 'zustand';
 interface Tree3DUiState {
   hiddenNames: Set<string>;
   selectedName: string | null;
+  /**
+   * 21/08 — `entityId` của khối đang chọn, khi biết (tường có entityId; group khác chưa có).
+   * VÌ SAO cần: `selectedName` là tên GROUP hiển thị, các lệnh chung (`lib/commands/registry.ts`)
+   * không có `scene` trong tay để tra ngược tên→entity. Đây vẫn là state CHỌN (đúng vai của
+   * store này), KHÔNG phải kho sự thật thứ hai — hình học vẫn ở `useCadStore`.
+   */
+  selectedEntityId: string | null;
   toggleHidden: (name: string) => void;
   select: (name: string | null) => void;
+  /** Chọn TRỰC TIẾP (không toggle) — cho đường bấm-vào-khối trên viewport (21/08): bấm lại cùng
+   *  khối phải GIỮ chọn, khác hành vi bấm-lại-bỏ-chọn của hàng cây Navigator. */
+  pick: (name: string | null, entityId?: string | null) => void;
 }
 
 export const useTree3DUi = create<Tree3DUiState>((set) => ({
   hiddenNames: new Set(),
   selectedName: null,
+  selectedEntityId: null,
   toggleHidden: (name) =>
     set((s) => {
       const next = new Set(s.hiddenNames);
@@ -28,5 +39,9 @@ export const useTree3DUi = create<Tree3DUiState>((set) => ({
       else next.add(name);
       return { hiddenNames: next };
     }),
-  select: (name) => set((s) => ({ selectedName: s.selectedName === name ? null : name })),
+  // Chọn từ CÂY: không biết entityId ⇒ xoá cờ, tránh để lại entityId của lượt chọn trước (lệnh
+  // xoá sẽ nhắm nhầm khối cũ — đúng loại lỗi §9 cấm).
+  select: (name) =>
+    set((s) => (s.selectedName === name ? { selectedName: null, selectedEntityId: null } : { selectedName: name, selectedEntityId: null })),
+  pick: (name, entityId = null) => set({ selectedName: name, selectedEntityId: name ? entityId : null }),
 }));
