@@ -56,6 +56,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { useT } from '@/lib/i18n';
 import { getLastStage } from '@/lib/shell/last-stage';
+import { getLastUserId, loadResume } from '@/lib/resume';
 import { RADIUS } from '@/lib/geometry';
 import Tooltip from '@/components/ui/Tooltip';
 import { HE_BIEU_TUONG } from '@/components/ui/command-icon';
@@ -147,11 +148,28 @@ export function RailDieuHuong() {
   const beRong = BE_RONG_NAC[nac];
   const hienChu = nac !== 'dinhVi';
   const hienTinhTrang = nac === 'duyet';
-  const daMoDuAn = Boolean(duAnId ?? flowId);
+
+  /**
+   * P0 21/08 (Hoà: "trỏ vào gần như cái gì cũng khoá") — đo trên app thật: mở `/` ở phiên mới
+   * thì `currentProjectId`/`currentFlowId` đều null cho tới khi người dùng BẤM một dự án ⇒
+   * 5/8 mục rail (Dự án + cả cụm CHẶNG) `aria-disabled` + `cursor:not-allowed` ngay từ khung
+   * hình đầu — thanh được rê chuột nhiều nhất thì 5/8 chỗ "khoá", đọc ra như cả app khoá.
+   *
+   * Nhưng app BIẾT dự án gần nhất: card "Việc đang dở · Mở lại" đọc `loadResume(userId).flowId`
+   * ([Đ2] — cùng nguồn, không đẻ bộ nhớ thứ hai). Rail lùi về nguồn đó khi store chưa có dự án:
+   * mục chặng thành LINK THẬT `/projects/<flowId>/<stage>` — bấm là vào thẳng chặng của dự án
+   * gần nhất, đúng thứ người dùng muốn khi bấm "Thiết kế 3D" từ Home.
+   *
+   * Đọc sau `daNap` (localStorage, client-only) để không lệch SSR. Người CHƯA TỪNG mở dự án nào
+   * (resume rỗng) thì mục vẫn mờ kèm lý do — đó là khoá THẬT, không phải bệnh.
+   */
+  const duAnGanNhat = daNap ? (loadResume(getLastUserId() ?? '')?.flowId ?? null) : null;
+  const duAnHieuLuc = duAnId ?? flowId ?? duAnGanNhat;
+  const daMoDuAn = Boolean(duAnHieuLuc);
 
   // "Chặng đang dở" — dữ liệu THẬT, cùng khoá mà card Gallery đang đọc ([marker: lastStage]).
   // Đọc sau khi đã nạp xong để tránh lệch server/client.
-  const changDangDo = daNap ? getLastStage(duAnId ?? flowId) : null;
+  const changDangDo = daNap ? getLastStage(duAnHieuLuc) : null;
 
   const duoiDangDo = changDangDo ? MUC_DUOI_THEO_PHA[changDangDo] : null;
 
@@ -244,7 +262,7 @@ export function RailDieuHuong() {
               <HangRail
                 key={muc.id}
                 muc={muc}
-                duongDi={duongCua(muc, duAnId ?? flowId)}
+                duongDi={duongCua(muc, duAnHieuLuc)}
                 lyDo={lyDoMo(muc, daMoDuAn)}
                 dangMo={dangMo === muc.id}
                 hienChu={hienChu}
