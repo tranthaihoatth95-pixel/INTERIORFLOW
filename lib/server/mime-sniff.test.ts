@@ -84,5 +84,10 @@ ok(
   sniffKind(Buffer.from('{"idfpVersion":1,"sheets":"x"}', 'utf8')) === null,
 );
 
+
+const idfThat = Buffer.from(JSON.stringify({ idfVersion: 2, sheets: [{ id: 'cadsheet-0', name: 'Bản vẽ 1' }] }), 'utf8');
+ok('.idf (bản vẽ 2D) → application/json', sniffKind(idfThat) === 'idfp');
+ok('JSON có sheets nhưng KHÔNG chữ ký IF → null', sniffKind(Buffer.from('{"sheets":[]}', 'utf8')) === null);
+
 console.log(`\n${pass} pass, ${fail} fail`);
 if (fail) process.exit(1);

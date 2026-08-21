@@ -64,8 +64,13 @@ export function sniffKind(buf: Buffer | Uint8Array): SniffedKind | null {
     const dau = b.subarray(0, 64).toString('utf8').trimStart();
     if (dau.startsWith('{')) {
       try {
-        const o = JSON.parse(b.toString('utf8')) as { idfpVersion?: unknown; sheets?: unknown };
-        if (typeof o?.idfpVersion === 'number' && Array.isArray(o?.sheets)) return 'idfp';
+        const o = JSON.parse(b.toString('utf8')) as { idfpVersion?: unknown; idfVersion?: unknown; sheets?: unknown };
+        // Hai chữ ký tài liệu của IF: `.idfp` (hồ sơ trình bày) và `.idf` (bản vẽ 2D). Cùng một
+        // lý lẽ an toàn: phải PARSE ĐƯỢC và mang đúng chữ ký + `sheets` là mảng — HTML/SVG/JS
+        // không thể thoả. Bản vẽ là SỰ THẬT NGHỀ NGHIỆP nên nó cần bản sao bền hơn cả deck.
+        if (Array.isArray(o?.sheets) && (typeof o?.idfpVersion === 'number' || typeof o?.idfVersion === 'number')) {
+          return 'idfp';
+        }
       } catch {
         /* không phải JSON hợp lệ — rơi xuống, trả null như cũ */
       }
