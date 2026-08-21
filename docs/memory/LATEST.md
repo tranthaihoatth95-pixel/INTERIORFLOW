@@ -1,5 +1,22 @@
 # LATEST — bản nén trí nhớ bối cảnh IF (ghi đè mỗi phiên lớn)
 
+## ⭐ ĐANG CHẠY: CHIẾN DỊCH HOÀN TẤT IF (22/08) — ĐỌC CÁI NÀY TRƯỚC
+
+**Con trỏ chiến dịch:** `docs/memory/sessions/2026-08-22/01-master-completion/README.md`
+Đọc ~100 dòng đầu (CURRENT POINTER + GREEN) là bắt tay làm được ngay.
+
+- COMMIT: `83ff452` · NHÁNH: `backup/2026-08-19-batch0a` (main `c7f3ac8`, KHÔNG đụng)
+- WAVE: SESSION-01 · UI / hệ thị giác
+- GREEN (đừng kiểm lại): khôi phục Present + 2D sau khi XOÁ SẠCH IndexedDB · 2D→Present→về đúng
+  tờ · 3D dựng bằng cử chỉ + biến đổi + Boolean/Array/Bevel · Công Thức Hình gom theo ý định
+- BLOCKER THẬT: ghi DB bị classifier chặn (SESSION-05) · Hoà duyệt mắt bản vẽ (SESSION-01) ·
+  test điện thoại LAN (SESSION-06)
+- PHIÊN SAU MỞ: `docs/memory/sessions/2026-08-22/01-master-completion/SESSION-01.md`
+
+> Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
+
+---
+
 > **Đọc file này ĐẦU TIÊN**, rồi **`docs/coordination/IF-LIVE-BRIDGE.md`** (tóm tắt sống nhất,
 > MAIN↔ChatGPT), rồi `docs/memory/sessions/2026-08-20/09-main-parallel-waves-handoff/README.md`
 > (chi tiết đầy đủ phiên vừa xong), rồi `docs/INTERIORFLOW-ARCHITECTURE-MAP.md` nếu cần bối cảnh
