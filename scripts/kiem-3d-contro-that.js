@@ -161,6 +161,64 @@ async function main() {
     let cx = box.x + box.w * 0.45;
     let cy = box.y + box.h * 0.45;
 
+    if (cmd === 'shots') {
+      // BỘ ẢNH THẬT cho Present/tài liệu. Luật: chỉ chụp màn CHẠY ĐƯỢC; màn chưa có thì ghi
+      // thiếu, KHÔNG dựng ảnh giả. Mỗi khung đóng panel thừa trước khi bấm máy.
+      const chup = async (ten, moTa) => {
+        await page.waitForTimeout(1200);
+        await page.screenshot({ path: `${OUT}/${ten}.png` });
+        log.push(`✓ ${ten} — ${moTa}`);
+      };
+      const di = async (url, cho = 5000) => {
+        await page.goto(`${BASE}${url}`, { waitUntil: 'domcontentloaded' });
+        await page.waitForTimeout(cho);
+      };
+      const dongThuVien = async () => {
+        const c = page.locator('button[aria-label="Đóng Thư viện"]').first();
+        if (await c.count().catch(() => 0)) { await c.click().catch(() => {}); await page.waitForTimeout(700); }
+      };
+
+      await di('/', 6000);
+      await chup('01-home', 'Trang chủ — bento, Resume, nền theo giờ');
+
+      await di('/files', 4500);
+      await chup('04-files', 'Files dự án');
+
+      await di('/materials', 4500);
+      await chup('05-library-materials', 'Kho vật liệu — quả cầu PBR thật');
+
+      await di(`/projects/${PROJ}/cad`, 7000);
+      await dongThuVien();
+      await chup('07-2d-so-phac', '2D — chế độ Sơ phác');
+
+      await di(`/projects/${PROJ}/present`, 8000);
+      await chup('17-present', 'Trình bày — deck IF dựng trong chính IF');
+
+      await di('/demo/ghe-3d', 9000);
+      await chup('12-image-to-3d-lincoln', 'Ảnh → 3D — ghế Lincoln 327, xoay/soi ngay');
+
+      // 3D: viewport sạch + khối đang chọn
+      await open3D(page);
+      await dongThuVien();
+      const f = page.locator('button.fitbtn').first();
+      if (await f.count().catch(() => 0)) { await f.click().catch(() => {}); await page.waitForTimeout(1400); }
+      await chup('09-3d-viewport', '3D — khung nhìn sạch');
+      const b2 = await viewportBox(page);
+      if (b2) {
+        let trung = false;
+        for (const fy of [0.42, 0.5, 0.58]) {
+          for (const fx of [0.5, 0.42, 0.58]) {
+            await page.mouse.click(b2.x + b2.w * fx, b2.y + b2.h * fy);
+            await page.waitForTimeout(450);
+            if (await inspectorText(page)) { trung = true; break; }
+          }
+          if (trung) break;
+        }
+        if (trung) await chup('10-3d-selection', '3D — khối đang chọn + Inspector + gizmo');
+        else log.push('✗ 10-3d-selection — cảnh trống, không có khối để chọn (không chụp giả)');
+      }
+    }
+
     if (cmd === 'home') {
       // Trang chủ: cụm góc-phải phải TRỐNG, và VI/EN + Giới thiệu phải nằm trong menu Hồ sơ.
       await page.goto(BASE, { waitUntil: 'domcontentloaded' });
