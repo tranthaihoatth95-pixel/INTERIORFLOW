@@ -61,6 +61,38 @@ const KHA_NANG: KhaNang = {
  */
 let toDaNhan: ToBanVe | null = null;
 
+/**
+ * BẢN LƯU TỜ ĐÃ NHẬN (21/08) — vá lỗi cùng họ với vụ mất deck.
+ * TRƯỚC: tờ gửi từ 2D chỉ sống ở biến module `toDaNhan` ⇒ TẢI LẠI TRANG là mất sạch — chip
+ * "Thiết lập trang" lẫn nút "Quay lại 2D" biến mất, người dùng phải sang 2D gửi lại. Đo thật
+ * trên app: gửi xong, F5, cả hai không còn.
+ * NAY: soi gương xuống `sessionStorage` theo TỪNG DỰ ÁN. Chọn sessionStorage chứ không phải
+ * localStorage vì tờ mang `anh` (dataURL xem trước ~1400px) — localStorage trần ~5MB là vỡ, còn
+ * đây là ngữ cảnh của MỘT phiên làm việc, đúng vòng đời của nó. Vỡ hạn mức thì im lặng bỏ qua:
+ * đây là tiện nghi, không được phép làm gãy editor (cùng luật `sheets-persist`).
+ */
+const KHOA_TO = 'interiorflow.toBanVe.';
+function khoaTo(): string {
+  const m = /\/projects\/([^/]+)/.exec(typeof location === 'undefined' ? '' : location.pathname);
+  return KHOA_TO + (m?.[1] ?? 'chung');
+}
+function docToDaLuu(): ToBanVe | null {
+  try {
+    const raw = sessionStorage.getItem(khoaTo());
+    return raw ? (JSON.parse(raw) as ToBanVe) : null;
+  } catch {
+    return null;
+  }
+}
+function ghiToDaLuu(t: ToBanVe | null): void {
+  try {
+    if (t) sessionStorage.setItem(khoaTo(), JSON.stringify(t));
+    else sessionStorage.removeItem(khoaTo());
+  } catch {
+    /* hết hạn mức / chế độ riêng tư — bỏ qua, tờ vẫn sống trong phiên qua biến module */
+  }
+}
+
 export default function CongThietLapTrang({ onMoBangNet }: { onMoBangNet?: () => void }) {
   const [to, setTo] = useState<ToBanVe | null>(toDaNhan);
   const router = useRouter();
@@ -79,8 +111,16 @@ export default function CongThietLapTrang({ onMoBangNet }: { onMoBangNet?: () =>
       toDaNhan = nhan[0];
       setTo(nhan[0]);
       setMo(true); // vừa gửi sang thì mở luôn — người dùng đang ở giữa một việc
+      ghiToDaLuu(nhan[0]);
     } else if (toDaNhan) {
       setTo(toDaNhan); // lần dựng thứ hai của StrictMode — nhặt lại tờ lần đầu đã tiêu thụ
+    } else {
+      // Không có tờ mới VÀ biến module trống ⇒ đây là lần TẢI LẠI TRANG. Nhặt bản đã lưu.
+      const cu = docToDaLuu();
+      if (cu) {
+        toDaNhan = cu;
+        setTo(cu);
+      }
     }
   }, []);
 
@@ -91,6 +131,7 @@ export default function CongThietLapTrang({ onMoBangNet }: { onMoBangNet?: () =>
   /** Ghi cả state LẪN biến module — tờ đã sửa phải sống qua lần dựng lại của StrictMode. */
   const capNhat = (t: ToBanVe) => {
     toDaNhan = t;
+    ghiToDaLuu(t); // đổi khổ/tỉ lệ/khung tên phải sống qua tải lại, không chỉ qua StrictMode
     setTo(t);
   };
 
