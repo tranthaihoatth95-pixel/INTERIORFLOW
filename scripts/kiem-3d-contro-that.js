@@ -161,6 +161,83 @@ async function main() {
     let cx = box.x + box.w * 0.45;
     let cy = box.y + box.h * 0.45;
 
+    if (cmd === 'boolean') {
+      // BOOLEAN: đo tận Doc — op có được ghi lên `ops` không, cutter có sinh ra không, và hình
+      // trong khung nhìn có đổi không. Ba câu hỏi tách bạch để biết đứt ở khâu nào.
+      let n0 = await entityCount(page);
+      if (!n0) {
+        const openCmd = page.locator('button[title="Mở bảng lệnh 3D"]').first();
+        if (await openCmd.count().catch(() => 0)) { await openCmd.click().catch(() => {}); await page.waitForTimeout(900); }
+        const w = page.locator('button', { hasText: /Thêm tường/ }).first();
+        if (await w.count().catch(() => 0)) { await w.click().catch(() => {}); await page.waitForTimeout(1600); }
+        const f = page.locator('button.fitbtn').first();
+        if (await f.count().catch(() => 0)) { await f.click().catch(() => {}); await page.waitForTimeout(1300); }
+        n0 = await entityCount(page);
+      }
+      let trung = false;
+      for (const fy of [0.42, 0.5, 0.58]) {
+        for (const fx of [0.5, 0.42, 0.58]) {
+          await page.mouse.click(box.x + box.w * fx, box.y + box.h * fy);
+          await page.waitForTimeout(420);
+          if (await inspectorText(page)) { trung = true; break; }
+        }
+        if (trung) break;
+      }
+      const doc = () => page.evaluate(() => {
+        const ents = window.__cadStore?.getState?.().doc?.entities ?? [];
+        return {
+          n: ents.length,
+          ops: ents.map((e) => ({ id: e.id.slice(-5), t: e.type, ops: (e.ops || []).map((o) => o.op) })).filter((x) => x.ops.length),
+        };
+      });
+      const d0 = await doc();
+      const h0 = await sceneHash(page);
+      // ⚠️ CÓ HAI thứ khớp /Khoét hốc/: ô "Boolean khoét/hợp khối" ở bảng Tạo bên trái (ĐANG MỜ
+      // có chủ ý — chưa có thao tác rời) và nút THẬT ở Inspector bên phải. `.first()` tóm nhầm ô
+      // mờ ⇒ Playwright chờ mãi rồi timeout, và ta suýt kết luận "engine hỏng". Bám nhãn đầy đủ.
+      const nut = page.locator('button', { hasText: /Khoét hốc \(mẫu/ }).first();
+      log.push(`chọn=${trung} · nút Khoét hốc=${(await nut.count().catch(() => 0)) > 0}`);
+      // KHÔNG nuốt lỗi click nữa: lần trước `.catch(()=>{})` che mất khả năng "cú bấm không tới
+      // nơi" và đẩy nghi ngờ sang engine — sai địa chỉ điều tra.
+      // Ai đang nằm TRÊN nút? (chẩn hit-test ở cấp chủ sở hữu, không đoán)
+      const chanNut = await page.evaluate(() => {
+        const b = [...document.querySelectorAll('button')].find((x) => /Khoét hốc \(mẫu/.test(x.textContent || ''));
+        if (!b) return 'không thấy nút';
+        const r = b.getBoundingClientRect();
+        const cx = r.x + r.width / 2, cy = r.y + r.height / 2;
+        const tren = document.elementFromPoint(cx, cy);
+        const mo = (el) => { const s = getComputedStyle(el); return `${el.tagName}.${String(el.className).slice(0,26)} pe=${s.pointerEvents} z=${s.zIndex} op=${s.opacity}`; };
+        const to = [];
+        let p = b;
+        for (let i = 0; i < 5 && p; i++) { to.push(mo(p)); p = p.parentElement; }
+        return {
+          hop: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)],
+          trongMan: r.width > 0 && r.height > 0 && r.y >= 0 && r.y < window.innerHeight,
+          nguoiChe: tren ? mo(tren) : null,
+          laChinhNo: tren === b || (tren && b.contains(tren)),
+          toTien: to,
+        };
+      });
+      log.push(`  CHẨN NÚT: ${JSON.stringify(chanNut)}`);
+      const loiClick = [];
+      page.on('pageerror', (er) => loiClick.push('PAGEERR: ' + String(er.message).slice(0, 120)));
+      if (await nut.count().catch(() => 0)) {
+        try {
+          await nut.click({ timeout: 5000 });
+        } catch (er) {
+          loiClick.push('CLICK FAIL: ' + String(er.message).split('\n')[0].slice(0, 140));
+        }
+        await page.waitForTimeout(1800);
+      }
+      if (loiClick.length) log.push(`  lỗi: ${JSON.stringify(loiClick)}`);
+      const d1 = await doc();
+      const h1 = await sceneHash(page);
+      log.push(`entity: ${d0.n} → ${d1.n} (cutter sinh ra=${d1.n > d0.n})`);
+      log.push(`ops mang boolean: trước=${JSON.stringify(d0.ops)} · sau=${JSON.stringify(d1.ops)}`);
+      log.push(`hình trong khung nhìn đổi=${h0 !== h1}`);
+      await page.screenshot({ path: OUT + '/13-3d-boolean.png' });
+    }
+
     if (cmd === 'transform') {
       // MOVE / ROTATE bằng KÉO GIZMO — khẳng định bằng Doc, không bằng pixel.
       let n0 = await entityCount(page);
