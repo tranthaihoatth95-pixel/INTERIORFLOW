@@ -20,7 +20,7 @@
  * khai tầng, thay vì sắp chữ cái (`'GF'/'L1'/'Lửng'/'Tum'` không có thứ tự chữ cái đúng nghĩa nào
  * — lý do PHU đã ghi ở `levelsFromStoreys`).
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight, Eye, EyeOff, Layers } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import { sortedLevels } from '@/lib/cad/levels';
@@ -46,6 +46,33 @@ export function Object3DTree() {
   const hiddenLevels = useLevelUi((s) => s.hiddenLevels);
   const toggleLevel = useLevelUi((s) => s.toggleLevel);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  /**
+   * P0 20/08 (Hoà: "không còn chỗ để dựng khối") — VIEWPORT LÀ CHÍNH, cây tầng chỉ đáng chiếm
+   * 224px thường trực khi có gì để tra. Cảnh trống/gần-trống (0 hoặc 1 khối) mà vẫn giữ cột
+   * trắng rộng là "vận hành thanh công cụ quanh không gian" đúng thứ Hoà chê.
+   *
+   * KHÔNG đẻ cơ chế thu/mở thứ hai: bắn LẠI đúng sự kiện `if:navigator-toggle` mà `AppShell.tsx`
+   * đã dùng cho phím B — Navigator tự nghe sự kiện đó rồi thu, KHÔNG có state mới ở đây. Chỉ bắn
+   * MỘT LẦN, và CHỈ khi người dùng CHƯA từng tự tay bấm thu/mở Navigator bao giờ (không có khoá
+   * `interiorflow.navigator.collapsed_v1` trong localStorage) — đúng luật "nhớ lựa chọn tay,
+   * không tự đảo ngược" đã ghi trong Navigator.tsx. Cảnh đông khối lại thì không đụng gì (giữ
+   * nguyên hành vi cũ).
+   */
+  const autoCollapseTried = useRef(false);
+  useEffect(() => {
+    if (autoCollapseTried.current) return;
+    if (groups.length > 1) return; // đã có thứ để tra — không tự thu
+    let touched = false;
+    try {
+      touched = localStorage.getItem('interiorflow.navigator.collapsed_v1') !== null;
+    } catch {
+      return; // localStorage chặn — không đoán, giữ hành vi mặc định của Navigator
+    }
+    if (touched) return;
+    autoCollapseTried.current = true;
+    window.dispatchEvent(new CustomEvent('if:navigator-toggle', { detail: { set: true } }));
+  }, [groups.length]);
 
   /** Thứ tự tầng ĐÃ KHAI (`Doc.levels`) — dùng làm thứ tự bucket khi khớp được nhãn. Xem cảnh báo
    * "khoá là nhãn `storey`, không phải `Level.id`" ở `scene3d-ui.ts`. */

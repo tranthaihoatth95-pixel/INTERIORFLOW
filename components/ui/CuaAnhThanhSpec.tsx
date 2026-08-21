@@ -28,6 +28,7 @@
  */
 
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import { RADIUS } from '@/lib/geometry';
@@ -120,6 +121,13 @@ function mauTrungBinh(data: Uint8ClampedArray): Mau | null {
 
 export default function CuaAnhThanhSpec({ onDong }: { onDong: () => void }) {
   const router = useRouter();
+  // Portal ra `document.body` (K4, đã trả giá 4 vòng sửa kính lỏng: panel kính nổi PHẢI portal,
+  // không lồng trong chrome kính) — nơi gọi (`StageToolbelt.tsx`) đứng trong một wrapper CÓ
+  // `transform` (neo top-center của Viewport3D), và bất kỳ ancestor nào có `transform` đều tự
+  // thành containing block cho `position:fixed` — không portal thì `top/right/bottom` ở dưới
+  // tính theo cái wrapper nhỏ xíu đó, không phải viewport thật (đã đo: panel co về cao 26px).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [dsAnh, setDsAnh] = useState<AnhThuVien[] | null>(null);
   const [loiDs, setLoiDs] = useState<string | null>(null);
   const [chon, setChon] = useState<AnhThuVien | null>(null);
@@ -265,7 +273,9 @@ export default function CuaAnhThanhSpec({ onDong }: { onDong: () => void }) {
     router.push('/present-editor');
   }, [spec, daLuu, router]);
 
-  return (
+  if (!mounted) return null; // portal cần DOM — tránh lệch SSR (cùng khuôn `CuaSoCongCu.tsx`).
+
+  return createPortal(
     <div style={panel} role="dialog" aria-label="Ảnh thành khối">
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <CommandIcon name="Box" size={16} />
@@ -495,16 +505,29 @@ export default function CuaAnhThanhSpec({ onDong }: { onDong: () => void }) {
           )}
         </section>
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }
 
 /* ─────────────────────────── hình thức (token, không hex) ─────────────────────────── */
 
+/**
+ * P0 20/08 (Hoà: "Image→Volume phải là side workspace / attached toolwindow, không phải modal
+ * che khung nhìn"). Nơi gọi DUY NHẤT (`StageToolbelt.tsx`) đặt cụm này trong một wrapper
+ * `position:absolute` NEO TRÊN-GIỮA của `Viewport3D` — không có style vị trí riêng thì cửa duyệt
+ * lớn dần TỪ GIỮA MÀN, đúng cảm giác "modal che khung nhìn" Hoà chê. Ghim `fixed` mép PHẢI thay
+ * vì để nó lớn từ điểm neo top-center: cửa duyệt trở thành một dải bên hông, không gian 3D còn
+ * lại (trái + giữa) VẪN THẤY được — người dùng còn biết vật đang thuộc về đâu trong không gian.
+ */
 const panel: CSSProperties = {
-  width: 'min(460px, calc(100vw - 32px))',
-  maxHeight: 'min(70vh, 620px)',
+  position: 'fixed',
+  top: 64,
+  right: 16,
+  bottom: 16,
+  width: 'min(400px, calc(100vw - 32px))',
   overflowY: 'auto',
+  zIndex: 30,
   display: 'flex',
   flexDirection: 'column',
   gap: 10,
