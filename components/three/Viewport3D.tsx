@@ -3,6 +3,10 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
 import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
+import { useTool3D } from '@/lib/render-studio/tool3d';
+import { useCadStore } from '@/lib/cad/store';
+import { wallSegmentOutline } from '@/lib/cad/commands';
+import { duongBaoKhoiDac, type CreateTool3D } from '@/lib/three/tao-khoi-3d';
 import { applyArrayGrid, parseArrayCommand } from '@/lib/render-studio/array-grid-ops';
 import type { Scene3DData } from '@/lib/three/cad-to-obj';
 import type { Scene3DMode, Scene3DCameraApi, LightMarker } from './Scene3DViewer';
@@ -108,6 +112,45 @@ export function Viewport3D({
   // (`Scene3DViewer.tsx`). Viewport3D chỉ CHUYỂN TIẾP ref, không tự đọc/ghi vào đây.
   // Ref nội bộ chỉ dùng khi nơi mount KHÔNG truyền ref của mình vào (giữ nguyên hành vi cũ).
   const cameraApiRefNoi = useRef<Scene3DCameraApi | null>(null);
+
+  /* ── DỰNG KHỐI BẰNG CỬ CHỈ (21/08) ───────────────────────────────────────────────────────
+     NỐI, KHÔNG XÂY: hình học đã có đủ từ trước (`lib/three/tao-khoi-3d.ts` sinh đường bao,
+     `lib/cad/commands.wallSegmentOutline` dựng tường), công cụ đang cầm đã có store riêng
+     (`useTool3D`), Doc đã có `addEntities` + undo. Thứ DUY NHẤT thiếu là con trỏ→mặt sàn, nay
+     `Scene3DViewer` mở ra. Ở đây chỉ ghép ba mảnh đó lại.
+     Ánh xạ tên: dock gọi theo hình vẽ (Đường/Chữ nhật/Vòng tròn), khối dựng ra gọi theo vật
+     (tường/hộp/trụ) — cùng một lệnh, hai mặt tiền, không đẻ tập lệnh thứ hai. */
+  const toolDangCam = useTool3D((s) => s.active);
+  const cuChiDung: CreateTool3D | null =
+    toolDangCam === 'line' ? 'wall' : toolDangCam === 'rect' ? 'box' : toolDangCam === 'circle' ? 'cylinder' : null;
+
+  // Khối vừa dựng phải TỰ ĐƯỢC CHỌN, nhưng tên group chỉ tồn tại sau khi `scene` dựng lại ở lượt
+  // render kế ⇒ ghi nhớ id rồi chọn khi scene mới tới (không thể chọn ngay trong handler).
+  const chonSauKhiDungRef = useRef<string | null>(null);
+  useEffect(() => {
+    const id = chonSauKhiDungRef.current;
+    if (!id) return;
+    const g = scene.groups.find((x) => x.entityId === id);
+    if (!g) return;
+    chonSauKhiDungRef.current = null;
+    useTree3DUi.getState().pick(g.name, id);
+  }, [scene]);
+
+  function ghiKhoiMoi(p: import('./Scene3DViewer').CreateSolidPayload) {
+    const st = useCadStore.getState();
+    const layer = st.currentLayer;
+    const ents =
+      p.tool === 'wall'
+        ? wallSegmentOutline(p.aMm, p.bMm, p.thicknessMm, layer).map((e) => ({ ...e, heightMm: p.heightMm }))
+        : duongBaoKhoiDac(p.pointsMm, layer).map((e) => ({ ...e, heightMm: p.heightMm }));
+    st.addEntities(ents);
+    // `polyline` kín là entity MANG hình (hatch chỉ là poché bám vào nó qua hostId) — đây là id
+    // mà `docToObjScene` gắn lên group, nên cũng là id chọn được.
+    chonSauKhiDungRef.current = ents.find((e) => e.type === 'polyline')?.id ?? ents[0]?.id ?? null;
+    // Thả tay khỏi công cụ sau MỘT hình: đúng nhịp "vẽ xong là chọn để chỉnh số ngay", không bắt
+    // người dùng nhớ tắt công cụ (máy trạng thái `tool3d` cũng về 'select' sau Enter/Esc).
+    useTool3D.getState().setActive('select');
+  }
   const cameraApiRef = cameraApiRefNgoai ?? cameraApiRefNoi;
   const tr = useT();
   // G-M18-04 — walk/campath tự lái camera mỗi khung (xem `Scene3DCameraApi.fit`), nút mờ đi kèm
@@ -164,6 +207,9 @@ export function Viewport3D({
           const g = scene.groups.find((x) => x.entityId === id);
           if (g) useTree3DUi.getState().pick(g.name, id);
         }}
+        createTool={cuChiDung}
+        onCreateSolid={ghiKhoiMoi}
+        onCreateCancel={() => useTool3D.getState().setActive('select')}
       />
 
       <div className="vplabel vpover">{label}</div>

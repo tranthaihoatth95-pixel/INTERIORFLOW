@@ -161,6 +161,60 @@ async function main() {
     let cx = box.x + box.w * 0.45;
     let cy = box.y + box.h * 0.45;
 
+    if (cmd === 've') {
+      // ── CỬ CHỈ DỰNG: cầm công cụ → kéo trên mặt sàn → thả → khối vào Doc + tự được chọn ──
+      const truoc = await entityCount(page);
+      // Cầm công cụ bằng PHÍM TẮT (r/c/l — TOOL3D_HOTKEYS): đúng đường người dùng thạo việc đi,
+      // và tránh bẫy "hai nút cùng tên" (dock có 'Chữ nhật', bảng Tạo có 'Rectangle chữ nhật' —
+      // bấm nhầm cái thứ hai thì cầm tool 2D, cử chỉ 3D không chạy; đã dính đúng bẫy này).
+      const cases = [
+        { phim: 'c', ten: 'TRỤ (kéo bán kính)', dx: 180, dy: 0 },
+        { phim: 'l', ten: 'TƯỜNG (kéo hai điểm)', dx: -240, dy: 120 },
+        { phim: 'r', ten: 'HỘP (kéo đáy)', dx: 300, dy: 200, fitTruoc: true },
+      ];
+      let n = truoc;
+      // Cú bấm LÀM NÓNG: phím tắt đầu tiên bị rơi nếu khung nhìn chưa nhận focus (đã đo: ca 1
+      // luôn trượt, ca 2-3 luôn chạy). Bấm một phát vào chỗ trống để trao focus rồi mới thử.
+      await page.mouse.click(box.x + box.w * 0.12, box.y + box.h * 0.16);
+      await page.waitForTimeout(700);
+      for (const c of cases) {
+        if (c.fitTruoc) {
+          const f = page.locator('button.fitbtn').first();
+          if (await f.count().catch(() => 0)) { await f.click().catch(() => {}); await page.waitForTimeout(1400); }
+        }
+        await page.mouse.move(box.x + box.w * 0.5, box.y + box.h * 0.5);
+        await page.keyboard.press(c.phim);
+        await page.waitForTimeout(600);
+        // Công cụ nào ĐANG cầm? đọc nút dock đang bật (aria-pressed/active) — để phân biệt
+        // "phím không ăn" với "cử chỉ không ăn".
+        const dangCam = await page.evaluate(() => {
+          const on = [...document.querySelectorAll('button')].filter(
+            (b) => b.getAttribute('aria-pressed') === 'true' || /active|dang-cam/.test(b.className),
+          );
+          return on.map((b) => (b.getAttribute('aria-label') || b.getAttribute('title') || b.textContent || '').trim().slice(0, 28));
+        });
+        log.push(`  [${c.phim}] đang cầm: ${JSON.stringify(dangCam)}`);
+        const sx = box.x + box.w * 0.45;
+        const sy = box.y + box.h * 0.55;
+        await page.mouse.move(sx, sy);
+        await page.mouse.down();
+        for (let i = 1; i <= 10; i++) {
+          await page.mouse.move(sx + (c.dx * i) / 10, sy + (c.dy * i) / 10);
+          await page.waitForTimeout(30);
+        }
+        await page.mouse.up();
+        await page.waitForTimeout(1600);
+        const sau = await entityCount(page);
+        const chon = await inspectorText(page);
+        log.push(`${c.ten}: entities ${n} → ${sau} (${sau > n ? 'TẠO ĐƯỢC' : 'KHÔNG tạo'}) · tự chọn=${chon ? 'CÓ' : 'không'}`);
+        n = sau;
+      }
+      const fit3 = page.locator('button.fitbtn').first();
+      if (await fit3.count().catch(() => 0)) { await fit3.click().catch(() => {}); await page.waitForTimeout(1200); }
+      await page.screenshot({ path: OUT + '/11-3d-authoring.png' });
+      log.push('đã chụp 11-3d-authoring.png');
+    }
+
     if (cmd === 'gate') {
       // ── CỔNG 3D CƠ BẢN: chọn → kéo (di/push-pull) → xoá → hoàn tác, đo bằng STORE THẬT ──
       // GIEO MẦM: hồ sơ Playwright là trắng tinh (Doc 3D nằm ở IndexedDB của TỪNG trình duyệt,
