@@ -199,8 +199,13 @@ const DAI_DUOI = 44;
 
 /**
  * Tờ giấy đúng TỈ LỆ HÌNH HỌC thật của khổ (không phải khung vuông cho đẹp) + lề thật.
- * ⚠️ Đây CHƯA phải xem trước nội dung — nội dung tờ chưa nối (VIỆC 5 còn nợ). Khai thẳng bằng
- * chữ trên tờ thay vì vẽ hình giả: bày một bản xem trước bịa còn tệ hơn để trống.
+ *
+ * NỘI DUNG THẬT: `to.anh` (dataURL) do 2D/3D gửi kèm tờ khi Handoff (`to-ban-ve.ts`) — vẽ NGUYÊN
+ * VẸN bên trong vùng lề, `object-fit: contain` (không crop, không bóp méo tỉ lệ nguồn). Đổi
+ * `khoGiay`/`huong`/`le`/`tyLe` ở panel Thiết lập nhanh (`ThietLapTrang.tsx`, ghi vào CÙNG `to`
+ * qua `onDoiTo`) làm khung/lề đo lại NGAY vì component này thuần đọc từ props — không cache riêng.
+ * `to.anh` rỗng (2D/3D chưa gửi ảnh xem trước) ⇒ GIỮ khung trống + chữ thật, ĐÚNG luật đã ghi ở
+ * model: "Không có thì Trình chiếu vẽ khung trống, KHÔNG bịa hình".
  */
 function ToGiay({ rongMm, caoMm, to }: { rongMm: number; caoMm: number; to: ToBanVe }) {
   const CAO_TOI_DA = 460;
@@ -221,7 +226,40 @@ function ToGiay({ rongMm, caoMm, to }: { rongMm: number; caoMm: number; to: ToBa
         placeItems: 'center',
       }}
     >
-      {/* biên lề — nét đứt, là đường DỰNG chứ không phải nội dung */}
+      {to.anh ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={to.anh}
+          alt={`${to.nhan} — xem trước`}
+          style={{
+            position: 'absolute',
+            inset: leP,
+            width: `calc(100% - ${leP * 2}px)`,
+            height: `calc(100% - ${leP * 2}px)`,
+            objectFit: 'contain',
+            background: 'var(--bg)',
+          }}
+        />
+      ) : (
+        <p
+          style={{
+            margin: 0,
+            padding: '0 24px',
+            textAlign: 'center',
+            fontSize: 11,
+            lineHeight: 1.6,
+            color: 'var(--t3)',
+            maxWidth: 320,
+          }}
+        >
+          Chưa có ảnh xem trước từ nguồn — 2D/3D gửi tờ này chưa kèm ảnh.
+          <br />
+          <span style={{ fontFamily: MONO }}>
+            {rongMm} × {caoMm} mm · lề {to.le} mm · {nhanTyLe(to.tyLe)}
+          </span>
+        </p>
+      )}
+      {/* biên lề — nét đứt, là đường DỰNG chứ không phải nội dung, LUÔN vẽ trên ảnh */}
       <div
         aria-hidden
         style={{
@@ -231,23 +269,23 @@ function ToGiay({ rongMm, caoMm, to }: { rongMm: number; caoMm: number; to: ToBa
           pointerEvents: 'none',
         }}
       />
-      <p
-        style={{
-          margin: 0,
-          padding: '0 24px',
-          textAlign: 'center',
-          fontSize: 11,
-          lineHeight: 1.6,
-          color: 'var(--t3)',
-          maxWidth: 320,
-        }}
-      >
-        Xem trước nội dung tờ chưa nối — đây mới là khổ, lề và tỉ lệ hình học thật.
-        <br />
-        <span style={{ fontFamily: MONO }}>
+      {to.anh && (
+        <span
+          style={{
+            position: 'absolute',
+            bottom: 4,
+            right: 6,
+            fontFamily: MONO,
+            fontSize: 9,
+            color: 'var(--t3)',
+            background: 'color-mix(in srgb, var(--card) 80%, transparent)',
+            padding: '1px 5px',
+            borderRadius: 3,
+          }}
+        >
           {rongMm} × {caoMm} mm · lề {to.le} mm · {nhanTyLe(to.tyLe)}
         </span>
-      </p>
+      )}
     </div>
   );
 }

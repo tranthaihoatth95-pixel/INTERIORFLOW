@@ -40,6 +40,7 @@ import SheetTabBar, { type SheetTab } from '@/components/studio/SheetTabBar';
 import { useCadStore, newId, type Tool } from '@/lib/cad/store';
 import type { Doc, Viewport, Sheet, PaperKey, PaperOrientation } from '@/lib/cad/model';
 import { emptyDoc, docBox, paperSizeMm, defaultPaperOrientation } from '@/lib/cad/model';
+import { renderDocToDataURL } from '@/lib/cad/render';
 import { getLastUserId, loadResume, saveResume } from '@/lib/resume';
 import {
   createSheetsAutosaver,
@@ -966,6 +967,9 @@ function GuiSangTrinhChieu({ sheets, activeId }: { sheets: Sheet[]; activeId: st
       },
       neo: { chang: 'cad2d', docId, sheetId: sheet.id, dauVet, luc: Date.now() },
       noiDungMm,
+      // Ảnh xem trước THẬT — cùng hàm dùng cho Export PNG/"Đưa sang Render", không dựng renderer
+      // thứ hai. Rỗng (SSR/lỗi canvas) thì để trống — Trình chiếu vẽ khung trống, không bịa hình.
+      anh: renderDocToDataURL(doc, 1400) || undefined,
     };
     guiToSangTrinhChieu([to]);
     setMsg(`Đã gửi "${sheet.name}" sang Trình chiếu.`);

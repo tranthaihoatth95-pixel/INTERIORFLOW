@@ -133,6 +133,16 @@ export function khoaCuaSoThe(cardId: string): string {
   return `the:${cardId}`;
 }
 
+/**
+ * Chiều ngược của `khoaCuaSoNode()` — cửa sổ nổi (khoá `the:...`) không neo vào node cụ thể nào
+ * nên trả `null`. Dùng ở nơi cần biết "cửa sổ này đang neo vào node nào" mà không phải xuyên
+ * thêm một prop `nodeId` qua các lớp component không liên quan (vd panel vệ tinh — xem
+ * `controlled-edit-ui.ts`).
+ */
+export function nodeIdFromKhoa(khoa: string): string | null {
+  return khoa.startsWith('node:') ? khoa.slice('node:'.length) : null;
+}
+
 /* ══════════════════════════════════════════════════════════════════════════════════════════
    MÔI TRƯỜNG LÀM VIỆC — phần Hoà làm rõ 16/08, và là chỗ cửa sổ công cụ khác hẳn "một panel".
    ══════════════════════════════════════════════════════════════════════════════════════════

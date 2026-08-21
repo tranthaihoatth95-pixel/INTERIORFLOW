@@ -53,6 +53,7 @@ import {
   NHAN_CAP,
   capKe,
   capTruoc,
+  nodeIdFromKhoa,
   type CapCuaSo,
   type MaMoiTruong,
   type NeoVeTinh,
@@ -60,6 +61,15 @@ import {
   type ViTriCuaSo,
 } from '@/lib/nodes/cua-so-cong-cu';
 import { useCuaSoCongCuUi } from '@/lib/nodes/cua-so-cong-cu-ui';
+import { useControlledEditUi } from '@/lib/render-studio/controlled-edit-ui';
+
+/**
+ * ⭐ LỆNH ĐÃ NỐI BỘ THI HÀNH — P0 (20/08), CHỈ MỘT: `cua.anh.can-trang` (Cân trắng). 6 lệnh còn
+ * lại của môi trường "Ảnh" + toàn bộ lệnh của "Phim"/"Khối 3D"/"Bàn bạc" vẫn mờ + lý do, đúng
+ * §9 (cấm nút giả). Đây KHÔNG phải danh sách "sắp làm" — thêm lệnh vào đây PHẢI đi kèm bộ thi
+ * hành thật (xem `SuaCoKiemSoat.tsx` làm mẫu), không chỉ đổi mảng này.
+ */
+const LENH_DA_NOI: ReadonlySet<string> = new Set(['cua.anh.can-trang']);
 
 export type BienTheCuaSo = 'noi' | 'neo' | 'toanMan';
 
@@ -112,8 +122,11 @@ function choDung(neo: NeoVeTinh, thuTu: number): CSSProperties {
  * nút bấm không ra gì còn tệ hơn ô trống. Ô trống là bằng chứng còn việc (luật §9 "cấm xoá ô
  * trống cho gọn mắt"); nút giả là lời hứa suông.
  */
-function PanelVeTinh({ v, thuTu }: { v: VeTinh; thuTu: number }) {
+function PanelVeTinh({ v, thuTu, khoa }: { v: VeTinh; thuTu: number; khoa: string }) {
   const tr = useT();
+  const nodeId = nodeIdFromKhoa(khoa);
+  const dangSuaNode = useControlledEditUi((s) => s.openNodeId);
+  const toggleSua = useControlledEditUi((s) => s.toggle);
   return (
     <aside
       style={{ ...voKinh(RADIUS.r2), ...choDung(v.neo, thuTu) }}
@@ -133,27 +146,57 @@ function PanelVeTinh({ v, thuTu }: { v: VeTinh; thuTu: number }) {
         {tr(v.ten.vi, v.ten.en)}
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: 6, background: 'var(--bg)' }}>
-          {v.lenh.map((l) => (
-            <button
-              key={l.id}
-              type="button"
-              aria-disabled
-              style={{
-                textAlign: 'left',
-                fontSize: 11,
-                padding: '5px 8px',
-                borderRadius: RADIUS.r1,
-                color: 'var(--t2)',
-                opacity: 'var(--mo-vo-hieu)',
-                cursor: 'not-allowed',
-                background: 'transparent',
-                border: 'none',
-              }}
-              title={tr('Lệnh của môi trường này — chưa nối bộ thi hành', 'Command of this environment — not wired yet')}
-            >
-              {tr(l.nhan.vi, l.nhan.en)}
-            </button>
-        ))}
+          {v.lenh.map((l) => {
+            // Lệnh ĐÃ NỐI + đang neo vào một node thật → nút chạy được, mở/đóng Controlled Edit
+            // TẠI CHỖ (chân cửa sổ node, `ThanCuaSoNode.tsx`). Không có nodeId (cửa sổ nổi mở từ
+            // thẻ việc, chưa gắn vào node nào) thì vẫn mờ — không có ảnh nào để chỉnh.
+            const daNoi = LENH_DA_NOI.has(l.id) && !!nodeId;
+            if (daNoi && nodeId) {
+              const dangMo = dangSuaNode === nodeId;
+              return (
+                <button
+                  key={l.id}
+                  type="button"
+                  aria-pressed={dangMo}
+                  onClick={() => toggleSua(nodeId)}
+                  style={{
+                    textAlign: 'left',
+                    fontSize: 11,
+                    padding: '5px 8px',
+                    borderRadius: RADIUS.r1,
+                    color: dangMo ? 'var(--on-accent, #fff)' : 'var(--t1)',
+                    background: dangMo ? 'var(--accent)' : 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                  title={tr('Chỉnh vùng chọn thủ công, có Trước/Sau + Nhận/Bỏ', 'Adjust a manual region, with Before/After + Accept/Reject')}
+                >
+                  {tr(l.nhan.vi, l.nhan.en)}
+                </button>
+              );
+            }
+            return (
+              <button
+                key={l.id}
+                type="button"
+                aria-disabled
+                style={{
+                  textAlign: 'left',
+                  fontSize: 11,
+                  padding: '5px 8px',
+                  borderRadius: RADIUS.r1,
+                  color: 'var(--t2)',
+                  opacity: 'var(--mo-vo-hieu)',
+                  cursor: 'not-allowed',
+                  background: 'transparent',
+                  border: 'none',
+                }}
+                title={tr('Lệnh của môi trường này — chưa nối bộ thi hành', 'Command of this environment — not wired yet')}
+              >
+                {tr(l.nhan.vi, l.nhan.en)}
+              </button>
+            );
+          })}
       </div>
     </aside>
   );
@@ -296,7 +339,7 @@ export default function CuaSoCongCu({
             .filter((v) => v.neo === neo)
             // Nấc `vua` và `toanMan` bày đủ lệnh như nhau — khác nhau ở CHỖ ĐỨNG, không ở chỗ
             // giấu bớt lệnh (giấu theo nấc là bắt người dùng học hai bản đồ lệnh).
-            .map((v, i) => <PanelVeTinh key={v.id} v={v} thuTu={i} />),
+            .map((v, i) => <PanelVeTinh key={v.id} v={v} thuTu={i} khoa={khoa} />),
         )
       : null;
 

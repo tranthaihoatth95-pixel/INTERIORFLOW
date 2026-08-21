@@ -95,6 +95,14 @@ export interface NodeRunState {
   error?: string;
   /** hash of inputs+params of the last successful run — unchanged inputs are not re-run */
   inputHash?: string;
+  /**
+   * Lịch sử Controlled Edit (`lib/render-studio/controlled-edit.ts`) — mục [0] LUÔN là bản GỐC,
+   * append-only, không bao giờ xoá/ghi đè. `outputs.image.value` phản chiếu revision đang hoạt
+   * động (mục cuối mảng); downstream chỉ đọc `outputs`, không cần biết mảng này tồn tại. Optional
+   * vì phần lớn node không có ảnh/không qua Controlled Edit — không nới rộng nghĩa `NodeRunState`
+   * cho những node đó.
+   */
+  editHistory?: import('@/lib/render-studio/controlled-edit').EditRevision[];
 }
 
 export interface Job {

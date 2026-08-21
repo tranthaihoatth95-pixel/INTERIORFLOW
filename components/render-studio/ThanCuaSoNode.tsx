@@ -31,6 +31,8 @@ import { ToolbarChip } from '@/components/ui/ToolbarChip';
 import { useT } from '@/lib/i18n';
 import { RADIUS } from '@/lib/geometry';
 import { DATA_TYPE_COLORS, type InteriorNodeData } from '@/lib/types';
+import { useControlledEditUi } from '@/lib/render-studio/controlled-edit-ui';
+import SuaCoKiemSoat from './SuaCoKiemSoat';
 
 /**
  * DẢI ĐỊNH NGHĨA KẾT QUẢ — chân cửa sổ. *"Định nghĩa file = kết quả"* (Hoà 15/08): đầu ra của
@@ -89,6 +91,8 @@ export default function ThanCuaSoNode({ nodeId, data }: { nodeId: string; data: 
   const anhNguon = useSourceImage(nodeId);
   const { status, progress } = data.run;
   const dangChay = status === 'running' || status === 'queued';
+  const suaMoChoNode = useControlledEditUi((s) => s.openNodeId === nodeId);
+  const coAnhKetQua = status === 'done' && !!data.run.outputs?.image;
 
   // Cổng vào KHÔNG có ảnh nối tới → nút chạy mờ KÈM LÝ DO. Luật §9 "cấm nút giả": mờ mà không
   // nói vì sao là nút câm. Lý do đi đường `aria-describedby` của ToolbarChip, không đi `title`.
@@ -198,7 +202,7 @@ export default function ThanCuaSoNode({ nodeId, data }: { nodeId: string; data: 
             {tr('Đang chạy', 'Running')} {Math.round(progress * 100)}%
           </p>
         )}
-        <NodeExtras nodeId={nodeId} data={data} />
+        {suaMoChoNode && coAnhKetQua ? <SuaCoKiemSoat nodeId={nodeId} /> : <NodeExtras nodeId={nodeId} data={data} />}
       </div>
     </div>
   );
