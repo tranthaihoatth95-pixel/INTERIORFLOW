@@ -15,7 +15,9 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { FileText } from 'lucide-react';
+import { FileText, ArrowLeft } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { getLastUserId, saveResume } from '@/lib/resume';
 import ThietLapTrang from './ThietLapTrang';
 import ThietLapTrangDayDu, { type KhaNang } from './ThietLapTrangDayDu';
 import {
@@ -61,6 +63,8 @@ let toDaNhan: ToBanVe | null = null;
 
 export default function CongThietLapTrang({ onMoBangNet }: { onMoBangNet?: () => void }) {
   const [to, setTo] = useState<ToBanVe | null>(toDaNhan);
+  const router = useRouter();
+  const pathname = usePathname();
   const [mo, setMo] = useState(false);
   // Hai bề mặt, HAI vai — không phải một panel to/nhỏ. `mo` = inspector NHANH bên cạnh;
   // `dayDu` = chế độ toàn không gian làm việc. Mở đầy đủ thì thu NHANH lại: hai bề mặt cùng
@@ -110,6 +114,23 @@ export default function CongThietLapTrang({ onMoBangNet }: { onMoBangNet?: () =>
   const mauTrangThai =
     trangThai === 'hien-hanh' ? 'var(--success)' : trangThai === 'cu' ? 'var(--warning)' : 'var(--t3)';
 
+  /**
+   * ĐƯỜNG VỀ 2D (21/08) — cấm ngõ cụt: vào sâu bằng đường nào thì phải ra được bằng đường đó.
+   * Tờ này mang sẵn `neo = {chang:'cad2d', docId, sheetId}` do CadSheets ghi lúc "Gửi sang Trình
+   * chiếu" — mọi thứ cần để về ĐÚNG tờ đã có, chỉ chưa ai dùng.
+   * Cách về dùng LẠI cơ chế sẵn có, không đẻ đường điều hướng thứ hai: ghi `resume.sheetId` rồi
+   * đi tới chặng 2D — `CadSheets` lúc mount vốn đã ưu tiên `resume.sheetId` để chọn tờ (dòng
+   * ~432), y hệt cách `PresentSheets` khôi phục tờ trình bày.
+   */
+  const veLai2D = () => {
+    const uid = getLastUserId();
+    if (uid) saveResume(uid, { route: '/cad-editor', sheetId: to.neo.sheetId });
+    // Cùng dự án: đổi đuôi chặng trên chính đường đang đứng (…/present → …/cad). Không đoán id
+    // dự án từ nơi khác — đường hiện tại LÀ nguồn đúng nhất.
+    const duong = (pathname ?? '').replace(/\/present(?:\/.*)?$/, '/cad');
+    router.push(duong && duong !== pathname ? duong : '/');
+  };
+
   return (
     <>
       <button
@@ -150,6 +171,31 @@ export default function CongThietLapTrang({ onMoBangNet }: { onMoBangNet?: () =>
         />
         <span style={{ fontSize: 10, color: 'var(--t3)' }}>{NHAN_TRANG_THAI[trangThai]}</span>
       </button>
+      {/* ĐƯỜNG VỀ — chỉ hiện khi tờ này ĐẾN TỪ 2D (`neo.chang === 'cad2d'`). Đứng ngay cạnh nút
+          Thiết lập trang vì đó là chỗ người dùng đang nhìn khi làm việc với tờ bản vẽ. Không có
+          neo 2D thì không vẽ nút — không hứa đường về mà không về được. */}
+      {to.neo.chang === 'cad2d' && (
+        <button
+          type="button"
+          onClick={veLai2D}
+          title={`Về đúng tờ "${to.nhan}" ở chặng Thiết kế 2D`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+            padding: '5px 9px',
+            minHeight: 28,
+            borderRadius: 'var(--r-2)',
+            border: '1px solid var(--vien-mo)',
+            background: 'transparent',
+            color: 'var(--t2)',
+            fontSize: 11.5,
+            cursor: 'pointer',
+          }}
+        >
+          <ArrowLeft size={13} /> Quay lại 2D
+        </button>
+      )}
       <ThietLapTrang
         mo={mo && !dayDu}
         onDong={() => setMo(false)}
