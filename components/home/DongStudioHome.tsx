@@ -33,9 +33,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import { Info, ChevronUp, ChevronDown, Pin, EyeOff } from 'lucide-react';
+import { ChevronUp, ChevronDown, Pin, EyeOff } from 'lucide-react';
 import { ProjectSelect } from '@/components/ProjectSelect';
-import { LangToggle } from '@/components/LangToggle';
 import { useFlowStore } from '@/lib/store';
 import { useLang, useT } from '@/lib/i18n';
 import { buildGreeting } from '@/lib/home/greeting';
@@ -80,14 +79,6 @@ const MUC_PHU_LABEL: Record<MucPhu, [string, string]> = {
   dongTin: ['Bảng tin studio', 'Studio feed'],
 };
 
-const CORNER_PILL: CSSProperties = {
-  background: 'var(--nen-mo-header, var(--panel))',
-  border: '1px solid var(--border)',
-  backdropFilter: 'blur(var(--blur)) saturate(150%)',
-  WebkitBackdropFilter: 'blur(var(--blur)) saturate(150%)',
-  boxShadow: '0 10px 28px -14px rgba(0,0,0,0.4)',
-};
-
 /** Shape rỗng hợp lệ — QuickNotes render ngay cả trước khi `/api/home/summary` trả lời. */
 const EMPTY_SUMMARY: HomeSummary = {
   greeting: { dueTodayCount: 0 },
@@ -112,7 +103,6 @@ interface LibraryAssetLite {
 
 export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   const user = useFlowStore((s) => s.user);
-  const openDashboardTab = useFlowStore((s) => s.openDashboardTab);
   const currentProjectId = useFlowStore((s) => s.currentProjectId);
   const currentUserId = user?.id ?? null;
   const en = useLang() === 'en';
@@ -638,30 +628,14 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
           (VitalsPill dời lên header từ 17/08 đã nằm dưới cụm), chỉ lộ ra khi đo bằng thao tác
           thật. Sửa bằng cách cho cụm bắt đầu NGAY DƯỚI mép header thay vì nới z-index — nới
           z-index chỉ đổi ai thắng, hai thứ vẫn chồng nhau về mặt thị giác. */}
-      <div className="fixed right-5 top-[50px] z-50 flex items-center gap-2">
-        <button
-          type="button"
-          /* LANE A (20/08) — MỘT CỬA VÀO. Nhãn cũ là "Chi tiết (toàn bộ dự án)", tức nó tự
-             quảng cáo mình là **một danh sách dự án thứ hai** đứng cạnh Home — đúng thứ "hai mô
-             hình cửa vào cạnh tranh" phiếu cấm. Mà nút này thật ra mở `openDashboardTab('board')`
-             = tấm Lark Bảng/Kanban/Nhân sự, tức nhóm & hoạt động, KHÔNG phải kho dự án.
-             ⇒ Đổi nhãn cho khớp việc nó làm. Home là cửa vào dự án DUY NHẤT; tấm này là khung
-             nhìn chi tiết về NHÓM, mở từ Home chứ không thay Home.
-             🔴 CÒN LẠI, ngoài vùng ghi của lane này: `components/Dashboard.tsx:416` tab "Tổng
-             quan" vẫn dựng lưới dự án + danh sách flow + thẻ KPI ("Thành viên", "Credit dùng 30
-             ngày") ⇒ vẫn là cửa vào thứ hai, chỉ lùi một cú bấm. Xem báo cáo ⑦ mục VIỆC 4. */
-          onClick={() => openDashboardTab('board', null)}
-          aria-label={en ? 'Team & activity' : 'Nhóm & hoạt động'}
-          title={en ? 'Team & activity' : 'Nhóm & hoạt động'}
-          className="grid h-9 w-9 place-items-center rounded-full text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
-          style={CORNER_PILL}
-        >
-          <Info size={15} aria-hidden="true" />
-        </button>
-        <LangToggle variant="ghost" />
-        {/* P-V 17/08 (chốt 16/08 "Vitals ở Home = chấm cạnh ô tìm kiếm") — VitalsPill DỜI lên
-            AppChrome top bar cạnh SearchProjectsInput, không còn nằm ở góc-phải-trên của Home. */}
-      </div>
+      {/* 21/08 (Hoà chốt "Home header gần như trống") — CỤM GÓC-PHẢI ĐÃ GỠ HẲN. Hai nút từng
+          đứng đây về đúng chủ, thay vì nằm rải thành đảo riêng trên Home:
+            · VI/EN và Giới thiệu → menu Hồ sơ (avatar góc phải header), cạnh Giao diện/Cài đặt.
+              Một mô hình sở hữu: Hoạt động = việc đang chạy · Vitals = việc đáng chú ý bây giờ ·
+              Hồ sơ = tôi + tuỳ chọn + cài đặt.
+            · Bảng Nhóm & hoạt động KHÔNG mất đường vào — `openDashboardTab('board', …)` còn 4 nơi
+              gọi ở `ProjectSelect.tsx`, gồm cả biến thể không kèm dự án. Đã kiểm TRƯỚC khi gỡ.
+          Vitals đã dời lên header từ 17/08, nên sau lượt này góc phải Home trống thật. */}
 
       {/* Lề ngoài 20px (p-5, trước là p-3) — chốt A2 16/08: *"thẻ kính KHÔNG phủ kín màn —
           chừa lề cho nền thở"*. Nền chỉ hiện ở lề + khe giữa thẻ; đó là chỗ nó sống. */}

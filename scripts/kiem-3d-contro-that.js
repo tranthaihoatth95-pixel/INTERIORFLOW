@@ -161,6 +161,32 @@ async function main() {
     let cx = box.x + box.w * 0.45;
     let cy = box.y + box.h * 0.45;
 
+    if (cmd === 'home') {
+      // Trang chủ: cụm góc-phải phải TRỐNG, và VI/EN + Giới thiệu phải nằm trong menu Hồ sơ.
+      await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(5000);
+      const noiTrenHome = await page.evaluate(() => {
+        const t = document.body.innerText || '';
+        return { coVI_EN: /\bVI\b/.test(t) && /\bEN\b/.test(t) };
+      });
+      log.push(`Home: còn công tắc VI/EN lơ lửng? ${noiTrenHome.coVI_EN}`);
+      await page.screenshot({ path: OUT + '/01-home.png' });
+      // mở menu Hồ sơ qua avatar
+      const av = page.locator('button[aria-label*="Tài khoản"], button[aria-label*="Avatar"]').first();
+      if (await av.count().catch(() => 0)) {
+        await av.click().catch(() => {});
+        await page.waitForTimeout(1200);
+        const muc = await page.evaluate(() =>
+          [...document.querySelectorAll('button,div[role=button]')]
+            .map((b) => (b.textContent || '').trim())
+            .filter((t) => t && t.length < 26),
+        );
+        const co = (x) => muc.some((m) => m.includes(x));
+        log.push(`Menu Hồ sơ: Ngôn ngữ=${co('Ngôn ngữ') || co('Language')} · Giới thiệu=${co('Giới thiệu') || co('About')} · Giao diện=${co('Giao diện') || co('Appearance')} · Cài đặt=${co('Cài đặt') || co('Settings')}`);
+        await page.screenshot({ path: OUT + '/02-profile-menu.png' });
+      } else log.push('Menu Hồ sơ: KHÔNG thấy avatar');
+    }
+
     if (cmd === 've') {
       // ── CỬ CHỈ DỰNG: cầm công cụ → kéo trên mặt sàn → thả → khối vào Doc + tự được chọn ──
       const truoc = await entityCount(page);
