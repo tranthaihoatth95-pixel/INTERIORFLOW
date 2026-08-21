@@ -357,10 +357,19 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
         saverRef.current?.touch(); // đồng bộ ngược lại IndexedDB — cache luôn ấm cho lần mở kế
       } else if (rec && valid.length > 0) {
         seq = Math.max(seq, nextSeqFrom(valid.map((s) => s.id), 'presheet'));
+        // ⚠️ THỨ TỰ QUYỀN SỞ HỮU (sửa 21/08) — `rec.activeId` THẮNG `resume.sheetId`.
+        // Trước đây resume được xét TRƯỚC, mà resume là con trỏ TOÀN CỤC theo user+route,
+        // KHÔNG theo dự án (`saveResume(userId,{route,sheetId})` — một giá trị duy nhất).
+        // Bản ghi thì per-project. Hậu quả đo được: dự án có 2 tờ, resume còn trỏ tờ cũ ⇒ mở
+        // Trình chiếu ra thấy tờ TRỐNG dù `activeId` đã trỏ đúng tờ có 25 slide — người dùng
+        // đọc thành "mất deck". Dính đúng hai lần trong ngày.
+        // Nay: sự thật CỦA CHÍNH DỰ ÁN đi trước; resume chỉ là lưới đỡ khi activeId vô hiệu
+        // (bản ghi cũ, tờ đã xoá). Cùng tinh thần `lastStage` — thứ gì thuộc dự án thì khoá
+        // theo dự án, không để một con trỏ toàn cục ghi đè.
         const resumeSheet = loadResume(userId)?.sheetId;
         const wantId =
-          (resumeSheet && valid.some((s) => s.id === resumeSheet) && resumeSheet) ||
           (valid.some((s) => s.id === rec.activeId) && rec.activeId) ||
+          (resumeSheet && valid.some((s) => s.id === resumeSheet) && resumeSheet) ||
           valid[0].id;
         const restored = valid.map(({ id, name, deck }) => ({ id, name, deck }));
         setSheets(restored);

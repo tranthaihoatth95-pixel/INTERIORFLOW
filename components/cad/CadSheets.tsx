@@ -427,12 +427,16 @@ export default function CadSheets() {
       } else if (rec && valid.length > 0) {
         const { doc, sheets: newSheets } = docAndSheetsFromIdf(cacheSheets);
         seq = Math.max(seq, nextSeqFrom(newSheets.map((s) => s.id), 'cadsheet'));
-        // sheet active: resume trỏ tận sheet nếu id còn sống, kế đến activeId đã lưu. Sau khi gộp
-        // (>1 sheet cũ) không id nào khớp nữa → rơi đúng vào newSheets[0] (chỉ còn 1 sheet).
+        // ⚠️ THỨ TỰ QUYỀN SỞ HỮU (sửa 21/08, cùng bản vá `PresentSheets`): `rec.activeId` —
+        // sự thật PER-PROJECT — THẮNG `resume.sheetId`, vốn là con trỏ TOÀN CỤC theo user+route
+        // (`saveResume(userId,{route,sheetId})` chỉ giữ MỘT giá trị, không kèm dự án). Để resume
+        // đi trước thì một con trỏ cũ đủ sức ghi đè tờ đang mở của dự án khác và màn ra tờ TRỐNG.
+        // Resume lùi xuống làm lưới đỡ khi activeId vô hiệu. Sau khi gộp (>1 sheet cũ) không id
+        // nào khớp nữa → rơi đúng vào newSheets[0] (chỉ còn 1 sheet), hành vi cũ giữ nguyên.
         const resumeSheet = loadResume(userId)?.sheetId;
         const wantId =
-          (resumeSheet && newSheets.some((s) => s.id === resumeSheet) && resumeSheet) ||
           (newSheets.some((s) => s.id === rec.activeId) && rec.activeId) ||
+          (resumeSheet && newSheets.some((s) => s.id === resumeSheet) && resumeSheet) ||
           newSheets[0].id;
         const activeOriginal = valid.find((s) => s.id === wantId) ?? valid[0];
         setSheets(newSheets);
