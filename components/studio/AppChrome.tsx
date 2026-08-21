@@ -51,6 +51,7 @@ import ShortcutsPanel from '@/components/ShortcutsPanel';
 import { AppLogoMenu } from '@/components/studio/AppLogoMenu';
 import { LeaveConfirmBar } from '@/components/studio/LeaveConfirmBar';
 import { LockScreen } from '@/components/studio/LockScreen';
+import { LiveGuide } from '@/components/studio/LiveGuide';
 import { useLockScreen, lockScreenNow, getLockIdleMinutes } from '@/lib/lockscreen';
 import { getLastUserId } from '@/lib/resume';
 import { useDismissable } from '@/lib/useDismissable';
@@ -413,6 +414,10 @@ export function AppChrome({ active, logoMenu }: Props) {
       <ShortcutsPanel open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} active={active} />
       <LeaveConfirmBar />
       <LockScreen />
+      {/* Hướng dẫn sống (Live Guide) — lớp chỉ dẫn neo UI thật, TẮT mặc định, bật ở tab Demo của
+          chuông Hoạt động. Sống ở đây (mọi chặng) để guide đi theo qua điều hướng. Render null
+          khi tắt — 0 chi phí. */}
+      <LiveGuide />
     </header>
   );
 }

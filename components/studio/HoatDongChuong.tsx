@@ -43,6 +43,7 @@ import {
   type MucHoatDong,
 } from '@/components/studio/hoat-dong-luong';
 import { useDemoSpine, tomTatSpine, useCheDoDemo, type BuocDemo, type TrangThaiBuoc } from '@/lib/studio/demo-spine';
+import { useGuideBat } from '@/lib/studio/live-guide';
 import LightBar from '@/components/ui/LightBar';
 
 type Muc = 'gon' | 'peek' | 'day';
@@ -182,6 +183,7 @@ export function HoatDongChuong() {
   // KHÔNG mục điều hướng mới. `useDemoSpine` đọc THẲNG từ store toàn cục (2D/3D/node ảnh) — 0
   // bản sao dữ liệu. Xem lib/studio/demo-spine.ts.
   const [demoBat, datDemoBat] = useCheDoDemo();
+  const [guideBat, datGuideBat] = useGuideBat();
   const spine = useDemoSpine();
   const tomTatDemo = tomTatSpine(spine);
   const diToi = (href: string) => {
@@ -398,6 +400,24 @@ export function HoatDongChuong() {
                         <DongBuoc key={b.id} b={b} tr={tr} onDi={diToi} />
                       ))}
                     </ul>
+                    <div className="mt-2 flex items-center justify-between px-1.5">
+                      <span className="text-[length:var(--fs-xs)] text-[var(--t3)]">
+                        {tr('Hướng dẫn sống — chỉ bước kế trên màn thật', 'Live guide — points at the next step on-screen')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => datGuideBat(!guideBat)}
+                        role="switch"
+                        aria-checked={guideBat}
+                        className="shrink-0 rounded-[var(--r-full)] px-2 py-0.5 text-[length:var(--fs-xs)] font-semibold transition-colors duration-[120ms]"
+                        style={{
+                          background: guideBat ? 'var(--accent)' : 'var(--field)',
+                          color: guideBat ? '#fff' : 'var(--t3)',
+                        }}
+                      >
+                        {guideBat ? tr('Đang bật', 'On') : tr('Bật', 'Off')}
+                      </button>
+                    </div>
                     <p className="mt-2 px-1.5 text-[length:var(--fs-xs)] leading-relaxed text-[var(--t4)]">
                       {tr(
                         'Bấm một bước để mở đúng chỗ đang chứa nó — không tạo dữ liệu demo mới.',
