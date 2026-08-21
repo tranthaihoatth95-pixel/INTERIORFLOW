@@ -4,15 +4,15 @@ CURRENT COMMIT: 83ff452
 CURRENT BRANCH: backup/2026-08-19-batch0a  (main = c7f3ac8, KHÔNG đụng)
 LAST GREEN WAVE: 2D server backup + recovery (83ff452)
 CURRENT WAVE: SESSION-01 · UI / Hệ thị giác
-NEXT EXECUTABLE ACTION: đọc SESSION-01.md → soi 5 màn thật → sửa theo cửa nghiệm thu thị giác
+NEXT EXECUTABLE ACTION: đọc SESSION-01.md → đối chiếu Home với board EXS-C → sửa phần LỆCH
 TRUE BLOCKERS:
   · DB write bị classifier chặn (1 lệnh cho Hoà, xem SESSION-05.md)
-  · Duyệt mắt bộ 3 bản vẽ Claude Design (SESSION-01)
+  · EXS-E biến thể Vitals V3-a — câu hỏi thị giác DUY NHẤT còn treo (SESSION-01)
   · Test điện thoại LAN (SESSION-06)
 FILES NEXT SESSION MUST OPEN:
   docs/memory/sessions/2026-08-22/01-master-completion/SESSION-01.md
-  docs/mocks/mock-he-thi-giac-3-man.html
-  components/home/DongStudioHome.tsx · components/AccountMenu.tsx
+  docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md   ← HỢP ĐỒNG THỊ GIÁC, đọc trước
+  components/home/DongStudioHome.tsx
 EXACT TEST TO RUN NEXT:
   npm test && npx tsc --noEmit
   node scripts/kiem-3d-contro-that.js gate      # cần dev server :3000
@@ -32,6 +32,9 @@ PRESENT: deck 25 slide "Giới thiệu IF" · sao lưu máy chủ · khôi phụ
   Thiết lập trang thuộc Present · về đúng tờ cũ · tờ gửi sống qua F5.
 3D BASIC: vào 3D rỗng không đòi mặt bằng 2D · dựng Hộp/Tường/Trụ bằng cử chỉ · chọn · dời · xoay ·
   xoá · hoàn tác · Boolean · Array · Bevel · gizmo bám vật.
+HỆ THỊ GIÁC: bộ board **EXS đã được Hoà DUYỆT MẮT 20/08** — hướng đã chốt, KHÔNG dựng lại,
+  KHÔNG đề xuất lại. Đã xây xong: sidebar 3 độ sâu 52/240/320 · Vitals là APERTURE mép trên
+  (không phải pill) · Profile gom Ngôn ngữ/Giới thiệu.
 FORM: dùng lại BuildRecipe · gom theo ý định (Hình chính·Khoét·Chi tiết·Hoa văn) · sửa được bậc CŨ ·
   tắt bậc giữ nguyên tham số · hoàn tác · KHÔNG engine lịch sử thứ hai.
 
@@ -76,15 +79,19 @@ Xem COMPLETION BOARD cuối tệp. Bảng đó là nguồn duy nhất, đừng �
    `uploadedAt`, KHÔNG phải `updatedAt`.
 7. Hai dev server cùng một thư mục = hỏng `.next` → route 404 / handler không gắn dù HTML hiện đủ.
    Chỉ MỘT server mỗi thư mục.
+9. ⭐ TRUY BẢN ĐÃ CÓ TRƯỚC KHI VẼ MỚI. 21/08 tôi dựng `mock-he-thi-giac-3-man.html` như một đề
+   xuất mới, trong khi bộ EXS đã được duyệt 20/08 VÀ phần lớn đã được xây (rail 52/240/320,
+   VitalsAperture). Suýt làm lại việc đã xong. Claude Design có 44 board — `DesignSync list_files`
+   trước, luôn luôn.
 8. Cookie phiên là HttpOnly → không xuất được sang Playwright. Chụp ảnh phải qua pane đã đăng nhập.
 
 # COMPLETION BOARD
 
 | hạng mục | trạng thái | session |
 |---|---|---|
-| UI / SHARED SHELL | PARTIAL | 01 |
-| HOME LIVING CANVAS | OPEN | 01 |
-| VITALS (mép trên, không phải pill) | OPEN | 01 |
+| UI / SHARED SHELL | GREEN (EXS duyệt 20/08 + rail/Vitals đã xây) | 01 |
+| HOME LIVING CANVAS (EXS-C, hero=Resume) | PARTIAL | 01 |
+| VITALS aperture mép trên | GREEN · biến thể V3-a HUMAN-GATED | 01 |
 | PROFILE / SETTINGS | GREEN | — |
 | 2D VISUAL | OPEN | 01 |
 | 3D VISUAL | PARTIAL | 01 |
@@ -114,4 +121,7 @@ Xem COMPLETION BOARD cuối tệp. Bảng đó là nguồn duy nhất, đừng �
 | PRODUCT TEST READINESS | PARTIAL | 06 |
 | MAIN INTEGRATION READINESS | OPEN | 06 |
 
-OPEN/PARTIAL/HUMAN-GATED còn lại: **22 cổng**.
+MASTER CAPABILITY 4 ĐỘ SÂU (chốt #10) | OPEN | 01-02
+NON-DESTRUCTIVE LIBRARY SEMANTICS (chốt #12) | OPEN | 03
+
+OPEN/PARTIAL/HUMAN-GATED còn lại: **21 cổng** (UI/shared-shell chuyển GREEN sau khi truy bản đã có).

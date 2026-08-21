@@ -75,6 +75,10 @@ import {
 } from './muc-dieu-huong';
 
 /** Khoá nhớ nấc chi tiết. Lưu THEO MÁY, không vào `.idf` (§6.4 — cách bày trên màn của tôi ≠ tài sản). */
+const KHOA_RONG_DUYET = 'interiorflow.rail.rongDuyet_v1';
+/** Dải chốt #4 Experience System — Work Panel 320–440. */
+const RONG_DUYET_MIN = 320;
+const RONG_DUYET_MAX = 440;
 const KHOA_NAC = 'interiorflow.rail.nac_v1';
 /**
  * MẶC ĐỊNH THEO NGỮ CẢNH — chỉ khi người dùng CHƯA từng chọn (Hoà chốt 20/08 + CHOT-EXPERIENCE
@@ -145,7 +149,46 @@ export function RailDieuHuong() {
     }
   };
 
-  const beRong = BE_RONG_NAC[nac];
+  /**
+   * NỚI TRẦN NẤC "DUYỆT" (22/08) — đóng đúng dòng nợ ghi sẵn ở `muc-dieu-huong.ts:128`
+   * ("thêm resize kéo tay nấc `duyet` trong khoảng [320, 440]") và thi hành chốt #4 của
+   * `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md`: Work Panel 320–440 **resizable**.
+   * Trước bản này nấc duyệt đứng cứng ở SÀN 320 — tức mức "duyệt nội dung" không bao giờ có đủ
+   * chỗ cho thứ nó sinh ra để bày (cột ô tròn vật liệu, màn dang dở của chặng).
+   * Chỉ nấc `duyet` mới kéo được: `dinhVi`/`dieuHuong` là hai mức có bề rộng MANG NGHĨA (định vị
+   * và điều hướng), kéo chúng là phá nhịp ba-nấc.
+   */
+  const [beRongDuyet, setBeRongDuyet] = useState<number>(BE_RONG_NAC.duyet);
+  useEffect(() => {
+    try {
+      const luu = Number(localStorage.getItem(KHOA_RONG_DUYET));
+      if (Number.isFinite(luu) && luu >= RONG_DUYET_MIN && luu <= RONG_DUYET_MAX) setBeRongDuyet(luu);
+    } catch {
+      /* im lặng — bề rộng là tiện nghi, không được chặn rail */
+    }
+  }, []);
+  const batDauKeo = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const x0 = e.clientX;
+    const r0 = beRongDuyet;
+    const keo = (ev: PointerEvent) => {
+      const moi = Math.min(RONG_DUYET_MAX, Math.max(RONG_DUYET_MIN, r0 + (ev.clientX - x0)));
+      setBeRongDuyet(moi);
+    };
+    const tha = () => {
+      window.removeEventListener('pointermove', keo);
+      window.removeEventListener('pointerup', tha);
+      try {
+        localStorage.setItem(KHOA_RONG_DUYET, String(beRongDuyet));
+      } catch {
+        /* im lặng */
+      }
+    };
+    window.addEventListener('pointermove', keo);
+    window.addEventListener('pointerup', tha);
+  };
+
+  const beRong = nac === 'duyet' ? beRongDuyet : BE_RONG_NAC[nac];
   const hienChu = nac !== 'dinhVi';
   const hienTinhTrang = nac === 'duyet';
 
@@ -236,9 +279,50 @@ export function RailDieuHuong() {
         zIndex: 5,
         // Ẩn tới khi biết nấc chi tiết đã lưu — nhấp nháy đổi bề rộng lúc mở app đọc ra như lỗi.
         visibility: daNap ? 'visible' : 'hidden',
-        transition: reduceMotion ? 'none' : 'width .2s var(--ease-apple)',
+        // Đang KÉO thì tắt transition — nếu không con trỏ đi trước, mép rail đuổi theo sau.
+        transition: reduceMotion || nac === 'duyet' ? 'none' : 'width .2s var(--ease-apple)',
       }}
     >
+      {/* TAY NẮM KÉO — chỉ ở nấc "duyệt" (chốt #4: Work Panel 320–440 resizable). Dải 6px sát
+          mép phải, trong suốt: nó là vùng CHẠM chứ không phải một vạch trang trí — thêm một
+          đường kẻ dọc nữa ở đây là thêm chrome đúng chỗ đang muốn nhường cho nội dung.
+          Bàn phím: mũi tên trái/phải đổi 16px một nhịp — kéo-thả không được là kênh DUY NHẤT
+          (luật a11y đã ghi ở phiếu kéo-thả 16/08). */}
+      {nac === 'duyet' && (
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label={tr('Kéo để đổi bề rộng bảng', 'Drag to resize the panel')}
+          aria-valuenow={beRongDuyet}
+          aria-valuemin={RONG_DUYET_MIN}
+          aria-valuemax={RONG_DUYET_MAX}
+          tabIndex={0}
+          onPointerDown={batDauKeo}
+          onKeyDown={(e) => {
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+            e.preventDefault();
+            const moi = Math.min(
+              RONG_DUYET_MAX,
+              Math.max(RONG_DUYET_MIN, beRongDuyet + (e.key === 'ArrowRight' ? 16 : -16)),
+            );
+            setBeRongDuyet(moi);
+            try {
+              localStorage.setItem(KHOA_RONG_DUYET, String(moi));
+            } catch {
+              /* im lặng */
+            }
+          }}
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: -3,
+            width: 6,
+            height: '100%',
+            cursor: 'col-resize',
+            zIndex: 6,
+          }}
+        />
+      )}
       {/* Ở nấc ĐỊNH VỊ khung cuộn phải VISIBLE **CẢ HAI TRỤC** — viên nhãn mọc ra ngoài 52px.
           🔴 Bẫy CSS đã đo: `overflow-y: auto` + `overflow-x: visible` KHÔNG cho ra "tràn ngang
           được" — theo spec, một trục là scroll thì trục kia tự nâng `visible` → `auto`, tức VẪN

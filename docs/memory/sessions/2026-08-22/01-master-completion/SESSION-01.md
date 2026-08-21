@@ -1,53 +1,65 @@
 # SESSION-01 · UI / HỆ THỊ GIÁC
 
-MISSION
-Chất lượng giao diện là một phần luận đề sản phẩm IF, không phải đánh bóng.
-Đưa Trang chủ · 2D · 3D · Present về MỘT hệ thị giác: điềm tĩnh · kiến trúc · editorial · cao cấp.
-Claude Design đề xuất bố cục; MAIN là người tích hợp và giữ kiến trúc/state/route/persistence.
+## ⛔ ĐỌC TRƯỚC KHI ĐỘNG VÀO BẤT CỨ THỨ GÌ
 
-START COMMIT: 83ff452 · nhánh backup/2026-08-19-batch0a
+**HƯỚNG THỊ GIÁC ĐÃ ĐƯỢC HOÀ DUYỆT MẮT — PASS 20/08.** Không dựng lại, không đề xuất lại.
+Hợp đồng thị giác = bộ board **EXS trên Claude Design** (project `InteriorFlow · Design System`,
+id `b7dc14ba-1752-4821-8fc7-d519f737ac09`) + hai văn bản:
+- `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md` — 12 điều chốt (55 dòng, đọc hết được)
+- `docs/IF-MOTION-VISUAL-LAW.md` — luật vận động + cá tính thị giác
 
-GREEN — DON'T TOUCH
-Profile/Settings đã gom xong (Ngôn ngữ + Giới thiệu trong menu avatar; Home không còn ⓘ/VI-EN lơ lửng).
-Mọi thứ ở mục GREEN của README. Đừng chứng minh lại.
+**Board ĐÃ DUYỆT (thi công theo được):** EXS-A luật vật lý · B sáu khung · C Home Work OS ·
+D sidebar 3 độ sâu · E context stack + Vitals aperture · F flows nghề · G/H/I ref-áp-DS ·
+J Auto Grid Present (bản v2) · L ngữ pháp hình học · M motion law.
+**Board BỊ BÁC (CẤM thi công visual, chỉ tham chiếu kỹ thuật):** EXS-N · O · P · R.
+**Đã huỷ:** EXS-K.
 
-OPEN
-1. HOME = CON NGƯỜI. Bố cục: KHÔNG KHÍ → TIẾP TỤC (một đích) → KỆ DỰ ÁN → MỘT vùng cảm hứng.
-   Dự án KHÔNG được chiếm khung hình đầu. Không đánh số mục kiểu dashboard, không tường widget.
-   Tuỳ biến về Cài đặt → Màn hình chính (Calm/Editorial/Compact/Custom).
-2. VITALS không phải pill. Neo ở MÉP TRÊN vùng làm việc, mảnh gần như vô hình; chú ý = hổ phách
-   nhẹ; rê chuột = Peek thả xuống; bấm = ghim; Esc = đóng.
-3. 2D: mặt vẽ trước. Sơ phác ⇄ Chuyên trong MỘT môi trường. Đừng thành AutoCAD đổi màu.
-4. 3D: khung nhìn trước. Thường trực ĐÚNG 7: Chọn·Dời·Xoay·Tạo·Vật liệu·Máy ảnh·Thêm.
-   Catalogue tạo hình mở theo ngữ cảnh.
-5. Present: editorial, ảnh mạnh, khoảng âm; Auto Grid chỉ khi có ích.
+⚠️ `docs/mocks/mock-he-thi-giac-3-man.html` (dựng 21/08) là đề xuất SAU khi EXS đã duyệt —
+coi là bản MINH HOẠ, KHÔNG phải hợp đồng. Chỗ nào lệch EXS thì EXS thắng.
 
-FILES TO OPEN
-docs/mocks/mock-he-thi-giac-3-man.html      (bản vẽ đã đẩy Claude Design — hợp đồng thị giác)
-components/home/DongStudioHome.tsx          (Home)
-components/studio/AppChrome.tsx             (thanh trên · Vitals · Profile)
-components/home/widgets/VitalsPill.tsx      (đang là PILL — phải đổi thành mép trên)
-components/nav/RailDieuHuong.tsx            (rail 3 nấc)
-components/cad/CadToolbelt.tsx              (thanh 2D)
-components/render-studio/ToolDock3D.tsx     (dock 3D)
-app/globals.css                             (token — KHÔNG chế màu mới)
+## ĐÃ XÂY RỒI — ĐỪNG LÀM LẠI (đo tại nguồn 22/08)
+- Sidebar 3 độ sâu: `BE_RONG_NAC = {52, 240, 320}` (`components/nav/muc-dieu-huong.ts:134`).
+  Rail 52 ✓ trong dải 52–56 · Shelf 240 ✓ trong dải 220–280.
+- Vitals **đã là aperture ở mép trên**, không phải pill: `components/studio/VitalsAperture.tsx`,
+  mount ở `AppChrome.tsx:376`. `VitalsPill` đã thôi mount.
+- Profile gom xong: Ngôn ngữ + Giới thiệu trong menu avatar; Home hết ⓘ/VI-EN lơ lửng (bf45718).
 
-TESTS TO RUN
+## OPEN — CHỈ CÒN NHỮNG THỨ NÀY
+1. **Work Panel 320 → resizable tới 440** (chốt #4). Hiện đứng ở sàn 320, chưa nới được.
+2. **HOME = Personal Work OS** (chốt #6, board EXS-C). **Hero = Resume ĐÃ CHỐT.**
+   Mặc định phải tươm tất ngay; tuỳ biến sâu nằm trong guardrail DS (add/hide/reorder/resize/pin,
+   density, mode, preset). Trả lời nhanh 4 câu: đang làm gì · dở đâu · cần xử gì · làm gì tiếp.
+   → Đối chiếu `components/home/DongStudioHome.tsx` với EXS-C rồi sửa phần LỆCH, đừng vẽ lại.
+3. **Master Capability System — 4 độ sâu** (chốt #10): Near-pointer capsule → Adaptive Toolbelt →
+   Context Shelf/Inspector → Deep ToolWindow. Toolbar = **working set 4–8 capability** theo ngữ
+   cảnh, KHÔNG chứa toàn bộ feature. Board EXS chưa vẽ thang này ⇒ phần MỚI thật sự.
+4. **Spotlight 1 Primary + 1 Secondary mỗi stage** (chốt #5) — kiểm từng chặng, sửa chỗ lệch.
+
+## HUMAN-GATED — CHỈ MỘT
+**EXS-E · Vitals biến thể V3-a** (morph từ chính aperture, không phải popover gắn lên).
+Bản chốt ghi rõ: *"chờ Hoà xác nhận trên board EXS-E"*. Đây là câu hỏi DUY NHẤT còn treo về thị
+giác. Hỏi gọn, đừng mở lại cả hệ.
+
+## FILES TO OPEN
+docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md   (12 điều chốt — nguồn sự thật)
+docs/IF-MOTION-VISUAL-LAW.md                (nhịp ms · character từng stage)
+components/home/DongStudioHome.tsx          (Home vs EXS-C)
+components/nav/muc-dieu-huong.ts:134        (BE_RONG_NAC — nới trần panel)
+components/studio/VitalsAperture.tsx        (đã đúng hướng, chỉ tinh chỉnh nếu Hoà chốt V3-a)
+components/render-studio/ToolDock3D.tsx     (working set 4–8)
+components/cad/CadToolbelt.tsx              (working set 4–8)
+
+## TESTS TO RUN
 npm test && npx tsc --noEmit
 npm run soi:hinh-hoc && npm run soi:tu-dien
-Chụp màn thật qua pane ĐÃ ĐĂNG NHẬP (cookie HttpOnly, Playwright không đăng nhập được).
+Chụp màn thật qua pane ĐÃ ĐĂNG NHẬP (cookie HttpOnly — Playwright không đăng nhập được).
+Ảnh ra nhỏ ~288px thì `resize_window` về preset desktop rồi chụp lại.
 
-ACCEPTANCE (thiếu một là FAIL)
-· Home đọc ra như dashboard → FAIL
-· 2D giống AutoCAD → FAIL
-· 3D nặng panel → FAIL
-· Present giống slide chung chung → FAIL
-· Ba màn đọc ra như ba app → FAIL
-· Chrome lấn nội dung → FAIL
-· Mọi thứ đều là thẻ bo tròn → FAIL
-· Kính dùng dày → FAIL
-Phải có ẢNH CHỤP APP THẬT mới được PASS.
+## ACCEPTANCE
+Home dashboard-like → FAIL · 2D giống AutoCAD → FAIL · 3D nặng panel → FAIL ·
+Present giống slide chung → FAIL · ba màn như ba app → FAIL · chrome lấn nội dung → FAIL ·
+mọi thứ đều thẻ bo tròn → FAIL · kính dày → FAIL.
+Phải có ẢNH APP THẬT mới PASS. Và phải đối chiếu được với board EXS tương ứng.
 
-STOP CONDITION
-Hoà duyệt mắt bộ 3 bản vẽ (blocker thật). Nếu chưa duyệt: vẫn làm được phần KHÔNG phụ thuộc gu —
-Vitals về mép trên, dọn chrome thừa, đo lại diện tích khung nhìn trước/sau.
+## STOP CONDITION
+Chỉ dừng ở câu V3-a. Mọi mục OPEN còn lại KHÔNG phụ thuộc câu đó — làm được ngay.
