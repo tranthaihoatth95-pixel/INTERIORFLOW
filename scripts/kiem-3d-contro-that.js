@@ -161,6 +161,37 @@ async function main() {
     let cx = box.x + box.w * 0.45;
     let cy = box.y + box.h * 0.45;
 
+    if (cmd === 'empty3d') {
+      // CỬA VÀO 3D RỖNG: phải dựng được NGAY, không đòi mặt bằng 2D.
+      const n0 = await entityCount(page);
+      // Card chào tự đóng khi có pointerdown RA NGOÀI nó — chính bộ kiểm đã bấm "Vẽ 3D"/fit nên
+      // nó đóng trước khi ta kịp soi. Gọi lại bằng đúng nút app cung cấp, không hack state.
+      const goiLai = page.locator('button[aria-label="Hiện lại gợi ý bắt đầu"]').first();
+      if (await goiLai.count().catch(() => 0)) { await goiLai.click().catch(() => {}); await page.waitForTimeout(900); }
+      const txt = await page.evaluate(() => document.body.innerText || '');
+      const coCanhBao = /Cần ít nhất một mặt bằng/.test(txt);
+      const coNutChinh = await page.locator('button', { hasText: /Bắt đầu trong 3D/ }).count().catch(() => 0);
+      const coDoiMatBang = /Vẽ mặt bằng trước/.test(txt);
+      log.push(`cảnh trống: ${n0} khối · nút "Bắt đầu trong 3D"=${coNutChinh > 0} · còn cảnh báo vàng=${coCanhBao} · còn ép "Vẽ mặt bằng trước"=${coDoiMatBang}`);
+      if (coNutChinh) {
+        await page.locator('button', { hasText: /Bắt đầu trong 3D/ }).first().click().catch(() => {});
+        await page.waitForTimeout(1000);
+        // kéo ngay trên mặt sàn — không bấm gì thêm
+        const sx = box.x + box.w * 0.42;
+        const sy = box.y + box.h * 0.56;
+        await page.mouse.move(sx, sy);
+        await page.mouse.down();
+        for (let i = 1; i <= 10; i++) { await page.mouse.move(sx + i * 26, sy - i * 9); await page.waitForTimeout(30); }
+        await page.mouse.up();
+        await page.waitForTimeout(1600);
+        const n1 = await entityCount(page);
+        log.push(`sau "Bắt đầu trong 3D" + MỘT cú kéo: ${n0} → ${n1} khối (${n1 > n0 ? 'DỰNG ĐƯỢC, không cần 2D' : 'KHÔNG dựng được'})`);
+        const f = page.locator('button.fitbtn').first();
+        if (await f.count().catch(() => 0)) { await f.click().catch(() => {}); await page.waitForTimeout(1300); }
+        await page.screenshot({ path: OUT + '/11b-3d-empty-entry.png' });
+      }
+    }
+
     if (cmd === 'shots') {
       // BỘ ẢNH THẬT cho Present/tài liệu. Luật: chỉ chụp màn CHẠY ĐƯỢC; màn chưa có thì ghi
       // thiếu, KHÔNG dựng ảnh giả. Mỗi khung đóng panel thừa trước khi bấm máy.
