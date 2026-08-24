@@ -1,3 +1,41 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════
+     BỘ NẠP — đọc khối này TRƯỚC, rồi mới đọc phần còn lại của tệp.
+     ═══════════════════════════════════════════════════════════════════════════════════════ -->
+
+# ⚡ BỘ NẠP PHIÊN MỚI — đọc 4 tệp, đừng quét lại cả repo
+
+Repo này có ~700 tệp tài liệu. Quét lại từ đầu mỗi phiên là cách đốt nửa phiên mà không làm được gì.
+**Não bền của dự án nằm ở `docs/control/`.** Đọc theo đúng thứ tự:
+
+| # | Tệp | Trả lời câu gì | Khi nào đọc |
+|---|---|---|---|
+| 1 | `docs/control/IF-CURRENT-STATE.md` | đang ở đâu · runtime nào · **việc kế tiếp chính xác** | **luôn luôn**, đầu tiên, nó nhỏ |
+| 2 | `docs/control/IF-CANONICAL.md` | IF **LÀ GÌ** · luật bền · ai quyết cái gì | **luôn luôn** |
+| 3 | `docs/control/IF-UXUI-OPERATING-MEMORY.md` | **những sai lầm đã trả giá** | trước mọi việc giao diện |
+| 4 | `docs/control/IF-TOOLING-RECEIPT.md` | năng lực **THẬT** đã xác minh | trước khi định dùng một công cụ |
+
+Tra khi cần, **đừng nạp sẵn**: `docs/control/IF-AUDIT-MEMORY.md` (khi điều tra) ·
+`docs/design-campaign/02-FAILURE-LEDGER.md` (khi một lỗi lặp lại).
+
+## Skill — nạp đúng nhánh, cấm nạp cả kho
+`if-design` bộ định tuyến thiết kế · `if-design-review` trọng tài chấm độc lập ·
+`if-ui-convergence` đưa một bề mặt đi trọn · `if-audit` audit có mục tiêu · `if-handoff` bàn giao phiên.
+
+## Chín luật vận hành — thuộc lòng, không cần mở tệp
+1. **Đọc control plane trước.** Cấm quét lại toàn repo trừ khi 4 tệp trên chứng minh là không đủ.
+2. **MỘT người ghi sản xuất** tại một thời điểm.
+3. **Claude Design sở hữu phần người dùng nhìn thấy.** MAIN thi công, **không âm thầm thiết kế lại**.
+4. **App thật thắng bản vẽ.** Bản vẽ thắng lời nói.
+5. **Không dữ liệu giả. Không PASS giả. Không tự tin giả.**
+6. **Tái dùng khuôn canonical** — đẻ khuôn thứ hai là bắt đầu phân kỳ.
+7. **Lỗi hệ thống thì chữa bằng hệ thống** (luật · máy canh · đổi cấu trúc), không chữa bằng vá ca.
+8. **Đi trọn tới chứng minh trên runtime.** Dừng ở "đã viết mã" là chưa xong.
+9. **Xong = 9 mục** (xem `IF-CANONICAL.md` §7). Thiếu một mục là chưa xong.
+
+> Luật thiết kế chi tiết **KHÔNG** nằm ở tệp này — chúng ở skill `if-design`. Tệp này chỉ nạp não.
+
+---
+
 > **MỘT NGUỒN — `AGENTS.md` là SYMLINK trỏ vào chính file này (T gộp 15/08).** Trước đó hai file
 > là hai bản sao gần y hệt, đã bắt đầu phân kỳ: bản `AGENTS.md` ghi sai `.Codex/launch.json`
 > (repo thật là `.claude/launch.json`) + đeo thêm 3 dòng phụ lục cụt. Sửa một bên quên bên kia là
@@ -5,7 +43,15 @@
 > `AGENTS.md` thì đọc qua symlink. Sửa luật: sửa `CLAUDE.md`, hết.
 
 ## Bắt đầu session
-Đọc @STATUS.md rồi @docs/00-CHOT.md TRƯỚC TIÊN. Cập nhật nó cuối mỗi task.
+🔴 **DÒNG NÀY ĐÃ ĐỔI 23/08 — bản cũ ra lệnh đọc `STATUS.md` rồi `00-CHOT.md` TRƯỚC TIÊN.**
+Câu đó nay **mâu thuẫn với BỘ NẠP ở đầu tệp**, và mâu thuẫn ấy đã gây hỏng thật: một phiên nguội
+làm bài kiểm 23/08 theo đúng câu này, đi vào `STATUS.md` (bản 19/08) → `LATEST.md` → sổ phiên cũ,
+và **không mở một tệp nào trong `docs/control/`**. Nó vẫn trả lời đúng — nhưng bằng nguồn CŨ, rải rác.
+⇒ Não bền viết ra mà không ai đi tới thì bằng không (luật M-24).
+
+**Thứ tự đúng: đọc BỘ NẠP ở đầu tệp này → `docs/control/` → rồi mới tra tiếp nếu cần.**
+`STATUS.md` và `00-CHOT.md` nay là **NHẬT KÝ**: tra khi cần khảo cổ một quyết định, KHÔNG dùng làm
+bức tranh hiện tại. Bức tranh hiện tại ở `docs/control/IF-CURRENT-STATE.md`.
 
 ## Quy tắc worktree & context
 

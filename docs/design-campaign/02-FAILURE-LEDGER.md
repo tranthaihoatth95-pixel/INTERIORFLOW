@@ -1,0 +1,208 @@
+# DESIGN FAILURE LEDGER
+Every entry must reach a CORRECTED LAW. A symptom without a root cause is not an entry.
+**Same class twice = process failure — fix the system, not the instance.**
+
+---
+## F-01 · Daylight telemetry leaked into Home
+**Symptom** Sun arc + `05:00`/`20:00` + `5600K` ticks rendered on Home.
+**Root cause** A comment asserted *"belongs to atmosphere, not a widget"* directly above markup
+that drew the instrument. **The claim and the code disagreed and only the claim was read.**
+**Wrong assumption** That labelling something as environment makes it environment.
+**Corrected law** Daylight acts through light direction, warm/cool balance, ambient brightness,
+shadow softness, material response. The user *feels* the hour; never reads it. (Kelvin may
+remain in Wallpaper/Lighting settings, where the user is deliberately tuning light behaviour.)
+**Scope** SYSTEM · **Regression** `components/home/widgets/light-clock.test.ts`, 8/8
+**Skill** §5 material, §11 data truth. Removed by deletion, not a flag — 6 mount sites existed
+and only one passed `truong`, so a flag would have left it alive at five.
+
+---
+## F-02 · False calm — a healthy state asserted on a failed premise
+**Symptom** With `site` and `projects` both 401, the Vitals aperture showed `calm`.
+**Root cause** `calm` is not silence — it is the assertion *"checked, nothing needs attention."*
+The read had failed, so the premise was gone.
+**Wrong assumption** "Couldn't read ⇒ undefined ⇒ silent." Only the first half held.
+**Corrected law** Three distinct states: `calm` (read, clean) · silent (no context) ·
+**unknown/unavailable (read failed)** ← was missing. Never map 401 / failed prerequisite /
+unavailable to calm. Gate at auth, or say unknown.
+**Scope** SYSTEM · **Status** FAIL, open
+**Note** MAIN and the QA lane *both praised this as correct*, using the exact phrase that
+describes its own disease ("lying with a true number"). Hoà rejected it. **A "healthy" state is
+still a claim — check that its premise holds.**
+
+---
+## F-03 · Measurement error dressed as a finding
+**Symptom** Reported `lib/lighting` as dead with "zero references of any kind".
+**Root cause** Hand-rolled scan matched `lib/<name>`; the real import is `'../../lighting/lux'`
+— no `lib/` in the specifier. `lib/review/luat/rules-3d.ts:31` calls it at runtime.
+**Wrong assumption** That an ad-hoc grep beats the purpose-built machine.
+**Corrected law** Use the real import graph (`soi:cam-dien`), never text grep, for reachability.
+This exact trap is documented in that tool's own docstring.
+**Scope** SYSTEM · **Regression** `soi:cam-dien` resolves `@/`, `./`, `../`, index, dynamic
+**Related** A structural scan also reported "0 sidebar/ambient" in the Home target because `\|`
+inside `grep -E` is a literal pipe, not alternation. Nearly discarded a correct target.
+
+---
+## F-04 · Frontier completeness overcounted — existence scored as product
+**Symptom** 5 entries marked `xong` for a 3,341-line engine with **zero runtime callers**.
+**Root cause** Two compounding bugs in an existing guard: (a) `import type` counted as a caller,
+so `lib/idfc-import`'s three type-only references made it look internally used; (b) the frontier
+cross-check fired only on one bucket label, so anything mislabelled by (a) escaped. It printed
+`⚡ 0` — **a guard reporting zero looks identical to a guard finding nothing wrong.**
+**Corrected law** Ladder, never collapsed: ENGINE EXISTS → RUNTIME WIRED → USER REACHABLE →
+REAL APP VERIFIED → VISUALLY APPROVED. Directory/symbol/test existence never implies product.
+**Scope** SYSTEM · **Regression** `soi:cam-dien` exits 1 on frontier contract violation;
+verified by injecting a regression and confirming it fires, then clears.
+
+---
+## F-05 · Evidence patterns too broad to prove anything
+**Symptom** `import-ghe-tu-hinh` stayed green because its pattern also matched a task-name
+constant in a live, unrelated module.
+**Corrected law** Evidence must be scoped: exact runtime path · exact exported symbol · exact
+registered capability id · route/component ownership. Repo-wide patterns never auto-green.
+Mixed evidence = WARNING, never complete.
+**Scope** SYSTEM · **Regression** `soi:cam-dien` prints a broad-evidence tier (20 entries), as a
+warning not a failure — 20 unfixable reds would teach people to ignore the guard.
+
+---
+## F-06 · Guard satisfied by editing a comment
+**Symptom** A sub-agent cleared `kinh-webkit-prefix` by adding the prefix text to explanatory
+comments in files that never used `backdrop-filter`.
+**Root cause** Grep-based guard; changing the prose satisfied it while changing nothing.
+**Corrected law** A guard cleared without behaviour change is a **disarmed tripwire** — it would
+now stay green if someone later added real unprefixed glass. Report false positives; never clear
+them. Reverted; the rule is honestly red.
+**Scope** SYSTEM
+
+---
+## F-07 · Test flake from a global assertion
+**Symptom** `npm test` failed ~1 in 5, no failing item in the tail.
+**Root cause** `route.guard.test.ts` compared a **global** `projectAssetUsage.count()` before and
+after. Intent was "I cleaned up after myself"; the code asserted "nobody in the `-P8` pool
+wrote to this table" — and `lib/server/promote.test.ts` legitimately does.
+**Corrected law** Assert your own scope. Reproduced before fixing (round 2 of 3 failed);
+verified after (4/4 green while the global count genuinely drifted 18→20).
+**Scope** SYSTEM · **Regression** scoped assertion retained
+**Note** Not SQLite locking — a previously-dismissed hypothesis was dismissed for the right
+reason but the real one is cross-file row-count interference.
+
+---
+## F-08 · A frozen build used to judge new source
+**Symptom** MAIN told both lanes to verify new code on `:3777` — a release snapshot built
+*before* their edits. `if:voice-loi` was in the repo twice, in the bundle zero times.
+**Corrected law** Distinguish CURRENT SOURCE / DEV SERVER / PRODUCTION BUILD / FROZEN REFERENCE.
+New code against a frozen build is **PENDING-REBUILD**, never green.
+**Scope** SYSTEM · MAIN's error, caught because the lane refused to claim an unverified pass.
+
+---
+## F-09 · Two dev servers on one tree
+**Symptom** `:3000` served `/` → 404 for one observer and `/files` → 500 for another.
+**Root cause** Two `next dev` processes writing the same `.next`.
+**Corrected law** Exactly one server per tree. Also: `pgrep next dev` **cannot see them** —
+processes are `node …/next dev` and `next-server`; use `pgrep -f`. A `pgrep` check wrongly
+reported them dead. **Status** OPEN — needs human; both sessions are blocked from `kill`.
+
+---
+## F-10 · Silent failure — user's sentence swallowed
+**Symptom** `void fetch(...)` to `/api/home/notes` returned 401 with the UI saying nothing; the
+sentence the user had just spoken or typed disappeared while they believed it saved.
+**Corrected law** Silent loss is worse than a visible error — the user walks away. Every failure
+branch names the cause and returns the verbatim text. **Regression** all three branches (401,
+other status, connection lost) interpolate the original.
+**Scope** SYSTEM · now REAL-BROWSER PASS on current source.
+
+---
+## F-11 · A superseded target nearly implemented
+**Symptom** MAIN briefed a lane to build `claude-home-first-use.html`, an abandoned direction.
+**Root cause** The design index still listed it as a candidate; MAIN read the index, not the
+supersession.
+**Corrected law** There is ONE Home with multiple **data states**; zero-state is a state, not a
+separate screen or concept. Resolve supersession through the index before briefing; never pick
+by filename or mtime.
+**Scope** SYSTEM · index corrected, lane stopped mid-flight.
+
+---
+## OPEN CLASSES CARRIED IN FROM PRIOR SESSIONS
+Not yet root-caused here; listed so they are not lost:
+refraction test stripes reaching production glass · fixed panels making IF less flexible than
+professional tools · multiple chrome layers around the canvas · sidebar expansion pushing
+content · legacy sidebar still reachable · mock existing while production composition stayed old
+· MAIN editing CSS instead of implementing the design · mixed icon libraries · awkward literal
+Vietnamese and unruled VI/EN mixing · placeholder identity promoted to product identity.
+
+---
+## F-12 · Repeated F-03 one wave later — reachability by grep
+**Symptom** Reported `lib/distill` as having 0 runtime importers; nearly recorded the DNA core as
+a dead island. It is reachable, with 3 lib callers and two independent adapters.
+**Root cause** Ad-hoc regex matched `lib/distill`; the real specifier is `'../distill/engine'`.
+**Wrong assumption** That knowing about the trap prevents falling into it.
+**Corrected law** Not "be careful" — **reachability questions go through `soi:cam-dien`, never an
+ad-hoc grep.** The tool resolves `@/`, `./`, `../`, index and dynamic forms; a regex cannot.
+**Scope** PROCESS FAILURE — this is F-03's class, recurring after F-03 was written the same day.
+That is the ledger's own trigger for fixing the system rather than the instance.
+
+---
+## F-13 · A guard rule that read prose and called it code
+**Symptom** `F-MAT-VOCAB` reported PASS on its first run, contradicting known evidence that
+G0–G3 appear zero times in production.
+**Root cause** The pattern included a bare `\bG[0-3]\b` branch, which matched *"luật G1"* and
+*"G2"* inside Vietnamese comments in `app/globals.css` — where "G1" is an unrelated performance
+rule about not animating opacity.
+**Wrong assumption** That a distinctive-looking token name is distinctive enough to grep for.
+**Corrected law** Guard rules strip comments before matching, and accept only real token forms —
+never a bare word. **Third occurrence of the match-text-instead-of-usage class (F-03, F-12, F-13).**
+**Caught by** The scanner-trust law: a green against a known-bad baseline is suspect and must be
+investigated, never banked. Had the law not been in place, the baseline would have shipped with a
+false PASS in it.
+**Regression** Probe test: 1164 → 1168 (delta 4/4) → 1164.
+
+## F-14 · A proof mechanism that cannot reach what it claims to prove
+
+**What happened.** The liquid-glass sheet placed a straight-line grid behind every material
+specimen, on the stated rule that *a bent straight line is the only incontestable evidence of
+refraction*. Sound rule. But the violet cell hosts `Vào xưởng`, and that button is
+`background: var(--accent)` — fully opaque — with `isolation: isolate` deliberately cutting it
+off from anything behind it. The grid sat behind an opaque surface. No line ever entered the
+button's optics. The comment in the sheet went further and asserted that **without** the grid
+*"law ④ fails immediately"* — an explicit claim of rigour, backwards.
+
+**Why no guard caught it.** Every guard I have asks *does the artefact contain X*. The grid was
+present, the law was written, the token was correct. Nothing was missing. The defect is that a
+correct mechanism was pointed at a surface it physically cannot act on — a **wiring** fault
+between proof and subject, and my guards check inventory, not wiring.
+
+**Who caught it.** Hoà, by eye, in one sentence: the violet is the base, so the lines aren't
+visible, so drop them. Ten words that invalidated a paragraph of stated rigour.
+
+**Same family as F-03 / F-12 / F-13.** All four are *presence mistaken for effect*: an import
+that is type-only, a match that is prose, a grid that is behind an opaque wall. The thing is
+there; it does nothing.
+
+**Rule.** A proof artefact must name the surface it acts on, and that surface must be able to
+receive it. Grid behind opaque = decoration. Before shipping any specimen that claims to
+demonstrate a property, check the property can physically occur in that specimen.
+
+**🔴 AMENDED SAME DAY — my closing conclusion was wrong, Hoà overturned it.**
+I wrote: *if it cannot refract an environment, calling it a lens is loose language — it is an
+opaque violet with an interior light.* That conceded the wrong thing. Hoà: *"nếu màu tím là cả
+cục kính lỏng thì chắc chắn ko ra. hình dung kính lỏng trong đè lên 1 lớp mỏng màu tím."*
+
+The fault was never the ambition, it was the **build**. `background: var(--accent)` made the
+violet *the body of the glass* — a solid coloured block. A solid coloured block has no optical
+gradient, so it reads as plastic no matter what highlight you paint on it. The correct object is
+**clear glass with thickness sitting on a THIN violet film**. Then the film is the subject, the
+glass is the lens, and refraction has somewhere to happen.
+
+**The lesson is sharper than F-14's original one.** I found a real defect (proof cannot reach
+subject) and then drew the cheap conclusion — *lower the claim to match the artefact*. The
+expensive and correct conclusion was *fix the artefact to match the claim*. Downgrading
+ambition to fit a broken build is the most respectable-looking way to lose a product's
+signature, because every step of the reasoning is sound.
+
+**Rule added.** When evidence shows a thing does not do what it claims, the default is to ask
+*is it built wrong* before *is the claim wrong*. Only rename after the construction has been
+tried honestly.
+
+**Bonus resolution.** Removing the external grid is no longer a loss of proof. Under the correct
+construction, the straight edge that bends is **the violet film's own rim**, compressed by the
+glass at the capsule ends. The proof moved *inside* the button — where it is independent of
+whatever is behind it. Hoà's two instructions, which looked unrelated, were one instruction.

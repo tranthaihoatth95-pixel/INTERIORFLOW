@@ -1,3 +1,18 @@
+> 🔴 **ĐÂY KHÔNG CÒN LÀ CỬA VÀO** (đóng dấu 23/08).
+> Cửa vào duy nhất: **`CLAUDE.md` → BỘ NẠP → `docs/control/`**.
+> · hiện trạng → `docs/control/IF-CURRENT-STATE.md`
+> · luật bền → `docs/control/IF-CANONICAL.md`
+> · sai lầm đã trả giá → `docs/control/IF-UXUI-OPERATING-MEMORY.md`
+> · năng lực thật → `docs/control/IF-TOOLING-RECEIPT.md`
+>
+> **Vì sao có dấu này:** hai bài kiểm khởi động nguội 23/08 đều **KHÔNG** mở tệp nào trong
+> `docs/control/`. Cả hai đi vào đây trước, vì mỗi tệp dưới đây từng tự xưng là điểm bắt đầu.
+> Phiên nguội tự tổng kết đúng bệnh: *"hai đường đọc chồng nhau, không nói rõ cái nào thắng."*
+> Nhiều cửa vào cùng mở = không có cửa vào nào. Nội dung dưới GIỮ NGUYÊN làm dấu vết.
+
+> ⚠️ Sửa lần cuối **19/08**. Luật vận hành trong đây phần lớn vẫn đúng, nhưng **thứ tự đọc thì sai** —
+> theo nó sẽ đi vào nhật ký thay vì vào não bền.
+
 # CLAUDE.md — Quy tắc làm việc dự án InteriorFlow (IF)
 
 > File này để ở gốc repo. Đọc trước MỌI phiên làm việc.
@@ -7,11 +22,22 @@
   cho TTT Architects dùng đầu tiên (miễn phí), dự định bán global.
 - IF = app thiết kế nội thất: Ý tưởng → CAD → Render → Present → Movie, dùng chung 1 nguồn `.idf`.
 - App song song: ArchiNote (hiện trường, mobile) — không gọi nhau, chỉ cùng đọc/ghi Lark Base (ATLAS).
+> ⚠️ CHỐT 19/08 ĐÈ CÂU TRÊN: Lark/ATLAS = OPTIONAL EXTERNAL ADAPTER, không còn là hạ tầng lõi.
+> IF phải chạy đầy đủ không cần Lark. ArchiNote dùng shared contract của IF, Lark không bắt buộc ở giữa.
 
 ## Nguồn sự thật — ĐỌC TRƯỚC KHI LÀM BẤT KỲ VIỆC GÌ
 0. `docs/memory/LATEST.md` — bản NÉN trí nhớ phiên gần nhất (đọc trước tiên, rẻ nhất) — cần chi
    tiết đầy đủ 1 nhánh việc thì mở đúng thư mục `docs/memory/sessions/<ngày>/<nhánh>/`
-1. ⭐ **`docs/IF-KIEN-TRUC.md` — BẢN ĐỒ KIẾN TRÚC. ĐỌC THẬT, KHÔNG LƯỚT.**
+1a. ⭐⭐ **`docs/IF-KIEN-TRUC-OS.md` — HIẾN PHÁP KIẾN TRÚC GỐC (Hoà chốt 18/08).**
+   IF = Local-first Design Operating System, AI chỉ là engine bên trong. 4 nguyên tắc:
+   *Own your data · Own your workflow · Own your memory · Replace your AI*. Trên mọi chốt khác.
+1. ⭐ **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md` — BẢN ĐỒ KIẾN TRÚC CHÍNH TẮC (19/08). ĐỌC THẬT, KHÔNG LƯỚT.**
+   (Tên cũ `IF-KIEN-TRUC.md` đã đóng dấu chuyển hướng 19/08, giữ làm dấu vết.)
+1b. ⭐ **`docs/IF-ARCHITECTURE-BLUEPRINT.md` — CANONICAL BLUEPRINT v1.0 (19/08, gate MISSING=0).**
+   Từ điển canonical 26 term (B3) · domain authority (B8) · bảng KHÔNG-PHẢI-LÀ 30 cặp (B20) ·
+   YAML machine-readable (B21) · coverage appendix 47 nhóm + 6 SUPERSEDED cấm hồi sinh (B22).
+   Vai: kiến trúc hiện hành GHÉP thành hệ thống thế nào — MAP là living direction, ADR thắng cả hai.
+   ⚠️ ĐỪNG NHẦM với `IF-ARCHITECTURE-BLUEPRINT-v1.md` bên dưới (file CŨ KHÁC HẲN — 8 luật vận hành).
    Kiến trúc tổng · hệ sinh thái `.idf` (là gì · ai đọc ai ghi · vòng đời · 4 ràng buộc) · lệnh giao diện.
    🔴 **Tên cũ `IF-MASTER-BLUEPRINT.md` chỉ còn là mẩu chuyển hướng 774 byte** (đổi tên 28/07).
    Dòng này TRƯỚC ĐÂY trỏ vào mẩu cụt đó ⇒ **suốt 19 ngày mọi phiên đọc mẩu cụt rồi đi tiếp,
@@ -110,3 +136,6 @@ LÀ bằng chứng cần thiết cho kết luận. Chữ nhiều mà nội dung 
   lịch sử — báo ngay nếu có, không tự ý xoá lịch sử git.
 - Local-first: KHÔNG phụ thuộc dịch vụ cloud bên thứ ba cho dữ liệu dự án (đã quyết định
   local-first + Electron, xem IF-CORE-SCHEMA.md).
+- CẤM chạy `prisma generate` trong sandbox/agent khi schema lệch DB thật — Prisma Client nằm
+  shared node_modules, generate với schema mới trên DB cũ làm chết runtime mọi phiên khác
+  (sự cố 19/08).

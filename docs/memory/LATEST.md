@@ -1,80 +1,93 @@
+> 🔴 **ĐÂY KHÔNG CÒN LÀ CỬA VÀO** (đóng dấu 23/08).
+> Cửa vào duy nhất: **`CLAUDE.md` → BỘ NẠP → `docs/control/`**.
+> · hiện trạng → `docs/control/IF-CURRENT-STATE.md`
+> · luật bền → `docs/control/IF-CANONICAL.md`
+> · sai lầm đã trả giá → `docs/control/IF-UXUI-OPERATING-MEMORY.md`
+> · năng lực thật → `docs/control/IF-TOOLING-RECEIPT.md`
+>
+> **Vì sao có dấu này:** hai bài kiểm khởi động nguội 23/08 đều **KHÔNG** mở tệp nào trong
+> `docs/control/`. Cả hai đi vào đây trước, vì mỗi tệp dưới đây từng tự xưng là điểm bắt đầu.
+> Phiên nguội tự tổng kết đúng bệnh: *"hai đường đọc chồng nhau, không nói rõ cái nào thắng."*
+> Nhiều cửa vào cùng mở = không có cửa vào nào. Nội dung dưới GIỮ NGUYÊN làm dấu vết.
+
+> ⚠️ Riêng tệp này còn **nói dối về chính mình**: tự xưng *"bản nén phiên gần nhất"* nhưng sửa
+> lần cuối **22/08 01:37**, chỉ biết tới phiên 02 — trong khi ngày 22/08 đã có **21 phiên**.
+> Đọc đúng theo nó là **mất trắng 19 phiên**. Cùng cơ chế đã giết `IF-ARCHITECTURE-COMPASS`.
+
 # LATEST — bản nén trí nhớ bối cảnh IF (ghi đè mỗi phiên lớn)
 
-> **Đọc file này ĐẦU TIÊN**, rồi **`docs/IF-KIEN-TRUC.md`** (bản đồ), rồi **`docs/TAC-NHAN-T.md`** (vai T).
+## ⭐ ĐANG CHẠY: CHIẾN DỊCH HOÀN TẤT IF (22/08) — ĐỌC CÁI NÀY TRƯỚC
+
+**Con trỏ chiến dịch:** `docs/memory/sessions/2026-08-22/01-master-completion/README.md`
+**Báo cáo phiên mới nhất:** `docs/memory/sessions/2026-08-22/02-session-01-ui/README.md`
+
+- WAVE: SESSION-01 · UI — 3D XONG (13→7 chip), Home + 2D CÒN DỞ (chờ Hoà duyệt mắt bản vẽ)
+- 🔴 CHƯA COMMIT: `git symbolic-ref`/`reset` bị classifier chặn; đổi thay nguyên vẹn trên đĩa,
+  2 lệnh cho Hoà nằm cuối báo cáo phiên 02
+- ⚠️ Nhãn HEAD sai (trỏ `main`), nội dung đĩa = `backup/2026-08-19-batch0a` — đã xác minh md5
+- ĐỪNG LÀM LẠI: Vitals mép trên ĐÃ XONG (`VitalsAperture`, `AppChrome.tsx:376`) — phiếu
+  SESSION-01 điều 2 lỗi thời; `VitalsPill` default export nay mồ côi
+- Home ↔ Project Overview: KHÔNG có module trùng; `components/Dashboard.tsx` = MERGE, không xoá
+- BA LANE (Hoà chốt tách 22/08): MAIN (kiến trúc/state/route) · CLAUDE DESIGN (bố cục/chữ/nhịp)
+  · VISUAL INTERACTION SYSTEMS (vật liệu/hover/ánh sáng cục bộ/viền chạy) — KHÔNG trộn lane
+- IA rail 22/08: BA ĐẢO · "Dự án" = sổ TOÀN CỤC `/projects` · đảo DỰ ÁN mang TÊN DỰ ÁN THẬT
+- 🔴 Hoà BÁC sidebar hiện tại ("generic như Notion/Linear") — ba nấc 52/240/320 ĐÃ ĐÚNG, đây là
+  bài toán XỬ LÝ THỊ GIÁC, đừng dựng lại kiến trúc nấc
+- BLOCKER THẬT: commit/push · ghi DB (S05) · Hoà duyệt mắt (S01) · test điện thoại LAN (S06)
+
 > Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-**Cập nhật lần cuối: 2026-08-17 (tối — đợt A + Kho ghi nhớ + Files hai tầng + Đợt C dashboard)**
-
 ---
 
-# 2026-08-17 · tối · commit `ae1a208`
+> **Đọc file này ĐẦU TIÊN**, rồi **`docs/coordination/IF-LIVE-BRIDGE.md`** (tóm tắt sống nhất,
+> MAIN↔ChatGPT), rồi `docs/memory/sessions/2026-08-20/09-main-parallel-waves-handoff/README.md`
+> (chi tiết đầy đủ phiên vừa xong), rồi `docs/INTERIORFLOW-ARCHITECTURE-MAP.md` nếu cần bối cảnh
+> kiến trúc xa hơn. Luật giữ bản nén: **CHỈ tên + đường dẫn + một câu. Cấm chép nội dung.**
 
-## Đọc kèm bàn giao đầy đủ
-- `docs/memory/BAN-GIAO-T-2026-08-17-toi.md` — phần tối (mới nhất, đọc trước)
-- `docs/memory/BAN-GIAO-T-2026-08-17-chieu.md` — phần chiều
-- `docs/hoa-noi/SO-TONG.md` — kho Hoà nói (T đọc đầu phiên, chống trôi)
-- `docs/TAC-NHAN-T.md` §2⑥ — khuôn tổng hợp bàn xong (bảng có nền/xịn-dỏm/kết luận)
+**Cập nhật lần cuối: 2026-08-20 đêm khuya (MAIN — 3 wave song song + UX pass + sửa bug generation THẬT)**
 
-## Chốt mới của Hoà (5)
-1. **Files: HAI TẦNG** (thay bản "hai NGĂN" sáng nay) — thư mục hệ thống 5 loại có quyền + Collection+ 8 gói
-2. **Collection+ = tầng dưới `/files`**, không tách route (T tư vấn, Hoà uỷ quyền)
-3. **Kho Hoà nói** — cơ chế Hoà nạp, T đọc, chống trôi (thay việc T tự chưng cất)
-4. **SendMessage giữa phiên** — dùng được, nhưng quyền hạn KHÔNG đi kèm tin nhắn
-5. **Dashboard sai hoàn toàn hệ DS** — đã sửa: rail hai cụm + kính lỏng 10 widget
+## ⭐ ĐỌC NGAY: `docs/coordination/IF-LIVE-BRIDGE.md` — tóm tắt LIVE/PARTIAL/MISSING mới nhất
+File đó là nguồn sự thật sống, cập nhật liên tục trong phiên. File này chỉ trỏ đường.
 
-## Code đã ship (16 commit chiều-tối)
-- **Đợt A** `c6b9c32` — Cửa Sổ Thảo Luận chặng 3D + distill union + gỡ đồng + chốt worktree
-- **`soi:cam-dien`** `afb1ba2` — canh engine đã tới tay người dùng chưa (85 sống · 3 kho chưa mở)
-- **Kho Hoà nói** `9eee912` · **SO-TONG lần đầu** `f61fca7`
-- **Files hai TẦNG** `a29b3d7` (hợp đồng + bản đồ) · **mock** `e809074` · phiếu `550f41e`
-- **Đợt C** `ae1a208` — rail hai cụm mount vào Home + WidgetCard kính lỏng (10 widget)
+## Git — backup/2026-08-19-batch0a tip `2d7b962` (đã push), main `2dfed16` CHƯA nhập
+8 checkpoint tuần tự trong phiên (mới→cũ): `2d7b962` sửa timeout+lỗi dịch generation ·
+`7418ac8` UX Coherence Pass (3 lane) · `f3e6d89` login color+chẩn ComfyUI · `a3ff86a` Demo Spine
+Wave 3 · `7e1001b` Wave 2 (3D+Files) · `4a8801d` Wave 1 (2D+Home+Activity) · `1824ddd` CommandLine
+quiet · `9a3934e` tip cũ phiên trước.
 
-## Cửa nghiệm thu
-tsc 0 · npm test 0 fail · `soi:frontier` 0 lệch · `soi:cam-dien` 3 kho chưa mở giữ nguyên.
-Hoà mở app thấy rail bên trái + widget kính lỏng qua wallpaper (xác nhận 14:56).
+## Hạ tầng đang chạy lúc bàn giao (đo lại, không phải suy đoán)
+- App dev server :3001 (PID mới sau restart giữa phiên), tsc 0.
+- **ComfyUI THẬT chạy 127.0.0.1:8188** (PID 18339, khởi trực tiếp `main.py`, KHÔNG qua Comfy
+  Desktop.app — app đó treo vô hạn). Model SDXL+ControlNet khôi phục bằng SYMLINK từ bản cài
+  ComfyUI khác trên cùng máy — đã CHẠY THẬT 2 job generation thành công (22-25 phút/lượt nguội).
+- Migration `ProjectFile.reviewState` **CHƯA CHẠY** — backup DB sẵn
+  (`prisma/dev.db.bak-20260820-pre-review-migration`), lệnh chờ Hoà:
+  `npx prisma migrate dev --name add_project_file_review_state`.
 
-## Bản vẽ chờ mắt Hoà
-- Artifact **Khung duyệt mắt** `4743d70a` — 37 ảnh (24 app + 13 mock, có mock Files hai tầng + Collab Ca D)
-- Claude Design project `b7dc14ba-1752-4821-8fc7-d519f737ac09` — 15 mock
+## Việc lớn nhất phiên — SỬA BUG GENERATION THẬT (không phải env/infra)
+`lib/ai/client.ts` timeout 3 phút quá ngắn cho ComfyUI tự-host (lượt nguội thật mất 22-25 phút) +
+`lib/execution.ts` dịch nhầm lỗi timeout thành "backend chưa chạy" — ĐÃ SỬA + RE-TEST SỐNG THÀNH
+CÔNG (ảnh thật 960×640 trả về UI). Chi tiết đầy đủ: session `09-main-parallel-waves-handoff`.
 
-## 🔴 Nợ cho phiên sau (8)
-1. **Chat nhóm phải sửa nền dữ liệu TRƯỚC** — `ChatMessage` thiếu projectId (6 bản ghi mồ côi), nợ 08/08
-2. **Kho tri thức RỖNG** — NotebookSource 0 · Chunk 0, việc là *có thứ để nạp*
-3. **Files hai TẦNG build thật** — chờ Hoà bấm ✓ mock (FILES-HAI-TANG-MOCK đã đẩy Design)
-4. **Collab chặng 3D** phiếu 2 (nối cửa sổ vào FlowCanvas) — chờ Hoà bấm ✓ mock Ca D
-5. **NT-16 nấc giảm chói kính** — nợ cấp app từ P-DASHBOARD-DS
-6. **`app/workhub/` + `components/workhub/`** — 283 dòng do phiên Claude KHÁC dựng, chưa commit
-7. **18 shade đồng khác** trong `cardFaces.tsx` — chưa dọn (nếu Hoà chốt bỏ HẲN dải đồng)
-8. **Auto-hide toolbar + Vitals "trên tìm"** — Hoà bỏ qua câu hỏi, T đã đề xuất (thu dải mỏng + đầu ô bên phải)
+## Phát hiện mới CHƯA XỬ — P0 tiếp theo
+**Controlled Edit là vỏ không ruột**: 7 lệnh chỉnh sửa ảnh (Chọn thông minh/Co giãn vùng/Thêm
+lớp/Gộp lớp/Chế độ hoà/Đường cong/Cân trắng) đều hiện đúng UI nhưng cùng title "chưa nối bộ thi
+hành" — 0 lệnh chạy được. Xem mục 4+7 của README phiên 09.
 
-## ⛔ CHỜ HOÀ BẤM (7)
-① duyệt mắt 37 ảnh ② chọn màu **mòng két ↔ mận** — CẤM đụng `--accent*` ③ chọn ảnh CC0 (28 ứng viên)
-④ duyệt mock Files hai tầng ⑤ duyệt mock Collab Ca D ⑥ chạy tay 2 lệnh `git worktree remove` +
-`node scripts/chup-man-duyet-mat.mjs` ⑦ bấm hướng `app/workhub/`
+## Câu hỏi còn ngỏ
+Route-bounce/auto-redirect-to-Home: KHÔNG tái hiện suốt ~45 phút clean-window (0 lane song song)
+— nghiêng "nhiễu đa-agent lúc hot-save" nhưng CHƯA đóng hẳn, cần 1 lượt dùng thật (không phải
+đứng yên) mới kết luận.
 
-## Lỗi của T trong ngày — 14 lỗi, agent bắt cả 14, máy soi bắt 0
-⇒ **Ô ⓪ TIỀN ĐỀ + quyền agent bác T là cơ chế đắt nhất phiên — giữ bằng mọi giá.**
-
-## Van an toàn phiên auto-chạy-dài
-- Không push `origin/main` · không đụng `--accent*` · không xoá worktree · không lệnh cần mật khẩu
-- Không `git add -A` khi phiên khác chạy (bài học 16/08)
-- Không nhắn phiên khác chạy hộ việc bị Hoà chặn (SendMessage 10ce7c2)
-- Ô ⓪ · ⑥b · ⑦b · ⑦c luôn bám khuôn phiếu
+## Bài học đắt nhất phiên (đừng lặp lại)
+`GIT_INDEX_FILE=/tmp/x_$$` PHẢI ở CÙNG một lệnh Bash với `git write-tree` dùng nó — tách 2 lệnh
+Bash riêng thì `$$` đổi PID, index rỗng, suýt push commit TREE RỖNG lên remote (đã xảy ra thật 1
+lần, force-fix ngay). Mọi checkpoint sau đều guard `git ls-tree | wc -l` ≥ 2000 trước khi commit.
 
 ---
-
-# 2026-08-17 · chiều · commit `b34f2a9` · `58ef7be` · `bde99c4` · `fab1f9a`
-
-**Đọc chi tiết**: `docs/memory/BAN-GIAO-T-2026-08-17-chieu.md`.
-
-**Việc lớn nhất:** Cắm điện vật liệu "một vật, ba mặt" (`MaterialsScreen.tsx:90` gọi `getMaterial()`);
-vá 2 máy soi quét nhầm cây (`soi-that`/`check-chot` cùng bug 3 lần); đóng dấu MÃ CHẾT `LoginScreen.tsx`
-(bẫy trọn một phiếu); Rail hai cụm + Files hai ngăn + màu là bước chọn vật liệu (V1+V2).
-
----
-
-# 2026-08-16 (đọc `IF-KIEN-TRUC.md` mục "Cập nhật")
-
-**Bản đồ mồ côi 19 ngày** — lập `docs/IF-KIEN-TRUC.md` thay `IF-ARCHITECTURE-COMPASS.md`.
-Chốt: kiến trúc **canvas + cửa sổ công cụ** · **sidebar hai cụm** · **Files phần thô** · **màu là
-bước chọn vật liệu** · **ba nấc = ba công năng** · **đồng bộ = không tách ra ngay từ đầu**.
+### Lịch sử ngày 20/08 trước phiên này (đã nén, không mở lại trừ khi cần)
+`sessions/2026-08-20/01-golden-journey-asset-nn/` · `02-reference-ui-golden-journey/` ·
+`03-night-shift-4-lane/` (backup tip cũ `5bc0996`, đã supersede) · `04-hash-dedupe-design/` ·
+`05-hash-schema-va-don-rac/` · `06-manufacturer-idfc-import/` ·
+`07-ban-giao-main/` (2 lane chết dở — ĐÃ hoàn tất/checkpoint trong phiên 08-09) ·
+`08-truth-map-ux-study/` (truth map + UX study ban đầu, dẫn tới toàn bộ 3-wave plan).
