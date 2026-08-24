@@ -10,7 +10,20 @@ prisma/dev.db*
 prisma/*.db
 prisma/*.db-journal
 build.log
-.claude/
+.claude/*
+# ⬆️ CHẶN MẶC ĐỊNH mọi thứ trong .claude — worktree · settings · cache · session ·
+#    socket · credential · cấu hình cá nhân. KHÔNG được nới dòng này.
+#
+# ⬇️ MỞ ĐÚNG MỘT CỬA: kho skill canonical của IF (Hoà chốt 24/08).
+#    Vì sao: `.claude/skills/**` là 5 skill + Trường Thiết Kế 61 tệp — DURABLE MEMORY của
+#    dự án. Bị ignore nghĩa là nó chỉ sống trên MỘT máy; đổi máy hoặc dọn cây là mất trắng,
+#    đúng thứ durable memory sinh ra để chống.
+#    Ba dòng cuối siết thêm: trong skills CHỈ nhận `.md`. Có ai bỏ binary/cache/secret vào
+#    đó thì git vẫn chặn — mở cửa cho THƯ MỤC, không mở cửa cho MỌI LOẠI TỆP.
+!.claude/skills/
+.claude/skills/**
+!.claude/skills/**/
+!.claude/skills/**/*.md
 *.tsbuildinfo
 
 # Electron — output đóng gói (.exe/nsis) do electron-builder tạo
@@ -85,3 +98,12 @@ docs/mocks/*Ti Share*/
 docs/mocks/*so-do-to-chuc*
 docs/mocks/*Sơ đồ tổ chức*
 nhat-ky-chup-man.txt
+
+# Understand-Anything plugin — analysis data
+# Giữ .ua/knowledge-graph.json + meta.json + config.json + .understandignore + fingerprints.json (commit được, share team)
+# Bỏ .ua/intermediate/ (dữ liệu trung gian) + .ua/tmp/ (script tạm) + .ua/.trash-*/ (bin auto-dọn sau 7 ngày)
+.ua/intermediate/
+.ua/tmp/
+.ua/.trash-*/
+.ua/diff-overlay.json
+uploads/site/
