@@ -53,7 +53,16 @@ for (const it of FRONTIER) {
   const holds = doneHolds(it);
   let mark, note;
   const done = it.trangThai === 'xong' || it.trangThai === 'xong-mat';
-  if (it.trangThai === 'xong-mat' && holds) { mark = '👁'; note = 'đã qua mắt Hoà'; }
+  // 22/08 — BẬC 'engine' (Hoà đặt sau audit kiến trúc: THƯ MỤC TỒN TẠI ≠ SẢN PHẨM TỒN TẠI).
+  // Nghĩa: engine CÓ THẬT, test có thể xanh — nhưng KHÔNG có đường chạy tới người dùng.
+  // Nó KHÔNG phải 'xong' (nói dối về sản phẩm) và cũng KHÔNG phải 'chua' (xoá công đã làm).
+  // Ai gác bậc này: `soi-cam-dien.mjs` (đồ thị import thật, bỏ type-only) — không phải máy này.
+  if (it.trangThai === 'engine') {
+    mark = holds ? '🧩' : '🔴';
+    note = holds ? 'ENGINE CÓ — CHƯA tới người dùng (soi:cam-dien gác)' : 'khai engine mà bằng chứng MẤT';
+    if (!holds) red++;
+  }
+  else if (it.trangThai === 'xong-mat' && holds) { mark = '👁'; note = 'đã qua mắt Hoà'; }
   else if (it.trangThai === 'xong' && holds) { mark = '✅'; note = 'xong-MÁY (chưa qua mắt Hoà)'; }
   else if (it.trangThai === 'chua' && !holds) { mark = '⬜'; note = 'chưa làm (đúng sổ)'; }
   else if (done && !holds) { mark = '🔴'; note = 'KHAI XONG mà bằng chứng MẤT — regress?'; red++; }
@@ -96,5 +105,8 @@ if (goiY.length) {
   console.log('💡 GROUP-BY GỢI Ý (≥3 việc chờ cùng hệ×vai → xét 1 phiếu chung / chung engine lõi):');
   for (const [k, ids] of goiY) console.log(`   ${k}: ${ids.join(' · ')}`);
 }
-console.log(`👁 ${mat} qua mắt Hoà · ✅ ${mayOnly} xong-MÁY (NỢ NGHIỆM THU MẮT) · ⬜ ${todo} chờ · 🔴 ${red} LỆCH${red ? '  ← xử lệch TRƯỚC khi bàn việc mới' : ''}\n`);
+const engineOnly = rows.filter((r) => r.mark === '🧩').length;
+console.log(`👁 ${mat} qua mắt Hoà · ✅ ${mayOnly} xong-MÁY (NỢ NGHIỆM THU MẮT) · 🧩 ${engineOnly} ENGINE-CHƯA-TỚI-NGƯỜI-DÙNG · ⬜ ${todo} chờ · 🔴 ${red} LỆCH${red ? '  ← xử lệch TRƯỚC khi bàn việc mới' : ''}`);
+if (engineOnly) console.log('   ⓘ 🧩 KHÔNG tính là xong: engine chạy được nhưng chưa có đường tới người dùng (soi:cam-dien gác bậc này).');
+console.log('');
 process.exit(red ? 1 : 0);

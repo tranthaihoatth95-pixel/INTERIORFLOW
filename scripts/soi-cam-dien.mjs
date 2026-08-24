@@ -172,7 +172,7 @@ const MODULE = new Map(); // id → { tep[], ui:Set, lib:Set, phu:Set, test:Set 
 for (const rel of TEP) {
   const id = moduleCua(rel);
   if (!id) continue;
-  if (!MODULE.has(id)) MODULE.set(id, { tep: [], ui: new Set(), lib: new Set(), phu: new Set(), test: new Set() });
+  if (!MODULE.has(id)) MODULE.set(id, { tep: [], ui: new Set(), lib: new Set(), phu: new Set(), test: new Set(), kieu: new Set(), goiToi: new Set() });
   MODULE.get(id).tep.push(rel);
 }
 /**
@@ -203,10 +203,26 @@ for (const tuTep of TEP) {
   const src = doc(tuTep);
   const gocGoi = tuTep.split('/')[0];
   const modGoi = moduleCua(tuTep);
-  const specs = new Set();
-  for (const mau of MAU_IMPORT) for (const m of src.matchAll(mau)) if (!laChuThich(dongChua(src, m.index))) specs.add(m[1]);
+  // 22/08 — CẠM BẪY ③ (bắt được khi audit kiến trúc): `import type … from '…'` BỊ XOÁ lúc
+  // biên dịch. Nó KHÔNG phải một lời gọi. Mẫu ① chỉ nhìn mệnh đề `from` nên trước nay đếm nó
+  // như caller thật ⇒ `lib/idfc-import` có 3 "caller" mà cả 3 chỉ mượn ĐÚNG MỘT type alias
+  // (`ProvenanceFlag`) ⇒ máy xếp nó vào CHỈ NỘI BỘ thay vì KHO CHƯA MỞ ⇒ khối đối chiếu
+  // frontier (chỉ bắn khi mọi bằng chứng nằm trong KHO CHƯA MỞ) im lặng trả 0, và hai entry
+  // 'xong' sống sót. Máy đã CÓ, chỗ hở nằm ở phép đếm.
+  // Hướng THẬN TRỌNG cố ý: chỉ loại dạng KHÔNG THỂ NHẦM (`import type` / `export type` mở đầu
+  // mệnh đề). Dạng trộn `import { type A, b }` VẪN tính là runtime — báo oan "chết" đắt hơn
+  // nhiều so với bỏ sót một type-only.
+  const specs = new Map(); // spec → chiRiengKieu (true = mọi lượt gặp đều là type-only)
+  for (const mau of MAU_IMPORT) {
+    for (const m of src.matchAll(mau)) {
+      const dong = dongChua(src, m.index);
+      if (laChuThich(dong)) continue;
+      const chiKieu = /^\s*(?:import|export)\s+type\s/.test(dong);
+      specs.set(m[1], specs.has(m[1]) ? specs.get(m[1]) && chiKieu : chiKieu);
+    }
+  }
 
-  for (const spec of specs) {
+  for (const [spec, chiKieu] of specs) {
     if (!spec.startsWith('.') && !spec.startsWith('@/')) continue; // gói ngoài
     const dich = giaiDuongDan(spec, tuTep);
     if (!dich) {
@@ -222,10 +238,34 @@ for (const tuTep of TEP) {
     if (!modDich || !MODULE.has(modDich)) continue;
     if (modDich === modGoi) continue;                    // gọi trong cùng module = nội bộ, không tính
     const o = MODULE.get(modDich);
+    if (chiKieu) { o.kieu.add(tuTep); continue; } // type-only: KHÔNG phải lời gọi, đếm riêng
     if (laTest(tuTep)) o.test.add(tuTep);
     else if (GOC_MAT.includes(gocGoi)) o.ui.add(tuTep);
-    else if (gocGoi === 'lib') o.lib.add(tuTep);
+    else if (gocGoi === 'lib') { o.lib.add(tuTep); if (modGoi) o.goiToi.add(modGoi); }
     else o.phu.add(tuTep);
+  }
+}
+
+/* ── TỚI ĐƯỢC NGƯỜI DÙNG (bắc cầu) ──────────────────────────────────────────────
+ * `ui > 0` chỉ trả lời "có mặt tiền gọi thẳng". Nó KHÔNG trả lời "người dùng chạm được".
+ * Hai chiều sai ngược nhau nếu chỉ đếm trực tiếp:
+ *   · module A chỉ được B gọi, mà B có mặt tiền  ⇒ A TỚI ĐƯỢC (đếm thẳng nói "chỉ nội bộ")
+ *   · module A chỉ được B gọi, mà B cũng không ai gọi ⇒ A KHÔNG tới được (cả hai là một đảo)
+ * Nên phải lấy điểm bất động: hạt giống = module có mặt tiền; lan theo cạnh module→module.
+ * Đây là bậc "USER REACHABLE" ở CẤP MÃ — điều kiện CẦN, chưa phải điều kiện ĐỦ. Bấm được
+ * nút thật vẫn phải mở app kiểm; máy này không tự nhận đã chứng minh điều đó.
+ */
+const TOI_DUOC = new Set();
+{
+  const hang = [];
+  for (const [id, o] of MODULE) if (o.ui.size > 0) { TOI_DUOC.add(id); hang.push(id); }
+  // cạnh ngược: X.goiToi chứa module ĐANG GỌI X ⇒ nếu kẻ gọi tới được thì X tới được
+  while (hang.length) {
+    const cha = hang.pop();
+    for (const [id, o] of MODULE) {
+      if (TOI_DUOC.has(id)) continue;
+      if (o.goiToi.has(cha)) { TOI_DUOC.add(id); hang.push(id); }
+    }
   }
 }
 
@@ -304,8 +344,16 @@ const moCoi = TEP.filter((t) => t.startsWith('lib/') && !laTest(t) && !duocGoi.h
 /* ── ĐỐI CHIẾU FRONTIER (④.5) — CHỈ IN, KHÔNG SỬA REGISTRY ──────────────────── */
 const ttCua = new Map(BANG.map((r) => [r.id, r.tt]));
 const chuaCamDien = [];
+const lanLon = []; // entry 'xong' có bằng chứng NỬA trong nửa ngoài đường tới người dùng
+const bangChungRong = []; // entry 'xong' lấy bằng chứng bằng mẫu QUÉT CẢ CÂY
 for (const e of FRONTIER) {
   if (e.trangThai !== 'xong' || !Array.isArray(e.bangChung)) continue;
+  // 22/08 · §2 — BẰNG CHỨNG PHẢI CÓ PHẠM VI. `dir: 'lib'` quét CẢ CÂY: một mẫu đủ rộng có thể
+  // trúng thư mục cài đặt thật VÀ trúng một hằng số tên-tác-vụ ở module sống chẳng liên quan
+  // (ca thật `import-ghe-tu-hinh`: `imageTo3d` là tên tác vụ trong lib/ai/models.ts). Lúc đó
+  // entry xanh nhờ thứ không phải là nó. Chỉ CẢNH BÁO, không tự đỏ: 19 entry đang dính, và một
+  // máy soi đỏ hàng loạt thứ chưa sửa được thì chết theo cách tệ nhất — người ta học cách bỏ qua.
+  if (e.bangChung.some((bc) => bc.dir && /^(lib|app|components)$/.test(bc.dir))) bangChungRong.push(e);
   const khop = new Set();
   for (const bc of e.bangChung) {
     if (bc.can === false) continue; // 'xong' nghĩa là KHÔNG còn khớp — không dùng để định vị code
@@ -319,8 +367,22 @@ for (const e of FRONTIER) {
   }
   if (!khop.size) continue;
   const ds = [...khop];
-  const toanChuaMo = ds.every((t) => ttCua.get(moduleCua(t) ?? '') === CHUA_MO);
-  if (toanChuaMo) chuaCamDien.push({ e, ds });
+  // 22/08 — TRƯỚC: `every(... === CHUA_MO)`. Chỗ hở thứ hai: nó chỉ bắn khi bằng chứng nằm
+  // trong nhóm KHO CHƯA MỞ. Module hạng CHỈ NỘI BỘ cũng KHÔNG tới tay người dùng, mà lại
+  // lọt lưới — cộng với lỗi đếm type-only ở trên, đúng hai entry `idfc-import` thoát cả hai
+  // tầng. NAY: hỏi thẳng câu cần hỏi — bằng chứng có nằm trên đường tới người dùng không.
+  const toanKhongToi = ds.every((t) => {
+    const md = moduleCua(t);
+    return md ? !TOI_DUOC.has(md) : false;
+  });
+  if (toanKhongToi) chuaCamDien.push({ e, ds });
+  else if (ds.some((t) => { const md = moduleCua(t); return md && !TOI_DUOC.has(md); })) {
+    // BẰNG CHỨNG LẪN LỘN — nửa nằm trên đường tới người dùng, nửa nằm ngoài.
+    // Không tự động đỏ: mẫu grep rộng có thể vô tình quét trúng một hằng số ở module sống
+    // (ca thật: `imageTo3d` là TÊN TÁC VỤ trong lib/ai/models.ts, không phải đường mesh).
+    // Máy KHÔNG đoán hộ ý định — nó chỉ chỉ đúng chỗ mẫu quá rộng để người audit siết lại.
+    lanLon.push({ e, ngoai: ds.filter((t) => { const md = moduleCua(t); return md && !TOI_DUOC.has(md); }) });
+  }
 }
 
 /* ── IN ─────────────────────────────────────────────────────────────────────── */
@@ -335,7 +397,9 @@ function inNhom(tt, ghiChu) {
   console.log(`\n${CO[tt]} ${tt} — ${ds.length} module${ghiChu ? ' · ' + ghiChu : ''}${ds.length ? '' : ' (không có)'}`);
   const w = ds.length ? Math.min(34, Math.max(...ds.map((r) => r.id.length))) : 0;
   for (const r of ds) {
-    console.log(`  ${CO[tt]} ${r.id.padEnd(w)} ${n(r.dong, 5)} dòng · ui=${n(r.ui, 2)} lib=${n(r.lib, 2)} phụ=${n(r.phu, 2)} test=${n(r.test, 2)} tự-kiểm=${n(r.rieng, 2)}`);
+    const k = MODULE.get(r.id)?.kieu.size ?? 0;
+    const toi = TOI_DUOC.has(r.id) ? 'tới-được' : 'CHƯA-TỚI';
+    console.log(`  ${CO[tt]} ${r.id.padEnd(w)} ${n(r.dong, 5)} dòng · ui=${n(r.ui, 2)} lib=${n(r.lib, 2)} phụ=${n(r.phu, 2)} test=${n(r.test, 2)} tự-kiểm=${n(r.rieng, 2)} · ${toi}${k ? ` · type-only=${k}` : ''}`);
     if (r.mo) console.log(`     ↳ ${r.mo.slice(0, 92)}`);
   }
 }
@@ -356,6 +420,23 @@ for (const { e, ds } of chuaCamDien) {
   console.log(`     ↳ bằng chứng: ${ds.slice(0, 3).join(' · ')}${ds.length > 3 ? ` … +${ds.length - 3}` : ''}`);
 }
 if (!chuaCamDien.length) console.log('  (không có)');
+console.log('  \u24d8 CHỈ IN, không sửa registry — flip trạng thái là việc của người audit.');
+
+console.log(`\n\u26a0\ufe0f  BẰNG CHỨNG LẪN LỘN — entry 'xong' có bằng chứng NỬA ngoài đường tới người dùng (${lanLon.length})`);
+for (const { e, ngoai } of lanLon) {
+  console.log(`  \u26a0\ufe0f  ${e.id} — ${e.ten.split('(')[0].trim().slice(0, 72)}`);
+  console.log(`     \u21b3 phần CHƯA TỚI: ${ngoai.slice(0, 3).join(' · ')}${ngoai.length > 3 ? ` … +${ngoai.length - 3}` : ''}`);
+}
+if (!lanLon.length) console.log('  (không có)');
+console.log(`  \u24d8 KHÔNG tự động đỏ: mẫu grep rộng quét trúng module sống là chuyện thật. Siết \`mau\` cho hẹp rồi chạy lại.`);
+
+console.log(`\n\ud83d\udd0d BẰNG CHỨNG QUÁ RỘNG — entry 'xong' dùng mẫu quét CẢ CÂY (${bangChungRong.length})`);
+console.log("   Bằng chứng nên có PHẠM VI: đường import runtime chính xác · tên export chính xác ·");
+console.log("   id capability đã đăng ký · route/component sở hữu. Tránh mẫu quét toàn repo.");
+for (const e of bangChungRong.slice(0, 12)) console.log(`  \ud83d\udd0d ${e.id}`);
+if (bangChungRong.length > 12) console.log(`     … +${bangChungRong.length - 12} entry nữa`);
+if (!bangChungRong.length) console.log('  (không có)');
+console.log('  \u24d8 KHÔNG tự động đỏ: mẫu grep rộng quét trúng module sống là chuyện thật. Siết `mau` cho hẹp rồi chạy lại.');
 console.log('  ⓘ CHỈ IN, không sửa registry — flip trạng thái là việc của người audit.');
 
 if (KHONG_DO_NOI.length) {
@@ -365,7 +446,29 @@ if (KHONG_DO_NOI.length) {
   for (const [spec, sl] of [...gom].sort((a, b) => b[1] - a[1]).slice(0, 8)) console.log(`  ❓ ${spec}  ×${sl}`);
 }
 
+/* ── BẬC HOÀN THÀNH (22/08) ─────────────────────────────────────────────────────
+ * Luật Hoà đặt sau audit kiến trúc: THƯ MỤC TỒN TẠI ≠ SẢN PHẨM TỒN TẠI.
+ * Máy chỉ phán được ba bậc dưới. Hai bậc trên KHÔNG suy ra được từ mã — phải mở app,
+ * phải có mắt người. Máy khai thẳng giới hạn đó thay vì im lặng để người đọc tự suy.
+ */
+const soCoCaller = [...MODULE].filter(([, o]) => o.ui.size + o.lib.size + o.phu.size > 0).length;
+console.log('\n🪜 BẬC HOÀN THÀNH — máy phán được 3/5 bậc');
+console.log(`  ① ENGINE CÓ MẶT        ${String(MODULE.size).padStart(3)} module lib`);
+console.log(`  ② CÓ DÂY CHẠY THẬT     ${String(soCoCaller).padStart(3)} module có caller không-phải-type-only`);
+console.log(`  ③ TỚI ĐƯỢC NGƯỜI DÙNG  ${String(TOI_DUOC.size).padStart(3)} module bắc cầu được về app|components`);
+console.log('  ④ KIỂM TRÊN APP THẬT   — máy KHÔNG phán được (phải mở app bấm)');
+console.log('  ⑤ QUA MẮT NGƯỜI DUYỆT  — máy KHÔNG phán được (trạng thái thiết kế, sổ riêng)');
+console.log('  ⓘ ③ là điều kiện CẦN, không phải ĐỦ: có đường dây ≠ có nút bấm.');
+
 const cm = theoTt(CHUA_MO);
 console.log('─'.repeat(104));
 console.log(`CẮM ĐIỆN — 🟢 ${theoTt(SONG).length} sống · 🔵 ${theoTt(NOI_BO).length} chỉ nội bộ · 🔴 ${cm.length} kho chưa mở (${cm.reduce((s, r) => s + r.dong, 0)} dòng) · 📄 ${moCoi.length} tệp mồ côi · ⚡ ${chuaCamDien.length} frontier chưa cắm điện\n`);
+// 22/08 — MÃ THOÁT. Luật Hoà: KHÔNG đỏ vì "hàm phụ chết" (kho chưa mở/tệp mồ côi là THÔNG TIN,
+// người audit đọc rồi quyết) — chỉ đỏ khi VI PHẠM HỢP ĐỒNG FRONTIER đã khai: entry tự nhận
+// 'xong' mà toàn bộ bằng chứng nằm ngoài đường tới người dùng. Đó là lời khai sai, không phải
+// một lựa chọn kiến trúc.
+if (chuaCamDien.length) {
+  console.log(`🔴 ${chuaCamDien.length} entry khai 'xong' mà bằng chứng KHÔNG tới được người dùng — sửa trạng thái trong frontier-registry.mjs, đừng sửa máy soi.\n`);
+  process.exit(1);
+}
 process.exit(0);

@@ -39,6 +39,11 @@ function isPublicApi(pathname: string): boolean {
   return (
     pathname.startsWith('/api/auth/') ||
     pathname === '/api/health' ||
+    // `/api/dev-identity` — cổng soi danh tính nguồn cho `scripts/dev-electron.mjs`. Phải công
+    // khai vì guard chạy TRƯỚC khi có phiên đăng nhập (nó quyết định có mở Electron hay không).
+    // An toàn: chính route đó trả 404 khi `NODE_ENV === 'production'`, nên bản đóng gói không
+    // có gì để lộ. Nó chỉ khai cwd/HEAD/pid — không chạm dữ liệu dự án.
+    pathname === '/api/dev-identity' ||
     pathname.startsWith('/api/share/')
   );
 }

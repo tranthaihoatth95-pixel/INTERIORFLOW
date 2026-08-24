@@ -29,15 +29,15 @@ const STRICT_DA_NGHIA = process.argv.includes('--strict-da-nghia');
 //    để né văn xuôi thường); pham_vi = dirs quét.
 // ───────────────────────────────────────────────────────────────────────────────────────────
 const TU_DIEN = [
-  { sai: "'Trình bày'|\"Trình bày\"|>Trình bày<", dung: 'Trình chiếu (tên chặng — chốt vòng cuối 07/08)', pham_vi: ['components', 'docs/mocks'] },
-  { sai: "'2D Kỹ thuật'|\"2D Kỹ thuật\"|>2D Kỹ thuật<", dung: 'Thiết kế 2D (chốt 07/08)', pham_vi: ['components'] },
-  { sai: "'3D Thiết kế'|\"3D Thiết kế\"|>3D Thiết kế<", dung: 'Thiết kế 3D (chốt 07/08)', pham_vi: ['components'] },
-  { sai: 'Thẻ gu|thẻ gu', dung: 'Thẻ DNA Thiết kế / Design DNA Card (chốt 11/08)', pham_vi: ['components', 'docs/mocks'] },
-  { sai: "'tự động'|\"tự động\"|>[Tt]ự động<", dung: 'Magic ✨ (CHOT-TACH-AI: cấm chữ "tự động" trong UI)', pham_vi: ['components'] },
-  { sai: "'Thẻ gu'|GuCard", dung: 'DnaCard (khoá code — hợp nhất Design DNA)', pham_vi: ['lib'] },
+  { sai: "'Trình bày'|\"Trình bày\"|>Trình bày<", dung: 'Trình chiếu (tên chặng — chốt vòng cuối 07/08)', pham_vi: ['components', 'docs/mocks', '.claude/skills'] },
+  { sai: "'2D Kỹ thuật'|\"2D Kỹ thuật\"|>2D Kỹ thuật<", dung: 'Thiết kế 2D (chốt 07/08)', pham_vi: ['components', '.claude/skills'] },
+  { sai: "'3D Thiết kế'|\"3D Thiết kế\"|>3D Thiết kế<", dung: 'Thiết kế 3D (chốt 07/08)', pham_vi: ['components', '.claude/skills'] },
+  { sai: 'Thẻ gu|thẻ gu', dung: 'Thẻ DNA Thiết kế / Design DNA Card (chốt 11/08)', pham_vi: ['components', 'docs/mocks', '.claude/skills'] },
+  { sai: "'tự động'|\"tự động\"|>[Tt]ự động<", dung: 'Magic ✨ (CHOT-TACH-AI: cấm chữ "tự động" trong UI)', pham_vi: ['components', '.claude/skills'] },
+  { sai: "'Thẻ gu'|GuCard", dung: 'DnaCard (khoá code — hợp nhất Design DNA)', pham_vi: ['lib', '.claude/skills'] },
   // 13/08 đêm (Hoà chốt khi duyệt mắt): trang gốc `/` là HOME Tổng quan (chốt 12/08) — nhãn cũ
   // "Về Thư viện dự án" trùng ngữ nghĩa với "Thư viện" (sheet vật liệu/asset), gây lẫn 2 nghĩa.
-  { sai: 'Về Thư viện dự án|Back to project library', dung: 'Home (nhãn điều hướng về trang gốc — chốt 13/08 đêm)', pham_vi: ['components', 'app', 'lib'] },
+  { sai: 'Về Thư viện dự án|Back to project library', dung: 'Home (nhãn điều hướng về trang gốc — chốt 13/08 đêm)', pham_vi: ['components', 'app', 'lib', '.claude/skills'] },
 
   // ── 16/08 · §V5 dòng #3 và #8: hai ca ĐÃ THI HÀNH XONG ⇒ đứng đây làm CHỐT CHẶN TÁI PHÁT.
   //    Khác 7 entry trên (nhãn hiển thị), hai entry này canh TÊN KỸ THUẬT trong code.
@@ -48,7 +48,7 @@ const TU_DIEN = [
     // nới cho qua cửa — mọi cách dùng của custom property đều rơi vào đúng hai dạng trên.
     sai: 'var\\(--mat-|--mat-[a-z-]+\\s*:',
     dung: '--nen-mo-* (§V5 #3 — `mat-card` cách `matId` đúng một dấu gạch: một bên là MÀU, một bên là TIỀN nối `ProductSpec.sku`)',
-    pham_vi: ['app', 'components', 'lib', 'scripts'],
+    pham_vi: ['app', 'components', 'lib', 'scripts', '.claude/skills'],
   },
   {
     // Bắt ca "trích nguyên văn câu của [Đ2] rồi gán số [Đ1]" — dạng sai khó thấy nhất vì
@@ -56,7 +56,7 @@ const TU_DIEN = [
     // tầng trước" · :72 = [Đ2] "NHÌN VÀO TRONG TRƯỚC".
     sai: '\\[Đ1\\][^\\n]{0,80}(nhìn vào trong|nhìn-vào-trong|NHÌN VÀO TRONG)',
     dung: '[Đ2] (TRIET-LY-IF.md:72). [Đ1] ở :70 là "tầng sau phải là hệ quả tầng trước" — §V5 #8',
-    pham_vi: ['app', 'components', 'lib', 'scripts', 'docs/phieu-giao'],
+    pham_vi: ['app', 'components', 'lib', 'scripts', 'docs/phieu-giao', '.claude/skills'],
   },
 ];
 
@@ -77,7 +77,7 @@ const TU_DA_NGHIA = [
     ten: ['bước (node trên canvas)', 'khối (khối 3D đặc — GIỮ chữ)', 'mảng (khối giao diện)'],
     // Đã rõ nghĩa thì thôi báo. "khối lượng" là từ ghép khác hẳn (BOQ) — không phải ca đa nghĩa.
     dinh_ngu: /khối 3D|khối đặc|dựng khối|khối lượng|Công Thức Khối|BuildRecipe|khối hộp|khối tích|khối nhà|bước|mảng/i,
-    pham_vi: ['docs/phieu-giao'],
+    pham_vi: ['docs/phieu-giao', '.claude/skills'],
     ngoai_le: [],
   },
   {
@@ -85,7 +85,7 @@ const TU_DA_NGHIA = [
     v5: '#2 🔴',
     ten: ['kính (VẬT LIỆU nội thất — GIỮ chữ, có giá + vào BOQ)', 'nền mờ (vibrancy giao diện)'],
     dinh_ngu: /nền mờ|kính cường lực|kính trong|kính mờ|vật liệu|transmission|vibrancy|backdrop-filter|--nen-mo|nen-mo-panel|nen-mo-card|vien-mo/i,
-    pham_vi: ['docs/phieu-giao'],
+    pham_vi: ['docs/phieu-giao', '.claude/skills'],
     ngoai_le: [],
   },
   {
@@ -93,7 +93,7 @@ const TU_DA_NGHIA = [
     v5: '#4 🔴',
     ten: ['nấc chi tiết (mức trình bày, người dùng bấm)', 'nấc cường độ (giảm chói/độ đậm)', 'cờ tin cậy (measured/inferred/verified — BỎ HẲN chữ "nấc")'],
     dinh_ngu: /nấc chi tiết|nấc cường độ|cờ tin cậy|chi tiết|thu gọn|sổ ra|mặc định|cường độ|giảm chói|độ đậm|measured|inferred|verified|tin cậy/i,
-    pham_vi: ['docs/phieu-giao'],
+    pham_vi: ['docs/phieu-giao', '.claude/skills'],
     ngoai_le: [],
   },
   {
@@ -101,7 +101,7 @@ const TU_DA_NGHIA = [
     v5: '#5 🔴',
     ten: ['lớp bản vẽ (CAD)', 'lớp slide (thứ tự z trong present-editor)', 'trục DNA (BỎ chữ lớp)', 'tuyến kiểm (BỎ chữ lớp)'],
     dinh_ngu: /lớp bản vẽ|lớp slide|trục DNA|tuyến kiểm|lớp phủ|lớp mặt|nhiều lớp|3 lớp|ba lớp|hai lớp|2 lớp|lớp luật|lớp góp ý|xếp lớp|lớp trên|lớp dưới/i,
-    pham_vi: ['docs/phieu-giao'],
+    pham_vi: ['docs/phieu-giao', '.claude/skills'],
     ngoai_le: [],
   },
   {
@@ -109,7 +109,7 @@ const TU_DA_NGHIA = [
     v5: '#6 🔴',
     ten: ['tầng (TẦNG NHÀ kiểu Revit — GIỮ chữ)', 'bậc AI (tier)', 'độ sâu (z giao diện)', 'kiểu sáng', 'cấp tool', 'cấp vai'],
     dinh_ngu: /bậc AI|độ sâu|kiểu sáng|cấp tool|cấp vai|tầng nhà|tầng trệt|cao độ|storey|Level|tầng sau|tầng trước|hạ tầng|tầng lớp/i,
-    pham_vi: ['docs/phieu-giao'],
+    pham_vi: ['docs/phieu-giao', '.claude/skills'],
     ngoai_le: [],
   },
   {
@@ -118,7 +118,7 @@ const TU_DA_NGHIA = [
     ten: ['khung thẻ (vỏ giao diện)', 'thẻ dự án', 'thẻ DNA', 'thẻ tác vụ', 'nền mờ thẻ', 'thẻ việc'],
     // ⚠️ CẤM đặt tên bằng chữ "tấm" — đã thuộc về tấm Thư viện (chốt 07/08).
     dinh_ngu: /khung thẻ|thẻ dự án|thẻ DNA|thẻ tác vụ|nền mờ thẻ|thẻ việc|thẻ vai|thẻ lật|WidgetCard|TaskCard|DesignDnaCard|ProjectOverviewCard|--card|card 3 nấc/i,
-    pham_vi: ['docs/phieu-giao'],
+    pham_vi: ['docs/phieu-giao', '.claude/skills'],
     ngoai_le: [],
   },
   {
@@ -128,7 +128,7 @@ const TU_DA_NGHIA = [
     // nó chỉ báo rằng đây là tên thứ tư cho thứ đã có ba tên, để người chốt.
     ten: ['CHƯA CHỐT TÊN — widget · element · node · module đang là BỐN tên cho MỘT thứ (§V5 #13). Bằng chứng lệch đã lan: WidgetCard.tsx dùng token `--shadow-node`.'],
     dinh_ngu: /ES-module|node_modules|module-level|mức MODULE|biến module/i,
-    pham_vi: ['docs/phieu-giao'],
+    pham_vi: ['docs/phieu-giao', '.claude/skills'],
     ngoai_le: [],
   },
 ];
