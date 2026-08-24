@@ -6,6 +6,12 @@
 > báo cáo nghe như đã kiểm mà chưa kiểm gì.
 
 ## 1 · SKILL DỰ ÁN — `.claude/skills/`
+
+> ✅ **ĐÃ TRACKED 24/08** — commit `b81dd88`. Trước đó `.gitignore` chặn cả `.claude/` ⇒ 72 tệp
+> durable memory **chỉ sống trên MỘT máy**; đổi máy hoặc dọn cây là mất trắng.
+> Cửa mở hẹp nhất: `.claude/*` chặn tất cả → `!.claude/skills/` mở một thư mục →
+> `.claude/skills/**` chặn lại bên trong → chỉ `!.claude/skills/**/*.md` được nhận.
+> ⇒ Bỏ binary/secret/cache vào skills thì git **vẫn chặn**. Kiểm hai chiều bằng `git check-ignore -v`.
 | Tên | Vai | Xác minh bằng | Trạng thái |
 |---|---|---|---|
 | `if-design` | bộ **ĐỊNH TUYẾN** thiết kế (110 dòng) → 61 tệp trường | `ls` + `soi:design-school` 0 mồ côi | ✅ |

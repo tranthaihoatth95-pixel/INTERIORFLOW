@@ -172,10 +172,18 @@ commit `package.json` mà thiếu là **gãy cổng test**.
 **CỐ Ý KHÔNG ĐÓNG** — 12 script chủ khác (`backfill-*` `seed-*` `audit-*` `kiem-3d-*` `md-to-pdf`
 `sinh-mau-*` `chup-visual-review`) và toàn bộ `app/` `components/` `lib/` đang bẩn.
 
-🔴 **LỖ BẢO TOÀN CHƯA VÁ — CHỜ HOÀ:** `.gitignore:13` chặn `.claude/` ⇒ **Trường Thiết Kế 61 tệp +
-5 skill KHÔNG được git theo dõi**, chỉ sống trên đĩa. Máy đổi hoặc cây bị dọn là **mất trắng** —
-đúng thứ "durable memory" sinh ra để chống. Vá được bằng một dòng `!.claude/skills/`, **nhưng đó là
-sửa config chi phối thứ gì rời khỏi máy** và `.claude/` còn chứa worktree + cài đặt ⇒ **không tự sửa.**
+✅ **LỖ BẢO TOÀN ĐÃ VÁ 24/08** — commit `b81dd88` **nhóm 3**. `.gitignore` nay chặn `.claude/*`
+và mở đúng `!.claude/skills/**/*.md`: **72 tệp, 100% `.md`, không gì khác lọt** (kiểm bằng
+`git add -n` và `git check-ignore -v` hai chiều). Quét an toàn 7 mục trước khi mở — 0 secret ·
+0 symlink ra ngoài · 0 binary >200KB · 0 đường dẫn máy cá nhân · 0 email · khớp "TTT" duy nhất
+là câu **bắt buộc trung tính**. Worktree · settings · cache · session · socket **vẫn bị chặn**.
+
+📌 **FOLLOW-UP DÀI HẠN — GHI, KHÔNG THI CÔNG HÔM NAY.**
+Kho skill canonical hiện nằm trong `.claude/`, tức **thư mục của MỘT công cụ**. Đúng về mặt bảo
+toàn nhưng sai về mặt sở hữu: skill là tài sản của **repo**, không của Claude, không của một chat.
+Hướng xem xét sau: dời sang thư mục trung tính (`.agents/skills` hoặc `skills/`), rồi để
+Claude/Codex dùng **adapter hoặc symlink** trỏ vào. Đổi chỗ kho là đụng mọi con trỏ trong
+`SKILL.md` + `soi:design-school` ⇒ phải làm trọn một lượt, có máy canh chạy sau, **không làm vội**.
 
 ## Đừng đụng
 `docs/nc/**` · `docs/00-CHOT.md` · `CHANGELOG.md` · `docs/bao-cao-phien/**` — **nhật ký lịch sử**, sửa là viết lại lịch sử.
