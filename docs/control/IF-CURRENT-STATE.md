@@ -144,10 +144,38 @@ bề mặt nằm sau đăng nhập, playwright trên `:3799` thấy `.if-rail-sp
 ~680 site đổi cỡ icon = **thay đổi người dùng NHÌN THẤY**, mới chỉ qua máy, **chưa qua mắt**.
 Theo M-01 trần cứng là **PARTIAL**, cấm PASS.
 
-### ▶️ HÀNH ĐỘNG KẾ TIẾP CHÍNH XÁC (làm được ngay, không chờ ai)
+### ▶️ (đã gộp — xem ô HÀNH ĐỘNG KẾ TIẾP CHÍNH XÁC ở CUỐI tệp, đó là ô DUY NHẤT)
+> 🔴 Mục này từng là ô thứ hai nói việc kế tiếp. Hai ô cùng sống = M-54. Nội dung dưới giữ lại
+> làm dấu vết, **đừng thi hành từ đây**.
 > **Audit thước của `F-ICON-STROKE` y như đã làm với `F-ICON-SIZE`** — liệt kê 137 chỗ bằng
 > `npm run soi:foundation -- --tat-ca`, phân loại ICON ↔ TRANH ↔ ẢNH SINH, sửa máy soi nếu còn đếm oan,
 > **rồi mới** hội tụ. ⛔ Đừng sửa 137 chỗ trước khi biết thước đúng — đó đúng là cái bẫy đợt này vừa thoát.
+
+## CHECKPOINT 24/08 — cây đã bảo toàn
+
+| | |
+|---|---|
+| Nhánh | `checkpoint/2026-08-24-control-plane` |
+| Commit | `02c9378` control plane · `869b782` guard infra · HEAD `869b782` |
+| Cây | **582 tệp còn bẩn — CỐ Ý.** Chủ khác/chưa truy được; luật cấm `add -A` |
+| Cổng | `tsc` 0 · `npm test` pass (hook chạy lúc commit) · `soi:design-school` 0 mồ côi |
+| Remote | **behind 57** — KHÔNG pull/rebase/merge; bảo toàn trước |
+| Runtime | `:3799` 200 mã hiện tại · `:3778` 200 **bản dựng CŨ, đừng nghiệm thu trên đó** |
+
+**Nhóm 1** `02c9378` — `docs/control/**` · `docs/design-campaign/**` · `CLAUDE.md` bộ nạp ·
+4 cửa vào cũ đóng dấu.
+**Nhóm 2** `869b782` — 5 máy soi · `frontier-registry` · `Icon.tsx`+test · `dev-identity` ·
+`middleware` · `dev-electron` · `package.json`.
+⚠️ Buộc phải kèm `soi-visual-source.mjs` + `foundation-tran.json`: `npm test` đã phụ thuộc chúng,
+commit `package.json` mà thiếu là **gãy cổng test**.
+
+**CỐ Ý KHÔNG ĐÓNG** — 12 script chủ khác (`backfill-*` `seed-*` `audit-*` `kiem-3d-*` `md-to-pdf`
+`sinh-mau-*` `chup-visual-review`) và toàn bộ `app/` `components/` `lib/` đang bẩn.
+
+🔴 **LỖ BẢO TOÀN CHƯA VÁ — CHỜ HOÀ:** `.gitignore:13` chặn `.claude/` ⇒ **Trường Thiết Kế 61 tệp +
+5 skill KHÔNG được git theo dõi**, chỉ sống trên đĩa. Máy đổi hoặc cây bị dọn là **mất trắng** —
+đúng thứ "durable memory" sinh ra để chống. Vá được bằng một dòng `!.claude/skills/`, **nhưng đó là
+sửa config chi phối thứ gì rời khỏi máy** và `.claude/` còn chứa worktree + cài đặt ⇒ **không tự sửa.**
 
 ## Đừng đụng
 `docs/nc/**` · `docs/00-CHOT.md` · `CHANGELOG.md` · `docs/bao-cao-phien/**` — **nhật ký lịch sử**, sửa là viết lại lịch sử.
