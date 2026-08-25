@@ -29,13 +29,18 @@
  */
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { DEFAULT_PHASE, STAGE_TINT, type Phase } from '@/lib/phases';
-import StageSwitcher from '@/components/studio/StageSwitcher';
 import { MobileMenu } from '@/components/MobileMenu';
-import { pressable } from '@/lib/motion';
+// P-V 17/08 — ô tìm dự án + Vitals ở top bar (chỉ Home; chặng có Vitals cạnh trục phải riêng).
+import SearchProjectsInput from '@/components/SearchProjectsInput';
+// COHERENCE-SHELL 20/08 — mép trên có HAI thứ mới, cả hai sống ở MỌI màn (không còn "chỉ Home"):
+// dải ngữ cảnh (đang ở đâu) + khẩu độ Vitals (nên biết gì). `VitalsPill` (bản chỉ-Home) nay
+// KHÔNG mount ở đây nữa — khẩu độ dùng lại ĐÚNG bề mặt chat của nó (`VitalsChatSurface`).
+import { DaiNguCanh } from '@/components/studio/DaiNguCanh';
+import { VitalsAperture } from '@/components/studio/VitalsAperture';
+import { CumPhaiTren } from '@/components/studio/CumPhaiTren';
 import { useStageTransition } from '@/components/studio/StageTransitionProvider';
 import { stageHrefFrom } from '@/lib/project-scope';
 import { useT } from '@/lib/i18n';
@@ -46,6 +51,8 @@ import ShortcutsPanel from '@/components/ShortcutsPanel';
 import { AppLogoMenu } from '@/components/studio/AppLogoMenu';
 import { LeaveConfirmBar } from '@/components/studio/LeaveConfirmBar';
 import { LockScreen } from '@/components/studio/LockScreen';
+import { LiveGuide } from '@/components/studio/LiveGuide';
+import { QuayVeTrinhBay } from '@/components/studio/QuayVeTrinhBay';
 import { useLockScreen, lockScreenNow, getLockIdleMinutes } from '@/lib/lockscreen';
 import { getLastUserId } from '@/lib/resume';
 import { useDismissable } from '@/lib/useDismissable';
@@ -182,6 +189,8 @@ export function AppChrome({ active, logoMenu }: Props) {
       if (useLockScreen.getState().locked) return;
       const userId = useFlowStore.getState().user?.id ?? getLastUserId() ?? '';
       const minutes = getLockIdleMinutes(userId);
+      // §24 — `null` = "Không bao giờ": KHÔNG đặt hẹn giờ, không giả lập bằng một số khổng lồ.
+      if (minutes === null) return;
       timer = setTimeout(() => lockScreenNow(), minutes * 60_000);
     };
     const events: (keyof WindowEventMap)[] = ['mousemove', 'keydown', 'pointerdown', 'wheel', 'touchstart'];
@@ -307,32 +316,91 @@ export function AppChrome({ active, logoMenu }: Props) {
           bị cấm overflow-hidden vì có Tệp/MoreMenu). Không có nó: khi flex bóp hộp này xuống gần
           0, nút tên dự án vẫn cần 1 mức rộng tối thiểu để vẽ (padding + 1 ký tự + "…") và TRÀN
           khỏi hộp — đè lên StageSwitcher (phát hiện 30/07, đo được 4px chồng ở 1024px). */}
-      <div className="flex min-w-0 flex-1 items-center overflow-hidden">
+      {/* COHERENCE-SHELL 20/08 — Ô NÀY TRƯỚC ĐÂY CHỈ CÓ TÊN DỰ ÁN (bấm = đổi tên). Nay là DẢI
+          NGỮ CẢNH: tên dự án · chặng đang đứng, bấm mở bộ chuyển ngữ cảnh. Đổi tên KHÔNG MẤT —
+          nó thành một mục trong menu (`onDoiTen` bật đúng ô `<input>` cũ dưới đây), vì một chỗ
+          đứng không nên mang hai việc: trước kia bấm vào tên dự án là lập tức vào chế độ sửa,
+          người dùng muốn BIẾT mình đang ở đâu thì không có gì để bấm.
+          Vì sao dải chỉ có HAI tầng (không có "Không gian/Workspace"): đo tại nguồn — schema
+          KHÔNG có model Workspace, `lib/store.ts:33` `WorkspaceMode = Phase` tức "workspace"
+          hiện chính là chặng. Chi tiết + bằng chứng file:dòng ở đầu `DaiNguCanh.tsx`. */}
+      {/* ⓵ VÙNG TRÁI — DỰ ÁN · CHẶNG. `min-w-0` + `overflow-hidden` là bước ① của bậc thang
+          nhường va chạm (Hoà chốt 20/08): **đầu đề dự án nén/cắt TRƯỚC**, để ổ Vitals ở giữa
+          không bao giờ phải nhúc nhích. `data-if-cum-trai-tren` cho ổ đo được mép phải của cụm
+          này mà không phải đoán. */}
+      <div className="flex min-w-0 flex-1 items-center overflow-hidden" data-if-cum-trai-tren="">
         {editing ? (
           <input
             autoFocus
-            className="w-36 shrink rounded-[10px] border border-[var(--accent-ring)] bg-[var(--field)] px-2 py-1 text-sm text-[var(--t1)] outline-none sm:w-56"
+            className="w-36 shrink rounded-[var(--r-2)] border border-[var(--accent-ring)] bg-[var(--field)] px-2 py-1 text-sm text-[var(--t1)] outline-none sm:w-56"
             value={flowName}
             onChange={(e) => setFlowName(e.target.value)}
             onBlur={() => setEditing(false)}
             onKeyDown={(e) => e.key === 'Enter' && setEditing(false)}
           />
         ) : (
-          <motion.button
-            {...pressable}
-            className="min-w-0 truncate rounded-[10px] px-2 py-1 text-sm text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
-            onClick={() => setEditing(true)}
-            title={tr('Đổi tên dự án', 'Rename project')}
-          >
-            {flowName}
-          </motion.button>
+          <DaiNguCanh
+            /* 🔴 26/08 — 'Untitled flow' KHÔNG PHẢI MỘT CÁI TÊN, nó là chỗ trống đội lốt tên.
+               Hoà soi app thật: thanh trên bày 'Untitled flow' cho một hồ sơ chưa ai đặt tên.
+               Chuỗi đó là giá trị MẶC ĐỊNH của store (`lib/store.ts:345`), không phải nhãn giao
+               diện — nhưng người dùng không phân biệt được, họ chỉ thấy app tự tin gọi tên một
+               thứ chưa có tên.
+               ⭐ Luật: CHƯA ĐẶT TÊN THÌ ĐỂ TRỐNG. Một chỗ trống nói thật ('chưa đặt tên') và
+               còn mời người ta đặt; một cái tên bịa thì đóng luôn lời mời đó lại — người dùng
+               tưởng nó đã có tên rồi nên không bấm vào sửa.
+               ⛔ Sửa ở TẦNG HIỂN THỊ, không đụng giá trị mặc định trong store: nhiều nơi khác
+               (API, xuất tệp, danh sách) đang dựa vào chuỗi đó để có một khoá không rỗng. */
+            tenDuAn={flowName === 'Untitled flow' ? '' : flowName}
+            // Home là màn CẤP APP, không đứng trong chặng nào ⇒ dải chỉ nói tên dự án, không
+            // bịa ra một chặng "mặc định" mà người dùng chưa bước vào.
+            chang={active === 'home' ? null : currentPhase}
+            onChonChang={(p) => onPickRef.current(p)}
+            onDoiTen={() => setEditing(true)}
+          />
         )}
       </div>
 
-      <div className="shrink-0" data-tour="phase-switcher">
-        <StageSwitcher active={currentPhase} onPick={onPick} photoContext={active === 'photo'} />
+      {/* StageSwitcher đã gỡ 17/08 (Hoà chốt): chốt 16/08 hạ sidebar thành hệ router,
+          ba chặng chỉ là 1 nhóm stage trong cụm PROJECT của RailDieuHuong. 3 nút chặng ở
+          top trùng chức năng. Phím tắt ⌘1/⌘2/⌘3 GIỮ NGUYÊN (onPickRef ở effect trên vẫn
+          gọi onPick), lối bàn phím không mất. Không xoá StageSwitcher.tsx — giữ để có thể
+          dùng lại nếu quay đầu. */}
+
+      {/* Ô TÌM DỰ ÁN — vẫn CHỈ Home (tìm giữa các dự án chỉ có nghĩa khi chưa mở dự án nào).
+          KHẨU ĐỘ VITALS thì ở MỌI màn: chốt 16/08 nói "cùng MỘT vật, di chuyển theo chỗ tay
+          đang đặt", và mép trên là chỗ vật đó đứng khi tay chưa ở trục phải. Vẫn đúng ràng buộc
+          "mỗi màn ĐÚNG MỘT Vitals" — `VitalsPill` bản chỉ-Home đã thôi mount, `VitalsGesture`
+          bản cũ thì đã mồ côi từ 17/08 (xem đầu `VitalsAperture.tsx`). */}
+      <div className="flex shrink-0 items-center gap-2" data-tour="home-search-vitals">
+        {active === 'home' && <SearchProjectsInput />}
       </div>
 
+      {/* ⓶ Ổ VITALS — VÙNG NGỮ NGHĨA GIỮA, chỗ DÀNH RIÊNG trong vỏ app.
+          🔴 ĐỔI TẦNG 20/08: trước đây `<VitalsAperture/>` đứng NGAY TRONG cụm phải-trên (cùng
+          `<div>` với ô tìm dự án) và tự tính `position:fixed` từ ref của chính cụm đó ⇒ nó
+          **bám vào hệ danh-tính**, đúng cái hệ nó không được sống trong. Đó là lý do nó đọc ra
+          như "gắn thêm vào sau": không phải neo sai chỗ, mà **neo nhầm hệ**.
+          Nay nó là con TRỰC TIẾP của `<header>` (đã `relative`), tự đặt mình bằng toạ độ tuyệt
+          đối theo **tâm vùng làm việc** (`useVungLamViec` → `viTriO`). Header thôi là một dòng
+          flex phẳng: trái = Dự án·Chặng · giữa = Ổ Vitals · phải = Thông báo·Hiện diện·Avatar.
+          ⛔ Đừng đưa nó trở lại vào một cụm flex nào — vào flex là mất chỗ dành riêng, và tâm
+          của nó lại chạy theo độ dài của thứ đứng cạnh. */}
+      <VitalsAperture />
+
+      {/* NAV-HAI-DAO 20/08 — CỤM PHẢI TRÊN: "tôi là ai / ai đang ở đây".
+          Hoà chốt thanh trái CHỈ CÒN VIỆC ⇒ Hồ sơ · Credit · Cài đặt · Tài khoản · Đăng xuất rời
+          rail và về đây, sau khẩu độ Vitals. ⛔ HAI HỆ KHÁC NHAU, cấm nhập một: `VitalsAperture`
+          (mép trên) trả lời *tôi nên biết gì*; `CumPhaiTren` trả lời *tôi là ai / ai đang ở đây*.
+          Vì sao đứng ở đây mà không sớm hơn trong DOM: thứ tự đọc trái→phải phải là ngữ-cảnh →
+          Vitals → danh-tính; đảo lại thì avatar chen vào giữa ô tìm và khẩu độ.
+          Cụm TỰ ẨN khi chưa đăng nhập, và phần hiện diện tự ẩn khi chỉ có một mình — không giữ
+          chỗ trống (luật widget-thiếu-dữ-liệu-tự-ẩn, Hoà chốt 13/08). */}
+      {/* ⓷ VÙNG PHẢI — THÔNG BÁO · HIỆN DIỆN · AVATAR. Ổ Vitals đọc mép trái của cụm này qua
+          marker SẴN CÓ `data-marker="cumPhaiTren"` (`CumPhaiTren.tsx:132`) — [Đ2] CONNECT, không
+          đẻ marker thứ hai — và coi đó là BIÊN CỨNG: bước ④ chỉ được dịch trong vùng an toàn,
+          không bao giờ chạm vào cụm này. Hai hệ cạnh nhau về không gian, tách hẳn về nghĩa:
+          Vitals = *tôi nên biết gì* · cụm này = *ai gửi gì cho tôi / tôi là ai*. */}
+      <CumPhaiTren />
 
       {/* 2.2.86 (30/07, Hoà chốt) — "Chạy flow" KHÔNG còn đứng riêng trên bar (~110px trả lại
           ngân sách bề rộng). Khởi chạy giờ CẠNH ĐỐI TƯỢNG: nút ▶ trên node, "Kết xuất" trên thẻ
@@ -359,6 +427,12 @@ export function AppChrome({ active, logoMenu }: Props) {
       <ShortcutsPanel open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} active={active} />
       <LeaveConfirmBar />
       <LockScreen />
+      {/* Hướng dẫn sống (Live Guide) — lớp chỉ dẫn neo UI thật, TẮT mặc định, bật ở tab Demo của
+          chuông Hoạt động. Sống ở đây (mọi chặng) để guide đi theo qua điều hướng. Render null
+          khi tắt — 0 chi phí. */}
+      <LiveGuide />
+      {/* Viên "Quay về Trình bày" — chỉ hiện khi đang rời trình chiếu bằng deep link (demo). */}
+      <QuayVeTrinhBay />
     </header>
   );
 }
