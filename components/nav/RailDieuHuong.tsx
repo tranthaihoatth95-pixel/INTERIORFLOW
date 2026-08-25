@@ -457,7 +457,17 @@ export function RailDieuHuong() {
       <div
         // `py-2` = 8px, đúng `.than{padding:8px 0}` của bản vẽ. HAI ĐẦU HỞ: chính chỗ hở này làm
         // viên đọc ra *vật nổi* thay vì *thanh* — phép nghiệm thu, không phải đệm cho thoáng.
-        className="flex min-h-0 flex-1 flex-col gap-1 py-2"
+        /* 🔴 26/08 — HAI VIÊN NEO QUANH TRỤC GIỮA, KHÔNG BÁM ĐỈNH.
+           Mã đã dựng đúng hai viên có mép riêng từ 23/08, nhưng trên app thật chúng vẫn
+           đọc ra *một thanh dọc dài*. Đo ảnh 26/08 ra hai nguyên nhân, cả hai là CHỖ ĐẶT
+           chứ không phải hình dạng:
+             ① viên dán SÁT MÉP TRÁI ⇒ không còn dải máng nào để mắt thấy là "vật đứng
+                trong chỗ". Không thấy máng thì viên = thanh.
+             ② cụm BÁM ĐỈNH rồi đổ dài xuống ⇒ đúng bóng dáng menu app cao suốt màn.
+           Nay: thụt trái 6px cho máng lộ ra, và `justify-center` để khối điều hướng neo
+           quanh trục giữa — "vật nổi gắn vào mép trái căn phòng", không phải tấm ván
+           treo từ trần xuống sàn. */
+        className="flex min-h-0 flex-1 flex-col justify-center gap-1 py-2 pl-1.5"
         style={{
           scrollbarWidth: 'thin',
           overflowY: hienChu ? 'auto' : 'visible',
