@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Check, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { giamChuyenDong } from '@/lib/ui/nhip';
 import { easeApple, pressable } from '@/lib/motion';
 import type { Lang } from '@/lib/i18n';
 import { setLastUserId } from '@/lib/resume';
@@ -34,10 +35,13 @@ import type { CardTextPlan } from '@/lib/adaptive-contrast';
  * GIỮ NGUYÊN logic auth lõi: POST /api/auth/{login,register} → setUser(body.user).
  */
 
-// 27/07 chốt design tokens: --accent (tím) là accent CHÍNH THỨC toàn app. Vàng đồng
-// chỉ còn NGOẠI LỆ ở nút submit "Vào xưởng"/"Enter the studio" — điểm nhấn duy nhất
-// trên nền ảnh gỗ, xem --accent-warm trong app/globals.css.
-const ACCENT_WARM = 'var(--accent-warm)';
+// 🔴 ĐÍNH CHÍNH 20/08 (Lane tự do, đóng nợ 16/08 "BỎ HẲN VÀNG ĐỒNG KHỎI VAI MÀU NHẤN" —
+// docs/00-CHOT.md): ngoại lệ --accent-warm dưới đây bị chính chốt đó khai tử — "nút 'Vào
+// xưởng' ở màn khoá đang màu đồng → đổi theo, phải vẽ trong bản duyệt". Màu thay thế cụ thể
+// (mòng két/mận) CHƯA chốt (Hoà: "DỰNG CẢ HAI ĐỂ SO, chưa xác nhận") — nên dùng --accent
+// (tím, accent CHÍNH THỨC toàn app, không bao giờ bị loại) thay vì đoán trước quyết định
+// chưa ra. Đổi lại nếu/khi Hoà chọn xong màu nhấn thứ hai.
+const ACCENT_WARM = 'var(--accent)';
 
 type Mode = 'login' | 'register';
 type Providers = { google: boolean; apple: boolean; microsoft: boolean };
@@ -106,6 +110,8 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null); // hướng dẫn (quên mật khẩu…)
   const [busy, setBusy] = useState(false);
+  /** Bật MỘT LƯỢT khi vào được — kích hoạt lượt quét sáng của thấu kính rồi thôi. */
+  const [vuaXong, setVuaXong] = useState(false);
   // provider nào đã có env — null = đang hỏi /api/auth/providers
   const [providers, setProviders] = useState<Providers | null>(null);
   const en = lang === 'en';
@@ -150,6 +156,9 @@ export function LoginForm({
         });
         const body = await readJsonSafe(res, en);
         if (!res.ok) throw new Error(body.error ?? (en ? 'Something went wrong.' : 'Có lỗi xảy ra.'));
+        // Lượt quét sáng CHỈ chạy khi đã vào được thật — nó là tín hiệu "cửa mở", không phải
+        // hiệu ứng lúc bấm. Bật trước `afterAuth` để mắt kịp thấy trước khi màn đổi.
+        setVuaXong(true);
         await afterAuth(body.user);
       } else {
         // ĐĂNG KÝ (mở lại 19/07): identifier chứa '@' → email, ngược lại → SĐT.
@@ -165,6 +174,7 @@ export function LoginForm({
         const body = await readJsonSafe(res, en);
         if (!res.ok) throw new Error(body.error ?? (en ? 'Something went wrong.' : 'Có lỗi xảy ra.'));
         // register công khai đã set cookie session phía server → vào thẳng
+        setVuaXong(true);
         await afterAuth(body.user);
       }
     } catch (err) {
@@ -332,7 +342,7 @@ export function LoginForm({
                 background: remember ? 'var(--accent)' : 'transparent',
               }}
             >
-              {remember && <Check size={11} strokeWidth={3} style={{ color: 'var(--bg)' }} />}
+              {remember && <Check size={14} strokeWidth={3} style={{ color: 'var(--bg)' }} />}
             </span>
             <span className="text-xs text-[var(--t3)]">
               {en ? 'Keep me signed in' : 'Ghi nhớ đăng nhập'}
@@ -374,19 +384,46 @@ export function LoginForm({
         </motion.p>
       )}
 
+      {/* CỬA VÀO — nút chữ ký của IF (22/08). Hai lớp: NỀN TÍM ĐẶC + THẤU KÍNH đè lên trên.
+          🔴 Nền cũ là `ACCENT_WARM` (vàng đồng) — màu đó ĐÃ BỊ BỎ khỏi vai màu nhấn 16/08 vì trên
+          nền xám nó ra xỉn/ố. Nút quan trọng nhất của cửa vào vẫn đang đeo màu đã khai tử, nên đổi
+          về `--accent`. Chữ dùng `--on-accent` (không phải `--bg`) — trên nền tím thì `--bg` chỉ
+          đúng ở một theme.
+          Chuột: thấu kính nghiêng NHẸ về phía con trỏ. Không lấy `--thau-x/y` chạy theo từng khung
+          hình bằng JS state — đặt thẳng biến CSS trên node, chuyển động do `transition` lo. */}
       <motion.button
         {...pressable}
         type="submit"
         disabled={busy}
-        className="flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-[var(--bg)] shadow-sm transition-opacity disabled:opacity-50"
-        style={{ background: ACCENT_WARM }}
+        data-xong={vuaXong ? '1' : undefined}
+        onPointerMove={(e) => {
+          if (giamChuyenDong()) return;
+          const r = e.currentTarget.getBoundingClientRect();
+          const x = (e.clientX - r.left) / r.width;
+          const y = (e.clientY - r.top) / r.height;
+          e.currentTarget.style.setProperty('--thau-x', `${18 + x * 44}%`);
+          e.currentTarget.style.setProperty('--thau-y', `${14 + y * 40}%`);
+          e.currentTarget.style.setProperty('--thau-dx', `${(x - 0.5) * 5}%`);
+          e.currentTarget.style.setProperty('--thau-dy', `${(y - 0.5) * 4}%`);
+        }}
+        onPointerLeave={(e) => {
+          e.currentTarget.style.removeProperty('--thau-dx');
+          e.currentTarget.style.removeProperty('--thau-dy');
+        }}
+        /* Bề ngang: KHÔNG kéo hết chiều rộng thẻ (Hoà 25/08 — "gọn lại là được").
+           Nút cửa vào cao 60px; kéo full-width thì tỉ lệ ra ~8:1, đọc thành một THANH
+           chứ không phải một NÚT, và nó át cả cụm ô nhập ngay trên. Ghim 268px ⇒ tỉ lệ
+           ~4,5:1, còn dư chỗ cho "Vào xưởng →" ở mọi ngôn ngữ, và canh giữa để trục dọc
+           của thẻ không bị lệch. `w-full` giữ lại làm trần cho khổ hẹp hơn 268px. */
+        className="if-vao-xuong group mx-auto flex w-full max-w-[268px] items-center justify-center gap-2 rounded-full text-sm font-semibold text-[var(--on-accent,#fff)] disabled:opacity-50"
       >
         {busy ? (
           <Loader2 size={14} className="animate-spin" />
         ) : (
           <>
             {mode === 'login' ? (en ? 'Enter the studio' : 'Vào xưởng') : en ? 'Create account' : 'Tạo tài khoản'}
-            <ArrowRight size={14} />
+            {/* Mũi tên nhích 2px khi rê vào — tín hiệu "đi tới", không phải trang trí. */}
+            <ArrowRight size={14} className="transition-transform duration-[140ms] group-hover:translate-x-[2px] motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
           </>
         )}
       </motion.button>
