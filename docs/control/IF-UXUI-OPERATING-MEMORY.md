@@ -310,3 +310,27 @@ không ai nghi. Một cách kiểm luôn trả về cùng một kết quả thì
    phù du** — kẻo người sau lại đi `ps` rồi kết luận nhầm.
 4. Mọi cách-kiểm ghi vào control plane phải tự trả lời: *"phép kiểm này có bao giờ trả về KHÁC
    không?"* Không bao giờ khác ⇒ **không phải phép kiểm**.
+
+
+### M-57 · 🔴 ĐÓNG DẤU SUPERSEDED LÀ **HAI** VIỆC — làm một việc thì phản tác dụng
+**Ca 26/08, phát hiện khi Hoà hỏi "Codex spec chỗ này thế nào".**
+
+Ngày 23/08 ai đó đóng dấu `claude-home-living-canvas-v2.html` là SUPERSEDED **ngay dòng 3 của
+chính tệp**, kèm cả diff sáu mục phải thừa kế. Làm rất kỹ. Nhưng **không cập nhật
+`CLAUDE-DESIGN-CURRENT.md`** — chỉ mục vẫn ghi *"APPROVED TARGET CANDIDATE"* thêm **ba ngày**.
+
+Một phiên Codex đọc **chỉ mục** — đúng thứ được lập ra để làm con trỏ chính thức — và spec cho
+Hoà rằng v2 là target Home hiện hành. **Codex không sai. Chỉ mục sai.**
+
+**Vì sao đây là lỗi TỆ HƠN không đóng dấu gì cả:** không đóng dấu thì có MỘT nguồn, cũ nhưng
+nhất quán. Đóng dấu nửa vời thì có **HAI nguồn nói ngược nhau, và cả hai đều trông chính thức** —
+người đọc không có cách nào biết bên nào mới hơn nếu không mở cả hai. Nửa vời **đắt hơn** bỏ mặc.
+
+**Đây là lần THỨ BA cùng một họ trong ba ngày** (M-54 `STATUS.md` còn ra lệnh dù đầu tệp đã đóng
+dấu · ô quản trị dùng đại từ · và ca này) ⇒ **HỆ THỐNG**, không còn là bất cẩn.
+
+**LUẬT:** đóng dấu một artefact là superseded gồm **HAI** việc, làm trong CÙNG một lượt:
+1. dấu **tại chỗ** trong chính tệp, kèm **DIFF** thứ kế nhiệm phải thừa kế;
+2. cập nhật **MỌI CON TRỎ** trỏ tới nó — chỉ mục, bảng target, hàng đợi, `CLAUDE-DESIGN-CURRENT`.
+Chỉ làm ① là **tạo ra một cái bẫy**, không phải dọn một cái bẫy.
+📌 Ứng viên máy soi: quét tệp có dấu `SUPERSEDED` rồi đối chiếu mọi chỗ nhắc tên tệp đó.
