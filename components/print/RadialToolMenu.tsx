@@ -166,7 +166,7 @@ export default function RadialToolMenu({
       <style jsx>{`
         ${RADIAL_MENU_KEYFRAMES}
         .if-bt-root {
-          animation: bt-in var(--dur-base) var(--ease-apple);
+          animation: bt-in var(--nhip-ngu-canh) var(--ease-apple);
         }
         @media (prefers-reduced-motion: reduce) {
           .if-bt-root {

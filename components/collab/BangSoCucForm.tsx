@@ -214,7 +214,7 @@ function HangSlider({ hang, giaTri, onDoi }: { hang: HangSoCuc; giaTri: number |
                     : isMid
                       ? 'var(--field)'
                       : 'transparent',
-                  transition: 'width 120ms ease, height 120ms ease, background 120ms ease',
+                  transition: 'width var(--nhip-bam) ease, height var(--nhip-bam) ease, background var(--nhip-bam) ease',
                 }}
               />
             </button>

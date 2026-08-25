@@ -123,7 +123,7 @@ export function PublishModal({ open, defaultStage, onClose, onSubmit }: Props) {
                   key={s}
                   type="button"
                   onClick={() => setScope(s)}
-                  className="rounded-full transition-shadow duration-[var(--dur-fast)]"
+                  className="rounded-full transition-shadow duration-[var(--nhip-vien)]"
                   style={{ boxShadow: scope === s ? '0 0 0 2px var(--accent)' : 'none' }}
                 >
                   <ScopeBadge scope={s} />
@@ -151,7 +151,7 @@ export function PublishModal({ open, defaultStage, onClose, onSubmit }: Props) {
           <button
             type="submit"
             disabled={!canSubmit}
-            className="rounded-[var(--radius-md)] py-2.5 text-[13.5px] font-semibold text-white transition-opacity duration-[var(--dur-fast)] disabled:opacity-40"
+            className="rounded-[var(--radius-md)] py-2.5 text-[13.5px] font-semibold text-white transition-opacity duration-[var(--nhip-vien)] disabled:opacity-40"
             style={{ background: 'var(--accent)' }}
           >
             Gửi lên kệ — chờ duyệt

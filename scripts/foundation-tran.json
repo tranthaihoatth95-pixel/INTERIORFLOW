@@ -4,7 +4,8 @@
   "F-ICON-STROKE": 37,
   "F-ICON-SIZE": 0,
   "F-ICON-VIEWBOX": 49,
-  "F-MOTION-TOKEN": 84,
+  "F-MOTION-TOKEN": 41,
   "F-MAT-VOCAB": 1,
-  "_siet-25-08": "F-ICON-STROKE 137 → 37 sau khi AUDIT THƯỚC rồi mới sửa. 9 ca là báo oan trong chuỗi sinh SVG (đã vá thước). 94 prop nét trên 29 tệp lucide thuần chuẩn hoá về 1.5. 37 ca còn lại là SVG INLINE — cấm sửa mù, xem ghi chú lưới 16."
+  "_siet-25-08": "F-ICON-STROKE 137 → 37 sau khi AUDIT THƯỚC rồi mới sửa. 9 ca là báo oan trong chuỗi sinh SVG (đã vá thước). 94 prop nét trên 29 tệp lucide thuần chuẩn hoá về 1.5. 37 ca còn lại là SVG INLINE — cấm sửa mù, xem ghi chú lưới 16.",
+  "_siet-25-08b": "F-MOTION-TOKEN 84 → 41. Audit thước trước: miễn trừ khối prefers-reduced-motion (0.001ms !important là LỐI THOÁT TRỢ NĂNG, không phải nhịp hoang — 'sửa' nó là bật lại chuyển động cho đúng nhóm đã xin tắt). Rồi ánh xạ thang cũ --dur-* và ms thô về --nhip-*."
 }

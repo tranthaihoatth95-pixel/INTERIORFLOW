@@ -99,7 +99,7 @@ function Row({ row, mono }: { row: LineweightRow; mono: boolean }) {
         height: 'var(--tap)',
         padding: '0 6px',
         borderRadius: 10,
-        transition: 'background var(--dur-fast) var(--ease-apple)',
+        transition: 'background var(--nhip-vien) var(--ease-apple)',
         background: hover ? 'var(--hover)' : 'transparent',
       }}
     >
@@ -159,7 +159,7 @@ function ModeButton({ active, onClick, children }: { active: boolean; onClick: (
         lineHeight: 1.45,
         fontFamily: 'inherit',
         cursor: 'pointer',
-        transition: 'background var(--dur-base) var(--ease-apple)',
+        transition: 'background var(--nhip-ngu-canh) var(--ease-apple)',
       }}
     >
       {children}

@@ -246,7 +246,7 @@ export default function LightBar({
                   transform: mut ? 'scaleY(1.28)' : sang ? undefined : 'scaleY(.62)',
                   transformOrigin: '50% 100%',
                   transition:
-                    'background 200ms var(--ease-apple, ease), transform 200ms var(--ease-apple, ease)',
+                    'background var(--nhip-bang) var(--ease-apple, ease), transform var(--nhip-bang) var(--ease-apple, ease)',
                   display: 'block',
                 }}
               />

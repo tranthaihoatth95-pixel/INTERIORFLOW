@@ -281,8 +281,26 @@ for (const p of TEP) {
         viPham('F-MOTION-TOKEN', p, soDong(src, m.index), cu, '--nhip-*', 'Sheet chốt thang --nhip-* (130/170/220/300/460); đây là thang CŨ');
       }
     }
+    /* 🔬 AUDIT THƯỚC 25/08 — MIỄN TRỪ `prefers-reduced-motion`.
+       Thước từng báo `0.001ms !important` (globals.css:528,531) là vi phạm nhịp. SAI, và sai ở
+       chỗ nguy hiểm: đó là **lối thoát chuẩn của trợ năng** — kỹ thuật phổ biến để TẮT chuyển
+       động cho người bật giảm-chuyển-động. Ai tin số rồi đi "sửa" `0.001ms` về `--nhip-bam`
+       sẽ **bật lại chuyển động cho đúng nhóm người đã xin tắt nó**.
+       ⇒ Một máy soi ép luật nhịp mà không biết miễn trừ trợ năng thì nó ép người dùng, không ép mã. */
+    const KHOI_GIAM_CD = [...src.matchAll(/@media[^{]*prefers-reduced-motion[^{]*\{/g)]
+      .map((k) => { // tìm ngoặc đóng khớp cặp
+        let d = 0, i = k.index + k[0].length - 1;
+        for (; i < src.length; i++) { if (src[i] === '{') d++; else if (src[i] === '}') { d--; if (!d) break; } }
+        return [k.index, i];
+      });
+    const trongGiamCD = (i) => KHOI_GIAM_CD.some(([a, b]) => i >= a && i <= b);
+
     const re2 = /(?:transition|animation)[^;\n]*?\b([0-9]{2,4})ms\b/g; let m2;
     while ((m2 = re2.exec(src))) {
+      if (trongGiamCD(m2.index)) {
+        NGOAI_PHAM_VI.push({ ho: 'F-MOTION-TOKEN', p, dong: soDong(src, m2.index), vi: 'lối thoát prefers-reduced-motion' });
+        continue;
+      }
       thay = true; ho['F-MOTION-TOKEN'].ungVien++;
       const v = parseInt(m2[1], 10);
       if (!Object.values(NHIP).includes(v)) viPham('F-MOTION-TOKEN', p, soDong(src, m2.index), `${v}ms`, Object.values(NHIP).join('|'), 'ms thô ngoài thang chuẩn');
