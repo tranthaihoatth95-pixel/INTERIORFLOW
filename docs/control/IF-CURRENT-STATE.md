@@ -2,7 +2,10 @@
 > Nhỏ và mới. **Cấm để triết lý dài hạn ở đây** — nó thuộc `IF-CANONICAL.md`.
 > **Cập nhật trước khi kết phiên.**
 
-**Ngày** 24/08/2026 · **Nhánh** `main` · **HEAD** `c7f3ac8` · **Cây bẩn** 603 tệp (chưa commit — cố ý, chờ chủ dự án duyệt mắt)
+**Ngày** 25/08/2026 · **Nhánh** `checkpoint/2026-08-24-control-plane` · **HEAD** `f70adb6` · **Cây bẩn** 587 tệp (cố ý, chưa commit)
+> 🔴 Dòng này TỪNG STALE: khai `main · c7f3ac8 · 603 tệp` trong khi thật là nhánh checkpoint.
+> Một phiên nguội đọc nó sẽ **đứng sai mã** mà không biết. Audit Codex 25/08 bắt được.
+> ⇒ LUẬT: đóng phiên là phải đo lại **nhánh · HEAD · số tệp bẩn**, cấm chép lại số cũ (M-05).
 
 ## 🔴 BÀN GIAO — đọc trước tiên
 ⛔ **KHỐI NÀY TỪNG TỰ TRAO BÚT CHO BẤT KỲ AI ĐỌC NÓ.** Bản 23/08 ghi *"Phiên đọc dòng này là MAIN
@@ -30,14 +33,26 @@ nghĩa) áp thẳng vào ô quản trị.
 ⇒ **LUẬT: ô dưới đây phải là ĐỊNH DANH ĐO ĐƯỢC, cấm đại từ.**
 
 ```
-NGƯỜI GHI HIỆN TẠI:  pid 29437 · ppid 25132   (socket /tmp/cc-socks/25132.sock)
-Nhận lúc:            24/08/2026 (lượt bảo toàn trước usage reset 25/08 12:00)
-Xác nhận bởi:        HOÀ — chỉ thị trực tiếp: "Hoà xác nhận phiên hiện tại
-                     pid 29014 · ppid 25132 là production writer duy nhất,
-                     thay thế interiorflow-9b đã chết."
-                     ⚠️ pid trong lời Hoà là 29014 (shell lượt trước); ppid 25132 KHỚP,
-                     đó mới là định danh bền của phiên. Ghi cả hai để truy được.
-THAY THẾ:            interiorflow-9b (pid 64608) — ĐÃ CHẾT, xác minh bằng `ps -p 64608`.
+NGƯỜI GHI HIỆN TẠI:  NONE — production writer slot đang trống.
+
+🔴 CÁCH KIỂM SỐNG ĐÃ ĐỔI 25/08 — ĐỌC TRƯỚC KHI ĐIỀN Ô NÀY (M-56):
+   Ô này TỪNG ghi `pid 29437 · ppid 25132` kèm cách kiểm `ps -p <pid>`. HỎNG TỪ GỐC:
+   pid đó là SHELL của MỘT lệnh Bash, chết ngay khi lệnh xong. Cùng một phiên, lệnh
+   kế tiếp đã mang pid khác (29437 → 59510). ⇒ `ps -p` LUÔN báo chết, kể cả khi phiên
+   đang sống khoẻ. Một phiên Codex đã thi hành đúng thủ tục đó và kết luận nhầm.
+   ⇒ ĐỊNH DANH = TÊN PHIÊN (`interiorflow-xx`, lấy bằng `ListAgents`).
+   ⇒ KIỂM SỐNG = `ListAgents`, KHÔNG phải `ps -p`.
+   ⇒ pid/ppid nếu ghi thì để trong ngoặc, sau tên, và nói rõ là PHÙ DU.
+PHẠM VI CHÍNH XÁC:   Không phiên nào được sửa production cho tới khi Hoà chỉ định identity mới.
+Trả lúc:             24/08/2026
+Vừa hoàn thành:      Codex task 01a03199-06aa-7b62-ad4a-90b36b9b73b8 — IF UI Review Board,
+                     IF Shared Memory Bridge, Drive publisher và IDF CONTROL CENTER; chỉ đụng
+                     `docs/control/`, `docs/mocks/`, `scripts/publish-idf-control-center.mjs`
+                     và thư mục Drive; KHÔNG sửa `app/` · `components/` · `lib/` · schema/runtime.
+Xác nhận bởi:        HOÀ — "cho phép", sau đó "set up mọi thứ đi".
+THAY THẾ:            Claude session pid 29437 · ppid 25132 — không còn sống khi kiểm bằng
+                     `ps -p 29437` ngày 24/08; phiên đã dừng vì usage/service.
+                     Trước đó: interiorflow-9b (pid 64608) — ĐÃ CHẾT, xác minh bằng `ps -p 64608`.
                      Ô này từng trỏ vào một phiên không còn tồn tại ⇒ bế tắc: luật cấm
                      phiên tự trao bút, nên KHÔNG phiên nào ghi được. Chỉ Hoà gỡ được.
                      ⇒ LUẬT BỔ SUNG: ô này phải kèm cách KIỂM SỐNG (`ps -p <pid>`).

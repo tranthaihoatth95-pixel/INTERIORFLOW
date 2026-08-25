@@ -275,3 +275,38 @@ sự lệch đó là thứ lộ ra rằng luật của tôi thiếu một vế. 
 
 **Kiểm tái phát:** trước khi hạ cỡ một glyph, hỏi **"bỏ nó đi thì ô này còn gì không?"**
 Còn ⇒ nó là icon. **Trống trơn ⇒ nó là TRANH, đừng đụng vào cỡ.**
+
+
+### M-56 · 🔴 ĐỊNH DANH NGƯỜI GHI BẰNG **PID** LÀ HỎNG TỪ GỐC — pid LUÔN chết khi ai đó đi kiểm
+**Ca 24–25/08. Lỗi của tôi, và nó là nguyên nhân của CẢ CHUỖI tranh chấp quyền ghi.**
+
+M-25 dạy: cấm đại từ *"phiên này"*, phải là **định danh đo được**. Đúng. Tôi thi hành bằng cách ghi
+`pid 29437 · ppid 25132` vào ô `NGƯỜI GHI HIỆN TẠI`, kèm cách kiểm `ps -p <pid>`.
+
+**Cái pid đó là SHELL của MỘT lệnh Bash.** Nó chết ngay khi lệnh kết thúc. Lệnh Bash kế tiếp của
+**cùng phiên đó** đã mang pid khác (đo được: 29437 → 59510), và `ppid` cũng đổi (25132 → 58988).
+⇒ `ps -p 29437` **LUÔN LUÔN thất bại**, kể cả khi phiên đang sống khoẻ.
+
+**Hậu quả thật:** một phiên Codex chạy đúng thủ tục tôi viết ra, `ps -p 29437` → không thấy,
+kết luận *"Claude session pid 29437 — không còn sống, phiên đã dừng vì usage/service"*, rồi
+tiếp quản. **Nó không làm sai gì cả** — nó thi hành đúng cách kiểm mà tôi để lại. Cái sai là
+cách kiểm.
+
+**Vì sao lỗi này sống dai:** nó **luôn cho ra câu trả lời đúng-về-hình-thức** ("phiên chết") nên
+không ai nghi. Một cách kiểm luôn trả về cùng một kết quả thì nó không phải phép đo, nó là hằng số
+đội lốt phép đo. Cùng họ với máy soi báo 0 mà không chứng minh đã quét (luật tự-chứng-minh của
+`soi:foundation`), và với M-55 (tự đo rồi khẳng định ngược).
+
+⚠️ Tôi **đã suýt bắt được**: chính tôi ghi chú *"ppid mới là định danh bền"*. Nhưng vẫn đặt `pid`
+**đứng trước** trong ô — và người đi kiểm đọc thứ đầu tiên. **Biết một thứ dễ gây hiểu nhầm mà vẫn
+để nó ở vị trí đập vào mắt trước thì coi như chưa biết.**
+
+**LUẬT — định danh phiên phải là TÊN PHIÊN, không phải số hiệu tiến trình:**
+1. Ô `NGƯỜI GHI HIỆN TẠI` ghi **tên phiên** (dạng `interiorflow-xx`, lấy bằng `ListAgents`).
+   Tên bền suốt đời phiên; pid/ppid thì không.
+2. Cách kiểm sống là **`ListAgents`**, KHÔNG phải `ps -p`. Tên không có trong danh sách ⇒ mới coi là
+   không còn.
+3. **Cấm ghi pid/ppid làm định danh chính.** Muốn ghi thì để trong ngoặc, sau tên, và **nói rõ nó
+   phù du** — kẻo người sau lại đi `ps` rồi kết luận nhầm.
+4. Mọi cách-kiểm ghi vào control plane phải tự trả lời: *"phép kiểm này có bao giờ trả về KHÁC
+   không?"* Không bao giờ khác ⇒ **không phải phép kiểm**.
