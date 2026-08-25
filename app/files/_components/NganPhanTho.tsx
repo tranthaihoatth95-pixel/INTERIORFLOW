@@ -59,7 +59,7 @@ function ThePhanTho({ mon }: { mon: MonTho }) {
       {/* THIẾU GÌ + LÀM SAO CÓ — hai dòng này là lý do ngăn tồn tại. Cấm ô trống câm (`ba-mat.ts`). */}
       {mon.matDung3d.thieu && (
         <p style={{ margin: 0, display: 'flex', gap: 6, fontSize: 'var(--fs-2xs)', color: 'var(--t2)' }}>
-          <AlertTriangle size={13} strokeWidth={1.8} aria-hidden style={{ flexShrink: 0, marginTop: 1 }} />
+          <AlertTriangle size={14} strokeWidth={1.5} aria-hidden style={{ flexShrink: 0, marginTop: 1 }} />
           <span>{tr(mon.matDung3d.thieu.vi, mon.matDung3d.thieu.en)}</span>
         </p>
       )}
@@ -73,15 +73,15 @@ function ThePhanTho({ mon }: { mon: MonTho }) {
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 'var(--fs-2xs)', color: 'var(--t3)' }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           {mon.coAnhVan
-            ? <><ImageIcon size={12} strokeWidth={1.8} aria-hidden />{tr('có ảnh vân', 'has colour map')}</>
-            : <><ImageOff size={12} strokeWidth={1.8} aria-hidden />{tr('chưa có ảnh vân', 'no colour map')}</>}
+            ? <><ImageIcon size={14} strokeWidth={1.5} aria-hidden />{tr('có ảnh vân', 'has colour map')}</>
+            : <><ImageOff size={14} strokeWidth={1.5} aria-hidden />{tr('chưa có ảnh vân', 'no colour map')}</>}
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          <Truck size={12} strokeWidth={1.8} aria-hidden />
+          <Truck size={14} strokeWidth={1.5} aria-hidden />
           {mon.nhaCungCap ?? tr('chưa khai nhà cung cấp', 'no supplier yet')}
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          <Wallet size={12} strokeWidth={1.8} aria-hidden />
+          <Wallet size={14} strokeWidth={1.5} aria-hidden />
           {mon.khoangGia
             ? tr(mon.khoangGia.chu.vi, mon.khoangGia.chu.en)
             : tr('nhóm này chưa món nào ghi giá', 'no item in this group has a price')}
@@ -136,7 +136,7 @@ export function NganPhanTho() {
             fontSize: 'var(--fs-2xs)', cursor: 'pointer',
           }}
         >
-          <RefreshCw size={13} strokeWidth={1.8} aria-hidden />{tr('Đọc lại', 'Reload')}
+          <RefreshCw size={18} strokeWidth={1.5} aria-hidden />{tr('Đọc lại', 'Reload')}
         </button>
       </div>
 

@@ -104,7 +104,7 @@ export function WallpaperSettings() {
                     className="absolute right-1.5 top-1.5 grid h-4 w-4 place-items-center rounded-[var(--r-full)]"
                     style={{ background: 'var(--accent)' }}
                   >
-                    <Check size={11} strokeWidth={3} style={{ color: 'var(--bg)' }} aria-hidden />
+                    <Check size={14} strokeWidth={1.5} style={{ color: 'var(--bg)' }} aria-hidden />
                   </span>
                 )}
               </span>

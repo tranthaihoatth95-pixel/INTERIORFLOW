@@ -43,7 +43,7 @@ export function NotebookButton({ compact = false }: { compact?: boolean }) {
         flex: '0 0 auto',
       }}
     >
-      <BookOpen size={14} strokeWidth={2} />
+      <BookOpen size={14} strokeWidth={1.5} />
       {!compact && <span>Notebook</span>}
     </button>
   );

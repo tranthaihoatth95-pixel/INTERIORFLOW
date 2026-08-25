@@ -189,7 +189,7 @@ export default function CameraExportTab({ scene }: { scene: Scene3DData | null }
             disabled={!!lyDoMo}
             className="mt-2 flex h-7 w-full items-center justify-center gap-1.5 rounded-[6px] border border-[var(--border)] bg-transparent px-2 text-[10px] font-semibold text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent"
           >
-            <Images size={12} strokeWidth={1.8} />
+            <Images size={16} strokeWidth={1.5} />
             {tr('Xuất chuỗi ảnh (PNG)', 'Export image sequence (PNG)')}
           </button>
         ) : (
@@ -198,7 +198,7 @@ export default function CameraExportTab({ scene }: { scene: Scene3DData | null }
                 0% khi `total === 0`, tức KHAI MỘT CON SỐ mà thật ra chưa biết gì. Đúng loại lỗi mà
                 đợt này sinh ra để diệt. `tuPhanSo` trả "không đo được" khi `total ≤ 0` ⇒ LightArc
                 tự chuyển sang cung quay, KHÔNG có `aria-valuenow`, không có con số nào. */}
-            <LightArc value={phanTramXuat} size={22} strokeWidth={2.5} label={tr('Tiến độ xuất chuỗi ảnh', 'Sequence export progress')} />
+            <LightArc value={phanTramXuat} size={22} strokeWidth={1.5} label={tr('Tiến độ xuất chuỗi ảnh', 'Sequence export progress')} />
             <span className="flex-1 text-[10px] text-[var(--t3)] tabular-nums">
               {tr(`Khung ${trangThai.done}/${trangThai.total}`, `Frame ${trangThai.done}/${trangThai.total}`)}
             </span>
@@ -207,7 +207,7 @@ export default function CameraExportTab({ scene }: { scene: Scene3DData | null }
               onClick={() => abortRef.current?.abort()}
               className="flex h-6 items-center gap-1 rounded-[6px] border border-[var(--border)] bg-transparent px-2 text-[10px] font-semibold text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
             >
-              <Square size={10} strokeWidth={2} />
+              <Square size={14} strokeWidth={1.5} />
               {tr('Huỷ', 'Cancel')}
             </button>
           </div>

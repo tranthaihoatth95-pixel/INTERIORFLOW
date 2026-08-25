@@ -59,7 +59,7 @@ export default function DrawToolbar() {
               active ? 'bg-[var(--accent)] text-white' : 'text-[var(--t3)] hover:bg-[var(--hover)] hover:text-[var(--t1)]',
             )}
           >
-            <Icon size={16} strokeWidth={1.75} />
+            <Icon size={16} strokeWidth={1.5} />
           </motion.button>
         );
       })}

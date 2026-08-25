@@ -102,7 +102,7 @@ export function AppLogoMenu({ open, anchorRect, onDismiss, menuRef, stage }: Pro
                   }}
                   className="flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-[12.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
                 >
-                  <goHomeItem.icon size={15} strokeWidth={1.75} className="shrink-0 text-[var(--t4)]" />
+                  <goHomeItem.icon size={15} strokeWidth={1.5} className="shrink-0 text-[var(--t4)]" />
                   {goHomeItem.label}
                 </button>
                 <div className="mx-2 my-1 h-px bg-[var(--border)]" />
@@ -116,7 +116,7 @@ export function AppLogoMenu({ open, anchorRect, onDismiss, menuRef, stage }: Pro
                     }}
                     className="flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-[12.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
                   >
-                    <it.icon size={15} strokeWidth={1.75} className="shrink-0 text-[var(--t4)]" />
+                    <it.icon size={15} strokeWidth={1.5} className="shrink-0 text-[var(--t4)]" />
                     {it.label}
                   </button>
                 ))}

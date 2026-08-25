@@ -103,7 +103,7 @@ export function UnitsScaleSettings() {
   return (
     <section>
       <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--t1)]">
-        <Ruler size={16} strokeWidth={1.75} aria-hidden="true" />
+        <Ruler size={16} strokeWidth={1.5} aria-hidden="true" />
         {tr('Đơn vị & Tỉ lệ', 'Units & Scale')}
       </h2>
       <p className="mt-1 text-[12px] text-[var(--t3)]">
@@ -130,7 +130,7 @@ export function UnitsScaleSettings() {
       {/* Cách nhập */}
       <div className="mt-4">
         <h3 id="units-input-label" className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[.06em] text-[var(--t4)]">
-          <Keyboard size={12} strokeWidth={2} aria-hidden="true" />
+          <Keyboard size={14} strokeWidth={1.5} aria-hidden="true" />
           {tr('Cách nhập số đo', 'Input unit')}
         </h3>
         <p className="mb-2.5 mt-0.5 text-[11px] text-[var(--t4)]">
@@ -181,7 +181,7 @@ export function UnitsScaleSettings() {
       {/* Tỉ lệ in mặc định */}
       <div className="mt-4 border-t border-[var(--border)] pt-3.5">
         <h3 id="units-scale-label" className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[.06em] text-[var(--t4)]">
-          <Grid3x3 size={12} strokeWidth={2} aria-hidden="true" />
+          <Grid3x3 size={14} strokeWidth={1.5} aria-hidden="true" />
           {tr('Tỉ lệ in mặc định', 'Default print scale')}
         </h3>
         <p className="mb-2.5 mt-0.5 text-[11px] text-[var(--t4)]">

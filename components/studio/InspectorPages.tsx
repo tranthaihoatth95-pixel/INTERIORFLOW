@@ -56,7 +56,7 @@ export function InspectorPages({ pages }: { pages: InspectorPage[] }) {
                   on ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t1)]',
                 )}
               >
-                <p.icon size={14} strokeWidth={1.75} />
+                <p.icon size={14} strokeWidth={1.5} />
               </button>
             );
           })}

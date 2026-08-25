@@ -149,7 +149,7 @@ export function GalleryLienNganh() {
           </p>
         </div>
         <span className="gal-search">
-          <Search size={13} strokeWidth={1.75} />
+          <Search size={18} strokeWidth={1.5} />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -200,7 +200,7 @@ export function GalleryLienNganh() {
       {collections.length > 0 && (
         <div className="gal-collections">
           <div className="sec-head">
-            <Compass size={14} strokeWidth={1.75} style={{ color: 'var(--accent)' }} />
+            <Compass size={14} strokeWidth={1.5} style={{ color: 'var(--accent)' }} />
             <h2>{tr('Bộ sưu tập xu hướng', 'Trend collections')}</h2>
             <span>{tr('có nguồn', 'sourced')}</span>
           </div>
@@ -242,7 +242,7 @@ export function GalleryLienNganh() {
             )}
           </span>
           <button type="button" className="go" onClick={() => openLibrarySheet()}>
-            <Plus size={13} strokeWidth={2} />
+            <Plus size={18} strokeWidth={1.5} />
             {tr('Nhập từ Kho chung', 'Import from the shared store')}
           </button>
         </div>
@@ -263,7 +263,7 @@ export function GalleryLienNganh() {
         return (
           <div className="gal-group" key={g.id}>
             <div className="sec-head">
-              <span className="ic"><Icon size={13} strokeWidth={1.85} /></span>
+              <span className="ic"><Icon size={14} strokeWidth={1.5} /></span>
               <h2>{industryLabel(g.id, tr)}</h2>
               <span>{g.items.length}</span>
             </div>
@@ -279,7 +279,7 @@ export function GalleryLienNganh() {
       {ungrouped.length > 0 && (
         <div className="gal-group">
           <div className="sec-head">
-            <span className="ic"><Sparkles size={13} strokeWidth={1.85} /></span>
+            <span className="ic"><Sparkles size={14} strokeWidth={1.5} /></span>
             <h2>{tr('Chưa gắn nhóm ngành', 'Not tagged with a discipline yet')}</h2>
             <span>{ungrouped.length}</span>
           </div>
@@ -313,13 +313,13 @@ export function GalleryLienNganh() {
             aria-label={tr('Đường dẫn nguồn', 'Source link')}
           />
           <button type="button" onClick={submitSource}>
-            <Link2 size={13} strokeWidth={2} />
+            <Link2 size={18} strokeWidth={1.5} />
             {tr('Thêm nguồn', 'Add source')}
           </button>
         </div>
         {sourceErr && (
           <p className="gal-source-err">
-            <X size={13} strokeWidth={2} style={{ flex: 'none', marginTop: 1 }} />
+            <X size={14} strokeWidth={1.5} style={{ flex: 'none', marginTop: 1 }} />
             {sourceErr}
           </p>
         )}
@@ -329,7 +329,7 @@ export function GalleryLienNganh() {
               <div className="gal-source-item" key={s.id}>
                 <a href={s.url} target="_blank" rel="noreferrer noopener">{s.url}</a>
                 <button type="button" onClick={() => removeSuggestion(s.id)} aria-label={tr('Bỏ đề xuất', 'Remove suggestion')}>
-                  <X size={12} strokeWidth={2} />
+                  <X size={14} strokeWidth={1.5} />
                 </button>
               </div>
             ))}
@@ -358,7 +358,7 @@ function GalleryCard({ asset, onUse, tr }: { asset: GalleryAsset; onUse: (a: Gal
           </span>
         )}
         <button type="button" className="use" onClick={() => onUse(asset)}>
-          <Copy size={12} strokeWidth={1.85} />
+          <Copy size={14} strokeWidth={1.5} />
           {tr('Dùng cho moodboard / Thẻ DNA', 'Use for moodboard / Design DNA')}
         </button>
       </div>

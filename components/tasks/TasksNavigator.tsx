@@ -13,7 +13,7 @@ export function TasksNavigator() {
   return (
     <div className="px-1.5 py-1">
       <div className="flex h-[30px] w-full items-center gap-2.5 rounded-[10px] px-2 text-[12.5px] text-[var(--t1)]">
-        <ClipboardList size={14} strokeWidth={1.75} className="shrink-0 text-[var(--t4)]" />
+        <ClipboardList size={14} strokeWidth={1.5} className="shrink-0 text-[var(--t4)]" />
         {tr('Bảng việc', 'Task board')}
       </div>
     </div>

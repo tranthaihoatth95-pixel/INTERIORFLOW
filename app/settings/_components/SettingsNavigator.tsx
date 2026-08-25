@@ -28,7 +28,7 @@ export function SettingsNavigator() {
           onClick={() => document.getElementById(g.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           className="flex h-[30px] w-full items-center gap-2.5 rounded-[8px] px-2 text-[12.5px] text-[var(--t2)] transition-colors duration-100 hover:bg-[var(--hover)] hover:text-[var(--t1)]"
         >
-          <g.icon size={14} strokeWidth={1.75} className="shrink-0 text-[var(--t4)]" />
+          <g.icon size={14} strokeWidth={1.5} className="shrink-0 text-[var(--t4)]" />
           {tr(g.label[0], g.label[1])}
         </button>
       ))}

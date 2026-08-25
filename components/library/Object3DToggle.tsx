@@ -55,7 +55,7 @@ export function Object3DToggle({ title, subtitle, glbUrl, mtlUrl }: Object3DTogg
           }
         }}
       >
-        {open ? <EyeOff size={11} strokeWidth={1.9} aria-hidden /> : <Eye size={11} strokeWidth={1.9} aria-hidden />}
+        {open ? <EyeOff size={14} strokeWidth={1.5} aria-hidden /> : <Eye size={14} strokeWidth={1.5} aria-hidden />}
         {tr('Xem 3D', 'View 3D')}
       </span>
       <Object3DWindow open={open} onOpenChange={setOpen} glbUrl={glbUrl} mtlUrl={mtlUrl} title={title} subtitle={subtitle} />

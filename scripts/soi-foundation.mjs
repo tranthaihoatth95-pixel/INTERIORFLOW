@@ -144,6 +144,22 @@ function thangViewBox(v) {
   return Math.max(n[2], n[3]);
 }
 const laIcon = (v) => { const t = thangViewBox(v); return t !== null && t <= THANG_ICON; };
+/* 🔬 AUDIT THƯỚC 25/08 — chạy bộ probe 11 ca trước khi cho phép sửa 180 vị trí sản xuất.
+   KẾT QUẢ: thước CHÍNH XÁC CAO. Bắt đúng icon nét sai; loại đúng tranh 200×200, SVG lồng sâu,
+   và `strokeWidth:` camelCase trong style CSS-in-JS (regex đòi `=`, không khớp `:`).
+   🔴 ĐÚNG MỘT LỚP BÁO OAN: `stroke-width` nằm trong CHUỖI/template literal sinh SVG, khi chính
+   chuỗi đó khai viewBox thang icon. Đo trên mã thật: lớp này xuất hiện **0 lần** trong 180 ca —
+   nên nó là lỗ TIỀM ẨN, chưa gây hại. Vá luôn để đừng chờ nó nổ.
+   ⚠️ `vb === null` vẫn tính là ứng viên, và điều đó ĐÚNG: 134/180 ca thật là **prop trên
+   component lucide** (`<Search size={16} strokeWidth={1.75} />`) — icon thật, không có viewBox
+   trong mã nguồn. Đổi nhánh này thành "bỏ qua" sẽ làm thước mù 3/4 số ca. */
+function trongChuoi(src, i) {
+  // Đếm dấu backtick chưa đóng trước vị trí i ⇒ đang nằm trong template literal.
+  let n = 0;
+  for (let k = 0; k < i; k++) if (src[k] === '`' && src[k - 1] !== '\\') n++;
+  return n % 2 === 1;
+}
+
 /** viewBox bao quanh vị trí `i` — dùng để biết một `stroke-width` nằm trong icon hay trong tranh. */
 function viewBoxBaoQuanh(src, i) {
   const truoc = src.lastIndexOf('viewBox', i);
@@ -168,6 +184,10 @@ for (const p of TEP) {
     while ((m = re.exec(src))) {
       const vb = viewBoxBaoQuanh(src, m.index);
       const v = parseFloat(m[1] ?? m[2]);
+      if (trongChuoi(src, m.index)) {          // SVG dựng bằng chuỗi — không phải icon render
+        NGOAI_PHAM_VI.push({ ho: 'F-ICON-STROKE', p, dong: soDong(src, m.index), vi: `nét ${v} trong CHUỖI sinh SVG` });
+        continue;
+      }
       if (vb !== null && !laIcon(vb)) {            // nét của TRANH, không phải nét của icon
         NGOAI_PHAM_VI.push({ ho: 'F-ICON-STROKE', p, dong: soDong(src, m.index), vi: `nét ${v} trong svg thang ${vb}` });
         continue;

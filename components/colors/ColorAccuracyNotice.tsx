@@ -35,7 +35,7 @@ export function ColorAccuracyNotice({ variant = 'full' }: { variant?: 'full' | '
         background: 'var(--field)',
       }}
     >
-      <Info size={14} strokeWidth={1.75} style={{ flexShrink: 0, marginTop: 2, color: 'var(--t4)' }} />
+      <Info size={14} strokeWidth={1.5} style={{ flexShrink: 0, marginTop: 2, color: 'var(--t4)' }} />
       <p style={{ margin: 0, fontSize: variant === 'short' ? 11.5 : 12, lineHeight: 1.6, color: 'var(--t3)' }}>
         {tr(text.vi, text.en)}
       </p>
