@@ -33,7 +33,14 @@ nghĩa) áp thẳng vào ô quản trị.
 ⇒ **LUẬT: ô dưới đây phải là ĐỊNH DANH ĐO ĐƯỢC, cấm đại từ.**
 
 ```
-NGƯỜI GHI HIỆN TẠI:  NONE — production writer slot đang trống.
+NGƯỜI GHI HIỆN TẠI:  interiorflow-65      ← TÊN PHIÊN, không phải pid (M-56)
+KIỂM SỐNG:           `ListAgents` — tên có trong danh sách = còn sống. CẤM `ps -p`.
+Nhận lúc:            25/08/2026, sau usage reset
+Xác nhận bởi:        HOÀ — "giờ reset rồi chạy auto mode end to end cho xong giao đi"
+PHẠM VI:             toàn quyền production; chế độ tự chủ, không dừng hỏi giữa các đợt
+                     (điều kiện dừng: IF-CANONICAL §20)
+THAY THẾ:            NONE (phiên Codex đã trả bút đúng thủ tục sau khi xong task
+                     01a03199 — IF UI Review Board · Shared Memory Bridge · Drive publisher)
 
 🔴 CÁCH KIỂM SỐNG ĐÃ ĐỔI 25/08 — ĐỌC TRƯỚC KHI ĐIỀN Ô NÀY (M-56):
    Ô này TỪNG ghi `pid 29437 · ppid 25132` kèm cách kiểm `ps -p <pid>`. HỎNG TỪ GỐC:
