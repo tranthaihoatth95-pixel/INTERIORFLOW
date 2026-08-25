@@ -30,3 +30,13 @@ trượt ngay"* — tức nó khai một phép chứng minh mà chính nó khôn
 ⇒ Hoà nhìn ra bằng mắt cái mà máy soi không bắt: **cơ chế chứng minh không với tới được
 thứ nó nhận là đang chứng minh.** Ghi thành F-14.
 
+```
+[2] ĐĂNG NHẬP · nút "Vào xưởng" — "nút tím login bề ngang nên gọn lại là dc."
+    LOẠI: thị giác
+    HỆ THỐNG? KHÔNG — một nút, một bề mặt
+    TRẠNG THÁI: đã sửa
+```
+Đo runtime: **384×60 (6,4:1) → 268×60 (4,5:1)**, canh giữa. Nút cao 60px là hệ quả của chốt
+23/08 (kính lỏng cần diện tích mới đọc được) — nhưng cao 60 mà kéo hết bề ngang thì ra tỉ lệ
+của một THANH, không phải một NÚT. Hai chốt đúng riêng lẻ, ghép lại thành sai: **nâng chiều cao
+mà không xem lại chiều ngang.** Giữ `w-full` làm trần cho khổ hẹp.
