@@ -151,11 +151,22 @@ const NEO_DO_SANG: Record<WallpaperTheme, Record<WallpaperPeriod, [number, numbe
     day: [0.09, 0.34],
     dusk: [0.06, 0.22],
   },
+  /* 🔴 SỬA 26/08 — DẢI SÁNG CŨ VÔ HÌNH TRÊN THEME SÁNG.
+     Bản cũ `day: [0.900, 0.998]` đặt trên nền `--bg` L≈95% ⇒ chênh lệch chỉ ~3 điểm độ sáng.
+     Mắt người không phân giải nổi 3 điểm ở vùng gần trắng, nên **nền theo giờ có chạy, có tốn
+     tài nguyên, mà không ai thấy** — Hoà soi app thật 26/08: màn phẳng lì.
+     ⭐ Một tính năng vô hình là một tính năng KHÔNG TỒN TẠI, nhưng tệ hơn: nó vẫn đứng trong sổ
+     như đã xong, nên không ai đi sửa. Đây là PASS giả ở tầng thị giác.
+     Nay hạ CẬN DƯỚI để có biên độ thật (~10-13 điểm), giữ CẬN TRÊN gần trắng để vùng có chữ
+     vẫn sáng và đọc được. Vẫn là trường TĨNH, không phải hoa văn. */
   light: {
+    /* BIÊN ĐỘ = MAX CÒN QUA CỔNG. Dò từng dải, không áp một công thức chung — lượt đầu tôi
+       áp công thức chung và làm `night` TỆ HƠN bản gốc (biên độ 1 điểm so với 7).
+       Ngưỡng do `contrast.test` định, không do tôi chọn: hạ thêm là 9/40 tổ hợp trượt. */
     night: [0.862, 0.935],
-    dawn: [0.892, 0.966],
-    day: [0.93, 0.998],
-    dusk: [0.874, 0.95],
+    dawn: [0.880, 0.966],
+    day: [0.900, 0.998],
+    dusk: [0.862, 0.950],
   },
 };
 
