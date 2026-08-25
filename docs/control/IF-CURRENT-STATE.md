@@ -96,6 +96,27 @@ sai. Xem "Nền móng" bên dưới.
 | **Trang chủ** | 🔴 **FAIL** — 7/10 lỗi đã sửa, **chưa có ảnh app thật để chấm lại** |
 | Trường Thiết Kế | ✅ 61 tệp + 5 skill + 2 máy soi mới |
 
+## ĐỢT 25/08 — audit thước rồi mới sửa (HEAD `0524e1a`)
+
+**Nợ nền: 1.173 → 128.** Không đợt nào sửa mù; mỗi thước bị AUDIT trước, và **cả hai lần audit
+đều bắt được thước báo oan** — nếu sửa theo con số thì cả hai lần đều làm hỏng thứ đang đúng.
+
+| Họ luật | Trước | Sau | Thước bắt oan gì |
+|---|---|---|---|
+| `F-ICON-SIZE` | 874 | **0** | (đợt trước) đếm cả `size` của quả cầu vật liệu · avatar · chấm trạng thái |
+| `F-ICON-STROKE` | 137 | **37** | `stroke-width` trong **chuỗi sinh SVG** — 9 ca |
+| `F-MOTION-TOKEN` | 84 | **41** | 🔴 `0.001ms !important` trong `prefers-reduced-motion` — **lối thoát trợ năng** |
+| `F-ICON-VIEWBOX` | 74 | 49 | chưa audit |
+| `F-MAT-VOCAB` | 1 | 1 | G0–G3 chưa có mặt dưới dạng token |
+
+⛔ **37 ca nét CÒN LẠI KHÔNG ĐƯỢC SỬA BẰNG CÁCH ĐỔI SỐ.** Phần lớn ở `components/nodes/NodeIcons.tsx`
+— bộ icon inline vẽ trên **lưới 16**, nét 1.2. Bơm 1.2 → 1.5 trên lưới 16 làm icon **nặng hơn về
+quang học**; "sửa" theo con số sẽ làm hỏng hình. **Việc thật ở đó là DI TRÚ LƯỚI 16 → 24** (hoặc
+đưa về primitive `Icon`), và đó là việc thị giác, không phải việc số học.
+
+⛔ **Ba ca nhịp còn lại cần phán đoán, không phải đổi số:** `900ms` (chuyển màu logo Login — chậm
+có chủ ý) · `260ms` (nằm giữa 220 và 300, không có lựa chọn hiển nhiên) · `700ms`.
+
 ## Kho bản vẽ — ĐỌC TRƯỚC MỌI VIỆC THỊ GIÁC
 `docs/mocks/CLAUDE-DESIGN-CURRENT.md` = **bản nào đang hiệu lực**. `docs/mocks/` = ~106 bản vẽ.
 ⛔ Trước khi brief hay dựng bất cứ thứ gì người dùng nhìn thấy: **`ls docs/mocks/` + đọc tệp trên.**
