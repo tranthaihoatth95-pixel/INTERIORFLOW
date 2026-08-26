@@ -42,7 +42,30 @@ const IS_WORKTREE = (() => {
 })();
 
 const COOKIE = !HAS_AUTH_SECRET ? 'if_session_noenv' : IS_WORKTREE ? 'if_session_wt' : 'if_session';
-// `||` chứ không `??`: AUTH_SECRET= rỗng phải rơi về fallback, khớp với HAS_AUTH_SECRET ở trên.
+
+/**
+ * ⛔ FAIL-CLOSED (Wave 0, 26/08 — Hoà cấp quyền).
+ *
+ * Trước đây thiếu `AUTH_SECRET` thì JWT ký bằng hằng số `'dev-secret-change-me'` — chuỗi này
+ * NẰM CÔNG KHAI TRONG MÃ NGUỒN. Bản Electron được cứu vì `electron/main.js` tự sinh secret và
+ * persist, nhưng repo có `vercel.json`: một lần deploy web quên đặt biến là ai cũng tự đúc được
+ * cookie `sub=<userId bất kỳ>`, kể cả `isAdmin`. Đó là chiếm quyền, không phải bất tiện.
+ *
+ * KHÔNG bỏ fallback ở dev: chế độ `if_session_noenv` ở trên là CÁCH LY CÓ CHỦ Ý (worktree /
+ * server tạm không được đụng phiên thật ở cùng localhost). Bỏ nó là phá một thứ đang làm đúng.
+ *
+ * ⇒ Chỉ chặn ở `production`. Cùng khuôn với `lib/integrations/crypto.ts:15` — thiếu key thì NÉM,
+ * không chạy tiếp lặng lẽ. Ném ở tầng module: hỏng thì hỏng LÚC KHỞI ĐỘNG, không phải hỏng
+ * âm thầm ở request thứ một nghìn.
+ */
+if (process.env.NODE_ENV === 'production' && !HAS_AUTH_SECRET) {
+  throw new Error(
+    'AUTH_SECRET chưa cấu hình ở production — TỪ CHỐI khởi động thay vì ký JWT bằng hằng số ' +
+      'công khai trong mã. Tạo: openssl rand -base64 32',
+  );
+}
+
+// `||` chứ không `??`: AUTH_SECRET= rỗng phải rơi về fallback (chỉ còn ở dev), khớp HAS_AUTH_SECRET.
 const secret = () => new TextEncoder().encode(process.env.AUTH_SECRET || 'dev-secret-change-me');
 
 if (process.env.NODE_ENV !== 'production' && COOKIE !== 'if_session') {

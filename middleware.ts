@@ -31,7 +31,18 @@ import { jwtVerify } from 'jose';
 
 const SESSION_COOKIES = ['if_session', 'if_session_wt', 'if_session_noenv'] as const;
 
-/** Cùng công thức secret với `lib/server/auth.ts:46` (`||` để chuỗi rỗng cũng rơi về fallback). */
+/**
+ * ⛔ FAIL-CLOSED ở production — cùng luật với `lib/server/auth.ts`.
+ * Hai chỗ này PHẢI cùng hành vi: middleware verify chữ ký, auth.ts ký. Lệch nhau là mở lại
+ * đúng lỗ vừa bịt. Dev vẫn giữ fallback để chế độ cách ly `if_session_noenv` chạy được.
+ */
+if (process.env.NODE_ENV === 'production' && !process.env.AUTH_SECRET) {
+  throw new Error(
+    'AUTH_SECRET chưa cấu hình ở production — middleware TỪ CHỐI xác thực bằng hằng số công khai.',
+  );
+}
+
+/** Cùng công thức secret với `lib/server/auth.ts` (`||` để chuỗi rỗng cũng rơi về fallback). */
 const secret = () => new TextEncoder().encode(process.env.AUTH_SECRET || 'dev-secret-change-me');
 
 /** `/api/auth/...`, `/api/health`, `/api/share/...` — xem docstring. */

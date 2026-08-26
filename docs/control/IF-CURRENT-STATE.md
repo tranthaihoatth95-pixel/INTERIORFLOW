@@ -7,7 +7,28 @@
 > Một phiên nguội đọc nó sẽ **đứng sai mã** mà không biết. Audit Codex 25/08 bắt được.
 > ⇒ LUẬT: đóng phiên là phải đo lại **nhánh · HEAD · số tệp bẩn**, cấm chép lại số cũ (M-05).
 
-## 🔴 26/08 · NGƯỜI GHI TRONG Ô DƯỚI ĐÃ CHẾT — kiểm trước khi tin
+## ✅ 26/08 · BÚT ĐÃ ĐƯỢC TRAO LẠI — Hoà xác nhận
+
+```
+NGƯỜI GHI HIỆN TẠI:  interiorflow-d0        ← TÊN PHIÊN (M-56), không phải pid
+KIỂM SỐNG:           `ListAgents` — tên có trong danh sách = còn sống. CẤM `ps -p`.
+Nhận lúc:            26/08/2026
+Xác nhận bởi:        HOÀ — "Chỉ định interiorflow-d0 là Production Integrator duy nhất,
+                     hiệu lực ngay" (8 điểm, có giới hạn phạm vi rõ)
+THAY THẾ:            interiorflow-65 — ĐÃ CHẾT, lease cũ HẾT HIỆU LỰC
+PHẠM VI GIAI ĐOẠN ĐẦU — CHỈ 3 nhóm:
+  ① nhập bền Packet 003 + cập nhật memory/control theo protocol
+  ② Wave 0: fail-closed auth secret · authenticated artifact delivery ·
+     content-integrity report-only · runtime proof harness
+  ③ Research-to-Spec packet READ-ONLY cho: tenant/access · .idfc ·
+     Material Connector · Vitals/UX · ba MVP flow
+CẤM cho tới khi mỗi phần có packet + scope + rollback + evidence plan:
+  schema multi-tenant · product permission · .idfc · UI production · bulk resource
+CẤM luôn:  audit tổng thể (chỉ delta audit theo rủi ro) ·
+           sub-agent tự ghi production / tự trao bút / tự tuyên PASS
+```
+
+### 🔴 Ô CŨ BÊN DƯỚI ĐÃ HẾT HIỆU LỰC — giữ lại làm bằng chứng, không phải lệnh
 `interiorflow-65` **không có trong `ListAgents`** lúc 26/08. Theo đúng luật kiểm sống của chính
 tệp này, tên vắng mặt = **không còn sống** ⇒ **bút đang VÔ CHỦ**, không phải đang có người giữ.
 Phiên `interiorflow-d0` phát hiện, **KHÔNG tự trao bút**, làm phần không cần bút và báo lại.
