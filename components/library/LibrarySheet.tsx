@@ -38,6 +38,7 @@ import { loadIdfcStore, hydrateIdfcStore } from '@/lib/library/idfc-store';
 import { tronKhoMam, anhXemTruocCua, matBieuDienCua, MAT_LABEL, giaPhaCua } from '@/lib/idfc-seed';
 import { getPbr } from '@/lib/materials/pbr-store';
 import { exportIdfc, IDFC_KINDS, type IdfcKind, type ParsedIdfc } from '@/lib/cad/idfc';
+import { kyIdfc } from '@/lib/cad/idfc-integrity';
 import { resolveLibraryItem } from '@/lib/cad/library-item-resolve';
 import { unavailableReason } from '@/lib/cad/library-code-map';
 import { useLibrarySheetState } from '@/lib/library/use-library-sheet';
@@ -1248,7 +1249,7 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                       <button
                         type="button"
                         className="ghost"
-                        onClick={() => {
+                        onClick={async () => {
                           const def = resolved.def;
                           const pbrHit = getPbr(displayItem.code);
                           const specHit = specs?.length ? matchSpec(displayItem.code, specs) : null;
@@ -1264,12 +1265,30 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                               ? { brand: specHit.brand ?? undefined, sku: specHit.sku ?? undefined, unit: specHit.unit ?? undefined, priceVnd: specHit.priceVnd ?? undefined }
                               : undefined,
                           });
+                          // IDFC-MANIFEST-INTEGRITY-001 — ĐÓNG DẤU trước khi ghi ra đĩa. `kyIdfc`
+                          // là async (crypto.subtle), nên chờ ở đây thay vì kéo cả `exportIdfc`
+                          // sang async. Ký hỏng ⇒ trả nguyên chuỗi chưa ký: mất một khối siêu dữ
+                          // liệu thì chấp nhận được, mất tệp của người dùng thì không.
+                          // Xuất xứ khai THẬT: món này lấy từ kho Thư viện, kèm id trong kho.
+                          const daKy = await kyIdfc(json, { kind: 'library', ref: displayItem.id });
+                          const coDau = daKy !== json;
                           const a = document.createElement('a');
-                          a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+                          a.href = URL.createObjectURL(new Blob([daKy], { type: 'application/json' }));
                           a.download = `${displayItem.code}.idfc`;
                           a.click();
                           URL.revokeObjectURL(a.href);
-                          pushLibraryToast(tr(`Đã xuất ${displayItem.code}.idfc`, `Exported ${displayItem.code}.idfc`));
+                          pushLibraryToast(
+                            coDau
+                              ? tr(
+                                  `Đã xuất ${displayItem.code}.idfc — có dấu toàn vẹn, mở lại là biết ngay tệp còn nguyên hay đã bị sửa.`,
+                                  `Exported ${displayItem.code}.idfc — signed, so a later open can tell whether the file is still intact.`,
+                                )
+                              : // Không im lặng: người dùng cầm một tệp KHÔNG có dấu mà tưởng có.
+                                tr(
+                                  `Đã xuất ${displayItem.code}.idfc — KHÔNG đóng được dấu toàn vẹn, tệp vẫn dùng được nhưng sau này không kiểm được đã bị sửa hay chưa.`,
+                                  `Exported ${displayItem.code}.idfc — could NOT sign it; the file works, but a later open cannot tell whether it was modified.`,
+                                ),
+                          );
                         }}
                       >
                         {tr('Xuất .idfc', 'Export .idfc')}

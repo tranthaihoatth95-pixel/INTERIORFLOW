@@ -195,6 +195,32 @@ async function chay() {
     ca('CA 39 · 0 món hỏng', 0, hong);
   }
 
+  // ── DÂY ĐÃ NỐI CHƯA — chống "năng lực có, không ai gọi" ───────────────────
+  // Repo đã ghi bốn lần cùng một lỗi: thêm năng lực rồi để 0 nơi gọi. `meta.integrity` mà không
+  // ai ký/kiểm thì đúng là lỗi đó lần thứ năm. Hai ca dưới soi ĐƯỜNG CHẠY THẬT, không soi ý định.
+  {
+    const doc = (f) => require('fs').readFileSync(path.join(REPO, f), 'utf8')
+      .split('\n').filter((l) => !/^\s*(\*|\/\/|\/\*)/.test(l)).join('\n');
+
+    const sheet = doc('components/library/LibrarySheet.tsx');
+    ca('CA 42 · đường XUẤT thật (`LibrarySheet`) có gọi `kyIdfc` trước khi ghi tệp', true,
+      /import \{[^}]*kyIdfc[^}]*\} from '@\/lib\/cad\/idfc-integrity'/.test(sheet) &&
+      /await kyIdfc\(/.test(sheet));
+    ca('CA 43 · và Blob ghi ra là chuỗi ĐÃ KÝ, không phải chuỗi gốc', true,
+      /new Blob\(\[daKy\]/.test(sheet) && !/new Blob\(\[json\]/.test(sheet));
+    ca('CA 44 · ký hỏng KHÔNG im lặng — người dùng được báo là tệp không có dấu', true,
+      /coDau/.test(sheet) && /KHÔNG đóng được dấu/.test(sheet));
+
+    const ingest = doc('components/library/BulkIngestMode.tsx');
+    ca('CA 45 · đường NHẬP thật (`BulkIngestMode`) có gọi `kiemToanVenIdfc`', true,
+      /import \{[^}]*kiemToanVenIdfc[^}]*\} from '@\/lib\/cad\/idfc-integrity'/.test(ingest) &&
+      /await kiemToanVenIdfc\(/.test(ingest));
+    ca('CA 46 · cảnh báo toàn vẹn TÁCH khỏi lỗi nhập (`canhBao` ≠ `error`) — không gộp hai nghĩa',
+      true, /canhBao\?: string\[\]/.test(ingest) && /f\.canhBao\?\.length/.test(ingest));
+    ca('CA 47 · và cảnh báo KHÔNG chặn nhập — tệp lệch dấu vẫn vào được kho', true,
+      /idfc: parsed, \.\.\.\(toanVen\?\.canhBao\.length/.test(ingest));
+  }
+
   // ── MỘT HỆ BĂM, KHÔNG HAI ─────────────────────────────────────────────────
   {
     const nguonIfpack = require('fs').readFileSync(path.join(REPO, 'lib/cad/ifpack.ts'), 'utf8');

@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { UploadCloud, FileText, Box, X } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { pushLibraryToast } from './LibraryToast';
+import { kiemToanVenIdfc } from '@/lib/cad/idfc-integrity';
 import { importIdfc, lastImportIdfcError, type ParsedIdfc } from '@/lib/cad/idfc';
 import { saveIdfcItems } from '@/lib/library/idfc-store';
 
@@ -18,6 +19,10 @@ interface Dropped {
    * khác giữ hành vi cũ (chỉ nhận diện loại). */
   idfc?: ParsedIdfc;
   error?: string;
+  /** IDFC-MANIFEST-INTEGRITY-001 (26/08) — cảnh báo toàn vẹn. Khác `error` một cách CÓ CHỦ Ý:
+   * `error` = không nhập được; `canhBao` = **nhập được nhưng đừng tin ngay**. Gộp hai thứ này
+   * là hoặc chặn oan một tệp còn cứu được, hoặc im lặng cho qua một tệp đã bị sửa. */
+  canhBao?: string[];
 }
 
 const KIND_BY_EXT: Record<string, string> = {
@@ -65,12 +70,17 @@ export function BulkIngestMode({ onDone }: { onDone: () => void }) {
       };
       if (base.kind === 'Cấu kiện IF') {
         // đọc + parse ngay — lỗi báo tại dòng, kèm lý do thật từ importIdfc
-        void f.text().then((txt) => {
+        void f.text().then(async (txt) => {
           const parsed = importIdfc(txt);
+          // IDFC-MANIFEST-INTEGRITY-001 — kiểm dấu toàn vẹn. Ngữ nghĩa CẢNH BÁO, KHÔNG CHẶN
+          // (cùng lối `restoreIfpack`): tệp lệch dấu vẫn nhập được, nhưng người dùng PHẢI biết.
+          // Tệp chưa ký (`khong-co`) thì im lặng — mọi `.idfc` sinh trước lát này đều thế, báo
+          // động ở đó là dạy người dùng bỏ qua cảnh báo.
+          const toanVen = parsed ? await kiemToanVenIdfc(txt) : null;
           setFiles((prev) => [
             ...prev,
             parsed
-              ? { ...base, idfc: parsed }
+              ? { ...base, idfc: parsed, ...(toanVen?.canhBao.length ? { canhBao: toanVen.canhBao } : {}) }
               : { ...base, error: lastImportIdfcError() ?? tr('File .idfc không đọc được.', 'Cannot read this .idfc file.') },
           ]);
         });
@@ -128,6 +138,13 @@ export function BulkIngestMode({ onDone }: { onDone: () => void }) {
                     ✓ {f.idfc.meta.name} · {f.idfc.meta.code}
                   </span>
                 )}
+                {f.canhBao?.length ? (
+                  // Cảnh báo toàn vẹn — KHÔNG chặn nhập, nhưng phải đọc được ngay tại dòng, cùng
+                  // chỗ với lỗi. Đặt ở nơi khác là đặt ở nơi không ai nhìn.
+                  <span style={{ color: 'var(--warning)', marginLeft: 6, fontSize: 11 }}>
+                    ⚠ {f.canhBao.join(' ')}
+                  </span>
+                ) : null}
                 {f.error && (
                   <span style={{ color: 'var(--warning)', marginLeft: 6, fontSize: 11 }}>{f.error}</span>
                 )}
