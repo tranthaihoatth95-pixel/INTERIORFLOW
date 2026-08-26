@@ -215,7 +215,7 @@ export function WarpCornersModal() {
             className="flex max-h-full w-[min(96vw,1080px)] flex-col overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--card)] shadow-2xl"
           >
             <div className="flex items-center gap-2 border-b border-[var(--border)] px-4 py-2.5">
-              <Frame size={15} className="text-[var(--accent)]" />
+              <Frame size={20} className="text-[var(--accent)]" />
               <span className="flex-1 text-sm font-medium text-[var(--t1)]">
                 Kéo 4 góc phối cảnh · Perspective Warp
               </span>
@@ -257,7 +257,7 @@ export function WarpCornersModal() {
                     onClick={() => setCorners(DEFAULT_CORNERS)}
                     className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2.5 py-1.5 text-[11px] text-[var(--t3)] hover:bg-[var(--hover)]"
                   >
-                    <RotateCcw size={12} />
+                    <RotateCcw size={16} />
                     Về mặc định
                   </motion.button>
                   <motion.button
@@ -265,7 +265,7 @@ export function WarpCornersModal() {
                     onClick={save}
                     className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent)] px-3.5 py-2 text-[11px] font-medium text-white"
                   >
-                    <Check size={13} />
+                    <Check size={18} />
                     Dùng 4 góc này
                   </motion.button>
                 </div>

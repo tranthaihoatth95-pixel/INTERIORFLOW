@@ -98,10 +98,21 @@ export default function CadStageScreen() {
   // chúng thật sự không có "tên", suy tên là bịa).
   // CHINH-5 (SPEC-PANEL-ROLLOUT §3 hàng "Lớp: Tường"): sub = CHẤM MÀU lớp + TÊN lớp (học Figma),
   // không nhãn "Lớp:", không lộ id thô (`l-wall`) như bản đầu.
+  // Bug D4 (QA 19/08) — PHÒNG THỦ nơi đọc: chỉ đếm/hiện id CÒN SỐNG trong doc. Nguồn chính đã
+  // chặn ở store (removeLayer lọc selection), nhưng mọi mutation tương lai làm chết id mà quên
+  // dọn selection sẽ không còn dựng được Inspector ma "N đối tượng" trên bản vẽ rỗng nữa
+  // (CadInspectorPages đã tự gate `!selected.length → null`, đây là gate cho VỎ AppShell + title).
+  const aliveSelection = useMemo(() => {
+    if (selection.length === 0) return selection;
+    const ids = new Set(doc.entities.map((e) => e.id));
+    const alive = selection.filter((id) => ids.has(id));
+    return alive.length === selection.length ? selection : alive;
+  }, [selection, doc.entities]);
+
   const { title, sub } = useMemo(() => {
-    if (selection.length === 0) return { title: undefined, sub: undefined };
-    if (selection.length > 1) return { title: tr(`${selection.length} đối tượng`, `${selection.length} objects`), sub: undefined };
-    const e = doc.entities.find((x) => x.id === selection[0]);
+    if (aliveSelection.length === 0) return { title: undefined, sub: undefined };
+    if (aliveSelection.length > 1) return { title: tr(`${aliveSelection.length} đối tượng`, `${aliveSelection.length} objects`), sub: undefined };
+    const e = doc.entities.find((x) => x.id === aliveSelection[0]);
     const layer = e ? doc.layers.find((l) => l.id === e.layer) : undefined;
     return {
       title: e ? (e.type === 'room' ? e.name : tr(entityTypeLabel(e.type), e.type)) : undefined,
@@ -112,7 +123,7 @@ export default function CadStageScreen() {
         </span>
       ) : undefined,
     };
-  }, [selection, doc.entities, doc.layers, tr]);
+  }, [aliveSelection, doc.entities, doc.layers, tr]);
 
   return (
     <AppShell
@@ -124,10 +135,10 @@ export default function CadStageScreen() {
       onNavigatorAdd={addLayer}
       /* CHINH-3 (SPEC-PANEL-ROLLOUT-IDF §2c): ruột Inspector = dải trang Rhino + rollout,
          thay SelectionInfoPanel chồng 4 box dọc. Gate chỉ-hiện-khi-chọn giữ nguyên. */
-      inspector={selection.length > 0 ? <CadInspectorPages /> : undefined}
+      inspector={aliveSelection.length > 0 ? <CadInspectorPages /> : undefined}
       inspectorTitle={title}
       inspectorSub={sub}
-      onCloseInspector={selection.length > 0 ? clearSelection : undefined}
+      onCloseInspector={aliveSelection.length > 0 ? clearSelection : undefined}
       /* Ổ ⑤ Toolbelt — dock kính gộp CadToolbar + CadTouchDock, hết đè Inspector (việc a
          hàng đợi CHINH, xem đầu CadToolbelt.tsx). */
       toolbelt={<CadToolbelt />}

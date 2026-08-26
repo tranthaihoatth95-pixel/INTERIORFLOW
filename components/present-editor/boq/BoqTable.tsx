@@ -209,14 +209,14 @@ export function BoqTable({ groups, errors, totalAmount, projectId, specExtra, on
               background: 'var(--field)', color: 'var(--t3)', cursor: 'pointer', flexShrink: 0,
             }}
           >
-            <RotateCcw size={11} />
+            <RotateCcw size={14} />
           </button>
         )}
         {/* Cảnh báo máy-vs-tay (mock `.drift`, §5) — LUÔN hiện (không chỉ khi hover), đúng
             `CHOT-TACH-AI-VA-CHINH-TAY`: tách bằng DẤU + TRUY VẾT, không giấu sau title/tooltip. */}
         {ov && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginLeft: 6, fontSize: 9.5, color: 'var(--warning)', flexShrink: 0 }}>
-            <AlertTriangle size={10} />
+            <AlertTriangle size={14} />
             {tr(`máy ${field === 'm2' ? fmtM2(ov.machineValue) : fmtVnd(ov.machineValue)}`, `model ${field === 'm2' ? fmtM2(ov.machineValue) : fmtVnd(ov.machineValue)}`)}
           </span>
         )}
@@ -272,7 +272,7 @@ export function BoqTable({ groups, errors, totalAmount, projectId, specExtra, on
                 onClick={() => setAddColOpen((v) => !v)}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: 0, background: 'transparent', color: 'var(--t4)', font: 'inherit', fontWeight: 600, fontSize: 11, cursor: 'pointer', padding: 0 }}
               >
-                <Plus size={13} /> {tr('Cột', 'Column')}
+                <Plus size={16} /> {tr('Cột', 'Column')}
               </button>
               {addColOpen && (
                 <div
@@ -308,7 +308,7 @@ export function BoqTable({ groups, errors, totalAmount, projectId, specExtra, on
                         opacity: customCols.length >= BOQ_CUSTOM_COLUMN_CAP ? 0.5 : 1,
                       }}
                     >
-                      <Icon size={13} style={{ color: 'var(--t4)', flexShrink: 0 }} />
+                      <Icon size={16} style={{ color: 'var(--t4)', flexShrink: 0 }} />
                       {label}
                     </button>
                   ))}

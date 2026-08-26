@@ -25,7 +25,7 @@ export function AppearanceCard(_props: { wallpaper: WallpaperId; onPickWallpaper
 
   return (
     <div className="card">
-      <h3><SunMoon size={15} /> {tr('Giao diện', 'Appearance')}</h3>
+      <h3><SunMoon size={14} /> {tr('Giao diện', 'Appearance')}</h3>
       <div className="hint">{tr('Theme áp cho CẢ APP · màu thương hiệu dự án nằm ở Brand Kit', 'Theme applies to the WHOLE app · project brand color lives in the Brand Kit')}</div>
 
       <div className="thgrid">
@@ -35,7 +35,7 @@ export function AppearanceCard(_props: { wallpaper: WallpaperId; onPickWallpaper
             <button type="button" key={t.id} className={sel ? 'th sel' : 'th'} onClick={() => setThemePref(t.id)}>
               <div className="prev" style={{ background: t.preview }}>
                 <div className="mb" style={{ background: t.inner, border: t.id === 'light' ? '1px solid #e4e1db' : undefined }} />
-                {sel && <span className="tick"><Check size={10} /></span>}
+                {sel && <span className="tick"><Check size={14} /></span>}
               </div>
               <div className="lb">{tr(t.label[0], t.label[1])}</div>
             </button>

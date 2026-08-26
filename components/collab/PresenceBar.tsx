@@ -47,8 +47,8 @@ const MEMBERS_POLL_MS = 30_000; // roster đổi chậm — không cần tần s
 export function PresenceBar() {
   const others = useCollabStore((s) => s.others);
   const meId = useCollabStore((s) => s.meId);
-  const meName = useCollabStore((s) => s.meName);
-  const meColor = useCollabStore((s) => s.meColor);
+  // `meName`/`meColor` ĐÃ GỠ 22/08 — chúng chỉ phục vụ ô "(bạn)" trong dãy hiện diện, mà ô đó
+  // nay không vẽ nữa (Hồ sơ thuộc cụm phải-trên của vỏ app). Giữ lại là nuôi hai đăng ký store chết.
   const currentProjectId = useFlowStore((s) => s.currentProjectId);
   const tr = useT();
 
@@ -84,10 +84,18 @@ export function PresenceBar() {
   // sống (online=false) — khử trùng theo userId, cursor sống ưu tiên (tên/màu tươi hơn roster).
   const seen = new Set<string>();
   const people: Person[] = [];
-  if (meId) {
-    people.push({ userId: meId, name: `${meName || 'Bạn'} (bạn)`, color: meColor, online: true });
-    seen.add(meId);
-  }
+  /* 🔴 22/08 — THÔI VẼ CHÍNH MÌNH TRONG DÃY HIỆN DIỆN (hotfix trùng ảnh đại diện).
+     Bản cũ đẩy `meId` vào đầu dãy với nhãn "(bạn)". Mà tấm này neo `right-4 top-4` của canvas,
+     tức NGAY DƯỚI ảnh đại diện tài khoản ở cụm phải-trên của vỏ app ⇒ mặt người dùng hiện HAI
+     LẦN trên cùng một khung hình, một lần là Hồ sơ, một lần là "người đang ở đây".
+     RANH GIỚI SỞ HỮU (Hoà chốt 22/08): **Hồ sơ có ĐÚNG MỘT chủ — cụm phải-trên của vỏ app**
+     (`CumPhaiTren.tsx`, cửa duy nhất tới Tài khoản/Cài đặt). Hiện diện trả lời câu KHÁC:
+     *"còn AI NỮA đang ở đây"* ⇒ theo định nghĩa nó KHÔNG chứa mình.
+     Chuẩn này KHÔNG mới trong repo — `CumPhaiTren.tsx:124` đã lọc `o.userId !== meId` từ trước;
+     tấm này là chỗ DUY NHẤT còn làm khác. Nay hai nơi cùng một luật.
+     ⚠️ `meId` vẫn dùng ở `onlineIds`/`invitable` bên dưới (lọc người có thể mời) — chỉ bỏ khỏi
+     DÃY VẼ, không bỏ khỏi logic. */
+  if (meId) seen.add(meId);
   for (const o of others) {
     if (seen.has(o.userId)) continue;
     seen.add(o.userId);
@@ -152,7 +160,7 @@ export function PresenceBar() {
           title={tr('Thêm thành viên vào dự án', 'Add a member to this project')}
           className="ml-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full border border-dashed border-[var(--border)] text-[var(--t4)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
         >
-          <UserPlus size={13} />
+          <UserPlus size={16} />
         </button>
       )}
 

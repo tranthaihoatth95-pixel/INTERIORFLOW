@@ -633,5 +633,28 @@ console.log('\n[22] entity trùng id → chỉ tính 1 lần + báo rõ (trướ
     okRes.rows[0]?.qty === 18 && !okRes.errors.some((x) => x.reason === 'invalid-geometry' && x.message.includes('id TRÙNG')));
 }
 
+/* ═══ [W0.2 19/08] BẤT BIẾN NAMESPACE — `specId` (tên đúng) LUÔN BẰNG `matId` (alias cũ) ═══ */
+console.log('\n[W0.2] rows/errors mang specId === matId (cả area lẫn count, cả nhánh lỗi)');
+{
+  const SAN2: MaterialSpecLite = { id: 'spec-w02-san', name: 'Sàn W0.2', vendor: null, sku: null, unit: 'm2', priceVnd: 100_000, wastagePercent: null };
+  const GHE2: MaterialSpecLite = { id: 'spec-w02-ghe', name: 'Ghế W0.2', vendor: null, sku: null, unit: 'cai', priceVnd: 50_000, wastagePercent: null };
+  const res = computeBoq(
+    docWith(
+      rectHatch(3000, 3000, { specId: SAN2.id }),
+      blockItem({ specId: GHE2.id }),
+      rectHatch(3000, 3000, { specId: 'spec-w02-khong-ton-tai' }, { x: 20_000, y: 20_000 }),
+    ),
+    [SAN2, GHE2],
+  );
+  ok('mọi row: specId === matId, không undefined',
+    res.rows.length === 2 && res.rows.every((r) => r.specId && r.specId === r.matId));
+  ok('mọi error có matId đều có specId cùng giá trị',
+    res.errors.filter((e) => e.matId !== undefined).length > 0 &&
+    res.errors.every((e) => e.matId === undefined || e.specId === e.matId));
+  // row không có spec (spec-not-found) KHÔNG vỡ: không sinh row, lỗi vẫn mang đủ 2 field
+  const nf = res.errors.find((e) => e.reason === 'spec-not-found');
+  ok('spec-not-found: specId === matId === mã lạ', nf?.specId === 'spec-w02-khong-ton-tai' && nf?.matId === nf?.specId);
+}
+
 console.log(`\nKẾT QUẢ: ${pass} pass, ${fail} fail`);
 if (fail) process.exit(1);

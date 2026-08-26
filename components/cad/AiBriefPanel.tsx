@@ -372,9 +372,9 @@ export default function AiBriefPanel({ onClose }: Props) {
   };
 
   const statusGlyph = (st: DossierItem['status']) => {
-    if (st === 'ok') return <Check size={12} color="var(--success)" />;
-    if (st === 'warn') return <AlertTriangle size={12} color="var(--warning)" />;
-    return <X size={12} color="var(--danger)" />;
+    if (st === 'ok') return <Check size={14} color="var(--success)" />;
+    if (st === 'warn') return <AlertTriangle size={14} color="var(--warning)" />;
+    return <X size={14} color="var(--danger)" />;
   };
 
   return (
@@ -395,7 +395,7 @@ export default function AiBriefPanel({ onClose }: Props) {
         {/* (0a, 31/07) thông báo bộ học Gu bắt đầu lại cho tài khoản này — 1 lần, tự đóng được */}
         {guFreshStart && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid var(--accent-ring)', borderRadius: 10, background: 'var(--accent-soft)', padding: '7px 11px', marginBottom: 8 }}>
-            <Sparkles size={12} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+            <Sparkles size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
             <span style={{ fontSize: 10.5, color: 'var(--t2)', lineHeight: 1.4, flex: 1 }}>
               Máy học &quot;gu&quot; bắt đầu lại cho tài khoản này — dữ liệu học cũ trên máy này (nếu có) thuộc
               người dùng khác, không mang sang.
@@ -406,7 +406,7 @@ export default function AiBriefPanel({ onClose }: Props) {
               title="Đã hiểu"
               style={{ display: 'flex', border: 'none', background: 'transparent', color: 'var(--t3)', cursor: 'pointer', flexShrink: 0 }}
             >
-              <X size={12} />
+              <X size={14} />
             </button>
           </div>
         )}
@@ -415,10 +415,10 @@ export default function AiBriefPanel({ onClose }: Props) {
         <label style={label}>1 · Hiện trạng (layout có sẵn để bố trí vào)</label>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <button type="button" onClick={() => requestImport('dxf')} style={smallBtn} title="Mở hộp chọn file DXF của CadEditor — THAY THẾ bản vẽ hiện tại bằng hồ sơ import">
-            <FolderOpen size={12} /> Import DXF
+            <FolderOpen size={16} /> Import DXF
           </button>
           <button type="button" onClick={() => requestImport('dwg')} style={smallBtn} title="Mở hộp chọn file DWG của CadEditor (parse trong Web Worker) — THAY THẾ bản vẽ hiện tại">
-            <FolderOpen size={12} /> Import DWG
+            <FolderOpen size={16} /> Import DWG
           </button>
           <button
             type="button"
@@ -427,7 +427,7 @@ export default function AiBriefPanel({ onClose }: Props) {
             style={{ ...smallBtn, ...(baselineOn ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : null), opacity: hasExisting ? 1 : 0.5 }}
             title={hasExisting ? 'Coi bản vẽ đang mở trên canvas là hiện trạng' : 'Bản vẽ đang trống — import hoặc vẽ trước'}
           >
-            <MousePointerClick size={12} /> Dùng bản vẽ hiện tại ({doc.entities.length} đối tượng)
+            <MousePointerClick size={16} /> Dùng bản vẽ hiện tại ({doc.entities.length} đối tượng)
           </button>
         </div>
         {!baselineOn && (
@@ -472,7 +472,7 @@ export default function AiBriefPanel({ onClose }: Props) {
           style={inputStyle}
         />
         <button type="button" onClick={runQuick} disabled={!quickDesc.trim()} style={{ ...smallBtn, marginTop: 6 }} title="Vẽ ngay 1 phương án (không qua Kiểm chuẩn)">
-          <Wand2 size={12} /> Vẽ nhanh
+          <Wand2 size={16} /> Vẽ nhanh
         </button>
 
         <div style={{ borderTop: '1px solid var(--border)', margin: '12px 0' }} />
@@ -500,7 +500,7 @@ export default function AiBriefPanel({ onClose }: Props) {
           style={{ ...smallBtn, marginBottom: 6, opacity: briefFileBusy ? 0.6 : 1 }}
           title="Nạp đề bài từ tệp .pdf/.txt/.md — trích chữ rồi đổ vào ô bên dưới để bạn đọc/sửa, KHÔNG tự chạy"
         >
-          {briefFileBusy ? <Loader2 size={12} className="pe-spin" /> : <FileText size={12} />}
+          {briefFileBusy ? <Loader2 size={16} className="pe-spin" /> : <FileText size={16} />}
           {briefFileBusy ? 'Đang đọc tệp…' : 'Nạp đề bài từ tệp'}
         </button>
         {briefFileNotice && (
@@ -546,7 +546,7 @@ export default function AiBriefPanel({ onClose }: Props) {
           disabled={!brief.trim() && !quickDesc.trim()}
           style={{ ...smallBtn, marginTop: 10, background: 'var(--accent)', color: '#fff', border: 'none' }}
         >
-          <Sparkles size={13} /> {dossier?.canLayoutInSitu ? 'Tạo 3 phương án VÀO hiện trạng + kiểm chuẩn' : 'Tạo 3 phương án + kiểm chuẩn'}
+          <Sparkles size={16} /> {dossier?.canLayoutInSitu ? 'Tạo 3 phương án VÀO hiện trạng + kiểm chuẩn' : 'Tạo 3 phương án + kiểm chuẩn'}
         </button>
 
         {results && (
@@ -574,10 +574,10 @@ export default function AiBriefPanel({ onClose }: Props) {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4, justifyContent: 'center' }}>
                     <button type="button" onClick={() => accept(s, results)} title="Nhận — áp bố cục + dạy máy (layout được dùng thì ghi nhớ)" style={miniBtn}>
-                      <ThumbsUp size={13} />
+                      <ThumbsUp size={14} />
                     </button>
                     <button type="button" onClick={() => toggleReject(s.opt.id)} title={dimmed ? 'Bỏ đánh dấu' : 'Bỏ phương án này'} style={{ ...miniBtn, ...(dimmed ? { color: 'var(--accent)' } : null) }}>
-                      <ThumbsDown size={13} />
+                      <ThumbsDown size={14} />
                     </button>
                   </div>
                 </div>

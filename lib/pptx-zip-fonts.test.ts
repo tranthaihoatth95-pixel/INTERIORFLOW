@@ -101,7 +101,12 @@ async function toZip(blob: Blob): Promise<JSZip> {
     const rid = pres.match(/<p:regular r:id="(rId\d+)"\/>/)?.[1];
     ok('r:id khớp một Relationship có thật', Boolean(rid) && rels.includes(`Id="${rid}"`));
 
-    const outPath = join(tmpdir(), 'if-pptx-font-embed-test.pptx');
+    // 22/08 — TÊN DUY NHẤT THEO TIẾN TRÌNH. Trước đây là tên CỐ ĐỊNH trong tmpdir dùng chung:
+    // hai lượt `npm test` chồng nhau (phiên song song · e2e chạy cùng lúc) sẽ ghi đè lên nhau và
+    // gây đỏ NGẪU NHIÊN — đúng loại lỗi chớp tắt vừa gặp một lần rồi không tái hiện được.
+    // Không dùng Date.now() (kém duy nhất khi hai tiến trình khởi cùng mili-giây); pid + ngẫu nhiên
+    // ngắn là đủ và không phụ thuộc đồng hồ.
+    const outPath = join(tmpdir(), `if-pptx-font-embed-test-${process.pid}-${Math.random().toString(36).slice(2, 8)}.pptx`);
     writeFileSync(outPath, Buffer.from(await blob.arrayBuffer()));
     console.log(`  → file để soi tay: ${outPath}`);
   }

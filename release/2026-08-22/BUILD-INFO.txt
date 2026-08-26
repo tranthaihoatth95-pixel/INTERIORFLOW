@@ -1,0 +1,50 @@
+InteriorFlow — Release Build Info
+=================================
+Product          InteriorFlow
+Version          0.1.0
+Bundle ID        com.interiorflow.app
+Build date       2026-08-22 18:21 (+07)
+Platform         macOS, arm64 (Apple Silicon)
+Electron         33.4.11
+electron-builder 25.1.8
+Next.js          14.2.35
+Node (build)     v20.18.1
+Next BUILD_ID    aY7nxzHdPS5uRDrLTkIry
+Git HEAD         c7f3ac8657fe924d13f273d51dfb2272b5c8c15d
+Git branch       main
+Built from       working tree (not a clean checkout) — see KNOWN-LIMITATIONS.md
+Signed           NO  (mac.identity = null, no credentials available)
+Notarized        NO
+asar             disabled (required for Prisma/SQLite + next start runtime)
+DMG size         354133978 bytes
+SHA-256          b38b52b8fa174e0b73765b104da6f537c7554a22dbc7577c67c0977db3c3e964
+
+Runtime model
+-------------
+The app spawns a local Next.js production server on 127.0.0.1:3777 (probes upward
+if busy) and points a BrowserWindow at it. No dev server, no terminal required.
+On startup it runs 'prisma db push' against a SQLite DB in userData; if that is
+refused due to a data-loss warning it backs up dev.db (+wal/journal/shm) and
+retries once with --accept-data-loss, then reports honestly if it still fails.
+
+Verified at build time
+----------------------
+next build                exit 0
+electron-builder --mac    exit 0
+npm test                  exit 0
+soi:frontier              exit 0
+soi:hinh-hoc              exit 0
+soi:tu-dien               exit 0
+soi:contract              exit 0
+soi:visual-source         exit 0
+soi:cam-dien              exit 0
+soi:thao-tac              exit 1  (2 known large-debt rules — see RELEASE-DEBT.md)
+
+Verified on the packaged app
+----------------------------
+Launch                    OK, server up in ~10s
+Startup DB migration      OK, backup written, matId column created
+Routes 200                / /login /files /library /library/gallery /materials
+                          /colors /tasks /projects /settings /workhub  (11/11)
+/api/health               200
+/api/projects             401 (auth correctly enforced, no data leak)

@@ -480,7 +480,7 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
   if (user === undefined) {
     return (
       <div className="grid h-[100dvh] place-items-center bg-[var(--bg)]">
-        <Loader2 size={22} className="animate-spin text-[var(--t4)]" />
+        <Loader2 size={20} className="animate-spin text-[var(--t4)]" />
       </div>
     );
   }
@@ -493,7 +493,7 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
   if (user === null && !introSeen) {
     return (
       <div className="grid h-[100dvh] place-items-center bg-[var(--bg)]">
-        <Loader2 size={22} className="animate-spin text-[var(--t4)]" />
+        <Loader2 size={20} className="animate-spin text-[var(--t4)]" />
       </div>
     );
   }

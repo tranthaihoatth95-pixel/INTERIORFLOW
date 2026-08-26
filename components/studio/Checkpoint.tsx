@@ -151,13 +151,13 @@ export function Checkpoint(props: CheckpointProps) {
         <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
           {props.onCancel ? (
             <button type="button" onClick={props.onCancel} style={btnGhost}>
-              <X size={13} /> {tr('Huỷ', 'Cancel')}
+              <X size={18} /> {tr('Huỷ', 'Cancel')}
             </button>
           ) : (
             // Luật §9: không có đường huỷ thì NÓI THẲNG, không để nút giả.
             <Tooltip label={tr('Bước này chưa huỷ giữa chừng được — chờ chạy xong rồi bấm Làm lại.', 'This step cannot be cancelled midway — wait, then use Retry.')}>
               <button type="button" disabled style={{ ...btnGhost, ...btnDisabled }}>
-                <X size={13} /> {tr('Huỷ', 'Cancel')}
+                <X size={18} /> {tr('Huỷ', 'Cancel')}
               </button>
             </Tooltip>
           )}
@@ -204,8 +204,10 @@ export function Checkpoint(props: CheckpointProps) {
       {/* ── KS1 tham số + KS2 seed ── */}
       {(props.params?.length || seed !== undefined) && (
         <dl style={{ margin: '10px 0 0', display: 'grid', gap: 4 }}>
-          {props.params?.map((p) => (
-            <div key={p.label} style={rowKV}>
+          {props.params?.map((p, i) => (
+            // key kèm chỉ số: hai hàng CÙNG NHÃN là ca thật (ClusterPanel truyền param "Số chỗ"
+            // của spec LẪN hàng tính từ result) — key theo label trần là React trùng key.
+            <div key={`${p.label}#${i}`} style={rowKV}>
               <dt style={kvKey}>{p.label}</dt>
               <dd style={kvVal}>{p.value}</dd>
             </div>
@@ -262,7 +264,7 @@ export function Checkpoint(props: CheckpointProps) {
                         color: it.why ? 'var(--t4)' : 'var(--t5)',
                       }}
                     >
-                      <Info size={12} />
+                      <Info size={16} />
                     </span>
                   </Tooltip>
                 </label>
@@ -274,7 +276,7 @@ export function Checkpoint(props: CheckpointProps) {
 
       {/* ── KS4 lùi về đâu ── */}
       <p style={{ marginTop: 10, fontSize: 11, color: 'var(--t4)', display: 'flex', gap: 5 }}>
-        <RotateCcw size={11} style={{ flexShrink: 0, marginTop: 2 }} />
+        <RotateCcw size={14} style={{ flexShrink: 0, marginTop: 2 }} />
         <span>{tr('Không nhận thì quay về: ', 'Discarding returns to: ')}{undoLabel}</span>
       </p>
 
@@ -282,36 +284,36 @@ export function Checkpoint(props: CheckpointProps) {
       <footer style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {gate.enabled ? (
           <button type="button" onClick={() => props.onAccept?.(selectedIds(items))} style={btnPrimary}>
-            <Check size={13} /> {tr(`Nhận ${nSel} phần`, `Accept ${nSel}`)}
+            <Check size={18} /> {tr(`Nhận ${nSel} phần`, `Accept ${nSel}`)}
           </button>
         ) : (
           <Tooltip label={gate.reason ?? ''}>
             <button type="button" disabled style={{ ...btnPrimary, ...btnDisabled }}>
-              <Check size={13} /> {tr('Nhận', 'Accept')}
+              <Check size={18} /> {tr('Nhận', 'Accept')}
             </button>
           </Tooltip>
         )}
 
         {props.onRetry ? (
           <button type="button" onClick={props.onRetry} style={btnGhost}>
-            <RotateCcw size={13} /> {tr('Làm lại', 'Retry')}
+            <RotateCcw size={18} /> {tr('Làm lại', 'Retry')}
           </button>
         ) : (
           <Tooltip label={tr('Bước này chưa chạy lại tại chỗ được — đóng rồi chạy lại từ đầu.', 'Cannot retry in place yet — close and run again.')}>
             <button type="button" disabled style={{ ...btnGhost, ...btnDisabled }}>
-              <RotateCcw size={13} /> {tr('Làm lại', 'Retry')}
+              <RotateCcw size={18} /> {tr('Làm lại', 'Retry')}
             </button>
           </Tooltip>
         )}
 
         {props.onEditParams ? (
           <button type="button" onClick={props.onEditParams} style={btnGhost}>
-            <SlidersHorizontal size={13} /> {tr('Sửa tham số rồi làm lại', 'Edit settings & retry')}
+            <SlidersHorizontal size={18} /> {tr('Sửa tham số rồi làm lại', 'Edit settings & retry')}
           </button>
         ) : (
           <Tooltip label={tr('Bước này chưa có bảng tham số sửa được.', 'This step has no editable settings yet.')}>
             <button type="button" disabled style={{ ...btnGhost, ...btnDisabled }}>
-              <SlidersHorizontal size={13} /> {tr('Sửa tham số rồi làm lại', 'Edit settings & retry')}
+              <SlidersHorizontal size={18} /> {tr('Sửa tham số rồi làm lại', 'Edit settings & retry')}
             </button>
           </Tooltip>
         )}
@@ -341,7 +343,7 @@ const btnBase: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 500,
   cursor: 'pointer',
-  transition: 'background 120ms ease-out, border-color 120ms ease-out',
+  transition: 'background var(--nhip-bam) ease-out, border-color var(--nhip-bam) ease-out',
 };
 
 const btnPrimary: React.CSSProperties = {

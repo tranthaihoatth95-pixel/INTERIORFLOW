@@ -9,7 +9,14 @@
  *
  * Chạy: node_modules/.bin/sucrase-node lib/cad/library-item-resolve.test.ts
  */
-import { resolveLibraryItem, normalizeKey, unresolvedMessage, DROPPABLE_ITEM_KINDS } from './library-item-resolve';
+import {
+  resolveLibraryItem,
+  normalizeKey,
+  unresolvedMessage,
+  idfcGeom2dOf,
+  idfcNoGeom2dMessage,
+  DROPPABLE_ITEM_KINDS,
+} from './library-item-resolve';
 import { itemsFor } from '../library/shelves';
 import type { LibraryManifest } from './block-library';
 
@@ -127,8 +134,110 @@ function testRealShelf() {
   ok('KHÔNG món nào khớp im lặng sang loại khác (mọi kết quả đều có id thật)',
     resolved.every((i) => {
       const r = resolveLibraryItem({ name: i.name, code: i.code, kind: i.kind }, MANIFEST)!;
-      return r.via === 'blockdef' ? !!r.def.id : !!r.meta.id;
+      // R8 thêm nhánh 'idfc' vào union — ở đây không truyền geom2d nên nhánh đó không thể xảy
+      // ra, nhưng narrowing phải khớp union đầy đủ (nhánh idfc coi geom2d là "id thật" của nó).
+      return r.via === 'blockdef' ? !!r.def.id : r.via === 'manifest' ? !!r.meta.id : !!r.geom2d;
     }));
+}
+
+/** R1 (19/08) — specId phải đi XUYÊN từ kệ tới kết quả resolve (rồi DropBridge gán vào entity).
+ * Bốn luật canh: có mã khớp → mang đúng ProductSpec.id · không nguồn nào → KHÔNG bịa ·
+ * specId đã chốt ở tầng UI (gán tay) THẮNG khớp mã · hai món khác mã không lây identity. */
+function testSpecIdThroughDrop() {
+  console.log('\n[7] R1 — specId đi xuyên đường thả');
+  const SPECS = [
+    { id: 'spec_sofa', sku: 'SOFA-3S' },
+    { id: 'spec_win', sku: 'WIN-SL-1800' },
+  ];
+
+  const a = resolveLibraryItem({ name: 'Sofa 3 chỗ', code: 'SOFA-3S', kind: 'furniture' }, MANIFEST, SPECS);
+  ok('món có mã khớp sku → specId = ProductSpec.id', a?.via === 'blockdef' && a.specId === 'spec_sofa');
+
+  const b = resolveLibraryItem({ name: 'Sofa 3 chỗ', code: 'SOFA-3S', kind: 'furniture' }, MANIFEST);
+  ok('không specs + không specId tầng UI → KHÔNG bịa (undefined)', !!b && b.specId === undefined);
+
+  const c = resolveLibraryItem(
+    { name: 'Sofa 3 chỗ', code: 'SOFA-3S', kind: 'furniture', specId: 'spec_gan_tay' },
+    MANIFEST,
+    SPECS,
+  );
+  ok('specId gán tay ở tầng UI THẮNG khớp mã tự động', c?.specId === 'spec_gan_tay');
+
+  const d = resolveLibraryItem({ name: 'Cửa sổ trượt', code: 'WIN-SL-1800', kind: 'block' }, MANIFEST, SPECS);
+  ok('hai món khác mã → specId khác nhau, không lây', d?.specId === 'spec_win' && d.specId !== a?.specId);
+
+  const e = resolveLibraryItem({ name: 'Sofa 3 chỗ', code: 'MA-KHONG-CO-TRONG-KHO', kind: 'furniture' }, MANIFEST, SPECS);
+  ok('mã không khớp kho spec → specId trống nhưng món VẪN thả được', !!e && e.specId === undefined);
+}
+
+/** R8 (19/08) — geom2d của `.idfc` phải có READER: món trong kho thả bằng hình CỦA CHÍNH NÓ,
+ * không đi vòng khớp-tên vào BLOCKS/manifest (UF-2 mắt đứt 2). Luật canh:
+ *   [a] có geom2d → via 'idfc', đúng prims của món, approximate=false (không phải khớp gần đúng);
+ *   [b] geom2d THẮNG khớp-tên (món trùng tên block kho vẫn ra hình của chính nó);
+ *   [c] geom2d ĐI TRƯỚC bộ lọc kind (ca `soft` → thumb 'fabric' không nằm DROPPABLE_ITEM_KINDS);
+ *   [d] specId R1 giữ nguyên chuỗi ưu tiên (gán tay > matchSpec > trống);
+ *   [e] không geom2d → hành vi CŨ y nguyên (fallback khớp-tên);
+ *   [f] idfcGeom2dOf rút đúng chỗ theo ruột: component.geom2d · material.symbol2d · loại khác/
+ *       prims rỗng → undefined.
+ */
+function testIdfcGeom2dReader() {
+  console.log('\n[8] R8 — geom2d reader: món .idfc thả bằng hình của chính nó');
+  const GEOM: import('./idfc').IdfcGeom2d = {
+    group: 'Phòng khách' as import('./shared-types').BlockGroup,
+    w: 800,
+    h: 600,
+    prims: [
+      { k: 'line', a: { x: -400, y: -300 }, b: { x: 400, y: -300 } },
+      { k: 'circle', c: { x: 0, y: 0 }, r: 100 },
+    ],
+  };
+
+  // [a] hình của chính món, exact
+  const a = resolveLibraryItem({ name: 'Ghế Lincoln', code: 'IDFC-GHE-01', kind: 'furniture' }, MANIFEST, undefined, GEOM);
+  ok('có geom2d → via idfc', a?.via === 'idfc');
+  ok('trả đúng prims của món (không phải hình kho khác)', a?.via === 'idfc' && a.geom2d.prims === GEOM.prims);
+  ok('không phải khớp gần đúng', a?.via === 'idfc' && a.approximate === false);
+  ok('khai thật không giữ danh tính BlockEntity', a?.via === 'idfc' && a.keepsIdentity === false);
+
+  // [b] thắng khớp-tên: tên trùng khít block kho ("Sofa 3 chỗ") vẫn phải ra hình CỦA MÓN
+  const b = resolveLibraryItem({ name: 'Sofa 3 chỗ', code: 'SOFA-3S', kind: 'furniture' }, MANIFEST, undefined, GEOM);
+  ok('trùng tên block kho vẫn ưu tiên geom2d của chính món', b?.via === 'idfc');
+
+  // [c] đi trước bộ lọc kind — .idfc kind soft hiện thumb 'fabric' (ngoài DROPPABLE_ITEM_KINDS)
+  ok("'fabric' vẫn KHÔNG nằm trong DROPPABLE_ITEM_KINDS (không nới danh sách chung)",
+    !(DROPPABLE_ITEM_KINDS as readonly string[]).includes('fabric'));
+  const c = resolveLibraryItem({ name: 'Rèm hai lớp', code: 'IDFC-REM-01', kind: 'fabric' }, MANIFEST, undefined, GEOM);
+  ok('kind fabric + geom2d → vẫn thả được (geom2d đứng trước bộ lọc)', c?.via === 'idfc');
+  const cKhongGeom = resolveLibraryItem({ name: 'Rèm hai lớp', code: 'IDFC-REM-01', kind: 'fabric' }, MANIFEST);
+  ok('kind fabric KHÔNG geom2d → bộ lọc vẫn chặn như cũ', cKhongGeom === null);
+
+  // [d] specId R1 nguyên chuỗi ưu tiên trên đường idfc
+  const SPECS = [{ id: 'spec_ghe', sku: 'IDFC-GHE-01' }];
+  const d1 = resolveLibraryItem({ name: 'Ghế Lincoln', code: 'IDFC-GHE-01', kind: 'furniture', specId: 'spec_gan_tay' }, MANIFEST, SPECS, GEOM);
+  ok('specId gán tay THẮNG matchSpec trên đường idfc', d1?.specId === 'spec_gan_tay');
+  const d2 = resolveLibraryItem({ name: 'Ghế Lincoln', code: 'IDFC-GHE-01', kind: 'furniture' }, MANIFEST, SPECS, GEOM);
+  ok('không gán tay → matchSpec theo mã', d2?.specId === 'spec_ghe');
+  const d3 = resolveLibraryItem({ name: 'Ghế Lincoln', code: 'IDFC-GHE-01', kind: 'furniture' }, MANIFEST, undefined, GEOM);
+  ok('không nguồn nào → KHÔNG bịa specId', !!d3 && d3.specId === undefined);
+
+  // [e] caller cũ (không truyền geom2d) — hành vi y nguyên R1
+  const e1 = resolveLibraryItem({ name: 'Sofa 3 chỗ', code: 'SOFA-3S', kind: 'furniture' }, MANIFEST);
+  ok('không truyền geom2d → vẫn đi đường BLOCKS như cũ', e1?.via === 'blockdef');
+  const e2 = resolveLibraryItem({ name: 'Ghế Lincoln', code: 'IDFC-GHE-01', kind: 'furniture' }, MANIFEST, undefined, null);
+  ok('geom2d null (idfc không có hình) → fallback khớp-tên, không khớp thì null thật',
+    e2 === null || e2.via !== 'idfc');
+
+  // [f] idfcGeom2dOf rút đúng chỗ theo ruột
+  ok('component → body.geom2d', idfcGeom2dOf({ type: 'component', geom2d: GEOM }) === GEOM);
+  ok('material có symbol2d → symbol2d', idfcGeom2dOf({ type: 'material', pbr: {}, symbol2d: GEOM }) === GEOM);
+  ok('material KHÔNG symbol2d → undefined', idfcGeom2dOf({ type: 'material', pbr: {} }) === undefined);
+  ok('video → undefined (không có hình 2D)', idfcGeom2dOf({ type: 'video', shots: [] }) === undefined);
+  ok('prims rỗng → undefined (không thả bản vẽ trống)',
+    idfcGeom2dOf({ type: 'component', geom2d: { ...GEOM, prims: [] } }) === undefined);
+
+  // câu báo nói thật cho .idfc không mang hình
+  ok('idfcNoGeom2dMessage nêu đúng nguyên nhân (không đổ "kho block thiếu món")',
+    idfcNoGeom2dMessage({ name: 'Video quay bếp', code: 'IDFC-VID-01' }).includes('không mang hình vẽ 2D'));
 }
 
 function main() {
@@ -139,6 +248,8 @@ function main() {
   testWrongMatchRegression();
   testMaterialsExcluded();
   testRealShelf();
+  testSpecIdThroughDrop();
+  testIdfcGeom2dReader();
   console.log(`\n${pass} ok, ${fail} fail`);
   if (fail > 0) process.exit(1);
 }

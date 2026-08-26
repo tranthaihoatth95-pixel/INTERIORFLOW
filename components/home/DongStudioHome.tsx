@@ -1,53 +1,59 @@
 'use client';
 
 /**
- * components/home/DongStudioHome.tsx — [marker: DongStudio] Home "Dòng Studio" — BENTO v3, MỘT
- * MÀN (phiếu docs/phieu-giao/home-bento-v3.md; Hoà chốt 13/08: "cuộn 2 trang không ổn — tổng
- * quan chia lưới BENTO, mỗi thẻ thiết kế như MỘT WIDGET ĐỘNG, thêm cử chỉ tương tác").
+ * components/home/DongStudioHome.tsx — [marker: DongStudio] HOME = **XƯỞNG CÁ NHÂN**, không phải
+ * dashboard.
  *
- * ĐẢO NGƯỢC v2: BỎ cuộn 2 trang (Trang 1 hero + Trang 2 lưới `md:grid-cols-2`) — v2 giữ NGUYÊN
- * nội dung/logic từng widget (chỉ port sang props mới khi cần), CHỈ đổi BỐ CỤC + THÊM ĐỘNG theo
- * phiếu ④. `ProjectSelect` (toggle carousel/grid, tìm kiếm, card dự án đợt 3, ngăn Nháp) mount
- * NGUYÊN VẸN trong ô A ở chế độ `bentoBox` (xem prop đó trong ProjectSelect.tsx — lý do carousel
- * 3D bị tắt trong ô A: đơn vị `vw` gắn viewport, vỡ hình khi nhét vào ô nhỏ).
+ * ⛔ 20/08 — BỐ CỤC CŨ HẾT HIỆU LỰC. Bản trước là lưới BENTO 12 cột × 3 hàng (v3/v4, phiếu
+ * `docs/phieu-giao/home-bento-v3.md` + `home-bento-v4.md`), ba nấc `mong`/`vua`/`bento`, mỗi ô
+ * một widget chia nhau chiều cao. Hoà chốt 20/08: *"TRƯỢT nếu Home vẫn trông như dashboard
+ * SaaS"* — **cấm lưới thẻ đều · cấm bức tường nút tính năng · cấm khung xương kiểu dashboard**.
+ * Ba nhánh lưới đó đã GỠ. `widgets/bento-layout.ts` GIỮ NGUYÊN (256 ca test) vì bản XẾP DỌC
+ * (màn hẹp) vẫn dùng nó cấp số ô.
  *
- * GU (chỉ đạo giữa phiên, `docs/nc/NC-GU-BENTRAN-PINTEREST-2026-08-13.md`) — Swiss/editorial:
- * hairline (đã có ở `WidgetCard`, không đổi), số ô mono nhỏ ("01 · Dự án"…) qua prop `index` của
- * `WidgetCard`, khoảng thở `--gap`, KHÔNG bo bubbly/icon hoạt hình.
+ * ⭐ BỐ CỤC ĐANG DÙNG — luật + test ở `./xuong-layout.ts`:
+ *   · NỀN (`SystemWallpaper`) là MẶT PHẲNG CHÍNH, mang tính CẤU TRÚC. Lề ngoài nở theo bề ngang
+ *     màn ⇒ màn càng rộng thì KHOẢNG ÂM càng lớn, không phải thẻ càng dãn.
+ *   · ĐÚNG MỘT TIÊU ĐIỂM (trái, ~1,62 phần): dải "Việc đang dở" (nếu có) + ô Dự án — mà ô Dự án
+ *     khi trống chính là **Ngày-Số-Không** ba cửa (`BatDauNgaySoKhong` bên trong `ProjectSelect`).
+ *   · ĐÚNG MỘT CỤM PHỤ (phải, 1 phần): MỘT cột xếp theo ưu tiên, mỗi mục cao ĐÚNG NỘI DUNG và
+ *     **cấm co** (`flex: 0 0 auto`); dài quá thì cột đó CUỘN, không nghiến mục nào.
+ *   · A → B → C là **một không gian đang lớn lên**: tiêu điểm không đổi chỗ, dữ liệu cập bến vào
+ *     đúng vùng đã có.
  *
- * MỘT INTERVAL TOÀN TRANG (ràng buộc ⑤ phiếu) — `minuteTick`/`eightSecTick` cùng cấp bởi MỘT
- * `setInterval` 1s (chỉ setState khi mốc thật sự đổi, tránh re-render vô ích mỗi giây). Ticker
- * (ô I) và pulse (ô C) là CSS `@keyframes` thuần — không đụng interval này (compositor, không
- * React state) — xem comment ở từng widget.
+ * `ProjectSelect` mount NGUYÊN VẸN trong tiêu điểm ở chế độ `bentoBox` (xem prop đó trong
+ * ProjectSelect.tsx — lý do carousel 3D bị tắt: đơn vị `vw` gắn viewport, vỡ hình trong ô nhỏ).
  *
- * "Widget trống tự ẩn, ô lân cận GIÃN chiếm chỗ" (④ mục giữ nguyên) — vì các ô nằm trên MỘT lưới
- * CSS Grid tường minh (không phải flow tự nhiên), lưới không tự "chảy" lấp lỗ như flexbox — các
- * biến `bArea/eArea/fAreaLeft/gArea/hArea/iArea` bên dưới tính lại `gridColumn/gridRow` CÓ ĐIỀU
- * KIỆN theo 6 cờ rỗng (C/D/E/G/H/I — chỉ ô A và ô B/F LUÔN có nội dung: dự án luôn có "+ Dự án
- * mới", chào luôn có, ghi chú luôn có ô gõ). Đây là quy tắc BOUNDED cho ĐÚNG 9 ô của phiếu này
- * (không phải thuật toán bento tổng quát — ghi rõ để phiên sau không tưởng nhầm là generic, xem
- * bảng đầy đủ ở báo cáo ⑦).
+ * GU (`docs/nc/NC-GU-BENTRAN-PINTEREST-2026-08-13.md`) — Swiss/editorial: hairline (ở
+ * `WidgetCard`, không đổi), số ô mono nhỏ ("01 · Dự án"…), khoảng thở `--gap`, KHÔNG bo bubbly.
+ *
+ * MỘT INTERVAL TOÀN TRANG (ràng buộc ⑤ phiếu cũ, GIỮ) — `minuteTick`/`eightSecTick` cùng cấp bởi
+ * MỘT `setInterval` 1s (chỉ setState khi mốc thật sự đổi). Ticker/pulse là CSS `@keyframes`
+ * thuần, không đụng interval này.
  */
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import { Info } from 'lucide-react';
+import { ChevronUp, ChevronDown, Pin, EyeOff } from 'lucide-react';
 import { ProjectSelect } from '@/components/ProjectSelect';
-import { LangToggle } from '@/components/LangToggle';
 import { useFlowStore } from '@/lib/store';
 import { useLang, useT } from '@/lib/i18n';
 import { buildGreeting } from '@/lib/home/greeting';
 import { useDisplayName } from './useDisplayName';
-import {
-  bentoFillPercent,
-  cellIndexMap,
-  duAnTileRows,
-  type HomeCellFlags,
-  type HomeLayout,
-} from './widgets/bento-layout';
+import { cellIndexMap, type HomeCellFlags } from './widgets/bento-layout';
+import { bocCucXuong, cotXuong, hangPhu, type MucPhu } from './xuong-layout';
+// 23/08 (HOME-SPEC) — Home là BỀ MẶT CÓ TRẠNG THÁI. Luật ở `nam-trang-thai.ts` (thuần, test
+// được); bày ra ở `BeMatHome.tsx`. Xem docstring hai tệp đó, không lặp lại ở đây.
+import BeMatHome from './BeMatHome';
+import type { MaWidget, TinHieu } from './nam-trang-thai';
+import { docDaQuayLai, ghiDaRoiHome } from './da-quay-lai';
+import { useHomeWidgetPrefs, applyWidgetPrefs } from '@/lib/home/widget-prefs';
+import { docCheDo, laBonDai, nhipDai, type CheDoHome } from '@/lib/home/che-do-home';
 import { shouldShowActivityGrid } from '@/lib/home/aggregate';
 import { pickWeeklyItem, pickWeeklyImages, isSeedLibraryAsset } from '@/lib/home/weekly-picks';
-import VitalsPill from './widgets/VitalsPill';
+// P-V 17/08 — VitalsPill dời lên AppChrome top bar (không import ở đây nữa).
 import LightClock from './widgets/LightClock';
+import LivingCanvas, { KeDuAn } from './LivingCanvas';
+import WidgetCard from './widgets/WidgetCard';
 import TodayStrip, { todayHasSignal } from './widgets/TodayStrip';
 import StageChart, { stageChartHasSignal } from './widgets/StageChart';
 import ContributionGrid from './widgets/ContributionGrid';
@@ -55,19 +61,31 @@ import QuickNotes from './widgets/QuickNotes';
 import NewsFeed, { newsHasSignal } from './widgets/NewsFeed';
 import UpcomingList, { upcomingHasSignal } from './widgets/UpcomingList';
 import WeeklyImage, { type WeeklyImageItem } from './widgets/WeeklyImage';
+// R5 (19/08) — widget "Việc đang dở" (P-N V2) trước nay MỒ CÔI (0 importer, chỉ được nhắc trong
+// comment HomeScreen). Mount vào Home sống tại đây; dữ liệu đọc qua `loadResume` (widget không
+// tự đụng localStorage — SSR-safe, đúng hợp đồng props của nó).
+import ResumeWork, { resumeWorkHasSignal } from './widgets/ResumeWork';
+import { buildResumeCard, daysAgoLabel, resumeHref } from './widgets/resume-card';
+import { loadResume, type ResumeState } from '@/lib/resume';
 import WeeklyMaterial, { type WeeklyMaterialItem } from './widgets/WeeklyMaterial';
 import SystemWallpaper from '@/components/wallpaper/SystemWallpaper';
+import { listGallery } from '@/lib/gallery';
 import type { HomeSummary } from './widgets/types';
 
 /** Pill kính nhỏ — cùng công thức nút đóng/mở của `VitalsPill.tsx` (button trạng thái đóng), tái
  * dùng cho nút "Chi tiết" (i) đứng cạnh nó trong cụm góc-phải-trên (④.4, xem cụm `fixed right-5
  * top-5` ở cuối component, ngay trước phần `return` render lưới). */
-const CORNER_PILL: CSSProperties = {
-  background: 'var(--nen-mo-header, var(--panel))',
-  border: '1px solid var(--border)',
-  backdropFilter: 'blur(var(--blur)) saturate(150%)',
-  WebkitBackdropFilter: 'blur(var(--blur)) saturate(150%)',
-  boxShadow: '0 10px 28px -14px rgba(0,0,0,0.4)',
+/** Nhãn song ngữ [vi, en] của từng mục cụm phụ — cho chip "Đã ẩn" + nhãn nút ẩn (LANE B,
+ * `lib/home/widget-prefs.ts`). Chỉ các mục TUỲ CHỌN cần nhãn — `chao`/`ghiChu` không có nút ẩn. */
+const MUC_PHU_LABEL: Record<MucPhu, [string, string]> = {
+  chao: ['Chào', 'Greeting'],
+  homNay: ['Hôm nay', 'Today'],
+  mocToi: ['Sắp tới', 'Upcoming'],
+  ghiChu: ['Ghi chú', 'Notes'],
+  vatLieu: ['Vật liệu của tuần', "This week's material"],
+  anhTuan: ['Ảnh đẹp tuần này', "This week's frame"],
+  bieuDo: ['Biểu đồ chặng', 'Stage chart'],
+  dongTin: ['Bảng tin studio', 'Studio feed'],
 };
 
 /** Shape rỗng hợp lệ — QuickNotes render ngay cả trước khi `/api/home/summary` trả lời. */
@@ -92,13 +110,9 @@ interface LibraryAssetLite {
   tags: string;
 }
 
-function area(col: [number, number], row: [number, number]): CSSProperties {
-  return { gridColumn: `${col[0]} / ${col[1]}`, gridRow: `${row[0]} / ${row[1]}` };
-}
-
 export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   const user = useFlowStore((s) => s.user);
-  const openDashboardTab = useFlowStore((s) => s.openDashboardTab);
+  const currentProjectId = useFlowStore((s) => s.currentProjectId);
   const currentUserId = user?.id ?? null;
   const en = useLang() === 'en';
   const tr = useT();
@@ -146,6 +160,13 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
       cancelled = true;
     };
   }, []);
+
+  // ---------- R5 (19/08) — "Việc đang dở": đọc resume MỘT lần trong effect (localStorage,
+  // client-only) rồi đưa xuống widget qua props; đổi user thì đọc lại theo user đó. ----------
+  const [resume, setResume] = useState<ResumeState | null>(null);
+  useEffect(() => {
+    setResume(currentUserId ? loadResume(currentUserId) : null);
+  }, [currentUserId]);
 
   // ---------- ⑤ MỘT interval toàn trang — cấp nhịp phút (ô B) + nhịp 8s (ô D crossfade) ----------
   const [minuteTick, setMinuteTick] = useState(() => Math.floor(Date.now() / 60000));
@@ -231,10 +252,24 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   // sáng tạo chọn — seed là dữ liệu MINH HOẠ kệ Thư viện, không phải "tuần này của studio", lên
   // Home là giả trân (đúng bẫy NC-HOME-DELIGHT). Lọc MỘT chỗ, cả 2 widget dùng chung `realAssets`.
   const realAssets = useMemo(() => (libraryAssets ?? []).filter((a) => !isSeedLibraryAsset(a.tags)), [libraryAssets]);
-  const weeklyImages: WeeklyImageItem[] = useMemo(() => {
-    if (!libraryAssets) return [];
-    return pickWeeklyImages(realAssets, 'ref-render', 6).map((a) => ({ id: a.id, url: a.url, name: a.name }));
-  }, [libraryAssets, realAssets]);
+  // ---------- CẢM HỨNG — HỢP ĐỒNG NGUỒN ẢNH (Hoà chốt 22/08) ----------
+  // 🔴 GỐC BỆNH ĐÃ BẮT ĐƯỢC TRÊN APP THẬT: nguồn cũ là `pickWeeklyImages(realAssets,'ref-render')`
+  // — tức ĐẦU RA RENDER / tài sản tham chiếu của chính app. Trên máy thật nó chiếu ra **ảnh chụp
+  // màn hình InteriorFlow** (thấy rõ canvas + node) dưới nhãn "Ảnh đẹp tuần này". Ảnh loại đó
+  // KHÔNG có nguồn, KHÔNG có provenance ⇒ sai cả nghĩa lẫn luật.
+  // (Trước đây `object-cover` cắt cụt nên không ai nhận ra; đổi sang `object-contain` cho đúng
+  //  luật ảnh thì cái sai lộ nguyên hình — bằng chứng: sửa đúng một chỗ làm lộ chỗ sai kế tiếp.)
+  //
+  // HỢP ĐỒNG ĐÚNG: ảnh cảm hứng đến từ **Gallery** — thứ người dùng ĐÃ TỰ LƯU, mỗi tấm mang
+  // danh tính `img_…` (`lib/img-id.ts`) độc lập URL/tên tệp ⇒ truy được nguồn.
+  // KHÔNG có ảnh hợp lệ ⇒ `weeklyImages` rỗng ⇒ `hasD=false` ⇒ **dải TỰ ẨN**, tuyệt đối không
+  // bịa một tấm cho đỡ trống. Đây là hành vi ĐÚNG, không phải thiếu sót.
+  const [gallery, setGallery] = useState<WeeklyImageItem[]>([]);
+  useEffect(() => {
+    // localStorage ⇒ client-only, đọc trong effect để không vỡ SSR.
+    setGallery(listGallery().map((g) => ({ id: g.id, url: g.url, name: g.name })));
+  }, [currentUserId]);
+  const weeklyImages: WeeklyImageItem[] = gallery;
   const weeklyMaterial: WeeklyMaterialItem | null = useMemo(() => {
     if (!libraryAssets) return null;
     const pool = realAssets.filter((a) => a.usage === 'material');
@@ -253,47 +288,14 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   const hasI = showActivityInI || newsHasSignal(s);
   const hasC = todayHasSignal(s, currentUserId);
 
-  // ---------- v4 (phiếu home-bento-v4.md ④.2) — NẤC bố cục theo ĐỘ DÀY dữ liệu ----------
-  // Đếm bao nhiêu trong 6 ô "có thể rỗng" (C/D/E/G/H/I) đang THẬT SỰ có dữ liệu. A (Dự án) · B
-  // (Chào+ánh sáng) · F (Ghi chú) LUÔN sống nên không tính vào đây — chúng là 3 ô của nấc MỎNG.
-  const optionalLiveCount = [hasC, hasD, hasE, hasG, hasH, hasI].filter(Boolean).length;
-  // MỎNG (0 ô phụ sống, chỉ còn A/B/F) · VỪA (1-3 ô phụ, tổng 4-6 ô) · ĐẦY (4-6 ô phụ, tổng 7-9 ô)
-  const tier: 'mong' | 'vua' | 'day' = optionalLiveCount === 0 ? 'mong' : optionalLiveCount <= 3 ? 'vua' : 'day';
-
-  // ---------- V2 (17/08, phiếu P-X ④.V2) — SỐ Ô TỰ TÍNH, không còn gán cứng ----------
-  // Trước đây `index="03"`/`"05"`/`"07"`… gán tại chỗ gọi trong khi widget render CÓ ĐIỀU KIỆN ⇒
-  // ẩn cái nào là dãy đứt (ảnh 17/08: 01·02·04·05·06·08, và ô Lưới tích luỹ KHÔNG có số). Nay số
-  // sinh từ THỨ TỰ Ô THẬT SỰ HIỆN RA của đúng bố cục đang dùng — luật + test ở
-  // `./widgets/bento-layout.ts` (256 ca: 64 tổ hợp cờ × 4 bố cục).
-  const layout: HomeLayout = !isWide ? 'stacked' : tier === 'mong' ? 'mong' : tier === 'vua' ? 'vua' : 'bento';
+  // ---------- 20/08 — SỐ Ô cho bản XẾP DỌC (hẹp) vẫn đi qua `bento-layout` (256 ca test) ----------
+  // Bản RỘNG đã đổi hẳn sang bố cục tiêu-điểm (xem `./xuong-layout.ts`) nên nó tự cấp số ô.
   const cellFlags: HomeCellFlags = {
     homNay: hasC, anhTuan: hasD, bieuDo: hasE, mocToi: hasG, vatLieu: hasH, dongTin: hasI,
   };
-  const cellIdx = cellIndexMap(layout, cellFlags);
-
-  // ---------- V3 (17/08, phiếu P-X ④.V3) — CỠ Ô THEO LƯỢNG TIN, không kéo dãn ----------
-  // Ô "Dự án" cao 2/3 màn nhưng lưới tile chỉ cần 1 hàng khi studio còn ít dự án ⇒ nửa dưới trống
-  // trơn (đúng chỗ Hoà chỉ). Lưới lùi về `bentoFillPercent(...)`% chiều cao và đứng giữa màn;
-  // phần dư trả cho HÌNH NỀN (chốt A2 16/08 "chừa lề cho nền thở"), không nhồi vào ô.
-  const projectCount = s.stageChart.reduce((acc, r) => acc + r.projects, 0);
-  const bentoFill = bentoFillPercent(duAnTileRows(projectCount));
+  const cellIdx = cellIndexMap('stacked', cellFlags);
 
   const openTasksByProject = summary?.openTasksByProject;
-
-  // ---- vùng trên-phải (B/C, row1) — C rỗng thì B (luôn có) giãn hết 5 cột ----
-  const bArea = area(hasC ? [8, 11] : [8, 13], [1, 2]);
-  // ---- vùng dưới-trái row3 (E/F/G dưới ô A) — F (luôn có) hấp thụ cột của E/G khi rỗng ----
-  const eArea = area([1, 4], [3, 4]);
-  const fAreaLeft: [number, number] = hasE && hasG ? [4, 6] : hasE ? [4, 8] : hasG ? [1, 6] : [1, 8];
-  const gArea = area([6, 8], [3, 4]);
-  // ---- vùng dưới-phải (D trên, H/I dưới, cols 8-12) — D rỗng thì H/I giãn LÊN chiếm cả 2 hàng.
-  //      V3 (17/08): H và I KHÔNG còn đứng CẠNH nhau nữa mà XẾP CHỒNG trong MỘT ô —
-  //      `gridTemplateRows: 'auto minmax(0,1fr)'`. `auto` là mấu chốt: ô "Vật liệu của tuần" chỉ
-  //      có 1 quả cầu + 1 dòng tên (~97px) nhưng trước đây bị kéo cao bằng cả hàng (~279px) ⇒
-  //      65% trống, đúng ô 08 Hoà chỉ. Nay nó lấy ĐÚNG chiều cao nội dung, phần dư về ô Bảng tin
-  //      (danh sách — càng cao càng hiện được nhiều tin, không có chỗ chết). Chỉ còn H mà không
-  //      có I thì `alignContent:'start'` để phần dư là NỀN, không phải ruột card rỗng.
-  const rightRow: [number, number] = hasD ? [3, 4] : [2, 4];
 
   // v4 (13/08, phiếu home-bento-v4.md ④.2) — ô A tách thành JSX dùng chung CẢ 4 layout (ĐẦY ·
   // VỪA · MỎNG · stackedList mobile) — trước đây chép văn y nguyên 2 lần (bentoGrid + stackedList),
@@ -319,8 +321,10 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
       {/* ⑤ P-X — tiêu đề ô đổi `--t4`→`--t3` và số đổi `--t5`→`--t3`: đo được 3,44/3,26 và
           1,98/2,21 (dưới ngưỡng 4,5:1). `--t3` đạt 7,24 (tối) / 5,20 (sáng). Số phân biệt với
           nhãn bằng CÂN NẶNG chữ, không bằng màu — màu không được là kênh duy nhất. */}
-      <div className="shrink-0 px-3.5 pb-1 pt-3 font-mono text-[length:var(--fs-2xs)] font-semibold uppercase tracking-wide text-[var(--t3)]">
-        <span className="font-normal">{cellIdx.duAn}</span> {tr('Dự án', 'Projects')}
+      <div className="shrink-0 px-3.5 pb-1 pt-3 font-mono text-[length:var(--fs-2xs)] font-semibold tracking-[.01em] text-[var(--t3)]">
+        {/* 22/08 — thôi đánh số ô (Hoà: "No numbered 01/02/03 sections"). `cellIndexMap` GIỮ
+            NGUYÊN (nó vẫn là hàm thứ tự thuần đúng, có test riêng) — chỉ thôi HIỂN THỊ số. */}
+        {tr('Dự án', 'Projects')}
       </div>
       <div className="min-h-0 flex-1">
         <ProjectSelect
@@ -337,159 +341,406 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
     </div>
   );
 
-  const bentoGrid = (
-    // V3 (17/08, P-X ④.V3) — lưới KHÔNG còn ép cao 100% màn. `bentoFill` co lưới lại khi ô Dự án
-    // chỉ cần 1 hàng tile; wrapper `items-center` đặt lưới giữa màn, phần dư là HÌNH NỀN.
-    <div className="flex h-full w-full items-center">
+  // ---------- R5 (19/08) — Ô GHI CHÚ + "VIỆC ĐANG DỞ" xếp chồng ----------
+  // ResumeWork mount theo đúng khuôn tiền lệ H/I (WeeklyMaterial `auto` chồng trên NewsFeed):
+  // hàng `auto` cao đúng nội dung, phần dư về Ghi chú. KHÔNG đụng lưới 12 cột và KHÔNG sửa
+  // `bento-layout.ts` (ngoài phạm vi phiếu — 256 ca test): widget này CỐ Ý không mang số ô
+  // (`index` optional). Không có việc dở ⇒ `hasR=false` ⇒ ô Ghi chú y nguyên (widget thiếu
+  // dữ liệu TỰ ẨN, luật 13/08 — `buildResumeCard` trả null là không mount gì).
+  const hasR = resumeWorkHasSignal(
+    buildResumeCard(resume, { recentProjects: s.recentProjects, currentProjectId }),
+  );
+  const quickNotesNode = (
+    <QuickNotes
+      summary={s}
+      armedNoteId={armedNoteId}
+      onArmNote={setArmedNoteId}
+      refreshKey={notesRefreshKey}
+      index={cellIdx.ghiChu}
+    />
+  );
+  const resumeNode = (
+    <ResumeWork
+      resume={resume}
+      recentProjects={s.recentProjects}
+      currentProjectId={currentProjectId}
+    />
+  );
+  // LANE C (20/08) — SÀN 96px CHO Ô GHI CHÚ + ngăn kẹp thì CUỘN, không nghiến.
+  // Đo trên app thật (1280×720, bố cục `bento`): hàng chồng `auto minmax(0,1fr)` cho ResumeWork
+  // lấy TRỌN chiều cao nội dung của nó (136px) trong một ô chỉ cao 156px ⇒ Ghi chú còn **12,3px**
+  // trong khi ô nhập của nó cao 33px — ô nhập TRÀN RA NGOÀI card, danh sách ghi chú biến mất.
+  // `minmax(0,1fr)` cho phép co về 0 nên không có sàn nào chặn. Sửa: hàng dưới có SÀN 96px (đủ
+  // tiêu đề + ô nhập + 1 dòng ghi chú) và cả ngăn `overflow-y-auto` — quá chật thì người dùng
+  // cuộn, KHÔNG có widget nào bị nghiến mất chức năng. (Bố cục `bento` còn được tách cạnh nhau,
+  // xem `notesCols`/`resumeCols` bên dưới — ngăn chồng này là đường lùi cho vua/mỏng/xếp-dọc.)
+  const notesStack: ReactNode = hasR ? (
+    <div
+      className="grid h-full min-h-0 overflow-y-auto"
+      style={{ gridTemplateRows: 'auto minmax(96px,1fr)', gap: 'var(--gap)' }}
+    >
+      {resumeNode}
+      <div className="min-h-0">{quickNotesNode}</div>
+    </div>
+  ) : (
+    quickNotesNode
+  );
+
+  // ---------- 20/08 — MỘT TIÊU ĐIỂM · MỘT CỤM PHỤ (thay HẲN lưới bento 12×3) ----------
+  // Luật + test ở `./xuong-layout.ts`. Ở đây chỉ BÀY RA: vùng tiêu điểm bên trái (dải "Việc đang
+  // dở" mọc lên trên nó khi có), cụm phụ là MỘT cột hẹp hơn hẳn bên phải, mục cao ĐÚNG NỘI DUNG.
+  // "Studio đã có dự án chưa" — ba nguồn, chỉ cần MỘT nói có. `hasR` cũng tính: có việc đang dở
+  // thì chắc chắn đã từng có dự án, và nguồn đó về SỚM hơn `/api/home/summary` (đọc localStorage)
+  // nên tránh được nhịp nháy "Ngày-Số-Không → có dự án" khi summary còn đang bay.
+  const coDuAn =
+    s.stageChart.reduce((acc, r) => acc + r.projects, 0) > 0 || s.recentProjects.length > 0 || hasR;
+  const bc = bocCucXuong({
+    coDuAn,
+    coViecDo: hasR,
+    duLieu: { homNay: hasC, mocToi: hasG, vatLieu: hasH, anhTuan: hasD, bieuDo: hasE, dongTin: hasI },
+  });
+
+  // ---------- CÁ NHÂN HOÁ cụm phụ (LANE B, `lib/home/widget-prefs.ts`) ----------
+  // Ẩn/hiện + thứ tự là lựa chọn CỦA MÁY NÀY (localStorage per-user) áp LÊN TRÊN `bc.cumPhu` đã
+  // lọc theo tín hiệu dữ liệu thật — mục hết dữ liệu vẫn biến mất bất kể prefs (đúng ràng buộc
+  // `applyWidgetPrefs`: cá nhân hoá không được làm sống lại mục không có gì để bày).
+  const widgetPrefs = useHomeWidgetPrefs(currentUserId);
+  /* Chế độ Trang chủ — đọc SAU khi gắn kết (localStorage không có ở lượt dựng phía máy chủ, đọc
+     thẳng lúc dựng là lệch SSR/CSR). Mặc định `calm` = bốn dải. */
+  const [cheDo, setCheDo] = useState<CheDoHome>('calm');
+  useEffect(() => { setCheDo(docCheDo()); }, []);
+
+  /* ── 23/08 · NGỮ CẢNH cho năm trạng thái ─────────────────────────────────────────────────
+     `gio` khởi tạo `null` (= CHƯA BIẾT) chứ không phải một giờ mặc định: đọc `new Date()` ngay
+     lúc dựng thì máy chủ và trình duyệt có thể ra hai giờ khác nhau ⇒ lệch hydrate. Trong lúc
+     chưa biết giờ, Home giữ nguyên bố cục Living Canvas (bản Hoà duyệt 22/08) — không màn
+     trắng, không nháy sang một trạng thái đoán bừa.
+     Cập nhật theo `minuteTick` (interval toàn trang sẵn có, luật ⑤) ⇒ qua 11h/18h là trạng
+     thái tự đổi, KHÔNG cần tải lại trang và KHÔNG thêm interval thứ hai. */
+  const [gio, setGio] = useState<number | null>(null);
+  useEffect(() => { setGio(new Date().getHours()); }, [minuteTick]);
+
+  const [daQuayLai, setDaQuayLai] = useState(false);
+  useEffect(() => {
+    setDaQuayLai(docDaQuayLai());
+    // Rời Home (vào một workspace) ⇒ lượt quay về sau đó là D "giữa giờ", không phải C "mở đầu
+    // ngày". Ghi lúc gỡ khỏi cây là chỗ duy nhất biết chắc người dùng đã đi.
+    return () => ghiDaRoiHome();
+  }, []);
+  const cumPhuFinal = useMemo(
+    () => applyWidgetPrefs(bc.cumPhu, widgetPrefs.prefs),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [bc.cumPhu.join(','), widgetPrefs.prefs],
+  );
+  // Số ô là ĐỊA CHỈ vị trí trên màn (docstring bento-layout.ts §V2) — sau khi người dùng sắp lại
+  // thứ tự, số phải theo đúng vị trí MỚI, không giữ số cũ đi lạc chỗ.
+  const soOFinal: Partial<Record<MucPhu | 'tieuDiem', string>> = { tieuDiem: '01' };
+  cumPhuFinal.forEach((m, i) => {
+    soOFinal[m] = String(i + 2).padStart(2, '0');
+  });
+  const hiddenList = widgetPrefs.prefs.hidden.filter((m) => bc.cumPhu.includes(m));
+
+  /** Một mục của cụm phụ. Số ô do `bocCucXuong` cấp — dãy liền mạch, không đứt khi mục tự ẩn. */
+  function mucPhuNode(m: MucPhu): ReactNode {
+    const so = soOFinal[m];
+    switch (m) {
+      case 'chao':
+        return (
+          <LightClock
+            headline={greeting.headline}
+            signal={greeting.signal}
+            tick={minuteTick}
+            index={so}
+            displayName={displayName}
+            onDisplayNameChange={setDisplayName}
+          />
+        );
+      case 'homNay':
+        return <TodayStrip summary={s} index={so} currentUserId={currentUserId} />;
+      case 'mocToi':
+        return <UpcomingList summary={s} index={so} />;
+      case 'ghiChu':
+        return (
+          <QuickNotes
+            summary={s}
+            armedNoteId={armedNoteId}
+            onArmNote={setArmedNoteId}
+            refreshKey={notesRefreshKey}
+            index={so}
+          />
+        );
+      case 'vatLieu':
+        return <WeeklyMaterial item={weeklyMaterial} index={so} />;
+      case 'anhTuan':
+        return <WeeklyImage images={weeklyImages} eightSecTick={eightSecTick} index={so} />;
+      case 'bieuDo':
+        return <StageChart summary={s} index={so} />;
+      case 'dongTin':
+        return showActivityInI ? <ContributionGrid summary={s} index={so} /> : <NewsFeed summary={s} index={so} />;
+    }
+  }
+
+  /* ── BỐ CỤC BỐN DẢI (§4) — KHÔNG KHÍ → TIẾP TỤC → KỆ DỰ ÁN → CẢM HỨNG ────────────────────
+     Đây là THỨ TỰ ĐỌC chính tắc của Trang chủ, và nó là MẶC ĐỊNH.
+     🔴 Vì sao đổi: bản cũ đặt KHÔNG KHÍ (lời chào + đồng hồ ánh sáng) vào CỘT PHỤ bên phải, còn
+     khung hình đầu thì nhường cho lưới dự án + một cột widget. Mắt chạm dữ liệu trước, chạm nơi
+     chốn sau ⇒ Trang chủ đọc ra bảng điều khiển. Bốn dải đảo lại đúng thứ tự đó.
+     ⚖️ Widget cũ KHÔNG bị xoá — chúng sống ở chế độ `custom` (bố cục hai cột nguyên vẹn). Bỏ hẳn
+     là phá chức năng đang chạy để chiều một bố cục; đây là đổi MẶC ĐỊNH, không phải cắt tính năng. */
+  const nhip = nhipDai(cheDo);
+  // ---------- BỐ CỤC CHÍNH TẮC — M2 · Living Canvas (Hoà duyệt 22/08) ----------
+  // 🔴 Bản BỐN DẢI cũ ĐÃ BỊ ĐÁNH FAIL 22/08: đọc ra là *dashboard* — thẻ "VIỆC ĐANG DỞ" khổ đại,
+  // kệ dự án `minHeight:360` nuốt trọn khung hình đầu, mục đánh số ①②③④ lộ ra như bảng điều khiển.
+  // Nó được THAY, không được vá: đánh bóng CSS của một cấu trúc sai vẫn ra cấu trúc sai.
+  // Bố cục mới sống ở `LivingCanvas.tsx` (nhịp kệ 64px · Tiếp tục MỘT dòng MỘT đích · tự ẩn khi
+  // thiếu dữ liệu · KHÔNG hiện số đếm Project vì số thô đang lẫn rác `__nb:`/fixture).
+  const bonDai = (
+    <LivingCanvas
+      ambient={
+        <LightClock
+          truong
+          // ⛔ 22/08 — ánh sáng ngày là MÔI TRƯỜNG, không phải widget. Home tắt phần đồng hồ đo
+          // (cung mặt trời · 05:00/20:00 · 5600K): người dùng phải CẢM được giờ, không phải ĐỌC
+          // một thiết bị đo. Giờ vẫn tác động qua nền ambient (`SystemWallpaper`), không mất tin.
+          khongDongHo
+          headline={greeting.headline}
+          signal={greeting.signal}
+          tick={minuteTick}
+          displayName={displayName}
+          onDisplayNameChange={setDisplayName}
+        />
+      }
+      // Dựng lại thẻ tại đây thay vì dùng `resumeNode` (widget khổ đại) — cùng MỘT nguồn dữ liệu
+      // `buildResumeCard`, chỉ khác cách trình bày. Trả null ⇒ dải Tiếp tục không mount.
+      resume={buildResumeCard(resume, { recentProjects: s.recentProjects, currentProjectId })}
+      projects={s.recentProjects}
+      inspiration={hasD ? <WeeklyImage images={weeklyImages} eightSecTick={eightSecTick} /> : null}
+    />
+  );
+
+  /* ── BỀ MẶT NĂM TRẠNG THÁI (chốt Hoà 23/08) ───────────────────────────────────────────────
+     Luật ở `nam-trang-thai.ts`; ở đây chỉ CẤP DỮ KIỆN THẬT và CẤP NỘI DUNG.
+     ⛔ Mọi cờ dưới đây đều là tín hiệu dữ liệu đang chạy sẵn (`hasC`/`hasG`/…) — KHÔNG cờ nào
+     được đặt `true` để màn đỡ trống. Thiếu dữ liệu thì mục biến mất, đó là câu trả lời đúng. */
+  const theResume = buildResumeCard(resume, {
+    recentProjects: s.recentProjects,
+    currentProjectId,
+  });
+
+  const tinHieuHome: TinHieu = {
+    coDuAn,
+    coViecDo: hasR,
+    // 🔴 CHƯA CÓ NGUỒN. Bản vẽ EXS-C có ô "Cần tôi xử" ("1 review chờ decision · 1 spec vật
+    // liệu thiếu"), nhưng `/api/home/summary` KHÔNG mang trường nào phân biệt được *việc đang
+    // chờ CHÍNH TÔI quyết* với *việc nói chung*. Lấy `dueTodayCount` thế vào là đổi nghĩa ô —
+    // nó sẽ sáng gần như mọi lúc và hết là tín hiệu. Để `false` ⇒ ô không mọc ra.
+    canToiXu: false,
+    homNay: hasC,
+    mocToi: hasG,
+    bieuDo: hasE,
+    dongTin: hasI,
+    anhTuan: hasD,
+    vatLieu: hasH,
+    // 🔴 CHƯA CÓ NGUỒN. Home hôm nay không có đường nào lấy được "insight Vitals đáng giá" —
+    // `grep` trong `components/home` + `lib/home` = 0. Đặt `false` là NÓI ĐÚNG SỰ THẬT, và nó
+    // thi hành thẳng luật của bản chốt: *"không có gì đáng nói thì không tạo card"*. Khi có
+    // nguồn thật thì đổi đúng dòng này, không phải dựng thêm ô.
+    vitalsDangNoi: false,
+  };
+
+  const noiDungO: Partial<Record<MaWidget, ReactNode>> = {
+    tiepTuc: hasR ? resumeNode : undefined,
+    /* 🔴 23/08 (lỗi ⑧ *"cột Dự án không có thẻ trong khi mọi thứ quanh nó đều có"*) — `KeDuAn`
+       tự vẽ tiêu đề + danh sách TRẦN, không đi qua `WidgetCard`. Đứng một mình trong `LivingCanvas`
+       thì đúng; đứng cạnh các ô khác trong lưới thì nó là ô DUY NHẤT không theo luật vỏ chung ⇒
+       mắt đọc ra một chỗ dựng hụt. Nay bọc `WidgetCard` như mọi ô, và tiêu đề do vỏ cấp — nên
+       `KeDuAn` nhận `khongTieuDe` để không in "Dự án" HAI LẦN. */
+    keDuAn: (
+      <WidgetCard title={tr('Dự án', 'Projects')}>
+        <KeDuAn projects={s.recentProjects} khongTieuDe />
+      </WidgetCard>
+    ),
+    homNay: <TodayStrip summary={s} currentUserId={currentUserId} />,
+    mocToi: <UpcomingList summary={s} />,
+    ghiChu: (
+      <QuickNotes
+        summary={s}
+        armedNoteId={armedNoteId}
+        onArmNote={setArmedNoteId}
+        refreshKey={notesRefreshKey}
+      />
+    ),
+    /* 🔴 23/08 — `bieuDo` và `dongTin` KHÔNG còn nội dung ở Trang chủ. Hai mã này cũng đã rời
+       kế hoạch bày (`nam-trang-thai.ts` D) — lý do đầy đủ ở đó. Tóm tắt: lưới tích luỹ là
+       "thống kê phù phiếm" đã bị loại tường minh 02/08; biểu đồ chặng mở cổng bằng *số dự án*
+       nên bày ra `3/0 · 0/0 · 0/0`. Bỏ nội dung Ở ĐÂY NỮA (chứ không chỉ bỏ khỏi kế hoạch) để
+       không ai nối lại bằng cách thêm một dòng vào kế hoạch mà tưởng là vô hại.
+       `StageChart` · `ContributionGrid` · `NewsFeed` GIỮ NGUYÊN — chúng vẫn sống ở bố cục
+       `xuongLayout`; đây là quyết định của TRANG CHỦ, không phải xoá widget. */
+    anhTuan: <WeeklyImage images={weeklyImages} eightSecTick={eightSecTick} />,
+    vatLieu: <WeeklyMaterial item={weeklyMaterial} />,
+    // `vitals` cố ý KHÔNG có nội dung — xem `vitalsDangNoi` ở trên.
+  };
+
+  /* Hero có đủ ruột để đứng khổ `2x2` không — xem `DuKienHome.heroDayRuot`.
+     Thẻ Việc-đang-dở chỉ "đầy" khi nó có thứ để nói ngoài tên dự án: một mốc thời gian thật,
+     hoặc nhiều hơn một dự án gần đây để xếp dưới. Không có ⇒ nó là ba dòng chữ, và ba dòng chữ
+     KHÔNG được cấp một khung 2×2 để rồi kéo giãn vỏ trắng ra cho bằng khung. */
+  const heroDayRuot =
+    theResume !== null && theResume.projectName !== null && theResume.daysAgo !== null;
+
+  const beMat = gio === null ? null : (
+    <BeMatHome
+      duKien={{ tinHieu: tinHieuHome, gio, daQuayLai, heroDayRuot }}
+      ambient={
+        <LightClock
+          truong
+          khongDongHo
+          headline={greeting.headline}
+          signal={greeting.signal}
+          tick={minuteTick}
+          displayName={displayName}
+          onDisplayNameChange={setDisplayName}
+        />
+      }
+      ngaySoKhong={projectTile}
+      noiDung={noiDungO}
+      vietDangDo={
+        theResume
+          ? {
+              tenDuAn: theResume.projectName,
+              nhanChang: null,
+              nhanLuc: daysAgoLabel(theResume.daysAgo, en),
+              href: resumeHref(theResume),
+              // ⛔ Chưa có nguồn tín hiệu ("2 bình luận mới", "1 mục chờ duyệt") ⇒ mảng RỖNG.
+              // Rỗng thật thì hàng đó không mọc ra — cấm bịa cho màn đỡ trống.
+              tinHieu: [],
+            }
+          : null
+      }
+      // Chưa có đường chụp "khoảnh khắc đẹp" ⇒ cổng FAIL-CLOSED: không ảnh, rơi về nền môi
+      // trường theo giờ. Xem docstring `BeMatHome.tsx`.
+      anhPhien={null}
+    />
+  );
+
+  const xuongLayout = (
+    // NỀN LÀ MẶT PHẲNG CHÍNH (chốt 20/08): nội dung KHÔNG phủ kín màn. Lề ngoài rộng theo bề
+    // ngang màn (`clamp` — không breakpoint px), nội dung đứng GIỮA theo chiều dọc, và chiều cao
+    // là `min(nội dung, màn)` chứ không ép 100% ⇒ phần dư trả cho nền, không nhồi vào thẻ.
+    // Trần bề ngang: trên màn rất rộng, khoảng âm LỚN LÊN thay vì thẻ kéo dãn ra (luật 16/08
+    // "size to là BỔ SUNG CHI TIẾT, không phải kéo dãn").
+    <div className="flex h-full w-full items-center justify-center">
       <div
         className="grid w-full"
         style={{
-          height: `${bentoFill}%`,
-          gridTemplateColumns: 'repeat(12, minmax(0,1fr))',
-          gridTemplateRows: 'repeat(3, minmax(0,1fr))',
-          gap: 'var(--gap)',
+          maxWidth: 'min(100%, 1360px)',
+          // Cao ĐÚNG chỗ được cấp + hàng `minmax(0,1fr)`: đây là thứ cho phép cụm phụ CUỘN thay
+          // vì tràn ra ngoài màn. (Đo 20/08: để `maxHeight` + hàng ẩn `auto` thì cột phụ cao
+          // 1112px trong khung 818px — `overflow-y` không bao giờ ăn vì chính nó bị kéo dài ra.)
+          // Khoảng âm theo chiều dọc nay nằm ở ĐÁY CỘT PHỤ (mục cao đúng nội dung + `start`)
+          // và ở LỀ NGOÀI, không phải ở chỗ cả lưới co lại.
+          height: '100%',
+          gridTemplateRows: 'minmax(0, 1fr)',
+          gridTemplateColumns: cotXuong(cumPhuFinal.length),
+          gap: 'calc(var(--gap) * 2)',
         }}
       >
-        {/* Ô 01 · DỰ ÁN — 7c × 2h, luôn hiện (never rỗng: "+ Dự án mới" luôn có trong ProjectSelect) */}
-        <div style={area([1, 8], [1, 3])} className="flex h-full flex-col overflow-hidden">
-          {projectTile}
+        {/* ── TIÊU ĐIỂM ── cùng MỘT vùng ở CẢ BA trạng thái; ruột đổi, chỗ đứng không đổi.
+            `auto` cho dải việc-dở = nó lấy đúng chiều cao của nó, phần còn lại về ô Dự án. */}
+        <div
+          className="grid min-h-0"
+          style={{ gridTemplateRows: bc.banViecDo ? 'auto minmax(0,1fr)' : 'minmax(0,1fr)', gap: 'var(--gap)' }}
+        >
+          {bc.banViecDo && resumeNode}
+          <div className="min-h-0">{projectTile}</div>
         </div>
 
-        {/* Ô CHÀO + ĐỒNG HỒ ÁNH SÁNG — luôn hiện; Hôm nay rỗng thì giãn hết 5 cột (`bArea`) */}
-        <div style={bArea}>
-          <LightClock
-            headline={greeting.headline}
-            signal={greeting.signal}
-            tick={minuteTick}
-            index={cellIdx.chao}
-            displayName={displayName}
-            onDisplayNameChange={setDisplayName}
-          />
-        </div>
-
-        {/* Ô HÔM NAY — tự ẩn */}
-        {hasC && (
-          <div style={area([11, 13], [1, 2])}>
-            <TodayStrip summary={s} index={cellIdx.homNay} currentUserId={currentUserId} />
-          </div>
-        )}
-
-        {/* Ô ẢNH ĐẸP TUẦN NÀY — tự ẩn; rỗng thì cụm Vật liệu/Bảng tin giãn LÊN cả 2 hàng (`rightRow`) */}
-        {hasD && (
-          <div style={area([8, 13], [2, 3])}>
-            <WeeklyImage images={weeklyImages} eightSecTick={eightSecTick} index={cellIdx.anhTuan} />
-          </div>
-        )}
-
-        {/* ---- Hàng 3 trái (dưới ô Dự án): BIỂU ĐỒ CHẶNG · GHI CHÚ · MỐC SẮP TỚI ---- */}
-        {hasE && (
-          <div style={eArea}>
-            <StageChart summary={s} index={cellIdx.bieuDo} />
-          </div>
-        )}
-        <div style={area(fAreaLeft, [3, 4])}>
-          <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index={cellIdx.ghiChu} />
-        </div>
-        {hasG && (
-          <div style={gArea}>
-            <UpcomingList summary={s} index={cellIdx.mocToi} />
-          </div>
-        )}
-
-        {/* ---- Hàng 3 phải: VẬT LIỆU (cao đúng nội dung) XẾP CHỒNG trên BẢNG TIN / LƯỚI TÍCH LUỸ ---- */}
-        {(hasH || hasI) && (
-          <div
-            style={{
-              ...area([8, 13], rightRow),
-              display: 'grid',
-              gridTemplateRows: hasH && hasI ? 'auto minmax(0,1fr)' : hasH ? 'auto' : 'minmax(0,1fr)',
-              gap: 'var(--gap)',
-              alignContent: 'start',
-            }}
-          >
-            {hasH && <WeeklyMaterial item={weeklyMaterial} index={cellIdx.vatLieu} />}
-            {hasI && (
-              <div className="min-h-0">
-                {showActivityInI ? <ContributionGrid summary={s} index={cellIdx.dongTin} /> : <NewsFeed summary={s} index={cellIdx.dongTin} />}
+        {/* ── CỤM PHỤ ── một cột, xếp theo ưu tiên, mục cao ĐÚNG NỘI DUNG (`auto`). Ghi chú là
+            mục DUY NHẤT co giãn (`1fr`) vì nó có danh sách + ô nhập; các mục khác không bị kéo
+            dãn ⇒ chỗ dư ở đáy cột là NỀN, không phải ruột card rỗng. `alignContent:'start'`
+            giữ cụm bám mép trên khi tổng nội dung thấp hơn cột. */}
+        <div
+          className="flex min-h-0 flex-col overflow-y-auto"
+          style={{ gap: 'var(--gap)' }}
+        >
+          {/* Dải khôi phục mục đã ẨN — cá nhân hoá không cho ẩn vĩnh viễn không lối quay lại
+              (luật §9 "MÁY MÌNH": người dùng vẫn phải kiểm soát được, không phải máy quyết
+              hộ). Chỉ hiện khi có mục thật sự bị ẩn tay. */}
+          {hiddenList.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 px-0.5">
+              <span className="text-[length:var(--fs-2xs)] text-[var(--t4)]">
+                {tr('Đã ẩn:', 'Hidden:')}
+              </span>
+              {hiddenList.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => widgetPrefs.toggleHidden(m)}
+                  className="rounded-[var(--r-1)] px-1.5 py-0.5 text-[length:var(--fs-2xs)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
+                  style={{ background: 'var(--field)' }}
+                  aria-label={tr(`Hiện lại ${MUC_PHU_LABEL[m][0]}`, `Show ${MUC_PHU_LABEL[m][1]} again`)}
+                >
+                  + {tr(...MUC_PHU_LABEL[m])}
+                </button>
+              ))}
+            </div>
+          )}
+          {cumPhuFinal.map((m, i) => {
+            const locked = widgetPrefs.LOCKED.includes(m);
+            return (
+              <div key={m} className="group/widget relative" style={hangPhu(m)}>
+                {mucPhuNode(m)}
+                {!locked && (
+                  <div
+                    className="absolute right-1.5 top-1.5 z-20 flex items-center gap-0.5 rounded-[var(--r-1)] p-0.5 opacity-0 shadow-sm transition-opacity focus-within:opacity-100 group-hover/widget:opacity-100"
+                    style={{ background: 'var(--nen-mo-card, var(--card))' }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => widgetPrefs.move(m, -1, cumPhuFinal)}
+                      disabled={i === 0}
+                      aria-label={tr('Đưa lên trên', 'Move up')}
+                      title={tr('Đưa lên trên', 'Move up')}
+                      className="grid h-6 w-6 place-items-center rounded-[var(--r-1)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)] disabled:opacity-30"
+                    >
+                      <ChevronUp size={14} aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => widgetPrefs.move(m, 1, cumPhuFinal)}
+                      disabled={i === cumPhuFinal.length - 1}
+                      aria-label={tr('Đưa xuống dưới', 'Move down')}
+                      title={tr('Đưa xuống dưới', 'Move down')}
+                      className="grid h-6 w-6 place-items-center rounded-[var(--r-1)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)] disabled:opacity-30"
+                    >
+                      <ChevronDown size={14} aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => widgetPrefs.pinTop(m, cumPhuFinal)}
+                      disabled={i === 0}
+                      aria-label={tr('Ghim lên đầu', 'Pin to top')}
+                      title={tr('Ghim lên đầu', 'Pin to top')}
+                      className="grid h-6 w-6 place-items-center rounded-[var(--r-1)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)] disabled:opacity-30"
+                    >
+                      <Pin size={14} aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => widgetPrefs.toggleHidden(m)}
+                      aria-label={tr(`Ẩn ${MUC_PHU_LABEL[m][0]}`, `Hide ${MUC_PHU_LABEL[m][1]}`)}
+                      title={tr('Ẩn khỏi Home', 'Hide from Home')}
+                      className="grid h-6 w-6 place-items-center rounded-[var(--r-1)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
+                    >
+                      <EyeOff size={14} aria-hidden />
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // v4 (13/08, phiếu home-bento-v4.md ④.2, lỗi #1+#2) — NẤC VỪA (1-3 ô phụ sống, tổng 4-6 ô).
-  // KHÔNG tái dùng thuật toán area-giãn của bentoGrid ở trên: thuật toán đó chỉ tránh lỗ trống
-  // KHI ít nhất 1 trong {D,H,I} sống (đảm bảo được vì ĐẦY yêu cầu ≥4/6 ô phụ — tối đa 3 ô nằm
-  // trong {C,E,G} nên luôn cần ít nhất 1 ô ở {D,H,I} mới đạt 4). Ở VỪA (≤3 ô phụ) điều đó KHÔNG
-  // còn đúng — vd chỉ mỗi E sống thì {D,H,I} đều rỗng, cột phải (8-13, hàng 2-3) sẽ trống trơn
-  // nếu dùng lại cách tính area cũ (chính là lỗi #1 "9 hộp rỗng ruột"/khoảng trắng đã bắt được).
-  // Giải pháp ĐƠN GIẢN, KHÔNG cần bảng tổ hợp: hàng 1 cố định (A cao 2 phần · B), hàng dưới là
-  // MỘT dải cột chia ĐỀU cho đúng số ô phụ sống + F (Ghi chú luôn sống) — số cột = số ô, không ô
-  // nào có thể "rỗng" vì mảng chỉ chứa ô ĐÃ lọc `hasX`.
-  const vuaExtras: { node: ReactNode }[] = [];
-  if (hasC) vuaExtras.push({ node: <TodayStrip summary={s} index={cellIdx.homNay} currentUserId={currentUserId} /> });
-  if (hasD) vuaExtras.push({ node: <WeeklyImage images={weeklyImages} eightSecTick={eightSecTick} index={cellIdx.anhTuan} /> });
-  if (hasE) vuaExtras.push({ node: <StageChart summary={s} index={cellIdx.bieuDo} /> });
-  if (hasG) vuaExtras.push({ node: <UpcomingList summary={s} index={cellIdx.mocToi} /> });
-  if (hasH) vuaExtras.push({ node: <WeeklyMaterial item={weeklyMaterial} index={cellIdx.vatLieu} /> });
-  if (hasI) {
-    vuaExtras.push({
-      node: showActivityInI ? <ContributionGrid summary={s} index={cellIdx.dongTin} /> : <NewsFeed summary={s} index={cellIdx.dongTin} />,
-    });
-  }
-  const vuaBottomCount = 1 + vuaExtras.length; // + ô F (Ghi chú, luôn sống)
-
-  const vuaGrid = (
-    <div className="flex h-full w-full flex-col gap-[var(--gap)]">
-      <div className="grid shrink-0" style={{ gridTemplateColumns: 'repeat(12, minmax(0,1fr))', gap: 'var(--gap)', height: '46%' }}>
-        <div style={{ gridColumn: '1 / 8' }} className="min-h-0">
-          {projectTile}
+            );
+          })}
         </div>
-        <div style={{ gridColumn: '8 / 13' }} className="min-h-0">
-          <LightClock
-            headline={greeting.headline}
-            signal={greeting.signal}
-            tick={minuteTick}
-            index={cellIdx.chao}
-            displayName={displayName}
-            onDisplayNameChange={setDisplayName}
-          />
-        </div>
-      </div>
-      <div className="grid min-h-0 flex-1" style={{ gridTemplateColumns: `repeat(${vuaBottomCount}, minmax(0,1fr))`, gap: 'var(--gap)' }}>
-        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index={cellIdx.ghiChu} />
-        {vuaExtras.map((e, i) => (
-          <div key={i} className="min-h-0">
-            {e.node}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  // v4 — NẤC MỎNG (0 ô phụ sống — đúng máy Hoà hôm nay: 1 dự án · 0 việc · 1 người). Phiếu ④.2
-  // đòi hỏi ĐÂY LÀ NẤC ĐẸP NHẤT (dữ liệu máy Hoà đang mỏng): chỉ 3 ô THẬT SỰ có nội dung — Dự án
-  // (lớn, 2 phần cao) + Chào/ánh-sáng gộp (cùng hàng) + Ghi chú (hàng dưới, cả chiều rộng) — thay
-  // vì lưới 3 hàng cũ để lại 2 hàng-cột rỗng bên phải (chính là lỗi #1+#4 "khoảng trắng mênh mông").
-  const mongGrid = (
-    <div className="grid h-full w-full" style={{ gridTemplateRows: '2fr 1fr', gap: 'var(--gap)' }}>
-      <div className="grid min-h-0" style={{ gridTemplateColumns: '7fr 5fr', gap: 'var(--gap)' }}>
-        <div className="min-h-0">{projectTile}</div>
-        <div className="min-h-0">
-          <LightClock
-            headline={greeting.headline}
-            signal={greeting.signal}
-            tick={minuteTick}
-            index={cellIdx.chao}
-            displayName={displayName}
-            onDisplayNameChange={setDisplayName}
-          />
-        </div>
-      </div>
-      <div className="min-h-0">
-        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index={cellIdx.ghiChu} />
       </div>
     </div>
   );
@@ -523,7 +774,7 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
         </div>
       )}
       <div className="h-[220px]">
-        <QuickNotes summary={s} armedNoteId={armedNoteId} onArmNote={setArmedNoteId} refreshKey={notesRefreshKey} index={cellIdx.ghiChu} />
+        {notesStack}
       </div>
       {hasG && (
         <div className="h-[200px]">
@@ -561,25 +812,38 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
           (`ProjectSelect` — `absolute right-6 top-6` tính theo góc của CHÍNH ô A, không phải góc
           màn) nên trông "lơ lửng" giữa card — nay cả cụm neo ĐÚNG MỘT LẦN ở góc màn thật, ô A
           không tự vẽ cụm này nữa (`bentoBox` gate trong ProjectSelect.tsx). */}
-      <div className="fixed right-5 top-5 z-50 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => openDashboardTab('board', null)}
-          aria-label={en ? 'Details (all projects)' : 'Chi tiết (toàn bộ dự án)'}
-          title={en ? 'Details (all projects)' : 'Chi tiết (toàn bộ dự án)'}
-          className="grid h-9 w-9 place-items-center rounded-full text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
-          style={CORNER_PILL}
-        >
-          <Info size={15} aria-hidden="true" />
-        </button>
-        <LangToggle variant="ghost" />
-        <VitalsPill />
-      </div>
+      {/* 20/08 (COHERENCE-SHELL) — HẠ CỤM XUỐNG DƯỚI HEADER. Trước đây `top-5` + `z-50` đặt cụm
+          này ĐÈ LÊN thanh đầu 42px (đo trên app thật 1440×900: cụm chiếm y 20→56, x 1309→1420 —
+          phủ đúng chỗ ô tìm dự án và Vitals đứng, `elementFromPoint(1386,20)` trả về cụm này chứ
+          không phải nút Vitals ⇒ **bấm Vitals ở Trang chủ không ăn**). Lỗi có TRƯỚC phiếu này
+          (VitalsPill dời lên header từ 17/08 đã nằm dưới cụm), chỉ lộ ra khi đo bằng thao tác
+          thật. Sửa bằng cách cho cụm bắt đầu NGAY DƯỚI mép header thay vì nới z-index — nới
+          z-index chỉ đổi ai thắng, hai thứ vẫn chồng nhau về mặt thị giác. */}
+      {/* 21/08 (Hoà chốt "Home header gần như trống") — CỤM GÓC-PHẢI ĐÃ GỠ HẲN. Hai nút từng
+          đứng đây về đúng chủ, thay vì nằm rải thành đảo riêng trên Home:
+            · VI/EN và Giới thiệu → menu Hồ sơ (avatar góc phải header), cạnh Giao diện/Cài đặt.
+              Một mô hình sở hữu: Hoạt động = việc đang chạy · Vitals = việc đáng chú ý bây giờ ·
+              Hồ sơ = tôi + tuỳ chọn + cài đặt.
+            · Bảng Nhóm & hoạt động KHÔNG mất đường vào — `openDashboardTab('board', …)` còn 4 nơi
+              gọi ở `ProjectSelect.tsx`, gồm cả biến thể không kèm dự án. Đã kiểm TRƯỚC khi gỡ.
+          Vitals đã dời lên header từ 17/08, nên sau lượt này góc phải Home trống thật. */}
 
       {/* Lề ngoài 20px (p-5, trước là p-3) — chốt A2 16/08: *"thẻ kính KHÔNG phủ kín màn —
           chừa lề cho nền thở"*. Nền chỉ hiện ở lề + khe giữa thẻ; đó là chỗ nó sống. */}
-      <div className={isWide ? 'relative z-10 h-full w-full p-5' : 'relative z-10 w-full'}>
-        {isWide ? (tier === 'mong' ? mongGrid : tier === 'vua' ? vuaGrid : bentoGrid) : stackedList}
+      {/* LỀ NGOÀI — NỀN LÀ MẶT PHẲNG CHÍNH (chốt 20/08). `p-5` (20px) cũ chỉ đủ cho một lưới
+          phủ gần kín màn; nay lề nở theo bề ngang màn nên màn càng rộng thì **khoảng âm càng
+          lớn**, không phải thẻ càng dãn ra. `clamp` — không breakpoint px. */}
+      <div
+        className={isWide ? 'relative z-10 h-full w-full' : 'relative z-10 w-full'}
+        style={isWide ? { padding: 'clamp(20px, 2.6vw, 52px) clamp(20px, 3.2vw, 64px)' } : undefined}
+      >
+        {/* Bốn dải là MẶC ĐỊNH ở màn rộng (§4). `custom` giữ nguyên bố cục hai cột cũ.
+            Màn hẹp vẫn dùng bản xếp dọc sẵn có — nó vốn đã là một cột, không phải tường widget. */}
+        {/* 23/08 — bề mặt NĂM TRẠNG THÁI là mặc định ở màn rộng. `beMat === null` chỉ xảy ra ở
+            lượt dựng đầu (chưa biết giờ, xem `gio`) ⇒ rơi về Living Canvas, không màn trắng.
+            `custom` vẫn giữ NGUYÊN VẸN bố cục hai cột cũ cho ai đã quen — đây là đổi MẶC ĐỊNH,
+            không phải cắt tính năng. */}
+        {isWide ? (laBonDai(cheDo) ? (beMat ?? bonDai) : xuongLayout) : stackedList}
       </div>
     </div>
   );

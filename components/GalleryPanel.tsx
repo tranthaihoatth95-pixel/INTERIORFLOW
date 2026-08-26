@@ -43,7 +43,7 @@ export function GalleryPanel() {
           onClick={() => setPanel(null)}
           className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
         >
-          <X size={13} />
+          <X size={14} />
         </motion.button>
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto p-2.5">
@@ -89,14 +89,14 @@ export function GalleryPanel() {
                 className="grid h-6 w-6 place-items-center rounded text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
                 title="Tải về"
               >
-                <Download size={12} />
+                <Download size={14} />
               </a>
               <button
                 onClick={() => removeFromGallery(item.id)}
                 className="grid h-6 w-6 place-items-center rounded text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-red-400"
                 title="Xoá"
               >
-                <Trash2 size={12} />
+                <Trash2 size={14} />
               </button>
             </div>
           </motion.div>

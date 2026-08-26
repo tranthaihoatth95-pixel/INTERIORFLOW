@@ -140,7 +140,7 @@ export default function StockPhotoPicker({
   if (sources === null) {
     return (
       <p style={note}>
-        <Loader2 size={11} className="pe-spin" /> {en ? 'Loading sources…' : 'Đang nạp nguồn ảnh…'}
+        <Loader2 size={14} className="pe-spin" /> {en ? 'Loading sources…' : 'Đang nạp nguồn ảnh…'}
       </p>
     );
   }
@@ -189,7 +189,7 @@ export default function StockPhotoPicker({
             style={inp}
           />
           <button type="button" onClick={() => void search()} disabled={busy} style={goBtn}>
-            {busy ? <Loader2 size={12} className="pe-spin" /> : <Search size={12} />}
+            {busy ? <Loader2 size={16} className="pe-spin" /> : <Search size={16} />}
           </button>
         </div>
       ) : (
@@ -204,7 +204,7 @@ export default function StockPhotoPicker({
             style={inp}
           />
           <button type="button" onClick={() => void resolveLink()} disabled={busy} style={goBtn}>
-            {busy ? <Loader2 size={12} className="pe-spin" /> : <LinkIcon size={12} />}
+            {busy ? <Loader2 size={16} className="pe-spin" /> : <LinkIcon size={16} />}
           </button>
         </div>
       )}
@@ -262,7 +262,7 @@ export default function StockPhotoPicker({
                     style={{ marginLeft: 3, color: 'var(--t4)' }}
                     title={en ? 'Open source page' : 'Mở trang gốc'}
                   >
-                    <ExternalLink size={8} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                    <ExternalLink size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
                   </a>
                 )}
               </span>

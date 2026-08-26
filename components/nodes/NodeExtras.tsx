@@ -109,13 +109,13 @@ export function OutputVideo({ src, className }: { src: string; className?: strin
           className="nodrag flex flex-1 items-center justify-center gap-1 rounded-md border border-[var(--border-strong)] py-1.5 text-[11px] text-[var(--t2)] hover:border-[#fb7185]/60"
           onClick={() => setLightboxUrl(src)}
         >
-          <Film size={12} /> Phóng to
+          <Film size={16} /> Phóng to
         </button>
         <button
           className="nodrag flex flex-1 items-center justify-center gap-1 rounded-md border border-[var(--border-strong)] py-1.5 text-[11px] text-[var(--t2)] hover:border-[#fb7185]/60"
           onClick={() => downloadDataUrl(src, 'walkthrough.mp4')}
         >
-          <Download size={12} /> Tải mp4
+          <Download size={16} /> Tải mp4
         </button>
       </div>
     </div>
@@ -190,7 +190,7 @@ function BoardActions({ board, projectName }: { board: string; projectName: stri
         className="nodrag flex flex-1 items-center justify-center gap-1 rounded-md border border-[var(--border-strong)] py-1.5 text-[11px] text-[var(--t2)] hover:border-violet-500/60"
         onClick={() => downloadDataUrl(board, `${safeName}.jpg`)}
       >
-        <Download size={12} /> PNG/JPG
+        <Download size={16} /> PNG/JPG
       </button>
       <button
         disabled={busy}
@@ -207,7 +207,7 @@ function BoardActions({ board, projectName }: { board: string; projectName: stri
           }
         }}
       >
-        <FileText size={12} /> PDF
+        <FileText size={16} /> PDF
       </button>
     </div>
   );
@@ -238,7 +238,7 @@ function DeckActions({ slidesJson, deckName }: { slidesJson: string; deckName: s
           }
         }}
       >
-        <FileText size={13} /> {busy ? 'Đang xuất…' : 'Tải PDF thuyết trình'}
+        <FileText size={18} /> {busy ? 'Đang xuất…' : 'Tải PDF thuyết trình'}
       </button>
       <ExportPptxButton slidesJson={slidesJson} deckName={deckName} />
     </div>
@@ -270,7 +270,7 @@ function SendToPresent({ images, nodeId }: { images: string[]; nodeId: string })
   if (sent !== null) {
     return (
       <p className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-500/10 py-1.5 text-[11px] text-emerald-300">
-        <Check size={12} /> Đã gửi {sent} ảnh sang Trình chiếu…
+        <Check size={16} /> Đã gửi {sent} ảnh sang Trình chiếu…
       </p>
     );
   }
@@ -286,7 +286,7 @@ function SendToPresent({ images, nodeId }: { images: string[]; nodeId: string })
         timerRef.current = setTimeout(() => router.push('/present-editor'), 650);
       }}
     >
-      <Presentation size={12} /> Đưa sang Trình chiếu →
+      <Presentation size={16} /> Đưa sang Trình chiếu →
     </button>
   );
 }
@@ -360,7 +360,7 @@ function ObjFbxActions({
             className="nodrag flex flex-1 items-center justify-center gap-1 rounded-md border border-[var(--border-strong)] py-1.5 text-[11px] text-[var(--t2)] hover:border-sky-500/60"
             onClick={() => setShow3d(true)}
           >
-            <Box size={12} /> Xem 3D
+            <Box size={16} /> Xem 3D
           </button>
         )}
         {shownScene && <Scene3DPreviewModal open={show3d} onClose={() => setShow3d(false)} scene={shownScene} onPushPull={handlePushPull} />}
@@ -372,7 +372,7 @@ function ObjFbxActions({
             downloadText(mtl, 'scene.mtl');
           }}
         >
-          <Download size={12} /> OBJ + MTL
+          <Download size={16} /> OBJ + MTL
         </button>
         <button
           disabled={busy}
@@ -408,7 +408,7 @@ function ObjFbxActions({
             }
           }}
         >
-          <Download size={12} /> {busy ? 'Đang convert…' : 'FBX (Blender)'}
+          <Download size={16} /> {busy ? 'Đang convert…' : 'FBX (Blender)'}
         </button>
       </div>
       {msg && <p className="rounded-md bg-[var(--field)] px-2 py-1.5 text-[9.5px] leading-snug text-[var(--t3)]">{msg}</p>}

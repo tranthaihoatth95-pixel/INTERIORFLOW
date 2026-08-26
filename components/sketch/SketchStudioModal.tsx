@@ -91,14 +91,14 @@ export function SketchStudioModal() {
             className="nen-mo-card flex max-h-full w-full max-w-4xl flex-col overflow-hidden rounded-[20px] border border-[var(--vien-mo)] shadow-2xl"
           >
             <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3">
-              <Paintbrush size={15} className="text-[var(--accent)]" />
+              <Paintbrush size={14} className="text-[var(--accent)]" />
               <span className="flex-1 text-sm font-medium text-[var(--t1)]">Sketch Studio — vẽ tay tự do</span>
               <motion.button
                 {...pressableIcon}
                 onClick={close}
                 className="grid h-7 w-7 place-items-center rounded-[10px] text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
               >
-                <X size={15} />
+                <X size={16} />
               </motion.button>
             </div>
 
@@ -143,7 +143,7 @@ export function SketchStudioModal() {
                 onClick={save}
                 className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-3.5 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)]"
               >
-                <Check size={13} /> Lưu vào node
+                <Check size={16} /> Lưu vào node
               </motion.button>
             </div>
           </motion.div>

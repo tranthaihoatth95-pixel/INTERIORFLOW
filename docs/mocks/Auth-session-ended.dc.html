@@ -1,0 +1,739 @@
+<!-- @dsCard group="Auth" -->
+<meta charset="utf-8">
+<title>Auth · Phiên đã hết</title>
+<style>
+/* ============================================================================
+   AUTH · PHIÊN ĐÃ HẾT — trạng thái CÒN THIẾU của họ Auth (Claude Design, 22/08)
+
+   Chỗ đứng của màn này: GIỮA hai màn đã duyệt trong Auth.dc.html.
+     · giống ĐĂNG NHẬP  — người dùng đang ở NGOÀI
+     · giống MÀN KHOÁ   — một phút trước họ còn ở TRONG
+     · khác CẢ HAI      — nó KHÔNG ĐƯỢC HỨA điều gì về việc chưa lưu
+
+   ⛔ LUẬT NỀN: KHOÁ ≠ ĐĂNG XUẤT. Màn khoá là TẤM PHỦ đặt lên cái bàn vẫn sống
+   (cây workspace chưa hề unmount) nên nó được phép hứa "việc của bạn vẫn ở đó".
+   Phiên hết hạn thì cái bàn KHÔNG được giữ cho ai cả. Mượn ngôn ngữ màn khoá ở
+   đây là nói dối đúng lúc cần thật nhất — nên toàn bộ bản vẽ này dựng theo một
+   nguyên tắc: MỌI TÍN HIỆU LIÊN TỤC CỦA MÀN KHOÁ ĐỀU BỊ GỠ BỎ, không thay bằng
+   tín hiệu tương đương nào.
+
+   VẬT LIỆU (LUAT-VAT-LIEU-KINH-G0-G3): màn này là G0–G1.
+   G0 trường ambient · G1 kính phẳng cho VI/EN. Nút "Vào xưởng" giữ G3 vì nó là
+   ĐÚNG CÁI CỬA của màn Đăng nhập, không phải một nút mới. Không G3 ở đâu khác.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   KHỐI GƯƠNG TOKEN — chỗ DUY NHẤT được phép có hex.
+   Chép đúng tên + đúng giá trị từ app/globals.css (chỉ đọc). Phần dựng màn bên
+   dưới không có một hex nào: mọi màu đi qua var(--…) / color-mix().
+   --------------------------------------------------------------------------- */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --on-accent:#ffffff;
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fs-ui:13px; --fw-normal:400; --fw-semi:600;
+  --blur:22px; --kinh-nhoe:16px; --kinh-nhoe-mong:12px;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --nhip-bam:130ms; --nhip-vien:170ms; --nhip-bang:220ms; --nhip-ngu-canh:300ms;
+  --tap:32px; --tap-lg:44px; --row:28px; --gap:8px;
+}
+:root,:root[data-theme='dark']{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --dots:#26262d; --surface-page:#17171b;
+  --nen-mo-header:rgba(20,20,23,.72); --nen-mo-panel:rgba(20,20,23,.68);
+  --nen-mo-card:rgba(26,26,30,.82); --nen-mo-overlay:rgba(6,6,8,.56);
+  --kinh-mong:rgba(24,24,28,.84); --kinh-vua:rgba(24,24,28,.90);
+  --vl-dac:var(--panel); --vl-gan-dac:rgba(20,20,23,.97);
+  --kinh-mep-sang:rgba(255,255,255,.14); --kinh-vien:rgba(255,255,255,.10);
+  --kinh-chu-phu:#b4b4bd;
+  --vien-mo:rgba(255,255,255,.06); --mo-vo-hieu:.5;
+  --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
+  --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --dots:#ddd8ce; --surface-page:#faf8f4;
+  --nen-mo-header:rgba(250,248,244,.72); --nen-mo-panel:rgba(250,248,244,.70);
+  --nen-mo-card:rgba(255,255,255,.82); --nen-mo-overlay:rgba(60,55,48,.28);
+  --kinh-mong:rgba(252,251,249,.88); --kinh-vua:rgba(252,251,249,.93);
+  --vl-dac:var(--panel); --vl-gan-dac:rgba(250,248,244,.975);
+  --kinh-mep-sang:rgba(255,255,255,.75); --kinh-vien:rgba(0,0,0,.08);
+  --kinh-chu-phu:#5c564d;
+  --vien-mo:rgba(0,0,0,.05); --mo-vo-hieu:.62;
+  --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
+  --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+body{font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  padding:36px 40px 96px}
+.mono{font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace;font-variant-numeric:tabular-nums}
+
+/* ---------- khung trang bản vẽ (khớp Auth.dc.html) ---------- */
+.page{width:1440px;margin:0 auto}
+.docHead{display:flex;align-items:flex-end;justify-content:space-between;gap:32px;margin-bottom:34px}
+.docHead h1{margin:0;font-size:var(--fs-xl);font-weight:var(--fw-semi);letter-spacing:-.02em}
+.docHead p{margin:8px 0 0;font-size:var(--fs-xs);color:var(--t3);max-width:960px}
+.tglBtn{height:var(--tap);padding:0 16px;border:1px solid var(--border);border-radius:var(--r-2);
+  background:var(--panel);color:var(--t2);font:var(--fw-semi) var(--fs-xs)/1 inherit;cursor:pointer;flex:none}
+.tglBtn:hover{background:var(--hover);color:var(--t1)}
+.board{margin:0 auto 64px}
+.boardHead{display:flex;align-items:baseline;gap:12px;margin:0 0 12px}
+.boardHead .k{font-size:var(--fs-2xs);font-weight:700;letter-spacing:.10em;color:var(--t4)}
+.boardHead h2{margin:0;font-size:var(--fs-lg);font-weight:var(--fw-semi);letter-spacing:-.01em}
+.boardHead .note{font-size:var(--fs-xs);color:var(--t3);margin-left:auto;text-align:right;max-width:620px}
+.frame{border:1px solid var(--border);border-radius:var(--r-4);overflow:hidden;background:var(--bg);
+  box-shadow:var(--shadow-node)}
+.tag{display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:var(--r-1);
+  background:var(--field);color:var(--t4);font-size:9px;font-weight:700;letter-spacing:.04em}
+.tagPh{background:color-mix(in srgb,var(--t5) 26%,transparent);color:var(--t2)}
+.strip{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+.chip{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border:1px solid var(--border);
+  border-radius:var(--r-3);background:var(--panel);font-size:var(--fs-xs);color:var(--t3);max-width:340px}
+.chip b{color:var(--t1);font-weight:var(--fw-semi);font-size:var(--fs-xs)}
+
+/* ============================================================================
+   TRƯỜNG G0 — cùng trường ambient của màn Đăng nhập, KHÔNG phải workspace.
+   Đây là tín hiệu đầu tiên nói "bạn đang ở NGOÀI": nền là gian phòng trống,
+   không phải cái bàn của bạn bị làm mờ.
+   ========================================================================== */
+.auth{position:relative;height:900px;overflow:hidden;background:var(--bg);isolation:isolate}
+.auth.narrow{height:820px}
+.photo{position:absolute;inset:0;z-index:0;overflow:hidden}
+.photo::after{content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(78% 62% at 26% 6%, color-mix(in srgb,var(--surface-page) 82%, transparent) 0%, transparent 64%),
+    radial-gradient(64% 52% at 88% 92%, var(--accent-soft) 0%, transparent 60%),
+    linear-gradient(168deg, color-mix(in srgb,var(--panel) 72%, transparent) 0%, color-mix(in srgb,var(--bg) 92%, transparent) 68%)}
+.photo svg{position:absolute;inset:0;width:100%;height:100%}
+.veil{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(46% 78% at 50% 46%, color-mix(in srgb,var(--bg) 46%, transparent) 0%, transparent 72%)}
+.authIn{position:relative;z-index:3;height:100%;display:flex;flex-direction:column}
+
+/* ============================================================================
+   ⭐ KHUNG RỖNG — thiết bị thị giác trung tâm của màn này.
+   Màn khoá vẽ workspace THẬT rồi làm mờ: có mảng đặc, có ảnh render, có nhịp thở
+   ⇒ "vẫn sống, chỉ bị che". Ở đây workspace được vẽ bằng ĐÚNG hình học đó nhưng
+   chỉ còn ĐƯỜNG NÉT ĐỨT, RỖNG RUỘT, KHÔNG BLUR (không có gì để làm mờ), KHÔNG
+   nhịp thở. Nó là dấu vết của cái bàn, không phải cái bàn.
+   ⚠️ Đây KHÔNG phải rail dùng được: 0 icon, 0 nhãn, 0 vùng bấm.
+   ========================================================================== */
+.krWrap{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:.5}
+.kr{position:absolute;inset:0;display:flex;flex-direction:column}
+.krLine{border:1px dashed color-mix(in srgb,var(--t5) 62%, transparent);background:transparent}
+.krTop{height:52px;border-bottom:1px dashed color-mix(in srgb,var(--t5) 50%, transparent)}
+.krBody{flex:1;display:flex;min-height:0}
+.krRail{width:56px;border-right:1px dashed color-mix(in srgb,var(--t5) 50%, transparent);
+  display:flex;flex-direction:column;gap:10px;align-items:center;padding-top:14px}
+.krSlot{width:30px;height:30px;border-radius:var(--r-2)}
+.krCanvas{flex:1;position:relative}      /* KHÔNG lưới chấm: canvas không tồn tại */
+.krInsp{width:300px;border-left:1px dashed color-mix(in srgb,var(--t5) 50%, transparent)}
+
+/* ---------- chrome nổi G1 ---------- */
+.kinh{background:var(--kinh-mong);backdrop-filter:blur(var(--kinh-nhoe-mong));
+  -webkit-backdrop-filter:blur(var(--kinh-nhoe-mong));
+  border:1px solid var(--kinh-vien);box-shadow:inset 0 1px 0 var(--kinh-mep-sang)}
+.topbar{display:flex;justify-content:flex-end;padding:22px 26px}
+.lang{display:inline-flex;height:var(--tap);padding:3px;border-radius:var(--r-full);gap:2px}
+.lang b,.lang span{display:grid;place-items:center;min-width:40px;padding:0 12px;border-radius:var(--r-full);
+  font-size:var(--fs-xs);font-weight:var(--fw-semi);letter-spacing:.02em}
+.lang b{background:var(--accent);color:var(--on-accent)}
+.lang span{color:var(--kinh-chu-phu)}
+
+/* ---------- cột giữa ---------- */
+.mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.mark{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:24px}
+.wordmark{font-size:var(--fs-xs);font-weight:700;letter-spacing:.34em;color:var(--t2);text-indent:.34em}
+
+/* ---------- THẺ ĐẶC (nội dung không bao giờ là kính) ---------- */
+.card{width:400px;background:var(--vl-dac);border:1px solid var(--border);border-radius:var(--r-4);
+  box-shadow:var(--shadow-sheet);padding:24px 28px 22px}
+
+/* dấu hiệu trạng thái: MŨI TÊN RỜI KHỎI KHUNG — không phải ổ khoá.
+   Ổ khoá là chữ ký của màn khoá; dùng lại nó ở đây là mượn lời hứa của màn khoá. */
+.dau{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.dauIcon{width:30px;height:30px;flex:none;border-radius:var(--r-2);display:grid;place-items:center;
+  background:var(--field);border:1px solid var(--border);color:var(--t3)}
+.dauTxt{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--t4)}
+.card h3{margin:0;font-size:var(--fs-lg);font-weight:var(--fw-semi);letter-spacing:-.01em;color:var(--t1)}
+.card .sub{margin:6px 0 0;font-size:var(--fs-sm);color:var(--t2)}
+
+/* nơi định vị — CHỈ tên tuyến. Không tên dự án · không tên khách · không tệp ·
+   không mốc giờ · không nội dung phiên cũ (đây là bề mặt CHƯA xác thực). */
+.tuyen{display:flex;align-items:center;gap:9px;margin:16px 0 0;padding:9px 12px;border-radius:var(--r-2);
+  background:var(--field);border:1px solid var(--border);font-size:var(--fs-xs);color:var(--t3)}
+.tuyen .mono{color:var(--t2)}
+
+/* câu KHÔNG HỨA — nhỏ, bình thản, nói đúng sự thật của mô hình lưu trữ */
+.thatTha{margin:12px 0 20px;font-size:var(--fs-2xs);line-height:1.5;color:var(--t4)}
+
+/* input gạch dưới mảnh — đúng ngôn ngữ họ Auth đang chạy */
+.f{position:relative;margin-bottom:18px}
+.f input{width:100%;appearance:none;border:0;border-bottom:1px solid var(--border);background:transparent;
+  padding:10px 2px;font:400 var(--fs-sm)/1.4 inherit;color:var(--t1);outline:none}
+.f input::placeholder{color:var(--t5)}
+.f.focus input{border-bottom-color:var(--accent)}
+.f .eye{position:absolute;right:0;bottom:6px;width:var(--tap);height:var(--tap);display:grid;place-items:center;
+  border-radius:var(--r-full);color:var(--t4);cursor:pointer}
+.f .eye:hover{background:var(--hover);color:var(--t2)}
+.rowOpt{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 18px}
+.ck{display:inline-flex;align-items:center;gap:9px;font-size:var(--fs-xs);color:var(--t2);cursor:pointer}
+.ckBox{width:16px;height:16px;border-radius:var(--r-1);border:1px solid var(--border-strong);
+  display:grid;place-items:center;background:var(--field)}
+.ck.on .ckBox{background:var(--accent);border-color:var(--accent)}
+.lnk{font-size:var(--fs-xs);color:var(--t3);text-decoration:none;border-bottom:1px solid transparent}
+.lnk:hover{color:var(--t1);border-bottom-color:var(--border-strong)}
+
+/* ---------- NÚT "VÀO XƯỞNG" — G3, cùng MỘT cánh cửa của màn Đăng nhập ---------- */
+.btnXuong{position:relative;width:100%;height:var(--tap-lg);border:0;border-radius:var(--r-full);
+  background:var(--accent);color:var(--on-accent);cursor:pointer;overflow:hidden;
+  font:var(--fw-semi) var(--fs-ui)/1 inherit;letter-spacing:.01em;
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  box-shadow:0 8px 22px -12px var(--accent-ring)}
+.btnXuong .lens{position:absolute;inset:1px;border-radius:inherit;pointer-events:none;
+  background:
+    radial-gradient(58% 150% at 30% -30%, color-mix(in srgb,var(--on-accent) 46%, transparent) 0%, transparent 62%),
+    radial-gradient(46% 120% at 82% 130%, color-mix(in srgb,var(--accent-strong) 90%, transparent) 0%, transparent 66%),
+    linear-gradient(180deg, color-mix(in srgb,var(--on-accent) 13%, transparent) 0%, transparent 44%);
+  animation:troi 18s var(--ease-apple) infinite}
+.btnXuong .lbl{position:relative;z-index:1}
+@keyframes troi{0%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(6px,-2px,0) scale(1.012)}
+  100%{transform:translate3d(0,0,0) scale(1)}}
+
+.hr{display:flex;align-items:center;gap:14px;margin:20px 0 16px;
+  font-size:9px;font-weight:700;letter-spacing:.13em;color:var(--t4)}
+.hr::before,.hr::after{content:'';height:1px;flex:1;background:var(--border)}
+.prov{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.prov button{height:var(--tap-lg);border:1px solid var(--border);border-radius:var(--r-2);background:var(--field);
+  color:var(--t2);cursor:pointer;display:grid;place-items:center;gap:5px;padding:0;
+  font:var(--fw-semi) var(--fs-2xs)/1 inherit}
+.prov button:hover{background:var(--hover);color:var(--t1)}
+.prov button[aria-disabled='true']{opacity:var(--mo-vo-hieu);cursor:default}
+.prov button[aria-disabled='true']:hover{background:var(--field);color:var(--t2)}
+.provWhy{margin-top:9px;font-size:var(--fs-2xs);color:var(--t4);text-align:center}
+
+/* ============================================================================
+   BẢNG SO — MÀN KHOÁ ↔ PHIÊN ĐÃ HẾT
+   ========================================================================== */
+.rowBoards{display:flex;gap:24px;align-items:flex-start}
+.col{flex:1;min-width:0}
+.mini{position:relative;height:460px;overflow:hidden;background:var(--bg);isolation:isolate}
+.cap{margin-top:10px;padding:12px 14px;border-radius:var(--r-3);border:1px solid var(--border);
+  background:var(--panel);font-size:var(--fs-sm);line-height:1.45;color:var(--t2)}
+.cap b{display:block;font-size:var(--fs-2xs);letter-spacing:.10em;font-weight:700;margin-bottom:5px}
+.cap.hua b{color:var(--success)}
+.cap.khong b{color:var(--t4)}
+
+/* --- mini màn khoá: việc THẬT còn sống, chỉ bị che --- */
+.ghostWrap{position:absolute;inset:0;z-index:0;filter:blur(22px) saturate(1.18);transform:scale(1.04);
+  animation:tho 9s ease-in-out infinite}
+@keyframes tho{0%,100%{transform:scale(1.04)}50%{transform:scale(1.055)}}
+.ghost{position:absolute;inset:0;display:flex;flex-direction:column}
+.gTop{height:44px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;
+  gap:10px;padding:0 16px}
+.gBody{flex:1;display:flex;min-height:0}
+.gRail{width:48px;background:var(--panel);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;gap:10px;align-items:center;padding-top:12px}
+.gCanvas{flex:1;background:var(--bg);position:relative;
+  background-image:radial-gradient(var(--dots) 1px,transparent 1px);background-size:22px 22px}
+.gInsp{width:180px;background:var(--panel);border-left:1px solid var(--border);padding:14px;
+  display:flex;flex-direction:column;gap:10px}
+.gBlk{border-radius:var(--r-2);background:var(--field)}
+.gLine{height:9px;border-radius:var(--r-full);background:var(--hover)}
+.gRender{position:absolute;left:10%;top:14%;width:54%;height:56%;border-radius:var(--r-3);
+  background:linear-gradient(140deg,color-mix(in srgb,var(--accent) 40%,var(--field)),var(--hover))}
+.gPlan{position:absolute;right:8%;bottom:10%;width:26%;height:32%;border-radius:var(--r-2);
+  border:2px solid var(--border-strong);background:var(--panel)}
+.lockVeil{position:absolute;inset:0;z-index:1;background:color-mix(in srgb,var(--bg) 72%, transparent);
+  backdrop-filter:blur(30px) saturate(120%);-webkit-backdrop-filter:blur(30px) saturate(120%)}
+.lockMid{position:relative;z-index:2;height:100%;display:flex;align-items:center;justify-content:center}
+.lockFace{display:flex;flex-direction:column;align-items:center;text-align:center}
+.lockPin{width:40px;height:40px;border-radius:var(--r-full);background:var(--panel);border:1px solid var(--border);
+  display:grid;place-items:center;color:var(--t2);margin-bottom:10px}
+.gio{font-size:48px;font-weight:var(--fw-semi);line-height:1;letter-spacing:-.03em;color:var(--t1);
+  font-variant-numeric:tabular-nums}
+.nguCanh{margin-top:10px;display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--t3)}
+.nguCanh b{color:var(--t2);font-weight:var(--fw-normal)}
+.daLuu{margin-top:14px;display:inline-flex;align-items:center;gap:7px;font-size:var(--fs-2xs);color:var(--t4)}
+.daLuu i{width:6px;height:6px;border-radius:var(--r-full);background:var(--success);display:block}
+.moLai{margin-top:20px;display:inline-flex;align-items:center;gap:9px;height:var(--tap-lg);padding:0 20px;
+  border-radius:var(--r-full);background:var(--panel);border:1px solid var(--border);color:var(--t1);
+  font:var(--fw-normal) var(--fs-ui)/1 inherit;cursor:pointer}
+
+/* --- bảng gỡ tín hiệu --- */
+.bang{width:100%;border-collapse:collapse;margin-top:18px;font-size:var(--fs-xs)}
+.bang th,.bang td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.bang th{font-size:9px;letter-spacing:.10em;color:var(--t4);font-weight:700;text-transform:uppercase}
+.bang td{color:var(--t3)}
+.bang td:first-child{color:var(--t1);width:32%}
+.co{color:var(--t2)}
+.khg{color:var(--t4)}
+
+@media (prefers-reduced-motion:reduce){
+  /* kính Ở LẠI, chỉ đứng yên — nó là vật liệu, không phải hiệu ứng */
+  .btnXuong .lens{animation:none}
+  .ghostWrap{animation:none}
+}
+</style>
+
+<div class="page">
+
+  <div class="docHead">
+    <div>
+      <h1>Auth · Phiên đã hết</h1>
+      <p>Trạng thái còn thiếu của họ Auth. Hiện <span class="mono">GET /files</span> lúc chưa đăng nhập
+        trả <b>200</b> và dựng nguyên vỏ xưởng trong khi mọi lệnh dữ liệu đều 401 — người dùng nhìn thấy
+        một cái xưởng rỗng và không được nói gì cả. Màn này lấp đúng chỗ đó.
+        Nó nằm <b>GIỮA</b> Đăng nhập và Màn khoá: người dùng đang ở NGOÀI (như Đăng nhập) nhưng một phút
+        trước còn ở TRONG (như Màn khoá) — và khác cả hai ở chỗ <b>nó không được hứa gì về việc chưa lưu</b>.
+        Vật liệu G0–G1; nút <span class="mono">Vào xưởng</span> giữ G3 vì đó vẫn là đúng một cánh cửa ấy.</p>
+    </div>
+    <button class="tglBtn" onclick="var r=document.documentElement;r.dataset.theme=r.dataset.theme==='light'?'dark':'light';this.textContent=r.dataset.theme==='light'?'Nền tối':'Nền sáng';">Nền sáng</button>
+  </div>
+
+  <!-- ══════════════════════════ A · KHỔ ĐẦY 1440×900 ══════════════════════════ -->
+  <section class="board">
+    <div class="boardHead">
+      <span class="k">A</span><h2>Phiên đã hết — vào lại từ <span class="mono">/files</span></h2>
+      <span class="note">Nền là gian phòng trống của họ Đăng nhập, KHÔNG phải bàn làm việc bị làm mờ.
+        Chồng lên đó là <b>khung rỗng nét đứt</b> — dấu vết của vỏ xưởng, rỗng ruột, không blur,
+        không nhịp thở, không một vùng bấm nào.</span>
+    </div>
+    <div class="frame">
+      <div class="auth">
+
+        <div class="photo">
+          <!-- PLACEHOLDER — trường ambient, dựng bằng token nên đúng ở cả hai theme. -->
+          <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <g fill="none" stroke="var(--t5)" stroke-width="1.2" opacity=".34">
+              <path d="M0 640 H1440"/><path d="M232 0 V640"/><path d="M1150 0 V640"/>
+              <path d="M232 640 L60 900"/><path d="M1150 640 L1380 900"/>
+            </g>
+            <rect x="300" y="120" width="300" height="380" fill="var(--panel)" opacity=".42"/>
+            <path d="M300 500 L620 500 L860 900 L120 900 Z" fill="var(--panel)" opacity=".2"/>
+            <rect x="880" y="430" width="230" height="210" fill="var(--field)" opacity=".42"/>
+          </svg>
+          <span class="tag tagPh" style="position:absolute;left:20px;top:20px;z-index:5">PLACEHOLDER · TRƯỜNG AMBIENT</span>
+        </div>
+        <div class="veil"></div>
+
+        <!-- ⭐ KHUNG RỖNG — hình học của vỏ xưởng, không còn ruột -->
+        <div class="krWrap" aria-hidden="true">
+          <div class="kr">
+            <div class="krTop"></div>
+            <div class="krBody">
+              <div class="krRail">
+                <div class="krSlot krLine"></div><div class="krSlot krLine"></div>
+                <div class="krSlot krLine"></div><div class="krSlot krLine"></div>
+              </div>
+              <div class="krCanvas"></div>
+              <div class="krInsp"></div>
+            </div>
+          </div>
+        </div>
+        <span class="tag tagPh" style="position:absolute;left:20px;bottom:20px;z-index:5">KHUNG RỖNG · KHÔNG PHẢI RAIL DÙNG ĐƯỢC</span>
+
+        <div class="authIn">
+          <div class="topbar"><div class="lang kinh"><b>VI</b><span>EN</span></div></div>
+
+          <div class="mid">
+            <!-- mark |F + wordmark TRỞ LẠI: chữ ký của "bạn đang ở NGOÀI".
+                 Màn khoá cố ý KHÔNG có hai thứ này. -->
+            <div class="mark">
+              <svg width="40" height="40" viewBox="0 0 44 44" aria-label="InteriorFlow">
+                <rect x="7" y="8" width="4" height="28" rx="1" fill="var(--t1)"/>
+                <path d="M19 36 V8 H35" stroke="var(--t1)" stroke-width="4" fill="none"/>
+                <path d="M19 21 H31" stroke="var(--t1)" stroke-width="4" fill="none"/>
+              </svg>
+              <div class="wordmark">INTERIORFLOW</div>
+            </div>
+
+            <div class="card">
+              <div class="dau">
+                <span class="dauIcon">
+                  <!-- MŨI TÊN RỜI KHỎI KHUNG — không phải ổ khoá. Ổ khoá là chữ ký
+                       của màn khoá và nó hứa "mở ra là về chỗ cũ". -->
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                    <path d="M14 4.5H6.5A1.5 1.5 0 0 0 5 6v12a1.5 1.5 0 0 0 1.5 1.5H14"/>
+                    <path d="M17.5 8.5 21 12l-3.5 3.5"/><path d="M20.4 12H10.5"/>
+                  </svg>
+                </span>
+                <span class="dauTxt">PHIÊN LÀM VIỆC ĐÃ ĐÓNG</span>
+              </div>
+
+              <h3>Phiên đã hết</h3>
+              <p class="sub">Đăng nhập lại để vào xưởng.</p>
+
+              <div class="tuyen">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                  <path d="M3.5 6.5h6l1.6 2h9.4v9a1.5 1.5 0 0 1-1.5 1.5h-14A1.5 1.5 0 0 1 3.5 17.5Z"/>
+                </svg>
+                Bạn vừa mở <span class="mono">Files</span>
+              </div>
+
+              <!-- CÂU KHÔNG HỨA. Nó nói sự thật của mô hình lưu trữ, KHÔNG nói về
+                   phiên cũ của riêng người này (bề mặt chưa xác thực). -->
+              <p class="thatTha">Việc đã lưu nằm trong dự án. Phần chưa lưu của phiên cũ thì không —
+                InteriorFlow không giữ lại phiên đã đóng.</p>
+
+              <div class="f"><input placeholder="Email hoặc số điện thoại" value=""></div>
+              <div class="f">
+                <input type="password" placeholder="Mật khẩu">
+                <span class="eye" title="Xem mật khẩu">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                    <path d="M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="2.7"/>
+                  </svg>
+                </span>
+              </div>
+
+              <div class="rowOpt">
+                <label class="ck on"><span class="ckBox">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--on-accent)" stroke-width="3.4"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+                </span>Ghi nhớ đăng nhập</label>
+                <a class="lnk" href="#">Quên mật khẩu?</a>
+              </div>
+
+              <button class="btnXuong"><span class="lens"></span><span class="lbl">Vào xưởng →</span></button>
+
+              <div class="hr">HOẶC TIẾP TỤC VỚI</div>
+              <div class="prov">
+                <button><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8.6h8.4M12 8.6a3.4 3.4 0 1 0 3.2 4.5"/></svg>Google</button>
+                <button><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7.6" height="7.6"/><rect x="13.4" y="3" width="7.6" height="7.6" opacity=".62"/><rect x="3" y="13.4" width="7.6" height="7.6" opacity=".62"/><rect x="13.4" y="13.4" width="7.6" height="7.6" opacity=".4"/></svg>Microsoft</button>
+                <button aria-disabled="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.4c0-2.5 2-3.7 2.1-3.8-1.1-1.7-2.9-1.9-3.6-1.9-1.5-.2-3 .9-3.7.9-.8 0-2-.9-3.2-.9-1.7 0-3.2 1-4 2.5-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.4 0 1.8.8 3.1.7 1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.5-1-2.5-3.9Z"/><path d="M14.2 4.9c.6-.8 1.1-1.9 1-3-1 0-2.2.6-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.5Z"/></svg>Apple</button>
+              </div>
+              <div class="provWhy">Apple: cần Apple Developer — sắp bật</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="strip">
+      <div class="chip"><div><b>KHÔNG có tab Đăng ký</b> — người đứng đây đã có tài khoản, và màn này chỉ
+        được phép có MỘT việc. Bỏ tab là khác biệt nhìn thấy được so với bản vẽ A của Auth.</div></div>
+      <div class="chip"><div><b>Ô email để TRỐNG</b> — không điền sẵn, không avatar, không tên.
+        Đây là bề mặt chưa xác thực; điền sẵn danh tính là rò dữ liệu phiên cũ cho bất kỳ ai mở máy.</div></div>
+      <div class="chip"><div><b>Không đỏ, không mã lỗi</b> — hết phiên là chuyện bình thường của thời gian,
+        không phải hỏng và không phải lỗi của người dùng. <span class="mono">--danger</span> không xuất hiện.</div></div>
+      <div class="chip"><div><b>Chỉ tên TUYẾN</b> — <span class="mono">Files</span>. Không tên dự án,
+        không tên khách, không tệp, không mốc giờ, không "bạn đang làm dở…".</div></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ B · SO CẠNH NHAU — TÂM ĐIỂM ══════════════════ -->
+  <section class="board">
+    <div class="boardHead">
+      <span class="k">B</span><h2>Màn khoá ↔ Phiên đã hết</h2>
+      <span class="note">Liếc một cái phải biết cái nào giữ việc cho bạn và cái nào không.
+        Hai khung dưới đây có CÙNG hình học vỏ xưởng — khác nhau ở chỗ một bên còn RUỘT, một bên chỉ còn NÉT.</span>
+    </div>
+
+    <div class="rowBoards">
+
+      <!-- B-1 · MÀN KHOÁ (đã duyệt trong Auth.dc.html — trích lại để so, không thiết kế lại) -->
+      <div class="col">
+        <div class="frame">
+          <div class="mini">
+            <div class="ghostWrap"><div class="ghost">
+              <div class="gTop">
+                <div class="gBlk" style="width:80px;height:13px"></div>
+                <div class="gBlk" style="width:120px;height:11px"></div>
+              </div>
+              <div class="gBody">
+                <div class="gRail">
+                  <div class="gBlk" style="width:26px;height:26px"></div><div class="gBlk" style="width:26px;height:26px"></div>
+                  <div class="gBlk" style="width:26px;height:26px"></div><div class="gBlk" style="width:26px;height:26px"></div>
+                </div>
+                <div class="gCanvas"><div class="gRender"></div><div class="gPlan"></div></div>
+                <div class="gInsp">
+                  <div class="gLine" style="width:62%"></div>
+                  <div class="gBlk" style="height:64px"></div>
+                  <div class="gLine" style="width:84%"></div><div class="gLine" style="width:50%"></div>
+                </div>
+              </div>
+            </div></div>
+            <div class="lockVeil"></div>
+            <div class="lockMid">
+              <div class="lockFace">
+                <div class="lockPin">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4.5" y="10.5" width="15" height="10" rx="2.4"/><path d="M8.2 10.5V7.6a3.8 3.8 0 0 1 7.6 0v2.9"/></svg>
+                </div>
+                <div class="gio">14:32</div>
+                <div class="nguCanh"><b>Căn hộ Thảo Điền</b><span aria-hidden>·</span><span>2D Kỹ thuật</span></div>
+                <div class="daLuu"><i></i>Đã lưu trước khi khoá · 14:31</div>
+                <button class="moLai">Mở lại</button>
+              </div>
+            </div>
+            <span class="tag tagPh" style="position:absolute;left:16px;top:14px;z-index:3">MÀN KHOÁ · ĐÃ DUYỆT</span>
+          </div>
+        </div>
+        <div class="cap hua">
+          <b>HỨA GÌ</b>
+          Việc của bạn vẫn còn nguyên ngay sau tấm phủ này — nhấc phủ lên là về đúng chỗ đã rời.
+        </div>
+      </div>
+
+      <!-- B-2 · PHIÊN ĐÃ HẾT -->
+      <div class="col">
+        <div class="frame">
+          <div class="mini">
+            <div class="photo">
+              <svg viewBox="0 0 700 460" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                <g fill="none" stroke="var(--t5)" stroke-width="1.1" opacity=".3">
+                  <path d="M0 320 H700"/><path d="M120 0 V320"/><path d="M570 0 V320"/></g>
+                <rect x="160" y="60" width="150" height="190" fill="var(--panel)" opacity=".36"/>
+              </svg>
+            </div>
+            <div class="veil"></div>
+            <div class="krWrap" aria-hidden="true">
+              <div class="kr">
+                <div class="krTop" style="height:44px"></div>
+                <div class="krBody">
+                  <div class="krRail" style="width:48px">
+                    <div class="krSlot krLine" style="width:26px;height:26px"></div>
+                    <div class="krSlot krLine" style="width:26px;height:26px"></div>
+                    <div class="krSlot krLine" style="width:26px;height:26px"></div>
+                    <div class="krSlot krLine" style="width:26px;height:26px"></div>
+                  </div>
+                  <div class="krCanvas"></div>
+                  <div class="krInsp" style="width:180px"></div>
+                </div>
+              </div>
+            </div>
+            <div class="authIn" style="align-items:center;justify-content:center">
+              <div class="mid">
+                <div class="mark" style="margin-bottom:16px">
+                  <svg width="30" height="30" viewBox="0 0 44 44" aria-hidden="true">
+                    <rect x="7" y="8" width="4" height="28" rx="1" fill="var(--t1)"/>
+                    <path d="M19 36 V8 H35" stroke="var(--t1)" stroke-width="4" fill="none"/>
+                    <path d="M19 21 H31" stroke="var(--t1)" stroke-width="4" fill="none"/></svg>
+                  <div class="wordmark" style="font-size:var(--fs-2xs);letter-spacing:.28em">INTERIORFLOW</div>
+                </div>
+                <div class="card" style="width:330px;padding:20px 22px 18px">
+                  <div class="dau" style="margin-bottom:12px">
+                    <span class="dauIcon" style="width:26px;height:26px">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                        <path d="M14 4.5H6.5A1.5 1.5 0 0 0 5 6v12a1.5 1.5 0 0 0 1.5 1.5H14"/>
+                        <path d="M17.5 8.5 21 12l-3.5 3.5"/><path d="M20.4 12H10.5"/></svg>
+                    </span>
+                    <span class="dauTxt">PHIÊN LÀM VIỆC ĐÃ ĐÓNG</span>
+                  </div>
+                  <h3 style="font-size:var(--fs-md)">Phiên đã hết</h3>
+                  <p class="sub" style="font-size:var(--fs-xs)">Đăng nhập lại để vào xưởng.</p>
+                  <div class="tuyen" style="margin-top:12px">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                      <path d="M3.5 6.5h6l1.6 2h9.4v9a1.5 1.5 0 0 1-1.5 1.5h-14A1.5 1.5 0 0 1 3.5 17.5Z"/></svg>
+                    Bạn vừa mở <span class="mono">Files</span>
+                  </div>
+                  <p class="thatTha" style="margin:10px 0 14px">Việc đã lưu nằm trong dự án.
+                    Phần chưa lưu của phiên cũ thì không.</p>
+                  <button class="btnXuong"><span class="lens"></span><span class="lbl">Đăng nhập lại →</span></button>
+                </div>
+              </div>
+            </div>
+            <span class="tag tagPh" style="position:absolute;left:16px;top:14px;z-index:5">PHIÊN ĐÃ HẾT · MỚI</span>
+          </div>
+        </div>
+        <div class="cap khong">
+          <b>HỨA GÌ</b>
+          Không hứa gì cả — phiên cũ đã đóng, xưởng không được giữ chỗ cho ai. Chỉ việc đã lưu mới còn.
+        </div>
+      </div>
+    </div>
+
+    <table class="bang">
+      <tr><th>Tín hiệu</th><th>Màn khoá</th><th>Phiên đã hết</th><th>Vì sao</th></tr>
+      <tr><td>Thứ nằm sau</td><td class="co">workspace THẬT, mờ 22–30px, thở 9s</td><td class="khg">khung rỗng nét đứt, không blur, đứng yên</td><td>mờ = còn đó mà không đọc được · nét đứt = không còn gì để mờ</td></tr>
+      <tr><td>Đồng hồ lớn</td><td class="co">14:32 — mốc neo của cả mặt khoá</td><td class="khg">không có</td><td>đồng hồ nói "thời gian của bạn vẫn đang chạy ở đây"</td></tr>
+      <tr><td>Tên dự án · tên chặng</td><td class="co">có</td><td class="khg">không — chỉ tên tuyến <span class="mono">Files</span></td><td>bề mặt chưa xác thực: cấm lộ dự án/khách/tệp/giờ</td></tr>
+      <tr><td>Chấm "Đã lưu" xanh</td><td class="co">có, kèm mốc giờ</td><td class="khg">không</td><td>đó là LỜI HỨA của màn khoá; ở đây hứa thế là nói dối</td></tr>
+      <tr><td>Ổ khoá</td><td class="co">có</td><td class="khg">mũi tên rời khỏi khung</td><td>ổ khoá hàm ý mở ra là về chỗ cũ</td></tr>
+      <tr><td>Mark |F · wordmark</td><td class="khg">không</td><td class="co">có</td><td>chữ ký "bạn đang ở NGOÀI", chung với màn Đăng nhập</td></tr>
+      <tr><td>Ô email · nhà cung cấp</td><td class="khg">không (phiên chưa mất)</td><td class="co">có, để TRỐNG</td><td>phải xác thực lại từ đầu, và không được biết trước bạn là ai</td></tr>
+      <tr><td>Việc chính</td><td>Mở lại ↵</td><td>Đăng nhập lại</td><td>một màn một việc</td></tr>
+    </table>
+  </section>
+
+  <!-- ══════════════════════════ C · KHỔ HẸP ~1100 ══════════════════════════ -->
+  <section class="board" style="width:1100px">
+    <div class="boardHead">
+      <span class="k">C</span><h2>Khổ hẹp ~1100px</h2>
+      <span class="note">Thẻ giữ nguyên 400px — nó là vật, không phải phần trăm. Khung rỗng co theo khung màn
+        (rail 56 → 48, inspector 300 → 240) vì nó là hình chiếu của vỏ xưởng ở đúng khổ đó.</span>
+    </div>
+    <div class="frame">
+      <div class="auth narrow">
+        <div class="photo"><svg viewBox="0 0 1100 820" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <g fill="none" stroke="var(--t5)" stroke-width="1.2" opacity=".32">
+            <path d="M0 560 H1100"/><path d="M180 0 V560"/><path d="M890 0 V560"/></g>
+          <rect x="235" y="96" width="250" height="330" fill="var(--panel)" opacity=".4"/>
+          <rect x="680" y="380" width="190" height="180" fill="var(--field)" opacity=".4"/>
+        </svg></div>
+        <div class="veil"></div>
+        <div class="krWrap" aria-hidden="true">
+          <div class="kr">
+            <div class="krTop" style="height:48px"></div>
+            <div class="krBody">
+              <div class="krRail" style="width:48px">
+                <div class="krSlot krLine" style="width:26px;height:26px"></div>
+                <div class="krSlot krLine" style="width:26px;height:26px"></div>
+                <div class="krSlot krLine" style="width:26px;height:26px"></div>
+              </div>
+              <div class="krCanvas"></div>
+              <div class="krInsp" style="width:240px"></div>
+            </div>
+          </div>
+        </div>
+        <div class="authIn">
+          <div class="topbar" style="padding:16px 20px"><div class="lang kinh"><b>VI</b><span>EN</span></div></div>
+          <div class="mid">
+            <div class="mark" style="margin-bottom:18px">
+              <svg width="34" height="34" viewBox="0 0 44 44" aria-hidden="true">
+                <rect x="7" y="8" width="4" height="28" rx="1" fill="var(--t1)"/>
+                <path d="M19 36 V8 H35" stroke="var(--t1)" stroke-width="4" fill="none"/>
+                <path d="M19 21 H31" stroke="var(--t1)" stroke-width="4" fill="none"/></svg>
+              <div class="wordmark" style="font-size:var(--fs-2xs);letter-spacing:.28em">INTERIORFLOW</div>
+            </div>
+            <div class="card" style="padding:20px 24px 18px">
+              <div class="dau" style="margin-bottom:12px">
+                <span class="dauIcon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                    <path d="M14 4.5H6.5A1.5 1.5 0 0 0 5 6v12a1.5 1.5 0 0 0 1.5 1.5H14"/>
+                    <path d="M17.5 8.5 21 12l-3.5 3.5"/><path d="M20.4 12H10.5"/></svg>
+                </span>
+                <span class="dauTxt">PHIÊN LÀM VIỆC ĐÃ ĐÓNG</span>
+              </div>
+              <h3 style="font-size:var(--fs-md)">Phiên đã hết</h3>
+              <p class="sub">Đăng nhập lại để vào xưởng.</p>
+              <div class="tuyen" style="margin-top:12px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                  <path d="M3.5 6.5h6l1.6 2h9.4v9a1.5 1.5 0 0 1-1.5 1.5h-14A1.5 1.5 0 0 1 3.5 17.5Z"/></svg>
+                Bạn vừa mở <span class="mono">Files</span>
+              </div>
+              <p class="thatTha" style="margin:10px 0 16px">Việc đã lưu nằm trong dự án.
+                Phần chưa lưu của phiên cũ thì không.</p>
+              <div class="f" style="margin-bottom:14px"><input placeholder="Email hoặc số điện thoại"></div>
+              <div class="f" style="margin-bottom:14px">
+                <input type="password" placeholder="Mật khẩu">
+                <span class="eye"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="2.7"/></svg></span>
+              </div>
+              <div class="rowOpt" style="margin:0 0 14px">
+                <label class="ck on"><span class="ckBox"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--on-accent)" stroke-width="3.4"><path d="M4 12.5 9.5 18 20 6.5"/></svg></span>Ghi nhớ đăng nhập</label>
+                <a class="lnk" href="#">Quên mật khẩu?</a>
+              </div>
+              <button class="btnXuong"><span class="lens"></span><span class="lbl">Vào xưởng →</span></button>
+              <div class="hr" style="margin:16px 0 12px">HOẶC TIẾP TỤC VỚI</div>
+              <div class="prov">
+                <button><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8.6h8.4M12 8.6a3.4 3.4 0 1 0 3.2 4.5"/></svg>Google</button>
+                <button><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7.6" height="7.6"/><rect x="13.4" y="3" width="7.6" height="7.6" opacity=".62"/><rect x="3" y="13.4" width="7.6" height="7.6" opacity=".62"/><rect x="13.4" y="13.4" width="7.6" height="7.6" opacity=".4"/></svg>Microsoft</button>
+                <button aria-disabled="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.4c0-2.5 2-3.7 2.1-3.8-1.1-1.7-2.9-1.9-3.6-1.9-1.5-.2-3 .9-3.7.9-.8 0-2-.9-3.2-.9-1.7 0-3.2 1-4 2.5-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.4 0 1.8.8 3.1.7 1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.5-1-2.5-3.9Z"/><path d="M14.2 4.9c.6-.8 1.1-1.9 1-3-1 0-2.2.6-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.5Z"/></svg>Apple</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="strip">
+      <div class="chip"><div><b>Thứ co lại là KHOẢNG THỞ</b> — không phần tử nào bị bỏ đi. Ba nút nhà cung cấp
+        vẫn một hàng, thẻ vẫn 400px.</div></div>
+      <div class="chip"><div><b>Khung rỗng không co theo tỉ lệ</b> — nó phải khớp hình học vỏ xưởng ở đúng khổ
+        màn đó, nếu không thì mất nghĩa "đây là chỗ xưởng từng đứng".</div></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- DESIGN NOTES
+  1 · BẪY NGỮ NGHĨA — VÀ CÁCH TRÁNH BẰNG MẮT, KHÔNG BẰNG CHỮ.
+     Màn khoá được phép hứa "việc của bạn vẫn ở đó" vì đó là sự thật: cây workspace chưa unmount,
+     nhấc phủ lên là về đúng bàn cũ. Phiên hết hạn thì cái bàn KHÔNG được giữ. Nếu màn này mượn ngôn
+     ngữ màn khoá, sản phẩm nói dối đúng vào lúc cần thật nhất. Nên nguyên tắc dựng là: GỠ HẾT tín
+     hiệu liên tục của màn khoá và KHÔNG thay bằng thứ tương đương —
+       gỡ: workspace mờ · nhịp thở · đồng hồ lớn · tên dự án · tên chặng · chấm "Đã lưu" xanh · ổ khoá
+       trả lại: mark |F · wordmark · ô email trống · ba nhà cung cấp   (bốn thứ của họ ĐĂNG NHẬP)
+     Bảng ở board B liệt kê từng dòng để người duyệt kiểm được, không phải tin lời.
+
+  2 · KHUNG RỖNG — trả lời đúng câu "vậy cái xưởng đâu?".
+     Bỏ trắng nền thì màn đọc ra như một trang lỗi. Vẽ workspace mờ thì lại thành màn khoá. Đường thứ ba:
+     giữ ĐÚNG hình học vỏ xưởng (top · rail · canvas · inspector) nhưng chỉ còn NÉT ĐỨT, rỗng ruột,
+     KHÔNG blur (không còn gì để mờ), KHÔNG nhịp thở, KHÔNG lưới chấm ở canvas, 0 icon, 0 nhãn, 0 vùng bấm,
+     opacity .5. Nó là DẤU VẾT, không phải cái bàn — và nó nói thẳng điều mà bug hiện tại đang nói dối:
+     vỏ dựng ra không có nghĩa là xưởng đang mở.
+
+  3 · KHÔNG PHẢI SỰ CỐ, KHÔNG PHẢI 404, KHÔNG PHẢI MẮNG.
+     Không --danger, không mã lỗi, không "401/unauthorized", không dấu chấm than, không mặt buồn.
+     Hết phiên là chuyện của thời gian. Nhịp chữ: dấu hiệu → tiêu đề → một câu việc phải làm → nơi định vị
+     → câu không-hứa → ô nhập. Người vội chỉ đọc hai dòng đầu là đủ.
+
+  4 · VẬT LIỆU G0–G1, MỘT NGOẠI LỆ G3 CÓ LÝ DO.
+     Trường ambient G0 · VI/EN G1 · thẻ ĐẶC (--vl-dac) vì nó mang chữ và ô nhập, tương phản ở đó không
+     được chạy theo tấm ảnh phía sau. "Vào xưởng" giữ G3 vì nó là ĐÚNG cánh cửa của màn Đăng nhập —
+     không phải một nút mới xin thêm kính. Không có G2, không có G3 thứ hai. Thang bậc còn nguyên.
+
+  5 · TƯƠNG THÍCH VỚI CẢ BA PHƯƠNG ÁN A/B/C ĐANG CHỜ HOÀ CHỌN.
+     Bản vẽ này KHÔNG đoán bên nào thắng. Phần riêng của nó gồm đúng bốn vật: khung rỗng · dấu hiệu
+     "phiên đã đóng" · dòng tuyến · câu không-hứa. Bốn vật đó gắn vào ĐỈNH thẻ đăng nhập, không đụng
+     phần dưới (ô nhập · nút · nhà cung cấp) — nên A, B hay C thắng thì phần dưới thay theo, phần trên giữ.
+
+  6 · CÂU CHỮ (chuỗi đề xuất, VI; EN dịch khi nối i18n)
+     "Phiên đã hết" · "Đăng nhập lại để vào xưởng." · "PHIÊN LÀM VIỆC ĐÃ ĐÓNG" ·
+     "Bạn vừa mở Files" · "Việc đã lưu nằm trong dự án. Phần chưa lưu của phiên cũ thì không —
+      InteriorFlow không giữ lại phiên đã đóng."
+     Cấm: "lỗi" · "401" · "unauthorized" · "không có quyền" · "bạn đang làm dở…" · mọi câu ngụ ý
+     phiên cũ được giữ hộ.
+-->
+
+<!-- TRANSFER NOTES
+  ┌─ Bản vẽ → tệp sản xuất sẽ sở hữu nó ─────────────────────────────────────────────────────────┐
+  A/C · Phiên đã hết (toàn màn)  → components/studio/AppShell.tsx
+        AppShell là chỗ dựng vỏ (top · rail · canvas · inspector) nên nó cũng là chỗ DUY NHẤT
+        biết đủ để KHÔNG dựng vỏ. Trạng thái này thay thế toàn bộ phần thân của shell.
+        ⚠️ Không sửa router, không redirect — /files vẫn trả 200, chỉ đổi thứ được render.
+
+  Thẻ đăng nhập lại        → components/entry/LoginForm.tsx
+        Dùng lại nguyên thẻ (ô nhập · nút Vào xưởng · ba nhà cung cấp). Đề xuất một prop dựng sẵn:
+        variant='session-ended' ⇒ ẨN tab Đăng nhập/Đăng ký (một màn một việc) + hiện cụm đỉnh
+        (dấu hiệu · tiêu đề · dòng tuyến · câu không-hứa). KHÔNG fork một form thứ hai.
+
+  Cụm đỉnh (4 vật mới)     → thành phần mới, đề xuất components/auth/PhienDaHet.tsx
+        khung rỗng · dấu hiệu · dòng tuyến · câu không-hứa. Nhận đúng MỘT prop: tên tuyến (chuỗi
+        đã dịch, ví dụ "Files"). KHÔNG nhận project · file · thời điểm · nội dung phiên cũ.
+
+  KHÔNG dùng               → components/auth/TheXacThucLai.tsx
+        Đó là mặt sau của MÀN KHOÁ: nó biết trước bạn là ai, chỉ hỏi mật khẩu, không có ô email,
+        không có nhà cung cấp — vì phiên chưa hề mất. Dùng lại nó ở đây là kéo theo đúng lời hứa
+        mà màn này không được phép hứa. Hai màn, hai thành phần, cố ý không chung.
+
+  ┌─ PHÁT HIỆN TRẠNG THÁI — bằng 401 CỦA DỮ LIỆU, KHÔNG PHẢI BẰNG ĐIỀU HƯỚNG ────────────────────┐
+  · Nguồn sự thật: lệnh dữ liệu trả 401. Một lớp fetch chung bắt 401 → bật cờ phiên-đã-hết ở AppShell.
+  · Cửa sổ luôn mở ở "/" (đã có cổng), nên ca này tới từ PHIÊN HẾT HẠN, không phải điều hướng nguội.
+    ⇒ Không đổi middleware, không thêm redirect, không gate lại route. Chỉ đổi thứ shell render.
+  · Tên tuyến lấy từ chính route đang đứng (pathname → nhãn đã dịch: /files → "Files"). Nếu không
+    ánh xạ được thì BỎ HẲN dòng tuyến — không đoán, không in đường dẫn thô.
+  · Chống nháy: 401 đầu tiên bật cờ ngay; các lệnh sau không bật lại, không chồng nhiều lớp.
+  · Sau khi đăng nhập lại thành công: quay về ĐÚNG tuyến đang đứng (/files), tải lại dữ liệu từ đầu.
+    KHÔNG khôi phục trạng thái phiên cũ — không có gì để khôi phục, và hứa thế là sai.
+  · a11y: cụm đỉnh là role="status" (không phải alert — không phải lỗi); tiêu điểm bàn phím nhảy vào
+    ô email ngay khi trạng thái hiện.
+
+  ┌─ Token MỚI ─────────────────────────────────────────────────────────────────────────────────┐
+  KHÔNG CÓ. Toàn bộ dùng token đã có trong app/globals.css. Hai giá trị dẫn xuất tại chỗ bằng
+  color-mix() từ token thật, cố ý KHÔNG mở nợ token mới:
+    · nét khung rỗng   = 1px dashed color-mix(--t5 62%/50%, transparent)
+    · độ mờ khung rỗng = opacity .5 (hằng số của bản vẽ, không phải màu)
+  Nếu MAIN muốn token hoá nét khung rỗng, đề xuất tên --vien-vet (viền của DẤU VẾT, phân biệt với
+  --vien-mo là viền của vật đang sống). Bản vẽ này không tự khai.
+
+  ┌─ Ảnh ───────────────────────────────────────────────────────────────────────────────────────┐
+  Mọi SVG nền trong tệp là PLACEHOLDER dựng bằng token — không phải ảnh thật, không phải tài sản
+  của studio nào. Cấm chép vào sản phẩm làm ảnh nền.
+-->

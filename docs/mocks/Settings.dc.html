@@ -1,0 +1,682 @@
+<!-- @dsCard group="Settings" -->
+<meta charset="utf-8">
+<title>Settings · Cài đặt</title>
+<style>
+/* ============================================================================
+   Settings — bản vẽ mục tiêu (Claude Design)
+   Token: chép ĐÚNG TÊN + ĐÚNG GIÁ TRỊ từ app/globals.css (2 theme). Không hex tự chế
+   trong phần dựng màn — mọi màu đi qua var(--…).
+   Artboard: A vỏ · B Màn hình chính (MỚI) · C Đơn vị & tỉ lệ · D trạng thái chưa đặt · E 1100px
+   ========================================================================== */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fs-ui:13px; --fw-normal:400; --fw-semi:600;
+  --blur:22px; --blur-strong:40px;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --nhip-bam:130ms; --nhip-vien:170ms; --nhip-bang:220ms;
+  --tap:32px; --tap-lg:44px; --row:28px; --gap:8px; --pad-card:8px 12px;
+}
+:root,:root[data-theme='dark']{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --dots:#26262d; --surface-page:#17171b;
+  --nen-mo-header:rgba(20,20,23,.72); --nen-mo-panel:rgba(20,20,23,.68);
+  --nen-mo-card:rgba(26,26,30,.82); --nen-mo-overlay:rgba(6,6,8,.56);
+  --kinh-mong:rgba(24,24,28,.84); --kinh-vua:rgba(24,24,28,.90); --kinh-dac:rgba(24,24,28,.95);
+  --kinh-mep-sang:rgba(255,255,255,.10); --kinh-vien:rgba(255,255,255,.08);
+  --kinh-chu-phu:#c2c2cb;
+  --vien-mo:rgba(255,255,255,.08); --mo-vo-hieu:.5;
+  --shadow-sheet:0 18px 60px -20px rgba(0,0,0,.7);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --on-accent:#ffffff;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --dots:#ddd8ce; --surface-page:#faf8f4;
+  --nen-mo-header:rgba(250,248,244,.72); --nen-mo-panel:rgba(250,248,244,.70);
+  --nen-mo-card:rgba(255,255,255,.82); --nen-mo-overlay:rgba(60,55,48,.28);
+  --kinh-mong:rgba(252,251,249,.88); --kinh-vua:rgba(252,251,249,.93); --kinh-dac:rgba(253,252,250,.96);
+  --kinh-mep-sang:rgba(255,255,255,.75); --kinh-vien:rgba(0,0,0,.08);
+  --kinh-chu-phu:#5c564d;
+  --vien-mo:rgba(0,0,0,.05); --mo-vo-hieu:.62;
+  --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+  --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --on-accent:#ffffff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+body{font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  padding:36px 40px 96px}
+.mono{font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace;font-variant-numeric:tabular-nums}
+
+/* ---------- khung trang bản vẽ ---------- */
+.page{width:1440px;margin:0 auto}
+.docHead{display:flex;align-items:flex-end;justify-content:space-between;gap:32px;margin-bottom:34px}
+.docHead h1{margin:0;font-size:var(--fs-xl);font-weight:var(--fw-semi);letter-spacing:-.02em}
+.docHead p{margin:8px 0 0;font-size:var(--fs-xs);color:var(--t3);max-width:960px}
+.tglBtn{height:var(--tap);padding:0 16px;border:1px solid var(--border);border-radius:var(--r-2);
+  background:var(--panel);color:var(--t2);font:var(--fw-semi) var(--fs-xs)/1 inherit;cursor:pointer;flex:none}
+.tglBtn:hover{background:var(--hover);color:var(--t1)}
+.board{margin:0 auto 64px}
+.boardHead{display:flex;align-items:baseline;gap:12px;margin:0 0 12px}
+.boardHead .k{font-size:var(--fs-2xs);font-weight:700;letter-spacing:.10em;color:var(--t4)}
+.boardHead h2{margin:0;font-size:var(--fs-lg);font-weight:var(--fw-semi);letter-spacing:-.01em}
+.boardHead .note{font-size:var(--fs-xs);color:var(--t3);margin-left:auto;text-align:right;max-width:600px}
+.frame{border:1px solid var(--border);border-radius:var(--r-4);overflow:hidden;background:var(--bg);
+  box-shadow:var(--shadow-node)}
+.tag{display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:var(--r-1);
+  background:var(--field);color:var(--t4);font-size:9px;font-weight:700;letter-spacing:.04em}
+
+/* ---------- VỎ CÀI ĐẶT ---------- */
+.set{display:flex;min-height:720px;background:var(--bg)}
+.setNav{width:264px;flex:none;border-right:1px solid var(--border);background:var(--panel);
+  padding:22px 14px 22px 18px;display:flex;flex-direction:column;gap:2px}
+.setNav h3{margin:0 0 4px;font-size:var(--fs-md);font-weight:var(--fw-semi);letter-spacing:-.01em}
+.setNav .sub{margin:0 0 18px;font-size:var(--fs-2xs);color:var(--t4);line-height:1.45}
+.navGrp{margin-top:16px;padding:0 8px 6px;font-size:var(--fs-2xs);font-weight:700;
+  letter-spacing:.10em;color:var(--t4)}
+.navGrp:first-of-type{margin-top:0}
+.navIt{display:flex;align-items:center;gap:10px;min-height:var(--tap);padding:0 10px;
+  border-radius:var(--r-2);color:var(--t2);font-size:var(--fs-ui);cursor:pointer;
+  border:1px solid transparent;transition:background var(--nhip-bam) var(--ease-apple)}
+.navIt:hover{background:var(--hover);color:var(--t1)}
+.navIt .ic{width:18px;height:18px;flex:none;color:var(--t4)}
+.navIt[aria-current='true']{background:var(--accent-soft);border-color:var(--accent-ring);color:var(--t1);
+  font-weight:var(--fw-semi)}
+.navIt[aria-current='true'] .ic{color:var(--accent)}
+.navIt .dotNew{margin-left:auto;width:6px;height:6px;border-radius:var(--r-full);background:var(--accent)}
+
+.setBody{flex:1;min-width:0;padding:26px 34px 44px;overflow:hidden}
+.secHead{margin:0 0 4px;font-size:22px;font-weight:var(--fw-semi);letter-spacing:-.015em}
+.secLead{margin:0 0 22px;font-size:var(--fs-xs);color:var(--t3);max-width:640px;line-height:1.55}
+.sCard{background:var(--card);border:1px solid var(--border);border-radius:var(--r-3);
+  padding:18px 20px;margin-bottom:14px}
+.sCard.pad0{padding:0;overflow:hidden}
+.sRow{display:flex;align-items:center;gap:18px;justify-content:space-between;
+  padding:12px 0;border-top:1px solid var(--vien-mo)}
+.sRow:first-child{border-top:0;padding-top:0}
+.sRow:last-child{padding-bottom:0}
+.sLbl{font-size:var(--fs-ui);color:var(--t1);font-weight:var(--fw-semi)}
+.sHint{margin-top:3px;font-size:var(--fs-2xs);color:var(--t3);line-height:1.5;max-width:420px}
+.kicker{font-size:var(--fs-2xs);font-weight:700;letter-spacing:.08em;color:var(--t4);
+  text-transform:uppercase;margin:0 0 8px}
+
+/* chip / radio dạng viên */
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{height:var(--tap);padding:0 14px;display:inline-flex;align-items:center;gap:6px;
+  border:1px solid var(--border);border-radius:var(--r-full);background:var(--field);
+  color:var(--t2);font-size:var(--fs-xs);font-weight:var(--fw-semi);cursor:pointer;
+  transition:background var(--nhip-bam) var(--ease-apple)}
+.chip:hover{background:var(--hover);color:var(--t1)}
+.chip[aria-checked='true']{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.chip[aria-disabled='true']{opacity:var(--mo-vo-hieu);cursor:default}
+.chip .u{font-size:var(--fs-2xs);opacity:.8;font-weight:var(--fw-normal)}
+
+.btn{height:var(--tap);padding:0 16px;border:1px solid var(--border);border-radius:var(--r-full);
+  background:var(--field);color:var(--t2);font:var(--fw-semi) var(--fs-xs)/1 inherit;cursor:pointer}
+.btn:hover{background:var(--hover);color:var(--t1)}
+.btnP{height:var(--tap-lg);padding:0 22px;border:0;border-radius:var(--r-full);background:var(--accent);
+  color:var(--on-accent);font:var(--fw-semi) var(--fs-ui)/1 inherit;cursor:pointer}
+.btnP:hover{background:var(--accent-strong)}
+.btn[aria-disabled='true'],.btnP[aria-disabled='true']{opacity:var(--mo-vo-hieu);cursor:default}
+
+/* LÝ DO NHÌN THẤY ĐƯỢC cho control mờ — không phải title, không phải tooltip */
+.whyOff{display:flex;align-items:flex-start;gap:8px;margin-top:9px;padding:9px 11px;
+  border:1px solid var(--border);border-left:2px solid var(--warning);border-radius:var(--r-2);
+  background:var(--field);font-size:var(--fs-2xs);color:var(--t2);line-height:1.5;max-width:520px}
+.whyOff b{color:var(--t1);font-weight:var(--fw-semi)}
+.whyOff .mk{color:var(--warning);flex:none;font-weight:700;line-height:1.35}
+
+/* CHƯA ĐO / CHƯA ĐẶT — không bịa số */
+.unk{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--r-1);
+  border:1px dashed var(--border-strong);color:var(--t3);font-size:var(--fs-2xs);background:transparent}
+
+/* ---------- B · CHỌN CHẾ ĐỘ MÀN HÌNH CHÍNH ---------- */
+.modeGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.modeCard{border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);
+  padding:10px 10px 12px;cursor:pointer;position:relative;
+  transition:border-color var(--nhip-bam) var(--ease-apple),background var(--nhip-bam) var(--ease-apple)}
+.modeCard:hover{background:var(--hover)}
+.modeCard[aria-checked='true']{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+/* rInner = rOuter − padding : 14 − 10 = ... dùng nấc dưới của thang (10) */
+.mini{border-radius:var(--r-2);border:1px solid var(--vien-mo);background:var(--surface-page);
+  height:168px;overflow:hidden;position:relative}
+.mini::before{content:'';position:absolute;inset:0;pointer-events:none;
+  /* PLACEHOLDER — nền không khí của Home, sinh bằng mã (SystemWallpaper) */
+  background:radial-gradient(120% 74% at 14% -12%, var(--accent-soft) 0%, transparent 62%)}
+.miniIn{position:relative;display:flex;flex-direction:column;height:100%}
+.bandLbl{position:absolute;right:6px;top:6px;font-size:9px;letter-spacing:.06em;color:var(--t5)}
+/* dải giả lập — cùng THỨ TỰ ĐỌC: không khí → tiếp tục → kệ dự án → cảm hứng */
+.b{flex:none;border-radius:4px;background:var(--field)}
+.bTitle{background:var(--t4);border-radius:3px}
+.bSub{background:var(--t5);border-radius:3px;opacity:.7}
+.bResume{background:linear-gradient(135deg,var(--accent-soft),var(--field));
+  border:1px solid var(--accent-ring)}
+.shelf{display:flex;gap:4px}
+.shelf i{display:block;flex:1;border-radius:3px;background:var(--field);border:1px solid var(--vien-mo)}
+.insp{display:flex;gap:4px}
+.insp i{display:block;flex:1;border-radius:3px;
+  background:linear-gradient(150deg,var(--hover),var(--field))}
+/* mật độ đúng nhipDai() — gap 26/34/16, lề trên 36/48/18, cỡ chữ chào 44/52/34 (thu tỉ lệ ~×0.32) */
+.mini[data-che-do]{--s:.32}
+.miniIn{padding:calc(36px * var(--s)) calc(30px * var(--s));gap:calc(26px * var(--s))}
+.mini[data-che-do='calm'] .bTitle{height:calc(44px * var(--s))}
+.mini[data-che-do='editorial'] .miniIn{padding:calc(48px * var(--s)) calc(30px * var(--s));gap:calc(34px * var(--s))}
+.mini[data-che-do='editorial'] .bTitle{height:calc(52px * var(--s))}
+.mini[data-che-do='compact'] .miniIn{padding:calc(18px * var(--s)) calc(30px * var(--s));gap:calc(16px * var(--s))}
+.mini[data-che-do='compact'] .bTitle{height:calc(34px * var(--s))}
+.mini[data-che-do='custom'] .miniIn{padding:calc(30px * var(--s)) calc(30px * var(--s));gap:calc(20px * var(--s))}
+/* Tự sắp: bố cục HAI CỘT + ô chọn widget — cấu trúc khác hẳn, không phải bản gọn của ba cái kia */
+.twoCol{flex:1;display:grid;grid-template-columns:1.35fr 1fr;gap:6px;min-height:0}
+.twoCol .w{border-radius:4px;background:var(--field);border:1px solid var(--vien-mo)}
+.twoCol .wPick{border-style:dashed;border-color:var(--accent-ring);
+  display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:13px;line-height:1}
+.colStack{display:flex;flex-direction:column;gap:6px;min-height:0}
+.colStack .w{flex:1}
+
+.modeMeta{margin-top:10px}
+.modeName{display:flex;align-items:center;gap:7px;font-size:var(--fs-ui);font-weight:var(--fw-semi);color:var(--t1)}
+.modeName .en{color:var(--t4);font-weight:var(--fw-normal);font-size:var(--fs-2xs)}
+.modeDesc{margin-top:3px;font-size:var(--fs-2xs);color:var(--t3);line-height:1.5;min-height:32px}
+.tick{width:18px;height:18px;border-radius:var(--r-full);border:1px solid var(--border-strong);
+  flex:none;display:flex;align-items:center;justify-content:center;margin-left:auto}
+.modeCard[aria-checked='true'] .tick{background:var(--accent);border-color:var(--accent)}
+.modeCard[aria-checked='true'] .tick svg{display:block}
+.tick svg{display:none;width:11px;height:11px;color:var(--on-accent)}
+.badgeNow{position:absolute;left:10px;top:10px;z-index:2;height:19px;padding:0 8px;border-radius:var(--r-full);
+  background:var(--accent);color:var(--on-accent);font-size:9px;font-weight:700;letter-spacing:.05em;
+  display:none;align-items:center}
+.modeCard[aria-checked='true'] .badgeNow{display:inline-flex}
+
+.orderStrip{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:12px 14px;border:1px solid var(--border);border-radius:var(--r-3);background:var(--field);
+  font-size:var(--fs-2xs);color:var(--t2)}
+.orderStrip b{color:var(--t1);font-weight:var(--fw-semi)}
+.orderStrip .sep{color:var(--t4)}
+
+/* ---------- C · xem trước đơn vị ---------- */
+.prev{background:var(--field);border:1px solid var(--border);border-radius:var(--r-3);padding:14px 16px}
+.prevRow{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:7px 0;
+  border-top:1px solid var(--vien-mo);font-size:var(--fs-xs);color:var(--t3)}
+.prevRow:first-child{border-top:0;padding-top:0}
+.prevRow b{color:var(--t1);font-weight:var(--fw-semi);font-size:var(--fs-ui)}
+.inp{height:var(--tap-lg);width:100%;max-width:280px;border:1px solid var(--border);border-radius:var(--r-2);
+  background:var(--card);color:var(--t1);padding:0 12px;font-size:var(--fs-ui);display:flex;align-items:center}
+.inp .ph{color:var(--t4)}
+
+/* ---------- D · trạng thái rỗng trong một mục ---------- */
+.emptyBox{border:1px dashed var(--border-strong);border-radius:var(--r-3);background:var(--field);
+  padding:26px 24px;display:flex;gap:20px;align-items:center}
+.emptyArt{width:96px;height:76px;flex:none;border-radius:var(--r-2);border:1px solid var(--border);
+  background:var(--card);display:flex;align-items:center;justify-content:center}
+.emptyTxt h4{margin:0 0 5px;font-size:var(--fs-md);font-weight:var(--fw-semi)}
+.emptyTxt p{margin:0 0 12px;font-size:var(--fs-xs);color:var(--t3);max-width:440px;line-height:1.55}
+
+/* ---------- E · khổ hẹp ---------- */
+.narrow{width:1100px}
+.narrow .set{min-height:640px}
+.narrow .setNav{width:0;padding:0;border-right:0;overflow:hidden}
+.narrowStrip{display:flex;gap:6px;overflow:hidden;padding:14px 26px 0;background:var(--panel);
+  border-bottom:1px solid var(--border)}
+.narrowStrip .navIt{min-height:34px;padding:0 12px;border-radius:var(--r-full);white-space:nowrap;
+  background:var(--field);font-size:var(--fs-2xs)}
+.narrowStrip .navIt[aria-current='true']{background:var(--accent-soft);border-color:var(--accent-ring)}
+.narrow .modeGrid{grid-template-columns:repeat(2,1fr)}
+.narrow .mini{height:150px}
+.stackCol{display:flex;flex-direction:column}
+</style>
+
+<div class="page">
+  <div class="docHead">
+    <div>
+      <h1>Cài đặt · Settings</h1>
+      <p>Nơi một người làm nghề chỉnh công cụ cho khớp cách mình làm việc. Mở thưa, đọc lướt được, mỗi
+      núm nói rõ nó đổi cái gì — không phải một bức tường công tắc. Artboard B là mục <b>MỚI</b>:
+      bốn chế độ Màn hình chính đã chạy thật trong <span class="mono">lib/home/che-do-home.ts</span>
+      mà chưa có màn nào cho người dùng chọn.</p>
+    </div>
+    <button class="tglBtn" id="tgl">Sáng / Tối</button>
+  </div>
+
+  <!-- ============================ A ============================ -->
+  <section class="board">
+    <div class="boardHead"><span class="k">A</span><h2>Vỏ Cài đặt — 9 mục, 4 nhóm</h2>
+      <p class="note">Danh sách trái = 4 nhóm thật của <span class="mono">SettingsNavigator</span>
+      (Hồ sơ · Giao diện · Nơi lưu file · Nâng cao). Mục đang mở nổi bằng nền tím nhạt + viền,
+      không chỉ bằng màu chữ.</p></div>
+    <div class="frame">
+      <div class="set">
+        <nav class="setNav" aria-label="Mục cài đặt">
+          <h3>Cài đặt</h3>
+          <p class="sub">Lựa chọn ở đây áp cho <b>máy này</b>. Bản vẽ, thư viện và dữ liệu dự án không đổi.</p>
+
+          <div class="navGrp">Hồ sơ</div>
+          <div class="navIt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="3.6"/><path d="M4.6 20c1.2-3.6 4-5.4 7.4-5.4S18.2 16.4 19.4 20"/></svg>Tài khoản</div>
+
+          <div class="navGrp">Giao diện</div>
+          <div class="navIt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.4"/><path d="M12 3.6v16.8"/></svg>Giao diện</div>
+          <div class="navIt" aria-current="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.4" y="4.6" width="17.2" height="14.8" rx="2.4"/><path d="M3.4 9.4h17.2M8.6 19.4V9.4"/></svg>Màn hình chính<span class="dotNew" aria-hidden="true"></span></div>
+          <div class="navIt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 6.5h16M4 12h16M4 17.5h16"/><circle cx="9" cy="6.5" r="2"/><circle cx="15" cy="17.5" r="2"/></svg>Đơn vị &amp; Tỉ lệ</div>
+          <div class="navIt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="10.4" width="14" height="9" rx="2.2"/><path d="M8.4 10.4V8a3.6 3.6 0 0 1 7.2 0v2.4"/></svg>Khoá màn</div>
+
+          <div class="navGrp">Nơi lưu file</div>
+          <div class="navIt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.4" y="5.4" width="17.2" height="13.2" rx="2.2"/><path d="M3.4 12h17.2"/><circle cx="7.4" cy="8.7" r=".9" fill="currentColor"/></svg>Lưu trữ</div>
+
+          <div class="navGrp">Nâng cao</div>
+          <div class="navIt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 4.6v14.8M6.4 8.2l11.2 7.6M17.6 8.2 6.4 15.8"/></svg>Mức phụ thuộc AI</div>
+          <div class="navIt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 17.6c3.6-9 10.4-12 14-11.2-1 3.8-4.4 10-11 11.2z"/></svg>Bộ học Gu</div>
+          <div class="navIt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.4"/><path d="M12 8.2v4.4l2.8 1.8"/></svg>Trải nghiệm</div>
+        </nav>
+
+        <div class="setBody">
+          <h3 class="secHead">Màn hình chính</h3>
+          <p class="secLead">Chọn cách Trang chủ bày ra khi bạn mở InteriorFlow. Bốn chế độ đều mở đủ mọi thứ
+          — chúng khác nhau ở <b>bố cục và nhịp thở</b>, không ở lượng nội dung.</p>
+
+          <div class="sCard">
+            <p class="kicker">Bố cục</p>
+            <div class="sRow">
+              <div><div class="sLbl">Chế độ đang dùng</div>
+                <div class="sHint">Lựa chọn nhớ theo máy này. Đổi lúc nào cũng được, không mất gì.</div></div>
+              <div class="chips"><span class="chip" aria-checked="true">Điềm tĩnh</span></div>
+            </div>
+            <div class="sRow">
+              <div><div class="sLbl">Thứ tự đọc</div>
+                <div class="sHint">Ba chế độ dải giữ đúng một thứ tự; “Tự sắp” dùng bố cục hai cột riêng.</div></div>
+              <div class="orderStrip"><b>Không khí</b><span class="sep">→</span><b>Một đích tiếp tục</b>
+                <span class="sep">→</span><b>Kệ dự án</b><span class="sep">→</span><b>Cảm hứng</b></div>
+            </div>
+          </div>
+
+          <div class="sCard">
+            <p class="kicker">Trên trang chủ còn hiện</p>
+            <div class="sRow">
+              <div><div class="sLbl">Ảnh nền theo giờ</div>
+                <div class="sHint">Quầng sáng sinh bằng mã, đổi theo giờ trong ngày — không phải ảnh chụp.</div></div>
+              <span class="chip" aria-checked="true">Bật</span>
+            </div>
+            <div class="sRow">
+              <div><div class="sLbl">Lời chào có tên</div>
+                <div class="sHint">Lấy tên từ mục Tài khoản.</div></div>
+              <span class="chip" aria-checked="true">Bật</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ B ============================ -->
+  <section class="board">
+    <div class="boardHead"><span class="k">B</span><h2>Màn hình chính — chọn chế độ bằng MẮT</h2>
+      <p class="note">Bốn chế độ khác nhau ở <b>bố cục</b>, nên không thể chọn bằng bốn dòng chữ.
+      Mỗi thẻ là một bản thu nhỏ của chính Trang chủ, dựng theo đúng số của
+      <span class="mono">nhipDai()</span>: khoảng cách 26/34/16, lề trên 36/48/18, cỡ chữ chào 44/52/34.</p></div>
+    <div class="frame">
+      <div class="setBody" style="padding:28px 34px 34px">
+        <h3 class="secHead">Màn hình chính</h3>
+        <p class="secLead">Nhìn thấy khác biệt trước khi chọn: hình thu nhỏ giữ đúng tỉ lệ khoảng trống,
+        cỡ chữ và cấu trúc dải của bản thật. Rê vào thẻ nào thì bản đó sáng lên; bấm là áp ngay,
+        đổi lại lúc nào cũng được.</p>
+
+        <div class="modeGrid" role="radiogroup" aria-label="Chế độ Màn hình chính">
+
+          <!-- calm -->
+          <div class="modeCard" role="radio" aria-checked="true" tabindex="0">
+            <span class="badgeNow">ĐANG DÙNG</span>
+            <div class="mini" data-che-do="calm" aria-hidden="true">
+              <div class="miniIn">
+                <div class="b bTitle" style="width:62%"></div>
+                <div class="b bResume" style="height:26px"></div>
+                <div class="shelf" style="height:30px"><i></i><i></i><i></i></div>
+                <div class="insp" style="height:24px"><i></i><i></i></div>
+              </div>
+              <span class="bandLbl">4 dải</span>
+            </div>
+            <div class="modeMeta">
+              <div class="modeName">Điềm tĩnh <span class="en">Calm</span>
+                <span class="tick"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2.4 6.4 4.9 8.9 9.6 3.6"/></svg></span></div>
+              <div class="modeDesc">Bốn dải, nhiều khoảng thở</div>
+            </div>
+          </div>
+
+          <!-- editorial -->
+          <div class="modeCard" role="radio" aria-checked="false" tabindex="-1">
+            <span class="badgeNow">ĐANG DÙNG</span>
+            <div class="mini" data-che-do="editorial" aria-hidden="true">
+              <div class="miniIn">
+                <div class="b bTitle" style="width:76%"></div>
+                <div class="b bResume" style="height:34px"></div>
+                <div class="shelf" style="height:34px"><i></i><i></i></div>
+                <div class="insp" style="height:26px"><i></i></div>
+              </div>
+              <span class="bandLbl">4 dải</span>
+            </div>
+            <div class="modeMeta">
+              <div class="modeName">Biên tập <span class="en">Editorial</span>
+                <span class="tick"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2.4 6.4 4.9 8.9 9.6 3.6"/></svg></span></div>
+              <div class="modeDesc">Chữ lớn hơn, ảnh mạnh hơn</div>
+            </div>
+          </div>
+
+          <!-- compact -->
+          <div class="modeCard" role="radio" aria-checked="false" tabindex="-1">
+            <span class="badgeNow">ĐANG DÙNG</span>
+            <div class="mini" data-che-do="compact" aria-hidden="true">
+              <div class="miniIn">
+                <div class="b bTitle" style="width:52%"></div>
+                <div class="b bResume" style="height:22px"></div>
+                <div class="shelf" style="height:28px"><i></i><i></i><i></i><i></i></div>
+                <div class="insp" style="height:22px"><i></i><i></i><i></i></div>
+                <div class="b bSub" style="height:8px;width:44%"></div>
+              </div>
+              <span class="bandLbl">4 dải</span>
+            </div>
+            <div class="modeMeta">
+              <div class="modeName">Gọn <span class="en">Compact</span>
+                <span class="tick"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2.4 6.4 4.9 8.9 9.6 3.6"/></svg></span></div>
+              <div class="modeDesc">Cùng thứ tự, ít khoảng trống hơn</div>
+            </div>
+          </div>
+
+          <!-- custom -->
+          <div class="modeCard" role="radio" aria-checked="false" tabindex="-1">
+            <span class="badgeNow">ĐANG DÙNG</span>
+            <div class="mini" data-che-do="custom" aria-hidden="true">
+              <div class="miniIn">
+                <div class="b bTitle" style="width:40%;height:12px"></div>
+                <div class="twoCol">
+                  <div class="colStack"><span class="w"></span><span class="w"></span></div>
+                  <div class="colStack"><span class="w"></span><span class="w"></span>
+                    <span class="w wPick">+</span></div>
+                </div>
+              </div>
+              <span class="bandLbl">2 cột</span>
+            </div>
+            <div class="modeMeta">
+              <div class="modeName">Tự sắp <span class="en">Custom</span>
+                <span class="tick"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2.4 6.4 4.9 8.9 9.6 3.6"/></svg></span></div>
+              <div class="modeDesc">Bố cục hai cột cũ + tự chọn widget</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sCard" style="margin-top:18px">
+          <div class="sRow">
+            <div><div class="sLbl">Ba chế độ dải dùng chung một thứ tự đọc</div>
+              <div class="sHint">Điềm tĩnh · Biên tập · Gọn bày cùng bốn dải theo cùng thứ tự — chỉ khác nhịp thở.
+              <b>Tự sắp</b> là bố cục hai cột riêng, có ô chọn widget; nó không phải bản rút gọn của ba chế độ kia,
+              cũng không phải bản đầy đủ hơn.</div></div>
+            <div class="orderStrip"><b>Không khí</b><span class="sep">→</span><b>Tiếp tục</b>
+              <span class="sep">→</span><b>Kệ dự án</b><span class="sep">→</span><b>Cảm hứng</b></div>
+          </div>
+          <div class="sRow">
+            <div><div class="sLbl">Chọn widget cho “Tự sắp”</div>
+              <div class="sHint">Ô chọn widget chỉ có nghĩa khi đang ở chế độ Tự sắp.</div>
+              <div class="whyOff"><span class="mk">▲</span><span>Đang ở chế độ <b>Điềm tĩnh</b> — chế độ này bày bốn dải cố định,
+                không có ô widget để chọn. Đổi sang <b>Tự sắp</b> để mở mục này.</span></div></div>
+            <span class="btn" aria-disabled="true">Chọn widget…</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ C ============================ -->
+  <section class="board">
+    <div class="boardHead"><span class="k">C</span><h2>Đơn vị &amp; Tỉ lệ — mục dày nhất, vẫn đọc lướt được</h2>
+      <p class="note">Chứng minh vỏ chịu được một mục thật sự dày: ba nhóm núm + một ô gõ thử +
+      bảng xem trước sống. Mỗi nhóm nói rõ nó áp vào đâu.</p></div>
+    <div class="frame">
+      <div class="setBody" style="padding:28px 34px 34px">
+        <h3 class="secHead">Đơn vị &amp; Tỉ lệ</h3>
+        <p class="secLead">Đổi cách hiển thị và cách gõ số đo — dữ liệu bên trong luôn lưu bằng mm,
+        đổi ở đây không sửa bản vẽ.</p>
+
+        <div class="sCard">
+          <p class="kicker">Đơn vị hiển thị</p>
+          <div class="sHint" style="margin:0 0 10px">Áp dụng cho mọi con số đo hiện trên bản vẽ, bảng vật liệu, BOQ.</div>
+          <div class="chips" role="radiogroup" aria-label="Đơn vị hiển thị">
+            <span class="chip" aria-checked="true">mm</span>
+            <span class="chip">cm</span>
+            <span class="chip">m</span>
+            <span class="chip">inch <span class="u">″</span></span>
+            <span class="chip">feet-inch <span class="u">′″</span></span>
+          </div>
+        </div>
+
+        <div class="sCard">
+          <p class="kicker">Cách nhập số đo</p>
+          <div class="sHint" style="margin:0 0 10px">Gõ số KHÔNG kèm đơn vị thì hiểu theo lựa chọn này.
+          Gõ kèm hậu tố (12cm · 3′ · 1m) thì luôn ưu tiên hậu tố đã gõ.</div>
+          <div class="chips" role="radiogroup" aria-label="Cách nhập số đo" style="margin-bottom:14px">
+            <span class="chip" aria-checked="true">mm</span>
+            <span class="chip">cm</span>
+            <span class="chip">m</span>
+            <span class="chip">inch <span class="u">″</span></span>
+            <span class="chip">feet-inch <span class="u">′″</span></span>
+          </div>
+          <label class="sHint" style="display:block;margin:0 0 6px">Gõ thử một số đo để xem quy đổi</label>
+          <div class="inp mono">1250 <span class="ph" style="margin-left:auto">→ 1250 mm</span></div>
+        </div>
+
+        <div class="sCard">
+          <p class="kicker">Tỉ lệ in mặc định</p>
+          <div class="sHint" style="margin:0 0 10px">Chỉ nhận đúng các nấc chuẩn ISO — không sinh tỉ lệ lẻ kiểu “1:47”.</div>
+          <div class="chips" role="radiogroup" aria-label="Tỉ lệ in mặc định">
+            <span class="chip">1:1</span><span class="chip">1:5</span><span class="chip">1:10</span>
+            <span class="chip">1:20</span><span class="chip" aria-checked="true">1:50</span>
+            <span class="chip">1:100</span><span class="chip">1:200</span><span class="chip">1:500</span>
+          </div>
+        </div>
+
+        <div class="prev" aria-label="Xem trước đổi đơn vị và tỉ lệ">
+          <div class="prevRow"><span>Chiều dài tường mẫu</span><b class="mono">3 600 mm</b></div>
+          <div class="prevRow"><span>Tỉ lệ đang chọn</span><b class="mono">1:50 — 1m ngoài đời = 20,00mm trên giấy</b></div>
+          <div class="prevRow"><span>Khổ giấy đang dùng ở mục Xuất</span><span class="unk">Chưa đặt trong dự án nào</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ D ============================ -->
+  <section class="board">
+    <div class="boardHead"><span class="k">D</span><h2>Chưa đặt — Lưu trữ</h2>
+      <p class="note">Mục chưa cấu hình thì <b>không bịa số</b>: dung lượng ghi “chưa đo được”, và nút
+      không chạy được thì mờ <b>kèm đúng lý do của nó</b> ngay trên màn — không phải tooltip,
+      không phải thuộc tính <span class="mono">title</span>.</p></div>
+    <div class="frame">
+      <div class="setBody" style="padding:28px 34px 34px">
+        <h3 class="secHead">Lưu trữ</h3>
+        <p class="secLead">InteriorFlow lưu bản vẽ và thư viện ngay trên máy bạn. Chọn thư mục gốc để
+        bắt đầu — dữ liệu không rời máy này.</p>
+
+        <div class="emptyBox">
+          <div class="emptyArt" aria-hidden="true">
+            <svg width="46" height="38" viewBox="0 0 46 38" fill="none" stroke="var(--t4)" stroke-width="1.6">
+              <path d="M3 10.5a3 3 0 0 1 3-3h11l3.6 4H40a3 3 0 0 1 3 3V31a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/>
+              <path d="M15 21h16M23 15v12" stroke-dasharray="2.6 3" stroke="var(--t5)"/>
+            </svg>
+          </div>
+          <div class="emptyTxt">
+            <h4>Chưa chọn thư mục gốc</h4>
+            <p>Chọn một thư mục để chuẩn bị cho lưu trữ cục bộ. Bạn đổi được về sau; đổi thư mục không xoá gì.</p>
+            <button class="btnP">Chọn thư mục…</button>
+          </div>
+        </div>
+
+        <div class="sCard" style="margin-top:14px">
+          <div class="sRow">
+            <div><div class="sLbl">Dung lượng đang chiếm</div>
+              <div class="sHint">Chỉ đo được sau khi có thư mục gốc.</div></div>
+            <span class="unk">Chưa đo được</span>
+          </div>
+          <div class="sRow">
+            <div><div class="sLbl">Kiểm tra kết nối thư mục</div>
+              <div class="sHint">Ghi một tệp thử rồi đọc lại, để chắc tầng đĩa hoạt động đúng.</div>
+              <div class="whyOff"><span class="mk">▲</span><span>Chưa chọn thư mục gốc nên chưa có chỗ nào để ghi thử.
+                Chọn thư mục ở khối trên rồi quay lại đây.</span></div></div>
+            <span class="btn" aria-disabled="true">Kiểm tra kết nối thư mục</span>
+          </div>
+          <div class="sRow">
+            <div><div class="sLbl">Tự khoá sau</div>
+              <div class="sHint">“Không bao giờ” nghĩa là <b>không đặt hẹn giờ nào cả</b> — không phải một hẹn giờ rất dài.</div></div>
+            <div class="chips" role="radiogroup" aria-label="Tự khoá sau">
+              <span class="chip">5 phút</span><span class="chip" aria-checked="true">15 phút</span>
+              <span class="chip">30 phút</span><span class="chip">60 phút</span>
+              <span class="chip">Không bao giờ</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ E ============================ -->
+  <section class="board narrow">
+    <div class="boardHead"><span class="k">E</span><h2>Khổ hẹp ~1100px</h2>
+      <p class="note">Dưới ngưỡng, danh sách trái thu thành một dải viên ngang cuộn được (giữ nguyên
+      thứ tự và nhóm); lưới chế độ về 2×2 — hình thu nhỏ <b>không được nhỏ hơn 150px</b>,
+      dưới ngưỡng đó thì nhìn không còn phân biệt được bố cục và cả màn mất công năng.</p></div>
+    <div class="frame">
+      <div class="stackCol">
+        <div class="narrowStrip" aria-label="Mục cài đặt">
+          <span class="navIt">Tài khoản</span>
+          <span class="navIt">Giao diện</span>
+          <span class="navIt" aria-current="true">Màn hình chính</span>
+          <span class="navIt">Đơn vị &amp; Tỉ lệ</span>
+          <span class="navIt">Khoá màn</span>
+          <span class="navIt">Lưu trữ</span>
+          <span class="navIt" style="opacity:.55">Mức phụ thuộc AI</span>
+        </div>
+        <div class="setBody" style="padding:24px 26px 30px">
+          <h3 class="secHead">Màn hình chính</h3>
+          <p class="secLead">Bốn chế độ, chọn bằng mắt. Ở khổ này lưới về hai cột — thứ tự giữ nguyên.</p>
+          <div class="modeGrid" role="radiogroup" aria-label="Chế độ Màn hình chính">
+            <div class="modeCard" role="radio" aria-checked="true" tabindex="0">
+              <span class="badgeNow">ĐANG DÙNG</span>
+              <div class="mini" data-che-do="calm" aria-hidden="true"><div class="miniIn">
+                <div class="b bTitle" style="width:62%"></div>
+                <div class="b bResume" style="height:24px"></div>
+                <div class="shelf" style="height:28px"><i></i><i></i><i></i></div>
+                <div class="insp" style="height:22px"><i></i><i></i></div></div></div>
+              <div class="modeMeta"><div class="modeName">Điềm tĩnh <span class="en">Calm</span>
+                <span class="tick"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2.4 6.4 4.9 8.9 9.6 3.6"/></svg></span></div>
+                <div class="modeDesc">Bốn dải, nhiều khoảng thở</div></div>
+            </div>
+            <div class="modeCard" role="radio" aria-checked="false" tabindex="-1">
+              <span class="badgeNow">ĐANG DÙNG</span>
+              <div class="mini" data-che-do="editorial" aria-hidden="true"><div class="miniIn">
+                <div class="b bTitle" style="width:76%"></div>
+                <div class="b bResume" style="height:30px"></div>
+                <div class="shelf" style="height:30px"><i></i><i></i></div>
+                <div class="insp" style="height:24px"><i></i></div></div></div>
+              <div class="modeMeta"><div class="modeName">Biên tập <span class="en">Editorial</span>
+                <span class="tick"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2.4 6.4 4.9 8.9 9.6 3.6"/></svg></span></div>
+                <div class="modeDesc">Chữ lớn hơn, ảnh mạnh hơn</div></div>
+            </div>
+            <div class="modeCard" role="radio" aria-checked="false" tabindex="-1">
+              <span class="badgeNow">ĐANG DÙNG</span>
+              <div class="mini" data-che-do="compact" aria-hidden="true"><div class="miniIn">
+                <div class="b bTitle" style="width:52%"></div>
+                <div class="b bResume" style="height:20px"></div>
+                <div class="shelf" style="height:26px"><i></i><i></i><i></i><i></i></div>
+                <div class="insp" style="height:20px"><i></i><i></i><i></i></div>
+                <div class="b bSub" style="height:8px;width:44%"></div></div></div>
+              <div class="modeMeta"><div class="modeName">Gọn <span class="en">Compact</span>
+                <span class="tick"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2.4 6.4 4.9 8.9 9.6 3.6"/></svg></span></div>
+                <div class="modeDesc">Cùng thứ tự, ít khoảng trống hơn</div></div>
+            </div>
+            <div class="modeCard" role="radio" aria-checked="false" tabindex="-1">
+              <span class="badgeNow">ĐANG DÙNG</span>
+              <div class="mini" data-che-do="custom" aria-hidden="true"><div class="miniIn">
+                <div class="b bTitle" style="width:40%;height:12px"></div>
+                <div class="twoCol">
+                  <div class="colStack"><span class="w"></span><span class="w"></span></div>
+                  <div class="colStack"><span class="w"></span><span class="w wPick">+</span></div>
+                </div></div></div>
+              <div class="modeMeta"><div class="modeName">Tự sắp <span class="en">Custom</span>
+                <span class="tick"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2.4 6.4 4.9 8.9 9.6 3.6"/></svg></span></div>
+                <div class="modeDesc">Bố cục hai cột cũ + tự chọn widget</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var r = document.documentElement;
+  if(!r.getAttribute('data-theme')) r.setAttribute('data-theme','dark');
+  document.getElementById('tgl').addEventListener('click', function(){
+    r.setAttribute('data-theme', r.getAttribute('data-theme')==='dark' ? 'light' : 'dark');
+  });
+  // bản vẽ: bấm thẻ chế độ để xem trạng thái chọn ở cả hai theme
+  document.querySelectorAll('[role=radiogroup]').forEach(function(g){
+    g.addEventListener('click', function(e){
+      var c = e.target.closest('.modeCard'); if(!c || !g.contains(c)) return;
+      g.querySelectorAll('.modeCard').forEach(function(x){
+        x.setAttribute('aria-checked','false'); x.tabIndex=-1; });
+      c.setAttribute('aria-checked','true'); c.tabIndex=0;
+    });
+  });
+})();
+</script>
+
+<!-- TRANSFER NOTES
+=====================================================================================
+CHỦ SỞ HỮU SẢN XUẤT — mỗi artboard thuộc file nào
+
+A · Vỏ Cài đặt
+   app/settings/page.tsx
+   app/settings/_components/SettingsNavigator.tsx   ← thêm mục "Màn hình chính" vào nhóm
+                                                      'group-appearance' (giữa Giao diện và
+                                                      Đơn vị & Tỉ lệ). Icon: layout-dashboard.
+   app/settings/_components/PixelSettingsShell.tsx  ← neo mục mới trong dòng cuộn
+
+B · Màn hình chính (MỤC MỚI — chưa tồn tại)
+   components/settings/HomeLayoutSettings.tsx       ← ĐẶT TÊN THEO ĐÚNG KHUÔN 8 mục đang có
+                                                      (AccountSettings · AppearanceSettings ·
+                                                      ExperienceSettings · UnitsScaleSettings ·
+                                                      LockScreenSettings · StorageSettings ·
+                                                      AiDependencySettings · GuModelSettings)
+   Đọc/ghi: lib/home/che-do-home.ts — docCheDo() / ghiCheDo() / NHAN_CHE_DO / nhipDai().
+            KHÔNG khai lại nhãn, KHÔNG khai lại số mật độ trong component. Bản thu nhỏ phải
+            lấy gap/leTren/coChu TỪ nhipDai(c) rồi nhân hệ số thu, để hình xem trước không bao
+            giờ trôi khỏi bản thật.
+   Khoá lưu: 'interiorflow.home.cheDo_v1' (localStorage) — đã có, không đổi.
+   Nơi tiêu thụ: components/home/DongStudioHome.tsx (đang đọc chế độ nhưng chưa ai chọn được).
+
+C · Đơn vị & Tỉ lệ
+   components/settings/UnitsScaleSettings.tsx (đã có — chỉ đưa vào vỏ mới, không đổi logic)
+
+D · Trạng thái chưa đặt
+   components/settings/StorageSettings.tsx  (khối rỗng + "Chưa đo được" + lý do nút mờ)
+   components/settings/LockScreenSettings.tsx ("Không bao giờ" = KHÔNG đặt hẹn giờ nào)
+   Lý do nút mờ đi qua đường aria-describedby + phần tử hiện trên màn (.whyOff), KHÔNG dùng
+   thuộc tính title — title câm trên cảm ứng và trình đọc màn hình đọc không nhất quán.
+
+E · Khổ hẹp
+   app/settings/_components/PixelSettingsShell.tsx  (dải viên ngang thay danh sách trái)
+   NGƯỠNG ĐO ĐƯỢC: hình thu nhỏ chế độ không được nhỏ hơn 150px chiều cao. Dưới ngưỡng đó
+   người dùng hết phân biệt được bố cục ⇒ cả cách chọn-bằng-mắt mất công năng, lúc ấy phải
+   xuống một cột chứ không thu nhỏ tiếp.
+
+TOKEN MỚI: KHÔNG có. Toàn bộ bản vẽ dùng token đang tồn tại trong app/globals.css.
+Ba class riêng của màn này (.whyOff · .unk · .mini) chỉ ghép token sẵn có, không thêm biến màu.
+
+MÀU: một màu nhấn duy nhất --accent. --warning chỉ xuất hiện làm vạch trái ô lý-do (2px), đúng
+vai "cần xem lại", không dùng làm nền hay chữ. Không có vàng đồng, không badge trạng thái giả.
+====================================================================================== -->

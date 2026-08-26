@@ -1,0 +1,135 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+    a { color: #6a57f5; } a:hover { color: #5646d6; }
+    .nhan { font-size: 10.5px; letter-spacing: .08em; color: #96918a; margin-bottom: 9px; }
+    .ghi { font-size: 11.5px; color: #6e6a62; line-height: 1.6; margin-top: 9px; }
+    .ghi b { font-weight: 500; color: #46433d; }
+    .k { border-radius: 14px; padding: 14px; box-sizing: border-box; height: 118px;
+         background: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.78);
+         box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 8px 20px -16px rgba(40,40,70,.3); }
+    .t { font-size: 11px; color: #6e6a62; letter-spacing: .05em; }
+  </style>
+</helmet>
+
+<div style="width: 1500px; height: 760px; color: #22201c; padding: 30px 34px; box-sizing: border-box;
+     background: radial-gradient(120% 80% at 14% 4%, #ffffff 0%, rgba(255,255,255,0) 54%), linear-gradient(168deg,#faf9f7,#eeece7);">
+
+  <div style="font-size: 15px; font-weight: 600; letter-spacing: -.01em;">Widget thiếu dữ liệu — ai đặt nó quyết nó biến mất hay ở lại</div>
+  <div class="ghi" style="max-width: 1060px; margin-bottom: 22px;">
+    Luật cũ nói gọn <b>“thiếu dữ liệu thì tự ẩn”</b> — đúng một nửa. Nó sinh ra từ bệnh tường thẻ, nơi MÁY tự nhét
+    widget rồi bày khung rỗng. Nhưng cùng một luật áp cho widget <b>người dùng tự ghim</b> thì thành sai:
+    ẩn đi là <b>lấy mất thứ người ta đã chọn</b>, và họ tưởng app hỏng chứ không nghĩ là “chưa có dữ liệu”.
+  </div>
+
+  <div style="display: flex; gap: 22px; align-items: flex-start; margin-bottom: 26px;">
+
+    <!-- MÁY ĐẶT -->
+    <div style="width: 300px;">
+      <div class="nhan" style="color:#b06060;">MÁY TỰ ĐẶT · KHÔNG DỮ LIỆU → ẨN</div>
+      <div style="height: 118px; border: 1px dashed #e0dcd3; border-radius: 14px; display: grid; place-items: center;">
+        <div style="font-size: 12px; color: #b5b0a8;">không vẽ gì cả</div>
+      </div>
+      <div class="ghi">Nó <b>chưa từng được ai xin</b>. Không có dữ liệu thì nó không có việc —
+        mà không có việc thì không được chiếm chỗ.</div>
+    </div>
+
+    <!-- NGƯỜI GHIM · CHƯA NỐI -->
+    <div style="width: 300px;">
+      <div class="nhan">NGƯỜI GHIM · CHƯA CẤP QUYỀN VỊ TRÍ</div>
+      <div class="k">
+        <div class="t">Thời tiết</div>
+        <div style="font-size: 13px; color: #46433d; margin-top: 9px; line-height: 1.45;">Cần biết anh ở đâu.</div>
+        <div style="display: inline-flex; align-items: center; gap: 6px; margin-top: 11px; height: 28px; padding: 0 12px; border-radius: 999px; background: rgba(106,87,245,.10); color: #6a57f5; font-size: 12px; font-weight: 500;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>
+          Chọn nơi
+        </div>
+      </div>
+      <div class="ghi"><b>Đây không phải “thiếu dữ liệu” — đây là “chưa dựng xong”.</b>
+        Widget giữ nguyên chỗ, giữ nguyên tên, và <b>mời dựng nốt</b>. Ẩn đi là bỏ rơi giữa chừng.</div>
+    </div>
+
+    <!-- ĐANG LẤY -->
+    <div style="width: 300px;">
+      <div class="nhan">NGƯỜI GHIM · ĐANG LẤY</div>
+      <div class="k">
+        <div class="t">Thời tiết</div>
+        <div style="margin-top: 12px;">
+          <div style="height: 22px; width: 78px; border-radius: 6px; background: linear-gradient(90deg,#e8e8f0,#f7f6f3,#e8e8f0);"></div>
+          <div style="height: 11px; width: 116px; border-radius: 5px; margin-top: 9px; background: linear-gradient(90deg,#eeece7,#f5f5f9,#eeece7);"></div>
+        </div>
+      </div>
+      <div class="ghi">Giữ <b>đúng khung xương</b> của trạng thái có dữ liệu, nên lúc số về thì
+        <b>không giật</b>. Không quay vòng, không chữ “Đang tải…”.</div>
+    </div>
+
+    <!-- LẤY HỤT -->
+    <div style="width: 300px;">
+      <div class="nhan">NGƯỜI GHIM · LẤY HỤT</div>
+      <div class="k">
+        <div class="t">Thời tiết</div>
+        <div style="font-size: 13px; color: #46433d; margin-top: 9px; line-height: 1.45;">Chưa lấy được.</div>
+        <div style="font-size: 11.5px; color: #96918a; margin-top: 4px;">Lần cuối: 07:10</div>
+        <div style="display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; height: 26px; padding: 0 11px; border-radius: 999px; border: 1px solid rgba(109,109,140,.18); color: #46433d; font-size: 11.5px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg>
+          Thử lại
+        </div>
+      </div>
+      <div class="ghi">Nói <b>thật là hụt</b>, kèm <b>lần cuối lấy được là bao giờ</b> — số cũ có ích, số bịa thì không.
+        ⛔ Không bao giờ hiện số cũ như thể nó là số hiện tại.</div>
+    </div>
+  </div>
+
+  <!-- DẤU CỘNG -->
+  <div style="display: flex; gap: 26px; align-items: flex-start;">
+    <div style="width: 626px;">
+      <div class="nhan">DẤU + — CHỈ SỐNG TRONG CHẾ ĐỘ SẮP XẾP</div>
+      <div style="display: flex; gap: 18px;">
+        <div style="flex: 1;">
+          <div style="font-size: 11px; color: #2f9e7a; margin-bottom: 7px;">SẮP XẾP — ô trống mời thêm</div>
+          <div style="height: 104px; border-radius: 14px; border: 1.5px dashed rgba(106,87,245,.34); background: rgba(106,87,245,.04); display: grid; place-items: center;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; color: #6a57f5;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span style="font-size: 11.5px;">Thêm widget</span>
+            </div>
+          </div>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-size: 11px; color: #b06060; margin-bottom: 7px;">NGHỈ — không có ô trống nào</div>
+          <div style="height: 104px; border-radius: 14px; background: rgba(255,255,255,.16); display: grid; place-items: center;">
+            <span style="font-size: 12px; color: #b5b0a8;">trường ambient, không mời gì</span>
+          </div>
+        </div>
+      </div>
+      <div class="ghi">Bày <b>+</b> trên màn nghỉ là <b>mời người ta lấp chỗ trống</b> — đúng cơ chế đẻ ra tường thẻ.
+        Ô trống chỉ xuất hiện khi người dùng <b>đã nói rằng họ muốn sắp xếp</b>.</div>
+    </div>
+
+    <div style="flex-grow: 1; max-width: 500px;">
+      <div class="nhan">LUẬT RÚT RA — thay câu “thiếu dữ liệu thì tự ẩn”</div>
+      <div style="border-radius: 16px; background: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.82); padding: 15px 17px; font-size: 12.5px; color: #46433d; line-height: 1.8;">
+        <b>1 · Hỏi AI ĐẶT nó ở đó, không hỏi có dữ liệu hay không.</b><br>
+        Máy đặt → ẩn. Người ghim → ở lại, đổi trạng thái.<br><br>
+        <b>2 · “Chưa nối” ≠ “không có dữ liệu”.</b><br>
+        Chưa nối là <i>chưa dựng xong</i> — phải mời dựng, không được biến mất.<br><br>
+        <b>3 · Rỗng không bao giờ là im lặng.</b><br>
+        Mỗi trạng thái nói được <b>vì sao</b> và <b>làm gì tiếp</b>.<br><br>
+        <b>4 · Số bịa vẫn cấm.</b><br>
+        Số cũ được hiện nhưng phải <b>đóng dấu là cũ</b>.
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

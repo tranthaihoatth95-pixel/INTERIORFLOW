@@ -56,7 +56,7 @@ export default function RevitSummaryPanel() {
   return (
     <div style={panel}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-        <Boxes size={13} color="var(--accent)" />
+        <Boxes size={14} color="var(--accent)" />
         <p style={{ fontSize: 11.5, lineHeight: 1.5, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 650, color: 'var(--t3)' }}>Cấu kiện BIM</p>
       </div>
       <p style={{ fontSize: 11.5, lineHeight: 1.5, color: 'var(--t2)', marginBottom: 8 }}>

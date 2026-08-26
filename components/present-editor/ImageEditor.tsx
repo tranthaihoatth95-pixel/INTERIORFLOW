@@ -210,7 +210,7 @@ export default function ImageEditor({ el, libAssets, onUpdate, onOpenAdvanced, o
             style={iconBtn}
             title="Chỉnh ảnh nâng cao (layers · mask · clone — mở /photo-editor)"
           >
-            <Wand2 size={15} />
+            <Wand2 size={18} />
           </button>
         )}
         <button type="button" onClick={onClose} style={doneBtn}>
@@ -346,7 +346,7 @@ export default function ImageEditor({ el, libAssets, onUpdate, onOpenAdvanced, o
                 <Slider label="Bão hoà" value={adjust.saturate} min={0} max={250} onChange={(v, l) => set('saturate', v, l)} />
                 <Slider label="Nhiệt độ" value={adjust.temperature} min={-100} max={100} onChange={(v, l) => set('temperature', v, l)} />
                 <button type="button" onClick={() => setAdjust({ ...DEFAULT_ADJUST }, false)} style={ghostBtn}>
-                  <RotateCcw size={12} /> Đặt lại màu
+                  <RotateCcw size={18} /> Đặt lại màu
                 </button>
               </Section>
               <Section title="Bo góc">
@@ -379,7 +379,7 @@ export default function ImageEditor({ el, libAssets, onUpdate, onOpenAdvanced, o
                 onClick={() => onUpdate((im) => (im.crop = { x: 0, y: 0, w: 1, h: 1 }))}
                 style={{ ...ghostBtn, marginTop: 10 }}
               >
-                <Maximize size={12} /> Bỏ crop
+                <Maximize size={18} /> Bỏ crop
               </button>
             </Section>
           )}
@@ -393,7 +393,7 @@ export default function ImageEditor({ el, libAssets, onUpdate, onOpenAdvanced, o
               {libAssets.length > 0 ? (
                 <>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '12px 0 8px', fontSize: 11, color: 'var(--t3)' }}>
-                    <Images size={13} /> Thư viện Reference
+                    <Images size={14} /> Thư viện Reference
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                     {libAssets.slice(0, 24).map((a) => (

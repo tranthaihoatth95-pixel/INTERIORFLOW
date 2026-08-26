@@ -13,6 +13,7 @@
  * - Kéo-thả tab trái/phải: onReorder(from, to). (Kéo-gộp single-window = pha 2, xem docs/MULTI-SHEET-PROPOSAL.md.)
  */
 
+import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 
@@ -37,6 +38,12 @@ interface Props {
   addLabel?: string;
   /** Chữ ở góc phải. Bỏ trống = `số sheet/trần` như cũ (CAD dùng bản này). */
   status?: string;
+  /**
+   * Ổ PHẢI (22/08, hiến pháp Smart Shell §13) — chỗ cho hành động cấp-tài-liệu đứng CÙNG HÀNG
+   * với tab, thay vì mỗi hành động tự mở một DẢI NGANG TOÀN KHỔ riêng. Ca thật: nút "Gửi sang
+   * Trình chiếu" từng chiếm nguyên một dải 41px chỉ để chứa một nút + một câu chú thích.
+   */
+  phai?: React.ReactNode;
 }
 
 export default function SheetTabBar({
@@ -50,6 +57,7 @@ export default function SheetTabBar({
   onReorder,
   addLabel = 'Thêm sheet',
   status,
+  phai,
 }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -182,7 +190,7 @@ export default function SheetTabBar({
                   cursor: 'pointer',
                 }}
               >
-                <X size={12} />
+                <X size={14} />
               </button>
             )}
           </div>
@@ -220,6 +228,7 @@ export default function SheetTabBar({
             ca hãn hữu bên gọi tự đặt trần riêng; mặc định không trần — chỉ đếm. */}
         {status ?? (max != null ? `${sheets.length}/${max}` : `${sheets.length} sheet`)}
       </span>
+      {phai && <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>{phai}</div>}
     </div>
   );
 }

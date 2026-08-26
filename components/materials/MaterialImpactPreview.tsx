@@ -133,7 +133,7 @@ export default function MaterialImpactPreview({ doc, specIds, nextName, onApply,
         )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10.5, color: 'var(--t4)', marginBottom: 12 }}>
-          <Undo2 size={11} />
+          <Undo2 size={14} />
           {tr('Áp xong vẫn hoàn tác được (⌘Z).', 'You can still undo afterwards (⌘Z).')}
         </div>
 
@@ -146,11 +146,11 @@ export default function MaterialImpactPreview({ doc, specIds, nextName, onApply,
           </button>
         </div>
       </div>
-      {/* Hover chỉ đổi nền 120ms, không scale (SPEC-HOVER-FOCUS-IDF: nút = đổi nền, cấm zoom). */}
+      {/* Hover chỉ đổi nền var(--nhip-bam), không scale (SPEC-HOVER-FOCUS-IDF: nút = đổi nền, cấm zoom). */}
       <style>{`
-        .if-impact-ghost { transition: background 120ms ease; }
+        .if-impact-ghost { transition: background var(--nhip-bam) ease; }
         .if-impact-ghost:hover { background: var(--hover); }
-        .if-impact-apply { transition: background 120ms ease; }
+        .if-impact-apply { transition: background var(--nhip-bam) ease; }
         .if-impact-apply:hover { background: color-mix(in srgb, var(--accent) 88%, #000); }
       `}</style>
     </div>,

@@ -119,7 +119,7 @@ export default function BackupRecoveryModal({ projectId, projectName, onClose }:
         )}
 
         <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginTop: 14, padding: '8px 10px', borderRadius: 10, background: 'rgba(217,163,74,0.1)', border: '1px solid var(--warning, #d9a34a)' }}>
-          <AlertTriangle size={13} style={{ marginTop: 1, flexShrink: 0, color: 'var(--warning, #d9a34a)' }} />
+          <AlertTriangle size={14} style={{ marginTop: 1, flexShrink: 0, color: 'var(--warning, #d9a34a)' }} />
           <span style={{ fontSize: 10.5, color: 'var(--warning, #d9a34a)' }}>
             Nếu 1 phần chuỗi backup bị hỏng/mất, app tự lùi về mốc gần nhất ráp được trước đó — sẽ báo rõ khi xảy ra, không âm thầm trả bản sai.
           </span>

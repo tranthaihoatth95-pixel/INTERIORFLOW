@@ -1,0 +1,162 @@
+  ▲ Next.js 14.2.35
+  - Environments: .env.local, .env
+
+   Creating an optimized production build ...
+ ⚠ Compiled with warnings
+
+./node_modules/unpdf/dist/index.mjs
+Critical dependency: Accessing import.meta directly is unsupported (only property access or destructuring is supported)
+
+Import trace for requested module:
+./node_modules/unpdf/dist/index.mjs
+./app/api/pdf/extract/route.ts
+
+./node_modules/jose/dist/webapi/lib/deflate.js
+A Node.js API is used (CompressionStream at line: 10) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+
+Import trace for requested module:
+./node_modules/jose/dist/webapi/lib/deflate.js
+./node_modules/jose/dist/webapi/jwe/flattened/decrypt.js
+./node_modules/jose/dist/webapi/index.js
+
+./node_modules/jose/dist/webapi/lib/deflate.js
+A Node.js API is used (DecompressionStream at line: 26) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+
+Import trace for requested module:
+./node_modules/jose/dist/webapi/lib/deflate.js
+./node_modules/jose/dist/webapi/jwe/flattened/decrypt.js
+./node_modules/jose/dist/webapi/index.js
+
+   Skipping linting
+   Checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/57) ...
+   Generating static pages (14/57) 
+   Generating static pages (28/57) 
+   Generating static pages (42/57) 
+ ✓ Generating static pages (57/57)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                           Size     First Load JS
+┌ ○ /                                                 344 B          1.01 MB
+├ ○ /_not-found                                       880 B          89.6 kB
+├ ƒ /api/ai-assist-chat                               0 B                0 B
+├ ƒ /api/asset-representation                         0 B                0 B
+├ ƒ /api/atlas-materials/sync                         0 B                0 B
+├ ƒ /api/auth/apple                                   0 B                0 B
+├ ƒ /api/auth/google                                  0 B                0 B
+├ ƒ /api/auth/google/callback                         0 B                0 B
+├ ƒ /api/auth/login                                   0 B                0 B
+├ ƒ /api/auth/me                                      0 B                0 B
+├ ƒ /api/auth/microsoft                               0 B                0 B
+├ ƒ /api/auth/microsoft/callback                      0 B                0 B
+├ ƒ /api/auth/providers                               0 B                0 B
+├ ƒ /api/auth/register                                0 B                0 B
+├ ƒ /api/boq/[projectId]                              0 B                0 B
+├ ƒ /api/chat                                         0 B                0 B
+├ ƒ /api/colors/lark                                  0 B                0 B
+├ ƒ /api/comfyui-image                                0 B                0 B
+├ ƒ /api/comments                                     0 B                0 B
+├ ƒ /api/credits                                      0 B                0 B
+├ ƒ /api/cursors                                      0 B                0 B
+├ ƒ /api/dashboard                                    0 B                0 B
+├ ƒ /api/flows                                        0 B                0 B
+├ ƒ /api/flows/[id]                                   0 B                0 B
+├ ƒ /api/gu/[kind]                                    0 B                0 B
+├ ○ /api/health                                       0 B                0 B
+├ ƒ /api/home/notes                                   0 B                0 B
+├ ƒ /api/home/summary                                 0 B                0 B
+├ ƒ /api/illustration                                 0 B                0 B
+├ ƒ /api/integrations/[provider]/callback             0 B                0 B
+├ ƒ /api/integrations/[provider]/connect              0 B                0 B
+├ ƒ /api/integrations/[provider]/disconnect           0 B                0 B
+├ ƒ /api/integrations/[provider]/status               0 B                0 B
+├ ƒ /api/jobs                                         0 B                0 B
+├ ƒ /api/jobs/[id]                                    0 B                0 B
+├ ƒ /api/lark-tasks                                   0 B                0 B
+├ ƒ /api/lark-tasks/[recordId]/status                 0 B                0 B
+├ ƒ /api/lark-tasks/sync                              0 B                0 B
+├ ƒ /api/lark-user-map                                0 B                0 B
+├ ƒ /api/library                                      0 B                0 B
+├ ƒ /api/library/[id]                                 0 B                0 B
+├ ƒ /api/library/[id]/file                            0 B                0 B
+├ ƒ /api/library/clip                                 0 B                0 B
+├ ƒ /api/library/from-url                             0 B                0 B
+├ ƒ /api/manufacturer-import                          0 B                0 B
+├ ƒ /api/manufacturer-import/apply                    0 B                0 B
+├ ƒ /api/notebook/[projectId]/query                   0 B                0 B
+├ ƒ /api/notebook/[projectId]/source                  0 B                0 B
+├ ƒ /api/notebook/[projectId]/source/[sourceId]       0 B                0 B
+├ ƒ /api/notebook/[projectId]/source/[sourceId]/file  0 B                0 B
+├ ƒ /api/notebook/[projectId]/sources                 0 B                0 B
+├ ƒ /api/pdf/extract                                  0 B                0 B
+├ ƒ /api/present/text                                 0 B                0 B
+├ ƒ /api/project-asset-usage                          0 B                0 B
+├ ƒ /api/project-asset-usage/[id]                     0 B                0 B
+├ ƒ /api/project-files                                0 B                0 B
+├ ƒ /api/project-files/[id]                           0 B                0 B
+├ ƒ /api/project-files/[id]/file                      0 B                0 B
+├ ƒ /api/project-files/[id]/promote                   0 B                0 B
+├ ƒ /api/projects/[id]/dna                            0 B                0 B
+├ ƒ /api/projects/[id]/members                        0 B                0 B
+├ ƒ /api/projects/[id]/overview                       0 B                0 B
+├ ƒ /api/projects/[id]/profile                        0 B                0 B
+├ ƒ /api/projects/[id]/site                           0 B                0 B
+├ ƒ /api/projects/[id]/site/tinh-lai                  0 B                0 B
+├ ƒ /api/render/fbx                                   0 B                0 B
+├ ƒ /api/render/nvidia-image                          0 B                0 B
+├ ƒ /api/render/premium                               0 B                0 B
+├ ƒ /api/share/[token]                                0 B                0 B
+├ ƒ /api/specs                                        0 B                0 B
+├ ƒ /api/specs/[id]                                   0 B                0 B
+├ ƒ /api/stock-photos                                 0 B                0 B
+├ ƒ /api/stock-photos/proxy                           0 B                0 B
+├ ƒ /api/strategy/scenarios                           0 B                0 B
+├ ƒ /api/tasks                                        0 B                0 B
+├ ƒ /api/tasks/[id]                                   0 B                0 B
+├ ƒ /api/user/avatar                                  0 B                0 B
+├ ƒ /api/vision/caption                               0 B                0 B
+├ ○ /cad-editor                                       1.38 kB         273 kB
+├ ○ /colors                                           1.16 kB        89.9 kB
+├ ○ /demo/ghe-3d                                      5.29 kB         272 kB
+├ ○ /dev-bench-3d-2                                   38.3 kB         370 kB
+├ ○ /files                                            26.5 kB         866 kB
+├ ○ /intro                                            7.35 kB         136 kB
+├ ○ /library                                          993 B          89.7 kB
+├ ○ /library/gallery                                  7.91 kB         844 kB
+├ ○ /library/ingest                                   7.44 kB         103 kB
+├ ○ /login                                            5.43 kB         339 kB
+├ ○ /materials                                        25.5 kB         900 kB
+├ ○ /photo-editor                                     1.38 kB         273 kB
+├ ○ /present-editor                                   1.38 kB         273 kB
+├ ○ /projects                                         4.89 kB         877 kB
+├ ƒ /projects/[id]/cad                                182 kB         1.03 MB
+├ ƒ /projects/[id]/notebook                           13.5 kB         112 kB
+├ ƒ /projects/[id]/overview                           14.6 kB         851 kB
+├ ƒ /projects/[id]/photo                              16.8 kB         417 kB
+├ ƒ /projects/[id]/present                            40.4 kB         919 kB
+├ ƒ /projects/[id]/render                             427 B          1.01 MB
+├ ○ /settings                                         22.6 kB         861 kB
+├ ○ /settings/about                                   1.96 kB         269 kB
+├ ○ /settings/avatar                                  3.89 kB         289 kB
+├ ○ /settings/licenses                                16.4 kB         283 kB
+├ ƒ /share/[token]                                    8.13 kB         393 kB
+├ ○ /tasks                                            1.04 kB         845 kB
+├ ○ /thu-be-mat                                       10.5 kB        99.2 kB
+├ ○ /thu-trang-thai                                   5.8 kB         94.5 kB
+└ ○ /workhub                                          6.84 kB        95.6 kB
++ First Load JS shared by all                         88.7 kB
+  ├ chunks/2117-54a03cef427969db.js                   31.9 kB
+  ├ chunks/fd9d1056-df2fd4a4a2a4e967.js               53.6 kB
+  └ other shared chunks (total)                       3.2 kB
+
+
+ƒ Middleware                                          32.3 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+BUILD2_EXIT=0

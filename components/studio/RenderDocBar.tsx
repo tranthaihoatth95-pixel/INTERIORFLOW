@@ -58,7 +58,7 @@ export function RenderDocBar() {
               {activeJobs}
             </span>
           )}
-          <ChevronDown size={12} className={cn('transition-transform duration-200 ease-[cubic-bezier(.32,.72,0,1)]', tasksOpen && 'rotate-180')} />
+          <ChevronDown size={16} className={cn('transition-transform duration-200 ease-[cubic-bezier(.32,.72,0,1)]', tasksOpen && 'rotate-180')} />
         </motion.button>
         <AnimatePresence>{tasksOpen && <TasksDropdown />}</AnimatePresence>
       </div>

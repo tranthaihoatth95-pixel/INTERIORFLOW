@@ -23,7 +23,7 @@
  * kiểu tab, xem cảnh báo trong báo cáo phiên này về phần CHƯA làm: dock công cụ nổi đáy viewport).
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useCadStore, type Tool } from '@/lib/cad/store';
 import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
@@ -52,6 +52,7 @@ import { entityBox, type BuildOp, type Entity } from '@/lib/cad/model';
 import { setEntityArrayRadial, setEntityMirror, setEntityBevelEx, setEntityTaper, setEntitySweep, entityFootprintMm } from '@/lib/cad/commands';
 import { newId } from '@/lib/cad/store';
 import { evalRecipe, type BuildRecipeStep } from '@/lib/three/build-recipe';
+import { nhomTheoYDinh, NHAN_Y_DINH, Y_DINH_CHUA_CO } from '@/lib/render-studio/form-recipe';
 
 /**
  * Tab do NƠI MOUNT giữ (mode Vẽ 3D cần mở thẳng tab Tạo khi bấm "Dựng khối đầu tiên").
@@ -112,7 +113,12 @@ function ContextQuickTools({ tab, onTaoTuong }: { tab: Command3DTab; onTaoTuong?
     tao: {
       title: ['Bắt đầu từ cấu kiện', 'Start with components'],
       detail: ['Dựng nhanh hoặc kéo cấu kiện có sẵn vào cảnh.', 'Build quickly or place a saved component.'],
-      action: onTaoTuong ? { label: ['Thêm tường', 'Add wall'], icon: Plus, run: onTaoTuong } : { label: ['Mở cấu kiện', 'Browse components'], icon: Box, run: openParts },
+      // 🔴 BUG THẬT bắt lúc nghiệm thu 20/08 (LANE C): trước đây `run: onTaoTuong` truyền THẲNG
+      // hàm vào `onClick` ⇒ React gọi nó với MouseEvent làm tham số đầu ⇒ tham số mặc định
+      // `draft = FIRST_WALL` KHÔNG được áp ⇒ `taoTuongMau` đọc `draft.from.x` trên một event
+      // ⇒ "Cannot read properties of undefined (reading 'x')" và nút "Thêm tường" KHÔNG BAO GIỜ
+      // tạo được tường. Bọc lambda để gọi đúng chữ ký `(draft?: WallDraft3D)`.
+      action: onTaoTuong ? { label: ['Thêm tường', 'Add wall'], icon: Plus, run: () => onTaoTuong() } : { label: ['Mở cấu kiện', 'Browse components'], icon: Box, run: openParts },
     },
     vatlieu: {
       title: ['Gán vật liệu đúng chỗ', 'Assign material in context'],
@@ -142,7 +148,7 @@ function ContextQuickTools({ tab, onTaoTuong }: { tab: Command3DTab; onTaoTuong?
   return (
     <section className="mb-3 rounded-[10px] border border-[var(--vien-mo)] bg-[var(--field)] p-2.5" aria-label={tr('Tác vụ theo ngữ cảnh', 'Contextual tasks')}>
       <div className="flex gap-2">
-        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-[var(--accent-soft)] text-[var(--accent)]"><Icon size={14} strokeWidth={1.8} /></span>
+        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-[var(--accent-soft)] text-[var(--accent)]"><Icon size={14} strokeWidth={1.5} /></span>
         <span className="min-w-0">
           <b className="block text-[11px] font-semibold text-[var(--t1)]">{tr(item.title[0], item.title[1])}</b>
           <span className="mt-0.5 block text-[10px] leading-[1.5] text-[var(--t4)]">{tr(item.detail[0], item.detail[1])}</span>
@@ -150,7 +156,7 @@ function ContextQuickTools({ tab, onTaoTuong }: { tab: Command3DTab; onTaoTuong?
       </div>
       {item.action && (
         <button type="button" onClick={item.action.run} className="mt-2 flex h-7 items-center gap-1 rounded-[6px] border border-[var(--border)] bg-transparent px-2 text-[10px] font-semibold text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]">
-          <Icon size={12} strokeWidth={1.8} />{tr(item.action.label[0], item.action.label[1])}<ArrowUpRight size={11} strokeWidth={1.8} />
+          <Icon size={16} strokeWidth={1.5} />{tr(item.action.label[0], item.action.label[1])}<ArrowUpRight size={16} strokeWidth={1.5} />
         </button>
       )}
     </section>
@@ -380,6 +386,9 @@ function CreateTab({
   onTabChange?: (tab: Tab) => void;
 }) {
   const tr = useT();
+  // Gốc id ổn định cho phần tử ẩn mang LÝ DO của ô mờ (đích `aria-describedby`). Đặt ở đây chứ
+  // KHÔNG gọi useId() trong `cell` — `cell` chạy một lần mỗi ô, gọi hook trong vòng lặp là sai luật hook.
+  const lyDoBaseId = useId();
   const [wallBuilderOpen, setWallBuilderOpen] = useState(false);
   const [wallDraft, setWallDraft] = useState<WallDraft3D>(DEFAULT_WALL_DRAFT);
   useEffect(() => {
@@ -425,11 +434,19 @@ function CreateTab({
 
   const cell = ({ id, en, vi, icon: Icon, lam, reason }: CellDef) => {
     const nhay = id === 'tuong' && nhayNutTuong;
+    // 20/08 — ĐỔI ĐƯỜNG ĐI CỦA LÝ DO, đúng cách `ToolbarChip` đã sửa 16/08. Trước: `disabled` thật
+    // ⇒ Tab BỎ QUA nút, `focus` không bắn, và không có `aria-describedby` nào ⇒ lý do (vốn đã viết
+    // sẵn, tử tế, trong `reason`) KHÔNG BAO GIỜ tới người dùng bàn phím/trình đọc màn hình, và trên
+    // cảm ứng thì cũng câm vì không có hover. Nay `aria-disabled` giữ nút focus được, lý do đi qua
+    // phần tử ẩn `.if-tooltip-a11y`. Nút vẫn KHÔNG chạy gì: onClick chỉ gắn khi `lam`.
+    const lyDo = !lam ? tr(...(reason ?? ['Chưa dựng được', 'Not available yet'])) : undefined;
+    const lyDoId = `${lyDoBaseId}-${id}`;
     return (
       <Tooltip key={id} side="right" label={lam ? tr(...(TIP[id] ?? ['Sửa được sau', 'Editable afterwards'])) : tr(...(reason ?? ['Chưa dựng được', 'Not available yet']))}>
         <button
           type="button"
-          disabled={!lam}
+          aria-disabled={!lam || undefined}
+          aria-describedby={lyDo ? lyDoId : undefined}
           onClick={lam ? HANDLER[id] : undefined}
           className={cn(
             'flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-[10px] border p-1 text-center transition-colors',
@@ -440,10 +457,11 @@ function CreateTab({
                 : 'cursor-not-allowed border-dashed border-[var(--border)] text-[var(--t5)] opacity-45',
           )}
         >
-          <Icon size={14} strokeWidth={1.7} />
+          <Icon size={14} strokeWidth={1.5} />
           {/* ② — tên lệnh EN dòng chính, giải thích VI dòng nhỏ (line-height ≥1.5, G4) */}
           <span className="text-[9.5px] font-semibold leading-[1.5]">{en}</span>
           <span className="text-[8px] leading-[1.5] opacity-80">{vi}</span>
+          {lyDo && <span id={lyDoId} className="if-tooltip-a11y">{lyDo}</span>}
         </button>
       </Tooltip>
     );
@@ -475,7 +493,7 @@ function CreateTab({
                 onClick={() => veRoiDun(tool)}
                 className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border border-[var(--border)] bg-[var(--panel)] p-1 text-center text-[var(--t2)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
               >
-                <Square size={14} strokeWidth={1.7} />
+                <Square size={14} strokeWidth={1.5} />
                 <span className="text-[9.5px] font-semibold leading-[1.5]">{en}</span>
                 <span className="text-[8px] leading-[1.5] opacity-80">{vi}</span>
               </button>
@@ -1318,7 +1336,17 @@ function BuildRecipeSection({ scene }: { scene: Scene3DData | null }) {
         <>
           {steps.length > 0 && (
             <div className="space-y-1.5">
-              {steps.map((step, i) => {
+              {/* 21/08 — GOM THEO Ý ĐỊNH (`lib/render-studio/form-recipe.ts`). Danh sách phẳng 8
+                  bước đọc ra như một chồng lệnh; KTS nghĩ theo "hình chính · khoét · chi tiết ·
+                  hoa văn". Chỉ đổi CÁCH BÀY: engine, thứ tự áp dụng (thứ tự mảng), bật/tắt, sửa
+                  tham số, lỗi từng bước GIỮ NGUYÊN — `index` gốc đi kèm nên mọi thao tác vẫn
+                  nhắm đúng bậc. Nén phức tạp vào ý định mà không giết khả năng sửa. */}
+              {nhomTheoYDinh(steps).map((nhom) => (
+                <div key={nhom.yDinh} className="space-y-1.5">
+                  <p className="px-0.5 pt-0.5 text-[8.5px] font-semibold tracking-[1.6px] text-[var(--t4)]">
+                    {tr(NHAN_Y_DINH[nhom.yDinh][0], NHAN_Y_DINH[nhom.yDinh][1]).toUpperCase()}
+                  </p>
+                  {nhom.buoc.map(({ step, index: i }) => {
                 const [label, detail] = recipeStepSummary(step.op, tr);
                 const error = stepErrors[step.id];
                 const editable = RECIPE_EDITABLE_KINDS.has(step.op.op);
@@ -1339,7 +1367,7 @@ function BuildRecipeSection({ scene }: { scene: Scene3DData | null }) {
                         onClick={() => writeSteps(steps.map((s) => (s.id === step.id ? { ...s, enabled: !s.enabled } : s)))}
                         className="shrink-0 text-[var(--t3)] hover:text-[var(--accent)]"
                       >
-                        {step.enabled ? <Eye size={13} /> : <EyeOff size={13} />}
+                        {step.enabled ? <Eye size={16} /> : <EyeOff size={16} />}
                       </button>
                       <button
                         type="button"
@@ -1352,7 +1380,7 @@ function BuildRecipeSection({ scene }: { scene: Scene3DData | null }) {
                         }}
                         className="shrink-0 text-[var(--t4)] hover:text-[var(--accent)] disabled:opacity-30"
                       >
-                        <ChevronUp size={13} />
+                        <ChevronUp size={16} />
                       </button>
                       <button
                         type="button"
@@ -1365,7 +1393,7 @@ function BuildRecipeSection({ scene }: { scene: Scene3DData | null }) {
                         }}
                         className="shrink-0 text-[var(--t4)] hover:text-[var(--accent)] disabled:opacity-30"
                       >
-                        <ChevronDown size={13} />
+                        <ChevronDown size={16} />
                       </button>
                       <button
                         type="button"
@@ -1375,14 +1403,14 @@ function BuildRecipeSection({ scene }: { scene: Scene3DData | null }) {
                         <span className="text-[10.5px] font-semibold text-[var(--t1)]">{step.label ? `${label} · ${step.label}` : label}</span>
                         <span className="block truncate text-[9px] text-[var(--t4)]">{detail}</span>
                       </button>
-                      {error && <AlertTriangle size={13} className="shrink-0 text-[var(--danger,#c0392b)]" />}
+                      {error && <AlertTriangle size={16} className="shrink-0 text-[var(--danger,#c0392b)]" />}
                       <button
                         type="button"
                         title={tr('xoá bước', 'delete step')}
                         onClick={() => writeSteps(steps.filter((s) => s.id !== step.id))}
                         className="shrink-0 text-[var(--t4)] hover:text-[var(--danger,#c0392b)]"
                       >
-                        <Trash2 size={13} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                     {error && (
@@ -1396,7 +1424,14 @@ function BuildRecipeSection({ scene }: { scene: Scene3DData | null }) {
                     )}
                   </div>
                 );
-              })}
+                  })}
+                </div>
+              ))}
+              {/* Khai THẲNG phần chưa có, thay vì để nó vắng mặt im lặng (§9). */}
+              <p className="px-0.5 pt-1 text-[9px] leading-[1.5] text-[var(--t5)]">
+                {tr('Chưa có: ', 'Not available yet: ')}
+                {Y_DINH_CHUA_CO.map((m) => tr(m.ten[0], m.ten[1])).join(' · ')}
+              </p>
             </div>
           )}
           <div className="flex flex-wrap gap-1.5">

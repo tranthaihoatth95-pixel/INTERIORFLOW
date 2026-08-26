@@ -24,6 +24,7 @@ import { useEffect, useState } from 'react';
 import PresentSheets from '@/components/present-editor/PresentSheets';
 import { AppShell } from '@/components/studio/AppShell';
 import { PresentNavigator } from '@/components/present-editor/PresentNavigator';
+import { useHoSoStatus } from '@/components/present-editor/ho-so-status';
 import { BoqScreen } from '@/components/present-editor/boq/BoqScreen';
 import { ScheduleScreen } from '@/components/present-editor/table/ScheduleScreen';
 import StatusBar from '@/components/studio/StatusBar';
@@ -35,6 +36,7 @@ import { useFlowStore } from '@/lib/store';
 import { usePlayStatus } from '@/lib/present-editor/play-status';
 import { effectiveUserId } from '@/lib/resume';
 import { useT } from '@/lib/i18n';
+import CongThietLapTrang from './CongThietLapTrang';
 
 export default function PresentStageScreen() {
   // Đợt 4 (`docs/phieu-giao/editor-bang-bieu-mau.md`) — thêm 'schedule' (Bảng thống kê), ĐI ĐÚNG
@@ -81,6 +83,9 @@ export default function PresentStageScreen() {
   // VIỆC A3 (28/07): StatusBar tự ẩn khi trình chiếu toàn màn hình (SlidePlayer che hết,
   // playing nay ở store dùng chung để đọc được từ NGOÀI PresentEditor).
   const playing = usePlayStatus((s) => s.playing);
+  /* [marker: nguonLienKet] `null` = chưa hydrate ⇒ truyền `undefined` cho Navigator để nó GIỮ
+     câu cũ, không đoán hộ. Xem `ho-so-status.ts`. */
+  const coHoSo = useHoSoStatus((s) => s.coHoSo);
   const tr = useT();
   return (
     <AppShell
@@ -88,6 +93,7 @@ export default function PresentStageScreen() {
       statusBar={<StatusBar stage="present" hidden={playing} />}
       navigator={
         <PresentNavigator
+          coHoSo={coHoSo ?? undefined}
           boqActive={mode === 'boq'}
           onOpenBoq={() => setMode(mode === 'boq' ? 'deck' : 'boq')}
           scheduleActive={mode === 'schedule'}
@@ -110,6 +116,11 @@ export default function PresentStageScreen() {
           <PresentSheets onRequestBoq={() => setMode('boq')} onRequestSchedule={() => setMode('schedule')} />
         )}
       </StageEnter>
+      {/* Cửa nhận tờ từ 2D/3D + Thiết lập trang. Mount Ở TẦNG CHẶNG chứ không trong `Toolbar`:
+          toolbar chỉ dựng khi đã có hồ sơ mở, mà tờ gửi sang thì phải nhận được NGAY cả khi chặng
+          Trình chiếu còn rỗng — không thì tờ nằm chờ ở màn người dùng không tới. Chưa ai gửi tờ
+          nào ⇒ component tự trả null, chặng y hệt trước. */}
+      <CongThietLapTrang />
       <ChatPanel />
       <CommentLayer />
       {/* Tầng 2 onboarding — thẻ giới thiệu lần đầu chặng Presenting. */}

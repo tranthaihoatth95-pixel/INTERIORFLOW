@@ -108,7 +108,7 @@ export function LibraryPanel() {
           onClick={() => setPanel(null)}
           className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
         >
-          <X size={13} />
+          <X size={14} />
         </motion.button>
       </div>
 
@@ -227,7 +227,7 @@ export function LibraryPanel() {
                   title={`Upload vào "${cat}" — cả team thấy`}
                   className="flex w-full items-center justify-center gap-1 rounded-[10px] bg-[var(--accent-strong)] px-2.5 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-[var(--accent)] disabled:opacity-50"
                 >
-                  {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />} Upload
+                  {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />} Upload
                 </motion.button>
                 <hr className="border-[var(--border)]" />
                 <motion.button
@@ -243,7 +243,7 @@ export function LibraryPanel() {
                   title="Nạp hàng loạt ảnh/file lớn — chưng cất thumbnail + palette + tag"
                   className="flex w-full items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
                 >
-                  <FolderInput size={12} /> Nạp vào thư viện
+                  <FolderInput size={16} /> Nạp vào thư viện
                 </motion.button>
               </div>
             )}
@@ -290,7 +290,7 @@ export function LibraryPanel() {
               bayCaptions={['vật liệu', 'không gian', 'bản vẽ', 'furniture']}
               title="Thư viện ảnh đang trống"
               desc="Upload ảnh tham khảo — cả team dùng chung, kéo thả thẳng ra canvas."
-              actions={[{ label: 'Thêm ảnh vào thư viện', primary: true, icon: <Plus size={13} />, onClick: () => setAddOpen(true) }]}
+              actions={[{ label: 'Thêm ảnh vào thư viện', primary: true, icon: <Plus size={18} />, onClick: () => setAddOpen(true) }]}
             />
           </div>
         )}
@@ -323,7 +323,7 @@ export function LibraryPanel() {
                   }}
                   className="grid h-5 w-5 shrink-0 place-items-center rounded text-[var(--t4)] opacity-0 transition group-hover:opacity-100 hover:text-red-400"
                 >
-                  <Trash2 size={11} />
+                  <Trash2 size={14} />
                 </button>
               )}
             </div>

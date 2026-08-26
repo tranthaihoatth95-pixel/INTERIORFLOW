@@ -122,7 +122,7 @@ function LayerRow(props: {
             flex: '0 0 auto',
           }}
         >
-          {l.kind === 'adjustment' ? <SlidersHorizontal size={13} /> : <ImageIcon size={13} />}
+          {l.kind === 'adjustment' ? <SlidersHorizontal size={14} /> : <ImageIcon size={14} />}
         </span>
         {editing ? (
           <input
@@ -170,7 +170,7 @@ function LayerRow(props: {
           </span>
         )}
         <IconBtn title={l.locked ? 'Mở khoá' : 'Khoá'} onClick={props.onToggleLock}>
-          {l.locked ? <Lock size={13} /> : <Unlock size={13} />}
+          {l.locked ? <Lock size={14} /> : <Unlock size={14} />}
         </IconBtn>
       </div>
 
@@ -227,10 +227,10 @@ function LayerRow(props: {
               <ChevronDown size={14} />
             </IconBtn>
             <IconBtn title="Nhân bản" onClick={props.onDuplicate}>
-              <Copy size={13} />
+              <Copy size={14} />
             </IconBtn>
             <IconBtn title="Xoá lớp" onClick={props.onDelete}>
-              <Trash2 size={13} />
+              <Trash2 size={14} />
             </IconBtn>
           </div>
         </div>

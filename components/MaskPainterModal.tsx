@@ -198,17 +198,17 @@ export function MaskPainterModal() {
           >
         {/* header */}
         <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3">
-          <Paintbrush size={15} className="text-[var(--accent)]" />
+          <Paintbrush size={14} className="text-[var(--accent)]" />
           <span className="flex-1 text-sm font-medium text-[var(--t1)]">Mask Painter</span>
           <motion.button {...pressableIcon} onClick={close} className="grid h-7 w-7 place-items-center rounded-[10px] text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]">
-            <X size={15} />
+            <X size={16} />
           </motion.button>
         </div>
 
         {/* cảnh báo còn nét vẽ chưa lưu — chỉ hiện sau lần Escape/X đầu tiên khi dirty */}
         {confirmClose && (
           <div className="flex items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-600 dark:text-amber-400">
-            <AlertTriangle size={13} className="shrink-0" />
+            <AlertTriangle size={18} className="shrink-0" />
             <span className="flex-1">Còn nét vẽ chưa lưu — nhấn Escape lần nữa để thoát, hoặc chọn bên dưới.</span>
             <button
               onClick={save}
@@ -270,7 +270,7 @@ export function MaskPainterModal() {
               !eraser ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
             )}
           >
-            <Paintbrush size={13} /> Brush
+            <Paintbrush size={16} /> Brush
           </motion.button>
           <motion.button
             {...pressable}
@@ -280,7 +280,7 @@ export function MaskPainterModal() {
               eraser ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
             )}
           >
-            <Eraser size={13} /> Eraser
+            <Eraser size={16} /> Eraser
           </motion.button>
           <label className="flex items-center gap-2 text-xs text-[var(--t3)]">
             Size
@@ -305,7 +305,7 @@ export function MaskPainterModal() {
             }}
             className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
           >
-            <Trash2 size={13} /> Clear
+            <Trash2 size={16} /> Clear
           </motion.button>
           <div className="flex-1" />
           <motion.button
@@ -314,7 +314,7 @@ export function MaskPainterModal() {
             disabled={!sourceImage || !ready}
             className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-3.5 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)] disabled:opacity-40"
           >
-            <Check size={13} /> Lưu mask
+            <Check size={16} /> Lưu mask
           </motion.button>
         </div>
           </motion.div>

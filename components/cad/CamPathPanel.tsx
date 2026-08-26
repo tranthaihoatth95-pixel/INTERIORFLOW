@@ -167,7 +167,7 @@ export default function CamPathPanel({ onClose }: { onClose: () => void }) {
     <div style={panel}>
       <div style={headStyle}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Video size={12} /> Đường cam — xem thử
+          <Video size={16} /> Đường cam — xem thử
         </span>
         <button type="button" onClick={onClose} style={miniBtn} aria-label="Đóng">
           <X size={14} />

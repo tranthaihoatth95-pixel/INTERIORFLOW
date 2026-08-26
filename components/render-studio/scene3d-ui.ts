@@ -58,24 +58,30 @@ export const useLevelUi = create<LevelUiState>((set) => ({
  *  - `datetime` — theo NGÀY GIỜ THẬT tại VỊ TRÍ THẬT, qua `sunLightFromDateTime()` (NOAA/Meeus
  *                 của PHU). Cần vĩ độ · kinh độ · ngày ⇒ chưa khai thì chưa bật được.
  *
- * ⚠️ **VỊ TRÍ CÔNG TRÌNH VÀ HƯỚNG BẮC CHƯA CÓ CHỖ LƯU TRONG `Doc`** (`grep -n "northDeg\|latitude\|
- * longitude" lib/cad/model.ts` = 0). Nên chúng sống ở đây, MẤT KHI ĐÓNG APP. Không tự thêm field
- * vào `model.ts` (vùng PHU) và cũng không ghi localStorage riêng — làm thế là dựng NGUỒN THỨ HAI
- * cạnh `.idf`, đúng bệnh K1 đã cấm. Đề nghị cụ thể cho PHU nằm trong báo cáo phiên.
+ * ⛔ **LỖI THỜI — ĐÃ SỬA 22/08.** Docstring cũ ở đây từng ghi: *"VỊ TRÍ CÔNG TRÌNH VÀ HƯỚNG BẮC
+ * CHƯA CÓ CHỖ LƯU TRONG `Doc` … nên chúng sống ở đây, MẤT KHI ĐÓNG APP"*, và store từng giữ
+ * `latDeg` · `lngDeg` · `northDeg`. Đó đúng là "3DLocation" — 3D tự sở hữu sự thật cấp dự án
+ * trong state giao diện của riêng nó. **Nay 3D THÔI SỞ HỮU, chỉ ĐỌC.**
+ *   · nơi ở đúng của vị trí/hướng: `HoSoDiaDiem` (`lib/site/types.ts`), lưu qua
+ *     `PATCH /api/projects/<id>/site`, đọc qua `components/site/dia-diem-client.ts`;
+ *   · nắng thật: `lib/site/solar.ts#trangThaiNang` — KHÔNG có công thức mặt trời thứ hai.
+ * Ba khoá còn lại (`mode` · `dateIso` · `hour`) ở lại đây **có lý do**: chúng là *đang xem lúc mấy
+ * giờ*, tức cách nhìn của một người trước một màn hình — không phải sự thật của công trình.
  *
- * ⚠️ `northDeg` KHÔNG được gộp vào `SunLight.azimuthDeg` khi ghi xuống `Doc`: hợp đồng của PHU ghi
+ * ⚠️ Hướng Bắc KHÔNG được gộp vào `SunLight.azimuthDeg` khi ghi xuống `Doc`: hợp đồng của PHU ghi
  * rõ phương vị đo **từ hướng Bắc địa lý** (`lighting.ts:42`). Gộp vào là biến field đó thành
  * "phương vị trong mặt bằng" — hai nghĩa cho một ô, đúng kiểu lỗi mà `sunDirectionCad` cảnh báo
- * ("chỗ dễ sai gương/lệch 90°"). Ở đây `northDeg` CHỈ xoay kim la bàn trên màn.
+ * ("chỗ dễ sai gương/lệch 90°"). Bắc chỉ xoay kim la bàn trên màn, và nay nó đọc từ
+ * `HoSoDiaDiem.huong.bacThatDeg`.
  */
 export type SunMode = 'manual' | 'datetime';
 
+/**
+ * ⛔ **KHÔNG THÊM `latDeg`/`lngDeg`/`northDeg` VÀO ĐÂY LẦN NỮA.** Chúng đã bị gỡ 22/08 và chuyển
+ * về `HoSoDiaDiem` của dự án. Thêm lại là dựng nguồn sự thật thứ hai cho cùng một sự thật.
+ */
 interface SunUiState {
   mode: SunMode;
-  /** hướng Bắc của bản vẽ, độ (0 = Bắc trùng +Y của Doc). CHỈ hiển thị — xem cảnh báo trên. */
-  northDeg: number;
-  latDeg: number | null;
-  lngDeg: number | null;
   /** 'YYYY-MM-DD'. Rỗng = chưa chọn. Cố ý KHÔNG mặc định `new Date()` — giá trị khác nhau giữa
    * lần render trên máy chủ và trên trình duyệt sẽ gây hydration mismatch thật. */
   dateIso: string;
@@ -86,17 +92,17 @@ interface SunUiState {
 
 export const useSunUi = create<SunUiState>((set) => ({
   mode: 'manual',
-  northDeg: 0,
-  latDeg: null,
-  lngDeg: null,
   dateIso: '',
   hour: 10,
   set: (patch) => set(patch),
 }));
 
-/** Đủ điều kiện tính nắng thật chưa (vĩ độ · kinh độ · ngày). */
-export function canUseDateTime(s: Pick<SunUiState, 'latDeg' | 'lngDeg' | 'dateIso'>): boolean {
-  return s.latDeg !== null && s.lngDeg !== null && s.dateIso !== '';
+/**
+ * Đủ điều kiện tính nắng thật chưa: dự án đã có toạ độ **và** đã chọn ngày.
+ * Toạ độ đến từ hồ sơ dự án (`coToaDo(hoSo)`), KHÔNG từ store này nữa.
+ */
+export function canUseDateTime(coToaDoDuAn: boolean, dateIso: string): boolean {
+  return coToaDoDuAn && dateIso !== '';
 }
 
 /* ─────────────────────────────────── ③ BẢNG TRA DÙNG CHUNG ──────────────────────────────────── */

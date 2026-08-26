@@ -91,7 +91,7 @@ export function ColorMatchPanel({ sources }: { sources: ColorSource[] }) {
         <>
           {!result.enough && (
             <div style={warnBox}>
-              <AlertTriangle size={13} style={{ flexShrink: 0, marginTop: 2 }} />
+              <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 2 }} />
               <span style={{ fontSize: 12.5, lineHeight: 1.6 }}>
                 {tr(NO_CLOSE_MATCH_NOTICE.vi, NO_CLOSE_MATCH_NOTICE.en)}{' '}
                 {tr(`Gần nhất lệch ΔE ${result.nearestDeltaE} (ngưỡng ${DEFAULT_MAX_DELTA_E}). Danh sách dưới đây chỉ để tham khảo, không phải kết quả khớp.`,
@@ -130,10 +130,10 @@ export function ColorMatchPanel({ sources }: { sources: ColorSource[] }) {
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button type="button" onClick={copyCodes} style={btn(false)}>
-              <Copy size={13} /> {tr('Chép mã đã chọn', 'Copy codes')}
+              <Copy size={18} /> {tr('Chép mã đã chọn', 'Copy codes')}
             </button>
             <button type="button" onClick={exportCsv} style={btn(false)}>
-              <FileDown size={13} /> {tr('Xuất CSV kết quả', 'Export results as CSV')}
+              <FileDown size={18} /> {tr('Xuất CSV kết quả', 'Export results as CSV')}
             </button>
             <button
               type="button" disabled
@@ -141,7 +141,7 @@ export function ColorMatchPanel({ sources }: { sources: ColorSource[] }) {
                 'Not wired yet — needs a path from the colour library into BOQ/orders.')}
               style={btn(false, true)}
             >
-              <ShoppingCart size={13} /> {tr('Đưa vào đơn đặt hàng', 'Add to order')}
+              <ShoppingCart size={18} /> {tr('Đưa vào đơn đặt hàng', 'Add to order')}
             </button>
           </div>
         </>

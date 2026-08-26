@@ -21,10 +21,15 @@
  * không giấu ở tooltip. Thứ DUY NHẤT hiện trong khung nhìn là **dấu vị trí đèn** để kéo bằng gizmo.
  */
 
-import { Lightbulb, Plus, Sun, Trash2, Cloud, Compass, MoveHorizontal, MapPin, AlertTriangle } from 'lucide-react';
+import { useEffect } from 'react';
+import { Lightbulb, Plus, Sun, Trash2, Cloud, Compass, MoveHorizontal, AlertTriangle } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import { sortedLevels } from '@/lib/cad/levels';
-import { buildLightRig, estimateLightingQuick, kelvinToHex, sunLightFromDateTime, type RoomLight, type RoomLightKind } from '@/lib/three/lighting';
+import { buildLightRig, estimateLightingQuick, kelvinToHex, type RoomLight, type RoomLightKind } from '@/lib/three/lighting';
+import { coToaDo } from '@/lib/site/types';
+import { useDuAnHienTai, useHoSoDiaDiem } from '@/components/site/dia-diem-client';
+import { gocNangTuHoSo } from '@/components/site/nang-tu-ho-so';
+import NhapViTri from '@/components/site/NhapViTri';
 import { useScene3D } from '@/lib/render-studio/use-scene3d';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -97,6 +102,22 @@ export function LightTab() {
   const sunUi = useSunUi();
   const setSunUi = useSunUi((s) => s.set);
 
+  // ⭐ VỊ TRÍ VÀ HƯỚNG LÀ SỰ THẬT CỦA DỰ ÁN, KHÔNG PHẢI CỦA BẢNG NÀY. Bảng Đèn chỉ ĐỌC. Sửa thì
+  // ghi thẳng về `PATCH /api/projects/<id>/site` qua `<NhapViTri>` — cùng khối mà Tổng quan dùng.
+  const duAnId = useDuAnHienTai();
+  const { hoSo } = useHoSoDiaDiem(duAnId);
+  const bacDeg = hoSo.huong.bacThatDeg ?? 0;
+
+  // Dự án đã có toạ độ mà chưa chọn ngày ⇒ mặc định HÔM NAY, để thanh giờ dùng được ngay.
+  // ⚠️ Chỉ đặt state giao diện, **KHÔNG** `writeSun`: mở một bảng ra xem không được phép tự ghi
+  // vào tài liệu người dùng. Nắng chỉ đổi khi người dùng thật sự kéo giờ hoặc đổi ngày.
+  // Đặt trong effect (không phải lúc render) vì `new Date()` khác nhau giữa máy chủ và trình duyệt.
+  useEffect(() => {
+    if (!useSunUi.getState().dateIso && coToaDo(hoSo)) {
+      setSunUi({ dateIso: new Date().toISOString().slice(0, 10) });
+    }
+  }, [hoSo, setSunUi]);
+
   // buildLightRig() là NGUỒN DUY NHẤT cho mọi con số dẫn xuất hiện trên UI (màu Kelvin đã đổi hex,
   // cảnh báo, cao độ đèn đã cộng cao độ tầng). Không tự tính lại bất kỳ dòng nào trong đó.
   const rig = buildLightRig(doc);
@@ -106,7 +127,7 @@ export function LightTab() {
   );
   const lighting = currentLighting();
   const levels = sortedLevels(doc);
-  const dateTimeReady = canUseDateTime(sunUi);
+  const dateTimeReady = canUseDateTime(coToaDo(hoSo), sunUi.dateIso);
 
   /** Đèn mới rơi vào GIỮA mặt bằng, cao độ theo loại — đặt ở gốc toạ độ thì đèn thường nằm ngoài
    * phòng, người dùng phải kéo lại ngay. */
@@ -131,30 +152,22 @@ export function LightTab() {
     writeRoomLights([...cur.rooms, light]);
   };
 
-  /** Chuyển thanh giờ/ngày/vị trí → phương vị + cao độ THẬT bằng NOAA của PHU. KHÔNG tự viết công
-   * thức thiên văn thứ hai (`sunLightFromDateTime` giữ nguyên intensity/colorK người dùng chỉnh). */
-  const applyDateTime = (patch: { hour?: number; dateIso?: string; lat?: number; lng?: number }) => {
-    // ⚠️ ĐỌC STORE BẰNG `getState()`, KHÔNG dùng `sunUi` của closure render hiện tại. Bắt được
-    // lúc verify: gõ vĩ độ → kinh độ → ngày trong CÙNG một nhịp (chưa kịp render lại) thì cả 3
-    // lần gọi đều thấy giá trị CŨ ⇒ không lần nào đủ điều kiện, mặt trời không nhúc nhích. Người
-    // dùng thật gõ chậm nên hiếm gặp, nhưng "hiếm gặp" không phải là "không có" (§0).
+  /**
+   * Ngày/giờ → hai góc mặt trời, TÍNH TỪ TOẠ ĐỘ CỦA DỰ ÁN.
+   *
+   * §25 — kéo thanh giờ **chỉ đổi hướng nắng**: `writeSun` nhận đúng `{azimuthDeg, altitudeDeg}`
+   * nên `intensity`/`colorK` người dùng vừa chỉnh không bị trả về mặc định, và không dòng nào
+   * chạm tới entity ⇒ mô hình không reset, danh tính vật thể không đổi. Ràng buộc này khoá bằng
+   * test (`components/site/nang-tu-ho-so.test.ts`), không bằng lời dặn.
+   */
+  const applyDateTime = (patch: { hour?: number; dateIso?: string }) => {
+    // ⚠️ ĐỌC STORE BẰNG `getState()`, KHÔNG dùng `sunUi` của closure render hiện tại — đổi ngày
+    // rồi kéo giờ trong CÙNG một nhịp thì closure còn giữ giá trị CŨ.
     const cur = useSunUi.getState();
-    const next = {
-      hour: patch.hour ?? cur.hour,
-      dateIso: patch.dateIso ?? cur.dateIso,
-      lat: patch.lat ?? cur.latDeg,
-      lng: patch.lng ?? cur.lngDeg,
-    };
-    setSunUi({
-      hour: next.hour,
-      dateIso: next.dateIso,
-      ...(patch.lat !== undefined ? { latDeg: patch.lat } : {}),
-      ...(patch.lng !== undefined ? { lngDeg: patch.lng } : {}),
-    });
-    if (next.lat === null || next.lng === null || !next.dateIso) return;
-    // `new Date('YYYY-MM-DD')` được ECMAScript quy định là đọc theo UTC — đúng thứ
-    // `sunFromDateTime` yêu cầu (docstring của PHU cảnh báo đừng dùng `new Date(y,m,d)` giờ máy).
-    writeSun(sunLightFromDateTime(lighting.sun, next.lat, next.lng, new Date(next.dateIso), next.hour));
+    const next = { hour: patch.hour ?? cur.hour, dateIso: patch.dateIso ?? cur.dateIso };
+    setSunUi(next);
+    const goc = gocNangTuHoSo(hoSo, next.dateIso, next.hour);
+    if (goc) writeSun(goc);
   };
 
   return (
@@ -184,7 +197,7 @@ export function LightTab() {
         <ul className="space-y-1 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5">
           {rig.warnings.map((w) => (
             <li key={w} className="flex items-start gap-1 text-[10px] leading-relaxed text-[var(--warning)]">
-              <AlertTriangle size={11} className="mt-[2px] flex-none" />
+              <AlertTriangle size={14} className="mt-[2px] flex-none" />
               {w}
             </li>
           ))}
@@ -215,7 +228,7 @@ export function LightTab() {
       {/* ── a) Mặt trời ── */}
       <section className="space-y-1.5 border-t border-[var(--border)] pt-3">
         <div className="flex items-center gap-1.5">
-          <Sun size={12} className="text-[var(--t4)]" />
+          <Sun size={14} className="text-[var(--t4)]" />
           <span className="flex-1 text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Mặt trời', 'Sun')}</span>
         </div>
 
@@ -242,14 +255,14 @@ export function LightTab() {
           {/* Kim la bàn — phản hồi NHÌN THẤY cho cả 2 chế độ. Xoay theo hướng Bắc của bản vẽ. */}
           <svg viewBox="0 0 48 48" className="h-12 w-12 flex-none" aria-label={tr('Hướng nắng', 'Sun direction')}>
             <circle cx="24" cy="24" r="19" fill="none" stroke="var(--border)" strokeWidth="1.5" />
-            <g transform={`rotate(${-sunUi.northDeg} 24 24)`}>
+            <g transform={`rotate(${-bacDeg} 24 24)`}>
               <text x="24" y="9.5" textAnchor="middle" fontSize="7.5" fill="var(--t4)" fontWeight="700">N</text>
             </g>
             {/* 🔴 Kim KHÔNG tô bằng `rig.sun.colorHex`: nắng 5500K ra gần TRẮNG, trên theme sáng
                 là kim tàng hình — bắt được lúc verify 2 theme (luật G2: nét phải tương phản với
                 nền CỦA CHÍNH NÓ). Dùng token `--warning` (chỉnh sẵn cho cả 2 theme); nhiệt độ màu
                 thật đã có ô vuông màu riêng ở mục "Nhiệt màu nắng" bên dưới. */}
-            <g transform={`rotate(${lighting.sun.azimuthDeg - sunUi.northDeg} 24 24)`}>
+            <g transform={`rotate(${lighting.sun.azimuthDeg - bacDeg} 24 24)`}>
               <line x1="24" y1="24" x2="24" y2="8.5" stroke={rig.sun.belowHorizon ? 'var(--t5)' : 'var(--warning)'} strokeWidth="2.5" strokeLinecap="round" />
               <circle cx="24" cy="8.5" r="3" fill={rig.sun.belowHorizon ? 'var(--t5)' : 'var(--warning)'} />
             </g>
@@ -257,19 +270,17 @@ export function LightTab() {
           </svg>
 
           <div className="min-w-0 flex-1 space-y-1">
-            <label className="block">
-              <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Hướng Bắc của bản vẽ', 'Drawing north')}</span>
+            {/* ⭐ CHỈ ĐỌC. Hướng Bắc là sự thật của DỰ ÁN, sửa ở khối "Vị trí công trình" bên
+                dưới (hoặc ở Tổng quan) — cả hai ghi về cùng một chỗ. */}
+            <div>
+              <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Hướng Bắc của dự án', 'Project north')}</span>
               <span className="mt-0.5 flex items-center gap-1">
-                <Compass size={12} className="flex-none text-[var(--t4)]" />
-                <NumberField
-                  value={sunUi.northDeg}
-                  onCommit={(v) => setSunUi({ northDeg: ((v % 360) + 360) % 360 })}
-                  suffix="°"
-                  step={5}
-                  ariaLabel={tr('Hướng Bắc của bản vẽ (độ)', 'Drawing north (deg)')}
-                />
+                <Compass size={14} className="flex-none text-[var(--t4)]" />
+                <span className="font-mono text-[11px] leading-[1.6] text-[var(--t2)]">
+                  {typeof hoSo.huong.bacThatDeg === 'number' ? `${Math.round(hoSo.huong.bacThatDeg)}°` : tr('chưa khai · 0°', 'not set · 0°')}
+                </span>
               </span>
-            </label>
+            </div>
             <p className="text-[9.5px] leading-relaxed text-[var(--t5)]">
               {rig.sun.belowHorizon
                 ? tr('Mặt trời đã lặn.', 'Sun is below the horizon.')
@@ -304,53 +315,34 @@ export function LightTab() {
           </>
         ) : (
           <>
-            {/* Chưa khai vị trí/ngày thì KHÔNG bịa Hà Nội vào hồ sơ người dùng (N4) — hiện ô nhập
-                ngay tại chỗ, đúng luật "empty state làm được việc TẠI CHỖ" (X2). */}
-            <div className="space-y-1 rounded-[10px] border border-[var(--border)] bg-[var(--field)] p-1.5">
-              <span className="flex items-center gap-1 text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">
-                <MapPin size={10} /> {tr('Vị trí công trình', 'Project location')}
-              </span>
-              <div className="grid grid-cols-2 gap-1">
-                <label className="block">
-                  <span className="text-[9px] leading-[1.6] text-[var(--t5)]">{tr('Vĩ độ', 'Latitude')}</span>
-                  <NumberField
-                    value={sunUi.latDeg ?? 0}
-                    onCommit={(v) => applyDateTime({ lat: Math.min(90, Math.max(-90, v)) })}
-                    suffix="°"
-                    step={1}
-                    decimals={4}
-                    ariaLabel={tr('Vĩ độ', 'Latitude')}
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-[9px] leading-[1.6] text-[var(--t5)]">{tr('Kinh độ', 'Longitude')}</span>
-                  <NumberField
-                    value={sunUi.lngDeg ?? 0}
-                    onCommit={(v) => applyDateTime({ lng: Math.min(180, Math.max(-180, v)) })}
-                    suffix="°"
-                    step={1}
-                    decimals={4}
-                    ariaLabel={tr('Kinh độ', 'Longitude')}
-                  />
-                </label>
-              </div>
-              <label className="block">
-                <span className="text-[9px] leading-[1.6] text-[var(--t5)]">{tr('Ngày', 'Date')}</span>
-                <input
-                  type="date"
-                  value={sunUi.dateIso}
-                  onChange={(e) => applyDateTime({ dateIso: e.target.value })}
-                  aria-label={tr('Ngày', 'Date')}
-                  className="h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
-                />
-              </label>
-              <p className="text-[9.5px] leading-relaxed text-[var(--t5)]">
-                {tr(
-                  'Chưa lưu vào tệp dự án — khai lại mỗi phiên. Múi giờ suy từ kinh độ.',
-                  'Not stored in the project file yet — re-enter each session. Time zone is derived from longitude.',
-                )}
-              </p>
-            </div>
+            {/* Chưa khai vị trí thì KHÔNG bịa Hà Nội vào hồ sơ người dùng (N4) — hiện ô nhập ngay
+                tại chỗ, đúng luật "empty state làm được việc TẠI CHỖ" (X2). Ghi thẳng về hồ sơ
+                dự án, KHÔNG giữ bản sao trong bảng này. */}
+            <NhapViTri
+              duAnId={duAnId}
+              gonGang
+              onLuuXong={(kq) => {
+                // Vừa có toạ độ mới ⇒ tính lại nắng cho đúng ngày/giờ đang xem, không bắt người
+                // dùng đụng lại thanh giờ.
+                if (kq.ok) applyDateTime({});
+              }}
+            />
+            <label className="block">
+              <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Ngày', 'Date')}</span>
+              <input
+                type="date"
+                value={sunUi.dateIso}
+                onChange={(e) => applyDateTime({ dateIso: e.target.value })}
+                aria-label={tr('Ngày', 'Date')}
+                className="mt-0.5 h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
+              />
+            </label>
+            <p className="text-[9.5px] leading-relaxed text-[var(--t5)]">
+              {tr(
+                'Vị trí lưu trong dự án — khai một lần, mọi chặng dùng chung. Múi giờ lấy từ hồ sơ, thiếu thì suy từ kinh độ.',
+                'The location is stored with the project — enter it once, every stage reads it. Time zone comes from the site profile, or is derived from longitude.',
+              )}
+            </p>
 
             <Slider
               label={tr('Giờ trong ngày', 'Time of day')}
@@ -364,7 +356,7 @@ export function LightTab() {
             />
             {!dateTimeReady && (
               <p className="text-[9.5px] leading-relaxed text-[var(--t5)]">
-                {tr('Nhập vĩ độ · kinh độ · ngày thì thanh giờ mới tính được góc nắng thật.', 'Enter latitude · longitude · date to unlock real sun angles.')}
+                {tr('Khai vị trí dự án và chọn ngày thì thanh giờ mới tính được góc nắng thật.', 'Set the project location and pick a date to unlock real sun angles.')}
               </p>
             )}
           </>
@@ -396,7 +388,7 @@ export function LightTab() {
         </div>
 
         <p className="flex items-start gap-1 text-[9.5px] leading-relaxed text-[var(--t5)]">
-          <MoveHorizontal size={11} className="mt-[1px] flex-none" />
+          <MoveHorizontal size={14} className="mt-[1px] flex-none" />
           {tr(
             'Trên khung nhìn: kéo ngang bằng BA NGÓN để xoay mặt trời. Bàn phím: [ và ] (giữ Shift = 15°).',
             'In the viewport: drag horizontally with THREE FINGERS to swing the sun. Keyboard: [ and ] (hold Shift for 15°).',
@@ -413,7 +405,7 @@ export function LightTab() {
       {/* ── b) Bầu trời ── */}
       <section className="space-y-1.5 border-t border-[var(--border)] pt-3">
         <div className="flex items-center gap-1.5">
-          <Cloud size={12} className="text-[var(--t4)]" />
+          <Cloud size={14} className="text-[var(--t4)]" />
           <span className="flex-1 text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Bầu trời', 'Sky')}</span>
         </div>
         <select
@@ -456,7 +448,7 @@ export function LightTab() {
       {/* ── c) Đèn phòng ── */}
       <section className="space-y-1.5 border-t border-[var(--border)] pt-3">
         <div className="flex items-center gap-1.5">
-          <Lightbulb size={12} className="text-[var(--t4)]" />
+          <Lightbulb size={14} className="text-[var(--t4)]" />
           <span className="flex-1 text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Đèn phòng', 'Room lights')}</span>
         </div>
 
@@ -477,7 +469,7 @@ export function LightTab() {
                 onClick={() => addLight(k.id)}
                 className="flex min-h-[var(--tap)] w-full items-center justify-center gap-1 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-1 text-[10.5px] font-medium leading-[1.4] text-[var(--t2)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
               >
-                <Plus size={11} className="flex-none" />
+                <Plus size={18} className="flex-none" />
                 {tr(k.vi, k.en)}
               </button>
             </Tooltip>
@@ -511,7 +503,7 @@ export function LightTab() {
                       title={tr('Xoá đèn', 'Delete light')}
                       className="grid h-[var(--tap)] w-[var(--tap)] flex-none place-items-center rounded-[6px] text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--danger)]"
                     >
-                      <Trash2 size={12} />
+                      <Trash2 size={18} />
                     </button>
                   </div>
 

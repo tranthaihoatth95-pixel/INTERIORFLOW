@@ -15,10 +15,12 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { EditorDeck } from '@/lib/present-editor/model';
 import { stageFor } from '@/lib/present-editor/stage-presets';
 import { slideVariants } from '@/lib/present-editor/motion-present';
+import { savePresentReturn } from '@/lib/present-editor/present-return';
 import PlayerElements from './PlayerElements';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDismissable } from '@/lib/useDismissable';
@@ -33,6 +35,27 @@ export default function SlidePlayer({ deck, startIndex = 0, onClose }: Props) {
   const [idx, setIdx] = useState(Math.min(startIndex, deck.slides.length - 1));
   const [dir, setDir] = useState(1);
   const busyRef = useRef(false);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  /**
+   * DEEP LINK từ slide (BaseElement.href, 21/08): lưu mốc quay-về (đường Present + slide đang
+   * đứng) rồi mới điều hướng — người trình bày quay lại là đứng ĐÚNG slide này ở chế độ trình
+   * chiếu (PresentEditor tiêu mốc lúc mount). Chỉ nhận đường nội bộ '/', chặn '//' (protocol-
+   * relative ra ngoài) — không mở URL ngoài từ một cú bấm trình chiếu.
+   */
+  const moLink = useCallback(
+    (href: string) => {
+      if (!href.startsWith('/') || href.startsWith('//')) return;
+      savePresentReturn({ path: pathname ?? '/', slideIndex: idx });
+      // ĐÓNG player TRƯỚC khi rời trang: `playing` là store TOÀN CỤC (usePlayStatus) sống xuyên
+      // điều hướng — không đóng thì lúc quay về PresentEditor mount lại player NGAY với
+      // currentSlide=0 (trước khi effect tiêu mốc kịp chạy) ⇒ mở nhầm slide 1. Đã thấy thật.
+      onClose();
+      router.push(href);
+    },
+    [router, pathname, idx, onClose],
+  );
 
   const slide = deck.slides[idx];
   const transition = slide?.transition ?? deck.transition ?? 'fade';
@@ -122,6 +145,7 @@ export default function SlidePlayer({ deck, startIndex = 0, onClose }: Props) {
                 fonts={deck.fonts}
                 watermark={deck.watermark}
                 deckReveal={deck.reveal}
+                onOpenLink={moLink}
               />
             ) : (
               <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: '#666', fontSize: 13 }}>
@@ -134,7 +158,7 @@ export default function SlidePlayer({ deck, startIndex = 0, onClose }: Props) {
 
       {/* điều hướng */}
       <button type="button" onClick={() => go(-1)} disabled={idx === 0} style={{ ...navBtn, left: 16 }} title="Trước (←)">
-        <ChevronLeft size={22} />
+        <ChevronLeft size={20} />
       </button>
       <button
         type="button"
@@ -143,7 +167,7 @@ export default function SlidePlayer({ deck, startIndex = 0, onClose }: Props) {
         style={{ ...navBtn, right: 16 }}
         title="Sau (→ / Space)"
       >
-        <ChevronRight size={22} />
+        <ChevronRight size={20} />
       </button>
 
       <div style={counter}>

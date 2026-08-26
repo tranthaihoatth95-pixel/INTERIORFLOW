@@ -40,6 +40,7 @@ import SheetTabBar, { type SheetTab } from '@/components/studio/SheetTabBar';
 import { useCadStore, newId, type Tool } from '@/lib/cad/store';
 import type { Doc, Viewport, Sheet, PaperKey, PaperOrientation } from '@/lib/cad/model';
 import { emptyDoc, docBox, paperSizeMm, defaultPaperOrientation } from '@/lib/cad/model';
+import { renderDocToDataURL } from '@/lib/cad/render';
 import { getLastUserId, loadResume, saveResume } from '@/lib/resume';
 import {
   createSheetsAutosaver,
@@ -49,6 +50,7 @@ import {
   type SheetsRecord,
 } from '@/lib/sheets-persist';
 import { exportIdf, importIdf, lastImportIdfError, type IdfSheetData } from '@/lib/cad/idf';
+import { saoLuuBanVeLenMayChu, taiBanVeTuMayChu } from '@/lib/cad/luu-len-may-chu';
 import { mergeIdfSheetsToDoc } from '@/lib/cad/sheet-migrate';
 import { rootFolderChosen, getProjectFolderHandle, writeTextFile, readTextFile } from '@/lib/root-folder';
 import { resolveSourceOfTruth, createDiskWriter, watchProjectPresence, type DiskWriter } from '@/lib/disk-sync';
@@ -63,6 +65,19 @@ import { buildPaperSheetPdf, exportSheetSetPdf, exportPaperSheetPdf } from '@/li
  * nên KHÔNG truyền `paperLockedReason` — người dùng đổi được, và đổi là ghi thẳng vào Doc.
  */
 import ExportPdfDialog from '@/components/print/ExportPdfDialog';
+/**
+ * GỬI SANG TRÌNH CHIẾU (20/08) — thi hành luật nền "2D/3D sáng tác nội dung · Trình chiếu dàn
+ * trang và phát hành". Chặng 2D KHÔNG mất năng lực in nào (hộp thoại xuất PDF ở dưới giữ nguyên,
+ * đó là đường GỬI-NHANH); nút này thêm ĐIỂM VÀO ĐÚNG: đẩy tờ có NEO NGUỒN sang Present để dàn
+ * trang và phát hành ở một chỗ. Không nhân bản engine trang — chỉ chuyển metadata + dấu vết.
+ */
+import {
+  guiToSangTrinhChieu,
+  dauVetNguon,
+  ghiDauVetNguon,
+  khungTenRong,
+  type ToBanVe,
+} from '@/lib/present-editor/to-ban-ve';
 import { buildExportChecks } from '@/lib/print/export-checks';
 import { buildIfpack, restoreIfpack } from '@/lib/cad/ifpack';
 import { startAutoBackup, type AutoBackupSession } from '@/lib/cad/auto-backup';
@@ -78,7 +93,7 @@ import { useSaveStatus } from '@/lib/save-status';
 import { useRouter } from 'next/navigation';
 import { drawEntities } from '@/lib/cad/render';
 import { clampViewportRect, docForViewport, moveViewportRect, patchSheetViewport, removeSheetViewport, resizeViewportRect, setViewportLayerVisibility, viewportLayerVisible, viewportWorldBox } from '@/lib/cad/paper-space';
-import { Grip, Lock, LockOpen, ScanSearch, Trash2 } from 'lucide-react';
+import { FileOutput, Grip, Lock, LockOpen, ScanSearch, Trash2 } from 'lucide-react';
 
 const ROUTE = '/cad-editor' as const;
 const DEFAULT_VIEWPORT: Viewport = { scale: 0.08, panX: 300, panY: 400 };
@@ -410,15 +425,32 @@ export default function CadSheets() {
       if (diskSheets) {
         applyIdfSheets(diskSheets);
         saverRef.current?.touch(); // đồng bộ ngược lại IndexedDB — cache luôn ấm cho lần mở kế
+      } else if (!rec || valid.length === 0) {
+        /**
+         * LƯỚI ĐỠ CUỐI (21/08) — MÁY CHỦ. Bản vẽ là SỰ THẬT NGHỀ NGHIỆP: mất deck thì dựng lại
+         * được, mất bản vẽ là mất công việc. Chạy khi và chỉ khi đĩa không thắng VÀ cache rỗng
+         * (trình duyệt mới, vừa xoá dữ liệu duyệt web, vừa đăng nhập máy khác) — đúng ca mà đồng
+         * bộ đĩa KHÔNG phủ được vì nó mặc định tắt.
+         * Không thấy bản sao ⇒ im lặng đi tiếp, KHÔNG dựng tờ trắng đè lên việc đang làm.
+         */
+        const tuMayChu = await taiBanVeTuMayChu(bucketId);
+        if (tuMayChu?.length) {
+          applyIdfSheets(tuMayChu);
+          saverRef.current?.touch();
+        }
       } else if (rec && valid.length > 0) {
         const { doc, sheets: newSheets } = docAndSheetsFromIdf(cacheSheets);
         seq = Math.max(seq, nextSeqFrom(newSheets.map((s) => s.id), 'cadsheet'));
-        // sheet active: resume trỏ tận sheet nếu id còn sống, kế đến activeId đã lưu. Sau khi gộp
-        // (>1 sheet cũ) không id nào khớp nữa → rơi đúng vào newSheets[0] (chỉ còn 1 sheet).
+        // ⚠️ THỨ TỰ QUYỀN SỞ HỮU (sửa 21/08, cùng bản vá `PresentSheets`): `rec.activeId` —
+        // sự thật PER-PROJECT — THẮNG `resume.sheetId`, vốn là con trỏ TOÀN CỤC theo user+route
+        // (`saveResume(userId,{route,sheetId})` chỉ giữ MỘT giá trị, không kèm dự án). Để resume
+        // đi trước thì một con trỏ cũ đủ sức ghi đè tờ đang mở của dự án khác và màn ra tờ TRỐNG.
+        // Resume lùi xuống làm lưới đỡ khi activeId vô hiệu. Sau khi gộp (>1 sheet cũ) không id
+        // nào khớp nữa → rơi đúng vào newSheets[0] (chỉ còn 1 sheet), hành vi cũ giữ nguyên.
         const resumeSheet = loadResume(userId)?.sheetId;
         const wantId =
-          (resumeSheet && newSheets.some((s) => s.id === resumeSheet) && resumeSheet) ||
           (newSheets.some((s) => s.id === rec.activeId) && rec.activeId) ||
+          (resumeSheet && newSheets.some((s) => s.id === resumeSheet) && resumeSheet) ||
           newSheets[0].id;
         const activeOriginal = valid.find((s) => s.id === wantId) ?? valid[0];
         setSheets(newSheets);
@@ -484,6 +516,25 @@ export default function CadSheets() {
     saverRef.current = saver;
 
     /**
+     * SAO LƯU MÁY CHỦ (21/08) — nhịp CHẬM 30s, khác IndexedDB (~1s). Bản vẽ là sự thật nghề
+     * nghiệp nên nó phải có bản sao KHÔNG phụ thuộc trình duyệt; đồng bộ đĩa sẵn có không phủ
+     * được vì mặc định tắt.
+     * Cổng chặn nằm trong `duDieuKienSaoLuu` — truyền cờ hydrate thật để phân biệt "bản vẽ trống
+     * CÓ CHỦ Ý" (hợp lệ, phải lưu) với "chưa nạp xong / vừa bị xoá sạch" (số 0 của máy, cấm ghi
+     * đè). KHÔNG lấy số lượng entity làm cớ từ chối — từ chối nó là nuốt mất thao tác xoá.
+     */
+    const nhipSaoLuu2D = window.setInterval(() => {
+      const active = sheetsRef.current.find((x) => x.id === activeIdRef.current) ?? sheetsRef.current[0];
+      if (!active || !bucketId) return;
+      void saoLuuBanVeLenMayChu(
+        bucketId,
+        singleIdfSheet(active.id, active.name, sheetsRef.current),
+        true, // tới được đây là effect autosave đã chạy ⇒ hydrate xong (effect này gate bằng `hydrated`)
+        useFlowStore.getState().flowName || 'InteriorFlow project',
+      );
+    }, 30_000);
+
+    /**
      * B4 (4.1.d, bổ sung ③) — ghi đĩa THEO NHỊP RIÊNG, chậm hơn IndexedDB (throttle 10s, không
      * debounce) + ⌘S/rời trang ép ghi ngay. `reason:'off'` là cờ nội bộ (KHÔNG phải lỗi) khi dự
      * án chưa bật lưu trữ — `onStatus` tách riêng, không báo "lỗi" cho trường hợp opt-in này.
@@ -531,6 +582,7 @@ export default function CadSheets() {
       document.removeEventListener('visibilitychange', onHide);
       saver.flush(); // rời route (client-nav) → không mất nhịp cuối
       saver.dispose();
+      window.clearInterval(nhipSaoLuu2D);
       saverRef.current = null;
       diskWriter.flushNow();
       diskWriter.dispose();
@@ -860,6 +912,10 @@ export default function CadSheets() {
         onClose={closeSheet}
         onReorder={reorder}
         addLabel="Thêm bản vẽ"
+        // §13 (22/08) — "Gửi sang Trình chiếu" về Ổ PHẢI của hàng tab. Trước nó là MỘT DẢI NGANG
+        // TOÀN KHỔ 41px chỉ chứa một nút + một câu chú thích ⇒ canvas mất 41px cho một hành động
+        // thỉnh thoảng mới bấm. Đo trước/sau: chrome trên canvas 163px → 122px.
+        phai={<GuiSangTrinhChieu sheets={sheets} activeId={activeId} />}
       />
       {/* Sketch luôn ở Model; Pro đổi thật giữa hình học 1:1 và tờ giấy. */}
       {cadMode === 'sketch' || cadWorkspace === 'model' ? <CadEditor /> : (
@@ -890,6 +946,117 @@ export default function CadSheets() {
           onClose={() => setBackupBrowserOpen(false)}
         />
       )}
+    </div>
+  );
+}
+
+/**
+ * Thanh mảnh dưới tab bản vẽ — ĐIỂM VÀO "gửi sang Trình chiếu" của chặng 2D.
+ *
+ * ⭐ Phân vai nhìn thấy được: ở đây KHÔNG có núm khổ giấy/tỉ lệ nào. Tờ mang theo khổ/tỉ lệ đang
+ * dùng làm ĐIỂM KHỞI ĐẦU, còn quyết định về trang giấy thì làm bên Trình chiếu.
+ *
+ * SỔ DẤU VẾT: effect dưới đây ghi dấu vết nội dung nguồn mỗi khi `doc` đổi (hoãn 600ms để không
+ * chạy theo từng khung kéo chuột). Nhờ vậy Present — vốn KHÔNG đọc được `Doc` vì khác route —
+ * biết tờ đã cũ chưa. Nó chỉ GHI SỔ, không đụng vào tờ nào đã gửi.
+ */
+function GuiSangTrinhChieu({ sheets, activeId }: { sheets: Sheet[]; activeId: string }) {
+  const router = useRouter();
+  const doc = useCadStore((s) => s.doc);
+  const bucketId = useSheetsBucketId();
+  const docId = bucketId || 'local';
+  const [msg, setMsg] = useState<string | null>(null);
+  const sheet = sheets.find((s) => s.id === activeId) ?? sheets[0];
+
+  // Dấu vết nội dung nguồn — hoãn 600ms, chỉ chạy khi người dùng ngừng tay.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        ghiDauVetNguon(docId, dauVetNguon([docId, doc.entities.length, JSON.stringify(doc.entities)]));
+      } catch {
+        /* doc quá lớn/vòng lặp tham chiếu — bỏ qua, Present sẽ báo 'Cần xem lại' thay vì đoán bừa */
+      }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [doc, docId]);
+
+  const gui = () => {
+    if (!sheet) return;
+    const box = docBox(doc);
+    const noiDungMm = box
+      ? { rongMm: Math.max(0, box.maxX - box.minX), caoMm: Math.max(0, box.maxY - box.minY) }
+      : { rongMm: 0, caoMm: 0 };
+    const vp = sheet.viewports[0];
+    const dauVet = dauVetNguon([docId, doc.entities.length, JSON.stringify(doc.entities)]);
+    ghiDauVetNguon(docId, dauVet);
+    const to: ToBanVe = {
+      id: `to-${sheet.id}-${Date.now().toString(36)}`,
+      nhan: sheet.name,
+      khoGiay: sheet.paper,
+      huong: sheet.orientation,
+      le: 10,
+      // Tỉ lệ ĐANG dùng ở ô nhìn đi theo tờ — KHÔNG tự đổi sang "vừa khung" cho tiện mắt.
+      tyLe: vp?.scale ? { kieu: 'chuan', n: vp.scale } : { kieu: 'chuan', n: 50 },
+      khungTen: {
+        ...khungTenRong(),
+        duAn: useFlowStore.getState().flowName || '',
+        tenBanVe: sheet.name,
+        soTo: sheet.number || '',
+        banSua: sheet.titleBlock?.revision || '',
+        nguoiVe: sheet.titleBlock?.drawnBy || '',
+        ngay: sheet.titleBlock?.date || '',
+      },
+      neo: { chang: 'cad2d', docId, sheetId: sheet.id, dauVet, luc: Date.now() },
+      noiDungMm,
+      // Ảnh xem trước THẬT — cùng hàm dùng cho Export PNG/"Đưa sang Render", không dựng renderer
+      // thứ hai. Rỗng (SSR/lỗi canvas) thì để trống — Trình chiếu vẽ khung trống, không bịa hình.
+      anh: renderDocToDataURL(doc, 1400) || undefined,
+    };
+    guiToSangTrinhChieu([to]);
+    setMsg(`Đã gửi "${sheet.name}" sang Trình chiếu.`);
+    // Chặng Trình chiếu có HAI lối vào thật: trong một dự án là `/projects/<id>/present`, ngoài
+    // dự án là `/present-editor`. Đi nhầm lối thì tờ vừa gửi nằm chờ ở màn người dùng không tới —
+    // suy lối từ đường đang đứng thay vì gõ cứng một đường.
+    const duAn = /^\/projects\/([^/]+)\//.exec(window.location.pathname)?.[1];
+    router.push(duAn ? `/projects/${duAn}/present` : '/present-editor');
+  };
+
+  return (
+    // 22/08 — THÔI LÀ DẢI TOÀN KHỔ: nay là cụm inline sống trong ổ phải của hàng tab. Vỏ dải cũ
+    // (borderBottom + background toàn khổ) bỏ; câu chú thích thường trực "Khổ giấy · tỉ lệ…"
+    // chuyển vào `title` của nút — nó là lời GIẢI THÍCH, không phải trạng thái cần chiếm chỗ.
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <button
+        title="Khổ giấy · tỉ lệ · lề · khung tên đặt bên Trình chiếu."
+        type="button"
+        onClick={gui}
+        aria-disabled={!sheet}
+        aria-describedby={!sheet ? 'gui-tc-ly' : undefined}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '3px 10px',
+          minHeight: 26,
+          borderRadius: 'var(--r-2)',
+          border: '1px solid var(--vien-mo)',
+          background: 'var(--card)',
+          color: 'var(--t1)',
+          fontSize: 12,
+          cursor: sheet ? 'pointer' : 'default',
+          opacity: sheet ? 1 : 'var(--mo-vo-hieu)',
+        }}
+      >
+        <FileOutput size={14} /> Gửi sang Trình chiếu
+      </button>
+      {!sheet && (
+        <span id="gui-tc-ly" style={{ fontSize: 11, color: 'var(--t3)' }}>
+          Chưa có tờ nào để gửi — thêm một bản vẽ trước.
+        </span>
+      )}
+      {/* Phản hồi TẠM THỜI sau khi gửi — chỉ hiện khi có; câu giải thích thường trực đã về
+          `title` của nút, không chiếm chỗ ngang nữa. */}
+      {msg && <span style={{ fontSize: 11, color: 'var(--t3)', whiteSpace: 'nowrap' }}>{msg}</span>}
     </div>
   );
 }
@@ -1000,7 +1167,7 @@ function PaperViewport({ doc, viewport, paperW, paperH, selected, onSelect, onMo
     <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
     {!hasVisibleContent && <button type="button" onClick={(event) => { event.stopPropagation(); onOpenModel(); }} style={{ position: 'absolute', left: '50%', top: '50%', translate: '-50% -50%', border: '1px solid #c8c4bc', borderRadius: 10, background: 'rgba(255,255,255,.94)', color: '#625d55', padding: '6px 9px', font: '600 10px Archivo, sans-serif', cursor: 'pointer' }}>Không thấy nội dung · Chọn vùng</button>}
     <div style={{ position: 'absolute', right: 5, bottom: 4, padding: '2px 5px', borderRadius: 6, background: 'rgba(255,255,255,.9)', color: '#625d55', font: '600 9px Archivo, sans-serif' }}>1:{viewport.scale} · {viewport.locked ? 'Đã khóa' : 'Chưa khóa'}</div>
-    {selected && <><div onPointerDown={onMoveStart} title={viewport.locked ? 'Mở khóa để kéo' : 'Kéo ô nhìn'} style={{ ...paperHandle, left: 6, top: 6, cursor: viewport.locked ? 'not-allowed' : 'move' }}><Grip size={13} /></div><div onPointerDown={onResizeStart} title="Đổi kích thước ô nhìn" style={{ ...paperHandle, right: 2, bottom: 2, cursor: 'nwse-resize' }} /></>}
+    {selected && <><div onPointerDown={onMoveStart} title={viewport.locked ? 'Mở khóa để kéo' : 'Kéo ô nhìn'} style={{ ...paperHandle, left: 6, top: 6, cursor: viewport.locked ? 'not-allowed' : 'move' }}><Grip size={14} /></div><div onPointerDown={onResizeStart} title="Đổi kích thước ô nhìn" style={{ ...paperHandle, right: 2, bottom: 2, cursor: 'nwse-resize' }} /></>}
   </div>;
 }
 

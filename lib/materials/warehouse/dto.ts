@@ -14,6 +14,11 @@ export interface MaterialSpecDto {
   nameEn: string | null;
   brand: string | null;
   sku: string | null;
+  /** IF-owned immutable UUID — identity của MATERIAL (19/08, chốt hòa giải, SUPERSEDES matId=sku
+   * 07/08). null = chưa backfill (chờ Prisma migration + `scripts/backfill-material-matid.ts`)
+   * hoặc `kind !== 'material'` (matId chỉ có domain vật liệu ở slice này). KHÔNG bao giờ = sku.
+   * Xem lib/materials/matid-identity.ts + lib/materials/resolve.ts. */
+  matId: string | null;
   vendor: string | null;
   w: number | null;
   d: number | null;

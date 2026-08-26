@@ -1,0 +1,742 @@
+<!-- @dsCard group="Home" -->
+<meta charset="utf-8">
+<title>Home · Living Canvas</title>
+<style>
+/* ============================================================================
+   Home · Living Canvas — bản vẽ mục tiêu (Claude Design)
+   Token: chép ĐÚNG TÊN + ĐÚNG GIÁ TRỊ từ app/globals.css (2 theme). Không hex tự chế
+   trong phần dựng màn — mọi màu đi qua var(--…).
+   ========================================================================== */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fs-ui:13px; --fw-normal:400; --fw-semi:600;
+  --blur:22px; --blur-strong:40px;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --nhip-bam:130ms; --nhip-vien:170ms; --nhip-bang:220ms;
+  --tap:32px; --tap-lg:44px; --row:28px; --gap:8px; --pad-card:8px 12px;
+}
+:root,:root[data-theme='dark']{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --dots:#26262d; --surface-page:#17171b;
+  --nen-mo-header:rgba(20,20,23,.72); --nen-mo-panel:rgba(20,20,23,.68);
+  --nen-mo-card:rgba(26,26,30,.82); --nen-mo-overlay:rgba(6,6,8,.56);
+  --kinh-mong:rgba(24,24,28,.84); --kinh-vua:rgba(24,24,28,.90); --kinh-dac:rgba(24,24,28,.95);
+  --kinh-mep-sang:rgba(255,255,255,.10); --kinh-vien:rgba(255,255,255,.08);
+  --kinh-chu-phu:#c2c2cb;
+  --vien-mo:rgba(255,255,255,.08); --mo-vo-hieu:.5;
+  --shadow-sheet:0 18px 60px -20px rgba(0,0,0,.7);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --dots:#ddd8ce; --surface-page:#faf8f4;
+  --nen-mo-header:rgba(250,248,244,.72); --nen-mo-panel:rgba(250,248,244,.70);
+  --nen-mo-card:rgba(255,255,255,.82); --nen-mo-overlay:rgba(60,55,48,.28);
+  --kinh-mong:rgba(252,251,249,.88); --kinh-vua:rgba(252,251,249,.93); --kinh-dac:rgba(253,252,250,.96);
+  --kinh-mep-sang:rgba(255,255,255,.75); --kinh-vien:rgba(0,0,0,.08);
+  --kinh-chu-phu:#5c564d;
+  --vien-mo:rgba(0,0,0,.05); --mo-vo-hieu:.62;
+  --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+  --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+body{font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  padding:36px 40px 96px}
+.mono{font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace;font-variant-numeric:tabular-nums}
+
+/* ---------- khung trang bản vẽ ---------- */
+.page{width:1440px;margin:0 auto}
+.docHead{display:flex;align-items:flex-end;justify-content:space-between;gap:32px;margin-bottom:34px}
+.docHead h1{margin:0;font-size:var(--fs-xl);font-weight:var(--fw-semi);letter-spacing:-.02em}
+.docHead p{margin:8px 0 0;font-size:var(--fs-xs);color:var(--t3);max-width:920px}
+.tglBtn{height:var(--tap);padding:0 16px;border:1px solid var(--border);border-radius:var(--r-2);
+  background:var(--panel);color:var(--t2);font:var(--fw-semi) var(--fs-xs)/1 inherit;cursor:pointer;flex:none}
+.tglBtn:hover{background:var(--hover);color:var(--t1)}
+
+.board{margin:0 auto 64px}
+.boardHead{display:flex;align-items:baseline;gap:12px;margin:0 0 12px}
+.boardHead .k{font-size:var(--fs-2xs);font-weight:700;letter-spacing:.10em;color:var(--t4)}
+.boardHead h2{margin:0;font-size:var(--fs-lg);font-weight:var(--fw-semi);letter-spacing:-.01em}
+.boardHead .note{font-size:var(--fs-xs);color:var(--t3);margin-left:auto;text-align:right;max-width:560px}
+.frame{border:1px solid var(--border);border-radius:var(--r-4);overflow:hidden;background:var(--bg);
+  box-shadow:var(--shadow-node)}
+.tag{display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:var(--r-1);
+  background:var(--field);color:var(--t4);font-size:9px;font-weight:700;letter-spacing:.04em}
+
+/* ---------- HOME: nền không khí (FIELD, không phải card) ---------- */
+.home{position:relative;background:var(--bg);isolation:isolate}
+.home::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  /* PLACEHOLDER — SystemWallpaper: quầng sáng theo giờ, sinh bằng mã, KHÔNG phải ảnh chụp */
+  background:
+    radial-gradient(120% 78% at 12% -14%, var(--accent-soft) 0%, transparent 62%),
+    radial-gradient(90% 60% at 96% 4%, var(--accent-soft) 0%, transparent 55%);}
+.home>*{position:relative;z-index:1}
+
+/* nhịp mật độ — 3 chế độ, số lấy đúng nhipDai() của lib/home/che-do-home.ts */
+.home{--gapDai:26px;--leTren:36px;--coChao:44px}
+.home[data-che-do='editorial']{--gapDai:34px;--leTren:48px;--coChao:52px}
+.home[data-che-do='compact']{--gapDai:16px;--leTren:18px;--coChao:34px}
+.homeInner{padding:var(--leTren) 40px 44px;display:flex;flex-direction:column;gap:var(--gapDai)}
+
+/* ---------- DẢI 1 · KHÔNG KHÍ ---------- */
+.ambient{display:flex;align-items:flex-end;justify-content:space-between;gap:48px}
+.chao{font-size:var(--coChao);font-weight:var(--fw-semi);letter-spacing:-.025em;line-height:1.06;margin:0}
+.chao em{font-style:normal;color:var(--t4)}
+.ngay{margin-top:10px;font-size:var(--fs-sm);color:var(--t3)}
+.sunWrap{flex:none;width:392px}
+.sunLbl{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:var(--fs-2xs);letter-spacing:.08em;color:var(--t3)}
+.sunLbl b{color:var(--t2);font-weight:var(--fw-semi)}
+.sunArc{margin-top:6px;display:block;width:100%;height:54px}
+/* dải nhỏ dưới cung sáng: chỗ TIẾP TỤC lên tiếng khi vắng (xem bản B) */
+
+/* ---------- DẢI 2 · TIẾP TỤC ---------- */
+.resume{display:flex;align-items:stretch;gap:0;border-radius:var(--r-4);overflow:hidden;
+  background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow-node)}
+.resumeThumb{width:236px;flex:none;position:relative;
+  background:linear-gradient(150deg,var(--field),var(--hover));} /* PLACEHOLDER ảnh khung đang dở */
+.resumeThumb .ph{position:absolute;left:10px;bottom:10px}
+.resumeBody{flex:1;min-width:0;padding:22px 26px;display:flex;flex-direction:column;justify-content:center;gap:7px}
+.resumeKick{font-size:var(--fs-2xs);font-weight:700;letter-spacing:.12em;color:var(--accent)}
+.resumeTitle{font-size:24px;font-weight:var(--fw-semi);letter-spacing:-.015em;margin:0}
+.resumeMeta{font-size:var(--fs-xs);color:var(--t3);display:flex;gap:14px;align-items:center}
+.resumeAct{flex:none;display:flex;align-items:center;padding-right:26px}
+.btnMain{height:var(--tap-lg);padding:0 24px;border:0;border-radius:var(--r-full);background:var(--accent);
+  color:#fff;font:var(--fw-semi) var(--fs-ui)/1 inherit;cursor:pointer}
+.btnMain:hover{background:var(--accent-strong)}
+.btnGhost{height:var(--tap);padding:0 14px;border:1px solid var(--border);border-radius:var(--r-full);
+  background:transparent;color:var(--t2);font:var(--fw-semi) var(--fs-xs)/1 inherit;cursor:pointer}
+.btnGhost:hover{background:var(--hover);color:var(--t1)}
+
+/* vắng việc dở — MỘT DÒNG, không card, dính mép dưới dải không khí */
+.resumeVang{display:flex;align-items:center;gap:12px;padding-top:2px;
+  border-top:1px solid var(--vien-mo);margin-top:4px;padding-top:14px}
+.resumeVang .txt{font-size:var(--fs-sm);color:var(--t3)}
+
+/* ---------- DẢI 3 · KỆ DỰ ÁN ---------- */
+.secHead{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.secHead .lbl{font-size:var(--fs-ui);font-weight:700;letter-spacing:.13em;color:var(--t1)}
+.secHead .rule{flex:1;height:1px;background:var(--border)}
+.secHead .cnt{font-size:var(--fs-xs);color:var(--t2)}
+.chipRow{display:flex;gap:8px;align-items:center}
+.chip{height:var(--tap);padding:0 14px;display:inline-flex;align-items:center;gap:8px;
+  border:1px solid var(--border);border-radius:var(--r-full);background:var(--panel);
+  color:var(--t2);font-size:var(--fs-xs);font-weight:var(--fw-semi);cursor:pointer}
+.chip[aria-pressed='true']{border-color:var(--accent-ring);color:var(--t1);background:var(--accent-soft)}
+.chip:hover{background:var(--hover)}
+
+.shelf{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.pCard{border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden;
+  box-shadow:var(--shadow-node);display:flex;flex-direction:column}
+.pCover{aspect-ratio:16/10;position:relative;
+  background:linear-gradient(140deg,var(--hover),var(--field));} /* PLACEHOLDER ảnh bìa dự án */
+.pCover .ph{position:absolute;left:9px;top:9px}
+.pBody{padding:14px 15px 15px;display:flex;align-items:center;gap:10px}
+.pName{font-size:var(--fs-md);font-weight:var(--fw-semi);letter-spacing:-.01em;flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ava{width:26px;height:26px;border-radius:var(--r-full);background:var(--field);border:1px solid var(--border);
+  display:grid;place-items:center;font-size:10px;font-weight:700;color:var(--t2);position:relative;flex:none}
+.ava .dot{position:absolute;right:-1px;bottom:-1px;width:8px;height:8px;border-radius:var(--r-full);
+  background:var(--success);border:2px solid var(--card)}
+.pNew{border:1px dashed var(--border-strong);border-radius:var(--r-3);background:transparent;
+  display:flex;flex-direction:column;justify-content:center;gap:8px;padding:26px 24px;cursor:pointer;
+  color:var(--t2);min-height:100%}
+.pNew:hover{border-color:var(--accent-ring);background:var(--accent-soft);color:var(--t1)}
+.pNew .plus{width:34px;height:34px;border-radius:var(--r-full);background:var(--accent);color:#fff;
+  display:grid;place-items:center;font-size:18px;line-height:1}
+.pNew .h{font-size:var(--fs-md);font-weight:var(--fw-semi)}
+.pNew .s{font-size:var(--fs-xs);color:var(--t3);max-width:36ch}
+.pAgg{grid-column:span 2;border:1px solid var(--border);border-radius:var(--r-3);background:var(--panel);
+  padding:20px 22px;display:flex;align-items:center;gap:22px}
+.pAgg .big{font-size:40px;font-weight:var(--fw-semi);letter-spacing:-.03em;line-height:1}
+.pAgg .txt .a{font-size:var(--fs-sm);font-weight:var(--fw-semi)}
+.pAgg .txt .b{font-size:var(--fs-xs);color:var(--t3);margin-top:3px}
+
+/* ---------- DẢI 4 · CẢM HỨNG ---------- */
+.inspo{position:relative;border-radius:var(--r-4);overflow:hidden}
+.inspoStrip{display:grid;grid-template-columns:2fr 1fr 1fr;gap:2px;height:268px}
+.inspoStrip>div{position:relative;background:linear-gradient(160deg,var(--hover),var(--field))}
+.inspoStrip>div:nth-child(2){background:linear-gradient(30deg,var(--field),var(--hover))}
+.inspoStrip>div:nth-child(3){background:linear-gradient(210deg,var(--hover),var(--panel))}
+.inspoOver{position:absolute;left:0;right:0;bottom:0;padding:20px 22px;display:flex;align-items:flex-end;
+  justify-content:space-between;gap:16px;
+  background:linear-gradient(to top,var(--nen-mo-overlay),transparent)}
+.inspoLbl{font-size:var(--fs-ui);font-weight:700;letter-spacing:.13em;color:var(--t1)}
+.inspoSub{font-size:var(--fs-xs);color:var(--t2);margin-top:4px}
+
+/* ---------- C · bảng hệ widget ---------- */
+.sysGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:26px 28px;background:var(--panel)}
+.wSpec{border:1px solid var(--vien-mo);border-radius:var(--r-3);background:var(--card);padding:14px;
+  box-shadow:var(--shadow-node);display:flex;flex-direction:column;gap:9px}
+.wSpec .top{display:flex;align-items:center;gap:8px}
+.wSpec .nm{font-size:var(--fs-ui);font-weight:var(--fw-semi);flex:1}
+.sz{font-family:ui-monospace,Menlo,monospace;font-size:10px;font-weight:700;letter-spacing:.04em;
+  padding:2px 6px;border-radius:var(--r-1);background:var(--field);color:var(--t2)}
+.cellMini{--u:13px;display:grid;gap:3px;grid-template-columns:repeat(2,var(--u));grid-template-rows:repeat(2,var(--u))}
+.cellMini i{border-radius:3px;background:var(--field);border:1px solid var(--vien-mo)}
+.cellMini i.on{background:var(--accent);border-color:transparent}
+.wSpec .role{font-size:var(--fs-2xs);letter-spacing:.09em;font-weight:700;color:var(--t4)}
+.wSpec .rule{font-size:var(--fs-xs);color:var(--t3);line-height:1.45}
+.dai-1{color:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:10px 22px;padding:0 28px 24px;background:var(--panel);
+  font-size:var(--fs-xs);color:var(--t3)}
+.legend b{color:var(--t2)}
+
+/* ---------- D · sửa Home ---------- */
+.editWrap{display:grid;grid-template-columns:1fr 316px;gap:0;background:var(--bg)}
+.editCanvas{padding:26px 26px 30px;display:flex;flex-direction:column;gap:14px}
+.slotGrid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:92px;gap:12px}
+.slot{border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);padding:11px 12px;
+  display:flex;flex-direction:column;gap:5px;position:relative;cursor:grab}
+.slot .h{font-size:var(--fs-xs);font-weight:var(--fw-semi)}
+.slot .s{font-size:var(--fs-2xs);color:var(--t3)}
+.slot .grip{position:absolute;right:9px;top:9px;color:var(--t4);font-size:11px;letter-spacing:2px}
+.slot.ghost{border:1px dashed var(--accent-ring);background:var(--accent-soft);cursor:default}
+.slot.ghost .h{color:var(--accent)}
+.slot.lifted{box-shadow:var(--shadow-pop);border-color:var(--accent-ring);transform:rotate(-.6deg)}
+.editRail{border-left:1px solid var(--border);background:var(--panel);padding:22px 20px;
+  display:flex;flex-direction:column;gap:16px}
+.railSec{font-size:var(--fs-2xs);font-weight:700;letter-spacing:.12em;color:var(--t4)}
+.railRow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r-2);
+  border:1px solid transparent}
+.railRow:hover{background:var(--hover)}
+.railRow .nm{flex:1;font-size:var(--fs-ui)}
+.railRow.off .nm{color:var(--t4)}
+.sw{width:34px;height:20px;border-radius:var(--r-full);background:var(--accent);position:relative;flex:none}
+.sw i{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:var(--r-full);background:#fff}
+.railRow.off .sw{background:var(--field);border:1px solid var(--border)}
+.railRow.off .sw i{left:2px;right:auto;background:var(--t4)}
+.hint{font-size:var(--fs-xs);color:var(--t3);line-height:1.5;border-top:1px solid var(--vien-mo);padding-top:14px}
+.modeSeg{display:inline-flex;padding:3px;gap:3px;border-radius:var(--r-full);background:var(--field);
+  border:1px solid var(--border)}
+.modeSeg button{height:30px;padding:0 15px;border:0;border-radius:var(--r-full);background:transparent;
+  color:var(--t3);font:var(--fw-semi) var(--fs-xs)/1 inherit;cursor:pointer}
+.modeSeg button[aria-pressed='true']{background:var(--card);color:var(--t1);box-shadow:var(--shadow-node)}
+
+/* ---------- E · ba mật độ ---------- */
+.densRow{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:24px;background:var(--panel)}
+.densCol{border:1px solid var(--border);border-radius:var(--r-3);overflow:hidden;background:var(--bg)}
+.densHead{padding:12px 14px;border-bottom:1px solid var(--vien-mo);display:flex;align-items:baseline;gap:8px}
+.densHead .n{font-size:var(--fs-ui);font-weight:var(--fw-semi)}
+.densHead .m{font-size:10px;color:var(--t4)}
+.mini{padding:var(--p);display:flex;flex-direction:column;gap:var(--g)}
+.mini .band{border-radius:var(--r-2);background:var(--field);border:1px solid var(--vien-mo)}
+.mini .b1{background:transparent;border:0;font-weight:var(--fw-semi);letter-spacing:-.02em;color:var(--t1)}
+.mini .b2{height:44px;background:var(--card)}
+.mini .b3{height:74px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:transparent;border:0}
+.mini .b3 span{border-radius:var(--r-2);background:var(--card);border:1px solid var(--vien-mo)}
+.mini .b4{height:56px;background:linear-gradient(140deg,var(--hover),var(--field))}
+.mini .lb{font-size:9px;letter-spacing:.1em;color:var(--t4);font-weight:700}
+
+/* ---------- F · hẹp ---------- */
+.narrow{width:1100px}
+.shelfNarrow{grid-template-columns:repeat(3,1fr)}
+.inspoNarrow{grid-template-columns:1fr 1fr}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+
+<div class="page">
+  <div class="docHead">
+    <div>
+      <h1>Home · Living Canvas</h1>
+      <p>Trang chủ là <b>nơi chốn của một con người</b>, không phải bảng điều khiển. Thứ tự đọc chính tắc,
+      không đổi ở bất kỳ bản nào: <b>KHÔNG KHÍ → TIẾP TỤC → KỆ DỰ ÁN → CẢM HỨNG</b>. Không khí là một
+      <b>trường</b> (không viền, không card). Widget khai theo <b>ô lưới</b> 1×1 · 2×1 · 2×2 — không kéo giãn px.
+      Widget không có dữ liệu thì <b>tự ẩn</b>, không bịa số. Một màu nhấn duy nhất (tím <code>--accent</code>);
+      đỏ/hổ phách/lục chỉ dành cho trạng thái luật.</p>
+    </div>
+    <button class="tglBtn" onclick="var r=document.documentElement;r.dataset.theme=r.dataset.theme==='light'?'dark':'light';this.textContent=r.dataset.theme==='light'?'Nền tối':'Nền sáng';">Nền sáng</button>
+  </div>
+
+  <!-- ══════════════════════════════ A ══════════════════════════════ -->
+  <section class="board">
+    <div class="boardHead">
+      <span class="k">A</span><h2>Có dự án · Active Studio</h2>
+      <span class="note">1440×900. Bốn dải xếp dọc, mỗi dải một câu hỏi khác nhau. Kệ dự án <b>không có
+      khung cao cố định và không có thanh cuộn riêng</b> — nó cao bằng nội dung, trang mới là thứ cuộn.</span>
+    </div>
+    <div class="frame">
+      <div class="home" data-che-do="calm"><div class="homeInner">
+
+        <!-- 1 · KHÔNG KHÍ (FIELD) -->
+        <div class="ambient">
+          <div>
+            <h3 class="chao">Chào Tour<em>.</em></h3>
+            <div class="ngay">Thứ Bảy, 22/08</div>
+          </div>
+          <div class="sunWrap">
+            <div class="sunLbl"><span class="mono">05:00</span><b>BAN NGÀY · 5600K</b><span class="mono">20:00</span></div>
+            <svg class="sunArc" viewBox="0 0 392 54" fill="none" aria-label="Cung mặt trời trong ngày">
+              <path d="M4 50 C 60 6, 332 6, 388 50" stroke="var(--border)" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M4 50 C 60 6, 210 4, 246 16" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="246" cy="16" r="5" fill="var(--accent)"/>
+              <circle cx="246" cy="16" r="10.5" fill="none" stroke="var(--accent-ring)" stroke-width="1"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- 2 · TIẾP TỤC -->
+        <div class="resume">
+          <div class="resumeThumb"><span class="tag ph">PLACEHOLDER</span></div>
+          <div class="resumeBody">
+            <div class="resumeKick">TIẾP TỤC</div>
+            <h4 class="resumeTitle">Nháp · 3D Thiết kế</h4>
+            <div class="resumeMeta"><span>Dở 2 ngày trước</span><span>·</span><span>Về đúng khung đang mở</span></div>
+          </div>
+          <div class="resumeAct"><button class="btnMain">Mở tiếp</button></div>
+        </div>
+
+        <!-- 3 · KỆ DỰ ÁN -->
+        <div>
+          <div class="secHead">
+            <span class="lbl">DỰ ÁN</span>
+            <span class="rule"></span>
+            <span class="cnt mono">21/21</span>
+          </div>
+          <div class="chipRow" style="margin-bottom:16px">
+            <button class="chip" aria-pressed="true">Tất cả dự án</button>
+            <button class="chip">2D Kỹ thuật</button>
+            <button class="chip">3D Thiết kế</button>
+            <button class="chip">Trình bày</button>
+          </div>
+          <div class="shelf">
+            <div class="pCard">
+              <div class="pCover"><span class="tag ph">PLACEHOLDER</span></div>
+              <div class="pBody">
+                <span class="pName">Nháp</span>
+                <span class="ava">DT<i class="dot"></i></span>
+              </div>
+            </div>
+            <div class="pAgg">
+              <span class="big mono">19</span>
+              <div class="txt"><div class="a">Bản nháp</div><div class="b">Chưa gắn dự án · mở để gom về một dự án</div></div>
+            </div>
+            <button class="pNew">
+              <span class="plus">＋</span>
+              <span class="h">Dự án mới</span>
+              <span class="s">Bắt đầu từ bản vẽ có sẵn, từ ảnh hiện trạng, hoặc từ một trang trắng.</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 · CẢM HỨNG -->
+        <div class="inspo">
+          <div class="inspoStrip">
+            <div><span class="tag ph" style="position:absolute;left:12px;top:12px">PLACEHOLDER</span></div>
+            <div></div><div></div>
+          </div>
+          <div class="inspoOver">
+            <div>
+              <div class="inspoLbl">ẢNH ĐẸP TUẦN NÀY</div>
+              <div class="inspoSub">Ba khung được ghim trong tuần · từ kệ Ảnh &amp; tài sản</div>
+            </div>
+            <button class="btnGhost">Xem cả kệ</button>
+          </div>
+        </div>
+
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ B ══════════════════════════════ -->
+  <section class="board">
+    <div class="boardHead">
+      <span class="k">B</span><h2>Xưởng còn trống · No Project</h2>
+      <span class="note">Không có việc dở ⇒ dải TIẾP TỤC <b>không dựng thành card rỗng</b>, nó thu về
+      một dòng nằm ngay dưới trường không khí. Kệ dự án vẫn giữ nhãn và vẫn đứng đúng chỗ — chỗ đó là
+      lời mời, không phải chỗ trống.</span>
+    </div>
+    <div class="frame">
+      <div class="home" data-che-do="calm"><div class="homeInner">
+
+        <div class="ambient">
+          <div>
+            <h3 class="chao">Chào Tour<em>.</em></h3>
+            <div class="ngay">Thứ Bảy, 22/08</div>
+          </div>
+          <div class="sunWrap">
+            <div class="sunLbl"><span class="mono">05:00</span><b>BAN NGÀY · 5600K</b><span class="mono">20:00</span></div>
+            <svg class="sunArc" viewBox="0 0 392 54" fill="none">
+              <path d="M4 50 C 60 6, 332 6, 388 50" stroke="var(--border)" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M4 50 C 60 6, 210 4, 246 16" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="246" cy="16" r="5" fill="var(--accent)"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- TIẾP TỤC · trạng thái VẮNG: một dòng, không card -->
+        <div class="resumeVang">
+          <span class="txt">Chưa có việc đang dở. Xưởng còn trống — mở một dự án là chỗ này nhớ giúp.</span>
+        </div>
+
+        <div>
+          <div class="secHead">
+            <span class="lbl">DỰ ÁN</span><span class="rule"></span><span class="cnt mono">0/0</span>
+          </div>
+          <div class="shelf" style="grid-template-columns:1.6fr 1fr 1fr">
+            <button class="pNew" style="padding:34px 32px">
+              <span class="plus">＋</span>
+              <span class="h" style="font-size:var(--fs-lg)">Dự án đầu tiên</span>
+              <span class="s" style="max-width:42ch">Đặt tên, chọn nơi chốn công trình — IF lấy đúng bộ quy chuẩn
+              của nơi đó rồi mở thẳng chặng 2D.</span>
+            </button>
+            <div class="pCard" style="opacity:var(--mo-vo-hieu)">
+              <div class="pCover"></div>
+              <div class="pBody"><span class="pName" style="color:var(--t4)">Bản vẽ có sẵn</span></div>
+            </div>
+            <div class="pCard" style="opacity:var(--mo-vo-hieu)">
+              <div class="pCover"></div>
+              <div class="pBody"><span class="pName" style="color:var(--t4)">Ảnh hiện trạng</span></div>
+            </div>
+          </div>
+          <div style="margin-top:12px;font-size:var(--fs-xs);color:var(--t3)">
+            Hai ô mờ là <b>hai lối vào khác</b>, không phải dự án — chúng sáng lên khi trỏ vào.
+          </div>
+        </div>
+
+        <div class="inspo">
+          <div class="inspoStrip" style="height:222px">
+            <div><span class="tag ph" style="position:absolute;left:12px;top:12px">PLACEHOLDER</span></div>
+            <div></div><div></div>
+          </div>
+          <div class="inspoOver">
+            <div>
+              <div class="inspoLbl">ẢNH ĐẸP TUẦN NÀY</div>
+              <div class="inspoSub">Kệ tuyển chọn vẫn sống khi chưa có dự án nào — đây là chỗ bắt đầu nghĩ</div>
+            </div>
+            <button class="btnGhost">Xem cả kệ</button>
+          </div>
+        </div>
+
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ C ══════════════════════════════ -->
+  <section class="board">
+    <div class="boardHead">
+      <span class="k">C</span><h2>Hệ widget · Widget System</h2>
+      <span class="note">Mỗi widget khai <b>cỡ ô</b> (1×1 · 2×1 · 2×2) và <b>dải</b> nó thuộc về. Khai theo ô
+      chứ không theo px là điều kiện để cùng một widget chạy trên máy tính · tablet · điện thoại.</span>
+    </div>
+    <div class="frame">
+      <div class="sysGrid">
+
+        <div class="wSpec">
+          <div class="top"><span class="nm">Đồng hồ ánh sáng</span><span class="sz">2×1</span></div>
+          <div class="cellMini"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+          <div class="role dai-1">DẢI 1 · KHÔNG KHÍ</div>
+          <div class="rule">Cung mặt trời theo giờ thật + nhiệt độ màu. <b>Luôn sống</b> — giờ thì lúc nào cũng có.</div>
+        </div>
+
+        <div class="wSpec">
+          <div class="top"><span class="nm">Chào</span><span class="sz">2×1</span></div>
+          <div class="cellMini"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+          <div class="role dai-1">DẢI 1 · KHÔNG KHÍ</div>
+          <div class="rule">Tên người + ngày. Cỡ chữ đổi theo chế độ (34 · 44 · 52). Luôn sống.</div>
+        </div>
+
+        <div class="wSpec">
+          <div class="top"><span class="nm">Việc đang dở</span><span class="sz">2×1</span></div>
+          <div class="cellMini"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+          <div class="role" style="color:var(--accent)">DẢI 2 · TIẾP TỤC</div>
+          <div class="rule">Một đích duy nhất, một cú bấm là tới. Không suy được đích ⇒ <b>tự ẩn</b> về một dòng (bản B).</div>
+        </div>
+
+        <div class="wSpec">
+          <div class="top"><span class="nm">Ảnh đẹp tuần này</span><span class="sz">2×2</span></div>
+          <div class="cellMini"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <div class="role">DẢI 4 · CẢM HỨNG</div>
+          <div class="rule">Ảnh tràn mép, không viền card. Chưa ghim ảnh nào ⇒ ẩn cả dải, không dựng khung xám.</div>
+        </div>
+
+        <div class="wSpec">
+          <div class="top"><span class="nm">Hôm nay</span><span class="sz">1×1</span></div>
+          <div class="cellMini"><i class="on"></i><i></i><i></i><i></i></div>
+          <div class="role">Ô PHỤ</div>
+          <div class="rule">Việc xong hôm nay + ai đang online. 0 việc &amp; 0 người ⇒ ẩn.</div>
+        </div>
+
+        <div class="wSpec">
+          <div class="top"><span class="nm">Sắp tới</span><span class="sz">1×1</span></div>
+          <div class="cellMini"><i class="on"></i><i></i><i></i><i></i></div>
+          <div class="role">Ô PHỤ</div>
+          <div class="rule">Mốc đến hạn thật từ bảng việc. Không có mốc ⇒ ẩn, <b>không hiện “0 việc”</b>.</div>
+        </div>
+
+        <div class="wSpec">
+          <div class="top"><span class="nm">Ghi chú</span><span class="sz">1×1</span></div>
+          <div class="cellMini"><i class="on"></i><i></i><i></i><i></i></div>
+          <div class="role">Ô PHỤ</div>
+          <div class="rule">Luôn sống — ô gõ trống vẫn là một lời mời, không phải dữ liệu rỗng.</div>
+        </div>
+
+        <div class="wSpec">
+          <div class="top"><span class="nm">Vật liệu của tuần</span><span class="sz">1×1</span></div>
+          <div class="cellMini"><i class="on"></i><i></i><i></i><i></i></div>
+          <div class="role">Ô PHỤ</div>
+          <div class="rule">Một quả cầu vật liệu thật từ kho <code>matId</code>. Kho trống ⇒ ẩn.</div>
+        </div>
+
+        <div class="wSpec">
+          <div class="top"><span class="nm">Biểu đồ chặng</span><span class="sz">2×1</span></div>
+          <div class="cellMini"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+          <div class="role">Ô PHỤ</div>
+          <div class="rule">Số dự án theo chặng — <b>đếm được</b>, không phải tiến độ phần trăm.</div>
+        </div>
+
+        <div class="wSpec">
+          <div class="top"><span class="nm">Bảng tin studio</span><span class="sz">2×1</span></div>
+          <div class="cellMini"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+          <div class="role">Ô PHỤ</div>
+          <div class="rule">Việc vừa xong · flow vừa sửa. Không có sự kiện nào ⇒ ẩn.</div>
+        </div>
+
+        <div class="wSpec">
+          <div class="top"><span class="nm">Lưới tích luỹ</span><span class="sz">2×1</span></div>
+          <div class="cellMini"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+          <div class="role">Ô PHỤ</div>
+          <div class="rule">Ngày nào có động tĩnh thì ô đó đậm. Một sắc tím, không thang cầu vồng.</div>
+        </div>
+
+        <div class="wSpec" style="border-style:dashed;background:transparent;box-shadow:none">
+          <div class="top"><span class="nm" style="color:var(--t3)">Vitals</span><span class="sz">—</span></div>
+          <div class="cellMini"><i></i><i></i><i></i><i></i></div>
+          <div class="role">NGOÀI PHẠM VI</div>
+          <div class="rule">Vitals sống ở mép trên của vỏ app, <b>không phải một widget của Home</b>. Không vẽ lại ở đây.</div>
+        </div>
+
+      </div>
+      <div class="legend">
+        <span><b>Ô lưới</b> — 1×1 · 2×1 · 2×2, không có cỡ thứ tư, không kéo mép.</span>
+        <span><b>Tự ẩn</b> — không dữ liệu là biến mất khỏi lưới, ô bên cạnh dồn lại lấp chỗ.</span>
+        <span><b>Cấm</b> — % tiến độ giả, xu hướng, chuỗi ngày liên tiếp, độ tin cậy của máy.</span>
+        <span><b>Màu</b> — một sắc tím; đỏ/hổ phách/lục để dành cho trạng thái luật.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ D ══════════════════════════════ -->
+  <section class="board">
+    <div class="boardHead">
+      <span class="k">D</span><h2>Sửa Home · Customization</h2>
+      <span class="note">Người dùng chọn <b>widget nào · đứng đâu · cỡ ô nào</b>; máy giữ lưới, khoảng thở
+      và bo góc. Chế độ <b>Tự sắp</b> giữ nguyên bố cục hai cột cũ — tuỳ biến không được xoá bớt widget.</span>
+    </div>
+    <div class="frame">
+      <div class="editWrap">
+        <div class="editCanvas">
+          <div style="display:flex;align-items:center;gap:14px">
+            <span class="secHead lbl" style="font-size:var(--fs-ui);font-weight:700;letter-spacing:.13em">SẮP LẠI Ô</span>
+            <span style="flex:1"></span>
+            <div class="modeSeg">
+              <button aria-pressed="true">Điềm tĩnh</button><button>Biên tập</button>
+              <button>Gọn</button><button>Tự sắp</button>
+            </div>
+          </div>
+          <div style="font-size:var(--fs-xs);color:var(--t3)">
+            Bốn dải trên cùng <b>khoá thứ tự</b> — chỉ các ô phụ được sắp lại. Kéo bằng chuột, hoặc chọn ô rồi
+            dùng phím mũi tên để dời và Enter để thả.
+          </div>
+          <div class="slotGrid">
+            <div class="slot" style="grid-column:span 2;background:var(--field)">
+              <span class="h">Không khí · Chào + đồng hồ ánh sáng</span>
+              <span class="s">Dải khoá — luôn đứng đầu</span>
+            </div>
+            <div class="slot" style="grid-column:span 2;background:var(--field)">
+              <span class="h">Tiếp tục · Việc đang dở</span>
+              <span class="s">Dải khoá — luôn đứng thứ hai</span>
+            </div>
+            <div class="slot lifted"><span class="grip">⠿</span><span class="h">Sắp tới</span><span class="s">1×1 · đang kéo</span></div>
+            <div class="slot ghost"><span class="h">Thả vào đây</span><span class="s">1×1</span></div>
+            <div class="slot"><span class="grip">⠿</span><span class="h">Ghi chú</span><span class="s">1×1</span></div>
+            <div class="slot"><span class="grip">⠿</span><span class="h">Vật liệu của tuần</span><span class="s">1×1</span></div>
+            <div class="slot" style="grid-column:span 2"><span class="grip">⠿</span><span class="h">Biểu đồ chặng</span><span class="s">2×1</span></div>
+            <div class="slot" style="grid-column:span 2"><span class="grip">⠿</span><span class="h">Bảng tin studio</span><span class="s">2×1</span></div>
+          </div>
+        </div>
+
+        <div class="editRail">
+          <div class="railSec">WIDGET · 11 MÓN</div>
+          <div>
+            <div class="railRow"><span class="nm">Hôm nay</span><span class="sz">1×1</span><span class="sw"><i></i></span></div>
+            <div class="railRow"><span class="nm">Sắp tới</span><span class="sz">1×1</span><span class="sw"><i></i></span></div>
+            <div class="railRow"><span class="nm">Ghi chú</span><span class="sz">1×1</span><span class="sw"><i></i></span></div>
+            <div class="railRow"><span class="nm">Vật liệu của tuần</span><span class="sz">1×1</span><span class="sw"><i></i></span></div>
+            <div class="railRow"><span class="nm">Biểu đồ chặng</span><span class="sz">2×1</span><span class="sw"><i></i></span></div>
+            <div class="railRow"><span class="nm">Bảng tin studio</span><span class="sz">2×1</span><span class="sw"><i></i></span></div>
+            <div class="railRow off"><span class="nm">Lưới tích luỹ</span><span class="sz">2×1</span><span class="sw"><i></i></span></div>
+            <div class="railRow off"><span class="nm">Ảnh đẹp tuần này</span><span class="sz">2×2</span><span class="sw"><i></i></span></div>
+          </div>
+          <div class="hint">
+            <b>Cỡ ô đổi bằng cách chọn</b>, không kéo mép: bấm vào con số cỡ để đổi giữa 1×1 · 2×1 · 2×2.<br><br>
+            Widget tắt ở đây thì mất khỏi Home ngay; widget bật mà <b>chưa có dữ liệu</b> vẫn tự ẩn — bật không
+            phải là lệnh bịa nội dung.
+          </div>
+          <div style="display:flex;gap:8px"><button class="btnMain" style="height:var(--tap)">Xong</button><button class="btnGhost">Về mặc định</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ E ══════════════════════════════ -->
+  <section class="board">
+    <div class="boardHead">
+      <span class="k">E</span><h2>Ba mật độ · Điềm tĩnh · Biên tập · Gọn</h2>
+      <span class="note">Cùng <b>một</b> thứ tự đọc, cùng <b>một</b> bộ widget — chỉ khác nhịp thở. Không chế độ
+      nào là bản cắt xén. Số lấy đúng <code>nhipDai()</code>.</span>
+    </div>
+    <div class="frame">
+      <div class="densRow">
+
+        <div class="densCol">
+          <div class="densHead"><span class="n">Điềm tĩnh</span><span class="m mono">gap 26 · lề 36 · chào 44</span></div>
+          <div class="mini" style="--p:20px;--g:14px">
+            <div class="band b1" style="font-size:22px">Chào Tour<span style="color:var(--t4)">.</span></div>
+            <div class="band b2"></div>
+            <div class="band b3"><span></span><span></span><span></span></div>
+            <div class="band b4"></div>
+          </div>
+        </div>
+
+        <div class="densCol">
+          <div class="densHead"><span class="n">Biên tập</span><span class="m mono">gap 34 · lề 48 · chào 52</span></div>
+          <div class="mini" style="--p:26px;--g:18px">
+            <div class="band b1" style="font-size:28px">Chào Tour<span style="color:var(--t4)">.</span></div>
+            <div class="band b2" style="height:50px"></div>
+            <div class="band b3" style="height:80px"><span></span><span></span><span></span></div>
+            <div class="band b4" style="height:70px"></div>
+          </div>
+        </div>
+
+        <div class="densCol">
+          <div class="densHead"><span class="n">Gọn</span><span class="m mono">gap 16 · lề 18 · chào 34</span></div>
+          <div class="mini" style="--p:12px;--g:8px">
+            <div class="band b1" style="font-size:17px">Chào Tour<span style="color:var(--t4)">.</span></div>
+            <div class="band b2" style="height:38px"></div>
+            <div class="band b3" style="height:62px"><span></span><span></span><span></span></div>
+            <div class="band b4" style="height:46px"></div>
+          </div>
+        </div>
+
+      </div>
+      <div class="legend">
+        <span><b>Điềm tĩnh</b> — mặc định.</span>
+        <span><b>Biên tập</b> — chữ lớn hơn, ảnh mạnh hơn; dải cảm hứng cao nhất.</span>
+        <span><b>Gọn</b> — cùng thứ tự, ít khoảng trống hơn; <b>không</b> bỏ dải nào.</span>
+        <span><b>Tự sắp</b> — bố cục hai cột cũ, giữ nguyên vẹn cho ai đã quen (xem bản D).</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ F ══════════════════════════════ -->
+  <section class="board narrow">
+    <div class="boardHead">
+      <span class="k">F</span><h2>Bề ngang hẹp · ~1100px</h2>
+      <span class="note">Không rơi thành một chồng đều tăm tắp: bốn dải giữ <b>chiều cao khác nhau</b> nên nhịp
+      còn nguyên. Kệ 4 cột → 3 cột; cảm hứng 3 khung → 2 khung.</span>
+    </div>
+    <div class="frame">
+      <div class="home" data-che-do="calm"><div class="homeInner" style="padding:28px 28px 34px">
+
+        <div class="ambient" style="align-items:flex-end;gap:28px">
+          <div>
+            <h3 class="chao" style="font-size:38px">Chào Tour<em>.</em></h3>
+            <div class="ngay">Thứ Bảy, 22/08</div>
+          </div>
+          <div class="sunWrap" style="width:300px">
+            <div class="sunLbl"><span class="mono">05:00</span><b>BAN NGÀY · 5600K</b><span class="mono">20:00</span></div>
+            <svg class="sunArc" viewBox="0 0 392 54" fill="none">
+              <path d="M4 50 C 60 6, 332 6, 388 50" stroke="var(--border)" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M4 50 C 60 6, 210 4, 246 16" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="246" cy="16" r="5" fill="var(--accent)"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="resume">
+          <div class="resumeThumb" style="width:172px"><span class="tag ph">PLACEHOLDER</span></div>
+          <div class="resumeBody" style="padding:18px 20px">
+            <div class="resumeKick">TIẾP TỤC</div>
+            <h4 class="resumeTitle" style="font-size:20px">Nháp · 3D Thiết kế</h4>
+            <div class="resumeMeta"><span>Dở 2 ngày trước</span></div>
+          </div>
+          <div class="resumeAct" style="padding-right:20px"><button class="btnMain">Mở tiếp</button></div>
+        </div>
+
+        <div>
+          <div class="secHead">
+            <span class="lbl">DỰ ÁN</span><span class="rule"></span><span class="cnt mono">21/21</span>
+          </div>
+          <div class="chipRow" style="margin-bottom:14px">
+            <button class="chip" aria-pressed="true">Tất cả dự án</button>
+            <button class="chip">2D Kỹ thuật</button>
+            <button class="chip">…</button>
+          </div>
+          <div class="shelf shelfNarrow">
+            <div class="pCard">
+              <div class="pCover"><span class="tag ph">PLACEHOLDER</span></div>
+              <div class="pBody"><span class="pName">Nháp</span><span class="ava">DT<i class="dot"></i></span></div>
+            </div>
+            <div class="pAgg" style="grid-column:span 1;flex-direction:column;align-items:flex-start;gap:10px;justify-content:center">
+              <span class="big mono">19</span>
+              <div class="txt"><div class="a">Bản nháp</div><div class="b">Chưa gắn dự án</div></div>
+            </div>
+            <button class="pNew" style="padding:20px 18px">
+              <span class="plus">＋</span><span class="h">Dự án mới</span>
+              <span class="s" style="max-width:24ch">Từ bản vẽ, từ ảnh, hoặc trang trắng.</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="inspo">
+          <div class="inspoStrip inspoNarrow" style="height:196px">
+            <div><span class="tag ph" style="position:absolute;left:12px;top:12px">PLACEHOLDER</span></div>
+            <div></div>
+          </div>
+          <div class="inspoOver">
+            <div><div class="inspoLbl">ẢNH ĐẸP TUẦN NÀY</div>
+            <div class="inspoSub">Khung thứ ba cuộn ngang, không rơi xuống hàng mới</div></div>
+            <button class="btnGhost">Xem cả kệ</button>
+          </div>
+        </div>
+
+      </div></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- DESIGN NOTES
+  Lỗi 1 · Kệ dự án là card cao cố định + có thanh cuộn riêng, card dự án bị cắt ở mép dưới.
+    → Kệ dự án KHÔNG còn là card. Nó là một TRƯỜNG: nhãn tiết mục + hàng chip + lưới card chảy
+      thẳng trên nền trang. Không có chiều cao khoá, không có overflow, nên không có gì bị cắt —
+      thứ cuộn là cả trang, đúng như ba dải kia.
+
+  Lỗi 2 · 1440px với 3 card ⇒ nửa phải của dải trống trơn.
+    → Lưới 4 cột được LẤP BẰNG NỘI DUNG THẬT, không kéo giãn card: ô "19 Bản nháp" nhận span 2 và
+      trở thành khối đếm lớn, ô "＋ Dự án mới" nở thành lời mời có tiêu đề + một câu dẫn. Ít dự án
+      thì lời mời to; nhiều dự án thì nó co về một tile. Không bịa card giả, không để lỗ.
+
+  Lỗi 3 · Nhãn "DỰ ÁN" quá nhỏ và quá nhạt.
+    → Nhãn lên 13px/700/letter-spacing .13em ở --t1 (không phải --t4/--t5), kèm một đường hairline
+      chạy hết bề ngang và số đếm 21/21 dạng chữ số bảng ở --t2. Cùng khuôn đó dùng lại cho
+      "ẢNH ĐẸP TUẦN NÀY" nên hai tiết mục đọc ra cùng một cấp bậc.
+
+  Lỗi 4 · Màn hẹp rơi thành một chồng dài không nhịp.
+    → Bản F giữ bốn dải với BỐN CHIỀU CAO KHÁC NHAU (không khí thấp/thoáng · tiếp tục là dải ngang
+      dẹt · kệ là lưới 3 cột · cảm hứng là mảng ảnh cao). Kệ 4→3 cột, cảm hứng 3→2 khung + cuộn ngang,
+      chào 44→38px. Nhịp đến từ chênh lệch chiều cao giữa các dải, không đến từ số cột.
+-->

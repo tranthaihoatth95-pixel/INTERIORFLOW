@@ -200,7 +200,7 @@ function DockBtn({
         transition: 'background .15s, color .15s',
       }}
     >
-      <Icon size={17} />
+      <Icon size={20} />
       {label}
     </button>
   );

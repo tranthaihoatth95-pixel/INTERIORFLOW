@@ -105,7 +105,7 @@ export default function MotionPanel({
         style={deckBtn}
         title="Đặt hiệu ứng này cho tất cả slide trong deck"
       >
-        <Layers size={13} /> Áp cho cả deck
+        <Layers size={18} /> Áp cho cả deck
       </button>
 
       <p style={{ fontSize: 10, color: 'var(--t4)', lineHeight: 1.4, margin: 0 }}>
@@ -189,7 +189,7 @@ function ElementRevealList({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <GripVertical size={12} style={{ color: 'var(--t4)', cursor: 'grab', flexShrink: 0 }} />
+              <GripVertical size={20} style={{ color: 'var(--t4)', cursor: 'grab', flexShrink: 0 }} />
               <KindIcon kind={el.kind} />
               <span
                 style={{

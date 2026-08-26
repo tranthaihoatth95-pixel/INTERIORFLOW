@@ -1,6 +1,26 @@
 'use client';
 
 /**
+ * ⛔ BẢN CŨ — ĐÃ MỒ CÔI, KHÔNG CÒN ROUTE NÀO MOUNT (đóng dấu 20/08, phiếu COHERENCE-SHELL).
+ *
+ * Đo tại nguồn: nơi mount DUY NHẤT của `VitalsGesturePanel` là `components/studio/StageSwitcher.tsx:446`;
+ * StageSwitcher bị gỡ khỏi header 17/08 (xem `AppChrome.tsx`, khối chú thích "StageSwitcher đã gỡ")
+ * và `grep -rn "StageSwitcher" components app` cho thấy **0 nơi mount** nó nữa.
+ * ⇒ Hai hệ quả đang sống, ghi ra để phiên sau không mất công tìm lại:
+ *   ① Toàn bộ tệp này (675 dòng: ThinkDial · gợi ý theo chặng · `buildVitalsDocPayload`) hiện
+ *      KHÔNG chạy trên màn nào.
+ *   ② Chip "Vitals" ở `StatusBar.tsx` gọi `openVitals()` để mở panel này ⇒ **bấm vào không ra gì**.
+ *      Đây là bug thật, không phải thiết kế; nó nằm ngoài vùng ghi của phiếu 20/08.
+ *
+ * BẢN ĐANG SỐNG là `components/studio/VitalsAperture.tsx` (khẩu độ mép trên, 3 mức
+ * Ambient/Peek/Engage), dùng lại `VitalsIcon` + `VitalsStateBadge` + bề mặt chat
+ * `VitalsChatSurface`. **Đừng hồi sinh tệp này bằng cách mount lại** — sẽ thành hai Vitals trên
+ * một màn, phá đúng ràng buộc "mỗi màn ĐÚNG MỘT Vitals" (chốt 16/08).
+ * Thứ trong đây CÒN ĐÁNG CỨU và chưa có ở khẩu độ: **ThinkDial 4 nấc** và **`buildVitalsDocPayload`**
+ * (gửi tóm tắt bản vẽ + kiểm quy chuẩn theo nấc). Cứu = dời hai thứ đó sang bề mặt chat đang
+ * sống, KHÔNG phải mount lại cả panel.
+ *
+ * ── nguyên văn mô tả cũ, giữ làm dấu vết ──────────────────────────────────────────────
  * components/studio/VitalsGesture.tsx — panel chat NHỎ của Vitals AI mở ra khi
  * người dùng KÉO XUỐNG từ handle line ở đáy StageSwitcher.
  *
@@ -524,7 +544,7 @@ export default function VitalsGesturePanel({
                   cursor: 'pointer',
                 }}
               >
-                <Maximize2 size={11} />
+                <Maximize2 size={14} />
               </button>
               <button
                 type="button"
@@ -542,7 +562,7 @@ export default function VitalsGesturePanel({
                 cursor: 'pointer',
               }}
             >
-              <X size={12} />
+              <X size={14} />
             </button>
             </div>
           </div>
@@ -665,7 +685,7 @@ export default function VitalsGesturePanel({
                 flex: '0 0 auto',
               }}
             >
-              {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+              {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
             </button>
           </div>
         </div>

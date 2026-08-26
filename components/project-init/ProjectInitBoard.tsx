@@ -210,7 +210,7 @@ export function ProjectInitBoard({ open, en, larkCode, larkName, onClose, onSkip
             onClick={onClose}
             disabled={busy}
           >
-            <X size={13} />
+            <X size={16} />
           </button>
         </div>
 
@@ -332,7 +332,7 @@ export function ProjectInitBoard({ open, en, larkCode, larkName, onClose, onSkip
                 : 'Quyền thư mục File Manager còn là mock — nối sau.'
             }
           >
-            <Lock size={12} />
+            <Lock size={16} />
             <span>{en ? 'Folder access · project lead — coming soon' : 'Phân quyền thư mục · gán chủ trì — sắp có'}</span>
           </div>
         </section>
@@ -370,12 +370,12 @@ export function ProjectInitBoard({ open, en, larkCode, larkName, onClose, onSkip
           <button type="button" className="pib-btn pib-primary" onClick={() => void handleCreate()} disabled={busy}>
             {busy ? (
               <span className="inline-flex items-center gap-1.5">
-                <Loader2 size={13} className="animate-spin" />
+                <Loader2 size={18} className="animate-spin" />
                 {en ? 'Creating…' : 'Đang tạo…'}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5">
-                <Plus size={13} />
+                <Plus size={18} />
                 {seedCount > 0
                   ? en
                     ? `Create project · ${seedCount} tasks`

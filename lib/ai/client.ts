@@ -1,7 +1,7 @@
 'use client';
 
 import { AI_TASKS, taskMediaType, type AiTask } from '@/lib/ai/models';
-import type { AiTier, OneAiEngine } from '@/lib/ai/tiers';
+import { providerForTier, type AiTier, type OneAiEngine } from '@/lib/ai/tiers';
 
 export class AiJobError extends Error {
   code?: string;
@@ -16,6 +16,14 @@ const POLL_MS = 1500;
 const TIMEOUT_MS = 180_000;
 /** Video render lâu hơn nhiều (Kling ~1–3 phút) → nới timeout riêng cho task video. */
 const VIDEO_TIMEOUT_MS = 300_000;
+/**
+ * 20/08 — đo thật trên máy Mac không CUDA (chỉ MPS, ComfyUI tự-host, "eager" kernel fallback):
+ * lượt CHẠY NGUỘI đầu tiên (nạp checkpoint SDXL 6,9GB + ControlNet 2,4GB từ đĩa vào bộ nhớ, chưa
+ * cache) hết 25 phút 38 giây cho MỘT ảnh — gấp ~8,5 lần TIMEOUT_MS cũ (180s). Cloud (fal/sd) vẫn
+ * đúng ~vài chục giây nên KHÔNG đổi timeout chung — chỉ tự-host (ComfyUI) mới cần cửa sổ dài hơn
+ * hẳn. Không nới vô hạn: 40 phút đủ cho cả lượt nguội chậm nhất đã đo + biên an toàn, vẫn có trần.
+ */
+const COMFYUI_TIMEOUT_MS = 2_400_000;
 
 /**
  * Ảnh trong app có thể là URL tương đối (/demo/…, /uploads/… từ gallery/demo).
@@ -60,7 +68,10 @@ export async function runImageJob(
   const started = Date.now();
   const typical = AI_TASKS[task].typicalMs;
   const isVideo = taskMediaType(task) === 'video';
-  const timeout = isVideo ? VIDEO_TIMEOUT_MS : TIMEOUT_MS;
+  // ComfyUI tự-host chạy trên máy người dùng (thường không CUDA) — đo thật cần cửa sổ chờ dài
+  // hơn hẳn cloud, xem chú thích COMFYUI_TIMEOUT_MS. Video giữ ưu tiên riêng của nó.
+  const isSelfHost = providerForTier(tier, engine) === 'comfyui';
+  const timeout = isVideo ? VIDEO_TIMEOUT_MS : isSelfHost ? COMFYUI_TIMEOUT_MS : TIMEOUT_MS;
   onProgress(0.04);
 
   for (;;) {

@@ -127,7 +127,7 @@ export default function LibraryBrowser({ images, loading, onUseImage, onDelete, 
         />
         <div style={{ display: 'flex', gap: 6 }}>
           <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} style={uploadBtn}>
-            {uploading ? <Loader2 size={13} className="pe-spin" /> : <Upload size={13} />} Tải ảnh tham khảo
+            {uploading ? <Loader2 size={16} className="pe-spin" /> : <Upload size={16} />} Tải ảnh tham khảo
           </button>
           <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => handleFiles(e.target.files)} />
           <button
@@ -136,7 +136,7 @@ export default function LibraryBrowser({ images, loading, onUseImage, onDelete, 
             style={{ ...uploadBtn, flex: 'none', width: 34, gap: 0 }}
             title="Ảnh trên mạng (Unsplash · Openverse · dán URL/Pinterest)"
           >
-            <Globe size={13} />
+            <Globe size={16} />
           </button>
         </div>
         {webOpen && (
@@ -160,17 +160,17 @@ export default function LibraryBrowser({ images, loading, onUseImage, onDelete, 
       {/* tìm + chọn cách gom nhóm */}
       <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm theo tên / thẻ…" style={inp} />
       <div style={{ display: 'flex', gap: 6 }}>
-        <GroupBtn active={groupBy === 'project'} onClick={() => setGroupBy('project')} icon={<FolderTree size={12} />}>
+        <GroupBtn active={groupBy === 'project'} onClick={() => setGroupBy('project')} icon={<FolderTree size={14} />}>
           Theo dự án
         </GroupBtn>
-        <GroupBtn active={groupBy === 'tag'} onClick={() => setGroupBy('tag')} icon={<TagIcon size={12} />}>
+        <GroupBtn active={groupBy === 'tag'} onClick={() => setGroupBy('tag')} icon={<TagIcon size={14} />}>
           Theo thẻ
         </GroupBtn>
       </div>
 
       {loading && (
         <p style={{ fontSize: 11, color: 'var(--t4)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Loader2 size={12} className="pe-spin" /> Đang nạp thư viện…
+          <Loader2 size={14} className="pe-spin" /> Đang nạp thư viện…
         </p>
       )}
       {!loading && !images.length && (
@@ -217,7 +217,7 @@ export default function LibraryBrowser({ images, loading, onUseImage, onDelete, 
                   {/* lớp nút hiện khi hover */}
                   <div className="pe-ref-actions" style={actions}>
                     <button type="button" title="Đưa vào slide" onClick={() => onUseImage(img.url)} style={miniBtn}>
-                      <ImagePlus size={12} />
+                      <ImagePlus size={14} />
                     </button>
                     {(img.source === 'local' || img.mine) && (
                       <button
@@ -226,7 +226,7 @@ export default function LibraryBrowser({ images, loading, onUseImage, onDelete, 
                         onClick={() => onDelete(img)}
                         style={{ ...miniBtn, color: '#e5674f' }}
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={14} />
                       </button>
                     )}
                   </div>

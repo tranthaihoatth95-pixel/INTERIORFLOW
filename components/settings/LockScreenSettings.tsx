@@ -12,20 +12,31 @@ import { useState } from 'react';
 import { LockKeyhole } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { getLastUserId } from '@/lib/resume';
-import { DEFAULT_LOCK_IDLE_MINUTES, getLockIdleMinutes, setLockIdleMinutes, lockScreenNow } from '@/lib/lockscreen';
+import {
+  LOCK_IDLE_CHOICES,
+  type LockIdleChoice,
+  getLockIdleChoice,
+  setLockIdleChoice,
+  lockScreenNow,
+} from '@/lib/lockscreen';
 import { WallpaperSettings } from '@/components/wallpaper/WallpaperSettings';
 import { useT } from '@/lib/i18n';
 
 export function LockScreenSettings() {
   const tr = useT();
   const userId = useFlowStore((s) => s.user?.id) ?? getLastUserId() ?? '';
-  const [minutes, setMinutes] = useState(() => getLockIdleMinutes(userId));
+  const [choice, setChoice] = useState<LockIdleChoice>(() => getLockIdleChoice(userId));
 
-  const commit = (n: number) => {
-    const clamped = Math.min(180, Math.max(1, Math.round(n)));
-    setMinutes(clamped);
-    setLockIdleMinutes(userId, clamped);
+  /** Lane K (22/08): NẤC chọn sẵn thay ô nhập số tự do — 5/15/30/60/Không bao giờ. Ô số tự do
+   * bắt người dùng nghĩ ra một con số cho việc họ không có ý kiến, và mở cửa cho giá trị vô
+   * nghĩa (1 phút = khoá giữa lúc đang ngắm bản vẽ). */
+  const commit = (n: LockIdleChoice) => {
+    setChoice(n);
+    setLockIdleChoice(userId, n);
   };
+
+  const nhan = (n: LockIdleChoice) =>
+    n === 0 ? tr('Không bao giờ', 'Never') : tr(`${n} phút`, `${n} min`);
 
   return (
     <>
@@ -33,23 +44,35 @@ export function LockScreenSettings() {
       <h2 className="text-[15px] font-semibold text-[var(--t1)]">{tr('Khoá màn', 'Lock screen')}</h2>
       <p className="mt-1 text-[12px] text-[var(--t2)]">
         {tr(
-          '⌃⌘Q khoá ngay bất cứ lúc nào, hoặc tự khoá sau bấy nhiêu phút không thao tác.',
-          '⌃⌘Q locks instantly, or auto-lock after this many idle minutes.',
+          'Khoá giữ nguyên việc đang làm — dự án, chặng, góc nhìn, và cả bản render đang chạy. Mở lại là về đúng chỗ cũ.',
+          'Locking keeps your work as-is — project, stage, viewport, and any render still running. Resuming returns you to the same place.',
         )}
       </p>
+      <div className="mt-4">
+        <div className="text-[12px] text-[var(--t2)]">{tr('Tự khoá sau', 'Auto-lock after')}</div>
+        <div className="mt-2 inline-flex flex-wrap gap-1 rounded-[var(--r-full,999px)] p-1" style={{ background: 'var(--field)', border: '1px solid var(--border)' }}>
+          {LOCK_IDLE_CHOICES.map((n) => {
+            const dangChon = n === choice;
+            return (
+              <button
+                key={n}
+                type="button"
+                aria-pressed={dangChon}
+                onClick={() => commit(n)}
+                className="rounded-[var(--r-full,999px)] px-3 py-1.5 text-[12px] transition-colors"
+                style={
+                  dangChon
+                    ? { background: 'var(--accent)', color: '#fff' }
+                    : { color: 'var(--t2)' }
+                }
+              >
+                {nhan(n)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
       <div className="mt-4 flex items-center gap-3">
-        <label className="flex items-center gap-2 text-[13px] text-[var(--t2)]">
-          {tr('Tự khoá sau', 'Auto-lock after')}
-          <input
-            type="number"
-            min={1}
-            max={180}
-            value={minutes}
-            onChange={(e) => commit(Number(e.target.value) || DEFAULT_LOCK_IDLE_MINUTES)}
-            className="w-16 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-center text-[13px] text-[var(--t1)] outline-none"
-          />
-          {tr('phút', 'minutes')}
-        </label>
         <button
           type="button"
           onClick={() => lockScreenNow()}
@@ -58,6 +81,11 @@ export function LockScreenSettings() {
           <LockKeyhole size={14} />
           {tr('Khoá ngay', 'Lock now')}
         </button>
+        {/* Phím tắt hiện NGAY CẠNH lệnh — dạy phím tại chỗ dùng, không bắt đi tra bảng.
+         * Nguồn phím là sổ lệnh chung (`app.lock`), chỗ này chỉ hiển thị. */}
+        <kbd className="rounded-[6px] px-2 py-1 text-[11px] text-[var(--t3)]" style={{ border: '1px solid var(--border)' }}>
+          {tr('⌘⇧L · Ctrl⇧L', '⌘⇧L · Ctrl⇧L')}
+        </kbd>
       </div>
     </section>
 

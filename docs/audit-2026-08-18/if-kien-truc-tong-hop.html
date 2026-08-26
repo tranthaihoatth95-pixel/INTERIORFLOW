@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<title>IF Kiến trúc tổng hợp · 18/08</title>
+<style>
+  @page { size: A4; margin: 15mm 12mm; }
+  body { font: 11px/1.55 -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif; color: #1a1a1a; margin: 0; }
+  .doc { }
+  .doc-title { font-size: 24px; margin: 0 0 4px; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  .meta { color: #666; font-size: 10px; margin-bottom: 14px; font-family: ui-monospace, Menlo, monospace; }
+  h1 { font-size: 20px; margin: 22px 0 8px; }
+  h2 { font-size: 15px; margin: 18px 0 6px; border-bottom: 1px solid #ddd; padding-bottom: 3px; }
+  h3 { font-size: 12px; margin: 12px 0 4px; }
+  p { margin: 6px 0; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 10px; background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+  pre { background: #f5f5f5; border: 1px solid #e0e0e0; padding: 8px 10px; border-radius: 4px; overflow-x: auto; font-size: 9.5px; line-height: 1.4; break-inside: avoid; }
+  pre code { background: none; padding: 0; }
+  ul, ol { margin: 6px 0; padding-left: 20px; }
+  li { margin: 2px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 10px; margin: 8px 0; break-inside: avoid; }
+  th, td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; vertical-align: top; }
+  th { background: #f0f0f0; font-weight: 600; }
+  blockquote { border-left: 3px solid #6a57f5; margin: 8px 0; padding: 4px 10px; background: #f7f5ff; color: #333; }
+  .page-break { page-break-after: always; height: 0; }
+  strong { font-weight: 600; }
+</style>
+</head><body>
+
+<section class="doc">
+  <h1 class="doc-title">HIẾN PHÁP OS · 18/08</h1>
+  <div class="meta">Nguồn: <code>docs/IF-KIEN-TRUC-OS.md</code></div>
+  <h1>IF là HỆ ĐIỀU HÀNH CÔNG VIỆC — AI là LỚP THAY THẾ ĐƯỢC</h1>
+<blockquote>Hoà chốt 18/08. <strong>Hiến pháp kiến trúc gốc — trên mọi chốt kiến trúc khác.</strong></blockquote>
+<blockquote>Bản đồ <code>docs/IF-KIEN-TRUC.md</code> bổ sung theo, không viết lại từ đầu.</blockquote>
+<h2>⭐ ĐỊNH NGHĨA IF (thay mọi câu định nghĩa cũ)</h2>
+<p><strong>KHÔNG PHẢI</strong>: <em>"AI App for Interior Design."</em></p>
+<p><strong>LÀ</strong>: <strong>"InteriorFlow — Local-first Design Operating System. AI chỉ là engine bên trong."</strong></p>
+<h2>⭐ BỐN NGUYÊN TẮC TRIẾT LÝ KỸ THUẬT</h2>
+<ol><li><strong>Own your data</strong> — dữ liệu là của người dùng, không thuộc nhà cung cấp.</li><li><strong>Own your workflow</strong> — luồng làm việc không bị khoá bởi bất kỳ SaaS/API.</li><li><strong>Own your memory</strong> — ký ức app có schema riêng, không lưu theo format của model.</li><li><strong>Replace your AI</strong> — model đổi tự do, không phải viết lại app.</li></ol>
+Giữ đúng 4 nguyên tắc này — 10 năm nữa AI landscape thay đổi hoàn toàn, IF vẫn là của Hoà, không thành lớp UI trên dịch vụ người khác.
+<h2>⭐ TRIẾT LÝ SÁNG TẠO — MAXIMUM CONTROL, MINIMUM FRICTION</h2>
+<p><strong>KHÔNG PHẢI</strong>: maximum automation.<br><strong>LÀ</strong>: <strong>maximum control with minimum friction</strong>.</p>
+<p>Designer không chỉ quan tâm output đúng/sai. Họ quan tâm <strong>cách đi đến output</strong> — vì ý đồ thiết kế nằm trong quá trình LỰA CHỌN · LOẠI BỎ · ĐIỀU CHỈNH.</p>
+<p><strong>Luật</strong>: AI KHÔNG <em>"làm thay"</em>. AI <em>"làm cùng"</em> — designer luôn <strong>NHÌN THẤY · CAN THIỆP ĐƯỢC · QUAY LẠI ĐƯỢC</strong>.</p>
+<h3>Cấm agent chạy một mạch (black box)</h3>
+<pre><code>
+❌ SAI:  Bạn: "Làm concept cho lobby" → AGENT [black box…] → "Xong."
+<p>✅ ĐÚNG:  BRIEF<br>          ↓<br>          [1] Understand  → 👁 Review  ✎ Edit  ✓ Approve<br>          ↓<br>          [2] Research     → 23 refs · 👁 xem nguồn · ✎ loại/giữ/thêm<br>          ↓<br>          [3] Directions   → A ─── B ─── C  ↑ bạn chọn<br>          ↓<br>          [4] Develop      → Material · Form · Color · Narrative ↑ chỉnh được<br>          ↓<br>          [5] Generate<br>          ↓<br>          [6] Review<br>          ↓<br>          OUTPUT<br></code></pre></p>
+<p>Đây là khác biệt lớn giữa <strong>automation software</strong> và <strong>creative software</strong>.</p>
+<h3>CONTROL POINTS — 4 mức tự do</h3>
+<pre><code>
+AUTONOMY ────────────────────────────────
+Assist         AI đề xuất → Tôi thực hiện
+Collaborate    AI làm → Tôi duyệt từng bước
+Delegate       AI tự làm → dừng ở checkpoint
+Autopilot      AI tự hoàn thành workflow
+</code></pre>
+<p>Không ép mọi người cùng một mức. Người dùng đặt mức <strong>TỪNG GIAI ĐOẠN</strong>.</p>
+<p>Ví dụ Creative Director:<br><ul><li>Research → Autopilot</li><li>Documentation → Autopilot</li><li>Moodboard → Collaborate</li><li>Concept → Assist</li><li>Final Design → Human only</li></ul><br>Junior khác:<br><ul><li>Research → Collaborate</li><li>Moodboard → Collaborate</li><li>Concept → Collaborate</li><li>Documentation → Delegate</li></ul><br>Automation trở thành <strong>biến số do designer kiểm soát</strong>.</p>
+<h3>WHY THIS? — AI khai bằng chứng, không chỉ đưa kết quả</h3>
+<p>Mọi đề xuất AI phải kèm khối <em>"Why this?"</em> liệt kê căn cứ + nút <strong>Change reasoning</strong>.</p>
+<p>Ví dụ: <em>"Sử dụng đá limestone màu warm beige."</em><br><pre><code><br>WHY THIS?<br>────────────────────────<br>Design Intent    → Calm / Natural / Timeless<br>Project req.     → Hospitality 5★<br>References       → Project A · Project B<br>Material Library → Limestone #MT-024<br>Constraints      → Indoor · Budget $$$</p>
+<p>[Change reasoning]<br></code></pre></p>
+<p><strong>Luật cứng</strong>: AI không có quyền đưa đề xuất mà không giải thích được căn cứ từ <strong>IF Memory</strong> (Person · Project · Client · Material · Reference · Standard) và <strong>Design Intent</strong> hiện tại.</p>
+<h2>⭐ HAI BỘ NGUYÊN TẮC SONG SONG</h2>
+<p><strong>Hạ tầng</strong>:<br><ul><li>Own your data · Own your workflow · Own your memory · Replace your AI</li></ul><br><strong>Trải nghiệm sáng tạo</strong>:<br><ul><li><strong>AI proposes</strong> · <strong>Human directs</strong> · <strong>Every decision is visible</strong> · <strong>Every decision is reversible</strong></li></ul><br>Hai bộ ghép lại → IF không cố trở thành <em>"AI thiết kế thay designer"</em>. IF trở thành:</p>
+<blockquote><strong>Một môi trường mà designer có thể điều khiển một đội ngũ AI giống như đang điều khiển team thiết kế — giao việc được, xem tiến độ được, can thiệp giữa chừng được, phản biện được và luôn giữ quyền quyết định cuối cùng.</strong></blockquote>
+<h2>⭐ TRANSPARENCY HỮU ÍCH ≠ chain-of-thought</h2>
+<p>Designer KHÔNG cần nhìn nội bộ model. Họ cần:<br><ul><li><strong>Evidence</strong> — bằng chứng</li><li><strong>Assumptions</strong> — giả định</li><li><strong>Design rationale</strong> — lý do thiết kế</li></ul><br>...tất cả <strong>kiểm tra được</strong>.</p>
+<h2>⭐ CREATIVE TIMELINE — lịch sử DECISION > lịch sử FILE</h2>
+<p>Không chỉ <em>"Version 17"</em>. Phải là:</p>
+<pre><code>
+CONCEPT EVOLUTION
+Brief
+│
+├── Direction A
+│   ✕ rejected · "too commercial"
+│
+├── Direction B
+│   ↓ B.1
+│   ↓ Client feedback
+│   ↓ B.2
+│   ↓ Material changed
+│   ↓ B.3 ★ APPROVED
+│
+└── Direction C archived
+</code></pre>
+<p>Sau 6 tháng vẫn trả lời được: <strong>"Tại sao thiết kế cuối cùng trở thành như vậy?"</strong> — không chỉ <em>"đây là file final"</em>.</p>
+<p><strong>Với ngành thiết kế, lịch sử DECISION đôi khi giá trị hơn lịch sử FILE.</strong></p>
+<h2>⭐ NON-DESTRUCTIVE AI WORKFLOW</h2>
+<p>AI làm sai bước 4-5-6 → <strong>KHÔNG</strong> làm lại từ đầu:</p>
+<pre><code>
+Step 1 ✓  Step 2 ✓  Step 3 ✓
+Step 4 ✕  Step 5 ✕  Step 6 ✕
+<p>↶ RETURN TO STEP 4<br>   "Giữ 1–3. Thay hướng vật liệu ở bước 4."<br>   ↓<br>   AI regenerate 4 → 6<br></code></pre></p>
+<p>Rất giống triết lý <strong>layer/history của Photoshop</strong>, áp cho AI process.</p>
+<h2>1 · Nguyên tắc số 1</h2>
+<p><strong>IF là hệ điều hành công việc cho thiết kế nội thất. AI chỉ là một lớp trí tuệ có thể thay thế.</strong></p>
+<p>Không phải: <em>"build một app rồi gắn API AI vào"</em>.</p>
+<p><strong>Điều kiện sống</strong>: 4 phần đầu (Project · Workflow · Knowledge · Community) phải hoạt động BÌNH THƯỜNG dù toàn bộ AI bị tháo ra.</p>
+<p>Ngày nào đó Qwen không phù hợp · Ollama biến mất · OpenAI tăng giá · Anthropic đổi chính sách → IF vẫn quản dự án, deadline, workflow, tài liệu, team, knowledge base bình thường.</p>
+<p>AI là <em>"một nhân viên cực thông minh đang ngồi bên trong IF"</em>, KHÔNG phải <em>"IF sống nhờ AI provider"</em>.</p>
+<h2>2 · Sơ đồ hệ thống</h2>
+<pre><code>
+INTERIORFLOW
+│
+├── PROJECT SYSTEM         (bắt buộc — không AI vẫn chạy)
+│   ├── Project · Phase · Deadline · Task · Team · File · Review/Approval
+│
+├── DESIGN WORKFLOW        (bắt buộc — không AI vẫn chạy)
+│   ├── Research · Layout · Moodboard · Concept · 3D · Tender · Construction/Handover
+│
+├── KNOWLEDGE SYSTEM       (bắt buộc — không AI vẫn chạy)
+│   ├── Material library · Standards · Company procedures · Past projects
+│   ├── Design references · Lessons learned
+│
+├── COMMUNITY / DEVELOPMENT (bắt buộc — không AI vẫn chạy)
+│   ├── Portfolio · Design sharing · Critique · Trends · Skill development
+│
+└── AI LAYER               (tuỳ chọn — thay được, tháo được)
+    ├── Local LLM · Cloud LLM optional · Agents · Search/RAG · Automation
+</code></pre>
+<h2>3 · AI Gateway — cấm phụ thuộc cứng backend</h2>
+<pre><code>
+             INTERIORFLOW
+                  ↓
+       INTERIORFLOW AI GATEWAY   ← IF chỉ nói chuyện với chỗ này
+                  ↓
+   ┌──────────────┼──────────────┐
+Local Runtime  Cloud API    Future engine
+   Ollama      GPT/Claude    llama.cpp · vLLM
+                Gemini · Qwen
+</code></pre>
+<p><strong>IF gửi</strong>: <code>/chat</code> · <code>/search</code> · <code>/embed</code> · <code>/analyze-project</code> · <code>/create-task</code> · <code>/review-design</code><br><strong>Gateway quyết định</strong> backend nào chạy.</p>
+<h2>4 · Privacy mode</h2>
+<pre><code>
+Privacy mode:  ● Fully Local    ○ Hybrid    ○ Cloud
+</code></pre>
+<ul><li><strong>Fully Local</strong>: Project files · Staff data · Client data · Drawings · Contracts · Meeting notes · Design library → KHÔNG RA INTERNET. Local model xử toàn bộ.</li><li><strong>Hybrid</strong>: chỉ tác vụ được cho phép ra cloud (Hoà chốt 18/08):</li></ul>  - ✓ RA cloud: Search trend Internet · General brainstorming
+  - ✕ KHÔNG ra cloud: <strong>Hồ sơ khách hàng · File dự án · Thông tin nhân sự · Budget · Tender</strong>
+<ul><li><strong>Cloud</strong>: mọi thứ đi cloud.</li></ul>
+<h2>4b · Workflow ngành THẬT (KHÁC Todo/Doing/Done — khác Notion/Monday/ClickUp)</h2>
+<pre><code>
+INPUT → RESEARCH → LAYOUT → MOODBOARD → CONCEPT → 3D
+      → DESIGN REVIEW → REVISION → TENDER → SHOPDRAWING
+      → SITE → HANDOVER
+</code></pre>
+<p>Mỗi giai đoạn <strong>SINH KNOWLEDGE</strong>. AI quan sát pattern (VD: <em>"70% project hospitality trễ Concept→3D vì material chưa approve"</em>) → đề xuất khoá milestone Material Direction Approval trước Concept 3D. Đây là AI <strong>phục vụ workflow thật</strong>, không AI generic.</p>
+<h2>4c · Company Design Intelligence — DATA > MODEL</h2>
+<p>Sau 5 năm công ty tích luỹ: 500 projects · 50k material records · 20k design comments · 5k client feedback · 3k site issues · 100k drawings · hundreds standards.</p>
+<p>IF biến thành <strong>Company Design Intelligence</strong> — designer hỏi:<br><ul><li><em>"Dự án resort 5 sao trước đây mình dùng loại gỗ nào cho khu vực pool?"</em></li><li><em>"Cho tôi những lỗi FF&E hay gặp trong project hospitality."</em></li></ul><br>AI KHÔNG trả lời generic từ Internet — trả lời từ <strong>lịch sử project của chính công ty</strong>. Đây là dữ liệu mà OpenAI · Autodesk · SaaS nào không sở hữu được nếu giữ local.</p>
+<p><strong>Nguyên tắc</strong>: DATA > MODEL. Model có thể thay. Data + workflow + knowledge graph mới là TÀI SẢN.</p>
+<h2>4d · IF MEMORY — schema riêng, không theo format model</h2>
+<p><strong>Cấm</strong>: lưu ký ức theo <em>ChatGPT memory · Claude memory · Ollama history</em>.</p>
+<p><strong>Bắt buộc</strong>: có <code>INTERIORFLOW MEMORY</code> schema riêng:<br><pre><code><br>Person · Project · Client · Material · Supplier · Space<br>· Design decision · Issue · Feedback · Lesson learned · Standard<br></code></pre></p>
+<p>AI chỉ ĐỌC/GHI qua API. Model Qwen → Llama vẫn đọc được toàn bộ ký ức IF.</p>
+<h2>4e · Hai thế giới — MANAGEMENT ↔ DEVELOPMENT</h2>
+<pre><code>
+     MANAGEMENT                    DEVELOPMENT
+     ──────────                    ───────────
+     Project                       Personal Growth
+     Resource · Deadline           Portfolio · Community
+     Workflow                      Inspiration · Trend
+     QA/QC                         Learning · Knowledge
+           │                              │
+           └──────────┬───────────────────┘
+                      ↓
+              DESIGN INTELLIGENCE
+</code></pre>
+<ul><li><strong>Management</strong> = giúp công ty vận hành</li><li><strong>Development</strong> = giúp designer giỏi lên</li><li><strong>AI ở giữa</strong> — học từ CẢ HAI</li></ul>
+<strong>Ví dụ</strong>: IF biết Hoà → Hospitality Concept Design · 8 projects · Strong storytelling · Weak tender coordination → Development gợi <em>"3 case study detailing hospitality nên xem"</em> hoặc <em>"Project mới phù hợp thử vai Design Lead"</em>.
+<p>⇒ IF thành <strong>career intelligence system</strong>, không chỉ task manager.</p>
+<h2>5 · Hệ quả bắt buộc</h2>
+<ol><li><strong>Cấm</strong> viết code IF gọi thẳng <code>openai</code>/<code>anthropic</code>/<code>ollama</code> SDK. Mọi lời gọi AI đi qua AI Gateway.</li><li><strong>Cấm</strong> tính năng nghiệp vụ đòi AI để hoạt động (vd: quản dự án không mở được vì AI down). AI chỉ <strong>thêm giá trị</strong>, không <strong>là điều kiện</strong>.</li><li><strong>Cấm</strong> dữ liệu dự án tự động ra cloud khi Privacy = Fully Local.</li><li>Gateway phải khai được <strong>backend hiện tại + lý do chọn</strong> (người dùng thấy được).</li><li>Đổi backend = đổi CẤU HÌNH, không sửa code IF.</li></ol>
+<h2>6 · Đối chiếu với hiện trạng IF (đo 18/08)</h2>
+<table><tr><th>Lớp</th><th>Có trong IF?</th><th>Vênh với hiến pháp mới</th></tr><tr><td>Project System</td><td>✅ Prisma models đủ (Project · Task · TaskContext · Team qua Review Gate)</td><td>Chưa có <code>Phase</code> model — hiện phase là chuỗi cứng trong <code>lib/phases.ts</code></td></tr><tr><td>Design Workflow</td><td>🟡 Chỉ 3 chặng (2D · 3D · Present) — chưa có Research · Moodboard tách riêng · Tender · Construction/Handover</td><td>Cần bổ sung sau, chưa đầy đủ workflow ngành</td></tr><tr><td>Knowledge System</td><td>🟡 Có Material · Standards (lib/cad/standards) · Past projects nhưng chưa gộp thành hệ</td><td>Chưa có "Company procedures" · "Lessons learned" · Design references thống nhất</td></tr><tr><td>Community</td><td>❌ 0 code — hoàn toàn chưa có</td><td>Portfolio · Sharing · Critique · Trends là mảng chưa động</td></tr><tr><td>AI Layer</td><td>🟡 CÓ tách tầng (<code>lib/ai/text-tier.ts</code> · providers <code>nvidia/ollama/fal/comfyui/sd</code>) NHƯNG chưa có <strong>AI Gateway thực sự</strong></td><td>Gọi thẳng provider ở nhiều chỗ — vi phạm §5.1</td></tr><tr><td>Privacy mode</td><td>❌ 0 UI · 0 config</td><td>Chưa có</td></tr></table>
+<strong>5 rủi ro đo được</strong>:
+<ol><li><code>lib/idfc-import/from-photo.ts:195</code> gọi thẳng <code>NVIDIA_VLM_MODEL</code> — cần đi qua Gateway</li><li><code>lib/nodes/defs/grounded-render.ts</code> gọi thẳng <code>/api/vision/caption</code> NVIDIA — nt</li><li>Chưa có concept "Privacy mode" trong UI/DB</li><li>Chưa có <code>Phase</code> model độc lập</li><li>AI provider thay = phải sửa code, không phải đổi cấu hình</li></ol>
+<h2>7 · Việc phải làm (chưa xếp thứ tự)</h2>
+<ul><li>Thiết kế <code>AI Gateway</code> interface — 6 lệnh <code>/chat</code> <code>/search</code> <code>/embed</code> <code>/analyze-project</code> <code>/create-task</code> <code>/review-design</code></li><li>Refactor mọi chỗ gọi thẳng provider → đi qua Gateway</li><li>Thêm <code>PrivacyMode</code> enum + UI toggle</li><li>Bổ sung schema thiếu (Phase model, Research, Moodboard, Tender, Handover, Community)</li><li>Đối chiếu 4 lớp lõi với hiện trạng — dựng bảng "còn thiếu gì" chi tiết</li><li>Nạp memory Anthropic feedback (hiến pháp mới)</li></ul>
+<h2>8 · Hạn dùng</h2>
+<p>Hiến pháp này <strong>không có hạn dùng</strong>. Đây là tầng gốc, mọi tầng sau là hệ quả. Chỉ HOÀ được lật.</p>
+</section>
+<div class="page-break"></div>
+
+<section class="doc">
+  <h1 class="doc-title">BẢN ĐỒ KIẾN TRÚC · vai KTS trưởng</h1>
+  <div class="meta">Nguồn: <code>docs/BAN-DO-KIEN-TRUC-2026-08-18.md</code></div>
+  <h1>Bản đồ kiến trúc IF · 18/08/2026 — vai KTS trưởng</h1>
+<blockquote>T đọc code (Prisma schema · store.ts · lib/gateway · lib/ai · cấu trúc <code>lib/</code>, <code>components/</code>, <code>app/api/</code>) rồi mô tả kiến trúc HIỆN TẠI + đối chiếu <strong>hiến pháp OS 18/08</strong>. Không sửa code, không tối ưu, bỏ qua lint/naming/style.</blockquote>
+<h2>1 · BẢN ĐỒ DOMAIN — Prisma schema thật</h2>
+<h3>1.1 · 21 model chia làm 5 cụm</h3>
+<pre><code>
+CUSER (người & tổ chức)          CDATA (dữ liệu ngành)
+├── User                         ├── LibraryAsset  (file thô + palette + caption)
+├── IntegrationAccount           ├── ProductSpec   (Legend: material/furniture/lighting…)
+                                 ├── LarkTaskRef   (mirror pull-only)
+CPROJECT (dự án)                 └── LarkPersonRef (mirror pull-only)
+├── Project (currentStage,stageLocked)
+├── ProjectMember (owner|crea|drafter|bim|viewer)   CWORK (việc)
+├── ProjectProfile (loại hình, diện tích…)          ├── WorkflowState  (cột Kanban tự khai)
+├── ProjectNotebook (RAG per-project)               ├── Task (stage,workspaceId,entityId — TaskContext Link)
+├── NotebookSource                                  └── CreditTransaction
+├── NotebookChunk (embedding text)
+├── Flow  (graphJson node-editor)                   CBRIDGE (nối ngoài)
+├── FlowVersion (snapshot mỗi Run)                  ├── ExternalRef (system+externalId → entityType/entityId, anti-loop)
+├── ChatMessage                                     ├── LarkUserMap
+├── GuModel (pairwise perceptron per user+kind)
+└── ProjectMember
+</code></pre>
+<h3>1.2 · Đối chiếu với hiến pháp OS</h3>
+<table><tr><th>Lớp OS chốt 18/08</th><th>Model có</th><th>Model THIẾU</th></tr><tr><td><strong>PROJECT SYSTEM</strong> — Project · Phase · Deadline · Task · Team · File · Review</td><td>Project ✓ · ProjectMember (Team) ✓ · Task ✓ · WorkflowState ✓ · LibraryAsset (File) ✓ · Flow (graph) ✓</td><td><strong>Phase</strong> model (đang là chuỗi cứng <code>currentStage</code>) · <strong>Deadline</strong> dedicated (rải rác: <code>dueAt</code> trong Task, <code>mocBanGiao</code> trong Profile) · <strong>Review/Approval</strong> (chỉ có <code>stageLocked</code> bool, không có bảng lịch sử duyệt)</td></tr><tr><td><strong>DESIGN WORKFLOW</strong> — Research · Layout · Moodboard · Concept · 3D · Design Review · Revision · Tender · Shopdrawing · Site · Handover</td><td><strong>Concept</strong> (Project.currentStage='concept') · <strong>3D</strong> ('render') · Layout gián tiếp (Flow)</td><td><strong>9 giai đoạn khác — 0 model độc lập</strong>: Research · Moodboard · Design Review · Revision · Tender · Shopdrawing · Site · Handover · Input</td></tr><tr><td><strong>KNOWLEDGE SYSTEM</strong> — Material library · Standards · Company procedures · Past projects · References · Lessons learned</td><td>Material (ProductSpec kind='material') · Standards (chỉ nằm trong <code>lib/cad/standards/<em>.ts</code>, KHÔNG lên DB) · Past projects (Project) · References (LibraryAsset usage='ref-render')</td><td><strong>Company procedures</strong> · <strong>Lessons learned</strong> · <strong>Design decisions</strong> — 0 model</td></tr><tr><td><strong>COMMUNITY / DEVELOPMENT</strong> — Portfolio · Design sharing · Critique · Trends · Skill development</td><td>Portfolio ~ Flow.shareToken (chia sẻ 1 flow)</td><td><strong>Critique · Trends · Skill development · Personal Growth</strong> — 0 model</td></tr><tr><td><strong>AI LAYER</strong> — Local · Cloud · Agents · RAG · Automation</td><td>ProjectNotebook + NotebookChunk (RAG per-project)</td><td>AI Gateway thực sự (chỉ có <code>lib/gateway/</code> LÀ GATEWAY ĐỊNH DẠNG FILE, tên trùng nhưng khác nghĩa) · Agent runtime · Automation rules</td></tr></table>
+<h3>1.3 · Nợ kiến trúc lộ ngay ở schema</h3>
+<ol><li><strong><code>Project.larkProjectCode</code> DEPRECATED</strong> (self-flagged trong comment) nhưng còn 13 file đọc → <code>ExternalRef</code> đã có nhưng chưa backfill xong</li><li><strong>Standards</strong> chỉ có trong code (3.074 dòng <code>lib/cad/standards/</code>) — không thể <strong>truy vấn</strong>, không thể tuỳ biến theo dự án/vùng (chốt 15/08 nói phải theo vị trí công trình)</li><li><strong><code>stageLocked: Boolean</code></strong> là quyết định 1 chiều, không có lịch sử — không đủ cho Review Gate đầy đủ (chốt 11/08)</li><li><strong><code>Task.assigneeIds: String</code> (JSON array)</strong> — không normalize, không query được "việc của tôi" hiệu quả</li><li><strong>NotebookChunk.embedding</strong> là text (JSON <code>number[]</code>) — cosine trong Node, giới hạn ~vài nghìn chunk trước chậm</li></ol>
+---
+<h2>2 · DATA FLOW — bức tranh hiện tại</h2>
+<h3>2.1 · Sơ đồ đường đi của DỮ LIỆU</h3>
+<pre><code>
+NGƯỜI DÙNG
+    │
+    ├── Chat/Vitals ──▶ /api/chat ─▶ lib/ai/text-tier ─▶ NVIDIA (cloud) / Ollama (local) / oneAI (LAN)
+    │                              (chọn theo tier + availability)
+    │
+    ├── Nhập tệp ──▶ /api/library/ingest ─▶ LibraryAsset (DB metadata + ./uploads file)
+    │                                       ↓
+    │                                       Auto-extract: palette, caption (nếu ảnh) via lib/idfc-import
+    │
+    ├── Notebook upload ──▶ /api/notebook/upload ─▶ NotebookSource ─▶ chunk ─▶ NVIDIA embed
+    │                                                                          ↓
+    │                                                                          NotebookChunk (embedding text)
+    │
+    ├── CAD vẽ ──▶ lib/cad/store.ts (useCadStore, in-memory) ─▶ .idf JSON (disk-sync.ts)
+    │             (KHÔNG lưu DB — 100% file trên đĩa qua handle FileSystem API)
+    │
+    ├── Node canvas ──▶ Flow.graphJson (Prisma) ─▶ FlowVersion snapshot mỗi Run
+    │                   ↓ chạy node
+    │                   lib/execution.ts ─▶ AI provider (fal/comfyui/sd) tuỳ node
+    │
+    ├── Chọn Present ──▶ lib/present-editor/ ─▶ localStorage boq-overrides + slide state
+    │
+    └── Sync Lark ──▶ /api/lark-tasks ─▶ LarkTaskRef (mirror pull-only)
+</code></pre>
+<h3>2.2 · State đang ở ĐÂU (đếm được)</h3>
+<table><tr><th>Loại state</th><th>Nơi lưu</th><th>Rủi ro</th></tr><tr><td>Auth session</td><td>cookie + Prisma User</td><td>OK</td></tr><tr><td>Project data</td><td>Prisma (DB SQLite)</td><td>OK</td></tr><tr><td><strong>CAD bản vẽ</strong></td><td><code>.idf</code> file trên ĐĨA qua FileSystem API + useCadStore in-memory</td><td><strong>Không đồng bộ máy</strong> — mỗi máy 1 file, không có nguồn chung</td></tr><tr><td><strong>Node canvas</strong></td><td><code>Flow.graphJson</code> trong DB</td><td>OK, có versioning</td></tr><tr><td>Task</td><td>Prisma</td><td>OK</td></tr><tr><td>UI state (mở panel, nấc sidebar)</td><td>localStorage per máy</td><td>Đúng luật lưu chung↔máy</td></tr><tr><td>Grid layout Home bento</td><td>code hard-coded + bentoFillPercent tự tính</td><td>Vênh chốt 16/08 (widget cỡ định sẵn 1×1/2×1/2×2)</td></tr><tr><td>BOQ overrides</td><td>localStorage per browser</td><td><strong>Không sync giữa máy</strong> — mất khi đổi browser</td></tr><tr><td>Zustand stores</td><td>3 store: <code>useFlowStore</code> (nodes) · <code>useCadStore</code> (CAD) · <code>useCollabStore</code> (presence)</td><td>State chồng lấn: <code>Flow.graphJson</code> DB vs <code>useFlowStore</code> in-memory</td></tr></table>
+<h3>2.3 · Nợ ở data flow</h3>
+<ol><li><strong>CAD (.idf) tách rời DB</strong> — chốt cross-platform (chốt 16/08) sẽ vỡ nếu máy khác không có file</li><li><strong>BOQ overrides trong localStorage</strong> — trái luật "vật là chung" (chốt 17/08 <code>IF-KIEN-TRUC §9</code>)</li><li><strong><code>useFlowStore</code> + <code>Flow.graphJson</code></strong> — hai nguồn cùng chứa node graph, cần đồng bộ tay</li><li><strong>NotebookChunk cosine trong Node</strong> — không scale, chưa có pgvector/sqlite-vss</li></ol>
+---
+<h2>3 · WORKFLOW hiện tại vs 12 giai đoạn ngành (chốt OS §4b)</h2>
+<h3>3.1 · Cây workflow hiện có</h3>
+<pre><code>
+CONCEPT (2D Kỹ thuật) ─▶ RENDER (3D Thiết kế) ─▶ PRESENT (Trình bày)
+     │                        │                        │
+     ├── /projects/[id]/cad   ├── render/              ├── present/
+     └── notebook (RAG)       └── photo (editor)       └── photo (editor)
+                                                       └── share/[token]
+</code></pre>
+<h3>3.2 · 9 giai đoạn OS §4b nói phải có — HIỆN TRẠNG</h3>
+<table><tr><th>Giai đoạn OS</th><th>Trạng thái IF</th><th>Ghi chú</th></tr><tr><td><strong>INPUT</strong> — nhận brief</td><td>🟡 Có <code>ProjectProfile</code> (hồ sơ 60s) + NotebookSource (tài liệu)</td><td>Chưa có "Brief" model độc lập với version + duyệt</td></tr><tr><td><strong>RESEARCH</strong> — thu thập ref</td><td>🟡 LibraryAsset usage='ref-render' + Gallery</td><td>Chưa có workflow tự động (AI tìm ref theo brief)</td></tr><tr><td><strong>LAYOUT</strong> — bố cục sơ</td><td>✅ Concept stage phủ</td><td>OK</td></tr><tr><td><strong>MOODBOARD</strong> — bảng cảm hứng</td><td>🟡 Có <code>lib/moodboard-boards.ts</code> + <code>moodboard-collage.ts</code></td><td>Không có route riêng, không có DB model</td></tr><tr><td><strong>CONCEPT</strong></td><td>✅ Concept stage</td><td>OK</td></tr><tr><td><strong>3D</strong></td><td>✅ Render stage</td><td>OK</td></tr><tr><td><strong>DESIGN REVIEW</strong></td><td>🔴 Chỉ có <code>stageLocked</code> — không có bảng lịch sử review</td><td>Cần Review Gate đầy đủ (chốt 11/08 đã đưa vào sổ nhưng chưa thi công)</td></tr><tr><td><strong>REVISION</strong></td><td>🔴 0 model</td><td>Không có concept version chính thức trong DB</td></tr><tr><td><strong>TENDER</strong></td><td>🔴 0 model</td><td>Hoàn toàn thiếu</td></tr><tr><td><strong>SHOPDRAWING</strong></td><td>🔴 0 model</td><td>Thiếu</td></tr><tr><td><strong>SITE</strong></td><td>🔴 0 model</td><td>Thiếu</td></tr><tr><td><strong>HANDOVER</strong></td><td>🔴 0 model</td><td>Thiếu</td></tr></table>
+⇒ <strong>IF phủ ~4/12 giai đoạn ngành</strong>. 8 giai đoạn còn lại là 0 code hoặc rải rác.
+<h3>3.3 · Non-destructive AI workflow (chốt OS)</h3>
+<p><strong>Chốt</strong>: AI sai bước 4-5-6 → RETURN TO STEP 4, giữ 1-3, regenerate 4-6.</p>
+<p><strong>Hiện trạng</strong>: <code>FlowVersion</code> snapshot mỗi lần Run — có versioning THEO CẢ FLOW, nhưng KHÔNG có checkpoint từng STEP trong 1 flow. Không có "return to step N".</p>
+<p>⇒ <strong>Chưa có non-destructive AI workflow đúng chốt</strong>. Cần bảng CheckpointStep hoặc thay đổi cách versioning.</p>
+<h3>3.4 · Creative Timeline — decision > file</h3>
+<p><strong>Chốt</strong>: lịch sử DECISION quan trọng hơn lịch sử FILE.</p>
+<p><strong>Hiện trạng</strong>: <code>FlowVersion</code> chỉ có <code>graphJson</code> + <code>createdAt</code> — không ghi </em>"vì sao đổi B1 → B2"<em>, không có Direction A/B/C rejected.</p>
+<p>⇒ <strong>Chưa có Creative Timeline</strong>. Cần model <code>DesignDecision</code> (rationale + parent + rejected reason + who).</p>
+<p>---</p>
+<h2>4 · NAVIGATION — trục điều hướng</h2>
+<pre><code>
+                          RailDieuHuong.tsx  (sidebar 2 cụm, 3 nấc 28/240/320)
+                                │
+        ┌───────────────────────┴───────────────────────┐
+   CỤM XƯỞNG                                        CỤM DỰ ÁN
+        │                                               │
+   Overview (/)              This project (/projects/[id]/overview)
+   Tasks (/tasks)            Notebook (/projects/[id]/notebook)
+   Chat·Meetings (workhub)   2D Design (/projects/[id]/cad)
+   Files (/files)            3D Design (/projects/[id]/render)
+   Library (SHEET nổi)       Presenting (/projects/[id]/present)
+   Settings (/settings)      Photo (/projects/[id]/photo)
+</code></pre>
+<h3>Nợ navigation</h3>
+<ol><li><strong>Không có concept "workspace ngữ cảnh"</strong> — <code>Task.workspaceId</code> đã có nhưng chưa mount thật vào navigation</li><li><strong><code>/library</code> là REDIRECT</strong> (SHEET nổi, không phải trang) — dễ gây nhầm với <code>/library/gallery</code> và <code>/library/ingest</code> là trang thật</li><li><strong><code>/materials</code> <code>/colors</code> là REDIRECT về Library sheet</strong> — đúng chốt 16/08 nhưng người dùng vẫn thấy 2 mục ngoài rail (chưa xoá)</li><li><strong>Legacy <code>/cad-editor</code> <code>/present-editor</code> <code>/photo-editor</code></strong> — cố ý giữ (<code>LegacyStageRedirect</code>), OK</li><li><strong>Chưa có route Community/Development</strong> — vì lớp này 0 code</li></ol>
+---
+<h2>5 · TECHNICAL DEBT (chiến lược, không lint)</h2>
+<h3>5.1 · 5 nợ cấp KIẾN TRÚC</h3>
+<ol><li><strong>AI Gateway CHƯA CÓ theo hiến pháp OS</strong> — <code>lib/gateway/</code> là gateway định dạng file, không phải AI Gateway. Mọi provider (<code>lib/ai/providers/nvidia|ollama|fal|comfyui|sd</code>) được gọi thẳng ở nhiều chỗ. Sửa Ollama biến mất = phải sửa nhiều điểm.</li><li><strong>Privacy mode 0 code</strong> — mọi tệp nhạy cảm có thể bị gửi cloud khi dùng NVIDIA. Chưa có toggle Fully Local / Hybrid / Cloud.</li><li><strong>Phase là chuỗi cứng</strong> — <code>currentStage: String</code> với 3 giá trị hard-coded. Không thể thêm giai đoạn Research/Moodboard/Tender/Handover mà không đổi code.</li><li><strong>Standards ở code, không ở DB</strong> — không thể <strong>tuỳ biến theo dự án/vùng địa lý</strong> như chốt 15/08 yêu cầu (biến số ngữ cảnh).</li><li><strong>IF Memory schema chưa gộp</strong> — 11 khái niệm OS §4d yêu cầu (Person · Project · Client · Material · Supplier · Space · Design decision · Issue · Feedback · Lesson learned · Standard) hiện có 5 (Person=User · Project · Material=ProductSpec · Standard qua code · Issue phần nào qua Task). Thiếu 6.</li></ol>
+<h3>5.2 · 5 nợ cấp CƠ CHẾ</h3>
+<ol><li><strong>CAD .idf tách rời DB</strong> — không đồng bộ máy được (vỡ Own your data ở multi-device)</li><li><strong>BOQ overrides localStorage</strong> — trái luật lưu chung</li><li><strong>useFlowStore + Flow.graphJson</strong> — hai nguồn cùng chứa node graph</li><li><strong>NotebookChunk cosine Node.js</strong> — không scale, chưa vector index thật</li><li><strong>assigneeIds JSON string</strong> — không query hiệu quả</li></ol>
+<h3>5.3 · 3 điểm CHỒNG CHÉO KHÁI NIỆM</h3>
+<ol><li><strong>"Gateway"</strong> trùng tên: <code>lib/gateway/</code> (định dạng file) vs <code>AI Gateway</code> (hiến pháp OS). Cần đặt lại 1 tên.</li><li><strong>"Flow"</strong> dùng cho: (a) file dự án (Flow.graphJson) (b) workflow ngành (12 giai đoạn OS). Cần tách.</li><li><strong>"Stage"</strong> dùng cho: (a) chặng UI (concept/render/present) (b) phase ngành (12 giai đoạn). Cần tách.</li></ol>
+---
+<h2>6 · ĐIỂM QUYẾT ĐỊNH KIẾN TRÚC — chờ Hoà chốt</h2>
+<p>Đây là các quyết định T KHÔNG tự quyết được (chạm hiến pháp OS, chạm chốt cũ):</p>
+<h3>Q1 · Có xây <code>Phase</code> model độc lập không?</h3>
+<ul><li><strong>Cách A</strong>: giữ <code>currentStage: String</code> — rẻ, không migrate. Đổi tên <code>render</code> → <code>render-3d</code> mà không phải migrate DB.</li><li><strong>Cách B</strong>: model <code>Phase(id, projectId, name, order, done)</code> + link Task/Doc/Decision vào Phase. Đúng OS §4b.</li><li>Ảnh hưởng: 8 giai đoạn thiếu (Research/Moodboard/Review/Revision/Tender/Shopdrawing/Site/Handover)</li></ul>
+<h3>Q2 · AI Gateway — xây bây giờ hay sau?</h3>
+<ul><li><strong>A</strong>: xây 1 lần cho đúng OS §3, mọi call qua Gateway. Refactor ~20 file.</li><li><strong>B</strong>: giữ nguyên, note nợ.</li><li><strong>C</strong>: hybrid — file mới bắt buộc qua Gateway, file cũ refactor dần.</li><li>Không xây = <strong>Own your AI</strong> chỉ là văn bản.</li></ul>
+<h3>Q3 · Standards vào DB hay giữ code?</h3>
+<ul><li>Chốt 15/08 nói <strong>Biến số ngữ cảnh</strong> (theo vị trí công trình) — cần queryable.</li><li><strong>A</strong>: giữ code + thêm layer "profile overrides" (VD <code>vn-lighting-hanoi.ts</code>).</li><li><strong>B</strong>: DB model <code>Standard(id, region, category, rule, source)</code> — tuỳ biến trong app.</li></ul>
+<h3>Q4 · CAD .idf — sync DB hay giữ file?</h3>
+<ul><li><strong>A</strong>: giữ file trên đĩa (hiện tại) → không đồng bộ máy được.</li><li><strong>B</strong>: đồng bộ vào Prisma → có thể sync qua network sau này.</li><li><strong>C</strong>: hybrid — file là nguồn thật, DB mirror để search + list.</li></ul>
+<h3>Q5 · IF Memory — bổ sung 6 model thiếu?</h3>
+<ul><li>OS §4d cần: Client · Supplier · Space · <strong>Design decision</strong> · Feedback · <strong>Lesson learned</strong>.</li><li><strong>A</strong>: bổ sung dần theo cần (Client trước, Lesson sau).</li><li><strong>B</strong>: bổ sung 1 lần → schema to nhưng gọn.</li><li>Trong 6, <strong>Design decision</strong> và <strong>Lesson learned</strong> là <strong>tài sản lớn nhất</strong> (chốt OS §4c </em>"data > model"*).</li></ul>
+<h3>Q6 · Non-destructive AI workflow + Creative Timeline</h3>
+<ul><li>Model <code>DesignDecision(id, parent, rationale, rejectedReason, evidence, who, at)</code> — trở thành <strong>cây quyết định</strong>, không phải cây file.</li><li>Ảnh hưởng: Present editor · Flow versioning · Vitals AI (mọi đề xuất phải ghi rationale).</li></ul>
+<h3>Q7 · Đổi tên chồng chéo — chọn từ dùng</h3>
+<ul><li><code>lib/gateway/</code> → <code>lib/format-router/</code>?</li><li><code>Flow</code> → <code>NodeGraph</code> (giữ cho ngữ cảnh node-editor)?</li><li><code>Stage</code> → <code>WorkspaceView</code> (UI) vs <code>Phase</code> (workflow ngành)?</li></ul>
+<h3>Q8 · Community / Development lớp</h3>
+<ul><li>OS chốt phải có Portfolio · Critique · Trends · Skill development.</li><li>Trong 6 tháng đầu: <strong>có xây không</strong>, hay hoãn tới v2?</li></ul>
+---
+<h2>7 · TÓM</h2>
+<table><tr><th>Khía cạnh</th><th>Trạng thái so với hiến pháp OS</th></tr><tr><td>Project System</td><td>✅ ~80% (thiếu Phase model + Review model đầy đủ)</td></tr><tr><td>Design Workflow (12 giai đoạn)</td><td>🔴 ~35% (chỉ 4/12 giai đoạn)</td></tr><tr><td>Knowledge System</td><td>🟡 ~50% (Standards ở code, Lesson learned chưa có)</td></tr><tr><td>Community / Development</td><td>🔴 0%</td></tr><tr><td>AI Layer + Gateway</td><td>🔴 ~20% (có tier + provider adapter nhưng KHÔNG có gateway thật, không có Privacy)</td></tr><tr><td>Own your data</td><td>🟡 ~60% (DB ok, .idf tách máy)</td></tr><tr><td>Own your workflow</td><td>🟡 ~70% (Prisma là mở, nhưng phase cứng)</td></tr><tr><td>Own your memory</td><td>🔴 ~40% (schema có phần, chưa đủ 11 khái niệm)</td></tr><tr><td>Replace your AI</td><td>🔴 ~30% (đổi provider = sửa nhiều điểm)</td></tr></table>
+<strong>IF hiện tại là APP THIẾT KẾ CÓ TÍCH HỢP AI, chưa phải LOCAL-FIRST DESIGN OS theo hiến pháp OS 18/08</strong>. Khoảng cách lớn nhất: (1) 8/12 giai đoạn workflow ngành, (2) AI Gateway, (3) Community/Development lớp, (4) IF Memory schema đầy đủ.
+<p>---</p>
+<h2>8 · CHƯA CHẮC / CHƯA KIỂM</h2>
+<ul><li>T đọc <strong>21 model Prisma</strong> + đọc <strong>cấu trúc lib/ (110 mục) và app/api/ (33 mục)</strong> — KHÔNG đọc từng file. Kết luận "ai provider được gọi thẳng ở nhiều chỗ" dựa vào grep, không đọc từng call site.</li><li><strong>Không mở app thật</strong> để chứng minh state flow — dựa trên đọc code.</li><li><strong>Không kiểm hết feature branches</strong> — chỉ đọc main branch tại HEAD <code>3da4b8c</code>.</li><li><strong>Không đo chi tiết hiệu năng</strong> — Hoà đã cấm.</li><li><strong>Chưa đọc tests</strong> — có thể có test khai giả định kiến trúc mà T bỏ sót.</li><li><strong>Các con số phần trăm cuối</strong> là ước lượng dựa trên tỉ lệ model có/thiếu — không phải đo lường chính xác.</li></ul>
+<h2>9 · Hạn dùng kết luận</h2>
+<p>Bản đồ này hết đúng khi:<br><ol><li>Hiến pháp OS được lật (không được lật trừ khi Hoà quyết)</li><li>Có model mới bổ sung (Phase, Client, DesignDecision…)</li><li>AI Gateway được xây</li><li>Community lớp bắt đầu code</li><li>Có thêm giai đoạn workflow được thi công (Moodboard/Tender/Handover…)</li></ol></p>
+</section>
+
+
+</body></html>

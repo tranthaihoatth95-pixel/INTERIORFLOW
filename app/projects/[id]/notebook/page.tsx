@@ -74,7 +74,7 @@ export default function ProjectNotebookPage() {
             fontSize: 12,
           }}
         >
-          <ChevronLeft size={13} /> Quay lại
+          <ChevronLeft size={14} /> Quay lại
         </button>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div
@@ -123,9 +123,9 @@ export default function ProjectNotebookPage() {
       >
         {(
           [
-            { key: 'sources', label: 'Nguồn', icon: <PanelLeft size={13} /> },
-            { key: 'chat', label: 'Chat', icon: <MessagesSquare size={13} /> },
-            { key: 'viewer', label: 'Xem', icon: <FileText size={13} /> },
+            { key: 'sources', label: 'Nguồn', icon: <PanelLeft size={18} /> },
+            { key: 'chat', label: 'Chat', icon: <MessagesSquare size={18} /> },
+            { key: 'viewer', label: 'Xem', icon: <FileText size={18} /> },
           ] as Array<{ key: MobileTab; label: string; icon: React.ReactNode }>
         ).map((t) => (
           <button

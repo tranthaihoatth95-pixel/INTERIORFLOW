@@ -217,7 +217,9 @@ export function dungTheLuat(f: FindingLuat, cheDo: CheDoHienThi): TheLuat {
     dongPhu,
     chuaKiemChung: dayDu ? f.chuaKiemChung === true : false,
     coNutSua: Boolean(f.cachSua),
-    coNutToiCho: Boolean(f.viTri?.entityId || f.viTri?.mm),
+    // R7 (19/08): thêm `slide` — finding deck (luatDeck ghi ViTri.slide) nay nhảy-tới được
+    // (ReviewPanel → event `present:goto-slide`). Trước đó nút bị ẩn vì deck chưa nối slides.
+    coNutToiCho: Boolean(f.viTri?.entityId || f.viTri?.mm || typeof f.viTri?.slide === 'number'),
     canhBaoNhatQuan: lechXuHuong
       ? {
           vi: 'Rule khai nguồn "Xu hướng" nhưng đang ở mức Bắt buộc — xu hướng không được chặn nghiệm thu.',

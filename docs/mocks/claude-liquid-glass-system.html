@@ -1,0 +1,1109 @@
+<!-- @dsCard group="Material" -->
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>InteriorFlow · Liquid Glass — vật liệu quang học + Vào xưởng</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TOKEN MIRROR — chép NGUYÊN VĂN từ app/globals.css (đọc, KHÔNG sửa).
+   Bản vẽ này đứng một mình nên phải soi lại token; giá trị dưới đây là bản sao,
+   không phải nguồn. Nguồn duy nhất vẫn là app/globals.css.
+   ĐÂY LÀ KHỐI DUY NHẤT ĐƯỢC PHÉP CÓ HEX/RGBA TRONG FILE NÀY.
+   ═════════════════════════════════════════════════════════════════════════════ */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --on-accent:#ffffff;
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --ease-apple:cubic-bezier(.32,.72,0,1);
+  --nhip-bam:130ms; --nhip-vien:170ms; --nhip-bang:220ms; --nhip-ngu-canh:300ms;
+  --tap:32px; --tap-lg:44px; --gap:8px;
+  --paper:#f7f5f0; --paper-edge:#d8d2c6; --paper-ink:#2a251d;
+
+  /* ── CẢNH AMBIENT CỐ ĐỊNH (không theo theme) ──
+     Artboard G phải bày ĐỦ BỐN môi trường khác nhau CÙNG LÚC. Nếu cảnh "tối" lấy
+     var(--bg) thì ở theme Sáng nó hoá sáng ⇒ còn ba cảnh sáng, phép nghiệm thu sập.
+     Cùng lối đã có sẵn trong app cho `--paper-*` và `--illus-*`: cảnh mang nền
+     riêng nên phải giữ tương phản nội bộ cố định ở cả hai theme.
+     Giá trị = đúng --bg/--card của từng theme trong app/globals.css. */
+  --canh-toi-nen:#0c0c0e;  --canh-toi-mat:#1a1a1e;
+  --canh-sang-nen:#f4f1eb; --canh-sang-mat:#ffffff;
+}
+:root,:root[data-theme='dark']{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --kinh-mong:rgba(24,24,28,.84); --kinh-vua:rgba(24,24,28,.9); --kinh-dac:rgba(24,24,28,.95);
+  --kinh-mep-sang:rgba(255,255,255,.14); --kinh-vien:rgba(255,255,255,.1);
+  --kinh-chu-phu:#b4b4bd; --vien-mo:rgba(255,255,255,.06);
+  --vl-dac:var(--panel); --vl-gan-dac:rgba(20,20,23,.97);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+
+  /* ── TOKEN MỚI phiếu này đề xuất — HỌ QUANG HỌC `--quang-*` ──
+     Tách khỏi họ `--kinh-*` cũ có chủ ý: `--kinh-mong/vua/dac` là ĐỘ ĐẶC của
+     một tấm mờ (nền), còn họ dưới đây mô tả một THẤU KÍNH (hình học + mật độ
+     quang). Trộn hai họ là mời người sau bôi `--kinh-dac` lên thấu kính rồi
+     mất luôn phần trong suốt. */
+  --quang-mep-ngoai:rgba(255,255,255,.34);   /* chỉ sáng mảnh viền NGOÀI */
+  --quang-mep-trong:rgba(6,4,18,.46);        /* vành TỐI khúc xạ bên trong → độ dày */
+  --quang-khoi:rgba(8,6,20,.55);             /* thân khói — do MẬT ĐỘ ở vành, không phải fill */
+  --quang-loe:rgba(255,255,255,.92);         /* loé phản chiếu: mảnh, lệch, sắc */
+  --quang-tan-sac:rgba(255,255,255,.55);     /* vạch tán sắc / caustic */
+  --quang-goc:rgba(255,255,255,.42);         /* dồn sáng ở GÓC nơi độ cong đổi */
+
+  /* ── G1 · KÍNH PHẲNG — VẬT LIỆU CHỦ ĐẠO ──
+     Cùng LUẬT với G3 (nền vẫn ảnh hưởng tới nó), khác BIÊN ĐỘ. Thân trong hoặc
+     ám màu rất nhẹ · chỉ sáng mảnh ở mép · vành tối bên trong RẤT khẽ · nhoè ăn
+     theo nền · hút màu ambient · nổi rất thấp · gần như không phồng. */
+  --g1-than:rgba(255,255,255,.045);   /* thân — ám nhẹ, KHÔNG phải fill */
+  --g1-mep-sang:rgba(255,255,255,.17);
+  --g1-mep-toi:rgba(0,0,0,.26);
+  --g1-loe:rgba(255,255,255,.55);     /* CHỈ hiện khi rê/lấy nét */
+  --g1-nhoe:10px;
+  --g1-bao-hoa:1.3;                   /* hút màu ambient */
+  --g1-phong:1.012;                   /* gần như không phồng */
+  /* G2 · KÍNH PHẲNG ĐANG HOẠT ĐỘNG — vẫn PHẲNG, chỉ rõ hơn một nấc. */
+  --g2-than:rgba(255,255,255,.085);
+  --g2-mep-sang:rgba(255,255,255,.30);
+  --g2-nhoe:14px;
+  --g2-bao-hoa:1.45;
+  --g2-phong:1.022;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e4dfd5; --border-strong:#cdc6b8;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#8e887c; --t5:#a8a294;
+  --kinh-mong:rgba(252,251,249,.88); --kinh-vua:rgba(252,251,249,.93); --kinh-dac:rgba(253,252,250,.96);
+  --kinh-mep-sang:rgba(255,255,255,.75); --kinh-vien:rgba(0,0,0,.08);
+  --kinh-chu-phu:#5c564d; --vien-mo:rgba(0,0,0,.05);
+  --vl-dac:var(--panel); --vl-gan-dac:rgba(250,248,244,.975);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.18);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+
+  --quang-mep-ngoai:rgba(255,255,255,.9);
+  --quang-mep-trong:rgba(40,34,26,.30);
+  --quang-khoi:rgba(40,34,26,.30);
+  --quang-loe:rgba(255,255,255,.98);
+  --quang-tan-sac:rgba(255,255,255,.72);
+  --quang-goc:rgba(255,255,255,.8);
+
+  /* Nền Sáng: giữ ám màu THẤP. Đẩy lên .40 là bắt đầu đọc ra "thẻ mờ đục chung chung"
+     — đúng nửa sau của phép thử G1 mà artboard H2 dùng để chấm. */
+  --g1-than:rgba(255,255,255,.24);
+  --g1-mep-sang:rgba(255,255,255,.85);
+  --g1-mep-toi:rgba(40,34,26,.13);
+  --g1-loe:rgba(255,255,255,.95);
+  --g1-nhoe:10px;  --g1-bao-hoa:1.22; --g1-phong:1.012;
+  --g2-than:rgba(255,255,255,.42);
+  --g2-mep-sang:rgba(255,255,255,.98);
+  --g2-nhoe:14px;  --g2-bao-hoa:1.34; --g2-phong:1.022;
+}
+
+/* ═══ HÌNH HỌC THẤU KÍNH — số, không phải màu ═══ */
+:root{
+  --quang-day:1.25px;   /* bề dày quang học → bán kính vành tối */
+  --quang-phong:1.055;  /* PHÓNG ở lõi (thấu kính lồi) */
+  --quang-nen:.87;      /* NÉN ở vành (môi trường bị dồn vào mép) */
+  --quang-nhoe:1.1px;   /* làm mềm RẤT NHẸ — kính trong, không phải kính mờ */
+}
+
+/* ═══ KHUNG TRANG ═══ */
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--t1);
+  font:var(--fw-normal) var(--fs-sm)/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
+  padding:28px 24px 96px; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto}
+h1{font-size:var(--fs-xl);font-weight:var(--fw-semi);letter-spacing:-.02em;margin:0 0 6px}
+h2{font-size:var(--fs-lg);font-weight:var(--fw-semi);letter-spacing:-.01em;margin:0 0 4px}
+h3{font-size:var(--fs-sm);font-weight:var(--fw-semi);margin:0 0 8px;color:var(--t2)}
+p{margin:0 0 10px;color:var(--t2)}
+.lead{color:var(--t3);max-width:74ch}
+.sub{color:var(--t3);font-size:var(--fs-xs)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:var(--fs-2xs);
+  background:var(--field);border:1px solid var(--vien-mo);border-radius:var(--r-1);padding:1px 5px;color:var(--t2)}
+
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px}
+.tgl{display:inline-flex;gap:2px;padding:3px;border-radius:var(--r-full);
+  background:var(--field);border:1px solid var(--vien-mo);flex:none}
+.tgl button{appearance:none;border:0;cursor:pointer;background:transparent;color:var(--t3);
+  font:var(--fw-semi) var(--fs-xs)/1 inherit;padding:0 14px;height:30px;border-radius:var(--r-full);
+  transition:background var(--nhip-bam) var(--ease-apple),color var(--nhip-bam) var(--ease-apple)}
+.tgl button[aria-pressed=true]{background:var(--card);color:var(--t1);box-shadow:0 1px 2px rgba(0,0,0,.18)}
+
+section{margin:0 0 40px;padding:22px 22px 24px;border-radius:var(--r-4);
+  background:var(--panel);border:1px solid var(--vien-mo)}
+.hd{display:flex;align-items:baseline;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.tag{font:var(--fw-semi) var(--fs-2xs)/1 inherit;letter-spacing:.08em;text-transform:uppercase;
+  padding:5px 9px;border-radius:var(--r-1);background:var(--field);color:var(--t3);border:1px solid var(--vien-mo)}
+.tag.bad{color:var(--danger);border-color:color-mix(in oklab,var(--danger) 40%,transparent)}
+.tag.good{color:var(--success);border-color:color-mix(in oklab,var(--success) 40%,transparent)}
+.row{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+.cap{font-size:var(--fs-2xs);color:var(--t3);margin-top:8px;display:block;line-height:1.45}
+.cap b{color:var(--t2);font-weight:var(--fw-semi)}
+.note{border-left:2px solid var(--accent);padding:6px 0 6px 12px;color:var(--t2);
+  font-size:var(--fs-xs);margin:14px 0 0}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MÔI TRƯỜNG — mỗi ô mang MỘT nền. Nền nào cũng có LƯỚI NÉT THẲNG:
+   nét thẳng bị bẻ là bằng chứng khúc xạ duy nhất không cãi được.
+   ═════════════════════════════════════════════════════════════════════════════ */
+.env{
+  position:relative; width:var(--env-w); height:var(--env-h);
+  border-radius:var(--r-3); overflow:hidden; flex:none;
+  border:1px solid var(--vien-mo);
+  display:flex; align-items:center; justify-content:center;
+  background-image:var(--env-img);
+  background-size:var(--env-w) var(--env-h);
+  background-position:center center;
+  background-repeat:no-repeat;
+}
+.env--lg{--env-w:268px;--env-h:176px}
+.env--sm{--env-w:212px;--env-h:150px}
+.env--wide{--env-w:360px;--env-h:200px}
+
+/* ① NỀN TÍM — chân đế của Vào xưởng. ĐÃ BỎ LƯỚI NÉT THẲNG (Hoà soi mắt 23/08).
+   🔴 BẢN CŨ CHÚ THÍCH SAI, giữ lại nguyên văn để không ai dựng lại:
+      "CỐ Ý KHÔNG PHẲNG: tím phẳng thì không nhìn ra chỗ nào bị bẻ, và luật ④ sẽ trượt ngay."
+   Câu đó giả định nút Vào xưởng KHÚC XẠ CÁI NỀN NÀY. Nó không.
+   Đo tại nguồn `app/globals.css:2120` — `.if-vao-xuong{background:var(--accent)}` là nền TÍM ĐẶC,
+   cộng `isolation:isolate` để CHỦ Ý cắt nút khỏi mọi thứ phía sau. Lưới nằm sau một mặt đục ⇒
+   không sợi nét nào đi vào quang học của nút ⇒ không có nét nào để bẻ ⇒ lưới ở ô này KHÔNG chứng
+   minh gì. Nó chỉ làm bản vẽ TRÔNG có vẻ chặt chẽ — thứ nguy hiểm hơn là không có gì.
+   ⇒ Lưới GIỮ ở các ô kính G1/G2 (kính trong thật, nét sau lưng thật sự bị bẻ). Ở ô tím thì BỎ. */
+.e-violet{--env-img:
+  radial-gradient(120% 96% at 26% 16%,var(--accent-strong) 0%,transparent 62%),
+  linear-gradient(158deg,var(--accent) 0%,color-mix(in oklab,var(--accent) 62%,black) 100%);}
+/* ② TỐI — ambient đêm. CỐ ĐỊNH, không theo theme (xem khối --canh-* ở trên). */
+.e-dark{--env-img:
+  repeating-linear-gradient(90deg,rgba(255,255,255,.07) 0 1px,transparent 1px 24px),
+  repeating-linear-gradient(0deg,rgba(255,255,255,.05) 0 1px,transparent 1px 24px),
+  radial-gradient(86% 74% at 18% 12%,color-mix(in oklab,var(--accent) 34%,transparent) 0%,transparent 68%),
+  linear-gradient(200deg,var(--canh-toi-mat) 0%,var(--canh-toi-nen) 100%);}
+/* ambient THEO THEME — dùng ở thang bậc hiếm (H), nơi câu hỏi là THỨ BẬC chứ không
+   phải khả năng thích ứng môi trường. */
+.e-amb{--env-img:
+  repeating-linear-gradient(90deg,var(--vien-mo) 0 1px,transparent 1px 24px),
+  repeating-linear-gradient(0deg,var(--vien-mo) 0 1px,transparent 1px 24px),
+  radial-gradient(86% 74% at 18% 12%,color-mix(in oklab,var(--accent) 26%,transparent) 0%,transparent 68%),
+  linear-gradient(200deg,var(--card) 0%,var(--bg) 100%);}
+/* ③ ẤM — mặt giấy/in (KHÔNG phải accent; vàng đồng đã bị khai tử) */
+.e-warm{--env-img:
+  repeating-linear-gradient(90deg,rgba(42,37,29,.13) 0 1px,transparent 1px 22px),
+  repeating-linear-gradient(0deg,rgba(42,37,29,.09) 0 1px,transparent 1px 22px),
+  radial-gradient(96% 80% at 74% 24%,var(--paper) 0%,transparent 66%),
+  linear-gradient(168deg,var(--paper-edge) 0%,var(--paper) 100%);}
+/* ④ SÁNG — ambient ngày. CỐ ĐỊNH, cùng lý do với ②. */
+.e-light{--env-img:
+  repeating-linear-gradient(90deg,rgba(33,30,25,.10) 0 1px,transparent 1px 24px),
+  repeating-linear-gradient(0deg,rgba(33,30,25,.07) 0 1px,transparent 1px 24px),
+  radial-gradient(90% 76% at 22% 18%,color-mix(in oklab,var(--accent) 20%,white) 0%,transparent 70%),
+  linear-gradient(196deg,var(--canh-sang-mat) 0%,var(--canh-sang-nen) 100%);}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ⭐ THẤU KÍNH QUANG HỌC `.tk`
+   KHÔNG tô hình một cái kính. Dựng một VẬT quang học:
+     lõi TRONG · vành DÀY · môi trường bị BẺ · loé MẢNH LỆCH.
+   Bốn lớp, mỗi lớp một việc, không lớp nào tô màu thân.
+   ═════════════════════════════════════════════════════════════════════════════ */
+.tk{
+  position:relative; isolation:isolate; flex:none;
+  border-radius:var(--tk-r,var(--r-3));
+  overflow:hidden;                      /* cắt lớp bẻ theo đúng bo góc */
+  -webkit-backdrop-filter:blur(var(--quang-nhoe)) saturate(1.16) contrast(1.04);
+  backdrop-filter:blur(var(--quang-nhoe)) saturate(1.16) contrast(1.04);
+  box-shadow:
+    0 0 0 .5px var(--quang-mep-ngoai),                                   /* ② chỉ sáng NGOÀI */
+    inset 0 0 0 var(--quang-day) var(--quang-mep-trong),                 /* ③ vành TỐI trong → dày */
+    inset 0 1.5px .5px -1px var(--quang-loe),                            /* mép trên bắt sáng */
+    inset 0 -2.5px 2px -2.5px var(--quang-mep-trong),                    /* mép dưới chìm */
+    inset 0 0 26px -12px var(--quang-khoi),                              /* ⑤ khói do MẬT ĐỘ ở vành */
+    0 12px 28px -18px rgba(0,0,0,.62);                                   /* tiếp đất */
+  transition:box-shadow var(--nhip-vien) var(--ease-apple),
+             transform var(--nhip-bam) var(--ease-apple);
+}
+.tk>*{position:relative;z-index:2}
+
+/* — LỚP 1 · LÕI PHÓNG: bản sao môi trường, phóng nhẹ, LỆCH TÂM.
+     Không thêm một hạt opacity nào. Lõi vẫn TRONG, chỉ to hơn. */
+.tk::before,.tk::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:var(--env-img);
+  background-size:var(--env-w) var(--env-h);
+  background-position:center center;
+  background-repeat:no-repeat;}
+.tk::before{
+  transform:scale(var(--quang-phong)) translate(-.9%,-1.3%);
+  -webkit-mask-image:radial-gradient(closest-side at 45% 41%,#000 0 38%,transparent 80%);
+  mask-image:radial-gradient(closest-side at 45% 41%,#000 0 38%,transparent 80%);
+  transition:transform var(--nhip-bang) var(--ease-apple);}
+/* — LỚP 2 · VÀNH NÉN: cùng bản sao, NÉN lại + bẻ bằng feDisplacementMap.
+     Đây là chỗ môi trường bị dồn vào mép — dấu hiệu kính DÀY, không phải blur. */
+.tk::after{
+  transform:scale(var(--quang-nen)) translate(.6%,1%);
+  filter:url(#ifWarp);
+  -webkit-mask-image:radial-gradient(closest-side at 50% 50%,transparent 50%,#000 94%);
+  mask-image:radial-gradient(closest-side at 50% 50%,transparent 50%,#000 94%);
+  transition:transform var(--nhip-bang) var(--ease-apple),filter var(--nhip-bang) linear;}
+
+/* — LỚP 3 · TÁN SẮC + GÓC: vạch caustic mảnh chạy ở vành, dồn ở GÓC. */
+.tk__caustic{position:absolute;inset:0;z-index:1;border-radius:inherit;pointer-events:none;
+  background:
+    conic-gradient(from 202deg,
+      transparent 0 14deg,var(--quang-tan-sac) 30deg,transparent 58deg,
+      transparent 176deg,var(--quang-goc) 210deg,transparent 244deg,
+      transparent 318deg,var(--quang-tan-sac) 336deg,transparent 356deg);
+  -webkit-mask:radial-gradient(closest-side,transparent calc(100% - 3px),#000 calc(100% - 1.2px),#000 100%);
+  mask:radial-gradient(closest-side,transparent calc(100% - 3px),#000 calc(100% - 1.2px),#000 100%);
+  opacity:.8;mix-blend-mode:screen;}
+:root[data-theme='light'] .tk__caustic{mix-blend-mode:normal;opacity:.62}
+
+/* — LỚP 4 · LOÉ: nhỏ, sắc, LỆCH. Đi theo con trỏ khi rê. */
+.tk__spec{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(19% 8% at var(--mx,33%) var(--my,17%),
+    var(--quang-loe) 0%,transparent 66%);
+  opacity:.5;filter:blur(.35px);
+  transition:opacity var(--nhip-vien) var(--ease-apple);}
+
+/* ═══ TRẠNG THÁI — cùng một vật liệu, đổi HÌNH HỌC quang chứ không đổi màu ═══ */
+.tk:hover,.tk.is-hover{--quang-phong:1.075;--quang-nen:.845;}
+.tk:hover .tk__spec,.tk.is-hover .tk__spec{opacity:.62}
+.tk:hover,.tk.is-hover{box-shadow:
+  0 0 0 .5px var(--quang-mep-ngoai),
+  inset 0 0 0 var(--quang-day) var(--quang-mep-trong),
+  inset 0 1.5px .5px -1px var(--quang-loe),
+  inset 0 -2.5px 2px -2.5px var(--quang-mep-trong),
+  inset 0 0 30px -13px var(--quang-khoi),
+  0 16px 34px -18px rgba(0,0,0,.66);}
+
+.tk:active,.tk.is-press{transform:scale(.988);
+  --quang-phong:1.018;--quang-nen:.80;--quang-day:1.9px;}
+.tk:active .tk__spec,.tk.is-press .tk__spec{opacity:.3}
+.tk:active,.tk.is-press{box-shadow:
+  0 0 0 .5px var(--quang-mep-ngoai),
+  inset 0 0 0 var(--quang-day) var(--quang-mep-trong),
+  inset 0 1px .5px -1px var(--quang-loe),
+  inset 0 -2px 2px -2px var(--quang-mep-trong),
+  inset 0 0 20px -6px var(--quang-khoi),          /* NÉN → ĐẶC quang hơn */
+  0 6px 16px -12px rgba(0,0,0,.7);}
+
+/* ═══ ĐỨNG YÊN (giảm chuyển động) — vật liệu GIỮ NGUYÊN, chỉ cắt phần chạy ═══ */
+.tk.is-rm::after{filter:url(#ifWarpStill)}
+.tk.is-rm,.tk.is-rm::before,.tk.is-rm::after,.tk.is-rm .tk__spec{
+  transition:none!important;animation:none!important}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   G0 · G1 · G2 — BA NẤC DƯỚI CỦA THANG. Đây mới là phần phủ gần hết diện tích app.
+   ⚠️ G1/G2 GIỮ NGUYÊN LUẬT MÔI TRƯỜNG của G3 (đổi nền thì vật liệu đổi theo),
+      chỉ HẠ BIÊN ĐỘ. Cấm ở G1/G2: thấu kính lồi dày · khúc xạ trong mạnh · phóng
+      to quang học · vành bóng nặng · chiều sâu capsule 3D · vành caustic dày · thạch/nhựa.
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+/* G0 · ĐỤC / MỜ — trường cấu trúc mặc định. KHÔNG nhoè, KHÔNG quang học. */
+.g0{position:relative;flex:none;border-radius:var(--tk-r,var(--r-3));
+  background:var(--vl-gan-dac);border:1px solid var(--vien-mo);
+  box-shadow:0 2px 6px -4px rgba(0,0,0,.4);
+  display:flex;align-items:center;justify-content:center}
+
+/* G1 · KÍNH PHẲNG — vật liệu chủ đạo. Màng mỏng THUỘC VỀ môi trường. */
+.g1{position:relative;isolation:isolate;flex:none;overflow:hidden;
+  border-radius:var(--tk-r,var(--r-3));
+  background:var(--g1-than);
+  -webkit-backdrop-filter:blur(var(--g1-nhoe)) saturate(var(--g1-bao-hoa));
+  backdrop-filter:blur(var(--g1-nhoe)) saturate(var(--g1-bao-hoa));
+  box-shadow:
+    inset 0 0 0 .5px var(--g1-mep-sang),      /* chỉ sáng mảnh — MỘT nét, không hai vành */
+    inset 0 -1px 0 -.5px var(--g1-mep-toi),   /* vành tối bên trong RẤT khẽ */
+    0 1px 3px -2px rgba(0,0,0,.30);           /* nổi RẤT thấp */
+  transition:background var(--nhip-vien) var(--ease-apple),
+             box-shadow var(--nhip-vien) var(--ease-apple);
+  display:flex;align-items:center;justify-content:center}
+/* Màng phản ứng với nền: bản sao môi trường, phồng 1.2% — vừa đủ để mép "sống",
+   không đủ để đọc ra khối thuỷ tinh. Đây là toàn bộ phần "quang" của G1. */
+.g1::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:var(--env-img);
+  background-size:var(--env-w) var(--env-h);
+  background-position:center center;background-repeat:no-repeat;
+  transform:scale(var(--g1-phong));
+  opacity:.5;
+  -webkit-mask-image:radial-gradient(closest-side at 50% 50%,transparent 62%,#000 100%);
+  mask-image:radial-gradient(closest-side at 50% 50%,transparent 62%,#000 100%);
+  transition:transform var(--nhip-bang) var(--ease-apple)}
+.g1>*{position:relative;z-index:2}
+/* Ô có bề rộng CO GIÃN thì không khai được `--env-w` bằng px ⇒ lớp bản sao sẽ lệch
+   khỏi nền. Thà BỎ lớp đó còn hơn để nó lệch: ở G1 phần phản ứng môi trường chính
+   vốn đến từ `backdrop-filter`, lớp bản sao chỉ là gia vị ở vành. Dùng ở thang H
+   (ô lưới co giãn); artboard H2 dùng px nên giữ đủ cả hai đường. */
+.g1--khong-sao::before{display:none}
+/* Loé CỤC BỘ — chỉ khi rê hoặc lấy nét, không bao giờ ở trạng thái nghỉ. */
+.g1__loe{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;
+  background:radial-gradient(26% 44% at var(--mx,50%) var(--my,50%),
+    var(--g1-loe) 0%,transparent 70%);
+  transition:opacity var(--nhip-vien) var(--ease-apple)}
+.g1:hover .g1__loe,.g1:focus-visible .g1__loe,.g1.is-hover .g1__loe{opacity:.30}
+.g1:hover,.g1.is-hover{box-shadow:
+  inset 0 0 0 .5px var(--g2-mep-sang),
+  inset 0 -1px 0 -.5px var(--g1-mep-toi),
+  0 2px 6px -3px rgba(0,0,0,.34)}
+
+/* G2 · KÍNH PHẲNG ĐANG HOẠT ĐỘNG — vẫn PHẲNG. Rõ hơn G1 đúng một nấc. */
+.g2{background:var(--g2-than);
+  -webkit-backdrop-filter:blur(var(--g2-nhoe)) saturate(var(--g2-bao-hoa));
+  backdrop-filter:blur(var(--g2-nhoe)) saturate(var(--g2-bao-hoa));
+  box-shadow:
+    inset 0 0 0 .5px var(--g2-mep-sang),
+    inset 0 -1px 0 -.5px var(--g1-mep-toi),
+    0 0 0 2px var(--accent-ring),            /* đang chọn — nói bằng VÒNG, không bằng độ dày */
+    0 3px 10px -6px rgba(0,0,0,.38)}
+.g2::before{transform:scale(var(--g2-phong));opacity:.62}
+.g2 .g1__loe{opacity:.18}   /* G2 giữ một điểm sáng nhẹ thường trực */
+
+@media (prefers-reduced-motion:reduce){
+  .g1,.g1::before,.g1__loe{transition:none!important}
+}
+
+/* ═══ A · BẢN BỊ BÁC — kính "vẽ ra" (bản đang chạy trong app) ═══
+   Sao lại đúng cơ chế của `.if-vao-xuong` hiện hành: hai radial TRẮNG cố định
+   đè lên nền. Không lấy gì từ môi trường ⇒ đổi nền, nó y nguyên. */
+.nhua{position:relative;isolation:isolate;flex:none;overflow:hidden;
+  border-radius:var(--tk-r,var(--r-3));
+  background:
+    radial-gradient(58% 44% at 32% 26%,rgba(255,255,255,.30) 0%,rgba(255,255,255,.12) 38%,rgba(255,255,255,0) 66%),
+    radial-gradient(70% 55% at 78% 88%,rgba(12,6,46,.28) 0%,rgba(12,6,46,0) 60%),
+    var(--accent);
+  box-shadow:0 1px 1px rgba(255,255,255,.34) inset,0 -1px 2px rgba(10,4,40,.34) inset,
+             0 8px 22px -12px rgba(0,0,0,.55);}
+.nhua--tren-nen{background:
+    radial-gradient(58% 44% at 32% 26%,rgba(255,255,255,.30) 0%,rgba(255,255,255,.12) 38%,rgba(255,255,255,0) 66%),
+    radial-gradient(70% 55% at 78% 88%,rgba(12,6,46,.28) 0%,rgba(12,6,46,0) 60%),
+    rgba(255,255,255,.10);}
+
+/* ═══ NHÃN TRONG Ô ═══ */
+.lbl{font:var(--fw-semi) var(--fs-xs)/1 inherit;letter-spacing:.01em;color:var(--on-accent);
+  text-shadow:0 1px 2px rgba(0,0,0,.35)}
+/* Nền ẤM (mặt giấy) KHÔNG theo theme ⇒ chữ trên nó phải dùng mực của giấy,
+   không dùng --t1 (ở theme Tối --t1 gần trắng ⇒ chữ trắng trên giấy trắng). */
+.lbl--ink{color:var(--paper-ink);text-shadow:none;opacity:.75}
+.badge{position:absolute;left:8px;top:8px;z-index:5;font:var(--fw-semi) var(--fs-2xs)/1 inherit;
+  padding:4px 7px;border-radius:var(--r-1);background:var(--kinh-dac);color:var(--kinh-chu-phu);
+  border:1px solid var(--vien-mo)}
+
+/* ═══ B · CHUẨN — hộp mẫu ═══ */
+.tk-demo{width:196px;height:104px;--tk-r:var(--r-3);
+  display:flex;align-items:center;justify-content:center}
+.tk-pill{height:var(--tap-lg);padding:0 22px;--tk-r:var(--r-full);
+  display:inline-flex;align-items:center;justify-content:center;gap:8px}
+
+/* ═══ C · SOI MÉP 3× ═══
+   Khung soi = ô cắt `overflow:hidden`, bên trong là ĐÚNG sân khấu của bản 1×,
+   phóng bằng `transform:scale(3)` với `transform-origin` đặt tại GÓC cần soi.
+   Cố ý dùng transform chứ không đổi kích thước: transform chạy SAU layout nên
+   `--env-w/--env-h` giữ nguyên ⇒ bản sao trong thấu kính vẫn trùng khít nền. */
+.soi{position:relative;flex:none;border-radius:var(--r-3);overflow:hidden;
+  border:1px solid var(--vien-mo);width:268px;height:176px}
+.soi__sk{position:absolute;inset:0;width:268px;height:176px;
+  display:flex;align-items:center;justify-content:center}
+.soi .tk{width:180px;height:110px;--tk-r:var(--r-4)}
+.soi--3x{width:300px;height:210px}
+.soi--3x .soi__sk{transform:scale(3);transform-origin:41px 31px}
+/* Khung chỉ vùng cắt trên bản 1× */
+.cut{position:absolute;left:32px;top:25px;width:100px;height:58px;z-index:7;
+  border:1px solid var(--accent);border-radius:var(--r-1);
+  box-shadow:0 0 0 9999px rgba(0,0,0,.34)}
+.mark{position:absolute;z-index:8;font:var(--fw-semi) var(--fs-2xs)/1 inherit;color:var(--t1);
+  background:var(--kinh-dac);border:1px solid var(--vien-mo);border-radius:var(--r-1);
+  padding:3px 6px;white-space:nowrap}
+
+
+/* ═══ H · THANG HIẾM ═══ */
+.thang{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+/* Nhãn nằm TRONG dòng chảy, không đặt tuyệt đối: nhãn hai dòng ở khổ hẹp sẽ đè lên
+   mẫu vật nếu đặt tuyệt đối — mà đây đúng là artboard người duyệt soi kỹ nhất. */
+.thang .cell{border-radius:var(--r-3);border:1px solid var(--vien-mo);overflow:hidden;
+  background-image:var(--env-img);background-size:var(--env-w) var(--env-h);
+  background-position:center;--env-w:100%;--env-h:158px;min-height:158px;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  gap:10px;padding:9px;position:relative}
+.thang .n{font:var(--fw-semi) var(--fs-2xs)/1.35 inherit;color:var(--kinh-chu-phu);
+  align-self:flex-start}
+.thang .cell>:not(.n){margin:auto 0}
+.matte{width:118px;height:66px;border-radius:var(--r-2);background:var(--vl-gan-dac);
+  border:1px solid var(--vien-mo);display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 18px -12px rgba(0,0,0,.5)}
+.no-glass{width:118px;height:66px;border-radius:var(--r-2);border:1px dashed var(--border-strong);
+  display:flex;align-items:center;justify-content:center;color:var(--kinh-chu-phu);
+  font-size:var(--fs-2xs)}
+
+/* ═══ I · VÀO XƯỞNG — hai lớp tách rời ═══ */
+.vx-base{height:var(--tap-lg);width:210px;border-radius:var(--r-full);flex:none;
+  background:
+    repeating-linear-gradient(90deg,rgba(255,255,255,.10) 0 1px,transparent 1px 22px),
+    radial-gradient(120% 96% at 26% 16%,var(--accent-strong) 0%,transparent 62%),
+    linear-gradient(158deg,var(--accent) 0%,color-mix(in oklab,var(--accent) 62%,black) 100%);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 22px -14px rgba(0,0,0,.6)}
+.vx-lens-only{height:var(--tap-lg);width:210px;--tk-r:var(--r-full);flex:none;
+  background:repeating-linear-gradient(45deg,var(--field) 0 7px,var(--card) 7px 14px)}
+.vx-stack{--env-w:210px;--env-h:var(--tap-lg);width:210px;height:var(--tap-lg);
+  border-radius:var(--r-full);--env-img:
+    repeating-linear-gradient(90deg,rgba(255,255,255,.10) 0 1px,transparent 1px 22px),
+    radial-gradient(120% 96% at 26% 16%,var(--accent-strong) 0%,transparent 62%),
+    linear-gradient(158deg,var(--accent) 0%,color-mix(in oklab,var(--accent) 62%,black) 100%);
+  background-image:var(--env-img);background-size:var(--env-w) var(--env-h);
+  background-position:center;display:flex;align-items:center;justify-content:center;flex:none;
+  isolation:isolate}
+.vx-stack .tk{position:absolute;inset:0;--tk-r:var(--r-full)}
+.vx-cell{position:relative;width:210px;height:var(--tap-lg);flex:none}
+.vx-btn{appearance:none;border:0;cursor:pointer;background:transparent;padding:0;
+  position:relative;width:210px;height:var(--tap-lg);flex:none;color:var(--on-accent)}
+
+/* THÀNH CÔNG — MỘT lượt quét quang, chạy đúng một lần, CHỈ sau khi mở được cửa. */
+.vx-cell[data-xong='1'] .tk__spec{animation:quang-quet 640ms var(--ease-apple) 1 forwards}
+@keyframes quang-quet{
+  0%{--mx:-6%;opacity:.28} 46%{opacity:.9} 100%{--mx:106%;opacity:.34}}
+@property --mx{syntax:'<percentage>';inherits:true;initial-value:33%}
+@property --my{syntax:'<percentage>';inherits:true;initial-value:17%}
+
+.states{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+/* G · BỐN MÔI TRƯỜNG phải đứng CẠNH NHAU trong một hàng — so sánh cạnh nhau là
+   toàn bộ giá trị của artboard nghiệm thu; xuống dòng là mất phép so. */
+.bon{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+/* ⚠️ Ô phải giữ CHIỀU RỘNG PX cố định, KHÔNG dùng %: `--env-w/--env-h` vừa là
+   background-size của ô NỀN vừa là của BẢN SAO trong thấu kính. Đổi sang % thì
+   bản sao lấy 100% của thấu kính (nhỏ hơn) ⇒ lệch khỏi nền ⇒ mất khúc xạ đúng chỗ.
+   Đây là ràng buộc của thủ thuật bản-sao, đã ghi trong TRANSFER NOTES §1(a). */
+.bon>div{width:212px;flex:none}
+
+@media (prefers-reduced-motion:reduce){
+  .tk,.tk::before,.tk::after,.tk__spec{transition:none!important;animation:none!important}
+  .tk::after{filter:url(#ifWarpStill)}
+  .vx-cell[data-xong='1'] .tk__spec{animation:none}
+}
+@media (max-width:900px){
+  .thang{grid-template-columns:repeat(2,1fr)}
+  .states{grid-template-columns:repeat(2,1fr)}
+
+}
+</style>
+</head>
+<body>
+
+<!-- ══ BỘ LỌC KHÚC XẠ — feDisplacementMap THẬT, bẻ từng pixel ══
+     Không phải blur. `feTurbulence` tần số RẤT THẤP → bản đồ dịch chuyển mượt,
+     KHÔNG ĐỀU (đúng luật ⑦: thấu kính không đồng nhất). Kênh R→dx, G→dy. -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <filter id="ifWarp" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.007 0.013" numOctaves="2" seed="7" result="n"/>
+    <feGaussianBlur in="n" stdDeviation="1.4" result="ns"/>
+    <feDisplacementMap in="SourceGraphic" in2="ns" scale="16"
+                       xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="ifWarpStill" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.006 0.011" numOctaves="1" seed="3" result="n"/>
+    <feGaussianBlur in="n" stdDeviation="1.6" result="ns"/>
+    <feDisplacementMap in="SourceGraphic" in2="ns" scale="12"
+                       xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="ifWarpBig" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.0022 0.004" numOctaves="2" seed="7" result="n"/>
+    <feGaussianBlur in="n" stdDeviation="4" result="ns"/>
+    <feDisplacementMap in="SourceGraphic" in2="ns" scale="46"
+                       xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<div class="wrap">
+
+  <div class="topbar">
+    <div>
+      <h1>Liquid Glass · vật liệu quang học</h1>
+      <p class="lead">Luật nền: <b>không TÔ ra một cái kính — dựng một VẬT bẻ cong môi trường
+      dưới nó.</b> Luật đó áp cho <b>cả bốn nấc</b>; khác nhau là <b>BIÊN ĐỘ</b>.</p>
+      <p class="lead"><b>Thang chính tắc — đọc trước khi đọc bất cứ artboard nào:</b>
+      <b>G0</b> đục/mờ (trường cấu trúc mặc định) · <b>G1</b> kính phẳng
+      (<b>vật liệu chủ đạo</b> — widget thường, bề mặt môi trường) · <b>G2</b> kính phẳng đang
+      hoạt động (đang chọn / đang sống / đang lấy nét) · <b>G3</b> kính quang học
+      (<b>chỉ dành cho tương tác chữ ký, hiếm</b>).<br>
+      ⚠️ Artboard <b>A · B · C · G · I</b> mô tả <b>G3</b>. Vật liệu dùng nhiều nhất nằm ở
+      <b>H2</b>. Bắt đầu ở <b>H</b> (thang) nếu bạn chỉ có thời gian đọc một mục.</p>
+    </div>
+    <div class="tgl" role="group" aria-label="Chế độ nền">
+      <button id="bToi" aria-pressed="true">Tối</button>
+      <button id="bSang" aria-pressed="false">Sáng</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════ A · BẢN BỊ BÁC ══════════════════ -->
+  <section>
+    <div class="hd"><h2>A · Bản bị bác</h2><span class="tag bad">REJECTED</span><span class="tag">G3</span>
+      <span class="sub">bản đang chạy — <code>app/globals.css .if-vao-xuong</code></span></div>
+    <p class="lead">Nó <b>tô</b> hai vệt trắng cố định lên nền. Vệt đó không lấy gì từ môi trường,
+      nên nó là <b>một bức tranh vẽ cái kính</b>. Bằng chứng: đặt cùng một vật lên hai nền khác hẳn
+      nhau — vệt sáng nằm y nguyên chỗ cũ, đậm y như cũ.</p>
+    <div class="row">
+      <div>
+        <div class="env env--sm e-violet">
+          <span class="badge">nền tím</span>
+          <div class="nhua" style="width:170px;height:var(--tap-lg);--tk-r:var(--r-full);display:flex;align-items:center;justify-content:center">
+            <span class="lbl">Vào xưởng</span></div>
+        </div>
+        <span class="cap"><b>Trên nền tím.</b> Vệt trắng ở 32%/26%.</span>
+      </div>
+      <div>
+        <div class="env env--sm e-warm">
+          <span class="badge">nền ấm</span>
+          <div class="nhua nhua--tren-nen" style="width:170px;height:var(--tap-lg);--tk-r:var(--r-full);display:flex;align-items:center;justify-content:center">
+            <span class="lbl lbl--ink">Vào xưởng</span></div>
+        </div>
+        <span class="cap"><b>Đổi nền → vệt trắng KHÔNG đổi.</b> Cùng chỗ, cùng độ đậm,
+          cùng hình. Lưới nét thẳng phía dưới <b>đi thẳng tuột</b> qua thân — không bị bẻ một chút nào.</span>
+      </div>
+      <div style="max-width:280px">
+        <h3>Bốn chỗ hỏng, đếm được</h3>
+        <p class="sub">① thân bị <b>đổ trắng</b> — mất lõi trong ·
+          ② viền chỉ có <b>một nét</b>, không có độ dày ·
+          ③ loé là <b>mảng to đối xứng</b>, đọc ra gel bóng ·
+          ④ <b>không có khúc xạ</b> — chỉ có phủ và mờ.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ B · BẢN SỬA ══════════════════ -->
+  <section>
+    <div class="hd"><h2>B · Bản sửa — kính quang học</h2><span class="tag good">CORRECTED</span><span class="tag">G3 · nấc hiếm</span></div>
+    <p class="lead">Bốn lớp, không lớp nào tô màu thân: ① <b>lõi phóng</b> (bản sao môi trường,
+      phóng nhẹ, lệch tâm) · ② <b>vành nén</b> (cùng bản sao, nén lại + bẻ bằng
+      <code>feDisplacementMap</code>) · ③ <b>tán sắc</b> ở vành, dồn ở góc · ④ <b>loé</b> mảnh lệch.
+      Thân kính rỗng — thứ nhìn thấy bên trong <b>là chính môi trường</b>.</p>
+    <div class="row">
+      <div>
+        <div class="env env--lg e-violet">
+          <div class="tk tk-demo">
+            <span class="tk__caustic"></span><span class="tk__spec"></span>
+            <span class="lbl">rê chuột vào tôi</span></div>
+        </div>
+        <span class="cap"><b>Nhìn lưới nét.</b> Nét vào tới mép thì <b>dồn lại và cong</b>;
+          ở giữa thì <b>giãn ra</b>. Đó là thấu kính lồi, không phải blur.</span>
+      </div>
+      <div>
+        <div class="env env--lg e-dark">
+          <div class="tk tk-demo">
+            <span class="tk__caustic"></span><span class="tk__spec"></span>
+            <span class="lbl">rê chuột vào tôi</span></div>
+        </div>
+        <span class="cap"><b>Cùng một khai báo CSS</b>, đổi mỗi <code>--env-img</code>.
+          Kính đọc ra khác hẳn vì nó <b>lấy toàn bộ diện mạo từ thứ nằm dưới</b>.</span>
+      </div>
+      <div style="max-width:250px">
+        <h3>Bảy luật vật liệu</h3>
+        <p class="sub">① lõi TRONG — 0 lớp phủ trắng/xám/tím ·
+          ② mép mang danh tính, không phải 1px viền trắng ·
+          ③ <b>hai vành</b>: sáng ngoài + tối trong ·
+          ④ khúc xạ THẬT, không phải blur ·
+          ⑤ khói do <b>mật độ ở vành</b>, không phải fill xám ·
+          ⑥ loé mảnh · lệch · sắc ·
+          ⑦ thấu kính <b>không đồng nhất</b>.</p>
+      </div>
+    </div>
+    <p class="note">⑤ <b>khói không phải một lớp xám.</b> Nó là
+      <code>inset 0 0 26px -12px</code> — bóng trong toả từ <b>vành</b> vào,
+      tắt hẳn ở giữa. Vật lý: dày thì hấp thụ nhiều, mà kính chỗ vành là dày nhất.
+      Đổ xám phẳng vào thân là quay lại đúng bản bị bác.</p>
+  </section>
+
+  <!-- ══════════════════ C · SOI MÉP 3× ══════════════════ -->
+  <section>
+    <div class="hd"><h2>C · Soi mép ở 3×</h2><span class="tag">G3</span><span class="sub">chứng minh hai vành và độ dày</span></div>
+    <div class="row">
+      <div>
+        <div class="soi e-violet">
+          <div class="soi__sk">
+            <div class="tk"><span class="tk__caustic"></span><span class="tk__spec"></span></div>
+          </div>
+          <span class="cut"></span>
+        </div>
+        <span class="cap"><b>1× — toàn cảnh.</b> Ô sáng là vùng được cắt ra soi bên phải:
+          góc trên-trái của thấu kính.</span>
+      </div>
+      <div>
+        <div class="soi soi--3x e-violet">
+          <div class="soi__sk">
+            <div class="tk"><span class="tk__caustic"></span><span class="tk__spec"></span></div>
+          </div>
+          <span class="mark" style="right:10px;top:10px">① chỉ sáng NGOÀI</span>
+          <span class="mark" style="right:10px;top:38px">② vành TỐI trong</span>
+          <span class="mark" style="right:10px;bottom:38px">③ bề dày = khoảng ①↔②</span>
+          <span class="mark" style="right:10px;bottom:10px">④ nét nền bị BẺ khi vào mép</span>
+        </div>
+        <span class="cap"><b>3× — góc trên-trái.</b> Hai đường viền <b>tách hẳn nhau</b>:
+          một chỉ sáng nằm NGOÀI mép, một vành TỐI nằm TRONG. Khoảng giữa hai đường
+          <b>chính là bề dày</b>. Một nét trắng đơn không bao giờ đọc ra dày.</span>
+      </div>
+      <div style="max-width:238px">
+        <h3>Vì sao góc sáng hơn cạnh</h3>
+        <p class="sub">Ở góc, <b>độ cong đổi nhanh nhất</b> ⇒ pháp tuyến bề mặt quét qua một
+          dải rộng ⇒ gom được nhiều hướng sáng hơn. Bản vẽ để dải sáng của
+          <code>conic-gradient</code> rơi đúng vào hai góc chéo — <b>không rải đều vòng viền</b>.
+          Rải đều là quay về đọc ra ống nhựa.</p>
+        <h3 style="margin-top:14px">Bề dày là một khoảng, không phải một nét</h3>
+        <p class="sub">Đây là chỗ bản bị bác (A) trượt dứt khoát: nó chỉ có <b>một</b> đường
+          viền, nên không có khoảng nào để đọc ra độ dày.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ D·E·F · TRẠNG THÁI ══════════════════ -->
+  <section>
+    <div class="hd"><h2>D · E · F — nghỉ · rê · bấm · đứng yên</h2><span class="tag">G3</span>
+      <span class="sub">đổi HÌNH HỌC quang, không đổi màu</span></div>
+    <div class="states">
+      <div>
+        <div class="env env--sm e-violet">
+          <div class="tk tk-demo" style="width:168px;height:92px">
+            <span class="tk__caustic"></span><span class="tk__spec"></span><span class="lbl">Nghỉ</span></div>
+        </div>
+        <span class="cap"><b>NGHỈ.</b> Đặc · trong · chính xác · im. Phóng 1.055 · nén .87.</span>
+      </div>
+      <div>
+        <div class="env env--sm e-violet">
+          <div class="tk tk-demo is-hover" style="width:168px;height:92px">
+            <span class="tk__caustic"></span><span class="tk__spec" style="--mx:68%;--my:26%"></span><span class="lbl">Rê</span></div>
+        </div>
+        <span class="cap"><b>RÊ (D).</b> Loé và khúc xạ <b>dịch về phía con trỏ</b> — cục bộ,
+          không phải cả tấm sáng lên. Phóng 1.075 · nén .845.</span>
+      </div>
+      <div>
+        <div class="env env--sm e-violet">
+          <div class="tk tk-demo is-press" style="width:168px;height:92px">
+            <span class="tk__caustic"></span><span class="tk__spec"></span><span class="lbl">Bấm</span></div>
+        </div>
+        <span class="cap"><b>BẤM (E).</b> Thấu kính <b>NÉN LẠI và ĐẶC quang hơn</b>:
+          phóng tụt về 1.018, vành dày 1.25→1.9px, khói co sát vành. Không phải "mờ đi".</span>
+      </div>
+      <div>
+        <div class="env env--sm e-violet">
+          <div class="tk tk-demo is-rm" style="width:168px;height:92px">
+            <span class="tk__caustic"></span><span class="tk__spec"></span><span class="lbl">Đứng yên</span></div>
+        </div>
+        <span class="cap"><b>GIẢM CHUYỂN ĐỘNG (F).</b> Cắt hết chuyển động — <b>vật liệu còn nguyên</b>.
+          Vẫn khúc xạ, vẫn hai vành, vẫn tán sắc. Xoá thấu kính mới là <b>làm mất thông tin về chất</b>.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ G · BỐN MÔI TRƯỜNG ══════════════════ -->
+  <section>
+    <div class="hd"><h2>G · Cùng một tấm kính, bốn môi trường</h2>
+      <span class="tag good">ARTBOARD NGHIỆM THU</span><span class="tag">G3</span></div>
+    <p class="lead">Bốn ô dưới đây dùng <b>y hệt một khối CSS</b>. Khác nhau đúng một biến:
+      <code>--env-img</code>. Không ô nào bị đục như sữa, và không ô nào giống ô nào.</p>
+    <div class="bon">
+      <div><div class="env env--sm e-violet"><span class="badge">nền tím</span>
+        <div class="tk" style="width:156px;height:88px;--tk-r:var(--r-3)">
+          <span class="tk__caustic"></span><span class="tk__spec"></span></div></div>
+        <span class="cap">Tím bị bẻ nhìn thấy được qua thân. <b>Thấu kính không hề tím.</b></span></div>
+      <div><div class="env env--sm e-dark"><span class="badge">ambient tối</span>
+        <div class="tk" style="width:156px;height:88px;--tk-r:var(--r-3)">
+          <span class="tk__caustic"></span><span class="tk__spec"></span></div></div>
+        <span class="cap">Vành tối ăn theo nền tối — mép chuyển sang <b>đọc bằng chỉ sáng</b>.</span></div>
+      <div><div class="env env--sm e-warm"><span class="badge">ambient ấm</span>
+        <div class="tk" style="width:156px;height:88px;--tk-r:var(--r-3)">
+          <span class="tk__caustic"></span><span class="tk__spec"></span></div></div>
+        <span class="cap">Trên mặt giấy, kính <b>ngả ấm theo</b>. Không có giọt trắng đục nào.</span></div>
+      <div><div class="env env--sm e-light"><span class="badge">ambient sáng</span>
+        <div class="tk" style="width:156px;height:88px;--tk-r:var(--r-3)">
+          <span class="tk__caustic"></span><span class="tk__spec"></span></div></div>
+        <span class="cap">Nền sáng: vành TỐI lên tiếng, chỉ sáng lùi lại. <b>Tự đảo cực.</b></span></div>
+    </div>
+    <p class="note"><b>PHÉP NGHIỆM THU — đổi nền thì kính PHẢI đổi theo.</b>
+      Đổi <code>--env-img</code> mà tấm kính trông vẫn thế ⇒ đó là một bức tranh vẽ kính ⇒ TRƯỢT.</p>
+    <p class="note"><b>Luật này KHÔNG chỉ của G3.</b> Nó giữ nguyên xuống tới <b>G1</b> —
+      chỉ <b>biên độ</b> tụt xuống. Xem cùng phép thử chạy ở G1 tại artboard <b>H2</b>.</p>
+  </section>
+
+  <!-- ══════════════════ H · THANG G0 → G3 ══════════════════ -->
+  <section>
+    <div class="hd"><h2>H · Thang vật liệu G0 → G3</h2>
+      <span class="tag good">THANG CHÍNH TẮC</span>
+      <span class="sub">§30 · G3 xuất hiện khắp nơi là cả thang sập</span></div>
+    <p class="lead"><b>G1 mới là vật liệu chủ đạo, không phải G3.</b> Toàn bộ phần quang học
+      ở artboard A · B · C · G · I mô tả <b>G3</b> — nấc HIẾM ở đỉnh thang, không phải
+      vật liệu của cả nhà.</p>
+    <div class="thang">
+      <div class="cell e-amb"><span class="n">G0 · đục / mờ</span>
+        <div class="no-glass">trường cấu trúc</div></div>
+      <div class="cell e-amb"><span class="n">G1 · kính phẳng</span>
+        <div class="g1 g1--khong-sao" style="width:118px;height:66px;--tk-r:var(--r-2)">
+          <span class="g1__loe"></span><span class="sub">chủ đạo</span></div></div>
+      <div class="cell e-amb"><span class="n">G2 · phẳng hoạt động</span>
+        <div class="g1 g2 g1--khong-sao" style="width:118px;height:66px;--tk-r:var(--r-2)">
+          <span class="g1__loe"></span><span class="sub">đang chọn</span></div></div>
+      <div class="cell e-amb"><span class="n">G3 · kính quang học</span>
+        <div class="tk" style="width:118px;height:66px;--tk-r:var(--r-2)">
+          <span class="tk__caustic"></span><span class="tk__spec"></span></div></div>
+      <div class="cell e-violet"><span class="n" style="color:var(--on-accent);opacity:.86">G3 · Vào xưởng</span>
+        <div class="tk" style="width:126px;height:var(--tap-lg);--tk-r:var(--r-full);--quang-day:1.6px;--quang-phong:1.08;--quang-nen:.84;display:flex;align-items:center;justify-content:center">
+          <span class="tk__caustic"></span><span class="tk__spec"></span><span class="lbl">Vào xưởng</span></div></div>
+    </div>
+
+    <h3 style="margin-top:22px">Giao nấc cho từng bề mặt</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:var(--fs-xs)">
+      <tbody>
+        <tr><td style="padding:7px 10px;border-bottom:1px solid var(--vien-mo);color:var(--t3);width:34%">Widget ở Home</td>
+            <td style="padding:7px 10px;border-bottom:1px solid var(--vien-mo)"><b>G0 – G1</b></td></tr>
+        <tr><td style="padding:7px 10px;border-bottom:1px solid var(--vien-mo);color:var(--t3)">Widget đang sống / đang chọn</td>
+            <td style="padding:7px 10px;border-bottom:1px solid var(--vien-mo)"><b>G2</b></td></tr>
+        <tr><td style="padding:7px 10px;border-bottom:1px solid var(--vien-mo);color:var(--t3)">Sidebar · vỏ trên cùng</td>
+            <td style="padding:7px 10px;border-bottom:1px solid var(--vien-mo)"><b>G0 – G1</b></td></tr>
+        <tr><td style="padding:7px 10px;border-bottom:1px solid var(--vien-mo);color:var(--t3)">Thẻ đăng nhập</td>
+            <td style="padding:7px 10px;border-bottom:1px solid var(--vien-mo)"><b>G1 – G2</b></td></tr>
+        <tr><td style="padding:7px 10px;border-bottom:1px solid var(--vien-mo);color:var(--t3)">Ruột đang chọn của điều khiển phân đoạn</td>
+            <td style="padding:7px 10px;border-bottom:1px solid var(--vien-mo)"><b>G2 – G3</b> <span class="sub">chỉ khi thật sự đáng</span></td></tr>
+        <tr><td style="padding:7px 10px;color:var(--t3)">Vào xưởng</td>
+            <td style="padding:7px 10px"><b>G3</b></td></tr>
+      </tbody>
+    </table>
+
+    <p class="note"><b>CƯỜNG ĐỘ ĐI THEO Ý NGHĨA, KHÔNG ĐI THEO KÍCH THƯỚC.</b>
+      Đừng cho chiều sâu quang tỉ lệ với cỡ thành phần: một widget <b>TO</b> có thể gần như
+      phẳng hoàn toàn, trong khi một hành động <b>NHỎ mà hệ trọng</b> được mang kính mạnh hơn.
+      Nghĩa quyết định vật liệu.</p>
+    <p class="note"><b>HIẾM MỚI CÓ GIÁ.</b> G3 giữ cho <b>Vào xưởng</b>, ruột đang chọn của
+      điều khiển phân đoạn, và <b>nhiều nhất một hai</b> trạng thái điểm-hành-động mang tính
+      chữ ký. Nhiều hơn thế là thang sập, và lúc đó G3 không còn nói được điều gì.</p>
+
+    <h3 style="margin-top:22px">§29 · vỏ kính TRONG bọc ruột ĐẶC bên trong</h3>
+    <p class="sub" style="max-width:70ch">Khuôn cho điều khiển phân đoạn: <b>vỏ ngoài là G1</b>
+      (gần như không quang học), <b>ruột đang hoạt động là G2–G3</b> trượt bên trong vỏ.</p>
+    <div class="env env--wide e-amb" style="margin-top:10px">
+      <div class="g1" style="width:296px;height:46px;--tk-r:var(--r-full);--env-w:360px;--env-h:200px;display:flex;align-items:center;padding:4px;gap:4px">
+        <span class="tk" style="flex:1;height:38px;--tk-r:var(--r-full);--quang-day:1.5px;--quang-phong:1.09;--quang-nen:.82;display:flex;align-items:center;justify-content:center">
+          <span class="tk__caustic"></span><span class="tk__spec"></span><span class="lbl">2D</span></span>
+        <span style="flex:1;height:38px;display:flex;align-items:center;justify-content:center;color:var(--kinh-chu-phu);font:var(--fw-semi) var(--fs-xs)/1 inherit">3D</span>
+        <span style="flex:1;height:38px;display:flex;align-items:center;justify-content:center;color:var(--kinh-chu-phu);font:var(--fw-semi) var(--fs-xs)/1 inherit">Trình bày</span>
+      </div>
+    </div>
+    <span class="cap" style="max-width:70ch"><b>Ngoại lệ duy nhất của luật cấm kính-chồng-kính.</b>
+      Hợp lệ vì hai lớp <b>không cùng nấc và không cùng vai</b>: vỏ G1 là <i>khung chứa</i>,
+      ruột G3 là <i>vật đang hoạt động</i>. Chồng hai tấm cùng nấc mới là lỗi.</span>
+  </section>
+
+  <!-- ══════════════════ H2 · G1 KÍNH PHẲNG ══════════════════ -->
+  <section>
+    <div class="hd"><h2>H2 · G1 · Kính phẳng — vật liệu chủ đạo</h2>
+      <span class="tag good">DÙNG NHIỀU NHẤT</span></div>
+    <p class="lead">Kiểu kính phẳng iOS-27: <b>thân trong hoặc ám màu rất nhẹ · chỉ sáng mảnh ở mép ·
+      vành tối bên trong rất khẽ · nhoè ăn theo nền · hút màu ambient · loé cục bộ CHỈ khi rê
+      hoặc lấy nét · nổi rất thấp · chiều sâu rất nông.</b>
+      Nó phải cảm thấy <b>THUỘC VỀ trường ambient</b>, không phải một vật đặt lên trên trường đó.</p>
+
+    <p class="note" style="border-left-color:var(--success)"><b>PHÉP THỬ VẬT LIỆU G1:</b><br>
+      Trông như một <b>khối kính vật lý</b> → <b>QUÁ TAY.</b><br>
+      Trông như một <b>thẻ mờ đục chung chung</b> → <b>QUÁ NHẠT.</b><br>
+      Đích đến: <b>MỘT MÀNG QUANG MỎNG, BIẾT PHẢN ỨNG, THUỘC VỀ MÔI TRƯỜNG.</b></p>
+
+    <h3 style="margin-top:20px">Widget thường · nghỉ ↔ rê · trên hai ambient khác nhau</h3>
+    <div class="bon">
+      <div><div class="env env--sm e-amb"><span class="badge">ambient A</span>
+        <div class="g1" style="width:156px;height:88px;--tk-r:var(--r-3);--env-w:212px;--env-h:150px">
+          <span class="g1__loe"></span><span class="sub">nghỉ</span></div></div>
+        <span class="cap"><b>NGHỈ.</b> Ranh giới <b>gần như biến mất</b> — chỉ còn một chỉ sáng
+          mảnh ở mép. Không loé, không phồng, không bóng nặng.</span></div>
+      <div><div class="env env--sm e-amb"><span class="badge">ambient A</span>
+        <div class="g1 is-hover" style="width:156px;height:88px;--tk-r:var(--r-3);--env-w:212px;--env-h:150px;--mx:64%;--my:38%">
+          <span class="g1__loe"></span><span class="sub">rê</span></div></div>
+        <span class="cap"><b>RÊ.</b> Mép sáng lên một nấc + <b>một điểm loé cục bộ</b> theo con trỏ.
+          Hết rê là hết. Đây là chỗ DUY NHẤT G1 được phép loé.</span></div>
+      <div><div class="env env--sm e-violet"><span class="badge">ambient B</span>
+        <div class="g1" style="width:156px;height:88px;--tk-r:var(--r-3);--env-w:212px;--env-h:150px">
+          <span class="g1__loe"></span><span class="lbl">nghỉ</span></div></div>
+        <span class="cap"><b>ĐỔI AMBIENT.</b> Cùng khối CSS, thân <b>ngả tím theo nền</b> —
+          nhoè và bão hoà hút màu môi trường. Luật vẫn giữ, biên độ nhỏ đi.</span></div>
+      <div><div class="env env--sm e-violet"><span class="badge">ambient B</span>
+        <div class="g1 is-hover" style="width:156px;height:88px;--tk-r:var(--r-3);--env-w:212px;--env-h:150px;--mx:38%;--my:60%">
+          <span class="g1__loe"></span><span class="lbl">rê</span></div></div>
+        <span class="cap"><b>RÊ trên ambient B.</b> Loé lấy màu từ nền tím, không phải một
+          vệt trắng đóng sẵn — đó là khác biệt giữa G1 và bản bị bác ở artboard A.</span></div>
+    </div>
+
+    <h3 style="margin-top:22px">G1 ↔ G2 ↔ G3 đứng cạnh nhau, cùng một ô</h3>
+    <div class="bon">
+      <div><div class="env env--sm e-amb"><span class="badge">G0</span>
+        <div class="g0" style="width:156px;height:88px;--tk-r:var(--r-3)"><span class="sub">đục</span></div></div>
+        <span class="cap">Không nhoè, không quang học. Nền của mọi thứ.</span></div>
+      <div><div class="env env--sm e-amb"><span class="badge">G1</span>
+        <div class="g1" style="width:156px;height:88px;--tk-r:var(--r-3);--env-w:212px;--env-h:150px">
+          <span class="g1__loe"></span></div></div>
+        <span class="cap">Màng mỏng. <b>Gần như không phồng.</b> Một nét mép.</span></div>
+      <div><div class="env env--sm e-amb"><span class="badge">G2</span>
+        <div class="g1 g2" style="width:156px;height:88px;--tk-r:var(--r-3);--env-w:212px;--env-h:150px">
+          <span class="g1__loe"></span></div></div>
+        <span class="cap"><b>VẪN PHẲNG.</b> Đang-chọn nói bằng <b>vòng nét</b> + mép rõ hơn,
+          <b>không</b> bằng độ dày quang.</span></div>
+      <div><div class="env env--sm e-amb"><span class="badge">G3</span>
+        <div class="tk" style="width:156px;height:88px;--tk-r:var(--r-3)">
+          <span class="tk__caustic"></span><span class="tk__spec"></span></div></div>
+        <span class="cap">Khối quang thật: hai vành, khúc xạ, bề dày. <b>Hiếm.</b></span></div>
+    </div>
+    <p class="note"><b>Bước nhảy nằm giữa G2 và G3, không nằm giữa G1 và G2.</b>
+      G0→G1→G2 là một dải liên tục của cùng một họ phẳng; G3 là một <b>loại vật liệu khác</b>.
+      Đó là lý do G3 phải hiếm — nó không phải "G2 nhưng đậm hơn".</p>
+  </section>
+
+  <!-- ══════════════════ I · VÀO XƯỞNG ══════════════════ -->
+  <section>
+    <div class="hd"><h2>I · “Vào xưởng” — nghiên cứu quang học</h2>
+      <span class="tag">§28 · nút chữ ký</span><span class="tag good">G3 — nấc cao nhất, hiếm nhất</span></div>
+    <p class="lead"><b>Tím thuộc CHÂN ĐẾ. Kính thuộc QUANG HỌC.</b>
+      Thấu kính <b>không</b> tím và <b>không</b> trắng đục — nó trong, và bạn nhìn thấy
+      tím bên dưới <b>bị bẻ</b> qua nó.</p>
+
+    <h3>Tách rời ba lớp</h3>
+    <div class="row" style="align-items:flex-end">
+      <div><div class="vx-base"><span class="lbl">Vào xưởng</span></div>
+        <span class="cap"><b>① CHÂN ĐẾ.</b> Tím <code>--accent</code> đặc. Cố ý <b>không phẳng</b>:
+          phẳng thì không nhìn ra chỗ nào bị bẻ.</span></div>
+      <div style="font-size:var(--fs-lg);color:var(--t4);padding-bottom:26px">+</div>
+      <div><div class="tk vx-lens-only"><span class="tk__caustic"></span><span class="tk__spec"></span></div>
+        <span class="cap"><b>② THẤU KÍNH.</b> Đặt trên nền kẻ ô để thấy nó <b>rỗng</b> —
+          không mang màu riêng nào.</span></div>
+      <div style="font-size:var(--fs-lg);color:var(--t4);padding-bottom:26px">=</div>
+      <div><div class="vx-cell"><div class="vx-stack"></div>
+          <div class="tk" style="position:absolute;inset:0;--tk-r:var(--r-full);--quang-day:1.6px;--quang-phong:1.08;--quang-nen:.84;display:flex;align-items:center;justify-content:center">
+            <span class="tk__caustic"></span><span class="tk__spec"></span><span class="lbl">Vào xưởng</span></div></div>
+        <span class="cap"><b>③ GHÉP.</b> <code>isolation:isolate</code> giữ nguyên:
+          thấu kính chỉ khúc xạ <b>chân đế của chính nó</b>, không hút cả trang.</span></div>
+    </div>
+
+    <h3 style="margin-top:24px">Bốn trạng thái</h3>
+    <div class="states">
+      <div><div class="vx-cell"><div class="vx-stack"></div>
+        <div class="tk" style="position:absolute;inset:0;--tk-r:var(--r-full);--quang-day:1.6px;--quang-phong:1.08;--quang-nen:.84;display:flex;align-items:center;justify-content:center">
+          <span class="tk__caustic"></span><span class="tk__spec"></span><span class="lbl">Vào xưởng</span></div></div>
+        <span class="cap"><b>NGHỈ.</b> Đặc · trong · chính xác · im.</span></div>
+      <div><div class="vx-cell"><div class="vx-stack"></div>
+        <div class="tk is-hover" style="position:absolute;inset:0;--tk-r:var(--r-full);--quang-day:1.6px;display:flex;align-items:center;justify-content:center">
+          <span class="tk__caustic"></span><span class="tk__spec" style="--mx:72%;--my:30%"></span><span class="lbl">Vào xưởng</span></div></div>
+        <span class="cap"><b>RÊ.</b> Khúc xạ dịch <b>về phía con trỏ</b>, cục bộ.</span></div>
+      <div><div class="vx-cell"><div class="vx-stack"></div>
+        <div class="tk is-press" style="position:absolute;inset:0;--tk-r:var(--r-full);display:flex;align-items:center;justify-content:center">
+          <span class="tk__caustic"></span><span class="tk__spec"></span><span class="lbl">Vào xưởng</span></div></div>
+        <span class="cap"><b>BẤM.</b> Thấu kính <b>cô đặc</b> — nén lại, dày lên, đặc quang hơn.</span></div>
+      <div><button class="vx-btn" id="btnXong" type="button">
+          <span class="vx-cell" id="cellXong" style="position:absolute;inset:0"><span class="vx-stack"></span>
+          <span class="tk" style="position:absolute;inset:0;--tk-r:var(--r-full);--quang-day:1.6px;display:flex;align-items:center;justify-content:center">
+            <span class="tk__caustic"></span><span class="tk__spec"></span><span class="lbl">Vào xưởng</span></span></span></button>
+        <span class="cap"><b>THÀNH CÔNG.</b> Bấm thử. MỘT lượt quét quang có hướng, chạy đúng một lần.
+          Nó nghĩa là <b>“cửa đã mở”</b> — <b>chỉ chạy SAU khi điều hướng thật sự thành công</b>,
+          không phải hiệu ứng lúc bấm.</span></div>
+    </div>
+
+    <p class="note"><b>Giảm chuyển động:</b> lượt quét bị cắt hoàn toàn — nhưng vật liệu
+      <b>giữ nguyên tính quang học</b>. Vẫn là kính, chỉ là kính đứng yên.
+      <b>Không bao giờ được xoá thấu kính.</b></p>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement, bT=document.getElementById('bToi'), bS=document.getElementById('bSang');
+  function set(m){root.setAttribute('data-theme',m);
+    bT.setAttribute('aria-pressed',String(m==='dark'));bS.setAttribute('aria-pressed',String(m==='light'));}
+  bT.onclick=function(){set('dark')}; bS.onclick=function(){set('light')};
+
+  /* Loé đi theo con trỏ — CỤC BỘ, trong phạm vi chính tấm kính. */
+  document.addEventListener('pointermove',function(e){
+    var el=e.target.closest && e.target.closest('.tk'); if(!el) return;
+    var r=el.getBoundingClientRect();
+    el.style.setProperty('--mx',(((e.clientX-r.left)/r.width)*100).toFixed(1)+'%');
+    el.style.setProperty('--my',(((e.clientY-r.top)/r.height)*100).toFixed(1)+'%');
+  },{passive:true});
+  document.addEventListener('pointerleave',function(e){
+    var el=e.target.closest && e.target.closest('.tk'); if(!el) return;
+    el.style.removeProperty('--mx'); el.style.removeProperty('--my');
+  },true);
+
+  /* THÀNH CÔNG — mô phỏng "điều hướng xong rồi mới quét". */
+  var b=document.getElementById('btnXong'), c=document.getElementById('cellXong');
+  b.onclick=function(){ c.removeAttribute('data-xong');
+    setTimeout(function(){c.setAttribute('data-xong','1');},420); /* trễ = thời gian mở cửa thật */
+    setTimeout(function(){c.removeAttribute('data-xong');},1400); };
+})();
+</script>
+
+<!-- TRANSFER NOTES ═══════════════════════════════════════════════════════════════
+
+MỤC TIÊU KỸ THUẬT
+  Không tô một cái kính. Dựng một vật quang học lấy diện mạo từ thứ nằm dưới nó.
+  Luật đó áp cho CẢ BỐN NẤC — khác nhau là BIÊN ĐỘ, không phải khác nguyên lý.
+
+═══ 0 · THANG CHÍNH TẮC — đọc trước ═══
+  G0 đục/mờ · G1 kính phẳng (CHỦ ĐẠO) · G2 phẳng đang hoạt động · G3 quang học (HIẾM).
+  §1–§3 dưới đây mô tả G3. G1/G2 ở §3b. Phần lớn diện tích app là G0/G1.
+  ⚠️ CƯỜNG ĐỘ ĐI THEO Ý NGHĨA, KHÔNG THEO KÍCH THƯỚC — widget to có thể gần như phẳng,
+     hành động nhỏ mà hệ trọng được mang kính mạnh hơn. Đừng gắn chiều sâu quang vào px.
+
+═══ 1 · KỸ THUẬT ĐỨNG SAU TỪNG HIỆU ỨNG ═══
+
+[KHÚC XẠ THẬT — luật ④, phần đắt nhất]
+  Ba cơ chế CỘNG LẠI, không cơ chế nào là blur:
+  (a) BẢN SAO MÔI TRƯỜNG. `.tk::before` / `.tk::after` vẽ lại chính `--env-img` với
+      `background-size: var(--env-w) var(--env-h)` + `background-position:center`.
+      Vì thấu kính được CĂN GIỮA trong ô môi trường, bản sao trùng khít pixel với nền
+      thật mà KHÔNG cần tính toạ độ. ⚠️ RÀNG BUỘC THI CÔNG: thấu kính phải căn giữa ô
+      của nó, hoặc phải truyền offset qua `background-position`. Đây là điều kiện để
+      thủ thuật này đúng.
+  (b) HÌNH HỌC. `::before` = `scale(1.055)` lệch tâm (LÕI PHÓNG, mask sáng ở giữa);
+      `::after` = `scale(.87)` (VÀNH NÉN, mask sáng ở vành). Cùng một môi trường, hai
+      tỉ lệ ngược nhau, ghép qua `mask-image` radial ⇒ mắt đọc ra thấu kính lồi:
+      giữa giãn, mép dồn. Đây là phần làm nên chữ "kính", không phải blur.
+  (c) BẺ TỪNG PIXEL. `filter:url(#ifWarp)` trên lớp vành:
+      feTurbulence(fractalNoise, baseFrequency .007/.013, 2 octave)
+        → feGaussianBlur(1.4)  → feDisplacementMap(scale 16, R→dx, G→dy).
+      Tần số RẤT THẤP + làm mượt = bản đồ dịch chuyển trơn, KHÔNG ĐỀU ⇒ thoả luật ⑦
+      (thấu kính không đồng nhất). Turbulence tần số cao sẽ ra "kính vân đá" — sai.
+  ⚠️ CÁCH ĐO: mọi môi trường đều có LƯỚI NÉT THẲNG 1px (repeating-linear-gradient).
+      Nét thẳng bị bẻ là bằng chứng khúc xạ duy nhất không cãi được. Nếu lưới đi thẳng
+      tuột qua thân kính ⇒ TRƯỢT luật ④, bất kể trông đẹp thế nào.
+
+[LÕI TRONG — luật ①]  Thân không có background-color. `backdrop-filter: blur(1.1px)
+  saturate(1.16) contrast(1.04)`. Blur 1.1px là CỐ Ý bé: kính TRONG chỉ làm mềm rất
+  nhẹ. Nhảy lên 12–24px là quay về mica ngay. `saturate/contrast` cho "đặc quang" mà
+  không thêm một hạt opacity nào.
+
+[HAI VÀNH + BỀ DÀY — luật ②③]  MỘT `box-shadow` sáu tầng:
+    0 0 0 .5px            var(--quang-mep-ngoai)   → chỉ sáng NGOÀI, sắc
+    inset 0 0 0 1.25px    var(--quang-mep-trong)   → vành TỐI khúc xạ TRONG
+    inset 0 1.5px .5px -1px   var(--quang-loe)     → mép trên bắt sáng
+    inset 0 -2.5px 2px -2.5px var(--quang-mep-trong) → mép dưới chìm
+    inset 0 0 26px -12px  var(--quang-khoi)        → khói (xem dưới)
+    0 12px 28px -18px     rgba(0,0,0,.62)          → tiếp đất
+  KHOẢNG GIỮA hai đường đầu = bề dày đọc được. Bỏ một trong hai là mất luôn chữ "dày".
+
+[KHÓI TRONG THÂN — luật ⑤]  KHÔNG phải fill xám. Là `inset ... 26px -12px`: bóng trong
+  toả từ VÀNH vào, spread âm ⇒ tắt hẳn ở giữa. Vật lý: hấp thụ tỉ lệ với bề dày, mà
+  chỗ dày nhất là vành. Kiểm: che vành đi thì lõi phải TRONG SUỐT.
+
+[TÁN SẮC + DỒN SÁNG Ở GÓC — luật ②]  `conic-gradient(from 202deg, …)` cắt bằng
+  `mask: radial-gradient(closest-side, transparent calc(100% - 3px), #000 …)` → còn
+  lại một vòng 1.8px. Các chặn màu đặt ĐÚNG hai góc chéo, KHÔNG rải đều — vì góc là
+  nơi độ cong đổi nhanh nhất. `mix-blend-mode:screen` ở nền tối; nền sáng đổi về
+  `normal` + opacity .62 (screen trên nền sáng sẽ bay mất).
+
+[LOÉ — luật ⑥]  `radial-gradient(30% 13% at var(--mx) var(--my), …)` — dẹt (30×13),
+  opacity .42, blur .35px. Nhỏ · sắc · LỆCH. JS đặt `--mx/--my` theo con trỏ, khai
+  bằng `@property <percentage>` để nội suy được. Không bao giờ là vệt bóng to đối xứng.
+
+[TRẠNG THÁI]  Đổi BIẾN HÌNH HỌC, không đổi màu:
+    nghỉ  phóng 1.055 · nén .87  · dày 1.25px
+    rê    phóng 1.075 · nén .845 · loé .42→.62, dịch về phía con trỏ
+    bấm   phóng 1.018 · nén .80  · dày 1.9px · khói co sát vành (ĐẶC QUANG hơn)
+  "Bấm = nén lại" đọc ra vật lý; "bấm = mờ đi" đọc ra hiệu ứng.
+
+═══ 2 · RẺ ↔ ĐẮT (chi phí vẽ) ═══
+  RẺ (chỉ vẽ, tổng hợp GPU, không tái vẽ mỗi khung):
+    box-shadow tĩnh · conic/radial-gradient tĩnh · transform trên lớp bản sao ·
+    mask-image tĩnh. Toàn bộ nấc 0–2 của thang hiếm chỉ dùng nhóm này.
+  VỪA:
+    backdrop-filter — mỗi lớp là một lần đọc-lại nền. blur 1.1px rẻ hơn hẳn 22px.
+    ⚠️ Không lồng nhiều lớp backdrop-filter chồng nhau (luật cấm kính-chồng-kính có
+    lý do hiệu năng, không chỉ lý do nhìn). Ngoại lệ §29 chấp nhận đúng HAI tầng.
+  ĐẮT:
+    filter:url(#feDisplacementMap) — chạy trên CPU/raster ở nhiều bản Chrome, tái vẽ
+    khi lớp đổi transform. ⇒ CHỈ dùng ở nấc 3–4 (điều khiển đang chọn · Vào xưởng).
+    ⛔ CẤM đặt lên thứ cuộn được, danh sách, hoặc bất cứ cái gì xuất hiện >2 lần trên
+    một màn. Đây chính là lý do KINH TẾ của thang bậc hiếm ở artboard H.
+
+═══ 3 · KHÔNG SỐNG SÓT Ở ĐÂU ═══
+  • Safari — `mask` / `mix-blend-mode` trên lớp bị `filter` bọc đôi khi ép tạo layer
+    mới ⇒ nhoè nhẹ và tốn bộ nhớ. Đường lùi: bỏ `mix-blend-mode` của `.tk__caustic`,
+    hạ opacity. Kính vẫn đúng, chỉ bớt lấp lánh ở vành.
+  • Firefox — `feDisplacementMap` có, nhưng `backdrop-filter` từng phải bật cờ ở bản
+    cũ. Không có nó thì lõi mất phần "làm mềm"; hai lớp bản sao + hai vành VẪN CHẠY,
+    nên kính vẫn đọc ra kính. Thoái lui đúng chỗ.
+  • `backdrop-filter:url(#svgFilter)` — CỐ Ý KHÔNG DÙNG. Firefox có, Chrome/Safari
+    không. Đó là lý do khúc xạ ở đây đi đường "bản sao môi trường + filter thường"
+    chứ không đi đường backdrop — bản sao chạy ở MỌI trình duyệt.
+  • `color-mix(in oklab, …)` — Chrome 111+ / Safari 16.2+ / FF 113+. Chỉ dùng cho nền
+    trình diễn của bản vẽ, KHÔNG nằm trong lõi thấu kính. Trước khi vào production nên
+    thay bằng token thật.
+  • `@property` — Safari 16.4+. Thiếu nó thì lượt quét thành công nhảy cóc thay vì
+    trôi; không ảnh hưởng vật liệu.
+  • ⚠️ RÀNG BUỘC KIẾN TRÚC: thủ thuật bản-sao đòi biết `--env-img/--env-w/--env-h`.
+    Với Vào xưởng thì miễn phí (chân đế là của chính nút, `isolation:isolate` đã có
+    sẵn trong code). Với kính trôi trên nền tuỳ ý (ảnh, viewport 3D) phải truyền
+    nền vào qua biến, HOẶC chấp nhận chỉ còn (b)+(c) mà không có (a).
+
+═══ 3b · G1 / G2 · KÍNH PHẲNG — vật liệu dùng nhiều nhất ═══
+  Cùng luật môi trường, HẠ BIÊN ĐỘ. Bốn khác biệt so với G3, đều đo được:
+    ① MỘT nét mép, không phải hai vành      `inset 0 0 0 .5px` (G3 có thêm vành tối 1.25px)
+    ② phồng 1.012 thay vì 1.055             gần như không phồng
+    ③ KHÔNG feDisplacementMap                → G1 rẻ, chạy được ở mọi nơi, mọi số lượng
+    ④ loé CHỈ khi rê/lấy nét, opacity .30    G3 loé thường trực .5
+  Phản ứng môi trường ở G1 đến từ HAI đường, không đường nào đắt:
+    · `backdrop-filter: blur(10px) saturate(1.3)` — hút màu ambient (đây là phần chính)
+    · một lớp bản-sao môi trường `scale(1.012)`, `opacity .5`, mask chỉ ở vành —
+      đủ để mép "sống", không đủ để đọc ra khối thuỷ tinh.
+  G2 = G1 + thân đậm hơn (.045→.085) + mép rõ hơn + VÒNG `--accent-ring`.
+  ⭐ ĐANG-CHỌN NÓI BẰNG VÒNG NÉT, KHÔNG BẰNG ĐỘ DÀY QUANG. Nếu G2 dày lên để tỏ ra
+     "đang chọn" thì nó lấn sang G3 và thang sập ở đúng chỗ dùng nhiều nhất.
+  PHÉP THỬ G1 (dán vào mọi phiếu dựng widget):
+     "Trông như một khối kính vật lý → QUÁ TAY. Trông như thẻ mờ đục chung chung → QUÁ NHẠT.
+      Đích: MỘT MÀNG QUANG MỎNG, BIẾT PHẢN ỨNG, THUỘC VỀ MÔI TRƯỜNG."
+  ⛔ CẤM ở G1/G2: thấu kính lồi dày · khúc xạ trong mạnh · phóng to quang học · vành bóng
+     nặng · chiều sâu capsule 3D · vành caustic dày · vẻ thạch/nhựa.
+
+═══ 4 · TOKEN MỚI ĐỀ XUẤT (chưa có trong app/globals.css) ═══
+  Họ `--quang-*`, tách khỏi `--kinh-*` có chủ ý: `--kinh-mong/vua/dac` là ĐỘ ĐẶC của
+  một tấm mờ; `--quang-*` mô tả một THẤU KÍNH. Trộn hai họ là mời người sau bôi
+  `--kinh-dac` lên thấu kính rồi mất luôn phần trong suốt.
+    MÀU (hai theme):
+      --quang-mep-ngoai   chỉ sáng mảnh viền NGOÀI
+      --quang-mep-trong   vành TỐI khúc xạ bên trong (thứ tạo bề dày)
+      --quang-khoi        thân khói — sinh từ mật độ ở vành
+      --quang-loe         loé phản chiếu
+      --quang-tan-sac     vạch tán sắc ở vành
+      --quang-goc         dồn sáng ở góc
+    HÌNH HỌC (không theo theme):
+      --quang-day    1.25px  bề dày quang
+      --quang-phong  1.055   hệ số phóng ở lõi
+      --quang-nen    .87     hệ số nén ở vành
+      --quang-nhoe   1.1px   làm mềm (CỐ Ý bé — kính trong, không phải kính mờ)
+  HỌ G1/G2 (kính phẳng — dùng nhiều nhất):
+      --g1-than / --g2-than           thân, ám nhẹ (KHÔNG phải fill)
+      --g1-mep-sang / --g2-mep-sang   chỉ sáng mảnh ở mép
+      --g1-mep-toi                    vành tối bên trong, rất khẽ
+      --g1-loe                        loé cục bộ, CHỈ khi rê/lấy nét
+      --g1-nhoe 10px / --g2-nhoe 14px
+      --g1-bao-hoa 1.3 / --g2-bao-hoa 1.45   ← đường hút màu ambient chính
+      --g1-phong 1.012 / --g2-phong 1.022    ← gần như không phồng
+  ⚠️ `--quang-*` CHỈ dành cho G3. Bôi `--quang-day` lên một widget G1 là phá thang.
+  ⚠️ Thang cường độ trong nội bộ G3: `1.25/1.055/.87` (thường) → `1.6/1.08/.84` (Vào xưởng).
+
+═══ 4b · VÌ SAO THANG NÀY CÒN LÀ QUYẾT ĐỊNH HIỆU NĂNG ═══
+  G0/G1 không dùng SVG filter ⇒ vẽ được với số lượng bất kỳ, kể cả trong danh sách cuộn.
+  G3 dùng `feDisplacementMap` ⇒ đắt, tái vẽ khi đổi transform, và ở nhiều bản Chrome chạy
+  ngoài GPU. Vì vậy "G3 phải hiếm" KHÔNG chỉ là lời khuyên thẩm mỹ — nó là ràng buộc kỹ
+  thuật. Một màn có 20 thẻ G3 sẽ tụt khung hình; 20 thẻ G1 thì không.
+
+═══ 5 · ĐIỂM YẾU THẬT CỦA BẢN NÀY (khai trước, đừng để người duyệt phải tìm) ═══
+  Luật ⑤ (khói quang học nội tại) là chỗ YẾU NHẤT. `inset box-shadow` toả từ vành vào
+  là mô hình đúng về nguyên nhân (hấp thụ theo bề dày) nhưng nó vẫn là MỘT LỚP TÔ —
+  nó không đổi theo màu của môi trường bên dưới như ba hiệu ứng kia. Đúng bản chất thì
+  khói phải là môi trường bị làm tối dần theo quãng đường quang, tức cần lấy mẫu nền
+  rồi hạ độ sáng — CSS thuần không làm được. Đường đi tiếp nếu cần chặt hơn: cho lớp
+  vành thêm `filter: brightness(.92) saturate(1.1)` (làm tối chính BẢN SAO môi trường
+  thay vì phủ một lớp tối lên trên). Đã thử: đúng hơn về nguyên lý, nhưng ở kích thước
+  nút thật thì gần như không phân biệt được — nên bản này giữ cách rẻ. Nếu Hoà soi ở
+  cỡ lớn (artboard C ở 3×) và thấy khói "dán lên" thay vì "sinh ra từ trong", đó là
+  chỗ phải sửa trước tiên.
+════════════════════════════════════════════════════════════════════════════════ -->
+</body>
+</html>

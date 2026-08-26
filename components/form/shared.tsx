@@ -357,7 +357,7 @@ export function ImagePicker({
                   <img src={a.url} alt={a.name} className="h-full w-full object-cover" loading="lazy" />
                   {on && (
                     <span className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-[var(--accent)] text-white">
-                      <Check size={12} />
+                      <Check size={14} />
                     </span>
                   )}
                 </button>
@@ -383,6 +383,7 @@ export function ImagePicker({
             onClick={() => fileRef.current?.click()}
             className="flex min-h-[120px] w-full flex-col items-center justify-center gap-2 rounded-[14px] border-2 border-dashed border-[var(--border)] bg-[var(--card)] text-[var(--t3)] transition-colors hover:border-[var(--t4)]"
           >
+            {/* soi-mien-tru: F-ICON-SIZE — glyph giữa vùng thả tệp, là nhân vật chính của ô rỗng */}
             <Upload size={22} />
             <span className="text-[13px] font-medium">Chụp ảnh hoặc chọn từ máy</span>
             <span className="text-[11px] text-[var(--t4)]">JPG · PNG · WEBP · TIFF · PSD — tự chuyển định dạng</span>

@@ -31,16 +31,17 @@
  * + luật "thu gọn chỉ hiện nút có hành vi thật" GIỮ NGUYÊN.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Spline, Square, Circle, Layers, Scissors, RotateCw,
-  Triangle, Boxes, Palette, MoreHorizontal, ChevronDown,
+  Triangle, Boxes, Palette, MoreHorizontal, ChevronDown, Camera, Shapes,
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { useTool3D, type Tool3DId } from '@/lib/render-studio/tool3d';
 import { ToolbarChip, ToolbarBar } from '@/components/ui/ToolbarChip';
 import { commonCommandsFor, bindStage } from '@/lib/commands/toolbar-source';
-import { CommandIcon } from '@/components/ui/command-icon';
+import { CommandIcon, commandHinh } from '@/components/ui/command-icon';
+import { useDismissable } from '@/lib/useDismissable';
 
 interface ToolDock3DProps {
   open: boolean;
@@ -49,6 +50,8 @@ interface ToolDock3DProps {
   onCreateWall: () => void;
   onOpenLibrary: () => void;
   onOpenMaterialTab: () => void;
+  /** Mở tab Máy ảnh của Command3DPanel (`setTab('camera')`) — engine THẬT, cùng đường với Vật liệu. */
+  onOpenCameraTab: () => void;
 }
 
 interface DockGroupItem {
@@ -61,14 +64,31 @@ interface DockGroupItem {
   disabled?: boolean;
   title?: string;
   onClick?: () => void;
+  /** R3 — hình minh hoạ thao tác cho ô giải nghĩa, đến TỪ SỔ LỆNH qua `commandHinh()`;
+   * item tự khai của dock không có hình (chỉ lệnh chung mang metadata này). */
+  hinh?: React.ReactNode;
 }
 
-export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLibrary, onOpenMaterialTab }: ToolDock3DProps) {
+export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLibrary, onOpenMaterialTab, onOpenCameraTab }: ToolDock3DProps) {
   const tr = useT();
   const activeTool = useTool3D((s) => s.active);
   const setActiveTool = useTool3D((s) => s.setActive);
   /** Nút tool = một dòng khai: active theo store, bấm là cầm tool (Tool3DBar tự hiện ô nhập). */
   const tool = (id: Tool3DId) => ({ active: activeTool === id, onClick: () => setActiveTool(id) });
+
+  /* THƯỜNG TRỰC ĐÚNG BẢY (SESSION-01 điều 4) — Chọn·Dời·Xoay·Tạo·Vật liệu·Máy ảnh·Thêm.
+     Trước 22/08 dạng thu gọn bày MỌI nút có engine (đo được trên app thật: 13 chip) — đó là
+     "thanh chung phình theo chặng", đúng thứ kiến-trúc-tool-3-lớp (chốt 13/08) sinh ra để dẹp.
+     Bốn lệnh tạo hình (Đường·Chữ nhật·Vòng tròn·Tường) gom vào MỘT chip "Tạo" mở catalogue theo
+     khuôn THƯ MỤC iOS (bấm là MỞ lưới, không phải chạy lệnh vừa dùng) — chúng là lệnh CHỌN-RỒI-VẼ,
+     người dùng cần thấy cả bộ trước khi chọn. Sao chép·Đo·Hoàn tác·Làm lại·Thư viện KHÔNG mất:
+     chúng ở dạng mở rộng ("Thêm") kèm nhãn + phím + lý do, đúng luật §9 không giấu frontier. */
+  const [catalogMo, setCatalogMo] = useState(false);
+  const catalogRef = useRef<HTMLDivElement>(null);
+  const catalogNutRef = useRef<HTMLDivElement>(null);
+  useDismissable({ open: catalogMo, onDismiss: () => setCatalogMo(false), refs: [catalogRef, catalogNutRef] });
+  // Thu dock lại thì catalogue không được sống sót — nó neo vào chip "Tạo" của dạng thu gọn.
+  useEffect(() => { if (open) setCatalogMo(false); }, [open]);
 
   // Tab mở/thu gọn dock — đúng phím mock (`onClick="{{ go4 }}" title="… — Tab"`), guard gõ chữ
   // như mọi hotkey khác của mode 3D (`Render3DModeSkeleton.tsx` đã làm cùng kiểu).
@@ -115,9 +135,14 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
           active: c.active,
           disabled: !c.enabled,
           onClick: c.enabled ? c.run : undefined,
+          // R3 — câu giải nghĩa ưu tiên TỪ SỔ (`c.desc`, một nguồn với 2D); lệnh chung chưa khai
+          // desc mới rơi về câu mặt tiền cũ. Hình cũng từ sổ, đổi khoá → glyph ở `commandHinh`.
           title: c.enabled
-            ? tr(`${c.label[0]} — dùng chung ở cả ba chặng`, `${c.label[1]} — shared across all three stages`)
+            ? c.desc
+              ? tr(c.desc[0], c.desc[1])
+              : tr(`${c.label[0]} — dùng chung ở cả ba chặng`, `${c.label[1]} — shared across all three stages`)
             : c.disabledReason,
+          hinh: commandHinh(c.hinh),
         })),
         { key: 'select-same', label: 'Cùng loại', labelEn: 'Same type', icon: <Layers size={18} />, shortcut: '⇧V', disabled: true, title: tr('Chưa có chọn-theo-loại — engine chưa tra cùng type', 'No select-by-type yet — engine cannot query same type') },
       ],
@@ -159,42 +184,113 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
   ];
 
   if (!open) {
-    // Trạng thái 03 (thu gọn) — 1 hàng, chỉ icon. 11/08 Hoà soi: bản cũ bày CẢ 12 nút disabled
-    // không nhãn không lý do → "hầu như chẳng sử dụng được". Ở dạng thu gọn icon câm không tải
-    // nổi chữ "vì sao mờ" ⇒ chỉ hiện nút CÓ HÀNH VI THẬT (đúng chốt "dock chỉ mang lệnh dùng
-    // liên tục"); các nút chờ-engine vẫn LỘ Ở DẠNG MỞ RỘNG ("Thêm") — nơi có nhãn + phím + lý
-    // do, frontier không bị giấu (luật §9 vẫn giữ, chỉ đổi chỗ đứng cho trung thực với mắt nhìn).
-    const flat = groups
-      .flatMap((g, gi) => g.items.map((it) => ({ ...it, groupIdx: gi })))
-      .filter((it) => !it.disabled);
+    /* Trạng thái 03 (thu gọn) — BẢY chỗ đứng, không hơn. Mỗi chip là một chỗ đứng cố định: người
+       dùng học MỘT lần rồi tay nhớ vị trí, không phải quét lại thanh mỗi lần đổi chặng. Nút mờ vẫn
+       không bao giờ xuất hiện ở đây (11/08 Hoà soi: icon câm không tải nổi chữ "vì sao mờ"). */
+    const byId = (id: string) => chung.find((c) => c.id === id);
+    const chungChip = (id: string, fallbackLabel: [string, string]) => {
+      const c = byId(id);
+      if (!c || !c.enabled) return null;
+      return (
+        <ToolbarChip
+          key={c.id}
+          icon={<CommandIcon name={c.icon} size={18} />}
+          label={tr(c.label[0] ?? fallbackLabel[0], c.label[1] ?? fallbackLabel[1])}
+          desc={c.desc ? tr(c.desc[0], c.desc[1]) : undefined}
+          hinh={commandHinh(c.hinh)}
+          active={c.active}
+          onClick={c.run}
+          shortcutHint={c.directKey}
+        />
+      );
+    };
+
+    // Catalogue tạo hình = nhóm "Vẽ" + nhóm "Dựng khối" của bảng mở rộng, KHÔNG khai lại lệnh nào
+    // (một sổ, nhiều mặt tiền — khai lại là đẻ nguồn thứ hai, đúng cái B2 vừa dẹp).
+    const muc = (t: string) => groups.find((g) => g.title === t)?.items ?? [];
+    const catalog = [...muc('Vẽ'), ...muc('Dựng khối')];
+    const dangCamTao = catalog.some((it) => it.active);
+
     return (
-      // B2 16/08 — vỏ dock thu gọn nay là `<ToolbarBar>` dùng chung (KB-1: h44 · r-full · đệm 6 ·
-      // gap 2), thay cho khung tự vẽ `gap 1 · padding 4 · borderRadius 14 · hairline` trước đây.
-      // Đây chính là khuôn GỐC mà 2D và Trình chiếu sẽ quy về (KB-1 "lấy dock capsule 3D làm gốc"),
-      // nên nó phải là component chung chứ không phải style riêng của file này.
       <ToolbarBar
         style={{ position: 'absolute', left: '50%', bottom: 76, transform: 'translateX(-50%)', zIndex: 6 }}
       >
-        {flat.map((item, i) => (
-          <span key={item.key} style={{ display: 'flex', alignItems: 'center' }}>
-            {i > 0 && item.groupIdx !== flat[i - 1].groupIdx && (
-              <ToolbarBar.Sep />
-            )}
-            <ToolbarChip
-              icon={item.icon}
-              label={tr(item.label, item.labelEn)}
-              desc={item.title}
-              active={item.active}
-              onClick={item.onClick}
-              shortcutHint={item.shortcut}
-            />
-          </span>
-        ))}
+        {chungChip('cad.sel.select', ['Chọn', 'Select'])}
+        <ToolbarBar.Sep />
+        {chungChip('cad.edit.move', ['Dời', 'Move'])}
+        {chungChip('cad.edit.rotate', ['Xoay', 'Rotate'])}
+        <ToolbarBar.Sep />
+
+        {/* ④ TẠO — chip mở catalogue. Nó KHÔNG tự là một lệnh: bấm là bày bộ ra, chọn xong mới chạy.
+            Sáng khi đang cầm một tool tạo hình, để thanh vẫn nói được "tôi đang ở đâu". */}
+        <div ref={catalogNutRef} style={{ position: 'relative', display: 'flex' }}>
+          <ToolbarChip
+            icon={<Shapes size={18} />}
+            label={tr('Tạo', 'Create')}
+            desc={tr('Mở bộ lệnh tạo hình — Đường · Chữ nhật · Vòng tròn · Tường', 'Open the creation set — Line · Rectangle · Circle · Wall')}
+            active={catalogMo || dangCamTao}
+            onClick={() => setCatalogMo((v) => !v)}
+          />
+          {catalogMo && (
+            <div
+              ref={catalogRef}
+              className="vitals-pop"
+              role="group"
+              aria-label={tr('Bộ lệnh tạo hình', 'Creation set')}
+              style={{
+                position: 'absolute', bottom: 'calc(100% + 10px)', left: '50%', transform: 'translateX(-50%)',
+                // Chip cha rộng ~44px ⇒ tấm `absolute` co-vừa-nội-dung bị KẸP còn ~22px (đã thấy
+                // trên app thật: catalogue thành một vạch đen dựng đứng). `max-content` cắt phụ
+                // thuộc đó — bề rộng do lưới 2 cột quyết định, không do chip neo quyết định.
+                width: 'max-content',
+                padding: 7, borderRadius: 14, border: '1px solid var(--vien-mo)',
+                boxShadow: '0 12px 30px rgba(0, 0, 0, .2)', zIndex: 7,
+                display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 2,
+              }}
+            >
+              {catalog.map((item) => (
+                <ToolbarChip
+                  key={item.key}
+                  icon={item.icon}
+                  label={tr(item.label, item.labelEn)}
+                  desc={item.disabled ? undefined : item.title}
+                  hinh={item.hinh}
+                  active={item.active}
+                  disabled={item.disabled}
+                  disabledReason={item.disabled ? item.title : undefined}
+                  onClick={item.onClick ? () => { item.onClick?.(); setCatalogMo(false); } : undefined}
+                  shortcutHint={item.shortcut}
+                  showLabel
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <ToolbarBar.Sep />
+        <ToolbarChip
+          icon={<Palette size={18} />}
+          label={tr('Vật liệu', 'Material')}
+          desc={tr('Mở tab Vật liệu', 'Open the Material tab')}
+          onClick={onOpenMaterialTab}
+          shortcutHint="B"
+        />
+        <ToolbarChip
+          icon={<Camera size={18} />}
+          label={tr('Máy ảnh', 'Camera')}
+          desc={tr('Mở tab Máy ảnh — khung hình, chụp, đường cam', 'Open the Camera tab — framing, capture, camera path')}
+          onClick={onOpenCameraTab}
+          shortcutHint="4"
+        />
         <ToolbarBar.Sep />
         <button
           type="button"
           className="dock-icon-btn"
           onClick={onToggleOpen}
+          // `title` là kênh CÂM trên cảm ứng và trình đọc màn hình đọc không nhất quán — nút này
+          // có nhãn chữ "Thêm" nên phần title mang thông tin THÊM (phím Tab) phải đi đường
+          // aria-label để tới được bàn phím/screen-reader. Giữ `title` cho hover chuột.
+          aria-label={tr('Mở rộng bảng công cụ — phím Tab', 'Expand the tool panel — Tab key')}
           title={tr('Mở rộng bảng công cụ — Tab', 'Expand the tool panel — Tab')}
           style={{
             height: 32, padding: '0 11px', border: 0, borderRadius: 10, background: 'transparent',
@@ -202,13 +298,12 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
             fontFamily: 'inherit', fontSize: 11, fontWeight: 600,
           }}
         >
-          <MoreHorizontal size={15} />
+          <MoreHorizontal size={18} />
           {tr('Thêm', 'More')}
         </button>
       </ToolbarBar>
     );
   }
-
   // Trạng thái 04 (mở rộng) — 5 nhóm có nhãn (Lệnh chung + 4 nhóm riêng của chặng), khuôn mock
   // `dockOpen`. Trước B2 là 6 nhóm; "Biến đổi" và "Thước" đã nhập vào nhóm Lệnh chung.
   const rows = [groups.slice(0, 3), groups.slice(3)];
@@ -247,6 +342,7 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
                         icon={item.icon}
                         label={tr(item.label, item.labelEn)}
                         desc={item.disabled ? undefined : item.title}
+                        hinh={item.hinh}
                         active={item.active}
                         disabled={item.disabled}
                         disabledReason={item.disabled ? item.title : undefined}
@@ -275,7 +371,7 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
           }}
         >
-          <ChevronDown size={13} />
+          <ChevronDown size={14} />
           {tr('Thu gọn · Tab', 'Collapse · Tab')}
         </button>
       </div>

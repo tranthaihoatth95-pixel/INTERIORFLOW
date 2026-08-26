@@ -20,6 +20,7 @@
 
 import CadToolbar from './CadToolbar';
 import CadTouchDock from './CadTouchDock';
+import StageToolbelt from '@/components/ui/StageToolbelt';
 import { useCadStore } from '@/lib/cad/store';
 import { RADIUS, concentricRadius } from '@/lib/geometry';
 import { useEffect, useState } from 'react';
@@ -35,6 +36,13 @@ export default function CadToolbelt() {
   const twoRows = cadMode === 'sketch';
   if (cadMode !== 'sketch' && workspace === 'paper') return <PaperToolbelt />;
   return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, maxWidth: '100%', minWidth: 0 }}>
+    {/* 20/08 (LANE A) — hàng NĂNG LỰC GỘP đứng RIÊNG, trên khối kính công cụ. Cố ý không nhét
+        chung một khối: lệnh đơn ("xoay", "đo") và năng lực gộp ("dựng hình ảnh") là hai HẠT khác
+        nhau — một cái là một cú bấm, một cái là cả dây chuyền có tiêu tiền và có cửa duyệt. Xếp
+        chung hàng là nói dối rằng chúng ngang giá. Danh sách đọc từ `workingSetChips()`, thanh 2D
+        không biết gì về nó. */}
+    <StageToolbelt stage="cad" />
     <div
       style={{
         display: 'flex',
@@ -62,6 +70,7 @@ export default function CadToolbelt() {
         </div>
       )}
     </div>
+    </div>
   );
 }
 
@@ -84,17 +93,17 @@ function PaperToolbelt() {
   return <div className="cad-pill-scroll" style={{ display: 'flex', alignItems: 'center', gap: 5, minHeight: 52, padding: 6, maxWidth: 'calc(100vw - 40px)', overflowX: 'auto', borderRadius: concentricRadius(RADIUS.r4, 0), background: 'color-mix(in srgb, var(--panel) 82%, transparent)', backdropFilter: 'blur(18px) saturate(1.35)', WebkitBackdropFilter: 'blur(18px) saturate(1.35)', border: '1px solid var(--border)', boxShadow: '0 8px 28px rgba(0,0,0,.2)' }}>
     <button type="button" onClick={() => setWorkspace('model')} style={paperToolBtn}><span style={paperModeBadge}>PAPER</span><span style={{ color: 'var(--t3)' }}>Model</span></button>
     <Divider />
-    <button type="button" onClick={() => paperAction('add')} style={paperToolBtn} title="Thêm một ô nhìn"><Plus size={15} /> Ô nhìn</button>
-    <button type="button" onClick={() => paperAction('center')} style={paperToolBtn} title="Căn ô nhìn vào toàn bộ bản vẽ"><Focus size={15} /> Căn vùng</button>
+    <button type="button" onClick={() => paperAction('add')} style={paperToolBtn} title="Thêm một ô nhìn"><Plus size={18} /> Ô nhìn</button>
+    <button type="button" onClick={() => paperAction('center')} style={paperToolBtn} title="Căn ô nhìn vào toàn bộ bản vẽ"><Focus size={18} /> Căn vùng</button>
     <select aria-label="Tỉ lệ ô nhìn trên Paper" value={state.scale} onChange={(event) => paperAction('scale', Number(event.target.value))} style={paperScaleSelect}>
       {PAPER_TOOL_SCALES.map((scale) => <option key={scale} value={scale}>1:{scale}</option>)}
     </select>
-    <button type="button" onClick={() => paperAction('lock')} style={{ ...paperToolBtn, ...(state.locked ? paperToolActive : {}) }} title={state.locked ? 'Mở khóa ô nhìn' : 'Khóa ô nhìn'}>{state.locked ? <Lock size={15} /> : <LockOpen size={15} />}<span className="paper-tool-label">{state.locked ? 'Đã khóa' : 'Khóa'}</span></button>
-    <button type="button" onClick={() => paperAction('layers')} style={paperToolBtn}><Layers3 size={15} /> Lớp</button>
+    <button type="button" onClick={() => paperAction('lock')} style={{ ...paperToolBtn, ...(state.locked ? paperToolActive : {}) }} title={state.locked ? 'Mở khóa ô nhìn' : 'Khóa ô nhìn'}>{state.locked ? <Lock size={18} /> : <LockOpen size={18} />}<span className="paper-tool-label">{state.locked ? 'Đã khóa' : 'Khóa'}</span></button>
+    <button type="button" onClick={() => paperAction('layers')} style={paperToolBtn}><Layers3 size={18} /> Lớp</button>
     <Divider />
-    <button type="button" onClick={() => fire('cad:paper-export-dialog-request')} style={paperToolBtn}><Settings2 size={15} /> Thiết lập</button>
-    <button type="button" onClick={() => paperAction('clean')} style={{ ...paperToolBtn, ...(state.clean ? paperToolActive : {}) }}><Eye size={15} /> {state.clean ? 'Chỉnh tờ' : 'Xem sạch'}</button>
-    <button type="button" onClick={() => fire('cad:paper-export-dialog-request')} style={{ ...paperToolBtn, background: 'var(--accent)', color: '#fff', borderColor: 'transparent' }}><FileOutput size={15} /> Xuất PDF</button>
+    <button type="button" onClick={() => fire('cad:paper-export-dialog-request')} style={paperToolBtn}><Settings2 size={18} /> Thiết lập</button>
+    <button type="button" onClick={() => paperAction('clean')} style={{ ...paperToolBtn, ...(state.clean ? paperToolActive : {}) }}><Eye size={18} /> {state.clean ? 'Chỉnh tờ' : 'Xem sạch'}</button>
+    <button type="button" onClick={() => fire('cad:paper-export-dialog-request')} style={{ ...paperToolBtn, background: 'var(--accent)', color: '#fff', borderColor: 'transparent' }}><FileOutput size={18} /> Xuất PDF</button>
   </div>;
 }
 
@@ -125,10 +134,10 @@ function ProWorkspaceBar() {
       <span style={{ width: 1, height: 16, background: 'var(--border)' }} />
       <span>BIM 2D {assigned}/{doc.entities.length}</span>
       <button type="button" onClick={() => fire('cad:cmd-focus')} style={modeActionBtn}>
-        <Terminal size={13} /> Lệnh
+        <Terminal size={16} /> Lệnh
       </button>
       <button type="button" onClick={() => fire('cad:paper-export-dialog-request')} style={modeActionBtn}>
-        <FileText size={13} /> Thiết lập tờ
+        <FileText size={16} /> Thiết lập tờ
       </button>
     </div>
   );

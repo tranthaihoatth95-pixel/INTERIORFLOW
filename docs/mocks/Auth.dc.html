@@ -1,0 +1,800 @@
+<!-- @dsCard group="Auth" -->
+<meta charset="utf-8">
+<title>Auth · Login · Lock · Resume</title>
+<style>
+/* ============================================================================
+   Auth / Login / Lock / Resume — bản vẽ mục tiêu (Claude Design, 22/08)
+   Token: chép ĐÚNG TÊN + ĐÚNG GIÁ TRỊ từ app/globals.css (2 theme).
+   Không một hex nào trong phần dựng màn — mọi màu đi qua var(--…) / color-mix().
+   Vàng đồng (--accent-warm, --k-doc) ĐÃ NGHỈ: không xuất hiện ở file này.
+   ========================================================================== */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --on-accent:#ffffff;
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fs-ui:13px; --fw-normal:400; --fw-semi:600;
+  --blur:22px; --blur-strong:40px; --kinh-nhoe:16px; --kinh-nhoe-mong:12px;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --nhip-bam:130ms; --nhip-vien:170ms; --nhip-bang:220ms; --nhip-ngu-canh:300ms; --nhip-bien-hinh:460ms;
+  --tap:32px; --tap-lg:44px; --row:28px; --gap:8px; --pad-card:8px 12px;
+}
+:root,:root[data-theme='dark']{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --dots:#26262d; --surface-page:#17171b;
+  --nen-mo-header:rgba(20,20,23,.72); --nen-mo-panel:rgba(20,20,23,.68);
+  --nen-mo-card:rgba(26,26,30,.82); --nen-mo-overlay:rgba(6,6,8,.56);
+  --kinh-mong:rgba(24,24,28,.84); --kinh-vua:rgba(24,24,28,.90); --kinh-dac:rgba(24,24,28,.95);
+  --vl-dac:var(--panel); --vl-gan-dac:rgba(20,20,23,.97);
+  --kinh-mep-sang:rgba(255,255,255,.14); --kinh-vien:rgba(255,255,255,.10);
+  --kinh-chu-phu:#b4b4bd;
+  --vien-mo:rgba(255,255,255,.06); --mo-vo-hieu:.5;
+  --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --dots:#ddd8ce; --surface-page:#faf8f4;
+  --nen-mo-header:rgba(250,248,244,.72); --nen-mo-panel:rgba(250,248,244,.70);
+  --nen-mo-card:rgba(255,255,255,.82); --nen-mo-overlay:rgba(60,55,48,.28);
+  --kinh-mong:rgba(252,251,249,.88); --kinh-vua:rgba(252,251,249,.93); --kinh-dac:rgba(253,252,250,.96);
+  --vl-dac:var(--panel); --vl-gan-dac:rgba(250,248,244,.975);
+  --kinh-mep-sang:rgba(255,255,255,.75); --kinh-vien:rgba(0,0,0,.08);
+  --kinh-chu-phu:#5c564d;
+  --vien-mo:rgba(0,0,0,.05); --mo-vo-hieu:.62;
+  --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+  --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+body{font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  padding:36px 40px 96px}
+.mono{font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace;font-variant-numeric:tabular-nums}
+
+/* ---------- khung trang bản vẽ (khớp Home.dc.html) ---------- */
+.page{width:1440px;margin:0 auto}
+.docHead{display:flex;align-items:flex-end;justify-content:space-between;gap:32px;margin-bottom:34px}
+.docHead h1{margin:0;font-size:var(--fs-xl);font-weight:var(--fw-semi);letter-spacing:-.02em}
+.docHead p{margin:8px 0 0;font-size:var(--fs-xs);color:var(--t3);max-width:940px}
+.tglBtn{height:var(--tap);padding:0 16px;border:1px solid var(--border);border-radius:var(--r-2);
+  background:var(--panel);color:var(--t2);font:var(--fw-semi) var(--fs-xs)/1 inherit;cursor:pointer;flex:none}
+.tglBtn:hover{background:var(--hover);color:var(--t1)}
+.board{margin:0 auto 64px}
+.boardHead{display:flex;align-items:baseline;gap:12px;margin:0 0 12px}
+.boardHead .k{font-size:var(--fs-2xs);font-weight:700;letter-spacing:.10em;color:var(--t4)}
+.boardHead h2{margin:0;font-size:var(--fs-lg);font-weight:var(--fw-semi);letter-spacing:-.01em}
+.boardHead .note{font-size:var(--fs-xs);color:var(--t3);margin-left:auto;text-align:right;max-width:600px}
+.frame{border:1px solid var(--border);border-radius:var(--r-4);overflow:hidden;background:var(--bg);
+  box-shadow:var(--shadow-node)}
+.tag{display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:var(--r-1);
+  background:var(--field);color:var(--t4);font-size:9px;font-weight:700;letter-spacing:.04em}
+.tagPh{background:color-mix(in srgb,var(--t5) 26%,transparent);color:var(--t2)}
+.rowBoards{display:flex;gap:24px;align-items:flex-start}
+
+/* ============================================================================
+   TRƯỜNG ẢNH NỀN — PLACEHOLDER. Không phải ảnh chụp thật: dựng bằng gradient +
+   một hình chiếu phòng bằng SVG, toàn bộ từ token nên đúng ở CẢ HAI theme.
+   Ảnh thật là ảnh ambient ấm, do LoginBackdrop nạp + nút "Đổi nền" đổi.
+   ========================================================================== */
+.auth{position:relative;height:900px;overflow:hidden;background:var(--bg);isolation:isolate}
+.auth.narrow{height:820px}
+.photo{position:absolute;inset:0;z-index:0;overflow:hidden}
+.photo::after{content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(78% 62% at 26% 6%, color-mix(in srgb,var(--surface-page) 82%, transparent) 0%, transparent 64%),
+    radial-gradient(64% 52% at 88% 92%, var(--accent-soft) 0%, transparent 60%),
+    linear-gradient(168deg, color-mix(in srgb,var(--panel) 72%, transparent) 0%, color-mix(in srgb,var(--bg) 92%, transparent) 68%);}
+.photo svg{position:absolute;inset:0;width:100%;height:100%}
+/* lớp dìm rất nhẹ CHỈ ở cột giữa — chữ đứng trên thẻ ĐẶC nên không cần dìm cả tấm */
+.veil{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(46% 78% at 50% 46%, color-mix(in srgb,var(--bg) 46%, transparent) 0%, transparent 72%)}
+.authIn{position:relative;z-index:2;height:100%;display:flex;flex-direction:column}
+
+/* ---------- chrome nổi: VI/EN trên phải · Đổi nền dưới phải (họ KÍNH MỎNG) ---------- */
+.kinh{background:var(--kinh-mong);backdrop-filter:blur(var(--kinh-nhoe-mong));
+  -webkit-backdrop-filter:blur(var(--kinh-nhoe-mong));
+  border:1px solid var(--kinh-vien);box-shadow:inset 0 1px 0 var(--kinh-mep-sang)}
+.topbar{display:flex;justify-content:flex-end;padding:22px 26px}
+.lang{display:inline-flex;height:var(--tap);padding:3px;border-radius:var(--r-full);gap:2px}
+.lang b,.lang span{display:grid;place-items:center;min-width:40px;padding:0 12px;border-radius:var(--r-full);
+  font-size:var(--fs-xs);font-weight:var(--fw-semi);letter-spacing:.02em}
+.lang b{background:var(--accent);color:var(--on-accent)}
+.lang span{color:var(--kinh-chu-phu)}
+.doiNen{position:absolute;right:26px;bottom:24px;z-index:3;display:inline-flex;align-items:center;gap:8px;
+  height:var(--tap);padding:0 14px;border-radius:var(--r-full);color:var(--t2);
+  font-size:var(--fs-xs);font-weight:var(--fw-semi);cursor:pointer}
+
+/* ---------- cột giữa ---------- */
+.mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
+.mark{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:26px}
+.wordmark{font-size:var(--fs-xs);font-weight:700;letter-spacing:.34em;color:var(--t2);text-indent:.34em}
+
+/* ---------- THẺ (ĐẶC — nội dung không bao giờ là kính) ---------- */
+.card{width:400px;background:var(--vl-dac);border:1px solid var(--border);border-radius:var(--r-4);
+  box-shadow:var(--shadow-sheet);padding:26px 28px 24px}
+.card.reg{padding-bottom:22px}
+.tabs{display:flex;gap:26px;border-bottom:1px solid var(--border);margin-bottom:22px}
+.tabs button{appearance:none;background:none;border:0;padding:0 0 12px;cursor:pointer;position:relative;
+  font:var(--fw-semi) var(--fs-sm)/1 inherit;color:var(--t4)}
+.tabs button[aria-selected='true']{color:var(--t1)}
+.tabs button[aria-selected='true']::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;
+  border-radius:var(--r-full);background:var(--accent)}
+
+/* input GẠCH DƯỚI MẢNH — giữ đúng ngôn ngữ đang chạy (không hộp kính) */
+.f{position:relative;margin-bottom:18px}
+.f input{width:100%;appearance:none;border:0;border-bottom:1px solid var(--border);background:transparent;
+  padding:10px 2px;font:400 var(--fs-sm)/1.4 inherit;color:var(--t1);outline:none}
+.f input::placeholder{color:var(--t5)}
+.f.focus input{border-bottom-color:var(--accent)}
+.f.bad input{border-bottom-color:var(--danger)}
+.f .eye{position:absolute;right:0;bottom:6px;width:var(--tap);height:var(--tap);display:grid;place-items:center;
+  border-radius:var(--r-full);color:var(--t4);cursor:pointer}
+.f .eye:hover{background:var(--hover);color:var(--t2)}
+
+.rowOpt{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 18px}
+.ck{display:inline-flex;align-items:center;gap:9px;font-size:var(--fs-xs);color:var(--t2);cursor:pointer}
+.ckBox{width:16px;height:16px;border-radius:var(--r-1);border:1px solid var(--border-strong);
+  display:grid;place-items:center;background:var(--field)}
+.ck.on .ckBox{background:var(--accent);border-color:var(--accent)}
+.lnk{font-size:var(--fs-xs);color:var(--t3);text-decoration:none;border-bottom:1px solid transparent}
+.lnk:hover{color:var(--t1);border-bottom-color:var(--border-strong)}
+
+/* ---------- LỖI THẬT — chỉ đỏ khi hỏng thật ---------- */
+.err{display:flex;align-items:flex-start;gap:9px;margin:-4px 0 18px;padding:10px 12px;border-radius:var(--r-2);
+  font-size:var(--fs-xs);line-height:1.45;color:var(--danger);
+  background:color-mix(in srgb,var(--danger) 12%, transparent);
+  border:1px solid color-mix(in srgb,var(--danger) 32%, transparent)}
+.err svg{flex:none;margin-top:1px}
+
+/* ---------- NÚT "VÀO XƯỞNG" — nền TÍM ĐẶC + LỚP THẤU KÍNH ở trên ---------- */
+.btnXuong{position:relative;width:100%;height:var(--tap-lg);border:0;border-radius:var(--r-full);
+  background:var(--accent);color:var(--on-accent);cursor:pointer;overflow:hidden;
+  font:var(--fw-semi) var(--fs-ui)/1 inherit;letter-spacing:.01em;
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  box-shadow:0 8px 22px -12px var(--accent-ring)}
+/* LỚP KÍNH: khúc xạ mảng tím bên dưới. Là VẬT LIỆU, không phải hiệu ứng bấm. */
+.btnXuong .lens{position:absolute;inset:1px;border-radius:inherit;pointer-events:none;
+  background:
+    radial-gradient(58% 150% at 30% -30%, color-mix(in srgb,var(--on-accent) 46%, transparent) 0%, transparent 62%),
+    radial-gradient(46% 120% at 82% 130%, color-mix(in srgb,var(--accent-strong) 90%, transparent) 0%, transparent 66%),
+    linear-gradient(180deg, color-mix(in srgb,var(--on-accent) 13%, transparent) 0%, transparent 44%);
+  animation:troi 18s var(--ease-apple) infinite}
+.btnXuong .lbl{position:relative;z-index:1}
+@keyframes troi{
+  0%{transform:translate3d(0,0,0) scale(1)}
+  50%{transform:translate3d(6px,-2px,0) scale(1.012)}
+  100%{transform:translate3d(0,0,0) scale(1)}}
+.btnXuong[data-st='hover']{background:var(--accent-strong)}
+.btnXuong[data-st='hover'] .lens{animation:none;transform:translate3d(9px,-3px,0) rotate(.6deg)}
+.btnXuong[data-st='press']{transform:scale(.985)}
+.btnXuong[data-st='press'] .lens{animation:none;transform:scale(.94)}
+/* CỬA MỞ — một lượt quét duy nhất sau khi đăng nhập THÀNH CÔNG THẬT */
+.btnXuong[data-st='mo']::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(100deg,transparent 34%,color-mix(in srgb,var(--on-accent) 55%,transparent) 50%,transparent 66%);
+  animation:quet 1.05s var(--ease-apple) 1 both}
+@keyframes quet{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+@media (prefers-reduced-motion:reduce){
+  /* KÍNH Ở LẠI, CHỈ ĐỨNG YÊN — nó là vật liệu, không xoá bao giờ */
+  .btnXuong .lens{animation:none}
+  .btnXuong[data-st='mo']::after{animation:none;opacity:.24}
+  .ghostWrap{animation:none}
+}
+
+/* ---------- vạch ngăn + 3 nhà cung cấp ---------- */
+.hr{display:flex;align-items:center;gap:14px;margin:20px 0 16px;
+  font-size:9px;font-weight:700;letter-spacing:.13em;color:var(--t4)}
+.hr::before,.hr::after{content:'';height:1px;flex:1;background:var(--border)}
+.prov{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.prov button{height:var(--tap-lg);border:1px solid var(--border);border-radius:var(--r-2);background:var(--field);
+  color:var(--t2);cursor:pointer;display:grid;place-items:center;gap:5px;padding:0;
+  font:var(--fw-semi) var(--fs-2xs)/1 inherit}
+.prov button:hover{background:var(--hover);color:var(--t1)}
+.prov button[aria-disabled='true']{opacity:var(--mo-vo-hieu);cursor:default}
+.prov button[aria-disabled='true']:hover{background:var(--field);color:var(--t2)}
+.provWhy{margin-top:9px;font-size:var(--fs-2xs);color:var(--t4);text-align:center}
+
+/* ---------- dải chú giải trạng thái dưới mỗi bản vẽ ---------- */
+.strip{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+.chip{display:flex;gap:10px;align-items:center;padding:10px 14px;border:1px solid var(--border);
+  border-radius:var(--r-3);background:var(--panel);font-size:var(--fs-xs);color:var(--t3);max-width:340px}
+.chip b{color:var(--t1);font-weight:var(--fw-semi);font-size:var(--fs-xs)}
+.chip .btnXuong{width:132px;height:36px;flex:none}
+
+/* ============================================================================
+   D · MÀN KHOÁ — LỚP CHE, KHÔNG PHẢI MÀN ĐĂNG NHẬP
+   ========================================================================== */
+.lock{position:relative;height:760px;overflow:hidden;background:var(--bg)}
+/* việc THẬT vẫn sống phía sau: mờ đủ để không đọc được, không đủ để quên mình đang ở đâu */
+.ghostWrap{position:absolute;inset:0;z-index:0;filter:blur(26px) saturate(1.18);transform:scale(1.04);
+  animation:tho 9s ease-in-out infinite}
+@keyframes tho{0%,100%{transform:scale(1.04)}50%{transform:scale(1.055)}}
+.ghost{position:absolute;inset:0;display:flex;flex-direction:column}
+.gTop{height:52px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;
+  gap:10px;padding:0 18px}
+.gBody{flex:1;display:flex;min-height:0}
+.gRail{width:56px;background:var(--panel);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;gap:10px;align-items:center;padding-top:14px}
+.gCanvas{flex:1;background:var(--bg);position:relative;
+  background-image:radial-gradient(var(--dots) 1px,transparent 1px);background-size:22px 22px}
+.gInsp{width:300px;background:var(--panel);border-left:1px solid var(--border);padding:16px;
+  display:flex;flex-direction:column;gap:12px}
+.gBlk{border-radius:var(--r-2);background:var(--field)}
+.gLine{height:9px;border-radius:var(--r-full);background:var(--hover)}
+.gRender{position:absolute;left:12%;top:14%;width:52%;height:58%;border-radius:var(--r-3);
+  background:linear-gradient(140deg,color-mix(in srgb,var(--accent) 40%,var(--field)),var(--hover))}
+.gPlan{position:absolute;right:9%;bottom:9%;width:26%;height:34%;border-radius:var(--r-2);
+  border:2px solid var(--border-strong);background:var(--panel)}
+
+.lockVeil{position:absolute;inset:0;z-index:1;
+  background:color-mix(in srgb,var(--bg) 72%, transparent);
+  backdrop-filter:blur(30px) saturate(120%);-webkit-backdrop-filter:blur(30px) saturate(120%)}
+.lockMid{position:relative;z-index:2;height:100%;display:flex;align-items:center;justify-content:center;gap:96px}
+.lockFace{display:flex;flex-direction:column;align-items:center;text-align:center}
+.lockPin{width:44px;height:44px;border-radius:var(--r-full);background:var(--panel);border:1px solid var(--border);
+  display:grid;place-items:center;color:var(--t2);margin-bottom:10px}
+.gio{font-size:56px;font-weight:var(--fw-semi);line-height:1;letter-spacing:-.03em;color:var(--t1);
+  font-variant-numeric:tabular-nums}
+.nguCanh{margin-top:12px;display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--t3)}
+.nguCanh b{color:var(--t2);font-weight:var(--fw-normal)}
+.dongNgan{margin-top:18px;max-width:300px;font-size:var(--fs-xs);font-style:italic;line-height:1.45;color:var(--t3)}
+.daLuu{margin-top:16px;display:inline-flex;align-items:center;gap:7px;font-size:var(--fs-2xs);color:var(--t4)}
+.daLuu i{width:6px;height:6px;border-radius:var(--r-full);background:var(--success);display:block}
+.moLai{margin-top:26px;display:inline-flex;align-items:center;gap:9px;height:var(--tap-lg);padding:0 20px;
+  border-radius:var(--r-full);background:var(--panel);border:1px solid var(--border);color:var(--t1);
+  font:var(--fw-normal) var(--fs-ui)/1 inherit;cursor:pointer}
+.moLai:hover{background:var(--hover)}
+
+/* mặt sau — xác thực LẠI đúng người đang mở. KHÔNG email, KHÔNG tab, KHÔNG OAuth. */
+.reauth{width:328px;background:var(--vl-dac);border:1px solid var(--border);border-radius:var(--r-4);
+  box-shadow:var(--shadow-sheet);padding:24px 24px 20px;text-align:center}
+.ava{width:56px;height:56px;border-radius:var(--r-full);margin:0 auto 12px;display:grid;place-items:center;
+  background:var(--accent-soft);border:1px solid var(--accent-ring);color:var(--accent);
+  font-size:var(--fs-lg);font-weight:var(--fw-semi)}
+.reauth .ten{font-size:var(--fs-md);font-weight:var(--fw-semi);color:var(--t1)}
+.reauth .mail{margin-top:3px;font-size:var(--fs-xs);color:var(--t3)}
+.reauth .f{margin-top:20px;text-align:left}
+.btnMo{width:100%;height:var(--tap-lg);border:0;border-radius:var(--r-full);background:var(--accent);
+  color:var(--on-accent);font:var(--fw-semi) var(--fs-ui)/1 inherit;cursor:pointer;position:relative;overflow:hidden}
+.quayLai{margin-top:12px;background:none;border:0;color:var(--t3);font-size:var(--fs-xs);cursor:pointer}
+.quayLai:hover{color:var(--t1)}
+.lat{position:absolute;left:50%;transform:translateX(-50%);bottom:22px;z-index:3;
+  font-size:var(--fs-2xs);color:var(--t4);display:flex;align-items:center;gap:8px}
+
+/* ============================================================================
+   E · TIẾP TỤC — về đúng chỗ đã rời, KHÔNG phải màn chờ tải
+   ========================================================================== */
+.res{position:relative;height:660px;overflow:hidden;background:var(--bg)}
+.resScene{position:absolute;inset:0;display:flex;flex-direction:column}
+.rTop{height:52px;background:var(--nen-mo-header);backdrop-filter:blur(var(--blur));border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;padding:0 18px;font-size:var(--fs-xs);color:var(--t3)}
+.rTop b{color:var(--t1);font-weight:var(--fw-semi);font-size:var(--fs-ui)}
+.rBody{flex:1;display:flex;min-height:0}
+.ribbon{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:4;
+  display:inline-flex;align-items:center;gap:12px;height:var(--tap-lg);padding:0 8px 0 18px;
+  border-radius:var(--r-full);color:var(--t1);font-size:var(--fs-ui)}
+.ribbon .dot{width:7px;height:7px;border-radius:var(--r-full);background:var(--accent)}
+.ribbon .x{width:var(--tap);height:var(--tap);border-radius:var(--r-full);display:grid;place-items:center;
+  color:var(--t3);cursor:pointer}
+.ribbon .x:hover{background:var(--hover);color:var(--t1)}
+.selRing{position:absolute;left:12%;top:14%;width:52%;height:58%;border-radius:var(--r-3);
+  outline:2px solid var(--accent);outline-offset:3px}
+</style>
+
+<div class="page">
+
+  <div class="docHead">
+    <div>
+      <h1>Auth · Login · Lock · Resume</h1>
+      <p>Cửa vào xưởng, không phải trạm gác. Bản vẽ này chốt MỘT phân biệt trên hết mọi thứ khác:
+        <b>KHOÁ ≠ ĐĂNG XUẤT</b> — màn khoá là tấm phủ đặt lên một cái bàn vẫn đang sống (phiên · dự án ·
+        camera · job render đều nguyên vẹn), nên nó không được mang một ô email nào, và mở ra phải là
+        tấm phủ nhấc lên chứ không phải app khởi động lại. Toàn bộ chuỗi chữ tiếng Việt dưới đây là chuỗi
+        THẬT đang chạy; chỗ nào chưa có thật đều dán nhãn PLACEHOLDER.</p>
+    </div>
+    <button class="tglBtn" onclick="var r=document.documentElement;r.dataset.theme=r.dataset.theme==='light'?'dark':'light';this.textContent=r.dataset.theme==='light'?'Nền tối':'Nền sáng';">Nền sáng</button>
+  </div>
+
+  <!-- ══════════════════════════════ A · LOGIN (nghỉ) ══════════════════════════════ -->
+  <section class="board">
+    <div class="boardHead">
+      <span class="k">A</span><h2>Đăng nhập · trạng thái nghỉ</h2>
+      <span class="note">Ảnh nền chiếm hết khung, thẻ ĐẶC nổi giữa. Chữ không bao giờ đứng thẳng trên ảnh —
+        tương phản là hằng số, không chạy theo tấm ảnh người dùng chọn.</span>
+    </div>
+    <div class="frame">
+      <div class="auth">
+
+        <div class="photo">
+          <!-- PLACEHOLDER — ảnh ambient ấm thật do LoginBackdrop nạp. Hình dưới chỉ là hình chiếu
+               một gian phòng để bản vẽ đọc ra "có ảnh", dựng bằng token nên đúng ở cả 2 theme. -->
+          <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <g fill="none" stroke="var(--t5)" stroke-width="1.2" opacity=".38">
+              <path d="M0 640 H1440"/><path d="M232 0 V640"/><path d="M1150 0 V640"/>
+              <path d="M232 640 L60 900"/><path d="M1150 640 L1380 900"/>
+            </g>
+            <rect x="300" y="120" width="300" height="380" fill="var(--panel)" opacity=".5"/>
+            <rect x="300" y="120" width="300" height="380" fill="none" stroke="var(--t5)" stroke-width="1.4" opacity=".5"/>
+            <path d="M300 500 L620 500 L860 900 L120 900 Z" fill="var(--panel)" opacity=".26"/>
+            <rect x="880" y="430" width="230" height="210" fill="var(--field)" opacity=".55"/>
+            <rect x="905" y="330" width="180" height="100" fill="var(--field)" opacity=".38"/>
+          </svg>
+          <span class="tag tagPh" style="position:absolute;left:20px;top:20px;z-index:4">PLACEHOLDER · ẢNH AMBIENT</span>
+        </div>
+        <div class="veil"></div>
+
+        <div class="authIn">
+          <div class="topbar">
+            <div class="lang kinh"><b>VI</b><span>EN</span></div>
+          </div>
+
+          <div class="mid">
+            <div class="mark">
+              <!-- mark |F — currentColor, không bao giờ tô accent (luật nhận diện) -->
+              <svg width="44" height="44" viewBox="0 0 44 44" aria-label="InteriorFlow">
+                <rect x="7" y="8" width="4" height="28" rx="1" fill="var(--t1)"/>
+                <path d="M19 36 V8 H35" stroke="var(--t1)" stroke-width="4" fill="none"/>
+                <path d="M19 21 H31" stroke="var(--t1)" stroke-width="4" fill="none"/>
+              </svg>
+              <div class="wordmark">INTERIORFLOW</div>
+            </div>
+
+            <div class="card">
+              <div class="tabs">
+                <button aria-selected="true">Đăng nhập</button>
+                <button aria-selected="false">Đăng ký</button>
+              </div>
+
+              <div class="f"><input placeholder="Email hoặc số điện thoại" value=""></div>
+              <div class="f">
+                <input type="password" placeholder="Mật khẩu">
+                <span class="eye" title="Xem mật khẩu">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                    <path d="M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="2.7"/>
+                  </svg>
+                </span>
+              </div>
+
+              <div class="rowOpt">
+                <label class="ck on"><span class="ckBox">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--on-accent)" stroke-width="3.4"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+                </span>Ghi nhớ đăng nhập</label>
+                <a class="lnk" href="#">Quên mật khẩu?</a>
+              </div>
+
+              <button class="btnXuong" data-st="idle"><span class="lens"></span><span class="lbl">Vào xưởng →</span></button>
+
+              <div class="hr">HOẶC TIẾP TỤC VỚI</div>
+              <div class="prov">
+                <button><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8.6h8.4M12 8.6a3.4 3.4 0 1 0 3.2 4.5"/></svg>Google</button>
+                <button><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7.6" height="7.6"/><rect x="13.4" y="3" width="7.6" height="7.6" opacity=".62"/><rect x="3" y="13.4" width="7.6" height="7.6" opacity=".62"/><rect x="13.4" y="13.4" width="7.6" height="7.6" opacity=".4"/></svg>Microsoft</button>
+                <button aria-disabled="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.4c0-2.5 2-3.7 2.1-3.8-1.1-1.7-2.9-1.9-3.6-1.9-1.5-.2-3 .9-3.7.9-.8 0-2-.9-3.2-.9-1.7 0-3.2 1-4 2.5-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.4 0 1.8.8 3.1.7 1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.5-1-2.5-3.9Z"/><path d="M14.2 4.9c.6-.8 1.1-1.9 1-3-1 0-2.2.6-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.5Z"/></svg>Apple</button>
+              </div>
+              <div class="provWhy">Apple: cần Apple Developer — sắp bật</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="doiNen kinh">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.5" cy="10" r="1.6"/><path d="M3.6 17.5 9 12.4l4 3.6 3.2-2.6 4.2 4.1"/></svg>
+          Đổi nền
+        </button>
+      </div>
+    </div>
+
+    <div class="strip">
+      <div class="chip"><button class="btnXuong" data-st="idle"><span class="lens"></span><span class="lbl">nghỉ</span></button>
+        <div><b>Nghỉ</b> — kính trôi 18s, biên độ nhỏ. Vật liệu đang sống, chưa ai chạm.</div></div>
+      <div class="chip"><button class="btnXuong" data-st="hover"><span class="lens"></span><span class="lbl">rê chuột</span></button>
+        <div><b>Rê chuột</b> — kính nghiêng về phía con trỏ, mũi tên nhích 2px. Nền lên <span class="mono">--accent-strong</span>.</div></div>
+      <div class="chip"><button class="btnXuong" data-st="press"><span class="lens"></span><span class="lbl">bấm</span></button>
+        <div><b>Bấm</b> — nút nén còn .985, kính CÔ ĐẶC về .94. Nén rồi mới nhả, không đổi màu.</div></div>
+      <div class="chip"><button class="btnXuong" data-st="mo"><span class="lens"></span><span class="lbl">cửa đã mở</span></button>
+        <div><b>Cửa đã mở</b> — MỘT lượt quét sáng, chỉ chạy sau khi máy chủ trả về thành công THẬT.
+          Đây là câu trả lời, không phải hiệu ứng của cú bấm.</div></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ B · LỖI ══════════════════════════════ -->
+  <section class="board">
+    <div class="boardHead">
+      <span class="k">B</span><h2>Đăng nhập · sai thông tin (401 thật)</h2>
+      <span class="note">Đỏ chỉ dành cho hỏng thật. Câu báo nằm GIỮA hàng tuỳ chọn và nút — đúng nơi mắt
+        đang đi xuống, không phải trên đỉnh thẻ nơi nó bị bỏ qua.</span>
+    </div>
+    <div class="frame">
+      <div class="auth" style="height:780px">
+        <div class="photo"><svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <g fill="none" stroke="var(--t5)" stroke-width="1.2" opacity=".34">
+            <path d="M0 620 H1440"/><path d="M232 0 V620"/><path d="M1150 0 V620"/></g>
+          <rect x="300" y="110" width="300" height="380" fill="var(--panel)" opacity=".5"/>
+          <rect x="880" y="410" width="230" height="210" fill="var(--field)" opacity=".5"/>
+        </svg></div>
+        <div class="veil"></div>
+
+        <div class="authIn">
+          <div class="topbar"><div class="lang kinh"><b>VI</b><span>EN</span></div></div>
+          <div class="mid">
+            <div class="mark">
+              <svg width="40" height="40" viewBox="0 0 44 44" aria-hidden="true">
+                <rect x="7" y="8" width="4" height="28" rx="1" fill="var(--t1)"/>
+                <path d="M19 36 V8 H35" stroke="var(--t1)" stroke-width="4" fill="none"/>
+                <path d="M19 21 H31" stroke="var(--t1)" stroke-width="4" fill="none"/></svg>
+              <div class="wordmark">INTERIORFLOW</div>
+            </div>
+
+            <div class="card">
+              <div class="tabs">
+                <button aria-selected="true">Đăng nhập</button>
+                <button aria-selected="false">Đăng ký</button>
+              </div>
+              <!-- Ô email GIỮ NGUYÊN giá trị đã gõ. Xoá nó là phạt người dùng hai lần. -->
+              <div class="f"><input placeholder="Email hoặc số điện thoại" value="hoa@studio.vn"></div>
+              <div class="f bad focus">
+                <input type="password" placeholder="Mật khẩu" value="••••••••">
+                <span class="eye"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="2.7"/></svg></span>
+              </div>
+              <div class="rowOpt">
+                <label class="ck on"><span class="ckBox"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--on-accent)" stroke-width="3.4"><path d="M4 12.5 9.5 18 20 6.5"/></svg></span>Ghi nhớ đăng nhập</label>
+                <a class="lnk" href="#">Quên mật khẩu?</a>
+              </div>
+
+              <div class="err" role="alert">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7.6v5.2M12 16.4h.01"/></svg>
+                <span>Sai email/SĐT hoặc mật khẩu.</span>
+              </div>
+
+              <button class="btnXuong" data-st="idle"><span class="lens"></span><span class="lbl">Vào xưởng →</span></button>
+
+              <div class="hr">HOẶC TIẾP TỤC VỚI</div>
+              <div class="prov">
+                <button><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8.6h8.4M12 8.6a3.4 3.4 0 1 0 3.2 4.5"/></svg>Google</button>
+                <button><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7.6" height="7.6"/><rect x="13.4" y="3" width="7.6" height="7.6" opacity=".62"/><rect x="3" y="13.4" width="7.6" height="7.6" opacity=".62"/><rect x="13.4" y="13.4" width="7.6" height="7.6" opacity=".4"/></svg>Microsoft</button>
+                <button aria-disabled="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.4c0-2.5 2-3.7 2.1-3.8-1.1-1.7-2.9-1.9-3.6-1.9-1.5-.2-3 .9-3.7.9-.8 0-2-.9-3.2-.9-1.7 0-3.2 1-4 2.5-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.4 0 1.8.8 3.1.7 1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.5-1-2.5-3.9Z"/><path d="M14.2 4.9c.6-.8 1.1-1.9 1-3-1 0-2.2.6-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.5Z"/></svg>Apple</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="doiNen kinh"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.5" cy="10" r="1.6"/><path d="M3.6 17.5 9 12.4l4 3.6 3.2-2.6 4.2 4.1"/></svg>Đổi nền</button>
+      </div>
+    </div>
+    <div class="strip">
+      <div class="chip"><div><b>Ba kênh, không chỉ màu</b> — câu chữ + hình tam giác cảnh báo + gạch dưới ô mật khẩu
+        đổi sang <span class="mono">--danger</span>. Người không phân biệt được màu vẫn biết hỏng ở đâu.</div></div>
+      <div class="chip"><div><b>Không đổi bố cục</b> — thẻ cao thêm đúng chiều cao câu báo; nút không nhảy đi chỗ khác,
+        tay đang ở đâu bấm lại được ở đó.</div></div>
+      <div class="chip"><div><b>Lỗi máy chủ tắt</b> dùng cùng khuôn này, khác chữ:
+        <span class="mono">"Không nối được máy chủ. Bật lại máy chủ rồi bấm lại."</span></div></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ C · ĐĂNG KÝ ══════════════════════════════ -->
+  <section class="board">
+    <div class="boardHead">
+      <span class="k">C</span><h2>Đăng ký</h2>
+      <span class="note">Cùng một thẻ, thêm đúng một ô. Không đổi khung, không đổi ảnh nền, không phải màn khác —
+        gạch tím dưới tab là thứ duy nhất di chuyển.</span>
+    </div>
+    <div class="frame">
+      <div class="auth" style="height:800px">
+        <div class="photo"><svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <g fill="none" stroke="var(--t5)" stroke-width="1.2" opacity=".34">
+            <path d="M0 620 H1440"/><path d="M232 0 V620"/><path d="M1150 0 V620"/></g>
+          <rect x="300" y="110" width="300" height="380" fill="var(--panel)" opacity=".5"/>
+        </svg></div>
+        <div class="veil"></div>
+        <div class="authIn">
+          <div class="topbar"><div class="lang kinh"><b>VI</b><span>EN</span></div></div>
+          <div class="mid">
+            <div class="mark">
+              <svg width="40" height="40" viewBox="0 0 44 44" aria-hidden="true">
+                <rect x="7" y="8" width="4" height="28" rx="1" fill="var(--t1)"/>
+                <path d="M19 36 V8 H35" stroke="var(--t1)" stroke-width="4" fill="none"/>
+                <path d="M19 21 H31" stroke="var(--t1)" stroke-width="4" fill="none"/></svg>
+              <div class="wordmark">INTERIORFLOW</div>
+            </div>
+            <div class="card reg">
+              <div class="tabs">
+                <button aria-selected="false">Đăng nhập</button>
+                <button aria-selected="true">Đăng ký</button>
+              </div>
+              <div class="f"><input placeholder="Tên của bạn"></div>
+              <div class="f"><input placeholder="Email hoặc số điện thoại"></div>
+              <div class="f">
+                <input type="password" placeholder="Mật khẩu (≥ 6 ký tự)">
+                <span class="eye"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="2.7"/></svg></span>
+              </div>
+              <div class="rowOpt">
+                <label class="ck on"><span class="ckBox"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--on-accent)" stroke-width="3.4"><path d="M4 12.5 9.5 18 20 6.5"/></svg></span>Ghi nhớ đăng nhập</label>
+                <span></span>
+              </div>
+              <button class="btnXuong" data-st="idle"><span class="lens"></span><span class="lbl">Tạo tài khoản</span></button>
+              <div class="hr">HOẶC TIẾP TỤC VỚI</div>
+              <div class="prov">
+                <button><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8.6h8.4M12 8.6a3.4 3.4 0 1 0 3.2 4.5"/></svg>Google</button>
+                <button><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7.6" height="7.6"/><rect x="13.4" y="3" width="7.6" height="7.6" opacity=".62"/><rect x="3" y="13.4" width="7.6" height="7.6" opacity=".62"/><rect x="13.4" y="13.4" width="7.6" height="7.6" opacity=".4"/></svg>Microsoft</button>
+                <button aria-disabled="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.4c0-2.5 2-3.7 2.1-3.8-1.1-1.7-2.9-1.9-3.6-1.9-1.5-.2-3 .9-3.7.9-.8 0-2-.9-3.2-.9-1.7 0-3.2 1-4 2.5-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.4 0 1.8.8 3.1.7 1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.5-1-2.5-3.9Z"/><path d="M14.2 4.9c.6-.8 1.1-1.9 1-3-1 0-2.2.6-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.5Z"/></svg>Apple</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="doiNen kinh"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.5" cy="10" r="1.6"/><path d="M3.6 17.5 9 12.4l4 3.6 3.2-2.6 4.2 4.1"/></svg>Đổi nền</button>
+      </div>
+    </div>
+    <div class="strip">
+      <div class="chip"><div><b>Nút đổi chữ, không đổi vật</b> — "Tạo tài khoản" dùng ĐÚNG nút thấu kính của
+        "Vào xưởng". Hai nhãn, một vật liệu; cửa vẫn là cùng một cánh cửa.</div></div>
+      <div class="chip"><div><b>Không hộp kính quanh ô nhập</b> — gạch dưới mảnh, đúng ngôn ngữ đang chạy.
+        Kính chỉ thuộc lớp nổi (VI/EN, Đổi nền), không thuộc nội dung.</div></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ D · MÀN KHOÁ ══════════════════════════════ -->
+  <section class="board">
+    <div class="boardHead">
+      <span class="k">D</span><h2>Màn khoá — tấm phủ, không phải cửa vào</h2>
+      <span class="note">Phân biệt quan trọng nhất cả tệp. So D với A: KHÔNG mark, KHÔNG wordmark, KHÔNG tab,
+        KHÔNG ô email, KHÔNG nhà cung cấp, KHÔNG ảnh nền riêng — thứ phía sau chính là việc đang làm.</span>
+    </div>
+    <div class="frame">
+      <div class="lock">
+
+        <!-- việc THẬT vẫn ở đó, chỉ bị che. Không unmount, không điều hướng. -->
+        <div class="ghostWrap"><div class="ghost">
+          <div class="gTop">
+            <div class="gBlk" style="width:96px;height:14px"></div>
+            <div class="gBlk" style="width:150px;height:12px"></div>
+            <div class="gBlk" style="width:70px;height:12px;margin-left:auto"></div>
+          </div>
+          <div class="gBody">
+            <div class="gRail">
+              <div class="gBlk" style="width:30px;height:30px"></div><div class="gBlk" style="width:30px;height:30px"></div>
+              <div class="gBlk" style="width:30px;height:30px"></div><div class="gBlk" style="width:30px;height:30px"></div>
+            </div>
+            <div class="gCanvas"><div class="gRender"></div><div class="gPlan"></div></div>
+            <div class="gInsp">
+              <div class="gLine" style="width:60%"></div>
+              <div class="gBlk" style="height:76px"></div>
+              <div class="gLine" style="width:84%"></div><div class="gLine" style="width:52%"></div>
+              <div class="gBlk" style="height:120px"></div>
+            </div>
+          </div>
+        </div></div>
+        <span class="tag tagPh" style="position:absolute;left:18px;top:16px;z-index:3">PLACEHOLDER · WORKSPACE THẬT PHÍA SAU</span>
+
+        <div class="lockVeil"></div>
+
+        <div class="lockMid">
+          <!-- D-1 · MẶT KHOÁ -->
+          <div class="lockFace">
+            <div class="lockPin">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4.5" y="10.5" width="15" height="10" rx="2.4"/><path d="M8.2 10.5V7.6a3.8 3.8 0 0 1 7.6 0v2.9"/></svg>
+            </div>
+            <div class="gio">14:32</div>
+            <div class="nguCanh"><b>Căn hộ Thảo Điền</b><span aria-hidden>·</span><span>2D Kỹ thuật</span></div>
+            <div class="dongNgan">Ánh sáng kể giờ, vật liệu kể chất.</div>
+            <div class="daLuu"><i></i>Đã lưu trước khi khoá · 14:31</div>
+            <button class="moLai">Mở lại
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="1.9"><path d="M20 5v6a3 3 0 0 1-3 3H5"/><path d="M9 10l-4 4 4 4"/></svg>
+            </button>
+          </div>
+
+          <!-- D-2 · MẶT XÁC THỰC LẠI (mặt sau của cùng một thẻ) -->
+          <div class="reauth">
+            <div class="ava">H</div>
+            <div class="ten">Trần Thái Hoà</div>
+            <div class="mail">hoa@studio.vn</div>
+            <div class="f focus" style="margin-bottom:16px">
+              <input type="password" placeholder="Mật khẩu" value="••••••">
+              <span class="eye"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="2.7"/></svg></span>
+            </div>
+            <button class="btnMo">Mở lại</button>
+            <button class="quayLai">Quay lại màn khoá</button>
+          </div>
+        </div>
+
+        <div class="lat">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v18"/><path d="M12 6a7 5 0 0 0-7 5 7 5 0 0 0 7 5"/><path d="M12 6a7 5 0 0 1 7 5 7 5 0 0 1-7 5"/></svg>
+          Cùng MỘT thẻ · lật 180° quanh trục Y, 620ms · giảm chuyển động ⇒ đổi mặt tức thì, không xoay
+        </div>
+      </div>
+    </div>
+    <div class="strip">
+      <div class="chip"><div><b>Thứ bậc mặt khoá</b>: giờ → ngữ cảnh → một dòng ngắn → Mở lại ↵. Đủ để biết mình
+        đang ở đâu, không đủ để người đi ngang đọc được nội dung.</div></div>
+      <div class="chip"><div><b>Mặt sau chỉ hỏi MỘT thứ</b>: mật khẩu của chính người đang mở. Không email
+        (đã biết là ai), không tab Đăng ký, không OAuth — phiên chưa hề mất.</div></div>
+      <div class="chip"><div><b>Không có vân tay / FaceID</b> — máy chủ không có đường WebAuthn. Một cái nút
+        không bấm được còn tệ hơn không có nút.</div></div>
+      <div class="chip"><div><b>"Đã lưu trước khi khoá"</b> là lời hứa nhìn thấy được: khoá đã ép autosave chạy
+        xong mới che. Chấm <span class="mono">--success</span> nhỏ, không phải huy hiệu bảo mật.</div></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ E · TIẾP TỤC ══════════════════════════════ -->
+  <section class="board">
+    <div class="boardHead">
+      <span class="k">E</span><h2>Tiếp tục — về đúng chỗ đã rời</h2>
+      <span class="note">Không màn chờ tải, không "đang khôi phục…". Cửa mở ra là bàn làm việc đã bày sẵn;
+        dải nhỏ chỉ nói mình vừa quay lại đâu rồi tự lui.</span>
+    </div>
+    <div class="frame">
+      <div class="res">
+        <div class="resScene">
+          <div class="rTop">
+            <svg width="16" height="16" viewBox="0 0 44 44" aria-hidden="true"><rect x="7" y="8" width="4" height="28" rx="1" fill="var(--t1)"/><path d="M19 36 V8 H35" stroke="var(--t1)" stroke-width="4" fill="none"/><path d="M19 21 H31" stroke="var(--t1)" stroke-width="4" fill="none"/></svg>
+            <b>Căn hộ Thảo Điền</b><span>2D Kỹ thuật · Sơ phác</span>
+            <span style="margin-left:auto">Đã lưu · 14:31</span>
+          </div>
+          <div class="rBody">
+            <div class="gRail" style="filter:none">
+              <div class="gBlk" style="width:30px;height:30px"></div><div class="gBlk" style="width:30px;height:30px"></div>
+              <div class="gBlk" style="width:30px;height:30px"></div>
+            </div>
+            <div class="gCanvas">
+              <div class="gRender"></div><div class="gPlan"></div>
+              <div class="selRing"></div>
+              <span class="tag tagPh" style="position:absolute;left:14px;bottom:14px">PLACEHOLDER · BẢN VẼ ĐANG DỞ</span>
+            </div>
+            <div class="gInsp">
+              <div class="gLine" style="width:56%"></div>
+              <div class="gBlk" style="height:84px"></div>
+              <div class="gLine" style="width:80%"></div><div class="gLine" style="width:46%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ribbon kinh">
+          <span class="dot"></span>
+          Tiếp tục từ chỗ bạn dừng · <b style="font-weight:var(--fw-semi)">2D Kỹ thuật</b>
+          <span class="x" title="Đóng">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="strip">
+      <div class="chip"><div><b>Vùng chọn còn nguyên</b> — vòng <span class="mono">--accent</span> quanh khung
+        đang chọn là bằng chứng mắt thấy được rằng không có gì bị dựng lại.</div></div>
+      <div class="chip"><div><b>Dải tự lui sau ~2,4s</b>, hoặc bấm × là đi ngay. Nó thông báo, không hỏi han.
+        Giảm chuyển động ⇒ hiện thẳng rồi lui thẳng, không trượt.</div></div>
+      <div class="chip"><div><b>Dùng chung cho CẢ HAI cửa</b>: sau "Vào xưởng" (phiên mới) và sau "Mở lại"
+        (tấm phủ nhấc lên). Khác nhau ở chỗ mở khoá thì cây phía sau chưa từng rời màn — dải chỉ chào một câu.</div></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ F · KHỔ HẸP ~1100 ══════════════════════════════ -->
+  <section class="board" style="width:1100px">
+    <div class="boardHead">
+      <span class="k">F</span><h2>Khổ hẹp ~1100px</h2>
+      <span class="note">Thẻ giữ nguyên 400px — nó là vật, không phải phần trăm. Ảnh nền cắt vào, không co lại;
+        khoảng thở trên/dưới rút, ba nút nhà cung cấp vẫn một hàng.</span>
+    </div>
+    <div class="frame">
+      <div class="auth narrow">
+        <div class="photo"><svg viewBox="0 0 1100 820" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <g fill="none" stroke="var(--t5)" stroke-width="1.2" opacity=".36">
+            <path d="M0 560 H1100"/><path d="M180 0 V560"/><path d="M890 0 V560"/></g>
+          <rect x="235" y="96" width="250" height="330" fill="var(--panel)" opacity=".5"/>
+          <rect x="680" y="380" width="190" height="180" fill="var(--field)" opacity=".5"/>
+        </svg></div>
+        <div class="veil"></div>
+        <div class="authIn">
+          <div class="topbar" style="padding:16px 20px"><div class="lang kinh"><b>VI</b><span>EN</span></div></div>
+          <div class="mid">
+            <div class="mark" style="margin-bottom:20px">
+              <svg width="34" height="34" viewBox="0 0 44 44" aria-hidden="true"><rect x="7" y="8" width="4" height="28" rx="1" fill="var(--t1)"/><path d="M19 36 V8 H35" stroke="var(--t1)" stroke-width="4" fill="none"/><path d="M19 21 H31" stroke="var(--t1)" stroke-width="4" fill="none"/></svg>
+              <div class="wordmark" style="font-size:var(--fs-2xs);letter-spacing:.28em">INTERIORFLOW</div>
+            </div>
+            <div class="card" style="padding:22px 24px 20px">
+              <div class="tabs" style="margin-bottom:18px">
+                <button aria-selected="true">Đăng nhập</button>
+                <button aria-selected="false">Đăng ký</button>
+              </div>
+              <div class="f" style="margin-bottom:14px"><input placeholder="Email hoặc số điện thoại"></div>
+              <div class="f" style="margin-bottom:14px">
+                <input type="password" placeholder="Mật khẩu">
+                <span class="eye"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="2.7"/></svg></span>
+              </div>
+              <div class="rowOpt" style="margin:0 0 14px">
+                <label class="ck on"><span class="ckBox"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--on-accent)" stroke-width="3.4"><path d="M4 12.5 9.5 18 20 6.5"/></svg></span>Ghi nhớ đăng nhập</label>
+                <a class="lnk" href="#">Quên mật khẩu?</a>
+              </div>
+              <button class="btnXuong" data-st="idle"><span class="lens"></span><span class="lbl">Vào xưởng →</span></button>
+              <div class="hr" style="margin:16px 0 12px">HOẶC TIẾP TỤC VỚI</div>
+              <div class="prov">
+                <button><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8.6h8.4M12 8.6a3.4 3.4 0 1 0 3.2 4.5"/></svg>Google</button>
+                <button><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7.6" height="7.6"/><rect x="13.4" y="3" width="7.6" height="7.6" opacity=".62"/><rect x="3" y="13.4" width="7.6" height="7.6" opacity=".62"/><rect x="13.4" y="13.4" width="7.6" height="7.6" opacity=".4"/></svg>Microsoft</button>
+                <button aria-disabled="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.4c0-2.5 2-3.7 2.1-3.8-1.1-1.7-2.9-1.9-3.6-1.9-1.5-.2-3 .9-3.7.9-.8 0-2-.9-3.2-.9-1.7 0-3.2 1-4 2.5-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.4 0 1.8.8 3.1.7 1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.5-1-2.5-3.9Z"/><path d="M14.2 4.9c.6-.8 1.1-1.9 1-3-1 0-2.2.6-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.5Z"/></svg>Apple</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="doiNen kinh" style="right:20px;bottom:18px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.5" cy="10" r="1.6"/><path d="M3.6 17.5 9 12.4l4 3.6 3.2-2.6 4.2 4.1"/></svg>Đổi nền</button>
+      </div>
+    </div>
+    <div class="strip">
+      <div class="chip"><div><b>Thứ co lại là KHOẢNG THỞ</b>, không phải phần tử. Wordmark 12→11px, tab margin
+        22→18, ô nhập 18→14. Không có gì bị bỏ đi.</div></div>
+      <div class="chip"><div><b>Màn khoá ở khổ hẹp</b> giữ nguyên: giờ 56px không đổi. Nó là mỏ neo của cả mặt khoá,
+        co nó lại là mất trọng tâm.</div></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- DESIGN NOTES
+  1 · KHOÁ ≠ ĐĂNG NHẬP — làm cho MẮT thấy được, không chỉ ghi trong tài liệu.
+     A và D cố ý KHÔNG có một phần tử chung nào. A có mark |F, wordmark, tab, ô email, ba nhà cung cấp,
+     ảnh nền riêng — bốn thứ nói "bạn đang ở NGOÀI". D có giờ, tên dự án, tên chặng, và chính công việc
+     đang mờ phía sau — bốn thứ nói "bạn vẫn ở TRONG, chỉ có tấm phủ". Ai liếc qua cũng phân biệt được
+     mà không phải đọc chữ nào. Đây là lý do mặt khoá không được mượn lại thẻ đăng nhập.
+
+  2 · VIỆC ĐANG SỐNG PHẢI NHÌN THẤY ĐƯỢC. Nền của D không phải một mảng tối, nó là workspace thật:
+     nhận ra bố cục quen (rail · canvas có lưới chấm · inspector), mờ 26px nên KHÔNG đọc được con số,
+     ảnh render hay bản vẽ. Thêm nhịp thở 9s rất chậm để nó không đọc ra là ảnh chụp màn hình đóng băng.
+     Che thì che cái nhìn, đừng che cái sống.
+
+  3 · KÍNH CHỈ Ở LỚP NỔI. Trong cả tệp chỉ có ba vật là kính: VI/EN, "Đổi nền", và dải Tiếp tục — cả ba
+     đều lơ lửng trên thứ khác và đều ít chữ. Thẻ đăng nhập, thẻ xác thực lại, inspector đều ĐẶC
+     (--vl-dac): chúng mang chữ và ô nhập, tương phản ở đó không được phép chạy theo tấm ảnh phía sau.
+
+  4 · NÚT THẤU KÍNH LÀ VẬT LIỆU, KHÔNG PHẢI HIỆU ỨNG. Nền tím ĐẶC luôn ở đó; lớp kính bên trên khúc xạ
+     mảng tím ấy. Nghỉ thì trôi 18s biên độ nhỏ · rê chuột thì nghiêng về con trỏ · bấm thì cô đặc về .94.
+     Lượt quét sáng CHỈ chạy một lần sau khi máy chủ trả về thành công thật — nó nói "cửa đã mở", không
+     phải phản hồi của cú bấm. prefers-reduced-motion: kính Ở LẠI và đứng yên; xoá nó là xoá vật liệu.
+
+  5 · CHỈ MỘT MÀU NHẤN, VÀ MÀU NÀO CŨNG MANG NGHĨA. Tím: cửa đang mở được (nút chính, gạch tab đang chọn,
+     vùng chọn còn nguyên ở E). Đỏ: hỏng thật, và đúng một câu — "Sai email/SĐT hoặc mật khẩu.".
+     Xanh: đã lưu. Vàng đồng đã nghỉ, không còn ở đâu trong tệp này. Không huy hiệu "bảo mật", không
+     vân tay/FaceID (máy chủ không có đường WebAuthn — nút bấm không được còn tệ hơn không có nút).
+-->
+
+<!-- TRANSFER NOTES
+  ┌─ Bản vẽ → tệp sản xuất sẽ sở hữu nó ─────────────────────────────────────────────────────────┐
+
+  A · Login (nghỉ)            → components/entry/LoginForm.tsx        (thẻ · tab · ô nhập · nút · 3 nhà cung cấp)
+                              → components/entry/LoginScreen.tsx      (cột giữa · mark |F · wordmark · VI/EN)
+                              → components/entry/LoginBackdrop.tsx    (ảnh ambient + nút "Đổi nền")
+                              → components/entry/IFLogo.tsx           (mark |F — giữ currentColor, KHÔNG tô accent)
+  B · Login lỗi               → components/entry/LoginForm.tsx        (khối .err giữa hàng tuỳ chọn và nút)
+  C · Đăng ký                 → components/entry/LoginForm.tsx        (mode='register'; thêm ô "Tên của bạn")
+  D-1 · Mặt khoá              → components/studio/LockScreen.tsx      ⚠️ KHÔNG phải components/entry/LockScreen.tsx
+                              → lib/lockscreen.ts                     (cờ locked · ép autosave · canh nhàn rỗi)
+  D-2 · Mặt xác thực lại      → components/auth/TheXacThucLai.tsx     (+ lib/auth/xac-thuc-lai.ts)
+  E · Tiếp tục                → components/entry/ResumeTracker.tsx    (đang render null — dải Tiếp tục là PHẦN MỚI)
+                              → lib/resume.ts · components/home/widgets/resume-card.ts
+  F · Khổ hẹp                 → cùng các tệp trên, chỉ đổi khoảng thở
+
+  ┌─ Token MỚI giới thiệu ───────────────────────────────────────────────────────────────────────┐
+  KHÔNG CÓ. Toàn bộ bản vẽ dùng token đã tồn tại trong app/globals.css. Ba giá trị dẫn xuất tại chỗ
+  bằng color-mix() từ token thật, KHÔNG cần khai token mới:
+    · nền/viền ô báo lỗi  = color-mix(--danger 12% / 32%, transparent)
+    · lớp che màn khoá    = color-mix(--bg 72%, transparent)      ← đã chạy thật ở LockScreen.tsx
+    · các mảng thấu kính  = color-mix(--on-accent / --accent-strong, transparent)
+  Nếu MAIN muốn token hoá lớp kính nút, đề xuất tên `--lens-*`; bản vẽ này CỐ Ý không mở nợ token.
+
+  ┌─ Ba lệch giữa bản vẽ và mã đang chạy — MAIN xử lúc dựng ─────────────────────────────────────┐
+  L1 · LoginForm.tsx docstring dòng 27 ghi tab dùng "gạch chân ĐỒNG". Vàng đồng đã nghỉ ⇒ gạch tab
+       phải là var(--accent). Sửa cả docstring, đừng để chữ chỉ sai đường cho phiên sau.
+  L2 · Brief của MAIN ghi phím khoá là ⌘⇧L; docstring lib/lockscreen.ts ghi ⌃⌘Q. Bản vẽ KHÔNG in phím
+       nào lên mặt khoá vì lý do đó — MAIN đo lại ở lib/commands/registry.ts rồi mới in.
+  L3 · Nút Apple: mã luôn trả "Cần Apple Developer — sắp bật". Bản vẽ để nó mờ theo --mo-vo-hieu +
+       aria-disabled + câu lý do dưới hàng nút, KHÔNG dùng thuộc tính title (title câm trên cảm ứng).
+
+  ┌─ Phần MỚI, chưa có trong mã (MAIN phải dựng, không phải chép) ───────────────────────────────┐
+  N1 · Dòng "Đã lưu trước khi khoá · 14:31" trên mặt khoá — đọc từ lib/save-status.ts, mà lockScreenNow()
+       vốn đã ép autosave chạy xong mới bật cờ. Chỉ là hiển thị lại một sự thật đã có.
+  N2 · Dải "Tiếp tục từ chỗ bạn dừng" ở E — ResumeTracker.tsx hiện render null. Tự lui sau ~2,4s,
+       có nút ×, và với prefers-reduced-motion thì hiện/lui thẳng, không trượt.
+  N3 · Ảnh trong artboard đều là PLACEHOLDER dựng bằng token, KHÔNG phải ảnh thật và KHÔNG phải
+       tài sản của studio nào — cấm chép SVG đó vào sản phẩm làm ảnh nền.
+-->

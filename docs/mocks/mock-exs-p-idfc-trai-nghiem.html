@@ -1,0 +1,134 @@
+<!-- @dsCard group="Experience System" title="EXS-P · IDFC — trải nghiệm Library" -->
+<!--
+  EXS-P — LIBRARY EXPERIENCE (phiếu §15-§23): 3 view mode trên CÙNG asset · card states ·
+  inspector · Place + anchor · Replace · Override vs Edit Definition · 2D↔3D same identity.
+  REUSE: LibrarySheet 960 + 3 nấc thẻ (đã có) · srcInsertId (instance giữ liên kết) · Checkpoint
+  (khuôn duyệt) · MaterialImpactPreview (blast radius) · quả cầu PBR. DESIGN ONLY.
+-->
+<div class="exp-root">
+<style>
+  .exp-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --success:#46b876; --warning:#d9a34a; --danger:#e5674f;
+    --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+    background:var(--bg); color:var(--t2); padding:36px;
+    font:13px/1.5 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exp-root *{box-sizing:border-box}
+  .h1{font-size:22px;font-weight:700;color:var(--t1);margin:0 0 4px}
+  .sub{color:var(--t3);margin:0 0 20px;max-width:940px}
+  .sec{margin:26px 0 10px;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--t4);text-transform:uppercase}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+  .pane{border:1px solid var(--border);border-radius:13px;background:var(--panel);padding:12px;font-size:11px;color:var(--t3)}
+  .pane b{color:var(--t1)}
+  .pane h5{margin:0 0 8px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t4)}
+  .chip{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);background:var(--card);font-size:10px;color:var(--t3);margin:2px 3px 0 0}
+  .chip.on{border-color:var(--accent-ring);background:var(--accent-soft);color:var(--t1)}
+  /* mini card grid */
+  .mini{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .mc{border:1px solid var(--border);border-radius:9px;background:var(--card);padding:7px;font-size:9.5px;color:var(--t4)}
+  .mc .th{height:44px;border-radius:6px;background:var(--field);border:1px solid var(--border);display:grid;place-items:center;margin-bottom:4px}
+  .mc b{color:var(--t1);font-size:10px;display:block}
+  .p{stroke:#f5f5f7;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .v{stroke:#d6d6db;stroke-width:1.1;fill:none}
+  .s{stroke:#9e9ea8;stroke-width:.7;fill:none}
+  .ax{stroke:#6e6e78;stroke-width:.5;fill:none;stroke-dasharray:8 3 2 3}
+  .sw{width:16px;height:16px;border-radius:99px;border:1px solid var(--border-strong);display:inline-block;vertical-align:-3px;margin-right:4px}
+  .flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .fs{border:1px solid var(--border);border-radius:10px;background:var(--panel);padding:8px 9px;font-size:10px;color:var(--t3);position:relative;min-height:88px}
+  .fs b{display:block;color:var(--t1);font-size:10.5px;margin-bottom:3px}
+  .fs:after{content:"→";position:absolute;right:-9px;top:42%;color:var(--t5)}
+  .fs:last-child:after{content:""}
+  .cvm{height:44px;border-radius:6px;background:var(--card);border:1px solid var(--border);position:relative;overflow:hidden;margin-bottom:4px}
+  .anchor{position:absolute;width:8px;height:8px;border-radius:99px;border:1.4px solid var(--accent);background:var(--accent-soft)}
+  .ghostpos{position:absolute;border:1.2px dashed var(--border-strong);border-radius:3px}
+  .law{border:1px solid var(--danger);border-radius:9px;background:rgba(229,103,79,.07);padding:6px 10px;font-size:10.5px;color:var(--t2);margin-top:8px}
+</style>
+
+  <div class="h1">EXS-P · Trải nghiệm Library — một asset, ba view mode, một identity</div>
+  <p class="sub">KHÔNG có "thư viện 2D" và "thư viện 3D" riêng — <b style="color:var(--t1)">một database, ba ống kính</b>. REUSE: tấm LibrarySheet 960 + 3 nấc thẻ đã có; `srcInsertId` giữ liên kết instance; Checkpoint làm cửa duyệt.</p>
+
+  <div class="sec">① Ba VIEW MODE — cùng bộ asset, đổi ống kính (segmented trên đầu tấm Library)</div>
+  <div class="three">
+    <div class="pane"><h5>CAD VIEW — đang ở 2D</h5>
+      <div class="mini">
+        <div class="mc"><span class="th"><svg width="56" height="36" viewBox="0 0 150 112"><rect class="p" x="37" y="30" width="76" height="56" rx="8"/><path class="v" d="M45 30 h60 a8 8 0 0 1 8 8 v6 h-76 v-6 a8 8 0 0 1 8 -8z"/></svg></span><b>Ghế ăn Oslo</b>450×500 · <span style="color:var(--t3)">plan+elev ✓</span></div>
+        <div class="mc"><span class="th"><svg width="56" height="36" viewBox="0 0 150 112"><rect class="p" x="15" y="30" width="120" height="58" rx="7"/><path class="v" d="M15 45 h14 v43 M135 45 h-14 v43 M29 45 v43 M63 45 v43 M98 45 v43"/></svg></span><b>Sofa Nara</b>2200×950 · plan+elev ✓</div>
+      </div>
+      <div style="margin-top:6px"><span class="chip on">Plan preview</span><span class="chip">size · type</span><span class="chip">rep availability</span></div></div>
+    <div class="pane"><h5>MATERIAL VIEW — đang lựa style</h5>
+      <div class="mini">
+        <div class="mc"><span class="th" style="background:linear-gradient(135deg,#5b5f66,#33363c)"></span><b>Nara · bouclé xám</b><span class="sw" style="background:#5b5f66"></span><span class="sw" style="background:#8a7354"></span><span class="sw" style="background:#2a2118"></span></div>
+        <div class="mc"><span class="th" style="background:linear-gradient(135deg,#8a7354,#4c3f2c)"></span><b>Nara · da cognac</b><span class="sw" style="background:#8a5a34"></span><span class="sw" style="background:#2a2118"></span></div>
+      </div>
+      <div style="margin-top:6px"><span class="chip on">finish · colorway</span><span class="chip">surface character</span></div></div>
+    <div class="pane"><h5>SPATIAL VIEW — đang ở 3D/Present</h5>
+      <div class="mini">
+        <div class="mc"><span class="th" style="background:radial-gradient(80% 70% at 45% 30%,#23262c,#101114)"><svg width="46" height="30" viewBox="0 0 150 112"><path d="M20 46 q0 -22 12 -22 l86 0 q12 0 12 22 l0 38 q0 8 -9 8 l-92 0 q-9 0 -9 -8 z" fill="#41454c"/></svg></span><b>Sofa Nara</b>proxy · design · pres.</div>
+        <div class="mc"><span class="th" style="background:radial-gradient(80% 70% at 45% 30%,#23262c,#101114)"><svg width="34" height="30" viewBox="0 0 150 112"><path d="M41 78 q0 -32 34 -32 q34 0 34 32z" fill="#8a6437"/></svg></span><b>Đèn Nón Đồng</b>silhouette · matière</div>
+      </div>
+      <div style="margin-top:6px"><span class="chip on">3D preview</span><span class="chip">proportion</span></div></div>
+  </div>
+
+  <div class="sec">② Card states + depth CARD → PEEK → INSPECT → DEEP</div>
+  <div class="two">
+    <div class="pane">
+      <div class="three" style="grid-template-columns:repeat(3,1fr);gap:8px">
+        <div class="mc"><span class="th"></span><b>idle</b>visual-first, ít chữ</div>
+        <div class="mc" style="box-shadow:var(--shadow-pop);transform:translateY(-1px)"><span class="th"></span><b>hover = PEEK</b>preview Plan ↔ 3D lật tại chỗ · quick: Đặt · Inspect · Ghim</div>
+        <div class="mc" style="border-color:var(--accent-ring);background:var(--accent-soft)"><span class="th"></span><b>selected = INSPECT</b>mở trục phải, không modal</div>
+      </div>
+      <div style="font-size:10px;color:var(--t4);margin-top:6px">Card default chỉ: preview · tên/type · kích thước · chỉ báo representation · tín hiệu nguồn. KHÔNG 15 dòng metadata.</div>
+    </div>
+    <div class="pane"><h5>INSPECT — trục phải (Context Lens, không modal)</h5>
+      <div style="display:flex;gap:10px">
+        <svg width="84" height="70" viewBox="0 0 150 112"><rect class="p" x="15" y="30" width="120" height="58" rx="7"/><path class="v" d="M15 45 h14 v43 M135 45 h-14 v43 M29 45 v43 M63 45 v43 M98 45 v43"/></svg>
+        <div style="font-size:10px;color:var(--t3)">
+          <b style="color:var(--t1)">Sofa Nara 3 chỗ</b> · 2200×950×780<br>
+          Slots: <span class="sw" style="background:#5b5f66"></span><span class="sw" style="background:#2a2118"></span><span class="sw" style="background:#8a8d92"></span><br>
+          <span class="chip">Plan ✓</span><span class="chip">Elev ✓</span><span class="chip">3D ✓</span><span class="chip">Rev R02</span><br>
+          <span class="chip">Nguồn: NCC Xưởng Mộc A ↗</span><span class="chip">Đang dùng: 3 dự án</span>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--t4);margin-top:5px">DEEP (cùng trục phải, nở xuống): variants · anchors · BuildRecipe · Where Used đầy đủ · provenance chain.</div></div>
+  </div>
+
+  <div class="sec">③ PLACE vào 2D — anchor là dữ liệu NGHỀ, không phải điểm giữa hình chữ nhật</div>
+  <div class="flow">
+    <div class="fs"><b>1 · Chọn từ Library</b><div class="cvm"><span style="position:absolute;left:8px;top:8px;width:34px;height:26px;border:1px solid var(--border-strong);border-radius:4px"></span></div>kéo hoặc bấm Đặt</div>
+    <div class="fs"><b>2 · Anchor đúng nghề</b><div class="cvm"><span class="ghostpos" style="left:30%;top:20%;width:34px;height:26px"></span><span class="anchor" style="left:calc(30% + 13px);top:16%"></span></div>ghế: back-center bám tường · tủ: rear-plane · cửa: hinge · đèn: mounting · cây: trunk · xe: axle ref</div>
+    <div class="fs"><b>3 · Snap + gõ số</b><div class="cvm"><span class="ghostpos" style="left:38%;top:24%;width:34px;height:26px;border-color:var(--accent-ring)"></span><span style="position:absolute;left:8px;bottom:5px;font:8px monospace;color:var(--t1);background:var(--field);border:1px solid var(--accent);border-radius:4px;padding:0 4px">cách tường 50</span></div>numeric trực tiếp · Enter/Esc</div>
+    <div class="fs"><b>4 · Confirm = INSTANCE</b><div class="cvm"><span style="position:absolute;left:38%;top:24%;width:34px;height:26px;border:1.4px solid #f5f5f7;border-radius:4px"></span></div>giữ `srcInsertId` — trỏ về kho, KHÔNG copy mất identity</div>
+    <div class="fs"><b>5 · Canvas sạch</b>liên kết Library chỉ hiện khi chọn (badge nhỏ ↗) — không clutter canvas</div>
+  </div>
+
+  <div class="sec">④ REPLACE — Master Capability (một lệnh, 2D = 3D)</div>
+  <div class="flow">
+    <div class="fs"><b>1 · Chọn instance</b>ghế cũ trên bản vẽ/scene</div>
+    <div class="fs"><b>2 · Replace</b>Library TỰ LỌC semantic-compatible (cùng kind + category + cỡ gần) — "mang đồ tới"</div>
+    <div class="fs"><b>3 · Preview footprint</b><div class="cvm"><span class="ghostpos" style="left:24%;top:18%;width:30px;height:24px"></span><span style="position:absolute;left:44%;top:14%;width:38px;height:30px;border:1.2px solid var(--warning);border-radius:4px"></span></div>cỡ mới KHÁC → thấy chồng lấn trước</div>
+    <div class="fs"><b>4 · Giữ context</b>position · anchor · rotation · room · layer · review/task relations (khi semantics cho phép)</div>
+    <div class="fs"><b>5 · Apply + Undo</b>một bước — Action Strip: "Đã thay 1 ghế · ↶"</div>
+  </div>
+
+  <div class="sec">⑤ OVERRIDE ↔ EDIT DEFINITION &nbsp;·&nbsp; ⑥ 2D ↔ 3D cùng identity</div>
+  <div class="two">
+    <div class="pane"><h5>Hai nút, hai phạm vi — không lẫn</h5>
+      <span class="chip on">Override instance</span> chỉ đổi BẢN NÀY (đè cục bộ — luật `.idfc` một chiều đã chốt)<br>
+      <span class="chip" style="border-color:var(--warning);color:var(--warning)">Edit definition…</span> đổi GỐC trong kho →
+      <div style="border:1px solid var(--warning);border-radius:9px;background:rgba(217,163,74,.07);padding:6px 9px;margin-top:6px;font-size:10.5px;color:var(--t2)">⚠ Where Used: 3 dự án · 14 instance · 2 slide · 1 BOQ — Impact Preview trước, người gật mới lan. Không silent overwrite.</div>
+      <div style="font-size:10px;color:var(--t4);margin-top:5px">Khuôn duyệt REUSE `Checkpoint` + blast-radius REUSE `MaterialImpactPreview` — không engine mới.</div></div>
+    <div class="pane"><h5>Cùng vật — hai chế độ nhìn</h5>
+      <div style="display:flex;gap:12px;align-items:center">
+        <svg width="72" height="54" viewBox="0 0 150 112"><rect class="p" x="37" y="30" width="76" height="56" rx="8"/><path class="v" d="M45 30 h60 a8 8 0 0 1 8 8 v6 h-76 v-6 a8 8 0 0 1 8 -8z"/></svg>
+        <span style="color:var(--t5)">↕ SAME SEMANTIC IDENTITY</span>
+        <svg width="72" height="54" viewBox="0 0 150 112"><path d="M38 52 q0 -26 37 -26 q37 0 37 26 l0 26 q0 8 -9 8 l-56 0 q-9 0 -9 -8z" fill="#3a3f47"/></svg>
+      </div>
+      <div style="font-size:10.5px;color:var(--t3);margin-top:5px">2D instance ↕ 3D instance: preserve position · orientation · semantic role. Không convert linework mù.</div>
+      <div class="law">Chưa có 3D → nói thật: <b>"3D representation unavailable"</b> + hành động THẬT nếu capability tồn tại (Attach · Generate qua chuan-net · Model · Link). Không fake model.</div></div>
+  </div>
+</div>

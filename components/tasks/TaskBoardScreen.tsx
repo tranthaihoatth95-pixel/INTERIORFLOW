@@ -122,7 +122,7 @@ const BOARD_CSS = `
   font-size: 10px; font-weight: 600; line-height: 1; cursor: pointer; flex: none;
   transition: color .15s var(--ease-apple, ease), border-color .15s var(--ease-apple, ease); }
 .tb-ctx:hover { color: var(--accent); border-color: var(--accent); }
-/* Thẻ template — vật đơn lẻ nên ĐƯỢC scale nhẹ (SPEC-HOVER-FOCUS-IDF: thẻ 1.02 + lift 2px 200ms). */
+/* Thẻ template — vật đơn lẻ nên ĐƯỢC scale nhẹ (SPEC-HOVER-FOCUS-IDF: thẻ 1.02 + lift 2px var(--nhip-bang)). */
 .tb-tpl { transition: transform .2s var(--ease-apple, ease), border-color .2s, box-shadow .2s; }
 .tb-tpl:hover:not(:disabled) { transform: translateY(-2px) scale(1.02); border-color: var(--border-strong); box-shadow: 0 6px 18px rgba(0,0,0,.12); }
 .tb-tpl:disabled { opacity: .55; cursor: default; }
@@ -314,9 +314,9 @@ export function TaskBoardScreen() {
 
   /* ── chip ngữ cảnh (TaskContext Link 11/08) — chỉ hiện khi việc CÓ stage; bấm = deep-link ── */
   const STAGE_ICONS: Record<TaskStage, JSX.Element> = {
-    concept: <PencilRuler size={10} />,
-    render: <Box size={10} />,
-    present: <Presentation size={10} />,
+    concept: <PencilRuler size={14} />,
+    render: <Box size={14} />,
+    present: <Presentation size={14} />,
   };
   const contextChip = (t: TaskRow) => {
     if (!t.stage) return null;
@@ -382,7 +382,7 @@ export function TaskBoardScreen() {
         )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 30, padding: '0 10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', minWidth: 200 }}>
-          <Search size={13} style={{ color: 'var(--t4)' }} />
+          <Search size={18} style={{ color: 'var(--t4)' }} />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -408,7 +408,7 @@ export function TaskBoardScreen() {
               border: 0, borderRadius: 10, fontSize: 12, fontWeight: 600, background: 'var(--accent)', color: '#fff', opacity: firstStateId ? 1 : 0.5,
             }}
           >
-            <Plus size={13} /> {tr('Thêm việc', 'Add task')}
+            <Plus size={18} /> {tr('Thêm việc', 'Add task')}
           </button>
         </div>
       </div>
@@ -437,7 +437,7 @@ export function TaskBoardScreen() {
                 'Each task board belongs to a project: its own status columns, its own cards. Create the first project, then add tasks right here.',
               )}
               actions={creatingProject ? [] : [
-                { label: tr('Tạo dự án đầu tiên', 'Create the first project'), primary: true, icon: <Plus size={13} />, onClick: () => setCreatingProject(true) },
+                { label: tr('Tạo dự án đầu tiên', 'Create the first project'), primary: true, icon: <Plus size={18} />, onClick: () => setCreatingProject(true) },
               ]}
             />
             {creatingProject && (
@@ -471,7 +471,7 @@ export function TaskBoardScreen() {
               'Each card is one task: title, due date, assignee. Cards live in status columns — change status with the card buttons or by dragging.',
             )}
             actions={[
-              { label: tr('Thêm việc đầu tiên', 'Add the first task'), primary: true, icon: <Plus size={13} />, onClick: () => { if (firstStateId) { setAdding(firstStateId); setNewTitle(''); } }, disabled: !firstStateId, disabledReason: tr('Dự án chưa có cột trạng thái', 'Project has no status columns') },
+              { label: tr('Thêm việc đầu tiên', 'Add the first task'), primary: true, icon: <Plus size={18} />, onClick: () => { if (firstStateId) { setAdding(firstStateId); setNewTitle(''); } }, disabled: !firstStateId, disabledReason: tr('Dự án chưa có cột trạng thái', 'Project has no status columns') },
               { label: tr('✨ Soạn việc với Vitals', '✨ Draft tasks with Vitals'), onClick: () => {}, disabled: true, disabledReason: tr('Sắp có — Vitals sẽ soạn danh sách việc từ đề bài dự án', 'Coming soon — Vitals will draft a task list from the project brief') },
             ]}
           />
@@ -552,7 +552,7 @@ export function TaskBoardScreen() {
                     onClick={() => { setAdding(col.state.id); setNewTitle(''); }}
                     style={{ marginLeft: 'auto', width: 24, height: 24, border: '1px solid var(--border)', borderRadius: 10, background: 'var(--field)', color: 'var(--t3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <Plus size={11} />
+                    <Plus size={14} />
                   </button>
                 </div>
 

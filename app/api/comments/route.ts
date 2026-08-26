@@ -13,6 +13,7 @@ import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { getSessionUser } from '@/lib/server/auth';
+import { luuAnhGopY } from '@/lib/server/comment-artifact';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,23 +27,17 @@ interface Comment {
   route: string;
   stage?: string;
   elementHint?: string;
-  image?: string; // đường dẫn ảnh minh hoạ đính kèm (comments-images/<id>.<ext>)
+  /**
+   * URL hiển thị lại ảnh đính kèm. MỚI: `/api/comments/image/<id>` — route CÓ XÁC THỰC.
+   * CŨ (di sản, còn trong các bản ghi đã lưu): `/comments-images/<id>.<ext>` — file tĩnh public.
+   * Cả hai vẫn hiển thị được; đường cũ KHÔNG bị viết lại, KHÔNG bị xoá.
+   */
+  image?: string;
+  /** sha256 bytes ảnh lúc ghi — đối chiếu về sau. Bản ghi cũ không có, đó là bình thường. */
+  imageSha256?: string;
+  imageBytes?: number;
   resolved?: boolean; // true = đã xử lý (thiếu field = chưa xử lý, tương thích comment cũ)
   ts: number;
-}
-
-/**
- * Giải mã data URL ảnh → ghi vào public/comments-images/ → trả URL để hiển thị lại
- * trong danh sách (và Claude đọc file public/comments-images/<id>.<ext>).
- */
-async function saveImage(id: string, dataUrl: string): Promise<string | undefined> {
-  const m = /^data:image\/(png|jpe?g|webp|gif);base64,(.+)$/.exec(dataUrl);
-  if (!m) return undefined;
-  const ext = m[1] === 'jpeg' ? 'jpg' : m[1];
-  const dir = path.join(process.cwd(), 'public', 'comments-images');
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(path.join(dir, `${id}.${ext}`), Buffer.from(m[2], 'base64'));
-  return `/comments-images/${id}.${ext}`; // URL public
 }
 
 async function readAll(): Promise<Comment[]> {
@@ -73,9 +68,17 @@ export async function POST(req: Request) {
   const list = await readAll();
   const id = `c_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
   let image: string | undefined;
+  let imageSha256: string | undefined;
+  let imageBytes: number | undefined;
   if (typeof body.image === 'string' && body.image.startsWith('data:image/')) {
     try {
-      image = await saveImage(id, body.image);
+      // Kiểm magic bytes + ghi vào thư mục RIÊNG (xem `lib/server/comment-artifact.ts`).
+      const anh = await luuAnhGopY(id, body.image);
+      if (anh) {
+        image = anh.url;
+        imageSha256 = anh.sha256;
+        imageBytes = anh.bytes;
+      }
     } catch {
       /* ảnh lỗi — vẫn lưu góp ý */
     }
@@ -89,6 +92,8 @@ export async function POST(req: Request) {
     stage: body.stage ? String(body.stage) : undefined,
     elementHint: body.elementHint ? String(body.elementHint).slice(0, 160) : undefined,
     image,
+    imageSha256,
+    imageBytes,
     ts: Date.now(),
   };
   list.push(c);

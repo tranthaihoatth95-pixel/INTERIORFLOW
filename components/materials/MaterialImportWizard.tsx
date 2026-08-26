@@ -182,7 +182,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
     <div role="dialog" aria-modal style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(10,8,6,0.4)' }}>
       <div style={{ width: 720, maxHeight: '88vh', display: 'flex', flexDirection: 'column', background: 'var(--panel)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', height: 46, padding: '0 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-          <FileSpreadsheet size={15} style={{ color: 'var(--accent)' }} />
+          <FileSpreadsheet size={20} style={{ color: 'var(--accent)' }} />
           <span style={{ marginLeft: 8, fontSize: 14, fontWeight: 600, color: 'var(--t1)' }}>
             {tr('Nhập vật liệu từ Excel/CSV', 'Import materials from Excel/CSV')}
           </span>
@@ -207,6 +207,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
                 background: dragOver ? 'var(--accent-soft, var(--field))' : 'var(--field)',
               }}
             >
+              {/* soi-mien-tru: F-ICON-SIZE — glyph giữa VÙNG THẢ TỆP - cỡ icon giao diện làm mất tín hiệu thả */}
               <Upload size={26} strokeWidth={1.5} style={{ color: 'var(--t4)' }} />
               <b style={{ fontSize: 'var(--fs-ui)', color: 'var(--t1)' }}>{tr('Thả file .xlsx hoặc .csv vào đây', 'Drop an .xlsx or .csv file here')}</b>
               <span style={{ fontSize: 11.5, color: 'var(--t4)' }}>{tr('Bảng giá từ nhà cung cấp — ghép cột ở bước sau', "Supplier price list — you'll map columns next")}</span>
@@ -226,7 +227,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
               />
               {fileError && (
                 <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--danger)', fontSize: 12 }}>
-                  <AlertTriangle size={13} /> {fileError}
+                  <AlertTriangle size={14} /> {fileError}
                 </div>
               )}
             </div>
@@ -289,7 +290,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
               {droppedColumns.length > 0 && (
                 <div style={{ marginBottom: 12, padding: '8px 10px', borderRadius: 10, background: 'color-mix(in srgb, var(--warning) 12%, var(--field))', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t2)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <AlertTriangle size={12} style={{ color: 'var(--warning)' }} />
+                    <AlertTriangle size={14} style={{ color: 'var(--warning)' }} />
                     {tr(`${droppedColumns.length} cột trong file KHÔNG được nhập:`, `${droppedColumns.length} column(s) in the file are NOT imported:`)}
                   </div>
                   <div style={{ marginTop: 4, fontSize: 11.5, color: 'var(--t3)' }}>
@@ -310,12 +311,12 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
                 </span>
                 {errorCount > 0 && (
                   <span style={{ fontSize: 11.5, color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <AlertTriangle size={11} /> {tr(`${errorCount} dòng lỗi`, `${errorCount} error row(s)`)}
+                    <AlertTriangle size={14} /> {tr(`${errorCount} dòng lỗi`, `${errorCount} error row(s)`)}
                   </span>
                 )}
                 {warnCount > 0 && (
                   <span style={{ fontSize: 11.5, color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <AlertTriangle size={11} /> {tr(`${warnCount} dòng có cảnh báo (vẫn nhập)`, `${warnCount} row(s) with warnings (still imported)`)}
+                    <AlertTriangle size={14} /> {tr(`${warnCount} dòng có cảnh báo (vẫn nhập)`, `${warnCount} row(s) with warnings (still imported)`)}
                   </span>
                 )}
               </div>
@@ -356,7 +357,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
                   {/* 06/08 — nhãn cũ ghi "ghép theo mã SKU trùng tên file" nay SAI so với code:
                       `matchImagesForRows` thử cột Ảnh TRƯỚC, hết mới tới SKU. Nhãn nói sai luật
                       ghép làm người dùng đặt tên file kiểu khác rồi tưởng app hỏng. */}
-                  <FolderInput size={13} /> {tr('Ảnh (tuỳ chọn) — kéo cả thư mục, ghép theo cột Ảnh; không có thì theo mã SKU', 'Images (optional) — drop a whole folder, matched by the Image column, else by SKU')}
+                  <FolderInput size={14} /> {tr('Ảnh (tuỳ chọn) — kéo cả thư mục, ghép theo cột Ảnh; không có thì theo mã SKU', 'Images (optional) — drop a whole folder, matched by the Image column, else by SKU')}
                 </div>
                 <button
                   type="button"
@@ -391,6 +392,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '40px 20px' }}>
               {step === 'importing' && (
                 <>
+                  {/* soi-mien-tru: F-ICON-SIZE — glyph giữa VÙNG THẢ TỆP - cỡ icon giao diện làm mất tín hiệu thả */}
                   <Loader2 size={22} className="animate-spin" style={{ color: 'var(--accent)' }} />
                   <span style={{ fontSize: 'var(--fs-ui)', color: 'var(--t2)' }}>
                     {progress?.phase === 'images'
@@ -401,6 +403,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
               )}
               {step === 'done' && result && (
                 <>
+                  {/* soi-mien-tru: F-ICON-SIZE — glyph giữa VÙNG THẢ TỆP - cỡ icon giao diện làm mất tín hiệu thả */}
                   <CheckCircle2 size={22} style={{ color: 'var(--accent)' }} />
                   <span style={{ fontSize: 'var(--fs-ui)', fontWeight: 600, color: 'var(--t1)' }}>
                     {tr(
@@ -448,7 +451,7 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
                         display: 'flex', alignItems: 'center', gap: 6,
                       }}
                     >
-                      <FileSpreadsheet size={13} />
+                      <FileSpreadsheet size={18} />
                       {exporting
                         ? tr('Đang dựng hồ sơ…', 'Building schedule…')
                         : tr(`Tải hồ sơ FF&E (${result.table.items.length} món)`, `Download FF&E schedule (${result.table.items.length} item(s))`)}

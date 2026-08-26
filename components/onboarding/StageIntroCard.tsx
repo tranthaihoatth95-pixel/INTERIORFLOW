@@ -113,7 +113,7 @@ export function StageIntroCard({ stage, userId }: { stage: OnboardingStage; user
             aria-label={tr('Bỏ qua', 'Skip')}
             className="absolute right-2.5 top-2.5 text-[var(--t4)] transition-colors hover:text-[var(--t1)]"
           >
-            <X size={13} />
+            <X size={14} />
           </button>
 
           <div className="flex items-center gap-2 pr-5">

@@ -158,11 +158,18 @@ export function AppShell({
             Gate BẰNG `active`, không bằng `navigator !== undefined`, để chặng khác quên truyền
             thì thấy khung Navigator trống — báo lỗi hiển thị sớm thay vì im lặng bỏ. */}
         {active !== 'home' && (
-          <Navigator addLabel={navigatorAddLabel ?? ''} collapsedLabel={navigatorCollapsedLabel} onAdd={onNavigatorAdd} onOpenLibrary={openLibrary} width={navigatorWidth} shiftHotkeys={active === 'cad'}>
+          <Navigator addLabel={navigatorAddLabel ?? ''} collapsedLabel={navigatorCollapsedLabel} onAdd={onNavigatorAdd} onOpenLibrary={openLibrary} width={navigatorWidth} shiftHotkeys={active === 'cad'} defaultCollapsed={active === 'cad' || active === 'render'}>
             {navigator}
           </Navigator>
         )}
-        <div className="relative flex min-w-0 flex-1 flex-col">
+        {/* `data-if-vung-lam-viec` — MỐC ĐO DUY NHẤT của vùng làm việc thật (cột canvas).
+            Ổ Vitals ở mép trên neo theo TÂM của hộp này, không theo tâm cửa sổ: cột trái biến
+            hình rail 52 → thềm 240 → bảng 320-440, và cột phải có thể mọc inspector — neo theo
+            cửa sổ thì Vitals trôi khỏi canvas mỗi lần người dùng đổi nấc sidebar, dù không ai
+            đụng vào Vitals. Hộp này tự đúng ở mọi nấc vì nó CHÍNH LÀ phần còn lại sau hai cột.
+            ⛔ Đừng gỡ thuộc tính này: `components/ui/useVungLamViec.ts` đọc nó, và không tìm
+            thấy thì ổ Vitals mất neo (trả `null`, cố ý KHÔNG bịa tâm cửa sổ để thay). */}
+        <div className="relative flex min-w-0 flex-1 flex-col" data-if-vung-lam-viec="">
           {toolbar}
           {children}
           {toolbelt && (
@@ -245,7 +252,7 @@ function InspectorSlot({
                   type="button"
                   onClick={onClose}
                   title={hotkey ? `Đóng — ẩn/hiện bằng ${hotkey}` : 'Đóng'}
-                  className="ml-auto grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[10px] text-[var(--t4)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+                  className="ml-auto grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[10px] text-[var(--t4)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
                 >
                   <X size={14} />
                 </button>

@@ -1,0 +1,102 @@
+<!-- @dsCard group="Experience System" title="EXS-M · Motion & Visual Law" -->
+<!--
+  EXS-M — IF MOTION & VISUAL LAW (Hoà chốt 20/08, toàn văn: docs/IF-MOTION-VISUAL-LAW.md).
+  Board treo LUẬT cho pane Design: mọi màn chính/phụ dựng sau đứng cạnh board này.
+  "Mỗi stage một cá tính — cùng một hệ sản phẩm." 0 hex mới.
+-->
+<div class="exm-root">
+<style>
+  .exm-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --success:#46b876; --warning:#d9a34a;
+    --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+    background:var(--bg); color:var(--t2); padding:36px;
+    font:13px/1.5 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exm-root *{box-sizing:border-box}
+  .h1{font-size:22px;font-weight:700;color:var(--t1);margin:0 0 4px}
+  .sub{color:var(--t3);margin:0 0 22px;max-width:940px}
+  .sec{margin:26px 0 10px;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--t4);text-transform:uppercase}
+  .tempo{display:flex;gap:10px;align-items:flex-end}
+  .tp{flex:1;border:1px solid var(--border);border-radius:11px;background:var(--panel);padding:9px;font-size:10.5px;color:var(--t4);text-align:center}
+  .tp b{display:block;color:var(--t1);font-size:12px}
+  .tp .bar{height:5px;border-radius:99px;background:var(--accent-soft);border:1px solid var(--accent-ring);margin:7px auto 4px}
+  .stages{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .stg{border:1px solid var(--border-strong);border-radius:14px;overflow:hidden;background:var(--panel)}
+  .stg h4{margin:0;padding:8px 13px;font-size:12px;color:var(--t1);border-bottom:1px solid var(--border)}
+  .stg h4 small{display:block;font-weight:400;color:var(--t4);font-size:10px}
+  .stg .vis{height:88px;position:relative;background:var(--card);overflow:hidden}
+  .stg .bd{padding:9px 13px;font-size:10.5px;color:var(--t3)}
+  .stg .bd b{color:var(--t2)}
+  .g2{position:absolute;inset:12px 12px 12px 12px;background:
+    linear-gradient(var(--border) 1px,transparent 1px) 0 0/20px 20px,
+    linear-gradient(90deg,var(--border) 1px,transparent 1px) 0 0/20px 20px}
+  .wall{position:absolute;border:1.5px solid var(--t2)}
+  .vp3{position:absolute;inset:0;background:radial-gradient(110% 80% at 50% 25%,#1c1f27 0,#0f1013 75%)}
+  .cube{position:absolute;left:42%;top:26%;width:44px;height:34px;border:1.4px solid var(--t3);transform:skewX(-16deg)}
+  .story{position:absolute;left:10px;top:12px;width:56%;bottom:12px;border-radius:8px;background:linear-gradient(150deg,#2b2620,#191512);border:1px solid var(--border-strong)}
+  .pg{position:absolute;border-radius:5px;background:var(--field);border:1px solid var(--border)}
+  .subrow{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
+  .sb{border:1px solid var(--border);border-radius:11px;background:var(--panel);padding:9px 10px;font-size:10px;color:var(--t4)}
+  .sb b{display:block;color:var(--t1);font-size:10.5px;margin-bottom:2px}
+  .sb i{font-style:normal;color:var(--t3)}
+  .laws{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .law{border:1px solid var(--border);border-radius:12px;background:var(--panel);padding:11px 13px;font-size:11px;color:var(--t3)}
+  .law b{color:var(--t1)}
+  .quote{border:1px solid var(--accent-ring);border-radius:13px;background:var(--accent-soft);padding:14px 16px;font-size:12px;color:var(--t1);line-height:1.65;font-style:italic}
+  .chip{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);background:var(--card);font-size:10px;color:var(--t3);margin:2px 3px 0 0}
+</style>
+
+  <div class="h1">EXS-M · MOTION &amp; VISUAL LAW</div>
+  <p class="sub"><b style="color:var(--t1)">Mỗi stage là một CHẾ ĐỘ LÀM VIỆC khác của cùng một spatial OS — không phải app khác.</b> Cá tính đến từ density · spotlight · content behavior — không bao giờ từ việc bịa một design language mới. Toàn văn luật: <code>docs/IF-MOTION-VISUAL-LAW.md</code>.</p>
+
+  <div class="sec">§0 · Nhịp motion mặc định (đè dải cũ khi vênh) — mọi surface NỞ TỪ NGUỒN, không teleport</div>
+  <div class="tempo">
+    <div class="tp"><b>100–160ms</b><span class="bar" style="width:22%"></span>hover · press</div>
+    <div class="tp"><b>140–200ms</b><span class="bar" style="width:34%"></span>tooltip · capsule · contextual reveal</div>
+    <div class="tp"><b>180–260ms</b><span class="bar" style="width:48%"></span>shelf · inspector</div>
+    <div class="tp"><b>240–380ms</b><span class="bar" style="width:66%"></span>stage / context transition</div>
+    <div class="tp"><b>300–700ms</b><span class="bar" style="width:92%"></span>layout morph · Auto Grid</div>
+  </div>
+  <p style="font-size:10.5px;color:var(--t4);margin:7px 2px 0">Motion luôn trả lời: <b style="color:var(--t2)">cái gì vừa xảy ra · từ đâu · đi đâu</b>. Không bounce vô nghĩa · không spring quá mức · không làm chậm tay nghề · luôn có Reduced Motion.</p>
+
+  <div class="sec">§I · Ba stage chính — ba cá tính, một hệ</div>
+  <div class="stages">
+    <div class="stg"><h4>2D KỸ THUẬT<small>Precise · flat-first · measured · quiet — "Tôi làm đúng từng mm."</small></h4>
+      <div class="vis"><span class="g2"></span><span class="wall" style="left:24px;top:26px;width:84px;height:40px"></span><span class="wall" style="left:66px;top:26px;width:1px;height:40px"></span><span style="position:absolute;right:12px;bottom:10px;font-size:9px;color:var(--t4)">1200 ⏎</span></div>
+      <div class="bd"><b>Spotlight:</b> canvas &gt; selection · depth ÍT hơn 3D · semantic color chỉ cho active/warning/selection/truth · không card-heavy trong canvas.<br><b>Motion:</b> bbox tức thì · drag = ghost cũ + preview mới · numeric mọc gần tay · snap settle nhẹ.</div></div>
+    <div class="stg"><h4>3D THIẾT KẾ<small>Spatial · tactile · layered · controlled — "Tôi đang chạm và tạo không gian."</small></h4>
+      <div class="vis"><span class="vp3"></span><span class="cube"></span><span style="position:absolute;left:46%;bottom:8px;font-size:9px;color:var(--t3)">Xoay 35°</span></div>
+      <div class="bd"><b>Spotlight:</b> viewport &gt; contextual tool · depth rõ hơn 2D · translucent nhẹ cho contextual · BuildRecipe là visual object · không dark sci-fi.<br><b>Motion:</b> palette mọc TỪ selection · material apply mềm · <b>2D→3D: object MỌC từ footprint</b> · camera giữ continuity.</div></div>
+    <div class="stg"><h4>PRESENT<small>Editorial · composed · cinematic · spacious — "Tôi kể chuyện bằng nội dung thiết kế."</small></h4>
+      <div class="vis"><span class="story"></span><span class="pg" style="right:10px;top:12px;width:30%;height:18px"></span><span class="pg" style="right:10px;top:36px;width:30%;height:18px"></span><span class="pg" style="right:10px;top:60px;width:30%;height:18px"></span><span style="position:absolute;left:14px;bottom:16px;font-size:9px;color:var(--t4)">01 · 02 · 03</span></div>
+      <div class="bd"><b>Spotlight:</b> story &gt; source/review · spacing + text lớn hơn · Section Navigator 01/02/03 · ít control thường trực.<br><b>Motion:</b> section chuyển có continuity · <b>Auto Grid HÌNH THÀNH, không pop</b> · compare = crossfade/split/morph · stale báo nhẹ.</div></div>
+  </div>
+
+  <div class="sec">§II · Surface phụ — mỗi cái một câu cảm giác</div>
+  <div class="subrow">
+    <div class="sb"><b>HOME</b><i>roomy · alive</i> — "bàn làm việc của tôi"; Resume mở TỪ card; widget morph, không nhảy loạn</div>
+    <div class="sb"><b>FILES/LIBRARY</b><i>visual-first · source-aware</i> — "tìm, hiểu, tái sử dụng nội dung thật"; promote/understand = semantic transition</div>
+    <div class="sb"><b>REVIEW</b><i>anchored · accountable</i> — "luôn biết đang nói về cái gì"; decision state &gt; conversation state</div>
+    <div class="sb"><b>VITALS</b><i>ambient intelligence</i> — aperture "CẮT" vào shell; engage mở từ chính nó; không có gì đáng nói thì im</div>
+    <div class="sb"><b>PROJECT/WORKSPACE</b><i>identity + continuity</i> — không KPI dashboard; breadcrumb nhẹ, không reload như app khác</div>
+    <div class="sb"><b>PROFILE/SETTINGS</b><i>quiet · secondary</i> — không cạnh tranh với work; credits ring nhỏ gọn</div>
+  </div>
+
+  <div class="sec">§III–VIII · Sáu luật xuyên hệ</div>
+  <div class="laws">
+    <div class="law"><b>SPOTLIGHT 1+1</b> — mỗi surface 1 primary + 1 secondary, còn lại tertiary. Mọi thứ đều nổi bật = FAIL.</div>
+    <div class="law"><b>DEPTH L0–L4</b> — canvas → shelf → tool/inspector → popover/peek → modal-khi-thật-cần. Càng cao càng TẠM THỜI và càng tập trung. Không random shadow.</div>
+    <div class="law"><b>MASTER CAPABILITY</b> — không đổi theo stage, chỉ đổi representation (near-pointer → toolbelt → shelf → inspector → ToolWindow); cùng icon family/shortcut/tên/grammar. `Replace` 2D = `Replace` 3D.</div>
+    <div class="law"><b>UI SỐNG theo TẦN SUẤT</b> — dùng liên tục: rất nhẹ · contextual: rõ hơn · có hậu quả: mạnh hơn · AI/system: cho biết đang làm gì. "Alive" ≠ "animated everywhere".</div>
+    <div class="law"><b>HÌNH HỌC</b> — rect=space · rounded=surface · capsule=compact action · circle=point/person/status; nở từ tâm/nguồn; nested radius quan hệ parent (chi tiết: EXS-L).</div>
+    <div class="law"><b>CHUYỂN STAGE = ĐỔI CHẾ ĐỘ</b> — shell giữ, cluster active chuyển, canvas/viewport morph, context strip giữ project/space, selection/source preserve, toolbar đổi working set. 3D→Present: camera/view thành source content, mở như CONTINUATION.</div>
+  </div>
+
+  <div class="sec">§IX · Câu luật chốt — dán nguyên khi dựng bất kỳ màn nào</div>
+  <div class="quote">Every primary and secondary stage in InteriorFlow must feel like a different working mode of the same spatial operating system, not a different application. Visual identity comes from density, spotlight and content behavior — never from inventing a new design language. Motion must preserve source, direction and context. Surfaces expand from where they originate, retain identity while changing depth, and collapse back predictably. Primary content always wins over chrome. The system is calm when idle, responsive when touched, intelligent when context demands it, and almost invisible when the professional user is in flow.</div>
+  <p style="font-size:10.5px;color:var(--t4);margin-top:8px"><span class="chip">Nối DS: SPEC-DESIGN-SYSTEM-IF §3+§7</span><span class="chip">Đè dải ms cũ SPEC-APPLE-MOTION (đã đóng dấu)</span><span class="chip">DRIFT: token --dur-* theo vai trò khi thi công</span><span class="chip">Board hình học: EXS-L</span><span class="chip">Board Auto Grid: EXS-J</span></p>
+</div>

@@ -150,17 +150,17 @@ export function AnnotateModal() {
             className="nen-mo-card flex max-h-full w-full max-w-4xl flex-col overflow-hidden rounded-[20px] border border-[var(--vien-mo)] shadow-2xl"
           >
         <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3">
-          <Type size={15} className="text-[var(--accent)]" />
+          <Type size={20} className="text-[var(--accent)]" />
           <span className="flex-1 text-sm font-medium text-[var(--t1)]">Annotate — ghi chú lên ảnh</span>
           <motion.button {...pressableIcon} onClick={close} className="grid h-7 w-7 place-items-center rounded-[10px] text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]">
-            <X size={15} />
+            <X size={16} />
           </motion.button>
         </div>
 
         {/* cảnh báo còn thay đổi chưa lưu — chỉ hiện sau lần Escape/X đầu tiên khi dirty */}
         {confirmClose && (
           <div className="flex items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-600 dark:text-amber-400">
-            <AlertTriangle size={13} className="shrink-0" />
+            <AlertTriangle size={18} className="shrink-0" />
             <span className="flex-1">Còn thay đổi chưa lưu — nhấn Escape lần nữa để thoát, hoặc chọn bên dưới.</span>
             <button
               onClick={save}
@@ -248,7 +248,7 @@ export function AnnotateModal() {
               tool === 'brush' ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
             )}
           >
-            <Paintbrush size={13} /> Vẽ
+            <Paintbrush size={16} /> Vẽ
           </motion.button>
           <motion.button
             {...pressable}
@@ -258,7 +258,7 @@ export function AnnotateModal() {
               tool === 'text' ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
             )}
           >
-            <Type size={13} /> Text
+            <Type size={16} /> Text
           </motion.button>
           {tool === 'text' && (
             <input
@@ -296,7 +296,7 @@ export function AnnotateModal() {
             }}
             className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
           >
-            <Trash2 size={13} /> Clear
+            <Trash2 size={16} /> Clear
           </motion.button>
           <div className="flex-1" />
           <motion.button
@@ -305,7 +305,7 @@ export function AnnotateModal() {
             disabled={!sourceImage || !ready}
             className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-3.5 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)] disabled:opacity-40"
           >
-            <Check size={13} /> Lưu
+            <Check size={16} /> Lưu
           </motion.button>
         </div>
           </motion.div>

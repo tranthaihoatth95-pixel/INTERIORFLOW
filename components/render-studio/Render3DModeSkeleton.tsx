@@ -32,13 +32,17 @@ import { wallSegmentOutline, railingPosts } from '@/lib/cad/commands';
 import { translateEntity } from '@/lib/cad/geometry';
 import { useScene3D } from '@/lib/render-studio/use-scene3d';
 import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
+import { useTool3D, rotateSelectionUpdates } from '@/lib/render-studio/tool3d';
 import { Viewport3D, EMPTY_SCENE_3D } from '@/components/three/Viewport3D';
 import ModeSwitchBar from '@/components/render-studio/ModeSwitchBar';
 import Command3DPanel, { type Command3DTab, type WallDraft3D } from '@/components/render-studio/Command3DPanel';
 import ToolDock3D from '@/components/render-studio/ToolDock3D';
 import Tool3DBar from '@/components/render-studio/Tool3DBar';
+import StageToolbelt from '@/components/ui/StageToolbelt';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import PanelFlank from '@/components/ui/PanelFlank';
+import KetXuatPanel from '@/components/render-studio/KetXuatPanel';
+import type { Scene3DCameraApi } from '@/components/three/Scene3DViewer';
 import { SECTION_LAYER_KEYS, type SectionAcceptPayload } from '@/components/render-studio/SectionExtractPanel';
 import { SECTION_LAYERS } from '@/lib/three/section-entities';
 import { useLevelUi, UNASSIGNED_LEVEL, ROOM_LIGHT_KINDS, ROOM_LIGHT_DEFAULT_Z_MM } from '@/components/render-studio/scene3d-ui';
@@ -328,6 +332,9 @@ export default function Render3DModeSkeleton() {
     return () => window.removeEventListener('keydown', onUndoKey);
   }, [tr]);
 
+  // LANE C — ref camera SỐNG, mượn từ Viewport3D để `KetXuatPanel` chụp đúng góc đang nhìn.
+  const cameraApiRef = useRef<Scene3DCameraApi | null>(null);
+
   const soKhoi = scene?.groups.length ?? 0;
   soKhoiRef.current = soKhoi;
   const coBanVe = doc.entities.length > 0;
@@ -427,6 +434,20 @@ export default function Render3DModeSkeleton() {
     ));
   }
 
+  /**
+   * XOAY khối đang chọn quanh tâm bbox (21/08 — kéo vòng ngoài gizmo).
+   * TÁI DÙNG `rotateSelectionUpdates` sẵn có ở `lib/render-studio/tool3d.ts` (đã lo `linkedIds`
+   * qua hostId + `rotateEntity` của engine 2D) — không chép lại phép quay ở đây.
+   */
+  function handleRotate(deltaDeg: number) {
+    if (!viewportSelectedId) return;
+    const store = useCadStore.getState();
+    const updates = rotateSelectionUpdates(store.doc.entities, viewportSelectedId, deltaDeg);
+    if (!updates.length) return;
+    store.updateEntities(updates);
+    store.setStatus(tr(`Đã xoay ${Math.round(deltaDeg)}°.`, `Rotated ${Math.round(deltaDeg)}°.`));
+  }
+
   /** Đùn từ bản vẽ: cảnh 3D vốn tự suy từ Doc, nên việc thật ở đây là ĐẶT CAO ĐỘ cho các nét
    * tường chưa có `heightMm` — đúng nghĩa "đùn", và ghi thẳng vào Doc (một nguồn). */
   function dunTuBanVe() {
@@ -444,6 +465,21 @@ export default function Render3DModeSkeleton() {
     setNhayNutTuong(true);
   }
   void dungKhoiTaiCho; // giữ hàm cho đường quay lại; tránh cảnh báo unused khi lint bật
+
+  /**
+   * LỐI CHÍNH của cửa vào 3D rỗng (21/08): đóng card chào, mở tab Tạo, và CẦM SẴN công cụ tường —
+   * người dùng chỉ việc kéo trên mặt sàn là có khối (cử chỉ dựng đã chạy thật, xem
+   * `Scene3DViewer.onGroundDraw`). KHÔNG mở form gõ số, KHÔNG đụng chặng 2D: đây là đường "vào
+   * thẳng 3D dựng được ngay" mà luật X3 đòi phải ngang hàng với đường đi từ mặt bằng.
+   */
+  function batDauTrong3D() {
+    dongCardChao();
+    setTab('tao');
+    useTool3D.getState().setActive('line');
+    useCadStore
+      .getState()
+      .setStatus(tr('Kéo trên mặt sàn để dựng tường. Esc để bỏ.', 'Drag on the ground to build a wall. Esc to cancel.'));
+  }
 
   function moLenhTuongHaiDiem() {
     setTab('tao');
@@ -522,8 +558,14 @@ export default function Render3DModeSkeleton() {
   return (
     <div style={{ display: 'flex', width: '100%', height: '100%', minHeight: 0, background: 'var(--bg)' }}>
       {/* p3 (07/08) — tay cầm thu/mở dùng chung PanelFlank (Hoà chốt nhân bản mẫu Trình chiếu).
-          Bảng lệnh 256px là panel bên duy nhất của mode 3D chưa thu được (đo 2/18 render-studio). */}
-      <PanelFlank side="left" storageKey="render3d.command-panel" label={tr('bảng lệnh 3D', '3D command panel')}>
+          Bảng lệnh 256px là panel bên duy nhất của mode 3D chưa thu được (đo 2/18 render-studio).
+          LANE 3 (20/08) — "viewport is primary, no giant control chrome": trước nay panel này mở
+          SẴN 100% các phiên đầu (defaultOpen mặc định của PanelFlank là true), đứng cạnh khung
+          nhìn 3D ngay từ khung hình đầu ⇒ chiếm ~31% bề rộng màn trước khi người dùng làm gì.
+          Đổi về THU-MẶC-ĐỊNH (khớp panel kết xuất bên phải đã `defaultOpen={false}` — cùng mode,
+          hai bên lệch nhau không có lý do). Tay cầm PanelFlank luôn hiện + nhớ lựa chọn qua
+          localStorage — người bấm mở một lần thì phiên sau mở lại đúng ý họ, không mất chức năng. */}
+      <PanelFlank side="left" storageKey="render3d.command-panel" label={tr('bảng lệnh 3D', '3D command panel')} defaultOpen={false}>
         <Command3DPanel
           tab={tab}
           onTabChange={setTab}
@@ -550,9 +592,11 @@ export default function Render3DModeSkeleton() {
       >
         <Viewport3D
           scene={visibleScene ?? EMPTY_SCENE_3D}
+          cameraApiRef={cameraApiRef}
           selectedId={viewportSelectedId}
           mode="massing"
           onNudge={handleNudge}
+          onRotate={handleRotate}
           onPushPull={handlePushPull}
           lightMarkers={lightMarkers}
           onLightMove={handleLightMove}
@@ -561,6 +605,17 @@ export default function Render3DModeSkeleton() {
           snap3d={{ settings: snapSettings, gridStepMm }}
           label={soKhoi > 0 ? 'Khối xám · chưa vật liệu' : 'Không gian trống'}
         >
+          {/* LANE D (20/08) — Toolbelt năng lực gộp cho chặng Vẽ 3D. Registry `compound.ts` đã
+              khai `image-to-3d.stages = ['cad','render']` từ trước (cửa Ảnh→Spec ĐÃ thiết kế
+              để bấm được ở đây) nhưng KHÔNG nơi nào mount `<StageToolbelt stage="render">` —
+              chỉ `CadToolbelt` (stage="cad") gọi nó. Cửa duyệt G1-G4 vì vậy mồ côi ở chặng 3D:
+              registry hứa, không ai mở cửa. Đặt top-center (mẫu vị trí switcher mặc định của
+              `ModeShell`, ở đây bị `hideBuiltInSwitcher`/`ModeSwitchBar` thay chỗ nên top đang
+              trống) — không đụng ToolDock3D/Tool3DBar/QuickCommandBox ở đáy. */}
+          <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 8 }}>
+            <StageToolbelt stage="render" coDoiTuongChon={!!viewportSelectedId} />
+          </div>
+
           {/* HUD giờ nắng — CHỈ hiện trong lúc 3 ngón đang quét (VIỆC 3.d). Nền đặc, không
               backdrop-filter (G9: trần 4 tấm kính trên WebGL đã dùng hết cho toolbelt/nút Dựng
               ảnh/ViewCube/Lightbox). */}
@@ -573,7 +628,7 @@ export default function Render3DModeSkeleton() {
                 pointerEvents: 'none',
               }}
             >
-              <Sun size={15} color={rig.sun.belowHorizon ? 'var(--t4)' : rig.sun.colorHex} />
+              <Sun size={18} color={rig.sun.belowHorizon ? 'var(--t4)' : rig.sun.colorHex} />
               <span style={{ fontSize: 15, lineHeight: 1.6, fontWeight: 600, color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>
                 {Math.round(currentLighting().sun.azimuthDeg)}° · {Math.round(currentLighting().sun.altitudeDeg)}°
               </span>
@@ -609,99 +664,91 @@ export default function Render3DModeSkeleton() {
                     borderRadius: 6, cursor: 'pointer',
                   }}
                 >
-                  <X size={13} />
+                  <X size={14} />
                 </button>
-                {/* M-EMPTY-2 (07/08) — chữ + 2 lối theo mock [BẢN CHỐT] `Bốn trạng thái rỗng.dc.html`
-                    màn 1c: "Dựng khối từ mặt bằng 2D" KHOÁ KÈM LÝ DO NHÌN THẤY khi chưa có bản vẽ
-                    (không chỉ title-hover như bản cũ) · "Vẽ mặt bằng trước" mở chặng 2D qua pickStage.
-                    Nút "Dựng khối đầu tiên" cũ rời card nhưng ĐƯỜNG TẠI CHỖ vẫn còn (Command panel
-                    Tạo → Tường) — X2 thoả ở mức màn, ghi nhận trong M-EMPTY-2-OUT. */}
+                {/* 21/08 (Hoà bác bản cũ) — CỬA VÀO 3D KHÔNG CÒN CỔNG 2D.
+                    Bản trước: nút chính "Dựng khối từ mặt bằng 2D" bị KHOÁ kèm cảnh báo vàng khi
+                    chưa có bản vẽ, còn nút được tô đậm lại là "Vẽ mặt bằng trước → mở chặng 2D".
+                    Đọc ra thành "3D là bước 2, phải xong bước 1 đã" — trái LUẬT X2 (`docs/00-CHOT.md`:
+                    *"KHÔNG MÀN NÀO ĐƯỢC CHẶN VÌ chưa-làm-bước-trước"*) và trái X3 (ba đường vào
+                    NGANG NHAU). 2D và 3D là hai MÔI TRƯỜNG nối nhau, không phải hai chặng của một
+                    phù thuỷ.
+                    Nay: lối chính là DỰNG THẲNG TRONG 3D (mở tab Tạo, cầm luôn công cụ tường —
+                    cử chỉ kéo trên mặt sàn đã chạy thật từ 21/08). Mặt bằng 2D tụt xuống lối phụ
+                    và CHỈ mời khi dự án CÓ bản vẽ thật; không có thì nó là một dòng chữ đi tiếp,
+                    không phải nút chết. Bỏ luôn dòng phụ "3D modelling space" — nhắc lại chính
+                    tiêu đề bằng tiếng Anh, không mang thêm tin nào. */}
                 <p style={{ margin: 0, fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semi)', color: 'var(--t1)', lineHeight: 1.5 }}>
-                  {tr('Không gian dựng khối', '3D modelling space')}
-                </p>
-                <p style={{ margin: '1px 0 0', fontSize: 10.5, color: 'var(--t4)', lineHeight: 1.5 }}>
-                  {tr('3D modelling space', 'Không gian dựng khối')}
+                  {tr('Bắt đầu dựng', 'Start building')}
                 </p>
                 <p style={{ margin: '6px 0 14px', fontSize: 'var(--fs-2xs)', color: 'var(--t3)', lineHeight: 1.6 }}>
                   {tr(
-                    'Mặt bằng hai chiều nâng thẳng lên thành tường, sàn và trần. Nét vẽ tới đâu, khối dựng tới đó.',
-                    'Walls, floors and ceilings rise straight from the 2D plan.',
+                    'Kéo thẳng trên mặt sàn để dựng tường và khối. Hoặc nâng một mặt bằng 2D lên.',
+                    'Drag on the ground to build walls and blocks — or raise a 2D plan.',
                   )}
                 </p>
-                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                  <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>
+                  {/* LỐI CHÍNH — luôn bấm được, không phụ thuộc gì. */}
+                  <button
+                    type="button"
+                    onClick={batDauTrong3D}
+                    style={{
+                      height: 32, padding: '0 14px', borderRadius: 999, cursor: 'pointer', border: 0,
+                      background: 'var(--accent)', color: '#fff', fontSize: 'var(--fs-2xs)',
+                      fontWeight: 'var(--fw-semi)', display: 'inline-flex', alignItems: 'center', gap: 6,
+                    }}
+                  >
+                    <Hammer size={18} strokeWidth={1.5} />
+                    {tr('Bắt đầu trong 3D', 'Start in 3D')}
+                  </button>
+
+                  {/* LỐI PHỤ — chỉ mời khi CÓ mặt bằng thật; không có thì chỉ là đường đi tiếp. */}
+                  {coBanVe ? (
                     <button
                       type="button"
                       onClick={dunTuBanVe}
-                      disabled={!coBanVe}
-                      style={
-                        coBanVe
-                          ? {
-                              height: 32, padding: '0 14px', borderRadius: 999, cursor: 'pointer', border: 0,
-                              background: 'var(--accent)', color: '#fff', fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)',
-                              display: 'inline-flex', alignItems: 'center', gap: 6,
-                            }
-                          : {
-                              height: 32, padding: '0 14px', borderRadius: 999, cursor: 'not-allowed',
-                              border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t4)',
-                              fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)',
-                            }
-                      }
+                      style={{
+                        height: 32, padding: '0 14px', borderRadius: 999, cursor: 'pointer',
+                        border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)',
+                        fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)',
+                      }}
                     >
-                      {coBanVe && <Hammer size={13} strokeWidth={1.9} />}
-                      {tr('Dựng khối từ mặt bằng 2D', 'Build from 2D plan')}
+                      {tr('Dùng mặt bằng này →', 'Use this plan →')}
                     </button>
-                    {!coBanVe && (
-                      <span style={{ fontSize: 10.5, lineHeight: 1.6, color: 'var(--warning)' }}>
-                        {tr('Cần ít nhất một mặt bằng ở chặng Thiết kế 2D', 'Needs at least one plan in the 2D stage')}
-                      </span>
-                    )}
-                  </span>
-                  <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+                  ) : (
                     <button
                       type="button"
                       onClick={veMatBangTruoc}
-                      style={
-                        coBanVe
-                          ? {
-                              height: 32, padding: '0 14px', borderRadius: 999, cursor: 'pointer',
-                              border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)',
-                              fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)',
-                            }
-                          : {
-                              height: 32, padding: '0 14px', borderRadius: 999, cursor: 'pointer', border: 0,
-                              background: 'var(--accent)', color: '#fff', fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)',
-                            }
-                      }
+                      style={{
+                        height: 32, padding: '0 10px', borderRadius: 999, cursor: 'pointer', border: 0,
+                        background: 'none', color: 'var(--t3)', fontSize: 'var(--fs-2xs)',
+                      }}
                     >
-                      {tr('Vẽ mặt bằng trước', 'Draw a plan first')}
+                      {tr('Vẽ / nhập mặt bằng →', 'Draw or import a plan →')}
                     </button>
-                    <span style={{ fontSize: 10.5, lineHeight: 1.6, color: 'var(--t4)' }}>
-                      {tr('Mở chặng Thiết kế 2D', 'Opens the 2D stage')}
-                    </span>
-                  </span>
+                  )}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Nút gọi lại card chào sau khi đã đóng (đường thoát #3 nói "nhớ", nên phải có lối
-              quay lại — SPEC-NGON-NGU: đóng thứ gì cũng phải mở lại được). */}
+          {/* Lối quay lại gợi ý bắt đầu — SPEC-NGON-NGU: đóng thứ gì cũng phải mở lại được.
+              21/08: hạ hẳn xuống CHỮ MỜ, bỏ viên kính + viền + nền mờ. Lý do: một viên nổi ở góc
+              là thêm MỘT VẬT trên khung nhìn cho việc chỉ dùng đúng một lần lúc cảnh còn trống —
+              đúng loại "capsule bí ẩn" đang phải cắt. Vẫn gate `soKhoi === 0` nên có khối là nó
+              biến mất hẳn, không lởn vởn suốt phiên dựng. Đường CHÍNH để tạo hình vẫn là tab Tạo
+              (mở sẵn) + dock công cụ; đây chỉ là lối quay lại lời mời. */}
           {soKhoi === 0 && welcomeHidden && (
             <button
               type="button"
               onClick={moLaiCardChao}
-              title="Hiện lại gợi ý bắt đầu"
-              aria-label="Hiện lại gợi ý bắt đầu"
               style={{
-                position: 'absolute', right: 14, bottom: 74, zIndex: 6, width: 26, height: 26,
-                borderRadius: 999, border: '1px solid var(--vien-mo)',
-                background: 'color-mix(in srgb, var(--panel) 82%, transparent)',
-                backdropFilter: 'blur(var(--blur))', WebkitBackdropFilter: 'blur(var(--blur))',
-                color: 'var(--t3)', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 74, zIndex: 6,
+                border: 0, background: 'none', padding: '4px 8px', color: 'var(--t4)',
+                fontSize: 'var(--fs-2xs)', cursor: 'pointer',
               }}
             >
-              ?
+              {tr('Gợi ý bắt đầu', 'Show start options')}
             </button>
           )}
 
@@ -713,6 +760,7 @@ export default function Render3DModeSkeleton() {
           onCreateWall={moLenhTuongHaiDiem}
           onOpenLibrary={() => openLibrarySheet({ stage: 'render' })}
           onOpenMaterialTab={() => setTab('vatlieu')}
+          onOpenCameraTab={() => setTab('camera')}
         />
 
         {/* Máy trạng thái công cụ 3D — bar ô nhập số của tool đang cầm (Tool3DStateMachine).
@@ -761,6 +809,13 @@ export default function Render3DModeSkeleton() {
 
         <ModeSwitchBar />
       </div>
+
+      {/* LANE C (20/08) — bảng Kết xuất + Chuyển động. Đứng mép PHẢI, cùng mẫu tay cầm PanelFlank
+          với bảng lệnh bên trái (chốt 07/08 mục 10: một mẫu thu/mở cho toàn app). Nó đọc camera
+          SỐNG qua `cameraApiRef` mượn từ Viewport3D — không dựng viewport thứ hai. */}
+      <PanelFlank side="right" storageKey="render3d.ketxuat-panel" label={tr('bảng kết xuất', 'render panel')} defaultOpen={false}>
+        <KetXuatPanel scene={visibleScene ?? null} cameraApiRef={cameraApiRef} soKhoi={soKhoi} />
+      </PanelFlank>
     </div>
   );
 }

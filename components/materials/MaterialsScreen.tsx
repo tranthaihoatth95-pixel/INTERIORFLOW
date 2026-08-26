@@ -19,7 +19,7 @@ import { useT } from '@/lib/i18n';
 import type { MaterialSpecDto } from '@/lib/materials/warehouse/dto';
 import { IMPORT_KIND_LABEL } from '@/lib/materials/warehouse/dto';
 import { getMaterial } from '@/lib/materials/resolve';
-import { loadPbrMap } from '@/lib/materials/pbr-store';
+import { loadPbrMap, ensurePbrCanonicalKeys } from '@/lib/materials/pbr-store';
 import { baMatChuaCoMa, baMatCuaVatLieu, type BaMat } from '@/lib/materials/ba-mat';
 import type { MaterialPbr } from '@/lib/materials/schema';
 import { MATERIALS } from '@/lib/cad/materials';
@@ -63,7 +63,15 @@ export function MaterialsScreen() {
       const res = await fetch('/api/specs');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const j = await res.json();
-      setItems(j.specs ?? []);
+      const specs: MaterialSpecDto[] = j.specs ?? [];
+      /* ⭐ W0.2 (19/08) — "đoạn dây cuối" PBR legacy→canonical (xem docstring
+         `ensurePbrCanonicalKeys`): spec nào đã backfill `matId` mà PBR còn nằm dưới khoá SKU cũ
+         thì copy sang khoá UUID, để bước 2B đổi callsite đọc sang UUID không làm mất công người
+         dùng đã đặt thông số. Idempotent, chỉ ghi localStorage khi có gì đổi; migrate xong nạp
+         lại pbrMap để chỉ báo "ba mặt" phản ánh ngay. */
+      const pbrReport = ensurePbrCanonicalKeys(specs);
+      if (pbrReport && pbrReport.migrated > 0) napPbr();
+      setItems(specs);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -139,7 +147,7 @@ export function MaterialsScreen() {
         <span style={{ fontSize: 11.5, color: 'var(--t4)' }}>{items ? tr(`${items.length} mục`, `${items.length} item(s)`) : ''}</span>
 
         <div style={{ marginLeft: 16, display: 'flex', alignItems: 'center', gap: 6, height: 30, padding: '0 10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', minWidth: 200 }}>
-          <Search size={13} style={{ color: 'var(--t4)' }} />
+          <Search size={18} style={{ color: 'var(--t4)' }} />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -179,13 +187,13 @@ export function MaterialsScreen() {
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
           {/* Lối vào `/colors` (05/08) — kho vật liệu và bảng màu là hai ngăn cùng một tủ vật tư. */}
           <button type="button" onClick={() => router.push('/colors')} style={btnStyle(false)}>
-            <Palette size={13} /> {tr('Bảng màu', 'Colour libraries')}
+            <Palette size={18} /> {tr('Bảng màu', 'Colour libraries')}
           </button>
           <button type="button" onClick={() => setImporting(true)} style={btnStyle(false)}>
-            <FileSpreadsheet size={13} /> {tr('Nhập Excel/CSV', 'Import Excel/CSV')}
+            <FileSpreadsheet size={18} /> {tr('Nhập Excel/CSV', 'Import Excel/CSV')}
           </button>
           <button type="button" onClick={() => setEditing('new')} style={btnStyle(true)}>
-            <Plus size={13} /> {tr('Thêm vật liệu', 'Add material')}
+            <Plus size={18} /> {tr('Thêm vật liệu', 'Add material')}
           </button>
         </div>
       </div>
@@ -214,8 +222,8 @@ export function MaterialsScreen() {
               'Each row is one commercial material: SKU, brand, size, price, unit. Add items by hand or import a whole Excel/CSV sheet — IF maps the columns.',
             )}
             actions={[
-              { label: tr('Nhập Excel/CSV', 'Import Excel/CSV'), primary: true, icon: <FileSpreadsheet size={13} />, onClick: () => setImporting(true) },
-              { label: tr('Thêm vật liệu đầu tiên', 'Add the first material'), icon: <Plus size={13} />, onClick: () => setEditing('new') },
+              { label: tr('Nhập Excel/CSV', 'Import Excel/CSV'), primary: true, icon: <FileSpreadsheet size={18} />, onClick: () => setImporting(true) },
+              { label: tr('Thêm vật liệu đầu tiên', 'Add the first material'), icon: <Plus size={18} />, onClick: () => setEditing('new') },
             ]}
           />
         </div>

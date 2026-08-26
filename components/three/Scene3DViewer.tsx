@@ -45,6 +45,16 @@ import { ensureBoundsTree, dropBoundsTree, installAcceleratedRaycast } from '@/l
 import { findSnap3D, lockToAxis, DEFAULT_SNAP_TOLERANCE_PX, type Snap3DKind, type CadAxis } from '@/lib/three/snap3d';
 import type { SnapSettings } from '@/lib/cad/store';
 import { clampWallHeight, cadToThreeM, type Scene3DData } from '@/lib/three/cad-to-obj';
+import {
+  threeMToCadMm,
+  hinhChuNhatMm,
+  daGiacDeuMm,
+  duLonDeGhi,
+  WALL_THICKNESS_MM,
+  DEFAULT_HEIGHT_MM,
+  CYLINDER_SIDES,
+  type CreateTool3D,
+} from '@/lib/three/tao-khoi-3d';
 import { camPathSampleToThree, sampleCamPathAt, EYE_HEIGHT_MM } from '@/lib/three/capture';
 import { sectionPlane, type SectionSpec } from '@/lib/three/section';
 import type { CamPathResult } from '@/lib/cad/campath';
@@ -65,8 +75,24 @@ export interface Scene3DCameraApi {
   controls: OrbitControls;
   /** G-M18-04 — đưa camera về khung bao trọn TOÀN CẢNH hiện tại (tính lại bbox mỗi lần gọi, không
    * chỉ dùng số đo lúc mount). Không làm gì ở mode `walk`/`campath` (camera do 2 mode đó tự lái
-   * mỗi khung, "toàn cảnh" vô nghĩa khi đang đứng trong phòng/bám đường quay). */
-  fit: () => void;
+   * mỗi khung, "toàn cảnh" vô nghĩa khi đang đứng trong phòng/bám đường quay).
+   * GOTO-3D (19/08) — truyền `entityId` để khung camera CHỈ bao khối đó (đọc `scene.groups`,
+   * dùng chung `positions` đã có sẵn — KHÔNG cần mesh riêng trong THREE scene, xem `frameBox`
+   * dưới). Không tìm thấy (entity chưa vào cảnh / rỗng) ⇒ rơi về toàn cảnh, không bịa vị trí. */
+  fit: (entityId?: string) => void;
+}
+
+/** Đưa camera+controls về khung bao trọn `box` — TÁCH khỏi `fitCameraToScene` để dùng lại được
+ * cho GOTO-3D (19/08, khung theo MỘT entity thay vì cả group). Toán giữ NGUYÊN VĂN công thức cũ
+ * (03/08, phán quyết PHU) — chỉ đổi chỗ ở, không đổi số. */
+function frameBox(camera: THREE.PerspectiveCamera, controls: OrbitControls, box: THREE.Box3) {
+  const c = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const halfDiag = Math.max(0.5, Math.hypot(size.x, size.y, size.z) / 2) * 1.15;
+  camera.position.set(c.x + halfDiag * 1.1, c.y + halfDiag * 0.9, c.z + halfDiag * 1.1);
+  controls.target.copy(c);
+  camera.updateProjectionMatrix();
+  controls.update();
 }
 
 /** Tính khung camera bao trọn `scene.bboxMm` — TÁCH RIÊNG khỏi effect mount để dùng lại được cho
@@ -85,13 +111,7 @@ function fitCameraToScene(scene: Scene3DData, camera: THREE.PerspectiveCamera, c
   // Giữ đường bboxMm làm fallback khi group rỗng (cảnh trống — vẫn cần đứng đúng chỗ 8×8m).
   const box = object ? new THREE.Box3().setFromObject(object) : null;
   if (box && !box.isEmpty()) {
-    const c = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    const halfDiag = Math.max(0.5, Math.hypot(size.x, size.y, size.z) / 2) * 1.15;
-    camera.position.set(c.x + halfDiag * 1.1, c.y + halfDiag * 0.9, c.z + halfDiag * 1.1);
-    controls.target.copy(c);
-    camera.updateProjectionMatrix();
-    controls.update();
+    frameBox(camera, controls, box);
     return;
   }
   const { minX, minY, maxX, maxY } = scene.bboxMm;
@@ -139,6 +159,12 @@ export interface Scene3DViewerProps {
    * `CHOT-HUONG-3D-2026-08-01.md`). Đọc qua ref (giống `onFrame`) — KHÔNG nằm trong deps effect
    * chính để đổi ref mỗi render không dựng lại toàn cảnh. */
   onPushPull?: (entityId: string, newHeightMm: number) => void;
+  /** LANE D (20/08) — khối đang chọn (entityId, cùng nguồn `useTree3DUi` qua Object3DTree/
+   * Object3DInspector). Chỉ tường (massing mesh có entityId) tô được — furniture/cửa sổ đi
+   * qua đường gộp-theo-màu `buildMergedGeometries`, không có mesh 1-1 để tô (giới hạn đã ghi
+   * ở Object3DInspector, KHÔNG bịa). Đưa vào deps effect chính — đổi chọn là 1 click rời rạc,
+   * không phải kéo liên tục như `lightMarkers`, nên KHÔNG cần đường ref né rebuild. */
+  selectedId?: string | null;
   /** SÂN KHẤU: lưới sàn + đường chân trời. Mở mode Vẽ 3D lúc CHƯA có khối nào vẫn phải thấy mình
    * đang đứng trong một không gian (chuẩn Blender/SketchUp mở file trống — Hoà chê 04/08 "rối
    * rắm, không hệ thống"). MẶC ĐỊNH TẮT vì mọi nơi CHỤP ẢNH (campath/capture/xuất) không được
@@ -160,13 +186,46 @@ export interface Scene3DViewerProps {
    * hành vi y như trước với campath/chụp ảnh/công trường. Đọc qua REF (như lightMarkers) —
    * đổi công tắc snap không dựng lại cảnh. */
   snap3d?: { settings: SnapSettings; gridStepMm: number } | null;
+  /** 21/08 — BẤM-VÀO-KHỐI ĐỂ CHỌN (viewport-first): pointerdown trúng mesh massing (mặt bất kỳ)
+   * gọi hàm này với `entityId` của mesh. Component KHÔNG tự ghi store chọn (một nguồn — nơi gọi
+   * map entityId→group rồi ghi `useTree3DUi`); bỏ trống = hành vi cũ (chỉ push-pull mặt trên). */
+  onPickEntity?: (entityId: string) => void;
+  /** 21/08 — DỰNG KHỐI BẰNG CỬ CHỈ. `null` = hành vi cũ y nguyên (chọn/kéo-đẩy). Khác `null` thì
+   * mọi cú bấm trong khung nhìn thuộc về cử chỉ dựng: chọn/kéo-đẩy/orbit tạm nhường đường, vì
+   * một cú bấm không thể vừa là "chọn khối" vừa là "đặt điểm đầu". Đọc qua REF (như `snap3d`) —
+   * đổi công cụ KHÔNG dựng lại cảnh. */
+  createTool?: CreateTool3D | null;
+  /** Chốt cử chỉ dựng — gọi ĐÚNG MỘT LẦN với toạ độ CAD (mm). Component KHÔNG tự ghi Doc (cùng
+   * luật một-nguồn với `onPushPull`): nơi gọi sinh entity rồi `useCadStore.addEntities`. */
+  onCreateSolid?: (payload: CreateSolidPayload) => void;
+  /** Esc / cử chỉ bị huỷ — nơi gọi tắt đèn nút công cụ. Không gọi khi chốt thành công. */
+  onCreateCancel?: () => void;
 }
+
+/** Kết quả một cử chỉ dựng, hệ CAD (mm). Union phân biệt theo `tool`: tường mang TIM + bề dày
+ * (nơi gọi tự dựng đường bao qua `wallSegmentOutline` sẵn có), hộp/trụ mang thẳng đa giác đáy. */
+export type CreateSolidPayload =
+  | { tool: 'wall'; aMm: { x: number; y: number }; bMm: { x: number; y: number }; thicknessMm: number; heightMm: number }
+  | { tool: 'box' | 'cylinder'; pointsMm: { x: number; y: number }[]; heightMm: number };
 
 const IMPLEMENTED_MODES: Scene3DMode[] = ['orbit', 'campath', 'section', 'walk', 'massing'];
 const WALK_SPEED_M_PER_SEC = 1.5; // ~tốc độ đi bộ chậm, cùng cảm giác tempo với campath 1200mm/s
 
-export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = EYE_HEIGHT_MM, lensMm = 35, lightingPreview = null, sectionMm, onFrame, onPushPull, lightMarkers, onLightMove, ground = false, className, cameraApiRef, snap3d }: Scene3DViewerProps) {
+export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = EYE_HEIGHT_MM, lensMm = 35, lightingPreview = null, sectionMm, onFrame, onPushPull, lightMarkers, onLightMove, ground = false, className, cameraApiRef, snap3d, selectedId = null, onPickEntity, createTool = null, onCreateSolid, onCreateCancel }: Scene3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // 21/08 — cử chỉ dựng đi qua REF (cùng lý do `snap3dRef`): đổi công cụ là chuyện của thanh nút,
+  // không phải chuyện của hình học — cho vào deps effect chính sẽ dựng lại cả cảnh + reset camera.
+  const createToolRef = useRef<CreateTool3D | null>(createTool);
+  createToolRef.current = createTool;
+  const onCreateSolidRef = useRef(onCreateSolid);
+  onCreateSolidRef.current = onCreateSolid;
+  const onCreateCancelRef = useRef(onCreateCancel);
+  onCreateCancelRef.current = onCreateCancel;
+  // Bỏ công cụ giữa chừng thì cử chỉ đang dở phải chết theo (không để lại mesh xem trước lơ lửng).
+  const huyVeRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (!createTool) huyVeRef.current?.();
+  }, [createTool]);
   // T4 — snap qua REF (cùng lý do lightMarkersRef): đổi công tắc không dựng lại cảnh.
   const snap3dRef = useRef(snap3d ?? null);
   snap3dRef.current = snap3d ?? null;
@@ -176,6 +235,9 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
   const massingActive = mode === 'massing';
   const onPushPullRef = useRef(onPushPull);
   onPushPullRef.current = onPushPull;
+  // 21/08 — pick qua REF (cùng lý do onPushPullRef): đổi handler không dựng lại cảnh.
+  const onPickEntityRef = useRef(onPickEntity);
+  onPickEntityRef.current = onPickEntity;
   // VIỆC 3.c — đèn đi qua REF, KHÔNG qua deps của effect chính. Nếu cho `lightMarkers` vào deps
   // thì mỗi lần kéo đèn 1px sẽ dựng lại TOÀN BỘ cảnh (hình học + camera + controls) — vừa giật
   // vừa reset góc nhìn. Effect chính đăng ký `syncMarkersRef`, effect nhỏ bên dưới gọi lại nó.
@@ -315,8 +377,23 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
       cameraApiRef.current = {
         camera,
         controls,
-        fit: () => {
+        fit: (entityId) => {
           if (walkActive || campathActive) return; // 2 mode này tự lái camera mỗi khung, fit vô nghĩa
+          // GOTO-3D (19/08): khung theo MỘT entity — đọc `positions` thẳng từ `scene.groups`
+          // (dữ liệu nguồn của `docToObjScene()`, cùng mảng dùng để dựng mesh), KHÔNG cần tìm
+          // mesh riêng trong THREE scene (`buildMergedGeometries` gộp mesh theo MÀU, không theo
+          // entity — không có mesh 1-1 với entityId trừ mode `massing`). Rỗng/không thấy ⇒ rơi
+          // xuống nhánh toàn cảnh bên dưới, không bịa vị trí.
+          if (entityId) {
+            const g = scene.groups.find((sg) => sg.entityId === entityId && sg.positions.length > 0);
+            if (g) {
+              const box = new THREE.Box3().setFromArray(g.positions);
+              if (!box.isEmpty()) {
+                frameBox(camera, controls, box);
+                return;
+              }
+            }
+          }
           fitCameraToScene(scene, camera, controls, fitTargetRef.group);
         },
       };
@@ -410,14 +487,31 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
     const massingWalls = massingActive ? buildMassingWalls(scene) : [];
     const massingMeshes: THREE.Mesh[] = [];
     for (const w of massingWalls) {
+      const isSelected = !!selectedId && w.entityId === selectedId;
       const material = lightingPreview
-        ? new THREE.MeshStandardMaterial({ color: w.colorHex, roughness: 0.78, metalness: 0.02, side: THREE.DoubleSide })
+        ? new THREE.MeshStandardMaterial({ color: w.colorHex, roughness: 0.78, metalness: 0.02, side: THREE.DoubleSide, emissive: isSelected ? 0x6a57f5 : 0x000000, emissiveIntensity: isSelected ? 0.28 : 0 })
         : new THREE.MeshBasicMaterial({ color: w.colorHex, side: THREE.DoubleSide });
       const mesh = new THREE.Mesh(w.geometry, material);
       mesh.userData = { entityId: w.entityId, baseHeightMm: w.baseHeightMm, baseMm: w.baseMm };
       addEdges(mesh);
       massingMeshes.push(mesh);
       group.add(mesh);
+      if (isSelected) {
+        // ⭐ SELECTION FEEDBACK THẬT — thứ truth-map 20/08 gắn cờ "3D PASS trừ selection feedback".
+        // Gốc bệnh: `Viewport3D` gizmo trước đây LUÔN vẽ ở CHÍNH GIỮA khung nhìn bất kể khối
+        // đang chọn nằm đâu (SVG `left:50%,top:50%` cố định) — Hoà đúng, đó không phải phản hồi
+        // chọn thật. Sửa TẠI NGUỒN: viền hộp bao khối THẬT trong không gian (Box3Helper, màu
+        // accent `#6a57f5`, khớp `--accent` app), theo camera/orbit như mọi vật khác — không
+        // phải overlay 2D cố định. `renderOrder` cao để không bị mesh khác đè (không depth test
+        // tắt hẳn — vẫn muốn nó ẩn đúng khi bị khối khác che, giống Blender/SketchUp).
+        const box = new THREE.Box3().setFromObject(mesh);
+        const helper = new THREE.Box3Helper(box, new THREE.Color(0x6a57f5));
+        (helper.material as THREE.LineBasicMaterial).transparent = true;
+        (helper.material as THREE.LineBasicMaterial).opacity = 0.9;
+        helper.renderOrder = 998;
+        group.add(helper);
+        edgeJunk.push(helper.geometry, helper.material as THREE.Material);
+      }
     }
 
     // p14 — fit SAU khi mesh tồn tại, đo Box3 từ chính group (xem docstring fitCameraToScene).
@@ -552,7 +646,90 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
       pointerNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       pointerNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     }
+
+    /* ── CỬ CHỈ DỰNG KHỐI trên mặt sàn (21/08) ─────────────────────────────────────────────
+       Mảnh còn thiếu mà `lib/render-studio/tool3d.ts` đã nêu đích danh trong docstring của nó:
+       hình học có đủ từ trước, chỉ thiếu đường "unproject con trỏ → mặt sàn" vì camera sống nằm
+       trong file này. Nay có: bấm-giữ-thả trên sàn, XEM TRƯỚC vẽ bằng mesh tạm (KHÔNG ghi Doc),
+       thả chuột mới trả toạ độ CAD mm ra ngoài cho nơi gọi ghi. Esc huỷ.                      */
+    const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const groundHit = new THREE.Vector3();
+    let veDang: { tuMm: { x: number; y: number }; toiMm: { x: number; y: number } } | null = null;
+    let xemTruoc: THREE.Line | null = null;
+
+    /** Con trỏ → điểm trên mặt sàn y=0, đổi sang hệ CAD (mm). null khi tia song song mặt sàn. */
+    function diemSanMm(e: PointerEvent): { x: number; y: number } | null {
+      ndcFromEvent(e);
+      raycaster.setFromCamera(pointerNdc, camera);
+      if (!raycaster.ray.intersectPlane(groundPlane, groundHit)) return null;
+      const c = threeMToCadMm({ x: groundHit.x, y: groundHit.y, z: groundHit.z });
+      return { x: c.x, y: c.y };
+    }
+
+    function xoaXemTruoc() {
+      if (!xemTruoc) return;
+      three.remove(xemTruoc);
+      xemTruoc.geometry.dispose();
+      (xemTruoc.material as THREE.Material).dispose();
+      xemTruoc = null;
+    }
+
+    /** Vẽ lại đường bao xem trước theo đúng loại cử chỉ đang cầm. Dùng CHUNG hàm sinh đa giác với
+     *  đường ghi thật (`tao-khoi-3d.ts`) — xem trước và kết quả không thể lệch nhau. */
+    function veXemTruoc(kind: CreateTool3D, aMm: { x: number; y: number }, bMm: { x: number; y: number }) {
+      xoaXemTruoc();
+      const diem: { x: number; y: number }[] =
+        kind === 'wall'
+          ? [aMm, bMm]
+          : kind === 'box'
+            ? hinhChuNhatMm(aMm, bMm)
+            : daGiacDeuMm(aMm, Math.hypot(bMm.x - aMm.x, bMm.y - aMm.y));
+      const khep = kind === 'wall' ? diem : [...diem, diem[0]];
+      // CAD mm → three m: nghịch đảo threeMToCadMm (z_three = -y_cad/1000). Nhích 5mm khỏi sàn
+      // để đường không bị z-fighting với lưới sàn.
+      const v = khep.map((p) => new THREE.Vector3(p.x / 1000, 0.005, -p.y / 1000));
+      const g = new THREE.BufferGeometry().setFromPoints(v);
+      xemTruoc = new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0x6a57f5, depthTest: false }));
+      xemTruoc.renderOrder = 999;
+      three.add(xemTruoc);
+      needsRender = true;
+    }
+
+    function huyVe() {
+      if (!veDang) return;
+      veDang = null;
+      xoaXemTruoc();
+      controls.enabled = !walkActive && !campathActive;
+      onCreateCancelRef.current?.();
+      needsRender = true;
+    }
+
+    // Bỏ công cụ giữa chừng (nút dock tắt, hoặc Esc ở tầng trên) → cử chỉ đang dở chết theo.
+    huyVeRef.current = huyVe;
+
+    // Esc huỷ cử chỉ ngay trong khung nhìn. Né ô nhập theo đúng luật keydown-ne-o-nhap đã dùng ở
+    // handler phím của mode walk bên trên — gõ Esc trong ô số không được huỷ hình đang vẽ.
+    function onEscVe(ev: KeyboardEvent) {
+      if (ev.key !== 'Escape' || !veDang) return;
+      const ae = document.activeElement;
+      if (ae instanceof HTMLElement && (ae.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(ae.tagName))) return;
+      ev.preventDefault();
+      huyVe();
+    }
+    window.addEventListener('keydown', onEscVe, true);
+
     function onPointerDown(e: PointerEvent) {
+      // Đang cầm công cụ dựng ⇒ cú bấm này thuộc về cử chỉ dựng, KHÔNG phải chọn/kéo-đẩy: một cú
+      // bấm không thể vừa đặt điểm đầu vừa chọn khối. Orbit nhường đường tới lúc thả.
+      const kind = createToolRef.current;
+      if (kind) {
+        const p = diemSanMm(e);
+        if (!p) return;
+        veDang = { tuMm: p, toiMm: p };
+        controls.enabled = false;
+        renderer.domElement.setPointerCapture(e.pointerId);
+        return;
+      }
       if (!massingMeshes.length && !markerMeshes.length) return;
       ndcFromEvent(e);
       raycaster.setFromCamera(pointerNdc, camera);
@@ -587,6 +764,11 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
       const hit = raycaster.intersectObjects(massingMeshes, false)[0];
       if (!hit || !hit.face) return;
       const worldNormal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
+      // 21/08 — BẤM TRÚNG KHỐI = CHỌN KHỐI (mặt nào cũng chọn), viewport-first: trước đây chọn
+      // CHỈ đi qua cây Navigator, bấm thẳng vào khối trên khung nhìn không làm gì (đo thật) —
+      // sai kỳ vọng của mọi app 3D. Chọn ngay ở pointerdown; mặt KHÔNG-phải-đỉnh thì return như
+      // cũ (orbit vẫn xoay bình thường, không capture) — chỉ thêm tín hiệu chọn, không đổi camera.
+      onPickEntityRef.current?.((hit.object as THREE.Mesh).userData.entityId as string);
       if (worldNormal.y < 0.5) return; // chỉ mặt TRÊN (đỉnh tường) mới có nghĩa "cao tường"
       const mesh = hit.object as THREE.Mesh;
       const ud = mesh.userData as { entityId: string; baseHeightMm: number; baseMm?: number };
@@ -602,6 +784,15 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
       renderer.domElement.setPointerCapture(e.pointerId);
     }
     function onPointerMove(e: PointerEvent) {
+      // Cử chỉ dựng đang chạy: cập nhật xem trước theo con trỏ, không đụng gì khác.
+      if (veDang) {
+        const p = diemSanMm(e);
+        if (!p) return;
+        veDang.toiMm = p;
+        const kind = createToolRef.current;
+        if (kind) veXemTruoc(kind, veDang.tuMm, p);
+        return;
+      }
       if (draggingLight) {
         ndcFromEvent(e);
         raycaster.setFromCamera(pointerNdc, camera);
@@ -677,6 +868,34 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
       needsRender = true;
     }
     function onPointerUp(e: PointerEvent) {
+      // Chốt cử chỉ dựng: đủ lớn thì trả toạ độ CAD ra ngoài (nơi gọi ghi Doc), nhỏ quá thì coi
+      // như bấm lỡ tay và huỷ — thà không tạo gì còn hơn đẻ khối 0 chiều không xoá được bằng mắt.
+      if (veDang) {
+        const kind = createToolRef.current;
+        const { tuMm, toiMm } = veDang;
+        veDang = null;
+        xoaXemTruoc();
+        controls.enabled = !walkActive && !campathActive;
+        if (renderer.domElement.hasPointerCapture(e.pointerId)) renderer.domElement.releasePointerCapture(e.pointerId);
+        const dx = toiMm.x - tuMm.x;
+        const dy = toiMm.y - tuMm.y;
+        if (kind === 'wall') {
+          if (duLonDeGhi(Math.hypot(dx, dy))) {
+            onCreateSolidRef.current?.({ tool: 'wall', aMm: tuMm, bMm: toiMm, thicknessMm: WALL_THICKNESS_MM, heightMm: DEFAULT_HEIGHT_MM });
+          } else onCreateCancelRef.current?.();
+        } else if (kind === 'box') {
+          if (duLonDeGhi(dx, dy)) {
+            onCreateSolidRef.current?.({ tool: 'box', pointsMm: hinhChuNhatMm(tuMm, toiMm), heightMm: DEFAULT_HEIGHT_MM });
+          } else onCreateCancelRef.current?.();
+        } else if (kind === 'cylinder') {
+          const r = Math.hypot(dx, dy);
+          if (duLonDeGhi(r)) {
+            onCreateSolidRef.current?.({ tool: 'cylinder', pointsMm: daGiacDeuMm(tuMm, r), heightMm: DEFAULT_HEIGHT_MM });
+          } else onCreateCancelRef.current?.();
+        }
+        needsRender = true;
+        return;
+      }
       if (draggingLight) {
         const p = draggingLight.mesh.position;
         // three (m, Y-lên) → CAD (mm, Y-Bắc): nghịch đảo `cadAxesToThree` = (x, z, -y) — viết
@@ -796,6 +1015,9 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
       }
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('keydown', onEscVe, true);
+      huyVeRef.current = null;
+      xoaXemTruoc();
       renderer.domElement.removeEventListener('pointerdown', onPointerDown);
       renderer.domElement.removeEventListener('pointermove', onPointerMove);
       renderer.domElement.removeEventListener('pointerup', onPointerUp);
@@ -833,7 +1055,7 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
     // lần đổi (không incremental-update riêng clippingPlanes) — chấp nhận được ở V1 (rebuild
     // scene vài chục ms, xem bench 3D-1), tối ưu sau nếu UI thật thấy giật khi kéo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, mode, camPath, cameraHeightMm, lensMm, lightingPreview, sectionMm, ground]);
+  }, [scene, mode, camPath, cameraHeightMm, lensMm, lightingPreview, sectionMm, ground, selectedId]);
 
   return <div ref={containerRef} className={className} style={{ width: '100%', height: '100%', minHeight: 320, position: 'relative' }} />;
 }

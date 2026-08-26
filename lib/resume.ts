@@ -15,6 +15,7 @@
 import { create } from 'zustand';
 import { isPhase, type Phase } from './phases';
 import { useSaveStatus } from './save-status';
+import { parseStageRoute, LEGACY_STAGE_ROUTE } from './scope-core';
 
 const RESUME_PREFIX = 'interiorflow.resume.';
 const TOUR_PREFIX = 'interiorflow.tourDone.';
@@ -43,6 +44,31 @@ export interface ResumeState {
 
 function isResumableRoute(v: unknown): v is ResumableRoute {
   return typeof v === 'string' && (RESUMABLE_ROUTES as readonly string[]).includes(v);
+}
+
+/**
+ * CONTINUITY-1 (19/08) — tính patch ghi resume TỪ PATHNAME, tách thuần khỏi ResumeTracker.tsx
+ * để test được không cần DOM/usePathname (sucrase-node).
+ *
+ * Bug đã sửa: khi đứng trên route scope dự án (`/projects/[id]/cad`…), patch cũ chỉ có
+ * `{ route }` (route TOÀN CỤC cũ, vd '/cad-editor') mà KHÔNG kèm id dự án. Nếu resume trước đó
+ * chưa từng có `flowId` (case "vào thẳng URL/bookmark"), `buildResumeCard()`
+ * (components/home/widgets/resume-card.ts) tính `routeId = currentProjectId || resume.flowId
+ * || null` ra `null` ⇒ `resumeHref()` trả route toàn cục cũ thay vì `/projects/<id>/<stage>` ⇒
+ * `LegacyStageRedirect` tra lại cũng null ⇒ dội về `/?notice=choose-project`.
+ *
+ * Trả `null` nếu route này không nên ghi resume (route '/' do app/page.tsx tự ghi kèm
+ * flowId+chặng riêng — xem docstring `ResumeTracker`; hoặc route không nằm trong
+ * `RESUMABLE_ROUTES`).
+ */
+export function computeResumePatch(
+  pathname: string,
+): { route: ResumableRoute; flowId?: string } | null {
+  const scoped = parseStageRoute(pathname);
+  const route = scoped ? LEGACY_STAGE_ROUTE[scoped.stage] : pathname;
+  if (route === '/') return null;
+  if (!isResumableRoute(route)) return null;
+  return scoped ? { route, flowId: scoped.projectId } : { route };
 }
 
 /** Ghi resume-state (merge nông lên bản cũ để route studio không xoá flowId đã lưu). */

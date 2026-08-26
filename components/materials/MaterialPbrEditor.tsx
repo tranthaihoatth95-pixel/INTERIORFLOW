@@ -147,8 +147,8 @@ export function MaterialPbrEditor({
     // vật lý). Một hàng gộp cả metallic + specular; def `specular` nằm trong danh sách `an`.
     metallic: () => (
       <div style={{ display: 'flex', gap: 16, padding: '8px 10px', borderRadius: 10, background: 'var(--field)' }}>
-        <span style={lockRow}><Lock size={11} /> metallic = {pbr.metallic ?? 0} {tr('(theo loại)', '(by type)')}</span>
-        <span style={lockRow}><Lock size={11} /> specular = {DEFAULT_PBR.specular} (IOR 1.5)</span>
+        <span style={lockRow}><Lock size={14} /> metallic = {pbr.metallic ?? 0} {tr('(theo loại)', '(by type)')}</span>
+        <span style={lockRow}><Lock size={14} /> specular = {DEFAULT_PBR.specular} (IOR 1.5)</span>
       </div>
     ),
     // Bước lặp vân mm — cặp {w,h}, chỉ hiện khi đã có ít nhất 1 map (như cũ).
@@ -210,7 +210,7 @@ export function MaterialPbrEditor({
 
         {pbr.suyDoan && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, padding: '7px 10px', borderRadius: 10, background: 'color-mix(in srgb, var(--warning) 14%, var(--panel))', color: 'var(--t1)', fontSize: 12, lineHeight: 1.5 }}>
-            <Sparkles size={13} />
+            <Sparkles size={16} />
             {tr('Số liệu đang là SUY ĐOÁN từ tên/danh mục — chưa ai đo hay chọn tay. Chỉnh một núm là hết suy đoán.', 'Values are GUESSED from the name/category — not measured. Adjust any control to confirm them.')}
           </div>
         )}
@@ -267,7 +267,7 @@ export function MaterialPbrEditor({
                       'Exports the SAVED version (unsaved edits are not included).')
                   : tr('Tải file JSON tham số cho engine render.', 'Download the engine parameter JSON file.')}
               style={{ height: 30, padding: '0 10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', color: savedPbr ? 'var(--t2)' : 'var(--t4)', fontSize: 12, fontWeight: 600, cursor: savedPbr ? 'pointer' : 'not-allowed', opacity: savedPbr ? 1 : 0.55, display: 'flex', alignItems: 'center', gap: 5 }}>
-              <Download size={12} /> {engine === 'vray' ? tr('Xuất V-Ray', 'Export V-Ray') : tr('Xuất D5', 'Export D5')}
+              <Download size={18} /> {engine === 'vray' ? tr('Xuất V-Ray', 'Export V-Ray') : tr('Xuất D5', 'Export D5')}
             </button>
           ))}
           {!savedPbr && (
@@ -280,7 +280,7 @@ export function MaterialPbrEditor({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button type="button" onClick={reset} title={tr('Xoá bản chỉnh, quay về suy đoán', 'Discard edits, back to inferred')}
             style={{ height: 'var(--tap)', padding: '0 10px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--t3)', fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
-            <RotateCcw size={12} /> {tr('Về mặc định', 'Reset')}
+            <RotateCcw size={18} /> {tr('Về mặc định', 'Reset')}
           </button>
           {savedFlash && <span style={{ fontSize: 12, color: 'var(--success)' }}>{tr('Đã lưu.', 'Saved.')}</span>}
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>

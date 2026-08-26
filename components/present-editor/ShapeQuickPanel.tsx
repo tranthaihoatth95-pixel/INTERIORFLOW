@@ -17,12 +17,12 @@ interface Props {
 }
 
 const KINDS: { id: ShapeKind; icon: React.ReactNode; title: string }[] = [
-  { id: 'rect', icon: <Square size={13} />, title: 'Chữ nhật' },
-  { id: 'ellipse', icon: <Circle size={13} />, title: 'Elip' },
-  { id: 'triangle', icon: <Triangle size={13} />, title: 'Tam giác' },
-  { id: 'polygon', icon: <Pentagon size={13} />, title: 'Đa giác' },
-  { id: 'arrow', icon: <MoveRight size={13} />, title: 'Mũi tên' },
-  { id: 'line', icon: <Minus size={13} />, title: 'Đường' },
+  { id: 'rect', icon: <Square size={16} />, title: 'Chữ nhật' },
+  { id: 'ellipse', icon: <Circle size={16} />, title: 'Elip' },
+  { id: 'triangle', icon: <Triangle size={16} />, title: 'Tam giác' },
+  { id: 'polygon', icon: <Pentagon size={16} />, title: 'Đa giác' },
+  { id: 'arrow', icon: <MoveRight size={16} />, title: 'Mũi tên' },
+  { id: 'line', icon: <Minus size={16} />, title: 'Đường' },
 ];
 
 export default function ShapeQuickPanel({ el, onUpdate }: Props) {

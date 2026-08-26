@@ -169,10 +169,10 @@ export function NotebookSourcesSidebar({
 
         <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
           <button type="button" onClick={() => setAddMode('url')} style={pillBtn}>
-            <LinkIcon size={11} /> URL
+            <LinkIcon size={14} /> URL
           </button>
           <button type="button" onClick={() => setAddMode('text')} style={pillBtn}>
-            <Plus size={11} /> Text
+            <Plus size={14} /> Text
           </button>
         </div>
 
@@ -364,7 +364,7 @@ export function NotebookSourcesSidebar({
                         textAlign: 'left',
                       }}
                     >
-                      <Trash2 size={12} /> Xoá nguồn
+                      <Trash2 size={16} /> Xoá nguồn
                     </button>
                   </div>
                 )}

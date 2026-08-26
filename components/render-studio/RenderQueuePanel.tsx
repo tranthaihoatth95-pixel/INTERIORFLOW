@@ -22,6 +22,10 @@
 import { useMemo } from 'react';
 import { Minus, X, ListVideo, Plus, Trash2, ImageOff } from 'lucide-react';
 import LightArc from '@/components/ui/LightArc';
+// R5 (19/08) — job ĐANG CHẠY dùng THANH `LightBar` (luật Hoà 16/08 "cái gì đang chạy cũng phải
+// có thanh"; trước đây LightBar mồ côi 0 importer). Pill thu gọn giữ `LightArc` (vòng cung nhỏ
+// vừa pill) — hai mặt tiền cùng MỘT lõi lib/ui/tien-trinh.ts, không phải hai bộ logic.
+import LightBar from '@/components/ui/LightBar';
 import { useFlowStore } from '@/lib/store';
 import { useT } from '@/lib/i18n';
 import {
@@ -116,7 +120,7 @@ export default function RenderQueuePanel() {
       >
         <LightArc
           size={20}
-          strokeWidth={2.5}
+          strokeWidth={1.5}
           value={running ? running.progress * 100 : activeCount > 0 ? undefined : 100}
           label={tr('Tiến trình hàng đợi render', 'Render queue progress')}
         />
@@ -235,7 +239,7 @@ export default function RenderQueuePanel() {
             fontSize: 12,
           }}
         >
-          <Plus size={13} />
+          <Plus size={18} />
           {tr('Thêm vào hàng đợi', 'Add to queue')}
           {selectedCount > 0 ? (
             <span style={{ color: 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>
@@ -346,7 +350,7 @@ function JobCard({
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
         ) : (
-          <ImageOff size={15} style={{ color: 'var(--t3)' }} />
+          <ImageOff size={20} style={{ color: 'var(--t3)' }} />
         )}
       </button>
 
@@ -379,25 +383,26 @@ function JobCard({
           {job.status === 'error' && job.error ? ` — ${job.error}` : ''}
           {job.status === 'done' && took ? ` · ${took}` : ''}
         </p>
-      </div>
 
-      {/* cung tiến độ + % SỐ THẬT */}
-      {job.status === 'running' ? (
-        <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <LightArc size={26} strokeWidth={3} value={pct} label={job.viewName} />
-          <span
-            style={{
-              fontSize: 11.5,
-              color: 'var(--t2)',
-              fontVariantNumeric: 'tabular-nums',
-              minWidth: 30,
-              textAlign: 'right',
-            }}
-          >
-            {pct}%
-          </span>
-        </div>
-      ) : null}
+        {/* R5 (19/08) — THANH tiến trình cho job đang chạy (thay cụm cung+% cũ, tránh nói cùng
+            một tin hai lần). Hai nhánh của union lõi tien-trinh.ts:
+            · progress > 0  → SỐ THẬT engine đã báo (relay ở render-queue-store) ⇒ nhánh ĐO ĐƯỢC,
+              LightBar tự in % (hienSo mặc định bật).
+            · progress = 0  → số 0 là store TỰ GHI lúc chuyển sang running (store:155), engine
+              CHƯA báo con số nào ⇒ truyền undefined = nhánh KHÔNG ĐO ĐƯỢC (rai trôi, không số).
+              Bịa "0%" đứng yên chính là loại số giả luật 16/08 cấm.
+            `soVach` hạ 20 vì thanh này hẹp (~230px trong bảng 400px) — xem ghi chú LightBar. */}
+        {job.status === 'running' && (
+          <div style={{ marginTop: 5 }}>
+            <LightBar
+              value={job.progress > 0 ? pct : undefined}
+              soVach={20}
+              height={7}
+              label={job.viewName}
+            />
+          </div>
+        )}
+      </div>
 
       {active ? (
         <button
@@ -407,7 +412,7 @@ function JobCard({
           aria-label={tr('Huỷ việc này', 'Cancel this job')}
           style={{ flex: 'none', padding: 6, borderRadius: 10, color: 'var(--t3)' }}
         >
-          <X size={13} />
+          <X size={14} />
         </button>
       ) : null}
     </article>

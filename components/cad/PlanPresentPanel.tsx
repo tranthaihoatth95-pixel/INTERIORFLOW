@@ -226,15 +226,15 @@ export default function PlanPresentPanel({ onClose }: { onClose: () => void }) {
           </div>
         </div>
         <div className={row}>
-          <span className="flex items-center gap-1.5 text-[var(--t3)]"><Circle size={12} />{tr('Thảm định vùng', 'Zoning rugs')}</span>
+          <span className="flex items-center gap-1.5 text-[var(--t3)]"><Circle size={16} />{tr('Thảm định vùng', 'Zoning rugs')}</span>
           <button type="button" className={chip(st.showRugs)} onClick={() => st.set({ showRugs: !st.showRugs })}>{st.showRugs ? tr('Hiện', 'On') : tr('Ẩn', 'Off')}</button>
         </div>
         <div className={row}>
-          <span className="flex items-center gap-1.5 text-[var(--t3)]"><Trees size={12} />{tr('Cây xanh', 'Planting')}</span>
+          <span className="flex items-center gap-1.5 text-[var(--t3)]"><Trees size={16} />{tr('Cây xanh', 'Planting')}</span>
           <button type="button" className={chip(st.showPlants)} onClick={() => st.set({ showPlants: !st.showPlants })}>{st.showPlants ? tr('Hiện', 'On') : tr('Ẩn', 'Off')}</button>
         </div>
         <div className={row}>
-          <span className="flex items-center gap-1.5 text-[var(--t3)]"><Users size={12} />{tr('Người', 'People')}</span>
+          <span className="flex items-center gap-1.5 text-[var(--t3)]"><Users size={16} />{tr('Người', 'People')}</span>
           <button type="button" className={chip(st.showPeople)} onClick={() => st.set({ showPeople: !st.showPeople })}>{st.showPeople ? tr('Hiện', 'On') : tr('Ẩn', 'Off')}</button>
         </div>
       </div>
@@ -261,7 +261,7 @@ export default function PlanPresentPanel({ onClose }: { onClose: () => void }) {
                 : 'cursor-not-allowed border-dashed border-[var(--border)] text-[var(--t5)]',
             )}
           >
-            <Tag size={13} />
+            <Tag size={18} />
             {tr('Đặt nhãn leader cho vật thể đang chọn', 'Leader-label the current selection')}
           </button>
         </Tooltip>
@@ -308,7 +308,7 @@ export default function PlanPresentPanel({ onClose }: { onClose: () => void }) {
                 disabled
                 className="flex w-full cursor-not-allowed items-center gap-2 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-2 text-[11.5px] leading-[1.5] text-[var(--t5)]"
               >
-                <Icon size={13} />
+                <Icon size={18} />
                 {tr(o.vi, o.en)}
               </button>
             </Tooltip>

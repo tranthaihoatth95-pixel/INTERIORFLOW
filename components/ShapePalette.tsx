@@ -59,7 +59,7 @@ export default function ShapePalette({ blocks, pendingId, onPick, onDragStart }:
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
       {/* B2.8 — search */}
       <div style={{ position: 'relative' }}>
-        <Search size={13} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--t4)' }} />
+        <Search size={16} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--t4)' }} />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}

@@ -144,7 +144,7 @@ export default function GenerateFlow({ refImages, onComplete, onSkip }: Props) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={magicIntro}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <Sparkles size={15} style={{ color: 'var(--accent)' }} />
+          <Sparkles size={14} style={{ color: 'var(--accent)' }} />
           <strong style={{ fontSize: 13, color: 'var(--t1)' }}>Magic tạo hồ sơ hoàn chỉnh</strong>
         </div>
         <p style={{ ...hintP, marginTop: 6 }}>
@@ -154,7 +154,7 @@ export default function GenerateFlow({ refImages, onComplete, onSkip }: Props) {
 
       <InputCard title="Hình ảnh (không bắt buộc)">
         <button type="button" onClick={() => imgInput.current?.click()} style={importBtn}>
-          <Upload size={15} /> Thêm hình ảnh
+          <Upload size={18} /> Thêm hình ảnh
         </button>
         <input ref={imgInput} type="file" accept="image/*" multiple hidden onChange={onPickContent} />
         {contentImages.length > 0 && (
@@ -168,14 +168,14 @@ export default function GenerateFlow({ refImages, onComplete, onSkip }: Props) {
                   title="Bỏ ảnh"
                   style={thumbX}
                 >
-                  <X size={10} />
+                  <X size={14} />
                 </button>
               </div>
             ))}
           </div>
         )}
         <p style={hintP}>
-          <ImagePlus size={11} /> {contentImages.length} ảnh — máy sẽ dàn vào slide theo bố cục gợi ý.
+          <ImagePlus size={14} /> {contentImages.length} ảnh — máy sẽ dàn vào slide theo bố cục gợi ý.
         </p>
       </InputCard>
 
@@ -200,9 +200,9 @@ export default function GenerateFlow({ refImages, onComplete, onSkip }: Props) {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {pptxTemplate && (
               <span style={chip}>
-                <FileText size={11} /> {pptxTemplate}
+                <FileText size={14} /> {pptxTemplate}
                 <button type="button" onClick={() => setPptxTemplate(null)} style={chipX}>
-                  <X size={10} />
+                  <X size={14} />
                 </button>
               </span>
             )}
@@ -210,7 +210,7 @@ export default function GenerateFlow({ refImages, onComplete, onSkip }: Props) {
               <div key={i} style={{ position: 'relative' }}>
                 <img src={u} alt="" style={{ ...thumb, width: 42, height: 42 }} />
                 <button type="button" onClick={() => toggleAttachRef(u)} style={thumbX}>
-                  <X size={10} />
+                  <X size={14} />
                 </button>
               </div>
             ))}
@@ -244,7 +244,7 @@ export default function GenerateFlow({ refImages, onComplete, onSkip }: Props) {
                   <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   {on && (
                     <span style={pickCheck}>
-                      <Check size={10} />
+                      <Check size={14} />
                     </span>
                   )}
                 </button>
@@ -253,7 +253,7 @@ export default function GenerateFlow({ refImages, onComplete, onSkip }: Props) {
           </div>
         )}
         <p style={hintP}>
-          <Wand2 size={11} /> Chỉ bổ sung phong cách; Brand Kit dự án vẫn là nhận diện chính.
+          <Wand2 size={14} /> Chỉ bổ sung phong cách; Brand Kit dự án vẫn là nhận diện chính.
         </p>
         </div>
       </details>
@@ -264,7 +264,7 @@ export default function GenerateFlow({ refImages, onComplete, onSkip }: Props) {
         onClick={onGenerate}
         style={genBtn}
       >
-        <Sparkles size={15} /> Tạo hồ sơ
+        <Sparkles size={20} /> Tạo hồ sơ
       </button>
       {onSkip && (
         <button

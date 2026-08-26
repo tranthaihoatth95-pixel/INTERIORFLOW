@@ -1,0 +1,888 @@
+<!-- @dsCard group="Gallery" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IF · Gallery / Explore</title>
+<style>
+/* ------------------------------------------------------------------
+   TOKEN — tên đọc từ app/globals.css, giá trị chép đúng từng byte.
+   Trong thân bản vẽ CHỈ dùng var(--…), không hex rời.
+   ------------------------------------------------------------------ */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14);
+  --accent-ring:rgba(106,87,245,.55); --on-accent:#ffffff; --k-doc:#c79a63;
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --ease-apple:cubic-bezier(.32,.72,0,1);
+  --dur-fast:.12s; --dur-base:.18s;
+  --tap:32px; --tap-lg:44px; --row:28px; --gap:8px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-ui:13px; --fs-sm:14px;
+  --nhip-bam:130ms; --nhip-vien:170ms;
+}
+:root,:root[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --nen-mo-header:rgba(20,20,23,.72); --nen-mo-panel:rgba(20,20,23,.68);
+  --nen-mo-card:rgba(26,26,30,.82); --vien-mo:rgba(255,255,255,.06);
+  --kinh-mong:rgba(24,24,28,.84); --kinh-vua:rgba(24,24,28,.9); --kinh-dac:rgba(24,24,28,.95);
+  --kinh-mep-sang:rgba(255,255,255,.14); --kinh-chu-phu:#b4b4bd;
+  --vl-gan-dac:rgba(20,20,23,.97);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --mo-vo-hieu:.5;
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65); --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --shadow-sheet:0 18px 60px -20px rgba(0,0,0,.7);
+}
+:root[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --nen-mo-header:rgba(250,248,244,.72); --nen-mo-panel:rgba(250,248,244,.7);
+  --nen-mo-card:rgba(255,255,255,.82); --vien-mo:rgba(0,0,0,.05);
+  --kinh-mong:rgba(252,251,249,.88); --kinh-vua:rgba(252,251,249,.93); --kinh-dac:rgba(253,252,250,.96);
+  --kinh-mep-sang:rgba(255,255,255,.75); --kinh-chu-phu:#5c564d;
+  --vl-gan-dac:rgba(250,248,244,.975);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --mo-vo-hieu:.62;
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22); --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --shadow-sheet:0 16px 50px -18px rgba(60,52,40,.3);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased;
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  font-size:var(--fs-sm);line-height:1.5}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms !important;animation-duration:.01ms !important}}
+
+/* ---- Ảnh PLACEHOLDER: KHÔNG dùng ảnh thật, KHÔNG hotlink. Chỉ gradient token + nhãn. ---- */
+.ph{position:relative;border-radius:var(--r-3);overflow:hidden;
+  background:linear-gradient(146deg,
+    color-mix(in srgb,var(--t4) 46%,var(--field)) 0%,
+    color-mix(in srgb,var(--t5) 34%,var(--field)) 44%,
+    var(--field) 100%);
+  border:1px solid var(--vien-mo)}
+.ph.b{background:linear-gradient(126deg,
+    color-mix(in srgb,var(--accent) 22%,var(--field)) 0%,
+    color-mix(in srgb,var(--t5) 30%,var(--field)) 52%, var(--field) 100%)}
+.ph.c{background:linear-gradient(160deg,
+    color-mix(in srgb,var(--k-doc) 30%,var(--field)) 0%,
+    color-mix(in srgb,var(--t5) 26%,var(--field)) 50%, var(--field) 100%)}
+.ph.d{background:linear-gradient(112deg,
+    color-mix(in srgb,var(--success) 18%,var(--field)) 0%,
+    color-mix(in srgb,var(--t5) 32%,var(--field)) 56%, var(--field) 100%)}
+.ph::after{content:"PLACEHOLDER";position:absolute;left:8px;bottom:8px;
+  font-size:9px;font-weight:700;letter-spacing:.08em;
+  padding:2px 6px;border-radius:var(--r-1);
+  background:var(--kinh-dac);color:var(--kinh-chu-phu);border:1px solid var(--vien-mo)}
+
+/* nhãn nhỏ dùng lại nhiều chỗ */
+.chip{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px;
+  border-radius:var(--r-1);background:var(--field);border:1px solid var(--vien-mo);
+  font-size:var(--fs-2xs);color:var(--t3);white-space:nowrap}
+.chip.warn{background:color-mix(in srgb,var(--warning) 16%,var(--field));
+  border-color:color-mix(in srgb,var(--warning) 40%,transparent);color:var(--warning);font-weight:600}
+.dot{width:8px;height:8px;border-radius:var(--r-full);flex:none}
+.mono{font-family:ui-monospace,Menlo,monospace}
+.h-sec{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t5)}
+.btn{height:var(--tap);padding:0 14px;border:1px solid var(--border);border-radius:var(--r-2);
+  background:var(--panel);color:var(--t2);font:inherit;font-size:var(--fs-xs);font-weight:600;
+  cursor:pointer;transition:background var(--dur-base) var(--ease-apple)}
+.btn:hover{background:var(--hover);color:var(--t1)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.pri:hover{background:var(--accent-strong)}
+.btn[aria-disabled="true"]{opacity:var(--mo-vo-hieu);cursor:not-allowed}
+.board{width:1440px;margin:0 auto 12px}
+.frame{border:1px solid var(--border);border-radius:var(--r-4);overflow:hidden;
+  box-shadow:var(--shadow-pop);background:var(--bg)}
+.row-side{height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;
+  border-left:2px solid transparent;font-size:var(--fs-xs);color:var(--t2);cursor:pointer}
+.row-side:hover{background:var(--hover)}
+.row-side.on{background:var(--accent-soft);border-left-color:var(--accent);color:var(--accent);font-weight:600}
+.count{margin-left:auto;font-size:10px;color:var(--t4)}
+.row-side.on .count{color:var(--accent)}
+</style>
+</head>
+<body>
+<div style="padding:34px 40px 80px">
+
+<!-- ================= ĐẦU BẢN VẼ ================= -->
+<div class="board" style="display:flex;align-items:flex-end;justify-content:space-between;gap:32px;margin-bottom:24px">
+  <div style="min-width:0">
+    <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap">
+      <span style="width:26px;height:26px;border-radius:8px;background:var(--accent);flex:none"></span>
+      <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.02em">Gallery / Explore</h1>
+      <span class="chip">D4 · bản vẽ đích</span>
+    </div>
+    <p style="margin:8px 0 0;font-size:var(--fs-xs);color:var(--t3);max-width:960px;text-wrap:pretty">
+      Gallery là <b style="color:var(--t2)">mặt tuyển chọn</b> của kệ “Ảnh &amp; tài sản” trong Thư viện —
+      không phải kho thứ hai. Mọi ảnh mang theo nguồn của nó; ảnh không rõ nguồn thì
+      <b style="color:var(--t2)">nói thẳng ra là không rõ</b> chứ không nằm lẫn như thể đáng tin ngang nhau.
+      Ở đây không có “Thịnh hành”, không lượt xem, không lượt thích, không xếp hạng độ phổ biến —
+      số nào máy không đo được thì số đó không xuất hiện.
+    </p>
+  </div>
+  <button class="btn" style="flex:none" onclick="document.documentElement.setAttribute('data-theme',document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')">Đổi nền sáng / tối</button>
+</div>
+
+<!-- ============================================================
+     A · GALLERY — mặt duyệt
+     ============================================================ -->
+<h2 class="board" style="font-size:var(--fs-sm);font-weight:600;margin:28px auto 10px;display:flex;align-items:center;gap:10px">
+  <span style="width:6px;height:16px;border-radius:3px;background:var(--accent)"></span>A · Gallery — mặt duyệt tuyển chọn
+  <span style="font-weight:400;font-size:var(--fs-xs);color:var(--t4)">1440 × 880</span>
+</h2>
+<div class="board frame" data-screen-label="A · Gallery" style="height:880px;display:flex;flex-direction:column">
+
+  <!-- header app -->
+  <div style="height:42px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--nen-mo-header);border-bottom:1px solid var(--border);backdrop-filter:blur(16px)">
+    <span style="width:20px;height:20px;border-radius:var(--r-1);background:var(--accent);flex:none"></span>
+    <span style="font-size:var(--fs-sm);font-weight:600;letter-spacing:-.01em">InteriorFlow</span>
+    <span style="color:var(--t5)">›</span>
+    <span style="font-size:var(--fs-xs);color:var(--t3)">Thư viện</span>
+    <span style="color:var(--t5)">›</span>
+    <span style="font-size:var(--fs-xs);color:var(--t2);font-weight:600">Ảnh &amp; tài sản · Gallery</span>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;height:var(--tap);width:280px;padding:0 12px;border-radius:var(--r-2);background:var(--field);border:1px solid transparent">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14" stroke-linecap="round"/></svg>
+      <span style="font-size:var(--fs-xs);color:var(--t4)">Tìm trong Gallery</span>
+    </div>
+    <span style="width:26px;height:26px;border-radius:var(--r-full);background:var(--field);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:var(--fs-2xs);font-weight:600;color:var(--t2)">NT</span>
+  </div>
+
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:214px 1fr">
+
+    <!-- CỘT LỌC 214 — cùng khuôn cột kệ của Thư viện -->
+    <div style="border-right:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;min-height:0;padding:10px 0;overflow:auto">
+      <div class="h-sec" style="padding:0 12px;height:22px;display:flex;align-items:center">Ngành</div>
+      <div class="row-side on"><span class="dot" style="background:var(--accent)"></span>Tất cả ngành<span class="count">240</span></div>
+      <div class="row-side"><span class="dot" style="background:var(--t3)"></span>Kiến trúc<span class="count">62</span></div>
+      <div class="row-side"><span class="dot" style="background:var(--accent)"></span>Nội thất<span class="count">98</span></div>
+      <div class="row-side"><span class="dot" style="background:var(--success)"></span>Cảnh quan<span class="count">31</span></div>
+      <div class="row-side"><span class="dot" style="background:var(--k-doc)"></span>Graphic<span class="count">24</span></div>
+      <div class="row-side"><span class="dot" style="background:var(--t4)"></span>Art<span class="count">17</span></div>
+      <div class="row-side" style="color:var(--warning)"><span class="dot" style="background:var(--warning)"></span>Chưa phân ngành<span class="count" style="color:var(--warning)">8</span></div>
+
+      <div class="h-sec" style="padding:14px 12px 0;height:36px;display:flex;align-items:flex-end">Giấy phép</div>
+      <div class="row-side">CC0<span class="count">44</span></div>
+      <div class="row-side">Unsplash License<span class="count">76</span></div>
+      <div class="row-side">Ảnh của studio<span class="count">88</span></div>
+      <div class="row-side">AI sinh<span class="count">19</span></div>
+      <div class="row-side">Người dùng thêm<span class="count">6</span></div>
+      <div class="row-side" style="color:var(--warning)">Chưa rõ giấy phép<span class="count" style="color:var(--warning)">7</span></div>
+
+      <div class="h-sec" style="padding:14px 12px 0;height:36px;display:flex;align-items:flex-end">Bộ sưu tập</div>
+      <div class="row-side">Ánh sáng ban ngày<span class="count">12</span></div>
+      <div class="row-side">Bếp mở · gỗ sồi<span class="count">9</span></div>
+      <div class="row-side">Sảnh khách sạn tối<span class="count">14</span></div>
+
+      <div style="margin-top:auto;padding:14px 12px 4px;border-top:1px solid var(--vien-mo)">
+        <div style="font-size:var(--fs-2xs);color:var(--t4);line-height:1.6;text-wrap:pretty">
+          Gallery không giữ ảnh của riêng nó. Mọi món ở đây nằm trong kệ
+          <b style="color:var(--t3)">Ảnh &amp; tài sản</b>.
+        </div>
+        <button class="btn" style="margin-top:8px;width:100%">Mở kệ trong Thư viện</button>
+      </div>
+    </div>
+
+    <!-- LƯỚI -->
+    <div style="min-height:0;overflow:auto;padding:20px 24px 28px;background:var(--bg)">
+
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:16px">
+        <div>
+          <div style="font-size:20px;font-weight:600;letter-spacing:-.02em">Gallery</div>
+          <div style="margin-top:4px;font-size:var(--fs-xs);color:var(--t3)">240 ảnh đã tuyển · 5 ngành · mọi ảnh đều khai nguồn hoặc khai là chưa rõ nguồn</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="display:inline-flex;background:var(--field);border-radius:var(--r-2);padding:2px">
+            <button class="btn" style="height:26px;border:0;background:var(--panel);box-shadow:var(--shadow-node);color:var(--t1);border-radius:var(--r-1);padding:0 12px">Lưới</button>
+            <button class="btn" style="height:26px;border:0;background:transparent;color:var(--t3);border-radius:var(--r-1);padding:0 12px">Theo bộ sưu tập</button>
+          </div>
+          <button class="btn">Thêm ảnh có nguồn</button>
+        </div>
+      </div>
+
+      <!-- dải bộ sưu tập, có nguồn -->
+      <div style="display:flex;gap:12px;margin-bottom:22px">
+        <div style="flex:1;min-width:0;border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);padding:12px 14px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:var(--fs-ui);font-weight:600">Ánh sáng ban ngày trong nhà ở</span>
+            <span class="chip">12 ảnh</span>
+          </div>
+          <div style="margin-top:6px;font-size:var(--fs-2xs);color:var(--t3)">Nguồn: Unsplash License (8) · Ảnh của studio (4) — tuyển bởi NT · 14/08</div>
+        </div>
+        <div style="flex:1;min-width:0;border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);padding:12px 14px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:var(--fs-ui);font-weight:600">Sảnh khách sạn tối</span>
+            <span class="chip">14 ảnh</span>
+          </div>
+          <div style="margin-top:6px;font-size:var(--fs-2xs);color:var(--t3)">Nguồn: Ảnh của studio (11) · CC0 (3) — tuyển bởi NT · 09/08</div>
+        </div>
+        <div style="flex:1;min-width:0;border:1px dashed var(--border-strong);border-radius:var(--r-3);background:transparent;padding:12px 14px;opacity:var(--mo-vo-hieu)">
+          <div style="font-size:var(--fs-ui);font-weight:600">Chưa có bộ sưu tập nào khác</div>
+          <div style="margin-top:6px;font-size:var(--fs-2xs);color:var(--t3)">Bộ sưu tập chỉ nhận ảnh đã khai đủ nguồn và giấy phép.</div>
+        </div>
+      </div>
+
+      <div class="h-sec" style="margin-bottom:10px">Nội thất · 98 ảnh</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+
+        <!-- thẻ 1 -->
+        <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden">
+          <div class="ph" style="height:150px;border:0;border-radius:0"></div>
+          <div style="padding:10px 12px 11px">
+            <div style="display:flex;align-items:center;gap:7px">
+              <span class="dot" style="background:var(--accent)"></span>
+              <span style="font-size:var(--fs-xs);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Phòng khách trần cao · nắng xiên</span>
+            </div>
+            <div style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span class="chip">Unsplash License</span>
+              <span class="chip mono" style="color:var(--t4)">unsplash.com</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- thẻ 2 -->
+        <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden">
+          <div class="ph b" style="height:150px;border:0;border-radius:0"></div>
+          <div style="padding:10px 12px 11px">
+            <div style="display:flex;align-items:center;gap:7px">
+              <span class="dot" style="background:var(--accent)"></span>
+              <span style="font-size:var(--fs-xs);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Bếp mở · mặt đá sáng</span>
+            </div>
+            <div style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span class="chip">Ảnh của studio</span>
+              <span class="chip mono" style="color:var(--t4)">Hồ sơ 2025-04</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- thẻ 3 — KHÔNG RÕ NGUỒN: nói thẳng, không nằm lẫn -->
+        <div style="border:1px solid color-mix(in srgb,var(--warning) 42%,var(--border));border-radius:var(--r-3);background:var(--card);overflow:hidden">
+          <div class="ph c" style="height:150px;border:0;border-radius:0">
+            <div style="position:absolute;left:0;right:0;top:0;height:26px;display:flex;align-items:center;gap:6px;padding:0 9px;background:color-mix(in srgb,var(--warning) 22%,var(--kinh-dac));border-bottom:1px solid color-mix(in srgb,var(--warning) 40%,transparent)">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--warning)" stroke-width="1.7" stroke-linecap="round"><path d="M8 2.6 14.4 13.4H1.6z"/><path d="M8 6.6v3.1M8 11.6v.1"/></svg>
+              <span style="font-size:var(--fs-2xs);font-weight:700;color:var(--warning)">KHÔNG RÕ NGUỒN</span>
+            </div>
+          </div>
+          <div style="padding:10px 12px 11px">
+            <div style="display:flex;align-items:center;gap:7px">
+              <span class="dot" style="background:var(--warning)"></span>
+              <span style="font-size:var(--fs-xs);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Ảnh dán vào 03/08</span>
+            </div>
+            <div style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span class="chip warn">Chưa khai nguồn</span>
+              <span class="chip warn">Chưa rõ giấy phép</span>
+            </div>
+            <div style="margin-top:7px;font-size:var(--fs-2xs);color:var(--t3);line-height:1.5">Không vào được bộ sưu tập, không đưa vào hồ sơ khách. <span style="color:var(--accent)">Khai nguồn</span></div>
+          </div>
+        </div>
+
+        <!-- thẻ 4 -->
+        <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden">
+          <div class="ph d" style="height:150px;border:0;border-radius:0"></div>
+          <div style="padding:10px 12px 11px">
+            <div style="display:flex;align-items:center;gap:7px">
+              <span class="dot" style="background:var(--accent)"></span>
+              <span style="font-size:var(--fs-xs);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Phòng ngủ · vải thô, gỗ ấm</span>
+            </div>
+            <div style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span class="chip">CC0</span>
+              <span class="chip mono" style="color:var(--t4)">Bảo tàng mở</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="h-sec" style="margin:24px 0 10px">Kiến trúc · 62 ảnh</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+        <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden">
+          <div class="ph" style="height:150px;border:0;border-radius:0"></div>
+          <div style="padding:10px 12px 11px">
+            <div style="display:flex;align-items:center;gap:7px"><span class="dot" style="background:var(--t3)"></span>
+              <span style="font-size:var(--fs-xs);font-weight:600">Mặt đứng gạch · bóng trưa</span></div>
+            <div style="margin-top:8px"><span class="chip">Ảnh của studio</span></div>
+          </div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden">
+          <div class="ph c" style="height:150px;border:0;border-radius:0"></div>
+          <div style="padding:10px 12px 11px">
+            <div style="display:flex;align-items:center;gap:7px"><span class="dot" style="background:var(--t3)"></span>
+              <span style="font-size:var(--fs-xs);font-weight:600">Cầu thang bê tông trần</span></div>
+            <div style="margin-top:8px"><span class="chip">CC0</span></div>
+          </div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden">
+          <div class="ph b" style="height:150px;border:0;border-radius:0"></div>
+          <div style="padding:10px 12px 11px">
+            <div style="display:flex;align-items:center;gap:7px"><span class="dot" style="background:var(--t3)"></span>
+              <span style="font-size:var(--fs-xs);font-weight:600">Giếng trời · nắng gắt</span></div>
+            <div style="margin-top:8px"><span class="chip">Unsplash License</span></div>
+          </div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden">
+          <div class="ph d" style="height:150px;border:0;border-radius:0"></div>
+          <div style="padding:10px 12px 11px">
+            <div style="display:flex;align-items:center;gap:7px"><span class="dot" style="background:var(--t3)"></span>
+              <span style="font-size:var(--fs-xs);font-weight:600">Hành lang dài · nhịp cột</span></div>
+            <div style="margin-top:8px"><span class="chip">AI sinh</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     B · MỘT BỘ SƯU TẬP ĐANG MỞ
+     ============================================================ -->
+<h2 class="board" style="font-size:var(--fs-sm);font-weight:600;margin:36px auto 10px;display:flex;align-items:center;gap:10px">
+  <span style="width:6px;height:16px;border-radius:3px;background:var(--accent)"></span>B · Một bộ sưu tập mở ra — nguồn hiện ngay đầu, không giấu dưới đáy
+  <span style="font-weight:400;font-size:var(--fs-xs);color:var(--t4)">1440 × 720</span>
+</h2>
+<div class="board frame" data-screen-label="B · Bộ sưu tập" style="height:720px;display:flex;flex-direction:column">
+  <div style="height:42px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--nen-mo-header);border-bottom:1px solid var(--border)">
+    <span style="width:20px;height:20px;border-radius:var(--r-1);background:var(--accent);flex:none"></span>
+    <span style="font-size:var(--fs-xs);color:var(--t3)">Gallery</span><span style="color:var(--t5)">›</span>
+    <span style="font-size:var(--fs-xs);color:var(--t2);font-weight:600">Ánh sáng ban ngày trong nhà ở</span>
+    <button class="btn" style="margin-left:auto;height:26px">Quay lại Gallery</button>
+  </div>
+
+  <div style="flex:1;min-height:0;overflow:auto;padding:22px 28px 30px">
+    <!-- ĐẦU BỘ SƯU TẬP: tiêu đề + KHAI NGUỒN -->
+    <div style="display:grid;grid-template-columns:1fr 420px;gap:26px;align-items:start;margin-bottom:22px">
+      <div>
+        <div style="font-size:24px;font-weight:600;letter-spacing:-.02em">Ánh sáng ban ngày trong nhà ở</div>
+        <div style="margin-top:8px;font-size:var(--fs-xs);color:var(--t3);max-width:640px;line-height:1.65;text-wrap:pretty">
+          Mười hai khung hình về cách nắng đi qua một căn nhà ở từ sáng tới chiều — dùng để đối chiếu
+          giờ nắng khi dựng cảnh, không phải để chép bố cục.
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <span class="chip">12 ảnh</span>
+          <span class="chip">Nội thất · Kiến trúc</span>
+          <span class="chip">Tuyển bởi NT · 14/08</span>
+        </div>
+      </div>
+
+      <!-- BẢNG NGUỒN — bắt buộc, một bộ sưu tập phải trích được nó đến từ đâu -->
+      <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);padding:14px 16px">
+        <div class="h-sec" style="margin-bottom:10px">Nguồn của bộ sưu tập này</div>
+        <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--vien-mo)">
+          <span class="dot" style="background:var(--accent)"></span>
+          <span style="font-size:var(--fs-xs);color:var(--t2);flex:1">Unsplash License</span>
+          <span class="mono" style="font-size:var(--fs-2xs);color:var(--t4)">unsplash.com</span>
+          <span class="mono" style="font-size:var(--fs-2xs);color:var(--t3);width:24px;text-align:right">8</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--vien-mo)">
+          <span class="dot" style="background:var(--success)"></span>
+          <span style="font-size:var(--fs-xs);color:var(--t2);flex:1">Ảnh của studio</span>
+          <span class="mono" style="font-size:var(--fs-2xs);color:var(--t4)">hồ sơ nội bộ</span>
+          <span class="mono" style="font-size:var(--fs-2xs);color:var(--t3);width:24px;text-align:right">4</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:7px 0">
+          <span class="dot" style="background:var(--warning)"></span>
+          <span style="font-size:var(--fs-xs);color:var(--warning);flex:1">Chưa rõ nguồn — bị loại khỏi bộ</span>
+          <span class="mono" style="font-size:var(--fs-2xs);color:var(--warning);width:24px;text-align:right">1</span>
+        </div>
+        <div style="margin-top:10px;font-size:var(--fs-2xs);color:var(--t3);line-height:1.55;text-wrap:pretty">
+          Bộ sưu tập chỉ nhận ảnh đã khai đủ nguồn <i>và</i> giấy phép — nên bộ này trích dẫn được
+          nguyên vẹn khi đưa vào hồ sơ khách.
+        </div>
+      </div>
+    </div>
+
+    <!-- lưới bộ sưu tập, nhịp editorial: 1 ảnh lớn + hàng nhỏ -->
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;grid-template-rows:190px 130px;gap:14px">
+      <div class="ph b" style="grid-row:1/3"></div>
+      <div class="ph"></div>
+      <div class="ph c"></div>
+      <div class="ph d"></div>
+      <div class="ph"></div>
+    </div>
+
+    <!-- món bị loại, hiện rõ chứ không giấu -->
+    <div style="margin-top:16px;display:flex;align-items:center;gap:14px;padding:12px 16px;border:1px dashed color-mix(in srgb,var(--warning) 45%,var(--border));border-radius:var(--r-3);background:color-mix(in srgb,var(--warning) 7%,transparent)">
+      <div class="ph c" style="width:74px;height:48px;flex:none;border-radius:var(--r-2)"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:var(--fs-xs);font-weight:600;color:var(--t1)">1 ảnh trong nhóm này chưa vào được bộ sưu tập</div>
+        <div style="margin-top:3px;font-size:var(--fs-2xs);color:var(--t3)">“Ảnh dán vào 03/08” — thiếu nguồn và giấy phép. Khai xong là tự vào bộ.</div>
+      </div>
+      <button class="btn">Khai nguồn cho ảnh này</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     C · MỘT ẢNH ĐƯỢC SOI — danh tính, nguồn, và nó nuôi được gì
+     ============================================================ -->
+<h2 class="board" style="font-size:var(--fs-sm);font-weight:600;margin:36px auto 10px;display:flex;align-items:center;gap:10px">
+  <span style="width:6px;height:16px;border-radius:3px;background:var(--accent)"></span>C · Soi một ảnh — danh tính <span class="mono" style="color:var(--t3)">img_…</span>, nguồn, và đường nó đi tiếp
+  <span style="font-weight:400;font-size:var(--fs-xs);color:var(--t4)">1440 × 760</span>
+</h2>
+<div class="board frame" data-screen-label="C · Soi ảnh" style="height:760px;display:grid;grid-template-columns:1fr 400px">
+
+  <!-- mặt ảnh: KHÔNG phủ kính lên ảnh -->
+  <div style="position:relative;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:34px">
+    <div class="ph b" style="width:100%;height:100%;border-radius:var(--r-4)"></div>
+    <!-- chrome nổi đứng NGOÀI vùng ảnh, không đè lên ảnh -->
+    <div style="position:absolute;left:34px;top:12px;display:flex;gap:8px">
+      <span class="chip">Nội thất</span><span class="chip">2400 × 1600</span><span class="chip">JPEG · 1,4 MB</span>
+    </div>
+    <div style="position:absolute;right:34px;bottom:12px;display:flex;gap:8px">
+      <button class="btn" style="height:26px">Xem cỡ thật</button>
+      <button class="btn" style="height:26px">Mở trong Thư viện</button>
+    </div>
+  </div>
+
+  <!-- INSPECTOR -->
+  <div style="border-left:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;min-height:0">
+    <div style="padding:18px 18px 14px;border-bottom:1px solid var(--vien-mo)">
+      <div style="font-size:16px;font-weight:600;letter-spacing:-.01em;text-wrap:pretty">Phòng khách trần cao · nắng xiên</div>
+      <div style="margin-top:6px;font-size:var(--fs-xs);color:var(--t3);line-height:1.6;text-wrap:pretty">
+        Nắng chiều xiên qua rèm vải thô, tường vôi ấm, sàn gỗ sồi ngả vàng.
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;overflow:auto;padding:16px 18px 20px">
+
+      <!-- ĐỊNH DANH -->
+      <div class="h-sec">Định danh trong IF</div>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid var(--border);border-radius:var(--r-2);background:var(--field)">
+        <span class="mono" style="flex:1;font-size:var(--fs-xs);color:var(--t1);overflow:hidden;text-overflow:ellipsis">img_m1f3k2p_7</span>
+        <button class="btn" style="height:24px;padding:0 9px">Chép mã</button>
+      </div>
+      <div style="margin-top:7px;font-size:var(--fs-2xs);color:var(--t3);line-height:1.6;text-wrap:pretty">
+        Mã này <b style="color:var(--t2)">không đổi</b> khi đổi tên tệp, đổi thư mục hay đổi nơi lưu ảnh.
+        Đó là thứ giữ được nguồn gốc — moodboard, Thẻ DNA và hồ sơ đều trỏ về mã này, không trỏ về tên tệp.
+      </div>
+
+      <!-- NGUỒN -->
+      <div class="h-sec" style="margin-top:20px">Nguồn</div>
+      <div style="margin-top:8px;border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden">
+        <div style="display:flex;align-items:center;gap:9px;padding:10px 12px;border-bottom:1px solid var(--vien-mo)">
+          <span class="dot" style="background:var(--success)"></span>
+          <span style="font-size:var(--fs-xs);color:var(--t3);width:74px">Giấy phép</span>
+          <span style="font-size:var(--fs-xs);color:var(--t1);font-weight:600">Unsplash License</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;padding:10px 12px;border-bottom:1px solid var(--vien-mo)">
+          <span class="dot" style="background:var(--t4)"></span>
+          <span style="font-size:var(--fs-xs);color:var(--t3);width:74px">Lấy từ</span>
+          <span class="mono" style="font-size:var(--fs-2xs);color:var(--accent);overflow:hidden;text-overflow:ellipsis">unsplash.com/photos/…</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;padding:10px 12px;border-bottom:1px solid var(--vien-mo)">
+          <span class="dot" style="background:var(--t4)"></span>
+          <span style="font-size:var(--fs-xs);color:var(--t3);width:74px">Người thêm</span>
+          <span style="font-size:var(--fs-xs);color:var(--t2)">NT · 14/08/2026</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;padding:10px 12px">
+          <span class="dot" style="background:var(--t4)"></span>
+          <span style="font-size:var(--fs-xs);color:var(--t3);width:74px">Nằm ở</span>
+          <span style="font-size:var(--fs-xs);color:var(--t2)">Thư viện › Ảnh &amp; tài sản</span>
+        </div>
+      </div>
+
+      <!-- NUÔI GÌ -->
+      <div class="h-sec" style="margin-top:20px">Ảnh này nuôi được</div>
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:7px">
+        <button class="btn pri" style="height:var(--tap-lg);width:100%;display:flex;align-items:center;gap:10px;justify-content:flex-start;padding:0 13px">
+          <span style="width:8px;height:8px;border-radius:2px;background:var(--on-accent);flex:none"></span>
+          <span style="flex:1;text-align:left">Thẻ DNA Thiết kế</span>
+          <span style="font-weight:400;opacity:.8;font-size:var(--fs-2xs)">gu dự án</span>
+        </button>
+        <button class="btn" style="height:var(--tap-lg);width:100%;display:flex;align-items:center;gap:10px;justify-content:flex-start;padding:0 13px">
+          <span class="dot" style="background:var(--accent)"></span>
+          <span style="flex:1;text-align:left">Moodboard · Cửa sổ Thảo luận</span>
+          <span style="font-weight:400;color:var(--t4);font-size:var(--fs-2xs)">chặng 3D</span>
+        </button>
+        <button class="btn" style="height:var(--tap-lg);width:100%;display:flex;align-items:center;gap:10px;justify-content:flex-start;padding:0 13px">
+          <span class="dot" style="background:var(--k-doc)"></span>
+          <span style="flex:1;text-align:left">Story Set · chương 3</span>
+          <span style="font-weight:400;color:var(--t4);font-size:var(--fs-2xs)">Trình chiếu</span>
+        </button>
+        <!-- việc chưa đủ điều kiện: hiện MỜ kèm LÝ DO, không phải nút giả -->
+        <button class="btn" aria-disabled="true" aria-describedby="lydo-bvl" style="height:var(--tap-lg);width:100%;display:flex;align-items:center;gap:10px;justify-content:flex-start;padding:0 13px">
+          <span class="dot" style="background:var(--t4)"></span>
+          <span style="flex:1;text-align:left">Bảng vật liệu</span>
+        </button>
+        <div id="lydo-bvl" style="font-size:var(--fs-2xs);color:var(--t3);line-height:1.55;padding:0 2px;text-wrap:pretty">
+          Chưa dùng được: bảng vật liệu chỉ nhận món có <span class="mono" style="color:var(--t2)">matId</span>.
+          Ảnh tham chiếu không mang mã vật liệu — gắn vật liệu cho ảnh trước đã.
+        </div>
+      </div>
+
+      <!-- CA KHÔNG CÓ NGUỒN -->
+      <div class="h-sec" style="margin-top:22px">Khi ảnh không có nguồn thì inspector nói thế này</div>
+      <div style="margin-top:8px;border:1px solid color-mix(in srgb,var(--warning) 45%,var(--border));border-radius:var(--r-3);background:color-mix(in srgb,var(--warning) 8%,transparent);padding:12px 13px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--warning)" stroke-width="1.7" stroke-linecap="round"><path d="M8 2.6 14.4 13.4H1.6z"/><path d="M8 6.6v3.1M8 11.6v.1"/></svg>
+          <span style="font-size:var(--fs-xs);font-weight:700;color:var(--warning)">Không rõ nguồn</span>
+        </div>
+        <div style="margin-top:7px;font-size:var(--fs-2xs);color:var(--t2);line-height:1.6;text-wrap:pretty">
+          Ảnh vẫn xem được và vẫn giữ mã <span class="mono">img_…</span> của nó. Nhưng nó
+          <b>không vào bộ sưu tập</b> và <b>không đi vào hồ sơ giao khách</b> — vì không trích dẫn được.
+        </div>
+        <button class="btn" style="margin-top:10px;width:100%">Khai nguồn cho ảnh này</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     D · GALLERY RỖNG — màn NGƯỜI MỚI thật sự gặp đầu tiên
+     ============================================================ -->
+<h2 class="board" style="font-size:var(--fs-sm);font-weight:600;margin:36px auto 10px;display:flex;align-items:center;gap:10px">
+  <span style="width:6px;height:16px;border-radius:3px;background:var(--accent)"></span>D · Gallery rỗng — đây là màn người cài lần đầu gặp thật
+  <span style="font-weight:400;font-size:var(--fs-xs);color:var(--t4)">1440 × 640</span>
+</h2>
+<div class="board frame" data-screen-label="D · Rỗng" style="height:640px;display:flex;flex-direction:column">
+  <div style="height:42px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--nen-mo-header);border-bottom:1px solid var(--border)">
+    <span style="width:20px;height:20px;border-radius:var(--r-1);background:var(--accent);flex:none"></span>
+    <span style="font-size:var(--fs-sm);font-weight:600">InteriorFlow</span>
+    <span style="color:var(--t5)">›</span><span style="font-size:var(--fs-xs);color:var(--t2);font-weight:600">Gallery</span>
+  </div>
+
+  <div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:30px">
+    <div style="width:720px;text-align:center">
+
+      <!-- minh hoạ: ba khung rỗng, nét mảnh — không phải icon vô nghĩa -->
+      <svg width="230" height="106" viewBox="0 0 230 106" fill="none" style="margin-bottom:22px">
+        <rect x="8" y="24" width="60" height="46" rx="8" stroke="var(--border-strong)" stroke-width="1.4"/>
+        <rect x="82" y="12" width="66" height="70" rx="9" stroke="var(--accent)" stroke-width="1.6"/>
+        <path d="M92 66l14-16 10 11 8-8 12 15" stroke="var(--accent)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/>
+        <circle cx="108" cy="32" r="5" stroke="var(--accent)" stroke-width="1.4" opacity=".7"/>
+        <rect x="162" y="24" width="60" height="46" rx="8" stroke="var(--border-strong)" stroke-width="1.4"/>
+        <path d="M22 92h32M176 92h32" stroke="var(--t5)" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+
+      <div style="font-size:22px;font-weight:600;letter-spacing:-.02em">Chưa có ảnh nào trong Gallery của bạn</div>
+      <div style="margin:10px auto 0;max-width:560px;font-size:var(--fs-xs);color:var(--t3);line-height:1.7;text-wrap:pretty">
+        Gallery là chỗ giữ ảnh tham chiếu <b style="color:var(--t2)">có nguồn</b> — thay cho thói quen lưu
+        ảnh rời từ web. Kho chung đã có sẵn ảnh để bắt đầu; ảnh bạn giữ ở đây
+        <b style="color:var(--t2)">lưu trên máy này</b>, chưa đồng bộ sang máy khác.
+      </div>
+
+      <div style="margin-top:26px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:left">
+        <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);padding:14px">
+          <div style="font-size:var(--fs-ui);font-weight:600">Duyệt kho chung</div>
+          <div style="margin-top:6px;font-size:var(--fs-2xs);color:var(--t3);line-height:1.55">240 ảnh trong kệ Ảnh &amp; tài sản, đã phân ngành và khai giấy phép.</div>
+          <button class="btn pri" style="margin-top:11px;width:100%">Mở Explore</button>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);padding:14px">
+          <div style="font-size:var(--fs-ui);font-weight:600">Thêm ảnh có nguồn</div>
+          <div style="margin-top:6px;font-size:var(--fs-2xs);color:var(--t3);line-height:1.55">Dán đường dẫn ảnh; IF hỏi giấy phép trước khi nhận.</div>
+          <button class="btn" style="margin-top:11px;width:100%">Dán đường dẫn</button>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);padding:14px">
+          <div style="font-size:var(--fs-ui);font-weight:600">Giữ ảnh render của bạn</div>
+          <div style="margin-top:6px;font-size:var(--fs-2xs);color:var(--t3);line-height:1.55">Ảnh dựng trong IF tự mang nguồn “Ảnh của studio”.</div>
+          <button class="btn" style="margin-top:11px;width:100%">Mở chặng 3D</button>
+        </div>
+      </div>
+
+      <!-- khai thật thứ chưa có: PLACEHOLDER -->
+      <div style="margin-top:16px;display:flex;align-items:center;gap:10px;justify-content:center;opacity:var(--mo-vo-hieu)">
+        <span class="chip">PLACEHOLDER</span>
+        <span style="font-size:var(--fs-2xs);color:var(--t3)">Nhập Gallery từ máy khác — chưa có, vì Gallery còn nằm trên máy này.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     E · EXPLORE — mặt khám phá (CHƯA TỒN TẠI TRONG SẢN PHẨM)
+     ============================================================ -->
+<h2 class="board" style="font-size:var(--fs-sm);font-weight:600;margin:36px auto 10px;display:flex;align-items:center;gap:10px">
+  <span style="width:6px;height:16px;border-radius:3px;background:var(--warning)"></span>E · Explore — mặt khám phá, chưa có route nào trong sản phẩm
+  <span style="font-weight:400;font-size:var(--fs-xs);color:var(--t4)">1440 × 900 · mỗi khối khai rõ có nguồn dữ liệu thật hay không</span>
+</h2>
+<div class="board frame" data-screen-label="E · Explore" style="height:900px;display:flex;flex-direction:column">
+
+  <div style="height:42px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--nen-mo-header);border-bottom:1px solid var(--border)">
+    <span style="width:20px;height:20px;border-radius:var(--r-1);background:var(--accent);flex:none"></span>
+    <span style="font-size:var(--fs-sm);font-weight:600">InteriorFlow</span><span style="color:var(--t5)">›</span>
+    <span style="font-size:var(--fs-xs);color:var(--t2);font-weight:600">Explore</span>
+    <div style="margin-left:16px;display:inline-flex;background:var(--field);border-radius:var(--r-2);padding:2px">
+      <button class="btn" style="height:24px;border:0;background:transparent;color:var(--t3);border-radius:var(--r-1);padding:0 13px">Gallery · của tôi</button>
+      <button class="btn" style="height:24px;border:0;background:var(--panel);box-shadow:var(--shadow-node);color:var(--t1);border-radius:var(--r-1);padding:0 13px">Explore · đi tìm</button>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;height:var(--tap);width:320px;padding:0 12px;border-radius:var(--r-2);background:var(--field)">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14" stroke-linecap="round"/></svg>
+      <span style="font-size:var(--fs-xs);color:var(--t4)">Tìm trong kho chung — theo tên, ngành, vật liệu</span>
+    </div>
+  </div>
+
+  <div style="flex:1;min-height:0;overflow:auto;padding:22px 28px 34px">
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:20px">
+      <div>
+        <div style="font-size:22px;font-weight:600;letter-spacing:-.02em">Explore</div>
+        <div style="margin-top:5px;font-size:var(--fs-xs);color:var(--t3);max-width:760px;line-height:1.6;text-wrap:pretty">
+          Gallery là thứ bạn <b style="color:var(--t2)">đã giữ</b>. Explore là chỗ <b style="color:var(--t2)">đi tìm</b> ảnh mới —
+          và mọi lối vào đây đều dẫn về kệ Ảnh &amp; tài sản, không dẫn ra web.
+        </div>
+      </div>
+      <div style="flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r-2);background:var(--card)">
+        <span class="dot" style="background:var(--success)"></span>
+        <span style="font-size:var(--fs-2xs);color:var(--t3)">Không xếp hạng theo lượt xem · không lượt thích · không “thịnh hành”</span>
+      </div>
+    </div>
+
+    <!-- ① CHƯA XEM — có dữ liệu thật -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span class="h-sec">① Trong kho chung mà bạn chưa xem</span>
+      <span class="chip" style="color:var(--success);border-color:color-mix(in srgb,var(--success) 40%,transparent)">CÓ DỮ LIỆU THẬT</span>
+      <span style="font-size:var(--fs-2xs);color:var(--t4)">so danh sách kệ với những gì đã lưu trên máy này</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:26px">
+      <div class="ph" style="height:130px"></div>
+      <div class="ph c" style="height:130px"></div>
+      <div class="ph b" style="height:130px"></div>
+      <div class="ph d" style="height:130px"></div>
+      <div style="height:130px;border:1px dashed var(--border-strong);border-radius:var(--r-3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+        <span style="font-size:20px;font-weight:600;color:var(--t2)">+236</span>
+        <span style="font-size:var(--fs-2xs);color:var(--t3)">chưa xem</span>
+      </div>
+    </div>
+
+    <!-- ② THEO NGÀNH — thật -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span class="h-sec">② Đi theo ngành</span>
+      <span class="chip" style="color:var(--success);border-color:color-mix(in srgb,var(--success) 40%,transparent)">CÓ DỮ LIỆU THẬT</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:26px">
+      <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);padding:13px 14px">
+        <span class="dot" style="background:var(--t3);display:inline-block"></span>
+        <div style="margin-top:8px;font-size:var(--fs-ui);font-weight:600">Kiến trúc</div>
+        <div style="margin-top:3px;font-size:var(--fs-2xs);color:var(--t4)">62 ảnh</div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);padding:13px 14px">
+        <span class="dot" style="background:var(--accent);display:inline-block"></span>
+        <div style="margin-top:8px;font-size:var(--fs-ui);font-weight:600">Nội thất</div>
+        <div style="margin-top:3px;font-size:var(--fs-2xs);color:var(--t4)">98 ảnh</div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);padding:13px 14px">
+        <span class="dot" style="background:var(--success);display:inline-block"></span>
+        <div style="margin-top:8px;font-size:var(--fs-ui);font-weight:600">Cảnh quan</div>
+        <div style="margin-top:3px;font-size:var(--fs-2xs);color:var(--t4)">31 ảnh</div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);padding:13px 14px">
+        <span class="dot" style="background:var(--k-doc);display:inline-block"></span>
+        <div style="margin-top:8px;font-size:var(--fs-ui);font-weight:600">Graphic</div>
+        <div style="margin-top:3px;font-size:var(--fs-2xs);color:var(--t4)">24 ảnh</div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);padding:13px 14px">
+        <span class="dot" style="background:var(--t4);display:inline-block"></span>
+        <div style="margin-top:8px;font-size:var(--fs-ui);font-weight:600">Art</div>
+        <div style="margin-top:3px;font-size:var(--fs-2xs);color:var(--t4)">17 ảnh</div>
+      </div>
+    </div>
+
+    <!-- ③ BỘ SƯU TẬP CÓ NGUỒN — thật -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span class="h-sec">③ Bộ sưu tập đã trích được nguồn</span>
+      <span class="chip" style="color:var(--success);border-color:color-mix(in srgb,var(--success) 40%,transparent)">CÓ DỮ LIỆU THẬT</span>
+      <span style="font-size:var(--fs-2xs);color:var(--t4)">chỉ hiện bộ nào mọi ảnh đều khai đủ nguồn + giấy phép</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:26px">
+      <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden">
+        <div style="display:grid;grid-template-columns:2fr 1fr;grid-template-rows:52px 52px;gap:2px">
+          <div class="ph b" style="grid-row:1/3;border-radius:0"></div><div class="ph" style="border-radius:0"></div><div class="ph c" style="border-radius:0"></div>
+        </div>
+        <div style="padding:11px 13px">
+          <div style="font-size:var(--fs-ui);font-weight:600">Ánh sáng ban ngày trong nhà ở</div>
+          <div style="margin-top:5px;font-size:var(--fs-2xs);color:var(--t3)">12 ảnh · Unsplash License (8) · Ảnh của studio (4)</div>
+        </div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden">
+        <div style="display:grid;grid-template-columns:2fr 1fr;grid-template-rows:52px 52px;gap:2px">
+          <div class="ph c" style="grid-row:1/3;border-radius:0"></div><div class="ph d" style="border-radius:0"></div><div class="ph" style="border-radius:0"></div>
+        </div>
+        <div style="padding:11px 13px">
+          <div style="font-size:var(--fs-ui);font-weight:600">Bếp mở · gỗ sồi</div>
+          <div style="margin-top:5px;font-size:var(--fs-2xs);color:var(--t3)">9 ảnh · Ảnh của studio (9)</div>
+        </div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden">
+        <div style="display:grid;grid-template-columns:2fr 1fr;grid-template-rows:52px 52px;gap:2px">
+          <div class="ph d" style="grid-row:1/3;border-radius:0"></div><div class="ph b" style="border-radius:0"></div><div class="ph c" style="border-radius:0"></div>
+        </div>
+        <div style="padding:11px 13px">
+          <div style="font-size:var(--fs-ui);font-weight:600">Sảnh khách sạn tối</div>
+          <div style="margin-top:5px;font-size:var(--fs-2xs);color:var(--t3)">14 ảnh · Ảnh của studio (11) · CC0 (3)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ④ THÊM TỪ NGOÀI — thật (đã có bộ chắn nguồn) -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span class="h-sec">④ Mang một ảnh từ ngoài vào</span>
+      <span class="chip" style="color:var(--success);border-color:color-mix(in srgb,var(--success) 40%,transparent)">CÓ DỮ LIỆU THẬT</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);margin-bottom:26px">
+      <div style="flex:1;display:flex;align-items:center;gap:9px;height:var(--tap-lg);padding:0 13px;border-radius:var(--r-2);background:var(--field);border:1px solid var(--border)">
+        <span class="mono" style="font-size:var(--fs-xs);color:var(--t4)">https://…</span>
+      </div>
+      <div style="display:inline-flex;background:var(--field);border-radius:var(--r-2);padding:2px">
+        <button class="btn" style="height:26px;border:0;background:transparent;color:var(--t3);border-radius:var(--r-1);padding:0 11px">CC0</button>
+        <button class="btn" style="height:26px;border:0;background:var(--panel);box-shadow:var(--shadow-node);color:var(--t1);border-radius:var(--r-1);padding:0 11px">Unsplash</button>
+        <button class="btn" style="height:26px;border:0;background:transparent;color:var(--t3);border-radius:var(--r-1);padding:0 11px">Của studio</button>
+        <button class="btn" style="height:26px;border:0;background:transparent;color:var(--t3);border-radius:var(--r-1);padding:0 11px">AI sinh</button>
+      </div>
+      <button class="btn pri" style="height:var(--tap-lg)">Nhận vào kho</button>
+    </div>
+    <div style="margin-top:-18px;margin-bottom:26px;font-size:var(--fs-2xs);color:var(--t3)">
+      Không khai giấy phép thì IF vẫn nhận ảnh, nhưng ảnh đó mang nhãn <b style="color:var(--warning)">Không rõ nguồn</b> suốt vòng đời của nó.
+    </div>
+
+    <!-- ⑤⑥ CHƯA CÓ NGUỒN DỮ LIỆU — vẽ ra, để mờ, nói rõ lý do -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span class="h-sec">⑤ Những khối Explore CHƯA có nguồn cấp</span>
+      <span class="chip warn">PLACEHOLDER · KHÔNG DỰNG CHO TỚI KHI CÓ DỮ LIỆU</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+
+      <div style="border:1px dashed var(--border-strong);border-radius:var(--r-3);background:transparent;padding:14px;opacity:var(--mo-vo-hieu)">
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <div class="ph" style="flex:1;height:56px"></div><div class="ph c" style="flex:1;height:56px"></div>
+        </div>
+        <div style="font-size:var(--fs-ui);font-weight:600">Nguồn CC0 nối sẵn</div>
+        <div style="margin-top:5px;font-size:var(--fs-2xs);color:var(--t3);line-height:1.55">Cần một đầu nối tới kho ảnh mở. IF chưa có đầu nối nào.</div>
+      </div>
+
+      <div style="border:1px dashed var(--border-strong);border-radius:var(--r-3);background:transparent;padding:14px;opacity:var(--mo-vo-hieu)">
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <div class="ph d" style="flex:1;height:56px"></div><div class="ph b" style="flex:1;height:56px"></div>
+        </div>
+        <div style="font-size:var(--fs-ui);font-weight:600">Ảnh dự án của studio</div>
+        <div style="margin-top:5px;font-size:var(--fs-2xs);color:var(--t3);line-height:1.55">Cần phạm vi “của studio” dùng chung. Kho ảnh hiện nằm trên từng máy.</div>
+      </div>
+
+      <div style="border:1px dashed var(--border-strong);border-radius:var(--r-3);background:transparent;padding:14px;opacity:var(--mo-vo-hieu)">
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <div class="ph b" style="flex:1;height:56px"></div><div class="ph" style="flex:1;height:56px"></div>
+        </div>
+        <div style="font-size:var(--fs-ui);font-weight:600">Ảnh gần giống ảnh này</div>
+        <div style="margin-top:5px;font-size:var(--fs-2xs);color:var(--t3);line-height:1.55">Cần lõi thị giác chạy cục bộ để so hình. Hiện chỉ có tìm theo chữ.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     F · KHỔ HẸP ~1100
+     ============================================================ -->
+<h2 class="board" style="font-size:var(--fs-sm);font-weight:600;margin:36px auto 10px;display:flex;align-items:center;gap:10px">
+  <span style="width:6px;height:16px;border-radius:3px;background:var(--accent)"></span>F · Khổ hẹp 1100 — cột lọc gập thành hàng chip, lưới về 3 cột
+</h2>
+<div style="width:1100px;margin:0 auto 12px" class="frame" data-screen-label="F · 1100px">
+  <div style="height:640px;display:flex;flex-direction:column">
+    <div style="height:42px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--nen-mo-header);border-bottom:1px solid var(--border)">
+      <span style="width:20px;height:20px;border-radius:var(--r-1);background:var(--accent);flex:none"></span>
+      <span style="font-size:var(--fs-xs);color:var(--t2);font-weight:600">Gallery</span>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px;height:26px;width:200px;padding:0 10px;border-radius:var(--r-2);background:var(--field)">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14" stroke-linecap="round"/></svg>
+        <span style="font-size:var(--fs-2xs);color:var(--t4)">Tìm</span>
+      </div>
+    </div>
+
+    <!-- lọc thành hàng chip cuộn ngang -->
+    <div style="flex:none;display:flex;gap:7px;padding:12px 20px;border-bottom:1px solid var(--vien-mo);overflow:auto;background:var(--panel)">
+      <span class="chip" style="height:26px;background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600">Tất cả · 240</span>
+      <span class="chip" style="height:26px"><span class="dot" style="background:var(--t3)"></span>Kiến trúc 62</span>
+      <span class="chip" style="height:26px"><span class="dot" style="background:var(--accent)"></span>Nội thất 98</span>
+      <span class="chip" style="height:26px"><span class="dot" style="background:var(--success)"></span>Cảnh quan 31</span>
+      <span class="chip" style="height:26px"><span class="dot" style="background:var(--k-doc)"></span>Graphic 24</span>
+      <span class="chip" style="height:26px"><span class="dot" style="background:var(--t4)"></span>Art 17</span>
+      <span class="chip warn" style="height:26px">Chưa rõ nguồn 7</span>
+      <span style="flex:none;width:1px;background:var(--vien-mo);margin:0 4px"></span>
+      <span class="chip" style="height:26px">Giấy phép ▾</span>
+      <span class="chip" style="height:26px">Bộ sưu tập ▾</span>
+    </div>
+
+    <div style="flex:1;min-height:0;overflow:auto;padding:16px 20px 22px;background:var(--bg)">
+      <div class="h-sec" style="margin-bottom:9px">Nội thất</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden">
+          <div class="ph" style="height:132px;border:0;border-radius:0"></div>
+          <div style="padding:9px 11px 10px"><div style="font-size:var(--fs-xs);font-weight:600">Phòng khách trần cao</div>
+            <div style="margin-top:7px"><span class="chip">Unsplash License</span></div></div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--r-3);background:var(--card);overflow:hidden">
+          <div class="ph b" style="height:132px;border:0;border-radius:0"></div>
+          <div style="padding:9px 11px 10px"><div style="font-size:var(--fs-xs);font-weight:600">Bếp mở · mặt đá sáng</div>
+            <div style="margin-top:7px"><span class="chip">Ảnh của studio</span></div></div>
+        </div>
+        <div style="border:1px solid color-mix(in srgb,var(--warning) 42%,var(--border));border-radius:var(--r-3);background:var(--card);overflow:hidden">
+          <div class="ph c" style="height:132px;border:0;border-radius:0">
+            <div style="position:absolute;left:0;right:0;top:0;height:24px;display:flex;align-items:center;gap:6px;padding:0 9px;background:color-mix(in srgb,var(--warning) 22%,var(--kinh-dac))">
+              <span style="font-size:9px;font-weight:700;color:var(--warning);letter-spacing:.05em">KHÔNG RÕ NGUỒN</span>
+            </div>
+          </div>
+          <div style="padding:9px 11px 10px"><div style="font-size:var(--fs-xs);font-weight:600">Ảnh dán vào 03/08</div>
+            <div style="margin-top:7px"><span class="chip warn">Khai nguồn</span></div></div>
+        </div>
+      </div>
+
+      <div class="h-sec" style="margin:20px 0 9px">Kiến trúc</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div class="ph" style="height:112px"></div>
+        <div class="ph d" style="height:112px"></div>
+        <div class="ph c" style="height:112px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
+
+<!-- TRANSFER NOTES ============================================================
+
+TỆP SẢN XUẤT SỞ HỮU MÀN NÀY
+  components/library/GalleryLienNganh.tsx   — mặt Gallery liên ngành (artboard A · B · D · F)
+  components/library/GalleryNavigator.tsx   — điều hướng nhóm ngành
+  components/library/gallery-css.ts         — CSS của Gallery
+  lib/library/gallery-data.ts               — đọc GET /api/library (kệ Ảnh & tài sản)
+  lib/library/gallery-tags.ts               — 4 trục tag: nganh: · license: · nguon: · bosuutap:
+  lib/library/gallery-source-guard.ts       — chắn nguồn khi dán URL (artboard E ④)
+  lib/gallery.ts + lib/img-id.ts            — Gallery cá nhân trên localStorage + mã img_… (artboard C · D)
+  EXPLORE: CHƯA CÓ TỆP NÀO. Không route, không component. Artboard E là bản vẽ đầu tiên của nó.
+
+MỌI THỨ ĐÃ ĐÁNH PLACEHOLDER
+  1. TOÀN BỘ ẢNH trong bản vẽ — không có ảnh thật nào, chỉ gradient dựng từ token, mỗi khung
+     đeo nhãn "PLACEHOLDER" ở góc. Không hotlink, không nhúng ảnh chụp.
+  2. Số đếm (240 · 98 · 62 · 31 · 24 · 17 · 12 · 9 · 14 …) là số MINH HOẠ cho bố cục.
+     Số thật phải đếm từ kệ Ảnh & tài sản lúc chạy. Không hardcode con số nào vào code.
+  3. Tên bộ sưu tập + tên ảnh + "NT · 14/08" là chữ minh hoạ trung tính, không phải dữ liệu thật,
+     không mang tên khách hàng hay studio nào.
+  4. Artboard D · dòng mờ "Nhập Gallery từ máy khác" — PLACEHOLDER, chưa có cơ chế đồng bộ.
+  5. Artboard E ⑤ · ba khối nét đứt (Nguồn CC0 nối sẵn · Ảnh dự án của studio · Ảnh gần giống) —
+     PLACEHOLDER, vẽ ra để thấy chỗ trống, KHÔNG được dựng thành nút chạy được.
+
+EXPLORE CẦN GÌ THẬT TRƯỚC KHI SHIP ĐƯỢC
+  Khối ①②③④ dựng được NGAY — chúng chỉ đọc lại GET /api/library + tag đã có:
+    ① "chưa xem"  cần: một dấu ĐÃ XEM per-user. Hiện chưa có. Rẻ nhất là một khoá localStorage
+                  cùng họ interiorflow.gallery.v1 — nhưng phải chốt là dấu này thuộc máy hay thuộc
+                  người, vì đó là câu hỏi đồng bộ chứ không phải câu hỏi giao diện.
+    ② theo ngành  cần: tag nganh: đã được gieo đủ trên LibraryAsset. Ảnh chưa gắn tag rơi vào
+                  nhóm "Chưa phân ngành" — nhóm đó PHẢI nhìn thấy được, không được ẩn đi.
+    ③ bộ sưu tập  cần: tag bosuutap: + nguon: + license: gieo đủ. Bộ nào có một ảnh thiếu nguồn
+                  thì cả bộ KHÔNG được lên Explore (đúng cổng hasSource đang có trong gallery-data).
+    ④ dán URL     đã có gallery-source-guard; chỉ cần mặt nhập + bắt buộc chọn giấy phép.
+  Khối ⑤ CHƯA ship được, và thiếu đúng ba thứ:
+    · "Nguồn CC0 nối sẵn"     — cần một đầu nối tới kho ảnh mở + rà giấy phép của kho đó.
+                                Chưa có đầu nối nào trong repo. Kèm câu hỏi pháp lý chưa ai trả lời:
+                                ảnh CC0 kéo về có được đóng vào hồ sơ bán cho khách không.
+    · "Ảnh dự án của studio"   — cần phạm vi lưu CẤP STUDIO. Gallery hiện là localStorage một máy;
+                                không có studio scope thì mục này rỗng vĩnh viễn.
+    · "Ảnh gần giống ảnh này"  — cần lõi thị giác chạy cục bộ (nhúng đặc trưng ảnh). Repo hiện
+                                KHÔNG có gói ML nào; tìm kiếm hiện là lexical thuần.
+  KHÔNG bao giờ được thêm vào Explore: Thịnh hành · lượt xem · lượt thích · xếp hạng phổ biến ·
+  "gợi ý cho bạn" không nói được vì sao gợi ý. Đó chính là thứ Gallery sinh ra để thay thế.
+
+MỘT ĐIỂM PHẢI GIỮ KHI DỰNG
+  Gallery KHÔNG được có kho riêng. Cột lọc artboard A kết bằng nút "Mở kệ trong Thư viện" là cố ý:
+  người dùng phải luôn thấy ảnh của mình sống ở kệ Ảnh & tài sản, không phải ở một nơi thứ hai.
+============================================================================ -->

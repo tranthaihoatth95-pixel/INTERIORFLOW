@@ -94,7 +94,7 @@ export function ChiBaoBaMat({ baMat, onMo }: { baMat: BaMat; onMo: () => void })
                   : `1px ${m.trangThai === 'chuaCo' ? 'dashed' : 'solid'} ${mau}`,
               }}
             >
-              <Icon size={11} />
+              <Icon size={14} />
               {tr(m.nhan.vi, m.nhan.en)}
               <span style={{ fontVariantNumeric: 'tabular-nums' }}>{dauCua(m)}</span>
             </span>

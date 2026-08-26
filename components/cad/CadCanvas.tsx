@@ -2868,7 +2868,10 @@ export default function CadCanvas() {
     drawPreview(ctx, v, accent);
     drawSelectionBox(ctx, v, accent);
     drawSnap(ctx, v, accent);
-    drawCrosshair(ctx, W, H, gridMinor);
+    // 2K (Lane A, 20/08) — crosshair đầy màn hình chỉ có nghĩa khi đang VẼ/CHỈNH (cần dóng theo
+    // trục X/Y qua toàn cảnh). Ở 'select'/'pan' nó chỉ là nhiễu che canvas — con trỏ OS mặc định
+    // (mũi tên) đã đủ nói "đây là chọn". Xem cursor CSS cùng lý do ở phần return JSX bên dưới.
+    if (st.tool !== 'select' && st.tool !== 'pan') drawCrosshair(ctx, W, H, gridMinor);
     drawDynInput(ctx, W, H);
 
     ctx.restore();
@@ -3608,10 +3611,40 @@ export default function CadCanvas() {
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerCancel}
         onDoubleClick={onDblClick}
-        onContextMenu={(e) => e.preventDefault()}
+        /**
+         * ⭐ CHUỘT PHẢI = MASTER TOOL (Hoà chốt 23/08, `WORKSPACE-SPEC-2026-08-23.md` ⑤ thành
+         * phần ②: *"lớp công cụ THEO NGỮ CẢNH · gọi bằng CHUỘT PHẢI · bao quanh vùng làm việc"*).
+         *
+         * 🔴 ĐO ĐƯỢC TRƯỚC KHI SỬA: dòng này TRƯỚC ĐÂY chỉ có `e.preventDefault()` — tức chuột
+         * phải trên canvas 2D **không ra gì cả**. `RadialToolMenu` đã dựng xong và ĐANG SỐNG,
+         * nhưng lối vào DUY NHẤT của nó là **nhấn giữ bằng ngón/bút, và chỉ ở mode Sơ phác**
+         * (xem `radialHoldRef` ~dòng 793). Người dùng chuột — tức gần như toàn bộ desktop —
+         * chưa bao giờ chạm được tới nó. Đây là NỐI DÂY cho thứ đã có, không dựng cái thứ hai:
+         * cùng `setCadRadial`, cùng hai bộ lệnh, cùng `runCadRadialAction`.
+         *
+         * Vì sao KHÔNG gate theo `cadMode`: đặc tả nói master tool **dùng chung cho mọi chế độ**.
+         * Đường nhấn-giữ bị giới hạn ở Sơ phác vì trên cảm ứng nó phải tránh giẫm cử chỉ vẽ;
+         * chuột phải không có xung đột đó — và ở mọi mode, phím này đang trống.
+         */
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setCadRadial({
+            x: e.clientX,
+            y: e.clientY,
+            selected: useCadStore.getState().selection.length > 0,
+          });
+        }}
         onDragOver={onDragOver}
         onDrop={onDrop}
-        style={{ display: 'block', touchAction: 'none', cursor: 'crosshair' }}
+        // 2K (Lane A, 20/08) — con trỏ chuột THẬT theo Ý ĐỊNH: 'select' = mũi tên OS mặc định
+        // (đang CHỌN, không phải đang ĐẶT ĐIỂM); 'pan' = grab (đang giữ để kéo màn); mọi lệnh vẽ/
+        // chỉnh còn lại = crosshair mảnh (đang đặt điểm chính xác — đúng quy ước AutoCAD/Revit).
+        // cadTool đã reactive-subscribe ở trên (dòng ~303), không cần thêm state mới.
+        style={{
+          display: 'block',
+          touchAction: 'none',
+          cursor: cadTool === 'select' ? 'default' : cadTool === 'pan' ? 'grab' : 'crosshair',
+        }}
       />
       {cadRadial && (
         <RadialToolMenu

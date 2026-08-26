@@ -51,13 +51,16 @@ export function renderViewerHtml(data: HoSoSongViewerData): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${ten} — Gói Hồ Sơ Sống</title>
 <style>
-  /* Giá trị màu chép từ app/globals.css (viewer tự chứa, không import được token) */
+  /* Giá trị màu chép từ app/globals.css (viewer tự chứa, không import được token).
+     23/08: theo hệ sáng mới — xám ngả LAM canh Apple, thay bộ kem ấm cũ
+     (#f2efe9/#221f1a/#6f6a61/#dcd7cc/#faf8f4). Viewer là BỀ MẶT GIAO DIỆN người xem
+     đọc, phải cùng nhiệt độ với app; khác --paper* là mô phỏng tờ giấy in. */
   :root{
-    --bg:#f2efe9;         /* kem — globals.css light --bg */
-    --ink:#221f1a;        /* mực đậm — họ --t1 */
-    --muted:#6f6a61;
-    --line:#dcd7cc;
-    --card:#faf8f4;
+    --bg:#f2f2f7;         /* xám nhóm — globals.css light --bg */
+    --ink:#1f1f26;        /* mực đậm — họ --t1 */
+    --muted:#6a6a76;
+    --line:#dbdbe3;
+    --card:#f9f9fb;
     --dark:#0c0c0e;       /* globals.css dark --bg — dùng cho header */
   }
   *{box-sizing:border-box;margin:0;padding:0}

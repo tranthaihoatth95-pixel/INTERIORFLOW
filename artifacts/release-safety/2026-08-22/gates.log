@@ -1,0 +1,68 @@
+=== npm test ===
+
+8 ok, 0 fail
+  ok  - 0 vi phạm (thấy 0)
+  ok  - 0 miễn trừ chết (thấy 0)
+
+[2] Meta-test — scanner phải bắt cả 3 màu ở CẢ 2 cách viết, và tha chú thích
+  ok  - bắt 3 màu dạng hex, không phân biệt hoa/thường
+  ok  - bắt dạng rgb/rgba kể cả có khoảng trắng (ca AUDIT-BRAND-PII bỏ sót)
+  ok  - bắt RGBA( viết HOA · rgb() cách bằng DẤU CÁCH · cú pháp alpha `/` (3 ca từng lọt)
+  ok  - CHÚ THÍCH được phép nêu tên màu đã gỡ (ghi lịch sử quyết định)
+  ok  - bỏ qua dòng GIỮA khối /* */ nhiều dòng, nhưng vẫn bắt dòng code sau khối
+  ok  - nguồn sạch (token + accent IF) → 0 hit
+  ok  - miễn trừ chỉ che ĐÚNG file được nêu
+
+[3] Hai file avatar — nằm TRONG lưới quét và sạch màu thương hiệu
+  ok  - lib/avatar.ts — nằm trong tập file được quét
+  ok  - lib/avatar.ts — KHÔNG còn nằm trong danh sách miễn trừ
+  ok  - lib/avatar.ts — 0 màu thương hiệu (thấy 0)
+  ok  - components/avatar/AvatarRenderer.tsx — nằm trong tập file được quét
+  ok  - components/avatar/AvatarRenderer.tsx — KHÔNG còn nằm trong danh sách miễn trừ
+  ok  - components/avatar/AvatarRenderer.tsx — 0 màu thương hiệu (thấy 0)
+
+16 ok, 0 fail
+cutter opts { x: 1700, y: -20, w: 600, h: 240, heightMm: 1200 }
+before group ops undefined cutters undefined
+after  group ops [{"op":"boolean","kind":"subtract","withRef":"cutter-1-dbai"}] cutters [ 'cutter-1-dbai' ] cutterLen 108
+after warnings []
+BVH: "maxLeafSize" option has been deprecated. Use "targetLeafSize", instead.
+BVH: "maxLeafSize" option has been deprecated. Use "targetLeafSize", instead.
+tris before 12 tris after 54
+TEST_EXIT=
+=== soi:frontier ===
+soi:frontier EXIT=0
+   DocCore · day: bang-anh-xa-doi-thu · smart-ingest · nhan-nguon-reset · neufert-tach-goi · dwg-tach-tien-trinh · tran-kich-thuoc-kho · claim-keys-va-cham · kho-mot-cua-han-dung · kiem-chang-moi-cong-doan · may-soi-dong-dang · phien-phu-co-giao-dien · duyet-mat-qua-drive · he-mau-2-lop · boq-specid-callsite-migrate
+   Workspace · day: activity-feed · chat-project · comment-neo-doi-tuong · nut-cong-tren-day
+👁 1 qua mắt Hoà · ✅ 76 xong-MÁY (NỢ NGHIỆM THU MẮT) · ⬜ 57 chờ · 🔴 0 LỆCH
+
+=== soi:hinh-hoc ===
+soi:hinh-hoc EXIT=0
+      1  components/avatar/AvatarBuilder.tsx
+──────────────────────────────────────────────────────────────────────────────
+Đã quét 364 file · 1043 khai báo radius · 27 ngoài thang (10 giá trị lẻ)
+
+=== soi:tu-dien ===
+soi:tu-dien EXIT=0
+   Loại trừ (nhật ký, không điều khiển việc): CHANGELOG.md · docs/memory/ · docs/bao-cao-phien/ · docs/00-CHOT.md · docs/nc/NC-TU-DA-NGHIA-2026-08-16.md
+🟡 316 chỗ dùng chữ trần — KHÔNG chặn. Sửa khi soạn phiếu MỚI; phiếu đã đóng thì để nguyên.
+   Bật chặt: `--strict` chặn lớp ①. `--strict-da-nghia` chặn thêm lớp ② — CHƯA dùng, để dành khi §V5 thi hành xong.
+
+=== soi:thao-tac ===
+soi:thao-tac EXIT=1
+    👁 mo-dong-dung-khuon — Mở popover/tool window: opacity+scale .96→1, gốc phóng TẠI nút bấm; đóng nhanh hơn mở (vào chậm ra nhanh)  (SPEC-APPLE-MOTION-MATERIAL §3d)
+────────────────────────────────────────────────────────────────────────────────────────────────────
+🔴 4 LỆCH (trên 17 luật grep) · 👁 19 luật chờ mắt  ← lệch trong code app GHI BÁO CÁO cho T quyết, không nới pattern
+
+=== soi:contract ===
+soi:contract EXIT=0
+  ✅ task-context-day      4 caller
+────────────────────────────────────────────────────────────────────────────────────────────────────
+CONTRACT — 🔗 21 có dây · 🟡 1 chờ dây · 🔴 0 LỆCH
+
+=== soi:visual-source ===
+soi:visual-source EXIT=0
+🟡 [material-glass] needsReview=true — MÂU THUẪN CHƯA CHỐT: luật ghi 'Vào xưởng = G3' nhưng verdict Login 22/08 ghi 'CTA chỉ là accent, không glow' ⇒ Login không còn G3 nào. Chờ Hoà chốt: G3 rời khỏi Login, hay hạ thang còn G0–G2.
+
+✅ Hợp đồng nguồn thị giác sạch. (1 cảnh báo, không chặn)
+

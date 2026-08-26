@@ -148,7 +148,7 @@ function GroupBlock({
                     title={tr('Lấy lại số từ mô hình', 'Reset to model value')}
                     style={{ marginLeft: 6, border: 0, background: 'transparent', color: 'var(--t4)', cursor: 'pointer', verticalAlign: 'middle' }}
                   >
-                    <RotateCcw size={11} />
+                    <RotateCcw size={14} />
                   </button>
                 )}
               </td>
@@ -157,7 +157,7 @@ function GroupBlock({
           <td style={{ ...tdStyle('left'), width: 26 }}>
             {row.orphaned && (
               <span title={tr('Không còn thấy trên bản vẽ — dữ liệu vẫn giữ, bấm "Cập nhật từ bản vẽ" không xoá dòng này.', 'No longer found on the drawing — data is kept; "Update from drawing" will not delete this row.')} style={{ color: 'var(--warning)', display: 'inline-flex' }}>
-                <AlertTriangle size={13} />
+                <AlertTriangle size={14} />
               </span>
             )}
             {!row.orphaned && row.entityId && onViewOnDrawing && (

@@ -194,10 +194,10 @@ export default function SchedulePanel({ onClose }: { onClose: () => void }) {
       {/* hành động */}
       <div style={{ display: 'flex', gap: 6, paddingTop: 8, borderTop: '1px solid var(--border)', marginTop: 8 }}>
         <button type="button" onClick={stampSchedule} disabled={!rows.length} style={actBtn(!rows.length)} title="Chèn bảng thống kê thành entity text/line cạnh mép phải bản vẽ — in PDF/xuất DXF được như mọi entity khác">
-          <Stamp size={13} /> Đóng dấu bảng
+          <Stamp size={18} /> Đóng dấu bảng
         </button>
         <button type="button" onClick={stampLegend} disabled={!legendCount} style={actBtn(!legendCount)} title="Đặt khung chú giải (swatch ký hiệu thu nhỏ + tên song ngữ) cạnh mép phải bản vẽ">
-          <Stamp size={13} /> Đặt legend
+          <Stamp size={18} /> Đặt legend
         </button>
       </div>
     </div>

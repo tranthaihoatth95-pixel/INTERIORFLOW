@@ -100,7 +100,7 @@ export function NotebookSourceViewer({ projectId, source }: Props) {
               textDecoration: 'none',
             }}
           >
-            <ExternalLink size={11} /> Mở link gốc
+            <ExternalLink size={14} /> Mở link gốc
           </a>
         )}
       </div>
@@ -131,7 +131,7 @@ export function NotebookSourceViewer({ projectId, source }: Props) {
                 gap: 4,
               }}
             >
-              {zoomed ? <ZoomOut size={11} /> : <ZoomIn size={11} />} {zoomed ? '100%' : 'Vừa khung'}
+              {zoomed ? <ZoomOut size={14} /> : <ZoomIn size={14} />} {zoomed ? '100%' : 'Vừa khung'}
             </button>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

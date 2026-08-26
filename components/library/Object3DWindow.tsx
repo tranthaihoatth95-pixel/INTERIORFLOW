@@ -75,10 +75,11 @@ export default function Object3DWindow({ open, onOpenChange, glbUrl, mtlUrl, tit
       container.appendChild(renderer.domElement);
 
       const scene = new THREE.Scene();
-      // "nền kem/token app" (phiếu ②) — đọc thẳng --bg đang áp (kem ở theme sáng, tối ở theme tối),
-      // không hardcode hex riêng cho viewer.
+      // "nền theo token app" (phiếu ②) — đọc thẳng --bg đang áp (xám ngả lam ở theme sáng,
+      // tối ở theme tối), không hardcode hex riêng cho viewer.
+      // 23/08: fallback theo hệ sáng mới (cũ #f2efe9 kem ấm — lệch nhiệt độ với --bg thật).
       const bgToken = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
-      scene.background = new THREE.Color(bgToken || '#f2efe9');
+      scene.background = new THREE.Color(bgToken || '#f2f2f7');
 
       const pmrem = new THREE.PMREMGenerator(renderer);
       const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;

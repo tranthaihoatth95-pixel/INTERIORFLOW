@@ -34,7 +34,7 @@ export default function ModeSwitchCell() {
       className="flex shrink-0 items-center gap-1.5 rounded-full px-2 text-[12px] font-medium text-[var(--t2)]"
       style={{ height: 34 }}
     >
-      <Box size={15} className={active ? 'text-[var(--accent)]' : undefined} />
+      <Box size={18} className={active ? 'text-[var(--accent)]' : undefined} />
       <span>{tr('Vẽ 3D', '3D')}</span>
       {/* Track — capsule 36×22, r11 (=cao/2, đồng tâm với đệm 2 quanh núm 18). */}
       <span
@@ -44,7 +44,7 @@ export default function ModeSwitchCell() {
           height: 22,
           borderRadius: 999,
           background: active ? 'var(--accent)' : 'var(--border-strong)',
-          transitionDuration: reduce ? '0ms' : '200ms',
+          transitionDuration: reduce ? '0ms' : 'var(--nhip-bang)',
         }}
       >
         <motion.span

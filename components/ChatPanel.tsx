@@ -94,7 +94,7 @@ export function ChatPanel() {
           onClick={() => setOpen(false)}
           className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
         >
-          <X size={13} />
+          <X size={14} />
         </motion.button>
       </div>
 
@@ -161,7 +161,7 @@ export function ChatPanel() {
           onClick={send}
           className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-[var(--accent-strong)] text-white transition-colors hover:bg-[var(--accent)]"
         >
-          <Send size={13} />
+          <Send size={18} />
         </motion.button>
       </div>
         </motion.aside>

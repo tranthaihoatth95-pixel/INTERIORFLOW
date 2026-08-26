@@ -165,7 +165,10 @@ export async function jobStatus(_workflowName: string, promptId: string): Promis
         subfolder: img.subfolder ?? '',
         type: img.type ?? 'output',
       });
-      urls.push(`${base()}/view?${q.toString()}`);
+      // ĐƯỜNG TƯƠNG ĐỐI, cùng origin với IF — KHÔNG trả thẳng URL ComfyUI (`${base()}/view?...`)
+      // nữa. ComfyUI 403 mọi request trình duyệt có header Origin (đo 20/08, không phải thiếu
+      // flag khởi động); `app/api/comfyui-image/route.ts` là cầu server-to-server duy nhất.
+      urls.push(`/api/comfyui-image?${q.toString()}`);
     }
   }
   if (!urls.length) {

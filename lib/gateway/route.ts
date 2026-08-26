@@ -43,5 +43,9 @@ export function routeFormat(format: GatewayFormat, stage: GatewayStage): RouteAc
     return { kind: 'unsupported', format, reason: capability.note };
   }
   if (format === 'image') return { kind: 'place-image', stage };
+  // R6 19/08 — PDF phụ thuộc chặng như ảnh: ở Trình bày nhập thành slide (Smart Convert bậc 1);
+  // các chặng khác giữ hành vi cũ (rơi xuống unsupported — capability 'reference' chưa có đường
+  // nhập riêng). Khoá này TRẢ NỢ "ĐẶC CÁCH GATEWAY" ở present Toolbar (comment cũ ở đó tự khai).
+  if (format === 'pdf' && stage === 'present') return { kind: 'present-import-deck' };
   return STATIC_ROUTE[format] ?? { kind: 'unsupported', format };
 }

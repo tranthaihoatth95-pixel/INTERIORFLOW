@@ -65,10 +65,10 @@ export default function ReplaceImageDialog({ onPickFromLibrary, onPickFromDisk, 
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <button type="button" onClick={onPickFromLibrary} style={choiceBtn}>
-            <FolderOpen size={15} /> Từ thư viện
+            <FolderOpen size={18} /> Từ thư viện
           </button>
           <button type="button" onClick={() => fileRef.current?.click()} style={choiceBtn}>
-            <Upload size={15} /> Từ máy tính
+            <Upload size={18} /> Từ máy tính
           </button>
           <input ref={fileRef} type="file" accept="image/*" hidden onChange={handleFile} />
         </div>

@@ -186,6 +186,7 @@ export function NotebookChatPanel({ messages, querying, onAsk, onCitationClick, 
       >
         {messages.length === 0 && (
           <div style={{ margin: 'auto', textAlign: 'center', maxWidth: 460 }}>
+            {/* soi-mien-tru: F-ICON-SIZE — glyph đứng giữa ô chat RỖNG, là TRANH của trạng thái rỗng chứ không phải icon điều khiển */}
             <VitalsIcon size={36} />
             <div style={{ marginTop: 12, fontSize: 15, color: 'var(--t1)' }}>
               Hỏi Vitals bất cứ điều gì về dự án này.
@@ -347,7 +348,7 @@ export function NotebookChatPanel({ messages, querying, onAsk, onCitationClick, 
             textTransform: 'uppercase',
           }}
         >
-          <Send size={13} /> Gửi
+          <Send size={18} /> Gửi
         </button>
       </div>
     </section>

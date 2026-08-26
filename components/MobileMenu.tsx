@@ -149,7 +149,7 @@ function AccountRow() {
           {user?.isAdmin && <span className="ml-1.5 rounded bg-amber-500/15 px-1 text-[9px] text-amber-300">admin</span>}
         </p>
         <p className="flex items-center gap-1 text-xs text-[var(--t3)]">
-          <Coins size={12} className="text-amber-400" /> {credits} credits
+          <Coins size={14} className="text-amber-400" /> {credits} credits
         </p>
       </div>
       {user && (
@@ -162,7 +162,7 @@ function AccountRow() {
           }}
           className="grid h-9 w-9 place-items-center rounded-[10px] border border-[var(--border)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-red-400"
         >
-          <LogOut size={15} />
+          <LogOut size={18} />
         </motion.button>
       )}
     </div>
@@ -222,7 +222,7 @@ function TierLinkRow() {
         </span>
         <span className="flex items-center gap-0.5 text-[var(--t4)]">
           {tr('Đổi trong Cài đặt', 'Change in Settings')}
-          <ChevronRight size={13} />
+          <ChevronRight size={18} />
         </span>
       </a>
     </Section>

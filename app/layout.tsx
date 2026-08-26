@@ -8,15 +8,28 @@ import { StoreHydrator } from '@/components/entry/StoreHydrator';
 import StageTransitionProvider from '@/components/studio/StageTransitionProvider';
 import { CanvasWallpaper } from '@/app/settings/_components/CanvasWallpaper';
 
-// Font cục bộ để build/installer không phụ thuộc Google Fonts. Hệ điều hành
-// tự fallback glyph tiếng Việt khi Geist không có ký tự tương ứng.
-// A1 (DS-A 14/08): khai `fallback` tường minh — next/font nối các family này vào
-// NGAY TRONG biến --font-sans, nên khi GeistVF.woff tải chậm/hỏng (Electron offline,
-// first paint) chữ vẫn là SANS hệ thống, không rơi về serif.
+/* 🔴 ĐỔI 23/08 — GEIST KHÔNG ĐÁNH VẦN ĐƯỢC TIẾNG VIỆT. Đây là lỗi nền, không phải chuyện gu.
+   Hoà gửi ảnh màn thật: "Thiêt kê 2D" · "gân nhât" · "Quyêt định" — mất sạch dấu chồng.
+   ĐO TẠI NGUỒN (fontTools, đọc cmap):
+     · app/fonts/GeistVF.woff              thiếu 10/10  ế ề ấ ầ ộ ự ữ ạ ị
+     · public/fonts/BeVietnamPro-Regular   đủ   10/10
+   Chú thích cũ ngay chỗ này khai "Hệ điều hành tự fallback glyph tiếng Việt" — CÂU ĐÓ LÀ GỐC BỆNH.
+   Fallback theo GLYPH có chạy, nhưng nó thay từng ký tự một bằng font mặc định của hệ (SERIF),
+   nên một từ tiếng Việt bị vá bằng hai font: "Thi" Geist + "ế" Times. Kết quả là chữ vừa mất dấu
+   vừa đọc ra serif — đúng hai thứ Hoà chê suốt hai tuần, và cả hai chỉ là MỘT nguyên nhân.
+   ⚠️ Bài học: khai `fallback` không cứu được font THIẾU BẢNG MÃ. Fallback lo lúc font TẢI HỎNG;
+   nó không lo được lúc font tải xong mà không có chữ. Hai lỗi khác nhau, một dòng comment gộp làm một.
+   BeVietnamPro đã nằm trong repo từ 26/07, có OFL, chưa ai cắm. Nay cắm.
+   🟡 Đây là VÁ ĐÚNG NGHĨA, không phải chọn typeface. Bộ chữ chính thức vẫn là quyền Claude Design —
+   ràng buộc bắt buộc từ nay: PHẢI phủ đủ tiếng Việt, kiểm bằng `npm run soi:foundation`. */
 const geistSans = localFont({
-  src: './fonts/GeistVF.woff',
+  src: [
+    { path: '../public/fonts/BeVietnamPro-Regular.ttf', weight: '400', style: 'normal' },
+    { path: '../public/fonts/BeVietnamPro-Bold.ttf', weight: '700', style: 'normal' },
+  ],
   variable: '--font-sans',
-  weight: '100 900',
+  /* Fallback vẫn giữ, nhưng nay chỉ còn đúng vai của nó: đỡ lúc TẢI HỎNG.
+     Đặt sans hệ thống lên đầu để kể cả lúc đó cũng không rơi về serif. */
   fallback: ['-apple-system', 'Segoe UI', 'Roboto', 'system-ui', 'sans-serif'],
 });
 

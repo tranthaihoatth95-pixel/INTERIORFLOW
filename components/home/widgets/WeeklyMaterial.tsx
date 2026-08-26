@@ -60,7 +60,7 @@ export default function WeeklyMaterial({ item, index }: { item: WeeklyMaterialIt
         />
         <div className="min-w-0">
           <div className="truncate text-[length:var(--fs-sm)] font-medium text-[var(--t1)]">{item.name}</div>
-          <div className="truncate font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-[var(--t4)]">
+          <div className="truncate font-mono text-[length:var(--fs-2xs)] tracking-[.01em] text-[var(--t4)]">
             {item.category || tr('vật liệu', 'material')}
           </div>
         </div>

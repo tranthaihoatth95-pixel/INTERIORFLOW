@@ -214,7 +214,7 @@ export default function Inspector({
           cursor: 'pointer',
         }}
       >
-        <Layers size={13} style={{ color: 'var(--accent)' }} />
+        <Layers size={18} style={{ color: 'var(--accent)' }} />
         <span style={{ flex: 1, textAlign: 'left' }}>Lớp ({slide.elements.length})</span>
         <ChevronDown size={14} style={{ transform: layersOpen ? 'rotate(180deg)' : 'none', transition: 'transform .18s', color: 'var(--t4)' }} />
       </button>
@@ -1168,7 +1168,7 @@ function ImageInspector({
       )}
       {onOpenAdvanced && (
         <button type="button" onClick={() => onOpenAdvanced(el.id)} style={ghostBtn} title="Layers · mask · clone (mở /photo-editor)">
-          <Wand2 size={12} /> Chỉnh ảnh nâng cao (Photoshop)
+          <Wand2 size={14} /> Chỉnh ảnh nâng cao (Photoshop)
         </button>
       )}
       {/* [marker: magic-phoi-canh] — vòng "Chỉnh phối cảnh" liên chặng (phiếu D2). Chỉ ảnh
@@ -1181,7 +1181,7 @@ function ImageInspector({
           style={ghostBtn}
           title="Gieo node Render bám ý (mảng) ở chặng Thiết kế 3D — chỉnh mask + phiếu duyệt + inpaint rồi nhận ảnh về đúng vị trí này"
         >
-          <Sparkles size={12} /> Chỉnh phối cảnh ✨
+          <Sparkles size={14} /> Chỉnh phối cảnh ✨
         </button>
       )}
       {el.assetId && magicResult && onReceiveMagicResult && (
@@ -1211,7 +1211,7 @@ function ImageInspector({
       <Sub>Liên kết file trên máy</Sub>
       {el.diskPathMissing && (
         <p style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10.5, color: '#c0392b', lineHeight: 1.4, margin: '0 0 6px' }}>
-          <AlertTriangle size={12} /> Lần cập nhật gần nhất không đúng file — kiểm tra lại.
+          <AlertTriangle size={14} /> Lần cập nhật gần nhất không đúng file — kiểm tra lại.
         </p>
       )}
       {el.diskPath && (
@@ -1225,7 +1225,7 @@ function ImageInspector({
         style={ghostBtn}
         title="Chọn lại file thật trên máy — cập nhật ảnh này theo file vừa chọn (thao tác tay một lần — máy không theo dõi file)"
       >
-        <RefreshCw size={12} /> {el.diskPath ? 'Cập nhật liên kết' : 'Liên kết với file trên máy'}
+        <RefreshCw size={14} /> {el.diskPath ? 'Cập nhật liên kết' : 'Liên kết với file trên máy'}
       </button>
       {(onCreateAsset || onAttachAsset || onDetachAsset) && (
         <>
@@ -1238,7 +1238,7 @@ function ImageInspector({
               </p>
               {onDetachAsset && (
                 <button type="button" onClick={onDetachAsset} style={ghostBtn} title="Tách ảnh này ra khỏi tài sản chung">
-                  <Unlink size={12} /> Gỡ liên kết
+                  <Unlink size={14} /> Gỡ liên kết
                 </button>
               )}
               {currentAsset?.recipe && (
@@ -1254,7 +1254,7 @@ function ImageInspector({
                   style={ghostBtn}
                   title="Đặt ảnh này làm nguồn dùng chung — gắn thêm ảnh khác vào sẽ đồng bộ theo"
                 >
-                  <Link2 size={12} /> Đặt làm tài sản dùng chung
+                  <Link2 size={14} /> Đặt làm tài sản dùng chung
                 </button>
               )}
               {onAttachAsset && otherAssets.length > 0 && (
@@ -1363,7 +1363,7 @@ function ImageInspector({
         onClick={() => onUpdate((im) => (im.crop = { x: 0, y: 0, w: 1, h: 1 }))}
         style={ghostBtn}
       >
-        <RotateCcw size={12} /> Bỏ crop
+        <RotateCcw size={14} /> Bỏ crop
       </button>
       <FillOverlayControls el={el} onUpdate={onUpdate} palette={palette} />
     </Panel>
@@ -1457,7 +1457,7 @@ function RecipeStatus({
     <>
       {stale && (
         <p style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10.5, color: 'var(--warning)', lineHeight: 1.4, margin: '6px 0' }}>
-          <AlertTriangle size={12} /> Bản vẽ đã đổi từ lúc chèn ảnh này.
+          <AlertTriangle size={14} /> Bản vẽ đã đổi từ lúc chèn ảnh này.
         </p>
       )}
       {error && (
@@ -1470,7 +1470,7 @@ function RecipeStatus({
         style={{ ...ghostBtn, opacity: busy ? 0.6 : 1 }}
         title="Dựng lại ảnh này từ bản vẽ Thiết kế 2D hiện tại (Doc sống) — KHÔNG phải bản chụp cũ"
       >
-        <RefreshCw size={12} /> {busy ? 'Đang làm mới…' : 'Làm mới từ bản vẽ'}
+        <RefreshCw size={14} /> {busy ? 'Đang làm mới…' : 'Làm mới từ bản vẽ'}
       </button>
     </>
   );

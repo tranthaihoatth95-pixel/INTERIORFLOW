@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * components/home/widgets/WidgetCard.tsx — [marker: DongStudio] vỏ card dùng chung cho widget
  * Home (phiếu docs/phieu-giao/home-dong-studio.md ④.5-10, nâng BENTO v3
@@ -45,7 +47,40 @@
  *      tường minh (K3). Class `.nen-mo-card` là bản dự phòng nếu inline bị override.
  */
 
-import type { CSSProperties, ReactNode } from 'react';
+import { createContext, useContext, type CSSProperties, type ReactNode } from 'react';
+
+/**
+ * ─── VAI CỦA Ô — thứ bậc, KHÔNG phải kích cỡ (sửa 23/08, Hoà: *"XẤU"*) ─────────────────────
+ *
+ * Trước: MỌI widget Home đều gọi `WidgetCard` ⇒ mọi ô đều là **một tấm kính giống hệt nhau**.
+ * Trên theme sáng (`--card` ≈ `--bg`, đo 23/08: `#fff` trên `rgb(242,242,247)`) chuỗi tấm đó
+ * đọc ra đúng thứ đã bị đánh trượt HAI LẦN — *"dashboard SaaS"* (20/08) và *"tường widget"*
+ * (22/08). Bo góc và bóng không cứu được: **thứ bậc phải nằm ở CHẤT LIỆU, không ở kích cỡ.**
+ *
+ * Nay ô khai `vai`, và vai quyết định VỎ:
+ *   · `hero`  — tấm kính, bắt sáng rõ nhất. Đúng MỘT ô/màn.
+ *   · `chinh` — tấm kính thường.
+ *   · `phu`   — **KHÔNG VỎ**: không nền, không viền, không bóng. Đứng trần trên nền, tách khỏi
+ *               hàng xóm bằng một đường tóc trên đỉnh. Đây là thứ phá "tường thẻ": ba tấm kính
+ *               cạnh sáu mục trần thì mắt đọc ra ngay cái nào quan trọng.
+ *
+ * Truyền bằng CONTEXT chứ không bằng prop: 12 nơi gọi `WidgetCard` nằm rải trong 10 tệp widget,
+ * mà quyết định vai thuộc về **bố cục** (`BeMatHome`) chứ không thuộc widget. Bắt mỗi widget
+ * nhận thêm một prop rồi chuyền tay là bắt chúng biết một thứ không phải việc của chúng — và là
+ * 12 chỗ có thể quên. Context giữ ĐÚNG MỘT nguồn.
+ */
+export type VaiO = 'hero' | 'chinh' | 'phu';
+
+const VaiOCtx = createContext<VaiO>('chinh');
+
+/** Bố cục bọc quanh mỗi ô để `WidgetCard` bên trong tự biết mình đứng vai nào. */
+export function VaiOProvider({ vai, children }: { vai: VaiO; children: ReactNode }) {
+  return <VaiOCtx.Provider value={vai}>{children}</VaiOCtx.Provider>;
+}
+
+export function useVaiO(): VaiO {
+  return useContext(VaiOCtx);
+}
 
 /** Vỏ kính lỏng dùng chung — kính chỉ ở LỚP VỎ (chốt 01/08); backdrop-filter + Webkit prefix
  * tường minh (K3 02/08); border hairline `--vien-mo` + top-highlight inset (ambient mép bắt sáng
@@ -71,7 +106,15 @@ export default function WidgetCard({
   bodyClassName = '',
 }: {
   title?: string;
-  /** Số thứ tự ô, vd "01" — gu Swiss (xem comment đầu file). Bỏ trống = không đánh số. */
+  /**
+   * ⛔ THÔI RENDER TỪ 22/08 (hotfix hướng sản phẩm — Hoà: *"No numbered 01/02/03 sections"*).
+   * Đánh số 01…06 làm Trang chủ đọc ra **bảng điều khiển đánh mục**, trong khi Home phải là
+   * **Living Canvas** — một NƠI CHỐN của con người, không phải trang quản trị. Số thứ tự là thứ
+   * duy nhất ép mắt đọc các ô thành một DANH SÁCH CÓ TRẬT TỰ HÀNH CHÍNH.
+   * Prop giữ lại (không xoá) vì 12 nơi gọi đang truyền — xoá kiểu bắn tỉa 12 chỗ trong một
+   * hotfix cấu trúc là rủi ro thừa. Chặn ở MỘT chỗ: nơi render. Dọn call site là việc dọn rác
+   * riêng, không phải việc của hotfix này.
+   */
   index?: string;
   action?: ReactNode;
   children: ReactNode;
@@ -82,11 +125,23 @@ export default function WidgetCard({
   noPad?: boolean;
   bodyClassName?: string;
 }) {
+  const vai = useVaiO();
+  const laPhu = vai === 'phu';
+
+  /* Ô PHỤ KHÔNG CÓ VỎ. Không phải "vỏ nhạt hơn" — không có vỏ. Nửa vời (viền mờ đi một chút)
+     vẫn đọc ra một tấm thẻ, và tấm thẻ nhạt cạnh tấm thẻ đậm thì vẫn là tường thẻ. */
+  const vo: CSSProperties = laPhu
+    ? { borderTop: '1px solid var(--vien-mo, var(--border))' }
+    : GLASS_SHELL;
+  const lopVo = laPhu ? '' : 'nen-mo-card rounded-[var(--r-3)]';
+  /* Ô trần không cần đệm ngang — nó đứng thẳng trên nền, đệm chỉ đẩy chữ lệch khỏi cột hàng xóm. */
+  const dem = laPhu ? 'pt-3' : dense ? 'p-3' : 'p-4';
+
   if (noPad) {
     return (
       <div
-        className={`relative h-full overflow-hidden rounded-[var(--r-3)] nen-mo-card ${className}`}
-        style={GLASS_SHELL}
+        className={`relative h-full overflow-hidden ${lopVo} ${className}`}
+        style={vo}
       >
         {children}
       </div>
@@ -94,8 +149,8 @@ export default function WidgetCard({
   }
   return (
     <div
-      className={`flex h-full flex-col rounded-[var(--r-3)] nen-mo-card ${dense ? 'p-3' : 'p-4'} ${className}`}
-      style={GLASS_SHELL}
+      className={`flex h-full flex-col ${lopVo} ${dem} ${className}`}
+      style={vo}
     >
       {title && (
         <div className={`flex items-center justify-between gap-2 ${dense ? 'mb-1.5' : 'mb-2.5'} shrink-0`}>
@@ -104,8 +159,20 @@ export default function WidgetCard({
               Cả hai lên `--t3` (7,24 / 5,20 ✓). Số vẫn tách khỏi nhãn, nhưng bằng CÂN NẶNG chữ
               (`font-normal` cạnh `font-semibold`) chứ không bằng màu nhạt — màu/độ nhạt không
               được là kênh phân biệt duy nhất. Đổi TOKEN, không tự chế màu. */}
-          <h3 className="flex items-baseline gap-1.5 font-mono text-[length:var(--fs-xs)] font-semibold uppercase tracking-wide text-[var(--t3)]">
-            {index && <span className="font-normal">{index}</span>}
+          {/* 🔴 23/08 — BỎ `uppercase`. Không phải chuyện gu: `LUAT-CHU-VIET-7.1.23` **cấm hoa
+              toàn phần** với tiếng Việt, vì dấu chồng mang nghĩa và viết hoa hết là giết dấu
+              ("VẬT LIỆU CỦA TUẦN" · "GHI CHÚ NHANH"). Một chữ `uppercase` ở ĐÂY đẻ ra nhãn hoa
+              cho CẢ 10 widget Home — Hoà đếm được sáu cái trên một màn.
+              Hệ quả thứ hai, cũng đáng: sáu nhãn hoa mono giống hệt nhau thì **không nhãn nào
+              nổi**, mắt không phân được cái nào quan trọng. Nay thứ bậc đi bằng CỠ + CÂN NẶNG +
+              vai của ô, không bằng chữ hoa. Ô phụ có nhãn nhỏ hơn và nhạt hơn ô chính. */}
+          <h3
+            className={
+              laPhu
+                ? 'flex items-baseline gap-1.5 text-[length:var(--fs-2xs)] font-medium tracking-[.01em] text-[var(--t3)]'
+                : 'flex items-baseline gap-1.5 text-[length:var(--fs-xs)] font-semibold tracking-[.01em] text-[var(--t2)]'
+            }
+          >
             {title}
           </h3>
           {action}

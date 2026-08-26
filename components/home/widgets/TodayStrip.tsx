@@ -66,7 +66,7 @@ export default function TodayStrip({
             <div className="font-mono text-[length:var(--fs-xl)] font-semibold leading-none tabular-nums text-[var(--t1)]">
               {dueTodayCount}
             </div>
-            <div className="mt-1 font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-[var(--t4)]">
+            <div className="mt-1 font-mono text-[length:var(--fs-2xs)] tracking-[.01em] text-[var(--t4)]">
               {tr(dueTodayCount === 1 ? 'việc đến hạn' : 'việc đến hạn', dueTodayCount === 1 ? 'task due' : 'tasks due')}
             </div>
           </div>
@@ -76,7 +76,7 @@ export default function TodayStrip({
               <div className="font-mono text-[length:var(--fs-xl)] font-semibold leading-none tabular-nums text-[var(--t1)]">
                 {tasksDoneToday}
               </div>
-              <div className="mt-1 font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-[var(--t4)]">
+              <div className="mt-1 font-mono text-[length:var(--fs-2xs)] tracking-[.01em] text-[var(--t4)]">
                 {tr('việc xong hôm nay', tasksDoneToday === 1 ? 'task done' : 'tasks done')}
               </div>
             </div>
@@ -104,7 +104,7 @@ export default function TodayStrip({
       </div>
       <style jsx>{`
         .today-count-in {
-          animation: today-count-in 200ms cubic-bezier(0.32, 0.72, 0, 1) both;
+          animation: today-count-in var(--nhip-bang) cubic-bezier(0.32, 0.72, 0, 1) both;
         }
         @keyframes today-count-in {
           from {

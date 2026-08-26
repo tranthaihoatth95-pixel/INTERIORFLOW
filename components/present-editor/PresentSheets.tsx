@@ -54,6 +54,7 @@ const PresentEditor = dynamic(() => import('./PresentEditor'), {
   ),
 });
 const PresentDocTypePicker = dynamic(() => import('./PresentDocTypePicker'), { ssr: false });
+import { useHoSoStatus } from './ho-so-status';
 import type { EditorDeck, EditorSlide } from '@/lib/present-editor/model';
 import { newId } from '@/lib/present-editor/model';
 import { buildStorySetDeck } from '@/lib/present-editor/story-set';
@@ -69,6 +70,7 @@ import {
   type SheetsRecord,
 } from '@/lib/sheets-persist';
 import { useSaveStatus } from '@/lib/save-status';
+import { saoLuuDeckLenMayChu, taiDeckTuMayChu } from '@/lib/present-editor/luu-len-may-chu';
 import { useSheetsBucketId } from '@/lib/scope';
 import { useFlowStore } from '@/lib/store';
 import { rootFolderChosen, getProjectFolderHandle, writeTextFile, readTextFile } from '@/lib/root-folder';
@@ -354,12 +356,34 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
       if (diskSheets) {
         applyIdfpSheets(diskSheets);
         saverRef.current?.touch(); // đồng bộ ngược lại IndexedDB — cache luôn ấm cho lần mở kế
+      } else if (!rec || valid.length === 0) {
+        /**
+         * LƯỚI ĐỠ CUỐI (21/08) — MÁY CHỦ. Chạy KHI VÀ CHỈ KHI đĩa không thắng VÀ cache rỗng:
+         * trình duyệt mới, vừa xoá dữ liệu duyệt web, vừa đăng nhập máy khác. Trước bản này
+         * đúng ca đó là mất trắng deck (đã xảy ra thật 21/08) vì đồng bộ đĩa mặc định TẮT —
+         * nó đòi người dùng tự chọn thư mục gốc, còn bản sao máy chủ thì không cần cài gì.
+         * Không thấy bản sao ⇒ im lặng đi tiếp, KHÔNG dựng deck rỗng đè lên việc đang làm.
+         */
+        const tuMayChu = await taiDeckTuMayChu(bucketId);
+        if (tuMayChu?.length) {
+          applyIdfpSheets(tuMayChu);
+          saverRef.current?.touch();
+        }
       } else if (rec && valid.length > 0) {
         seq = Math.max(seq, nextSeqFrom(valid.map((s) => s.id), 'presheet'));
+        // ⚠️ THỨ TỰ QUYỀN SỞ HỮU (sửa 21/08) — `rec.activeId` THẮNG `resume.sheetId`.
+        // Trước đây resume được xét TRƯỚC, mà resume là con trỏ TOÀN CỤC theo user+route,
+        // KHÔNG theo dự án (`saveResume(userId,{route,sheetId})` — một giá trị duy nhất).
+        // Bản ghi thì per-project. Hậu quả đo được: dự án có 2 tờ, resume còn trỏ tờ cũ ⇒ mở
+        // Trình chiếu ra thấy tờ TRỐNG dù `activeId` đã trỏ đúng tờ có 25 slide — người dùng
+        // đọc thành "mất deck". Dính đúng hai lần trong ngày.
+        // Nay: sự thật CỦA CHÍNH DỰ ÁN đi trước; resume chỉ là lưới đỡ khi activeId vô hiệu
+        // (bản ghi cũ, tờ đã xoá). Cùng tinh thần `lastStage` — thứ gì thuộc dự án thì khoá
+        // theo dự án, không để một con trỏ toàn cục ghi đè.
         const resumeSheet = loadResume(userId)?.sheetId;
         const wantId =
-          (resumeSheet && valid.some((s) => s.id === resumeSheet) && resumeSheet) ||
           (valid.some((s) => s.id === rec.activeId) && rec.activeId) ||
+          (resumeSheet && valid.some((s) => s.id === resumeSheet) && resumeSheet) ||
           valid[0].id;
         const restored = valid.map(({ id, name, deck }) => ({ id, name, deck }));
         setSheets(restored);
@@ -397,6 +421,24 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
       onSavingChange: (saving) => useSaveStatus.getState().setStatus(saving ? 'saving' : 'saved'),
     });
     saverRef.current = saver;
+
+    /**
+     * SAO LƯU MÁY CHỦ (21/08) — nhịp CHẬM 30s, khác hẳn IndexedDB (debounce ~1s).
+     * Vì sao chậm: mỗi lần ghi là một tệp `.idfp` vài chục KB đi qua mạng + ghi đĩa máy chủ;
+     * deck không đổi mỗi giây, và đây là BẢN SAO chứ không phải nguồn làm việc. Ghi đè cùng một
+     * tên tệp nên không rải hàng chục bản nháp vào Files.
+     * Im lặng khi hỏng: bản sao là lưới đỡ, tuyệt đối không được làm gãy editor.
+     */
+    const nhipSaoLuu = window.setInterval(() => {
+      const rec = getRecord();
+      if (!rec?.sheets.length || !bucketId) return;
+      void saoLuuDeckLenMayChu(
+        bucketId,
+        rec.sheets.map((x) => ({ id: x.id, name: x.name, deck: (x as unknown as { deck: EditorDeck }).deck })),
+        getActiveBrandKit(),
+        useFlowStore.getState().flowName || 'InteriorFlow project',
+      );
+    }, 30_000);
 
     /**
      * B4 (4.1.d, bổ sung ③) — ghi đĩa THEO NHỊP RIÊNG, chậm hơn IndexedDB (throttle 10s, không
@@ -443,6 +485,7 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
       window.removeEventListener('present:force-save-request', onForceSave);
       saver.flush(); // rời route (client-nav) → không mất nhịp cuối
       saver.dispose();
+      window.clearInterval(nhipSaoLuu);
       saverRef.current = null;
       diskWriter.flushNow();
       diskWriter.dispose();
@@ -539,6 +582,18 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
   }, [activeId, hydrated]);
 
   const active = sheets.find((s) => s.id === activeId) ?? sheets[0];
+
+  /* [marker: nguonLienKet] Bắc cờ "đã có hồ sơ chưa" sang `PresentNavigator` (ANH EM, không
+     phải con — nó mount ở `PresentStageScreen`). CÙNG khuôn `usePlayStatus` đã dùng cho ca y
+     hệt của StatusBar; xem `ho-so-status.ts`. Điều kiện dưới đây CHÍNH LÀ điều kiện quyết định
+     mount `PresentDocTypePicker` ở phần render — khai một lần, dùng lại cả hai chỗ, không chép
+     công thức ra hai nơi rồi để chúng phân kỳ. */
+  const setCoHoSo = useHoSoStatus((s) => s.setCoHoSo);
+  const dangOThuVienMau = hydrated && active.deck.slides.length === 0 && !active.deck.docType;
+  useEffect(() => {
+    setCoHoSo(hydrated ? !dangOThuVienMau : null);
+    return () => setCoHoSo(null); // rời chặng ⇒ về "chưa biết", không để cờ cũ nói hộ màn khác
+  }, [hydrated, dangOThuVienMau, setCoHoSo]);
 
   /** Commit deck sống của sheet đang mở vào state sheets (gọi trước mỗi thao tác tab). */
   const commitActive = (list: Sheet[]): Sheet[] =>
@@ -657,7 +712,7 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
         {/* Chỉ mount editor SAU hydrate: deck khôi phục phải vào từ initialDeck (key=activeId).
             B2 (4.1.b) — `:importGen` ép remount sau khi nhập .idfp dù id sheet trùng (xem
             docstring importGen phía trên). */}
-        {hydrated && active.deck.slides.length === 0 && !active.deck.docType ? (
+        {dangOThuVienMau ? (
           <PresentDocTypePicker
             onChooseBlankDeck={() => chooseDeck('blank')}
             onChooseMagicDeck={() => chooseDeck('magic')}

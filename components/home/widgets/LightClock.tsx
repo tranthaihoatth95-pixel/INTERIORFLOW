@@ -39,14 +39,30 @@ export default function LightClock({
   signal,
   tick,
   index,
+  truong = false,
+  khongDongHo = false,
   displayName,
   onDisplayNameChange,
 }: {
   headline: string;
   signal: string | null;
+  /** ⛔ LUẬT 22/08 — ÁNH SÁNG NGÀY KHÔNG PHẢI MỘT VẬT TRÊN TRANG.
+   *  Bật cờ này thì phần ĐỒNG HỒ ĐO (cung mặt trời · `05:00`/`20:00` · nhãn kelvin) KHÔNG dựng;
+   *  chỉ còn lời chào. Ánh sáng ngày vẫn tác động — nhưng qua HƯỚNG SÁNG · ẤM/LẠNH · độ sáng
+   *  môi trường · độ mềm bóng đổ, tức người dùng CẢM được giờ mà không phải ĐỌC một thiết bị đo.
+   *  Home bật cờ này. Bố cục `custom` (hai cột cũ) KHÔNG bật — ở đó nó vẫn là widget thật. */
+  khongDongHo?: boolean;
   /** đổi giá trị này (mốc phút) là component tính lại giờ — xem comment đầu file. */
   tick: number;
   index?: string;
+  /**
+   * TRƯỜNG, KHÔNG PHẢI THẺ (§4). Bố cục bốn dải đặt KHÔNG KHÍ ở dải đầu — mà không khí là một
+   * TRƯỜNG để thở, không phải một ô có viền. Bật cờ này thì bỏ vỏ `WidgetCard` (viền + nền card),
+   * chữ đứng thẳng trên nền trang.
+   * ⚖️ Vẫn là PROP chứ không đổi luôn: bố cục `custom` hai cột vẫn cần vỏ thẻ để xếp hàng với các
+   * ô khác. Một component, hai chỗ đứng — không đẻ bản thứ hai.
+   */
+  truong?: boolean;
   /** V1 (17/08, P-X ④.V1) — tên người dùng TỰ ĐẶT; `null` = đang dùng tên tài khoản. */
   displayName?: string | null;
   /** Bỏ trống = không cho sửa tên tại đây (ô chào vẫn chạy y nguyên). */
@@ -76,9 +92,7 @@ export default function LightClock({
   const tod = timeOfDayNow(now);
   const hourFloat = now.getHours() + now.getMinutes() / 60;
   const sun = sunPosition(hourFloat);
-
-  const arcX = PAD + (sun.xPercent / 100) * (W - PAD * 2);
-  const arcY = PAD + (sun.yPercent / 100) * (H - PAD * 2 - 8);
+  // (arcX/arcY đã theo khối cung ra đi — 22/08)
 
   // hairline arc thật (không chỉ ước lượng vị trí điểm) — vẽ bằng cùng công thức sin của
   // sunPosition, lấy mẫu 24 điểm để path mượt mà vẫn THUẦN SVG (không lib chart).
@@ -93,16 +107,15 @@ export default function LightClock({
   const fillPath = `M ${samplePts[0][0].toFixed(1)},${(H - PAD).toFixed(1)} L ${samples} L ${samplePts[samplePts.length - 1][0].toFixed(1)},${(H - PAD).toFixed(1)} Z`;
 
   // nhãn rút gọn "BAN NGÀY · 5600K" (v4 lỗi #5) — thay câu dài lightLabel.
-  const shortLabel = `${tr(tod.label[0], tod.label[1])} · ${tod.kelvin}K`;
+  // 🔴 22/08 — BỎ HẬU TỐ KELVIN. Trước: "BAN NGÀY · 5600K". Con số kelvin là ngôn ngữ THIẾT BỊ
+  // ĐO, không phải ngôn ngữ buổi sáng — nằm đúng danh sách Hoà bác (§8). Giữ lại tên buổi, vì đó
+  // là KHÔNG KHÍ (thứ cảm được), không phải số liệu (thứ phải đọc).
+  const shortLabel = tr(tod.label[0], tod.label[1]);
 
-  return (
-    <WidgetCard dense>
+  const ruot = (
       <div className="flex h-full flex-col gap-2.5">
         <div className="min-w-0">
-          {index && (
-            // P-X ⑤ — `--t5` đo được 1,98/2,21 (dưới 4,5:1) → lên `--t3` (7,24/5,20).
-            <span className="font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-[var(--t3)]">{index}</span>
-          )}
+          {/* 22/08 — thôi đánh số ô (Hoà: "No numbered 01/02/03 sections"). Xem WidgetCard.tsx. */}
           {editing ? (
             <div className="mt-0.5 flex items-center gap-1.5">
               <input
@@ -141,7 +154,7 @@ export default function LightClock({
                   title={tr('Đổi tên hiển thị', 'Change display name')}
                   className="grid h-7 w-7 shrink-0 place-items-center rounded-[var(--r-2)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
                 >
-                  <Pencil size={13} aria-hidden="true" />
+                  <Pencil size={16} aria-hidden="true" />
                 </button>
               )}
             </div>
@@ -149,34 +162,16 @@ export default function LightClock({
           {signal && <p className="mt-0.5 truncate text-[length:var(--fs-2xs)] text-[var(--t3)]">{signal}</p>}
         </div>
 
-        <div>
-          <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img" aria-label={tr(tod.lightLabel[0], tod.lightLabel[1])}>
-            {/* fill nhẹ dưới cung — cho cung có "khối", không chỉ một nét mảnh trôi nổi */}
-            <path d={fillPath} fill="var(--accent-warm)" opacity={0.1} stroke="none" />
-            {/* cung sơ đồ kỹ thuật — 2px, màu đậm hơn hairline cũ để KHÔNG "vô hình" trên nền card */}
-            <polyline points={samples} fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" />
-            {/* 3 tick mốc: bình minh · giữa cung · hoàng hôn */}
-            {[0, 0.5, 1].map((p) => {
-              const x = PAD + p * (W - PAD * 2);
-              return <line key={p} x1={x} y1={H - PAD + 1} x2={x} y2={H - PAD - 3} stroke="var(--t5)" strokeWidth="1" />;
-            })}
-            {/* đường chân trời */}
-            <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="var(--border)" strokeWidth="1" />
-            {!sun.belowHorizon && (
-              <>
-                {/* leader line kiểu chú thích kỹ thuật, không tia mặt trời cartoon */}
-                <line x1={arcX} y1={arcY} x2={arcX} y2={H - PAD} stroke="var(--t5)" strokeWidth="1" strokeDasharray="2 2" />
-                <circle cx={arcX} cy={arcY} r="5" fill="var(--accent-warm)" stroke="var(--card)" strokeWidth="1.5" />
-              </>
-            )}
-          </svg>
-          <div className="mt-1 flex items-center justify-between font-mono text-[length:var(--fs-2xs)] uppercase tracking-wide text-[var(--t4)]">
-            <span>{tr('05:00', '05:00')}</span>
-            <span className="text-[var(--t3)]">{shortLabel}</span>
-            <span>{tr('20:00', '20:00')}</span>
-          </div>
-        </div>
+        {/* 🔴 GỠ 22/08 (Hoà bác, §8 SAFE CONVERGENCE) — KHỐI ĐỒNG HỒ ĐO ĐÃ XOÁ HẲN, không phải tắt bằng cờ.
+            Trước: cung mặt trời + mốc 05:00/20:00 + nhãn kelvin (2700K/5600K) — đọc ra như biểu đồ
+            telemetry, không phải như một buổi sáng. Ba chỗ mount thì chỉ MỘT truyền `truong`, nên hai chỗ
+            kia vẫn dựng nguyên widget kỹ thuật ⇒ nhánh đã bị bác VẪN VỚI TỚI ĐƯỢC.
+            §17: đánh dấu superseded trong sổ mà mã còn render được thì đó là LỖI SẢN XUẤT, không phải nợ.
+            ⇒ Xoá khối, không để cờ nào bật lại được. Ánh sáng ngày ở lại dưới dạng MÔI TRƯỜNG
+            (độ sáng · ấm/lạnh · hướng · lời chào theo buổi) — thứ người dùng CẢM, không phải thứ họ ĐỌC. */}
       </div>
-    </WidgetCard>
   );
+
+  // TRƯỜNG: chữ đứng thẳng trên nền trang, không viền không nền thẻ. THẺ: vỏ cũ, nguyên vẹn.
+  return truong ? <div className="w-full">{ruot}</div> : <WidgetCard dense>{ruot}</WidgetCard>;
 }

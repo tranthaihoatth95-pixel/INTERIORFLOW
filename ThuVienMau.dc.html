@@ -1,0 +1,200 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><script src="./support.js"></script></head><body><x-dc>
+<helmet><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+  body{margin:0;font-family:'Be Vietnam Pro',-apple-system,system-ui,sans-serif;}
+  .nhan{font-size:10.5px;letter-spacing:.08em;color:#96918a;margin-bottom:11px;}
+  .ghi{font-size:11.5px;color:#6e6a62;line-height:1.62;margin-top:10px;}
+  .ghi b{font-weight:500;color:#46433d;}
+  .o{border-radius:20px;background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.8);padding:15px 17px;}
+  .vanh{border-radius:20px;padding:5px;box-sizing:border-box;background:rgba(255,255,255,.42);
+        border:1px solid rgba(255,255,255,.72);backdrop-filter:blur(18px);
+        box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 16px 36px -26px rgba(40,40,70,.48);}
+  .loi{border-radius:16px;background:#fff;}
+  .buoc{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:11px;font-size:12px;color:#6e6a62;}
+  .buoc.on{background:rgba(255,255,255,.82);color:#22201c;box-shadow:0 2px 7px -4px rgba(40,44,74,.28);}
+</style></helmet>
+
+<div style="width:1780px;height:1140px;box-sizing:border-box;padding:30px 34px;color:#22201c;
+     background:#f7f6f3;">
+
+  <div style="font-size:15px;font-weight:600;letter-spacing:-.01em;">Thư viện màu — <span style="font-weight:400">CÁI ĐÃ CÓ TRONG IF, dựng lại đúng tầm</span></div>
+  <div class="ghi" style="max-width:1200px;margin-bottom:8px;">
+    Hoà chỉ ra tôi suýt đề xuất lại thứ đã tồn tại. Đúng: <b><code>lib/colors/</code> 12 tệp</b>,
+    <b><code>ColorLibraryScreen</code> 270 dòng</b>, <b><code>ColorImportWizard</code> 372 dòng</b>,
+    <b><code>ColorMatchPanel</code> 180 dòng</b> — và quan trọng hơn cả: một <b>kiến trúc pháp lý</b>
+    đã trả giá để có. Đây là bản vẽ lại <b>thứ có thật</b>, không phải đề xuất mới.
+  </div>
+  <div style="display:flex;align-items:center;gap:9px;margin-bottom:20px;padding:9px 14px;border-radius:12px;
+       background:rgba(106,87,245,.08);border:1px solid rgba(106,87,245,.22);width:fit-content;">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5646d6" stroke-width="1.6" stroke-linecap="round"><path d="M12 8v5M12 16v.01"/><circle cx="12" cy="12" r="8.5"/></svg>
+    <span style="font-size:11.5px;color:#46433d;">Chốt 16/08: <b>màu là MỘT BƯỚC của chọn vật liệu</b>, không phải một kệ.
+      <code style="font-size:10.5px;">/colors</code> nay là redirect vào đúng bước này — <b>không xoá route</b>, đổi vai.</span>
+  </div>
+
+  <div style="display:flex;gap:20px;align-items:flex-start;">
+
+    <!-- SHEET THƯ VIỆN · KỆ VẬT LIỆU · BƯỚC CHỌN THEO MÀU -->
+    <div class="vanh" style="width:1176px;">
+      <div class="loi" style="padding:0;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:12px;padding:13px 17px;border-bottom:1px solid rgba(109,109,140,.12);">
+          <span class="nhan" style="margin:0;">THƯ VIỆN</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#c9c5bc" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+          <span style="font-size:12px;color:#6e6a62;">Vật liệu</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#c9c5bc" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+          <span style="font-size:12px;color:#22201c;">Chọn theo màu</span>
+          <div style="flex-grow:1;"></div>
+          <span style="font-size:10.5px;color:#b5b0a8;">Căn hộ mẫu · IF·048·CH</span>
+        </div>
+
+        <div style="display:flex;">
+          <!-- BƯỚC -->
+          <div style="width:172px;padding:13px 10px;border-right:1px solid rgba(109,109,140,.1);background:rgba(249,249,251,.7);">
+            <div class="buoc">Duyệt kệ</div>
+            <div class="buoc on">Chọn theo màu</div>
+            <div class="buoc">Bề mặt · vân</div>
+            <div class="buoc">Nhà cung cấp</div>
+            <div class="buoc">Đã chỉ định</div>
+          </div>
+
+          <!-- ① NGUỒN + ⑤ CHẶN -->
+          <div style="width:330px;padding:15px 16px;border-right:1px solid rgba(109,109,140,.1);">
+            <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:11px;">
+              <span class="nhan" style="margin:0;">① NGUỒN ĐÃ NẠP</span>
+              <div style="flex-grow:1;"></div>
+              <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#5646d6;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5646d6" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nạp bảng</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.8);margin-bottom:7px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#96918a" stroke-width="1.5" stroke-linejoin="round"><path d="M7 4h8l4 4v12H7z"/><path d="M15 4v4h4"/></svg><div style="flex-grow:1;"><div style="font-size:12.5px;color:#22201c;">Bảng xưởng · nội thất</div><div style="font-size:10px;color:#b5b0a8;margin-top:2px;">studio · 214 màu</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b5b0a8" stroke-width="1.5"><path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.6"/></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b5b0a8" stroke-width="1.5" stroke-linecap="round"><path d="M5 7h14M9 7V5h6v2M7 7l1 12h8l1-12"/></svg></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.8);margin-bottom:7px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#96918a" stroke-width="1.5" stroke-linejoin="round"><path d="M7 4h8l4 4v12H7z"/><path d="M15 4v4h4"/></svg><div style="flex-grow:1;"><div style="font-size:12.5px;color:#22201c;">Sơn hoàn thiện 2026</div><div style="font-size:10px;color:#b5b0a8;margin-top:2px;">studio · 96 màu</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b5b0a8" stroke-width="1.5"><path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.6"/></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b5b0a8" stroke-width="1.5" stroke-linecap="round"><path d="M5 7h14M9 7V5h6v2M7 7l1 12h8l1-12"/></svg></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.8);margin-bottom:7px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#96918a" stroke-width="1.5" stroke-linejoin="round"><path d="M7 4h8l4 4v12H7z"/><path d="M15 4v4h4"/></svg><div style="flex-grow:1;"><div style="font-size:12.5px;color:#22201c;">Bảng khách gửi</div><div style="font-size:10px;color:#b5b0a8;margin-top:2px;">dự án · 38 màu</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b5b0a8" stroke-width="1.5"><path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.6"/></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b5b0a8" stroke-width="1.5" stroke-linecap="round"><path d="M5 7h14M9 7V5h6v2M7 7l1 12h8l1-12"/></svg></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:12px;background:rgba(109,109,140,.05);border:1px solid rgba(255,255,255,.8);margin-bottom:7px;opacity:.55;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#96918a" stroke-width="1.5" stroke-linejoin="round"><path d="M7 4h8l4 4v12H7z"/><path d="M15 4v4h4"/></svg><div style="flex-grow:1;"><div style="font-size:12.5px;color:#96918a;">Vải bọc · nhà cung cấp B</div><div style="font-size:10px;color:#b5b0a8;margin-top:2px;">studio · 52 màu</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b5b0a8" stroke-width="1.5"><path d="M4 4l16 16"/><path d="M2 12s4-6 10-6c1.6 0 3 .4 4.2 1M21.6 13.6C20.2 15.4 16.8 18 12 18c-1.4 0-2.7-.3-3.8-.7"/></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b5b0a8" stroke-width="1.5" stroke-linecap="round"><path d="M5 7h14M9 7V5h6v2M7 7l1 12h8l1-12"/></svg></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:12px;background:rgba(109,109,140,.05);border:1px solid rgba(255,255,255,.8);margin-bottom:7px;opacity:.55;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#96918a" stroke-width="1.5" stroke-linejoin="round"><path d="M7 4h8l4 4v12H7z"/><path d="M15 4v4h4"/></svg><div style="flex-grow:1;"><div style="font-size:12.5px;color:#96918a;text-decoration:line-through;">Hãng X</div><div style="font-size:10px;color:#b5b0a8;margin-top:2px;">studio · — màu</div></div><span style="font-size:9px;letter-spacing:.08em;color:#a86a6a;">CHẶN HÃNG</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b5b0a8" stroke-width="1.5"><path d="M4 4l16 16"/><path d="M2 12s4-6 10-6c1.6 0 3 .4 4.2 1M21.6 13.6C20.2 15.4 16.8 18 12 18c-1.4 0-2.7-.3-3.8-.7"/></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b5b0a8" stroke-width="1.5" stroke-linecap="round"><path d="M5 7h14M9 7V5h6v2M7 7l1 12h8l1-12"/></svg></div>
+
+            <div class="nhan" style="margin:18px 0 9px;">CHẶN THEO HÃNG</div>
+            <div style="display:flex;gap:7px;">
+              <div style="flex-grow:1;height:30px;border-radius:9px;background:rgba(109,109,140,.08);
+                   display:flex;align-items:center;padding:0 11px;font-size:11px;color:#b5b0a8;">tên hãng…</div>
+              <div style="padding:0 14px;height:30px;display:grid;place-items:center;border-radius:9px;
+                   background:rgba(109,109,140,.11);font-size:11px;color:#46433d;">Chặn</div>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:9px;">
+              <span style="padding:4px 10px;border-radius:999px;background:rgba(168,106,106,.12);
+                    border:1px solid rgba(168,106,106,.28);font-size:10.5px;color:#8e5252;">Hãng X ✕</span>
+            </div>
+            <div style="font-size:10px;color:#96918a;line-height:1.6;margin-top:11px;">
+              <b style="color:#46433d;font-weight:500;">Hiệu lực ngay</b>, không build lại app,
+              không ai phải cập nhật.
+            </div>
+          </div>
+
+          <!-- ② TRA MÀU -->
+          <div style="flex-grow:1;padding:15px 17px;">
+            <div class="nhan">② TRA MÀU — máy thu hẹp, NGƯỜI chọn</div>
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;">
+              <div style="width:52px;height:52px;border-radius:12px;background:#8a5a3c;flex-shrink:0;
+                   box-shadow:0 1px 3px rgba(40,44,74,.2) inset;"></div>
+              <div style="flex-grow:1;height:36px;border-radius:10px;background:rgba(109,109,140,.08);
+                   display:flex;align-items:center;gap:9px;padding:0 12px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b5b0a8" stroke-width="1.6"><circle cx="11" cy="11" r="6"/><path d="M15.5 15.5 20 20"/></svg>
+                <span style="font-size:13px;color:#46433d;font-variant-numeric:tabular-nums;">#8A5A3C</span>
+              </div>
+              <div style="padding:0 13px;height:36px;display:flex;align-items:center;border-radius:10px;
+                   background:rgba(109,109,140,.08);font-size:11.5px;color:#46433d;">Bảng xưởng ▾</div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.85);box-shadow:0 3px 9px -5px rgba(40,44,74,.28);margin-bottom:6px;"><div style="width:44px;height:44px;border-radius:10px;background:#8b5b3e;flex-shrink:0;box-shadow:0 1px 3px rgba(40,44,74,.18) inset;"></div><div style="flex-grow:1;"><div style="font-size:12.5px;">Nâu gỗ ấm</div><div style="display:flex;gap:9px;margin-top:3px;"><span style="font-size:9.5px;letter-spacing:.1em;color:#b5b0a8;">N-1073</span><span style="font-size:9.5px;color:#c9c5bc;">Bảng xưởng</span></div></div><div style="text-align:right;"><div style="font-size:14px;font-variant-numeric:tabular-nums;color:#3d7f5f;">ΔE 0.7</div><div style="font-size:9px;color:#b5b0a8;margin-top:2px;">gần như trùng</div></div></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;margin-bottom:6px;"><div style="width:44px;height:44px;border-radius:10px;background:#875540;flex-shrink:0;box-shadow:0 1px 3px rgba(40,44,74,.18) inset;"></div><div style="flex-grow:1;"><div style="font-size:12.5px;">Đất nung nhạt</div><div style="display:flex;gap:9px;margin-top:3px;"><span style="font-size:9.5px;letter-spacing:.1em;color:#b5b0a8;">S-214</span><span style="font-size:9.5px;color:#c9c5bc;">Bảng xưởng</span></div></div><div style="text-align:right;"><div style="font-size:14px;font-variant-numeric:tabular-nums;color:#3d7f5f;">ΔE 1.6</div><div style="font-size:9px;color:#b5b0a8;margin-top:2px;">mắt thường khó phân biệt</div></div></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;margin-bottom:6px;"><div style="width:44px;height:44px;border-radius:10px;background:#7f5a3a;flex-shrink:0;box-shadow:0 1px 3px rgba(40,44,74,.18) inset;"></div><div style="flex-grow:1;"><div style="font-size:12.5px;">Nâu cà phê sữa</div><div style="display:flex;gap:9px;margin-top:3px;"><span style="font-size:9.5px;letter-spacing:.1em;color:#b5b0a8;">N-1080</span><span style="font-size:9.5px;color:#c9c5bc;">Sơn 2026</span></div></div><div style="text-align:right;"><div style="font-size:14px;font-variant-numeric:tabular-nums;color:#c9843e;">ΔE 2.4</div><div style="font-size:9px;color:#b5b0a8;margin-top:2px;">thấy khác khi đặt cạnh</div></div></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;margin-bottom:6px;"><div style="width:44px;height:44px;border-radius:10px;background:#93603f;flex-shrink:0;box-shadow:0 1px 3px rgba(40,44,74,.18) inset;"></div><div style="flex-grow:1;"><div style="font-size:12.5px;">Gạch mộc</div><div style="display:flex;gap:9px;margin-top:3px;"><span style="font-size:9.5px;letter-spacing:.1em;color:#b5b0a8;">S-231</span><span style="font-size:9.5px;color:#c9c5bc;">Sơn 2026</span></div></div><div style="text-align:right;"><div style="font-size:14px;font-variant-numeric:tabular-nums;color:#c9843e;">ΔE 3.1</div><div style="font-size:9px;color:#b5b0a8;margin-top:2px;">thấy khác khi đặt cạnh</div></div></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;margin-bottom:6px;"><div style="width:44px;height:44px;border-radius:10px;background:#7a5544;flex-shrink:0;box-shadow:0 1px 3px rgba(40,44,74,.18) inset;"></div><div style="flex-grow:1;"><div style="font-size:12.5px;">Nâu tro</div><div style="display:flex;gap:9px;margin-top:3px;"><span style="font-size:9.5px;letter-spacing:.1em;color:#b5b0a8;">N-1066</span><span style="font-size:9.5px;color:#c9c5bc;">Bảng khách</span></div></div><div style="text-align:right;"><div style="font-size:14px;font-variant-numeric:tabular-nums;color:#c9843e;">ΔE 3.8</div><div style="font-size:9px;color:#b5b0a8;margin-top:2px;">thấy khác khi đặt cạnh</div></div></div>
+
+            <!-- ④ CẢNH BÁO KHÔNG TẮT ĐƯỢC -->
+            <div style="display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:11px 13px;
+                 border-radius:12px;background:rgba(201,132,62,.09);border:1px solid rgba(201,132,62,.24);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b5762f" stroke-width="1.7" stroke-linecap="round" style="flex-shrink:0;margin-top:1px;"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.01"/></svg>
+              <div style="font-size:11px;color:#7a5220;line-height:1.6;">
+                Màu trên màn hình <b>chỉ là xấp xỉ</b> — phụ thuộc màn, ánh sáng phòng và bề mặt thật.
+                <b>Luôn xác nhận bằng mẫu vật lý</b> trước khi đặt hàng.
+                <span style="color:#a08050;">Câu này không tắt được.</span>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-top:12px;align-items:center;">
+              <div style="padding:8px 16px;border-radius:10px;background:rgba(109,109,140,.11);font-size:11.5px;color:#46433d;">Chép mã</div>
+              <div style="padding:8px 16px;border-radius:10px;background:rgba(109,109,140,.11);font-size:11.5px;color:#46433d;">Xuất</div>
+              <div style="padding:8px 16px;border-radius:10px;background:rgba(109,109,140,.06);font-size:11.5px;color:#c9c5bc;
+                   border:1px solid rgba(160,164,190,.3);">Đặt hàng</div>
+              <span style="font-size:10px;color:#b5b0a8;line-height:1.5;flex-grow:1;">
+                Vẽ sẵn nhưng <b style="color:#96918a;font-weight:500;">tắt kèm lý do</b>:
+                chưa có đường nối sang BOQ. Cấm nút giả bấm không ra gì.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ③ THAM CHIẾU XU HƯỚNG -->
+        <div style="padding:15px 17px;border-top:1px solid rgba(109,109,140,.12);background:rgba(249,249,251,.6);">
+          <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px;">
+            <span class="nhan" style="margin:0;">③ MÀU CỦA NĂM — tham chiếu, KHÔNG phải bảng tra</span>
+            <span style="font-size:10.5px;color:#b5b0a8;">trần cứng 1 mục/năm · mỗi mục bắt buộc có link nguồn</span>
+          </div>
+          <div style="display:flex;gap:16px;align-items:flex-start;">
+            <div style="width:84px;"><div style="height:56px;border-radius:9px;background:#a47864;box-shadow:0 6px 14px -10px #a47864;"></div><div style="font-size:10.5px;margin-top:7px;">Mocha Mousse</div><div style="font-size:9px;color:#b5b0a8;margin-top:2px;">2025 · Pantone</div><div style="font-size:9px;letter-spacing:.08em;color:#c9c5bc;margin-top:1px;">17-1230</div></div>
+            <div style="width:84px;"><div style="height:56px;border-radius:9px;background:#ffbe98;box-shadow:0 6px 14px -10px #ffbe98;"></div><div style="font-size:10.5px;margin-top:7px;">Peach Fuzz</div><div style="font-size:9px;color:#b5b0a8;margin-top:2px;">2024 · Pantone</div><div style="font-size:9px;letter-spacing:.08em;color:#c9c5bc;margin-top:1px;">13-1023</div></div>
+            <div style="width:84px;"><div style="height:56px;border-radius:9px;background:#bb2649;box-shadow:0 6px 14px -10px #bb2649;"></div><div style="font-size:10.5px;margin-top:7px;">Viva Magenta</div><div style="font-size:9px;color:#b5b0a8;margin-top:2px;">2023 · Pantone</div><div style="font-size:9px;letter-spacing:.08em;color:#c9c5bc;margin-top:1px;">18-1750</div></div>
+            <div style="width:84px;"><div style="height:56px;border-radius:9px;background:#6667ab;box-shadow:0 6px 14px -10px #6667ab;"></div><div style="font-size:10.5px;margin-top:7px;">Very Peri</div><div style="font-size:9px;color:#b5b0a8;margin-top:2px;">2022 · Pantone</div><div style="font-size:9px;letter-spacing:.08em;color:#c9c5bc;margin-top:1px;">17-3938</div></div>
+            <div style="width:84px;"><div style="height:56px;border-radius:9px;background:#939597;box-shadow:0 6px 14px -10px #939597;"></div><div style="font-size:10.5px;margin-top:7px;">Ultimate Gray</div><div style="font-size:9px;color:#b5b0a8;margin-top:2px;">2021 · Pantone</div><div style="font-size:9px;letter-spacing:.08em;color:#c9c5bc;margin-top:1px;">17-5104</div></div>
+            <div style="flex-grow:1;font-size:10.5px;color:#6e6a62;line-height:1.7;padding-left:8px;">
+              Dùng để <b>gợi bối cảnh khi bàn gu với khách</b> — “năm nay hướng ấm, nâu đất”.
+              <b>KHÔNG dùng để tra mã sơn.</b> Tra mã đi qua bảng studio tự nạp ở ②.
+              <br><br><span style="color:#96918a;">Trạng thái xác minh trong mã ghi rõ: danh sách này
+              <b style="color:#46433d;font-weight:500;">chưa mở lại từng link để đối chiếu</b>.
+              Phải làm trước khi phát hành — sai một mã là sai lời tư vấn.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LUẬT PHÁP LÝ -->
+    <div style="flex-grow:1;display:flex;flex-direction:column;gap:13px;">
+      <div class="o">
+        <div class="nhan" style="margin-bottom:9px;">LUẬT NỀN — đã trả giá để có</div>
+        <div style="font-size:12px;color:#46433d;line-height:1.85;">
+          <b>KHÔNG hãng sơn nào được nhúng vào bundle.</b> Không <code style="font-size:10.5px;">import bangMau from './dulux.json'</code>,
+          không mảng hằng 2000 mã.
+          <br><br>Vì sao: <b>Dulux</b> cấm scraping thương mại gọi đích danh; <b>Jotun</b> dùng đúng
+          lập luận “selection and arrangement”; cả hai là công ty EU nên còn <b>sui generis database right</b> —
+          quyền riêng cho người bỏ vốn xây CSDL, tồn tại độc lập với bản quyền.
+          <br><br><b>IF là cái MÁY TRA, không phải cái KHO.</b>
+        </div>
+      </div>
+      <div class="o">
+        <div class="nhan" style="margin-bottom:9px;">LỢI THẾ KIẾN TRÚC</div>
+        <div style="font-size:12px;color:#46433d;line-height:1.85;">
+          Có thư yêu cầu gỡ thì <b>đổi cấu hình lúc chạy</b> — chặn theo nguồn hoặc theo hãng —
+          hoặc xoá đúng tệp dữ liệu. <b>Không build lại app, không phát hành bản vá, không ai phải cập nhật.</b>
+          <br><br>Đó là lý do cửa chặn nằm ở ① chứ không nằm trong tệp cấu hình lập trình viên.
+        </div>
+      </div>
+      <div class="o">
+        <div class="nhan" style="margin-bottom:9px;">TRỐNG LÚC MỚI MỞ LÀ ĐÚNG THIẾT KẾ</div>
+        <div style="font-size:12px;color:#46433d;line-height:1.85;">
+          Chưa nạp bảng nào thì màn này <b>trống</b>, và EmptyState phải <b>nói rõ đó là chủ ý</b> —
+          không để người dùng tưởng app hỏng. Đây là ca mẫu của luật
+          <b>“không có tín hiệu thật thì im, không bịa”</b>.
+        </div>
+      </div>
+      <div class="o">
+        <div class="nhan" style="margin-bottom:9px;">RANH GIỚI VỚI “THẺ MÀU HỆ THỐNG”</div>
+        <div style="font-size:12px;color:#46433d;line-height:1.85;">
+          Hai thứ <b>KHÔNG được trộn</b>:
+          <br>• <b>Thư viện màu</b> (đây) — màu của <b>VẬT LIỆU THẬT</b>, có mã hãng, có ΔE, có mẫu vật lý.
+          <br>• <b>Thẻ màu hệ thống</b> — màu của <b>GIAO DIỆN</b>, sinh từ hình nền.
+          <br><br>Trộn hai cái là mời người dùng lấy màu giao diện đi đặt sơn.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc></body></html>

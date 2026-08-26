@@ -75,7 +75,7 @@ export default function ReferencePane() {
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 12 }}>
         {state === 'loading' && (
           <Hint>
-            <Loader2 size={15} className="animate-spin" /> Đang tải thư viện…
+            <Loader2 size={14} className="animate-spin" /> Đang tải thư viện…
           </Hint>
         )}
         {state === 'auth' && <Hint>Đăng nhập để xem thư viện Reference của team.</Hint>}

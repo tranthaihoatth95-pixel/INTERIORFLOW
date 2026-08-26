@@ -160,7 +160,7 @@ export function ProjectMembersPanel({ projects, teamUsers }: {
                     onClick={() => call({ method: 'DELETE', qs: `?userId=${m.userId}` })}
                     className="grid h-7 w-7 place-items-center rounded-[10px] border border-[var(--border)] text-[var(--t4)] hover:bg-[var(--hover)] hover:text-red-400 disabled:opacity-50"
                   >
-                    <Trash2 size={12} />
+                    <Trash2 size={16} />
                   </button>
                 </>
               ) : (
@@ -173,7 +173,7 @@ export function ProjectMembersPanel({ projects, teamUsers }: {
 
           {data.canManage && (
             <div className="flex flex-wrap items-center gap-1.5 px-4 py-2.5">
-              <UserPlus size={13} className="text-[var(--t4)]" />
+              <UserPlus size={20} className="text-[var(--t4)]" />
               <select
                 value={addUserId}
                 onChange={(e) => setAddUserId(e.target.value)}
@@ -207,7 +207,7 @@ export function ProjectMembersPanel({ projects, teamUsers }: {
                   'rounded-[6px] bg-[var(--accent-strong)] px-2.5 py-1 text-[11px] font-medium text-white disabled:opacity-50',
                 )}
               >
-                {busy ? <Loader2 size={11} className="animate-spin" /> : 'Thêm'}
+                {busy ? <Loader2 size={14} className="animate-spin" /> : 'Thêm'}
               </button>
             </div>
           )}

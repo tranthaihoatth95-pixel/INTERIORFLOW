@@ -166,13 +166,13 @@ export function ScheduleScreen({ projectId, userId }: { projectId: string; userI
         <span style={{ fontSize: 14, fontWeight: 600 }}>{tr('Bảng thống kê', 'Schedule')}</span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
           <button type="button" onClick={() => window.print()} disabled={groups.length === 0 || loading} style={btnStyle(false)}>
-            <Printer size={13} /> {tr('In A4 ngang', 'Print A4 landscape')}
+            <Printer size={16} /> {tr('In A4 ngang', 'Print A4 landscape')}
           </button>
           <button type="button" onClick={exportXlsx} disabled={groups.length === 0 || loading || exporting} style={btnStyle(false)}>
-            <FileSpreadsheet size={13} /> {exporting ? tr('Đang xuất…', 'Exporting…') : tr('Xuất xlsx', 'Export xlsx')}
+            <FileSpreadsheet size={16} /> {exporting ? tr('Đang xuất…', 'Exporting…') : tr('Xuất xlsx', 'Export xlsx')}
           </button>
           <button type="button" onClick={() => void compute({ forceResync: true })} disabled={loading} style={btnStyle(true)}>
-            <RefreshCw size={13} /> {tr('Cập nhật từ bản vẽ', 'Update from drawing')}
+            <RefreshCw size={16} /> {tr('Cập nhật từ bản vẽ', 'Update from drawing')}
           </button>
         </div>
       </div>
@@ -199,7 +199,7 @@ export function ScheduleScreen({ projectId, userId }: { projectId: string; userI
               'The schedule counts DOORS and ROOMS from the drawing — this project has no drawing yet, so the table is empty.',
             )}
             actions={[
-              { label: tr('Cập nhật từ bản vẽ', 'Update from drawing'), primary: true, icon: <RefreshCw size={13} />, onClick: () => void compute({ forceResync: true }) },
+              { label: tr('Cập nhật từ bản vẽ', 'Update from drawing'), primary: true, icon: <RefreshCw size={18} />, onClick: () => void compute({ forceResync: true }) },
               { label: tr('Mở bản vẽ', 'Open drawing'), onClick: () => router.push(`/projects/${projectId}/cad`) },
             ]}
           />
@@ -216,7 +216,7 @@ export function ScheduleScreen({ projectId, userId }: { projectId: string; userI
               'Bảng thống kê v1 đếm cửa đi (gán loại "Cửa đi") và phòng (đã khoanh vùng). Vẽ/gán xong quay lại bấm "Cập nhật từ bản vẽ".',
               'The v1 schedule counts doors (tagged "Door") and rooms (already outlined). Draw/tag them, then come back and click "Update from drawing".',
             )}
-            actions={[{ label: tr('Cập nhật từ bản vẽ', 'Update from drawing'), primary: true, icon: <RefreshCw size={13} />, onClick: () => void compute({ forceResync: true }) }]}
+            actions={[{ label: tr('Cập nhật từ bản vẽ', 'Update from drawing'), primary: true, icon: <RefreshCw size={18} />, onClick: () => void compute({ forceResync: true }) }]}
           />
         </div>
       )}

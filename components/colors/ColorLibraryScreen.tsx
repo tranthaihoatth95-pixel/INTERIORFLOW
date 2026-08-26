@@ -19,7 +19,7 @@ import { Palette, Plus, Trash2, Ban, ExternalLink, EyeOff } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { useFlowStore } from '@/lib/store';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { listStudioColorSources, removeStudioColorSource, readProjectColorSources, removeProjectColorSource } from '@/lib/colors/store';
+import { listStudioColorSources, hydrateStudioColorSources, removeStudioColorSource, readProjectColorSources, removeProjectColorSource } from '@/lib/colors/store';
 import { applyRegistryConfig, effectiveRegistryConfig, readLocalRegistryConfig, writeLocalRegistryConfig } from '@/lib/colors/registry';
 import { TREND_COLORS, TREND_MISSING_YEARS } from '@/lib/colors/trend';
 import type { ColorSource } from '@/lib/colors/types';
@@ -38,6 +38,7 @@ export function ColorLibraryScreen() {
   const [config, setConfig] = useState(() => ({ disabledSourceIds: [] as string[], blockedBrands: [] as string[] }));
 
   const load = useCallback(async () => {
+    await hydrateStudioColorSources(); // W0.3: kho studio nay ở IndexedDB — chờ nạp rồi mới đọc
     const studio = listStudioColorSources();
     const project = projectId ? await readProjectColorSources(projectId, projectName) : [];
     setRaw([...studio, ...project]);
@@ -96,7 +97,7 @@ export function ColorLibraryScreen() {
             `${sources.length} librar${sources.length === 1 ? 'y' : 'ies'} · ${sources.reduce((n, s) => n + s.colors.length, 0)} colours`) : ''}
         </span>
         <button type="button" onClick={() => setImporting(true)} style={{ ...btn(true), marginLeft: 'auto' }}>
-          <Plus size={13} /> {tr('Nạp bảng màu', 'Import a library')}
+          <Plus size={18} /> {tr('Nạp bảng màu', 'Import a library')}
         </button>
       </div>
 
@@ -111,7 +112,7 @@ export function ColorLibraryScreen() {
               'InteriorFlow ships with no manufacturer colour libraries — those belong to their owners. Bring in the library you are entitled to use: import a CSV/Excel file, paste from a spreadsheet, or connect your studio Larkbase table.',
             )}
             actions={[
-              { label: tr('Nạp bảng màu', 'Import a library'), primary: true, icon: <Plus size={13} />, onClick: () => setImporting(true) },
+              { label: tr('Nạp bảng màu', 'Import a library'), primary: true, icon: <Plus size={18} />, onClick: () => setImporting(true) },
             ]}
           />
         ) : (
@@ -142,10 +143,10 @@ export function ColorLibraryScreen() {
                       title={tr('Tắt/bật bảng này mà KHÔNG xoá dữ liệu — dùng khi cần gỡ gấp theo yêu cầu.',
                         'Disable/enable without deleting the data — for a takedown request.')}
                     >
-                      <EyeOff size={13} /> {off ? tr('Bật lại', 'Enable') : tr('Tắt', 'Disable')}
+                      <EyeOff size={18} /> {off ? tr('Bật lại', 'Enable') : tr('Tắt', 'Disable')}
                     </button>
                     <button type="button" onClick={() => void onDelete(s)} style={btn(false)}>
-                      <Trash2 size={13} /> {tr('Xoá', 'Delete')}
+                      <Trash2 size={18} /> {tr('Xoá', 'Delete')}
                     </button>
                   </div>
                 );
@@ -206,7 +207,7 @@ export function ColorLibraryScreen() {
                 <div style={{ width: '100%', height: 34, borderRadius: 6, background: t.hex, border: '1px solid var(--border)' }} />
                 <div style={{ fontSize: 11.5, lineHeight: 1.6, color: 'var(--t1)', fontWeight: 600 }}>{t.year} · {t.name}</div>
                 <div style={{ fontSize: 11, lineHeight: 1.6, color: 'var(--t4)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  {t.publisher}{t.code ? ` ${t.code}` : ''} <ExternalLink size={10} />
+                  {t.publisher}{t.code ? ` ${t.code}` : ''} <ExternalLink size={14} />
                 </div>
               </a>
             ))}

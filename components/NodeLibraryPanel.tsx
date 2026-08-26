@@ -297,7 +297,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
           className="flex w-full items-center gap-1.5 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-1.5 text-[11px] text-[var(--t4)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--t2)]"
           title={tr('Tìm & thêm nhanh khối/hành động', 'Quickly find & add blocks/actions')}
         >
-          <Command size={11} className="shrink-0" />
+          <Command size={16} className="shrink-0" />
           {tr('Tìm nhanh mọi thứ', 'Quick find anything')}
           <kbd suppressHydrationWarning className="ml-auto shrink-0 rounded border border-[var(--border)] bg-[var(--field)] px-1 py-0.5 text-[9px]">{modKey('K')}</kbd>
         </button>
@@ -308,7 +308,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
           className="flex w-full items-center gap-1.5 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-1.5 text-[11px] text-[var(--t4)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--t2)]"
           title={tr('Thêm khối Free Sketch vào canvas rồi mở Sketch Studio ngay', 'Add a Free Sketch block to the canvas and open Sketch Studio now')}
         >
-          <Paintbrush size={11} className="shrink-0" />
+          <Paintbrush size={16} className="shrink-0" />
           {tr('Vẽ tay nhanh', 'Quick sketch')}
         </button>
         <button
@@ -316,7 +316,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
           className="flex w-full items-center gap-1.5 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-1.5 text-[11px] text-[var(--t4)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--t2)]"
           title={tr('Tạo sẵn Free Sketch → Sketch→Render ← Prompt đã nối dây — minh hoạ pipeline vẽ tay → render', 'Sets up Free Sketch → Sketch→Render ← Prompt already wired — demoes the sketch → render pipeline')}
         >
-          <Wand2 size={11} className="shrink-0" />
+          <Wand2 size={16} className="shrink-0" />
           {tr('Demo: Vẽ tay → Render', 'Demo: Sketch → Render')}
         </button>
       </div>
@@ -346,9 +346,9 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
                     className="flex w-full items-center gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-left transition-colors hover:border-[var(--accent-ring)]"
                   >
                     {(() => {
-                      if (!defType) return <StickyNote size={13} className="shrink-0 text-[var(--t3)]" />;
+                      if (!defType) return <StickyNote size={16} className="shrink-0 text-[var(--t3)]" />;
                       const Icon = nodeIconFor(defType);
-                      return <Icon size={13} className="shrink-0 text-[var(--t3)]" />;
+                      return <Icon size={16} className="shrink-0 text-[var(--t3)]" />;
                     })()}
                     <span className="min-w-0 flex-1 truncate text-[11.5px] font-medium text-[var(--t1)]">{label}</span>
                   </button>
@@ -365,7 +365,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
         {moodDefs.length > 0 && (
           <div>
             <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t3)]">
-              <Users size={10} />
+              <Users size={14} />
               {tr('Mood + Cộng tác', 'Mood + Collab')}
             </p>
             <div className="space-y-1">
@@ -377,7 +377,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
                 className="flex w-full items-center gap-2 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-2 text-[11px] text-[var(--t4)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--t2)]"
                 title={tr('Thêm ghi chú dán lên canvas — trao đổi/ghi ý tưởng, không phải khối xử lý', 'Add a sticky note to the canvas — for discussion/ideas, not a processing block')}
               >
-                <StickyNote size={13} className="shrink-0" />
+                <StickyNote size={18} className="shrink-0" />
                 {tr('Ghi chú', 'Note')}
               </button>
             </div>
@@ -390,7 +390,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
         {materials.length > 0 && !query.trim() && (
           <div>
             <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t3)]">
-              <Palette size={10} />
+              <Palette size={14} />
               {tr('Vật liệu', 'Materials')}
             </p>
             <div className="space-y-1">
@@ -408,7 +408,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
         {phase.id === 'render' && !query.trim() && (
           <div>
             <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t3)]">
-              <Network size={10} />
+              <Network size={14} />
               {tr('Form lập luận', 'Reasoning frames')}
             </p>
             <div className="space-y-1">
@@ -438,7 +438,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
                   </p>
                 </div>
                 <span className="ml-auto grid h-5 w-5 shrink-0 place-items-center rounded-md text-[var(--t5)] opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-[var(--accent)]">
-                  <Plus size={13} />
+                  <Plus size={14} />
                 </span>
               </div>
             </div>
@@ -451,7 +451,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
         {masterDefs.length > 0 && (
           <div>
             <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t3)]">
-              <Sparkles size={10} />
+              <Sparkles size={14} />
               {tr('Công cụ', 'Tools')}
             </p>
             <motion.div className="space-y-1" variants={staggerList} initial="hidden" animate="visible">
@@ -467,7 +467,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
         {featured.length > 0 && (
           <div>
             <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent)]">
-              <Star size={10} className="fill-[var(--accent)]" />
+              <Star size={14} className="fill-[var(--accent)]" />
               Chặng {phase.label}
             </p>
             <motion.div className="space-y-1" variants={staggerList} initial="hidden" animate="visible">
@@ -495,7 +495,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: GROUP_META[group].color }} />
               {tr(GROUP_META[group].label, GROUP_META[group].labelEn)}
               <span className="ml-auto text-[10px] tabular-nums text-[var(--t5)]">{defs.length}</span>
-              <ChevronRight size={13} className={cn('shrink-0 transition-transform duration-150', expanded && 'rotate-90')} />
+              <ChevronRight size={14} className={cn('shrink-0 transition-transform duration-150', expanded && 'rotate-90')} />
             </button>
             {expanded && (
               <motion.div className="space-y-1" variants={staggerList} initial="hidden" animate="visible">
@@ -547,7 +547,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
                 onClick={() => setPanel(null)}
                 className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
               >
-                <X size={13} />
+                <X size={14} />
               </motion.button>
             </div>
             {body}
@@ -626,7 +626,7 @@ function NodeCard({
           </span>
         )}
         <span className="grid h-5 w-5 place-items-center rounded-md text-[var(--t5)] opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-[var(--accent)]">
-          <Plus size={13} />
+          <Plus size={14} />
         </span>
       </div>
     </div>
@@ -680,7 +680,7 @@ function MaterialSwatchChip({
         )}
       </div>
       <span className="ml-auto grid h-5 w-5 shrink-0 place-items-center rounded-md text-[var(--t5)] opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-[var(--accent)]">
-        <Plus size={13} />
+        <Plus size={14} />
       </span>
     </div>
   );

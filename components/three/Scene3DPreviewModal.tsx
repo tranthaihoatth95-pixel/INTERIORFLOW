@@ -94,7 +94,7 @@ export function Scene3DPreviewModal({
                   background: mode === 'orbit' ? 'var(--t1)' : 'transparent',
                 }}
               >
-                <Box size={12} /> Quan sát
+                <Box size={14} /> Quan sát
               </button>
               <button
                 className="nodrag"
@@ -107,7 +107,7 @@ export function Scene3DPreviewModal({
                   background: mode === 'massing' ? 'var(--t1)' : 'transparent',
                 }}
               >
-                <Move3d size={12} /> Đẩy-kéo khối
+                <Move3d size={14} /> Đẩy-kéo khối
               </button>
             </div>
           )}

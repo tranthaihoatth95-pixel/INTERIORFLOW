@@ -306,7 +306,7 @@ function NutChungCat({ biChan, lyDo, onBam }: { biChan: boolean; lyDo: string; o
           flexShrink: 0,
         }}
       >
-        <Sparkles size={13} aria-hidden />
+        <Sparkles size={16} aria-hidden />
         {tr('Chưng cất → Thẻ DNA', 'Distill → DNA Card')}
       </button>
       {biChan && (

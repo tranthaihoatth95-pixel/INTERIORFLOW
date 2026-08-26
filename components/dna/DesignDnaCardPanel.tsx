@@ -175,7 +175,7 @@ export default function DesignDnaCardPanel({ projectId }: { projectId: string })
         }}
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Sparkles size={15} style={{ color: 'var(--accent)' }} />
+          <Sparkles size={20} style={{ color: 'var(--accent)' }} />
           <span style={{ fontSize: 13, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--t3)' }}>
             {t('Thẻ DNA Thiết kế', 'Design DNA Card')}
           </span>
@@ -209,7 +209,7 @@ export default function DesignDnaCardPanel({ projectId }: { projectId: string })
                     )}
                   </p>
                   <button type="button" onClick={createCard} style={primaryBtn}>
-                    <Plus size={13} /> {t('Tạo thẻ đầu tiên', 'Create first card')}
+                    <Plus size={18} /> {t('Tạo thẻ đầu tiên', 'Create first card')}
                   </button>
                 </div>
               ) : (
@@ -226,7 +226,7 @@ export default function DesignDnaCardPanel({ projectId }: { projectId: string })
                     ))}
                   </div>
                   <button type="button" onClick={createCard} style={{ ...secondaryBtn, marginTop: 12 }}>
-                    <Plus size={13} /> {t('Thêm phương án khác', 'Add another option')}
+                    <Plus size={18} /> {t('Thêm phương án khác', 'Add another option')}
                   </button>
                 </>
               )}
@@ -330,7 +330,7 @@ function DnaCardEditor({
           title={t('Chưng cất từ ảnh dự án', 'Distill from project images')}
           style={{ ...secondaryBtn, padding: '6px 10px' }}
         >
-          <ImagePlus size={13} /> {t('Chưng cất từ ảnh', 'Distill from images')}
+          <ImagePlus size={16} /> {t('Chưng cất từ ảnh', 'Distill from images')}
         </button>
         <button
           type="button"
@@ -338,7 +338,7 @@ function DnaCardEditor({
           title={t('Xoá thẻ', 'Delete card')}
           style={{ ...secondaryBtn, padding: '6px 8px', color: 'var(--danger)', borderColor: 'var(--danger)' }}
         >
-          <Trash2 size={13} />
+          <Trash2 size={16} />
         </button>
       </div>
 
@@ -369,7 +369,7 @@ function DnaCardEditor({
                     }}
                     title={`${meta.label(true)} · ${field.nguon.length} ${t('nguồn', 'source(s)')}`}
                   >
-                    <Icon size={11} />
+                    <Icon size={14} />
                     {meta.label(true)}
                   </span>
                 )}
@@ -392,7 +392,7 @@ function DnaCardEditor({
             {t('Huỷ sửa', 'Discard')}
           </button>
           <button type="button" onClick={() => onSave(draft)} style={primaryBtn} disabled={busy}>
-            {busy ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+            {busy ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
             {t('Lưu thẻ', 'Save card')}
           </button>
         </div>
@@ -488,7 +488,7 @@ function AssetPicker({ onDistill, onClose }: { onDistill: (assets: DnaSourceAsse
           {t('Đóng', 'Close')}
         </button>
         <button type="button" onClick={run} disabled={selected.size === 0} style={primaryBtn}>
-          <Sparkles size={13} /> {t(`Chưng cất (${selected.size})`, `Distill (${selected.size})`)}
+          <Sparkles size={18} /> {t(`Chưng cất (${selected.size})`, `Distill (${selected.size})`)}
         </button>
       </div>
     </div>

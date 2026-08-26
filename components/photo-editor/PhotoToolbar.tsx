@@ -61,17 +61,17 @@ interface Props {
 /** Nhóm theo chức năng (giữ đúng thứ tự cũ), phân tách bằng Divider giữa các nhóm —
  * mượn quy ước nhóm-công-cụ của CadToolbar, không đập lại bố cục hàng công cụ. */
 const TOOL_GROUPS: { t: Tool; icon: React.ReactNode }[][] = [
-  [{ t: 'move', icon: <MousePointer2 size={15} /> }],
+  [{ t: 'move', icon: <MousePointer2 size={18} /> }],
   [
-    { t: 'brush', icon: <Brush size={15} /> },
-    { t: 'eraser', icon: <Eraser size={15} /> },
-    { t: 'clone', icon: <Stamp size={15} /> },
-    { t: 'heal', icon: <Bandage size={15} /> },
-    { t: 'mask', icon: <MaskIcon size={15} /> },
+    { t: 'brush', icon: <Brush size={18} /> },
+    { t: 'eraser', icon: <Eraser size={18} /> },
+    { t: 'clone', icon: <Stamp size={18} /> },
+    { t: 'heal', icon: <Bandage size={18} /> },
+    { t: 'mask', icon: <MaskIcon size={18} /> },
   ],
   [
-    { t: 'marquee', icon: <SquareDashed size={15} /> },
-    { t: 'lasso', icon: <Lasso size={15} /> },
+    { t: 'marquee', icon: <SquareDashed size={18} /> },
+    { t: 'lasso', icon: <Lasso size={18} /> },
   ],
 ];
 const TOOLS = TOOL_GROUPS.flat();
@@ -120,7 +120,7 @@ export default function PhotoToolbar(p: Props) {
           }}
           title="Quay lại"
         >
-          <ArrowLeft size={15} /> Quay lại
+          <ArrowLeft size={18} /> Quay lại
         </Btn>
         <Divider />
         {TOOL_GROUPS.map((group, gi) => (
@@ -140,38 +140,38 @@ export default function PhotoToolbar(p: Props) {
           title={p.canCrop ? 'Cắt tài liệu theo vùng đang chọn' : 'Chọn vùng bằng Marquee hoặc Lasso trước'}
           disabled={!p.canCrop || !!p.busy}
         >
-          <Crop size={15} /> Cắt
+          <Crop size={18} /> Cắt
         </Btn>
 
         <Divider />
         <Btn onClick={() => fileRef.current?.click()} title="Tải ảnh lên">
-          <Upload size={15} /> Tải lên
+          <Upload size={18} /> Tải lên
         </Btn>
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
         <Btn onClick={() => setUrlOpen((v) => !v)} title="Dán URL ảnh" active={urlOpen}>
-          <Link2 size={15} /> URL
+          <Link2 size={18} /> URL
         </Btn>
         <Btn onClick={p.onOpenLibrary} title="Từ thư viện Reference">
-          <ImagePlus size={15} /> Thư viện
+          <ImagePlus size={18} /> Thư viện
         </Btn>
 
         <Divider />
         <IconBtn onClick={p.onUndo} title={`Hoàn tác (${undoLabel})`} disabled={!p.canUndo}>
-          <Undo2 size={15} />
+          <Undo2 size={18} />
         </IconBtn>
         <IconBtn onClick={p.onRedo} title={`Làm lại (${redoLabel})`} disabled={!p.canRedo}>
-          <Redo2 size={15} />
+          <Redo2 size={18} />
         </IconBtn>
         <IconBtn onClick={p.onFit} title={`Vừa khung (${fitLabel})`}>
-          <Maximize size={15} />
+          <Maximize size={18} />
         </IconBtn>
 
         <div style={{ flex: 1 }} />
         <Btn onClick={() => p.onExport('png')} title="Xuất PNG" disabled={!!p.busy}>
-          <Download size={15} /> {p.busy === 'png' ? 'Đang xuất…' : 'PNG'}
+          <Download size={18} /> {p.busy === 'png' ? 'Đang xuất…' : 'PNG'}
         </Btn>
         <Btn onClick={() => p.onExport('jpeg')} title="Xuất JPEG" disabled={!!p.busy} primary>
-          <Download size={15} /> {p.busy === 'jpeg' ? 'Đang xuất…' : 'JPEG'}
+          <Download size={18} /> {p.busy === 'jpeg' ? 'Đang xuất…' : 'JPEG'}
         </Btn>
         {p.onWriteBack && (
           <>
@@ -182,7 +182,7 @@ export default function PhotoToolbar(p: Props) {
               disabled={!!p.busy}
               primary
             >
-              {p.writeBackDone ? <Check size={15} /> : <CornerUpLeft size={15} />}
+              {p.writeBackDone ? <Check size={18} /> : <CornerUpLeft size={18} />}
               {p.busy === 'writeback' ? 'Đang ghi…' : p.writeBackDone ? 'Đã ghi' : 'Ghi về Present'}
             </Btn>
           </>

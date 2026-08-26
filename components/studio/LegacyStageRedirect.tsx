@@ -42,7 +42,7 @@ export default function LegacyStageRedirect({ stage }: { stage: StageSegment }) 
   // dù đích là route scope dự án hay Dashboard.
   return (
     <div style={{ display: 'grid', placeItems: 'center', height: '100dvh', background: 'var(--bg)' }}>
-      <Loader2 size={22} className="animate-spin" style={{ color: 'var(--t4)' }} />
+      <Loader2 size={20} className="animate-spin" style={{ color: 'var(--t4)' }} />
     </div>
   );
 }

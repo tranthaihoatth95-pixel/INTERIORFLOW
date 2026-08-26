@@ -98,6 +98,7 @@ export function ItemThumb({ item, children }: { item: SheetItem; children?: Reac
   // (b) vân procedural theo loại + icon loại
   return (
     <span className="th" title={title} style={texture}>
+      {/* soi-mien-tru: F-ICON-SIZE — glyph lấp ô xem trước thư viện, aria-hidden, không gắn hạng điều khiển */}
       <Icon size={22} strokeWidth={1.5} className="kicon" aria-hidden />
       {children}
     </span>

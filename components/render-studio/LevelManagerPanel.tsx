@@ -163,7 +163,7 @@ export function LevelManagerPanel() {
                   onClick={buildFromStoreys}
                   className="flex h-[var(--tap)] items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 text-[10.5px] font-semibold leading-[1.6] text-[var(--t1)] transition-colors hover:bg-[var(--hover)]"
                 >
-                  <Wand2 size={12} />
+                  <Wand2 size={18} />
                   {tr('Dựng từ nhãn có sẵn', 'Build from labels')}
                 </button>
               </Tooltip>
@@ -187,7 +187,7 @@ export function LevelManagerPanel() {
                 dragId === level.id ? 'bg-[var(--accent-soft)]' : 'hover:bg-[var(--hover)]',
               )}
             >
-              <GripVertical size={12} className="flex-none cursor-grab text-[var(--t5)]" aria-hidden />
+              <GripVertical size={16} className="flex-none cursor-grab text-[var(--t5)]" aria-hidden />
 
               <input
                 value={level.name}
@@ -226,7 +226,7 @@ export function LevelManagerPanel() {
                 title={tr('Lên một bậc', 'Move up')}
                 className="grid h-[var(--tap)] w-[var(--tap)] place-items-center rounded-[6px] text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)] disabled:opacity-30"
               >
-                <ChevronUp size={12} />
+                <ChevronUp size={18} />
               </button>
               <button
                 type="button"
@@ -236,7 +236,7 @@ export function LevelManagerPanel() {
                 title={tr('Xuống một bậc', 'Move down')}
                 className="grid h-[var(--tap)] w-[var(--tap)] place-items-center rounded-[6px] text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)] disabled:opacity-30"
               >
-                <ChevronDown size={12} />
+                <ChevronDown size={18} />
               </button>
 
               <Tooltip
@@ -252,7 +252,7 @@ export function LevelManagerPanel() {
                   aria-label={tr('Xoá tầng', 'Delete level')}
                   className="grid h-[var(--tap)] w-[var(--tap)] place-items-center rounded-[6px] text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--danger,#e5484d)]"
                 >
-                  <Trash2 size={12} />
+                  <Trash2 size={18} />
                 </button>
               </Tooltip>
             </li>

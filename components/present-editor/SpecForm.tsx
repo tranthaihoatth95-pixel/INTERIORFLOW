@@ -56,7 +56,7 @@ export default function SpecForm({ spec, palette, onChange }: Props) {
                 }}
               >
                 <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600 }}>
-                  <Zap size={11} /> {p.label}
+                  <Zap size={18} /> {p.label}
                 </span>
                 <span style={{ fontSize: 9.5, color: 'var(--t4)', lineHeight: 1.2 }}>{p.hint}</span>
               </button>

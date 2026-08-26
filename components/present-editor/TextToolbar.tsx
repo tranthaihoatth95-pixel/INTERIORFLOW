@@ -220,7 +220,7 @@ export default function TextToolbar({
           title="Tạo / gợi ý nội dung (AI)"
           style={{ ...pillBtn, ...aiBtn }}
         >
-          {aiBusy ? <Loader2 size={13} className="pe-spin" /> : <Sparkles size={13} />}
+          {aiBusy ? <Loader2 size={14} className="pe-spin" /> : <Sparkles size={14} />}
           <span style={{ fontSize: 11.5, fontWeight: 600 }}>Tạo content</span>
         </button>
 
@@ -228,13 +228,13 @@ export default function TextToolbar({
 
         {/* cỡ chữ */}
         <button type="button" onClick={() => bumpSize(-0.4)} title="Giảm cỡ chữ" style={pillIcon}>
-          <Minus size={13} />
+          <Minus size={18} />
         </button>
         <span style={{ fontSize: 11, color: GLASS_TEXT_DIM, minWidth: 26, textAlign: 'center' }}>
           {size.toFixed(1)}
         </span>
         <button type="button" onClick={() => bumpSize(0.4)} title="Tăng cỡ chữ" style={pillIcon}>
-          <Plus size={13} />
+          <Plus size={18} />
         </button>
 
         <Sep />

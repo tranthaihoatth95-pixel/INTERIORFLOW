@@ -1,5 +1,9 @@
 # IF · KIẾN TRÚC — bản đồ, không phải nhật ký
 
+> ⛔ **BẢN ĐỒ CHÍNH TẮC NAY LÀ `INTERIORFLOW-ARCHITECTURE-MAP.md` (19/08).**
+> File này giữ làm dấu vết, **không cập nhật nữa**. Mọi con trỏ đã chuyển cùng lượt
+> (luật 16/08: đổi tài liệu nền phải sửa mọi con trỏ ngay).
+
 > **ĐỌC FILE NÀY ĐẦU MỖI PHIÊN. Đọc thật, không lướt.**
 >
 > **Đây là loại tài liệu KHÁC `00-CHOT.md`.** `00-CHOT` trả lời *"cái gì được quyết, khi nào"* —

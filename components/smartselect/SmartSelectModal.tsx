@@ -399,7 +399,7 @@ export function SmartSelectModal() {
             className="flex max-h-full w-[min(96vw,1080px)] flex-col overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--card)] shadow-2xl"
           >
             <div className="flex items-center gap-2 border-b border-[var(--border)] px-4 py-2.5">
-              <Wand2 size={15} className="text-[var(--accent)]" />
+              <Wand2 size={18} className="text-[var(--accent)]" />
               <span className="flex-1 text-sm font-medium text-[var(--t1)]">
                 Chọn vùng thông minh · Smart Select
               </span>
@@ -451,7 +451,7 @@ export function SmartSelectModal() {
                       onClick={() => void autoSelect()}
                       className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent)] px-3 py-1.5 text-[11px] font-medium text-white disabled:opacity-50"
                     >
-                      {busy ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                      {busy ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
                       {busy ? `Đang chọn… ${Math.round(progress * 100)}%` : 'Magic chọn vùng'}
                     </motion.button>
                     <motion.button
@@ -459,7 +459,7 @@ export function SmartSelectModal() {
                       onClick={clearAll}
                       className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2.5 py-1.5 text-[11px] text-[var(--t3)] hover:bg-[var(--hover)]"
                     >
-                      <Trash2 size={12} />
+                      <Trash2 size={14} />
                       Xoá hết
                     </motion.button>
                   </div>
@@ -485,7 +485,7 @@ export function SmartSelectModal() {
                 <div className="space-y-1 border-t border-[var(--border)] px-4 py-2">
                   {error && (
                     <p className="flex items-center gap-1.5 text-[11px] text-red-400">
-                      <AlertTriangle size={12} />
+                      <AlertTriangle size={14} />
                       {error}
                     </p>
                   )}
@@ -501,7 +501,7 @@ export function SmartSelectModal() {
                       disabled={busy}
                       className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent)] px-3.5 py-2 text-[11px] font-medium text-white disabled:opacity-50"
                     >
-                      <Check size={13} />
+                      <Check size={16} />
                       Dùng vùng chọn này
                     </motion.button>
                   </div>
@@ -536,7 +536,7 @@ function ToolBtn({
           : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
       )}
     >
-      <Icon size={12} />
+      <Icon size={14} />
       {children}
     </button>
   );

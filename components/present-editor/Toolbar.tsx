@@ -265,14 +265,11 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
    * PresentEditor CÙNG PATTERN `openPptxFile` ngay trên (nối vào CUỐI deck đang mở, không hỏi
    * trước — PDF là tài liệu nguồn khác, không phải project `.idfp` của chính mình).
    *
-   * ⚠️ ĐẶC CÁCH GATEWAY (ghi rõ để phiên sau khỏi ngỡ ngàng): `lib/gateway/capabilities.ts` hiện
-   * khai `present.pdf.import = 'unavailable'` (đúng lúc viết ticket này — chặng Trình chiếu CHƯA
-   * đọc được PDF) và `route.ts#STATIC_ROUTE` CHƯA có khoá `pdf` (dù dòng comment kiểu `RouteAction`
-   * ở đó ĐÃ ghi sẵn ý định `// .pptx / .pdf — nhập làm slide`, `route.ts:18`). VÙNG FILE của ticket
-   * này CẤM sửa `lib/gateway/**` — nên `onGatewayFile` bên dưới ĐẶC CÁCH bắt `format === 'pdf'`
-   * NGAY TRƯỚC khi gọi `routeFormat`, không đụng gateway. Việc dọn nợ này (ngoài phạm vi ticket):
-   * thêm `pdf: { kind: 'present-import-deck' }` vào `STATIC_ROUTE` + đổi
-   * `capabilities.ts` `present.pdf.import` thành `'lossy'` rồi BỎ đặc cách này.
+   * ✅ ĐẶC CÁCH GATEWAY ĐÃ TRẢ NỢ (R6 19/08): `lib/gateway` nay khai `present.pdf.import='lossy'`
+   * và `routeFormat('pdf','present')` trả `present-import-deck` — `onGatewayFile` bên dưới hết
+   * bắt `format === 'pdf'` trước khi gọi router; PDF đi CÙNG CỬA với mọi định dạng khác. Chọn
+   * importer nào (pdf-import ↔ pptx-import) vẫn quyết Ở ĐÂY theo `format` — đó là việc của bề
+   * mặt, router chỉ trả lời "đích là gì".
    *
    * Số trang > `PDF_RANGE_PROMPT_THRESHOLD` (30) → hỏi phạm vi trước khi convert (phiếu ③) bằng
    * `window.prompt` — cùng mức tương tác `window.confirm` của `openIdfpFile` phía trên, không
@@ -365,24 +362,23 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
     if (!f) return;
     const bytes = new Uint8Array(await f.slice(0, 8192).arrayBuffer());
     const format = detectFormat({ name: f.name, bytes });
-    if (format === 'pdf') {
-      await openPdfFile(f);
-      return;
-    }
     const action = routeFormat(format, 'present');
     if (action.kind === 'place-image') {
       addImageFile(f);
       return;
     }
     if (action.kind === 'present-import-deck') {
-      await openPptxFile(f);
+      // Cùng MỘT đích "nhập làm slide", hai importer theo định dạng (route.ts:18 khai sẵn ý này).
+      if (format === 'pdf') await openPdfFile(f);
+      else await openPptxFile(f);
       return;
     }
     if (action.kind === 'present-open-project') {
       openIdfpFile(f);
       return;
     }
-    if (format === 'xlsx' || format === 'csv') {
+    if (action.kind === 'library-bulk-ingest') {
+      // xlsx/csv — ở chặng Trình bày đích "nạp hàng loạt" nghĩa là nhập BOQ (dialog sẵn có).
       setBoqInitialFile(f);
       setBoqImportOpen(true);
       return;
@@ -554,7 +550,7 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
       }}
     >
       <Btn onClick={onBack} title="Quay lại app chính">
-        <ArrowLeft size={15} /> Quay lại
+        <ArrowLeft size={18} /> Quay lại
       </Btn>
       <Divider />
       {/* 19/07 — cặp Nhập/Xuất DÙNG CHUNG với chặng Layout CAD & Render (components/ui/IOMenu.tsx):
@@ -569,7 +565,7 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
             id: 'gateway',
             label: 'Chọn tệp — tự nhận định dạng',
             sub: 'Ảnh · PPTX · PDF (chữ sống, bậc 1) · IDFP · XLSX/CSV; định dạng chưa hỗ trợ sẽ nói rõ lý do',
-            icon: <FileUp size={15} />,
+            icon: <FileUp size={16} />,
             onSelect: () => gatewayFileRef.current?.click(),
           },
         ]}
@@ -582,7 +578,7 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
           <LightArc
             value={pdfProgress.total > 0 ? (pdfProgress.done / pdfProgress.total) * 100 : undefined}
             size={16}
-            strokeWidth={2}
+            strokeWidth={1.5}
             label="Đang chuyển PDF"
           />
           Trang {pdfProgress.done}/{pdfProgress.total}
@@ -609,21 +605,23 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
         busy={p.busy}
         resultMsg={p.exportMsg}
         items={[
-          { id: 'pdf', label: 'PDF', sub: '1:1 với editor · đúng khổ đã chọn (màn hình/chiếu)', icon: <FileDown size={15} />, onSelect: p.onExportPdf },
-          { id: 'pptx', label: 'PowerPoint (.pptx)', sub: 'Chữ còn chỉnh được trong PPT · luôn khổ 16:9', icon: <FileText size={15} />, onSelect: p.onExportPptx },
-          { id: 'png', label: 'Ảnh PNG', sub: 'Mỗi slide 1 ảnh, tải lần lượt', icon: <ImageIcon size={15} />, onSelect: p.onExportPng },
+          { id: 'pdf', label: 'PDF', sub: '1:1 với editor · đúng khổ đã chọn (màn hình/chiếu)', icon: <FileDown size={16} />, onSelect: p.onExportPdf },
+          /* R9a (19/08) nhãn-nói-thật: "luôn khổ 16:9" lỗi thời — export.ts đọc
+             deck.stagePreset (quyết định 16:9-cứng đã HUỶ 07/08 p12). */
+          { id: 'pptx', label: 'PowerPoint (.pptx)', sub: 'Chữ còn chỉnh được trong PPT · đúng khổ đã chọn', icon: <FileText size={16} />, onSelect: p.onExportPptx },
+          { id: 'png', label: 'Ảnh PNG', sub: 'Mỗi slide 1 ảnh, tải lần lượt', icon: <ImageIcon size={16} />, onSelect: p.onExportPng },
           {
             id: 'idfp',
             label: 'Toàn bộ project (.idfp)',
             sub: 'Mở lại chỉnh được tiếp — mọi trang/slide/font/ảnh nhúng, tự chứa',
-            icon: <FileJson size={15} />,
+            icon: <FileJson size={16} />,
             onSelect: () => window.dispatchEvent(new CustomEvent('present:idfp-export-request')),
           },
           {
             id: 'print300',
             label: 'PDF in 300dpi (A3/A4)',
             sub: 'Chữ/hình khối + ảnh đủ nguồn đạt 300dpi thật · ảnh nhỏ tự nâng độ phân giải (hỏi giá/thời gian trước khi chạy)',
-            icon: <Printer size={15} />,
+            icon: <Printer size={16} />,
             onSelect: p.onExportPrint300,
             disabled: !p.printReady,
             disabledReason: 'Chỉ xuất được ở khổ giấy A4/A3 — đổi khổ trong "Khổ trình bày" trước (16:9 là khổ màn hình, không phải khổ in).',
@@ -632,14 +630,14 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
             id: 'pdf-sheets',
             label: 'Xuất PDF theo tờ giấy…',
             sub: 'Chọn khổ/hướng giấy · xem trước tờ · kiểm bảng nét in trước khi xuất',
-            icon: <FileDown size={15} />,
+            icon: <FileDown size={16} />,
             onSelect: () => setPdfSheetsOpen(true),
           },
           {
             id: 'ho-so-song',
             label: 'Gói Hồ Sơ (.zip) · Living Dossier',
             sub: 'Một file giao khách: trang xem mở mọi trình duyệt + ảnh/BOQ + dữ liệu máy-đọc nhập lại được',
-            icon: <Archive size={15} />,
+            icon: <Archive size={16} />,
             onSelect: () => { void exportHoSoSong(); },
             disabled: hoSoBusy,
             disabledReason: 'Đang đóng gói — chờ xong lượt trước.',
@@ -663,15 +661,18 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
         }}
         onClose={() => setPdfSheetsOpen(false)}
       />
+      {/* Cửa nhận tờ từ 2D/3D mount ở `PresentStageScreen` (tầng chặng), KHÔNG ở đây: cầu là
+          consume-once, hai nơi cùng nhận thì nơi nào dựng trước cướp mất tờ của nơi kia. Toolbar
+          chỉ dựng khi đã có hồ sơ mở nên nó là chỗ SAI để nhận. */}
       <Divider />
       <Btn onClick={p.onAddText} title="Thêm chữ">
-        <Type size={15} /> Chữ
+        <Type size={18} /> Chữ
       </Btn>
       <Btn
         onClick={() => fileRef.current?.click()}
         title="Ảnh NỘI DUNG: tải ảnh lên và đưa thẳng vào slide đang dàn. (Ảnh tham khảo/style → tab Reference bên trái)"
       >
-        <ImageIcon size={15} /> Ảnh
+        <ImageIcon size={18} /> Ảnh
       </Btn>
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
 
@@ -681,28 +682,28 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
           lệnh nào, chỉ đổi nơi đứng — cùng luật §0d đã áp cho "Sắp xếp" bên dưới. */}
       <span ref={shapeBtnRef} style={{ display: 'inline-flex' }}>
         <Btn onClick={() => setShapeOpen((v) => !v)} active={shapeOpen} title="Hình — chữ nhật · elip · tam giác · đa giác · mũi tên · đường thẳng">
-          <Square size={15} /> Hình
+          <Square size={18} /> Hình
         </Btn>
       </span>
       {shapeOpen && (
         <AnchoredPopover anchorRef={shapeBtnRef} onDismiss={() => setShapeOpen(false)} width={168}>
           <IconOnly onClick={() => { p.onAddShape('rect'); setShapeOpen(false); }} title="Hình chữ nhật (chuột phải shape trên slide để chỉnh cạnh/góc)">
-            <Square size={15} />
+            <Square size={18} />
           </IconOnly>
           <IconOnly onClick={() => { p.onAddShape('ellipse'); setShapeOpen(false); }} title="Hình elip">
-            <Circle size={15} />
+            <Circle size={18} />
           </IconOnly>
           <IconOnly onClick={() => { p.onAddShape('triangle'); setShapeOpen(false); }} title="Tam giác">
-            <Triangle size={15} />
+            <Triangle size={18} />
           </IconOnly>
           <IconOnly onClick={() => { p.onAddShape('polygon'); setShapeOpen(false); }} title="Đa giác (chỉnh số cạnh khi chuột phải)">
-            <Pentagon size={15} />
+            <Pentagon size={18} />
           </IconOnly>
           <IconOnly onClick={() => { p.onAddShape('arrow'); setShapeOpen(false); }} title="Mũi tên">
-            <MoveRight size={15} />
+            <MoveRight size={18} />
           </IconOnly>
           <IconOnly onClick={() => { p.onAddShape('line'); setShapeOpen(false); }} title="Đường thẳng">
-            <Minus size={15} />
+            <Minus size={18} />
           </IconOnly>
         </AnchoredPopover>
       )}
@@ -713,7 +714,7 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
           không nhắc nguyên văn nhãn cũ ở đây để cửa kiểm PHEU-AI-TEN-MAGIC quét chuỗi không
           báo nhầm vào comment lịch sử). */}
       <Btn onClick={p.onToggleTemplates} active={p.templatesOpen} title="Thiết kế — Magic và các mẫu dàn trang">
-        <LayoutTemplate size={15} /> Thiết kế
+        <LayoutTemplate size={18} /> Thiết kế
       </Btn>
 
       <Divider />
@@ -735,7 +736,7 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
           title={c.enabled ? c.label[0] : (c.disabledReason ?? c.label[0])}
           disabled={!c.enabled}
         >
-          <CommandIcon name={c.icon} size={15} />
+          <CommandIcon name={c.icon} size={18} />
         </IconOnly>
       ))}
 
@@ -751,7 +752,7 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
           active={layoutMenuOpen || arrangeOpen}
           title="Thêm — Sắp xếp · Brand Kit · Khổ trình bày · Xem lưới"
         >
-          <MoreHorizontal size={15} />
+          <MoreHorizontal size={18} />
         </Btn>
       </span>
       {layoutMenuOpen && (
@@ -791,42 +792,42 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
         title="Căn trái theo nhau (cần ≥2 đối tượng)"
         disabled={multiCount < 2}
       >
-        <AlignStartVertical size={15} />
+        <AlignStartVertical size={18} />
       </IconOnly>
       <IconOnly
         onClick={() => p.onAlignSelection('hcenter')}
         title="Căn giữa ngang theo nhau (cần ≥2 đối tượng)"
         disabled={multiCount < 2}
       >
-        <AlignCenterVertical size={15} />
+        <AlignCenterVertical size={18} />
       </IconOnly>
       <IconOnly
         onClick={() => p.onAlignSelection('right')}
         title="Căn phải theo nhau (cần ≥2 đối tượng)"
         disabled={multiCount < 2}
       >
-        <AlignEndVertical size={15} />
+        <AlignEndVertical size={18} />
       </IconOnly>
       <IconOnly
         onClick={() => p.onAlignSelection('top')}
         title="Căn trên theo nhau (cần ≥2 đối tượng)"
         disabled={multiCount < 2}
       >
-        <AlignStartHorizontal size={15} />
+        <AlignStartHorizontal size={18} />
       </IconOnly>
       <IconOnly
         onClick={() => p.onAlignSelection('vcenter')}
         title="Căn giữa dọc theo nhau (cần ≥2 đối tượng)"
         disabled={multiCount < 2}
       >
-        <AlignCenterHorizontal size={15} />
+        <AlignCenterHorizontal size={18} />
       </IconOnly>
       <IconOnly
         onClick={() => p.onAlignSelection('bottom')}
         title="Căn dưới theo nhau (cần ≥2 đối tượng)"
         disabled={multiCount < 2}
       >
-        <AlignEndHorizontal size={15} />
+        <AlignEndHorizontal size={18} />
       </IconOnly>
 
       <IconOnly
@@ -834,28 +835,28 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
         title="Đưa lên trước cùng"
         disabled={multiCount < 1}
       >
-        <ChevronsUp size={15} />
+        <ChevronsUp size={18} />
       </IconOnly>
       <IconOnly
         onClick={() => p.onZOrder('forward')}
         title="Tiến 1 bậc"
         disabled={multiCount < 1}
       >
-        <ArrowUp size={15} />
+        <ArrowUp size={18} />
       </IconOnly>
       <IconOnly
         onClick={() => p.onZOrder('backward')}
         title="Lùi 1 bậc"
         disabled={multiCount < 1}
       >
-        <ArrowDown size={15} />
+        <ArrowDown size={18} />
       </IconOnly>
       <IconOnly
         onClick={() => p.onZOrder('back')}
         title="Đưa ra sau cùng"
         disabled={multiCount < 1}
       >
-        <ChevronsDown size={15} />
+        <ChevronsDown size={18} />
       </IconOnly>
 
       <IconOnly
@@ -863,21 +864,21 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
         title="Gộp các phần tử đang chọn thành 1 cụm (cần ≥2 đối tượng)"
         disabled={multiCount < 2}
       >
-        <Group size={15} />
+        <Group size={18} />
       </IconOnly>
       <IconOnly
         onClick={p.onUngroup}
         title="Rã cụm của lựa chọn hiện tại"
         disabled={selectedGroupCount < 1}
       >
-        <Ungroup size={15} />
+        <Ungroup size={18} />
       </IconOnly>
       <IconOnly
         onClick={p.onToggleLock}
         title={anyUnlocked ? 'Khoá lựa chọn' : 'Mở khoá lựa chọn'}
         disabled={multiCount < 1}
       >
-        {anyUnlocked ? <Lock size={15} /> : <Unlock size={15} />}
+        {anyUnlocked ? <Lock size={18} /> : <Unlock size={18} />}
       </IconOnly>
       {/* P6b bước 2a — Ẩn hàng loạt, cạnh Khoá theo đúng vị trí Hoà duyệt. */}
       <IconOnly
@@ -885,7 +886,7 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
         title={anyVisible ? 'Ẩn lựa chọn' : 'Hiện lựa chọn'}
         disabled={multiCount < 1}
       >
-        {anyVisible ? <EyeOff size={15} /> : <Eye size={15} />}
+        {anyVisible ? <EyeOff size={18} /> : <Eye size={18} />}
       </IconOnly>
 
         </AnchoredPopover>
@@ -895,7 +896,7 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
       {/* H4 (13/08): "Xem lưới" dời vào menu "⋯" phía trên (xem AnchoredPopover layout="list") —
           Trình chiếu giữ nguyên vị trí cuối cùng, luôn thấy được (1 trong 6 việc chính). */}
       <Btn onClick={p.onPlay} title="Trình chiếu (xem hiệu ứng động)">
-        <Play size={15} /> Trình chiếu
+        <Play size={18} /> Trình chiếu
       </Btn>
 
       {/* nút ẩn giữ chỗ cho lib open state (tránh unused) */}
@@ -1263,7 +1264,7 @@ function BoqXlsxImportDialog({ onClose, initialFile = null }: { onClose: () => v
     >
       <div style={{ width: 760, maxWidth: 'calc(100vw - 24px)', maxHeight: '88vh', display: 'flex', flexDirection: 'column', background: 'var(--panel)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', height: 46, padding: '0 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-          <FileSpreadsheet size={15} style={{ color: 'var(--accent)' }} />
+          <FileSpreadsheet size={20} style={{ color: 'var(--accent)' }} />
           <span style={{ marginLeft: 8, fontSize: 14, fontWeight: 600, color: 'var(--t1)' }}>
             {tr('Nhập .xlsx vào bảng khối lượng', 'Import .xlsx into the bill of quantities')}
           </span>
@@ -1277,13 +1278,13 @@ function BoqXlsxImportDialog({ onClose, initialFile = null }: { onClose: () => v
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '40px 20px' }}>
               {loadError ? (
                 <>
-                  <AlertTriangle size={22} style={{ color: 'var(--danger)' }} />
+                  <AlertTriangle size={20} style={{ color: 'var(--danger)' }} />
                   <span style={{ fontSize: 12.5, color: 'var(--t2)', textAlign: 'center', maxWidth: 460, lineHeight: 1.5 }}>{loadError}</span>
                   <button type="button" onClick={() => void loadBoq()} style={btnPrimary}>{tr('Thử lại', 'Try again')}</button>
                 </>
               ) : (
                 <>
-                  <Loader2 size={22} className="animate-spin" style={{ color: 'var(--accent)' }} />
+                  <Loader2 size={20} className="animate-spin" style={{ color: 'var(--accent)' }} />
                   <span style={{ fontSize: 13, color: 'var(--t2)' }}>{tr('Đang đọc bảng khối lượng hiện tại…', 'Reading the current bill of quantities…')}</span>
                 </>
               )}
@@ -1313,7 +1314,7 @@ function BoqXlsxImportDialog({ onClose, initialFile = null }: { onClose: () => v
                   background: dragOver ? 'var(--accent-soft, var(--field))' : 'var(--field)',
                 }}
               >
-                <Upload size={26} strokeWidth={1.5} style={{ color: 'var(--t4)' }} />
+                <Upload size={20} strokeWidth={1.5} style={{ color: 'var(--t4)' }} />
                 <b style={{ fontSize: 13, color: 'var(--t1)' }}>{tr('Thả file .xlsx hoặc .csv vào đây', 'Drop an .xlsx or .csv file here')}</b>
                 <span style={{ fontSize: 11.5, color: 'var(--t4)' }}>
                   {tr('Kể cả file do chính app xuất ra ("Xuất xlsx" ở màn BOQ) — sửa trong Excel rồi nạp lại', 'Including the file this app exported ("Export xlsx" on the BOQ screen) — edit in Excel and load it back')}
@@ -1330,7 +1331,7 @@ function BoqXlsxImportDialog({ onClose, initialFile = null }: { onClose: () => v
                 />
                 {fileError && (
                   <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--danger)', fontSize: 12, textAlign: 'center' }}>
-                    <AlertTriangle size={13} /> {fileError}
+                    <AlertTriangle size={14} /> {fileError}
                   </div>
                 )}
               </div>
@@ -1365,7 +1366,7 @@ function BoqXlsxImportDialog({ onClose, initialFile = null }: { onClose: () => v
 
               {columns.matId == null && columns.ma == null && (
                 <div style={{ marginBottom: 12, padding: '8px 10px', borderRadius: 10, background: 'color-mix(in srgb, var(--danger) 12%, var(--field))', border: '1px solid var(--border)', fontSize: 11.5, color: 'var(--t2)' }}>
-                  <AlertTriangle size={12} style={{ color: 'var(--danger)', verticalAlign: -2, marginRight: 5 }} />
+                  <AlertTriangle size={14} style={{ color: 'var(--danger)', verticalAlign: -2, marginRight: 5 }} />
                   {tr(
                     'Chưa chỉ được cột MÃ — không có mã thì không biết dòng Excel thuộc hạng mục nào. Khớp theo TÊN là cách chắc chắn nạp nhầm giá, nên app không làm.',
                     'No code column selected — without a code there is no way to tell which item a row belongs to. Matching by name is a reliable way to import the wrong price, so the app does not do it.',
@@ -1376,7 +1377,7 @@ function BoqXlsxImportDialog({ onClose, initialFile = null }: { onClose: () => v
               {dropped.length > 0 && (
                 <div style={{ marginBottom: 12, padding: '8px 10px', borderRadius: 10, background: 'color-mix(in srgb, var(--warning) 12%, var(--field))', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t2)' }}>
-                    <AlertTriangle size={12} style={{ color: 'var(--warning)', verticalAlign: -2, marginRight: 5 }} />
+                    <AlertTriangle size={14} style={{ color: 'var(--warning)', verticalAlign: -2, marginRight: 5 }} />
                     {tr(`${dropped.length} cột trong file KHÔNG được nạp:`, `${dropped.length} column(s) in the file are NOT imported:`)}
                   </div>
                   <div style={{ marginTop: 4, fontSize: 11.5, color: 'var(--t3)' }}>{dropped.map((c) => `"${c.header}"`).join(' · ')}</div>
@@ -1449,7 +1450,7 @@ function BoqXlsxImportDialog({ onClose, initialFile = null }: { onClose: () => v
 
               {fileError && (
                 <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--danger)', fontSize: 12 }}>
-                  <AlertTriangle size={13} /> {fileError}
+                  <AlertTriangle size={14} /> {fileError}
                 </div>
               )}
             </>
@@ -1457,14 +1458,14 @@ function BoqXlsxImportDialog({ onClose, initialFile = null }: { onClose: () => v
 
           {step === 'applying' && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '40px 20px' }}>
-              <Loader2 size={22} className="animate-spin" style={{ color: 'var(--accent)' }} />
+              <Loader2 size={20} className="animate-spin" style={{ color: 'var(--accent)' }} />
               <span style={{ fontSize: 13, color: 'var(--t2)' }}>{tr('Đang nạp vào bảng khối lượng…', 'Writing into the bill of quantities…')}</span>
             </div>
           )}
 
           {step === 'done' && applied && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '40px 20px' }}>
-              <CheckCircle2 size={22} style={{ color: 'var(--accent)' }} />
+              <CheckCircle2 size={20} style={{ color: 'var(--accent)' }} />
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>
                 {tr(`Đã nạp ${applied.cells} ô vào ${applied.rows} hạng mục`, `Imported ${applied.cells} cell(s) into ${applied.rows} item(s)`)}
               </span>

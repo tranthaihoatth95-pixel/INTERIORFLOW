@@ -12,7 +12,7 @@
  * `lib/commands/registry.ts`/`lib/server/credits.ts`).
  */
 
-export type SniffedKind = 'png' | 'jpeg' | 'gif' | 'webp' | 'avif' | 'pdf';
+export type SniffedKind = 'png' | 'jpeg' | 'gif' | 'webp' | 'avif' | 'pdf' | 'idfp';
 
 /** Kind → MIME chuẩn hoá để LƯU vào DB (không lưu lại chuỗi client gửi). */
 export const SNIFFED_MIME: Record<SniffedKind, string> = {
@@ -22,6 +22,7 @@ export const SNIFFED_MIME: Record<SniffedKind, string> = {
   webp: 'image/webp',
   avif: 'image/avif',
   pdf: 'application/pdf',
+  idfp: 'application/json',
 };
 
 const RASTER_IMAGE_KINDS: SniffedKind[] = ['png', 'jpeg', 'gif', 'webp', 'avif'];
@@ -46,6 +47,34 @@ export function sniffKind(buf: Buffer | Uint8Array): SniffedKind | null {
   }
   if (b.length >= 12 && b.subarray(0, 4).toString('ascii') === 'RIFF' && b.subarray(8, 12).toString('ascii') === 'WEBP') {
     return 'webp';
+  }
+  // `.idfp` — HỒ SƠ TRÌNH BÀY CỦA CHÍNH IF (21/08). Nhận vào whitelist để deck có BẢN SAO BỀN
+  // trên máy chủ; trước bản này deck chỉ sống ở IndexedDB và đã MẤT TRẮNG một lần khi hồ sơ
+  // trình duyệt bị làm mới.
+  //
+  // Vì sao KHÔNG phá luật chống XSS lưu trữ mà whitelist này sinh ra:
+  //  ① đây không phải "nhận JSON bất kỳ" — phải PARSE ĐƯỢC và mang đúng chữ ký tài liệu
+  //     (`idfpVersion` là số + `sheets` là mảng). Một tệp HTML/SVG/JS không thể thoả.
+  //     Kiểm CẤU TRÚC mạnh hơn kiểm magic-bytes, không yếu hơn.
+  //  ② đường phục vụ lại (`_lib/doc-noi-dung.ts`) ép `application/octet-stream` cho mọi thứ
+  //     KHÔNG phải ảnh raster, luôn kèm `X-Content-Type-Options: nosniff` ⇒ trình duyệt không
+  //     bao giờ diễn giải tệp này thành HTML. `idfp` cố ý ĐỨNG NGOÀI `RASTER_IMAGE_KINDS`.
+  // Đặt CUỐI để ảnh/PDF luôn thắng trước; chỉ tệp không khớp magic-bytes nào mới thử parse.
+  if (b.length >= 2 && b.length <= 40 * 1024 * 1024) {
+    const dau = b.subarray(0, 64).toString('utf8').trimStart();
+    if (dau.startsWith('{')) {
+      try {
+        const o = JSON.parse(b.toString('utf8')) as { idfpVersion?: unknown; idfVersion?: unknown; sheets?: unknown };
+        // Hai chữ ký tài liệu của IF: `.idfp` (hồ sơ trình bày) và `.idf` (bản vẽ 2D). Cùng một
+        // lý lẽ an toàn: phải PARSE ĐƯỢC và mang đúng chữ ký + `sheets` là mảng — HTML/SVG/JS
+        // không thể thoả. Bản vẽ là SỰ THẬT NGHỀ NGHIỆP nên nó cần bản sao bền hơn cả deck.
+        if (Array.isArray(o?.sheets) && (typeof o?.idfpVersion === 'number' || typeof o?.idfVersion === 'number')) {
+          return 'idfp';
+        }
+      } catch {
+        /* không phải JSON hợp lệ — rơi xuống, trả null như cũ */
+      }
+    }
   }
   if (b.length >= 4 && b.subarray(0, 4).toString('ascii') === '%PDF') {
     return 'pdf';

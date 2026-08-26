@@ -83,7 +83,7 @@ function StatCard({ icon: Icon, label, value, sub }: { icon: typeof FolderKanban
   return (
     <motion.div variants={staggerItem} className="nen-mo-card rounded-[14px] border border-[var(--vien-mo)] p-4">
       <div className="flex items-center gap-2 text-[var(--t4)]">
-        <Icon size={15} />
+        <Icon size={14} />
         <span className="text-[11px] font-medium uppercase tracking-wider">{label}</span>
       </div>
       <div className="mt-2 text-2xl font-semibold tracking-tight text-[var(--t1)]">{value}</div>
@@ -245,7 +245,7 @@ export function Dashboard({
               title="Tạo dự án"
               className="grid h-8 w-8 place-items-center rounded-[10px] bg-[var(--accent-strong)] text-white transition-colors hover:bg-[var(--accent)] disabled:opacity-50"
             >
-              {creating ? <Loader2 size={13} className="animate-spin" /> : <Check size={14} />}
+              {creating ? <Loader2 size={18} className="animate-spin" /> : <Check size={14} />}
             </motion.button>
             <motion.button
               {...pressableIcon}
@@ -265,7 +265,7 @@ export function Dashboard({
               disabled={creating}
               className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)] disabled:opacity-50"
             >
-              {creating ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+              {creating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
               Dự án mới
             </motion.button>
             <motion.button
@@ -304,7 +304,7 @@ export function Dashboard({
                   : 'border-transparent text-[var(--t4)] hover:text-[var(--t2)]',
               )}
             >
-              <t.icon size={13} />
+              <t.icon size={18} />
               {t.label}
             </button>
           ))}
@@ -312,7 +312,7 @@ export function Dashboard({
             <span className="ml-2 flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] text-[var(--accent)]">
               Đang lọc 1 dự án
               <button type="button" onClick={() => setFilterProjectId(null)} className="hover:opacity-70">
-                <X size={10} />
+                <X size={14} />
               </button>
             </span>
           )}
@@ -349,6 +349,7 @@ export function Dashboard({
                 )}
                 {!larkData && larkLoading ? (
                   <div className="grid h-64 place-items-center text-[var(--t4)]">
+                    {/* soi-mien-tru: F-ICON-SIZE — vòng quay tải đứng giữa ô rỗng, không gắn hạng điều khiển nào */}
                     <Loader2 size={22} className="animate-spin" />
                   </div>
                 ) : !larkData ? (
@@ -385,6 +386,7 @@ export function Dashboard({
               </div>
             ) : loading && !data ? (
               <div className="grid h-64 place-items-center text-[var(--t4)]">
+                {/* soi-mien-tru: F-ICON-SIZE — vòng quay tải đứng giữa ô rỗng, không gắn hạng điều khiển nào */}
                 <Loader2 size={22} className="animate-spin" />
               </div>
             ) : !data ? (
@@ -405,7 +407,7 @@ export function Dashboard({
                   {/* dự án */}
                   <section>
                     <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--t2)]">
-                      <FolderKanban size={15} /> Dự án ({data.projects.length})
+                      <FolderKanban size={14} /> Dự án ({data.projects.length})
                     </h2>
                     {data.projects.length === 0 ? (
                       <p className="rounded-[14px] border border-dashed border-[var(--border)] p-6 text-center text-sm text-[var(--t4)]">
@@ -441,7 +443,7 @@ export function Dashboard({
                   {/* team */}
                   <section>
                     <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--t2)]">
-                      <Users size={15} /> Team ({data.stats.online}/{data.stats.members} online)
+                      <Users size={14} /> Team ({data.stats.online}/{data.stats.members} online)
                     </h2>
                     <div className="nen-mo-card divide-y divide-[var(--border)] overflow-hidden rounded-[14px] border border-[var(--vien-mo)]">
                       {data.team.map((m) => (
@@ -451,7 +453,7 @@ export function Dashboard({
                             <div className="flex items-center gap-1.5 truncate text-sm font-medium text-[var(--t1)]">
                               {m.name}
                               {m.id === data.me && <span className="rounded bg-[var(--hover)] px-1 text-[9px] text-[var(--t3)]">bạn</span>}
-                              {m.isAdmin && <Crown size={11} className="text-amber-400" />}
+                              {m.isAdmin && <Crown size={14} className="text-amber-400" />}
                             </div>
                             <div className="truncate text-[11px] text-[var(--t4)]">
                               {m.online ? 'online' : timeAgo(m.lastSeenAt)} · {m.flowCount} flow
@@ -462,7 +464,7 @@ export function Dashboard({
                               trống/`undefined`. Số dư của người khác không còn lộ ra client. */}
                           {m.credits !== undefined && (
                             <span className="flex shrink-0 items-center gap-1 text-[11px] text-[var(--t3)]">
-                              <Coins size={12} className="text-amber-400" /> {m.credits}
+                              <Coins size={14} className="text-amber-400" /> {m.credits}
                             </span>
                           )}
                         </div>
@@ -474,7 +476,7 @@ export function Dashboard({
                 {/* hoạt động gần đây */}
                 <section>
                   <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--t2)]">
-                    <Clock size={15} /> Flow cập nhật gần đây
+                    <Clock size={14} /> Flow cập nhật gần đây
                   </h2>
                   {data.flows.length === 0 ? (
                     <p className="text-sm text-[var(--t4)]">Chưa có flow nào.</p>
@@ -490,14 +492,15 @@ export function Dashboard({
                             coverMode ? 'cursor-default' : 'hover:bg-[var(--hover)]',
                           )}
                         >
-                          <Workflow size={15} className="shrink-0 text-[var(--t4)]" />
+                          <Workflow size={16} className="shrink-0 text-[var(--t4)]" />
                           <div className="min-w-0 flex-1">
                             <div className="truncate text-sm text-[var(--t1)]">{f.name}</div>
                             <div className="truncate text-[11px] text-[var(--t4)]">
                               {f.project ? `${f.project.name} · ` : ''}{f.user.name} · v{f.version} · {timeAgo(f.updatedAt)}
                             </div>
                           </div>
-                          {f.shared && <Share2 size={13} className="shrink-0 text-emerald-400" />}
+                          {f.shared && <Share2 size={16} className="shrink-0 text-emerald-400" />}
+                          {/* soi-mien-tru: F-ICON-SIZE — CHẤM trạng thái cuối hàng, không phải icon mang nghĩa; ép lên 14 là biến chấm thành hình */}
                           <Circle size={5} className="shrink-0 fill-[var(--accent)] text-[var(--accent)]" />
                         </button>
                       ))}

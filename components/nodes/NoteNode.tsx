@@ -32,7 +32,7 @@ function NoteNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
         onClick={() => deleteNode(id)}
         className="nodrag absolute right-1 top-1 grid h-5 w-5 place-items-center rounded text-[var(--t3)] opacity-0 transition hover:bg-[var(--hover)] hover:text-[var(--t1)] group-hover:opacity-100"
       >
-        <X size={12} />
+        <X size={14} />
       </button>
       <textarea
         className="nodrag h-24 w-full resize-none bg-transparent text-xs leading-snug text-[var(--t1)] placeholder-[var(--t4)] outline-none"

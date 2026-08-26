@@ -71,5 +71,23 @@ console.log('SNIFFED_MIME — map đủ mọi SniffedKind sang MIME chuẩn');
   ok('pdf → application/pdf', SNIFFED_MIME.pdf === 'application/pdf');
 }
 
+
+/* ── .idfp — hồ sơ trình bày của chính IF (21/08) ─────────────────────────────────────────
+   Nhận vào whitelist để deck có bản sao BỀN trên máy chủ. Điều kiện chặt hơn magic-bytes:
+   phải parse được VÀ mang đúng chữ ký tài liệu. Bốn ca dưới khoá đúng ranh giới đó. */
+const idfpThat = Buffer.from(JSON.stringify({ idfpVersion: 1, sheets: [{ id: 's1', name: 'A', deck: {} }] }), 'utf8');
+ok('.idfp thật → application/json', sniffKind(idfpThat) === 'idfp' && SNIFFED_MIME.idfp === 'application/json');
+ok('JSON thường (không chữ ký idfp) → null', sniffKind(Buffer.from('{"a":1}', 'utf8')) === null);
+ok('HTML núp bóng JSON → null', sniffKind(Buffer.from('<html><script>alert(1)</script></html>', 'utf8')) === null);
+ok(
+  'JSON có idfpVersion nhưng sheets KHÔNG phải mảng → null',
+  sniffKind(Buffer.from('{"idfpVersion":1,"sheets":"x"}', 'utf8')) === null,
+);
+
+
+const idfThat = Buffer.from(JSON.stringify({ idfVersion: 2, sheets: [{ id: 'cadsheet-0', name: 'Bản vẽ 1' }] }), 'utf8');
+ok('.idf (bản vẽ 2D) → application/json', sniffKind(idfThat) === 'idfp');
+ok('JSON có sheets nhưng KHÔNG chữ ký IF → null', sniffKind(Buffer.from('{"sheets":[]}', 'utf8')) === null);
+
 console.log(`\n${pass} pass, ${fail} fail`);
 if (fail) process.exit(1);

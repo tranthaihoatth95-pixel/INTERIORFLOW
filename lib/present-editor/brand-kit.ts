@@ -16,6 +16,7 @@
 import type { FontPairing } from '@/lib/slides';
 import type { EditorDeck, DeckWatermark, WatermarkCorner } from './model';
 import { rethemeDeck } from './theme-roles';
+import { createStudioBlobStore } from '../storage/studio-persist';
 
 /** Cấu hình watermark lưu trong Brand Kit (không kèm enabled — deck tự bật/tắt). */
 export interface BrandWatermark {
@@ -44,6 +45,11 @@ export interface BrandKit {
   updatedAt: number;
 }
 
+/* Key localStorage CŨ — W0.3 (19/08, FINAL-AUDIT A-4): Brand Kit là tài sản studio, dời
+ * localStorage → IndexedDB qua `lib/storage/studio-persist.ts` (tái dùng DB `interiorflow-sheets`).
+ * Hai key cũ chỉ còn là CẦU đọc-một-lần lúc di trú, không ghi mới, không xoá. Câu than cũ
+ * "Đổi máy = mất Brand Kit" vẫn đúng (IDB vẫn per-máy) — nhưng clear-site-data thân thiện hơn
+ * và logo dataURL không còn đụng trần 5MB. */
 const KEY = 'interiorflow.brandKits';
 const ACTIVE_KEY = 'interiorflow.brandKitActive';
 
@@ -52,26 +58,44 @@ interface Stored {
   activeId: string | null;
 }
 
+const EMPTY_STORED: Stored = { kits: [], activeId: null };
+
+function parseStored(v: unknown): Stored | undefined {
+  if (!v || typeof v !== 'object') return undefined;
+  const s = v as Partial<Stored>;
+  if (!Array.isArray(s.kits)) return undefined;
+  return { kits: s.kits, activeId: typeof s.activeId === 'string' && s.activeId ? s.activeId : null };
+}
+
+const brandStore = createStudioBlobStore<Stored>({
+  route: '/studio-brand-kits',
+  readLegacy: () => {
+    if (typeof window === 'undefined') return undefined;
+    try {
+      const kits = JSON.parse(localStorage.getItem(KEY) || 'null') as BrandKit[] | null;
+      if (!Array.isArray(kits)) return undefined;
+      const activeId = localStorage.getItem(ACTIVE_KEY);
+      return { kits, activeId: activeId || null };
+    } catch {
+      return undefined;
+    }
+  },
+  empty: EMPTY_STORED,
+  parse: parseStored,
+});
+
+/** Chờ IDB nạp xong (panel Brand Kit await rồi đọc lại nếu cần dữ liệu tươi nhất). */
+export function hydrateBrandKits(): Promise<void> {
+  return brandStore.hydrate();
+}
+
 function read(): Stored {
-  if (typeof window === 'undefined') return { kits: [], activeId: null };
-  try {
-    const kits = JSON.parse(localStorage.getItem(KEY) || '[]') as BrandKit[];
-    const activeId = localStorage.getItem(ACTIVE_KEY);
-    return { kits: Array.isArray(kits) ? kits : [], activeId: activeId || null };
-  } catch {
-    return { kits: [], activeId: null };
-  }
+  return brandStore.get();
 }
 
 function write(s: Stored): void {
   if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(KEY, JSON.stringify(s.kits));
-    if (s.activeId) localStorage.setItem(ACTIVE_KEY, s.activeId);
-    else localStorage.removeItem(ACTIVE_KEY);
-  } catch {
-    /* localStorage đầy/chặn — bỏ qua persist */
-  }
+  brandStore.set(s);
 }
 
 function makeId(): string {

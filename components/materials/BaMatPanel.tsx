@@ -53,6 +53,8 @@ export function BaMatPanel({
   const tamRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // esc-only: handler CHỈ đóng bằng Escape — Escape phải luôn thoát được, kể cả khi tiêu điểm
+    // đang ở trong một ô nhập bên trong tấm này, nên KHÔNG bail theo INPUT/TEXTAREA ở đây.
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -138,7 +140,7 @@ export function BaMatPanel({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                  <Icon size={13} style={{ color: mau }} />
+                  <Icon size={14} style={{ color: mau }} />
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--t1)' }}>{tr(m.nhanDay.vi, m.nhanDay.en)}</span>
                   <span aria-hidden style={{ color: mau, fontSize: 12, fontWeight: 700 }}>{dauCua(m)}</span>
                   <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--t3)' }}>{tr(CHANG[m.khoa].vi, CHANG[m.khoa].en)}</span>
@@ -152,7 +154,7 @@ export function BaMatPanel({
 
                 {m.suyDoan && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6, fontSize: 11.5, color: 'var(--t2)', lineHeight: 1.5 }}>
-                    <Sparkles size={12} style={{ color: 'var(--warning)', flexShrink: 0 }} />
+                    <Sparkles size={14} style={{ color: 'var(--warning)', flexShrink: 0 }} />
                     {tr('Máy suy đoán từ tên/danh mục — chưa ai xác nhận.', 'Machine-inferred from name/category — nobody has confirmed it.')}
                   </div>
                 )}

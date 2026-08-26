@@ -150,7 +150,7 @@ export function ParamField({
           className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[var(--border-strong)] py-2 text-[11px] text-[var(--t3)] transition hover:border-[var(--accent-ring)] hover:text-[var(--t1)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[var(--border-strong)] disabled:hover:text-[var(--t3)]"
           onClick={open}
         >
-          {isSmart ? <Wand2 size={13} /> : <Paintbrush size={13} />}
+          {isSmart ? <Wand2 size={18} /> : <Paintbrush size={18} />}
           {disabled ? 'Nối ảnh vào input Image trước' : label}
         </button>
       </div>
@@ -168,7 +168,7 @@ export function ParamField({
           className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[var(--border-strong)] py-2 text-[11px] text-[var(--t3)] transition hover:border-[var(--accent-ring)] hover:text-[var(--t1)] disabled:cursor-not-allowed disabled:opacity-40"
           onClick={() => hasSourceImage && useWarpStore.getState().open(nodeId)}
         >
-          <Frame size={13} />
+          <Frame size={18} />
           {!hasSourceImage ? 'Nối ảnh vào input Image trước' : set ? 'Sửa 4 góc' : 'Kéo 4 góc phối cảnh'}
         </button>
       </div>
@@ -189,7 +189,7 @@ export function ParamField({
           className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[var(--border-strong)] py-2 text-[11px] text-[var(--t3)] transition hover:border-[var(--accent-ring)] hover:text-[var(--t1)]"
           onClick={() => useSketchStore.getState().open(nodeId)}
         >
-          <Paintbrush size={13} />
+          <Paintbrush size={18} />
           {has ? 'Sửa vẽ' : 'Vẽ tay'}
         </button>
       </div>

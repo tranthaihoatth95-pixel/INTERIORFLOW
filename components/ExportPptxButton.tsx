@@ -67,7 +67,7 @@ export default function ExportPptxButton({
         'nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-[var(--border-strong)] py-2 text-[11px] font-medium text-[var(--t2)] hover:border-orange-500/60 disabled:opacity-40'
       }
     >
-      <FileText size={13} /> {busy ? 'Đang xuất…' : 'Tải PowerPoint (.pptx)'}
+      <FileText size={18} /> {busy ? 'Đang xuất…' : 'Tải PowerPoint (.pptx)'}
     </button>
   );
 }

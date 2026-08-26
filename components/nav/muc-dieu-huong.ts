@@ -1,13 +1,46 @@
 /**
  * components/nav/muc-dieu-huong.ts — [marker: railHaiCum] BẢNG KHAI của rail điều hướng.
+ * (Marker GIỮ NGUYÊN chuỗi `railHaiCum` làm ĐỊNH DANH ổn định qua mọi lần đổi cấu trúc — hai cụm
+ *  16/08 → ba cụm 20/08 → HAI ĐẢO 20/08. Đổi chuỗi marker là vỡ mọi con trỏ trong phiếu/nhật ký
+ *  cũ; tên marker là khoá kỹ thuật, không phải nhãn. Đừng "sửa cho khớp".)
  *
  * Vì sao tách khỏi component: đây là phần DUY NHẤT kiểm được bằng máy (đường đi · mục đang mở ·
  * lý do mờ · nấc chi tiết nào có gì để nhìn). Để chung trong `.tsx` thì muốn kiểm phải dựng DOM.
  *
- * NGUỒN CẤU TRÚC — `docs/HOP-DONG-CAU-TRUC-DIEU-HUONG.md` §1 (hai cụm) · §5 (ba nấc chi tiết =
- * ba công năng) · §6 (ràng buộc chung). Bản đồ: `docs/IF-KIEN-TRUC.md` §2 §3 §7.
- * Hoà chốt 16/08: **sidebar là hệ router toàn app**; ba chặng chỉ là MỘT nhóm stage, không phải
- * trục riêng ⇒ `components/studio/StageSwitcher.tsx` thôi là "trục điều hướng duy nhất".
+ * 🔴 NGUỒN CẤU TRÚC HIỆN HÀNH — **Hoà chốt 23/08**: *"thanh sidebar cực đơn giản, KHÔNG nên 1
+ * thanh dọc dài dễ cảm giác thô, mà tách 2 phần"* + *"BỎ LUÔN CÁI NHÁP. CHỐT THEO NHỮNG MỤC
+ * SÁNG CHỐT"*. Rail dựng thành **ĐÚNG HAI VIÊN**, không hơn:
+ *   VIÊN 1 · XƯỞNG/VIỆC — Trang chủ · Dự án · Cảm hứng · Thư viện
+ *   VIÊN 2 · CHẶNG      — Thiết kế 2D · Thiết kế 3D · Trình chiếu · `+`
+ * Hai viên tách bằng KHOẢNG THỞ CÓ NGHĨA, ⛔ không gộp thành một menu dài, ⛔ không đường kẻ.
+ *
+ * 🔴 BA THỨ VỪA RỜI RAIL 23/08 — đọc trước khi định "bù cho đủ":
+ *   · **Files** và **Soát duyệt** không có trong danh sách Hoà chốt ⇒ rời rail (route còn sống).
+ *   · **Cả đảo NGỮ CẢNH DỰ ÁN** (Tổng quan · Flows·Workspace · Tệp dự án · Quyết định·DNA) —
+ *     Hoà gọi thẳng là "cái nháp", **BỎ HẲN KHỎI RAIL**. Bốn thứ đó là ngữ cảnh của MỘT dự án,
+ *     thuộc bề mặt dự án chứ không thuộc bộ điều hướng cấp app. ⛔ KHÔNG xoá route, KHÔNG xoá
+ *     màn — chỉ gỡ khỏi bản đồ. Lối vào còn lại ghi trong `docs/bao-cao-phien/2026-08-23-lane-rail.md`.
+ *   · **Cảm hứng** thì ngược lại: chưa từng có trên rail ⇒ THÊM VÀO.
+ * ⇒ Đảo thứ ba (`cum: 'du-an'`) và cơ chế `CUM_CAN_DU_AN` đã gỡ hẳn: giữ lại một khái niệm cụm
+ *   không còn cụm nào dùng là để sẵn một cái bẫy cho phiên sau tưởng chỗ đó còn trống mà nhét vào.
+ * Thanh trái trả lời đúng hai câu: *tôi đang làm việc ở đâu* · *tôi đang ở chặng nào*.
+ * ⛔ **Cá nhân/Cộng tác/Hệ thống RỜI KHỎI thanh trái** — Hồ sơ · Credit · Cài đặt · Tài khoản ·
+ * Đăng xuất nay sống trong MENU ẢNH ĐẠI DIỆN ở cụm phải-trên
+ * (`components/studio/CumPhaiTren.tsx` + `components/AccountMenu.tsx`). Hoà nêu thẳng đây là
+ * TIÊU CHÍ TRƯỢT: *"trượt nếu thanh trái còn chứa Hồ sơ/Credit/Cài đặt"* ⇒ ai định thêm lại một
+ * mục Cá nhân/Cài đặt vào bảng này, đọc dòng này trước; test [2] chặn cứng.
+ *
+ * ĐÈ CHỐT NÀO: "BA CỤM" của `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md` điều 3 (Workspace chung ·
+ * ba chặng · cá nhân/hệ thống) — bản đó tự nó đã ĐÈ "hai cụm" 16-17/08, và nay bị đè tiếp: cụm
+ * cá nhân/hệ thống KHÔNG còn là đảo thứ ba trên trục dọc, nó chuyển sang trục phải-trên.
+ * Điều 4 của cùng chốt (ba độ sâu: Rail 52-56 · Context Shelf 220-280 · Work Panel 320-440)
+ * GIỮ NGUYÊN, không đụng. Nền cũ vẫn đúng phần ràng buộc:
+ * `docs/HOP-DONG-CAU-TRUC-DIEU-HUONG.md` §5 (ba nấc chi tiết = ba công năng) · §6 (ràng buộc
+ * chung). Bản đồ: `docs/IF-KIEN-TRUC.md` §2 §3 §7.
+ * Hoà chốt 16/08 (VẪN ĐÚNG): **sidebar là hệ router toàn app** ⇒
+ * `components/studio/StageSwitcher.tsx` thôi là "trục điều hướng duy nhất". Nhưng câu "ba chặng
+ * chỉ là MỘT nhóm stage ngang hàng Files/Thư viện" nay ĐƯỢC LÀM RÕ: ba chặng là ĐẢO RIÊNG, tách
+ * bằng khoảng thở — ngang hàng về trục, KHÔNG trộn vào cùng một danh sách.
  *
  * ⚠️ MỘT ĐÍNH CHÍNH SO VỚI BẢNG §1 CỦA HỢP ĐỒNG — nhãn ba chặng.
  * Bảng §1 gọi hai chặng đầu theo lối đảo chữ (kỹ-thuật trước, thiết-kế trước); nhưng chốt 07/08
@@ -21,33 +54,83 @@
  */
 
 import type { LucideIcon } from 'lucide-react';
-import {
-  LayoutGrid,
-  ListTodo,
-  MessagesSquare,
-  Folder,
-  Library,
-  Settings,
-  Building2,
-  NotebookPen,
-  PencilRuler,
-  Box,
-  Presentation,
-} from 'lucide-react';
+import { House, Folders, Compass, GalleryHorizontalEnd, Grid2x2, Box, Monitor } from 'lucide-react';
 
+/* ─── BẢY BIỂU TƯỢNG CỦA THANH TRÁI — MỘT HỌ, không phải bảy cái hiểu được ──────────────────
+ * Khung/nét là hằng số chung ở `components/ui/command-icon.tsx` (`HE_BIEU_TUONG`). Ở đây chọn
+ * NGHĨA **và** SILHOUETTE.
+ *
+ * 🔴 Hoà 20/08: hiểu được từng cái nhưng **chưa cảm thấy là MỘT HỌ của IF** ⇒ siết NGỮ PHÁP HÌNH.
+ * TRỤC XUYÊN SUỐT: **chữ nhật → chữ nhật bo → viên nang → tròn**. Mọi icon phải đọc ra là biến
+ * thể trên trục đó: cùng bán kính góc · cùng kiểu đầu nét/góc nối · đơn sắc trung tính mặc định ·
+ * màu CHỈ hỗ trợ trạng thái.
+ * ⛔ Cấm trộn glyph đặc với glyph viền · bán kính góc tuỳ tiện · hình quá chi tiết · kiểu emoji.
+ *
+ *  mục          icon                    silhouette                    vì sao
+ *  Trang chủ    House                   thân bo r2 + mái dốc          ⚠️ lệch trục — xem ghi chú dưới
+ *  Dự án        Folders                 HAI thư mục r2 xếp chồng      hộp chứa dự án
+ *  Cảm hứng     Compass                 VÒNG TRÒN + kim               ⭐ cái DUY NHẤT trọn trục — xem dưới
+ *  Thư viện     GalleryHorizontalEnd    dãy thẻ r2 song song          kho tài sản xếp kệ
+ *  Thiết kế 2D  Grid2x2                 CHỮ NHẬT r2 chia ô            MẶT PHẲNG
+ *  Thiết kế 3D  Box                     khối lập phương dây           KHỐI
+ *  Trình chiếu  Monitor                 CHỮ NHẬT r2 + chân            MẶT ĐẦU RA
+ *
+ * ⭐ VIÊN CHẶNG PHẢI ĐỌC THÀNH MỘT TIẾN TRÌNH, không phải ba vật rời:
+ *      Grid2x2  →  Box  →  Monitor
+ *      PHẲNG       KHỐI     MẶT TRÌNH BÀY
+ *   Cả ba cùng bắt đầu từ MỘT hình chữ nhật: cái đầu chia ô (phẳng), cái giữa đùn lên có chiều sâu
+ *   (khối), cái cuối đặt lên chân (mặt xuất). Đứng cạnh nhau thấy được một câu chuyện.
+ *   ⛔ Đổi lẻ một trong ba là làm gãy câu chuyện — phải đổi cả ba hoặc không đổi.
+ *
+ * ⭐ **CẢM HỨNG = `Compass` — CHỌN BẰNG SỐ, KHÔNG BẰNG NGHĨA (THÊM 23/08).**
+ *   Nó đứng ngay cạnh Thư viện, nên ràng buộc nặng nhất là SILHOUETTE PHẢI KHÁC HẲN. Mọi ứng
+ *   viên "đúng nghĩa ảnh" lại đều là KHUNG CHỮ NHẬT (`Image` · `Images` · `GalleryVertical`) ⇒
+ *   ở 18px đọc lẫn với dãy thẻ của Thư viện. `Compass` là VÒNG TRÒN + kim: tách bạch ngay từ
+ *   đường viền ngoài, và **tròn là điểm CUỐI của chính cái trục** chữ-nhật→bo→viên-nang→tròn
+ *   ⇒ nó là icon DUY NHẤT của bộ nằm trọn trên trục. Nghĩa cũng đúng: đi tìm hướng, không phải
+ *   xem một tấm ảnh.
+ *   🔴 `Lightbulb` là lựa chọn ĐẦU và bị TEST BÁC, ghi lại để không ai thử lại: cung của nó là
+ *   `a6 6` ⇒ **bán kính 6**, trong khi cả sáu icon còn lại đều **r2**. Đúng loại lệch mà mắt
+ *   thấy "sai sai" mà không gọi được tên — và test [9] gọi được tên nó bằng số.
+ *   `Sparkles` bị loại có chủ đích: sắc lấp lánh là ngôn ngữ của AI, kênh đó đã dành cho nút
+ *   `+` ở viên 2 — dùng ở hai chỗ thì `+` mất nghĩa riêng.
+ *
+ * ⚠️ **`House` VẪN LÀ MỤC DUY NHẤT LỆCH TRỤC** — khai thẳng, không giấu: mái dốc là HAI ĐƯỜNG
+ *   CHÉO. Đã rà hết ứng viên lucide cho nghĩa "nhà/xưởng" (`Warehouse` `Building*`) — cái nào
+ *   cũng mái dốc hoặc mái cong; `LayoutGrid`/`LayoutDashboard` đúng trục nhưng Hoà đã loại vì
+ *   là ngôn ngữ dashboard. ⇒ Muốn trục tuyệt đối thì cần GLYPH RIÊNG của IF; đó là việc của cửa
+ *   thiết kế, KHÔNG tự vẽ ở lane code. Nó vẫn r2, vẫn viền đơn sắc, chỉ lệch ở silhouette.
+ *
+ * Dải phần tử **1-3** (đo bằng test [8]) — không cái nào lệch hẳn.
+ * ⚠️ Con số là ĐO, không đếm mắt: bản nháp đầu của chính bảng này sai 4/8 dòng vì regex đếm hụt
+ * icon một-phần-tử. Sửa icon thì chạy test rồi chép số ra, đừng ước.
+ */
 /* ─────────────────────────────────────────────────────────────────────────────────────────
-   BA NẤC CHI TIẾT = BA CÔNG NĂNG (hợp đồng §5 · bản đồ §7)
+   BA NẤC CHI TIẾT = BA CÔNG NĂNG (hợp đồng §5 · bản đồ §7 · CHOT-EXPERIENCE-SYSTEM điều 4)
 
-   28  "tôi đang ở đâu"     — định vị bằng vị trí + hình, KHÔNG chữ
-   240 "tôi đi đâu được"    — thêm CHỮ
-   320 "ở đó đang có gì"    — thêm HÌNH, hoặc TÌNH TRẠNG nếu thứ đó không có hình
+   52  "tôi đang ở đâu"     — định vị bằng vị trí + hình, KHÔNG chữ (Rail icon-only)
+   240 "tôi đi đâu được"    — thêm CHỮ (Context Shelf)
+   320 "ở đó đang có gì"    — thêm HÌNH, hoặc TÌNH TRẠNG nếu thứ đó không có hình (Work Panel)
+
+   ✅ 52 — MÂU THUẪN 28↔52 ĐÃ ĐÓNG 23/08. Đừng mở lại.
+   Từng có hai văn bản hai số: bản vẽ `docs/mocks/mock-rail-hai-cum.html` (`--w-dinh-vi:28px`) +
+   `docs/HOP-DONG-CAU-TRUC-DIEU-HUONG.md` §5 nói **28**; `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md`
+   điều 4 nói **52-56**. Chỉ thị cuối của Hoà (§SIDEBAR MAP) tuyên thẳng **"52px anchor rail"**
+   ⇒ `docs/control/IF-CANONICAL.md` §10 `[CHỐT]` **Neo 52px** là PHÂN GIẢI, không phải ghi vội.
+   **THAY BỞI:** IF-CANONICAL §10. Bản vẽ 28px nay LỖI THỜI **ở con số này thôi** — phần a11y và
+   hành vi của nó vẫn là hợp đồng.
+   Hệ quả bố cục: hàng rộng 52 − 2×4 lề = **44px**, vẫn thừa cho ô icon 20×20 của `HE_BIEU_TUONG`
+   và nay CHỨA NỔI nút thu/mở 32px (xem `RailDieuHuong.tsx` › `NutNac` — 24px cũ là hệ quả BỊ ÉP
+   của 28, không phải một lựa chọn a11y; đừng giữ nó vì quán tính).
+   240 GIỮ: đã nằm trong khoảng 220-280 của chốt, đổi là churn không mang tin.
+   320 GIỮ min: chốt cho resize tới trần 440 nhưng rail HIỆN CHƯA có cơ chế resize —
+   ⛳ NỢ (phiếu riêng): thêm resize kéo tay nấc `duyet` trong khoảng [320, 440].
 
    ⛔ Ba nấc chi tiết là một NHỊP, không phải HẠN NGẠCH: mục nào không có gì để nhìn ở 320 thì
-   BỎ nấc đó cho riêng mục ấy (`mat320.kieu === 'khong'` + lý do đọc được). Giữ lại một nấc chỉ
-   to hơn mà không mang thêm tin chính là "kéo dãn" — thứ Hoà bác thẳng 16/08.
+   BỎ nấc đó cho riêng mục ấy (`mat320.kieu === 'khong'` + lý do đọc được).
    ───────────────────────────────────────────────────────────────────────────────────────── */
 
-export const BE_RONG_NAC = { dinhVi: 28, dieuHuong: 240, duyet: 320 } as const;
+export const BE_RONG_NAC = { dinhVi: 52, dieuHuong: 240, duyet: 320 } as const;
 
 export type NacRail = keyof typeof BE_RONG_NAC;
 
@@ -69,7 +152,18 @@ export function nacKe(nac: NacRail, huong: 1 | -1): NacRail | null {
 
 /* ───────────────────────────────────────────────────────────────────────────────────────── */
 
-export type CumRail = 'xuong' | 'duAn';
+/**
+ * ĐÚNG HAI VIÊN (Hoà chốt 23/08 — ĐÈ ba đảo 22/08):
+ *   `viec`  — VIÊN 1, XƯỞNG/VIỆC: *tôi đang làm việc ở đâu*. Bốn mục.
+ *   `chang` — VIÊN 2, CHẶNG: *tôi đang ở chặng nào*. Đúng ba mục + nút `+`, không hơn — viên này
+ *             phải ỔN ĐỊNH và QUEN TAY, thêm mục vào đây là làm mất tính đoán-trước của nó.
+ * ⛔ KHÔNG có viên thứ ba. Cá nhân/hệ thống ở cụm phải-trên; ngữ cảnh dự án ở bề mặt dự án.
+ *
+ * ĐỔI KHOÁ CÓ AN TOÀN KHÔNG — đo trước khi đổi, không đoán: `CumRail` sống trong đúng ba tệp
+ * `components/nav/**`, và localStorage của rail chỉ có MỘT khoá `interiorflow.rail.nac_v1` lưu
+ * **NacRail** — không khoá nào lưu CumRail. ⇒ bỏ một cụm KHÔNG vỡ dữ liệu đã ghi.
+ */
+export type CumRail = 'viec' | 'chang';
 
 /**
  * Nấc 320 của TỪNG mục — "ở đó đang có gì".
@@ -87,9 +181,13 @@ export interface MucRail {
   en: string;
   cum: CumRail;
   icon: LucideIcon;
-  /** Cụm XƯỞNG — đường tuyệt đối, sống không cần dự án nào. */
+  /** Đường tuyệt đối, sống không cần dự án nào. */
   duong?: string;
-  /** Cụm DỰ ÁN — đuôi sau `/projects/<id>/`; chỉ có nghĩa khi đã mở một dự án. */
+  /**
+   * Đuôi sau `/projects/<id>/` — mục CHỈ có nghĩa khi đã mở một dự án.
+   * Điều kiện "cần dự án" nay đọc từ CHÍNH trường này chứ không suy từ cụm: đảo VIỆC có cả mục
+   * cần dự án (Dự án) lẫn mục không cần (Files · Thư viện), nên lấy cụm làm điều kiện là sai.
+   */
   duoi?: string;
   /** Có giá trị = mục hiện MỜ vĩnh viễn, và đây là lý do đọc được (§9 cấm nút giả không lý do). */
   chuaCoTrang?: { vi: string; en: string };
@@ -101,105 +199,72 @@ export interface MucRail {
  * một KỆ của Thư viện · Gallery là mặt tuyển chọn của kệ Ảnh. Ba thứ đó KHÔNG có mục riêng ở đây;
  * ai định thêm vào, đọc §1 trước.
  */
+
 export const MUC_RAIL: readonly MucRail[] = [
-  // ── CỤM XƯỞNG — sống không cần dự án nào ─────────────────────────────────────────────────
+  // ── VIÊN 1 · XƯỞNG/VIỆC — "tôi đang làm việc ở đâu". Đúng bốn mục Hoà chốt 23/08 ──────────
   {
-    id: 'tong-quan',
-    vi: 'Tổng quan',
-    en: 'Overview',
-    cum: 'xuong',
-    icon: LayoutGrid,
+    id: 'trang-chu',
+    vi: 'Trang chủ',
+    en: 'Home',
+    cum: 'viec',
+    icon: House,
     duong: '/',
-    // Hợp đồng §2: tên "Tổng quan" thuộc về Home; hai mặt cùng tên kia đổi thành "Bảng chi tiết"
-    // và "Dự án này".
     mat320: {
       kieu: 'khong',
       viSao:
-        'Tổng quan CHÍNH LÀ mặt nhìn của app — bày một bản thu nhỏ của nó ngay cạnh nó là nói cùng một điều hai lần.',
+        'Trang chủ CHÍNH LÀ mặt nhìn của app — bày một bản thu nhỏ của nó ngay cạnh nó là nói cùng một điều hai lần.',
     },
   },
   {
-    id: 'bang-viec',
-    vi: 'Bảng việc',
-    en: 'Tasks',
-    cum: 'xuong',
-    icon: ListTodo,
-    duong: '/tasks',
-    mat320: { kieu: 'tinhTrang', moTa: 'việc tới hạn gần nhất', daNoiNguon: false },
+    id: 'du-an',
+    vi: 'Dự án',
+    en: 'Projects',
+    cum: 'viec',
+    icon: Folders,
+    // 🔴 ĐỔI NGHĨA (Hoà chốt 22/08) — trước đây mục này trỏ `/projects/<id>/overview`, tức một
+    // bề mặt THUỘC MỘT DỰ ÁN lại đứng ở viên TOÀN CỤC ⇒ hai đích đọc ra như hai dashboard ngang
+    // hàng. Nay nó là **SỔ DỰ ÁN TOÀN CỤC**: danh sách MỌI dự án, sống không cần dự án nào mở.
+    // ⛔ KHÔNG bịa engine mới: `/projects` mount `ProjectSelect` — chính cỗ máy đang làm sổ dự án
+    // bên trong `/`, chỉ là trước nay nó không có đường đi riêng (một cỗ máy, nhiều mặt tiền).
+    duong: '/projects',
+    mat320: { kieu: 'hinh', moTa: 'thẻ dự án gần đây', daNoiNguon: true },
   },
   {
-    id: 'chat-hop',
-    vi: 'Chat · Họp',
-    en: 'Chat · Meetings',
-    cum: 'xuong',
-    icon: MessagesSquare,
-    // Hợp đồng §7: có `app/api/chat/route.ts`, KHÔNG có trang. Mục vẫn hiện — ẩn thì người dùng
-    // không biết app có gì; nhưng không được là nút bấm-không-ra-gì.
-    chuaCoTrang: { vi: 'Chưa có trang — phần này đang dựng', en: 'No page yet — under construction' },
-    mat320: { kieu: 'khong', viSao: 'Chưa có trang thì chưa có gì để nhìn.' },
-  },
-  {
-    id: 'files',
-    vi: 'Files',
-    en: 'Files',
-    cum: 'xuong',
-    icon: Folder,
-    duong: '/files',
-    // Nguồn nằm trong vùng ghi của phiên V2 (`app/files/**`) ⇒ khai trước, KHÔNG tự nối và
-    // tuyệt đối không bịa dữ liệu để nấc 320 trông có vẻ đầy (hợp đồng §8: chạm biên thì dừng).
-    mat320: { kieu: 'hinh', moTa: 'thư mục gần đây + ảnh xem trước', daNoiNguon: false },
+    id: 'cam-hung',
+    vi: 'Cảm hứng',
+    en: 'Inspiration',
+    cum: 'viec',
+    icon: Compass,
+    // THÊM 23/08 theo danh sách Hoà chốt. ⛔ KHÔNG đẻ route mới: đích là `/library/gallery` —
+    // Gallery liên ngành ĐANG SỐNG (`app/library/gallery/page.tsx`), đúng nghĩa "kho ảnh tuyển
+    // liên ngành, chống thói quen search web/Pinterest ảnh rác, NUÔI Thẻ DNA/moodboard"
+    // (00-CHOT 12/08). Trước nay nó chỉ tới được từ bên trong tấm Thư viện.
+    // ⚠️ ĐÂY LÀ CHỖ T SUY, KHAI THẲNG: Hoà viết "Cảm hứng (Design DNA)" — chữ trong ngoặc có thể
+    // trỏ Thẻ DNA. Nhưng Thẻ DNA hiện KHÔNG có route riêng (mount trong trang Tổng quan), nên
+    // trỏ vào đó là quay lại đúng bề mặt dự án vừa bị gỡ. Gallery là đích DUY NHẤT vừa có route
+    // thật, vừa toàn cục, vừa đúng nghĩa "cảm hứng". Hoà bác thì đổi một dòng `duong` này.
+    duong: '/library/gallery',
+    mat320: { kieu: 'hinh', moTa: 'ảnh tuyển gần đây', daNoiNguon: false },
   },
   {
     id: 'thu-vien',
     vi: 'Thư viện',
     en: 'Library',
-    cum: 'xuong',
-    icon: Library,
+    cum: 'viec',
+    icon: GalleryHorizontalEnd,
     duong: '/library',
     // Hoà nêu đích danh 16/08: "thư viện vật liệu, size to nhất là cột dọc ô tròn vật liệu".
     mat320: { kieu: 'hinh', moTa: 'cột ô tròn vật liệu', daNoiNguon: false },
   },
-  {
-    id: 'cai-dat',
-    vi: 'Cài đặt',
-    en: 'Settings',
-    cum: 'xuong',
-    icon: Settings,
-    duong: '/settings',
-    mat320: {
-      kieu: 'khong',
-      // Bản đồ §7 / hợp đồng §5 nêu ĐÍCH DANH Cài đặt làm ví dụ cho luật "bỏ nấc khi không có gì
-      // để nhìn". Giữ nấc 320 ở đây là ca kéo dãn mẫu.
-      viSao: 'Cài đặt không có gì để NHÌN — chỉ có thứ để đọc và bấm; nấc rộng chỉ làm chữ xa nhau ra.',
-    },
-  },
 
-  // ── CỤM DỰ ÁN — chỉ có nghĩa khi đã mở một dự án ─────────────────────────────────────────
-  {
-    id: 'du-an-nay',
-    vi: 'Dự án này',
-    en: 'This project',
-    cum: 'duAn',
-    icon: Building2,
-    duoi: 'overview',
-    // Route GIỮ NGUYÊN `/projects/[id]/overview` — đổi route là vỡ deep-link (hợp đồng §2).
-    mat320: { kieu: 'tinhTrang', moTa: 'tên bản đang mở', daNoiNguon: true },
-  },
-  {
-    id: 'so-tay',
-    vi: 'Sổ tay',
-    en: 'Notebook',
-    cum: 'duAn',
-    icon: NotebookPen,
-    duoi: 'notebook',
-    mat320: { kieu: 'tinhTrang', moTa: 'ghi chú gần nhất', daNoiNguon: false },
-  },
+  // ── VIÊN 2 · CHẶNG — "tôi đang ở chặng nào". ĐÚNG BA MỤC + nút `+` (nút không phải MucRail:
+  //    nó không dẫn đi đâu trên bản đồ, nó SINH RA thứ mới — xem `NutTaoAi` trong RailDieuHuong).
   {
     id: 'thiet-ke-2d',
     vi: 'Thiết kế 2D',
     en: '2D Design',
-    cum: 'duAn',
-    icon: PencilRuler,
+    cum: 'chang',
+    icon: Grid2x2,
     duoi: 'cad',
     mat320: { kieu: 'tinhTrang', moTa: 'chặng đang dở', daNoiNguon: true },
   },
@@ -207,7 +272,7 @@ export const MUC_RAIL: readonly MucRail[] = [
     id: 'thiet-ke-3d',
     vi: 'Thiết kế 3D',
     en: '3D Design',
-    cum: 'duAn',
+    cum: 'chang',
     icon: Box,
     duoi: 'render',
     mat320: { kieu: 'tinhTrang', moTa: 'chặng đang dở', daNoiNguon: true },
@@ -216,22 +281,31 @@ export const MUC_RAIL: readonly MucRail[] = [
     id: 'trinh-chieu',
     vi: 'Trình chiếu',
     en: 'Presenting',
-    cum: 'duAn',
-    icon: Presentation,
+    cum: 'chang',
+    icon: Monitor,
     duoi: 'present',
     mat320: { kieu: 'tinhTrang', moTa: 'chặng đang dở', daNoiNguon: true },
   },
 ] as const;
 
 export const NHAN_CUM: Record<CumRail, { vi: string; en: string }> = {
-  xuong: { vi: 'Xưởng', en: 'Studio' },
-  duAn: { vi: 'Dự án', en: 'Project' },
+  viec: { vi: 'Việc', en: 'Work' },
+  chang: { vi: 'Chặng', en: 'Stages' },
 };
+
+/**
+ * Thứ tự vẽ HAI VIÊN trên cùng một trục dọc (Hoà chốt 23/08 — ĐÈ bản ba đảo 22/08).
+ * `viec` → `chang`. Viên VIỆC ở trên vì nó sống không cần dự án nào; viên CHẶNG ở dưới, gần
+ * tầm tay nhất khi đang làm — và nó là thứ người dùng bấm nhiều nhất trong một phiên sáng tác.
+ */
+export const THU_TU_CUM: readonly CumRail[] = ['viec', 'chang'] as const;
 
 /** Đường đi thật của một mục — `null` khi mục chưa dùng được (chưa có trang / chưa mở dự án). */
 export function duongCua(muc: MucRail, duAnId: string | null): string | null {
   if (muc.chuaCoTrang) return null;
-  if (muc.cum === 'xuong') return muc.duong ?? null;
+  // Điều kiện đọc từ `duoi`, KHÔNG từ cụm: đảo VIỆC trộn cả mục cần dự án (Dự án) lẫn mục không
+  // cần (Files · Thư viện) ⇒ lấy cụm làm điều kiện sẽ khoá nhầm nửa đảo.
+  if (!muc.duoi) return muc.duong ?? null;
   return duAnId ? `/projects/${duAnId}/${muc.duoi}` : null;
 }
 
@@ -241,18 +315,31 @@ export function duongCua(muc: MucRail, duAnId: string | null): string | null {
  * `/materials` và `/colors` cùng sáng ở **Thư viện**: hợp đồng §1 khai chúng là KỆ và BƯỚC bên
  * trong Thư viện, không phải mục rail. Hai route đó còn đứng riêng cho tới khi phiên V2 gộp
  * xong; tới lúc ấy hai dòng này tự thành thừa và xoá được mà không đụng gì khác.
+ *
+ * ⚠️ `/settings`, `/settings/avatar`, `/tasks`, `/projects/<id>/notebook` nay trả **null** — CÓ Ý,
+ * không phải bỏ sót: bốn route đó vẫn sống, nhưng KHÔNG còn mục nào trên thanh trái đại diện cho
+ * chúng (Cài đặt/Hồ sơ sang menu ảnh đại diện; Bảng việc/Sổ tay rời rail theo chốt hai đảo).
+ * Trả về id của một mục không tồn tại thì rail sẽ sáng nhầm hoặc không sáng gì — null là đúng.
+ *
+ * ⚠️ 23/08 — DANH SÁCH TRẢ NULL DÀI THÊM, và đây là CÁI GIÁ ĐÃ BIẾT của chốt hai viên:
+ * `/files` và `/projects/<id>/overview` nay cũng null. Hai màn đó vẫn sống và vẫn vào được, chỉ
+ * là thanh trái không còn mục nào đại diện ⇒ đứng ở đó thì rail **không sáng hàng nào**.
+ * ⛔ Đừng "chữa" bằng cách cho nó sáng nhờ một mục gần giống (vd `/files` sáng ở Thư viện) —
+ * sáng nhầm mục là NÓI DỐI VỊ TRÍ, tệ hơn hẳn không sáng gì.
  */
 export function mucDangMo(duong: string | null | undefined): string | null {
   if (!duong) return null;
-  if (duong === '/') return 'tong-quan';
-  if (duong.startsWith('/tasks')) return 'bang-viec';
-  if (duong.startsWith('/files')) return 'files';
+  if (duong === '/') return 'trang-chu';
+  // Gallery phải đứng TRƯỚC `/library`: nó là tiền tố con, để sau thì Cảm hứng không bao giờ sáng.
+  if (duong.startsWith('/library/gallery')) return 'cam-hung';
   if (duong.startsWith('/library') || duong.startsWith('/materials') || duong.startsWith('/colors')) return 'thu-vien';
-  if (duong.startsWith('/settings')) return 'cai-dat';
+  // Sổ dự án toàn cục. Phải đứng TRƯỚC nhánh `/projects/<id>/…` bên dưới và khớp CHÍNH XÁC,
+  // nếu không `/projects/abc/overview` cũng rơi vào đây và Tổng quan không bao giờ sáng.
+  if (duong === '/projects' || duong.startsWith('/projects?')) return 'du-an';
 
   const duAn = /^\/projects\/[^/]+\/([^/?#]+)/.exec(duong);
   if (duAn) {
-    const found = MUC_RAIL.find((m) => m.cum === 'duAn' && m.duoi === duAn[1]);
+    const found = MUC_RAIL.find((m) => m.duoi === duAn[1]);
     if (found) return found.id;
   }
   return null;
@@ -268,10 +355,10 @@ export function mucDangMo(duong: string | null | undefined): string | null {
  */
 export function lyDoMo(muc: MucRail, daMoDuAn: boolean): { vi: string; en: string } | null {
   if (muc.chuaCoTrang) return muc.chuaCoTrang;
-  if (muc.cum === 'duAn' && !daMoDuAn) {
+  if (muc.duoi && !daMoDuAn) {
     return {
-      vi: 'Chưa mở dự án — chọn một dự án ở Tổng quan',
-      en: 'No project open — pick one from Overview',
+      vi: 'Chưa mở dự án — chọn một dự án ở Trang chủ',
+      en: 'No project open — pick one from Home',
     };
   }
   return null;

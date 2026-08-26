@@ -172,7 +172,7 @@ export function MacroNodeFace({ group }: { group: NodeGroup }) {
           title={tr('Mở ra xem bên trong', 'Open to view inside')}
           className="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-[10px] border border-[var(--vien-mo)] bg-[var(--card)] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
         >
-          <Maximize2 size={13} />
+          <Maximize2 size={14} />
         </button>
       </div>
 

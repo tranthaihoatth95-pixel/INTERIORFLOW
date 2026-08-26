@@ -57,7 +57,7 @@ export function BoqErrorBanner({ errors }: { errors: BoqError[] }) {
         borderRadius: 10, padding: '7px 12px', fontSize: 13, color: 'var(--t1)',
       }}
     >
-      <AlertTriangle size={17} style={{ color: 'var(--danger)', flexShrink: 0 }} />
+      <AlertTriangle size={18} style={{ color: 'var(--danger)', flexShrink: 0 }} />
       {tr(`${errors.length} vùng chưa vào tổng — `, `${errors.length} region(s) not counted — `)}
       <u onClick={scrollToBoqErrorRows} style={{ cursor: 'pointer', textUnderlineOffset: 2 }}>
         {tr('xem dòng lỗi cuối bảng', 'see error rows below')}
@@ -96,7 +96,7 @@ export function BoqErrorRows({ errors, projectId, columns }: { errors: BoqError[
           style={{ background: 'color-mix(in srgb, var(--danger) 8%, var(--panel))' }}
         >
           <td colSpan={columns} style={{ padding: '0 10px', height: 'var(--row, 28px)', color: 'var(--t2)', fontSize: 13 }}>
-            <AlertTriangle size={12} style={{ color: 'var(--danger)', display: 'inline-block', verticalAlign: -3, marginRight: 5 }} />
+            <AlertTriangle size={16} style={{ color: 'var(--danger)', display: 'inline-block', verticalAlign: -3, marginRight: 5 }} />
             {err.message}
             <button
               type="button"

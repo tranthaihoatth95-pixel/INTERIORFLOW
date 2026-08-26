@@ -154,7 +154,7 @@ export function SectionPreviewOverlay({
           aria-label={tr('Đóng', 'Close')}
           style={{ position: 'absolute', top: 8, right: 8, zIndex: 1, display: 'grid', placeItems: 'center', width: 28, height: 28, borderRadius: 10, border: 0, background: 'transparent', color: 'var(--t3)', cursor: 'pointer' }}
         >
-          <X size={15} />
+          <X size={16} />
         </button>
         <Checkpoint
           phase="preview"

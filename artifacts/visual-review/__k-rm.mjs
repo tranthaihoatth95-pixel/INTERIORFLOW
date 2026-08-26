@@ -1,0 +1,18 @@
+import { chromium } from 'playwright';
+import { homedir } from 'os'; import { join } from 'path';
+const ctx = await chromium.launchPersistentContext(join(homedir(),'.if-phien-chup-man'),{headless:true,viewport:{width:1440,height:900},locale:'vi-VN',reducedMotion:'reduce'});
+const p = ctx.pages()[0] ?? await ctx.newPage();
+await p.goto('http://localhost:3000',{waitUntil:'domcontentloaded'});
+const d = await (await p.request.get('http://localhost:3000/api/flows')).json();
+await p.goto(`http://localhost:3000/projects/${d.flows[0].project.id}/cad`,{waitUntil:'domcontentloaded'});
+await p.waitForTimeout(5000);
+await p.keyboard.press('Meta+Shift+L');
+await p.waitForTimeout(600);
+const t1 = await p.evaluate(()=>getComputedStyle(document.querySelector('[data-lockscreen-root] [style*="preserve-3d"]')).transform);
+console.log('reduce-motion, mat khoa transform =', t1);
+await p.locator('[data-lockscreen-root] button',{hasText:'Mở lại'}).first().click();
+await p.waitForTimeout(400);
+const t2 = await p.evaluate(()=>getComputedStyle(document.querySelector('[data-lockscreen-root] [style*="preserve-3d"]')).transform);
+console.log('reduce-motion, mat xac thuc transform =', t2, '| o mat khau:', await p.locator('#if-mk-mo-khoa').count());
+await p.screenshot({path:'artifacts/visual-review/K2c-reduce-motion.png'});
+await ctx.close();

@@ -56,7 +56,7 @@ export function SketchToolbar({
                 : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
             )}
           >
-            <Icon size={13} />
+            <Icon size={16} />
           </motion.button>
         ))}
       </div>
@@ -125,7 +125,7 @@ export function SketchToolbar({
           onClick={onClear}
           className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
         >
-          <Trash2 size={13} /> Xoá hết
+          <Trash2 size={16} /> Xoá hết
         </motion.button>
       </div>
     </div>

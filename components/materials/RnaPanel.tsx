@@ -133,7 +133,7 @@ export function RnaPanel<T extends object>({
         <div>
           <label style={rnaLabelStyle}>{nhan}</label>
           <label style={{ ...rnaInputStyle, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: raw ? 'var(--t1)' : 'var(--t4)' }}>
-            <Upload size={13} />
+            <Upload size={18} />
             {raw ? tr('Đã nạp — bấm đổi', 'Loaded — click to replace') : tr('Nạp ảnh…', 'Load image…')}
             <input type="file" accept="image/*" className="hidden"
               onChange={(e) => { const file = e.target.files?.[0]; if (file) void fileToDataUrl(file).then((url) => ghi(f, url)); }} />
@@ -154,7 +154,7 @@ export function RnaPanel<T extends object>({
             <button type="button"
               onClick={() => setDong((s) => { const n = new Set(s); if (n.has(g.vi)) n.delete(g.vi); else n.add(g.vi); return n; })}
               style={{ display: 'flex', alignItems: 'center', gap: 4, border: 0, background: 'transparent', color: 'var(--t3)', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0, marginBottom: mo ? 10 : 14 }}>
-              <ChevronRight size={13} style={{ transform: mo ? 'rotate(90deg)' : undefined, transition: reduceMotion ? undefined : 'transform 120ms' }} />
+              <ChevronRight size={14} style={{ transform: mo ? 'rotate(90deg)' : undefined, transition: reduceMotion ? undefined : 'transform var(--nhip-bam)' }} />
               {tr(g.vi, g.en)}
             </button>
             {mo && chiaRun(fields).map((run, i) => {

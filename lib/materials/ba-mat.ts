@@ -191,8 +191,10 @@ export function baMatCuaVatLieu(f: MaterialFacets): BaMat {
 }
 
 /**
- * Món CHƯA CÓ MÃ. `matId` của IF chính là `ProductSpec.sku` — không mã thì không có khoá nối, cả
- * ba mặt đều không tra được. Nói thẳng ra vậy, KHÔNG hiện ba ô trống câm để người dùng tự đoán.
+ * Món CHƯA CÓ MÃ. ⚠️ SUPERSEDED 19/08: matId nay là IF-owned immutable UUID (chốt hòa giải
+ * Hoà 19/08), KHÔNG còn = ProductSpec.sku. "Chưa có mã" nghĩa là chưa có matId — vẫn không tra
+ * được cả ba mặt. Logic hàm giữ nguyên; text hiển thị "Mã vật liệu" có thể cần đổi thành
+ * "Material ID" sau khi UI thi công, phiếu Slice 1A kế. Xem `lib/materials/matid-identity.ts`.
  */
 export function baMatChuaCoMa(): BaMat {
   const loiRa: BaMatText = {

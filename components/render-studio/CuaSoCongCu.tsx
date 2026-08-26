@@ -40,18 +40,20 @@
  * phát sáng là cướp kênh của trạng thái chạy.
  */
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Minimize2, Maximize2, Minus, X, GripHorizontal } from 'lucide-react';
 import { RADIUS } from '@/lib/geometry';
 import { useT } from '@/lib/i18n';
 import { ToolbarChip } from '@/components/ui/ToolbarChip';
+import { useKeoBeMat } from '@/components/ui/useKeoBeMat';
 import {
   KHUNG_VUA,
   MOI_TRUONG,
   NHAN_CAP,
   capKe,
   capTruoc,
+  nodeIdFromKhoa,
   type CapCuaSo,
   type MaMoiTruong,
   type NeoVeTinh,
@@ -59,6 +61,14 @@ import {
   type ViTriCuaSo,
 } from '@/lib/nodes/cua-so-cong-cu';
 import { useCuaSoCongCuUi } from '@/lib/nodes/cua-so-cong-cu-ui';
+import NutLenhVeTinh from './NutLenhVeTinh';
+
+/**
+ * ⭐ LỆNH NÀO CÓ DÒNG ĐIỆN — nay khai ở `lib/nodes/thi-hanh-lenh-cua.ts`, không nằm rải trong
+ * tệp khung này nữa (22/08). Lý do đổi chỗ: bảng ở đây là một `Set` id trần, nên **12 lệnh chưa
+ * nối dùng CHUNG một câu lý do** — câu đó không nói người dùng đang thiếu cái gì. Bảng mới bắt
+ * mỗi lệnh khai số phận của riêng nó, và có test canh (`lenhKhongKhaiSoPhan()` phải rỗng).
+ */
 
 export type BienTheCuaSo = 'noi' | 'neo' | 'toanMan';
 
@@ -97,12 +107,28 @@ function voKinh(bo: number): CSSProperties {
   };
 }
 
-/** Đặt vệ tinh quanh khung. Toạ độ tính theo BỌC NGOÀI của cụm ⇒ kéo cụm là vệ tinh đi theo. */
-function choDung(neo: NeoVeTinh, thuTu: number): CSSProperties {
+/**
+ * Đặt vệ tinh quanh khung. Toạ độ tính theo BỌC NGOÀI của cụm ⇒ kéo cụm là vệ tinh đi theo.
+ *
+ * 🔴 `trong` — SỬA 22/08, lỗi bắt được bằng ẢNH CHỤP THẬT chứ không bằng đọc mã: ở nấc `toanMan`
+ * bọc ngoài là `inset:0`, nên `right: calc(100% + 8px)` đẩy vệ tinh **ra ngoài mép màn** ⇒ nấc
+ * to nhất là nấc DUY NHẤT không có vệ tinh nào. Đúng thứ luật *"nấc to phải có thứ nấc nhỏ
+ * KHÔNG THỂ có"* cấm — nó còn ít hơn nấc vừa.
+ * Nay ở toàn màn vệ tinh **nổi ĐÈ LÊN MÉP** mặt làm việc (đúng hình 7 ảnh tham chiếu Photoshop ·
+ * Lightroom · Premiere: panel vây quanh và đè mép tài liệu), không bị đẩy ra ngoài.
+ */
+function choDung(neo: NeoVeTinh, thuTu: number, trong: boolean): CSSProperties {
   const cach = 8;
-  if (neo === 'trai') return { position: 'absolute', right: `calc(100% + ${cach}px)`, top: thuTu * 132, width: VE_TINH_W };
-  if (neo === 'phai') return { position: 'absolute', left: `calc(100% + ${cach}px)`, top: thuTu * 132, width: VE_TINH_W };
-  return { position: 'absolute', top: `calc(100% + ${cach}px)`, left: thuTu * (VE_TINH_W + cach), width: VE_TINH_W };
+  const chung = { position: 'absolute', width: VE_TINH_W } as const;
+  if (trong) {
+    // Nổi ĐÈ mép trong. `zIndex` để chắc chắn đứng trên ruột, không lẫn vào nội dung.
+    if (neo === 'trai') return { ...chung, left: 12, top: 64 + thuTu * 132, zIndex: 1 };
+    if (neo === 'phai') return { ...chung, right: 12, top: 64 + thuTu * 132, zIndex: 1 };
+    return { ...chung, bottom: 12, left: 12 + thuTu * (VE_TINH_W + cach), zIndex: 1 };
+  }
+  if (neo === 'trai') return { ...chung, right: `calc(100% + ${cach}px)`, top: thuTu * 132 };
+  if (neo === 'phai') return { ...chung, left: `calc(100% + ${cach}px)`, top: thuTu * 132 };
+  return { ...chung, top: `calc(100% + ${cach}px)`, left: thuTu * (VE_TINH_W + cach) };
 }
 
 /**
@@ -111,11 +137,12 @@ function choDung(neo: NeoVeTinh, thuTu: number): CSSProperties {
  * nút bấm không ra gì còn tệ hơn ô trống. Ô trống là bằng chứng còn việc (luật §9 "cấm xoá ô
  * trống cho gọn mắt"); nút giả là lời hứa suông.
  */
-function PanelVeTinh({ v, thuTu }: { v: VeTinh; thuTu: number }) {
+function PanelVeTinh({ v, thuTu, khoa, trong }: { v: VeTinh; thuTu: number; khoa: string; trong: boolean }) {
   const tr = useT();
+  const nodeId = nodeIdFromKhoa(khoa);
   return (
     <aside
-      style={{ ...voKinh(RADIUS.r2), ...choDung(v.neo, thuTu) }}
+      style={{ ...voKinh(RADIUS.r2), ...choDung(v.neo, thuTu, trong) }}
       aria-label={tr(v.ten.vi, v.ten.en)}
       className="nodrag nowheel"
     >
@@ -132,26 +159,8 @@ function PanelVeTinh({ v, thuTu }: { v: VeTinh; thuTu: number }) {
         {tr(v.ten.vi, v.ten.en)}
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: 6, background: 'var(--bg)' }}>
-          {v.lenh.map((l) => (
-            <button
-              key={l.id}
-              type="button"
-              aria-disabled
-              style={{
-                textAlign: 'left',
-                fontSize: 11,
-                padding: '5px 8px',
-                borderRadius: RADIUS.r1,
-                color: 'var(--t2)',
-                opacity: 'var(--mo-vo-hieu)',
-                cursor: 'not-allowed',
-                background: 'transparent',
-                border: 'none',
-              }}
-              title={tr('Lệnh của môi trường này — chưa nối bộ thi hành', 'Command of this environment — not wired yet')}
-            >
-              {tr(l.nhan.vi, l.nhan.en)}
-            </button>
+        {v.lenh.map((l) => (
+          <NutLenhVeTinh key={l.id} lenhId={l.id} nhan={tr(l.nhan.vi, l.nhan.en)} nodeId={nodeId} />
         ))}
       </div>
     </aside>
@@ -179,84 +188,35 @@ export default function CuaSoCongCu({
   const datViTri = useCuaSoCongCuUi((s) => s.datViTri);
   const dayLenTren = useCuaSoCongCuUi((s) => s.dayLenTren);
 
-  const [dangKeo, setDangKeo] = useState(false);
-  const moc = useRef<{ dx: number; dy: number } | null>(null);
   const viTri: ViTriCuaSo = viTriLuu ?? { x: 96, y: 88 };
 
   const mt = moiTruong ? MOI_TRUONG[moiTruong] : null;
   const ten = tieuDe ?? (mt ? tr(mt.ten.vi, mt.ten.en) : '');
   const phu = moTa ?? (mt ? tr(mt.moTa.vi, mt.moTa.en) : undefined);
 
-  /* KÉO CẢ CỤM BẰNG THANH TIÊU ĐỀ — chỉ biến thể `noi`. Pointer capture (một họ sự kiện cho
-     chuột · bút · ngón tay) thay vì listener trên window: chuột chạy ra ngoài giữa chừng vẫn
-     không rớt kéo. `touchAction:'none'` để cảm ứng không cuộn trang lúc kéo. */
-  const batKeo = useCallback(
-    (e: React.PointerEvent) => {
-      if (bienThe !== 'noi') return;
-      dayLenTren(khoa);
-      moc.current = { dx: e.clientX - viTri.x, dy: e.clientY - viTri.y };
-      setDangKeo(true);
-      e.currentTarget.setPointerCapture(e.pointerId);
-    },
-    [bienThe, khoa, viTri.x, viTri.y, dayLenTren],
-  );
-
-  const dangDiChuyen = useCallback(
-    (e: React.PointerEvent) => {
-      if (!moc.current) return;
-      datViTri(
-        khoa,
-        { x: e.clientX - moc.current.dx, y: e.clientY - moc.current.dy },
-        { w: KHUNG_VUA.w, h: KHUNG_VUA.h },
-        { w: window.innerWidth, h: window.innerHeight },
-      );
-    },
-    [khoa, datViTri],
-  );
-
-  const thoiKeo = useCallback((e: React.PointerEvent) => {
-    moc.current = null;
-    setDangKeo(false);
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
-  }, []);
-
-  /* BÀN PHÍM = CHUỘT (`SPEC-HOVER-FOCUS-IDF §3.6` + luật `outline-can-focus-visible`): thanh
-     tiêu đề nhận focus và dời CẢ CỤM bằng phím mũi tên. Không có đường này thì "kéo được" chỉ
-     đúng với người dùng chuột — đúng lỗ a11y mà đợt 16/08 đang vá ở chỗ khác. 16px một nhịp,
-     giữ Shift đi nhanh gấp 4. */
-  const phimDoiCho = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (bienThe !== 'noi') return;
-      const buoc = e.shiftKey ? 64 : 16;
-      const d: Record<string, [number, number]> = {
-        ArrowLeft: [-buoc, 0],
-        ArrowRight: [buoc, 0],
-        ArrowUp: [0, -buoc],
-        ArrowDown: [0, buoc],
-      };
-      const v = d[e.key];
-      if (!v) return;
-      e.preventDefault();
-      datViTri(
-        khoa,
-        { x: viTri.x + v[0], y: viTri.y + v[1] },
-        { w: KHUNG_VUA.w, h: KHUNG_VUA.h },
-        { w: window.innerWidth, h: window.innerHeight },
-      );
-    },
-    [bienThe, khoa, viTri.x, viTri.y, datViTri],
-  );
+  /* ⭐ KÉO — dùng MÁY CHUNG `useKeoBeMat`, không giữ bản riêng nữa (20/08).
+     Trước đây phần này là ~60 dòng pointer capture + phím mũi tên viết tại chỗ. Khi `BeMatNoi`
+     cũng cần kéo, giữ nguyên ở đây là có HAI bộ kéo — đúng thứ luật §17 cấm. Cơ chế đã rút ra
+     `components/ui/useKeoBeMat.ts`; mọi quyết định cũ giữ nguyên (pointer capture · Shift đi
+     nhanh gấp 4 · `touchAction:'none'`), và được THÊM hút mép + chặn kéo-nhầm-khi-đang-gõ.
+     Vị trí vẫn do `useCuaSoCongCuUi` giữ (cần THỨ TỰ CHỒNG giữa nhiều cửa sổ) — hook nhận kho
+     ngoài qua `viTriNgoai`/`onDoiCho`, nên không phải đổi kho. */
+  const keo = useKeoBeMat({
+    khoa,
+    co: { w: KHUNG_VUA.w, h: KHUNG_VUA.h },
+    batKeo: bienThe === 'noi',
+    viTriMoc: viTri,
+    viTriNgoai: viTri,
+    onDoiCho: (v) =>
+      datViTri(khoa, v, { w: KHUNG_VUA.w, h: KHUNG_VUA.h }, { w: window.innerWidth, h: window.innerHeight }),
+    onChamVao: () => dayLenTren(khoa),
+  });
 
   const bo = bienThe === 'toanMan' ? 0 : RADIUS.r3;
 
   const thanhTieuDe = (
     <div
-      onPointerDown={batKeo}
-      onPointerMove={dangDiChuyen}
-      onPointerUp={thoiKeo}
-      onPointerCancel={thoiKeo}
-      onKeyDown={phimDoiCho}
-      tabIndex={bienThe === 'noi' ? 0 : undefined}
+      {...keo.thuocTinhTieuDe}
       role={bienThe === 'noi' ? 'toolbar' : undefined}
       aria-label={
         bienThe === 'noi'
@@ -266,14 +226,13 @@ export default function CuaSoCongCu({
       // `nodrag`: trong canvas, ngăn xyflow cướp thao tác của thanh tiêu đề.
       className="nodrag"
       style={{
+        ...keo.thuocTinhTieuDe.style,
         flexShrink: 0,
         display: 'flex',
         alignItems: 'center',
         gap: 8,
         padding: '8px 10px 8px 12px',
         borderBottom: '1px solid var(--vien-mo)',
-        cursor: bienThe === 'noi' ? (dangKeo ? 'grabbing' : 'grab') : 'default',
-        touchAction: bienThe === 'noi' ? 'none' : undefined,
       }}
     >
       {bienThe === 'noi' && <GripHorizontal size={14} aria-hidden style={{ color: 'var(--t4)', flexShrink: 0 }} />}
@@ -345,7 +304,9 @@ export default function CuaSoCongCu({
             .filter((v) => v.neo === neo)
             // Nấc `vua` và `toanMan` bày đủ lệnh như nhau — khác nhau ở CHỖ ĐỨNG, không ở chỗ
             // giấu bớt lệnh (giấu theo nấc là bắt người dùng học hai bản đồ lệnh).
-            .map((v, i) => <PanelVeTinh key={v.id} v={v} thuTu={i} />),
+            .map((v, i) => (
+              <PanelVeTinh key={v.id} v={v} thuTu={i} khoa={khoa} trong={bienThe === 'toanMan'} />
+            )),
         )
       : null;
 

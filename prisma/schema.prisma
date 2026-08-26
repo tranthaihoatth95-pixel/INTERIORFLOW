@@ -109,6 +109,10 @@ model Project {
   // Bảng khởi tạo dự án 12/08 (SPEC-KHOI-TAO-DU-AN-2026-08-11 mảnh PLAN) — hồ sơ 60s.
   profile ProjectProfile?
 
+  // ══ MỚI 19/08 (Q5-SCHEMA, chuỗi Understand/Review→Promote→ProjectAssetUsage→H9) ══
+  files       ProjectFile[]
+  assetUsages ProjectAssetUsage[]
+
   @@index([larkProjectCode])
   @@index([deletedAt])
 }
@@ -310,6 +314,71 @@ model LibraryAsset {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // ══ MỚI 19/08 (Q5-SCHEMA) ══ — where-used: asset này đang được project nào REUSE.
+  usages ProjectAssetUsage[]
+
+  // ══ MỚI 20/08 (cửa duyệt 01, Hoà chốt) ══ VÂN TAY NỘI DUNG — sha256 hex của BINARY GỐC,
+  // CÙNG định nghĩa với `ProjectFile.contentHash` (hàm `bamContentHash`, app/api/project-files/
+  // _lib/luu-file.ts:63) ⇒ promote so trực tiếp, không tính lại.
+  // 🔴 CỐ Ý nullable và CỐ Ý KHÔNG @unique:
+  //  · nullable — asset cũ chưa backfill, và file mất trên đĩa (ca 410 có thật) thì để null,
+  //    chính báo cáo backfill là bản kiểm kê file chết.
+  //  · KHÔNG unique — hai tệp TRÙNG BYTES nhưng KHÁC GIẤY PHÉP là ca HỢP LỆ (license sống trong
+  //    `tags`, một hàng chỉ mang được một license). Và kho đang có trùng thật (đo 20/08: "Ảnh PDF
+  //    trang 15 — Westlake" ×7) ⇒ unique áp vào là đổ ngay lúc backfill.
+  //  ⇒ Chống trùng làm ở TẦNG CODE tại cửa nhập: cùng userId + cùng contentHash + cùng lớp
+  //    `license:` mới coi là một vật. Đừng "tiện tay" thêm @unique về sau — đọc lại đoạn này.
+  contentHash String?
+
+  // Nhiều cách thể hiện của CÙNG một danh tính (cửa duyệt 02) — xem model AssetRepresentation.
+  representations AssetRepresentation[]
+
+  @@index([deletedAt])
+  // Tra chống trùng LUÔN theo phạm vi người dùng (không có dedupe toàn cục — asset mang userId,
+  // dùng chung xuyên người là rò tài sản) ⇒ index GHÉP, không index contentHash trần.
+  @@index([userId, contentHash])
+}
+
+/// ══ MỚI 20/08 (cửa duyệt 02, Hoà chốt) ══ MỘT MÓN ĐỒ — NHIỀU CÁCH THỂ HIỆN.
+/// Ghế trong Thư viện là MỘT danh tính ngữ nghĩa; mặt bằng · mặt đứng · mặt cắt · khối 3D · ảnh
+/// là các CÁCH THỂ HIỆN của nó. Trước bảng này, khối 3D dựng từ ảnh không có chỗ lưu ⇒ mất khi
+/// đóng phiên (phát hiện của tuyến ảnh-thành-khối 20/08).
+/// ⛔ KHÔNG nhân bản LibraryAsset để chứa khối 3D — nhân bản là đẻ danh tính thứ hai cho cùng một vật.
+model AssetRepresentation {
+  id      String @id @default(cuid())
+  assetId String
+  /// plan | elevation | section | model3d | image — chuỗi tự do CÓ CHỦ ĐÍCH (cùng lối
+  /// `ExternalRef.system`): thêm kiểu thể hiện mới không phải migrate.
+  kind    String
+
+  /// Trỏ tới nơi chứa nội dung thật (đường dẫn uploads · id .idfc · khoá blob). KHÔNG nhúng
+  /// payload nặng vào cột — cùng luật `LibraryAsset.path` đang chạy.
+  payloadRef String
+
+  /// 🔴 MỨC SỰ THẬT — dùng lại NGUYÊN từ vựng ba nấc đang chạy (~509 chỗ trong code):
+  /// `measured` đo được · `inferred` máy suy · `verified` người đã ký.
+  /// LUẬT (Hoà chốt 15/08 + cửa duyệt 03): BOQ CHỈ nhận `measured`/`verified`.
+  /// Cửa duyệt 03: bấm "Nhận" KHÔNG tự nâng cả ba chiều lên `verified` — chỉ chiều nào người
+  /// GÕ LẠI SỐ mới được `verified`; chiều để nguyên vẫn là `inferred`.
+  truthLevel String @default("inferred")
+
+  /// Nguồn gốc: sinh từ đâu, bằng năng lực nào, tham số gì (JSON chuỗi — cùng lối `palette`).
+  provenance String @default("")
+
+  /// Ai đã ký xác nhận (null = chưa ai). Đi cùng `truthLevel = 'verified'`.
+  verifiedBy String?
+  verifiedAt DateTime?
+
+  createdBy String?
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  asset LibraryAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  // 🔴 CỐ Ý KHÔNG @@unique([assetId, kind]): một món CÓ THỂ có nhiều phương án cùng loại
+  // (hai khối 3D dựng từ hai ảnh khác nhau) — ràng buộc cứng sẽ cấm nhầm ca hợp lệ.
+  // Cùng bài học với `contentHash` ở trên.
+  @@index([assetId, kind])
   @@index([deletedAt])
 }
 
@@ -414,6 +483,19 @@ model ProductSpec {
   note         String?
   createdAt    DateTime  @default(now())
   syncedAt     DateTime?
+
+  // ── matId — IDENTITY của MATERIAL (19/08, Hoà chốt hòa giải Decision Conflict, SUPERSEDES
+  // luật cũ 07/08 "matId = ProductSpec.sku"). KHÁC HẲN `sku`: sku là business/external key
+  // (mutable — ATLAS được phép sync đổi sku mà KHÔNG đổi matId), matId là IF-owned immutable
+  // UUID sinh 1 lần, không phụ thuộc id/sku/ATLAS record id/.idfc meta.code. Domain: chỉ
+  // ProductSpec{kind:'material'} mang matId (registry `material-matid-uuid`) — furniture/
+  // lighting/millwork/fixture KHÔNG dùng trường này ở slice này (chưa có evidence cần).
+  // Quan hệ 1 UUID ↔ 1 ProductSpec.matId — KHÔNG có model mapping riêng cho tới khi có bằng
+  // chứng 1 material cần N ProductSpec (chưa có, xem docs/ADR-Q0-ARCHITECTURE-DECISIONS-2026-08-19.md).
+  // @unique GIỮ NULL cho nhiều dòng chưa backfill — SQLite/Prisma cho phép nhiều NULL trên cột
+  // @unique. Cột CHƯA MIGRATE — chủ dự án chạy `npx prisma db push && npx prisma generate` rồi
+  // mới chạy `scripts/backfill-material-matid.ts`. Xem lib/materials/matid-identity.ts.
+  matId        String?   @unique
 
   // ── 2.1.9.r (30/07) — mở rộng cho BOQ, THAY vì bảng AtlasMaterial riêng (Luật Đồng Bộ #6,
   // Hoà xác nhận): ProductSpec{kind:'material'} đã là "1 bảng duy nhất" theo Q-L2 trước đó, thêm
@@ -619,4 +701,107 @@ model ExternalRef {
   /// chiều ngược: từ thực thể lõi tra ra mọi id ngoài của nó.
   @@index([entityType, entityId])
   @@index([system])
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Q5-SCHEMA (19/08, chuỗi Hoà chốt: Q5 ProjectFile → Understand/Review → Promote →
+// LibraryAsset → ProjectAssetUsage → H9 context → downstream). SCHEMA-ONLY — model này
+// CHƯA push/generate; KHÔNG có code nào gọi prisma.projectFile.*/prisma.projectAssetUsage.*
+// tính tới thời điểm ghi đoạn này (Prisma Client sinh từ DB đã push, không sinh từ text
+// schema.prisma — gọi trước khi push sẽ không tsc-pass, đó là tín hiệu cấm, không phải lỗi).
+// Xem migration-plan: docs/memory/sessions/2026-08-19/18-q5-schema-migration-plan/README.md
+// ══════════════════════════════════════════════════════════════════════════
+
+// ProjectFile — raw/project-owned input, 1-N TRƯỚC Promote (chưa đủ định nghĩa để render/BOQ).
+// Đây là "ngăn dự án" trong luật Files-hai-ngăn (17/08 sáng → 17/08 tối: hai TẦNG, ngăn
+// "phần thô dùng chung" gộp vào thư mục Nhà cung cấp ở tầng ①, KHÔNG phải model này).
+model ProjectFile {
+  id          String  @id @default(cuid())
+  projectId   String
+  name        String
+  mime        String
+  path        String
+  contentHash String?
+  uploadedBy  String
+
+  // ══ MỚI 20/08 (Hoà chốt) ══ CỬA DUYỆT THẬT cho Promote.
+  // Trước đây cờ "Đã xem" chỉ sống trong state client ⇒ máy chủ không cưỡng chế được ⇒ UI ngụ ý
+  // một cổng duyệt KHÔNG TỒN TẠI. Ba cột dưới đây là chỗ lưu để cổng đó thành thật.
+  //
+  // `reviewState` — **PENDING** (mặc định, chưa ai xem) · **REVIEWED** (người đã xem, promote được)
+  // · **NEEDS_REVIEW** (đã xem và thấy có vấn đề, phải xử trước khi promote).
+  // 🔴 Khai là String CHỨ KHÔNG PHẢI enum Prisma — **cả schema này có 0 enum**, mọi tập giá trị
+  // đóng khác đều là String + giá trị ghi trong chú thích (`usage` · `kind` · `system` ·
+  // `truthLevel`). Thêm enum đầu tiên chỉ cho một cột là phá quy ước đang chạy và thêm ma sát
+  // migrate trên SQLite. Từ vựng được khoá bằng test phía code, không bằng kiểu DB.
+  reviewState String    @default("PENDING")
+  reviewedAt  DateTime?
+  // Id người duyệt — CÙNG quy ước `uploadedBy` ngay trên và `ProjectAssetUsage.addedBy`:
+  // chuỗi id, KHÔNG phải quan hệ Prisma. Đúng chỉ thị "dùng lại quan hệ danh tính đang có,
+  // đừng đẻ hệ danh tính thứ hai chỉ vì việc này".
+  reviewedBy  String?
+
+  // ══ convention chung mọi model mutable của repo (xem Project/ProjectMember/LibraryAsset ở
+  // trên, docs/IF-CORE-SCHEMA.md §1D/§2C) — rev cho hoà giải xung đột, deletedAt = xoá mềm
+  // (mọi query PHẢI lọc deletedAt: null), lastEditedBy/lastEditedDevice = truy vết.
+  uploadedAt       DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  rev              Int       @default(0)
+  deletedAt        DateTime?
+  lastEditedBy     String?
+  lastEditedDevice String?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([deletedAt])
+}
+
+// ProjectAssetUsage — join N-N Project↔LibraryAsset. Trả lời câu KHÁC với ProjectFile: đây là
+// vật ĐÃ QUA Promote (đã đủ định nghĩa, sống trong LibraryAsset/Master Library), và câu hỏi ở
+// đây là "project cụ thể này dùng asset đó để làm gì" — không phải "vật này còn thô hay đã
+// định nghĩa" (đó là ranh giới ProjectFile ↔ LibraryAsset).
+model ProjectAssetUsage {
+  id          String  @id @default(cuid())
+  projectId   String
+  assetId     String
+
+  // ══ TRANSITIONAL (Hoà chốt 19/08 khuya) ── optional string, KHÔNG FK. Model Workspace/
+  // Canvas (H9 — CẤP 0.5, chốt 11/08 §CẤP 0.5 + Reconciliation 19/08 "Project → nhiều
+  // Workspace → nhiều Canvas") CHƯA tồn tại trong schema này. workspaceId/canvasId ở đây chỉ
+  // là con trỏ ngữ cảnh dạng chuỗi tự do (id logic phía ứng dụng), giữ chỗ để downstream (chat/
+  // task-context/deep-link) đọc được "asset này đang dùng ở đâu" mà KHÔNG chặn bởi việc H9
+  // chưa xong. SAU KHI H9 CHỐT: audit lại — nếu Workspace/Canvas trở thành bảng thật, cân nhắc
+  // nâng cấp hai cột này thành relation FK thật; KHÔNG tự động nâng cấp bây giờ (đây là quyết
+  // định cần đo lại tại thời điểm đó, không suy diễn trước).
+  workspaceId String?
+  canvasId    String?
+
+  // ══ `usage` ở ĐÂY là câu hỏi KHÁC với LibraryAsset.usage. LibraryAsset.usage (dòng ~293,
+  // RefUsage) là phân loại CẤP-KHO/generic-default của bản thân asset lúc Promote (nó vốn là
+  // loại gì). `usage` ở đây là "PROJECT CỤ THỂ này đang dùng asset đó để làm gì" — một asset
+  // material có thể được project A dùng làm 'material' và project B dùng làm 'ref-render' cho
+  // một khung hình khác, hai usage độc lập nhau dù cùng asset. REUSE cùng vocabulary
+  // LIBRARY_USAGES (lib/server/library-save.ts:17: 'ref-render'|'slide'|'material'|'layout'|
+  // 'cad'|'brief'|'furniture') — KHÔNG phải taxonomy thứ ba, KHÔNG deprecate LibraryAsset.usage.
+  usage String
+
+  note    String?
+  addedBy String
+
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  project Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  asset   LibraryAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  // ⚠️ Re-verify theo yêu cầu Hoà (đối chiếu ProjectMember.@@unique([projectId,userId]),
+  // dòng ~140 phía trên): CÙNG VẤN ĐỀ tồn tại ở đây — deletedAt KHÔNG nằm trong @@unique bên
+  // dưới, nên gỡ một usage rồi thêm lại CÙNG (projectId, assetId, usage) sẽ đụng unique
+  // constraint vì hàng cũ (deletedAt đã set) vẫn còn đó. Chỗ gọi (route POST sau này) PHẢI
+  // "hồi sinh" hàng cũ (deletedAt: null) thay vì create mới — cùng khuôn xử lý với
+  // ProjectMember, xem comment tại đó. Ghi rõ trong migration-plan để không quên khi thi công.
+  @@unique([projectId, assetId, usage])
+  @@index([assetId]) // where-used: asset này dùng ở project nào
+  @@index([projectId]) // truy vấn nóng: project này dùng asset nào
 }

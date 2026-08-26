@@ -249,6 +249,16 @@ interface BaseElement {
   /** tên hiển thị trong ô quản lý layer (đổi được). Bỏ trống = tự đặt theo loại/nội dung. */
   name?: string;
   /**
+   * DEEP LINK khi TRÌNH CHIẾU (21/08, phục vụ demo "slide → mở ngữ cảnh sống"): đường dẫn
+   * NỘI BỘ app (`/projects/<id>/render`, `/files`…) — SlidePlayer render phần tử có href thành
+   * nút bấm được, bấm là LƯU MỐC quay-về (slide đang đứng, xem `present-return.ts`) rồi điều
+   * hướng. CHỈ tác dụng lúc trình chiếu — editor giữ nguyên hành vi chọn/kéo. Additive: deck cũ
+   * không có field này chạy y hệt trước; export PPTX/PDF bỏ qua (không phải siêu liên kết file).
+   * ⛔ Chỉ đường dẫn cùng origin bắt đầu bằng '/' — SlidePlayer kiểm tra trước khi push, không
+   * mở URL ngoài từ một cú bấm trình chiếu.
+   */
+  href?: string;
+  /**
    * Animation Pane theo object (mở rộng build-in slide-level cũ, xem `EditorSlide.reveal`):
    * ghi đè kiểu build-in RIÊNG cho phần tử này. Bỏ trống = kế thừa `slide.reveal ?? deck.reveal`
    * (HÀNH VI CŨ — mọi phần tử chung 1 kiểu, deck cũ trước tính năng này không có field → chạy

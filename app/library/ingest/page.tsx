@@ -9,9 +9,10 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import {
-  ingestFile, loadManifest, saveManifest, toAiManifest, byteSize, human,
+  ingestFile, loadManifest, saveManifest, hydrateRefManifest, toAiManifest, byteSize, human,
   USAGES, type RefAsset, type RefManifest, type RefUsage,
 } from '@/lib/refingest';
+import { buildGalleryTag } from '@/lib/library/gallery-tags';
 
 const TYPE_BADGE: Record<string, string> = { pdf: 'PDF', excel: 'XLS', cad: 'CAD', other: 'FILE' };
 
@@ -21,7 +22,11 @@ interface Pick {
   source: 'reference' | 'openverse' | 'unsplash';
   refId?: string; url?: string; thumb?: string; title?: string;
   credit?: string; license?: string; landing?: string;
+  // Unsplash ToS: endpoint đếm tải PHẢI ping khi user THỰC SỰ dùng ảnh (xem lib/stock-photos.ts).
+  downloadLocation?: string;
 }
+/** Trạng thái nút "Dùng ảnh này" mỗi pick — key = index trong mảng `picks`. */
+type SaveState = 'idle' | 'saving' | 'done' | 'error';
 const RANK_META: Record<string, { label: string; tone: string }> = {
   best: { label: 'Tốt nhất', tone: '#7C9A6B' },
   uncertain: { label: 'Phân vân', tone: '#C79A63' },
@@ -69,13 +74,17 @@ function IngestPageInner() {
   const [illusQuery, setIllusQuery] = useState('');
   const [picks, setPicks] = useState<Pick[] | null>(null);
   const [picking, setPicking] = useState(false);
+  const [picksSave, setPicksSave] = useState<Record<number, SaveState>>({});
   const inputRef = useRef<HTMLInputElement>(null);
   const mounted = useRef(false);
 
   useEffect(() => {
-    const m = loadManifest();
-    if (m) { setProject(m.project); setAssets(m.assets); }
-    mounted.current = true;
+    // W0.3: chờ IDB hydrate xong mới đọc — tránh nạp bản localStorage cũ rồi autosave đè ngược.
+    void hydrateRefManifest().then(() => {
+      const m = loadManifest();
+      if (m) { setProject(m.project); setAssets(m.assets); }
+      mounted.current = true;
+    });
   }, []);
 
   // autosave manifest (không thọc base64 gốc — chỉ thumbnail nhẹ)
@@ -83,12 +92,21 @@ function IngestPageInner() {
     if (mounted.current) saveManifest({ project, createdAt: new Date().toISOString(), assets });
   }, [project, assets]);
 
+  // R6 19/08 — nhận file đi qua MỘT CỬA Format Router (`ingestFile` → `classify` → `planUpload`,
+  // lib/gateway/upload.ts): hết cảnh trang này tự đoán đuôi riêng. Loại router chưa chưng cất
+  // được vẫn NHẬN (giữ tham chiếu metadata như cũ — không mất gì), nhưng NÓI THẬT qua notice.
   const add = async (files: FileList | File[]) => {
     setBusy(true);
     const arr = Array.from(files);
+    const chuaChungCat: string[] = [];
     for (const f of arr) {
       const a = await ingestFile(f);
+      if (a.type === 'other') chuaChungCat.push(a.name);
       setAssets((prev) => [...prev, a]);
+    }
+    if (chuaChungCat.length > 0) {
+      const vi = chuaChungCat.slice(0, 3).join(', ') + (chuaChungCat.length > 3 ? '…' : '');
+      setNotice(`${chuaChungCat.length} tệp chưa chưng cất được (${vi}) — vẫn giữ tham chiếu metadata, không mất bản gốc.`);
     }
     setBusy(false);
   };
@@ -156,8 +174,53 @@ function IngestPageInner() {
       const body = await res.json().catch(() => ({}));
       if (!res.ok) { setNotice(`Lỗi pick hình: ${body.error ?? res.status}`); return; }
       setPicks(body.picks ?? []);
+      setPicksSave({});
       if (body.searchError) setNotice(`Nguồn free lỗi: ${body.searchError}`);
     } finally { setPicking(false); }
+  };
+
+  // "Dùng ảnh này" — nối pick Openverse/Unsplash thành lưu THẬT vào Thư viện (19/08 CONNECT-1;
+  // trước đây chỉ set React state `picks`, không ghi đâu cả — dead-end). Server tự tải ảnh từ
+  // URL ngoài qua `POST /api/library/from-url`, gắn tag nguồn+giấy phép theo đúng quy ước
+  // `lib/library/gallery-tags.ts` (KHÔNG tự chế cú pháp tag mới).
+  const useIllustration = async (p: Pick, idx: number) => {
+    if (p.source === 'reference' || !p.url) return; // đã có sẵn trong Thư viện — không lưu lại
+    setPicksSave((prev) => ({ ...prev, [idx]: 'saving' }));
+    setNotice(null);
+    try {
+      const tags = [
+        buildGalleryTag('nguon', p.source),
+        p.license ? buildGalleryTag('license', p.license) : null,
+      ].filter(Boolean).join(',');
+      const res = await fetch('/api/library/from-url', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: p.url,
+          name: p.title || `${p.source} ${illusQuery}`.slice(0, 120),
+          category: 'reference',
+          tags,
+          usage: 'ref-render',
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setPicksSave((prev) => ({ ...prev, [idx]: 'error' }));
+        setNotice(`Không lưu được ảnh: ${body.error ?? res.status}`);
+        return;
+      }
+      // Unsplash ToS: PHẢI ping đếm tải khi user thực sự dùng ảnh — lỗi thì bỏ qua, không chặn.
+      if (p.source === 'unsplash' && p.downloadLocation) {
+        void fetch('/api/stock-photos', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'use', downloadLocation: p.downloadLocation }),
+        }).catch(() => {});
+      }
+      setPicksSave((prev) => ({ ...prev, [idx]: 'done' }));
+      setNotice(`Đã lưu "${p.title || p.source}" vào Thư viện.`);
+    } catch {
+      setPicksSave((prev) => ({ ...prev, [idx]: 'error' }));
+      setNotice('Không kết nối được server để lưu ảnh.');
+    }
   };
 
   const manifest: RefManifest = { project, createdAt: new Date().toISOString(), assets };
@@ -267,6 +330,20 @@ function IngestPageInner() {
                     {/* GHI CÔNG — Unsplash/CC đều bắt buộc hiện tên tác giả. */}
                     {p.source !== 'reference' && p.credit && (
                       <p style={{ fontSize: 9.5, color: '#8B887F', margin: '3px 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`© ${p.credit}`}>© {p.credit}</p>
+                    )}
+                    {p.source !== 'reference' && (
+                      <button
+                        onClick={() => useIllustration(p, i)}
+                        disabled={picksSave[i] === 'saving' || picksSave[i] === 'done'}
+                        style={{
+                          width: '100%', marginTop: 6, fontSize: 10.5, borderRadius: 6, padding: '4px 6px', cursor: 'pointer',
+                          background: picksSave[i] === 'done' ? '#7C9A6B22' : 'none',
+                          border: `1px solid ${picksSave[i] === 'done' ? '#7C9A6B66' : picksSave[i] === 'error' ? '#9A6B8466' : `${tone}66`}`,
+                          color: picksSave[i] === 'done' ? '#9FCB8B' : picksSave[i] === 'error' ? '#D89AB0' : tone,
+                        }}
+                      >
+                        {picksSave[i] === 'saving' ? 'Đang lưu…' : picksSave[i] === 'done' ? '✓ Đã vào Thư viện' : picksSave[i] === 'error' ? '↺ Thử lại' : 'Dùng ảnh này'}
+                      </button>
                     )}
                   </div>
                 </div>

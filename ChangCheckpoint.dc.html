@@ -1,0 +1,165 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><script src="./support.js"></script></head><body><x-dc>
+<helmet><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@200;300;400;500;600&display=swap">
+<style>
+  body{margin:0;font-family:'Be Vietnam Pro',-apple-system,system-ui,sans-serif;}
+  .nhan{font-size:10.5px;letter-spacing:.09em;color:#96918a;margin-bottom:11px;}
+  .ghi{font-size:11.5px;color:#6e6a62;line-height:1.62;margin-top:10px;}
+  .ghi b{font-weight:500;color:#46433d;}
+  .o{border-radius:20px;background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.85);padding:16px 18px;}
+  .ma{letter-spacing:.13em;font-variant-numeric:tabular-nums;}
+  .khung{border-radius:18px;background:#fdfcfa;box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 14px 32px -28px rgba(60,52,40,.45);}
+  @keyframes hut { 0%,100%{opacity:.3} 50%{opacity:1} }
+  .s1{animation:hut 1.4s ease-in-out infinite} .s2{animation:hut 1.4s ease-in-out .16s infinite}
+  .s3{animation:hut 1.4s ease-in-out .32s infinite}
+  @media (prefers-reduced-motion: reduce){ .s1,.s2,.s3{animation:none;opacity:.75} }
+</style></helmet>
+
+<div style="width:1780px;height:1080px;box-sizing:border-box;padding:30px 34px;color:#22201c;background:#f7f6f3;">
+
+  <div style="font-size:15px;font-weight:600;letter-spacing:-.01em;">Checkpoint của chặng — <span style="font-weight:400">luồng tự động DỪNG ở chỗ cần người, không tự vượt</span></div>
+  <div class="ghi" style="max-width:1240px;margin:8px 0 20px;">
+    Mỗi chặng có <b>vài câu hỏi CÓ/KHÔNG</b> phải trả lời xong mới đi tiếp — cảm giác cổng MVP.
+    Máy làm được phần nào thì làm, nhưng <b>đụng checkpoint cần người là nó ĐỨNG LẠI VÀ NÓI</b>.
+    Đó là toàn bộ khác biệt giữa <i>tự động</i> và <i>tự tiện</i>.
+  </div>
+
+  <div style="display:flex;gap:20px;align-items:flex-start;">
+
+    <!-- CHẶNG -->
+    <div style="width:392px;">
+      <div class="nhan">CHẶNG CỦA CÔNG TRÌNH</div>
+      <div class="khung" style="padding:10px;box-sizing:border-box;">
+        <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;"><span class="ma" style="font-size:10px;color:#c9c5bc;width:18px;flex-shrink:0;">00</span><span style="width:7px;height:7px;border-radius:999px;background:#4aa88a;flex-shrink:0;"></span><span style="font-size:12.5px;color:#22201c;flex-grow:1;">Hồ sơ đầu vào</span><span style="font-size:9.5px;color:#4aa88a;">xong</span></div>
+        <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;"><span class="ma" style="font-size:10px;color:#c9c5bc;width:18px;flex-shrink:0;">01</span><span style="width:7px;height:7px;border-radius:999px;background:#4aa88a;flex-shrink:0;"></span><span style="font-size:12.5px;color:#22201c;flex-grow:1;">Hiện trạng</span><span style="font-size:9.5px;color:#4aa88a;">xong</span></div>
+        <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;"><span class="ma" style="font-size:10px;color:#c9c5bc;width:18px;flex-shrink:0;">02</span><span style="width:7px;height:7px;border-radius:999px;background:#4aa88a;flex-shrink:0;"></span><span style="font-size:12.5px;color:#22201c;flex-grow:1;">Ý tưởng</span><span style="font-size:9.5px;color:#4aa88a;">xong</span></div>
+        <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;background:#fff;box-shadow:0 2px 7px -4px rgba(60,52,40,.26);"><span class="ma" style="font-size:10px;color:#c9c5bc;width:18px;flex-shrink:0;">03</span><span style="width:7px;height:7px;border-radius:999px;background:#c9843e;flex-shrink:0;"></span><span style="font-size:12.5px;color:#22201c;flex-grow:1;">Bản vẽ</span><span style="font-size:9.5px;color:#c9843e;">TẮC · chờ người</span></div>
+        <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;"><span class="ma" style="font-size:10px;color:#c9c5bc;width:18px;flex-shrink:0;">04</span><span style="width:7px;height:7px;border-radius:999px;background:#1f7f88;flex-shrink:0;"></span><span style="font-size:12.5px;color:#22201c;flex-grow:1;">Ba chiều</span><span style="font-size:9.5px;color:#1f7f88;">đang chạy</span></div>
+        <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;"><span class="ma" style="font-size:10px;color:#c9c5bc;width:18px;flex-shrink:0;">05</span><span style="width:7px;height:7px;border-radius:999px;background:#1f7f88;flex-shrink:0;"></span><span style="font-size:12.5px;color:#22201c;flex-grow:1;">Vật liệu</span><span style="font-size:9.5px;color:#1f7f88;">đang chạy</span></div>
+        <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;"><span class="ma" style="font-size:10px;color:#c9c5bc;width:18px;flex-shrink:0;">06</span><span style="width:7px;height:7px;border-radius:999px;background:#c9c5bc;flex-shrink:0;"></span><span style="font-size:12.5px;color:#b5b0a8;flex-grow:1;">Trình bày</span><span style="font-size:9.5px;color:#c9c5bc;">chưa tới</span></div>
+        <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;"><span class="ma" style="font-size:10px;color:#c9c5bc;width:18px;flex-shrink:0;">07</span><span style="width:7px;height:7px;border-radius:999px;background:#c9c5bc;flex-shrink:0;"></span><span style="font-size:12.5px;color:#b5b0a8;flex-grow:1;">Thi công</span><span style="font-size:9.5px;color:#c9c5bc;">chưa tới</span></div>
+        <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;"><span class="ma" style="font-size:10px;color:#c9c5bc;width:18px;flex-shrink:0;">08</span><span style="width:7px;height:7px;border-radius:999px;background:#c9c5bc;flex-shrink:0;"></span><span style="font-size:12.5px;color:#b5b0a8;flex-grow:1;">Bàn giao</span><span style="font-size:9.5px;color:#c9c5bc;">chưa tới</span></div>
+      </div>
+      <div class="ghi">Chặng <b>không khoá nhau cứng</b> — 04 và 05 chạy song song được.
+        Nhưng <b>06 không mở được</b> khi 03 còn tắc: không thể đưa khách xem bản vẽ chưa chốt.</div>
+    </div>
+
+    <!-- CHECKPOINT -->
+    <div style="width:452px;">
+      <div class="nhan">03 · BẢN VẼ — bốn checkpoint</div>
+      <div class="khung" style="padding:14px 16px;box-sizing:border-box;">
+        <div style="display:flex;align-items:flex-start;gap:11px;padding:9px 0;border-top:1px solid rgba(120,110,90,.14);"><div style="width:22px;height:22px;border-radius:999px;background:#4aa88a;display:grid;place-items:center;flex-shrink:0;margin-top:1px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12l3 3 5-6"/></svg></div><div style="flex-grow:1;"><div style="font-size:12.5px;color:#22201c;line-height:1.4;">Mặt bằng khép kín, không hở tường</div><div style="display:flex;gap:8px;margin-top:4px;"><span style="font-size:9px;letter-spacing:.1em;color:#4aa88a;">máy đã làm</span><span style="font-size:9.5px;color:#b5b0a8;">tự kiểm 26/08</span></div></div></div>
+        <div style="display:flex;align-items:flex-start;gap:11px;padding:9px 0;border-top:1px solid rgba(120,110,90,.14);"><div style="width:22px;height:22px;border-radius:999px;background:#4aa88a;display:grid;place-items:center;flex-shrink:0;margin-top:1px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12l3 3 5-6"/></svg></div><div style="flex-grow:1;"><div style="font-size:12.5px;color:#22201c;line-height:1.4;">Mọi kích thước chính đã ghi</div><div style="display:flex;gap:8px;margin-top:4px;"><span style="font-size:9px;letter-spacing:.1em;color:#4aa88a;">máy đã làm</span><span style="font-size:9.5px;color:#b5b0a8;">tự kiểm 26/08</span></div></div></div>
+        <div style="display:flex;align-items:flex-start;gap:11px;padding:9px 0;border-top:1px solid rgba(120,110,90,.14);"><div style="width:22px;height:22px;border-radius:999px;background:#c9843e;display:grid;place-items:center;flex-shrink:0;margin-top:1px;box-shadow:0 0 0 4px rgba(201,132,62,.18);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16v.01"/></svg></div><div style="flex-grow:1;"><div style="font-size:12.5px;color:#22201c;line-height:1.4;">Cao độ trần bếp — số đo lệch 60 so với hiện trạng</div><div style="display:flex;gap:8px;margin-top:4px;"><span style="font-size:9px;letter-spacing:.1em;color:#c9843e;">CHỜ NGƯỜI</span><span style="font-size:9.5px;color:#b5b0a8;">Hoà phải quyết</span></div></div></div>
+        <div style="display:flex;align-items:flex-start;gap:11px;padding:9px 0;border-top:1px solid rgba(120,110,90,.14);"><div style="width:22px;height:22px;border-radius:999px;background:#c9c5bc;display:grid;place-items:center;flex-shrink:0;margin-top:1px;"></div><div style="flex-grow:1;"><div style="font-size:12.5px;color:#b5b0a8;line-height:1.4;">Khung tên đọc Brand Kit của công trình</div><div style="display:flex;gap:8px;margin-top:4px;"><span style="font-size:9px;letter-spacing:.1em;color:#c9c5bc;">chưa tới</span></div></div></div>
+        <div style="display:flex;gap:9px;margin-top:14px;padding-top:13px;border-top:1px solid rgba(120,110,90,.16);">
+          <div style="flex-grow:1;padding:9px 0;text-align:center;border-radius:11px;font-size:12px;font-weight:600;color:#fff;
+               background:radial-gradient(126% 168% at 50% 46%,transparent 0 88%,#a79bf9 95%,#c3bbfb 100%),
+                          radial-gradient(112% 138% at 50% 40%,#9184f8 0%,#6a57f5 40%,#4c3cc0 74%,#372b8c 88%,transparent 93%),
+                          linear-gradient(180deg,#4838ad,#332880);">Lấy 2 700 · theo hiện trạng</div>
+          <div style="flex-grow:1;padding:9px 0;text-align:center;border-radius:11px;
+               background:rgba(120,110,90,.12);font-size:12px;color:#46433d;">Giữ 2 760 · sửa hiện trạng</div>
+        </div>
+        <div style="font-size:10.5px;color:#96918a;line-height:1.6;margin-top:11px;">
+          Máy <b style="color:#46433d;font-weight:500;">bày đủ hai đường và hậu quả</b>,
+          nhưng <b style="color:#46433d;font-weight:500;">không chọn hộ</b>. Đây là số đo sẽ đi vào hồ sơ thi công.
+        </div>
+      </div>
+    </div>
+
+    <!-- WIDGET -->
+    <div style="flex-grow:1;">
+      <div class="nhan">WIDGET TIẾN TRÌNH — hạng L, đặt được lên Trang chủ</div>
+      <div style="border-radius:22px;padding:5px;box-sizing:border-box;background:rgba(255,255,255,.5);
+           border:1px solid rgba(255,255,255,.8);backdrop-filter:blur(18px);
+           box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 18px 40px -26px rgba(60,52,40,.5);">
+        <div style="border-radius:17px;background:#fff;padding:17px 19px;">
+          <div style="display:flex;align-items:baseline;gap:10px;">
+            <span style="font-size:10.5px;letter-spacing:.09em;color:#96918a;">LUỒNG TỰ ĐỘNG</span>
+            <span style="flex-grow:1;"></span>
+            <span style="font-size:10.5px;color:#c9843e;">đang TẮC ở 03</span>
+          </div>
+
+          <!-- dải chặng -->
+          <div style="display:flex;gap:3px;margin-top:14px;">
+            <div style="flex-grow:1;height:6px;border-radius:3px;background:#4aa88a;"></div><div style="flex-grow:1;height:6px;border-radius:3px;background:#4aa88a;"></div><div style="flex-grow:1;height:6px;border-radius:3px;background:#4aa88a;"></div><div style="flex-grow:1;height:6px;border-radius:3px;background:#c9843e;"></div><div style="flex-grow:1;height:6px;border-radius:3px;background:#1f7f88;"></div><div style="flex-grow:1;height:6px;border-radius:3px;background:#1f7f88;"></div><div style="flex-grow:1;height:6px;border-radius:3px;background:#dad6cd;"></div><div style="flex-grow:1;height:6px;border-radius:3px;background:#dad6cd;"></div><div style="flex-grow:1;height:6px;border-radius:3px;background:#dad6cd;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:7px;">
+            <span style="font-size:9px;color:#b5b0a8;">00</span>
+            <span style="font-size:9px;color:#c9843e;">03</span>
+            <span style="font-size:9px;color:#b5b0a8;">08</span>
+          </div>
+
+          <div style="height:1px;background:rgba(120,110,90,.16);margin:16px 0 14px;"></div>
+
+          <!-- việc máy đang chạy -->
+          <div style="display:flex;align-items:center;gap:11px;margin-bottom:11px;">
+            <div style="display:flex;align-items:center;gap:2.5px;">
+              <div class="s1" style="width:3px;height:7px;border-radius:2px;background:#1f7f88;"></div><div class="s2" style="width:3px;height:12px;border-radius:2px;background:#1f7f88;"></div><div class="s3" style="width:3px;height:16px;border-radius:2px;background:#1f7f88;"></div><div class="s1" style="width:3px;height:12px;border-radius:2px;background:#1f7f88;"></div><div class="s2" style="width:3px;height:7px;border-radius:2px;background:#1f7f88;"></div>
+            </div>
+            <div style="flex-grow:1;">
+              <div style="font-size:12.5px;color:#22201c;">Kết xuất phòng khách</div>
+              <div style="font-size:10px;color:#96918a;margin-top:2px;">04 · Ba chiều — máy tự chạy tiếp được</div>
+            </div>
+            <span style="font-size:11px;color:#96918a;font-variant-numeric:tabular-nums;">~6 phút</span>
+          </div>
+
+          <!-- chỗ tắc -->
+          <div style="display:flex;gap:11px;align-items:flex-start;padding:12px 13px;border-radius:13px;
+               background:rgba(201,132,62,.1);border:1px solid rgba(201,132,62,.26);">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b5762f" stroke-width="1.7"
+                 stroke-linecap="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v5M12 16v.01"/></svg>
+            <div style="flex-grow:1;">
+              <div style="font-size:12px;color:#7a5220;line-height:1.5;">
+                Luồng <b style="font-weight:500;">đã dừng</b> ở 03 · Bản vẽ.
+                Một checkpoint cần anh quyết: <b style="font-weight:500;">cao độ trần bếp</b>.</div>
+              <div style="display:flex;gap:8px;margin-top:11px;">
+                <div style="padding:7px 15px;border-radius:10px;background:#22201c;font-size:11.5px;color:#f7f6f3;">Xem và quyết</div>
+                <div style="padding:7px 15px;border-radius:10px;background:rgba(120,110,90,.14);font-size:11.5px;color:#46433d;">Để sau</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="font-size:10.5px;color:#96918a;line-height:1.6;margin-top:13px;">
+            Bốn chặng sau <b style="color:#46433d;font-weight:500;">vẫn chạy được</b> — luồng chỉ đứng ở nhánh
+            đi qua 03. Không có việc "đứng hết vì một chỗ".
+          </div>
+        </div>
+      </div>
+      <div class="ghi">Widget này là <b>hạng L</b> theo luật widget: vành kính, lõi đặc.
+        Không có việc nào chạy và không chỗ nào tắc thì nó <b>rút xuống hạng S một dòng</b> —
+        không giữ nguyên khối to để bày một dải xanh cho đẹp.</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:20px;margin-top:24px;">
+    <div class="o" style="flex-grow:1;">
+      <div class="nhan" style="margin-bottom:10px;">LUẬT CHECKPOINT — sáu điều</div>
+      <div style="font-size:12.5px;color:#46433d;line-height:1.9;">
+        <b>1 · CHECKPOINT LÀ CÂU HỎI CÓ/KHÔNG</b>, không phải phần trăm.
+        "Mặt bằng đã khép kín chưa" trả lời được; "bản vẽ xong 70%" thì không có nghĩa gì.<br>
+        <b>2 · MÁY KHÔNG TỰ TICK CHECKPOINT CẦN NGƯỜI.</b> Đây là luật quan trọng nhất ở đây.
+        Máy tự kiểm được thì tự tick; đụng thứ cần một quyết định nghề thì <b>đứng lại và nói</b>.<br>
+        <b>3 · DỪNG THÌ PHẢI NÓI DỪNG Ở ĐÂU VÀ VÌ SAO</b>, kèm <b>đủ hai đường và hậu quả</b> —
+        không bày một nút "Tiếp tục" mù.<br>
+        <b>4 · TẮC MỘT NHÁNH KHÔNG ĐỨNG CẢ LUỒNG.</b> Chặng nào không phụ thuộc thì chạy tiếp.<br>
+        <b>5 · KHÔNG CÓ PHẦN TRĂM TỔNG.</b> Chín chặng nặng nhẹ khác nhau; cộng lại ra một con số là bịa.
+        Dải chín ô nói được nhiều hơn, và <b>không nói dối</b>.<br>
+        <b>6 · CHECKPOINT DO CHẶNG ĐỊNH NGHĨA, KHÔNG DO NGƯỜI DÙNG THÊM BỚT.</b>
+        Ai cũng tự đặt cổng riêng thì <b>không so được hai công trình</b>, và cây thư mục 00→08 mất nghĩa.
+      </div>
+    </div>
+    <div class="o" style="width:520px;">
+      <div class="nhan" style="margin-bottom:10px;">"TỰ ĐỘNG" KHÁC "TỰ TIỆN"</div>
+      <div style="font-size:12.5px;color:#46433d;line-height:1.9;">
+        Một luồng end-to-end chạy tuột từ đầu tới cuối <b>nghe thì sướng</b>, nhưng nó
+        <b>ăn mất chỗ người làm nghề tạo ra giá trị</b> — và khi ra sai thì không ai chỉ được nó sai từ đâu.
+        <br><br>Checkpoint là chỗ <b>trả quyền quyết về cho người</b>, và cũng là chỗ
+        <b>ghi lại quyết định đó kèm lý do</b>. Ba tháng sau tra lại, câu "vì sao trần 2 700"
+        <b>có câu trả lời</b>.
+        <br><br>Đây cũng là luật số 5 của dự án nói cách khác: <b>không tự tin giả</b>.
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc></body></html>

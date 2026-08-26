@@ -20,6 +20,7 @@ import {
   KHUNG_VUA,
   KHUNG_VUA_MIN,
   khoaCuaSoNode,
+  moiTruongChoDefType,
   theViecChoDefType,
 } from '@/lib/nodes/cua-so-cong-cu';
 import { useCuaSoCongCuUi } from '@/lib/nodes/cua-so-cong-cu-ui';
@@ -40,9 +41,9 @@ export { ParamField };
 
 function StatusIcon({ status }: { status: string }) {
   if (status === 'running' || status === 'queued')
-    return <Loader2 size={13} className="animate-spin text-[var(--accent)]" />;
-  if (status === 'done') return <CircleCheck size={13} className="text-emerald-400" />;
-  if (status === 'error') return <CircleAlert size={13} className="text-red-400" />;
+    return <Loader2 size={14} className="animate-spin text-[var(--accent)]" />;
+  if (status === 'done') return <CircleCheck size={14} className="text-emerald-400" />;
+  if (status === 'error') return <CircleAlert size={14} className="text-red-400" />;
   return null;
 }
 
@@ -58,10 +59,15 @@ function InteriorNodeInner({ id, data, selected, width, height }: NodeProps<Flow
      Node nào có thẻ việc tương ứng thì mở ra được thành cụm cửa sổ NGAY TẠI CHỖ — không phải hộp
      thoại nổi trên canvas như trước. Nấc lưu ngoài `data` (xem `cua-so-cong-cu-ui.ts`): nó là
      CÁCH NHÌN, không phải nội dung tài liệu, nên không được đi theo bản lưu/chia sẻ/xuất. */
+  /* 🔴 22/08 — điều kiện mở cửa sổ đổi từ "CÓ THẺ VIỆC" sang "THUỘC MỘT MÔI TRƯỜNG". Thẻ việc
+     12/12 là node ảnh, nên bám vào nó là khoá cửa sổ lại ở đúng một môi trường; `three.*` và
+     `*2video` khi ấy không mở nổi cửa sổ nào dù bảng `MOI_TRUONG` đã khai sẵn vệ tinh cho chúng.
+     `cardId` vẫn giữ — nó cho tiêu đề + ảnh Trước/Sau khi node đó có thẻ. */
+  const moiTruong = moiTruongChoDefType(data.defType);
   const cardId = theViecChoDefType(data.defType);
   const khoaCua = khoaCuaSoNode(id);
   const capCua = useCuaSoCongCuUi((s) => s.bang[khoaCua]?.cap ?? 'thu');
-  const moRong = cardId !== null && capCua !== 'thu';
+  const moRong = moiTruong !== null && capCua !== 'thu';
   /* Dây nối — chỉ để dựng ĐỊNH NGHĨA của kết quả ("định nghĩa file = kết quả", Hoà 15/08):
      phần "nuôi bởi" cần biết node nào đang chảy vào node này. */
   const edges = useFlowStore((s) => s.edges);
@@ -114,7 +120,7 @@ function InteriorNodeInner({ id, data, selected, width, height }: NodeProps<Flow
       <HopCongCuBamVat
         nodeId={id}
         hien={Boolean(selected)}
-        laCuaSo={cardId !== null}
+        laCuaSo={moiTruong !== null}
         dangChay={busy}
         loi={status === 'error'}
       />
@@ -136,7 +142,7 @@ function InteriorNodeInner({ id, data, selected, width, height }: NodeProps<Flow
       {/* ── NẤC MỞ: thân node LÀ cụm cửa sổ công cụ. Không portal, không `position:fixed` — nó
           THUỘC canvas nên pan/zoom theo, kéo theo node, và giữ nguyên cổng vào/ra bên dưới để
           nối sang cửa sổ kế (Hoà 15/08). Ruột là chính node này nhìn gần, không phải màn khác. */}
-      {moRong && cardId && <ToolWindow cardId={cardId} nodeId={id} />}
+      {moRong && <ToolWindow cardId={cardId ?? undefined} nodeId={id} />}
 
       {/* ── NẤC THU: khối nhỏ như cũ. Phải ĐỦ TỰ THÂN — che hai nấc kia đi vẫn đứng được một mình
           (Hoà 16/08: *"luôn gọn và tươm tất ở lớp mặc định"*). */}
@@ -179,7 +185,7 @@ function InteriorNodeInner({ id, data, selected, width, height }: NodeProps<Flow
           onClick={() => runNode(id)}
           className="nodrag grid h-6 w-6 place-items-center rounded-md bg-[var(--accent-strong)] text-white transition-colors hover:bg-[var(--accent)] disabled:opacity-40"
         >
-          {status === 'error' ? <RotateCcw size={12} /> : <Play size={12} className="translate-x-[1px]" />}
+          {status === 'error' ? <RotateCcw size={14} /> : <Play size={14} className="translate-x-[1px]" />}
         </motion.button>
         <motion.button
           {...pressableIcon}
@@ -188,7 +194,7 @@ function InteriorNodeInner({ id, data, selected, width, height }: NodeProps<Flow
           onClick={() => deleteNode(id)}
           className="nodrag grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-red-500/15 hover:text-red-400 disabled:opacity-40"
         >
-          <X size={13} />
+          <X size={14} />
         </motion.button>
       </div>
 

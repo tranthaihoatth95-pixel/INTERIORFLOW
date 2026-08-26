@@ -135,20 +135,20 @@ export default function SlideStrip({
           </button>
           <div style={{ display: 'flex', gap: 4, marginTop: 4, justifyContent: 'center' }}>
             <IconBtn title="Lên" onClick={() => onMove(i, -1)} disabled={i === 0}>
-              <ChevronUp size={13} />
+              <ChevronUp size={14} />
             </IconBtn>
             <IconBtn title="Xuống" onClick={() => onMove(i, 1)} disabled={i === deck.slides.length - 1}>
-              <ChevronDown size={13} />
+              <ChevronDown size={14} />
             </IconBtn>
             <IconBtn title="Nhân bản" onClick={() => onDuplicate(i)}>
-              <Copy size={13} />
+              <Copy size={14} />
             </IconBtn>
             <IconBtn
               title="Xoá"
               onClick={() => onDelete(i)}
               disabled={deck.slides.length <= 1}
             >
-              <Trash2 size={13} />
+              <Trash2 size={14} />
             </IconBtn>
           </div>
         </div>

@@ -39,6 +39,8 @@ export async function openFlow(id: string) {
       body.flow.id,
       body.flow.shareToken,
       body.flow.projectId ?? null,
+      // H11 (19/08) — rev flow đang cầm; persistNow gửi lại đúng số này làm expectedRev.
+      typeof body.flow.rev === 'number' ? body.flow.rev : undefined,
     );
 }
 

@@ -115,15 +115,15 @@ export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
       style={{ height: 44, borderRadius: 22, padding: 5 }}
     >
       <Btn title="Select (V)" active={tool === 'select'} onClick={() => setTool('select')}>
-        <MousePointer2 size={15} />
+        <MousePointer2 size={18} />
       </Btn>
       <Btn title="Pan (Space giữ / H)" active={tool === 'pan'} onClick={() => setTool('pan')}>
-        <Hand size={15} />
+        <Hand size={18} />
       </Btn>
       {/* G2 phần (1) — kéo-vẽ khung phòng trên nền canvas (SPEC-CHANG2-UI-2MODE §1 thứ tự
           "chọn · pan · frame"). Logic vẽ ở FlowCanvas.tsx (pointerdown/move/up khi tool='frame'). */}
       <Btn title="Khung phòng — kéo vẽ khung trên nền canvas" active={tool === 'frame'} onClick={() => setTool('frame')}>
-        <FrameIcon size={15} />
+        <FrameIcon size={18} />
       </Btn>
       {/* G4-1a (đêm 04/08) — lối vào bảng bút vẽ tay: DrawToolbar không còn đứng thường trực,
           chỉ hiện khi 1 tool vẽ active. Nút này bật tool 'pen' → bảng bút trồi ra mép trái. */}
@@ -132,41 +132,41 @@ export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
         active={tool === 'pen' || tool === 'marker' || tool === 'highlight' || tool === 'eraser'}
         onClick={() => setTool('pen')}
       >
-        <Pen size={15} />
+        <Pen size={18} />
       </Btn>
       <Btn title="Sticky note" onClick={onAddNote}>
-        <StickyNote size={15} />
+        <StickyNote size={18} />
       </Btn>
       <Divider />
       <Btn title={`Undo (${modKey('Z')})`} disabled={!canUndo} onClick={undo}>
-        <Undo2 size={15} />
+        <Undo2 size={18} />
       </Btn>
       <Btn title={`Redo (${modShiftKey('Z')})`} disabled={!canRedo} onClick={redo}>
-        <Redo2 size={15} />
+        <Redo2 size={18} />
       </Btn>
       <Divider />
       <Btn title="Zoom out" onClick={() => zoomOut()}>
-        <Minus size={15} />
+        <Minus size={18} />
       </Btn>
       <span className="w-11 shrink-0 text-center text-[11px] tabular-nums text-[var(--t3)]">
         {Math.round(zoom * 100)}%
       </span>
       <Btn title="Zoom in" onClick={() => zoomIn()}>
-        <Plus size={15} />
+        <Plus size={18} />
       </Btn>
       <Btn title="Fit view" onClick={() => fitView({ padding: 0.2 })}>
-        <Maximize size={15} />
+        <Maximize size={18} />
       </Btn>
       <Divider />
       {/* A5 (DS-A 14/08, SPEC-NGON-NGU): bỏ jargon "graph/auto-layout" khỏi UI */}
       <Btn title="Tự dàn bảng" onClick={() => autoLayout()}>
-        <LayoutGrid size={15} />
+        <LayoutGrid size={18} />
       </Btn>
       <Btn title={`Snap lưới: ${snapGrid ? 'đang bật' : 'đang tắt'}`} active={snapGrid} onClick={() => toggleSnap()}>
-        <Grid3x3 size={15} />
+        <Grid3x3 size={18} />
       </Btn>
       <Btn title={`Command palette (${modKey('K')})`} onClick={() => setPaletteOpen(true)}>
-        <Command size={15} />
+        <Command size={18} />
       </Btn>
       <Divider />
       <ModeSwitchCell />

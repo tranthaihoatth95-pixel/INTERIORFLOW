@@ -1,0 +1,1102 @@
+<!-- @dsCard group="Home" -->
+<meta charset="utf-8" />
+<title>HOME · Dùng lần đầu — xưởng đã là chỗ của tôi</title>
+
+<style>
+  /* ============================================================================
+     TOKEN MIRROR — chép NGUYÊN BYTE từ app/globals.css (đọc 22/08), cùng khối với
+     claude-home-living-canvas-final.html. Đây là khối DUY NHẤT được phép có hex.
+     ============================================================================ */
+  :root {
+    --accent: #6a57f5;
+    --accent-strong: #553ff3;
+    --accent-soft: rgba(106, 87, 245, 0.14);
+    --accent-ring: rgba(106, 87, 245, 0.55);
+    --on-accent: #ffffff;
+    --r-1: 6px;
+    --r-2: 10px;
+    --r-3: 14px;
+    --r-4: 20px;
+    --r-full: 999px;
+    --fs-2xs: 11px;
+    --fs-xs: 12px;
+    --fs-sm: 14px;
+    --fs-md: 16px;
+    --fs-lg: 20px;
+    --fs-xl: 28px;
+    --ease-apple: cubic-bezier(0.32, 0.72, 0, 1);
+    --dur-fast: 0.18s;
+    --dur-base: 0.32s;
+    --nhip-bam: 130ms;
+    --nhip-vien: 170ms;
+    --nhip-bang: 220ms;
+    --nhip-ngu-canh: 300ms;
+    --nhip-bien-hinh: 460ms;
+    --tap: 32px;
+    --tap-lg: 44px;
+    --fs-ui: 13px;
+    --kinh-nhoe-mong: 12px;
+    --vl-gan-dac-nhoe: 6px;
+  }
+
+  /* ---- Tối (mặc định) ---- */
+  :root,
+  :root[data-theme='dark'] {
+    --bg: #0c0c0e;
+    --panel: #141417;
+    --card: #1a1a1e;
+    --field: #202024;
+    --hover: #2a2a30;
+    --border: #2a2a31;
+    --border-strong: #3d3d45;
+    --t1: #f5f5f7;
+    --t2: #d6d6db;
+    --t3: #9e9ea8;
+    --t4: #6e6e78;
+    --t5: #4e4e57;
+    --nen-mo-header: rgba(20, 20, 23, 0.72);
+    --nen-mo-overlay: rgba(6, 6, 8, 0.56);
+    --kinh-mong: rgba(24, 24, 28, 0.84);
+    --kinh-vua: rgba(24, 24, 28, 0.9);
+    --kinh-dac: rgba(24, 24, 28, 0.95);
+    --vl-dac: var(--panel);
+    --vl-gan-dac: rgba(20, 20, 23, 0.97);
+    --kinh-mep-sang: rgba(255, 255, 255, 0.14);
+    --kinh-vien: rgba(255, 255, 255, 0.1);
+    --kinh-chu-phu: #b4b4bd;
+    --vien-mo: rgba(255, 255, 255, 0.06);
+    --mo-vo-hieu: 0.5;
+    --shadow-sheet: 0 12px 40px -12px rgba(0, 0, 0, 0.7);
+    --shadow-pop: 0 8px 30px -8px rgba(0, 0, 0, 0.65);
+    --shadow-node: 0 6px 20px -8px rgba(0, 0, 0, 0.6);
+    --danger: #e5674f;
+    --warning: #d9a34a;
+    --success: #46b876;
+
+    /* ===== TRƯỜNG KHÔNG KHÍ — kế thừa NGUYÊN VẸN từ bản Living Canvas ===== */
+    --amb-sang: rgba(255, 236, 205, 0.1);
+    --amb-sang-loi: rgba(255, 241, 219, 0.16);
+    --amb-tuong: #131318;
+    --amb-san: #08080a;
+    --amb-mep: rgba(255, 255, 255, 0.055);
+    --amb-sau: rgba(0, 0, 0, 0.55);
+    --amb-net-vat: rgba(245, 245, 247, 0.5);
+    --vitals-yen: rgba(255, 255, 255, 0.07);
+    --vitals-chu-y: var(--warning);
+    --nhip-khong-khi: 150s;
+
+    /* ===== TOKEN MỚI · BA KHUNG GIỜ (đề xuất — xem TRANSFER NOTES) =====
+       Cùng MỘT vai (--amb-sang / --amb-sang-loi), ba nhiệt độ. KHÔNG mang nghĩa,
+       không bao giờ đứng sau chữ cần đọc ⇒ không phạm luật "màu luôn mang nghĩa". */
+    --amb-som: rgba(255, 226, 186, 0.095); /* ~3200K, mặt trời thấp phía đông */
+    --amb-som-loi: rgba(255, 235, 203, 0.15);
+    --amb-trua: rgba(238, 243, 255, 0.105); /* ~5600K, gần đỉnh, chùm hẹp */
+    --amb-trua-loi: rgba(247, 250, 255, 0.175);
+    --amb-chieu: rgba(255, 205, 150, 0.105); /* ~2700K, mặt trời thấp phía tây */
+    --amb-chieu-loi: rgba(255, 216, 168, 0.16);
+  }
+
+  /* ---- Sáng ---- */
+  :root[data-theme='light'] {
+    --bg: #f2efe9;
+    --panel: #faf8f4;
+    --card: #ffffff;
+    --field: #f4f1eb;
+    --hover: #e9e5dd;
+    --border: #e3ded4;
+    --border-strong: #cbc4b6;
+    --t1: #211e19;
+    --t2: #47423a;
+    --t3: #726c62;
+    --t4: #9a938a;
+    --t5: #b8b1a7;
+    --nen-mo-header: rgba(250, 248, 244, 0.72);
+    --nen-mo-overlay: rgba(60, 55, 48, 0.28);
+    --kinh-mong: rgba(252, 251, 249, 0.88);
+    --kinh-vua: rgba(252, 251, 249, 0.93);
+    --kinh-dac: rgba(253, 252, 250, 0.96);
+    --vl-dac: var(--panel);
+    --vl-gan-dac: rgba(250, 248, 244, 0.975);
+    --kinh-mep-sang: rgba(255, 255, 255, 0.75);
+    --kinh-vien: rgba(0, 0, 0, 0.08);
+    --kinh-chu-phu: #5c564d;
+    --vien-mo: rgba(0, 0, 0, 0.05);
+    --mo-vo-hieu: 0.62;
+    --shadow-sheet: 0 12px 40px -14px rgba(60, 52, 40, 0.28);
+    --shadow-pop: 0 10px 30px -10px rgba(60, 52, 40, 0.22);
+    --shadow-node: 0 6px 18px -8px rgba(60, 52, 40, 0.2);
+    --danger: #c9341d;
+    --warning: #9a6304;
+    --success: #107043;
+
+    --amb-sang: rgba(255, 244, 222, 0.72);
+    --amb-sang-loi: rgba(255, 250, 238, 0.92);
+    --amb-tuong: #efebe3;
+    --amb-san: #e6e1d7;
+    --amb-mep: rgba(255, 255, 255, 0.85);
+    --amb-sau: rgba(60, 52, 40, 0.14);
+    --amb-net-vat: rgba(33, 30, 25, 0.48);
+    --vitals-yen: rgba(0, 0, 0, 0.07);
+    --vitals-chu-y: var(--warning);
+
+    --amb-som: rgba(255, 238, 213, 0.74);
+    --amb-som-loi: rgba(255, 247, 232, 0.93);
+    --amb-trua: rgba(248, 250, 255, 0.8);
+    --amb-trua-loi: rgba(253, 254, 255, 0.95);
+    --amb-chieu: rgba(255, 226, 189, 0.72);
+    --amb-chieu-loi: rgba(255, 238, 213, 0.9);
+  }
+
+  /* ============================================================================
+     TRANG BẢN VẼ (chrome của chính bản vẽ — không thuộc thiết kế)
+     ============================================================================ */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--t1);
+    font-family: ui-sans-serif, -apple-system, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .trang { padding: 28px 32px 96px; max-width: 1560px; margin: 0 auto; }
+  .doc-h { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 6px; }
+  .doc-p { font-size: var(--fs-sm); color: var(--t3); max-width: 78ch; line-height: 1.65; margin: 0 0 10px; }
+  .art-h {
+    display: flex; align-items: baseline; gap: 12px;
+    margin: 52px 0 4px; padding-top: 22px; border-top: 1px solid var(--border);
+  }
+  .art-h b { font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
+  .art-h span { font-size: var(--fs-xs); color: var(--t4); }
+  .art-note { font-size: var(--fs-xs); color: var(--t3); line-height: 1.6; max-width: 92ch; margin: 0 0 14px; }
+  .cuon { overflow-x: auto; padding-bottom: 10px; }
+  .thanh-theme {
+    position: sticky; top: 0; z-index: 50; display: flex; gap: 8px; align-items: center;
+    padding: 10px 0 14px; background: linear-gradient(var(--bg) 72%, transparent);
+  }
+  .nut-doc {
+    height: var(--tap); padding: 0 14px; border-radius: var(--r-full);
+    border: 1px solid var(--border); background: var(--card); color: var(--t2);
+    font-size: var(--fs-xs); cursor: pointer;
+  }
+  .nut-doc[aria-pressed='true'] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+
+  /* ============================================================================
+     KHUNG MÀN — 1440×900
+     ============================================================================ */
+  .khung {
+    position: relative; width: 1440px; height: 900px; flex: 0 0 auto;
+    border-radius: var(--r-4); border: 1px solid var(--border);
+    overflow: hidden; background: var(--bg); isolation: isolate;
+  }
+  .khung.hep { width: 1100px; }
+
+  /* ---------- D0 · TRƯỜNG KHÔNG KHÍ ----------
+     Xưởng còn trống ⇒ căn phòng TRỐNG HƠN NÊN SÁNG HƠN: hốc bên rail hẹp lại,
+     sàn thấy rõ hơn, chùm sáng là sự kiện chính của màn. */
+  .canh { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  .canh-tuong { position: absolute; inset: 0; background: linear-gradient(178deg, var(--amb-tuong) 0%, var(--bg) 46%, var(--bg) 62%); }
+  .canh-san {
+    position: absolute; left: 0; right: 0; top: 62%; bottom: 0;
+    background: linear-gradient(180deg, var(--amb-mep) 0%, transparent 2px, var(--amb-san) 82%);
+  }
+  .canh-hoc { position: absolute; left: 0; top: 0; width: 22%; bottom: 0; background: linear-gradient(90deg, var(--amb-sau), transparent 76%); }
+  .canh-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  /* ánh sáng phải có MÉP MỀM — vector sắc cạnh đọc ra là "hình thang xám", không phải ánh sáng */
+  .sang-mem { filter: blur(16px); }
+  .san-sang { filter: blur(24px); }
+  /* vignette: góc phòng tối dần, mắt tự đi vào chỗ sáng */
+  .canh-vinhet {
+    position: absolute; inset: 0;
+    background: radial-gradient(126% 104% at 58% 44%, transparent 46%, var(--amb-sau) 100%);
+    opacity: 0.55;
+  }
+
+  .chum { animation: troi var(--nhip-khong-khi) var(--ease-apple) infinite alternate; transform-origin: 1090px 60px; }
+  @keyframes troi {
+    from { transform: translateX(0) rotate(0deg); }
+    to { transform: translateX(-26px) rotate(-0.9deg); }
+  }
+  .suong {
+    position: absolute; inset: -10%;
+    background: radial-gradient(56% 48% at 76% 12%, var(--amb-sang) 0%, transparent 72%);
+    animation: tho calc(var(--nhip-khong-khi) * 1.4) ease-in-out infinite alternate;
+  }
+  @keyframes tho {
+    from { opacity: 0.72; transform: scale(1); }
+    to { opacity: 1; transform: scale(1.045); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chum, .suong { animation: none !important; }
+  }
+
+  /* ba khung giờ — cùng vai, đổi nhiệt độ. Chỉ hoán token, không đổi cơ chế. */
+  .gio-som { --amb-sang: var(--amb-som); --amb-sang-loi: var(--amb-som-loi); }
+  .gio-trua { --amb-sang: var(--amb-trua); --amb-sang-loi: var(--amb-trua-loi); }
+  .gio-chieu { --amb-sang: var(--amb-chieu); --amb-sang-loi: var(--amb-chieu-loi); }
+
+  /* ---------- VỎ · thanh trên ---------- */
+  .thanh-tren {
+    position: absolute; left: 52px; right: 0; top: 0; height: 56px; z-index: 6;
+    display: flex; align-items: center; gap: 14px; padding: 0 20px 0 22px; background: transparent;
+  }
+  .tt-tim {
+    flex: 1; max-width: 460px; height: var(--tap); display: flex; align-items: center; gap: 9px;
+    padding: 0 14px; border-radius: var(--r-full); border: 1px solid var(--vien-mo);
+    background: var(--kinh-mong); backdrop-filter: blur(var(--kinh-nhoe-mong));
+    color: var(--kinh-chu-phu); font-size: var(--fs-ui);
+  }
+  .tt-phai { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+  .tt-o { width: var(--tap); height: var(--tap); display: grid; place-items: center; border-radius: var(--r-full); color: var(--t3); }
+  .tt-o:hover { background: var(--kinh-mong); color: var(--t1); }
+  .tt-ava {
+    width: 28px; height: 28px; border-radius: var(--r-full); background: var(--accent);
+    color: var(--on-accent); display: grid; place-items: center;
+    font-size: var(--fs-2xs); font-weight: 600; margin-left: 6px;
+  }
+
+  /* ---------- VỎ · VITALS EDGE — KHOẺ = GẦN NHƯ VÔ HÌNH ---------- */
+  .vitals-edge { position: absolute; left: 52px; right: 0; top: 56px; height: 1px; z-index: 7; background: var(--vitals-yen); }
+
+  /* ---------- VỎ · RAIL ---------- */
+  .rail {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 52px; z-index: 8;
+    display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 0;
+    background: linear-gradient(90deg, var(--amb-sau), transparent);
+    border-right: 1px solid var(--vien-mo);
+  }
+  .rail-o { width: 36px; height: 36px; display: grid; place-items: center; border-radius: var(--r-2); color: var(--t4); position: relative; }
+  .rail-o:hover { color: var(--t2); background: var(--vien-mo); }
+  .rail-o[aria-current='page'] { color: var(--t1); background: var(--accent-soft); }
+  .rail-o[aria-current='page']::before {
+    content: ''; position: absolute; left: -8px; top: 9px; bottom: 9px; width: 2px;
+    border-radius: var(--r-full); background: var(--accent);
+  }
+  .rail-ngat { width: 20px; height: 1px; background: var(--vien-mo); margin: 9px 0; }
+
+  /* ---------- TRƯỜNG LÀM VIỆC ---------- */
+  .truong { position: absolute; left: 52px; right: 0; top: 57px; bottom: 0; z-index: 3; }
+  .vat { position: absolute; }
+  .chao { font-size: 34px; font-weight: 500; letter-spacing: -0.02em; color: var(--t1); margin: 0; }
+  .chao-phu { font-size: var(--fs-ui); color: var(--t3); margin: 7px 0 0; }
+
+  /* ---------- D3 · LỐI VÀO DUY NHẤT — KÍNH LỎNG QUANG HỌC ----------
+     Đây là vật DUY NHẤT trên màn được mang G3. Nó nhỏ, và nó hệ trọng:
+     cường độ theo NGHĨA, không theo kích thước (LUẬT VẬT LIỆU §4). */
+  .loi-vao {
+    position: relative; display: inline-flex; align-items: center; gap: 11px;
+    height: 52px; padding: 0 26px 0 22px; border-radius: var(--r-full); border: 0;
+    font-size: var(--fs-md); font-weight: 600; letter-spacing: -0.01em; cursor: pointer;
+    color: var(--on-accent);
+    background: linear-gradient(168deg, var(--accent) 0%, var(--accent-strong) 100%);
+    box-shadow:
+      0 1px 0 0 var(--kinh-mep-sang) inset,
+      0 -10px 22px -12px var(--amb-sau) inset,
+      0 14px 34px -12px var(--accent-ring),
+      0 2px 10px -4px var(--amb-sau);
+    transition: transform var(--nhip-bam) var(--ease-apple),
+      box-shadow var(--nhip-vien) var(--ease-apple),
+      background var(--nhip-vien) var(--ease-apple);
+  }
+  .loi-vao::before {
+    /* vành khúc xạ MỎNG — màng quang học, không phải thấu kính lồi */
+    content: ''; position: absolute; inset: 0; border-radius: var(--r-full);
+    background: linear-gradient(180deg, var(--kinh-mep-sang) 0%, transparent 26%, transparent 78%, var(--amb-sau) 100%);
+    opacity: 0.4; pointer-events: none;
+  }
+  .loi-vao::after {
+    /* vệt sáng chạy trên mặt kính — chỉ đọc được khi nhìn kỹ */
+    content: ''; position: absolute; left: 10%; right: 42%; top: 3px; height: 12px;
+    border-radius: var(--r-full); background: var(--kinh-mep-sang);
+    filter: blur(6px); opacity: 0.38; pointer-events: none;
+  }
+  .loi-vao:hover {
+    box-shadow:
+      0 1px 0 0 var(--kinh-mep-sang) inset,
+      0 -10px 22px -12px var(--amb-sau) inset,
+      0 18px 44px -12px var(--accent-ring),
+      0 2px 10px -4px var(--amb-sau);
+  }
+  .loi-vao:active, .loi-vao.nhan {
+    transform: translateY(1px) scale(0.988);
+    background: linear-gradient(168deg, var(--accent-strong) 0%, var(--accent-strong) 100%);
+    box-shadow:
+      0 2px 6px -2px var(--amb-sau) inset,
+      0 6px 16px -10px var(--accent-ring);
+  }
+  .loi-vao:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 3px; }
+  .vung-sang {
+    /* quầng sáng đổ RA SÀN dưới lối vào — nó ĐỨNG trong phòng, không dán lên phòng */
+    position: absolute; z-index: 2; border-radius: 50%; filter: blur(44px);
+    background: var(--amb-sang-loi); opacity: 0.62; pointer-events: none;
+  }
+  .bong-tiep-dat {
+    position: absolute; z-index: 2; border-radius: 50%;
+    background: var(--amb-sau); filter: blur(9px); opacity: 0.7; pointer-events: none;
+  }
+  .goi-y { font-size: var(--fs-ui); color: var(--t4); line-height: 1.7; }
+  .lien-ket {
+    font-size: var(--fs-ui); color: var(--t3); text-decoration: none;
+    border-bottom: 1px solid var(--vien-mo); padding-bottom: 1px; cursor: pointer;
+  }
+  .lien-ket:hover { color: var(--t1); border-bottom-color: var(--t4); }
+
+  /* ---------- khung thu nhỏ cho ba khung giờ ---------- */
+  .luoi-gio { display: flex; gap: 18px; flex-wrap: wrap; }
+  .o-gio { width: 456px; }
+  .thu-nho { width: 456px; height: 285px; overflow: hidden; border-radius: var(--r-3); position: relative; }
+  .thu-nho > .khung { transform: scale(0.31667); transform-origin: 0 0; border-radius: 0; border: 0; }
+  .gio-cap { font-size: var(--fs-2xs); color: var(--t4); padding: 8px 2px 0; line-height: 1.6; }
+  .gio-cap b { color: var(--t2); font-size: var(--fs-xs); }
+
+  /* ---------- bảng trạng thái lối vào ---------- */
+  .luoi-tt { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start; }
+  .o-tt {
+    position: relative; width: 366px; height: 210px; border-radius: var(--r-3);
+    border: 1px solid var(--border); overflow: hidden; display: grid; place-items: center;
+  }
+  .tt-cap { font-size: var(--fs-2xs); color: var(--t4); padding: 8px 2px 0; }
+
+  /* ---------- bảng VẮNG MẶT ---------- */
+  .bang-vang { width: 100%; border-collapse: collapse; font-size: var(--fs-xs); }
+  .bang-vang th, .bang-vang td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .bang-vang th { color: var(--t4); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; font-size: var(--fs-2xs); }
+  .bang-vang td:first-child { color: var(--t1); font-weight: 600; white-space: nowrap; }
+  .bang-vang td:nth-child(2) { color: var(--t3); }
+  .bang-vang td:nth-child(3) { color: var(--t2); }
+  .bang-vang code { font-size: var(--fs-2xs); color: var(--t3); }
+  .mo-ta { font-size: var(--fs-xs); color: var(--t3); line-height: 1.7; }
+</style>
+
+<div class="trang">
+  <div class="thanh-theme">
+    <button class="nut-doc" id="b-toi" aria-pressed="true" onclick="dt('dark')">Tối</button>
+    <button class="nut-doc" id="b-sang" aria-pressed="false" onclick="dt('light')">Sáng</button>
+    <span style="font-size: var(--fs-xs); color: var(--t4); margin-left: 8px"
+      >Màn rỗng phải ĐẸP ở cả hai nền — không nền nào được đọc ra là "chưa tải xong".</span
+    >
+  </div>
+
+  <h1 class="doc-h">HOME · Dùng lần đầu</h1>
+  <p class="doc-p">
+    <b>"Xưởng đang yên, nhưng đây đã là chỗ của tôi."</b>
+    Đây KHÔNG phải màn rỗng xin lỗi. Không "Chưa có gì", không nút tạo-dự-án khổng lồ, không
+    danh sách việc cần làm, không hình vẽ buồn bã. Căn phòng đã là của anh — nó chỉ đang yên,
+    và đèn thì đang bật.
+  </p>
+  <p class="doc-p">
+    Trạng thái ĐO ĐƯỢC (truy vấn cơ sở dữ liệu 22/08): đã đăng nhập · <b>0</b> dự án thật ·
+    <b>0</b> phiên làm dở để tiếp tục · <b>0</b> lịch sử · <b>0</b> ảnh cảm hứng đủ điều kiện.
+    Trong 15 hàng <code>Project</code> thì 5 là chỗ chứa sổ tay (<code>__nb:…</code>), 4 là bản
+    thử (<i>Enter test 2</i>, <i>M-SCOPE test rỗng</i>…), 6 còn lại là nháp trùng, một
+    <i>Dự án mới</i> rỗng, một hàng canh và một hạt giống lặp. <b>Số thật của người dùng là 0.</b>
+    Bản Home đang chạy hiển thị <i>"21/21"</i> và <i>"19 Bản nháp"</i> tính từ đống rác đó —
+    đúng thứ bản vẽ này thay thế.
+  </p>
+  <p class="doc-p" style="color: var(--t4)">
+    Kế thừa nguyên vẹn trường không khí, token và bộ phận vỏ của
+    <code>claude-home-living-canvas-final.html</code>. Vật liệu theo
+    <code>LUAT-VAT-LIEU-KINH-G0-G3.md</code>: gần như toàn màn là G0, vỏ trên G0–G1,
+    <b>đúng một</b> vật là G2–G3.
+    ⛔ <b>Ánh sáng ban ngày KHÔNG phải một widget.</b> Không cung mặt trời, không đồng hồ,
+    không con số giờ, không nhãn Kelvin, không biểu đồ. Giờ trong ngày chỉ được phép đổi
+    <b>hướng chiếu · độ ấm · độ mềm của bóng · phản ứng của kính · bầu không khí</b> —
+    nó là VẬT LÝ CỦA CĂN PHÒNG, không phải số liệu bày ra đọc.
+  </p>
+
+  <!-- ══════════════════════════ 1 · DÙNG LẦN ĐẦU ══════════════════════════ -->
+  <div class="art-h"><b>1 · HOME — DÙNG LẦN ĐẦU</b><span>1440 × 900 · trạng thái thật, 0 dữ liệu</span></div>
+  <p class="art-note">
+    Nhân vật chính của màn này là <b>CHÍNH CĂN PHÒNG</b>. Vỏ và lối vào <b>sống bên trong</b>
+    không gian đó, không phải một bộ phận giao diện xếp lên trên nó. Trên màn có đúng NĂM thứ:
+    trường không khí · rail Bản đồ · vỏ trên (đã rút về mức gần như môi trường) · Vitals Edge
+    khoẻ · lời chào khẽ · MỘT lối vào. Khoảng trống mênh mông ở giữa <b>là thiết kế</b>, không phải chỗ
+    chưa kịp lấp — đó là sàn xưởng vừa quét, và là đường đi của chùm sáng. Lối vào KHÔNG đứng
+    giữa màn như một biểu ngữ; nó <b>đứng trên sàn, ngay chỗ ánh sáng chạm xuống</b>, có bóng
+    tiếp đất. Cả căn phòng chỉ dẫn mắt tới một chỗ đó.
+  </p>
+  <div class="cuon">
+    <div class="khung">
+      <!-- D0 · TRƯỜNG KHÔNG KHÍ — nhân vật chính của màn -->
+      <div class="canh">
+        <div class="canh-tuong"></div>
+        <div class="canh-san"></div>
+        <div class="canh-hoc"></div>
+        <svg class="canh-svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <g class="chum">
+            <!-- ① luồng khí sáng: từ ô cửa cao xuống tới giao tuyến sàn -->
+            <g class="sang-mem">
+              <polygon points="1000,104 1180,104 1058,560 725,560" fill="var(--amb-sang)" />
+              <polygon points="1040,104 1142,104 1010,560 800,560" fill="var(--amb-sang-loi)" opacity=".55" />
+            </g>
+            <!-- ② vũng sáng NẰM TRÊN SÀN — chỗ ánh sáng thật sự chạm xuống -->
+            <g class="san-sang">
+              <polygon points="725,560 1058,560 968,900 520,900" fill="var(--amb-sang-loi)" opacity=".62" />
+              <polygon points="800,560 1010,560 900,900 640,900" fill="var(--amb-sang-loi)" opacity=".45" />
+            </g>
+            <!-- ③ ô cửa: nguồn -->
+            <rect x="1000" y="104" width="180" height="22" fill="var(--amb-sang-loi)" opacity=".55" class="sang-mem" />
+            <line x1="1000" y1="104" x2="1000" y2="560" stroke="var(--amb-mep)" stroke-width="1" opacity=".8" />
+            <line x1="1180" y1="104" x2="1180" y2="560" stroke="var(--amb-mep)" stroke-width="1" opacity=".8" />
+          </g>
+          <!-- giao tuyến tường ↔ sàn: đường quan trọng nhất của căn phòng -->
+          <line x1="0" y1="560" x2="1440" y2="560" stroke="var(--amb-mep)" stroke-width="1.25" />
+          <ellipse cx="890" cy="560" rx="330" ry="12" fill="var(--amb-sang-loi)" opacity=".5" class="san-sang" />
+          <!-- cạnh tường bên + đường trần: phòng trống nên đọc rõ hơn -->
+          <line x1="286" y1="0" x2="286" y2="560" stroke="var(--amb-mep)" stroke-width="1" opacity=".5" />
+          <line x1="0" y1="92" x2="1440" y2="92" stroke="var(--amb-mep)" stroke-width="1" opacity=".28" />
+        </svg>
+        <div class="suong"></div>
+        <div class="canh-vinhet"></div>
+      </div>
+
+      <!-- rail Bản đồ — canonical, chép nguyên -->
+      <nav class="rail" aria-label="Bản đồ">
+        <div class="rail-o" aria-current="page" title="Trang chủ">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />
+          </svg>
+        </div>
+        <div class="rail-o" title="Dự án">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M3 7h6l2 2.5h10V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
+          </svg>
+        </div>
+        <div class="rail-o" title="Files">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M6 3h8l4 4v14H6z" /><path d="M14 3v4h4" />
+          </svg>
+        </div>
+        <div class="rail-o" title="Thư viện">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <rect x="4" y="4" width="6" height="16" rx="1" /><rect x="13" y="4" width="6" height="16" rx="1" />
+          </svg>
+        </div>
+        <div class="rail-o" title="Soát duyệt">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="m5 12 4.5 4.5L19 7" />
+          </svg>
+        </div>
+        <div class="rail-ngat"></div>
+        <div class="rail-o" title="Thiết kế 2D">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <rect x="4" y="4" width="16" height="16" rx="1" /><path d="M4 15h7v5" />
+          </svg>
+        </div>
+        <div class="rail-o" title="Thiết kế 3D">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M12 3 20 7.5v9L12 21 4 16.5v-9z" /><path d="M12 12v9M12 12l8-4.5M12 12 4 7.5" />
+          </svg>
+        </div>
+        <div class="rail-o" title="Trình chiếu">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <rect x="3" y="5" width="18" height="11" rx="1" /><path d="M12 16v4" />
+          </svg>
+        </div>
+        <div style="flex: 1"></div>
+        <div class="rail-o" title="Cài đặt">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <circle cx="12" cy="12" r="3" /><path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
+          </svg>
+        </div>
+      </nav>
+
+      <!-- vỏ trên — RÚT VỀ MỨC GẦN NHƯ MÔI TRƯỜNG. Không chip flow (chưa có flow nào),
+           không tên dự án giả, không tên workspace giả, không ô trạng thái luôn-rỗng.
+           Chỉ còn hai thứ có thật ở mọi lúc: chỗ tìm, và người đang đăng nhập. -->
+      <header class="thanh-tren">
+        <div class="tt-tim">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" />
+          </svg>
+          Tìm tên, ghi chú, dự án…
+        </div>
+        <div class="tt-phai">
+          <div class="tt-ava" title="Hoà">H</div>
+        </div>
+      </header>
+      <!-- Vitals KHOẺ: một đường, không nhịp, không đoạn sáng. -->
+      <div class="vitals-edge"></div>
+
+      <!-- TRƯỜNG -->
+      <div class="truong">
+        <!-- lời chào — chữ đứng trong phòng, không card. {tên} = tên hiển thị THẬT -->
+        <div class="vat" style="left: 56px; top: 40px">
+          <p class="chao">Chào Hoà</p>
+          <p class="chao-phu">Thứ Bảy, 22/08 · xưởng đang yên</p>
+        </div>
+
+        <!-- lối vào đứng ĐÚNG chỗ ánh sáng chạm sàn: quầng nở dưới chân + bóng tiếp đất -->
+        <div class="vung-sang" style="left: 636px; top: 372px; width: 408px; height: 168px"></div>
+        <div class="bong-tiep-dat" style="left: 747px; top: 492px; width: 186px; height: 14px"></div>
+
+        <!-- ⭐ LỐI VÀO DUY NHẤT — vật G3 duy nhất trên toàn màn -->
+        <div class="vat" style="left: 703px; top: 448px">
+          <button class="loi-vao">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+              <path d="M12 16V4" /><path d="m7.5 8.5 4.5-4.5 4.5 4.5" /><path d="M4 15v3.5a1.5 1.5 0 0 0 1.5 1.5h13a1.5 1.5 0 0 0 1.5-1.5V15" />
+            </svg>
+            Nhập bản vẽ có sẵn
+          </button>
+        </div>
+
+        <!-- gợi ý — biến chính KHOẢNG TRỐNG thành chỗ thả tệp. Không phải lời xin lỗi. -->
+        <div class="vat goi-y" style="left: 663px; top: 526px; width: 360px; text-align: center">
+          Hoặc thả tệp <b style="color: var(--t3); font-weight: 500">DWG · DXF · PDF · SKP</b><br />
+          vào bất cứ đâu trên màn này.
+        </div>
+
+        <!-- lối phụ — chữ trần, không vỏ nút. Nó KHÔNG cạnh tranh với lối vào. -->
+        <div class="vat" style="left: 663px; top: 590px; width: 360px; text-align: center">
+          <a class="lien-ket">Bắt đầu một dự án trống</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ 2 · BA KHUNG GIỜ ══════════════════════════ -->
+  <div class="art-h"><b>2 · CÙNG MÀN ĐÓ, ÁNH SÁNG ĐI QUA PHÒNG</b><span>sáng · trưa · chiều — không một con số nào trong khung</span></div>
+  <p class="art-note">
+    Ba khung dưới đây khác nhau <b>CHỈ ở cách ánh sáng rơi</b>: góc chiếu · độ ấm · độ dài và độ mềm
+    của bóng · độ tương phản của phòng. <b>Không cung mặt trời, không đồng hồ, không giờ, không
+    Kelvin, không biểu đồ — không có gì để đọc.</b> Người dùng không <i>xem</i> thời gian; họ
+    <i>ở trong</i> nó. Bố cục, lời chào và lối vào đứng nguyên chỗ ở cả ba — thứ duy nhất chuyển
+    động là mặt trời. (Rail vẽ giản lược ở cỡ thu nhỏ.)
+  </p>
+  <div class="luoi-gio">
+
+    <div class="o-gio">
+      <div class="thu-nho">
+        <div class="khung gio-som">
+          <div class="canh">
+            <div class="canh-tuong"></div><div class="canh-san"></div><div class="canh-hoc"></div>
+            <svg class="canh-svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <g class="chum">
+                <g class="sang-mem">
+                  <polygon points="90,150 300,150 900,560 420,560" fill="var(--amb-sang)" />
+                  <polygon points="130,150 250,150 800,560 520,560" fill="var(--amb-sang-loi)" opacity=".5" />
+                </g>
+                <g class="san-sang">
+                  <polygon points="420,560 900,560 1300,900 620,900" fill="var(--amb-sang-loi)" opacity=".5" />
+                </g>
+                <rect x="90" y="150" width="210" height="20" fill="var(--amb-sang-loi)" opacity=".45" class="sang-mem" />
+              </g>
+              <line x1="0" y1="560" x2="1440" y2="560" stroke="var(--amb-mep)" stroke-width="1.25" />
+          <ellipse cx="890" cy="560" rx="330" ry="12" fill="var(--amb-sang-loi)" opacity=".5" class="san-sang" />
+              <line x1="286" y1="0" x2="286" y2="560" stroke="var(--amb-mep)" stroke-width="1" opacity=".5" />
+            </svg>
+            <div class="suong" style="background: radial-gradient(50%% 44%% at 12%% 16%%, var(--amb-sang) 0%, transparent 72%)"></div>
+            <div class="canh-vinhet"></div>
+          </div>
+          <nav class="rail" aria-hidden="true">
+            <div class="rail-o" aria-current="page"></div><div class="rail-o"></div><div class="rail-o"></div>
+            <div class="rail-o"></div><div class="rail-o"></div><div class="rail-ngat"></div>
+            <div class="rail-o"></div><div class="rail-o"></div><div class="rail-o"></div>
+          </nav>
+          <header class="thanh-tren">
+            <div class="tt-tim">Tìm tên, ghi chú, dự án…</div>
+            <div class="tt-phai"><div class="tt-ava">H</div></div>
+          </header>
+          <div class="vitals-edge"></div>
+          <div class="truong">
+            <div class="vat" style="left: 56px; top: 40px">
+              <p class="chao">Chào Hoà</p>
+              <p class="chao-phu">Thứ Bảy, 22/08 · xưởng đang yên</p>
+            </div>
+            <div class="vung-sang" style="left: 596px; top: 376px; width: 400px; height: 156px; opacity: .4"></div>
+            <div class="bong-tiep-dat" style="left: 776px; top: 494px; width: 232px; height: 13px; opacity: .55"></div>
+            <div class="vat" style="left: 703px; top: 448px"><button class="loi-vao">Nhập bản vẽ có sẵn</button></div>
+            <div class="vat goi-y" style="left: 663px; top: 526px; width: 360px; text-align: center">
+              Hoặc thả tệp <b style="color: var(--t3); font-weight: 500">DWG · DXF · PDF · SKP</b><br />vào bất cứ đâu trên màn này.
+            </div>
+            <div class="vat" style="left: 663px; top: 590px; width: 360px; text-align: center"><a class="lien-ket">Bắt đầu một dự án trống</a></div>
+          </div>
+        </div>
+      </div>
+      <p class="gio-cap"><b>Sáng sớm</b><br />Mặt trời thấp phía đông. Luồng sáng dài và nông, ngả ấm, vào phòng gần như nằm ngang; vũng sáng trải rộng trên sàn và chỉ vừa chạm mép trái lối vào. Bóng tiếp đất dài, mềm, đổ về bên phải.</p>
+    </div>
+
+    <div class="o-gio">
+      <div class="thu-nho">
+        <div class="khung gio-trua">
+          <div class="canh">
+            <div class="canh-tuong"></div><div class="canh-san"></div><div class="canh-hoc"></div>
+            <svg class="canh-svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <g class="chum">
+                <g class="sang-mem">
+                  <polygon points="800,84 950,84 1010,560 760,560" fill="var(--amb-sang)" />
+                  <polygon points="828,84 922,84 966,560 806,560" fill="var(--amb-sang-loi)" opacity=".62" />
+                </g>
+                <g class="san-sang">
+                  <polygon points="760,560 1010,560 1060,900 700,900" fill="var(--amb-sang-loi)" opacity=".72" />
+                </g>
+                <rect x="800" y="84" width="150" height="22" fill="var(--amb-sang-loi)" opacity=".6" class="sang-mem" />
+                <line x1="800" y1="84" x2="800" y2="560" stroke="var(--amb-mep)" stroke-width="1" opacity=".8" />
+                <line x1="950" y1="84" x2="950" y2="560" stroke="var(--amb-mep)" stroke-width="1" opacity=".8" />
+              </g>
+              <line x1="0" y1="560" x2="1440" y2="560" stroke="var(--amb-mep)" stroke-width="1.25" />
+          <ellipse cx="890" cy="560" rx="330" ry="12" fill="var(--amb-sang-loi)" opacity=".5" class="san-sang" />
+              <line x1="286" y1="0" x2="286" y2="560" stroke="var(--amb-mep)" stroke-width="1" opacity=".5" />
+            </svg>
+            <div class="suong" style="background: radial-gradient(44%% 38%% at 61%% 6%%, var(--amb-sang) 0%, transparent 72%)"></div>
+            <div class="canh-vinhet"></div>
+          </div>
+          <nav class="rail" aria-hidden="true">
+            <div class="rail-o" aria-current="page"></div><div class="rail-o"></div><div class="rail-o"></div>
+            <div class="rail-o"></div><div class="rail-o"></div><div class="rail-ngat"></div>
+            <div class="rail-o"></div><div class="rail-o"></div><div class="rail-o"></div>
+          </nav>
+          <header class="thanh-tren">
+            <div class="tt-tim">Tìm tên, ghi chú, dự án…</div>
+            <div class="tt-phai"><div class="tt-ava">H</div></div>
+          </header>
+          <div class="vitals-edge"></div>
+          <div class="truong">
+            <div class="vat" style="left: 56px; top: 40px">
+              <p class="chao">Chào Hoà</p>
+              <p class="chao-phu">Thứ Bảy, 22/08 · xưởng đang yên</p>
+            </div>
+            <div class="vung-sang" style="left: 672px; top: 380px; width: 336px; height: 148px; opacity: .8"></div>
+            <div class="bong-tiep-dat" style="left: 754px; top: 495px; width: 172px; height: 9px; opacity: .8"></div>
+            <div class="vat" style="left: 703px; top: 448px"><button class="loi-vao">Nhập bản vẽ có sẵn</button></div>
+            <div class="vat goi-y" style="left: 663px; top: 526px; width: 360px; text-align: center">
+              Hoặc thả tệp <b style="color: var(--t3); font-weight: 500">DWG · DXF · PDF · SKP</b><br />vào bất cứ đâu trên màn này.
+            </div>
+            <div class="vat" style="left: 663px; top: 590px; width: 360px; text-align: center"><a class="lien-ket">Bắt đầu một dự án trống</a></div>
+          </div>
+        </div>
+      </div>
+      <p class="gio-cap"><b>Giữa trưa</b><br />Gần đỉnh. Luồng sáng hẹp, trong và lạnh hơn, rọi gần như thẳng đứng xuống đúng lối vào. Tương phản phòng cao nhất trong ngày; bóng co lại gần như biến mất ngay dưới chân vật.</p>
+    </div>
+
+    <div class="o-gio">
+      <div class="thu-nho">
+        <div class="khung gio-chieu">
+          <div class="canh">
+            <div class="canh-tuong"></div><div class="canh-san"></div><div class="canh-hoc"></div>
+            <svg class="canh-svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <g class="chum">
+                <g class="sang-mem">
+                  <polygon points="1180,170 1360,170 1200,560 900,560" fill="var(--amb-sang)" />
+                  <polygon points="1226,170 1330,170 1150,560 970,560" fill="var(--amb-sang-loi)" opacity=".5" />
+                </g>
+                <g class="san-sang">
+                  <polygon points="900,560 1200,560 900,900 400,900" fill="var(--amb-sang-loi)" opacity=".54" />
+                </g>
+                <rect x="1180" y="170" width="180" height="20" fill="var(--amb-sang-loi)" opacity=".45" class="sang-mem" />
+              </g>
+              <line x1="0" y1="560" x2="1440" y2="560" stroke="var(--amb-mep)" stroke-width="1.25" />
+          <ellipse cx="890" cy="560" rx="330" ry="12" fill="var(--amb-sang-loi)" opacity=".5" class="san-sang" />
+              <line x1="286" y1="0" x2="286" y2="560" stroke="var(--amb-mep)" stroke-width="1" opacity=".5" />
+            </svg>
+            <div class="suong" style="background: radial-gradient(52%% 46%% at 90%% 20%%, var(--amb-sang) 0%, transparent 72%)"></div>
+            <div class="canh-vinhet"></div>
+          </div>
+          <nav class="rail" aria-hidden="true">
+            <div class="rail-o" aria-current="page"></div><div class="rail-o"></div><div class="rail-o"></div>
+            <div class="rail-o"></div><div class="rail-o"></div><div class="rail-ngat"></div>
+            <div class="rail-o"></div><div class="rail-o"></div><div class="rail-o"></div>
+          </nav>
+          <header class="thanh-tren">
+            <div class="tt-tim">Tìm tên, ghi chú, dự án…</div>
+            <div class="tt-phai"><div class="tt-ava">H</div></div>
+          </header>
+          <div class="vitals-edge"></div>
+          <div class="truong">
+            <div class="vat" style="left: 56px; top: 40px">
+              <p class="chao">Chào Hoà</p>
+              <p class="chao-phu">Thứ Bảy, 22/08 · xưởng đang yên</p>
+            </div>
+            <div class="vung-sang" style="left: 686px; top: 374px; width: 404px; height: 162px; opacity: .5"></div>
+            <div class="bong-tiep-dat" style="left: 604px; top: 494px; width: 268px; height: 13px; opacity: .5"></div>
+            <div class="vat" style="left: 703px; top: 448px"><button class="loi-vao">Nhập bản vẽ có sẵn</button></div>
+            <div class="vat goi-y" style="left: 663px; top: 526px; width: 360px; text-align: center">
+              Hoặc thả tệp <b style="color: var(--t3); font-weight: 500">DWG · DXF · PDF · SKP</b><br />vào bất cứ đâu trên màn này.
+            </div>
+            <div class="vat" style="left: 663px; top: 590px; width: 360px; text-align: center"><a class="lien-ket">Bắt đầu một dự án trống</a></div>
+          </div>
+        </div>
+      </div>
+      <p class="gio-cap"><b>Chiều muộn</b><br />Mặt trời thấp phía tây. Luồng sáng ngả hổ phách, quét ngược qua phòng; vũng sáng kéo dài về phía rail. Bóng dài và loãng nhất, đổ về bên trái. Cùng căn phòng — khác một buổi.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ 3 · LỐI VÀO — BA TRẠNG THÁI ══════════════════════════ -->
+  <style>
+    /* mô phỏng tĩnh trạng thái rê/nhấn để in ra giấy được */
+    .loi-vao.gia-re {
+      box-shadow:
+        0 1px 0 0 var(--kinh-mep-sang) inset,
+        0 -10px 22px -12px var(--amb-sau) inset,
+        0 18px 44px -12px var(--accent-ring),
+        0 2px 10px -4px var(--amb-sau);
+    }
+  </style>
+  <div class="art-h"><b>3 · LỐI VÀO DUY NHẤT</b><span>nghỉ · rê vào · nhấn — vật duy nhất vượt G1</span></div>
+  <p class="art-note">
+    <b>Cường độ theo NGHĨA, không theo kích thước</b> (LUẬT VẬT LIỆU §4). Đây là vật NHỎ NHẤT trên
+    màn và là vật DUY NHẤT vượt lên trên G1 — nó ở nấc <b>G2–G3</b>, và nó chỉ được phép ở đó vì
+    nó là cửa duy nhất, KHÔNG phải để "cho màn đỡ nhạt": bầu không khí mới là thứ gánh diện mạo.
+    Nếu Hoà thấy nó nổi hơn mức cần, hạ về G2 phẳng là đổi đúng một khối
+    <code>box-shadow</code> — bố cục không đụng gì. Đây là vật G3 — vì nó là cửa duy nhất từ "chưa có gì" sang "đã có việc".
+    Nghỉ: mép trên bắt sáng mảnh, một vệt sáng mờ chạy trên mặt, quầng đổ xuống sàn. Rê vào:
+    quầng nở ra 44px, <b>không phóng to, không nhấc lên</b> — đèn sáng thêm, vật không nhảy.
+    Nhấn: lún 1px, kính <b>chìm xuống</b> (bóng đảo vào trong), quầng tắt gần hết — cảm giác
+    ấn vào một vật thật. Không có nút thứ hai nào trên màn được phép mang vật liệu này.
+  </p>
+  <div class="luoi-tt">
+    <div>
+      <div class="o-tt">
+        <div class="canh"><div class="canh-tuong"></div><div class="canh-san" style="top: 66%"></div>
+          <svg class="canh-svg" viewBox="0 0 366 210" preserveAspectRatio="none">
+            <polygon points="238,0 320,0 300,210 120,210" fill="var(--amb-sang)" class="sang-mem" />
+            <line x1="0" y1="139" x2="366" y2="139" stroke="var(--amb-mep)" />
+          </svg>
+        </div>
+        <div style="position: relative">
+          <div class="vung-sang" style="left: -80px; top: -18px; width: 400px; height: 120px"></div>
+          <div class="bong-tiep-dat" style="left: 22px; top: 46px; width: 186px; height: 13px"></div>
+          <button class="loi-vao" style="position: relative">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+              <path d="M12 16V4" /><path d="m7.5 8.5 4.5-4.5 4.5 4.5" /><path d="M4 15v3.5a1.5 1.5 0 0 0 1.5 1.5h13a1.5 1.5 0 0 0 1.5-1.5V15" />
+            </svg>
+            Nhập bản vẽ có sẵn
+          </button>
+        </div>
+      </div>
+      <p class="tt-cap">NGHỈ — mép sáng mảnh · vệt sáng mờ · quầng sàn 0,62</p>
+    </div>
+
+    <div>
+      <div class="o-tt">
+        <div class="canh"><div class="canh-tuong"></div><div class="canh-san" style="top: 66%"></div>
+          <svg class="canh-svg" viewBox="0 0 366 210" preserveAspectRatio="none">
+            <polygon points="238,0 320,0 300,210 120,210" fill="var(--amb-sang)" class="sang-mem" />
+            <line x1="0" y1="139" x2="366" y2="139" stroke="var(--amb-mep)" />
+          </svg>
+        </div>
+        <div style="position: relative">
+          <div class="vung-sang" style="left: -92px; top: -26px; width: 424px; height: 136px; opacity: .82"></div>
+          <div class="bong-tiep-dat" style="left: 22px; top: 46px; width: 186px; height: 13px"></div>
+          <button class="loi-vao gia-re" style="position: relative">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+              <path d="M12 16V4" /><path d="m7.5 8.5 4.5-4.5 4.5 4.5" /><path d="M4 15v3.5a1.5 1.5 0 0 0 1.5 1.5h13a1.5 1.5 0 0 0 1.5-1.5V15" />
+            </svg>
+            Nhập bản vẽ có sẵn
+          </button>
+        </div>
+      </div>
+      <p class="tt-cap">RÊ VÀO (<code>--nhip-vien</code> 170ms) — quầng nở, vật đứng yên</p>
+    </div>
+
+    <div>
+      <div class="o-tt">
+        <div class="canh"><div class="canh-tuong"></div><div class="canh-san" style="top: 66%"></div>
+          <svg class="canh-svg" viewBox="0 0 366 210" preserveAspectRatio="none">
+            <polygon points="238,0 320,0 300,210 120,210" fill="var(--amb-sang)" class="sang-mem" />
+            <line x1="0" y1="139" x2="366" y2="139" stroke="var(--amb-mep)" />
+          </svg>
+        </div>
+        <div style="position: relative">
+          <div class="vung-sang" style="left: -60px; top: -6px; width: 356px; height: 100px; opacity: .3"></div>
+          <div class="bong-tiep-dat" style="left: 30px; top: 45px; width: 170px; height: 10px; opacity: .85"></div>
+          <button class="loi-vao nhan" style="position: relative">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+              <path d="M12 16V4" /><path d="m7.5 8.5 4.5-4.5 4.5 4.5" /><path d="M4 15v3.5a1.5 1.5 0 0 0 1.5 1.5h13a1.5 1.5 0 0 0 1.5-1.5V15" />
+            </svg>
+            Nhập bản vẽ có sẵn
+          </button>
+        </div>
+      </div>
+      <p class="tt-cap">NHẤN (<code>--nhip-bam</code> 130ms) — lún 1px · kính chìm · quầng tắt</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ 4 · 1100px ══════════════════════════ -->
+  <div class="art-h"><b>4 · KHỔ HẸP</b><span>1100 × 900 — cùng căn phòng, không phải bản rút gọn</span></div>
+  <p class="art-note">
+    Rail <b>vẫn 52px và vẫn nằm trong dòng</b>. Trường không khí dựng lại theo khổ: ô cửa dịch vào,
+    chùm sáng vẫn phải <b>đi qua vùng trống</b> và vẫn phải <b>chạm đúng lối vào</b> — đó là ràng
+    buộc bố cục, không phải chuyện đẹp. Lời chào giữ nguyên cỡ (nó là giọng nói, không co theo màn).
+    Không bỏ bớt thứ gì, vì trên màn vốn đã không có gì để bỏ. Vỏ trên cũng chỉ còn chỗ tìm
+    và người đang đăng nhập — không tên dự án giả, không ô trạng thái luôn-rỗng.
+  </p>
+  <div class="cuon">
+    <div class="khung hep">
+      <div class="canh">
+        <div class="canh-tuong"></div><div class="canh-san"></div>
+        <div class="canh-hoc" style="width: 18%"></div>
+        <svg class="canh-svg" viewBox="0 0 1100 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <g class="chum" style="transform-origin: 830px 60px">
+            <g class="sang-mem">
+              <polygon points="760,100 900,100 843,560 565,560" fill="var(--amb-sang)" />
+              <polygon points="790,100 872,100 806,560 640,560" fill="var(--amb-sang-loi)" opacity=".55" />
+            </g>
+            <g class="san-sang">
+              <polygon points="565,560 843,560 800,900 420,900" fill="var(--amb-sang-loi)" opacity=".62" />
+              <polygon points="640,560 806,560 754,900 512,900" fill="var(--amb-sang-loi)" opacity=".45" />
+            </g>
+            <rect x="760" y="100" width="140" height="21" fill="var(--amb-sang-loi)" opacity=".55" class="sang-mem" />
+            <line x1="760" y1="100" x2="760" y2="560" stroke="var(--amb-mep)" stroke-width="1" opacity=".8" />
+            <line x1="900" y1="100" x2="900" y2="560" stroke="var(--amb-mep)" stroke-width="1" opacity=".8" />
+          </g>
+          <line x1="0" y1="560" x2="1100" y2="560" stroke="var(--amb-mep)" stroke-width="1.25" />
+          <ellipse cx="704" cy="560" rx="272" ry="12" fill="var(--amb-sang-loi)" opacity=".5" class="san-sang" />
+          <line x1="232" y1="0" x2="232" y2="560" stroke="var(--amb-mep)" stroke-width="1" opacity=".5" />
+          <line x1="0" y1="92" x2="1100" y2="92" stroke="var(--amb-mep)" stroke-width="1" opacity=".28" />
+        </svg>
+        <div class="suong" style="background: radial-gradient(58% 48% at 74% 12%, var(--amb-sang) 0%, transparent 72%)"></div>
+        <div class="canh-vinhet"></div>
+      </div>
+      <nav class="rail" aria-label="Bản đồ">
+        <div class="rail-o" aria-current="page" title="Trang chủ">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg>
+        </div>
+        <div class="rail-o" title="Dự án">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h6l2 2.5h10V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" /></svg>
+        </div>
+        <div class="rail-o" title="Files">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h8l4 4v14H6z" /><path d="M14 3v4h4" /></svg>
+        </div>
+        <div class="rail-o" title="Thư viện">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="6" height="16" rx="1" /><rect x="13" y="4" width="6" height="16" rx="1" /></svg>
+        </div>
+        <div class="rail-o" title="Soát duyệt">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m5 12 4.5 4.5L19 7" /></svg>
+        </div>
+        <div class="rail-ngat"></div>
+        <div class="rail-o" title="Thiết kế 2D">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="1" /><path d="M4 15h7v5" /></svg>
+        </div>
+        <div class="rail-o" title="Thiết kế 3D">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3 20 7.5v9L12 21 4 16.5v-9z" /><path d="M12 12v9M12 12l8-4.5M12 12 4 7.5" /></svg>
+        </div>
+        <div class="rail-o" title="Trình chiếu">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="11" rx="1" /><path d="M12 16v4" /></svg>
+        </div>
+        <div style="flex: 1"></div>
+        <div class="rail-o" title="Cài đặt">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3" /><path d="M12 3v3M12 18v3M3 12h3M18 12h3" /></svg>
+        </div>
+      </nav>
+      <header class="thanh-tren">
+        <div class="tt-tim" style="max-width: 340px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg>
+          Tìm tên, ghi chú, dự án…
+        </div>
+        <div class="tt-phai">
+          <div class="tt-ava" title="Hoà">H</div>
+        </div>
+      </header>
+      <div class="vitals-edge"></div>
+      <div class="truong">
+        <div class="vat" style="left: 48px; top: 40px">
+          <p class="chao">Chào Hoà</p>
+          <p class="chao-phu">Thứ Bảy, 22/08 · xưởng đang yên</p>
+        </div>
+        <div class="vung-sang" style="left: 450px; top: 372px; width: 400px; height: 166px"></div>
+        <div class="bong-tiep-dat" style="left: 560px; top: 492px; width: 186px; height: 14px"></div>
+        <div class="vat" style="left: 516px; top: 448px">
+          <button class="loi-vao">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+              <path d="M12 16V4" /><path d="m7.5 8.5 4.5-4.5 4.5 4.5" /><path d="M4 15v3.5a1.5 1.5 0 0 0 1.5 1.5h13a1.5 1.5 0 0 0 1.5-1.5V15" />
+            </svg>
+            Nhập bản vẽ có sẵn
+          </button>
+        </div>
+        <div class="vat goi-y" style="left: 476px; top: 526px; width: 360px; text-align: center">
+          Hoặc thả tệp <b style="color: var(--t3); font-weight: 500">DWG · DXF · PDF · SKP</b><br />vào bất cứ đâu trên màn này.
+        </div>
+        <div class="vat" style="left: 476px; top: 590px; width: 360px; text-align: center">
+          <a class="lien-ket">Bắt đầu một dự án trống</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ 5 · CỐ Ý VẮNG MẶT ══════════════════════════ -->
+  <div class="art-h"><b>5 · CỐ Ý VẮNG MẶT</b><span>đọc trước khi dựng — đừng tưởng màn này còn dang dở</span></div>
+  <p class="art-note">
+    Mỗi dòng dưới đây là một module <b>KHÔNG render</b> ở màn này, kèm <b>lý do thật</b> và
+    <b>điều kiện chính xác</b> để nó bắt đầu render. <b>Không ô trống. Không khung xám. Không "—".
+    Không số 0 ở bất kỳ đâu.</b> Module không có dữ liệu thì <b>không tồn tại trên màn</b> —
+    hiện ra một cái vỏ rỗng là nói dối về trạng thái hệ thống, và làm màn đọc ra như lỗi tải.
+  </p>
+  <table class="bang-vang">
+    <tr><th>Module</th><th>Vì sao vắng (dữ liệu thật 22/08)</th><th>Bắt đầu render KHI</th></tr>
+    <tr>
+      <td>Việc đang dở<br /><code>ResumeWork</code></td>
+      <td>0 phiên làm dở. Không có workspace nào để tiếp tục — không có gì để "resume".</td>
+      <td>tồn tại ≥1 phiên có <code>lastStage</code> + mốc thời gian sửa gần nhất</td>
+    </tr>
+    <tr>
+      <td>Kệ dự án<br /><code>ProjectOverviewCard</code></td>
+      <td>0 dự án THẬT. 15 hàng <code>Project</code> đều là chỗ chứa sổ tay <code>__nb:…</code>, bản thử, hoặc nháp trùng.</td>
+      <td>≥1 <code>Project</code> không phải <code>__nb:</code>, không phải fixture, có ít nhất một tệp/entity thuộc về nó</td>
+    </tr>
+    <tr>
+      <td>Chip đếm dự án</td>
+      <td>Bản đang chạy hiện <i>"21/21"</i> và <i>"19 Bản nháp"</i> — <b>đếm từ rác</b>. Con số bịa còn tệ hơn không có số.</td>
+      <td>chỉ hiện khi số dự án thật &gt; 1; một dự án thì đếm là thừa</td>
+    </tr>
+    <tr>
+      <td>Bản nháp</td>
+      <td>Không nháp nào do người dùng tạo. Toàn bộ là hạt giống và bản thử.</td>
+      <td>≥1 dự án có <code>createdBy</code> = người dùng và chưa có bản xuất nào</td>
+    </tr>
+    <tr>
+      <td>Cảm hứng / Ảnh đẹp tuần này<br /><code>WeeklyImage</code></td>
+      <td>0 ảnh đủ điều kiện. Chưa render gì, chưa ghim gì. Lấy ảnh mẫu vào đây là bịa nội dung.</td>
+      <td>≥1 ảnh render thuộc dự án của người dùng, hoặc ≥1 ảnh được ghim trong Gallery</td>
+    </tr>
+    <tr>
+      <td>Vật liệu của tuần<br /><code>WeeklyMaterial</code></td>
+      <td>Người dùng chưa đụng <code>matId</code> nào. Kệ 73 món là kho <b>chung</b>, không phải hoạt động của người này.</td>
+      <td>≥1 <code>matId</code> được dùng hoặc lưu bởi chính người dùng</td>
+    </tr>
+    <tr>
+      <td>Hoạt động gần đây</td>
+      <td>0 dòng lịch sử. Tài khoản vừa tạo.</td>
+      <td>≥3 sự kiện trong nhật ký hoạt động (dưới 3 thì đọc ra là danh sách lẻ loi, tệ hơn không có)</td>
+    </tr>
+    <tr>
+      <td>Ghi chú nhanh<br /><code>QuickNotes</code></td>
+      <td>Chưa có ghi chú nào. Ô nhập trống mời gọi <b>không phải</b> là nội dung — nó là một việc-cần-làm trá hình.</td>
+      <td>≥1 ghi chú đã lưu; trước đó vào bằng ⌘K hoặc rail, không chiếm ô trên Home</td>
+    </tr>
+    <tr>
+      <td>Tín hiệu Vitals</td>
+      <td><b>Khoẻ</b> — không có tín hiệu nào. Đây KHÔNG phải vắng mặt: Vitals <i>đang</i> hiển thị đúng trạng thái của nó là một đường mảnh, gần như vô hình.</td>
+      <td>đoạn sáng chỉ xuất hiện khi có tín hiệu thật, ở đúng trục ngang của vật liên quan</td>
+    </tr>
+    <tr>
+      <td>Chip Flow / tên dự án / tên workspace<br />trên vỏ trên</td>
+      <td>Chưa có Project, chưa có Workspace, chưa có flow. Bản Living Canvas hiện <i>"Untitled flow"</i>
+      vì lúc đó đã có một flow thật — ở đây, <b>một cái tên bịa chính là loại hư cấu màn này sinh ra để dẹp</b>.</td>
+      <td>≥1 Project/Workspace/flow THẬT tồn tại. Trước đó vỏ trên chỉ có chỗ tìm + người đăng nhập.</td>
+    </tr>
+    <tr>
+      <td>Ô trạng thái Vitals / Hoạt động<br />trên vỏ trên</td>
+      <td>Hai ô này luôn rỗng ở trạng thái này ⇒ chúng là <b>bản đọc của con số không</b>. Vitals đã có mặt
+      đúng cách rồi: là ĐƯỜNG ở mép trên vùng làm việc.</td>
+      <td>≥1 tín hiệu Vitals hoặc ≥1 việc đang chạy</td>
+    </tr>
+    <tr>
+      <td>Đồng hồ ánh sáng<br /><code>LightClock</code> (cung mặt trời · giờ · Kelvin)</td>
+      <td><b>Cố ý không render, và cũng không render khi đã có dự án.</b> Ánh sáng ban ngày KHÔNG phải
+      một vật trên trang. Nó là vật lý của căn phòng: hướng chiếu · độ ấm · độ mềm của bóng · phản ứng
+      của kính. Bày nó thành cung + số là biến bầu không khí thành bảng đồng hồ.</td>
+      <td><b>KHÔNG BAO GIỜ dưới dạng widget.</b> Dữ liệu LightClock chỉ đi vào tham số của trường không khí.</td>
+    </tr>
+    <tr>
+      <td>Danh sách bước làm quen<br />(onboarding)</td>
+      <td><b>Cố ý không làm, không phải thiếu dữ liệu.</b> Bảng việc-cần-làm biến căn phòng của anh thành lớp học.</td>
+      <td><b>KHÔNG BAO GIỜ.</b> Dạy bằng ô giải nghĩa tại chỗ dùng, không bằng danh sách trên Home</td>
+    </tr>
+    <tr>
+      <td>Vạch tiến độ / chuỗi ngày</td>
+      <td>Không có gì để đo. Đo sự trống rỗng chính là biến nó thành lời trách móc.</td>
+      <td><b>KHÔNG BAO GIỜ trên Home.</b> Tiến độ thuộc Bảng việc / Gantt</td>
+    </tr>
+  </table>
+
+  <p class="mo-ta" style="margin-top: 18px; max-width: 92ch">
+    <b>Một chỗ cần Hoà phán:</b> ngoài lối vào G3 còn <b>một</b> chữ trần
+    <i>"Bắt đầu một dự án trống"</i> — cố ý KHÔNG có vỏ nút, để nó không tranh vai lối-vào-chính.
+    Brief nói đúng MỘT lối vào; đây là lối phụ dạng chữ. Giữ hay bỏ là quyết định của Hoà —
+    bỏ thì người muốn bắt đầu từ số không phải đi qua rail. Bản vẽ nêu ra chứ không tự quyết.
+  </p>
+</div>
+
+<script>
+  function dt(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    document.getElementById('b-toi').setAttribute('aria-pressed', String(t === 'dark'));
+    document.getElementById('b-sang').setAttribute('aria-pressed', String(t === 'light'));
+  }
+  dt('dark');
+</script>
+
+<!-- TRANSFER NOTES ============================================================
+
+TỆP SẢN XUẤT SỞ HỮU MÀN NÀY
+  · components/home/DongStudioHome.tsx        ← vỏ + trường không khí + cổng ĐIỀU KIỆN RENDER
+  · components/home/widgets/*                 ← ResumeWork · WeeklyImage · WeeklyMaterial ·
+                                                QuickNotes · ProjectOverviewCard
+                                                (tất cả đều KHÔNG render ở màn này — xem artboard 5)
+  · components/home/widgets/LightClock.tsx    ← ⛔ KHÔNG còn là widget. Giữ phần TÍNH (vị trí mặt
+                                                trời · nhiệt độ màu), bỏ phần VẼ. Đầu ra của nó là
+                                                tham số cho trường không khí, không phải một ô trên Home.
+  · components/home/widgets/bento-layout.ts   ← khai ô lưới; ô nào không có dữ liệu thì KHÔNG
+                                                chiếm ô, lưới phải TỰ KHÍT LẠI (không để lỗ)
+  · lib/home/che-do-home.ts                   ← ⛔ vẫn khai BỐN DẢI; bản này (như Living Canvas) ĐÈ nó
+  · components/nav/muc-dieu-huong.ts          ← nhãn rail, KHÔNG đổi
+  · app/globals.css                           ← nạp token --amb-som/-trua/-chieu (mục dưới)
+  ⚠️ Đường "Nhập bản vẽ có sẵn" đi tới màn ĐÃ CÓ BẢN VẼ DUYỆT:
+     docs/mocks/Nhập bản vẽ có sẵn.dc.html — cửa này KHÔNG dẫn vào chỗ trống.
+
+ĐIỀU KIỆN VÀO TRẠNG THÁI NÀY (một hàm, một chỗ — cấm rải if khắp nơi)
+  laDungLanDau() = soDuAnThat === 0 && soPhienLamDo === 0
+  soDuAnThat: LOẠI BỎ id/tên khớp `__nb:` (chỗ chứa sổ tay) · LOẠI BỎ fixture
+              (`* test *`, `M-SCOPE *`) · LOẠI BỎ dự án 0 tệp 0 entity tạo bởi hạt giống.
+  🔴 Bản đang chạy KHÔNG lọc — nên hiện "21/21" và "19 Bản nháp" từ 15 hàng rác.
+     Sửa bộ lọc này là việc ĐẦU TIÊN; không có nó thì màn dưới đây không bao giờ xuất hiện.
+
+TRƯỜNG KHÔNG KHÍ — DỰNG BẰNG GÌ (giống hệt Living Canvas, không có kỹ thuật thứ hai)
+  KHÔNG ảnh nền, KHÔNG <img>, KHÔNG blob blur ngẫu nhiên. Bốn lớp CSS + MỘT inline SVG:
+    ① .canh-tuong  gradient dọc          → mặt tường lùi sau
+    ② .canh-san    gradient dọc từ 62%   → mặt sàn (tối hơn tường)
+    ③ .canh-hoc    gradient ngang 22%    → hốc tối bên rail (HẸP hơn Living Canvas 34%:
+                                            phòng trống thì sáng hơn — đây là khác biệt CÓ Ý)
+    ④ <svg>        chùm sáng (hình thang từ ô cửa cao xuống sàn) + ba đường kiến trúc:
+                   giao tuyến tường↔sàn y=560 · cạnh tường bên · đường trần
+    ⑤ .suong       radial-gradient quanh nguồn sáng, thở rất chậm (150s)
+  GÓC + NHIỆT ĐỘ ĐỌC TỪ LightClock đang chạy (dữ liệu thật, không bịa):
+    · góc chùm ← vị trí mặt trời (sáng đổ từ trái · trưa gần đỉnh · chiều đổ từ phải) ⇒ hai đỉnh
+      trên của polygon trượt theo, vũng sáng trên sàn trượt ngược lại
+    · màu chùm ← nhiệt độ màu → hoán --amb-sang/--amb-sang-loi (ba cặp token dưới)
+    · độ mở    ← trưa hẹp/trong/tương phản cao · sáng và chiều rộng, ngả ấm, tương phản thấp
+    ⛔ Không con số nào trong ba thứ trên được HIỆN RA. Người dùng cảm thấy giờ, không đọc giờ.
+    · ánh sáng là hai lớp RIÊNG, đừng gộp: LUỒNG KHÍ (tường→sàn, blur 16) và VŨNG SÁNG TRÊN SÀN
+      (dưới giao tuyến, blur 24, sáng hơn). Gộp một polygon là ra "hình thang xám", không ra ánh sáng.
+    · bóng tiếp đất dưới lối vào ĐỔI HƯỚNG theo mặt trời (phải lúc sáng · gần mất lúc trưa ·
+      trái lúc chiều). Đây là chi tiết rẻ nhất mà làm căn phòng thành THẬT.
+  Không có dữ liệu giờ ⇒ dùng bộ BAN NGÀY, KHÔNG bịa vị trí mặt trời.
+  prefers-reduced-motion ⇒ tắt .chum và .suong; ánh sáng vẫn ĐÚNG GIỜ, chỉ không trôi.
+
+TOKEN MỚI CẦN NẠP VÀO app/globals.css (khai theo VAI TRÒ, hai theme, đảo cực)
+  --amb-som       --amb-som-loi      chùm ~3200K, mặt trời thấp phía đông
+  --amb-trua      --amb-trua-loi     chùm ~5600K, gần đỉnh, hẹp và trong
+  --amb-chieu     --amb-chieu-loi    chùm ~2700K, mặt trời thấp phía tây
+  (Ba cặp này CÙNG VAI với --amb-sang/--amb-sang-loi đã đề xuất ở Living Canvas — chúng là
+   ba giá trị của cùng một vai, KHÔNG phải sáu token mới. Runtime chỉ hoán giá trị theo giờ.)
+  ⚠️ --amb-* KHÔNG BAO GIỜ mang nghĩa, không bao giờ đứng sau chữ cần đọc, luôn nằm dưới mọi
+     nội dung ⇒ không phạm luật "màu luôn mang nghĩa", không đụng phổ đỏ/vàng/xanh.
+  KHÔNG có token màu nhấn thứ hai nào ở đây. Đúng MỘT accent: --accent tím.
+
+VẬT LIỆU (LUAT-VAT-LIEU-KINH-G0-G3.md)
+  G0 matte : trường không khí · lời chào · cung mặt trời · chữ gợi ý · lối phụ dạng chữ
+  G1 kính phẳng : thanh tìm kiếm · rail (nấc nở) — mép sáng mảnh, blur biết-nền, rất nông
+  G2 : KHÔNG CÓ trên màn này (không vật nào đang sống, không vật nào đang được chọn)
+  G2–G3 : ĐÚNG MỘT — nút "Nhập bản vẽ có sẵn". Bản vẽ để ở G3; hạ về G2 phẳng chỉ là đổi một
+          khối box-shadow. Ngân sách vật liệu: BẦU KHÔNG KHÍ gánh diện mạo, KHÔNG phải nút.
+  Đếm được: `grep -c 'loi-vao"' ` phải cho ĐÚNG MỘT nút G3 mỗi khung màn.
+
+QUY TẮC KHÔNG ĐƯỢC PHÁ KHI DỰNG
+  1. Widget không có dữ liệu ⇒ KHÔNG RENDER. Không ô trống, không khung xám, không "—", không 0.
+  2. Đúng MỘT G3 trên cả màn. Lối phụ là CHỮ TRẦN, không được mọc vỏ nút.
+  3. Khoảng trống là thiết kế. Chùm sáng phải đi qua nó và phải CHẠM lối vào — cấm nhét widget
+     vào chỗ trống "cho đỡ phí".
+  4. ⭐ NHÂN VẬT CHÍNH LÀ KHÔNG GIAN. Vỏ và lối vào SỐNG BÊN TRONG nó. Câu nghiệm thu đúng nghĩa
+     đen: "Hoà có sẵn lòng để app mở nguyên ở màn này, không dự án, không việc gì chạy, không?"
+     Trả lời KHÔNG ⇒ sửa BẦU KHÔNG KHÍ, đừng thêm bộ phận giao diện.
+  4b. Không bao giờ hiện chữ "Chưa có gì" / "Trống" / hình vẽ buồn. Câu duy nhất nói về sự trống
+     là "xưởng đang yên" — và nó nằm cạnh lời chào như một nhận xét về thời tiết, không phải lỗi.
+  5. Cả trường (trừ rail + vỏ trên) là VÙNG THẢ TỆP. Kéo tệp vào ⇒ chùm sáng mạnh lên và vùng
+     sáng trên sàn nở ra — phản hồi bằng chính ánh sáng của phòng, không phải khung nét đứt xanh.
+  6. Rail nấc 240/320 NỔI ĐÈ, không đẩy trường một pixel nào.
+  7. Khi dự án đầu tiên xuất hiện: KHÔNG chuyển màn. Vật mọc lên TRONG chính căn phòng này
+     (Living Canvas trạng thái A) — cùng ánh sáng, cùng sàn, cùng chỗ. Người dùng phải thấy
+     xưởng của mình có thêm đồ, không phải thấy một app khác.
+
+=========================================================================== -->

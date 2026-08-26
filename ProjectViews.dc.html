@@ -1,0 +1,135 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><script src="./support.js"></script></head><body><x-dc>
+<helmet><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@200;300;400;500;600&display=swap">
+<style>
+  body{margin:0;font-family:'Be Vietnam Pro',-apple-system,system-ui,sans-serif;}
+  .nhan{font-size:10.5px;letter-spacing:.09em;color:#96918a;margin-bottom:11px;}
+  .ghi{font-size:11.5px;color:#6e6a62;line-height:1.62;margin-top:10px;}
+  .ghi b{font-weight:500;color:#46433d;}
+  .o{border-radius:20px;background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.85);padding:16px 18px;}
+  .khung{border-radius:18px;background:#fdfcfa;box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 14px 32px -28px rgba(60,52,40,.45);}
+</style></helmet>
+
+<div style="width:1900px;height:1300px;box-sizing:border-box;padding:30px 34px;color:#22201c;background:#f7f6f3;">
+
+  <div style="font-size:15px;font-weight:600;letter-spacing:-.01em;">Stage PROJECT — <span style="font-weight:400">một stage, SÁU CÁCH NHÌN cùng một dữ liệu</span></div>
+  <div class="ghi" style="max-width:1240px;margin:8px 0 16px;">
+    Project Legacy <b>không phải một màn riêng</b> — nó là <b>một view</b> của stage Project.
+    Đổi view <b>không đổi dữ liệu</b>, chỉ đổi cách chiếu. Đây đúng Luật A của spec hạ tầng:
+    <i>một tài liệu là bất biến, mọi editor chỉ là bản chiếu.</i>
+  </div>
+
+  <!-- CHUYỂN VIEW -->
+  <div style="display:flex;align-items:center;gap:5px;padding:6px;border-radius:21px;width:fit-content;
+       background:rgba(120,110,90,.09);margin-bottom:18px;">
+    <div style="height:30px;border-radius:15px;padding:0 14px;display:flex;align-items:center;color:#6e6a62;font-size:12px;white-space:nowrap;">Dòng thời gian</div><div style="height:30px;border-radius:15px;padding:0 14px;display:flex;align-items:center;color:#6e6a62;font-size:12px;white-space:nowrap;">Lịch</div><div style="height:30px;border-radius:15px;padding:0 14px;display:flex;align-items:center;background:#fff;box-shadow:0 2px 6px -3px rgba(60,52,40,.28);color:#22201c;font-size:12px;white-space:nowrap;">Gantt</div><div style="height:30px;border-radius:15px;padding:0 14px;display:flex;align-items:center;color:#6e6a62;font-size:12px;white-space:nowrap;">Kanban</div><div style="height:30px;border-radius:15px;padding:0 14px;display:flex;align-items:center;color:#6e6a62;font-size:12px;white-space:nowrap;">Nhân sự</div><div style="height:30px;border-radius:15px;padding:0 14px;display:flex;align-items:center;color:#6e6a62;font-size:12px;white-space:nowrap;">Bản sửa</div>
+    <div style="width:1px;height:18px;background:rgba(120,110,90,.22);margin:0 5px;"></div>
+    <div style="height:30px;border-radius:15px;padding:0 13px;display:flex;align-items:center;gap:7px;font-size:12px;color:#6e6a62;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6e6a62" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Công trình mới</div>
+  </div>
+
+  <div style="display:flex;gap:20px;align-items:flex-start;">
+
+    <!-- GANTT -->
+    <div style="width:1000px;">
+      <div class="nhan">GANTT — chặng của công trình ĐANG MỞ</div>
+      <div class="khung" style="position:relative;height:250px;padding:22px 20px 14px;box-sizing:border-box;">
+        <div style="position:relative;height:100%;"><div style="position:absolute;left:0px;top:0;bottom:0;width:1px;background:rgba(120,110,90,.26);"></div><div style="position:absolute;left:6px;top:0;font-size:9.5px;color:#b5b0a8;">T1</div><div style="position:absolute;left:96px;top:0;bottom:0;width:1px;background:rgba(120,110,90,.1);"></div><div style="position:absolute;left:102px;top:0;font-size:9.5px;color:#b5b0a8;"></div><div style="position:absolute;left:192px;top:0;bottom:0;width:1px;background:rgba(120,110,90,.26);"></div><div style="position:absolute;left:198px;top:0;font-size:9.5px;color:#b5b0a8;">T3</div><div style="position:absolute;left:288px;top:0;bottom:0;width:1px;background:rgba(120,110,90,.1);"></div><div style="position:absolute;left:294px;top:0;font-size:9.5px;color:#b5b0a8;"></div><div style="position:absolute;left:384px;top:0;bottom:0;width:1px;background:rgba(120,110,90,.26);"></div><div style="position:absolute;left:390px;top:0;font-size:9.5px;color:#b5b0a8;">T5</div><div style="position:absolute;left:480px;top:0;bottom:0;width:1px;background:rgba(120,110,90,.1);"></div><div style="position:absolute;left:486px;top:0;font-size:9.5px;color:#b5b0a8;"></div><div style="position:absolute;left:576px;top:0;bottom:0;width:1px;background:rgba(120,110,90,.26);"></div><div style="position:absolute;left:582px;top:0;font-size:9.5px;color:#b5b0a8;">T7</div><div style="position:absolute;left:672px;top:0;bottom:0;width:1px;background:rgba(120,110,90,.1);"></div><div style="position:absolute;left:678px;top:0;font-size:9.5px;color:#b5b0a8;"></div><div style="position:absolute;left:768px;top:0;bottom:0;width:1px;background:rgba(120,110,90,.26);"></div><div style="position:absolute;left:774px;top:0;font-size:9.5px;color:#b5b0a8;">T9</div><div style="position:absolute;left:0px;top:32px;width:180px;height:26px;border-radius:7px;background:rgba(120,110,90,.14);overflow:hidden;"><div style="position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:7px;background:linear-gradient(90deg,#7f8a86,#5c6663);"></div><div style="position:absolute;left:11px;top:0;bottom:0;display:flex;align-items:center;font-size:11px;color:#f7f6f3;white-space:nowrap;">Khảo sát hiện trạng</div></div><div style="position:absolute;left:160px;top:66px;width:220px;height:26px;border-radius:7px;background:rgba(120,110,90,.14);overflow:hidden;"><div style="position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:7px;background:linear-gradient(90deg,#8b7ff2,#5b48d8);"></div><div style="position:absolute;left:11px;top:0;bottom:0;display:flex;align-items:center;font-size:11px;color:#f7f6f3;white-space:nowrap;">Ý tưởng · 3 phương án</div></div><div style="position:absolute;left:350px;top:100px;width:300px;height:26px;border-radius:7px;background:rgba(120,110,90,.14);overflow:hidden;"><div style="position:absolute;left:0;top:0;bottom:0;width:62%;border-radius:7px;background:linear-gradient(90deg,#8b7ff2,#5b48d8);"></div><div style="position:absolute;left:11px;top:0;bottom:0;display:flex;align-items:center;font-size:11px;color:#f7f6f3;white-space:nowrap;">Bản vẽ triển khai</div></div><div style="position:absolute;left:430px;top:134px;width:180px;height:26px;border-radius:7px;background:rgba(120,110,90,.14);overflow:hidden;"><div style="position:absolute;left:0;top:0;bottom:0;width:34%;border-radius:7px;background:linear-gradient(90deg,#a2907a,#6d5c46);"></div><div style="position:absolute;left:11px;top:0;bottom:0;display:flex;align-items:center;font-size:11px;color:#f7f6f3;white-space:nowrap;">Vật liệu · chỉ định</div></div><div style="position:absolute;left:600px;top:168px;width:240px;height:26px;border-radius:7px;background:rgba(120,110,90,.14);overflow:hidden;"><div style="position:absolute;left:0;top:0;bottom:0;width:0%;border-radius:7px;background:linear-gradient(90deg,#c9c5bc,#a09a90);"></div><div style="position:absolute;left:11px;top:0;bottom:0;display:flex;align-items:center;font-size:11px;color:#f7f6f3;white-space:nowrap;">Trình bày · duyệt khách</div></div><div style="position:absolute;left:760px;top:202px;width:180px;height:26px;border-radius:7px;background:rgba(120,110,90,.14);overflow:hidden;"><div style="position:absolute;left:0;top:0;bottom:0;width:0%;border-radius:7px;background:linear-gradient(90deg,#c9c5bc,#a09a90);"></div><div style="position:absolute;left:11px;top:0;bottom:0;display:flex;align-items:center;font-size:11px;color:#f7f6f3;white-space:nowrap;">Hồ sơ thi công</div></div><div style="position:absolute;left:432px;top:16px;bottom:8px;width:2px;background:#c9843e;"></div><div style="position:absolute;left:426px;top:8px;padding:2px 7px;border-radius:5px;background:#c9843e;font-size:9px;color:#fff;white-space:nowrap;">hôm nay</div></div>
+      </div>
+      <div class="ghi">Chặng nào <b>đã xong thì đặc</b>, đang chạy thì <b>đổ một phần</b>,
+        chưa tới thì <b>xám</b>. Vạch cam là hôm nay. <b>Không có phần trăm tổng của cả công trình</b> —
+        cộng sáu chặng nặng nhẹ khác nhau ra một con số là bịa.</div>
+    </div>
+
+    <!-- KANBAN -->
+    <div style="flex-grow:1;">
+      <div class="nhan">KANBAN — việc của công trình</div>
+      <div class="khung" style="height:250px;padding:16px;box-sizing:border-box;overflow:hidden;">
+        <div style="display:flex;gap:14px;">
+          <div style="width:186px;flex-shrink:0;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:11px;"><span style="width:7px;height:7px;border-radius:999px;background:#c9c5bc;"></span><span style="font-size:11.5px;color:#46433d;flex-grow:1;">Chờ</span><span style="font-size:10px;color:#b5b0a8;font-variant-numeric:tabular-nums;">4</span></div><div style="border-radius:11px;background:#fff;padding:10px;margin-bottom:8px;box-shadow:0 2px 6px -3px rgba(60,52,40,.22);"><div style="font-size:11.5px;color:#22201c;line-height:1.35;">Đo lại cao độ trần bếp</div><div style="display:flex;align-items:center;gap:7px;margin-top:8px;"><span style="font-size:9px;letter-spacing:.11em;color:#b5b0a8;">IF·048</span><span style="flex-grow:1;"></span><span style="width:20px;height:20px;border-radius:999px;background:linear-gradient(140deg,#8b7ff2,#5b48d8);"></span><span style="font-size:9.5px;color:#96918a;">Hoà</span></div></div><div style="border-radius:11px;background:#fff;padding:10px;margin-bottom:8px;box-shadow:0 2px 6px -3px rgba(60,52,40,.22);"><div style="font-size:11.5px;color:#22201c;line-height:1.35;">Xin mẫu đá</div><div style="display:flex;align-items:center;gap:7px;margin-top:8px;"><span style="font-size:9px;letter-spacing:.11em;color:#b5b0a8;">IF·048</span><span style="flex-grow:1;"></span><span style="width:20px;height:20px;border-radius:999px;background:linear-gradient(140deg,#a2907a,#6d5c46);"></span><span style="font-size:9.5px;color:#96918a;">Vy</span></div></div></div>
+          <div style="width:186px;flex-shrink:0;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:11px;"><span style="width:7px;height:7px;border-radius:999px;background:#1f7f88;"></span><span style="font-size:11.5px;color:#46433d;flex-grow:1;">Đang làm</span><span style="font-size:10px;color:#b5b0a8;font-variant-numeric:tabular-nums;">2</span></div><div style="border-radius:11px;background:#fff;padding:10px;margin-bottom:8px;box-shadow:0 2px 6px -3px rgba(60,52,40,.22);"><div style="height:56px;border-radius:7px;margin-bottom:9px;background:linear-gradient(150deg,#a2907a,#6d5c46);"></div><div style="font-size:11.5px;color:#22201c;line-height:1.35;">Kết xuất phòng khách</div><div style="display:flex;align-items:center;gap:7px;margin-top:8px;"><span style="font-size:9px;letter-spacing:.11em;color:#b5b0a8;">IF·048</span><span style="flex-grow:1;"></span><span style="width:20px;height:20px;border-radius:999px;background:linear-gradient(140deg,#a2907a,#6d5c46);"></span><span style="font-size:9.5px;color:#96918a;">Nam</span></div></div></div>
+          <div style="width:186px;flex-shrink:0;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:11px;"><span style="width:7px;height:7px;border-radius:999px;background:#c9843e;"></span><span style="font-size:11.5px;color:#46433d;flex-grow:1;">Chờ duyệt</span><span style="font-size:10px;color:#b5b0a8;font-variant-numeric:tabular-nums;">1</span></div><div style="border-radius:11px;background:#fff;padding:10px;margin-bottom:8px;box-shadow:0 2px 6px -3px rgba(60,52,40,.22);"><div style="height:56px;border-radius:7px;margin-bottom:9px;background:linear-gradient(150deg,#7f8a86,#5c6663);"></div><div style="font-size:11.5px;color:#22201c;line-height:1.35;">Bảng vật liệu bản 2</div><div style="display:flex;align-items:center;gap:7px;margin-top:8px;"><span style="font-size:9px;letter-spacing:.11em;color:#b5b0a8;">IF·048</span><span style="flex-grow:1;"></span><span style="width:20px;height:20px;border-radius:999px;background:linear-gradient(140deg,#7f8a86,#5c6663);"></span><span style="font-size:9.5px;color:#96918a;">Hoà</span></div></div></div>
+          <div style="width:186px;flex-shrink:0;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:11px;"><span style="width:7px;height:7px;border-radius:999px;background:#4aa88a;"></span><span style="font-size:11.5px;color:#46433d;flex-grow:1;">Xong</span><span style="font-size:10px;color:#b5b0a8;font-variant-numeric:tabular-nums;">9</span></div><div style="border-radius:11px;background:#fff;padding:10px;margin-bottom:8px;box-shadow:0 2px 6px -3px rgba(60,52,40,.22);"><div style="font-size:11.5px;color:#22201c;line-height:1.35;">Tách nền 4 vật</div><div style="display:flex;align-items:center;gap:7px;margin-top:8px;"><span style="font-size:9px;letter-spacing:.11em;color:#b5b0a8;">IF·048</span><span style="flex-grow:1;"></span><span style="width:20px;height:20px;border-radius:999px;background:linear-gradient(140deg,#8b7ff2,#5b48d8);"></span><span style="font-size:9.5px;color:#96918a;">Nam</span></div></div></div>
+        </div>
+      </div>
+      <div class="ghi">Cột <b>Chờ duyệt</b> tách riêng khỏi <b>Đang làm</b> — vì việc nằm ở đó
+        <b>không phải lỗi của xưởng</b>, và trộn hai cái làm mất dấu chỗ đang tắc.</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:20px;margin-top:22px;align-items:flex-start;">
+
+    <!-- LỊCH -->
+    <div style="width:452px;">
+      <div class="nhan">LỊCH — mốc và hẹn</div>
+      <div class="khung" style="height:274px;padding:16px 18px;box-sizing:border-box;">
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:13px;">
+          <span style="font-size:13px;">Tháng 8 · 2026</span>
+          <span style="flex-grow:1;"></span>
+          <span style="font-size:10.5px;color:#b5b0a8;">4 mốc</span></div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">
+          <div style="font-size:9px;color:#b5b0a8;text-align:center;padding-bottom:5px;">H</div><div style="font-size:9px;color:#b5b0a8;text-align:center;padding-bottom:5px;">B</div><div style="font-size:9px;color:#b5b0a8;text-align:center;padding-bottom:5px;">T</div><div style="font-size:9px;color:#b5b0a8;text-align:center;padding-bottom:5px;">N</div><div style="font-size:9px;color:#b5b0a8;text-align:center;padding-bottom:5px;">S</div><div style="font-size:9px;color:#b5b0a8;text-align:center;padding-bottom:5px;">B</div><div style="font-size:9px;color:#b5b0a8;text-align:center;padding-bottom:5px;">C</div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;"></span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;"></span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">1</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">2</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">3</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">4</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;background:rgba(74,168,138,.16);"><span style="font-size:10.5px;color:#22201c;font-variant-numeric:tabular-nums;">5</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">6</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">7</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">8</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">9</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">10</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">11</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;background:rgba(106,87,245,.13);"><span style="font-size:10.5px;color:#22201c;font-variant-numeric:tabular-nums;">12</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">13</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">14</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">15</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">16</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">17</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">18</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;background:rgba(106,87,245,.13);"><span style="font-size:10.5px;color:#22201c;font-variant-numeric:tabular-nums;">19</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">20</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">21</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">22</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">23</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">24</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">25</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;background:rgba(201,132,62,.16);"><span style="font-size:10.5px;color:#22201c;font-variant-numeric:tabular-nums;">26</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">27</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">28</span></div><div style="height:28px;border-radius:7px;display:grid;place-items:center;position:relative;"><span style="font-size:10.5px;color:#96918a;font-variant-numeric:tabular-nums;">29</span></div>
+        </div>
+        <div style="margin-top:13px;padding-top:11px;border-top:1px solid rgba(120,110,90,.16);">
+          <div style="display:flex;align-items:center;gap:9px;padding:6px 0;"><span style="width:6px;height:6px;border-radius:999px;background:#6a57f5;"></span><span style="font-size:11.5px;color:#46433d;flex-grow:1;">Khách xem bản vẽ</span><span style="font-size:10px;color:#b5b0a8;">12/08</span></div><div style="display:flex;align-items:center;gap:9px;padding:6px 0;"><span style="width:6px;height:6px;border-radius:999px;background:#6a57f5;"></span><span style="font-size:11.5px;color:#46433d;flex-grow:1;">Chốt vật liệu</span><span style="font-size:10px;color:#b5b0a8;">19/08</span></div><div style="display:flex;align-items:center;gap:9px;padding:6px 0;"><span style="width:6px;height:6px;border-radius:999px;background:#c9843e;"></span><span style="font-size:11.5px;color:#46433d;flex-grow:1;">Phát hành hồ sơ</span><span style="font-size:10px;color:#b5b0a8;">26/08</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NHÂN SỰ -->
+    <div style="width:452px;">
+      <div class="nhan">NHÂN SỰ — ai đã làm, từ khi nào tới giờ</div>
+      <div class="khung" style="height:274px;padding:16px 18px;box-sizing:border-box;overflow:hidden;">
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:2px;">
+          <span style="font-size:11.5px;color:#46433d;flex-grow:1;">Đang làm công trình này</span>
+          <span style="font-size:10px;color:#b5b0a8;">số công trình đã cùng làm</span></div>
+        {ng('Hoà','chủ trì','2021 → nay','#8b7ff2','#5b48d8','48')}
+        {ng('Nam','dựng 3D · kết xuất','2023 → nay','#a2907a','#6d5c46','26')}
+        {ng('Vy','vật liệu · hồ sơ','2024 → nay','#7f8a86','#5c6663','14')}
+        {ng('Khang','bản vẽ','2025 → nay','#a99a86','#615647','7')}
+        <div style="font-size:10.5px;color:#96918a;line-height:1.6;margin-top:11px;padding-top:10px;
+             border-top:1px solid rgba(120,110,90,.16);">
+          Ở <b style="color:#46433d;font-weight:500;">Project Legacy</b>, cột này hiện
+          <b style="color:#46433d;font-weight:500;">người đã tham gia THỜI ĐÓ</b> — kể cả người đã nghỉ.
+          Công trình cũ vẫn là công của họ.
+        </div>
+      </div>
+    </div>
+
+    <!-- BẢN SỬA -->
+    <div style="flex-grow:1;">
+      <div class="nhan">BẢN SỬA — mỗi bản có GIỜ và có CMT rõ ràng</div>
+      <div class="khung" style="height:274px;padding:16px 18px;box-sizing:border-box;overflow:hidden;">
+        {rev('7','26/08 · 09:40','Hoà','Hạ trần bếp xuống 2 700. Khách đồng ý qua điện thoại sáng nay.','#a2907a','#6d5c46',True)}
+        {rev('6','19/08 · 16:12','Nam','Đổi vật liệu sàn sang sồi hun khói theo bảng Vy gửi.','#b7a690','#6d5c46')}
+        {rev('5','12/08 · 11:05','Hoà','Khách xem, muốn thấy rõ mảng tường gạch hơn.','#c0ac92','#75634b')}
+      </div>
+      <div class="ghi"><b>Cmt là BẮT BUỘC</b> khi lưu một bản. Không có cmt thì ba tháng sau
+        không ai biết bản 6 khác bản 5 chỗ nào — và đó chính là chỗ hở
+        <i>Triển khai → Duyệt</i> ở bản đồ luồng.</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:20px;margin-top:22px;">
+    <div class="o" style="flex-grow:1;">
+      <div class="nhan" style="margin-bottom:10px;">SÁU VIEW, MỘT DỮ LIỆU — VÌ SAO KHÔNG PHẢI SÁU MÀN</div>
+      <div style="font-size:12.5px;color:#46433d;line-height:1.9;">
+        Gantt · Kanban · Lịch · Nhân sự · Bản sửa · Dòng thời gian đều đọc <b>cùng một tập việc</b>.
+        Kéo một thẻ ở Kanban thì <b>thanh Gantt dịch theo</b>, ngày trên Lịch đổi theo, và
+        Bản sửa ghi lại. <b>Không có sự thật thứ hai.</b>
+        <br><br>Nếu tách thành sáu màn thì mỗi màn sẽ dần đẻ dữ liệu riêng, rồi số liệu chỏi nhau —
+        đó là bệnh của mọi phần mềm quản lý dự án đã có.
+      </div>
+    </div>
+    <div class="o" style="width:520px;">
+      <div class="nhan" style="margin-bottom:10px;">TẠO CÔNG TRÌNH MỚI — THẢ VÀO DÒNG THỜI GIAN</div>
+      <div style="font-size:12.5px;color:#46433d;line-height:1.9;">
+        Nút <b>Công trình mới</b> nằm cạnh dải view, không nằm ở đâu khác. Tạo xong thì
+        <b>một bìa rỗng rơi vào dòng thời gian ở đúng hôm nay</b> — và đó là chỗ nó ở lại vĩnh viễn.
+        <br><br>Nhờ vậy <b>Legacy không phải một cái kho phải dọn</b>: nó lớn lên theo đúng nhịp
+        studio làm việc, không cần ai ngồi nhập lại.
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc></body></html>

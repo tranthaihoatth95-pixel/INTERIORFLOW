@@ -27,6 +27,11 @@ export interface PresentNavigatorProps {
    * `boqActive`/`onOpenBoq` (BOQ chỉ mở lại được từ màn chọn loại hồ sơ nếu không có lối tắt này). */
   scheduleActive?: boolean;
   onOpenSchedule?: () => void;
+  /**
+   * Hồ sơ đang mở đã có trang chưa. `false` = màn giữa đang là thư viện mẫu ⇒ KHÔNG có dải
+   * thumbnail để trỏ tới. Bỏ trống = không biết ⇒ giữ nguyên câu cũ (không đoán hộ nơi gọi).
+   */
+  coHoSo?: boolean;
 }
 
 function NavShortcutButton({ active, onClick, icon, label }: { active?: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
@@ -48,15 +53,25 @@ function NavShortcutButton({ active, onClick, icon, label }: { active?: boolean;
   );
 }
 
-export function PresentNavigator({ boqActive, onOpenBoq, scheduleActive, onOpenSchedule }: PresentNavigatorProps) {
+export function PresentNavigator({ boqActive, onOpenBoq, scheduleActive, onOpenSchedule, coHoSo }: PresentNavigatorProps) {
   const tr = useT();
   return (
     <div>
+      {/* 20/08 — CHỈ DẪN PHẢI CÓ THỨ ĐỂ TRỎ VÀO. Đo trên app thật (tiền cảnh, dự án chưa có hồ
+          sơ): ổ này in "Chuyển trang ở dải thumbnail dưới canvas" trong khi **chưa có canvas
+          nào và 0 trang** — câu đúng ngữ pháp, trỏ vào hư không. Nay tách hai trạng thái:
+          chưa có hồ sơ ⇒ nói ổ này SẼ liệt kê gì (đúng luật X2: khai rõ chưa có, không chặn);
+          đã có hồ sơ ⇒ giữ nguyên câu cũ vì lúc đó dải thumbnail có thật. */}
       <div className="px-3 py-4 text-center text-[12px] leading-relaxed text-[var(--t4)]">
-        {tr(
-          'Chuyển trang ở dải thumbnail dưới canvas.',
-          'Switch pages in the thumbnail strip below the canvas.',
-        )}
+        {coHoSo === false
+          ? tr(
+              'Chưa chọn hồ sơ — chọn một mẫu ở giữa màn, danh sách trang sẽ hiện ở đây.',
+              'No document yet — pick a template in the middle and the page list appears here.',
+            )
+          : tr(
+              'Chuyển trang ở dải thumbnail dưới canvas.',
+              'Switch pages in the thumbnail strip below the canvas.',
+            )}
       </div>
       {onOpenBoq && (
         <NavShortcutButton

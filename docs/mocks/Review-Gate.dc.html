@@ -1,0 +1,843 @@
+<!-- @dsCard group="Review" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cổng Soát Duyệt — InteriorFlow</title>
+<style>
+/* ============================================================================
+   TOKEN — chép ĐÚNG TÊN + ĐÚNG GIÁ TRỊ từ app/globals.css (chỉ đọc, không sửa).
+   Mọi chỗ dùng đi qua var(--…); không hex trần trong phần thân.
+   ========================================================================== */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14);
+  --accent-ring:rgba(106,87,245,.55); --on-accent:#ffffff;
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fs-ui:13px; --fw-normal:400; --fw-semi:600;
+  --tap:32px; --tap-lg:44px; --row:28px; --gap:8px; --pad-card:8px 12px;
+  --ease-apple:cubic-bezier(.32,.72,0,1);
+  --nhip-bam:130ms; --nhip-vien:170ms; --nhip-bang:220ms;
+  --kinh-nhoe:16px; --vl-gan-dac-nhoe:6px;
+}
+:root,:root[data-theme='dark']{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --nen-mo-header:rgba(20,20,23,.72); --nen-mo-panel:rgba(20,20,23,.68);
+  --nen-mo-overlay:rgba(6,6,8,.56);
+  --kinh-mong:rgba(24,24,28,.84); --kinh-vua:rgba(24,24,28,.9); --kinh-dac:rgba(24,24,28,.95);
+  --vl-dac:var(--panel); --vl-gan-dac:rgba(20,20,23,.97);
+  --kinh-mep-sang:rgba(255,255,255,.14); --kinh-vien:rgba(255,255,255,.1);
+  --kinh-chu-phu:#b4b4bd; --vien-mo:rgba(255,255,255,.06); --mo-vo-hieu:.5;
+  --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --dots:#26262d;
+  --stage:radial-gradient(112% 84% at 50% 4%,#16161c 0%,#0c0c0e 66%);
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --nen-mo-header:rgba(250,248,244,.72); --nen-mo-panel:rgba(250,248,244,.7);
+  --nen-mo-overlay:rgba(60,55,48,.28);
+  --kinh-mong:rgba(252,251,249,.88); --kinh-vua:rgba(252,251,249,.93); --kinh-dac:rgba(253,252,250,.96);
+  --vl-dac:var(--panel); --vl-gan-dac:rgba(250,248,244,.975);
+  --kinh-mep-sang:rgba(255,255,255,.75); --kinh-vien:rgba(0,0,0,.08);
+  --kinh-chu-phu:#5c564d; --vien-mo:rgba(0,0,0,.05); --mo-vo-hieu:.62;
+  --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+  --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --dots:#ddd8ce;
+  --stage:radial-gradient(112% 84% at 50% 4%,#fdfbf7 0%,#efebe3 66%);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);
+  font:var(--fw-normal) var(--fs-sm)/1.5 -apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+/* ---------- vỏ trang bản vẽ ---------- */
+.page{padding:32px 40px 64px}
+.head{width:1440px;margin:0 auto 22px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px}
+h1{margin:0;font-size:var(--fs-xl);font-weight:var(--fw-semi);letter-spacing:-.02em;line-height:1.5}
+.sub{margin-top:6px;font-size:var(--fs-xs);line-height:1.6;color:var(--t3);max-width:920px}
+.tog{height:var(--tap);padding:0 16px;border:1px solid var(--border);border-radius:var(--r-2);
+  background:var(--panel);color:var(--t2);font:var(--fw-semi) var(--fs-xs)/1.5 inherit;cursor:pointer}
+.tog:hover{background:var(--hover);color:var(--t1)}
+.ab{width:1440px;margin:0 auto 12px;display:flex;align-items:baseline;gap:10px;padding-top:26px}
+.ab h2{margin:0;font-size:var(--fs-lg);font-weight:var(--fw-semi);letter-spacing:-.01em}
+.ab .k{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:var(--r-1);
+  background:var(--accent);color:var(--on-accent);font-size:var(--fs-2xs);font-weight:700;letter-spacing:.05em}
+.ab .n{font-size:var(--fs-xs);color:var(--t3)}
+.cap{width:1440px;margin:12px auto 0;font-size:var(--fs-xs);line-height:1.7;color:var(--t3);max-width:1100px}
+.cap b{color:var(--t2)}
+.frame{width:1440px;margin:0 auto;border:1px solid var(--border);border-radius:var(--r-4);overflow:hidden;
+  box-shadow:var(--shadow-pop);background:var(--bg)}
+.frame.narrow{width:1100px}
+
+/* ---------- vỏ app ---------- */
+.appbar{height:42px;display:flex;align-items:center;gap:10px;padding:0 12px;
+  background:var(--nen-mo-header);backdrop-filter:blur(var(--kinh-nhoe));border-bottom:1px solid var(--border)}
+.logo{width:20px;height:20px;border-radius:var(--r-1);background:var(--accent);flex:none}
+.brand{font-size:var(--fs-sm);font-weight:var(--fw-semi);letter-spacing:-.01em}
+.crumb{font-size:var(--fs-xs);color:var(--t3)}
+.seg{margin-left:auto;display:inline-flex;background:var(--field);border-radius:var(--r-2);padding:2px}
+.seg button{border:0;background:transparent;color:var(--t3);font:var(--fw-semi) var(--fs-xs)/1.5 inherit;
+  padding:4px 13px;border-radius:var(--r-1);cursor:pointer}
+.seg button[aria-current='true']{background:var(--card);color:var(--t1)}
+.body{display:grid;grid-template-columns:52px 1fr 14px auto;height:726px}
+.body.b-narrow{grid-template-columns:52px 1fr 14px auto;height:640px}
+.rail{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;
+  align-items:center;gap:6px;padding:8px 0}
+.rail i{width:34px;height:34px;border-radius:var(--r-2);background:var(--field);display:block}
+.rail i.on{background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent-ring)}
+.stage{position:relative;background:var(--stage);overflow:hidden}
+.grid{position:absolute;inset:0;
+  background-image:linear-gradient(var(--dots) 1px,transparent 1px),linear-gradient(90deg,var(--dots) 1px,transparent 1px);
+  background-size:48px 48px;opacity:.5}
+
+/* ---------- tay cầm thu/mở panel (PanelFlank) ---------- */
+.flank{width:14px;background:var(--panel);border-left:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;color:var(--t4);cursor:pointer}
+.flank:hover{background:var(--hover);color:var(--t2)}
+
+/* ---------- BẢNG KIỂM ---------- */
+.gate{width:364px;background:var(--vl-gan-dac);backdrop-filter:blur(var(--vl-gan-dac-nhoe));
+  border-left:1px solid var(--border);display:flex;flex-direction:column;min-height:0;
+  box-shadow:inset 1px 0 0 var(--kinh-mep-sang)}
+.gate.w330{width:330px}
+.gate-h{padding:12px 14px 10px;border-bottom:1px solid var(--border);flex:none}
+.gate-h .r1{display:flex;align-items:center;gap:8px}
+.gate-t{font-size:var(--fs-sm);font-weight:var(--fw-semi);letter-spacing:-.01em}
+.chip-chang{margin-left:auto;display:inline-flex;align-items:center;height:20px;padding:0 8px;
+  border-radius:var(--r-full);background:var(--field);border:1px solid var(--border);
+  color:var(--t3);font-size:var(--fs-2xs);font-weight:var(--fw-semi)}
+.gate-note{margin-top:6px;font-size:var(--fs-2xs);line-height:1.6;color:var(--t3)}
+.gate-b{flex:1;min-height:0;overflow:auto;padding:10px 12px 14px}
+.gate-f{flex:none;border-top:1px solid var(--border);padding:10px 12px;background:var(--panel)}
+
+/* nhãn nhóm */
+.grp{display:flex;align-items:center;gap:8px;margin:12px 2px 8px}
+.grp:first-child{margin-top:2px}
+.grp .lbl{font-size:var(--fs-2xs);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t2)}
+.grp .hint{font-size:var(--fs-2xs);color:var(--t4)}
+.grp .cnt{margin-left:auto;font-size:var(--fs-2xs);color:var(--t3)}
+.rule-line{height:1px;background:var(--border);flex:1}
+
+/* ===== THẺ LỚP LUẬT — mép TRÁI LIỀN 3px, góc vuông hơn, có điều khoản ===== */
+.f{position:relative;border:1px solid var(--border);background:var(--card);
+  border-radius:var(--r-2);padding:10px 12px 10px 13px;margin-bottom:8px;
+  transition:background var(--nhip-bam) var(--ease-apple)}
+.f:hover{background:var(--hover)}
+.f-luat{border-left:3px solid var(--border-strong)}
+.f-luat[data-muc='do']{border-left-color:var(--danger)}
+.f-luat[data-muc='vang']{border-left-color:var(--warning)}
+.f-top{display:flex;align-items:flex-start;gap:8px}
+/* DẤU HÌNH DẠNG — kênh không-màu phân biệt mức */
+.mark{width:14px;height:14px;flex:none;margin-top:2px;display:block}
+.f-title{font-size:var(--fs-ui);line-height:1.45;color:var(--t1);font-weight:var(--fw-semi);flex:1;min-width:0}
+.f-desc{margin-top:5px;font-size:var(--fs-xs);line-height:1.6;color:var(--t2)}
+.f-num{font-weight:700;color:var(--t1)}
+.clause{margin-top:7px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  font-size:var(--fs-2xs);color:var(--t3)}
+.clause .tag{display:inline-flex;align-items:center;height:19px;padding:0 7px;border-radius:var(--r-1);
+  background:var(--field);border:1px solid var(--border);color:var(--t2);font-weight:var(--fw-semi)}
+.clause .src{font-size:var(--fs-2xs)}
+.f-act{margin-top:9px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* ===== THẺ LỚP GÓP Ý — mép TRÁI ĐỨT NÉT, bo tròn hơn, dấu Magic, chữ "gợi ý" ===== */
+.f-gopy{border-left:3px dashed var(--t4);border-radius:var(--r-3);background:var(--panel)}
+.magic{width:14px;height:14px;flex:none;margin-top:2px;color:var(--accent);display:block}
+.tag-goi-y{display:inline-flex;align-items:center;gap:5px;height:19px;padding:0 8px;
+  border-radius:var(--r-full);background:var(--accent-soft);
+  box-shadow:inset 0 0 0 1px var(--accent-ring);color:var(--t1);
+  font-size:var(--fs-2xs);font-weight:700;letter-spacing:.02em}
+.khong-chan{margin-top:7px;font-size:var(--fs-2xs);line-height:1.6;color:var(--t3);font-style:italic}
+
+/* nút */
+.btn{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:var(--r-1);
+  border:1px solid var(--border);background:var(--field);color:var(--t2);
+  font:var(--fw-semi) var(--fs-2xs)/1 inherit;cursor:pointer;
+  transition:background var(--nhip-bam) var(--ease-apple)}
+.btn:hover{background:var(--hover);color:var(--t1)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.pri:hover{background:var(--accent-strong);color:var(--on-accent)}
+.btn.big{height:var(--tap);padding:0 15px;border-radius:var(--r-2);font-size:var(--fs-xs)}
+.btn[aria-disabled='true']{opacity:var(--mo-vo-hieu);cursor:default}
+.btn[aria-disabled='true']:hover{background:var(--field);color:var(--t2)}
+.btn:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px}
+
+/* ô giải nghĩa — hiện THẤY ĐƯỢC, không dùng title */
+.giai{margin-top:8px;border:1px solid var(--border);border-radius:var(--r-2);background:var(--field);
+  padding:9px 10px;display:flex;gap:10px}
+.giai .hinh{width:56px;height:44px;flex:none;border-radius:var(--r-1);border:1px solid var(--border);
+  background:var(--card);color:var(--t3);display:flex;align-items:center;justify-content:center}
+.giai .t{font-size:var(--fs-2xs);font-weight:700;color:var(--t1)}
+.giai .d{margin-top:3px;font-size:var(--fs-2xs);line-height:1.6;color:var(--t2)}
+
+/* trạng thái sạch */
+.sach{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:28px 22px;gap:14px}
+.sach .t{font-size:var(--fs-md);font-weight:var(--fw-semi)}
+.sach .d{font-size:var(--fs-xs);line-height:1.7;color:var(--t3);max-width:250px}
+
+/* cổng xuất */
+.cx{background:var(--card);border:1px solid var(--border);border-radius:var(--r-3);padding:14px 16px}
+.cx-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--vien-mo)}
+.cx-row:last-of-type{border-bottom:0}
+.cx-lbl{font-size:var(--fs-ui);color:var(--t1);flex:1}
+.cx-st{font-size:var(--fs-2xs);color:var(--t3);display:inline-flex;align-items:center;gap:6px;flex:none}
+
+/* chú giải dưới artboard C */
+.legend{width:1440px;margin:12px auto 0;border:1px solid var(--border);border-radius:var(--r-3);
+  background:var(--panel);padding:14px 16px}
+.legend h3{margin:0 0 9px;font-size:var(--fs-ui);font-weight:var(--fw-semi)}
+.legend ul{margin:0;padding-left:18px}
+.legend li{font-size:var(--fs-xs);line-height:1.9;color:var(--t2)}
+.legend li b{color:var(--t1)}
+.ph{font-size:var(--fs-2xs);color:var(--t4);letter-spacing:.06em;font-weight:700}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="head">
+  <div>
+    <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap">
+      <div style="width:26px;height:26px;border-radius:var(--r-2);background:var(--accent)"></div>
+      <h1>Cổng Soát Duyệt</h1>
+      <span style="font-size:var(--fs-ui);color:var(--t4)">Review Gate</span>
+    </div>
+    <div class="sub">Bảng kiểm mở ở <b>mép phải của chặng đang làm</b> — không phải một trang riêng. Trong bảng có
+      <b>hai lớp khác hẳn nhau về bản chất</b>: <b>LUẬT</b> do máy tính, tất định, dẫn được điều khoản, có thể chặn nghiệm thu;
+      <b>GÓP Ý</b> do AI, mỗi lần một khác, chỉ dẫn được thông lệ nghề, <b>không bao giờ chặn</b>.
+      Nếu hai lớp nói cùng một giọng đỏ thì người dùng học cách bỏ qua cả hai. Máy đề xuất — người quyết; không có nút tự sửa ở đâu cả.</div>
+  </div>
+  <button class="tog" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='light'?'dark':'light'">Đổi nền Sáng / Tối</button>
+</div>
+
+
+<!-- ══════════════════ A ══════════════════ -->
+<div class="ab"><span class="k">A</span><h2>Bảng kiểm ở mép phải chặng</h2><span class="n">1440 × 768 · chặng Thiết kế 2D · kết quả trộn</span></div>
+<div class="frame">
+  <div class="appbar">
+    <span class="logo"></span><span class="brand">InteriorFlow</span>
+    <span class="crumb">› Căn hộ Thảo Điền · Mặt bằng bố trí</span>
+    <div class="seg">
+      <button aria-current="true">Thiết kế 2D</button><button>Thiết kế 3D</button><button>Trình chiếu</button>
+    </div>
+  </div>
+  <div class="body">
+    <nav class="rail" aria-label="Điều hướng"><i></i><i></i><i class="on"></i><i></i><i></i></nav>
+
+    <div class="stage"><div class="grid"></div>
+      <!-- PLACEHOLDER: mặt bằng — nét minh hoạ, không phải bản vẽ thật -->
+      <svg viewBox="0 0 720 460" style="position:absolute;inset:0;width:100%;height:100%" fill="none"
+           stroke="var(--t4)" stroke-width="2" aria-hidden="true">
+        <rect x="90" y="60" width="520" height="330" stroke="var(--t3)"/>
+        <path d="M90 250h230M320 60v190M320 320v70M430 250h180"/>
+        <path d="M320 250v70" stroke="var(--t5)" stroke-dasharray="6 5"/>
+        <rect x="118" y="286" width="86" height="52" stroke="var(--t5)"/>
+        <rect x="470" y="96" width="104" height="60" stroke="var(--t5)"/>
+        <!-- vòng neo vị trí finding đang chọn -->
+        <circle cx="375" cy="285" r="24" stroke="var(--accent)" stroke-width="2"/>
+        <circle cx="375" cy="285" r="3.5" fill="var(--accent)" stroke="none"/>
+      </svg>
+      <div style="position:absolute;left:16px;bottom:14px;font-size:var(--fs-2xs);color:var(--t4)" class="ph">PLACEHOLDER · MẶT BẰNG MINH HOẠ</div>
+    </div>
+
+    <div class="flank" title=""><svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5.5 1.5 1.5 7l4 5.5"/></svg></div>
+
+    <aside class="gate" aria-label="Cổng soát duyệt">
+      <div class="gate-h">
+        <div class="r1">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--t2)" stroke-width="1.4" aria-hidden="true"><path d="M3 2.6h10v10.8H3z"/><path d="M5.4 6.2h5.2M5.4 9.4h3.4"/></svg>
+          <span class="gate-t">Cổng soát duyệt</span>
+          <span class="chip-chang">Thiết kế 2D</span>
+        </div>
+        <div class="gate-note">Máy kiểm lúc 14:32 · máy chạy lại là ra y hệt. Bảng này <b>đề xuất</b>, không tự sửa gì.</div>
+      </div>
+
+      <div class="gate-b">
+
+        <div class="grp">
+          <span class="lbl">Luật</span><span class="hint">dẫn điều khoản · chặn xuất</span>
+          <span class="rule-line"></span><span class="cnt">4</span>
+        </div>
+
+        <article class="f f-luat" data-muc="do">
+          <div class="f-top">
+            <svg class="mark" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="1" width="12" height="12" rx="1.5" fill="var(--danger)"/><path d="M7 4.1v3.6M7 9.7v.1" stroke="var(--card)" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <div class="f-title">Lối thoát hẹp hơn mức bắt buộc</div>
+          </div>
+          <div class="f-desc">Cửa ra hành lang chung đo được <span class="f-num mono">742 mm</span>, thiếu <span class="f-num mono">58 mm</span> so với mức tối thiểu <span class="mono">800 mm</span>.</div>
+          <div class="clause">
+            <span class="tag mono">QCVN 06:2022/BXD §3.2.5</span>
+            <span class="src">Quy chuẩn quốc gia · hiệu lực 16/01/2023</span>
+          </div>
+          <div class="f-act">
+            <button class="btn pri"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="6" cy="6" r="4.2"/><path d="M6 1v1.4M6 9.6V11M11 6H9.6M2.4 6H1"/></svg>Tới chỗ này</button>
+            <button class="btn">Xem cách sửa</button>
+          </div>
+        </article>
+
+        <article class="f f-luat" data-muc="do">
+          <div class="f-top">
+            <svg class="mark" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="1" width="12" height="12" rx="1.5" fill="var(--danger)"/><path d="M7 4.1v3.6M7 9.7v.1" stroke="var(--card)" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <div class="f-title">Hành lang thiếu bề rộng thông thuỷ</div>
+          </div>
+          <div class="f-desc">Đoạn hành lang trục B–C rộng <span class="f-num mono">1 080 mm</span>, dưới mức <span class="mono">1 200 mm</span>.</div>
+          <div class="clause">
+            <span class="tag mono">QCVN 06:2022/BXD §3.3.1</span>
+            <span class="src">Quy chuẩn quốc gia</span>
+          </div>
+          <div class="f-act">
+            <button class="btn pri">Tới chỗ này</button>
+            <button class="btn">Xem cách sửa</button>
+          </div>
+        </article>
+
+        <article class="f f-luat" data-muc="vang">
+          <div class="f-top">
+            <svg class="mark" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1.4 13 12.4H1z" fill="none" stroke="var(--warning)" stroke-width="1.7" stroke-linejoin="round"/><path d="M7 5.6v2.9M7 10.4v.1" stroke="var(--warning)" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <div class="f-title">Lối đi giữa bàn ăn và tủ bếp hơi chật</div>
+          </div>
+          <div class="f-desc">Khoảng hở <span class="f-num mono">870 mm</span>, dưới mức tiện nghi khuyến nghị <span class="mono">900 mm</span> cho lối đi một người có ghế kéo ra.</div>
+          <div class="clause">
+            <span class="tag mono">TCVN 4319:2012 · khuyến nghị</span>
+            <span class="src">Tiêu chuẩn ngành · không chặn xuất</span>
+          </div>
+          <div class="f-act">
+            <button class="btn pri">Tới chỗ này</button>
+            <button class="btn">Xem cách sửa</button>
+          </div>
+        </article>
+
+        <article class="f f-luat" data-muc="vang">
+          <div class="f-top">
+            <svg class="mark" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1.4 13 12.4H1z" fill="none" stroke="var(--warning)" stroke-width="1.7" stroke-linejoin="round"/><path d="M7 5.6v2.9M7 10.4v.1" stroke="var(--warning)" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <div class="f-title">Bốn nét tường chưa gán loại cấu kiện</div>
+          </div>
+          <div class="f-desc">Bốn nét mang cao độ đùn nhưng chưa khai <span class="mono">elementType</span> — sẽ không lên được bảng khối lượng.</div>
+          <div class="clause">
+            <span class="tag mono">cad-thieu-element-type</span>
+            <span class="src">Hình học thuần · kiểm dữ liệu</span>
+          </div>
+          <div class="f-act">
+            <button class="btn pri">Tới nét đầu tiên</button>
+          </div>
+        </article>
+
+        <div class="grp">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="var(--accent)" aria-hidden="true"><path d="M7 0.6l1.5 4 4 1.5-4 1.5L7 11.6 5.5 7.6l-4-1.5 4-1.5z"/></svg>
+          <span class="lbl">Góp ý</span><span class="hint">AI · không chặn gì</span>
+          <span class="rule-line"></span><span class="cnt">2</span>
+        </div>
+
+        <article class="f f-gopy">
+          <div class="f-top">
+            <svg class="magic" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M7 .6l1.5 4 4 1.5-4 1.5L7 11.6 5.5 7.6l-4-1.5 4-1.5z"/></svg>
+            <div class="f-title" style="font-weight:var(--fw-normal);color:var(--t1)">Phòng khách chỉ có một hướng nhìn ra ban công; xoay sofa 90° sẽ mở thêm trục nhìn về ô cửa phía đông.</div>
+          </div>
+          <div class="clause" style="margin-top:8px">
+            <span class="tag-goi-y">gợi ý</span>
+            <span class="src">theo thông lệ nghề · mỗi lần chạy có thể khác</span>
+          </div>
+          <div class="khong-chan">Không chặn xuất hồ sơ.</div>
+          <div class="f-act">
+            <button class="btn">Tới chỗ này</button>
+            <button class="btn">Bỏ qua</button>
+          </div>
+        </article>
+
+        <article class="f f-gopy">
+          <div class="f-top">
+            <svg class="magic" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M7 .6l1.5 4 4 1.5-4 1.5L7 11.6 5.5 7.6l-4-1.5 4-1.5z"/></svg>
+            <div class="f-title" style="font-weight:var(--fw-normal);color:var(--t1)">Ba phòng đều dùng một loại sàn; đổi sàn phòng ngủ sang vật liệu ấm hơn sẽ tách được khu nghỉ khỏi khu sinh hoạt.</div>
+          </div>
+          <div class="clause" style="margin-top:8px">
+            <span class="tag-goi-y">gợi ý</span>
+            <span class="src">theo thông lệ nghề</span>
+          </div>
+          <div class="khong-chan">Không chặn xuất hồ sơ.</div>
+          <div class="f-act">
+            <button class="btn">Tới phòng ngủ 1</button>
+            <button class="btn">Bỏ qua</button>
+          </div>
+        </article>
+
+      </div>
+
+      <div class="gate-f">
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="1" width="12" height="12" rx="1.5" fill="var(--danger)"/></svg>
+          <span style="font-size:var(--fs-2xs);color:var(--t2);line-height:1.5">Còn <b style="color:var(--t1)">2 mục bắt buộc</b> chưa xử lý — cổng xuất đang đóng.</span>
+        </div>
+        <button class="btn big" aria-disabled="true" aria-describedby="ly-do-xuat" style="width:100%;margin-top:9px;justify-content:center">Xuất hồ sơ</button>
+        <div id="ly-do-xuat" class="giai" style="margin-top:8px">
+          <div class="hinh"><svg width="26" height="22" viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="3" width="16" height="18" rx="2"/><path d="M6 8h8M6 12h8M6 16h5"/><rect x="18" y="10" width="8" height="7" rx="1.6" stroke="var(--danger)"/><path d="M20 10V8.4a2 2 0 0 1 4 0V10" stroke="var(--danger)"/></svg></div>
+          <div>
+            <div class="t">Chưa xuất được</div>
+            <div class="d">Hai mục mức đỏ chặn nghiệm thu. Xử lý xong hoặc ghi lý do miễn trừ thì cổng mở. Góp ý không tính vào đây.</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+<div class="cap"><b>Đọc ra được điều gì:</b> hai nhóm đứng tách hẳn, mỗi nhóm có nhãn nói rõ bản chất
+(<i>“dẫn điều khoản · chặn xuất”</i> ↔ <i>“AI · không chặn gì”</i>). Cuộn tới đâu cũng biết mình đang đọc lớp nào vì thẻ hai lớp
+khác nhau ở mép trái, ở dấu hình, ở việc có/không có ô điều khoản. Chân bảng là cổng xuất — nút mờ đi
+<span class="mono">aria-disabled</span> + <span class="mono">aria-describedby</span> nên vẫn nhận Tab và lý do đọc được, không giấu trong <span class="mono">title</span>.</div>
+
+
+<!-- ══════════════════ B ══════════════════ -->
+<div class="ab"><span class="k">B</span><h2>Một mục luật mở rộng</h2><span class="n">nguyên văn điều khoản · nơi xảy ra · cách sửa · KHÔNG có nút tự sửa</span></div>
+<div class="frame">
+  <div class="appbar"><span class="logo"></span><span class="brand">InteriorFlow</span><span class="crumb">› Căn hộ Thảo Điền</span>
+    <div class="seg"><button aria-current="true">Thiết kế 2D</button><button>Thiết kế 3D</button><button>Trình chiếu</button></div></div>
+  <div class="body">
+    <nav class="rail"><i></i><i></i><i class="on"></i><i></i><i></i></nav>
+    <div class="stage"><div class="grid"></div>
+      <svg viewBox="0 0 720 460" style="position:absolute;inset:0;width:100%;height:100%" fill="none" stroke="var(--t4)" stroke-width="2" aria-hidden="true">
+        <rect x="90" y="60" width="520" height="330" stroke="var(--t3)"/>
+        <path d="M90 250h230M320 60v190M320 320v70M430 250h180"/>
+        <rect x="300" y="228" width="150" height="112" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/>
+        <path d="M320 250v70" stroke="var(--danger)" stroke-width="4"/>
+        <text x="330" y="222" fill="var(--t2)" stroke="none" font-size="15" font-family="ui-monospace,monospace">742</text>
+      </svg>
+      <div style="position:absolute;left:16px;bottom:14px" class="ph">PLACEHOLDER · MẶT BẰNG MINH HOẠ</div>
+    </div>
+    <div class="flank"><svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5.5 1.5 1.5 7l4 5.5"/></svg></div>
+
+    <aside class="gate" aria-label="Cổng soát duyệt">
+      <div class="gate-h">
+        <div class="r1">
+          <button class="btn" style="height:24px;padding:0 8px">‹ Tất cả</button>
+          <span class="gate-t" style="font-size:var(--fs-xs)">Mục 1 / 6</span>
+          <span class="chip-chang">Thiết kế 2D</span>
+        </div>
+      </div>
+      <div class="gate-b">
+        <article class="f f-luat" data-muc="do" style="background:var(--card);margin-bottom:10px">
+          <div class="f-top">
+            <svg class="mark" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="1" width="12" height="12" rx="1.5" fill="var(--danger)"/><path d="M7 4.1v3.6M7 9.7v.1" stroke="var(--card)" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <div class="f-title" style="font-size:var(--fs-sm)">Lối thoát hẹp hơn mức bắt buộc</div>
+          </div>
+          <div class="f-desc">Cửa ra hành lang chung đo được <span class="f-num mono">742 mm</span>, thiếu <span class="f-num mono">58 mm</span> so với mức tối thiểu <span class="mono">800 mm</span>.</div>
+          <div class="f-act"><button class="btn pri">Tới chỗ này · đã tô sáng trên bản vẽ</button></div>
+        </article>
+
+        <div style="border:1px solid var(--border);border-radius:var(--r-2);background:var(--field);padding:11px 12px">
+          <div style="font-size:var(--fs-2xs);font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3)">Nguyên văn điều khoản</div>
+          <div class="mono" style="margin-top:7px;font-size:var(--fs-xs);line-height:1.75;color:var(--t1)">QCVN 06:2022/BXD §3.2.5</div>
+          <blockquote style="margin:7px 0 0;padding-left:10px;border-left:2px solid var(--border-strong);
+            font-size:var(--fs-xs);line-height:1.8;color:var(--t2)">“Chiều rộng thông thuỷ của cửa trên đường thoát nạn không được nhỏ hơn 0,8 m…”</blockquote>
+          <div style="margin-top:8px;display:flex;gap:14px;flex-wrap:wrap;font-size:var(--fs-2xs);color:var(--t3)">
+            <span>Loại nguồn: <b style="color:var(--t2)">quy chuẩn quốc gia</b></span>
+            <span>Hiệu lực từ: <b class="mono" style="color:var(--t2)">2023-01-16</b></span>
+          </div>
+        </div>
+
+        <div style="margin-top:10px;border:1px solid var(--border);border-radius:var(--r-2);background:var(--panel);padding:11px 12px">
+          <div style="font-size:var(--fs-2xs);font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3)">Cách sửa</div>
+          <div style="margin-top:6px;font-size:var(--fs-xs);line-height:1.75;color:var(--t2)">
+            Nới cửa <span class="mono" style="color:var(--t1)">D-04</span> lên <span class="mono" style="color:var(--t1)">800 mm</span> trở lên, hoặc đổi sang cánh mở lật để lấy đủ thông thuỷ.
+            Sửa xong máy kiểm lại và mục này tự rời khỏi bảng.
+          </div>
+          <div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn pri">Tới cửa D-04</button>
+            <button class="btn">Ghi lý do miễn trừ</button>
+          </div>
+          <div style="margin-top:9px;font-size:var(--fs-2xs);line-height:1.6;color:var(--t3)">
+            Bảng kiểm <b style="color:var(--t2)">không tự sửa bản vẽ</b>. Nó chỉ ra chỗ, chép nguyên văn điều khoản và nói hướng — tay bạn sửa.
+          </div>
+        </div>
+
+        <div style="margin-top:10px;border:1px dashed var(--border-strong);border-radius:var(--r-2);background:transparent;padding:10px 12px">
+          <div style="display:flex;align-items:center;gap:7px">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="var(--warning)" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="5.6"/><path d="M7 4.2v3.4M7 9.6v.1" stroke-linecap="round"/></svg>
+            <span style="font-size:var(--fs-2xs);font-weight:700;color:var(--t1)">Số liệu chưa đối chiếu văn bản gốc</span>
+          </div>
+          <div style="margin-top:5px;font-size:var(--fs-2xs);line-height:1.6;color:var(--t2)">Ví dụ về cách hiện cờ <span class="mono">chuaKiemChung</span> — mục này thì đã đối chiếu, cờ chỉ hiện khi rule tự khai là chưa.</div>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn">Đánh dấu đã xử lý</button>
+          <button class="btn" aria-describedby="ly-do-bo-qua" aria-disabled="true">Bỏ qua rule này</button>
+        </div>
+        <div id="ly-do-bo-qua" class="giai">
+          <div class="hinh"><svg width="26" height="22" viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="4" y="4" width="20" height="16" rx="2"/><path d="M8 12h12" stroke="var(--danger)" stroke-width="2"/></svg></div>
+          <div>
+            <div class="t">Không bỏ qua được mục mức đỏ</div>
+            <div class="d">Mục sai quy chuẩn bắt buộc chỉ đóng được bằng cách sửa, hoặc bằng lý do miễn trừ có người ký. Mức vàng và góp ý thì bỏ qua tự do.</div>
+          </div>
+        </div>
+      </div>
+      <div class="gate-f">
+        <div style="display:flex;gap:6px"><button class="btn" style="flex:1;justify-content:center">‹ Mục trước</button><button class="btn" style="flex:1;justify-content:center">Mục sau ›</button></div>
+      </div>
+    </aside>
+  </div>
+</div>
+<div class="cap"><b>Đọc ra được điều gì:</b> mở một mục ra thì thứ đầu tiên hiện là <b>nguyên văn điều khoản</b>, không phải lời diễn giải —
+đây là thứ mang ra bảo vệ hồ sơ trước thẩm duyệt. Bấm mục là bản vẽ bên trái tự khoanh đúng vật (<span class="mono">viTri.entityId</span>);
+nhảy tới chỗ là hành động chính, không phải tiện ích thêm. Không có nút “sửa tất cả”, không có nút tự sửa.</div>
+
+
+<!-- ══════════════════ C ══════════════════ -->
+<div class="ab"><span class="k">C</span><h2>Đặt cạnh nhau: một mục LUẬT và một mục GÓP Ý</h2><span class="n">trái tim của màn này</span></div>
+<div class="frame" style="padding:26px 28px 24px;background:var(--panel)">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:26px">
+
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:var(--fs-2xs);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t2)">Lớp luật</span>
+        <span style="font-size:var(--fs-2xs);color:var(--t4)">máy tính · tất định · 0 đồng · chạy 10 lần ra 10 lần y hệt</span>
+      </div>
+      <article class="f f-luat" data-muc="do" style="margin:0;padding:14px 16px 14px 17px">
+        <div class="f-top">
+          <svg class="mark" style="width:16px;height:16px" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="1" width="12" height="12" rx="1.5" fill="var(--danger)"/><path d="M7 4.1v3.6M7 9.7v.1" stroke="var(--card)" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <div class="f-title" style="font-size:var(--fs-sm)">Lối thoát hẹp hơn mức bắt buộc</div>
+        </div>
+        <div class="f-desc" style="font-size:var(--fs-ui)">Cửa ra hành lang chung đo được <span class="f-num mono">742 mm</span>, thiếu <span class="f-num mono">58 mm</span> so với mức tối thiểu <span class="mono">800 mm</span>.</div>
+        <div class="clause"><span class="tag mono">QCVN 06:2022/BXD §3.2.5</span><span class="src">quy chuẩn quốc gia · hiệu lực 2023-01-16</span></div>
+        <div class="f-act"><button class="btn pri">Tới chỗ này</button><button class="btn">Xem cách sửa</button></div>
+      </article>
+      <ul style="margin:12px 0 0;padding-left:18px">
+        <li style="font-size:var(--fs-xs);line-height:1.85;color:var(--t2)">Mép trái là <b>vạch liền</b> · dấu <b>vuông đặc</b> (đỏ) hoặc <b>tam giác rỗng</b> (vàng)</li>
+        <li style="font-size:var(--fs-xs);line-height:1.85;color:var(--t2)">Luôn có <b>ô điều khoản</b> và <b>một con số đo được</b></li>
+        <li style="font-size:var(--fs-xs);line-height:1.85;color:var(--t2)">Có <b>cách sửa</b>; mức đỏ thì <b>chặn cổng xuất</b></li>
+      </ul>
+    </div>
+
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:var(--fs-2xs);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t2)">Lớp góp ý</span>
+        <span style="font-size:var(--fs-2xs);color:var(--t4)">AI · mỗi lần một khác · chỉ thông lệ nghề</span>
+      </div>
+      <article class="f f-gopy" style="margin:0;padding:14px 16px 14px 17px">
+        <div class="f-top">
+          <svg class="magic" style="width:16px;height:16px" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M7 .6l1.5 4 4 1.5-4 1.5L7 11.6 5.5 7.6l-4-1.5 4-1.5z"/></svg>
+          <div class="f-title" style="font-size:var(--fs-ui);font-weight:var(--fw-normal)">Phòng khách chỉ có một hướng nhìn ra ban công; xoay sofa 90° sẽ mở thêm trục nhìn về ô cửa phía đông.</div>
+        </div>
+        <div class="clause" style="margin-top:10px"><span class="tag-goi-y">gợi ý</span><span class="src">theo thông lệ nghề · không dẫn được điều khoản</span></div>
+        <div class="khong-chan">Không chặn xuất hồ sơ.</div>
+        <div class="f-act"><button class="btn">Tới chỗ này</button><button class="btn">Bỏ qua</button></div>
+      </article>
+      <ul style="margin:12px 0 0;padding-left:18px">
+        <li style="font-size:var(--fs-xs);line-height:1.85;color:var(--t2)">Mép trái là <b>vạch đứt nét</b> · dấu <b>tia bốn cánh</b> (Magic)</li>
+        <li style="font-size:var(--fs-xs);line-height:1.85;color:var(--t2)">Không có điều khoản, không có mức, <b>không có điểm số</b> — là một câu quan sát có lý do và hướng làm tiếp</li>
+        <li style="font-size:var(--fs-xs);line-height:1.85;color:var(--t2)">Luôn có dòng <b>“Không chặn xuất hồ sơ.”</b> và nút <b>Bỏ qua</b></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <h3>Phân biệt hai lớp KHÔNG cần nhìn màu</h3>
+  <ul>
+    <li><b>Mép trái:</b> luật là vạch <b>liền</b>, góp ý là vạch <b>đứt nét</b> — thấy được ở mọi mức thu phóng và mọi kiểu mù màu.</li>
+    <li><b>Dấu hình:</b> luật mang <b>vuông đặc</b> (bắt buộc) hoặc <b>tam giác rỗng</b> (khuyến nghị); góp ý mang <b>tia bốn cánh</b> Magic — ba hình khác nhau, không phải ba màu khác nhau.</li>
+    <li><b>Chữ:</b> mục luật luôn in <b>số hiệu điều khoản</b>; mục góp ý luôn đeo chữ <b>“gợi ý”</b> và câu <b>“Không chặn xuất hồ sơ.”</b></li>
+    <li><b>Nút:</b> luật có <b>Xem cách sửa</b>; góp ý có <b>Bỏ qua</b> — hai bộ hành động khác nhau, đọc bằng chữ là biết.</li>
+    <li><b>Hình dạng thẻ:</b> luật bo <b>10px</b> nền <span class="mono">--card</span>; góp ý bo <b>14px</b> nền <span class="mono">--panel</span> — nhìn nghiêng cũng thấy là hai họ.</li>
+    <li><b>Chỗ đứng:</b> hai nhóm <b>không bao giờ trộn hàng</b>; mỗi nhóm có nhãn nói thẳng bản chất và quyền chặn của nó.</li>
+  </ul>
+</div>
+
+
+<!-- ══════════════════ D ══════════════════ -->
+<div class="ab"><span class="k">D</span><h2>Trạng thái sạch</h2><span class="n">nơi người thiết kế muốn tới — không có gì để báo</span></div>
+<div class="frame">
+  <div class="appbar"><span class="logo"></span><span class="brand">InteriorFlow</span><span class="crumb">› Căn hộ Thảo Điền</span>
+    <div class="seg"><button aria-current="true">Thiết kế 2D</button><button>Thiết kế 3D</button><button>Trình chiếu</button></div></div>
+  <div class="body">
+    <nav class="rail"><i></i><i></i><i class="on"></i><i></i><i></i></nav>
+    <div class="stage"><div class="grid"></div>
+      <svg viewBox="0 0 720 460" style="position:absolute;inset:0;width:100%;height:100%" fill="none" stroke="var(--t4)" stroke-width="2" aria-hidden="true">
+        <rect x="90" y="60" width="520" height="330" stroke="var(--t3)"/>
+        <path d="M90 250h230M320 60v190M320 320v70M430 250h180"/>
+        <rect x="118" y="286" width="86" height="52" stroke="var(--t5)"/><rect x="470" y="96" width="104" height="60" stroke="var(--t5)"/>
+      </svg>
+      <div style="position:absolute;left:16px;bottom:14px" class="ph">PLACEHOLDER · MẶT BẰNG MINH HOẠ</div>
+    </div>
+    <div class="flank"><svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5.5 1.5 1.5 7l4 5.5"/></svg></div>
+
+    <aside class="gate" aria-label="Cổng soát duyệt">
+      <div class="gate-h">
+        <div class="r1">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--t2)" stroke-width="1.4" aria-hidden="true"><path d="M3 2.6h10v10.8H3z"/><path d="M5.4 6.2h5.2M5.4 9.4h3.4"/></svg>
+          <span class="gate-t">Cổng soát duyệt</span><span class="chip-chang">Thiết kế 2D</span>
+        </div>
+        <div class="gate-note">Máy kiểm lúc 15:07 · <b>12 bộ luật</b> đã chạy đủ.</div>
+      </div>
+      <div class="gate-b" style="display:flex">
+        <div class="sach">
+          <svg width="76" height="76" viewBox="0 0 76 76" fill="none" aria-hidden="true">
+            <circle cx="38" cy="38" r="27" stroke="var(--border-strong)" stroke-width="1.5"/>
+            <path d="M27 38.5 34.6 46 49 31.5" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div>
+            <div class="t">Không có mục nào phải xử lý</div>
+            <div class="d">Mười hai bộ luật của chặng 2D đã chạy hết và không tìm thấy chỗ nào lệch. Cổng xuất đang mở.</div>
+          </div>
+          <div style="border:1px dashed var(--border-strong);border-radius:var(--r-2);padding:10px 12px;text-align:left;max-width:270px">
+            <div style="display:flex;align-items:center;gap:7px">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="var(--accent)" aria-hidden="true"><path d="M7 .6l1.5 4 4 1.5-4 1.5L7 11.6 5.5 7.6l-4-1.5 4-1.5z"/></svg>
+              <span style="font-size:var(--fs-2xs);font-weight:700;color:var(--t1)">Lớp góp ý chưa chạy được</span>
+            </div>
+            <div style="margin-top:5px;font-size:var(--fs-2xs);line-height:1.65;color:var(--t2)">Chưa có đề bài đã ghi cho dự án này, nên chưa soi được bố cục so với điều đã thống nhất.</div>
+            <button class="btn" style="margin-top:8px">Ghi đề bài</button>
+          </div>
+          <div style="font-size:var(--fs-2xs);line-height:1.65;color:var(--t4);max-width:250px">
+            Sạch nghĩa là <b style="color:var(--t3)">không lệch luật nào đã cắm</b> — không có nghĩa hồ sơ đã hay.
+          </div>
+        </div>
+      </div>
+      <div class="gate-f">
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--success)" stroke-width="2.2" aria-hidden="true"><path d="M2.4 7.4 5.6 10.6 11.6 3.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span style="font-size:var(--fs-2xs);color:var(--t2)">Cổng xuất <b style="color:var(--t1)">đang mở</b> — 0 mục bắt buộc.</span>
+        </div>
+        <button class="btn big pri" style="width:100%;margin-top:9px;justify-content:center">Xuất hồ sơ</button>
+      </div>
+    </aside>
+  </div>
+</div>
+<div class="cap"><b>Đọc ra được điều gì:</b> màn sạch <b>không im lặng</b> — nó nói rõ đã chạy bao nhiêu bộ luật, và nói thẳng khi lớp góp ý
+<i>không chạy được</i> kèm lý do và nút mở đường (<span class="mono">gopyBiChan</span>). Câu cuối giữ người dùng khỏi đọc dấu tick thành “hồ sơ đã hay”.</div>
+
+
+<!-- ══════════════════ E ══════════════════ -->
+<div class="ab"><span class="k">E</span><h2>Cổng xuất</h2><span class="n">bảng kiểm phải sạch mục bắt buộc thì hồ sơ mới rời xưởng</span></div>
+<div class="frame" style="background:var(--bg)">
+  <div class="appbar"><span class="logo"></span><span class="brand">InteriorFlow</span><span class="crumb">› Căn hộ Thảo Điền · Xuất bộ hồ sơ</span>
+    <div class="seg"><button>Thiết kế 2D</button><button>Thiết kế 3D</button><button aria-current="true">Trình chiếu</button></div></div>
+  <div style="position:relative;height:726px;background:var(--stage);display:flex;align-items:center;justify-content:center">
+    <div style="position:absolute;inset:0;background:var(--nen-mo-overlay)"></div>
+    <div style="position:relative;width:1120px;display:grid;grid-template-columns:1fr 1fr;gap:22px">
+
+      <!-- E1 · CHẶN -->
+      <div style="background:var(--vl-gan-dac);backdrop-filter:blur(var(--vl-gan-dac-nhoe));
+        border:1px solid var(--border);border-radius:var(--r-4);box-shadow:var(--shadow-sheet);padding:20px 22px 18px">
+        <div style="display:flex;align-items:center;gap:9px">
+          <span style="font-size:var(--fs-md);font-weight:var(--fw-semi)">Xuất bộ hồ sơ</span>
+          <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--r-full);
+            background:var(--field);border:1px solid var(--border);font-size:var(--fs-2xs);font-weight:700;color:var(--t1)">
+            <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true"><rect x="0" y="0" width="12" height="12" rx="1.6" fill="var(--danger)"/></svg>CỔNG ĐÓNG</span>
+        </div>
+        <div style="margin-top:6px;font-size:var(--fs-xs);line-height:1.65;color:var(--t3)">14 tờ A3 · BOQ · bảng vật liệu — gửi cho chủ đầu tư.</div>
+
+        <div class="cx" style="margin-top:14px">
+          <div class="cx-row">
+            <svg width="15" height="15" viewBox="0 0 14 14" style="margin-top:2px;flex:none" aria-hidden="true"><rect x="1" y="1" width="12" height="12" rx="1.5" fill="var(--danger)"/><path d="M7 4.1v3.6M7 9.7v.1" stroke="var(--panel)" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <div class="cx-lbl">Luật bắt buộc — chặng 2D<div style="font-size:var(--fs-2xs);color:var(--t3);margin-top:3px">Lối thoát 742 mm · hành lang 1 080 mm</div></div>
+            <span class="cx-st"><b class="mono" style="color:var(--t1)">2 mục</b> · chặn</span>
+          </div>
+          <div class="cx-row">
+            <svg width="15" height="15" viewBox="0 0 14 14" style="margin-top:2px;flex:none" fill="none" stroke="var(--warning)" stroke-width="1.7" aria-hidden="true"><path d="M7 1.4 13 12.4H1z" stroke-linejoin="round"/></svg>
+            <div class="cx-lbl">Khuyến nghị — chặng 2D<div style="font-size:var(--fs-2xs);color:var(--t3);margin-top:3px">Không chặn; xuất kèm ghi chú nếu bỏ qua</div></div>
+            <span class="cx-st"><b class="mono" style="color:var(--t1)">2 mục</b> · không chặn</span>
+          </div>
+          <div class="cx-row">
+            <svg width="15" height="15" viewBox="0 0 14 14" style="margin-top:2px;flex:none" fill="none" stroke="var(--success)" stroke-width="2.2" aria-hidden="true"><path d="M2.4 7.4 5.6 10.6 11.6 3.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div class="cx-lbl">Chuẩn đầu ra tờ in<div style="font-size:var(--fs-2xs);color:var(--t3);margin-top:3px">Tỉ lệ chuẩn · khung tên đủ ô · 300 dpi · nhãn né hình</div></div>
+            <span class="cx-st">đạt</span>
+          </div>
+          <div class="cx-row">
+            <svg width="15" height="15" viewBox="0 0 14 14" style="margin-top:2px;flex:none" fill="var(--accent)" aria-hidden="true"><path d="M7 .6l1.5 4 4 1.5-4 1.5L7 11.6 5.5 7.6l-4-1.5 4-1.5z"/></svg>
+            <div class="cx-lbl">Góp ý của AI<div style="font-size:var(--fs-2xs);color:var(--t3);margin-top:3px">Ghi lại trong hồ sơ phiên, <b>không tính vào cổng</b></div></div>
+            <span class="cx-st">2 gợi ý</span>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
+          <button class="btn big pri" aria-describedby="e-ly-do" aria-disabled="true" style="flex:1;justify-content:center">Xuất bộ hồ sơ</button>
+          <button class="btn big" style="justify-content:center">Về bảng kiểm</button>
+        </div>
+        <div id="e-ly-do" class="giai">
+          <div class="hinh"><svg width="26" height="22" viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="10" y="10" width="10" height="8" rx="1.6" stroke="var(--danger)"/><path d="M12.4 10V8.2a2.6 2.6 0 0 1 5.2 0V10" stroke="var(--danger)"/><path d="M3 20V5.5A1.5 1.5 0 0 1 4.5 4h6"/></svg></div>
+          <div>
+            <div class="t">Còn 2 mục bắt buộc chưa xử lý</div>
+            <div class="d">Sửa hai chỗ đó, hoặc ghi lý do miễn trừ có người ký, thì nút này mở. Khuyến nghị và góp ý không giữ cổng.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- E2 · MỞ -->
+      <div style="background:var(--vl-gan-dac);backdrop-filter:blur(var(--vl-gan-dac-nhoe));
+        border:1px solid var(--border);border-radius:var(--r-4);box-shadow:var(--shadow-sheet);padding:20px 22px 18px">
+        <div style="display:flex;align-items:center;gap:9px">
+          <span style="font-size:var(--fs-md);font-weight:var(--fw-semi)">Xuất bộ hồ sơ</span>
+          <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--r-full);
+            background:var(--field);border:1px solid var(--border);font-size:var(--fs-2xs);font-weight:700;color:var(--t1)">
+            <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="var(--success)" stroke-width="2.4" aria-hidden="true"><path d="M2.4 7.4 5.6 10.6 11.6 3.8" stroke-linecap="round" stroke-linejoin="round"/></svg>CỔNG MỞ</span>
+        </div>
+        <div style="margin-top:6px;font-size:var(--fs-xs);line-height:1.65;color:var(--t3)">Sau khi hai mục bắt buộc đã đóng.</div>
+
+        <div class="cx" style="margin-top:14px">
+          <div class="cx-row">
+            <svg width="15" height="15" viewBox="0 0 14 14" style="margin-top:2px;flex:none" fill="none" stroke="var(--success)" stroke-width="2.2" aria-hidden="true"><path d="M2.4 7.4 5.6 10.6 11.6 3.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div class="cx-lbl">Luật bắt buộc — chặng 2D<div style="font-size:var(--fs-2xs);color:var(--t3);margin-top:3px">Cửa D-04 nới lên 900 mm · hành lang nới 1 250 mm</div></div>
+            <span class="cx-st">0 mục còn lại</span>
+          </div>
+          <div class="cx-row">
+            <svg width="15" height="15" viewBox="0 0 14 14" style="margin-top:2px;flex:none" fill="none" stroke="var(--warning)" stroke-width="1.7" aria-hidden="true"><path d="M7 1.4 13 12.4H1z" stroke-linejoin="round"/></svg>
+            <div class="cx-lbl">Khuyến nghị bỏ qua có ghi chú<div style="font-size:var(--fs-2xs);color:var(--t3);margin-top:3px">“Lối đi bếp 870 mm — chủ nhà chấp thuận, biên bản 12/08.”</div></div>
+            <span class="cx-st">1 mục · kèm hồ sơ</span>
+          </div>
+          <div class="cx-row">
+            <svg width="15" height="15" viewBox="0 0 14 14" style="margin-top:2px;flex:none" fill="none" stroke="var(--success)" stroke-width="2.2" aria-hidden="true"><path d="M2.4 7.4 5.6 10.6 11.6 3.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div class="cx-lbl">Chuẩn đầu ra tờ in</div>
+            <span class="cx-st">đạt</span>
+          </div>
+          <div class="cx-row">
+            <svg width="15" height="15" viewBox="0 0 14 14" style="margin-top:2px;flex:none" fill="var(--accent)" aria-hidden="true"><path d="M7 .6l1.5 4 4 1.5-4 1.5L7 11.6 5.5 7.6l-4-1.5 4-1.5z"/></svg>
+            <div class="cx-lbl">Góp ý của AI<div style="font-size:var(--fs-2xs);color:var(--t3);margin-top:3px">2 gợi ý đã đọc, 1 đã làm — không tính vào cổng</div></div>
+            <span class="cx-st">đã xem</span>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;display:flex;gap:8px">
+          <button class="btn big pri" style="flex:1;justify-content:center">Xuất bộ hồ sơ</button>
+          <button class="btn big" style="justify-content:center">Xem trước</button>
+        </div>
+        <div style="margin-top:10px;font-size:var(--fs-2xs);line-height:1.7;color:var(--t3)">
+          Bản xuất đính kèm <b style="color:var(--t2)">biên bản soát duyệt</b>: bộ luật nào đã chạy, mục nào đã sửa, mục nào bỏ qua và vì sao — ai ký, lúc nào.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="cap"><b>Đọc ra được điều gì:</b> cổng chỉ đếm <b>mục bắt buộc</b>. Khuyến nghị bỏ qua thì phải <b>ghi lý do</b> và lý do đó đi theo hồ sơ.
+Góp ý của AI có mặt trong bảng cho đủ chuyện, nhưng dòng của nó ghi thẳng <i>“không tính vào cổng”</i> — nó không bao giờ giữ hồ sơ lại.</div>
+
+
+<!-- ══════════════════ F ══════════════════ -->
+<div class="ab"><span class="k">F</span><h2>Khổ hẹp ~1100px</h2><span class="n">bảng còn 330px · thẻ rút gọn nhưng không mất kênh phân biệt nào</span></div>
+<div class="frame narrow">
+  <div class="appbar"><span class="logo"></span><span class="brand">InteriorFlow</span>
+    <div class="seg"><button aria-current="true">2D</button><button>3D</button><button>Trình chiếu</button></div></div>
+  <div class="body b-narrow">
+    <nav class="rail"><i></i><i></i><i class="on"></i><i></i></nav>
+    <div class="stage"><div class="grid"></div>
+      <svg viewBox="0 0 600 420" style="position:absolute;inset:0;width:100%;height:100%" fill="none" stroke="var(--t4)" stroke-width="2" aria-hidden="true">
+        <rect x="70" y="52" width="440" height="300" stroke="var(--t3)"/><path d="M70 220h190M260 52v168M260 288v64M360 220h150"/>
+        <circle cx="308" cy="254" r="21" stroke="var(--accent)" stroke-width="2"/>
+      </svg>
+      <div style="position:absolute;left:14px;bottom:12px" class="ph">PLACEHOLDER</div>
+    </div>
+    <div class="flank"><svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5.5 1.5 1.5 7l4 5.5"/></svg></div>
+    <aside class="gate w330" aria-label="Cổng soát duyệt">
+      <div class="gate-h">
+        <div class="r1"><span class="gate-t">Cổng soát duyệt</span><span class="chip-chang">2D</span></div>
+        <div class="gate-note">Máy kiểm 14:32 · 6 mục</div>
+      </div>
+      <div class="gate-b">
+        <div class="grp"><span class="lbl">Luật</span><span class="hint">chặn xuất</span><span class="rule-line"></span><span class="cnt">4</span></div>
+
+        <article class="f f-luat" data-muc="do" style="padding:9px 10px 9px 11px">
+          <div class="f-top">
+            <svg class="mark" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="1" width="12" height="12" rx="1.5" fill="var(--danger)"/><path d="M7 4.1v3.6M7 9.7v.1" stroke="var(--card)" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <div class="f-title" style="font-size:var(--fs-xs)">Lối thoát hẹp hơn mức bắt buộc</div>
+          </div>
+          <div class="f-desc" style="font-size:var(--fs-2xs)">Cửa ra hành lang <span class="f-num mono">742 mm</span> / tối thiểu <span class="mono">800 mm</span>.</div>
+          <div class="clause"><span class="tag mono">QCVN 06:2022 §3.2.5</span></div>
+          <div class="f-act"><button class="btn" style="height:24px">Tới chỗ này</button><button class="btn" style="height:24px">Cách sửa</button></div>
+        </article>
+
+        <article class="f f-luat" data-muc="vang" style="padding:9px 10px 9px 11px">
+          <div class="f-top">
+            <svg class="mark" viewBox="0 0 14 14" fill="none" stroke="var(--warning)" stroke-width="1.7" aria-hidden="true"><path d="M7 1.4 13 12.4H1z" stroke-linejoin="round"/><path d="M7 5.6v2.9M7 10.4v.1" stroke-linecap="round"/></svg>
+            <div class="f-title" style="font-size:var(--fs-xs)">Lối đi bếp hơi chật</div>
+          </div>
+          <div class="f-desc" style="font-size:var(--fs-2xs)">Khoảng hở <span class="f-num mono">870 mm</span> / khuyến nghị <span class="mono">900 mm</span>.</div>
+          <div class="clause"><span class="tag mono">TCVN 4319:2012</span></div>
+          <div class="f-act"><button class="btn" style="height:24px">Tới chỗ này</button></div>
+        </article>
+
+        <div class="grp">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="var(--accent)" aria-hidden="true"><path d="M7 .6l1.5 4 4 1.5-4 1.5L7 11.6 5.5 7.6l-4-1.5 4-1.5z"/></svg>
+          <span class="lbl">Góp ý</span><span class="hint">không chặn</span><span class="rule-line"></span><span class="cnt">2</span>
+        </div>
+
+        <article class="f f-gopy" style="padding:9px 10px 9px 11px">
+          <div class="f-top">
+            <svg class="magic" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M7 .6l1.5 4 4 1.5-4 1.5L7 11.6 5.5 7.6l-4-1.5 4-1.5z"/></svg>
+            <div class="f-title" style="font-size:var(--fs-xs);font-weight:var(--fw-normal)">Phòng khách chỉ có một hướng nhìn; xoay sofa 90° mở thêm trục nhìn về ô cửa phía đông.</div>
+          </div>
+          <div class="clause" style="margin-top:7px"><span class="tag-goi-y">gợi ý</span></div>
+          <div class="khong-chan">Không chặn xuất hồ sơ.</div>
+          <div class="f-act"><button class="btn" style="height:24px">Tới chỗ này</button><button class="btn" style="height:24px">Bỏ qua</button></div>
+        </article>
+      </div>
+      <div class="gate-f">
+        <button class="btn big" aria-disabled="true" aria-describedby="f-ly-do" style="width:100%;justify-content:center">Xuất hồ sơ</button>
+        <div id="f-ly-do" style="margin-top:7px;font-size:var(--fs-2xs);line-height:1.6;color:var(--t3)">Còn <b style="color:var(--t1)">2 mục bắt buộc</b> chưa xử lý.</div>
+      </div>
+    </aside>
+  </div>
+</div>
+<div class="cap"><b>Đọc ra được điều gì:</b> khổ hẹp cắt <b>câu mô tả nguồn</b> và rút gọn nhãn nút, nhưng <b>không cắt kênh phân biệt nào</b>:
+mép liền/đứt, dấu hình, ô điều khoản, chữ “gợi ý”, câu “Không chặn xuất hồ sơ.” đều còn. Ô giải nghĩa ở chân bảng
+thu thành một dòng chữ — vẫn là chữ thấy được, vẫn nối bằng <span class="mono">aria-describedby</span>.</div>
+
+</div>
+</body>
+</html>
+<!-- TRANSFER NOTES ===========================================================
+TỆP SẢN XUẤT SỞ HỮU MÀN NÀY (MAIN dựng vào đây, KHÔNG đẻ route mới)
+
+  · components/review/ReviewPanel.tsx        — thân bảng kiểm: đầu bảng (tên · chặng · giờ kiểm),
+      hai nhóm TÁCH HẲN (luat[] ↔ gopy[]), chân bảng = cổng xuất. Artboard A · D · F đổ vào đây.
+      ⛔ KHÔNG có nút "sửa tất cả"/tự sửa ở bất kỳ nhánh nào — máy đề xuất, người quyết.
+  · components/review/TheLuat.tsx  (mới)     — thẻ lớp LUẬT: mép trái LIỀN 3px, bo --r-2, nền --card,
+      dấu hình VUÔNG ĐẶC (đỏ) / TAM GIÁC RỖNG (vàng), ô điều khoản BẮT BUỘC (nguon + loaiNguon +
+      ngayHieuLuc), nút "Tới chỗ này" (chính) + "Xem cách sửa" khi có cachSua.
+      Cờ chuaKiemChung hiện thành khối viền đứt nét, KHÔNG hiện thành màu.
+  · components/review/TheGopY.tsx  (mới)     — thẻ lớp GÓP Ý: mép trái ĐỨT NÉT, bo --r-3, nền --panel,
+      dấu TIA BỐN CÁNH (Magic), chip chữ "gợi ý", dòng cố định "Không chặn xuất hồ sơ.",
+      nút "Tới chỗ này" + "Bỏ qua". KHÔNG có mức, KHÔNG có điểm số, KHÔNG có ô điều khoản.
+      Hai thẻ phải là HAI COMPONENT RIÊNG — dùng chung một component rồi rẽ nhánh theo `lop`
+      là con đường ngắn nhất để hai lớp trôi về cùng một giọng.
+  · components/review/CongXuat.tsx (mới)     — artboard E: bảng bốn dòng (bắt buộc · khuyến nghị ·
+      chuẩn đầu ra · góp ý). Chỉ dòng "bắt buộc" giữ cổng; dòng góp ý in sẵn chữ "không tính vào cổng".
+  · components/ui/PanelFlank.tsx             — tay cầm thu/mở ở mép phải (dải 14px). Đã có, dùng lại.
+  · components/ui/Tooltip.tsx                — ô giải nghĩa CÓ HÌNH (prop `hinh`). Nút mờ đi đường
+      aria-disabled + aria-describedby; KHÔNG quay lại thuộc tính title (câm trên cảm ứng, Tab bỏ qua).
+  · components/nav/RailDieuHuong.tsx         — mục "Soát duyệt" là HÀNH ĐỘNG mở panel này, không phải
+      route. Ở Home vẫn mờ kèm lý do "Mở một chặng thiết kế để có bảng kiểm".
+
+LÕI ĐÃ CÓ — KHÔNG VIẾT LẠI
+  · lib/review/types.ts        FindingLuat · FindingGopy · Finding · ReviewResult · ViTri · ReviewChang
+  · lib/review/luat/cad.ts · luat/rules-3d.ts · luat/deck.ts   (bộ luật ba chặng)
+  · lib/review/gopy/index.ts   (lớp góp ý; gopyBiChan → khối "chưa chạy được" ở artboard D)
+  · lib/review/hien-thi-luat.ts (+ test) — helper hiển thị điều khoản/nguyên văn, dùng thẳng.
+  · ViTri.entityId → tô sáng vật trên canvas. "Tới chỗ này" là hành động CHÍNH của mọi mục.
+
+TOKEN MỚI — KHÔNG CÓ.
+  Màn này dựng trọn bằng token đã có trong app/globals.css:
+  --accent/--accent-soft/--accent-ring/--on-accent · --danger/--warning/--success ·
+  --card/--panel/--field/--hover/--border/--border-strong · --t1..--t5 ·
+  --vl-gan-dac(+nhoe)/--nen-mo-header/--nen-mo-overlay/--kinh-mep-sang/--vien-mo ·
+  --r-1/--r-2/--r-3/--r-4/--r-full · --mo-vo-hieu · --shadow-pop/--shadow-sheet ·
+  --tap/--fs-2xs/--fs-xs/--fs-ui/--fs-sm/--fs-md · --nhip-bam/--ease-apple.
+  Nếu lúc dựng thấy cần một token mới ⇒ dừng lại: gần như chắc chắn đang định gán MÀU cho một
+  việc mà hình dạng phải làm.
+
+ĐIỂM NGHIỆM THU
+  1. Che hết màu (in đen trắng · giả lập mù màu) — vẫn phân biệt được LUẬT với GÓP Ý.
+     Sáu kênh không-màu ghi ở chú giải dưới artboard C, mất một kênh là chưa đạt.
+  2. Không có nút tự sửa nào trong toàn bộ nhánh review.
+  3. Không có điểm số / phần trăm / mức tin cậy ở lớp góp ý.
+  4. Mọi mục bấm được là nhảy tới đúng vật trên canvas.
+  5. Cổng xuất chỉ đếm FindingLuat mức 'do'; không FindingGopy nào chạm được vào nó.
+=========================================================================== -->

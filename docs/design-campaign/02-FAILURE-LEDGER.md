@@ -206,3 +206,61 @@ tried honestly.
 construction, the straight edge that bends is **the violet film's own rim**, compressed by the
 glass at the capsule ends. The proof moved *inside* the button — where it is independent of
 whatever is behind it. Hoà's two instructions, which looked unrelated, were one instruction.
+
+---
+
+## F-15 · MÁY SOI RỖNG VẪN BÁO XANH — 26/08
+
+**Ghi vào đây theo yêu cầu của Hoà (26/08): *"Harness cũng là thứ phải chứng minh; ghi failure
+của harness rỗng vào failure ledger/Smartboard, không chỉ docstring."* Trước đó tôi mới ghi bài
+học này trong docstring của `scripts/proof/auth-failclosed.mjs` — tức là chôn nó ở nơi chỉ người
+đã đọc đúng file mới thấy. Bài học nằm ngoài sổ chung thì phiên sau không đi tới. Đúng luật M-24.**
+
+**Chuyện gì.** Chứng minh fail-closed `AUTH_SECRET` cần nạp `middleware.ts` trong hai môi trường
+giả lập. Tôi biên dịch bằng `npx sucrase --transforms typescript middleware.ts > mw-proof.mjs`.
+Lệnh **thoát mã 0** và tạo ra một file **RỖNG**. Import file rỗng thì thành công, in ra `LOADED`.
+
+**Vì sao suýt chết người.** Ca đang chạy lúc đó mong `THREW`, nên file rỗng làm ca **đỏ** — tôi
+nhìn thấy và đi tìm. Nếu ca đó mong `LOADED` — và ca "production có secret → nạp được" **đúng là
+mong `LOADED`** — thì tôi đã báo **PASS trên một module rỗng**. Không có gì được kiểm. Máy soi
+xanh vì nó không soi gì cả.
+
+**Gốc.** Tôi kiểm *mã thoát của công cụ*, không kiểm *sản phẩm của công cụ*. `sucrase` CLI trong
+repo này không hỗ trợ đường vào như tôi tưởng và chọn cách im lặng thay vì báo lỗi.
+
+**Cùng họ với F-03 / F-12 / F-13 / F-14** — *có mặt bị nhầm là có tác dụng*. Ở đây thứ "có mặt"
+là chính máy soi.
+
+**Luật thêm — CỔNG HARNESS.** Mọi script chứng minh phải mở đầu bằng **một ca chứng minh chính
+nó**: một điều kiện chỉ có thể đúng khi bộ máy thật sự đang chạy đúng chủ thể. Cổng đỏ ⇒ dừng
+ngay, **cấm in PASS cho bất kỳ ca nào phía sau**. Ca đó không được nằm ở cuối; nó phải chặn đầu.
+
+**Đã áp dụng ngay.** `scripts/proof/secure-artifact-delivery.mjs` mở bằng `CA 0 · HARNESS`. Và nó
+**đã bắt được lỗi thật ngay lần chạy đầu**: bộ đọc `.env` của harness không bóc cặp nháy bao quanh
+`AUTH_SECRET` (Next thì có bóc), nên cookie ký bằng secret lệch. Không có CA 0, cả 6 ca sau đều
+`401` và tôi đã có thể đọc "chặn tốt" trên một bộ chứng minh **không xác thực nổi chính mình**.
+Cổng harness trả tiền ngay trong ngày nó được đặt.
+
+---
+
+## F-16 · TÔI TỰ CHẤM PASS CHO THỨ MỚI ĐẠT MỨC HỢP ĐỒNG — 26/08
+
+**Chuyện gì.** Wave 0 `auth-failclosed`: tôi tuyên **PASS**. Hoà hiệu chỉnh: đó là
+**`PARTIAL — process/contract proof`**, *"chưa được gọi full Electron/production runtime PASS"*.
+
+**Hoà đúng, và lý do quan trọng hơn cái nhãn.** Cái tôi đã chứng minh: (a) một test đọc mã nguồn
+xác nhận cổng chặn nằm TRƯỚC `secret()` ở cả hai tệp (11/11); (b) một proof nạp module trong ba
+tổ hợp biến môi trường (3/3). Cả hai đều là **bằng chứng về hợp đồng của tiến trình** — mã có
+đúng hình dạng đó không, module có ném không. Cái tôi **chưa** chứng minh: bản Electron **đã đóng
+gói**, chạy `NODE_ENV=production` **thật**, thiếu `AUTH_SECRET`, **từ chối khởi động**, và người
+dùng **nhìn thấy** một thông điệp hiểu được thay vì cửa sổ trắng.
+
+**Gốc — chỗ này mới là bài học.** Tôi để **độ tinh vi của bằng chứng** thay cho **phạm vi của
+bằng chứng**. Hai máy soi, một trong đó tự bắt được lỗi của chính mình, tạo cảm giác đã đi trọn.
+Nhưng luật 8 nói *đi trọn tới chứng minh trên runtime* — và runtime của IF là **Electron đóng
+gói**, không phải `node -e`. Bằng chứng đẹp trên sai bề mặt vẫn là sai bề mặt (đúng họ F-14).
+
+**Luật thêm.** Nhãn verdict phải mang theo **bề mặt đã chạm**, không chỉ số ca đạt.
+`PASS` một mình là chữ rỗng. Viết `PARTIAL — process/contract proof` hoặc
+`PASS — runtime HTTP (dev server)` hoặc `PASS — Electron đóng gói`. Ai đọc cũng biết ngay còn
+thiếu bậc nào. Bậc chưa chạm ghi `NOT ASSESSED` **kèm lý do**, không im lặng bỏ trống.

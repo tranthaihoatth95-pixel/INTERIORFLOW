@@ -1,0 +1,60 @@
+# .understandignore — patterns for files/dirs to exclude from analysis
+# Đã cấu hình cho lần chạy /understand đầu tiên của IF (T soạn 19/08).
+# Nguyên tắc: giữ CODE + SCHEMA + SCRIPT, loại nhật ký/asset/DB/worktree.
+
+# --- Từ .gitignore, loại rác không phải code ---
+.env
+.env.local
+uploads/
+prisma/dev.db*
+prisma/*.db
+prisma/*.db-journal
+build.log
+.claude/
+*.tsbuildinfo
+dist-installer/
+tsconfig.tsbuildinfo
+test drag/
+public/InteriorFlow.apk
+test-input/
+comments-review.json
+public/comments-images/
+.DS_Store
+public/test-assets/
+.env*.bak*
+.env.local.bak*
+.serena/
+2407-Test/
+docs/BAO-CAO-BGD-GD1.html
+docs/DEMO-CLAY-2407/
+.cowork-tmp/
+public/__*.html
+public/__*.glb
+.claude/worktrees/
+.worktrees/
+knowledge/ttt-design-system/
+docs/files.zip
+docs/**/*.png
+docs/**/*.jpg
+docs/**/*.jpeg
+docs/**/*.webp
+_to_delete/
+docs/mocks/*Ti Share*
+docs/mocks/*Ti Share*/
+docs/mocks/*so-do-to-chuc*
+docs/mocks/*Sơ đồ tổ chức*
+nhat-ky-chup-man.txt
+
+# --- Loại nhật ký & tài liệu (T quyết: /understand là để hiểu CODE, không phải nhật ký) ---
+# 843 file docs/ (44MB) là nhật ký tiếng Việt — analyze bằng LLM sẽ tốn token vô ích.
+# Bản đồ tay của T đã có docs/IF-KIEN-TRUC-OS.md + BAN-DO-KIEN-TRUC-2026-08-18.md.
+docs/
+# public/ chỉ có asset tĩnh, không phải code
+public/
+# components/ — 310 file UI, cắt theo Hoà chốt 19/08 để giảm scope.
+# Đối chiếu 5 lớp OS + AI Gateway + Phase model KHÔNG cần đọc UI component.
+components/
+
+# --- Giữ nguyên (KHÔNG loại) ---
+# app/ · lib/ · components/ · prisma/schema.prisma · scripts/ · package.json · tsconfig.json
+# Test files (*.test.ts, *.spec.ts) GIỮ — chúng khai giả định kiến trúc, cần đọc.

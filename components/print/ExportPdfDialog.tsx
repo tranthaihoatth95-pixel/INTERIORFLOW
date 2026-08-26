@@ -300,7 +300,7 @@ export default function ExportPdfDialog({
                   boxShadow: 'var(--shadow-pop)',
                 }}
               >
-                <Wand2 size={15} />
+                <Wand2 size={18} />
               </button>
             )}
           </div>
@@ -449,7 +449,7 @@ function HeaderIconButton({ title, onClick, children }: { title: string; onClick
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        transition: 'background var(--dur-fast) var(--ease-apple)',
+        transition: 'background var(--nhip-vien) var(--ease-apple)',
       }}
     >
       {children}
@@ -490,7 +490,7 @@ function PaperButton({
         fontFamily: MONO,
         cursor: locked ? 'not-allowed' : 'pointer',
         opacity: locked && !active ? 0.45 : 1,
-        transition: 'background var(--dur-base) var(--ease-apple)',
+        transition: 'background var(--nhip-ngu-canh) var(--ease-apple)',
       }}
     >
       {children}
@@ -556,7 +556,7 @@ function ExportMainButton({ onClick, children }: { onClick: () => void; children
         lineHeight: 1.45,
         fontFamily: 'inherit',
         cursor: 'pointer',
-        transition: 'background var(--dur-base) var(--ease-apple)',
+        transition: 'background var(--nhip-ngu-canh) var(--ease-apple)',
       }}
     >
       {children}

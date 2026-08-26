@@ -241,12 +241,12 @@ function loadUserConfig(userDataDir) {
 // Dùng `db push --skip-generate` thay vì `migrate deploy` vì repo quản lý schema
 // bằng db push (prisma/migrations ĐÃ CŨ hơn schema.prisma — deploy sẽ tạo schema
 // thiếu bảng). db push idempotent: lần đầu tạo đủ bảng, các lần sau chỉ diff.
-function runDbPush(appRoot, env, userDataDir) {
-  return new Promise((resolve, reject) => {
+function spawnDbPush(appRoot, env, userDataDir, extraArgs) {
+  return new Promise((resolve) => {
     // Prisma CLI có sẵn trong node_modules được đóng gói.
     const prismaBin = path.join(appRoot, 'node_modules', 'prisma', 'build', 'index.js');
     if (!fs.existsSync(prismaBin)) {
-      reject(new Error('Không tìm thấy Prisma CLI để kiểm tra dữ liệu. Hãy cài lại InteriorFlow.'));
+      resolve({ ok: false, missing: true });
       return;
     }
     // Log ra userData để debug được khi máy user lỗi (không có console).
@@ -257,19 +257,22 @@ function runDbPush(appRoot, env, userDataDir) {
       /* không ghi được log — vẫn chạy */
     }
     let settled = false;
-    const finish = (error) => {
+    const finish = (result) => {
       if (settled) return;
       settled = true;
       if (logFd !== null) {
         try { fs.closeSync(logFd); } catch { /* bỏ qua */ }
         logFd = null;
       }
-      if (error) reject(error);
-      else resolve();
+      resolve(result);
     };
     const child = spawn(
       process.execPath,
-      [prismaBin, 'db', 'push', '--skip-generate', '--schema', path.join(appRoot, 'prisma', 'schema.prisma')],
+      [
+        prismaBin, 'db', 'push', '--skip-generate',
+        '--schema', path.join(appRoot, 'prisma', 'schema.prisma'),
+        ...extraArgs,
+      ],
       {
         cwd: appRoot,
         env: {
@@ -281,20 +284,64 @@ function runDbPush(appRoot, env, userDataDir) {
         windowsHide: true,
       }
     );
-    child.on('exit', (code, signal) => {
-      if (code === 0) {
-        finish();
-        return;
-      }
-      finish(
-        new Error(
-          `Không thể kiểm tra/nâng cấp dữ liệu cục bộ${code !== null ? ` (mã ${code})` : ''}${signal ? ` (${signal})` : ''}. ` +
-            `Dữ liệu chưa được mở để tránh ghi tiếp khi chưa an toàn. Xem db-push.log trong thư mục dữ liệu rồi liên hệ người quản trị.`,
-        ),
-      );
-    });
-    child.on('error', (err) => finish(new Error(`Không chạy được Prisma: ${err.message}`)));
+    child.on('exit', (code, signal) => finish({ ok: code === 0, code, signal }));
+    child.on('error', (err) => finish({ ok: false, spawnError: err }));
   });
+}
+
+// Sao lưu dev.db (kèm -wal/-journal/-shm) TRƯỚC khi thử nâng cấp có rủi ro.
+// Gọi lúc server CHƯA chạy nên DB đang đóng ⇒ copy tệp là an toàn.
+function backupDbBeforeRisky(userDataDir) {
+  const src = path.join(userDataDir, 'dev.db');
+  if (!fs.existsSync(src)) return null;
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const dest = path.join(userDataDir, `dev.db.backup-${stamp}`);
+  fs.copyFileSync(src, dest);
+  for (const suffix of ['-wal', '-journal', '-shm']) {
+    if (fs.existsSync(src + suffix)) {
+      try { fs.copyFileSync(src + suffix, dest + suffix); } catch { /* phụ trợ — bỏ qua */ }
+    }
+  }
+  return dest;
+}
+
+// Hai nấc, CỐ Ý:
+//   1. `db push` thường — đủ cho gần hết trường hợp (tạo mới / diff không rủi ro).
+//   2. Nếu nấc 1 hỏng: Prisma thường từ chối vì CẢNH BÁO có thể mất dữ liệu (ví dụ
+//      thêm ràng buộc UNIQUE lên cột đã có). Lúc đó SAO LƯU dev.db rồi thử LẠI
+//      ĐÚNG MỘT LẦN với --accept-data-loss.
+// Vì sao KHÔNG đặt --accept-data-loss ngay từ đầu: cờ đó tắt lưới an toàn cho MỌI
+// thay đổi schema về sau, kể cả thay đổi xoá thật. Chỉ dùng khi đã có bản sao.
+async function runDbPush(appRoot, env, userDataDir) {
+  const first = await spawnDbPush(appRoot, env, userDataDir, []);
+  if (first.ok) return;
+  if (first.missing) {
+    throw new Error('Không tìm thấy Prisma CLI để kiểm tra dữ liệu. Hãy cài lại InteriorFlow.');
+  }
+  if (first.spawnError) {
+    throw new Error(`Không chạy được Prisma: ${first.spawnError.message}`);
+  }
+
+  let backupPath = null;
+  try {
+    backupPath = backupDbBeforeRisky(userDataDir);
+  } catch (err) {
+    throw new Error(
+      'Không nâng cấp được dữ liệu cục bộ và cũng KHÔNG sao lưu được trước khi thử lại ' +
+        `(${err.message}). Dữ liệu chưa được mở để tránh ghi tiếp khi chưa an toàn.`,
+    );
+  }
+
+  const second = await spawnDbPush(appRoot, env, userDataDir, ['--accept-data-loss']);
+  if (second.ok) return;
+
+  throw new Error(
+    'Không thể kiểm tra/nâng cấp dữ liệu cục bộ' +
+      (second.code !== null && second.code !== undefined ? ` (mã ${second.code})` : '') +
+      '. Dữ liệu chưa được mở để tránh ghi tiếp khi chưa an toàn.' +
+      (backupPath ? ` Bản sao trước khi thử nâng cấp: ${backupPath}.` : '') +
+      ' Xem db-push.log trong thư mục dữ liệu rồi liên hệ người quản trị.',
+  );
 }
 
 // ── Spawn Next.js production server ───────────────────────────────────────────
@@ -520,3 +567,5 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', killServer); // chắc chắn kill server trước khi thoát
 app.on('quit', killServer);
+
+

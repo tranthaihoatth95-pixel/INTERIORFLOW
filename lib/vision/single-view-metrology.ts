@@ -823,7 +823,17 @@ function tier1(category: FurnitureCategory): TieredMeasurement {
 }
 
 /** Bậc 2 — tỉ lệ W:H khung bao mặt nạ tinh chỉnh bậc 1 (H làm neo, lệch ít hơn W giữa các món
- * cùng loại). D vẫn 🟡 — ảnh 2D không đo được sâu, bất kể có mặt nạ hay không. */
+ * cùng loại). D vẫn 🟡 — ảnh 2D không đo được sâu, bất kể có mặt nạ hay không.
+ *
+ * 🔴 SỬA NGHĨA 20/08 — CẢ BA CHIỀU Ở BẬC NÀY LÀ `inferred`, KHÔNG PHẢI `measured`.
+ * Bản trước gắn `measured` cho W và H trong khi `basis` của chính nó thú nhận *"cao chuẩn nghề —
+ * chưa có neo thật để hiệu chỉnh riêng"*. Tức **một con số trong sách đang mang nhãn ĐO ĐƯỢC**, và
+ * theo luật BOQ nó đủ điều kiện vào bảng khối lượng như một phép đo. Sai định nghĩa canonical:
+ * MEASURED = đo tất định, TRUY ĐƯỢC VẾT. Ở bậc 2 KHÔNG có phép đo tuyệt đối nào — toàn bộ thang
+ * mm/px sinh từ chiều cao chuẩn nghề của loại đồ, nên W (= tỉ lệ px × cao-chuẩn-nghề) cũng thừa
+ * hưởng đúng cái giả định đó chứ không đo được gì hơn. Bậc 2 đọc ảnh (TỈ LỆ khung bao là tin thật
+ * lấy từ pixel) nên nó tốt hơn bậc 1 — độ tin 65% vẫn giữ — nhưng "tốt hơn ước lượng" không phải
+ * là "đo được". Bậc 3 trở lên mới có neo thật ⇒ mới `measured`. */
 function tier2(category: FurnitureCategory, silhouette: ObjectSilhouette): TieredMeasurement {
   const p = FURNITURE_SIZE_PRIORS[category];
   const box = bbox(silhouette.front);
@@ -840,14 +850,14 @@ function tier2(category: FurnitureCategory, silhouette: ObjectSilhouette): Tiere
     width: {
       valueMm: widthMm,
       toleranceMm: widthMm * 0.2,
-      kind: 'measured',
-      basis: `Tỉ lệ rộng/cao khung bao mặt nạ × cao chuẩn nghề "${p.label}" (${Math.round(hTypical)}mm).`,
+      kind: 'inferred',
+      basis: `Tỉ lệ rộng/cao khung bao mặt nạ × cao chuẩn nghề "${p.label}" (${Math.round(hTypical)}mm) — thang đo mượn từ dải chuẩn nghề, chưa có neo thật.`,
     },
     depth: t1.depth,
     height: {
       valueMm: hTypical,
       toleranceMm: priorTolerance(p.heightMm),
-      kind: 'measured',
+      kind: 'inferred',
       basis: `Cao chuẩn nghề "${p.label}" — chưa có neo thật để hiệu chỉnh riêng.`,
     },
     upgradeHint: 'Nhập 1 kích thước bạn biết của món này (vd rộng thật) để tăng độ tin lên ~80%.',

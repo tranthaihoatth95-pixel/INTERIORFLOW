@@ -124,7 +124,7 @@ export function LarkBoardTab({ data, filterCode, persons, userMap, teamById }: {
       className="flex items-center gap-1 text-left text-[11px] font-semibold uppercase tracking-wider text-[var(--t4)] hover:text-[var(--t2)]"
     >
       {label}
-      {sortKey === k && (dir === 1 ? <ArrowUp size={11} /> : <ArrowDown size={11} />)}
+      {sortKey === k && (dir === 1 ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
     </button>
   );
 
@@ -334,7 +334,7 @@ export function LarkRosterTab({ data, teamUsers, onMapped }: {
             </div>
             {mapped ? (
               <span className="shrink-0 rounded-full bg-[var(--hover)] px-2 py-1 text-[11px] text-[var(--t3)]">
-                <Link2 size={11} className="mr-1 inline" />
+                <Link2 size={14} className="mr-1 inline" />
                 {mappedName ?? 'đã gán'}
               </span>
             ) : assigning === p.larkAccount ? (
@@ -355,7 +355,7 @@ export function LarkRosterTab({ data, teamUsers, onMapped }: {
                   onClick={() => assign(p.larkAccount)}
                   className="rounded-[10px] bg-[var(--accent-strong)] px-2 py-1 text-[11px] text-white disabled:opacity-50"
                 >
-                  {busy === p.larkAccount ? <Loader2 size={11} className="animate-spin" /> : 'Gán'}
+                  {busy === p.larkAccount ? <Loader2 size={14} className="animate-spin" /> : 'Gán'}
                 </button>
                 <button
                   type="button"
@@ -371,7 +371,7 @@ export function LarkRosterTab({ data, teamUsers, onMapped }: {
                 onClick={() => setAssigning(p.larkAccount)}
                 className="flex shrink-0 items-center gap-1 rounded-full border border-[var(--border)] px-2.5 py-1 text-[11px] text-[var(--t3)] hover:bg-[var(--hover)]"
               >
-                <UserPlus size={12} /> Gán tài khoản IF
+                <UserPlus size={14} /> Gán tài khoản IF
               </button>
             )}
           </div>
@@ -397,7 +397,7 @@ export function LarkSyncBar({ data, loading, onReload }: { data: LarkData | null
         disabled={loading}
         className={cn('flex items-center gap-1 rounded-full border border-[var(--border)] px-2 py-1 hover:bg-[var(--hover)]', loading && 'opacity-60')}
       >
-        {loading ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
+        {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
         Tải lại
       </button>
     </div>

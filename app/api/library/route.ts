@@ -1,12 +1,8 @@
 import { NextResponse } from 'next/server';
-import { mkdir, writeFile } from 'fs/promises';
-import path from 'path';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
 import { imgIdFromKey } from '@/lib/img-id';
-import { sniffKind, isRasterImageKind, SNIFFED_MIME } from '@/lib/server/mime-sniff';
-
-const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
+import { saveLibraryAssetFromBuffer } from '@/lib/server/library-save';
 
 /** Thư viện dùng chung cả team — GET trả tất cả asset của mọi user. */
 export async function GET() {
@@ -49,9 +45,9 @@ function safeArr(s: string): string[] {
   }
 }
 
-const USAGES = ['ref-render', 'slide', 'material', 'layout', 'cad', 'brief', 'furniture'];
-
-/** POST { name, category, tags, dataUrl } — lưu file vào ./uploads + metadata DB. */
+/** POST { name, category, tags, dataUrl } — lưu file vào ./uploads + metadata DB.
+ *  Nay đi qua `saveLibraryAssetFromBuffer` (lib/server/library-save.ts, 19/08 CONNECT-1) — cùng
+ *  hàm ghi DB mà `POST /api/library/from-url` dùng, hành vi giữ nguyên như bản gốc. */
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
@@ -65,41 +61,9 @@ export async function POST(req: Request) {
   if (!match) return NextResponse.json({ error: 'dataUrl không hợp lệ.' }, { status: 400 });
   const [, , b64] = match;
   const buf = Buffer.from(b64, 'base64');
-  if (buf.length > 25 * 1024 * 1024) {
-    return NextResponse.json({ error: 'File quá 25MB.' }, { status: 413 });
-  }
-  // Whitelist MIME đọc MAGIC BYTES thật (§6.2 R3, `docs/AUDIT-BACKEND-2026-08-03.md`) — KHÔNG
-  // tin `mime` client khai trong prefix dataUrl (đúng gốc lỗ XSS lưu trữ: trước đây lưu thẳng
-  // chuỗi client gửi, không đối chiếu nội dung thật). Thư viện CHỈ nhận ảnh raster.
-  const kind = sniffKind(buf);
-  if (!isRasterImageKind(kind)) {
-    return NextResponse.json(
-      { error: 'Loại file không được phép — Thư viện chỉ nhận ảnh (PNG/JPEG/WEBP/GIF/AVIF).' },
-      { status: 400 },
-    );
-  }
-  const mime = SNIFFED_MIME[kind];
-  await mkdir(UPLOAD_DIR, { recursive: true });
-  const ext = mime.split('/')[1]?.replace(/[^a-z0-9]/gi, '') || 'bin';
-  const filename = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  await writeFile(path.join(UPLOAD_DIR, filename), buf);
-  const asset = await prisma.libraryAsset.create({
-    data: {
-      userId: user.id,
-      name: String(name).slice(0, 120),
-      category: String(category),
-      tags: String(tags ?? ''),
-      mime,
-      path: filename,
-      // ---- Gu Engine: chưng cất gu (client gửi lên; thiếu thì default) ----
-      usage: USAGES.includes(usage) ? usage : 'ref-render',
-      palette: Array.isArray(palette) ? JSON.stringify(palette.slice(0, 8)) : '',
-      caption: typeof caption === 'string' ? caption.slice(0, 400) : '',
-      content: typeof content === 'string' ? content.slice(0, 20000) : null,
-      w: Number.isFinite(w) ? Math.round(w) : 0,
-      h: Number.isFinite(h) ? Math.round(h) : 0,
-      lastEditedBy: user.id,
-    },
+  const saved = await saveLibraryAssetFromBuffer({
+    userId: user.id, name, category, tags, buf, usage, palette, caption, content, w, h,
   });
-  return NextResponse.json({ id: asset.id, imgId: imgIdFromKey(asset.id), url: `/api/library/${asset.id}/file` });
+  if (!saved.ok) return NextResponse.json({ error: saved.error }, { status: saved.status });
+  return NextResponse.json({ id: saved.id, imgId: saved.imgId, url: saved.url });
 }

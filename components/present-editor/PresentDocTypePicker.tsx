@@ -1,14 +1,29 @@
 'use client';
 
 /**
- * Cửa vào Trình chiếu: thư viện mẫu, không phải form chọn loại tài liệu.
- * Chốt 10/08: bốn ô ngang hàng; ô cuối luôn là hành động tạo trống.
- * Các loại chưa có editor vẫn hiện đúng cấu trúc thư viện, nhưng không giả thao tác.
+ * Cửa vào Trình chiếu — MÀN CHỜ.
+ *
+ * 🔴 ĐỔI VAI 20/08 (Hoà bác bản cũ): trước đây vào Present là gặp NGAY một bức tường thẻ mẫu
+ * (dải 6 tab có số đếm + lưới 4 cột ảnh lớn) cộng bốn thẻ nguồn to. Nó đọc ra *"phải làm xong
+ * mấy bước này Present mới cho làm việc"* — đúng thứ cửa nghiệm thu bắt trượt.
+ *
+ * Nay: **~80% thở · 20% hành động**. Một hành động CHÍNH, vài LỐI TẮT là **cửa vào chứ không
+ * phải bước**, tín hiệu dự án nói khẽ một dòng. Thư viện mẫu KHÔNG mất — nó lùi về sau một lối
+ * tắt (`moThuVien`), giữ nguyên 100% lưới cũ bên dưới. Không xoá năng lực nào, chỉ đổi thứ tự
+ * gặp mặt.
+ *
+ * ⛔ Ba thứ bị cấm đích danh, khoá tại đây: không thẻ nguồn to · không "BOQ 0 dòng" · không số
+ * đếm giả (xem `NguonLienKet.tsx`).
+ * ⛔ Màn chờ phải TĨNH — không thanh chạy, không đếm ngược, không gì tự nhúc nhích.
+ *
+ * Chốt 10/08 (bốn ô ngang hàng, ô cuối luôn là tạo-trống) vẫn đúng — nhưng nó là luật của THƯ
+ * VIỆN MẪU, và thư viện nay nằm sau lối tắt chứ không còn là mặt tiền.
  */
 
 import { useState } from 'react';
-import { FileSpreadsheet, FileText, Film, Layers3, ListTree, LockKeyhole, Plus, Presentation } from 'lucide-react';
+import { ArrowLeft, FileSpreadsheet, FileText, Film, Layers3, LayoutTemplate, ListTree, LockKeyhole, Plus, Presentation, Sparkles, BookOpen } from 'lucide-react';
 import { useT } from '@/lib/i18n';
+import NguonLienKet from './NguonLienKet';
 
 export interface PresentDocTypePickerProps {
   onChooseBlankDeck: () => void;
@@ -116,6 +131,8 @@ const KIND_ICON: Record<Kind, typeof Presentation> = {
 export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onChooseMaterialBoard, onChooseBoq, onChooseStorySet, onChooseSchedule }: PresentDocTypePickerProps) {
   const tr = useT();
   const [kind, setKind] = useState<Kind>('deck');
+  /** Thư viện mẫu là LỐI TẮT, không phải mặt tiền — mặc định đóng, người dùng chủ động mở. */
+  const [moThuVien, setMoThuVien] = useState(false);
   const current = LIBRARY[kind];
   const canCreateBlank = kind === 'deck' || kind === 'material';
 
@@ -128,9 +145,102 @@ export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onC
     else onChooseMagicDeck();
   };
 
+  /* ── MÀN CHỜ (mặc định) ────────────────────────────────────────────────────────────
+     80% thở / 20% hành động. Thứ tự đọc: một câu → MỘT hành động chính → tín hiệu khẽ →
+     lối tắt nhỏ. Không có bước nào phải làm xong trước. */
+  if (!moThuVien) {
+    const loiTat: {
+      khoa: string;
+      nhan: [string, string];
+      icon: React.ReactNode;
+      chay?: () => void;
+      ly?: [string, string];
+    }[] = [
+      { khoa: 'material', nhan: ['Bảng vật liệu A3', 'A3 material board'], icon: <Layers3 size={18} strokeWidth={1.5} />, chay: onChooseMaterialBoard },
+      { khoa: 'boq', nhan: ['Khối lượng (BOQ)', 'Bill of quantities'], icon: <FileSpreadsheet size={18} strokeWidth={1.5} />, chay: onChooseBoq },
+      { khoa: 'schedule', nhan: ['Bảng thống kê', 'Schedule table'], icon: <ListTree size={18} strokeWidth={1.5} />, chay: onChooseSchedule,
+        ly: ['Màn bảng thống kê chưa nối ở chỗ này.', 'The schedule screen is not wired here yet.'] },
+      { khoa: 'story', nhan: ['Bộ hồ sơ kể chuyện', 'Story set'], icon: <BookOpen size={18} strokeWidth={1.5} />, chay: onChooseStorySet,
+        ly: ['Mẫu bộ hồ sơ kể chuyện chưa nối ở chỗ này.', 'The story set template is not wired here yet.'] },
+      { khoa: 'magic', nhan: ['Dựng nhanh bằng Magic', 'Draft with Magic'], icon: <Sparkles size={18} strokeWidth={1.5} />, chay: onChooseMagicDeck },
+      { khoa: 'thu-vien', nhan: ['Thư viện mẫu', 'Template library'], icon: <LayoutTemplate size={18} strokeWidth={1.5} />, chay: () => setMoThuVien(true) },
+    ];
+
+    return (
+      <div style={{ height: '100%', overflowY: 'auto', display: 'grid', placeItems: 'center', padding: '32px 26px 64px' }}>
+        <section style={{ width: '100%', maxWidth: 640, textAlign: 'center' }}>
+          <h1 style={{ margin: 0, color: 'var(--t1)', fontSize: 'clamp(26px, 3.4vw, 36px)', lineHeight: 1.12, letterSpacing: '-.04em', fontWeight: 600 }}>
+            {tr('Trình bày dự án này.', 'Present this project.')}
+          </h1>
+          <p style={{ maxWidth: 430, margin: '10px auto 0', color: 'var(--t3)', fontSize: 14, lineHeight: 1.55 }}>
+            {tr('Bắt đầu từ một trang trắng, hoặc mở thẳng thứ bạn cần.',
+                'Start from a blank page, or open exactly what you need.')}
+          </p>
+
+          {/* MỘT hành động chính — mờ đục, rõ, không tranh chỗ với gì khác. */}
+          <button
+            type="button"
+            onClick={onChooseBlankDeck}
+            style={{
+              marginTop: 26, padding: '0 22px', height: 44, borderRadius: 'var(--r-3)', border: 0,
+              background: 'var(--accent)', color: 'var(--on-accent)', fontSize: 14, fontWeight: 650,
+              cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8,
+            }}
+          >
+            <Presentation size={16} strokeWidth={1.5} aria-hidden="true" />
+            {tr('Bắt đầu trình bày', 'Start presenting')}
+          </button>
+
+          {/* Tín hiệu gọn — vai phụ, im lặng khi dự án chưa có gì thật. */}
+          <NguonLienKet />
+
+          {/* Lối tắt = CỬA VÀO, không phải bước. Nhỏ, kính mỏng, không đánh số, không thứ tự. */}
+          <ul style={{ listStyle: 'none', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, margin: '30px 0 0', padding: 0 }}>
+            {loiTat.map((l) => {
+              const khoa = !l.chay;
+              const lyId = `loi-tat-ly-${l.khoa}`;
+              return (
+                <li key={l.khoa}>
+                  <button
+                    type="button"
+                    className="kinh-noi kinh-noi--mong"
+                    aria-disabled={khoa || undefined}
+                    aria-describedby={khoa ? lyId : undefined}
+                    onClick={khoa ? undefined : l.chay}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 7,
+                      padding: '0 13px', height: 36, borderRadius: 'var(--r-3)',
+                      border: '1px solid var(--vien-mo)', color: 'var(--t1)', fontSize: 12.5,
+                      cursor: khoa ? 'default' : 'pointer', opacity: khoa ? 'var(--mo-vo-hieu)' : 1,
+                    }}
+                  >
+                    <span aria-hidden="true" style={{ color: 'var(--t3)', display: 'inline-flex' }}>{l.icon}</span>
+                    {tr(...l.nhan)}
+                  </button>
+                  {khoa && (
+                    <span id={lyId} style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
+                      {tr(...(l.ly ?? ['Chưa nối ở chỗ này.', 'Not wired here yet.']))}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div style={{ height: '100%', overflowY: 'auto', padding: 'clamp(34px, 7vh, 76px) 26px 96px' }}>
       <section style={{ width: '100%', maxWidth: 1120, margin: '0 auto' }}>
+        <button
+          type="button"
+          onClick={() => setMoThuVien(false)}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 18, padding: '0 11px', height: 32, borderRadius: 'var(--r-2)', border: '1px solid var(--vien-mo)', background: 'var(--card)', color: 'var(--t2)', fontSize: 12, cursor: 'pointer' }}
+        >
+          <ArrowLeft size={14} aria-hidden="true" /> {tr('Về màn chờ', 'Back')}
+        </button>
         <div style={{ textAlign: 'center' }}>
           <div style={{ color: 'var(--accent)', fontSize: 11, fontWeight: 750, letterSpacing: '.09em' }}>
             <span aria-hidden="true" style={{ display: 'inline-block', width: 7, height: 7, marginRight: 7, borderRadius: '50%', background: 'currentColor' }} />
@@ -142,13 +252,18 @@ export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onC
           <p style={{ maxWidth: 540, margin: '0 auto', color: 'var(--t3)', fontSize: 14.5, lineHeight: 1.55 }}>{tr(...current.lead)}</p>
         </div>
 
+        {/* [marker: nguonLienKet] ⚠️ ĐÃ DỜI (20/08) — `<NguonLienKet/>` trước đây đứng NGAY ĐÂY,
+            dưới đầu đề thư viện mẫu. Nay nó ở MÀN CHỜ (đầu tệp), dạng một dòng tín hiệu khẽ.
+            Không bày lại ở đây: cùng một tin nói hai chỗ là nói hai lần, và thư viện mẫu là nơi
+            người dùng đã BIẾT mình muốn gì rồi. Ghi lại tại chỗ thay vì xoá lặng, để phiên sau
+            đi tìm marker này không tưởng nó biến mất. */}
         <nav aria-label={tr('Loại hồ sơ', 'Document type')} style={{ display: 'flex', justifyContent: 'center', gap: 5, margin: '32px 0 24px', paddingBottom: 12, borderBottom: '1px solid var(--border)', overflowX: 'auto' }}>
           {(Object.keys(LIBRARY) as Kind[]).map((key) => {
             const item = LIBRARY[key];
             const selected = key === kind;
             const Icon = KIND_ICON[key];
             return <button key={key} type="button" onClick={() => setKind(key)} style={{ flex: 'none', height: 34, padding: '0 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: selected ? 'var(--accent-soft)' : 'transparent', color: selected ? 'var(--accent)' : 'var(--t3)', fontSize: 12, fontWeight: selected ? 650 : 500, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <Icon size={14} strokeWidth={1.8} aria-hidden="true" />
+              <Icon size={14} strokeWidth={1.5} aria-hidden="true" />
               {tr(...item.label)} <small style={{ marginLeft: 2, opacity: .68 }}>{item.count}</small>
             </button>;
           })}
@@ -171,7 +286,7 @@ export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onC
           ))}
 
           <button type="button" onClick={canCreateBlank ? (kind === 'material' ? onChooseMaterialBoard : onChooseBlankDeck) : undefined} disabled={!canCreateBlank} aria-label={tr('Tạo hồ sơ trống', 'Create blank document')} style={{ height: 185, border: '1px dashed var(--border)', borderRadius: 14, background: 'transparent', color: canCreateBlank ? 'var(--t3)' : 'var(--t4)', cursor: canCreateBlank ? 'pointer' : 'not-allowed', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 11 }}>
-            <span style={{ width: 42, height: 42, borderRadius: '50%', border: '1px solid currentColor', display: 'grid', placeItems: 'center' }}><Plus size={23} strokeWidth={1.5} /></span>
+            <span style={{ width: 42, height: 42, borderRadius: '50%', border: '1px solid currentColor', display: 'grid', placeItems: 'center' }}><Plus size={20} strokeWidth={1.5} /></span>
             <span style={{ fontSize: 12, fontWeight: 650 }}>{kind === 'material' ? tr('Tạo bảng A3 trống', 'Create blank A3 board') : tr('Tạo hồ sơ trống', 'Create blank document')}</span>
             {!canCreateBlank ? <span style={{ fontSize: 10 }}>{tr('Chưa khả dụng', 'Not available yet')}</span> : null}
           </button>

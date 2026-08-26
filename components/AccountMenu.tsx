@@ -15,7 +15,7 @@
 import { useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, User, Palette, CircleHelp, Coins, Share2, Check, MessageCircle, Settings as SettingsIcon } from 'lucide-react';
+import { LogOut, User, Palette, CircleHelp, Coins, Share2, Check, MessageCircle, IdCard, Info, Languages, Settings as SettingsIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { nextThemePref, themeIconFor, themeLabelVi } from '@/lib/theme-toggle';
@@ -44,6 +44,12 @@ export function AccountMenu({ open, anchorRect, onDismiss, menuRef }: Props) {
   const themePref = useFlowStore((s) => s.themePref);
   const setThemePref = useFlowStore((s) => s.setThemePref);
   const credits = useFlowStore((s) => s.credits);
+  const setDashboardOpen = useFlowStore((s) => s.setDashboardOpen);
+  // 21/08 — NGÔN NGỮ VỀ ĐÂY. Trước nó là một công tắc VI/EN lơ lửng riêng ở góc Trang chủ; ngôn
+  // ngữ là TUỲ CHỌN CỦA TÔI, cùng họ với Giao diện ngay dưới, nên nó thuộc menu này. Đọc/ghi
+  // đúng `useFlowStore.lang` mà `LangToggle` vẫn dùng — một nguồn, không đẻ state thứ hai.
+  const lang = useFlowStore((s) => s.lang);
+  const setLang = useFlowStore((s) => s.setLang);
   const router = useRouter();
   const tr = useT();
   if (!user) return null;
@@ -72,14 +78,31 @@ export function AccountMenu({ open, anchorRect, onDismiss, menuRef }: Props) {
                   {user.name}
                 </div>
                 {/* Gom từ MoreMenu (⋯ đã bỏ khỏi header, Hoà chốt 03/08 "một cửa cho chuyện
-                    của tôi"): credits + share/chat giữ nguyên chức năng, chỉ đổi nhà. */}
-                <div className="mb-1.5 flex items-center justify-between rounded-[10px] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
+                    của tôi"): credits + share/chat giữ nguyên chức năng, chỉ đổi nhà.
+                    NAV-HAI-DAO 20/08 — menu này nay là CỬA DUY NHẤT tới chuyện của tôi (thanh
+                    trái đã sạch Hồ sơ/Credit/Cài đặt), nên dòng credit thôi là con số câm: nó
+                    thành NÚT mở đúng chỗ xem MỨC DÙNG thật.
+                    ĐÍCH ĐẾN LÀ THẬT, đo tại nguồn 20/08: `components/Dashboard.tsx:401` tab
+                    "Tổng quan" là nơi DUY NHẤT trong app hiện credit mức-đội (`Credit dùng 30
+                    ngày` + `còn X trong team`), và `setDashboardOpen(true)` mở đúng tab mặc định
+                    đó (`Dashboard.tsx:124`). Dashboard mount trong `AppShell` nên có ở mọi màn.
+                    ⛔ Hoà 20/08: "giữ NĂNG LỰC, đừng giữ Dashboard chỉ để giữ Credit" — khi có
+                    màn mức-dùng riêng thì đổi ĐÍCH ở đúng dòng này, đừng thêm mục thứ hai. */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    onDismiss();
+                    setDashboardOpen(true);
+                  }}
+                  aria-label={tr('Tín dụng và mức dùng — mở bảng chi tiết', 'Credits and usage — open the details board')}
+                  className="mb-1.5 flex w-full items-center justify-between rounded-[10px] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+                >
                   <span className="flex items-center gap-1.5">
-                    <Coins size={13} className="text-amber-400" />
-                    {tr('Tín dụng', 'Credits')}
+                    <Coins size={16} className="text-amber-400" />
+                    {tr('Tín dụng · Mức dùng', 'Credits · Usage')}
                   </span>
                   <span className="font-semibold text-[var(--t1)]">{credits}</span>
-                </div>
+                </button>
                 <div className="mb-1 flex items-center gap-1.5 px-0.5">
                   <ShareButton />
                   <ChatToggle />
@@ -89,7 +112,7 @@ export function AccountMenu({ open, anchorRect, onDismiss, menuRef }: Props) {
                   onClick={() => go('/settings')}
                   className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
                 >
-                  <User size={13} className="shrink-0 text-[var(--t4)]" />
+                  <User size={16} className="shrink-0 text-[var(--t4)]" />
                   {tr('Hồ sơ', 'Profile')}
                 </button>
                 <button
@@ -97,16 +120,42 @@ export function AccountMenu({ open, anchorRect, onDismiss, menuRef }: Props) {
                   onClick={() => go('/settings/avatar')}
                   className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
                 >
-                  <Palette size={13} className="shrink-0 text-[var(--t4)]" />
+                  <Palette size={16} className="shrink-0 text-[var(--t4)]" />
                   {tr('Đổi avatar', 'Change avatar')}
                 </button>
+                {/* NGÔN NGỮ — hai ô VI/EN nằm ngay trong hàng, không phải menu con: chỉ có hai
+                    lựa chọn, giấu sau một lớp nữa là bắt bấm hai lần cho một việc một bước. Ô
+                    đang chọn nói bằng NỀN + `aria-pressed`, không chỉ bằng màu chữ (luật màu
+                    không-là-kênh-duy-nhất). */}
+                <div className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)]">
+                  <Languages size={16} className="shrink-0 text-[var(--t4)]" />
+                  {tr('Ngôn ngữ', 'Language')}
+                  <span className="ml-auto flex items-center gap-1">
+                    {(['vi', 'en'] as const).map((l) => (
+                      <button
+                        key={l}
+                        type="button"
+                        onClick={() => setLang(l)}
+                        aria-pressed={lang === l}
+                        className={cn(
+                          'rounded-[7px] px-1.5 py-0.5 text-[10px] font-semibold uppercase transition-colors',
+                          lang === l
+                            ? 'bg-[var(--accent)] text-[var(--bg)]'
+                            : 'text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t2)]',
+                        )}
+                      >
+                        {l}
+                      </button>
+                    ))}
+                  </span>
+                </div>
                 <button
                   type="button"
                   onClick={() => setThemePref(nextThemePref(themePref))}
                   className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
                   title={tr('Bấm để đổi', 'Click to switch')}
                 >
-                  <ThemeIcon size={13} className="shrink-0 text-[var(--t4)]" />
+                  <ThemeIcon size={16} className="shrink-0 text-[var(--t4)]" />
                   {tr('Giao diện', 'Appearance')}
                   <span className="ml-auto text-[10px] text-[var(--t4)]">{themeLabelVi(themePref)}</span>
                 </button>
@@ -115,9 +164,48 @@ export function AccountMenu({ open, anchorRect, onDismiss, menuRef }: Props) {
                   onClick={() => go('/settings')}
                   className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
                 >
-                  <SettingsIcon size={13} className="shrink-0 text-[var(--t4)]" />
+                  <SettingsIcon size={16} className="shrink-0 text-[var(--t4)]" />
                   {tr('Cài đặt', 'Settings')}
                 </button>
+                {/* GIỚI THIỆU — thay nút ⓘ lơ lửng từng đứng ở góc Trang chủ. Route `/settings/
+                    about` đã có sẵn (không dựng màn mới). */}
+                <button
+                  type="button"
+                  onClick={() => go('/settings/about')}
+                  className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+                >
+                  <Info size={16} className="shrink-0 text-[var(--t4)]" />
+                  {tr('Giới thiệu', 'About')}
+                </button>
+                {/* NAV-HAI-DAO 20/08 — "Tài khoản" nằm trong danh sách Hoà chốt cho menu này,
+                    NHƯNG đo tại nguồn: KHÔNG có màn tài khoản riêng. `components/settings/
+                    AccountSettings.tsx` tồn tại mà `app/settings/_components/PixelSettingsShell.tsx`
+                    KHÔNG mount nó (grep = 0); thứ thật sự có là nhóm `#group-profile` — chính là
+                    đích của mục "Hồ sơ" ngay trên.
+                    ⇒ Hiện MỜ KÈM LÝ DO THẬT thay vì trỏ trùng chỗ "Hồ sơ" (nút bấm ra đúng thứ
+                    người ta vừa bấm = nút giả kiểu tinh vi hơn, §9 vẫn cấm). Ô mờ đi đường
+                    `aria-disabled` + `aria-describedby` chứ KHÔNG `disabled`/`title`: bài học đo
+                    được 16/08 (`ToolbarChip.tsx:24-37`) — `<button disabled>` bị Tab bỏ qua hẳn
+                    và `title=` câm trên cảm ứng, tức đúng cái nút cần giải thích nhất lại mất
+                    sạch kênh giải thích.
+                    ⛳ NỢ: khi màn Tài khoản có thật, đổi khối này thành nút đi tới, xoá lý do. */}
+                <div
+                  role="button"
+                  aria-disabled="true"
+                  aria-describedby="acct-menu-taikhoan-ly-do"
+                  tabIndex={0}
+                  style={{ opacity: 'var(--mo-vo-hieu)', cursor: 'not-allowed' }}
+                  className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                >
+                  <IdCard size={16} className="shrink-0 text-[var(--t4)]" />
+                  {tr('Tài khoản', 'Account')}
+                </div>
+                <span id="acct-menu-taikhoan-ly-do" className="if-tooltip-a11y">
+                  {tr(
+                    'Chưa có màn Tài khoản riêng — hồ sơ và đăng xuất nằm ở Cài đặt → Hồ sơ',
+                    'No separate Account screen yet — profile and sign-out live in Settings → Profile',
+                  )}
+                </span>
                 <button
                   type="button"
                   onClick={() => {
@@ -126,7 +214,7 @@ export function AccountMenu({ open, anchorRect, onDismiss, menuRef }: Props) {
                   }}
                   className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
                 >
-                  <CircleHelp size={13} className="shrink-0 text-[var(--t4)]" />
+                  <CircleHelp size={16} className="shrink-0 text-[var(--t4)]" />
                   {tr('Trợ giúp', 'Help')}
                 </button>
                 {/* Ngăn cách phía trên — hành động phá huỷ tách khỏi mục thường. */}
@@ -139,7 +227,7 @@ export function AccountMenu({ open, anchorRect, onDismiss, menuRef }: Props) {
                   }}
                   className="mt-1 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-2 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-red-400"
                 >
-                  <LogOut size={13} />
+                  <LogOut size={16} />
                   {tr('Đăng xuất', 'Sign out')}
                 </button>
               </div>
@@ -200,7 +288,7 @@ function ShareButton() {
           : 'border-[var(--border)] text-[var(--t2)] hover:bg-[var(--hover)]',
       )}
     >
-      {copied ? <Check size={13} /> : <Share2 size={13} />}
+      {copied ? <Check size={16} /> : <Share2 size={16} />}
       {copied ? tr('Đã copy', 'Copied') : tr('Chia sẻ', 'Share')}
     </motion.button>
   );
@@ -222,7 +310,7 @@ function ChatToggle() {
           : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)] hover:text-[var(--t1)]',
       )}
     >
-      <MessageCircle size={13} />
+      <MessageCircle size={16} />
       {tr('Chat', 'Chat')}
     </motion.button>
   );

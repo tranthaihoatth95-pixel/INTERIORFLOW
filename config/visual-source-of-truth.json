@@ -1,0 +1,646 @@
+{
+  "$schema": "./visual-source-of-truth.schema.md",
+  "version": 1,
+  "generatedAt": "2026-08-22",
+  "partial": true,
+  "partialReason": "Mới nạp 10 màn của đợt 22/08. Kiểm kê 146 mock lịch sử đang chạy — bổ sung sau, KHÔNG coi file này là đã đủ.",
+  "law": [
+    "Agent code PHẢI đọc file này TRƯỚC khi sửa bất kỳ màn người-dùng-thấy nào.",
+    "Không có entry cho surface đó ⇒ DỪNG thiết kế lại, đăng ký surface trước.",
+    "source.type nói NƠI BẢN VẼ ĐƯỢC TẠO RA, không phải nơi nó được sao lưu. Đẩy lên Claude Design KHÔNG biến repo-html thành claude-design.",
+    "Production TUYỆT ĐỐI không render/iframe tệp mock lúc chạy. Mock là ĐÍCH NGẮM, không phải dữ liệu runtime.",
+    "Một surface chỉ có MỘT canonical. Alternatives được phép đọc để học, không được tự ý chọn thay."
+  ],
+  "sourceTypes": [
+    "repo-html",
+    "repo-image",
+    "claude-design",
+    "figma",
+    "production-screenshot",
+    "historical-exploration",
+    "other"
+  ],
+  "provenance": {
+    "claudeDesign": {
+      "used": true,
+      "projectName": "InteriorFlow · Design System",
+      "projectId": "b7dc14ba-1752-4821-8fc7-d519f737ac09",
+      "isOwned": true,
+      "role": "MIRROR để xem/duyệt — KHÔNG phải nơi sáng tác của 10 màn 22/08",
+      "historicalContentLastEdited": "2026-08-14T01:31:42Z",
+      "note": "45 tệp mock-*.html ≤14/08 ĐƯỢC sáng tác/đẩy trước đây. 10 màn 22/08 sáng tác bằng HTML trong repo rồi mới đồng bộ lên."
+    },
+    "figma": {
+      "used": false,
+      "verified": false,
+      "historicalKeyFound": "y421AJBWVpqGVvJ3vTn2wO",
+      "foundIn": [
+        "docs/00-CHOT.md",
+        "docs/BAO-CAO-CHINH.md"
+      ],
+      "note": "CHƯA xác minh. Figma MCP chưa đăng nhập trong phiên 22/08; 0 lượt gọi Figma. Cấm gọi đây là nguồn thiết kế sống cho tới khi đăng nhập và mở được tệp."
+    },
+    "actualWorkflowToday": "Claude sinh HTML → server xem trước cục bộ (127.0.0.1:4173) → chụp bằng Playwright → đồng bộ lên Claude Design"
+  },
+  "surfaces": [
+    {
+      "surfaceId": "home",
+      "name": "Home · Living Canvas",
+      "productionRoute": "/",
+      "productionComponents": [
+        "components/home/DongStudioHome.tsx",
+        "components/home/LivingCanvas.tsx"
+      ],
+      "status": "candidate",
+      "source": {
+        "type": "repo-html",
+        "path": "docs/mocks/claude-home-living-canvas-v2.html"
+      },
+      "alternatives": [
+        "docs/mocks/claude-home-living-canvas-final.html (⛔ SUPERSEDED bởi v2 — còn vẽ đồng hồ ánh sáng + đóng đinh 21/21)",
+        "docs/mocks/Home.dc.html (⛔ SUPERSEDED — bố cục 4 dải bị bác)",
+        "docs/mocks/claude-home-first-use.html (⛔ SUPERSEDED/REJECTED — KHÔNG có khái niệm 'First-Use Home' riêng)",
+        "docs/mocks/claude-home-widget-system.html (ACTIVE-HOME tương lai)"
+      ],
+      "mirrors": {
+        "claudeDesign": {
+          "projectId": "b7dc14ba-1752-4821-8fc7-d519f737ac09",
+          "path": "2026-08-22-current-direction/home/claude-home-living-canvas-final.html",
+          "syncedAt": "2026-08-22"
+        }
+      },
+      "reviewedAt": "2026-08-22",
+      "reviewedAgainstCurrentProduct": true,
+      "currentProductFit": "high",
+      "compatibility": {
+        "visual": "keep",
+        "interaction": "adapt",
+        "data": "adapt",
+        "architecture": "compatible"
+      },
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "devices": [
+        "desktop",
+        "tablet-landscape"
+      ],
+      "approved": {
+        "composition": true,
+        "navigation": true,
+        "visualLanguage": true,
+        "interactionDetails": false
+      },
+      "productionMatch": {
+        "status": "partial",
+        "evidence": [
+          "artifacts/visual-review/ui-authority/home-production/real-home-1440.png"
+        ],
+        "verifiedAt": "2026-08-22"
+      },
+      "notes": [
+        "Đã thi công 22/08: thứ tự đo thật khong-khi 123 → tiep-tuc 286 → ke-du-an 378; hàng kệ 64px; bỏ hết số đếm vì số Project thô lẫn rác.",
+        "CÒN LỆCH: rail mở đè ~144px lên nội dung Home.",
+        "v2 (22/08): GIỜ đi qua 5 kênh vật lý (hướng sáng · ấm/lạnh · độ sáng · bóng đổ · độ nét chùm) đặt bằng MỘT biến `data-gio`. 0 cung mặt trời · 0 Kelvin · 0 mốc giờ trong khung.",
+        "0 số bịa còn lại trong khung. Chip đếm bị XOÁ HẲN, không đổi nhãn. Kệ hiện 2 món vì NHỊP, không vì dữ liệu nói 2.",
+        "Trạng thái KHÔNG-CÓ-DỮ-LIỆU là MẶC ĐỊNH; có-dữ-liệu là biến thể. MỘT hệ Home, nhiều trạng thái dữ liệu.",
+        "Vào xưởng: nền tím đặc + thấu kính feDisplacementMap thật, trạng thái đổi bằng ĐỘ DÀY MÉP + bóng tiếp đất, KHÔNG bằng ánh sáng phát ra. 0 glow/halo/aura."
+      ]
+    },
+    {
+      "surfaceId": "home-first-use",
+      "name": "Home · Dùng lần đầu (zero-state)",
+      "productionRoute": "/",
+      "productionComponents": [
+        "components/home/DongStudioHome.tsx"
+      ],
+      "status": "candidate",
+      "source": {
+        "type": "repo-html",
+        "path": "docs/mocks/claude-home-first-use.html"
+      },
+      "mirrors": {
+        "claudeDesign": {
+          "projectId": "b7dc14ba-1752-4821-8fc7-d519f737ac09",
+          "path": "2026-08-22-current-direction/home/claude-home-first-use.html",
+          "syncedAt": "2026-08-22"
+        }
+      },
+      "reviewedAt": "2026-08-22",
+      "reviewedAgainstCurrentProduct": true,
+      "currentProductFit": "high",
+      "compatibility": {
+        "visual": "keep",
+        "interaction": "keep",
+        "data": "keep",
+        "architecture": "compatible"
+      },
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "devices": [
+        "desktop",
+        "tablet-landscape"
+      ],
+      "approved": {
+        "composition": true,
+        "navigation": true,
+        "visualLanguage": true,
+        "interactionDetails": false
+      },
+      "productionMatch": {
+        "status": "not-built",
+        "evidence": [],
+        "verifiedAt": null
+      },
+      "notes": [
+        "Số dự án THẬT của người dùng = 0 (15 hàng Project: 5 `__nb:` + 4 fixture). Đây mới là trạng thái thật của người mới.",
+        "Lối vào chính = `Nhập bản vẽ có sẵn`. KHÔNG có widget ánh sáng ngày."
+      ]
+    },
+    {
+      "surfaceId": "auth-login",
+      "name": "Login / Lock / Resume",
+      "productionRoute": "/login",
+      "productionComponents": [
+        "components/entry/LoginForm.tsx",
+        "components/studio/LockScreen.tsx",
+        "components/auth/TheXacThucLai.tsx"
+      ],
+      "status": "candidate",
+      "source": {
+        "type": "repo-html",
+        "path": "docs/mocks/claude-login-redesign-abc.html"
+      },
+      "alternatives": [
+        "docs/mocks/Auth.dc.html",
+        "docs/mocks/claude-login-home-ambient-final.html (BỊ BÁC 22/08 — đọc như SaaS auth card)"
+      ],
+      "mirrors": {
+        "claudeDesign": {
+          "projectId": "b7dc14ba-1752-4821-8fc7-d519f737ac09",
+          "path": "2026-08-22-current-direction/auth/claude-login-redesign-abc.html",
+          "syncedAt": "2026-08-22"
+        }
+      },
+      "reviewedAt": "2026-08-22",
+      "reviewedAgainstCurrentProduct": true,
+      "currentProductFit": "high",
+      "compatibility": {
+        "visual": "keep",
+        "interaction": "keep",
+        "data": "adapt",
+        "architecture": "compatible"
+      },
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "approved": {
+        "composition": false,
+        "navigation": true,
+        "visualLanguage": true,
+        "interactionDetails": false
+      },
+      "productionMatch": {
+        "status": "mismatch",
+        "evidence": [
+          "artifacts/visual-review/ui-authority/login-redesign/opt-a.png",
+          "artifacts/visual-review/ui-authority/login-redesign/opt-b.png",
+          "artifacts/visual-review/ui-authority/login-redesign/opt-c.png"
+        ],
+        "verifiedAt": "2026-08-22"
+      },
+      "notes": [
+        "3 phương án A/B/C — Hoà CHƯA chọn. Đề xuất B (Ngưỡng cửa).",
+        "⚠️ A và B đang lộ tên dự án + mốc giờ bịa TRƯỚC khi đăng nhập — phải sửa trước khi dựng.",
+        "Không vẽ sinh trắc: máy chủ không có route WebAuthn."
+      ]
+    },
+    {
+      "surfaceId": "workspace-toolwindow",
+      "name": "Workspace / Canvas + Cửa sổ công cụ",
+      "productionRoute": "/projects/[id]/render",
+      "productionComponents": [
+        "components/render-studio/CuaSoCongCu.tsx",
+        "components/nodes/HopCongCuBamVat.tsx",
+        "components/FlowCanvas.tsx"
+      ],
+      "status": "candidate",
+      "source": {
+        "type": "repo-html",
+        "path": "docs/mocks/Workspace-ToolWindow.dc.html"
+      },
+      "mirrors": {
+        "claudeDesign": {
+          "projectId": "b7dc14ba-1752-4821-8fc7-d519f737ac09",
+          "path": "2026-08-22-current-direction/workspace/Workspace-ToolWindow.dc.html",
+          "syncedAt": "2026-08-22"
+        }
+      },
+      "reviewedAt": "2026-08-22",
+      "reviewedAgainstCurrentProduct": true,
+      "currentProductFit": "high",
+      "compatibility": {
+        "visual": "keep",
+        "interaction": "adapt",
+        "data": "keep",
+        "architecture": "compatible"
+      },
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "approved": {
+        "composition": true,
+        "navigation": true,
+        "visualLanguage": true,
+        "interactionDetails": false
+      },
+      "productionMatch": {
+        "status": "partial",
+        "evidence": [],
+        "verifiedAt": null
+      },
+      "notes": [
+        "Nấc TOÀN MÀN chỉ đáng tồn tại NẾU dựng tầng ĐỐI CHIẾU (2 kết quả 1:1 + bảng tham số + gia phả); không dựng thì ship HAI nấc."
+      ]
+    },
+    {
+      "surfaceId": "gallery-explore",
+      "name": "Gallery / Explore",
+      "productionRoute": "/library/gallery",
+      "productionComponents": [
+        "components/library/GalleryLienNganh.tsx",
+        "components/library/GalleryNavigator.tsx"
+      ],
+      "status": "candidate",
+      "source": {
+        "type": "repo-html",
+        "path": "docs/mocks/Gallery-Explore.dc.html"
+      },
+      "mirrors": {
+        "claudeDesign": {
+          "projectId": "b7dc14ba-1752-4821-8fc7-d519f737ac09",
+          "path": "2026-08-22-current-direction/gallery-explore/Gallery-Explore.dc.html",
+          "syncedAt": "2026-08-22"
+        }
+      },
+      "reviewedAt": "2026-08-22",
+      "reviewedAgainstCurrentProduct": true,
+      "currentProductFit": "medium",
+      "compatibility": {
+        "visual": "keep",
+        "interaction": "adapt",
+        "data": "rework",
+        "architecture": "compatible"
+      },
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "devices": [
+        "desktop",
+        "tablet-landscape"
+      ],
+      "approved": {
+        "composition": true,
+        "navigation": true,
+        "visualLanguage": true,
+        "interactionDetails": false
+      },
+      "productionMatch": {
+        "status": "not-built",
+        "evidence": [],
+        "verifiedAt": null
+      },
+      "notes": [
+        "Explore có mục KHÔNG THỂ ship: nguồn CC0 chưa có connector + câu hỏi pháp lý; ảnh studio cần phạm vi lưu cấp studio (Gallery đang localStorage); ảnh gần giống cần vision backbone (repo 0 gói ML). Các mục đó đã đóng dấu PLACEHOLDER."
+      ]
+    },
+    {
+      "surfaceId": "settings",
+      "name": "Settings (gồm Màn hình chính)",
+      "productionRoute": "/settings",
+      "productionComponents": [
+        "components/settings/AppearanceSettings.tsx",
+        "components/settings/UnitsScaleSettings.tsx",
+        "components/settings/LockScreenSettings.tsx"
+      ],
+      "status": "candidate",
+      "source": {
+        "type": "repo-html",
+        "path": "docs/mocks/Settings.dc.html"
+      },
+      "mirrors": {
+        "claudeDesign": {
+          "projectId": "b7dc14ba-1752-4821-8fc7-d519f737ac09",
+          "path": "2026-08-22-current-direction/settings/Settings.dc.html",
+          "syncedAt": "2026-08-22"
+        }
+      },
+      "reviewedAt": "2026-08-22",
+      "reviewedAgainstCurrentProduct": true,
+      "currentProductFit": "high",
+      "compatibility": {
+        "visual": "keep",
+        "interaction": "keep",
+        "data": "keep",
+        "architecture": "compatible"
+      },
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "approved": {
+        "composition": true,
+        "navigation": true,
+        "visualLanguage": true,
+        "interactionDetails": false
+      },
+      "productionMatch": {
+        "status": "not-built",
+        "evidence": [],
+        "verifiedAt": null
+      },
+      "notes": [
+        "Mục 'Màn hình chính' là MỚI — Home đã ship 4 chế độ (calm/editorial/compact/custom) mà KHÔNG có màn nào để chọn. Bản vẽ chọn bằng ẢNH THU NHỎ SỐNG dựng từ số thật `nhipDai()`, production phải đọc số từ đó chứ không chép lại."
+      ]
+    },
+    {
+      "surfaceId": "review-gate",
+      "name": "Cổng soát duyệt",
+      "productionRoute": null,
+      "productionComponents": [
+        "components/review/ReviewPanel.tsx",
+        "lib/review/**"
+      ],
+      "status": "candidate",
+      "source": {
+        "type": "repo-html",
+        "path": "docs/mocks/Review-Gate.dc.html"
+      },
+      "mirrors": {
+        "claudeDesign": {
+          "projectId": "b7dc14ba-1752-4821-8fc7-d519f737ac09",
+          "path": "2026-08-22-current-direction/review/Review-Gate.dc.html",
+          "syncedAt": "2026-08-22"
+        }
+      },
+      "reviewedAt": "2026-08-22",
+      "reviewedAgainstCurrentProduct": true,
+      "currentProductFit": "high",
+      "compatibility": {
+        "visual": "keep",
+        "interaction": "keep",
+        "data": "keep",
+        "architecture": "compatible"
+      },
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "approved": {
+        "composition": true,
+        "navigation": true,
+        "visualLanguage": true,
+        "interactionDetails": false
+      },
+      "productionMatch": {
+        "status": "not-built",
+        "evidence": [],
+        "verifiedAt": null
+      },
+      "notes": [
+        "Sống ở MÉP PHẢI của chặng đang đứng, KHÔNG phải trang toàn cục.",
+        "LUẬT ≠ GÓP Ý phân biệt bằng SÁU kênh không-màu (mép liền/đứt · dấu vuông/tia · có điều khoản+số đo / chữ 'gợi ý' · động từ khác · hình học thẻ khác)."
+      ]
+    },
+    {
+      "surfaceId": "material-glass",
+      "name": "Thang vật liệu kính G0–G3 + Vào xưởng",
+      "productionRoute": null,
+      "productionComponents": [
+        "app/globals.css",
+        "components/entry/LoginForm.tsx"
+      ],
+      "status": "candidate",
+      "source": {
+        "type": "repo-html",
+        "path": "docs/mocks/claude-liquid-glass-system.html"
+      },
+      "mirrors": {
+        "claudeDesign": {
+          "projectId": "b7dc14ba-1752-4821-8fc7-d519f737ac09",
+          "path": "2026-08-22-current-direction/system-material/claude-liquid-glass-system.html",
+          "syncedAt": "2026-08-22"
+        }
+      },
+      "reviewedAt": "2026-08-22",
+      "reviewedAgainstCurrentProduct": true,
+      "currentProductFit": "high",
+      "compatibility": {
+        "visual": "keep",
+        "interaction": "keep",
+        "data": "keep",
+        "architecture": "compatible"
+      },
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "approved": {
+        "composition": true,
+        "navigation": true,
+        "visualLanguage": true,
+        "interactionDetails": false
+      },
+      "productionMatch": {
+        "status": "not-built",
+        "evidence": [],
+        "verifiedAt": null
+      },
+      "needsReview": true,
+      "needsReviewReason": "MÂU THUẪN CHƯA CHỐT: luật ghi 'Vào xưởng = G3' nhưng verdict Login 22/08 ghi 'CTA chỉ là accent, không glow' ⇒ Login không còn G3 nào. Chờ Hoà chốt: G3 rời khỏi Login, hay hạ thang còn G0–G2.",
+      "notes": [
+        "Đo được: G1 phồng 1.012 · G3 phồng 1.055 + nén 0.87 đối nghịch. G1/G2 có 0 feDisplacementMap — warp CHỈ ở lớp `.tk` (G3).",
+        "G3 còn là ràng buộc HIỆU NĂNG: feDisplacementMap re-raster khi transform, 20 thẻ G3 rớt khung hình, 20 thẻ G1 thì không."
+      ]
+    },
+    {
+      "surfaceId": "home-active-widgets",
+      "name": "ACTIVE-HOME · hệ widget tương lai",
+      "productionRoute": "/",
+      "productionComponents": [
+        "components/home/widgets/*"
+      ],
+      "status": "exploration",
+      "source": {
+        "type": "repo-html",
+        "path": "docs/mocks/claude-home-widget-system.html"
+      },
+      "mirrors": null,
+      "reviewedAt": "2026-08-22",
+      "reviewedAgainstCurrentProduct": true,
+      "currentProductFit": "low",
+      "compatibility": {
+        "visual": "keep",
+        "interaction": "adapt",
+        "data": "rework",
+        "architecture": "compatible"
+      },
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "approved": {
+        "composition": false,
+        "navigation": false,
+        "visualLanguage": true,
+        "interactionDetails": false
+      },
+      "productionMatch": {
+        "status": "not-built",
+        "evidence": [],
+        "verifiedAt": null
+      },
+      "notes": [
+        "⛔ KHÔNG PHẢI First-Use Home. Đầu vào của bản 'kệ lùi xa 21 dự án' là RÁC TEST ⇒ chỉ là khảo sát tràn, chưa được thực tế sản phẩm xác nhận.",
+        "Cố ý KHÔNG đồng bộ lên Claude Design — luật: exploration không đẩy."
+      ]
+    },
+    {
+      "surfaceId": "sidebar-map",
+      "name": "Sidebar · Bản đồ",
+      "productionRoute": "*",
+      "productionComponents": [
+        "components/nav/RailDieuHuong.tsx",
+        "components/studio/AppShell.tsx"
+      ],
+      "status": "canonical",
+      "source": {
+        "type": "claude-design",
+        "path": "docs/mocks/mock-sidebar-ban-do-2026-08-22.html",
+        "claudeDesign": {
+          "projectId": "b7dc14ba-1752-4821-8fc7-d519f737ac09",
+          "path": "docs/mocks/mock-sidebar-ban-do-2026-08-22.html"
+        }
+      },
+      "mirrors": null,
+      "reviewedAt": "2026-08-22",
+      "reviewedAgainstCurrentProduct": true,
+      "currentProductFit": "high",
+      "compatibility": {
+        "visual": "keep",
+        "interaction": "keep",
+        "data": "keep",
+        "architecture": "compatible"
+      },
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "approved": {
+        "composition": true,
+        "navigation": true,
+        "visualLanguage": true,
+        "interactionDetails": true
+      },
+      "productionMatch": {
+        "status": "partial",
+        "evidence": [
+          "artifacts/visual-review/ui-authority/production/sidebar-after-collapsed.png",
+          "artifacts/visual-review/ui-authority/production/sidebar-after-expanded.png"
+        ],
+        "verifiedAt": "2026-08-22"
+      },
+      "notes": [
+        "⭐ Đây là surface DUY NHẤT trong danh sách có source.type = claude-design THẬT (tệp nằm trong project, đẩy ≤14/08).",
+        "Hành vi ĐỦ 7/7 đã kiểm app thật: rail 52 trong dòng chảy · nấc mở NỔI đè · không bóp canvas · tự thu 320ms · ghim · Esc · focus giữ mở.",
+        "Thị giác đã thi công (523 dòng chưa commit, mtime 10:37 22/08): dải 2px accent, ĐÃ BỎ hộp bo lớn ôm cụm chặng.",
+        "CÒN LỆCH: `RailDieuHuong.tsx:99` mặc định `dieuHuong` khi KHÔNG ở trong chặng ⇒ ở Home rail luôn mở và đè ~144px lên nội dung. Luật đòi overlap = 0px."
+      ]
+    },
+    {
+      "surfaceId": "auth-session-ended",
+      "name": "Phiên đã hết — đăng nhập lại (route sâu)",
+      "productionRoute": "/files (+7 route anh em)",
+      "productionComponents": [
+        "components/studio/AppShell.tsx",
+        "components/entry/LoginForm.tsx",
+        "components/auth/TheXacThucLai.tsx"
+      ],
+      "status": "candidate",
+      "source": {
+        "type": "repo-html",
+        "path": "docs/mocks/Auth-session-ended.dc.html"
+      },
+      "alternatives": [
+        "docs/mocks/Auth.dc.html (có Màn khoá + 401 — KHÔNG phủ trạng thái này)"
+      ],
+      "mirrors": null,
+      "reviewedAt": "2026-08-22",
+      "reviewedAgainstCurrentProduct": true,
+      "currentProductFit": "high",
+      "compatibility": {
+        "visual": "keep",
+        "interaction": "keep",
+        "data": "keep",
+        "architecture": "compatible"
+      },
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "approved": {
+        "composition": true,
+        "navigation": true,
+        "visualLanguage": true,
+        "interactionDetails": false
+      },
+      "productionMatch": {
+        "status": "mismatch",
+        "evidence": [],
+        "verifiedAt": "2026-08-22"
+      },
+      "needsReview": false,
+      "notes": [
+        "⚠️ BẪY NGỮ NGHĨA — KHÔNG được vẽ giống Màn khoá. Luật KHOÁ ≠ ĐĂNG XUẤT: màn khoá là TẤM PHỦ lên việc CÒN SỐNG (cây workspace chưa tháo, mở ra về đúng bàn cũ). Hết phiên thì việc KHÔNG còn sống — hứa sai là lừa người dùng.",
+        "Nó nằm GIỮA hai thứ đã có: ở NGOÀI như Login, nhưng người dùng ĐÃ từng ở trong như Lock. Khác cả hai ở chỗ: không hứa giữ việc.",
+        "Phạm vi hôm nay: CHỈ thiết kế trạng thái. KHÔNG đổi cổng route.",
+        "Bản vẽ 22/08: nền sau là KHUNG RỖNG nét đứt (dấu vết cái bàn), KHÔNG phải bàn làm việc bị làm mờ như màn khoá — đây là chỗ phân biệt chính.",
+        "Gỡ SẠCH mọi tín hiệu liên tục của màn khoá (đồng hồ lớn · tên dự án/chặng · chấm 'Đã lưu' · ổ khoá) và trả lại chữ ký của họ Login (mark |F · ô email rỗng · hàng nhà cung cấp).",
+        "Câu thật, không hứa suông: 'Việc đã lưu nằm trong dự án. Phần chưa lưu của phiên cũ thì không.'",
+        "Chỉ nêu ROUTE ('Bạn vừa mở Files'), không nêu dự án/khách/tệp/mốc giờ.",
+        "TRANSFER NOTES: AppShell sở hữu trạng thái · LoginForm nhận variant='session-ended' · component mới PhienDaHet.tsx · CẤM dùng lại TheXacThucLai.tsx · phát hiện qua 401 ở tầng fetch chung, KHÔNG đổi router/middleware.",
+        "G3 duy nhất là nút 'Vào xưởng' dùng lại — đúng một cánh cửa, thang vật liệu không vỡ."
+      ]
+    }
+  ]
+}

@@ -34,9 +34,12 @@
  * Tay cầm thu/mở = `PanelFlank` dùng chung (Hoà chốt 07/08 — không chế dải thứ hai); mặc định
  * THU (defaultOpen=false) để không chiếm 300px mọi màn, PanelFlank tự nhớ lựa chọn theo panel.
  *
- * Nhảy-tới-đối-tượng: bấm mục → `select([entityId])` của useCadStore + sự kiện `cad:goto-box`
- * CÓ SẴN (`CadCanvas.tsx` — fit camera vào box, cùng đường CadSheets dùng). Chặng deck CHƯA
- * nhảy được (dữ liệu deck sống trong PresentEditor — vùng p12 cấm đụng, xem ghi chú DECK dưới).
+ * Nhảy-tới-đối-tượng — BA MẶT TIỀN, một cho mỗi chặng (GOTO-3D 19/08 đóng nốt mặt tiền cuối):
+ *   2D    → `select([entityId])` của useCadStore + sự kiện `cad:goto-box` (`CadCanvas.tsx` —
+ *           fit camera vào box, cùng đường CadSheets dùng).
+ *   3D    → sự kiện `render:goto-entity` (`Viewport3D.tsx` nghe — chọn qua `useTree3DUi` +
+ *           `Scene3DCameraApi.fit(entityId)` khung camera quanh riêng khối đó).
+ *   deck  → sự kiện `present:goto-slide` (R7 19/08, `PresentEditor.tsx` nghe).
  *
  * G2: nền đặc `var(--panel)` 100% · G4: mọi chữ line-height ≥1.5 · G6: nút hành động có CHỮ ·
  * G8: PanelFlank là nút bấm, không kéo thả. Bo góc: thang duyệt 12/08 qua `lib/geometry`.
@@ -54,6 +57,7 @@ import {
   type FindingLuat, type FindingGopy, type ReviewChang, type CheDoHienThi, type HinhDangMuc, type Nhan,
 } from '@/lib/review';
 import { useT, useLang } from '@/lib/i18n';
+import type { EditorSlide } from '@/lib/present-editor/model';
 
 export type ReviewPanelStage = 'cad' | 'render' | 'present';
 
@@ -88,19 +92,54 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
   useEffect(() => { setCheDo(layCheDoHienThi()); }, []);
   const doiCheDo = (m: CheDoHienThi) => { setCheDo(m); datCheDoHienThi(m); };
 
+  /* R7 (19/08) — SLIDES THẬT từ trình dàn trang, đóng nợ p3c "chờ mở cửa đọc slides".
+   * Truth deck vẫn của useEditor trong PresentEditor; đây chỉ giữ THAM CHIẾU mảng slides nhận
+   * qua cầu CustomEvent (PresentEditor.tsx cùng ngày) — không clone, không persist, không mutate.
+   * `null` = KHÔNG có hồ sơ nào đang mở (PresentEditor chưa mount / đã unmount) — trạng thái
+   * khác hẳn "deck 0 vi phạm", UI phải nói khác nhau (N5). */
+  const [deckSlides, setDeckSlides] = useState<EditorSlide[] | null>(null);
+  useEffect(() => {
+    if (chang !== 'deck') return;
+    const onState = (ev: Event) => {
+      const slides = (ev as CustomEvent<{ slides?: EditorSlide[] | null }>).detail?.slides;
+      setDeckSlides(Array.isArray(slides) ? slides : null);
+    };
+    window.addEventListener('present:deck-review-state', onState);
+    // Panel mặc định THU — mở ra mới mount ReviewBody, nên phải HỎI bản hiện tại (editor đã
+    // phát state từ trước khi mình nghe). Nghe trước, hỏi sau: trả lời là dispatch đồng bộ.
+    window.dispatchEvent(new CustomEvent('present:deck-review-request'));
+    return () => window.removeEventListener('present:deck-review-state', onState);
+  }, [chang]);
+
   /** Chọn nhãn theo ngôn ngữ giao diện — mọi nhãn từ engine đều song ngữ sẵn. */
   const n = (x: Nhan) => (lang === 'en' ? x.en : x.vi);
 
   const result = useMemo(() => {
     if (chang === '2d') return review2d({ doc, deBai: null });
     if (chang === '3d') return review3d({ doc, deBai: null });
-    // DECK: slides sống trong state nội bộ PresentEditor (vùng p12) — vỏ app không với tới nguồn
-    // sự thật đó, và đọc bản autosave là đẻ nguồn thứ hai. Trả kết quả rỗng + panel tự ghi chú
-    // "chưa nối nguồn deck" ở khối LUẬT (N5 — nói thẳng, không giả vờ đã kiểm).
-    return reviewDeck({ deBai: null });
-  }, [chang, doc]);
+    // DECK (R7 19/08): slides thật nhận qua cầu event ở trên. `null` (chưa có hồ sơ mở) thì
+    // reviewDeck nhận undefined → luat=[] — nhưng UI phân biệt bằng `deckSlides === null`,
+    // KHÔNG được đọc thành "0 vi phạm" (N5).
+    return reviewDeck({ slides: deckSlides ?? undefined, deBai: null });
+  }, [chang, doc, deckSlides]);
 
   const nhayToi = (f: FindingLuat) => {
+    // Deck: ViTri.slide (1-index) → chuyển slide đang mở trong PresentEditor (listener R7).
+    if (chang === 'deck') {
+      if (typeof f.viTri?.slide === 'number') {
+        window.dispatchEvent(new CustomEvent('present:goto-slide', { detail: { slide: f.viTri.slide } }));
+      }
+      return;
+    }
+    // GOTO-3D (19/08): 3D KHÔNG dùng đường CadStore/`cad:goto-box` bên dưới — đó là kênh của
+    // CadCanvas (2D), ở 3D nó không có ai nghe nên trước bản vá này bấm 1 finding 3D không làm
+    // gì cả. `Viewport3D.tsx` nghe `render:goto-entity` riêng (chọn qua `useTree3DUi` + khung
+    // camera qua `Scene3DCameraApi.fit(entityId)`).
+    if (chang === '3d') {
+      const id = f.viTri?.entityId;
+      if (id) window.dispatchEvent(new CustomEvent('render:goto-entity', { detail: { entityId: id } }));
+      return;
+    }
     const st = useCadStore.getState();
     const id = f.viTri?.entityId;
     const e = id ? st.doc.entities.find((x) => x.id === id) : undefined;
@@ -147,15 +186,18 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
         >
           {doCount > 0 && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--danger)', fontWeight: 700 }}>
-              <OctagonAlert size={11} strokeWidth={2.2} aria-hidden />{doCount}
+              <OctagonAlert size={14} strokeWidth={1.5} aria-hidden />{doCount}
             </span>
           )}
           {vangCount > 0 && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--warning)', fontWeight: 700 }}>
-              <TriangleAlert size={11} strokeWidth={2.2} aria-hidden />{vangCount}
+              <TriangleAlert size={14} strokeWidth={1.5} aria-hidden />{vangCount}
             </span>
           )}
-          {result.luat.length === 0 && tr('0 vi phạm', '0 issues')}
+          {/* R7: deck chưa nối hồ sơ nào thì header nói "chưa kiểm" — "0 vi phạm" ở trạng thái
+              đó là nói dối (không có gì được kiểm cả). Hai trạng thái phải phân biệt được. */}
+          {result.luat.length === 0 &&
+            (chang === 'deck' && deckSlides === null ? tr('chưa kiểm', 'not checked') : tr('0 vi phạm', '0 issues'))}
         </span>
       </div>
 
@@ -192,12 +234,25 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
           ))}
         </div>
 
-        {chang === 'deck' && (
+        {/* R7 (19/08) — deck ĐÃ nối slides thật; câu "chưa nối" cũ chỉ còn cho đúng trạng thái
+            KHÔNG có hồ sơ nào đang mở (PresentEditor chưa mount: màn chọn loại hồ sơ / BOQ /
+            chưa vào chặng). Vẫn không phải "0 vi phạm" — không có gì được kiểm. */}
+        {chang === 'deck' && deckSlides === null && (
           <p style={{ margin: '2px 12px 10px', fontSize: 12, lineHeight: 1.5, color: 'var(--t4)' }}>
             {tr(
-              'Chưa nối được hồ sơ đang mở — dữ liệu deck sống trong trình dàn trang, phiếu sau nối. Không có gì được kiểm ở chặng này, đây không phải "0 vi phạm".',
-              'Deck data lives inside the layout editor — not wired to this board yet. Nothing was checked here; this is not "0 issues".',
+              'Không có hồ sơ nào đang mở trong trình dàn trang — mở một hồ sơ để kiểm. Không có gì được kiểm; đây không phải "0 vi phạm".',
+              'No deck is open in the layout editor — open one to run checks. Nothing was checked; this is not "0 issues".',
             )}
+          </p>
+        )}
+        {chang === 'deck' && deckSlides !== null && deckSlides.length === 0 && (
+          <p style={{ margin: '2px 12px 10px', fontSize: 12, lineHeight: 1.5, color: 'var(--t4)' }}>
+            {tr('Hồ sơ đang mở chưa có trang nào — chưa có gì để kiểm.', 'The open deck has no pages yet — nothing to check.')}
+          </p>
+        )}
+        {chang === 'deck' && deckSlides !== null && deckSlides.length > 0 && result.luat.length === 0 && (
+          <p style={{ margin: '2px 12px 10px', fontSize: 12, lineHeight: 1.5, color: 'var(--t4)' }}>
+            {tr('Không phát hiện vi phạm nào trên hồ sơ đang mở.', 'No violations found in the open deck.')}
           </p>
         )}
         {chang !== 'deck' && result.luat.length === 0 && (
@@ -276,7 +331,7 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
 
                   {t.chuaKiemChung && (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 2, padding: '1px 7px', borderRadius: R_NHO, border: '1px solid var(--warning)', color: 'var(--warning)', fontSize: 10, lineHeight: 1.5, fontWeight: 700 }}>
-                      <TriangleAlert size={10} strokeWidth={2.2} aria-hidden />
+                      <TriangleAlert size={14} strokeWidth={1.5} aria-hidden />
                       {tr('Số liệu chưa đối chiếu bản gốc', 'Figure not checked against source text')}
                     </span>
                   )}
@@ -292,7 +347,7 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
               <div style={{ display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
                 {t.coNutToiCho && (
                   <button type="button" onClick={() => nhayToi(f)} style={btnNho}>
-                    <Crosshair size={11} strokeWidth={2} aria-hidden />
+                    <Crosshair size={14} strokeWidth={1.5} aria-hidden />
                     {tr('Tới chỗ này', 'Go there')}
                   </button>
                 )}
@@ -303,7 +358,7 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
                     nguyên thì người dùng nghĩ nút hỏng, chứ không nghĩ mình hiểu sai. */}
                 {t.coNutSua && (
                   <button type="button" onClick={() => sua(f)} title={f.cachSua} style={btnNho}>
-                    <Wrench size={11} strokeWidth={2} aria-hidden />
+                    <Wrench size={14} strokeWidth={1.5} aria-hidden />
                     {tr('Cách sửa', 'How to fix')}
                   </button>
                 )}
@@ -320,7 +375,7 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
           {/* Dấu Magic tím sống ở GLYPH và ở viền đứt của thẻ, KHÔNG ở màu chữ: đo 16/08,
               --accent trên --card chỉ 3,55:1 (theme tối) — trượt WCAG 1.4.3 cho chữ 11-12px.
               Đây là nợ cấp TOKEN (xem báo cáo), ở đây chỉ né đúng chỗ chữ. */}
-          <Sparkles size={12} color="var(--accent)" aria-hidden />
+          <Sparkles size={14} color="var(--accent)" aria-hidden />
           <span style={{ fontSize: 11, lineHeight: 1.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t3)' }}>
             {tr('Gợi ý — Magic, chỉ là ý kiến', 'Suggestions — Magic, opinions only')}
           </span>
@@ -335,7 +390,7 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
             // Viền ĐỨT NÉT + không vạch mức — kênh phân biệt thứ tư với thẻ luật.
             <div key={i} style={{ margin: '0 10px 8px', padding: '9px 10px', borderRadius: R_THE, border: '1px dashed color-mix(in srgb, var(--accent) 45%, transparent)', background: 'var(--card)' }}>
               <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: 'var(--t2)' }}>
-                <Sparkles size={11} strokeWidth={2.2} color="var(--accent)" style={{ verticalAlign: '-1px', marginRight: 3 }} aria-hidden />
+                <Sparkles size={14} strokeWidth={1.5} color="var(--accent)" style={{ verticalAlign: '-1px', marginRight: 3 }} aria-hidden />
                 <span style={{ fontWeight: 700 }}>{n(t.nhanDau)} · </span>
                 {t.moTa}
               </p>
@@ -357,17 +412,17 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
 
 /** Hình dạng mức — kênh phân biệt KHÔNG dựa vào màu (bát giác = bắt buộc · tam giác = khuyến nghị). */
 function IconMuc({ hinhDang }: { hinhDang: HinhDangMuc }) {
-  if (hinhDang === 'batGiac') return <OctagonAlert size={11} strokeWidth={2.2} aria-hidden />;
-  if (hinhDang === 'tamGiac') return <TriangleAlert size={11} strokeWidth={2.2} aria-hidden />;
-  return <Sparkles size={11} strokeWidth={2.2} aria-hidden />;
+  if (hinhDang === 'batGiac') return <OctagonAlert size={14} strokeWidth={1.5} aria-hidden />;
+  if (hinhDang === 'tamGiac') return <TriangleAlert size={14} strokeWidth={1.5} aria-hidden />;
+  return <Sparkles size={14} strokeWidth={1.5} aria-hidden />;
 }
 
 /** Icon trục NGUỒN — luôn đi kèm nhãn chữ (NT-8), không bao giờ đứng một mình. */
 function IconNguon({ loai }: { loai?: FindingLuat['loaiNguon'] }) {
-  if (loai === 'luat') return <Landmark size={10} strokeWidth={2} aria-hidden />;
-  if (loai === 'tieuChuan') return <Ruler size={10} strokeWidth={2} aria-hidden />;
-  if (loai === 'xuHuong') return <TrendingUp size={10} strokeWidth={2} aria-hidden />;
-  return <HelpCircle size={10} strokeWidth={2} aria-hidden />;
+  if (loai === 'luat') return <Landmark size={14} strokeWidth={1.5} aria-hidden />;
+  if (loai === 'tieuChuan') return <Ruler size={14} strokeWidth={1.5} aria-hidden />;
+  if (loai === 'xuHuong') return <TrendingUp size={14} strokeWidth={1.5} aria-hidden />;
+  return <HelpCircle size={14} strokeWidth={1.5} aria-hidden />;
 }
 
 const nhanNho: React.CSSProperties = {

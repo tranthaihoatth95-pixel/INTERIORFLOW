@@ -255,14 +255,14 @@ export function CommandPalette() {
                       isActive ? 'bg-violet-500/15 text-[var(--t1)]' : 'text-[var(--t2)] hover:bg-[var(--hover)]'
                     }`}
                   >
-                    <Icon size={15} className={isActive ? 'text-violet-300' : 'text-[var(--t4)]'} />
+                    <Icon size={18} className={isActive ? 'text-violet-300' : 'text-[var(--t4)]'} />
                     <span className="flex-1 truncate">{c.label}</span>
                     {c.hint && (
                       <span className="shrink-0 rounded bg-[var(--hover)] px-1.5 py-0.5 text-[10px] text-[var(--t4)]">
                         {c.hint}
                       </span>
                     )}
-                    {isActive && <CornerDownLeft size={13} className="shrink-0 text-[var(--t4)]" />}
+                    {isActive && <CornerDownLeft size={18} className="shrink-0 text-[var(--t4)]" />}
                   </button>
                 );
               })}

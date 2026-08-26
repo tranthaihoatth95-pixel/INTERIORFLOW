@@ -5,9 +5,13 @@
  * tự khoá sau N phút không thao tác. Store zustand thuần (`useLockScreen`) — chỉ 1 cờ `locked`,
  * đọc/ghi ở AppChrome.tsx (nơi TẬP TRUNG mọi phím tắt toàn cục, VIỆC 2) + LockScreen.tsx (UI).
  *
- * KHÔNG có cơ chế mật khẩu cục bộ riêng — `LockScreen.tsx` nhúng thẳng `LoginForm` (đường
- * auth CÓ SẴN, `components/entry/LoginForm.tsx`), đúng yêu cầu "mở khoá = đăng nhập lại qua
- * đường cũ". File này không tự chế xác thực gì cả.
+ * KHÔNG có cơ chế mật khẩu cục bộ riêng. File này không tự chế xác thực gì cả.
+ *
+ * 🔴 ĐÍNH CHÍNH LANE K (22/08): dòng trên TỪNG ghi "`LockScreen.tsx` nhúng thẳng `LoginForm`" —
+ * nay KHÔNG CÒN ĐÚNG và cũng không được phép đúng nữa. Khoá ≠ đăng xuất, nên mặt khoá cấm là
+ * một form đăng nhập thứ hai (không ô email). Mở lại đi qua `lib/auth/xac-thuc-lai.ts` —
+ * xác thực LẠI đúng tài khoản đang mở, dùng lại `POST /api/auth/login` sẵn có, KHÔNG đụng
+ * phiên/route/dự án/job đang chạy.
  */
 
 import { create } from 'zustand';
@@ -72,15 +76,26 @@ export function lockScreenNow(): void {
 const IDLE_MINUTES_PREFIX = 'interiorflow.lockIdleMinutes.';
 export const DEFAULT_LOCK_IDLE_MINUTES = 15;
 
-export function getLockIdleMinutes(userId: string): number {
+/**
+ * Số phút hẹn giờ tự khoá — hàm nơi tiêu thụ CŨ (`AppChrome.tsx`) đang gọi, GIỮ NGUYÊN TÊN và
+ * chữ ký để không phải sửa nơi đó.
+ *
+ * 🔴 LANE K (22/08) sửa RUỘT: bản cũ trả thẳng con số trong localStorage và coi mọi giá trị
+ * `<= 0` là "hỏng" ⇒ rơi về 15. Nay nấc "Không bao giờ" được lưu bằng số `0`, nên nếu giữ
+ * nguyên bản cũ thì chọn "không bao giờ" vẫn bị khoá sau 15 phút — đúng ngược ý người dùng.
+ * Ủy quyền hết cho `getLockIdleMinutesEffective` (0 → `NEVER_MINUTES`, xem lý do ở đó).
+ */
+/**
+ * 🔴 §24 (22/08, ĐÈ bản 7-ngày của Lane K): "Không bao giờ" = **KHÔNG CÓ HẸN GIỜ TỰ KHOÁ**.
+ * Trả `null` — hợp đồng mới bắt NƠI TIÊU THỤ phải xử nhánh "đừng đặt timer", thay vì nhận một
+ * con số nào đó rồi cứ thế `setTimeout`. Bản 7-ngày là GIẢ LẬP: nó vẫn khoá (chỉ là rất lâu),
+ * và một hẹn giờ 604.800.000ms sống qua sleep/wake của macOS theo cách không ai kiểm soát.
+ * Khoá TAY (⌘⇧L / lệnh) vẫn hoạt động bình thường ở nấc này.
+ */
+export function getLockIdleMinutes(userId: string): number | null {
   if (!userId) return DEFAULT_LOCK_IDLE_MINUTES;
-  try {
-    const raw = localStorage.getItem(IDLE_MINUTES_PREFIX + userId);
-    const n = raw ? Number(raw) : NaN;
-    return Number.isFinite(n) && n > 0 ? n : DEFAULT_LOCK_IDLE_MINUTES;
-  } catch {
-    return DEFAULT_LOCK_IDLE_MINUTES;
-  }
+  const choice = getLockIdleChoice(userId);
+  return choice === 0 ? null : choice;
 }
 
 export function setLockIdleMinutes(userId: string, minutes: number): void {
@@ -90,4 +105,107 @@ export function setLockIdleMinutes(userId: string, minutes: number): void {
   } catch {
     /* bỏ qua — localStorage bị chặn (private mode…), chỉ mất tiện nghi */
   }
+}
+
+/* ═══════════════ LANE K (22/08) — mở rộng, KHÔNG dựng hệ khoá thứ hai ═══════════════
+ * Ba thứ thêm ở dưới, đều bám đúng cơ chế đã chạy ở trên:
+ *   ① NẤC TỰ KHOÁ 5/15/30/60/Không-bao-giờ (thay ô nhập số tự do ở Cài đặt).
+ *   ② CANH TAB Ở NỀN — tab bị ẩn quá hạn thì khoá NGAY KHI QUAY LẠI (hẹn giờ setTimeout của
+ *      AppChrome vẫn chạy khi tab ẩn nhưng trình duyệt bóp ga rất mạnh, không tin được).
+ *   ③ CỬA EVENT `if:lock-request` — để LỆNH trong sổ lệnh chung (lib/commands/registry.ts)
+ *      gọi khoá mà lib/commands/ KHÔNG phải import store/DOM (giữ lib/commands thuần, cùng
+ *      khuôn 'cad:zoom-extents' đã có sẵn ở đó).
+ *
+ * ⚠️ LOCK ≠ LOGOUT: không hàm nào dưới đây đụng phiên đăng nhập, route, store dự án, hay job
+ * đang chạy. Khoá chỉ dựng một lớp che (LockScreen.tsx) — cây React phía sau vẫn sống nguyên.
+ */
+
+/** Nấc chọn được ở Cài đặt. `0` = KHÔNG BAO GIỜ tự khoá. */
+export const LOCK_IDLE_CHOICES = [5, 15, 30, 60, 0] as const;
+export type LockIdleChoice = (typeof LOCK_IDLE_CHOICES)[number];
+
+/**
+ * "Không bao giờ" quy ra PHÚT cho `getLockIdleMinutes` — 7 ngày.
+ * ⚠️ CỐ Ý không dùng 0/Infinity: nơi tiêu thụ duy nhất hôm nay (AppChrome.tsx) làm
+ * `setTimeout(..., minutes * 60_000)`, mà `setTimeout` với 0/không-hữu-hạn/quá 2^31−1 ms đều
+ * chạy NGAY LẬP TỨC ⇒ chọn "không bao giờ" sẽ hoá ra "khoá tức thì", đúng ngược ý người dùng.
+ * 7 ngày = 604.800.000 ms, vẫn dưới trần 2.147.483.647 ms nên hẹn giờ hợp lệ và thực tế không
+ * bao giờ tới. Đổi số này phải kiểm lại đúng hai ràng buộc đó.
+ */
+export const NEVER_MINUTES = 7 * 24 * 60;
+
+/** Nấc NGƯỜI DÙNG chọn (0 = không bao giờ) — cho màn Cài đặt đọc/ghi. */
+export function getLockIdleChoice(userId: string): LockIdleChoice {
+  if (!userId) return DEFAULT_LOCK_IDLE_MINUTES;
+  try {
+    const raw = localStorage.getItem(IDLE_MINUTES_PREFIX + userId);
+    if (raw === null) return DEFAULT_LOCK_IDLE_MINUTES;
+    const n = Number(raw);
+    return (LOCK_IDLE_CHOICES as readonly number[]).includes(n)
+      ? (n as LockIdleChoice)
+      : DEFAULT_LOCK_IDLE_MINUTES;
+  } catch {
+    return DEFAULT_LOCK_IDLE_MINUTES;
+  }
+}
+
+export function setLockIdleChoice(userId: string, choice: LockIdleChoice): void {
+  if (!userId) return;
+  try {
+    localStorage.setItem(IDLE_MINUTES_PREFIX + userId, String(choice));
+  } catch {
+    /* localStorage bị chặn — chỉ mất tiện nghi, không hỏng việc */
+  }
+}
+
+/**
+ * ⛔ LỖI THỜI (22/08, §24) — bản này quy "không bao giờ" thành 7 ngày, tức VẪN KHOÁ. Định nghĩa
+ * đúng: không bao giờ = không có hẹn giờ. Giữ hàm cho nơi gọi cũ khỏi vỡ; đường sống là
+ * `getLockIdleMinutes` (trả `null` khi Never).
+ */
+export function getLockIdleMinutesEffective(userId: string): number {
+  const choice = getLockIdleChoice(userId);
+  return choice === 0 ? NEVER_MINUTES : choice;
+}
+
+/** Sự kiện cửa vào của LỆNH "Khoá InteriorFlow" (sổ lệnh chung bắn, LockScreen.tsx nghe). */
+export const LOCK_REQUEST_EVENT = 'if:lock-request';
+
+let lanHoatDongCuoi = Date.now();
+
+/**
+ * Canh nền cho khoá — gọi MỘT LẦN từ `LockScreen.tsx` (component luôn mount cùng AppChrome).
+ * Cố ý đặt ở đây thay vì thêm vào AppChrome: AppChrome đã có hẹn giờ rảnh riêng (VIỆC 3, 04/08)
+ * và phần này CỘNG THÊM chứ không thay — hai đường cùng gọi `lockScreenNow()`, mà khoá là thao
+ * tác luỹ đẳng (`locked=true` hai lần vẫn là một) nên không có tác dụng phụ.
+ */
+export function startLockGuard(getIdleMinutes: () => number | null): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const cham = () => {
+    lanHoatDongCuoi = Date.now();
+  };
+  // Tương tác THẬT — chuột · phím · bút/chạm (pointerdown phủ cả bút Wacom lẫn ngón tay) · cuộn.
+  const events: (keyof WindowEventMap)[] = ['mousemove', 'keydown', 'pointerdown', 'wheel', 'touchstart'];
+  events.forEach((ev) => window.addEventListener(ev, cham, { passive: true }));
+
+  const khiHienLai = () => {
+    if (document.visibilityState !== 'visible') return;
+    if (useLockScreen.getState().locked) return;
+    const phut = getIdleMinutes();
+    // §24 — `null` = Không bao giờ: tab về lại cũng KHÔNG khoá. (Nhánh `>= NEVER_MINUTES` giữ
+    // cho nơi gọi cũ còn dùng bản Effective; đường sống trả null từ trước khi tới đây.)
+    if (phut === null || phut >= NEVER_MINUTES) return;
+    if (Date.now() - lanHoatDongCuoi >= phut * 60_000) lockScreenNow();
+    else cham();
+  };
+  document.addEventListener('visibilitychange', khiHienLai);
+
+  const khiCoLenh = () => lockScreenNow();
+  window.addEventListener(LOCK_REQUEST_EVENT, khiCoLenh);
+
+  return () => {
+    events.forEach((ev) => window.removeEventListener(ev, cham));
+    document.removeEventListener('visibilitychange', khiHienLai);
+    window.removeEventListener(LOCK_REQUEST_EVENT, khiCoLenh);
+  };
 }

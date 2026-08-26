@@ -259,12 +259,12 @@ export function AppCommandPalette({ active }: { active: AppChromeActive }) {
                       on ? 'bg-[var(--accent-soft)] text-[var(--t1)]' : 'text-[var(--t2)] hover:bg-[var(--hover)]'
                     }`}
                   >
-                    <Icon size={15} className={on ? 'text-[var(--accent)]' : 'text-[var(--t4)]'} />
+                    <Icon size={18} className={on ? 'text-[var(--accent)]' : 'text-[var(--t4)]'} />
                     <span className="flex-1 truncate">{r.label}</span>
                     {r.hint && (
                       <span className="shrink-0 rounded bg-[var(--hover)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--t4)]">{r.hint}</span>
                     )}
-                    {on && <CornerDownLeft size={13} className="shrink-0 text-[var(--t4)]" />}
+                    {on && <CornerDownLeft size={18} className="shrink-0 text-[var(--t4)]" />}
                   </button>
                 );
               })}

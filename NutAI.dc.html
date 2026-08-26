@@ -1,0 +1,240 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><script src="./support.js"></script></head><body><x-dc>
+<helmet><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+  body{margin:0;font-family:'Be Vietnam Pro',-apple-system,system-ui,sans-serif;}
+  .nhan{font-size:10.5px;letter-spacing:.08em;color:#96918a;margin-bottom:11px;}
+  .ghi{font-size:11.5px;color:#6e6a62;line-height:1.62;margin-top:10px;}
+  .ghi b{font-weight:500;color:#46433d;}
+  .o{border-radius:20px;background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.8);padding:14px 16px;}
+  /* HAI NHỊP KHÁC NHAU — tỉ số 1 : 1.43, cố ý KHÔNG chia hết cho nhau
+     nên hai lớp không bao giờ về đúng chỗ cũ. Mắt không bắt được chu kỳ. */
+  @keyframes la { 0% {background-position:-130% 0} 100% {background-position:230% 0} }
+  @keyframes lb { 0% {background-position:230% 0} 100% {background-position:-130% 0} }
+  .loang-a { animation: la 3.9s cubic-bezier(.44,0,.32,1) infinite; }
+  .loang-b { animation: lb 5.6s cubic-bezier(.36,0,.28,1) infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .loang-a, .loang-b { animation:none; background-position:46% 0; }
+  }
+</style></helmet>
+
+<div style="width:1560px;height:1000px;box-sizing:border-box;padding:30px 34px;color:#22201c;
+     background:#f7f6f3;">
+
+  <div style="font-size:15px;font-weight:600;letter-spacing:-.01em;">Nút <span style="font-weight:400">+</span> — <span style="font-weight:400">BA màu loang trong khúc xạ, không phải cầu vồng quét</span></div>
+  <div class="ghi" style="max-width:1160px;margin-bottom:22px;">
+    Bản trước tôi rải <b>năm chặng màu</b> trong một lớp duy nhất — nên nó <b>quét</b>, không <b>loang</b>.
+    Chỗ khác nhau <b>không nằm ở màu, nằm ở SỐ LỚP</b>: một lớp trượt qua thì mắt đọc ra một vật cứng đi ngang;
+    <b>hai lớp cùng ba màu, lệch pha, chạy ngược nhau và khác tốc độ</b> thì màu <b>chồng lên rồi tách ra</b> —
+    đó mới là cảm giác chất lỏng đang chảy.
+  </div>
+
+  <div style="display:flex;gap:20px;">
+    <div style="width:300px;">
+      <div class="nhan">① NGHỈ — ba màu gần như ngủ</div>
+      <div style="height:236px;border-radius:20px;display:grid;place-items:center;
+           background:linear-gradient(168deg,#fbfaf7,#f0eee9);
+           box-shadow:0 1px 0 rgba(255,255,255,.85) inset,0 14px 32px -26px rgba(30,34,64,.45);">
+        <div style="position:relative;width:132px;height:132px;">
+      <div style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);
+           width:132px;height:132px;border-radius:999px;opacity:0;filter:blur(14px);
+           background:
+             radial-gradient(46% 52% at 24% 42%, #4fbfd69e, #4fbfd600 70%),
+             radial-gradient(44% 50% at 52% 62%, #8b7ff294, #8b7ff200 70%),
+             radial-gradient(46% 52% at 78% 56%, #e884b494, #e884b400 70%);"></div>
+
+      <div style="position:absolute;inset:0;border-radius:999px;overflow:hidden;
+           background:radial-gradient(112% 128% at 50% 22%, rgba(255,255,255,.97), rgba(255,255,255,.80) 58%, rgba(250,249,253,.72) 100%);
+           border:1px solid rgba(255,255,255,.92);
+           box-shadow:0 1px 0 rgba(255,255,255,1) inset,0 -10px 18px -12px rgba(120,116,150,.34) inset,
+                      0 14px 30px -16px rgba(90,86,130,.34),0 2px 5px rgba(90,86,130,.12);">
+
+        <!-- LỚP LOANG 1 — ba màu, mép mềm -->
+        <div class="" style="position:absolute;inset:0;border-radius:999px;opacity:.32;filter:blur(3.4px);
+             background:linear-gradient(96deg,#4fbfd600 4%,#4fbfd6e6 22%,#8b7ff2c4 46%,#e884b4d6 72%,#e884b400 94%);
+             background-size:230% 100%;
+             -webkit-mask-image:radial-gradient(closest-side, transparent 0 74%, #000 87%, #000 100%);
+             mask-image:radial-gradient(closest-side, transparent 0 74%, #000 87%, #000 100%);"></div>
+
+        <!-- LỚP LOANG 2 — CÙNG ba màu, lệch pha + chạy ngược, chậm hơn.
+             Đây mới là thứ đẻ ra cảm giác LOANG. Một lớp thì chỉ là quét. -->
+        <div class="" style="position:absolute;inset:0;border-radius:999px;opacity:0.23;filter:blur(5.2px);
+             mix-blend-mode:screen;
+             background:linear-gradient(78deg,#e884b400 6%,#e884b4b8 26%,#4fbfd6a8 52%,#8b7ff2c4 76%,#8b7ff200 96%);
+             background-size:260% 100%;
+             -webkit-mask-image:radial-gradient(closest-side, transparent 0 70%, #000 86%, #000 100%);
+             mask-image:radial-gradient(closest-side, transparent 0 70%, #000 86%, #000 100%);"></div>
+
+        <div style="position:absolute;left:16%;top:9%;width:56%;height:30%;border-radius:999px;
+             background:radial-gradient(60% 100% at 50% 0%, rgba(255,255,255,.95), rgba(255,255,255,0) 76%);
+             filter:blur(1px);"></div>
+      </div>
+
+      <div style="position:absolute;inset:0;display:grid;place-items:center;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+             stroke="rgba(124,116,158,.72)" stroke-width="2.1" stroke-linecap="round">
+          <path d="M12 4v16M4 12h16"/></svg>
+      </div>
+    </div>
+      </div>
+      <div class="ghi">Chỉ một gợn ở vành, đủ để biết không phải nhựa trắng. <b>Tâm sạch.</b> Chưa có gì chảy.</div>
+    </div>
+    <div style="width:300px;">
+      <div class="nhan">② TRỎ — ba màu LOANG vào nhau</div>
+      <div style="height:236px;border-radius:20px;display:grid;place-items:center;
+           background:linear-gradient(168deg,#fbfaf7,#f0eee9);
+           box-shadow:0 1px 0 rgba(255,255,255,.85) inset,0 14px 32px -26px rgba(30,34,64,.45);">
+        <div style="position:relative;width:132px;height:132px;">
+      <div style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);
+           width:152px;height:152px;border-radius:999px;opacity:.55;filter:blur(19px);
+           background:
+             radial-gradient(46% 52% at 24% 42%, #4fbfd69e, #4fbfd600 70%),
+             radial-gradient(44% 50% at 52% 62%, #8b7ff294, #8b7ff200 70%),
+             radial-gradient(46% 52% at 78% 56%, #e884b494, #e884b400 70%);"></div>
+
+      <div style="position:absolute;inset:0;border-radius:999px;overflow:hidden;
+           background:radial-gradient(112% 128% at 50% 22%, rgba(255,255,255,.97), rgba(255,255,255,.80) 58%, rgba(250,249,253,.72) 100%);
+           border:1px solid rgba(255,255,255,.92);
+           box-shadow:0 1px 0 rgba(255,255,255,1) inset,0 -10px 18px -12px rgba(120,116,150,.34) inset,
+                      0 14px 30px -16px rgba(90,86,130,.34),0 2px 5px rgba(90,86,130,.12);">
+
+        <!-- LỚP LOANG 1 — ba màu, mép mềm -->
+        <div class="loang-a" style="position:absolute;inset:0;border-radius:999px;opacity:.9;filter:blur(3.4px);
+             background:linear-gradient(96deg,#4fbfd600 4%,#4fbfd6e6 22%,#8b7ff2c4 46%,#e884b4d6 72%,#e884b400 94%);
+             background-size:230% 100%;
+             -webkit-mask-image:radial-gradient(closest-side, transparent 0 74%, #000 87%, #000 100%);
+             mask-image:radial-gradient(closest-side, transparent 0 74%, #000 87%, #000 100%);"></div>
+
+        <!-- LỚP LOANG 2 — CÙNG ba màu, lệch pha + chạy ngược, chậm hơn.
+             Đây mới là thứ đẻ ra cảm giác LOANG. Một lớp thì chỉ là quét. -->
+        <div class="loang-b" style="position:absolute;inset:0;border-radius:999px;opacity:0.65;filter:blur(5.2px);
+             mix-blend-mode:screen;
+             background:linear-gradient(78deg,#e884b400 6%,#e884b4b8 26%,#4fbfd6a8 52%,#8b7ff2c4 76%,#8b7ff200 96%);
+             background-size:260% 100%;
+             -webkit-mask-image:radial-gradient(closest-side, transparent 0 70%, #000 86%, #000 100%);
+             mask-image:radial-gradient(closest-side, transparent 0 70%, #000 86%, #000 100%);"></div>
+
+        <div style="position:absolute;left:16%;top:9%;width:56%;height:30%;border-radius:999px;
+             background:radial-gradient(60% 100% at 50% 0%, rgba(255,255,255,.95), rgba(255,255,255,0) 76%);
+             filter:blur(1px);"></div>
+      </div>
+
+      <div style="position:absolute;inset:0;display:grid;place-items:center;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+             stroke="rgba(124,116,158,.72)" stroke-width="2.1" stroke-linecap="round">
+          <path d="M12 4v16M4 12h16"/></svg>
+      </div>
+    </div>
+      </div>
+      <div class="ghi">Hai lớp chạy <b>ngược chiều</b>, <b>3.9s và 5.6s</b>. Tỉ số cố ý không chia hết nên hai lớp <b>không bao giờ về đúng chỗ cũ</b> — mắt không bắt được chu kỳ, nên nó đọc ra <b>chảy</b> chứ không phải <b>lặp</b>.</div>
+    </div>
+    <div style="width:300px;">
+      <div class="nhan">③ BẤM — loang TRÀN ra mặt sau</div>
+      <div style="height:236px;border-radius:20px;display:grid;place-items:center;
+           background:linear-gradient(168deg,#fbfaf7,#f0eee9);
+           box-shadow:0 1px 0 rgba(255,255,255,.85) inset,0 14px 32px -26px rgba(30,34,64,.45);">
+        <div style="position:relative;width:132px;height:132px;">
+      <div style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);
+           width:192px;height:192px;border-radius:999px;opacity:1;filter:blur(29px);
+           background:
+             radial-gradient(46% 52% at 24% 42%, #4fbfd69e, #4fbfd600 70%),
+             radial-gradient(44% 50% at 52% 62%, #8b7ff294, #8b7ff200 70%),
+             radial-gradient(46% 52% at 78% 56%, #e884b494, #e884b400 70%);"></div>
+
+      <div style="position:absolute;inset:0;border-radius:999px;overflow:hidden;
+           background:radial-gradient(112% 128% at 50% 22%, rgba(255,255,255,.97), rgba(255,255,255,.80) 58%, rgba(250,249,253,.72) 100%);
+           border:1px solid rgba(255,255,255,.92);
+           box-shadow:0 1px 0 rgba(255,255,255,1) inset,0 -10px 18px -12px rgba(120,116,150,.34) inset,
+                      0 14px 30px -16px rgba(90,86,130,.34),0 2px 5px rgba(90,86,130,.12);">
+
+        <!-- LỚP LOANG 1 — ba màu, mép mềm -->
+        <div class="" style="position:absolute;inset:0;border-radius:999px;opacity:1;filter:blur(3.4px);
+             background:linear-gradient(96deg,#4fbfd600 4%,#4fbfd6e6 22%,#8b7ff2c4 46%,#e884b4d6 72%,#e884b400 94%);
+             background-size:230% 100%;
+             -webkit-mask-image:radial-gradient(closest-side, transparent 0 74%, #000 87%, #000 100%);
+             mask-image:radial-gradient(closest-side, transparent 0 74%, #000 87%, #000 100%);"></div>
+
+        <!-- LỚP LOANG 2 — CÙNG ba màu, lệch pha + chạy ngược, chậm hơn.
+             Đây mới là thứ đẻ ra cảm giác LOANG. Một lớp thì chỉ là quét. -->
+        <div class="" style="position:absolute;inset:0;border-radius:999px;opacity:0.72;filter:blur(5.2px);
+             mix-blend-mode:screen;
+             background:linear-gradient(78deg,#e884b400 6%,#e884b4b8 26%,#4fbfd6a8 52%,#8b7ff2c4 76%,#8b7ff200 96%);
+             background-size:260% 100%;
+             -webkit-mask-image:radial-gradient(closest-side, transparent 0 70%, #000 86%, #000 100%);
+             mask-image:radial-gradient(closest-side, transparent 0 70%, #000 86%, #000 100%);"></div>
+
+        <div style="position:absolute;left:16%;top:9%;width:56%;height:30%;border-radius:999px;
+             background:radial-gradient(60% 100% at 50% 0%, rgba(255,255,255,.95), rgba(255,255,255,0) 76%);
+             filter:blur(1px);"></div>
+      </div>
+
+      <div style="position:absolute;inset:0;display:grid;place-items:center;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+             stroke="rgba(124,116,158,.9)" stroke-width="2.1" stroke-linecap="round">
+          <path d="M12 4v16M4 12h16"/></svg>
+      </div>
+    </div>
+      </div>
+      <div class="ghi">Ba vũng màu đọng ra ngoài đường bao nút. Đây là lúc duy nhất màu ra khỏi vành — và nó ra <b>phía sau</b>.</div>
+    </div>
+
+    <div style="flex-grow:1;display:flex;flex-direction:column;gap:13px;">
+      <div class="o">
+        <div class="nhan" style="margin-bottom:12px;">BA NEO MÀU — CHỌN CÓ LÝ DO, KHÔNG CHỌN THEO GU</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:11px;"><div style="width:34px;height:34px;border-radius:10px;background:#4fbfd6;flex-shrink:0;box-shadow:0 5px 12px -8px #4fbfd6;"></div><div style="flex-grow:1;"><div style="font-size:12px;color:#22201c;">Lam mòng két</div><div style="font-size:10.5px;color:#96918a;margin-top:2px;line-height:1.45;">họ hàng với màu MÁY #1f7f88</div></div><span style="font-size:9.5px;letter-spacing:.1em;color:#b5b0a8;">#4fbfd6</span></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:11px;"><div style="width:34px;height:34px;border-radius:10px;background:#8b7ff2;flex-shrink:0;box-shadow:0 5px 12px -8px #8b7ff2;"></div><div style="flex-grow:1;"><div style="font-size:12px;color:#22201c;">Tím</div><div style="font-size:10.5px;color:#96918a;margin-top:2px;line-height:1.45;">họ hàng với màu NGƯỜI #6a57f5</div></div><span style="font-size:9.5px;letter-spacing:.1em;color:#b5b0a8;">#8b7ff2</span></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:11px;"><div style="width:34px;height:34px;border-radius:10px;background:#e884b4;flex-shrink:0;box-shadow:0 5px 12px -8px #e884b4;"></div><div style="flex-grow:1;"><div style="font-size:12px;color:#22201c;">Hồng ấm</div><div style="font-size:10.5px;color:#96918a;margin-top:2px;line-height:1.45;">kết quả — thứ hai bên làm ra</div></div><span style="font-size:9.5px;letter-spacing:.1em;color:#b5b0a8;">#e884b4</span></div>
+        <div style="font-size:11.5px;color:#6e6a62;line-height:1.7;margin-top:4px;padding-top:12px;
+             border-top:1px solid rgba(109,109,140,.13);">
+          Nút <b>+</b> là chỗ <b>người và máy gặp nhau</b>: người hỏi, máy làm. Nên ba neo màu
+          <b>chính là hai màu của hệ cộng thêm cái chúng sinh ra</b>.
+          <br><br>Và vì thứ tự lam → tím → hồng <b>trùng với thứ tự tán sắc thật</b> (lạnh trước, ấm sau),
+          nó vẫn đọc ra là <b>ánh sáng bị bẻ</b> chứ không phải ba vệt sơn.
+        </div>
+      </div>
+      <div class="o">
+        <div class="nhan" style="margin-bottom:9px;">VÌ SAO ĐÚNG BA, KHÔNG PHẢI NĂM</div>
+        <div style="font-size:12px;color:#46433d;line-height:1.85;">
+          Năm chặng thì <b>không màu nào kịp loang vào màu nào</b> — mắt chỉ thấy một dải cầu vồng
+          và đọc ra “hiệu ứng”. Ba màu có <b>chỗ để chồng lên nhau</b>: lam gặp tím ra một vùng,
+          tím gặp hồng ra một vùng nữa. <b>Vùng chồng mới là thứ tạo ra chiều sâu</b>, không phải số màu.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:20px;margin-top:24px;align-items:flex-start;">
+    <div class="o" style="width:480px;">
+      <div class="nhan" style="margin-bottom:9px;">BỐN LỚP, XẾP TỪ SAU RA TRƯỚC</div>
+      <div style="font-size:12px;color:#46433d;line-height:1.9;">
+        <b>1 · Ba vũng đọng</b> — nằm SAU nút, dấu của ánh sáng đã xuyên qua.<br>
+        <b>2 · Thân kính</b> — gần như không màu. Che vành đi thì tâm <b>phải gần như trắng</b>.<br>
+        <b>3 · HAI lớp loang ở vành</b> — cùng ba màu, lệch pha, ngược chiều, khác tốc.
+        Chặn ở 74% và 70% bán kính nên <b>không bò vào tâm</b>.<br>
+        <b>4 · Chóa</b> — vệt sáng chỏm trên. Thứ duy nhất nói “vật này CONG”.
+      </div>
+    </div>
+    <div class="o" style="width:480px;">
+      <div class="nhan" style="margin-bottom:9px;">GIẢM CHUYỂN ĐỘNG</div>
+      <div style="font-size:12px;color:#46433d;line-height:1.9;">
+        Hai lớp <b>dừng ở một pha đã chọn sẵn</b> (46%) — chỗ ba màu đang chồng nhau đẹp nhất.
+        Vẫn thấy đủ ba màu và vẫn thấy vùng chồng, chỉ mất chuyển động.
+        <br><br>Tôi <b>không tắt hẳn</b> như tắt hoạt hình minh hoạ của icon thao tác:
+        hoạt hình icon <b>không mang tin</b>, còn tán sắc <b>là dấu hiệu duy nhất</b> phân biệt
+        nút này với một nút cộng thường.
+      </div>
+    </div>
+    <div class="o" style="flex-grow:1;">
+      <div class="nhan" style="margin-bottom:9px;">CHƯA CHỨNG MINH ĐƯỢC — và một lỗi tôi vừa tự soi ra</div>
+      <div style="font-size:12px;color:#46433d;line-height:1.9;">
+        <b>3.9s và 5.6s KHÔNG nằm trên thang nhịp</b> của IF (130/170/220/300/460ms).
+        Nhưng thang đó viết cho <b>chuyển tiếp</b>, chưa có mục nào cho <b>hoạt hình lặp vô hạn</b>.
+        Đây là <b>thang thiếu</b>, không phải nút này được miễn — phải bổ sung mục vào thang trước khi thi công.
+        <br><br>Và: dựng bằng gradient + blur, <b>không phải khúc xạ thật</b>.
+        Trên nền đậm hoặc trên <b>nền giấy nháp</b> của hướng C, thân “gần như không màu”
+        có thể thành một đốm xám đục. Phải thử đủ bốn nền theo giờ. <b>Không ghi PASS.</b>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc></body></html>

@@ -1,0 +1,938 @@
+<!-- @dsCard group="Hệ thị giác" -->
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>IF · Sidebar là BẢN ĐỒ — bảy trạng thái + chuyển cảnh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400&display=swap" rel="stylesheet" />
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+   SIDEBAR LÀ BẢN ĐỒ, KHÔNG PHẢI MENU.
+   Nó nói: AI · DỰ ÁN NÀO · NGỮ CẢNH NÀO · MÔI TRƯỜNG NÀO — mà không thành dashboard điều hướng.
+
+   TOKEN: chép NGUYÊN VĂN từ `app/globals.css` (:root[data-theme='dark'] · [data-theme='light']).
+   Không một hex nào tự chế. Thang bo: --r-1 6 · --r-2 10 · --r-3 14 · --r-4 20 · --r-full 999
+   (`lib/geometry.ts` RADIUS). Nhịp: hover 100-160 · reveal 140-200 · shelf 180-260 · stage 240-380
+   (`docs/IF-MOTION-VISUAL-LAW.md`).
+
+   Ý TƯỞNG HÌNH HỌC TRUNG TÂM — XƯƠNG SỐNG (SPINE):
+     Một đường dọc mảnh chạy suốt rail. Mục KHÔNG phải hàng-trong-danh-sách, chúng là ĐIỂM TRÊN
+     MỘT TUYẾN. Ba đảo tách nhau bằng chỗ ĐỨT của chính đường đó — khoảng thở có nghĩa, không cần
+     hộp, không cần vạch ngang, không cần tiêu đề in hoa to.
+     Đảo CHẶNG là đoạn xương sống LIỀN và ĐẬM hơn: `2D │ 3D │ Trình chiếu` đọc ra một tiến trình
+     nghề, không phải ba mục cùng cấp trong một thẻ bo lớn.
+   ═════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* ---------- TỐI (mặc định) — app/globals.css :root[data-theme='dark'] ---------- */
+:root, :root[data-theme='dark']{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14);
+  --accent-ring:rgba(106,87,245,.55);
+  --success:#46b876; --warning:#d9a34a; --danger:#e5674f;
+  --vien-mo:rgba(255,255,255,.06);
+  --kinh-mep-sang:rgba(255,255,255,.14);
+  --mo-vo-hieu:.5;
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --nen-mo-overlay:rgba(6,6,8,.56);
+  --surface-page:#17171b;
+  --page:#08080a; /* nền GIẤY TRÌNH BÀY, không phải token sản phẩm —
+                     dùng đúng giá trị `docs/mocks/mock-he-thi-giac-3-man.html` đã dùng */
+}
+/* ---------- SÁNG — app/globals.css :root[data-theme='light'] ---------- */
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14);
+  --accent-ring:rgba(106,87,245,.55);
+  --success:#107043; --warning:#9a6304; --danger:#c9341d;
+  --vien-mo:rgba(0,0,0,.05);
+  --kinh-mep-sang:rgba(255,255,255,.75);
+  --mo-vo-hieu:.62;
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+  --nen-mo-overlay:rgba(60,55,48,.28);
+  --surface-page:#faf8f4;
+  --page:#e9e5dd; /* = --hover nền Kem */
+}
+:root{
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --W-rail:56px; --W-map:236px; --W-browse:320px;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --serif:'Newsreader',Georgia,serif;
+  /* nhịp — IF-MOTION-VISUAL-LAW */
+  --d-hover:140ms; --d-reveal:180ms; --d-shelf:220ms; --d-stage:300ms;
+  --ease:cubic-bezier(.32,.72,0,1);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{color-scheme:dark}
+:root[data-theme='light']{color-scheme:light}
+body{
+  background:var(--page); color:var(--t1); font-family:var(--sans);
+  -webkit-font-smoothing:antialiased; padding:36px 26px 96px; font-size:14px;
+}
+.wrap{max-width:1580px;margin:0 auto}
+
+/* ══ khung trang ══ */
+.lede{max-width:800px;margin:0 auto 34px;text-align:center}
+.lede h1{font-family:var(--serif);font-size:33px;font-weight:400;letter-spacing:-.4px;margin-bottom:10px}
+.lede p{color:var(--t3);font-size:13.5px;line-height:1.75}
+.lede em{color:var(--t2);font-style:normal}
+
+.sec{margin-bottom:52px}
+.sec-hd{display:flex;align-items:baseline;gap:13px;margin-bottom:16px;padding-bottom:9px;border-bottom:1px solid var(--vien-mo)}
+.sec-hd .n{font-size:10px;letter-spacing:2.4px;color:var(--t3);font-variant-numeric:tabular-nums}
+.sec-hd h2{font-size:15px;font-weight:600;letter-spacing:-.1px}
+.sec-hd .sub{color:var(--t3);font-size:11.5px;margin-left:auto;text-align:right;max-width:52ch;line-height:1.5}
+
+.note{color:var(--t3);font-size:12.5px;line-height:1.7;max-width:88ch;margin-bottom:18px}
+.note b{color:var(--t2);font-weight:600}
+.note code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--t2);background:var(--field);padding:1px 5px;border-radius:var(--r-1)}
+
+/* ══ nút đổi theme ══ */
+.topbar{position:sticky;top:0;z-index:40;display:flex;justify-content:flex-end;gap:8px;
+  margin:-36px -26px 22px;padding:10px 26px;
+  background:color-mix(in srgb,var(--page) 86%,transparent);backdrop-filter:blur(12px) saturate(1.1);
+  border-bottom:1px solid var(--vien-mo)}
+.tbtn{display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 16px;border-radius:var(--r-full);
+  border:1px solid var(--border);background:var(--panel);color:var(--t2);font:500 12px var(--sans);
+  cursor:pointer;transition:background var(--d-hover) var(--ease),color var(--d-hover) var(--ease)}
+.tbtn:hover{background:var(--hover);color:var(--t1)}
+.tbtn[aria-pressed="true"]{border-color:var(--accent-ring);color:var(--t1)}
+.tbtn:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   RAIL — thân chung. Mọi khung dùng đúng một bộ luật này.
+   ═══════════════════════════════════════════════════════════════════════ */
+.stage{
+  position:relative;display:flex;height:700px;border-radius:var(--r-3);overflow:hidden;
+  border:1px solid var(--border);background:var(--bg);
+}
+.stage.tall{height:700px}
+/* ĐỘ CAO THẬT, không rút cho vừa khung trình bày: 12 hàng × 44px + đỉnh 52 + ngữ cảnh ~62 +
+   đáy 46 ≈ 700px. Cửa sổ 1440×900 còn ~856px vùng nội dung ⇒ VỪA, và vừa sát — đó chính là
+   lý do hàng KHÔNG được cao hơn 44 và đảo dự án phải nén được. Vẽ khung 452px rồi khen
+   "thoáng" là tự lừa mình. */
+
+.rail{
+  position:relative;flex:0 0 auto;width:var(--W-rail);
+  display:flex;flex-direction:column;
+  background:var(--panel);
+  border-right:1px solid var(--vien-mo);
+  transition:width var(--d-shelf) var(--ease), opacity var(--d-stage) var(--ease),
+             filter var(--d-stage) var(--ease), background var(--d-stage) var(--ease);
+  overflow:hidden;
+}
+.rail[data-nac="map"]{width:var(--W-map)}
+.rail[data-nac="browse"]{width:var(--W-browse)}
+/* G · HOME YÊN — rail lùi tương phản, không tranh chấp với Ambient */
+.rail[data-tone="yen"]{background:transparent;border-right-color:transparent}
+.rail[data-tone="yen"] .r-ico{color:var(--t3);opacity:.82}
+.rail[data-tone="yen"] .r-lb{color:var(--t3)}
+/* E/F · IMMERSIVE — rail LÙI LẠI, không biến mất */
+.rail[data-tone="lui"]{opacity:.58;background:transparent;border-right-color:transparent}
+.rail[data-tone="lui"]:hover{opacity:1}
+
+/* ── ĐỈNH RAIL: DANH TÍNH NGƯỜI (ai) ───────────────────────────────── */
+.who{display:flex;align-items:center;gap:10px;height:52px;padding:0 12px;flex:0 0 auto;
+  border-bottom:1px solid var(--vien-mo)}
+.who .av{width:26px;height:26px;flex:0 0 auto;border-radius:var(--r-full);
+  background:linear-gradient(150deg,var(--accent) 0%,var(--accent-strong) 100%);
+  display:grid;place-items:center;font:600 10.5px var(--sans);color:#fff;letter-spacing:.4px}
+.who .txt{min-width:0;white-space:nowrap;overflow:hidden}
+.who .nm{font-size:12.5px;font-weight:600;color:var(--t2);line-height:1.25}
+.who .rl{font-size:10.5px;color:var(--t3);line-height:1.3}
+.rail:not([data-nac="rail"]) .who{padding:0 14px}
+
+/* ── THÂN: XƯƠNG SỐNG + CÁC ĐIỂM ─────────────────────────────────── */
+.body{position:relative;flex:1 1 auto;padding:12px 0 8px;overflow:hidden}
+
+/* XƯƠNG SỐNG — MỘT ĐOẠN CHO MỖI ĐẢO, không phải một đường dài rồi che bớt.
+   Trước đây bản nháp vẽ một đường suốt thân rồi lấy một khối màu nền "xoá" chỗ đứt — cách đó
+   sai vì rail nền `--panel` còn khối xoá lấy `--bg`, và ở nấc immersive rail lại trong suốt
+   nên chẳng có gì để xoá bằng. Đoạn-theo-đảo làm chỗ đứt thành THẬT, đúng ở cả ba nền. */
+.isl{position:relative}
+.isl::before{content:'';position:absolute;left:27.5px;top:6px;bottom:6px;width:1px;
+  background:var(--vien-mo);pointer-events:none}
+/* KHOẢNG THỞ CÓ NGHĨA giữa các đảo — không kẻ vạch ngang, không hộp */
+.isl + .isl{margin-top:22px}
+/* giữ selector cũ để đánh dấu vị trí; không còn vẽ gì */
+.spine{display:none}
+
+/* nhãn đảo — chỉ hiện từ nấc MAP; nhỏ, nhẹ, KHÔNG in hoa cỡ lớn.
+   Màu `--t3` chứ KHÔNG `--t4`: đo ra --t4 chỉ 3,65:1 nền Mực và 2,86:1 nền Kem — dưới 4,5:1
+   cho chữ nhỏ ở CẢ HAI nền. --t3 cho 6,93 / 4,90. */
+.isl-lb{display:none;padding:0 14px 6px 46px;font-size:10.5px;letter-spacing:.12em;
+  color:var(--t3);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rail:not([data-nac="rail"]) .isl-lb{display:block}
+
+/* ── HÀNG ─────────────────────────────────────────────────────────── */
+/* 44px = `--tap` của app. Đây KHÔNG phải con số chọn cho đẹp: 56 của nấc định vị được suy ra
+   từ chính nó (44 + 2×4px lề + 2×2 đệm) — để hàng 38px là phá đúng phép tính biện minh cho 56. */
+.row{position:relative;display:flex;align-items:center;gap:12px;height:44px;padding:0 14px 0 0;
+  background:none;border:0;width:100%;cursor:pointer;text-align:left;color:inherit;font:inherit;
+  transition:none}
+.row .slot{flex:0 0 56px;display:grid;place-items:center;position:relative;
+  transition:flex-basis var(--d-shelf) var(--ease)}
+.r-ico{color:var(--t3);display:block;
+  transition:color var(--d-hover) var(--ease), transform var(--d-hover) var(--ease),
+             filter var(--d-hover) var(--ease)}
+.r-lb{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-size:13px;font-weight:450;color:var(--t3);letter-spacing:-.05px;
+  opacity:0;transform:translateX(-4px);
+  transition:opacity var(--d-reveal) var(--ease),transform var(--d-reveal) var(--ease),color var(--d-hover) var(--ease)}
+.rail:not([data-nac="rail"]) .r-lb{opacity:1;transform:none}
+.rail[data-nac="rail"] .r-lb{pointer-events:none}
+
+/* ⬛ TÍN HIỆU ACTIVE — LIỀN VÀO RAIL, không dán đè.
+   quiet field · one meaningful signal · local light · local deformation           */
+.row::before{content:'';position:absolute;left:27.5px;top:50%;width:1px;height:0;z-index:1;
+  transform:translateY(-50%);background:var(--t3);border-radius:var(--r-full);
+  transition:height var(--d-hover) var(--ease),background var(--d-hover) var(--ease),
+             width var(--d-hover) var(--ease),box-shadow var(--d-hover) var(--ease)}
+/* hover — xương sống hé sáng TẠI CHỖ, không dịch chuyển gì, không nền */
+.row:hover::before{height:15px}
+.row:hover .r-ico{color:var(--t2)}
+.row:hover .r-lb{color:var(--t2)}
+/* active — ánh sáng cục bộ trên chính xương sống + icon THỤT VÀO 1px */
+.row[aria-current="page"]::before{height:22px;width:2px;background:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft), 0 0 10px -1px var(--accent-ring)}
+.row[aria-current="page"] .r-ico{color:var(--t1);transform:translateX(1.5px) scale(.97)}
+.row[aria-current="page"] .r-lb{color:var(--t1);font-weight:560}
+.row:focus-visible{outline:2px solid var(--accent-ring);outline-offset:-2px;border-radius:var(--r-1)}
+
+/* mục MỜ — lý do đọc được, không nút giả */
+.row[aria-disabled="true"]{cursor:default;opacity:var(--mo-vo-hieu)}
+.row[aria-disabled="true"]:hover::before{height:0}
+.row[aria-disabled="true"]:hover .r-ico,.row[aria-disabled="true"]:hover .r-lb{color:var(--t3)}
+
+/* ── BA TRỌNG LƯỢNG ICON (điều 6) ─────────────────────────────────── */
+.row[data-w="toan-cuc"] .r-ico{stroke-width:1.5}
+.row[data-w="du-an"]    .r-ico{stroke-width:1.25;color:var(--t3);opacity:.86}
+.row[data-w="du-an"]:hover .r-ico{color:var(--t2);opacity:1}
+.row[data-w="du-an"] .r-lb{font-size:12.5px}
+.row[data-w="chang"]    .r-ico{stroke-width:1.85;color:var(--t2)}
+.row[data-w="chang"] .r-lb{font-size:13px;font-weight:520;color:var(--t2)}
+
+/* ── ĐẢO CHẶNG: XƯƠNG SỐNG NGHỀ — đoạn LIỀN, đậm hơn. KHÔNG hộp bo. ── */
+.isl[data-isl="chang"]{position:relative}
+.isl[data-isl="chang"]::before{background:var(--border-strong)}
+
+/* ── NGỮ CẢNH DỰ ÁN SỐNG (điều 3) ─────────────────────────────────── */
+.ctx{padding:0 14px 10px 46px;white-space:nowrap;overflow:hidden}
+.ctx .nm{font-family:var(--serif);font-size:15px;font-weight:400;letter-spacing:-.15px;color:var(--t1);line-height:1.2}
+.ctx .rm{font-size:11.5px;color:var(--t3);line-height:1.5;margin-top:1px}
+.ctx .st{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--t3);margin-top:3px}
+.ctx .st i{width:5px;height:5px;border-radius:var(--r-full);background:var(--accent);flex:0 0 auto;
+  box-shadow:0 0 0 2.5px var(--accent-soft)}
+/* NÉN LẠI khi không cần — ở nấc rail chỉ còn MỘT chấm trên xương sống */
+.rail[data-nac="rail"] .ctx{display:none}
+.ctx-dot{display:none;height:16px;position:relative}
+.ctx-dot::before{content:'';position:absolute;left:24px;top:5px;width:7px;height:7px;border-radius:var(--r-full);
+  border:1px solid var(--accent);background:var(--bg)}
+.rail[data-nac="rail"] .ctx-dot{display:block}
+.rail[data-nac="rail"] .isl-lb{display:none}
+
+/* ── NẤC 320 · "ở đó đang có gì" ──────────────────────────────────── */
+.mat{display:none;padding:2px 14px 8px 56px}
+.rail[data-nac="browse"] .row[aria-current="page"] + .mat{display:block}
+.rail[data-nac="browse"] .row[data-mat="on"] + .mat{display:block}
+.swat{display:flex;flex-direction:column;gap:6px}
+.swat .s{display:flex;align-items:center;gap:9px;font-size:11.5px;color:var(--t3)}
+.swat .s b{width:22px;height:22px;border-radius:var(--r-full);flex:0 0 auto;border:1px solid var(--vien-mo)}
+.thumbs{display:flex;gap:6px}
+.thumbs i{width:44px;height:32px;border-radius:var(--r-1);border:1px solid var(--vien-mo);display:block}
+.stat{font-size:11.5px;color:var(--t3);line-height:1.6}
+.stat b{color:var(--t2);font-weight:550}
+
+/* ── ĐÁY RAIL: nấc chi tiết — CÓ NHÃN, không phải hai mũi tên câm ─── */
+.foot{flex:0 0 auto;border-top:1px solid var(--vien-mo);padding:4px 8px;min-height:52px;display:flex;align-items:center;gap:8px}
+.nacbtn{display:flex;align-items:center;gap:9px;height:44px;min-height:44px;padding:0 8px;flex:1 1 auto;min-width:0;
+  border:0;background:none;color:var(--t3);font:500 11.5px var(--sans);cursor:pointer;
+  border-radius:var(--r-1);transition:color var(--d-hover) var(--ease),background var(--d-hover) var(--ease)}
+.nacbtn:hover{color:var(--t2);background:var(--hover)}
+.nacbtn:focus-visible{outline:2px solid var(--accent-ring);outline-offset:1px}
+.nacbtn .txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rail[data-nac="rail"] .nacbtn{justify-content:center;padding:0}
+.rail[data-nac="rail"] .nacbtn .txt{display:none}
+
+/* ── MẶT LÀM VIỆC (chỉ để rail có ngữ cảnh, KHÔNG phải phần đang thiết kế) ── */
+.work{flex:1 1 auto;position:relative;background:var(--bg);overflow:hidden}
+.work .top{height:44px;border-bottom:1px solid var(--vien-mo);display:flex;align-items:center;
+  padding:0 16px;gap:12px;color:var(--t3);font-size:11.5px}
+.work .cnv{position:absolute;inset:44px 0 0;display:grid;place-items:center;color:var(--t5);font-size:11.5px;
+  letter-spacing:.1em;text-transform:uppercase}
+.work[data-kind="2d"] .cnv{
+  background-image:linear-gradient(var(--vien-mo) 1px,transparent 1px),linear-gradient(90deg,var(--vien-mo) 1px,transparent 1px);
+  background-size:26px 26px}
+.work[data-kind="3d"] .cnv{background:radial-gradient(120% 90% at 50% 0%,var(--surface-page) 0%,var(--bg) 72%)}
+.work[data-kind="home"] .cnv{background:radial-gradient(80% 60% at 22% 0%,var(--accent-soft) 0%,transparent 62%)}
+.work[data-kind="home"] .amb{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+  padding:0 48px;gap:14px}
+.work[data-kind="home"] .amb h3{font-family:var(--serif);font-size:29px;font-weight:400;color:var(--t1)}
+.work[data-kind="home"] .amb .cards{display:flex;gap:12px}
+.work[data-kind="home"] .amb .cards i{flex:1;height:96px;border-radius:var(--r-2);background:var(--card);
+  border:1px solid var(--vien-mo);display:block}
+
+/* ══ lưới khung ══ */
+.grid{display:grid;gap:22px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:1240px){.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+.frame-hd{display:flex;align-items:baseline;gap:9px;margin-bottom:9px}
+.frame-hd .k{font:600 10px var(--sans);letter-spacing:.16em;color:var(--accent);
+  border:1px solid var(--accent-ring);border-radius:var(--r-1);padding:1px 5px}
+.frame-hd h3{font-size:13px;font-weight:600}
+.frame-hd .w{margin-left:auto;font-size:10.5px;color:var(--t3);font-variant-numeric:tabular-nums}
+.frame-cap{margin-top:9px;font-size:11.5px;color:var(--t3);line-height:1.6}
+.frame-cap b{color:var(--t3);font-weight:550}
+
+/* ══ khung nhỏ chỉ để soi rail (không kèm mặt làm việc) ══ */
+.solo{display:flex;border-radius:var(--r-3);overflow:hidden;border:1px solid var(--border);
+  background:var(--bg);height:452px}
+
+/* ══ BỎ ↔ THAY ══ */
+.ab{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:var(--r-3);overflow:hidden}
+.ab > div{padding:18px 20px}
+.ab > div + div{border-left:1px solid var(--vien-mo)}
+.ab h4{font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px}
+.ab .bo h4{color:var(--danger,#e5674f)}
+.ab .thay h4{color:var(--success)}
+.ab ul{list-style:none;display:flex;flex-direction:column;gap:7px}
+.ab li{font-size:12px;color:var(--t3);line-height:1.55;padding-left:16px;position:relative}
+.ab li::before{content:'';position:absolute;left:0;top:7px;width:7px;height:1px;background:var(--t5)}
+.ab .thay li::before{background:var(--success)}
+.ab li b{color:var(--t2);font-weight:600}
+
+/* ══ giải phẫu tín hiệu active ══ */
+.anat{display:grid;grid-template-columns:210px 1fr;gap:26px;align-items:center;
+  border:1px solid var(--border);border-radius:var(--r-3);padding:22px;background:var(--panel)}
+@media(max-width:820px){.anat{grid-template-columns:1fr}}
+.anat-demo{background:var(--bg);border-radius:var(--r-2);padding:14px 0;border:1px solid var(--vien-mo)}
+.anat dl{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:12px}
+.anat dt{color:var(--t2);font-weight:600;white-space:nowrap}
+.anat dd{color:var(--t3);line-height:1.55}
+
+/* ══ bảng trọng lượng icon ══ */
+.icotab{width:100%;border-collapse:collapse;font-size:12px}
+.icotab th{text-align:left;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);
+  padding:0 12px 9px;border-bottom:1px solid var(--vien-mo);font-weight:500}
+.icotab td{padding:11px 12px;border-bottom:1px solid var(--vien-mo);color:var(--t3);vertical-align:middle}
+.icotab tr:last-child td{border-bottom:0}
+.icotab .ico-cell{display:flex;gap:14px;align-items:center}
+.icotab b{color:var(--t2);font-weight:600}
+
+/* ══ chuyển cảnh — băng phim ══ */
+.strip{display:flex;gap:0;align-items:stretch;border:1px solid var(--border);border-radius:var(--r-3);
+  overflow:hidden;background:var(--bg)}
+.strip .fr{flex:1 1 0;min-width:0;position:relative;padding:14px 0 0;border-right:1px solid var(--vien-mo)}
+.strip .fr:last-child{border-right:0}
+.strip .fr .cap{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:10px;
+  color:var(--t3);letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.strip .fr .mini{margin:0 auto;background:var(--panel);border-radius:var(--r-2);border:1px solid var(--vien-mo);
+  height:190px;position:relative;overflow:hidden}
+.strip .fr .mini .ln{position:absolute;left:13px;top:14px;bottom:14px;width:1px;background:var(--vien-mo)}
+.strip .fr .mini .dot{position:absolute;left:9px;width:9px;height:9px;border-radius:var(--r-full);
+  background:var(--t5)}
+.strip .fr .mini .dot.on{background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.strip .fr .mini .tx{position:absolute;left:30px;height:5px;border-radius:var(--r-full);background:var(--t5);
+  transition:opacity var(--d-reveal)}
+.strip .fr .mini .th{position:absolute;left:30px;height:20px;border-radius:var(--r-1);background:var(--field)}
+
+/* ══ điều khiển demo sống ══ */
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.ctrl button{height:44px;padding:0 16px;border-radius:var(--r-full);border:1px solid var(--border);
+  background:var(--panel);color:var(--t3);font:500 12px var(--sans);cursor:pointer;
+  transition:background var(--d-hover) var(--ease),color var(--d-hover) var(--ease),border-color var(--d-hover) var(--ease)}
+.ctrl button:hover{background:var(--hover);color:var(--t1)}
+.ctrl button[aria-pressed="true"]{border-color:var(--accent);color:var(--t1);background:var(--accent-soft)}
+.ctrl button:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px}
+
+.an-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.legend{display:flex;gap:20px;flex-wrap:wrap;margin-top:14px;font-size:11.5px;color:var(--t3)}
+.legend span{display:flex;align-items:center;gap:7px}
+.legend i{width:2px;height:16px;border-radius:var(--r-full);display:block}
+
+/* ══ reduce-motion — nhánh TĨNH thật, không phải chỉ 0s ══ */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{transition-duration:1ms !important;animation-duration:1ms !important}
+  .row[aria-current="page"] .r-ico{transform:none}
+  .row[aria-current="page"]::before{box-shadow:0 0 0 3px var(--accent-soft)}
+  .r-lb{transform:none}
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="tbtn" id="bt-dark" aria-pressed="true" onclick="setTheme('dark')">Nền Mực</button>
+  <button class="tbtn" id="bt-light" aria-pressed="false" onclick="setTheme('light')">Nền Kem</button>
+</div>
+
+<div class="wrap">
+
+<div class="lede">
+  <h1>Sidebar là <em>bản đồ</em>, không phải menu</h1>
+  <p>Nó trả lời bốn câu cùng lúc — <em>ai · dự án nào · ngữ cảnh nào · môi trường nào</em> — mà không biến
+  thành một dashboard điều hướng. Hình học trung tâm là một <em>xương sống</em>: các mục không phải hàng
+  trong danh sách, chúng là điểm trên một tuyến. Ba đảo tách nhau bằng chỗ <em>đứt</em> của chính đường đó.</p>
+</div>
+
+<!-- ═════ §0 · BỎ ↔ THAY ═════ -->
+<section class="sec">
+  <div class="sec-hd"><span class="n">00</span><h2>Bỏ gì · thay bằng gì</h2>
+    <span class="sub">Đối chiếu từng gạch đầu dòng Hoà bác. Cấu trúc ba nấc và ba đảo GIỮ NGUYÊN — đây là bài toán xử lý thị giác.</span></div>
+  <div class="ab">
+    <div class="bo">
+      <h4>Bỏ</h4>
+      <ul>
+        <li><b>Hộp bo tròn to ôm cụm CHẶNG</b> — nền <code>--t1 3%</code>, bo r3</li>
+        <li><b>Hàng active thành pill/card</b> — nền tô + bo tròn cả hàng</li>
+        <li><b>Icon và chữ cùng một trọng lượng</b> — tám mục nặng như nhau</li>
+        <li><b>Tiêu đề IN HOA cỡ lớn khắp nơi</b></li>
+        <li><b>Nửa dưới trống chết</b></li>
+        <li><b>Hai mũi tên đáy không giải thích</b></li>
+        <li><b>Sidebar thành chồng thẻ</b></li>
+      </ul>
+    </div>
+    <div class="thay">
+      <h4>Thay</h4>
+      <ul>
+        <li><b>Đoạn xương sống liền, đậm hơn</b> — <code>2D │ 3D │ Trình chiếu</code> đọc ra tiến trình nghề, không hộp</li>
+        <li><b>Ánh sáng cục bộ trên xương sống</b> + icon thụt vào 1px — liền vào rail, không dán đè</li>
+        <li><b>Ba trọng lượng</b>: toàn cục 1.5 · dự án 1.25 nhỏ hơn · chặng 1.85 mạnh nhất</li>
+        <li><b>Nhãn đảo 10.5px, chữ thường, nhạt</b> — và <b>tên dự án đặt bằng serif</b>, đó mới là thứ đáng to</li>
+        <li><b>Ngữ cảnh dự án sống</b> chiếm nửa dưới: tên · phòng · chặng đang làm; nén thành một chấm khi không cần</li>
+        <li><b>Nút nấc có nhãn đọc được</b>: “Điều hướng” / “Duyệt”</li>
+        <li><b>Một mặt phẳng liền</b> — không viền, không nền hàng, không bóng đổ nào bên trong rail</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ §1 · GIẢI PHẪU TÍN HIỆU ACTIVE ═════ -->
+<section class="sec">
+  <div class="sec-hd"><span class="n">01</span><h2>Tín hiệu “tôi đang ở đây”</h2>
+    <span class="sub">quiet field · one meaningful signal · local light · local deformation — bốn thứ cùng một chỗ, không thứ nào dán đè lên rail.</span></div>
+  <div class="anat">
+    <div class="anat-demo">
+      <div class="rail" data-nac="map" style="width:100%;border-right:0;background:transparent">
+        <div class="body" style="padding:0">
+          <div class="spine"></div>
+          <button class="row" data-w="toan-cuc"><span class="slot">
+            <svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+          </span><span class="r-lb">nghỉ</span></button>
+          <button class="row" data-w="toan-cuc" data-hoverdemo="1" style="--x:1"><span class="slot">
+            <svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+          </span><span class="r-lb">trỏ vào</span></button>
+          <button class="row" data-w="toan-cuc" aria-current="page"><span class="slot">
+            <svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+          </span><span class="r-lb">đang ở đây</span></button>
+        </div>
+      </div>
+    </div>
+    <dl>
+      <dt>Trường yên</dt><dd>Không hàng nào có nền, viền, bo góc hay bóng. Rail là một mặt phẳng liền — nên bất kỳ tín hiệu nào cũng đọc được ngay.</dd>
+      <dt>Một tín hiệu</dt><dd>Đúng <b>một</b> chỗ đổi: đoạn xương sống tại hàng đó. Không cầu vồng, không đồng thời nền + viền + màu chữ + đậm.</dd>
+      <dt>Ánh sáng cục bộ</dt><dd>Đoạn 22×2px màu <code>--accent</code>, quầng <code>--accent-soft</code> lan 3px. Nó <b>là</b> xương sống sáng lên, không phải vạch dán thêm bên trái.</dd>
+      <dt>Biến dạng cục bộ</dt><dd>Icon dịch 1,5px về phía xương sống và co 3% — như một phím vừa bị ấn xuống. Đủ để cảm, không đủ để làm chữ nhảy.</dd>
+      <dt>Hover</dt><dd>Xương sống hé sáng 15px màu <code>--t3</code>, <b>không</b> dịch chuyển, <b>không</b> nền. Vào 140ms.</dd>
+      <dt>Kênh dự phòng</dt><dd>Màu không bao giờ là kênh duy nhất: hàng đang mở còn có <code>aria-current="page"</code>, chữ lên <code>--t1</code> và nét 560. Bỏ hết màu vẫn đọc được.</dd>
+    </dl>
+  </div>
+  <div class="legend">
+    <span><i style="background:var(--t3)"></i> hover · 15px · --t3</span>
+    <span><i style="background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);width:2px"></i> đang mở · 22×2px · --accent</span>
+    <span><i style="background:var(--vien-mo)"></i> xương sống nghỉ · 1px · --vien-mo</span>
+    <span><i style="background:var(--border-strong)"></i> xương sống nghề (đảo chặng) · 1px · --border-strong</span>
+  </div>
+</section>
+
+<!-- ═════ §2 · BẢY TRẠNG THÁI ═════ -->
+<section class="sec">
+  <div class="sec-hd"><span class="n">02</span><h2>Bảy trạng thái</h2>
+    <span class="sub">A rail 56 · B map 236 · C ngữ cảnh dự án · D browse 320 · E 2D immersive · F 3D immersive · G Home yên</span></div>
+
+  <div class="grid g3">
+
+    <!-- A · RAIL -->
+    <div>
+      <div class="frame-hd"><span class="k">A</span><h3>Rail · định vị</h3><span class="w">56px</span></div>
+      <div class="solo">
+        <div class="rail" data-nac="rail" style="width:56px;flex:0 0 56px">
+          <div class="who"><span class="av">TH</span></div>
+          <div class="body">
+            <div class="spine"></div>
+            <div class="isl" data-isl="viec">
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="r-lb">Trang chủ</span></button>
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M8 17a2 2 0 0 1-2-2V4a1 1 0 0 1 1-1h3.172a1 1 0 0 1 .707.293l1.828 1.828A1 1 0 0 0 13.414 6H19a1 1 0 0 1 1 1v8a2 2 0 0 1-2 2z"/><path d="M2 8v11a2 2 0 0 0 2 2h14"/></svg></span><span class="r-lb">Dự án</span></button>
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></span><span class="r-lb">Files</span></button>
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><path d="M8 14c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><rect width="12" height="12" x="10" y="10" rx="2"/></svg></span><span class="r-lb">Thư viện</span></button>
+              <button class="row" data-w="toan-cuc" aria-disabled="true" aria-describedby="ly-soat"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m3 15 2 2 4-4"/></svg></span><span class="r-lb">Soát duyệt</span></button>
+            </div>
+            <div class="isl" data-isl="du-an"><div class="ctx-dot"></div></div>
+            <div class="isl" data-isl="chang">
+              <button class="row" data-w="chang"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 12h18"/><path d="M12 3v18"/></svg></span><span class="r-lb">Thiết kế 2D</span></button>
+              <button class="row" data-w="chang"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span><span class="r-lb">Thiết kế 3D</span></button>
+              <button class="row" data-w="chang"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M12 17v4"/><path d="M8 21h8"/></svg></span><span class="r-lb">Trình chiếu</span></button>
+            </div>
+          </div>
+          <div class="foot"><button class="nacbtn" aria-label="Mở nấc Điều hướng"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg><span class="txt">Điều hướng</span></button></div>
+        </div>
+      </div>
+      <p class="frame-cap">Chỉ ký hiệu. <b>Không nhãn, không tiêu đề đảo.</b> Ba đảo đọc được bằng chỗ đứt của
+      xương sống. Đảo dự án nén thành <b>một chấm rỗng</b> — đủ nói “có ngữ cảnh ở đây”, không chiếm chỗ.</p>
+    </div>
+
+    <!-- B · MAP -->
+    <div>
+      <div class="frame-hd"><span class="k">B</span><h3>Map · điều hướng</h3><span class="w">236px</span></div>
+      <div class="solo">
+        <div class="rail" data-nac="map" style="flex:0 0 236px">
+          <div class="who"><span class="av">TH</span><span class="txt"><span class="nm">Trần Thái Hoà</span><span class="rl">Chủ trì thiết kế</span></span></div>
+          <div class="body">
+            <div class="spine"></div>
+            <div class="isl" data-isl="viec">
+              <div class="isl-lb">Việc</div>
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="r-lb">Trang chủ</span></button>
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M8 17a2 2 0 0 1-2-2V4a1 1 0 0 1 1-1h3.172a1 1 0 0 1 .707.293l1.828 1.828A1 1 0 0 0 13.414 6H19a1 1 0 0 1 1 1v8a2 2 0 0 1-2 2z"/><path d="M2 8v11a2 2 0 0 0 2 2h14"/></svg></span><span class="r-lb">Dự án</span></button>
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></span><span class="r-lb">Files</span></button>
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><path d="M8 14c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><rect width="12" height="12" x="10" y="10" rx="2"/></svg></span><span class="r-lb">Thư viện</span></button>
+              <button class="row" data-w="toan-cuc" aria-disabled="true" aria-describedby="ly-soat"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m3 15 2 2 4-4"/></svg></span><span class="r-lb">Soát duyệt</span></button>
+              <span id="ly-soat" class="an-only">Chưa có trang riêng — bảng soát duyệt ở mép phải mỗi chặng</span>
+            </div>
+            <div class="isl" data-isl="du-an">
+              <div class="ctx-dot"></div>
+              <div class="ctx"><span class="nm">Thảo Điền</span><div class="rm">Phòng khách</div><div class="st"><i></i>3D · đang làm</div></div>
+              <button class="row" data-w="du-an"><span class="slot"><svg class="r-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/></svg></span><span class="r-lb">Tổng quan</span></button>
+              <button class="row" data-w="du-an"><span class="slot"><svg class="r-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></svg></span><span class="r-lb">Flows · Workspace</span></button>
+              <button class="row" data-w="du-an" aria-disabled="true" aria-describedby="ly-tep"><span class="slot"><svg class="r-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg></span><span class="r-lb">Tệp dự án</span></button>
+              <button class="row" data-w="du-an"><span class="slot"><svg class="r-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 12h.01"/></svg></span><span class="r-lb">Quyết định · DNA</span></button>
+            </div>
+            <div class="isl" data-isl="chang">
+              <button class="row" data-w="chang"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 12h18"/><path d="M12 3v18"/></svg></span><span class="r-lb">Thiết kế 2D</span></button>
+              <button class="row" data-w="chang" aria-current="page"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span><span class="r-lb">Thiết kế 3D</span></button>
+              <button class="row" data-w="chang"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M12 17v4"/><path d="M8 21h8"/></svg></span><span class="r-lb">Trình chiếu</span></button>
+            </div>
+          </div>
+          <div class="foot">
+            <button class="nacbtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg><span class="txt">Thu về ký hiệu</span></button>
+            <button class="nacbtn" style="flex:0 0 auto" aria-label="Mở nấc Duyệt"><span class="txt">Duyệt</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <p class="frame-cap">Thêm <b>chữ</b>, không thêm hộp. Nhãn đảo nhỏ và nhạt; thứ được đặt to là
+      <b>tên dự án</b> — bằng serif, vì nó là danh tính chứ không phải nhãn giao diện.</p>
+    </div>
+
+    <!-- C · NGỮ CẢNH DỰ ÁN -->
+    <div>
+      <div class="frame-hd"><span class="k">C</span><h3>Ngữ cảnh dự án</h3><span class="w">236px · soi gần</span></div>
+      <div class="solo" style="height:452px;align-items:stretch">
+        <div class="rail" data-nac="map" style="flex:0 0 236px">
+          <div class="who"><span class="av">TH</span><span class="txt"><span class="nm">Trần Thái Hoà</span><span class="rl">Chủ trì thiết kế</span></span></div>
+          <div class="body">
+            <div class="spine"></div>
+            <div class="isl" data-isl="viec">
+              <div class="isl-lb">Việc</div>
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="r-lb">Trang chủ</span></button>
+              <button class="row" data-w="toan-cuc" aria-current="page"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M8 17a2 2 0 0 1-2-2V4a1 1 0 0 1 1-1h3.172a1 1 0 0 1 .707.293l1.828 1.828A1 1 0 0 0 13.414 6H19a1 1 0 0 1 1 1v8a2 2 0 0 1-2 2z"/><path d="M2 8v11a2 2 0 0 0 2 2h14"/></svg></span><span class="r-lb">Dự án</span></button>
+            </div>
+            <div class="isl" data-isl="du-an">
+              <div class="ctx-dot"></div>
+              <div class="isl-lb" style="letter-spacing:.14em">Đang mở</div>
+              <div class="ctx"><span class="nm">Thảo Điền</span><div class="rm">Phòng khách</div><div class="st"><i></i>3D · đang làm</div></div>
+              <button class="row" data-w="du-an"><span class="slot"><svg class="r-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/></svg></span><span class="r-lb">Tổng quan</span></button>
+              <button class="row" data-w="du-an"><span class="slot"><svg class="r-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></svg></span><span class="r-lb">Flows · Workspace</span></button>
+              <button class="row" data-w="du-an" aria-disabled="true" aria-describedby="ly-tep"><span class="slot"><svg class="r-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg></span><span class="r-lb">Tệp dự án</span></button>
+              <span id="ly-tep" class="an-only">Chưa lọc theo dự án — Files hiện là kho chung</span>
+              <button class="row" data-w="du-an"><span class="slot"><svg class="r-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 12h.01"/></svg></span><span class="r-lb">Quyết định · DNA</span></button>
+            </div>
+            <div class="isl" data-isl="chang">
+              <button class="row" data-w="chang"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 12h18"/><path d="M12 3v18"/></svg></span><span class="r-lb">Thiết kế 2D</span></button>
+              <button class="row" data-w="chang"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span><span class="r-lb">Thiết kế 3D</span></button>
+              <button class="row" data-w="chang"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M12 17v4"/><path d="M8 21h8"/></svg></span><span class="r-lb">Trình chiếu</span></button>
+            </div>
+          </div>
+          <div class="foot"><button class="nacbtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg><span class="txt">Thu về ký hiệu</span></button></div>
+        </div>
+      </div>
+      <p class="frame-cap"><code>THẢO ĐIỀN / Phòng khách / 3D · đang làm</code> — không còn
+      <code>UNTITLED FLOW</code>. Bốn mục dự án <b>nhẹ hơn</b> mục toàn cục (nét 1.25, cỡ 17px) vì chúng
+      phụ thuộc ngữ cảnh. Hai mục chưa có trang vẫn hiện <b>mờ kèm lý do</b> đi bằng
+      <code>aria-describedby</code>, không phải <code>title</code>.</p>
+    </div>
+
+  </div>
+
+  <div class="grid g2" style="margin-top:26px">
+
+    <!-- D · BROWSE -->
+    <div>
+      <div class="frame-hd"><span class="k">D</span><h3>Browse · “ở đó đang có gì”</h3><span class="w">320px</span></div>
+      <div class="stage">
+        <div class="rail" data-nac="browse" style="flex:0 0 320px">
+          <div class="who"><span class="av">TH</span><span class="txt"><span class="nm">Trần Thái Hoà</span><span class="rl">Chủ trì thiết kế</span></span></div>
+          <div class="body">
+            <div class="spine"></div>
+            <div class="isl" data-isl="viec">
+              <div class="isl-lb">Việc</div>
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="r-lb">Trang chủ</span></button>
+              <button class="row" data-w="toan-cuc" data-mat="on"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></span><span class="r-lb">Files</span></button>
+              <div class="mat"><div class="thumbs">
+                <i style="background:linear-gradient(140deg,var(--field),var(--card))"></i>
+                <i style="background:linear-gradient(140deg,var(--hover),var(--field))"></i>
+                <i style="background:linear-gradient(140deg,var(--card),var(--hover))"></i>
+              </div><div class="stat" style="margin-top:6px">Gần đây · <b>Thảo Điền / mặt bằng</b></div></div>
+              <button class="row" data-w="toan-cuc" aria-current="page"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><path d="M8 14c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><rect width="12" height="12" x="10" y="10" rx="2"/></svg></span><span class="r-lb">Thư viện</span></button>
+              <div class="mat"><div class="swat">
+                <div class="s"><b style="background:#8a6a44"></b>Sồi tự nhiên · <span style="color:var(--t3)">MAT-014</span></div>
+                <div class="s"><b style="background:#47423a"></b>Óc chó ngả xám · <span style="color:var(--t3)">MAT-031</span></div>
+                <div class="s"><b style="background:#cbc4b6"></b>Travertine mờ · <span style="color:var(--t3)">MAT-007</span></div>
+                <div class="s"><b style="background:#3d3d45"></b>Thép sơn tĩnh điện · <span style="color:var(--t3)">MAT-022</span></div>
+              </div></div>
+              <button class="row" data-w="toan-cuc" aria-disabled="true" aria-describedby="ly-soat"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m3 15 2 2 4-4"/></svg></span><span class="r-lb">Soát duyệt</span></button>
+            </div>
+            <div class="isl" data-isl="chang">
+              <button class="row" data-w="chang" data-mat="on"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span><span class="r-lb">Thiết kế 3D</span></button>
+              <div class="mat"><div class="stat">Đang dở · <b>Phòng khách — dựng khối</b><br>Sửa lần cuối 14 phút trước</div></div>
+              <button class="row" data-w="chang"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M12 17v4"/><path d="M8 21h8"/></svg></span><span class="r-lb">Trình chiếu</span></button>
+            </div>
+          </div>
+          <div class="foot"><button class="nacbtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg><span class="txt">Về Điều hướng</span></button></div>
+        </div>
+        <div class="work" data-kind="3d"><div class="top">Thảo Điền · Phòng khách · dựng khối</div><div class="cnv">viewport</div></div>
+      </div>
+      <p class="frame-cap">Nấc to <b>bổ sung một lớp tin</b>, không phóng to lớp cũ: Thư viện mọc ra
+      <b>cột ô tròn vật liệu</b>, Files mọc ra <b>ảnh xem trước</b>, chặng mọc ra <b>tình trạng</b>.
+      Mục nào không có gì để nhìn (Soát duyệt · Trang chủ) thì <b>không mọc</b> — ba nấc là nhịp,
+      không phải hạn ngạch.</p>
+    </div>
+
+    <!-- G · HOME YÊN -->
+    <div>
+      <div class="frame-hd"><span class="k">G</span><h3>Home · yên</h3><span class="w">236px · tương phản thấp</span></div>
+      <div class="stage">
+        <div class="rail" data-nac="map" data-tone="yen" style="flex:0 0 236px">
+          <div class="who"><span class="av">TH</span><span class="txt"><span class="nm">Trần Thái Hoà</span><span class="rl">Chủ trì thiết kế</span></span></div>
+          <div class="body">
+            <div class="spine"></div>
+            <div class="isl" data-isl="viec">
+              <div class="isl-lb">Việc</div>
+              <button class="row" data-w="toan-cuc" aria-current="page"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="r-lb">Trang chủ</span></button>
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M8 17a2 2 0 0 1-2-2V4a1 1 0 0 1 1-1h3.172a1 1 0 0 1 .707.293l1.828 1.828A1 1 0 0 0 13.414 6H19a1 1 0 0 1 1 1v8a2 2 0 0 1-2 2z"/><path d="M2 8v11a2 2 0 0 0 2 2h14"/></svg></span><span class="r-lb">Dự án</span></button>
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></span><span class="r-lb">Files</span></button>
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><path d="M8 14c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><rect width="12" height="12" x="10" y="10" rx="2"/></svg></span><span class="r-lb">Thư viện</span></button>
+              <button class="row" data-w="toan-cuc" aria-disabled="true" aria-describedby="ly-soat"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m3 15 2 2 4-4"/></svg></span><span class="r-lb">Soát duyệt</span></button>
+            </div>
+            <div class="isl" data-isl="chang">
+              <span id="ly-duan" class="an-only">Chưa mở dự án — chọn một dự án ở Trang chủ</span>
+              <button class="row" data-w="chang" aria-disabled="true" aria-describedby="ly-duan"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 12h18"/><path d="M12 3v18"/></svg></span><span class="r-lb">Thiết kế 2D</span></button>
+              <button class="row" data-w="chang" aria-disabled="true" aria-describedby="ly-duan"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span><span class="r-lb">Thiết kế 3D</span></button>
+              <button class="row" data-w="chang" aria-disabled="true" aria-describedby="ly-duan"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M12 17v4"/><path d="M8 21h8"/></svg></span><span class="r-lb">Trình chiếu</span></button>
+            </div>
+          </div>
+          <div class="foot"><button class="nacbtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg><span class="txt">Thu về ký hiệu</span></button></div>
+        </div>
+        <div class="work" data-kind="home">
+          <div class="cnv"></div>
+          <div class="amb">
+            <h3>Chiều muộn, Hoà.</h3>
+            <div class="cards"><i></i><i></i><i></i></div>
+          </div>
+        </div>
+      </div>
+      <p class="frame-cap">Rail <b>bỏ nền và bỏ viền</b> — nó ngồi thẳng trên nền Home. Icon tụt xuống
+      <code>--t4</code>, chữ <code>--t3</code>. Đảo chặng mờ vì <b>chưa mở dự án</b> (lý do đọc được).
+      Home là một <b>nơi chốn</b> trước đã; điều hướng không tranh chấp với Ambient.</p>
+    </div>
+
+  </div>
+
+  <div class="grid g2" style="margin-top:26px">
+
+    <!-- E · 2D IMMERSIVE -->
+    <div>
+      <div class="frame-hd"><span class="k">E</span><h3>2D · immersive</h3><span class="w">56px · rail lùi</span></div>
+      <div class="stage">
+        <div class="rail" data-nac="rail" data-tone="lui" style="flex:0 0 56px">
+          <div class="who" style="border-bottom-color:transparent"><span class="av">TH</span></div>
+          <div class="body">
+            <div class="spine"></div>
+            <div class="isl" data-isl="viec">
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="r-lb">Trang chủ</span></button>
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></span><span class="r-lb">Files</span></button>
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><path d="M8 14c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><rect width="12" height="12" x="10" y="10" rx="2"/></svg></span><span class="r-lb">Thư viện</span></button>
+            </div>
+            <div class="isl" data-isl="du-an"><div class="ctx-dot"></div></div>
+            <div class="isl" data-isl="chang">
+              <button class="row" data-w="chang" aria-current="page"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 12h18"/><path d="M12 3v18"/></svg></span><span class="r-lb">Thiết kế 2D</span></button>
+              <button class="row" data-w="chang"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span><span class="r-lb">Thiết kế 3D</span></button>
+              <button class="row" data-w="chang"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M12 17v4"/><path d="M8 21h8"/></svg></span><span class="r-lb">Trình chiếu</span></button>
+            </div>
+          </div>
+          <div class="foot" style="border-top-color:transparent"><button class="nacbtn" aria-label="Mở nấc Điều hướng"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button></div>
+        </div>
+        <div class="work" data-kind="2d"><div class="top">Thảo Điền · Mặt bằng bố trí · 1:50</div><div class="cnv">bản vẽ</div></div>
+      </div>
+      <p class="frame-cap">Rail <b>lùi lại</b> chứ không biến mất: mờ còn 58 %, bỏ nền và viền, hoà vào nền
+      bản vẽ. Đưa chuột về mép là <b>sáng lại đủ 100 %</b>. Không auto-hide hung hăng — vẫn giữ nguyên
+      chỗ đứng, vẫn Tab tới được.</p>
+    </div>
+
+    <!-- F · 3D IMMERSIVE -->
+    <div>
+      <div class="frame-hd"><span class="k">F</span><h3>3D · immersive</h3><span class="w">56px · rail lùi</span></div>
+      <div class="stage">
+        <div class="rail" data-nac="rail" data-tone="lui" style="flex:0 0 56px">
+          <div class="who" style="border-bottom-color:transparent"><span class="av">TH</span></div>
+          <div class="body">
+            <div class="spine"></div>
+            <div class="isl" data-isl="viec">
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="r-lb">Trang chủ</span></button>
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></span><span class="r-lb">Files</span></button>
+              <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><path d="M8 14c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><rect width="12" height="12" x="10" y="10" rx="2"/></svg></span><span class="r-lb">Thư viện</span></button>
+            </div>
+            <div class="isl" data-isl="du-an"><div class="ctx-dot"></div></div>
+            <div class="isl" data-isl="chang">
+              <button class="row" data-w="chang"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 12h18"/><path d="M12 3v18"/></svg></span><span class="r-lb">Thiết kế 2D</span></button>
+              <button class="row" data-w="chang" aria-current="page"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span><span class="r-lb">Thiết kế 3D</span></button>
+              <button class="row" data-w="chang"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M12 17v4"/><path d="M8 21h8"/></svg></span><span class="r-lb">Trình chiếu</span></button>
+            </div>
+          </div>
+          <div class="foot" style="border-top-color:transparent"><button class="nacbtn" aria-label="Mở nấc Điều hướng"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button></div>
+        </div>
+        <div class="work" data-kind="3d"><div class="top">Thảo Điền · Phòng khách · dựng khối</div><div class="cnv">viewport</div></div>
+      </div>
+      <p class="frame-cap">Cùng một luật với 2D — <b>khác môi trường, không khác sidebar</b>. Điểm sáng
+      trên xương sống dịch từ ô 2D xuống ô 3D; đó là toàn bộ thứ đổi. Người dùng đọc được mình đang ở
+      đâu trong tiến trình <code>2D → 3D → Trình chiếu</code> mà không phải rời mắt khỏi viewport.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═════ §3 · CHUYỂN CẢNH ═════ -->
+<section class="sec">
+  <div class="sec-hd"><span class="n">03</span><h2>Chuyển cảnh</h2>
+    <span class="sub">Bấm để xem thật — chiều rộng, nhãn, ngữ cảnh và lớp nội dung vào ra theo ba nhịp khác nhau.</span></div>
+
+  <p class="note">Ba lớp <b>không vào cùng lúc</b>, và đó là điều làm nó đọc ra như một vật đang mở chứ
+  không phải một trang đang đổi: khung rail giãn theo nhịp <b>shelf 220ms</b>; nhãn chữ hiện sau theo
+  nhịp <b>reveal 180ms</b> kèm trượt 4px; ngữ cảnh dự án và lớp 320 nở ra <b>sau cùng</b>. Đường cong
+  <code>cubic-bezier(.32,.72,0,1)</code> — đúng đường đang dùng cho tấm Thư viện.</p>
+
+  <div class="ctrl">
+    <button id="c-rail"  aria-pressed="false" onclick="setNac('rail')">A · Rail 56</button>
+    <button id="c-map"   aria-pressed="true"  onclick="setNac('map')">B · Map 236</button>
+    <button id="c-browse"aria-pressed="false" onclick="setNac('browse')">D · Browse 320</button>
+    <span style="width:14px"></span>
+    <button id="c-lui"   aria-pressed="false" onclick="toggleLui()">E/F · vào immersive (rail lùi)</button>
+    <button id="c-yen"   aria-pressed="false" onclick="toggleYen()">G · Home yên</button>
+  </div>
+
+  <div class="stage tall">
+    <nav class="rail" id="live" data-nac="map" style="flex:0 0 auto" aria-label="Bản đồ ứng dụng">
+      <div class="who"><span class="av">TH</span><span class="txt"><span class="nm">Trần Thái Hoà</span><span class="rl">Chủ trì thiết kế</span></span></div>
+      <div class="body">
+        <div class="spine"></div>
+        <div class="isl" data-isl="viec">
+          <div class="isl-lb">Việc</div>
+          <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="r-lb">Trang chủ</span></button>
+          <button class="row" data-w="toan-cuc"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M8 17a2 2 0 0 1-2-2V4a1 1 0 0 1 1-1h3.172a1 1 0 0 1 .707.293l1.828 1.828A1 1 0 0 0 13.414 6H19a1 1 0 0 1 1 1v8a2 2 0 0 1-2 2z"/><path d="M2 8v11a2 2 0 0 0 2 2h14"/></svg></span><span class="r-lb">Dự án</span></button>
+          <button class="row" data-w="toan-cuc" data-mat="on"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></span><span class="r-lb">Files</span></button>
+          <div class="mat"><div class="thumbs"><i style="background:linear-gradient(140deg,var(--field),var(--card))"></i><i style="background:linear-gradient(140deg,var(--hover),var(--field))"></i><i style="background:linear-gradient(140deg,var(--card),var(--hover))"></i></div></div>
+          <button class="row" data-w="toan-cuc" data-mat="on"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><path d="M8 14c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><rect width="12" height="12" x="10" y="10" rx="2"/></svg></span><span class="r-lb">Thư viện</span></button>
+          <div class="mat"><div class="swat">
+            <div class="s"><b style="background:#8a6a44"></b>Sồi tự nhiên</div>
+            <div class="s"><b style="background:#47423a"></b>Óc chó ngả xám</div>
+            <div class="s"><b style="background:#cbc4b6"></b>Travertine mờ</div>
+          </div></div>
+          <button class="row" data-w="toan-cuc" aria-disabled="true" aria-describedby="ly-soat"><span class="slot"><svg class="r-ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m3 15 2 2 4-4"/></svg></span><span class="r-lb">Soát duyệt</span></button>
+        </div>
+        <div class="isl" data-isl="du-an">
+          <div class="ctx-dot"></div>
+          <div class="ctx"><span class="nm">Thảo Điền</span><div class="rm">Phòng khách</div><div class="st"><i></i>3D · đang làm</div></div>
+          <button class="row" data-w="du-an"><span class="slot"><svg class="r-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/></svg></span><span class="r-lb">Tổng quan</span></button>
+          <button class="row" data-w="du-an"><span class="slot"><svg class="r-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></svg></span><span class="r-lb">Flows · Workspace</span></button>
+          <button class="row" data-w="du-an"><span class="slot"><svg class="r-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 12h.01"/></svg></span><span class="r-lb">Quyết định · DNA</span></button>
+        </div>
+        <div class="isl" data-isl="chang">
+          <button class="row" data-w="chang"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 12h18"/><path d="M12 3v18"/></svg></span><span class="r-lb">Thiết kế 2D</span></button>
+          <button class="row" data-w="chang" aria-current="page" data-mat="on"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span><span class="r-lb">Thiết kế 3D</span></button>
+          <div class="mat"><div class="stat">Đang dở · <b>Phòng khách — dựng khối</b></div></div>
+          <button class="row" data-w="chang"><span class="slot"><svg class="r-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M12 17v4"/><path d="M8 21h8"/></svg></span><span class="r-lb">Trình chiếu</span></button>
+        </div>
+      </div>
+      <div class="foot">
+        <button class="nacbtn" id="fb-lui" onclick="stepNac(-1)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg><span class="txt" id="fb-lui-t">Thu về ký hiệu</span></button>
+        <button class="nacbtn" id="fb-toi" style="flex:0 0 auto" onclick="stepNac(1)"><span class="txt" id="fb-toi-t">Duyệt</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+      </div>
+    </nav>
+    <div class="work" data-kind="3d" id="live-work"><div class="top" id="live-top">Thảo Điền · Phòng khách · dựng khối</div><div class="cnv">viewport</div></div>
+  </div>
+
+  <h3 style="font-size:12.5px;font-weight:600;margin:26px 0 10px;color:var(--t2)">Băng phim — năm khung của một lần mở</h3>
+  <div class="strip">
+    <div class="fr"><div class="mini" style="width:34px">
+      <div class="ln"></div><div class="dot" style="top:22px"></div><div class="dot" style="top:44px"></div>
+      <div class="dot on" style="top:66px"></div><div class="dot" style="top:98px"></div><div class="dot" style="top:120px"></div>
+    </div><div class="cap">0 ms · 56</div></div>
+    <div class="fr"><div class="mini" style="width:88px">
+      <div class="ln"></div><div class="dot" style="top:22px"></div><div class="dot" style="top:44px"></div>
+      <div class="dot on" style="top:66px"></div><div class="dot" style="top:98px"></div><div class="dot" style="top:120px"></div>
+      <div class="tx" style="top:24px;width:34px;opacity:.25"></div><div class="tx" style="top:46px;width:28px;opacity:.25"></div>
+      <div class="tx" style="top:68px;width:40px;opacity:.25"></div>
+    </div><div class="cap">70 ms · khung giãn</div></div>
+    <div class="fr"><div class="mini" style="width:150px">
+      <div class="ln"></div><div class="dot" style="top:22px"></div><div class="dot" style="top:44px"></div>
+      <div class="dot on" style="top:66px"></div><div class="dot" style="top:98px"></div><div class="dot" style="top:120px"></div>
+      <div class="tx" style="top:24px;width:56px;opacity:.6"></div><div class="tx" style="top:46px;width:44px;opacity:.6"></div>
+      <div class="tx" style="top:68px;width:64px;opacity:.6"></div><div class="tx" style="top:100px;width:50px;opacity:.35"></div>
+      <div class="tx" style="top:122px;width:58px;opacity:.35"></div>
+    </div><div class="cap">150 ms · chữ hiện</div></div>
+    <div class="fr"><div class="mini" style="width:186px">
+      <div class="ln"></div><div class="dot" style="top:22px"></div><div class="dot" style="top:44px"></div>
+      <div class="dot on" style="top:66px"></div><div class="dot" style="top:110px"></div><div class="dot" style="top:132px"></div>
+      <div class="tx" style="top:24px;width:60px"></div><div class="tx" style="top:46px;width:48px"></div>
+      <div class="tx" style="top:68px;width:70px"></div>
+      <div class="tx" style="top:90px;width:84px;background:var(--t3);height:7px"></div>
+      <div class="tx" style="top:112px;width:52px"></div><div class="tx" style="top:134px;width:62px"></div>
+    </div><div class="cap">220 ms · ngữ cảnh nở</div></div>
+    <div class="fr"><div class="mini" style="width:230px">
+      <div class="ln"></div><div class="dot" style="top:22px"></div><div class="dot" style="top:44px"></div>
+      <div class="dot on" style="top:66px"></div><div class="dot" style="top:132px"></div><div class="dot" style="top:154px"></div>
+      <div class="tx" style="top:24px;width:60px"></div><div class="tx" style="top:46px;width:48px"></div>
+      <div class="tx" style="top:68px;width:70px"></div>
+      <div class="th" style="top:82px;width:150px"></div>
+      <div class="tx" style="top:112px;width:84px;background:var(--t3);height:7px"></div>
+      <div class="tx" style="top:134px;width:52px"></div><div class="tx" style="top:156px;width:62px"></div>
+    </div><div class="cap">380 ms · lớp 320</div></div>
+  </div>
+  <p class="frame-cap" style="max-width:96ch">Ở nhánh <code>prefers-reduced-motion</code> năm khung này
+  <b>sập về một</b>: rail nhảy thẳng tới nấc đích, chữ và lớp 320 hiện ngay, ánh sáng active bỏ quầng
+  toả và icon <b>không</b> thụt vào — chỉ còn đổi màu và <code>aria-current</code>. Không có “bản rút gọn
+  0 giây”, có một bản tĩnh thật.</p>
+</section>
+
+<!-- ═════ §4 · NGÔN NGỮ ICON ═════ -->
+<section class="sec">
+  <div class="sec-hd"><span class="n">04</span><h2>Ba trọng lượng ký hiệu</h2>
+    <span class="sub">Không icon nào nặng như nhau. Cả bộ ≤3 phần tử, cùng bán kính góc r2 — ràng buộc đang bị test khoá.</span></div>
+  <table class="icotab">
+    <thead><tr><th style="width:200px">Ký hiệu</th><th style="width:150px">Hạng</th><th style="width:130px">Nét · cỡ · màu</th><th>Vì sao</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><div class="ico-cell" style="color:var(--t3)">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 17a2 2 0 0 1-2-2V4a1 1 0 0 1 1-1h3.172a1 1 0 0 1 .707.293l1.828 1.828A1 1 0 0 0 13.414 6H19a1 1 0 0 1 1 1v8a2 2 0 0 1-2 2z"/><path d="M2 8v11a2 2 0 0 0 2 2h14"/></svg>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><path d="M8 14c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><rect width="12" height="12" x="10" y="10" rx="2"/></svg>
+        </div></td>
+        <td><b>Toàn cục</b><br><span style="font-size:11px;color:var(--t3)">định hướng</span></td>
+        <td>1.5 · 19px · <code>--t3</code></td>
+        <td>Glyph định hướng đơn giản, sống không cần dự án nào. Đây là <b>mức nền</b> — hai hạng kia đo theo nó.</td>
+      </tr>
+      <tr>
+        <td><div class="ico-cell" style="color:var(--t3);opacity:.86">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/></svg>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></svg>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 12h.01"/></svg>
+        </div></td>
+        <td><b>Thuộc dự án</b><br><span style="font-size:11px;color:var(--t3)">phụ thuộc ngữ cảnh</span></td>
+        <td>1.25 · 17px · <code>--t3</code> mờ .86</td>
+        <td>Nhẹ hơn bằng <b>nét và cỡ</b>, không bằng bậc màu: <code>--t4</code> đo ra chỉ <b>2,86:1</b> nền Kem — trượt cả ngưỡng 3:1 của đồ hoạ phi-chữ. Giữ <code>--t3</code> rồi hạ mờ nhẹ. Chúng <b>chỉ tồn tại khi có dự án mở</b> nên không được đòi chú ý ngang mục toàn cục.</td>
+      </tr>
+      <tr>
+        <td><div class="ico-cell" style="color:var(--t2)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 12h18"/><path d="M12 3v18"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M12 17v4"/><path d="M8 21h8"/></svg>
+        </div></td>
+        <td><b>Môi trường</b><br><span style="font-size:11px;color:var(--t3)">ký hiệu nghề</span></td>
+        <td>1.85 · 20px · <code>--t2</code></td>
+        <td>Mạnh nhất bộ. Ba cái cùng bắt đầu từ <b>một hình chữ nhật</b>: chia ô (phẳng) → đùn lên (khối) → đặt lên chân (mặt xuất). Đứng cạnh nhau là <b>một câu chuyện</b>, không phải ba vật rời.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="note" style="margin-top:16px">Ba hạng chênh nhau <b>0,25 rồi 0,35 điểm nét</b> và <b>2px cỡ</b> —
+  đủ để mắt xếp hạng khi liếc, không đủ để thành ba bộ icon khác nhau. Tránh đúng “SaaS icon soup”:
+  vẫn <b>một họ</b>, chỉ khác <b>tiếng nói to nhỏ</b>.</p>
+</section>
+
+<!-- ═════ §5 · HÀNH VI ═════ -->
+<section class="sec">
+  <div class="sec-hd"><span class="n">05</span><h2>Hành vi</h2>
+    <span class="sub">Điều 7 · 8 · 9 — và một luật cứng: không auto-hide hung hăng lúc đang làm việc.</span></div>
+  <table class="icotab">
+    <thead><tr><th style="width:230px">Khi</th><th style="width:200px">Sidebar làm gì</th><th>Ràng buộc</th></tr></thead>
+    <tbody>
+      <tr><td><b>Thu</b></td><td>Chỉ rail 56</td><td>Ba đảo vẫn đọc được bằng chỗ đứt của xương sống; đảo dự án nén thành một chấm rỗng.</td></tr>
+      <tr><td><b>Hover / mở tường minh</b></td><td>Ra Map 236</td><td>Có <b>trễ</b> trước khi mở — chuột đi ngang qua không được kích hoạt. Nút “Điều hướng” ở đáy là đường tường minh, luôn có.</td></tr>
+      <tr><td><b>Chọn đích nặng-duyệt</b><br><span style="font-size:11px;color:var(--t3)">Thư viện · Files</span></td><td>Ra Browse 320</td><td>Chỉ mục <b>có gì để nhìn</b> mới mở được nấc này. Trang chủ và Soát duyệt dừng ở 236 — bỏ nấc kèm lý do, không kéo dãn cho đủ ba.</td></tr>
+      <tr><td><b>Vào 2D / 3D immersive</b></td><td>Rail <b>lùi lại</b> — mờ 58 %, bỏ nền và viền</td><td>KHÔNG biến mất, KHÔNG trượt ra ngoài. Vẫn chiếm chỗ, vẫn Tab tới được, vẫn đọc được mình đang ở chặng nào.</td></tr>
+      <tr><td><b>Đưa chuột về mép</b></td><td>Map quay lại (hoặc rail sáng đủ)</td><td>Cùng luật trễ. Rời chuột thì trở lại trạng thái trước, <b>không</b> tự đóng thứ người dùng đã mở tường minh.</td></tr>
+      <tr><td><b>Ở Home</b></td><td>Yên hơn màn làm việc</td><td>Rail bỏ nền, icon <code>--t4</code>. Home là một <b>nơi chốn</b>; điều hướng không tranh chấp với Ambient.</td></tr>
+      <tr><td><b>Trong dự án</b></td><td>Canvas / viewport là nhân vật chính</td><td>Sidebar không bao giờ vượt 320. Không panel nổi, không bóng đổ đè lên mặt làm việc.</td></tr>
+      <tr><td><b>Lần sau mở lại</b></td><td>Nhớ đúng nấc người dùng để lại</td><td>Nấc là <b>cách xem</b> ⇒ lưu theo <b>máy</b>, không vào <code>.idf</code> (luật lưu chung ↔ máy).</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</div>
+
+<script>
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  document.getElementById('bt-dark').setAttribute('aria-pressed', String(t==='dark'));
+  document.getElementById('bt-light').setAttribute('aria-pressed', String(t==='light'));
+}
+var NAC=['rail','map','browse'];
+var NHAN={rail:'Định vị',map:'Điều hướng',browse:'Duyệt'};
+function setNac(n){
+  var r=document.getElementById('live');
+  r.setAttribute('data-nac',n);
+  ['rail','map','browse'].forEach(function(k){
+    document.getElementById('c-'+k).setAttribute('aria-pressed',String(k===n));
+  });
+  var i=NAC.indexOf(n);
+  var lui=document.getElementById('fb-lui'), toi=document.getElementById('fb-toi');
+  lui.style.visibility = i>0 ? 'visible':'hidden';
+  toi.style.visibility = i<2 ? 'visible':'hidden';
+  if(i>0) document.getElementById('fb-lui-t').textContent = 'Về ' + NHAN[NAC[i-1]];
+  if(i<2) document.getElementById('fb-toi-t').textContent = NHAN[NAC[i+1]];
+}
+function stepNac(d){
+  var r=document.getElementById('live');
+  var i=NAC.indexOf(r.getAttribute('data-nac'))+d;
+  if(i>=0&&i<NAC.length) setNac(NAC[i]);
+}
+function toggleLui(){
+  var r=document.getElementById('live'), b=document.getElementById('c-lui');
+  var on = r.getAttribute('data-tone')==='lui';
+  if(on){ r.removeAttribute('data-tone'); b.setAttribute('aria-pressed','false'); }
+  else { r.setAttribute('data-tone','lui'); b.setAttribute('aria-pressed','true');
+         document.getElementById('c-yen').setAttribute('aria-pressed','false');
+         setNac('rail'); r.setAttribute('data-tone','lui'); }
+}
+function toggleYen(){
+  var r=document.getElementById('live'), b=document.getElementById('c-yen');
+  var w=document.getElementById('live-work'), t=document.getElementById('live-top');
+  var on = r.getAttribute('data-tone')==='yen';
+  if(on){ r.removeAttribute('data-tone'); b.setAttribute('aria-pressed','false');
+          w.setAttribute('data-kind','3d'); t.textContent='Thảo Điền · Phòng khách · dựng khối'; }
+  else { r.setAttribute('data-tone','yen'); b.setAttribute('aria-pressed','true');
+         document.getElementById('c-lui').setAttribute('aria-pressed','false');
+         w.setAttribute('data-kind','home'); t.textContent='Trang chủ';
+         setNac('map'); r.setAttribute('data-tone','yen'); }
+}
+setNac('map');
+</script>
+</body>
+</html>

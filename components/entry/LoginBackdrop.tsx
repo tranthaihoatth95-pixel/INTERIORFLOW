@@ -710,7 +710,7 @@ export function LoginBackdropPicker({
                     color: isStill ? 'var(--accent)' : 'var(--t3)',
                   }}
                 >
-                  <ImageIcon size={11} />
+                  <ImageIcon size={18} />
                   {en ? 'Still' : 'Tĩnh'}
                 </button>
                 <button
@@ -728,7 +728,7 @@ export function LoginBackdropPicker({
                     cursor: noLibrary ? 'not-allowed' : undefined,
                   }}
                 >
-                  <Play size={11} />
+                  <Play size={18} />
                   {en ? 'Slideshow' : 'Trình chiếu'}
                 </button>
                 <button
@@ -742,7 +742,7 @@ export function LoginBackdropPicker({
                     color: isDynamic ? 'var(--accent)' : 'var(--t3)',
                   }}
                 >
-                  <Sparkles size={11} />
+                  <Sparkles size={18} />
                   {en ? 'Live' : 'Động'}
                 </button>
               </div>
@@ -774,8 +774,8 @@ export function LoginBackdropPicker({
                             {on && (
                               <span className="absolute inset-0 grid place-items-center">
                                 <Check
-                                  size={13}
-                                  strokeWidth={3}
+                                  size={20}
+                                  strokeWidth={1.5}
                                   style={{ color: '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,.6))' }}
                                 />
                               </span>
@@ -818,7 +818,7 @@ export function LoginBackdropPicker({
                               boxShadow: on ? '0 0 0 1px var(--accent)' : undefined,
                             }}
                           >
-                            {on && <Check size={12} strokeWidth={3} style={{ color: '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,.6))' }} />}
+                            {on && <Check size={20} strokeWidth={1.5} style={{ color: '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,.6))' }} />}
                           </span>
                           <span className="text-[9.5px] leading-none text-[var(--t4)]">{en ? p.en : p.vi}</span>
                         </button>
@@ -854,7 +854,7 @@ export function LoginBackdropPicker({
                           <img src={w.src} alt="" loading="lazy" className="aspect-[4/3] w-full object-cover" draggable={false} />
                           {on && (
                             <span className="absolute inset-0 grid place-items-center bg-black/25">
-                              <Check size={13} strokeWidth={3} style={{ color: '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,.6))' }} />
+                              <Check size={20} strokeWidth={1.5} style={{ color: '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,.6))' }} />
                             </span>
                           )}
                         </button>
@@ -868,7 +868,7 @@ export function LoginBackdropPicker({
                       onClick={() => fileRef.current?.click()}
                       className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border)] text-[11px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
                     >
-                      <Upload size={11} />
+                      <Upload size={18} />
                       {en ? 'Your photo' : 'Ảnh của bạn'}
                     </button>
                     {choice.kind === 'image' && (
@@ -878,7 +878,7 @@ export function LoginBackdropPicker({
                         title={en ? 'Remove photo' : 'Gỡ ảnh'}
                         className="grid h-8 w-8 place-items-center rounded-[10px] border border-[var(--border)] text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-red-400"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={18} />
                       </button>
                     )}
                   </div>
@@ -901,7 +901,7 @@ export function LoginBackdropPicker({
                     onClick={() => setOnlineOpen((o) => !o)}
                     className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border)] text-[11px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
                   >
-                    <Globe size={11} />
+                    <Globe size={18} />
                     {en ? 'From the web' : 'Ảnh trên mạng'}
                   </button>
                   {onlineOpen && (
@@ -945,7 +945,7 @@ export function LoginBackdropPicker({
                         color: choice.order === 'shuffle' ? 'var(--accent)' : 'var(--t3)',
                       }}
                     >
-                      <Shuffle size={11} />
+                      <Shuffle size={18} />
                       {en ? 'Shuffle' : 'Ngẫu nhiên'}
                     </button>
                     <button
@@ -957,7 +957,7 @@ export function LoginBackdropPicker({
                         color: choice.order === 'seq' ? 'var(--accent)' : 'var(--t3)',
                       }}
                     >
-                      <ListOrdered size={11} />
+                      <ListOrdered size={18} />
                       {en ? 'In order' : 'Tuần tự'}
                     </button>
                   </div>
@@ -988,7 +988,7 @@ export function LoginBackdropPicker({
                           <img src={w.src} alt="" loading="lazy" className="aspect-[4/3] w-full object-cover" draggable={false} />
                           {on && (
                             <span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-[var(--accent)]">
-                              <Check size={10} strokeWidth={3.5} style={{ color: '#17130e' }} />
+                              <Check size={14} strokeWidth={1.5} style={{ color: '#17130e' }} />
                             </span>
                           )}
                         </button>

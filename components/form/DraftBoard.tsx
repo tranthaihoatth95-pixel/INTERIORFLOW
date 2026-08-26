@@ -89,7 +89,7 @@ export function DraftBoard({
           onClick={onAuto}
           className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-[12px] font-medium text-[var(--t2)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--t1)]"
         >
-          <Wand2 size={13} /> Tự sắp xếp
+          <Wand2 size={18} /> Tự sắp xếp
         </button>
       </div>
 
@@ -128,7 +128,7 @@ export function DraftBoard({
                     className="absolute right-1 top-1 z-30 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-white hover:bg-red-500"
                     title="Bỏ ảnh khỏi bố cục"
                   >
-                    <X size={11} />
+                    <X size={14} />
                   </button>
                   {/* tay cầm resize góc dưới-phải */}
                   <div
@@ -151,13 +151,13 @@ export function DraftBoard({
             onClick={() => scale(sel, 0.88)}
             className="flex items-center gap-1 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-[12px] text-[var(--t2)] hover:bg-[var(--hover)]"
           >
-            <Minus size={12} /> Nhỏ
+            <Minus size={16} /> Nhỏ
           </button>
           <button
             onClick={() => scale(sel, 1.14)}
             className="flex items-center gap-1 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-[12px] text-[var(--t2)] hover:bg-[var(--hover)]"
           >
-            <Plus size={12} /> To
+            <Plus size={16} /> To
           </button>
         </div>
       )}

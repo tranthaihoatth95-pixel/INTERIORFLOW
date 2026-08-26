@@ -217,7 +217,7 @@ export function MaterialFormModal({
             disabled={saving}
             style={{ height: 32, padding: '0 16px', borderRadius: 10, border: 0, background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
           >
-            {saving && <Loader2 size={13} className="animate-spin" />}
+            {saving && <Loader2 size={18} className="animate-spin" />}
             {editing ? tr('Lưu', 'Save') : tr('Thêm', 'Add')}
           </button>
         </div>

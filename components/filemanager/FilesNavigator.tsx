@@ -33,7 +33,7 @@ export function FilesNavigator({ currentFolderId, onSelect }: Props) {
           currentFolderId === null ? 'bg-[var(--accent-soft)] font-semibold text-[var(--accent)]' : 'text-[var(--t2)] hover:bg-[var(--hover)]',
         )}
       >
-        <Folder size={13} className="shrink-0" />
+        <Folder size={16} className="shrink-0" />
         Files
       </button>
       {roots.map((root) => {
@@ -49,7 +49,7 @@ export function FilesNavigator({ currentFolderId, onSelect }: Props) {
                 currentFolderId === root.id ? 'bg-[var(--accent-soft)] font-semibold text-[var(--accent)]' : 'text-[var(--t2)] hover:bg-[var(--hover)]',
               )}
             >
-              <ChevronRight size={11} className={cn('shrink-0 text-[var(--t4)] transition-transform', children.length === 0 && 'opacity-0')} />
+              <ChevronRight size={16} className={cn('shrink-0 text-[var(--t4)] transition-transform', children.length === 0 && 'opacity-0')} />
               <span className="min-w-0 flex-1 truncate text-left">{root.name}</span>
               <span className="shrink-0 font-mono text-[10px] text-[var(--t4)]">{stats.count || ''}</span>
             </button>

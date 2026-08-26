@@ -33,37 +33,55 @@ import { useEffect, useState } from 'react';
 import { useToolModeUi, useIsSmallScreenForCanvas } from '@/lib/render-studio/tool-mode-ui';
 import { taskCardById } from '@/lib/render-studio/task-cards';
 import { useFlowStore } from '@/lib/store';
-import { khoaCuaSoNode, khoaCuaSoThe, type CapCuaSo } from '@/lib/nodes/cua-so-cong-cu';
+import { getDefinition } from '@/lib/nodes/registry';
+import { khoaCuaSoNode, khoaCuaSoThe, moiTruongChoDefType, type CapCuaSo } from '@/lib/nodes/cua-so-cong-cu';
 import { useCuaSoCongCuUi } from '@/lib/nodes/cua-so-cong-cu-ui';
 import CuaSoCongCu from './CuaSoCongCu';
 import ThanCuaSoNode, { DaiDinhNghiaKetQua } from './ThanCuaSoNode';
 import ToolModeForm from './ToolModeForm';
 
-export default function ToolWindow({ cardId, nodeId }: { cardId: string; nodeId?: string }) {
+/**
+ * 🔴 22/08 — `cardId` thành TUỲ CHỌN, và môi trường thôi bị gõ cứng `"anh"`.
+ *
+ * Đo được trước lượt này: `TASK_CARDS` có 12 thẻ, **12/12 là node ẢNH** ⇒ mọi cửa sổ đều mở ra
+ * môi trường "Ảnh", trong khi `MOI_TRUONG` khai đủ bốn. Ba môi trường kia có bảng vệ tinh, có
+ * test canh, và **không có đường nào mở ra** — dây đủ, chưa có dòng điện. Node `three.*` /
+ * `*2video` không có thẻ việc nên trước đây còn không mở nổi cửa sổ.
+ * NAY: môi trường tra từ `moiTruongChoDefType(defType)`, tiêu đề lấy thẻ việc nếu có, không thì
+ * lấy tên khối trong registry. Nhờ đó một canvas bày được **cửa sổ Khối 3D nối dây sang cửa sổ
+ * Ảnh nối dây sang cửa sổ Phim** — ba xưởng khác loại, một dây chuyền.
+ */
+export default function ToolWindow({ cardId, nodeId }: { cardId?: string; nodeId?: string }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const backToHome = useToolModeUi((s) => s.backToHome);
   const setSessionImageDataUrl = useToolModeUi((s) => s.setSessionImageDataUrl);
   const setSessionNodeRefs = useToolModeUi((s) => s.setSessionNodeRefs);
   const smallScreen = useIsSmallScreenForCanvas();
-  const card = taskCardById(cardId);
+  const card = cardId ? taskCardById(cardId) : undefined;
 
-  const khoa = nodeId ? khoaCuaSoNode(nodeId) : khoaCuaSoThe(cardId);
+  const khoa = nodeId ? khoaCuaSoNode(nodeId) : khoaCuaSoThe(cardId ?? '');
   const cap = useCuaSoCongCuUi((s) => s.bang[khoa]?.cap ?? (nodeId ? 'thu' : 'vua'));
   const datCap = useCuaSoCongCuUi((s) => s.datCap);
   const node = useFlowStore((s) => (nodeId ? s.nodes.find((n) => n.id === nodeId) : undefined));
 
-  if (!mounted || !card) return null;
+  if (!mounted) return null;
 
   // ── ĐƯỜNG ② — neo vào node. Ruột là chính node đó nhìn gần (`ThanCuaSoNode`).
   if (nodeId) {
     if (!node) return null;
+    // Môi trường ĐỌC TỪ NODE, không gõ cứng: đây là chỗ cửa sổ 3D khác cửa sổ ảnh khác cửa sổ
+    // phim. Node không thuộc môi trường nào thì không có cửa sổ nào để mở (`InteriorNode` đã
+    // chặn từ trước, nhánh này chỉ là lưới đỡ).
+    const mt = moiTruongChoDefType(node.data.defType);
+    if (!mt) return null;
+    const def = getDefinition(node.data.defType);
     return (
       <CuaSoCongCu
         khoa={khoa}
-        moiTruong="anh"
-        tieuDe={card.label}
-        moTa={card.desc}
+        moiTruong={mt}
+        tieuDe={card?.label ?? def.title}
+        moTa={card?.desc ?? def.description}
         cap={cap}
         bienThe={cap === 'toanMan' ? 'toanMan' : 'neo'}
         onCap={(c: CapCuaSo) => datCap(khoa, c)}
@@ -73,6 +91,11 @@ export default function ToolWindow({ cardId, nodeId }: { cardId: string; nodeId?
       </CuaSoCongCu>
     );
   }
+
+  // ── ĐƯỜNG ① chỉ có nghĩa khi mở TỪ MỘT THẺ VIỆC (không node nào để neo vào). Không thẻ thì
+  // không có gì để bày — trước đây guard này nằm chung ở đầu hàm, nay tách ra vì đường ② không
+  // còn đòi thẻ việc.
+  if (!cardId || !card) return null;
 
   // Màn ≤7 inch: cụm CHÍNH NÓ trở thành Tool Mode toàn màn cũ — cùng 1 code (`ToolModeForm`),
   // không dựng khung kính (§1 mục 4 "không nuôi hai giao diện"). `ToolModeForm` tự

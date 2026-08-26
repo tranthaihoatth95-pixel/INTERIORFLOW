@@ -63,8 +63,13 @@
 // bundler Next.js, không resolve trong `node_modules/.bin/sucrase-node` chạy trực tiếp.
 import type { Tool } from '../cad/store';
 import { useCadStore, PRO_ONLY_TOOLS } from '../cad/store';
+import { useTree3DUi } from '../render-studio/tree3d-ui';
 import type { HatchPattern } from '../cad/model';
 import { CAD_COMMANDS } from '../cad/command-aliases';
+// R3 (19/08) — CHỈ import KIỂU (erased lúc compile): sổ lệnh giữ `hinh` dạng KHOÁ CHUỖI đúng khuôn
+// `icon` (chuỗi → component là việc của components/ui/command-icon.tsx), nên lib/ vẫn THUẦN,
+// test sucrase-node không kéo React vào. Kho hình + ràng buộc "cấm làm nút" sống ở chính file đó.
+import type { ThaoTacKey } from '../ui/thao-tac-glyph';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // Kiểu dữ liệu
@@ -134,6 +139,22 @@ export interface CommandDef {
    * chưa tồn tại cho chúng (xem TODO#2 cuối file, giữ nguyên từ bản gốc). */
   icon?: string;
   /**
+   * R3 (19/08) — HÌNH MINH HOẠ THAO TÁC cho ô giải nghĩa: KHOÁ vào kho `lib/ui/thao-tac-glyph.tsx`
+   * (loại "Hình minh hoạ" trong bảng sáu loại icon 16/08 — vẽ ĐỘNG TÁC, cấm làm nút; ràng buộc đó
+   * khoá bằng test của chính kho hình). Cùng khuôn với `icon`: sổ giữ CHUỖI, đổi khoá → component
+   * ở `components/ui/command-icon.tsx` (`commandHinh`) — mặt tiền KHÔNG tự khai hình lần hai.
+   * CHỈ điền cho lệnh mà một hình nói nhanh hơn một câu; không ép mọi lệnh phải có.
+   */
+  hinh?: ThaoTacKey;
+  /**
+   * R3 (19/08) — câu GIẢI NGHĨA 1 dòng [vi, en] cho ô giải nghĩa (prop `desc` của Tooltip).
+   * ⚠️ Hợp đồng Tooltip: có `hinh` thì BẮT BUỘC có `desc` (hình aria-hidden — thiếu desc là người
+   * dùng trình đọc màn hình mất trắng phần giải nghĩa; Tooltip.tsx tự cảnh báo lúc dev, và
+   * registry.test khoá bất biến `hinh ⇒ desc` bằng máy). Viết theo SPEC-NGON-NGU-CHI-DAN:
+   * hành động trước, ≤12 từ, không jargon.
+   */
+  desc?: [string, string];
+  /**
    * B2 (16/08) — PHÍM ĐƠN: bấm MỘT phát là chạy, khuôn `TOOL3D_HOTKEYS`
    * (`lib/render-studio/tool3d.ts:42`).
    *
@@ -200,6 +221,29 @@ const CAD_PRO = when('stage==cad && proToolsAllowed==true');
  * tự gắn listener ⌘Z/⌘⇧Z gọi ĐÚNG `useCadStore.getState().undo()/redo()` — cùng hàm `run()` của
  * `cad.sel.undo`/`cad.sel.redo` bên dưới gọi. Xác nhận bằng đọc code, không suy đoán. */
 const CAD_OR_RENDER = (ctx: WhenCtx): boolean => ctx.stage === 'cad' || ctx.stage === 'render';
+
+/**
+ * 21/08 — XOÁ: sống ở 'cad' như cũ, và sống ở 'render' KHI có khối đang chọn trên khung nhìn 3D.
+ * Đọc `useTree3DUi.selectedEntityId` (state CHỌN của 3D — cùng store Navigator/Inspector đang
+ * dùng, KHÔNG đẻ nguồn thứ hai). Chưa chọn gì ⇒ mờ kèm lý do, đúng §9 (cấm nút bấm-không-ra-gì).
+ */
+const CAD_OR_RENDER_SEL = (ctx: WhenCtx): boolean =>
+  ctx.stage === 'cad' || (ctx.stage === 'render' && !!useTree3DUi.getState().selectedEntityId);
+
+/**
+ * Xoá thứ ĐANG CHỌN, đúng theo chặng đang đứng: 3D có khối chọn ⇒ xoá đúng entity đó (một lệnh
+ * `updateDoc` để undo gộp một nhịp); còn lại ⇒ đường cũ `deleteSelected()` của 2D. Một lệnh, hai
+ * bộ thi hành — đúng khuôn "một sổ lệnh nhiều mặt tiền" (TICKET-KIEN-TRUC-LENH-3-TANG §B5).
+ */
+function xoaDangChon(): void {
+  const id3d = useTree3DUi.getState().selectedEntityId;
+  if (id3d) {
+    store().removeIds([id3d]);
+    useTree3DUi.getState().pick(null);
+    return;
+  }
+  store().deleteSelected();
+}
 
 /** Chọn CAD_PRO nếu toolId thuộc PRO_ONLY_TOOLS (lib/cad/store.ts), ngược lại CAD_BASIC — tránh
  * gõ tay đúng/sai cho từng dòng, một nguồn duy nhất (PRO_ONLY_TOOLS) quyết định. */
@@ -293,6 +337,7 @@ export const COMMANDS: CommandDef[] = [
   {
     id: 'cad.dim.measure', label: ['Đo khoảng cách', 'Measure distance'], aliases: ['DI'], when: gateFor('measure'),
     group: 'dim@2', surfaces: ['statusbar'], run: activate('measure'), stages: ['cad', 'render', 'present'], icon: 'MoveDiagonal', directKey: 'T',
+    hinh: 'do', desc: ['Bấm hai điểm để đo khoảng cách giữa chúng', 'Click two points to measure the distance between them'],
     // B1 (15/08) — lệnh chung "Đo". Phím thắng (ticket §4 B1): DI — đã là alias duy nhất, không
     // đổi. 3D dock gọi khái niệm GẦN GIỐNG (không hệt) là "Thước" phím T, tool3d id 'ruler'
     // (`ToolDock3D.tsx:130`) — đo W×D×H của khối đang chọn, KHÁC "đo khoảng cách 2 điểm" của DI ở
@@ -342,6 +387,7 @@ export const COMMANDS: CommandDef[] = [
   {
     id: 'cad.edit.move', label: ['Di chuyển', 'Move'], aliases: ['M', 'MOVE'], when: gateFor('move'),
     group: 'edit@1', surfaces: ['statusbar'], run: activate('move'), stages: ['cad', 'render', 'present'], icon: 'Move', directKey: 'M',
+    hinh: 'doi', desc: ['Chọn đối tượng rồi kéo tới vị trí mới', 'Pick an object, then drag it to a new spot'],
     // MỜ ở 'render': `tool3d.ts` CÓ 'move' thật nhưng ở `useTool3D` (store khác `useCadStore`) —
     // cùng lý do cad.sel.select phía trên, nối 2 store là việc B5. MỜ ở 'present': phần tử dời
     // được bằng kéo chuột/mũi tên (`PresentEditor.tsx` onNudge cục bộ), không có "tool Dời" nào
@@ -350,6 +396,7 @@ export const COMMANDS: CommandDef[] = [
   {
     id: 'cad.edit.copy', label: ['Sao chép', 'Copy'], aliases: ['CO', 'COPY'], when: gateFor('copy'),
     group: 'edit@2', surfaces: ['statusbar'], run: activate('copy'), stages: ['cad', 'render', 'present'], icon: 'Copy', directKey: 'D',
+    hinh: 'chep', desc: ['Nhân bản đối tượng đang chọn sang chỗ mới', 'Duplicate the selection into a new spot'],
     // Phím thắng (ticket §4 B1): CO — đã là alias chính ở đây, không đổi. 3D dock gọi khái niệm
     // này là "Nhân bản" phím D (`ToolDock3D.tsx:117`, tool3d id 'dup') — GIỮ NGUYÊN ở 3D, không
     // sửa. MỜ ở 'render'/'present': cùng lý do move (store khác/không có store).
@@ -357,12 +404,14 @@ export const COMMANDS: CommandDef[] = [
   {
     id: 'cad.edit.rotate', label: ['Xoay', 'Rotate'], aliases: ['RO', 'ROTATE'], when: gateFor('rotate'),
     group: 'edit@3', surfaces: ['statusbar'], run: activate('rotate'), stages: ['cad', 'render', 'present'], icon: 'RotateCw', directKey: 'Q',
+    hinh: 'xoay', desc: ['Xoay đối tượng quanh một tâm chọn trước', 'Rotate the selection around a chosen center'],
     // Phím thắng (ticket §4 B1): RO — đã là alias chính, không đổi. 3D dock dùng phím Q
     // (`ToolDock3D.tsx:116`) — GIỮ NGUYÊN ở 3D. MỜ ở 'render'/'present': cùng lý do move.
   },
   {
     id: 'cad.edit.mirror', label: ['Đối xứng', 'Mirror'], aliases: ['MI', 'MIRROR'], when: gateFor('mirror'),
     group: 'edit@4', surfaces: ['statusbar'], run: activate('mirror'), stages: ['cad', 'render', 'present'], icon: 'FlipHorizontal2',
+    hinh: 'lat', desc: ['Lật đối tượng qua một trục đối xứng', 'Flip the selection across a mirror axis'],
     // MỜ ở 'render': 3D KHÔNG có tool "Lật" rời (`TOOL3D_IDS` không có 'mirror') — mirror ở 3D là
     // MỘT BƯỚC BuildOp áp qua form tab "Sửa" (`Command3DPanel.tsx:917-967`, chọn mặt phẳng + Áp),
     // khác cơ chế "cầm tool rồi click" hoàn toàn — không có hàm 1-lệnh nào để `run()` gọi thay
@@ -445,6 +494,7 @@ export const COMMANDS: CommandDef[] = [
     // B1); khi B2 nối registry vào dock, 'V' xuống hàng alias phụ, Esc lên hàng chính.
     key: ['Esc'], when: CAD_BASIC, group: 'sel@1', surfaces: ['statusbar'], run: activate('select'),
     stages: ['cad', 'render', 'present'], icon: 'MousePointer2', directKey: 'V',
+    hinh: 'chon', desc: ['Bấm để chọn, kéo khung để chọn nhiều', 'Click to select, drag a box for many'],
     // MỜ ở 'render': `tool3d.ts` CÓ tool 'select' thật (và Escape cũng đưa 3D về select qua
     // `tool3dKeyTransition`) nhưng đó là store KHÁC (`useTool3D`, không phải `useCadStore`) — `run()`
     // ở đây chỉ gọi được `useCadStore`, gọi từ palette lúc đang ở 3D sẽ KHÔNG đổi gì thấy được
@@ -455,12 +505,13 @@ export const COMMANDS: CommandDef[] = [
   },
   {
     id: 'cad.sel.delete', label: ['Xoá', 'Delete'], aliases: ['E', 'DEL', 'ERASE'], key: ['Delete'],
-    when: CAD_BASIC, group: 'sel@2', surfaces: ['statusbar', 'shortcut'], run: () => store().deleteSelected(),
+    when: CAD_OR_RENDER_SEL, group: 'sel@2', surfaces: ['statusbar', 'shortcut'], run: xoaDangChon,
     stages: ['cad', 'render', 'present'], icon: 'Trash2',
-    // MỜ ở 'render': `deleteSelected()` xoá theo `useCadStore.selection` — 3D dùng
-    // `viewportSelectedId` cục bộ (`Render3DModeSkeleton.tsx:720`, KHÔNG đồng bộ vào
-    // `useCadStore.selection`), gọi sẽ xoá NHẦM/xoá KHÔNG GÌ thay vì khối đang chọn trên khung
-    // nhìn 3D — đúng loại lỗi §9 cảnh báo, không nối. MỜ ở 'present': không có store toàn cục.
+    // 21/08 — NAY THẬT ở 'render' khi có khối được chọn trên khung nhìn. Lý do mờ cũ ("3D dùng
+    // viewportSelectedId cục bộ, không đồng bộ useCadStore.selection") đã hết hiệu lực: bấm-vào-
+    // khối nay ghi `useTree3DUi.selectedEntityId` (state CHỌN, không phải kho sự thật thứ hai),
+    // nên xoá nhắm ĐÚNG khối đang chọn — xem `xoaDangChon`. Chưa chọn gì thì vẫn MỜ kèm lý do
+    // (`toolbar-source.ts`), KHÔNG có nút chạy-mà-không-làm-gì. MỜ ở 'present': không có store.
   },
   {
     id: 'cad.sel.undo', label: ['Hoàn tác', 'Undo'], aliases: ['U', 'UNDO'], key: ['mod', 'Z'],
@@ -548,3 +599,66 @@ if (process.env.NODE_ENV !== 'production') {
  *    ticket §2b(b)) là việc **B5**, không phải B1 — xem báo cáo `docs/bao-cao-phien/2026-08-15-
  *    B1-so-lenh-chung.md`.
  */
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// LỆNH CẤP APP (Lane K, 22/08) — thêm, KHÔNG sửa lệnh cũ.
+//
+// VÌ SAO ĐỨNG RIÊNG MẢNG chứ không nhét vào `COMMANDS`: `COMMANDS` hôm nay là bản gom của
+// `CAD_COMMANDS` và bị khoá bằng ba bất biến trong `registry.test.ts` — ① số alias phải KHỚP
+// CHÍNH XÁC `CAD_COMMANDS` ② mọi CommandDef phải có ≥1 alias ③ chỉ 10 CommandDef được khai đủ
+// 3 `stages`. Lệnh "Khoá InteriorFlow" không có alias gõ-tay kiểu AutoCAD (gõ "KHOA" giữa lúc
+// vẽ mà khoá màn là bẫy), nên nhét vào đó sẽ vừa vi phạm ① vừa vi phạm ②. Tách mảng là cách
+// THÊM mà không phá cái đang chạy — vẫn CÙNG MỘT FILE, CÙNG kiểu `CommandDef`, nên vẫn đúng
+// tinh thần "một sổ lệnh, nhiều mặt tiền": mặt tiền nào cần lệnh app thì đọc `APP_COMMANDS`,
+// không nơi nào được tự khai lại phím.
+//
+// `run` bắn CustomEvent thay vì gọi thẳng `lockScreenNow()`: giữ `lib/commands/` THUẦN (chạy
+// được dưới sucrase-node, không kéo theo zustand store/DOM của lớp khoá). Cùng khuôn
+// 'cad:zoom-extents' đã dùng ở trên. Nơi nghe: `components/studio/LockScreen.tsx`.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+export const APP_COMMANDS: CommandDef[] = [
+  {
+    id: 'app.lock',
+    label: ['Khoá InteriorFlow', 'Lock InteriorFlow'],
+    // ⌘⇧L / Ctrl⇧L. Đã đo va phím 22/08: ⌘L (KHÔNG shift) là mở tấm Thư viện
+    // (`AppChrome.tsx:162`) — thêm shift là hết va, không phải lách. ⌃⌘Q cũ vẫn chạy song song
+    // ở AppChrome (tay quen macOS), nhưng phím CHÍNH THỨC của lệnh là dòng này.
+    key: ['mod', 'shift', 'L'],
+    aliases: [],
+    when: () => true,
+    group: 'app@1',
+    surfaces: ['shortcut', 'palette'],
+    stages: ['cad', 'render', 'present'],
+    icon: 'Lock',
+    desc: ['Khoá màn, giữ nguyên việc đang làm', 'Lock the screen, keep your work as-is'],
+    run: () => {
+      if (typeof window === 'undefined') return;
+      window.dispatchEvent(new CustomEvent('if:lock-request'));
+    },
+  },
+];
+
+/** Tra lệnh cấp app theo id. */
+export function findAppCommand(id: string): CommandDef | undefined {
+  return APP_COMMANDS.find((c) => c.id === id);
+}
+
+/**
+ * Khớp một tổ hợp `KeyToken[]` với sự kiện bàn phím thật. `mod` = ⌘ trên macOS, Ctrl nơi khác
+ * (đúng quy ước KeyToken của `lib/shortcuts.ts`). Dịch nền tảng nằm ĐÚNG MỘT CHỖ là đây, để
+ * không component nào phải tự đoán `metaKey` hay `ctrlKey`.
+ */
+export function matchKeyToken(tokens: KeyToken[], e: KeyboardEvent): boolean {
+  const mac =
+    typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+  const canMod = tokens.includes('mod');
+  const canShift = tokens.includes('shift');
+  const canAlt = tokens.includes('alt');
+  const chu = tokens.find((t) => t !== 'mod' && t !== 'shift' && t !== 'alt');
+  if (!chu) return false;
+  if (canMod !== (mac ? e.metaKey : e.ctrlKey)) return false;
+  if (canShift !== e.shiftKey) return false;
+  if (canAlt !== e.altKey) return false;
+  return e.key.toLowerCase() === chu.toLowerCase();
+}

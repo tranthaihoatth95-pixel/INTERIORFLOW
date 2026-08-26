@@ -39,9 +39,14 @@ interface Props {
   watermark?: DeckWatermark;
   /** hiệu ứng build-in mặc định cấp deck (fallback khi slide/element không tự set). */
   deckReveal?: ElementReveal;
+  /**
+   * DEEP LINK (21/08): phần tử có `href` được bọc thành nút bấm lúc trình chiếu — bấm gọi hàm
+   * này (SlidePlayer lo lưu mốc quay-về + điều hướng). Bỏ trống = mọi phần tử chỉ-đọc như cũ.
+   */
+  onOpenLink?: (href: string) => void;
 }
 
-export default function PlayerElements({ slide, fonts, watermark, deckReveal }: Props) {
+export default function PlayerElements({ slide, fonts, watermark, deckReveal, onOpenLink }: Props) {
   const timings = computeElementRevealTimings(slide, deckReveal);
   const timingById = new Map(timings.map((t) => [t.id, t]));
 
@@ -64,26 +69,43 @@ export default function PlayerElements({ slide, fonts, watermark, deckReveal }: 
       {slide.elements.map((el) => {
         if (el.hidden) return null;
         const timing = timingById.get(el.id);
+        const ruot = (
+          <RevealItem reveal={timing?.reveal} delaySec={timing?.delaySec ?? 0}>
+            <Inner
+              el={el}
+              fonts={fonts}
+              overImage={textOverImage(el, slide.elements, !!slide.backgroundImage)}
+            />
+          </RevealItem>
+        );
+        const viTri: React.CSSProperties = {
+          position: 'absolute',
+          left: `${el.frame.x}%`,
+          top: `${el.frame.y}%`,
+          width: `${el.frame.w}%`,
+          height: `${el.frame.h}%`,
+          transform: `rotate(${el.frame.rotation}deg)`,
+          opacity: el.opacity ?? 1,
+        };
+        // Phần tử mang deep link → NÚT thật (bàn phím tới được, con trỏ pointer nói "bấm được").
+        // Không vẽ thêm khung/hiệu ứng nào — affordance là việc của chính nội dung phần tử
+        // (người soạn slide tự viết "→ Mở live"), nút chỉ lo ngữ nghĩa + hành vi.
+        if (el.href && onOpenLink) {
+          return (
+            <button
+              key={el.id}
+              type="button"
+              onClick={() => onOpenLink(el.href!)}
+              aria-label={`Mở ngữ cảnh sống: ${el.href}`}
+              style={{ ...viTri, border: 0, background: 'transparent', padding: 0, cursor: 'pointer', textAlign: 'inherit' }}
+            >
+              {ruot}
+            </button>
+          );
+        }
         return (
-          <div
-            key={el.id}
-            style={{
-              position: 'absolute',
-              left: `${el.frame.x}%`,
-              top: `${el.frame.y}%`,
-              width: `${el.frame.w}%`,
-              height: `${el.frame.h}%`,
-              transform: `rotate(${el.frame.rotation}deg)`,
-              opacity: el.opacity ?? 1,
-            }}
-          >
-            <RevealItem reveal={timing?.reveal} delaySec={timing?.delaySec ?? 0}>
-              <Inner
-                el={el}
-                fonts={fonts}
-                overImage={textOverImage(el, slide.elements, !!slide.backgroundImage)}
-              />
-            </RevealItem>
+          <div key={el.id} style={viTri}>
+            {ruot}
           </div>
         );
       })}

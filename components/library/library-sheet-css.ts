@@ -40,7 +40,7 @@ export const LIBRARY_SHEET_CSS = `
    nền quanh nó lộ ra cả bốn phía nên phải lùi sâu hơn thì card mới "nổi" thành vật thể riêng. */
 .if-lib-root .scrim{position:fixed;inset:0;
        background:linear-gradient(rgba(0,0,0,.22),rgba(0,0,0,.22)),var(--nen-mo-overlay);opacity:0;pointer-events:none;z-index:90;
-       transition:opacity var(--dur-base) var(--ease-apple);border:0;padding:0}
+       transition:opacity var(--nhip-ngu-canh) var(--ease-apple);border:0;padding:0}
 .if-lib-root .scrim[data-open="true"]{opacity:1;pointer-events:auto}
 /* ═══ CARD RỜI (detached sheet, chuẩn iOS 15+) — Hoà chốt 05/08, cách VÀO chốt lại 07/08 ═══
    Trước: dính đáy (bottom:0), chỉ bo 2 góc trên, rộng tới 980px.
@@ -74,9 +74,9 @@ export const LIBRARY_SHEET_CSS = `
         hiện đủ). Không dùng opacity (G1 — .badge bên trong có backdrop-filter): dùng visibility
         TRỄ đúng 200ms cho transform chạy hết rồi mới biến mất; lúc mở visibility bật NGAY (delay 0). */
      visibility:hidden;
-     transition:transform 200ms cubic-bezier(.32,.72,0,1), visibility 0s 200ms}
+     transition:transform var(--nhip-bang) cubic-bezier(.32,.72,0,1), visibility 0s var(--nhip-bang)}
 .if-lib-root .lib[data-open="true"]{transform:translate(-50%,0) scale(1);visibility:visible;
-     transition:transform 200ms cubic-bezier(.32,.72,0,1), visibility 0s 0s}
+     transition:transform var(--nhip-bang) cubic-bezier(.32,.72,0,1), visibility 0s 0s}
 /* Vùng kéo: vạch NHÌN vẫn 4px, nhưng vùng CHẠM cao 44px (§0c mảng 3 — ngón tay/găng tay công
    trường). Kéo xuống quá ngưỡng = đóng; nút ✕ ở header là đường tương đương (K5/G8). */
 .if-lib-root .grab{height:44px;flex:none;display:flex;align-items:center;justify-content:center;
@@ -281,9 +281,9 @@ export const LIBRARY_SHEET_CSS = `
       transform không đẩy layout anh em.
     · .speccol — width CỐ ĐỊNH 236px bên trong wrapper (không co theo wrapper) nên chữ/hàng
       không bị bóp méo giữa chừng animate; wrapper hẹp hơn thì overflow:hidden chỉ CẮT bớt,
-      tạo đúng cảm giác "trượt vào từ phải". TSX giữ displayItem sống thêm 200ms sau khi bỏ
+      tạo đúng cảm giác "trượt vào từ phải". TSX giữ displayItem sống thêm var(--nhip-bang) sau khi bỏ
       chọn (đợi onTransitionEnd) để có khung hình đóng — xem LibrarySheet.tsx. */
-.if-lib-root .specwrap{width:0;flex:none;overflow:hidden;transition:width 200ms cubic-bezier(.32,.72,0,1)}
+.if-lib-root .specwrap{width:0;flex:none;overflow:hidden;transition:width var(--nhip-bang) cubic-bezier(.32,.72,0,1)}
 .if-lib-root .specwrap[data-open="true"]{width:236px}
 .if-lib-root .speccol{width:236px;flex:none;border-left:1px solid var(--vien-mo);
        display:flex;flex-direction:column;height:100%;min-height:0;overflow-y:auto}
@@ -305,6 +305,13 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .speccol .sprow .v.num{font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
 /* Ô TRỐNG có lý do (§9): gạch ngang mờ, KHÔNG số mẫu. Không xoá dòng đi cho gọn mắt. */
 .if-lib-root .speccol .sprow .v.none{color:var(--t5)}
+/* MỘT VẬT — NHIỀU MẶT (Lane B, 22/08): dải chip liệt kê các mặt món này lộ ra. Chip là NHÃN
+   CHỮ, không icon trần — mặt biểu diễn là khái niệm nghề, icon câm không nói nổi (NT-8).
+   Không màu riêng cho từng mặt: phổ màu đã có nghĩa (đỏ sai · vàng cần xem · xanh đạt), thêm
+   màu ở đây là ăn vào kênh đó. Phân biệt bằng CHỮ, đủ và không gây nhầm. */
+.if-lib-root .speccol .spmat{display:flex;flex-wrap:wrap;gap:6px;padding:2px 12px 8px}
+.if-lib-root .speccol .spmatchip{font-size:var(--fs-2xs);line-height:1;padding:6px 9px;
+       border-radius:var(--r-full);border:1px solid var(--vien-mo);color:var(--t2);background:var(--field)}
 .if-lib-root .speccol .spbar{height:3px;border-radius:2px;background:var(--field);margin-top:5px;overflow:hidden}
 .if-lib-root .speccol .spbar i{display:block;height:100%;border-radius:2px;background:var(--accent)}
 .if-lib-root .speccol .spwhy{padding:10px 12px;font-size:var(--fs-2xs);line-height:1.5;color:var(--t4);
@@ -322,11 +329,33 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .speccol .spact{margin-top:auto;padding:12px;display:flex;flex-direction:column;gap:7px}
 .if-lib-root .speccol .spact button{width:100%;height:var(--tap);border-radius:var(--r-2);border:0;cursor:pointer;
        font-size:var(--fs-xs);font-weight:var(--fw-semi);font-family:inherit;
-       transition:background var(--dur-fast) var(--ease-apple)}
+       transition:background var(--nhip-vien) var(--ease-apple)}
 .if-lib-root .speccol .spact .primary{background:var(--accent);color:var(--on-accent)}
 .if-lib-root .speccol .spact .primary:hover{background:var(--accent-strong)}
 .if-lib-root .speccol .spact .ghost{background:var(--field);color:var(--t2);border:1px solid var(--border)}
 .if-lib-root .speccol .spact .ghost:hover{background:var(--hover);color:var(--t1)}
+
+/* LANE 3 (20/08) — HỘ CHIẾU món (Object Passport): ảnh lớn hơn, editorial, KHÔNG phải ma trận.
+   ".pp" là biến thể của .sphead/.spprev đã có sẵn (đổi mỗi chiều cao ảnh xem trước), không đẻ
+   khối mới cho phần đầu — chỉ phần thân bên dưới (.sppass) là mới. */
+.if-lib-root .speccol .sphead.pp{padding-bottom:14px}
+.if-lib-root .speccol .spprev.pp{height:200px}
+.if-lib-root .speccol .sppass{padding:0 12px 12px;display:flex;flex-direction:column;gap:10px}
+.if-lib-root .speccol .ppfacts{display:flex;flex-direction:column;gap:6px}
+.if-lib-root .speccol .ppf{display:flex;align-items:center;justify-content:space-between;gap:8px;
+       min-height:22px;font-size:var(--fs-xs)}
+.if-lib-root .speccol .ppf .k{color:var(--t4);white-space:nowrap}
+.if-lib-root .speccol .ppf .v{color:var(--t1);text-align:right;min-width:0;
+       overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,Menlo,monospace;
+       font-variant-numeric:tabular-nums}
+.if-lib-root .speccol .ppverify{height:var(--tap);border-radius:var(--r-2);border:1px solid var(--border);
+       background:var(--field);color:var(--t2);font:inherit;font-size:var(--fs-xs);font-weight:var(--fw-semi);
+       cursor:pointer;transition:background var(--nhip-vien) var(--ease-apple)}
+.if-lib-root .speccol .ppverify:hover{background:var(--hover);color:var(--t1)}
+.if-lib-root .speccol .ppback{margin:10px 12px 0;align-self:flex-start;height:26px;padding:0 9px;
+       border-radius:var(--r-1);border:1px solid var(--border);background:var(--field);color:var(--t3);
+       font:inherit;font-size:var(--fs-2xs);cursor:pointer}
+.if-lib-root .speccol .ppback:hover{background:var(--hover);color:var(--t1)}
 /* Thẻ ĐANG CHỌN trong lưới — cùng ngôn ngữ "viền accent + quầng" với node đang chọn ở chặng 3D. */
 .if-lib-root .it.on{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
 

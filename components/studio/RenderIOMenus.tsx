@@ -102,7 +102,7 @@ export function RenderIOMenus() {
       id: 'gateway',
       label: tr('Chọn tệp — tự nhận định dạng', 'Choose files — auto-detect format'),
       sub: tr('Ảnh tạo node · GLB, glTF hoặc OBJ/MTL mở trong Vẽ 3D', 'Images create nodes · GLB, glTF or OBJ/MTL opens in 3D Design'),
-      icon: <FileUp size={15} />,
+      icon: <FileUp size={16} />,
       onSelect: () => fileRef.current?.click(),
     },
   ];
@@ -112,20 +112,20 @@ export function RenderIOMenus() {
       id: 'pdf',
       label: tr('PDF thuyết trình', 'Presentation PDF'),
       sub: tr('Gom slide đã render trong bảng làm việc · 16:9 1920×1080, nhiều trang', 'Collects rendered slides from the board · 16:9 1920×1080, multi-page'),
-      icon: <FileDown size={15} />,
+      icon: <FileDown size={16} />,
       onSelect: exportPdf,
     },
     {
       id: 'pptx',
       label: tr('PowerPoint (.pptx)', 'PowerPoint (.pptx)'),
       sub: tr('Mỗi slide 1 ảnh full-bleed · khổ 16:9', 'Each slide is 1 full-bleed image · 16:9'),
-      icon: <FileText size={15} />,
+      icon: <FileText size={16} />,
       onSelect: exportPptx,
     },
     {
       id: 'flow-export',
       label: tr('Bảng làm việc (.json)', 'Board (.json)'),
-      icon: <FileUp size={15} />,
+      icon: <FileUp size={16} />,
       onSelect: () => {},
       disabled: true,
       disabledReason: tr('Chưa hỗ trợ — bảng làm việc lưu trên server, chưa xuất ra file rời', 'Not supported yet — boards live on the server, no file export yet'),
@@ -133,7 +133,7 @@ export function RenderIOMenus() {
     {
       id: 'print300',
       label: tr('In 300dpi (A3/A4)', 'Print at 300dpi (A3/A4)'),
-      icon: <Printer size={15} />,
+      icon: <Printer size={16} />,
       onSelect: () => {},
       disabled: true,
       disabledReason: tr('Chưa khả dụng — ảnh render hiện ~1920px (~116dpi ở khổ A3)', 'Not available yet — rendered images are ~1920px (~116dpi at A3)'),
@@ -155,9 +155,9 @@ export function RenderIOMenus() {
         title={tr('Nhập ảnh · mở bảng làm việc · xuất PDF/PPTX/in ấn', 'Import images · open board · export PDF/PPTX/print')}
         className="flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-[12px] font-medium text-[var(--t2)] transition-colors hover:bg-[var(--hover)] disabled:opacity-60"
       >
-        <Files size={13} />
+        <Files size={16} />
         <span className="hidden sm:inline">{busy ? `${tr('Đang', 'Working')} ${runningLabel ?? ''}…` : tr('Tệp', 'File')}</span>
-        <ChevronDown size={12} className={cn('transition-transform', open && 'rotate-180')} />
+        <ChevronDown size={16} className={cn('transition-transform', open && 'rotate-180')} />
       </button>
 
       {open && (

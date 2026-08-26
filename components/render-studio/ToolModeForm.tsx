@@ -415,7 +415,7 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
                                     x2={p1.x}
                                     y2={p1.y}
                                     stroke="var(--accent)"
-                                    strokeWidth={2}
+                                    strokeWidth={1.5}
                                     // Nét ĐỨT = máy suy [derived] · nét LIỀN = KTS đã chỉnh tay [user] — khác nhau
                                     // nhìn là biết, không cùng 1 kiểu nét (đúng ④.3 của phiếu).
                                     strokeDasharray={horizon.source === 'derived' ? '7 6' : undefined}
@@ -432,7 +432,7 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
                                       fill="var(--accent)"
                                       fillOpacity={0.18}
                                       stroke="var(--accent)"
-                                      strokeWidth={2}
+                                      strokeWidth={1.5}
                                       style={{ cursor: 'ns-resize', pointerEvents: 'auto' }}
                                       onPointerDown={(e) => {
                                         e.stopPropagation();
@@ -461,7 +461,7 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
                                     fill="var(--warning)"
                                     fillOpacity={0.18}
                                     stroke="var(--warning)"
-                                    strokeWidth={2}
+                                    strokeWidth={1.5}
                                     style={{ cursor: 'grab', pointerEvents: 'auto' }}
                                     onPointerDown={(e) => {
                                       e.stopPropagation();
@@ -676,7 +676,7 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
                   onClick={() => setAdvancedOpen((o) => !o)}
                   style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: 'var(--t3)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
                 >
-                  <ChevronDown size={13} style={{ transform: advancedOpen ? 'rotate(180deg)' : undefined, transition: 'transform .15s' }} />
+                  <ChevronDown size={14} style={{ transform: advancedOpen ? 'rotate(180deg)' : undefined, transition: 'transform .15s' }} />
                   Tinh chỉnh
                 </button>
                 {advancedOpen && (

@@ -65,8 +65,8 @@ export function FlankStrip({ side, open, onClick, label, hotkey }: {
   label: string;
   hotkey?: string;
 }) {
-  const collapse = side === 'left' ? <ChevronLeft size={12} /> : <ChevronRight size={12} />;
-  const expand = side === 'left' ? <ChevronRight size={12} /> : <ChevronLeft size={12} />;
+  const collapse = side === 'left' ? <ChevronLeft size={14} /> : <ChevronRight size={14} />;
+  const expand = side === 'left' ? <ChevronRight size={14} /> : <ChevronLeft size={14} />;
   return (
     <button
       type="button"
@@ -76,13 +76,13 @@ export function FlankStrip({ side, open, onClick, label, hotkey }: {
       aria-label={open ? `Thu ${label}` : `Mở ${label}`}
       title={(open ? `Thu ${label}` : `Mở ${label}`) + (hotkey ? ` — ${hotkey}` : '')}
       style={{
-        flex: '0 0 14px',
-        width: 14,
+        flex: '0 0 10px',
+        width: 10,
         alignSelf: 'stretch',
         border: 'none',
-        [side === 'left' ? 'borderRight' : 'borderLeft']: '1px solid var(--border)',
-        background: 'var(--panel)',
-        color: 'var(--t3)',
+        [side === 'left' ? 'borderRight' : 'borderLeft']: '1px solid var(--vien-mo)',
+        background: 'transparent',
+        color: 'var(--t4)',
         display: 'grid',
         placeItems: 'center',
         cursor: 'pointer',
@@ -121,6 +121,24 @@ export default function PanelFlank({ side, storageKey, label, defaultOpen = true
     if (stored !== null) setOpen(stored);
   }, [storageKey]);
 
+  /**
+   * MỞ TỪ XA — một sự kiện, khoá theo `storageKey`.
+   * 🔴 Vì sao cần: bảng Soát duyệt sống ở MÉP PHẢI theo luật "một chỗ ngồi cố định", nên nó
+   * KHÔNG có route. Hệ quả đo được: mục "Soát duyệt" trên thanh trái **mờ vĩnh viễn** — một mục
+   * chết nằm giữa bốn mục sống. Nay nơi khác (rail, sổ lệnh, Vitals) chỉ cần bắn sự kiện là panel
+   * mở, không phải đẻ một trang Soát duyệt toàn cục chỉ để có chỗ mà trỏ tới.
+   * Khoá theo `storageKey` nên bắn cho panel này KHÔNG mở nhầm panel khác.
+   */
+  useEffect(() => {
+    const nghe = (e: Event) => {
+      if ((e as CustomEvent<{ khoa?: string }>).detail?.khoa !== storageKey) return;
+      setOpen(true);
+      writeStored(storageKey, true);
+    };
+    window.addEventListener('if:panel-flank-open', nghe);
+    return () => window.removeEventListener('if:panel-flank-open', nghe);
+  }, [storageKey]);
+
   const toggle = useCallback(() => {
     setOpen((o) => {
       writeStored(storageKey, !o);
@@ -144,8 +162,8 @@ export default function PanelFlank({ side, storageKey, label, defaultOpen = true
 
   // Mũi tên NÓI HÀNH ĐỘNG sắp xảy ra (chuẩn PresentEditor): panel trái đang mở → ‹ (thu về trái);
   // đang thu → › (bung ra phải). Panel phải thì ngược chiều.
-  const collapseIcon = side === 'left' ? <ChevronLeft size={12} /> : <ChevronRight size={12} />;
-  const expandIcon = side === 'left' ? <ChevronRight size={12} /> : <ChevronLeft size={12} />;
+  const collapseIcon = side === 'left' ? <ChevronLeft size={14} /> : <ChevronRight size={14} />;
+  const expandIcon = side === 'left' ? <ChevronRight size={14} /> : <ChevronLeft size={14} />;
 
   const stripStyle: React.CSSProperties = {
     flex: '0 0 14px',

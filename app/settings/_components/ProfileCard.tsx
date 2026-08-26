@@ -32,13 +32,13 @@ export function ProfileCard() {
 
   return (
     <div className="card" style={{ gridColumn: '1 / -1' }}>
-      <h3><CircleUser size={15} /> {tr('Hồ sơ', 'Profile')}</h3>
+      <h3><CircleUser size={14} /> {tr('Hồ sơ', 'Profile')}</h3>
       <div className="hint">{tr('Chạm avatar để đổi — ảnh của bạn hiện với cộng sự khi làm chung', 'Tap the avatar to change it — teammates see this when you collaborate')}</div>
 
       <div className="avrow">
         <button type="button" className="avbig" onClick={goEdit} aria-label={tr('Đổi avatar', 'Change avatar')}>
           <UserAvatar id={user?.id} avatar={user?.avatar} name={user?.name} size={68} frame={false} />
-          <span className="edit"><Pencil size={12} /></span>
+          <span className="edit"><Pencil size={14} /></span>
         </button>
         <div>
           <div className="avname">{user?.name ?? tr('Khách', 'Guest')}</div>

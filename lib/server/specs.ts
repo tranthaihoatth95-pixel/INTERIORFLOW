@@ -56,7 +56,8 @@ type DecimalLike = { toString(): string } | number | string;
  * không qua POST/PATCH tay, xem lib/lark/atlas-material-map.ts). */
 export function specToDto(s: {
   id: string; kind: string; name: string; nameEn: string | null; brand: string | null;
-  sku: string | null; vendor: string | null; w: number | null; d: number | null; hUp: number | null;
+  sku: string | null; matId?: string | null;
+  vendor: string | null; w: number | null; d: number | null; hUp: number | null;
   materials: string; finishes: string; colorHex: string | null; imageAssetId: string | null;
   drawingBlock: string | null; priceNote: string | null; currency: string | null; note: string | null;
   larkRecordId: string | null; createdAt: Date; syncedAt: Date | null;
@@ -72,6 +73,9 @@ export function specToDto(s: {
     nameEn: s.nameEn,
     brand: s.brand,
     sku: s.sku,
+    // matId (19/08) — ĐỌC MỚI, cột chưa migrate trên DB thật nên `s.matId` có thể `undefined`
+    // trước khi Hoà chạy `prisma db push`; ??-chain trả `null` cho tới lúc đó (KHÔNG throw).
+    matId: s.matId ?? null,
     vendor: s.vendor,
     w: s.w,
     d: s.d,
@@ -128,7 +132,14 @@ const dec = (v: unknown): number | null => {
 /** Ép field body POST về đúng kiểu cột — bỏ qua field lạ (không mass-assign).
  * `ownerId` KHÔNG đọc từ body (client không được tự khai chủ sở hữu) — luôn là user đang đăng
  * nhập, đúng ngữ nghĩa VIỆC 1 (`ownerId = null` ⇒ kho chung, CHƯA code ở đợt này). `scope` cũng
- * ép cứng `'studio'` — tầng `'global'` chưa có UI/luật duyệt, không cho client tự đặt. */
+ * ép cứng `'studio'` — tầng `'global'` chưa có UI/luật duyệt, không cho client tự đặt.
+ *
+ * ⛔ `matId` CỐ Ý KHÔNG có trong danh sách field ở đây — client KHÔNG được tự đặt/đổi matId qua
+ * POST/PATCH. Đây là hệ quả trực tiếp của "IF-owned immutable UUID" (19/08): matId chỉ được sinh
+ * đúng một lần, bởi `scripts/backfill-material-matid.ts` (món cũ) hoặc lối tạo material chuyên
+ * dụng của phiếu sau (món mới). Nhồi nó vào mass-assign body sẽ mở đường cho client tự đổi
+ * identity — đúng thứ luật hòa giải cấm. Muốn nối identity mới cho một dòng đã có: phải qua
+ * đường backfill/generate, không qua PATCH tay. */
 export function specNormalize(b: Record<string, unknown>, kind: string, name: string, ownerId: string) {
   return {
     kind,

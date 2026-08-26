@@ -108,13 +108,14 @@ test('system là chuỗi tự do, KHÔNG enum — thêm nhà cung cấp không p
   assert.ok(/\bsystem\s+String\b/.test(khoi), 'system phải là String');
 });
 
-test('cửa chặn migrate còn nguyên — cờ EXTERNAL_REF_TABLE_READY chưa bị bật ẩu', () => {
-  // Bảng chưa có trong dev.db (chưa ai chạy db push). Bật cờ mà chưa migrate = vỡ ở lần gọi đầu.
-  // Khi chủ dự án đã chạy lệnh ở M-APPLY-C-OUT §10 thì ĐỔI dòng dưới thành `true` cùng lúc.
+test('cờ EXTERNAL_REF_TABLE_READY đã bật ĐÚNG LÚC — sau khi bảng có thật trong dev.db (20/08, H6)', () => {
+  // Flip 20/08 sau db push+generate — verify bằng query Prisma thật (prisma.externalRef.findMany
+  // chạy OK), không chỉ bằng lời khai. Nếu ai revert dòng dưới về false mà bảng vẫn còn thật trong
+  // dev.db thì đang tự khoá nhầm cửa đã mở — sửa lại true.
   const src = fs.readFileSync(path.resolve(__dirname, 'external-ref.ts'), 'utf8');
   assert.ok(
-    /export const EXTERNAL_REF_TABLE_READY = false;/.test(src),
-    'Cờ đã bật — chỉ đúng NẾU `sqlite3 dev.db ".tables"` thật sự thấy ExternalRef. Sửa test này cùng lúc.',
+    /export const EXTERNAL_REF_TABLE_READY = true;/.test(src),
+    'Cờ phải là true — bảng ExternalRef đã có thật trong dev.db từ H6 (20/08), client đã generate khớp.',
   );
 });
 

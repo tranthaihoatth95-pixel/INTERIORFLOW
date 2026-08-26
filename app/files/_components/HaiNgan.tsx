@@ -1,6 +1,14 @@
 'use client';
 
 /**
+ * ⛔ **LỖI THỜI 17/08 tối — KHÔNG CÒN AI MOUNT FILE NÀY.** Hoà đổi Files từ *hai NGĂN* sang
+ * **hai TẦNG** (thư mục hệ thống 5 loại + Collection+ 8 gói). Vỏ đang chạy là
+ * `./HaiTang.tsx`; bản vẽ hợp đồng là `docs/mocks/mock-files-hai-tang.html`.
+ * Giữ lại làm dấu vết (đúng luật *văn bản bị thay phải đóng dấu tại chỗ, không bỏ hoang*) —
+ * **cấm mount lại, cấm chép cách bố cục ở đây sang màn khác.** Lõi `../_lib/ngan-tho.ts` thì
+ * VẪN SỐNG: nó là ruột của thư mục *Nhà cung cấp* (`./NganPhanTho.tsx`).
+ * MAIN quyết có xoá hẳn hay không — xoá thì mất luôn phần đối chiếu "vì sao đổi".
+ *
  * app/files/_components/HaiNgan.tsx — [marker: filesHaiNgan] VỎ HAI NGĂN của Files.
  *
  * Hoà chốt 17/08 (`docs/HOP-DONG-CAU-TRUC-DIEU-HUONG.md` §3): *"Khác bản chất ⇒ phải THẤY ĐƯỢC
@@ -116,7 +124,7 @@ export function HaiNgan({ duAn, thoChung }: { duAn: ReactNode; thoChung: ReactNo
               }}
             >
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-ui)', fontWeight: on ? 'var(--fw-semi)' : 'var(--fw-normal)' }}>
-                <Icon size={14} strokeWidth={1.8} aria-hidden />
+                <Icon size={14} strokeWidth={1.5} aria-hidden />
                 {tr(nhan.ten.vi, nhan.ten.en)}
               </span>
               {/* Dòng AI THẤY — thứ phân biệt BẢN CHẤT. Một bộ lọc không bao giờ có dòng này.

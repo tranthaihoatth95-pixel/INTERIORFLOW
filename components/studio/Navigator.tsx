@@ -16,16 +16,19 @@
  * không tự đảo ngược").
  */
 
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { ChevronLeft, Plus, Library, Settings as SettingsIcon } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useFlowStore } from '@/lib/store';
+import { useEffect, useState, type ReactNode } from 'react';
+import { ChevronLeft, Plus, Library } from 'lucide-react';
 import { useT } from '@/lib/i18n';
-import { useDismissable } from '@/lib/useDismissable';
-import { UserAvatar } from '@/components/avatar/UserAvatar';
-import { AccountMenu } from '@/components/AccountMenu';
 
-const DEFAULT_WIDTH = 214;
+/**
+ * NAV-TI-LE-ICON 20/08 — 214 → **224**.
+ * Hoà chốt tỉ lệ cột trái lúc đang sáng tác: rail việc **52-56** : thềm **220-248** ≈ **1 : 4-4,5**;
+ * tổng phần trái thường trực **272-304px**, và ở 1440-1600 không quá ~20% bề rộng dùng được.
+ * 214 nằm NGOÀI dải 220-248 (52 : 214 = 1 : 4,12 thì đúng tỉ lệ, nhưng bề rộng tuyệt đối thì hụt).
+ * 224 cho: tổng trái 52 + 224 = **276** ∈ [272, 304] ✓ · tỉ lệ 1 : 4,31 ∈ [4, 4,5] ✓ ·
+ * 276/1440 = **19,2%** ✓ · 276/1600 = **17,3%** ✓ (đo thật trên app, không ước — xem báo cáo).
+ */
+const DEFAULT_WIDTH = 224;
 const COLLAPSE_BREAKPOINT = 1280;
 const STORAGE_KEY = 'interiorflow.navigator.collapsed_v1';
 
@@ -41,6 +44,8 @@ interface Props {
   /** Nhãn hiện trên DẢI MỎNG khi thu gọn (CHINH-3, SPEC-PANEL-ROLLOUT-IDF §2f — "dải dọc mỏng
    * CÓ NHÃN", né lỗi SketchUp nút không nhãn). Thiếu → "Bảng". */
   collapsedLabel?: string;
+  /** Điểm xuất phát khi CHƯA có lựa chọn lưu — bật cho môi trường đắm chìm (2D/3D). */
+  defaultCollapsed?: boolean;
   /** Bề rộng ổ ② — mặc định 214 (Trụ 1). Hoà 04/08 (BÁC bản Render list-chữ, §0d "giữ cái đang
    * tốt"): chặng Render gắn NGUYÊN `NodeLibraryPanel` (card icon+mô tả+badge) cần THỞ hơn danh
    * sách chữ CAD/Present — 280px, số ghi ở nơi gọi (`AppShell.tsx`). */
@@ -51,12 +56,16 @@ interface Props {
   shiftHotkeys?: boolean;
 }
 
-export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, collapsedLabel, width = DEFAULT_WIDTH, shiftHotkeys = false }: Props) {
-  const [collapsed, setCollapsed] = useState(false);
+export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, collapsedLabel, width: widthProp = DEFAULT_WIDTH, shiftHotkeys = false, defaultCollapsed = false }: Props) {
+  // 22/08 (hotfix "stop mini-app UI") — MÔI TRƯỜNG ĐẮM CHÌM (2D · 3D) MẶC ĐỊNH THU BẢNG TRÁI.
+  // Hoà: *"canvas dominates · layers only when opened"*. Bảng Lớp thường trực chính là thứ làm
+  // chặng Vẽ đọc ra "một app CAD" thay vì một môi trường trong Workspace.
+  // ⚠️ Chỉ đổi ĐIỂM XUẤT PHÁT, KHÔNG cướp quyền người dùng: `localStorage` vẫn thắng ngay ở
+  // effect hydrate bên dưới ⇒ ai đã mở bảng thì lần sau vẫn thấy nó mở (luật "nhớ lựa chọn
+  // trong bố cục Workspace"). Đây là lý do KHÔNG ép `setCollapsed(true)` mỗi lần mount.
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [hydrated, setHydrated] = useState(false);
   const [peek, setPeek] = useState(false);
-  const user = useFlowStore((s) => s.user);
-  const router = useRouter();
   const tr = useT();
   // Tooltip PHẢI ghi đúng phím của chặng đang mở (§0c mảng 1 "tooltip hiện phím"): chặng Vẽ
   // ⇧B/⇧L, chặng khác B/L.
@@ -65,7 +74,9 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
+    // Lựa chọn đã lưu THẮNG mặc định theo chặng — cả hai chiều ('1' thu, '0' mở).
     if (stored === '1') setCollapsed(true);
+    else if (stored === '0') setCollapsed(false);
     else if (window.innerWidth < COLLAPSE_BREAKPOINT) setCollapsed(true);
     setHydrated(true);
   }, []);
@@ -103,18 +114,35 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
     return () => window.removeEventListener('if:navigator-toggle', onToggle);
   }, []);
 
-  const avatarRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [anchorRect, setAnchorRect] = useState<{ top: number; left: number } | null>(null);
-  useLayoutEffect(() => {
-    if (!menuOpen) return;
-    const el = avatarRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    setAnchorRect({ top: r.top - 6, left: r.right + 8 });
-  }, [menuOpen]);
-  useDismissable({ open: menuOpen, onDismiss: () => setMenuOpen(false), refs: [avatarRef, menuRef] });
+  /**
+   * NAV-TI-LE-ICON 20/08 — BẢNG LÀM VIỆC SÂU **NỞ RA THAY THẾ** thềm.
+   * Panel ruột (vd `LayerPanel` lúc "Sửa nét") báo bề rộng nó cần; thềm đổi bề rộng TẠI CHỖ.
+   * ⛔ TUYỆT ĐỐI KHÔNG dựng thêm một cột thứ ba thường trực cạnh thềm — đó là cách nhanh nhất
+   * ăn hết bề rộng canvas: 52 + 224 + 320 = 596px, tức 41% màn 1440, gấp đôi trần ~20% Hoà chốt.
+   * `null` = trả về mặc định. Không persist: đây là trạng thái của MỘT lượt sửa sâu, không phải
+   * cách bày quen tay — nhớ nó qua phiên sẽ làm app mở ra rộng ngoác không rõ vì sao.
+   */
+  const [rongTheo, setRongTheo] = useState<number | null>(null);
+  useEffect(() => {
+    const onWidth = (e: Event) => {
+      const w = (e as CustomEvent<{ width?: number | null }>).detail?.width;
+      setRongTheo(typeof w === 'number' ? w : null);
+    };
+    window.addEventListener('if:navigator-width', onWidth);
+    return () => window.removeEventListener('if:navigator-width', onWidth);
+  }, []);
+
+  // Bề rộng THAY THẾ, không cộng dồn: `rongTheo` ghi đè `widthProp`, không đứng cạnh nó.
+  const width = rongTheo ?? widthProp;
+
+  /* NAV-HAI-DAO 20/08 — Ổ CHÂN AVATAR + CÀI ĐẶT ĐÃ GỠ khỏi Navigator.
+   * Trước đây chân panel này có avatar (mở `AccountMenu`: Hồ sơ · Credit · Cài đặt · Đăng xuất)
+   * và một nút ⚙ đi thẳng `/settings`. Cả hai nằm ở CỘT TRÁI ⇒ đúng thứ Hoà nêu là tiêu chí
+   * TRƯỢT (*"trượt nếu thanh trái còn chứa Hồ sơ/Credit/Cài đặt"*), và sau khi cụm phải-trên có
+   * avatar thì đây thành BẢN THỨ HAI của cùng một cửa — lặp, không phải dự phòng.
+   * ⇒ Cửa duy nhất nay là `components/studio/CumPhaiTren.tsx`. Không mất chức năng nào:
+   * `AccountMenu` giữ nguyên, chỉ đổi chỗ neo. Đừng lắp lại ở đây.
+   */
 
   if (collapsed) {
     // §2f SPEC-PANEL-ROLLOUT-IDF — thu về DẢI MỎNG CÓ NHÃN, hover mới HÉ (overlay tạm, không
@@ -131,9 +159,9 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
           type="button"
           onClick={toggle}
           title={tr(`Mở lại bảng — ${kPanel}`, `Expand panel — ${kPanel}`)}
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] text-[var(--t3)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] text-[var(--t3)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
         >
-          <ChevronLeft size={15} className="rotate-180" />
+          <ChevronLeft size={16} className="rotate-180" />
         </button>
         <span
           className="mt-3 select-none text-[var(--fs-2xs)] font-bold uppercase tracking-wider text-[var(--t4)]"
@@ -173,51 +201,28 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
           onClick={onAdd}
           disabled={!onAdd}
           title={addLabel}
-          className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded-[10px] text-[11px] text-[var(--t3)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent"
+          className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded-[10px] text-[11px] text-[var(--t3)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent"
         >
-          <Plus size={13} />
+          <Plus size={16} />
         </button>
         <button
           type="button"
           onClick={onOpenLibrary}
           title={tr(`Thư viện — ${kLibrary}`, `Library — ${kLibrary}`)}
-          className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded-[10px] text-[11px] text-[var(--t3)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+          className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded-[10px] text-[11px] text-[var(--t3)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
         >
-          <Library size={13} />
+          <Library size={16} />
           {tr('Thư viện', 'Library')}
         </button>
         <button
           type="button"
           onClick={toggle}
           title={tr(`Thu gọn — ${kPanel}`, `Collapse — ${kPanel}`)}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] text-[var(--t3)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] text-[var(--t3)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
         >
-          <ChevronLeft size={13} />
+          <ChevronLeft size={16} />
         </button>
       </div>
-      <div className="flex shrink-0 gap-0.5 border-t border-[var(--border)] p-1.5">
-        {user && (
-          <button
-            ref={avatarRef}
-            type="button"
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-expanded={menuOpen}
-            className="flex h-[30px] min-w-0 flex-1 items-center gap-2 rounded-[10px] px-1.5 transition-colors duration-[120ms] hover:bg-[var(--hover)]"
-          >
-            <UserAvatar id={user.id} avatar={user.avatar} name={user.name} size={22} frame={false} />
-            <span className="min-w-0 truncate text-[12px] text-[var(--t2)]">{user.name}</span>
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => router.push('/settings')}
-          title={tr('Cài đặt', 'Settings')}
-          className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[10px] text-[var(--t3)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
-        >
-          <SettingsIcon size={14} strokeWidth={1.75} />
-        </button>
-      </div>
-      {user && <AccountMenu open={menuOpen} anchorRect={anchorRect} onDismiss={() => setMenuOpen(false)} menuRef={menuRef} />}
     </aside>
   );
 }

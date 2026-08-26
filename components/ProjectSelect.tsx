@@ -23,7 +23,12 @@ import {
   Layers,
   LayoutGrid,
   GalleryHorizontal,
+  WifiOff,
 } from 'lucide-react';
+// LANE A (20/08) — bốn trạng thái dùng chung: máy trạng thái THUẦN + lớp bày ra + màn Ngày-Số-Không.
+import { KhungXuong, OTrangThai } from '@/components/home/TrangThaiO';
+import BatDauNgaySoKhong from '@/components/home/BatDauNgaySoKhong';
+import { useTrangThaiMang } from '@/lib/home/trang-thai';
 import VitalsIcon from '@/components/studio/VitalsIcon';
 import { VitalsBubble, VitalsTyping } from '@/components/studio/VitalsChatBubble';
 import { easeApple, pressable, springStage } from '@/lib/motion';
@@ -44,6 +49,7 @@ import { LangToggle } from '@/components/LangToggle';
 import { adaptiveTextStyle, useAdaptiveContrast } from '@/components/ui/AdaptiveContrast';
 import type { ContrastPlan } from '@/lib/adaptive-contrast';
 import { timeAgo } from '@/lib/home/format-time';
+import { useHomeSearch } from '@/lib/home/search-store';
 
 /**
  * Home/Gallery ↔ Larkbase (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md, M1) — BỔ SUNG dữ liệu vào
@@ -435,7 +441,11 @@ export function ProjectSelect({
   const [statusFor, setStatusFor] = useState<string | null>(null);
   const [statusDraft, setStatusDraft] = useState('');
   // Grid + tìm kiếm khi >8 dự án (J-4c)
-  const [query, setQuery] = useState('');
+  // P-V 17/08 — `query`/`setQuery` DỜI sang store chia sẻ `useHomeSearch` (`lib/home/search-store.ts`)
+  // để ô tìm ở AppChrome top bar cùng đọc/ghi. `projFilter` vẫn cục bộ (chỉ thấy trong searchGrid,
+  // không có mặt tiền thứ hai).
+  const query = useHomeSearch((s) => s.query);
+  const setQuery = useHomeSearch((s) => s.setQuery);
   const [projFilter, setProjFilter] = useState<string>(''); // '' = tất cả, '__none__' = chưa gắn dự án
   // v2 (13/08 home-dong-studio-v2.md ④.1 lỗi #1) — mặt tiền grid gom flow theo DỰ ÁN; flow chưa
   // gắn dự án gom vào MỘT ngăn "Nháp" thu gọn, bấm mới mở ra danh sách flow lẻ bên trong.
@@ -544,6 +554,11 @@ export function ProjectSelect({
       setChatSending(false);
     }
   }, [chatInput, chatSending, chatMessages, en]);
+
+  /* LANE A (20/08) — MỘT chỗ duy nhất trong Home chạm `navigator.onLine`. Dùng để PHÂN BIỆT
+     NGUYÊN NHÂN khi `load()` đã hỏng (mất mạng ≠ máy chủ không trả lời), KHÔNG dùng để chặn
+     fetch: `onLine === true` chỉ nghĩa là có card mạng, không bảo đảm ra được Internet. */
+  const trucTuyen = useTrangThaiMang();
 
   const load = useCallback(() => {
     setLoadError(false);
@@ -770,9 +785,18 @@ export function ProjectSelect({
    * [marker: lastStage] — click card nhảy CHẶNG ĐANG DỞ của dự án đó (phiếu
    * home-overview-card ④.1); chưa từng ghi → mặc định 'concept'.
    * - 'render': đi đường cũ `onEnter()` (HomeScreen setStageDone + toProjectRender).
-   * - 'concept'/'present': vào thẳng route chặng `/projects/[id]/(cad|present)` —
-   *   tự ghi cờ `interiorflow.stageDone` y hệt HomeScreen.onEnter (cùng khoá + user.id)
-   *   để lần quay về '/' vẫn vào thẳng canvas, không rơi lại Gallery.
+   * - 'concept'/'present': vào thẳng route chặng `/projects/[id]/(cad|present)`.
+   *
+   * 🔴 20/08 (Lane 1 coherence pass) — GỠ `localStorage.setItem('interiorflow.stageDone', …)`
+   * từng nằm ở đây. Đó là tàn dư của kiến trúc TRƯỚC 16/08 ("vào thẳng canvas"); từ
+   * [marker: cuaVaoDashboard] (`HomeScreen.tsx`) app đã đổi luật thành **"mọi lối đều dừng ở
+   * dashboard"** — HomeScreen tự khai đã gỡ CẢ HAI nơi ĐỌC cờ này, chỉ còn đúng chỗ GHI này
+   * sống sót (comment cũ ở đây tự nhận là nợ: "cần T dọn nốt"). Hệ quả đo được: mở một dự án
+   * ở chặng 2D/Trình chiếu rồi bấm về '/' — hoặc mở tab MỚI cùng origin — sẽ đọc lại flag này
+   * (nay đã xoá) qua state hydrate và có thể văng thẳng vào canvas thay vì dashboard, đúng
+   * hiện tượng "auto-redirect" đang treo ở UX FINDINGS của IF-LIVE-BRIDGE.md. Ghi flag chết mà
+   * không ai đọc thì vô hại về mặt hiển thị NGAY LẬP TỨC, nhưng vẫn là nguồn rối khi có code
+   * khác (cũ hoặc mới) lỡ đọc lại — xoá dứt điểm, không để "cờ tiện nghi" mồ côi.
    */
   const enterAtLastStage = useCallback(
     (f: FlowRow) => {
@@ -782,11 +806,6 @@ export function ProjectSelect({
       if (stage === 'render') {
         onEnter();
         return;
-      }
-      try {
-        if (s.user) localStorage.setItem('interiorflow.stageDone', s.user.id);
-      } catch {
-        /* bỏ qua — chỉ là cờ tiện nghi */
       }
       router.push(stageRoutePath(f.project?.id ?? f.id, stageSegmentForPhase(stage)));
     },
@@ -1197,7 +1216,7 @@ export function ProjectSelect({
                   onClick={() => void saveStatus(f.id)}
                   className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-white/85 hover:text-white"
                 >
-                  <Check size={13} />
+                  <Check size={14} />
                 </button>
                 <button
                   type="button"
@@ -1205,7 +1224,7 @@ export function ProjectSelect({
                   onClick={() => setStatusFor(null)}
                   className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-white/60 hover:text-white/90"
                 >
-                  <X size={13} />
+                  <X size={14} />
                 </button>
               </div>
             ) : (
@@ -1287,7 +1306,7 @@ export function ProjectSelect({
                 className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-white/90 hover:text-white"
                 style={darkPill}
               >
-                <ImagePlus size={13} />
+                <ImagePlus size={18} />
                 {en ? 'Cover' : 'Đổi bìa'}
               </button>
               {/* "Chi tiết" — mở panel Dashboard, lọc sẵn theo project của card này (§2.2(b)) */}
@@ -1300,7 +1319,7 @@ export function ProjectSelect({
                 className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-white/90 hover:text-white"
                 style={darkPill}
               >
-                <Info size={13} />
+                <Info size={18} />
                 {en ? 'Details' : 'Chi tiết'}
               </button>
               {/* "Tổng quan" — mở trang /projects/[id]/overview của ĐÚNG dự án được click.
@@ -1316,7 +1335,7 @@ export function ProjectSelect({
                 className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-white/90 hover:text-white"
                 style={darkPill}
               >
-                <ArrowRight size={13} />
+                <ArrowRight size={18} />
                 {en ? 'Overview' : 'Tổng quan'}
               </button>
             </div>
@@ -1341,45 +1360,58 @@ export function ProjectSelect({
 
   /* ---------- Các khối trạng thái ---------- */
 
+  /* LANE A (20/08) — BỐN TRẠNG THÁI PHẢI KHÁC NHAU, và phải LẤP ĐẦY Ô.
+   *
+   * Đo trên app thật 1280×720 trước khi sửa: ô "01 DỰ ÁN" cao ~400px, còn `loadingBlock` cũ là
+   * một pill 44px căn giữa ⇒ đúng cái "vòng xoay trong hộp trắng khổng lồ" phiếu cấm. Và
+   * NGOẠI TUYẾN thì KHÔNG TỒN TẠI: rớt mạng → `load()` rơi vào `.catch` → hiện y hệt màn LỖI,
+   * mời người dùng bấm "Thử lại" — lời khuyên vô ích khi không có mạng.
+   *
+   * Nay cả bốn đi qua một máy trạng thái THUẦN (`lib/home/trang-thai.ts`, 16 tổ hợp có test) và
+   * một lớp bày ra dùng chung (`components/home/TrangThaiO.tsx`). Ba nút cũ GIỮ NGUYÊN hành vi
+   * (`load` · `onEnter`), chỉ đổi chỗ đứng và thêm nhánh ngoại tuyến. */
   const loadingBlock = (
-    <div className="flex items-center gap-2.5 rounded-full px-5 py-3" style={glass}>
-      <Loader2 size={15} className="animate-spin" style={{ color: ACCENT }} />
-      <span className="text-[length:var(--fs-sm)] text-[var(--t3,var(--t4))]">
-        {en ? 'Loading your projects…' : 'Đang tải dự án…'}
-      </span>
-    </div>
+    <KhungXuong
+      hinh="the"
+      soMang={4}
+      nhan={en ? 'Loading your projects…' : 'Đang tải dự án…'}
+    />
   );
 
-  const errorBlock = (
-    <div className="flex max-w-sm flex-col items-center gap-4 rounded-[var(--radius-xl)] px-7 py-7 text-center" style={glass}>
-      <p className="text-[length:var(--fs-sm)] leading-relaxed text-[var(--t4)]">
-        {en
-          ? 'Could not load your projects — check the connection and try again.'
-          : 'Không tải được danh sách dự án — kiểm tra kết nối rồi thử lại.'}
-      </p>
-      <div className="flex items-center gap-2.5">
-        <motion.button
-          {...pressable}
-          type="button"
-          onClick={load}
-          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[length:var(--fs-xs)] font-medium text-[var(--t1)]"
-          style={glass}
-        >
-          <RefreshCw size={13} />
-          {en ? 'Retry' : 'Thử lại'}
-        </motion.button>
-        <motion.button
-          {...pressable}
-          type="button"
-          onClick={onEnter}
-          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[length:var(--fs-xs)] font-semibold"
-          style={{ background: ACCENT, color: '#fff' }}
-        >
-          {en ? 'Enter empty canvas' : 'Vào canvas trống'}
-          <ArrowRight size={13} />
-        </motion.button>
-      </div>
-    </div>
+  const errorBlock = trucTuyen ? (
+    <OTrangThai
+      bieuTuong={<RefreshCw size={18} aria-hidden />}
+      tieuDe={en ? 'Could not load your projects' : 'Không tải được danh sách dự án'}
+      moTa={
+        en
+          ? 'The app is online but the project service did not answer. Your files on this machine are untouched.'
+          : 'Máy vẫn có mạng nhưng dịch vụ dự án không trả lời. Tệp trên máy bạn không bị đụng tới.'
+      }
+      hanhDong={[
+        { nhan: en ? 'Retry' : 'Thử lại', onClick: load, chinh: true },
+        { nhan: en ? 'Enter empty canvas' : 'Vào canvas trống', onClick: onEnter },
+      ]}
+    />
+  ) : (
+    /* NGOẠI TUYẾN — KHÔNG có nút "Thử lại": app tự nhận ra khi mạng về (sự kiện `online` trong
+       `useTrangThaiMang`). Thứ người dùng cần ở đây là biết việc CỤC BỘ nào vẫn hiểu được. */
+    <OTrangThai
+      bieuTuong={<WifiOff size={18} aria-hidden />}
+      tieuDe={en ? 'Offline — working locally' : 'Ngoại tuyến — đang làm việc cục bộ'}
+      moTa={
+        en
+          ? 'The project list lives on the server, so it is unavailable right now. Everything already on this machine still opens and still saves.'
+          : 'Danh sách dự án nằm trên máy chủ nên tạm thời không lấy được. Thứ đã có sẵn trên máy này vẫn mở được và vẫn lưu được.'
+      }
+      hanhDong={[{ nhan: en ? 'Enter empty canvas' : 'Vào canvas trống', onClick: onEnter, chinh: true }]}
+      duoi={
+        <ul className="mt-1 flex max-w-[46ch] flex-col gap-1 text-left text-[length:var(--fs-2xs)] leading-relaxed text-[var(--t4)]">
+          <li>{en ? '· Drawing, 3D and layout keep working — they write to the local document.' : '· Vẽ, dựng 3D và dàn trang vẫn chạy — chúng ghi vào hồ sơ cục bộ.'}</li>
+          <li>{en ? '· Quick notes are kept and sent when the connection returns.' : '· Ghi chú nhanh được giữ lại, gửi đi khi có mạng trở lại.'}</li>
+          <li>{en ? '· AI, sharing and the team roster need the network.' : '· AI, chia sẻ và danh sách nhóm cần mạng mới dùng được.'}</li>
+        </ul>
+      }
+    />
   );
 
   /* port mock-if-du-an-v2.html màn 02 "Chưa có dự án nào" — trước đây flows=[] chỉ còn lại
@@ -1390,46 +1422,41 @@ export function ProjectSelect({
      "Mở dự án từ máy" mock vẽ là nút bấm được, nhưng đường khôi phục .ifpack hiện chỉ sống trong
      chặng Thiết kế 2D (`cad:ifpack-import-request` — CadSheets.tsx xử lý; Gallery chưa có đường
      nạp tệp thành dự án) ⇒ theo luật §9/2c KHOÁ + LÝ DO thay vì nút chết. GAP ghi M-EMPTY-2-OUT. */
+  /* LANE A (20/08) — TRỐNG = HOME NGÀY-SỐ-KHÔNG, không phải một thẻ xin lỗi.
+   *
+   * Khối cũ đúng tinh thần nhưng thiếu hai thứ và sai một thứ:
+   *   · THIẾU cửa "Nhập nguồn" — `/library/ingest` là route THẬT, đang chạy, mà màn trống lại
+   *     không mời vào ⇒ người mới chỉ thấy 1 cửa rưỡi trong khi IF có 3.
+   *   · THIẾU lối xem trước (Thư viện · ghi chú · đường đi) nên màn đầu tiên không có gì để
+   *     làm ngoài "tạo dự án hoặc thôi".
+   *   · SAI cách khoá nút "Mở dự án từ máy": `disabled` + `title`. Tab BỎ QUA nút `disabled`
+   *     và `title` câm trên cảm ứng ⇒ cái LÝ DO (vốn viết rất đúng) không bao giờ tới người
+   *     dùng bàn phím hoặc trình đọc màn hình. Lý do giữ nguyên từng chữ, chỉ đổi sang đường
+   *     `aria-disabled` + `aria-describedby`.
+   * Hành vi "Tạo dự án" giữ nguyên `choose({kind:'new'})`. */
   const emptyBlock = (
-    <div className="flex max-w-md flex-col items-center gap-4 rounded-[var(--radius-xl)] px-8 py-10 text-center" style={glass}>
-      <div className="grid h-14 w-14 place-items-center rounded-full" style={{ background: 'rgba(106,87,245,0.14)', color: ACCENT }}>
-        <FolderPlus size={22} />
-      </div>
-      <div>
-        <p className="text-[length:var(--fs-sm)] font-semibold text-[var(--t1)]">
-          {en ? 'Your project workspace' : 'Không gian dự án của bạn'}
-        </p>
-        <p className="text-[11px] text-[var(--t4)]">{en ? 'Không gian dự án của bạn' : 'Your project workspace'}</p>
-        <p className="mt-1.5 text-[length:var(--fs-xs)] leading-relaxed text-[var(--t4)]">
-          {en
-            ? 'A project keeps drawings, 3D models and client files together.'
-            : 'Một dự án giữ bản vẽ, khối 3D và hồ sơ trình khách ở cùng một chỗ.'}
-        </p>
-      </div>
-      <div className="flex flex-wrap items-center justify-center gap-2.5">
-        <motion.button
-          {...pressable}
-          type="button"
-          disabled={busy}
-          onClick={() => void choose({ kind: 'new' })}
-          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[length:var(--fs-xs)] font-semibold disabled:opacity-60"
-          style={{ background: ACCENT, color: '#fff' }}
-        >
-          {busy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-          {en ? 'New project' : 'Tạo dự án mới'}
-        </motion.button>
-        <button
-          type="button"
-          disabled
-          title={en
-            ? 'Restoring a project from an .ifpack file currently lives in the 2D stage (File menu) — open a project first. Wiring it here is on the backlog.'
-            : 'Khôi phục dự án từ tệp .ifpack hiện nằm ở chặng Thiết kế 2D (menu Mở tệp) — mở một dự án trước. Nối thẳng vào đây đang trong hàng đợi.'}
-          className="cursor-not-allowed rounded-full border border-[var(--border)] px-4 py-2 text-[length:var(--fs-xs)] font-semibold text-[var(--t4)] opacity-70"
-        >
-          {en ? 'Open from disk' : 'Mở dự án từ máy'}
-        </button>
-      </div>
-    </div>
+    <BatDauNgaySoKhong
+      en={en}
+      onTaoDuAn={() => void choose({ kind: 'new' })}
+      lyDoMoTuMay={
+        en
+          ? 'Restoring a project from an .ifpack file currently lives in the 2D stage (File menu) — open a project first. Wiring it here is on the backlog.'
+          : 'Khôi phục dự án từ tệp .ifpack hiện nằm ở chặng Thiết kế 2D (menu Mở tệp) — mở một dự án trước. Nối thẳng vào đây đang trong hàng đợi.'
+      }
+      onNhapNguon={() => router.push('/library/ingest')}
+      onThuVien={() => router.push('/library')}
+      /* Ghi chú nhanh chỉ có thật khi ô Ghi chú đang ở trên màn (Home bento). Ngoài Home thì
+         truyền `undefined` ⇒ lối này tự hiện MỜ kèm lý do, không phải nút giả. */
+      onGhiChu={
+        bentoBox
+          ? () => {
+              const o = document.querySelector<HTMLInputElement>('[data-ghi-chu-nhap]');
+              o?.focus();
+              o?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+          : undefined
+      }
+    />
   );
 
   /* ---------- Gallery 3D (desktop, không reduce-motion) ---------- */
@@ -1572,7 +1599,7 @@ export function ProjectSelect({
         className="absolute left-2 top-1/2 z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full text-[var(--t2,var(--t1))] transition-opacity disabled:opacity-30 sm:left-4"
         style={glass}
       >
-        <ChevronLeft size={17} />
+        <ChevronLeft size={20} />
       </button>
       <button
         type="button"
@@ -1582,7 +1609,7 @@ export function ProjectSelect({
         className="absolute right-2 top-1/2 z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full text-[var(--t2,var(--t1))] transition-opacity disabled:opacity-30 sm:right-4"
         style={glass}
       >
-        <ChevronRight size={17} />
+        <ChevronRight size={20} />
       </button>
 
       {/* dots kiểu visionOS — chấm active kéo dài */}
@@ -1668,7 +1695,7 @@ export function ProjectSelect({
                       </span>
                     )}
                   </span>
-                  <ArrowRight size={15} className="shrink-0 self-center text-[var(--t4)]" />
+                  <ArrowRight size={20} className="shrink-0 self-center text-[var(--t4)]" />
                 </>
               ) : (
                 <>
@@ -1722,7 +1749,7 @@ export function ProjectSelect({
             void choose({ kind: 'flow', flow: f });
           }
         }}
-        // hover thẻ 1.02 + lift 200ms (phiếu home-overview-card ④.3, khớp SPEC-HOVER-FOCUS-IDF: thẻ 1.02 + lift 2px 200ms)
+        // hover thẻ 1.02 + lift var(--nhip-bang) (phiếu home-overview-card ④.3, khớp SPEC-HOVER-FOCUS-IDF: thẻ 1.02 + lift 2px var(--nhip-bang))
         className="group cursor-pointer overflow-hidden text-left transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:scale-[1.02]"
         style={{
           borderRadius: 'var(--radius-xl)',
@@ -1747,7 +1774,7 @@ export function ProjectSelect({
               className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
               style={darkPill}
             >
-              <ImagePlus size={13} />
+              <ImagePlus size={16} />
             </button>
             <button
               type="button"
@@ -1759,7 +1786,7 @@ export function ProjectSelect({
               className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
               style={darkPill}
             >
-              <Info size={13} />
+              <Info size={16} />
             </button>
             {/* "Tổng quan" — /projects/[id]/overview của ĐÚNG dự án (id ổn định, Task #18) */}
             <button
@@ -1772,7 +1799,7 @@ export function ProjectSelect({
               className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
               style={darkPill}
             >
-              <ArrowRight size={13} />
+              <ArrowRight size={16} />
             </button>
           </div>
         </div>
@@ -1806,7 +1833,7 @@ export function ProjectSelect({
                 onClick={() => void saveStatus(f.id)}
                 className="grid h-5 w-5 shrink-0 place-items-center text-white/85 hover:text-white"
               >
-                <Check size={12} />
+                <Check size={14} />
               </button>
             </div>
           ) : (
@@ -1856,6 +1883,15 @@ export function ProjectSelect({
    * lời lỗi #5 "card nghèo" — trước đây hầu hết thẻ là flow rời KHÔNG có `projectId` thật nên
    * `ProjectOverviewCard` không có gì để fetch; nay thẻ LUÔN có `projectId` thật.
    */
+  /* ═══ VIỆC 1+2 (20/08) · MỘT KHỔ THẺ CHO CẢ LƯỚI ════════════════════════════════════════
+     Trước phiếu này lưới có BA khổ khác nhau đứng cạnh nhau: ô "Dự án mới" 4/4.1 · thẻ dự án
+     (ảnh 4/3 **+** một khối chữ nền `--card` cao thêm ~85px) · ngăn "Bản nháp" 4/4.1 ⇒ đỉnh
+     thẻ hàng dưới không bao giờ trùng nhau, và thẻ dự án đọc ra là HAI vật dán vào nhau.
+     Nay MỘT tỉ lệ khai một chỗ, cả ba loại thẻ dùng chung ⇒ đỉnh thẻ · chiều cao quang học
+     bằng nhau theo cấu tạo. `4 / 5` (không phải 4/4.1) vì thẻ dự án nay ôm TRỌN cả phần chữ
+     bên trong một mặt ảnh — cần thêm chiều cao, và khổ dọc là khổ editorial đúng gu. */
+  const THE_TY_LE = '4 / 5';
+
   const renderProjectTile = (group: ProjectGroup) => {
     const rep = group.flows[0];
     const stage = getLastStage(group.projectId) ?? getLastStage(rep.id);
@@ -1908,19 +1944,29 @@ export function ProjectSelect({
             onNoteDrop(noteId, group.projectId);
           }
         }}
-        className={`group cursor-pointer overflow-hidden text-left ${reduce ? '' : 'transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:scale-[1.02]'}`}
+        data-the-du-an=""
+        className={`group relative cursor-pointer overflow-hidden text-left ${reduce ? '' : 'transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:scale-[1.02]'}`}
+        /* ═══ VIỆC 2 (20/08) · THẺ DỰ ÁN LÀ **MỘT MẶT LIỀN** ══════════════════════════════
+           ⛔ BÁC bản cũ: khối ảnh 4/3 rồi một khối chữ nền `--card` đặc dán ngay dưới ⇒ mắt
+           đọc ra ĐƯỜNG NỐI NGANG CỨNG chia thẻ làm hai vật, mà đường nối đó KHÔNG mang nghĩa
+           gì (không phải ranh giới ngữ nghĩa — cùng một dự án ở cả hai nửa).
+           ⇒ Nay ảnh phủ TRỌN thẻ, và chữ đứng trên **lớp phủ chuyển sắc** dựng thẳng từ đáy
+           lên: đặc ở chân chữ, tan dần về 0 ở giữa thẻ. Không có mép nào cả — ảnh · không khí
+           · vùng chữ là một dải liên tục.
+           🔴 Chuyển sắc này TỒN TẠI VÌ TƯƠNG PHẢN, không phải vì đẹp: nó là thứ giữ chữ trắng
+           đọc được **bất kể ảnh bìa sáng tới đâu**. Vùng chữ nằm trọn trong dải α ≥ 0,90 nên
+           nền hiệu dụng dưới chân chữ ≈ #22211f kể cả khi ảnh là trắng tinh (0,9·10 + 0,1·255
+           = 34,5) ⇒ tương phản ~15:1, dư ngưỡng 4,5. Số đo thật ghi ở báo cáo phiên. */
         style={{
+          aspectRatio: THE_TY_LE,
           borderRadius: 'var(--radius-xl)',
-          // v4 (13/08, phiếu home-bento-v4.md ④.3, lỗi #6) — trước hardcode '#141210' (đen bất kể
-          // theme, đúng bug "theme sáng không đen thui" Hoà chê); nay theo token card/border/bóng
-          // sẵn có — card THEO ĐÚNG theme app, không còn khối đen lạc giữa nền giấy sáng.
           border: noteArmed ? '1px solid var(--accent)' : '1px solid var(--border)',
           background: 'var(--card)',
           boxShadow: noteArmed ? '0 0 0 3px var(--accent-soft), var(--shadow-node)' : 'var(--shadow-node)',
           opacity: busy ? 0.6 : 1,
         }}
       >
-        <div className="relative" style={{ aspectRatio: '4 / 3' }}>
+        <div className="absolute inset-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={coverOf(rep)} alt="" draggable={false} className="h-full w-full object-cover" />
           {/* chip chặng đang dở (lỗi #5) — badge nổi trên ảnh, GIỐNG dòng "Đang dở · …" mà
@@ -1992,7 +2038,7 @@ export function ProjectSelect({
               className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
               style={darkPill}
             >
-              <ImagePlus size={13} />
+              <ImagePlus size={16} />
             </button>
             <button
               type="button"
@@ -2004,7 +2050,7 @@ export function ProjectSelect({
               className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
               style={darkPill}
             >
-              <Info size={13} />
+              <Info size={16} />
             </button>
             <button
               type="button"
@@ -2016,7 +2062,7 @@ export function ProjectSelect({
               className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
               style={darkPill}
             >
-              <ArrowRight size={13} />
+              <ArrowRight size={16} />
             </button>
           </div>
         </div>
@@ -2049,28 +2095,48 @@ export function ProjectSelect({
   };
 
   const searchGrid = flows && (
-    <div className="w-full" data-tour="project-gallery">
-      {/* thanh tìm kiếm + lọc theo dự án */}
-      <div className="mb-5 flex flex-wrap items-center justify-center gap-2.5">
-        <div className="flex items-center gap-2 rounded-full px-3.5 py-2" style={glass}>
-          <Search size={14} className="shrink-0 text-[var(--t4)]" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={en ? 'Search name, note, project…' : 'Tìm tên, ghi chú, dự án…'}
-            className="w-48 bg-transparent text-[length:var(--fs-sm)] text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none sm:w-56"
-          />
-          {query && (
-            <button
-              type="button"
-              aria-label={en ? 'Clear search' : 'Xoá tìm kiếm'}
-              onClick={() => setQuery('')}
-              className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[var(--t4)] hover:text-[var(--t1)]"
-            >
-              <X size={12} />
-            </button>
-          )}
-        </div>
+    /* ═══ VIỆC 1 (20/08) · MỘT LƯỚI DUY NHẤT ═══════════════════════════════════════════════
+       🔴 Đo trên app thật 1440×900 TRƯỚC phiếu này: đầu đề "01 · Dự án" đứng ở x = ô+14
+       (`px-3.5` do DongStudioHome cấp), hàng điều khiển CĂN GIỮA (`justify-center` — không
+       bám mép nào cả), lưới thẻ ở x = ô+16 (`px-3` của vỏ bentoBox + `px-1` của lưới). Ba
+       thứ thuộc CÙNG một khối mà mỗi thứ tự khai một mép ⇒ lệch nhìn thấy được.
+       ⇒ Nay MÉP TRÁI khai ĐÚNG MỘT CHỖ: biến `--xuong-mep` do khối tiêu điểm cấp
+       (DongStudioHome `projectTile`). Đầu đề · hàng điều khiển · lưới thẻ · thẻ nháp đều
+       đọc chung biến đó ⇒ lệch = 0px theo cấu tạo, không phải theo con mắt.
+       ⛔ CẤM dịch tay từng thẻ: mọi `px-*` ngang bên trong khối này đã gỡ; thêm lại một cái
+       là mép trái tách đôi trở lại. Ngoài Home (`bentoBox=false`) biến không tồn tại ⇒ rơi
+       về `4px`, đúng bằng `px-1` cũ, bố cục trang riêng KHÔNG đổi. */
+    <div className="w-full" data-tour="project-gallery" style={{ paddingInline: 'var(--xuong-mep, 4px)' }}>
+      {/* thanh tìm kiếm + lọc theo dự án
+          P-V 17/08 — ô SEARCH TÁCH lên AppChrome top bar (SearchProjectsInput.tsx). Ở bento (ô A
+          của DongStudioHome, `bentoBox=true`) KHÔNG render pill ở đây nữa để tránh 2 ô tìm cùng
+          trang; nơi khác (nếu còn) vẫn giữ ô cũ. Store chung `useHomeSearch` nên filter khớp
+          thời gian thực dù đứng ở đâu. */}
+      <div
+        data-xuong-dieukhien=""
+        className={`mb-4 flex flex-wrap items-center gap-2.5 ${bentoBox ? 'justify-start' : 'justify-center'}`}
+      >
+        {!bentoBox && (
+          <div className="flex items-center gap-2 rounded-full px-3.5 py-2" style={glass}>
+            <Search size={14} className="shrink-0 text-[var(--t4)]" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={en ? 'Search name, note, project…' : 'Tìm tên, ghi chú, dự án…'}
+              className="w-48 bg-transparent text-[length:var(--fs-sm)] text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none sm:w-56"
+            />
+            {query && (
+              <button
+                type="button"
+                aria-label={en ? 'Clear search' : 'Xoá tìm kiếm'}
+                onClick={() => setQuery('')}
+                className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[var(--t4)] hover:text-[var(--t1)]"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        )}
         <select
           value={projFilter}
           onChange={(e) => setProjFilter(e.target.value)}
@@ -2097,7 +2163,12 @@ export function ProjectSelect({
       {/* BENTO v3 — trong ô A, KHÔNG tự cuộn riêng (`max-h-[56vh]` tính theo VIEWPORT, sai khi
           nhét vào khung nhỏ) — nhường việc cuộn cho container ô A ở DongStudioHome.tsx (root
           wrapper bên dưới đặt `overflow-y-auto h-full`, MỘT vùng cuộn duy nhất cho cả card). */}
-      <div className={`grid grid-cols-2 gap-4 px-1 pb-2 sm:grid-cols-3 lg:grid-cols-4 ${bentoBox ? '' : 'max-h-[56vh] overflow-y-auto'}`}>
+      <div
+        data-xuong-luoi=""
+        /* VIỆC 1 — `px-1` GỠ: mép trái nay do `--xuong-mep` ở khối cha cấp (xem đầu searchGrid).
+           Rãnh ngang/dọc là MỘT giá trị `gap-4`, không có ngoại lệ nào. */
+        className={`grid grid-cols-2 gap-4 pb-2 sm:grid-cols-3 lg:grid-cols-4 ${bentoBox ? '' : 'max-h-[56vh] overflow-y-auto'}`}
+      >
         {/* tile "+ Dự án mới" luôn đứng đầu — không lệ thuộc filter */}
         <div
           role="button"
@@ -2133,7 +2204,7 @@ export function ProjectSelect({
               className="grid h-10 w-10 place-items-center rounded-full"
               style={{ border: `1.5px dashed ${ACCENT}`, color: ACCENT }}
             >
-              <Plus size={17} />
+              <Plus size={20} />
             </span>
             <span className="text-[length:var(--fs-sm)] font-semibold text-[var(--t1)]">
               {en ? 'New project' : 'Dự án mới'}
@@ -2179,7 +2250,7 @@ export function ProjectSelect({
           >
             <div className="flex flex-col items-center gap-1.5 px-3 text-center">
               <span className="grid h-10 w-10 place-items-center rounded-full text-[var(--t3)]" style={{ background: 'var(--field)' }}>
-                <Layers size={17} />
+                <Layers size={20} />
               </span>
               <span className="font-mono text-[length:var(--fs-md)] font-semibold leading-none text-[var(--t1)]">
                 {draftFlows.length}
@@ -2225,7 +2296,7 @@ export function ProjectSelect({
                 className="grid h-10 w-10 place-items-center rounded-full"
                 style={{ border: '1.5px dashed rgba(127,127,127,0.55)', color: 'var(--t3)' }}
               >
-                <ChevronLeft size={17} className="rotate-90" />
+                <ChevronLeft size={20} className="rotate-90" />
               </span>
               <span className="text-[length:var(--fs-sm)] font-semibold text-[var(--t1)]">
                 {en ? 'Collapse' : 'Thu gọn'}
@@ -2307,7 +2378,7 @@ export function ProjectSelect({
             className="grid h-9 w-9 place-items-center rounded-full text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
             style={glass}
           >
-            <Info size={15} aria-hidden="true" />
+            <Info size={18} aria-hidden="true" />
           </button>
           <LangToggle variant="ghost" />
         </div>
@@ -2334,7 +2405,15 @@ export function ProjectSelect({
         initial={{ opacity: 0, y: reduce ? 0 : 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: easeApple }}
-        className="relative z-10 flex w-full max-w-5xl flex-col items-center"
+        /* LANE A (20/08) — `flex-1 min-h-0` khi ở ô bento. Đo được: khối này là con của một cột
+           flex cao 386px nhưng KHÔNG có `flex-1` nên nó tự co về chiều cao nội dung (37px lúc
+           đang tải) ⇒ mọi khối trạng thái bên trong dù khai `h-full` cũng chỉ cao 37px, và đó
+           chính là "vòng xoay trong hộp trắng khổng lồ": không phải khối trạng thái nhỏ, mà là
+           nó KHÔNG ĐƯỢC CẤP chiều cao để lấp đầy. Chỉ bật ở `bentoBox` để không đổi bố cục màn
+           chọn dự án toàn màn (nơi khối căn giữa theo chiều dọc là đúng). */
+        className={
+          'relative z-10 flex w-full max-w-5xl flex-col items-center' + (bentoBox ? ' min-h-0 flex-1' : '')
+        }
       >
         {/* pill kính chào user + tiêu đề (kiểu thanh kính TitleSequence) — đè lên ẢNH NỀN
             ambient khi carousel hiện, nên MÀU CHỮ đi qua heroPlan (đo nền thật) thay vì
@@ -2401,7 +2480,7 @@ export function ProjectSelect({
                   className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-[var(--t2)] transition-colors hover:text-[var(--t1)] disabled:cursor-not-allowed disabled:opacity-45"
                   style={showAmbient ? { ...glass, ...adaptiveTextStyle(heroPlan) } : glass}
                 >
-                  {syncing ? <Loader2 size={13} className="animate-spin" /> : <Link2 size={13} />}
+                  {syncing ? <Loader2 size={18} className="animate-spin" /> : <Link2 size={18} />}
                   {en ? 'Sync progress' : 'Đồng bộ tiến độ'}
                 </button>
               )}
@@ -2443,7 +2522,7 @@ export function ProjectSelect({
               WebkitBackdropFilter: 'blur(var(--blur-strong)) saturate(150%)',
             }}
           >
-            <VitalsIcon size={15} className="shrink-0" style={{ color: ACCENT }} />
+            <VitalsIcon size={16} className="shrink-0" style={{ color: ACCENT }} />
             <span
               className="shrink-0 text-[length:var(--fs-xs)] uppercase text-[var(--t4)]"
               style={{ letterSpacing: '0.22em', ...(showAmbient ? adaptiveTextStyle(heroPlan, true) : null) }}
@@ -2502,7 +2581,7 @@ export function ProjectSelect({
               className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-35"
               style={{ background: ACCENT }}
             >
-              {chatSending ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+              {chatSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
             </button>
           </div>
 
@@ -2549,7 +2628,7 @@ export function ProjectSelect({
                       onClick={() => setChatCollapsed(true)}
                       className="grid h-6 w-6 place-items-center rounded-full text-[var(--t4)] hover:text-[var(--t1)]"
                     >
-                      <X size={13} />
+                      <X size={14} />
                     </button>
                   </div>
                   <div ref={chatScrollRef} className="max-h-[34vh] space-y-2.5 overflow-y-auto px-3.5 py-3.5">
@@ -2584,12 +2663,14 @@ export function ProjectSelect({
 
         {/* thân màn theo trạng thái — reduce-motion THẮNG TẤT CẢ (kể cả override toggle,
             xem viewToggle), rồi mới tới effectiveGrid (J-4c mặc định HOẶC override thủ công). */}
+        {/* LANE A (20/08) — ba khối trạng thái đi qua MỘT ngăn `flex-1 min-h-0 w-full`: chúng
+            phải chiếm đúng chỗ mà nội dung thật sẽ chiếm, không đứng lơ lửng giữa ô. */}
         {loadError ? (
-          errorBlock
+          <div className="min-h-0 w-full flex-1">{errorBlock}</div>
         ) : flows === null ? (
-          loadingBlock
+          <div className="min-h-0 w-full flex-1">{loadingBlock}</div>
         ) : flows.length === 0 ? (
-          emptyBlock
+          <div className="min-h-0 w-full flex-1">{emptyBlock}</div>
         ) : reduce ? (
           flatList
         ) : effectiveGrid ? (
@@ -2660,7 +2741,7 @@ export function ProjectSelect({
                   className="grid h-8 w-8 place-items-center rounded-full text-[var(--t3,var(--t4))] hover:text-[var(--t1)]"
                   style={glass}
                 >
-                  <X size={15} />
+                  <X size={18} />
                 </button>
               </div>
 
@@ -2684,9 +2765,9 @@ export function ProjectSelect({
                   style={{ ...glass, border: '1.5px dashed rgba(106,87,245,0.53)' }}
                 >
                   {uploading ? (
-                    <Loader2 size={15} className="animate-spin" style={{ color: ACCENT }} />
+                    <Loader2 size={20} className="animate-spin" style={{ color: ACCENT }} />
                   ) : (
-                    <Upload size={15} style={{ color: ACCENT }} />
+                    <Upload size={20} style={{ color: ACCENT }} />
                   )}
                   {uploading
                     ? en
@@ -2768,7 +2849,7 @@ export function ProjectSelect({
           }}
         >
           <div className="flex items-center gap-2.5 rounded-full px-5 py-3" style={glass}>
-            <Loader2 size={15} className="animate-spin" style={{ color: ACCENT }} />
+            <Loader2 size={20} className="animate-spin" style={{ color: ACCENT }} />
             <span className="text-[length:var(--fs-sm)] text-[var(--t1)]">
               {en ? 'Opening project…' : 'Đang mở dự án…'}
             </span>

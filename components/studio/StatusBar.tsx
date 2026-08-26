@@ -27,8 +27,8 @@
  * luôn-hiện riêng (VitalsChatBubble), gộp 2 kiến trúc khác nhau ngoài phạm vi đợt này.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Loader2, Save, ShieldAlert, HardDriveDownload, Eye } from 'lucide-react';
+import { useMemo } from 'react';
+import { Loader2, Save, ShieldAlert, HardDriveDownload, Eye, Magnet } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { useT } from '@/lib/i18n';
 import { getDefinition } from '@/lib/nodes/registry';
@@ -38,9 +38,8 @@ import { useCadStore, type SnapSettings } from '@/lib/cad/store';
 import { useStageMode } from '@/lib/stage-mode';
 import { useSaveStatus } from '@/lib/save-status';
 import { useProjectPresence } from '@/lib/project-presence-ui';
-import { useVitalsUi } from '@/lib/vitals-ui';
-import VitalsIcon from './VitalsIcon';
 import type { Phase } from '@/lib/phases';
+import Tooltip from '@/components/ui/Tooltip';
 
 interface Props {
   stage: Phase;
@@ -69,7 +68,51 @@ function activeSnapKindsLabel(snap: SnapSettings): string {
   return active.length > 0 ? active.map((k) => SNAP_KIND_LABEL[k]).join(', ') : 'không loại nào';
 }
 
-const HOVER_DELAY_MS = 150;
+/**
+ * `SnapIndicator` (2D-STATUSBAR-DENSITY, phiên 20/08 tiếp) — thay dòng chữ liệt kê đầy đủ
+ * ("Bắt điểm: Đầu mút, Giữa cạnh, …") vốn tràn/cụt ở Chuyên bằng MỘT badge gọn, mở đủ danh
+ * sách qua `Tooltip` sẵn có (hover/focus, [Đ2] — không dựng cơ chế hiện/ẩn thứ hai).
+ *
+ * Sơ phác (`dense=false`): chỉ 1 chấm nam châm mờ (`--t4`) — "barely register", đúng luật
+ * nhẹ hơn của mode này. Chuyên (`dense=true`): icon + SỐ LƯỢNG (tabular-nums, `--t3`) — đặc
+ * hơn nhưng vẫn 1 cụm ngắn, không phải chuỗi phẩy tràn dòng. Cả hai bấm/trỏ vào đều mở
+ * `Tooltip` liệt kê đủ tên — không mất thông tin, chỉ đổi MẬT ĐỘ mặc định.
+ */
+function SnapIndicator({ snap, dense }: { snap: SnapSettings; dense: boolean }) {
+  if (!snap.enabled) {
+    return (
+      <span style={{ whiteSpace: 'nowrap', color: 'var(--t4)', display: 'flex', alignItems: 'center', gap: 5 }}>
+        <Magnet size={14} style={{ opacity: 0.5 }} />
+        {dense && 'Bắt điểm: tắt'}
+      </span>
+    );
+  }
+  const activeKeys = (Object.keys(SNAP_KIND_LABEL) as (keyof typeof SNAP_KIND_LABEL)[]).filter((k) => snap[k]);
+  return (
+    <Tooltip
+      label="Bắt điểm"
+      desc={activeKeys.length > 0 ? activeSnapKindsLabel(snap) : 'không loại nào'}
+      side="top"
+    >
+      <span
+        tabIndex={0}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          whiteSpace: 'nowrap',
+          color: dense ? 'var(--t3)' : 'var(--t4)',
+          cursor: 'default',
+          outline: 'none',
+        }}
+      >
+        <Magnet size={dense ? 12 : 11} />
+        {dense && <span style={{ fontVariantNumeric: 'tabular-nums' }}>{activeKeys.length}</span>}
+      </span>
+    </Tooltip>
+  );
+}
+
 
 /** 2.1.8.n — "HH:MM" giờ lưu gần nhất, không giây (không cần chính xác tới giây cho mục đích
  * xác nhận thị giác "đã lưu chưa"). */
@@ -88,45 +131,17 @@ export default function StatusBar({ stage, hidden }: Props) {
   const cursorWorld = useCadLiveStatus((s) => s.cursorWorld);
   const lastViolationCount = useCadLiveStatus((s) => s.lastViolationCount);
   const snap = useCadStore((s) => s.snap);
+  const cadMode = useCadStore((s) => s.cadMode);
   const saveState = useSaveStatus((s) => s.status);
   const lastSavedAt = useSaveStatus((s) => s.lastSavedAt);
   const diskStatus = useSaveStatus((s) => s.diskStatus);
   const diskMessage = useSaveStatus((s) => s.diskMessage);
   const otherTabOpen = useProjectPresence((s) => s.otherTabOpen);
 
-  // 05/08 — panel Vitals nay mount DUY NHẤT ở `StageSwitcher.tsx` (ổ ① header). Ở đây chỉ ĐỌC
-  // `panelOpen` để ô gõ nhanh không tự co lại khi panel đang mở, và gọi `open()` khi người dùng
-  // gửi câu hỏi. KHÔNG mount panel (xem lib/vitals-ui.ts + SO-KIEM-TONG §1).
-  const panelOpen = useVitalsUi((s) => s.panelOpen);
-  const openVitals = useVitalsUi((s) => s.open);
-
-  const [expanded, setExpanded] = useState(false);
-  const [draft, setDraft] = useState('');
-  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
-
-  // Panel đã mở (vd qua ⌘J) → vùng giữa cũng coi như "đang nở", tránh nhấp nháy co lại rồi mở.
-  useEffect(() => {
-    if (panelOpen) setExpanded(true);
-  }, [panelOpen]);
-
-  const onZoneEnter = () => {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    hoverTimer.current = setTimeout(() => setExpanded(true), HOVER_DELAY_MS);
-  };
-  const onZoneLeave = () => {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    if (panelOpen) return; // popover đầy đủ đang mở — đừng co ô gọn lại dưới nó
-    if (document.activeElement === inputRef.current) return; // đang gõ — đừng co khi rê chuột ra ngoài
-    hoverTimer.current = setTimeout(() => setExpanded(false), HOVER_DELAY_MS);
-  };
-
-  const submit = () => {
-    const text = draft.trim();
-    setDraft('');
-    openVitals(text, text.length > 0);
-  };
+  // 20/08 (COHERENCE-SHELL) — ĐÃ GỠ toàn bộ state của chip Vitals (`panelOpen`/`openVitals`/
+  // `expanded`/`draft`/hover-timer/`wrapRef`/`inputRef`/`submit`). Lý do đầy đủ ở khối chú
+  // thích "GIỮA" trong phần dựng hình bên dưới: chip trỏ vào một panel không còn mount từ
+  // 17/08. Giữ state lại là để một cỗ máy chạy không cho ai cả.
 
   // 2.2.86 (30/07) — đếm theo FlowRun (lượt chạy), khớp badge "Việc" ở AppChrome.tsx (Luật Đồng
   // Bộ #6, tránh 2 mặt tiền đếm khác đơn vị — trước đếm Job/node lẻ, ra số khác badge trên bar).
@@ -197,100 +212,22 @@ export default function StatusBar({ stage, hidden }: Props) {
             X {Math.round(cursorWorld.x)}&nbsp;&nbsp;Y {Math.round(cursorWorld.y)} mm
           </span>
         )}
-        {stage === 'concept' && (
-          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title="Cấu hình bắt điểm đang bật — đổi ở nút nam châm trên Toolbelt">
-            {snap.enabled ? `Bắt điểm: ${activeSnapKindsLabel(snap)}` : 'Bắt điểm: tắt'}
-          </span>
-        )}
+        {stage === 'concept' && <SnapIndicator snap={snap} dense={cadMode !== 'sketch'} />}
       </div>
 
-      {/* GIỮA — Vitals, điểm gọi chính thức */}
-      <div
-        ref={wrapRef}
-        onMouseEnter={onZoneEnter}
-        onMouseLeave={onZoneLeave}
-        style={{ position: 'relative', display: 'flex', justifyContent: 'center', flex: '0 0 auto' }}
-      >
-        <div
-          role="button"
-          tabIndex={0}
-          aria-label="Vitals — hỏi trợ lý (⌘J / Ctrl+J)"
-          title="Vitals — hỏi trợ lý (⌘J / Ctrl+J)"
-          onClick={() => {
-            if (!expanded) setExpanded(true);
-            inputRef.current?.focus();
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') submit();
-          }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 7,
-            height: 24,
-            padding: expanded ? '0 4px 0 10px' : '0 12px',
-            borderRadius: 999,
-            // PHIẾU ĐỢT 7 A2 — chip chìm hẳn vào StatusBar (viền `--border` mờ + nền trong suốt lúc
-            // rảnh), không ai thấy đây là điểm gọi CHÍNH THỨC. Viền tím cố định + nền tím nhạt lúc
-            // rảnh cho nó nổi lên khỏi thanh trạng thái; lúc nở thì đổi sang `--field` (đủ tương
-            // phản cho input, không lẫn với 2 vùng chữ khác trên bar).
-            border: '1px solid var(--accent)',
-            background: expanded ? 'var(--field)' : 'var(--accent-soft)',
-            color: 'var(--accent)',
-            cursor: 'pointer',
-            width: expanded ? 280 : 92,
-            transition: 'width .16s ease, padding .16s ease, background .16s ease',
-            overflow: 'hidden',
-          }}
-        >
-          <VitalsIcon size={14} />
-          {expanded ? (
-            <>
-              <input
-                ref={inputRef}
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.stopPropagation();
-                    submit();
-                  }
-                }}
-                placeholder="Hỏi Vitals…"
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  border: 'none',
-                  outline: 'none',
-                  background: 'transparent',
-                  color: 'var(--t1)',
-                  fontSize: 11.5,
-                }}
-              />
-              <span style={{ fontSize: 9.5, color: 'var(--t4)', whiteSpace: 'nowrap', paddingRight: 4 }}>⌘J</span>
-            </>
-          ) : (
-            <>
-              <span style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>Vitals</span>
-              {/* chấm sống — tái dùng đúng cỗ máy `vitals-state-dot--idle` (VitalsStateBadge.tsx),
-                  chỉ ghi đè nhịp thở 2s theo brief thay vì 4.4s mặc định; reduced-motion đã tắt
-                  animation qua class này ở globals.css nên không cần xử lý riêng ở đây. */}
-              <span
-                className="vitals-state-dot vitals-state-dot--idle"
-                style={{ width: 6, height: 6, animationDuration: '2s' }}
-                aria-hidden="true"
-              />
-            </>
-          )}
-        </div>
-
-        {/* 05/08 — ĐÃ GỠ `<VitalsGesturePanel>` khỏi đây (Hoà chốt: giữ MỘT bản ở header).
-            Panel mount duy nhất tại `StageSwitcher.tsx`; ô gõ nhanh trên đây gọi `openVitals()`
-            và panel ở header nhận `initialInput`/`autoSend`. Ô gõ + hover-nở kiểu Siri GIỮ
-            NGUYÊN — đó là cơ chế riêng (gõ thẳng, không phải mở panel rồi mới gõ), không phải
-            bản sao của panel. */}
-      </div>
+      {/* GIỮA — 🔴 ĐÃ GỠ CHIP VITALS (20/08, phiếu COHERENCE-SHELL).
+          Nó là **nút bấm-không-ra-gì**, đo được: chip gọi `useVitalsUi.open()`, và bên NHẬN
+          trạng thái đó là `VitalsGesturePanel` — mount duy nhất ở `StageSwitcher.tsx`, mà
+          StageSwitcher đã bị gỡ khỏi header 17/08; nay `grep -rn "StageSwitcher" components app`
+          = 0 nơi mount. Nghĩa là từ 17/08 tới nay, gõ câu hỏi vào ô này rồi Enter thì câu hỏi
+          ĐI VÀO HƯ KHÔNG. Phím ⌘J cũng đăng ký trong StageSwitcher nên đã chết cùng lúc — không
+          phải mất ở lần gỡ này.
+          Vitals nay có ĐÚNG MỘT chỗ đứng: khẩu độ mép trên `components/studio/VitalsAperture.tsx`
+          (chốt 16/08 — "mỗi màn ĐÚNG MỘT Vitals"). Giữ chip lại là để hai lối vào trên một màn
+          mà một trong hai không chạy.
+          CÒN NỢ, KHÔNG làm ở phiếu này: ô GÕ NHANH (gõ thẳng ở đáy, không phải mở panel rồi mới
+          gõ) là cơ chế RIÊNG và đáng giá. Muốn cứu thì cấp cho `VitalsChatSurface` một câu mở
+          đầu rồi nối lại — đừng mount lại panel cũ. */}
 
       {/* PHẢI — trạng thái hệ thống. A2 (DS-A 14/08): `overflow:hidden` cùng lý do cánh trái —
           justify flex-end làm nội dung thừa tràn về PHÍA TRÁI, đè lên pill Vitals; mỗi mục con
@@ -316,7 +253,7 @@ export default function StatusBar({ stage, hidden }: Props) {
         )}
         {stage === 'render' && jobsActive > 0 && (
           <span style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
-            <Loader2 size={12} className="animate-spin" /> {jobsActive} đang render
+            <Loader2 size={14} className="animate-spin" /> {jobsActive} đang render
           </span>
         )}
         {showSave && (
@@ -326,7 +263,7 @@ export default function StatusBar({ stage, hidden }: Props) {
           // của cả StatusBar (thuộc đợt sửa token 7.1.23 riêng, đang chờ Hoà gật, ngoài phạm vi
           // việc gấp này).
           <span style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', fontSize: 12, lineHeight: 1.5, minWidth: 0 }}>
-            <Save size={12} style={{ flexShrink: 0 }} />
+            <Save size={14} style={{ flexShrink: 0 }} />
             {/* A2 — khổ hẹp: chữ tự cụt bằng ellipsis thay vì tràn đè pill Vitals */}
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {saveState === 'saving' ? 'Đang lưu…' : lastSavedAt ? `Đã lưu lúc ${formatHHMM(lastSavedAt)}` : 'Đã lưu'}
@@ -348,7 +285,7 @@ export default function StatusBar({ stage, hidden }: Props) {
             }}
             title={diskMessage ?? undefined}
           >
-            <HardDriveDownload size={12} />
+            <HardDriveDownload size={14} />
             {diskStatus === 'syncing' ? 'Đang ghi đĩa…' : diskStatus === 'error' ? 'Chưa ghi ra đĩa' : 'Đĩa đồng bộ'}
           </span>
         )}
@@ -362,7 +299,7 @@ export default function StatusBar({ stage, hidden }: Props) {
             style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', color: 'var(--t3)', minWidth: 0 }}
             title="Dự án này đang mở ở tab/cửa sổ khác — sửa đồng thời có thể ghi đè lẫn nhau"
           >
-            <Eye size={12} style={{ flexShrink: 0 }} />
+            <Eye size={14} style={{ flexShrink: 0 }} />
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>Đang mở nơi khác</span>
           </span>
         )}
@@ -377,7 +314,7 @@ export default function StatusBar({ stage, hidden }: Props) {
             }}
             title="Số vi phạm quy chuẩn — lần kiểm gần nhất (Kiểm chuẩn, chạy tay)"
           >
-            <ShieldAlert size={12} />
+            <ShieldAlert size={14} />
             {lastViolationCount} lỗi
           </span>
         )}

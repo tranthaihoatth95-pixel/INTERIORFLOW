@@ -1,0 +1,380 @@
+[
+ {
+  "ten": "Login",
+  "u": "/login",
+  "url": "/login",
+  "chu": 98,
+  "lopChrome": 0,
+  "daiChrome": [],
+  "canvasW": 0,
+  "canvasH": 0,
+  "vw": 1440,
+  "vh": 900,
+  "nut": 11,
+  "svgTong": 8,
+  "svgLucide": 4,
+  "svgKhac": 4,
+  "cỡChữ": 4,
+  "tronNgonNgu": false,
+  "jargon": [],
+  "rail": false,
+  "api": []
+ },
+ {
+  "ten": "Home",
+  "u": "/",
+  "url": "/",
+  "chu": 98,
+  "lopChrome": 0,
+  "daiChrome": [],
+  "canvasW": 0,
+  "canvasH": 0,
+  "vw": 1440,
+  "vh": 900,
+  "nut": 11,
+  "svgTong": 8,
+  "svgLucide": 4,
+  "svgKhac": 4,
+  "cỡChữ": 4,
+  "tronNgonNgu": false,
+  "jargon": [],
+  "rail": false,
+  "api": [
+   "401 auth/me"
+  ]
+ },
+ {
+  "ten": "Projects",
+  "u": "/projects",
+  "url": "/projects",
+  "chu": 801,
+  "lopChrome": 3,
+  "daiChrome": [
+   "0/900",
+   "344/543",
+   "838/62"
+  ],
+  "canvasW": 0,
+  "canvasH": 0,
+  "vw": 1440,
+  "vh": 900,
+  "nut": 46,
+  "svgTong": 42,
+  "svgLucide": 40,
+  "svgKhac": 2,
+  "cỡChữ": 7,
+  "tronNgonNgu": false,
+  "jargon": [
+   "Untitled flow"
+  ],
+  "rail": true,
+  "api": [
+   "401 auth/me",
+   "401 flows",
+   "401 lark-tasks"
+  ]
+ },
+ {
+  "ten": "Project Overview",
+  "u": "/projects/cmsiyfiw30001w9bd7j0gjthn/overview",
+  "url": "/projects/cmsiyfiw30001w9bd7j0gjthn/over",
+  "chu": 893,
+  "lopChrome": 3,
+  "daiChrome": [
+   "0/900",
+   "344/543",
+   "838/62"
+  ],
+  "canvasW": 0,
+  "canvasH": 0,
+  "vw": 1440,
+  "vh": 900,
+  "nut": 42,
+  "svgTong": 45,
+  "svgLucide": 43,
+  "svgKhac": 2,
+  "cỡChữ": 8,
+  "tronNgonNgu": false,
+  "jargon": [
+   "Untitled flow"
+  ],
+  "rail": true,
+  "api": [
+   "401 projects/cmsiyfiw30001w9bd",
+   "401 auth/me",
+   "401 flows"
+  ]
+ },
+ {
+  "ten": "Files",
+  "u": "/files",
+  "url": "/files",
+  "chu": 1423,
+  "lopChrome": 3,
+  "daiChrome": [
+   "0/900",
+   "344/543",
+   "838/62"
+  ],
+  "canvasW": 0,
+  "canvasH": 0,
+  "vw": 1440,
+  "vh": 900,
+  "nut": 57,
+  "svgTong": 50,
+  "svgLucide": 47,
+  "svgKhac": 3,
+  "cỡChữ": 11,
+  "tronNgonNgu": false,
+  "jargon": [
+   "Untitled flow"
+  ],
+  "rail": true,
+  "api": [
+   "401 auth/me",
+   "401 flows",
+   "401 specs"
+  ]
+ },
+ {
+  "ten": "Library",
+  "u": "/library",
+  "url": "/files",
+  "chu": 1987,
+  "lopChrome": 3,
+  "daiChrome": [
+   "0/900",
+   "326/560",
+   "838/62"
+  ],
+  "canvasW": 0,
+  "canvasH": 0,
+  "vw": 1440,
+  "vh": 900,
+  "nut": 58,
+  "svgTong": 51,
+  "svgLucide": 48,
+  "svgKhac": 3,
+  "cỡChữ": 11,
+  "tronNgonNgu": false,
+  "jargon": [
+   "Untitled flow"
+  ],
+  "rail": true,
+  "api": [
+   "401 auth/me",
+   "401 flows",
+   "401 specs"
+  ]
+ },
+ {
+  "ten": "Gallery",
+  "u": "/library/gallery",
+  "url": "/library/gallery",
+  "chu": 1168,
+  "lopChrome": 3,
+  "daiChrome": [
+   "0/900",
+   "344/543",
+   "838/62"
+  ],
+  "canvasW": 0,
+  "canvasH": 0,
+  "vw": 1440,
+  "vh": 900,
+  "nut": 57,
+  "svgTong": 43,
+  "svgLucide": 41,
+  "svgKhac": 2,
+  "cỡChữ": 8,
+  "tronNgonNgu": false,
+  "jargon": [
+   "Untitled flow"
+  ],
+  "rail": true,
+  "api": [
+   "401 auth/me",
+   "401 flows",
+   "401 library"
+  ]
+ },
+ {
+  "ten": "Materials",
+  "u": "/materials",
+  "url": "/materials",
+  "chu": 883,
+  "lopChrome": 4,
+  "daiChrome": [
+   "134/30",
+   "0/900",
+   "344/543",
+   "838/62"
+  ],
+  "canvasW": 0,
+  "canvasH": 0,
+  "vw": 1440,
+  "vh": 900,
+  "nut": 46,
+  "svgTong": 45,
+  "svgLucide": 43,
+  "svgKhac": 2,
+  "cỡChữ": 7,
+  "tronNgonNgu": false,
+  "jargon": [
+   "Untitled flow"
+  ],
+  "rail": true,
+  "api": [
+   "401 auth/me",
+   "401 flows",
+   "401 specs"
+  ]
+ },
+ {
+  "ten": "2D",
+  "u": "/projects/cmsiyfiw30001w9bd7j0gjthn/cad",
+  "url": "/projects/cmsiyfiw30001w9bd7j0gjthn/cad",
+  "chu": 2625,
+  "lopChrome": 3,
+  "daiChrome": [
+   "0/900",
+   "344/543",
+   "838/62"
+  ],
+  "canvasW": 1338,
+  "canvasH": 712,
+  "vw": 1440,
+  "vh": 900,
+  "nut": 101,
+  "svgTong": 108,
+  "svgLucide": 103,
+  "svgKhac": 5,
+  "cỡChữ": 10,
+  "tronNgonNgu": false,
+  "jargon": [
+   "Untitled flow"
+  ],
+  "rail": true,
+  "api": [
+   "401 projects/cmsiyfiw30001w9bd",
+   "401 auth/me",
+   "401 flows"
+  ]
+ },
+ {
+  "ten": "3D",
+  "u": "/projects/cmsiyfiw30001w9bd7j0gjthn/render",
+  "url": "/projects/cmsiyfiw30001w9bd7j0gjthn/rend",
+  "chu": 98,
+  "lopChrome": 0,
+  "daiChrome": [],
+  "canvasW": 0,
+  "canvasH": 0,
+  "vw": 1440,
+  "vh": 900,
+  "nut": 11,
+  "svgTong": 8,
+  "svgLucide": 4,
+  "svgKhac": 4,
+  "cỡChữ": 4,
+  "tronNgonNgu": false,
+  "jargon": [],
+  "rail": false,
+  "api": [
+   "401 auth/me"
+  ]
+ },
+ {
+  "ten": "Present",
+  "u": "/projects/cmsiyfiw30001w9bd7j0gjthn/present",
+  "url": "/projects/cmsiyfiw30001w9bd7j0gjthn/pres",
+  "chu": 989,
+  "lopChrome": 3,
+  "daiChrome": [
+   "0/900",
+   "344/543",
+   "838/62"
+  ],
+  "canvasW": 0,
+  "canvasH": 0,
+  "vw": 1440,
+  "vh": 900,
+  "nut": 54,
+  "svgTong": 55,
+  "svgLucide": 53,
+  "svgKhac": 2,
+  "cỡChữ": 8,
+  "tronNgonNgu": false,
+  "jargon": [
+   "Untitled flow"
+  ],
+  "rail": true,
+  "api": [
+   "401 projects/cmsiyfiw30001w9bd",
+   "401 auth/me",
+   "401 flows"
+  ]
+ },
+ {
+  "ten": "Settings",
+  "u": "/settings",
+  "url": "/settings",
+  "chu": 4243,
+  "lopChrome": 3,
+  "daiChrome": [
+   "0/900",
+   "344/543",
+   "838/62"
+  ],
+  "canvasW": 0,
+  "canvasH": 0,
+  "vw": 1440,
+  "vh": 900,
+  "nut": 107,
+  "svgTong": 75,
+  "svgLucide": 65,
+  "svgKhac": 10,
+  "cỡChữ": 8,
+  "tronNgonNgu": false,
+  "jargon": [
+   "D5",
+   "Untitled flow"
+  ],
+  "rail": true,
+  "api": [
+   "401 auth/me",
+   "401 flows",
+   "401 gu/cad-layout-option"
+  ]
+ },
+ {
+  "ten": "Tasks",
+  "u": "/tasks",
+  "url": "/tasks",
+  "chu": 864,
+  "lopChrome": 3,
+  "daiChrome": [
+   "0/900",
+   "344/543",
+   "838/62"
+  ],
+  "canvasW": 0,
+  "canvasH": 0,
+  "vw": 1440,
+  "vh": 900,
+  "nut": 45,
+  "svgTong": 45,
+  "svgLucide": 43,
+  "svgKhac": 2,
+  "cỡChữ": 7,
+  "tronNgonNgu": false,
+  "jargon": [
+   "Untitled flow"
+  ],
+  "rail": true,
+  "api": [
+   "401 auth/me",
+   "401 flows"
+  ]
+ }
+]

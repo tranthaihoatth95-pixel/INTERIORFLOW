@@ -76,7 +76,7 @@ export default function ThirdPartyLicensesPage() {
           onClick={() => router.back()}
           style={{ ...ghostButtonStyle, display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, marginBottom: 20 }}
         >
-          <ArrowLeft size={13} /> {tr('Quay lại', 'Back')}
+          <ArrowLeft size={18} /> {tr('Quay lại', 'Back')}
         </button>
 
         <div style={{ fontSize: 10, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 6 }}>

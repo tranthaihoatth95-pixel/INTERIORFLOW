@@ -201,11 +201,11 @@ export function StageSelect({ onEnter }: { onEnter: () => void }) {
             style={{ background: COPPER, fontFamily: SANS }}
           >
             {busy ? (
-              <Loader2 size={15} className="animate-spin" />
+              <Loader2 size={20} className="animate-spin" />
             ) : (
               <>
                 {en ? 'Enter canvas' : 'Vào canvas'} · {PHASE_MAP[chosen].label}
-                <ArrowRight size={15} />
+                <ArrowRight size={20} />
               </>
             )}
           </motion.button>

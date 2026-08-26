@@ -1,0 +1,953 @@
+<!-- @dsCard group="Foundations" -->
+<meta charset="utf-8">
+<title>Foundation System Sheet</title>
+
+<style>
+/* ============================================================================
+   TOKEN MIRROR — the ONLY block in this file allowed to contain hex literals.
+   Values copied byte-for-byte from app/globals.css so this sheet renders
+   standalone. If globals.css changes, this block is stale — it is a MIRROR,
+   never a source. Everything below uses var(--…) only.
+   ============================================================================ */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14);
+  --accent-ring:rgba(106,87,245,.55); --on-accent:#ffffff;
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-ui:13px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --tap:32px; --tap-lg:44px; --row:28px; --gap:8px; --pad-card:8px 12px;
+  --blur:22px; --blur-strong:40px; --kinh-nhoe:16px; --kinh-nhoe-sau:24px; --kinh-nhoe-mong:12px;
+  --vl-gan-dac-nhoe:6px;
+  --ease-apple:cubic-bezier(.32,.72,0,1);
+  --dur-fast:.18s; --dur-base:.32s;
+  --nhip-bam:130ms; --nhip-vien:170ms; --nhip-bang:220ms; --nhip-ngu-canh:300ms; --nhip-bien-hinh:460ms;
+  --font-sans:var(--font-sans-app,-apple-system),-apple-system,'SF Pro Text','Segoe UI',Roboto,system-ui,sans-serif;
+}
+:root,:root[data-theme='dark']{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --kinh-mong:rgba(24,24,28,.84); --kinh-vua:rgba(24,24,28,.90); --kinh-dac:rgba(24,24,28,.95);
+  --vl-dac:var(--panel); --vl-gan-dac:rgba(20,20,23,.97);
+  --kinh-mep-sang:rgba(255,255,255,.14); --kinh-vien:rgba(255,255,255,.10);
+  --kinh-chu-phu:#b4b4bd; --vien-mo:rgba(255,255,255,.06); --mo-vo-hieu:.5;
+  --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --nen-mo-panel:rgba(20,20,23,.68); --nen-mo-overlay:rgba(6,6,8,.56);
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --kinh-mong:rgba(252,251,249,.88); --kinh-vua:rgba(252,251,249,.93); --kinh-dac:rgba(253,252,250,.96);
+  --vl-dac:var(--panel); --vl-gan-dac:rgba(250,248,244,.975);
+  --kinh-mep-sang:rgba(255,255,255,.75); --kinh-vien:rgba(0,0,0,.08);
+  --kinh-chu-phu:#5c564d; --vien-mo:rgba(0,0,0,.05); --mo-vo-hieu:.62;
+  --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+  --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --nen-mo-panel:rgba(250,248,244,.70); --nen-mo-overlay:rgba(60,55,48,.28);
+}
+/* === END TOKEN MIRROR — no hex below this line === */
+
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--bg); color:var(--t1);
+  font-family:var(--font-sans);
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+.sheet{max-width:1120px;margin:0 auto;padding:48px 24px 96px;}
+
+/* --- sheet chrome --------------------------------------------------------- */
+.masthead{border-bottom:1px solid var(--border-strong);padding-bottom:24px;margin-bottom:12px;}
+.eyebrow{font-size:var(--fs-xs);font-weight:var(--fw-semi);color:var(--t3);
+  text-transform:uppercase;letter-spacing:.08em;line-height:1.5;margin:0 0 12px;}
+h1{font-size:var(--fs-xl);font-weight:var(--fw-semi);line-height:1.25;letter-spacing:-.02em;margin:0 0 12px;}
+.standfirst{font-size:var(--fs-md);line-height:1.6;color:var(--t2);margin:0;max-width:66ch;}
+
+section{margin-top:64px;scroll-margin-top:24px;}
+h2{font-size:var(--fs-lg);font-weight:var(--fw-semi);line-height:1.3;letter-spacing:-.01em;
+  margin:0 0 8px;display:flex;align-items:baseline;gap:12px;}
+h2 .num{font-size:var(--fs-xs);color:var(--accent);font-variant-numeric:tabular-nums;
+  border:1px solid var(--accent-ring);border-radius:var(--r-1);padding:2px 7px;flex:none;}
+h3{font-size:var(--fs-md);font-weight:var(--fw-semi);line-height:1.5;margin:32px 0 12px;}
+p{font-size:var(--fs-sm);line-height:1.6;color:var(--t2);max-width:76ch;margin:0 0 12px;}
+.lede{font-size:var(--fs-sm);line-height:1.6;color:var(--t3);max-width:76ch;margin:0 0 20px;}
+code,.mono{font-family:var(--font-sans);font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;letter-spacing:0;}
+code{font-size:var(--fs-xs);background:var(--field);border:1px solid var(--vien-mo);
+  border-radius:var(--r-1);padding:1px 5px;color:var(--t1);}
+
+table{width:100%;border-collapse:collapse;margin:0 0 12px;font-size:var(--fs-xs);}
+th{text-align:left;font-weight:var(--fw-semi);color:var(--t3);font-size:var(--fs-2xs);
+  text-transform:uppercase;letter-spacing:.06em;line-height:1.5;
+  padding:0 12px 8px 0;border-bottom:1px solid var(--border-strong);white-space:nowrap;}
+td{padding:9px 12px 9px 0;border-bottom:1px solid var(--vien-mo);color:var(--t2);
+  line-height:1.5;vertical-align:top;}
+td.n{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;color:var(--t1);white-space:nowrap;}
+td.tok{color:var(--accent);white-space:nowrap;font-variant-numeric:tabular-nums;}
+tr:last-child td{border-bottom:none;}
+
+.callout{border-left:2px solid var(--accent);background:var(--accent-soft);
+  padding:14px 16px;border-radius:0 var(--r-2) var(--r-2) 0;margin:20px 0;}
+.callout p{color:var(--t1);margin:0;}
+.callout p + p{margin-top:8px;}
+.warn{border-left-color:var(--warning);background:transparent;
+  border:1px solid var(--border-strong);border-left:2px solid var(--warning);
+  border-radius:0 var(--r-2) var(--r-2) 0;padding:14px 16px;margin:20px 0;}
+.warn p{color:var(--t2);margin:0;}
+.warn p+p{margin-top:8px;}
+.warn strong,.callout strong{color:var(--t1);font-weight:var(--fw-semi);}
+
+.specimen{border:1px solid var(--border);border-radius:var(--r-3);
+  background:var(--panel);padding:24px;margin:0 0 20px;}
+.specimen-label{font-size:var(--fs-2xs);font-weight:var(--fw-semi);color:var(--t3);
+  text-transform:uppercase;letter-spacing:.06em;line-height:1.5;margin:0 0 16px;}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;}
+.scroll{overflow-x:auto;}
+
+/* --- typography specimens ------------------------------------------------- */
+.type-row{display:grid;grid-template-columns:104px 1fr;gap:20px;align-items:baseline;
+  padding:14px 0;border-bottom:1px solid var(--vien-mo);}
+.type-row:last-child{border-bottom:none;}
+.type-meta{font-size:var(--fs-2xs);line-height:1.5;color:var(--t3);
+  font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+.type-meta b{display:block;color:var(--t1);font-size:var(--fs-xs);font-weight:var(--fw-semi);
+  text-transform:uppercase;letter-spacing:.06em;}
+.sp-display{font-size:var(--fs-xl);font-weight:var(--fw-semi);line-height:1.25;letter-spacing:-.02em;color:var(--t1);}
+.sp-title{font-size:var(--fs-lg);font-weight:var(--fw-semi);line-height:1.35;letter-spacing:-.01em;color:var(--t1);}
+.sp-body{font-size:var(--fs-md);font-weight:var(--fw-normal);line-height:1.6;letter-spacing:0;color:var(--t1);}
+.sp-label{font-size:var(--fs-ui);font-weight:var(--fw-semi);line-height:1.5;letter-spacing:0;color:var(--t1);}
+.sp-tech{font-size:var(--fs-sm);font-weight:var(--fw-normal);line-height:1.25;letter-spacing:.01em;
+  color:var(--t1);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+.sp-caption{font-size:var(--fs-xs);font-weight:var(--fw-normal);line-height:1.5;letter-spacing:0;color:var(--t3);}
+
+/* --- spacing specimens ---------------------------------------------------- */
+.sp-scale{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;}
+.sp-bar{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.sp-bar i{display:block;background:var(--accent);border-radius:var(--r-1);height:28px;}
+.sp-bar span{font-size:var(--fs-2xs);color:var(--t3);font-variant-numeric:tabular-nums;}
+
+/* --- colour swatches ------------------------------------------------------ */
+.sw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+.sw{border:1px solid var(--border);border-radius:var(--r-2);overflow:hidden;background:var(--card);}
+.sw i{display:block;height:52px;}
+.sw b{display:block;font-size:var(--fs-2xs);font-weight:var(--fw-semi);color:var(--t1);
+  padding:8px 10px 2px;line-height:1.5;}
+.sw span{display:block;font-size:var(--fs-2xs);color:var(--t3);padding:0 10px 8px;line-height:1.5;}
+.text-spec{padding:10px 12px;border-radius:var(--r-2);background:var(--card);
+  border:1px solid var(--vien-mo);margin-bottom:8px;font-size:var(--fs-sm);line-height:1.5;}
+
+/* --- state channel demo --------------------------------------------------- */
+.state-row{display:flex;align-items:center;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--vien-mo);flex-wrap:wrap;}
+.state-row:last-child{border-bottom:none;}
+.chip{display:inline-flex;align-items:center;gap:6px;height:var(--tap);padding:0 10px;
+  border-radius:var(--r-full);font-size:var(--fs-ui);font-weight:var(--fw-semi);line-height:1;
+  border:1px solid var(--border);background:var(--field);color:var(--t1);}
+.chip.err{border-color:var(--danger);color:var(--danger);}
+.chip.ok{border-color:var(--success);color:var(--success);}
+.chip.warnc{border-color:var(--warning);color:var(--warning);}
+.chip svg{flex:none;}
+
+/* --- component dimension specimens ---------------------------------------- */
+.dim-strip{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;}
+.dim{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.dim .box{border:1px solid var(--border-strong);border-radius:var(--r-2);background:var(--field);
+  display:flex;align-items:center;justify-content:center;color:var(--t2);
+  font-size:var(--fs-2xs);font-variant-numeric:tabular-nums;padding:0 14px;}
+.dim em{font-style:normal;font-size:var(--fs-2xs);color:var(--t3);}
+.hit{position:relative;display:inline-flex;align-items:center;justify-content:center;
+  width:var(--tap-lg);height:var(--tap-lg);border-radius:var(--r-2);
+  border:1px dashed var(--accent-ring);}
+.hit i{position:absolute;inset:0;margin:auto;width:20px;height:20px;
+  border:1px solid var(--border-strong);border-radius:2px;}
+
+/* --- radius specimens ----------------------------------------------------- */
+.rad-strip{display:flex;gap:16px;flex-wrap:wrap;}
+.rad{width:88px;height:64px;background:var(--field);border:1px solid var(--border-strong);
+  display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;
+  font-size:var(--fs-2xs);color:var(--t3);font-variant-numeric:tabular-nums;}
+.concentric{width:120px;height:88px;border-radius:var(--r-4);background:var(--field);
+  border:1px solid var(--border-strong);padding:8px;display:flex;}
+.concentric i{flex:1;border-radius:max(4px,calc(var(--r-4) - 8px));background:var(--accent-soft);
+  border:1px solid var(--accent-ring);}
+
+/* --- icon grid ------------------------------------------------------------ */
+.icon-demo{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;}
+.icon-cell{display:flex;flex-direction:column;align-items:center;gap:8px;width:104px;text-align:center;}
+.icon-box{width:var(--tap-lg);height:var(--tap-lg);display:flex;align-items:center;justify-content:center;
+  border-radius:var(--r-2);border:1px solid var(--vien-mo);background:var(--field);color:var(--t2);}
+.icon-box.sel{background:var(--accent-soft);border-color:var(--accent-ring);color:var(--accent);}
+.icon-box.dis{opacity:var(--mo-vo-hieu);}
+.icon-cell em{font-style:normal;font-size:var(--fs-2xs);color:var(--t3);line-height:1.5;}
+.icon-cell em b{display:block;color:var(--t1);font-weight:var(--fw-semi);}
+.gridpaper{background:var(--card);border:1px solid var(--border);border-radius:var(--r-2);padding:12px;}
+
+/* --- material G0-G3 ------------------------------------------------------- */
+.g-stage{position:relative;border-radius:var(--r-3);overflow:hidden;padding:20px;min-height:184px;
+  background:
+    radial-gradient(58% 84% at 22% 8%, var(--accent-soft), transparent 70%),
+    radial-gradient(46% 68% at 88% 92%, var(--kinh-mep-sang), transparent 72%),
+    var(--panel);
+  border:1px solid var(--border);}
+.g-row{display:flex;gap:12px;flex-wrap:wrap;}
+.g-card{flex:1;min-width:132px;border-radius:var(--r-3);padding:14px;
+  font-size:var(--fs-2xs);line-height:1.5;color:var(--t2);}
+.g-card b{display:block;color:var(--t1);font-size:var(--fs-ui);font-weight:var(--fw-semi);margin-bottom:4px;}
+.g0{background:transparent;border:1px solid var(--vien-mo);}
+.g1{background:var(--kinh-mong);-webkit-backdrop-filter:blur(var(--kinh-nhoe-mong)) saturate(118%);
+  backdrop-filter:blur(var(--kinh-nhoe-mong)) saturate(118%);
+  border:1px solid var(--kinh-vien);border-top-color:var(--kinh-mep-sang);}
+.g2{background:var(--kinh-vua);-webkit-backdrop-filter:blur(var(--kinh-nhoe)) saturate(126%);
+  backdrop-filter:blur(var(--kinh-nhoe)) saturate(126%);
+  border:1px solid var(--accent-ring);border-top-color:var(--kinh-mep-sang);}
+.g3{background:var(--kinh-dac);-webkit-backdrop-filter:blur(var(--kinh-nhoe-sau)) saturate(140%);
+  backdrop-filter:blur(var(--kinh-nhoe-sau)) saturate(140%);
+  border:1px solid var(--kinh-mep-sang);
+  box-shadow:inset 0 1px 0 var(--kinh-mep-sang),inset 0 -1px 0 var(--kinh-vien),var(--shadow-node);
+  transform:scale(1.015);}
+
+/* --- elevation ------------------------------------------------------------ */
+.elev-strip{display:flex;gap:20px;flex-wrap:wrap;}
+.elev{width:150px;height:82px;border-radius:var(--r-3);background:var(--card);
+  border:1px solid var(--vien-mo);display:flex;align-items:center;justify-content:center;
+  font-size:var(--fs-2xs);color:var(--t3);text-align:center;line-height:1.5;padding:8px;}
+.e1{box-shadow:var(--shadow-node);} .e2{box-shadow:var(--shadow-pop);} .e3{box-shadow:var(--shadow-sheet);}
+
+/* --- motion --------------------------------------------------------------- */
+.motion-lane{display:flex;align-items:center;gap:12px;padding:8px 0;}
+.motion-lane .track{flex:1;height:3px;background:var(--field);border-radius:var(--r-full);position:relative;overflow:hidden;}
+.motion-lane .track i{position:absolute;inset:0 auto 0 0;width:34%;border-radius:var(--r-full);
+  background:var(--accent);animation:slide 2.6s var(--ease-apple) infinite alternate;}
+.motion-lane:nth-child(2) i{animation-duration:var(--nhip-bam);}
+@keyframes slide{from{transform:translateX(0);}to{transform:translateX(196%);}}
+@media (prefers-reduced-motion:reduce){.motion-lane .track i{animation:none;transform:translateX(80%);}}
+
+/* --- rules list ----------------------------------------------------------- */
+ol.rules{counter-reset:r;list-style:none;padding:0;margin:0;}
+ol.rules li{counter-increment:r;position:relative;padding:10px 0 10px 52px;
+  border-bottom:1px solid var(--vien-mo);font-size:var(--fs-xs);line-height:1.6;color:var(--t2);}
+ol.rules li:last-child{border-bottom:none;}
+ol.rules li::before{content:"R" counter(r,decimal-leading-zero);position:absolute;left:0;top:10px;
+  font-size:var(--fs-2xs);font-weight:var(--fw-semi);color:var(--accent);
+  font-variant-numeric:tabular-nums;letter-spacing:.04em;}
+ol.rules li b{color:var(--t1);font-weight:var(--fw-semi);}
+
+.pass{color:var(--success);font-weight:var(--fw-semi);}
+.fail{color:var(--danger);font-weight:var(--fw-semi);}
+.hold{color:var(--warning);font-weight:var(--fw-semi);}
+ul.plain{margin:0 0 12px;padding-left:18px;}
+ul.plain li{font-size:var(--fs-sm);line-height:1.6;color:var(--t2);margin-bottom:6px;}
+ul.plain li b{color:var(--t1);font-weight:var(--fw-semi);}
+</style>
+
+<div class="sheet">
+
+<header class="masthead">
+  <p class="eyebrow">InteriorFlow · Foundations · 23/08/2026</p>
+  <h1>Foundation System Sheet</h1>
+  <p class="standfirst">The base scale every surface is measured against. Six type roles, one
+  spacing meaning-map, colour roles with a mandatory second channel, and an icon law strict enough
+  that a reviewer can reject an icon with a ruler instead of an opinion. Every entry is a number,
+  a token name, and a usage rule.</p>
+</header>
+
+<div class="warn">
+  <p><strong>Why this sheet exists — measured, not opinion.</strong> Icons are mixed-source on
+  <b>13 of 13 surfaces</b> (Settings alone: 65 of 75 non-lucide). One screen carries
+  <b>11 type sizes</b> where the shell uses 4. Production carries
+  <b>12 distinct icon stroke weights</b> (2 · 1.8 · 1.75 · 2.2 · 1.9 · 1.7 · 1.5 · 3 · 2.5 · 1.85 …)
+  and <b>12+ distinct icon sizes</b> (13 · 14 · 15 · 12 · 11 · 16 · 18 · 10 · 22 · 17 · 20 · 26).</p>
+  <p>No guard could be written for any of it, because <strong>a guard cannot check conformance to
+  a scale nobody has written.</strong> This is that scale. The machine-checkable rule list at the
+  bottom is the contract for a future <code>soi:</code> guard — it is the most valuable thing in
+  this file.</p>
+</div>
+
+<!-- ======================================================================= -->
+<section>
+<h2><span class="num">01</span> Typography</h2>
+<p class="lede">Six roles. Six sizes. No seventh. The scale is small on purpose: every extra size
+is a decision a reviewer has to re-litigate, and 11 sizes on one screen is what that costs.</p>
+
+<div class="specimen">
+  <p class="specimen-label">Rendered specimen · all six roles at true size</p>
+
+  <div class="type-row">
+    <div class="type-meta"><b>display</b>28 / 600<br>lh 1.25 · tr −.02em</div>
+    <div class="sp-display">Căn hộ Thảo Điền</div>
+  </div>
+  <div class="type-row">
+    <div class="type-meta"><b>title</b>20 / 600<br>lh 1.35 · tr −.01em</div>
+    <div class="sp-title">Bảng vật liệu · tầng trệt</div>
+  </div>
+  <div class="type-row">
+    <div class="type-meta"><b>body</b>16 / 400<br>lh 1.60 · tr 0</div>
+    <div class="sp-body">Đổi vật liệu ghế từ sồi sang óc chó thì bản vẽ, phối cảnh, hồ sơ khách và
+    bảng khối lượng đều đổi theo — vì chỉ có một vật.</div>
+  </div>
+  <div class="type-row">
+    <div class="type-meta"><b>label</b>13 / 600<br>lh 1.50 · tr 0</div>
+    <div class="sp-label">Thư viện &nbsp;·&nbsp; Vật liệu &nbsp;·&nbsp; Cấu kiện</div>
+  </div>
+  <div class="type-row">
+    <div class="type-meta"><b>technical</b>14 / 400<br>lh 1.25 · tr +.01em</div>
+    <div class="sp-tech">2400 × 750 × 18 mm &nbsp;·&nbsp; IDFC-0231 &nbsp;·&nbsp; Rev C
+    &nbsp;·&nbsp; 1:50 &nbsp;·&nbsp; 78.40 m²</div>
+  </div>
+  <div class="type-row">
+    <div class="type-meta"><b>caption</b>12 / 400<br>lh 1.50 · tr 0</div>
+    <div class="sp-caption">Số đo suy từ khối dựng · chưa xác nhận</div>
+  </div>
+</div>
+
+<div class="scroll"><table>
+<thead><tr><th>Role</th><th>Token</th><th>Size</th><th>Weight</th><th>Line-height</th><th>Tracking</th><th>Case rule</th><th>Where used</th></tr></thead>
+<tbody>
+<tr><td><b>display</b></td><td class="tok">--fs-xl</td><td class="n">28px</td><td class="n">600</td><td class="n">1.25</td><td class="n">−0.02em</td><td>Sentence case</td><td>One per screen, max. Project name, Home greeting, empty-state headline.</td></tr>
+<tr><td><b>title</b></td><td class="tok">--fs-lg</td><td class="n">20px</td><td class="n">600</td><td class="n">1.35</td><td class="n">−0.01em</td><td>Sentence case</td><td>Section head, sheet head, panel head, card head at expanded nấc.</td></tr>
+<tr><td><b>body</b></td><td class="tok">--fs-md</td><td class="n">16px</td><td class="n">400</td><td class="n">1.60</td><td class="n">0</td><td>Sentence case</td><td>Running prose. Ô giải nghĩa description. Review findings. Anything read as sentences.</td></tr>
+<tr><td><b>label</b></td><td class="tok">--fs-ui</td><td class="n">13px desktop<br>15px touch</td><td class="n">600</td><td class="n">1.50</td><td class="n">0</td><td>Sentence case</td><td>Button text, list row, tab, toolbar chip, field label, menu item.</td></tr>
+<tr><td><b>technical</b></td><td class="tok">--fs-sm</td><td class="n">14px</td><td class="n">400</td><td class="n">1.25</td><td class="n">+0.01em</td><td>Codes may be upper</td><td>Dimensions, area, scale ratio, matId/specId, revision, coordinate, credit count, BOQ cell.</td></tr>
+<tr><td><b>caption</b></td><td class="tok">--fs-xs</td><td class="n">12px</td><td class="n">400</td><td class="n">1.50</td><td class="n">0</td><td>Sentence case</td><td>Provenance note, timestamp, unit suffix, table header, secondary hint.</td></tr>
+</tbody></table></div>
+
+<h3>The boundary between <em>technical</em> and everything else</h3>
+<p>This is the reason a single scale failed. <b>Technical</b> is allowed
+<code>line-height: 1.25</code> — tighter than any other role — because it carries no Vietnamese
+diacritics to stack. Ambient Home copy is the opposite job: it is read as language, and it needs
+air. The boundary is not taste, it is <b>character content</b>, and it is testable:</p>
+
+<div class="callout">
+<p><strong>A text node may use <code>line-height: 1.25</code> only if its content matches
+<code>^[0-9A-Za-z .,:×·°²³∅±≥≤%\/\-–—()"']+$</code></strong> — digits, Latin letters without
+diacritics, separators, and the construction symbol set <code>× · ° ² ³ ∅ ± ≥ ≤</code>. Those
+symbols are not decoration: <code>m²</code> is the single most common technical string in the app
+(every BOQ row, every room area), and a character class that omits it would reject the very thing
+the role exists for. The instant a Vietnamese diacritic appears, the node is no longer
+<em>technical</em>: it is <em>caption</em> or <em>body</em>, and the 1.50 floor applies.</p>
+<p>So <code>2400 × 750 mm</code> is technical. <code>Chiều cao 750 mm</code> is not — it is a
+caption that happens to contain a number, and it gets 1.50.</p>
+</div>
+
+<div class="warn">
+<p><strong>Vietnamese constraints — already in force, restated so a guard can carry them.</strong></p>
+<p>① <code>line-height</code> must never fall below <b>1.50</b> for body, label, and caption.
+Diacritics stack above <em>and</em> below the x-height; below 1.50 the marks of one line collide
+with the ascenders of the next. ② <b>ALL-CAPS is banned for Vietnamese running text</b> — the
+diacritics carry meaning and uppercase forms lose or distort them. Uppercase is permitted only for
+Latin-only strings: table headers written in short Latin words, unit codes, revision letters,
+file extensions. ③ <b>Negative tracking is banned for Vietnamese running text</b> — tightening
+pulls the mark of one glyph over its neighbour. Negative tracking survives only at
+<em>display</em> and <em>title</em>, where size gives the marks room.</p>
+</div>
+
+<h3>Family</h3>
+<div class="scroll"><table>
+<thead><tr><th>Token</th><th>Value</th><th>Rule</th></tr></thead>
+<tbody>
+<tr><td class="tok">--font-sans</td><td>Geist Variable → <code>-apple-system</code> → <code>SF Pro Text</code> → <code>Segoe UI</code> → Roboto → system-ui → sans-serif</td><td>All six roles. <b>Every <code>var()</code> reference must carry a fallback inside the parentheses</b> — a bare <code>var(--font-sans)</code> with the variable unset invalidates the whole declaration and the app renders Times. That has happened once already.</td></tr>
+<tr><td class="tok">--font-tech</td><td><code>var(--font-sans)</code> + <code>font-variant-numeric: tabular-nums</code> + <code>font-feature-settings: "tnum" 1</code></td><td><b>New token. Technical is a TREATMENT, not a second family.</b></td></tr>
+</tbody></table></div>
+
+<div class="callout">
+<p><strong>Why no monospace family.</strong> IF ships offline in Electron. A second webfont is a
+second thing that can fail to load, and the last font failure put the entire app in Times. Mono
+also reads as <em>code</em>, which is wrong for a dimension on an architectural drawing — the
+figure should look like a number on a drawing, not a token in a terminal. Tabular figures give
+the one property that actually matters: <b>columns of numbers align</b>. Alignment was the
+requirement; a mono family was only ever a way of getting it.</p>
+</div>
+</section>
+
+<!-- ======================================================================= -->
+<section>
+<h2><span class="num">02</span> Spacing</h2>
+<p class="lede">The proposed scale is confirmed with one deletion. A step with no meaning gets
+deleted — that rule is applied here rather than quoted.</p>
+
+<div class="specimen">
+  <p class="specimen-label">Rendered specimen · each step at true width</p>
+  <div class="sp-scale">
+    <div class="sp-bar"><i style="width:4px"></i><span>4</span></div>
+    <div class="sp-bar"><i style="width:8px"></i><span>8</span></div>
+    <div class="sp-bar"><i style="width:12px"></i><span>12</span></div>
+    <div class="sp-bar"><i style="width:16px"></i><span>16</span></div>
+    <div class="sp-bar"><i style="width:20px"></i><span>20</span></div>
+    <div class="sp-bar"><i style="width:24px"></i><span>24</span></div>
+    <div class="sp-bar"><i style="width:32px"></i><span>32</span></div>
+    <div class="sp-bar"><i style="width:40px"></i><span>40</span></div>
+    <div class="sp-bar"><i style="width:48px"></i><span>48</span></div>
+    <div class="sp-bar"><i style="width:64px"></i><span>64</span></div>
+    <div class="sp-bar"><i style="width:80px"></i><span>80</span></div>
+  </div>
+</div>
+
+<div class="scroll"><table>
+<thead><tr><th>Step</th><th>Band</th><th>Means</th><th>Concretely</th><th>Verdict</th></tr></thead>
+<tbody>
+<tr><td class="n">4</td><td rowspan="2"><b>Internal</b></td><td>Inside one object; parts of a single thing</td><td>Icon↔label gap in a chip. Badge padding. Dot↔text.</td><td class="pass">KEEP</td></tr>
+<tr><td class="n">8</td><td>Object padding; adjacent controls in one group</td><td><code>--gap</code>. Card inner padding-y. Button↔button in a segmented.</td><td class="pass">KEEP</td></tr>
+<tr><td class="n">12</td><td rowspan="2"><b>Group</b></td><td>Sibling objects that read as one cluster</td><td>Card↔card in a bento cell. Toolbar group↔group. <code>--pad-card</code> x.</td><td class="pass">KEEP</td></tr>
+<tr><td class="n">16</td><td>Cluster padding; the standard gutter</td><td>Panel inner padding. Grid gutter. Row↔row in a dense list.</td><td class="pass">KEEP</td></tr>
+<tr><td class="n">20</td><td rowspan="3"><b>Section</b></td><td>Distinct block within one region</td><td>Heading↔its table. Specimen block padding.</td><td class="pass">KEEP</td></tr>
+<tr><td class="n">24</td><td>Region padding; shell gutter</td><td>Sheet side padding. Sidebar inner padding. Modal padding.</td><td class="pass">KEEP</td></tr>
+<tr><td class="n">32</td><td>Section↔section inside one surface</td><td>h3 top margin. Panel section divider spacing.</td><td class="pass">KEEP</td></tr>
+<tr><td class="n">40</td><td rowspan="3"><b>Major</b></td><td>Major break; changes subject</td><td>Home widget row↔row at roomy density.</td><td class="hold">KEEP — narrow</td></tr>
+<tr><td class="n">48</td><td>Top-of-surface breathing</td><td>Sheet top padding. Empty-state vertical centring block.</td><td class="pass">KEEP</td></tr>
+<tr><td class="n">64</td><td>Chapter break</td><td>Major section↔section. Home band↔band.</td><td class="pass">KEEP</td></tr>
+<tr><td class="n">80</td><td><b>none found</b></td><td>Nothing in the shell asks for a gap between 64 and a full viewport. Its only observed use would be "64 but a bit more", which is taste, not meaning.</td><td class="fail">DELETE</td></tr>
+</tbody></table></div>
+
+<div class="warn">
+<p><strong>40 is on probation.</strong> It has a meaning on paper but the same job is done by 32
+in every dense surface and by 48 in every roomy one. If the Full App Experience Atlas finds no
+surface that needs exactly 40, it goes the way of 80. <b>Ten steps, not eleven.</b></p>
+</div>
+
+<p><b>Density note:</b> spacing steps are absolute and do <em>not</em> change between desktop and
+touch. What changes is <em>which step a component picks</em> — see §07.</p>
+</section>
+
+<!-- ======================================================================= -->
+<section>
+<h2><span class="num">03</span> Colour roles</h2>
+<p class="lede">Contrast measured with WCAG 2.x relative luminance against every surface the role
+can legally sit on. Three roles fail and are constrained below rather than quietly shipped.</p>
+
+<h3>Surfaces</h3>
+<div class="sw-grid">
+  <div class="sw"><i style="background:var(--bg)"></i><b>canvas</b><span>--bg · the ground</span></div>
+  <div class="sw"><i style="background:var(--panel)"></i><b>surface.g0</b><span>--panel · matte field</span></div>
+  <div class="sw"><i style="background:var(--card)"></i><b>surface.raised</b><span>--card · object</span></div>
+  <div class="sw"><i style="background:var(--field)"></i><b>surface.inset</b><span>--field · input well</span></div>
+  <div class="sw"><i style="background:var(--hover)"></i><b>hover</b><span>--hover</span></div>
+  <div class="sw"><i style="background:var(--border)"></i><b>border.subtle</b><span>--border</span></div>
+  <div class="sw"><i style="background:var(--border-strong)"></i><b>border.active</b><span>--border-strong</span></div>
+  <div class="sw"><i style="background:var(--accent)"></i><b>accent</b><span>--accent · #6a57f5</span></div>
+</div>
+
+<h3>Text roles — measured, both themes</h3>
+<div class="specimen">
+  <p class="specimen-label">Rendered specimen · on --card</p>
+  <div class="text-spec" style="color:var(--t1)">text.primary — Bảng vật liệu tầng trệt đã cập nhật</div>
+  <div class="text-spec" style="color:var(--t2)">text.secondary — Đổi lúc 14:20 bởi Hoà</div>
+  <div class="text-spec" style="color:var(--t3)">text.tertiary — Số đo suy từ khối dựng</div>
+  <div class="text-spec" style="color:var(--t4)">text.disabled — Chưa đủ điều kiện chạy</div>
+  <div class="text-spec" style="color:var(--t5)">t5 — hairline / decoration only, never text</div>
+</div>
+
+<div class="scroll"><table>
+<thead><tr><th>Role</th><th>Token</th><th colspan="2">Dark · on bg / card</th><th colspan="2">Light · on bg / card</th><th>Verdict + rule</th></tr></thead>
+<tbody>
+<tr><td><b>text.primary</b></td><td class="tok">--t1</td><td class="n">17.95</td><td class="n">15.93</td><td class="n">14.47</td><td class="n">16.61</td><td class="pass">PASS</td></tr>
+<tr><td><b>text.secondary</b></td><td class="tok">--t2</td><td class="n">13.49</td><td class="n">11.98</td><td class="n">8.68</td><td class="n">9.96</td><td class="pass">PASS</td></tr>
+<tr><td><b>text.tertiary</b></td><td class="tok">--t3</td><td class="n">7.36</td><td class="n">6.53</td><td class="n">4.53</td><td class="n">5.20</td><td class="hold">PASS, no headroom. Light on <code>--bg</code> is <b>4.53</b> — 0.03 above the line. <b>--t3 is banned on any translucent surface</b>; use <code>--kinh-chu-phu</code> there (6.32 / 9.50).</td></tr>
+<tr><td><b>text.disabled</b></td><td class="tok">--t4</td><td class="n">3.88</td><td class="n">3.44</td><td class="n">2.65</td><td class="n">3.04</td><td class="fail">FAILS 4.5 everywhere; light fails 3.0 on <code>--bg</code> (2.65) and <code>--field</code> (2.69). <b>Justified:</b> disabled text is exempt from WCAG 1.4.3. <b>Constrained:</b> --t4 may carry <em>no</em> information that exists nowhere else, and disabled state must also be announced by <code>aria-disabled</code> + a reason in the ô giải nghĩa. Never for enabled text.</td></tr>
+<tr><td>—</td><td class="tok">--t5</td><td class="n">2.37</td><td class="n">2.11</td><td class="n">1.85</td><td class="n">2.12</td><td class="fail">NOT A TEXT ROLE. Hairlines, dividers, disabled iconography fill. Any text node using --t5 is a bug.</td></tr>
+<tr><td><b>accent</b> (as text)</td><td class="tok">--accent</td><td class="n">4.00</td><td class="n">3.55</td><td class="n">4.26</td><td class="n">4.89</td><td class="fail">FAILS as body text in dark on every surface, and in light on <code>--bg</code>. <b>Rule: --accent is a FILL and a BORDER, not a text colour.</b> Accent text is permitted only at ≥18.66px/600 (large-text threshold 3:1) — i.e. display and title only. White on accent fill = <b>4.89</b> <span class="pass">PASS</span> (<code>--on-accent</code>).</td></tr>
+</tbody></table></div>
+
+<h3>State roles — and the mandatory second channel</h3>
+<p>Colour is never the only carrier of meaning. Every state role below names the non-colour channel
+that must accompany it. A reviewer disables colour and the meaning must survive.</p>
+
+<div class="specimen">
+  <p class="specimen-label">Rendered specimen · shape + icon + label carry the state without colour</p>
+  <div class="state-row">
+    <span class="chip err">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6"/><path d="M12 16.5v.01"/></svg>
+      Sai chuẩn</span>
+    <span class="chip warnc">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 4.3 2.6 17.4a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z"/><path d="M12 10v3"/><path d="M12 16.5v.01"/></svg>
+      Cần xem lại</span>
+    <span class="chip ok">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-4.8"/></svg>
+      Đạt</span>
+    <span class="chip">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5"/><path d="M12 8v.01"/></svg>
+      Thông tin</span>
+  </div>
+  <p style="font-size:var(--fs-2xs);color:var(--t3);margin:12px 0 0;line-height:1.5">
+  Each chip carries three redundant channels: a distinct <b>glyph silhouette</b> (circle / triangle /
+  circle-with-tick), a <b>text label</b>, and colour. Remove colour entirely and all four remain
+  distinguishable.</p>
+</div>
+
+<div class="scroll"><table>
+<thead><tr><th>Role</th><th>Token</th><th>Dark on card</th><th>Light on card</th><th>SECOND CHANNEL (mandatory)</th></tr></thead>
+<tbody>
+<tr><td><b>state.error</b></td><td class="tok">--danger</td><td class="n">5.27 <span class="pass">✓</span></td><td class="n">5.26 <span class="pass">✓</span></td><td><b>Glyph:</b> circle + exclamation. <b>Label:</b> always present, never icon-only. <b>Weight:</b> border 1px→ solid. Blocks the gate.</td></tr>
+<tr><td><b>state.warning</b></td><td class="tok">--warning</td><td class="n">7.67 <span class="pass">✓</span></td><td class="n">5.05 <span class="pass">✓</span></td><td><b>Glyph:</b> triangle — silhouette differs from error at 12px. <b>Label</b> required. Light on <code>--bg</code> is <b>4.40</b> <span class="hold">⚠ under 4.5</span> — warning text is banned on <code>--bg</code>; it must sit on <code>--card</code> or <code>--panel</code>.</td></tr>
+<tr><td><b>state.success</b></td><td class="tok">--success</td><td class="n">6.92 <span class="pass">✓</span></td><td class="n">6.14 <span class="pass">✓</span></td><td><b>Glyph:</b> tick inside circle. <b>Label</b> required. Success is the only state permitted to be transient (fades after 2 lanes of motion).</td></tr>
+<tr><td><b>state.info</b></td><td class="tok">--t2</td><td class="n">11.98 <span class="pass">✓</span></td><td class="n">9.96 <span class="pass">✓</span></td><td><b>Deliberately not a hue.</b> Info is neutral text + an "i" glyph. Spending a hue on info would burn one of the two clean hue windows left in the spectrum.</td></tr>
+<tr><td><b>state.attention</b></td><td class="tok">--accent</td><td class="n">fill only</td><td class="n">fill only</td><td><b>Position + motion,</b> not colour: a 6px dot at the corner of the object, plus one <code>--nhip-vien</code> reveal. Never a colour swap on existing text.</td></tr>
+<tr><td><b>selection</b></td><td class="tok">--accent-soft + --accent-ring</td><td>—</td><td>—</td><td><b>Fill + 1px ring together.</b> Ring alone reads as hover; fill alone is invisible on ambient. Selected rows additionally carry a 2px inset bar on the leading edge.</td></tr>
+<tr><td><b>focus</b></td><td class="tok">--accent-ring</td><td>—</td><td>—</td><td><b>2px ring, 2px offset, always visible</b> — <code>:focus-visible</code>, never suppressed. Focus ring geometry is identical on every control in the app; it is the one thing a keyboard user navigates by.</td></tr>
+<tr><td><b>hover</b></td><td class="tok">--hover</td><td>—</td><td>—</td><td><b>Background shift only.</b> Hover must never move, scale, or re-weight text — see §07. Touch devices get no hover state at all, so hover may never be the only way to reach information.</td></tr>
+</tbody></table></div>
+</section>
+
+<!-- ======================================================================= -->
+<section>
+<h2><span class="num">04</span> Component dimensions</h2>
+<p class="lede">Rail 52px, touch target ≥44px class, radius 6/10/14/20 + capsule, and concentric
+<code>rInner = max(4, rOuter − pad)</code> are taken as given and not renegotiated.</p>
+
+<div class="specimen">
+  <p class="specimen-label">Rendered specimen · control heights at true size</p>
+  <div class="dim-strip">
+    <div class="dim"><div class="box" style="height:24px">24</div><em>micro</em></div>
+    <div class="dim"><div class="box" style="height:28px">28</div><em>row</em></div>
+    <div class="dim"><div class="box" style="height:32px">32</div><em>compact</em></div>
+    <div class="dim"><div class="box" style="height:36px">36</div><em>standard</em></div>
+    <div class="dim"><div class="box" style="height:44px">44</div><em>major / touch</em></div>
+    <div class="dim"><div class="box" style="height:52px;width:52px">52</div><em>rail</em></div>
+  </div>
+</div>
+
+<div class="scroll"><table>
+<thead><tr><th>Class</th><th>Height</th><th>Token</th><th>Radius</th><th>Icon optical</th><th>Min hit region</th><th>Where</th></tr></thead>
+<tbody>
+<tr><td><b>micro</b></td><td class="n">24px</td><td class="tok">—</td><td class="n">--r-1 · 6</td><td class="n">14px</td><td class="n">32 × 32</td><td>Badge, inline dot, tag. Non-interactive by default; if interactive, the hit region is padded to 32.</td></tr>
+<tr><td><b>row</b></td><td class="n">28px</td><td class="tok">--row</td><td class="n">--r-2 · 10</td><td class="n">16px</td><td class="n">28 × full width</td><td>List row, tree node, table row. Full-width rows satisfy the hit area horizontally.</td></tr>
+<tr><td><b>compact</b></td><td class="n">32px</td><td class="tok">--tap</td><td class="n">--r-2 · 10</td><td class="n">18px</td><td class="n">32 × 32</td><td>Toolbar chip, icon button, segmented item, field. The 2D/3D dense default.</td></tr>
+<tr><td><b>standard</b></td><td class="n">36px</td><td class="tok">—</td><td class="n">--r-2 · 10</td><td class="n">18px</td><td class="n">36 × 36</td><td>Text button, select, search input. The balanced default in Files, Library, Settings.</td></tr>
+<tr><td><b>major</b></td><td class="n">44px</td><td class="tok">--tap-lg</td><td class="n">--r-3 · 14 or --r-full</td><td class="n">20px</td><td class="n">44 × 44</td><td>Primary action, Vitals aperture, round panel button. Also the value <code>--tap</code> takes under touch.</td></tr>
+<tr><td><b>rail</b></td><td class="n">52px</td><td class="tok">🔒 fixed</td><td class="n">--r-2 · 10</td><td class="n">20px</td><td class="n">52 × 52</td><td>Sidebar rail nấc 1. Not negotiable, not derived from --tap.</td></tr>
+</tbody></table></div>
+
+<div class="callout">
+<p><strong>The 32-vs-44 boundary, stated once so it stops being re-argued.</strong>
+<code>--tap: 32px</code> is a <em>desktop control height</em>. <code>--tap-lg: 44px</code> is the
+<em>touch target class</em>. They are not competing values — 32 is what a mouse needs and 44 is
+what a finger needs, and <code>--tap</code> already flips to 44 under
+<code>(hover:none) and (pointer:coarse)</code>. <b>A 32px control is legal on desktop only if its
+hit region is ≥32 × 32 and it is not the primary action.</b> Primary actions are 44 everywhere.</p>
+</div>
+
+<h3>Radius — the given scale, and concentric derivation</h3>
+<div class="specimen">
+  <p class="specimen-label">Rendered specimen · the four steps + capsule</p>
+  <div class="rad-strip">
+    <div class="rad" style="border-radius:var(--r-1)">6 · --r-1</div>
+    <div class="rad" style="border-radius:var(--r-2)">10 · --r-2</div>
+    <div class="rad" style="border-radius:var(--r-3)">14 · --r-3</div>
+    <div class="rad" style="border-radius:var(--r-4)">20 · --r-4</div>
+    <div class="rad" style="border-radius:var(--r-full)">999 · --r-full</div>
+  </div>
+  <p class="specimen-label" style="margin:24px 0 12px">Concentric · outer 20, pad 8 → inner max(4, 12) = 12</p>
+  <div class="concentric"><i></i></div>
+</div>
+<div class="scroll"><table>
+<thead><tr><th>Token</th><th>px</th><th>Applies to</th></tr></thead>
+<tbody>
+<tr><td class="tok">--r-1</td><td class="n">6</td><td>Chip, badge, small input, keyboard-key glyph, nested element inside pad ≤ 8.</td></tr>
+<tr><td class="tok">--r-2</td><td class="n">10</td><td>Button, list row, field, icon container, rail item.</td></tr>
+<tr><td class="tok">--r-3</td><td class="n">14</td><td>Card, popover, sub-panel, tool window body.</td></tr>
+<tr><td class="tok">--r-4</td><td class="n">20</td><td>Sheet, modal, large glass surface, top-level panel.</td></tr>
+<tr><td class="tok">--r-full</td><td class="n">999</td><td>Capsule and circle: pill, switch track, segmented shell, avatar, aperture, tool-group shell.</td></tr>
+</tbody></table></div>
+<p><b>Concentric law:</b> <code>rInner = max(4px, rOuter − pad)</code>, applied only when
+<code>pad ≤ 8</code>. Above 8px of padding the inner corner is visually independent and takes its
+own step from the scale. CSS form: <code>max(4px, calc(var(--r-4) - 8px))</code>. TS form:
+<code>concentricRadius()</code> in <code>lib/geometry.ts</code>.</p>
+</section>
+
+<!-- ======================================================================= -->
+<section>
+<h2><span class="num">05</span> Iconography grammar</h2>
+<p class="lede">The centrepiece. This is the section that ends the 13/13 mixing, and it is written
+so a reviewer rejects an icon <em>by measurement</em>, not by taste.</p>
+
+<div class="warn">
+<p><strong>Is lucide the system, or is it being replaced? — lucide IS the system.</strong></p>
+<p>Measured: <code>lucide-react</code> is imported in <b>214 files</b>. Replacing it means
+redrawing several hundred glyphs and touching 214 files, which buys nothing a constraint cannot
+buy. <b>The problem was never the source of the icons — it was that nothing constrained how they
+were used.</b> Production carries 12 distinct stroke weights and 12+ distinct sizes; that is the
+actual defect, and it is a defect lucide did not cause.</p>
+<p><strong>So: lucide is the canonical set, wrapped and constrained.</strong> The 65-of-75
+non-lucide glyphs in Settings and their siblings on the other 12 surfaces are the ones that must
+go — either replaced by the lucide equivalent, or, where no equivalent exists (nghề symbols:
+tường, cửa, cao độ, trục, mặt cắt), redrawn to the grammar below and admitted to a named house
+set. <b>Nothing enters the app outside those two sets.</b></p>
+</div>
+
+<h3>The grammar — every clause measurable</h3>
+<div class="scroll"><table>
+<thead><tr><th>Property</th><th>Law</th><th>Rejection test</th></tr></thead>
+<tbody>
+<tr><td><b>Grid</b></td><td><code>24 × 24</code> viewBox, always. Live area <code>20 × 20</code>, centred: a 2px margin on all sides.</td><td><code>viewBox</code> ≠ <code>"0 0 24 24"</code> → reject.</td></tr>
+<tr><td><b>Stroke weight</b></td><td><b>1.5</b> at 20px optical. Scaled linearly for other optical sizes so the <em>rendered</em> stroke is constant: 14px→1.5, 16px→1.5, 18px→1.5, 20px→1.5. One value, no exceptions.</td><td><code>stroke-width</code> ∉ {1.5} → reject. This alone removes 11 of the 12 weights now in production.</td></tr>
+<tr><td><b>Optical size</b></td><td><b>Four sizes only: 14 · 16 · 18 · 20.</b> Bound to control class (§04), never chosen freely.</td><td><code>size</code> ∉ {14,16,18,20} → reject. This removes 13, 15, 12, 11, 10, 22, 17, 26 — which is 8 of the 12 sizes now shipping, and the four highest-count ones (13, 14, 15, 12) collapse to 14 and 16.</td></tr>
+<tr><td><b>Corners</b></td><td><code>stroke-linejoin="round"</code>. Corner radius 2px on the 24-grid.</td><td>Mitre or bevel joins → reject.</td></tr>
+<tr><td><b>Terminals</b></td><td><code>stroke-linecap="round"</code>. No flat, no square, no tapered ends.</td><td>Butt or square caps → reject.</td></tr>
+<tr><td><b>Fill vs outline</b></td><td><b>OUTLINE IS THE DEFAULT AND THE ONLY LEGAL RESTING STATE.</b> Fill is reserved: it signals <em>selected</em> or <em>on</em>, and nothing else. An icon is therefore never fill-by-design — fill is a state the same glyph enters and leaves.</td><td>A filled glyph in a resting control, or an outline glyph in a selected one → reject. Also: <b>a fill/outline pair must be the same glyph</b>, not two different drawings.</td></tr>
+<tr><td><b>Optical alignment</b></td><td>Glyph is centred on the geometric grid, then nudged to <em>optical</em> centre where mass is asymmetric (play triangles, chevrons). Nudge ≤ 1px on the 24-grid.</td><td>&gt;1px offset → reject.</td></tr>
+<tr><td><b>Colour</b></td><td><code>stroke="currentColor"</code>, always. An icon never carries its own hue.</td><td>Any hard-coded <code>stroke</code> or <code>fill</code> hex → reject.</td></tr>
+<tr><td><b>Detail budget</b></td><td>Max <b>5 paths</b> per glyph. At 14px, anything beyond 5 strokes becomes a smudge.</td><td>&gt;5 path/circle/rect children → reject.</td></tr>
+</tbody></table></div>
+
+<div class="specimen">
+  <p class="specimen-label">Rendered specimen · one glyph, four optical sizes, constant 1.5 stroke</p>
+  <div class="icon-demo">
+    <div class="icon-cell"><div class="icon-box" style="width:32px;height:32px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+    </div><em><b>14</b>micro · row</em></div>
+    <div class="icon-cell"><div class="icon-box" style="width:32px;height:32px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+    </div><em><b>16</b>row</em></div>
+    <div class="icon-cell"><div class="icon-box" style="width:36px;height:36px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+    </div><em><b>18</b>compact · standard</em></div>
+    <div class="icon-cell"><div class="icon-box">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+    </div><em><b>20</b>major · rail</em></div>
+  </div>
+</div>
+
+<h3>States — the same glyph, six conditions</h3>
+<div class="specimen">
+  <p class="specimen-label">Rendered specimen · default · active · selected · running · attention · disabled</p>
+  <div class="icon-demo">
+    <div class="icon-cell"><div class="icon-box">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 9v11h6v-6h6v6h6V9Z"/></svg>
+    </div><em><b>default</b>outline · --t2</em></div>
+
+    <div class="icon-cell"><div class="icon-box" style="background:var(--hover)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 9v11h6v-6h6v6h6V9Z"/></svg>
+    </div><em><b>active</b>bg shift only</em></div>
+
+    <div class="icon-cell"><div class="icon-box sel">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" fill-opacity=".18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 9v11h6v-6h6v6h6V9Z"/></svg>
+    </div><em><b>selected</b>FILL + ring</em></div>
+
+    <div class="icon-cell"><div class="icon-box" style="border-color:var(--accent-ring)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><path d="M12 3a9 9 0 1 0 9 9" opacity=".9"/><path d="M12 3a9 9 0 0 1 9 9" opacity=".25"/></svg>
+    </div><em><b>running</b>arc, not the glyph</em></div>
+
+    <div class="icon-cell"><div class="icon-box" style="position:relative">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 9v11h6v-6h6v6h6V9Z"/></svg>
+      <i style="position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:var(--r-full);background:var(--accent);display:block"></i>
+    </div><em><b>attention</b>6px dot, corner</em></div>
+
+    <div class="icon-cell"><div class="icon-box dis">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 9v11h6v-6h6v6h6V9Z"/></svg>
+    </div><em><b>disabled</b>--mo-vo-hieu + reason</em></div>
+  </div>
+</div>
+
+<div class="scroll"><table>
+<thead><tr><th>State</th><th>Change</th><th>Explicitly NOT</th></tr></thead>
+<tbody>
+<tr><td><b>default</b></td><td>Outline, <code>--t2</code>.</td><td>Never fill.</td></tr>
+<tr><td><b>active</b> (hover / press)</td><td>Container background → <code>--hover</code>. Colour → <code>--t1</code>.</td><td>Never scale, never re-weight the stroke, never move.</td></tr>
+<tr><td><b>selected</b></td><td>Glyph gains <code>fill="currentColor" fill-opacity=".18"</code>, container gains <code>--accent-soft</code> + <code>--accent-ring</code>. <b>Three channels.</b></td><td>Never colour alone.</td></tr>
+<tr><td><b>running</b></td><td>An <b>arc replaces the glyph</b> in the same 24-grid, rotating at <code>--nhip-bien-hinh</code>. Under <code>prefers-reduced-motion</code> it becomes a static three-quarter arc.</td><td>Never a pulsing or glowing version of the original glyph — that reads as attention, not progress.</td></tr>
+<tr><td><b>attention</b></td><td>Unmodified glyph + a <b>6px dot</b> at the container's top-right, offset 5px.</td><td>Never a hue change on the glyph itself.</td></tr>
+<tr><td><b>disabled</b></td><td><code>opacity: var(--mo-vo-hieu)</code> (0.5 dark / 0.62 light) + <code>aria-disabled="true"</code> + <code>aria-describedby</code> pointing at a reason.</td><td>Never <code>disabled</code> attribute alone — it removes the element from Tab order and the reason becomes unreachable. Never <code>title=</code> — silent on touch.</td></tr>
+</tbody></table></div>
+</section>
+
+<!-- ======================================================================= -->
+<section>
+<h2><span class="num">06</span> G0 → G3 exact values</h2>
+<p class="lede">Intensity follows <b>meaning</b>, not size. A large widget can be nearly flat; a
+small but consequential action can carry the strongest material. G3 is optical — <b>zero outer
+glow, halo, or aura.</b></p>
+
+<div class="specimen">
+  <p class="specimen-label">Rendered specimen · four grades over one ambient field</p>
+  <div class="g-stage">
+    <div class="g-row">
+      <div class="g-card g0"><b>G0</b>ambient / matte<br>the structural field</div>
+      <div class="g-card g1"><b>G1</b>flat glass<br>ordinary widget</div>
+      <div class="g-card g2"><b>G2</b>flat glass, live<br>selected · focused</div>
+      <div class="g-card g3"><b>G3</b>optical<br>signature only</div>
+    </div>
+  </div>
+</div>
+
+<div class="scroll"><table>
+<thead><tr><th>Grade</th><th>Body opacity D / L</th><th>Blur</th><th>Saturate</th><th>Edge</th><th>Bulge / scale</th><th>Elevation</th></tr></thead>
+<tbody>
+<tr><td><b>G0</b> ambient</td><td class="n">— / —</td><td class="n">none</td><td class="n">—</td><td><code>--vien-mo</code> 1px, or none</td><td class="n">1.000</td><td>none</td></tr>
+<tr><td><b>G1</b> flat glass</td><td class="n">.84 / .88<br><code>--kinh-mong</code></td><td class="n">12px<br><code>--kinh-nhoe-mong</code></td><td class="n">118%</td><td><code>--kinh-vien</code> 1px; top edge <code>--kinh-mep-sang</code></td><td class="n">1.000</td><td>none</td></tr>
+<tr><td><b>G2</b> flat glass, live</td><td class="n">.90 / .93<br><code>--kinh-vua</code></td><td class="n">16px<br><code>--kinh-nhoe</code></td><td class="n">126%</td><td><code>--accent-ring</code> 1px; top edge <code>--kinh-mep-sang</code></td><td class="n">1.000</td><td><code>--shadow-node</code></td></tr>
+<tr><td><b>G3</b> optical</td><td class="n">.95 / .96<br><code>--kinh-dac</code></td><td class="n">24px<br><code>--kinh-nhoe-sau</code></td><td class="n">140%</td><td><code>--kinh-mep-sang</code> 1px + inset top hairline + inset bottom <code>--kinh-vien</code></td><td class="n">1.015 max</td><td><code>--shadow-node</code> only</td></tr>
+</tbody></table></div>
+
+<div class="warn">
+<p><strong>G3 hard limits — measurable, because this is where it always goes wrong.</strong>
+<code>scale</code> ≤ <b>1.015</b>. <code>blur</code> ≤ <b>24px</b>. <b>Zero</b> <code>box-shadow</code>
+with a positive spread. <b>Zero</b> <code>filter: drop-shadow</code> carrying a hue. <b>Zero</b>
+outer glow, halo, aura, caustic ring, or bloom. The only shadows permitted on G3 are the two
+<em>inset</em> hairlines that describe the edge, plus <code>--shadow-node</code>.</p>
+<p><strong>G3 budget: at most 3 instances per screen.</strong> The chốt reserves it for
+<em>Vào xưởng</em>, the selected segmented lens, and at most one or two signature action states.
+G3 everywhere collapses the whole ladder — scarcity is the entire value.</p>
+</div>
+
+<div class="callout">
+<p><strong>Contradiction found and bridged.</strong> <code>LUAT-VAT-LIEU-KINH-G0-G3.md</code>
+speaks in <b>G0/G1/G2/G3</b>. <code>globals.css</code> contains <b>zero</b> occurrences of those
+names — it speaks in <code>--kinh-mong / --kinh-vua / --kinh-dac</code> and
+<code>--vl-dac / --vl-gan-dac</code>. Two vocabularies for one ladder, sharing no word. The table
+above is the bridge, and it is the whole reason a reviewer could not previously tell whether a
+surface complied: the law and the tokens were not speaking the same language.</p>
+<p><b>No new colour tokens are added.</b> G0–G3 map onto tokens that already exist. What is
+missing is a <em>name</em>, and names cost nothing: <code>--g0 … --g3</code> should be declared as
+aliases so the law and the code finally use one word.</p>
+</div>
+
+<p><b>Nesting law, restated:</b> glass never sits on glass. A floating glass panel portals to the
+document root rather than nesting inside glass chrome — the two backdrop filters compose into a
+wash and the inner surface goes transparent. Where depth is needed <em>and</em> content must stay
+sharp, the legal form is <b>glass shell + near-opaque core</b> (<code>--vl-gan-dac</code>, blur
+<code>--vl-gan-dac-nhoe</code> 6px).</p>
+</section>
+
+<!-- ======================================================================= -->
+<section>
+<h2><span class="num">07</span> Elevation · Motion · Density</h2>
+
+<h3>Elevation — four levels, and higher means more temporary</h3>
+<div class="specimen">
+  <p class="specimen-label">Rendered specimen</p>
+  <div class="elev-strip">
+    <div class="elev">L0 · flush<br>no shadow</div>
+    <div class="elev e1">L1 · --shadow-node<br>card, node</div>
+    <div class="elev e2">L2 · --shadow-pop<br>popover, menu</div>
+    <div class="elev e3">L3 · --shadow-sheet<br>sheet, modal</div>
+  </div>
+</div>
+<div class="scroll"><table>
+<thead><tr><th>Level</th><th>Token</th><th>Dark</th><th>Light</th><th>Occupants</th><th>Permanence</th></tr></thead>
+<tbody>
+<tr><td><b>L0</b></td><td class="tok">none</td><td>—</td><td>—</td><td>Ambient field, rail, inline content, G0/G1 widgets at rest.</td><td>Permanent</td></tr>
+<tr><td><b>L1</b></td><td class="tok">--shadow-node</td><td class="n">0 6px 20px −8px / .60</td><td class="n">0 6px 18px −8px / .20</td><td>Card, canvas node, tool window body, G2/G3 surfaces.</td><td>Session-persistent</td></tr>
+<tr><td><b>L2</b></td><td class="tok">--shadow-pop</td><td class="n">0 8px 30px −8px / .65</td><td class="n">0 10px 30px −10px / .22</td><td>Popover, dropdown, ô giải nghĩa, context pill.</td><td>Dismisses on outside press</td></tr>
+<tr><td><b>L3</b></td><td class="tok">--shadow-sheet</td><td class="n">0 12px 40px −12px / .70</td><td class="n">0 12px 40px −14px / .28</td><td>Sheet, modal, full-screen tool window. Scrim <code>--nen-mo-overlay</code> beneath.</td><td>Blocks; must be dismissible by Esc</td></tr>
+</tbody></table></div>
+<p><b>Rule:</b> elevation is not decoration — <b>a higher level is a promise that the surface is
+more temporary.</b> A permanent surface at L3 is a bug, because the user will keep waiting for it
+to go away.</p>
+
+<h3>Motion — duration and easing per role</h3>
+<div class="specimen">
+  <p class="specimen-label">Rendered specimen · one easing curve, five durations</p>
+  <div class="motion-lane"><span class="sp-caption" style="width:120px">bấm · 130ms</span><span class="track"><i style="animation-duration:.13s"></i></span></div>
+  <div class="motion-lane"><span class="sp-caption" style="width:120px">viên · 170ms</span><span class="track"><i style="animation-duration:.17s"></i></span></div>
+  <div class="motion-lane"><span class="sp-caption" style="width:120px">bảng · 220ms</span><span class="track"><i style="animation-duration:.22s"></i></span></div>
+  <div class="motion-lane"><span class="sp-caption" style="width:120px">ngữ cảnh · 300ms</span><span class="track"><i style="animation-duration:.3s"></i></span></div>
+  <div class="motion-lane"><span class="sp-caption" style="width:120px">biến hình · 460ms</span><span class="track"><i style="animation-duration:.46s"></i></span></div>
+</div>
+<div class="scroll"><table>
+<thead><tr><th>Role</th><th>Token</th><th>Duration</th><th>Easing</th><th>Applies to</th></tr></thead>
+<tbody>
+<tr><td><b>press / hover</b></td><td class="tok">--nhip-bam</td><td class="n">130ms</td><td><code>--ease-apple</code></td><td>Background shift, chip press, checkbox. Must feel instant.</td></tr>
+<tr><td><b>reveal</b></td><td class="tok">--nhip-vien</td><td class="n">170ms</td><td><code>--ease-apple</code></td><td>Context pill appearing beside an object, tooltip, attention dot.</td></tr>
+<tr><td><b>expand</b></td><td class="tok">--nhip-bang</td><td class="n">220ms</td><td><code>--ease-apple</code></td><td>Panel opening from a pill, card nấc change, shelf slide.</td></tr>
+<tr><td><b>context</b></td><td class="tok">--nhip-ngu-canh</td><td class="n">300ms</td><td><code>--ease-apple</code></td><td>Stage change, sheet in/out, deep context switch.</td></tr>
+<tr><td><b>morph</b></td><td class="tok">--nhip-bien-hinh</td><td class="n">460ms</td><td><code>--ease-apple</code></td><td>Identity-preserving transformation only — icon → capsule → tool window. Never for a plain appear.</td></tr>
+</tbody></table></div>
+<p><b>One curve.</b> <code>cubic-bezier(.32, .72, 0, 1)</code> for every role above. Motion varies
+by <em>duration</em>, not by personality — five curves would be five things to get wrong.
+<b><code>prefers-reduced-motion: reduce</code> wins over everything</b>: durations collapse to 0
+and any looping animation is replaced by a static equivalent, never merely slowed.</p>
+
+<h3>Density — desktop vs touch</h3>
+<div class="scroll"><table>
+<thead><tr><th>Token</th><th>Desktop</th><th>Touch</th><th>Why it moves</th></tr></thead>
+<tbody>
+<tr><td class="tok">--tap</td><td class="n">32px</td><td class="n">44px</td><td>Finger contact patch vs cursor point.</td></tr>
+<tr><td class="tok">--row</td><td class="n">28px</td><td class="n">44px</td><td>Rows become tap targets.</td></tr>
+<tr><td class="tok">--gap</td><td class="n">8px</td><td class="n">12px</td><td>Separation must exceed targeting error.</td></tr>
+<tr><td class="tok">--pad-card</td><td class="n">8px 12px</td><td class="n">12px 16px</td><td>Follows the gap.</td></tr>
+<tr><td class="tok">--fs-ui</td><td class="n">13px</td><td class="n">15px</td><td>Greater viewing distance, no cursor to aid targeting.</td></tr>
+<tr><td class="tok">--tap-lg</td><td class="n">44px</td><td class="n">44px</td><td><b>Does not move</b> — it is already finger-sized.</td></tr>
+</tbody></table></div>
+
+<div class="callout">
+<p><strong>What must NOT change between desktop and touch.</strong> Type scale (except
+<code>--fs-ui</code>) · spacing step values · every radius · every colour role and its contrast ·
+icon optical sizes and stroke weight · the G0–G3 ladder · elevation levels · motion durations ·
+component <em>identity</em>.</p>
+<p>Touch is a <b>layer of interaction</b>, not a separate build. Five density tokens flip under
+<code>(hover:none) and (pointer:coarse)</code> and nothing else does. The corollary is binding:
+<b>hover may never be the only route to information</b>, because on touch there is no hover at
+all — anything reachable by hover must also be reachable by press, long-press, or a persistent
+affordance.</p>
+</div>
+</section>
+
+<!-- ======================================================================= -->
+<section>
+<h2><span class="num">08</span> Contradictions found in <code>globals.css</code></h2>
+<p class="lede">Measured against the anchors above. Each needs a decision before a guard can pass.</p>
+<div class="scroll"><table>
+<thead><tr><th>#</th><th>Finding</th><th>Evidence</th><th>Bearing</th></tr></thead>
+<tbody>
+<tr><td class="n">C1</td><td><b>Two parallel motion scales.</b> <code>--dur-fast .18s</code> / <code>--dur-base .32s</code> coexist with <code>--nhip-*</code> 130/170/220/300/460ms. Neither references the other.</td><td><code>globals.css</code> :root, two adjacent blocks</td><td>180ms and 320ms are not steps on the <code>--nhip</code> scale. <b>Recommend:</b> <code>--dur-fast → --nhip-vien</code>, <code>--dur-base → --nhip-ngu-canh</code> as aliases; retire the pair.</td></tr>
+<tr><td class="n">C2</td><td><b>Seven size tokens, six roles.</b> <code>--fs-2xs 11px</code> has no role in this sheet.</td><td><code>--fs-2xs</code> declared in <code>:root</code></td><td>Deprecate <code>--fs-2xs</code>; its occupants move to <code>--fs-xs</code> 12px.</td></tr>
+<tr><td class="n">C3</td><td><b>Off-scale font sizes inside <code>globals.css</code> itself.</b> <code>11.5px</code> (×2), <code>11px</code>, <code>10px</code>, <code>9px</code> in the tooltip and touch-rail blocks.</td><td>lines ≈1828, 1897, 1908, 1921, 2004</td><td>None is on any declared scale; <b>9px</b> is below any legible floor and it is a Vietnamese rail label. Must move to <code>--fs-xs</code>.</td></tr>
+<tr><td class="n">C4</td><td><b>Global negative tracking on Vietnamese body text.</b> <code>body { letter-spacing: -0.011em }</code> applies to every string in the app.</td><td>line ≈430</td><td>Directly contradicts the Vietnamese rule that negative tracking is banned in running text. <b>Recommend:</b> move to <code>.sp-display</code>/<code>.sp-title</code> only; body resets to 0.</td></tr>
+<tr><td class="n">C5</td><td><b>G0–G3 vocabulary absent from code.</b> The material law's four names appear <b>zero</b> times in <code>globals.css</code>.</td><td>grep <code>G0|G1|G2|G3</code> → 0</td><td>Add <code>--g0 … --g3</code> as aliases of the existing surfaces. §06 is the mapping.</td></tr>
+<tr><td class="n">C6</td><td><b><code>--accent</code> fails as text</b> on every dark surface (4.00 / 3.76 / 3.55 / 3.32) and on light <code>--bg</code> (4.26).</td><td>computed WCAG 2.x</td><td>Constrained in §03: fill and border only; accent text permitted at ≥18.66px/600 alone.</td></tr>
+<tr><td class="n">C7</td><td><b>Light <code>--t4</code> fails even the 3:1 non-text threshold</b> on <code>--bg</code> (2.65) and <code>--field</code> (2.69).</td><td>computed WCAG 2.x</td><td>Justified as disabled-only (WCAG-exempt) <em>and</em> constrained: never the sole carrier, always paired with <code>aria-disabled</code> + reason.</td></tr>
+<tr><td class="n">C8</td><td><b>Light <code>--warning</code> on <code>--bg</code> = 4.40</b> — below 4.5.</td><td>computed WCAG 2.x</td><td>Warning text banned on <code>--bg</code>; must sit on <code>--card</code> or <code>--panel</code> (5.05 / 4.76).</td></tr>
+<tr><td class="n">C9</td><td><b>Light <code>--t3</code> on <code>--bg</code> = 4.53</b> — passes by 0.03.</td><td>computed WCAG 2.x</td><td>Zero headroom. Any translucent surface consumes it → the <code>--kinh-chu-phu</code> rule in §03 is not optional.</td></tr>
+<tr><td class="n">C10</td><td><b><code>--accent-warm</code> is declared login-only, but <code>--k-doc</code> (dark) is the same hex.</b></td><td><code>#c79a63</code> twice in <code>:root</code></td><td>Two tokens, one value, contradictory rules. Either divergence is intended (then document it) or the shelf dot should alias.</td></tr>
+<tr><td class="n">C11</td><td><b><code>--radius-xl</code> aliases <code>--r-4</code></b>, so the four-step scale has a fifth name meaning the fourth step.</td><td><code>--radius-xl: var(--r-4)</code></td><td>Harmless today, but a guard counting radius names finds 9. Migrate the 62 legacy usages and delete the aliases.</td></tr>
+</tbody></table></div>
+</section>
+
+<!-- ======================================================================= -->
+<section>
+<h2><span class="num">09</span> Machine-checkable rule list</h2>
+<p class="lede">The contract for a future <code>soi:foundation</code> guard. Each rule is phrased so
+a script can test it against source, with no judgement call.</p>
+
+<ol class="rules">
+<li><b>Type — size closure.</b> No text node may compute a <code>font-size</code> outside {12, 13, 14, 15, 16, 20, 28}px. 15 is legal only inside <code>(hover:none) and (pointer:coarse)</code>. Any literal <code>font-size</code> in <code>.tsx</code>/<code>.css</code> not equal to one of <code>--fs-xs · --fs-ui · --fs-sm · --fs-md · --fs-lg · --fs-xl</code> fails.</li>
+<li><b>Type — token, not literal.</b> No <code>font-size</code> declaration may use a raw <code>px</code> value. It must be <code>var(--fs-*)</code>. Count of raw declarations must be 0.</li>
+<li><b>Type — <code>--fs-2xs</code> is retired.</b> Occurrences of <code>--fs-2xs</code> must be 0.</li>
+<li><b>Type — Vietnamese line-height floor.</b> Any rule with <code>line-height &lt; 1.5</code> must apply only to selectors annotated <code>/* technical */</code>, and the corresponding string must match <code>^[0-9A-Za-z .,:×·°²³∅±≥≤%\/\-–—()"']+$</code>. A sub-1.5 line-height on a string containing any of <code>ăâđêôơư</code> or any combining diacritic fails.</li>
+<li><b>Type — no ALL-CAPS Vietnamese.</b> No element with <code>text-transform: uppercase</code> may contain a string with a Vietnamese diacritic. Literal upper-case Vietnamese strings in source fail equally.</li>
+<li><b>Type — no negative tracking on running text.</b> <code>letter-spacing</code> &lt; 0 is legal only where computed <code>font-size ≥ 20px</code>. The <code>body{}</code> rule must not carry a negative value.</li>
+<li><b>Type — font fallback.</b> Every <code>font-family</code> containing <code>var(</code> must supply a fallback inside the parentheses. <code>var(--font-sans)</code> with no second argument fails.</li>
+<li><b>Spacing — step closure.</b> Every <code>margin</code>, <code>padding</code>, <code>gap</code>, <code>top/right/bottom/left</code> px literal must be in {0, 4, 8, 12, 16, 20, 24, 32, 40, 48, 64}. <b>80 fails.</b> 1px is exempt (hairline).</li>
+<li><b>Radius — step closure.</b> Every <code>border-radius</code> must resolve to one of <code>--r-1 · --r-2 · --r-3 · --r-4 · --r-full</code>, or to <code>max(4px, calc(var(--r-*) - Npx))</code> with N ≤ 8. Any other literal fails.</li>
+<li><b>Radius — alias retirement.</b> Occurrences of <code>--radius-sm · --radius-md · --radius-lg · --radius-xl · --radius</code> must trend to 0 (baseline 62; the guard fails on any increase).</li>
+<li><b>Icon — single source.</b> Every icon element must originate from <code>lucide-react</code> or from the named house set. Any inline <code>&lt;svg&gt;</code> outside those two, in a component file, fails.</li>
+<li><b>Icon — stroke weight.</b> Every icon must render <code>stroke-width="1.5"</code>. Any <code>strokeWidth</code> prop ≠ 1.5 fails. <em>Baseline: 12 distinct values, ~120 occurrences.</em></li>
+<li><b>Icon — optical size.</b> Every icon <code>size</code> must be in {14, 16, 18, 20}. <em>Baseline: 12+ distinct values; 13/15/12/11/10/22/17/26 all fail.</em></li>
+<li><b>Icon — grid.</b> Every icon <code>viewBox</code> must equal <code>"0 0 24 24"</code>.</li>
+<li><b>Icon — terminals and joins.</b> Every icon must carry <code>stroke-linecap="round"</code> and <code>stroke-linejoin="round"</code>.</li>
+<li><b>Icon — colour.</b> Every icon must use <code>stroke="currentColor"</code>. Any hard-coded hex in an icon <code>stroke</code> or <code>fill</code> fails.</li>
+<li><b>Icon — fill law.</b> A filled icon (<code>fill</code> ≠ <code>"none"</code>) must sit inside an element carrying a selected/on marker (<code>aria-selected</code>, <code>aria-pressed="true"</code>, or <code>data-selected</code>). A filled icon in a resting control fails.</li>
+<li><b>Icon — detail budget.</b> House-set glyphs must contain ≤ 5 drawing children.</li>
+<li><b>Colour — no literals.</b> Outside the single marked token-mirror block, no <code>#rrggbb</code> or <code>rgb()</code> literal may appear in any <code>.tsx</code>, <code>.css</code>, or <code>.dc.html</code>.</li>
+<li><b>Colour — <code>--t5</code> is not text.</b> No <code>color</code> declaration may resolve to <code>--t5</code>.</li>
+<li><b>Colour — accent is not text.</b> <code>color: var(--accent)</code> is legal only where computed <code>font-size ≥ 18.66px</code> <em>and</em> <code>font-weight ≥ 600</code>.</li>
+<li><b>Colour — warning placement.</b> <code>color: var(--warning)</code> must not appear on an element whose computed background resolves to <code>--bg</code>.</li>
+<li><b>Colour — tertiary on glass.</b> <code>color: var(--t3)</code> must not appear on any element carrying <code>backdrop-filter</code> or a <code>--kinh-*</code> background. Use <code>--kinh-chu-phu</code>.</li>
+<li><b>Colour — second channel.</b> Every element whose <em>only</em> distinguishing property is <code>--danger</code>, <code>--warning</code>, or <code>--success</code> must also contain a text node or an icon child. A colour-only status indicator fails.</li>
+<li><b>Focus — never suppressed.</b> <code>outline: none</code> is legal only when the same rule set defines a <code>:focus-visible</code> ring. Unpaired <code>outline: none</code> fails.</li>
+<li><b>Hit region.</b> Every interactive element must compute ≥ 32 × 32 on desktop and ≥ 44 × 44 under coarse pointer.</li>
+<li><b>Rail.</b> The sidebar rail's first nấc must compute exactly 52px. Any other value fails.</li>
+<li><b>Material — no glass on glass.</b> No element with <code>backdrop-filter</code> may have an ancestor with <code>backdrop-filter</code> inside the same stacking context.</li>
+<li><b>Material — G3 scarcity.</b> At most <b>3</b> elements per rendered screen may carry <code>--kinh-dac</code> together with a scale transform.</li>
+<li><b>Material — G3 has no aura.</b> No element carrying <code>--kinh-dac</code> may declare a <code>box-shadow</code> with positive spread, a <code>filter: drop-shadow</code> with a hue, or any non-inset shadow other than <code>--shadow-node</code>.</li>
+<li><b>Material — G3 bulge ceiling.</b> Any <code>scale()</code> on a <code>--kinh-dac</code> element must be ≤ 1.015.</li>
+<li><b>Material — blur ceiling.</b> No <code>backdrop-filter: blur()</code> may exceed 24px.</li>
+<li><b>Elevation — closure.</b> Every <code>box-shadow</code> must be <code>--shadow-node</code>, <code>--shadow-pop</code>, <code>--shadow-sheet</code>, or an inset hairline. Bespoke shadow literals fail.</li>
+<li><b>Motion — duration closure.</b> Every <code>transition-duration</code> and <code>animation-duration</code> must be one of the five <code>--nhip-*</code> tokens.</li>
+<li><b>Motion — single curve.</b> Every <code>transition-timing-function</code> must be <code>var(--ease-apple)</code> or a linear ramp for a progress indicator.</li>
+<li><b>Motion — reduced-motion coverage.</b> Every rule declaring <code>animation</code> with <code>infinite</code> must have a matching <code>prefers-reduced-motion: reduce</code> override that sets a static state, not a longer duration.</li>
+<li><b>Density — token closure.</b> Only <code>--tap</code>, <code>--row</code>, <code>--gap</code>, <code>--pad-card</code>, <code>--fs-ui</code> may be redefined inside <code>(hover:none) and (pointer:coarse)</code>. Any other token redefined there fails.</li>
+<li><b>Density — hover is never sole.</b> Every element whose content appears only on <code>:hover</code> must also expose it on <code>:focus-visible</code> and on press.</li>
+<li><b>Theme — attribute driven.</b> Theme-varying declarations must sit under <code>:root[data-theme='light']</code> or <code>:root[data-theme='dark']</code>. A colour token defined <em>only</em> inside <code>prefers-color-scheme</code> fails.</li>
+<li><b>Disabled — reachable reason.</b> Every element carrying <code>--mo-vo-hieu</code> must also carry <code>aria-disabled="true"</code> and <code>aria-describedby</code>. The bare <code>disabled</code> attribute and <code>title=</code> both fail.</li>
+</ol>
+</section>
+
+</div>
+
+<!-- TRANSFER NOTES
+================================================================================
+FOUNDATION SYSTEM SHEET — docs/mocks/claude-foundation-system.dc.html
+Claude Design · 23/08/2026 · group="Foundations"
+
+WHAT THIS IS
+  The base scale the other surfaces were blocked on. Not a screen. Six type
+  roles, ten spacing steps with stated meanings, colour roles with measured
+  contrast and a mandatory second channel, an icon law strict enough to reject
+  by measurement, exact G0-G3 values, and elevation/motion/density tokens.
+
+  Section 09 is the deliverable that matters most: 40 rules phrased for a
+  script. It is the contract for a future `soi:foundation` guard.
+
+SETTLED — TYPE SCALE COUNT: SIX
+  display 28 / title 20 / body 16 / label 13-15 / technical 14 / caption 12.
+  Six because the app has exactly six typographic jobs and one screen was
+  already carrying eleven sizes. Seven size tokens exist in globals.css; six
+  are mapped to roles and --fs-2xs (11px) is retired (C2).
+
+  The technical/ambient boundary is content-based and testable: line-height
+  1.25 is permitted ONLY for strings with no Vietnamese diacritics. That is
+  the reason a single scale failed, and it is now a regex, not an opinion.
+
+ICON LAW, ONE SENTENCE
+  lucide is the system: every icon is a 24x24 grid, stroke-width 1.5,
+  currentColor, round caps and joins, at one of four optical sizes
+  (14/16/18/20), outline at rest with fill reserved exclusively to mean
+  selected.
+
+TOKENS REUSED (no parallel set invented)
+  --fs-xs/-ui/-sm/-md/-lg/-xl · --fw-normal/-semi · --r-1..4 · --r-full
+  --bg --panel --card --field --hover --border --border-strong
+  --t1..t5 · --accent --accent-strong --accent-soft --accent-ring --on-accent
+  --danger --warning --success · --kinh-chu-phu · --vien-mo · --mo-vo-hieu
+  --kinh-mong/-vua/-dac · --kinh-mep-sang --kinh-vien
+  --kinh-nhoe --kinh-nhoe-sau --kinh-nhoe-mong · --vl-dac --vl-gan-dac(-nhoe)
+  --shadow-node/-pop/-sheet · --nen-mo-panel --nen-mo-overlay
+  --nhip-bam/-vien/-bang/-ngu-canh/-bien-hinh · --ease-apple
+  --tap --tap-lg --row --gap --pad-card --font-sans
+
+TOKENS THAT MUST BE ADDED (2 names, 0 new values)
+  --font-tech   alias of --font-sans + tabular-nums. A TREATMENT, not a second
+                family: a second webfont is a second thing that can fail to
+                load offline, and the last font failure put the app in Times.
+  --g0 .. --g3  aliases of the existing surfaces, so the material law and the
+                code finally use the same word (see C5).
+
+CONTRADICTIONS FOUND IN globals.css — full table in section 08
+  C1  two parallel motion scales (--dur-fast/-base vs --nhip-*); 180ms and
+      320ms are not steps on the --nhip scale
+  C3  globals.css itself ships 11.5 / 11 / 10 / 9px off-scale font sizes; the
+      9px one is a Vietnamese rail label under coarse pointer
+  C4  body { letter-spacing: -0.011em } applies negative tracking to ALL
+      Vietnamese running text, against the standing rule
+  C5  G0/G1/G2/G3 appear ZERO times in globals.css - the law and the tokens
+      share no vocabulary, which is why compliance was uncheckable
+  C6  --accent fails as text on every dark surface (3.32-4.00) and light --bg
+  C7  light --t4 fails even 3:1 on --bg (2.65) and --field (2.69)
+  C8  light --warning on --bg = 4.40, under 4.5
+  C9  light --t3 on --bg = 4.53 - passes by 0.03, zero headroom
+  C10 --accent-warm (login-only) and --k-doc share one hex with opposing rules
+  C11 --radius-xl aliases --r-4: nine radius names for five steps
+
+BASELINE COUNTS FOR THE GUARD (measured 23/08)
+  lucide-react imports ......... 214 files
+  strokeWidth distinct values ... 12  (2, 1.8, 1.75, 2.2, 1.9, 1.7, 1.5, 3,
+                                       2.5, 1.85, ...)
+  icon size distinct values ..... 12+ (13:317, 14:248, 15:180, 12:178, 11:83,
+                                       16:54, 18:50, 10:30, 22:20, 17:12,
+                                       20:9, 26:5)
+  legacy radius aliases ......... 62 usages
+  Rules R12/R13 should fail loudly on first run. That is the point: the guard
+  is being written against a known-bad baseline, and the counts above are what
+  "fixed" will be measured against.
+
+NOT SETTLED - NEEDS A DECISION BEFORE BUILD
+  · spacing step 40 is on probation (§02). If the Full App Experience Atlas
+    finds no surface needing exactly 40, the scale becomes nine steps.
+  · C10: is the --accent-warm / --k-doc divergence intended or accidental?
+  · the house set of nghe symbols (tuong, cua, cao do, truc, mat cat) is named
+    here but not drawn. It needs its own sheet before R11 can pass.
+
+RENDER NOTES
+  Self-contained. Inline CSS + inline SVG only, no external assets. Theme is
+  driven by [data-theme='light'] / [data-theme='dark'] attribute selectors,
+  matching how the app drives theme - NOT prefers-color-scheme. Dark is the
+  default via the bare :root selector. All hex is confined to the single
+  marked TOKEN MIRROR block at the top; it is a mirror of globals.css, never
+  a source.
+================================================================================
+-->

@@ -111,7 +111,7 @@ export default function ResumeWork({
           {/* Mũi tên NÓI HÀNH ĐỘNG sắp xảy ra (chuẩn PanelFlank): quay xuống = sổ thêm,
               quay lên (nấc cuối) = thu về gọn. */}
           <ChevronDown
-            size={13}
+            size={14}
             aria-hidden
             style={{ transform: nac === 'day' ? 'rotate(180deg)' : undefined }}
           />
@@ -146,14 +146,14 @@ export default function ResumeWork({
                 className="inline-flex items-center gap-1 rounded-[var(--r-1)] px-1.5 py-0.5 text-[length:var(--fs-2xs)] text-[var(--t3)]"
                 style={{ background: 'var(--field)' }}
               >
-                <Icon size={11} aria-hidden /> {stageName}
+                <Icon size={14} aria-hidden /> {stageName}
               </span>
               {time && (
                 <span
                   className="inline-flex items-center gap-1 rounded-[var(--r-1)] px-1.5 py-0.5 font-mono text-[length:var(--fs-2xs)] tabular-nums text-[var(--t3)]"
                   style={{ background: 'var(--field)' }}
                 >
-                  <Clock size={11} aria-hidden /> {time}
+                  <Clock size={14} aria-hidden /> {time}
                 </span>
               )}
             </div>

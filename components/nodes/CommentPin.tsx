@@ -50,7 +50,7 @@ export default function CommentPin({ nodeId }: { nodeId: string }) {
         title={tr('Bình luận', 'Comments')}
         className={cnPin(own.length > 0, open)}
       >
-        <MessageCircle size={11} />
+        <MessageCircle size={14} />
         {own.length > 0 && <span className="text-[9px] font-semibold tabular-nums">{own.length}</span>}
       </button>
 
@@ -86,7 +86,7 @@ export default function CommentPin({ nodeId }: { nodeId: string }) {
                           title={tr('Xoá bình luận', 'Delete comment')}
                           className="opacity-0 transition-opacity hover:text-red-400 group-hover/c:opacity-100"
                         >
-                          <X size={11} />
+                          <X size={14} />
                         </button>
                       </div>
                     </div>

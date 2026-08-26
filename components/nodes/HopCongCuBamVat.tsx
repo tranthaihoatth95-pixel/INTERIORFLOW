@@ -39,7 +39,9 @@ export function HopCongCuBamVat({
 }: {
   nodeId: string;
   hien: boolean;
-  /** Node này có mở được thành cửa sổ công cụ không (có thẻ việc tương ứng). */
+  /** Node này có mở được thành cửa sổ công cụ không (= thuộc một MÔI TRƯỜNG làm việc;
+   *  22/08 đổi từ "có thẻ việc" — thẻ việc 12/12 là node ảnh nên bám vào nó là khoá cửa sổ
+   *  lại ở đúng một môi trường, xem `moiTruongChoDefType`). */
   laCuaSo: boolean;
   dangChay: boolean;
   loi: boolean;

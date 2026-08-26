@@ -44,11 +44,16 @@ export const TOKEN: Record<
     nenMoHeader: [20, 20, 23], // --nen-mo-header rgba(20,20,23,.72)
   },
   light: {
-    t1: [33, 30, 25], // --t1 #211e19
-    t2: [71, 66, 58], // --t2 #47423a
-    t3: [114, 108, 98], // --t3 #726c62
+    // 🔄 ĐỒNG BỘ 23/08 — bộ cũ là hệ KEM ẤM (#211e19 · #47423a · #726c62 · nền #faf8f4).
+    // Lane MÀU đưa theme sáng về hệ ngả LAM canh Apple, bản sao này lệch theo và drift-guard
+    // bắt đúng — đó là việc của nó. Đây là chỗ DỄ MỤC NHẤT của repo: một bản sao thủ công của
+    // `globals.css`. Nó tồn tại vì hàm tính tương phản là hàm THUẦN, không đọc được CSS lúc chạy.
+    // ⇒ Đừng bỏ guard cho đỡ phiền: guard chính là thứ vừa cứu bản sao này khỏi nói dối.
+    t1: [29, 29, 36], // --t1 #1d1d24
+    t2: [67, 67, 78], // --t2 #43434e
+    t3: [108, 108, 120], // --t3 #6c6c78
     card: [255, 255, 255], // --card #ffffff
-    nenMoHeader: [250, 248, 244], // --nen-mo-header rgba(250,248,244,.72)
+    nenMoHeader: [249, 249, 251], // --nen-mo-header rgba(249,249,251,.72)
   },
 };
 

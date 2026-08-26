@@ -173,7 +173,7 @@ export function ZonePanel({ onClose, onExportPresent }: { onClose: () => void; o
       {tool === 'arrow' && (
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 4px', cursor: 'pointer' }}>
           <input type="checkbox" checked={bothHeads} onChange={(e) => setBothHeads(e.target.checked)} />
-          <MoveUpRight size={13} />
+          <MoveUpRight size={14} />
           <span style={{ fontSize: 11.5, color: 'var(--t2)' }}>Mũi tên CẢ 2 đầu (song hướng)</span>
         </label>
       )}
@@ -188,20 +188,20 @@ export function ZonePanel({ onClose, onExportPresent }: { onClose: () => void; o
             onClick={() => fileRef.current?.click()}
             style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', justifyContent: 'center', padding: '6px 0', borderRadius: 10, border: '1px dashed var(--border)', background: 'transparent', color: 'var(--t2)', fontSize: 11.5, cursor: 'pointer' }}
           >
-            <Upload size={13} /> Tải ảnh vệ tinh / hiện trạng
+            <Upload size={16} /> Tải ảnh vệ tinh / hiện trạng
           </button>
         )}
         {site && (
           <div style={{ display: 'grid', gap: 5 }}>
             <div style={{ display: 'flex', gap: 4 }}>
               <button type="button" onClick={() => updateSiteImage({ visible: !site.visible })} style={{ ...segBtn(false), display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }} title="Ẩn/hiện ảnh nền">
-                {site.visible ? <Eye size={12} /> : <EyeOff size={12} />} {site.visible ? 'Hiện' : 'Ẩn'}
+                {site.visible ? <Eye size={14} /> : <EyeOff size={14} />} {site.visible ? 'Hiện' : 'Ẩn'}
               </button>
               <button type="button" onClick={fitToDrawing} style={{ ...segBtn(false), display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }} title="Trải lại theo bao hình bản vẽ">
-                <Maximize size={12} /> Fit
+                <Maximize size={14} /> Fit
               </button>
               <button type="button" onClick={() => setSiteImage(null)} style={{ ...segBtn(false), display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }} title="Gỡ ảnh nền">
-                <Trash2 size={12} /> Gỡ
+                <Trash2 size={14} /> Gỡ
               </button>
             </div>
             <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
@@ -235,7 +235,7 @@ export function ZonePanel({ onClose, onExportPresent }: { onClose: () => void; o
         title="Render zone map + legend thành 1 slide mới ở chặng Trình chiếu"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 8, padding: '7px 0', borderRadius: 10, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
       >
-        Xuất Trình chiếu <ArrowRight size={13} />
+        Xuất Trình chiếu <ArrowRight size={18} />
       </button>
     </div>
   );
@@ -322,7 +322,7 @@ export function ZonesLegend() {
         })}
         {hasArrow && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 4px' }}>
-            <MoveUpRight size={11} color="var(--t3)" style={{ flexShrink: 0 }} />
+            <MoveUpRight size={14} color="var(--t3)" style={{ flexShrink: 0 }} />
             <span style={{ fontSize: 10.5, fontWeight: 650, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--t1)' }}>Giao thông</span>
             <span style={{ fontSize: 10, color: 'var(--t4)' }}>· Circulation (mũi tên đứt)</span>
           </div>

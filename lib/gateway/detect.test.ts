@@ -100,7 +100,9 @@ ok('dxf → cad-import-drawing', routeFormat('dxf', 'cad').kind === 'cad-import-
 ok('dwg → cad-import-drawing ở đúng chặng', routeFormat('dwg', 'cad').kind === 'cad-import-drawing');
 ok('ifpack → cad-restore-project (gọi từ bất kỳ chặng nào)', routeFormat('ifpack', 'present').kind === 'cad-restore-project');
 ok('pptx → present-import-deck ở đúng chặng', routeFormat('pptx', 'present').kind === 'present-import-deck');
-ok('pdf → unsupported vì chưa có importer deck PDF', routeFormat('pdf', 'present').kind === 'unsupported');
+// R6 19/08 — Smart Convert bậc 1 đã có importer deck PDF; dòng cũ khẳng định đường thoái lui.
+ok('pdf → present-import-deck ở Trình bày', routeFormat('pdf', 'present').kind === 'present-import-deck');
+ok('pdf ở CAD → unsupported như cũ', routeFormat('pdf', 'cad').kind === 'unsupported');
 ok('xlsx → library-bulk-ingest', routeFormat('xlsx', 'present').kind === 'library-bulk-ingest');
 ok('csv → library-bulk-ingest', routeFormat('csv', 'cad').kind === 'library-bulk-ingest');
 ok('unknown → unsupported (kèm format gốc)', (() => {

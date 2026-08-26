@@ -118,9 +118,19 @@ export function theViecChoDefType(defType: string): string | null {
   return card ? card.id : null;
 }
 
-/** Mặt tiền boolean của hàm trên, cho chỗ chỉ cần biết có/không. */
+/**
+ * Mặt tiền boolean: `defType` này có mở ra được thành cửa sổ công cụ không.
+ *
+ * 🔴 ĐỔI 22/08 — TRƯỚC đây hàm này hỏi *"có thẻ việc không"*, mà `TASK_CARDS` **12/12 là node ẢNH**
+ * ⇒ hệ quả đo được: `ToolWindow.tsx` gõ cứng `moiTruong="anh"` cho MỌI cửa sổ, và bảng
+ * `MOI_TRUONG` khai đủ 4 môi trường nhưng **3 cái không có đường nào mở ra**. Tức khung chịu được
+ * bốn môi trường còn app chỉ đi được một — đúng loại "dây có, chưa có dòng điện".
+ * NAY hỏi thẳng *"node này thuộc môi trường nào"* (`moiTruongChoDefType`), thẻ việc chỉ còn là
+ * MỘT trong các nguồn trả lời. Nhờ đó `three.*` mở ra cửa sổ **Khối 3D**, `*2video` mở ra cửa sổ
+ * **Phim** — hai loại cửa sổ khác nhau đứng chung một canvas, nối dây được.
+ */
 export function laCuaSoCongCu(defType: string): boolean {
-  return theViecChoDefType(defType) !== null;
+  return moiTruongChoDefType(defType) !== null;
 }
 
 /** Khoá cửa sổ neo vào một node — tiền tố để không đụng khoá của cửa sổ nổi. */
@@ -131,6 +141,16 @@ export function khoaCuaSoNode(nodeId: string): string {
 /** Khoá cửa sổ nổi mở từ một thẻ việc. */
 export function khoaCuaSoThe(cardId: string): string {
   return `the:${cardId}`;
+}
+
+/**
+ * Chiều ngược của `khoaCuaSoNode()` — cửa sổ nổi (khoá `the:...`) không neo vào node cụ thể nào
+ * nên trả `null`. Dùng ở nơi cần biết "cửa sổ này đang neo vào node nào" mà không phải xuyên
+ * thêm một prop `nodeId` qua các lớp component không liên quan (vd panel vệ tinh — xem
+ * `controlled-edit-ui.ts`).
+ */
+export function nodeIdFromKhoa(khoa: string): string | null {
+  return khoa.startsWith('node:') ? khoa.slice('node:'.length) : null;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════
@@ -385,4 +405,59 @@ export function lenhSaiKhongGian(ma: MaMoiTruong): string[] {
 /** Lệnh vừa ở thanh chung vừa ở trong cửa sổ — **phải luôn rỗng**, nếu không là hai bộ đá nhau. */
 export function lenhDamChan(ma: MaMoiTruong): string[] {
   return lenhTrongCua(ma).filter((id) => LENH_CHUNG.includes(id));
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   NODE NÀO THUỘC MÔI TRƯỜNG NÀO — điều kiện để "hai cửa sổ KHÁC LOẠI đứng chung một canvas".
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Bảng khai **TƯỜNG MINH**, cố ý KHÔNG đoán theo tiền tố chuỗi (`defType.startsWith('three.')`).
+ * Đoán theo tên là luật ngầm: thêm một node `three.xyz` chỉ để tính toán mà không phải môi
+ * trường 3D thì nó tự mọc ra một cửa sổ sai — và không ai thấy cho tới lúc người dùng bấm.
+ * Khai tay thì mỗi dòng là một quyết định đọc lại được.
+ *
+ * Node ẢNH không liệt kê ở đây: chúng đến từ `TASK_CARDS` (xem `moiTruongChoDefType`), giữ đúng
+ * luật "không chép cùng một danh sách sang chỗ thứ hai".
+ */
+export const MOI_TRUONG_THEO_DEFTYPE: Readonly<Record<string, MaMoiTruong>> = {
+  // Khối 3D — cả hai node đều làm việc trên KHÔNG GIAN, không phải trên pixel.
+  'three.camera': 'ba-chieu',
+  'three.cad2fbx': 'ba-chieu',
+  // Phim — đầu ra là `video`, dòng thời gian mới là bàn làm việc đúng của chúng.
+  'ai.image2video': 'video',
+  'ai.text2video': 'video',
+  // Ảnh — node ảnh KHÔNG có thẻ việc trong `TASK_CARDS` (thẻ việc chỉ phủ 12 node).
+  'ai.text2image': 'anh',
+};
+
+/**
+ * Môi trường làm việc của một `defType`, hoặc `null` nếu node này không mở ra cửa sổ nào
+ * (đúng và bình thường: `input.prompt`, `util.compare`… là khối nhỏ, không phải xưởng).
+ *
+ * Thứ tự tra: bảng khai tay TRƯỚC (nói rõ), rồi mới tới thẻ việc (mọi thẻ việc đều là ảnh).
+ */
+export function moiTruongChoDefType(defType: string): MaMoiTruong | null {
+  const khai = MOI_TRUONG_THEO_DEFTYPE[defType];
+  if (khai) return khai;
+  return theViecChoDefType(defType) !== null ? 'anh' : null;
+}
+
+/**
+ * Nấc này có được chạy MÔI TRƯỜNG NẶNG không (viewport 3D · trình phát phim · WebGL).
+ *
+ * ⚠️ ZOOM LỒNG ZOOM — lý do hàm này tồn tại. Cụm `neo` nằm TRONG phép biến đổi của canvas (đúng
+ * chốt Hoà 15/08: cửa sổ phải THUỘC canvas mới nối dây được). Một mặt WebGL vẽ bên trong một
+ * container đang bị `scale()` thì vừa mờ hình vừa loạn tay (canvas zoom một đằng, quỹ đạo 3D
+ * xoay một nẻo). Chặn ở nấc `thu`: nấc đó chỉ được bày ẢNH TĨNH + trạng thái, đúng công năng của
+ * nó (*"có công đoạn này, xong chưa"*) — không phải bản thu nhỏ của bàn làm việc.
+ *
+ * 🟡 KHAI THẬT: ở nấc `vua` cụm VẪN nằm trong phép biến đổi canvas. Đây là **cố ý**, vì thoát ra
+ * là mất cổng/dây — trả giá lớn hơn cái được. Rủi ro chưa hiện thực vì trong repo hiện tại
+ * KHÔNG mặt WebGL nào vẽ trong thân node (xem 3D là `Scene3DPreviewModal`, một cửa sổ nổi riêng);
+ * ngày nào kéo viewport 3D vào thẳng thân node thì phải giải lại, và `toanMan` (đã thoát ra
+ * `position:fixed`) là đường ra sẵn có.
+ */
+export function chayMoiTruongNang(cap: CapCuaSo): boolean {
+  return cap !== 'thu';
 }

@@ -27,9 +27,22 @@ import {
   lenhTrongCua,
   lenhSaiKhongGian,
   lenhDamChan,
+  moiTruongChoDefType,
+  MOI_TRUONG_THEO_DEFTYPE,
+  chayMoiTruongNang,
   type CapCuaSo,
   type MaMoiTruong,
 } from './cua-so-cong-cu';
+import {
+  LENH_DA_NOI,
+  LY_DO_CHUA_NOI,
+  daNoiDien,
+  giaTriKe,
+  lenhKhongKhaiSoPhan,
+  lenhKhaiHaiLan,
+  lenhKhaiThua,
+  moiLenhTrongCua,
+} from './thi-hanh-lenh-cua';
 import { dinhNghiaKetQua, dongDinhNghia, TEN_LOAI } from './dinh-nghia-ket-qua';
 import { TASK_CARDS } from '../render-studio/task-cards';
 
@@ -182,6 +195,78 @@ ok(
   'ranh giới lệnh áp CHO CẢ HAI LOẠI, không có ngoại lệ cho cửa sổ thảo luận',
   MOI_TRUONG_MA.every((m) => lenhSaiKhongGian(m).length === 0 && lenhDamChan(m).length === 0),
 );
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   ⑦ HAI CỬA SỔ KHÁC LOẠI TRÊN MỘT CANVAS — điều kiện dữ liệu, canh bằng máy.
+   Trước 22/08 `ToolWindow` gõ cứng `moiTruong="anh"` vì `laCuaSoCongCu` chỉ hỏi "có thẻ việc
+   không", mà 12/12 thẻ việc là node ảnh ⇒ bảng khai bốn môi trường, app đi được một.
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+ok(
+  'mọi thẻ việc vẫn mở ra cửa sổ ẢNH (không phá đường cũ)',
+  TASK_CARDS.every((c) => moiTruongChoDefType(c.nodeType) === 'anh'),
+);
+ok('node 3D mở ra cửa sổ KHỐI 3D', moiTruongChoDefType('three.camera') === 'ba-chieu');
+ok('node video mở ra cửa sổ PHIM', moiTruongChoDefType('ai.image2video') === 'video');
+ok('node không thuộc môi trường nào thì KHÔNG mở cửa sổ', moiTruongChoDefType('input.prompt') === null);
+ok('`laCuaSoCongCu` đi theo môi trường, không đi theo thẻ việc', laCuaSoCongCu('three.cad2fbx'));
+// Đây là điểm nghiệm thu THẬT của "hai cửa sổ khác loại": phải tồn tại ≥2 môi trường có node
+// thật mở ra được. Một môi trường thì không có chuyện "khác loại" nào để chứng minh.
+const moiTruongMoDuoc = new Set(
+  [...TASK_CARDS.map((c) => c.nodeType), ...Object.keys(MOI_TRUONG_THEO_DEFTYPE)]
+    .map(moiTruongChoDefType)
+    .filter((m): m is MaMoiTruong => m !== null),
+);
+ok('có ÍT NHẤT HAI loại cửa sổ mở được từ node thật', moiTruongMoDuoc.size >= 2);
+ok('bảng khai tay không trỏ vào môi trường lạ', Object.values(MOI_TRUONG_THEO_DEFTYPE).every((m) => MOI_TRUONG[m]));
+
+// ⑧ ZOOM LỒNG ZOOM — nấc `thu` KHÔNG được chạy môi trường nặng (WebGL trong container bị scale).
+ok('nấc thu KHÔNG chạy môi trường nặng', chayMoiTruongNang('thu') === false);
+ok('nấc vừa và toàn màn thì có', chayMoiTruongNang('vua') && chayMoiTruongNang('toanMan'));
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   ⑨ DÒNG ĐIỆN CHO LỆNH VỆ TINH — mọi lệnh phải khai SỐ PHẬN của nó.
+   Luật: đã nối thì có bộ thi hành; chưa nối thì có LÝ DO RIÊNG. Không lệnh nào rơi vào câu lý
+   do dùng chung — câu chung là lý do của cái danh sách, không phải của lệnh (§9).
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+ok('không lệnh nào thiếu khai số phận (nối, hoặc có lý do riêng)', lenhKhongKhaiSoPhan().length === 0);
+ok('không lệnh nào vừa khai đã-nối vừa khai chưa-nối', lenhKhaiHaiLan().length === 0);
+ok('không khai thừa lệnh không tồn tại trong bảng môi trường', lenhKhaiThua().length === 0);
+ok('có ít nhất 4 lệnh ĐÃ có dòng điện', Object.keys(LENH_DA_NOI).length >= 4);
+ok(
+  'dòng điện chạm ÍT NHẤT HAI môi trường (không dồn hết vào Ảnh)',
+  new Set(Object.keys(LENH_DA_NOI).map((id) => id.split('.')[1])).size >= 2,
+);
+ok(
+  'mọi lý do đều song ngữ và không rỗng',
+  Object.values(LY_DO_CHUA_NOI).every((r) => r.vi.trim().length > 0 && r.en.trim().length > 0),
+);
+ok(
+  'lý do phải RIÊNG — không hai lệnh khác môi trường dùng chung một câu',
+  (() => {
+    const theoMoiTruong = new Map<string, Set<string>>();
+    for (const [id, r] of Object.entries(LY_DO_CHUA_NOI)) {
+      const mt = id.split('.')[1];
+      if (!theoMoiTruong.has(r.vi)) theoMoiTruong.set(r.vi, new Set());
+      theoMoiTruong.get(r.vi)!.add(mt);
+    }
+    return [...theoMoiTruong.values()].every((s) => s.size === 1);
+  })(),
+);
+// Lệnh có dòng điện VẪN phải nằm trong không gian tên của môi trường mình — nối điện không phải
+// là cái cớ để một lệnh bò ra thanh chung.
+ok(
+  'lệnh đã nối vẫn giữ tiền tố `cua.<môi trường>.`',
+  Object.keys(LENH_DA_NOI).every((id) => id.startsWith('cua.')),
+);
+ok('bảng lệnh đủ 13 lệnh như bảng môi trường khai', moiLenhTrongCua().length === new Set(moiLenhTrongCua()).size);
+ok('`daNoiDien` khớp bảng', daNoiDien('cua.anh.can-trang') && !daNoiDien('cua.anh.duong-cong'));
+
+// ⑩ `giaTriKe` — nút đảo tham số. CUỘN VÒNG (khác `capKe` cố ý không cuộn: nấc là thang có đầu
+//    có cuối, tiêu cự/vật liệu là một vòng lựa chọn).
+ok('giaTriKe cuộn vòng', giaTriKe(['a', 'b', 'c'], 'c') === 'a');
+ok('giaTriKe đi tới', giaTriKe(['a', 'b', 'c'], 'a') === 'b');
+ok('giá trị lạ thì về đầu danh sách, KHÔNG ném lỗi', giaTriKe(['a', 'b'], 'zzz') === 'a');
+ok('danh sách rỗng thì trả null', giaTriKe([], 'a') === null);
 
 console.log(`\n${pass} pass · ${fail} fail`);
 if (fail > 0) process.exit(1);

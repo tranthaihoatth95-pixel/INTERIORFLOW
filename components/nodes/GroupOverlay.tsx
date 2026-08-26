@@ -65,7 +65,7 @@ function MacroExpandedFrame({
         style={{ height: HEADER_H, pointerEvents: 'auto' }}
       >
         <span className="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-[10px] bg-[var(--accent-soft)]">
-          <Icon size={15} className="text-[var(--accent)]" />
+          <Icon size={14} className="text-[var(--accent)]" />
         </span>
         <span className="text-[13px] font-semibold leading-[1.5] tracking-tight text-[var(--t1)]">{group.label}</span>
         <span className="text-[11px] leading-[1.5] text-[var(--t4)]">
@@ -76,7 +76,7 @@ function MacroExpandedFrame({
           onClick={() => toggleGroupCollapse(group.id)}
           className="nodrag ml-auto flex h-7 items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-3 text-[11px] font-semibold leading-[1.5] text-[var(--t1)] transition-colors hover:bg-[var(--hover)]"
         >
-          <Minimize2 size={13} />
+          <Minimize2 size={16} />
           {tr('Thu gọn lại', 'Collapse')}
         </button>
       </div>
@@ -126,7 +126,7 @@ function GroupRect({ group }: { group: NodeGroup }) {
           onClick={() => toggleGroupCollapse(group.id)}
           title="Mở rộng group"
         >
-          <ChevronRight size={12} />
+          <ChevronRight size={14} />
         </button>
         <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--t2)]">
           {group.label}
@@ -188,7 +188,7 @@ function GroupRect({ group }: { group: NodeGroup }) {
           onClick={() => toggleGroupCollapse(group.id)}
           title="Thu gọn group"
         >
-          <ChevronDown size={12} />
+          <ChevronDown size={14} />
         </button>
         {editing ? (
           <input
@@ -219,7 +219,7 @@ function GroupRect({ group }: { group: NodeGroup }) {
           onClick={() => ungroupById(group.id)}
           title="Gỡ group"
         >
-          <X size={11} />
+          <X size={14} />
         </button>
       </div>
     </div>

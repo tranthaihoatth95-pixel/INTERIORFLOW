@@ -112,7 +112,7 @@ export function FmContextMenu({
             title={!canRename ? renameReason : undefined}
             onClick={() => setRenaming(true)}
           >
-            <Pencil size={13} /> Đổi tên
+            <Pencil size={16} /> Đổi tên
           </button>
           <button
             type="button"
@@ -124,7 +124,7 @@ export function FmContextMenu({
               onDismiss();
             }}
           >
-            <Download size={13} /> Tải xuống
+            <Download size={16} /> Tải xuống
           </button>
           <button
             type="button"
@@ -137,7 +137,7 @@ export function FmContextMenu({
               onDismiss();
             }}
           >
-            <Trash2 size={13} /> Xoá
+            <Trash2 size={16} /> Xoá
           </button>
         </>
       )}

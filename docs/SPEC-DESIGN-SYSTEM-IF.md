@@ -90,3 +90,25 @@ Cùng một hình học áp cho CẢ HAI tầng:
 
 ---
 *Cowork ghi 02/08/2026. Nguồn token cho code — cùng tinh thần SyncWork (1 accent, motion spring) nhưng IF là hệ token RIÊNG.*
+## 7 · CẬP NHẬT 20/08/2026 — Experience System + luật cứng hình học (BỔ CHÍNH, không thay §2–§2e)
+
+> Nguồn: `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md` (12 điều) + luật hình học 14 mục (00-CHOT
+> 20/08) + bộ board `EXS-A…L` (Claude Design, nhóm "Experience System") — **Hoà review mắt PASS
+> 20/08**. Đây là MỘT DS duy nhất: mục này chỉ NỐI phần mới vào chỗ cũ, không mở hệ thứ hai.
+
+| Mục cũ | Trạng thái | Phần mới nối vào |
+|---|---|---|
+| §2 Hình khối | GIỮ + bổ chính | 4 primitive CÓ VIỆC: rect=không gian · rounded-rect=chủ đạo · capsule=compact action (mode/status/tool group/Vitals/segmented — cấm biến card thành pill) · circle=điểm/người/trạng thái. ⚠️ Nếu bản cũ còn số bo "6/9/12/16" thì đọc theo TOKEN hiện hành `--r-1..4 = 6/10/14/20` + `--r-full` (thang duyệt 12/08 đã đè). |
+| §2c chống ngô nghê · §2d hình học Apple | GIỮ NGUYÊN hiệu lực | thêm 3 luật: **FROM-THE-CENTER** (mọi surface mở từ tâm/nguồn của chính nó — button→capsule nở · aperture→mở từ aperture · card→inspector từ vị trí card · Auto Grid cell mọc từ frame, không teleport) · **MORPH GIỮ IDENTITY** (rail icon→label→shelf · aperture→peek→engage · icon→capsule→ToolWindow — nội suy liên tục, không hard-cut; reduce-motion được phép cắt) · **ICON CONTAINER thống nhất** (active chỉ là rounded-square/circle/capsule-ghost theo rule — khuôn ToolbarChip ghost `--accent-soft` là chuẩn). |
+| §3 Motion | GIỮ + bổ chính | 7 verb REVEAL·EXPAND·DOCK·LIFT·RECEDE·TRANSFER·RESUME (board EXS-A) — from-the-center là RÀNG BUỘC hình học của REVEAL/EXPAND. |
+| §4 Component chung | GIỮ | thêm vào danh mục: Vitals Aperture (top-edge, 3 mức) · Context Lens (right stack 5 góc) · Khung Mọc/Layout Ghost (capability Auto Grid CỦA PRESENT — scope đã đính chính 20/08) · truth badges Measured/Verified/Inferred/External/Stale · Semantic Action Strip. |
+| §5 triết lý xuyên sản phẩm | GIỮ | thêm: MỘT hệ — BỐN MẬT ĐỘ (Home roomy · Files/Library balanced · 2D/3D compact · Present editorial) đi qua token `--tap/--row/--gap/--pad-card/--fs-ui` sẵn có; khác density KHÔNG khác DS. |
+| Hard test mới | — | che logo, đặt 9 màn cạnh nhau vẫn nhận ra một hệ (board EXS-B là bàn thử; máy đo phần radius = `soi:hinh-hoc`, phần from-center/morph bổ tiêu chí khi thi công). |
+
+*Cập nhật bởi phiên EXS 20/08 theo nhắc của Hoà: "DS có trước rồi — cập nhật cái mới, sửa cái cũ nếu không đúng, không vẽ mới hoàn toàn."*
+
+**Bổ sung §7 cùng ngày 20/08:** phần MOTION + cá tính từng stage nay có luật riêng đầy đủ —
+`docs/IF-MOTION-VISUAL-LAW.md` (Hoà chốt 20/08, nguyên văn 0→IX): nhịp ms mặc định · character
+2D/3D/Present + Home/Files/Review/Vitals/Project/Profile · spotlight · depth L0-L4 · master
+capability đổi representation không đổi identity · UI-sống theo tần suất · chuyển stage = đổi chế
+độ. Nhịp §0 của law THẮNG dải cũ SPEC-APPLE-MOTION khi vênh. §3 file này đọc kèm law đó.

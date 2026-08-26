@@ -15,12 +15,31 @@
  * Phím: listener CAPTURE trên window — chạy TRƯỚC QuickCommandBox (bubble, `Viewport3D`) và
  * `stopPropagation` cho đúng các phím mình xử lý, để một cú Esc không vừa thoát tool vừa xoá dòng
  * lệnh. Đang gõ ở ô nhập NGOÀI bar (đặt tên layer, ô cao độ…) thì bar không cướp phím nào.
- * Nền đặc `--panel` ≥96%, KHÔNG backdrop blur (G9 — trần kính trên WebGL đã dùng hết).
+ * Nền đặc `--panel`, KHÔNG backdrop blur (G9 — trần kính trên WebGL đã dùng hết).
+ *
+ * 19/08 (R4 — mảnh cuối `toolbar-mot-khuon`, KB-1): vỏ tự vẽ (r3 · color-mix 96% · shadow riêng)
+ * ĐỔI sang `ToolbarBar` + nút Áp dụng đổi sang `ToolbarChip` — cùng khuôn với dock compact
+ * `ToolDock3D` ngay bên dưới (capsule 44/r-full, nền đặc `var(--panel)` nên G9 vẫn giữ).
+ * Ô số đổi bo theo `RADIUS.full` (trình duyệt kẹp về nửa cạnh ngắn ⇒ tự đồng tâm với vỏ ở mọi
+ * cỡ, xem ghi chú trong `ToolbarBar`). Hành vi/phím/handlers GIỮ NGUYÊN — chỉ đổi vỏ nút.
+ * `barRef` nằm ở div định vị bọc ngoài (ToolbarBar không forward ref; div này chỉ mang position
+ * + font, KHÔNG mang hình dạng — hình dạng thuộc ToolbarBar, đúng hợp đồng "không cho ghi đè").
+ *
+ * 19/08 (R4-L1 — bar tràn ngang khi tool ≥5 ô số): bar MỘT capsule của tool `line` (6 ô) rộng
+ * ~915px trong khi viewport 3D chỉ ~678px @1440×900 ⇒ tràn hai bên + dòng nhắc "Enter áp…" văng
+ * khỏi màn. KHÔNG wrap được bên trong một ToolbarBar (khuôn khoá cứng `height: var(--tap-lg)`,
+ * hợp đồng cấm ghi đè hình dạng — và sửa khuôn là đổi cả 3 chặng, ngoài phạm vi phiếu). Cách sửa:
+ * chia bar thành CÁC CAPSULE NHỎ (tiêu đề · nhóm ≤3 ô số · Áp dụng + dòng nhắc) trong một
+ * container flex-wrap có `maxWidth: calc(100% - 24px)` theo viewport — mỗi mảnh vẫn đúng khuôn
+ * KB-1 (capsule 44/r-full, bo §2d tự đồng tâm), viewport hẹp thì capsule tự xuống hàng (CSS thuần,
+ * không đo JS, không animation), bar neo đáy nên nở LÊN TRÊN, và dòng nhắc nằm trong capsule cuối
+ * nên không bao giờ văng mất (luật: người dùng luôn biết đường ra).
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { RADIUS, concentricRadius } from '@/lib/geometry';
+import { RADIUS } from '@/lib/geometry';
 import { Check } from 'lucide-react';
+import { ToolbarChip, ToolbarBar } from '@/components/ui/ToolbarChip';
 import { useCadStore } from '@/lib/cad/store';
 import { useT } from '@/lib/i18n';
 import {
@@ -216,65 +235,95 @@ export default function Tool3DBar({ selectedEntityId, bottomPx = 130 }: Tool3DBa
   const needsSel = NEEDS_SELECTION.includes(active) && !selectedEntityId;
   const measure = active === 'ruler' && selectedEntityId ? measureSelection(docEntities, selectedEntityId) : null;
 
+  // R4-L1: chia ô số thành nhóm ≤3 — mỗi nhóm một capsule ToolbarBar, để viewport hẹp thì
+  // capsule tự xuống hàng thay vì cả bar tràn ngang. 3 là cỡ nhóm lớn nhất mà capsule
+  // (nhãn + ô 58px) vẫn dưới ~400px — lọt viewport hẹp nhất đã đo (~678px) cả bản EN.
+  const fieldChunks: (typeof TOOL_FIELDS)[Exclude<Tool3DId, 'select' | 'ruler'>][] = [];
+  if (!needsSel && active !== 'ruler') {
+    const fields = TOOL_FIELDS[active];
+    for (let i = 0; i < fields.length; i += 3) fieldChunks.push(fields.slice(i, i + 3));
+  }
+
+  const hint = (
+    <span style={{ color: 'var(--t4)', padding: '0 6px' }}>{tr('Enter áp · Esc huỷ · Space về Chọn', 'Enter apply · Esc cancel · Space to Select')}</span>
+  );
+
   return (
     <div
       ref={barRef}
       className="if-3d-tool-bar"
       style={{
+        // Div này CHỈ định vị + xếp capsule + font — hình dạng (nền/viền/bo/bóng) là việc của
+        // ToolbarBar. flex-wrap + maxWidth theo viewport: hẹp thì capsule xuống hàng, neo đáy
+        // nên nở lên trên (không đè dock bên dưới). whiteSpace nowrap giữ cho CHỮ trong từng
+        // capsule không gãy giữa nhãn — wrap chỉ xảy ra ở cấp capsule.
         position: 'absolute', left: '50%', bottom: bottomPx, transform: 'translateX(-50%)', zIndex: 6,
-        display: 'flex', alignItems: 'center', gap: 10, padding: '7px 12px', borderRadius: RADIUS.r3, // thang bo 12/08
-        background: 'color-mix(in srgb, var(--panel) 96%, transparent)',
-        border: '1px solid var(--vien-mo)', boxShadow: '0 12px 30px rgba(0, 0, 0, .2)',
+        display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center',
+        gap: 6, width: 'max-content', maxWidth: 'calc(100% - 24px)',
         fontSize: 11, lineHeight: 1.5, color: 'var(--t2)', whiteSpace: 'nowrap',
       }}
     >
-      <span style={{ fontWeight: 700, color: 'var(--t1)' }}>{tr(TOOL_TITLES[active].vi, TOOL_TITLES[active].en)}</span>
+      <ToolbarBar>
+        <span style={{ fontWeight: 700, color: 'var(--t1)', padding: '0 8px' }}>{tr(TOOL_TITLES[active].vi, TOOL_TITLES[active].en)}</span>
+      </ToolbarBar>
 
       {needsSel ? (
-        <span style={{ color: 'var(--warning)' }}>
-          {tr('Chưa chọn khối — bấm một khối trước.', 'No block selected — pick one first.')}
-        </span>
+        <ToolbarBar>
+          <span style={{ color: 'var(--warning)', padding: '0 4px' }}>
+            {tr('Chưa chọn khối — bấm một khối trước.', 'No block selected — pick one first.')}
+          </span>
+          <ToolbarBar.Sep />
+          {hint}
+        </ToolbarBar>
       ) : active === 'ruler' ? (
-        <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--t1)' }}>
-          {measure
-            ? `${measure.wMm} × ${measure.dMm}${measure.hMm !== null ? ` × ${measure.hMm}` : ''} mm${measure.hMm === null ? tr(' · chưa đùn cao', ' · not extruded yet') : ''}`
-            : tr('Khối này chưa đo được.', 'This block cannot be measured.')}
-        </span>
+        <ToolbarBar>
+          <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--t1)', padding: '0 4px' }}>
+            {measure
+              ? `${measure.wMm} × ${measure.dMm}${measure.hMm !== null ? ` × ${measure.hMm}` : ''} mm${measure.hMm === null ? tr(' · chưa đùn cao', ' · not extruded yet') : ''}`
+              : tr('Khối này chưa đo được.', 'This block cannot be measured.')}
+          </span>
+          <ToolbarBar.Sep />
+          {hint}
+        </ToolbarBar>
       ) : (
         <>
-          {TOOL_FIELDS[active].map((f, i) => (
-            <label key={f.key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ color: 'var(--t3)' }}>{tr(f.vi, f.en)}</span>
-              <input
-                ref={i === 0 ? firstInputRef : undefined}
-                value={vals[f.key] ?? ''}
-                onChange={(e) => setVals((v) => ({ ...v, [f.key]: e.target.value }))}
-                inputMode="decimal"
-                aria-label={tr(f.vi, f.en)}
-                style={{
-                  width: 58, padding: '3px 6px', borderRadius: concentricRadius(RADIUS.r3, 7), border: '1px solid var(--border-strong)',
-                  background: 'var(--field)', color: 'var(--t1)', fontSize: 11, lineHeight: 1.5,
-                  fontVariantNumeric: 'tabular-nums', outline: 'none', fontFamily: 'inherit',
-                }}
-              />
-            </label>
+          {fieldChunks.map((chunk, ci) => (
+            <ToolbarBar key={ci}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 4px' }}>
+                {chunk.map((f, i) => (
+                  <label key={f.key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ color: 'var(--t3)' }}>{tr(f.vi, f.en)}</span>
+                    <input
+                      ref={ci === 0 && i === 0 ? firstInputRef : undefined}
+                      value={vals[f.key] ?? ''}
+                      onChange={(e) => setVals((v) => ({ ...v, [f.key]: e.target.value }))}
+                      inputMode="decimal"
+                      aria-label={tr(f.vi, f.en)}
+                      style={{
+                        // RADIUS.full kẹp về nửa cạnh ngắn ⇒ tự đồng tâm với vỏ capsule (ghi chú ToolbarBar).
+                        width: 58, padding: '3px 8px', borderRadius: RADIUS.full, border: '1px solid var(--border-strong)',
+                        background: 'var(--field)', color: 'var(--t1)', fontSize: 11, lineHeight: 1.5,
+                        fontVariantNumeric: 'tabular-nums', outline: 'none', fontFamily: 'inherit',
+                      }}
+                    />
+                  </label>
+                ))}
+              </span>
+            </ToolbarBar>
           ))}
-          <button
-            type="button"
-            onClick={() => { applyRef.current(); setActive('select'); }}
-            style={{
-              height: 24, padding: '0 10px', border: 0, borderRadius: concentricRadius(RADIUS.r3, 7), background: 'var(--accent)',
-              color: 'var(--on-accent)', fontFamily: 'inherit', fontSize: 11, fontWeight: 600,
-              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
-            }}
-          >
-            <Check size={12} />
-            {tr('Áp dụng', 'Apply')}
-          </button>
+          <ToolbarBar>
+            <ToolbarChip
+              icon={<Check size={18} />}
+              label={tr('Áp dụng', 'Apply')}
+              desc={tr('Áp giá trị đang nhập rồi về Chọn', 'Apply the entered values, then return to Select')}
+              shortcutHint="Enter"
+              onClick={() => { applyRef.current(); setActive('select'); }}
+            />
+            <ToolbarBar.Sep />
+            {hint}
+          </ToolbarBar>
         </>
       )}
-
-      <span style={{ color: 'var(--t4)' }}>{tr('Enter áp · Esc huỷ · Space về Chọn', 'Enter apply · Esc cancel · Space to Select')}</span>
     </div>
   );
 }

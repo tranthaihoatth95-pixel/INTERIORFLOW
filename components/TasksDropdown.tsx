@@ -70,7 +70,7 @@ function RunRow({ run, queuePosition }: { run: FlowRun; queuePosition?: number }
           title={run.status === 'running' ? 'Dừng (ở ranh giới node kế tiếp, không cắt giữa)' : 'Huỷ khỏi hàng đợi'}
           className="shrink-0 rounded-md p-1 text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-red-400"
         >
-          <X size={12} />
+          <X size={14} />
         </button>
       )}
     </div>

@@ -94,3 +94,9 @@ Liquid Glass iOS 27/macOS 27 (MacRumors · Cult of Mac · 9to5Mac, 6/2026).
 ---
 *Cowork nghiên cứu + soạn 02/08/2026 sau khi Hoà yêu cầu "nghiên cứu kỹ rồi hãy áp dụng". Số liệu
 lấy từ nguồn, không suy đoán. Nối: SPEC-DESIGN-SYSTEM-IF §2d/§3 · LUAT-GIAO-DIEN-BAT-BUOC.*
+
+---
+⚠️ **ĐÓNG DẤU 20/08/2026**: dải thời lượng của file này (<200ms bấm · 300–500ms chuyển trang) bị
+`docs/IF-MOTION-VISUAL-LAW.md` §0 ĐÈ ở chỗ vênh (hover 100–160 · reveal 140–200 · shelf 180–260 ·
+stage 240–380 · morph 300–700). Phần còn lại (nguyên tắc stagger · công thức mở/đóng · khuôn Siri
+§4b · reduce-motion thắng) CÒN HIỆU LỰC. Đọc law mới trước, file này là nền tham chiếu.

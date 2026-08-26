@@ -23,7 +23,7 @@ export const VE3D_CSS = `
 .if-ve3d .ctabs button{flex:1;border:0;background:transparent;padding:9px 2px;font-size:var(--fs-2xs);
   color:var(--t2);display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
   transition:background-color .12s var(--ease-apple),color .12s var(--ease-apple)}
-/* SPEC-HOVER §2 "nút toolbar/icon-only": ĐỔI NỀN 120ms, KHÔNG scale */
+/* SPEC-HOVER §2 "nút toolbar/icon-only": ĐỔI NỀN var(--nhip-bam), KHÔNG scale */
 .if-ve3d .ctabs button:hover{background:var(--hover);color:var(--t1)}
 .if-ve3d .ctabs button.on{color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent);font-weight:var(--fw-semi)}
 .if-ve3d .ctabs button:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--accent)}
@@ -78,7 +78,7 @@ export const VE3D_CSS = `
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;
   color:var(--t2);font-size:var(--fs-3xs);font-weight:var(--fw-semi);padding:4px;
   transition:background-color .12s var(--ease-apple),color .12s var(--ease-apple),border-color .12s}
-/* nút công cụ: đổi nền 120ms, KHÔNG scale (SPEC-HOVER §4 cấm scale nút toolbar) */
+/* nút công cụ: đổi nền var(--nhip-bam), KHÔNG scale (SPEC-HOVER §4 cấm scale nút toolbar) */
 .if-ve3d .tool:hover{background:var(--hover);color:var(--t1)}
 .if-ve3d .tool.on{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
 .if-ve3d .tool:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
@@ -126,6 +126,13 @@ export const VE3D_CSS = `
 /* ══════ VIEWPORT 3D (ổ ③ canvas) ══════ */
 .if-ve3d.vp3d{position:relative;width:100%;height:100%;overflow:hidden;background:var(--bg)}
 .if-ve3d .vpscene{position:absolute;inset:0}
+/* 21/08 — GỐC BỆNH "3D không dùng được" trên màn retina: Scene3DViewer gọi renderer.setSize(w,h,
+   FALSE) (không ghi style) + setPixelRatio(min(dpr,1.5)) ⇒ buffer canvas = container × 1.5, và vì
+   KHÔNG có luật CSS nào ghim cỡ hiển thị, trình duyệt vẽ canvas Ở ĐÚNG CỠ BUFFER — tràn 50% ra
+   ngoài container rồi bị .vp3d overflow:hidden cắt cụt: chỉ thấy 2/3 khung hình, raycast/NDC lệch
+   theo. DPR=1 thì buffer=container nên không ai thấy — bệnh chỉ phát trên retina. Đây là khuôn
+   chuẩn three.js cho setSize(…,false): CSS phải tự ghim canvas theo container. */
+.if-ve3d .vpscene>canvas{display:block;width:100%;height:100%}
 /* PHIẾU ĐỢT 7 NHÓM B — 96×96 (spec), khung ViewCube3D thật (renderer riêng, xem ViewCube3D.tsx);
    không còn <button> con — cube tự vẽ nhãn bằng texture, tự bắt pointer trên canvas của nó. */
 .if-ve3d .viewcube{position:absolute;right:14px;top:14px;width:76px;height:76px;z-index:4;overflow:hidden;

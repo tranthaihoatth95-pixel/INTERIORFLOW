@@ -29,7 +29,7 @@ function ResetPanelLayoutRow() {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)', display: 'flex', alignItems: 'center', gap: 7 }}>
-          <PanelsTopLeft size={13} /> Bố cục panel
+          <PanelsTopLeft size={14} /> Bố cục panel
         </div>
         <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--t2)' }}>
           Panel nào lỡ thu/kéo mất chỗ — đưa mọi panel về bố cục mặc định.
@@ -45,7 +45,7 @@ function ResetPanelLayoutRow() {
           window.setTimeout(() => setDone(false), 2500);
         }}
       >
-        {done ? <><Check size={13} /> Đã đặt lại</> : 'Đặt lại bố cục panel'}
+        {done ? <><Check size={18} /> Đã đặt lại</> : 'Đặt lại bố cục panel'}
       </button>
     </div>
   );
@@ -60,7 +60,7 @@ function MaterialsWarehouseRow() {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)', display: 'flex', alignItems: 'center', gap: 7 }}>
-          <Boxes size={13} /> Kho vật liệu
+          <Boxes size={14} /> Kho vật liệu
         </div>
         <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--t2)' }}>
           Thêm/sửa/xoá vật liệu, giá, nhà cung cấp — nhập cả bằng Excel/CSV.
@@ -87,7 +87,7 @@ function TaskBoardRow() {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)', display: 'flex', alignItems: 'center', gap: 7 }}>
-          <ClipboardList size={13} /> Bảng việc
+          <ClipboardList size={14} /> Bảng việc
         </div>
         <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--t2)' }}>
           Việc theo dự án, chia cột trạng thái — thêm/sửa/xoá/đổi trạng thái.
@@ -116,7 +116,7 @@ function LegalRows() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)', display: 'flex', alignItems: 'center', gap: 7 }}>
-            <ScrollText size={13} /> Giấy phép bên thứ ba
+            <ScrollText size={14} /> Giấy phép bên thứ ba
           </div>
           <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--t2)' }}>
             IF dùng một số mã nguồn mở — quan trọng nhất là GNU LibreDWG (GPL-3.0).
@@ -129,7 +129,7 @@ function LegalRows() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)', display: 'flex', alignItems: 'center', gap: 7 }}>
-            <Info size={13} /> Giới thiệu InteriorFlow
+            <Info size={14} /> Giới thiệu InteriorFlow
           </div>
           <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--t2)' }}>
             Phiên bản đang chạy, giấy phép bên thứ ba.
@@ -162,7 +162,7 @@ export function PixelSettingsShell() {
 
         <div className="main">
           <button type="button" className="backlink" onClick={() => router.back()}>
-            <ArrowLeft size={13} /> Quay lại
+            <ArrowLeft size={14} /> Quay lại
           </button>
 
           <h1>Cài đặt</h1>
@@ -194,7 +194,7 @@ export function PixelSettingsShell() {
               className="ghost"
               style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 7 }}
             >
-              <LogOut size={13} /> Đăng xuất
+              <LogOut size={18} /> Đăng xuất
             </button>
           )}
 

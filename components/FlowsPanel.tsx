@@ -76,7 +76,7 @@ export function FlowsPanel() {
           }}
           className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
         >
-          <FolderPlus size={13} />
+          <FolderPlus size={14} />
         </motion.button>
         <motion.button
           {...pressableIcon}
@@ -95,7 +95,7 @@ export function FlowsPanel() {
           onClick={() => setPanel(null)}
           className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
         >
-          <X size={13} />
+          <X size={14} />
         </motion.button>
       </div>
 
@@ -124,7 +124,7 @@ export function FlowsPanel() {
               >
                 {f.name}
               </button>
-              {f.shareToken && <Link2 size={11} className="shrink-0 text-emerald-400" />}
+              {f.shareToken && <Link2 size={16} className="shrink-0 text-emerald-400" />}
               <button
                 title="Xoá flow"
                 onClick={async () => {
@@ -135,7 +135,7 @@ export function FlowsPanel() {
                 }}
                 className="grid h-5 w-5 shrink-0 place-items-center rounded text-[var(--t4)] opacity-0 transition group-hover:opacity-100 hover:text-red-400"
               >
-                <Trash2 size={11} />
+                <Trash2 size={14} />
               </button>
             </div>
             <div className="mt-1 flex items-center gap-2">

@@ -320,7 +320,7 @@ export default function SlideSorter({
                       onDuplicate(i);
                     }}
                   >
-                    <Copy size={13} />
+                    <Copy size={16} />
                   </TileBtn>
                   <TileBtn
                     title="Xoá"
@@ -330,7 +330,7 @@ export default function SlideSorter({
                       onDelete(i);
                     }}
                   >
-                    <Trash2 size={13} />
+                    <Trash2 size={16} />
                   </TileBtn>
                 </div>
               </div>
@@ -362,7 +362,7 @@ export default function SlideSorter({
                 fontSize: 13,
               }}
             >
-              <Plus size={22} />
+              <Plus size={20} />
               Thêm slide
             </button>
             <div style={{ height: 21 }} />

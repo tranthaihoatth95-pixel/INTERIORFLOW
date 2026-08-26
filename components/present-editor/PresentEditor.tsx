@@ -61,6 +61,9 @@ import { slidesFromReference, detectGridFromUrl } from '@/lib/present-editor/ref
 import type { GridGeometryInput } from '@/lib/present-editor/suggest';
 import { consumePresentHandoffWithIds, deckImagesWithIdsFromNodes } from '@/lib/present-editor/handoff';
 import { consumeCadPresentHandoff } from '@/lib/cad/present-handoff';
+import { consumeSpecPresentHandoff } from '@/lib/present-editor/spec-present-handoff';
+import { consumePresentReturn, peekPresentReturn } from '@/lib/present-editor/present-return';
+import { markDemoStep } from '@/lib/studio/demo-spine';
 import {
   stashPhotoEditorIn,
   readPhotoEditorReturn,
@@ -153,6 +156,39 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
   useEffect(() => {
     onDeckChange?.(ed.deck);
   }, [ed.deck, onDeckChange]);
+
+  /* R7 (19/08) — MỞ CỬA ĐỌC SLIDES cho Bảng kiểm (nợ p3c 08/08 "chờ mở cửa đọc slides").
+   * Truth deck vẫn MỘT owner là useEditor ở đây; ReviewPanel (AppShell, mép phải) chỉ ĐỌC qua
+   * cầu CustomEvent — đúng pattern `present:*` sẵn có phía trên (idfp/pptx/pdf), KHÔNG store mới.
+   *   · `present:deck-review-state`   — đẩy tham chiếu `slides` mỗi khi deck đổi (reducer clone
+   *     mỗi mutate nên tham chiếu đã phát ra là bất biến — bên nhận không mutate được truth).
+   *   · `present:deck-review-request` — ReviewPanel mở panel sau mới hỏi; trả lời bằng bản mới
+   *     nhất qua ref (không re-bind listener theo từng phím gõ).
+   *   · unmount → phát `slides: null` (đổi sheet/BOQ/đóng chặng): ReviewPanel về trạng thái
+   *     "không có hồ sơ đang mở" thật, không đông cứng bản cũ. */
+  const deckForReviewRef = useRef(ed.deck.slides);
+  deckForReviewRef.current = ed.deck.slides;
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('present:deck-review-state', { detail: { slides: ed.deck.slides } }));
+  }, [ed.deck.slides]);
+  useEffect(() => {
+    const onRequest = () => {
+      window.dispatchEvent(new CustomEvent('present:deck-review-state', { detail: { slides: deckForReviewRef.current } }));
+    };
+    // Nhảy-tới của thẻ luật deck (ViTri.slide, 1-index từ evaluateDeck) → chuyển slide đang mở.
+    const onGoto = (ev: Event) => {
+      const slide = (ev as CustomEvent<{ slide?: number }>).detail?.slide;
+      if (typeof slide === 'number' && Number.isFinite(slide)) ed.selectSlide(slide - 1);
+    };
+    window.addEventListener('present:deck-review-request', onRequest);
+    window.addEventListener('present:goto-slide', onGoto);
+    return () => {
+      window.removeEventListener('present:deck-review-request', onRequest);
+      window.removeEventListener('present:goto-slide', onGoto);
+      window.dispatchEvent(new CustomEvent('present:deck-review-state', { detail: { slides: null } }));
+    };
+    // ed.selectSlide memo hoá với deps [] trong useEditor — ổn định suốt đời instance.
+  }, [ed.selectSlide]);
 
   /* FONT TẢI LÊN (#1) — nhúng theo deck. Đăng ký lại vào document mỗi khi mở/đổi deck để
      chữ hiện ĐÚNG font ngay lần vẽ đầu (canvas render cho PDF cũng cần font đã sẵn sàng).
@@ -272,6 +308,9 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
   // màn hình (SlidePlayer). Mọi lời gọi playing/setPlaying bên dưới giữ nguyên cú pháp cũ.
   const playing = usePlayStatus((s) => s.playing);
   const setPlaying = usePlayStatus((s) => s.setPlaying);
+  // QUAY VỀ TRÌNH BÀY (present-return.ts): index slide phải mở lại — GHIM RIÊNG, không dựa vào
+  // ed.currentSlide (deck có thể được PresentSheets bơm lại sau khi consume ⇒ reducer reset về 0).
+  const [returnStartIdx, setReturnStartIdx] = useState<number | null>(null);
   // "Xem lưới" (Slide Sorter) — overlay bổ sung cho SlideStrip, xem toàn deck dạng lưới.
   const [sorterOpen, setSorterOpen] = useState(false);
   // bảng hỏi số liệu (áp vào bố cục sinh ra).
@@ -382,6 +421,77 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
     ed.selectSlide(insertAt);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Cầu nối Spec (G1-G4 CuaAnhThanhSpec) → Present — LANE F, đóng gap "Spec Portal to Present"
+  // (IF-LIVE-BRIDGE.md MISSING). Cùng pattern consume-once + chèn 1 SLIDE MỚI như cầu CAD→Present
+  // ở trên — KHÔNG content-model mới, chỉ makeText đã có. Chỉ tới đây khi spec đã DUYỆT VÀ LƯU
+  // THẬT (nút "Đưa sang Trình bày" ở G4 chỉ bật sau khi /api/asset-representation trả 200).
+  useEffect(() => {
+    const p = consumeSpecPresentHandoff();
+    if (!p) return;
+    const insertAt = ed.deck.slides.length;
+    ed.update((d) => {
+      d.slides.push({
+        id: newId('sld'),
+        background: '#F4F1EA',
+        backgroundImage: null,
+        elements: [
+          makeText({
+            text: p.doiTuong,
+            role: 'kicker',
+            frame: { x: 6, y: 5, w: 88, h: 8, rotation: 0 },
+            fontSize: 3,
+            bold: true,
+            color: '#221f1a',
+          }),
+          ...p.dongChu.map((line, i) =>
+            makeText({
+              text: line,
+              frame: { x: 6, y: 16 + i * 8, w: 88, h: 7, rotation: 0 },
+              fontSize: 1.8,
+              color: '#3a352c',
+            }),
+          ),
+          makeText({
+            text: p.boqNote,
+            frame: { x: 6, y: 16 + p.dongChu.length * 8 + 4, w: 88, h: 7, rotation: 0 },
+            fontSize: 1.6,
+            color: '#6a5f4e',
+          }),
+        ],
+        templateId: 'spec-handoff',
+      });
+    });
+    ed.selectSlide(insertAt);
+    // Chế độ hiển thị Demo — mốc CHỈ ghi khi slide thật vừa được chèn (đúng lúc, không sớm hơn).
+    markDemoStep('specPresent', p.doiTuong);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /**
+   * QUAY VỀ TRÌNH BÀY (deep link demo, 21/08 — `present-return.ts`): rời trình chiếu bằng một
+   * deep link trên slide rồi quay lại đây ⇒ nhảy ĐÚNG slide đã đứng + tự vào lại chế độ trình
+   * chiếu. Consume-once; chờ deck nạp xong (slide index phải có thật) mới áp — deck chưa đủ
+   * slide thì không áp, mốc đã tiêu, không nhảy bậy.
+   */
+  useEffect(() => {
+    // PEEK trước, chỉ TIÊU khi áp được: PresentEditor mount với deck rỗng rồi PresentSheets mới
+    // bơm deck thật từ IndexedDB — tiêu mốc lúc deck chưa nạp là mất mốc mà không nhảy đâu cả.
+    // Effect chạy lại theo số slide; áp xong thì consume (mốc biến mất, không áp lần hai).
+    const m = peekPresentReturn();
+    if (!m) return;
+    if (m.slideIndex >= 0 && m.slideIndex < ed.deck.slides.length) {
+      consumePresentReturn();
+      ed.selectSlide(m.slideIndex);
+      // Ghim index quay-về RIÊNG (không chỉ qua ed.currentSlide): PresentSheets có thể bơm lại
+      // deck SAU effect này (hydrate nhiều nhịp) làm reducer reset currentSlide=0 đúng lúc
+      // SlidePlayer mount ⇒ mở nhầm slide 1. Đã thấy thật 1 lần trên browser; state riêng này
+      // sống qua mọi lần load deck, xoá khi đóng player.
+      setReturnStartIdx(m.slideIndex);
+      setPlaying(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ed.deck.slides.length]);
 
   /**
    * [marker: focusEntity] — chiều ĐỌC của TaskContext Link (phiếu focus-entity-2d-present):
@@ -1964,13 +2074,13 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
               <div style={{ display: 'flex', gap: 4, padding: '10px 12px 0' }}>
                 {/* 07/08 (p12): tab đổi "Magic"→"Bố cục" — một thứ một tên (chốt 01/08 §3c);
                     "Magic" giữ cho phần AI sinh bên trong LayoutShelf, không phải tên cái kệ. */}
-                <TabBtn active={tab === 'layout'} onClick={() => setTab('layout')} icon={<LayoutTemplate size={13} />}>
+                <TabBtn active={tab === 'layout'} onClick={() => setTab('layout')} icon={<LayoutTemplate size={18} />}>
                   Thiết kế
                 </TabBtn>
-                <TabBtn active={tab === 'reference'} onClick={() => setTab('reference')} icon={<Images size={13} />}>
+                <TabBtn active={tab === 'reference'} onClick={() => setTab('reference')} icon={<Images size={18} />}>
                   Tài nguyên
                 </TabBtn>
-                <TabBtn active={tab === 'motion'} onClick={() => setTab('motion')} icon={<Wand2 size={13} />}>
+                <TabBtn active={tab === 'motion'} onClick={() => setTab('motion')} icon={<Wand2 size={18} />}>
                   Hiệu ứng
                 </TabBtn>
               </div>
@@ -2068,7 +2178,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
                 title="Ẩn panel Magic/Reference/Motion"
                 style={panelToggleBtnStyle}
               >
-                <ChevronLeft size={12} />
+                <ChevronLeft size={18} />
               </button>
             </div>
           </>
@@ -2080,7 +2190,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
             title="Hiện panel Magic/Reference/Motion"
             style={panelEdgeStripStyle}
           >
-            <ChevronRight size={12} />
+            <ChevronRight size={14} />
           </button>
         )}
 
@@ -2156,7 +2266,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
                     cursor: builtImages.length === 0 ? 'not-allowed' : 'pointer', opacity: builtImages.length === 0 ? 0.6 : 1,
                   }}
                 >
-                  <Sparkles size={13} />
+                  <Sparkles size={14} />
                   {trEmpty('Hoặc tạo từ ảnh đã dựng', 'Or build from renders')}
                   {builtImages.length > 0 && ` (${builtImages.length})`}
                 </button>
@@ -2232,7 +2342,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
                 title="Vừa khung / 100% (Ctrl/Cmd 0)"
                 style={zoomBtnStyle}
               >
-                <Maximize size={13} />
+                <Maximize size={14} />
               </button>
             </div>
           )}
@@ -2265,7 +2375,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
                 title="Ẩn panel Lớp"
                 style={panelToggleBtnStyle}
               >
-                <ChevronRight size={12} />
+                <ChevronRight size={18} />
               </button>
             </div>
             <aside
@@ -2341,7 +2451,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
             title="Hiện panel Lớp"
             style={panelEdgeStripStyleR}
           >
-            <ChevronLeft size={12} />
+            <ChevronLeft size={14} />
           </button>
         )}
       </div>
@@ -2373,7 +2483,16 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
       )}
 
       {/* Trình chiếu với hiệu ứng động. */}
-      {playing && <SlidePlayer deck={ed.deck} startIndex={ed.currentSlide} onClose={() => setPlaying(false)} />}
+      {playing && (
+        <SlidePlayer
+          deck={ed.deck}
+          startIndex={returnStartIdx ?? ed.currentSlide}
+          onClose={() => {
+            setPlaying(false);
+            setReturnStartIdx(null);
+          }}
+        />
+      )}
 
       {/* "Xem lưới" (Slide Sorter) — overlay bổ sung cho SlideStrip, xem toàn deck dạng lưới.
           AnimatePresence để lưới còn chạy được `exit` lúc đóng (trước đây tắt phựt). */}

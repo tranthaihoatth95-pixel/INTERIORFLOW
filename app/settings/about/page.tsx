@@ -46,7 +46,7 @@ export default function AboutPage() {
             marginBottom: 24,
           }}
         >
-          <ArrowLeft size={13} /> {tr('Quay lại', 'Back')}
+          <ArrowLeft size={16} /> {tr('Quay lại', 'Back')}
         </button>
 
         <h1 style={{ fontSize: 28, fontWeight: 500, margin: 0, color: 'var(--t1)', letterSpacing: '-0.01em' }}>

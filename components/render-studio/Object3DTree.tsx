@@ -20,7 +20,7 @@
  * khai tầng, thay vì sắp chữ cái (`'GF'/'L1'/'Lửng'/'Tum'` không có thứ tự chữ cái đúng nghĩa nào
  * — lý do PHU đã ghi ở `levelsFromStoreys`).
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight, Eye, EyeOff, Layers } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import { sortedLevels } from '@/lib/cad/levels';
@@ -46,6 +46,33 @@ export function Object3DTree() {
   const hiddenLevels = useLevelUi((s) => s.hiddenLevels);
   const toggleLevel = useLevelUi((s) => s.toggleLevel);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  /**
+   * P0 20/08 (Hoà: "không còn chỗ để dựng khối") — VIEWPORT LÀ CHÍNH, cây tầng chỉ đáng chiếm
+   * 224px thường trực khi có gì để tra. Cảnh trống/gần-trống (0 hoặc 1 khối) mà vẫn giữ cột
+   * trắng rộng là "vận hành thanh công cụ quanh không gian" đúng thứ Hoà chê.
+   *
+   * KHÔNG đẻ cơ chế thu/mở thứ hai: bắn LẠI đúng sự kiện `if:navigator-toggle` mà `AppShell.tsx`
+   * đã dùng cho phím B — Navigator tự nghe sự kiện đó rồi thu, KHÔNG có state mới ở đây. Chỉ bắn
+   * MỘT LẦN, và CHỈ khi người dùng CHƯA từng tự tay bấm thu/mở Navigator bao giờ (không có khoá
+   * `interiorflow.navigator.collapsed_v1` trong localStorage) — đúng luật "nhớ lựa chọn tay,
+   * không tự đảo ngược" đã ghi trong Navigator.tsx. Cảnh đông khối lại thì không đụng gì (giữ
+   * nguyên hành vi cũ).
+   */
+  const autoCollapseTried = useRef(false);
+  useEffect(() => {
+    if (autoCollapseTried.current) return;
+    if (groups.length > 1) return; // đã có thứ để tra — không tự thu
+    let touched = false;
+    try {
+      touched = localStorage.getItem('interiorflow.navigator.collapsed_v1') !== null;
+    } catch {
+      return; // localStorage chặn — không đoán, giữ hành vi mặc định của Navigator
+    }
+    if (touched) return;
+    autoCollapseTried.current = true;
+    window.dispatchEvent(new CustomEvent('if:navigator-toggle', { detail: { set: true } }));
+  }, [groups.length]);
 
   /** Thứ tự tầng ĐÃ KHAI (`Doc.levels`) — dùng làm thứ tự bucket khi khớp được nhãn. Xem cảnh báo
    * "khoá là nhãn `storey`, không phải `Level.id`" ở `scene3d-ui.ts`. */
@@ -121,8 +148,8 @@ export function Object3DTree() {
                 onClick={() => toggleCollapse(storeyKey)}
                 className="flex min-w-0 flex-1 items-center gap-1.5 rounded-[10px] px-1.5 py-1 text-left"
               >
-                {isCollapsed ? <ChevronRight size={11} className="text-[var(--t4)]" /> : <ChevronDown size={11} className="text-[var(--t4)]" />}
-                <Layers size={11} className="text-[var(--t4)]" />
+                {isCollapsed ? <ChevronRight size={16} className="text-[var(--t4)]" /> : <ChevronDown size={16} className="text-[var(--t4)]" />}
+                <Layers size={16} className="text-[var(--t4)]" />
                 {/* mock `.sech`: 11px, chữ t4, letter-spacing .07em (không phải tracking-wide mặc định) */}
                 <span
                   className="flex-1 truncate text-[11px] font-bold uppercase leading-[1.6] tracking-[0.07em] text-[var(--t4)]"
@@ -142,7 +169,7 @@ export function Object3DTree() {
                   levelHidden ? 'text-[var(--accent)]' : 'text-[var(--t4)]',
                 )}
               >
-                {levelHidden ? <EyeOff size={12} /> : <Eye size={12} />}
+                {levelHidden ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
 
@@ -188,7 +215,7 @@ export function Object3DTree() {
                       title={hidden ? tr('Hiện lại', 'Show') : tr('Ẩn', 'Hide')}
                       className="flex h-[var(--tap)] w-[var(--tap)] flex-none items-center justify-center rounded-[6px] text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
                     >
-                      {hidden ? <EyeOff size={12} /> : <Eye size={12} />}
+                      {hidden ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 );

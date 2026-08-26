@@ -24,6 +24,7 @@ import {
 import IOMenu from '@/components/ui/IOMenu';
 import MenuButton from '@/components/ui/MenuButton';
 import { useCadStore } from '@/lib/cad/store';
+import { thoiLuong, NHIP, DUONG_CONG } from '@/lib/ui/nhip';
 import { useT } from '@/lib/i18n';
 import { useCadLiveStatus } from '@/lib/cad/live-status';
 import type { HatchPattern } from '@/lib/cad/model';
@@ -697,7 +698,7 @@ export default function CadEditor() {
           size="sm"
           title="Nhập / mở file vào chặng Thiết kế 2D"
           items={[
-            { id: 'gateway', label: 'Chọn tệp — tự nhận định dạng', sub: 'IDF · IFpack · DXF · DWG · ảnh; định dạng chưa hỗ trợ sẽ nói rõ lý do', icon: <FolderOpen size={15} />, onSelect: () => gatewayFileRef.current?.click() },
+            { id: 'gateway', label: 'Chọn tệp — tự nhận định dạng', sub: 'IDF · IFpack · DXF · DWG · ảnh; định dạng chưa hỗ trợ sẽ nói rõ lý do', icon: <FolderOpen size={16} />, onSelect: () => gatewayFileRef.current?.click() },
           ]}
         />
         <IOMenu
@@ -706,25 +707,25 @@ export default function CadEditor() {
           align="left"
           title="Xuất file từ chặng Thiết kế 2D"
           items={[
-            { id: 'png', label: 'PNG', sub: 'Ảnh raster nền trắng — bản vẽ đang mở', icon: <Download size={15} />, onSelect: doExportPng },
-            { id: 'dxf', label: 'DXF', sub: 'Trao đổi với AutoCAD — bản vẽ đang mở', icon: <Download size={15} />, onSelect: doExportDxf },
-            { id: 'pdf', label: 'PDF', sub: 'PDF vector (nét/text thật) — layer chưa ẩn/hiện được trong PDF', icon: <FileText size={15} />, onSelect: doExportPdf },
-            { id: 'idf', label: '.idf', sub: 'File project JSON — TẤT CẢ sheet + metadata, để backup/chia sẻ', icon: <Save size={15} />, onSelect: doExportIdf },
-            { id: 'sheetset-pdf', label: 'Xuất bộ hồ sơ (PDF nhiều tờ)…', sub: 'Chọn khổ/hướng giấy · xem trước tờ · soát bảng nét, rồi xuất TẤT CẢ sheet gộp 1 PDF', icon: <ListOrdered size={15} />, onSelect: doOpenPaperExport },
-            { id: 'ifpack', label: 'Sao lưu dự án (.ifpack)', sub: 'ZIP đầy đủ — bản vẽ + ảnh markup hiện trường, phục hồi lại được', icon: <Save size={15} />, onSelect: doExportIfpack },
+            { id: 'png', label: 'PNG', sub: 'Ảnh raster nền trắng — bản vẽ đang mở', icon: <Download size={16} />, onSelect: doExportPng },
+            { id: 'dxf', label: 'DXF', sub: 'Trao đổi với AutoCAD — bản vẽ đang mở', icon: <Download size={16} />, onSelect: doExportDxf },
+            { id: 'pdf', label: 'PDF', sub: 'PDF vector (nét/text thật) — layer chưa ẩn/hiện được trong PDF', icon: <FileText size={16} />, onSelect: doExportPdf },
+            { id: 'idf', label: '.idf', sub: 'File project JSON — TẤT CẢ sheet + metadata, để backup/chia sẻ', icon: <Save size={16} />, onSelect: doExportIdf },
+            { id: 'sheetset-pdf', label: 'Xuất bộ hồ sơ (PDF nhiều tờ)…', sub: 'Chọn khổ/hướng giấy · xem trước tờ · soát bảng nét, rồi xuất TẤT CẢ sheet gộp 1 PDF', icon: <ListOrdered size={16} />, onSelect: doOpenPaperExport },
+            { id: 'ifpack', label: 'Sao lưu dự án (.ifpack)', sub: 'ZIP đầy đủ — bản vẽ + ảnh markup hiện trường, phục hồi lại được', icon: <Save size={16} />, onSelect: doExportIfpack },
             // 03/08 SPEC-APP-SHELL-CHUNG §2: 2 NÚT "Đưa sang…" to trên fileBar đã CẮT (trùng
             // segmented chuyển chặng ở header). NĂNG LỰC handoff-ảnh (stash ảnh bản vẽ sang
             // chặng sau — thứ segmented KHÔNG làm) GIỮ NGUYÊN, chuyển vào menu Xuất — đúng ngữ
             // nghĩa "xuất bản vẽ đi nơi khác".
-            { id: 'to-render', label: 'Đưa ảnh bản vẽ sang Thiết kế 3D', sub: 'Kết xuất layout thành node Import Image ở chặng Thiết kế 3D', icon: <ArrowRight size={15} />, onSelect: toRender },
-            { id: 'to-present', label: 'Đưa ảnh bản vẽ sang Trình chiếu', sub: 'Chụp bản vẽ hiện tại thành 1 slide mới (không đè slide có sẵn)', icon: <ArrowRight size={15} />, onSelect: toPresent },
+            { id: 'to-render', label: 'Đưa ảnh bản vẽ sang Thiết kế 3D', sub: 'Kết xuất layout thành node Import Image ở chặng Thiết kế 3D', icon: <ArrowRight size={16} />, onSelect: toRender },
+            { id: 'to-present', label: 'Đưa ảnh bản vẽ sang Trình chiếu', sub: 'Chụp bản vẽ hiện tại thành 1 slide mới (không đè slide có sẵn)', icon: <ArrowRight size={16} />, onSelect: toPresent },
             {
               id: 'auto-backup',
               label: backupOn ? 'Backup định kỳ: đang bật' : 'Bật backup định kỳ',
               sub: backupOn
                 ? 'Ghi ra thư mục đã chọn mỗi 10 phút + mỗi lần lưu — giữ theo thang thời gian (mọi bản 1 giờ đầu, thưa dần về sau, phủ toàn bộ đời dự án)'
                 : 'Chọn 1 thư mục trên máy — tự ghi backup định kỳ, không cần nhớ bấm Sao lưu',
-              icon: <HardDrive size={15} />,
+              icon: <HardDrive size={16} />,
               onSelect: doChooseBackupFolder,
             },
             ...(backupOn
@@ -733,7 +734,7 @@ export default function CadEditor() {
                     id: 'backup-recover',
                     label: 'Khôi phục từ backup…',
                     sub: 'Xem lịch sử backup, chọn 1 điểm — tạo dự án MỚI, không đụng dự án đang mở',
-                    icon: <History size={15} />,
+                    icon: <History size={16} />,
                     onSelect: () => window.dispatchEvent(new CustomEvent('cad:backup-browse-open')),
                   },
                 ]
@@ -745,9 +746,9 @@ export default function CadEditor() {
           icon={<Sparkles size={14} />}
           title="Điểm khởi đầu nhanh — bản demo · mẫu dự án · AI mô tả"
           items={[
-            { id: 'demo', label: 'Mở bản demo', sub: 'Mặt bằng căn hộ mẫu đầy đủ (tường/phòng/cửa/kích thước/nội thất)', icon: <Sparkles size={15} />, onSelect: openDemo },
-            { id: 'template', label: 'Mẫu dự án', sub: 'Căn hộ / Văn phòng / Khách sạn — tường bao + 1-2 phòng để vẽ tiếp', icon: <LayoutTemplate size={15} />, onSelect: () => setTemplateOpen((o) => !o), active: templateOpen },
-            { id: 'ai', label: 'AI mô tả', sub: 'Mô tả nhanh 1 phòng → tự vẽ tường + đặt nội thất khớp từ khoá', icon: <Wand2 size={15} />, onSelect: aiAssist },
+            { id: 'demo', label: 'Mở bản demo', sub: 'Mặt bằng căn hộ mẫu đầy đủ (tường/phòng/cửa/kích thước/nội thất)', icon: <Sparkles size={16} />, onSelect: openDemo },
+            { id: 'template', label: 'Mẫu dự án', sub: 'Căn hộ / Văn phòng / Khách sạn — tường bao + 1-2 phòng để vẽ tiếp', icon: <LayoutTemplate size={16} />, onSelect: () => setTemplateOpen((o) => !o), active: templateOpen },
+            { id: 'ai', label: 'AI mô tả', sub: 'Mô tả nhanh 1 phòng → tự vẽ tường + đặt nội thất khớp từ khoá', icon: <Wand2 size={16} />, onSelect: aiAssist },
           ]}
         />
         <MenuButton
@@ -755,13 +756,13 @@ export default function CadEditor() {
           icon={<ShieldCheck size={14} />}
           title="Khung tên · Kiểm chuẩn · Gợi ý tên phòng · MEP"
           items={[
-            { id: 'titleblock', label: 'Khung tên', sub: 'Chèn cajetín vào góc dưới-phải bản vẽ', icon: <FileSignature size={15} />, onSelect: () => setTitleBlockOpen((o) => !o), active: titleBlockOpen },
-            { id: 'schedule', label: 'Thống kê · Legend', sub: 'Bảng schedule tự đếm + khung chú giải ký hiệu — đóng dấu lên bản vẽ được', icon: <ListOrdered size={15} />, onSelect: () => setScheduleOpen((o) => !o), active: scheduleOpen },
-            { id: 'standards', label: 'Kiểm chuẩn', sub: 'Đối chiếu TCVN/QCVN/ISO — chỉ đọc & đề xuất, không tự sửa', icon: <ShieldCheck size={15} />, onSelect: () => setStandardsOpen((o) => !o), active: standardsOpen },
-            { id: 'autolabel', label: 'Gợi ý tên phòng', sub: 'Đoán tên phòng chưa có nhãn — chỉ đề xuất, bạn bấm Áp dụng', icon: <Tag size={15} />, onSelect: () => setAutoLabelOpen((o) => !o), active: autoLabelOpen },
-            { id: 'rooms', label: 'Nhận diện phòng', sub: 'Nhãn + tường → cấu kiện phòng thật: biên đóng băng, m² sống — duyệt từng phòng', icon: <LayoutPanelTop size={15} />, onSelect: () => setRoomDetectOpen((o) => !o), active: roomDetectOpen },
-            { id: 'mep', label: 'MEP sơ cấp', sub: 'Gợi ý chiếu sáng/công tắc/ổ cắm/máy lạnh — chỉ đề xuất', icon: <Lightbulb size={15} />, onSelect: () => setMepOpen((o) => !o), active: mepOpen },
-            { id: 'history', label: 'Lịch sử vẽ', sub: 'Xem lại các bước đã vẽ — click 1 bước để Undo/Redo tới đó', icon: <History size={15} />, onSelect: () => setHistoryOpen((o) => !o), active: historyOpen },
+            { id: 'titleblock', label: 'Khung tên', sub: 'Chèn cajetín vào góc dưới-phải bản vẽ', icon: <FileSignature size={16} />, onSelect: () => setTitleBlockOpen((o) => !o), active: titleBlockOpen },
+            { id: 'schedule', label: 'Thống kê · Legend', sub: 'Bảng schedule tự đếm + khung chú giải ký hiệu — đóng dấu lên bản vẽ được', icon: <ListOrdered size={16} />, onSelect: () => setScheduleOpen((o) => !o), active: scheduleOpen },
+            { id: 'standards', label: 'Kiểm chuẩn', sub: 'Đối chiếu TCVN/QCVN/ISO — chỉ đọc & đề xuất, không tự sửa', icon: <ShieldCheck size={16} />, onSelect: () => setStandardsOpen((o) => !o), active: standardsOpen },
+            { id: 'autolabel', label: 'Gợi ý tên phòng', sub: 'Đoán tên phòng chưa có nhãn — chỉ đề xuất, bạn bấm Áp dụng', icon: <Tag size={16} />, onSelect: () => setAutoLabelOpen((o) => !o), active: autoLabelOpen },
+            { id: 'rooms', label: 'Nhận diện phòng', sub: 'Nhãn + tường → cấu kiện phòng thật: biên đóng băng, m² sống — duyệt từng phòng', icon: <LayoutPanelTop size={16} />, onSelect: () => setRoomDetectOpen((o) => !o), active: roomDetectOpen },
+            { id: 'mep', label: 'MEP sơ cấp', sub: 'Gợi ý chiếu sáng/công tắc/ổ cắm/máy lạnh — chỉ đề xuất', icon: <Lightbulb size={16} />, onSelect: () => setMepOpen((o) => !o), active: mepOpen },
+            { id: 'history', label: 'Lịch sử vẽ', sub: 'Xem lại các bước đã vẽ — click 1 bước để Undo/Redo tới đó', icon: <History size={16} />, onSelect: () => setHistoryOpen((o) => !o), active: historyOpen },
           ]}
         />
         <ScaleMenu />
@@ -793,26 +794,31 @@ export default function CadEditor() {
       {/* vùng canvas + panel */}
       <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
         <CadCanvas />
-        {/* Bàn trống đã tự là "Vẽ mới": chỉ giữ một lối nhập gọn. Chạm vùng ngoài nút đóng lớp
-            gợi ý; lần chạm kế tiếp làm việc trực tiếp trên canvas, không còn bước "Vẽ mới". */}
+        {/* GỢI Ý BÀN TRỐNG — KHÔNG CHẶN (sửa 22/08, hotfix "stop mini-app UI").
+            🔴 BẢN CŨ LÀ MỘT LỚP CHẶN THẬT: `position:absolute; inset:0; zIndex:5` phủ TRỌN canvas,
+            và `onPointerDown` của nó chỉ tự đóng chứ KHÔNG chuyển tiếp cú chạm xuống dưới ⇒ cú
+            click ĐẦU TIÊN luôn bị nuốt. Chính docstring cũ đã tự thú điều đó rồi phải vá bằng
+            `cadTool === 'select'` — tức là chữa triệu chứng: vẫn chặn, chỉ chặn ít hơn.
+            NAY: bỏ hẳn lớp phủ. Vỏ ngoài `pointer-events:none` nên MỌI cú chạm rơi thẳng vào
+            canvas ở lần đầu tiên; chỉ hai cái nút mới nhận chuột (`pointer-events:auto`).
+            Hệ quả: canvas là nhân vật chính, gợi ý chỉ là gợi ý — không còn cửa chặn nào giữa
+            người dùng và bàn vẽ, và KHÔNG cần điều kiện `cadTool` nữa (không có gì để nuốt).
+            Gợi ý tự biến mất khi bản vẽ có nét — không cần ai bấm để đuổi nó đi. */}
         {docIsEmpty && !emptyCardDismissed && (
           <div
             data-empty-drawing-overlay
-            onPointerDown={() => setEmptyCardDismissed(true)}
-            style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', zIndex: 5 }}
+            style={{
+              position: 'absolute', inset: 0, display: 'grid', placeItems: 'center',
+              zIndex: 5, pointerEvents: 'none',
+            }}
           >
-            {/* 11/08 Hoà chê pill tím lơ lửng "vô duyên" — đổi thành card empty-state có dẫn
-                dắt (khuôn chặng 3D: chữ dẫn + hành động, không CTA trần giữa canvas). Accent
-                chỉ còn ở MỘT nút chính; đường "vẽ ngay" là ghost vì canvas trống tự nó đã là
-                bàn vẽ (chạm ngoài card = bắt đầu vẽ, giữ nguyên cơ chế dismiss). */}
             <div
               data-empty-drawing-prompt
-              onPointerDown={(event) => event.stopPropagation()}
               style={{
                 display: 'grid', justifyItems: 'center', gap: 10, maxWidth: 340, textAlign: 'center',
-                padding: '22px 26px 20px', borderRadius: 14, border: '1px solid var(--border)',
-                background: 'color-mix(in srgb, var(--panel) 92%, transparent)',
-                backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+                padding: '18px 22px 16px', borderRadius: 14, border: '1px solid var(--border)',
+                background: 'color-mix(in srgb, var(--panel) 88%, transparent)',
+                backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
                 boxShadow: '0 6px 22px rgba(0,0,0,.14)',
               }}
             >
@@ -820,9 +826,11 @@ export default function CadEditor() {
                 {t('Bàn vẽ đang trống', 'The drawing board is empty')}
               </div>
               <div style={{ fontSize: 12, color: 'var(--t3)', lineHeight: 1.5 }}>
-                {t('Gõ L để vẽ tường ngay tại chỗ, hoặc mở file có sẵn (.idf · .dxf · .dwg).', 'Type L to draw a wall right here, or open an existing file (.idf · .dxf · .dwg).')}
+                {/* W = cad.draw.wall (lib/commands/registry.ts:274, alias 'W'/'WALL'). KHÔNG đổi lại
+                    thành L — L là cad.draw.line ("Đường thẳng", registry.ts:258), không phải tường. */}
+                {t('Gõ W để vẽ tường ngay tại chỗ, hoặc mở file có sẵn (.idf · .dxf · .dwg).', 'Type W to draw a wall right here, or open an existing file (.idf · .dxf · .dwg).')}
               </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+              <div style={{ display: 'flex', gap: 8, marginTop: 2, pointerEvents: 'auto' }}>
                 <button
                   type="button"
                   onClick={() => gatewayFileRef.current?.click()}
@@ -835,7 +843,7 @@ export default function CadEditor() {
                   onClick={() => setEmptyCardDismissed(true)}
                   style={{ padding: '8px 15px', borderRadius: 999, border: '1px solid var(--border)', cursor: 'pointer', background: 'transparent', color: 'var(--t2)', fontSize: 12.5, fontWeight: 500, lineHeight: 1.5 }}
                 >
-                  {t('Vẽ ngay', 'Start drawing')}
+                  {t('Ẩn gợi ý', 'Hide hint')}
                 </button>
               </div>
             </div>
@@ -884,7 +892,7 @@ export default function CadEditor() {
               onClick={() => (dwgImportAbort ?? dxfImportAbort)?.abort()}
               style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--t1)', fontSize: 12, cursor: 'pointer' }}
             >
-              <X size={13} /> Huỷ
+              <X size={14} /> Huỷ
             </button>
           </div>
         )}
@@ -1323,7 +1331,7 @@ function DxfImportReportPanel({
             onClick={() => window.dispatchEvent(new CustomEvent('cad:goto-box', { detail: clusterBox }))}
             style={dxfLoadBtn}
           >
-            <Crosshair size={13} /> Về cụm vẽ chính
+            <Crosshair size={14} /> Về cụm vẽ chính
           </button>
         )}
         <button
@@ -1331,7 +1339,7 @@ function DxfImportReportPanel({
           onClick={() => window.dispatchEvent(new CustomEvent('cad:zoom-extents'))}
           style={dxfLoadBtn}
         >
-          <Eye size={13} /> Xem toàn bộ bản vẽ
+          <Eye size={14} /> Xem toàn bộ bản vẽ
         </button>
         <button type="button" onClick={onClose} style={{ ...dxfLoadBtn, background: 'var(--accent)', color: '#fff', border: 'none' }}>
           Đóng
@@ -1417,17 +1425,51 @@ const LINETYPE_DASH: Record<string, string | undefined> = {
  * cung vi tri/bo/nhip voi Inspector cua Presenting). Chi dung useCadStore (store toan cuc)
  * nen mount o dau cung chay.
  */
+/**
+ * BẢNG LỚP — hàng MẶC ĐỊNH gọn, chi tiết đẩy xuống phần MỞ RỘNG (Hoà chốt 20/08).
+ *
+ * Hàng mặc định CHỈ được có sáu thứ: ô màu ngữ nghĩa · mẫu nét (kiểu + độ dày) · tên lớp ·
+ * ẩn/hiện · khoá · **trạng thái lớp hiện hành rõ ràng**.
+ * ⛔ KHÔNG nhét dropdown nét/độ dày vào MỌI hàng. Trước 20/08 mỗi hàng mang **hai `<select>`
+ * + một nút Xoá**, tức một danh sách 8 lớp bày sẵn 16 hộp xổ — bảng lớp là thứ người ta LƯỚT để
+ * tìm lớp, không phải bảng chỉnh thông số; chỉnh là việc của một lớp tại một thời điểm.
+ * ⇒ Hai select + Xoá nay chỉ hiện ở phần MỞ RỘNG, và chỉ cho **lớp đang chọn**.
+ *
+ * BA NẤC CỦA BẢNG LỚP — thu/mở ĐỘC LẬP với rail (rail giữ nguyên khi bảng này đổi):
+ *   ĐÓNG      → dải mỏng, do `Navigator` lo sẵn (phím B / tay cầm) — không dựng cơ chế thứ hai
+ *   gọn 224   → mặc định: lướt để TÌM lớp
+ *   rộng 320  → sửa sâu: thêm khối chỉnh nét/độ dày/xoá cho lớp đang chọn
+ * ⚠️ Nấc rộng **NỞ RA THAY THẾ** thềm, KHÔNG đẻ cột thứ ba — nó chỉ đổi bề rộng của chính
+ * `Navigator` qua sự kiện `if:navigator-width`. Ba nấc là ba CÔNG NĂNG: nấc rộng có thứ nấc gọn
+ * KHÔNG THỂ có (khối chỉnh nét), không phải cùng nội dung kéo giãn ra.
+ *
+ * "Trạng thái lớp hiện hành RÕ RÀNG" = ba kênh, không chỉ màu: nền `--accent-soft` · **chấm đặc**
+ * ở mép trái · **chữ "hiện hành"**. Bỏ hết màu (in trắng đen / mù màu) vẫn đọc ra lớp nào đang
+ * hiện hành — đúng luật "trạng thái không được chỉ dựa vào màu".
+ */
 export function LayerPanel() {
   const doc = useCadStore((s) => s.doc);
   const current = useCadStore((s) => s.currentLayer);
   const setCurrent = useCadStore((s) => s.setCurrentLayer);
   const updateLayer = useCadStore((s) => s.updateLayer);
   const removeLayer = useCadStore((s) => s.removeLayer);
+  const [rong, setRong] = useState(false);
 
   // 08/08 — port `docs/mocks/2D Kỹ thuật.dc.html` khối "Lớp bản vẽ" + dòng đếm đáy
   // ("N lớp · X đang ẩn · Y đang khoá"), số THẬT đọc từ doc.layers (không chép chữ tĩnh của mock).
   const hiddenCount = doc.layers.filter((l) => !l.visible).length;
   const lockedCount = doc.layers.filter((l) => l.locked).length;
+  const layerHienHanh = doc.layers.find((l) => l.id === current) ?? null;
+
+  // Nấc rộng NỞ RA THAY THẾ thềm — báo bề rộng mới cho `Navigator`, không dựng cột thứ hai.
+  // Trả bề rộng về mặc định khi rời chặng: bảng lớp là của chặng 2D, để lại 320 cho panel của
+  // chặng khác là bắt nó gánh một quyết định không phải của nó.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('if:navigator-width', { detail: { width: rong ? 320 : null } }));
+    return () => {
+      window.dispatchEvent(new CustomEvent('if:navigator-width', { detail: { width: null } }));
+    };
+  }, [rong]);
 
   return (
     <div style={{ padding: '2px 6px', fontSize: 12.5 }}>
@@ -1436,82 +1478,127 @@ export function LayerPanel() {
           trái). Nhãn "Lớp bản vẽ" khớp mock (trước "Lớp (Layer)" — trộn VI/EN khác quy ước mock). */}
       <div style={panelHead}>
         <span>Lớp bản vẽ</span>
+        <button
+          type="button"
+          onClick={() => setRong((v) => !v)}
+          aria-expanded={rong}
+          title={rong ? 'Thu về bảng gọn' : 'Mở rộng để sửa nét lớp đang chọn'}
+          style={{ ...miniBtn, width: 'auto', padding: '0 6px', fontSize: 11 }}
+        >
+          {rong ? 'Gọn' : 'Sửa nét'}
+        </button>
       </div>
       <div style={{ overflowY: 'auto' }}>
         {doc.layers.map((l) => {
           const on = l.id === current;
           return (
-            <div key={l.id} style={{ padding: '5px 8px', borderRadius: 10, background: on ? 'var(--accent-soft)' : 'transparent' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input
-                  type="color"
-                  value={l.color}
-                  onChange={(e) => updateLayer(l.id, { color: e.target.value })}
-                  title="Màu lớp"
-                  style={{ width: 18, height: 18, padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}
-                />
-                <button type="button" onClick={() => setCurrent(l.id)} title="Đặt lớp hiện hành" style={{ flex: 1, textAlign: 'left', border: 'none', background: 'none', color: on ? 'var(--accent)' : 'var(--t2)', fontSize: 12, fontWeight: on ? 600 : 400, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {l.name}
-                </button>
-                <button type="button" onClick={() => updateLayer(l.id, { visible: !l.visible })} title="Ẩn/hiện" style={miniBtn}>
-                  {l.visible ? <Eye size={13} /> : <EyeOff size={13} />}
-                </button>
-                <button type="button" onClick={() => updateLayer(l.id, { locked: !l.locked })} title="Khoá/mở" style={miniBtn}>
-                  {l.locked ? <Lock size={13} /> : <Unlock size={13} />}
-                </button>
-                <button type="button" onClick={() => removeLayer(l.id)} title="Xoá lớp" style={miniBtn}>
-                  <Trash2 size={13} />
-                </button>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3, paddingLeft: 24 }}>
-                {/* CHINH-5 (SPEC-PANEL-ROLLOUT §3 "Nét: liền" → VẼ THẲNG kiểu nét, học AutoCAD):
-                    preview SVG sống theo lineType + lineweight — nhìn 1 phát biết nét gì, dày
-                    bao nhiêu, không phải đọc chữ. 2 <select> GIỮ để đổi giá trị (native select
-                    không vẽ được stroke trong option — preview đứng cạnh là dạng khả thi không
-                    phải dựng dropdown tự chế). */}
-                <svg
-                  width="30"
-                  height="10"
+            <div
+              key={l.id}
+              style={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '5px 8px',
+                borderRadius: 10,
+                background: on ? 'var(--accent-soft)' : 'transparent',
+              }}
+            >
+              {/* Kênh HÌNH DẠNG của trạng thái hiện hành — chấm đặc mép trái, sống cả khi mất màu. */}
+              {on && (
+                <span
                   aria-hidden
-                  style={{ flexShrink: 0 }}
-                >
-                  <line
-                    x1="1"
-                    y1="5"
-                    x2="29"
-                    y2="5"
-                    stroke="var(--t2)"
-                    strokeWidth={Math.max(1, (l.lineweight ?? 0.25) * 4)}
-                    strokeDasharray={LINETYPE_DASH[l.lineType ?? 'continuous']}
-                  />
-                </svg>
-                <select
-                  value={l.lineweight ?? 0.25}
-                  onChange={(e) => updateLayer(l.id, { lineweight: parseFloat(e.target.value) })}
-                  title="Bề dày nét (mm, ISO 128)"
-                  style={miniSelect}
-                >
-                  {[0.13, 0.18, 0.25, 0.35, 0.5, 0.7, 1.0].map((w) => (
-                    <option key={w} value={w}>{w.toFixed(2)}mm</option>
-                  ))}
-                </select>
-                <select
-                  value={l.lineType ?? 'continuous'}
-                  onChange={(e) => updateLayer(l.id, { lineType: e.target.value as typeof l.lineType })}
-                  title="Nét vẽ (linetype)"
-                  style={miniSelect}
-                >
-                  <option value="continuous">liền</option>
-                  <option value="hidden">khuất</option>
-                  <option value="center">trục</option>
-                  <option value="dashed">đứt</option>
-                  <option value="phantom">phantom</option>
-                </select>
-              </div>
+                  style={{ position: 'absolute', left: 1, width: 4, height: 4, borderRadius: 999, background: 'var(--accent)' }}
+                />
+              )}
+              <input
+                type="color"
+                value={l.color}
+                onChange={(e) => updateLayer(l.id, { color: e.target.value })}
+                title="Màu lớp"
+                aria-label={`Màu lớp ${l.name}`}
+                style={{ width: 14, height: 14, padding: 0, border: 'none', background: 'none', cursor: 'pointer', flexShrink: 0, marginLeft: 3 }}
+              />
+              {/* MẪU NÉT — kiểu + độ dày đọc bằng MẮT, không phải bằng chữ trong hộp xổ. Đây là
+                  thứ thay cho hai `<select>` cũ ở hàng mặc định: xem thì đủ, sửa thì mở rộng. */}
+              <svg width="22" height="10" aria-hidden style={{ flexShrink: 0 }}>
+                <line
+                  x1="1"
+                  y1="5"
+                  x2="21"
+                  y2="5"
+                  stroke="var(--t2)"
+                  strokeWidth={Math.max(1, (l.lineweight ?? 0.25) * 4)}
+                  strokeDasharray={LINETYPE_DASH[l.lineType ?? 'continuous']}
+                />
+              </svg>
+              <button
+                type="button"
+                onClick={() => setCurrent(l.id)}
+                title="Đặt lớp hiện hành"
+                aria-current={on ? 'true' : undefined}
+                style={{ flex: 1, minWidth: 0, textAlign: 'left', border: 'none', background: 'none', color: on ? 'var(--t1)' : 'var(--t2)', fontSize: 12, fontWeight: on ? 600 : 400, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              >
+                {l.name}
+                {/* Kênh CHỮ của trạng thái — nói thẳng, không bắt đoán qua sắc độ. */}
+                {on && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 400, color: 'var(--t3)' }}>hiện hành</span>}
+              </button>
+              <button type="button" onClick={() => updateLayer(l.id, { visible: !l.visible })} title="Ẩn/hiện" aria-label={`${l.visible ? 'Ẩn' : 'Hiện'} lớp ${l.name}`} style={miniBtn}>
+                {l.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+              </button>
+              <button type="button" onClick={() => updateLayer(l.id, { locked: !l.locked })} title="Khoá/mở" aria-label={`${l.locked ? 'Mở khoá' : 'Khoá'} lớp ${l.name}`} style={miniBtn}>
+                {l.locked ? <Lock size={14} /> : <Unlock size={14} />}
+              </button>
             </div>
           );
         })}
       </div>
+
+      {/* PHẦN MỞ RỘNG — chỉ ở nấc rộng, và chỉ cho LỚP ĐANG CHỌN. Đây là thứ nấc gọn KHÔNG THỂ
+          có; nếu bỏ khối này đi thì nấc rộng chỉ còn là nấc gọn kéo giãn ⇒ không đáng tồn tại. */}
+      {rong && layerHienHanh && (
+        <div style={{ marginTop: 6, padding: '8px', borderRadius: 10, background: 'var(--field)' }}>
+          <div style={{ fontSize: 11, color: 'var(--t3)', marginBottom: 6 }}>
+            Nét của lớp <strong style={{ color: 'var(--t1)' }}>{layerHienHanh.name}</strong>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <select
+              value={layerHienHanh.lineweight ?? 0.25}
+              onChange={(e) => updateLayer(layerHienHanh.id, { lineweight: parseFloat(e.target.value) })}
+              title="Bề dày nét (mm, ISO 128)"
+              aria-label="Bề dày nét"
+              style={miniSelect}
+            >
+              {[0.13, 0.18, 0.25, 0.35, 0.5, 0.7, 1.0].map((w) => (
+                <option key={w} value={w}>{w.toFixed(2)}mm</option>
+              ))}
+            </select>
+            <select
+              value={layerHienHanh.lineType ?? 'continuous'}
+              onChange={(e) => updateLayer(layerHienHanh.id, { lineType: e.target.value as typeof layerHienHanh.lineType })}
+              title="Nét vẽ (linetype)"
+              aria-label="Kiểu nét"
+              style={miniSelect}
+            >
+              <option value="continuous">liền</option>
+              <option value="hidden">khuất</option>
+              <option value="center">trục</option>
+              <option value="dashed">đứt</option>
+              <option value="phantom">phantom</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => removeLayer(layerHienHanh.id)}
+              title="Xoá lớp đang chọn"
+              aria-label={`Xoá lớp ${layerHienHanh.name}`}
+              style={miniBtn}
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Dòng đếm đáy — khớp mock "6 lớp · 1 đang ẩn · 1 đang khoá", số THẬT từ doc.layers.
           KHÔNG lặp dòng "N tờ"/save-status của StatusBar (đó là ổ ⑥ dùng chung, ngoài phạm vi
           file này) — dòng này CHỈ nói về chính danh sách lớp đang cuộn ở trên. */}
@@ -2028,7 +2115,7 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
           ))}
         </select>
         <button type="button" onClick={detect} title="Nhận diện loại vận hành từ bản vẽ (block/nhãn phòng/text) — tất định, chỉ gợi ý, bạn duyệt" style={miniBtn}>
-          <Wand2 size={13} />
+          <Wand2 size={14} />
         </button>
       </div>
       {(detectMsg || groupNote) && (
@@ -2059,14 +2146,14 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
                 </div>
                 {fix && (
                   <div style={{ fontSize: 10.5, color: 'var(--accent)', marginTop: 4, display: 'flex', gap: 4, alignItems: 'flex-start', lineHeight: 1.4 }}>
-                    <Wrench size={11} style={{ marginTop: 2, flexShrink: 0 }} />
+                    <Wrench size={14} style={{ marginTop: 2, flexShrink: 0 }} />
                     <span>{fix}</span>
                   </div>
                 )}
               </div>
               {v.at && (
                 <button type="button" onClick={() => zoomTo(v)} title="Zoom tới vị trí" style={miniBtn}>
-                  <Crosshair size={13} />
+                  <Crosshair size={14} />
                 </button>
               )}
             </div>
@@ -2077,7 +2164,7 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
       {reportOpen && (
         <div style={{ borderTop: '1px solid var(--border)', padding: '8px 8px 10px', background: 'var(--panel)' }}>
           <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t1)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <FileText size={13} /> Xuất PDF báo cáo quy chuẩn
+            <FileText size={14} /> Xuất PDF báo cáo quy chuẩn
           </div>
           <div style={{ fontSize: 10, color: 'var(--t4)', marginBottom: 8, lineHeight: 1.45 }}>
             Tên studio &amp; dự án lấy sẵn từ Brand Kit + khung tên bản vẽ — sửa nếu cần. Báo cáo TRUNG TÍNH, không nhúng thương hiệu mặc định.
@@ -2102,7 +2189,7 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
           </label>
           <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
             <button type="button" onClick={doExportReport} disabled={exporting} style={{ ...reportBtn, flex: 1, opacity: exporting ? 0.6 : 1, background: 'var(--accent)', color: '#fff', borderColor: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <Download size={13} /> {exporting ? 'Đang xuất…' : 'Xuất PDF'}
+              <Download size={14} /> {exporting ? 'Đang xuất…' : 'Xuất PDF'}
             </button>
             <button type="button" onClick={() => setReportOpen(false)} style={{ ...reportBtn, width: 72 }}>Huỷ</button>
           </div>
@@ -2186,10 +2273,10 @@ function RoomDetectPanel({ onClose }: { onClose: () => void }) {
               <div style={{ fontSize: 10, color: 'var(--t4)', marginTop: 2, lineHeight: 1.5 }}>{p.areaM2.toFixed(2)} m² · biên {p.room.boundary.length} đỉnh</div>
             </div>
             <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('cad:zoom-to', { detail: p.room.labelPos }))} title="Zoom tới phòng" style={miniBtn}>
-              <Crosshair size={13} />
+              <Crosshair size={14} />
             </button>
             <button type="button" onClick={() => applyOne(p)} title="Tạo phòng này (nhãn chữ cũ được thay bằng nhãn sống)" style={miniBtn}>
-              <Check size={13} />
+              <Check size={14} />
             </button>
           </div>
         ))}
@@ -2202,7 +2289,7 @@ function RoomDetectPanel({ onClose }: { onClose: () => void }) {
               <div key={u.textId} style={{ fontSize: 10.5, color: 'var(--t3)', padding: '3px 0', lineHeight: 1.5, display: 'flex', gap: 6 }}>
                 <span style={{ flex: 1 }}>· {u.name}</span>
                 <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('cad:zoom-to', { detail: u.at }))} title={u.reason} style={miniBtn}>
-                  <Crosshair size={12} />
+                  <Crosshair size={14} />
                 </button>
               </div>
             ))}
@@ -2297,10 +2384,10 @@ function AutoLabelPanel({ onClose }: { onClose: () => void }) {
               </div>
             </div>
             <button type="button" onClick={() => zoomTo(s)} title="Zoom tới vị trí" style={miniBtn}>
-              <Crosshair size={13} />
+              <Crosshair size={14} />
             </button>
             <button type="button" onClick={() => apply(s)} title="Chèn nhãn này vào bản vẽ" style={miniBtn}>
-              <Check size={13} />
+              <Check size={14} />
             </button>
           </div>
         ))}
@@ -2389,8 +2476,8 @@ function MepPanel({ onClose }: { onClose: () => void }) {
                     {p.lighting.minLux}–{p.lighting.maxLux} lux tham khảo → ~{Math.round(p.lighting.totalLumensTarget)} lumen → {p.lighting.recommendedDownlightCount} đèn downlight (900lm/đèn, giả định) · dò được {p.positions.length} vị trí đặt
                   </div>
                 </div>
-                <button type="button" onClick={() => zoomTo(p.roomAt)} title="Zoom tới" style={miniBtn}><Crosshair size={13} /></button>
-                <button type="button" onClick={() => placeLightsForRoom(p)} disabled={p.positions.length === 0} title="Đặt đèn downlight vào bản vẽ" style={{ ...miniBtn, opacity: p.positions.length === 0 ? 0.4 : 1 }}><Check size={13} /></button>
+                <button type="button" onClick={() => zoomTo(p.roomAt)} title="Zoom tới" style={miniBtn}><Crosshair size={14} /></button>
+                <button type="button" onClick={() => placeLightsForRoom(p)} disabled={p.positions.length === 0} title="Đặt đèn downlight vào bản vẽ" style={{ ...miniBtn, opacity: p.positions.length === 0 ? 0.4 : 1 }}><Check size={14} /></button>
               </div>
             ))}
           </>
@@ -2403,7 +2490,7 @@ function MepPanel({ onClose }: { onClose: () => void }) {
             {switches.map((s, i) => (
               <div key={`sw-${i}`} style={rowStyle}>
                 <div style={{ flex: 1, minWidth: 0, fontSize: 10.5, color: 'var(--t3)', lineHeight: 1.4 }}>{s.note}</div>
-                <button type="button" onClick={() => zoomTo(s.at)} title="Zoom tới vị trí gợi ý" style={miniBtn}><Crosshair size={13} /></button>
+                <button type="button" onClick={() => zoomTo(s.at)} title="Zoom tới vị trí gợi ý" style={miniBtn}><Crosshair size={14} /></button>
               </div>
             ))}
           </>
@@ -2423,8 +2510,8 @@ function MepPanel({ onClose }: { onClose: () => void }) {
             {outlets.map((o, i) => (
               <div key={`ot-${i}`} style={rowStyle}>
                 <div style={{ flex: 1, minWidth: 0, fontSize: 10.5, color: 'var(--t3)', lineHeight: 1.4 }}>{o.note}</div>
-                <button type="button" onClick={() => zoomTo(o.at)} title="Zoom tới" style={miniBtn}><Crosshair size={13} /></button>
-                <button type="button" onClick={() => placeOutlet(o)} title="Đặt ổ cắm vào bản vẽ" style={miniBtn}><Check size={13} /></button>
+                <button type="button" onClick={() => zoomTo(o.at)} title="Zoom tới" style={miniBtn}><Crosshair size={14} /></button>
+                <button type="button" onClick={() => placeOutlet(o)} title="Đặt ổ cắm vào bản vẽ" style={miniBtn}><Check size={14} /></button>
               </div>
             ))}
           </>
@@ -2471,6 +2558,16 @@ function CommandLine({ status }: { status: string }) {
   const [acOpen, setAcOpen] = useState(false);
   const [acIndex, setAcIndex] = useState(0);
   const suggestions = acOpen ? matchCommands(val) : [];
+  const cadMode = useCadStore((s) => s.cadMode);
+  // 20/08 (2D-WORKING-MODE-CORRECTION) — "Dynamic Input quiet by default" ở Sơ phác: dòng lệnh
+  // vẫn LÀ CHÍNH NÓ (cùng ô nhập, cùng autocomplete, cùng bàn phím) — chỉ đổi MẬT ĐỘ THỊ GIÁC
+  // mặc định. Sơ phác không gõ lệnh bằng bàn phím (chạm-giữ), nên ô 340px monospace luôn mở là
+  // một khối "kỹ thuật" đứng lì giữa một chế độ vốn phải NHẸ. Kỹ thuật/Chuyên giữ NGUYÊN — luôn
+  // mở, đúng vai "precision catches up with intent". `focused` bắt cả click tay lẫn
+  // `cad:cmd-focus` (nút "Lệnh" ở CadTouchDock gọi `inputRef.current?.focus()` có sẵn) nên KHÔNG
+  // cần sửa gì ở CadTouchDock — chạm vào là tự nở, đúng luật mọc-từ-nguồn.
+  const [focused, setFocused] = useState(false);
+  const quiet = cadMode === 'sketch' && !focused && !val;
   const setTool = useCadStore((s) => s.setTool);
   const setStatus = useCadStore((s) => s.setStatus);
   const deleteSelected = useCadStore((s) => s.deleteSelected);
@@ -2735,7 +2832,15 @@ function CommandLine({ status }: { status: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 34, flex: '0 0 auto', padding: '0 12px', borderTop: '1px solid var(--border)', background: 'var(--panel)' }}>
       <Command size={14} style={{ color: 'var(--t4)' }} />
-      <div style={{ position: 'relative', width: 340 }}>
+      <div
+        style={{
+          position: 'relative',
+          width: quiet ? 84 : 340,
+          // NHIP.bam — cùng bề mặt biến hình tại chỗ (không phải viên/bảng mới mọc ra), nhịp
+          // "bấm/rê" là đúng vai; thoiLuong() tự về 0ms khi bật giảm chuyển động.
+          transition: `width ${thoiLuong(NHIP.bam)}ms ${DUONG_CONG}`,
+        }}
+      >
         {acOpen && suggestions.length > 0 && (
           <div
             style={{
@@ -2765,12 +2870,18 @@ function CommandLine({ status }: { status: string }) {
           value={val}
           onChange={(e) => { setVal(e.target.value); setAcOpen(true); setAcIndex(0); }}
           onKeyDown={onInputKeyDown}
-          onBlur={() => setAcOpen(false)}
-          placeholder="Gõ lệnh: L · PL · REC · C · W 200 · ROOM · D · WIN · M · CO · RO · MI · O 150 · DIM · T · E · U…"
+          onFocus={() => setFocused(true)}
+          onBlur={() => { setAcOpen(false); setFocused(false); }}
+          placeholder={quiet ? 'Lệnh…' : 'Gõ lệnh: L · PL · REC · C · W 200 · ROOM · D · WIN · M · CO · RO · MI · O 150 · DIM · T · E · U…'}
           style={{ width: '100%', background: 'var(--field)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 8px', fontSize: 12, color: 'var(--t1)', outline: 'none', fontFamily: 'ui-monospace, monospace' }}
         />
       </div>
-      <span style={{ fontSize: 11.5, color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{status}</span>
+      {/* Trạng thái: câm ở Sơ phác lúc chưa gõ — đúng "minimal numeric interruption". Bấm/chạm
+          vào ô lệnh (focused hoặc có `val`) thì hiện lại ngay, không mất thông tin, chỉ đổi mặc
+          định. Kỹ thuật/Chuyên giữ hiện LUÔN — dòng trạng thái là công cụ làm việc ở đó. */}
+      {!quiet && (
+        <span style={{ fontSize: 11.5, color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{status}</span>
+      )}
       <RoomStatsBadge />
       <WallStatsBadge />
     </div>
@@ -2934,7 +3045,7 @@ function InsertClusterBox({ selected }: { selected: Entity[] }) {
           cursor: more > 0 ? 'pointer' : 'not-allowed',
         }}
       >
-        <Crosshair size={13} /> Chọn cả cụm{more > 0 ? ` (+${more} hình)` : ''}
+        <Crosshair size={14} /> Chọn cả cụm{more > 0 ? ` (+${more} hình)` : ''}
       </button>
       {more <= 0 && (
         <p style={{ margin: '5px 0 0', fontSize: 10.5, lineHeight: 1.45, color: 'var(--t4)' }}>

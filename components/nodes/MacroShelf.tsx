@@ -53,7 +53,7 @@ export function MacroShelf() {
         <span className="flex-1 text-[11px] font-bold uppercase leading-[1.5] tracking-wide text-[var(--t4)]">
           {tr('Nút tổng của tôi', 'My macro nodes')}
         </span>
-        <ChevronRight size={13} className="text-[var(--t4)]" />
+        <ChevronRight size={18} className="text-[var(--t4)]" />
       </button>
       <div className="min-h-0 flex-1 overflow-y-auto py-1">
         {macros.map((g) => {
@@ -70,7 +70,7 @@ export function MacroShelf() {
               }}
             >
               <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[10px] bg-[var(--field)]">
-                <Icon size={15} className={!g.collapsed ? 'text-[var(--accent)]' : 'text-[var(--t3)]'} />
+                <Icon size={18} className={!g.collapsed ? 'text-[var(--accent)]' : 'text-[var(--t3)]'} />
               </span>
               <span className="min-w-0 flex-1">
                 <span
@@ -99,7 +99,7 @@ export function MacroShelf() {
                   g.shared ? 'bg-[var(--field)] text-[var(--success)]' : 'text-[var(--t4)] hover:bg-[var(--field)] hover:text-[var(--t1)]',
                 )}
               >
-                {g.shared ? <Check size={13} /> : <Share2 size={13} />}
+                {g.shared ? <Check size={16} /> : <Share2 size={16} />}
               </button>
             </div>
           );

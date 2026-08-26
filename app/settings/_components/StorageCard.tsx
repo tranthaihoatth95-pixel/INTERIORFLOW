@@ -79,7 +79,7 @@ export function StorageCard({
 
   return (
     <div className="card">
-      <h3><FolderOpen size={15} /> {tr('Nơi lưu file', 'File location')}</h3>
+      <h3><FolderOpen size={14} /> {tr('Nơi lưu file', 'File location')}</h3>
       <div className="hint">{tr('IF đọc/ghi thẳng thư mục thật — mở Finder vẫn hiểu', 'IF reads/writes a real folder — open Finder and it still makes sense')}</div>
 
       {!supported ? (
@@ -88,7 +88,7 @@ export function StorageCard({
         </p>
       ) : (
         <div className="pathbox">
-          <span className="fi" aria-hidden="true"><FolderOpen size={20} strokeWidth={1.8} /></span>
+          <span className="fi" aria-hidden="true"><FolderOpen size={20} strokeWidth={1.5} /></span>
           <span className="p">
             <span className="pp">{folderName ?? tr('Chưa chọn thư mục', 'No folder chosen')}</span>
             {folderName && (

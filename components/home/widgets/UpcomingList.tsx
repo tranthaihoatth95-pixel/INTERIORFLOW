@@ -41,7 +41,7 @@ export default function UpcomingList({ summary, index }: { summary: HomeSummary;
             {/* v3 (ⓖ "hover ngày → tooltip tên việc") — tooltip native liệt kê MỌI việc trong
                 ngày, kể cả phần bị "+N việc khác" gấp gọn bên dưới. */}
             <div
-              className="mb-1.5 text-[length:var(--fs-2xs)] font-semibold uppercase tracking-wide text-[var(--t4)]"
+              className="mb-1.5 text-[length:var(--fs-2xs)] font-semibold tracking-[.01em] text-[var(--t4)]"
               title={day.items.map((t) => t.title).join('\n')}
             >
               {fmtDayHeader(day.date, lang === 'en')}

@@ -83,7 +83,7 @@ export function AiDependencySettings() {
                   {a === false && (
                     <span className="rounded bg-amber-500/15 px-1 text-[length:var(--fs-xs)] text-amber-300">{tr('chạy mock', 'mock')}</span>
                   )}
-                  {active && <Check size={12} className="ml-auto text-[var(--accent)]" />}
+                  {active && <Check size={14} className="ml-auto text-[var(--accent)]" />}
                 </div>
                 <p className="mt-0.5 text-[12px] leading-snug text-[var(--t4)]">{m.blurb}</p>
               </div>

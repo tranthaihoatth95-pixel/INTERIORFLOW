@@ -377,7 +377,7 @@ export default function LayoutShelf({
               padding: '9px 12px',
             }}
           >
-            <Sparkles size={12} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+            <Sparkles size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} />
             <span style={{ fontSize: 10.5, color: 'var(--t2)', lineHeight: 1.4, flex: 1 }}>
               Máy học &quot;gu&quot; bắt đầu lại cho tài khoản này — dữ liệu học cũ trên máy này (nếu có) thuộc
               người dùng khác, không mang sang.
@@ -388,7 +388,7 @@ export default function LayoutShelf({
               title="Đã hiểu"
               style={{ display: 'flex', border: 'none', background: 'transparent', color: 'var(--t3)', cursor: 'pointer', flexShrink: 0 }}
             >
-              <X size={12} />
+              <X size={14} />
             </button>
           </div>,
           document.body,
@@ -397,7 +397,7 @@ export default function LayoutShelf({
       {learnedNotes && (
         <div style={{ border: '1px solid var(--accent-ring)', borderRadius: 10, background: 'var(--accent-soft)', padding: '9px 11px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-            <Sparkles size={12} style={{ color: 'var(--accent)' }} />
+            <Sparkles size={14} style={{ color: 'var(--accent)' }} />
             <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', flex: 1 }}>Máy đã học từ reference</span>
             <button
               type="button"
@@ -405,7 +405,7 @@ export default function LayoutShelf({
               title="Nhập lại reference / nội dung"
               style={{ display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'transparent', color: 'var(--accent)', fontSize: 10.5, cursor: 'pointer' }}
             >
-              <RefreshCw size={11} /> Làm lại
+              <RefreshCw size={14} /> Làm lại
             </button>
           </div>
           <ul style={{ margin: 0, paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -418,7 +418,7 @@ export default function LayoutShelf({
       {/* ô tìm + tạo mới */}
       <div style={{ display: 'flex', gap: 6 }}>
         <div style={{ position: 'relative', flex: 1 }}>
-          <Search size={13} style={{ position: 'absolute', left: 8, top: 8, color: 'var(--t4)', pointerEvents: 'none' }} />
+          <Search size={16} style={{ position: 'absolute', left: 8, top: 8, color: 'var(--t4)', pointerEvents: 'none' }} />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -478,10 +478,10 @@ export default function LayoutShelf({
             title="Lưu template"
             style={saveConfirmBtn}
           >
-            <Check size={13} />
+            <Check size={16} />
           </button>
           <button type="button" onClick={() => setSaveOpen(false)} title="Huỷ" style={saveCancelBtn}>
-            <X size={13} />
+            <X size={16} />
           </button>
         </div>
       )}
@@ -505,7 +505,7 @@ export default function LayoutShelf({
             cursor: 'pointer',
           }}
         >
-          <SlidersHorizontal size={13} style={{ color: 'var(--accent)' }} />
+          <SlidersHorizontal size={16} style={{ color: 'var(--accent)' }} />
           <span style={{ flex: 1, textAlign: 'left' }}>
             Bảng hỏi số liệu · {spec.minImages}–{spec.maxImages} hình · {toneLabel(spec.tone)} · {spec.background === 'image' ? 'nền ảnh' : 'nền màu'}
           </span>
@@ -547,7 +547,7 @@ export default function LayoutShelf({
               </div>
               {shelf === shelfOfSuggested(suggestedId, allTemplates) && suggestReason && (
                 <p style={{ fontSize: 10.5, color: 'var(--t3)', margin: '6px 2px 0', lineHeight: 1.4, display: 'flex', gap: 4 }}>
-                  <Sparkles size={12} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 1 }} /> {suggestReason}
+                  <Sparkles size={14} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 1 }} /> {suggestReason}
                 </p>
               )}
             </section>
@@ -673,7 +673,7 @@ function ShelfCard({
           {!preview && <span style={{ opacity: 0.6 }}>…</span>}
           {highlight && (
             <span style={badge}>
-              <Sparkles size={9} /> Gợi ý
+              <Sparkles size={14} /> Gợi ý
             </span>
           )}
         </div>
@@ -687,7 +687,7 @@ function ShelfCard({
           className="pe-variant-btn"
           style={variantBtn}
         >
-          <Shuffle size={11} />
+          <Shuffle size={14} />
         </button>
       )}
       {onDelete && (
@@ -701,7 +701,7 @@ function ShelfCard({
           className="pe-variant-btn"
           style={variantBtn}
         >
-          <Trash2 size={11} />
+          <Trash2 size={14} />
         </button>
       )}
       {/* M-1: cặp nút Nhận/Bỏ kín đáo (hover mới hiện — quiet-luxury). Nhận = áp + dạy máy;
@@ -714,7 +714,7 @@ function ShelfCard({
             title={`Nhận gợi ý này (áp bố cục + dạy máy)${tip}`}
             style={fbBtn}
           >
-            <ThumbsUp size={10} />
+            <ThumbsUp size={14} />
           </button>
           <button
             type="button"
@@ -722,7 +722,7 @@ function ShelfCard({
             title={dimmed ? 'Bỏ đánh dấu' : 'Bỏ gợi ý này (dạy máy khi bạn chọn cái khác)'}
             style={{ ...fbBtn, ...(dimmed ? fbBtnActive : null) }}
           >
-            <ThumbsDown size={10} />
+            <ThumbsDown size={14} />
           </button>
         </div>
       )}

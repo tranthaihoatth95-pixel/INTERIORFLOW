@@ -83,7 +83,7 @@ export default function LayerPanel({
               opacity: el.hidden ? 0.55 : 1,
             }}
           >
-            <GripVertical size={12} style={{ color: 'var(--t4)', cursor: 'grab', flexShrink: 0 }} />
+            <GripVertical size={14} style={{ color: 'var(--t4)', cursor: 'grab', flexShrink: 0 }} />
             <KindIcon kind={el.kind} />
             {editing === el.id ? (
               <input
@@ -127,7 +127,7 @@ export default function LayerPanel({
                   onToggleHidden(el.id);
                 }}
               >
-                {el.hidden ? <EyeOff size={12} /> : <Eye size={12} />}
+                {el.hidden ? <EyeOff size={14} /> : <Eye size={14} />}
               </IconBtn>
               <IconBtn
                 title={el.locked ? 'Mở khoá' : 'Khoá'}
@@ -136,7 +136,7 @@ export default function LayerPanel({
                   onToggleLocked(el.id);
                 }}
               >
-                {el.locked ? <Lock size={12} /> : <Unlock size={12} />}
+                {el.locked ? <Lock size={14} /> : <Unlock size={14} />}
               </IconBtn>
             </div>
           </div>
@@ -148,9 +148,9 @@ export default function LayerPanel({
 
 export function KindIcon({ kind }: { kind: SlideElement['kind'] }) {
   const c = 'var(--t3)';
-  if (kind === 'text') return <Type size={12} style={{ color: c, flexShrink: 0 }} />;
-  if (kind === 'image') return <ImageIcon size={12} style={{ color: c, flexShrink: 0 }} />;
-  return <Square size={12} style={{ color: c, flexShrink: 0 }} />;
+  if (kind === 'text') return <Type size={14} style={{ color: c, flexShrink: 0 }} />;
+  if (kind === 'image') return <ImageIcon size={14} style={{ color: c, flexShrink: 0 }} />;
+  return <Square size={14} style={{ color: c, flexShrink: 0 }} />;
 }
 
 export function displayName(el: SlideElement): string {

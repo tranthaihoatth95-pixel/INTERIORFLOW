@@ -249,7 +249,7 @@ export function SectionExtractPanel({ scene, onNhan }: SectionExtractPanelProps)
               : 'cursor-not-allowed border border-dashed border-[var(--border)] text-[var(--t5)]',
           )}
         >
-          {dangTinh ? <Loader2 size={13} className="animate-spin" /> : mode === 'section' ? <Scissors size={13} /> : <Eye size={13} />}
+          {dangTinh ? <Loader2 size={18} className="animate-spin" /> : mode === 'section' ? <Scissors size={18} /> : <Eye size={18} />}
           {tr('Xem trước', 'Preview')}
         </button>
       </Tooltip>

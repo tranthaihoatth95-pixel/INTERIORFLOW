@@ -1,0 +1,1012 @@
+<!-- @dsCard group="Auth" -->
+<meta charset="utf-8" />
+<title>COLD OPEN · môi trường thức trước giao diện</title>
+
+<style>
+  /* ════════════════════════════════════════════════════════════════════════════
+     TOKEN MIRROR — chép NGUYÊN BYTE từ app/globals.css (đọc 23/08).
+     ĐÂY LÀ KHỐI DUY NHẤT trong file được phép có hex. Mọi chỗ khác dùng var().
+     Bộ --amb-* / --anh-sang-* / --nhip-khong-khi chép từ bản Home đã duyệt
+     (claude-home-living-canvas-v2.html) — CỐ Ý dùng lại y nguyên, vì đó chính là
+     bằng chứng "cùng MỘT căn phòng", không phải một trường thứ hai.
+     ════════════════════════════════════════════════════════════════════════════ */
+  :root {
+    --accent: #6a57f5;
+    --accent-strong: #553ff3;
+    --accent-soft: rgba(106, 87, 245, 0.14);
+    --accent-ring: rgba(106, 87, 245, 0.55);
+    --on-accent: #ffffff;
+    --r-1: 6px;
+    --r-2: 10px;
+    --r-3: 14px;
+    --r-4: 20px;
+    --r-full: 999px;
+    --fs-2xs: 11px;
+    --fs-xs: 12px;
+    --fs-sm: 14px;
+    --fs-md: 16px;
+    --fs-lg: 20px;
+    --fs-xl: 28px;
+    --ease-apple: cubic-bezier(0.32, 0.72, 0, 1);
+    --dur-fast: 0.18s;
+    --dur-base: 0.32s;
+    --nhip-bam: 130ms;
+    --nhip-vien: 170ms;
+    --nhip-bang: 220ms;
+    --nhip-ngu-canh: 300ms;
+    --nhip-bien-hinh: 460ms;
+    --tap: 32px;
+    --tap-lg: 44px;
+    --fs-ui: 13px;
+    --kinh-nhoe-mong: 12px;
+    --vl-gan-dac-nhoe: 6px;
+  }
+
+  /* ---- TỐI = mặc định của app ---- */
+  :root,
+  :root[data-theme='dark'] {
+    --bg: #0c0c0e;
+    --panel: #141417;
+    --card: #1a1a1e;
+    --field: #202024;
+    --hover: #2a2a30;
+    --border: #2a2a31;
+    --border-strong: #3d3d45;
+    --t1: #f5f5f7;
+    --t2: #d6d6db;
+    --t3: #9e9ea8;
+    --t4: #6e6e78;
+    --t5: #4e4e57;
+    --kinh-mong: rgba(24, 24, 28, 0.84);
+    --kinh-vua: rgba(24, 24, 28, 0.9);
+    --kinh-dac: rgba(24, 24, 28, 0.95);
+    --vl-dac: var(--panel);
+    --vl-gan-dac: rgba(20, 20, 23, 0.97);
+    --kinh-mep-sang: rgba(255, 255, 255, 0.14);
+    --kinh-vien: rgba(255, 255, 255, 0.1);
+    --kinh-chu-phu: #b4b4bd;
+    --vien-mo: rgba(255, 255, 255, 0.06);
+    --mo-vo-hieu: 0.5;
+    --shadow-pop: 0 8px 30px -8px rgba(0, 0, 0, 0.65);
+    --danger: #e5674f;
+    --warning: #d9a34a;
+    --success: #46b876;
+
+    /* TRƯỜNG KHÔNG KHÍ — y nguyên bản Home v2 đã duyệt */
+    --amb-tuong: #131318;
+    --amb-san: #08080a;
+    --amb-mep: rgba(255, 255, 255, 0.055);
+    --amb-sau: rgba(0, 0, 0, 0.55);
+    --amb-net-vat: rgba(245, 245, 247, 0.5);
+    --nhip-khong-khi: 150s;
+    --sang-boi: 1;
+    --anh-sang-lanh: 255, 246, 236;
+    --anh-sang-am: 255, 214, 168;
+  }
+
+  /* ---- SÁNG ---- */
+  :root[data-theme='light'] {
+    --bg: #f2efe9;
+    --panel: #faf8f4;
+    --card: #ffffff;
+    --field: #f4f1eb;
+    --hover: #e9e5dd;
+    --border: #e3ded4;
+    --border-strong: #cbc4b6;
+    --t1: #211e19;
+    --t2: #47423a;
+    --t3: #726c62;
+    --t4: #9a938a;
+    --t5: #b8b1a7;
+    --kinh-mong: rgba(252, 251, 249, 0.88);
+    --kinh-vua: rgba(252, 251, 249, 0.93);
+    --kinh-dac: rgba(253, 252, 250, 0.96);
+    --vl-dac: var(--panel);
+    --vl-gan-dac: rgba(250, 248, 244, 0.975);
+    --kinh-mep-sang: rgba(255, 255, 255, 0.75);
+    --kinh-vien: rgba(0, 0, 0, 0.08);
+    --kinh-chu-phu: #5c564d;
+    --vien-mo: rgba(0, 0, 0, 0.05);
+    --mo-vo-hieu: 0.62;
+    --shadow-pop: 0 10px 30px -10px rgba(60, 52, 40, 0.22);
+    --danger: #c9341d;
+    --warning: #9a6304;
+    --success: #107043;
+
+    --amb-tuong: #e7e3da;
+    --amb-san: #d8d2c5;
+    --amb-mep: rgba(255, 255, 255, 0.85);
+    --amb-sau: rgba(60, 52, 40, 0.2);
+    --amb-net-vat: rgba(33, 30, 25, 0.48);
+    --anh-sang-lanh: 255, 247, 226;
+    --anh-sang-am: 255, 226, 178;
+    --sang-boi: 6.2;
+  }
+
+  /* Máy để "hệ thống": chỉ đổi khi KHÔNG có data-theme ép tối.
+     App lái theme bằng data-theme trên gốc — hai đường phải cùng đúng. */
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme='dark']) {
+      --bg: #f2efe9;
+      --panel: #faf8f4;
+      --card: #ffffff;
+      --field: #f4f1eb;
+      --hover: #e9e5dd;
+      --border: #e3ded4;
+      --border-strong: #cbc4b6;
+      --t1: #211e19;
+      --t2: #47423a;
+      --t3: #726c62;
+      --t4: #9a938a;
+      --t5: #b8b1a7;
+      --kinh-mong: rgba(252, 251, 249, 0.88);
+      --kinh-vua: rgba(252, 251, 249, 0.93);
+      --kinh-dac: rgba(253, 252, 250, 0.96);
+      --vl-gan-dac: rgba(250, 248, 244, 0.975);
+      --kinh-mep-sang: rgba(255, 255, 255, 0.75);
+      --kinh-vien: rgba(0, 0, 0, 0.08);
+      --kinh-chu-phu: #5c564d;
+      --vien-mo: rgba(0, 0, 0, 0.05);
+      --mo-vo-hieu: 0.62;
+      --shadow-pop: 0 10px 30px -10px rgba(60, 52, 40, 0.22);
+      --danger: #c9341d;
+      --warning: #9a6304;
+      --success: #107043;
+      --amb-tuong: #e7e3da;
+      --amb-san: #d8d2c5;
+      --amb-mep: rgba(255, 255, 255, 0.85);
+      --amb-sau: rgba(60, 52, 40, 0.2);
+      --amb-net-vat: rgba(33, 30, 25, 0.48);
+      --anh-sang-lanh: 255, 247, 226;
+      --anh-sang-am: 255, 226, 178;
+      --sang-boi: 6.2;
+    }
+  }
+
+  /* ════════════════════════════════════════════════════════════════════════════
+     TRANG BẢN VẼ (chrome của chính bản vẽ — KHÔNG thuộc thiết kế)
+     ════════════════════════════════════════════════════════════════════════════ */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--t1);
+    font-family: ui-sans-serif, -apple-system, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .trang { padding: 28px 32px 96px; max-width: 1560px; margin: 0 auto; }
+  .doc-h { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 6px; }
+  .doc-p { font-size: var(--fs-sm); color: var(--t3); max-width: 84ch; line-height: 1.65; margin: 0 0 10px; }
+  .doc-p b { color: var(--t2); }
+  .doc-p code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: var(--fs-xs); color: var(--t2); }
+  .art-h {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    margin: 40px 0 12px; padding-top: 18px; border-top: 1px solid var(--border);
+  }
+  .art-h .n {
+    font-size: var(--fs-2xs); letter-spacing: 0.14em; color: var(--t4);
+    border: 1px solid var(--border); border-radius: var(--r-full); padding: 3px 9px;
+  }
+  .art-h h2 { font-size: var(--fs-md); font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .art-h i { font-style: normal; font-size: var(--fs-xs); color: var(--t4); }
+  .ghi { font-size: var(--fs-xs); color: var(--t4); line-height: 1.6; margin: 8px 0 0; max-width: 90ch; }
+  .ghi b { color: var(--t3); }
+  .toolbar {
+    position: sticky; top: 0; z-index: 40; display: flex; gap: 8px; align-items: center;
+    padding: 10px 0 12px; background: var(--bg); border-bottom: 1px solid var(--border); margin-bottom: 6px;
+  }
+  .toolbar button {
+    font: inherit; font-size: var(--fs-xs); color: var(--t2); background: var(--field);
+    border: 1px solid var(--border); border-radius: var(--r-full); padding: 5px 12px; cursor: pointer;
+  }
+  .toolbar button:hover { background: var(--hover); }
+  .toolbar .sp { flex: 1; }
+  .toolbar .hint { font-size: var(--fs-2xs); color: var(--t4); }
+
+  /* ════════════════════════════════════════════════════════════════════════════
+     ① CĂN PHÒNG — TRƯỜNG DÙNG CHUNG
+     Đây là thứ DUY NHẤT sống xuyên cả sáu trạng thái. Sáu khung dưới đây dùng
+     ĐÚNG một khối markup này; chỉ đổi năm biến ánh sáng và lớp nội dung bên trên.
+     Mô hình hình học mượn nguyên bản Home v2 (khẩu độ trên tường --cua-*, vệt
+     trên sàn --san-*) nhưng khai bằng % để co theo mọi khổ khung.
+     ════════════════════════════════════════════════════════════════════════════ */
+  .phong {
+    position: relative; overflow: hidden;
+    border-radius: var(--r-3); border: 1px solid var(--border);
+    background: var(--bg);
+    /* năm biến ánh sáng — TRẠNG THÁI ĐÍCH (đã thức) */
+    --cua-l: 54%; --cua-r: 76%;      /* khẩu độ trên tường */
+    --san-l: 34%; --san-r: 92%;      /* vệt đổ trên sàn */
+    --sang-rgb: var(--anh-sang-lanh);
+    --A: calc(0.05 * var(--sang-boi));   /* độ sáng nền của chùm */
+    --L: calc(0.085 * var(--sang-boi));  /* lõi chùm */
+    --net-chum: 0.82;                 /* mép chùm sắc hay tan */
+    --mo-noi-dung: 1;                 /* độ hiện của lớp giao diện */
+  }
+  .phong .tuong { position: absolute; inset: 0; background: linear-gradient(178deg, var(--amb-tuong) 0%, var(--bg) 46%, var(--bg) 62%); }
+  .phong .san   { position: absolute; left: 0; right: 0; top: 63%; bottom: 0; background: linear-gradient(180deg, transparent 0%, var(--amb-san) 78%); }
+  .phong .hoc   { position: absolute; left: 0; top: 0; width: 30%; bottom: 0; background: linear-gradient(90deg, var(--amb-sau), transparent 76%); }
+  /* mạch chân tường — MỘT nét duy nhất. Đây là mầm liên tục sang Login và Home:
+     nó không bao giờ biến mất, kể cả ở COLD. */
+  .phong .mach {
+    position: absolute; left: 0; right: 0; top: 63%; height: 1px;
+    background: var(--amb-net-vat);
+    opacity: 0.16;
+  }
+  /* Ở COLD nó là THỨ DUY NHẤT còn đọc được, nên đậm hơn một nấc.
+     Dùng màu nét-vật (tự đảo cực theo theme) chứ không phải --vien-mo: nền SÁNG thì
+     viền trắng-loãng biến mất hẳn, mà mạch này là bằng chứng liên tục — nó KHÔNG được
+     phép vắng mặt ở bất kỳ theme nào. */
+  .phong[data-tt='cold'] .mach { opacity: 0.3; }
+  .phong .chum {
+    position: absolute; inset: 0;
+    clip-path: polygon(var(--cua-l) 12%, var(--cua-r) 12%, var(--san-r) 100%, var(--san-l) 100%);
+    background: linear-gradient(
+      177deg,
+      rgba(var(--sang-rgb), var(--L)) 0%,
+      rgba(var(--sang-rgb), var(--A)) 40%,
+      rgba(var(--sang-rgb), calc(var(--A) * 0.55)) 100%
+    );
+    filter: blur(calc(22px - var(--net-chum) * 12px));
+    opacity: var(--net-chum);
+    transition: opacity 620ms var(--ease-apple), clip-path 900ms var(--ease-apple), filter 620ms var(--ease-apple);
+  }
+  .phong .vet {
+    position: absolute; top: 63%; bottom: 0;
+    left: var(--san-l); width: calc(var(--san-r) - var(--san-l));
+    background: linear-gradient(
+      180deg,
+      rgba(var(--sang-rgb), calc(var(--L) * 1.15)) 0%,
+      rgba(var(--sang-rgb), calc(var(--A) * 0.5)) 52%,
+      rgba(var(--sang-rgb), 0) 100%
+    );
+    filter: blur(calc(20px - var(--net-chum) * 9px));
+    opacity: var(--net-chum);
+    transition: opacity 620ms var(--ease-apple), left 900ms var(--ease-apple), width 900ms var(--ease-apple);
+  }
+  /* ánh sáng liếm mép khẩu độ — tầng ① CHẤT LIỆU, không phải quầng */
+  .phong .mep-cua {
+    position: absolute; top: 12%; height: 34%; width: 1px;
+    left: var(--cua-l); background: linear-gradient(180deg, var(--amb-mep), transparent);
+    opacity: var(--net-chum);
+    transition: opacity 620ms var(--ease-apple), left 900ms var(--ease-apple);
+  }
+  .phong .suong {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(120% 70% at 68% 8%, rgba(var(--sang-rgb), calc(var(--A) * 1.5)) 0%, transparent 72%);
+    opacity: var(--net-chum);
+    transition: opacity 620ms var(--ease-apple);
+  }
+
+  /* ---------- năm cấu hình ánh sáng = năm trạng thái ---------- */
+  .phong[data-tt='cold'] {
+    --A: 0; --L: 0; --net-chum: 0; --mo-noi-dung: 0;
+    --cua-l: 64%; --cua-r: 66%; --san-l: 62%; --san-r: 68%;
+  }
+  .phong[data-tt='waking'] {
+    --A: calc(0.028 * var(--sang-boi)); --L: calc(0.05 * var(--sang-boi));
+    --net-chum: 0.44; --mo-noi-dung: 0;
+    --cua-l: 57%; --cua-r: 72%; --san-l: 44%; --san-r: 86%;
+  }
+  .phong[data-tt='identity'] { --net-chum: 0.66; --mo-noi-dung: 0; }
+  .phong[data-tt='ready']    { --mo-noi-dung: 1; }
+  .phong[data-tt='trans']    {
+    /* ánh sáng TIẾN LÊN — khẩu độ mở rộng, vệt sàn dài ra. Không có màn mới nào tới. */
+    --cua-l: 48%; --cua-r: 82%; --san-l: 26%; --san-r: 98%;
+    --A: calc(0.062 * var(--sang-boi)); --L: calc(0.1 * var(--sang-boi));
+  }
+  .phong[data-tt='home'] {
+    --cua-l: 48%; --cua-r: 82%; --san-l: 26%; --san-r: 98%;
+    --A: calc(0.062 * var(--sang-boi)); --L: calc(0.1 * var(--sang-boi));
+  }
+
+  /* ════════════════════════════════════════════════════════════════════════════
+     LỚP GIAO DIỆN trong phòng — G0/G1, không có gì nổi lên khỏi môi trường
+     ════════════════════════════════════════════════════════════════════════════ */
+  .lop-ui { position: absolute; inset: 0; }
+
+  /* dấu IF — kiến trúc, kiềm chế. KHÔNG có hoạt cảnh lộ diện. */
+  .dau {
+    position: absolute; left: 22px; top: 18px;
+    display: flex; align-items: center; gap: 8px;
+    color: var(--t2); opacity: 0; transition: opacity 140ms linear;
+  }
+  .phong[data-tt='identity'] .dau,
+  .phong[data-tt='ready'] .dau,
+  .phong[data-tt='trans'] .dau,
+  .phong[data-tt='home'] .dau { opacity: 0.82; }
+  .dau .tu { font-size: var(--fs-2xs); letter-spacing: 0.2em; font-weight: 600; }
+
+  /* cột nhập — MỌC TỪ MÔI TRƯỜNG: không trượt vào, chỉ hiện lên tại chỗ nó vốn đứng */
+  .cot {
+    position: absolute; right: 8%; top: 26%; width: 250px;
+    opacity: var(--mo-noi-dung);
+    transform: translateY(calc((1 - var(--mo-noi-dung)) * 6px));
+    transition: opacity 200ms var(--ease-apple), transform 200ms var(--ease-apple);
+  }
+  .cot .tieu { font-size: var(--fs-lg); font-weight: 600; letter-spacing: -0.015em; margin: 0 0 4px; color: var(--t1); }
+  .cot .phu { font-size: var(--fs-xs); color: var(--t3); margin: 0 0 16px; line-height: 1.5; }
+  /* G1 · kính phẳng: thân ám nhẹ · mép sáng mảnh · gần như không phồng */
+  .o {
+    height: var(--tap-lg); border-radius: var(--r-2);
+    background: var(--kinh-mong);
+    border: 1px solid var(--kinh-vien);
+    box-shadow: inset 0 1px 0 var(--kinh-mep-sang);
+    backdrop-filter: blur(var(--kinh-nhoe-mong));
+    -webkit-backdrop-filter: blur(var(--kinh-nhoe-mong));
+    display: flex; align-items: center; padding: 0 12px; margin-bottom: 8px;
+    font-size: var(--fs-ui); color: var(--kinh-chu-phu);
+  }
+  .o.co-tro { color: var(--t1); }
+  .o .caret {
+    display: inline-block; width: 1px; height: 15px; background: var(--accent);
+    margin-left: 1px; animation: nhay 1.05s steps(1) infinite;
+  }
+  .o.dang-go { border-color: var(--accent-ring); box-shadow: inset 0 1px 0 var(--kinh-mep-sang), 0 0 0 2px var(--accent-soft); }
+  @keyframes nhay { 0%, 50% { opacity: 1 } 50.01%, 100% { opacity: 0 } }
+  /* Vào xưởng — G3, vật duy nhất được mang kính quang học. Nền tím ĐẶC, KHÔNG quầng sáng. */
+  .vao {
+    height: var(--tap-lg); border-radius: var(--r-2); margin-top: 12px;
+    background: var(--accent); color: var(--on-accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: var(--fs-ui); font-weight: 600; letter-spacing: 0.01em;
+    border: 1px solid var(--accent-strong);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.28),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+      0 8px 18px -14px var(--amb-sau);
+  }
+  .cot .chan { margin-top: 12px; font-size: var(--fs-2xs); color: var(--t4); letter-spacing: 0.02em; }
+
+  /* Home ở trạng thái KHÔNG có dữ liệu thật — 0 dự án · 0 phiên dở · 0 ảnh */
+  .home-rail {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 46px;
+    background: var(--kinh-mong); border-right: 1px solid var(--vien-mo);
+    backdrop-filter: blur(var(--kinh-nhoe-mong)); -webkit-backdrop-filter: blur(var(--kinh-nhoe-mong));
+    display: flex; flex-direction: column; align-items: center; gap: 9px; padding-top: 52px;
+  }
+  .home-rail i { width: 18px; height: 18px; border-radius: var(--r-1); background: var(--vien-mo); display: block; }
+  .home-rail i.on { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-ring); }
+  .home-top {
+    position: absolute; left: 46px; right: 0; top: 0; height: 42px;
+    background: var(--kinh-mong); border-bottom: 1px solid var(--vien-mo);
+    backdrop-filter: blur(var(--kinh-nhoe-mong)); -webkit-backdrop-filter: blur(var(--kinh-nhoe-mong));
+    display: flex; align-items: center; gap: 10px; padding: 0 14px;
+  }
+  .home-top .o-tim {
+    flex: 1; max-width: 260px; height: 24px; border-radius: var(--r-full);
+    background: var(--vien-mo); border: 1px solid var(--kinh-vien);
+    display: flex; align-items: center; padding: 0 10px; font-size: var(--fs-2xs); color: var(--kinh-chu-phu);
+  }
+  .home-ruot { position: absolute; left: 66px; right: 20px; top: 62px; }
+  .home-ruot .chao { font-size: var(--fs-lg); font-weight: 600; letter-spacing: -0.015em; margin: 0 0 3px; }
+  .home-ruot .chao-p { font-size: var(--fs-xs); color: var(--t3); margin: 0 0 14px; }
+  .luoi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  /* G0–G1: lúc nghỉ ranh giới widget gần như biến mất, nằm sát ambient */
+  .wg {
+    height: 62px; border-radius: var(--r-3);
+    background: color-mix(in srgb, var(--card) 34%, transparent);
+    border: 1px solid var(--vien-mo);
+    padding: 9px 11px; font-size: var(--fs-2xs); color: var(--t4); letter-spacing: 0.05em;
+  }
+  .wg b { display: block; font-size: var(--fs-xs); color: var(--t3); font-weight: 500; letter-spacing: 0; margin-top: 5px; }
+  /* việc đang làm — nhô lên MỘT CHÚT, G1 */
+  .wg.song {
+    background: var(--kinh-mong); border-color: var(--kinh-vien);
+    box-shadow: inset 0 1px 0 var(--kinh-mep-sang);
+    backdrop-filter: blur(var(--kinh-nhoe-mong)); -webkit-backdrop-filter: blur(var(--kinh-nhoe-mong));
+    color: var(--kinh-chu-phu);
+  }
+
+  /* ════════════════════════════════════════════════════════════════════════════
+     LƯỚI KHUNG + NHÃN
+     ════════════════════════════════════════════════════════════════════════════ */
+  .phim { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .khung .cap {
+    display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px;
+    font-size: var(--fs-2xs); letter-spacing: 0.1em; color: var(--t4);
+  }
+  .khung .cap b { color: var(--t2); letter-spacing: 0.12em; }
+  .khung .cap .ms {
+    margin-left: auto; font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    letter-spacing: 0; color: var(--t3);
+    border: 1px solid var(--border); border-radius: var(--r-full); padding: 1px 7px;
+  }
+  .khung .phong { height: 232px; }
+  .khung .noi { font-size: var(--fs-2xs); color: var(--t4); line-height: 1.55; margin: 6px 0 0; }
+
+  /* chú giải neo trên khung lớn */
+  .to .phong { height: 470px; }
+  .neo {
+    position: absolute; z-index: 5; font-size: var(--fs-2xs); letter-spacing: 0.02em;
+    background: var(--kinh-dac); border: 1px solid var(--kinh-vien); color: var(--t2);
+    border-radius: var(--r-1); padding: 4px 8px; max-width: 250px; line-height: 1.5;
+    box-shadow: var(--shadow-pop);
+  }
+  .neo b { color: var(--t1); }
+  .neo.acc { border-color: var(--accent-ring); }
+  .gach { position: absolute; z-index: 4; background: var(--accent-ring); }
+
+  /* bảng nhịp */
+  table.nhip { border-collapse: collapse; width: 100%; font-size: var(--fs-xs); margin-top: 6px; }
+  table.nhip th, table.nhip td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  table.nhip th { background: var(--field); color: var(--t2); font-weight: 600; font-size: var(--fs-2xs); letter-spacing: 0.06em; }
+  table.nhip td { color: var(--t3); line-height: 1.5; }
+  table.nhip td b { color: var(--t1); font-weight: 600; }
+  table.nhip .ms { font-family: ui-monospace, 'SF Mono', Menlo, monospace; color: var(--t2); white-space: nowrap; }
+  table.nhip .kind { font-size: var(--fs-2xs); letter-spacing: 0.08em; border-radius: var(--r-full); padding: 2px 8px; display: inline-block; white-space: nowrap; }
+  .k-san  { background: var(--accent-soft); color: var(--t1); box-shadow: inset 0 0 0 1px var(--accent-ring); }
+  .k-nguoi{ background: color-mix(in srgb, var(--success) 18%, transparent); color: var(--t1); box-shadow: inset 0 0 0 1px var(--success); }
+  .k-gio  { background: color-mix(in srgb, var(--warning) 16%, transparent); color: var(--t1); box-shadow: inset 0 0 0 1px var(--warning); }
+  table.nhip tr.tong td { background: var(--field); color: var(--t1); }
+
+  /* Giảm chuyển động: bản vẽ nói bằng CHÍNH nó — mọi hoạt cảnh dừng, kể cả nháy caret */
+  @media (prefers-reduced-motion: reduce) {
+    .phong .chum, .phong .vet, .phong .mep-cua, .phong .suong, .cot { transition: none !important; }
+    .o .caret { animation: none !important; opacity: 1; }
+  }
+</style>
+
+<div class="trang">
+  <div class="toolbar">
+    <button type="button" onclick="dt()">Sáng / Tối</button>
+    <button type="button" onclick="dg()">Giờ: <b id="gio-nhan">ban ngày</b></button>
+    <span class="sp"></span>
+    <span class="hint">Bản vẽ tĩnh — sáu khung là sáu MỐC, không phải sáu màn.</span>
+  </div>
+
+  <h1 class="doc-h">COLD OPEN — môi trường thức trước giao diện</h1>
+  <p class="doc-p">
+    Bản hiện tại đặt <b>60 giây</b> (<code>SCENE_DURATIONS = [15000, 10000, 25000, 10000]</code>) trước mặt
+    một người mở app nhiều lần mỗi ngày. Bản này thay bằng <b>320 ms tới lúc gõ được</b>, và ánh sáng còn
+    lại chạy tiếp <b>không chặn ai</b>. Ba việc bản cũ làm đúng thì giữ nguyên: <b>chạy thật (framer-motion)
+    chứ không phải video</b> · <b>máy trạng thái <code>useReducer</code></b> · <b><code>useReducedMotion</code> đã đấu dây</b>.
+  </p>
+  <p class="doc-p">
+    <b>Thứ sống xuyên suốt là CĂN PHÒNG, không phải một tấm thẻ.</b> Sáu khung dưới đây dùng đúng một khối
+    markup phòng — cùng mô hình khẩu độ/vệt sàn của bản Home đã duyệt và của cả ba phương án Login A/B/C.
+    Cold Open <i>dựng</i> căn phòng đó; Login <i>mọc lên trong</i> nó; Home <i>ở lại</i> nó. Không có màn nào tới.
+  </p>
+
+  <!-- ═══════════════ ARTBOARD ① ═══════════════ -->
+  <div class="art-h">
+    <span class="n">①</span>
+    <h2>Sáu trạng thái — dải phim</h2>
+    <i>cùng một căn phòng nhìn thấy được ở cả sáu khung: mạch chân tường không bao giờ đứt</i>
+  </div>
+
+  <div class="phim">
+    <!-- 1 · COLD -->
+    <div class="khung">
+      <div class="cap"><b>COLD</b> máy tối <span class="ms">0–60ms</span></div>
+      <div class="phong" data-tt="cold">
+        <div class="tuong"></div><div class="san"></div><div class="hoc"></div>
+        <div class="chum"></div><div class="vet"></div><div class="mep-cua"></div><div class="suong"></div>
+        <div class="mach"></div>
+      </div>
+      <p class="noi"><b>COLD = CHƯA CÓ ÁNH SÁNG, không phải MÀU ĐEN.</b> Nền tối thì gần đen; nền sáng thì
+        là căn phòng nhạt chưa có nắng — <b>cùng một hình học, khác lượng sáng</b>. Cố tình như vậy: ép đen ở
+        theme Sáng là một cú loé đen lúc mở máy, tức một lỗi dùng-được chứ không phải một hiệu ứng.
+        <b>Chỉ mạch chân tường</b> còn đọc được — đó là mầm của căn phòng, và là thứ
+        chứng minh về sau rằng không có phòng nào khác được dựng thay. Không dấu, không chữ, không quầng khởi động.</p>
+    </div>
+
+    <!-- 2 · WAKING -->
+    <div class="khung">
+      <div class="cap"><b>WAKING</b> ánh sáng tới <span class="ms">60–320ms</span></div>
+      <div class="phong" data-tt="waking">
+        <div class="tuong"></div><div class="san"></div><div class="hoc"></div>
+        <div class="chum"></div><div class="vet"></div><div class="mep-cua"></div><div class="suong"></div>
+        <div class="mach"></div>
+      </div>
+      <p class="noi">Khẩu độ <b>mở ra từ chính nó</b> (một khe → một ô), ánh sáng rửa tường trước, chạm sàn sau.
+        Mép chùm còn tan. <b>Chưa có một phần tử giao diện nào.</b> Đây là toàn bộ nghĩa của câu &ldquo;môi trường thức trước&rdquo;.</p>
+    </div>
+
+    <!-- 3 · IDENTITY -->
+    <div class="khung">
+      <div class="cap"><b>IDENTITY</b> dấu có mặt <span class="ms">180–320ms</span></div>
+      <div class="phong" data-tt="identity">
+        <div class="tuong"></div><div class="san"></div><div class="hoc"></div>
+        <div class="chum"></div><div class="vet"></div><div class="mep-cua"></div><div class="suong"></div>
+        <div class="mach"></div>
+        <div class="lop-ui">
+          <div class="dau">
+            <svg width="14" height="16" viewBox="0 0 20 22" aria-label="InteriorFlow">
+              <rect x="0" y="0" width="3" height="22" fill="currentColor" />
+              <rect x="8" y="0" width="12" height="3" fill="currentColor" />
+              <rect x="8" y="0" width="3" height="22" fill="currentColor" />
+              <rect x="8" y="9" width="9" height="3" fill="currentColor" />
+            </svg>
+            <span class="tu">INTERIORFLOW</span>
+          </div>
+        </div>
+      </div>
+      <p class="noi">Dấu <b>đã ở sẵn chỗ nghỉ cuối cùng</b> của nó, hiện lên trong 140 ms rồi hết chuyện.
+        Không phóng to, không vẽ nét, không tách chữ. <b>Dấu không phải tiết mục</b> — nó chỉ xác nhận đây là xưởng nào.</p>
+    </div>
+
+    <!-- 4 · AUTH_READY -->
+    <div class="khung">
+      <div class="cap"><b>AUTH_READY</b> gõ được <span class="ms">320ms →</span></div>
+      <div class="phong" data-tt="ready">
+        <div class="tuong"></div><div class="san"></div><div class="hoc"></div>
+        <div class="chum"></div><div class="vet"></div><div class="mep-cua"></div><div class="suong"></div>
+        <div class="mach"></div>
+        <div class="lop-ui">
+          <div class="dau">
+            <svg width="14" height="16" viewBox="0 0 20 22" aria-hidden="true">
+              <rect x="0" y="0" width="3" height="22" fill="currentColor" /><rect x="8" y="0" width="12" height="3" fill="currentColor" />
+              <rect x="8" y="0" width="3" height="22" fill="currentColor" /><rect x="8" y="9" width="9" height="3" fill="currentColor" />
+            </svg>
+            <span class="tu">INTERIORFLOW</span>
+          </div>
+          <div class="cot" style="width: 190px; top: 24%">
+            <p class="tieu" style="font-size: var(--fs-md)">Bước vào xưởng.</p>
+            <div class="o">Email</div>
+            <div class="o">Mật khẩu</div>
+            <div class="vao" style="height: 34px">Vào xưởng</div>
+          </div>
+        </div>
+      </div>
+      <p class="noi">Điều khiển <b>không trượt vào</b> — chúng hiện lên đúng chỗ chúng vốn đứng (200 ms, nhích 6 px).
+        <b>Trạng thái này chờ NGƯỜI, không chờ đồng hồ</b>: nó đứng đây bao lâu cũng được.</p>
+    </div>
+
+    <!-- 5 · AUTHENTICATED_TRANSITION -->
+    <div class="khung">
+      <div class="cap"><b>AUTHENTICATED_TRANSITION</b> <span class="ms">240–420ms</span></div>
+      <div class="phong" data-tt="trans">
+        <div class="tuong"></div><div class="san"></div><div class="hoc"></div>
+        <div class="chum"></div><div class="vet"></div><div class="mep-cua"></div><div class="suong"></div>
+        <div class="mach"></div>
+        <div class="lop-ui">
+          <div class="dau">
+            <svg width="14" height="16" viewBox="0 0 20 22" aria-hidden="true">
+              <rect x="0" y="0" width="3" height="22" fill="currentColor" /><rect x="8" y="0" width="12" height="3" fill="currentColor" />
+              <rect x="8" y="0" width="3" height="22" fill="currentColor" /><rect x="8" y="9" width="9" height="3" fill="currentColor" />
+            </svg>
+            <span class="tu">INTERIORFLOW</span>
+          </div>
+          <div class="cot" style="width: 190px; top: 24%; opacity: 0.16; transform: translateY(4px)">
+            <p class="tieu" style="font-size: var(--fs-md)">Bước vào xưởng.</p>
+            <div class="o">Email</div>
+            <div class="o">Mật khẩu</div>
+            <div class="vao" style="height: 34px">Vào xưởng</div>
+          </div>
+        </div>
+      </div>
+      <p class="noi"><b>Không có trang nào lật.</b> Khẩu độ nới rộng, vệt sàn dài ra — <b>ánh sáng tiến lên</b>;
+        cột nhập lùi lại (mờ đi, tụt 4 px) chứ không bị đẩy ra. So khung 4 và khung 5: khẩu độ dịch, mạch chân tường thì không.</p>
+    </div>
+
+    <!-- 6 · HOME_READY -->
+    <div class="khung">
+      <div class="cap"><b>HOME_READY</b> 0 dữ liệu <span class="ms">+260ms</span></div>
+      <div class="phong" data-tt="home">
+        <div class="tuong"></div><div class="san"></div><div class="hoc"></div>
+        <div class="chum"></div><div class="vet"></div><div class="mep-cua"></div><div class="suong"></div>
+        <div class="mach"></div>
+        <div class="lop-ui">
+          <div class="home-rail"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+          <div class="home-top">
+            <svg width="11" height="13" viewBox="0 0 20 22" aria-hidden="true" style="color: var(--t2)">
+              <rect x="0" y="0" width="3" height="22" fill="currentColor" /><rect x="8" y="0" width="12" height="3" fill="currentColor" />
+              <rect x="8" y="0" width="3" height="22" fill="currentColor" /><rect x="8" y="9" width="9" height="3" fill="currentColor" />
+            </svg>
+            <span class="o-tim">Tìm trong xưởng</span>
+          </div>
+          <div class="home-ruot">
+            <p class="chao">Xưởng đã sẵn sàng.</p>
+            <p class="chao-p">Chưa có dự án nào. Bắt đầu bằng một bản vẽ, hoặc một tấm ảnh.</p>
+            <div class="luoi">
+              <div class="wg song">DỰ ÁN<b>Tạo dự án đầu tiên</b></div>
+              <div class="wg">THƯ VIỆN<b>Chưa có món nào</b></div>
+              <div class="wg">GHI CHÚ<b>Trống</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="noi">Vẫn <b>đúng căn phòng đó</b>, ánh sáng không khởi động lại — cùng một hoạt cảnh đang chạy dở.
+        Home ở <b>trạng thái không có dữ liệu thật</b>: 0 dự án · 0 phiên dở · 0 ảnh. Widget G0–G1, ranh giới gần như tan vào ambient.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════ ARTBOARD ② ═══════════════ -->
+  <div class="art-h">
+    <span class="n">②</span>
+    <h2>Khung bàn giao — điều khiển MỌC TỪ môi trường</h2>
+    <i>không có màn mới tới; lớp trường giữ nguyên, chỉ lớp nội dung đổi</i>
+  </div>
+  <p class="doc-p">
+    Đây là ràng buộc khó nhất: bản cũ thoát bằng <code>router.push('/login')</code>, tức Cold Open và Login là
+    <b>hai màn theo cấu tạo</b>. Lời giải không phải là làm hiệu ứng chuyển trang đẹp hơn — mà là
+    <b>nâng lớp trường lên trên chỗ điều hướng đi qua</b>: căn phòng thuộc về vỏ (layout), không thuộc về route.
+    Đổi route thì chỉ <b>lớp nội dung</b> bị tháo ra lắp lại; phòng không hề biết chuyện đó xảy ra.
+  </p>
+
+  <div class="to">
+    <div class="phong" data-tt="ready">
+      <div class="tuong"></div><div class="san"></div><div class="hoc"></div>
+      <div class="chum"></div><div class="vet"></div><div class="mep-cua"></div><div class="suong"></div>
+      <div class="mach"></div>
+
+      <div class="lop-ui">
+        <div class="dau">
+          <svg width="17" height="19" viewBox="0 0 20 22" aria-label="InteriorFlow">
+            <rect x="0" y="0" width="3" height="22" fill="currentColor" /><rect x="8" y="0" width="12" height="3" fill="currentColor" />
+            <rect x="8" y="0" width="3" height="22" fill="currentColor" /><rect x="8" y="9" width="9" height="3" fill="currentColor" />
+          </svg>
+          <span class="tu">INTERIORFLOW</span>
+        </div>
+
+        <div class="cot">
+          <p class="tieu">Bước vào xưởng.</p>
+          <p class="phu">Ánh sáng còn đang ổn định. Không phải đợi nó.</p>
+          <div class="o">Email</div>
+          <div class="o">Mật khẩu</div>
+          <div class="vao">Vào xưởng</div>
+          <p class="chan">Quên mật khẩu</p>
+        </div>
+      </div>
+
+      <!-- chú giải -->
+      <div class="neo" style="left: 18px; bottom: 92px">
+        <b>LỚP TRƯỜNG</b> — tường · sàn · mạch · chùm · vệt · sương.<br />
+        Gắn ở <b>vỏ</b>, sống xuyên <code>/intro</code> → <code>/login</code> → <code>/</code>.
+        Đổi route <b>không tháo lớp này</b>.
+      </div>
+      <div class="neo acc" style="left: 44%; top: 22%">
+        <b>LỚP NỘI DUNG</b> — đây là thứ DUY NHẤT được thay.<br />
+        Nó <b>mọc lên tại chỗ</b>: chỉ đổi độ hiện + nhích 6 px, không trượt ngang, không đổi khổ.
+      </div>
+      <div class="gach" style="left: 44%; top: 22%; width: 1px; height: 96px"></div>
+      <div class="neo" style="left: 18px; top: 63%; max-width: 232px">
+        <b>Mạch chân tường</b> là bằng chứng nhìn thấy được: nó đứng yên tuyệt đối qua cả sáu trạng thái.
+        Nếu nó nhảy một pixel thì đã có màn thứ hai được dựng.
+      </div>
+      <div class="neo" style="left: 44%; bottom: 18px; max-width: 236px">
+        <b>Ba phương án Login A/B/C đều lắp vừa.</b><br />
+        Cả ba đã khai cùng bộ trường (tường · sàn · ánh sáng · một nét chân trời).
+        Cold Open chỉ cấp cho chúng <b>trạng thái ánh sáng lúc bắt đầu</b>, không ép bố cục nào.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ ARTBOARD ③ ═══════════════ -->
+  <div class="art-h">
+    <span class="n">③</span>
+    <h2>Đang gõ trong lúc môi trường còn ổn định</h2>
+    <i>chuyển động phục vụ dùng được, không bao giờ chặn nó</i>
+  </div>
+  <p class="doc-p">
+    Khung này là <b>điều kiện nghiệm thu, không phải minh hoạ</b>. Ở mốc <b>~520 ms</b>: người dùng đã gõ xong
+    email và đang gõ mật khẩu; chùm sáng <b>mới đi được hai phần ba</b> (mép còn tan, vệt sàn chưa tới hết chiều dài).
+    Hai việc chạy song song và <b>không cái nào đợi cái nào</b>.
+  </p>
+
+  <div class="to">
+    <div class="phong" data-tt="ready" style="--net-chum: 0.62; --san-r: 84%; --cua-r: 73%">
+      <div class="tuong"></div><div class="san"></div><div class="hoc"></div>
+      <div class="chum"></div><div class="vet"></div><div class="mep-cua"></div><div class="suong"></div>
+      <div class="mach"></div>
+
+      <div class="lop-ui">
+        <div class="dau">
+          <svg width="17" height="19" viewBox="0 0 20 22" aria-hidden="true">
+            <rect x="0" y="0" width="3" height="22" fill="currentColor" /><rect x="8" y="0" width="12" height="3" fill="currentColor" />
+            <rect x="8" y="0" width="3" height="22" fill="currentColor" /><rect x="8" y="9" width="9" height="3" fill="currentColor" />
+          </svg>
+          <span class="tu">INTERIORFLOW</span>
+        </div>
+
+        <div class="cot">
+          <p class="tieu">Bước vào xưởng.</p>
+          <p class="phu">Ánh sáng còn đang ổn định. Không phải đợi nó.</p>
+          <div class="o co-tro">hoa@xuong.vn</div>
+          <div class="o co-tro dang-go">••••••••<span class="caret"></span></div>
+          <div class="vao">Vào xưởng</div>
+          <p class="chan">Quên mật khẩu</p>
+        </div>
+      </div>
+
+      <div class="neo acc" style="left: 18px; top: 30px">
+        <b>t ≈ 520 ms</b> · con trỏ đã ở ô thứ hai.<br />
+        Ô nhập nhận phím <b>từ khung đầu tiên nó tồn tại</b> — không có <code>pointer-events:none</code>,
+        không có lớp phủ chờ, không <code>disabled</code> lúc mở.
+      </div>
+      <div class="neo" style="left: 18px; bottom: 84px; max-width: 268px">
+        <b>Chùm sáng mới đi 2/3.</b> Mép còn tan (<code>--net-chum .62</code>), vệt sàn chưa tới mép phải.
+        Nó sẽ tự ổn định ở ~1400 ms — <b>và nếu người dùng bấm Vào xưởng trước lúc đó, nó bị bỏ dở giữa chừng.
+        Đó là hành vi đúng</b>, không phải lỗi cần vá.
+      </div>
+      <div class="neo" style="left: 42%; bottom: 18px; max-width: 250px">
+        Ánh sáng <b>không bao giờ chạy qua chân chữ</b>: cột nhập đứng ở vùng đã ổn định, nên tương phản chữ
+        không chạy theo pha hoạt cảnh. Đo tương phản <b>tại chân chữ</b>, không đo trung bình khung.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ ARTBOARD ④ ═══════════════ -->
+  <div class="art-h">
+    <span class="n">④</span>
+    <h2>Bản giảm chuyển động — một bố cục thật, không phải &ldquo;tắt hoạt cảnh&rdquo;</h2>
+    <i>ánh sáng đổi, hình học không đổi</i>
+  </div>
+  <p class="doc-p">
+    Bản này <b>không</b> là bản đầy đủ bị gỡ hoạt cảnh — gỡ hoạt cảnh thì còn lại một màn đứng im vô nghĩa, và
+    câu &ldquo;môi trường thức&rdquo; mất sạch. Thay vào đó căn phòng được dựng <b>hai lần, ở hai tình trạng ánh sáng
+    cố định</b>, và chuyển giữa hai bản đó bằng <b>một lần hoà tan 180 ms</b>.
+  </p>
+  <p class="doc-p">
+    <b>Không có gì di chuyển:</b> khẩu độ đã ở kích thước cuối, vệt sàn đã ở chiều dài cuối, sương không thở,
+    chùm không quét, dấu và ô nhập <b>có mặt từ khung đầu tiên</b>. Thứ duy nhất đổi là <b>lượng ánh sáng</b>.
+    Người dùng vẫn nhận được cùng một câu — phòng vừa sáng lên — nhưng không có vật nào bò ngang màn hình.
+  </p>
+
+  <div class="phim" style="grid-template-columns: repeat(2, minmax(0, 1fr))">
+    <div class="khung">
+      <div class="cap"><b>BẢN TĨNH 1</b> · phòng chưa sáng <span class="ms">0ms</span></div>
+      <div class="phong" data-tt="ready" style="--A: 0; --L: 0; --net-chum: 0; height: 300px">
+        <div class="tuong"></div><div class="san"></div><div class="hoc"></div>
+        <div class="chum"></div><div class="vet"></div><div class="mep-cua"></div><div class="suong"></div>
+        <div class="mach"></div>
+        <div class="lop-ui">
+          <div class="dau" style="opacity: 0.82">
+            <svg width="14" height="16" viewBox="0 0 20 22" aria-hidden="true">
+              <rect x="0" y="0" width="3" height="22" fill="currentColor" /><rect x="8" y="0" width="12" height="3" fill="currentColor" />
+              <rect x="8" y="0" width="3" height="22" fill="currentColor" /><rect x="8" y="9" width="9" height="3" fill="currentColor" />
+            </svg>
+            <span class="tu">INTERIORFLOW</span>
+          </div>
+          <div class="cot" style="width: 200px; top: 26%">
+            <p class="tieu" style="font-size: var(--fs-md)">Bước vào xưởng.</p>
+            <div class="o">Email</div>
+            <div class="o">Mật khẩu</div>
+            <div class="vao" style="height: 36px">Vào xưởng</div>
+          </div>
+        </div>
+      </div>
+      <p class="noi">Hình học <b>đã ở vị trí cuối cùng</b> — khẩu độ đủ rộng, vệt sàn đủ dài, chỉ là chưa có ánh sáng.
+        Ô nhập <b>đã gõ được ngay ở khung này</b>.</p>
+    </div>
+
+    <div class="khung">
+      <div class="cap"><b>BẢN TĨNH 2</b> · phòng đã sáng <span class="ms">+180ms hoà tan</span></div>
+      <div class="phong" data-tt="ready" style="height: 300px">
+        <div class="tuong"></div><div class="san"></div><div class="hoc"></div>
+        <div class="chum"></div><div class="vet"></div><div class="mep-cua"></div><div class="suong"></div>
+        <div class="mach"></div>
+        <div class="lop-ui">
+          <div class="dau" style="opacity: 0.82">
+            <svg width="14" height="16" viewBox="0 0 20 22" aria-hidden="true">
+              <rect x="0" y="0" width="3" height="22" fill="currentColor" /><rect x="8" y="0" width="12" height="3" fill="currentColor" />
+              <rect x="8" y="0" width="3" height="22" fill="currentColor" /><rect x="8" y="9" width="9" height="3" fill="currentColor" />
+            </svg>
+            <span class="tu">INTERIORFLOW</span>
+          </div>
+          <div class="cot" style="width: 200px; top: 26%">
+            <p class="tieu" style="font-size: var(--fs-md)">Bước vào xưởng.</p>
+            <div class="o">Email</div>
+            <div class="o">Mật khẩu</div>
+            <div class="vao" style="height: 36px">Vào xưởng</div>
+          </div>
+        </div>
+      </div>
+      <p class="noi">Chỉ <code>opacity</code> của ba lớp ánh sáng đổi. <b>Không</b> <code>clip-path</code>,
+        <b>không</b> <code>transform</code>, <b>không</b> <code>filter</code> động, <b>không</b> lặp vô hạn.</p>
+    </div>
+  </div>
+  <p class="ghi">
+    <b>Sang Home ở bản giảm chuyển động:</b> cũng một lần hoà tan 180 ms giữa hai tình trạng ánh sáng,
+    lớp nội dung đổi thẳng. <b>Tổng cộng đúng HAI lần hoà tan cho cả hành trình</b> — và
+    <code>--nhip-khong-khi</code> (nhịp thở 150 s của không khí) <b>tắt hẳn</b>, không hạ biên độ.
+  </p>
+
+  <!-- ═══════════════ ARTBOARD ⑤ ═══════════════ -->
+  <div class="art-h">
+    <span class="n">⑤</span>
+    <h2>Thang nhịp — cái gì đẩy trạng thái đi tiếp</h2>
+    <i>sẵn sàng · tương tác · thời gian — và thời gian chỉ được dùng làm SÀN, không làm CỔNG</i>
+  </div>
+
+  <table class="nhip">
+    <thead>
+      <tr>
+        <th style="width: 168px">Trạng thái</th>
+        <th style="width: 132px">Đẩy đi tiếp bởi</th>
+        <th style="width: 108px">Đích</th>
+        <th>Vì sao là loại đó</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>COLD</b></td>
+        <td><span class="kind k-san">SẴN SÀNG</span></td>
+        <td class="ms">0 → 60 ms</td>
+        <td>Khung trước lần vẽ đầu. Không phải một nhịp được thiết kế — <b>không được biến nó thành một nhịp</b>.</td>
+      </tr>
+      <tr>
+        <td><b>WAKING</b></td>
+        <td><span class="kind k-san">SẴN SÀNG</span></td>
+        <td class="ms">60 → 320 ms<br />trần 400 ms</td>
+        <td>Kết thúc khi <b>kiểm phiên đăng nhập trả lời</b> và lớp trường đã vẽ. Máy nhanh thì ngắn hơn thật.
+          Trần 400 ms để máy chậm không kéo dài vô hạn.</td>
+      </tr>
+      <tr>
+        <td><b>IDENTITY</b></td>
+        <td><span class="kind k-san">SẴN SÀNG</span></td>
+        <td class="ms">180 → 320 ms<br />(chồng lên WAKING)</td>
+        <td><b>Chồng lấn có chủ ý</b>, không nối đuôi. Dấu hiện trong lúc ánh sáng còn đi — nối đuôi là cách
+          60 giây được sinh ra.</td>
+      </tr>
+      <tr>
+        <td><b>AUTH_READY</b></td>
+        <td><span class="kind k-nguoi">NGƯỜI</span></td>
+        <td class="ms">gõ được từ 320 ms<br />đứng vô thời hạn</td>
+        <td><b>Trạng thái duy nhất được phép kéo dài</b>, vì người quyết. Ánh sáng vẫn tự chạy tới ~1400 ms
+          <b>song song</b>, không giữ ô nhập lại.</td>
+      </tr>
+      <tr>
+        <td><b>AUTHENTICATED_<br />TRANSITION</b></td>
+        <td><span class="kind k-san">SẴN SÀNG</span> <span class="kind k-gio">+ SÀN</span></td>
+        <td class="ms">240 → 420 ms</td>
+        <td>Kết thúc khi máy chủ trả lời; <b>sàn 240 ms</b> để phiên trả lời trong 40 ms không loé một cái rồi biến —
+          đây là <b>chỗ duy nhất</b> thời gian được dùng, và nó là <b>sàn</b> chứ không phải cổng.</td>
+      </tr>
+      <tr>
+        <td><b>HOME_READY</b></td>
+        <td><span class="kind k-san">SẴN SÀNG</span></td>
+        <td class="ms">+260 ms lắng</td>
+        <td>Kết thúc khi Home đã gắn. Ánh sáng <b>không khởi động lại</b> — cùng một hoạt cảnh đang chạy dở.</td>
+      </tr>
+      <tr class="tong">
+        <td><b>TỔNG · mở máy → gõ được</b></td>
+        <td><span class="kind k-nguoi">NGƯỜI đợi</span></td>
+        <td class="ms"><b>≈ 320 ms</b></td>
+        <td>Con số duy nhất người dùng thật sự trả giá. <b>60 000 → 320.</b></td>
+      </tr>
+      <tr class="tong">
+        <td><b>TỔNG · môi trường ổn định</b></td>
+        <td><span class="kind k-san">chạy nền</span></td>
+        <td class="ms">≈ 1400 ms</td>
+        <td><b>Không ai đợi nó.</b> Nó xong bên trong khoảng thời gian app vốn đã tốn để khởi động — nên chi phí chờ bằng 0.</td>
+      </tr>
+      <tr class="tong">
+        <td><b>TỔNG · bấm vào → Home dùng được</b></td>
+        <td><span class="kind k-san">SẴN SÀNG</span></td>
+        <td class="ms">≈ 620 ms</td>
+        <td>240–420 ms chuyển + 260 ms lắng, gối lên nhau.</td>
+      </tr>
+      <tr class="tong">
+        <td><b>NGƯỜI QUAY LẠI</b> (phiên còn hạn)</td>
+        <td><span class="kind k-san">SẴN SÀNG</span></td>
+        <td class="ms">≈ 380 ms</td>
+        <td>COLD → thẳng AUTHENTICATED_TRANSITION. <b>WAKING và IDENTITY bị bỏ hẳn</b>: căn phòng dựng một lần,
+          không diễn lại mỗi lần mở. Đây là điều kiện để chịu được &ldquo;nhiều lần mỗi ngày&rdquo;.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="ghi">
+    <b>Luật rút gọn cho người thi công:</b> thời gian <b>chỉ</b> được xuất hiện ở hai chỗ — một cái <b>trần</b>
+    (WAKING 400 ms, chống máy chậm treo) và một cái <b>sàn</b> (TRANSITION 240 ms, chống loé). Mọi
+    <code>setTimeout</code> khác trong <code>components/intro/IntroSequence.tsx</code> là một cái cổng, và
+    <b>mọi cái cổng đều là 60 giây ở dạng nhỏ hơn</b>.
+  </p>
+</div>
+
+<script>
+  function dt() {
+    var r = document.documentElement;
+    var cur = r.getAttribute('data-theme');
+    if (!cur) cur = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    r.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+  }
+  // Ba giờ trong ngày — CHỈ đổi hướng sáng · ấm-lạnh · độ sáng · độ mềm bóng.
+  // KHÔNG có mặt đồng hồ, KHÔNG số Kelvin, KHÔNG cung mặt trời (luật ánh sáng ngày).
+  var GIO = [
+    { ten: 'sáng sớm', cl: 62, cr: 76, sl: 44, sr: 96, rgb: 'var(--anh-sang-lanh)', a: 0.032, l: 0.058, net: 0.58 },
+    { ten: 'ban ngày', cl: 54, cr: 76, sl: 34, sr: 92, rgb: 'var(--anh-sang-lanh)', a: 0.05, l: 0.085, net: 0.82 },
+    { ten: 'cuối chiều', cl: 26, cr: 44, sl: 30, sr: 88, rgb: 'var(--anh-sang-am)', a: 0.046, l: 0.082, net: 0.5 },
+  ];
+  var gi = 1;
+  function dg() {
+    gi = (gi + 1) % GIO.length;
+    var g = GIO[gi];
+    document.getElementById('gio-nhan').textContent = g.ten;
+    document.querySelectorAll('.phong').forEach(function (p) {
+      if (p.dataset.tt === 'cold') return; // phòng tối thì chưa có giờ nào cả
+      p.style.setProperty('--sang-rgb', g.rgb);
+      // giữ nguyên biên độ riêng của từng trạng thái, chỉ đổi TÍNH CHẤT ánh sáng
+      if (p.dataset.tt !== 'waking' && p.dataset.tt !== 'identity') {
+        p.style.setProperty('--cua-l', g.cl + '%');
+        p.style.setProperty('--cua-r', g.cr + '%');
+        p.style.setProperty('--san-l', g.sl + '%');
+        p.style.setProperty('--san-r', g.sr + '%');
+      }
+    });
+  }
+</script>
+
+<!-- TRANSFER NOTES ===========================================================
+
+TỆP SẢN XUẤT SỞ HỮU MÀN NÀY
+  components/intro/IntroSequence.tsx   (365 dòng · máy trạng thái useReducer, GIỮ)
+  app/intro/page.tsx                   (route công khai)
+  components/entry/LoginForm.tsx       (lớp nội dung của AUTH_READY)
+  ⛔ KHÔNG đụng components/entry/WelcomeIntro.tsx — đó là hướng dẫn lần đầu BÊN TRONG Home.
+  ⛔ components/intro/TitleSequence.tsx = mồ côi (0 import) — coi như đã chết, đừng hồi sinh.
+
+BA THỨ BẢN CŨ LÀM ĐÚNG — GIỮ NGUYÊN, KHÔNG DỰNG LẠI
+  · chạy thật bằng framer-motion (không phải video) — không có bài toán prerender/decode/khung đen
+  · máy trạng thái useReducer đã có thật — chỉ đổi ĐIỀU KIỆN chuyển, không đổi kiến trúc
+  · useReducedMotion đã đấu dây — thứ thiếu là BỐ CỤC giảm-chuyển-động, không phải dây
+
+MỘT DÒNG PHẢI XOÁ
+  IntroSequence.tsx:45  SCENE_DURATIONS = [15000, 10000, 25000, 10000]
+  IntroSequence.tsx:67  setTimeout(..., SCENE_DURATIONS[phase])
+  Thay bằng: chuyển theo SẴN SÀNG (promise phân giải) và theo TƯƠNG TÁC. Thời gian chỉ còn hai vai —
+  một TRẦN (WAKING 400ms) và một SÀN (TRANSITION 240ms). Bất kỳ setTimeout nào khác là một cái cổng.
+
+CÁI GÌ DO SẴN SÀNG, CÁI GÌ DO TƯƠNG TÁC
+  SẴN SÀNG   COLD→WAKING (lần vẽ đầu) · WAKING→IDENTITY (kiểm phiên trả lời) ·
+             IDENTITY→AUTH_READY (lớp trường đã vẽ) · TRANSITION→HOME_READY (Home đã gắn)
+  TƯƠNG TÁC  AUTH_READY→TRANSITION — ĐÂY LÀ TRẠNG THÁI DUY NHẤT ĐƯỢC PHÉP ĐỨNG VÔ THỜI HẠN.
+  THỜI GIAN  chỉ trần 400ms (WAKING) + sàn 240ms (TRANSITION). Hết.
+  ⚠️ Ánh sáng ổn định ở ~1400ms chạy SONG SONG với AUTH_READY — nó KHÔNG phải một trạng thái,
+     và không được có bất kỳ nhánh mã nào đợi nó xong.
+
+LIÊN TỤC SỐNG SÓT THẾ NÀO KHI KHÔNG CÒN router.push
+  Lớp trường (tường · sàn · mạch · chùm · vệt · sương) gắn ở VỎ, trên chỗ điều hướng đi qua —
+  cụ thể là một layout bọc cả /intro, /login và /. Đổi route chỉ tháo lắp LỚP NỘI DUNG;
+  phòng không bị tháo, nên không có gì phải "chuyển tiếp giữa hai màn".
+  ⇒ router.push có thể GIỮ NGUYÊN. Đây là điểm quan trọng nhất của bản này: liên tục KHÔNG
+    phụ thuộc vào việc bỏ điều hướng — nó phụ thuộc vào việc trường nằm TRÊN điều hướng.
+  Phép thử một dòng: mạch chân tường đứng yên tuyệt đối qua cả sáu trạng thái. Nhảy một pixel
+  = đã có phòng thứ hai được dựng = hỏng.
+
+TƯƠNG THÍCH VỚI LOGIN A/B/C (Hoà CHƯA chọn)
+  Cả ba phương án đã khai cùng bộ trường (tường · sàn · ánh sáng · một nét chân trời). Bản này
+  chỉ cấp TRẠNG THÁI ÁNH SÁNG LÚC BẮT ĐẦU cho lớp trường đó, không ép bố cục cột nhập nào.
+  Chọn A, B hay C đều không phải vẽ lại Cold Open.
+
+COLD KHÔNG PHẢI MÀU ĐEN
+  COLD = CHƯA CÓ ÁNH SÁNG. Nền tối gần đen; nền sáng là phòng nhạt chưa nắng. Cùng hình học,
+  khác lượng sáng. ⛔ KHÔNG ép nền đen ở theme Sáng — đó là một cú loé đen lúc mở máy.
+  Hệ quả thi công: COLD vẽ bằng chính --bg của theme đang hiệu lực, không bằng một màu riêng.
+
+BẢN GIẢM CHUYỂN ĐỘNG (là một BỐ CỤC, không phải "tắt hoạt cảnh")
+  Phòng dựng ở HAI tình trạng ánh sáng cố định (chưa sáng / đã sáng), chuyển bằng MỘT lần hoà tan
+  180ms opacity. Hình học đã ở vị trí cuối ngay từ khung đầu: khẩu độ đủ rộng, vệt sàn đủ dài,
+  dấu và ô nhập có mặt sẵn. Không clip-path động, không transform, không filter động, không lặp.
+  Sang Home: thêm đúng một lần hoà tan nữa. Cả hành trình = HAI lần hoà tan.
+  --nhip-khong-khi (nhịp thở 150s) TẮT HẲN, không hạ biên độ.
+
+TOKEN
+  Mượn nguyên: --accent · --accent-strong · --accent-soft · --accent-ring · --on-accent ·
+    --r-1..--r-4 · --r-full · --ease-apple · --tap-lg · --fs-* · --t1..--t5 · --border ·
+    --kinh-mong · --kinh-vien · --kinh-mep-sang · --kinh-chu-phu · --kinh-nhoe-mong · --vien-mo
+  Dùng lại của Home v2 (ĐỪNG khai bộ thứ hai): --amb-tuong · --amb-san · --amb-mep · --amb-sau ·
+    --anh-sang-lanh · --anh-sang-am · --sang-boi · --nhip-khong-khi
+  MỚI — đề xuất, chỉ 2 cái, đều là NHỊP theo vai trò (họ --nhip-* đã có sẵn):
+    --nhip-thuc      620ms   ánh sáng vào phòng (WAKING)
+    --nhip-hoa-tan   180ms   một lần hoà tan của bản giảm chuyển động
+  ⚠️ --nhip-bien-hinh (460ms) CỐ Ý không dùng lại: nó mang nghĩa "biến hình lớn — CHỈ khi đáng",
+     còn đây là ánh sáng của môi trường, không phải một vật biến hình.
+
+VẬT LIỆU (G0–G3)
+  G0  tường · sàn · hốc · mạch — toàn bộ trường
+  G1  ô nhập · rail · vỏ trên · widget Home (lúc nghỉ ranh giới gần như tan vào ambient)
+  G2  ô nhập đang focus (chỉ thêm vành --accent-soft, KHÔNG dày kính lên)
+  G3  ĐÚNG MỘT vật trong cả màn: nút Vào xưởng — nền tím ĐẶC + mép quang học, KHÔNG QUẦNG SÁNG.
+  0 glow · 0 halo · 0 aura · 0 hạt · 0 gradient khởi động ở mọi trạng thái.
+
+CHƯA CHẮC / CHỜ
+  · Chưa chạy trên app thật; mọi số là bố cục + nhịp trong bản vẽ, chưa đo trên máy đích.
+  · Ngân sách hiệu năng của lớp trường (blur + clip-path động ở toàn khổ màn) là việc của MAIN.
+    Nếu trượt khung hình: hạ blur của .chum TRƯỚC, giữ nguyên nhịp — chậm mà mượt vẫn đúng bản này,
+    còn kéo dài nhịp thì sai.
+  · Chuỗi tiếng Việt trong bản vẽ ("Bước vào xưởng." · "Xưởng đã sẵn sàng.") là chữ ĐỀ XUẤT,
+    chưa có trong i18n. Không con số dự án/phiên/ảnh nào được bịa — Home ở đây là 0 · 0 · 0.
+=========================================================================== -->

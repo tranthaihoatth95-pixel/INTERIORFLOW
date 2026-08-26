@@ -163,16 +163,16 @@ export function ColorImportWizard({ onClose, onImported }: { onClose: () => void
         <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
           <div style={{ display: 'flex', gap: 6 }}>
             {([
-              ['file', <FileSpreadsheet key="i" size={13} />, tr('Từ tệp', 'From file')],
-              ['paste', <ClipboardPaste key="i" size={13} />, tr('Dán tay', 'Paste')],
-              ['lark', <Cloud key="i" size={13} />, tr('Từ Larkbase', 'From Larkbase')],
+              ['file', <FileSpreadsheet key="i" size={18} />, tr('Từ tệp', 'From file')],
+              ['paste', <ClipboardPaste key="i" size={18} />, tr('Dán tay', 'Paste')],
+              ['lark', <Cloud key="i" size={18} />, tr('Từ Larkbase', 'From Larkbase')],
             ] as const).map(([k, icon, label]) => (
               <button key={k} type="button" onClick={() => setTab(k)} style={btn(tab === k)}>
                 {icon} {label}
               </button>
             ))}
             <button type="button" onClick={downloadTemplate} style={{ ...btn(false), marginLeft: 'auto' }}>
-              <Download size={13} /> {tr('Tải mẫu CSV', 'Download CSV template')}
+              <Download size={18} /> {tr('Tải mẫu CSV', 'Download CSV template')}
             </button>
           </div>
 
@@ -187,7 +187,7 @@ export function ColorImportWizard({ onClose, onImported }: { onClose: () => void
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); }}
               />
               <button type="button" onClick={() => fileRef.current?.click()} style={btn(true)}>
-                <FileSpreadsheet size={13} /> {tr('Chọn tệp…', 'Choose a file…')}
+                <FileSpreadsheet size={18} /> {tr('Chọn tệp…', 'Choose a file…')}
               </button>
             </div>
           )}
@@ -222,14 +222,14 @@ export function ColorImportWizard({ onClose, onImported }: { onClose: () => void
                 style={{ ...field, fontFamily: 'ui-monospace, monospace' }}
               />
               <button type="button" onClick={() => void onLarkPreview()} disabled={!tableId.trim() || busy} style={btn(true, !tableId.trim() || busy)}>
-                {busy ? <Loader2 size={13} className="animate-spin" /> : <Cloud size={13} />} {tr('Đọc bảng', 'Read table')}
+                {busy ? <Loader2 size={18} className="animate-spin" /> : <Cloud size={18} />} {tr('Đọc bảng', 'Read table')}
               </button>
             </div>
           )}
 
           {error && (
             <div style={errBox}>
-              <AlertTriangle size={13} style={{ flexShrink: 0, marginTop: 2 }} />
+              <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 2 }} />
               <span style={{ fontSize: 12.5, lineHeight: 1.6 }}>{error}</span>
             </div>
           )}
@@ -314,7 +314,7 @@ export function ColorImportWizard({ onClose, onImported }: { onClose: () => void
                   {tr('Lưu theo dự án', 'Save to project')}
                 </button>
                 <button type="button" onClick={() => void save('studio')} disabled={busy} style={btn(true, busy)}>
-                  {busy ? <Loader2 size={13} className="animate-spin" /> : null} {tr('Lưu theo studio', 'Save to studio')}
+                  {busy ? <Loader2 size={18} className="animate-spin" /> : null} {tr('Lưu theo studio', 'Save to studio')}
                 </button>
               </div>
             </>

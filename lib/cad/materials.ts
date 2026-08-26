@@ -55,12 +55,14 @@ export interface MaterialDef {
    */
   atlasRecordId?: string;
   /**
-   * P13 VIỆC 1 (07/08) — KHOÁ NỐI ba mảnh vật liệu (G-M17-01): matId của IF = `ProductSpec.sku`
-   * (mã ATLAS "Mã vật liệu" — tái dùng mã sẵn có, không đẻ hệ mã thứ hai). Preset khai trường này
-   * ⇒ `lib/materials/resolve.ts` `getMaterial(matId)` trả được cả ③ mảnh 2D này cùng ① PBR
-   * (`pbr-store.ts`) + ② thương mại (`/api/specs`). undefined = preset nội bộ chưa gắn mã kho —
-   * hành vi cũ y nguyên. KHÁC `atlasRecordId` (id RECORD Lark, đổi khi re-sync); `matId` là MÃ
-   * NGHIỆP VỤ người đọc hiểu (SW-TRV-BE…), bền qua sync.
+   * P13 VIỆC 1 (07/08) — KHOÁ NỐI ba mảnh vật liệu (G-M17-01). ⚠️ SUPERSEDED 19/08 — Hoà chốt
+   * hòa giải: matId nay là IF-owned immutable UUID, KHÔNG còn = ProductSpec.sku. Preset khai
+   * trường này với UUID (không phải sku) ⇒ `getMaterial(matId)` sẽ tra qua ProductSpec.matId
+   * (field mới, chờ Prisma migration Hoà chạy tay). Preset MATERIALS[] hiện có 0 preset khai matId
+   * — bootstrap 1 preset qua Slice 1A khi Prisma sẵn sàng. Xem `lib/materials/matid-identity.ts`.
+   *
+   * LỊCH SỬ (07/08, lỗi thời): "matId = ProductSpec.sku (mã ATLAS 'Mã vật liệu' — tái dùng, không
+   * đẻ hệ mã thứ hai)". KHÁC `atlasRecordId` (id RECORD Lark, đổi khi re-sync).
    */
   matId?: string;
   /**

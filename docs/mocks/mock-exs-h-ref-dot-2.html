@@ -1,0 +1,187 @@
+<!-- @dsCard group="Experience System" title="EXS-H · Ref đợt 2 → DS của IF" -->
+<!--
+  EXS-H — 9 ảnh ref đợt 2 (20/08) vẽ lại bằng token IF. Chưng cất + luật ràng:
+  docs/nc/REF-VISUAL-EXS-2026-08-20.md (phần ĐỢT 2, R6–R14).
+  Học cơ chế — bỏ neon, bỏ wallpaper rực sau chữ, bỏ billing card. 0 hex mới.
+-->
+<div class="exh-root">
+<style>
+  .exh-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --success:#46b876; --warning:#d9a34a; --danger:#e5674f;
+    --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+    background:var(--bg); color:var(--t2); padding:36px;
+    font:13px/1.5 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exh-root *{box-sizing:border-box}
+  .h1{font-size:22px;font-weight:700;color:var(--t1);margin:0 0 4px}
+  .sub{color:var(--t3);margin:0 0 24px}
+  .sec{margin:30px 0 10px;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--t4);text-transform:uppercase}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  .pane{border:1px solid var(--border);border-radius:13px;background:var(--panel);padding:14px;font-size:11.5px;color:var(--t3)}
+  .pane b{color:var(--t1)}
+  .law{border:1px solid var(--danger);border-radius:9px;background:rgba(229,103,79,.07);padding:7px 11px;font-size:11px;color:var(--t2);margin-top:9px}
+  .chip{display:inline-block;padding:2px 9px;border-radius:999px;border:1px solid var(--border);background:var(--card);font-size:10.5px;color:var(--t3);margin:2px 3px 0 0}
+  .note{font-size:11px;color:var(--t4);margin-top:7px}
+  /* R6 upload card */
+  .up{max-width:380px;border-radius:16px;background:var(--card);border:1px solid var(--border);padding:14px;position:relative}
+  .up .x{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:99px;border:1px solid var(--border-strong);display:grid;place-items:center;color:var(--t3)}
+  .fico{position:relative;width:44px;height:56px;border-radius:7px;background:var(--field);border:1px solid var(--border-strong);float:left;margin-right:12px}
+  .fico:before{content:"";position:absolute;top:0;right:0;width:14px;height:14px;background:var(--panel);border-left:1px solid var(--border-strong);border-bottom:1px solid var(--border-strong);border-radius:0 0 0 6px}
+  .fico .ext{position:absolute;left:-8px;bottom:8px;padding:1px 7px;border-radius:6px;background:var(--panel);border:1px solid var(--border-strong);font-size:9px;font-weight:700;color:var(--t2)}
+  .up h5{margin:4px 0 1px;color:var(--t1);font-size:13.5px}
+  .up small{color:var(--t4)}
+  .upbar{clear:both;margin-top:14px;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:999px;background:var(--field);border:1px solid var(--border);font-size:11px}
+  .upbar .pct{margin-left:auto;color:var(--t1);font-variant-numeric:tabular-nums}
+  .vach{flex:1;display:flex;gap:3px;align-items:center}
+  .vach i{flex:1;height:9px;border-radius:99px;background:var(--t5);max-width:5px}
+  .vach i.on{background:var(--accent);height:15px}
+  /* R7 capsules */
+  .caps{display:flex;flex-direction:column;gap:10px;max-width:380px}
+  .cap1{display:flex;align-items:center;gap:4px;height:42px;border-radius:999px;padding:4px;background:rgba(26,26,30,.55);border:1px solid var(--border);backdrop-filter:blur(8px)}
+  .seg{flex:1;text-align:center;padding:7px 0;border-radius:999px;font-size:12px;color:var(--t3)}
+  .seg.on{background:var(--card);color:var(--t1);border:1px solid var(--border-strong)}
+  .wavepill{display:flex;align-items:center;gap:12px;height:42px;border-radius:999px;padding:0 16px;background:rgba(26,26,30,.55);border:1px solid var(--border);width:max-content}
+  .wv{display:flex;gap:2.5px;align-items:center}
+  .wv i{width:2.5px;border-radius:99px;background:var(--t2)}
+  /* R8 vitals engage card */
+  .eng{max-width:390px;border-radius:18px;background:var(--card);border:1px solid var(--border-strong);box-shadow:var(--shadow-pop);overflow:hidden}
+  .eng .head{display:flex;gap:9px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--panel)}
+  .eng .ask{flex:1;font-size:12px;color:var(--t4)}
+  .eng .send{width:28px;height:28px;border-radius:99px;background:var(--t1);color:var(--bg);display:grid;place-items:center;font-weight:700}
+  .eng .bd{padding:13px 14px}
+  .intent{display:inline-flex;gap:6px;align-items:center;padding:6px 12px;border-radius:999px;background:var(--field);border:1px solid var(--border-strong);font-size:12px;color:var(--t1)}
+  .intent u{text-decoration-color:var(--accent);color:var(--t1)}
+  .tl{margin:12px 0 0 6px;border-left:1.5px solid var(--border-strong);padding-left:14px}
+  .tl .step{position:relative;margin-bottom:10px;font-size:11.5px}
+  .tl .step:before{content:"";position:absolute;left:-19.5px;top:4px;width:9px;height:9px;border-radius:99px;background:var(--success)}
+  .tl .step.run:before{background:var(--warning)}
+  .tl .step small{display:block;color:var(--t4)}
+  .res{display:flex;gap:10px;align-items:center;margin:6px 0 2px;padding:9px;border-radius:11px;background:var(--field);border:1px solid var(--border)}
+  .fold{width:38px;height:28px;border-radius:6px;background:var(--panel);border:1px solid var(--border-strong);position:relative}
+  .fold:before{content:"";position:absolute;top:-5px;left:0;width:16px;height:6px;border-radius:4px 4px 0 0;background:var(--panel);border:1px solid var(--border-strong);border-bottom:0}
+  .eng .foot{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-top:1px solid var(--border);background:var(--panel)}
+  .pub{display:inline-flex;gap:8px;align-items:center;padding:6px 14px;border-radius:999px;background:var(--accent);color:#fff;font-weight:600;font-size:12px}
+  .model{padding:5px 12px;border-radius:999px;border:1px solid var(--border-strong);font-size:11px;color:var(--t2)}
+  /* R9 rail expand */
+  .r9{display:flex;gap:12px}
+  .r9 .rl{width:44px;border-radius:13px;background:var(--panel);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 0}
+  .r9 .rl i{width:20px;height:20px;border-radius:6px;background:var(--field);border:1px solid var(--border)}
+  .r9 .ex{width:230px;border-radius:13px;background:var(--panel);border:1px solid var(--border);padding:11px;font-size:11.5px}
+  .glbl{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--t5);margin:9px 0 4px}
+  .rrow{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:8px;color:var(--t2)}
+  .rrow i{width:15px;height:15px;border-radius:5px;background:var(--field);border:1px solid var(--border);flex:none}
+  .cnt{margin-left:auto;padding:1px 8px;border-radius:999px;background:var(--accent-soft);border:1px solid var(--accent-ring);font-size:10px;color:var(--t1)}
+  /* R10 meeting */
+  .meet{display:grid;grid-template-columns:1.6fr 1fr;gap:8px;max-width:520px}
+  .vid{border-radius:12px;background:radial-gradient(90% 70% at 50% 30%,#1d2129 0,#101216 75%);border:1px solid var(--border-strong);min-height:110px;position:relative}
+  .vid .live{position:absolute;top:8px;left:8px;padding:1px 8px;border-radius:999px;background:rgba(229,103,79,.15);border:1px solid var(--danger);font-size:9.5px;color:var(--t1)}
+  .vid .ctl{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:5px;padding:4px 9px;border-radius:999px;background:rgba(20,20,23,.7);border:1px solid var(--border)}
+  .vid .ctl i{width:14px;height:14px;border-radius:99px;background:var(--field);border:1px solid var(--border-strong)}
+  .chatc{border-radius:12px;background:var(--panel);border:1px solid var(--border);padding:9px;font-size:10.5px;color:var(--t3)}
+  .mi{grid-column:1/-1;display:flex;gap:10px;align-items:center;border:1px solid var(--border);border-radius:11px;background:var(--panel);padding:8px 11px;font-size:11px}
+  .mi .bar{flex:1;height:5px;border-radius:99px;background:var(--field);overflow:hidden}
+  .mi .bar i{display:block;height:100%;width:90%;background:var(--success)}
+  /* R14 filter */
+  .flt{max-width:280px;border-radius:14px;background:var(--card);border:1px solid var(--border-strong);box-shadow:var(--shadow-pop);padding:11px;font-size:12px}
+  .flt .srch{display:flex;gap:7px;align-items:center;padding:7px 11px;border-radius:999px;background:var(--field);border:1px solid var(--border);color:var(--t4);font-size:11.5px;margin-bottom:9px}
+  .frow{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:9px;color:var(--t2)}
+  .frow.on{background:var(--field)}
+  .frow i{width:15px;height:15px;border-radius:5px;background:var(--panel);border:1px solid var(--border-strong);flex:none}
+  .frow .n{margin-left:auto;padding:0 7px;border-radius:6px;background:var(--panel);border:1px solid var(--border-strong);font-size:10px;color:var(--t1)}
+  .frow .ar{color:var(--t5)}
+</style>
+
+  <div class="h1">EXS-H · Ref đợt 2 → DS của IF</div>
+  <p class="sub">9 ảnh, học cơ chế — <b style="color:var(--t1)">bỏ neon · bỏ wallpaper rực sau chữ · bỏ billing card</b>. Chưng cất đầy đủ R6–R14 trong sổ REF-VISUAL-EXS.</p>
+
+  <div class="sec">R6 · Thẻ upload — VẬT + tiến trình ĐO ĐƯỢC + huỷ ngay</div>
+  <div class="two">
+    <div class="pane" style="background:var(--bg)">
+      <div class="up"><span class="x">×</span>
+        <span class="fico"><span class="ext">DWG</span></span>
+        <h5>Mat-bang-T3.dwg</h5><small>2,4 MB · từ khách gửi</small>
+        <div class="upbar">Đang nhập…<span class="vach"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span><span class="pct">74%</span></div>
+      </div>
+    </div>
+    <div class="pane"><b>Áp:</b> drop-zone Files/ingest · hàng đợi nhập. Badge đuôi tệp = icon loại 6 (nội dung, được màu riêng). Upload đo được ⇒ % hợp lệ, thanh = DÃY VẠCH cùng họ LightBar. × huỷ ngay trên thẻ.<div class="law">⚠ Ref có quầng neon tím lớn — NT-11 cấm glow trang trí + phiếu cấm "AI purple". Muốn ánh sáng: VIỀN CHẠY = đang-chạy (tầng ③), không quầng tĩnh.</div></div>
+  </div>
+
+  <div class="sec">R7 · Capsule kính điều khiển + voice pill (kính rất trong CHỈ chỗ ít chữ)</div>
+  <div class="two">
+    <div class="pane" style="background:var(--bg)">
+      <div class="caps">
+        <div class="cap1"><span class="seg on">Insights</span><span class="seg">Dashboard</span></div>
+        <div class="wavepill">🎙<span class="wv"><i style="height:6px"></i><i style="height:14px"></i><i style="height:19px"></i><i style="height:11px"></i><i style="height:16px"></i><i style="height:7px"></i></span><span style="color:var(--t5)">×</span></div>
+      </div>
+    </div>
+    <div class="pane"><b>Áp:</b> xác nhận <code>ToolbarBar</code> KB-1 (vỏ capsule) đúng hướng. Segmented: ô chọn TÔ ĐẶC trong capsule trong — trạng thái = nền, không chỉ màu chữ. Voice pill mic|waveform|đóng = visual companion cho K-flow (sóng chạy TRONG khe — không orb, đúng khuôn Siri §4b đã chốt).</div>
+  </div>
+
+  <div class="sec">R8 ⭐ · Thẻ việc AI = khuôn Vitals V3 ENGAGE (không phải chat dài)</div>
+  <div class="two">
+    <div class="pane" style="background:var(--bg)">
+      <div class="eng">
+        <div class="head"><span style="color:var(--t4)">←</span><span class="ask">Hỏi tiếp…</span><span class="send">→</span></div>
+        <div class="bd">
+          <span class="intent">Render lại phòng khách · vật liệu <u>óc chó ▾</u> · góc <u>C2 ▾</u></span>
+          <div class="tl">
+            <div class="step">Đọc scene + DNA<small>revision R03 · 2 mảng khoá</small></div>
+            <div class="step run">Đang render — 4cr đã báo trước<small>hàng đợi #2 · huỷ được</small></div>
+          </div>
+          <div class="res"><span class="fold"></span><div><b style="color:var(--t1);font-size:12px">Phối cảnh khách · 4 ảnh</b><br><small style="color:var(--t4)">mang định nghĩa: render · R03 · nguồn scene ↗</small></div></div>
+        </div>
+        <div class="foot"><span class="pub">Đưa vào Present →</span><span class="model">⚙ Trong IF · Qwen ▾</span></div>
+      </div>
+    </div>
+    <div class="pane"><b>Năm cơ chế lấy nguyên:</b> ① lệnh = CHIP tham số SỬA TẠI CHỖ (= "ý định có cấu trúc" luật 8 + Change reasoning OS) ② tiến trình = timeline chấm theo BƯỚC (pipeline human-in-loop) ③ kết quả = VẬT mang định nghĩa (cổng ra cửa sổ công cụ — "định nghĩa file = kết quả") ④ MỘT hành động chính ⑤ <b>model picker trên thẻ = Own/Replace your AI</b> (3 lựa chọn 15/08: Trong IF · Máy tôi có · Cloud).<div class="note">Mutation dừng ở nút người bấm — "Đưa vào Present" không tự chạy.</div></div>
+  </div>
+
+  <div class="sec">R9 · Rail ↔ mở rộng là CÙNG MỘT VẬT nở ra &nbsp;·&nbsp; R10 · Họp = spotlight + insight thành VIỆC</div>
+  <div class="two">
+    <div class="pane" style="background:var(--bg)">
+      <div class="r9">
+        <div class="rl"><i style="border-color:var(--accent-ring);background:var(--accent-soft)"></i><i></i><i></i><i></i><i style="margin-top:auto"></i></div>
+        <div class="ex">
+          <div class="glbl">Workspace</div>
+          <div class="rrow" style="background:var(--field)"><i></i>Dự án của tôi</div>
+          <div class="rrow"><i></i>Bảng việc<span class="cnt">3</span></div>
+          <div class="glbl">Inbox</div>
+          <div class="rrow"><i></i>Chat · Họp<span class="cnt">12</span></div>
+          <div class="glbl">Settings — thu 1 hàng</div>
+          <div style="display:flex;gap:6px;padding:3px 7px"><i style="width:15px;height:15px;border-radius:5px;background:var(--field);border:1px solid var(--border)"></i><i style="width:15px;height:15px;border-radius:5px;background:var(--field);border:1px solid var(--border)"></i><i style="width:15px;height:15px;border-radius:5px;background:var(--field);border:1px solid var(--border)"></i></div>
+        </div>
+      </div>
+      <div class="note">Icon rail thẳng hàng với hàng mở rộng — REVEAL từ đúng nguồn, học một lần.</div>
+    </div>
+    <div class="pane" style="background:var(--bg)">
+      <div class="meet">
+        <div class="vid"><span class="live">● LIVE</span><span class="ctl"><i></i><i></i><i></i></span></div>
+        <div class="chatc">Sarah: “sàn đổi sang mẫu 2?”<br>Minh: “ok, chốt sau họp”<br>…</div>
+        <div class="mi">Duyệt concept · 20p<span class="bar"><i></i></span>9/10 · <b style="color:var(--t1)">2 việc theo dõi</b> →</div>
+      </div>
+      <div class="note">Meeting Insight = mặt tiền meeting-distill (chốt 11/08): biên bản → chủ trì duyệt → việc vào Bảng việc kèm TaskContext. <b style="color:var(--danger)">Bỏ</b> "Upgrade to Pro" card — shell không phải billing UI.</div>
+    </div>
+  </div>
+
+  <div class="sec">R11–R14 · Xác nhận khuôn đã có + một nợ thi công</div>
+  <div class="two">
+    <div class="pane" style="background:var(--bg)">
+      <div class="flt">
+        <div class="srch">🔍 Tìm thuộc tính…</div>
+        <div class="frow"><i></i>Loại vật liệu<span class="n">2</span><span class="ar">›</span></div>
+        <div class="frow on"><i></i>Trạng thái spec<span class="n">1</span><span class="ar">›</span></div>
+        <div class="frow"><i></i>Nhà cung cấp<span class="ar">›</span></div>
+        <div class="frow"><i></i>Phòng<span class="n">3</span><span class="ar">›</span></div>
+      </div>
+    </div>
+    <div class="pane">
+      <b>R14 Filter:</b> khớp nguyên chốt 16/08 "dropdown dài PHẢI có ô tìm + gõ-tiếp" (đo: vẫn là NỢ thi công, grep type-ahead = 0). Badge SỐ = bộ-lọc-đang-áp, kèm tên — không chỉ màu. Áp: Library · Gallery · BOQ · Tasks.<br><br>
+      <b>R11 menu giải nghĩa</b> (icon khối trên lưới + tên + 1 câu): xác nhận khuôn Tooltip <code>hinh</code>+<code>desc</code> vừa cắm R3; phong cách nét-trên-lưới = hướng MỞ RỘNG kho <code>thao-tac-glyph</code>, KHÔNG icon system mới.<br><br>
+      <b>R12+R13 empty states</b>: <code>EmptyState</code> hiện có đã đúng khuôn (ghost + 1 câu + CTA tại chỗ) — xác nhận, không việc mới.
+    </div>
+  </div>
+</div>

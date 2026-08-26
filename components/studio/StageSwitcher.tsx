@@ -328,7 +328,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
                 />
               )}
               <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Icon size={13} strokeWidth={on ? 2.2 : 2} /> {name}
+                <Icon size={18} strokeWidth={on ? 2.2 : 2} /> {name}
                 {/* IF2-nền — badge "Coming soon · IF2" khi CAD ở chặng kỹ thuật/BIM mà tính năng
                     thật (BIM viewer/IFC/clash) chưa build. Đặt ngay cạnh nhãn pill để hoạ viên/
                     khách demo hiểu là tính năng sắp có, không phải lỗi. Class chấm bé xíu, không

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<title>IF Kiến trúc tổng hợp · 18/08</title>
+<style>
+  @page { size: A4; margin: 15mm 12mm; }
+  body { font: 11px/1.55 -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif; color: #1a1a1a; margin: 0; }
+  .doc { }
+  .doc-title { font-size: 24px; margin: 0 0 4px; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  .meta { color: #666; font-size: 10px; margin-bottom: 14px; font-family: ui-monospace, Menlo, monospace; }
+  h1 { font-size: 20px; margin: 22px 0 8px; }
+  h2 { font-size: 15px; margin: 18px 0 6px; border-bottom: 1px solid #ddd; padding-bottom: 3px; }
+  h3 { font-size: 12px; margin: 12px 0 4px; }
+  p { margin: 6px 0; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 10px; background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+  pre { background: #f5f5f5; border: 1px solid #e0e0e0; padding: 8px 10px; border-radius: 4px; overflow-x: auto; font-size: 9.5px; line-height: 1.4; break-inside: avoid; }
+  pre code { background: none; padding: 0; }
+  ul, ol { margin: 6px 0; padding-left: 20px; }
+  li { margin: 2px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 10px; margin: 8px 0; break-inside: avoid; }
+  th, td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; vertical-align: top; }
+  th { background: #f0f0f0; font-weight: 600; }
+  blockquote { border-left: 3px solid #6a57f5; margin: 8px 0; padding: 4px 10px; background: #f7f5ff; color: #333; }
+  .page-break { page-break-after: always; height: 0; }
+  strong { font-weight: 600; }
+</style>
+</head><body>
+
+<section class="doc">
+  <h1 class="doc-title">InteriorFlow · Thống kê thời gian làm việc + coding</h1>
+  <div class="meta">Nguồn: <code>docs/IF-THOI-GIAN-LAM-VIEC.md</code></div>
+  <h1>InteriorFlow · Thống kê thời gian làm việc + coding</h1>
+<blockquote>Số liệu MÁY ĐO từ <code>git log</code> HEAD <code>3da4b8c</code> (17/08 tối) — không phải khai suông.</blockquote>
+<p>---</p>
+<h2>1 · TỔNG QUAN</h2>
+<table><tr><th>Chỉ số</th><th>Giá trị</th></tr><tr><td><strong>Ngày bắt đầu</strong></td><td>03/07/2026 18:57 (Initial commit Next App)</td></tr><tr><td><strong>Ngày commit cuối (đo)</strong></td><td>17/08/2026 16:19</td></tr><tr><td><strong>Thời gian dự án</strong></td><td><strong>~46 ngày</strong> (03/07 → 17/08)</td></tr><tr><td><strong>Số ngày CÓ commit</strong></td><td><strong>46 ngày</strong> — commit HÀNG NGÀY, không nghỉ</td></tr><tr><td><strong>Tổng commit</strong></td><td><strong>1.610 commit</strong></td></tr><tr><td><strong>Trung bình</strong></td><td><strong>35 commit/ngày</strong> (rất cao — cường độ dày)</td></tr><tr><td><strong>Đỉnh 1 ngày</strong></td><td><strong>154 commit ngày 02/08</strong></td></tr></table>
+<h2>2 · TỐC ĐỘ THEO THÁNG</h2>
+<table><tr><th>Tháng</th><th>Commit</th><th>Ngày</th></tr><tr><td>07/2026</td><td><strong>800</strong></td><td>29 ngày (03/07 → 31/07)</td></tr><tr><td>08/2026</td><td><strong>810</strong></td><td>17 ngày (01/08 → 17/08)</td></tr></table>
+<strong>Nhận xét</strong>: tháng 8 CAO HƠN tháng 7 (810 vs 800 với thời gian ngắn hơn 12 ngày) → <strong>cường độ TĂNG dần</strong>, không giảm.
+<h2>3 · TÁC GIẢ COMMIT</h2>
+<table><tr><th>Tên</th><th>Commit</th><th>Ghi chú</th></tr><tr><td><strong>Hoà</strong></td><td>852</td><td>52,9% — tài khoản chính</td></tr><tr><td><strong>Tran Thai Hoa</strong></td><td>739</td><td>45,9% — cùng người, tên khác</td></tr><tr><td><strong>Hoa Tran</strong></td><td>16</td><td>1,0% — cùng người</td></tr><tr><td><strong>Claude</strong></td><td>2</td><td>0,1% — commit Claude ký tên (agent con)</td></tr><tr><td><strong>InteriorFlow Dev</strong></td><td>1</td><td>0,06%</td></tr></table>
+⇒ <strong>1.607/1.610 commit = 99,8% do Hoà tự chạy</strong> (với AI hỗ trợ trong session). Chỉ 3 commit do agent ký thẳng tên.
+<h2>4 · LOẠI COMMIT</h2>
+<table><tr><th>Loại</th><th>Số</th><th>%</th></tr><tr><td><strong>docs</strong></td><td><strong>621</strong></td><td>38,6% — TÀI LIỆU nặng hơn code</td></tr><tr><td><strong>feat</strong></td><td><strong>426</strong></td><td>26,5% — tính năng mới</td></tr><tr><td><strong>fix</strong></td><td><strong>207</strong></td><td>12,9% — sửa lỗi</td></tr><tr><td><strong>merge</strong></td><td>111</td><td>6,9%</td></tr><tr><td><strong>chore</strong></td><td>33</td><td>2,0%</td></tr><tr><td><strong>refactor</strong></td><td>22</td><td>1,4%</td></tr><tr><td><strong>wip</strong></td><td>8</td><td>0,5%</td></tr><tr><td><strong>perf</strong></td><td>5</td><td>0,3%</td></tr><tr><td><strong>test</strong></td><td>4</td><td>0,2%</td></tr><tr><td><strong>frontier</strong></td><td>3</td><td>0,2%</td></tr></table>
+<strong>Nhận xét đắt</strong>: <strong>DOCS > FEAT</strong> (621 vs 426). Đây là dự án <strong>THIẾT KẾ TRƯỚC CODE SAU</strong> — đúng luật §9 Hoà đặt 03/08 <em>"nghiên cứu xong phải vẽ ngay lên giao diện, tính năng điền vào sau"</em>.
+<h2>5 · TOP 8 NGÀY HOẠT ĐỘNG CAO NHẤT</h2>
+<table><tr><th>Xếp</th><th>Ngày</th><th>Commit</th><th>Ghi chú</th></tr><tr><td>1</td><td>02/08</td><td><strong>154</strong></td><td>Kiến trúc giao diện hạ tầng (SPEC-MODE-PER-STAGE + ref visual + Apple Motion)</td></tr><tr><td>2</td><td>03/08</td><td>98</td><td>Panel rollout + design system + hàm đo con trỏ + tên 3 chặng</td></tr><tr><td>3</td><td>10/08</td><td>89</td><td>Chiếu sáng workspace + hình minh hoạ điện ảnh + Design DNA</td></tr><tr><td>4</td><td>19/07</td><td>87</td><td>(đầu tháng, xây nền)</td></tr><tr><td>5</td><td>14/08</td><td>68</td><td>NT-1..18 duyệt + DesignSync + ghế Lincoln Trellis + chuỗi P1-P6</td></tr><tr><td>6</td><td>17/07</td><td>66</td><td>(đầu tháng, xây nền)</td></tr><tr><td>7</td><td>16/08</td><td>62</td><td>Đợt giao diện T #2 (bàn giao 5 phiên phụ)</td></tr><tr><td>8</td><td>11/07</td><td>59</td><td>(đầu tháng)</td></tr></table>
+<h2>6 · GIỜ COMMIT — Hoà làm việc như thế nào</h2>
+<pre><code>
+Giờ  | Commit
+---------------
+00 h | 43  ▓▓▓▓
+01 h | 43  ▓▓▓▓
+02 h | 33  ▓▓▓
+03 h | 25  ▓▓
+04 h | 33  ▓▓▓
+05 h | 53  ▓▓▓▓▓
+06 h | 79  ▓▓▓▓▓▓▓▓
+07 h | 64  ▓▓▓▓▓▓
+08 h | 70  ▓▓▓▓▓▓▓
+09 h | 91  ▓▓▓▓▓▓▓▓▓
+10 h | 91  ▓▓▓▓▓▓▓▓▓
+11 h | 56  ▓▓▓▓▓
+12 h | 66  ▓▓▓▓▓▓
+13 h | 125 ▓▓▓▓▓▓▓▓▓▓▓▓  ← đỉnh
+14 h | 101 ▓▓▓▓▓▓▓▓▓▓
+15 h | 116 ▓▓▓▓▓▓▓▓▓▓▓
+16 h | 60  ▓▓▓▓▓▓
+17 h | 60  ▓▓▓▓▓▓
+18 h | 64  ▓▓▓▓▓▓
+19 h | 72  ▓▓▓▓▓▓▓
+20 h | 51  ▓▓▓▓▓
+21 h | 64  ▓▓▓▓▓▓
+22 h | 64  ▓▓▓▓▓▓
+23 h | 86  ▓▓▓▓▓▓▓▓  ← đỉnh phụ đêm
+</code></pre>
+<p><strong>Đọc</strong>:<br><ul><li><strong>Đỉnh 1: 13-15h</strong> (342 commit) — buổi chiều sau nghỉ trưa</li><li><strong>Đỉnh 2: 09-10h</strong> (182 commit) — buổi sáng sớm</li><li><strong>Đỉnh 3: 23-01h</strong> (172 commit) — đêm khuya, gần 11%</li><li><strong>Đáy: 03h</strong> (25 commit) — chỉ giờ này Hoà nghỉ</li></ul><br>⇒ <strong>Làm cả ngày lẫn đêm</strong>. 172 commit trong khung 23-01h = Hoà thường xuyên chốt việc trước khi ngủ.</p>
+<h2>7 · KÍCH THƯỚC CODEBASE HIỆN TẠI</h2>
+<table><tr><th>Loại</th><th>Số</th></tr><tr><td><strong>Dòng code</strong> (.ts + .tsx)</td><td><strong>232.812</strong></td></tr><tr><td><strong>Số file</strong> (.ts + .tsx)</td><td><strong>1.141</strong></td></tr><tr><td><strong>Số file test</strong></td><td><strong>849</strong> — tỉ lệ 74,4% file có test</td></tr><tr><td><strong>Số file docs (.md)</strong></td><td><strong>424</strong></td></tr><tr><td><strong>Kích thước docs</strong></td><td><strong>44 MB</strong></td></tr></table>
+<strong>Ghi chú</strong>: chưa tính CSS, JSON, config. Tổng có thể ~250-260k dòng nếu tính đủ.
+<h2>8 · TỔNG KẾT NGƯỜI + MÁY</h2>
+<ul><li><strong>1.610 commit</strong> trong <strong>46 ngày</strong> = <strong>35 commit/ngày</strong> (cường độ cực cao)</li><li><strong>1.607/1.610 = 99,8% do Hoà đứng tên</strong> — Hoà là người bấm commit, AI ở trong session giúp làm</li><li><strong>621 docs commit > 426 feat commit</strong> — thiết kế trước code sau (đúng luật §9)</li><li><strong>74% file có test</strong> — chống hồi quy</li><li><strong>Không có ngày nghỉ</strong> trong 46 ngày dự án</li><li><strong>Đỉnh 154 commit/ngày (02/08)</strong> — ngày chốt kiến trúc UI hạ tầng</li><li><strong>11% commit trong khung 23-01h</strong> — Hoà chốt việc trước ngủ thường xuyên</li></ul>
+<strong>Chỉ số cường độ</strong>:
+<ul><li>1.610 commit ÷ 46 ngày = <strong>35 commit/ngày</strong></li><li>232k dòng code ÷ 46 ngày = <strong>5.060 dòng/ngày</strong></li><li>424 file docs ÷ 46 ngày = <strong>9,2 file docs/ngày</strong></li></ul>
+Ba con số này cho một dự án <strong>1-2 người</strong> (Hoà + AI trong session) là <strong>cực kỳ cao</strong>.
+<h2>9 · CHƯA ĐO ĐƯỢC</h2>
+<ul><li>Thời gian THẬT Hoà ngồi trước màn hình (git chỉ đo lúc BẤM commit, không đo lúc nghiên cứu/vẽ mock/đọc tài liệu)</li><li>Tỉ lệ code Hoà viết tay vs AI trong session viết (khó tách vì Hoà bấm commit cả hai)</li><li>Thời gian bay/đi nghỉ (nhìn khoảng trống commit ra được, nhưng chưa đo)</li></ul>
+<h2>10 · CẬP NHẬT VỀ SAU</h2>
+<p>Mọi ngày mới commit → chạy lại script grep để cập nhật:<br><pre><code>bash<br>git log --format='%as' | sort -u | wc -l         # số ngày làm việc<br>git log --oneline | wc -l                         # tổng commit<br>git log --format='%s' | sed -E 's/^([a-z]+).<em>/\1/' | sort | uniq -c    # loại commit<br></code></pre></p>
+<p>---</p>
+<p></em>Thống kê 19/08/2026, HEAD <code>3da4b8c</code> (17/08 16:19). Không nạp commit của ngày 18-19/08 (đang phiên T + chưa commit). Chạy lại khi cập nhật.*</p>
+</section>
+
+
+</body></html>

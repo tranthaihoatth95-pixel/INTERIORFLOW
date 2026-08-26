@@ -61,5 +61,67 @@ console.log('getMaterial — defs mặc định (MATERIALS app): chưa preset n�
   ok('flat null trên catalog mặc định hiện tại', m.flat === null);
 }
 
+// ── Bước 2A (19/08) — đường CHÍNH: input là UUID canonical, tra ProductSpec.matId ──
+const UUID_1 = 'a1b2c3d4-e5f6-4789-8abc-def012345678';
+const UUID_2 = 'b2c3d4e5-f6a7-4890-9bcd-ef0123456789';
+const pbrMapUuid: Record<string, MaterialPbr> = { [UUID_1]: { typeId: 'da-tu-nhien', roughness: 0.6, metallic: 0 } };
+const specsUuid = [
+  { sku: 'SW-TRV-BE', matId: UUID_1, name: 'Đá travertine be', vendor: 'Stoneworld', unit: 'm2', priceVnd: 850000 },
+  { sku: 'OLD-NO-MATID', matId: null, name: 'Chưa backfill' },
+];
+const defsUuid: MaterialDef[] = [
+  {
+    id: 'da-travertine', name: 'Đá travertine', category: 'Sàn', hatchPattern: 'ANSI32',
+    patternScale: 1, patternAngle: 0, color: '#d8cbb4', texture: 'travertine', tones: ['#d8cbb4'],
+    matId: UUID_1,
+  },
+];
+
+console.log('getMaterial — input UUID ⇒ resolvedVia "uuid", tra qua ProductSpec.matId canonical');
+{
+  const m = getMaterial(UUID_1, { pbrMap: pbrMapUuid, specs: specsUuid, defs: defsUuid });
+  ok('resolvedVia = uuid', m.resolvedVia === 'uuid');
+  ok('① pbr có', m.pbr?.typeId === 'da-tu-nhien');
+  ok('② commercial có, khớp theo matId (không phải sku)', m.commercial?.priceVnd === 850000);
+  ok('③ flat có (matId khớp)', m.flat?.id === 'da-travertine');
+  ok('matId trả về = canonical lowercase, giữ nguyên UUID', m.matId === UUID_1);
+}
+
+console.log('getMaterial — UUID hoa/thường/khoảng trắng vẫn khớp, canonical LUÔN lowercase (không upperCase)');
+{
+  const m = getMaterial(`  ${UUID_1.toUpperCase()}  `, { pbrMap: pbrMapUuid, specs: specsUuid, defs: defsUuid });
+  ok('vẫn khớp đủ 3 mảnh dù input UUID viết hoa', m.pbr !== null && m.commercial !== null && m.flat !== null);
+  ok('matId trả về LOWERCASE (không phải bản upper của input)', m.matId === UUID_1 && m.matId === m.matId.toLowerCase());
+}
+
+console.log('getMaterial — UUID không khớp bản ghi nào ⇒ cả 3 mảnh null, KHÔNG rơi về đường legacy-sku');
+{
+  const m = getMaterial(UUID_2, { pbrMap: pbrMapUuid, specs: specsUuid, defs: defsUuid });
+  ok('resolvedVia vẫn = uuid (không lặng lẽ đổi đường)', m.resolvedVia === 'uuid');
+  ok('cả 3 mảnh null — không bịa, không lẫn sang record của UUID_1', m.pbr === null && m.commercial === null && m.flat === null);
+}
+
+console.log('getMaterial — ProductSpec.matId = null (chưa backfill) KHÔNG BAO GIỜ khớp UUID nào (cấm giả sku thành UUID)');
+{
+  // OLD-NO-MATID có sku hợp lệ nhưng matId=null — tra bằng UUID_1 hay UUID_2 đều không được vớ nhầm nó.
+  const m1 = getMaterial(UUID_1, { specs: [{ sku: 'OLD-NO-MATID', matId: null, name: 'Chưa backfill' }] });
+  ok('không khớp bản ghi matId=null', m1.commercial === null);
+}
+
+console.log('getMaterial — hai đường KHÔNG LẪN NHAU: sku trùng hình dạng UUID (giả định cực đoan) vẫn tách đúng namespace');
+{
+  // input KHÔNG phải UUID hợp lệ (thiếu version nibble đúng chuẩn) ⇒ phải đi đường legacy, dù trông "giống" UUID.
+  const notQuiteUuid = 'zzzzzzzz-e5f6-4789-8abc-def012345678';
+  const m = getMaterial(notQuiteUuid, { specs: specsUuid });
+  ok('chuỗi không hợp lệ UUID ⇒ đi đường legacy-sku, không throw', m.resolvedVia === 'legacy-sku');
+}
+
+console.log('getMaterial — đường legacy-sku (input KHÔNG phải UUID) TIẾP TỤC hoạt động y hệt trước 19/08');
+{
+  const m = getMaterial('SW-TRV-BE', { pbrMap, specs, defs });
+  ok('resolvedVia = legacy-sku', m.resolvedVia === 'legacy-sku');
+  ok('hành vi giống hệt test gốc phía trên (không hồi quy)', m.pbr !== null && m.commercial !== null && m.flat !== null);
+}
+
 console.log(`\n${pass} pass, ${fail} fail`);
 if (fail > 0) process.exit(1);

@@ -284,9 +284,9 @@ export function RolloutGroup({ kindKey, children }: GroupProps) {
           type="button"
           onClick={allClosed ? openAll : closeAll}
           title={allClosed ? tr('Mở hết', 'Open all') : tr('Thu hết', 'Close all')}
-          className="grid h-6 w-6 place-items-center rounded-[10px] text-[var(--t4)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+          className="grid h-6 w-6 place-items-center rounded-[10px] text-[var(--t4)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
         >
-          {allClosed ? <ChevronsUpDown size={13} /> : <ChevronsDownUp size={13} />}
+          {allClosed ? <ChevronsUpDown size={14} /> : <ChevronsDownUp size={14} />}
         </button>
       </div>
 
@@ -312,11 +312,11 @@ export function RolloutGroup({ kindKey, children }: GroupProps) {
                   e.preventDefault();
                   setMenu({ x: e.clientX, y: e.clientY, id: it.id });
                 }}
-                className="group flex h-[var(--row)] w-full cursor-pointer select-none items-center gap-1.5 border-b border-[var(--vien-mo)] px-2 transition-colors duration-[120ms] hover:bg-[var(--hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent-ring)]"
+                className="group flex h-[var(--row)] w-full cursor-pointer select-none items-center gap-1.5 border-b border-[var(--vien-mo)] px-2 transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent-ring)]"
               >
                 <ChevronDown
-                  size={12}
-                  className={cn('shrink-0 text-[var(--t4)] transition-transform duration-[120ms]', !isOpen && '-rotate-90')}
+                  size={16}
+                  className={cn('shrink-0 text-[var(--t4)] transition-transform duration-[var(--nhip-bam)]', !isOpen && '-rotate-90')}
                 />
                 <span className="min-w-0 flex-1 truncate text-[var(--fs-2xs)] font-bold uppercase tracking-wider text-[var(--t3)]">
                   {it.title}
@@ -329,13 +329,13 @@ export function RolloutGroup({ kindKey, children }: GroupProps) {
                   }}
                   title={isPinned ? tr('Bỏ ghim', 'Unpin') : tr('Ghim — giữ mở khi đổi vật chọn', 'Pin — stays open across selections')}
                   className={cn(
-                    'grid h-5 w-5 shrink-0 place-items-center rounded-[6px] transition-all duration-[120ms]',
+                    'grid h-5 w-5 shrink-0 place-items-center rounded-[6px] transition-all duration-[var(--nhip-bam)]',
                     isPinned
                       ? 'text-[var(--accent)]'
                       : 'text-[var(--t5)] opacity-0 hover:bg-[var(--hover)] hover:text-[var(--t2)] group-hover:opacity-100 group-focus-within:opacity-100',
                   )}
                 >
-                  <Pin size={11} className={cn(isPinned && 'fill-current')} />
+                  <Pin size={14} className={cn(isPinned && 'fill-current')} />
                 </button>
                 <span
                   onPointerDown={(e) => {
@@ -344,9 +344,9 @@ export function RolloutGroup({ kindKey, children }: GroupProps) {
                   }}
                   onClick={(e) => e.stopPropagation()}
                   title={tr('Kéo để đổi thứ tự', 'Drag to reorder')}
-                  className="grid h-5 w-4 shrink-0 cursor-grab place-items-center text-[var(--t5)] opacity-0 transition-opacity duration-[120ms] hover:text-[var(--t2)] active:cursor-grabbing group-hover:opacity-100 group-focus-within:opacity-100"
+                  className="grid h-5 w-4 shrink-0 cursor-grab place-items-center text-[var(--t5)] opacity-0 transition-opacity duration-[var(--nhip-bam)] hover:text-[var(--t2)] active:cursor-grabbing group-hover:opacity-100 group-focus-within:opacity-100"
                 >
-                  <GripVertical size={12} />
+                  <GripVertical size={14} />
                 </span>
               </div>
               {isOpen && <div>{it.node}</div>}
@@ -366,7 +366,7 @@ export function RolloutGroup({ kindKey, children }: GroupProps) {
             className="nen-mo-panel pointer-events-none fixed left-auto z-[90] flex h-[var(--row)] w-48 items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2 opacity-80 shadow-[var(--shadow-pop)]"
             style={{ top: drag.ghostY - 14, left: (listRef.current?.getBoundingClientRect().left ?? 0) + 8 }}
           >
-            <GripVertical size={12} className="text-[var(--t4)]" />
+            <GripVertical size={16} className="text-[var(--t4)]" />
             <span className="truncate text-[var(--fs-2xs)] font-bold uppercase tracking-wider text-[var(--t2)]">
               {dragItem.title}
             </span>

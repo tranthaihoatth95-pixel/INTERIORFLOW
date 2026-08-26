@@ -156,7 +156,7 @@ export function WallTypePanel3D() {
                     aria-label={tr('Xoá loại tường', 'Delete wall type')}
                     className="grid h-[var(--tap)] w-[var(--tap)] flex-none place-items-center rounded-[6px] text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--danger)]"
                   >
-                    <Trash2 size={12} />
+                    <Trash2 size={18} />
                   </button>
                 </Tooltip>
               </li>
@@ -227,7 +227,7 @@ export function WallTypePanel3D() {
             )}
             {layerCheck.mismatchMm !== undefined && (
               <p className="mt-1 flex items-start gap-1 text-[10px] leading-relaxed text-[var(--warning)]">
-                <AlertTriangle size={11} className="mt-0.5 flex-none" />
+                <AlertTriangle size={14} className="mt-0.5 flex-none" />
                 {tr(
                   `Tổng lớp ${layerCheck.sumMm}mm lệch ${layerCheck.mismatchMm > 0 ? '+' : ''}${layerCheck.mismatchMm}mm so bề dày khai.`,
                   `Layers total ${layerCheck.sumMm}mm, off by ${layerCheck.mismatchMm > 0 ? '+' : ''}${layerCheck.mismatchMm}mm from the declared thickness.`,
@@ -266,7 +266,7 @@ export function WallTypePanel3D() {
 
           {resolved.danglingTypeId && (
             <p className="flex items-start gap-1 text-[10px] leading-relaxed text-[var(--danger)]">
-              <AlertTriangle size={11} className="mt-0.5 flex-none" />
+              <AlertTriangle size={14} className="mt-0.5 flex-none" />
               {tr(
                 `Tường trỏ tới loại "${resolved.danglingTypeId}" không còn tồn tại — đang chạy bằng số riêng của nó.`,
                 `This wall points at type "${resolved.danglingTypeId}" which no longer exists — running on its own values.`,
@@ -344,7 +344,7 @@ function ParamRow({
             aria-label={tr('Trả về theo Type', 'Revert to Type')}
             className="grid h-[var(--tap)] w-[var(--tap)] flex-none place-items-center rounded-[6px] text-[var(--accent)] transition-colors hover:bg-[var(--hover)]"
           >
-            <RotateCcw size={12} />
+            <RotateCcw size={18} />
           </button>
         </Tooltip>
       ) : (

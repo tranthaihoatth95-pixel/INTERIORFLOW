@@ -1,0 +1,437 @@
+{
+  "artboards": [
+    {
+      "file": "HeMau.dc.html",
+      "x": 1900,
+      "y": 0,
+      "w": 1500,
+      "h": 1240,
+      "title": "Hệ ba màu"
+    },
+    {
+      "file": "TheMauHeThong.dc.html",
+      "x": 3520,
+      "y": 0,
+      "w": 1680,
+      "h": 1000,
+      "title": "Thẻ màu hệ thống — hình nền sinh ra bộ"
+    },
+    {
+      "file": "ThuVienMau.dc.html",
+      "x": 5320,
+      "y": 0,
+      "w": 1780,
+      "h": 1140,
+      "title": "Thư viện màu — cái đã có trong IF"
+    },
+    {
+      "file": "Icon.dc.html",
+      "x": 7220,
+      "y": 0,
+      "w": 1560,
+      "h": 1000,
+      "title": "Icon — hai tầng nghĩa"
+    },
+    {
+      "file": "IconTep.dc.html",
+      "x": 8900,
+      "y": 0,
+      "w": 1500,
+      "h": 900,
+      "title": "Tệp và thư mục"
+    },
+    {
+      "file": "NutAI.dc.html",
+      "x": 10520,
+      "y": 0,
+      "w": 1560,
+      "h": 1000,
+      "title": "Nút + — màu trong khúc xạ"
+    },
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 1610,
+      "w": 1440,
+      "h": 900,
+      "title": "Trang chủ · hướng A — trên hình nền thật"
+    },
+    {
+      "file": "HuongB.dc.html",
+      "x": 1560,
+      "y": 1610,
+      "w": 1440,
+      "h": 900,
+      "title": "Trang chủ · hướng B"
+    },
+    {
+      "file": "BanLamViec.dc.html",
+      "x": 3120,
+      "y": 1610,
+      "w": 1440,
+      "h": 900,
+      "title": "Trang chủ · hướng C (giấy nháp)"
+    },
+    {
+      "file": "Widget.dc.html",
+      "x": 4680,
+      "y": 1610,
+      "w": 1560,
+      "h": 1120,
+      "title": "Widget — vật liệu và hạng"
+    },
+    {
+      "file": "TrangThai.dc.html",
+      "x": 6360,
+      "y": 1610,
+      "w": 1500,
+      "h": 760,
+      "title": "Widget — thiếu dữ liệu"
+    },
+    {
+      "file": "Rail.dc.html",
+      "x": 0,
+      "y": 3200,
+      "w": 1180,
+      "h": 640,
+      "title": "Rail điều hướng"
+    },
+    {
+      "file": "BottomBar.dc.html",
+      "x": 1300,
+      "y": 3200,
+      "w": 1780,
+      "h": 1560,
+      "title": "Thanh dưới · dock — theo số đo chốt 02/08"
+    },
+    {
+      "file": "Vitals.dc.html",
+      "x": 0,
+      "y": 5230,
+      "w": 1780,
+      "h": 1800,
+      "title": "Vitals — khe sáng"
+    },
+    {
+      "file": "ThongBao.dc.html",
+      "x": 1900,
+      "y": 5230,
+      "w": 1500,
+      "h": 960,
+      "title": "Thông báo — ba mức"
+    },
+    {
+      "file": "ManDuAn.dc.html",
+      "x": 0,
+      "y": 7500,
+      "w": 1440,
+      "h": 1188,
+      "title": "Công trình"
+    },
+    {
+      "file": "ManBanVe.dc.html",
+      "x": 5600,
+      "y": 7500,
+      "w": 1680,
+      "h": 1050,
+      "title": "Bản vẽ · mặt bằng (bộ công cụ đầy đủ)"
+    },
+    {
+      "file": "ManVatLieu.dc.html",
+      "x": 7400,
+      "y": 7500,
+      "w": 1440,
+      "h": 900,
+      "title": "Vật liệu"
+    },
+    {
+      "file": "ManThuVien.dc.html",
+      "x": 8960,
+      "y": 7500,
+      "w": 1440,
+      "h": 900,
+      "title": "Thư viện"
+    },
+    {
+      "file": "ManTrinhBay.dc.html",
+      "x": 10520,
+      "y": 7500,
+      "w": 1900,
+      "h": 1160,
+      "title": "Trình bày — màn làm việc đầy đủ"
+    },
+    {
+      "file": "ManCamHung.dc.html",
+      "x": 12540,
+      "y": 7500,
+      "w": 1680,
+      "h": 940,
+      "title": "Cảm hứng"
+    },
+    {
+      "file": "HoaVan.dc.html",
+      "x": 14340,
+      "y": 7500,
+      "w": 1720,
+      "h": 1020,
+      "title": "Hoa văn và ký hiệu"
+    },
+    {
+      "file": "ThuVienChung.dc.html",
+      "x": 0,
+      "y": 9158,
+      "w": 1680,
+      "h": 1210,
+      "title": "Thư viện dùng chung — MỘT khuôn"
+    },
+    {
+      "file": "PhuMot.dc.html",
+      "x": 0,
+      "y": 10838,
+      "w": 1500,
+      "h": 1020,
+      "title": "Màn phụ · trong công trình"
+    },
+    {
+      "file": "PhuHai.dc.html",
+      "x": 1620,
+      "y": 10838,
+      "w": 1500,
+      "h": 1020,
+      "title": "Màn phụ · hệ thống và ngoài xưởng"
+    },
+    {
+      "file": "KhoaMan.dc.html",
+      "x": 3240,
+      "y": 10838,
+      "w": 1620,
+      "h": 1000,
+      "title": "Khoá màn — mặt sau thẻ đăng nhập"
+    },
+    {
+      "file": "ManAvatar.dc.html",
+      "x": 4980,
+      "y": 10838,
+      "w": 1900,
+      "h": 1260,
+      "title": "Ảnh đại diện — mặc định một người, mở dần"
+    },
+    {
+      "file": "BanPhimSo.dc.html",
+      "x": 0,
+      "y": 12328,
+      "w": 1500,
+      "h": 900,
+      "title": "Nhập số đo"
+    },
+    {
+      "file": "ViecVaBrief.dc.html",
+      "x": 1620,
+      "y": 12328,
+      "w": 1500,
+      "h": 900,
+      "title": "Việc cần làm · hỏi brief"
+    },
+    {
+      "file": "CadBang.dc.html",
+      "x": 0,
+      "y": 13698,
+      "w": 1720,
+      "h": 1000,
+      "title": "Bản vẽ trên bảng"
+    },
+    {
+      "file": "BaChieuBang.dc.html",
+      "x": 1840,
+      "y": 13698,
+      "w": 1720,
+      "h": 990,
+      "title": "Dựng 3D trên bảng"
+    },
+    {
+      "file": "LuongHoatDong.dc.html",
+      "x": 0,
+      "y": 15168,
+      "w": 1720,
+      "h": 1180,
+      "title": "Luồng công trình — và chặng còn thiếu"
+    },
+    {
+      "file": "MasterTool.dc.html",
+      "x": 1840,
+      "y": 15168,
+      "w": 1780,
+      "h": 1120,
+      "title": "Master tool — nối biến đổi"
+    },
+    {
+      "file": "CuaSoMoiTruong.dc.html",
+      "x": 3740,
+      "y": 15168,
+      "w": 1780,
+      "h": 1000,
+      "title": "Cửa sổ theo môi trường"
+    },
+    {
+      "file": "ProjectLegacy.dc.html",
+      "x": 1560,
+      "y": 7500,
+      "w": 1900,
+      "h": 1180,
+      "title": "Project Legacy — trục ĐỨNG kiểu Stage Manager"
+    },
+    {
+      "file": "HoSoCongTrinh.dc.html",
+      "x": 3580,
+      "y": 7500,
+      "w": 1900,
+      "h": 1260,
+      "title": "Hồ sơ công trình — lưu trữ"
+    },
+    {
+      "file": "TruyNguon.dc.html",
+      "x": 16180,
+      "y": 7500,
+      "w": 1780,
+      "h": 880,
+      "title": "Tra cứu bằng hình ảnh — truy nguồn"
+    },
+    {
+      "file": "ThuThap.dc.html",
+      "x": 18080,
+      "y": 7500,
+      "w": 1900,
+      "h": 1320,
+      "title": "Thu thập có đầu bài · bảng cảm hứng"
+    },
+    {
+      "file": "ToolLinhHoat.dc.html",
+      "x": 3200,
+      "y": 3200,
+      "w": 1780,
+      "h": 1120,
+      "title": "Toolbelt linh hoạt"
+    },
+    {
+      "file": "ChiDan.dc.html",
+      "x": 5100,
+      "y": 3200,
+      "w": 1780,
+      "h": 1000,
+      "title": "Chỉ dẫn — ô đầy, ô trống"
+    },
+    {
+      "file": "ProjectViews.dc.html",
+      "x": 20100,
+      "y": 7500,
+      "w": 1900,
+      "h": 1300,
+      "title": "Stage Project — sáu view"
+    },
+    {
+      "file": "ChangCheckpoint.dc.html",
+      "x": 22120,
+      "y": 7500,
+      "w": 1780,
+      "h": 1080,
+      "title": "Checkpoint chặng · widget tiến trình"
+    },
+    {
+      "file": "HinhNen.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1780,
+      "h": 1080,
+      "title": "Hình nền — chọn hẳn một phía"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "nhom-0",
+      "x": 0,
+      "y": -250,
+      "w": 920,
+      "text": "A · HỆ NỀN\n\nChữ nghĩa của cả hệ. Sửa ở đây là sửa mọi màn.\nHệ ba màu · icon hai tầng · tệp-thư mục · nút +."
+    },
+    {
+      "id": "nhom-1",
+      "x": 0,
+      "y": 1360,
+      "w": 920,
+      "text": "B · TRANG CHỦ — BA HƯỚNG\n\nBa chế độ của CÙNG một Trang chủ, không phải ba đề xuất loại trừ nhau.\nA ambient · B · C bàn làm việc giấy nháp. Kèm luật widget."
+    },
+    {
+      "id": "nhom-2",
+      "x": 0,
+      "y": 2950,
+      "w": 920,
+      "text": "C · KHUNG VÀ ĐIỀU HƯỚNG\n\nBộ khung có mặt ở mọi màn: rail 52 bên trái, thanh dưới.\nĐây là thứ người dùng không bao giờ chú ý — nên nó phải không bao giờ sai."
+    },
+    {
+      "id": "nhom-3",
+      "x": 0,
+      "y": 4980,
+      "w": 920,
+      "text": "D · VITALS VÀ THÔNG BÁO\n\nMột hệ chỉ có MỘT chỗ để nói. Cả hai bề mặt này đều mọc ra từ khe.\nVitals: khe sáng · thanh đang-làm · ngăn xếp. Thông báo: ba mức."
+    },
+    {
+      "id": "nhom-4",
+      "x": 0,
+      "y": 7250,
+      "w": 920,
+      "text": "E · MÀN CHÍNH\n\nBảy màn dùng chung một vỏ. Bản vẽ là màn nặng nhất nên dựng đầy đủ:\nbộ công cụ theo nhóm · thanh ngữ cảnh · thư viện mở mà KHÔNG che, ba nấc.\n\nĐỔI 26/08: \"Tổng quan công trình\" → PROJECT LEGACY.\nDòng thời gian toàn bộ việc studio đã làm, bìa dạng card. Bấm bìa → hồ sơ lưu trữ.\nBăng thời gian nền TỐI vì bìa là ẢNH — ngoại lệ thứ hai sau khung nhìn 3D, cùng dạng lý do vật lý."
+    },
+    {
+      "id": "nhom-5",
+      "x": 0,
+      "y": 8908,
+      "w": 920,
+      "text": "F · THƯ VIỆN DÙNG CHUNG\n\nMỘT khuôn cho mọi màn cần thư viện. Nội dung đổi theo ngữ cảnh, bố cục KHÔNG đổi.\nHai dải: của dự án này ↑ · cấu kiện IDFC ↓. Một thẻ = một cấu kiện.\nVân · bump · texture chỉ có ở EDITOR, không nhét vào panel."
+    },
+    {
+      "id": "nhom-6",
+      "x": 0,
+      "y": 10588,
+      "w": 920,
+      "text": "G · MÀN PHỤ\n\nTám màn phụ. Hai màn CỐ TÌNH bỏ vỏ: Đăng nhập và Chia sẻ —\nbày rail và dock ở đó là hứa một quyền không có thật."
+    },
+    {
+      "id": "nhom-7",
+      "x": 0,
+      "y": 12078,
+      "w": 920,
+      "text": "H · CHI TIẾT VÀ THAO TÁC\n\nNhững bề mặt nhỏ mà dùng nhiều nhất trong ngày."
+    },
+    {
+      "id": "nhom-bang",
+      "x": 0,
+      "y": 13448,
+      "w": 920,
+      "text": "I · TRÊN BẢNG (TABLET)\n\nKHÔNG phải màn để bàn thu nhỏ. Chạm không có hover, tay che phần trên màn,\nvà bảng dùng ở HIỆN TRƯỜNG chứ không ở xưởng — nên nội dung cũng khác, không chỉ cỡ.\n\nMàn 3D là chỗ DUY NHẤT trong IF được tối, vì khối đọc bằng bóng đổ.\nNgoại lệ phải trả lời được câu \"vì sao\", nếu không thì chỉ là thiếu nhất quán."
+    },
+    {
+      "id": "nhom-kien-truc",
+      "x": 0,
+      "y": 14918,
+      "w": 920,
+      "text": "J · KIẾN TRÚC VÀ LUỒNG\n\nBản đồ TRUNG THỰC: 30 artboard phủ tốt hai chặng GIỮA (ý tưởng, triển khai),\nnhưng HAI ĐẦU CÒN HỞ — khảo sát và thi công/bàn giao.\nĐó lại đúng là hai chỗ người làm nghề mất nhiều thời gian nhất.\n\nMaster tool = thứ không phần mềm nội thất nào khác có: người dùng TỰ NỐI đường đi,\nnên họ GIẢI THÍCH ĐƯỢC với khách vì sao ra kết quả đó.\n\nCửa sổ theo môi trường: một khuôn cửa, bộ công cụ đổi theo BẢN CHẤT nội dung.\nCông tắc Sửa ↔ Nối, và chuyển chế độ KHÔNG ĐƯỢC MẤT GÌ."
+    },
+    {
+      "id": "tho-co-ly-do",
+      "x": 960,
+      "y": 1360,
+      "w": 900,
+      "text": "KHOẢNG THỞ PHẢI CÓ LÝ DO — Hoà 26/08\n\nTrang chủ dựng lại trên HÌNH NỀN THẬT (bộ \"Nắng chiều\"), không còn là gradient nhạt.\nNền có vệt nắng chéo, chân trời sàn, bóng đổ từ phải — để khối kính CÓ GÌ ĐỂ KHÚC XẠ.\n\nBa khoảng trống, ba lý do:\n① Băng giữa lời chào và hàng công việc — đó là chỗ VỆT NẮNG đi qua.\n   Nền là nội dung ở đây, không phải chỗ chưa dựng xong. Che nền đi thì băng này SAI.\n② Khoảng giữa lời chào và cụm môi trường — hai cụm khác BẢN CHẤT\n   (một cái nói với người, một cái nói về thế giới). Dính vào nhau là đọc ra cùng nhóm.\n③ Dải dưới dock — chỗ tay chuột đi vào. Đặt gì ở đó là đặt vào đường đi.\n\nNếu một khoảng trống KHÔNG trả lời được ba kiểu lý do trên\n(nền là nội dung · ngăn hai bản chất · chừa đường đi) thì nó là thiếu, không phải thoáng.\n\nDock cũng sửa theo spec 02/08: capsule 44/r22, nút 34/r17, icon 15, cách 5."
+    },
+    {
+      "id": "nen-trang",
+      "x": 0,
+      "y": 1110,
+      "w": 920,
+      "text": "NỀN — SỬA HỆ THỐNG 26/08 (Hoà)\n\n\"Trắng pha tím loang làm app trông BẨN.\"\n\nLUẬT MỚI:\n· HÌNH NỀN chỉ ở KHOÁ MÀN và TRANG CHỦ. Ở đó thì là hình nền HẲN, không nửa vời.\n· MỌI MÀN CÒN LẠI: trắng Apple phẳng #f2f2f7. Không gradient, không ngả màu.\n\nĐã dọn 35 tệp. Sáu mã ngả tím bị loại khỏi mọi màn không phải Home/khoá:\n#f7f7fb · #eaeaf2 · #ececf3 · #eeeef4 · #f9f9fc · #f8f8fc\n\nVì sao gradient nhạt làm bẩn: nó không đủ đậm để đọc ra là MỘT CHỦ Ý,\nnhưng đủ để mắt thấy màu trắng KHÔNG SẠCH. Nửa vời là chỗ tệ nhất —\nhoặc hình nền thật, hoặc trắng thật."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

@@ -2,8 +2,7 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { saveResume, getLastUserId, RESUMABLE_ROUTES, type ResumableRoute } from '@/lib/resume';
-import { LEGACY_STAGE_ROUTE, parseStageRoute } from '@/lib/scope-core';
+import { saveResume, getLastUserId, computeResumePatch } from '@/lib/resume';
 
 /**
  * ResumeTracker — ghi "đang đứng route nào" cho persistent-state B-3 (Sprint 1).
@@ -18,6 +17,14 @@ import { LEGACY_STAGE_ROUTE, parseStageRoute } from '@/lib/scope-core';
  * đọc nó → auto-resume về /cad-editor không bao giờ chạy.
  *
  * Render null — zero UI, zero ảnh hưởng cây layout server (client component lá).
+ *
+ * CONTINUITY-1 (19/08): khi đứng trên route scope dự án (`/projects/[id]/cad`…), PHẢI kèm
+ * `flowId = projectId` trong patch ghi resume. Thiếu nó thì `buildResumeCard()`
+ * (components/home/widgets/resume-card.ts) tính `routeId = currentProjectId || resume.flowId
+ * || null` ra `null` cho lượt "vào thẳng URL/bookmark" (currentProjectId chưa nạp store),
+ * `resumeHref()` rơi về route TOÀN CỤC cũ (`/cad-editor`…) thay vì `/projects/<id>/<stage>`,
+ * và `LegacyStageRedirect` tra lại cũng ra null (store rỗng + resume rỗng) ⇒ dội về
+ * `/?notice=choose-project` dù widget "Việc đang dở" vừa trỏ đúng chỗ.
  */
 export function ResumeTracker() {
   const pathname = usePathname();
@@ -28,14 +35,13 @@ export function ResumeTracker() {
     // ghi TÊN ROUTE CŨ tương ứng ('/cad-editor'…): route cũ nay là cầu redirect nên
     // auto-resume vẫn đưa về đúng chặng + đúng dự án (redirect tra lại id), mà không phải
     // đổi kiểu `ResumableRoute` hay lưu id dự án trùng lặp ở hai chỗ.
-    const scoped = parseStageRoute(pathname);
-    const route = scoped ? LEGACY_STAGE_ROUTE[scoped.stage] : pathname;
-    // '/' do app/page.tsx (HomeScreen) tự ghi kèm flowId + chặng — xem doc ở trên.
-    if (route === '/') return;
-    if (!(RESUMABLE_ROUTES as readonly string[]).includes(route)) return;
+    // Logic tách sang `computeResumePatch` (lib/resume.ts) để test được thuần (sucrase-node,
+    // không cần DOM/usePathname) — xem docstring hàm đó cho chi tiết bug CONTINUITY-1.
+    const patch = computeResumePatch(pathname);
+    if (!patch) return;
     const userId = getLastUserId();
     if (!userId) return;
-    saveResume(userId, { route: route as ResumableRoute });
+    saveResume(userId, patch);
   }, [pathname]);
 
   return null;

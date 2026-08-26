@@ -307,13 +307,13 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
             </div>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
               <button type="button" onClick={() => window.print()} disabled={!boq || loading} style={btnStyle(false)}>
-                <Printer size={13} /> {tr('In A4 ngang', 'Print A4 landscape')}
+                <Printer size={16} /> {tr('In A4 ngang', 'Print A4 landscape')}
               </button>
               <button type="button" onClick={exportXlsx} disabled={!boq || loading || exporting} style={btnStyle(false)}>
-                <FileSpreadsheet size={13} /> {exporting ? tr('Đang xuất…', 'Exporting…') : tr('Xuất xlsx', 'Export xlsx')}
+                <FileSpreadsheet size={16} /> {exporting ? tr('Đang xuất…', 'Exporting…') : tr('Xuất xlsx', 'Export xlsx')}
               </button>
               <button type="button" onClick={() => void compute()} disabled={loading} style={btnStyle(true)}>
-                <RefreshCw size={13} /> {tr('Tính lại từ bản vẽ', 'Recompute from drawing')}
+                <RefreshCw size={16} /> {tr('Tính lại từ bản vẽ', 'Recompute from drawing')}
               </button>
             </div>
           </div>
@@ -350,7 +350,7 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
                   'The BOQ is generated from painted material regions in the drawing — it is not a hand-typed sheet. This project has no drawing yet, so the table is empty.',
                 )}
                 actions={[
-                  { label: tr('Tính lại từ bản vẽ', 'Recompute from drawing'), primary: true, icon: <RefreshCw size={13} />, onClick: () => void compute() },
+                  { label: tr('Tính lại từ bản vẽ', 'Recompute from drawing'), primary: true, icon: <RefreshCw size={18} />, onClick: () => void compute() },
                   { label: tr('Mở bản vẽ', 'Open drawing'), onClick: () => router.push(`/projects/${projectId}/cad`) },
                 ]}
               />
@@ -384,7 +384,7 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t4)' }}>{tr('Ô đang chọn', 'Selected cell')}</span>
             {selected && (
               <button type="button" onClick={() => setSelected(null)} style={{ marginLeft: 'auto', width: 22, height: 22, border: 0, borderRadius: 6, background: 'transparent', color: 'var(--t4)', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
-                <X size={13} />
+                <X size={14} />
               </button>
             )}
           </div>

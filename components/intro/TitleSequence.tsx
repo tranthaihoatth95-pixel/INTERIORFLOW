@@ -225,7 +225,7 @@ export function TitleSequence({ onFinish }: { onFinish: () => void }) {
             }}
             className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white/75 transition-colors hover:bg-white/20 hover:text-white sm:flex"
           >
-            <ChevronLeft size={15} />
+            <ChevronLeft size={18} />
           </button>
           <div className="flex min-w-0 items-center gap-2 rounded-full bg-white/[0.08] px-4 py-1.5 sm:px-5">
             <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: COPPER }} />
@@ -245,7 +245,7 @@ export function TitleSequence({ onFinish }: { onFinish: () => void }) {
             }}
             className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white/75 transition-colors hover:bg-white/20 hover:text-white sm:flex"
           >
-            <ChevronRight size={15} />
+            <ChevronRight size={18} />
           </button>
         </div>
       </motion.div>

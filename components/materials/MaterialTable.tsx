@@ -103,14 +103,14 @@ export function MaterialTable({
                   <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                     {onEditPbr && m.sku && (
                       <button type="button" onClick={() => onEditPbr(m)} aria-label={tr('Chất liệu render', 'Render material')} title={tr('Chất liệu render (PBR)', 'Render material (PBR)')} style={iconBtn}>
-                        <Orbit size={13} />
+                        <Orbit size={16} />
                       </button>
                     )}
                     <button type="button" onClick={() => onEdit(m)} aria-label={tr('Sửa', 'Edit')} style={iconBtn}>
-                      <Pencil size={13} />
+                      <Pencil size={16} />
                     </button>
                     <button type="button" onClick={() => onDelete(m)} aria-label={tr('Xoá', 'Delete')} style={iconBtn}>
-                      <Trash2 size={13} />
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </td>

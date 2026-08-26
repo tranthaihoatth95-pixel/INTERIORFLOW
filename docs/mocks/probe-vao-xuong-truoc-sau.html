@@ -1,0 +1,137 @@
+<!-- @dsCard group="Vật liệu · G3" -->
+<!doctype html><meta charset="utf-8"><title>Vào xưởng — trước / sau</title>
+<style>
+  :root{ --accent:#6a57f5; --ease:cubic-bezier(.32,.72,0,1); }
+  body{margin:0;background:#141118;color:#e8e4ef;
+    font:500 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    padding:44px 40px 40px;}
+  h1{font-size:15px;font-weight:600;letter-spacing:.02em;margin:0 0 4px}
+  .sub{font-size:12px;opacity:.52;margin:0 0 30px}
+  .hang{display:flex;gap:34px;align-items:flex-start;margin-bottom:30px}
+  .o{flex:1}
+  .nhan{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;opacity:.5;margin-bottom:9px}
+  .nhan b{color:#ff8080;letter-spacing:.14em}
+  .nhan i{color:#6fe0c4;font-style:normal;letter-spacing:.14em}
+  .nut{position:relative;isolation:isolate;overflow:hidden;height:120px;border-radius:60px;
+    display:flex;align-items:center;justify-content:center;
+    font:600 30px/1 -apple-system,sans-serif;color:#fff;letter-spacing:.01em;}
+
+  /* ══ TRƯỚC — cả cục tím. background tô PHẲNG, trên đắp một mảng trắng rộng. ══ */
+  .cu{background:var(--accent);
+      box-shadow:0 1px 0 rgba(255,255,255,.16) inset, 0 8px 22px -12px rgba(0,0,0,.55);}
+  .cu::before{content:'';position:absolute;inset:-35%;z-index:-1;
+    background:
+      radial-gradient(58% 44% at 32% 26%, rgba(255,255,255,.30) 0%, rgba(255,255,255,.12) 38%, rgba(255,255,255,0) 66%),
+      radial-gradient(70% 55% at 78% 88%, rgba(12,6,46,.28) 0%, rgba(12,6,46,0) 60%);
+    filter:blur(.5px);}
+  .cu::after{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;
+    box-shadow:0 1px 1px rgba(255,255,255,.34) inset, 0 -1px 2px rgba(10,4,40,.34) inset;}
+
+  /* ══ SAU — kính trong đè lên PHIM TÍM MỎNG. Chép nguyên từ globals.css. ══ */
+  .moi{
+    background:radial-gradient(124% 156% at 50% 40%,
+      color-mix(in oklab, var(--accent) 82%, white) 0%,
+      var(--accent) 44%,
+      color-mix(in oklab, var(--accent) 80%, black) 84%,
+      color-mix(in oklab, var(--accent) 62%, black) 100%);
+    box-shadow:0 1px 0 rgba(255,255,255,.16) inset, 0 8px 22px -12px rgba(0,0,0,.55);}
+  .moi::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;
+    background:
+      radial-gradient(142% 188% at 50% 50%, transparent 0 60%, rgba(255,255,255,.10) 82%, rgba(255,255,255,.26) 100%),
+      radial-gradient(42% 32% at 34% 24%, rgba(255,255,255,.30) 0%, rgba(255,255,255,.09) 46%, rgba(255,255,255,0) 74%),
+      radial-gradient(64% 52% at 80% 92%, rgba(12,6,46,.26) 0%, rgba(12,6,46,0) 62%);
+    filter:blur(.4px);}
+  .moi::after{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;
+    box-shadow:0 1px 1px rgba(255,255,255,.40) inset, 0 -1px 2px rgba(10,4,40,.38) inset,
+               0 0 0 1px rgba(255,255,255,.07) inset;}
+
+
+  /* ══ V2 — phim tím THỤT VÀO, thấy vành kính trong bao quanh nó ══ */
+  .v2{
+    /* nền = KÍNH (gần như không màu, chỉ hút chút ambient tối) */
+    background:
+      /* ① vành kính trong ở sát mép — sáng, gần mất màu: đây là BỀ DÀY nhìn nghiêng */
+      radial-gradient(126% 168% at 50% 46%,
+        transparent 0 88%,
+        color-mix(in oklab, var(--accent) 34%, white) 95%,
+        color-mix(in oklab, var(--accent) 20%, white) 100%),
+      /* ② PHIM TÍM — thụt vào, mép phim thấy được, đặc lại ngay trước khi hết */
+      radial-gradient(112% 138% at 50% 40%,
+        color-mix(in oklab, var(--accent) 78%, white) 0%,
+        var(--accent) 40%,
+        color-mix(in oklab, var(--accent) 72%, black) 74%,
+        color-mix(in oklab, var(--accent) 52%, black) 88%,
+        transparent 93%),
+      /* ③ đáy tối dưới phim */
+      linear-gradient(180deg, color-mix(in oklab, var(--accent) 66%, black), color-mix(in oklab, var(--accent) 48%, black));
+    box-shadow:0 1px 0 rgba(255,255,255,.20) inset, 0 10px 26px -12px rgba(0,0,0,.62);}
+  .v2::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;
+    background:
+      /* tiêu sáng GỌN — chùm hội tụ, không phải mảng loang */
+      radial-gradient(30% 24% at 33% 22%, rgba(255,255,255,.42) 0%, rgba(255,255,255,.06) 52%, transparent 76%),
+      radial-gradient(56% 46% at 82% 94%, rgba(10,5,42,.30) 0%, rgba(10,5,42,0) 60%);
+    filter:blur(.3px);}
+  .v2::after{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;
+    box-shadow:
+      0 1.5px 0 rgba(255,255,255,.52) inset,      /* mép trên: ánh sáng VÀO kính */
+      0 -1.5px 3px rgba(8,3,36,.46) inset,        /* mép dưới: phản xạ toàn phần = bề dày */
+      0 0 0 1px rgba(255,255,255,.13) inset,      /* vành ngoài khối kính */
+      0 0 0 7px color-mix(in oklab, var(--accent) 24%, transparent) inset; /* MÉP PHIM nhìn qua kính */
+  }
+
+  .do{display:flex;gap:0;margin-top:13px;border-radius:8px;overflow:hidden;height:42px}
+  .do span{flex:1;display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px;
+    font-size:9.5px;letter-spacing:.1em;color:rgba(255,255,255,.82);text-shadow:0 1px 2px rgba(0,0,0,.5)}
+  .ghi{font-size:11.5px;opacity:.6;margin-top:9px;line-height:1.65}
+
+  /* ── HÀNG CỠ THẬT — nút trong app cao 44px, rộng 326px. Bản vẽ to là để SOI;
+        quyết định phải nhìn ở cỡ nó thật sự xuất hiện. ── */
+  .that{display:flex;gap:30px;align-items:flex-start;
+    margin-top:34px;padding-top:26px;border-top:1px solid rgba(255,255,255,.09)}
+  .that .nut{height:44px;width:326px;border-radius:22px;font-size:14px}
+  .that .o{flex:none}
+  .that .nhan{margin-bottom:8px}
+</style>
+<h1>Nút “Vào xưởng” — cả cục tím  ↔  kính trong trên phim tím mỏng</h1>
+<p class="sub">Cùng một màu gốc <code>#6a57f5</code>, cùng cỡ, cùng nền. Khác duy nhất ở CẤU TẠO.</p>
+
+<div class="hang">
+  <div class="o">
+    <div class="nhan"><b>TRƯỚC</b> · tím là THÂN nút, tô phẳng</div>
+    <div class="nut cu">Vào xưởng →</div>
+    <div class="do">
+      <span style="background:#6a57f5">TÂM</span>
+      <span style="background:#6a57f5">RÌA</span>
+    </div>
+    <div class="ghi">Tâm = rìa. Không có gradient quang học nào — chỉ một vệt trắng đắp lên.
+      Mắt đọc ra <b style="color:#ff8080">NHỰA</b>.</div>
+  </div>
+  <div class="o">
+    <div class="nhan"><i>SAU</i> · phim tím mỏng dưới khối kính trong</div>
+    <div class="nut moi">Vào xưởng →</div>
+    <div class="do">
+      <span style="background:color-mix(in oklab,#6a57f5 82%,white)">TÂM · nhạt</span>
+      <span style="background:color-mix(in oklab,#6a57f5 62%,black)">RÌA · đặc</span>
+    </div>
+    <div class="ghi">Rìa đặc hơn tâm vì đường quang dài hơn.
+      Đo oklab: <b style="color:#6fe0c4">L 0.647 → 0.353</b>.</div>
+  </div>
+  <div class="o">
+    <div class="nhan"><i>V2</i> · phim THỤT VÀO, kính có vành + bề dày</div>
+    <div class="nut v2">Vào xưởng →</div>
+    <div class="do">
+      <span style="background:color-mix(in oklab,#6a57f5 78%,white)">TÂM</span>
+      <span style="background:color-mix(in oklab,#6a57f5 52%,black)">MÉP PHIM</span>
+      <span style="background:color-mix(in oklab,#6a57f5 27%,white)">VÀNH KÍNH</span>
+    </div>
+    <div class="ghi">Ba vùng phân biệt được: phim ở giữa · mép phim đặc lại · vành kính trong bao ngoài.
+      Đây mới là <i style="color:#6fe0c4">CẤU TẠO</i>, không phải gradient.</div>
+  </div>
+</div>
+
+<div class="that">
+  <div class="o"><div class="nhan"><b>TRƯỚC</b> · cỡ thật 326×44</div><div class="nut cu">Vào xưởng →</div></div>
+  <div class="o"><div class="nhan"><i>SAU</i> · cỡ thật</div><div class="nut moi">Vào xưởng →</div></div>
+  <div class="o"><div class="nhan"><i>V2</i> · cỡ thật</div><div class="nut v2">Vào xưởng →</div></div>
+</div>
+<p class="ghi" style="margin-top:16px">⚠️ Hàng dưới mới là thứ người dùng thật sự thấy. Bản vẽ to ở trên chỉ để soi cấu tạo.</p>

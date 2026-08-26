@@ -1,0 +1,884 @@
+<!-- @dsCard group="Workspace" -->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InteriorFlow · Workspace · Canvas + Cửa sổ công cụ</title>
+<style>
+/* ============================================================================
+   TOKEN — chép NGUYÊN VĂN từ app/globals.css (đọc, KHÔNG sửa). Mock tự chứa nên
+   phải khai lại giá trị ở đây; mọi chỗ dùng trong bản vẽ chỉ gọi var(--…).
+   Hai khối theme tách y như globals.css để bản vẽ đúng ở CẢ hai nền.
+   ========================================================================== */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14);
+  --accent-ring:rgba(106,87,245,.55); --on-accent:#ffffff;
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --ease-apple:cubic-bezier(.32,.72,0,1);
+  --dur-fast:.18s; --dur-base:.32s;
+  --nhip-bam:130ms; --nhip-vien:170ms; --nhip-bang:220ms; --nhip-ngu-canh:300ms; --nhip-bien-hinh:460ms;
+  --tap:32px; --tap-lg:44px; --row:28px; --gap:8px;
+  --pad-card:8px 12px; --fs-ui:13px;
+  --p-img:var(--accent); --p-mask:var(--warning); --p-mat:var(--success); --p-num:var(--t3);
+  --hatch:repeating-linear-gradient(45deg,var(--field) 0 9px,var(--card) 9px 18px);
+}
+:root,:root[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --dots:#26262d; --minimap-mask:rgba(12,12,14,.7);
+  --nen-mo-panel:rgba(20,20,23,.68); --nen-mo-card:rgba(26,26,30,.82); --nen-mo-overlay:rgba(6,6,8,.56);
+  --kinh-mong:rgba(24,24,28,.84); --kinh-vua:rgba(24,24,28,.9); --kinh-dac:rgba(24,24,28,.95);
+  --vl-dac:var(--panel); --vl-gan-dac:rgba(20,20,23,.97); --vl-gan-dac-nhoe:6px;
+  --kinh-nhoe-mong:12px;
+  --kinh-mep-sang:rgba(255,255,255,.14); --kinh-vien:rgba(255,255,255,.1);
+  --kinh-chu-phu:#b4b4bd;
+  --vien-mo:rgba(255,255,255,.06);
+  --mo-vo-hieu:.5;
+  --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --p-text:#38bdf8; --p-video:#fb7185;
+}
+:root[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --dots:#ddd8ce; --minimap-mask:rgba(242,239,233,.72);
+  --nen-mo-panel:rgba(250,248,244,.7); --nen-mo-card:rgba(255,255,255,.82); --nen-mo-overlay:rgba(60,55,48,.28);
+  --kinh-mong:rgba(252,251,249,.88); --kinh-vua:rgba(252,251,249,.93); --kinh-dac:rgba(253,252,250,.96);
+  --vl-dac:var(--panel); --vl-gan-dac:rgba(250,248,244,.975);
+  --kinh-mep-sang:rgba(255,255,255,.75); --kinh-vien:rgba(0,0,0,.08);
+  --kinh-chu-phu:#5c564d;
+  --vien-mo:rgba(0,0,0,.05);
+  --mo-vo-hieu:.62;
+  --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+  --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  --p-text:#0369a1; --p-video:#be123c;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,system-ui,sans-serif;
+  font-size:var(--fs-sm);line-height:1.5;letter-spacing:-.011em;padding:30px 40px 70px}
+
+/* ---------- khung bản vẽ ---------- */
+.page{width:1440px;margin:0 auto}
+.ab{width:1440px;margin:0 auto 46px}
+.ab-h{display:flex;align-items:baseline;gap:12px;margin:0 0 6px}
+.ab-k{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:var(--r-1);
+  background:var(--accent);color:var(--on-accent);font-size:var(--fs-2xs);font-weight:700;flex:none;align-self:center}
+.ab-t{margin:0;font-size:var(--fs-lg);font-weight:var(--fw-semi);letter-spacing:-.02em}
+.ab-s{font-size:var(--fs-xs);color:var(--t3)}
+.cap{margin:8px 0 0;font-size:var(--fs-xs);color:var(--t2);max-width:1080px;text-wrap:pretty}
+.cap b{color:var(--t1);font-weight:var(--fw-semi)}
+.frame{border:1px solid var(--border);border-radius:var(--r-4);overflow:hidden;box-shadow:var(--shadow-pop);background:var(--bg);position:relative}
+
+/* ---------- nền canvas: sơ đồ dây chuyền ---------- */
+.canvas{position:relative;background-color:var(--bg);
+  background-image:radial-gradient(var(--dots) 1.1px,transparent 1.1px);background-size:24px 24px;background-position:-1px -1px}
+.wires{position:absolute;inset:0;pointer-events:none}
+
+/* ---------- rail bản đồ (sidebar) ---------- */
+.rail{width:56px;background:var(--panel);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0}
+.rail-i{width:36px;height:36px;border-radius:var(--r-2);display:flex;align-items:center;justify-content:center;color:var(--t3)}
+.rail-i.on{background:var(--accent-soft);color:var(--accent)}
+.rail-sep{width:24px;height:1px;background:var(--border);margin:4px 0}
+
+/* ---------- CỬA SỔ CÔNG CỤ ---------- */
+.win{position:absolute;border-radius:var(--r-3);border:1px solid var(--border-strong);
+  background:var(--vl-gan-dac);box-shadow:var(--shadow-node);display:flex;flex-direction:column}
+.win.sel{border-color:var(--accent);box-shadow:var(--shadow-pop),0 0 0 3px var(--accent-soft)}
+.win-head{height:30px;display:flex;align-items:center;gap:7px;padding:0 6px 0 8px;border-bottom:1px solid var(--vien-mo);flex:none}
+.win-kind{display:inline-flex;align-items:center;gap:5px;height:18px;padding:0 6px;border-radius:var(--r-1);
+  background:var(--field);color:var(--t3);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;flex:none}
+.win-t{flex:1;min-width:0;font-size:var(--fs-xs);font-weight:var(--fw-semi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.win-body{flex:1;min-height:0;display:flex}
+.win-stage{flex:1;min-width:0;position:relative;overflow:hidden;background:var(--card)}
+
+/* nấc — segmented 3 ô, ô đang bật là hình đặc */
+.nac{display:inline-flex;background:var(--field);border-radius:var(--r-1);padding:2px;gap:2px;flex:none}
+.nac b{width:20px;height:16px;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--t4)}
+.nac b.on{background:var(--panel);color:var(--t1);box-shadow:var(--shadow-node)}
+
+/* vệ tinh — LUÔN CÓ MẶT khi cửa sổ mở, ở cả ba nấc */
+.sat-col{width:38px;background:var(--panel);border-right:1px solid var(--vien-mo);
+  display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;flex:none}
+.sat-right{width:150px;background:var(--panel);border-left:1px solid var(--vien-mo);padding:8px;flex:none;overflow:hidden}
+.sat-row{display:flex;align-items:center;gap:4px;padding:5px 6px;border-top:1px solid var(--vien-mo);background:var(--panel);flex:none}
+.sat{width:26px;height:26px;border-radius:var(--r-1);display:flex;align-items:center;justify-content:center;
+  color:var(--t2);background:transparent;flex:none}
+.sat.on{background:var(--accent-soft);color:var(--accent)}
+.sat.off{opacity:var(--mo-vo-hieu);color:var(--t2)}
+.sat-lbl{font-size:10px;color:var(--t3);letter-spacing:.05em;text-transform:uppercase;font-weight:700;margin:2px 0 4px}
+
+/* cổng nối */
+.port{position:absolute;width:11px;height:11px;border-radius:var(--r-full);border:2px solid var(--bg);top:50%;margin-top:-6px}
+.port.in{left:-6px}.port.out{right:-6px}
+.port-tag{position:absolute;top:50%;transform:translateY(-50%);font-size:10px;color:var(--t3);white-space:nowrap}
+
+/* thanh tiến trình — HAI LOẠI, khác HÌNH DẠNG */
+.pg-do{display:flex;align-items:center;gap:6px}
+.pg-tick{display:flex;gap:2px}
+.pg-tick i{width:4px;height:9px;border-radius:1px;background:var(--t5)}
+.pg-tick i.f{background:var(--accent)}
+.pg-num{font-size:10px;color:var(--t3);font-variant-numeric:tabular-nums}
+.pg-khongdo{position:relative;height:3px;border-radius:var(--r-full);background:var(--field);overflow:hidden}
+.pg-khongdo::after{content:"";position:absolute;top:0;bottom:0;width:34%;border-radius:var(--r-full);
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:sweep 1.6s var(--ease-apple) infinite}
+@keyframes sweep{0%{left:-40%}100%{left:104%}}
+
+/* chip · nhãn nhỏ */
+.chip{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 7px;border-radius:var(--r-full);
+  background:var(--field);color:var(--t2);font-size:10px;font-weight:var(--fw-semi);white-space:nowrap}
+.chip.acc{background:var(--accent-soft);color:var(--accent)}
+.dot{width:6px;height:6px;border-radius:var(--r-full);flex:none}
+.ph{position:absolute;left:6px;top:6px;z-index:2;height:15px;padding:0 5px;border-radius:4px;background:var(--nen-mo-card);
+  color:var(--kinh-chu-phu);font-size:9px;font-weight:700;letter-spacing:.06em;display:inline-flex;align-items:center}
+
+/* thanh công cụ CHUNG — chỉ lệnh dùng chung 3 chặng */
+.dock{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;height:var(--tap-lg);display:flex;align-items:center;gap:2px;
+  padding:0 6px;border-radius:var(--r-full);background:var(--kinh-mong);border:1px solid var(--kinh-vien);
+  box-shadow:var(--shadow-pop);backdrop-filter:blur(var(--kinh-nhoe-mong));-webkit-backdrop-filter:blur(var(--kinh-nhoe-mong))}
+.dock-b{height:32px;min-width:32px;padding:0 9px;border-radius:var(--r-full);display:flex;align-items:center;gap:6px;
+  color:var(--t2);font-size:var(--fs-2xs);font-weight:var(--fw-semi)}
+.dock-b.on{background:var(--accent);color:var(--on-accent)}
+.dock-sep{width:1px;height:18px;background:var(--vien-mo);margin:0 4px}
+
+/* ô giải nghĩa — nơi LÝ DO của lệnh mờ sống */
+.giai{width:236px;border-radius:var(--r-3);background:var(--vl-dac);border:1px solid var(--border);
+  box-shadow:var(--shadow-pop);padding:10px;color:var(--t2)}
+.giai-hinh{height:66px;border-radius:var(--r-2);background:var(--field);border:1px solid var(--vien-mo);
+  display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+.giai-t{font-size:var(--fs-xs);font-weight:var(--fw-semi);color:var(--t1);display:flex;align-items:center;gap:6px}
+.giai-d{font-size:var(--fs-2xs);color:var(--t3);margin-top:4px;text-wrap:pretty}
+.giai-ly{margin-top:8px;padding:6px 7px;border-radius:var(--r-1);background:var(--field);
+  border-left:2px solid var(--warning);font-size:var(--fs-2xs);color:var(--t2);text-wrap:pretty}
+.kbd{display:inline-flex;align-items:center;height:15px;padding:0 4px;border-radius:4px;background:var(--field);
+  border:1px solid var(--vien-mo);font-size:9px;color:var(--t3);font-weight:700}
+
+/* bảng nhỏ */
+.tb{width:100%;border-collapse:collapse;font-size:var(--fs-2xs)}
+.tb td{padding:4px 6px;border-bottom:1px solid var(--vien-mo);color:var(--t2)}
+.tb td:last-child{text-align:right;color:var(--t3);font-variant-numeric:tabular-nums}
+.note{font-size:var(--fs-2xs);color:var(--t3)}
+
+.btn{height:30px;padding:0 14px;border:1px solid var(--border);border-radius:var(--r-2);background:var(--panel);
+  color:var(--t2);font-weight:var(--fw-semi);font-size:var(--fs-xs);font-family:inherit;cursor:pointer}
+.btn:hover{background:var(--hover);color:var(--t1)}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms !important}
+  .pg-khongdo::after{animation:none;left:0;width:100%;
+    background:repeating-linear-gradient(90deg,var(--accent) 0 6px,transparent 6px 12px)}
+}
+</style>
+</head>
+<body>
+
+<div class="page" style="display:flex;align-items:flex-end;justify-content:space-between;gap:32px;margin-bottom:26px">
+  <div>
+    <div style="display:flex;align-items:center;gap:11px">
+      <div style="width:26px;height:26px;border-radius:8px;background:var(--accent)"></div>
+      <h1 style="margin:0;font-size:var(--fs-xl);font-weight:var(--fw-semi);letter-spacing:-.02em">Workspace · Canvas + Cửa sổ công cụ</h1>
+    </div>
+    <div style="margin-top:6px;font-size:var(--fs-xs);color:var(--t3);max-width:940px;text-wrap:pretty">
+      <b style="color:var(--t2)">Canvas là SƠ ĐỒ DÂY CHUYỀN · Cửa sổ là XƯỞNG của một công đoạn · Chặng là KHUNG NHÌN · Sidebar là BẢN ĐỒ.</b>
+      Cửa sổ là công dân của canvas: có cổng vào/ra, đi theo pan/zoom, mở được nhiều cái và nối được vào nhau —
+      không phải hộp thoại. Dữ liệu trong bản vẽ là dữ liệu mẫu; ảnh là PLACEHOLDER.
+    </div>
+  </div>
+  <button class="btn" onclick="var r=document.documentElement;r.setAttribute('data-theme',r.getAttribute('data-theme')==='light'?'dark':'light')">Đổi nền sáng / tối</button>
+</div>
+
+<!-- ══════════════════════════════ A ══════════════════════════════ -->
+<section class="ab">
+  <div class="ab-h"><span class="ab-k">A</span><h2 class="ab-t">Canvas · ba cửa sổ KHÁC LOẠI nối thành một dây chuyền</h2>
+    <span class="ab-s">1440 × 720</span></div>
+
+  <div class="frame" style="display:flex;height:720px">
+    <!-- sidebar = BẢN ĐỒ -->
+    <nav class="rail">
+      <div class="rail-i" title="Tổng quan"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg></div>
+      <div class="rail-i" title="Files"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h3l1.6 2H15.5A1.5 1.5 0 0 1 17 8.5v6A1.5 1.5 0 0 1 15.5 16h-11A1.5 1.5 0 0 1 3 14.5Z"/></svg></div>
+      <div class="rail-i" title="Thư viện"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h3v12H4zM9 4h3v12H9z"/><path d="m14.2 4.6 2.6.7-2.6 10.4-2.2-.6z"/></svg></div>
+      <div class="rail-sep"></div>
+      <div class="rail-i" title="2D Kỹ thuật"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 16 10 4l7 12z"/></svg></div>
+      <div class="rail-i on" title="3D Thiết kế — đang ở đây"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M10 3 17 7v6l-7 4-7-4V7z"/><path d="M10 3v14M3 7l7 4 7-4"/></svg></div>
+      <div class="rail-i" title="Trình bày"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="14" height="9" rx="1.5"/><path d="M8 16h4"/></svg></div>
+    </nav>
+
+    <div class="canvas" style="flex:1;min-width:0">
+      <!-- nhãn ngữ cảnh canvas -->
+      <div style="position:absolute;left:18px;top:14px;display:flex;align-items:center;gap:8px">
+        <span class="chip acc">Dây chuyền · Phòng khách</span>
+        <span class="chip">4 công đoạn · 3 dây</span>
+        <span class="note">Hình dạng dây chuyền là SỰ THẬT CHUNG — ai mở cũng thấy y hệt.</span>
+      </div>
+
+      <!-- dây nối -->
+      <svg class="wires" viewBox="0 0 1384 720" preserveAspectRatio="none">
+        <path d="M512 268 C 560 268, 552 246, 604 246" fill="none" stroke="var(--p-img)" stroke-width="1.8"/>
+        <path d="M856 246 C 900 246, 872 262, 916 262" fill="none" stroke="var(--p-img)" stroke-width="1.8"/>
+        <circle cx="558" cy="258" r="8.5" fill="var(--panel)" stroke="var(--border-strong)" stroke-width="1"/>
+        <path d="M554 258h8M558 254v8" stroke="var(--t3)" stroke-width="1.4" stroke-linecap="round"/>
+        <circle cx="886" cy="254" r="8.5" fill="var(--panel)" stroke="var(--border-strong)" stroke-width="1"/>
+        <path d="M882 254h8M886 250v8" stroke="var(--t3)" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+
+      <!-- ① cửa sổ 3D · nấc VỪA -->
+      <div class="win sel" style="left:70px;top:118px;width:430px;height:300px">
+        <div class="win-head">
+          <span class="win-kind"><span class="dot" style="background:var(--p-mat)"></span>3D</span>
+          <span class="win-t">Máy ảnh &amp; khối · three.camera</span>
+          <span class="chip"><span class="dot" style="background:var(--success)"></span>Sẵn sàng</span>
+          <span class="nac"><b>▪</b><b class="on">▭</b><b>⛶</b></span>
+        </div>
+        <div class="win-body">
+          <div class="sat-col">
+            <div class="sat on" title="Đặt máy ảnh"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="10" height="9" rx="1.5"/><path d="m13 10 4-2.5v7L13 12z"/></svg></div>
+            <div class="sat on" title="Tiêu cự"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="6"/><path d="M10 4v12"/></svg></div>
+            <div class="sat on" title="Tỉ lệ khung"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="14" height="10" rx="1.5"/></svg></div>
+            <div class="sat off" title="Chỉnh đứng 2 điểm tụ"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 16 8 4l4 12M14 4v12"/></svg></div>
+            <div class="sat off" title="Độ sâu trường ảnh"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="3"/><circle cx="10" cy="10" r="6.5" stroke-dasharray="2 2.4"/></svg></div>
+            <div class="sat off" title="Đường quay"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 13c4-8 10-8 14 0"/><circle cx="14" cy="12.4" r="1.8"/></svg></div>
+            <div style="margin-top:auto;font-size:9px;color:var(--t4);font-weight:700">4/13</div>
+          </div>
+          <div class="win-stage">
+            <span class="ph">PLACEHOLDER</span>
+            <div style="position:absolute;inset:0;background:
+              linear-gradient(180deg,var(--field) 0%,var(--card) 62%,var(--panel) 100%)"></div>
+            <svg viewBox="0 0 260 200" style="position:absolute;inset:0;width:100%;height:100%" fill="none"
+              stroke="var(--t4)" stroke-width="1">
+              <path d="M0 128h260M40 200 96 128M220 200 168 128" opacity=".55"/>
+              <path d="M74 128V76l52-16 52 16v52" stroke="var(--t2)" stroke-width="1.3"/>
+              <path d="M74 76 126 60l52 16-52 16z" stroke="var(--t2)" stroke-width="1.3"/>
+              <rect x="96" y="96" width="34" height="32" stroke="var(--accent)" stroke-width="1.6"/>
+              <path d="M150 104h26v24h-26z" stroke="var(--t3)"/>
+            </svg>
+            <div style="position:absolute;left:8px;bottom:8px;display:flex;gap:6px">
+              <span class="chip">tiêu cự 28 mm</span><span class="chip">tầm mắt 1 650</span>
+            </div>
+          </div>
+          <div class="sat-right">
+            <div class="sat-lbl">Máy ảnh</div>
+            <table class="tb"><tr><td>Tiêu cự</td><td>28 mm</td></tr>
+              <tr><td>Cao độ</td><td>1 650</td></tr>
+              <tr><td>Tỉ lệ khung</td><td>3 : 2</td></tr>
+              <tr><td>Xoay</td><td>−14°</td></tr></table>
+            <div class="sat-lbl" style="margin-top:10px">Ra</div>
+            <div style="height:44px;border-radius:var(--r-1);background:var(--hatch);border:1px solid var(--vien-mo);position:relative">
+              <span class="ph" style="left:4px;top:4px">KHUNG</span></div>
+          </div>
+        </div>
+        <div class="port in" style="background:var(--p-mat)"></div>
+        <div class="port out" style="background:var(--p-img)"></div>
+        <div class="port-tag" style="right:-56px">ảnh</div>
+      </div>
+
+      <!-- ② cửa sổ ẢNH · nấc THU · ĐANG CHẠY (không đo được) -->
+      <div class="win" style="left:604px;top:186px;width:252px;height:124px">
+        <div class="win-head">
+          <span class="win-kind"><span class="dot" style="background:var(--p-img)"></span>Ảnh</span>
+          <span class="win-t">Bám ý · ai.text2image</span>
+          <span class="nac"><b class="on">▪</b><b>▭</b><b>⛶</b></span>
+        </div>
+        <div class="win-body" style="flex-direction:column">
+          <div style="flex:1;display:flex;gap:8px;padding:8px;align-items:center">
+            <div style="width:70px;height:52px;border-radius:var(--r-1);background:var(--hatch);border:1px solid var(--vien-mo);position:relative;flex:none">
+              <span class="ph" style="left:3px;top:3px;font-size:8px">PLACEHOLDER</span></div>
+            <div style="min-width:0;flex:1">
+              <div style="font-size:var(--fs-2xs);color:var(--t2)">Đang gọi máy chủ ảnh</div>
+              <div class="pg-khongdo" style="margin:6px 0 5px"></div>
+              <div class="note">Không đo được — không hiện phần trăm.</div>
+            </div>
+          </div>
+          <div class="sat-row">
+            <div class="sat on" style="width:22px;height:22px"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h12M4 10h12M4 14h7"/></svg></div>
+            <div class="sat off" style="width:22px;height:22px"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="12" height="12" rx="2"/><path d="M4 13l4-4 4 4"/></svg></div>
+            <div class="sat off" style="width:22px;height:22px"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="5"/><path d="M10 5v10"/></svg></div>
+            <div class="sat off" style="width:22px;height:22px"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 15 15 5M9 5h6v6"/></svg></div>
+            <span class="note" style="margin-left:auto">vệ tinh · 1/4 chạy được</span>
+          </div>
+        </div>
+        <div class="port in" style="background:var(--p-img)"></div>
+        <div class="port out" style="background:var(--p-img)"></div>
+      </div>
+
+      <!-- ③ cửa sổ VIDEO · nấc VỪA -->
+      <div class="win" style="left:916px;top:112px;width:400px;height:288px">
+        <div class="win-head">
+          <span class="win-kind"><span class="dot" style="background:var(--p-video)"></span>Video</span>
+          <span class="win-t">Dựng phim · ai.image2video</span>
+          <span class="chip"><span class="dot" style="background:var(--warning)"></span>Chờ đầu vào</span>
+          <span class="nac"><b>▪</b><b class="on">▭</b><b>⛶</b></span>
+        </div>
+        <div class="win-body">
+          <div class="sat-col">
+            <div class="sat on" title="Cắt cảnh"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="14" r="2.2"/><circle cx="14" cy="14" r="2.2"/><path d="M7.6 12.4 15 5M12.4 12.4 5 5"/></svg></div>
+            <div class="sat off" title="Đường chuyển động"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 14c5 0 4-8 9-8h5"/></svg></div>
+            <div class="sat off" title="Nhạc nền"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 14V5l8-1.6V13"/><circle cx="5.5" cy="14.4" r="1.8"/><circle cx="13.5" cy="12.8" r="1.8"/></svg></div>
+            <div class="sat off" title="Tốc độ"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="11" r="5.6"/><path d="M10 11 13 8"/></svg></div>
+            <div style="margin-top:auto;font-size:9px;color:var(--t4);font-weight:700">1/4</div>
+          </div>
+          <div class="win-stage" style="display:flex;flex-direction:column">
+            <div style="flex:1;position:relative;background:var(--hatch)">
+              <span class="ph">PLACEHOLDER · khung phim</span>
+            </div>
+            <div style="height:52px;border-top:1px solid var(--vien-mo);background:var(--panel);padding:7px 8px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="note" style="font-weight:700">Dòng thời gian</span>
+                <span class="note">0:00 — 0:08</span>
+              </div>
+              <div style="display:flex;gap:3px;margin-top:6px">
+                <div style="flex:3;height:16px;border-radius:3px;background:var(--accent-soft);border:1px solid var(--accent-ring)"></div>
+                <div style="flex:2;height:16px;border-radius:3px;background:var(--field);border:1px solid var(--vien-mo)"></div>
+                <div style="flex:4;height:16px;border-radius:3px;background:var(--field);border:1px solid var(--vien-mo)"></div>
+              </div>
+            </div>
+          </div>
+          <div class="sat-right" style="width:130px">
+            <div class="sat-lbl">Phim</div>
+            <table class="tb"><tr><td>Dài</td><td>8 s</td></tr><tr><td>Khung/giây</td><td>24</td></tr>
+              <tr><td>Khổ</td><td>16 : 9</td></tr></table>
+            <div class="giai-ly" style="margin-top:10px">Chờ ảnh từ công đoạn trước — dây đã nối, chưa có kết quả.</div>
+          </div>
+        </div>
+        <div class="port in" style="background:var(--p-img)"></div>
+        <div class="port out" style="background:var(--p-video)"></div>
+      </div>
+
+      <!-- ④ cửa sổ THẢO LUẬN · nấc THU · KHÔNG có cổng ra -->
+      <div class="win" style="left:250px;top:470px;width:266px;height:120px">
+        <div class="win-head">
+          <span class="win-kind"><span class="dot" style="background:var(--p-num)"></span>Bàn bạc</span>
+          <span class="win-t">Chốt hướng vật liệu · ban-bac</span>
+          <span class="nac"><b class="on">▪</b><b>▭</b><b>⛶</b></span>
+        </div>
+        <div class="win-body" style="flex-direction:column;padding:8px;gap:6px">
+          <div style="display:flex;gap:5px">
+            <div style="flex:1;height:34px;border-radius:var(--r-1);background:var(--hatch);border:1px solid var(--vien-mo)"></div>
+            <div style="flex:1;height:34px;border-radius:var(--r-1);background:var(--hatch);border:1px solid var(--vien-mo)"></div>
+            <div style="flex:1;height:34px;border-radius:var(--r-1);background:var(--accent-soft);border:1px solid var(--accent)"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="chip acc">Đã chốt · gỗ ấm, nhám</span>
+            <span class="note" style="margin-left:auto">không có cổng ra</span>
+          </div>
+        </div>
+        <div class="port in" style="background:var(--p-num)"></div>
+      </div>
+
+      <!-- thanh công cụ CHUNG -->
+      <div class="dock">
+        <div class="dock-b on"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 3 15 10l-4.4 1.2L9 16z"/></svg>Chọn</div>
+        <div class="dock-b"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 3v14M3 10h14M10 3 8 5.4M10 3l2 2.4M3 10l2.4-2M3 10l2.4 2"/></svg>Di chuyển</div>
+        <div class="dock-b"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M15.5 10a5.5 5.5 0 1 1-2-4.2"/><path d="M16 3v3.6h-3.6"/></svg>Xoay</div>
+        <div class="dock-b"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="7" width="14" height="6" rx="1.5"/><path d="M7 7v3M11 7v3M15 7v3"/></svg>Đo</div>
+        <div class="dock-sep"></div>
+        <div class="dock-b"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="10" y="10" width="7" height="7" rx="1.5"/></svg>Nhóm</div>
+        <div class="dock-b"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 10h12M11 5l5 5-5 5"/></svg>Chạy dây</div>
+        <div class="dock-sep"></div>
+        <div class="dock-b"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 9.5A5.5 5.5 0 0 1 15 8"/><path d="M15 4v4h-4"/></svg>Lùi</div>
+      </div>
+      <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:2px;font-size:10px;color:var(--t4);white-space:nowrap">
+        Thanh CHUNG — chỉ 7 lệnh giống hệt ở cả 3 chặng. Lệnh chuyên sâu của mỗi môi trường ở LẠI trong cửa sổ của nó.
+      </div>
+    </div>
+  </div>
+  <p class="cap"><b>Đọc ra được điều gì:</b> ba xưởng khác loại (3D · ảnh · video) đứng trên MỘT nền, nối bằng dây có màu theo
+  kiểu dữ liệu; nút <b>+</b> trên dây để chèn công đoạn vào giữa. Cửa sổ thứ tư là loại <b>bàn bạc</b> — nó chỉ có cổng vào,
+  <b>không có cổng ra</b>, vì sản phẩm của nó là một quyết định chứ không phải một tệp.</p>
+</section>
+
+<!-- ══════════════════════════════ B ══════════════════════════════ -->
+<section class="ab">
+  <div class="ab-h"><span class="ab-k">B</span><h2 class="ab-t">Nấc THU — công đoạn này là gì, đã xong chưa?</h2>
+    <span class="ab-s">296 × 176 · trên canvas</span></div>
+
+  <div class="frame canvas" style="height:270px;display:flex;align-items:center;gap:40px;padding:0 40px">
+    <div class="win" style="position:relative;left:0;top:0;width:296px;height:176px">
+      <div class="win-head">
+        <span class="win-kind"><span class="dot" style="background:var(--p-img)"></span>Ảnh</span>
+        <span class="win-t">Bám ý · phòng khách</span>
+        <span class="nac"><b class="on">▪</b><b>▭</b><b>⛶</b></span>
+      </div>
+      <div class="win-body" style="flex-direction:column">
+        <div style="flex:1;display:flex;gap:9px;padding:9px">
+          <div style="width:96px;border-radius:var(--r-1);background:var(--hatch);border:1px solid var(--vien-mo);position:relative;flex:none">
+            <span class="ph" style="left:3px;top:3px;font-size:8px">PLACEHOLDER</span></div>
+          <div style="min-width:0;flex:1;display:flex;flex-direction:column;gap:6px">
+            <span class="chip"><span class="dot" style="background:var(--success)"></span>Xong · 3 bản</span>
+            <div class="pg-do"><span class="pg-tick"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></span><span class="pg-num">8/8</span></div>
+            <div class="note">Bản chọn: <span style="color:var(--t2)">B · 15:02</span></div>
+            <div class="note" style="margin-top:auto">Ra → Dựng phim</div>
+          </div>
+        </div>
+        <div class="sat-row">
+          <div class="sat on" style="width:22px;height:22px"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h12M4 10h12M4 14h7"/></svg></div>
+          <div class="sat on" style="width:22px;height:22px"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="12" height="12" rx="2"/><path d="M4 13l4-4 4 4"/></svg></div>
+          <div class="sat off" style="width:22px;height:22px"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="5"/><path d="M10 5v10"/></svg></div>
+          <div class="sat off" style="width:22px;height:22px"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 15 15 5M9 5h6v6"/></svg></div>
+          <span class="note" style="margin-left:auto">vệ tinh vẫn ở đây</span>
+        </div>
+      </div>
+      <div class="port in" style="background:var(--p-img)"></div>
+      <div class="port out" style="background:var(--p-img)"></div>
+    </div>
+
+    <div style="max-width:640px">
+      <div style="font-size:var(--fs-md);font-weight:var(--fw-semi);margin-bottom:6px">Lớp tin của nấc này: DANH TÍNH · TRẠNG THÁI · KẾT QUẢ MỚI NHẤT</div>
+      <div class="note" style="font-size:var(--fs-xs);color:var(--t2);text-wrap:pretty">
+        Nấc THU trả lời đúng một câu: <b>“trạm này xong chưa, ra cái gì”</b> — đủ để quét mắt qua cả dây chuyền 20 trạm mà
+        không phải mở cái nào. Nó <b>không</b> chứa môi trường sống: không viewport, không núm chỉnh. Vệ tinh vẫn có mặt
+        (mở cửa sổ LÀ hành vi bày ra), chỉ đổi mật độ sang một hàng nén — không có lớp giấu thứ hai.
+      </div>
+    </div>
+  </div>
+  <p class="cap"><b>Câu hỏi nấc THU trả lời:</b> “Công đoạn này là gì và đã xong chưa?” · <b>Lớp tin thêm so với không có gì:</b>
+  danh tính trạm + trạng thái + ảnh kết quả mới nhất, ở kích thước quét-mắt-được trên sơ đồ.</p>
+</section>
+
+<!-- ══════════════════════════════ C ══════════════════════════════ -->
+<section class="ab">
+  <div class="ab-h"><span class="ab-k">C</span><h2 class="ab-t">Nấc VỪA — làm việc trong công đoạn này</h2>
+    <span class="ab-s">720 × 420 · vẽ ở tỉ lệ MÀN HÌNH, thoát khỏi phép zoom của canvas</span></div>
+
+  <div class="frame canvas" style="height:500px;position:relative">
+    <div class="win sel" style="left:40px;top:40px;width:720px;height:420px">
+      <div class="win-head" style="height:34px">
+        <span class="win-kind"><span class="dot" style="background:var(--p-img)"></span>Ảnh</span>
+        <span class="win-t">Bám ý · phòng khách — dựa trên khung máy ảnh 28 mm</span>
+        <span class="chip"><span class="dot" style="background:var(--accent)"></span>Đang sửa</span>
+        <span class="nac"><b>▪</b><b class="on">▭</b><b>⛶</b></span>
+      </div>
+      <div class="win-body">
+        <div class="sat-col" style="width:44px">
+          <div class="sat on"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h12M4 10h12M4 14h7"/></svg></div>
+          <div class="sat on"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m4 13 4-4 3 3 5-5"/><rect x="3" y="4" width="14" height="12" rx="2"/></svg></div>
+          <div class="sat on"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 14 14 6M6 6l8 8"/><circle cx="10" cy="10" r="7"/></svg></div>
+          <div class="sat off"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="5"/><path d="M10 5v10"/></svg></div>
+          <div class="sat off"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 15 15 5M9 5h6v6"/></svg></div>
+          <div class="sat off"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="12" height="12" rx="2"/><path d="M4 13l4-4 4 4"/></svg></div>
+          <div style="margin-top:auto;font-size:9px;color:var(--t4);font-weight:700">3/6</div>
+        </div>
+
+        <div class="win-stage" style="display:flex;flex-direction:column">
+          <div style="flex:1;position:relative;background:var(--hatch)">
+            <span class="ph">PLACEHOLDER · ảnh phối cảnh</span>
+            <!-- mảng đã định danh -->
+            <div style="position:absolute;left:9%;top:52%;width:44%;height:36%;border:1.5px solid var(--p-mat);border-radius:4px"></div>
+            <div style="position:absolute;left:9%;top:52%;transform:translateY(-100%);margin-top:-3px"><span class="chip" style="background:var(--panel)"><span class="dot" style="background:var(--p-mat)"></span>Sàn · gỗ sồi</span></div>
+            <div style="position:absolute;right:10%;top:16%;width:26%;height:40%;border:1.5px dashed var(--accent);border-radius:4px"></div>
+            <div style="position:absolute;right:10%;top:16%;transform:translateY(-100%);margin-top:-3px"><span class="chip acc">Mảng đang sửa</span></div>
+          </div>
+          <div style="height:44px;border-top:1px solid var(--vien-mo);background:var(--panel);display:flex;align-items:center;gap:8px;padding:0 10px">
+            <span class="note" style="font-weight:700">Mức bám</span>
+            <div style="flex:1;height:4px;border-radius:var(--r-full);background:var(--field);position:relative">
+              <div style="position:absolute;left:0;top:0;bottom:0;width:68%;border-radius:var(--r-full);background:var(--accent)"></div>
+              <div style="position:absolute;left:68%;top:-5px;width:14px;height:14px;margin-left:-7px;border-radius:var(--r-full);background:var(--panel);border:1px solid var(--border-strong);box-shadow:var(--shadow-node)"></div>
+            </div>
+            <span class="pg-num">0,68</span>
+          </div>
+        </div>
+
+        <div class="sat-right" style="width:196px">
+          <div class="sat-lbl">Lời nhắc</div>
+          <div style="min-height:54px;border-radius:var(--r-2);background:var(--field);border:1px solid var(--vien-mo);padding:6px 7px;font-size:var(--fs-2xs);color:var(--t2);text-wrap:pretty">
+            Phòng khách ánh sáng chiều, sàn gỗ sồi nhám, tường vôi ấm.</div>
+          <div class="sat-lbl" style="margin-top:10px">Khoá theo khung</div>
+          <table class="tb">
+            <tr><td>Hình học</td><td>khoá</td></tr>
+            <tr><td>Bố cục</td><td>khoá</td></tr>
+            <tr><td>Vật liệu</td><td>mở</td></tr>
+          </table>
+          <div class="sat-lbl" style="margin-top:10px">Bản đã sinh</div>
+          <div style="display:flex;gap:5px">
+            <div style="flex:1;height:38px;border-radius:var(--r-1);background:var(--hatch);border:1px solid var(--vien-mo)"></div>
+            <div style="flex:1;height:38px;border-radius:var(--r-1);background:var(--hatch);border:2px solid var(--accent)"></div>
+            <div style="flex:1;height:38px;border-radius:var(--r-1);background:var(--hatch);border:1px solid var(--vien-mo)"></div>
+          </div>
+        </div>
+      </div>
+      <div class="port in" style="background:var(--p-img)"></div>
+      <div class="port out" style="background:var(--p-img)"></div>
+    </div>
+
+    <div style="position:absolute;right:26px;top:60px;width:560px;text-align:right">
+      <div class="note" style="color:var(--t2);text-wrap:pretty">Từ nấc VỪA trở lên, cửa sổ <b>vẽ ở tỉ lệ màn hình</b> —
+      canvas trôi phía sau. Nếu để nó co giãn theo zoom của canvas thì viewport bên trong mờ nhoè và hai cử chỉ pan/zoom
+      đánh nhau.</div>
+    </div>
+  </div>
+  <p class="cap"><b>Câu hỏi nấc VỪA trả lời:</b> “Tôi làm việc ở trạm này thế nào?” · <b>Lớp tin thêm so với THU:</b>
+  MÔI TRƯỜNG SỐNG (mặt làm việc thật, sửa được tại chỗ) + núm chỉnh và tham số — thứ nấc THU không thể chứa vì
+  ở cỡ đó không thao tác được.</p>
+</section>
+
+<!-- ══════════════════════════════ D ══════════════════════════════ -->
+<section class="ab">
+  <div class="ab-h"><span class="ab-k">D</span><h2 class="ab-t">Nấc TOÀN MÀN — kết quả này có đúng không?</h2>
+    <span class="ab-s">1440 × 700 · canvas lùi ra sau, KHÔNG rời dây chuyền</span></div>
+
+  <div class="frame" style="height:700px;display:flex;flex-direction:column;background:var(--panel)">
+    <!-- dải dây chuyền: chứng minh vẫn đứng trên cùng một dây -->
+    <div style="height:38px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--nen-mo-panel);border-bottom:1px solid var(--border)">
+      <span class="chip">Dây chuyền · Phòng khách</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="chip"><span class="dot" style="background:var(--p-mat)"></span>3D</span>
+        <svg width="14" height="8" viewBox="0 0 14 8"><path d="M0 4h11M8 1l3 3-3 3" fill="none" stroke="var(--t4)" stroke-width="1.4"/></svg>
+        <span class="chip acc"><span class="dot" style="background:var(--accent)"></span>Ảnh · đang mở</span>
+        <svg width="14" height="8" viewBox="0 0 14 8"><path d="M0 4h11M8 1l3 3-3 3" fill="none" stroke="var(--t4)" stroke-width="1.4"/></svg>
+        <span class="chip"><span class="dot" style="background:var(--p-video)"></span>Video</span>
+      </div>
+      <span class="note" style="margin-left:auto">Thu về nấc vừa để quay lại sơ đồ</span>
+      <span class="nac"><b>▪</b><b>▭</b><b class="on">⛶</b></span>
+    </div>
+
+    <div style="flex:1;min-height:0;display:flex">
+      <div class="sat-col" style="width:48px;background:var(--panel);border-right:1px solid var(--border)">
+        <div class="sat on"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h12M4 10h12M4 14h7"/></svg></div>
+        <div class="sat on"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m4 13 4-4 3 3 5-5"/><rect x="3" y="4" width="14" height="12" rx="2"/></svg></div>
+        <div class="sat on"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 14 14 6M6 6l8 8"/><circle cx="10" cy="10" r="7"/></svg></div>
+        <div class="sat on"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="14" height="10" rx="1.5"/><path d="M8 5v10"/></svg></div>
+        <div class="sat off"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="5"/><path d="M10 5v10"/></svg></div>
+        <div class="sat off"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 15 15 5M9 5h6v6"/></svg></div>
+        <div class="sat off"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="12" height="12" rx="2"/><path d="M4 13l4-4 4 4"/></svg></div>
+        <div style="margin-top:auto;font-size:9px;color:var(--t4);font-weight:700">4/13</div>
+      </div>
+
+      <!-- LỚP TIN RIÊNG CỦA TOÀN MÀN: ĐỐI CHIẾU Ở TỈ LỆ THẬT -->
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:var(--bg)">
+        <div style="height:30px;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--border)">
+          <span class="note" style="font-weight:700;color:var(--t2);letter-spacing:.05em;text-transform:uppercase">Đối chiếu · tỉ lệ thật 1:1</span>
+          <span class="chip">A · 15:41</span><span class="chip acc">B · 16:02 · đang chọn</span>
+          <span class="note" style="margin-left:auto">Khoá cuộn hai bên</span>
+        </div>
+        <div style="flex:1;min-height:0;display:flex;gap:1px;background:var(--border)">
+          <div style="flex:1;position:relative;background:var(--hatch)">
+            <span class="ph">PLACEHOLDER · bản A ở 1:1</span>
+            <div style="position:absolute;left:10px;bottom:10px" class="chip">gỗ sồi · nhám</div>
+          </div>
+          <div style="flex:1;position:relative;background:var(--hatch);outline:2px solid var(--accent);outline-offset:-2px">
+            <span class="ph">PLACEHOLDER · bản B ở 1:1</span>
+            <div style="position:absolute;left:10px;bottom:10px" class="chip acc">óc chó · nhám</div>
+          </div>
+        </div>
+        <!-- phả hệ -->
+        <div style="height:92px;flex:none;border-top:1px solid var(--border);background:var(--panel);padding:8px 12px">
+          <div class="sat-lbl" style="margin:0 0 6px">Phả hệ của kết quả đang chọn</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span class="chip"><span class="dot" style="background:var(--p-mat)"></span>Khung máy ảnh 28 mm · three.camera</span>
+            <svg width="16" height="8" viewBox="0 0 14 8"><path d="M0 4h11M8 1l3 3-3 3" fill="none" stroke="var(--t4)" stroke-width="1.4"/></svg>
+            <span class="chip"><span class="dot" style="background:var(--p-num)"></span>Quyết định “gỗ ấm, nhám” · ban-bac</span>
+            <svg width="16" height="8" viewBox="0 0 14 8"><path d="M0 4h11M8 1l3 3-3 3" fill="none" stroke="var(--t4)" stroke-width="1.4"/></svg>
+            <span class="chip"><span class="dot" style="background:var(--p-mat)"></span>matId · OAK-NAT-18</span>
+            <svg width="16" height="8" viewBox="0 0 14 8"><path d="M0 4h11M8 1l3 3-3 3" fill="none" stroke="var(--t4)" stroke-width="1.4"/></svg>
+            <span class="chip acc">Bản B</span>
+          </div>
+          <div class="note" style="margin-top:7px">Kết quả rời cửa sổ mang theo định nghĩa này — đó là thứ công đoạn sau nhận được ở cổng vào.</div>
+        </div>
+      </div>
+
+      <!-- bảng thông số ĐẦY ĐỦ + ô giải nghĩa cho lệnh mờ -->
+      <div style="width:300px;flex:none;background:var(--panel);border-left:1px solid var(--border);padding:10px;overflow:hidden">
+        <div class="sat-lbl" style="margin-top:0">Thông số đầy đủ</div>
+        <table class="tb">
+          <tr><td>Khung nguồn</td><td>28 mm · 3:2</td></tr>
+          <tr><td>Mức bám hình học</td><td>0,92</td></tr>
+          <tr><td>Mức bám vật liệu</td><td>0,68</td></tr>
+          <tr><td>Hạt giống</td><td>4 481 902</td></tr>
+          <tr><td>Số bước</td><td>32</td></tr>
+          <tr><td>Mảng đã định danh</td><td>7 / 9</td></tr>
+          <tr><td>Khoá sắc độ</td><td>đạt</td></tr>
+        </table>
+
+        <div class="sat-lbl" style="margin-top:12px">Lệnh chưa dùng được · 9</div>
+        <div class="giai" style="width:100%;margin-top:4px">
+          <div class="giai-hinh">
+            <svg width="112" height="46" viewBox="0 0 112 46" fill="none" stroke="var(--t3)" stroke-width="1.3">
+              <rect x="4" y="6" width="44" height="34" rx="3"/>
+              <path d="M10 40 26 14l16 26" stroke="var(--t2)"/>
+              <path d="M56 23h12M64 19l4 4-4 4" stroke="var(--t4)"/>
+              <rect x="76" y="6" width="32" height="34" rx="3" stroke="var(--accent)"/>
+              <path d="M82 40V16h20v24" stroke="var(--accent)"/>
+            </svg>
+          </div>
+          <div class="giai-t">Chỉnh đứng 2 điểm tụ <span class="kbd">⇧ P</span></div>
+          <div class="giai-d">Bẻ các đường đứng về thẳng góc, giữ đúng phối cảnh hai điểm tụ như ảnh chụp kiến trúc.</div>
+          <div class="giai-ly"><b>Chưa dùng được:</b> ảnh này chưa có đường chân trời đã xác nhận — mở lại cửa sổ máy ảnh và chốt tầm mắt trước.</div>
+        </div>
+        <div class="note" style="margin-top:8px">Mỗi lệnh mờ có <b>lý do riêng của nó</b>, không dùng chung một câu. Lý do sống trong ô giải nghĩa này — không nằm trong thuộc tính <span style="font-family:ui-monospace,monospace">title</span>.</div>
+      </div>
+    </div>
+  </div>
+  <p class="cap"><b>Câu hỏi nấc TOÀN MÀN trả lời:</b> “Kết quả này có đúng không, lấy cái nào?” · <b>Lớp tin thêm so với VỪA:</b>
+  ĐỐI CHIẾU hai bản ở tỉ lệ thật 1:1 cạnh nhau + bảng thông số đầy đủ + phả hệ của kết quả — ba thứ VỪA không đủ chỗ chứa
+  (hai bản 1:1 cạnh nhau không lọt vào một cửa sổ trên canvas). <b>⚠ Cảnh báo cho MAIN:</b> hôm nay nấc này CHƯA có lớp
+  đối chiếu — nó chỉ thoát khỏi zoom. Chưa dựng lớp này thì theo luật ba-nấc-ba-công-năng phải ship HAI nấc, không độn cho đủ ô.</p>
+</section>
+
+<!-- ══════════════════════════════ E ══════════════════════════════ -->
+<section class="ab">
+  <div class="ab-h"><span class="ab-k">E</span><h2 class="ab-t">Hộp công cụ bám vật — nổi cạnh vật đang chọn</h2>
+    <span class="ab-s">trong cửa sổ 3D · nấc VỪA</span></div>
+
+  <div class="frame canvas" style="height:400px;position:relative">
+    <div class="win sel" style="left:40px;top:34px;width:560px;height:330px">
+      <div class="win-head">
+        <span class="win-kind"><span class="dot" style="background:var(--p-mat)"></span>3D</span>
+        <span class="win-t">Máy ảnh &amp; khối · three.camera</span>
+        <span class="nac"><b>▪</b><b class="on">▭</b><b>⛶</b></span>
+      </div>
+      <div class="win-body">
+        <div class="sat-col">
+          <div class="sat on"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="10" height="9" rx="1.5"/><path d="m13 10 4-2.5v7L13 12z"/></svg></div>
+          <div class="sat on"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="6"/><path d="M10 4v12"/></svg></div>
+          <div class="sat on"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="14" height="10" rx="1.5"/></svg></div>
+          <div class="sat off"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 16 8 4l4 12M14 4v12"/></svg></div>
+          <div class="sat off"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="3"/><circle cx="10" cy="10" r="6.5" stroke-dasharray="2 2.4"/></svg></div>
+        </div>
+        <div class="win-stage" style="position:relative">
+          <span class="ph">PLACEHOLDER</span>
+          <svg viewBox="0 0 380 240" style="position:absolute;inset:0;width:100%;height:100%" fill="none" stroke="var(--t4)" stroke-width="1">
+            <path d="M0 168h380M40 240 110 168M340 240 280 168" opacity=".5"/>
+            <path d="M110 168V96l60-18 62 18v72" stroke="var(--t2)" stroke-width="1.2"/>
+          </svg>
+          <!-- vật đang chọn -->
+          <div style="position:absolute;left:36%;top:44%;width:110px;height:74px;border:1.6px solid var(--accent);border-radius:3px;background:var(--accent-soft)"></div>
+          <!-- hộp công cụ BÁM VẬT -->
+          <div style="position:absolute;left:36%;top:44%;transform:translateY(-100%);margin-top:-9px;display:flex;align-items:center;gap:2px;
+              height:34px;padding:0 5px;border-radius:var(--r-full);background:var(--kinh-mong);border:1px solid var(--kinh-vien);
+              box-shadow:var(--shadow-pop);backdrop-filter:blur(var(--kinh-nhoe-mong));-webkit-backdrop-filter:blur(var(--kinh-nhoe-mong))">
+            <div class="sat on" style="width:24px;height:24px;border-radius:var(--r-full)"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 3v14M3 10h14"/></svg></div>
+            <div class="sat" style="width:24px;height:24px;border-radius:var(--r-full)"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="12" height="12" rx="2"/></svg></div>
+            <div class="sat" style="width:24px;height:24px;border-radius:var(--r-full)"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 10h12M11 5l5 5-5 5"/></svg></div>
+            <div class="sat off" style="width:24px;height:24px;border-radius:var(--r-full);outline:2px solid var(--accent-ring);outline-offset:-1px"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 3v14M6 6 3 10l3 4M14 6l3 4-3 4"/></svg></div>
+            <div class="dock-sep" style="margin:0 3px"></div>
+            <div class="sat" style="width:24px;height:24px;border-radius:var(--r-full)"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10" cy="5" r="1.4"/><circle cx="10" cy="10" r="1.4"/><circle cx="10" cy="15" r="1.4"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ô giải nghĩa mở cạnh nút mờ -->
+    <div class="giai" style="position:absolute;left:626px;top:150px">
+      <div class="giai-hinh">
+        <svg width="120" height="48" viewBox="0 0 120 48" fill="none" stroke="var(--t3)" stroke-width="1.3">
+          <rect x="6" y="10" width="30" height="28" rx="2"/>
+          <path d="M42 24h14M52 20l4 4-4 4" stroke="var(--t4)"/>
+          <rect x="62" y="10" width="30" height="28" rx="2" stroke="var(--accent)"/>
+          <path d="M96 10v28" stroke="var(--accent)" stroke-dasharray="3 3"/>
+          <rect x="100" y="10" width="14" height="28" rx="2" stroke="var(--accent)" opacity=".55"/>
+        </svg>
+      </div>
+      <div class="giai-t">Đối xứng qua trục <span class="kbd">M</span></div>
+      <div class="giai-d">Soi khối sang bên kia một mặt phẳng — dùng cho bốn chân ghế, dãy tủ, nan chớp.</div>
+      <div class="giai-ly"><b>Chưa dùng được:</b> khối đang chọn chưa có trục đối xứng; chọn thêm một mặt phẳng làm gương rồi bấm lại.</div>
+      <div class="note" style="margin-top:8px">Nút mờ đi đường <span style="font-family:ui-monospace,monospace">aria-disabled</span> +
+      <span style="font-family:ui-monospace,monospace">aria-describedby</span> — vẫn nhận được Tab và trình đọc màn hình vẫn đọc ra lý do.</div>
+    </div>
+  </div>
+  <p class="cap"><b>Đọc ra được điều gì:</b> hộp công cụ bám vật là <b>lệnh của VẬT đang chọn</b>, nổi ngay cạnh nó, chỉ sống
+  trong lòng cửa sổ. Nó KHÔNG tràn lên thanh chung ở artboard A — đó chính là cơ chế khiến ba chặng thôi có cảm giác ba app.</p>
+</section>
+
+<!-- ══════════════════════════════ F ══════════════════════════════ -->
+<section class="ab">
+  <div class="ab-h"><span class="ab-k">F</span><h2 class="ab-t">Cửa sổ THẢO LUẬN — sản phẩm là một QUYẾT ĐỊNH, không phải một tệp</h2>
+    <span class="ab-s">nấc VỪA · loại ban-bac</span></div>
+
+  <div class="frame canvas" style="height:430px;position:relative">
+    <div class="win" style="left:40px;top:34px;width:660px;height:360px">
+      <div class="win-head">
+        <span class="win-kind"><span class="dot" style="background:var(--p-num)"></span>Bàn bạc</span>
+        <span class="win-t">Chốt hướng vật liệu · phòng khách</span>
+        <span class="chip"><span class="dot" style="background:var(--t3)"></span>3 người</span>
+        <span class="nac"><b>▪</b><b class="on">▭</b><b>⛶</b></span>
+      </div>
+      <div class="win-body">
+        <div class="sat-col" style="width:44px">
+          <div class="sat on" title="Khung tư duy"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/></svg></div>
+          <div class="sat on" title="Ghim ảnh"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="14" height="11" rx="2"/><path d="m5 13 4-4 3 3 3-3"/></svg></div>
+          <div class="sat on" title="Ghi chú"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h10v9l-4 3H5z"/><path d="M5 8h10"/></svg></div>
+          <div class="sat off" title="Bỏ phiếu"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m4 10 4 4 8-8"/></svg></div>
+        </div>
+        <div class="win-stage" style="background:var(--bg);padding:10px;display:flex;gap:10px">
+          <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+            <div class="sat-lbl" style="margin:0">Khung tư duy · “ba hướng, một chọn”</div>
+            <div style="flex:1;display:flex;gap:8px">
+              <div style="flex:1;border-radius:var(--r-2);border:1px solid var(--border);background:var(--card);padding:7px;display:flex;flex-direction:column;gap:6px">
+                <span class="note" style="font-weight:700">Ấm · mộc</span>
+                <div style="flex:1;border-radius:var(--r-1);background:var(--hatch);border:1px solid var(--vien-mo)"></div>
+                <span class="note">sồi · vôi ấm</span>
+              </div>
+              <div style="flex:1;border-radius:var(--r-2);border:2px solid var(--accent);background:var(--card);padding:7px;display:flex;flex-direction:column;gap:6px">
+                <span class="note" style="font-weight:700;color:var(--accent)">Trầm · sâu</span>
+                <div style="flex:1;border-radius:var(--r-1);background:var(--hatch);border:1px solid var(--accent-ring)"></div>
+                <span class="note">óc chó · đá mờ</span>
+              </div>
+              <div style="flex:1;border-radius:var(--r-2);border:1px solid var(--border);background:var(--card);padding:7px;display:flex;flex-direction:column;gap:6px">
+                <span class="note" style="font-weight:700">Sáng · tối giản</span>
+                <div style="flex:1;border-radius:var(--r-1);background:var(--hatch);border:1px solid var(--vien-mo)"></div>
+                <span class="note">phong · vôi trắng</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:var(--r-full);background:var(--accent);color:var(--on-accent);font-size:var(--fs-2xs);font-weight:var(--fw-semi)">
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m4 10 4 4 8-8"/></svg>Chốt hướng này</div>
+              <span class="note">Chốt xong → một <b>quyết định</b> vào nhật ký dự án, không sinh tệp nào.</span>
+            </div>
+          </div>
+          <div style="width:172px;flex:none;border-left:1px solid var(--vien-mo);padding-left:10px">
+            <div class="sat-lbl" style="margin-top:0">Ghi chú tại chỗ</div>
+            <div style="border-radius:var(--r-1);background:var(--field);padding:6px 7px;font-size:var(--fs-2xs);color:var(--t2);margin-bottom:6px">CĐT thích trầm, sợ tối. Thử óc chó nhưng nâng sáng chiều.</div>
+            <div style="border-radius:var(--r-1);background:var(--field);padding:6px 7px;font-size:var(--fs-2xs);color:var(--t2)">Bếp đã dùng sồi — tránh lặp.</div>
+            <div class="sat-lbl" style="margin-top:12px">Quyết định đã chốt</div>
+            <span class="chip acc" style="height:auto;padding:4px 8px;white-space:normal;text-align:left">Gỗ ấm, bề mặt nhám — 16:02</span>
+          </div>
+        </div>
+      </div>
+      <div class="port in" style="background:var(--p-num)"></div>
+    </div>
+
+    <div style="position:absolute;right:26px;top:70px;width:600px;text-align:right">
+      <div class="note" style="color:var(--t2);text-wrap:pretty">
+        <b>Không có cổng ra ở mép phải.</b> Ép một cổng ra vào đây là nói dối: cửa sổ này không đẻ ra tệp.
+        Quyết định của nó đi vào dự án bằng đường khác — nó là thứ các cửa sổ sản xuất phía sau <b>trích dẫn</b>
+        (xem phả hệ ở artboard D), không phải thứ chảy trên dây.</div>
+    </div>
+  </div>
+  <p class="cap"><b>Đọc ra được điều gì:</b> hai loại cửa sổ khác nhau ở đúng một chỗ nhìn thấy được — <b>có hay không có
+  cổng ra</b>. Vệ tinh của loại thảo luận là khung tư duy · ghim ảnh · ghi chú, cũng luôn có mặt khi cửa sổ mở.</p>
+</section>
+
+<!-- ══════════════════════════════ G ══════════════════════════════ -->
+<section class="ab">
+  <div class="ab-h"><span class="ab-k">G</span><h2 class="ab-t">Khổ hẹp ~1100 — vệ tinh đổi CHỖ, không biến mất</h2>
+    <span class="ab-s">1100 × 560</span></div>
+
+  <div class="frame" style="width:1100px;height:560px;display:flex">
+    <nav class="rail" style="width:44px">
+      <div class="rail-i" style="width:30px;height:30px"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg></div>
+      <div class="rail-i on" style="width:30px;height:30px"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M10 3 17 7v6l-7 4-7-4V7z"/></svg></div>
+      <div class="rail-i" style="width:30px;height:30px"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="14" height="9" rx="1.5"/><path d="M8 16h4"/></svg></div>
+    </nav>
+    <div class="canvas" style="flex:1;min-width:0;position:relative">
+      <svg class="wires" viewBox="0 0 1056 560" preserveAspectRatio="none">
+        <path d="M406 210 C 448 210, 442 200, 486 200" fill="none" stroke="var(--p-img)" stroke-width="1.8"/>
+      </svg>
+
+      <div class="win sel" style="left:34px;top:96px;width:372px;height:228px">
+        <div class="win-head">
+          <span class="win-kind"><span class="dot" style="background:var(--p-mat)"></span>3D</span>
+          <span class="win-t">Máy ảnh &amp; khối</span>
+          <span class="nac"><b>▪</b><b class="on">▭</b><b>⛶</b></span>
+        </div>
+        <div class="win-body" style="flex-direction:column">
+          <div class="win-stage" style="flex:1">
+            <span class="ph">PLACEHOLDER</span>
+            <svg viewBox="0 0 300 150" style="position:absolute;inset:0;width:100%;height:100%" fill="none" stroke="var(--t4)" stroke-width="1">
+              <path d="M0 106h300M30 150 78 106M270 150 222 106" opacity=".5"/>
+              <path d="M86 106V62l58-14 58 14v44" stroke="var(--t2)" stroke-width="1.2"/>
+            </svg>
+          </div>
+          <!-- vệ tinh chuyển từ cột dọc sang hàng ngang, GIỮ ĐỦ SỐ LƯỢNG -->
+          <div class="sat-row" style="gap:3px">
+            <div class="sat on" style="width:24px;height:24px"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="10" height="9" rx="1.5"/><path d="m13 10 4-2.5v7L13 12z"/></svg></div>
+            <div class="sat on" style="width:24px;height:24px"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="6"/><path d="M10 4v12"/></svg></div>
+            <div class="sat on" style="width:24px;height:24px"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="14" height="10" rx="1.5"/></svg></div>
+            <div class="sat off" style="width:24px;height:24px"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 16 8 4l4 12M14 4v12"/></svg></div>
+            <div class="sat off" style="width:24px;height:24px"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="3"/><circle cx="10" cy="10" r="6.5" stroke-dasharray="2 2.4"/></svg></div>
+            <div class="sat off" style="width:24px;height:24px"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 13c4-8 10-8 14 0"/></svg></div>
+            <span class="note" style="margin-left:auto">4/13 · thông số ↓</span>
+          </div>
+        </div>
+        <div class="port in" style="background:var(--p-mat)"></div>
+        <div class="port out" style="background:var(--p-img)"></div>
+      </div>
+
+      <div class="win" style="left:486px;top:140px;width:250px;height:120px">
+        <div class="win-head">
+          <span class="win-kind"><span class="dot" style="background:var(--p-img)"></span>Ảnh</span>
+          <span class="win-t">Bám ý</span>
+          <span class="nac"><b class="on">▪</b><b>▭</b><b>⛶</b></span>
+        </div>
+        <div class="win-body" style="flex-direction:column">
+          <div style="flex:1;display:flex;gap:8px;padding:8px;align-items:center">
+            <div style="width:62px;height:44px;border-radius:var(--r-1);background:var(--hatch);border:1px solid var(--vien-mo);flex:none"></div>
+            <div style="min-width:0"><div class="note" style="color:var(--t2)">Đang gọi máy chủ</div>
+              <div class="pg-khongdo" style="margin-top:6px;width:110px"></div></div>
+          </div>
+          <div class="sat-row" style="gap:3px">
+            <div class="sat on" style="width:22px;height:22px"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h12M4 10h12M4 14h7"/></svg></div>
+            <div class="sat off" style="width:22px;height:22px"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="12" height="12" rx="2"/></svg></div>
+            <div class="sat off" style="width:22px;height:22px"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="5"/></svg></div>
+            <div class="sat off" style="width:22px;height:22px"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 15 15 5"/></svg></div>
+          </div>
+        </div>
+        <div class="port in" style="background:var(--p-img)"></div>
+        <div class="port out" style="background:var(--p-img)"></div>
+      </div>
+
+      <div class="dock" style="bottom:12px">
+        <div class="dock-b on"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 3 15 10l-4.4 1.2L9 16z"/></svg>Chọn</div>
+        <div class="dock-b"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 3v14M3 10h14"/></svg></div>
+        <div class="dock-b"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M15.5 10a5.5 5.5 0 1 1-2-4.2"/><path d="M16 3v3.6h-3.6"/></svg></div>
+        <div class="dock-b"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="7" width="14" height="6" rx="1.5"/></svg></div>
+        <div class="dock-sep"></div>
+        <div class="dock-b"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 10h12M11 5l5 5-5 5"/></svg></div>
+        <div class="dock-b"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 9.5A5.5 5.5 0 0 1 15 8"/><path d="M15 4v4h-4"/></svg></div>
+      </div>
+    </div>
+  </div>
+  <p class="cap"><b>Đọc ra được điều gì:</b> ở khổ hẹp, vệ tinh rời cột dọc xuống hàng ngang dưới mặt làm việc và cột thông
+  số cuộn xuống dưới — <b>đủ số lượng, đổi chỗ</b>. Thanh chung bỏ chữ, giữ icon; nhãn về trong ô giải nghĩa. Rail thu còn 44.</p>
+</section>
+
+<div class="page" style="border-top:1px solid var(--border);padding-top:16px">
+  <div class="note" style="text-wrap:pretty">
+    <b style="color:var(--t2)">Ba thứ bản vẽ này cố ý KHÔNG làm:</b> không vẽ cửa sổ thành hộp thoại giữa màn ·
+    không bịa phần trăm cho việc không đo được (hai loại thanh tiến trình khác HÌNH DẠNG, không phải khác chỗ có số) ·
+    không đưa lệnh chuyên sâu của môi trường lên thanh chung. Chỉ một màu nhấn tím <span style="font-family:ui-monospace,monospace">--accent</span>;
+    các chấm màu ở cổng nối là token ngữ nghĩa theo KIỂU DỮ LIỆU
+    (<span style="font-family:ui-monospace,monospace">--p-img/--p-mat/--p-video/--p-num</span>), không phải màu nhấn thứ hai.
+  </div>
+</div>
+
+</body>
+</html>
+<!-- TRANSFER NOTES ===========================================================
+TỆP SẢN XUẤT SỞ HỮU MÀN NÀY
+  · components/render-studio/CuaSoCongCu.tsx   — khung cửa sổ: đầu · thân môi trường · vệ tinh trái/phải ·
+      ba nấc (thu/vừa/toàn màn) · cổng vào-ra. Artboard B/C/D/F đổ vào đây.
+  · components/nodes/HopCongCuBamVat.tsx       — hộp công cụ bám vật (artboard E). Giữ đường
+      aria-disabled + aria-describedby; KHÔNG quay lại dùng thuộc tính title.
+  · components/nodes/InteriorNode.tsx          — thân node + hai Handle vào/ra; loại `ban-bac`
+      phải render KHÔNG có Handle ra (artboard F).
+  · components/FlowCanvas.tsx                  — nền sơ đồ, dây nối, nút "+" trên dây (artboard A),
+      và điểm cắt phép biến đổi zoom từ nấc VỪA trở lên.
+
+TOKEN
+  · KHÔNG cần token mới. Bản vẽ chỉ dùng token đã có trong app/globals.css:
+    --accent/--accent-soft/--accent-ring/--on-accent · --r-1..--r-4/--r-full ·
+    --t1..--t5 · --bg/--panel/--card/--field/--hover · --border/--border-strong · --vien-mo ·
+    --vl-gan-dac/--vl-dac · --kinh-mong/--kinh-vien/--kinh-nhoe-mong · --kinh-chu-phu ·
+    --shadow-node/--shadow-pop · --mo-vo-hieu (nút mờ) · --dots · --hatch (PLACEHOLDER) ·
+    --danger/--warning/--success · --p-img/--p-mask/--p-mat/--p-num/--p-text/--p-video (màu cổng) ·
+    --tap/--tap-lg/--row/--gap · --nhip-* + --ease-apple (chuyển nấc: dùng --nhip-bang cho
+    thu↔vừa, --nhip-bien-hinh cho vừa↔toàn màn).
+
+BA ĐIỂM NGHIỆM THU KHÔNG ĐƯỢC BỎ
+  1. Vệ tinh có mặt ở CẢ BA nấc (lỗi cũ: toàn màn đẩy vệ tinh ra ngoài màn).
+  2. Nấc TOÀN MÀN phải mang lớp ĐỐI CHIẾU (1:1 + thông số đầy đủ + phả hệ). Không dựng lớp đó
+     thì ship HAI nấc — cấm để nó là "nấc VỪA nhưng to hơn".
+  3. Nấc là Ý ĐỊNH LÀM VIỆC nhưng cùng cỡ-kéo-tay là TRẠNG THÁI XEM THEO MÁY; hình dạng dây
+     chuyền (node · vị trí · dây) mới là sự thật chung ghi vào bản lưu.
+=========================================================================== -->

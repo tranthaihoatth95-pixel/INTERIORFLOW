@@ -858,7 +858,7 @@ export function FlowCanvas() {
                       onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--field)')}
                       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     >
-                      <Icon size={13} className="shrink-0" />
+                      <Icon size={18} className="shrink-0" />
                       <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.title}</span>
                       {d.creditCost > 0 && (
                         <span style={{ flex: 'none', fontSize: 10, color: 'var(--t4)', fontVariantNumeric: 'tabular-nums' }}>{d.creditCost}cr</span>

@@ -262,7 +262,7 @@ export function ConceptForm() {
                 <img src={a.url} alt={a.name} className="h-full w-full object-cover" loading="lazy" />
                 {on && (
                   <span className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-[var(--accent)] text-white">
-                    <Check size={12} />
+                    <Check size={14} />
                   </span>
                 )}
               </button>
@@ -323,7 +323,7 @@ export function ConceptForm() {
               onClick={() => styleFileRef.current?.click()}
               className="flex items-center gap-1.5 rounded-full border border-dashed border-[var(--accent-ring)] px-2.5 py-1 text-[12px] font-medium text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)]"
             >
-              <Sparkles size={12} /> Nhận diện từ ảnh
+              <Sparkles size={14} /> Nhận diện từ ảnh
             </button>
           </div>
           {guess && (

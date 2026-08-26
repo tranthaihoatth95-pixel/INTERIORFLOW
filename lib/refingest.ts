@@ -10,6 +10,8 @@
  * Manual-first (0 AI): palette + thumbnail + tag tay chạy local. VLM auto-caption gắn sau.
  */
 import { loadImage, extractPalette } from '@/lib/imaging';
+import { createStudioBlobStore } from '@/lib/storage/studio-persist';
+import { planUpload } from '@/lib/gateway/upload';
 
 export type RefUsage = 'ref-render' | 'slide' | 'material' | 'layout' | 'cad' | 'brief' | 'furniture';
 export type RefType = 'image' | 'pdf' | 'excel' | 'cad' | 'other';
@@ -52,12 +54,22 @@ export const MOOD_USAGES: RefUsage[] = ['ref-render', 'slide', 'material'];
 
 const STORE_KEY = 'interiorflow.refManifest';
 
+/**
+ * R6 19/08 — phân loại đi qua Format Router (`lib/gateway/upload.ts#planUpload`), KHÔNG tự chế
+ * bộ đoán đuôi riêng nữa (trước đây đây là taxonomy thứ ba song song detect.ts). `RefType` giữ
+ * nguyên làm KHOÁ LƯU của manifest (đổi là vỡ manifest IDB cũ) — nó chỉ còn là ánh xạ thu hẹp
+ * từ `GatewayFormat`, không phải nguồn phân loại. Mime ảnh giữ làm lưới đỡ (file ảnh không đuôi).
+ */
 export function classify(mime: string, name: string): RefType {
-  const n = name.toLowerCase();
+  const { format } = planUpload({ name });
+  if (format === 'image') return 'image';
+  if (format === 'pdf') return 'pdf';
+  if (format === 'xlsx' || format === 'csv') return 'excel';
+  if (format === 'dxf' || format === 'dwg') return 'cad';
+  // Lưới đỡ giữ hành vi cũ cho ca router chưa phủ: ảnh không đuôi (mime) + .xls đời cũ
+  // (detect.ts chỉ nhận .xlsx — .xls vẫn nằm trong `accept` của trang ingest).
   if (mime.startsWith('image/')) return 'image';
-  if (mime === 'application/pdf' || n.endsWith('.pdf')) return 'pdf';
-  if (/sheet|excel|csv/.test(mime) || /\.(xlsx?|csv)$/.test(n)) return 'excel';
-  if (/\.(dxf|dwg)$/.test(n)) return 'cad';
+  if (/sheet|excel|csv/.test(mime) || name.toLowerCase().endsWith('.xls')) return 'excel';
   return 'other';
 }
 
@@ -141,21 +153,40 @@ export async function ingestFile(file: File): Promise<RefAsset> {
 }
 
 // ---------- Manifest storage + export ----------
+/* W0.3 (19/08, FINAL-AUDIT A-4): refManifest KHÔNG rebuild được — ảnh gốc không lưu đâu cả,
+ * manifest là bản ghi DUY NHẤT của usage/tags/caption người dùng đã gán ⇒ canonical, dời
+ * localStorage → IndexedDB (studio-persist). Key cũ chỉ còn là cầu di trú đọc-một-lần.
+ * Bonus: hết cảnh "localStorage đầy vì nhiều thumb" mà comment cũ tự khai. */
+const manifestStore = createStudioBlobStore<RefManifest | null>({
+  route: '/studio-ref-manifest',
+  readLegacy: () => {
+    if (typeof window === 'undefined') return undefined;
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      return raw ? (JSON.parse(raw) as RefManifest) : undefined;
+    } catch {
+      return undefined;
+    }
+  },
+  empty: null,
+  parse: (v) => {
+    if (v === null) return null;
+    if (!v || typeof v !== 'object' || !Array.isArray((v as RefManifest).assets)) return undefined;
+    return v as RefManifest;
+  },
+});
+
+/** Chờ IDB nạp xong (trang ingest await rồi loadManifest lại nếu cần bản tươi nhất). */
+export function hydrateRefManifest(): Promise<void> {
+  return manifestStore.hydrate();
+}
+
 export function loadManifest(): RefManifest | null {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    return raw ? (JSON.parse(raw) as RefManifest) : null;
-  } catch {
-    return null;
-  }
+  return manifestStore.get();
 }
 
 export function saveManifest(m: RefManifest) {
-  try {
-    localStorage.setItem(STORE_KEY, JSON.stringify(m));
-  } catch {
-    /* localStorage đầy — manifest to do nhiều thumb; export ra file thay thế */
-  }
+  manifestStore.set(m);
 }
 
 /** Manifest cho AI: BỎ thumbnail → chỉ còn phần "hiểu" (vài KB), không vỡ context window. */

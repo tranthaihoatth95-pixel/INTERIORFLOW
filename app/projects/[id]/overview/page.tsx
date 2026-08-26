@@ -22,6 +22,8 @@ import { ChevronLeft, BookOpen, LayoutGrid, Users, Layers, ArrowRight, Loader2 }
 import { useScope } from '@/lib/scope';
 import { useT } from '@/lib/i18n';
 import DesignDnaCardPanel from '@/components/dna/DesignDnaCardPanel';
+import { AppShell } from '@/components/studio/AppShell';
+import TomTatDiaDiem from '@/components/site/TomTatDiaDiem';
 
 interface OverviewFlow {
   id: string;
@@ -90,9 +92,20 @@ export default function ProjectOverviewPage() {
   const stageLabel = STAGE_LABEL[stage]?.[0] ?? stage;
 
   return (
+    /* 🔴 22/08 — TỔNG QUAN NAY SỐNG TRONG VỎ APP (hotfix chủ-sở-hữu ảnh đại diện).
+       Trước đó trang này tự dựng vỏ riêng (`minHeight:100dvh` + header của chính nó) và đứng
+       NGOÀI `AppShell` ⇒ đo được 22/08: Home/2D/3D/Trình chiếu đều có ĐÚNG MỘT ảnh đại diện
+       toàn cục, riêng Tổng quan có **KHÔNG** — tức nó trượt cửa nghiệm thu ở chiều ngược lại,
+       và người dùng mất luôn thanh trái lẫn cửa vào Tài khoản khi đang đứng trong dự án.
+       Bọc vào `AppShell` là sửa ĐÚNG CHỦ SỞ HỮU: vỏ app cấp rail + cụm phải-trên (ảnh đại diện,
+       hoạt động), trang chỉ còn lo NỘI DUNG của nó. Cũng đóng luôn lệch IA đã ghi trong sổ:
+       "bề mặt project-local đứng ngoài vỏ app". */
+    <AppShell active="home">
     <div
       style={{
-        minHeight: '100dvh',
+        minHeight: '100%',
+        height: '100%',
+        overflowY: 'auto',
         background: 'var(--bg)',
         color: 'var(--t1)',
         fontFamily: 'var(--font-sans, system-ui), system-ui, sans-serif', // A1: var() có fallback, biến chưa gán không làm vô hiệu cả khai báo
@@ -124,7 +137,12 @@ export default function ProjectOverviewPage() {
             fontSize: 12.5,
           }}
         >
-          <ChevronLeft size={14} /> {t('Về Thư viện', 'Gallery')}
+          {/* 22/08 — NHÃN CŨ NÓI SAI ĐÍCH ĐẾN: nút này đi `/` (Trang chủ) nhưng đề chữ
+              "Về Thư viện · Gallery", trong khi Thư viện là MỘT ĐÍCH KHÁC THẬT (`/library`,
+              mục riêng trên rail). Nhãn dẫn sai chỗ là nói dối điều hướng, không phải chuyện
+              chữ nghĩa. Tên đúng theo hệ sở hữu hiện hành: Trang chủ = CON NGƯỜI, Tổng quan =
+              DỰ ÁN; đi lên từ dự án là về Trang chủ. */}
+          <ChevronLeft size={14} /> {t('Về Trang chủ', 'Back to Home')}
         </button>
         <div
           style={{
@@ -137,13 +155,14 @@ export default function ProjectOverviewPage() {
           <Link href="/" style={{ color: 'inherit', textDecoration: 'none' }}>
             InteriorFlow
           </Link>{' '}
-          / {t('Dự án', 'Project')}
+          / {t('Tổng quan dự án', 'Project overview')}
         </div>
       </header>
 
       <main style={{ maxWidth: 960, margin: '0 auto', padding: '28px 24px 64px' }}>
         {state === 'loading' && (
           <div style={{ display: 'grid', placeItems: 'center', padding: '80px 0' }}>
+            {/* soi-mien-tru: F-ICON-SIZE — vòng quay tải đứng một mình giữa màn, là TRANH không phải icon */}
             <Loader2 size={22} className="animate-spin" style={{ color: 'var(--t4)' }} />
           </div>
         )}
@@ -168,7 +187,7 @@ export default function ProjectOverviewPage() {
                 fontSize: 12.5,
               }}
             >
-              {t('Home', 'Home')}
+              {t('Trang chủ', 'Home')}
             </button>
           </div>
         )}
@@ -249,9 +268,9 @@ export default function ProjectOverviewPage() {
               }}
             >
               {[
-                { icon: <LayoutGrid size={15} />, label: t('Số flow', 'Flows'), value: String(data.flows.length) },
-                { icon: <Users size={15} />, label: t('Thành viên', 'Members'), value: String(data.memberCount) },
-                { icon: <Layers size={15} />, label: t('Chặng', 'Stage'), value: stageLabel },
+                { icon: <LayoutGrid size={14} />, label: t('Số flow', 'Flows'), value: String(data.flows.length) },
+                { icon: <Users size={14} />, label: t('Thành viên', 'Members'), value: String(data.memberCount) },
+                { icon: <Layers size={14} />, label: t('Chặng', 'Stage'), value: stageLabel },
               ].map((s, i) => (
                 <div
                   key={i}
@@ -269,6 +288,14 @@ export default function ProjectOverviewPage() {
                   <div style={{ fontSize: 20, fontWeight: 600, marginTop: 8 }}>{s.value}</div>
                 </div>
               ))}
+            </div>
+
+            {/* Ngữ cảnh địa điểm (§18) — ĐỊA ĐIỂM → TÍN HIỆU → HỆ QUẢ → QUYẾT ĐỊNH.
+                Nó đứng ở ĐÂY chứ không thành một mục trên rail: ngữ cảnh địa điểm thuộc DỰ ÁN,
+                không phải một app riêng (§19 · §39). Cùng `HoSoDiaDiem` mà bảng Đèn của chặng 3D
+                đọc — một sự thật, hai mặt tiền. */}
+            <div id="ngu-canh-dia-diem" style={{ marginTop: 24, scrollMarginTop: 24 }}>
+              <TomTatDiaDiem duAnId={id} />
             </div>
 
             {/* Danh sách flow (đã lọc theo [id]) */}
@@ -310,5 +337,6 @@ export default function ProjectOverviewPage() {
         )}
       </main>
     </div>
+    </AppShell>
   );
 }

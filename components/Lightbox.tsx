@@ -37,7 +37,7 @@ export function Lightbox() {
                trên ảnh render), luật ở globals.css. Bỏ bg/border/backdrop-blur cũ — class tự mang. */
             className="glass-float glass-float--bar absolute right-4 top-4 grid h-9 w-9 place-items-center text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
           >
-            <X size={17} />
+            <X size={18} />
           </motion.button>
           <motion.div
             ref={contentRef}
