@@ -32,6 +32,25 @@ export function canReadLibraryAsset(
 }
 
 /**
+ * ⚙️ CỜ PHẠM VI DỰ ÁN — Wave 1 · W1-3/W1-4.
+ *
+ * Hôm nay các route list (`dashboard`, `flows`, `home/summary`) trả **mọi dự án của mọi người**,
+ * kèm ghi chú *"app nội bộ team (LAN) → hiển thị toàn team"*. Đó là **định vị cũ** (công cụ nội
+ * bộ một studio). Định vị hiện tại là sản phẩm toàn cầu, nhiều studio — nên hành vi này phải đổi.
+ * Nhưng đổi thẳng là đổi thứ người dùng đang thấy mỗi ngày, nên đặt sau cờ:
+ *
+ *   · `IF_PROJECT_SCOPE_ENFORCE` chưa đặt → **hành vi hôm nay, không suy suyển**.
+ *   · `=1` → mọi truy vấn list đi qua `projectScope()`.
+ *
+ * Luật Hoà 26/08: *"Không bật enforcement rộng trước proof."* Cả hai nhánh đều có proof
+ * (`scripts/proof/project-scope-routes.mjs`), và cờ này là thứ cho phép bật **theo lát dọc**,
+ * từng route một, thay vì một cú lật toàn hệ.
+ */
+export function projectScopeEnforced(): boolean {
+  return process.env.IF_PROJECT_SCOPE_ENFORCE === '1';
+}
+
+/**
  * `asset.path` là chuỗi trong DB. Nếu nó chứa `../` thì `path.join(UPLOAD_DIR, path)` **thoát ra
  * khỏi `uploads/`** và route đọc được file tuỳ ý trên máy. Chốt chặn này KHÔNG có cờ và KHÔNG
  * phụ thuộc quyền: nó không đổi hành vi hợp lệ nào, chỉ chặn đường thoát. Cùng khuôn với

@@ -63,8 +63,8 @@ auto-update.
 |---|---|---|---|---|
 | **W1-1** | R8 `library/[id]/file` — phạm vi đọc **sau cờ** + traversal **không cờ** | ✅ **XONG** | `library-file-scope.mjs` 12/12 · `access-scope.test.ts` 14/14 | revert 2 tệp |
 | **W1-2** | **Shared access primitive** `projectScope`/`visibleProjectIds`/`projectScopeWhere` | ✅ **XONG** — cứng hoá, **0 caller**, chưa đổi hành vi nào | `access-scope.mjs` 19/19 (7 ca đồng thuận với `assertProjectAccess`) | revert 1 tệp |
-| **W1-3** | Bật lọc ở `dashboard` (3 truy vấn) — bề mặt **chỉ đọc** | ⏭️ kế tiếp | cần: 2 tài khoản 2 dự án · **admin vẫn thấy tất cả** | cờ + revert 1 tệp |
-| **W1-4** | `home/summary` + `flows`: `userId: self` → phạm vi. Sửa luôn **under-fetch** | sau W1-3 | member được mời **thấy** dự án — *tính năng*, không chỉ vá | cờ + revert 2 tệp |
+| **W1-3** | `dashboard`: dự án · flow · roster · tổng chi 30 ngày đi qua cửa phạm vi | ✅ **XONG** | `project-scope-routes.mjs` 17/17 | cờ `IF_PROJECT_SCOPE_ENFORCE` |
+| **W1-4** | `flows` + `home/summary`: `userId: self` → phạm vi. **Under-fetch ĐÃ SỬA** | ✅ **XONG** | cùng proof — CA 10/CA 12: A **thấy** dự án B mời | cùng cờ |
 | **W1-5** | **Đọc lại spec đã duyệt** — panel gọi `GET /api/asset-representation` (route có sẵn, 0 caller) | song song | duyệt → F5 → mở lại đúng tờ spec; sửa → **2 hàng**, hàng cũ nguyên | revert 1 tệp |
 | **W1-6** | **Ghi visual-generate xuống đĩa** — `nhanDeXuat()` ghi ảnh **và** `XuatXu` | song song | dựng ảnh → F5 → ảnh **và** model/version/credit còn nguyên (hôm nay trượt) | cờ + revert 1 tệp |
 | **W1-7** | **Integrity `.idfc`** — nối `sha256Hex`+`IfpackManifest` của `ifpack.ts`; `ParsedIdfc.x` để **không mất khoá lạ** | song song | `idfc-roundtrip.mjs` CA 6 đang **ĐỎ đúng đắn** — nó là bài kiểm sẵn cho lát này | revert 2 tệp |

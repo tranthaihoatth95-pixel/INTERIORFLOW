@@ -1,20 +1,48 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
-import { assertProjectAccess, accessErrorPayload } from '@/lib/server/access';
+import {
+  assertProjectAccess,
+  accessErrorPayload,
+  flowScopeWhere,
+  projectScopeEnforced,
+  projectScopeWhere,
+  visibleUserIds,
+} from '@/lib/server/access';
 import { ensureDraftProject } from '@/lib/server/draft-project';
 import { HIDDEN_NOTEBOOK_PREFIX } from '@/lib/notebook/resolveProject';
 
-/** Danh sách flow của user (kèm project). Card dự án cần thêm coverUrl + status + roster team. */
+/**
+ * Danh sách flow của user (kèm project). Card dự án cần thêm coverUrl + status + roster team.
+ *
+ * Wave 1 · W1-4 — hai chiều cùng một lúc, cùng một cờ `IF_PROJECT_SCOPE_ENFORCE`:
+ *   · **SIẾT**: roster `prisma.user.findMany()` không điều kiện (comment cũ: *"roster cả team
+ *     (app nội bộ LAN)"*) trả toàn bộ người dùng của cài đặt — rò rỉ ngang khi nhiều studio.
+ *   · **NỚI**: `where: { userId: user.id }` là **under-fetch** — người được MỜI vào dự án
+ *     (`ProjectMember`) hôm nay **không thấy dự án đó** trong Gallery. Đó là lỗi tính năng, không
+ *     phải lựa chọn an ninh; cửa phạm vi sửa luôn.
+ *
+ * Cờ chưa đặt ⇒ hành vi y hệt hôm nay ở CẢ HAI chiều.
+ */
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const ONLINE_MS = 45 * 1000; // seen < 45s = đang online (đồng bộ shape roster dashboard)
 
+  const [rosterIds, duAnWhere, flowWhere] = await Promise.all([
+    visibleUserIds(user.id),
+    projectScopeEnforced()
+      ? projectScopeWhere(user.id)
+      : Promise.resolve({ userId: user.id, deletedAt: null } as Record<string, unknown>),
+    projectScopeEnforced()
+      ? flowScopeWhere(user.id)
+      : Promise.resolve({ userId: user.id, deletedAt: null } as Record<string, unknown>),
+  ]);
+
   const [flows, projects, members] = await Promise.all([
     prisma.flow.findMany({
-      where: { userId: user.id, deletedAt: null },
+      where: flowWhere,
       orderBy: { updatedAt: 'desc' },
       select: {
         id: true,
@@ -32,16 +60,14 @@ export async function GET() {
     }),
     prisma.project.findMany({
       // Loại project ẩn (bucket notebook per-user, name '__nb:<slug>') khỏi Gallery.
-      where: {
-        userId: user.id,
-        deletedAt: null,
-        NOT: { name: { startsWith: HIDDEN_NOTEBOOK_PREFIX } },
-      },
+      where: { ...duAnWhere, NOT: { name: { startsWith: HIDDEN_NOTEBOOK_PREFIX } } },
       orderBy: { createdAt: 'desc' },
       select: { id: true, name: true, clientName: true, larkProjectCode: true },
     }),
-    // roster cả team (app nội bộ LAN) — hàng avatar memoji trên card
+    // roster — hàng avatar memoji trên card. `rosterIds === null` ⇒ cờ tắt (hoặc admin): giữ
+    // nguyên truy vấn toàn roster như hôm nay.
     prisma.user.findMany({
+      ...(rosterIds ? { where: { id: { in: rosterIds } } } : {}),
       orderBy: { lastSeenAt: 'desc' },
       select: { id: true, name: true, lastSeenAt: true },
     }),

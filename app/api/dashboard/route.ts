@@ -2,10 +2,20 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
 import { HIDDEN_NOTEBOOK_PREFIX } from '@/lib/notebook/resolveProject';
+import { flowScopeWhere, projectScopeEnforced, projectScopeWhere, visibleUserIds } from '@/lib/server/access';
 
 /**
  * Tổng quan cho Dashboard: team + projects + hoạt động gần đây + thống kê.
- * Đây là app nội bộ team (LAN) → hiển thị toàn team, không chỉ user hiện tại.
+ *
+ * 🔴 GHI CHÚ CŨ ĐÃ HẾT ĐÚNG — giữ lại nguyên văn để thấy vì sao mã từng như vậy:
+ *   *"Đây là app nội bộ team (LAN) → hiển thị toàn team, không chỉ user hiện tại."*
+ * Câu đó đúng với định vị CŨ (công cụ nội bộ một studio). Định vị hiện tại là **sản phẩm nhiều
+ * studio** (Packet 003 chốt: multi-studio/tenant theo core contract), nên "hiển thị toàn team"
+ * nghĩa là **hiển thị toàn bộ người dùng và dự án của mọi studio** — rò rỉ ngang.
+ *
+ * Wave 1 · W1-3: mọi truy vấn list ở đây đi qua cửa phạm vi (`lib/server/access.ts`), **sau cờ
+ * `IF_PROJECT_SCOPE_ENFORCE`**. Cờ chưa đặt ⇒ hành vi y hệt hôm nay, không suy suyển. Đây là bề
+ * mặt CHỈ ĐỌC nên chọn làm lát đầu tiên: sai thì thấy ngay bằng mắt, lùi bằng một biến môi trường.
  */
 export async function GET() {
   const user = await getSessionUser();
@@ -14,8 +24,19 @@ export async function GET() {
   const now = Date.now();
   const ONLINE_MS = 2 * 60 * 1000; // seen < 2 phút = đang online
 
+  // Ba mệnh đề phạm vi tính TRƯỚC: cờ tắt thì cả ba trả về đúng thứ mã cũ đang dùng.
+  const [rosterIds, duAnWhere, flowWhere] = await Promise.all([
+    visibleUserIds(user.id),
+    projectScopeEnforced()
+      ? projectScopeWhere(user.id)
+      : Promise.resolve({ deletedAt: null } as Record<string, unknown>),
+    flowScopeWhere(user.id),
+  ]);
+
   const [users, projects, flows, spend] = await Promise.all([
     prisma.user.findMany({
+      // rosterIds === null ⇒ cờ tắt (hoặc admin): giữ nguyên truy vấn toàn roster.
+      ...(rosterIds ? { where: { id: { in: rosterIds } } } : {}),
       orderBy: { lastSeenAt: 'desc' },
       // KHÔNG select email/phone — PII, client không hiển thị (chỉ tên + avatar chữ cái).
       select: {
@@ -33,7 +54,7 @@ export async function GET() {
       },
     }),
     prisma.project.findMany({
-      where: { deletedAt: null, NOT: { name: { startsWith: HIDDEN_NOTEBOOK_PREFIX } } },
+      where: { ...duAnWhere, NOT: { name: { startsWith: HIDDEN_NOTEBOOK_PREFIX } } },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -48,7 +69,7 @@ export async function GET() {
       },
     }),
     prisma.flow.findMany({
-      where: { deletedAt: null },
+      where: flowWhere,
       orderBy: { updatedAt: 'desc' },
       take: 12,
       select: {
@@ -62,9 +83,16 @@ export async function GET() {
       },
     }),
     // tổng credit đã tiêu (amount âm) trong 30 ngày gần đây
+    // Chi tiêu 30 ngày: cờ tắt = toàn hệ (hành vi cũ). Cờ bật = chỉ những người trong phạm vi —
+    // tổng chi của studio khác không phải việc của người này, và bản thân CON SỐ cũng là rò rỉ
+    // (suy ra được quy mô hoạt động của bên kia).
     prisma.creditTransaction.aggregate({
       _sum: { amount: true },
-      where: { amount: { lt: 0 }, createdAt: { gte: new Date(now - 30 * 24 * 3600 * 1000) } },
+      where: {
+        amount: { lt: 0 },
+        createdAt: { gte: new Date(now - 30 * 24 * 3600 * 1000) },
+        ...(rosterIds ? { userId: { in: rosterIds } } : {}),
+      },
     }),
   ]);
 
@@ -90,7 +118,7 @@ export async function GET() {
 
   const stats = {
     projects: projects.length,
-    flows: await prisma.flow.count({ where: { deletedAt: null } }),
+    flows: await prisma.flow.count({ where: flowWhere }),
     members: users.length,
     online: team.filter((t) => t.online).length,
     creditsSpent30d: Math.abs(spend._sum.amount ?? 0),

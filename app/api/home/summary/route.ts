@@ -3,6 +3,7 @@ import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
 import { HIDDEN_NOTEBOOK_PREFIX } from '@/lib/notebook/resolveProject';
 import { isTaskStage } from '@/lib/server/tasks';
+import { flowScopeWhere, projectScopeEnforced, projectScopeWhere, visibleUserIds } from '@/lib/server/access';
 import { PHASE_MAP, type Phase } from '@/lib/phases';
 import {
   countTasksDoneToday,
@@ -30,6 +31,11 @@ export const dynamic = 'force-dynamic';
  *
  * Phạm vi: dự án SỞ HỮU bởi user (userId=user.id) — CÙNG nguồn `/api/flows` (đã dùng cho Gallery
  * hôm nay), không mở rộng sang ProjectMember ở v1 (giữ nhất quán với card dự án đang hiển thị).
+ *
+ * 🔴 Wave 1 · W1-4 — câu "không mở rộng sang ProjectMember ở v1" nay là **lỗi under-fetch**, đúng
+ * như ở `/api/flows`: người được mời không thấy dự án. Sửa sau cờ `IF_PROJECT_SCOPE_ENFORCE`, và
+ * sửa ở CẢ HAI route cùng lúc — vì lý do "giữ nhất quán với card dự án" ở trên chỉ đúng khi hai
+ * route dùng chung một định nghĩa phạm vi. Nay chúng dùng chung `lib/server/access.ts`.
  */
 export async function GET() {
   const user = await getSessionUser();
@@ -37,16 +43,30 @@ export async function GET() {
 
   const ONLINE_MS = 45 * 1000; // đồng bộ ngưỡng "online" với /api/flows
 
+  const [rosterIds, duAnWhere, flowWhere] = await Promise.all([
+    visibleUserIds(user.id),
+    projectScopeEnforced()
+      ? projectScopeWhere(user.id)
+      : Promise.resolve({ userId: user.id, deletedAt: null } as Record<string, unknown>),
+    projectScopeEnforced()
+      ? flowScopeWhere(user.id)
+      : Promise.resolve({ userId: user.id, deletedAt: null } as Record<string, unknown>),
+  ]);
+
   const [projectsRaw, flowsRaw, teamRaw] = await Promise.all([
     prisma.project.findMany({
-      where: { userId: user.id, deletedAt: null, NOT: { name: { startsWith: HIDDEN_NOTEBOOK_PREFIX } } },
+      where: { ...duAnWhere, NOT: { name: { startsWith: HIDDEN_NOTEBOOK_PREFIX } } },
       select: { id: true, name: true, currentStage: true },
     }),
     prisma.flow.findMany({
-      where: { userId: user.id, deletedAt: null },
+      where: flowWhere,
       select: { id: true, name: true, projectId: true, updatedAt: true },
     }),
-    prisma.user.findMany({ orderBy: { lastSeenAt: 'desc' }, select: { id: true, name: true, lastSeenAt: true } }),
+    prisma.user.findMany({
+      ...(rosterIds ? { where: { id: { in: rosterIds } } } : {}),
+      orderBy: { lastSeenAt: 'desc' },
+      select: { id: true, name: true, lastSeenAt: true },
+    }),
   ]);
 
   const projects: ProjectLite[] = projectsRaw.map((p) => ({

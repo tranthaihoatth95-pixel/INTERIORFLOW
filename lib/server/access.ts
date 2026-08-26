@@ -11,6 +11,7 @@
 import { prisma } from '@/lib/server/db';
 import { ROLE_RANK, canEditStage, isProjectRole, type ProjectRole } from './access-policy';
 import { excludeHiddenNotebookProjects } from '@/lib/notebook/resolveProject';
+import { projectScopeEnforced } from './access-scope';
 
 export * from './access-policy';
 
@@ -148,6 +149,40 @@ export async function projectScopeWhere(
   opts: TuyChonPhamVi = {},
 ): Promise<{ id: { in: string[] }; deletedAt: null }> {
   return { id: { in: await visibleProjectIds(userId, opts) }, deletedAt: null };
+}
+
+/**
+ * Mệnh đề `where` cho `prisma.flow.findMany` theo phạm vi. Flow thuộc về user (`userId`) HOẶC
+ * thuộc một dự án (`projectId`) — nên "thấy được" là hợp của hai vế, không phải một.
+ *
+ * Cờ TẮT → trả mệnh đề y hệt hôm nay (`{ deletedAt: null }`), không đổi hành vi.
+ */
+export async function flowScopeWhere(userId: string): Promise<Record<string, unknown>> {
+  if (!projectScopeEnforced()) return { deletedAt: null };
+  const pv = await projectScope(userId);
+  if (pv.laAdmin) return { deletedAt: null };
+  return {
+    deletedAt: null,
+    OR: [{ userId }, { projectId: { in: pv.ids } }],
+  };
+}
+
+/**
+ * Danh sách userId **cùng phạm vi** với `userId` — chính mình + mọi người là member của một dự án
+ * mà mình thấy được. Dùng cho roster: hôm nay `dashboard` trả `prisma.user.findMany()` **không
+ * điều kiện**, tức là danh sách toàn bộ người dùng của cài đặt.
+ *
+ * Cờ TẮT → `null`, caller giữ nguyên truy vấn cũ.
+ */
+export async function visibleUserIds(userId: string): Promise<string[] | null> {
+  if (!projectScopeEnforced()) return null;
+  const pv = await projectScope(userId);
+  if (pv.laAdmin) return null; // admin thấy toàn bộ roster — cùng cửa hậu với assertProjectAccess
+  const rows = await prisma.projectMember.findMany({
+    where: { projectId: { in: pv.ids }, deletedAt: null },
+    select: { userId: true },
+  });
+  return Array.from(new Set([userId, ...rows.map((r) => r.userId)]));
 }
 
 /* ===================== PHẠM VI TÀI NGUYÊN NGOÀI CÂY PROJECT ===================== */

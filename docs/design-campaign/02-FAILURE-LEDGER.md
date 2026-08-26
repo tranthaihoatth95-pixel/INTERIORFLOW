@@ -264,3 +264,25 @@ gói**, không phải `node -e`. Bằng chứng đẹp trên sai bề mặt vẫ
 `PASS` một mình là chữ rỗng. Viết `PARTIAL — process/contract proof` hoặc
 `PASS — runtime HTTP (dev server)` hoặc `PASS — Electron đóng gói`. Ai đọc cũng biết ngay còn
 thiếu bậc nào. Bậc chưa chạm ghi `NOT ASSESSED` **kèm lý do**, không im lặng bỏ trống.
+
+---
+
+## F-17 · KHẲNG ĐỊNH XANH TRÊN `undefined` — 26/08
+
+**Chuyện gì.** Proof cho W1-4 kiểm `/api/home/summary` bằng `h.projects`. Route đó **không có
+trường `projects`** — nó trả `recentProjects`. Nên `h.projects` là `undefined`, `(undefined ??
+[]).some(...)` là `false`, và hai ca *"KHÔNG thấy dự án của B"* **xanh** — trong khi chúng chưa
+bao giờ nhìn vào dữ liệu nào.
+
+**Vì sao lần này bắt được.** Ca thứ ba của cùng nhóm mong `true` ("A **thấy** dự án được mời").
+`false !== true` nên nó đỏ, và kéo hai ca xanh giả kia ra ánh sáng.
+
+**Cùng họ F-15, nhưng ở tầng khác.** F-15 là *bộ máy* rỗng. Đây là *khẳng định* rỗng — bộ máy
+chạy đúng, dữ liệu về đủ, nhưng ta soi vào một trường không tồn tại. Cổng harness ở CA 0 **không
+bắt được** loại này: nó chứng minh bộ máy sống, không chứng minh ta đang nhìn đúng chỗ.
+
+**Luật thêm — KHẲNG ĐỊNH PHẢI CÓ CHỦ THỂ.** Trước khi khẳng định *nội dung* của một trường trong
+phản hồi, phải có một ca khẳng định **trường đó tồn tại và đúng kiểu**. Và: **một nhóm ca chỉ toàn
+kỳ vọng "không thấy" là nhóm ca không đáng tin** — luôn kèm ít nhất một ca **mong THẤY** trên cùng
+đường dữ liệu. Ca dương tính là thứ chứng minh đường ống có nước; ca âm tính chỉ chứng minh vòi
+đang khoá — mà một cái ống chưa nối cũng "khoá".
