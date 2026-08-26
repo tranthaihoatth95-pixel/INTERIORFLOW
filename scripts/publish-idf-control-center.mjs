@@ -94,6 +94,18 @@ const mappings = [
    '06-REVIEW/IF-ARCH-LOCAL-FIRST-LARK-001/10-TEST-RUNTIME-GATE.md'],
   ['docs/design-candidate/IF-ARCH-LOCAL-FIRST-LARK-001/MANIFEST.json',
    '06-REVIEW/IF-ARCH-LOCAL-FIRST-LARK-001/MANIFEST.json'],
+
+  // ── IDF-IF-PACKET-003 · bootstrap + GAP-MAP + Smartboard (26/08) ───────────
+  ['docs/design-candidate/IDF-IF-PACKET-003/00-MEMORY-RECEIPT.md',
+   '06-REVIEW/IDF-IF-PACKET-003/00-MEMORY-RECEIPT.md'],
+  ['docs/design-candidate/IDF-IF-PACKET-003/01-IF-CORE-GAP-MAP.md',
+   '06-REVIEW/IDF-IF-PACKET-003/01-IF-CORE-GAP-MAP.md'],
+  ['docs/design-candidate/IDF-IF-PACKET-003/02-SMARTBOARD.md',
+   '06-REVIEW/IDF-IF-PACKET-003/02-SMARTBOARD.md'],
+  ['docs/design-candidate/IDF-IF-PACKET-003/MANIFEST.json',
+   '06-REVIEW/IDF-IF-PACKET-003/MANIFEST.json'],
+  ['docs/design-candidate/IDF-IF-PACKET-003/PACKET-003-SOURCE.md',
+   '06-REVIEW/IDF-IF-PACKET-003/PACKET-003-SOURCE.md'],
 ];
 
 const reviewImages = [
