@@ -1,5 +1,21 @@
 # CLAUDE DESIGN — CURRENT POINTER + DESIGN QUEUE
 
+> ## 📥 SPEC UX/UI CỦA DESIGN AUTHORITY — ĐÃ CỨU VÀO REPO 26/08
+> | Tệp | Trạng thái |
+> |---|---|
+> | `docs/design-authority/IF-UX-COMPLETE-SPEC-010.md` (818 dòng) | **CANDIDATE** — spec UX/UI đầy đủ, đã tới bản 027 |
+> | `docs/design-authority/IF-FINAL-DESIGN-CONTRACT-CANDIDATE.md` (281 dòng) | **CANDIDATE** — hợp đồng thiết kế |
+>
+> 🔴 **Trước 26/08 hai tệp này KHÔNG có trong repo lẫn Drive** — chúng chỉ sống trong một link
+> chat 155.831 ký tự và một thư mục tạm của Codex. `find` ra 0 kết quả. `IF-CANONICAL` cấm lấy
+> chat làm nguồn sự thật; link mục nát là mất trắng khối spec lớn hơn mọi thứ làm trong ba ngày.
+>
+> ⚠️ **CANDIDATE, chưa APPROVED.** Chỉ Hoà nâng được. Không thi công thẳng từ chúng mà chưa qua
+> Design Contract + packet của Codex MAIN.
+> ⚠️ **Hash lệch cả hai tệp** so với hash kỳ vọng trong chỉ thị — Design Authority đã cập nhật
+> sau khi ghi hash. Nhập bản hiện tại, ghi cả hai hash làm dấu vết.
+
+
 > **Vai:** đây là BẢNG ĐIỀU KHIỂN THIẾT KẾ (control plane), KHÔNG phải một bản vẽ.
 > MAIN đọc file này TRƯỚC khi dựng bất kỳ màn nào. MAIN **không tự thiết kế**.
 >
