@@ -65,10 +65,9 @@ auto-update.
 | **W1-2** | **Shared access primitive** `projectScope`/`visibleProjectIds`/`projectScopeWhere` | ✅ **XONG** — cứng hoá, **0 caller**, chưa đổi hành vi nào | `access-scope.mjs` 19/19 (7 ca đồng thuận với `assertProjectAccess`) | revert 1 tệp |
 | **W1-3** | `dashboard`: dự án · flow · roster · tổng chi 30 ngày đi qua cửa phạm vi | ✅ **XONG** | `project-scope-routes.mjs` 17/17 | cờ `IF_PROJECT_SCOPE_ENFORCE` |
 | **W1-4** | `flows` + `home/summary`: `userId: self` → phạm vi. **Under-fetch ĐÃ SỬA** | ✅ **XONG** | cùng proof — CA 10/CA 12: A **thấy** dự án B mời | cùng cờ |
-| **W1-5** | **Đọc lại spec đã duyệt** — panel gọi `GET /api/asset-representation` (route có sẵn, 0 caller) | song song | duyệt → F5 → mở lại đúng tờ spec; sửa → **2 hàng**, hàng cũ nguyên | revert 1 tệp |
-| **W1-6** | **Ghi visual-generate xuống đĩa** — `nhanDeXuat()` ghi ảnh **và** `XuatXu` | song song | dựng ảnh → F5 → ảnh **và** model/version/credit còn nguyên (hôm nay trượt) | cờ + revert 1 tệp |
-| **W1-7** | **Integrity `.idfc`** — nối `sha256Hex`+`IfpackManifest` của `ifpack.ts`; `ParsedIdfc.x` để **không mất khoá lạ** | song song | `idfc-roundtrip.mjs` CA 6 đang **ĐỎ đúng đắn** — nó là bài kiểm sẵn cho lát này | revert 2 tệp |
-| **W1-8** | **`lastImportIdfcError()` cho JSON hỏng** — ca hỏng phổ biến nhất đang là ca duy nhất câm | song song | `idfc-roundtrip.mjs` CA 3.2 | revert 1 tệp |
+| **W1-5** | **Đọc lại spec đã duyệt** — panel `SoSpecDaLuu` gọi `GET /api/asset-representation` (route có sẵn, 0 caller) | ✅ **XONG** | `spec-reread.mjs` 12/12 | `rm` 2 tệp + revert 1 |
+| **W1-6** | **Ghi `XuatXu` xuống nơi bền** — hai tầng: `localStorage` (luôn chạy) + `AssetRepresentation.provenance` (xuyên máy) | ✅ **XONG** | `persist-xuatxu.mjs` 23/23 + test thuần 8 nhóm, có **kiểm đột biến** | cờ `IF_PERSIST_XUATXU` |
+| **W1-7/8** | **`IDFC-INTEGRITY-001`** — giữ khoá lạ · lỗi đọc được cho JSON hỏng · **danh tính component tới BOQ** | ✅ **XONG** | `idfc-roundtrip.mjs` **39/39** · `idfc-identity-boq.mjs` **28/28** | cờ `NEXT_PUBLIC_IF_IDFC_IDENTITY` |
 | **W1-9** | **Material Adapter Sandbox** — mapping hợp đồng · preview/staged diff · người xác nhận · rollback · provenance · nhãn cũ/stale · 20 bản ghi rights-cleared | song song | ⛔ **CẤM live vendor upsert và CẤM đưa giá vào BOQ** cho tới khi API/export thật của nhà cung cấp được xác minh | cờ |
 | **W1-10** | **Vitals/UX research** — Target/Reject storyboard + state contract | song song | ⛔ **không dựng lookalike, không code visual production** trước khi có Design Authority candidate. Mắt & chuyển động cuối cùng: **chỉ Hoà** — nhưng không chặn lane khác | tài liệu |
 

@@ -21,6 +21,7 @@
  */
 
 import { boKetQua, nhanKetQua, type DeXuatHinhAnh, type KieuNguon } from './visual-generate';
+import { ghiXuatXuBen } from './xuat-xu-ben';
 
 export interface NguonAnhState {
   readonly anhNguon?: string;
@@ -67,6 +68,15 @@ export function themDeXuat(d: DeXuatHinhAnh) {
  * NHẬN một đề xuất: ghi xuất xứ `daNhan`, chuyển sang danh sách đã nhận, **và** để nó thành ảnh
  * nguồn cho bước kế — đúng chuỗi công đoạn (kết quả một bước là đầu vào đã-định-nghĩa của bước
  * sau). Việc thay nguồn xảy ra ở ĐÂY và chỉ ở đây, vì đây là chỗ có cú bấm của người.
+ *
+ * ── GHI BỀN (cờ `IF_PERSIST_XUATXU=1`) ────────────────────────────────────────────────────────
+ * Đây là **chỗ DUY NHẤT có cú bấm của người**, nên cũng là chỗ duy nhất đáng ghi xuống nơi bền.
+ * Sổ này sống trong RAM: F5 là mất — trong khi `/api/jobs` đã trừ tiền BỀN vào DB. Tiền bền mà
+ * kết quả bay hơi là lời hứa gãy, nên `XuatXu` (nhẹ) được ghi xuống `xuat-xu-ben.ts`.
+ *
+ * ⛔ Ghi bền **KHÔNG được** đứng chắn giữa cú bấm và trạng thái: `dat()` chạy TRƯỚC, việc ghi là
+ *    `void` (không `await`) và hàm ghi tự hứa không bao giờ ném. Người bấm Nhận thì nhận được
+ *    ảnh, kể cả khi kho hỏng. Sự cố ghi đi ra `subscribeSuCoGhi()`, **không** bị nuốt im lặng.
  */
 export function nhanDeXuat(id: string) {
   const d = state.deXuat.find((x) => x.id === id);
@@ -81,6 +91,12 @@ export function nhanDeXuat(id: string) {
     deXuat: state.deXuat.filter((x) => x.id !== id),
     daNhan: [...state.daNhan, daNhan],
   });
+  // Sau khi trạng thái đã đổi — thứ tự này là hợp đồng, không phải tình cờ.
+  try {
+    void ghiXuatXuBen({ id: daNhan.id, xuatXu: daNhan.xuatXu, anhKetQua: daNhan.anh });
+  } catch {
+    /* `ghiXuatXuBen` đã tự hứa không ném; đây là lưới thứ hai để cú bấm Nhận không bao giờ rơi */
+  }
 }
 
 /** BỎ một đề xuất. Vẫn đi qua `boKetQua()` để trạng thái được ghi, rồi mới rời danh sách. */

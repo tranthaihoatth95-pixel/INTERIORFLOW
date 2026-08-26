@@ -113,6 +113,26 @@ export interface IdfcMeta {
   /** ID nguồn trong kho Thư viện lúc xuất — CHỈ để hiển thị "xuất từ đâu", KHÔNG dùng để ghi
    * ngược (ràng buộc 1 — một chiều). `lib/library/*` KHÔNG đọc field này để đồng bộ tự động. */
   sourceLibraryId?: string;
+  /**
+   * ⚙️ IDFC-INTEGRITY-001 (26/08) — TÚI VẬN CHUYỂN cho khoá lạ ở **CẤP GỐC** của file.
+   *
+   * Vì sao túi này nằm trong `meta` chứ không ở cấp gốc, dù nó chứa khoá cấp gốc:
+   * `importIdfc` trả `ParsedIdfc`, nhưng **mọi nơi gọi `exportIdfc` đều bóc tách**
+   * `{ meta, body, commerce }` — một trường mới ở cấp gốc sẽ bị bỏ lại ở đúng mọi nơi gọi hiện
+   * có, và ta lại mất dữ liệu y như cũ, chỉ khác là lần này có thêm một field trông như đã sửa.
+   * `meta` thì LUÔN được truyền nguyên khối. Nên túi đi nhờ `meta` là đường DUY NHẤT sống sót
+   * mà không phải sửa mọi nơi gọi (và không phải tin rằng mọi nơi gọi TƯƠNG LAI sẽ nhớ).
+   *
+   * `exportIdfc` trả những khoá này về **đúng cấp gốc** và **xoá `meta.x`** khỏi file ghi ra —
+   * nên vị trí trên đĩa được giữ nguyên văn, không có field lạ nào mọc thêm.
+   *
+   * Khoá lạ của CHÍNH `meta` thì KHÔNG cần túi: chúng được giữ **tại chỗ** trên `meta`.
+   *
+   * ⚠️ `x` là tên DÀNH RIÊNG cho cơ chế này. File nào mang sẵn `meta.x` sẽ bị coi là túi.
+   */
+  x?: Record<string, unknown>;
+  /** Khoá lạ của `meta` giữ TẠI CHỖ — khai index signature để TypeScript không chặn. */
+  [khoaLa: string]: unknown;
 }
 
 /* ═══════════════ RUỘT THEO LOẠI ═══════════════ */
@@ -203,12 +223,37 @@ export interface IdfcFile {
   meta: IdfcMeta;
   body: IdfcBody;
   commerce?: IdfcCommerce;
+  /** Khoá lạ cấp gốc giữ TẠI CHỖ. Ca thật đã mất dữ liệu: `xFromPhoto` (xuất xứ 3 nấc
+   * `measured|inferred|verified` của `lib/idfc-import/from-photo.ts`) đặt ở cấp gốc. */
+  [khoaLa: string]: unknown;
 }
 
 export interface ParsedIdfc {
   meta: IdfcMeta;
   body: IdfcBody;
   commerce?: IdfcCommerce;
+  /** Khoá lạ cấp gốc — giữ TẠI CHỖ để nơi đọc thấy đúng thứ file có. Bản sao vận chuyển nằm ở
+   * `meta.x` (xem lý do ở đó). */
+  [khoaLa: string]: unknown;
+}
+
+/** Khoá cấp GỐC mà app hiểu — mọi khoá khác vào túi `x`. */
+const KHOA_GOC_DA_BIET = ['idfcVersion', 'meta', 'body', 'commerce'] as const;
+/** Khoá của `meta` mà app hiểu — mọi khoá khác vào túi `meta.x`. */
+const KHOA_META_DA_BIET = [
+  'id', 'name', 'nameEn', 'code', 'kind', 'scope', 'tags', 'room', 'author',
+  'createdAt', 'modifiedAt', 'appVersion', 'sourceLibraryId', 'x',
+] as const;
+
+/** Gom những khoá KHÔNG nằm trong `daBiet` thành một túi. Rỗng ⇒ `undefined` (không đẻ `{}` thừa
+ * vào mọi file, tránh làm nhiễu so sánh round-trip của dữ liệu cũ). */
+function tuiKhoaLa(
+  o: Record<string, unknown>,
+  daBiet: readonly string[],
+): Record<string, unknown> | undefined {
+  const tui: Record<string, unknown> = {};
+  for (const k of Object.keys(o)) if (!daBiet.includes(k)) tui[k] = o[k];
+  return Object.keys(tui).length ? tui : undefined;
 }
 
 /* ═══════════════ MIGRATION ═══════════════ */
@@ -300,12 +345,18 @@ export function exportIdfc(input: {
   meta: Partial<IdfcMeta> & Pick<IdfcMeta, 'name' | 'code' | 'kind'>;
   body: IdfcBody;
   commerce?: IdfcCommerce;
+  /** IDFC-INTEGRITY-001 — khoá lạ cấp gốc, rải trở lại nguyên văn. Thường KHÔNG cần truyền:
+   * `importIdfc` đã nhét bản sao vào `meta.x` chính vì mọi nơi gọi đều bóc tách và sẽ quên
+   * trường này. Truyền ở đây chỉ để nơi gọi nào muốn khai tường minh. */
+  x?: Record<string, unknown>;
 }): string {
   const now = new Date().toISOString();
+  // `meta.x` là TÚI VẬN CHUYỂN khoá cấp gốc (xem `IdfcMeta.x`) — bóc ra khỏi meta, trả về gốc.
+  const { x: tuiGoc, ...metaConLai } = input.meta as IdfcMeta;
   const file: IdfcFile = {
     idfcVersion: IDFC_VERSION,
     meta: {
-      ...input.meta,
+      ...metaConLai, // khoá lạ của meta đi kèm ở đây, giữ nguyên vị trí
       name: input.meta.name,
       code: input.meta.code,
       kind: input.meta.kind,
@@ -316,7 +367,16 @@ export function exportIdfc(input: {
     body: input.body,
     commerce: input.commerce,
   };
-  return JSON.stringify(file);
+  // Túi rải TRƯỚC, khoá đã biết ĐÈ LÊN SAU: một file lạ không bao giờ đổi được `idfcVersion`,
+  // `meta`, `body`, `commerce` của bản ghi ra. Nếu nó làm được thì mở-rồi-lưu một file cố ý
+  // độc hại có thể thay ruột món khác.
+  const raGoc: Record<string, unknown> = {
+    ...(tuiGoc ?? {}),
+    ...(input.x ?? {}),
+    ...file,
+  };
+  if (raGoc.commerce === undefined) delete raGoc.commerce;
+  return JSON.stringify(raGoc);
 }
 
 /* ═══════════════ IMPORT + VALIDATE ═══════════════ */
@@ -383,13 +443,24 @@ export function importIdfc(json: string): ParsedIdfc | null {
   let parsed: unknown;
   try {
     parsed = JSON.parse(json);
-  } catch {
+  } catch (e) {
+    // IDFC-INTEGRITY-001 — TRƯỚC ĐÂY đường này `return null` KHÔNG đặt `lastImportError`. Mọi
+    // đường từ chối khác đều có câu chữ; riêng ca hỏng PHỔ BIẾN NHẤT (file cụt, tải dở, sửa tay
+    // sai dấu phẩy) là ca DUY NHẤT câm. UI nhận `null` và không có gì để nói với người dùng.
+    const chiTiet = e instanceof Error ? e.message : String(e);
+    lastImportError = `File .idfc không phải JSON hợp lệ (${chiTiet}). File có thể bị cắt cụt hoặc hỏng khi tải/chép.`;
     return null;
   }
-  if (!isPlainObject(parsed)) return null;
+  if (!isPlainObject(parsed)) {
+    lastImportError = 'File .idfc phải là một đối tượng JSON — nhận được mảng hoặc giá trị đơn.';
+    return null;
+  }
 
   const fileVersion = parsed.idfcVersion;
-  if (typeof fileVersion !== 'number') return null;
+  if (typeof fileVersion !== 'number') {
+    lastImportError = 'File .idfc thiếu số phiên bản (`idfcVersion`) — có thể không phải file .idfc.';
+    return null;
+  }
 
   let file: Record<string, unknown> = parsed;
   if (fileVersion !== currentIdfcVersion) {
@@ -437,7 +508,17 @@ export function importIdfc(json: string): ParsedIdfc | null {
     appVersion: typeof rawMeta.appVersion === 'string' ? rawMeta.appVersion : 'unknown',
     sourceLibraryId: typeof rawMeta.sourceLibraryId === 'string' ? rawMeta.sourceLibraryId : undefined,
   };
+  // ⚙️ IDFC-INTEGRITY-001 — GIỮ khoá lạ thay vì vứt. Gom từ `file` (đã qua migration), không từ
+  // `parsed`: migration có thể dời khoá lên/xuống, gom bản trước migration là gom nhầm chỗ.
+  //
+  // Khoá lạ của `meta`  → giữ TẠI CHỖ trên `meta` (meta luôn được truyền nguyên khối khi xuất).
+  // Khoá lạ CẤP GỐC     → giữ TẠI CHỖ trên object trả về (để nơi đọc thấy đúng thứ file có)
+  //                        + bản sao trong `meta.x` để sống sót qua nơi gọi bóc tách.
+  Object.assign(meta, tuiKhoaLa(rawMeta, KHOA_META_DA_BIET) ?? {});
+  const laGoc = tuiKhoaLa(file, KHOA_GOC_DA_BIET);
+  if (laGoc) meta.x = laGoc;
+
   const commerce = isPlainObject(file.commerce) ? (file.commerce as unknown as IdfcCommerce) : undefined;
 
-  return { meta, body: file.body as IdfcBody, commerce };
+  return { meta, body: file.body as IdfcBody, commerce, ...(laGoc ?? {}) };
 }

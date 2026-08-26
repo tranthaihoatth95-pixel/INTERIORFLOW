@@ -28,6 +28,7 @@
  */
 
 import { useEffect } from 'react';
+import { idfcIdentityEnabled } from '@/lib/cad/idfc-identity-flag';
 import { LIBRARY_INSTANTIATE_EVENT } from '@/components/library/LibrarySheet';
 import { pushLibraryToast } from '@/components/library/LibraryToast';
 import { useCadStore, newId } from '@/lib/cad/store';
@@ -105,13 +106,21 @@ async function dropItem(item: LibraryItemRef, sheetItemId?: string): Promise<voi
     // lý do đã ghi block-library.ts:201). Gắn `srcBlock` + MỘT `srcInsertId` chung cho cả cụm
     // (Base đã có 2 field, serialize vào .idf) ⇒ chọn 1 nét là nở ra cả cụm
     // (`expandIdsByInsertGroup`), truy được gốc "từ .idfc nào".
-    // ⚠️ specId (R1) KHÔNG gắn được lên nét rời — schema chỉ cho Block/Hatch entity mang specId;
-    // thêm field vào model.ts là NGOÀI phạm vi phiếu. Khai thật trong báo cáo, không im lặng.
+    // ⚙️ IDFC-INTEGRITY-001 (26/08) — ĐÍNH CHÍNH ghi chú cũ ở đây:
+    //   *"specId (R1) KHÔNG gắn được lên nét rời — schema chỉ cho Block/Hatch entity mang specId;
+    //    thêm field vào model.ts là NGOÀI phạm vi phiếu."*
+    // Câu đó đúng lúc viết, và cái giá của nó đo được: **0/60 món mầm `.idfc` lên được BOQ** —
+    // món xuống bản vẽ rồi biến mất khỏi bảng khối lượng, không lỗi, không dòng. Nay `specId` đã
+    // nằm ở `Base` (`lib/cad/model.ts`), nên nét rời mang được danh tính, và `lib/boq/compute.ts`
+    // gom theo `srcInsertId` thành MỘT dòng đếm cho mỗi bản chèn.
+    // Sau cờ `NEXT_PUBLIC_IF_IDFC_IDENTITY` (`lib/cad/idfc-identity-flag.ts`): chưa đặt ⇒ y hệt hôm nay.
     const srcInsertId = newId('idfc-ins');
+    const ganDanhTinh = idfcIdentityEnabled();
     const entities = clusterPrimsToEntities(hit.geom2d.prims, at, { layer: 'l-furniture' }).map((e) => ({
       ...e,
       srcBlock: item.code,
       srcInsertId,
+      ...(ganDanhTinh && hit.specId ? { specId: hit.specId } : {}),
     }));
     if (entities.length === 0) {
       const msg = idfcNoGeom2dMessage(item);

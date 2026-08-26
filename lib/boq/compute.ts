@@ -29,6 +29,10 @@
  */
 
 import type { Doc, HatchEntity, BlockEntity, Pt } from '../cad/model';
+// Import TƯƠNG ĐỐI, KHÔNG alias '@/': file này là module THUẦN, chạy test thẳng bằng
+// `sucrase-node` (xem docstring đầu tệp) — sucrase KHÔNG giải alias, dùng '@/' là 5 tệp test
+// chết ngay với `Cannot find module`. Cùng quy ước đã ghi ở `lib/server/mime-sniff.ts`.
+import { idfcIdentityEnabled } from '../cad/idfc-identity-flag';
 import { polygonArea, pointInPolygon } from '../cad/hatch';
 import { BLOCK_MAP } from '../cad/furniture';
 import { isCountUnit, normalizeQty, FFE_DEFAULT_UNIT } from '../ffe/item';
@@ -267,8 +271,10 @@ export function computeBoq(doc: Doc, specs: MaterialSpecLite[]): BoqResult {
   /** group theo specId — Map giữ thứ tự gặp lần đầu, để rows/errors ra ổn định (không phụ thuộc
    * thứ tự duyệt Map nội bộ khác implementation). */
   const bySpecId = new Map<string, HatchEntity[]>();
-  /** cùng nguyên tắc, cho MÓN RỜI (BlockEntity) — tách Map riêng vì m² và cái KHÔNG cộng chung. */
-  const itemsBySpecId = new Map<string, BlockEntity[]>();
+  /** cùng nguyên tắc, cho MÓN RỜI — tách Map riêng vì m² và cái KHÔNG cộng chung.
+   * Kiểu nới thành `{ id }` (BlockEntity thoả) để nhận thêm **cụm nét rời từ `.idfc`** bên dưới:
+   * vòng dựng dòng chỉ dùng `e.id` và `group.length`, không cần gì hơn. */
+  const itemsBySpecId = new Map<string, { id: string }[]>();
 
   for (const h of hatches) {
     const specId = h.specId && h.specId.trim() ? h.specId : undefined;
@@ -290,6 +296,36 @@ export function computeBoq(doc: Doc, specs: MaterialSpecLite[]): BoqResult {
     const group = itemsBySpecId.get(specId);
     if (group) group.push(b);
     else itemsBySpecId.set(specId, [b]);
+  }
+
+  /* ───────── ⚙️ IDFC-INTEGRITY-001 · CỤM NÉT RỜI TỪ `.idfc` ─────────
+     Món `.idfc` không dựng được `BlockEntity` (lý do ở `Base.specId`), nên nó xuống bản vẽ dưới
+     dạng NHIỀU nét rời cùng chung một `srcInsertId`. Trước lát này, **0/60 món mầm `.idfc` lên
+     được BOQ**: chúng vào bản vẽ rồi biến mất khỏi bảng khối lượng, không lỗi, không dòng.
+
+     Luật đếm: **một `srcInsertId` = MỘT món**, không phải 41 nét = 41 món. Đây là chỗ dễ sai
+     nhất của lát này, nên nó là ca kiểm bắt buộc.
+
+     Sau cờ `NEXT_PUBLIC_IF_IDFC_IDENTITY` (`lib/cad/idfc-identity-flag.ts` giải thích vì sao
+     phải là biến NEXT_PUBLIC): cờ chưa đặt ⇒ BOQ ra y hệt hôm nay. */
+  if (idfcIdentityEnabled()) {
+    /** srcInsertId → specId. Map giữ thứ tự gặp đầu ⇒ dòng ra ổn định. */
+    const cumTheoInsert = new Map<string, string>();
+    for (const e of doc.entities) {
+      if (e.type === 'hatch' || e.type === 'block') continue; // đã đếm ở đường cũ
+      const ins = e.srcInsertId;
+      const sid = e.specId && e.specId.trim() ? e.specId : undefined;
+      if (!ins || !sid) continue;
+      // Gặp lại cùng bản chèn ⇒ bỏ qua: nét thứ hai của cùng một món KHÔNG phải món thứ hai.
+      if (!cumTheoInsert.has(ins)) cumTheoInsert.set(ins, sid);
+    }
+    for (const [ins, sid] of cumTheoInsert) {
+      const group = itemsBySpecId.get(sid);
+      // Định danh dòng lỗi theo BẢN CHÈN, không theo nét — người dùng chọn được cả cụm bằng
+      // `expandIdsByInsertGroup`, nên id bản chèn là thứ chỉ được vào đúng vật.
+      if (group) group.push({ id: ins });
+      else itemsBySpecId.set(sid, [{ id: ins }]);
+    }
   }
 
   const rows: BoqRow[] = [];

@@ -35,6 +35,7 @@ import { RADIUS } from '@/lib/geometry';
 import { markDemoStep } from '@/lib/studio/demo-spine';
 import { CommandIcon } from './command-icon';
 import LightBar from './LightBar';
+import SoSpecDaLuu from './SoSpecDaLuu';
 import { loadImage } from '@/lib/imaging';
 import { stashSpecPresentHandoff } from '@/lib/present-editor/spec-present-handoff';
 import { extractForeground } from '@/lib/render-core/furniture-extract-core';
@@ -392,6 +393,12 @@ export default function CuaAnhThanhSpec({ onDong }: { onDong: () => void }) {
           </div>
         )}
       </section>
+
+      {/* ═══ ĐƯỜNG ĐỌC — spec đã lưu của CHÍNH ảnh này ═══
+          Gắn ở đây, không ở thanh công cụ: ảnh nguồn đã được chọn ngay phía trên, nên "tờ spec cũ
+          của ảnh này" là câu hỏi tại chỗ, không cần một cửa thứ hai và một lần chọn ảnh thứ hai.
+          `khoaLamMoi` đổi khi vừa lưu xong ⇒ bản vừa ký hiện ngay, không phải đóng/mở lại panel. */}
+      {chon && <SoSpecDaLuu assetId={chon.id} khoaLamMoi={daLuu?.id ?? ''} />}
 
       {/* ═══ G2 — KÍCH THƯỚC ═══ */}
       {uv && (

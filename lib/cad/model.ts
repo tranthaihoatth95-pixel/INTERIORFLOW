@@ -344,6 +344,24 @@ interface Base {
   srcBlock?: string;
 
   /**
+   * ⚙️ IDFC-INTEGRITY-001 (26/08) — MÃ HÀNG trên entity BẤT KỲ, không chỉ Block/Hatch.
+   *
+   * Vì sao phải nâng lên `Base`: món `.idfc` thả xuống bản vẽ **không dựng được `BlockEntity`**
+   * (`.idfc` tự chứa không có `blockId` trong `BLOCK_MAP`; đăng ký block động là mở lại bản vẽ
+   * mất hình — lý do ghi ở `block-library.ts:201`). Đường thả làm phẳng `prims` thành nét rời.
+   * Nét rời trước nay KHÔNG mang được `specId` (schema chỉ cho Block/Hatch), nên **0/60 món mầm
+   * `.idfc` từng lên được BOQ** — chúng vào bản vẽ rồi biến mất khỏi bảng khối lượng, âm thầm.
+   *
+   * Nâng field lên `Base` là cách RẺ NHẤT sửa đúng gốc: `HatchEntity.specId`/`BlockEntity.specId`
+   * vẫn nguyên (chỉ là thu hẹp cùng kiểu), `.idf` cũ không có field vẫn mở nguyên, và nét rời
+   * nay mang được danh tính. Cặp đôi với `srcInsertId`: một BẢN CHÈN = một món để đếm.
+   *
+   * Nơi tiêu thụ (K4 — không khai field chết): `lib/boq/compute.ts` gom nét rời theo
+   * `srcInsertId` thành **một** dòng `kind:'count'`, sau cờ `IF_IDFC_IDENTITY`.
+   */
+  specId?: string;
+
+  /**
    * A1 · G-M1-06 (06/08) — **DANH TÍNH CỦA MỘT BẢN CHÈN**, KHÔNG phải tên block.
    *
    * `srcBlock` trả lời "hình này thuộc block TÊN GÌ"; nó KHÔNG tách được bản chèn này với bản
