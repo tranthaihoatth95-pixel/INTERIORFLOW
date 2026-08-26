@@ -46,6 +46,25 @@ const mappings = [
   ['docs/control/IF-TOOLING-RECEIPT.md', '03-TOPICS/IF-TOOLING/IF-TOOLING-RECEIPT.md'],
   ['docs/control/IF-UI-REVIEW-BOARD.md', '06-REVIEW/IF-UI-REVIEW/IF-UI-REVIEW-BOARD.md'],
   ['docs/mocks/IF-UI-Review-Board.html', '06-REVIEW/IF-UI-REVIEW/IF-UI-Review-Board.html'],
+
+  // ── GÓI CANDIDATE TTT-PROFILE-UX-001 (People & Organization) ──────────────
+  // Thêm 26/08. Gói này sensitivity = INTERNAL: bảng luật có nêu tên khách hàng.
+  // Mirror để Hoà và các phiên khác đọc được, KHÔNG phải để đăng công khai.
+  ['docs/design-candidate/TTT-PROFILE-UX-001/MANIFEST.json',
+   '06-REVIEW/TTT-PROFILE-UX-001/MANIFEST.json'],
+  ['docs/design-candidate/TTT-PROFILE-UX-001/00-RECEIPT.md',
+   '06-REVIEW/TTT-PROFILE-UX-001/00-RECEIPT.md'],
+  ['docs/design-candidate/TTT-PROFILE-UX-001/IF-PO-14-ProjectPresenceStack.md',
+   '06-REVIEW/TTT-PROFILE-UX-001/IF-PO-14-ProjectPresenceStack.md'],
+  ['docs/design-candidate/TTT-PROFILE-UX-001/artifacts/IF-PO-01.dc.html',
+   '06-REVIEW/TTT-PROFILE-UX-001/artifacts/IF-PO-01.dc.html'],
+  ['docs/design-candidate/TTT-PROFILE-UX-001/artifacts/IF-PO-14.dc.html',
+   '06-REVIEW/TTT-PROFILE-UX-001/artifacts/IF-PO-14.dc.html'],
+  ['docs/design-candidate/TTT-PROFILE-UX-001/artifacts/po-canvas.json',
+   '06-REVIEW/TTT-PROFILE-UX-001/artifacts/po-canvas.json'],
+  // canvas độc lập — mở thẳng bằng trình duyệt từ Drive, không cần repo
+  ['people-and-organization.html',
+   '06-REVIEW/TTT-PROFILE-UX-001/people-and-organization.html'],
 ];
 
 const reviewImages = [
