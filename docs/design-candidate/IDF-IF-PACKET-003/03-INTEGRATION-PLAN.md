@@ -85,6 +85,18 @@ auto-update.
 
 ---
 
+### ⛔ CHỐT CHẶN 26/08 — cấm chạm Prisma cho tới khi có receipt
+
+Hoà chốt: **`NOT ASSESSED` / `PARTIAL` / `PASS` / `FAIL`, không nhãn nào khác.** Nhãn
+`SAFE-TO-RUN` của gói 04 đã đổi thành **`PARTIAL — no schema delta on copied DB;
+migration-ledger conflict unresolved`** — nó nói đúng thứ đã đo (bản sao DB không lệch schema)
+và nói đúng thứ CHƯA giải quyết (sổ migration mâu thuẫn), thay vì gộp cả hai thành một chữ trấn an.
+
+**CẤM `prisma migrate resolve --applied`, `migrate reset`, `db push` trên DB THẬT** cho tới khi
+`IF-MIGRATION-LEDGER-RECONCILIATION-001` ra receipt chứng minh **từng** migration khớp chính xác:
+forensic trên bản sao · hash + diff SQL của 6 thư mục đối chiếu 5 hàng sổ · parity schema↔DB ·
+backup + **diễn tập khôi phục thật** + kế hoạch lùi tường minh. Không receipt thì không chạm.
+
 ## 4 · Luật chung cho mọi mục trên
 
 1. **Cổng harness (F-15).** Mỗi script chứng minh mở bằng một ca chứng minh **chính nó**. Cổng đỏ

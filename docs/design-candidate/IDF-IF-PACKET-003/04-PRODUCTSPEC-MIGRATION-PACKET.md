@@ -1,10 +1,10 @@
 # 04 · GÓI MIGRATION `ProductSpec`
 
-## `SAFE-TO-RUN`
+## `PARTIAL — no schema delta on copied DB; migration-ledger conflict unresolved`
 
 > **Không có gì để chạy.** Cả ba cột bị nghi là "chưa migrate" (`matId`, `room`, `confidence`) **đã tồn tại trên `prisma/dev.db` thật**, và `prisma migrate diff` giữa toàn bộ `schema.prisma` và DB trả về **empty migration** — độ lệch schema↔DB **bằng 0**.
 
-⚠️ Một ngoại lệ, đọc trước khi gõ bất cứ lệnh Prisma nào: **sổ migration lệch** (§7 · Rủi ro #1). Bước sửa sổ đó là `RUN-WITH-BACKUP`, không phải `SAFE-TO-RUN`.
+⚠️ Một ngoại lệ, đọc trước khi gõ bất cứ lệnh Prisma nào: **sổ migration lệch** (§7 · Rủi ro #1). Bước sửa sổ đó là `RUN-WITH-BACKUP`, không phải `PARTIAL — no schema delta on copied DB; migration-ledger conflict unresolved`.
 
 *Đo ngày 26/08/2026 · task `IF-PRODUCTSPEC-MIGRATION-PACKET-001` · mọi con số dưới đây đo trên **bản sao** `probe.db`, không chạm bản gốc.*
 

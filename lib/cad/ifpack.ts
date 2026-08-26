@@ -24,6 +24,7 @@
  */
 
 import { exportIdf, importIdf, type IdfSheetData } from './idf';
+import { sha256Hex } from './sha256';
 
 export const IFPACK_VERSION = 1 as const;
 
@@ -44,12 +45,8 @@ export interface IfpackManifest {
   files: IfpackManifestEntry[];
 }
 
-async function sha256Hex(data: ArrayBuffer): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
+// Hàm băm dời sang `lib/cad/sha256.ts` (26/08) để `.idfc` dùng CHUNG thay vì chép sang một bản
+// thứ hai — xem lý do đầy đủ ở đầu tệp đó. Hành vi không đổi một bit.
 
 /** "data:image/png;base64,...." → { mime, bytes }. null nếu không phải data URL base64 hợp lệ. */
 function decodeDataUrl(src: string): { mime: string; bytes: Uint8Array } | null {

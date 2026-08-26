@@ -11,7 +11,7 @@
 import { prisma } from '@/lib/server/db';
 import { ROLE_RANK, canEditStage, isProjectRole, type ProjectRole } from './access-policy';
 import { excludeHiddenNotebookProjects } from '@/lib/notebook/resolveProject';
-import { projectScopeEnforced } from './access-scope';
+import { projectScopeEnforced, canReadLibraryAsset } from './access-scope';
 
 export * from './access-policy';
 
@@ -183,6 +183,32 @@ export async function visibleUserIds(userId: string): Promise<string[] | null> {
     select: { userId: true },
   });
   return Array.from(new Set([userId, ...rows.map((r) => r.userId)]));
+}
+
+/**
+ * `AssetRepresentation` **thừa kế phạm vi** từ `LibraryAsset` qua khoá ngoại `assetId` — nó không
+ * có chủ sở hữu riêng, và cũng KHÔNG NÊN có: đẻ thêm một trục quyền thứ hai cho cùng một cái cây
+ * là bắt đầu phân kỳ (luật 6). Hàm này là cửa DUY NHẤT trả lời "phiên này có được đụng vào các
+ * cách thể hiện của asset kia không".
+ *
+ * Trả `null` = **không được** (caller trả 404, không phải 403 — không xác nhận asset có tồn tại).
+ * Trả asset = được.
+ *
+ * Dùng CHUNG cờ `IF_LIBRARY_SCOPE_ENFORCE` với `GET /api/library/[id]/file`, cố ý: hai cửa dẫn
+ * vào cùng một tài nguyên. Hai cờ riêng là hai câu trả lời khác nhau cho cùng một câu hỏi, và
+ * chúng sẽ lệch nhau — chỉ là vấn đề thời gian.
+ */
+export async function assetTrongPhamVi(
+  user: { id: string; isAdmin: boolean },
+  assetId: string,
+): Promise<{ id: string; userId: string } | null> {
+  if (!assetId) return null;
+  const asset = await prisma.libraryAsset.findFirst({
+    where: { id: assetId, deletedAt: null },
+    select: { id: true, userId: true },
+  });
+  if (!asset) return null;
+  return canReadLibraryAsset(user, asset) ? asset : null;
 }
 
 /* ===================== PHẠM VI TÀI NGUYÊN NGOÀI CÂY PROJECT ===================== */
