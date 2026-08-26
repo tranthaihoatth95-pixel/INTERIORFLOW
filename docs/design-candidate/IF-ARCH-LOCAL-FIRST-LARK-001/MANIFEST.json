@@ -1,0 +1,143 @@
+{
+  "schema": "IF-ARCH-PACKET-MANIFEST-v1",
+  "packetId": "IF-ARCH-LOCAL-FIRST-LARK-001",
+  "sourceBrief": "IF-ARCH-LOCAL-FIRST-LARK-001 — kiến trúc local-first + Lark, evidence-first",
+  "owner": "Hoà",
+  "producedBy": "CLAUDE MAIN + 3 phiên audit read-only (A architecture · B Lark/HRM · D security)",
+  "generatedAt": "2026-08-26T21:18:21+07:00",
+  "commitHead": "a08378a78d216903ab1439c550c3ff5da2c69427",
+  "branch": "checkpoint/2026-08-24-control-plane",
+  "status": "CANDIDATE",
+  "sensitivity": "INTERNAL",
+  "sensitivityReason": "Chứa đường dẫn mã, tên route và MÔ TẢ lỗ hổng chưa vá (R1·R2·R3). KHÔNG chứa secret, không trích giá trị credential, không PII. ⇒ Nội bộ. KHÔNG đăng công khai khi R2/R3 chưa vá.",
+  "noWriteAssertion": "Phiên này KHÔNG ghi/sửa/xoá bất kỳ tệp nào trong app/ components/ lib/ prisma/ electron/ scripts/. Ba phiên audit chạy read-only. Chỉ tạo tệp mới trong docs/design-candidate/.",
+  "sections": [
+    {
+      "file": "00-RECEIPT.md",
+      "sha256": "f68b5c04647d4ffb910e85ce5014794762a5d8690ae977fde27aeb41531cc9e4",
+      "bytes": 6051
+    },
+    {
+      "file": "01-OBSERVED-BACKEND-MAP.md",
+      "sha256": "941870eae6a400877f659ddc9cbe183d4693e7ee1a0b1efe6cbad265a6290ae8",
+      "bytes": 8890
+    },
+    {
+      "file": "02-LOCAL-FIRST-BOUNDARY.md",
+      "sha256": "e15118ef7c5f2b3c07f73434c00f35ac4b7dddf9a0a65cbd20e6bd2c59aebd8b",
+      "bytes": 5726
+    },
+    {
+      "file": "03-LARK-CONNECTOR-EVIDENCE.md",
+      "sha256": "bce396468644558848dec3267f6e84f017d2e3a11278b257612e1ec2ed47ed94",
+      "bytes": 7662
+    },
+    {
+      "file": "04-NEUTRAL-CONTRACT.md",
+      "sha256": "cccf229ab4fe488d683ea3943643cafe4bc1f08be930dfabedd8c7474f75fe12",
+      "bytes": 7534
+    },
+    {
+      "file": "05-DATA-CLASSIFICATION.md",
+      "sha256": "2d85e6c5008c2fc9460edfa0b4fe385899c24371de6f4804bf59e50f80822aba",
+      "bytes": 3511
+    },
+    {
+      "file": "06-SYNC-OPTIONS.md",
+      "sha256": "1847ae4cb345cac948340b8be37c7f99d2b0dff4308d7366727924848c4574aa",
+      "bytes": 3628
+    },
+    {
+      "file": "07-RISKS-AND-UNKNOWN.md",
+      "sha256": "a9db334298cba870885b9acac579ad531022385962ae037decb29526e704fa8e",
+      "bytes": 8507
+    },
+    {
+      "file": "08-ADR-CANDIDATE.md",
+      "sha256": "3cf7927703cd8257f88655b5d0c54143a8d455faa3ff98d1876977eb53c1ed88",
+      "bytes": 6709
+    },
+    {
+      "file": "09-IMPLEMENTATION-BACKLOG.md",
+      "sha256": "4079a3975a2a5c78d43179f586604fea88319f51c5efc151d0817ddf8e81d3fc",
+      "bytes": 3417
+    },
+    {
+      "file": "10-TEST-RUNTIME-GATE.md",
+      "sha256": "833b0b4fea53c66381f71de861c29699444aac87e381efab2dba5c6b6e3880b5",
+      "bytes": 4022
+    }
+  ],
+  "evidenceSessions": [
+    {
+      "id": "A",
+      "name": "Architecture Audit",
+      "mode": "read-only",
+      "scope": "electron startup · 77 routes · 24 models · file storage · auth · connectors"
+    },
+    {
+      "id": "B",
+      "name": "Lark/HRM Audit",
+      "mode": "read-only · KHÔNG gọi API Lark · KHÔNG lấy dữ liệu nhân sự",
+      "verdict": "ACTIVE CONNECTOR (không phải VERIFIED SOURCE)"
+    },
+    {
+      "id": "C",
+      "name": "Product Domain",
+      "mode": "do CLAUDE MAIN làm — PROPOSED, không phải OBSERVED"
+    },
+    {
+      "id": "D",
+      "name": "Security/Quality Audit",
+      "mode": "read-only · không trích giá trị secret"
+    }
+  ],
+  "topRisks": [
+    {
+      "id": "R1",
+      "sev": "NẶNG",
+      "title": "Không có tenant — 6 bảng nằm NGOÀI mô hình quyền",
+      "evidence": "prisma/schema.prisma; app/api/library/route.ts:7,11-15"
+    },
+    {
+      "id": "R2",
+      "sev": "NẶNG",
+      "title": "AUTH_SECRET fallback hardcode",
+      "evidence": "lib/server/auth.ts:46; middleware.ts:34"
+    },
+    {
+      "id": "R3",
+      "sev": "NẶNG",
+      "title": "public/comments-images/ phục vụ tệp KHÔNG xác thực",
+      "evidence": "app/api/comments/route.ts:42-45; middleware.ts:76"
+    },
+    {
+      "id": "R4",
+      "sev": "CAO",
+      "title": "Không có audit trail nào",
+      "evidence": "grep audit|activityLog = 0 hit"
+    },
+    {
+      "id": "R5",
+      "sev": "CAO",
+      "title": "Sync Lark ghi đè im lặng việc người dùng",
+      "evidence": "status/route.ts:89 ↔ sync/route.ts:63"
+    }
+  ],
+  "blockingQuestion": {
+    "id": "U1",
+    "q": "Một cài đặt IF có bao giờ phục vụ >1 studio không?",
+    "why": "Quyết định R1 và ADR-001. Chặn TOÀN BỘ People & Organization.",
+    "owner": "Hoà"
+  },
+  "gates": {
+    "architecture": "CANDIDATE",
+    "review": "PENDING",
+    "quality": "NOT VERIFIED",
+    "production": "NOT STARTED",
+    "runtime": "NOT VERIFIED"
+  },
+  "nextDependency": "ADR-001 (tenancy) — không quyết thì không mở writer task nào cho People & Organization",
+  "routing": "gửi Codex MAIN để định tuyến Product / Design / Architecture / Quality",
+  "adrNumbering": "Q10–Q13 — nối tiếp Q1–Q9 ACCEPTED trong docs/ADR-Q0-ARCHITECTURE-DECISIONS-2026-08-19.md"
+}
