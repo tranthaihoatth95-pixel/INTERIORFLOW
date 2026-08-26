@@ -44,16 +44,31 @@
 | luật UX đã trả giá | `SB-003` |
 | ai đang giữ bút | `SB-001` → ô **NGƯỜI GHI HIỆN TẠI** |
 
-## 📋 SỔ BẰNG CHỨNG WAVE 0 — nhãn mang theo BỀ MẶT ĐÃ CHẠM
+## 📋 SỔ BẰNG CHỨNG — nhãn mang theo BỀ MẶT ĐÃ CHẠM
 
-> Luật F-16 (`docs/design-campaign/02-FAILURE-LEDGER.md`): `PASS` một mình là chữ rỗng.
-> Mỗi nhãn phải nói **đã chạm bề mặt nào**. Bậc chưa chạm ghi `NOT ASSESSED` **kèm lý do**.
+> Luật F-16: `PASS` một mình là chữ rỗng. Mỗi nhãn nói **đã chạm bề mặt nào**.
+> Bậc chưa chạm ghi `NOT ASSESSED` **kèm lý do**.
+>
+> 🔴 **NHÃN TỔNG — release/security overall = `PARTIAL`** (Hoà chốt 26/08), và giữ `PARTIAL` cho
+> tới khi có ĐỦ hai thứ: **binary Electron đã đóng gói** và **cross-tenant negative có proof**.
+> Không mục nào dưới đây được dùng để nâng nhãn tổng lên rộng hơn bằng chứng của chính nó.
 
-| # | việc | verdict | bằng chứng | bậc CHƯA chạm |
+| # | việc | verdict theo scope | bằng chứng | bậc CHƯA chạm |
 |---|---|---|---|---|
-| R1 | `AUTH_SECRET` fail-closed (`lib/server/auth.ts` · `middleware.ts`) | 🟠 **`PARTIAL — process/contract proof`** | `lib/server/auth-failclosed.test.ts` 11/11 (đọc mã nguồn) · `scripts/proof/auth-failclosed.mjs` 3/3 (nạp module, 3 tổ hợp env) | **Electron đóng gói `NODE_ENV=production` thật** — chưa dựng bản đóng gói trong phiên này. Thông điệp lỗi người dùng nhìn thấy: `NOT ASSESSED` |
+| R1 | `AUTH_SECRET` fail-closed | 🟢 **`PASS — production server runtime (Electron-equivalent env)`** | `scripts/proof/identity-boundary.mjs` **13/13** · `auth-failclosed.test.ts` 11/11 · `auth-failclosed.mjs` 3/3 | binary `.app` đã đóng gói · `prisma db push` lúc khởi động · auto-update |
+| R3 | `IF-SECURE-ARTIFACT-DELIVERY-001` | 🟢 **`PASS — single-tenant HTTP runtime slice`** | `comment-artifact.test.ts` 29/29 · `secure-artifact-delivery.mjs` **12/12** · lại được xác nhận ở production runtime (identity-boundary CA 5-8) | Electron đóng gói · **cross-tenant negative** |
+| R8 | `GET /api/library/[id]/file` — phạm vi đọc + traversal | 🟢 **`PASS — single-tenant HTTP runtime slice, cả hai nhánh cờ`** | `access-scope.test.ts` 14/14 · `library-file-scope.mjs` **12/12** (cờ TẮT giữ nguyên kho dùng chung · cờ BẬT siết về chủ/admin · traversal chặn ở CẢ HAI) | cross-tenant negative |
+| W1-2 | shared access primitive `projectScope` | 🟢 **`PASS — DB runtime (dev.db thật), 0 caller`** | `scripts/proof/access-scope.mjs` **19/19**, gồm 7 ca **đồng thuận** với `assertProjectAccess` | hành vi route: **chưa bật** — cố ý |
+| `.idfc` | round-trip · migration · apply 2D · integrity | 🟠 **`PARTIAL — 35/39, 4 ca ĐỎ là bug thật`** | `scripts/proof/idfc-roundtrip.mjs` | integrity `MISSING` · `keepsIdentity=false` cho **0/60** seed |
 | R2 | content-integrity gate (report-only) | ⚪ **`NOT ASSESSED`** | — | chưa bắt đầu |
-| R3 | **`IF-SECURE-ARTIFACT-DELIVERY-001`** — ảnh góp ý rời `public/` | 🟢 **`PASS — runtime HTTP (Next dev server)`** | `lib/server/comment-artifact.test.ts` 29/29 (ghi/đọc THẬT trên hệ tệp) · `scripts/proof/secure-artifact-delivery.mjs` **12/12** qua HTTP thật, mở bằng **CA 0 · cổng harness** | **Electron đóng gói**: `NOT ASSESSED`. **Cross-tenant negative**: `NOT ASSESSED` — *IF chưa có khái niệm tenant*, không có ranh giới để vượt (xem Lane A). Ghi thẳng, không đội lốt PASS |
+
+### 🐞 Bug mã sản xuất đo được, CỐ Ý CHƯA VÁ (không nằm trong scope lát này)
+
+| bug | file:dòng | hệ quả |
+|---|---|---|
+| `importIdfc` **nuốt khoá lạ** — dựng lại `{meta, body, commerce}`, `meta` theo whitelist 13 trường | `lib/cad/idfc.ts:415-442` | mở file có `xFromPhoto` → lưu lại → **mất trên đĩa**, không cảnh báo. Trái với chính kỷ luật KS4 mà file tự khai |
+| `lastImportIdfcError()` trả `null` cho JSON hỏng | `lib/cad/idfc.ts:~395` | ca hỏng phổ biến nhất (file cụt/hỏng) là ca DUY NHẤT không có câu chữ cho người dùng |
+| thả `.idfc` **mất danh tính component** — `keepsIdentity=false`, **0/60** seed giữ được | `lib/cad/library-item-resolve.ts:56-70` | nét vào bản vẽ nhưng không mang `specId` ⇒ **không bao giờ tới BOQ như một món**. Đây là điều kiện tiên quyết của W2-3 |
 
 ### R3 — điều đo được, không phải điều suy ra
 

@@ -34,40 +34,51 @@ không phải một tính năng. Rẻ hơn, có bằng chứng nhanh hơn, và k
 
 | # | việc | verdict | còn thiếu bậc nào |
 |---|---|---|---|
-| R1 | `AUTH_SECRET` fail-closed | 🟠 `PARTIAL — process/contract proof` | Electron đóng gói `NODE_ENV=production` thật · thông điệp người dùng thấy: `NOT ASSESSED` |
-| R3 | `IF-SECURE-ARTIFACT-DELIVERY-001` | 🟢 `PASS — runtime HTTP (Next dev server)` · 29/29 đơn vị + 12/12 HTTP | Electron đóng gói: `NOT ASSESSED` · cross-tenant negative: `NOT ASSESSED` **vì chưa có tenant** |
+| R1 | `AUTH_SECRET` fail-closed | 🟢 `PASS — production server runtime (Electron-equivalent env)` · 13/13 | binary `.app` đã đóng gói · `prisma db push` khởi động · auto-update |
+| R3 | `IF-SECURE-ARTIFACT-DELIVERY-001` | 🟢 `PASS — single-tenant HTTP runtime slice` · 29/29 + 12/12 | Electron đóng gói · cross-tenant negative |
 | R2 | content-integrity gate (report-only) | ⚪ `NOT ASSESSED` | chưa bắt đầu |
-| R8 | path traversal `GET /api/library/[id]/file` | 🔴 **CHƯA VÁ** — Lane A đo lại: route `findUnique` rồi **trả file, không kiểm chủ sở hữu nào** | — |
+| R8 | `GET /api/library/[id]/file` | 🟢 `PASS — single-tenant HTTP runtime slice, cả hai nhánh cờ` · 12/12 | cross-tenant negative |
 
-**Chốt chặn cho cả kế hoạch:** Lane A nói thẳng — *"tenancy không có nghĩa khi ai cũng đúc được
-cookie `sub=<bất kỳ>`"*. ⇒ **R1 phải lên bậc Electron TRƯỚC khi bật bất kỳ bộ lọc phạm vi nào.**
-Bộ lọc dựng trên danh tính giả là trang trí.
+**Chốt chặn đã GỠ (26/08).** Lane A nói đúng — *"tenancy không có nghĩa khi ai cũng đúc được
+cookie `sub=<bất kỳ>`"* — nhưng Hoà chỉnh đúng chỗ: **không chờ "Electron hoàn hảo"**. Identity
+Boundary Probe (`scripts/proof/identity-boundary.mjs`, 13/13) đã chứng minh ở **production
+runtime thật** rằng thiếu `AUTH_SECRET` là route **từ chối phục vụ (500)**, và cookie ký bằng
+hằng số công khai `dev-secret-change-me` **không mở được cửa**. Nền danh tính đủ vững để làm
+access — miễn là **additive, sau cờ, không bật enforcement rộng trước proof**.
+
+Probe cũng phát hiện một điều quan trọng cho bản đóng gói: **`next start <appRoot>` nạp
+`<appRoot>/.env`**. Bản đóng gói KHÔNG chứa `.env` (`package.json → build.files`), nên
+`AUTH_SECRET` chỉ đến từ `<userData>/config.json` — probe dựng appRoot tạm **không có `.env`**
+đúng vì lý do đó. Chạy probe trên gốc repo là tự cho mình một secret và **không bao giờ thấy
+fail-closed bắn**.
+
+**`NOT ASSESSED` còn lại của R1:** binary `.app` đã ký/đóng gói · `prisma db push` lúc khởi động ·
+auto-update.
 
 ---
 
 ## 2 · WAVE 1 — nối dây. Mỗi mục một PR, mỗi mục lùi được bằng một `git revert`
 
-Thứ tự **không** tuỳ ý: sắp theo *rẻ nhất × chứng minh sớm nhất × ít phụ thuộc nhất*.
+| # | việc | trạng thái | bằng chứng | lùi |
+|---|---|---|---|---|
+| **W1-1** | R8 `library/[id]/file` — phạm vi đọc **sau cờ** + traversal **không cờ** | ✅ **XONG** | `library-file-scope.mjs` 12/12 · `access-scope.test.ts` 14/14 | revert 2 tệp |
+| **W1-2** | **Shared access primitive** `projectScope`/`visibleProjectIds`/`projectScopeWhere` | ✅ **XONG** — cứng hoá, **0 caller**, chưa đổi hành vi nào | `access-scope.mjs` 19/19 (7 ca đồng thuận với `assertProjectAccess`) | revert 1 tệp |
+| **W1-3** | Bật lọc ở `dashboard` (3 truy vấn) — bề mặt **chỉ đọc** | ⏭️ kế tiếp | cần: 2 tài khoản 2 dự án · **admin vẫn thấy tất cả** | cờ + revert 1 tệp |
+| **W1-4** | `home/summary` + `flows`: `userId: self` → phạm vi. Sửa luôn **under-fetch** | sau W1-3 | member được mời **thấy** dự án — *tính năng*, không chỉ vá | cờ + revert 2 tệp |
+| **W1-5** | **Đọc lại spec đã duyệt** — panel gọi `GET /api/asset-representation` (route có sẵn, 0 caller) | song song | duyệt → F5 → mở lại đúng tờ spec; sửa → **2 hàng**, hàng cũ nguyên | revert 1 tệp |
+| **W1-6** | **Ghi visual-generate xuống đĩa** — `nhanDeXuat()` ghi ảnh **và** `XuatXu` | song song | dựng ảnh → F5 → ảnh **và** model/version/credit còn nguyên (hôm nay trượt) | cờ + revert 1 tệp |
+| **W1-7** | **Integrity `.idfc`** — nối `sha256Hex`+`IfpackManifest` của `ifpack.ts`; `ParsedIdfc.x` để **không mất khoá lạ** | song song | `idfc-roundtrip.mjs` CA 6 đang **ĐỎ đúng đắn** — nó là bài kiểm sẵn cho lát này | revert 2 tệp |
+| **W1-8** | **`lastImportIdfcError()` cho JSON hỏng** — ca hỏng phổ biến nhất đang là ca duy nhất câm | song song | `idfc-roundtrip.mjs` CA 3.2 | revert 1 tệp |
+| **W1-9** | **Material Adapter Sandbox** — mapping hợp đồng · preview/staged diff · người xác nhận · rollback · provenance · nhãn cũ/stale · 20 bản ghi rights-cleared | song song | ⛔ **CẤM live vendor upsert và CẤM đưa giá vào BOQ** cho tới khi API/export thật của nhà cung cấp được xác minh | cờ |
+| **W1-10** | **Vitals/UX research** — Target/Reject storyboard + state contract | song song | ⛔ **không dựng lookalike, không code visual production** trước khi có Design Authority candidate. Mắt & chuyển động cuối cùng: **chỉ Hoà** — nhưng không chặn lane khác | tài liệu |
 
-| # | việc | phụ thuộc | phạm vi | cờ | lùi | bằng chứng phải có |
-|---|---|---|---|---|---|---|
-| **W1-1** | Vá **R8** `library/[id]/file` — kiểm chủ sở hữu trước khi trả bytes. Dùng lại đúng khuôn R3 vừa chứng minh | — | 1 route | không cần | revert 1 tệp | proof HTTP: chủ sở hữu 200 · người khác 404 · không phiên 401 · **CA 0 cổng harness** |
-| **W1-2** | **Cứng hoá `visibleProjectIds()`** — thêm `Project.deletedAt`, nhánh `isAdmin`, cờ `includeHidden` + test thuần | — | 1 tệp lib | không cần | revert 1 tệp | **0 caller ⇒ 0 rủi ro hành vi.** Test: 4 ca `visibleProjectIds` ≡ `assertProjectAccess` |
-| **W1-3** | Bật lọc ở `dashboard` (3 truy vấn) — bề mặt **chỉ đọc**, thấy ngay bằng mắt | W1-2, R1-Electron | 1 route | có | revert 1 tệp | 2 tài khoản, 2 dự án: mỗi bên chỉ thấy của mình · **admin vẫn thấy tất cả** (không thì là hồi quy) |
-| **W1-4** | `home/summary` + `flows`: đổi `userId: self` → phạm vi. **Sửa luôn lỗi under-fetch**: member được mời hiện **chưa từng** thấy dự án | W1-3 | 2 route | có | revert 2 tệp | member được mời **thấy** dự án — đây là *tính năng*, không chỉ vá an ninh |
-| **W1-5** | **Đọc lại spec đã duyệt** — panel gọi `GET /api/asset-representation`, dựng lại `SpecTuAnh` từ cột `provenance` đã có đủ dữ liệu | — | 1 component | không cần | revert 1 tệp | duyệt → tải lại trang → **mở lại đúng tờ spec**, sửa → **2 hàng DB**, hàng cũ nguyên vẹn |
-| **W1-6** | **Ghi kết quả visual-generate xuống đĩa** — `nhanDeXuat()` ghi ảnh **và** `XuatXu` (chỗ duy nhất có cú bấm của người) | — | 1 hàm | có | revert 1 tệp | dựng ảnh → F5 → ảnh **và** model/version/credit còn nguyên (hôm nay trượt ca này) |
-| **W1-7** | **Nối integrity `.idfc`** — dùng lại `sha256Hex` + `IfpackManifest` của `ifpack.ts`; và `ParsedIdfc.x` để **không mất khoá lạ** khi vào kho | — | 2 tệp lib | không cần | revert 2 tệp | round-trip giữ `xFromPhoto` (provenance 3 nấc hôm nay **rơi mất lúc nhập kho** — bug thật, Lane B đo được) |
-
-**Cấm gộp W1-3 với W1-4.** Cấm bắt đầu W1-3 khi W1-2 chưa có test.
-
----
+**Cấm gộp W1-3 với W1-4.**
 
 ## 3 · WAVE 2 — đổi cấu trúc. Chỉ mở sau khi Wave 1 xanh trên runtime
 
 | # | việc | quyết định chặn | vì sao phải chờ |
 |---|---|---|---|
-| **W2-1** | `Tenant` + `tenantId` **nullable** trên **9 bảng gốc** (phương án (c) của Lane A), backfill 1 tenant, **chưa ai đọc cột** | 🔴 **Câu hỏi U1 — của Hoà, không phải của kỹ thuật**: *một cài đặt có bao giờ phục vụ >1 studio không?* **KHÔNG** ⇒ bỏ hẳn W2-1..2-2, chỉ giữ Wave 1 + ghi ràng buộc triển khai tường minh | expand-only, nhưng kéo theo **quả mìn**: `ProductSpec.room`/`confidence` đã khai schema **chưa `db push`** — `prisma generate` sai lúc là **mọi đọc/ghi ProductSpec chết ở runtime**. Phải gộp cùng một lần push, sao lưu `dev.db` trước |
+| **W2-1** | `Tenant` + `tenantId` **nullable** trên **9 bảng gốc** (phương án (c) của Lane A), backfill 1 tenant, **chưa ai đọc cột** | ✅ **U1 ĐÃ ĐÓNG** (Hoà 26/08): Packet 003 quyết **IF là multi-studio/tenant theo core contract**; MVP có thể chỉ hiện TTT. U1 **gỡ khỏi danh sách chặn** — W2-1 là việc phải làm, không phải việc chờ | expand-only, nhưng kéo theo **quả mìn**: `ProductSpec.room`/`confidence` đã khai schema **chưa `db push`** — `prisma generate` sai lúc là **mọi đọc/ghi ProductSpec chết ở runtime**. Phải gộp cùng một lần push, sao lưu `dev.db` trước |
 | **W2-2** | Bật lọc `tenantId` sau cờ, thứ tự: `specs` → `boq` → `library` → `lark-tasks` → roster `user` → `chat` | — | `chat` cuối vì cần khoá kênh mới — hôm nay **không có bảng kênh** |
 | **W2-3** | `.idfc` mở rộng: `parts/instances` (4 chân ghế = 2 Definition × mirror), `meshRef`, `IdfcBoqRule`, `present` hints | 🔴 **Điều kiện tiên quyết**: sửa đường thả `clusterPrimsToEntities` — nó **làm phẳng prims, mất danh tính** | luật lặp ở tầng file sẽ **bị xoá sạch ngay lúc thả xuống bản vẽ**. Mở rộng trước khi sửa đường thả = **dữ liệu đúng trong file, sai trên bản vẽ, sai trong BOQ** — im lặng sai, tệ hơn lỗi to tiếng |
 | **W2-4** | Material Connector pilot 20 bản ghi | 🔴 **BLOCKED-BY-VENDOR**: chưa có tài liệu API **hoặc** bản xuất mẫu, chưa có điều khoản license bằng văn bản | `ATLAS_FIELD_NAMES` là **placeholder chưa xác minh**; route **upsert thẳng, không preview**; `priceVnd` chảy vào BOQ ⇒ bật lúc này là **ghi giá sai, âm thầm**. Đi **cửa Excel/CSV trước** (đã có 246 test pass), API sau |
@@ -91,9 +102,14 @@ Thứ tự **không** tuỳ ý: sắp theo *rẻ nhất × chứng minh sớm nh
 
 ## 5 · Chưa chạm — nói thẳng
 
-- **Lane D (Vitals/UX)**: `BLOCKED-BY-INPUT`. Cần bộ tham chiếu Hoà cung cấp + nghiên cứu hợp
-  pháp; **không dựng visual lookalike**. Chưa mở, không đoán thay.
-- **Bậc Electron đóng gói** cho R1 và R3: chưa dựng bản đóng gói trong phiên này.
+- **Lane D (Vitals/UX)**: **ĐÃ MỞ** (W1-10) — dùng toàn bộ reference Hoà đã cung cấp + hiện vật
+  thiết kế canonical đang có. Đầu ra bắt buộc: **Target/Reject storyboard + state contract**.
+  **Không lookalike, không code visual production** trước Design Authority candidate. Mắt và
+  chuyển động cuối cùng vẫn **chỉ Hoà** — nhưng không chặn lane khác.
+- **Bậc Electron ĐÓNG GÓI** (binary `.app`) cho R1/R3/R8: chưa dựng bản đóng gói trong phiên này.
+  Bậc *production server runtime* thì đã chạm (13/13).
+- **Nhãn tổng release/security = `PARTIAL`** cho tới khi có ĐỦ: binary đóng gói **và**
+  cross-tenant negative có proof. Từng mục có thể `PASS` trong scope của nó; nhãn tổng thì không.
 - **Trạng thái thật của cột `ProductSpec.matId` trên `dev.db`**: chưa đọc được (không có
   `sqlite3` trong môi trường của lane).
 - **Cross-tenant negative** ở mọi mục: `NOT ASSESSED` cho tới khi W2-1 tồn tại.

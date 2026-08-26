@@ -10,6 +10,7 @@
  */
 import { prisma } from '@/lib/server/db';
 import { ROLE_RANK, canEditStage, isProjectRole, type ProjectRole } from './access-policy';
+import { excludeHiddenNotebookProjects } from '@/lib/notebook/resolveProject';
 
 export * from './access-policy';
 
@@ -71,15 +72,89 @@ export async function canAccessStage(
   }
 }
 
-/** Danh sách projectId user được thấy — dùng cho truy vấn dạng list (bật lọc ở wave sau). */
-export async function visibleProjectIds(userId: string): Promise<string[]> {
+/**
+ * ⚙️ SHARED ACCESS PRIMITIVE — Wave 1 (26/08, Hoà mở lane).
+ *
+ * Bản CŨ của hàm này lệch ngữ nghĩa với `assertProjectAccess()` ở BA điểm, và vì nó có **0 nơi
+ * gọi** nên chỗ lệch chưa bao giờ nổ. Bật nguyên trạng là tạo hai định nghĩa "thấy được" mâu
+ * thuẫn nhau trong cùng một hệ — nguy hiểm hơn không lọc gì, vì nó *trông như* đã lọc:
+ *
+ *   ① KHÔNG lọc `Project.deletedAt` → dự án xoá mềm vẫn lọt vào list, trong khi route đơn lẻ
+ *     trả 404. Hai cửa nói hai chuyện khác nhau về cùng một dự án.
+ *   ② KHÔNG có nhánh `isAdmin` → `assertProjectAccess` coi admin là `owner` mọi dự án, còn hàm
+ *     này trả **rỗng** cho admin không phải member. Bật lọc là admin **mất sạch dashboard**.
+ *   ③ KHÔNG loại bucket ẩn `__nb:*` → mỗi route list phải tự nhớ, và hôm nay đúng là 4 chỗ
+ *     chép tay cùng một mệnh đề.
+ *
+ * Nay hàm này là **cửa DUY NHẤT** trả phạm vi dự án cho truy vấn dạng list, và phải cho **cùng
+ * câu trả lời** với `assertProjectAccess` trên bốn ca: admin · dự án xoá mềm · member bị gỡ ·
+ * bucket ẩn. `lib/server/access-scope.test.ts` canh đúng bốn ca đó.
+ *
+ * ⚠️ Chưa route nào gọi hàm này tại commit thêm nó — CỐ Ý. Lát W1-2 chỉ cứng hoá primitive
+ * (0 caller ⇒ 0 rủi ro hành vi); việc bật lọc là các lát sau, mỗi lát một route, có cờ.
+ */
+export interface PhamViDuAn {
+  /** `true` = user là admin: thấy MỌI dự án sống. Khi đó `ids` là toàn bộ dự án sống. */
+  laAdmin: boolean;
+  /** Danh sách projectId user được thấy — đã loại xoá mềm và (mặc định) bucket ẩn. */
+  ids: string[];
+}
+
+export interface TuyChonPhamVi {
+  /** `true` = giữ lại bucket ẩn `__nb:*`. Mặc định `false` (Gallery/Dashboard không được thấy). */
+  includeHidden?: boolean;
+}
+
+/**
+ * Phạm vi dự án của user, kèm cờ admin. Dùng cái này khi cần biết "vì sao thấy".
+ */
+export async function projectScope(userId: string, opts: TuyChonPhamVi = {}): Promise<PhamViDuAn> {
+  const u = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } });
+  const anBucket = opts.includeHidden ? {} : excludeHiddenNotebookProjects;
+
+  // Cửa hậu admin: giữ NGUYÊN ngữ nghĩa `assertProjectAccess` (admin ≡ owner mọi dự án).
+  // Không có nhánh này thì bật lọc = admin mất sạch dashboard — chính là hồi quy ②.
+  if (u?.isAdmin) {
+    const all = await prisma.project.findMany({
+      where: { deletedAt: null, ...anBucket },
+      select: { id: true },
+    });
+    return { laAdmin: true, ids: all.map((r) => r.id) };
+  }
+
   const rows = await prisma.projectMember.findMany({
-    // deletedAt: null — member đã bị gỡ khỏi dự án không còn thấy dự án đó trong list.
-    where: { userId, deletedAt: null },
+    // deletedAt trên CẢ HAI phía: member bị gỡ không còn thấy, và dự án xoá mềm thì không ai
+    // thấy — kể cả member còn sống. Bản cũ thiếu vế thứ hai (①).
+    where: { userId, deletedAt: null, project: { deletedAt: null, ...anBucket } },
     select: { projectId: true },
   });
-  return rows.map((r) => r.projectId);
+  return { laAdmin: false, ids: rows.map((r) => r.projectId) };
 }
+
+/**
+ * Danh sách projectId user được thấy. Vỏ mỏng của `projectScope` cho caller không cần cờ admin.
+ */
+export async function visibleProjectIds(userId: string, opts: TuyChonPhamVi = {}): Promise<string[]> {
+  return (await projectScope(userId, opts)).ids;
+}
+
+/**
+ * Mệnh đề `where` cho `prisma.project.findMany` — để route KHÔNG tự ghép `{ id: { in: [...] } }`
+ * mỗi nơi một kiểu. Đây là điểm mà "cửa duy nhất" thật sự có hiệu lực: một helper, không phải
+ * 18 mệnh đề chép tay.
+ */
+export async function projectScopeWhere(
+  userId: string,
+  opts: TuyChonPhamVi = {},
+): Promise<{ id: { in: string[] }; deletedAt: null }> {
+  return { id: { in: await visibleProjectIds(userId, opts) }, deletedAt: null };
+}
+
+/* ===================== PHẠM VI TÀI NGUYÊN NGOÀI CÂY PROJECT ===================== */
+
+// Phần THUẦN nằm ở `access-scope.ts` (test bằng sucrase-node, không cần Prisma); re-export tại
+// đây để route chỉ có MỘT import path cho mọi câu hỏi về quyền — đúng khuôn `access-policy.ts`.
+export * from './access-scope';
 
 /** Helper tiện dùng trong route: đổi AccessError thành {status,message} — còn lại re-throw. */
 export function accessErrorPayload(e: unknown): { status: 401 | 403 | 404; message: string } | null {
