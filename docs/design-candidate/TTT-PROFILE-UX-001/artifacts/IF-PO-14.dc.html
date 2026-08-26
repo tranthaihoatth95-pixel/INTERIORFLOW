@@ -1,0 +1,191 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><script src="./support.js"></script></head><body><x-dc>
+<helmet><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@200;300;400;500;600&display=swap">
+<style>
+  body{margin:0;font-family:'Be Vietnam Pro',-apple-system,system-ui,sans-serif;}
+  .nho{font-size:10px;letter-spacing:.1em;color:#96918a;}
+  .ghi{font-size:11.5px;color:#6e6a62;line-height:1.68;}
+  .ghi b{font-weight:500;color:#46433d;}
+  .o{border-radius:18px;background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.86);padding:15px 17px;}
+  code{font-size:10.5px;background:rgba(120,110,90,.12);padding:1px 5px;border-radius:4px;}
+</style></helmet>
+
+<div style="width:1900px;height:1320px;box-sizing:border-box;padding:28px 34px;color:#22201c;background:#f7f6f3;">
+
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
+    <span style="padding:4px 11px;border-radius:7px;background:#22201c;color:#f7f6f3;font-size:10.5px;letter-spacing:.11em;">IF-PO-14</span>
+    <span style="padding:4px 11px;border-radius:7px;background:rgba(61,127,95,.14);border:1px solid rgba(61,127,95,.32);
+          font-size:10.5px;color:#2f6b4d;">CANDIDATE · ALIGNED</span>
+    <span style="font-size:10.5px;color:#96918a;">v0.1</span>
+    <span style="font-size:10.5px;color:#96918a;">· nguồn: TTT-PROFILE-UX-001 + chốt Hoà 26/08</span>
+    <div style="flex-grow:1;"></div>
+    <span style="font-size:10px;color:#b5b0a8;">SYNTHETIC · không PII</span>
+  </div>
+  <div style="font-size:16px;font-weight:600;letter-spacing:-.015em;">ProjectPresenceStack — primitive DÙNG CHUNG</div>
+  <div class="ghi" style="max-width:1250px;margin:8px 0 18px;">
+    Bốn chỗ đang tự dựng bốn kiểu. Nay <b>một primitive</b>, sáu nơi dùng.
+    Và một điều chỉnh bắt buộc tôi nhận và làm ngay: <b>cụm này biểu diễn ĐỘI DỰ ÁN, không tự khẳng định ai đang online.</b>
+  </div>
+
+  <!-- CỠ -->
+  <div style="display:flex;gap:20px;align-items:flex-start;">
+    <div class="o" style="width:452px;">
+      <div class="nho" style="margin-bottom:14px;">BA CỠ THEO NGỮ CẢNH</div>
+      <div style="display:flex;gap:22px;align-items:flex-end;">
+        <div style="text-align:center;"><div style="height:44px;display:grid;place-items:center;"><span style="display:inline-flex;align-items:center;"><span style="width:18px;height:18px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#8b7ff2,#5b48d8);border:2px solid #fdfcfa;"></span><span style="width:18px;height:18px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#a2907a,#6d5c46);border:2px solid #fdfcfa;margin-left:-6px;"></span><span style="width:18px;height:18px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#7f8a86,#5c6663);border:2px solid #fdfcfa;margin-left:-6px;"></span></span></div><div style="font-size:11px;margin-top:8px;">18px</div><div style="font-size:10px;color:#96918a;margin-top:3px;line-height:1.4;">thẻ công trình</div></div><div style="text-align:center;"><div style="height:44px;display:grid;place-items:center;"><span style="display:inline-flex;align-items:center;"><span style="width:20px;height:20px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#8b7ff2,#5b48d8);border:2px solid #fdfcfa;"></span><span style="width:20px;height:20px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#a2907a,#6d5c46);border:2px solid #fdfcfa;margin-left:-7px;"></span><span style="width:20px;height:20px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#7f8a86,#5c6663);border:2px solid #fdfcfa;margin-left:-7px;"></span><span style="width:20px;height:20px;border-radius:999px;flex-shrink:0;background:rgba(120,110,90,.16);border:2px solid #fdfcfa;margin-left:-7px;display:grid;place-items:center;font-size:8px;color:#46433d;font-variant-numeric:tabular-nums;">+2</span></span></div><div style="font-size:11px;margin-top:8px;">20px</div><div style="font-size:10px;color:#96918a;margin-top:3px;line-height:1.4;">widget Home</div></div><div style="text-align:center;"><div style="height:44px;display:grid;place-items:center;"><span style="display:inline-flex;align-items:center;"><span style="width:24px;height:24px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#8b7ff2,#5b48d8);border:2px solid #fdfcfa;"></span><span style="width:24px;height:24px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#a2907a,#6d5c46);border:2px solid #fdfcfa;margin-left:-8px;"></span><span style="width:24px;height:24px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#7f8a86,#5c6663);border:2px solid #fdfcfa;margin-left:-8px;"></span><span style="width:24px;height:24px;border-radius:999px;flex-shrink:0;background:rgba(120,110,90,.16);border:2px solid #fdfcfa;margin-left:-8px;display:grid;place-items:center;font-size:9px;color:#46433d;font-variant-numeric:tabular-nums;">+2</span></span></div><div style="font-size:11px;margin-top:8px;">24px</div><div style="font-size:10px;color:#96918a;margin-top:3px;line-height:1.4;">hồ sơ · Legacy</div></div>
+      </div>
+      <div class="ghi" style="margin-top:15px;font-size:10.5px;">
+        Cỡ <b>không tự chọn theo dữ liệu</b> — nó theo <b>bề mặt chứa</b>. Cùng một dự án ở ba chỗ
+        thì ba cỡ khác nhau nhưng <b>cùng tập người</b>.
+      </div>
+    </div>
+
+    <!-- HỢP ĐỒNG -->
+    <div class="o" style="flex-grow:1;">
+      <div class="nho" style="margin-bottom:4px;">HỢP ĐỒNG — 9 điều, Hoà chốt 26/08</div>
+      <div style="display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-top:1px solid rgba(120,110,90,.14);"><span style="font-size:10px;color:#b5b0a8;width:16px;flex-shrink:0;padding-top:2px;font-variant-numeric:tabular-nums;">1</span><div style="flex-grow:1;"><div style="font-size:12px;color:#22201c;line-height:1.4;">Tối đa <b>3 avatar</b>, sau đó <code>+N</code>.</div></div></div>
+      <div style="display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-top:1px solid rgba(120,110,90,.14);"><span style="font-size:10px;color:#b5b0a8;width:16px;flex-shrink:0;padding-top:2px;font-variant-numeric:tabular-nums;">2</span><div style="flex-grow:1;"><div style="font-size:12px;color:#22201c;line-height:1.4;">Chồng khoảng <b>một phần ba</b>.</div><div style="font-size:10.5px;color:#96918a;margin-top:4px;line-height:1.5;">Ít hơn thì rời rạc, nhiều hơn thì không đếm được.</div></div></div>
+      <div style="display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-top:1px solid rgba(120,110,90,.14);"><span style="font-size:10px;color:#b5b0a8;width:16px;flex-shrink:0;padding-top:2px;font-variant-numeric:tabular-nums;">3</span><div style="flex-grow:1;"><div style="font-size:12px;color:#22201c;line-height:1.4;">Viền lấy <b>token của bề mặt chứa</b>.</div><div style="font-size:10.5px;color:#96918a;margin-top:4px;line-height:1.5;">Không dùng trắng cố định — avatar phải đọc ra là NẰM TRÊN mặt đó.</div></div></div>
+      <div style="display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-top:1px solid rgba(120,110,90,.14);"><span style="font-size:10px;color:#b5b0a8;width:16px;flex-shrink:0;padding-top:2px;font-variant-numeric:tabular-nums;">4</span><div style="flex-grow:1;"><div style="font-size:12px;color:#22201c;line-height:1.4;">Cỡ theo context: <b>18 / 20 / 24px</b>.</div></div></div>
+      <div style="display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-top:1px solid rgba(120,110,90,.14);"><span style="font-size:10px;color:#b5b0a8;width:16px;flex-shrink:0;padding-top:2px;font-variant-numeric:tabular-nums;">5</span><div style="flex-grow:1;"><div style="font-size:12px;color:#22201c;line-height:1.4;">Cùng <code>projectId</code> ⇒ <b>cùng tập presence/membership đã được phép nhìn</b>.</div><div style="font-size:10.5px;color:#96918a;margin-top:4px;line-height:1.5;">Đây là điều dễ vỡ nhất khi bốn chỗ tự triển khai.</div></div></div>
+      <div style="display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-top:1px solid rgba(120,110,90,.14);"><span style="font-size:10px;color:#b5b0a8;width:16px;flex-shrink:0;padding-top:2px;font-variant-numeric:tabular-nums;">6</span><div style="flex-grow:1;"><div style="font-size:12px;color:#22201c;line-height:1.4;"><b>Không ghi role</b> trực tiếp lên thẻ dự án.</div><div style="font-size:10.5px;color:#96918a;margin-top:4px;line-height:1.5;">Vai trò thuộc Project Staffing.</div></div></div>
+      <div style="display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-top:1px solid rgba(120,110,90,.14);"><span style="font-size:10px;color:#b5b0a8;width:16px;flex-shrink:0;padding-top:2px;font-variant-numeric:tabular-nums;">7</span><div style="flex-grow:1;"><div style="font-size:12px;color:#22201c;line-height:1.4;">Hover/focus/tap mở <b>popover ngắn</b>; “Xem đội dự án” mới đi vào Project Staffing.</div></div></div>
+      <div style="display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-top:1px solid rgba(120,110,90,.14);"><span style="font-size:10px;color:#b5b0a8;width:16px;flex-shrink:0;padding-top:2px;font-variant-numeric:tabular-nums;">8</span><div style="flex-grow:1;"><div style="font-size:12px;color:#22201c;line-height:1.4;">Keyboard · touch · screen reader <b>đọc được SỐ NGƯỜI</b>.</div><div style="font-size:10.5px;color:#96918a;margin-top:4px;line-height:1.5;"><code>aria-label="Đội dự án: 5 người"</code> — không phải 5 ảnh không nhãn.</div></div></div>
+      <div style="display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-top:1px solid rgba(120,110,90,.14);"><span style="font-size:10px;color:#b5b0a8;width:16px;flex-shrink:0;padding-top:2px;font-variant-numeric:tabular-nums;">9</span><div style="flex-grow:1;"><div style="font-size:12px;color:#22201c;line-height:1.4;"><b>Không dùng màu avatar</b> để biểu diễn role hay trạng thái duy nhất.</div><div style="font-size:10.5px;color:#96918a;margin-top:4px;line-height:1.5;">Màu là để nhận ra người, không mang nghĩa thứ hai.</div></div></div>
+    </div>
+
+    <!-- POPOVER -->
+    <div style="width:330px;">
+      <div class="nho" style="margin-bottom:14px;">POPOVER KHI TRỎ · CHẠM · FOCUS</div>
+      <div style="border-radius:16px;background:#fff;box-shadow:0 18px 40px -22px rgba(60,52,40,.55);
+           border:1px solid rgba(120,110,90,.16);padding:14px 15px;">
+        <div style="font-size:11px;color:#96918a;">ĐỘI DỰ ÁN · 5 NGƯỜI</div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(120,110,90,.13);"><span style="width:26px;height:26px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#8b7ff2,#5b48d8);border:2px solid #fff;"></span><span style="font-size:12px;color:#22201c;flex-grow:1;">Người A</span><span style="width:7px;height:7px;border-radius:999px;background:#4aa88a;"></span></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(120,110,90,.13);"><span style="width:26px;height:26px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#a2907a,#6d5c46);border:2px solid #fff;"></span><span style="font-size:12px;color:#22201c;flex-grow:1;">Người B</span></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(120,110,90,.13);"><span style="width:26px;height:26px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#7f8a86,#5c6663);border:2px solid #fff;"></span><span style="font-size:12px;color:#22201c;flex-grow:1;">Người C</span><span style="width:7px;height:7px;border-radius:999px;background:#4aa88a;"></span></div>
+        <div style="font-size:10.5px;color:#b5b0a8;padding:8px 0 0;border-top:1px solid rgba(120,110,90,.13);">còn 2 người</div>
+        <div style="margin-top:11px;padding:9px 0;text-align:center;border-radius:10px;
+             background:rgba(120,110,90,.1);font-size:11.5px;color:#46433d;">Xem đội dự án →</div>
+      </div>
+      <div class="ghi" style="margin-top:11px;font-size:10.5px;">
+        Chấm xanh chỉ hiện khi <b>CÓ DỮ LIỆU PRESENCE THẬT</b>. Không có nguồn presence thì
+        <b>không có chấm nào</b> — không suy ra online từ việc họ là thành viên.
+      </div>
+    </div>
+  </div>
+
+  <!-- QUYỀN -->
+  <div style="margin-top:22px;">
+    <div class="nho" style="margin-bottom:14px;">QUYỀN — KIỂM TRƯỚC KHI TẢI, không tải rồi che bằng CSS</div>
+    <div style="display:flex;gap:20px;">
+      <div style="width:300px;">
+      <div style="height:104px;border-radius:13px;background:#fdfcfa;display:grid;place-items:center;
+           border:1px solid rgba(120,110,90,.3);
+           "><div style="text-align:center;"><span style="display:inline-flex;align-items:center;"><span style="width:24px;height:24px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#8b7ff2,#5b48d8);border:2px solid #fdfcfa;"></span><span style="width:24px;height:24px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#a2907a,#6d5c46);border:2px solid #fdfcfa;margin-left:-8px;"></span><span style="width:24px;height:24px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#7f8a86,#5c6663);border:2px solid #fdfcfa;margin-left:-8px;"></span><span style="width:24px;height:24px;border-radius:999px;flex-shrink:0;background:rgba(120,110,90,.16);border:2px solid #fdfcfa;margin-left:-8px;display:grid;place-items:center;font-size:9px;color:#46433d;font-variant-numeric:tabular-nums;">+2</span></span><div style="font-size:10.5px;color:#96918a;margin-top:9px;">5 người</div></div></div>
+      <div style="font-size:11.5px;margin-top:9px;color:#22201c;">Có quyền xem đội</div>
+      <div style="font-size:10.5px;color:#6e6a62;line-height:1.6;margin-top:4px;">Thấy avatar và tên. Ảnh chỉ được tải SAU khi quyền trả về.</div>
+    </div>
+      <div style="width:300px;">
+      <div style="height:104px;border-radius:13px;background:#fdfcfa;display:grid;place-items:center;
+           border:1px solid rgba(120,110,90,.3);
+           "><div style="text-align:center;"><div style="display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;background:rgba(120,110,90,.1);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6e6a62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="3.5"/><path d="M17 11h4M19 9v4"/></svg><span style="font-size:12px;color:#46433d;">5 người</span></div></div></div>
+      <div style="font-size:11.5px;margin-top:9px;color:#22201c;">Chỉ thấy tổng hợp</div>
+      <div style="font-size:10.5px;color:#6e6a62;line-height:1.6;margin-top:4px;">Không có quyền xem danh tính. Hiện SỐ, không hiện ai.</div>
+    </div>
+      <div style="width:300px;">
+      <div style="height:104px;border-radius:13px;background:#fdfcfa;display:grid;place-items:center;
+           border:1px solid rgba(120,110,90,.3);
+           "><div style="text-align:center;"><span style="display:inline-flex;align-items:center;"><span style="width:24px;height:24px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#8b7ff2,#5b48d8);border:2px solid #fdfcfa;"></span><span style="width:24px;height:24px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#a2907a,#6d5c46);border:2px solid #fdfcfa;margin-left:-8px;"></span></span><div style="font-size:10.5px;color:#96918a;margin-top:9px;">2 trong phạm vi chia sẻ</div></div></div>
+      <div style="font-size:11.5px;margin-top:9px;color:#22201c;">Khách của dự án</div>
+      <div style="font-size:10.5px;color:#6e6a62;line-height:1.6;margin-top:4px;">Chỉ thấy thành viên THUỘC PHẠM VI ĐƯỢC CHIA SẺ, không thấy cả đội.</div>
+    </div>
+      <div style="width:300px;">
+      <div style="height:104px;border-radius:13px;background:#fdfcfa;display:grid;place-items:center;
+           border:1px solid rgba(120,110,90,.3);
+           "><div style="font-size:11px;color:#c9c5bc;">— không có gì ở đây —</div></div>
+      <div style="font-size:11.5px;margin-top:9px;color:#22201c;">Không có quyền</div>
+      <div style="font-size:10.5px;color:#6e6a62;line-height:1.6;margin-top:4px;">KHÔNG hiện cụm. Không hiện ô trống, không hiện ổ khoá.</div>
+    </div>
+      <div style="width:300px;">
+      <div style="height:104px;border-radius:13px;background:rgba(168,106,106,.06);display:grid;place-items:center;
+           border:1px solid rgba(120,110,90,0);
+           outline:2px solid #a86a6a;outline-offset:-2px;"><div style="text-align:center;filter:blur(4px);opacity:.6;"><span style="display:inline-flex;align-items:center;"><span style="width:24px;height:24px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#8b7ff2,#5b48d8);border:2px solid #fdfcfa;"></span><span style="width:24px;height:24px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#a2907a,#6d5c46);border:2px solid #fdfcfa;margin-left:-8px;"></span><span style="width:24px;height:24px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#7f8a86,#5c6663);border:2px solid #fdfcfa;margin-left:-8px;"></span><span style="width:24px;height:24px;border-radius:999px;flex-shrink:0;background:rgba(120,110,90,.16);border:2px solid #fdfcfa;margin-left:-8px;display:grid;place-items:center;font-size:9px;color:#46433d;font-variant-numeric:tabular-nums;">+2</span></span></div></div>
+      <div style="font-size:11.5px;margin-top:9px;color:#a86a6a;">✕ SAI — tải rồi che</div>
+      <div style="font-size:10.5px;color:#6e6a62;line-height:1.6;margin-top:4px;">Tải avatar và tên xong mới làm mờ bằng CSS. Dữ liệu ĐÃ RA KHỎI máy chủ.</div>
+    </div>
+    </div>
+  </div>
+
+  <!-- BA TRẠNG THÁI + HỎNG -->
+  <div style="display:flex;gap:20px;margin-top:24px;align-items:flex-start;">
+    <div class="o" style="width:560px;">
+      <div class="nho" style="margin-bottom:12px;">BA TRẠNG THÁI KHÁC NHAU — KHÔNG ĐƯỢC TRỘN</div>
+      <div style="font-size:12px;color:#46433d;line-height:1.9;">
+        <b>MEMBERSHIP</b> — thuộc team nào. Bền, đổi hiếm.<br>
+        <b>PROJECT ASSIGNMENT</b> — được giao vào dự án nào, vai trò gì, từ ngày nào tới ngày nào.
+        <b>Đây là thứ cụm này biểu diễn.</b><br>
+        <b>PRESENCE</b> — đang mở app hay không. Thoáng qua, giây một.
+        <br><br>Trộn ba cái là nguồn của mọi hiểu nhầm: một người <b>còn trong đội</b> nhưng
+        <b>hết hạn assignment</b>, hoặc <b>đang online</b> nhưng <b>không thuộc dự án này</b>.
+        <br><br><b>Mặc định của cụm = ĐỘI DỰ ÁN.</b> Presence là lớp <b>thêm vào</b>, chỉ khi có nguồn thật.
+      </div>
+    </div>
+    <div class="o" style="flex-grow:1;">
+      <div class="nho" style="margin-bottom:12px;">HỎNG · THIẾU · DÀI</div>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <div style="text-align:center;">
+          <div style="height:46px;display:grid;place-items:center;">
+            <span style="display:inline-flex;align-items:center;">
+              <span style="width:24px;height:24px;border-radius:999px;background:rgba(120,110,90,.16);
+                    border:2px solid #fdfcfa;display:grid;place-items:center;font-size:10px;color:#6e6a62;">A</span>
+              <span style="width:24px;height:24px;border-radius:999px;background:rgba(120,110,90,.16);
+                    border:2px solid #fdfcfa;margin-left:-8px;display:grid;place-items:center;font-size:10px;color:#6e6a62;">B</span>
+              <span style="width:24px;height:24px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#7f8a86,#5c6663);border:2px solid #fdfcfa;margin-left:-8px;"></span></span></div>
+          <div style="font-size:10.5px;color:#6e6a62;line-height:1.5;width:150px;">
+            <b style="color:#46433d;font-weight:500;">Mất ảnh</b> → chữ cái đầu tên,<br>không phải ô xám trống</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="height:46px;display:grid;place-items:center;">
+            <span style="display:inline-flex;align-items:center;opacity:.5;">
+              <span style="width:24px;height:24px;border-radius:999px;background:rgba(120,110,90,.14);border:2px solid #fdfcfa;"></span><span style="width:24px;height:24px;border-radius:999px;background:rgba(120,110,90,.14);border:2px solid #fdfcfa;margin-left:-8px;"></span><span style="width:24px;height:24px;border-radius:999px;background:rgba(120,110,90,.14);border:2px solid #fdfcfa;margin-left:-8px;"></span>
+            </span></div>
+          <div style="font-size:10.5px;color:#6e6a62;line-height:1.5;width:150px;">
+            <b style="color:#46433d;font-weight:500;">Đang tải</b> → ba ô mờ, KHÔNG nhảy số</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="height:46px;display:grid;place-items:center;">
+            <span style="display:inline-flex;align-items:center;gap:7px;">
+              <span style="display:inline-flex;align-items:center;"><span style="width:24px;height:24px;border-radius:999px;flex-shrink:0;background:linear-gradient(140deg,#8b7ff2,#5b48d8);border:2px solid #fdfcfa;"></span></span>
+              <span style="font-size:11px;color:#46433d;max-width:104px;overflow:hidden;text-overflow:ellipsis;
+                    white-space:nowrap;display:inline-block;">Nguyễn Thị Hoàng Ph…</span></span></div>
+          <div style="font-size:10.5px;color:#6e6a62;line-height:1.5;width:160px;">
+            <b style="color:#46433d;font-weight:500;">Tên dài</b> → cắt bằng dấu ba chấm,<br>cụm avatar KHÔNG co lại</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUALITY -->
+  <div class="o" style="margin-top:22px;">
+    <div class="nho" style="margin-bottom:12px;">TÁM ĐIỀU QUALITY PHẢI KIỂM — chép nguyên từ Hoà, chưa cái nào PASS</div>
+    <div style="display:flex;gap:26px;">
+      <div style="flex-grow:1;font-size:12px;color:#46433d;line-height:1.95;">
+        1 · Cùng project cho kết quả nhất quán ở cả sáu nơi<br>
+        2 · <code>+N</code> tính đúng<br>
+        3 · <b>Permission-before-load</b><br>
+        4 · Avatar lỗi/mất ảnh có fallback
+      </div>
+      <div style="flex-grow:1;font-size:12px;color:#46433d;line-height:1.95;">
+        5 · 18/20/24px vẫn nhận diện được<br>
+        6 · Không vỡ ở 1100px, touch, và tên dài<br>
+        7 · Click mở đúng Project Staffing<br>
+        8 · <b>Ảnh chứng minh trên Electron thật</b>
+      </div>
+      <div class="ghi" style="width:452px;">
+        <b>Trạng thái thật lúc này:</b> thiết kế <code>CANDIDATE · ALIGNED</code> ·
+        production <b>chưa có</b> · runtime <b>chưa kiểm</b>.
+        <br><br>Bốn chỗ trên canvas IF hiện đang là <b>bản vẽ tay, chưa qua primitive</b> —
+        chúng <b>chưa có cổng quyền</b>. Đó là lý do artifact này phải ra trước khi Production chạm vào.
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc></body></html>

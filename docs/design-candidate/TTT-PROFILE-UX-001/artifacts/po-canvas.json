@@ -1,0 +1,39 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1900,
+      "h": 1320,
+      "title": "IF-PO-01 · System map và chỗ đặt"
+    },
+    {
+      "file": "IF-PO-14.dc.html",
+      "x": 2020,
+      "y": 0,
+      "w": 1900,
+      "h": 1320,
+      "title": "IF-PO-14 · ProjectPresenceStack"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "nhan-viec",
+      "x": 0,
+      "y": -330,
+      "w": 980,
+      "text": "TTT-PROFILE-UX-001 · HỌ ARTIFACT People & Organization\n\nTRẠNG THÁI: CANDIDATE — chờ Hoà duyệt mắt.\nPhiên này là DESIGN, READ-ONLY trên production. Không sửa app/ components/ lib/ prisma/.\n\nDỰNG XONG 1/13. Mười hai cái còn lại CỐ Ý CHƯA DỰNG:\nnếu chỗ đặt ở IF-PO-01 sai thì cả 12 cái sau sai theo.\n\nDữ liệu trong mọi bản vẽ: SYNTHETIC. Không PII của TTT.\nKhông dùng số 430 làm mặc định. Mọi số tổng hợp kèm ngày chụp + nguồn.\n\n⛔ SÁU THỨ CHƯA CHỐT (ghi trong artifact): domain schema · permission model ·\nnguồn HRM · feature flag theo tenant · audit trail · định nghĩa \"quá tải\".\nP0 KHÔNG chốt được khi còn thiếu.\n\n🔴 Lệch so với đề bài: môi trường này không lấy được Claude Design project ID thật —\nbản Design ở đây là canvas nhúng trong Artifact. Dùng URL artifact làm định danh,\nvà ghi rõ đây là LỆCH, không phải tương đương."
+    },
+    {
+      "id": "po14",
+      "x": 2020,
+      "y": -330,
+      "w": 900,
+      "text": "IF-PO-14 · ProjectPresenceStack — CANDIDATE · ALIGNED\n\nNhận contract Hoà chốt 26/08. Một primitive, SÁU nơi dùng:\nProject Legacy · Hồ sơ công trình · Project cards · Widget Home · Project Lens · Project Reel.\n\nĐIỀU CHỈNH BẮT BUỘC đã nhận và làm:\ncụm biểu diễn ĐỘI DỰ ÁN, KHÔNG tự khẳng định ai đang online.\nPresence là lớp thêm vào, chỉ khi có nguồn thật.\n\nPermission-before-load: bốn trạng thái quyền + một ca SAI (tải rồi che bằng CSS).\n\n🔴 Bốn chỗ trên canvas IF hiện là BẢN VẼ TAY, CHƯA qua primitive,\nCHƯA có cổng quyền. Production phải thay bằng primitive trước khi dùng thật."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

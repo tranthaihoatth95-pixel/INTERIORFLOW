@@ -1,0 +1,109 @@
+{
+  "schema": "IF-DESIGN-CANDIDATE-MANIFEST-v1",
+  "bundleId": "TTT-PROFILE-UX-001",
+  "sourceBrief": "TTT-PROFILE-UX-001 — People & Organization, hồ sơ khách hàng đầu tiên của IF",
+  "owner": "Hoà",
+  "producedBy": "CLAUDE MAIN · phiên DESIGN (read-only trên production)",
+  "generatedAt": "2026-08-26T19:12:02+07:00",
+  "branch": "checkpoint/2026-08-24-control-plane",
+  "status": "CANDIDATE",
+  "sensitivity": "INTERNAL",
+  "sensitivityReason": "Bản vẽ KHÔNG chứa secret, email, đường dẫn cá nhân hay PII. Nhưng các bảng LUẬT trong IF-PO-01 có nêu tên khách hàng (\"ánh xạ TTT là configuration adapter\") như một phần lập luận thiết kế về LUẬT TRUNG TÍNH. Số 430 chỉ xuất hiện trong câu CẤM dùng nó làm mặc định, không phải như dữ liệu. ⇒ Gói này dùng NỘI BỘ. Không đăng công khai khi chưa gỡ phần nêu tên khách.",
+  "syntheticRoster": {
+    "note": "Mọi tên người trong bản vẽ do IF tự đặt, KHÔNG lấy từ dữ liệu TTT.",
+    "names": [
+      "Người A",
+      "Người B",
+      "Người C",
+      "Nguyễn Thị Hoàng Ph… (mẫu TÊN DÀI để thử cắt chữ)"
+    ],
+    "residualRisk": "Tên mẫu tiếng Việt có thể TRÙNG NGẪU NHIÊN với người thật. Nếu Hoà thấy rủi ro, đổi sang chuỗi trung tính — tôi không tự đổi vì nó phá phép thử cắt chữ."
+  },
+  "artifacts": [
+    {
+      "file": "artifacts/IF-PO-01.dc.html",
+      "designId": "IF-PO-01",
+      "version": "v0.1",
+      "name": "System map · navigation placement",
+      "sha256": "13d1e8122be5ded40c856ae28651935cd62a11b5b582317f0e2206b7cfefab31",
+      "bytes": 24068,
+      "supersedes": null,
+      "artifactUrl": "https://claude.ai/code/artifact/c87eb06d-8369-474e-9402-3417527e29b8",
+      "productionMapping": "CHƯA CÓ — chờ P0 domain/permission contract",
+      "sensitivity": "INTERNAL",
+      "status": "CANDIDATE"
+    },
+    {
+      "file": "artifacts/IF-PO-14.dc.html",
+      "designId": "IF-PO-14",
+      "version": "v0.1",
+      "name": "ProjectPresenceStack — primitive dùng chung",
+      "sha256": "0a09676edf00786563d6de7a869e07e827e797ce7989012a606e1e84fa6e0610",
+      "bytes": 23666,
+      "supersedes": null,
+      "artifactUrl": "https://claude.ai/code/artifact/c87eb06d-8369-474e-9402-3417527e29b8",
+      "productionMapping": "P1 · shared People/Organization primitives → thay 4 chỗ vẽ tay: ProjectLegacy · HoSoCongTrinh · ManDuAn · Main(widget Công trình)",
+      "sensitivity": "INTERNAL",
+      "status": "CANDIDATE"
+    },
+    {
+      "file": "artifacts/po-canvas.json",
+      "designId": "IF-PO-CANVAS",
+      "version": "v0.2",
+      "name": "Bố cục canvas họ artifact",
+      "sha256": "5e80aa0d73923ee5acf9e78176a98d45bf6ae057234d53e5cd32e91a1f7a3e0e",
+      "bytes": 2343,
+      "supersedes": null,
+      "artifactUrl": "https://claude.ai/code/artifact/c87eb06d-8369-474e-9402-3417527e29b8",
+      "productionMapping": "—",
+      "sensitivity": "INTERNAL",
+      "status": "CANDIDATE"
+    }
+  ],
+  "family": {
+    "planned": 13,
+    "built": 2,
+    "builtIds": [
+      "IF-PO-01",
+      "IF-PO-14"
+    ],
+    "missing": [
+      "IF-PO-02",
+      "IF-PO-03",
+      "IF-PO-04",
+      "IF-PO-05",
+      "IF-PO-06",
+      "IF-PO-07",
+      "IF-PO-08",
+      "IF-PO-09",
+      "IF-PO-10",
+      "IF-PO-11",
+      "IF-PO-12",
+      "IF-PO-13"
+    ],
+    "warning": "KHÔNG được gọi hệ People & Organization là hoàn thành. Mới 2/13 (+1 bổ sung ngoài danh sách gốc)."
+  },
+  "blockedBy": [
+    "domain schema Organization/Person/Membership",
+    "Product Permission model (workload · OT · HR)",
+    "nguồn HRM và cơ chế đồng bộ",
+    "hạ tầng feature flag theo tenant",
+    "audit trail (export · role change · assignment)",
+    "định nghĩa ngưỡng \"quá tải\""
+  ],
+  "gates": {
+    "design": "CANDIDATE",
+    "review": "PENDING",
+    "production": "NOT STARTED",
+    "runtime": "NOT VERIFIED",
+    "driveMirror": "PENDING"
+  },
+  "scan": {
+    "secrets": "CLEAN",
+    "emails": "CLEAN",
+    "personalPaths": "CLEAN",
+    "customerPII": "CLEAN",
+    "customerNameMentions": 4,
+    "ranAt": "2026-08-26T19:12:02+07:00"
+  }
+}
