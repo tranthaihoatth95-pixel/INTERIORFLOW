@@ -155,3 +155,20 @@ tái hiện trong phiên này; `lib/dna/store.ts` chưa được đọc kỹ ph�
 - **Làm reopen trước khi làm write** — không có gì để đọc lại. Thứ tự bắt buộc là ghi → đọc.
 - **Bỏ `localStorage` khi thêm ghi máy chủ** — mất tính năng khôi phục lúc gõ dở. Hai lớp phục vụ
   hai mục đích khác nhau, giữ cả hai.
+
+---
+
+## 8. Sai lệch so với lượt đo (đã xác minh lại trên `147f66a`)
+
+| lượt đo ghi | mã thật `147f66a` | ghi chú |
+|---|---|---|
+| HEAD `ad26391` | HEAD **`147f66a`** | dòng đã trôi trên nhiều tệp |
+| `brief-file.ts:14,23` cho `.docx` | `:14` là **docstring** khai `.docx` chưa nhận; nhánh trả `'word'` thật ở **`:37`**; `:23` là `BRIEF_FILE_ACCEPT` | kết luận không đổi, dòng đổi |
+| `brief-file.ts:35` `briefFileKind()` | **`:34`** | lệch 1 |
+| `ai-assist.ts:216` parse là stub | `:216` là **docstring** "TẦNG 1 (stub rule-based)"; hàm ở **`:220`** | cả hai đều đúng nghĩa |
+| `ai-assist.ts:155` stub | ✅ đúng (mốc mục "TẦNG 1 — PARSE (stub…)") | — |
+| `AiBriefPanel.tsx:341` "Nhận" | hàm `accept` ở **`:340`** (docstring `:335-338`) | lệch 1 |
+| `lib/dna/types.ts:47` Thẻ DNA | `export interface DesignDnaCard` ở **`:48`** | lệch 1 |
+| `lib/dna/store.ts:21,50` | `DNA_ROOT` **`:21`** ✅ · `cards.json` ở **`:53`** (không phải `:50`) | lệch 3 |
+| `CadEditor.tsx:911`, `AiBriefPanel.tsx:157`, `:252`, `:297`, `:75-76`, `ai-assist.ts:559`, route DNA | ✅ **đúng nguyên** | — |
+| "không dòng mã nào nối brief → DNA" | ✅ **xác nhận lại** — grep `aibrief` ngoài `AiBriefPanel.tsx` = 0 dòng | — |

@@ -158,3 +158,32 @@ có trần trả về, nếu không danh sách sẽ kéo cả nghìn dòng vào 
   vào là biến nó thành lát có rủi ro, và mất luôn đường lùi sạch ở §5.
 - **Bỏ cờ, bật thẳng** — nếu chưa xác minh trần phân trang (`NOT ASSESSED` ở Ca 3), một dự án
   nhiều spec sẽ kéo cửa G1-G4 đứng hình.
+
+---
+
+## 8. Sai lệch so với lượt đo (đã xác minh lại trên `147f66a`)
+
+🔴 **Thay đổi lớn nhất: luồng đã ĐI TIẾP kể từ lượt đo.** Lượt đo không có hai thứ sau, nay đã
+tồn tại và chạy:
+
+- **Cầu Spec → Trình bày** — `lib/present-editor/spec-present-handoff.ts` (LANE F, đóng gap
+  `IF-LIVE-BRIDGE.md` mục MISSING "Spec Portal to Present"). Gọi từ `CuaAnhThanhSpec.tsx:39` và
+  `PresentEditor.tsx:64,428`. Dùng lại đúng khuôn `sessionStorage` + fallback singleton của
+  `lib/cad/present-handoff.ts`, không đẻ cơ chế thứ ba, không content-model mới.
+- **Mốc demo ghi đúng lúc `200/201` thật** — `lib/studio/demo-spine.ts:88` (`markDemoStep`), gọi
+  ở `CuaAnhThanhSpec.tsx:248` ngay sau khi POST trả về, không sớm hơn.
+
+⇒ Câu *"tờ spec không đi tiếp được đâu"* của lượt đo **không còn đúng**. Nó đi sang Trình bày
+được. Chỗ đứt còn lại là **đọc lại**, không phải đi tiếp.
+
+| lượt đo ghi | mã thật `147f66a` | ghi chú |
+|---|---|---|
+| HEAD `ad26391` | HEAD **`147f66a`** | — |
+| `StageToolbelt.tsx:119` điểm vào | render `CuaAnhThanhSpec` ở **`:93`**; nhánh mở ở **`:120-121`** (`c.id === 'image-to-3d' ? () => setMoKhoi(true)`) | `:119` là nhánh `visual-generate` |
+| `CuaAnhThanhSpec.tsx:93` component | `export default function` ở **`:123`** (`:93` là hàm đọc tệp ảnh) | lệch 30 |
+| `anh-thanh-spec.ts:245` `taoSpecTuUngVien` | **`:244`** | lệch 1 |
+| `anh-thanh-spec.ts:299` `banGhiBieuDien` | **`:300`** | lệch 1 |
+| `anh-thanh-spec.ts:227-237` ngữ pháp sự thật | `nhanKichThuoc` **`:229-234`** (docstring `:225`) | lệch nhỏ |
+| `anh-thanh-spec.ts:289-292` payload tự khai | docstring `payloadRef` **`:288-293`**, giá trị đặt ở **`:305`** | lệch nhỏ |
+| `image-to-3d.ts:350,364,505` · `to-cad.ts:130` · `route.ts:23,63` · `schema.prisma:347` · `CuaAnhThanhSpec.tsx:216-247,240` · `ToolModeForm.tsx:974` | ✅ **đúng nguyên** (`route.ts` GET thực ở `:24`, POST `:37`) | — |
+| "`GET` tồn tại, 0 component gọi" | ✅ **xác nhận lại** — grep `asset-representation` toàn `app/ components/ lib/`: 5 kết quả, chỉ 1 lượt `fetch` và đó là **POST** | — |
