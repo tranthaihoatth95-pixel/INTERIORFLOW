@@ -26,7 +26,8 @@
  */
 
 import { useCallback, useId, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, DragEvent } from 'react';
+import { ASSET_MIME } from '@/components/LibraryPanel';
 import { RADIUS } from '@/lib/geometry';
 import { ToolbarBar, ToolbarChip } from './ToolbarChip';
 import { CommandIcon } from './command-icon';
@@ -41,6 +42,7 @@ import {
   type DeXuatHinhAnh,
   type KieuNguon,
   type TienDoDung,
+  type YeuCauDung,
 } from '@/lib/capabilities/visual-generate';
 import { chayDungHinhAnh } from '@/lib/capabilities/visual-generate-run';
 import {
@@ -54,6 +56,55 @@ import {
 } from '@/lib/capabilities/nguon-anh';
 
 const ANH_SANG = ['', 'Daylight', 'Sunset', 'Đèn vàng ấm ban đêm', 'Studio soft light'] as const;
+
+/* ─────────────────────────── NGUỒN CÓ DANH TÍNH (W1-6b) ─────────────────────────── */
+
+/**
+ * `/api/library/<id>/file` ⇒ `<id>` — **id thật của một `LibraryAsset`**, không phải id bịa.
+ *
+ * ── VÌ SAO ĐÂY LÀ ID ĐÚNG, VÀ VÌ SAO KHÔNG CÓ ID NÀO KHÁC ─────────────────────────────────────
+ * Tầng bền xuyên máy (`xuat-xu-ben.ts` → `POST /api/asset-representation`) đòi `assetId` là một
+ * `LibraryAsset` **đang tồn tại** — route cố ý không bao giờ tạo asset. Trong repo hôm nay chỉ có
+ * MỘT nơi phát ra danh tính đó ra ngoài: `LibraryPanel` gắn `item.url = /api/library/{a.id}/file`
+ * vào `dataTransfer` khi kéo một món trên kệ (`components/LibraryPanel.tsx:302`), và chính URL đó
+ * đã được `FlowCanvas` đọc từ trước. Nên id ở đây **được đọc lại từ nguồn phát**, không tự chế.
+ *
+ * ⛔ Ảnh chọn bằng hộp thoại tệp (`<input type=file>`) KHÔNG có id: nó chưa bao giờ lên máy chủ,
+ *    không có hàng `LibraryAsset` nào để gắn vào. Ca đó **cố ý** trả `undefined` — bịa một id cho
+ *    nó là tạo một xuất xứ trỏ vào hư không, tệ hơn hẳn việc để trống (route sẽ trả 404, và
+ *    `ghiXuatXuBen` ghi lại sự cố `tu-choi` thay vì im lặng).
+ */
+export function idAssetTuUrl(url: string): string | undefined {
+  const m = /^\/api\/library\/([^/?#]+)\/file(?:[?#]|$)/.exec(url.trim());
+  return m ? m[1] : undefined;
+}
+
+export interface ThamSoYeuCau {
+  readonly anhNguon?: string;
+  readonly kieuNguon: KieuNguon;
+  /** Danh tính vật nguồn — CHỈ có khi nguồn đến từ Thư viện. Xem `idAssetTuUrl`. */
+  readonly nguonId?: string;
+  readonly yDinh: string;
+  readonly anhSang: string;
+  readonly nangCap: boolean;
+}
+
+/**
+ * Dựng `YeuCauDung` cho một lượt bấm "Dựng". Tách ra khỏi `CuaDuyet` **cố ý**: đây là ĐƯỜNG NỐI
+ * `nguonId` — thứ quyết định tầng bền xuyên máy có nổ hay không — nên nó phải là hàm thuần,
+ * gọi được từ proof runtime, chứ không nằm chôn trong một closure React chỉ chạy trong trình duyệt.
+ */
+export function dungYeuCau(p: ThamSoYeuCau): YeuCauDung {
+  return {
+    anhNguon: p.anhNguon,
+    nguonId: p.nguonId,
+    kieuNguon: p.kieuNguon,
+    yDinh: p.yDinh,
+    nac: 'nhanh',
+    doiAnhSang: p.anhSang || undefined,
+    nangCap: p.nangCap,
+  };
+}
 
 /** Trạng thái rỗng dùng cho lần render trên máy chủ — sổ nguồn là bộ nhớ của MÁY người dùng. */
 const RONG = getNguonAnh();
@@ -80,28 +131,67 @@ export default function StageToolbelt({ stage, coDoiTuongChon = false }: StageTo
   );
   const chips = useMemo(() => workingSetChips(ctx), [ctx]);
 
+  /**
+   * Nguồn ĐÃ ĐỊNH DANH: cặp `{url, id}` của món kéo từ Thư viện. Giữ ở đây, KHÔNG nhét vào sổ
+   * `nguon-anh.ts` — sổ đó có proof riêng của lát trước, và `nguonId` chỉ là một thuộc tính của
+   * lần chọn nguồn này, không phải một trạng thái mới của sổ.
+   */
+  const [nguonKho, setNguonKho] = useState<{ url: string; id: string } | null>(null);
+  /**
+   * ⚠️ Chỉ nhận id khi ảnh nguồn HIỆN TẠI đúng là món đã kéo. `nhanDeXuat()` thay `anhNguon` bằng
+   * kết quả máy dựng — lúc đó id cũ KHÔNG còn mô tả thứ đang cầm, giữ lại là khai sai xuất xứ.
+   */
+  const nguonId = nguonKho && nguon.anhNguon === nguonKho.url ? nguonKho.id : undefined;
+
   const chonTep = useCallback((file: File | undefined) => {
     if (!file) return;
+    // Tệp cục bộ chưa bao giờ lên máy chủ ⇒ KHÔNG có `LibraryAsset` nào để gắn. Xoá id cũ.
+    setNguonKho(null);
     const reader = new FileReader();
     reader.onload = () => datAnhNguon(String(reader.result), file.name);
     reader.readAsDataURL(file);
   }, []);
 
+  const keVao = useCallback((e: DragEvent<HTMLDivElement>) => {
+    if (!e.dataTransfer.types.includes(ASSET_MIME)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  const thaTuThuVien = useCallback((e: DragEvent<HTMLDivElement>) => {
+    const url = e.dataTransfer.getData(ASSET_MIME);
+    if (!url) return;
+    e.preventDefault();
+    const id = idAssetTuUrl(url);
+    // URL lạ khuôn ⇒ vẫn nhận ảnh (có còn hơn không) nhưng KHÔNG gắn id — xem `idAssetTuUrl`.
+    setNguonKho(id ? { url, id } : null);
+    datAnhNguon(url, 'Ảnh trong Thư viện');
+  }, []);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
-      {mo && <CuaDuyet onDong={() => setMo(false)} />}
+      {mo && <CuaDuyet nguonId={nguonId} onDong={() => setMo(false)} />}
       {moKhoi && <CuaAnhThanhSpec onDong={() => setMoKhoi(false)} />}
 
       <ToolbarBar>
         {/* Bước SOURCE — nút này KHÔNG phải năng lực gộp (không nằm trong `compound.ts`): nó chỉ
             đưa nguyên liệu vào tay. Đặt trước dấu ngăn để đọc đúng thứ tự dây chuyền. */}
-        <ToolbarChip
-          icon={<CommandIcon name="ImagePlus" size={18} />}
-          label={nguon.anhNguon ? `Nguồn: ${nguon.tenNguon ?? 'ảnh đã chọn'}` : 'Chọn ảnh nguồn'}
-          desc="Ảnh/phác thảo/khung nhìn làm nguyên liệu cho các năng lực bên phải"
-          active={Boolean(nguon.anhNguon)}
-          onClick={() => fileRef.current?.click()}
-        />
+        {/* Ô THẢ: kéo một món từ Thư viện vào đây thì nguồn có DANH TÍNH (`nguonId`) — đó là điều
+            kiện để xuất xứ ghi được xuống DB, tức sống qua đổi máy. Bấm vẫn mở hộp thoại tệp như
+            cũ (nguồn không danh tính, chỉ bền trong localStorage của máy này). */}
+        <div onDragOver={keVao} onDragEnter={keVao} onDrop={thaTuThuVien}>
+          <ToolbarChip
+            icon={<CommandIcon name="ImagePlus" size={18} />}
+            label={nguon.anhNguon ? `Nguồn: ${nguon.tenNguon ?? 'ảnh đã chọn'}` : 'Chọn ảnh nguồn'}
+            desc={
+              nguonId
+                ? 'Nguồn từ Thư viện — có danh tính, xuất xứ lưu được xuyên máy'
+                : 'Ảnh/phác thảo/khung nhìn làm nguyên liệu — bấm để chọn tệp, hoặc kéo một ảnh từ Thư viện vào đây'
+            }
+            active={Boolean(nguon.anhNguon)}
+            onClick={() => fileRef.current?.click()}
+          />
+        </div>
         <ToolbarBar.Sep />
         {chips.map((c) => (
           <ToolbarChip
@@ -141,7 +231,7 @@ export default function StageToolbelt({ stage, coDoiTuongChon = false }: StageTo
 
 /* ─────────────────────────── cửa duyệt ─────────────────────────── */
 
-function CuaDuyet({ onDong }: { onDong: () => void }) {
+function CuaDuyet({ nguonId, onDong }: { nguonId?: string; onDong: () => void }) {
   const nguon = useNguonAnh();
   const [yDinh, setYDinh] = useState('');
   const [anhSang, setAnhSang] = useState('');
@@ -161,19 +251,21 @@ function CuaDuyet({ onDong }: { onDong: () => void }) {
     setLoi(null);
     setTienDo({ trangThai: 'queued', soBuocXong: 0, tongBuoc: 1 });
     const kq = await chayDungHinhAnh(
-      {
+      dungYeuCau({
         anhNguon: nguon.anhNguon,
         kieuNguon: nguon.kieuNguon,
+        // ĐƯỜNG NỐI W1-6b: `nguonId` chảy tới `dungXuatXu()` ⇒ `XuatXu.nguon.id` ⇒ tầng bền
+        // xuyên máy của `xuat-xu-ben.ts` mới nổ. Bỏ dòng này là app quay lại "F5 sống, đổi máy chết".
+        nguonId,
         yDinh,
-        nac: 'nhanh',
-        doiAnhSang: anhSang || undefined,
+        anhSang,
         nangCap,
-      },
+      }),
       { onTienDo: setTienDo },
     );
     if (kq.ok && kq.deXuat) themDeXuat(kq.deXuat);
     else setLoi(kq.loi ?? 'Không rõ nguyên nhân.');
-  }, [nguon.anhNguon, nguon.kieuNguon, yDinh, anhSang, nangCap]);
+  }, [nguon.anhNguon, nguon.kieuNguon, nguonId, yDinh, anhSang, nangCap]);
 
   const tCaLuot = tienDo ? tienTrinhCaLuot(tienDo) : null;
 
