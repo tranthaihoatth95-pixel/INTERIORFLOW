@@ -1,0 +1,80 @@
+{
+  "schema": "IF-PACKET-MANIFEST-v1",
+  "packetId": "IDF-IF-PACKET-003",
+  "title": "IDF · IF AUTONOMOUS EXECUTION PACKET 003",
+  "importedFrom": "~/.codex/visualizations/2026/08/24/01a03199-06aa-7b62-ad4a-90b36b9b73b8/IDF-IF-AUTONOMOUS-EXECUTION-PACKET-003.md",
+  "sourceOfTruth": "tệp trong repo này — KHÔNG phải chat, KHÔNG phải tệp cầu ở .codex/",
+  "supersedes": "packet 001 · 002 — UNKNOWN, không tìm thấy trong repo, không suy đoán",
+  "supersededBy": null,
+  "owner": "Hoà",
+  "status": "CANDIDATE",
+  "sensitivity": "INTERNAL",
+  "importedAt": "2026-08-26T22:22:14+07:00",
+  "commitHead": "6c9712a37b5ca1ccf6d8e0e375a7991bfa997480",
+  "branch": "checkpoint/2026-08-24-control-plane",
+  "measuredAtImport": {
+    "dirty": 616,
+    "worktrees": 2,
+    "devServers": 0,
+    "sessionIdentity": "interiorflow-d0"
+  },
+  "writerLease": {
+    "declaredIn": "docs/control/IF-CURRENT-STATE.md",
+    "declaredName": "interiorflow-65",
+    "aliveCheck": "ListAgents 26/08",
+    "result": "ABSENT — không còn sống",
+    "action": "KHÔNG tự trao bút. Lượt này chỉ ghi docs/design-candidate/ + cập nhật số đo.",
+    "blocking": "Cần Hoà xác nhận trước bất kỳ lần ghi production nào"
+  },
+  "conflictsResolved": [
+    {
+      "id": "Q10",
+      "was": "BLOCKING — một hay nhiều tổ chức mỗi cài đặt?",
+      "now": "ANSWERED-BY-PACKET-003 — đa studio/tenant theo core contract, MVP có thể chỉ hiện TTT",
+      "unblocks": "backlog 0.1 và toàn bộ People & Organization"
+    },
+    {
+      "id": "LARK",
+      "note": "packet ghi ACTIVE CONNECTOR · UNVERIFIED SOURCE — KHỚP kết luận Phiên B"
+    },
+    {
+      "id": "SECURITY-ORDER",
+      "note": "packet xếp fail-closed secret → authenticated delivery → access contract — KHỚP R2→R3→R1"
+    }
+  ],
+  "gapMap": {
+    "file": "01-IF-CORE-GAP-MAP.md",
+    "capabilities": 12,
+    "labels": {
+      "EXISTS-RUNTIME-PROVEN": 0,
+      "EXISTS-PARTIAL": 10,
+      "CANDIDATE-ONLY": 0,
+      "MISSING": 1,
+      "UNKNOWN": 1
+    },
+    "note": "0 RUNTIME-PROVEN là kết quả ĐÚNG: lượt này 0 dev server chạy ⇒ 0 bằng chứng runtime"
+  },
+  "files": [
+    {
+      "file": "00-MEMORY-RECEIPT.md",
+      "sha256": "ff981403bda6469c06d6e26cbca131546a4f7532758f0d68a7f7cc52a80b7281",
+      "bytes": 4941
+    },
+    {
+      "file": "01-IF-CORE-GAP-MAP.md",
+      "sha256": "dfcdc38aeafc3529e22304afc0da9a32c91ea2734b8491d7cc4737cfd8769c70",
+      "bytes": 7661
+    },
+    {
+      "file": "02-SMARTBOARD.md",
+      "sha256": "34f24d422ed5d31e65d545b5e4751b62b7e2cfa92d8c9ea46dff42980236218f",
+      "bytes": 2874
+    },
+    {
+      "file": "PACKET-003-SOURCE.md",
+      "sha256": "1f52702ce4b918d082d659bce3ccfa9895f94944b34cdb263f508844460ed3ef",
+      "bytes": 18860
+    }
+  ],
+  "nextDependency": "Xác nhận người ghi → rồi Q12 (fail-closed AUTH_SECRET, 1 dòng, khuôn có sẵn crypto.ts:16)"
+}

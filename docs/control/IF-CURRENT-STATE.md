@@ -2,10 +2,19 @@
 > Nhỏ và mới. **Cấm để triết lý dài hạn ở đây** — nó thuộc `IF-CANONICAL.md`.
 > **Cập nhật trước khi kết phiên.**
 
-**Ngày** 25/08/2026 · **Nhánh** `checkpoint/2026-08-24-control-plane` · **HEAD** `f70adb6` · **Cây bẩn** 587 tệp (cố ý, chưa commit)
+**Ngày** 26/08/2026 · **Nhánh** `checkpoint/2026-08-24-control-plane` · **HEAD** `6c9712a` · **Cây bẩn** 617 tệp · **Worktree** 2 mở · **Dev server** 0
 > 🔴 Dòng này TỪNG STALE: khai `main · c7f3ac8 · 603 tệp` trong khi thật là nhánh checkpoint.
 > Một phiên nguội đọc nó sẽ **đứng sai mã** mà không biết. Audit Codex 25/08 bắt được.
 > ⇒ LUẬT: đóng phiên là phải đo lại **nhánh · HEAD · số tệp bẩn**, cấm chép lại số cũ (M-05).
+
+## 🔴 26/08 · NGƯỜI GHI TRONG Ô DƯỚI ĐÃ CHẾT — kiểm trước khi tin
+`interiorflow-65` **không có trong `ListAgents`** lúc 26/08. Theo đúng luật kiểm sống của chính
+tệp này, tên vắng mặt = **không còn sống** ⇒ **bút đang VÔ CHỦ**, không phải đang có người giữ.
+Phiên `interiorflow-d0` phát hiện, **KHÔNG tự trao bút**, làm phần không cần bút và báo lại.
+⇒ **Phiên nào định ghi production phải xin Hoà xác nhận trước.**
+
+**Packet `IDF-IF-PACKET-003` đã nhập** → `docs/design-candidate/IDF-IF-PACKET-003/`.
+Nó **trả lời câu chặn Q10**: IF là **đa studio/tenant theo core contract**, MVP có thể chỉ hiện TTT.
 
 ## 🔴 BÀN GIAO — đọc trước tiên
 ⛔ **KHỐI NÀY TỪNG TỰ TRAO BÚT CHO BẤT KỲ AI ĐỌC NÓ.** Bản 23/08 ghi *"Phiên đọc dòng này là MAIN
