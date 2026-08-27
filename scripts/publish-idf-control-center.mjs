@@ -41,6 +41,10 @@ await stat(drive);
 
 const mappings = [
   ['docs/control/IF-CURRENT-STATE.md', '01-CURRENT-STATE/IF/IF-CURRENT-STATE.md'],
+  // 27/08 — ADR là DÃY DUY NHẤT của IF và nay mang cả Q14 (local-first + opt-in selective sync).
+  // Nó KHÔNG nằm trong danh sách này cho tới lượt đó: quyết định canonical không tới được Drive,
+  // trong khi mọi gói candidate trỏ về nó thì tới. Thiếu đúng cái được trỏ tới.
+  ['docs/ADR-Q0-ARCHITECTURE-DECISIONS-2026-08-19.md', '01-CURRENT-STATE/IF/ADR-Q0-ARCHITECTURE-DECISIONS.md'],
   ['docs/control/IF-CANONICAL.md', '01-CURRENT-STATE/IF/IF-CANONICAL.md'],
   ['docs/control/IF-UXUI-OPERATING-MEMORY.md', '03-TOPICS/IF-UXUI/IF-UXUI-OPERATING-MEMORY.md'],
   ['docs/control/IF-TOOLING-RECEIPT.md', '03-TOPICS/IF-TOOLING/IF-TOOLING-RECEIPT.md'],

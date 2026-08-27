@@ -286,3 +286,42 @@ phản hồi, phải có một ca khẳng định **trường đó tồn tại v
 kỳ vọng "không thấy" là nhóm ca không đáng tin** — luôn kèm ít nhất một ca **mong THẤY** trên cùng
 đường dữ liệu. Ca dương tính là thứ chứng minh đường ống có nước; ca âm tính chỉ chứng minh vòi
 đang khoá — mà một cái ống chưa nối cũng "khoá".
+
+---
+
+## F-18 · `.env` THẮNG BIẾN MÔI TRƯỜNG — tôi ghi vào DB thật trong lúc tưởng đang thử trên bản sao — 27/08
+
+**Chuyện gì.** Tôi định chạy thử hai lệnh `prisma migrate resolve --applied` trên **bản sao** DB
+trước khi xin Hoà cho chạy trên bản thật. Cách cách ly tôi chọn:
+
+```
+export DATABASE_URL="file:/tmp/…/thu.db"
+npx prisma migrate resolve --applied <tên>
+```
+
+**Prisma CLI nạp `.env` và `.env` thắng biến tôi vừa `export`.** Hai lệnh đi thẳng vào
+`prisma/dev.db` thật. Tôi phát hiện sau đó ba lệnh, khi hash `dev.db` đổi từ `a93c351f…` sang
+`7a793e7b…` trong một lượt kiểm định kỳ mà tôi đưa vào **vì lý do khác**.
+
+**Thiệt hại thật, đo bằng cách băm nội dung TỪNG bảng giữa bản sao lưu và DB hiện tại:**
+**24/25 bảng giống hệt từng byte.** Bảng thứ 25 là `_prisma_migrations`, thêm đúng **2 hàng** —
+đúng hai hàng tôi định xin phép. `PRAGMA integrity_check` = `ok`.
+
+**Vì sao vẫn phải ghi vào sổ dù không mất gì.** Kết quả tốt là **may**, không phải do tôi cẩn
+thận. Cùng cơ chế đó với `migrate reset` thay vì `resolve` là mất 38 MB. Ba điều kiện an toàn
+(sao lưu · lùi đã diễn tập · parity đã chứng minh) tình cờ **đã đủ** trước lúc lệnh chạy — nhưng
+tôi không chạy nó *vì* biết chúng đủ, tôi chạy nó *vì tưởng đang trỏ vào chỗ khác*. Một biện pháp
+an toàn chỉ có giá trị khi nó được viện dẫn có ý thức.
+
+**Cùng họ F-15/F-17, tầng thứ ba.** F-15: *bộ máy* rỗng. F-17: *khẳng định* soi nhầm chỗ. Đây:
+**mục tiêu** không phải chỗ mình tưởng. Cả ba đều là "thao tác chạy đúng, chỉ là không chạy vào
+cái mình nghĩ". Cổng harness không bắt được loại này — nó chứng minh bộ máy sống, không chứng
+minh bộ máy đang đứng ở đâu.
+
+**Luật thêm — MỤC TIÊU PHẢI ĐƯỢC ĐỌC LẠI TỪ CHÍNH CÔNG CỤ.**
+1. **`export` KHÔNG phải cách cách ly** với công cụ tự nạp tệp cấu hình. Muốn thử an toàn: chạy ở
+   thư mục **không có `.env`**, hoặc truyền `--url` tường minh, hoặc tạm đổi tên `.env`.
+2. Trước bất kỳ lệnh nào ghi được, **in ra mục tiêu thật do chính công cụ báo** (Prisma in dòng
+   `Datasource "db": … at file:/…`) và **đối chiếu bằng mắt** — đừng tin biến mình vừa đặt.
+3. Với thao tác không lùi được, chốt chặn cuối là **băm tệp đích trước và sau**. Chính lượt băm
+   này đã phát hiện ra vụ trên; nếu không có nó, sổ đã lệch mà không ai biết.
