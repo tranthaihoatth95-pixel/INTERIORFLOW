@@ -325,3 +325,40 @@ minh bộ máy đang đứng ở đâu.
    `Datasource "db": … at file:/…`) và **đối chiếu bằng mắt** — đừng tin biến mình vừa đặt.
 3. Với thao tác không lùi được, chốt chặn cuối là **băm tệp đích trước và sau**. Chính lượt băm
    này đã phát hiện ra vụ trên; nếu không có nó, sổ đã lệch mà không ai biết.
+
+---
+
+## F-19 · `git add -A` NUỐT 980 TỆP CỦA NGƯỜI KHÁC VÀO COMMIT CỦA TÔI — 27/08
+
+**Chuyện gì.** Commit đầu tiên của phiên, `147f66a`, mang nhan đề *"feat(security): R3
+IF-SECURE-ARTIFACT-DELIVERY-001…"*. Tôi chủ ý sửa **9 tệp**. Commit đó chứa **991 tệp**.
+
+980 tệp còn lại là công việc **chưa commit của các phiên trước**, đang nằm bẩn trong cây khi phiên
+này mở ra (ảnh chụp `git status` đầu phiên: hơn 600 tệp `M`, một tệp `D`). Tôi gõ `git add -A`,
+và chúng đi theo. Gồm cả một lượt **xoá** `components/IntroSequence.tsx` mà tôi chưa từng đọc.
+
+**Ai bắt được.** Không phải tôi. Lane `IF-UXUI-RUNTIME-001` nhận ra *"582 tệp bẩn đã biến mất khỏi
+cây, không qua commit"* khi đối chiếu hai lần đo cách nhau vài giờ. Nó nói *"không qua commit"* —
+sai một nửa: chúng **có** qua commit, chỉ là qua commit của tôi, dưới một cái tên không nhắc gì tới
+chúng. Đó chính là điều làm nó khó thấy.
+
+**Thiệt hại thật.** Không mất dữ liệu — mọi thứ nằm trong git, phục hồi được, không có gì bị ghi
+đè. Nhưng ba hệ quả có thật:
+1. **Commit nói dối bằng cách bỏ sót.** Nhan đề mô tả 9 tệp; ruột có 991.
+2. **`git revert 147f66a` nay là thao tác NGUY HIỂM** — nó sẽ lùi luôn 980 tệp không liên quan,
+   và hồi sinh một tệp đã bị xoá có chủ ý. Đường lùi mà tôi ghi trong chính commit đó **không
+   dùng được**.
+3. Ranh giới *"MỘT người ghi tại một thời điểm"* bị nhoè: công việc của phiên khác nay mang chữ ký
+   của tôi trong `git log`.
+
+**Gốc.** `git add -A` khai *"thêm mọi thứ"* và tôi đọc nó thành *"thêm mọi thứ TÔI vừa sửa"*. Hai
+câu đó chỉ trùng nhau khi cây sạch trước khi bắt đầu — mà tôi **không hề kiểm** điều đó. Cùng họ
+F-18: **thao tác chạy đúng, chỉ là không chạy vào cái mình nghĩ.**
+
+**Luật thêm — CÂY PHẢI SẠCH TRƯỚC KHI CẦM BÚT.**
+1. Đầu phiên, **đo `git status --porcelain | wc -l`**. Khác 0 ⇒ đó là công việc của người khác:
+   **báo ra**, không nuốt vào commit của mình.
+2. **Cấm `git add -A`/`git add .` khi cây không sạch.** Liệt kê tệp tường minh. Chấp nhận gõ dài.
+3. Trước khi commit, **đối chiếu số tệp staged với số tệp mình chủ ý sửa**. Lệch ⇒ dừng.
+4. Đường lùi ghi trong commit phải **đúng với ruột thật** của commit đó. `147f66a` nay được đánh
+   dấu **KHÔNG revert được** ở đây, vì trong chính nó thì không.
