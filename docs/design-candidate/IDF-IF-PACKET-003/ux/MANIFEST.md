@@ -4,6 +4,20 @@
 > **Đây là tài liệu READ-ONLY của lane audit.** Mock/canvas cũ là `CANDIDATE / NOT FINAL TARGET`,
 > **cấm lấy làm chuẩn để viết mã.**
 
+## 🔒 LUẬT ẢNH RUNTIME — Hoà chốt 27/08, bốn điều
+
+1. **Git giữ**: manifest · hash · route/state · đường dẫn mirror. **Không giữ ảnh.**
+2. **Drive riêng có quyền giữ ảnh gốc** — 23/23 hash khớp với bảng dưới (đối chiếu chéo
+   `SYNC-RECEIPT.json` ↔ manifest này).
+3. **Cần review rộng hơn ⇒ dựng bản ĐÃ CHE tên khách/dự án riêng.** Tuyệt đối không đưa ảnh gốc
+   ra ngoài vòng người có quyền.
+4. ⛔ **Không dùng ảnh runtime thật làm asset hay mẫu mặc định của IF.** Đây là LUẬT NỀN TẢNG áp
+   vào hiện vật: sản phẩm bán ra toàn cầu không mang dữ liệu của một studio cụ thể.
+
+Vì sao ảnh không vào git, ghi lại để phiên sau không mở lại cuộc tranh luận: `.gitignore:85-90`
+chặn `docs/**` ảnh dưới nhãn *"luật trung tính + repo nhẹ (chốt 01/08)"*. Lý do thứ hai là lý do
+chặn — ảnh này chụp app với **dữ liệu dự án thật, mang tên khách hàng**.
+
 | tệp | byte | sha256 |
 |---|---|---|
 | `01-RUNTIME-UI-GAP-MAP.md` | 59073 | `6ddf387a42779534` |
