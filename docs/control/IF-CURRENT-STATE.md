@@ -72,7 +72,15 @@ ngoài, không phải nguồn chân lý · cấm ghi đè im lặng · ⛔ **kh�
    Bằng chứng cổng: `scripts/proof/db-target-guard.mjs` **15/15**, có ca dựng lại đúng F-18.
    Hai bản sao lưu sống: `dev.db.bak-2026-08-27-mocsach-truoc-baseline` (sổ 5 hàng) ·
    `…-sau-ky-so` (sổ 7 hàng). Hai `migration.sql` đã ký nay **BẤT BIẾN** — sổ giữ checksum.
-2. **Plugin Prisma vẫn bật.** Mở phiên Claude Code mới là 3 tiến trình `prisma mcp` sinh lại, và
+2. ⛔ **CẤM `git revert 147f66a`.** Commit đó mang nhan đề về R3 (9 tệp) nhưng chứa **991 tệp** —
+   980 tệp là việc chưa commit của phiên trước, bị `git add -A` nuốt vào, gồm một lượt **xoá**
+   `components/IntroSequence.tsx`. Hoà chốt **GIỮ NGUYÊN**: cấm revert · rebase · reset · cấm
+   tách lại. Cần lùi phần R3 thì lùi **từng tệp**, không lùi commit — 9 đường dẫn liệt kê ở
+   `docs/design-candidate/IDF-IF-PACKET-003/release/02-SCOPE-CORRECTION-147f66a.md`.
+   🔒 Từ nay **cấm `git add -A`/`git add .` khi cây bẩn**; trước mỗi commit đối chiếu số tệp
+   staged với số tệp chủ ý sửa, lệch thì **dừng**.
+
+3. **Plugin Prisma vẫn bật.** Mở phiên Claude Code mới là 3 tiến trình `prisma mcp` sinh lại, và
    `migrate-reset` nằm trong tầm tay chúng. Kiểm+diệt: `pkill -f "prisma mcp"; pgrep -c -f "prism[a] mcp" || echo 0`.
 
 ## Runtime
