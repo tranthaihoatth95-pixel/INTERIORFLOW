@@ -80,7 +80,13 @@ Nếu 4 điều kiện đủ: `git worktree remove <path>` (KHÔNG `--force`) + 
 - Kiểm tra `.claude/worktrees/` không còn thư mục `agent-*` mồ côi (agent đã đóng nhưng worktree không được dọn).
 
 ### Chống tràn context
-- STATUS.md **dưới 800 từ**. Lịch sử đã xong chuyển sang CHANGELOG.md.
+- 🔴 **LUẬT NÀY ĐÃ HẾT ÁP DỤNG CHO `STATUS.md` (28/08).** Nguyên văn cũ: *"STATUS.md **dưới 800
+  từ**. Lịch sử đã xong chuyển sang CHANGELOG.md."* Trần 800 từ có nghĩa khi `STATUS.md` còn là
+  **bức tranh hiện tại** — một tệp nóng thì phải ngắn để đọc được nhanh. Nhưng chính tệp này đã hạ
+  nó xuống **NHẬT KÝ** ngày 23/08 (xem dòng "Bắt đầu session" ở trên), và **cắt ngắn một cuốn nhật
+  ký là xoá bằng chứng**, không phải dọn dẹp. Đo 28/08: `STATUS.md` 1657 từ — **để nguyên**.
+  ⇒ Trần độ dài nay áp cho **`docs/control/IF-CURRENT-STATE.md`** (tệp nóng thật sự): giữ nhỏ, cấm
+  để triết lý dài hạn, cập nhật trước khi kết phiên.
 - KHÔNG đọc CHANGELOG.md mỗi đầu phiên — chỉ đọc khi được yêu cầu.
 - Nếu gặp lỗi "autocompact thrashing" → nguyên nhân là file quá lớn hoặc quá nhiều file trong context. Báo ngay, KHÔNG tự retry liên tục.
 

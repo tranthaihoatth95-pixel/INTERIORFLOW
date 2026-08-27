@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { cp, mkdir, readFile, readdir, rename, stat, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
@@ -9,11 +10,30 @@ const repo = process.cwd();
 const cloudRoot = join(homedir(), 'Library', 'CloudStorage');
 const controlCenterName = '00 · IDF CONTROL CENTER';
 
+/**
+ * ⚠️ SỬA 28/08 — lane Codex bắt được: bản cũ `entries.find(startsWith('GoogleDrive-'))` lấy
+ * **tài khoản Google ĐẦU TIÊN tìm thấy**. Máy có hai tài khoản (một cá nhân, một builder) thì nó
+ * xuất nhầm chỗ, và "nhầm chỗ" ở đây nghĩa là **đẩy tài liệu quản trị vào Drive chứa tài liệu
+ * khách hàng**. Nay: nhiều hơn một tài khoản ⇒ **DỪNG**, đòi khai tường minh. Đoán mò một lần
+ * đúng chín lần không bù được một lần sai.
+ */
 async function findDriveRoot() {
   const explicit = process.env.IDF_DRIVE_ROOT;
   if (explicit) return explicit;
   const entries = await readdir(cloudRoot, { withFileTypes: true });
-  const google = entries.find((entry) => entry.isDirectory() && entry.name.startsWith('GoogleDrive-'));
+  const tatCa = entries.filter((e) => e.isDirectory() && e.name.startsWith('GoogleDrive-'));
+  const chon = process.env.IDF_DRIVE_ACCOUNT;
+  const google = chon ? tatCa.find((e) => e.name.includes(chon)) : tatCa[0];
+  if (chon && !google) {
+    throw new Error(`Không thấy tài khoản Drive khớp IDF_DRIVE_ACCOUNT="${chon}". Đang có: ${tatCa.map((e) => e.name).join(', ')}`);
+  }
+  if (!chon && tatCa.length > 1) {
+    throw new Error(
+      `Có ${tatCa.length} tài khoản Google Drive trên máy — KHÔNG đoán.\n` +
+        tatCa.map((e) => `   · ${e.name}`).join('\n') +
+        `\nKhai tường minh: IDF_DRIVE_ACCOUNT=<phần email> hoặc IDF_DRIVE_ROOT=<đường dẫn đầy đủ>.`,
+    );
+  }
   if (!google) throw new Error('Không thấy Google Drive sync trong ~/Library/CloudStorage.');
   const account = join(cloudRoot, google.name);
   const children = await readdir(account, { withFileTypes: true });
@@ -22,17 +42,31 @@ async function findDriveRoot() {
   return join(account, myDrive.name, controlCenterName);
 }
 
+const bam = (b) => createHash('sha256').update(b).digest('hex');
+
+/**
+ * ⚠️ SỬA 28/08 — lane Codex bắt được: bản cũ băm **tệp NGUỒN** rồi ghi vào receipt. Nó chứng
+ * minh *"đã chép cái gì"*, KHÔNG chứng minh *"trên Drive đang có cái gì"*. Hai câu đó khác nhau
+ * đúng ở chỗ đáng lo: chép hỏng, đồng bộ cắt ngang, ai đó sửa tay bản mirror.
+ *
+ * Nay đọc lại **tệp ĐÍCH** sau khi ghi và băm nó. `sha256Source !== sha256Destination` ⇒ người
+ * đọc receipt biết ngay bản mirror **không còn là bản đã ký**.
+ */
 async function atomicCopy(source, destination) {
   await mkdir(join(destination, '..'), { recursive: true });
   const temporary = `${destination}.syncing`;
   await cp(source, temporary, { force: true });
   await rename(temporary, destination);
-  const bytes = await readFile(source);
+  const nguon = await readFile(source);
+  const dich = await readFile(destination); // ← đọc LẠI tệp đích, không tin lượt ghi
   return {
     source: source.replace(`${repo}/`, ''),
     destination: destination.split(`${controlCenterName}/`)[1],
-    bytes: bytes.length,
-    sha256: createHash('sha256').update(bytes).digest('hex'),
+    bytes: nguon.length,
+    sha256Source: bam(nguon),
+    sha256Destination: bam(dich),
+    // giữ `sha256` cho bản đọc cũ trong một vòng tương thích — nó BẰNG sha256Source
+    sha256: bam(nguon),
   };
 }
 
@@ -174,12 +208,45 @@ for (const [relSrcDir, relDstDir] of folderMappings) {
   }
 }
 
+/**
+ * ⚠️ SỬA 28/08 — hai lỗ nữa lane Codex bắt được:
+ *
+ * ① **Rò đường dẫn máy cá nhân.** Bản cũ ghi `repo` và `drive` là đường TUYỆT ĐỐI
+ *    (`/Users/tranben/…`, kèm email trong tên thư mục CloudStorage). Tệp này **nằm trên Drive**
+ *    — nơi sẽ chia sẻ cho người khác. Bỏ hẳn; đường dẫn tương đối trong `files[]` là đủ để đối
+ *    chiếu, và không nói gì về máy ai.
+ *
+ * ② **Không có mốc thời gian/phiên bản.** Người đọc bản mirror không biết nó cũ hay mới, nên
+ *    một tác nhân đọc Drive sẽ phát biểu "trạng thái hiện tại" trên một ảnh chụp đã cũ — đúng ca
+ *    vừa xảy ra: một báo cáo đo ở `c7f3ac8` được đọc như đang đúng, trong khi HEAD đã đi 54
+ *    commit. `sourceHead`/`sourceBranch`/`generationId`/`expiresAt` là thứ chặn được điều đó.
+ */
+const git = (args) => {
+  try {
+    return execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
+  } catch {
+    return null;
+  }
+};
+const sourceHead = git(['rev-parse', 'HEAD']);
+const sourceBranch = git(['rev-parse', '--abbrev-ref', 'HEAD']);
+const cayBan = (git(['status', '--porcelain']) ?? '').split('\n').filter(Boolean).length;
+const publishedAt = new Date();
+const HAN_NGAY = 7;
+
 const receipt = {
-  schema: 'IDF-SYNC-RECEIPT-v1',
+  schema: 'IDF-SYNC-RECEIPT-v2',
   direction: 'IF-REPO_TO_DRIVE',
-  generatedAt: new Date().toISOString(),
-  repo,
-  drive,
+  // Định danh DUY NHẤT của lượt xuất: thời điểm + HEAD. Hai lượt cùng HEAD vẫn khác generation.
+  generationId: `${publishedAt.toISOString()}_${(sourceHead ?? 'unknown').slice(0, 12)}`,
+  namespace: 'IF',
+  sourceHead,
+  sourceBranch,
+  // Cây bẩn ⇒ bản mirror KHÔNG tái lập được từ HEAD. Phải nói ra, không im.
+  sourceDirtyFiles: cayBan,
+  publishedAt: publishedAt.toISOString(),
+  expiresAt: new Date(publishedAt.getTime() + HAN_NGAY * 864e5).toISOString(),
+  generatedAt: publishedAt.toISOString(), // giữ tên cũ một vòng cho bản đọc cũ
   files: published,
 };
 const receiptPath = join(drive, '01-CURRENT-STATE', 'IF', 'SYNC-RECEIPT.json');
@@ -187,5 +254,13 @@ const receiptTemporary = `${receiptPath}.syncing`;
 await writeFile(receiptTemporary, `${JSON.stringify(receipt, null, 2)}\n`, 'utf8');
 await rename(receiptTemporary, receiptPath);
 
-console.log(`Đã xuất ${published.length} nguồn IF sang ${drive}`);
+const lech = published.filter((f) => f.sha256Source !== f.sha256Destination);
+console.log(`Đã xuất ${published.length} nguồn IF sang ${basename(drive)}`);
+console.log(`  generation : ${receipt.generationId}`);
+console.log(`  HEAD       : ${sourceHead?.slice(0, 12)} · nhánh ${sourceBranch} · cây bẩn ${cayBan} tệp`);
+console.log(`  hết hạn    : ${receipt.expiresAt.slice(0, 10)} (${HAN_NGAY} ngày)`);
+console.log(lech.length ? `  🔴 ${lech.length} tệp LỆCH nguồn↔đích` : '  ✅ mọi tệp: hash nguồn = hash đích');
+if (cayBan > 0) {
+  console.log(`  🟡 cây bẩn ${cayBan} tệp — bản mirror này KHÔNG tái lập được từ HEAD ${sourceHead?.slice(0, 8)}`);
+}
 console.log(`Receipt: ${receiptPath}`);

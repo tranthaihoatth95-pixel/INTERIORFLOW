@@ -2,7 +2,7 @@
 > Nhỏ và mới. **Cấm để triết lý dài hạn ở đây** — nó thuộc `IF-CANONICAL.md`.
 > **Cập nhật trước khi kết phiên.**
 
-**Ngày** 27/08/2026 · **Nhánh** `checkpoint/2026-08-24-control-plane` · **HEAD** `2a454b4` · **Cây bẩn** 3 tệp · **Worktree** 2 mở · **Dev server** 0 · **`prisma mcp`** 0
+**Ngày** 28/08/2026 · **Nhánh** `checkpoint/2026-08-24-control-plane` · **HEAD** `65dc66c` · **Cây bẩn** 2 tệp · **Worktree** 0 (đã dọn 28/08) · **Dev server** 0 · **`prisma mcp`** 0
 > Đo lúc ghi, không chép số cũ (M-05). Dòng này TỪNG stale hai lần — khai `main · c7f3ac8` khi
 > thật là nhánh checkpoint, rồi khai `6c9712a · 617 tệp` sau khi đã đi thêm 8 commit.
 
