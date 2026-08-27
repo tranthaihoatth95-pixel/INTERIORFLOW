@@ -140,8 +140,38 @@ for (const relativeImage of reviewImages) {
 }
 
 const published = [];
+/**
+ * Thư mục cần mirror NGUYÊN CỤM (không liệt kê từng tệp).
+ *
+ * ⚠️ VÌ SAO ẢNH RUNTIME KHÔNG NẰM TRONG GIT — quyết định 27/08, có lý do, không phải tiện tay:
+ * `.gitignore:85-90` chặn `docs/**` ảnh dưới nhãn *"luật trung tính + repo nhẹ (chốt 01/08)"*.
+ * Hai lý do, và lý do thứ hai là lý do chặn:
+ *   ① repo nhẹ — mỗi lượt audit ~4 MB, cộng dồn theo thời gian;
+ *   ② **TRUNG TÍNH** — ảnh runtime chụp app với **dữ liệu dự án THẬT**, mang tên khách hàng.
+ *      Đưa chúng vào repo là đưa tên khách của một studio vào sản phẩm bán ra toàn cầu — đúng
+ *      thứ mà LUẬT NỀN TẢNG (`CLAUDE.md`) cấm.
+ * ⇒ Ảnh đi Drive (kho riêng của Hoà), **hash nằm trong `ux/MANIFEST.md` đã commit** để đối chiếu
+ * được. Bằng chứng vẫn tái lập được, mà repo vẫn trung tính.
+ */
+const folderMappings = [
+  ['docs/design-candidate/IDF-IF-PACKET-003/ux/anh', '06-REVIEW/IF-UXUI-RUNTIME/anh'],
+];
+
 for (const [relativeSource, relativeDestination] of mappings) {
   published.push(await atomicCopy(join(repo, relativeSource), join(drive, relativeDestination)));
+}
+
+for (const [relSrcDir, relDstDir] of folderMappings) {
+  const srcDir = join(repo, relSrcDir);
+  let names = [];
+  try {
+    names = (await readdir(srcDir, { withFileTypes: true })).filter((e) => e.isFile()).map((e) => e.name);
+  } catch {
+    continue; // thư mục chưa tồn tại ⇒ bỏ qua, không phải lỗi
+  }
+  for (const name of names.sort()) {
+    published.push(await atomicCopy(join(srcDir, name), join(drive, relDstDir, name)));
+  }
 }
 
 const receipt = {
