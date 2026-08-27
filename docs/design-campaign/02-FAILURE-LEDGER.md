@@ -405,3 +405,47 @@ chưa, hay tôi đang thấy nó hợp lý?"*
    bằng bài nhỏ nhất có thể. Tài liệu và trực giác không thay được một lượt chạy hai phút.
 4. **Nhãn sai lan nhanh hơn mã sai.** Câu đó đã kịp nằm trong chú thích của ba tệp, một commit,
    và một checkpoint trước khi bị bác. Mã sai thì test bắt; nhãn sai thì chỉ người đọc kỹ bắt.
+
+---
+
+## F-21 · HAI TÁC NHÂN CÙNG GẬT, CẢ HAI CÙNG CHƯA ĐỌC — 27/08
+
+**Chuyện gì.** 23 ảnh runtime UX cần chỗ để sống. Codex đề xuất **commit vào Git**. Tôi (MAIN)
+xem qua và viết: *"tôi nghiêng về ngoại lệ hẹp — ảnh là bằng chứng, và bằng chứng không tái lập
+được thì không phải bằng chứng."*
+
+Hai tác nhân, cùng một kết luận, **cả hai đều chưa mở `.gitignore` đọc vì sao dòng
+`docs/**/*.png` tồn tại.** Nhãn ngay trên nó: *"luật trung tính + repo nhẹ (chốt 01/08)"*.
+
+Khi đọc thật, lý do thứ hai chặn thẳng: ảnh chụp app với **25 dự án thật, mang tên khách hàng**.
+Commit chúng là đưa tên khách của một studio vào một repo định vị là **sản phẩm toàn cầu** — vi
+phạm LUẬT NỀN TẢNG, và **không lùi được sau khi push**.
+
+**Ai chặn.** Không phải sự thông minh của ai. Chỉ là **một lượt mở tệp đọc lý do** trước khi phá
+một luật — việc mà cả hai đều bỏ qua vì kết luận nghe đã hợp lý rồi.
+
+**Vì sao nó nguy hơn một người sai một mình.** Người thứ hai gật làm người thứ nhất **chắc chắn
+hơn**. Không ai trong hai người thấy cần kiểm nữa — đúng lúc đáng kiểm nhất. Đồng thuận **cảm
+giác** giống bằng chứng, mà nó là thứ ngược lại: nó là lúc **không ai còn đang kiểm**.
+
+**Lệch phạm vi, và đây là mấu chốt kỹ thuật.** Câu *"ảnh là bằng chứng"* **đúng** — cho câu hỏi
+*"UI hiện ra thế nào"*. Nhưng câu hỏi thật là *"hiện vật này chứa gì, và được phép nằm ở đâu"* —
+một câu hỏi **quyền riêng tư**, không phải câu hỏi kỹ thuật. Một bằng chứng **mạnh** vẫn **vô
+dụng** khi nó trả lời câu khác. Đó là loại sai không lộ ra qua việc kiểm kỹ hơn cùng một hướng.
+
+**Cùng họ F-20, khác tầng.** F-20: một người suy diễn không kiểm. Đây: **hai người** cùng không
+kiểm, và sự trùng khớp của họ **thay thế** việc kiểm.
+
+**Luật thêm — thành protocol, không thành lời dặn.**
+1. **Trước khi đề xuất phá một luật đang có, PHẢI đọc lý do của luật đó và trích nguyên văn.**
+   Không trích được ⇒ chưa đủ tư cách đề xuất.
+2. **Mỗi bằng chứng phải khai `Sensitivity` và `Scope`.** Ô để trống là cổng `BLOCK` — không cần
+   ai đủ tinh ý, chỉ cần ô bắt buộc không được để trống.
+3. **W2 trở lên: phản biện độc lập, người phản biện KHÔNG phải người đề xuất**, và nhận **bài
+   toán + bằng chứng** chứ không nhận kết luận dọn sẵn. Đưa kết luận trước là mời người ta đi tìm
+   lý do đồng ý.
+4. **Đồng thuận không phải bằng chứng** — hai cái gật cộng thành một sự tự tin, không cộng thành
+   một bằng chứng.
+
+Protocol đầy đủ: `docs/control/IF-ADVICE-VERIFICATION-GATE.md` (`IF-ADVICE-VERIFICATION-GATE-001`).
+Ví dụ dựng ngược từ chính case này ở §7 của tệp đó.

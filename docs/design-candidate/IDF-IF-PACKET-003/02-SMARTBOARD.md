@@ -12,6 +12,7 @@
 | `SB-002` | `docs/control/IF-CANONICAL.md` | IF **LÀ GÌ** · luật bền | **luôn** |
 | `SB-003` | `docs/control/IF-UXUI-OPERATING-MEMORY.md` | sai lầm đã trả giá | trước mọi việc giao diện |
 | `SB-004` | `docs/control/IF-TOOLING-RECEIPT.md` | năng lực **THẬT** đã xác minh | trước khi dùng công cụ |
+| `SB-007` | `docs/control/IF-ADVICE-VERIFICATION-GATE.md` | **`IF-ADVICE-VERIFICATION-GATE-001`** — lời khuyên → quyết định bền. `IF-DEC-*` · `EV-*` · `DISS-*` · `GATE-*` · `REC-*`. Trạng thái `PARTIAL` (chưa có máy canh) | **trước khi biến một khuyến nghị thành quyết định hoặc thành mã** |
 | `SB-005` | `docs/ADR-Q0-ARCHITECTURE-DECISIONS-2026-08-19.md` | **ADR ACCEPTED** Q1–Q9 · **Q14 local-first + opt-in selective sync** (chốt 27/08, `2a454b4`) — dãy ADR DUY NHẤT, cấm mở dãy hai | trước khi quyết kiến trúc |
 | `SB-006` | `docs/IF-ARCHITECTURE-BLUEPRINT.md` | các mảnh **lắp với nhau** ra sao | khi cần bức tranh hệ |
 

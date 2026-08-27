@@ -310,3 +310,24 @@ chưa chốt ⑤ một trải nghiệm đã chín, sẵn sàng trình mắt.
 
 ## 21 · G3 `[MỞ — CHỜ NGƯỜI]`
 Quản trị G3 diện rộng **CHƯA CHỐT**. ⛔ **Đừng chặn việc UI khác vì G3.**
+
+---
+
+## 22 · CỔNG THẨM ĐỊNH LỜI KHUYÊN `[CHỐT 27/08]`
+
+**Lời khuyên KHÔNG tự thành quyết định.** Mọi khuyến nghị — của MAIN, Codex, sub-agent hay người
+review — phải đi qua `IF-ADVICE-VERIFICATION-GATE-001` trước khi trở thành quyết định bền hoặc
+chạm sản xuất.
+
+Protocol canonical: **`docs/control/IF-ADVICE-VERIFICATION-GATE.md`** (tệp DUY NHẤT, cấm sổ song song).
+
+Năm hiện vật: `IF-DEC-*` quyết định · `EV-*` bằng chứng · `DISS-*` phản biện độc lập ·
+`GATE-*` cổng thi công · `REC-*` biên nhận bền.
+
+Ba câu là luật, thuộc lòng không cần mở tệp:
+1. **Đồng thuận không phải bằng chứng.** Hai bên cùng gật mà cùng chưa đọc thì hai cái gật ấy
+   cộng thành một sự tự tin, không cộng thành một bằng chứng.
+2. **Không có `EV-*` thì chỉ được ghi `UNKNOWN`** — cấm nói thành fact.
+3. **`PASS` chỉ do Quality tuyên, sau runtime proof độc lập.** MAIN/Codex không tự gọi `PASS`.
+
+Bằng chứng phải đúng **PHẠM VI** câu hỏi: một `EV` mạnh vẫn vô dụng nếu nó trả lời câu khác.

@@ -19,6 +19,9 @@ PHẠM VI (mở rộng 27/08 — "SHIP ACCELERATION"):
   Wave S3  UI CHỈ theo Design Authority, không tự thiết kế lại
 CHẾ ĐỘ:    GREEN tự làm · AMBER chọn mặc định reversible + cờ + rollback ·
            RED chỉ dừng ở: license/PII/chi phí vật liệu · migrate phá huỷ · duyệt mắt/brand
+CỔNG:      mọi khuyến nghị → quyết định bền phải qua `IF-ADVICE-VERIFICATION-GATE-001`
+           (`docs/control/IF-ADVICE-VERIFICATION-GATE.md`). Không có `EV-*` ⇒ chỉ được
+           ghi `UNKNOWN`. `PASS` chỉ do Quality tuyên sau runtime proof độc lập.
 CẤM:       PASS giả (chỉ NOT ASSESSED / PARTIAL / PASS / FAIL, kèm bề mặt proof) ·
            audit lại toàn repo (chỉ delta audit khi chạm security/migration/dữ liệu/tenant/runtime)
 ```

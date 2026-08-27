@@ -15,7 +15,9 @@ Repo này có ~700 tệp tài liệu. Quét lại từ đầu mỗi phiên là c
 | 4 | `docs/control/IF-TOOLING-RECEIPT.md` | năng lực **THẬT** đã xác minh | trước khi định dùng một công cụ |
 
 Tra khi cần, **đừng nạp sẵn**: `docs/control/IF-AUDIT-MEMORY.md` (khi điều tra) ·
-`docs/design-campaign/02-FAILURE-LEDGER.md` (khi một lỗi lặp lại).
+`docs/design-campaign/02-FAILURE-LEDGER.md` (khi một lỗi lặp lại) ·
+`docs/control/IF-ADVICE-VERIFICATION-GATE.md` (**trước khi biến một khuyến nghị thành quyết định
+bền hoặc thành mã** — `IF-DEC-*` · `EV-*` · `DISS-*` · `GATE-*` · `REC-*`).
 
 ## Skill — nạp đúng nhánh, cấm nạp cả kho
 `if-design` bộ định tuyến thiết kế · `if-design-review` trọng tài chấm độc lập ·
