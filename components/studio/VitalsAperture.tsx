@@ -51,7 +51,10 @@ import { useVungLamViec } from '@/components/ui/useVungLamViec';
 import { viTriO, viTriTamXo } from '@/lib/ui/vung-lam-viec';
 // 22/08 — đọc từ NHÀ CANONICAL, không đi vòng qua widget Trang chủ (tách quyền sở hữu Lane A/B).
 import { VitalsChatSurface } from '@/components/studio/VitalsChatSurface';
-import { chonTinHieu, trangThaiAmbient, type TinHieu, type MaMien } from '@/components/studio/vitals-tin-hieu';
+import {
+  chonTinHieu, trangThaiAmbient, mucKhauDo, nhanKhauDo, domKhauDo,
+  type TinHieu, type MaMien,
+} from '@/components/studio/vitals-tin-hieu';
 import { useDemoSpine, tomTatSpine, useCheDoDemo } from '@/lib/studio/demo-spine';
 import { NHAN_GIU_MS, SLOP_PX, TRE_RE_VAO_MS } from '@/components/studio/cu-chi-nhan-giu';
 
@@ -174,15 +177,28 @@ export function VitalsAperture() {
     if (!duAnHienTai) { setMienCu(undefined); setSoCu(undefined); return; }
     let huy = false;
     const doc = () => {
+      /**
+       * 🔴 P0 `L2-03` (28/08) — TRƯỚC lát này, cả hai đường hỏng đều IM:
+       *   `.then((r) => (r.ok ? r.json() : null))` rồi `if (!d) return;`  ⇒ 401/500 bỏ qua
+       *   `.catch(() => {})`                                              ⇒ mất mạng bỏ qua
+       * Hệ quả: `soCu` giữ nguyên giá trị cũ (thường là 0), và khẩu độ đọc "không có tín hiệu"
+       * — tức app khẳng định *"không có gì cần xem"* trong khi nó **không hỏi được**. Đó là
+       * F-02 (calm giả) nguyên bản: trấn an trên một tiền đề đã chết.
+       * Nay ghi lại SỨC KHOẺ NGUỒN để nhãn nói đúng "chưa đo được".
+       */
       fetch(`/api/projects/${encodeURIComponent(duAnHienTai)}/site`)
-        .then((r) => (r.ok ? r.json() : null))
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
         .then((d) => {
-          if (huy || !d) return;
-          const ds: string[] = Array.isArray(d.daCu) ? d.daCu : [];
+          if (huy) return;
+          const ds: string[] = Array.isArray(d?.daCu) ? d.daCu : [];
           setSoCu(ds.length);
           setMienCu([...new Set(ds.map((k) => k.split('.')[0]))] as MaMien[]);
+          setNguonSite('doc-duoc');
         })
-        .catch(() => {});
+        .catch(() => {
+          if (huy) return;
+          setNguonSite('hong');
+        });
     };
     doc();
     // Sự thật địa điểm đổi ở nơi khác (Tổng quan, bảng Đèn) ⇒ khẩu độ phải biết mà không cần F5.
@@ -190,6 +206,13 @@ export function VitalsAperture() {
     window.addEventListener('if:site-changed', nghe);
     return () => { huy = true; window.removeEventListener('if:site-changed', nghe); };
   }, [duAnHienTai]);
+
+  /**
+   * Sức khoẻ nguồn — `chua-doc` lúc chưa hỏi lần nào, `hong` khi hỏi mà không được.
+   * Không có nó thì "chưa đo được" và "đã đo, không có gì" là một, và nhãn buộc phải nói dối
+   * một trong hai ca.
+   */
+  const [nguonSite, setNguonSite] = useState<'chua-doc' | 'doc-duoc' | 'hong'>('chua-doc');
 
   const [demoBat] = useCheDoDemo();
   const spine = useDemoSpine();
@@ -204,6 +227,13 @@ export function VitalsAperture() {
     ...(demoBat ? { demoXong: tomTat.xong, demoTong: tomTat.tong } : {}),
   });
   const trangThai = trangThaiAmbient(tinHieu);
+  /**
+   * Đo được hay chưa. Không có dự án nào mở ⇒ **không có gì để đo**, và đó là "yên" thật, không
+   * phải "không biết" — đừng làm khẩu độ kêu ở màn chưa chọn dự án. Có dự án mà nguồn `hong`
+   * hoặc chưa đọc xong ⇒ **chưa đo được**.
+   */
+  const daDoDuoc = !duAnHienTai || nguonSite === 'doc-duoc';
+  const mucTin = mucKhauDo(trangThai, daDoDuoc);
 
   const huyHen = () => {
     if (dongHo.current) clearTimeout(dongHo.current);
@@ -381,12 +411,9 @@ export function VitalsAperture() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vung, moPeek]);
 
-  const nhanTrangThai =
-    trangThai === 'answering'
-      ? tr('đang chạy', 'running')
-      : trangThai === 'alert'
-        ? tr('có việc cần xem', 'needs attention')
-        : tr('không có tín hiệu', 'no signals');
+  // Nhãn và `data-vitals-state` sinh từ CÙNG `muc` — hai bề mặt tính riêng thì chúng sẽ lệch,
+  // và chúng đã lệch (DOM nói `calm`, trình đọc màn hình nghe "không có tín hiệu").
+  const nhanTrangThai = nhanKhauDo(mucTin, tr('vi', 'en') === 'en');
 
   if (!oViTri) return null;
 
@@ -497,7 +524,10 @@ export function VitalsAperture() {
          * động; trước đây trạng thái chỉ nằm trong closure React nên một lỗi đóng-ngay-khi-mở
          * sống được mà không ai thấy.
          */
-        data-vitals-state={muc === 'ambient' ? (trangThai === 'alert' ? 'attention' : 'calm') : muc}
+        /* 🔴 P0 `L2-03` — bản cũ tự tính `trangThai === 'alert' ? 'attention' : 'calm'`, tức
+           DOM nói `calm` trong khi `aria-label` nói "không có tín hiệu". Hai bề mặt của MỘT nút
+           nói hai chuyện. Nay cả hai sinh từ `mucTin` — lệch được nữa thì phải lệch ở một chỗ. */
+        data-vitals-state={muc === 'ambient' ? domKhauDo(mucTin) : muc}
         aria-haspopup="dialog"
         aria-label={tr(`Vitals — ${nhanTrangThai}`, `Vitals — ${nhanTrangThai}`)}
         className="flex items-center gap-1.5 rounded-[var(--r-full)] px-2.5 py-1 transition-colors duration-[120ms] hover:bg-[var(--hover)]"

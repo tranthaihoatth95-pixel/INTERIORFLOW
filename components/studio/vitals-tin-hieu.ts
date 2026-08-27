@@ -193,10 +193,67 @@ export function chonTinHieu(nguon: NguonTinHieu): TinHieu[] {
  * KHÔNG đẻ bảng trạng thái thứ hai. Đang chạy → 'answering' (nhịp nhanh) · có việc cần xem →
  * 'alert' · còn lại → 'idle' (thở chậm, im).
  * ⚠️ 'demo-flow' CỐ Ý không kéo chấm sang 'alert': nó là TIẾN ĐỘ trình bày, không phải cảnh báo —
- * demo chưa xong hết không phải một lỗi cần nhấp nháy đỏ. Chỉ hai loại thật sự CẦN XEM
- * ('chay-loi'/'chuan-ve') mới kéo ambient sang alert. */
+ * demo chưa xong hết không phải một lỗi cần nhấp nháy đỏ.
+ *
+ * 🔴 ĐÍNH CHÍNH 28/08 (lane UX bắt được, ký hiệu X-12): câu cũ ghi *"Chỉ HAI loại thật sự CẦN XEM
+ * ('chay-loi'/'chuan-ve')"* — mã kéo **BA**: `chay-loi` · `chuan-ve` · **`dia-diem`**. Lệch chú
+ * thích ↔ mã nằm đúng trong hàm quyết định sắc của lõi Vitals, tức chỗ người đọc tin chú thích
+ * nhất. `dia-diem` (sự thật địa điểm đã cũ) ĐÚNG là loại cần xem — mã đúng, chữ sai. */
 export function trangThaiAmbient(tinHieu: TinHieu[]): 'idle' | 'answering' | 'alert' {
   if (tinHieu.some((t) => t.loai === 'dang-chay')) return 'answering';
   if (tinHieu.some((t) => t.loai === 'chay-loi' || t.loai === 'chuan-ve' || t.loai === 'dia-diem')) return 'alert';
   return 'idle';
+}
+
+/* ═══════════════ NHÃN KHẨU ĐỘ — P0 `L2-03`, sửa 28/08 ═══════════════
+ *
+ * ⚠️ Lane `IF-UXUI-RUNTIME-001` đo trên app thật và tìm ra một lời nói dối ĐỐI XỨNG:
+ * nút Vitals đọc `aria-label="Vitals — không có tín hiệu"` **kể cả khi đã đăng nhập, có dữ liệu,
+ * mọi API trả 200** — và cùng lúc DOM ghi `data-vitals-state="calm"`. Hai bề mặt của một nút
+ * nói hai chuyện khác nhau: trình đọc màn hình nghe "không có tín hiệu", máy kiểm đọc "calm".
+ *
+ * Gốc: `idle` gộp HAI thứ khác hẳn nhau —
+ *   ① **đã đo, không có gì cần xem**  ⇒ đúng là "yên"
+ *   ② **chưa/không đo được** (401 · mất mạng · chưa mở dự án) ⇒ **KHÔNG BIẾT**
+ * Chính tệp này đã đặt luật phân biệt `undefined` ↔ `0` ở tầng TỪNG TÍN HIỆU (docstring đầu tệp,
+ * *"nhập chúng làm một là mở đường cho câu 'bản vẽ không có lỗi'"*) — nhưng ở tầng NHÃN thì lại
+ * gộp. Luật đúng, thi hành sót một tầng.
+ *
+ * ⛔ Và đây là chỗ nguy hiểm hơn cả hai: nói "không có tín hiệu" khi thật ra **không hỏi được**
+ * là bảo người dùng *"mọi thứ ổn"* trên một tiền đề đã chết — đúng bệnh **F-02 (calm giả)**.
+ *
+ * ⇒ Nhãn và `data-vitals-state` nay sinh ra từ **MỘT hàm duy nhất**. Không phải vì gọn, mà vì
+ * hai bề mặt tính riêng thì chúng sẽ lệch — và chúng đã lệch.
+ */
+
+export type MucKhauDo = 'yen' | 'dang-chay' | 'can-xem' | 'khong-biet';
+
+/**
+ * `daDoDuoc = false` ⇒ **KHÔNG BIẾT**, và nó THẮNG mọi thứ khác: không đo được thì cái "yên"
+ * kia không có căn cứ nào. Đang chạy thì vẫn là đang chạy (ta thấy nó chạy, đó là một phép đo).
+ */
+export function mucKhauDo(
+  trangThai: 'idle' | 'answering' | 'alert',
+  daDoDuoc: boolean,
+): MucKhauDo {
+  if (trangThai === 'answering') return 'dang-chay';
+  if (trangThai === 'alert') return 'can-xem';
+  return daDoDuoc ? 'yen' : 'khong-biet';
+}
+
+/** Nhãn người đọc — song ngữ. Bốn mức, bốn câu KHÁC NHAU. */
+export function nhanKhauDo(muc: MucKhauDo, en: boolean): string {
+  switch (muc) {
+    case 'dang-chay': return en ? 'running' : 'đang chạy';
+    case 'can-xem': return en ? 'needs attention' : 'có việc cần xem';
+    case 'yen': return en ? 'all clear' : 'không có gì cần xem';
+    // Cố ý KHÔNG nói "không có tín hiệu": đó là câu khẳng định về thế giới, mà ta chưa nhìn thấy
+    // thế giới. Câu đúng phải nói về CHÍNH TA.
+    case 'khong-biet': return en ? 'not measured yet' : 'chưa đo được';
+  }
+}
+
+/** Giá trị cho `data-vitals-state` — sinh từ CÙNG `muc`, nên DOM không thể lệch với nhãn. */
+export function domKhauDo(muc: MucKhauDo): 'calm' | 'attention' | 'running' | 'unknown' {
+  return muc === 'can-xem' ? 'attention' : muc === 'dang-chay' ? 'running' : muc === 'yen' ? 'calm' : 'unknown';
 }

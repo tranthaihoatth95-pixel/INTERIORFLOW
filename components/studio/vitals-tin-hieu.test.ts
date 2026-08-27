@@ -127,3 +127,47 @@ ok(
 );
 ok('demo-flow KHÔNG kéo ambient sang alert', trangThaiAmbient(chonTinHieu({ ...RONG, demoXong: 1, demoTong: 2 })) === 'idle');
 ok('demo-flow + lỗi thật thì ambient vẫn alert (lỗi thắng)', trangThaiAmbient(chonTinHieu({ dangChay: 0, chayLoi: 1, demoXong: 1, demoTong: 2 })) === 'alert');
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+ * P0 `L2-03` — NHÃN KHẨU ĐỘ. Lane `IF-UXUI-RUNTIME-001` đo trên app thật: nút Vitals đọc
+ * `aria-label="Vitals — không có tín hiệu"` **kể cả khi đã đăng nhập, có dữ liệu, mọi API 200**,
+ * và cùng lúc DOM ghi `data-vitals-state="calm"`. Hai bề mặt của một nút nói hai chuyện.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+{
+  const { mucKhauDo, nhanKhauDo, domKhauDo } = require('./vitals-tin-hieu');
+  console.log('\n[L2-03] nhãn khẩu độ — bốn mức, và DOM không được lệch nhãn');
+
+  /* ── ĐO ĐƯỢC thắng/thua ở đâu ── */
+  ok('đo được + im ⇒ yen', mucKhauDo('idle', true) === 'yen');
+  ok('KHÔNG đo được + im ⇒ khong-biet (KHÔNG phải yen)', mucKhauDo('idle', false) === 'khong-biet');
+  // Đang chạy là một PHÉP ĐO — ta thấy nó chạy. Không đo được nguồn khác không xoá điều đó.
+  ok('đang chạy ⇒ dang-chay dù nguồn khác chưa đo được', mucKhauDo('answering', false) === 'dang-chay');
+  ok('có việc cần xem ⇒ can-xem dù nguồn khác chưa đo được', mucKhauDo('alert', false) === 'can-xem');
+
+  /* ── XƯƠNG SỐNG: bốn mức, bốn câu KHÁC NHAU ── */
+  for (const en of [false, true]) {
+    const cau = ['yen', 'dang-chay', 'can-xem', 'khong-biet'].map((m: any) => nhanKhauDo(m, en));
+    ok(`${en ? 'en' : 'vi'} — 4 mức ra 4 câu, không trùng đôi nào`, new Set(cau).size === 4);
+  }
+
+  /* ── Câu "không có tín hiệu" là câu KHẲNG ĐỊNH VỀ THẾ GIỚI khi ta chưa nhìn thấy thế giới ── */
+  ok('vi — "chưa đo được" nói về CHÍNH TA, không khẳng định về thế giới',
+    nhanKhauDo('khong-biet', false) === 'chưa đo được');
+  ok('vi — KHÔNG còn câu "không có tín hiệu" ở bất kỳ mức nào',
+    !['yen', 'dang-chay', 'can-xem', 'khong-biet'].some((m: any) => /không có tín hiệu/.test(nhanKhauDo(m, false))));
+  ok('en — "not measured yet", không phải "no signals"',
+    nhanKhauDo('khong-biet', true) === 'not measured yet' && !/no signals/.test(nhanKhauDo('yen', true)));
+
+  /* ── DOM sinh từ CÙNG `muc` ⇒ không thể lệch nhãn ── */
+  ok('yen → calm', domKhauDo('yen') === 'calm');
+  ok('can-xem → attention', domKhauDo('can-xem') === 'attention');
+  ok('dang-chay → running', domKhauDo('dang-chay') === 'running');
+  ok('khong-biet → unknown (KHÔNG phải calm — đây là ca đã sập)', domKhauDo('khong-biet') === 'unknown');
+  // Ca chính xác đã đo được trên runtime: không đo được mà DOM nói `calm`.
+  ok('không đo được ⇒ DOM tuyệt đối KHÔNG được là calm',
+    domKhauDo(mucKhauDo('idle', false)) !== 'calm');
+
+  /* ── Nhãn và DOM luôn cùng gốc: bốn mức, bốn giá trị DOM, ánh xạ một-một ── */
+  const domSet = new Set(['yen', 'dang-chay', 'can-xem', 'khong-biet'].map((m: any) => domKhauDo(m)));
+  ok('4 mức → 4 giá trị DOM riêng biệt', domSet.size === 4);
+}
