@@ -5,8 +5,11 @@
  * Đo 27/08 trên `prisma/dev.db`: `journal_mode = delete`. Ở chế độ đó, **mỗi lần ghi khoá độc
  * quyền toàn bộ tệp** — người đọc bị chặn. Mà `getSession()` ghi `lastSeenAt` ở gần như mọi
  * request, nên trong một phiên dùng bình thường, người đọc và người ghi chặn nhau liên tục.
- * Cộng `busy_timeout = 0` (chờ vô hạn) ⇒ dev server **kẹt cứng sau ~6 phút**, mọi route treo,
- * không lỗi, không timeout. Đây là P0 `L2-01` mà lane UX đo được.
+ * 🔴 ĐÍNH CHÍNH: bản đầu của chú thích này ghi *"`busy_timeout = 0` (chờ vô hạn)"* — **SAI**.
+ * Đo thật: `busy_timeout=0` trả `database is locked` **sau 0.00s**, tức KHÔNG chờ. Nó không thể
+ * là cơ chế gây treo. **Nguyên nhân cú kẹt ~6 phút (`L2-01`) vẫn CHƯA XÁC ĐỊNH.**
+ * WAL giữ lại vì nó đúng cho ứng dụng local-first vừa đọc vừa ghi, KHÔNG phải vì đã chứng minh
+ * nó chữa được cú kẹt.
  *
  * WAL: người đọc **không chặn** người ghi và ngược lại. Đây là chế độ đúng cho một ứng dụng
  * local-first có một tiến trình vừa đọc vừa ghi liên tục.

@@ -362,3 +362,46 @@ F-18: **thao tác chạy đúng, chỉ là không chạy vào cái mình nghĩ.*
 3. Trước khi commit, **đối chiếu số tệp staged với số tệp mình chủ ý sửa**. Lệch ⇒ dừng.
 4. Đường lùi ghi trong commit phải **đúng với ruột thật** của commit đó. `147f66a` nay được đánh
    dấu **KHÔNG revert được** ở đây, vì trong chính nó thì không.
+
+---
+
+## F-20 · TÔI DỰNG MỘT CÂU CHUYỆN NHÂN QUẢ NGHE HỢP LÝ RỒI KHÔNG KIỂM NÓ — 27/08
+
+**Chuyện gì.** Dev server kẹt cứng sau ~6 phút; 9 luồng query engine đứng chết cùng stack. Tôi đo
+ba PRAGMA của tệp DB, thấy `journal_mode=delete` và `busy_timeout=0`, rồi viết vào chú thích mã,
+vào commit, và vào checkpoint gửi Hoà:
+
+> *"`busy_timeout=0` ⇒ kết nối bị chặn **chờ mãi mãi** thay vì báo lỗi."*
+
+**Hoà bắt được, và Hoà đúng.** Đo lại bằng hai tiến trình, một giữ `BEGIN IMMEDIATE`:
+
+```
+busy_timeout=0   → sau 0.00s: database is locked   ← BÁO LỖI NGAY
+busy_timeout=5s  → sau 5.04s: ghi được
+```
+
+`busy_timeout=0` nghĩa là **KHÔNG CHỜ**. Nó là cơ chế gây **lỗi sớm**, không thể là cơ chế gây
+treo. Câu tôi viết không chỉ thiếu bằng chứng — nó **ngược với sự thật**.
+
+**Vì sao nó lọt.** Ba dữ kiện đo được (`delete` · `busy_timeout=0` · `getSession()` ghi mỗi
+request) ghép lại thành một câu chuyện **rất khớp** với triệu chứng. Câu chuyện khớp đến mức tôi
+không nhận ra mình chưa kiểm mắt xích cuối. Ba số đo thật + một suy diễn không kiểm = một kết
+luận trông như đã đo.
+
+**Đây là thứ nguy hiểm hơn F-15/F-17/F-18.** Ba cái đó là *bộ máy sai chỗ* — soi nhầm ô, nhầm
+mục tiêu, chạy trên module rỗng; đều có thể bắt bằng một cổng máy. Cái này là **suy luận sai**
+mặc bộ máy chạy đúng. Không cổng nào bắt được. Chỉ có thói quen tự hỏi *"tôi đã đo mắt xích này
+chưa, hay tôi đang thấy nó hợp lý?"*
+
+**Đắt gấp đôi vì tôi đã có sẵn dụng cụ.** Bài đo bác bỏ nó mất **hai phút** — hai tiến trình
+`sqlite3`, một `BEGIN IMMEDIATE`. Tôi không chạy vì tôi không thấy có gì để hỏi.
+
+**Luật thêm — TÁCH "ĐO ĐƯỢC" KHỎI "SUY RA", TRONG CÙNG MỘT CÂU.**
+1. Một chuỗi nhân quả nhiều mắt: **mỗi mắt phải có nhãn riêng** `OBSERVED` hay `INFERENCE`.
+   Cấm để một mắt `INFERENCE` thừa hưởng độ tin của các mắt `OBSERVED` đứng cạnh.
+2. **Trước khi gọi thứ gì là nguyên nhân, phải TÁI HIỆN được sự cố.** Không tái hiện được thì
+   nhãn cao nhất được phép là `PARTIAL — chưa xác định nguyên nhân`, và bản vá là **ứng viên**.
+3. Khi một cơ chế được viện dẫn (`busy_timeout`, `journal_mode`, pool…), **đo chính cơ chế đó**
+   bằng bài nhỏ nhất có thể. Tài liệu và trực giác không thay được một lượt chạy hai phút.
+4. **Nhãn sai lan nhanh hơn mã sai.** Câu đó đã kịp nằm trong chú thích của ba tệp, một commit,
+   và một checkpoint trước khi bị bác. Mã sai thì test bắt; nhãn sai thì chỉ người đọc kỹ bắt.

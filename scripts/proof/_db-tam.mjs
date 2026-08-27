@@ -56,6 +56,51 @@ const bam = (p) => (existsSync(p) ? createHash('sha256').update(readFileSync(p))
  * Mở một bản sao DB dùng riêng cho lượt chạy này.
  * `nhan` chỉ để đặt tên thư mục tạm cho dễ nhìn khi soi.
  */
+/**
+ * ⛔ CỔNG TIỀN KIỂM — chạy TRƯỚC khi mở bất kỳ kết nối Prisma nào.
+ *
+ * Hoà chốt 27/08 sau sự cố fixture rò lên bề mặt: *"Cấm dựa vào cleanup cuối script… Guard phải
+ * fail TRƯỚC khi server/script mở Prisma nếu target là DB thật. Dọn fixture chỉ là hậu kiểm;
+ * không phải cơ chế an toàn."*
+ *
+ * Vì sao câu đó đúng, đo được: hai lượt `access-scope.mjs` **chết giữa chừng**, nên phần dọn ở
+ * cuối không bao giờ chạy — và 8 user + 10 dự án giả nằm lại trong `prisma/dev.db` cho tới khi
+ * lane UX thấy chúng **trên `/api/dashboard` của người dùng**. Một cơ chế an toàn chỉ chạy khi
+ * mọi thứ suôn sẻ thì không phải cơ chế an toàn; nó là một lời chúc may mắn.
+ *
+ * Cổng này ném **trước** dòng `new PrismaClient()` đầu tiên. Không có đường vòng, không có cờ bỏ qua.
+ */
+export function tienKiemMucTieu(duongDanBanSao) {
+  const cam = [];
+  const thuc = path.resolve(duongDanBanSao);
+
+  // ① không được là chính DB thật theo `.env`
+  const that = duongDbThat();
+  if (that && path.resolve(that) === thuc) cam.push(`trùng DB thật theo .env (${that})`);
+
+  // ② không được nằm trong repo — mọi DB sản phẩm của IF đều nằm trong repo hoặc userData
+  if (thuc.startsWith(path.resolve(REPO) + path.sep)) cam.push('nằm TRONG repo');
+
+  // ③ không được nằm trong thư mục userData của bản đóng gói (Electron ghi DB thật ở đó)
+  const userData = [
+    path.join(process.env.HOME ?? '', 'Library', 'Application Support'),
+    process.env.APPDATA ?? '',
+  ].filter(Boolean);
+  for (const d of userData) if (thuc.startsWith(path.resolve(d) + path.sep)) cam.push(`nằm trong userData (${d})`);
+
+  // ④ tên tệp không được là `dev.db` trần ở một chỗ trông giống sản xuất
+  if (!thuc.includes('if-') && path.basename(thuc) === 'dev.db') cam.push('đường dẫn không mang dấu hiệu thư mục tạm');
+
+  if (cam.length) {
+    throw new Error(
+      `⛔ CỔNG TIỀN KIỂM CHẶN — từ chối mở Prisma.\n` +
+        `   mục tiêu: ${thuc}\n` +
+        cam.map((c) => `   · ${c}`).join('\n') +
+        `\n   Đây là chốt chặn TRƯỚC KHI GHI, không phải dọn dẹp sau khi ghi (Hoà chốt 27/08).`,
+    );
+  }
+}
+
 export async function moDbTam(nhan = 'proof') {
   const that = duongDbThat();
   if (!that || !existsSync(that)) {
@@ -67,6 +112,9 @@ export async function moDbTam(nhan = 'proof') {
   for (const hau of ['', '-wal', '-shm']) {
     if (existsSync(`${that}${hau}`)) copyFileSync(`${that}${hau}`, `${ban}${hau}`);
   }
+
+  // ⛔ Cổng tiền kiểm — TRƯỚC mọi kết nối. Sai mục tiêu thì ném ở đây, không ghi được byte nào.
+  tienKiemMucTieu(ban);
 
   const url = `file:${ban}`;
 
