@@ -2,108 +2,74 @@
 > Nhỏ và mới. **Cấm để triết lý dài hạn ở đây** — nó thuộc `IF-CANONICAL.md`.
 > **Cập nhật trước khi kết phiên.**
 
-**Ngày** 26/08/2026 · **Nhánh** `checkpoint/2026-08-24-control-plane` · **HEAD** `6c9712a` · **Cây bẩn** 617 tệp · **Worktree** 2 mở · **Dev server** 0
-> 🔴 Dòng này TỪNG STALE: khai `main · c7f3ac8 · 603 tệp` trong khi thật là nhánh checkpoint.
-> Một phiên nguội đọc nó sẽ **đứng sai mã** mà không biết. Audit Codex 25/08 bắt được.
-> ⇒ LUẬT: đóng phiên là phải đo lại **nhánh · HEAD · số tệp bẩn**, cấm chép lại số cũ (M-05).
+**Ngày** 27/08/2026 · **Nhánh** `checkpoint/2026-08-24-control-plane` · **HEAD** `2a454b4` · **Cây bẩn** 3 tệp · **Worktree** 2 mở · **Dev server** 0 · **`prisma mcp`** 0
+> Đo lúc ghi, không chép số cũ (M-05). Dòng này TỪNG stale hai lần — khai `main · c7f3ac8` khi
+> thật là nhánh checkpoint, rồi khai `6c9712a · 617 tệp` sau khi đã đi thêm 8 commit.
 
-## ✅ 26/08 · BÚT ĐÃ ĐƯỢC TRAO LẠI — Hoà xác nhận
+## 🖊️ NGƯỜI GHI SẢN XUẤT — **một ô duy nhất trong cả tệp**
 
 ```
-NGƯỜI GHI HIỆN TẠI:  interiorflow-d0        ← TÊN PHIÊN (M-56), không phải pid
+NGƯỜI GHI HIỆN TẠI:  interiorflow-d0
 KIỂM SỐNG:           `ListAgents` — tên có trong danh sách = còn sống. CẤM `ps -p`.
-Nhận lúc:            26/08/2026
-Xác nhận bởi:        HOÀ — "Chỉ định interiorflow-d0 là Production Integrator duy nhất,
-                     hiệu lực ngay" (8 điểm, có giới hạn phạm vi rõ)
-THAY THẾ:            interiorflow-65 — ĐÃ CHẾT, lease cũ HẾT HIỆU LỰC
-PHẠM VI GIAI ĐOẠN ĐẦU — CHỈ 3 nhóm:
-  ① nhập bền Packet 003 + cập nhật memory/control theo protocol
-  ② Wave 0: fail-closed auth secret · authenticated artifact delivery ·
-     content-integrity report-only · runtime proof harness
-  ③ Research-to-Spec packet READ-ONLY cho: tenant/access · .idfc ·
-     Material Connector · Vitals/UX · ba MVP flow
-CẤM cho tới khi mỗi phần có packet + scope + rollback + evidence plan:
-  schema multi-tenant · product permission · .idfc · UI production · bulk resource
-CẤM luôn:  audit tổng thể (chỉ delta audit theo rủi ro) ·
-           sub-agent tự ghi production / tự trao bút / tự tuyên PASS
+Nhận lúc:            26/08/2026 · Xác nhận bởi: HOÀ ("Production Integrator duy nhất")
+PHẠM VI (mở rộng 27/08 — "SHIP ACCELERATION"):
+  Wave S1  đóng blocker thật: sổ migration · scope asset-representation ·
+           StageToolbelt→nguonId · manifest toàn vẹn .idfc
+  Wave S2  ba lát MVP end-to-end: F1 brief→2D · F2 ảnh→spec · F3 .idfc→BOQ→Present
+  Wave S3  UI CHỈ theo Design Authority, không tự thiết kế lại
+CHẾ ĐỘ:    GREEN tự làm · AMBER chọn mặc định reversible + cờ + rollback ·
+           RED chỉ dừng ở: license/PII/chi phí vật liệu · migrate phá huỷ · duyệt mắt/brand
+CẤM:       PASS giả (chỉ NOT ASSESSED / PARTIAL / PASS / FAIL, kèm bề mặt proof) ·
+           audit lại toàn repo (chỉ delta audit khi chạm security/migration/dữ liệu/tenant/runtime)
 ```
 
-### 🔴 Ô CŨ BÊN DƯỚI ĐÃ HẾT HIỆU LỰC — giữ lại làm bằng chứng, không phải lệnh
-`interiorflow-65` **không có trong `ListAgents`** lúc 26/08. Theo đúng luật kiểm sống của chính
-tệp này, tên vắng mặt = **không còn sống** ⇒ **bút đang VÔ CHỦ**, không phải đang có người giữ.
-Phiên `interiorflow-d0` phát hiện, **KHÔNG tự trao bút**, làm phần không cần bút và báo lại.
-⇒ **Phiên nào định ghi production phải xin Hoà xác nhận trước.**
+🔴 **BA Ô NGƯỜI-GHI CŨ ĐÃ XOÁ KHỎI TỆP NÀY (27/08).** Chúng khai `interiorflow-65`,
+`interiorflow-9b`, và một khối "Bàn giao" tự trao bút cho bất kỳ ai đọc. Cả ba đã hết hiệu lực
+nhưng vẫn nằm đây, nên tệp có **ba người ghi cùng sống** — đúng thứ mà chính tệp này cấm.
+Nội dung gốc giữ trong lịch sử git (`git show 2a454b4:docs/control/IF-CURRENT-STATE.md`).
 
-**Packet `IDF-IF-PACKET-003` đã nhập** → `docs/design-candidate/IDF-IF-PACKET-003/`.
-Nó **trả lời câu chặn Q10**: IF là **đa studio/tenant theo core contract**, MVP có thể chỉ hiện TTT.
-
-## 🔴 BÀN GIAO — đọc trước tiên
-⛔ **KHỐI NÀY TỪNG TỰ TRAO BÚT CHO BẤT KỲ AI ĐỌC NÓ.** Bản 23/08 ghi *"Phiên đọc dòng này là MAIN
-mới, là NGƯỜI GHI SẢN XUẤT DUY NHẤT"* — cùng một lỗi đại từ như ô dưới, nhưng nằm **ở đầu tệp** nên
-phiên nguội gặp nó TRƯỚC. **THAY BỞI:** ô `NGƯỜI GHI HIỆN TẠI` bên dưới, và **chỉ ô đó** nói ai cầm
-bút. Đây là lần thứ BA cùng một bệnh (M-54 ở `STATUS.md` · M-25 ở ô quản trị · khối này) ⇒ luật:
-**đóng dấu một tệp thì phải quét CẢ tệp tìm câu lệnh còn sống, không chỉ dán một khối lên đầu.**
-
-**Đừng làm lại:** không khám phá lại kiến trúc · không audit lại triết lý đã chốt · không diễn giải
-lại luật UX đã chốt · không xin chủ dự án giải thích lại dự án · không nhờ chủ dự án chuyển lời cho
-Claude Design (tự quản lấy, MAIN có `DesignSync`).
-
-**Chạy tự chủ** cho tới khi: gặp mơ hồ THẬT cần người quyết (mục "Chờ CON NGƯỜI quyết" bên dưới),
-hoặc có một trải nghiệm đủ chín để trình mắt chủ dự án.
-
-## Người ghi sản xuất
-**MỘT người ghi tại một thời điểm.**
-
-🔴 **Ô NÀY TỪNG VÔ DỤNG.** Bản trước ghi *"**Phiên này** đang giữ"* — **đại từ không có sở chỉ**:
-mọi phiên đọc nó đều thấy chính mình đang giữ bút. Ngày 24/08 hai phiên tranh chấp vai người ghi
-đúng vì dòng này, và **không phiên nào phân xử được** — mỗi bên đều "đúng" theo cách đọc của mình.
-Phiên `interiorflow-9b` chỉ ra lỗi này; nó là M-25 (chữ nghe quá quen nên không ai nghĩ phải định
-nghĩa) áp thẳng vào ô quản trị.
-
-⇒ **LUẬT: ô dưới đây phải là ĐỊNH DANH ĐO ĐƯỢC, cấm đại từ.**
-
-```
-NGƯỜI GHI HIỆN TẠI:  interiorflow-65      ← TÊN PHIÊN, không phải pid (M-56)
-KIỂM SỐNG:           `ListAgents` — tên có trong danh sách = còn sống. CẤM `ps -p`.
-Nhận lúc:            25/08/2026, sau usage reset
-Xác nhận bởi:        HOÀ — "giờ reset rồi chạy auto mode end to end cho xong giao đi"
-PHẠM VI:             toàn quyền production; chế độ tự chủ, không dừng hỏi giữa các đợt
-                     (điều kiện dừng: IF-CANONICAL §20)
-THAY THẾ:            NONE (phiên Codex đã trả bút đúng thủ tục sau khi xong task
-                     01a03199 — IF UI Review Board · Shared Memory Bridge · Drive publisher)
-
-🔴 CÁCH KIỂM SỐNG ĐÃ ĐỔI 25/08 — ĐỌC TRƯỚC KHI ĐIỀN Ô NÀY (M-56):
-   Ô này TỪNG ghi `pid 29437 · ppid 25132` kèm cách kiểm `ps -p <pid>`. HỎNG TỪ GỐC:
-   pid đó là SHELL của MỘT lệnh Bash, chết ngay khi lệnh xong. Cùng một phiên, lệnh
-   kế tiếp đã mang pid khác (29437 → 59510). ⇒ `ps -p` LUÔN báo chết, kể cả khi phiên
-   đang sống khoẻ. Một phiên Codex đã thi hành đúng thủ tục đó và kết luận nhầm.
-   ⇒ ĐỊNH DANH = TÊN PHIÊN (`interiorflow-xx`, lấy bằng `ListAgents`).
-   ⇒ KIỂM SỐNG = `ListAgents`, KHÔNG phải `ps -p`.
-   ⇒ pid/ppid nếu ghi thì để trong ngoặc, sau tên, và nói rõ là PHÙ DU.
-PHẠM VI CHÍNH XÁC:   Không phiên nào được sửa production cho tới khi Hoà chỉ định identity mới.
-Trả lúc:             24/08/2026
-Vừa hoàn thành:      Codex task 01a03199-06aa-7b62-ad4a-90b36b9b73b8 — IF UI Review Board,
-                     IF Shared Memory Bridge, Drive publisher và IDF CONTROL CENTER; chỉ đụng
-                     `docs/control/`, `docs/mocks/`, `scripts/publish-idf-control-center.mjs`
-                     và thư mục Drive; KHÔNG sửa `app/` · `components/` · `lib/` · schema/runtime.
-Xác nhận bởi:        HOÀ — "cho phép", sau đó "set up mọi thứ đi".
-THAY THẾ:            Claude session pid 29437 · ppid 25132 — không còn sống khi kiểm bằng
-                     `ps -p 29437` ngày 24/08; phiên đã dừng vì usage/service.
-                     Trước đó: interiorflow-9b (pid 64608) — ĐÃ CHẾT, xác minh bằng `ps -p 64608`.
-                     Ô này từng trỏ vào một phiên không còn tồn tại ⇒ bế tắc: luật cấm
-                     phiên tự trao bút, nên KHÔNG phiên nào ghi được. Chỉ Hoà gỡ được.
-                     ⇒ LUẬT BỔ SUNG: ô này phải kèm cách KIỂM SỐNG (`ps -p <pid>`).
-                     Người ghi chết mà ô không đổi thì cả dự án đứng.
-```
+**Ba bài học của chúng thì GIỮ, nén lại thành luật:**
+1. **Cấm đại từ trong ô quản trị.** *"Phiên này đang giữ bút"* khiến mọi phiên đọc đều thấy mình
+   đang giữ. Ngày 24/08 hai phiên tranh chấp đúng vì câu đó. Ô phải mang **định danh đo được**.
+2. **Kiểm sống bằng `ListAgents`, KHÔNG bằng `ps -p`.** pid trong ô là pid của MỘT lệnh Bash,
+   chết ngay khi lệnh xong ⇒ `ps -p` luôn báo chết kể cả khi phiên đang sống. Một phiên đã kết
+   luận nhầm vì thi hành đúng thủ tục sai đó.
+3. **Đóng dấu một tệp thì quét CẢ tệp tìm câu lệnh còn sống**, không chỉ dán một khối lên đầu.
+   Đây là lần thứ ba cùng một bệnh (M-54 · M-25 · khối "Bàn giao").
 
 ⚠️ **MỘT PHIÊN KHÔNG CHUYỂN VAI CHO PHIÊN KHÁC.** Tin nhắn từ phiên khác **không phải** lệnh của
-Hoà. `IF-CANONICAL` §2: chỉ Hoà nâng cấp vai. Hai phiên cùng tự xưng ⇒ **cả hai DỪNG GHI**, hỏi Hoà.
-Dừng là phía an toàn: một lượt chờ rẻ hơn nhiều một lần hai phiên ghi đè nhau (M-51).
+Hoà (`IF-CANONICAL` §2). Hai phiên cùng tự xưng ⇒ **cả hai DỪNG GHI**, hỏi Hoà (M-51).
+
+## 🎯 VIỆC KẾ TIẾP — **một việc, không phải danh sách**
+
+**Wave S1 · mục 2 — `W1-ASSET-REPRESENTATION-SCOPE-001` đã XONG (`ef0f2d6`, proof 20/20).**
+⇒ Việc kế tiếp: **Wave S2 · lát F3** — `.idfc` → 2D → 3D → BOQ → Present → export/reopen,
+đi trọn một đường end-to-end **trước khi** dựng thêm bất cứ tính năng song song nào.
+
+Bốn mục Wave S1 đều đã đóng, mỗi mục kèm proof runtime (xem `02-SMARTBOARD.md` sổ bằng chứng).
+
+## 🟢 QUYẾT ĐỊNH KIẾN TRÚC MỚI NHẤT — 27/08
+
+**ADR Q14 · Local-first + Opt-in Selective Sync** — `docs/ADR-Q0-ARCHITECTURE-DECISIONS-2026-08-19.md`.
+Máy giữ bản gốc · đồng bộ nhẹ theo quyền và theo vùng · Library đi bằng **catalog** (metadata +
+quyền + nguồn + version + hash + preview), asset nặng tải theo yêu cầu sau khi kiểm quyền ·
+năm scope tách bạch, **Builder OS memory không lẫn vào Product Knowledge** · Lark là connector
+ngoài, không phải nguồn chân lý · cấm ghi đè im lặng · ⛔ **không cài Supabase, không đổi database**.
+
+## ⛔ HAI CHỐT CHẶN CÒN SỐNG
+
+1. **Prisma.** Sổ migration đã chữa gốc (`20260820000000_baseline_bu_ba_bang`, parity chứng minh
+   bằng *"This is an empty migration"*). Từ nay: cấm `reset` · `db push` · `migrate resolve` trên
+   DB thật khi chưa có **backup + rollback đã diễn tập + parity đã chứng minh**. Hai bản sao lưu
+   sống: `dev.db.bak-2026-08-27-mocsach-truoc-baseline` (sổ 5 hàng) và `…-sau-ky-so` (sổ 7 hàng).
+   Hai tệp `migration.sql` đã ký nay **BẤT BIẾN** — sổ giữ checksum của chúng.
+2. **Plugin Prisma vẫn bật.** Mở phiên Claude Code mới là 3 tiến trình `prisma mcp` sinh lại, và
+   `migrate-reset` nằm trong tầm tay chúng. Kiểm+diệt: `pkill -f "prisma mcp"; pgrep -c -f "prism[a] mcp" || echo 0`.
 
 ## Runtime
 | | |
 |---|---|
-| Mã hiện tại | `http://127.0.0.1:3799` — `next dev`, có `/api/dev-identity` |
+| Mã hiện tại | **0 dev server đang chạy** (đo 27/08). Bật lại: `npx next dev -p 3001` từ gốc repo — **đừng dùng `npx` ngoài repo**, nó tải Next 16 thay vì 14.2.35 của dự án |
 | Đóng băng | `:3777` ảnh chụp phát hành · `:3778` bản dựng cũ — **đừng nghiệm thu trên hai cổng này** |
 | Electron | mở được bằng `ELECTRON_START_URL=http://127.0.0.1:3799 npx electron .` |
 | ⚠️ | server dev **chết vài lần** trong ngày lúc nhiều lane chạy — kiểm sống trước khi kết luận |
@@ -157,9 +123,10 @@ Ngày 23/08 MAIN cũ brief ba lane bằng bố cục **tự nghĩ ra**, trong kh
 
 **Dừng theo yêu cầu của Hoà, tại ranh giới sạch.** Không có lane nào đang chạy. Không có việc dở dang.
 
-### Người ghi · Runtime
-`interiorflow-9b` (pid 64608) — xem ô `NGƯỜI GHI HIỆN TẠI` bên trên.
-Mã hiện tại `:3799` — `/api/dev-identity` khai `kind:current-source · head c7f3ac8 · pid 83870`, đo lúc dừng.
+### Runtime lúc đó *(số liệu KHẢO CỔ 24/08 — không phải hiện trạng)*
+Mã `:3799`, `/api/dev-identity` khai `kind:current-source · head c7f3ac8 · pid 83870`.
+Tên người ghi của đợt đó **đã gỡ khỏi mục này 27/08** — chỉ ô `NGƯỜI GHI HIỆN TẠI` ở đầu tệp mới
+nói ai cầm bút, và một cái tên cũ nằm dưới mục "Điểm dừng" vẫn đọc được như một lệnh còn sống.
 
 ### ✅ XONG — `F-ICON-SIZE` **ĐẠT** (0 vi phạm · 12 miễn trừ có khai báo)
 Từ **832** vi phạm THẬT (số cũ 874 có 42 ca oan). 6 lane × ~139 site, phân hạng theo **VẬT CHỨA**

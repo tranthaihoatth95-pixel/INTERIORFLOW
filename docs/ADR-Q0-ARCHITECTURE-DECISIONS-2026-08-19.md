@@ -1,8 +1,13 @@
-# ADR Q0 · 9 QUYẾT ĐỊNH KIẾN TRÚC INTERIORFLOW
+# ADR Q0 · QUYẾT ĐỊNH KIẾN TRÚC INTERIORFLOW
 
-> **Ngày chốt**: 19/08/2026 (Hoà chốt sau khi đọc [Audit Q0](AUDIT-Q0-SOURCE-OF-TRUTH-LIBRARY-IDFC-2026-08-19.md))
-> **Trạng thái**: ACCEPTED (Hoà đã quyết) — nhiệm vụ T là **ghi lại + đối chiếu code + migration plan**, KHÔNG tự đổi quyết định.
-> **Mốc code**: `3da4b8c` (main HEAD)
+> **Q1–Q9** — ngày chốt 19/08/2026 (Hoà chốt sau khi đọc [Audit Q0](AUDIT-Q0-SOURCE-OF-TRUTH-LIBRARY-IDFC-2026-08-19.md)) · `ACCEPTED` · mốc code `3da4b8c`.
+> **Q10–Q13** — `CANDIDATE`, còn ở `docs/design-candidate/IF-ARCH-LOCAL-FIRST-LARK-001/08-ADR-CANDIDATE.md`. Chưa chốt, **đừng đọc như đã chốt**.
+> **Q14** — ngày chốt 27/08/2026 · `ACCEPTED` · mốc code `2a454b4`. Xem §Q14 cuối tệp.
+>
+> ⚠️ Tệp này là **DÃY ADR DUY NHẤT** của IF. Cấm mở dãy thứ hai — đã suýt xảy ra một lần
+> (phiên 24/08 định đánh số lại từ `ADR-001` trong khi Q1–Q9 đang sống), và hai dãy song song là
+> hai lịch sử quyết định mâu thuẫn nhau. Quyết định mới **nối tiếp số**, không đẻ tệp mới.
+> Tiêu đề cũ ghi "9 QUYẾT ĐỊNH" — bỏ số đó đi vì nó sai ngay lần thêm đầu tiên.
 
 ---
 
@@ -1135,3 +1140,126 @@ Khi Hoà + T duyệt 9 ADR xong, Claude được đụng Prisma và persistence 
 - Bản đồ tay: [`BAN-DO-KIEN-TRUC-2026-08-18.md`](BAN-DO-KIEN-TRUC-2026-08-18.md)
 - Hiến pháp OS: [`IF-KIEN-TRUC-OS.md`](IF-KIEN-TRUC-OS.md)
 - Sổ chốt: [`00-CHOT.md`](00-CHOT.md)
+
+---
+
+## Q14 · Mô hình dữ liệu & đồng bộ của IF
+
+> **Chốt 27/08/2026 · `ACCEPTED` · Hoà quyết.**
+> Nguồn bằng chứng: [`06-SYNC-OPTIONS.md`](design-candidate/IF-ARCH-LOCAL-FIRST-LARK-001/06-SYNC-OPTIONS.md)
+> (ba đường A/B/C, đo trên HEAD `a08378a`). Quyết định này **chốt Đường B**.
+
+### Current state
+
+Đo được, không suy luận:
+
+- **SQLite một tệp**, `provider = "sqlite"` (`prisma/schema.prisma:16`). Không server, không cổng
+  mạng, không dịch vụ đám mây nào. Trong bản Electron đóng gói, tệp nằm ở
+  `app.getPath('userData')/dev.db` (`electron/main.js:118-129`) — **trên máy người dùng**.
+- **Không có tầng đồng bộ nào**. `06-SYNC-OPTIONS.md` khai thẳng: hiện trạng là **Đường A ·
+  LOCAL-ONLY**, và cảnh báo *"local-first không có nghĩa local-only — phải có đường đi tiếp,
+  nhưng không được giả vờ đã có"*.
+- **Chưa có khái niệm tenant.** `grep tenantId` toàn schema = 0. Phạm vi duy nhất đang chạy là
+  `ProjectMember` quanh cây `Project`; sáu bảng nằm **ngoài** nó (`LibraryAsset`, `ProductSpec`,
+  `AssetRepresentation`, `ChatMessage`, `LarkPersonRef`, roster `User`).
+- **Lark**: `POST /api/atlas-materials/sync` là đường **PULL-ONLY**, không có route ghi ngược, và
+  **chưa chạy thật lần nào** (`0` nơi gọi, tên cột còn là placeholder chưa xác minh).
+- Bốn cửa phạm vi đã dựng nhưng **đang TẮT sau cờ**: `IF_LIBRARY_SCOPE_ENFORCE`,
+  `IF_PROJECT_SCOPE_ENFORCE`, `NEXT_PUBLIC_IF_IDFC_IDENTITY`, `IF_PERSIST_XUATXU`.
+
+### Decision
+
+**IF = LOCAL-FIRST + OPT-IN SELECTIVE SYNC.** Bảy điều, tất cả đều ràng buộc:
+
+**① Máy người dùng giữ bản gốc.** Bản gốc, cache, render trung gian, texture/model/video nặng, và
+mọi dữ liệu **chưa được chọn chia sẻ** — nằm trên máy. Đây là mặc định, không phải tuỳ chọn.
+
+**② Đồng bộ NHẸ, theo quyền và theo VÙNG.** Chỉ những vùng này được rời máy khi người dùng bật:
+identity/account · project metadata · cấu trúc · quyết định · task/note · thông số · version ·
+manifest/hash · provenance · permission · thumbnail/preview.
+**Không** đồng bộ mặc định: bản vẽ, ảnh, tệp dự án, asset nặng.
+
+**③ Library/Knowledge chung đi bằng CATALOG, không bằng asset.** Đồng bộ: metadata + quyền +
+nguồn + version + hash + preview. **Asset gốc nặng tải theo yêu cầu**, và **chỉ khi người dùng
+có quyền** — quyền kiểm TRƯỚC khi byte rời máy chủ (luật đã thi hành ở
+`app/api/comments/image/[id]/route.ts` và `app/api/asset-representation/route.ts`).
+
+**④ Năm scope, tách bạch, không lẫn:**
+`Global Product` · `Studio/Tenant` · `Project` · `Personal` · `Candidate/Quarantine`.
+⛔ **Builder OS memory / Drive / agent / session TUYỆT ĐỐI không lẫn vào Product Knowledge.**
+Bộ nhớ của cỗ máy dựng ra sản phẩm không phải là tri thức của sản phẩm. Lẫn một lần là sản phẩm
+mang theo dấu vết của một studio cụ thể — vi phạm thẳng LUẬT NỀN TẢNG (IF trung tính, toàn cầu).
+
+**⑤ Lark là EXTERNAL CONNECTOR.** Không phải nguồn chân lý, không phải backend IF. Dữ liệu Lark
+vào IF qua cửa nhập có preview + xác nhận của người, không đồng bộ hai chiều tự động.
+
+**⑥ Không tự đồng bộ toàn bộ. Không ghi đè im lặng.**
+Xung đột **metadata**: hiện rõ + có đường khôi phục, **cấm last-writer-wins**.
+Asset **nặng**: version bất biến + hash, **preview trước khi tải**, kiểm nguồn gốc và quyền trước.
+
+**⑦ Cloud Sync là LỚP TƯƠNG LAI, bật dần qua adapter + feature flag.**
+⛔ **Không cài Supabase. Không chuyển database lúc này.** SQLite ở lại.
+
+### Why
+
+- **Đường A không đủ, Đường C quá sớm.** `06-SYNC-OPTIONS.md` đo rồi: A "đúng cho studio nhỏ,
+  **không đủ** cho bài toán People & Organization quy mô lớn"; C mở bề mặt tấn công mạng và chi
+  phí vận hành mà hôm nay chưa ai cần.
+- **Cái đang chặn không phải loại database.** Ba thứ chặn thật là: chưa có `tenant`, bốn cờ phạm
+  vi vẫn tắt, sáu bảng ngoài mô hình quyền. Đổi sang Postgres/Supabase lúc này chỉ **đổi chỗ
+  chứa**, không đóng được lỗ nào trong ba lỗ đó — và còn thêm một tầng phải bảo mật.
+- **Catalog-trước-asset là cách duy nhất giữ được cả hai vế.** Thư viện chung cần tìm kiếm được
+  từ mọi máy; asset gốc thì nặng và có ràng buộc bản quyền (Lane C đo: bản ghi vật liệu hôm nay
+  **trắng rights/license**). Đồng bộ metadata + hash + preview cho phép tìm, còn byte thì đi sau
+  một lần kiểm quyền.
+- **Cấm last-writer-wins cho metadata** là bài học đã trả giá, không phải sở thích: cùng luật đã
+  chốt cho HRM import (preview + human confirm), và cùng lý do `atlas-materials/sync` bị chặn —
+  upsert thẳng không preview thì **ghi giá sai vào BOQ, âm thầm**.
+- **Tách Builder OS khỏi Product Knowledge** đóng lại đúng cái lỗ mà `knowledge/ttt-design-system`
+  từng mở: tài sản của MỘT studio nằm trong sản phẩm bán ra.
+
+### Code impact
+
+| việc | nơi | trạng thái |
+|---|---|---|
+| Phạm vi dự án (cửa duy nhất) | `lib/server/access.ts` `projectScope`/`visibleProjectIds`/`projectScopeWhere` | ✅ có, proof 19/19 |
+| Phạm vi tài nguyên ngoài cây Project | `lib/server/access-scope.ts` `canReadLibraryAsset`, `assetTrongPhamVi` | ✅ có, proof 20/20 + 12/12 |
+| Hash/manifest dùng chung | `lib/cad/sha256.ts` ← `ifpack.ts` + `idfc-integrity.ts` | ✅ có, proof 48/48 |
+| Provenance bền | `lib/capabilities/xuat-xu-ben.ts` + `AssetRepresentation.provenance` | ✅ có, proof 23/23 + 28/28 |
+| `tenantId` trên 9 bảng gốc | `prisma/schema.prisma` | ❌ chưa — Wave 2 |
+| Adapter đồng bộ + hàng đợi ngoại tuyến | chưa có tệp | ❌ chưa |
+| Cửa preview + xác nhận cho mọi nhập từ ngoài | `atlas-materials/sync` upsert thẳng | ❌ chưa — Adapter Sandbox |
+
+### Data impact
+
+**Không** thay đổi dữ liệu ở lượt chốt này. Quyết định ràng buộc **hình dạng tương lai**:
+mọi bảng sắp thêm phải khai trước nó thuộc scope nào trong năm scope §④, và mọi trường sắp thêm
+phải khai trước nó thuộc vùng **được đồng bộ** hay **ở lại máy** theo §②.
+
+### Migration impact
+
+**Không migration nào ở lượt này.** Ràng buộc cho các lượt sau:
+
+- `tenantId` **nullable** trên 9 bảng gốc, expand → backfill → contract, mỗi bảng lùi được riêng.
+- ⛔ Không chạm Prisma khi chưa có **backup + rollback đã diễn tập + parity đã chứng minh**.
+  Điều kiện này **đã đạt** cho `IF-MIGRATION-LEDGER-RECONCILIATION-001` (xem Q14 · Risks).
+- Đổi `provider` sang `postgresql` **không nằm trong kế hoạch nào** cho tới khi có ADR riêng.
+
+### Risks
+
+1. **Đồng bộ chọn lọc khó hơn đồng bộ tất cả.** "Vùng nào đi, vùng nào ở" là quyết định phải ra
+   cho **từng trường**, và sai một trường là rò rỉ. Giảm thiểu: mặc định **ở lại máy**; một
+   trường chỉ được đồng bộ khi có người khai tường minh.
+2. **Catalog và asset lệch nhau.** Metadata nói có, byte thì mất. Giảm thiểu: `hash` bắt buộc
+   trong manifest, và **cảnh báo chứ không chặn** khi lệch (đúng ngữ nghĩa `restoreIfpack`).
+3. **Feature flag sống quá lâu thành nợ.** Bốn cờ đang tắt. Mỗi cờ phải có ngày bật hoặc ngày gỡ.
+4. **Sổ migration đã từng lệch một lần.** 6 thư mục / 5 hàng, và thư mục không dựng lại được CSDL
+   (`P3006`). Đã chữa gốc bằng `20260820000000_baseline_bu_ba_bang` — parity chứng minh bằng
+   `"This is an empty migration"`. Bài học ở `docs/design-campaign/02-FAILURE-LEDGER.md`.
+
+### Unknowns
+
+- **Dịch vụ đồng bộ chạy ở đâu** khi bật — tự vận hành hay thuê. Chưa cần trả lời để làm Wave S1/S2.
+- **Đơn vị thu phí** của lớp đồng bộ. Chưa ảnh hưởng kiến trúc.
+- **Ngưỡng "asset nặng"** — bao nhiêu MB thì không đồng bộ. Đề xuất đo trên dữ liệu thật trước
+  khi chốt số, KHÔNG đoán.

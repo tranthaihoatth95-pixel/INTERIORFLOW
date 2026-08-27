@@ -12,7 +12,7 @@
 | `SB-002` | `docs/control/IF-CANONICAL.md` | IF **LÀ GÌ** · luật bền | **luôn** |
 | `SB-003` | `docs/control/IF-UXUI-OPERATING-MEMORY.md` | sai lầm đã trả giá | trước mọi việc giao diện |
 | `SB-004` | `docs/control/IF-TOOLING-RECEIPT.md` | năng lực **THẬT** đã xác minh | trước khi dùng công cụ |
-| `SB-005` | `docs/ADR-Q0-ARCHITECTURE-DECISIONS-2026-08-19.md` | **9 ADR ACCEPTED** Q1–Q9 | trước khi quyết kiến trúc |
+| `SB-005` | `docs/ADR-Q0-ARCHITECTURE-DECISIONS-2026-08-19.md` | **ADR ACCEPTED** Q1–Q9 · **Q14 local-first + opt-in selective sync** (chốt 27/08, `2a454b4`) — dãy ADR DUY NHẤT, cấm mở dãy hai | trước khi quyết kiến trúc |
 | `SB-006` | `docs/IF-ARCHITECTURE-BLUEPRINT.md` | các mảnh **lắp với nhau** ra sao | khi cần bức tranh hệ |
 
 ## Gói candidate — chưa phải nguồn chân lý
