@@ -1,5 +1,7 @@
 'use client';
 
+import { useT, useLang } from '@/lib/i18n';
+import { workhubNhungNgoaiBat } from '@/lib/workhub/cong';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   AppWindow,
@@ -51,13 +53,35 @@ const SERVICES: Service[] = [
   { id: 'canvas', name: 'Canvas', short: 'CV', url: 'https://www.canva.com', icon: Sparkles, detail: 'Thiết kế nội dung trực quan' },
 ];
 
-const INITIAL_MESSAGES: Message[] = [
-  {
-    id: 1,
-    role: 'assistant',
-    text: 'Chào Hoa. Tôi có thể đọc ngữ cảnh từ các cửa sổ đang mở và giúp bạn biến chúng thành công việc, email hoặc tài liệu.',
-  },
-];
+/**
+ * ⚙️ IF-WORKHUB-CONTAINMENT-001 (27/08) — lời chào KHÔNG nhúng tên riêng.
+ *
+ * Bản trước: `'Chào Hoa. …'` — nhúng cứng tên một người vào sản phẩm. Vi phạm thẳng LUẬT NỀN
+ * TẢNG (`CLAUDE.md`): IF là sản phẩm toàn cầu, trung tính, không mang tên người hay studio nào.
+ * Một studio khác mở app ra và được chào bằng tên người lạ — đó không phải lỗi chính tả, đó là
+ * sản phẩm nói rằng nó thuộc về người khác.
+ *
+ * Lane `IF-UXUI-RUNTIME-001` đo được câu này **trên runtime, ở bề mặt chưa đăng nhập**.
+ */
+function loiChaoBanDau(tr: (vi: string, en: string) => string): Message[] {
+  return [
+    {
+      id: 1,
+      role: 'assistant',
+      text: tr(
+        'Tôi có thể đọc ngữ cảnh từ các cửa sổ đang mở và giúp bạn biến chúng thành công việc, email hoặc tài liệu.',
+        'I can read context from your open windows and turn it into tasks, emails, or documents.',
+      ),
+    },
+  ];
+}
+
+/** Ngày HÔM NAY theo ngôn ngữ đang chọn — thay cho một chuỗi đóng băng trong mã. */
+function ngayHomNay(lang: string): string {
+  return new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'vi-VN', {
+    weekday: 'long', day: 'numeric', month: 'long',
+  });
+}
 
 function normalizeUrl(value: string) {
   const clean = value.trim();
@@ -66,11 +90,27 @@ function normalizeUrl(value: string) {
 }
 
 function WebPane({ service, onClose }: { service: Service; onClose?: () => void }) {
+  const tr = useT();
+  /**
+   * ⚙️ IF-WORKHUB-CONTAINMENT-001 — nhúng miền NGOÀI phải sau cờ riêng, mặc định TẮT.
+   *
+   * Bản trước nhúng thẳng `outlook.office.com` · `pinterest.com` · `chat.zalo.me` ·
+   * `microsoft365.com` · `canva.com` · `youtube.com` bằng `<iframe>`, **ở bề mặt chưa đăng
+   * nhập**. Ba vấn đề, không phải một:
+   *   ① mở một cửa ra Internet ngay trong vỏ app — bề mặt tấn công mà phần còn lại của IF
+   *     (local-first, loopback, `contextIsolation`) cố ý không có;
+   *   ② ô địa chỉ nhận **URL tuỳ ý** người dùng gõ và nhúng luôn — không allowlist, không kiểm;
+   *   ③ chọn đúng sáu dịch vụ của MỘT lối làm việc cụ thể — trái LUẬT NỀN TẢNG về trung tính.
+   *
+   * Cờ tách riêng khỏi cờ `/workhub` có chủ ý (`lib/workhub/cong.ts` giải thích).
+   */
+  const nhungNgoai = workhubNhungNgoaiBat();
   const [address, setAddress] = useState(service.url);
   const [liveUrl, setLiveUrl] = useState('');
 
   const openAddress = (event: FormEvent) => {
     event.preventDefault();
+    if (!nhungNgoai) return; // cờ tắt ⇒ ô địa chỉ không nhúng được gì, kể cả URL gõ tay
     setLiveUrl(normalizeUrl(address));
   };
 
@@ -80,14 +120,19 @@ function WebPane({ service, onClose }: { service: Service; onClose?: () => void 
         <div className={styles.traffic} aria-hidden="true"><i /><i /><i /></div>
         <form className={styles.addressBar} onSubmit={openAddress}>
           <Globe2 size={16} />
-          <input aria-label="Địa chỉ trang web" value={address} onChange={(event) => setAddress(event.target.value)} />
-          <button type="submit">Mở</button>
+          <input
+            aria-label={tr('Địa chỉ trang web', 'Web address')}
+            value={address}
+            onChange={(event) => setAddress(event.target.value)}
+            disabled={!nhungNgoai}
+          />
+          <button type="submit" disabled={!nhungNgoai}>{tr('Mở', 'Open')}</button>
         </form>
         <button className={styles.iconButton} aria-label="Phóng to cửa sổ"><Maximize2 size={18} /></button>
         {onClose && <button className={styles.iconButton} aria-label="Đóng cửa sổ" onClick={onClose}><X size={18} /></button>}
       </header>
 
-      {liveUrl ? (
+      {liveUrl && nhungNgoai ? (
         <iframe className={styles.frame} src={liveUrl} title={service.name} />
       ) : (
         <div className={styles.serviceHome}>
@@ -95,9 +140,20 @@ function WebPane({ service, onClose }: { service: Service; onClose?: () => void 
           <p className={styles.eyebrow}>Cửa sổ làm việc</p>
           <h2>{service.name}</h2>
           <p>{service.detail}</p>
-          <button className={styles.primaryButton} onClick={() => setLiveUrl(service.url)}>
-            <Globe2 size={18} /> Mở trang web
-          </button>
+          {nhungNgoai ? (
+            <button className={styles.primaryButton} onClick={() => setLiveUrl(service.url)}>
+              <Globe2 size={18} /> {tr('Mở trang web', 'Open website')}
+            </button>
+          ) : (
+            /* Cờ tắt: nói RÕ vì sao, không để nút chết câm. "Bị tắt" ≠ "hỏng" ≠ "chưa có gì" —
+               đúng trục trạng thái mà lane UX đo được là đã sập ở các màn khác. */
+            <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: 'var(--t4)', maxWidth: 300 }}>
+              {tr(
+                'Nhúng trang ngoài đang tắt ở bản này. Không phải lỗi — đây là lựa chọn an toàn mặc định.',
+                'Embedding external sites is disabled in this build. Not an error — this is the safe default.',
+              )}
+            </p>
+          )}
           <span>Một số dịch vụ yêu cầu mở trong ứng dụng desktop để đăng nhập.</span>
         </div>
       )}
@@ -106,10 +162,12 @@ function WebPane({ service, onClose }: { service: Service; onClose?: () => void 
 }
 
 export default function WorkHubShell() {
+  const tr = useT();
+  const lang = useLang();
   const [assistantOpen, setAssistantOpen] = useState(true);
   const [paneCount, setPaneCount] = useState<1 | 2 | 3>(2);
   const [paneServices, setPaneServices] = useState(['mail', 'pinterest', 'office']);
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<Message[]>(() => loiChaoBanDau(tr));
   const [draft, setDraft] = useState('');
   const [contextEnabled, setContextEnabled] = useState(true);
   const [activeCreator, setActiveCreator] = useState<string | null>(null);
@@ -229,7 +287,10 @@ export default function WorkHubShell() {
         <header className={styles.topbar}>
           <div>
             <strong>Không gian làm việc</strong>
-            <span>Thứ Hai, 17 tháng 8</span>
+            {/* IF-WORKHUB-CONTAINMENT-001 — bản trước ghi cứng 'Thứ Hai, 17 tháng 8'. Một ngày
+                đóng băng nằm ngay cạnh chữ "Không gian làm việc" là app nói dối về thời gian
+                thực; và nó cũng là dấu vết của một lần chụp màn hình bị bỏ quên trong mã. */}
+            <span suppressHydrationWarning>{ngayHomNay(lang)}</span>
           </div>
           <div className={styles.topActions}>
             <label className={styles.search}><Search size={14} /><input placeholder="Tìm tab hoặc công cụ" /></label>
