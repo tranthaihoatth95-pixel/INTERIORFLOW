@@ -52,6 +52,8 @@ import { adaptiveTextStyle, useAdaptiveContrast } from '@/components/ui/Adaptive
 import type { ContrastPlan } from '@/lib/adaptive-contrast';
 import { timeAgo } from '@/lib/home/format-time';
 import { useHomeSearch } from '@/lib/home/search-store';
+import { doThongKe } from '@/lib/ui/tai-khoan-trong';
+import { nhanDemDai, nhanConThieu } from '@/lib/ui/nhan-dem-dai';
 
 /**
  * Home/Gallery ↔ Larkbase (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md, M1) — BỔ SUNG dữ liệu vào
@@ -751,8 +753,34 @@ export function ProjectSelect({
 
   // Tìm kiếm/lọc "Chưa gắn dự án" phải THẤY NGAY kết quả khớp, không bắt bấm thêm 1 lần để mở
   // ngăn Nháp — tự bung khi có tín hiệu lọc rõ ràng; người dùng vẫn thu lại tay được sau đó.
+  /**
+   * Tổng dự án THẬT của tài khoản — `null` = **chưa đo được**, và `null` KHÔNG được rơi về 0
+   * (`lib/ui/tai-khoan-trong.ts`). Chỉ dùng để nói ra phần dải này chưa hiện được, không dùng
+   * để vẽ thẻ: dải vẫn dựng từ `/api/flows` như cũ.
+   */
+  const [tongDuAn, setTongDuAn] = useState<number | null>(null);
+  useEffect(() => {
+    const bo = new AbortController();
+    void doThongKe(undefined, bo.signal).then((tk) => {
+      if (!bo.signal.aborted) setTongDuAn(tk?.projects ?? null);
+    });
+    return () => bo.abort();
+  }, []);
+
   const draftAutoOpen = query.trim() !== '' || projFilter === '__none__';
   const draftShown = draftExpanded || draftAutoOpen;
+
+  const demDai = useMemo(
+    () => ({
+      duAnHien: projectGroups.length,
+      nhapHien: draftFlows.length,
+      banVeKhop: filteredFlows.length,
+      banVeNap: flows?.length ?? 0,
+      tongDuAn,
+      dangLoc: query.trim() !== '' || projFilter !== '',
+    }),
+    [projectGroups.length, draftFlows.length, filteredFlows.length, flows?.length, tongDuAn, query, projFilter],
+  );
 
   /**
    * Bảng khởi tạo dự án 12/08 ([marker: ProjectInitBoard], SPEC-KHOI-TAO-DU-AN-2026-08-11):
@@ -2223,8 +2251,22 @@ export function ProjectSelect({
         {/* BENTO v3 — ẩn toggle carousel/grid trong ô A: `bentoBox` đã ép lưới cứng (xem comment
             prop), hiện một nút không đổi được gì là hứa suông (luật §9). */}
         {!bentoBox && viewToggle}
-        <span className="text-[length:var(--fs-xs)] text-[var(--t4)]">
-          {filteredFlows.length}/{flows.length}
+        {/* 28/08 · L2-07 — TRƯỚC ĐÂY chỗ này là `{filteredFlows.length}/{flows.length}`: đếm
+            FLOW, đứng dưới nhãn DỰ ÁN, và `x/y` khẳng định "y là tất cả" trong khi tài khoản
+            đo được 17 dự án. Nay đếm cái gì thì gọi tên cái đó, và NÓI RA phần đang thiếu.
+            Xem `lib/ui/nhan-dem-dai.ts` — ở đó ghi cả phần file này KHÔNG sửa được. */}
+        <span className="flex items-baseline gap-1.5 text-[length:var(--fs-xs)] text-[var(--t4)]">
+          <span>{nhanDemDai(demDai, en)}</span>
+          {nhanConThieu(demDai, en) && (
+            <span
+              className="text-[var(--t5,var(--t4))]"
+              title={en
+                ? 'Home builds this reel from drawings, so a project with no drawing yet does not appear.'
+                : 'Dải này dựng từ bản vẽ, nên dự án chưa có bản vẽ nào thì chưa hiện ở đây.'}
+            >
+              · {nhanConThieu(demDai, en)}
+            </span>
+          )}
         </span>
       </div>
 

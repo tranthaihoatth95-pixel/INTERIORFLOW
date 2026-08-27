@@ -71,6 +71,7 @@ import { stableProjectRouteId } from '@/lib/scope';
 import { stageRoutePath } from '@/lib/scope-core';
 import { defineMode, requireMode, type ModeId } from '@/lib/shell/mode-registry';
 import type { RenderStageMode } from '@/lib/stage-mode';
+import { doTaiKhoanTrong, duocChaoTuDong } from '@/lib/ui/tai-khoan-trong';
 
 /**
  * Ngưỡng bề rộng phân biệt màn HẸP (cover foldable / điện thoại) vs màn ĐỦ RỘNG.
@@ -232,6 +233,10 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
   // simulated-remount nên chặn được lần 2; remount THẬT (điều hướng) ref mới → chạy lại.
   const bootRan = useRef(false);
 
+  /** Huỷ phép đo "tài khoản có trống không" nếu người dùng rời đi trước khi server trả lời. */
+  const chaoAbort = useRef<AbortController | null>(null);
+  useEffect(() => () => chaoAbort.current?.abort(), []);
+
   /**
    * Task #21 — NÂNG URL từ route toàn cục `/` lên scope dự án `/projects/[id]/render`
    * sau khi đã biết chắc đang mở dự án nào (store vừa nạp flow). Chỉ chạy ở chế độ toàn
@@ -317,9 +322,23 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
       // mặc định. Người vẫn là người quyết lúc nào bước vào ([T5] con người quyết cuối).
       if (resume?.phase) useFlowStore.getState().setWorkspace(resume.phase);
 
-      // Người dùng LẦN ĐẦU (chưa có dấu chân nào) → thêm WelcomeIntro trên dashboard, đúng
-      // hành vi cũ. Người đã dùng rồi → dashboard trơn, việc dở nằm ở widget.
-      if (!resume && !isTourDone(userId)) setWelcomeOpen(true);
+      // Người dùng LẦN ĐẦU → WelcomeIntro trên dashboard. Người đã dùng rồi → dashboard trơn.
+      //
+      // 28/08 · L2-06 — TRƯỚC ĐÂY dòng này là `if (!resume && !isTourDone(userId))`. Cả hai vế
+      // đều đọc **localStorage**, tức nó hỏi TRÌNH DUYỆT chứ không hỏi DỮ LIỆU: xoá storage /
+      // đổi máy / cửa sổ ẩn danh ⇒ một tài khoản 17 dự án nhận màn "Tạo dự án của tôi", ngay
+      // trên nền dải dự án đang có. Nay phải ĐO ĐƯỢC là trống mới chào (`lib/ui/tai-khoan-trong.ts`).
+      // Hỏi không được ⇒ `chua-biet` ⇒ KHÔNG chào. Im lặng nhầm chỉ mất một lời chào; nói bừa
+      // là bảo người đã làm ba tháng rằng họ chưa có gì.
+      if (!resume && !isTourDone(userId)) {
+        const bo = new AbortController();
+        chaoAbort.current?.abort();
+        chaoAbort.current = bo;
+        void doTaiKhoanTrong(undefined, bo.signal).then((trangThai) => {
+          if (bo.signal.aborted) return;
+          if (duocChaoTuDong({ coDauChan: false, daBoQua: false, trangThai })) setWelcomeOpen(true);
+        });
+      }
     },
     [router, projectRouteId, toProjectRender],
   );
