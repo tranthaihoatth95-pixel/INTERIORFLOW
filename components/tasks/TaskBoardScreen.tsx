@@ -19,7 +19,9 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, ClipboardList, Loader2, PencilRuler, Plus, Presentation, Search } from 'lucide-react';
-import { useT } from '@/lib/i18n';
+import { useT, useLang } from '@/lib/i18n';
+import { phanLoaiHong, nhan, HONG_KHONG_DOC_DUOC, type LyDoHong } from '@/lib/ui/trang-thai-tai';
+import { useTrangThaiMang } from '@/lib/home/trang-thai';
 import type { TaskRow, TaskStage, WorkflowStateRow } from '@/lib/server/tasks';
 import { buildTaskDeepLink, STAGE_LABELS } from '@/lib/tasks/context';
 import {
@@ -131,12 +133,20 @@ const BOARD_CSS = `
 
 export function TaskBoardScreen() {
   const tr = useT();
+  const en = useLang() === 'en';
 
   const [projects, setProjects] = useState<ProjectOpt[] | null>(null);
   const [projectId, setProjectId] = useState<string>('');
   const [states, setStates] = useState<WorkflowStateRow[] | null>(null);
   const [tasks, setTasks] = useState<TaskRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** ⚙️ P0-2 — lý do lượt NẠP hỏng (khác `error` ở trên: đó là lỗi của THAO TÁC). */
+  const [lyDoHong, setLyDoHong] = useState<{ lyDo: LyDoHong; ma?: number } | null>(null);
+  const trucTuyen = useTrangThaiMang();
+  /* `loadProjects` là `useCallback([])` — đọc `trucTuyen` qua ref để không phải nối lại callback
+     mỗi lần mạng nhấp nháy (nối lại ⇒ `useEffect` chạy lại ⇒ gọi API lại, đúng lúc mạng yếu). */
+  const trucTuyenRef = useRef(trucTuyen);
+  trucTuyenRef.current = trucTuyen;
   const [query, setQuery] = useState('');
   /** cột đang mở ô nhập thẻ mới (statusId) — mở từ nút ＋ cột, nút "Thêm việc", hoặc EmptyState. */
   const [adding, setAdding] = useState<string | null>(null);
@@ -152,9 +162,28 @@ export function TaskBoardScreen() {
 
   /* ── nạp danh sách dự án (nguồn: GET /api/flows — cùng nguồn Gallery, không route mới) ── */
   const loadProjects = useCallback(async () => {
+    /**
+     * ⚙️ P0-2 (27/08) — lượt NẠP không được in mã kỹ thuật ra mặt người dùng.
+     * Bản cũ ném `HTTP ${res.status}` rồi hiện thẳng chuỗi đó. Lane `IF-UXUI-RUNTIME-001` đo
+     * được `HTTP 401` nằm cạnh câu "chưa có gì" — người dùng hết phiên bị bảo là bảng trống.
+     * Từ vựng chung `lib/ui/trang-thai-tai.ts`, dùng chung với `/projects` và `/materials`.
+     * ⚠️ Chỉ đổi đường NẠP. Lỗi của THAO TÁC (tạo/sửa/xoá) là chuyện khác — chúng đã ưu tiên
+     * `j.error` của máy chủ và cần nói đúng thao tác nào hỏng, nên để nguyên.
+     */
+    let res: Response;
     try {
-      const res = await fetch('/api/flows');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      res = await fetch('/api/flows');
+    } catch {
+      setLyDoHong(phanLoaiHong(null, trucTuyenRef.current));
+      setProjects([]);
+      return;
+    }
+    if (!res.ok) {
+      setLyDoHong(phanLoaiHong(res, trucTuyenRef.current));
+      setProjects([]);
+      return;
+    }
+    try {
       const j = await res.json();
       const list: ProjectOpt[] = (j.projects ?? []).map((p: { id: string; name: string }) => ({ id: p.id, name: p.name }));
       setProjects(list);
@@ -164,8 +193,8 @@ export function TaskBoardScreen() {
         if (saved && list.some((p) => p.id === saved)) return saved;
         return list[0]?.id ?? '';
       });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+    } catch {
+      setLyDoHong(HONG_KHONG_DOC_DUOC);
       setProjects([]);
     }
   }, []);
@@ -420,7 +449,35 @@ export function TaskBoardScreen() {
       )}
 
       {/* ── thân màn ─────────────────────────────────────────────────────────── */}
-      {projects === null || loadingBoard ? (
+      {lyDoHong ? (
+        /* ⚙️ P0-2 — nhánh HỎNG phải đứng TRƯỚC nhánh RỖNG.
+           Bản cũ: nạp hỏng ⇒ `setProjects([])` ⇒ rơi thẳng vào "chưa có dự án nào" — nói với
+           một tài khoản có 15 dự án rằng họ chẳng có dự án nào. Đây đúng là ca lane
+           `IF-UXUI-RUNTIME-001` đo được: "không có quyền" và "chưa có gì" hiện cùng một màn. */
+        (() => {
+          const n = nhan(lyDoHong.lyDo, { vi: 'bảng việc', en: 'task boards' }, en);
+          return (
+            <div style={{ flex: 1, display: 'grid', placeItems: 'center', minHeight: 0, padding: 24 }}>
+              <EmptyState
+                icon={<ClipboardList size={18} />}
+                title={n.tieuDe}
+                desc={n.moTa}
+                actions={
+                  n.hanhDong
+                    ? [{
+                        label: n.hanhDong,
+                        primary: true,
+                        onClick: lyDoHong.lyDo === 'khong-quyen'
+                          ? () => { window.location.href = '/'; }
+                          : () => { setLyDoHong(null); void loadProjects(); },
+                      }]
+                    : []
+                }
+              />
+            </div>
+          );
+        })()
+      ) : projects === null || loadingBoard ? (
         <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--t4)' }}>
           <Loader2 size={20} className="animate-spin" />
         </div>

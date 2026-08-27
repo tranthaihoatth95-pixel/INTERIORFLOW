@@ -14,8 +14,10 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, FileSpreadsheet, Search, Loader2, Palette } from 'lucide-react';
-import { useT } from '@/lib/i18n';
+import { Plus, FileSpreadsheet, Search, Loader2, Palette, LogIn, WifiOff, RefreshCw } from 'lucide-react';
+import { useT, useLang } from '@/lib/i18n';
+import { phanLoaiHong, nhan, HONG_KHONG_DOC_DUOC, type LyDoHong } from '@/lib/ui/trang-thai-tai';
+import { useTrangThaiMang } from '@/lib/home/trang-thai';
 import type { MaterialSpecDto } from '@/lib/materials/warehouse/dto';
 import { IMPORT_KIND_LABEL } from '@/lib/materials/warehouse/dto';
 import { getMaterial } from '@/lib/materials/resolve';
@@ -32,9 +34,12 @@ import { EmptyState } from '@/components/ui/EmptyState';
 
 export function MaterialsScreen() {
   const tr = useT();
+  const en = useLang() === 'en';
   const router = useRouter();
   const [items, setItems] = useState<MaterialSpecDto[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  /** ⚙️ P0-2 — thay chuỗi lỗi thô bằng LÝ DO. Xem `lib/ui/trang-thai-tai.ts`. */
+  const [lyDoHong, setLyDoHong] = useState<{ lyDo: LyDoHong; ma?: number } | null>(null);
+  const trucTuyen = useTrangThaiMang();
   const [query, setQuery] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
   /** '' = mọi loại. Khoá dùng đúng `ProductSpec.kind` ('material' | 'furniture' | …), nhãn lấy từ
@@ -58,10 +63,26 @@ export function MaterialsScreen() {
    * đã có, không thêm vòng gọi API mỗi lần đổi bộ lọc.
    */
   const load = async () => {
-    setError(null);
+    setLyDoHong(null);
+    /**
+     * ⚙️ P0-2 (27/08) — KHÔNG in mã kỹ thuật ra mặt người dùng.
+     * Bản cũ: `throw new Error(\`HTTP ${res.status}\`)` rồi hiện thẳng chuỗi đó trong một thanh
+     * đỏ. Lane `IF-UXUI-RUNTIME-001` đo được trên app thật: **`HTTP 401` in ra cạnh câu "kho
+     * đang trống"** — người dùng hết phiên bị bảo là kho rỗng. Hai chuyện khác hẳn nhau.
+     * Từ vựng chung: `lib/ui/trang-thai-tai.ts` (dùng chung với `/projects`, `/tasks`).
+     */
+    let res: Response;
     try {
-      const res = await fetch('/api/specs');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      res = await fetch('/api/specs');
+    } catch {
+      setLyDoHong(phanLoaiHong(null, trucTuyen));
+      return;
+    }
+    if (!res.ok) {
+      setLyDoHong(phanLoaiHong(res, trucTuyen));
+      return;
+    }
+    try {
       const j = await res.json();
       const specs: MaterialSpecDto[] = j.specs ?? [];
       /* ⭐ W0.2 (19/08) — "đoạn dây cuối" PBR legacy→canonical (xem docstring
@@ -72,8 +93,9 @@ export function MaterialsScreen() {
       const pbrReport = ensurePbrCanonicalKeys(specs);
       if (pbrReport && pbrReport.migrated > 0) napPbr();
       setItems(specs);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+    } catch {
+      // Thân về được nhưng không đọc nổi — KHÁC máy chủ lỗi, và câu chữ phải khác.
+      setLyDoHong(HONG_KHONG_DOC_DUOC);
     }
   };
 
@@ -198,13 +220,37 @@ export function MaterialsScreen() {
         </div>
       </div>
 
-      {error && (
-        <div style={{ margin: '10px 14px 0', padding: '8px 12px', borderRadius: 10, background: 'color-mix(in srgb, var(--danger) 14%, var(--panel))', fontSize: 13, color: 'var(--t1)' }}>
-          {error}
-        </div>
-      )}
-
-      {items === null && !error ? (
+      {lyDoHong ? (
+        /* Trạng thái HỎNG chiếm CHỖ CỦA NỘI DUNG, không phải một thanh mỏng đứng trên một bảng
+           rỗng. Bản cũ để cả hai cùng hiện ⇒ "không có quyền" và "chưa có gì" đọc như một. */
+        (() => {
+          const n = nhan(lyDoHong.lyDo, { vi: 'vật liệu', en: 'materials' }, en);
+          return (
+            <div style={{ flex: 1, display: 'grid', placeItems: 'center', minHeight: 0, padding: 24 }}>
+              <EmptyState
+                icon={
+                  lyDoHong.lyDo === 'khong-quyen' ? <LogIn size={18} />
+                    : lyDoHong.lyDo === 'ngoai-tuyen' ? <WifiOff size={18} />
+                    : <RefreshCw size={18} />
+                }
+                title={n.tieuDe}
+                desc={n.moTa}
+                actions={
+                  n.hanhDong
+                    ? [{
+                        label: n.hanhDong,
+                        primary: true,
+                        onClick: lyDoHong.lyDo === 'khong-quyen'
+                          ? () => { window.location.href = '/'; }
+                          : () => { void load(); },
+                      }]
+                    : []
+                }
+              />
+            </div>
+          );
+        })()
+      ) : items === null ? (
         <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--t4)' }}>
           <Loader2 size={20} className="animate-spin" />
         </div>

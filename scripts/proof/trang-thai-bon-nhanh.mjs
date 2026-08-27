@@ -124,7 +124,29 @@ async function main() {
   }
 
   chuaDo('CA 11 · bố cục/thị giác bốn màn', 'thuộc lane UX + mắt Hoà; proof này chỉ chứng minh NGỮ NGHĨA đã tách');
-  chuaDo('CA 12 · `/materials` và `/tasks`', 'chưa nối vào từ vựng chung — lát kế tiếp của P0-2');
+  /* ── CA 12-16 · `/materials` và `/tasks` (nối 27/08) ───────────────────────── */
+  {
+    const doc = (f) => readFileSync(f, 'utf8').split('\n').filter((l) => !/^\s*(\*|\/\/|\/\*)/.test(l)).join('\n');
+    const mat = doc('components/materials/MaterialsScreen.tsx');
+    const task = doc('components/tasks/TaskBoardScreen.tsx');
+
+    ca('CA 12 · `/materials` dùng từ vựng chung, KHÔNG còn ném `HTTP ${status}` ở đường nạp', true,
+      /phanLoaiHong\(/.test(mat) && !/throw new Error\(`HTTP \$\{res\.status\}`\)/.test(mat));
+    ca('CA 13 · và trạng thái hỏng CHIẾM CHỖ nội dung, không phải thanh mỏng trên bảng rỗng', true,
+      /lyDoHong \? \(/.test(mat) && !/\{error && \(/.test(mat));
+
+    ca('CA 14 · `/tasks` đường NẠP dùng từ vựng chung', true, /phanLoaiHong\(/.test(task));
+    /* Ca nặng nhất của lát này: nhánh HỎNG phải đứng TRƯỚC nhánh RỖNG. Bản cũ nạp hỏng ⇒
+       setProjects([]) ⇒ rơi vào "chưa có dự án nào" — nói với tài khoản có 15 dự án rằng họ
+       chẳng có gì. */
+    const iHong = task.indexOf('{lyDoHong ? (');
+    const iRong = task.indexOf('projects.length === 0');
+    ca('CA 15 · nhánh HỎNG đứng TRƯỚC nhánh RỖNG (nếu ngược lại: "hết phiên" đọc thành "chưa có gì")',
+      true, iHong > 0 && iRong > 0 && iHong < iRong, `hỏng@${iHong} · rỗng@${iRong}`);
+    ca('CA 16 · ba màn dùng CHUNG một từ vựng, không ba bản chép', 3,
+      ['components/ProjectSelect.tsx', 'components/materials/MaterialsScreen.tsx', 'components/tasks/TaskBoardScreen.tsx']
+        .filter((f) => /from '@\/lib\/ui\/trang-thai-tai'/.test(readFileSync(f, 'utf8'))).length);
+  }
   chuaDo('CA 13 · Electron đóng gói', 'proof chạy `next dev`');
 }
 
