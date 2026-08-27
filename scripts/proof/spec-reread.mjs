@@ -17,9 +17,11 @@
 import { spawn } from 'child_process';
 import { SignJWT } from 'jose';
 import { readFileSync } from 'fs';
-import { PrismaClient } from '@prisma/client';
+import { moDbTam } from './_db-tam.mjs';
 
-const prisma = new PrismaClient();
+// Cách ly khỏi `prisma/dev.db` THẬT — xem `_db-tam.mjs` (cổng #12 của lane QA phát hành).
+const db = await moDbTam('spec-reread');
+const prisma = db.prisma;
 const TAG = `__proof_spec_${Date.now()}`;
 const KIND = 'spec-from-image'; // = KIND_SPEC của lib/capabilities/anh-thanh-spec.ts
 const PORT = 3031;
@@ -53,7 +55,7 @@ function ca(ten, mong, got) {
 
 const servers = [];
 async function dungServer(port) {
-  const p = spawn('npx', ['next', 'dev', '-p', String(port)], { env: process.env, stdio: 'ignore' });
+  const p = spawn('npx', ['next', 'dev', '-p', String(port)], { env: { ...process.env, ...db.env }, stdio: 'ignore' });
   servers.push(p);
   for (let i = 0; i < 60; i++) {
     try {
@@ -237,7 +239,7 @@ main()
   })
   .finally(async () => {
     await don().catch((e) => console.error('DỌN THẤT BẠI:', e.message));
-    await prisma.$disconnect();
+    await db.dong();
     const fail = ket.filter((k) => !k.dat);
     console.log(`\n${ket.length - fail.length}/${ket.length} ĐẠT`);
     process.exit(fail.length ? 1 : 0);

@@ -39,9 +39,11 @@ import { readFileSync, statSync, mkdirSync, rmSync } from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
 import { SignJWT } from 'jose';
-import { PrismaClient } from '@prisma/client';
+import { moDbTam } from './_db-tam.mjs';
 
-const prisma = new PrismaClient();
+// Cách ly khỏi `prisma/dev.db` THẬT — xem `_db-tam.mjs` (cổng #12 của lane QA phát hành).
+const db = await moDbTam('persist-xuatxu');
+const prisma = db.prisma;
 const TAG = `__proof_xuatxu_${Date.now()}`;
 const PORT = 3031;
 
@@ -88,7 +90,7 @@ class KhoGia {
 
 let server = null;
 async function dungServer() {
-  server = spawn('npx', ['next', 'dev', '-p', String(PORT)], { env: { ...process.env }, stdio: 'ignore' });
+  server = spawn('npx', ['next', 'dev', '-p', String(PORT)], { env: { ...process.env, ...db.env }, stdio: 'ignore' });
   for (let i = 0; i < 60; i++) {
     try {
       const r = await fetch(`http://127.0.0.1:${PORT}/api/comments`);
@@ -268,7 +270,7 @@ main()
   })
   .finally(async () => {
     await don().catch((e) => console.error('DỌN THẤT BẠI:', e.message));
-    await prisma.$disconnect();
+    await db.dong();
     const fail = ket.filter((k) => !k.dat);
     console.log(`\n${ket.length - fail.length}/${ket.length} ĐẠT`);
     console.log('VERDICT: xem khối "BỀ MẶT ĐÃ CHẠM / CHƯA CHẠM" ở đầu tệp — có 2 mục NOT ASSESSED.');

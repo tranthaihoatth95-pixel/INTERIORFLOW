@@ -14,7 +14,7 @@
  * Chạy: node scripts/proof/auth-failclosed.mjs
  */
 import { spawnSync } from 'node:child_process';
-import { rmSync } from 'node:fs';
+import { rmSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const repo = process.cwd();
@@ -25,6 +25,47 @@ const build = spawnSync('npx', ['esbuild', 'middleware.ts', '--bundle', '--forma
 if (build.status !== 0) {
   console.error('Không dịch được middleware.ts:', build.stderr?.slice(0, 300));
   process.exit(2);
+}
+
+/* ══════════════ CA 0 · CỔNG HARNESS (thêm 27/08) ══════════════
+ *
+ * ⚠️ Script này là script DUY NHẤT trong `scripts/proof/` từng KHÔNG có cổng harness, và đó là
+ * một nghịch lý đắt: docstring ngay phía trên kể lại đúng sự cố F-15 — công cụ sinh ra một tệp
+ * RỖNG, thoát mã 0, `require()` thành công, in `LOADED` — rồi **ca thứ hai của chính nó lại mong
+ * đúng chữ `LOADED`**. Nghĩa là nếu esbuild im lặng sinh bundle rỗng:
+ *     · ca 1 (mong `THREW`) đỏ ⇒ ta được cứu TÌNH CỜ, y hệt lần F-15;
+ *     · ca 2 và ca 3 **XANH TRÊN MỘT MODULE RỖNG**.
+ *
+ * `build.status !== 0` ở trên là kiểm **mã thoát của công cụ** — đúng cái gốc mà F-15 kết luận
+ * là sai. Cổng dưới đây kiểm **SẢN PHẨM của công cụ**: tệp có thân, và nạp được thì thật sự
+ * mang thứ ta định soi.
+ *
+ * Lane `IF-RELEASE-QA-001` tìm ra chỗ này khi soi lại toàn bộ ma trận proof. Cổng harness không
+ * tự mọc ở nơi nó cần nhất; phải có người đi soi từng cái. */
+{
+  const loi = [];
+  if (!existsSync(out)) loi.push('esbuild thoát 0 nhưng KHÔNG có tệp đầu ra');
+  else if (statSync(out).size < 1024) loi.push(`bundle chỉ ${statSync(out).size} byte — rỗng hoặc cụt`);
+  else {
+    // Nạp một lần với đủ điều kiện để KHÔNG ném, rồi đòi module thật sự phơi ra `middleware`.
+    // Bundle rỗng `require()` được nhưng `exports` trống ⇒ chết ở đây, đúng chỗ nó phải chết.
+    const kiem = spawnSync(process.execPath, ['-e',
+      `process.env.NODE_ENV='development';delete process.env.AUTH_SECRET;` +
+      `const m=require(${JSON.stringify(out)});` +
+      `console.log(typeof m.middleware==='function'?'CO_MIDDLEWARE':'THIEU_MIDDLEWARE:'+Object.keys(m).join(','));`,
+    ], { cwd: repo, encoding: 'utf8' });
+    const ra = `${kiem.stdout ?? ''}${kiem.stderr ?? ''}`;
+    if (!/CO_MIDDLEWARE/.test(ra)) loi.push(`module nạp được nhưng không phơi \`middleware\`: ${ra.trim().slice(0, 160)}`);
+  }
+
+  if (loi.length) {
+    console.error('\n⛔ CA 0 · CỔNG HARNESS ĐỎ — KHÔNG in ĐẠT cho ca nào phía sau.');
+    for (const l of loi) console.error(`   · ${l}`);
+    console.error('   Đây đúng là bẫy F-15: bộ máy xanh vì nó không soi gì cả.');
+    rmSync(out, { force: true });
+    process.exit(1);
+  }
+  console.log(`  ok  CA 0 · HARNESS: bundle ${statSync(out).size} byte, nạp được, có phơi \`middleware\``);
 }
 
 const run = (nodeEnv, hasSecret) => {

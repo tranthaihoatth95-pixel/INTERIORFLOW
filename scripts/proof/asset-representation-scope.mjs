@@ -17,9 +17,11 @@
 import { spawn } from 'child_process';
 import { SignJWT } from 'jose';
 import { readFileSync } from 'fs';
-import { PrismaClient } from '@prisma/client';
+import { moDbTam } from './_db-tam.mjs';
 
-const prisma = new PrismaClient();
+// Cách ly khỏi `prisma/dev.db` THẬT — xem `_db-tam.mjs` (cổng #12 của lane QA phát hành).
+const db = await moDbTam('asset-representation-scope');
+const prisma = db.prisma;
 const TAG = `__proof_arep_${Date.now()}`;
 const servers = [];
 const ket = [];
@@ -49,7 +51,7 @@ const cookie = async (sub) =>
     .setExpirationTime('1h').sign(new TextEncoder().encode(env.AUTH_SECRET))}`;
 
 async function dungServer(port, extraEnv) {
-  const p = spawn('npx', ['next', 'dev', '-p', String(port)], { env: { ...process.env, ...extraEnv }, stdio: 'ignore' });
+  const p = spawn('npx', ['next', 'dev', '-p', String(port)], { env: { ...process.env, ...db.env, ...extraEnv }, stdio: 'ignore' });
   servers.push(p);
   for (let i = 0; i < 60; i++) {
     try {
@@ -172,7 +174,7 @@ main()
   .catch((e) => { console.error(e.message); ket.push({ ten: 'CHẠY ĐƯỢC', dat: false }); })
   .finally(async () => {
     await don().catch((e) => console.error('DỌN THẤT BẠI:', e.message));
-    await prisma.$disconnect();
+    await db.dong();
     const fail = ket.filter((k) => !k.dat);
     const na = ket.filter((k) => k.chuaDo).length;
     console.log(`\n${ket.length - fail.length - na}/${ket.length - na} ĐẠT · ${na} NOT ASSESSED`);

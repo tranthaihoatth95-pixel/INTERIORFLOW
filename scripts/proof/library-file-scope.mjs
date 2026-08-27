@@ -17,9 +17,11 @@ import { spawn } from 'child_process';
 import { SignJWT } from 'jose';
 import { readFileSync, mkdirSync, writeFileSync, rmSync } from 'fs';
 import path from 'path';
-import { PrismaClient } from '@prisma/client';
+import { moDbTam } from './_db-tam.mjs';
 
-const prisma = new PrismaClient();
+// Cách ly khỏi `prisma/dev.db` THẬT — xem `_db-tam.mjs` (cổng #12 của lane QA phát hành).
+const db = await moDbTam('library-file-scope');
+const prisma = db.prisma;
 const TAG = `__proof_lib_${Date.now()}`;
 const PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
@@ -55,7 +57,7 @@ function ca(ten, mong, got) {
 const servers = [];
 async function dungServer(port, extraEnv) {
   const p = spawn('npx', ['next', 'dev', '-p', String(port)], {
-    env: { ...process.env, ...extraEnv },
+    env: { ...process.env, ...db.env, ...extraEnv },
     stdio: 'ignore',
   });
   servers.push(p);
@@ -152,7 +154,7 @@ main()
   })
   .finally(async () => {
     await don().catch((e) => console.error('DỌN THẤT BẠI:', e.message));
-    await prisma.$disconnect();
+    await db.dong();
     const fail = ket.filter((k) => !k.dat);
     console.log(`\n${ket.length - fail.length}/${ket.length} ĐẠT`);
     process.exit(fail.length ? 1 : 0);

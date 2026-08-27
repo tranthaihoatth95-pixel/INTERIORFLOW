@@ -16,11 +16,13 @@
 import { execFileSync } from 'child_process';
 import { mkdtempSync, rmSync } from 'fs';
 import path from 'path';
-import { PrismaClient } from '@prisma/client';
+import { moDbTam } from './_db-tam.mjs';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
-const prisma = new PrismaClient();
+// Cách ly khỏi `prisma/dev.db` THẬT — xem `_db-tam.mjs` (cổng #12 của lane QA phát hành).
+const db = await moDbTam('access-scope');
+const prisma = db.prisma;
 const TAG = `__proof_scope_${Date.now()}`;
 // Bundle phải nằm TRONG repo: nó `require('@prisma/client')`, mà Node giải node_modules theo
 // đường của FILE. Đặt ở /tmp là `MODULE_NOT_FOUND` — đã sập đúng ca này lần chạy đầu.
@@ -162,7 +164,7 @@ main()
   })
   .finally(async () => {
     await don().catch((e) => console.error('DỌN THẤT BẠI:', e.message));
-    await prisma.$disconnect();
+    await db.dong();
     const fail = ket.filter((k) => !k.dat);
     console.log(`\n${ket.length - fail.length}/${ket.length} ĐẠT`);
     process.exit(fail.length ? 1 : 0);
