@@ -40,7 +40,11 @@ export const FORMAT_CAPABILITIES: Record<GatewayFormat, FormatCapability> = {
     cad: stage('lossy', 'lossy', 'Nhập/xuất hình học; một số entity có thể bị làm phẳng hoặc bỏ qua'), render: no(), present: no(),
   } },
   dwg: { format: 'dwg', label: 'AutoCAD DWG', extensions: ['.dwg'], stages: {
-    cad: stage('lossy', 'unavailable', 'Đọc hình học qua bộ chuyển đổi; chưa xuất DWG'), render: no(), present: no(),
+    // 28/08 — năng lực CỦA ĐỊNH DẠNG vẫn là 'lossy' (mã đọc DWG còn nguyên), nhưng đường
+    // này ĐANG TẮT bằng cờ `NEXT_PUBLIC_IF_DWG_IMPORT` (xem `lib/cad/dwg-flag.ts`: gói đọc
+    // DWG là GPL-3.0 và đi theo mọi bộ cài). Người dùng gặp câu giải thích ở `importDwgFile`,
+    // không phải một nút chết.
+    cad: stage('lossy', 'unavailable', 'Đọc hình học qua bộ chuyển đổi — ĐANG TẮT ở bản này (giấy phép); dùng DXF. Chưa xuất DWG'), render: no(), present: no(),
   } },
   image: { format: 'image', label: 'Image', extensions: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'], stages: {
     cad: stage('reference', 'unavailable', 'Đặt làm ảnh tham chiếu'),

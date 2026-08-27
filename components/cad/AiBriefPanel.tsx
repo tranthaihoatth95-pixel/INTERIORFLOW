@@ -39,6 +39,7 @@ import { loadGuModelFromServer, saveGuModelToServer } from '@/lib/gu/gu-model-sy
 import { cadLayoutOptionModelKey, layoutOptionFeatures, explainLayoutOption, type LayoutOptionSignal } from '@/lib/cad/ai-layout-feedback';
 import { useFlowStore } from '@/lib/store';
 import { effectiveUserId } from '@/lib/resume';
+import { dwgImportEnabled } from '@/lib/cad/dwg-flag';
 import {
   briefFileKind,
   normalizeBriefText,
@@ -417,9 +418,13 @@ export default function AiBriefPanel({ onClose }: Props) {
           <button type="button" onClick={() => requestImport('dxf')} style={smallBtn} title="Mở hộp chọn file DXF của CadEditor — THAY THẾ bản vẽ hiện tại bằng hồ sơ import">
             <FolderOpen size={16} /> Import DXF
           </button>
-          <button type="button" onClick={() => requestImport('dwg')} style={smallBtn} title="Mở hộp chọn file DWG của CadEditor (parse trong Web Worker) — THAY THẾ bản vẽ hiện tại">
-            <FolderOpen size={16} /> Import DWG
-          </button>
+          {/* Cờ TẮT 28/08 (`lib/cad/dwg-flag.ts`) — nút biến mất thay vì bấm vào rồi báo lỗi.
+              Nút chết còn tệ hơn nút không có: nó hứa một năng lực rồi nuốt lời. */}
+          {dwgImportEnabled() && (
+            <button type="button" onClick={() => requestImport('dwg')} style={smallBtn} title="Mở hộp chọn file DWG của CadEditor (parse trong Web Worker) — THAY THẾ bản vẽ hiện tại">
+              <FolderOpen size={16} /> Import DWG
+            </button>
+          )}
           <button
             type="button"
             onClick={useCurrentAsBaseline}

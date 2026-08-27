@@ -55,14 +55,36 @@ const tepDocs = moiTepMd(path.join(REPO, 'docs'));
  * Đây là ô đã bắt được case 23 ảnh: `EV-001` là bằng chứng MẠNH cho "UI hiện ra thế nào" nhưng
  * `Sensitivity: client-data` và `Scope` không khớp câu hỏi đang hỏi. Ô để trống = lọt.
  * Chỉ soi những tệp THẬT SỰ khai bằng chứng (có dòng bắt đầu bằng `EV-<số>`), không soi mọi
- * chỗ nhắc tới chuỗi "EV-" trong văn xuôi. */
+ * chỗ nhắc tới chuỗi "EV-" trong văn xuôi.
+ *
+ * 28/08 — SỬA MỘT CA KÊU OAN. Bằng chứng hay được viết thành BẢNG: mỗi `EV-*` một hàng, rồi
+ * MỘT dòng `Sensitivity`/`Scope` chung cho cả bảng ở cuối mục. Bản đầu chỉ soi thân từ `EV-n`
+ * tới `EV-n+1`, nên mọi hàng trừ hàng cuối đều bị báo thiếu — trong khi tệp đã khai đủ.
+ * Đó đúng là bệnh đã làm tôi bỏ luật L3 (`docs/design-campaign/02-FAILURE-LEDGER.md` F-02):
+ * máy kêu oan thì người học cách ngó lơ, và lần nó kêu THẬT cũng bị ngó lơ luôn.
+ * ⇒ Thiếu ở thân hàng thì tra tiếp trong MỤC `##` bao quanh. Khai một lần cho cả mục là đủ;
+ * không khai ở đâu cả vẫn đỏ. */
 for (const tep of tepDocs) {
   const noi = readFileSync(tep, 'utf8');
-  const khoi = [...noi.matchAll(/^\s*(?:###\s*)?`?(EV-\d+)`?\b([\s\S]{0,900}?)(?=^\s*(?:###\s*)?`?EV-\d+`?\b|^\s*##\s|$(?![\s\S]))/gm)];
-  for (const [, ma, than] of khoi) {
+  // Chỉ KHAI BÁO mới bị soi — ba khuôn: hàng bảng `| \`EV-n\` |`, tiêu đề `### EV-n`, hoặc
+  // `EV-n:`. Một câu văn xuôi mở đầu bằng `EV-010`+`011`… là NHẮC LẠI, không phải khai báo mới;
+  // bản trước soi cả nó nên báo thiếu ô ngay ở mục INFERENCE (nơi không đời nào khai Sensitivity).
+  const KHAI = String.raw`^[ \t]*(?:\|[ \t]*|###[ \t]+)\`?(EV-\d+)\`?(?=[ \t]*(?:\||:|—|$))|^[ \t]*\`?(EV-\d+)\`?:`;
+  const khoi = [...noi.matchAll(new RegExp(KHAI + String.raw`([\s\S]{0,900}?)(?=^[ \t]*(?:\|[ \t]*|###[ \t]+)\`?EV-\d+|^[ \t]*##[ \t]|$(?![\s\S]))`, 'gm'))];
+  /** Mục `##` chứa vị trí `i` — dùng làm phạm vi khai chung cho cả bảng bằng chứng. */
+  const mucQuanh = (i) => {
+    const dau = noi.lastIndexOf('\n## ', i);
+    const sau = noi.indexOf('\n## ', i);
+    return noi.slice(dau < 0 ? 0 : dau, sau < 0 ? noi.length : sau);
+  };
+  for (const kq of khoi) {
+    const ma = kq[1] ?? kq[2];
+    const than = kq[3] ?? '';
+    const quanh = mucQuanh(kq.index);
+    const co = (o) => new RegExp(o, 'i').test(than) || new RegExp(o, 'i').test(quanh);
     const thieu = [];
-    if (!/Sensitivity/i.test(than)) thieu.push('Sensitivity');
-    if (!/Scope/i.test(than)) thieu.push('Scope');
+    if (!co('Sensitivity')) thieu.push('Sensitivity');
+    if (!co('Scope')) thieu.push('Scope');
     if (thieu.length) {
       loi.push(`L1 · ${path.relative(REPO, tep)} — \`${ma}\` thiếu ô bắt buộc: ${thieu.join(', ')}.
        Ô để trống chính là chỗ 23 ảnh lọt qua (F-21). Không cần ai tinh ý — chỉ cần điền.`);

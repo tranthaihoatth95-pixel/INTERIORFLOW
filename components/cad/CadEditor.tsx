@@ -24,6 +24,7 @@ import {
 import IOMenu from '@/components/ui/IOMenu';
 import MenuButton from '@/components/ui/MenuButton';
 import { useCadStore } from '@/lib/cad/store';
+import { dwgImportEnabled, dwgTatMessage } from '@/lib/cad/dwg-flag';
 import { thoiLuong, NHIP, DUONG_CONG } from '@/lib/ui/nhip';
 import { useT } from '@/lib/i18n';
 import { useCadLiveStatus } from '@/lib/cad/live-status';
@@ -596,6 +597,12 @@ export default function CadEditor() {
     importDwgFile(f);
   };
   const importDwgFile = (f: File) => {
+    // CỜ TẮT 28/08 — `lib/cad/dwg-flag.ts` giải thích vì sao (GPL-3.0 đi theo bộ cài).
+    // Chặn ở ĐÂY vì cả nút chọn file lẫn kéo-thả (dòng ~461) đều đi qua hàm này.
+    if (!dwgImportEnabled()) {
+      useCadStore.getState().setStatus(dwgTatMessage(f.name));
+      return;
+    }
     useCadStore.getState().setStatus(`Đang đọc ${f.name}…`);
     const controller = new AbortController();
     setDwgImportAbort(controller);
