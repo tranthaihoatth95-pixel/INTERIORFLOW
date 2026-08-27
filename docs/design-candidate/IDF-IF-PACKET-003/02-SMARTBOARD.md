@@ -60,6 +60,8 @@
 | R8 | `GET /api/library/[id]/file` — phạm vi đọc + traversal | 🟢 **`PASS — single-tenant HTTP runtime slice, cả hai nhánh cờ`** | `access-scope.test.ts` 14/14 · `library-file-scope.mjs` **12/12** (cờ TẮT giữ nguyên kho dùng chung · cờ BẬT siết về chủ/admin · traversal chặn ở CẢ HAI) | cross-tenant negative |
 | W1-2 | shared access primitive `projectScope` | 🟢 **`PASS — DB runtime (dev.db thật), 0 caller`** | `scripts/proof/access-scope.mjs` **19/19**, gồm 7 ca **đồng thuận** với `assertProjectAccess` | hành vi route: **chưa bật** — cố ý |
 | `.idfc` | round-trip · migration · apply 2D · integrity | 🟠 **`PARTIAL — 35/39, 4 ca ĐỎ là bug thật`** | `scripts/proof/idfc-roundtrip.mjs` | integrity `MISSING` · `keepsIdentity=false` cho **0/60** seed |
+| migration | sổ migration + baseline bù 3 bảng | 🟠 **`PARTIAL — parity/recovery proven; target-isolation incident F-18 remains open`** | baseline 86 dòng → `"This is an empty migration"` · diễn tập khôi phục 0,057s · 24/25 bảng giống byte | **F-18 chưa đóng**: `migrate resolve` đã ghi nhầm đích. Parity SAU sự cố là bằng chứng phục hồi tốt, **không** biến thao tác ghi nhầm thành PASS |
+| guard | cổng mục tiêu cho mọi lệnh ghi được DB | 🟢 **`PASS — dựng lại đúng ca F-18 và chặn`** | `scripts/proof/db-target-guard.mjs` **15/15** | — |
 | R2 | content-integrity gate (report-only) | ⚪ **`NOT ASSESSED`** | — | chưa bắt đầu |
 
 ### 🐞 Bug mã sản xuất đo được, CỐ Ý CHƯA VÁ (không nằm trong scope lát này)

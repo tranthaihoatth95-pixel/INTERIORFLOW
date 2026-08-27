@@ -58,11 +58,20 @@ ngoài, không phải nguồn chân lý · cấm ghi đè im lặng · ⛔ **kh�
 
 ## ⛔ HAI CHỐT CHẶN CÒN SỐNG
 
-1. **Prisma.** Sổ migration đã chữa gốc (`20260820000000_baseline_bu_ba_bang`, parity chứng minh
-   bằng *"This is an empty migration"*). Từ nay: cấm `reset` · `db push` · `migrate resolve` trên
-   DB thật khi chưa có **backup + rollback đã diễn tập + parity đã chứng minh**. Hai bản sao lưu
-   sống: `dev.db.bak-2026-08-27-mocsach-truoc-baseline` (sổ 5 hàng) và `…-sau-ky-so` (sổ 7 hàng).
-   Hai tệp `migration.sql` đã ký nay **BẤT BIẾN** — sổ giữ checksum của chúng.
+1. **Prisma — `PARTIAL`, KHÔNG phải xanh.**
+   Sổ migration đã chữa gốc (`20260820000000_baseline_bu_ba_bang`; parity chứng minh bằng
+   *"This is an empty migration"*). Nhưng nhãn đúng là
+   **`PARTIAL — parity/recovery proven; target-isolation incident F-18 remains open`**:
+   parity đo SAU sự cố là bằng chứng **phục hồi tốt**, nó không biến một thao tác **ghi nhầm
+   đích** thành PASS.
+   ⛔ **CẤM `reset` · `db push` · `migrate resolve` trên DB thật trong mọi lane sau.**
+   ⛔ **Mọi lệnh có thể ghi DB phải đi qua cổng:**
+   `node scripts/db-target-guard.mjs --expect <đường dẫn> -- <lệnh>`
+   Cổng in đường **tuyệt đối** + băm tệp + **vân tay dữ liệu** trước/sau, và **DỪNG khi mục tiêu
+   lệch**. `export DATABASE_URL` **không** cách ly được — `.env` thắng (đó là F-18).
+   Bằng chứng cổng: `scripts/proof/db-target-guard.mjs` **15/15**, có ca dựng lại đúng F-18.
+   Hai bản sao lưu sống: `dev.db.bak-2026-08-27-mocsach-truoc-baseline` (sổ 5 hàng) ·
+   `…-sau-ky-so` (sổ 7 hàng). Hai `migration.sql` đã ký nay **BẤT BIẾN** — sổ giữ checksum.
 2. **Plugin Prisma vẫn bật.** Mở phiên Claude Code mới là 3 tiến trình `prisma mcp` sinh lại, và
    `migrate-reset` nằm trong tầm tay chúng. Kiểm+diệt: `pkill -f "prisma mcp"; pgrep -c -f "prism[a] mcp" || echo 0`.
 
