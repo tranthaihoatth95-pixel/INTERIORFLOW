@@ -222,11 +222,53 @@ Commit `63de2d8` (Gap Map + manifest) · `56b84a7` (bốn luật ảnh) · Drive
 - **Không tự chạy.** Chưa có máy soi nào canh; hôm nay nó là **kỷ luật đọc-và-điền**, và đó là
   điểm yếu lớn nhất của chính nó. Xem §9.
 
+## 9b · MÁY CANH — `npm run soi:quan-tri` (27/08)
+
+Protocol nay **có răng máy**, chạy trong `npm test`. Nguyên tắc chọn luật: **chỉ canh thứ đã cắn** —
+mỗi luật ứng với một lỗi có số hiệu trong sổ, không luật nào canh một lỗi tưởng tượng.
+
+| luật | canh gì | gốc |
+|---|---|---|
+| **L1** | `EV-*` thiếu `Sensitivity` hoặc `Scope` ⇒ **ĐỎ** | F-21 — ô để trống là chỗ 23 ảnh lọt qua |
+| **L2** | một `IF-DEC-*` vừa `CURRENT` vừa `SUPERSEDED`/`REJECTED` ⇒ **ĐỎ** | F-19 — ba ô người-ghi cùng sống |
+| ~~L3~~ | ~~`PASS` không kèm bề mặt~~ — **ĐÃ BỎ**, xem dưới | F-16 |
+| **L4** | đang sửa **luật nền** mà không entry nào khai `luatNen` ⇒ cảnh báo | F-21 — cả hai cùng gật, cùng chưa đọc |
+| **L5** | entry frontier nhạy cảm/chạm luật nền mà thiếu `dec`/`ev` ⇒ **ĐỎ**; W2+ thiếu `diss` ⇒ cảnh báo | ngưỡng §6 |
+
+🔴 **L3 đã bị bỏ, và lý do đáng ghi hơn cả luật.** Ý đúng (`PASS` một mình là chữ rỗng), **máy
+soi thì sai**: lượt đầu kêu **10 chỗ, cả 10 đều oan** — chúng chỉ đang *bàn về* chữ `PASS`. Siết
+lại còn 6, vẫn **5 oan**, và chỗ thứ sáu (`**PASS ở tầng máy chủ**`) **có** nêu bề mặt, chỉ khác
+dấu câu. Phân biệt **tuyên bố** với **bàn luận** cần hiểu ngữ cảnh — regex thua. Mà một cổng kêu
+oan là một cổng **sẽ bị tắt** (F-02, chính bài học được trích trong chú thích của luật đó).
+⇒ F-16 ở lại là **luật ĐỌC**, không thành luật MÁY. Thà biết mình đang dựa vào kỷ luật người,
+còn hơn tưởng có máy canh trong khi cái máy ấy kêu bừa.
+
+### Kiểm đột biến — `scripts/proof/soi-quan-tri.mjs` · **12/12**
+Cố ý viết `EV-901` thiếu ô, đòi máy **đỏ đúng chỗ**, rồi xoá và đòi **xanh lại**.
+Nó bắt được ngay một lỗi thật của chính máy soi: lookahead dùng `\Z` — **cú pháp Python/PCRE,
+trong JS khớp chữ `Z`** — nên khối `EV`/`IF-DEC` không bao giờ đóng đúng và **máy soi CÂM**.
+Ship thẳng thì đã có một cổng "xanh" vì nó **không soi gì cả** — đúng F-15, lần này ở tầng máy canh.
+
+### Chỗ Hoà kiểm soát: **lớp frontier**
+`scripts/frontier-registry.mjs` — sổ máy-đọc-được, đã soi hai chiều. Entry mang ô `quanTri` tuỳ
+chọn: `bac` · `nhay` · `dec` · `ev` · `diss` · `gate` · `luatNen`.
+**Cố ý tuỳ chọn**: 90% entry là W1, không đáng một ô nào; máy chỉ **đòi** khi entry chạm luật nền
+hoặc dữ liệu nhạy cảm. Bắt mọi entry điền là cách nhanh nhất giết một protocol.
+Một lệnh để nhìn toàn cảnh: `npm run soi:quan-tri`.
+
 ## 9 · TRẠNG THÁI — `PARTIAL`
 
 `PARTIAL — protocol/documentation proof; chưa có máy canh, chưa runtime-proven.`
 
-Cụ thể **chưa được chứng minh**: chưa có script nào từ chối một commit thiếu `IF-DEC-*`/`EV-*` ·
-chưa có kiểm tự động cho ô `Sensitivity` để trống · ví dụ §7 là **dựng ngược** từ một case đã
-xảy ra, **chưa** có case nào được protocol chặn **trước** khi nó xảy ra. Đó là bậc bằng chứng
-duy nhất thật sự đáng tin, và nó **chưa tồn tại**.
+**Đã có** (27/08): máy canh `soi:quan-tri` chạy trong `npm test`, 4 luật, kiểm đột biến 12/12 —
+xem §9b. Ô `Sensitivity` để trống nay **bị chặn bằng máy**, không còn là kỷ luật đọc.
+
+**Vẫn CHƯA được chứng minh, và đây là điều quan trọng nhất của mục này:** ví dụ §7 là **dựng
+ngược** từ một case đã xảy ra. **Chưa có case nào bị protocol chặn TRƯỚC khi nó xảy ra.** Đó là
+bậc bằng chứng duy nhất thật sự đáng tin, và nó chưa tồn tại. Máy canh xanh chỉ nói *"không ai
+để trống ô"*, không nói *"cổng đã cứu một quyết định"*.
+
+⏳ **Điều khoản khai tử — protocol tự chịu luật của mình.** Sau **10 quyết định W2+**: nếu không
+`DISS-*` nào ra `MATERIAL_CONFLICT` và không lượt `soi:quan-tri` nào đỏ ⇒ **cắt xuống còn L1/L4 +
+câu hỏi trích-luật**, bỏ phần còn lại. Một protocol không bao giờ nổ thì hoặc hoàn hảo, hoặc chết
+— và không phân biệt được nếu không đặt luật trước.

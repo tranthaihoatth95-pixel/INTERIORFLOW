@@ -26,7 +26,48 @@
  *   { dir: 'thư/mục', mau: 'regex' }                        — quét đệ quy .ts/.tsx/.mjs/.prisma
  */
 
+/**
+ * ── QUẢN TRỊ Ở LỚP FRONTIER (`IF-ADVICE-VERIFICATION-GATE-001`, Hoà đặt 27/08) ────────────────
+ *
+ * Hoà: *"tôi cần hệ thống đó tôi phải kiểm soát được ở lớp frontier."* Đúng chỗ — sổ này đã là
+ * thứ DUY NHẤT máy đọc được và soi HAI CHIỀU (khai xong mà không có bằng chứng · có bằng chứng
+ * mà sổ quên). Một protocol quản trị nằm ngoài nó sẽ chết như mọi sổ giấy khác đã chết.
+ *
+ * `quanTri` là **TUỲ CHỌN**, và cố ý tuỳ chọn: 90% entry là W1, không đáng một ô nào. Máy soi
+ * `soi-quan-tri.mjs` chỉ ĐÒI ô này khi entry **chạm luật nền hoặc dữ liệu nhạy cảm** — tức chỉ
+ * đòi ở đúng chỗ đã từng cắn. Bắt mọi entry điền là cách nhanh nhất giết một protocol.
+ *
+ *   quanTri: {
+ *     bac : 'W1' | 'W2' | 'W3'        — W2+ đòi `diss`; W3 đòi cả `gate`
+ *     nhay: 'public' | 'internal' | 'client-data' | 'PII' | 'license-bound'
+ *     dec : 'IF-DEC-<n>'              — thẻ quyết định (chỉ W2+)
+ *     ev  : ['EV-<n>', …]             — bằng chứng; RỖNG ⇒ chỉ được ghi UNKNOWN
+ *     diss: 'DISS-<n>' | null         — phản biện độc lập
+ *     gate: 'GATE-<n>' | null         — cổng thi công
+ *     luatNen: ['.gitignore', …]      — luật nền mà entry này CHẠM; có mục nào ⇒ phải trích
+ *                                       nguyên văn lý do của luật đó trong `IF-DEC-*`
+ *   }
+ *
+ * Canonical protocol: `docs/control/IF-ADVICE-VERIFICATION-GATE.md`.
+ * Máy soi: `npm run soi:quan-tri`.
+ */
+
 export const FRONTIER = [
+  // ── QUẢN TRỊ (chính protocol tự chịu luật của mình) ─────────────────────────
+  { id: 'advice-gate', vai: 'do', ten: 'CỔNG THẨM ĐỊNH LỜI KHUYÊN (IF-ADVICE-VERIFICATION-GATE-001, 27/08) — lời khuyên không tự thành quyết định. Năm hiện vật IF-DEC/EV/DISS/GATE/REC, ngưỡng W1/W2/W3, và ba luật thuộc lòng: đồng thuận không phải bằng chứng · không có EV thì chỉ được ghi UNKNOWN · PASS chỉ do Quality tuyên sau runtime proof độc lập. Gốc: F-21 — Codex và MAIN cùng đề xuất commit 23 ảnh runtime vào Git, CẢ HAI chưa đọc vì sao .gitignore chặn docs/**/*.png; ảnh chụp app với 25 dự án thật mang tên khách. 🟡 Nợ: protocol KHÔNG TỰ CHẠY, chưa case nào bị chặn TRƯỚC khi xảy ra (ví dụ §7 dựng ngược).', he: 'DocCore', dot: 12, trangThai: 'xong',
+    quanTri: { bac: 'W2', nhay: 'internal', dec: 'IF-DEC-002', ev: ['EV-003'], diss: null, gate: null, luatNen: [] },
+    bangChung: [
+      { file: 'docs/control/IF-ADVICE-VERIFICATION-GATE.md', mau: 'IF-DEC-\\*|EV-\\*|DISS-\\*' },
+      { file: 'docs/control/IF-CANONICAL.md', mau: '22 · CỔNG THẨM ĐỊNH LỜI KHUYÊN' },
+      { file: 'scripts/soi-quan-tri.mjs', mau: 'Sensitivity' },
+    ] },
+  { id: 'anh-runtime-mirror', vai: 'do', ten: 'ẢNH RUNTIME UX KHÔNG VÀO GIT (27/08, Hoà chốt bốn điều) — git giữ manifest+hash+route/state+đường mirror; Drive riêng có quyền giữ ảnh gốc; review rộng hơn thì dựng bản ĐÃ CHE tên khách; CẤM dùng ảnh runtime thật làm asset/mẫu mặc định của IF. Đây là ca đã chạy NGƯỢC qua protocol ở §7 và là bằng chứng duy nhất hiện có rằng cổng bắt được lỗi.', he: 'DocCore', dot: 12, trangThai: 'xong',
+    quanTri: { bac: 'W3', nhay: 'client-data', dec: 'IF-DEC-001', ev: ['EV-001', 'EV-002'], diss: 'DISS-001', gate: 'GATE-001', luatNen: ['.gitignore'] },
+    bangChung: [
+      { file: 'docs/design-candidate/IDF-IF-PACKET-003/ux/MANIFEST.md', mau: 'LUẬT ẢNH RUNTIME' },
+      { file: 'scripts/publish-idf-control-center.mjs', mau: 'folderMappings' },
+    ] },
+
   // ── ĐÃ XONG (script canh regress) ────────────────────────────────────────────
   { id: 'h4-picker', vai: 'mvp', ten: 'Màn chọn 6 loại hồ sơ Trình chiếu (H4/V6)', he: 'Workspace', dot: 0, trangThai: 'xong',
     bangChung: [{ file: 'components/present-editor/PresentDocTypePicker.tsx', mau: '.' }] },
