@@ -141,7 +141,10 @@ export function RailDieuHuong() {
   const duong = usePathname();
   const reduceMotion = useReducedMotion();
   const duAnId = useFlowStore((s) => s.currentProjectId);
-  const flowId = useFlowStore((s) => s.currentFlowId);
+  // 🔴 GỠ 27/08 (P0 `L2-02`): `currentFlowId` là FLOW id, và nơi duy nhất nó được dùng ở tệp này
+  // là chuỗi dựng URL `/projects/<id>/…` — tức nó luôn sai ở đó. Gỡ khỏi chuỗi rồi thì biến này
+  // thành mã chết; giữ lại một `useFlowStore` không ai đọc là mời phiên sau nối nó vào lần nữa.
+  // const flowId = useFlowStore((s) => s.currentFlowId);
 
   // `dangMo`/`dangTrongChang` tính trước state vì giá trị MỞ ĐẦU của nấc phụ thuộc ngữ cảnh.
   const dangMo = mucDangMo(duong);
@@ -246,7 +249,20 @@ export function RailDieuHuong() {
    * Đọc sau `daNap` (localStorage, client-only) để không lệch SSR. Người CHƯA TỪNG mở dự án nào
    * (resume rỗng) thì mục vẫn mờ kèm lý do — đó là khoá THẬT, không phải bệnh.
    */
-  const duAnGanNhat = daNap ? (loadResume(getLastUserId() ?? '')?.flowId ?? null) : null;
+  /**
+   * ⚠️ CHỈ nhận khi resume khai rõ đó là PROJECT id (`scopeKind === 'project'`).
+   *
+   * `resume.flowId` mang HAI loại danh tính (xem `lib/resume.ts`): route `/` ghi **flow id**,
+   * route `/projects/[id]/…` ghi **project id**, và `saveResume` gộp nông nên giá trị cũ sống
+   * sót. Trước 27/08 rail đọc trường này rồi dán thẳng vào `/projects/<id>/<chặng>` — đúng nửa
+   * số trường hợp. Dữ liệu ghi TRƯỚC lát này không có `scopeKind` ⇒ **KHÔNG BIẾT** ⇒ bỏ qua.
+   * "Không biết" phải được xử như "không dùng được", không phải như "chắc là project".
+   */
+  const duAnGanNhat = (() => {
+    if (!daNap) return null;
+    const r = loadResume(getLastUserId() ?? '');
+    return r?.scopeKind === 'project' ? (r.flowId ?? null) : null;
+  })();
 
   /**
    * P0 21/08 vòng 2 (Hoà: "bấm Trình chiếu không được — chỗ thanh sidebar") — đo trên tài khoản
@@ -262,7 +278,12 @@ export function RailDieuHuong() {
    * Còn khoá thật (tài khoản CHƯA có flow nào) thì vẫn mờ kèm lý do — lúc đó nó đúng là khoá.
    */
   const [duAnMayChu, setDuAnMayChu] = useState<string | null>(null);
-  const cankiemMayChu = daNap && !duAnId && !flowId && !duAnGanNhat;
+  /**
+   * ⚠️ Đã GỠ `!flowId` khỏi điều kiện này (27/08). `flowId` không còn góp vào `duAnHieuLuc` nữa,
+   * nên "đang có một flow mở" KHÔNG còn là lý do để BỎ QUA lượt tra máy chủ. Giữ nó lại là tạo
+   * ra đúng ca xấu: có flow mở ⇒ không tra ⇒ không có project id ⇒ rail mờ, dù tài khoản có dự án.
+   */
+  const cankiemMayChu = daNap && !duAnId && !duAnGanNhat;
   useEffect(() => {
     if (!cankiemMayChu || duAnMayChu) return;
     let huy = false;
@@ -270,12 +291,32 @@ export function RailDieuHuong() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (huy || !d?.flows?.length) return;
-        // Flow mới sửa gần nhất = thứ người dùng nhiều khả năng muốn quay lại.
-        const moiNhat = [...d.flows].sort(
-          (a: { updatedAt?: string }, b: { updatedAt?: string }) =>
-            new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime(),
-        )[0];
-        if (moiNhat?.id) setDuAnMayChu(moiNhat.id);
+        /**
+         * 🔴 SỬA 27/08 — P0 `L2-02`. Bản cũ: `setDuAnMayChu(moiNhat.id)`.
+         * `moiNhat.id` là **FLOW id**, và nó được ghép vào `/projects/<id>/<chặng>`. Lane
+         * `IF-UXUI-RUNTIME-001` đo trên app thật: id trên ba nút Chặng **không có hàng nào trong
+         * bảng `Project`** — nó là một `Flow` tên *"Untitled flow"*. Ba lối vào chính của app
+         * trỏ vào một dự án không tồn tại, trong khi người dùng chưa chọn gì.
+         *
+         * Đo thêm trên dữ liệu thật: **42/48 flow đang sống KHÔNG có `projectId`**. Flow độc
+         * lập là chuyện THƯỜNG, không phải ngoại lệ — nên "lấy flow mới nhất rồi coi như dự án"
+         * sai ở gốc, không phải sai ở một ca hiếm.
+         *
+         * Nay lấy `moiNhat.project?.id` — chính PROJECT id mà `/api/flows` đã trả sẵn
+         * (`app/api/flows/route.ts` select `project: { id, name, larkProjectCode }`).
+         * Flow không thuộc dự án nào ⇒ để `null`, rail giữ nguyên trạng thái mờ kèm lý do.
+         * ⛔ KHÔNG bịa URL — app hiện KHÔNG có route trang nào cho một flow độc lập
+         * (`find app -name page.tsx` = 0 hit cho `flows/[id]`). Đó là **PRODUCT MISSING**, đã ghi
+         * ở `docs/design-candidate/IDF-IF-PACKET-003/ux/`; ép nó thành URL dự án là dựng lại
+         * đúng lỗi vừa sửa.
+         */
+        const moiNhatCoDuAn = [...d.flows]
+          .filter((f: { project?: { id?: string } | null }) => !!f.project?.id)
+          .sort(
+            (a: { updatedAt?: string }, b: { updatedAt?: string }) =>
+              new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime(),
+          )[0] as { project?: { id?: string } } | undefined;
+        if (moiNhatCoDuAn?.project?.id) setDuAnMayChu(moiNhatCoDuAn.project.id);
       })
       .catch(() => {
         /* mất mạng/401 — giữ nguyên trạng thái mờ kèm lý do, không bịa đường vào */
@@ -297,7 +338,22 @@ export function RailDieuHuong() {
    * những route KHÔNG mang id trên đường (Trang chủ, Files, Thư viện).
    */
   const duAnTrenDuong = /^\/projects\/([^/]+)/.exec(duong ?? '')?.[1] ?? null;
-  const duAnHieuLuc = duAnTrenDuong ?? duAnId ?? flowId ?? duAnGanNhat ?? duAnMayChu;
+  /**
+   * 🔴 GỠ `flowId` KHỎI CHUỖI NÀY — 27/08, P0 `L2-02`.
+   *
+   * `flowId` là `useFlowStore(s => s.currentFlowId)` — **luôn luôn** là một FLOW id
+   * (`lib/store.ts:536` đặt nó từ tham số `flowId` của `loadGraph`). Nó nằm trong một chuỗi mà
+   * kết quả được ghép vào `/projects/<id>/<chặng>`. Không có ca nào nó đúng.
+   *
+   * Bốn nguồn còn lại đều **chứng minh được là PROJECT id**:
+   *   · `duAnTrenDuong` — bóc từ chính `/projects/<id>` trên URL (chân lý, xem ghi chú 22/08)
+   *   · `duAnId`        — `currentProjectId` của store
+   *   · `duAnGanNhat`   — chỉ nhận khi resume khai `scopeKind === 'project'`
+   *   · `duAnMayChu`    — `flow.project.id` do máy chủ trả, không phải `flow.id`
+   * Không nguồn nào cho ⇒ `null` ⇒ rail **mờ kèm lý do**, đúng hành vi đã có. Thà không có
+   * đường vào còn hơn một đường vào dẫn tới trang không tồn tại.
+   */
+  const duAnHieuLuc = duAnTrenDuong ?? duAnId ?? duAnGanNhat ?? duAnMayChu;
   const daMoDuAn = Boolean(duAnHieuLuc);
 
   /**

@@ -422,6 +422,10 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
     saveResume(user.id, {
       route: '/',
       flowId: currentFlowId ?? undefined,
+      // ⚠️ Đây là FLOW id, không phải project id. Khai tường minh (27/08, P0 `L2-02`): trước lát
+      // này `resume.flowId` mang hai loại danh tính mà không có gì phân biệt, và rail dán nó
+      // thẳng vào `/projects/<id>/…` ⇒ trỏ vào một dự án không tồn tại. Xem `lib/resume.ts`.
+      scopeKind: 'flow',
       phase: workspace ?? undefined,
     });
   }, [user, stageDone, currentFlowId, workspace]);

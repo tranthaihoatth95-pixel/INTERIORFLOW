@@ -28,8 +28,30 @@ export type ResumableRoute = (typeof RESUMABLE_ROUTES)[number];
 export interface ResumeState {
   /** route đang đứng khi thoát */
   route: ResumableRoute;
-  /** flow đang mở trên canvas '/' (id thôi, graph tự nạp lại từ DB) */
+  /**
+   * ⚠️ TÊN TỆ, HAI NGHĨA — đọc kỹ trước khi dùng (đo 27/08, P0 `L2-02`).
+   *
+   * Trường này **KHÔNG phải lúc nào cũng là flow id**. Hai nơi ghi nó, mỗi nơi một loại danh tính:
+   *   · `components/home/HomeScreen.tsx` (route `/`)      → ghi **FLOW id** (`currentFlowId`)
+   *   · `computeResumePatch()` (route `/projects/[id]/…`) → ghi **PROJECT id** (từ URL)
+   * Và `saveResume` gộp NÔNG (`patch.flowId ?? prev?.flowId`) nên giá trị cũ **sống sót** qua
+   * lượt ghi sau ⇒ đọc ra không biết đang cầm loại nào.
+   *
+   * Hệ quả đo được trên app thật: `components/nav/RailDieuHuong.tsx` dán giá trị này thẳng vào
+   * `/projects/<id>/<chặng>` — **ba lối vào chính của app trỏ vào một dự án không tồn tại** khi
+   * giá trị đang là flow id. Lane `IF-UXUI-RUNTIME-001` bắt được: id trên thanh rail **không có
+   * hàng nào trong bảng `Project`**; nó là một `Flow` tên *"Untitled flow"*.
+   *
+   * ⇒ Từ 27/08, **luôn đi kèm `scopeKind`**. Không có `scopeKind` (dữ liệu cũ) ⇒ **KHÔNG BIẾT**
+   * ⇒ cấm dùng để dựng URL dự án. Đổi tên trường là vỡ resume-state đã lưu trên máy người dùng,
+   * nên giữ tên và **thêm cái phân biệt**.
+   */
   flowId?: string;
+  /**
+   * `flowId` ở trên đang là loại danh tính nào. `undefined` = dữ liệu ghi TRƯỚC 27/08 ⇒ **không
+   * biết**, và "không biết" phải được xử như "không dùng được", không phải như "chắc là project".
+   */
+  scopeKind?: 'project' | 'flow';
   /** chặng workspace (concept | render | present) */
   phase?: Phase;
   /**
@@ -63,12 +85,13 @@ function isResumableRoute(v: unknown): v is ResumableRoute {
  */
 export function computeResumePatch(
   pathname: string,
-): { route: ResumableRoute; flowId?: string } | null {
+): { route: ResumableRoute; flowId?: string; scopeKind?: 'project' | 'flow' } | null {
   const scoped = parseStageRoute(pathname);
   const route = scoped ? LEGACY_STAGE_ROUTE[scoped.stage] : pathname;
   if (route === '/') return null;
   if (!isResumableRoute(route)) return null;
-  return scoped ? { route, flowId: scoped.projectId } : { route };
+  // `scoped.projectId` là PROJECT id lấy từ URL — khai tường minh để nơi đọc không phải đoán.
+  return scoped ? { route, flowId: scoped.projectId, scopeKind: 'project' } : { route };
 }
 
 /** Ghi resume-state (merge nông lên bản cũ để route studio không xoá flowId đã lưu). */
@@ -78,7 +101,11 @@ export function saveResume(userId: string, patch: Partial<Omit<ResumeState, 'ts'
     const prev = loadResume(userId);
     const next: ResumeState = {
       route: patch.route ?? prev?.route ?? '/',
-      flowId: patch.flowId ?? prev?.flowId,
+      // ⚠️ `flowId` và `scopeKind` phải đi THÀNH CẶP. Gộp rời từng trường là đẻ ra đúng cái bệnh
+      // đang chữa: id của lượt này ghép với nhãn loại của lượt trước ⇒ nhãn nói dối về id.
+      ...(patch.flowId !== undefined
+        ? { flowId: patch.flowId, scopeKind: patch.scopeKind }
+        : { flowId: prev?.flowId, scopeKind: prev?.scopeKind }),
       phase: patch.phase ?? prev?.phase,
       sheetId: patch.sheetId ?? prev?.sheetId,
       ts: Date.now(),
