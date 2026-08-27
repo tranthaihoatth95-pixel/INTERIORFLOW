@@ -24,7 +24,9 @@ import {
   LayoutGrid,
   GalleryHorizontal,
   WifiOff,
+  LogIn,
 } from 'lucide-react';
+import { phanLoaiHong, nhan, HONG_KHONG_DOC_DUOC, type LyDoHong } from '@/lib/ui/trang-thai-tai';
 // LANE A (20/08) — bốn trạng thái dùng chung: máy trạng thái THUẦN + lớp bày ra + màn Ngày-Số-Không.
 import { KhungXuong, OTrangThai } from '@/components/home/TrangThaiO';
 import BatDauNgaySoKhong from '@/components/home/BatDauNgaySoKhong';
@@ -192,17 +194,39 @@ type FlowRow = {
 };
 
 /** GET /api/flows — bản giàu hơn fetchFlows() workspace (kèm coverUrl/status + team roster). */
-async function loadProjectCards(): Promise<{ flows: FlowRow[]; team: TeamMember[] }> {
-  const res = await fetch('/api/flows');
-  if (!res.ok) throw new Error('Không tải được danh sách flow.');
-  const j = await res.json().catch(() => ({}));
+/**
+ * ⚙️ P0-2 (27/08) — TRẢ VỀ LÝ DO, KHÔNG NÉM MỘT CHUỖI.
+ *
+ * Bản cũ: `if (!res.ok) throw new Error('Không tải được danh sách flow.')` — **vứt mã trạng
+ * thái**, rồi nơi gọi `.catch(() => setLoadError(true))` gộp mọi thất bại vào MỘT boolean.
+ * Hệ quả đo được trên app thật (lane `IF-UXUI-RUNTIME-001`): 401 và "server chết hẳn" in ra
+ * **chữ y hệt, pixel y hệt**. Người dùng hết phiên được bảo là "dịch vụ không trả lời", nên họ
+ * bấm Thử lại mãi thay vì đăng nhập lại.
+ */
+async function loadProjectCards(
+  trucTuyen: boolean,
+): Promise<
+  | { ok: true; flows: FlowRow[]; team: TeamMember[] }
+  | { ok: false; lyDo: LyDoHong; ma?: number }
+> {
+  let res: Response;
+  try {
+    res = await fetch('/api/flows');
+  } catch {
+    // `fetch` ném = mất mạng giữa chừng / DNS hỏng / server chết hẳn. `trucTuyen` phân biệt.
+    return { ok: false, ...phanLoaiHong(null, trucTuyen) };
+  }
+  if (!res.ok) return { ok: false, ...phanLoaiHong(res, trucTuyen) };
+  const j = await res.json().catch(() => null);
+  // Trả lời về được nhưng không đọc nổi — KHÁC hẳn máy chủ lỗi, và câu chữ phải khác.
+  if (j === null) return { ok: false, ...HONG_KHONG_DOC_DUOC };
   const flows: FlowRow[] = Array.isArray(j?.flows) ? j.flows : [];
   const team: TeamMember[] = Array.isArray(j?.team)
     ? j.team
         .filter((m: unknown): m is TeamMember => !!m && typeof (m as TeamMember).id === 'string')
         .map((m: TeamMember) => ({ id: m.id, name: m.name ?? '', online: !!m.online }))
     : [];
-  return { flows, team };
+  return { ok: true, flows, team };
 }
 
 /* ---------- Pose 3D theo offset so với card focus (gu TitleSequence) ---------- */
@@ -425,7 +449,12 @@ export function ProjectSelect({
 
   const [flows, setFlows] = useState<FlowRow[] | null>(null); // null = đang tải
   const [team, setTeam] = useState<TeamMember[]>([]);
-  const [loadError, setLoadError] = useState(false);
+  /**
+   * ⚙️ P0-2 — THAY `loadError: boolean` bằng LÝ DO.
+   * Một boolean chỉ trả lời "có hỏng không". Người dùng cần biết "hỏng vì gì" để biết phải làm
+   * gì tiếp: đăng nhập lại · nối mạng · thử lại. Xem `lib/ui/trang-thai-tai.ts`.
+   */
+  const [lyDoHong, setLyDoHong] = useState<{ lyDo: LyDoHong; ma?: number } | null>(null);
   const [active, setActive] = useState(0);
   const [busy, setBusy] = useState(false); // đang mở/tạo flow
   const [openError, setOpenError] = useState<string | null>(null);
@@ -561,16 +590,19 @@ export function ProjectSelect({
   const trucTuyen = useTrangThaiMang();
 
   const load = useCallback(() => {
-    setLoadError(false);
+    setLyDoHong(null);
     setFlows(null);
-    loadProjectCards()
-      .then((r) => {
-        setFlows(r.flows);
-        setTeam(r.team);
-        setActive(0); // flow mới nhất đứng giữa
-      })
-      .catch(() => setLoadError(true));
-  }, []);
+    loadProjectCards(trucTuyen).then((r) => {
+      if (!r.ok) {
+        setLyDoHong({ lyDo: r.lyDo, ma: r.ma });
+        return;
+      }
+      setLyDoHong(null);
+      setFlows(r.flows);
+      setTeam(r.team);
+      setActive(0); // flow mới nhất đứng giữa
+    });
+  }, [trucTuyen]);
 
   useEffect(load, [load]);
 
@@ -647,12 +679,12 @@ export function ProjectSelect({
     const focused = items[active];
     if (focused && focused.kind === 'flow') setAmbientSrc(coverOf(focused.flow));
   }, [active, items]);
-  const showAmbient = !loadError && flows !== null && !effectiveGrid && !reduce;
+  const showAmbient = !lyDoHong && flows !== null && !effectiveGrid && !reduce;
 
   /** v4 (13/08, phiếu home-bento-v4.md ④.4, lỗi #4) — khối "chào + đồng bộ tiến độ" chỉ đáng
    * chiếm chỗ khi có ÍT NHẤT MỘT trong ba: hero copy (`!hideHeroCopy`) · hàng đồng bộ/toggle
    * (điều kiện y hệt JSX bên dưới, tách ra đây để dùng chung) · thông điệp đồng bộ vừa chạy. */
-  const showSyncRow = larkConfigured === true || (!loadError && flows !== null && !effectiveGrid);
+  const showSyncRow = larkConfigured === true || (!lyDoHong && flows !== null && !effectiveGrid);
   const hasHeaderContent = !hideHeroCopy || showSyncRow || !!syncMsg;
 
   /** Kế hoạch tương phản cho hero (pill chào/tiêu đề/mô tả/2 nút/Vitals AI) — CHỈ đo khi
@@ -1378,7 +1410,43 @@ export function ProjectSelect({
     />
   );
 
-  const errorBlock = trucTuyen ? (
+  const errorBlock = lyDoHong ? (
+    (() => {
+      // Câu chữ do `lib/ui/trang-thai-tai.ts` quyết — MỘT từ vựng cho cả `/projects`,
+      // `/materials`, `/tasks`. Ba màn cùng một bệnh thì phải cùng một thuốc, nếu không chúng
+      // sẽ lệch nhau lần nữa ở lượt sửa sau.
+      const n = nhan(lyDoHong.lyDo, { vi: 'dự án', en: 'projects' }, !!en);
+      return (
+        <OTrangThai
+          bieuTuong={
+            lyDoHong.lyDo === 'khong-quyen' ? (
+              <LogIn size={18} aria-hidden />
+            ) : lyDoHong.lyDo === 'ngoai-tuyen' ? (
+              <WifiOff size={18} aria-hidden />
+            ) : (
+              <RefreshCw size={18} aria-hidden />
+            )
+          }
+          tieuDe={n.tieuDe}
+          moTa={n.moTa}
+          // Mất mạng thì KHÔNG có nút: nối mạng là nó tự về. Một cái nút bấm-không-đổi-gì
+          // dạy người dùng rằng nút của app là vô nghĩa.
+          hanhDong={
+            n.hanhDong
+              ? [{
+                  nhan: n.hanhDong,
+                  chinh: true,
+                  onClick:
+                    lyDoHong.lyDo === 'khong-quyen'
+                      ? () => { window.location.href = '/'; }
+                      : load,
+                }]
+              : []
+          }
+        />
+      );
+    })()
+  ) : trucTuyen ? (
     <OTrangThai
       bieuTuong={<RefreshCw size={18} aria-hidden />}
       tieuDe={en ? 'Could not load your projects' : 'Không tải được danh sách dự án'}
@@ -2487,7 +2555,7 @@ export function ProjectSelect({
               {/* Toggle Carousel↔Grid — CHỈ hiện ở đây khi carousel/flatList đang hiện (đỡ trùng
                   với bản trong `searchGrid` cạnh "Tất cả dự án"); đây là lối vào duy nhất để BẬT
                   grid khi ≤8 dự án hoặc quay lại carousel — bản kia chỉ tới được SAU KHI đã ở grid. */}
-              {!loadError && flows !== null && !effectiveGrid && viewToggle}
+              {!lyDoHong && flows !== null && !effectiveGrid && viewToggle}
             </div>
           )}
           {syncMsg && (
@@ -2665,7 +2733,7 @@ export function ProjectSelect({
             xem viewToggle), rồi mới tới effectiveGrid (J-4c mặc định HOẶC override thủ công). */}
         {/* LANE A (20/08) — ba khối trạng thái đi qua MỘT ngăn `flex-1 min-h-0 w-full`: chúng
             phải chiếm đúng chỗ mà nội dung thật sẽ chiếm, không đứng lơ lửng giữa ô. */}
-        {loadError ? (
+        {lyDoHong ? (
           <div className="min-h-0 w-full flex-1">{errorBlock}</div>
         ) : flows === null ? (
           <div className="min-h-0 w-full flex-1">{loadingBlock}</div>
