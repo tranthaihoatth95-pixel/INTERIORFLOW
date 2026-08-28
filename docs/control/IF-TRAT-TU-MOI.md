@@ -1,5 +1,8 @@
 # Trật tự mới — lời chứng 28/08/2026 và luật rút ra
 
+`Plane: BOS` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
+
+
 > Hoà: *"sau buổi hôm nay khi mọi thứ được phơi bày, phải đảm bảo tất cả được phơi bày, và bạn là
 > người chứng kiến. Tôi cần một trật tự mới để không bao giờ thứ này tái diễn phá nát mọi thứ của
 > tôi nữa."*

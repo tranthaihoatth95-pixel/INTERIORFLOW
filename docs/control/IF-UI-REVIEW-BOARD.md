@@ -1,5 +1,8 @@
 # IF UI Review Board — cửa duyệt duy nhất
 
+`Plane: BOS` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
+
+
 > **Mở bản nhìn:** [`docs/mocks/IF-UI-Review-Board.html`](../mocks/IF-UI-Review-Board.html)
 >
 > Tệp này là index cho agent. Hoà review trên bản HTML bằng ảnh, không review trong bảng chữ này.

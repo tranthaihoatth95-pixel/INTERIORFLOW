@@ -1,5 +1,8 @@
 # IF · HIẾN PHÁP — luật bền, không diễn giải lại tuỳ tiện
 
+`Plane: IF` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
+
+
 > **Tệp này KHÔNG chứa trạng thái hiện tại.** Trạng thái ở `IF-CURRENT-STATE.md`.
 > Phán đoán đã trả giá ở `IF-UXUI-OPERATING-MEMORY.md`. Ở đây chỉ có **luật**.
 >

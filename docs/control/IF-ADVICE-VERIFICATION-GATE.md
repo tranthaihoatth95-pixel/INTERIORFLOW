@@ -1,5 +1,8 @@
 # `IF-ADVICE-VERIFICATION-GATE-001` — từ LỜI KHUYÊN tới QUYẾT ĐỊNH BỀN
 
+`Plane: BOS` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
+
+
 > **Plane: BUILDER.** Đây là luật vận hành của cỗ máy dựng ra IF, **không phải tri thức sản phẩm**.
 > ADR Q14 §④ cấm trộn hai thứ; tệp này ở `docs/control/` đúng vì lý do đó.
 > **Tệp CANONICAL DUY NHẤT của protocol này.** Cấm dựng bảng/sổ song song — sổ thứ hai là bắt đầu

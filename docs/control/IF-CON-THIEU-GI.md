@@ -1,5 +1,8 @@
 # IF còn thiếu gì · cái gì đang chờ Hoà
 
+`Plane: BOS` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
+
+
 > Chưng cất **một lần** 28/08 từ ba kho: repo · 109 phiên chat · phép đo trực tiếp.
 > Hoà: *"đằng nào chả tốn — tốn sao cho khôn thì dựa vào các bạn khai thác khôn thôi."*
 > Khôn = **tra có mục tiêu rồi cất vĩnh viễn**, không đánh thức 109 phiên.

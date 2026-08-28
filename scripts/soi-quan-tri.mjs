@@ -130,6 +130,27 @@ for (const tep of tepDocs) {
   }
 }
 
+/* ═══ L7 · MỌI TỆP CONTROL PHẢI KHAI TUYẾN ═══════════════════════════════════════════════════
+ * Hoà 28/08: *"cái nào ra cái đó. Trí nhớ bị trộn thì phải phân luồng."*
+ * Đo được: 11/17 tệp trong `docs/control/` là luật NGƯỜI XÂY nhưng đều mang tiền tố `IF-` —
+ * tên nói dối tuyến. Phiên mới đọc `IF-CURRENT-STATE` tưởng đang đọc trạng thái SẢN PHẨM; thật
+ * ra đang đọc trạng thái CÔNG TRƯỜNG.
+ * KHÔNG đổi tên 17 tệp (gãy tham chiếu — lớp lỗi B). Thay bằng MỘT DÒNG khai tuyến.
+ * Vàng, không đỏ: thiếu khai là *chưa phân loại*, không phải *sai*. */
+{
+  const thuMuc = path.join(REPO, 'docs/control');
+  if (existsSync(thuMuc)) {
+    const thieu = readdirSync(thuMuc)
+      .filter((f) => f.endsWith('.md'))
+      .filter((f) => !/Plane:\s*(IF|BOS|AN|IDF|CLIENT)/.test(readFileSync(path.join(thuMuc, f), 'utf8').slice(0, 600)));
+    if (thieu.length) {
+      canhBao.push(`L7 · ${thieu.length} tệp trong docs/control chưa khai tuyến: ${thieu.slice(0, 4).join(', ')}${thieu.length > 4 ? '…' : ''}
+       Thêm một dòng \`Plane: IF\` hoặc \`Plane: BOS\` ngay dưới tiêu đề. Hỏi: tệp này hỏng thì
+       SẢN PHẨM sai hay CÔNG TRƯỜNG sai? Xem docs/control/BOS-PHAN-LUONG-TRI-NHO.md`);
+    }
+  }
+}
+
 /* ═══ L2 · một quyết định KHÔNG được vừa CURRENT vừa SUPERSEDED/REJECTED ═════════════════════
  * F-19: `IF-CURRENT-STATE.md` từng mang BA ô người-ghi cùng sống vì artifact mới dán lên mà
  * artifact cũ không ai đóng dấu. Hai sự thật cùng sống thì phiên nguội đọc trúng cái nào là hên xui. */

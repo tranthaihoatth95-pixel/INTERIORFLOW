@@ -1,5 +1,8 @@
 # IF · TRÍ NHỚ AUDIT — phương pháp và phát hiện, đã phân loại
 
+`Plane: BOS` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
+
+
 > ## ⭐ BÁO CÁO AUDIT LÀ BẰNG CHỨNG, KHÔNG PHẢI THẨM QUYỀN.
 >
 > Mọi phát hiện phải mang đúng MỘT nhãn trước khi ai đó hành động:

@@ -1,5 +1,8 @@
 # IF · SHARED MEMORY BRIDGE
 
+`Plane: IF` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
+
+
 > **Namespace:** IF · **Authority:** adapter từ repo sang `00 · IDF CONTROL CENTER` trên Google Drive.
 
 ## Source of truth

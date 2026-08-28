@@ -1,4 +1,7 @@
 # IF · BIÊN NHẬN NĂNG LỰC — cái gì THẬT SỰ có, đã xác minh
+
+`Plane: BOS` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
+
 Đo ngày **23/08/2026**. Mọi dòng dưới đây đã CHẠY THỬ, không phải đọc khai báo.
 
 > ⛔ **LUẬT**: **CHỜ ĐỢI CÓ MÀ CHƯA XÁC MINH ⇒ COI LÀ KHÔNG CÓ.**

@@ -1,5 +1,8 @@
 # Vì sao IF chưa ship được — gốc bệnh, khám 28/08/2026
 
+`Plane: IF` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
+
+
 > Hoà 28/08: *"khám và đọc tìm hiểu ngọn nguồn gốc bệnh một lần và chữa mãi mãi thì IF hay những
 > app sau mới ship được."* Đây là lượt khám đó. **Không đọc tài liệu — chạy đúng mã sản xuất trên
 > bản vẽ thật của Hoà.**

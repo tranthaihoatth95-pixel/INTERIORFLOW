@@ -1,5 +1,8 @@
 # CHỈ MỤC AUDIT CODEX — 8 phiên, 25/08/2026
 
+`Plane: BOS` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
+
+
 > ⚠️ **VÌ SAO TỆP NÀY TỒN TẠI.** Tám phiên Codex dưới đây sản sinh audit/ADR/nghiên cứu có giá trị
 > thật, nhưng chúng **chỉ sống trong link chat ChatGPT**. Đó đúng là thứ `IF-CANONICAL` cấm:
 > *chat không phải nguồn sự thật*. Link mục nát, hoặc một phiên nguội không mở được link, là mất sạch.

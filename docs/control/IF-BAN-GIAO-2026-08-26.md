@@ -1,5 +1,8 @@
 # INTERIORFLOW — BẢN GIAO TÌNH HÌNH · 26/08/2026
 
+`Plane: IF` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
+
+
 > Viết để đưa cho một mô hình khác (ChatGPT) đọc một lần là nắm được, rồi trao đổi tiếp với Hoà.
 > Nguồn: 33 artboard thiết kế dựng trong phiên 26/08 + control plane `docs/control/`.
 > **Canvas thiết kế:** https://claude.ai/code/artifact/d0b75c15-eb2a-44ff-bb29-d807f456545c

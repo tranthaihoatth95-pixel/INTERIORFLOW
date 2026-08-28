@@ -1,4 +1,7 @@
 # IF · TRẠNG THÁI HIỆN TẠI — tệp NÓNG, cố ý dễ cũ
+
+`Plane: BOS` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
+
 > Nhỏ và mới. **Cấm để triết lý dài hạn ở đây** — nó thuộc `IF-CANONICAL.md`.
 > **Cập nhật trước khi kết phiên.**
 

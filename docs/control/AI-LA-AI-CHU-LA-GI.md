@@ -1,5 +1,8 @@
 # Ai là ai, chữ là gì — bản cho máy đọc
 
+`Plane: BOS` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
+
+
 > Bản cho **mắt Hoà** là một trang xem được (artifact). Agent **không đọc được** trang đó.
 > Tệp này là **cùng nội dung, cho máy**. Sửa một bên phải sửa bên kia — hoặc bỏ hẳn một bên.
 

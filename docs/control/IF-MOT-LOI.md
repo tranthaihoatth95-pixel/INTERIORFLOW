@@ -1,5 +1,8 @@
 # Một lỗi — công thức chung, ánh xạ cho cả IF lẫn chúng tôi
 
+`Plane: IF` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
+
+
 > Hoà 28/08: *"xâu chuỗi lại thì phải logic hoá. Áp dụng công thức chung, ánh xạ giải quyết cho
 > trường hợp lỗi của chúng ta, lỗi của IF đi."*
 >

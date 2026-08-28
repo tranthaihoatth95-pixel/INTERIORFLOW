@@ -1,5 +1,8 @@
 # IF · TRÍ NHỚ VẬN HÀNH UX/UI — phán đoán đã trả giá
 
+`Plane: BOS` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
+
+
 > **Đây KHÔNG phải nhật ký phiên.** Nhật ký kể *chuyện gì đã xảy ra*; tệp này giữ *điều đã học được
 > và phải trả giá để học*. Mọi mục đều là thứ đã làm hỏng thật ít nhất một lần.
 >

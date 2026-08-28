@@ -1,5 +1,8 @@
 # IF · MỤC LỤC THEO CÂU HỎI
 
+`Plane: BOS` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
+
+
 > Tra ở đây **trước khi** tìm ngoài. Đây là mục lục của câu hỏi, không phải của tệp.
 
 ## Vì sao có tệp này
