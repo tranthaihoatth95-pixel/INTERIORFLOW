@@ -24,7 +24,7 @@ phiên đã ghi *"poché tường 126–161 mảng/file không neo vào cấu ki
 | Thứ | Trạng thái thật | Nguồn |
 |---|---|---|
 | **14 hàm dựng khối 3D** (bevel · chamfer · array · mirror) | đã nối vào UI (`Object3DInspector`, `Command3DPanel`) nhưng **`ops[]` KHÔNG lưu vào `.idf`** ⇒ vát cạnh xong, lưu, **mở lại là mất** | `ĐO` — 14 hàm ở `build-ops.ts`, 0 chỗ `ops` trong `idf.ts` |
-| **`geom3d.heightMm` của `.idfc`** | 3 nơi ghi · **0 nơi đọc** — chiều cao cấu kiện tự khai không tới được cảnh 3D | `ĐO` |
+| **`geom3d.heightMm` của `.idfc`** | 3 nơi ghi · **0 nơi đọc** — chiều cao cấu kiện tự khai không tới được cảnh 3D | `ĐO` · đo lại: `grep -rn geom3d lib components app --include='*.ts' --include='*.tsx' \| grep -v '\.test\.'` |
 | **Đường `.idfc → 3D`** | mã có, **cổng G1–G7 chặn** thi công (`IF-DEC-IDFC-3D-001-v0.2`) | `ĐO` |
 | **Nhập DWG trực tiếp** | mã còn nguyên, **cờ TẮT** vì GPL trong bộ cài | `ĐO` |
 
@@ -112,7 +112,7 @@ Tôi vừa dựng bảng đó **từ đầu**, không biết việc đã đượ
 |---|---|---|
 | Thiết kế **AI Gateway** (6 lệnh) | ❌ chưa có | `lib/gateway/` là cổng **định dạng tệp**, tên trùng, không phải AI Gateway |
 | Refactor mọi chỗ gọi thẳng provider | ❌ | **3 tệp** còn gọi thẳng |
-| `PrivacyMode` enum + UI | ❌ | **0 tệp** trong toàn repo |
+| `PrivacyMode` enum + UI | ❌ | **0 tệp** · đo lại: `grep -rl 'PrivacyMode\|privacyMode' lib components app prisma/schema.prisma` |
 | Schema thiếu: `Phase` · Research · Moodboard · Tender · Handover · Community | ❌ | `model Phase` = **0** |
 | Dựng bảng "còn thiếu gì" | 🟡 làm hôm nay, **không biết đã được giao** | — |
 | Nạp memory hiến pháp | ❌ | tệp không nằm trong bộ nạp cho tới 28/08 |

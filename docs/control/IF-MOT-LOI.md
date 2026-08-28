@@ -223,6 +223,37 @@ tôi đã làm nó hết đúng.
 · Cổng vẫn cần. Nhưng **cổng không chữa được bệnh 21/23** — không cổng nào bắt được một câu
   khẳng định vội trong văn xuôi.
 
+## 🔴 Nối lên một tầng — luật này CŨNG áp cho lời của máy, không chỉ cho giao diện
+
+Hoà 28/08: *"còn tối ưu hơn và chính xác hơn nữa không?"* Có, và nó **không phải cơ chế mới**.
+
+Ba câu sai trong ngày, bóc tới cùng, là **một hành vi**: **nói về trạng thái thay vì đọc trạng
+thái**. Cả ba đều đo được trong **năm giây** và MAIN đã không đo — `sqlite3` một dòng ·
+`grep` một dòng · `ls dist/` một dòng.
+
+> **Không nói một dữ kiện mà lượt này chưa đo.**
+> Chưa đo thì **đo ngay**, hoặc nói **"tôi chưa đo lượt này"**.
+
+Không máy, không luật mới. Bắt được cả ba lỗi, **tại chỗ chúng sinh ra** thay vì ở cuối đường.
+
+**Chính xác hơn nữa — vì sao đã không đo?** Không phải lười. Vì **nói "chưa biết" đắt hơn nói một
+câu nghe đầy đủ**: mọi khuôn báo cáo đều thưởng cho sự trọn vẹn — bảng phải kín ô, kết luận phải
+có. Nên máy **lấp**.
+
+⇒ Can thiệp sâu nhất không ở cổng, không ở quy ước, không ở kỷ luật. Ở chỗ **đổi thế nào là một
+câu trả lời tốt**:
+
+> **Một câu trả lời có ô trống được khai rõ thì TỐT HƠN một câu trả lời nghe trọn vẹn.**
+
+**Và đây là chỗ khép vòng:** đó **đúng là luật `F-NHAN-BIA`** dựng sáng cùng ngày cho giao diện —
+*"chưa biết phải là giá trị hạng nhất, cấm một mặc định lặng lẽ đứng thay chỗ nó"*. MAIN áp nó cho
+**app**, và **không áp cho lời của chính mình**. App bịa tên `Hoa`; MAIN bịa `42/48`.
+**Cùng một lỗi, khác tầng.**
+
+⇒ **Không phải luật thứ 25.** Là luật đã có, **nối lên một tầng**. Ghi ở đây thay vì mở mục mới —
+vì đẻ thêm luật chính là con bệnh: **24 luật + máy trong MỘT ngày**, so với ~1,1/ngày suốt 57 ngày
+trước đó. Gấp **21 lần** nhịp lịch sử.
+
 ## Việc phải làm khác đi
 
 Không phải dựng thêm cổng. Là **một thói quen trước khi khẳng định**:

@@ -84,7 +84,32 @@ không biết nó có canh gì không ⇒ thiếu **ca đột biến**.
 | **T6** | **Không đưa Hoà quyết định thiếu hai câu sàng** (thứ kiểm được + điều gì xảy ra nếu im lặng) | 🔴 **chưa có cổng** | ❌ |
 | **T7** | **Cửa vào từ thế giới ngoài đo bằng tỉ lệ sống sót**, không bằng "có đọc được không" | `scripts/proof/ti-le-song-sot.ts` — chạy tay, chưa nối cổng | 🟡 |
 
-**Ba cổng còn thiếu (T2 · T6 · T7) là nợ đã khai, không phải đã xong.** Chừng nào chưa có cổng,
+| **T9** | ⚠️ **KHÔNG PHẢI LUẬT MỚI — máy hoá của `M-55`.** Luật đã có trước 28/08 trong `IF-UXUI-OPERATING-MEMORY.md` (tệp **nằm sẵn trong bộ nạp**): *"khẳng định phủ định phải kèm ĐẦU RA NGUYÊN VĂN; không dán được ⇒ chưa được khẳng định"*. MAIN vi phạm nó **ba lần trong ngày**, rồi **phát minh lại nó**. `T10` cũng vậy — `M-55` đã kết luận *"quyền bác ngược của phiên khác là hàng rào DUY NHẤT"*. **Khẳng định VẮNG MẶT phải kèm lệnh chứng minh.** *"Chưa có X"* chỉ đúng **trong phạm vi mình đã nhìn**; nhìn nhầm chỗ là **sai âm thầm**, không ai phát hiện | `npm run soi:vang-mat` · bánh cóc **7** | ✅ **CHẶN** · kiểm ngược xong |
+| **T10** | **Một lượt phản biện độc lập cuối mỗi khối việc** — phiên context **trắng**, giao đúng một việc: **cố bác bỏ** kết luận vừa ra | 🟡 **thói quen, chưa có cổng** — máy không ép được người phóng agent | 🟡 |
+
+**Ba cổng còn thiếu (T2 · T6 · T7) là nợ đã khai, không phải đã xong.**
+
+## Vì sao T9 và T10 sinh ra — 28/08
+
+Ba câu sai của MAIN trong một ngày, **cả ba chỉ lộ ra vì Hoà hỏi**:
+
+| | khẳng định | sự thật |
+|---|---|---|
+| sáng | `42/48` flow tên rác | `32/52` — số nhớ từ phiên trước |
+| trưa | `16 máy soi ÷ 5` | `14/14` — **chính MAIN vừa nối 8 máy rồi vẫn trích số cũ** |
+| chiều | *"bản đóng gói Electron **chưa dựng**"* | **336 MB nằm trong `dist/` từ 15/07** · đo lại: `ls -la dist/` |
+
+*"Hoà tình cờ hỏi đúng chỗ"* **không phải một cơ chế.** Hai câu đầu là **khẳng định về số đếm**,
+câu thứ ba là **khẳng định về sự vắng mặt** — và câu thứ ba nguy hiểm nhất, vì khẳng định **có**
+thì nhìn một cái là bác được, còn khẳng định **không có** đọc y hệt một kết luận đã kiểm.
+
+`T9` bắt được lớp thứ hai bằng máy. `T10` bắt được lớp thứ nhất bằng người —
+và nó **đã chứng minh giá trị ngay lượt đầu**: một phiên context trắng, ba phút, tìm ra **ba lỗi
+thật** trong chẩn đoán mà MAIN vừa viết, gồm cả câu *"tỉ lệ 16÷5"* đã hết đúng.
+
+⚠️ **T9 khai đúng phạm vi của nó**: nó **KHÔNG** bắt mọi câu khẳng định vội — chỉ bắt **một lớp
+con hẹp**. Thước phải siết hai lần: lượt đầu bắt cả **câu luật** (*"thư mục chưa ai quyết"* là
+**tên một luật**) — kêu oan, đúng lý do `L3` từng bị bỏ. Chừng nào chưa có cổng,
 ba luật đó **vẫn là lời chúc** — và tệp này phải nói ra điều đó thay vì để nhìn như đủ bảy.
 
 ## Luật đứng trên bảy luật
@@ -115,6 +140,7 @@ Hai tuần liên tiếp *"chưa"* ⇒ đang đi sai, và agent phải nói ra tr
 · ~~**Bản đóng gói Electron**: chưa dựng, chưa chạy.~~ 🔴 **SAI — SỬA 28/08, cùng ngày.**
   Đo: `dist/InteriorFlow-0.1.0-arm64.dmg` · **336 MB** · dựng **15/07/2026** từ commit `7aa9006`,
   bung ra **895 MB**, **25 tệp `.wasm`**. **Một bộ cài macOS thật đã tồn tại 44 ngày trên đĩa.**
+  Đo lại bất cứ lúc nào: `ls -la dist/`.
   Tôi khẳng định "chưa dựng" mà **không mở thư mục `dist/` ra nhìn** — lần thứ ba trong một ngày,
   đúng bệnh phiên phản biện vừa chỉ: **không kiểm lại trước khi khẳng định**.
   ⚠️ Bộ cài đó **không dùng được để ship**: dựng trước ~1.400 commit, trước toàn bộ việc GPL,

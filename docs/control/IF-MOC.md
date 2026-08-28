@@ -27,3 +27,4 @@
 | 2026-08-28 05:52 | **Mạch làm việc: sơ đồ + tính chất agent vào bộ nạp** | artifact 5 mạch vẽ cả cổng HỞ; 9 tính chất kèm vết trượt thật; cả hai đường vào CLAUDE.md | `17d8854` +1 bẩn | `0ffcd43c` d.11852 |
 | 2026-08-28 05:57 | **Một bản kiến trúc: tầng chung + phả hệ + công cụ + công thức** | 4 bất biến cho mọi sản phẩm; phả hệ 7 dòng chứng minh không phát minh gì mới; 20 máy/23 proof/18 sổ/5 công cụ ngoài | `05492d9` +1 bẩn | `0ffcd43c` d.11895 |
 | 2026-08-28 06:05 | **GỐC BỆNH: tạo mà không nối** | tỉ lệ tạo÷nối giống nhau ở mọi ca; 11/16 máy soi chưa từng chạy; nối 8, khai 3 nợ có số | `b62b3c5` +1 bẩn | `0ffcd43c` d.11972 |
+| 2026-08-28 07:08 | **T9 máy soi khẳng định vắng mặt + T10 phản biện độc lập** | 11 câu vắng mặt 0 kèm chứng minh; thước siết 2 lần 48→7; kiểm ngược xong; T10 chưa có cổng, khai là thói quen | `52e8c4c` +5 bẩn | `0ffcd43c` d.12423 |
