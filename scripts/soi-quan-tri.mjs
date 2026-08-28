@@ -22,7 +22,7 @@
  * Chạy: `npm run soi:quan-tri`
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { FRONTIER } from './frontier-registry.mjs';
@@ -88,6 +88,32 @@ for (const tep of tepDocs) {
     if (thieu.length) {
       loi.push(`L1 · ${path.relative(REPO, tep)} — \`${ma}\` thiếu ô bắt buộc: ${thieu.join(', ')}.
        Ô để trống chính là chỗ 23 ảnh lọt qua (F-21). Không cần ai tinh ý — chỉ cần điền.`);
+    }
+  }
+}
+
+/* ═══ L6 · TÁC ĐỘNG CHÉO — trí nhớ phải nối vào cổng đã có ════════════════════════════════════
+ * Hoà 28/08: *"luật AI có thể không theo vì không có tác động, vậy nếu tác động chéo thì sao?"*
+ * Câu đó đúng và nó là chỗ mọi luật trí nhớ trước nay đã chết: chúng nằm trong tài liệu, mà tài
+ * liệu thì không chặn ai làm gì. **Luật là thứ vi phạm thì không làm xong được việc của mình.**
+ * ⇒ Nối sổ mốc vào ĐÚNG cái cổng đã chặn mã (`npm test`). Commit chạy xa mốc gần nhất ⇒ vàng.
+ *
+ * Vàng, KHÔNG đỏ — có chủ ý. Một lát việc dài mà chưa tới lúc đóng mốc là chuyện bình thường;
+ * chặn nó là kêu oan, và máy kêu oan thì người học cách ngó lơ (F-02, đã trả giá bằng luật L3). */
+{
+  const soMoc = path.join(REPO, 'docs/control/IF-MOC.md');
+  if (existsSync(soMoc)) {
+    const dong = readFileSync(soMoc, 'utf8').split('\n').filter((l) => l.startsWith('| 20'));
+    const cuoi = dong.at(-1);
+    const m = cuoi && cuoi.match(/\|\s*`([0-9a-f]{7,})`/);
+    if (m) {
+      try {
+        const xa = Number(execFileSync('git', ['rev-list', '--count', `${m[1]}..HEAD`], { encoding: 'utf8' }).trim());
+        if (xa > 5) {
+          canhBao.push(`L6 · ${xa} commit kể từ mốc gần nhất (\`${m[1]}\`) — phần tinh đang chỉ nằm trong context.
+       Đóng mốc: \`npm run moc "chủ đề" "một dòng"\`. Nén tới lúc nào cũng được nếu đã đóng.`);
+        }
+      } catch { /* mốc trỏ tới commit không còn — bỏ qua, không kêu oan */ }
     }
   }
 }
