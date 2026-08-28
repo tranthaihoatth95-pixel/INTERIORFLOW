@@ -112,7 +112,14 @@ Hai tuần liên tiếp *"chưa"* ⇒ đang đi sai, và agent phải nói ra tr
 · **10 phiên có mục *"chờ Hoà quyết"***: đọc trích đoạn, **chưa xác minh cái nào còn sống**.
 · **`~/PROJECT/PRIVATE/`**: **không mở** — không gian riêng của Hoà, có nhận xét về từng người.
 · **App thật**: **không mở lần nào hôm nay.** Mọi thay đổi giao diện 28/08 đều `NOT ASSESSED`.
-· **Bản đóng gói Electron**: chưa dựng, chưa chạy.
+· ~~**Bản đóng gói Electron**: chưa dựng, chưa chạy.~~ 🔴 **SAI — SỬA 28/08, cùng ngày.**
+  Đo: `dist/InteriorFlow-0.1.0-arm64.dmg` · **336 MB** · dựng **15/07/2026** từ commit `7aa9006`,
+  bung ra **895 MB**, **25 tệp `.wasm`**. **Một bộ cài macOS thật đã tồn tại 44 ngày trên đĩa.**
+  Tôi khẳng định "chưa dựng" mà **không mở thư mục `dist/` ra nhìn** — lần thứ ba trong một ngày,
+  đúng bệnh phiên phản biện vừa chỉ: **không kiểm lại trước khi khẳng định**.
+  ⚠️ Bộ cài đó **không dùng được để ship**: dựng trước ~1.400 commit, trước toàn bộ việc GPL,
+  trước cờ tắt DWG. Nhưng nó chứng minh **đường đóng gói ĐÃ từng chạy** — mốc *"IF cài trên máy
+  khác"* không phải đường chưa ai đi, mà là đường **đã đi được rồi bỏ**.
 · **Các lane Codex**: đọc **7**; không biết còn bao nhiêu.
 
 ⇒ Lời chứng này **đúng trong phạm vi trên và không rộng hơn**. Ai đọc nó rồi kết luận
