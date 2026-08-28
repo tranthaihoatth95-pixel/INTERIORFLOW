@@ -272,3 +272,52 @@ bậc bằng chứng duy nhất thật sự đáng tin, và nó chưa tồn tạ
 `DISS-*` nào ra `MATERIAL_CONFLICT` và không lượt `soi:quan-tri` nào đỏ ⇒ **cắt xuống còn L1/L4 +
 câu hỏi trích-luật**, bỏ phần còn lại. Một protocol không bao giờ nổ thì hoặc hoàn hảo, hoặc chết
 — và không phân biệt được nếu không đặt luật trước.
+
+---
+
+## 10 · SỔ QUYẾT ĐỊNH — bổ sung 28/08
+
+> Ghi ở đây, **không** dựng bảng thứ hai (§0 luật *"không tạo một bảng trí nhớ song song"*).
+
+### `IF-DEC-DOCK-ANCHOR-001` — Dock có giữ vùng neo bất biến không
+`Plane` IF · `Owner` Claude Design · `Authority` **Hoà** · `Status` **PROVISIONAL**
+
+`Problem` — `03-TARGET-DOCK.md` §7 `X-9` gọi đây là *"câu hỏi duy nhất mà mọi thứ còn lại của tệp
+này phụ thuộc vào"*: vế Hoà nói dock **thích ứng theo stage**; hợp đồng §3.1 nói *"stable universal
+anchors"* + *"one morphing dynamic control zone"*. Nếu **toàn bộ** dock đổi theo chặng thì vùng
+neo ⓐ biến mất, `T-1` (trí nhớ cơ bắp) sụp, kéo theo cả ranh giới dock/toolbar §1.2.
+
+`OBSERVED`
+· `EV-020` — `03-TARGET-DOCK.md:40,48,53,77,146` đã dựng sẵn cấu trúc ⓐ/ⓑ/ⓒ với ⓐ *"không bao giờ"*
+  đổi, ⓑ là **một** vùng biến hình, `D-03` cấm hai vùng biến hình trở lên. `Sensitivity` `internal` ·
+  `Scope` trả lời *"gói TARGET đề xuất gì"*, **không** trả lời *"Hoà đã chốt chưa"*.
+· `EV-021` — Hoà chốt trong lane trò chuyện ngoài repo (28/08): giữ **khung ổn định + tải trọng
+  thích ứng có giới hạn**; ⓐ (Chọn/Hoàn tác/Làm lại, ≤4 lệnh) **không bao giờ chạy**; chỉ ⓑ đổi gói
+  theo `stageChanged` tường minh; ⓒ giữ trạng thái việc đang chạy; mã lệnh và phím tắt giữ nguyên;
+  `prefers-reduced-motion` chuyển tức thì; cờ `adaptiveDockV1`. `Sensitivity` `internal` ·
+  `Scope` trả lời **đúng** câu `X-9`.
+  ⚠️ `Strength` **weak-medium**: nguồn là **chat**, mà `IF-CANONICAL` ghi rõ *"chat không canonical"*.
+  Vì vậy `Status` là `PROVISIONAL`, không phải `CURRENT`.
+
+`INFERENCE` — `EV-020` và `EV-021` **hội tụ**: hai đường độc lập (một bên đọc hợp đồng + runtime,
+một bên Hoà quyết) ra cùng một hình. Hội tụ làm tăng độ tin, **không** làm nó thành chốt: cả hai
+vẫn cùng thiếu một thứ — chưa ai nhìn thấy nó chạy.
+
+`PROPOSED` — coi `X-9` là **đã có câu trả lời tạm: GIỮ ⓐ BẤT BIẾN**. MAIN được phép ngừng treo
+Dock như một việc bị chặn, và được chuẩn bị mã sau cờ `adaptiveDockV1` (mặc định TẮT).
+
+`Scope` — **được** chạm: cấu trúc ⓐ/ⓑ/ⓒ sau cờ tắt · tài liệu candidate.
+**CẤM**: bật cờ mặc định · đổi bố cục dock đang chạy · coi `X-10` (kính dock ↔ kính thanh trên) là
+đã giải — nó **chưa**, và `03-TARGET-DOCK.md` §7 đòi chốt nó **cùng một lượt** với `X-1`.
+**CẤM** áp quyết định này cho 3D · Present · mobile — `EV-021` khai rõ ba mặt đó `NOT ASSESSED`.
+
+`Risks` — hội tụ hai nguồn dễ bị đọc thành "đã chứng minh". Dấu hiệu sớm: phiên sau trích
+`IF-DEC-DOCK-ANCHOR-001` mà bỏ chữ `PROVISIONAL`.
+
+`Safety` — chưa có mã nào phụ thuộc; đường lùi là xoá mục này. Khi có mã: `adaptiveDockV1` tắt.
+
+`Canonical` — mục này. `03-TARGET-DOCK.md` **không sửa** (băm trong `ux-target/MANIFEST.md` là
+biên nhận của lượt đo 27/08; sửa nội dung là hỏng biên nhận).
+
+**Còn thiếu để lên `CURRENT`:** Hoà xác nhận **trong repo**, và một lượt runtime cho thấy ⓐ đứng
+đúng một toạ độ qua cả ba chặng (`T-1`).
