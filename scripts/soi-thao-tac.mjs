@@ -11,6 +11,8 @@
  * Exit 1 khi có lệch grep.
  */
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { boChuThich } from './_chu-thich.mjs';
+import path from 'node:path';
 import { join } from 'node:path';
 import { LUAT, TOI_DANH } from './thao-tac-registry.mjs';
 
@@ -57,13 +59,21 @@ function timKhop(dk) {
   return hits;
 }
 
-/** kiểu mauCo/mauThieu — file có mauCo mà thiếu mauThieu */
+/** kiểu mauCo/mauThieu — file có mauCo mà thiếu mauThieu.
+ *
+ * 🔴 SỬA 28/08 — TRƯỚC ĐÂY soi cả CHÚ THÍCH. Luật `kinh-webkit-prefix` báo đỏ **ba tệp**
+ * (`SearchProjectsInput` · `Render3DModeSkeleton` · `BeMatNoi`) chỉ vì chúng **NHẮC**
+ * `backdrop-filter` trong chú thích — để giải thích vì sao chúng **KHÔNG dùng** nó.
+ * Máy phạt đúng những tệp đã cân nhắc kỹ nhất.
+ *
+ * Cùng lớp lỗi mà `soi-foundation` họ `F-NHAN-BIA` mắc phải sáng cùng ngày ⇒ **một cỗ máy,
+ * nhiều mặt tiền**: dùng chung `scripts/_chu-thich.mjs`, cấm chép hàm sang tệp thứ hai (M-26). */
 function timThieu(dk) {
   const reCo = new RegExp(dk.mauCo, 'm');
   const reThieu = new RegExp(dk.mauThieu, 'm');
   const xau = [];
   for (const f of filesOf(dk)) {
-    const s = readFileSync(f, 'utf8');
+    const s = boChuThich(readFileSync(f, 'utf8'));   // soi MÃ, không soi lời kể về mã
     if (reCo.test(s) && !reThieu.test(s)) xau.push(f.replace(ROOT, ''));
   }
   return xau;
@@ -74,6 +84,9 @@ const IN_TOI_DA = 5; // in tối đa 5 vị trí mỗi lỗi, còn lại đếm 
 let lech = 0;
 console.log('\nHỆ LUẬT THAO TÁC — soi-thao-tac ' + new Date().toISOString().slice(0, 10));
 console.log('─'.repeat(100));
+
+/** Số tệp vi phạm của mỗi luật grep — nguồn cho bánh cóc ở cuối tệp. */
+const xauTheoLuat = [];
 
 // ── Khối 1: luật grep — soi 2 chiều ──────────────────────────────────────────
 for (const l of LUAT) {
@@ -90,6 +103,8 @@ for (const l of LUAT) {
       if (hits.length) loi.push({ kieu: 'cam', dk, hits });
     }
   }
+  const soTep = loi.reduce((n, e) => n + (e.xau?.length ?? e.hits?.length ?? 0), 0);
+  xauTheoLuat.push({ id: l.id, xau: { length: soTep } });
   if (!loi.length) { console.log(`  ✅ ${l.id}`); continue; }
   lech++;
   console.log(`  🔴 ${l.id} — [tội ${l.toiDanh} · ${TOI_DANH[l.toiDanh]}]`);
@@ -124,4 +139,37 @@ for (const td of Object.keys(TOI_DANH)) {
 console.log('─'.repeat(100));
 const soGrep = LUAT.filter((l) => l.loai === 'grep').length;
 console.log(`🔴 ${lech} LỆCH (trên ${soGrep} luật grep) · 👁 ${mat.length} luật chờ mắt${lech ? '  ← lệch trong code app GHI BÁO CÁO cho T quyết, không nới pattern' : ''}\n`);
+
+/* ── BÁNH CÓC — nối máy này vào cổng chung mà không chặn đứng mọi lane ─────────────────────────
+ * Hoà 28/08: *"làm cái dang dở đi, phân ra làm bù làm tiến độ."*
+ * Máy này TỒN TẠI từ lâu nhưng **chưa bao giờ nằm trên đường `npm test`** — đúng gốc bệnh
+ * *tạo mà không nối*. Nối thẳng lúc này là chặn mọi lane vì hai luật đang đỏ với **42 tệp**:
+ *   · `outline-can-focus-visible` 33 tệp — bàn phím không thấy mình đang ở đâu
+ *   · `keydown-ne-o-nhap` 9 tệp — gõ chữ trong ô là kích hoạt phím tắt
+ * Cả hai là lỗi **thật**, người dùng chạm phải, nhưng sửa mù 42 tệp là đổi một lỗi lấy một lỗi.
+ *
+ * ⇒ Bánh cóc: **khoá trần ở số hiện tại, chỉ được siết xuống**. Máy vào được cổng chung ngay
+ * hôm nay, nợ không tăng thêm được, và mỗi lần dọn thật thì hạ trần. Cấm nới lên (M-52). */
+{
+  const tranTep = path.join(ROOT, 'scripts/foundation-tran.json');
+  if (existsSync(tranTep)) {
+    const tran = JSON.parse(readFileSync(tranTep, 'utf8'));
+    let vuot = 0;
+    for (const e of xauTheoLuat) {
+      const key = `T-${e.id}`;
+      const tr = tran[key];
+      if (typeof tr !== 'number') continue;
+      const n = e.xau.length;
+      console.log(`   bánh cóc ${key.padEnd(28)} ${String(n).padStart(3)} / trần ${tr}`);
+      if (n > tr) { console.log(`   🔴 VƯỢT TRẦN ${n - tr} tệp — sửa mã, CẤM nới trần (M-52).`); vuot++; }
+      else if (n < tr) console.log(`   ✅ thấp hơn trần ${tr - n} — hạ trần xuống ${n}.`);
+    }
+    /* Chỉ ĐỎ khi VƯỢT TRẦN, hoặc khi một luật đang đỏ mà CHƯA có trần — luật xanh thì không
+     * cần trần. Bản đầu bắt mọi luật phải có trần ⇒ 15 luật xanh cũng làm cổng đỏ: một cổng
+     * đòi hỏi vô lý là cổng người ta học cách ngó lơ (F-02). */
+    const doMaChuaCoTran = xauTheoLuat.filter((e) => e.xau.length > 0 && typeof tran[`T-${e.id}`] !== 'number');
+    for (const e of doMaChuaCoTran) console.log(`   🔴 ${e.id} đỏ ${e.xau.length} tệp mà CHƯA có trần — thêm "T-${e.id}" vào foundation-tran.json`);
+    process.exit(vuot || doMaChuaCoTran.length ? 1 : 0);
+  }
+}
 process.exit(lech ? 1 : 0);

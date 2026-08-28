@@ -23,6 +23,7 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative, extname, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { trongChuThich } from './_chu-thich.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const TRAN_MODE = process.argv.includes('--tran');
@@ -160,18 +161,6 @@ function trongChuoi(src, i) {
   return n % 2 === 1;
 }
 
-/** Vị trí `i` có nằm trong CHÚ THÍCH không?
- * Cần vì thước F-NHAN-BIA lượt đầu bắt luôn chú thích của chính bản vá — nơi mẫu cũ được TRÍCH
- * LẠI để giải thích vì sao nó sai. Đó là F-06 lộn ngược: guard bị chú thích đánh lừa. Một máy soi
- * không phân biệt được **mã** với **lời kể về mã** thì nó soi văn bản, không soi phần mềm. */
-function trongChuThich(src, i) {
-  const dauDong = src.lastIndexOf('\n', i) + 1;
-  const dong = src.slice(dauDong, i);
-  if (/(^|[^:])\/\//.test(dong)) return true;              // `// …` trên cùng dòng
-  const moKhoi = src.lastIndexOf('/*', i);
-  const dongKhoi = src.lastIndexOf('*/', i);
-  return moKhoi > dongKhoi;                                 // đang trong `/* … */`
-}
 
 /** viewBox bao quanh vị trí `i` — dùng để biết một `stroke-width` nằm trong icon hay trong tranh. */
 function viewBoxBaoQuanh(src, i) {

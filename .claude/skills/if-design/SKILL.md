@@ -110,4 +110,4 @@ Sổ: `docs/design-campaign/02-FAILURE-LEDGER.md` (F-01…F-14).
 - Luật vận động/thị giác: `docs/IF-MOTION-VISUAL-LAW.md`
 - Chữ Việt: `docs/LUAT-CHU-VIET-7.1.23-2026-07-31.md`
 - Hiến pháp giao diện NT-1..18: `docs/nc/NC-NGUYEN-TAC-GIAO-DIEN-TOAN-APP-2026-08-14.md`
-- Bản cũ của chính tệp này (bách khoa 237 dòng, giữ làm dấu vết): `docs/design-campaign/SKILL-if-design-BAN-CU-23-08.md`
+- Bản cũ của chính tệp này (bách khoa 237 dòng, giữ làm dấu vết): `docs/nhat-ky/design-campaign/SKILL-if-design-BAN-CU-23-08.md` (dời 28/08 lượt dọn kho)

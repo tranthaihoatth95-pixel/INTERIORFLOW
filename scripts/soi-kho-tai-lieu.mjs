@@ -29,6 +29,13 @@ function quet(dir, ra = []) {
   return ra;
 }
 
+/* 🔴 SỬA 28/08 — PHẠM VI ĐO TỪNG THIẾU, và nó gây hỏng thật.
+ * Lượt dọn sáng 28/08 dời 111 tệp "mồ côi". Một trong số đó — `SKILL-if-design-BAN-CU-23-08.md` —
+ * **không hề mồ côi**: nó được trỏ tới từ `.claude/skills/if-design/SKILL.md`, tức **ngoài `docs/`**,
+ * nơi phép đo này không quét tới. Máy nói "mồ côi" vì **nó không nhìn đủ rộng**, không phải vì
+ * tệp thật sự không ai cần. Dọn xong thì `soi:design-school` báo con trỏ chết.
+ * ⇒ Bài học: *"an toàn vì chỉ dời tệp mồ côi"* chỉ đúng khi **phạm vi đo phủ hết nơi có thể trỏ tới**.
+ * Nay quét thêm `.claude/` khi tìm tham chiếu. */
 const tep = quet(path.join(REPO, 'docs')).concat(
   readdirSync(REPO).filter((f) => f.endsWith('.md')).map((f) => path.join(REPO, f)),
 );
@@ -36,7 +43,21 @@ const tep = quet(path.join(REPO, 'docs')).concat(
 // Gom toàn bộ chữ để tìm tham chiếu — đọc một lần, không quét lại 887 lần.
 const noi = new Map();
 for (const t of tep) { try { noi.set(t, readFileSync(t, 'utf8')); } catch { noi.set(t, ''); } }
-const tatCa = [...noi.values()].join('\n');
+/* Nguồn tham chiếu KHÔNG chỉ là `docs/` — gộp cả `.claude/` (skill, cấu hình agent) và mã nguồn,
+ * vì một tệp tài liệu hoàn toàn có thể chỉ được trỏ tới từ đó. */
+const nguonTro = [...noi.values()];
+for (const d of ['.claude', 'scripts', 'lib', 'components', 'app']) {
+  const goc = path.join(REPO, d);
+  if (!existsSync(goc)) continue;
+  const di = (t) => { for (const e of readdirSync(t, { withFileTypes: true })) {
+    if (BO.has(e.name)) continue;
+    const q = path.join(t, e.name);
+    if (e.isDirectory()) di(q);
+    else if (/\.(md|ts|tsx|mjs|json)$/.test(e.name)) { try { nguonTro.push(readFileSync(q, 'utf8')); } catch { /* bỏ qua */ } }
+  } };
+  di(goc);
+}
+const tatCa = nguonTro.join('\n');
 
 const DAU_DONG = /KHÔNG CÒN LÀ CỬA VÀO|SUPERSEDED|THAY BỞI|đã bị thay thế|dấu vết|chuyển hướng/i;
 const TEN_KHAO_CO = /\d{4}-\d{2}-\d{2}|\d{2}-\d{2}\.md$|^(AUDIT|SOI|PROMPT|BAN-GIAO|CHOT|BAO-CAO|PHIEU)/i;
