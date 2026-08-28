@@ -49,6 +49,31 @@ Ba loại **thật sự** là của Hoà: **mắt** (đẹp/xấu, đúng gu ngh
 
 Thấy Hoà xuất hiện ở nhịp khác 01/05 ⇒ máy đang trút việc sang Hoà.
 
+## 3b · NHẮC VIỆC — bắt buộc khi đổi chủ đề
+
+Hoà 28/08: *"mỗi một trả lời mà nội dung sắp bị dẫn dắt sang chủ đề khác, thì tóm lại những việc
+cũ đang còn, những gì đạt được những gì chưa — tất cả gói gọn trong **ngưỡng chống phình**."*
+
+**Khi nào:** lượt trả lời mà chủ đề khác lượt trước. Không phải mọi lượt — đổi chủ đề mới nhắc.
+
+**Khuôn — bốn dòng, mỗi dòng MỘT dòng. Đây là trần, không phải gợi ý:**
+
+```
+⏸ NHẮC VIỆC
+đang dở  · …
+đạt      · …
+chưa     · …
+chờ Hoà  · …        ← chỉ ghi mục ĐANG CHẶN, không liệt kê cả bảy
+```
+
+**Ngưỡng chống phình:** ≤ 4 dòng · ≤ 60 từ · **không bảng, không liên kết, không giải thích**.
+Cần giải thích thì đó không phải nhắc việc, đó là một lượt trả lời khác.
+
+**Vì sao có trần:** nhắc việc mà dài thì bị bỏ qua như mọi thứ dài khác — và lúc đó nó thành thứ
+tệ hơn im lặng, vì nó tạo cảm giác đã nhắc. Dài quá trần ⇒ cắt, không xin phép.
+
+Nguồn để điền: `docs/control/IF-CON-THIEU-GI.md` (chờ Hoà) · `IF-CURRENT-STATE.md` (đang dở).
+
 ## 4 · Ba công thức — 21 lỗi rút gọn
 
 Sổ lỗi có 21 mục và chính nó ghi *"cùng lớp với F-03"* **sáu lần** — nhận ra trùng tính chất rồi
