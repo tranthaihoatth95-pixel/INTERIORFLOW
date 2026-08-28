@@ -182,6 +182,72 @@ const demLayer=(ds:Truc[])=>{const t=new Map<string,number>();for(const x of ds)
 console.log(`   giữ lại: ${demLayer(giuLai)}`);
 console.log(`   loại ra: ${demLayer(bo)}`);
 
+/* ── GỘP CHÙM NÉT → LẤY BAO NGOÀI ────────────────────────────────────────────
+ * Hoà nhìn ảnh phóng to 29/08: vẫn 3–4 vệt song song trên CÙNG một bức tường.
+ * Vì sao: thợ vẽ tường bằng nhiều nét (hai mặt kết cấu + nét trát/ốp mỗi bên), ghép đôi độc
+ * quyền cho ra mấy cặp rời — mỗi cặp một trục, chồng lên nhau.
+ * Đảo OFFSET cho ĐÚNG phải lấy CẶP NGOÀI CÙNG: bề dày tường = khoảng cách hai nét ngoài cùng
+ * của chùm, nét giữa là lớp hoàn thiện chứ không phải mặt tường.
+ *
+ * ⛔ BẢN TRƯỚC ĐÃ TRƯỢT — "giữ trục dày nhất trong vùng" làm mất 74% chiều dài, vì một trục
+ * 400mm dài nuốt trọn các tường 200mm nằm cùng đường. Lần này KHÔNG chọn-một-bỏ-phần-còn-lại
+ * mà GỘP: chỉ gom những trục THỰC SỰ chồng nhau, và tường mới phải TRÙM đúng phần chúng phủ.
+ */
+function gopChum(ds: Truc[]) {
+  const L = (t: Truc) => Math.hypot(t.bx - t.ax, t.by - t.ay);
+  const chua = ds.map((t) => ({ t, id: -1 }));
+  const trucCua = (t: Truc) => {
+    const l = L(t); let ux = (t.bx-t.ax)/l, uy = (t.by-t.ay)/l;
+    if (ux < 0 || (Math.abs(ux) < 1e-9 && uy < 0)) { ux = -ux; uy = -uy; }
+    return { ux, uy, c: t.ax*-uy + t.ay*ux, s0: Math.min(t.ax*ux+t.ay*uy, t.bx*ux+t.by*uy),
+             s1: Math.max(t.ax*ux+t.ay*uy, t.bx*ux+t.by*uy) };
+  };
+  const g = chua.map((x) => trucCua(x.t));
+  // hai trục cùng MỘT bức tường khi: cùng phương · chồng nhau dọc trục · lệch vuông góc nhỏ hơn
+  // nửa tổng bề dày (tức nét kia nằm TRONG thân bức tường đang xét, không phải tường bên cạnh)
+  const cungTuong = (i: number, j: number) => {
+    const a = g[i], b = g[j];
+    if (Math.abs(a.ux*b.ux + a.uy*b.uy) < 0.999) return false;
+    if (Math.abs(a.c - b.c) > (chua[i].t.d + chua[j].t.d) / 2) return false;
+    if (chua[i].t.layer !== chua[j].t.layer) return false;
+    return Math.min(a.s1, b.s1) - Math.max(a.s0, b.s0) > 0.5 * Math.min(a.s1-a.s0, b.s1-b.s0);
+  };
+  let soChum = 0;
+  for (let i = 0; i < chua.length; i++) {
+    if (chua[i].id >= 0) continue;
+    chua[i].id = soChum;
+    for (let j = i + 1; j < chua.length; j++)
+      if (chua[j].id < 0 && cungTuong(i, j)) chua[j].id = soChum;
+    soChum++;
+  }
+  const ra: Truc[] = [];
+  for (let k = 0; k < soChum; k++) {
+    const nhom = chua.filter((x) => x.id === k);
+    if (!nhom.length) continue;
+    if (nhom.length === 1) { ra.push(nhom[0].t); continue; }
+    const cai = g[chua.indexOf(nhom[0])];
+    const cs = nhom.map((x) => g[chua.indexOf(x)]);
+    const lo = Math.min(...cs.map((x) => x.s0)), hi = Math.max(...cs.map((x) => x.s1));
+    // BAO NGOÀI: mép ngoài cùng hai bên = tâm trục ± nửa bề dày, lấy min/max qua cả chùm
+    const mepTren = Math.max(...nhom.map((x, n) => cs[n].c + x.t.d / 2));
+    const mepDuoi = Math.min(...nhom.map((x, n) => cs[n].c - x.t.d / 2));
+    const cGiua = (mepTren + mepDuoi) / 2, beDay = Math.round(mepTren - mepDuoi);
+    const px = -cai.uy * cGiua, py = cai.ux * cGiua;
+    ra.push({ ax: px + cai.ux*lo, ay: py + cai.uy*lo, bx: px + cai.ux*hi, by: py + cai.uy*hi,
+              d: beDay, layer: nhom[0].t.layer });
+  }
+  return ra;
+}
+const tuong = gopChum(giuLai);
+console.log(`\nGỘP CHÙM NÉT → BAO NGOÀI: ${giuLai.length} → ${tuong.length} tường · ${m(giuLai).toFixed(0)} → ${m(tuong).toFixed(0)} m`);
+{
+  const dt = tuong.map((t) => Math.hypot(t.bx-t.ax, t.by-t.ay)).sort((a,b)=>a-b);
+  const bd = new Map<number, number>(); for (const t of tuong) bd.set(t.d, (bd.get(t.d) ?? 0) + 1);
+  console.log(`   dài trung bình ${(m(tuong)/tuong.length).toFixed(1)} m · trung vị ${(dt[dt.length>>1]/1000).toFixed(1)} m · dài nhất ${(dt.at(-1)!/1000).toFixed(1)} m`);
+  console.log(`   bề dày: ${[...bd].sort((a,b)=>b[1]-a[1]).slice(0,7).map(([k,v])=>`${k}mm×${v}`).join(' · ')}`);
+  console.log(`   layer:  ${demLayer(tuong)}`);
+}
+
 /* ── VẼ RA: bản vẽ gốc (nhạt) + tường IF nhận ra (đậm) ── */
 import { writeFileSync } from 'node:fs';
 let minx=1e18,miny=1e18,maxx=-1e18,maxy=-1e18;
@@ -189,11 +255,11 @@ for (const s of THANG) for (const p of [s.a,s.b]) { minx=Math.min(minx,p.x); min
 const W=maxx-minx, H=maxy-miny, S=1600/Math.max(W,H);
 const X=(x:number)=>((x-minx)*S).toFixed(1), Y=(y:number)=>((maxy-y)*S).toFixed(1);
 const nen = THANG.map(s=>`<line x1="${X(s.a.x)}" y1="${Y(s.a.y)}" x2="${X(s.b.x)}" y2="${Y(s.b.y)}"/>`).join('');
-const tuong = giuLai.map(t=>`<line x1="${X(t.ax)}" y1="${Y(t.ay)}" x2="${X(t.bx)}" y2="${Y(t.by)}" stroke-width="${Math.max(1.2,t.d*S)}"/>`).join('');
+const veTuong = tuong.map(t=>`<line x1="${X(t.ax)}" y1="${Y(t.ay)}" x2="${X(t.bx)}" y2="${Y(t.by)}" stroke-width="${Math.max(1.2,t.d*S)}"/>`).join('');
 writeFileSync('/tmp/tuong-nhan-ra.svg',
 `<svg xmlns="http://www.w3.org/2000/svg" width="${(W*S).toFixed(0)}" height="${(H*S).toFixed(0)}" viewBox="0 0 ${(W*S).toFixed(0)} ${(H*S).toFixed(0)}">
 <rect width="100%" height="100%" fill="#F7F9FA"/>
 <g stroke="#C6CFD6" stroke-width="0.7" fill="none">${nen}</g>
-<g stroke="#B03528" stroke-linecap="butt" opacity="0.75" fill="none">${tuong}</g>
+<g stroke="#B03528" stroke-linecap="butt" opacity="0.75" fill="none">${veTuong}</g>
 </svg>`);
 console.log(`\n🖼  /tmp/tuong-nhan-ra.svg  ·  ${(W/1000).toFixed(1)} × ${(H/1000).toFixed(1)} m`);
