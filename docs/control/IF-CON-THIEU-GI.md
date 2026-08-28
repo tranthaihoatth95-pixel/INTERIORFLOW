@@ -61,3 +61,72 @@ một phiên (`Lane 4 · IDFC`) có **9 câu hỏi kiến trúc** chờ Hoà; m�
 
 Trả lời xong một mục → **xoá dòng đó**, ghi kết quả vào `IF-HOI-DAP.md`. Tệp này phải **ngắn dần**.
 Nó dài ra là dấu hiệu đang tích nợ, không phải đang làm việc.
+
+---
+
+# ĐỐI CHIẾU VỚI HIẾN PHÁP — làm sau, và nó đổi cả phạm vi bảng trên
+
+> Hoà 28/08: *"đối chiếu với mong muốn kỳ vọng và mục đích giao việc của tôi chưa? dựa trên tầm
+> nhìn IF/IDF để xem chưa? cứ hỏi mà chưa tra thì hỏi làm gì?"*
+>
+> **Chưa.** Bảng phía trên viết từ phép đo **của tôi**, không từ **kỳ vọng của Hoà**. Giữ nguyên
+> làm dấu vết, vì cách nó sai chính là bài học.
+
+## Điều đáng xấu hổ nhất
+
+`docs/IF-KIEN-TRUC-OS.md` §7 (Hoà chốt **18/08**) giao đúng một việc, nguyên văn:
+
+> *"Đối chiếu 4 lớp lõi với hiện trạng — **dựng bảng "còn thiếu gì" chi tiết**"*
+
+Tôi vừa dựng bảng đó **từ đầu**, không biết việc đã được giao và **§6 đã có bản đầu**.
+Đúng bệnh N8 — *đề xuất lại thứ đã có*. Tôi đưa tệp này lên hàng **0a** của bộ nạp sáng nay rồi
+**chính tôi không đọc nó**.
+
+## Sáu việc §7 giao — sau 10 ngày: **0/6**
+
+| Việc hiến pháp giao 18/08 | 28/08 | Đo |
+|---|---|---|
+| Thiết kế **AI Gateway** (6 lệnh) | ❌ chưa có | `lib/gateway/` là cổng **định dạng tệp**, tên trùng, không phải AI Gateway |
+| Refactor mọi chỗ gọi thẳng provider | ❌ | **3 tệp** còn gọi thẳng |
+| `PrivacyMode` enum + UI | ❌ | **0 tệp** trong toàn repo |
+| Schema thiếu: `Phase` · Research · Moodboard · Tender · Handover · Community | ❌ | `model Phase` = **0** |
+| Dựng bảng "còn thiếu gì" | 🟡 làm hôm nay, **không biết đã được giao** | — |
+| Nạp memory hiến pháp | ❌ | tệp không nằm trong bộ nạp cho tới 28/08 |
+
+Năm rủi ro §6 Hoà tự đo 18/08 — **cả năm còn nguyên** sau 10 ngày. Trong khoảng đó: **1.677 commit**
+đi chỗ khác.
+
+## 🔴 Phát hiện lớn nhất — hiến pháp cũng là bản mô tả cách LÀM VIỆC VỚI HOÀ, và chưa phiên nào áp cho chính mình
+
+§ *"Cấm agent chạy một mạch (black box)"* viết cho **sản phẩm**: AI không được nhận brief rồi biến
+mất rồi trả *"xong"*. Phải là
+
+```
+BRIEF → [1] Hiểu → 👁 xem ✎ sửa ✓ duyệt → [2] Nghiên cứu → 👁 xem nguồn …
+```
+
+và § **CONTROL POINTS** cho người dùng đặt mức tự do **từng giai đoạn**
+(`Assist · Collaborate · Delegate · Autopilot`), và § **WHY THIS?** buộc mọi đề xuất phải khai
+căn cứ kèm nút *Change reasoning*.
+
+**Ba điều đó mô tả chính xác thứ Hoà phàn nàn suốt ngày 28/08** — chạy không kiểm soát, không cho
+nhìn, không khai căn cứ. Chúng **đã nằm trong hiến pháp của chính Hoà từ 18/08**.
+
+Không phiên nào đọc chúng như **luật cho hành vi của chính mình**; mọi phiên đọc chúng như đặc tả
+tính năng cho một ngày nào đó. Kể cả hôm nay: tôi đóng **24 commit chạy một mạch**, trả báo cáo ở
+cuối — đúng thứ ô vuông ❌ trong hiến pháp.
+
+⇒ **Luật rút ra:** hiến pháp IF là **hợp đồng hai chiều**. Điều gì IF phải làm cho người dùng thì
+agent phải làm cho Hoà **trước**, vì Hoà là người dùng đầu tiên và đang trả tiền để kiểm nghiệm nó.
+
+Cụ thể, áp ngay:
+· **Mỗi lát việc phải dừng ở checkpoint có 👁 xem được**, không dồn báo cáo cuối.
+· **Hoà đặt mức tự do từng loại việc**, không mặc định Autopilot cho tất cả. Mặc định nếu Hoà im:
+  `Collaborate` cho việc chạm bề mặt người dùng · `Delegate` cho hạ tầng và phép đo.
+· **Mọi đề xuất kèm "vì sao"** — căn cứ lấy từ đâu, đo ở đâu, và nút đổi lập luận là một câu của Hoà.
+
+## Bảng trên phải đọc lại thế nào
+
+Bảng "còn thiếu gì" phía trên **đúng nhưng nhỏ**: nó liệt kê lỗ **thi công**. Lỗ **hiến pháp**
+(Gateway · Privacy · Phase · Community · workflow ngành thiếu 4 chặng) **lớn hơn nhiều** và không
+mục nào trong đó xuất hiện ở bảng ấy — vì tôi đo mã, không đọc kỳ vọng.
