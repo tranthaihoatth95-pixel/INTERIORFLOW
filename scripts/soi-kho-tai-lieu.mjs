@@ -12,7 +12,7 @@
  *   ③ TÊN KHẢO CỔ — tên mang ngày tháng hoặc tên máy sinh ra nó, không phải câu hỏi nó trả lời.
  *   ④ TRÙNG NỘI DUNG — cùng sha256, khác đường dẫn. Hai bản thật, phân kỳ chờ sẵn.
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
@@ -81,3 +81,40 @@ for (const t of moCoi.map((t) => ({ t, s: statSync(t).size })).sort((a, b) => b.
   console.log(`  ${String(Math.round(t.s / 1024)).padStart(4)} KB  ${r(t.t)}`);
 }
 console.log('\nKhông tệp nào bị dời, đổi tên hay xoá trong lượt chạy này.');
+
+/* ── BÁNH CÓC MỒ CÔI — cơ chế "KHÔNG ĐẺ" ──────────────────────────────────────────────────────
+ * Hoà 28/08: *"trí nhớ không có, lưu thì sai chỗ rải rác khắp các thư mục… gốc bệnh nằm ở trí
+ * nhớ. Làm sao cho khôn: cách mở mục KHÔNG ĐẺ, và xếp gọn theo mỗi chu kì."*
+ *
+ * Hai chữ đó là hai cơ chế khác nhau, và một bánh cóc làm được cả hai:
+ *   · **không đẻ**  — tạo một tệp mà không tệp nào trỏ tới ⇒ số mồ côi TĂNG ⇒ **ĐỎ, chặn**.
+ *                     Muốn thêm tệp thì phải nối nó vào một chỗ có người đi, **trong cùng lượt**.
+ *   · **xếp gọn**   — mỗi lần dọn thật thì HẠ trần xuống. Trần chỉ đi một chiều.
+ *
+ * ⚠️ Đây là cổng **CHẶN**, không phải cảnh báo — đúng bài học vừa trả giá 28/08:
+ * **dây cảnh báo không dẫn điện** (`IF-MOT-LOI.md` §bác bỏ). Cổng cảnh báo để 4 vi phạm nằm
+ * nguyên; cổng chặn giữ được 0.
+ *
+ * ⚠️ Và cấm nới trần để qua cổng — nới lên là tháo ngòi dây bẫy (M-52). Nối tệp mới vào, hoặc
+ * dọn một tệp cũ. Hai đường, không có đường thứ ba. */
+{
+  const tranTep = path.join(REPO, 'scripts/foundation-tran.json');
+  if (existsSync(tranTep)) {
+    const tran = JSON.parse(readFileSync(tranTep, 'utf8'));
+    const tr = tran['F-MO-COI'];
+    if (typeof tr === 'number') {
+      console.log(`\nBÁNH CÓC MỒ CÔI  ${moCoi.length} / trần ${tr}`);
+      if (moCoi.length > tr) {
+        console.log(`🔴 VƯỢT TRẦN ${moCoi.length - tr} tệp — có tệp vừa sinh ra mà KHÔNG AI TRỎ TỚI.`);
+        console.log('   Hai đường, không có đường thứ ba:');
+        console.log('     · NỐI tệp mới vào một chỗ có người đi (mục lục, bộ nạp, tệp đang sống)');
+        console.log('     · hoặc DỌN một tệp mồ côi cũ');
+        console.log('   ⛔ CẤM nới trần để qua cổng — nới lên là tháo ngòi dây bẫy (M-52).');
+        process.exit(1);
+      }
+      if (moCoi.length < tr) {
+        console.log(`✅ Thấp hơn trần ${tr - moCoi.length} tệp — hạ trần xuống ${moCoi.length} trong foundation-tran.json.`);
+      }
+    }
+  }
+}
