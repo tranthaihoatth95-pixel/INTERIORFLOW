@@ -96,3 +96,10 @@ Cùng khuôn đọc-ngược-thao-tác dùng lại được cho phần còn lạ
 
 **Nguyên tắc chung: mỗi lệnh CAD là một phép biến đổi có nghịch đảo. Đọc bản vẽ = giải ngược chuỗi
 lệnh mà người vẽ đã chạy.**
+
+## Ảnh đối chiếu — nhìn được bằng mắt
+
+`anh/dao-trim-03_TANG5B.svg` — cùng một bản vẽ, hai trạng thái:
+**trên** 972 mảnh rời (mỗi màu = một đối tượng, đó là thứ lệnh `TRIM` để lại) ·
+**dưới** 262 bức tường liền sau khi đảo ngược. Tổng chiều dài gần như không đổi
+(1139,2 → 1128,9 m) — bằng chứng không ăn mất tường.
