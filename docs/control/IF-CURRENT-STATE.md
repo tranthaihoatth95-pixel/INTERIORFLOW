@@ -45,7 +45,28 @@ Hoà (`IF-CANONICAL` §2). Hai phiên cùng tự xưng ⇒ **cả hai DỪNG GHI
 
 ## 🎯 VIỆC KẾ TIẾP — **một việc, không phải danh sách**
 
-**Wave S1 · mục 2 — `W1-ASSET-REPRESENTATION-SCOPE-001` đã XONG (`ef0f2d6`, proof 20/20).**
+🔄 **CẬP NHẬT 28/08 — HEAD `cf96bf6`.** Câu dưới (Wave S1/S2) là bản 27/08, giữ làm dấu vết.
+
+**Việc kế tiếp: đo L2-01 trên chính `next start`.**
+Phép đo 28/08 (`docs/design-candidate/IDF-IF-PACKET-003/sqlite/01-L2-01-CHAN-DOAN.md`,
+6,2 triệu lượt / 45 phút / 3 arm) **KHÔNG tái hiện được cú kẹt**, kể cả arm mang đúng điều kiện
+27/08. ⇒ Bậc bằng chứng còn lại: chạy tải hỗn hợp qua HTTP trên `next start` với phiên đăng nhập
+thật — đó là nơi bệnh đã xảy ra. Ngoài nó chỉ thu hẹp nghi ngờ, không đóng được ca.
+
+**P0-2 đã ĐÓNG** (`b7c836b`): bốn trạng thái trên `/projects` `/materials` `/tasks` · Vitals ·
+Home modal người-mới (L2-06) · dải Dự án thôi nói dối con số (L2-07).
+
+**F3 — mắt xích `.idfc → 3D` nay BỊ KHOÁ BỞI QUYẾT ĐỊNH, không phải bởi thiếu hiểu biết.**
+Tôi đo và commit (`4712a38`); lane Design biến nó thành `IF-DEC-IDFC-3D-001`, Quality bác v0.1
+rồi chấp nhận v0.2 là **ACCEPTED CANDIDATE · BUILD BLOCKED** (cổng G1–G7). Hai bản đã nhập repo:
+`docs/design-candidate/IF-DEC/`. ⛔ **MAIN KHÔNG được thi công mục PROPOSED trong bản đo của
+chính mình** — đó đúng là thứ đang bị cổng chặn.
+
+**DWG đã gắn cờ TẮT** (`ca0eb7c`) + cổng `npm run soi:giay-phep` chặn mọi `electron:build*`.
+Tắt cờ **không** gỡ 19,1 MB mã GPL khỏi bộ cài — việc gỡ khỏi artifact vẫn còn nợ.
+
+---
+*(bản 27/08, dấu vết:)* **Wave S1 · mục 2 — `W1-ASSET-REPRESENTATION-SCOPE-001` đã XONG (`ef0f2d6`, proof 20/20).**
 ⇒ Việc kế tiếp: **Wave S2 · lát F3** — `.idfc` → 2D → 3D → BOQ → Present → export/reopen,
 đi trọn một đường end-to-end **trước khi** dựng thêm bất cứ tính năng song song nào.
 
