@@ -30,6 +30,12 @@ Repo này có ~700 tệp tài liệu. Quét lại từ đầu mỗi phiên là c
 
 ## 🔧 MẠCH LÀM VIỆC — sơ đồ, mọi agent phải đi qua
 
+⚠️ **Phần CHUNG không sống trong repo này.** Nó ở `~/PROJECT/SHARED/PLAYBOOK/std_dung-san-pham-voi-doi-ai.md`
+— 4 bất biến · 5 tuyến · vòng 5 nhịp · 10 công thức · 9 tính chất · 7 khuôn máy, **bắc ngang mọi
+dự án**. Hoà bắt 28/08: *"mạch làm việc cho IF thôi à?"* — tri thức chung nằm trong control plane
+của **một sản phẩm** thì dự án sau không bao giờ đọc tới, tức nó chết đúng kiểu đã chết 57 ngày đầu.
+Trong repo này chỉ giữ phần **riêng của IF**.
+
 **Sơ đồ cho MẮT** (Hoà + người duyệt): https://claude.ai/code/artifact/3741f2cb-5409-448e-9412-d4b44c1aea2e
 **Bản cho MÁY** (agent đọc cái này, không đọc được artifact):
 `docs/control/AI-LA-AI-CHU-LA-GI.md` — ai là ai · hai câu sàng · **§4b tính chất phải mang** ·
