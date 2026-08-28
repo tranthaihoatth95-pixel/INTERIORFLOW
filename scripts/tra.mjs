@@ -67,8 +67,8 @@ for (const l of lop) console.log(`   [${l.ma}] ${l.ten}\n       thuốc chung: $
 
 console.log(`\n② ĐÃ TỪNG XỬ LÝ NHÓM NÀY CHƯA — tra ${NGUON.length} nguồn trong kho`);
 if (!thay.length) {
-  console.log('   🟡 KHÔNG THẤY trong kho.');
-  console.log('   ⇒ Bây giờ MỚI được ra web. Và tìm xong thì:');
+  console.log('   🟡 KHÔNG THẤY trong kho TỆP.');
+  console.log('   ⛔ CHƯA được ra web. Còn KHO THỨ BA chưa tra — xem dưới.');
   console.log('       · thêm một dòng vào docs/control/IF-HOI-DAP.md');
   console.log('       · nếu là lỗi: ghi vào sổ lỗi kèm LỚP nó thuộc, không đẻ mục mới cho cùng một lớp');
 } else {
@@ -77,3 +77,16 @@ if (!thay.length) {
   if (thay.length > 8) console.log(`   … còn ${thay.length - 8} chỗ`);
   console.log('   ⛔ Chưa được ra web khi phần này chưa đọc hết.');
 }
+
+/* ═══ KHO THỨ BA — máy này KHÔNG với tới, agent phải tự tra ═══════════════════════════════════ */
+console.log(`\n③ KHO THỨ BA — 109 phiên chat · 1,3 GB nguyên văn`);
+console.log('   Máy này KHÔNG đọc được kho đó (nó nằm sau công cụ MCP, không phải tệp).');
+console.log('   Agent PHẢI tự gọi:  mcp__ccd_session_mgmt__search_session_transcripts');
+console.log('');
+console.log('   ⚠️ Vì sao bước này bắt buộc, đo được 28/08: chẩn đoán gốc bệnh của IF');
+console.log('      (bản vẽ thật → 3D ra rỗng) đã nằm trong tầm tay TỪ 07/08 và 15/08 —');
+console.log('      hai phiên đã mở ĐÚNG hai tệp 03_TANG5B-TTT.dxf và 05_TANG9-TTT.dxf,');
+console.log('      và một phiên đã ghi "poché tường 126–161 mảng/file KHÔNG neo vào cấu kiện".');
+console.log('      Ba tuần sau phải đo lại từ đầu, vì không ai tra kho đó.');
+console.log('');
+console.log('   Chỉ khi CẢ BA kho đều trống mới được ra web.');

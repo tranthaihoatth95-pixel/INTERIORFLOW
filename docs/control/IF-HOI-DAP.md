@@ -28,12 +28,25 @@ thêm một dòng vào bảng dưới, trỏ tới nó. **Kho tự dọn theo nh
 ## Lệnh nghiên cứu — thứ tự bắt buộc
 
 ```
-① tra bảng dưới          → đã có ai trả lời câu này chưa?
+① tra bảng dưới          → đã có ai trả lời câu này chưa?          (npm run tra)
 ② tra kho ngoài repo     → ~/PROJECT · Drive · interiorflow-reference
-③ mới ra ngoài tìm       → và chỉ tìm ĐIỀU MỚI, không tìm lại điều đã biết
-④ tư vấn                 → kèm phần ① đã có, để Hoà thấy cái gì cũ cái gì mới
-⑤ ghi câu hỏi mới vào bảng này
+③ TRA 109 PHIÊN CHAT     → mcp__ccd_session_mgmt__search_session_transcripts
+④ mới ra ngoài tìm       → và chỉ tìm ĐIỀU MỚI, không tìm lại điều đã biết
+⑤ tư vấn                 → kèm phần ①②③ đã có, để Hoà thấy cái gì cũ cái gì mới
+⑥ ghi câu hỏi mới vào bảng này
 ```
+
+### 🔴 Bước ③ là bước đắt nhất khi bỏ qua — đo được 28/08
+
+`~/.claude/projects/…/` giữ **109 phiên · 1,3 GB nguyên văn**. Không ai từng mở lại.
+
+Chẩn đoán **gốc bệnh của IF** (bản vẽ thật vào, 3D ra rỗng) đã nằm trong tầm tay **từ 07/08 và
+15/08**: hai phiên đã mở **đúng** `03_TANG5B-TTT.dxf` và `05_TANG9-TTT.dxf`, và một phiên đã ghi
+*"poché tường **126–161 mảng/file** KHÔNG neo vào cấu kiện"* — con số khớp chính xác phép đo
+28/08 (126 và 147 hatch).
+
+**Ba tuần, hai lần nhìn thấy, rồi phải đo lại từ đầu** — chỉ vì không ai tra kho đó.
+Đây là cơ chế Hoà mô tả: *"rất nhiều cái rất tinh rất hay đã từng được xây dựng"* rồi mất.
 
 Bỏ bước ① là cơ chế đẻ ra *"đề xuất lại thứ đã có"* (luật N8) — và đó là thứ đã tiêu tiền của Hoà.
 
