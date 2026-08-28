@@ -109,8 +109,20 @@ for (const tep of tepDocs) {
     if (m) {
       try {
         const xa = Number(execFileSync('git', ['rev-list', '--count', `${m[1]}..HEAD`], { encoding: 'utf8' }).trim());
-        if (xa > 5) {
-          canhBao.push(`L6 · ${xa} commit kể từ mốc gần nhất (\`${m[1]}\`) — phần tinh đang chỉ nằm trong context.
+        // 28/08 — NGƯỠNG THEO COMMIT LÀ SAI, tự chứng minh: 21 commit / 3 mốc mà L6 vẫn im.
+        // Commit đo *khối lượng đã ghi*, không đo *độ dài cuộc trò chuyện* — mà thứ bị nén là
+        // cuộc trò chuyện. Thêm trục THỜI GIAN: nó bám sát độ dài phiên hơn hẳn.
+        // (Hoà chỉ ra con số context 583k/1M CÓ TỒN TẠI trên giao diện, chỉ là không đi vào
+        //  chỗ MAIN. Chừng nào chưa có đường đó, thời gian là proxy tốt nhất đo được.)
+        const phut = (() => {
+          const g = cuoi.match(/^\|\s*(\d{4}-\d{2}-\d{2} \d{2}:\d{2})/);
+          // `moc.mjs` ghi bằng `toISOString()` ⇒ giờ UTC. Thiếu chữ `Z` thì JS đọc thành giờ
+          // ĐỊA PHƯƠNG và lệch đúng bằng múi giờ — 420 phút ở UTC+7. Đây là lớp lỗi B của chính
+          // tôi (đúng thao tác, sai khung quy chiếu), bị máy này bắt ngay lượt chạy đầu.
+          return g ? Math.round((Date.now() - new Date(g[1].replace(' ', 'T') + 'Z').getTime()) / 60000) : 0;
+        })();
+        if (xa > 5 || phut > 90) {
+          canhBao.push(`L6 · ${xa} commit${phut > 90 ? ` · ${phut} phút` : ''} kể từ mốc gần nhất (\`${m[1]}\`) — phần tinh đang chỉ nằm trong context.
        Đóng mốc: \`npm run moc "chủ đề" "một dòng"\`. Nén tới lúc nào cũng được nếu đã đóng.`);
         }
       } catch { /* mốc trỏ tới commit không còn — bỏ qua, không kêu oan */ }
