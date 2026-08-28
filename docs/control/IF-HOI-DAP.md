@@ -103,6 +103,7 @@ sau tin nhầm.
 | Câu hỏi | Trả lời ở | Còn đúng không |
 |---|---|---|
 | DWG có ship được không, vướng gì? | `docs/design-candidate/IDF-IF-PACKET-003/dwg/01-DWG-LICENSE-FIDELITY.md` | ✅ đo 28/08 · cờ đã tắt |
+| Người vẽ CAD thao tác thế nào · AI vẽ CAD thế nào? | `docs/nc/NC-DOC-NGUOC-THAO-TAC-VE-2026-08-28.md` | ✅ khảo 28/08 — **ý định người vẽ là TRỤC + BỀ DÀY; hai đường song song là sản phẩm phụ của `OFFSET`**. Đầu vào vector ⇒ dùng hình học, **không** dùng học sâu |
 | Máy không có AutoCAD thì nhập DWG kiểu gì? | `lib/cad/dwg-flag.ts` (đầu tệp) | ✅ ba đường, không nêu tên hãng |
 | Vì sao server kẹt sau 6 phút? | `docs/design-candidate/IDF-IF-PACKET-003/sqlite/01-L2-01-CHAN-DOAN.md` | ⚠️ **chưa tái hiện được** — 6,2 triệu lượt, 0 arm kẹt |
 | `.idfc` có ra được 3D không? | `docs/design-candidate/IDF-IF-PACKET-003/f3/01-IDFC-TO-3D-GAP.md` | ✅ đo 28/08 — **đứt**, `geom3d.heightMm` 3 nơi ghi 0 nơi đọc |
