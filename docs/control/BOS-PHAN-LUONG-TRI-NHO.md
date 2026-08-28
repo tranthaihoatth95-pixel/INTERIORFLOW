@@ -58,3 +58,50 @@ tệp một lần**, kèm sửa mọi chỗ trỏ tới. **Kho tự dọn theo n
 
 `soi:quan-tri` luật **L7** — mọi tệp trong `docs/control/` phải khai `Plane:` trong 15 dòng đầu.
 Vàng, không đỏ: thiếu khai là *chưa phân loại*, không phải *sai*.
+
+---
+
+## Bảng mã luật — luật nào thuộc tuyến nào
+
+> Hoà 28/08: *"phần luật có vẻ cứ lẫn lẫn giữa luật design system, luật vận hành, luật làm việc
+> của đội build. Và việc tôi không thấy nhắc mã hoặc tên chủ đề trước câu trả lời — tôi biết cái
+> đó chưa được thực thi theo luật trung tính vừa bàn → là mầm mống lẫn lộn cho tương lai."*
+>
+> Đúng cả hai vế. Tuyến đã khai cho **tệp**; **hệ mã luật** thì chưa, và **câu trả lời** thì chưa.
+
+### 🔴 Hai vụ đụng mã — đo 28/08
+
+| tiền tố | nghĩa 1 | nghĩa 2 | hậu quả |
+|---|---|---|---|
+| **`F-*`** | **23 lỗi đã trả giá** — `F-15` · `F-22` · `F-23`, sổ `02-FAILURE-LEDGER.md` | **7 họ luật nền** — `F-NHAN-BIA` · `F-ICON-STROKE`, bánh cóc `foundation-tran.json` | một cái là **quá khứ**, một cái là **luật đang sống** |
+| **`T-*`** | **8 luật trật tự** — `T2` · `T6`, `IF-TRAT-TU-MOI.md` | **3 trần bánh cóc** — `T-keydown-ne-o-nhap` | một cái là **luật**, một cái là **hạn nợ** |
+
+**Chưa đổi mã ngay** — đổi tiền tố là gãy mọi tham chiếu (lớp lỗi B), và `F-*` đã nằm trong 23 mục
+sổ lỗi cùng hàng chục chỗ trỏ tới. Xử đúng cách đã dùng cho tên tệp: **phân biệt bằng bảng, không
+bằng đổi tên.** Mã mới thì tránh hai tiền tố này.
+
+### Bảng đầy đủ
+
+| mã | số | nghĩa | sổ | tuyến |
+|---|---|---|---|---|
+| `M-*` | 42 | sai lầm **thiết kế** đã trả giá | `IF-UXUI-OPERATING-MEMORY.md` | **IF** — sai về sản phẩm |
+| `F-01…F-23` | 23 | sai lầm **thi công** đã trả giá | `02-FAILURE-LEDGER.md` | **BOS** — sai về công trường |
+| `F-<TÊN>` | 7 | **họ luật nền** đang sống + bánh cóc | `foundation-tran.json` | **IF** — ràng buộc lên sản phẩm |
+| `T-<tên>` | 3 | **trần nợ** thao tác | `foundation-tran.json` | **IF** |
+| `T1…T8` | 8 | **luật trật tự** làm việc | `IF-TRAT-TU-MOI.md` | **BOS** |
+| `L1…L7` | 7 | luật máy quản trị | `soi-quan-tri.mjs` | **BOS** |
+| `B25` · `N8` | 2 | luật nền cách làm | `CLAUDE.md` | **BOS** |
+| `IF-DEC-*` · `EV-*` · `DISS-*` | — | thẻ quyết định + bằng chứng | `IF-ADVICE-VERIFICATION-GATE.md` | **cả hai** — thẻ tự khai `Plane` |
+
+**Cách đọc nhanh, không cần nhớ bảng:** *lỗi này nếu sửa thì sửa ở đâu?*
+Sửa **mã sản phẩm** ⇒ tuyến `IF`. Sửa **cách đội làm việc** ⇒ tuyến `BOS`.
+
+### Luật cho CÂU TRẢ LỜI — phần chưa ai thi hành
+
+Tuyến khai cho tệp mà **không khai cho lời nói** thì lẫn lộn vẫn tiếp tục, chỉ là ở chỗ khác.
+
+> **Mỗi lượt trả lời mở đầu bằng một dòng: `<TUYẾN> · <chủ đề>`**
+> `BOS · làm bù` · `IF · nhập DXF` · `HOA · việc công ty` · `CLIENT · hồ sơ khách`
+
+Một dòng, không giải thích. Người đọc nhìn dòng đầu là biết máy **đang đứng ở tầng nào** — và
+biết ngay khi máy **đứng nhầm tầng**.
