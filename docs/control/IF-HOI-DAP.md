@@ -143,3 +143,5 @@ ngăn "gộp cái bẩn vào người".
 
 Trả lời xong một câu hỏi mà bảng này chưa có → thêm **một dòng**, không viết thêm tài liệu tổng
 kết. Bảng dài ra là kho đang khoẻ; kho đẻ thêm tệp tổng kết mới là kho đang ốm.
+
+| chia việc cho nhiều phiên thế nào, ai được ghi | `IF-VUNG-BOI-CANH.md` |
