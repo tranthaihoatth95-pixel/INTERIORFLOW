@@ -7,7 +7,7 @@
  *
  * QUAN HỆ CANONICAL, đo trên dữ liệu thật trước khi sửa:
  *   · `Flow.projectId` là **`String?`** — flow CÓ THỂ không thuộc dự án nào.
- *   · **42/48 flow đang sống KHÔNG có `projectId`.** Flow độc lập là chuyện THƯỜNG.
+ *   · **32/52 (**sửa 28/08** — `42/48` là số nhớ từ phiên trước, chưa đo lại; đo thật: 32/52) flow đang sống KHÔNG có `projectId`.** Flow độc lập là chuyện THƯỜNG.
  *   · App **không có route trang nào** cho một flow độc lập — quét mọi `page.tsx` trong
  *     `app/` cho 0 hit `flows/[id]` ⇒ **PRODUCT MISSING**. Không bịa URL cho ca đó.
  *

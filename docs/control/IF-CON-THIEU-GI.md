@@ -40,7 +40,7 @@ và lộ ra một mục **không có trong bất kỳ bảng nào trước đó*
 |---|---|---|---|
 | **90 chỗ ghi `localStorage`, 0 bảng thiết lập trong schema** | **0** — Hoà làm một máy, không ai thấy | 🔴 **rất cao** — đăng nhập trên máy thứ hai là **mất sạch** tên hiển thị · chế độ xem · nháp · luật tuỳ chỉnh · lịch sử. App trông như chưa từng dùng. Và nó **vi phạm nguyên tắc số 1 của hiến pháp — *Own your data*** (dữ liệu người dùng đang thuộc về một **hồ sơ trình duyệt**) | **đúng ngày cài lên máy TTT** — tức đúng mốc Hoà đặt ra |
 | Tên bịa in lên ảnh gửi khách (`lib/imaging.ts`) | 1 dòng chữ sai | cao — tên sai trên hồ sơ đã gửi, không rút lại được | mỗi lần xuất · **đã sửa 28/08** |
-| Tên giả đúc vào DB (`api/flows`) | 42/48 flow mang tên rác | cao — lan ra mọi tầng, vĩnh viễn | **đã sửa 28/08** |
+| Tên giả đúc vào DB (`api/flows`) | 32/52 (**sửa 28/08** — `42/48` là số nhớ từ phiên trước, chưa đo lại; đo thật: 32/52) flow mang tên rác | cao — lan ra mọi tầng, vĩnh viễn | **đã sửa 28/08** |
 | Bản vẽ nghề vào → 1 khối ra | pilot không dùng được | cao — nhưng **biết rồi**, đã đo, đã có đường chữa | trước pilot |
 | Mã GPL trong bộ cài | 0 | 🔴 rất cao — **pháp lý**, không lùi được sau khi giao | **lần đầu giao installer** |
 | 93 chỗ `?? 0` | 0 | thấp ở đường tiền — **đo 28/08: `lib/boq/` sạch, 0 chỗ bịa số** | — |

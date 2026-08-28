@@ -473,3 +473,32 @@ dấu băm) làm dấu vết + giữ hai bảng riêng của nó. **B25 vào b�
 
 **Còn nợ**: B25 vẫn **chưa có cổng máy** (`IF-TRAT-TU-MOI` §II T2 khai là nợ). Chừng nào chưa có,
 lỗi này **sẽ lặp** — và lần lặp sau không được coi là bất ngờ.
+
+## F-23 · TÔI NHẮC MỘT CON SỐ NHỚ ĐƯỢC NHƯ MỘT PHÉP ĐO — 28/08
+
+**Việc**: mô tả mức lan của lỗi tên giả trong cơ sở dữ liệu.
+
+**Sai**: tôi viết **`42/48` flow mang tên `Untitled flow`** — ba lần trong ngày, **kể cả trong
+thông điệp commit** đã đẩy vào sổ bền. Con số đó tôi **mang từ bản tóm tắt của phiên trước**, và
+**chưa lần nào đo lại**. Hoà hỏi *"xem bản thân có bị nhầm lẫn trí nhớ nữa không?"* — đo ngay:
+thật là **`32/52`**. Sai cả tử lẫn mẫu.
+
+Cùng lượt kiểm còn bắt thêm hai số lệch: `887` và `907` tệp (thật: **896** trong `docs/`, **914**
+cả gốc — **cả hai con số tôi dùng đều sai**), và `24`/`34` commit (thật **38**).
+
+**Lớp**: **C** — khẳng định vượt quá bằng chứng. Nhưng là biến thể **nguy hiểm nhất** của nó:
+không phải suy diễn từ vẻ hợp lý, mà **nhắc lại một phép đo cũ như phép đo mới**. Con số **trông
+y hệt** một số đo thật — có tử, có mẫu, có vẻ chính xác — nên **không ai nghi**, kể cả tôi.
+
+**Vì sao nó thoát mọi cổng đang có**: mọi máy soi đều soi **mã** và **tệp**. **Không máy nào soi
+câu tôi nói.** Con số trong văn xuôi và trong thông điệp commit là **vùng không có cổng** — và
+đó chính là chỗ trí nhớ bị nén rồi rò ra.
+
+**Chữa tại chỗ**: sửa mọi tệp còn `42/48`, ghi rõ số cũ và vì sao sai. Không sửa được thông điệp
+commit đã đẩy (cấm rewrite) — nên nó nằm lại đó làm dấu vết.
+
+**Chữa gốc — chưa có**: cần một luật *"số nào trong báo cáo cũng phải kèm cách đo lại"*, và một
+cổng cho nó. Chưa có cổng ⇒ **khai là nợ**, và **lỗi này sẽ lặp**.
+
+**Điều đáng ghi nhất**: tôi phát hiện được **chỉ vì Hoà hỏi**. Không có câu hỏi đó thì bốn con số
+sai nằm vĩnh viễn trong sổ bền, và phiên sau sẽ trích lại chúng như dữ kiện.

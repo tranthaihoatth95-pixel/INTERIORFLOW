@@ -66,6 +66,8 @@ Không chỉ số nào trong repo đo con số cuối. Nên 57 ngày trôi qua m
 > **Một luật chỉ là luật khi có đủ BA thứ: chỗ được nạp · một cổng · một ca đột biến chứng minh
 > cổng bắt được. Thiếu một là lời chúc.**
 
+🔴 **SỬA 28/08 sau phép bác bỏ:** một cổng **chỉ cảnh báo** là **nửa sợi dây** — đo được: cổng CHẶN giữ được 0 vi phạm, cổng CẢNH BÁO để 4 vi phạm nằm nguyên. Cảnh báo chỉ là **trạm tạm, phải có ngày hạn lên chặn**; không có ngày hạn thì nó nằm đó mãi và ta tưởng đã nối.
+
 Hôm nay chứng minh cả ba đều cần: B25 thiếu **chỗ nạp** ⇒ vi phạm 13 lần.
 M-41 có chỗ nạp nhưng thiếu **cổng** ⇒ vẫn vi phạm. Một máy canh chưa ai thử làm hỏng nó thì
 không biết nó có canh gì không ⇒ thiếu **ca đột biến**.
@@ -78,7 +80,7 @@ không biết nó có canh gì không ⇒ thiếu **ca đột biến**.
 | **T2** | **LOOK INSIDE trước khi tạo mới** (B25). Vùng dày: mặc định REUSE/CONNECT/TUNE. NEW đòi bằng chứng phủ định | 🔴 **chưa có cổng** — xem dưới | ❌ |
 | **T3** | **Tra ba kho trước khi ra web**: bảng câu hỏi · kho ngoài repo · 109 phiên | `npm run tra` + `IF-HOI-DAP.md` | 🟡 một phần — máy không với tới kho phiên, tự khai |
 | **T4** | **Mỗi thư mục phải có người quyết**: tracked hoặc ignored-kèm-lý-do. Không có trạng thái thứ ba | `npm run soi:thu-muc` | ✅ có · kiểm ngược xong |
-| **T5** | **Ghi phần tinh liên tục, không chờ nén.** Mốc trỏ vào bản ghi nguyên văn | `soi:quan-tri` L6 (>5 commit **hoặc** >90 phút) | ✅ có · kiểm ngược xong |
+| **T5** | **Ghi phần tinh liên tục, không chờ nén.** Mốc trỏ vào bản ghi nguyên văn | `soi:quan-tri` L6 (>5 commit **hoặc** >90 phút) | 🟡 **nửa dây** — chỉ cảnh báo |
 | **T6** | **Không đưa Hoà quyết định thiếu hai câu sàng** (thứ kiểm được + điều gì xảy ra nếu im lặng) | 🔴 **chưa có cổng** | ❌ |
 | **T7** | **Cửa vào từ thế giới ngoài đo bằng tỉ lệ sống sót**, không bằng "có đọc được không" | `scripts/proof/ti-le-song-sot.ts` — chạy tay, chưa nối cổng | 🟡 |
 

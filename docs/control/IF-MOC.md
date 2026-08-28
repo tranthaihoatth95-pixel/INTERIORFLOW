@@ -23,3 +23,7 @@
 | 2026-08-28 05:15 | **Phân luồng trí nhớ 5 tuyến + cổng L7** | 11/17 tệp control là BOS nhưng mang tên IF-; khai tuyến bằng 1 dòng thay vì đổi tên; kiểm ngược xong | `d9be409` | `0ffcd43c` d.11551 |
 | 2026-08-28 05:20 | **Hợp nhất chỉ mục + F-22 + luật mang-lại-vào** | smartboard≡hoi-dap, hợp nhất; ghi F-22 lỗi tự đẻ trùng; nối hồ sơ đã-từng-bỏ; ST5 không phạm luật | `21bbe20` +1 bẩn | `0ffcd43c` d.11615 |
 | 2026-08-28 05:38 | **F-NHAN-BIA: cấm bịa danh tính + 9 chỗ sửa gốc** | mầm 17 chỗ; nguồn là API đúc tên giả vào DB và imaging in lên ảnh gửi khách; thước sửa 2 lần | `695c61e` +1 bẩn | `0ffcd43c` d.11770 |
+| 2026-08-28 05:46 | **Rủi ro theo thiệt hại tương lai + gỡ nhãn tự bịa** | 90 localStorage / 0 bảng thiết lập = mất sạch khi cài máy khác, vi phạm Own your data; tôi không phải lần đầu chạy trọn vòng | `b25e686` | `0ffcd43c` d.11810 |
+| 2026-08-28 05:52 | **Mạch làm việc: sơ đồ + tính chất agent vào bộ nạp** | artifact 5 mạch vẽ cả cổng HỞ; 9 tính chất kèm vết trượt thật; cả hai đường vào CLAUDE.md | `17d8854` +1 bẩn | `0ffcd43c` d.11852 |
+| 2026-08-28 05:57 | **Một bản kiến trúc: tầng chung + phả hệ + công cụ + công thức** | 4 bất biến cho mọi sản phẩm; phả hệ 7 dòng chứng minh không phát minh gì mới; 20 máy/23 proof/18 sổ/5 công cụ ngoài | `05492d9` +1 bẩn | `0ffcd43c` d.11895 |
+| 2026-08-28 06:05 | **GỐC BỆNH: tạo mà không nối** | tỉ lệ tạo÷nối giống nhau ở mọi ca; 11/16 máy soi chưa từng chạy; nối 8, khai 3 nợ có số | `b62b3c5` +1 bẩn | `0ffcd43c` d.11972 |

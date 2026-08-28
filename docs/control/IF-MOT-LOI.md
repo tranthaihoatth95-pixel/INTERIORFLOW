@@ -150,3 +150,30 @@ nó không canh gì cả; nó chỉ là một tệp.
 · **3 máy đang đỏ** (`check:mocks` · `soi:thao-tac` · `soi:design-school`) **không** nối vào —
   nối lúc này là chặn mọi lane. Chúng thành **nợ CÓ SỐ**: `npm run no:chua-noi` in ra tên chúng.
   **Sửa cho xanh rồi nối; cấm nới luật để nối được.**
+
+## Đã thử BÁC BỎ giả thuyết — 28/08, Hoà yêu cầu
+
+*"Đã test xác suất chưa? Xem bản thân có bị nhầm lẫn trí nhớ nữa không?"*
+
+Khớp mọi ca **không phải là đúng** — đó chính là lớp lỗi C. Nên thử giết giả thuyết:
+**nếu "nối dây" là gốc, thì thứ ĐÃ NỐI phải giữ được và thứ CHƯA NỐI phải vỡ.**
+
+| dây loại gì | kết quả đo |
+|---|---|
+| cổng **CHẶN** — `T8` `F-NHAN-BIA` | **giữ** · 0 vi phạm |
+| cổng **CẢNH BÁO** — `T4` `soi:thu-muc` | **vẫn 4 vi phạm** nguyên đó |
+| cổng **CẢNH BÁO** — `T5` `L6` | 37 commit / 16 mốc — đỡ hơn, vẫn hụt |
+| **không cổng** — `T2` `B25` | 13 vi phạm trong một ngày |
+
+**Giả thuyết không chết, nhưng bị SỬA — và bản sửa quan trọng hơn bản gốc:**
+
+> Không phải *"nối hay không nối"*. Là **"nối bằng dây gì"**.
+> **Dây cảnh báo không dẫn điện.**
+
+⚠️ Và đây là chỗ tự soi: **cả ngày 28/08 tôi dựng toàn cổng CẢNH BÁO** — `L6` · `L7` ·
+`soi:thu-muc` · `soi:giay-phep` — rồi gọi chúng là **cổng**. Chúng là **nửa sợi dây**. Bảng
+`T1–T8` trong `IF-TRAT-TU-MOI.md` ghi chúng là ✅ **có cổng**; đúng hơn phải là 🟡 **có nửa**.
+
+Lý do chọn cảnh báo thay vì chặn đều thật (chặn ngay là đỏ vĩnh viễn cho mọi lane — `F-02`).
+Nhưng lý do đúng **không biến nửa dây thành dây**. Đường đi đúng: **cảnh báo là trạm tạm, phải có
+ngày hạn để lên chặn** — chưa có ngày hạn thì nó nằm đó mãi, và ta tưởng đã nối.
