@@ -14,12 +14,15 @@ Repo này có ~700 tệp tài liệu. Quét lại từ đầu mỗi phiên là c
 > mô tả **cách làm việc với Hoà**. Hai lần cùng một cơ chế: **danh tính bị hạ xuống, thủ tục được
 > đưa lên.** Hệ quả đo được: phiên thức dậy biết phải làm gì tiếp, **không biết mình đang xây cái
 > gì, cho ai** — rồi tóm đề bằng kết quả thay vì bằng bản chất. Hoà bắt được lỗi này 28/08.
-> ⇒ Hai hàng `0a`/`0b` dưới đây là **danh tính**, đọc TRƯỚC mọi thứ. Chúng ngắn.
+> ⇒ Ba hàng `0a`/`0b`/`0c` dưới đây đọc **trước** mọi thứ. Chúng ngắn.
+> `0a` **IF là gì** · `0b` **làm việc với Hoà thế nào** · `0c` **Hoà vừa nhắn gì**.
+> Cả ba đều là thứ Hoà đã có sẵn; không tệp nào trong số đó do máy đẻ ra.
 
 | # | Tệp | Trả lời câu gì | Khi nào đọc |
 |---|---|---|---|
 | **0a** | `docs/IF-KIEN-TRUC-OS.md` | **IF LÀ GÌ** — Local-first Design OS · *Own your data · workflow · memory · Replace your AI*. Trên mọi chốt khác | **luôn luôn, đầu tiên** |
 | **0b** | `~/PROJECT/CLAUDE.md` §3 + §5 | **LÀM VIỆC VỚI HOÀ THẾ NÀO** — *"Hoà nói, Claude ghi hộ, không bắt Hoà điền form"* · *"không đề xuất chung chung, phải trích được nguồn"*. **Hoà tự viết 26/08.** Đây là bản canonical — cấm đẻ bản thứ hai trong repo (luật 6) | **luôn luôn**, ngoài repo, đọc chỉ-đọc |
+| **0c** | `~/PROJECT/INBOX.md` | **Hoà vừa nhắn gì** — hộp thư anh tự dựng 26/08 (*"chỗ đổ ý nghĩ, đừng nghĩ nó thuộc đâu"*). Anh gõ một dòng, phiên sau thấy, không phải dán lại | **luôn luôn**, chỉ-đọc, vài giây |
 | 1 | `docs/control/IF-CURRENT-STATE.md` | đang ở đâu · runtime nào · **việc kế tiếp chính xác** | **luôn luôn**, nó nhỏ |
 | 2 | `docs/control/IF-CANONICAL.md` | IF **LÀ GÌ** · luật bền · ai quyết cái gì | **luôn luôn** |
 | 3 | `docs/control/IF-UXUI-OPERATING-MEMORY.md` | **những sai lầm đã trả giá** | trước mọi việc giao diện |
