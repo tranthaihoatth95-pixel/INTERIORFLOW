@@ -52,7 +52,10 @@ export function normalizeDisplayName(raw: string | null | undefined): string | n
 }
 
 /**
- * Viết hoa chữ cái đầu — phần DUY NHẤT máy suy được mà luôn đúng (`hoa` → `Hoa`, không đụng dấu).
+ * Viết hoa chữ cái đầu.
+ * 🔴 28/08 — chú thích cũ ghi đây là *"phần DUY NHẤT máy suy được mà LUÔN ĐÚNG"*. **SAI**, và đã
+ * trả giá: `hoa` → `Hoa` trong khi tên thật là `Hoà`. Hàm này **CẤM dùng cho TÊN NGƯỜI**; nó chỉ
+ * còn hợp lệ cho thứ máy tự sinh và tự biết đúng, ví dụ thứ trong tuần.
  * Dùng `toLocaleUpperCase()` để chữ có dấu lên hoa đúng (`ánh` → `Ánh`), và tách bằng spread để
  * không cắt đôi cặp mã (emoji/ký tự ngoài BMP).
  */
@@ -99,7 +102,18 @@ export function buildGreeting(input: GreetingInput): GreetingResult {
   // dùng gõ được, nên `displayName` đứng trước.
   const custom = normalizeDisplayName(input.displayName);
   const lastWord = (input.name ?? '').trim().split(/\s+/).pop() || '';
-  const firstName = custom ?? (lastWord ? capitalizeFirst(lastWord) : null);
+  /* 🔴 SỬA 28/08 — TRƯỚC ĐÂY: `capitalizeFirst(lastWord)`, kèm chú thích tự khai đó là
+   * *"phần DUY NHẤT máy suy được mà LUÔN ĐÚNG"*. **Câu đó sai, và Hoà chụp màn chứng minh:**
+   * tên trong DB là `hoa`; viết hoa ra `Hoa`; tên thật là **Hoà**.
+   *
+   * Đây KHÔNG phải bịa một chuỗi như `|| 'Untitled'` — nguy hiểm hơn: một **phép biến đổi chế
+   * ra sự tự tin**. Nó lấy giá trị không kiểm được rồi làm nó **trông như đã được xác nhận**,
+   * nên không ai nghi. `hoa` để nguyên thì người dùng thấy lạ và tự sửa; `Hoa` thì trông đúng
+   * và **sai vĩnh viễn**.
+   *
+   * Nay: `displayName` (người dùng TỰ GÕ, có dấu) thắng; không có thì hiện **đúng thứ đang lưu**,
+   * không tô vẽ. Máy chỉ được hiển thị thứ nó đo được. */
+  const firstName = custom ?? (lastWord || null);
   const dateLine = formatWeekdayDate(input.now, input.en);
   const namePart = firstName ? (input.en ? `Hi ${firstName}` : `Chào ${firstName}`) : 'InteriorFlow';
   const headline = dateLine ? `${namePart} · ${dateLine}` : namePart;

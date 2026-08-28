@@ -56,22 +56,31 @@ console.log('buildGreeting() — dueTodayCount âm/NaN không throw, coi như 0'
   ok('NaN → null', r2.signal === null);
 }
 
-/* ─── v5 (17/08, phiếu P-X ④.V1) — TÊN HIỂN THỊ ────────────────────────────────────────────
- * Ảnh chụp màn thật ra "Chào hoa": tên tài khoản lưu là `hoa` (thường + MẤT DẤU). Hai nửa:
- * viết hoa thì máy làm được, dấu thì KHÔNG — nên có `displayName` do người dùng gõ. */
+/* ─── v5 (17/08) → 🔴 LẬT NGƯỢC 28/08 ──────────────────────────────────────────────────────
+ * Bản 17/08 chốt: *"viết hoa thì máy làm được, dấu thì không"* — và bốn ca dưới đây từng
+ * **khẳng định** `Chào Hoa`.
+ *
+ * **Chính bài kiểm đã khoá cứng cái sai suốt 11 ngày.** Cổng có, đã nối, chạy mỗi `npm test` —
+ * nhưng nó **canh đúng cái lỗi**. Hoà chụp màn 28/08: app gọi anh là **`Hoa`**, tên thật **`Hoà`**.
+ *
+ * Sai không nằm ở chữ hoa. Sai ở chỗ `capitalizeFirst` là **một phép biến đổi chế ra sự tự tin**:
+ * lấy giá trị không kiểm được rồi làm nó **trông như đã xác nhận**. `hoa` để nguyên thì người
+ * dùng thấy lạ và tự sửa; `Hoa` thì **trông đúng và sai vĩnh viễn**.
+ *
+ * ⇒ Luật mới: máy **chỉ hiển thị thứ nó đo được**. Tên người thì chỉ người gõ mới đúng. */
 
-console.log('buildGreeting() — viết hoa chữ cái đầu: "hoa" KHÔNG còn ra "Chào hoa"');
+console.log('buildGreeting() — KHÔNG tô vẽ tên tài khoản, hiện đúng thứ đang lưu');
 {
   const r = buildGreeting({ name: 'hoa', now: NOW, en: false, dueTodayCount: 0 });
-  ok('ra "Chào Hoa" (viết hoa)', r.headline.startsWith('Chào Hoa'));
-  ok('KHÔNG còn "Chào hoa" chữ thường', !r.headline.startsWith('Chào hoa'));
+  ok('hiện NGUYÊN VĂN "Chào hoa" — thứ đang lưu, không tô vẽ', r.headline.startsWith('Chào hoa'));
+  ok('KHÔNG tự viết hoa thành "Hoa" (trông đúng, sai vĩnh viễn)', !r.headline.startsWith('Chào Hoa'));
   ok('KHÔNG tự bịa dấu thành "Hoà"', !r.headline.includes('Hoà'));
 }
 
-console.log('buildGreeting() — chữ CÓ DẤU vẫn lên hoa đúng, không vỡ dấu');
+console.log('buildGreeting() — chữ có dấu cũng giữ NGUYÊN, không đụng vào');
 {
   const r = buildGreeting({ name: 'nguyễn ánh', now: NOW, en: false, dueTodayCount: 0 });
-  ok('"ánh" → "Ánh"', r.headline.startsWith('Chào Ánh'));
+  ok('"ánh" giữ nguyên "ánh", máy không sửa tên người', r.headline.startsWith('Chào ánh'));
 }
 
 console.log('buildGreeting() — tên người dùng TỰ ĐẶT thắng tên tài khoản, giữ nguyên từng chữ');
@@ -85,7 +94,7 @@ console.log('buildGreeting() — tên người dùng TỰ ĐẶT thắng tên t�
 console.log('buildGreeting() — tên tự đặt rỗng/toàn khoảng trắng → rơi về tên tài khoản, KHÔNG rỗng');
 {
   const r = buildGreeting({ name: 'hoa', displayName: '   ', now: NOW, en: false, dueTodayCount: 0 });
-  ok('rơi về tên tài khoản đã viết hoa', r.headline.startsWith('Chào Hoa'));
+  ok('rơi về tên tài khoản NGUYÊN VĂN', r.headline.startsWith('Chào hoa'));
   const r2 = buildGreeting({ name: null, displayName: null, now: NOW, en: false, dueTodayCount: 0 });
   ok('không tên nào cả → vẫn "InteriorFlow", không bịa', r2.headline.includes('InteriorFlow'));
 }
