@@ -341,3 +341,25 @@ dấu · ô quản trị dùng đại từ · và ca này) ⇒ **HỆ THỐNG**,
 2. cập nhật **MỌI CON TRỎ** trỏ tới nó — chỉ mục, bảng target, hàng đợi, `CLAUDE-DESIGN-CURRENT`.
 Chỉ làm ① là **tạo ra một cái bẫy**, không phải dọn một cái bẫy.
 📌 Ứng viên máy soi: quét tệp có dấu `SUPERSEDED` rồi đối chiếu mọi chỗ nhắc tên tệp đó.
+
+### M-59
+**PHÉP THỬ TỰ CHẤM MÙ — khi lỗi thổi phồng CẢ HAI VẾ thì tỉ lệ vẫn đẹp.**
+Trả giá 29/08. Máy nhận tường: nghiệm thu đặt ra là *"số tường giảm mạnh · tổng chiều dài
+gần như không đổi"* — chạy ra `972 → 262` và `1139 → 1129 m`, đạt cả hai vế. Nhưng Hoà phóng
+to ảnh, nhìn một cái là thấy: **cái tưởng là một bức tường liền thật ra là 3–4 vật xếp đè**.
+Chiều dài bị đếm nhiều lần — và vì **trước lẫn sau đều bị thổi như nhau**, phép thử "không
+đổi" không thể phát hiện. Nó đo ĐÚNG cái nó đo, và mù đúng chỗ cần thấy.
+
+**Cơ chế:** một phép thử so sánh TRƯỚC↔SAU chỉ bắt được lỗi mà bước đó **thêm vào**; nó không
+bao giờ bắt được lỗi **đã có sẵn ở cả hai đầu**. Đó là lý do "tự chấm được, không cần mắt ai"
+là câu nói **chỉ đúng một nửa** — nó đúng cho *hồi quy*, sai cho *nghiệm thu lần đầu*.
+
+**Luật:** một máy sinh ra HÌNH HỌC thì lần đầu **bắt buộc phải vẽ ra và nhìn ở mức phóng to
+một chi tiết**, trước khi báo bất kỳ con số nào. Vẽ toàn cảnh không tính — mặt bằng 189×70m
+thu vào một ảnh thì tường 200mm mỏng hơn một điểm ảnh, nhìn cũng như không (đã xảy ra: bản vẽ
+toàn cảnh đầu tiên Hoà bảo *"ko thấy rõ"*). Kèm theo: **tô mỗi đối tượng một màu riêng** —
+thứ cần nhìn không phải hình dạng mà là **RANH GIỚI ĐỐI TƯỢNG**, mà ranh giới thì chỉ hiện ra
+khi đổi màu.
+
+**Liên quan:** [[M-01]] (NOT ASSESSED thay vì mở app ra xem) — cùng một bệnh, khác bề mặt:
+tin vào thứ đo được thay vì thứ nhìn được.
