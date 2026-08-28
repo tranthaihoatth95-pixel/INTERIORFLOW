@@ -40,11 +40,11 @@
     "electron:dev": "cross-env ELECTRON_START_URL=http://localhost:3000 concurrently -k -n NEXT,ELECTRON -c blue,magenta \"next dev\" \"wait-on tcp:3000 && electron .\"",
     "electron:build": "npm run soi:giay-phep -- --chan && next build && electron-builder --win --x64",
     "electron:build:win": "npm run soi:giay-phep -- --chan && next build && electron-builder --win --x64",
-    "electron:pack:win": "electron-builder --win --x64",
+    "electron:pack:win": "npm run soi:giay-phep -- --chan && electron-builder --win --x64",
     "electron:build:mac": "npm run soi:giay-phep -- --chan && next build && electron-builder --mac",
-    "electron:publish": "next build && electron-builder --win --x64 --publish always",
+    "electron:publish": "npm run soi:giay-phep -- --chan && next build && electron-builder --win --x64 --publish always",
     "soi:visual-source": "node scripts/soi-visual-source.mjs",
-    "electron:pack:mac": "electron-builder --mac --publish never",
+    "electron:pack:mac": "npm run soi:giay-phep -- --chan && electron-builder --mac --publish never",
     "dev:electron": "node scripts/dev-electron.mjs",
     "soi:foundation": "node scripts/soi-foundation.mjs",
     "soi:design-school": "node scripts/soi-design-school.mjs"
@@ -129,7 +129,9 @@
       "!prisma/*.db*",
       "!**/*.map",
       "!node_modules/.prisma/client/libquery_engine-linux-*",
-      "!node_modules/@prisma/engines/*linux*"
+      "!node_modules/@prisma/engines/*linux*",
+      "!node_modules/@mlightcad/**",
+      "!public/wasm/libredwg-web.wasm"
     ],
     "extraResources": [
       {
