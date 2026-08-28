@@ -6,6 +6,61 @@
 > Bản cho **mắt Hoà** là một trang xem được (artifact). Agent **không đọc được** trang đó.
 > Tệp này là **cùng nội dung, cho máy**. Sửa một bên phải sửa bên kia — hoặc bỏ hẳn một bên.
 
+## 0 · Bốn bất biến — cho MỌI sản phẩm, không riêng IF
+
+> Hoà 28/08: *"nó không chỉ dành cho IF đâu… IF là một trong những dự án đầu tiên của Hoà, TTT là
+> một khách thuê đang được Hoà miễn phí khi Hoà còn là nhân viên TTT. Sẽ còn những trường hợp
+> trung tính sau này."*
+> Sơ đồ cho mắt: https://claude.ai/code/artifact/3741f2cb-5409-448e-9412-d4b44c1aea2e
+
+| | Bất biến |
+|---|---|
+| **I** | **Ba tầng không được trộn** — *sản phẩm* (bán cho mọi người) · *khách thuê* (một người dùng cụ thể) · *công trường* (đội xây). Tên, màu, chuẩn đặt tên, dữ liệu của một khách **không bao giờ** thành mặc định sản phẩm — nhưng cũng **không bị vứt**: nó về **hồ sơ của khách đó**. Trung tính = **phân biệt rồi xử lý**. |
+| **II** | **Trí nhớ là thứ duy nhất liên tục** — model đổi, phiên đổi, nén xoá bớt. Chỉ thứ được ghi mới sống ⇒ danh tính đọc trước thủ tục · **một** chỗ định tuyến · mốc trỏ vào bản ghi thô thay vì chép lại. |
+| **III** | **Luật = luật + cổng + đột biến.** Thiếu một là lời chúc. Cổng phải nối vào **đúng cái cổng người ta đã phải đi qua** để làm xong việc của mình. |
+| **IV** | **Đo, đừng đoán** — khoảng trống thì đo hoặc nói *chưa biết*, không có cửa thứ ba. **Xếp việc theo xác suất × thiệt hại TƯƠNG LAI**, không theo tổn thất hiện tại. |
+
+### Phả hệ — cái mới sinh từ cái cũ chưa trọn, KHÔNG phải tuyến song song
+
+| Đã có, chưa trọn | Đứt ở đâu | Trọn 28/08 |
+|---|---|---|
+| `B25` nhìn-vào-trong | 20 tệp, **không ở bộ nạp, không cổng** | vào bộ nạp · **cổng vẫn hở (T2)** |
+| Hiến pháp `IF-KIEN-TRUC-OS` | đọc như **đặc tả tính năng** | đọc như **hợp đồng hai chiều** |
+| `trang-thai-tai.ts` 4 trạng thái | **chỉ áp một màn** | luật chung *"chưa biết là giá trị hạng nhất"* · máy `F-NHAN-BIA` |
+| 21 lỗi `M-*` `F-*` rời | sổ tự ghi *"cùng lớp F-03"* **6 lần** vẫn mở mục mới | **ba mặt của một lỗi** |
+| `02-SMARTBOARD` | nằm trong gói candidate, ít người tới | hợp nhất về `IF-HOI-DAP` · **F-22** |
+| Bánh cóc `foundation-tran.json` | mới phủ 5 họ | thêm họ thứ sáu, đạt 0 ngay lượt lập |
+| `Plane: IF|AN|IDF|BUILDER|CLIENT` | khai trong **một mẫu thẻ**, không ai xếp tệp theo | **5 tuyến** · 17/17 đóng dấu · cổng `L7` |
+
+## 0b · Công cụ ĐÃ CÓ — đọc trước khi viết máy mới (B25)
+
+**Trong repo** — `npm test` là cổng chung, **mọi luật phải nối vào đó**:
+`npm run tra "…"` tra kho theo câu hỏi · `moc "…"` đóng mốc trỏ bản ghi thô ·
+`soi:thu-muc` thư mục chưa ai quyết · `soi:quan-tri` L1–L7 · `soi:foundation` 6 họ + **bánh cóc** ·
+`soi:giay-phep` GPL trong bộ cài · `soi:kho-tai-lieu` mồ côi/tên khảo cổ/trùng ·
++ 12 máy soi khác · `scripts/proof/` **23 tệp** (mỗi tệp mở bằng **cổng harness**) ·
+`scripts/proof/_db-tam.mjs` bản sao DB + chặn **trước** khi mở Prisma · `docs/control/` **18 sổ**.
+
+**Ngoài repo** — kèm giới hạn, vì giới hạn mới là thứ hay bị quên:
+· `search_session_transcripts` — **109 phiên · 1,3 GB**, kho thứ ba, **chưa ai dùng tới 28/08**
+· `get_session`/`list_sessions` — ⚠️ **KHÔNG** trả context còn lại; con số `583k/1M` **chỉ có ở giao diện Hoà**
+· Claude Browser — mở web thật khi `WebFetch` bị chặn
+· `WebSearch` — **chỉ khi cả ba kho đều trống**
+· Artifact publish — trang cho **mắt** Hoà; ⚠️ **agent KHÔNG đọc được**, mọi thứ bền phải có bản chữ trong repo
+
+## 0c · Mười công thức đáng giữ
+
+1. **Rủi ro = xác suất × thiệt hại TƯƠNG LAI**, không phải tổn thất hiện tại.
+2. **Mọi lỗi = lấp khoảng trống bằng phỏng đoán, rồi trình bày như sự thật.** Ba mặt: chưa đo *tác dụng* · chưa đo *đích* · chưa đo *căn cứ*.
+3. **Luật = luật + cổng + đột biến.**
+4. **Trung tính = phân biệt rồi xử lý**, không phải thấy gì không-chung thì bỏ.
+5. **Một cỗ máy, nhiều mặt tiền** — trùng tính chất thì quy về một cơ chế.
+6. **B25**: nhìn vào trong → bản đồ → phân loại → nối → mở rộng → mới. `NEW` đòi bằng chứng phủ định.
+7. **Tra ba kho trước khi ra web.** Chưa tra thì nói *"tôi chưa tra"*, không nói *"chưa có"*.
+8. **Thứ từng bị bỏ, mang lại vào phải khai ba dòng**: ai bỏ · vì sao · điều gì đã đổi.
+9. **Phép thử trước khi mở miệng**: *"số này, chữ này — tôi **đo** được hay tôi **suy** ra?"*
+10. **Hai câu sàng của Hoà**: *"cho tôi xem thứ tôi tự kiểm được"* · *"im lặng thì sao, gỡ lại kiểu gì?"*
+
 ## 1 · Ai đang ngồi ở bàn
 
 Tất cả đều tên "Claude" hoặc "GPT". Khác nhau đúng hai chỗ: **có sửa được tệp trên máy Hoà không**,
