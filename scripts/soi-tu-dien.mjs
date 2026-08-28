@@ -17,6 +17,7 @@
  * THÊM TỪ MỚI = thêm 1 entry lúc CHỐT TÊN — cùng kỷ luật với frontier-registry.
  */
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { CAP_DA_NHAU, THIEU_REACH, soiDong } from './_cap-da-nhau.mjs';
 import { join } from 'node:path';
 
 const ROOT = new URL('..', import.meta.url).pathname;
@@ -148,33 +149,9 @@ const MD_QUET = [
   'docs/mocks', //  3 tệp — mock là hợp đồng giao diện (luật QUY TRÌNH DESIGN 02/08).
 ];
 // ───────────────────────────────────────────────────────────────────────────────────────────
-// ③ CAP_DA_NHAU — HAI CHỮ TRONG CÙNG MỘT DÒNG, NGHĨA NGƯỢC NHAU.  (Hoà chỉ ra 29/08)
-//
-// Khác hẳn hai lớp trên. ① là "một khái niệm nhiều nhãn" — sửa nhãn là xong. ② là "một chữ
-// nhiều nghĩa" — máy không đặt tên hộ được nên chỉ cảnh báo. Lớp ③ này KHÔNG mơ hồ: hai chữ
-// đứng cạnh nhau mà loại trừ lẫn nhau, ai đọc kỹ cũng thấy sai — nên nó CHẶN, không cảnh báo.
-//
-// CA GỐC, trả giá 13 ngày: `docs/phieu-giao/P-A-don-vi-ty-le.md:40` viết
-//     "Lưu lựa chọn per-user (localStorage cùng khuôn các cài đặt sẵn có — không thêm bảng DB)"
-// «per-user» = đi theo NGƯỜI, đổi máy vẫn còn.  «localStorage» = ở lại TRÌNH DUYỆT máy này,
-// đổi máy là mất. Người viết nghĩ mình dặn vế đầu; máy làm đúng vế sau. Không ai hỏi lại một
-// dòng. Đo 29/08: 543 dòng localStorage, 0 bảng cài đặt, đổi máy mất sạch Brand Kit + gu nghề.
-// Bệnh nó gây ra còn biết nguỵ trang: `lib/lockscreen.ts` đính `<userId>` vào tên khoá nên đọc
-// mã lên trông y như "theo người", trong khi vẫn nằm trong trình duyệt.
-//
-// THÊM CẶP MỚI = khi bắt được một ca thật, kèm dòng nguồn. Cấm thêm cặp "phòng xa".
-const CAP_DA_NHAU = [
-  {
-    ten: 'per-user ↔ localStorage',
-    a: /\bper[-\s]?user\b|theo (từng )?(người dùng|tài khoản)/i,
-    b: /\blocalStorage\b|\bsessionStorage\b|\bIndexedDB\b/i,
-    vi_sao: '«per-user» = đi theo NGƯỜI (sống trong DB). «localStorage» = ở lại MÁY NÀY. Chọn một, và nói rõ.',
-    pham_vi: ['docs/phieu-giao', 'docs/control', '.claude/skills'],
-    // CA GỐC — giữ nguyên làm dấu vết. Phiếu đã đóng thì không viết lại lời khai của nó.
-    ngoai_le: ['docs/phieu-giao/P-A-don-vi-ty-le.md'],
-  },
-];
-
+// ③ CẶP CHỮ ĐÁ NHAU — luật + hàm soi nằm ở `_cap-da-nhau.mjs`, dùng chung với
+//    `cap-da-nhau.test.ts`. Đọc chú thích ở đó để biết BA TRỤC Owner/Storage/Reach và vì sao
+//    bản đầu (per-user ↔ localStorage) đã bị Hoà bác 29/08 bằng một phản ví dụ.
 /** Loại trừ tường minh + LÝ DO. Thừa so với MD_QUET, cố ý — chặn cả khi ai đó nới pham_vi sau này. */
 const MD_LOAI_TRU = [
   ['CHANGELOG.md', 'nhật ký append-only 220K — luật cấm xoá lịch sử cũ'],
@@ -285,23 +262,37 @@ function* diKhap(dir) {
   }
 }
 let tongDaNhau = 0;
+let tongThieuReach = 0;
 for (const c of CAP_DA_NHAU) {
-  const hits = [];
+  const chan = [];
+  const nhac = [];
   const quet = (fn) => { for (const d of c.pham_vi) for (const p of diKhap(join(ROOT, d))) fn(p, chuanHoa(p)); };
   quet((f, rel) => {
     if (c.ngoai_le.some((x) => rel.startsWith(x))) return;
     readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
-      if (c.a.test(line) && c.b.test(line)) hits.push(`${rel}:${i + 1}`);
+      const kq = soiDong(line, c);
+      if (kq === 'chan') chan.push(`${rel}:${i + 1}`);
+      else if (kq === 'canh-bao') nhac.push(`${rel}:${i + 1}`);
     });
   });
-  tongDaNhau += hits.length;
-  if (hits.length) {
-    console.log(`🔴 ${hits.length}× «${c.ten}»`);
+  tongDaNhau += chan.length;
+  tongThieuReach += nhac.length;
+  if (chan.length) {
+    console.log(`🔴 ${chan.length}× «${c.ten}»`);
     console.log(`     ${c.vi_sao}`);
-    hits.slice(0, 5).forEach((h) => console.log(`     ${h}`));
+    chan.slice(0, 5).forEach((h) => console.log(`     ${h}`));
+  }
+  if (nhac.length) {
+    console.log(`🟡 ${nhac.length}× «${THIEU_REACH.ten}»`);
+    console.log(`     ${THIEU_REACH.vi_sao}`);
+    nhac.slice(0, 5).forEach((h) => console.log(`     ${h}`));
   }
 }
-console.log(tongDaNhau ? `\n🔴 ${tongDaNhau} cặp đá nhau — CHẶN.` : `✅ 0 cặp chữ đá nhau (${CAP_DA_NHAU.length} cặp đang canh)`);
+console.log(
+  tongDaNhau
+    ? `\n🔴 ${tongDaNhau} cặp đá nhau — CHẶN.`
+    : `✅ 0 cặp chữ đá nhau (${CAP_DA_NHAU.length} cặp đang canh · ${tongThieuReach} chỗ thiếu trục Reach, chỉ nhắc)`
+);
 
 console.log('─'.repeat(96));
 console.log(`   Phạm vi .md đang quét: ${MD_QUET.join(' · ')}`);

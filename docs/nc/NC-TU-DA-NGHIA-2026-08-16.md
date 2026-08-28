@@ -512,6 +512,58 @@ Cũng bỏ qua: `CHANGELOG.md` (220K) · `docs/bao-cao-phien/` trừ một tệp
 
 ---
 
+## LỚP ③ — CẶP CHỮ ĐÁ NHAU (Hoà chỉ ra 29/08, và **sửa lại luật cùng ngày**)
+
+### BA TRỤC — bảng chuẩn, Hoà chốt 29/08
+
+Nói về "cài đặt sống ở đâu" thì phải nói đủ **ba trục rời nhau**. Thiếu một trục là chỗ hiểu sai chui vào:
+
+| trục | hỏi gì | các giá trị |
+|---|---|---|
+| **① Owner** | của ai | `user` · `project` · `workspace` |
+| **② Storage** | cất ở đâu | `localStorage` · `IndexedDB` · `DB` |
+| **③ Reach** | **vươn tới đâu** | `browser-local` · `device-local` · `account-synced` |
+
+**Câu nói đủ, mẫu để chép:**
+> *"Thiết lập thuộc người dùng, lưu trong `localStorage`, chỉ có hiệu lực trên trình duyệt hiện tại."*
+
+### #1 · `account-synced` ↔ `browser-local` — mâu thuẫn THẬT, mức CHẶN
+
+Không thể cùng đúng: hứa **đổi máy vẫn còn** (trục ③) mà cất vào kho **chỉ sống trong một
+trình duyệt** (trục ②).
+
+### 🔴 BẢN ĐẦU CỦA MÁY ĐÃ SAI — giữ lại làm dấu vết
+
+Tôi lấy cặp «`per-user` ↔ `localStorage`» làm mâu thuẫn. Hoà bác ngay trong ngày, bằng một
+phản ví dụ phá được luật:
+
+> *"`per-user` và `localStorage` không tuyệt đối loại trừ nhau. Dữ liệu có thể được phân vùng
+> theo `userId` nhưng vẫn chỉ tồn tại trên một trình duyệt."*
+
+Đúng: `per-user` trả lời **trục ①** (của ai), `localStorage` trả lời **trục ②** (cất ở đâu).
+**Hai câu hỏi khác nhau thì không thể đá nhau.** Cổng cũ sẽ **báo đỏ oan** đúng câu mẫu ở trên.
+
+⇒ Câu gốc `P-A-don-vi-ty-le.md:40` sai vì **THIẾU TRỤC ③**, không phải vì chứa `per-user`.
+Nên nó xuống mức **🟡 nhắc "thiếu trục Reach"**, không chặn.
+
+### Cổng và bằng chứng
+
+Luật + hàm soi: `scripts/_cap-da-nhau.mjs` — **dùng chung** với `scripts/cap-da-nhau.test.ts`,
+cố ý không để hai bản (test gọi bản sao thì nó chứng minh bản sao, không chứng minh luật).
+
+`8 ok · 0 fail`, trong đó **có cả ca mong THẤY lẫn phản ví dụ của Hoà** (F-17: nhóm chỉ toàn
+kỳ vọng phủ định là không tin được).
+
+Ca đột biến trên repo thật: câu mâu thuẫn ⇒ **đỏ** · phản ví dụ ⇒ **im, không báo** ·
+thiếu Reach ⇒ **nhắc mà không chặn** · ca gốc trong phiếu đã đóng ⇒ **miễn**.
+
+**VAN AN TOÀN (Hoà đặt 29/08):** cặp mới chỉ được thêm khi có **ca thật · nguồn cụ thể ·
+phản ví dụ · và một test chứng minh không báo nhầm**. Bốn thứ, thiếu một là không thêm.
+
+---
+
+## (bản đầu, đã bị đè — giữ để đối chiếu)
+
 ## LỚP ③ — CẶP CHỮ ĐÁ NHAU (Hoà chỉ ra 29/08)
 
 Hai lớp cũ của sổ này nói về **một chữ**. Lớp thứ ba nói về **hai chữ đứng cạnh nhau mà loại
