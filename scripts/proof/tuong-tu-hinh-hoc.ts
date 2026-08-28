@@ -48,7 +48,15 @@ console.log('layer:', [...theoLayer.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8)
 
 /* ── GỘP cặp → TƯỜNG: mỗi cặp cho một trục giữa; gộp trục trùng nhau ── */
 type Truc = { ax:number; ay:number; bx:number; by:number; d:number; layer:string };
-const trucs: Truc[] = [];
+/* GHÉP CẶP ĐỘC QUYỀN — một nét chỉ là mặt của MỘT bức tường.
+ * Bản trước ghép MỌI cặp thoả điều kiện ⇒ tường vẽ 3–4 nét (hai mặt kết cấu + nét
+ * trát/ốp) đẻ ra 6 trục chồng nhau. Hoà nhìn ảnh phóng to bắt được: "bị sai" —
+ * cái tưởng là một tường liền thật ra là nhiều vật xếp đè.
+ * Sửa bằng GHÉP ĐÔI ĐỘC QUYỀN: xếp mọi cặp ứng viên theo độ tin cậy (chồng lấn dài
+ * nhất trước, rồi bề dày mỏng hơn = cặp nét sát nhau nhất), duyệt lần lượt, chỉ
+ * nhận khi CẢ HAI nét còn tự do. Mỗi nét vào đúng một tường, hết chồng.  */
+type UngVien = { i:number; j:number; t:Truc; ov:number };
+const uv: UngVien[] = [];
 for (let i = 0; i < THANG.length; i++) for (let j = i+1; j < THANG.length; j++) {
   const p = THANG[i], q = THANG[j];
   if (p.layer !== q.layer) continue;
@@ -56,21 +64,24 @@ for (let i = 0; i < THANG.length; i++) for (let j = i+1; j < THANG.length; j++) 
   if (dg > 0.02) continue;
   const ux = Math.cos(goc(p)), uy = Math.sin(goc(p));
   const d = Math.abs((q.a.x-p.a.x)*-uy + (q.a.y-p.a.y)*ux);
-  if (d < 90 || d > 400) continue;                       // siết: bỏ khe 60–90mm (kính, khe co giãn)
+  if (d < 90 || d > 400) continue;
   const t = (pt:any) => (pt.x-p.a.x)*ux + (pt.y-p.a.y)*uy;
   const [p0,p1]=[t(p.a),t(p.b)].sort((a,b)=>a-b), [q0,q1]=[t(q.a),t(q.b)].sort((a,b)=>a-b);
   const lo = Math.max(p0,q0), hi = Math.min(p1,q1);
-  if (hi - lo < 500) continue;                            // tường ngắn hơn 50cm thì bỏ
+  if (hi - lo < 500) continue;
   const mx = (p.a.x + q.a.x)/2, my = (p.a.y + q.a.y)/2;
-  trucs.push({ ax: mx+ux*lo, ay: my+uy*lo, bx: mx+ux*hi, by: my+uy*hi, d: Math.round(d), layer: p.layer });
+  const khop = (hi-lo) / Math.max(p1-p0, q1-q0);   // OFFSET tạo bản sao DÀI BẰNG NHAU
+  uv.push({ i, j, ov: khop,
+    t: { ax: mx+ux*lo, ay: my+uy*lo, bx: mx+ux*hi, by: my+uy*hi, d: Math.round(d), layer: p.layer } });
 }
-// gộp trục gần trùng
+uv.sort((a,b) => b.ov - a.ov || a.t.d - b.t.d);   // khớp-nhau nhất trước, rồi mỏng hơn
+const daDung = new Set<number>();
 const giu: Truc[] = [];
-for (const t of trucs) {
-  const trung = giu.find(g =>
-    Math.hypot(g.ax-t.ax, g.ay-t.ay) < 150 && Math.hypot(g.bx-t.bx, g.by-t.by) < 150 && Math.abs(g.d-t.d) < 30);
-  if (!trung) giu.push(t);
+for (const c of uv) {
+  if (daDung.has(c.i) || daDung.has(c.j)) continue;
+  daDung.add(c.i); daDung.add(c.j); giu.push(c.t);
 }
+console.log(`ghép đôi độc quyền: ${uv.length} cặp ứng viên → ${giu.length} tường (dùng ${daDung.size}/${THANG.length} nét)`);
 const tongDai = giu.reduce((s,t)=>s+Math.hypot(t.bx-t.ax, t.by-t.ay), 0);
 console.log(`\n⇒ TƯỜNG gộp được: ${giu.length}  ·  tổng chiều dài ${(tongDai/1000).toFixed(1)} m`);
 const dd = new Map<number,number>(); for (const t of giu) dd.set(t.d,(dd.get(t.d)??0)+1);

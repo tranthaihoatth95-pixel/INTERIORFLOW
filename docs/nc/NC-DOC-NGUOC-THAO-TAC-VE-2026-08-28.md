@@ -130,3 +130,29 @@ mọi cặp thì một tường đẻ nhiều trục). Thử luật *"giữ tr�
 Nguyên nhân: xếp theo bề dày trước khiến một trục 400mm dài nuốt trọn các tường
 200mm nằm cùng đường. **Không nhận, không đưa vào mã.** Luật đúng phải là *cặp
 NGOÀI CÙNG của một chùm nét*, không phải *trục dày nhất trong vùng*.
+
+## Hoà bắt lỗi bằng MẮT: "bị sai" (29/08)
+
+Anh phóng to ảnh và chỉ ra: cái tưởng là **một bức tường liền** thật ra là **nhiều
+vật xếp đè lên nhau**. Số đo không thấy được điều đó — 262 vật với 1129 m trông
+hoàn toàn hợp lý.
+
+**Nguyên nhân:** tôi ghép **mọi cặp nét** thoả điều kiện. Một bức tường thợ vẽ
+3–4 nét (hai mặt kết cấu + nét trát/ốp) ⇒ đẻ ra 6 trục chồng nhau. Chính vì thế
+1129 m là **con số bị thổi phồng**, không phải chiều dài tường thật.
+
+**Sửa — GHÉP ĐÔI ĐỘC QUYỀN:** một nét chỉ là mặt của MỘT bức tường. Xếp cặp ứng
+viên theo độ **khớp chiều dài** (`OFFSET` sinh ra bản sao dài bằng nhau), duyệt
+lần lượt, chỉ nhận khi **cả hai nét còn tự do**.
+
+    1062 cặp ứng viên → 332 mảnh (dùng 664/996 nét) → ĐẢO TRIM → 119 tường · 405 m
+
+`anh/ghep-doi-doc-quyen.png` — panel ② cho thấy tường biên nay là **một vệt màu
+chạy suốt**, hết vụn theo chiều dài.
+
+**CÒN SAI, chưa chữa:** nhìn kỹ vẫn thấy **3–4 vệt song song trên cùng một bức
+tường** — tường nhiều nét vẫn tách thành mấy cặp rời. Luật đúng còn thiếu:
+gom chùm trục song song chồng nhau rồi lấy **BAO NGOÀI** của chùm (bề dày = khoảng
+cách hai nét ngoài cùng), chứ không phải giữ trục dày nhất — bản "giữ dày nhất"
+đã thử và **trượt nghiệm thu** (mất 74% chiều dài, ghi ở mục trên).
+⇒ Mọi con số tổng chiều dài hiện nay vẫn **chưa dùng để kết luận được**.
