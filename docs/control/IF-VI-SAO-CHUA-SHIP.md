@@ -81,16 +81,34 @@ DWG (đang tắt cờ, xem `lib/cad/dwg-flag.ts`).
 > *"bởi vì nó phạm luật trung tính … xử sao cho trung tính, không TTT, mà tận dụng lại hết cái
 > nó đã làm."*
 
-## Cái bẫy phải tránh
+## 🔴 Luật trung tính nghĩa là gì — Hoà sửa hai lần, ghi lại nguyên văn
 
-Cách chữa **hiển nhiên nhất là cách sai nhất**: thêm `A-Wall` · `A-Furniture` · `A-Door` vào bảng
-nhận diện. Làm thế là **nhét chuẩn CAD của một studio vào sản phẩm bán toàn cầu** — đúng thứ
-`LUẬT NỀN TẢNG §1` cấm. Studio sau dùng `M_TUONG`, `WALL-INT`, `01_MUR`, `INT-WALL-NEW` là gãy lại,
-và mỗi lần gãy lại thêm một cái tên vào bảng. Bảng đó không bao giờ đủ.
+> *"luật trung tính dùng để **phân biệt rồi xử lý**, không phải thấy gì sai global là bỏ."*
+> *"sai luật ngay từ đầu thì giá trả là đắt."*
+> *"đó không phải chuẩn CAD TTT, mà do **máy tự hiểu nhầm cùng một việc**."*
 
-Ghi rõ để phiên sau không đi lại: **`wallLayerIds()` khớp `/tường|wall/i` hiện tại đã là mầm của
-lỗi này.** Nó chạy được vì tiếng Anh và tiếng Việt trùng may mắn. Nó sẽ chết ở hồ sơ tiếng Pháp,
-tiếng Nhật, hoặc bất kỳ studio nào đánh số layer.
+Bản nháp đầu của mục này đã hiểu sai luật theo đúng cách tốn tiền nhất, nên giữ lại làm dấu vết:
+tôi viết *"`wallLayerIds()` khớp `/tường|wall/i` là **mầm của lỗi**"* và định gỡ nó.
+
+**Sai.** Nó là **tri thức sản phẩm đặt nhầm tầng** — dùng làm **cổng chặn** trong khi nó chỉ đủ tư
+cách làm **gợi ý**. Bản thân nó không có tội, và gỡ nó đi là mất một thứ đúng.
+
+Cũng vậy: chuẩn layer `A-Wall` · `A-Furniture` của TTT **không phải ô nhiễm cần né**. Nó là **dữ
+liệu hợp lệ thuộc hồ sơ của TTT**. Trung tính **không** có nghĩa IF không biết gì về TTT; nghĩa là
+IF biết mà **cất đúng ngăn**.
+
+| | thuộc về | ở đâu | ai sửa |
+|---|---|---|---|
+| *"tường thường là hai đường song song"* | **sản phẩm** — đúng với mọi studio | mã | MAIN |
+| *"chữ `wall`/`tường` trong tên layer là dấu hiệu tường"* | **sản phẩm**, mức **gợi ý** | mã, nhưng là hint chứ không phải cổng | MAIN |
+| *"ở TTT, tường nằm ở `A-Wall`"* | **hồ sơ của TTT** | dữ liệu, theo dự án/studio | người dùng |
+
+Ba dòng đó **không dòng nào bị bỏ**. Phân biệt xong thì mỗi thứ về đúng chỗ — đó là **phân biệt
+rồi xử lý**, không phải dọn.
+
+**Điều thật sự sai** không phải một cái tên nào cả. Là: **cùng một việc — "nhận ra tường" — được
+nhiều phiên hiểu khác nhau và làm ở nhiều chỗ khác nhau**, rồi bản tốt bị worktree mang ra mang
+vào và bị dọn. Cái tên chỉ là chỗ vết nứt lộ ra.
 
 ## Ba tầng, trung tính theo cấu tạo
 
@@ -118,7 +136,7 @@ thay vì hardcode. Không đẻ khuôn thứ hai (luật 6).
 
 | Đang có | Vai mới | Vứt đi? |
 |---|---|---|
-| `wallLayerIds()` khớp `/tường\|wall/i` | **gợi ý** điền sẵn ô gán vai, người dùng sửa được | ❌ giữ |
+| `wallLayerIds()` khớp `/tường\|wall/i` | **hạ từ CỔNG xuống GỢI Ý** — điền sẵn ô gán vai, người dùng sửa được | ❌ giữ, không gỡ |
 | `BLOCK_MAP` 46 món | **kệ gợi ý** để khớp block lạ với món đã biết | ❌ giữ |
 | Đường hatch poché | **một trong hai** đường dựng tường, không còn là đường duy nhất | ❌ giữ |
 | Bộ đùn khối, tessellate, `computeHeights` | nguyên vẹn — chúng nhận footprint, không quan tâm footprint từ đâu | ❌ giữ |
