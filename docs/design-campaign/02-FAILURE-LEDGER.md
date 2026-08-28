@@ -449,3 +449,27 @@ kiểm, và sự trùng khớp của họ **thay thế** việc kiểm.
 
 Protocol đầy đủ: `docs/control/IF-ADVICE-VERIFICATION-GATE.md` (`IF-ADVICE-VERIFICATION-GATE-001`).
 Ví dụ dựng ngược từ chính case này ở §7 của tệp đó.
+
+## F-22 · TÔI ĐẺ CHỈ MỤC ĐỊNH TUYẾN THỨ HAI TRONG LÚC ĐANG VIẾT LUẬT CẤM ĐẺ TRÙNG — 28/08
+
+**Việc**: dựng `docs/control/IF-HOI-DAP.md` — *"mục lục theo câu hỏi"* — vì Hoà nói kho 887 tệp
+đặt tên khiến không ai muốn đọc.
+
+**Sai**: `docs/design-candidate/IDF-IF-PACKET-003/02-SMARTBOARD.md` (26/08) đã là **đúng thứ đó**,
+tự khai nguyên văn *"chỉ mục **ĐỊNH TUYẾN** — không thay thế nguồn nào, chỉ trỏ đường"*. Tôi không
+LOOK INSIDE (**B25**) trước khi tạo. Hoà bắt: *"smartboard, look inside, sổ luật quá trời luôn —
+có giống nhau không?"*
+
+**Nặng hơn một lỗi thường ở hai điểm:**
+① Cùng ngày tôi **viết luật B25 vào bộ nạp** và **lập máy `npm run tra`** để bắt đúng lỗi này.
+② Tôi tạo **13 tệp mới trong một ngày**, không lần nào LOOK INSIDE — `IF-MOT-LOI.md` viết xong
+   đã có **0 tệp trỏ tới**, tức mồ côi ngay lúc chào đời.
+
+**Lớp**: **A** — *có mặt ≠ có tác dụng*. Luật B25 **có mặt** trong 20 tệp; nó **không có tác dụng**
+vì không nằm trong bộ nạp và không có cổng. Viết thêm luật không làm luật chạy.
+
+**Chữa**: hợp nhất vai định tuyến về `IF-HOI-DAP.md`; Smartboard giữ nguyên (nằm trong gói đã đóng
+dấu băm) làm dấu vết + giữ hai bảng riêng của nó. **B25 vào bộ nạp** (`CLAUDE.md`, commit 28/08).
+
+**Còn nợ**: B25 vẫn **chưa có cổng máy** (`IF-TRAT-TU-MOI` §II T2 khai là nợ). Chừng nào chưa có,
+lỗi này **sẽ lặp** — và lần lặp sau không được coi là bất ngờ.

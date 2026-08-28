@@ -4,6 +4,17 @@
 
 
 > Tra ở đây **trước khi** tìm ngoài. Đây là mục lục của câu hỏi, không phải của tệp.
+>
+> 🔴 **HỢP NHẤT 28/08 — tệp này THAY VAI ĐỊNH TUYẾN của `02-SMARTBOARD.md`.**
+> Smartboard (26/08, `design-candidate/IDF-IF-PACKET-003/`) tự khai *"chỉ mục **ĐỊNH TUYẾN** —
+> không thay thế nguồn nào, chỉ trỏ đường"* — **đúng thứ tệp này làm**. Tôi dựng tệp này 28/08
+> mà **không LOOK INSIDE**, nên đẻ ra chỉ mục định tuyến thứ hai. Hoà bắt được: *"smartboard,
+> look inside, sổ luật quá trời luôn — có giống nhau không?"* Có.
+>
+> **Một chỉ mục định tuyến, ở đây.** Smartboard **giữ nguyên, không sửa** — nó nằm trong gói đã
+> đóng dấu băm (`IDF-IF-PACKET-003/MANIFEST.json`), sửa nó là hỏng biên nhận. Nó còn giá trị làm
+> **dấu vết** và giữ hai bảng tệp này không có: **gói candidate** `SB-101…103` và **canvas thiết kế**.
+> Cần hai bảng đó thì mở Smartboard; **định tuyến nguồn chân lý thì đọc ở đây.**
 
 ## Vì sao có tệp này
 
@@ -70,6 +81,12 @@ sau tin nhầm.
 | Hoà vừa nhắn gì? | `~/PROJECT/INBOX.md` | ✅ đọc mỗi phiên |
 | Đang ở đâu, việc kế tiếp là gì? | `docs/control/IF-CURRENT-STATE.md` | ✅ tệp nóng, dễ cũ |
 | Tôi cầm được công cụ gì, đã xác minh? | `docs/control/IF-TOOLING-RECEIPT.md` | ✅ |
+| Kiến trúc đã chốt gì? (`SB-005`) | `docs/ADR-Q0-ARCHITECTURE-DECISIONS-2026-08-19.md` | ✅ ADR Q1–Q9 + **Q14** — **dãy ADR duy nhất, cấm mở dãy hai** |
+| Các mảnh lắp với nhau ra sao? (`SB-006`) | `docs/IF-ARCHITECTURE-BLUEPRINT.md` | ✅ |
+| Mọi lỗi rút gọn thành một công thức nào? | `docs/control/IF-MOT-LOI.md` | ✅ đo 28/08 — **lấp khoảng trống bằng phỏng đoán rồi trình bày như sự thật** |
+| Trí nhớ chia mấy tuyến, cất ở đâu? | `docs/control/BOS-PHAN-LUONG-TRI-NHO.md` | ✅ 5 tuyến · cổng L7 |
+| Trật tự mới sau 28/08 là gì? | `docs/control/IF-TRAT-TU-MOI.md` | ✅ lời chứng + 7 luật kèm **trạng thái cổng thật** |
+| Ai là ai trong đống Claude/GPT? | `docs/control/AI-LA-AI-CHU-LA-GI.md` | ✅ |
 
 ### Đã ngã ở đâu
 
