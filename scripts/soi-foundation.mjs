@@ -160,6 +160,19 @@ function trongChuoi(src, i) {
   return n % 2 === 1;
 }
 
+/** Vị trí `i` có nằm trong CHÚ THÍCH không?
+ * Cần vì thước F-NHAN-BIA lượt đầu bắt luôn chú thích của chính bản vá — nơi mẫu cũ được TRÍCH
+ * LẠI để giải thích vì sao nó sai. Đó là F-06 lộn ngược: guard bị chú thích đánh lừa. Một máy soi
+ * không phân biệt được **mã** với **lời kể về mã** thì nó soi văn bản, không soi phần mềm. */
+function trongChuThich(src, i) {
+  const dauDong = src.lastIndexOf('\n', i) + 1;
+  const dong = src.slice(dauDong, i);
+  if (/(^|[^:])\/\//.test(dong)) return true;              // `// …` trên cùng dòng
+  const moKhoi = src.lastIndexOf('/*', i);
+  const dongKhoi = src.lastIndexOf('*/', i);
+  return moKhoi > dongKhoi;                                 // đang trong `/* … */`
+}
+
 /** viewBox bao quanh vị trí `i` — dùng để biết một `stroke-width` nằm trong icon hay trong tranh. */
 function viewBoxBaoQuanh(src, i) {
   const truoc = src.lastIndexOf('viewBox', i);
@@ -173,9 +186,52 @@ moHo('F-ICON-SIZE', 'Icon · cỡ quang học ∈ {14,16,18,20}');
 moHo('F-ICON-VIEWBOX', 'Icon · inline svg viewBox = "0 0 24 24"');
 moHo('F-MOTION-TOKEN', 'Chuyển động · chỉ dùng thang --nhip-*');
 moHo('F-MAT-VOCAB', 'Vật liệu · G0–G3 phải có mặt trong token sản xuất');
+/* ── F-NHAN-BIA · BỊA NHÃN KHI CHƯA BIẾT ──────────────────────────────────────────────────────
+ * Hoà soi app thật **26/08**: thanh trên bày `Untitled flow` cho một hồ sơ có thật. Người ta vá
+ * ĐÚNG MỘT CHỖ (`AppChrome.tsx:353`) rồi để nguyên gốc — **28/08 tái diễn**, ảnh Hoà gửi cho thấy
+ * `Chưa đặt tên`, sinh từ `DaiNguCanh.tsx:79`. Vá ca thì mầm còn sống.
+ *
+ * Cùng lỗi với `Chào Hoa`: tên trong DB là `hoa` (không tin được) ⇒ app **tự viết hoa** thành một
+ * cái tên SAI, thay vì nói "chưa biết" và mời gõ. Cùng lỗi với Vitals `calm` khi không đọc được
+ * dữ liệu, với dải `2/2` khi có 17 dự án.
+ *
+ * ⇒ Một công thức: **lấp khoảng trống bằng phỏng đoán rồi trình bày như sự thật**
+ *   (`docs/control/IF-MOT-LOI.md`). Thuốc thế giới đã dùng: *make illegal states unrepresentable*
+ *   — không có luật ESLint sẵn cho ca này (đã tra 28/08), nên dựng máy riêng, nối vào bánh cóc đã có.
+ *
+ * ⚠️ **KHÔNG cấm chuỗi `Chưa đặt tên` tồn tại.** Nó hợp lệ khi là **lời mời đặt tên** (nút, ô nhập,
+ * placeholder). Chỉ bắt khi nó đứng sau `||`/`??` để **thế chỗ một giá trị thật chưa biết** —
+ * đó mới là chỗ phỏng đoán đội lốt sự thật. */
+moHo('F-NHAN-BIA', 'Nhãn · cấm bịa tên khi giá trị thật chưa biết');
 
 for (const p of TEP) {
   const src = doc(p);
+
+  // ── NHÃN BỊA: `x || 'Chưa đặt tên'` · `x ?? 'Untitled'` ─────────────────────
+  {
+    /* ỨNG VIÊN = **mọi** chỗ lùi về một chuỗi (`x || 'abc'`, `x ?? 'abc'`).
+     * VI PHẠM  = trong số đó, chuỗi lùi về là một **DANH TÍNH BỊA**.
+     *
+     * Định nghĩa lượt đầu lấy ứng viên = vi phạm ⇒ sửa xong là `0 ứng viên` ⇒ máy tự tuyên
+     * **PHÉP ĐO HỎNG** (đúng LUẬT TIN CẬY §5: không thấy gì ≠ sạch). Luật đó ĐÚNG, không nới.
+     * Sai là ở định nghĩa: một thước mà "đạt" và "hỏng" trông giống nhau thì không dùng được. */
+    const re = /(\|\||\?\?)\s*(?:tr\()?\s*['"`]([^'"`\n]{1,40})['"`]/g;
+    const BIA = /^(Chưa đặt tên|Chưa có tên|Untitled.*|Unnamed.*|No name|Không tên)$/i;
+    let m;
+    let thayNhan = false;
+    while ((m = re.exec(src))) {
+      if (trongChuThich(src, m.index)) {
+        NGOAI_PHAM_VI.push({ ho: 'F-NHAN-BIA', p, dong: soDong(src, m.index), vi: 'mẫu cũ trích lại trong chú thích' });
+        continue;
+      }
+      ho['F-NHAN-BIA'].ungVien++; thayNhan = true;
+      if (!BIA.test(m[2])) continue;           // lùi về một chuỗi KHÁC — hợp lệ, không phải danh tính bịa
+      viPham('F-NHAN-BIA', p, soDong(src, m.index), `${m[1]} '${m[2]}'`,
+        'trạng thái "chưa biết" hiện ra được, hoặc lời mời đặt tên',
+        'Giá trị thật chưa biết mà app bịa một cái tên rồi trình bày như sự thật. Hoà bắt 26/08 (Untitled flow) và 28/08 (Chưa đặt tên) — vá một chỗ thì tái diễn ở chỗ khác.');
+    }
+    if (thayNhan) ho['F-NHAN-BIA'].tep++;
+  }
 
   // ── ICON: strokeWidth / stroke-width ────────────────────────────────────────
   {

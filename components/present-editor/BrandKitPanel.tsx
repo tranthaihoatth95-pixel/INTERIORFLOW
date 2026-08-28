@@ -82,7 +82,8 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
   const importFileRef = useRef<HTMLInputElement>(null); // 7.1.25 — nhập brand-kits.json (khác fileRef = logo ảnh)
 
   const projectId = useSheetsBucketId();
-  const projectName = useFlowStore((s) => s.flowName) || 'Không tên';
+  // 28/08 · F-NHAN-BIA — rỗng nghĩa là chưa đặt tên; tầng dưới tự quyết hiển thị hay bỏ trống.
+  const projectName = useFlowStore((s) => s.flowName) || '';
   const [hasProjectFile, setHasProjectFile] = useState(false); // B3 (4.1.c) — có brand-kit.json trong thư mục dự án chưa
   // Sự cố 31/07: "đã lưu" (localStorage) và "đã ghi đĩa" (thư mục dự án) là HAI việc — HAI thông
   // báo riêng, không được gộp. `diskMsg` báo lỗi đĩa KHÔNG tự tắt nhanh như `saved` (cần đọc kỹ).
@@ -313,7 +314,8 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
                       color: k.id === editingId ? 'var(--accent)' : 'var(--t2)',
                     }}
                   >
-                    {k.name || 'Không tên'}
+                    {/* 28/08 · F-NHAN-BIA — bộ nhận diện chưa đặt tên thì MỜI đặt, không bịa hộ */}
+                    {k.name || 'Đặt tên bộ này'}
                   </button>
                   <button type="button" onClick={() => onDelete(k.id)} title="Xoá kit" style={xMini}>
                     ×

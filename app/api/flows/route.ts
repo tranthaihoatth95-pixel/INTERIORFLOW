@@ -134,7 +134,11 @@ export async function POST(req: Request) {
   const flow = await prisma.flow.create({
     data: {
       userId: user.id,
-      name: String(body.name ?? 'Untitled flow'),
+      // 28/08 · F-NHAN-BIA — TRƯỚC ĐÂY `?? 'Untitled flow'`: đây là NGUỒN của cả chuỗi lỗi —
+      // tên giả được đúc thẳng vào cơ sở dữ liệu, rồi mọi tầng phía sau bày nó ra như tên thật
+      // (đo 28/08: 42/48 flow sống mang đúng chuỗi này). Rỗng = **chưa đặt tên**, và đó là sự
+      // thật; tầng hiển thị có trách nhiệm mời người dùng đặt, không phải bịa hộ.
+      name: String(body.name ?? '').trim(),
       projectId,
       graphJson: typeof body.graphJson === 'string' ? body.graphJson : '{"nodes":[],"edges":[]}',
       lastEditedBy: user.id,

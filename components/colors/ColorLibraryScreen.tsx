@@ -30,7 +30,8 @@ import { ColorAccuracyNotice } from './ColorAccuracyNotice';
 export function ColorLibraryScreen() {
   const tr = useT();
   const projectId = useFlowStore((s) => s.currentProjectId);
-  const projectName = useFlowStore((s) => s.flowName) || 'Không tên';
+  // 28/08 · F-NHAN-BIA — rỗng = chưa đặt tên.
+  const projectName = useFlowStore((s) => s.flowName) || '';
 
   const [raw, setRaw] = useState<ColorSource[] | null>(null);
   const [importing, setImporting] = useState(false);

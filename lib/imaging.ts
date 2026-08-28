@@ -82,7 +82,9 @@ export async function composeBoard({ images, projectName, studioName }: BoardOpt
   // header
   ctx.fillStyle = '#f4f4f5';
   ctx.font = `600 ${64 * SCALE}px system-ui, sans-serif`;
-  ctx.fillText(projectName || 'Untitled project', PAD, 128 * SCALE);
+  // 28/08 · F-NHAN-BIA — TRƯỚC ĐÂY `|| 'Untitled project'`: in một cái tên BỊA lên tấm ảnh
+  // **gửi cho khách**. Không tên thì không in dòng nào — thiếu một dòng chữ còn hơn một dòng sai.
+  if (projectName) ctx.fillText(projectName, PAD, 128 * SCALE);
   ctx.fillStyle = '#8b7cf7';
   ctx.font = `500 ${34 * SCALE}px system-ui, sans-serif`;
   ctx.fillText((studioName || 'InteriorFlow Studio').toUpperCase(), PAD, 182 * SCALE);

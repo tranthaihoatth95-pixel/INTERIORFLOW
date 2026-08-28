@@ -646,7 +646,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       set({
         nodes: visibleNodes,
         edges: saved.edges ?? [],
-        flowName: saved.flowName ?? 'Untitled flow',
+        flowName: saved.flowName ?? '', // 28/08 · F-NHAN-BIA — rỗng = chưa đặt tên, không bịa
         credits: typeof saved.credits === 'number' ? saved.credits : 120,
         groups,
         comments,

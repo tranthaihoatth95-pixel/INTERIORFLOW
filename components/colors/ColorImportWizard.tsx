@@ -34,7 +34,8 @@ type Tab = 'file' | 'paste' | 'lark';
 export function ColorImportWizard({ onClose, onImported }: { onClose: () => void; onImported: () => void }) {
   const tr = useT();
   const projectId = useFlowStore((s) => s.currentProjectId);
-  const projectName = useFlowStore((s) => s.flowName) || 'Không tên';
+  // 28/08 · F-NHAN-BIA — rỗng = chưa đặt tên.
+  const projectName = useFlowStore((s) => s.flowName) || '';
 
   const [tab, setTab] = useState<Tab>('file');
   const [busy, setBusy] = useState(false);

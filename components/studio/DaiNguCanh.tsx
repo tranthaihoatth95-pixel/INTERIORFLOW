@@ -76,7 +76,11 @@ export function DaiNguCanh({ tenDuAn, chang, onChonChang, onDoiTen }: DaiNguCanh
   };
 
   const SEGMENTS: Segment[] = [
-    { khoa: 'du-an', chu: tenDuAn || tr('Chưa đặt tên', 'Untitled') },
+    // 28/08 · F-NHAN-BIA — TRƯỚC ĐÂY: `tenDuAn || 'Chưa đặt tên'`. Người đã đăng nhập, chưa mở
+    // dự án nào, mà thanh trên vẫn bày MỘT CÁI TÊN. "Chưa đặt tên" đọc như tên của một dự án có
+    // thật nhưng chưa được đặt tên — sai. Sự thật là **chưa mở dự án nào**, và câu đúng phải MỜI
+    // chọn, không giả vờ đã có. (Hoà bắt 26/08 với `Untitled flow`, tái diễn 28/08.)
+    { khoa: 'du-an', chu: tenDuAn || tr('Chọn dự án', 'Pick a project') },
     ...(chang ? [{ khoa: 'chang' as const, chu: nhanChang(chang) }] : []),
   ];
 

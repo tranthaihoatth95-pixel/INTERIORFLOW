@@ -150,7 +150,8 @@ export async function bootstrapWorkspace() {
     const { nodes, edges, flowName, user } = useFlowStore.getState();
     const carryOver = !user || localFlowBelongsTo(user.id);
     if (!carryOver) useFlowStore.setState({ nodes: [], edges: [], flowName: 'Untitled flow' });
-    const firstName = carryOver ? flowName || 'Untitled flow' : 'Untitled flow';
+    // 28/08 · F-NHAN-BIA — không đúc tên giả; rỗng nghĩa là chưa đặt tên.
+    const firstName = carryOver ? flowName || '' : '';
     // G-M14-01 (07/08, p12) — bootstrapWorkspace là 1 trong 5 điểm tạo flow TRẦN sinh ra flow mồ
     // côi (M-SCOPE-OUT VIỆC 1 mục 2): tài khoản mới đăng nhập lần đầu nhận ngay 1 flow không
     // thuộc Project nào. Nay tạo Project bọc ngoài TRƯỚC rồi gắn flow đầu tiên vào — tài khoản

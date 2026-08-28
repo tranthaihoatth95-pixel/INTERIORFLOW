@@ -136,6 +136,9 @@ async function ensurePermission(handle: FileSystemDirectoryHandle): Promise<bool
 /** Tên thư mục 1 dự án — khớp sơ đồ Hoà chốt `<mã dự án> — <tên>/`. Lọc ký tự hệ điều hành cấm
  * trong tên thư mục (`/ \ : * ? " < > |`) khỏi TÊN (mã dự án là id kỹ thuật, luôn an toàn sẵn). */
 export function projectFolderName(projectId: string, projectName: string): string {
+  /* soi-mien-tru: F-NHAN-BIA — đây KHÔNG phải bịa danh tính. Một thư mục trên đĩa **bắt buộc**
+     phải có tên; rỗng thì hệ tệp từ chối tạo. Đây là lùi THẬT ở tầng lưu trữ, không phải một
+     nhãn trình bày cho người dùng đọc như tên dự án. */
   const safeName = projectName.replace(/[/\\:*?"<>|]/g, '').trim() || 'Không tên';
   return `${projectId} — ${safeName}`;
 }
