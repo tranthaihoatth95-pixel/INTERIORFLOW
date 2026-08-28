@@ -1,0 +1,93 @@
+# IF · MỤC LỤC THEO CÂU HỎI
+
+> Tra ở đây **trước khi** tìm ngoài. Đây là mục lục của câu hỏi, không phải của tệp.
+
+## Vì sao có tệp này
+
+Kho tài liệu IF có **887 tệp**, đặt tên theo *lúc nào làm* (`AUDIT-…-2026-08-03`) hoặc *máy nào
+đẻ ra nó* (`SOI-10-PHIEN-…`, `PROMPT-…`). **Không tên nào hứa trả lời một câu hỏi**, nên không ai
+mở — và mỗi phiên lại đi đo lại thứ đã đo rồi. Hoà chỉ ra 28/08: *"đặt tên sao cho các bạn dễ tìm
+**và muốn đọc**"*. Chữ *muốn* mới là chữ khó.
+
+Một tệp được mở khi **tên nó là câu hỏi mà người đọc đang có trong đầu**. Không phải khi nó đúng
+thư mục.
+
+## Ba luật đặt tên — áp cho tài liệu MỚI
+
+1. **Tên là câu hỏi nó trả lời**, không phải ngày tháng, không phải tên máy sinh ra nó.
+   `dwg-co-ship-duoc-khong.md` ✅ · `AUDIT-DWG-2026-08-28.md` ❌
+2. **Một tệp một câu hỏi.** Trả lời được hai câu thì tách hai tệp. Tệp trả lời mười câu là tệp
+   không ai đọc hết, tức không ai đọc.
+3. **Ngày nằm TRONG tệp, không nằm trên tên.** Ngày trên tên làm mọi tệp trông như đã cũ; ngày
+   trong tệp cho biết nó còn dùng được không.
+
+⚠️ **Không đổi tên 887 tệp cũ.** Đổi tên hàng loạt là làm gãy mọi tham chiếu đang trỏ tới chúng —
+đúng lớp lỗi B (*đúng thao tác, sai đối tượng*). Tệp cũ cứ để yên; câu hỏi nào có người hỏi thì
+thêm một dòng vào bảng dưới, trỏ tới nó. **Kho tự dọn theo nhu cầu thật, không dọn theo lịch.**
+
+## Lệnh nghiên cứu — thứ tự bắt buộc
+
+```
+① tra bảng dưới          → đã có ai trả lời câu này chưa?
+② tra kho ngoài repo     → ~/PROJECT · Drive · interiorflow-reference
+③ mới ra ngoài tìm       → và chỉ tìm ĐIỀU MỚI, không tìm lại điều đã biết
+④ tư vấn                 → kèm phần ① đã có, để Hoà thấy cái gì cũ cái gì mới
+⑤ ghi câu hỏi mới vào bảng này
+```
+
+Bỏ bước ① là cơ chế đẻ ra *"đề xuất lại thứ đã có"* (luật N8) — và đó là thứ đã tiêu tiền của Hoà.
+
+---
+
+## Bảng câu hỏi
+
+Cột **Còn đúng không** là cột quan trọng nhất: một câu trả lời cũ mà không ai đóng dấu thì phiên
+sau tin nhầm.
+
+### IF là gì · làm việc thế nào
+
+| Câu hỏi | Trả lời ở | Còn đúng không |
+|---|---|---|
+| InteriorFlow **là gì**? | `docs/IF-KIEN-TRUC-OS.md` | ✅ chốt 18/08, trên mọi chốt khác |
+| Luật bền nào ràng buộc tôi? | `docs/control/IF-CANONICAL.md` | ✅ |
+| Làm việc với Hoà thế nào? | `~/PROJECT/CLAUDE.md` §3 + §5 | ✅ Hoà tự viết 26/08 |
+| Hoà vừa nhắn gì? | `~/PROJECT/INBOX.md` | ✅ đọc mỗi phiên |
+| Đang ở đâu, việc kế tiếp là gì? | `docs/control/IF-CURRENT-STATE.md` | ✅ tệp nóng, dễ cũ |
+| Tôi cầm được công cụ gì, đã xác minh? | `docs/control/IF-TOOLING-RECEIPT.md` | ✅ |
+
+### Đã ngã ở đâu
+
+| Câu hỏi | Trả lời ở | Còn đúng không |
+|---|---|---|
+| Sai lầm giao diện nào đã trả giá? | `docs/control/IF-UXUI-OPERATING-MEMORY.md` | ✅ M-01…M-56 |
+| Viết hoa chữ Việt có sao không? | cùng tệp trên, **M-41** | ✅ **hoa toàn phần giết dấu chồng** |
+| Bộ chữ có phủ đủ tiếng Việt không? | cùng tệp trên, **M-40** | ✅ kiểm bằng bảng mã, không bằng mắt |
+| 21 lỗi đã ghi rút gọn thành mấy công thức? | `docs/design-campaign/02-FAILURE-LEDGER.md` | ⚠️ sổ có 21 mục; **ba công thức** rút 28/08 chưa ghi vào sổ |
+| Một khuyến nghị thành quyết định bền qua cổng nào? | `docs/control/IF-ADVICE-VERIFICATION-GATE.md` | ✅ |
+
+### Đã đo, có biên nhận
+
+| Câu hỏi | Trả lời ở | Còn đúng không |
+|---|---|---|
+| DWG có ship được không, vướng gì? | `docs/design-candidate/IDF-IF-PACKET-003/dwg/01-DWG-LICENSE-FIDELITY.md` | ✅ đo 28/08 · cờ đã tắt |
+| Máy không có AutoCAD thì nhập DWG kiểu gì? | `lib/cad/dwg-flag.ts` (đầu tệp) | ✅ ba đường, không nêu tên hãng |
+| Vì sao server kẹt sau 6 phút? | `docs/design-candidate/IDF-IF-PACKET-003/sqlite/01-L2-01-CHAN-DOAN.md` | ⚠️ **chưa tái hiện được** — 6,2 triệu lượt, 0 arm kẹt |
+| `.idfc` có ra được 3D không? | `docs/design-candidate/IDF-IF-PACKET-003/f3/01-IDFC-TO-3D-GAP.md` | ✅ đo 28/08 — **đứt**, `geom3d.heightMm` 3 nơi ghi 0 nơi đọc |
+| Dock có được đổi hết theo chặng không? | `docs/control/IF-ADVICE-VERIFICATION-GATE.md` §10 | 🟡 PROVISIONAL — **giữ vùng neo bất biến** |
+| `.idfc → 3D` được phép thi công chưa? | `docs/design-candidate/IF-DEC/IF-DEC-IDFC-3D-001-v0.2.md` | ⛔ **CHƯA** — ACCEPTED CANDIDATE, cổng G1–G7 chặn |
+
+### Đang mở — chưa ai trả lời
+
+| Câu hỏi | Ai trả lời được | Vì sao chưa |
+|---|---|---|
+| IF đã làm được **việc nghề nào** cho Hoà? | phép thử DXF thật | chờ Hoà đưa một tệp |
+| Cú kẹt L2-01 do đâu? | đo trên `next start` có phiên đăng nhập | chưa chạy |
+| Gỡ mã GPL khỏi bộ cài thế nào? | cấu hình `build.files` | chưa làm; cổng đã chặn đóng gói |
+| Ký số hay chấp nhận bản chưa ký? | **chỉ Hoà** | — |
+
+---
+
+## Cách thêm một dòng
+
+Trả lời xong một câu hỏi mà bảng này chưa có → thêm **một dòng**, không viết thêm tài liệu tổng
+kết. Bảng dài ra là kho đang khoẻ; kho đẻ thêm tệp tổng kết mới là kho đang ốm.
