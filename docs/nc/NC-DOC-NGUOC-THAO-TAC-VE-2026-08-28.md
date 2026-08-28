@@ -103,3 +103,30 @@ lệnh mà người vẽ đã chạy.**
 **trên** 972 mảnh rời (mỗi màu = một đối tượng, đó là thứ lệnh `TRIM` để lại) ·
 **dưới** 262 bức tường liền sau khi đảo ngược. Tổng chiều dài gần như không đổi
 (1139,2 → 1128,9 m) — bằng chứng không ăn mất tường.
+
+## ĐẢO ARRAY — bậc thang không phải tường (29/08)
+
+`anh/dao-3-buoc-03_TANG5B.png` — ba bước trên cùng một góc mặt bằng.
+
+Ảnh phơi ra lỗi mà **số đo không thấy được**: khối bậc thang bị đọc thành ~112 bức
+tường sát nhau. Chữ ký hình học của nó, **không đọc tên layer**: ≥4 trục song song
+cách đều nhau bước 200–400mm — đó là dấu tay của lệnh `ARRAY`/`OFFSET` lặp.
+
+    262 → 144 tường · 1129 → 990 m   (loại 118 vật bước đều, 139 m)
+
+**PHÉP THỬ ĐỘC LẬP, không cố ý dựng ra:** máy loại **105/112** vật nằm trên layer
+tên `E-Stair` mà **chưa từng đọc chữ "Stair"**. Hình học và tên người vẽ đặt trùng
+khớp nhau — hai nguồn độc lập cùng chỉ một chỗ. Đây là kiểu bằng chứng mạnh hơn
+"chạy ra số đẹp", vì nó không thể dàn xếp được.
+
+### Thử thứ ba ĐÃ TRƯỢT — bỏ trục chồng
+
+Còn 728 cặp trục chồng nhau (một tường 3–4 nét: hai mặt kết cấu + nét trát ⇒ ghép
+mọi cặp thì một tường đẻ nhiều trục). Thử luật *"giữ trục dày nhất trong chùm"*:
+
+    144 → 52 tường · 990 → 260 m       ⇒ MẤT 74% chiều dài
+
+Đúng cái nghiệm thu đã đặt ra bắt được: **giảm cả hai là đang ăn mất tường.**
+Nguyên nhân: xếp theo bề dày trước khiến một trục 400mm dài nuốt trọn các tường
+200mm nằm cùng đường. **Không nhận, không đưa vào mã.** Luật đúng phải là *cặp
+NGOÀI CÙNG của một chùm nét*, không phải *trục dày nhất trong vùng*.

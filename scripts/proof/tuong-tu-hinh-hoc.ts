@@ -129,6 +129,48 @@ console.log(`\n⇒ CHỐT (khe ≤100mm): ${giu.length} → ${noi.length} tườ
   console.log(`   dài trung bình ${(doDai(noi)*1000/noi.length/1000).toFixed(2)} m · dài nhất ${(d.at(-1)!/1000).toFixed(1)} m · trung vị ${(d[d.length>>1]/1000).toFixed(2)} m`);
 }
 
+/* ── ĐẢO ARRAY — bậc thang KHÔNG phải tường ──────────────────────────────────
+ * Chữ ký hình học, KHÔNG đọc tên layer: ≥4 trục song song, cùng phương, xếp
+ * cách đều nhau bước 200–400mm. Đó là dấu tay của lệnh ARRAY/OFFSET lặp —
+ * người vẽ dựng BẬC THANG (hoặc gạch lát), không dựng bốn bức tường sát nhau.
+ */
+function boArray(ds: Truc[]) {
+  const nhom: Truc[][] = [];
+  for (const t of ds) {
+    const L=Math.hypot(t.bx-t.ax,t.by-t.ay); if(L<1) continue;
+    let ux=(t.bx-t.ax)/L, uy=(t.by-t.ay)/L; if(ux<0||(Math.abs(ux)<1e-9&&uy<0)){ux=-ux;uy=-uy;}
+    const g = nhom.find(g=>{const a=g[0];const la=Math.hypot(a.bx-a.ax,a.by-a.ay);
+      const vx=(a.bx-a.ax)/la, vy=(a.by-a.ay)/la;
+      if(Math.abs(vx*ux+vy*uy)<0.999) return false;
+      const s=(p:Truc)=>(p.ax-a.ax)*vx+(p.ay-a.ay)*vy;      // vị trí dọc trục
+      return Math.abs(s(t)-0)<L+la && Math.abs((t.ax-a.ax)*-vy+(t.ay-a.ay)*vx)<3000; });
+    if(g) g.push(t); else nhom.push([t]);
+  }
+  const bo = new Set<Truc>();
+  for (const g of nhom) {
+    if (g.length < 4) continue;
+    const a=g[0], la=Math.hypot(a.bx-a.ax,a.by-a.ay);
+    const vx=(a.bx-a.ax)/la, vy=(a.by-a.ay)/la;
+    const c = g.map(p=>(p.ax-a.ax)*-vy+(p.ay-a.ay)*vx).sort((x,y)=>x-y);
+    const b: number[] = []; for(let i=1;i<c.length;i++) b.push(c[i]-c[i-1]);
+    const deu = b.filter(x=>x>150&&x<420);
+    if (deu.length >= 3) {                                   // ≥4 bậc ⇒ ≥3 bước đều
+      const tb = deu.reduce((s,x)=>s+x,0)/deu.length;
+      if (deu.every(x=>Math.abs(x-tb)<60)) g.forEach(p=>bo.add(p));
+    }
+  }
+  return { giuLai: ds.filter(t=>!bo.has(t)), bo: [...bo] };
+}
+const { giuLai, bo } = boArray(noi);
+const m=(ds:Truc[])=>ds.reduce((s,t)=>s+Math.hypot(t.bx-t.ax,t.by-t.ay),0)/1000;
+console.log(`\nĐẢO ARRAY — loại ${bo.length} đối tượng bước đều (${m(bo).toFixed(0)} m) ⇒ KHÔNG phải tường`);
+console.log(`⇒ TƯỜNG THẬT: ${giuLai.length} · ${m(giuLai).toFixed(0)} m`);
+const ten=(id:string)=>layers.get(id)??id;
+const demLayer=(ds:Truc[])=>{const t=new Map<string,number>();for(const x of ds)t.set(ten(x.layer),(t.get(ten(x.layer))??0)+1);
+  return [...t].sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${k}×${v}`).join(' · ');};
+console.log(`   giữ lại: ${demLayer(giuLai)}`);
+console.log(`   loại ra: ${demLayer(bo)}`);
+
 /* ── VẼ RA: bản vẽ gốc (nhạt) + tường IF nhận ra (đậm) ── */
 import { writeFileSync } from 'node:fs';
 let minx=1e18,miny=1e18,maxx=-1e18,maxy=-1e18;
@@ -136,7 +178,7 @@ for (const s of THANG) for (const p of [s.a,s.b]) { minx=Math.min(minx,p.x); min
 const W=maxx-minx, H=maxy-miny, S=1600/Math.max(W,H);
 const X=(x:number)=>((x-minx)*S).toFixed(1), Y=(y:number)=>((maxy-y)*S).toFixed(1);
 const nen = THANG.map(s=>`<line x1="${X(s.a.x)}" y1="${Y(s.a.y)}" x2="${X(s.b.x)}" y2="${Y(s.b.y)}"/>`).join('');
-const tuong = noi.map(t=>`<line x1="${X(t.ax)}" y1="${Y(t.ay)}" x2="${X(t.bx)}" y2="${Y(t.by)}" stroke-width="${Math.max(1.2,t.d*S)}"/>`).join('');
+const tuong = giuLai.map(t=>`<line x1="${X(t.ax)}" y1="${Y(t.ay)}" x2="${X(t.bx)}" y2="${Y(t.by)}" stroke-width="${Math.max(1.2,t.d*S)}"/>`).join('');
 writeFileSync('/tmp/tuong-nhan-ra.svg',
 `<svg xmlns="http://www.w3.org/2000/svg" width="${(W*S).toFixed(0)}" height="${(H*S).toFixed(0)}" viewBox="0 0 ${(W*S).toFixed(0)} ${(H*S).toFixed(0)}">
 <rect width="100%" height="100%" fill="#F7F9FA"/>
