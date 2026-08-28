@@ -502,3 +502,50 @@ cổng cho nó. Chưa có cổng ⇒ **khai là nợ**, và **lỗi này sẽ l�
 
 **Điều đáng ghi nhất**: tôi phát hiện được **chỉ vì Hoà hỏi**. Không có câu hỏi đó thì bốn con số
 sai nằm vĩnh viễn trong sổ bền, và phiên sau sẽ trích lại chúng như dữ kiện.
+
+## F-24 · TÁM THỨ TÔI "PHÁT HIỆN" HÔM NAY ĐỀU ĐÃ NẰM TRONG SỔ — 28/08
+
+**Việc**: Hoà bảo *"đọc đi"*. Đọc hết **42 mục `M-*` + 23 mục `F-*`**.
+
+**Kết quả — tám phát hiện của cả ngày, không cái nào mới:**
+
+| tôi "phát hiện" 28/08 | đã viết sẵn |
+|---|---|
+| `T9` khẳng định vắng mặt phải kèm lệnh | `M-55` luật 2, nguyên văn |
+| `T10` chỉ phản biện độc lập bắt được lớp này | `M-55` câu kết, nguyên văn |
+| `F-23` nhắc số nhớ như số đo | `M-05` *"số chép lại không phải phép đo"* |
+| *"tạo mà không nối"* | `M-23` *"thiếu **ĐƯỜNG DẪN** tới tri thức · 3/4 ca là lỗi **ĐỊNH TUYẾN**"* |
+| *"sổ không cổng thì chỉ là sổ"* | `M-14` nguyên văn |
+| dời tệp làm gãy con trỏ | `M-24` — **và nó gọi tên sẵn máy canh** `soi:design-school` |
+| ban luật rồi tự vi phạm | `M-33` |
+| ghi `NOT ASSESSED` thay vì mở app | `M-01` *"không có ảnh app thật thì **cấm** cho PASS"* |
+
+**Và `M-11` giải thích vì sao ĐỌC RỒI VẪN VI PHẠM** — nó tự gọi mình là *"bài học đắt nhất cả
+chiến dịch"*: docstring của **chính tệp dựng bố cục** chép sẵn luật, gọi tên đúng cả hai lần trượt
+trước, rồi vẫn giao ra tường thẻ trắng.
+
+> *"**Không phải "không ai đọc".** Luật bằng văn xuôi **không cho người ta cách đối chiếu sản phẩm
+> của mình với nó**. Luật nào không kèm được **một cặp ảnh TỐT/XẤU** thì chưa dùng được — nó mới là
+> một câu, chưa phải một công cụ."*
+
+⇒ Câu tôi nói trước khi đọc — *"chỗ tắc là không tuân thứ đã đọc"* — **cũng sai**, đúng kiểu `M-11`
+mô tả. **Tuân không phải chuyện ý chí.** Một luật văn xuôi thiếu dụng cụ đối chiếu thì **không tuân
+được**, đọc bao nhiêu lần cũng vậy.
+
+**Hai lỗi tìm thấy trong chính sổ:**
+1. **`M-56` xuất hiện HAI LẦN** (dòng 248 và 283), hai nội dung khác hẳn — **trùng mã trong chính
+   cuốn sổ dạy về định danh**. Đã đổi mục sau thành `M-58`. Ai từng trích `M-56` trước 28/08 đang
+   trỏ vào **một trong hai** mà không biết là cái nào.
+2. `F-06` chốt *"báo động giả thì **báo cáo**, không bao giờ tự làm xanh"*, và để `kinh-webkit-prefix`
+   **đỏ một cách trung thực**. Sáng 28/08 tôi **làm nó xanh** — trước khi đọc `F-06`.
+   Kiểm lại theo đúng `M-55` (dán đầu ra): **43 tệp dùng `backdrop-filter` thật · 0 tệp thiếu
+   `-webkit-`**. Luật xanh vì **sạch thật**. Việc làm xanh hợp lệ — nhưng tôi làm nó **mà không
+   biết `F-06` tồn tại**, nên **đúng cũng là may**, giống hệt `F-18`.
+
+**Lớp**: `A` — có mặt ≠ có tác dụng, ở tầng cao nhất: **65 mục tri thức có mặt đầy đủ, và không có
+tác dụng lên hành vi của phiên đang chạy.**
+
+**Việc phải làm khác đi — theo `M-11`, không theo trực giác của tôi:**
+Không phải đọc kỹ hơn, không phải thêm luật, không phải thêm cổng. Là **cho mỗi luật hay tái phạm
+một DỤNG CỤ ĐỐI CHIẾU** — cặp ảnh TỐT/XẤU, hoặc một lệnh chạy được, hoặc một ca đột biến. Luật nào
+không có dụng cụ thì **khai thẳng là chưa dùng được**, đừng để nó nằm đó như một câu đã có hiệu lực.

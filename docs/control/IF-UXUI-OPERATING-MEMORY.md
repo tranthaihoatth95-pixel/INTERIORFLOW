@@ -280,7 +280,11 @@ sự lệch đó là thứ lộ ra rằng luật của tôi thiếu một vế. 
 Còn ⇒ nó là icon. **Trống trơn ⇒ nó là TRANH, đừng đụng vào cỡ.**
 
 
-### M-56 · 🔴 ĐỊNH DANH NGƯỜI GHI BẰNG **PID** LÀ HỎNG TỪ GỐC — pid LUÔN chết khi ai đó đi kiểm
+### M-58 · 🔴 ĐỊNH DANH NGƯỜI GHI BẰNG **PID** LÀ HỎNG TỪ GỐC
+<!-- 🔴 SỬA 28/08 — mục này TRƯỚC ĐÂY mang số `M-56`, TRÙNG với mục icon/tranh phía trên.
+     Hai mục khác hẳn nhau cùng một mã, trong chính cuốn sổ dạy về định danh (M-25 · M-56-pid).
+     Đổi thành `M-58` (M-57 đã dùng). Ai trích `M-56` trước 28/08 thì đang trỏ vào MỘT trong hai —
+     phải đọc nội dung mới biết là mục nào. Đây là lý do M-24 tồn tại: con trỏ đứt thì tri thức chết. --> — pid LUÔN chết khi ai đó đi kiểm
 **Ca 24–25/08. Lỗi của tôi, và nó là nguyên nhân của CẢ CHUỖI tranh chấp quyền ghi.**
 
 M-25 dạy: cấm đại từ *"phiên này"*, phải là **định danh đo được**. Đúng. Tôi thi hành bằng cách ghi
