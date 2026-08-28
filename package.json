@@ -26,6 +26,7 @@
     "soi:giay-phep": "node scripts/soi-giay-phep-phat-hanh.mjs",
     "moc": "node scripts/moc.mjs",
     "tra": "node scripts/tra.mjs",
+    "nang-luc": "node scripts/nang-luc.mjs",
     "xep-gon": "echo \"── XẾP GỌN CUỐI CHU KÌ ──\" && node scripts/soi-kho-tai-lieu.mjs && node scripts/soi-thu-muc.mjs && node scripts/soi-quan-tri.mjs; echo \"\" && echo \"VIỆC TAY, theo thứ tự:\" && echo \"  1. docs/control/IF-HOI-DAP.md      — câu đã trả lời xong thì XOÁ DÒNG, đừng để dài ra\" && echo \"  2. docs/control/IF-CON-THIEU-GI.md — mục đã xong thì XOÁ DÒNG. Tệp này phải NGẮN DẦN\" && echo \"  3. docs/control/IF-CURRENT-STATE.md— chỉ giữ HIỆN TẠI; chuyện cũ sang docs/nhat-ky/\" && echo \"  4. bánh cóc trong scripts/foundation-tran.json — dọn thật thì HẠ trần, cấm nới lên\" && echo \"  5. npm run no:chua-noi             — máy nào còn đỏ, chưa nối vào cổng chung\" && echo \"\" && echo \"Luật: kho tự dọn theo NHU CẦU, không theo lịch. Chạy lệnh này khi kết một chu kì việc.\"",
     "no:chua-noi": "echo \"🔴 3 máy soi ĐANG ĐỎ, chưa nối vào npm test — nợ có số, không phải nợ im lặng:\" && echo \"   check:mocks · soi:thao-tac · soi:design-school\" && echo \"   Nối vào lúc này là chặn mọi lane. Sửa cho xanh RỒI nối — đừng nới luật để nối.\"",
     "soi:kho-tai-lieu": "node scripts/soi-kho-tai-lieu.mjs",
