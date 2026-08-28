@@ -1,0 +1,83 @@
+#!/usr/bin/env node
+/**
+ * soi-kho-tai-lieu.mjs — ĐO độ phân mảnh của kho tài liệu, KHÔNG dời một tệp nào.
+ *
+ * Hoà 28/08: *"gốc rễ của sự rời rạc … dọn dẹp sắp xếp lại ngăn nắp được không?"*
+ * Được — nhưng đo trước. Dời hàng loạt là gãy mọi tham chiếu (lớp lỗi B: đúng thao tác, sai
+ * đối tượng). Máy này chỉ ĐỌC; nó nói kho đang hỏng ở đâu để việc dọn có mục tiêu.
+ *
+ * Bốn số nó trả lời:
+ *   ① MỒ CÔI   — tệp không tệp nào trỏ tới. Viết ra rồi không ai đi tới thì bằng không (M-24).
+ *   ② ĐÃ ĐÓNG DẤU — tự khai superseded/không-còn-cửa-vào. Đây là phần dọn AN TOÀN nhất.
+ *   ③ TÊN KHẢO CỔ — tên mang ngày tháng hoặc tên máy sinh ra nó, không phải câu hỏi nó trả lời.
+ *   ④ TRÙNG NỘI DUNG — cùng sha256, khác đường dẫn. Hai bản thật, phân kỳ chờ sẵn.
+ */
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import path from 'node:path';
+
+const REPO = process.cwd();
+const BO = new Set(['node_modules', '.git', '.next', '.claude', 'worktrees']);
+
+function quet(dir, ra = []) {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    if (BO.has(e.name)) continue;
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) quet(p, ra);
+    else if (e.name.endsWith('.md')) ra.push(p);
+  }
+  return ra;
+}
+
+const tep = quet(path.join(REPO, 'docs')).concat(
+  readdirSync(REPO).filter((f) => f.endsWith('.md')).map((f) => path.join(REPO, f)),
+);
+
+// Gom toàn bộ chữ để tìm tham chiếu — đọc một lần, không quét lại 887 lần.
+const noi = new Map();
+for (const t of tep) { try { noi.set(t, readFileSync(t, 'utf8')); } catch { noi.set(t, ''); } }
+const tatCa = [...noi.values()].join('\n');
+
+const DAU_DONG = /KHÔNG CÒN LÀ CỬA VÀO|SUPERSEDED|THAY BỞI|đã bị thay thế|dấu vết|chuyển hướng/i;
+const TEN_KHAO_CO = /\d{4}-\d{2}-\d{2}|\d{2}-\d{2}\.md$|^(AUDIT|SOI|PROMPT|BAN-GIAO|CHOT|BAO-CAO|PHIEU)/i;
+
+const moCoi = [], daDong = [], khaoCo = [];
+const bam = new Map();
+
+for (const t of tep) {
+  const ten = path.basename(t);
+  const goc = ten.replace(/\.md$/, '');
+  // được trỏ tới nếu tên xuất hiện ở BẤT KỲ tệp nào khác
+  const soLan = tatCa.split(goc).length - 1;
+  const tuNo = (noi.get(t).split(goc).length - 1);
+  if (soLan - tuNo <= 0) moCoi.push(t);
+  if (DAU_DONG.test(noi.get(t).slice(0, 1200))) daDong.push(t);
+  if (TEN_KHAO_CO.test(ten)) khaoCo.push(t);
+  const h = createHash('sha256').update(noi.get(t)).digest('hex');
+  if (!bam.has(h)) bam.set(h, []);
+  bam.get(h).push(t);
+}
+const trung = [...bam.values()].filter((v) => v.length > 1);
+
+const r = (p) => path.relative(REPO, p);
+const pc = (n) => `${((n / tep.length) * 100).toFixed(0)}%`;
+
+console.log('SOI KHO TÀI LIỆU · chỉ đọc, không dời tệp nào\n');
+console.log(`  tổng tệp .md          ${tep.length}`);
+console.log(`  ① mồ côi              ${moCoi.length}  (${pc(moCoi.length)}) — không tệp nào trỏ tới`);
+console.log(`  ② đã đóng dấu         ${daDong.length}  (${pc(daDong.length)}) — tự khai đã bị thay/không còn cửa vào`);
+console.log(`  ③ tên khảo cổ         ${khaoCo.length}  (${pc(khaoCo.length)}) — tên mang ngày hoặc tên máy sinh`);
+console.log(`  ④ trùng nội dung      ${trung.length} cặp — cùng sha256, khác đường dẫn`);
+
+const vuaMoCoiVuaCu = moCoi.filter((t) => khaoCo.includes(t));
+console.log(`\n  ⇒ VỪA mồ côi VỪA tên khảo cổ: ${vuaMoCoiVuaCu.length} — đây là phần dọn an toàn nhất`);
+
+console.log('\n── ④ TRÙNG NỘI DUNG (nguy hiểm nhất: hai bản thật) ──');
+if (!trung.length) console.log('  không có');
+for (const g of trung.slice(0, 8)) console.log('  ' + g.map(r).join('\n    ≡ '));
+
+console.log('\n── ① MỒ CÔI, 12 tệp lớn nhất ──');
+for (const t of moCoi.map((t) => ({ t, s: statSync(t).size })).sort((a, b) => b.s - a.s).slice(0, 12)) {
+  console.log(`  ${String(Math.round(t.s / 1024)).padStart(4)} KB  ${r(t.t)}`);
+}
+console.log('\nKhông tệp nào bị dời, đổi tên hay xoá trong lượt chạy này.');
