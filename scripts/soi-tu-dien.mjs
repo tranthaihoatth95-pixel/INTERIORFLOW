@@ -147,6 +147,34 @@ const MD_QUET = [
   'docs/phieu-giao', // 59 tệp — agent đọc để THI HÀNH. Ưu tiên số 1.
   'docs/mocks', //  3 tệp — mock là hợp đồng giao diện (luật QUY TRÌNH DESIGN 02/08).
 ];
+// ───────────────────────────────────────────────────────────────────────────────────────────
+// ③ CAP_DA_NHAU — HAI CHỮ TRONG CÙNG MỘT DÒNG, NGHĨA NGƯỢC NHAU.  (Hoà chỉ ra 29/08)
+//
+// Khác hẳn hai lớp trên. ① là "một khái niệm nhiều nhãn" — sửa nhãn là xong. ② là "một chữ
+// nhiều nghĩa" — máy không đặt tên hộ được nên chỉ cảnh báo. Lớp ③ này KHÔNG mơ hồ: hai chữ
+// đứng cạnh nhau mà loại trừ lẫn nhau, ai đọc kỹ cũng thấy sai — nên nó CHẶN, không cảnh báo.
+//
+// CA GỐC, trả giá 13 ngày: `docs/phieu-giao/P-A-don-vi-ty-le.md:40` viết
+//     "Lưu lựa chọn per-user (localStorage cùng khuôn các cài đặt sẵn có — không thêm bảng DB)"
+// «per-user» = đi theo NGƯỜI, đổi máy vẫn còn.  «localStorage» = ở lại TRÌNH DUYỆT máy này,
+// đổi máy là mất. Người viết nghĩ mình dặn vế đầu; máy làm đúng vế sau. Không ai hỏi lại một
+// dòng. Đo 29/08: 543 dòng localStorage, 0 bảng cài đặt, đổi máy mất sạch Brand Kit + gu nghề.
+// Bệnh nó gây ra còn biết nguỵ trang: `lib/lockscreen.ts` đính `<userId>` vào tên khoá nên đọc
+// mã lên trông y như "theo người", trong khi vẫn nằm trong trình duyệt.
+//
+// THÊM CẶP MỚI = khi bắt được một ca thật, kèm dòng nguồn. Cấm thêm cặp "phòng xa".
+const CAP_DA_NHAU = [
+  {
+    ten: 'per-user ↔ localStorage',
+    a: /\bper[-\s]?user\b|theo (từng )?(người dùng|tài khoản)/i,
+    b: /\blocalStorage\b|\bsessionStorage\b|\bIndexedDB\b/i,
+    vi_sao: '«per-user» = đi theo NGƯỜI (sống trong DB). «localStorage» = ở lại MÁY NÀY. Chọn một, và nói rõ.',
+    pham_vi: ['docs/phieu-giao', 'docs/control', '.claude/skills'],
+    // CA GỐC — giữ nguyên làm dấu vết. Phiếu đã đóng thì không viết lại lời khai của nó.
+    ngoai_le: ['docs/phieu-giao/P-A-don-vi-ty-le.md'],
+  },
+];
+
 /** Loại trừ tường minh + LÝ DO. Thừa so với MD_QUET, cố ý — chặn cả khi ai đó nới pham_vi sau này. */
 const MD_LOAI_TRU = [
   ['CHANGELOG.md', 'nhật ký append-only 220K — luật cấm xoá lịch sử cũ'],
@@ -239,6 +267,42 @@ for (const t of TU_DA_NGHIA) {
   }
 }
 
+// ── ③ CẶP CHỮ ĐÁ NHAU (🔴 CHẶN, không cần cờ) ─────────────────────────────────────────────
+console.log('\n' + '─'.repeat(96));
+console.log('🔴 CẶP CHỮ ĐÁ NHAU — hai chữ cùng dòng, nghĩa loại trừ nhau. Mức CHẶN.');
+console.log('─'.repeat(96));
+/* Lớp ③ TỰ ĐI, không mượn `quetPhamVi`: bộ lọc .md của hai lớp trên chỉ nhận `MD_QUET`
+ * (docs/phieu-giao · docs/mocks), nên mượn nó thì `docs/control` và `.claude/skills` — hai chỗ
+ * ra lệnh nhiều nhất — bị bỏ qua IM LẶNG, cổng vẫn xanh. Đo lúc thêm: mượn = 0 tệp .md ngoài
+ * phiếu giao được quét. Cổng canh chỗ không ai viết thì canh cái gì. */
+function* diKhap(dir) {
+  if (!existsSync(dir)) return;
+  for (const name of readdirSync(dir)) {
+    if (SKIP.has(name)) continue;
+    const p = join(dir, name);
+    if (statSync(p).isDirectory()) yield* diKhap(p);
+    else if (/\.(md|ts|tsx|html|css)$/.test(name)) yield p;
+  }
+}
+let tongDaNhau = 0;
+for (const c of CAP_DA_NHAU) {
+  const hits = [];
+  const quet = (fn) => { for (const d of c.pham_vi) for (const p of diKhap(join(ROOT, d))) fn(p, chuanHoa(p)); };
+  quet((f, rel) => {
+    if (c.ngoai_le.some((x) => rel.startsWith(x))) return;
+    readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
+      if (c.a.test(line) && c.b.test(line)) hits.push(`${rel}:${i + 1}`);
+    });
+  });
+  tongDaNhau += hits.length;
+  if (hits.length) {
+    console.log(`🔴 ${hits.length}× «${c.ten}»`);
+    console.log(`     ${c.vi_sao}`);
+    hits.slice(0, 5).forEach((h) => console.log(`     ${h}`));
+  }
+}
+console.log(tongDaNhau ? `\n🔴 ${tongDaNhau} cặp đá nhau — CHẶN.` : `✅ 0 cặp chữ đá nhau (${CAP_DA_NHAU.length} cặp đang canh)`);
+
 console.log('─'.repeat(96));
 console.log(`   Phạm vi .md đang quét: ${MD_QUET.join(' · ')}`);
 console.log(`   Loại trừ (nhật ký, không điều khiển việc): ${MD_LOAI_TRU.map(([m]) => m).join(' · ')}`);
@@ -251,4 +315,4 @@ console.log(
   `   Bật chặt: \`--strict\` chặn lớp ①. \`--strict-da-nghia\` chặn thêm lớp ② — CHƯA dùng, để dành khi §V5 thi hành xong.\n`
 );
 
-process.exit((STRICT && tongNhan) || (STRICT_DA_NGHIA && tongDaNghia) ? 1 : 0);
+process.exit(tongDaNhau || (STRICT && tongNhan) || (STRICT_DA_NGHIA && tongDaNghia) ? 1 : 0);

@@ -508,3 +508,41 @@ hay `nấc`, thì đề xuất tên ở V5 có thể trùng hoặc chọi — **
 
 Cũng bỏ qua: `CHANGELOG.md` (220K) · `docs/bao-cao-phien/` trừ một tệp · toàn bộ `docs/memory/` ·
 ~540 tệp `.md` còn lại trong `docs/`.
+
+
+---
+
+## LỚP ③ — CẶP CHỮ ĐÁ NHAU (Hoà chỉ ra 29/08)
+
+Hai lớp cũ của sổ này nói về **một chữ**. Lớp thứ ba nói về **hai chữ đứng cạnh nhau mà loại
+trừ lẫn nhau** — và nó **không mơ hồ**, nên máy chặn được, không cần người đặt tên hộ.
+
+### #1 · `per-user` ↔ `localStorage` — trả giá 13 ngày
+
+Câu gốc, `docs/phieu-giao/P-A-don-vi-ty-le.md:40` (16/08):
+
+> *"Lưu lựa chọn **per-user** (**localStorage** cùng khuôn các cài đặt sẵn có — không thêm bảng DB)"*
+
+| chữ | nghĩa thật |
+|---|---|
+| `per-user` | đi theo **NGƯỜI** — đổi máy vẫn còn (phải sống trong DB) |
+| `localStorage` | ở lại **TRÌNH DUYỆT CỦA MÁY NÀY** — đổi máy là mất |
+
+Người viết nghĩ mình đang dặn vế đầu. Máy làm đúng vế sau. **Không ai hỏi lại một dòng.**
+
+**Đo 29/08:** 543 dòng `localStorage` trong `lib/ components/ app/` · **0 bảng cài đặt** trong
+`prisma/schema.prisma` · ~9 khoá thuộc loại mất-là-đau (Brand Kit · bảng màu · đơn vị đo ·
+ngôn ngữ · tên hiển thị). Đổi máy là mất sạch.
+
+**Nó còn biết nguỵ trang:** `lib/lockscreen.ts:76` cất khoá là `interiorflow.lockIdleMinutes.<userId>`
+— đính tên người dùng vào nên **đọc mã lên trông y như "theo người"**, trong khi vẫn nằm trong
+trình duyệt. Ai soi nhanh sẽ gật đầu cho qua.
+
+**Cổng:** `scripts/soi-tu-dien.mjs` lớp ③ — **CHẶN**, không cần cờ. Quét `docs/phieu-giao` ·
+`docs/control` · `.claude/skills`.
+Ca đột biến đã chạy: viết lại đúng câu gây bệnh ⇒ **đỏ** · nói rõ *"theo tài khoản, cất trong DB"*
+⇒ **xanh** · ca gốc trong phiếu đã đóng vẫn được miễn ⇒ **xanh** (phiếu đóng thì không viết lại
+lời khai của nó — giữ làm dấu vết).
+
+**Cách chữa khi gặp:** không phải đổi chữ cho êm, mà **chọn một trong hai và nói thẳng ra**:
+*"theo tài khoản, cất trong DB"* hoặc *"chỉ theo máy này, chấp nhận đổi máy là mất"*.
