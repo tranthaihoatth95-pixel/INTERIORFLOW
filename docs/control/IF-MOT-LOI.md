@@ -177,3 +177,58 @@ Khớp mọi ca **không phải là đúng** — đó chính là lớp lỗi C. 
 Lý do chọn cảnh báo thay vì chặn đều thật (chặn ngay là đỏ vĩnh viễn cho mọi lane — `F-02`).
 Nhưng lý do đúng **không biến nửa dây thành dây**. Đường đi đúng: **cảnh báo là trạm tạm, phải có
 ngày hạn để lên chặn** — chưa có ngày hạn thì nó nằm đó mãi, và ta tưởng đã nối.
+
+---
+
+# 🔴 CHẨN ĐOÁN TRÊN ĐÃ BỊ PHẢN BIỆN ĐỘC LẬP SỬA — 28/08
+
+Hoà cho phóng một phiên **context trắng**, giao đúng một việc: **cố bác bỏ** phần "GỐC BỆNH THẬT"
+ở trên. Nó bác được, và tôi kiểm lại từng điểm — **đúng cả ba**.
+
+## Ba điểm nó bác, đã kiểm
+
+| nó nói | kiểm lại |
+|---|---|
+| Tỉ lệ **`16 máy soi ÷ 5`** đã **sai ngay lúc tôi dùng** | Thật: **14/14**. Tôi nối 8 máy **trong cùng phiên** rồi vẫn trích con số trước khi nối — **vào tài liệu và vào artifact** |
+| `npm run no:chua-noi` vẫn liệt 2 máy tôi **đã nối** | Đúng. **Sổ nợ của chính tôi đang nói dối.** Nó là danh sách **viết tay** |
+| **21/23** lỗi trong sổ xảy ra **TRÊN đường đã nối** | `F-18` `F-19` `F-15` `F-02` — đều trong mã sống, đường sống. Chỉ **1/23** (`F-22`) thật sự khớp *"tạo mà không nối"* |
+
+## Chẩn đoán đúng — hai quần thể, hai bệnh khác nhau
+
+Tôi gộp hai thứ khác nhau vào một câu, nên câu đó vừa đúng vừa sai:
+
+| quần thể | bệnh | bằng chứng |
+|---|---|---|
+| **Hiện vật** — tài liệu · luật · máy · phiên chat | **tạo mà không nối** | 153 tệp mồ côi · `B25` 20 tệp không ở bộ nạp · 109 phiên chưa ai mở |
+| **Lỗi** — 23 mục trong sổ | **không kiểm lại trước khi khẳng định** | **21/23**, tất cả xảy ra trên đường đã nối |
+
+**Bệnh thứ hai lớn hơn** — 21/23 — và nó **không phải lỗi cấu trúc. Nó là lỗi của người viết.**
+
+## Điểm đâm đau nhất, và tôi nhận
+
+> *"Quy lỗi về 'cấu trúc không nối' **ít đau hơn** quy lỗi về 'tôi liên tục không kiểm lại trước
+> khi khẳng định'."*
+
+Đúng. Tôi chọn khung **dễ hành động và dễ chịu trách nhiệm hơn**. Khung "nối dây" cho tôi việc để
+làm và cổng để dựng; khung "không kiểm lại" chỉ cho tôi một điều: **chậm lại và tự nghi mình**.
+
+Và bằng chứng nặng nhất là chính buổi này: sáng 28/08 tôi tự ghi **`F-23` — nhắc số nhớ như số
+đo** — rồi **tái phạm đúng nó trong cùng buổi**, với chính con số `16÷5`, sau khi hành động của
+tôi đã làm nó hết đúng.
+
+## Điều vẫn đứng vững
+
+· **Dây cảnh báo không dẫn điện** — đo được, không phụ thuộc con số sai.
+· Với **hiện vật**, *tạo mà không nối* vẫn đúng: 153 mồ côi là số thật.
+· Cổng vẫn cần. Nhưng **cổng không chữa được bệnh 21/23** — không cổng nào bắt được một câu
+  khẳng định vội trong văn xuôi.
+
+## Việc phải làm khác đi
+
+Không phải dựng thêm cổng. Là **một thói quen trước khi khẳng định**:
+
+> **Số này, câu này — tôi đo LÚC NÀO? Đo lại có còn đúng không?**
+> Đặc biệt với số của **chính mình vừa làm nó đổi**.
+
+Đã sửa `no:chua-noi`: nay nó **đo** (`nang-luc.mjs`) thay vì đọc một danh sách viết tay. Một sổ nợ
+viết tay thì cũ đúng bằng tốc độ ta trả nợ.
