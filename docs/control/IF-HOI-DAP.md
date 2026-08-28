@@ -109,6 +109,24 @@ sau tin nhầm.
 | Dock có được đổi hết theo chặng không? | `docs/control/IF-ADVICE-VERIFICATION-GATE.md` §10 | 🟡 PROVISIONAL — **giữ vùng neo bất biến** |
 | `.idfc → 3D` được phép thi công chưa? | `docs/design-candidate/IF-DEC/IF-DEC-IDFC-3D-001-v0.2.md` | ⛔ **CHƯA** — ACCEPTED CANDIDATE, cổng G1–G7 chặn |
 
+### Đã từng BỎ — biết trước khi mang lại vào
+
+> Hoà 28/08: *"có những cái từng được chốt bỏ → chốt mang ra ngoài repo có lý do → giờ mang vào
+> ok, **nhưng phải biết điều gì đã từng bị bỏ mà không gộp cái bẩn vào người**."*
+> Mang lại vào thì phải **đọc hàng tương ứng dưới đây trước**, không mang mù.
+
+| Câu hỏi | Trả lời ở | Còn đúng không |
+|---|---|---|
+| Thương hiệu/dữ liệu riêng nào từng sót trong repo? | `docs/AUDIT-BRAND-PII.md` | ✅ quét 25/07 · 853 tệp · 13 chuỗi khách |
+| Cái gì đã **tách ra ngoài repo** và vì sao? | `CLAUDE.md` §"Dữ liệu tham khảo đã TÁCH RA NGOÀI" | ✅ 24/07 — hồ sơ khách · brand TTT · ảnh sản phẩm · bản sao DB → `~/Downloads/interiorflow-reference/` |
+| Vì sao `knowledge/ttt-design-system` biến mất? | `CLAUDE.md` §"Project Knowledge" + `docs/00-CHOT.md` "Dọn trung tính 01/08" | ✅ tài sản thương hiệu **một** studio, không được nằm trong sản phẩm bán ra |
+| Ảnh khách trong Thư viện có phạm luật không? | **KHÔNG**, nếu có xuất xứ và **không** mang thẻ `seed`/`minh-hoa` | ✅ đo 28/08 — 5 asset `ST5` là *người dùng thêm*, có nguồn `pdf 260812_st5_concept`, **0** thẻ seed |
+| Luật tách APP / DEMO / DỰ ÁN | `docs/CONTENT-RULES.md` | ✅ |
+
+**Luật mang-lại-vào:** thứ gì từng bị bỏ, mang lại vào thì phải khai **ba dòng** — *ai bỏ · vì sao
+bỏ · điều gì đã đổi khiến nay mang lại được*. Thiếu một dòng ⇒ **không mang**. Ba dòng đó là thứ
+ngăn "gộp cái bẩn vào người".
+
 ### Đang mở — chưa ai trả lời
 
 | Câu hỏi | Ai trả lời được | Vì sao chưa |
