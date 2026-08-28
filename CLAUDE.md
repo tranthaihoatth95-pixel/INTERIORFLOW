@@ -28,6 +28,12 @@ Repo này có ~700 tệp tài liệu. Quét lại từ đầu mỗi phiên là c
 | 3 | `docs/control/IF-UXUI-OPERATING-MEMORY.md` | **những sai lầm đã trả giá** | trước mọi việc giao diện |
 | 4 | `docs/control/IF-TOOLING-RECEIPT.md` | năng lực **THẬT** đã xác minh | trước khi định dùng một công cụ |
 
+**Trước khi tạo bất kỳ thứ gì MỚI — luật B25:**
+`LOOK INSIDE → MAP EXISTING → CLASSIFY → CONNECT → EXTEND → NEW`. Vùng code dày: **mặc định
+REUSE/CONNECT/TUNE**; `NEW` đòi bằng chứng phủ định. Luật này có trong **20 tệp** `docs/` từ trước
+19/08 nhưng **chưa từng nằm trong bộ nạp** — hậu quả đo được 28/08: **13 tệp mới** được tạo trong
+một ngày, không lần nào LOOK INSIDE trước. Lời chứng đầy đủ: `docs/control/IF-TRAT-TU-MOI.md`.
+
 **Tra câu hỏi trước khi tìm ngoài:** `docs/control/IF-HOI-DAP.md` — mục lục **theo câu hỏi**, không
 theo tệp. Lệnh nghiên cứu nay là: ① tra bảng đó → ② tra kho ngoài repo → ③ mới ra ngoài tìm, và
 chỉ tìm **điều mới** → ④ tư vấn kèm phần đã có. Bỏ bước ① là đẻ ra "đề xuất lại thứ đã có" (N8).

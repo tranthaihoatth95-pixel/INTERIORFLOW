@@ -40,7 +40,7 @@ Luật: mỗi mục phải kèm **mặc định nếu Hoà im lặng** và **đ�
 
 | # | Quyết định | Vì sao chỉ Hoà | Mặc định nếu im lặng |
 |---|---|---|---|
-| ① | **Một tệp DXF thật** để chạy đường nghề đầu tiên | không phải quyết định — chỉ cần **một tệp** | ⚠️ đứng yên, không có gì thay thế được |
+| ~~①~~ | ~~Một tệp DXF thật~~ — **GỠ 28/08.** Cổng chặn **giả**: tôi có trình duyệt, tự tải được, **và đã dùng 4 tệp thật của Hoà sáng nay** (`~/Downloads/BAN-VE/`, `AI DATA/FILE MBHT/`). Hoà: *"sao kêu tôi cung cấp hoài vậy"* | — | không chặn gì cả |
 | ② | Ghi vào `~/PROJECT/SHARED` + `NOW.md` được không | không gian riêng, có `PRIVATE/` | **không ghi**; đưa nội dung ra để Hoà tự dán |
 | ③ | Ký số hay chấp nhận bản chưa ký | tiền · pháp lý | chưa ký, không phát hành cho ai |
 | ④ | Quyền chụp màn hình Electron | quyền máy | không có ảnh Electron ⇒ giữ `NOT ASSESSED` |
