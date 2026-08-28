@@ -28,6 +28,17 @@ Repo này có ~700 tệp tài liệu. Quét lại từ đầu mỗi phiên là c
 | 3 | `docs/control/IF-UXUI-OPERATING-MEMORY.md` | **những sai lầm đã trả giá** | trước mọi việc giao diện |
 | 4 | `docs/control/IF-TOOLING-RECEIPT.md` | năng lực **THẬT** đã xác minh | trước khi định dùng một công cụ |
 
+## 🔧 MẠCH LÀM VIỆC — sơ đồ, mọi agent phải đi qua
+
+**Sơ đồ cho MẮT** (Hoà + người duyệt): https://claude.ai/code/artifact/3741f2cb-5409-448e-9412-d4b44c1aea2e
+**Bản cho MÁY** (agent đọc cái này, không đọc được artifact):
+`docs/control/AI-LA-AI-CHU-LA-GI.md` — ai là ai · hai câu sàng · **§4b tính chất phải mang** ·
+vòng 5 nhịp · `IF-TRAT-TU-MOI.md` — 8 luật kèm **trạng thái cổng thật** (3 cổng đang hở) ·
+`IF-MOT-LOI.md` — một công thức lỗi · `BOS-PHAN-LUONG-TRI-NHO.md` — 5 tuyến trí nhớ.
+
+> **Một luật chỉ là luật khi có đủ ba: chỗ được nạp · một cổng · một ca đột biến chứng minh cổng
+> bắt được.** Thiếu một là lời chúc. Ba cổng `T2 · T6 · T7` **đang hở** — đó là nợ có tên.
+
 **Trước khi tạo bất kỳ thứ gì MỚI — luật B25:**
 `LOOK INSIDE → MAP EXISTING → CLASSIFY → CONNECT → EXTEND → NEW`. Vùng code dày: **mặc định
 REUSE/CONNECT/TUNE**; `NEW` đòi bằng chứng phủ định. Luật này có trong **20 tệp** `docs/` từ trước

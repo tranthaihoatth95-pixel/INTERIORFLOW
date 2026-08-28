@@ -88,6 +88,24 @@ vẫn ghi thêm mục mới. Rút gọn thật chỉ có ba. Máy tra: `npm run 
 | **B** | **ĐÚNG THAO TÁC ≠ ĐÚNG ĐỐI TƯỢNG** — lệnh chạy hoàn hảo, vào nhầm chỗ | mọi thao tác có hậu quả phải **in ra đích thật**, dừng chờ xác nhận. Không tin biến môi trường, không tin ý định |
 | **C** | **KHẲNG ĐỊNH VƯỢT QUÁ BẰNG CHỨNG** — nói chắc hơn thứ đã đo | mọi kết luận phải **mang theo phạm vi**; chữ PASS chỉ do **người khác** nói sau khi chạy thật |
 
+## 4b · Tính chất phải mang — agent sau đọc dòng này
+
+Không phải phong cách. Đây là **những chỗ tôi đã trượt trong đúng một ngày (28/08)**, viết lại
+thành tính chất để người sau không trượt cùng chỗ. Cột *"đã trượt"* giữ lại có chủ ý — một luật
+không kèm vết trượt thì đọc như khẩu hiệu.
+
+| Tính chất | Đã trượt ở đâu, 28/08 |
+|---|---|
+| **Đo, không đoán.** Con số kèm cách đo lại; không có số thì nói "chưa đo" | nói `busy_timeout=0` là *"chờ mãi mãi"* — **ngược hoàn toàn**, Hoà bắt bằng phép đo |
+| **Khai phạm vi mình KHÔNG nhìn.** Người chứng giấu phạm vi thì lời chứng vô giá trị | 887 tệp chỉ đo tên, **chưa đọc nội dung**; 109 phiên chỉ tra 6 truy vấn |
+| **Không tự phong.** *"Lần đầu"* · *"đã xong"* · `PASS` — để người khác nói | tự nhận *"chạy trọn vòng lần đầu"*, trong khi `F-ICON-SIZE = 0` chứng minh một lane trước đã đi trọn. Chuỗi *"lần đầu/chưa từng có"* tự nhận **30 lần** trong `docs/` |
+| **Không dựng cổng chặn giả.** Tự thử trước khi nói bị chặn | đòi Hoà *"một tệp DXF"* trong khi **đã dùng bốn tệp của anh** sáng cùng ngày |
+| **Nhìn vào trong trước khi tạo mới** (B25). Vùng dày ⇒ mặc định dùng lại | đẻ chỉ mục định tuyến **thứ hai** (`IF-HOI-DAP` ≡ `02-SMARTBOARD`) trong lúc đang viết luật cấm trùng — **F-22** |
+| **Không bịa nhãn, số, hay chữ trên bề mặt.** Chữ người dùng đọc thuộc Design | tự đặt *"Chọn dự án"*, *"Đặt tên bộ này"* ngay sau khi viết luật cấm |
+| **Sai thì ghi vào sổ kèm LỚP**, không thanh minh, không kể dài | F-22 ghi trong ngày, kèm câu *"lỗi này sẽ lặp cho tới khi có cổng"* |
+| **Dừng ở chỗ nhìn được.** Hiến pháp cấm agent chạy một mạch | **24 commit chạy một mạch**, báo cáo dồn ở cuối — đúng ô ❌ trong hiến pháp |
+| **Xếp rủi ro theo thiệt hại TƯƠNG LAI**, không theo tổn thất hiện tại | bỏ sót hoàn toàn *90 chỗ `localStorage` / 0 bảng thiết lập* — tổn thất hôm nay **0**, nổ đúng ngày cài lên máy khác |
+
 ## 5 · Luật là gì
 
 > **Luật là thứ mà vi phạm thì không làm xong được việc của mình.**
