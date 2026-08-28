@@ -315,7 +315,8 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
                     }}
                   >
                     {/* 28/08 · F-NHAN-BIA — bộ nhận diện chưa đặt tên thì MỜI đặt, không bịa hộ */}
-                    {k.name || 'Đặt tên bộ này'}
+                    {/* 28/08 — không bịa nhãn, cũng không tự nghĩ chữ mới: rỗng thì để trống */}
+                    {k.name}
                   </button>
                   <button type="button" onClick={() => onDelete(k.id)} title="Xoá kit" style={xMini}>
                     ×

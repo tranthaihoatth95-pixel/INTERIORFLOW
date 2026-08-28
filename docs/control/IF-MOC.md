@@ -20,3 +20,6 @@
 | 2026-08-28 05:01 | **Đối chiếu hiến pháp: 0/6 việc §7, hợp đồng hai chiều** | 5 rủi ro 18/08 còn nguyên; cấm-black-box + CONTROL POINTS + WHY THIS chưa phiên nào áp cho chính mình | `f2c6f65` +1 bẩn | `0ffcd43c` d.11417 |
 | 2026-08-28 05:07 | **Trật tự mới + lời chứng 28/08** | B25 vào bộ nạp; 7 luật kèm trạng thái cổng thật; khai rõ 3 cổng còn thiếu và 7 thứ tôi không nhìn | `5335804` +1 bẩn | `0ffcd43c` d.11478 |
 | 2026-08-28 05:11 | **MỘT LỖI: logic hoá + ánh xạ hai chiều** | 9 triệu chứng = 1 công thức; A/B/C là 3 mặt; thuốc = 'chưa biết' phải là giá trị hạng nhất; 5 cơ chế thế giới có tên | `4dec591` +1 bẩn | `0ffcd43c` d.11522 |
+| 2026-08-28 05:15 | **Phân luồng trí nhớ 5 tuyến + cổng L7** | 11/17 tệp control là BOS nhưng mang tên IF-; khai tuyến bằng 1 dòng thay vì đổi tên; kiểm ngược xong | `d9be409` | `0ffcd43c` d.11551 |
+| 2026-08-28 05:20 | **Hợp nhất chỉ mục + F-22 + luật mang-lại-vào** | smartboard≡hoi-dap, hợp nhất; ghi F-22 lỗi tự đẻ trùng; nối hồ sơ đã-từng-bỏ; ST5 không phạm luật | `21bbe20` +1 bẩn | `0ffcd43c` d.11615 |
+| 2026-08-28 05:38 | **F-NHAN-BIA: cấm bịa danh tính + 9 chỗ sửa gốc** | mầm 17 chỗ; nguồn là API đúc tên giả vào DB và imaging in lên ảnh gửi khách; thước sửa 2 lần | `695c61e` +1 bẩn | `0ffcd43c` d.11770 |

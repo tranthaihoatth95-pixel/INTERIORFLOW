@@ -28,6 +28,27 @@ phiên đã ghi *"poché tường 126–161 mảng/file không neo vào cấu ki
 | **Đường `.idfc → 3D`** | mã có, **cổng G1–G7 chặn** thi công (`IF-DEC-IDFC-3D-001-v0.2`) | `ĐO` |
 | **Nhập DWG trực tiếp** | mã còn nguyên, **cờ TẮT** vì GPL trong bộ cài | `ĐO` |
 
+## 2b · 🔴 XẾP LẠI RỦI RO THEO THIỆT HẠI TƯƠNG LAI — Hoà chốt 28/08
+
+> *"đánh giá rủi ro phải xác suất dựa trên **thiệt hại trong tương lai** gặp phải, chứ không phải
+> **tổn thất hiện tại**."*
+
+Bảng §2/§3 xếp theo *"cái gì đang hỏng"*. Xếp lại theo *"cái gì sẽ đắt"* thì thứ tự **đổi hẳn**,
+và lộ ra một mục **không có trong bất kỳ bảng nào trước đó**:
+
+| Rủi ro | Tổn thất **hôm nay** | Thiệt hại **tương lai** | Khi nào nổ |
+|---|---|---|---|
+| **90 chỗ ghi `localStorage`, 0 bảng thiết lập trong schema** | **0** — Hoà làm một máy, không ai thấy | 🔴 **rất cao** — đăng nhập trên máy thứ hai là **mất sạch** tên hiển thị · chế độ xem · nháp · luật tuỳ chỉnh · lịch sử. App trông như chưa từng dùng. Và nó **vi phạm nguyên tắc số 1 của hiến pháp — *Own your data*** (dữ liệu người dùng đang thuộc về một **hồ sơ trình duyệt**) | **đúng ngày cài lên máy TTT** — tức đúng mốc Hoà đặt ra |
+| Tên bịa in lên ảnh gửi khách (`lib/imaging.ts`) | 1 dòng chữ sai | cao — tên sai trên hồ sơ đã gửi, không rút lại được | mỗi lần xuất · **đã sửa 28/08** |
+| Tên giả đúc vào DB (`api/flows`) | 42/48 flow mang tên rác | cao — lan ra mọi tầng, vĩnh viễn | **đã sửa 28/08** |
+| Bản vẽ nghề vào → 1 khối ra | pilot không dùng được | cao — nhưng **biết rồi**, đã đo, đã có đường chữa | trước pilot |
+| Mã GPL trong bộ cài | 0 | 🔴 rất cao — **pháp lý**, không lùi được sau khi giao | **lần đầu giao installer** |
+| 93 chỗ `?? 0` | 0 | thấp ở đường tiền — **đo 28/08: `lib/boq/` sạch, 0 chỗ bịa số** | — |
+
+**Luật rút ra, áp cho mọi lượt xếp việc sau:**
+> **Rủi ro = xác suất × thiệt hại TƯƠNG LAI.** Một lỗi tổn thất hôm nay bằng 0 vẫn có thể là lỗi
+> đắt nhất — và thường **chính nó** là lỗi đắt nhất, vì không ai thấy nên không ai sửa.
+
 ## 3 · Chưa có — nói thẳng
 
 · **Gỡ mã GPL khỏi artifact** — cờ tắt **không** gỡ 19,1 MB khỏi bộ cài. Cổng đã chặn `electron:build*`. `ĐO`

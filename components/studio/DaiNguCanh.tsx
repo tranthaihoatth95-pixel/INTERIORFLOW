@@ -80,7 +80,10 @@ export function DaiNguCanh({ tenDuAn, chang, onChonChang, onDoiTen }: DaiNguCanh
     // dự án nào, mà thanh trên vẫn bày MỘT CÁI TÊN. "Chưa đặt tên" đọc như tên của một dự án có
     // thật nhưng chưa được đặt tên — sai. Sự thật là **chưa mở dự án nào**, và câu đúng phải MỜI
     // chọn, không giả vờ đã có. (Hoà bắt 26/08 với `Untitled flow`, tái diễn 28/08.)
-    { khoa: 'du-an', chu: tenDuAn || tr('Chọn dự án', 'Pick a project') },
+    // ⚠️ 28/08 — chữ hiện ra thuộc Design, KHÔNG phải MAIN tự nghĩ. Bản vá đầu tôi tự đặt
+    // 'Chọn dự án' — đó là bịa nhãn ở tầng khác, đúng thứ tôi vừa lập luật cấm. Nay: chưa mở dự
+    // án nào thì **không hiện ô này**; thiếu một ô còn hơn một câu do máy tự nghĩ.
+    ...(tenDuAn ? [{ khoa: 'du-an' as const, chu: tenDuAn }] : []),
     ...(chang ? [{ khoa: 'chang' as const, chu: nhanChang(chang) }] : []),
   ];
 
