@@ -87,3 +87,66 @@ Trước khi hiện bất kỳ giá trị nào — cho Hoà, hay cho người d�
 
 Chín triệu chứng ở §1 đều trượt đúng phép thử này. Không cái nào cần thông minh hơn để tránh —
 chỉ cần hỏi một câu trước khi mở miệng.
+
+---
+
+# GỐC BỆNH THẬT — xâu chuỗi lần ba, 28/08
+
+> Hoà hỏi ba lần. Hai lần đầu tôi trả lời **triệu chứng**. Đây là lần thứ ba.
+
+## Tỉ lệ — đo, không kể
+
+| tạo ra | ÷ | nối vào đường có người đi |
+|---|---|---|
+| 896 tài liệu `docs/` | | **9** trong bộ nạp |
+| 16 máy soi | | **5** chạy trong `npm test` |
+| 109 phiên chat · 1,3 GB | | **0** từng mở lại |
+| 22 lỗi ghi sổ | | **3** công thức rút ra |
+| 8 luật `T1–T8` | | **5** có cổng |
+| 907 tệp | | **172 mồ côi** |
+
+Cùng một hình dạng, **không sót trường hợp nào**.
+
+## Một câu
+
+> **Chúng tôi tạo ra thứ ĐÚNG, rồi không nối nó vào con đường người ta THẬT SỰ đi.**
+
+`B25` đúng — không trên đường **nạp**. Hiến pháp đúng — không trên đường **hành vi**. Bốn trạng
+thái tải đúng — chỉ nối **một màn**. `~/PROJECT` của Hoà **tốt hơn bản MAIN đề xuất** — không nằm
+trên đường của **agent nào**. Bản vá `Untitled` 26/08 đúng — nối **một chỗ trong mười bảy**.
+
+**Không cái nào SAI. Tất cả đều KHÔNG ĐƯỢC NỐI.**
+
+## Vì sao nó lặp mãi — cơ chế tự nuôi
+
+**Tạo ra** thì nhìn thấy được: có tệp, có commit, có cái để trình. **Nối dây** thì không sinh ra
+gì để nhìn. Nên **ai cũng tạo, không ai nối**. Đống chưa nối càng lớn thì người sau càng không tin
+được cái gì, nên **lại tạo tiếp**.
+
+⇒ Đây cũng là lời giải cho câu Hoà nói: *"tôi hay đẻ máy vì các bạn không nhớ."* **Không phải Hoà
+tham công cụ.** Vì chưa cái nào được nối nên cái nào cũng như chưa có.
+
+## Quan hệ với công thức cũ
+
+Công thức *"lấp khoảng trống bằng phỏng đoán rồi trình bày như sự thật"* (mục trên) là **HỆ QUẢ**,
+không phải gốc: khi thứ đúng **có tồn tại** mà không nằm trên đường ta đi, ta **không tìm ra nó**,
+nên ta đoán. **Đoán là triệu chứng. Không nối dây là bệnh.**
+
+## Ca chẩn đoán tự soi — mạnh nhất trong ngày
+
+**11 trên 16 máy soi chưa bao giờ chạy.** Tức chính **cơ chế được rao giảng cả ngày — CỔNG — thì
+bản thân nó không được nối** ở 11/16 trường hợp. Một máy canh không nằm trên đường thi công thì
+nó không canh gì cả; nó chỉ là một tệp.
+
+## Thuốc — và nó không phải viết thêm luật
+
+> **Cấm tạo ra thứ gì mà không nối nó vào một con đường có người đi.**
+> **Nối dây là PHẦN VIỆC, không phải phần dọn dẹp sau.**
+
+Áp ngay trong lượt phát hiện, không hẹn:
+· **8 máy xanh đã nối vào `npm test`** (`soi:frontier` · `hinh-hoc` · `tu-dien` · `contract` ·
+  `that` · `cam-dien` · `kho-tai-lieu` · `visual-source`). `npm test` nay 48 giây — chậm hơn, và
+  đó **đúng là cái giá phải trả**.
+· **3 máy đang đỏ** (`check:mocks` · `soi:thao-tac` · `soi:design-school`) **không** nối vào —
+  nối lúc này là chặn mọi lane. Chúng thành **nợ CÓ SỐ**: `npm run no:chua-noi` in ra tên chúng.
+  **Sửa cho xanh rồi nối; cấm nới luật để nối được.**
