@@ -73,7 +73,12 @@ if (lenh === 'handoff') {
   process.exit(0);
 }
 
-if (lenh === 'inbox') {
+/* `im <lane>` — bản CÂM của `inbox`, dành riêng cho hook.
+ * Hook chạy ở MỖI lượt; in "không có phiếu mới" mỗi lượt là đổ rác vào ngữ cảnh, và rác đều
+ * đặn thì người ta học cách bỏ qua. Rỗng ⇒ im lặng tuyệt đối, exit 0. Có phiếu ⇒ in, và
+ * ĐÁNH DẤU SEEN — đó là mắt xích giữa SENT và ACK mà cầu này đang thiếu. */
+if (lenh === 'im' || lenh === 'inbox') {
+  const cam = lenh === 'im';
   const lane = process.argv[3];
   if (!LANES.has(lane)) {
     console.error('Dùng: node scripts/moc.mjs inbox <lane>');
@@ -81,10 +86,38 @@ if (lenh === 'inbox') {
   }
   const events = docSuKien();
   const acked = new Set(events.filter((e) => e.type === 'ACK' && e.lane === lane).map((e) => e.handoffId));
+  const seen = new Set(events.filter((e) => e.type === 'SEEN' && e.lane === lane).map((e) => e.handoffId));
   const open = events.filter((e) => e.type === 'HANDOFF' && e.to === lane && !acked.has(e.id));
-  if (!open.length) console.log(`✅ ${lane}: không có handoff mới`);
-  for (const e of open) console.log(`${e.id}\n  ${e.from} → ${e.to} · ${e.topic}\n  ${e.body}\n  nguồn: ${e.source}\n`);
+  if (!open.length) {
+    if (!cam) console.log(`✅ ${lane}: không có handoff mới`);
+    process.exit(0);
+  }
+  if (cam) console.log(`📬 ${open.length} phiếu CHƯA XỬ LÝ cho lane ${lane} — đọc rồi \`moc.mjs ack ${lane} <id>\`:`);
+  for (const e of open) {
+    console.log(`${e.id}${seen.has(e.id) ? '' : '  🆕'}\n  ${e.from} → ${e.to} · ${e.topic}\n  ${e.body}\n  nguồn: ${e.source}\n`);
+    // SEEN ghi MỘT LẦN cho mỗi phiếu — biên nhận "đã tới mắt", khác hẳn ACK "đã xử lý".
+    if (!seen.has(e.id)) ghiSuKien({ schema: 'BOS-HANDOFF-v1', id: `SEEN-${randomUUID()}`, type: 'SEEN', lane, handoffId: e.id, createdAt: new Date().toISOString() });
+  }
   process.exit(0);
+}
+
+/* `chua-nhan [phút]` — cho phiên TUẦN TRA. Liệt kê phiếu đã GỬI mà chưa ai NHÌN THẤY quá N
+ * phút, kèm lane đích. Đây là thứ biến hòm thư thành cầu: có nó thì người tuần tra biết
+ * PHẢI ĐÁNH THỨC AI, thay vì mọi phiên tự hỏi "có ai nhắn mình không". */
+if (lenh === 'chua-nhan') {
+  const nguong = Number(process.argv[3] ?? 10);
+  const events = docSuKien();
+  const seen = new Set(events.filter((e) => e.type === 'SEEN').map((e) => e.handoffId));
+  const acked = new Set(events.filter((e) => e.type === 'ACK').map((e) => e.handoffId));
+  const now = Date.now();
+  const treo = events.filter((e) => e.type === 'HANDOFF' && !seen.has(e.id) && !acked.has(e.id)
+    && (now - Date.parse(e.createdAt)) / 60000 >= nguong);
+  if (!treo.length) { console.log('✅ không có phiếu nào treo quá ' + nguong + ' phút'); process.exit(0); }
+  for (const e of treo) {
+    const phut = Math.round((now - Date.parse(e.createdAt)) / 60000);
+    console.log(`⏳ ${e.id} · lane ${e.to} · treo ${phut} phút · ${e.topic}`);
+  }
+  process.exit(1);   // exit 1 = CÓ việc phải đánh thức
 }
 
 if (lenh === 'ack') {

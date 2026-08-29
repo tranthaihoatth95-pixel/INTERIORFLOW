@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+
+  "//": [
+    "HOOK NHẬN PHIẾU — mảnh còn thiếu của cầu bàn giao (Hoà chốt 29/08).",
+    "",
+    "Hoà mô tả đúng hiện trạng trước đó: `moc handoff` CHỈ GHI PHIẾU. Nó không đánh thức ai,",
+    "và một phiên Claude đang chạy cũng không tự đọc. Hệ quả: Hoà phải làm người chuyển tin —",
+    "tức cầu chưa hoàn thành, dù cả hai đầu đều có thật.",
+    "",
+    "Hai hook dưới đây bịt đúng khoảng đó cho Claude Code:",
+    "  SessionStart      — phiên mới mở là thấy phiếu ngay, không cần ai nhắc",
+    "  UserPromptSubmit  — mỗi lượt nói chuyện, phiếu mới tới được chèn vào ngữ cảnh",
+    "",
+    "`moc.mjs im 00` là bản CÂM: hộp thư rỗng thì im lặng tuyệt đối, exit 0. Bắt buộc phải câm —",
+    "hook chạy mỗi lượt, in 'không có phiếu mới' mỗi lượt là đổ rác đều đặn, và rác đều đặn thì",
+    "người ta học cách bỏ qua. Có phiếu thì nó in VÀ ghi biên nhận SEEN.",
+    "",
+    "⛔ GIỚI HẠN THẬT, không được nói quá — đây đúng là lỗi Hoà vừa bắt:",
+    "  · Hook chạy ở RANH GIỚI LƯỢT, không phải bất đồng bộ. Một phiên ngồi im chờ người gõ thì",
+    "    KHÔNG có lượt nào để chạy hook ⇒ phiếu vẫn nằm đó tới khi có ai gõ gì đó.",
+    "  · Thứ đánh thức được một phiên đang sống là `SendMessage` từ phiên khác, không phải hook.",
+    "    Hook là LƯỚI ĐỠ: nó bảo đảm không phiên nào BỎ SÓT phiếu, không bảo đảm phiên nào cũng",
+    "    NHẬN NGAY.",
+    "  · Claude Web không đọc được tệp local ⇒ hoàn toàn nằm ngoài đường này. Cần connector riêng.",
+    "    Không được giả bằng Drive hay chat.",
+    "",
+    "Chuỗi biên nhận đầy đủ, mỗi mắt một người khác nhau ghi:",
+    "  SENT  bưu tá Codex ghi khi gửi   ·   SEEN  hook này ghi khi phiếu tới mắt   ·   ACK  phiên xử lý xong ghi",
+    "Thiếu SEEN thì SENT→ACK không có gì ở giữa, và đó chính là chỗ hệ thống được phép nói dối",
+    "câu 'đã báo Claude'. Nay không nói dối được nữa: không có SEEN thì chưa ai thấy."
+  ],
+
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && node scripts/moc.mjs im 00 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && node scripts/moc.mjs im 00 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

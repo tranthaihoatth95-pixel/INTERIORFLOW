@@ -24,6 +24,14 @@ build.log
 .claude/skills/**
 !.claude/skills/**/
 !.claude/skills/**/*.md
+
+# CỬA HẸP THỨ HAI (29/08) — `.claude/settings.json`, và CHỈ tệp đó.
+# Vì sao phải mở: nó chứa hook NHẬN PHIẾU của cầu bàn giao. Để nó bị `.claude/*` chặn thì cấu
+# hình chuông chỉ sống trên MỘT máy — đúng cái bệnh đã trả giá 24/08 khi `.claude/` chặn cả 72
+# tệp trí nhớ bền: đổi máy hoặc dọn cây là mất trắng, và không ai biết mình vừa mất gì.
+# Cửa hẹp đúng bằng một tệp: `settings.local.json` (thứ mang khoá và tuỳ chọn riêng máy) VẪN bị
+# chặn, vì `.claude/*` ở trên vẫn phủ nó. Kiểm hai chiều bằng `git check-ignore -v`.
+!.claude/settings.json
 *.tsbuildinfo
 
 # Electron — output đóng gói (.exe/nsis) do electron-builder tạo
