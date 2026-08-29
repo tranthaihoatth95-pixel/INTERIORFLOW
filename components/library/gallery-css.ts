@@ -19,6 +19,19 @@ export const GALLERY_CSS = `
 .gal-search input::placeholder{color:var(--t4)}
 
 /* ── Chip hàng lọc: nhóm ngành + giấy phép, cùng công thức chip đã có ở Thư viện sheet ── */
+/* THANH MỎNG thay cho khối đầu trang cũ (<h1> + đoạn văn + ô tìm to). Một hàng, dính trên
+   khi cuộn, để lưới ảnh chiếm màn ngay từ pixel đầu. */
+.gal-bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;
+     padding:2px 0 10px;background:linear-gradient(var(--bg) 72%,transparent)}
+.gal-loc-nut{position:relative;flex:none;height:var(--tap,32px);padding:0 14px;border-radius:var(--r-full);
+     border:1px solid var(--border);background:var(--panel);color:var(--t2);font-size:var(--fs-xs);
+     cursor:pointer;transition:background .14s ease,color .14s ease}
+.gal-loc-nut:hover{background:var(--hover);color:var(--t1)}
+.gal-loc-nut.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.gal-loc-cham{position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:var(--r-full);
+     background:var(--accent)}
+/* Dòng "còn N ảnh chưa tuyển" — nói thật về thứ KHÔNG hiện, để không ai tưởng ảnh biến mất. */
+.gal-con-lai{margin:18px 0 0;font-size:var(--fs-xs);color:var(--t4);line-height:1.5}
 .gal-filters{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
 .gal-chiprow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .gal-chiprow .lbl{font-size:var(--fs-2xs);font-weight:700;letter-spacing:.06em;text-transform:uppercase;
@@ -60,20 +73,41 @@ export const GALLERY_CSS = `
 
 .gal-card{position:relative;border-radius:var(--r-3);overflow:hidden;border:1px solid var(--border);
      background:var(--card);text-align:left;cursor:default;display:flex;flex-direction:column}
-.gal-card .shot{position:relative;height:140px;background-size:cover;background-position:center;
+/* THẺ = TẤM ẢNH (Hoà chốt 30/08 "ảnh trước, bộ máy sau").
+   Trước: ảnh 140px + một thân thẻ cố định mang tên · nguồn · nút hành động — bộ máy ăn ~40%
+   chiều cao MỖI thẻ, nhân với cả lưới thì mặt cảm hứng thành bảng kê. Nay ảnh chiếm trọn thẻ,
+   thân thẻ trượt lên khi rê chuột / khi tab tới. Không mất thông tin nào, chỉ đổi lúc nó xuất hiện. */
+.gal-card .shot{position:relative;height:210px;background-size:cover;background-position:center;
      background-color:var(--field)}
-.gal-badge{position:absolute;top:7px;right:7px;height:19px;padding:0 7px;border-radius:var(--r-full);
-     font-size:9.5px;font-weight:var(--fw-semi);letter-spacing:.03em;text-transform:uppercase;
+/* BADGE GIẤY PHÉP — chỉ hiện khi rê chuột (Hoà chốt 30/08 "ảnh trước, bộ máy sau").
+   Bản cũ dán chữ HOA lên góc MỌI tấm ảnh: siêu dữ liệu đè lên chính thứ người ta tới để nhìn.
+   Nó vẫn ở đó, vẫn đọc được, chỉ thôi tranh chỗ với ảnh. Bàn phím tab tới cũng hiện (:focus-within).
+   Cỡ chữ 9.5px → 12px: sàn chữ Việt V-6 (Hoà chốt 30/08 "nâng sàn 12px, giữ tỉ lệ"). */
+.gal-badge{position:absolute;top:7px;right:7px;height:20px;padding:0 8px;border-radius:var(--r-full);
+     opacity:0;transition:opacity .16s ease;
+     font-size:12px;font-weight:var(--fw-semi);letter-spacing:.03em;text-transform:uppercase;
      display:inline-flex;align-items:center;background:color-mix(in srgb, var(--bg) 62%, transparent);
      color:#fff;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.gal-card:hover .gal-badge,.gal-card:focus-within .gal-badge{opacity:1}
+@media (prefers-reduced-motion:reduce){.gal-badge{transition:none}}
 .gal-badge.unknown{background:color-mix(in srgb, var(--warning) 78%, transparent)}
-.gal-card .body{padding:9px 10px 10px;display:flex;flex-direction:column;gap:6px;flex:1}
+.gal-card{position:relative}
+.gal-card .body{position:absolute;left:0;right:0;bottom:0;padding:10px;display:flex;
+     flex-direction:column;gap:6px;
+     background:linear-gradient(transparent,color-mix(in srgb, var(--bg) 88%, transparent) 34%);
+     opacity:0;transform:translateY(6px);transition:opacity .16s ease,transform .16s ease}
+.gal-card:hover .body,.gal-card:focus-within .body{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.gal-card .body{transition:none}}
+/* Màn cảm ứng không có trạng thái rê chuột ⇒ ở đó thân thẻ hiện thường trực, nếu không thì
+   thông tin nguồn/giấy phép thành thứ không đường nào tới được. */
+@media (hover:none){.gal-card .body{position:static;opacity:1;transform:none;background:none}
+  .gal-card .gal-badge{opacity:1}}
 .gal-card .name{font-size:var(--fs-xs);color:var(--t1);font-weight:var(--fw-semi);
      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gal-card .src{font-size:var(--fs-2xs);color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gal-card .src{font-size:12px;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gal-card .src.missing{color:var(--warning)}
-.gal-card .use{margin-top:auto;height:26px;border-radius:var(--r-2);border:1px solid var(--border);
-     background:var(--field);color:var(--t2);font-size:var(--fs-2xs);font-weight:var(--fw-semi);
+.gal-card .use{height:28px;border-radius:var(--r-2);border:1px solid var(--border);
+     background:var(--field);color:var(--t2);font-size:12px;font-weight:var(--fw-semi);
      display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;
      transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
 .gal-card .use:hover{background:var(--accent-soft);color:var(--accent)}

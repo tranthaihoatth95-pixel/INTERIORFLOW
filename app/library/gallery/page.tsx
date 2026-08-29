@@ -24,7 +24,10 @@ export default function LibraryGalleryPage() {
       active="render"
       navigator={<GalleryNavigator />}
       navigatorAddLabel={tr('Gallery', 'Gallery')}
-      navigatorCollapsedLabel={tr('Gallery', 'Gallery')}
+      /* DẢI CHỮ DỌC "GALLERY" ĐÃ BỎ 30/08 — Hoà đã yêu cầu một lần trước đó và nó vẫn còn.
+         Nó là nhãn của Navigator lúc thu gọn: một cột chữ HOA xoay dọc chiếm chỗ cạnh lưới ảnh,
+         nói đúng cái tên đã có ở thanh điều hướng bên trái. Trên một mặt CẢM HỨNG, mọi pixel
+         không phải ảnh đều phải trả giá bằng lý do. Cột này không có lý do. */
     >
       <div className="min-h-0 flex-1 overflow-y-auto">
         <GalleryLienNganh />

@@ -33,7 +33,7 @@ import {
   collectionLabel,
   collectionsFrom,
   groupByIndustry,
-  ungroupedOf,
+  curatedOnly,
   useGalleryAssets,
   type GalleryAsset,
 } from '@/lib/library/gallery-data';
@@ -89,25 +89,31 @@ export function GalleryLienNganh() {
   const [industryFilter, setIndustryFilter] = useState<GalleryIndustry | null>(null);
   const [licenseFilter, setLicenseFilter] = useState<GalleryLicense | null>(null);
   const [collectionFilter, setCollectionFilter] = useState<string | null>(null);
+  const [hienLoc, setHienLoc] = useState(false);
   const [sourceUrl, setSourceUrl] = useState('');
   const [sourceErr, setSourceErr] = useState<string | null>(null);
 
   const collections = useMemo(() => collectionsFrom(assets), [assets]);
 
+  /* MẶT TIỀN chỉ ăn hàng ĐÃ TUYỂN (Hoà chốt 30/08). Ảnh chưa gắn ngành+giấy phép vẫn nằm nguyên
+   * trong Thư viện — không mất, chỉ không lên mặt tiền. Số bị giữ lại hiện ở một dòng cuối trang,
+   * KHÔNG im lặng: giấu 1.580 ảnh mà không nói là đúng bệnh "biến mất không dấu vết". */
+  const curated = useMemo(() => curatedOnly(assets), [assets]);
+  const soChuaTuyen = assets.length - curated.length;
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return assets.filter((a) => {
+    return curated.filter((a) => {
       if (industryFilter && a.nganh !== industryFilter) return false;
       if (licenseFilter && a.license !== licenseFilter) return false;
       if (collectionFilter && !(a.hasSource && a.bosuutap.includes(collectionFilter))) return false;
       if (q && !a.name.toLowerCase().includes(q) && !a.category.toLowerCase().includes(q) && !a.caption.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [assets, industryFilter, licenseFilter, collectionFilter, query]);
+  }, [curated, industryFilter, licenseFilter, collectionFilter, query]);
 
   const industryOrder = useMemo(() => GALLERY_INDUSTRIES.map((g) => g.id), []);
   const groups = useMemo(() => groupByIndustry(filtered, industryOrder), [filtered, industryOrder]);
-  const ungrouped = useMemo(() => ungroupedOf(filtered), [filtered]);
 
   const useForNourish = (a: GalleryAsset) => {
     const detail = { imgId: a.imgId, name: a.name, url: a.url };
@@ -130,26 +136,22 @@ export function GalleryLienNganh() {
     pushLibraryToast(tr('Đã thêm nguồn — chờ gắn vào ảnh', 'Source added — link it to an image next'));
   };
 
-  const hasAnyAsset = assets.length > 0;
-  const hasAnyVisible = groups.length > 0 || ungrouped.length > 0;
+  const hasAnyAsset = curated.length > 0;
+  const hasAnyVisible = groups.length > 0;
   const isFiltering = !!query.trim() || !!industryFilter || !!licenseFilter || !!collectionFilter;
 
   return (
     <div className="if-gallery-root" data-marker="gallery-curated">
       <RawStyle css={GALLERY_CSS} />
 
-      <div className="gal-head">
-        <div className="gal-head-copy">
-          <h1>{tr('Gallery — cảm hứng liên ngành', 'Gallery — cross-discipline inspiration')}</h1>
-          <p>
-            {tr(
-              'Ảnh tuyển có nguồn và giấy phép rõ ràng — kiến trúc · nội thất · cảnh quan · graphic · art. Dùng lại được cho hồ sơ khách, không phải ảnh nhặt trên mạng.',
-              'Curated images with clear source and license — architecture · interior · landscape · graphic · art. Reusable in client deliverables, not scraped from the web.',
-            )}
-          </p>
-        </div>
+      {/* ĐẦU TRANG MỎNG (Hoà chốt 30/08: "ảnh trước, bộ máy sau").
+          Bản cũ đặt <h1> + một đoạn văn giải thích + ô tìm to trước lưới ảnh; cộng 12 chip lọc bên
+          dưới thì tấm ảnh ĐẦU TIÊN rơi xuống quá nửa màn. Một mặt cảm hứng mà phải đọc trước khi
+          nhìn thì nó là tài liệu, không phải cảm hứng. Chữ giải thích chuyển vào `title` của nút
+          lọc — vẫn tra được, không chắn mắt. */}
+      <div className="gal-bar">
         <span className="gal-search">
-          <Search size={18} strokeWidth={1.5} />
+          <Search size={16} strokeWidth={1.5} />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -157,8 +159,23 @@ export function GalleryLienNganh() {
             aria-label={tr('Tìm trong Gallery', 'Search the gallery')}
           />
         </span>
+        <button
+          type="button"
+          className={hienLoc ? 'gal-loc-nut on' : 'gal-loc-nut'}
+          aria-pressed={hienLoc}
+          aria-expanded={hienLoc}
+          title={tr(
+            'Ảnh tuyển có nguồn và giấy phép rõ ràng — kiến trúc · nội thất · cảnh quan · graphic · art. Dùng lại được cho hồ sơ khách.',
+            'Curated images with clear source and license — architecture · interior · landscape · graphic · art. Reusable in client deliverables.',
+          )}
+          onClick={() => setHienLoc((v) => !v)}
+        >
+          {tr('Lọc', 'Filter')}
+          {isFiltering && <span className="gal-loc-cham" aria-hidden />}
+        </button>
       </div>
 
+      {hienLoc && (
       <div className="gal-filters">
         <div className="gal-chiprow" role="group" aria-label={tr('Lọc theo nhóm ngành', 'Filter by discipline')}>
           <span className="lbl">{tr('Ngành', 'Discipline')}</span>
@@ -196,6 +213,7 @@ export function GalleryLienNganh() {
           ))}
         </div>
       </div>
+      )}
 
       {collections.length > 0 && (
         <div className="gal-collections">
@@ -276,19 +294,16 @@ export function GalleryLienNganh() {
         );
       })}
 
-      {ungrouped.length > 0 && (
-        <div className="gal-group">
-          <div className="sec-head">
-            <span className="ic"><Sparkles size={14} strokeWidth={1.5} /></span>
-            <h2>{tr('Chưa gắn nhóm ngành', 'Not tagged with a discipline yet')}</h2>
-            <span>{ungrouped.length}</span>
-          </div>
-          <div className="gal-grid">
-            {ungrouped.map((a) => (
-              <GalleryCard key={a.id} asset={a} onUse={useForNourish} tr={tr} />
-            ))}
-          </div>
-        </div>
+      {/* KHỐI "Chưa gắn nhóm ngành" ĐÃ BỎ 30/08 — nó từng dựng 1.629 thẻ, cao 200.103 px.
+          Nguồn nay đã lọc ở `curatedOnly()` nên khối này không bao giờ có hàng; giữ lại là giữ
+          một nhánh chết. Số ảnh bị giữ ngoài mặt tiền KHÔNG bị giấu — nó ở dòng ngay dưới. */}
+      {soChuaTuyen > 0 && (
+        <p className="gal-con-lai">
+          {tr(
+            `Còn ${soChuaTuyen} ảnh trong Thư viện chưa gắn nhóm ngành hoặc giấy phép — chưa lên mặt tiền, không mất.`,
+            `${soChuaTuyen} more images in your Library still lack a discipline or license tag — not shown here, not lost.`,
+          )}
+        </p>
       )}
 
       {/* VIỆC 4 (phiếu): "mọi ô nhập URL trong vùng library từ chối domain pinterest". Gallery

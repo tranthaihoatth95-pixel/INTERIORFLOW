@@ -121,6 +121,7 @@ sau tin nhầm.
 | Thương hiệu/dữ liệu riêng nào từng sót trong repo? | `docs/AUDIT-BRAND-PII.md` | ✅ quét 25/07 · 853 tệp · 13 chuỗi khách |
 | Cái gì đã **tách ra ngoài repo** và vì sao? | `CLAUDE.md` §"Dữ liệu tham khảo đã TÁCH RA NGOÀI" | ✅ 24/07 — hồ sơ khách · brand TTT · ảnh sản phẩm · bản sao DB → `~/Downloads/_IF-KHO/tham-chieu/` (đổi 29/08) |
 | Vì sao `knowledge/ttt-design-system` biến mất? | `CLAUDE.md` §"Project Knowledge" + `docs/00-CHOT.md` "Dọn trung tính 01/08" | ✅ tài sản thương hiệu **một** studio, không được nằm trong sản phẩm bán ra |
+| **Gu của Hoà là gì — đừng bắt anh tả lại lần nữa** | `docs/GU-PROFILE.md` | ✅ chưng cất 11/07 từ 4 board Pinterest `Bentran_tth`. **§2 là luật cho giao diện app**: liquid-glass · pill bo full · frosted blur · **đơn sắc + 1 accent** · toolbar nổi · KHÔNG flat/material. Kèm mock: artifact `InteriorFlow · Bộ màn thiết kế` 26/08 |
 | Ảnh khách trong Thư viện có phạm luật không? | **KHÔNG**, nếu có xuất xứ và **không** mang thẻ `seed`/`minh-hoa` | ✅ đo 28/08 — 5 asset `ST5` là *người dùng thêm*, có nguồn `pdf 260812_st5_concept`, **0** thẻ seed |
 | Luật tách APP / DEMO / DỰ ÁN | `docs/CONTENT-RULES.md` | ✅ |
 

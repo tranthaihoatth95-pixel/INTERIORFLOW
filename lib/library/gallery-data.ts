@@ -119,6 +119,26 @@ export function ungroupedOf(assets: GalleryAsset[]): GalleryAsset[] {
   return assets.filter((a) => a.nganh === null);
 }
 
+/** ĐÃ TUYỂN — hàng rào của MẶT TIỀN (Hoà chốt 30/08).
+ *
+ * Phiếu gốc 12/08 gọi Gallery là **"MẶT TIỀN TUYỂN CHỌN của kệ Ảnh & tài sản"**, và mục ① nói rõ
+ * nó thay Pinterest cho việc **tìm cảm hứng**. Nhưng mã lại đọc thẳng cả `LibraryAsset` không lọc.
+ * Đo 30/08 trên máy Hoà: **1.635 tài sản** đổ ra, trong đó **1.580 là ảnh Hoà tự nạp để dạy gu**
+ * (`tag: moodboard|layout, gu-đích`, tên tệp là mã băm) — tức NGUYÊN LIỆU, không phải ĐỒ TUYỂN.
+ * Hệ quả đo được: vùng cuộn cao **401.805 px**, 1.634 thẻ dựng cùng lúc trong DOM, và mặt tiền
+ * biến thành cái kho. Đây là ca "làm đủ mục ④ nên đánh mất mục ①".
+ *
+ * Hàng rào: phải có **cả** nhóm ngành **và** giấy phép. Thiếu một là chưa tuyển — ảnh vẫn nằm
+ * nguyên trong Thư viện, KHÔNG mất; nó chỉ không được lên mặt tiền.
+ * (`hasSource` là hàng rào riêng của **bộ sưu tập**, chặt hơn — xem `collectionsFrom`.) */
+export function daTuyen(a: GalleryAsset): boolean {
+  return a.nganh !== null && a.license !== null;
+}
+
+export function curatedOnly(assets: GalleryAsset[]): GalleryAsset[] {
+  return assets.filter(daTuyen);
+}
+
 export interface GalleryCollection {
   slug: string;
   items: GalleryAsset[];
