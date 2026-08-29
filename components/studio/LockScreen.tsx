@@ -182,7 +182,12 @@ export function LockScreen() {
         >
           <div className="relative" style={{ perspective: 1200 }}>
             <motion.div
-              className="relative"
+              /* HAI MẶT XẾP CHỒNG TRONG MỘT Ô LƯỚI, không phải `absolute inset-0`.
+                 Vì sao đổi: mặt sau (thẻ danh ngôn) nay RỘNG HƠN mặt trước (đồng hồ). Với
+                 `absolute` thì khung lật lấy kích thước theo mặt trước, mặt sau tràn ra và bị
+                 CẮT CỤT — bắt được bằng mắt ngay lần soi đầu. Lưới cho khung tự lấy kích thước
+                 theo mặt LỚN NHẤT, nên đổi bố cục mặt sau không phá khung nữa. */
+              className="relative grid"
               style={{ transformStyle: 'preserve-3d' }}
               initial={reduce ? false : { rotateY: 180 }}
               animate={{ rotateY: reduce ? 0 : xoay }}
@@ -190,8 +195,8 @@ export function LockScreen() {
             >
               {/* ── MẶT KHOÁ: giờ → ngữ cảnh → dòng ngắn → Mở lại ↵ ─────────────────────── */}
               <div
-                className="flex flex-col items-center gap-1.5 text-center"
-                style={{ backfaceVisibility: 'hidden', visibility: reduce && mode === 'xac-thuc' ? 'hidden' : undefined }}
+                className="flex flex-col items-center justify-center gap-1.5 text-center"
+                style={{ gridArea: '1 / 1', backfaceVisibility: 'hidden', visibility: reduce && mode === 'xac-thuc' ? 'hidden' : undefined }}
                 aria-hidden={mode === 'xac-thuc'}
               >
                 <div
@@ -217,7 +222,7 @@ export function LockScreen() {
                 </div>
 
                 {line && (
-                  <div className="mt-4 max-w-[300px] text-[12px] italic leading-snug text-[var(--t3)]">
+                  <div className="mt-4 max-w-[300px] text-[13px] italic leading-normal text-[var(--t3)]">
                     {tr(line[0], line[1])}
                   </div>
                 )}
@@ -237,8 +242,9 @@ export function LockScreen() {
 
               {/* ── MẶT XÁC THỰC (mặt sau, lật 180° trục Y) ─────────────────────────────── */}
               <div
-                className="absolute inset-0 flex items-center justify-center"
+                className="flex items-center justify-center"
                 style={{
+                  gridArea: '1 / 1',
                   backfaceVisibility: 'hidden',
                   transform: reduce ? undefined : 'rotateY(180deg)',
                   visibility: mode === 'xac-thuc' ? 'visible' : 'hidden',
@@ -287,95 +293,108 @@ function TheDanhNgon({ cau, en, onMoLai }: { cau: DanhNgon; en: boolean; onMoLai
   const W = 400;
   const H = 250;
 
+  /* HÌNH — tách ra để hai bố cục (ngang/dọc) dùng CHUNG một khối, không nhân bản.
+     Kính bọc dựng bằng ba lớp chồng, cố ý KHÔNG dùng `backdrop-filter`: ở đây không có gì phía
+     sau để làm mờ (hình nằm ngay dưới kính), dùng nó chỉ tốn GPU mà mắt không thấy khác. */
+  const hinh = (
+    <div className="relative h-full w-full">
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-hidden style={{ display: 'block' }}>
+        <rect width={W} height={H} fill={h.troi} />
+        <circle cx={h.vangX * W} cy={h.vangY * H} r={H * 0.115} fill={h.vang} />
+        <line x1="0" y1={H * 0.54} x2={W} y2={H * 0.54} stroke={h.net} strokeWidth="0.8" opacity="0.5" />
+        {/* Vẽ từ XA (cao trên màn) tới GẦN (thấp dưới màn) — lớp gần vẽ SAU nên che phần dưới
+            của lớp xa, chừa lại đúng một dải: đó là cách chồng lớp cho ra chiều sâu. */}
+        {h.lop.map((l, i) => {
+          const y = H * (1 - l.cao);
+          const dx = l.lech * W * 0.5;
+          return (
+            <path
+              key={i}
+              d={`M ${-W * 0.2 + dx} ${H} L ${-W * 0.2 + dx} ${y + H * 0.09} L ${W * 0.34 + dx} ${y} L ${W * 0.78 + dx} ${y + H * 0.07} L ${W * 1.2 + dx} ${y - H * 0.02} L ${W * 1.2 + dx} ${H} Z`}
+              fill={l.mau}
+            />
+          );
+        })}
+        <rect y={H * 0.965} width={W} height={H * 0.035} fill={h.dat} />
+      </svg>
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(108deg, rgba(255,255,255,0.46) 0%, rgba(255,255,255,0.16) 18%, rgba(255,255,255,0.02) 34%, rgba(255,255,255,0) 58%, rgba(255,255,255,0.07) 82%, rgba(255,255,255,0.26) 100%)',
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          boxShadow:
+            'inset 0 1.5px 0 rgba(255,255,255,0.72), inset 1px 0 0 rgba(255,255,255,0.30), inset -1px 0 0 rgba(255,255,255,0.30), inset 0 -1px 0 rgba(0,0,0,0.28), inset 0 -18px 30px -20px rgba(0,0,0,0.5), inset 0 14px 24px -20px rgba(255,255,255,0.5)',
+        }}
+      />
+    </div>
+  );
+
+  const chu = (
+    <div className="flex flex-col items-center gap-6 px-6 py-8 text-center sm:px-9 md:items-start md:px-10 md:py-9 md:text-left">
+      <blockquote className="m-0 flex flex-col gap-4">
+        <p
+          className="m-0 font-medium text-[var(--t1)]"
+          /* CHỮ TIẾNG VIỆT — ba con số này là LUẬT, không phải gu (trường thiết kế
+             `knowledge/typography-vietnamese.md`, và nó đã bị phạm một lần ngày 23/08):
+               V-2  cấm line-height < 1.5 — dấu thanh chồng lên dấu nguyên âm, thiếu chiều cao
+                    là chữ dính vào dòng trên. Để 1.6 vì cỡ này còn nhỏ.
+               V-3  cấm letter-spacing ÂM — bóp ngang làm dấu đè lên chữ bên cạnh.
+               V-6  cỡ sàn ≥12px cho chuỗi có dấu.
+             Bản trước tôi để 1.38 / -0.012em: phạm cả hai. */
+          style={{ fontSize: 'clamp(18px, 2.1vw, 24px)', lineHeight: 1.6, letterSpacing: 0, textWrap: 'pretty' }}
+        >
+          “{en ? cau.en : cau.vi}”
+        </p>
+        <footer className="flex flex-col gap-0.5">
+          <div className="text-[13px] font-semibold text-[var(--t1)]">{cau.ai}</div>
+          <div className="text-[13px] leading-normal text-[var(--t3)]">{cau.vai}</div>
+          <div className="mt-2 max-w-[46ch] text-[12px] leading-normal text-[var(--t3)] opacity-80">{cau.nguon}</div>
+        </footer>
+      </blockquote>
+
+      <button
+        type="button"
+        onClick={onMoLai}
+        autoFocus
+        className="whitespace-nowrap rounded-[var(--r-full,999px)] px-7 py-2.5 text-[13px] font-medium transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+        style={{ background: 'var(--accent)', color: 'var(--on-accent, #fff)' }}
+      >
+        {tr('Mở lại', 'Resume')}
+      </button>
+    </div>
+  );
+
+  /* HAI KHỔ, MỘT THẺ — Hoà 29/08: *"sao tỉ lệ nó thon dài dữ vậy?"*
+   *
+   * Bản trước gõ cứng `w-[430px]` rồi xếp dọc: ảnh 250 + câu 6 dòng + tên + nguồn + nút ≈ 760px
+   * cao trên 400px rộng ⇒ **1 : 1,9**, khung hẹp còn ra 1 : 2,4. Nhưng lỗi gốc KHÔNG phải chiều
+   * cao — mà là **chiều rộng**: tôi chọn khổ điện thoại cho một tấm che phủ TOÀN MÀN MÁY TÍNH.
+   *
+   * Hệ quả đo được: câu 25px trong cột 400px cho ra **~22 ký tự/dòng**, trong khi dải dễ đọc là
+   * **45–75**. Mắt phải nhảy dòng gấp ba lần cần thiết ⇒ vừa xấu vừa mệt, và hai cái đó là MỘT
+   * nguyên nhân. Chiều cao dài ra chỉ là hệ quả.
+   *
+   *   ≥768px  NGANG  — ảnh trái, chữ phải. Cột chữ ~440px ⇒ rơi đúng dải 45–75 ký tự, câu còn
+   *                    2–3 dòng. Tranh phong cảnh vốn là khung ngang, hết bị cắt cụt hai bên.
+   *   <768px  DỌC    — khổ con tem, đúng cho điện thoại.
+   * Hai bố cục cho hai khổ màn, không ép một cái dùng cho cả hai. */
   return (
     <div
-      className="w-[min(92vw,430px)] overflow-hidden text-center"
+      className="flex w-[min(92vw,430px)] flex-col overflow-hidden md:h-[400px] md:w-[min(94vw,880px)] md:flex-row"
       style={{
         background: 'var(--panel)',
         border: '1px solid var(--border)',
-        borderRadius: 22,
+        borderRadius: 'var(--radius-lg)',   // thang đóng 10/14/20 — 22 là số tự phát minh
         boxShadow: '0 24px 60px -24px rgba(0,0,0,0.34), 0 2px 8px -2px rgba(0,0,0,0.12)',
       }}
     >
-      {/* ── HÌNH BỌC KÍNH ────────────────────────────────────────────────────────────────
-          Hoà 29/08: *"hình được bọc trong kính là đẹp"*. Kính ở đây dựng bằng BA lớp chồng,
-          không dùng `backdrop-filter`: ① vệt loé chéo (ánh sáng trượt trên mặt kính) ② viền
-          trong sáng ở mép trên + tối ở mép dưới (độ dày của tấm kính) ③ bóng đổ nhẹ vào trong.
-          Cố ý KHÔNG dùng `backdrop-filter`: ở đây không có gì phía sau để làm mờ — hình nằm
-          ngay dưới kính. Dùng nó chỉ tốn GPU mà mắt không thấy khác. */}
-      <div className="relative">
-        <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-hidden style={{ display: 'block' }}>
-          <rect width={W} height={H} fill={h.troi} />
-          {/* vầng tròn — mặt trời hoặc mặt trăng, tuỳ bảng màu */}
-          <circle cx={h.vangX * W} cy={h.vangY * H} r={H * 0.115} fill={h.vang} />
-          {/* đường chân trời — nét mảnh, đúng ngôn ngữ bản vẽ */}
-          <line x1="0" y1={H * 0.54} x2={W} y2={H * 0.54} stroke={h.net} strokeWidth="0.8" opacity="0.5" />
-          {/* Các lớp mặt phẳng, vẽ từ XA (cao trên màn) tới GẦN (thấp dưới màn) — lớp gần vẽ
-              SAU nên che phần dưới của lớp xa, chừa lại đúng một dải: đó là cách chồng lớp cho
-              ra chiều sâu. Bản đầu tôi `reverse()` nên vẽ ngược, lớp cao nhất vẽ cuối và trùm
-              hết mọi lớp dưới ⇒ hình phẳng lì, chỉ thấy MỘT bóng. Hoà nhìn ảnh là thấy ngay. */}
-          {h.lop.map((l, i) => {
-            const y = H * (1 - l.cao);
-            const dx = l.lech * W * 0.5;
-            return (
-              <path
-                key={i}
-                d={`M ${-W * 0.2 + dx} ${H} L ${-W * 0.2 + dx} ${y + H * 0.09} L ${W * 0.34 + dx} ${y} L ${W * 0.78 + dx} ${y + H * 0.07} L ${W * 1.2 + dx} ${y - H * 0.02} L ${W * 1.2 + dx} ${H} Z`}
-                fill={l.mau}
-              />
-            );
-          })}
-          <rect y={H * 0.965} width={W} height={H * 0.035} fill={h.dat} />
-        </svg>
-
-        {/* ① vệt loé chéo */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(108deg, rgba(255,255,255,0.46) 0%, rgba(255,255,255,0.16) 18%, rgba(255,255,255,0.02) 34%, rgba(255,255,255,0) 58%, rgba(255,255,255,0.07) 82%, rgba(255,255,255,0.26) 100%)',
-          }}
-        />
-        {/* ② + ③ độ dày kính: mép trên sáng, mép dưới tối, bóng đổ vào trong */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            boxShadow:
-              'inset 0 1.5px 0 rgba(255,255,255,0.72), inset 1px 0 0 rgba(255,255,255,0.30), inset -1px 0 0 rgba(255,255,255,0.30), inset 0 -1px 0 rgba(0,0,0,0.28), inset 0 -18px 30px -20px rgba(0,0,0,0.5), inset 0 14px 24px -20px rgba(255,255,255,0.5)',
-          }}
-        />
-      </div>
-
-      {/* ── CHỮ ──────────────────────────────────────────────────────────────────────── */}
-      <div className="px-6 pb-7 pt-6 sm:px-9">
-        <blockquote className="m-0">
-          <p
-            className="m-0 font-medium text-[var(--t1)]"
-            style={{ fontSize: 'clamp(17px, 3.4vw, 22px)', lineHeight: 1.38, letterSpacing: '-0.012em', textWrap: 'pretty' }}
-          >
-            “{en ? cau.en : cau.vi}”
-          </p>
-          <footer className="mt-5">
-            <div className="text-[13px] font-semibold text-[var(--t1)]">{cau.ai}</div>
-            <div className="mt-0.5 text-[11.5px] text-[var(--t3)]">{cau.vai}</div>
-            <div className="mx-auto mt-2.5 max-w-[300px] text-[10.5px] leading-snug text-[var(--t3)] opacity-80">
-              {cau.nguon}
-            </div>
-          </footer>
-        </blockquote>
-
-        {/* Nút DUY NHẤT, nằm GIỮA — Hoà 29/08: *"chữ mở lại nằm giữa"*. Không có nút "lật lại":
-            mặt trước chỉ còn đồng hồ, quay về đó không cho người dùng thêm việc gì làm được. */}
-        <button
-          type="button"
-          onClick={onMoLai}
-          autoFocus
-          className="mx-auto mt-7 block whitespace-nowrap rounded-[var(--r-full,999px)] px-7 py-2.5 text-[13px] font-medium transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-          style={{ background: 'var(--accent)', color: 'var(--on-accent, #fff)' }}
-        >
-          {tr('Mở lại', 'Resume')}
-        </button>
-      </div>
+      <div className="h-[210px] w-full shrink-0 md:h-full md:w-[46%]">{hinh}</div>
+      <div className="flex min-w-0 flex-1 items-center">{chu}</div>
     </div>
   );
 }
