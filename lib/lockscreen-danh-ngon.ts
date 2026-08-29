@@ -115,11 +115,14 @@ export const DANH_NGON: DanhNgon[] = [
     nguon: 'Câu nói gắn với ông, được trích rộng rãi trong giới thiết kế',
   },
   {
-    en: 'When I am working on a problem, I never think about beauty. But when I have finished, if the solution is not beautiful, I know it is wrong.',
-    vi: 'Khi đang giải một bài toán, tôi không bao giờ nghĩ đến cái đẹp. Nhưng khi xong, nếu lời giải không đẹp, tôi biết là mình sai.',
+    // Trích PHẦN SAU của câu — vế này đứng độc lập được và là vế mang ý. Vế đầu ("khi đang
+    // giải tôi không nghĩ đến cái đẹp") chỉ là dẫn nhập. Cắt để vừa khổ thẻ 300px; nguyên văn
+    // đầy đủ ghi ở `nguon` bên dưới, không giấu.
+    en: 'If the solution is not beautiful, I know it is wrong.',
+    vi: 'Nếu lời giải không đẹp, tôi biết là mình sai.',
     ai: 'Buckminster Fuller',
     vai: 'kiến trúc sư & nhà phát minh mái vòm trắc địa',
-    nguon: 'Câu nói được trích rộng rãi, gắn với ông trong nhiều tuyển tập',
+    nguon: 'Trích phần sau. Nguyên văn: “When I am working on a problem, I never think about beauty. But when I have finished, if the solution is not beautiful, I know it is wrong.”',
   },
   {
     en: 'You cannot simply put something new into a place. You have to absorb what you see around you.',

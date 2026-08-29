@@ -36,6 +36,15 @@ for (const c of DANH_NGON) {
   la(c.en.split(/\s+/).length <= 30, `${c.ai} — trích ngắn (${c.en.split(/\s+/).length} chữ)`);
 }
 
+// ── VỪA KHỔ THẺ: thẻ danh ngôn CHÉP ĐÚNG khổ thẻ đăng nhập (300px, `TheXacThucLai.tsx:67`)
+//    và Hoà chốt 29/08 *"tỉ lệ không thay đổi so với card login, chỉ đơn giản lật 180 độ"*.
+//    ⇒ Câu quá dài thì CẮT CÂU, không nới thẻ. Trần 95 ký tự ≈ 4 dòng ở cỡ 17px trong cột
+//    260px. Đây là cổng cho một kỷ luật tôi đã tuyên bố — tuyên bố mà không có cổng thì lần
+//    sau người ta nới thẻ, vì nới thẻ dễ hơn cắt câu.
+for (const c of DANH_NGON) {
+  la(c.vi.length <= 95, `${c.ai} — bản Việt vừa khổ thẻ 300px (${c.vi.length}/95 ký tự)`);
+}
+
 // ── bốc ngẫu nhiên: không bao giờ trả về cùng câu hai lần LIÊN TIẾP
 let lap = 0;
 let truoc = danhNgonNgauNhien().en;
