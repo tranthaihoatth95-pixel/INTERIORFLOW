@@ -77,8 +77,16 @@ if (lenh === 'handoff') {
  * Hook chạy ở MỖI lượt; in "không có phiếu mới" mỗi lượt là đổ rác vào ngữ cảnh, và rác đều
  * đặn thì người ta học cách bỏ qua. Rỗng ⇒ im lặng tuyệt đối, exit 0. Có phiếu ⇒ in, và
  * ĐÁNH DẤU SEEN — đó là mắt xích giữa SENT và ACK mà cầu này đang thiếu. */
-if (lenh === 'im' || lenh === 'inbox') {
+/* 🔴 SỬA 29/08 theo phiếu HO-…-a1a71250c5c9 — LỖI THẬT: `inbox` và `im` CÙNG ghi SEEN.
+ * Hậu quả: bưu tá dùng `inbox` để soi xem có gì phải gửi → nó tạo SEEN NGAY LÚC SOI, tức biên
+ * nhận "đã tới mắt" được sinh ra TRƯỚC KHI giao. Biên nhận giả còn tệ hơn không có biên nhận:
+ * nó làm hệ thống tin rằng phiếu đã tới nơi.
+ * ⇒ Nay chỉ MỘT lệnh được ghi SEEN: `im`, và nó chỉ do HOOK TẠI ĐÍCH chạy.
+ *   `peek`/`inbox` — CHỈ ĐỌC tuyệt đối, ai soi cũng được, không để lại dấu.
+ *   `im`           — hook tại đích, in VÀ ghi SEEN. */
+if (lenh === 'im' || lenh === 'inbox' || lenh === 'peek') {
   const cam = lenh === 'im';
+  const chiDoc = lenh !== 'im';
   const lane = process.argv[3];
   if (!LANES.has(lane)) {
     console.error('Dùng: node scripts/moc.mjs inbox <lane>');
@@ -96,7 +104,8 @@ if (lenh === 'im' || lenh === 'inbox') {
   for (const e of open) {
     console.log(`${e.id}${seen.has(e.id) ? '' : '  🆕'}\n  ${e.from} → ${e.to} · ${e.topic}\n  ${e.body}\n  nguồn: ${e.source}\n`);
     // SEEN ghi MỘT LẦN cho mỗi phiếu — biên nhận "đã tới mắt", khác hẳn ACK "đã xử lý".
-    if (!seen.has(e.id)) ghiSuKien({ schema: 'BOS-HANDOFF-v1', id: `SEEN-${randomUUID()}`, type: 'SEEN', lane, handoffId: e.id, createdAt: new Date().toISOString() });
+    // CHỈ `im` (hook tại đích) được ghi. `peek`/`inbox` đi qua đây mà không để lại gì.
+    if (!chiDoc && !seen.has(e.id)) ghiSuKien({ schema: 'BOS-HANDOFF-v1', id: `SEEN-${randomUUID()}`, type: 'SEEN', lane, handoffId: e.id, createdAt: new Date().toISOString() });
   }
   process.exit(0);
 }
@@ -104,20 +113,52 @@ if (lenh === 'im' || lenh === 'inbox') {
 /* `chua-nhan [phút]` — cho phiên TUẦN TRA. Liệt kê phiếu đã GỬI mà chưa ai NHÌN THẤY quá N
  * phút, kèm lane đích. Đây là thứ biến hòm thư thành cầu: có nó thì người tuần tra biết
  * PHẢI ĐÁNH THỨC AI, thay vì mọi phiên tự hỏi "có ai nhắn mình không". */
+/* `sent <handoffId> <đường-giao> <biên-nhận>` — ghi SAU KHI giao thành công, KHÔNG trước.
+ * Sổ trước đây chỉ có HANDOFF (= đã VIẾT phiếu) rồi nhảy thẳng tới SEEN — thiếu hẳn mắt
+ * "đã GIAO". Thiếu nó thì không phân biệt được *chưa ai gửi* với *gửi rồi mà không ai nhìn*,
+ * mà hai ca đó cần hai cách chữa khác hẳn nhau.
+ * `đường-giao` là cách giao thật (`send_message`, `cron`, `tay`), `biên-nhận` là bằng chứng
+ * bên kia trả về. Gửi THẤT BẠI thì ĐỪNG gọi lệnh này — không có SENT là đúng sự thật. */
+if (lenh === 'sent') {
+  const [hoId, duong, bienNhan] = process.argv.slice(3);
+  if (!hoId || !duong) {
+    console.error('Dùng: node scripts/moc.mjs sent <handoffId> <đường-giao> [biên-nhận]');
+    process.exit(2);
+  }
+  const co = docSuKien().find((e) => e.type === 'HANDOFF' && e.id === hoId);
+  if (!co) { console.error(`Không thấy phiếu ${hoId}.`); process.exit(1); }
+  ghiSuKien({ schema: 'BOS-HANDOFF-v1', id: `SENT-${randomUUID()}`, type: 'SENT',
+    handoffId: hoId, lane: co.to, transport: duong, receipt: bienNhan ?? null,
+    createdAt: new Date().toISOString() });
+  console.log(`📤 ${hoId} · đã giao qua ${duong}${bienNhan ? ' · ' + bienNhan : ''}`);
+  process.exit(0);
+}
+
 if (lenh === 'chua-nhan') {
   const nguong = Number(process.argv[3] ?? 10);
   const events = docSuKien();
+  const sent = new Set(events.filter((e) => e.type === 'SENT').map((e) => e.handoffId));
   const seen = new Set(events.filter((e) => e.type === 'SEEN').map((e) => e.handoffId));
   const acked = new Set(events.filter((e) => e.type === 'ACK').map((e) => e.handoffId));
   const now = Date.now();
-  const treo = events.filter((e) => e.type === 'HANDOFF' && !seen.has(e.id) && !acked.has(e.id)
-    && (now - Date.parse(e.createdAt)) / 60000 >= nguong);
-  if (!treo.length) { console.log('✅ không có phiếu nào treo quá ' + nguong + ' phút'); process.exit(0); }
-  for (const e of treo) {
-    const phut = Math.round((now - Date.parse(e.createdAt)) / 60000);
-    console.log(`⏳ ${e.id} · lane ${e.to} · treo ${phut} phút · ${e.topic}`);
+  const phutCua = (e) => Math.round((now - Date.parse(e.createdAt)) / 60000);
+  const mo = events.filter((e) => e.type === 'HANDOFF' && !acked.has(e.id) && phutCua(e) >= nguong);
+
+  /* HAI RỔ, HAI CÁCH CHỮA KHÁC HẲN — đây là lý do phải tách:
+   *   CHƯA GỬI   → chưa ai bấm nút giao. Việc của BƯU TÁ: đi giao.
+   *   GỬI RỒI, CHƯA AI NHÌN → đã giao mà đích không mở lên. Việc của NGƯỜI: đánh thức phiên đó.
+   * Gộp hai rổ lại thì bưu tá gửi lại phiếu đã gửi — và mỗi lần gửi lại là một cơ hội đẻ
+   * biên nhận giả. */
+  const chuaGui = mo.filter((e) => !sent.has(e.id));
+  const guiRoiChuaNhin = mo.filter((e) => sent.has(e.id) && !seen.has(e.id));
+
+  if (!chuaGui.length && !guiRoiChuaNhin.length) {
+    console.log(`✅ không có phiếu nào treo quá ${nguong} phút`);
+    process.exit(0);
   }
-  process.exit(1);   // exit 1 = CÓ việc phải đánh thức
+  for (const e of chuaGui) console.log(`📮 CHƯA GỬI · ${e.id} · lane ${e.to} · ${phutCua(e)} phút · ${e.topic}`);
+  for (const e of guiRoiChuaNhin) console.log(`⏳ ĐÃ GỬI, CHƯA AI NHÌN · ${e.id} · lane ${e.to} · ${phutCua(e)} phút · ${e.topic}`);
+  process.exit(1);   // exit 1 = CÓ việc phải làm (đi giao, hoặc đánh thức)
 }
 
 if (lenh === 'ack') {

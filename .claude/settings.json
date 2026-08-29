@@ -35,7 +35,13 @@
     "Hook đọc lane từ biến IF_LANE. Phiên nào đặt IF_LANE=06 thì nhận phiếu của lane 06.",
     "Không đặt ⇒ mặc định 00 (MAIN). Cách đặt: `export IF_LANE=06` trước khi mở phiên, hoặc",
     "thêm vào `.claude/settings.local.json` mục `env` của riêng máy đó.",
-    "Một biến duy nhất điều khiển cả hai hook — không đẻ cấu hình thứ hai (luật 6)."
+    "Một biến duy nhất điều khiển cả hai hook — không đẻ cấu hình thứ hai (luật 6).",
+    "",
+    "⚠️ CHỈ HOOK NÀY ĐƯỢC GHI `SEEN`, và chỉ vì nó chạy TẠI ĐÍCH. Lệnh nó gọi là `im` —",
+    "`peek`/`inbox` là CHỈ ĐỌC tuyệt đối, ai soi cũng được mà không để lại dấu.",
+    "Vì sao phải tách: bưu tá dùng lệnh soi để xem có gì phải giao; nếu lệnh soi cũng ghi SEEN",
+    "thì biên nhận 'đã tới mắt' được sinh ra TRƯỚC KHI giao. Biên nhận giả tệ hơn không có biên",
+    "nhận — nó làm cả hệ thống tin rằng phiếu đã tới nơi. Lỗi này có thật, đã đo, đã sửa 29/08."
   ],
 
   "hooks": {
