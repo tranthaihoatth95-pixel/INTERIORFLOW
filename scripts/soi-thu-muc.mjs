@@ -25,10 +25,34 @@
 import { execFileSync } from 'node:child_process';
 import { readdirSync, existsSync } from 'node:fs';
 import path from 'node:path';
+import { homedir } from 'node:os';
 
 const REPO = process.cwd();
 /** Thư mục hạ tầng — không thuộc quyền quyết của ai, luôn bỏ qua khi soi. */
 const NGOAI = new Set(['.git', 'node_modules', '.next']);
+
+/* ── VÙNG NGOÀI REPO — mở rộng 29/08 ───────────────────────────────────────────────────────
+ * Khám 29/08 tìm ra một vùng mù DO CHÍNH REPO TẠO RA:
+ *   `CLAUDE.md` RA LỆNH đẩy dữ liệu RA `~/Downloads` (luật trung tính 24/07 — tài sản của một
+ *   studio không được nằm trong sản phẩm bán ra; + tách 121 MB hồ sơ khách và 274 MB DB cũ).
+ *   Máy này canh chặt BÊN TRONG. **Không máy soi nào canh BÊN NGOÀI** (đo: 0 tệp `soi-*.mjs`
+ *   chạm `homedir()`). Đẩy ra mà không dựng cổng ở ngoài = tạo vùng mù có chủ ý.
+ * Đo được ngày đó: 199 mục / 38 GB ở gốc `~/Downloads`, 55 mục dính IF/IDF/TTT/agent,
+ * **6/14 thư mục IF-* không nơi nào trong repo trỏ tới — 522 MB**.
+ *
+ * VÌ SAO MỞ RỘNG MÁY NÀY chứ không đẻ máy thứ hai: câu hỏi y hệt — *"thư mục này có ai quyết
+ * chưa"*. Chỉ khác chỗ đứng. Đẻ máy thứ hai là đẻ luật thứ hai cho cùng một việc (luật 6).
+ *
+ * ⚠️ HAI KHÁC BIỆT so với bên trong repo, cố ý:
+ *   ① Bên trong, "có người quyết" = **git tracked hoặc gitignored**. Bên ngoài không có git,
+ *      nên "có người quyết" = **có ít nhất một chỗ trong repo TRỎ TỚI TÊN NÓ**
+ *      (`docs/`, `scripts/`, `CLAUDE.md`, `.claude/skills/`).
+ *   ② Bên trong CHẶN ở vòng phát hành. Bên ngoài **CHỈ BÁO, KHÔNG BAO GIỜ CHẶN** — thư mục
+ *      Tải về là của Hoà, không phải của dự án. Máy không có quyền chặn việc của người ta ở
+ *      chỗ không phải của nó. Nó chỉ được nói: *chỗ này có N thứ không ai còn trỏ tới*.
+ * ⛔ Máy này TUYỆT ĐỐI không xoá/di chuyển/đổi tên gì ở ngoài. Nó đọc tên thư mục, hết. */
+const VUNG_NGOAI = path.join(homedir(), 'Downloads');
+const TIEN_TO_NGOAI = /^(IF[-_]|InteriorFlow|IDF|TTT |_TTT|_IF|_CLAUDE|interiorflow|AI DATA|Design system TTT)/i;
 
 const g = (...a) => { try { return execFileSync('git', a, { cwd: REPO, encoding: 'utf8' }); } catch { return ''; } };
 
@@ -74,6 +98,47 @@ if (moCoi.length) {
   console.log('  Không quyết = lần dọn sau nó biến mất và không ai biết đã mất gì.');
   // Cảnh báo ở vòng dev, CHẶN ở vòng phát hành. Chặn ngay bây giờ là đỏ vĩnh viễn cho mọi lane
   // — và cổng luôn đỏ là cổng người ta học cách ngó lơ (F-02, đã trả giá bằng luật L3).
+  soiNgoaiRepo();
   process.exit(process.argv.includes('--chan') ? 1 : 0);
 }
 console.log('  Không thư mục nào đang chờ người quyết.');
+
+/* ══ VÙNG NGOÀI REPO — chỉ BÁO, không bao giờ chặn ═════════════════════════════════════════ */
+function soiNgoaiRepo() {
+  let mucNgoai = [];
+  try {
+    mucNgoai = readdirSync(VUNG_NGOAI, { withFileTypes: true })
+      .filter((e) => e.isDirectory() && TIEN_TO_NGOAI.test(e.name))
+      .map((e) => e.name);
+  } catch { /* không có thư mục Tải về, hoặc không đọc được — im lặng, đây không phải việc bắt buộc */ }
+
+  if (mucNgoai.length) {
+    /* "Có người quyết" ở ngoài = có ít nhất một chỗ trong repo NHẮC TỚI TÊN nó. Dùng `git grep`
+     * để chỉ soi tệp đã theo dõi — nhanh, và không đọc phải rác chưa commit. */
+    const coTro = (ten) => {
+      try {
+        execFileSync('git', ['grep', '-l', '--fixed-strings', ten, '--', 'docs', 'scripts', 'CLAUDE.md', '.claude'],
+          { cwd: REPO, stdio: 'pipe' });
+        return true;
+      } catch { return false; }
+    };
+    const moCoiNgoai = mucNgoai.filter((t) => !coTro(t));
+    console.log(`\n── ngoài repo · ${VUNG_NGOAI.replace(homedir(), '~')} ──`);
+    console.log(`  ✅ có nơi trỏ tới   ${mucNgoai.length - moCoiNgoai.length} / ${mucNgoai.length}`);
+    console.log(`  ${moCoiNgoai.length ? '🔴' : '✅'} KHÔNG AI TRỎ TỚI  ${moCoiNgoai.length}`);
+    for (const m of moCoiNgoai) {
+      let mb = '?';
+      try {
+        mb = execFileSync('du', ['-sh', path.join(VUNG_NGOAI, m)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim().split(/\t| /)[0];
+      } catch { /* du hỏng thì thôi, kích thước không phải điều quan trọng nhất */ }
+      console.log(`     🔴 ${m}  (${mb})`);
+    }
+    if (moCoiNgoai.length) {
+      console.log('\n  Đây là thư mục CỦA HOÀ, không phải của dự án — máy KHÔNG chặn và KHÔNG đụng vào.');
+      console.log('  Nó chỉ nói: repo đã đẩy thứ ra đây rồi QUÊN ĐƯỜNG VỀ. Muốn hết báo thì');
+      console.log('  nhắc tên nó ở một chỗ trong `docs/` — hoặc quyết rằng nó không còn cần nữa.');
+    }
+  }
+}
+
+if (!moCoi.length) soiNgoaiRepo();
