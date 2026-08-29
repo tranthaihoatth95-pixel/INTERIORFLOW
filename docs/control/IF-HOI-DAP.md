@@ -145,3 +145,5 @@ Trả lời xong một câu hỏi mà bảng này chưa có → thêm **một d�
 kết. Bảng dài ra là kho đang khoẻ; kho đẻ thêm tệp tổng kết mới là kho đang ốm.
 
 | chia việc cho nhiều phiên thế nào, ai được ghi | `IF-VUNG-BOI-CANH.md` |
+
+| cài đặt người dùng nên sống ở đâu | `docs/design-candidate/IF-DEC/IF-DEC-CAI-DAT-BA-TRUC-001.md` |

@@ -156,3 +156,38 @@ gom chùm trục song song chồng nhau rồi lấy **BAO NGOÀI** của chùm (
 cách hai nét ngoài cùng), chứ không phải giữ trục dày nhất — bản "giữ dày nhất"
 đã thử và **trượt nghiệm thu** (mất 74% chiều dài, ghi ở mục trên).
 ⇒ Mọi con số tổng chiều dài hiện nay vẫn **chưa dùng để kết luận được**.
+
+
+## Câu hỏi "ba nét song song" — ĐÃ TRẢ LỜI, và câu hỏi đó SAI ĐỀ (29/08)
+
+Tôi từng định hỏi người trong nghề: *ba nét song song cách 350–400mm, chạy suốt 17–18m, là một
+tường có lớp hay nhiều vách?* Khám bằng mẫu CAD thật cho ra: **cả hai đều sai, vì đó không phải
+tường.**
+
+**Đo được:** không phải 3 nét mà là **7 nét** thẳng đứng cùng layer `A-Draw`, bước
+`100 · 200 · 200 · 200 · 200 · 200 mm`. Mỗi nét không liền — nó là **chuỗi nét đứt lặp y hệt:
+1150mm đặc + 350mm hở, lặp 13–14 lần suốt 20m**.
+
+**Ba con số tôi đưa ra (195.719 / 196.069 / 196.469) KHÔNG phải toạ độ nét gốc** — chúng là
+**trung điểm của ba cặp** do chính bước ghép đôi của tôi tính ra. Tôi hỏi về sản phẩm của máy
+mình rồi tưởng đang hỏi về bản vẽ.
+
+**Ba bằng chứng phủ định, đo trong hộp bao quanh cụm:**
+`DIMENSION` bao trùm cả cụm = **0** · `HATCH` lấp khe giữa các nét = **0** · đường bao phòng khép
+kín lấy một trong các nét làm biên = **0**. Và layer `A-Wall` trong toàn dải cạnh này = **0 nét**
+— người vẽ **chưa từng định danh chỗ này là tường**.
+
+⇒ Đây là **hoạ tiết vẽ bằng `OFFSET` + `ARRAY`** (nhiều khả năng là nan đứng mặt kính). Chữ ký:
+bước cách đều tuyệt đối + cùng một nét đứt căn khớp nhau suốt 20m. Vách thật không lặp đều tuyệt
+đối và không dùng chung một nét đứt căn khớp.
+
+**Điều đáng giá nhất: `ĐẢO ARRAY` đã tự loại đúng cụm này rồi** — nhật ký ghi *"loại 52 đối tượng
+bước đều (65 m) ⇒ KHÔNG phải tường"*. Tức máy đã đúng ở chỗ tôi tưởng nó sai, và tôi suýt đi hỏi
+người dùng một câu vô nghĩa dựa trên số liệu của chính mình.
+
+**Bài học, cùng họ với [[M-59]]:** trước khi mang một "phát hiện" đi hỏi ai, phải kiểm nó có phải
+**dữ liệu gốc** hay chỉ là **đầu ra trung gian của chính mình**. Con số đi qua ba bước xử lý thì
+nó nói về ba bước đó, không còn nói về bản vẽ.
+
+**Còn mở:** trường hợp CHUNG (3 nét 350–400mm trên layer `A-Wall` thật) **chưa có mẫu để khám** —
+mẫu này không khớp mô tả đó về cả bề dày lẫn layer.

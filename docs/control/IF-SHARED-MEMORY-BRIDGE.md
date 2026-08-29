@@ -31,6 +31,30 @@ ghi nguyên tử: tạo file tạm rồi đổi tên, tránh để Drive thấy 
 4. Tạo event xác nhận `VERIFIED`/`DECIDED`; không sửa event gốc.
 5. Xuất bản lại để điện thoại thấy version mới.
 
+## Cầu Claude ↔ Codex — không dùng Hoà làm người chuyển tin
+
+Cầu dùng lại `scripts/moc.mjs`; không có sổ quyết định hoặc canonical thứ hai. Sự kiện thô nằm ở
+`~/PROJECT/SHARED/LOG/agent-handoffs.jsonl`, append-only và chỉ mang nội dung BUILDER. Repo vẫn thắng.
+
+```bash
+# giao việc / kết quả có provenance
+node scripts/moc.mjs handoff 00 05 "chủ đề" "một dòng đủ hành động" "docs/control/…#sha256"
+
+# phiên lane 05 tự kéo phần chưa nhận khi bắt đầu
+node scripts/moc.mjs inbox 05
+
+# nhận xong thì thêm ACK; không sửa hoặc xoá sự kiện gốc
+node scripts/moc.mjs ack 05 HO-…
+```
+
+Mỗi phiên chạy `inbox <lane>` **một lần khi bắt đầu**, không quét transcript. Khi có kết luận cần
+lane khác xử lý, chạy `handoff`; người nhận tự ACK. Thiếu source/hash thì giữ nhãn `chat-unverified`,
+không được nâng thành decision. Cấm ghi PII, CLIENT, TTT/private hoặc asset khách vào cầu này.
+
+Giới hạn thật: cầu filesystem truyền được khi hai ứng dụng cùng máy và cùng đọc bootstrap. Nó không
+tự đánh thức Claude Web. Muốn chạy khi ứng dụng đang đóng cần một Routine/Automation phía ứng dụng;
+đó là cơ chế đánh thức, không phải một kho nhớ mới.
+
 ## Chống context bleed
 
 - IF repo chỉ nạp tài liệu `IF-*` và bridge này.
