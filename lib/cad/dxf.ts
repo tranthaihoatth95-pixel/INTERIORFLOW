@@ -54,6 +54,9 @@ import {
   INSERT_ID_CELL_SEP, INSERT_ID_NEST_SEP, roomCentroid,
 } from './model';
 import { inferElementTypes, type ElementInferRule } from './element-infer';
+// CHỈ import KIỂU — bị xoá lúc biên dịch, nên không kéo `tuong-hinh-hoc.ts` (và chuỗi
+// commands→store của nó) vào bundle của mọi nơi gọi `parseDxfEx`. Không có vòng import lúc chạy.
+import type { DoDemTuong } from './tuong-hinh-hoc';
 import { polygonArea } from './hatch';
 import { BLOCK_MAP, type Prim } from './furniture';
 
@@ -476,6 +479,13 @@ export interface DxfLoadReport {
    * Bỏ suy đoán (`opts.inferRules = null`) ⇒ `inferredCount = 0`, hai bảng rỗng.
    */
   elementTypes: { inferredCount: number; declaredCount: number; byType: Record<string, number>; byLayer: Record<string, string> };
+  /**
+   * IF-301 — SỐ ĐO nhận diện tường bằng hình học (`lib/cad/tuong-hinh-hoc.ts`). CHỈ có mặt khi cờ
+   * `NEXT_PUBLIC_IF_TUONG_HINH_HOC=1`; mặc định `undefined` ⇒ báo cáo y hệt hôm nay.
+   * `parseDxfEx()` KHÔNG tự sinh field này — nó do điểm gọi duy nhất (`dxf-worker.ts`) gắn vào,
+   * đúng lý do ghi ở đó. Khai ở đây để nơi đọc báo cáo có kiểu, không phải đoán.
+   */
+  tuongHinhHoc?: DoDemTuong;
 }
 
 /**

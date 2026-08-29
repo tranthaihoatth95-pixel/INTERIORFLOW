@@ -76,6 +76,11 @@ Nguồn: [Automated Wall Detection in 2D CAD Drawings](https://www.researchgate.
 (trước đó cùng tệp cho ra **1 khối sàn**). Mã: `scripts/proof/tuong-tu-hinh-hoc.ts` — **phép thử,
 chưa vào sản phẩm**.
 
+> 🔴 **HAI ĐOẠN DƯỚI ĐÂY LÀ TRẠNG THÁI NGÀY 28/08, NAY ĐÃ CŨ.** `ĐẢO TRIM` đã làm, và cả bộ đã vào
+> mã sản phẩm ngày 29/08 — xem mục **IF-301** ở cuối tệp. Con số `972`/`1.139 m` cũng đã bị chính
+> mục đó bác: chúng tính trên bản còn con bọ `e.pts` (bỏ sạch cạnh polyline) và trước khi có ghép
+> đôi độc quyền. Giữ nguyên chữ ở đây làm lời chứng, KHÔNG dùng làm số hiện hành.
+
 `ĐẢO TRIM` **chưa làm**. Đây là lý do 972 tường dài trung bình **1,17 m** — ngắn bất thường.
 Nghiệm thu khi làm xong, **tự chấm được, không cần mắt ai**:
 **số tường phải GIẢM MẠNH, tổng chiều dài phải GẦN NHƯ KHÔNG ĐỔI.**
@@ -191,3 +196,66 @@ nó nói về ba bước đó, không còn nói về bản vẽ.
 
 **Còn mở:** trường hợp CHUNG (3 nét 350–400mm trên layer `A-Wall` thật) **chưa có mẫu để khám** —
 mẫu này không khớp mô tả đó về cả bề dày lẫn layer.
+
+---
+
+## IF-301 — THUẬT TOÁN ĐÃ VÀO MÃ SẢN PHẨM (29/08)
+
+Engine nằm ngoài đường thi công thì bằng không. `scripts/proof/tuong-tu-hinh-hoc.ts` chạy được từ
+28/08 nhưng **chưa có ai gọi tới**; nay nó đã ở trong sản phẩm:
+
+| chỗ | việc |
+|---|---|
+| `lib/cad/tuong-hinh-hoc.ts` | thuật toán 4 bước + cờ + hàm đưa tường vào bản vẽ |
+| `lib/cad/dxf-worker.ts` | **ĐIỂM GỌI DUY NHẤT**, ngay sau `parseDxfEx()` |
+| `lib/cad/tuong-hinh-hoc.test.ts` · `lib/cad/dxf-worker-tuong.test.ts` | 45 phép, có ca DƯƠNG (F-17) |
+| `scripts/proof/tuong-tu-hinh-hoc.ts` | không còn giữ thuật toán — **gọi module**, chỉ in số + vẽ SVG |
+
+Cờ `NEXT_PUBLIC_IF_TUONG_HINH_HOC`, **mặc định TẮT**. Tắt ⇒ `doc` và báo cáo trả ra trùng khít
+`parseDxfEx()` trần (khoá bằng test, so cả hai chuỗi JSON).
+
+**Vì sao gọi ở `dxf-worker.ts` chứ không trong `parseDxfEx`:** đó là chỗ DUY NHẤT một tệp DXF *của
+người dùng* đi vào app (`dxf-open.ts` đẻ worker này). `parseDxfEx` còn ~15 nơi khác gọi để đọc
+block/thư viện/roundtrip — cắm thêm một tầng suy diễn ở đó là đổi hành vi của những đường chẳng
+liên quan. Worker lại đang nắm luồng riêng nên 23 ms/12.274 entity không đụng vào giao diện.
+
+**Tường sinh ra là entity tường THẬT của IF** — hatch poché + đường bao, dựng bằng đúng khuôn
+canonical `commands.ts` `wallSegmentOutline` (B25 REUSE, không đẻ khuôn thứ hai), nên 3D/BOQ/kiểm
+chuẩn thấy được ngay. **THÊM chứ không thay thế:** nét gốc của người vẽ giữ nguyên vẹn (K3).
+
+### 🔴 CON BỌ IM LẶNG trong chính phép thử: `e.pts` ≠ `e.points`
+
+Phép thử gốc đọc `e.pts` để bung cạnh polyline. Model của IF đặt tên field là **`points`**
+(`model.ts` `PolylineEntity`). Nên nó bỏ sạch **1.858 cạnh polyline** của `03_TANG5B-TTT.dxf` —
+không nổ, không cảnh báo, chỉ **ra ít tường hơn**. Mọi con số công bố trước 29/08 (996 nét · 332
+mảnh · 119 → 67 → 64 tường) đều tính thiếu vì lý do này, không phải vì thuật toán.
+
+Đây đúng là **lớp lỗi B**: đúng thao tác, sai đối tượng. Và nó lọt được vì phép thử đứng RIÊNG,
+không dùng chung kiểu với mã sản phẩm. Bản trong `lib/` đọc `Doc` có kiểu ⇒ tsc bắt được ngay nếu
+gõ sai tên field. Đó là lý do thứ hai để đưa engine vào sản phẩm, ngoài lý do "để có ai gọi tới".
+
+### Số đo sau khi sửa — `03_TANG5B-TTT.dxf`, 12.274 entity, 23 ms
+
+```
+nét thẳng > 300mm                                          1.347
+① ĐẢO OFFSET   1.258 cặp ứng viên  →   390 mảnh   (ghép đôi ĐỘC QUYỀN)
+② ĐẢO TRIM       390 mảnh          →   165 tường liền
+③ ĐẢO ARRAY    loại 81 vật bước đều →    84 còn lại
+④ GỘP CHÙM        84 trục          →    81 tường (BAO NGOÀI)
+⇒ 81 TƯỜNG · 286,0 m
+   bề dày: 200mm×35 · 100mm×18 · 300mm×12 · 220mm×5 · 250mm×2 · 150mm×1 · 400mm×1
+```
+
+Bảng bề dày vẫn rơi đúng các **nấc nghề** `200 · 100 · 300 · 400` — chính những con số người vẽ đã
+gõ vào `OFFSET`. Nhận diện sai sẽ cho phân bố tán loạn; đây là phép tự chấm không dàn xếp được.
+
+Đối chiếu mốc cũ: **1 khối sàn → 81 bức tường có trục và bề dày.**
+
+### CÒN NỢ, đã khai
+
+- **`E-Stair`×12 vẫn lọt** vào danh sách tường. `ĐẢO ARRAY` loại 81 vật bước đều nhưng phần thang
+  không xếp đủ đều thì vẫn qua. Chưa có luật thứ hai cho thang; **không** định chữa bằng cách đọc
+  tên layer (LUẬT NỀN TẢNG §1).
+- **Chưa có ai ĐỌC `report.tuongHinhHoc`.** Trường số đo đã có kiểu và đã được worker gắn vào, nhưng
+  nơi hiện nó cho người dùng nằm ở `components/` — ngoài vùng ghi của phiên này.
+- `ĐẢO MLINE` (đùn khối 3D từ trục + bề dày) chưa tới lượt.
