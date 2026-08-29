@@ -75,7 +75,7 @@ export function LockScreenSettings() {
       <div className="mt-4 flex items-center gap-3">
         <button
           type="button"
-          onClick={() => lockScreenNow()}
+          onClick={() => lockScreenNow('tay')}
           className="flex items-center gap-2 rounded-[10px] border border-[var(--border)] px-3 py-2 text-[13px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
         >
           <LockKeyhole size={14} />

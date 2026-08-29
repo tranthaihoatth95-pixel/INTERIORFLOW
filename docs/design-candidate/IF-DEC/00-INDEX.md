@@ -1,4 +1,9 @@
-# IF · SỔ QUYẾT ĐỊNH THIẾT KẾ — nhập từ xưởng Design (28/08/2026)
+# IF · SỔ QUYẾT ĐỊNH THIẾT KẾ
+
+> 🔴 **TÊN CŨ GHI "nhập từ xưởng Design (28/08)" — nay KHÔNG CÒN ĐỦ.** Sổ này ban đầu chỉ chứa
+> thẻ **nhập từ ngoài**, nên đầu đề mô tả nguồn gốc thay vì mô tả vai. Từ 29/08 nó chứa cả thẻ
+> **sinh trong repo**. Đầu đề mô tả nguồn nhập khiến thẻ sinh tại chỗ không có đường vào — và
+> đó chính là lý do `IF-DEC-CAI-DAT-BA-TRUC-001` nằm ngoài bảng suốt một ngày.
 
 > **Đây là CANDIDATE, không phải chốt.** Không tệp nào trong thư mục này cho phép thi công.
 > Cổng thi công nằm ở chính các tệp (`GATE-*`, `G1–G7`) và ở `docs/control/IF-ADVICE-VERIFICATION-GATE.md`.
@@ -22,6 +27,7 @@ Nhập **nguyên văn, không sửa một byte**. Băm dưới đây đo tại t
 | `IF-FINAL-DESIGN-CONTRACT-CANDIDATE.md` | 22052 | `501a5d8d3a7553cfbf006f0c3417cee4fee3735bb0bcf4e7465533fff2db90dc` | CANDIDATE · chờ Hoà duyệt mắt |
 | `IF-TASK-FIRST-INTERACTION-CONTRACT-028.md` | 11044 | `42fdc92e6107718840ec3d6f07db987f53ea5caa1e307a3f8ac860fe52348430` | CANDIDATE |
 | `IF-UX-COMPLETE-SPEC-010.md` | 75915 | `b53971ea678b1059799ebbcfa72c54028faa2e2b546b833931accb604bde5969` | CANDIDATE |
+| `IF-DEC-CAI-DAT-BA-TRUC-001.md` | 5179 | `1e63eec23a1d946ee4d2809694986b272d3299e5aa7c7805a12bb79a9f058a6d` | **ĐÃ QUYẾT · chưa thi công** — sinh trong repo 29/08, không nhập từ ngoài |
 
 ## 🔴 BIÊN NHẬN CŨ ĐÃ SAI — ĐO ĐƯỢC 28/08
 

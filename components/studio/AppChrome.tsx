@@ -126,7 +126,7 @@ export function AppChrome({ active, logoMenu }: Props) {
       // này không bao giờ gõ ra ký tự nên an toàn đặt TRƯỚC input-guard bên dưới).
       if (e.ctrlKey && e.metaKey && e.key.toLowerCase() === 'q') {
         e.preventDefault();
-        lockScreenNow();
+        lockScreenNow('tay');   // NGƯỜI chủ động bấm ⌃⌘Q ⇒ khoá CỨNG, đòi mật khẩu
         return;
       }
       const tag = (e.target as HTMLElement)?.tagName;
@@ -191,7 +191,7 @@ export function AppChrome({ active, logoMenu }: Props) {
       const minutes = getLockIdleMinutes(userId);
       // §24 — `null` = "Không bao giờ": KHÔNG đặt hẹn giờ, không giả lập bằng một số khổng lồ.
       if (minutes === null) return;
-      timer = setTimeout(() => lockScreenNow(), minutes * 60_000);
+      timer = setTimeout(() => lockScreenNow('ranh'), minutes * 60_000);   // MÁY tự khoá ⇒ mở bằng một nút
     };
     const events: (keyof WindowEventMap)[] = ['mousemove', 'keydown', 'pointerdown', 'wheel', 'touchstart'];
     events.forEach((ev) => window.addEventListener(ev, reset, { passive: true }));

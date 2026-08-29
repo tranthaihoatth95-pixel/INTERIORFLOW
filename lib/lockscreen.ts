@@ -17,17 +17,44 @@
 import { create } from 'zustand';
 import { useSaveStatus } from './save-status';
 
+/**
+ * HAI MỨC KHOÁ — Hoà chốt 29/08. Trước đó chỉ có MỘT mức, và nó đòi mật khẩu trong cả hai
+ * tình huống hoàn toàn khác nhau:
+ *
+ *   `ranh` — MÁY tự khoá vì người dùng rời bàn 15 phút. Người dùng KHÔNG yêu cầu gì cả; đây là
+ *            máy tự bảo vệ. Đi pha cà phê rồi quay lại mà phải gõ mật khẩu là **phạt người dùng
+ *            vì một việc họ không làm**. ⇒ MỞ BẰNG MỘT NÚT, không mật khẩu.
+ *   `tay`  — NGƯỜI dùng chủ động bấm ⌘⇧L (hoặc gọi lệnh "Khoá InteriorFlow"). Đây là một YÊU CẦU
+ *            rõ ràng: "che màn hình này lại". Rời máy cho người khác dùng, họp, ra khỏi phòng.
+ *            ⇒ ĐÒI mật khẩu, đúng điều người dùng vừa xin.
+ *
+ * Vì sao đây là sửa LUẬT chứ không phải sửa giao diện: mức bảo vệ phải theo Ý ĐỊNH của người
+ * dùng, không theo tiện tay của máy. Bản cũ đối xử hai tình huống như một ⇒ vừa phiền ở ca
+ * thường gặp, vừa không hề an toàn hơn ở ca thật sự cần (kẻ ngồi cùng bàn vẫn đợi được 15 phút).
+ */
+export type LyDoKhoa = 'ranh' | 'tay';
+
 interface LockScreenState {
   locked: boolean;
-  lock: () => void;
+  /** Vì sao đang khoá. `null` khi chưa khoá. */
+  lyDo: LyDoKhoa | null;
+  lock: (lyDo?: LyDoKhoa) => void;
   unlock: () => void;
 }
 
 export const useLockScreen = create<LockScreenState>((set) => ({
   locked: false,
-  lock: () => set({ locked: true }),
-  unlock: () => set({ locked: false }),
+  lyDo: null,
+  // Mặc định `tay` — an toàn mặc định: nơi gọi nào quên khai lý do thì rơi về mức CHẶT hơn,
+  // không phải mức lỏng hơn.
+  lock: (lyDo: LyDoKhoa = 'tay') => set({ locked: true, lyDo }),
+  unlock: () => set({ locked: false, lyDo: null }),
 }));
+
+/** Khoá này có đòi mật khẩu không. Một chỗ trả lời, mọi mặt hiện đọc chung. */
+export function canMatKhau(lyDo: LyDoKhoa | null): boolean {
+  return lyDo !== 'ranh';
+}
 
 /** Trần an toàn nếu autosave kẹt/không bao giờ báo xong — không được khoá treo mãi. */
 const FORCE_SAVE_MAX_WAIT_MS = 2000;
@@ -48,12 +75,12 @@ const FORCE_SAVE_MAX_WAIT_MS = 2000;
  * đợi tới khi rời trạng thái đó, có trần `FORCE_SAVE_MAX_WAIT_MS` phòng autosave kẹt/không mount.
  * Không có gì đang lưu (ca phổ biến nhất) ⇒ khoá gần như ngay, không đợi vô ích.
  */
-export function lockScreenNow(): void {
+export function lockScreenNow(lyDo: LyDoKhoa = 'tay'): void {
   window.dispatchEvent(new CustomEvent('cad:force-save-request'));
   window.dispatchEvent(new CustomEvent('present:force-save-request'));
 
   if (useSaveStatus.getState().status !== 'saving') {
-    useLockScreen.getState().lock();
+    useLockScreen.getState().lock(lyDo);
     return;
   }
 
@@ -63,7 +90,7 @@ export function lockScreenNow(): void {
     settled = true;
     window.clearTimeout(safety);
     unsubscribe();
-    useLockScreen.getState().lock();
+    useLockScreen.getState().lock(lyDo);
   };
   const unsubscribe = useSaveStatus.subscribe((s) => {
     if (s.status !== 'saving') finish();
@@ -195,12 +222,12 @@ export function startLockGuard(getIdleMinutes: () => number | null): () => void 
     // §24 — `null` = Không bao giờ: tab về lại cũng KHÔNG khoá. (Nhánh `>= NEVER_MINUTES` giữ
     // cho nơi gọi cũ còn dùng bản Effective; đường sống trả null từ trước khi tới đây.)
     if (phut === null || phut >= NEVER_MINUTES) return;
-    if (Date.now() - lanHoatDongCuoi >= phut * 60_000) lockScreenNow();
+    if (Date.now() - lanHoatDongCuoi >= phut * 60_000) lockScreenNow('ranh');   // MÁY tự khoá
     else cham();
   };
   document.addEventListener('visibilitychange', khiHienLai);
 
-  const khiCoLenh = () => lockScreenNow();
+  const khiCoLenh = () => lockScreenNow('tay');   // NGƯỜI chủ động gọi lệnh / bấm ⌘⇧L
   window.addEventListener(LOCK_REQUEST_EVENT, khiCoLenh);
 
   return () => {

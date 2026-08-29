@@ -27,7 +27,7 @@ Repo này có ~700 tệp tài liệu. Quét lại từ đầu mỗi phiên là c
 | 1 | `docs/control/IF-CURRENT-STATE.md` | đang ở đâu · runtime nào · **việc kế tiếp chính xác** | **luôn luôn**, nó nhỏ |
 | 2 | `docs/control/IF-CANONICAL.md` | IF **LÀ GÌ** · luật bền · ai quyết cái gì | **luôn luôn** |
 | 3 | `docs/control/IF-UXUI-OPERATING-MEMORY.md` | **những sai lầm đã trả giá** | trước mọi việc giao diện |
-| 4 | `docs/control/IF-TOOLING-RECEIPT.md` | năng lực **THẬT** đã xác minh | trước khi định dùng một công cụ |
+| 4 | `node scripts/nang-luc.mjs` | năng lực **THẬT** — sổ **TỰ SINH**, không bao giờ lệch. `--chay` để biết máy nào đỏ. ⛔ `IF-TOOLING-RECEIPT.md` là bản chép tay **đã bị thay 29/08** (nó ghi 5 máy, thật là 17) — chỉ còn giá trị khảo cổ | trước khi định dùng một công cụ |
 
 ## 🔧 MẠCH LÀM VIỆC — sơ đồ, mọi agent phải đi qua
 

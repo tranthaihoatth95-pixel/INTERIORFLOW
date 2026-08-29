@@ -1,5 +1,23 @@
 # IF · BIÊN NHẬN NĂNG LỰC — cái gì THẬT SỰ có, đã xác minh
 
+> 🔴 **TỆP NÀY ĐÃ BỊ THAY (đóng dấu 29/08). ĐỪNG ĐỌC NÓ ĐỂ BIẾT NĂNG LỰC HIỆN TẠI.**
+>
+> **Sổ năng lực SỐNG:** `node scripts/nang-luc.mjs` — **tự sinh từ chính `package.json` và
+> `scripts/`**, nên không bao giờ lệch. Thêm `--chay` để biết máy nào đang đỏ.
+>
+> **Vì sao thay:** bản dưới là bản **chép tay**, đo **23/08**. Ngày 29/08 sổ tự sinh đếm được
+> **17 máy soi, 16 nằm trên đường `npm test`** — bản chép tay liệt kê **5**. Một biên nhận sai
+> còn nguy hơn không có biên nhận: nó khiến phiên sau tin là đã kiểm.
+>
+> **Cách hỏng của nó không phải lỗi ai viết** — nó là loại tệp **phải đúng tại một thời điểm rồi
+> lệch dần theo từng commit**. Chữa bằng người thì lệch lại; chữa bằng máy sinh thì hết bệnh.
+> Cùng khuôn `M-24`: hai đường đọc chồng nhau mà không nói cái nào thắng.
+>
+> **Giữ nguyên phần dưới làm dấu vết**, không xoá — nó là lời chứng của ngày 23/08.
+
+---
+
+
 `Plane: BOS` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
 
 Đo ngày **23/08/2026**. Mọi dòng dưới đây đã CHẠY THỬ, không phải đọc khai báo.
