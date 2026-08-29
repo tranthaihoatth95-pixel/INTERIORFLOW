@@ -30,6 +30,32 @@ export type DanhNgon = {
   nguon: string;
   /** Chỉ điền khi câu này hay bị gán nhầm cho người khác. */
   luuY?: string;
+  /**
+   * Ảnh CÔNG TRÌNH CỦA CHÍNH NGƯỜI NÓI — Hoà chốt 29/08: *"hình nên là dự án minh hoạ cho câu
+   * nói của họ, hoặc chính dự án của họ."* Có ảnh thì thẻ hiện ảnh; không có thì rơi về hình
+   * sinh bằng hình học (`lockscreen-hinh-the.ts`).
+   *
+   * ⛔ TUYỆT ĐỐI KHÔNG gán ảnh công trình của người này cho câu của người khác. Gán sai còn tệ
+   * hơn không có ảnh: nó dạy người dùng một điều sai về nghề. Bốn người trong bảng KHÔNG có ảnh
+   * — Zaha Hadid (Azerbaijan không có quyền chụp công trình nơi công cộng), Steve Jobs,
+   * Massimo Vignelli, Milton Glaser (sản phẩm/logo còn bản quyền và nhãn hiệu) — và họ ở lại
+   * với hình hình học, KHÔNG mượn ảnh của ai.
+   *
+   * `chup` + `lic` là ĐIỀU KIỆN CỦA GIẤY PHÉP, không phải phần trang trí: giấy phép CC BY buộc
+   * ghi công người chụp. Bỏ hai trường này là vi phạm giấy phép, không phải tiết kiệm chỗ.
+   */
+  anh?: {
+    /** Tên tệp trong `public/anh-khoa/`. */
+    tep: string;
+    /** Công trình + năm — hiện cho người đọc. */
+    ct: string;
+    /** Người chụp — BẮT BUỘC theo giấy phép CC BY. */
+    chup: string;
+    /** Giấy phép, nguyên văn như Wikimedia khai. */
+    lic: string;
+    /** Trang gốc, để ai muốn kiểm thì có đường kiểm. */
+    trang: string;
+  };
 };
 
 export const DANH_NGON: DanhNgon[] = [
@@ -54,6 +80,13 @@ export const DANH_NGON: DanhNgon[] = [
     ai: 'Charles Eames',
     vai: 'kiến trúc sư & nhà thiết kế nội thất',
     nguon: 'Phát biểu được ghi lại nhiều lần, phổ biến qua Eames Office',
+    anh: {
+      tep: 'eames.jpg',
+      ct: 'Nhà Eames, Case Study #8, 1949',
+      chup: 'Gunnar Klack',
+      lic: 'CC BY-SA 4.0',
+      trang: 'https://commons.wikimedia.org/wiki/File:Eames-House-Case-Study-House-No-8-Pacific-Palisades-California-04-2014d.jpg',
+    },
   },
   {
     en: 'Styles come and go. Good design is a language, not a style.',
@@ -77,6 +110,13 @@ export const DANH_NGON: DanhNgon[] = [
     vai: 'kiến trúc sư, giám đốc Bauhaus cuối cùng',
     nguon: 'Câu nói gắn liền với Mies suốt sự nghiệp',
     luuY: 'Có bản “The devil is in the details” — nghĩa ngược hẳn, và không phải của Mies.',
+    anh: {
+      tep: 'rohe.jpg',
+      ct: 'Gian hàng Barcelona, 1929',
+      chup: 'Hans Peter Schaefer',
+      lic: 'CC BY-SA 3.0',
+      trang: 'https://commons.wikimedia.org/wiki/File:Barcelona_mies_v_d_rohe_pavillon_weltausstellung1999_03.jpg',
+    },
   },
   {
     en: 'Form ever follows function.',
@@ -85,6 +125,13 @@ export const DANH_NGON: DanhNgon[] = [
     vai: 'kiến trúc sư, “cha đẻ nhà chọc trời”',
     nguon: '“The Tall Office Building Artistically Considered”, 1896',
     luuY: 'Thường bị gán nhầm cho Frank Lloyd Wright — Wright là học trò ông, và còn phản đối cách hiểu máy móc của câu này.',
+    anh: {
+      tep: 'sullivan.jpg',
+      ct: 'Toà Wainwright, St. Louis 1891',
+      chup: 'w_lemay',
+      lic: 'CC BY-SA 2.0',
+      trang: 'https://commons.wikimedia.org/wiki/File:Entrance,_Wainwright_Building,_7th_Street_and_Chestnut_Street,_St._Louis,_MO_-_53050675572.jpg',
+    },
   },
   {
     en: 'Space and light and order. Those are the things that men need just as much as they need bread or a place to sleep.',
@@ -92,6 +139,13 @@ export const DANH_NGON: DanhNgon[] = [
     ai: 'Le Corbusier',
     vai: 'kiến trúc sư & nhà quy hoạch',
     nguon: 'Phát biểu được trích rộng rãi trong các tuyển tập về ông',
+    anh: {
+      tep: 'corbusier.jpg',
+      ct: 'Villa Savoye, Poissy 1931',
+      chup: 'jeanbaptisteparis from Cambridge, MA, USA',
+      lic: 'CC BY-SA 2.0',
+      trang: 'https://commons.wikimedia.org/wiki/File:Villa_Savoye_(8237925975).jpg',
+    },
   },
   {
     en: 'Always design a thing by considering it in its next larger context.',
@@ -123,6 +177,13 @@ export const DANH_NGON: DanhNgon[] = [
     ai: 'Buckminster Fuller',
     vai: 'kiến trúc sư & nhà phát minh mái vòm trắc địa',
     nguon: 'Trích phần sau. Nguyên văn: “When I am working on a problem, I never think about beauty. But when I have finished, if the solution is not beautiful, I know it is wrong.”',
+    anh: {
+      tep: 'fuller.jpg',
+      ct: 'Biosphère Montréal, 1967',
+      chup: 'Ziko',
+      lic: 'CC BY-SA 4.0',
+      trang: 'https://commons.wikimedia.org/wiki/File:201708_Biosphere_Montreal_01.jpg',
+    },
   },
   {
     en: 'You cannot simply put something new into a place. You have to absorb what you see around you.',
@@ -130,6 +191,13 @@ export const DANH_NGON: DanhNgon[] = [
     ai: 'Tadao Ando',
     vai: 'kiến trúc sư, giải Pritzker 1995',
     nguon: 'Phát biểu được trích rộng rãi trong các bài về phương pháp của ông',
+    anh: {
+      tep: 'ando.jpg',
+      ct: 'Nhà thờ Ánh sáng, Ibaraki 1989',
+      chup: 'Chun-Hung Eric Cheng',
+      lic: 'CC BY 2.0',
+      trang: 'https://commons.wikimedia.org/wiki/File:Church_of_the_Light.jpg',
+    },
   },
   {
     en: 'There are 360 degrees, so why stick to one?',
@@ -144,6 +212,13 @@ export const DANH_NGON: DanhNgon[] = [
     ai: 'Alvar Aalto',
     vai: 'kiến trúc sư & nhà thiết kế đồ nội thất Phần Lan',
     nguon: 'Phát biểu được trích trong các tuyển tập về Aalto',
+    anh: {
+      tep: 'aalto.jpg',
+      ct: 'Viện điều dưỡng Paimio, 1933',
+      chup: 'Saandraaa',
+      lic: 'CC0',
+      trang: 'https://commons.wikimedia.org/wiki/File:The_terrace_of_Paimio_Sanatorium.jpg',
+    },
   },
   {
     en: 'Never design anything that cannot be made.',
@@ -151,6 +226,13 @@ export const DANH_NGON: DanhNgon[] = [
     ai: 'Jean Prouvé',
     vai: 'thợ nguội kiêm nhà thiết kế kết cấu',
     nguon: 'Nguyên tắc nghề gắn với ông, trích rộng rãi trong tài liệu về xưởng Prouvé',
+    anh: {
+      tep: 'prouve.jpg',
+      ct: 'Maison du Peuple, Clichy 1939',
+      chup: 'Lolo92110',
+      lic: 'CC BY-SA 4.0',
+      trang: 'https://commons.wikimedia.org/wiki/File:Vue_de_la_Maison_du_Peuple,_Clichy.jpg',
+    },
   },
 ];
 

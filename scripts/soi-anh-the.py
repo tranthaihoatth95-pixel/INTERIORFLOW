@@ -86,7 +86,15 @@ def cat_dai(im: "Image.Image") -> "Image.Image":
 
 
 def do(path: str) -> dict:
-    im = Image.open(path).convert("RGB")
+    # Một tệp tải dở KHÔNG được làm chết cả lượt soi. Cổng gãy vì một tệp hỏng là cổng không
+    # dùng được — bắt được lần chạy đầu trên 110 ảnh: đúng một tấm truncated, cả máy dừng.
+    try:
+        im = Image.open(path).convert("RGB")
+    except Exception as e:
+        return {"tep": os.path.basename(path), "rong": 0, "cao": 0, "ti_le": 0,
+                "sang": 0, "tuong_phan": 0, "chay": 0, "roi": 0, "chenh_o": 0,
+                "o_phang": 0, "diem_hop": 0.0, "dat": False,
+                "loi": [f"không đọc được: {type(e).__name__}"]}
     w, h = im.size
     dai = cat_dai(im).resize((600, 300), Image.LANCZOS)
     xam = dai.convert("L")

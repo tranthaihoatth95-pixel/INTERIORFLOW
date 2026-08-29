@@ -313,8 +313,17 @@ function TheDanhNgon({ cau, en, onMoLai }: { cau: DanhNgon; en: boolean; onMoLai
       style={{ background: 'var(--panel)', border: '1px solid var(--border)' }}
     >
       {/* HÌNH BỌC KÍNH — ba lớp chồng, cố ý KHÔNG dùng `backdrop-filter`: hình nằm ngay dưới
-          kính, không có gì phía sau để làm mờ. Dùng nó chỉ tốn GPU mà mắt không thấy khác. */}
+          kính, không có gì phía sau để làm mờ. Dùng nó chỉ tốn GPU mà mắt không thấy khác.
+          Có ảnh CÔNG TRÌNH CỦA CHÍNH NGƯỜI NÓI thì dùng ảnh; không có thì rơi về hình hình học. */}
       <div className="relative h-[150px] overflow-hidden rounded-[10px]">
+        {cau.anh ? (
+          <img
+            src={`/anh-khoa/${cau.anh.tep}`}
+            alt={`${cau.anh.ct} — ${cau.ai}`}
+            className="h-full w-full object-cover"
+            draggable={false}
+          />
+        ) : (
         <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-hidden style={{ display: 'block' }}>
           <rect width={W} height={H} fill={h.troi} />
           <circle cx={h.vangX * W} cy={h.vangY * H} r={H * 0.115} fill={h.vang} />
@@ -334,6 +343,7 @@ function TheDanhNgon({ cau, en, onMoLai }: { cau: DanhNgon; en: boolean; onMoLai
           })}
           <rect y={H * 0.965} width={W} height={H * 0.035} fill={h.dat} />
         </svg>
+        )}
         <div
           className="pointer-events-none absolute inset-0"
           style={{
@@ -362,6 +372,13 @@ function TheDanhNgon({ cau, en, onMoLai }: { cau: DanhNgon; en: boolean; onMoLai
         <footer className="flex flex-col gap-0.5">
           <div className="text-[13px] font-semibold text-[var(--t1)]">{cau.ai}</div>
           <div className="text-[12px] leading-normal text-[var(--t3)]">{cau.vai}</div>
+          {/* Công trình + người chụp. `chup` là ĐIỀU KIỆN CỦA GIẤY PHÉP CC BY, không phải chú
+              thích cho đẹp — bỏ nó là vi phạm giấy phép. */}
+          {cau.anh && (
+            <div className="mt-2 text-[12px] leading-normal text-[var(--t3)] opacity-75">
+              {cau.anh.ct} · ảnh {cau.anh.chup} · {cau.anh.lic}
+            </div>
+          )}
         </footer>
       </blockquote>
 

@@ -107,3 +107,6 @@ nhat-ky-chup-man.txt
 .ua/.trash-*/
 .ua/diff-overlay.json
 uploads/site/
+
+# rác biên dịch Python — máy soi ảnh chạy tại chỗ, không cần theo dõi
+scripts/__pycache__/
