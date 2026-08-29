@@ -48,6 +48,74 @@ Hoà (`IF-CANONICAL` §2). Hai phiên cùng tự xưng ⇒ **cả hai DỪNG GHI
 
 ## 🎯 VIỆC KẾ TIẾP — **một việc, không phải danh sách**
 
+🔄 **CẬP NHẬT 29/08 — HEAD `71667fa`.** Mọi dòng bên dưới mốc này là bản 28/08, giữ làm dấu vết.
+
+### Hai chốt chặn ship của 28/08 ĐÃ ĐÓNG CẢ HAI
+
+**① Sản phẩm đọc được bản vẽ nghề thật.** `lib/cad/tuong-hinh-hoc.ts` (sau cờ
+`NEXT_PUBLIC_IF_TUONG_HINH_HOC`, mặc định TẮT) đảo ngược đúng chuỗi lệnh người vẽ đã chạy:
+ghép đôi độc quyền → ĐẢO TRIM → ĐẢO ARRAY → gộp chùm.
+`03_TANG5B-TTT.dxf`: **12.274 entity → 81 tường · 286,0 m · 23 ms**, bề dày rơi vào nấc nghề
+200/100/300mm. Trước đó cùng tệp ra **1 khối sàn**. Điểm gọi duy nhất `lib/cad/dxf-worker.ts:38`.
+⚠️ **Chưa ai HIỆN số đo đó cho người dùng** — nó nằm ở `report.tuongHinhHoc`, không mặt nào đọc.
+Đã giao lane 06 (`HO-20260829110917-81c45b528978`).
+
+**② GPL ra khỏi bộ cài, chặn bằng CẤU TRÚC.** `next.config.mjs:18` alias
+`@mlightcad/libredwg-web` → `lib/cad/dwg-engine-tat.ts` khi cờ tắt ⇒ webpack không đọc tới gói.
+Dựng sạch từ HEAD, tự kiểm: **0 tệp .wasm · 0 tệp mang tên · 0 tệp mang mã GPL · cổng exit 0**.
+Bật cờ lên dựng lại → mã quay lại đúng **9.399.820 byte × 2** ⇒ **cờ không nói dối**.
+⛔ **CHƯA ĐƯỢC GỌI LÀ "SẠCH"**: thiếu SBOM · biên nhận artifact · biên nhận giấy phép. Nhãn đúng
+là **"quét sạch, chưa có biên nhận"**. Đã giao lane 07 (`HO-20260829110917-0a6369e3941f`).
+
+### Máy soi mới trong ngày — 3 cái, đều có ca đột biến
+
+| máy | canh gì | trần |
+|---|---|---|
+| `soi-chu-viet.mjs` | luật chữ Việt V-2/V-3/V-6, **tách ứng viên khỏi vi phạm** | `T-CHU-VIET` **850** |
+| `soi-anh-the.py` | ảnh thẻ khoá: 5 cổng chặn + 1 tiêu chí bố cục (độ tĩnh) | — |
+| `nhuom-anh-the.py` | lọc điện ảnh ASC CDL + chuẩn hoá thích ứng, `--quet` chạy dải | — |
+
+`soi-giay-phep-phat-hanh.mjs` đã **nâng để soi RUỘT tệp** — bản cũ chỉ soi tên và **đã nói dối**
+trên một artifact bẩn thật (trần độ sâu 6, đường thật sâu 8).
+
+### Cầu bàn giao — nay có chuông phía Claude Code
+
+`SENT` (bưu tá Codex) → `SEEN` (hook `.claude/settings.json` ghi) → `ACK` (phiên xử lý ghi).
+Hook đọc `IF_LANE`, mặc định `00`. `moc.mjs im <lane>` câm khi rỗng; `moc.mjs chua-nhan [phút]`
+cho bưu tá biết phải đánh thức ai.
+⛔ Hook chạy ở **ranh giới lượt**, không bất đồng bộ. Phiên ngồi im thì phiếu nằm đó.
+⛔ Claude Web / điện thoại **không đọc được tệp local** ⇒ ngoài đường này. Cần connector riêng.
+
+### Ba phiên cũ đã thành lane, phiếu đã ghi, CHƯA AI NHẬN
+
+`06 · 2D3D` (`251b1d67`) · `07 · QUALITY` (`b98f2f19`) · `03 · UI` (`6d476d59`) · `00 · MAIN` (phiên này).
+
+### Nợ đã đo, chưa giao ai
+
+- **772/850 vi phạm là cỡ chữ < 12px** ⇒ thang chữ của app dưới sàn tiếng Việt. Phải xử bằng
+  **thang token**, không vá 772 chỗ. Chạm diện mạo ⇒ **quyền Hoà**.
+- **Hai cơ chế Home** theo bề rộng màn (`HomeScreen.tsx:151`, ngưỡng 480px, rẽ ở :626;
+  730+365+850 dòng). Hoà 29/08: *"không cần thiết"*. Đã ghi vào phiếu lane 03.
+- **Dữ liệu demo trong bản ship**: `public/demo` 6,1 MB · `test-assets` 2,3 MB · `.apk` 3,6 MB ·
+  4 route `app/demo` + 3 route `thu-*`. Hoà: *"ship lúc đầu chưa có dữ liệu thì thống kê lấy gì
+  mà đếm"* — ảnh anh gửi hiện "3 dự án · 15 nháp" là đếm trên demo. **Quyền Hoà.**
+- **31 chuỗi HOA CỨNG** cần phân loại *quy ước nghề* ↔ *lỗi*; nặng nhất là tiêu đề hồ sơ trình
+  khách trong `lib/present-editor/story-set.ts` — **khách đọc**, không phải nhân viên.
+- Hoà chốt 29/08: **"giao diện tới giờ vẫn còn sai"** — cấm tuyên PASS bằng đọc mã.
+
+### Bài học đắt nhất trong ngày — [[M-59]]
+
+Phép thử so **trước ↔ sau** chỉ bắt được lỗi mà bước đó **thêm vào**; lỗi **có sẵn ở cả hai đầu**
+thì nó mù. Máy nào sinh ra HÌNH HỌC thì lần đầu **bắt buộc vẽ ra và nhìn ở mức phóng to**, mỗi
+đối tượng một màu — thứ cần nhìn là **ranh giới đối tượng**, chỉ hiện ra khi đổi màu.
+
+Kèm hai lỗi điều phối của MAIN, ghi để không lặp: **ghi sản xuất khi worker khác đang chạy**
+(làm `tsc` của nó đỏ giữa chừng) · **chia ranh giới theo tệp nguồn mà quên `.next` là tài nguyên
+dùng chung** (dev server + `next build` cùng lúc ⇒ `.next` hỏng, `/api/auth/me` sập 500 ba lần).
+
+---
+
+
 🔄 **CẬP NHẬT 28/08 — HEAD `cf96bf6`.** Câu dưới (Wave S1/S2) là bản 27/08, giữ làm dấu vết.
 
 **Việc kế tiếp: đo L2-01 trên chính `next start`.**
