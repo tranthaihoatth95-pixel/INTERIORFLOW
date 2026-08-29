@@ -18,7 +18,7 @@
  */
 
 import { lockScreenNow } from '@/lib/lockscreen';
-import { LockScreen } from '@/components/studio/LockScreen';
+import { LockScreen, docKieuKhoa, ghiKieuKhoa, type KieuKhoa } from '@/components/studio/LockScreen';
 import { DANH_NGON } from '@/lib/lockscreen-danh-ngon';
 
 export default function ThuTheKhoa() {
@@ -32,7 +32,28 @@ export default function ThuTheKhoa() {
         Hai mức khoá, hai hành vi khác hẳn nhau. Bấm để xem mặt thật, không phải bản mô phỏng.
       </p>
 
-      <div className="mt-8 grid gap-3 sm:grid-cols-2">
+      {/* HAI HƯỚNG Hoà đưa 29/08 — chọn kiểu rồi bấm khoá để xem mặt thật. Lựa chọn nhớ lại
+          qua `localStorage`, đúng trục Reach = browser-local (đây là tiện nghi thử nghiệm của
+          MỘT máy, không phải cài đặt đi theo tài khoản). */}
+      <div className="mt-8 flex flex-wrap items-center gap-2">
+        {(['A', 'D'] as KieuKhoa[]).map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => { ghiKieuKhoa(k); location.reload(); }}
+            className="rounded-[var(--r-full,999px)] px-4 py-2 text-[13px] transition-colors"
+            style={
+              docKieuKhoa() === k
+                ? { background: 'var(--accent)', color: 'var(--on-accent, #fff)' }
+                : { background: 'var(--panel)', border: '1px solid var(--border)', color: 'var(--t2)' }
+            }
+          >
+            {k === 'A' ? 'Hướng A · thẻ hai nửa bọc kính' : 'Hướng D · nền động'}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <button
           type="button"
           onClick={() => lockScreenNow('ranh')}

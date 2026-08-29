@@ -34,6 +34,18 @@ import { Lock, CornerDownLeft } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { useLockScreen, startLockGuard, getLockIdleMinutes, canMatKhau, LOCK_REQUEST_EVENT } from '@/lib/lockscreen';
 import { danhNgonNgauNhien, type DanhNgon } from '@/lib/lockscreen-danh-ngon';
+
+/** Hai hướng Hoà đưa ra 29/08, giữ CẢ HAI trong mã cho tới khi anh chốt một.
+ *  `A` — thẻ hai nửa: ảnh bọc kính ở trên, chữ bọc kính nền TRONG SUỐT ở dưới.
+ *  `D` — nền động "nắng đi qua phòng" phủ cả màn, không có thẻ. */
+export type KieuKhoa = 'A' | 'D';
+const KHOA_KIEU = 'interiorflow.kieuManKhoa';
+export function docKieuKhoa(): KieuKhoa {
+  try { return localStorage.getItem(KHOA_KIEU) === 'D' ? 'D' : 'A'; } catch { return 'A'; }
+}
+export function ghiKieuKhoa(k: KieuKhoa): void {
+  try { localStorage.setItem(KHOA_KIEU, k); } catch { /* riêng tư/chặn — chỉ mất tiện nghi */ }
+}
 import { hinhChoCau } from '@/lib/lockscreen-hinh-the';
 import { getLastUserId } from '@/lib/resume';
 import { TheXacThucLai } from '@/components/auth/TheXacThucLai';
@@ -261,7 +273,9 @@ export function LockScreen() {
                       onHuy={() => setMode('mat-khoa')}
                     />
                   ) : (
-                    cau && <TheDanhNgon cau={cau} en={lang === 'en'} onMoLai={unlock} />
+                    cau && (docKieuKhoa() === 'D'
+                      ? <NenDong cau={cau} en={lang === 'en'} onMoLai={unlock} />
+                      : <TheDanhNgon cau={cau} en={lang === 'en'} onMoLai={unlock} />)
                   ))}
               </div>
             </motion.div>
@@ -309,13 +323,16 @@ function TheDanhNgon({ cau, en, onMoLai }: { cau: DanhNgon; en: boolean; onMoLai
    * hơn. Đổi lại phải giữ kỷ luật: câu quá dài thì cắt bớt khỏi bảng, không nới thẻ. */
   return (
     <div
-      className="w-[300px] rounded-[20px] p-5"
-      style={{ background: 'var(--panel)', border: '1px solid var(--border)' }}
+      /* HƯỚNG A — vỏ thẻ nay TRONG SUỐT, hai nửa tự mang kính của mình:
+         nửa trên là ảnh dưới lớp kính, nửa dưới là chữ trên tấm kính mờ. Vỏ không còn tô nền
+         đục nữa, nếu không thì "nền trong suốt" chỉ là lời nói — lớp đục sẽ chặn hết phía sau. */
+      className="w-[300px] overflow-hidden rounded-[20px]"
+      style={{ border: '1px solid var(--border)', boxShadow: '0 24px 60px -24px rgba(0,0,0,0.42)' }}
     >
       {/* HÌNH BỌC KÍNH — ba lớp chồng, cố ý KHÔNG dùng `backdrop-filter`: hình nằm ngay dưới
           kính, không có gì phía sau để làm mờ. Dùng nó chỉ tốn GPU mà mắt không thấy khác.
           Có ảnh CÔNG TRÌNH CỦA CHÍNH NGƯỜI NÓI thì dùng ảnh; không có thì rơi về hình hình học. */}
-      <div className="relative h-[150px] overflow-hidden rounded-[10px]">
+      <div className="relative h-[150px] overflow-hidden">
         {cau.anh ? (
           <img
             src={`/anh-khoa/${cau.anh.tep}`}
@@ -360,7 +377,8 @@ function TheDanhNgon({ cau, en, onMoLai }: { cau: DanhNgon; en: boolean; onMoLai
         />
       </div>
 
-      <blockquote className="m-0 mt-4 flex flex-col gap-3 text-center">
+      <div className="the-khoa-kinh p-5">
+      <blockquote className="m-0 flex flex-col gap-3 text-center">
         {/* Ba con số dưới đây là LUẬT chữ tiếng Việt (`knowledge/typography-vietnamese.md`):
             V-2 line-height ≥1.5 · V-3 letter-spacing không âm · V-6 cỡ sàn ≥12px. */}
         <p
@@ -391,6 +409,62 @@ function TheDanhNgon({ cau, en, onMoLai }: { cau: DanhNgon; en: boolean; onMoLai
       >
         {tr('Mở lại', 'Resume')}
       </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * HƯỚNG D — NỀN ĐỘNG phủ cả màn, không có thẻ.
+ *
+ * Khác A ở CHỖ ĐẶT NHÂN VẬT CHÍNH: A cho ảnh và chữ vào một vật cầm được; D biến cả màn thành
+ * một căn phòng có nắng đi qua, chữ nổi lên giữa. Không có cái nào đúng hơn — chúng nhắm hai
+ * cảm giác khác nhau, nên phải nhìn thật mới chọn được.
+ *
+ * Ba lớp trôi lệch nhịp (48 · 67 · 26 giây, xem `app/globals.css`) nên mắt không bắt được chu
+ * kỳ. Một nét đứng yên duy nhất — đường chân trời — làm chỗ mắt bám.
+ */
+function NenDong({ cau, en, onMoLai }: { cau: DanhNgon; en: boolean; onMoLai: () => void }) {
+  const tr = (v: string, e: string) => (en ? e : v);
+  return (
+    <div className="absolute inset-0 overflow-hidden" style={{ background: 'var(--bg)' }}>
+      <div className="nen-dong-lop nen-dong-bong" />
+      <div className="nen-dong-lop nen-dong-nang" />
+      <div className="nen-dong-lop nen-dong-luoi" />
+      {/* Đường chân trời — nét DUY NHẤT đứng yên giữa mọi thứ đang trôi. */}
+      <div
+        className="pointer-events-none absolute left-0 right-0"
+        style={{
+          top: '58%', height: 1,
+          background: 'linear-gradient(to right, rgba(220,228,238,0) 0%, rgba(220,228,238,0.22) 22%, rgba(220,228,238,0.22) 78%, rgba(220,228,238,0) 100%)',
+        }}
+      />
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 px-8 text-center">
+        <p
+          className="m-0 max-w-[30ch] font-medium text-[var(--t1)]"
+          style={{ fontSize: 'clamp(19px, 2.4vw, 27px)', lineHeight: 1.55, letterSpacing: 0, textWrap: 'pretty' }}
+        >
+          “{en ? cau.en : cau.vi}”
+        </p>
+        <div className="flex flex-col gap-0.5">
+          <div className="text-[13px] font-semibold text-[var(--t1)]">{cau.ai}</div>
+          <div className="text-[12px] leading-normal text-[var(--t3)]">{cau.vai}</div>
+          {cau.anh && (
+            <div className="mt-1 text-[12px] leading-normal text-[var(--t3)] opacity-75">
+              {cau.anh.ct} · ảnh {cau.anh.chup} · {cau.anh.lic}
+            </div>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onMoLai}
+          autoFocus
+          className="whitespace-nowrap rounded-[var(--r-full,999px)] px-7 py-2.5 text-[13px] font-medium transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+          style={{ background: 'var(--accent)', color: 'var(--on-accent, #fff)' }}
+        >
+          {tr('Mở lại', 'Resume')}
+        </button>
+      </div>
     </div>
   );
 }

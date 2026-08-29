@@ -2281,3 +2281,65 @@ body[data-if-library-open='true'] .if-bottombar {
   .if-vao-xuong, .if-vao-xuong:active { transition: none; transform: none; }
   .if-vao-xuong[data-xong='1']::before { animation: none; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+   MÀN KHOÁ — HAI HƯỚNG, Hoà chọn 29/08. Giữ CẢ HAI trong mã cho tới khi anh chốt một.
+   `A` thẻ hai nửa bọc kính · `D` nền động "nắng đi qua phòng".
+   ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* ── HƯỚNG A · nửa dưới của thẻ: KÍNH THẬT, nền TRONG SUỐT ──────────────────────────────────
+   Khác hẳn "nền mờ giả" (một lớp màu đục 90%): ở đây `backdrop-filter` LÀM MỜ THỨ PHÍA SAU,
+   nên nền workspace vẫn hiện lờ mờ qua chữ. Đó là điều Hoà nói "nền trong suốt".
+   -webkit- BẮT BUỘC đi kèm (luật `kinh-webkit-prefix`, Safari/WebKit chưa bỏ tiền tố). */
+.the-khoa-kinh {
+  background: color-mix(in srgb, var(--panel) 55%, transparent);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+/* ── HƯỚNG D · nền động, nắng đi qua phòng ──────────────────────────────────────────────────
+   Ba lớp trôi LỆCH NHỊP nhau (48 · 67 · 26 giây) nên mắt không bắt được chu kỳ — nhìn lâu
+   không thấy nó lặp. Số nguyên tố cùng nhau là cố ý, không phải ngẫu hứng.
+   Chỉ MỘT nét đứng yên: đường chân trời. Mọi thứ khác trôi, nó là chỗ mắt bám vào. */
+@keyframes nang-troi {
+  0%, 100% { transform: translate3d(-22%, 6%, 0) rotate(-14deg); opacity: 0.34; }
+  50%      { transform: translate3d(26%, -4%, 0) rotate(-14deg); opacity: 0.62; }
+}
+@keyframes bong-do {
+  0%, 100% { transform: translate3d(14%, -3%, 0); opacity: 0.5; }
+  50%      { transform: translate3d(-16%, 5%, 0); opacity: 0.28; }
+}
+@keyframes luoi-tho {
+  0%, 100% { opacity: 0.05; }
+  50%      { opacity: 0.095; }
+}
+.nen-dong-lop { position: absolute; inset: -30%; will-change: transform, opacity; pointer-events: none; }
+.nen-dong-nang {
+  background: radial-gradient(58% 42% at 34% 40%, rgba(255, 214, 150, 0.3) 0%, rgba(255, 196, 120, 0.13) 40%, rgba(255, 180, 100, 0) 72%);
+  animation: nang-troi 48s ease-in-out infinite;
+}
+.nen-dong-bong {
+  background: radial-gradient(52% 46% at 66% 62%, rgba(58, 64, 120, 0.42) 0%, rgba(40, 44, 86, 0.18) 46%, rgba(30, 32, 60, 0) 74%);
+  animation: bong-do 67s ease-in-out infinite;
+}
+.nen-dong-luoi {
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(215, 224, 235, 0.9) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(215, 224, 235, 0.9) 1px, transparent 1px);
+  background-size: 84px 84px;
+  animation: luoi-tho 26s ease-in-out infinite;
+}
+
+/* MO-8: `prefers-reduced-motion` KHÔNG được xoá sạch thông tin — phải giữ nhân quả và thứ bậc
+   bằng kênh khác. Ở đây: tắt chuyển động, nhưng GIỮ NGUYÊN vị trí đích và độ đậm, nên bố cục
+   ánh sáng vẫn đọc được. Tắt thành nền phẳng trơn mới là mất thông tin. */
+@media (prefers-reduced-motion: reduce) {
+  .nen-dong-nang, .nen-dong-bong, .nen-dong-luoi { animation: none; }
+  .nen-dong-nang { transform: translate3d(0, 0, 0) rotate(-14deg); opacity: 0.5; }
+  .nen-dong-bong { transform: translate3d(0, 0, 0); opacity: 0.38; }
+  .nen-dong-luoi { opacity: 0.07; }
+}

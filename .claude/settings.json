@@ -31,13 +31,20 @@
     "câu 'đã báo Claude'. Nay không nói dối được nữa: không có SEEN thì chưa ai thấy."
   ],
 
+  "//lane": [
+    "Hook đọc lane từ biến IF_LANE. Phiên nào đặt IF_LANE=06 thì nhận phiếu của lane 06.",
+    "Không đặt ⇒ mặc định 00 (MAIN). Cách đặt: `export IF_LANE=06` trước khi mở phiên, hoặc",
+    "thêm vào `.claude/settings.local.json` mục `env` của riêng máy đó.",
+    "Một biến duy nhất điều khiển cả hai hook — không đẻ cấu hình thứ hai (luật 6)."
+  ],
+
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && node scripts/moc.mjs im 00 2>/dev/null || true"
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && node scripts/moc.mjs im \"${IF_LANE:-00}\" 2>/dev/null || true"
           }
         ]
       }
@@ -47,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && node scripts/moc.mjs im 00 2>/dev/null || true"
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && node scripts/moc.mjs im \"${IF_LANE:-00}\" 2>/dev/null || true"
           }
         ]
       }
