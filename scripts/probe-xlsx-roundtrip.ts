@@ -132,7 +132,7 @@ async function main() {
       'Thiếu --file="/duong/dan/SPEC_TEMPLATE 1.xlsx". Script này KHÔNG hardcode đường dẫn máy Hoà — ' +
         'truyền tay lúc chạy. File không tìm thấy trong phạm vi Cowork phiên này lúc viết script (đã tìm ' +
         'toàn bộ mount, không thấy) — rất có thể nằm ngoài thư mục được cấp quyền, vd ~/Downloads/ ' +
-        'interiorflow-reference/ (theo quy ước tách dữ liệu tham khảo ra ngoài repo, xem CLAUDE.md).',
+        '~/Downloads/_IF-KHO/tham-chieu/ (quy ước tách dữ liệu tham khảo ra ngoài repo, xem CLAUDE.md).',
     );
   }
   if (!fs.existsSync(args.file)) {

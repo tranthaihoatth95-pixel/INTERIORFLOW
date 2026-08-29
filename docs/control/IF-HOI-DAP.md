@@ -43,7 +43,7 @@ thêm một dòng vào bảng dưới, trỏ tới nó. **Kho tự dọn theo nh
 
 ```
 ① tra bảng dưới          → đã có ai trả lời câu này chưa?          (npm run tra)
-② tra kho ngoài repo     → ~/PROJECT · Drive · interiorflow-reference
+② tra kho ngoài repo     → ~/PROJECT · Drive · ~/Downloads/_IF-KHO/
 ③ TRA 109 PHIÊN CHAT     → mcp__ccd_session_mgmt__search_session_transcripts
 ④ mới ra ngoài tìm       → và chỉ tìm ĐIỀU MỚI, không tìm lại điều đã biết
 ⑤ tư vấn                 → kèm phần ①②③ đã có, để Hoà thấy cái gì cũ cái gì mới
@@ -119,7 +119,7 @@ sau tin nhầm.
 | Câu hỏi | Trả lời ở | Còn đúng không |
 |---|---|---|
 | Thương hiệu/dữ liệu riêng nào từng sót trong repo? | `docs/AUDIT-BRAND-PII.md` | ✅ quét 25/07 · 853 tệp · 13 chuỗi khách |
-| Cái gì đã **tách ra ngoài repo** và vì sao? | `CLAUDE.md` §"Dữ liệu tham khảo đã TÁCH RA NGOÀI" | ✅ 24/07 — hồ sơ khách · brand TTT · ảnh sản phẩm · bản sao DB → `~/Downloads/interiorflow-reference/` |
+| Cái gì đã **tách ra ngoài repo** và vì sao? | `CLAUDE.md` §"Dữ liệu tham khảo đã TÁCH RA NGOÀI" | ✅ 24/07 — hồ sơ khách · brand TTT · ảnh sản phẩm · bản sao DB → `~/Downloads/_IF-KHO/tham-chieu/` (đổi 29/08) |
 | Vì sao `knowledge/ttt-design-system` biến mất? | `CLAUDE.md` §"Project Knowledge" + `docs/00-CHOT.md` "Dọn trung tính 01/08" | ✅ tài sản thương hiệu **một** studio, không được nằm trong sản phẩm bán ra |
 | Ảnh khách trong Thư viện có phạm luật không? | **KHÔNG**, nếu có xuất xứ và **không** mang thẻ `seed`/`minh-hoa` | ✅ đo 28/08 — 5 asset `ST5` là *người dùng thêm*, có nguồn `pdf 260812_st5_concept`, **0** thẻ seed |
 | Luật tách APP / DEMO / DỰ ÁN | `docs/CONTENT-RULES.md` | ✅ |

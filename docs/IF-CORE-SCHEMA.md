@@ -22,7 +22,7 @@ của dự án đang mở. **Không hardcode** tên/logo/màu/font của studio 
 app. Không có Brand Kit ⇒ để **rỗng**, không fallback vào một brand cụ thể.
 
 **Điều 0.3 — Dữ liệu tham khảo sống NGOÀI repo.** Ghi nhận 24/07: đã tách **401 MB**
-dữ liệu tham khảo ra khỏi repo (chuyển, KHÔNG xoá) → **`~/Downloads/interiorflow-reference/`**:
+dữ liệu tham khảo ra khỏi repo (chuyển, KHÔNG xoá) → **`~/Downloads/_IF-KHO/tham-chieu/`** (đổi 29/08, trước là `interiorflow-reference/` ở gốc Tải về):
 
 | Thư mục đã tách | Nội dung | Dung lượng |
 |---|---|---|

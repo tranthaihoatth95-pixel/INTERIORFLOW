@@ -140,8 +140,16 @@ Cần tra nó khi làm **tài liệu/báo cáo CHO TTT** (KHÔNG áp vào sản 
 
 > Ghi chú 05/08 (S6/T9): mục này TRƯỚC ĐÂY ghi *"Tài liệu tham chiếu đã load vào `knowledge/`"* — sai hiện trạng, khiến phiên sau tin là có tài liệu, đi tìm, không thấy, rồi tự suy diễn. Đó đúng là cơ chế đẻ ra "đề xuất lại thứ đã có" (luật N8).
 
-### 📦 Dữ liệu tham khảo đã TÁCH RA NGOÀI repo (24/07)
-Theo Luật trung tính, các thư mục sau **không còn trong repo** (đã chuyển, KHÔNG xoá) — nằm ở **`~/Downloads/interiorflow-reference/`**:
+### 📦 Dữ liệu tham khảo đã TÁCH RA NGOÀI repo (24/07 · **dời kho 29/08**)
+🔴 **ĐƯỜNG DẪN ĐÃ ĐỔI 29/08.** Bản cũ ghi `~/Downloads/interiorflow-reference/`. Luật trung tính
+ra lệnh dữ liệu **phải rời repo** nhưng **chưa bao giờ nói rời đi ĐÂU** — không có đích thì mỗi
+phiên tự chọn, và đo 29/08: **55 mục dính IF nằm rải giữa 198 thứ tải về**. Dọn thư mục Tải về
+theo thói quen là chạm phải tài sản khách. ⇒ Nay có **một đích duy nhất, có tên**:
+**`~/Downloads/_IF-KHO/`** (gạch dưới ⇒ luôn ở đầu danh sách; tên nói "kho", không nói "tải về").
+Đã gom 7 thư mục / 890 MB vào đó. Cổng canh: `node scripts/soi-thu-muc.mjs` — bất cứ thứ gì dính
+IF **mọc lại ở gốc `~/Downloads`** đều bị nêu tên (báo, không chặn).
+
+Tham chiếu nay nằm ở **`~/Downloads/_IF-KHO/tham-chieu/`**:
 - `project-references/` — 4 PDF hồ sơ dự án khách thật (Sungroup Beach Club, HV Office, Detech Complex), 121MB
 - `ttt-brand/` — TTT Brand Guideline 5 biến thể
 - `san pham dau ra/` — 51 ảnh sản phẩm tham khảo

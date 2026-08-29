@@ -51,7 +51,12 @@ const NGOAI = new Set(['.git', 'node_modules', '.next']);
  *      Tải về là của Hoà, không phải của dự án. Máy không có quyền chặn việc của người ta ở
  *      chỗ không phải của nó. Nó chỉ được nói: *chỗ này có N thứ không ai còn trỏ tới*.
  * ⛔ Máy này TUYỆT ĐỐI không xoá/di chuyển/đổi tên gì ở ngoài. Nó đọc tên thư mục, hết. */
-const VUNG_NGOAI = path.join(homedir(), 'Downloads');
+/* SỬA 29/08 — VÙNG NGOÀI nay có HAI TẦNG, vì gốc bệnh không phải "dữ liệu nằm ngoài repo".
+ * Gốc bệnh là: luật trung tính ra lệnh dữ liệu PHẢI RỜI repo nhưng KHÔNG BAO GIỜ NÓI RỜI ĐI ĐÂU.
+ * Không có đích ⇒ mỗi phiên tự chọn ⇒ đo 29/08: 55 mục dính IF rải giữa 198 thứ tải về, và
+ * dọn thư mục Tải về theo thói quen là chạm phải tài sản khách. Thuốc là ĐẶT TÊN CHO MỘT ĐÍCH. */
+const KHO = path.join(homedir(), 'Downloads', '_IF-KHO');   // đích duy nhất, đã gom 29/08
+const GOC_TAI_VE = path.join(homedir(), 'Downloads');       // nơi KHÔNG được để đồ dự án nữa
 const TIEN_TO_NGOAI = /^(IF[-_]|InteriorFlow|IDF|TTT |_TTT|_IF|_CLAUDE|interiorflow|AI DATA|Design system TTT)/i;
 
 const g = (...a) => { try { return execFileSync('git', a, { cwd: REPO, encoding: 'utf8' }); } catch { return ''; } };
@@ -105,39 +110,51 @@ console.log('  Không thư mục nào đang chờ người quyết.');
 
 /* ══ VÙNG NGOÀI REPO — chỉ BÁO, không bao giờ chặn ═════════════════════════════════════════ */
 function soiNgoaiRepo() {
-  let mucNgoai = [];
-  try {
-    mucNgoai = readdirSync(VUNG_NGOAI, { withFileTypes: true })
-      .filter((e) => e.isDirectory() && TIEN_TO_NGOAI.test(e.name))
-      .map((e) => e.name);
-  } catch { /* không có thư mục Tải về, hoặc không đọc được — im lặng, đây không phải việc bắt buộc */ }
+  const doc = (d) => {
+    try {
+      return readdirSync(d, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
+    } catch { return []; }   // không có thư mục — im lặng, đây không phải việc bắt buộc
+  };
+  const co = (t) => {
+    try {
+      execFileSync('git', ['grep', '-l', '--fixed-strings', t, '--', 'docs', 'scripts', 'CLAUDE.md', '.claude'],
+        { cwd: REPO, stdio: 'pipe' });
+      return true;
+    } catch { return false; }
+  };
+  const co_ = (d, t) => {
+    try {
+      return execFileSync('du', ['-sh', path.join(d, t)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+        .trim().split(/\t| /)[0];
+    } catch { return '?'; }
+  };
 
-  if (mucNgoai.length) {
-    /* "Có người quyết" ở ngoài = có ít nhất một chỗ trong repo NHẮC TỚI TÊN nó. Dùng `git grep`
-     * để chỉ soi tệp đã theo dõi — nhanh, và không đọc phải rác chưa commit. */
-    const coTro = (ten) => {
-      try {
-        execFileSync('git', ['grep', '-l', '--fixed-strings', ten, '--', 'docs', 'scripts', 'CLAUDE.md', '.claude'],
-          { cwd: REPO, stdio: 'pipe' });
-        return true;
-      } catch { return false; }
-    };
-    const moCoiNgoai = mucNgoai.filter((t) => !coTro(t));
-    console.log(`\n── ngoài repo · ${VUNG_NGOAI.replace(homedir(), '~')} ──`);
-    console.log(`  ✅ có nơi trỏ tới   ${mucNgoai.length - moCoiNgoai.length} / ${mucNgoai.length}`);
-    console.log(`  ${moCoiNgoai.length ? '🔴' : '✅'} KHÔNG AI TRỎ TỚI  ${moCoiNgoai.length}`);
-    for (const m of moCoiNgoai) {
-      let mb = '?';
-      try {
-        mb = execFileSync('du', ['-sh', path.join(VUNG_NGOAI, m)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim().split(/\t| /)[0];
-      } catch { /* du hỏng thì thôi, kích thước không phải điều quan trọng nhất */ }
-      console.log(`     🔴 ${m}  (${mb})`);
+  /* ── TẦNG 1 · TRONG KHO — có nhà rồi, chỉ còn hỏi "còn ai cần không" ────────────────────── */
+  const trongKho = doc(KHO);
+  if (trongKho.length) {
+    const moCoi = trongKho.filter((t) => !co(t));
+    console.log(`\n── kho ngoài repo · ${KHO.replace(homedir(), '~')} ──`);
+    console.log(`  ✅ có nơi trỏ tới   ${trongKho.length - moCoi.length} / ${trongKho.length}`);
+    console.log(`  ${moCoi.length ? '🟡' : '✅'} KHÔNG AI TRỎ TỚI  ${moCoi.length}`);
+    for (const m of moCoi) console.log(`     🟡 ${m}  (${co_(KHO, m)})`);
+    if (moCoi.length) {
+      console.log('\n  Vàng, không đỏ: nó ĐÃ CÓ NHÀ, chỉ là repo không còn nhắc tên. Không ai xoá nhầm nó.');
+      console.log('  Muốn hết báo thì nhắc tên ở một chỗ trong `docs/` — hoặc quyết rằng không còn cần.');
     }
-    if (moCoiNgoai.length) {
-      console.log('\n  Đây là thư mục CỦA HOÀ, không phải của dự án — máy KHÔNG chặn và KHÔNG đụng vào.');
-      console.log('  Nó chỉ nói: repo đã đẩy thứ ra đây rồi QUÊN ĐƯỜNG VỀ. Muốn hết báo thì');
-      console.log('  nhắc tên nó ở một chỗ trong `docs/` — hoặc quyết rằng nó không còn cần nữa.');
-    }
+  }
+
+  /* ── TẦNG 2 · RƠI RA GỐC TẢI VỀ — đây mới là dây bẫy thật ───────────────────────────────── */
+  /* Hai thứ KHÔNG phải "rơi ra": chính cái kho, và chính repo này. Repo nằm ở Tải về là điều
+   * Hoà đã cân nhắc và quyết giữ (29/08) — cổng không được đếm quyết định đã chốt là vi phạm. */
+  const KHONG_TINH = new Set(['_IF-KHO', path.basename(REPO)]);
+  const roiRa = doc(GOC_TAI_VE).filter((t) => !KHONG_TINH.has(t) && TIEN_TO_NGOAI.test(t));
+  if (roiRa.length) {
+    console.log(`\n── 🔴 RƠI RA NGOÀI KHO · ${GOC_TAI_VE.replace(homedir(), '~')} ──`);
+    /* Còn chủ hay không KHÔNG đổi mức báo: dọn thư mục Tải về đụng phải nó bất kể có ai trỏ tới.
+     * Nó chỉ đổi việc phải làm — có chủ thì chuyển kho RỒI SỬA CHỖ TRỎ, không chủ thì Hoà quyết. */
+    for (const m of roiRa) console.log(`     🔴 ${m}  (${co_(GOC_TAI_VE, m)})${co(m) ? '  · có chỗ trỏ tới ⇒ chuyển kho phải sửa kèm' : ''}`);
+    console.log('\n  Đồ dự án nằm lẫn giữa tệp tải về. Dọn thư mục Tải về theo thói quen là');
+    console.log(`  chạm phải nó. Chuyển vào ${KHO.replace(homedir(), '~')}/ rồi sửa chỗ trỏ tới.`);
   }
 }
 
