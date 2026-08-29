@@ -19,7 +19,7 @@
  * gỡ gói. Đây chính là điểm dễ nhầm nhất, nên máy phải nói ra.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { extname, join } from 'node:path';
 
 const GOI_GPL = ['@mlightcad/libredwg-web'];
 const chan = process.argv.includes('--chan');
@@ -94,16 +94,58 @@ if (existsSync(pubWasm)) {
 /* ② BẰNG CHỨNG MẠNH NHẤT — quét artifact thật nếu đã đóng gói. Ý định trong build.files có
  * thể đúng mà electron-builder vẫn nhét vào (phụ thuộc bắc cầu, asarUnpack…). Cái nằm trên
  * đĩa mới là cái giao cho người dùng. */
+/* 🔴 SỬA 29/08 (lượt 2) — CỔNG NÀY VỪA BỊ BẮT QUẢ TANG NÓI DỐI.
+ * Phép thử: dựng thật từ HEAD 913ac61 (`next build` + `electron-builder --mac --dir`) rồi chạy
+ * `node scripts/soi-giay-phep-phat-hanh.mjs --chan` → in "✅ không thấy gói/WASM GPL", exit 0.
+ * Trong khi trên đĩa, cùng lúc đó:
+ *   · dist-installer/mac-arm64/InteriorFlow.app/.../app/.next/static/media/libredwg-web.*.wasm
+ *     — 9,4 MB, sha256 TRÙNG KHỚP public/wasm/libredwg-web.wasm, và nằm ĐÚNG HAI BẢN.
+ *   · .next/server/chunks/6995.js — TOÀN BỘ glue Emscripten của libredwg-web đã minify.
+ * Hai lỗ, độc lập nhau, cả hai đều đủ để cho GPL lọt qua:
+ *   ① TRẦN ĐỘ SÂU `sau > 6`. Đường thật sâu 8 (mac-arm64/InteriorFlow.app/Contents/Resources/
+ *      app/.next/static/media/…) ⇒ vòng quét quay đầu TRƯỚC khi tới nơi có hàng. Cổng không
+ *      "không thấy gì" — nó chưa từng đi tới chỗ có gì để thấy.
+ *   ② CHỈ SOI TÊN TỆP. `6995.js` mang trọn mã GPL mà tên thì vô tội; không mẫu tên nào bắt được.
+ * ⇒ Bỏ trần độ sâu, và soi RUỘT tệp mã.
+ *
+ * ⚠️ Dấu vết phải PHÂN BIỆT ĐƯỢC "mã GPL đi kèm" với "chữ nhắc tên GPL". Trang
+ * `/settings/licenses` là trang GHI CÔNG bắt buộc của chính GPL — nó CHỨA chuỗi
+ * "@mlightcad/libredwg-web" và "public/wasm/libredwg-web.wasm" dưới dạng VĂN XUÔI. Bắt bừa theo
+ * chữ "libredwg" ⇒ cổng đỏ vĩnh viễn kể cả khi đã gỡ sạch mã, tức đẻ đúng "cổng ai cũng học cách
+ * bỏ qua" mà đầu tệp này cảnh báo. Nên hai dấu vết dưới đây được chọn vì chúng CHỈ xuất hiện
+ * trong mã đã bundle, và đo được là 0 lần trên trang ghi công. */
+const DAU_VET_MA_GPL = [
+  '@mlightcad/libredwg-web/wasm', // đường dẫn module hardcode trong glue Emscripten đã bundle
+  'static/media/libredwg-web',    // tham chiếu asset WASM do webpack phát ra
+];
+const DUOI_MA = new Set(['.js', '.mjs', '.cjs', '.html', '.json', '.css', '.txt']);
+const TRAN_DOC = 64 * 1024 * 1024; // tệp lớn hơn mức này không phải mã nguồn — bỏ, khỏi ngốn RAM
+
 const trongGoi = [];
 for (const thuMuc of ['dist-installer', 'dist']) {
   const d = join(goc, thuMuc);
   if (!existsSync(d)) continue;
-  const quet = (dir, sau = 0) => {
-    if (sau > 6) return;
-    for (const e of readdirSync(dir, { withFileTypes: true })) {
+  const quet = (dir) => {
+    let muc;
+    try { muc = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of muc) {
       const p = join(dir, e.name);
-      if (e.isDirectory()) quet(p, sau + 1);
-      else if (/libredwg|mlightcad/i.test(e.name)) trongGoi.push(p.slice(goc.length + 1));
+      if (e.isSymbolicLink()) continue;           // .app đầy symlink vòng — đi vào là treo
+      if (e.isDirectory()) { quet(p); continue; } // KHÔNG còn trần độ sâu (xem lỗ ① ở trên)
+      if (!e.isFile()) continue;
+      const tuongDoi = p.slice(goc.length + 1);
+      if (/libredwg|mlightcad/i.test(e.name)) {
+        trongGoi.push({ duong: tuongDoi, vi: 'tên tệp' });
+        continue;
+      }
+      if (!DUOI_MA.has(extname(e.name).toLowerCase())) continue;
+      let noi;
+      try {
+        if (statSync(p).size > TRAN_DOC) continue;
+        noi = readFileSync(p, 'latin1');          // latin1: so khớp theo BYTE, khỏi giải mã UTF-8
+      } catch { continue; }
+      const dau = DAU_VET_MA_GPL.find((m) => noi.includes(m));
+      if (dau) trongGoi.push({ duong: tuongDoi, vi: `ruột tệp mang dấu vết "${dau}"` });
     }
   };
   quet(d);
@@ -121,7 +163,7 @@ for (const p of phat) {
   console.log(`  · ${p.ten} — dependencies: ${p.khaiBao ?? '(không khai)'} · trên đĩa: ${p.coTrenDia ? `có, ${p.mb} MB` : 'không'}`);
 }
 for (const w of wasm) console.log(`  · public/wasm/${w.f} — ${w.mb} MB`);
-for (const t of trongGoi) console.log(`  · 🔥 NẰM TRONG ARTIFACT ĐÃ ĐÓNG GÓI: ${t}`);
+for (const t of trongGoi) console.log(`  · 🔥 NẰM TRONG ARTIFACT ĐÃ ĐÓNG GÓI (${t.vi}): ${t.duong}`);
 console.log('  GPL tính việc GIAO BẢN SAO, không tính có thu tiền — pilot miễn phí KHÔNG được miễn.');
 console.log('  Phải gỡ khỏi artifact (hoặc có lời giải giấy phép) TRƯỚC khi giao bộ cài cho bất kỳ ai.');
 console.log('  Xem: lib/cad/dwg-flag.ts · docs/LICENSE-NOTES.md · docs/RESEARCH-DWG-LICENSE.md\n');

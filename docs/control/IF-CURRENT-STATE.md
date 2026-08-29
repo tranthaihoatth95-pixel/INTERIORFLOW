@@ -66,7 +66,30 @@ rồi chấp nhận v0.2 là **ACCEPTED CANDIDATE · BUILD BLOCKED** (cổng G1�
 chính mình** — đó đúng là thứ đang bị cổng chặn.
 
 **DWG đã gắn cờ TẮT** (`ca0eb7c`) + cổng `npm run soi:giay-phep` chặn mọi `electron:build*`.
-Tắt cờ **không** gỡ 19,1 MB mã GPL khỏi bộ cài — việc gỡ khỏi artifact vẫn còn nợ.
+Tắt cờ **không** gỡ mã GPL khỏi bộ cài — việc gỡ khỏi artifact vẫn còn nợ.
+
+🔴 **ĐO THẬT 29/08 — BỘ CÀI DỰNG TỪ HEAD `913ac61` VẪN MANG GPL-3.0. Câu trả lời: CÒN.**
+Dựng thật (`next build` + `npx electron-builder --mac --dir`, cả hai exit 0), rồi quét ruột
+`dist-installer/mac-arm64/InteriorFlow.app/`:
+- `…/app/.next/static/media/libredwg-web.56922457.wasm` **và** `…/app/.next/server/chunks/static/
+  media/…` — **HAI bản**, mỗi bản 9.399.820 byte, sha256 `2b66d476…` **trùng khớp**
+  `public/wasm/libredwg-web.wasm`. Tổng **17,9 MiB**.
+- `…/app/.next/server/chunks/6995.js` (187 KB) + `…/static/chunks/6513.*.js` (67 KB) — **toàn bộ
+  glue Emscripten của libredwg-web đã minify**, còn nguyên đường dẫn `@mlightcad/libredwg-web/wasm`.
+
+**Đường nó lọt vào:** hai dòng loại trừ ở `package.json:133-134` (`!node_modules/@mlightcad/**`,
+`!public/wasm/libredwg-web.wasm`) **CÓ hiệu lực** — hai đường đó đã sạch trong artifact. Nhưng
+`lib/cad/dwg-worker.ts:277` `await import('@mlightcad/libredwg-web')` khiến **webpack đã sao mã GPL
++ WASM vào `.next/` TRƯỚC KHI** electron-builder chạy, và `package.json:118` gói cả `.next/**/*`
+không loại trừ gì. **Loại trừ nguồn không đuổi kịp bản sao của bộ đóng gói.** ⇒ cần ARCHITECT
+quyết, MAIN không tự sửa `package.json`.
+
+⚠️ **Cổng `soi:giay-phep` đã NÓI DỐI, nay đã chữa.** Trên đúng artifact bẩn ở trên, bản cũ in
+"✅ không thấy gói/WASM GPL", exit 0. Hai lỗ độc lập: ① trần độ sâu `sau > 6` — đường thật sâu 8,
+vòng quét quay đầu trước khi tới nơi; ② chỉ soi **tên tệp** — `6995.js` mang trọn mã GPL mà tên
+vô tội. Đã bỏ trần độ sâu + soi **ruột** tệp mã, phân biệt được mã GPL với **trang ghi công**
+`/settings/licenses` (trang này bắt buộc phải nhắc tên GPL, không được tính là vi phạm).
+Nay `--chan` → **exit 1**, 2,5s. `npm test` vẫn exit 0 (mức cảnh báo).
 
 ---
 *(bản 27/08, dấu vết:)* **Wave S1 · mục 2 — `W1-ASSET-REPRESENTATION-SCOPE-001` đã XONG (`ef0f2d6`, proof 20/20).**
