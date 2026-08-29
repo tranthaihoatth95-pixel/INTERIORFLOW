@@ -26,6 +26,7 @@
  * Đọc lại chi tiết: mở `.jsonl` của phiên tại số dòng ghi trong mốc.
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import os from 'node:os';
@@ -33,6 +34,74 @@ import os from 'node:os';
 const REPO = process.cwd();
 const SO = path.join(REPO, 'docs/control/IF-MOC.md');
 const KHO = path.join(os.homedir(), '.claude/projects/-Users-tranben-Downloads-interiorflow');
+const LOG_ROOT = process.env.BOS_SHARED_LOG_ROOT || path.join(os.homedir(), 'PROJECT/SHARED/LOG');
+const CAU = path.join(LOG_ROOT, 'agent-handoffs.jsonl');
+
+const LANES = new Set(['00', '01', '02', '03', '04', '05', '06', '07', '08', '99']);
+const bamNgan = (s) => createHash('sha256').update(s).digest('hex').slice(0, 12);
+
+function docSuKien() {
+  if (!existsSync(CAU)) return [];
+  return readFileSync(CAU, 'utf8').split('\n').filter(Boolean).flatMap((line) => {
+    try { return [JSON.parse(line)]; } catch { return []; }
+  });
+}
+
+function ghiSuKien(event) {
+  mkdirSync(LOG_ROOT, { recursive: true });
+  appendFileSync(CAU, `${JSON.stringify(event)}\n`, 'utf8');
+}
+
+/**
+ * Cầu Claude ↔ Codex dùng CHÍNH máy mốc, không dựng máy receipt thứ hai.
+ *
+ *   node scripts/moc.mjs handoff 00 05 "chủ đề" "nội dung" "nguồn#hash"
+ *   node scripts/moc.mjs inbox 05
+ *   node scripts/moc.mjs ack 05 <event-id>
+ */
+const lenh = process.argv[2];
+if (lenh === 'handoff') {
+  const [from, to, topic, body, source = 'chat-unverified'] = process.argv.slice(3);
+  if (!LANES.has(from) || !LANES.has(to) || !topic || !body) {
+    console.error('Dùng: node scripts/moc.mjs handoff <from-lane> <to-lane> "chủ đề" "nội dung" "nguồn#hash"');
+    process.exit(2);
+  }
+  const createdAt = new Date().toISOString();
+  const id = `HO-${createdAt.replace(/\D/g, '').slice(0, 14)}-${bamNgan(`${from}|${to}|${topic}|${body}|${randomUUID()}`)}`;
+  ghiSuKien({ schema: 'BOS-HANDOFF-v1', id, type: 'HANDOFF', from, to, topic, body, source, sensitivity: 'BUILDER', createdAt });
+  console.log(`${id} · ${from} → ${to} · ${topic}`);
+  process.exit(0);
+}
+
+if (lenh === 'inbox') {
+  const lane = process.argv[3];
+  if (!LANES.has(lane)) {
+    console.error('Dùng: node scripts/moc.mjs inbox <lane>');
+    process.exit(2);
+  }
+  const events = docSuKien();
+  const acked = new Set(events.filter((e) => e.type === 'ACK' && e.lane === lane).map((e) => e.handoffId));
+  const open = events.filter((e) => e.type === 'HANDOFF' && e.to === lane && !acked.has(e.id));
+  if (!open.length) console.log(`✅ ${lane}: không có handoff mới`);
+  for (const e of open) console.log(`${e.id}\n  ${e.from} → ${e.to} · ${e.topic}\n  ${e.body}\n  nguồn: ${e.source}\n`);
+  process.exit(0);
+}
+
+if (lenh === 'ack') {
+  const [lane, handoffId] = process.argv.slice(3);
+  if (!LANES.has(lane) || !handoffId) {
+    console.error('Dùng: node scripts/moc.mjs ack <lane> <event-id>');
+    process.exit(2);
+  }
+  const target = docSuKien().find((e) => e.type === 'HANDOFF' && e.id === handoffId);
+  if (!target || target.to !== lane) {
+    console.error(`Không thấy handoff ${handoffId} dành cho lane ${lane}.`);
+    process.exit(1);
+  }
+  ghiSuKien({ schema: 'BOS-HANDOFF-v1', id: `ACK-${randomUUID()}`, type: 'ACK', lane, handoffId, createdAt: new Date().toISOString() });
+  console.log(`✅ ${lane} đã nhận ${handoffId}`);
+  process.exit(0);
+}
 
 const chuDe = process.argv[2];
 const noiDung = process.argv[3] ?? '';
