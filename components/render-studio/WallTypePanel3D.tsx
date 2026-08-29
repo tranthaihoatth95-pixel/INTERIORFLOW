@@ -31,6 +31,7 @@ import Tooltip from '@/components/ui/Tooltip';
 import { writeWallTypes, assignWallType, clearWallInstanceOverride } from './doc-catalog';
 import { NumberField } from './NumberField';
 import { formatThousands } from './scene3d-ui';
+import { NHAN_NHO } from './nhan-nho';
 
 /** Id tất định (không `Math.random`/`Date.now` — cùng luật với `levelIdFromStorey` của PHU). */
 function newTypeId(existing: WallType[]): string {
@@ -96,7 +97,7 @@ export function WallTypePanel3D() {
   return (
     <section className="space-y-2.5">
       <header className="flex items-center gap-1.5">
-        <span className="flex-1 text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">
+        <span className={`flex-1 ${NHAN_NHO}`}>
           {tr('Loại tường (Type)', 'Wall types')}
         </span>
         <Tooltip side="right" label={tr('Thêm loại tường mới', 'Add a wall type')}>
@@ -169,7 +170,7 @@ export function WallTypePanel3D() {
       {editing && (
         <div className="space-y-2 rounded-[10px] border border-[var(--border)] bg-[var(--field)] p-2">
           <label className="block">
-            <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Tên loại', 'Name')}</span>
+            <span className={`${NHAN_NHO}`}>{tr('Tên loại', 'Name')}</span>
             <input
               value={editing.name}
               onChange={(e) => patchType(editing.id, { name: e.target.value })}
@@ -179,7 +180,7 @@ export function WallTypePanel3D() {
 
           <div className="flex gap-2">
             <label className="flex-1">
-              <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Bề dày (mm)', 'Thickness (mm)')}</span>
+              <span className={`${NHAN_NHO}`}>{tr('Bề dày (mm)', 'Thickness (mm)')}</span>
               <span className="mt-0.5 block">
                 <NumberField
                   value={editing.thicknessMm}
@@ -192,7 +193,7 @@ export function WallTypePanel3D() {
               </span>
             </label>
             <label className="flex-1">
-              <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Phân loại', 'Kind')}</span>
+              <span className={`${NHAN_NHO}`}>{tr('Phân loại', 'Kind')}</span>
               <select
                 value={editing.kind}
                 onChange={(e) => patchType(editing.id, { kind: e.target.value as WallKind })}
@@ -207,7 +208,7 @@ export function WallTypePanel3D() {
 
           {/* Cấu tạo lớp — HIỆN được, SỬA chưa (§9: ô trống là bằng chứng còn việc, kèm lý do). */}
           <div>
-            <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Cấu tạo lớp', 'Layers')}</span>
+            <span className={`${NHAN_NHO}`}>{tr('Cấu tạo lớp', 'Layers')}</span>
             {editing.layers?.length ? (
               <ul className="mt-0.5 space-y-0.5">
                 {editing.layers.map((l, i) => (
@@ -260,7 +261,7 @@ export function WallTypePanel3D() {
       {/* ── Ba tham số của tường đang chọn: giá trị cuối + NGUỒN + đường trả về Type ── */}
       {targetWall && resolved && (
         <div className="space-y-1.5 border-t border-[var(--vien-mo)] pt-2.5">
-          <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">
+          <span className={`${NHAN_NHO}`}>
             {tr('Tường đang chọn', 'Selected wall')}
           </span>
 

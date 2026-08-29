@@ -25,6 +25,7 @@ import { entityBox } from '@/lib/cad/model';
 import { assignLevelToEntities } from './doc-catalog';
 import { formatThousands } from './scene3d-ui';
 import { useT } from '@/lib/i18n';
+import { NHAN_NHO, NHAN_NHO_BASE } from './nhan-nho';
 
 export function Object3DInspector() {
   const tr = useT();
@@ -45,7 +46,7 @@ export function Object3DInspector() {
       <div className="flex items-center gap-2 border-b border-[var(--vien-mo)] pb-2.5">
         <span className="h-[10px] w-[10px] flex-none rounded-[3px]" style={{ background: KIND_DOT[kind] }} />
         <span className="flex-1 truncate text-[13px] font-semibold text-[var(--t1)]">{labelOfGroup(selected, tr)}</span>
-        <span className="rounded-[6px] bg-[var(--nen-mo-card)] px-1.5 py-[1px] text-[9px] font-bold uppercase text-[var(--t3)]">
+        <span className={`rounded-[6px] bg-[var(--nen-mo-card)] px-1.5 py-[1px] ${NHAN_NHO_BASE} text-[var(--t3)]`}>
           {tr(KIND_LABEL_VI[kind], KIND_LABEL_EN[kind])}
         </span>
       </div>
@@ -59,8 +60,8 @@ export function Object3DInspector() {
       <LevelRow storey={selected.storey} entityId={selected.entityId} />
 
       <div className="space-y-2 border-t border-[var(--vien-mo)] pt-3">
-        {/* mock `.grp h4`: 11px (fs-2xs), letter-spacing .07em — trước 10.5px/tracking-wide(.025em) */}
-        <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-[var(--t4)]">{tr('Vật liệu', 'Material')}</span>
+        {/* mock `.grp h4` — nay dùng khuôn `NHAN_NHO` (12px, không uppercase) theo V-1/V-6 (29/08). */}
+        <span className={`${NHAN_NHO}`}>{tr('Vật liệu', 'Material')}</span>
         <div className="flex items-center gap-2.5">
           {selectedMat ? (
             <MaterialSphere
@@ -135,7 +136,7 @@ function LevelRow({ storey, entityId }: { storey?: string; entityId?: string }) 
 
   return (
     <label className="block rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5">
-      <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Tầng', 'Level')}</span>
+      <span className={`${NHAN_NHO}`}>{tr('Tầng', 'Level')}</span>
       <select
         value={entity.levelId ?? ''}
         onChange={(e) => {

@@ -45,6 +45,7 @@ import {
   ROOM_LIGHT_DEFAULT_Z_MM,
 } from './scene3d-ui';
 import { currentLighting, writeSun, writeSky, writeRoomLights, patchRoomLight, newRoomLightId } from './doc-catalog';
+import { NHAN_NHO } from './nhan-nho';
 
 /** Thanh trượt dùng chung — cao `--tap` (32 desktop / 44 cảm ứng) để ngón tay bắt được núm, không
  * phải rãnh 4px chỉ chuột mới trúng (§0c mảng 3). */
@@ -70,7 +71,7 @@ function Slider({
   return (
     <label className={cn('block', disabled && 'opacity-45')}>
       <span className="flex items-baseline gap-1.5">
-        <span className="flex-1 text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{label}</span>
+        <span className={`flex-1 ${NHAN_NHO}`}>{label}</span>
         <span className="font-mono text-[10.5px] leading-[1.6] text-[var(--t2)]">{readout}</span>
       </span>
       <input
@@ -187,7 +188,7 @@ export function LightTab() {
           [tr('Đồng đều', 'Uniformity'), quickEstimate.uniformity === null ? '—' : quickEstimate.uniformity.toFixed(2)],
         ].map(([label, value]) => (
           <div key={label} className="rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5">
-            <p className="text-[9px] font-bold uppercase tracking-wide text-[var(--t4)]">{label}</p>
+            <p className={`${NHAN_NHO}`}>{label}</p>
             <p className="mt-0.5 text-[12px] font-semibold tabular-nums text-[var(--t1)]">{value}</p>
           </div>
         ))}
@@ -206,7 +207,7 @@ export function LightTab() {
 
       {/* ── d) Bốn cảnh sáng dựng sẵn ── */}
       <section className="space-y-1.5">
-        <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Cảnh sáng', 'Presets')}</span>
+        <span className={`${NHAN_NHO}`}>{tr('Cảnh sáng', 'Presets')}</span>
         <div className="grid grid-cols-2 gap-1.5">
           {LIGHT_PRESETS.map((p) => (
             <button
@@ -229,7 +230,7 @@ export function LightTab() {
       <section className="space-y-1.5 border-t border-[var(--border)] pt-3">
         <div className="flex items-center gap-1.5">
           <Sun size={14} className="text-[var(--t4)]" />
-          <span className="flex-1 text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Mặt trời', 'Sun')}</span>
+          <span className={`flex-1 ${NHAN_NHO}`}>{tr('Mặt trời', 'Sun')}</span>
         </div>
 
         {/* Hai chế độ, đúng bộ đôi Sun Settings của Revit. */}
@@ -273,7 +274,7 @@ export function LightTab() {
             {/* ⭐ CHỈ ĐỌC. Hướng Bắc là sự thật của DỰ ÁN, sửa ở khối "Vị trí công trình" bên
                 dưới (hoặc ở Tổng quan) — cả hai ghi về cùng một chỗ. */}
             <div>
-              <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Hướng Bắc của dự án', 'Project north')}</span>
+              <span className={`${NHAN_NHO}`}>{tr('Hướng Bắc của dự án', 'Project north')}</span>
               <span className="mt-0.5 flex items-center gap-1">
                 <Compass size={14} className="flex-none text-[var(--t4)]" />
                 <span className="font-mono text-[11px] leading-[1.6] text-[var(--t2)]">
@@ -328,7 +329,7 @@ export function LightTab() {
               }}
             />
             <label className="block">
-              <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Ngày', 'Date')}</span>
+              <span className={`${NHAN_NHO}`}>{tr('Ngày', 'Date')}</span>
               <input
                 type="date"
                 value={sunUi.dateIso}
@@ -372,7 +373,7 @@ export function LightTab() {
           onChange={(v) => writeSun({ intensity: v / 100 })}
         />
         <div className="flex items-center gap-1.5">
-          <span className="flex-1 text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Nhiệt màu nắng', 'Sun colour')}</span>
+          <span className={`flex-1 ${NHAN_NHO}`}>{tr('Nhiệt màu nắng', 'Sun colour')}</span>
           <span className="h-[14px] w-[14px] flex-none rounded-[4px] border border-[var(--border)]" style={{ background: rig.sun.colorHex }} aria-hidden />
           <span className="w-[74px] flex-none">
             <NumberField
@@ -406,7 +407,7 @@ export function LightTab() {
       <section className="space-y-1.5 border-t border-[var(--border)] pt-3">
         <div className="flex items-center gap-1.5">
           <Cloud size={14} className="text-[var(--t4)]" />
-          <span className="flex-1 text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Bầu trời', 'Sky')}</span>
+          <span className={`flex-1 ${NHAN_NHO}`}>{tr('Bầu trời', 'Sky')}</span>
         </div>
         <select
           value={lighting.sky.hdriId ?? ''}
@@ -449,7 +450,7 @@ export function LightTab() {
       <section className="space-y-1.5 border-t border-[var(--border)] pt-3">
         <div className="flex items-center gap-1.5">
           <Lightbulb size={14} className="text-[var(--t4)]" />
-          <span className="flex-1 text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Đèn phòng', 'Room lights')}</span>
+          <span className={`flex-1 ${NHAN_NHO}`}>{tr('Đèn phòng', 'Room lights')}</span>
         </div>
 
         {/* Thả đèn = chọn THẲNG loại, không phải thêm rồi mới đổi loại (4 loại, 4 nút — nhanh hơn
@@ -525,7 +526,7 @@ export function LightTab() {
                   <div className="grid grid-cols-3 gap-1">
                     {(['x', 'y', 'z'] as const).map((axis) => (
                       <label key={axis} className="block">
-                        <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{axis}</span>
+                        <span className={`${NHAN_NHO}`}>{axis}</span>
                         <NumberField
                           value={l.posMm[axis]}
                           onCommit={(v) => patchRoomLight(l.id, { posMm: { ...l.posMm, [axis]: v } })}
@@ -539,7 +540,7 @@ export function LightTab() {
 
                   <div className="grid grid-cols-2 gap-1">
                     <label className="block">
-                      <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Quang thông', 'Luminous flux')}</span>
+                      <span className={`${NHAN_NHO}`}>{tr('Quang thông', 'Luminous flux')}</span>
                       <NumberField
                         value={l.lumens}
                         onCommit={(v) => patchRoomLight(l.id, { lumens: v })}
@@ -550,7 +551,7 @@ export function LightTab() {
                       />
                     </label>
                     <label className="block">
-                      <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Nhiệt màu', 'Colour temp')}</span>
+                      <span className={`${NHAN_NHO}`}>{tr('Nhiệt màu', 'Colour temp')}</span>
                       <NumberField
                         value={l.colorK}
                         onCommit={(v) => patchRoomLight(l.id, { colorK: v })}
@@ -567,7 +568,7 @@ export function LightTab() {
                       `RoomLight.levelId` PHU khai (z là cao độ TƯƠNG ĐỐI khi có levelId). */}
                   {levels.length > 0 && (
                     <label className="block">
-                      <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Gắn tầng', 'Level')}</span>
+                      <span className={`${NHAN_NHO}`}>{tr('Gắn tầng', 'Level')}</span>
                       <select
                         value={l.levelId ?? ''}
                         onChange={(e) => patchRoomLight(l.id, { levelId: e.target.value || undefined })}

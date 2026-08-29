@@ -30,6 +30,7 @@ import Tooltip from '@/components/ui/Tooltip';
 import { writeLevels, assignLevelToEntities, addLevelToDoc } from './doc-catalog';
 import { NumberField } from './NumberField';
 import { formatThousands } from './scene3d-ui';
+import { NHAN_NHO } from './nhan-nho';
 
 /** Chuẩn hoá `order` về 0..n-1 theo đúng thứ tự mảng truyền vào — gọi sau mọi phép đổi chỗ để số
  * thứ tự không rỗ (0,1,3,4) sau vài lần xoá. */
@@ -119,7 +120,7 @@ export function LevelManagerPanel() {
   return (
     <section className="border-b border-[var(--vien-mo)] px-1.5 pb-2.5 pt-2">
       <header className="flex items-center gap-1.5 px-1">
-        <span className="flex-1 text-[10.5px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">
+        <span className={`flex-1 ${NHAN_NHO}`}>
           {tr('Tầng', 'Levels')}
         </span>
         <Tooltip side="right" label={tr('Thêm tầng mới (Shift+T)', 'Add a level (Shift+T)')}>
@@ -263,7 +264,7 @@ export function LevelManagerPanel() {
       {/* ── Gán tầng cho vật đang chọn ── */}
       {selectedName && (
         <div className="mt-2 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5">
-          <p className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">
+          <p className={`${NHAN_NHO}`}>
             {tr('Gán tầng cho khối đang chọn', 'Assign level to selection')}
           </p>
           <p className="truncate text-[10.5px] leading-relaxed text-[var(--t3)]">{selectedName}</p>

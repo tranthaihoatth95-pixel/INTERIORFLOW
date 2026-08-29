@@ -53,6 +53,7 @@ import { setEntityArrayRadial, setEntityMirror, setEntityBevelEx, setEntityTaper
 import { newId } from '@/lib/cad/store';
 import { evalRecipe, type BuildRecipeStep } from '@/lib/three/build-recipe';
 import { nhomTheoYDinh, NHAN_Y_DINH, Y_DINH_CHUA_CO } from '@/lib/render-studio/form-recipe';
+import { NHAN_NHO, NHAN_NHO_BASE } from './nhan-nho';
 
 /**
  * Tab do NƠI MOUNT giữ (mode Vẽ 3D cần mở thẳng tab Tạo khi bấm "Dựng khối đầu tiên").
@@ -482,7 +483,7 @@ function CreateTab({
       )}
       {/* ① VẼ RỒI ĐÙN — tạo TỪ ĐÂU (không nút xám nào — nhóm đầu tiên toàn nút sống) */}
       <div className="space-y-2">
-        <p className="px-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--t4)]">
+        <p className={`px-0.5 ${NHAN_NHO}`}>
           {tr('Vẽ rồi đùn', 'Draw then extrude')}
         </p>
         <div className="grid grid-cols-3 gap-2">
@@ -507,7 +508,7 @@ function CreateTab({
 
       {/* ② CẤU KIỆN — tạo CÁI GÌ */}
       <div className="space-y-2 border-t border-[var(--border)] pt-3">
-        <p className="px-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--t4)]">
+        <p className={`px-0.5 ${NHAN_NHO}`}>
           {tr('Cấu kiện', 'Building components')}
         </p>
         <div className="grid grid-cols-3 gap-2">{NHOM_CAU_KIEN.map(cell)}</div>
@@ -515,7 +516,7 @@ function CreateTab({
 
       {/* ③ BIẾN ĐỔI — sửa THẾ NÀO */}
       <div className="space-y-2 border-t border-[var(--border)] pt-3">
-        <p className="px-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--t4)]">
+        <p className={`px-0.5 ${NHAN_NHO}`}>
           {tr('Biến đổi', 'Modify')}
         </p>
         <div className="grid grid-cols-3 gap-2">{NHOM_BIEN_DOI.map(cell)}</div>
@@ -728,7 +729,7 @@ function ArrayGridSection({ scene }: { scene: Scene3DData | null }) {
       {/* Hoà chốt 08/08 (②): LỆNH DỰNG HÌNH giữ TÊN ANH (thuật ngữ nghề quốc tế — dân 3ds Max/
           SketchUp đọc là hiểu), dòng nhỏ dưới là giải thích tiếng Việt. Chỉ áp cho tên LỆNH —
           nhãn ô nhập/lý do khoá vẫn theo ngôn ngữ giao diện. Chốt ghi ở docs/00-CHOT.md. */}
-      <p className="px-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--t2)]">
+      <p className={`px-0.5 ${NHAN_NHO_BASE} text-[var(--t2)]`}>
         Array
       </p>
       <p className="-mt-1 px-0.5 text-[9px] leading-[1.5] text-[var(--t4)]">
@@ -840,7 +841,7 @@ const numCls =
   'w-full rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-right text-[11px] tabular-nums text-[var(--t1)] outline-none focus:border-[var(--accent-ring)]';
 const labCls = 'text-[9px] font-medium leading-[1.5] text-[var(--t4)]';
 const sectionTitle = (en: string) => (
-  <p className="px-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--t2)]">{en}</p>
+  <p className={`px-0.5 ${NHAN_NHO_BASE} text-[var(--t2)]`}>{en}</p>
 );
 const applyBtnCls = (enabled: boolean) =>
   cn(

@@ -39,6 +39,7 @@ import {
 } from '@/lib/render-studio/controlled-edit';
 import { applyWhiteBalanceToRegion } from '@/lib/render-studio/controlled-edit-apply';
 import { useControlledEditUi } from '@/lib/render-studio/controlled-edit-ui';
+import { NHAN_NHO_STYLE } from './nhan-nho';
 
 const NEUTRAL: WhiteBalanceParams = { temperature: 0, tint: 0 };
 
@@ -182,7 +183,7 @@ export default function SuaCoKiemSoat({ nodeId }: { nodeId: string }) {
           gap: 8,
         }}
       >
-        <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--t4)' }}>
+        <p style={NHAN_NHO_STYLE}>
           {tr('Cân trắng — kéo để chọn vùng', 'White balance — drag to select a region')}
         </p>
         <ToolbarChip

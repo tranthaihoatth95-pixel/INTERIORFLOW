@@ -62,6 +62,7 @@ import {
 } from '@/lib/nodes/cua-so-cong-cu';
 import { useCuaSoCongCuUi } from '@/lib/nodes/cua-so-cong-cu-ui';
 import NutLenhVeTinh from './NutLenhVeTinh';
+import { NHAN_NHO_STYLE } from './nhan-nho';
 
 /**
  * ⭐ LỆNH NÀO CÓ DÒNG ĐIỆN — nay khai ở `lib/nodes/thi-hanh-lenh-cua.ts`, không nằm rải trong
@@ -148,9 +149,7 @@ function PanelVeTinh({ v, thuTu, khoa, trong }: { v: VeTinh; thuTu: number; khoa
     >
       <p
         style={{
-          fontSize: 10,
-          textTransform: 'uppercase',
-          letterSpacing: '.06em',
+          ...NHAN_NHO_STYLE,
           color: 'var(--t3)',
           padding: '6px 10px',
           borderBottom: '1px solid var(--vien-mo)',

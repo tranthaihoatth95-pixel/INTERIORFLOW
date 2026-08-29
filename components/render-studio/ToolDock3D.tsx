@@ -42,6 +42,7 @@ import { ToolbarChip, ToolbarBar } from '@/components/ui/ToolbarChip';
 import { commonCommandsFor, bindStage } from '@/lib/commands/toolbar-source';
 import { CommandIcon, commandHinh } from '@/components/ui/command-icon';
 import { useDismissable } from '@/lib/useDismissable';
+import { NHAN_NHO_STYLE } from './nhan-nho';
 
 interface ToolDock3DProps {
   open: boolean;
@@ -332,7 +333,7 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
               <span key={g.title} style={{ display: 'flex' }}>
                 {gi > 0 && <span style={{ width: 1, background: 'var(--vien-mo)', margin: '4px 0' }} />}
                 <div style={{ padding: '0 9px', display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <div style={{ fontSize: 11, lineHeight: 1.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t3)', paddingLeft: 3 }}>
+                  <div style={{ ...NHAN_NHO_STYLE, letterSpacing: '.08em', color: 'var(--t3)', paddingLeft: 3 }}>
                     {tr(g.title, g.titleEn)}
                   </div>
                   <div style={{ display: 'flex', gap: 1 }}>

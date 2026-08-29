@@ -41,6 +41,7 @@ import { cn } from '@/lib/utils';
 import Tooltip from '@/components/ui/Tooltip';
 import { SectionPreviewOverlay } from './SectionPreviewOverlay';
 import type { CheckpointParam } from '@/components/studio/Checkpoint';
+import { NHAN_NHO } from './nhan-nho';
 
 /** Tên layer người dùng đặt — khoá kỹ thuật (`S-CUT`…) giữ nguyên bên trong, chỉ TÊN đổi. */
 export interface SectionLayerNames {
@@ -170,7 +171,7 @@ export function SectionExtractPanel({ scene, onNhan }: SectionExtractPanelProps)
 
       {/* ── trục ── */}
       <div className="space-y-1.5">
-        <p className="px-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--t4)]">{tr('Hướng', 'Direction')}</p>
+        <p className={`px-0.5 ${NHAN_NHO}`}>{tr('Hướng', 'Direction')}</p>
         <div className="grid grid-cols-3 gap-1.5">
           {TRUC.map((t) => (
             <Tooltip key={t.axis} side="right" label={tr(t.giaiThich[0], t.giaiThich[1])}>
@@ -194,7 +195,7 @@ export function SectionExtractPanel({ scene, onNhan }: SectionExtractPanelProps)
       {/* ── cao độ cắt (chỉ chế độ cắt lớp) ── */}
       {mode === 'section' && (
         <label className="block space-y-1">
-          <span className="px-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--t4)]">
+          <span className={`px-0.5 ${NHAN_NHO}`}>
             {axis === 'z' ? tr('Cắt ở cao độ (mm)', 'Cut at height (mm)') : tr('Cắt tại toạ độ (mm)', 'Cut at coordinate (mm)')}
           </span>
           <input
@@ -214,7 +215,7 @@ export function SectionExtractPanel({ scene, onNhan }: SectionExtractPanelProps)
 
       {/* ── tên layer: người dùng đổi được, KHÔNG chốt theo quy ước 1 bộ hồ sơ ── */}
       <div className="space-y-1.5 border-t border-[var(--border)] pt-3">
-        <p className="px-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--t4)]">{tr('Đặt vào lớp', 'Target layers')}</p>
+        <p className={`px-0.5 ${NHAN_NHO}`}>{tr('Đặt vào lớp', 'Target layers')}</p>
         {(
           [
             ['cut', 'Nét cắt', 'Cut'],
@@ -328,7 +329,7 @@ function ChuaCoNhungPhaiThay() {
   const tr = useT();
   return (
     <div className="space-y-1.5 border-t border-[var(--border)] pt-3">
-      <p className="px-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--t4)]">{tr('Chưa dựng được', 'Not built yet')}</p>
+      <p className={`px-0.5 ${NHAN_NHO}`}>{tr('Chưa dựng được', 'Not built yet')}</p>
       {CHUA_CO.map((c) => (
         <Tooltip key={c.en} side="right" label={tr(c.ly[0], c.ly[1])}>
           <button

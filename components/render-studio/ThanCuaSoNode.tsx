@@ -33,6 +33,7 @@ import { RADIUS } from '@/lib/geometry';
 import { DATA_TYPE_COLORS, type InteriorNodeData } from '@/lib/types';
 import { useControlledEditUi } from '@/lib/render-studio/controlled-edit-ui';
 import SuaCoKiemSoat from './SuaCoKiemSoat';
+import { NHAN_NHO_STYLE } from './nhan-nho';
 
 /**
  * DẢI ĐỊNH NGHĨA KẾT QUẢ — chân cửa sổ. *"Định nghĩa file = kết quả"* (Hoà 15/08): đầu ra của
@@ -51,7 +52,7 @@ export function DaiDinhNghiaKetQua({ nodeId, data }: { nodeId: string; data: Int
   const ds = dinhNghiaKetQua(nodeId, data.defType, def.outputs, data.run.outputs, edges);
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-      <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--t4)' }}>
+      <span style={NHAN_NHO_STYLE}>
         {tr('Cổng ra', 'Output')}
       </span>
       {ds.map((d) => (
@@ -79,7 +80,7 @@ export function DaiDinhNghiaKetQua({ nodeId, data }: { nodeId: string; data: Int
 
 function TieuMuc({ children }: { children: string }) {
   return (
-    <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--t4)', marginBottom: 8 }}>
+    <p style={{ ...NHAN_NHO_STYLE, marginBottom: 8 }}>
       {children}
     </p>
   );

@@ -31,6 +31,7 @@ import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { LevelManagerPanel } from './LevelManagerPanel';
 import { useLevelUi, UNASSIGNED_LEVEL } from './scene3d-ui';
+import { NHAN_NHO } from './nhan-nho';
 
 const UNASSIGNED = UNASSIGNED_LEVEL;
 
@@ -150,9 +151,10 @@ export function Object3DTree() {
               >
                 {isCollapsed ? <ChevronRight size={16} className="text-[var(--t4)]" /> : <ChevronDown size={16} className="text-[var(--t4)]" />}
                 <Layers size={16} className="text-[var(--t4)]" />
-                {/* mock `.sech`: 11px, chữ t4, letter-spacing .07em (không phải tracking-wide mặc định) */}
+                {/* Khuôn nhãn nhỏ dùng chung `NHAN_NHO` (12px, t4) — 29/08 bỏ uppercase + nâng khỏi 11px
+                    theo V-1/V-6; letter-spacing .07em của mock cũ nhường cho tracking-wide của khuôn. */}
                 <span
-                  className="flex-1 truncate text-[11px] font-bold uppercase leading-[1.6] tracking-[0.07em] text-[var(--t4)]"
+                  className={`flex-1 truncate ${NHAN_NHO}`}
                   style={{ opacity: levelHidden ? 0.45 : 1 }}
                 >
                   {isUnassigned ? tr('Chưa xếp tầng', 'Unassigned') : storeyKey}
