@@ -41,7 +41,7 @@ export default function SharePage({ params }: { params: { token: string } }) {
         {/* Logo IF phương án "có khung" — đồng bộ với Header/MobileMenu/login (19/07). */}
         <IFLogo size={26} variant="framed" className="shrink-0 text-[var(--t1)]" />
         <span className="text-sm font-medium text-[var(--t1)]">{data.name}</span>
-        <span className="text-xs text-[var(--t4)]">· chia sẻ bởi {data.owner}</span>
+        <span className="text-xs leading-normal text-[var(--t4)]">· chia sẻ bởi {data.owner}</span>
         <div className="flex-1" />
         <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-300">
           Chỉ xem

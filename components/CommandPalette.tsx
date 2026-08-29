@@ -234,7 +234,7 @@ export function CommandPalette() {
 
         <div ref={listRef} className="max-h-[52vh] overflow-y-auto py-1.5">
           {grouped.length === 0 && (
-            <p className="px-4 py-6 text-center text-xs text-[var(--t5)]">Không có kết quả cho “{query}”.</p>
+            <p className="px-4 py-6 text-center text-xs leading-normal text-[var(--t5)]">Không có kết quả cho “{query}”.</p>
           )}
           {grouped.map(({ group, items }) => (
             <div key={group} className="mb-1">

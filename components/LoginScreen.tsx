@@ -267,7 +267,7 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
             <button
               type="button"
               onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-              className="text-xs text-[var(--t4)] transition-colors hover:text-[var(--t2)]"
+              className="text-xs leading-normal text-[var(--t4)] transition-colors hover:text-[var(--t2)]"
             >
               {authMode === 'login' ? 'Chưa có tài khoản? Đăng ký' : 'Đã có tài khoản? Đăng nhập'}
             </button>
@@ -275,7 +275,7 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
               <button
                 type="button"
                 onClick={onReplayIntro}
-                className="text-xs text-[var(--t5)] transition-colors hover:text-[var(--t3)]"
+                className="text-xs leading-normal text-[var(--t5)] transition-colors hover:text-[var(--t3)]"
               >
                 Xem lại intro
               </button>

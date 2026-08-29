@@ -483,7 +483,7 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
       <div className="grid h-[100dvh] place-items-center bg-[var(--bg)] px-6 text-center">
         <div className="max-w-sm">
           <p className="text-sm text-[var(--t2)]">Chưa kết nối được máy chủ · Server unreachable</p>
-          <p className="mt-2 text-xs text-[var(--t4)]">
+          <p className="mt-2 text-xs leading-normal text-[var(--t4)]">
             Phiên đăng nhập của bạn vẫn còn — không cần đăng nhập lại.
           </p>
           <button
@@ -491,7 +491,7 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
               setAuthOffline(false);
               void checkAuth();
             }}
-            className="mt-4 rounded-[10px] border border-[var(--border)] px-4 py-2 text-xs text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+            className="mt-4 rounded-[10px] border border-[var(--border)] px-4 py-2 text-xs leading-normal text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
           >
             Thử lại
           </button>

@@ -413,7 +413,7 @@ export function SmartSelectModal() {
             </div>
 
             {!sourceImage ? (
-              <div className="flex items-center gap-2 px-4 py-8 text-xs text-[var(--t3)]">
+              <div className="flex items-center gap-2 px-4 py-8 text-xs leading-normal text-[var(--t3)]">
                 <AlertTriangle size={14} className="text-amber-400" />
                 Nối ảnh vào input <b>Image</b> của node trước (Import Image hoặc output của node khác).
               </div>

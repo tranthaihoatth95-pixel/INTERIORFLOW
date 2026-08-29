@@ -353,7 +353,7 @@ function TasksRow() {
     <Section label={`Việc${running.length + queued.length ? ` · ${running.length + queued.length}` : ''}`}>
       <div className="overflow-hidden rounded-[14px] border border-[var(--border)]">
         {ordered.length === 0 && (
-          <p className="px-3 py-5 text-center text-xs text-[var(--t4)]">Chưa có lượt chạy nào — bấm ▶ trên node hoặc &quot;Kết xuất&quot; trên thẻ.</p>
+          <p className="px-3 py-5 text-center text-xs leading-normal text-[var(--t4)]">Chưa có lượt chạy nào — bấm ▶ trên node hoặc &quot;Kết xuất&quot; trên thẻ.</p>
         )}
         {ordered.map((r: FlowRun) => {
           const total = r.nodeIds.length;

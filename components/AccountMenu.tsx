@@ -74,7 +74,7 @@ export function AccountMenu({ open, anchorRect, onDismiss, menuRef }: Props) {
               className="nen-mo-panel z-[80] w-52 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
             >
               <div ref={menuRef} style={{ display: 'contents' }}>
-                <div className="truncate px-2 py-1.5 text-xs text-[var(--t3)]" title={`${user.name} · ${user.email}`}>
+                <div className="truncate px-2 py-1.5 text-xs leading-normal text-[var(--t3)]" title={`${user.name} · ${user.email}`}>
                   {user.name}
                 </div>
                 {/* Gom từ MoreMenu (⋯ đã bỏ khỏi header, Hoà chốt 03/08 "một cửa cho chuyện

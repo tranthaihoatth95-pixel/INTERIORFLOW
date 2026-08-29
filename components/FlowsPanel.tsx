@@ -101,7 +101,7 @@ export function FlowsPanel() {
 
       <div className="flex-1 space-y-1.5 overflow-y-auto p-2.5">
         {flows.length === 0 && (
-          <p className="px-1 pt-4 text-center text-xs text-[var(--t5)]">Chưa có flow nào.</p>
+          <p className="px-1 pt-4 text-center text-xs leading-normal text-[var(--t5)]">Chưa có flow nào.</p>
         )}
         {flows.map((f) => (
           <motion.div
@@ -118,7 +118,7 @@ export function FlowsPanel() {
           >
             <div className="flex items-center gap-1.5">
               <button
-                className="min-w-0 flex-1 truncate text-left text-xs font-medium text-[var(--t1)]"
+                className="min-w-0 flex-1 truncate text-left text-xs leading-normal font-medium text-[var(--t1)]"
                 onClick={() => openFlow(f.id)}
                 title="Mở flow"
               >

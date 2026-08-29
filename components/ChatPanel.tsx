@@ -115,7 +115,7 @@ export function ChatPanel() {
       {/* messages */}
       <div className="flex-1 space-y-2 overflow-y-auto px-3 py-3">
         {messages.length === 0 && (
-          <p className="pt-6 text-center text-xs text-[var(--t5)]">Chưa có tin nhắn — chào team đi 👋</p>
+          <p className="pt-6 text-center text-xs leading-normal text-[var(--t5)]">Chưa có tin nhắn — chào team đi 👋</p>
         )}
         {messages.map((m) => (
           <motion.div

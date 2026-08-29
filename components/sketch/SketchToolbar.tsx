@@ -88,7 +88,7 @@ export function SketchToolbar({
         </label>
       </div>
 
-      <label className="flex items-center gap-2 text-xs text-[var(--t3)]">
+      <label className="flex items-center gap-2 text-xs leading-normal text-[var(--t3)]">
         Nét
         <input
           type="range"
@@ -123,7 +123,7 @@ export function SketchToolbar({
         <motion.button
           {...pressable}
           onClick={onClear}
-          className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
+          className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2.5 py-1.5 text-xs leading-normal text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
         >
           <Trash2 size={16} /> Xoá hết
         </motion.button>

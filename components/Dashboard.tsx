@@ -216,7 +216,7 @@ export function Dashboard({
       <div className="nen-mo-header flex h-14 shrink-0 items-center gap-3 border-b border-[var(--border)] px-4 sm:px-6">
         <FolderKanban size={18} className="text-[var(--accent)]" />
         <h1 className="text-base font-semibold tracking-tight text-[var(--t1)]">Tổng quan</h1>
-        <span className="hidden text-xs text-[var(--t4)] sm:block">Dự án · Team · Hoạt động</span>
+        <span className="hidden text-xs leading-normal text-[var(--t4)] sm:block">Dự án · Team · Hoạt động</span>
         <div className="flex-1" />
         {/* Cover (màn ngoài) = CHỈ XEM → ẩn nút thao tác, thay bằng gợi ý mở màn trong. */}
         {coverMode ? (
@@ -263,7 +263,7 @@ export function Dashboard({
               {...pressable}
               onClick={onNewProject}
               disabled={creating}
-              className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)] disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-3 py-1.5 text-xs leading-normal font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)] disabled:opacity-50"
             >
               {creating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
               Dự án mới

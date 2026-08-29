@@ -159,7 +159,7 @@ export function AnnotateModal() {
 
         {/* cảnh báo còn thay đổi chưa lưu — chỉ hiện sau lần Escape/X đầu tiên khi dirty */}
         {confirmClose && (
-          <div className="flex items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-600 dark:text-amber-400">
+          <div className="flex items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs leading-normal text-amber-600 dark:text-amber-400">
             <AlertTriangle size={18} className="shrink-0" />
             <span className="flex-1">Còn thay đổi chưa lưu — nhấn Escape lần nữa để thoát, hoặc chọn bên dưới.</span>
             <button
@@ -303,7 +303,7 @@ export function AnnotateModal() {
             {...pressable}
             onClick={save}
             disabled={!sourceImage || !ready}
-            className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-3.5 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)] disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-3.5 py-1.5 text-xs leading-normal font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)] disabled:opacity-40"
           >
             <Check size={16} /> Lưu
           </motion.button>

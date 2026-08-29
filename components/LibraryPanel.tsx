@@ -120,7 +120,7 @@ export function LibraryPanel() {
         {/* Hàng 1: tìm + [+] */}
         <div className="flex gap-1.5">
           <input
-            className="min-w-0 flex-1 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
+            className="min-w-0 flex-1 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs leading-normal text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
             placeholder="Tìm: tên · tag · mô tả · màu (vd 'gỗ ấm', 'be tong', 'xanh')…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -145,7 +145,7 @@ export function LibraryPanel() {
                   value={usage}
                   onChange={(e) => setUsage(e.target.value)}
                   title="Phân loại ảnh — Tự nhận: app tự nhận loại (dàn trang / không gian / bản vẽ / vật liệu / furniture). Hoặc chọn tay để ép."
-                  className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] outline-none transition-colors focus:border-[var(--accent-ring)]"
+                  className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs leading-normal text-[var(--t1)] outline-none transition-colors focus:border-[var(--accent-ring)]"
                 >
                   <option value="auto">⚡ Tự nhận loại</option>
                   {USAGES.map((u) => (
@@ -155,7 +155,7 @@ export function LibraryPanel() {
                   ))}
                 </select>
                 <input
-                  className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
+                  className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs leading-normal text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
                   placeholder="Tag khi upload: NCC, mã, style…"
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
@@ -261,7 +261,7 @@ export function LibraryPanel() {
               setCat(e.target.value);
             }
           }}
-          className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] outline-none transition-colors focus:border-[var(--accent-ring)]"
+          className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs leading-normal text-[var(--t1)] outline-none transition-colors focus:border-[var(--accent-ring)]"
         >
           <option value="__all__">Tất cả (tìm xuyên mọi category)</option>
           {orderedCats.map((c) => (

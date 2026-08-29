@@ -141,7 +141,7 @@ export function SketchStudioModal() {
               <motion.button
                 {...pressable}
                 onClick={save}
-                className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-3.5 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)]"
+                className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-3.5 py-1.5 text-xs leading-normal font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)]"
               >
                 <Check size={16} /> Lưu vào node
               </motion.button>

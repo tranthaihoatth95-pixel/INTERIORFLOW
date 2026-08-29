@@ -344,7 +344,7 @@ export function LoginForm({
             >
               {remember && <Check size={14} strokeWidth={3} style={{ color: 'var(--bg)' }} />}
             </span>
-            <span className="text-xs text-[var(--t3)]">
+            <span className="text-xs leading-normal text-[var(--t3)]">
               {en ? 'Keep me signed in' : 'Ghi nhớ đăng nhập'}
             </span>
           </label>
@@ -357,7 +357,7 @@ export function LoginForm({
                   : 'Không có luồng reset qua email — nhắn admin để đặt lại mật khẩu.',
               )
             }
-            className="text-xs text-[var(--t4)] transition-colors hover:text-[var(--t2)]"
+            className="text-xs leading-normal text-[var(--t4)] transition-colors hover:text-[var(--t2)]"
           >
             {en ? 'Forgot password?' : 'Quên mật khẩu?'}
           </button>

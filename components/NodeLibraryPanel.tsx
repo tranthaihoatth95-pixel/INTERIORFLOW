@@ -256,7 +256,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
       <div className="space-y-1.5 p-2.5">
         <input
           autoFocus={panel === 'search'}
-          className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
+          className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs leading-normal text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
           placeholder={tr('Tìm khối…', 'Search blocks…')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -539,7 +539,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
             className="nen-mo-panel z-20 flex w-64 flex-col border-r border-[var(--border)]"
           >
             <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2.5">
-              <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--t3)]">
+              <span className="flex-1 text-xs leading-normal font-semibold uppercase tracking-wider text-[var(--t3)]">
                 {tr('Thư viện khối', 'Block library')}
               </span>
               <motion.button

@@ -229,7 +229,7 @@ export function WarpCornersModal() {
             </div>
 
             {!overlaySrc ? (
-              <div className="flex items-center gap-2 px-4 py-8 text-xs text-[var(--t3)]">
+              <div className="flex items-center gap-2 px-4 py-8 text-xs leading-normal text-[var(--t3)]">
                 <AlertTriangle size={14} className="text-amber-400" />
                 Nối ảnh cần warp (vd pattern) vào input <b>Image</b> trước. Nối thêm ảnh phối cảnh vào
                 input <b>Base</b> để canh góc trực tiếp trên tường.

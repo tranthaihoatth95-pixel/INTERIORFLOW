@@ -896,7 +896,7 @@ export function FlowCanvas() {
             <button
               type="button"
               onClick={() => setPanel('library')}
-              className="pointer-events-auto mt-3 rounded-full border border-[var(--accent-ring)] bg-[var(--accent-soft)] px-4 py-1.5 text-xs font-semibold text-[var(--accent)]"
+              className="pointer-events-auto mt-3 rounded-full border border-[var(--accent-ring)] bg-[var(--accent-soft)] px-4 py-1.5 text-xs leading-normal font-semibold text-[var(--accent)]"
             >
               Mở Thư viện khối
             </button>
