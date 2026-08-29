@@ -34,6 +34,7 @@ import { Lock, CornerDownLeft } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { useLockScreen, startLockGuard, getLockIdleMinutes, canMatKhau, LOCK_REQUEST_EVENT } from '@/lib/lockscreen';
 import { danhNgonNgauNhien, type DanhNgon } from '@/lib/lockscreen-danh-ngon';
+import { hinhChoCau } from '@/lib/lockscreen-hinh-the';
 import { getLastUserId } from '@/lib/resume';
 import { TheXacThucLai } from '@/components/auth/TheXacThucLai';
 import { useLang, useT } from '@/lib/i18n';
@@ -146,7 +147,10 @@ export function LockScreen() {
     if (!locked) return;
     setLine(dailyLine());
     setCau(danhNgonNgauNhien());
-    setMode('mat-khoa');
+    // Khoá RẢNH: thẻ TỰ LẬT sang mặt danh ngôn — Hoà 29/08 *"lúc khoá nó tự động lật, không cần
+    // nút"*. Bắt bấm một nút chỉ để xem mặt sau là dựng một cửa không ai xin. Khoá TAY thì vẫn
+    // đứng ở mặt khoá: mặt sau bên đó là ô mật khẩu, tự lật vào đó là ép người dùng gõ.
+    setMode(canMatKhau(useLockScreen.getState().lyDo) ? 'mat-khoa' : 'xac-thuc');
     // Đưa tiêu điểm vào nút "Mở lại" — vừa để Enter chạy được ngay (bộ chặn phím toàn cục của
     // AppChrome chỉ chừa lối cho phần tử BÊN TRONG [data-lockscreen-root]), vừa đúng trợ năng.
     const t = setTimeout(() => nutMoLai.current?.focus(), 80);
@@ -229,17 +233,6 @@ export function LockScreen() {
                   <CornerDownLeft size={18} className="text-[var(--t3)]" aria-hidden />
                 </button>
 
-                {/* Lật xem danh ngôn — chỉ có ở khoá RẢNH; khoá TAY thì mặt sau là ô mật khẩu,
-                    không được chiếm chỗ của nó. */}
-                {!doiMatKhau && (
-                  <button
-                    type="button"
-                    onClick={() => setMode('xac-thuc')}
-                    className="mt-2.5 rounded-[var(--r-full,999px)] px-3 py-1 text-[11px] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-                  >
-                    {tr('Lật thẻ', 'Flip the card')}
-                  </button>
-                )}
               </div>
 
               {/* ── MẶT XÁC THỰC (mặt sau, lật 180° trục Y) ─────────────────────────────── */}
@@ -262,7 +255,7 @@ export function LockScreen() {
                       onHuy={() => setMode('mat-khoa')}
                     />
                   ) : (
-                    cau && <TheDanhNgon cau={cau} en={lang === 'en'} onQuayLai={() => setMode('mat-khoa')} onMoLai={unlock} />
+                    cau && <TheDanhNgon cau={cau} en={lang === 'en'} onMoLai={unlock} />
                   ))}
               </div>
             </motion.div>
@@ -288,57 +281,99 @@ export function LockScreen() {
  *   · **Cạnh răng cưa như con tem** — mượn đúng ngôn ngữ Hoà đưa trong ảnh tham chiếu; nó nói
  *     "vật sưu tầm, mỗi lần một cái khác", đúng bản chất bốc ngẫu nhiên.
  */
-function TheDanhNgon({ cau, en, onQuayLai, onMoLai }: { cau: DanhNgon; en: boolean; onQuayLai: () => void; onMoLai: () => void }) {
+function TheDanhNgon({ cau, en, onMoLai }: { cau: DanhNgon; en: boolean; onMoLai: () => void }) {
   const tr = (v: string, e: string) => (en ? e : v);
+  const h = hinhChoCau(cau.en);
+  const W = 400;
+  const H = 250;
+
   return (
     <div
-      className="w-[min(92vw,430px)] px-6 py-8 text-center sm:px-9 sm:py-10"
+      className="w-[min(92vw,430px)] overflow-hidden text-center"
       style={{
         background: 'var(--panel)',
         border: '1px solid var(--border)',
-        borderRadius: 20,
-        // Răng cưa mép tem — vẽ bằng mask, không cần ảnh.
-        WebkitMaskImage:
-          'radial-gradient(circle 5px at 50% 0, transparent 4.5px, #000 5px), radial-gradient(circle 5px at 50% 100%, transparent 4.5px, #000 5px)',
-        WebkitMaskSize: '16px 100%, 16px 100%',
-        WebkitMaskRepeat: 'repeat-x, repeat-x',
-        WebkitMaskPosition: 'top, bottom',
-        WebkitMaskComposite: 'source-in',
-        maskComposite: 'intersect',
+        borderRadius: 22,
+        boxShadow: '0 24px 60px -24px rgba(0,0,0,0.34), 0 2px 8px -2px rgba(0,0,0,0.12)',
       }}
     >
-      <blockquote className="m-0">
-        <p
-          className="m-0 font-medium text-[var(--t1)]"
-          style={{ fontSize: 'clamp(18px, 3.6vw, 24px)', lineHeight: 1.36, letterSpacing: '-0.012em', textWrap: 'pretty' }}
-        >
-          “{en ? cau.en : cau.vi}”
-        </p>
-        <footer className="mt-6">
-          <div className="text-[13px] font-semibold text-[var(--t1)]">{cau.ai}</div>
-          <div className="mt-0.5 text-[11.5px] text-[var(--t3)]">{cau.vai}</div>
-          <div className="mx-auto mt-3 max-w-[300px] text-[10.5px] leading-snug text-[var(--t3)] opacity-80">{cau.nguon}</div>
-          {cau.luuY && (
-            <div className="mx-auto mt-2 max-w-[300px] text-[10.5px] leading-snug text-[var(--t3)] opacity-70">{cau.luuY}</div>
-          )}
-        </footer>
-      </blockquote>
+      {/* ── HÌNH BỌC KÍNH ────────────────────────────────────────────────────────────────
+          Hoà 29/08: *"hình được bọc trong kính là đẹp"*. Kính ở đây dựng bằng BA lớp chồng,
+          không dùng `backdrop-filter`: ① vệt loé chéo (ánh sáng trượt trên mặt kính) ② viền
+          trong sáng ở mép trên + tối ở mép dưới (độ dày của tấm kính) ③ bóng đổ nhẹ vào trong.
+          Cố ý KHÔNG dùng `backdrop-filter`: ở đây không có gì phía sau để làm mờ — hình nằm
+          ngay dưới kính. Dùng nó chỉ tốn GPU mà mắt không thấy khác. */}
+      <div className="relative">
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-hidden style={{ display: 'block' }}>
+          <rect width={W} height={H} fill={h.troi} />
+          {/* vầng tròn — mặt trời hoặc mặt trăng, tuỳ bảng màu */}
+          <circle cx={h.vangX * W} cy={h.vangY * H} r={H * 0.115} fill={h.vang} />
+          {/* đường chân trời — nét mảnh, đúng ngôn ngữ bản vẽ */}
+          <line x1="0" y1={H * 0.54} x2={W} y2={H * 0.54} stroke={h.net} strokeWidth="0.8" opacity="0.5" />
+          {/* Các lớp mặt phẳng, vẽ từ XA (cao trên màn) tới GẦN (thấp dưới màn) — lớp gần vẽ
+              SAU nên che phần dưới của lớp xa, chừa lại đúng một dải: đó là cách chồng lớp cho
+              ra chiều sâu. Bản đầu tôi `reverse()` nên vẽ ngược, lớp cao nhất vẽ cuối và trùm
+              hết mọi lớp dưới ⇒ hình phẳng lì, chỉ thấy MỘT bóng. Hoà nhìn ảnh là thấy ngay. */}
+          {h.lop.map((l, i) => {
+            const y = H * (1 - l.cao);
+            const dx = l.lech * W * 0.5;
+            return (
+              <path
+                key={i}
+                d={`M ${-W * 0.2 + dx} ${H} L ${-W * 0.2 + dx} ${y + H * 0.09} L ${W * 0.34 + dx} ${y} L ${W * 0.78 + dx} ${y + H * 0.07} L ${W * 1.2 + dx} ${y - H * 0.02} L ${W * 1.2 + dx} ${H} Z`}
+                fill={l.mau}
+              />
+            );
+          })}
+          <rect y={H * 0.965} width={W} height={H * 0.035} fill={h.dat} />
+        </svg>
 
-      <div className="mt-7 flex items-center justify-center gap-2">
+        {/* ① vệt loé chéo */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(108deg, rgba(255,255,255,0.46) 0%, rgba(255,255,255,0.16) 18%, rgba(255,255,255,0.02) 34%, rgba(255,255,255,0) 58%, rgba(255,255,255,0.07) 82%, rgba(255,255,255,0.26) 100%)',
+          }}
+        />
+        {/* ② + ③ độ dày kính: mép trên sáng, mép dưới tối, bóng đổ vào trong */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            boxShadow:
+              'inset 0 1.5px 0 rgba(255,255,255,0.72), inset 1px 0 0 rgba(255,255,255,0.30), inset -1px 0 0 rgba(255,255,255,0.30), inset 0 -1px 0 rgba(0,0,0,0.28), inset 0 -18px 30px -20px rgba(0,0,0,0.5), inset 0 14px 24px -20px rgba(255,255,255,0.5)',
+          }}
+        />
+      </div>
+
+      {/* ── CHỮ ──────────────────────────────────────────────────────────────────────── */}
+      <div className="px-6 pb-7 pt-6 sm:px-9">
+        <blockquote className="m-0">
+          <p
+            className="m-0 font-medium text-[var(--t1)]"
+            style={{ fontSize: 'clamp(17px, 3.4vw, 22px)', lineHeight: 1.38, letterSpacing: '-0.012em', textWrap: 'pretty' }}
+          >
+            “{en ? cau.en : cau.vi}”
+          </p>
+          <footer className="mt-5">
+            <div className="text-[13px] font-semibold text-[var(--t1)]">{cau.ai}</div>
+            <div className="mt-0.5 text-[11.5px] text-[var(--t3)]">{cau.vai}</div>
+            <div className="mx-auto mt-2.5 max-w-[300px] text-[10.5px] leading-snug text-[var(--t3)] opacity-80">
+              {cau.nguon}
+            </div>
+          </footer>
+        </blockquote>
+
+        {/* Nút DUY NHẤT, nằm GIỮA — Hoà 29/08: *"chữ mở lại nằm giữa"*. Không có nút "lật lại":
+            mặt trước chỉ còn đồng hồ, quay về đó không cho người dùng thêm việc gì làm được. */}
         <button
           type="button"
           onClick={onMoLai}
-          className="whitespace-nowrap rounded-[var(--r-full,999px)] px-5 py-2 text-[12.5px] font-medium transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+          autoFocus
+          className="mx-auto mt-7 block whitespace-nowrap rounded-[var(--r-full,999px)] px-7 py-2.5 text-[13px] font-medium transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
           style={{ background: 'var(--accent)', color: 'var(--on-accent, #fff)' }}
         >
           {tr('Mở lại', 'Resume')}
-        </button>
-        <button
-          type="button"
-          onClick={onQuayLai}
-          className="whitespace-nowrap rounded-[var(--r-full,999px)] px-4 py-2 text-[12px] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-        >
-          {tr('Lật lại', 'Flip back')}
         </button>
       </div>
     </div>
