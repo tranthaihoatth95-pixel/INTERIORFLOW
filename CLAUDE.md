@@ -22,6 +22,7 @@ Repo này có ~700 tệp tài liệu. Quét lại từ đầu mỗi phiên là c
 |---|---|---|---|
 | **0a** | `docs/IF-KIEN-TRUC-OS.md` | **IF LÀ GÌ** — Local-first Design OS · *Own your data · workflow · memory · Replace your AI*. Trên mọi chốt khác | **luôn luôn, đầu tiên** |
 | **0b** | `~/PROJECT/CLAUDE.md` §3 + §5 | **LÀM VIỆC VỚI HOÀ THẾ NÀO** — *"Hoà nói, Claude ghi hộ, không bắt Hoà điền form"* · *"không đề xuất chung chung, phải trích được nguồn"*. **Hoà tự viết 26/08.** Đây là bản canonical — cấm đẻ bản thứ hai trong repo (luật 6) | **luôn luôn**, ngoài repo, đọc chỉ-đọc |
+| **0d** | `node scripts/moc.mjs inbox <lane>` | **TUYẾN KHÁC VỪA GIAO GÌ** — hộp thư giữa các lane (Codex ↔ Claude ↔ mọi công cụ ghi được tệp). ⚠️ **Nó KHÔNG tự đánh thức ai.** Phiếu nằm im tới khi có người chạy lệnh. Đo 29/08: một phiếu tới sau lần kiểm 5 phút và suýt nằm lại hết phiên; phiếu trước đó chỉ được tìm thấy vì `git status` tình cờ báo có tệp lạ bị sửa | **luôn luôn**, một lệnh, vài giây |
 | **0c** | `~/PROJECT/INBOX.md` | **Hoà vừa nhắn gì** — hộp thư anh tự dựng 26/08 (*"chỗ đổ ý nghĩ, đừng nghĩ nó thuộc đâu"*). Anh gõ một dòng, phiên sau thấy, không phải dán lại | **luôn luôn**, chỉ-đọc, vài giây |
 | 1 | `docs/control/IF-CURRENT-STATE.md` | đang ở đâu · runtime nào · **việc kế tiếp chính xác** | **luôn luôn**, nó nhỏ |
 | 2 | `docs/control/IF-CANONICAL.md` | IF **LÀ GÌ** · luật bền · ai quyết cái gì | **luôn luôn** |
