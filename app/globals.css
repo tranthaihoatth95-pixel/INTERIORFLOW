@@ -463,7 +463,15 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  letter-spacing: -0.011em;
+  /* 🔴 SỬA 29/08 — TỪNG LÀ `-0.011em`, và đó là vi phạm luật V-3 trên TOÀN APP.
+     Luật: `.claude/skills/if-design/knowledge/typography-vietnamese.md:28-30` —
+     *"CẤM letter-spacing ÂM trên chữ Việt. Dấu chồng làm hộp bao quang học rộng hơn thân glyph;
+     kéo âm ⇒ dấu chữ này đè thân chữ kia (ườ ẫu ợi hỏng trước tiên). Sàn là 0."*
+     Bóp ngang là mẹo quen tay của chữ Latin — chữ Latin không có dấu chồng nên bóp được.
+     Tiếng Việt thì có, nên cùng một mẹo lại thành lỗi.
+     Vì sao nó sống lâu: nó nằm ở `body`, KHÔNG ở màn nào cả. Soi từng màn thì không màn nào
+     có lỗi; lỗi ở chỗ mọi màn cùng thừa kế. Đây là loại lỗi chỉ lộ ra khi soi CÁI CHUNG. */
+  letter-spacing: 0;
   /* Chuyển sáng/tối mượt: đổi cả nền + màu chữ theo nhịp Apple */
   transition: background-color var(--nhip-ngu-canh) var(--ease-apple),
     color var(--nhip-ngu-canh) var(--ease-apple);

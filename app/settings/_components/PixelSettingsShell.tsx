@@ -199,7 +199,11 @@ export function PixelSettingsShell() {
           )}
 
           <div id="group-advanced" style={{ marginTop: 32, maxWidth: 1000, scrollMarginTop: 16 }}>
-            <h2 style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--t2)' }}>Nâng cao</h2>
+            {/* V-1 cấm CHỮ HOA TOÀN PHẦN trên chuỗi CÓ DẤU ("Nâng cao" có â) — nhiều bộ chữ
+                cắt mất dấu ở dạng hoa. Rail đã tự gỡ `uppercase` ngày 26/08 vì đúng lý do này;
+                màn Cài đặt thì sót. Nhấn bằng ĐỘ ĐẬM + cỡ, không bằng chữ hoa.
+                `letterSpacing` cũng bỏ: giãn chữ là mẹo đi kèm chữ hoa, hết hoa thì hết cần. */}
+            <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--t2)' }}>Nâng cao</h2>
             <p style={{ margin: '4px 0 12px', fontSize: 11, color: 'var(--t2)' }}>
               Chưa có trong bản mẫu pixel — giữ nguyên tính năng cũ, chưa đổi giao diện.
             </p>
