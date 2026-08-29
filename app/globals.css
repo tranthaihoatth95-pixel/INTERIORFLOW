@@ -1870,10 +1870,12 @@ body[data-if-library-open='true'] .if-bottombar {
   background: var(--t1);
   color: var(--bg);
   border: 1px solid var(--border);
-  font-size: 11.5px;
+  /* V-6 cỡ sàn 12px · V-3 letter-spacing không âm · V-2 line-height ≥1.5 (sửa 29/08, IF-305 Ổ 1).
+     Trước: 11.5px / -0.005em / 1.3 — phạm cả ba luật chữ Việt cùng lúc trên tooltip DÙNG CHUNG. */
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: -0.005em;
-  line-height: 1.3;
+  letter-spacing: 0;
+  line-height: 1.5;
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
@@ -1940,7 +1942,8 @@ body[data-if-library-open='true'] .if-bottombar {
   gap: 10px;
 }
 .if-tooltip-title {
-  font-size: 11.5px;
+  /* V-6 (29/08): 11.5px → 12px. Tiêu đề tooltip là chữ Việt có dấu. */
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.5;
 }
@@ -1961,7 +1964,9 @@ body[data-if-library-open='true'] .if-bottombar {
 .if-tooltip-desc {
   display: block;
   margin-top: 3px;
-  font-size: 11px;
+  /* V-6 (29/08): 11px → 12px. Câu giải nghĩa là chữ Việt nhiều dòng, dưới sàn thì không
+     phân biệt được hỏi ↔ ngã. Đã có opacity 0.78 lo phần phân cấp, không cần nhỏ hơn. */
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.5;
   opacity: 0.78;
