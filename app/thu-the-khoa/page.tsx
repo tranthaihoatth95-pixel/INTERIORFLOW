@@ -18,7 +18,7 @@
  */
 
 import { lockScreenNow } from '@/lib/lockscreen';
-import { LockScreen, docKieuKhoa, ghiKieuKhoa, type KieuKhoa } from '@/components/studio/LockScreen';
+import { LockScreen } from '@/components/studio/LockScreen';
 import { DANH_NGON } from '@/lib/lockscreen-danh-ngon';
 
 export default function ThuTheKhoa() {
@@ -32,28 +32,9 @@ export default function ThuTheKhoa() {
         Hai mức khoá, hai hành vi khác hẳn nhau. Bấm để xem mặt thật, không phải bản mô phỏng.
       </p>
 
-      {/* HAI HƯỚNG Hoà đưa 29/08 — chọn kiểu rồi bấm khoá để xem mặt thật. Lựa chọn nhớ lại
-          qua `localStorage`, đúng trục Reach = browser-local (đây là tiện nghi thử nghiệm của
-          MỘT máy, không phải cài đặt đi theo tài khoản). */}
-      <div className="mt-8 flex flex-wrap items-center gap-2">
-        {(['A', 'D'] as KieuKhoa[]).map((k) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => { ghiKieuKhoa(k); location.reload(); }}
-            className="rounded-[var(--r-full,999px)] px-4 py-2 text-[13px] transition-colors"
-            style={
-              docKieuKhoa() === k
-                ? { background: 'var(--accent)', color: 'var(--on-accent, #fff)' }
-                : { background: 'var(--panel)', border: '1px solid var(--border)', color: 'var(--t2)' }
-            }
-          >
-            {k === 'A' ? 'Hướng A · thẻ hai nửa bọc kính' : 'Hướng D · nền động'}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      {/* KHÔNG còn nút chọn kiểu: lý do khoá đã quyết mặt nào (Hoà chốt 29/08).
+          Rảnh tay → nền động phủ màn · Chủ động → thẻ lật ra mật khẩu. */}
+      <div className="mt-8 grid gap-3 sm:grid-cols-2">
         <button
           type="button"
           onClick={() => lockScreenNow('ranh')}
@@ -63,7 +44,7 @@ export default function ThuTheKhoa() {
           <div className="text-[14px] font-semibold text-[var(--t1)]">Khoá rảnh tay</div>
           <div className="mt-1.5 text-[12px] leading-snug text-[var(--t2)]">
             Máy tự khoá sau 15 phút không thao tác. <b>Không hỏi mật khẩu</b> — một nút là vào.
-            Lật thẻ ra mặt sau để đọc một câu về thiết kế.
+            Mặt hiện ra là <b>nền động</b> phủ cả màn, kèm một câu về thiết kế.
           </div>
         </button>
 

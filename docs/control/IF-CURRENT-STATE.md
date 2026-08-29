@@ -62,7 +62,14 @@ ghép đôi độc quyền → ĐẢO TRIM → ĐẢO ARRAY → gộp chùm.
 
 **② GPL ra khỏi bộ cài, chặn bằng CẤU TRÚC.** `next.config.mjs:18` alias
 `@mlightcad/libredwg-web` → `lib/cad/dwg-engine-tat.ts` khi cờ tắt ⇒ webpack không đọc tới gói.
-Dựng sạch từ HEAD, tự kiểm: **0 tệp .wasm · 0 tệp mang tên · 0 tệp mang mã GPL · cổng exit 0**.
+Dựng sạch từ HEAD, tự kiểm — **chạy lại được, đừng tin con số suông**:
+```
+rm -rf .next && npx next build && npx electron-builder --mac --dir
+find .next -name "*.wasm" | wc -l                                          # → 0
+find dist-installer/mac-arm64 -iname "*libredwg*" -o -iname "*mlightcad*"   # → rỗng
+grep -rl "@mlightcad/libredwg-web/wasm\|static/media/libredwg-web" dist-installer/mac-arm64 --include="*.js" | wc -l   # → 0
+node scripts/soi-giay-phep-phat-hanh.mjs --chan                            # → exit 0
+```
 Bật cờ lên dựng lại → mã quay lại đúng **9.399.820 byte × 2** ⇒ **cờ không nói dối**.
 ⛔ **CHƯA ĐƯỢC GỌI LÀ "SẠCH"**: thiếu SBOM · biên nhận artifact · biên nhận giấy phép. Nhãn đúng
 là **"quét sạch, chưa có biên nhận"**. Đã giao lane 07 (`HO-20260829110917-0a6369e3941f`).

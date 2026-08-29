@@ -35,17 +35,20 @@ import { useFlowStore } from '@/lib/store';
 import { useLockScreen, startLockGuard, getLockIdleMinutes, canMatKhau, LOCK_REQUEST_EVENT } from '@/lib/lockscreen';
 import { danhNgonNgauNhien, type DanhNgon } from '@/lib/lockscreen-danh-ngon';
 
-/** Hai hướng Hoà đưa ra 29/08, giữ CẢ HAI trong mã cho tới khi anh chốt một.
- *  `A` — thẻ hai nửa: ảnh bọc kính ở trên, chữ bọc kính nền TRONG SUỐT ở dưới.
- *  `D` — nền động "nắng đi qua phòng" phủ cả màn, không có thẻ. */
-export type KieuKhoa = 'A' | 'D';
-const KHOA_KIEU = 'interiorflow.kieuManKhoa';
-export function docKieuKhoa(): KieuKhoa {
-  try { return localStorage.getItem(KHOA_KIEU) === 'D' ? 'D' : 'A'; } catch { return 'A'; }
-}
-export function ghiKieuKhoa(k: KieuKhoa): void {
-  try { localStorage.setItem(KHOA_KIEU, k); } catch { /* riêng tư/chặn — chỉ mất tiện nghi */ }
-}
+/* HAI HƯỚNG, HAI MỨC KHOÁ — Hoà chốt 29/08: *"giữ cả 2 vì một cái rảnh tay một cái chủ động,
+ * liên quan gì nhau"*. Đúng, và nó bỏ luôn được cái nút chọn tôi vừa dựng: LÝ DO KHOÁ đã quyết
+ * mặt nào rồi, không cần hỏi người dùng thêm một câu nữa.
+ *
+ *   khoá RẢNH  (máy tự khoá, người dùng không xin gì)  →  D · NỀN ĐỘNG phủ cả màn.
+ *              Không có thẻ, không có gì phải chứng minh. Chỉ một câu và một nút.
+ *              Đúng cảm giác: anh rời bàn, căn phòng vẫn đó, nắng vẫn đi qua.
+ *
+ *   khoá TAY   (người bấm ⌘⇧L — một YÊU CẦU rõ ràng)   →  A · THẺ, lật ra mặt mật khẩu.
+ *              Thẻ là VẬT: cầm được, lật được, và mặt sau là chỗ chứng minh "vẫn là anh".
+ *              Ẩn dụ khớp việc: anh xin khoá lại, nên phải có cái để mở.
+ *
+ * Hai mặt KHÁC CẤP nhau — A là một vật đặt giữa màn, D là chính cái màn. Ép chung một khung
+ * là vỡ (đã trả giá: nhét D vào khung lật rộng 300px của A, nền không phủ nổi màn). */
 import { hinhChoCau } from '@/lib/lockscreen-hinh-the';
 import { getLastUserId } from '@/lib/resume';
 import { TheXacThucLai } from '@/components/auth/TheXacThucLai';
@@ -192,6 +195,14 @@ export function LockScreen() {
             WebkitBackdropFilter: 'blur(30px) saturate(120%)',
           }}
         >
+          {/* HƯỚNG D thay CẢ LỚP CHE, không nằm trong khung lật.
+              Bản đầu tôi nhét `NenDong` vào trong khung lật (khung đó rộng đúng bằng thẻ 300px)
+              ⇒ nền động không phủ nổi màn, chữ trôi lơ lửng trên trang. Nhìn ảnh là thấy ngay.
+              Hai hướng KHÁC NHAU VỀ CẤP: A là một VẬT đặt giữa màn (có lật, có hai mặt);
+              D là CHÍNH CÁI MÀN. Nhét D vào khung của A là ép hai cấp khác nhau vào một chỗ. */}
+          {!doiMatKhau && cau ? (
+            <NenDong cau={cau} en={lang === 'en'} onMoLai={unlock} />
+          ) : (
           <div className="relative" style={{ perspective: 1200 }}>
             <motion.div
               /* HAI MẶT XẾP CHỒNG TRONG MỘT Ô LƯỚI, không phải `absolute inset-0`.
@@ -211,19 +222,30 @@ export function LockScreen() {
                 style={{ gridArea: '1 / 1', backfaceVisibility: 'hidden', visibility: reduce && mode === 'xac-thuc' ? 'hidden' : undefined }}
                 aria-hidden={mode === 'xac-thuc'}
               >
+                {/* Khoá TAY: mặt trước là THẺ A (ảnh công trình + câu, bọc kính) — Hoà chốt
+                    29/08 "giữ cả 2, một cái rảnh tay một cái chủ động". Nút trên thẻ LẬT sang
+                    mặt mật khẩu, không mở thẳng: đây là khoá người dùng CHỦ ĐỘNG xin. */}
+                {cau && (
+                  <TheDanhNgon
+                    cau={cau}
+                    en={lang === 'en'}
+                    onMoLai={() => setMode('xac-thuc')}
+                    nhanNut={tr('Mở lại', 'Resume')}
+                  />
+                )}
                 <div
-                  className="mb-2 grid h-11 w-11 place-items-center rounded-[var(--r-full,999px)]"
+                  className="mt-4 mb-2 hidden h-11 w-11 place-items-center rounded-[var(--r-full,999px)]"
                   style={{ background: 'var(--panel)', border: '1px solid var(--border)' }}
                 >
                   <Lock size={18} className="text-[var(--t2)]" />
                 </div>
 
-                <div className="text-[56px] font-semibold tabular-nums leading-none tracking-tight text-[var(--t1)]">
+                <div className="hidden text-[56px] font-semibold tabular-nums leading-none tracking-tight text-[var(--t1)]">
                   {time}
                 </div>
 
                 {/* NGỮ CẢNH — dự án · chặng. Đúng mức "đang ở đâu", không hé nội dung. */}
-                <div className="mt-2 flex items-center gap-2 text-[12px] text-[var(--t3)]">
+                <div className="mt-2 hidden items-center gap-2 text-[12px] text-[var(--t3)]">
                   <span className="text-[var(--t2)]">{flowName || tr('Chưa mở dự án', 'No project open')}</span>
                   {chang && (
                     <>
@@ -234,7 +256,7 @@ export function LockScreen() {
                 </div>
 
                 {line && (
-                  <div className="mt-4 max-w-[300px] text-[13px] italic leading-normal text-[var(--t3)]">
+                  <div className="mt-4 hidden max-w-[300px] text-[13px] italic leading-normal text-[var(--t3)]">
                     {tr(line[0], line[1])}
                   </div>
                 )}
@@ -243,7 +265,7 @@ export function LockScreen() {
                   ref={nutMoLai}
                   type="button"
                   onClick={() => (doiMatKhau ? setMode('xac-thuc') : unlock())}
-                  className="mt-7 flex items-center gap-2 rounded-[var(--r-full,999px)] px-5 py-2.5 text-[13px] text-[var(--t1)] transition-colors hover:bg-[var(--hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                  className="mt-7 hidden items-center gap-2 rounded-[var(--r-full,999px)] px-5 py-2.5 text-[13px] text-[var(--t1)] transition-colors hover:bg-[var(--hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                   style={{ background: 'var(--panel)', border: '1px solid var(--border)' }}
                 >
                   {tr('Mở lại', 'Resume')}
@@ -263,23 +285,20 @@ export function LockScreen() {
                 }}
                 aria-hidden={mode !== 'xac-thuc'}
               >
-                {mode === 'xac-thuc' &&
-                  (doiMatKhau ? (
-                    <TheXacThucLai
-                      ten={user?.name ?? ''}
-                      email={user?.email ?? ''}
-                      en={lang === 'en'}
-                      onXong={unlock}
-                      onHuy={() => setMode('mat-khoa')}
-                    />
-                  ) : (
-                    cau && (docKieuKhoa() === 'D'
-                      ? <NenDong cau={cau} en={lang === 'en'} onMoLai={unlock} />
-                      : <TheDanhNgon cau={cau} en={lang === 'en'} onMoLai={unlock} />)
-                  ))}
+                {/* Khung lật nay CHỈ dùng cho khoá TAY ⇒ mặt sau luôn là thẻ xác thực. */}
+                {mode === 'xac-thuc' && (
+                  <TheXacThucLai
+                    ten={user?.name ?? ''}
+                    email={user?.email ?? ''}
+                    en={lang === 'en'}
+                    onXong={unlock}
+                    onHuy={() => setMode('mat-khoa')}
+                  />
+                )}
               </div>
             </motion.div>
           </div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>,
@@ -301,7 +320,7 @@ export function LockScreen() {
  *   · **Cạnh răng cưa như con tem** — mượn đúng ngôn ngữ Hoà đưa trong ảnh tham chiếu; nó nói
  *     "vật sưu tầm, mỗi lần một cái khác", đúng bản chất bốc ngẫu nhiên.
  */
-function TheDanhNgon({ cau, en, onMoLai }: { cau: DanhNgon; en: boolean; onMoLai: () => void }) {
+function TheDanhNgon({ cau, en, onMoLai, nhanNut }: { cau: DanhNgon; en: boolean; onMoLai: () => void; nhanNut?: string }) {
   const tr = (v: string, e: string) => (en ? e : v);
   const h = hinhChoCau(cau.en);
   const W = 400;
@@ -407,7 +426,7 @@ function TheDanhNgon({ cau, en, onMoLai }: { cau: DanhNgon; en: boolean; onMoLai
         className="mt-4 flex w-full items-center justify-center gap-2 rounded-[var(--r-full,999px)] px-4 py-2.5 text-[13px] font-medium transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
         style={{ background: 'var(--accent)', color: 'var(--on-accent, #fff)' }}
       >
-        {tr('Mở lại', 'Resume')}
+        {nhanNut ?? tr('Mở lại', 'Resume')}
       </button>
       </div>
     </div>
