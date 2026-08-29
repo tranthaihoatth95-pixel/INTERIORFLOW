@@ -93,6 +93,21 @@ cho bưu tá biết phải đánh thức ai.
 ⛔ Hook chạy ở **ranh giới lượt**, không bất đồng bộ. Phiên ngồi im thì phiếu nằm đó.
 ⛔ Claude Web / điện thoại **không đọc được tệp local** ⇒ ngoài đường này. Cần connector riêng.
 
+### Phiếu đang nằm trong cầu — 30/08: **4 phiếu · 0 phiên sống để nhận**
+
+`ListAgents` 30/08: 22 phiên ngang hàng, **tất cả offline**. Hook nhận phiếu chạy ở ranh giới
+lượt ⇒ phiên offline không bao giờ có lượt ⇒ **phiếu nằm im vô hạn**. Đây là thứ đang chặn ship,
+không phải việc khó.
+
+| lane | phiếu | việc |
+|---|---|---|
+| `03 · UI` | `HO-20260829110918-7a934500f2a1` | thang cỡ chữ tiếng Việt (Hoà chốt **nâng sàn 12px, giữ tỉ lệ**) + bỏ hai cơ chế Home |
+| `05 · THIẾT KẾ/NC` | `HO-20260829181708-7dcb0535e6b4` | **MÁY ĐỌC GU** — đặc tả đầy đủ ở [`docs/phieu-giao/may-doc-gu.md`](../phieu-giao/may-doc-gu.md), viết cho người KHÔNG có repo. Bên đó thiết kế, bên này thi công |
+| `06 · 2D3D` | `HO-20260829110917-81c45b528978` | hiện 81 tường lên giao diện |
+| `07 · QUALITY` | `HO-20260829110917-0a6369e3941f` | SBOM + biên nhận giấy phép |
+
+Mở phiên nhận lane: `cd ~/Downloads/interiorflow && IF_LANE=06 claude`
+
 ### Ba phiên cũ đã thành lane, phiếu đã ghi, CHƯA AI NHẬN
 
 `06 · 2D3D` (`251b1d67`) · `07 · QUALITY` (`b98f2f19`) · `03 · UI` (`6d476d59`) · `00 · MAIN` (phiên này).
