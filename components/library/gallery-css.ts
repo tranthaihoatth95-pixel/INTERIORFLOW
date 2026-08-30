@@ -21,10 +21,31 @@ export const GALLERY_CSS = `
 /* ── Chip hàng lọc: nhóm ngành + giấy phép, cùng công thức chip đã có ở Thư viện sheet ── */
 /* THANH MỎNG thay cho khối đầu trang cũ (<h1> + đoạn văn + ô tìm to). Một hàng, dính trên
    khi cuộn, để lưới ảnh chiếm màn ngay từ pixel đầu. */
-.gal-bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;
-     padding:2px 0 10px;background:linear-gradient(var(--bg) 72%,transparent)}
-.gal-loc-nut{position:relative;flex:none;height:var(--tap,32px);padding:0 14px;border-radius:var(--r-full);
-     border:1px solid var(--border);background:var(--panel);color:var(--t2);font-size:var(--fs-xs);
+/* 🔴 SỬA 30/08 — THANH NÀY TỪNG LÀ FLAT, VÀ ĐÓ LÀ LỖI CÓ TÊN.
+   Bản sáng 30/08 (cũng do phiên này viết) dựng một dải phẳng, góc vuông, trải hết bề ngang, làm
+   mờ nền bằng "linear-gradient" — tức KHÔNG có kính, KHÔNG có chiều dày, KHÔNG bo.
+   "docs/GU-PROFILE.md" §2 — chưng cất 11/07 từ 4 board Pinterest của Hoà — chốt thẳng:
+     "liquid-glass / soft neumorphism · pill bo tròn full · frosted blur · đơn sắc + 1 accent ·
+      floating toolbar · KHÔNG rẽ flat/material"
+   Đo được trên app trước khi sửa: "backdrop-filter: none" · "border-radius: 0px".
+   Nguyên nhân gốc KHÔNG phải bất cẩn: "GU-PROFILE.md" lúc đó có **0 con trỏ** từ bộ nạp, nên
+   phiên viết CSS chưa từng đọc nó. Cổng "scripts/soi-con-tro.mjs" sinh ra để chặn đúng chỗ đó.
+   Nay: viên thuốc NỔI, không trải hết bề ngang, kính thật "blur(40px)" + "saturate(170%)",
+   sáng viền trong 1px và bóng mềm hai chiều — đúng "soft neumorphism", không phải viền tóc. */
+.gal-bar{position:sticky;top:8px;z-index:2;display:inline-flex;align-items:center;gap:10px;
+     margin-bottom:14px;padding:0 8px 0 14px;height:var(--tap,38px);border-radius:var(--r-full);
+     background:linear-gradient(155deg,color-mix(in srgb,var(--panel) 78%,transparent),
+       color-mix(in srgb,var(--panel) 52%,transparent));
+     -webkit-backdrop-filter:blur(var(--blur-strong,40px)) saturate(170%);
+     backdrop-filter:blur(var(--blur-strong,40px)) saturate(170%);
+     border:1px solid color-mix(in srgb,var(--border) 70%,transparent);
+     box-shadow:0 1px 0 color-mix(in srgb,var(--t1) 8%,transparent) inset,
+       0 20px 44px -26px rgba(0,0,0,.88)}
+/* Trình duyệt không có backdrop-filter thì rơi về nền đục — thà đục còn hơn chữ chồng lên ảnh. */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .gal-bar{background:var(--panel)}}
+.gal-loc-nut{position:relative;flex:none;height:28px;padding:0 14px;border-radius:var(--r-full);
+     border:0;background:color-mix(in srgb,var(--field) 70%,transparent);color:var(--t2);font-size:var(--fs-xs);
      cursor:pointer;transition:background .14s ease,color .14s ease}
 .gal-loc-nut:hover{background:var(--hover);color:var(--t1)}
 .gal-loc-nut.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
@@ -71,7 +92,14 @@ export const GALLERY_CSS = `
 
 .gal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:12px}
 
-.gal-card{position:relative;border-radius:var(--r-3);overflow:hidden;border:1px solid var(--border);
+/* SỬA 30/08 — viền tóc → bóng mềm hai chiều (GU §2 "đổ bóng mềm 2 chiều (neumorphic)").
+   Một đường 1px là ngôn ngữ material; thẻ ảnh cần NỔI khỏi nền, không cần bị kẻ ô. Giữ một
+   vệt sáng trong rất nhạt làm mép trên — đó là cái cho cảm giác dày. */
+.gal-card{position:relative;border-radius:var(--r-3);overflow:hidden;border:0;
+     box-shadow:0 0 0 1px color-mix(in srgb,var(--border) 46%,transparent),
+       0 1px 0 color-mix(in srgb,var(--t1) 6%,transparent) inset,
+       0 14px 30px -20px rgba(0,0,0,.85);
+     transition:box-shadow .18s ease,transform .18s ease;
      background:var(--card);text-align:left;cursor:default;display:flex;flex-direction:column}
 /* THẺ = TẤM ẢNH (Hoà chốt 30/08 "ảnh trước, bộ máy sau").
    Trước: ảnh 140px + một thân thẻ cố định mang tên · nguồn · nút hành động — bộ máy ăn ~40%
@@ -97,6 +125,12 @@ export const GALLERY_CSS = `
      background:linear-gradient(transparent,color-mix(in srgb, var(--bg) 88%, transparent) 34%);
      opacity:0;transform:translateY(6px);transition:opacity .16s ease,transform .16s ease}
 .gal-card:hover .body,.gal-card:focus-within .body{opacity:1;transform:none}
+.gal-card:hover,.gal-card:focus-within{transform:translateY(-2px);
+     box-shadow:0 0 0 1px color-mix(in srgb,var(--border) 70%,transparent),
+       0 1px 0 color-mix(in srgb,var(--t1) 10%,transparent) inset,
+       0 22px 44px -22px rgba(0,0,0,.92)}
+@media (prefers-reduced-motion:reduce){.gal-card{transition:none}
+  .gal-card:hover,.gal-card:focus-within{transform:none}}
 @media (prefers-reduced-motion:reduce){.gal-card .body{transition:none}}
 /* Màn cảm ứng không có trạng thái rê chuột ⇒ ở đó thân thẻ hiện thường trực, nếu không thì
    thông tin nguồn/giấy phép thành thứ không đường nào tới được. */

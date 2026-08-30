@@ -133,7 +133,10 @@ export function GalleryLienNganh() {
     addSuggestion(sourceUrl.trim(), '');
     setSourceUrl('');
     setSourceErr(null);
-    pushLibraryToast(tr('Đã thêm nguồn — chờ gắn vào ảnh', 'Source added — link it to an image next'));
+    /* SỬA 30/08 — chữ cũ: "Đã thêm nguồn — CHỜ GẮN VÀO ẢNH". Nó hứa một bước tiếp theo KHÔNG
+       tồn tại: không có hàng đợi nào, không ai duyệt, không có route ghi vào kho chung. Nói đúng
+       thứ vừa xảy ra thì người dùng biết mình đang có gì trong tay. */
+    pushLibraryToast(tr('Đã lưu vào sổ nguồn của bạn — chỉ ở máy này', 'Saved to your source list — on this device only'));
   };
 
   const hasAnyAsset = curated.length > 0;
@@ -312,11 +315,17 @@ export function GalleryLienNganh() {
           phải trang trí. Danh sách chỉ sống cục bộ (localStorage, `gallery-local-state.ts`) vì
           ghi vào kho chung `LibraryAsset` cần route PATCH mới, ngoài vùng file được giao. */}
       <div className="gal-source">
-        <h3>{tr('Đề xuất nguồn mới', 'Suggest a new source')}</h3>
+        {/* SỬA 30/08 — tên cũ "Đề xuất nguồn mới" / "Suggest a new source" ngụ ý GỬI ĐI ĐÂU ĐÓ.
+            Không gửi đi đâu cả: danh sách sống trong localStorage (`gallery-local-state.ts`), chỉ
+            người này thấy, chỉ máy này có. Bản thân tính năng KHÔNG hỏng — link vẫn bấm được, vẫn
+            xoá được, và ô nhập vẫn là cửa thật chặn domain Pinterest. Hỏng là ở lời hứa.
+            (Phiên này ban đầu chấm nhầm cả khối là "cửa giả" rồi định xoá — đọc kỹ dòng 341 thì
+            danh sách CÓ được vẽ lại. Sửa chữ, không xoá tính năng.) */}
+        <h3>{tr('Sổ nguồn của bạn', 'Your source list')}</h3>
         <p>
           {tr(
-            'Tìm thấy một nguồn ảnh sạch, có giấy phép rõ? Dán link vào đây — Pinterest không dùng được.',
-            'Found a clean, clearly licensed image source? Paste the link here — Pinterest links aren’t accepted.',
+            'Ghi lại nguồn ảnh sạch bạn tìm được, để lần sau khỏi phải nhớ. Lưu ở máy này. Pinterest không dùng được.',
+            'Keep track of clean, clearly licensed image sources you find. Stored on this device. Pinterest links aren’t accepted.',
           )}
         </p>
         <div className="gal-source-row">

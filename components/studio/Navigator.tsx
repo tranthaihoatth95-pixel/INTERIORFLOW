@@ -145,9 +145,21 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
    */
 
   if (collapsed) {
-    // §2f SPEC-PANEL-ROLLOUT-IDF — thu về DẢI MỎNG CÓ NHÃN, hover mới HÉ (overlay tạm, không
-    // đổi layout — khác auto-hide bị cấm: dải là trạng thái NGƯỜI DÙNG chọn, hé chỉ để nhìn
-    // nhanh, bấm chevron mới mở hẳn lại).
+    // §2f SPEC-PANEL-ROLLOUT-IDF — thu về DẢI MỎNG, hover mới HÉ (overlay tạm, không đổi
+    // layout — khác auto-hide bị cấm: dải là trạng thái NGƯỜI DÙNG chọn, hé chỉ để nhìn nhanh,
+    // bấm chevron mới mở hẳn lại).
+    //
+    // 🔴 SỬA 30/08 — BỎ NHÃN CHỮ DỌC. Spec §2f gọi đây là "dải mỏng CÓ NHÃN"; Hoà đè chốt đó,
+    // hai lần trong một ngày: "cái line gallery tôi kêu bỏ rồi mà" rồi "cái line panel có cách
+    // thiết kế nào khôn hơn ko? đâu cần thiết nằm đó".
+    // Nhãn cũ là <span writingMode:vertical-rl> in HOA — nó phạm ba thứ cùng lúc:
+    //   ① thừa   — nút chevron ngay trên đã mang đúng cái tên đó trong `title`, kèm phím tắt
+    //   ② V-1    — viết HOA chuỗi có dấu: "BẢNG" mất dấu, đúng luật chữ Việt cấm
+    //   ③ V-6    — cỡ `--fs-2xs`, dưới sàn 12px của tiếng Việt có dấu
+    // Chữ xoay 90° còn bắt người đọc nghiêng đầu, và trả giá bằng bề ngang trên MỌI màn dùng
+    // AppShell. Tên màn nay sống ở `title` của nút (chuột rê ra là thấy) và ở `aria-label`
+    // (trình đọc màn hình vẫn nghe đúng) — không mất đường nào, chỉ thôi chiếm chỗ.
+    // ⚠️ Muốn dựng lại nhãn thì sửa `SPEC-PANEL-ROLLOUT-IDF` §2f trước, đừng lặng lẽ thêm vào.
     return (
       <div
         className="relative flex shrink-0 flex-col items-center border-r border-[var(--border)] bg-[var(--panel)] py-2"
@@ -158,17 +170,12 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
         <button
           type="button"
           onClick={toggle}
-          title={tr(`Mở lại bảng — ${kPanel}`, `Expand panel — ${kPanel}`)}
+          title={tr(`Mở lại ${collapsedLabel ?? 'bảng'} — ${kPanel}`, `Expand ${collapsedLabel ?? 'panel'} — ${kPanel}`)}
+          aria-label={tr(`Mở lại ${collapsedLabel ?? 'bảng'}`, `Expand ${collapsedLabel ?? 'panel'}`)}
           className="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] text-[var(--t3)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
         >
           <ChevronLeft size={16} className="rotate-180" />
         </button>
-        <span
-          className="mt-3 select-none text-[var(--fs-2xs)] font-bold uppercase tracking-wider text-[var(--t4)]"
-          style={{ writingMode: 'vertical-rl' }}
-        >
-          {collapsedLabel ?? tr('Bảng', 'Panel')}
-        </span>
         {peek && (
           <div
             className="absolute left-full top-0 z-20 flex h-full min-h-0 flex-col border-r border-[var(--border)] bg-[var(--panel)] shadow-[var(--shadow-pop)]"
