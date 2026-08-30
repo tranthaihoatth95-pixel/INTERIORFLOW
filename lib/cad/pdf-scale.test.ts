@@ -12,7 +12,7 @@
  */
 import { emptyDoc, fitBox, fitScaleLabel, docBox, paperSizeMm } from './model';
 import type { Doc, PaperKey } from './model';
-import { newId } from './store';
+import { newId } from './id';
 import { titleBlock } from './commands';
 import {
   applyRealScaleToTitleBlock,

@@ -5,7 +5,7 @@
 import { emptyDoc, entityBox, type Doc, type Entity } from './model';
 import { mergeIdfSheetsToDoc } from './sheet-migrate';
 import { exportIdf, importIdf, type IdfSheetData } from './idf';
-import { newId } from './store';
+import { newId } from './id';
 
 let pass = 0;
 let fail = 0;

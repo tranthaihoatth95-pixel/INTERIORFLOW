@@ -8,7 +8,7 @@ import {
 } from './hatch';
 import { emptyDoc } from './model';
 import type { Doc, LineEntity, BlockEntity, Entity } from './model';
-import { newId } from './store';
+import { newId } from './id';
 import { wallChain } from './commands';
 import { buildDemoPlan } from './demo-plan';
 

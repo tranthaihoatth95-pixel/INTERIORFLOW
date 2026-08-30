@@ -8,6 +8,16 @@
  * Báo đúng 3 mốc CÓ THẬT trong mã, không bịa phần trăm (xem docstring `dxf-import.ts`).
  */
 
+/**
+ * ⚠️ BẪY ĐÃ TRẢ GIÁ (30/08, lane 06): tệp này chạy trong WEB WORKER — không có `window`.
+ * Mọi thứ nó import, và mọi thứ những thứ đó import, PHẢI là module thuần. Khi cờ tường-hình-học
+ * bật, chuỗi `tuong-hinh-hoc → commands → store` từng kéo cả CAD store vào worker; dev-mode Next
+ * tiêm mã React Refresh chạm `window` ở phạm vi module ⇒ `ReferenceError: window is not defined`,
+ * worker chết IM, giao diện chỉ thấy "đang nạp" mãi không xong. Guard `typeof window` trong store
+ * KHÔNG cứu được — thứ chạm `window` là mã trình biên dịch tiêm vào.
+ * ⇒ `newId` nay ở module lá `lib/cad/id.ts`. Trước khi thêm import mới vào đây, kiểm chuỗi phụ
+ * thuộc có chạm store/DOM không.
+ */
 import { parseDxfEx } from './dxf';
 import { apDungTuongHinhHoc, tuongHinhHocEnabled } from './tuong-hinh-hoc';
 

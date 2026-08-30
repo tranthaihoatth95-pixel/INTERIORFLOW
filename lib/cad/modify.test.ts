@@ -19,7 +19,7 @@ import {
 } from './modify';
 import type { LineEntity, ArcEntity, CircleEntity, PolylineEntity, RectEntity, BlockEntity, Entity } from './model';
 import { dist } from './model';
-import { newId } from './store';
+import { newId } from './id';
 
 let pass = 0;
 let fail = 0;

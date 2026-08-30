@@ -19,7 +19,7 @@
 
 import type { Doc, Entity } from './model';
 import { emptyDoc } from './model';
-import { newId } from './store';
+import { newId } from './id';
 import { wallChain, dimensionChain } from './commands';
 
 const EXT = 210; // bề dày tường bao (mm) — cùng khung 200-220 dùng trong demo-plan.ts

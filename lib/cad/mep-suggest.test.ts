@@ -10,7 +10,7 @@ import {
 } from './mep-suggest';
 import { emptyDoc } from './model';
 import type { Doc, LineEntity, TextEntity, BlockEntity } from './model';
-import { newId } from './store';
+import { newId } from './id';
 import { findRoomLabels } from './standards/checker';
 
 let pass = 0;

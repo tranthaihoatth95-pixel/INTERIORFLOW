@@ -13,7 +13,7 @@ import {
   emptyDoc, entityBox, zoneBoundaryPoints, zoneCentroid, ZONE_GROUP_META, ZONE_GROUPS,
 } from './model';
 import type { Doc, ZoneEntity, EllipseEntity, ArrowEntity, HatchEntity } from './model';
-import { newId } from './store';
+import { newId } from './id';
 import { translateEntity, rotateEntity, mirrorEntity } from './geometry';
 import { scaleEntitiesAbout } from './modify';
 import { exportDxf } from './dxf';

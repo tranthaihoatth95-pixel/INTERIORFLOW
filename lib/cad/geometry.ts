@@ -4,7 +4,7 @@
  */
 
 import type { Entity, Pt } from './model';
-import { newId } from './store';
+import { newId } from './id';
 
 /**
  * Sprint 5 — Việc 2 (Circle 3-điểm) + Việc 3 (Arc tâm+góc): 2 hàm hình học THUẦN, tách riêng

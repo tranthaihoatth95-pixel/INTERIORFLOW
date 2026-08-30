@@ -8,7 +8,7 @@ import {
   openingsWidthOnBoundary, OPENING_BOUNDARY_TOL_MM, polygonPerimeter,
 } from './hatch';
 import type { BlockEntity, Entity } from './model';
-import { newId } from './store';
+import { newId } from './id';
 
 const LAY = 'l-default';
 function doorBlock(at: { x: number; y: number }, block = 'door'): BlockEntity {

@@ -7,7 +7,7 @@ import type { IdfSheetData } from './idf';
 import type { Sheet } from './model';
 import { emptyDoc } from './model';
 import type { Doc } from './model';
-import { newId } from './store';
+import { newId } from './id';
 import { createMarkupPin, createPhotoEmbed } from './markup';
 
 let pass = 0;

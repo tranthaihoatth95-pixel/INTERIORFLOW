@@ -4,7 +4,7 @@
  */
 import { gripsOf, hitTestGrip, applyGripMove } from './grips';
 import type { LineEntity, PolylineEntity, RectEntity, CircleEntity, ArcEntity, BlockEntity } from './model';
-import { newId } from './store';
+import { newId } from './id';
 
 let pass = 0;
 let fail = 0;

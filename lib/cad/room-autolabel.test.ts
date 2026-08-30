@@ -7,7 +7,7 @@
 import { suggestRoomNames } from './room-autolabel';
 import { emptyDoc } from './model';
 import type { Doc, LineEntity, BlockEntity, TextEntity } from './model';
-import { newId } from './store';
+import { newId } from './id';
 import { classifyRoom, findRoomLabels } from './standards/checker';
 
 let pass = 0;

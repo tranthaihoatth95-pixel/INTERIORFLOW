@@ -19,7 +19,7 @@
 
 import type { Entity } from './model';
 import { roomRect } from './commands';
-import { newId } from './store';
+import { newId } from './id';
 import { BLOCK_MAP } from './furniture';
 import { classifyOperator, type OperatorType } from './operator-profile';
 

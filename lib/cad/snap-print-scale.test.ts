@@ -7,7 +7,7 @@
 import assert from 'node:assert';
 import { emptyDoc, snapPrintScale, isStandardPrintScale, PRINT_SCALE_STEPS, STANDARD_SCALES, docBox, paperSizeMm } from './model';
 import type { Doc } from './model';
-import { newId } from './store';
+import { newId } from './id';
 import { resolveExportScaleN, DEFAULT_PDF_MARGIN_MM } from './pdf';
 
 let pass = 0;

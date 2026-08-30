@@ -24,7 +24,7 @@
 
 import type { Doc, Entity } from './model';
 import { emptyDoc, docBox } from './model';
-import { newId } from './store';
+import { newId } from './id';
 import { wallChain, roomRect as _roomRect, dimensionChain, addPresentationKit, elevationMarker } from './commands';
 
 void _roomRect; // (không dùng — tường của demo là vách CHUNG giữa các phòng, tự dựng tay bên dưới)

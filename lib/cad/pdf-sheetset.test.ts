@@ -13,7 +13,7 @@
  */
 import { emptyDoc, paperSizeMm, defaultPaperOrientation } from './model';
 import type { Doc, PaperKey, PaperOrientation } from './model';
-import { newId } from './store';
+import { newId } from './id';
 import { buildSheetSetPdf, paperKeyOrientationLabel, type SheetSetEntry } from './pdf';
 
 let pass = 0;

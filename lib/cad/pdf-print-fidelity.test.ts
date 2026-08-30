@@ -16,7 +16,7 @@
  */
 import { emptyDoc } from './model';
 import type { Doc } from './model';
-import { newId } from './store';
+import { newId } from './id';
 import { buildCadPdf, MIN_PRINTABLE_LINE_MM, pdfFooterLine } from './pdf';
 
 let pass = 0;

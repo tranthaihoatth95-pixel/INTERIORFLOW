@@ -7,7 +7,7 @@
 import assert from 'node:assert';
 import type { Box, Doc, Entity, TextEntity, DimEntity, BlockEntity, Layer } from './model';
 import { emptyDoc } from './model';
-import { newId } from './store';
+import { newId } from './id';
 import {
   avoidLabelCollision,
   boxesOverlap,

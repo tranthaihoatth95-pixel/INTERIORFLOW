@@ -24,7 +24,7 @@ import { roomCentroid } from './model';
 import { findRoomLabels } from './standards/checker';
 import { polygonArea } from './hatch';
 import { ringKey } from './poche';
-import { newId } from './store';
+import { newId } from './id';
 
 /** Diện tích lòng phòng (m²) — MỘT nguồn cho mọi ống kính, tính từ biên, không lưu số chết. */
 export function roomAreaM2(room: Pick<RoomEntity, 'boundary'>): number {

@@ -6,7 +6,7 @@
  */
 import { translateEntity, rotateEntity, mirrorEntity, withNewId, offsetEntity, pasteEntities } from './geometry';
 import type { LineEntity, RectEntity, BlockEntity, Entity } from './model';
-import { newId } from './store';
+import { newId } from './id';
 
 let pass = 0;
 let fail = 0;

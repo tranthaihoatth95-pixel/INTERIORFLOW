@@ -26,7 +26,7 @@
 import type { Doc, Entity, Layer, Level, MarkupPin, PhotoEmbed, Sheet, SiteImage, Viewport2D, WallType } from './model';
 import { docBox, defaultPaperOrientation, paperSizeMm, type PaperKey } from './model';
 import { translateEntity, translatePt } from './geometry';
-import { newId } from './store';
+import { newId } from './id';
 import type { IdfSheetData } from './idf';
 
 /** khoảng trống mm giữa 2 sheet liền kề khi xếp hàng ngang — đủ rộng để không ai nhầm 2 sheet

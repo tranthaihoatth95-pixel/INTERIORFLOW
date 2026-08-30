@@ -11,7 +11,7 @@
 
 import type { Doc, Entity, BlockEntity, ElementType } from './model';
 import { BLOCK_MAP } from './furniture';
-import { newId } from './store';
+import { newId } from './id';
 
 export interface ScheduleRow {
   /** khoá group: 'block:sofa3' / 'block:bedD:king-1800' / 'elem:door' / 'unclassified' */

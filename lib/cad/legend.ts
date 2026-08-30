@@ -10,7 +10,7 @@
 
 import type { Doc, Entity, BlockEntity, HatchEntity, HatchPattern, LineType } from './model';
 import { BLOCK_MAP } from './furniture';
-import { newId } from './store';
+import { newId } from './id';
 
 export interface LegendBlockItem {
   block: string;

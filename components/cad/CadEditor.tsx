@@ -1189,6 +1189,17 @@ function DxfImportReportPanel({
         {skippedTotal > 0 ? ` Bỏ qua ${skippedTotal} bản ghi.` : ' Không bỏ sót bản ghi nào.'}
       </p>
 
+      {/* IF-301 — SỐ ĐO NHẬN DIỆN TƯỜNG. Engine `lib/cad/tuong-hinh-hoc.ts` đảo ngược đúng chuỗi
+          lệnh người vẽ CAD đã chạy (ghép đôi độc quyền → đảo TRIM → đảo ARRAY → gộp chùm) và trả
+          số đo về `report.tuongHinhHoc`; tới trước bản này KHÔNG mặt nào đọc trường đó, nên thành
+          quả lớn nhất của engine vô hình với người dùng.
+          Nối vào ĐÚNG panel đã có chứ không dựng mặt mới: đây là một dòng của BÁO CÁO NẠP, cùng
+          họ với "Đọc được"/"Bỏ qua" ngay dưới. Vắng mặt khi cờ tắt (`tuongHinhHoc === undefined`)
+          ⇒ panel y hệt hôm nay, không suy suyển.
+          ⚠️ Mọi số ở đây là số ĐO ĐƯỢC từ chính tệp người dùng vừa mở — không có số mẫu, không có
+          khung rỗng chờ nội dung (cổng A6 · sự thật dữ liệu). */}
+      {report.tuongHinhHoc && <MucTuongHinhHoc do={report.tuongHinhHoc} />}
+
       <Section title="Đọc được">
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5 }}>
           <thead>
@@ -1357,6 +1368,96 @@ function DxfImportReportPanel({
 }
 
 /** Một mục trong báo cáo nạp — tiêu đề nhỏ + nội dung, dùng lại cho cả 5 mục. */
+/**
+ * IF-301 · mục "Tường nhận ra được" trong Báo cáo nạp bản vẽ.
+ *
+ * Ba lớp thông tin, đúng thứ tự người vẽ quan tâm:
+ *  ① một câu kết: bao nhiêu bức, tổng bao nhiêu mét — thứ trả lời "bản vẽ này có gì";
+ *  ② bảng bề dày: nghề đọc tường bằng BỀ DÀY (200/100/300mm là ba nấc chuẩn), nên đây là bảng
+ *    chứ không phải một con số gộp;
+ *  ③ dòng đường đi: nét thẳng → ứng viên → sau từng phép đảo. Để khi số ra sai, người đọc thấy
+ *    NGAY bước nào ăn mất — không phải mở log.
+ *
+ * ⚠️ NỢ ĐÃ BIẾT, NÓI THẲNG TRÊN MẶT: `E-Stair` ×12 còn bị tính nhầm là tường. Giấu nợ trong
+ * comment mà để mặt hiện con số tròn trịa là đúng thứ luật "không PASS giả" cấm.
+ */
+function MucTuongHinhHoc({ do: d }: { do: import('@/lib/cad/tuong-hinh-hoc').DoDemTuong }) {
+  const soBuc = d.sauGopChum;
+  const met = d.tongDaiMm / 1000;
+  // Bề dày: nấc dày nhất lên trước — tường bao đọc trước tường ngăn, đúng cách người ta soi mặt bằng.
+  const beDay = Object.entries(d.beDay)
+    .map(([mm, n]) => [Number(mm), n] as const)
+    .sort((a, b) => b[0] - a[0]);
+  const soNgo = beDay.filter(([mm]) => mm % 10 !== 0).reduce((a, [, n]) => a + n, 0);
+  const buoc: [string, number][] = [
+    ['Nét thẳng', d.netThang],
+    ['Cặp ứng viên', d.capUngVien],
+    ['Sau ghép đôi', d.sauGhepDoi],
+    ['Sau đảo TRIM', d.sauDaoTrim],
+    ['Sau đảo ARRAY', d.sauDaoArray],
+    ['Sau gộp chùm', d.sauGopChum],
+  ];
+  return (
+    <Section title="Tường nhận ra được">
+      <p style={{ margin: '0 0 8px', fontSize: 12, lineHeight: 1.5, color: 'var(--t1)' }}>
+        <b style={{ fontVariantNumeric: 'tabular-nums' }}>{soBuc}</b> bức tường ·{' '}
+        <b style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {met.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}
+        </b>{' '}
+        m trục
+      </p>
+
+      {soNgo > 0 && (
+        <p style={{ margin: '0 0 8px', fontSize: 11, lineHeight: 1.55, color: 'var(--warning)' }}>
+          Trong đó <b style={{ fontVariantNumeric: 'tabular-nums' }}>{soNgo}</b> bức có bề dày không
+          tròn nấc — hãy soi lại trước khi tin số tổng.
+        </p>
+      )}
+
+      {beDay.length > 0 && (
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, marginBottom: 6 }}>
+          <thead>
+            <tr>
+              <th style={dxfTh}>Bề dày</th>
+              <th style={{ ...dxfTh, textAlign: 'right' }}>Số bức</th>
+            </tr>
+          </thead>
+          <tbody>
+            {beDay.map(([mm, n]) => {
+              // Bề dày KHÔNG tròn 10mm là dấu hiệu ghép nhầm — tường nghề không dày 91 hay 271mm.
+              // Nêu tên nó ngay tại dòng thay vì để con số tổng trông sạch sẽ (bài học M-59: phép
+              // so trước↔sau mù với lỗi có ở CẢ HAI đầu; chỉ soi từng bức mới thấy).
+              const ngo = mm % 10 !== 0;
+              return (
+                <tr key={mm}>
+                  <td style={{ ...dxfTd, color: ngo ? 'var(--warning)' : undefined }}>
+                    {mm} mm{ngo ? ' — không tròn nấc, nghi ghép nhầm' : ''}
+                  </td>
+                  <td style={{ ...dxfTd, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: ngo ? 'var(--warning)' : undefined }}>{n}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+
+      <p style={{ margin: '0 0 4px', fontSize: 10.5, lineHeight: 1.6, color: 'var(--t4)' }}>
+        {buoc.map(([ten, n], i) => (
+          <span key={ten}>
+            {i > 0 && ' → '}
+            {ten} <b style={{ color: 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>{n}</b>
+          </span>
+        ))}
+        {d.loaiBoiArray > 0 && ` · đảo ARRAY bỏ ${d.loaiBoiArray} bản lặp`}
+      </p>
+
+      <p style={{ margin: 0, fontSize: 10.5, lineHeight: 1.6, color: 'var(--warning)' }}>
+        Còn nợ: lớp <code>E-Stair</code> vẫn lọt vào danh sách tường — số trên có thể dư vài bức.
+      </p>
+    </Section>
+  );
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ paddingTop: 8, marginTop: 8, borderTop: '1px solid var(--border)' }}>

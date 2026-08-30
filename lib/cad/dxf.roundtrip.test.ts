@@ -15,7 +15,7 @@
 import { exportDxf, parseDxf } from './dxf';
 import { emptyDoc, dist } from './model';
 import type { Doc, Entity } from './model';
-import { newId } from './store';
+import { newId } from './id';
 import { wallSegment } from './commands';
 import { syncPocheAnchors, findBrokenPocheePairs } from './poche';
 

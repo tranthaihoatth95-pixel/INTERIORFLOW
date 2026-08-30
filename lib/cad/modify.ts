@@ -19,7 +19,7 @@
 
 import type { Entity, LineEntity, ArcEntity, CircleEntity, PolylineEntity, Pt } from './model';
 import { dist } from './model';
-import { newId } from './store';
+import { newId } from './id';
 import { entSegments } from './query';
 import { translateEntity, rotateEntity, rotatePt, withNewId } from './geometry';
 import { BLOCK_MAP, type Prim } from './furniture';

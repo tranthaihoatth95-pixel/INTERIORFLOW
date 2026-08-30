@@ -12,7 +12,9 @@
 
 import type { Doc, Entity, Box, Pt, WallRun, WallLocationLine, BuildOp } from './model';
 import { entityBox } from './model';
-import { newId } from './store';
+// Lấy từ module LÁ, KHÔNG từ `store` — worker nạp file này; kéo store vào worker là chết
+// (`window is not defined`, xem `lib/cad/id.ts`).
+import { newId } from './id';
 import { BLOCK_MAP } from './furniture';
 import { stripInternalJargon } from './label-placer';
 

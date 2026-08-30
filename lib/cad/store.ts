@@ -429,11 +429,14 @@ function clone(d: Doc): Doc {
   };
 }
 
-let seq = 0;
-export function newId(prefix = 'e'): string {
-  seq += 1;
-  return `${prefix}-${seq}-${Math.random().toString(36).slice(2, 6)}`;
-}
+/**
+ * `newId` DỜI sang `lib/cad/id.ts` (module lá, 30/08) và re-export ở đây để 60 nơi gọi cũ không
+ * phải sửa. Lý do dời: `commands.ts` cần `newId`, mà khi cờ tường-hình-học bật thì `dxf-worker`
+ * kéo `commands` → kéo CẢ store này vào Web Worker; dev-mode Next tiêm React Refresh chạm
+ * `window` ở phạm vi module ⇒ worker chết. Xem docstring `id.ts`.
+ */
+export { newId } from './id';
+import { newId } from './id';
 
 export const useCadStore = create<CadState>((set, get) => ({
   doc: emptyDoc(),
