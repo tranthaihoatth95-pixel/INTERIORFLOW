@@ -99,7 +99,12 @@ export const VIEC = [
   {
     ma: 'nap-dxf-song', pha: 'soat', lane: '06', ten: 'Đường nạp DXF không chết',
     y: 'lane 06 bắt được 30/08: worker chết vì `window is not defined` — nạp bản vẽ đang hỏng THẬT',
-    can: ['kieu-sach'], bang: { tay: 'mở app, nạp một tệp DXF thật, không có lỗi ở console' },
+    /* 🔴 ĐỔI 30/08 — TRƯỚC ĐÂY GẮN NHÃN "DUYỆT MẮT", VÀ ĐÓ LÀ LƯỜI.
+       Hoà: *"một bản vẽ DXF biết bao nhiêu là nét, làm sao biết được nét nào đúng nét nào sai?
+       Chi tiết nào thiếu? … nạp cái gì vào mà không biết nó đạt tiêu chuẩn hay chưa, phải dựa vào
+       mắt người, thì hệ thống đó vứt."* Đúng: mắt chỉ thấy "có hình / không hình".
+       Nay máy chấm bằng `lib/cad/chuan-nap.ts` — 5 tiêu chí, đếm bằng PHƯƠNG PHÁP KHÁC bộ đọc. */
+    can: ['kieu-sach'], bang: { lenh: 'node_modules/.bin/sucrase-node', args: ['lib/cad/chuan-nap.test.ts'] },
   },
 
   {
@@ -114,6 +119,12 @@ export const VIEC = [
   },
 
   /* ══ ② DỰNG & SHIP ══ */
+  {
+    ma: 'worker-sach', pha: 'soat', lane: '06', ten: 'Chuỗi import worker sạch',
+    y: 'worker kéo phải React/zustand ⇒ ReferenceError ⇒ chết IM, giao diện quay mãi, không lỗi đỏ',
+    can: [], bang: { lenh: 'node', args: ['scripts/soi-worker-sach.mjs', '--chan'] },
+  },
+
   {
     ma: 'tuong-len-man', pha: 'dung', lane: '06', ten: 'Hiện 81 bức tường lên màn',
     y: 'máy đọc được 12.274 nét → 81 tường · 286,0 m, nhưng chưa mặt nào đọc con số đó',

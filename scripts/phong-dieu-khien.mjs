@@ -119,6 +119,22 @@ const HANH_DONG = {
       return /^[0-9]+$/.test(pid) ? ['kill', [pid]] : null;
     },
   },
+  'chuan-nap': {
+    nhan: 'Chạy chuẩn nạp DXF', y: '5 tiêu chí bảo toàn dữ liệu trên mọi DXF của repo — máy chấm, không cần mắt',
+    lam: () => ['node_modules/.bin/sucrase-node', ['lib/cad/chuan-nap.test.ts']],
+  },
+  'soi-worker': {
+    nhan: 'Soi chuỗi worker', y: 'worker kéo phải React/zustand là chết IM — giao diện quay mãi',
+    lam: () => ['node', ['scripts/soi-worker-sach.mjs']],
+  },
+  'dung-lai-sach': {
+    nhan: 'Dựng lại sạch + sinh biên nhận', y: 'dừng dev → đóng gói mac → biên nhận tự sinh cuối chuỗi (vài phút)',
+    lam: () => {
+      const pid = chay('lsof', ['-nP', '-iTCP:3000', '-sTCP:LISTEN', '-t']).split('\n')[0];
+      if (/^[0-9]+$/.test(pid)) chay('kill', [pid]);   // giải phóng .next trước
+      return ['npm', ['run', 'electron:pack:mac']];
+    },
+  },
   'soi-con-tro': { nhan: 'Soi con trỏ', y: 'nguồn đã chưng cất có đường về không', lam: () => ['node', ['scripts/soi-con-tro.mjs']] },
   'soi-route-dev': { nhan: 'Soi route thử', y: 'route dev nào lọt được vào bản phát hành', lam: () => ['node', ['scripts/soi-route-dev.mjs']] },
   'soi-tep-nang': { nhan: 'Soi tệp nặng', y: 'tệp >90MB và mọi bản sao CSDL trong git', lam: () => ['node', ['scripts/soi-tep-nang.mjs']] },
@@ -151,7 +167,7 @@ function nghe(req, res) {
       if (!v) return json(400, { loi: `Không có việc tên "${p.ma}". Danh sách ĐÓNG, không nhận lệnh tự do.` });
       const lenh = v.lam(p);
       if (!lenh) return json(400, { loi: 'Tham số không hợp khuôn, hoặc không có gì để làm.' });
-      execFile(lenh[0], lenh[1], { cwd: REPO, timeout: 120000 }, (err, out, errOut) => {
+      execFile(lenh[0], lenh[1], { cwd: REPO, timeout: p.ma === 'dung-lai-sach' ? 1800000 : 120000, maxBuffer: 8 * 1024 * 1024 }, (err, out, errOut) => {
         json(200, { ma: p.ma, ok: !err, ra: (out || errOut || '').slice(-4000), lenh: `${lenh[0]} ${lenh[1].slice(0, 3).join(' ')}…` });
       });
     });
