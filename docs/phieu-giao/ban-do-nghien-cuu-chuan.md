@@ -35,6 +35,22 @@ gai góc, bao bọc — vì tone ấm và hình tròn tác động lên thị gi
 
 ---
 
+## 0b · THỨ TỰ — Hoà chốt 30/08, đọc trước khi bắt tay
+
+```
+①  CHUẨN NGÀNH   ← VIỆC CỦA PHIẾU NÀY.  Làm cho xong trước.
+②  ĐIỀU HƠN CHUẨN
+③  HỌC GU        ← HOÃN.  Sau cùng, vì nó làm IF khác biệt chứ không làm nền.
+```
+
+> *"Xong hết phần chuẩn → cuối cùng chúng ta sẽ học gu."*
+
+⇒ **Trong phiếu này: không hiệu chuẩn gu, không dùng `GU-PROFILE.md` làm nguồn, không đụng 1.580
+ảnh.** Chúng vẫn đang nuôi prompt dựng ảnh nên **không xoá** — chỉ ra khỏi phạm vi.
+Phần §7 của `IF-DEC-GU-READER-001` (dataset split 60/20/20) ⇒ **HOÃN**, không phải huỷ.
+
+---
+
 ## 1 · BA BƯỚC, HAI ĐÍCH
 
 ```
@@ -121,11 +137,19 @@ Cần: danh mục theo vùng + cách IF nhận biết đang ở vùng nào.
 
 ## 5 · RÀNG BUỘC
 
-- **Trung tính thương hiệu.** Chuẩn là chuẩn ngành, không phải gu một studio. Gu Hoà
-  (`docs/GU-PROFILE.md`) chỉ được sống trong **7 lĩnh vực diễn đạt**.
+- **Trung tính thương hiệu.** Chuẩn là chuẩn ngành, không phải gu một studio.
+  🔴 **SỬA 30/08 — bản đầu viết "gu Hoà sống trong 7 lĩnh vực diễn đạt". Vẫn còn xếp gu ngang
+  hàng với chuẩn, và Hoà bác:** *"không cần gu trong giai đoạn này vì chuẩn ngành nên đang chuẩn
+  bị thiết lập. Gu của tôi chỉ là thứ khiến IF trở nên khác biệt, và là một trong những design DNA
+  được trích xuất từ một designer đầu tiên IF học thôi."*
+  ⇒ **`GU-PROFILE.md` KHÔNG phải nguồn cho bất kỳ ô `NGUỒN` nào trong phiếu này.** Nó là **mẫu DNA
+  số 1**, dữ liệu hiệu chuẩn. Lĩnh vực nào chưa có chuẩn thì ghi `CHƯA CÓ SỐ` — **cấm lấy gu lấp**.
 - **Local-first.** Chuẩn nào cần mạng phải nói rõ và nêu đường hạ cấp.
 - **Không tính từ.** `NGƯỠNG` phải là số hoặc chữ `CHƯA CÓ SỐ`. Câu như *"cần hài hoà"* là câu rỗng.
 - **Nêu nguồn.** Chuẩn không truy được nguồn thì ghi `KHÔNG TRUY ĐƯỢC`, đừng viết như thể có.
+- **SỰ THẬT BẨN.** Số đã bị nói lại và vá nhiều lượt thì **đo lại từ nguồn**, không vá tiếp.
+  Ca thật: *"1.580 ảnh tag `gu-đích`"* — 1.580 đúng nhưng đến từ **category**; tag `gu-đích` chỉ
+  có **43**. Lane 00 viết sai, lane 05 kế thừa. Gặp số kiểu này thì dừng lại đo, đừng dùng.
 - **Nói thẳng chỗ không biết.** Phiếu thiếu một lĩnh vực còn chữa được; phiếu **đoán** thì không.
 
 ## 6 · VÌ SAO HOÀ MUỐN VIỆC NÀY

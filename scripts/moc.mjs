@@ -70,6 +70,11 @@ if (lenh === 'handoff') {
   const id = `HO-${createdAt.replace(/\D/g, '').slice(0, 14)}-${bamNgan(`${from}|${to}|${topic}|${body}|${randomUUID()}`)}`;
   ghiSuKien({ schema: 'BOS-HANDOFF-v1', id, type: 'HANDOFF', from, to, topic, body, source, sensitivity: 'BUILDER', createdAt });
   console.log(`${id} · ${from} → ${to} · ${topic}`);
+  console.log('');
+  console.log('  ⛔ PHIẾU ĐÃ GHI — NHƯNG CHƯA GIAO. Cầu chỉ chở nội dung, nó KHÔNG đánh thức ai.');
+  console.log(`  Bên giao phải tự đánh thức lane ${to} bằng cơ chế của hệ mình, rồi ghi lại:`);
+  console.log(`      node scripts/moc.mjs danh-thuc ${id} "<cơ chế đã dùng>"`);
+  console.log('  Không có mắt ĐÁNH THỨC thì `soi:cau` sẽ đỏ, và đúng như vậy — phiếu chưa tới ai.');
   process.exit(0);
 }
 
@@ -131,6 +136,39 @@ if (lenh === 'sent') {
     handoffId: hoId, lane: co.to, transport: duong, receipt: bienNhan ?? null,
     createdAt: new Date().toISOString() });
   console.log(`📤 ${hoId} · đã giao qua ${duong}${bienNhan ? ' · ' + bienNhan : ''}`);
+  process.exit(0);
+}
+
+/* ══ `danh-thuc <handoffId> <cách>` — MẮT XÍCH CÒN THIẾU CỦA CẦU ══
+ *
+ * Hoà chốt 30/08, và đây là RÀNG BUỘC chứ không phải lời nhắc:
+ *   *"hệ AI nào đang giao việc thì hệ đó phải TỰ ĐÁNH THỨC. Bạn là main bên đầu Claude, ngang
+ *   hàng với main bên đầu Codex hay hệ Agent khác."*
+ *
+ * Ca thật sinh ra luật: 30/08 lane 00 ghi hai phiếu quan trọng vào cầu rồi coi như đã giao. Lane 05
+ * **đang mở và rảnh** nhưng không biết có việc mới — vì `handoff` CHỈ GHI VÀO SỔ, nó không phải
+ * chuông. Hai phiếu nằm im tới khi Hoà hỏi *"lane 5 đâu?"*.
+ *
+ * ⛔ **GHI PHIẾU KHÔNG PHẢI GIAO VIỆC.** Phiếu chỉ chở nội dung; nó không thay được người gọi.
+ * Bên giao phải đánh thức bằng **cơ chế của chính hệ mình**, rồi ghi lại đã dùng cơ chế nào:
+ *   · Claude Code  → `SendMessage` / `ccd_session_mgmt.send_message`
+ *   · Codex        → cơ chế đánh thức của phía đó
+ *   · người        → mở phiên và gõ
+ * `cách` là chuỗi tự do NHƯNG phải nói được cơ chế thật, không được ghi "đã báo".
+ */
+if (lenh === 'danh-thuc') {
+  const [handoffId, cach] = process.argv.slice(3);
+  if (!handoffId || !cach) {
+    console.error('Dùng: node scripts/moc.mjs danh-thuc <handoffId> "<cơ chế đã dùng>"');
+    console.error('  Ví dụ: … danh-thuc HO-2026… "SendMessage → local_51cf773f"');
+    process.exit(2);
+  }
+  const events = docSuKien();
+  const ho = events.find((e) => e.type === 'HANDOFF' && e.id === handoffId);
+  if (!ho) { console.error(`Không có phiếu ${handoffId}`); process.exit(2); }
+  ghiSuKien({ schema: 'BOS-HANDOFF-v1', id: `WAKE-${randomUUID()}`, type: 'WAKE',
+    handoffId, lane: ho.to, cach, createdAt: new Date().toISOString() });
+  console.log(`⏰ đã ghi ĐÁNH THỨC cho ${handoffId} → lane ${ho.to} · ${cach}`);
   process.exit(0);
 }
 
