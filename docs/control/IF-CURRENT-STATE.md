@@ -107,6 +107,7 @@ không phải việc khó.
 | `03 · UI` | `HO-20260829110918-7a934500f2a1` | thang cỡ chữ tiếng Việt (Hoà chốt **nâng sàn 12px, giữ tỉ lệ**) + bỏ hai cơ chế Home |
 | `05 · THIẾT KẾ/NC` | `HO-20260829181708-7dcb0535e6b4` | **MÁY ĐỌC GU** — đặc tả đầy đủ ở [`docs/phieu-giao/may-doc-gu.md`](../phieu-giao/may-doc-gu.md), viết cho người KHÔNG có repo. Bên đó thiết kế, bên này thi công |
 | `05 · THIẾT KẾ/NC` | *chưa gửi cầu* | **KHẢO SÁT UX/UI CHUẨN TOÀN CẦU** — [`docs/phieu-giao/khao-sat-ux-toan-cau.md`](../phieu-giao/khao-sat-ux-toan-cau.md) + 24 ảnh ở `artifacts/man-30-08/`. Hoà giao 30/08: *"chụp màn router chính → gửi ChatGPT để nó làm khảo sát UX/UI global standard with Apple design system human-centric để viết phiếu định hướng"*. ⚠️ Đo md5: 4 cặp ảnh TRÙNG KHÍT ⇒ 24 khung nhưng chỉ **20 mặt khác nhau** |
+| `05 · THIẾT KẾ/NC` | *bản đồ chuẩn* | **38 LĨNH VỰC** — [`docs/phieu-giao/ban-do-nghien-cuu-chuan.md`](../phieu-giao/ban-do-nghien-cuu-chuan.md). Hai họ: chuẩn hệ thống 12 (8 đã có cổng) · chuẩn ngành 26 (**19 nền tảng** không thương lượng + **7 diễn đạt** — chỗ duy nhất gu cá nhân được sống). Luật quy định theo vùng tách hẳn. Nền: [`IF-CHUAN-NEN.md`](IF-CHUAN-NEN.md) |
 | `06 · 2D3D` | `HO-20260829110917-81c45b528978` | hiện 81 tường lên giao diện |
 | `07 · QUALITY` | `HO-20260829110917-0a6369e3941f` | SBOM + biên nhận giấy phép |
 
