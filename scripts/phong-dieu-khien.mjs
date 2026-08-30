@@ -29,6 +29,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { PHA, NGUOI, VIEC } from './bos-so-viec.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CAU = path.join(process.env.BOS_SHARED_LOG_ROOT || path.join(os.homedir(), 'PROJECT/SHARED/LOG'),
@@ -40,6 +41,22 @@ const chay = (cmd, args, cwd = REPO) => {
   try { return execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); }
   catch { return ''; }
 };
+
+/* ══ BỘ NHỚ ĐỆM KẾT QUẢ SOÁT ══
+ * `soat-toan-dien` chạy cả `npm test` ⇒ ~60 giây. KHÔNG được chạy mỗi 2 giây.
+ * Nên: trang vẽ kết quả ĐÃ ĐỆM, kèm dấu thời gian, và có nút chạy lại. Vẽ số cũ mà không nói nó
+ * cũ là nói dối bằng giao diện — nên dấu thời gian luôn hiện. */
+let DEM = { luc: null, dang: false, du: null };
+
+function soatLai() {
+  if (DEM.dang) return;
+  DEM.dang = true;
+  execFile('node', ['scripts/soat-toan-dien.mjs', '--json'], { cwd: REPO, timeout: 900000, maxBuffer: 8 * 1024 * 1024 },
+    (err, out) => {
+      try { DEM = { luc: new Date().toISOString(), dang: false, du: JSON.parse(out) }; }
+      catch { DEM = { ...DEM, dang: false }; }
+    });
+}
 
 /* ══ TRẠNG THÁI THẬT ══ */
 function trangThai() {
@@ -76,11 +93,13 @@ function trangThai() {
   };
 }
 
-/* ══ DANH SÁCH HÀNH ĐỘNG — ĐÓNG. Thêm mục là thêm quyền, cân nhắc kỹ. ══ */
+/* ══ DANH SÁCH HÀNH ĐỘNG — ĐÓNG. Thêm mục là thêm quyền, cân nhắc kỹ. ══
+ * Tên `HANH_DONG` chứ không phải `VIEC`: `VIEC` đã là ĐẦU VIỆC trong sổ `bos-so-viec.mjs`.
+ * Hai thứ khác hẳn nhau — đầu việc là thứ phải làm xong; hành động là cái nút bấm được. */
 const KHUON_LANE = /^[0-9]{2}$/;
 const KHUON_PHIEU = /^HO-[0-9]{14}-[0-9a-f]{12}$/;
 
-const VIEC = {
+const HANH_DONG = {
   'bao-nhan': {
     nhan: 'Báo nhận phiếu', y: 'ghi ACK — phiếu thôi lặp lại trong hộp thư',
     lam: (p) => (KHUON_LANE.test(p.lane || '') && KHUON_PHIEU.test(p.phieu || ''))
@@ -113,15 +132,22 @@ function nghe(req, res) {
 
   if (url.pathname === '/api/trang-thai') return json(200, trangThai());
 
+  if (url.pathname === '/api/so-viec') {
+    if (!DEM.luc && !DEM.dang) soatLai();
+    return json(200, { luc: DEM.luc, dang: DEM.dang, pha: PHA, nguoi: NGUOI,
+      viec: DEM.du ? DEM.du.viec : VIEC.map((v) => ({ ...v, kq: null })), tong: DEM.du?.tong ?? null });
+  }
+  if (url.pathname === '/api/soat-lai' && req.method === 'POST') { soatLai(); return json(200, { dang: true }); }
+
   if (url.pathname === '/api/viec' && req.method === 'GET')
-    return json(200, Object.entries(VIEC).map(([k, v]) => ({ ma: k, nhan: v.nhan, y: v.y })));
+    return json(200, Object.entries(HANH_DONG).map(([k, v]) => ({ ma: k, nhan: v.nhan, y: v.y })));
 
   if (url.pathname === '/api/lam' && req.method === 'POST') {
     let body = '';
     req.on('data', (c) => { body += c; if (body.length > 4096) req.destroy(); });
     req.on('end', () => {
       let p; try { p = JSON.parse(body || '{}'); } catch { return json(400, { loi: 'JSON hỏng' }); }
-      const v = VIEC[p.ma];
+      const v = HANH_DONG[p.ma];
       if (!v) return json(400, { loi: `Không có việc tên "${p.ma}". Danh sách ĐÓNG, không nhận lệnh tự do.` });
       const lenh = v.lam(p);
       if (!lenh) return json(400, { loi: 'Tham số không hợp khuôn, hoặc không có gì để làm.' });
@@ -137,144 +163,190 @@ function nghe(req, res) {
 }
 
 const TRANG = `<!doctype html><html lang="vi"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>Phòng điều khiển IF</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Bản vẽ luồng việc IF</title>
 <style>
 :root{--bg:#0c0c0e;--panel:#141417;--field:#202024;--line:#2a2a31;--t1:#f5f5f7;--t2:#d6d6db;
- --t3:#9e9ea8;--t4:#6e6e78;--ac:#8b7bf7;--acs:rgba(106,87,245,.18);--ok:#46b876;--warn:#d9a34a;--bad:#e5674f;
- --rf:999px;--r3:14px;--r4:20px}
+ --t3:#9e9ea8;--t4:#6e6e78;--ac:#8b7bf7;--acs:rgba(106,87,245,.18);
+ --ok:#46b876;--oks:rgba(70,184,118,.15);--warn:#d9a34a;--warns:rgba(217,163,74,.15);
+ --bad:#e5674f;--bads:rgba(229,103,79,.15);--rf:999px}
 @media(prefers-color-scheme:light){:root{--bg:#f2f2f7;--panel:#f9f9fb;--field:#f4f4f9;--line:#e2e2ea;
  --t1:#1d1d24;--t2:#43434e;--t3:#6c6c78;--t4:#93939f;--ac:#553ff3;--acs:rgba(85,63,243,.12);
- --ok:#107043;--warn:#9a6304;--bad:#c9341d}}
+ --ok:#107043;--oks:rgba(16,112,67,.12);--warn:#9a6304;--warns:rgba(154,99,4,.12);
+ --bad:#c9341d;--bads:rgba(201,52,29,.12)}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--t1);line-height:1.5;
  font-family:-apple-system,'SF Pro Text','Segoe UI',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-.wrap{max-width:1120px;margin:0 auto;padding:36px 24px 64px;display:flex;flex-direction:column;gap:30px}
+.wrap{max-width:1400px;margin:0 auto;padding:32px 22px 60px;display:flex;flex-direction:column;gap:26px}
 .num{font-variant-numeric:tabular-nums}
 .eye{font-size:12px;letter-spacing:.15em;color:var(--t4)}
-h1{margin:8px 0 0;font-size:28px;font-weight:600;letter-spacing:-.02em}
-h2{margin:0;font-size:17px;font-weight:600;letter-spacing:-.01em}
-.card{background:linear-gradient(155deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
- box-shadow:0 0 0 1px var(--line),0 18px 40px -24px rgba(0,0,0,.75);border-radius:var(--r3);
- -webkit-backdrop-filter:blur(22px) saturate(150%);backdrop-filter:blur(22px) saturate(150%)}
-.pad{padding:18px}
-.g{display:grid;gap:12px}
-.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
-.g5{grid-template-columns:repeat(5,minmax(0,1fr))}
-@media(max-width:820px){.g3,.g5{grid-template-columns:1fr 1fr}}
-.big{font-size:26px;font-weight:600;letter-spacing:-.02em}
-.cap{font-size:12px;color:var(--t4);margin-top:5px}
-.pill{display:inline-flex;align-items:center;gap:6px;border-radius:var(--rf);padding:4px 10px;
- font-size:12px;background:var(--field);color:var(--t3)}
-.dot{width:7px;height:7px;border-radius:var(--rf)}
-/* mạch cầu — chỉ chạy khi CÓ phiếu đang mở */
-.track{position:relative;height:3px;border-radius:var(--rf);background:var(--line);margin:16px 0 18px;overflow:hidden}
-.spark{position:absolute;top:-3px;left:-16%;width:16%;height:9px;border-radius:var(--rf);
- background:linear-gradient(90deg,transparent,var(--ac),transparent);filter:blur(1px);
- animation:chay 4.4s linear infinite}
-.spark.b{animation-delay:1.5s}.spark.c{animation-delay:2.9s}
-@keyframes chay{to{left:116%}}
-.track.im .spark{animation:none;opacity:0}
-@media(prefers-reduced-motion:reduce){.spark{animation:none;left:44%}}
-.mat{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:11.5px;letter-spacing:.1em;color:var(--t4)}
-.lane{padding:14px;display:flex;flex-direction:column;gap:8px}
-.lane .id{font-size:14px;font-weight:600}
-.ph{font-size:11.5px;color:var(--t3);font-family:ui-monospace,'SF Mono',Menlo,monospace;
- word-break:break-all;line-height:1.5}
-button{font:inherit;cursor:pointer;border:0;border-radius:var(--rf);padding:9px 14px;font-size:13px;
+h1{margin:8px 0 0;font-size:27px;font-weight:600;letter-spacing:-.02em}
+.sub{font-size:13px;color:var(--t3)}
+.card{background:linear-gradient(155deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+ box-shadow:0 0 0 1px var(--line),0 16px 36px -26px rgba(0,0,0,.7);border-radius:14px}
+.pad{padding:16px}
+.top{display:flex;gap:12px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:7px;border-radius:var(--rf);padding:7px 14px;
+ font-size:13px;background:var(--field);color:var(--t2)}
+.chip b{font-weight:600;color:var(--t1)}
+.dot{width:8px;height:8px;border-radius:var(--rf)}
+
+/* ── BẢN VẼ: cột = trạng thái dự án · hàng = người ── */
+.ve{overflow-x:auto}
+.grid{display:grid;grid-template-columns:150px 1fr 1fr;gap:0;min-width:900px}
+.hd{padding:12px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:2}
+.hd .ten{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.hd .y{font-size:11.5px;color:var(--t4);margin-top:3px;line-height:1.45}
+.lan{padding:16px 14px;border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
+.lan .ma{font-size:19px;font-weight:600;letter-spacing:-.02em}
+.lan .ten{font-size:12.5px;color:var(--t2);margin-top:1px}
+.lan .mo{font-size:11.5px;color:var(--t4);margin-top:6px;line-height:1.45}
+.o{padding:12px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:9px;
+ min-height:78px;border-right:1px solid var(--line)}
+.o:last-child{border-right:0}
+
+/* ── THẺ VIỆC: trạng thái hiện bằng HÌNH, không chỉ bằng chữ ── */
+.v{border-radius:11px;padding:11px 12px;background:var(--field);
+ box-shadow:0 0 0 1px var(--line);transition:box-shadow .2s,transform .2s}
+.v .n{font-size:13.5px;font-weight:600;letter-spacing:-.005em;line-height:1.35}
+.v .y{font-size:11.5px;color:var(--t3);margin-top:5px;line-height:1.5}
+.v .cho{font-size:11.5px;color:var(--t4);margin-top:7px;display:flex;align-items:center;gap:5px}
+.v .bar{height:3px;border-radius:var(--rf);background:var(--line);margin-bottom:9px}
+/* ĐẠT — sáng, có màu, nhấc lên */
+.v.dat{background:var(--oks);box-shadow:0 0 0 1px rgba(70,184,118,.4),0 10px 24px -18px rgba(0,0,0,.8)}
+.v.dat .bar{background:var(--ok)}
+.v.dat .n{color:var(--t1)}
+/* HỎNG — đỏ, mạch đập */
+.v.hong{background:var(--bads);box-shadow:0 0 0 1px rgba(229,103,79,.5)}
+.v.hong .bar{background:var(--bad);animation:dap 1.7s ease-in-out infinite}
+@keyframes dap{0%,100%{opacity:1}50%{opacity:.3}}
+/* CHƯA XÁC NHẬN — hổ phách, viền đứt */
+.v.tay{background:var(--warns);box-shadow:0 0 0 1px rgba(217,163,74,.45)}
+.v.tay .bar{background:repeating-linear-gradient(90deg,var(--warn) 0 6px,transparent 6px 11px)}
+/* CHƯA TỚI — XÁM, chìm, không sáng gì cả */
+.v.chuaToi{background:transparent;box-shadow:0 0 0 1px var(--line);opacity:.42}
+.v.chuaToi .n{color:var(--t3);font-weight:500}
+/* CHƯA CHẤM */
+.v.trong{background:transparent;box-shadow:0 0 0 1px var(--line);opacity:.3}
+@media(prefers-reduced-motion:reduce){.v.hong .bar{animation:none}}
+
+.chugiai{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--t3)}
+.chugiai span{display:inline-flex;align-items:center;gap:7px}
+.sw{width:22px;height:8px;border-radius:var(--rf)}
+
+button{font:inherit;cursor:pointer;border:0;border-radius:var(--rf);padding:9px 15px;font-size:13px;
  background:var(--field);color:var(--t2);transition:background .14s,color .14s}
 button:hover{background:var(--acs);color:var(--ac)}
 button:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
-button.chinh{background:var(--acs);color:var(--ac)}
+button.chinh{background:var(--acs);color:var(--ac);font-weight:600}
 button[disabled]{opacity:.45;cursor:not-allowed}
 .nut{display:flex;flex-wrap:wrap;gap:9px}
-.ra{margin:0;padding:14px 16px;background:var(--field);border-radius:var(--r3);font-size:12px;
+.ra{margin:0;padding:13px 15px;background:var(--field);border-radius:12px;font-size:12px;
  font-family:ui-monospace,'SF Mono',Menlo,monospace;white-space:pre-wrap;color:var(--t2);
- max-height:340px;overflow:auto;line-height:1.55}
-.sub{font-size:12.5px;color:var(--t4)}
+ max-height:300px;overflow:auto;line-height:1.55}
 </style></head><body><div class="wrap">
 
 <header>
-  <div class="eye">INTERIORFLOW · PHÒNG ĐIỀU KHIỂN · CHẠY TẠI MÁY</div>
-  <h1>Diễn biến, và nút để thông mạch</h1>
-  <p class="sub" style="margin:10px 0 0">Đọc trạng thái thật mỗi 2 giây. Nút bấm chạy lệnh thật —
-  danh sách hành động là <b style="color:var(--t2)">đóng</b>, trang này không gửi lệnh tự do.</p>
+  <div class="eye">INTERIORFLOW · BẢN VẼ LUỒNG VIỆC · CHẠY TẠI MÁY</div>
+  <h1>Ai đang làm gì, và cái gì chưa tới lượt</h1>
+  <p class="sub" style="margin:9px 0 0">Hàng là <b>người</b>. Cột là <b>trạng thái của dự án</b>.
+  Ô sáng là việc đang sống; ô <b>xám</b> là việc chưa tới lượt vì còn chờ thứ khác.</p>
 </header>
 
-<section class="g g3">
-  <div class="card pad"><div class="big num" id="s-head">…</div><div class="cap" id="s-nhanh">nhánh</div></div>
-  <div class="card pad"><div class="big num" id="s-phieu">…</div><div class="cap">phiếu đang mở trên cầu</div></div>
-  <div class="card pad"><div class="big" id="s-dev">…</div><div class="cap">máy chủ dev cổng 3000</div></div>
+<section class="top" id="top"></section>
+
+<section class="card ve"><div class="grid" id="grid"></div></section>
+
+<section class="chugiai">
+  <span><i class="sw" style="background:var(--ok)"></i>đạt — máy đã chứng minh</span>
+  <span><i class="sw" style="background:var(--bad)"></i>hỏng — phải sửa</span>
+  <span><i class="sw" style="background:repeating-linear-gradient(90deg,var(--warn) 0 6px,transparent 6px 11px)"></i>chờ mắt người — máy không có quyền tuyên</span>
+  <span><i class="sw" style="background:var(--line)"></i>chưa tới lượt — còn chờ việc khác</span>
 </section>
 
-<section style="display:flex;flex-direction:column;gap:12px">
-  <h2>Cầu bàn giao</h2>
-  <div class="card pad">
-    <div class="mat"><span>HANDOFF</span><span>SENT</span><span>SEEN</span><span>ACK</span></div>
-    <div class="track im" id="track"><i class="spark"></i><i class="spark b"></i><i class="spark c"></i></div>
-    <div class="g g5" id="lanes"></div>
-  </div>
-</section>
-
-<section style="display:flex;flex-direction:column;gap:12px">
-  <h2>Thông mạch</h2>
-  <div class="card pad" style="display:flex;flex-direction:column;gap:14px">
-    <div class="nut" id="nut"></div>
-    <pre class="ra" id="ra">Chưa chạy gì. Bấm một nút ở trên.</pre>
-  </div>
+<section class="card pad" style="display:flex;flex-direction:column;gap:13px">
+  <div class="nut" id="nut"></div>
+  <pre class="ra" id="ra">Chưa chạy gì.</pre>
 </section>
 
 </div><script>
 const $=s=>document.querySelector(s);
-let dangChay=false;
+const BIEU={dat:'đạt',hong:'hỏng',tay:'chờ mắt người',chuaToi:'chưa tới lượt'};
+let dangChay=false, soVe=null;
 
-async function ve(){
+async function veTop(){
   let d; try{ d=await (await fetch('/api/trang-thai')).json(); }catch{ return; }
-  $('#s-head').textContent=d.git.head||'—';
-  $('#s-nhanh').textContent=(d.git.nhanh||'—')+' · '+d.git.ban+' bẩn'+
-    (d.git.chuaDay===null?'':' · '+d.git.chuaDay+' chưa đẩy');
-  $('#s-phieu').textContent=d.tongPhieuMo;
-  $('#s-dev').innerHTML=d.devServer
-    ? '<span style="color:var(--ok)">đang chạy</span>' : '<span style="color:var(--t4)">tắt</span>';
-  $('#track').classList.toggle('im', d.tongPhieuMo===0);
+  const s=soVe&&soVe.tong;
+  $('#top').innerHTML=
+    '<span class="chip"><b class="num">'+(d.git.head||'—')+'</b>'+d.git.ban+' bẩn · '+
+      (d.git.chuaDay??0)+' chưa đẩy</span>'+
+    '<span class="chip"><span class="dot" style="background:'+(d.devServer?'var(--ok)':'var(--t4)')+'"></span>'+
+      'máy chủ dev '+(d.devServer?'đang chạy':'tắt')+'</span>'+
+    '<span class="chip"><b class="num">'+d.tongPhieuMo+'</b>phiếu đang mở trên cầu</span>'+
+    (s?'<span class="chip"><b class="num" style="color:var(--ok)">'+s.dat+'</b>đạt · '+
+      '<b class="num" style="color:var(--bad)">'+s.hong+'</b>hỏng · '+
+      '<b class="num" style="color:var(--warn)">'+s.tay+'</b>chờ người</span>':'')+
+    '<span class="chip" id="dau-thoi-gian">…</span>';
+}
 
-  $('#lanes').innerHTML=d.lane.map(l=>{
-    const n=l.phieu.length;
-    const mau=n===0?'var(--t4)':l.phieu.some(p=>p.mat==='HANDOFF')?'var(--bad)':'var(--warn)';
-    return '<div class="card lane"><div style="display:flex;justify-content:space-between;align-items:center">'
-      +'<span class="id">'+l.id+'</span>'
-      +'<span class="pill"><span class="dot" style="background:'+mau+'"></span>'+(n||'—')+'</span></div>'
-      +(n? '<div class="ph">'+l.phieu.map(p=>p.mat+' · '+p.topic.slice(0,42)).join('<br>')+'</div>'
-         : '<div class="sub">hộp thư rỗng</div>')
-      +(n? '<button data-ma="bao-nhan" data-lane="'+l.id+'" data-phieu="'+l.phieu[0].id+'">Báo nhận phiếu đầu</button>'
-         : '<button data-ma="danh-thuc" data-lane="'+l.id+'">Đánh thức</button>')
-      +'</div>';
-  }).join('');
+async function veGrid(){
+  const d=await (await fetch('/api/so-viec')).json(); soVe=d;
+  const pha=['soat','dung'];
+  let h='<div class="hd"><div class="ten">Người</div><div class="y">làn việc — ai chịu trách nhiệm</div></div>';
+  for(const p of pha) h+='<div class="hd"><div class="ten">'+d.pha[p].ten+'</div><div class="y">'+d.pha[p].y+'</div></div>';
+
+  for(const ng of d.nguoi){
+    h+='<div class="lan"><div class="ma num">'+ng.ma+'</div><div class="ten">'+ng.ten+'</div>'
+      +'<div class="mo">'+ng.mo+'</div></div>';
+    for(const p of pha){
+      const oViec=d.viec.filter(v=>v.lane===ng.ma&&v.pha===p);
+      h+='<div class="o">'+(oViec.length?oViec.map(v=>{
+        const t=v.kq?v.kq.trang:'trong';
+        const cho=v.kq&&v.kq.trang==='chuaToi'?v.kq.ghi:'';
+        return '<div class="v '+t+'" title="'+(v.y||'').replace(/"/g,'&quot;')+'">'
+          +'<div class="bar"></div><div class="n">'+v.ten+'</div>'
+          +'<div class="y">'+(v.y||'')+'</div>'
+          +(cho?'<div class="cho">⏳ '+cho+'</div>':'')
+          +(v.kq&&v.kq.trang==='hong'?'<div class="cho" style="color:var(--bad)">'+(v.kq.ghi||'').slice(0,90)+'</div>':'')
+          +(v.kq&&v.kq.trang==='tay'?'<div class="cho">👁 '+v.kq.ghi+'</div>':'')
+          +'</div>';
+      }).join(''):'<div class="sub" style="color:var(--t4);font-size:11.5px">—</div>')+'</div>';
+    }
+  }
+  $('#grid').innerHTML=h;
+  const dt=$('#dau-thoi-gian');
+  if(dt) dt.textContent=d.dang?'đang soát lại…':(d.luc?'soát lúc '+new Date(d.luc).toLocaleTimeString('vi-VN'):'chưa soát');
 }
 
 async function veNut(){
   const v=await (await fetch('/api/viec')).json();
-  $('#nut').innerHTML=v.filter(x=>x.ma.startsWith('soi')||x.ma==='dung-dev')
-    .map(x=>'<button class="'+(x.ma==='dung-dev'?'chinh':'')+'" data-ma="'+x.ma+'" title="'+x.y+'">'+x.nhan+'</button>').join('');
+  $('#nut').innerHTML='<button class="chinh" data-soat="1">Soát lại toàn diện</button>'
+    +v.map(x=>'<button data-ma="'+x.ma+'" title="'+x.y+'">'+x.nhan+'</button>').join('');
 }
 
 document.addEventListener('click',async e=>{
-  const b=e.target.closest('button[data-ma]'); if(!b||dangChay) return;
+  const b=e.target.closest('button'); if(!b||dangChay) return;
   dangChay=true; const cu=b.textContent; b.textContent='đang chạy…';
   document.querySelectorAll('button').forEach(x=>x.disabled=true);
   try{
-    const r=await (await fetch('/api/lam',{method:'POST',headers:{'content-type':'application/json'},
-      body:JSON.stringify({ma:b.dataset.ma,lane:b.dataset.lane,phieu:b.dataset.phieu})})).json();
-    $('#ra').textContent=(r.ok===false?'⚠️ lệnh trả mã lỗi\\n\\n':'')+(r.ra||r.loi||'(không có đầu ra)');
+    if(b.dataset.soat){
+      await fetch('/api/soat-lai',{method:'POST'});
+      $('#ra').textContent='Đang soát toàn diện — mẻ này chạy cả npm test nên mất khoảng một phút.';
+    }else{
+      const r=await (await fetch('/api/lam',{method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({ma:b.dataset.ma})})).json();
+      $('#ra').textContent=(r.ok===false?'⚠️ lệnh trả mã lỗi\\n\\n':'')+(r.ra||r.loi||'(không có đầu ra)');
+    }
   }catch(err){ $('#ra').textContent='Không gọi được máy chủ: '+err.message; }
   document.querySelectorAll('button').forEach(x=>x.disabled=false);
-  b.textContent=cu; dangChay=false; ve();
+  b.textContent=cu; dangChay=false; veGrid(); veTop();
 });
 
-veNut(); ve(); setInterval(ve,2000);
+veNut(); veGrid(); veTop();
+setInterval(()=>{veTop(); if(soVe&&soVe.dang) veGrid();},2500);
 </script></body></html>`;
 
 createServer(nghe).listen(CONG, '127.0.0.1', () => {
   console.log(`\n  Phòng điều khiển IF  →  http://127.0.0.1:${CONG}`);
-  console.log(`  Đọc trạng thái thật mỗi 2 giây. Danh sách hành động ĐÓNG (${Object.keys(VIEC).length} việc).`);
+  console.log(`  Đọc trạng thái thật mỗi 2 giây. Danh sách hành động ĐÓNG (${Object.keys(HANH_DONG).length} việc).`);
   console.log('  Ctrl+C để tắt.\n');
 });
