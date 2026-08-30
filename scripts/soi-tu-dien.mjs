@@ -73,6 +73,38 @@ const TU_DIEN = [
 // ───────────────────────────────────────────────────────────────────────────────────────────
 const TU_DA_NGHIA = [
   {
+    /* ══ THÊM 30/08 — Hoà chẩn đúng gốc của lỗi "xám bẩn" đã báo HƠN BA LẦN ══
+     *   *"Nếu mình đoán không lầm, lỗi này xuất từ việc hiểu nghĩa tiếng Việt giữa: MÀU NỀN
+     *   (toàn bộ màu base của các màn) = MÀU HÌNH NỀN, rồi sau đó lẫn lộn lấy làm nền luôn."*
+     *
+     * Bằng chứng đo được cùng ngày: `components/present-editor/PlayerElements.tsx:55` viết CẢ HAI
+     * trong một câu — *"ảnh nền full-bleed (màu nền do SlidePlayer đặt…)"*. Và "màu nền" đang mang
+     * ÍT NHẤT NĂM nghĩa trong mã: nền slide · nền khung avatar · màu nguội thanh tiến trình ·
+     * nền của chính một vật · nền base toàn app.
+     *
+     * ⚠️ VÌ SAO CA NÀY QUAY LẠI BA LẦN: máy canh có, nhưng **nó không kêu** — `nền` chưa từng nằm
+     * trong bảng này. Hoà: *"máy canh mà không kêu thì phải coi lại."*
+     *
+     * ══ CÁCH GIẢI, Hoà chốt — và đây là khuôn cho CẢ tính năng "Create with AI" ══
+     *   canh → thấy sai HOẶC NGHI sai → báo thẳng AI/agent
+     *        → agent TÓM GỌN điều người dùng vừa yêu cầu
+     *        → rồi HỎI LUÔN: từ đó anh muốn nói nghĩa nào?
+     *   ⇒ giải xong bài toán, ai cũng hiểu dù cùng một từ mà khác nghĩa.
+     * Người dùng IF sẽ gõ "đổi màu nền" vào ô Create with AI. Nếu máy đoán bừa thì nó đổi nhầm
+     * token base thay vì thay ảnh nền — đúng lỗi vừa xảy ra, chỉ khác là lần đó nạn nhân là chúng ta. */
+    tu: 'nền',
+    v5: '#0 🔴🔴 — ca đã trả giá 3 lần',
+    ten: [
+      'nền base (token mặt của app: --bg · --panel · --card · --field)',
+      'hình nền / wallpaper (ẢNH khoác lên, thay lúc nào cũng được)',
+      'nền của một vật (nền thẻ · nền nút · nền khung avatar)',
+    ],
+    /* Có một trong các định ngữ này thì đã rõ nghĩa ⇒ thôi báo. */
+    dinh_ngu: /hình nền|wallpaper|ảnh nền|nền động|nền base|nền hệ|--bg\b|--panel\b|--card\b|--field\b|nền thẻ|nền nút|nền khung|nền mờ|background-image|backgroundImage/i,
+    pham_vi: ['docs/phieu-giao', '.claude/skills'],
+    ngoai_le: [],
+  },
+  {
     tu: 'khối',
     v5: '#1 🔴🔴',
     ten: ['bước (node trên canvas)', 'khối (khối 3D đặc — GIỮ chữ)', 'mảng (khối giao diện)'],
@@ -221,6 +253,15 @@ console.log(tongNhan ? `\n🔴 ${tongNhan} chỗ lệch NHÃN — sửa khi ch�
 console.log('\n' + '─'.repeat(96));
 console.log('🟡 TỪ TRẦN ĐA NGHĨA — chữ dùng mà chưa nói rõ nghĩa nào (§V5 NC-TU-DA-NGHIA, Hoà duyệt 16/08)');
 console.log('   Mức CẢNH BÁO: đếm và chỉ chỗ, KHÔNG chặn build. Máy không đặt tên hộ — người chọn.');
+console.log('');
+console.log('   ⇒ CÁCH GIẢI, Hoà chốt 30/08 — máy KHÔNG dừng ở việc kêu:');
+console.log('       ① máy canh thấy sai HOẶC NGHI sai  →  báo thẳng AI/agent đang làm');
+console.log('       ② agent TÓM GỌN điều người dùng vừa yêu cầu');
+console.log('       ③ rồi HỎI LUÔN: từ đó anh muốn nói nghĩa nào trong các nghĩa dưới?');
+console.log('     Giải xong bài toán: ai cũng hiểu, dù cùng một chữ mà khác nghĩa.');
+console.log('     ⚠️ Đây cũng là khuôn bắt buộc cho tính năng CREATE WITH AI của IF — người dùng gõ');
+console.log('     "đổi màu nền" thì máy phải HỎI, không được đoán. Đoán bừa là đổi nhầm token base');
+console.log('     thay vì thay ảnh nền — đúng lỗi đã trả giá ba lần, chỉ khác là nạn nhân lần đó là ta.');
 console.log('─'.repeat(96));
 
 let tongDaNghia = 0;

@@ -157,29 +157,35 @@ Tiếng Việt chồng **hai tầng dấu** (`ế` `ộ` `ữ`), nên quy tắc 
 
 ---
 
-## 4 · MÀU — chưa có chuẩn, và **gu KHÔNG phải chuẩn**
+## 4 · MÀU — **HỆ ĐÃ CHỐT 30/08**: 5 bộ, mỗi bộ là *hình nền + bảng màu* đi liền
 
-🔴 **HẠ CẤP 30/08 — mục này TRƯỚC ĐÂY lấy `docs/GU-PROFILE.md` §2 làm NGUỒN CHUẨN cho luật
-"đơn sắc + một màu nhấn". Đó là biến gu cá nhân thành chuẩn ngành, và Hoà bác thẳng:**
+> Hoà chốt: *"Hệ màu accent tôi đã chốt rồi. Sẽ có các bảng màu gắn với hình nền sẵn có, ứng với
+> **5 phong cách và cá tính nghệ thuật đặc trưng**. Ai thích chọn gì thì cài cái đó. Cả hệ, phần
+> nào có thể **tinh chỉnh trong range giá trị mà design system cho phép** thì đổi theo, để tạo ra
+> combo cá nhân hoá — cảm giác tối ưu cho sở thích người dùng, **nhưng thực chất vẫn rất tuân thủ
+> luật chung, không phạm**."*
 
-> *"Không cần gu trong giai đoạn này, vì chuẩn ngành nên đang chuẩn bị thiết lập. Gu của tôi ⇒
-> chỉ là thứ khiến IF trở nên **khác biệt**, và là **một trong những design DNA** được trích xuất
-> từ **một designer đầu tiên** IF học thôi."*
-
-⇒ Ba câu, ghi ra để không ai xếp nhầm lần nữa:
+### Ba điều kiến trúc rút ra — đây không phải một tuỳ chọn, nó đổi cách dựng token
 
 | | |
 |---|---|
-| `GU-PROFILE.md` **là** | **mẫu DNA thiết kế số 1** — trích từ designer đầu tiên IF học. Dữ liệu hiệu chuẩn. |
-| `GU-PROFILE.md` **không phải** | chuẩn · nguồn · thang đo · mặc định toàn cầu |
-| Nó dùng để | làm IF **khác biệt**, sau khi IF đã đạt chuẩn — **không** thay chuẩn |
+| **Bộ = hình nền + bảng màu, đi liền** | không phải hai thứ chọn rời. Đúng hình ảnh Hoà đưa trước đó: *Home **mặc** cái áo wallpaper, thay lúc nào cũng được*. |
+| **Token nền phải DẪN XUẤT từ bộ đang chọn** | không được cố định cứng. Base tự mang gu thì **mọi wallpaper khoác lên đều bị nhuộm**. |
+| **Tự do có RANGE, và range là luật** | người dùng chỉnh được, nhưng chỉ trong khoảng design system cho phép. **Tự do trong khung, không phải tự do khỏi khung.** |
 
-**Trạng thái thật của mục MÀU:** `CHƯA CÓ CHUẨN`. Số màu nhấn nên là bao nhiêu, dựa trên nghiên
-cứu nào — đó là câu của lĩnh vực `11 · 12` trong bản đồ, đã giao lane 05. **Không dùng gu để lấp
-chỗ trống này.**
+### Hệ quả thi hành
 
-**Đo IF, giữ lại vì nó là dữ kiện:** accent `#6a57f5` tím-indigo — accent mặc định của gần như
-mọi SaaS. Có đúng không thì chờ chuẩn, không chờ gu.
+- Câu *"base nên trung tính bao nhiêu"* mà lane 00 để mở 30/08 ⇒ **đã có lời**: base trung tính
+  **đủ để không nhuộm** wallpaper; sắc thái đến từ **bộ**, không từ token cứng.
+- Accent `#6a57f5` hiện tại **không còn là hằng số** — nó là accent của **một** bộ trong năm.
+- **Cần dựng, chưa có:** ① khai báo 5 bộ ② **range hợp lệ cho từng token chỉnh được** ③ cổng canh
+  giá trị người dùng chỉnh không ra ngoài range. Không có ③ thì "không phạm luật chung" chỉ là
+  lời chúc.
+- Luật đã có vẫn thắng: hai cổng `soi:trung-tinh` (mặt nền và bóng cùng họ) và WCAG 2.2 AA
+  **áp cho MỌI bộ** — một bộ đẹp mà chữ không đọc được vẫn là bộ hỏng.
+
+⚠️ **`GU-PROFILE.md` vẫn KHÔNG phải nguồn ở đây.** Nó là **DNA số 1**, có thể trở thành **một
+trong năm bộ**, không phải cái khuôn của cả năm.
 
 ---
 

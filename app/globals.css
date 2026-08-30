@@ -154,7 +154,15 @@
   --tap-lg: 44px;
   --row: 28px;
   --gap: 8px;
-  --fs-2xs: 11px;
+  /* 🔴 30/08 — NÂNG SÀN 11 → 12px. Luật V-6: dưới 12px thì dấu tiếng Việt (ắ ấ ộ ữ) sập thành
+     một chấm mờ — đây là sàn ĐỌC ĐƯỢC, không phải sở thích. Tỉ lệ các nấc TRÊN giữ nguyên
+     (14·16·20·28) vì lượt này chỉ nâng SÀN; việc thang có đúng mô-đun hay không là phiếu riêng
+     của lane 05 (`IF-CHUAN-NEN.md` §2 đo được 4 tỉ lệ khác nhau trong cùng một thang).
+     ⚠️ Nâng token này chỉ chạm 161 chỗ dùng `--fs-2xs`. 1.186 chỗ còn lại viết SỐ CỨNG dưới sàn
+     bằng lớp Tailwind tuỳ ý — chúng đi VÒNG qua thang, nên token không với tới. Đó là việc của
+     codemod, không phải của dòng này. (Cố ý KHÔNG viết ví dụ số cứng ra đây: máy soi đọc cả chú
+     thích, viết ví dụ vào là tự đẻ thêm vi phạm — đã đo, +3.) */
+  --fs-2xs: 12px;
   /* Bổ sung 13/08 (đợt 5, phiếu H3) — 2 token còn thiếu trong bộ 5 đã chốt ở
      SPEC-MAT-DO-CON-TRO §5 (`--tap/--row/--gap/--pad-card/--fs-ui`). 3 token đầu đã có
      từ trước (dòng trên); --pad-card/--fs-ui nạp ở đây, override cùng khối cảm ứng dưới. */
@@ -370,7 +378,19 @@
 :root[data-theme='light'] {
   --bg: #f2f2f7;
   --panel: #f9f9fb;
-  --card: #ffffff;
+  /* 🔴 SỬA 30/08 — TRƯỚC ĐÂY `#ffffff`, VÀ ĐÓ LÀ GỐC CỦA "XÁM BẨN ÁM LÊN TRẮNG".
+     Hoà báo lỗi này HƠN BA LẦN, mỗi lần sửa xong nó lại quay về — vì chưa ai tìm ra gốc và
+     chưa có cổng canh. Gốc không nằm ở trắng đóng cứng trong mã (đo 30/08: 319 chỗ, nhưng thẻ
+     dự án dùng đúng `var(--card)`), mà nằm ở CHÍNH BẢNG MÀU:
+         --bg     #f2f2f7   lệch kênh +5   ám xanh nhẹ
+         --panel  #f9f9fb   lệch kênh +2   ám xanh nhẹ
+         --card   #ffffff   lệch kênh  0   TRUNG TÍNH TUYỆT ĐỐI  ← cái lạc
+     Trộn một trung tính THUẦN với các trung tính ĐÃ ÁM MÀU thì mắt neo vào cái thuần làm mốc
+     trắng, và mọi mặt còn lại đọc thành "xám bẩn". Đây là lỗi bảng màu kinh điển, không phải
+     chuyện gu. Theme tối KHÔNG bị: 0c0c0e · 141417 · 1a1a1e cùng ám một hướng.
+     ⇒ `--card` nay giữ vai sáng nhất của thang, nhưng ám CÙNG HƯỚNG với cả bảng.
+     Cổng canh: `npm run soi:trung-tinh` — mặt nền nào lệch kênh 0 giữa bảng đã ám là đỏ. */
+  --card: #fdfdff;
   --field: #f4f4f9;
   --hover: #e8e8ef;
   --border: #e2e2ea;
@@ -419,9 +439,17 @@
      mới ≥ giá trị cũ tương ứng). */
   --mo-vo-hieu: 0.62;
 
-  --shadow-sheet: 0 12px 40px -14px rgba(44, 44, 56, 0.28);
-  --shadow-pop: 0 10px 30px -10px rgba(44, 44, 56, 0.22);
-  --shadow-node: 0 6px 18px -8px rgba(44, 44, 56, 0.2);
+  /* 🔴 SỬA 30/08 — BÓNG TỪNG ÁM TÍM MẠNH HƠN MỌI MẶT NỀN NÓ ĐỔ LÊN.
+     Đo được: bóng `rgba(44,44,56)` có B−R = 12, trong khi cả bảng mặt nền chỉ 2–8
+     (--card 2 · --panel 2 · --bg 5 · --field 5 · --hover 7 · --border 8).
+     Bóng không thuộc cùng họ trung tính với thứ nó phủ lên ⇒ Hoà thấy "ám tím + shadow".
+     Và vì lệch MÀU cộng vào lệch SÁNG, cùng một alpha sẽ đọc GẮT hơn một bóng cùng họ.
+     ⇒ Kéo về B−R = 6, nằm giữa dải 2–8 của bảng. Giữ nguyên alpha và bán kính — đổi một biến
+     một lần, để biết chính xác cái nào chữa được cái gì.
+     Cổng: `npm run soi:trung-tinh` nay canh cả màu bóng, không chỉ mặt nền. */
+  --shadow-sheet: 0 12px 40px -14px rgba(46, 46, 52, 0.28);
+  --shadow-pop: 0 10px 30px -10px rgba(46, 46, 52, 0.22);
+  --shadow-node: 0 6px 18px -8px rgba(46, 46, 52, 0.2);
 
   /* Trạng thái — bản SÁNG cần đậm hơn hẳn để đạt ≥4.5:1 trên --panel (#f9f9fb)/
      --card (#ffffff) gần trắng; cùng hue với bản tối, chỉ hạ lightness. */
