@@ -215,9 +215,15 @@ Tiếng Việt chồng **hai tầng dấu** (`ế` `ộ` `ữ`), nên quy tắc 
 - Câu *"base nên trung tính bao nhiêu"* mà lane 00 để mở 30/08 ⇒ **đã có lời**: base trung tính
   **đủ để không nhuộm** wallpaper; sắc thái đến từ **bộ**, không từ token cứng.
 - Accent `#6a57f5` hiện tại **không còn là hằng số** — nó là accent của **một** bộ trong năm.
-- **Cần dựng, chưa có:** ① khai báo 5 bộ ② **range hợp lệ cho từng token chỉnh được** ③ cổng canh
-  giá trị người dùng chỉnh không ra ngoài range. Không có ③ thì "không phạm luật chung" chỉ là
-  lời chúc.
+- 🔴 **SỬA 30/08 — DÒNG CŨ SAI HIỆN TRẠNG.** Nguyên văn: *"Cần dựng, chưa có: ① khai báo 5 bộ
+  ② range ③ cổng canh"*. Mục ① **đã có từ 16/08**: `lib/wallpaper/sets.ts` khai đúng năm bộ, sinh
+  bằng mã, kèm **240 phép đo** tương phản trong `contrast.test.ts`. Viết "chưa có" về một thứ đã
+  chạy 14 ngày là N8 ở dạng đắt nhất — suýt dựng lại từ đầu.
+  Thiếu thật là **nửa BẢNG MÀU** của câu "bộ = hình nền + bảng màu đi liền" (`sets.ts` cố ý không
+  mang màu nhấn), cộng ② và ③. **Cả ba nay đã dựng** — lane 04, 30/08:
+  `lib/wallpaper/mau-bo.ts` + `mau-bo.test.ts` (51 pass, 8 ca đột biến, trên đường `npm test`).
+  ⇒ **Lời chứng đầy đủ, ba câu hỏi ①②③ và khoảng trống không che: `docs/control/IF-HE-5-BO-MAU.md`.**
+  ⚠️ Còn nợ: `--accent` trong `globals.css` **chưa** dẫn xuất từ bộ đang chọn — xem §4/§5 tệp đó.
 - Luật đã có vẫn thắng: hai cổng `soi:trung-tinh` (mặt nền và bóng cùng họ) và WCAG 2.2 AA
   **áp cho MỌI bộ** — một bộ đẹp mà chữ không đọc được vẫn là bộ hỏng.
 

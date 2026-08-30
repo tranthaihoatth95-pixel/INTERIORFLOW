@@ -52,11 +52,26 @@ const bamNgan = (s) => createHash('sha256').update(s).digest('hex').slice(0, 12)
 
 /** Ghi: lane này đang do phiên nào giữ. Gọi mỗi lần hook chạm — tự lành, không cần ai dọn. */
 function buocLane(lane) {
-  const ct = conTro();
-  if (!ct) return;
+  /* ID PHIÊN PHẢI ĐẾN TỪ CHÍNH PHIÊN, KHÔNG ĐƯỢC ĐOÁN.
+   * Bản đầu dùng `conTro()` — "tệp .jsonl vừa được chạm gần nhất". Sai ngay khi có hai phiên
+   * chạy song song: đo 30/08 lúc 5 phiên cùng sống, sổ gán lane 04 và 06 cho CÙNG một id, và
+   * gán lane 03 cho phiên MAIN vốn chưa bao giờ nhận lane đó. Một sổ sai còn tệ hơn không có
+   * sổ — nó khiến MAIN gọi nhầm người rồi tin là đã gọi đúng.
+   * Hook của Claude Code đưa JSON vào stdin, trong đó có `session_id` THẬT. Đọc nó trước;
+   * chỉ khi không có mới lùi về phỏng đoán, VÀ khi lùi thì đánh dấu `doan: true` để người đọc
+   * biết dòng đó không chắc. */
+  let phien = null, doan = false;
+  try {
+    if (!process.stdin.isTTY) {
+      const vao = readFileSync(0, 'utf8');
+      phien = JSON.parse(vao).session_id ?? null;
+    }
+  } catch { /* không có stdin, hoặc không phải JSON */ }
+  if (!phien) { const ct = conTro(); if (!ct) return; phien = ct.phien; doan = true; }
+  const ct = { phien };
   let so = {};
   try { so = JSON.parse(readFileSync(SO_LANE, 'utf8')); } catch { /* chưa có sổ */ }
-  so[lane] = { phien: ct.phien, luc: new Date().toISOString() };
+  so[lane] = { phien: ct.phien, luc: new Date().toISOString(), ...(doan ? { doan: true } : {}) };
   try { mkdirSync(path.dirname(SO_LANE), { recursive: true }); writeFileSync(SO_LANE, JSON.stringify(so, null, 2)); }
   catch { /* không ghi được thì thôi — cấm làm hỏng phiên vì một sổ phụ */ }
 }
@@ -135,7 +150,7 @@ if (lenh === 'ai-giu') {
   console.log('── lane ↔ phiên đang giữ ──');
   for (const [l, v] of hang.sort()) {
     const phut = Math.round((Date.now() - Date.parse(v.luc)) / 60000);
-    console.log(`  ${l}  ${v.phien}  · gõ lần cuối ${phut} phút trước${phut > 120 ? '  ⚠️ có thể đã đóng' : ''}`);
+    console.log(`  ${l}  ${v.phien}  · gõ lần cuối ${phut} phút trước${v.doan ? '  ⚠️ ĐOÁN, chưa chắc' : ''}${phut > 120 ? '  ⚠️ có thể đã đóng' : ''}`);
   }
   process.exit(0);
 }
