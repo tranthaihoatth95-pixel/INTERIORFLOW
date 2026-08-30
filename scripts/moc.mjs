@@ -124,6 +124,7 @@ if (lenh === 'im' || lenh === 'inbox' || lenh === 'peek') {
     console.error('Dùng: node scripts/moc.mjs inbox <lane>');
     process.exit(2);
   }
+  let daChiBan = false;
   const events = docSuKien();
   const acked = new Set(events.filter((e) => e.type === 'ACK' && e.lane === lane).map((e) => e.handoffId));
   const seen = new Set(events.filter((e) => e.type === 'SEEN' && e.lane === lane).map((e) => e.handoffId));
@@ -137,6 +138,12 @@ if (lenh === 'im' || lenh === 'inbox' || lenh === 'peek') {
     console.log(`${e.id}${seen.has(e.id) ? '' : '  🆕'}\n  ${e.from} → ${e.to} · ${e.topic}\n  ${e.body}\n  nguồn: ${e.source}\n`);
     // SEEN ghi MỘT LẦN cho mỗi phiếu — biên nhận "đã tới mắt", khác hẳn ACK "đã xử lý".
     // CHỈ `im` (hook tại đích) được ghi. `peek`/`inbox` đi qua đây mà không để lại gì.
+    if (!daChiBan) {
+      /* Ngồi vào bàn thì phải đọc bàn giao TRƯỚC khi gõ — kiến thức nằm ở bàn, không ở người ngồi
+       * (Hoà 30/08). In một dòng, không in cả bàn: bàn có thể dài, và đổ dài mỗi lượt là đổ rác. */
+      console.log(`📋 BÀN ${lane} · ${VAI[lane] ?? ''}\n   đọc bàn giao TRƯỚC khi gõ:  docs/control/ban/${lane}.md`);
+      daChiBan = true;
+    }
     if (!chiDoc && !seen.has(e.id)) ghiSuKien({ schema: 'BOS-HANDOFF-v1', id: `SEEN-${randomUUID()}`, type: 'SEEN', lane, handoffId: e.id, createdAt: new Date().toISOString() });
   }
   process.exit(0);
