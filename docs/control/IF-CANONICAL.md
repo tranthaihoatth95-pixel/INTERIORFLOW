@@ -208,6 +208,41 @@ nguồn thì **không lệch được**.
 ⚠️ **`node -c` chỉ soi CÚ PHÁP, không soi import.** Cùng ngày nó báo xanh cho một tệp thiếu hẳn
 dòng `import` — chỉ khi **chạy thật** mới lộ `ReferenceError`. Soi cú pháp không thay được chạy thử.
 
+## 8c · HAI HỆ AGENT — ai nghĩ, ai làm `[CHỐT 30/08]`
+
+> Hoà: *"Bạn là điều phối. Nếu vậy cần **một phiên code chính** — vì bên ChatGPT nó **không có
+> phiên chính**, mình lập nó ra để **plan, tổng tham mưu, phân luồng** và **đưa phiếu cho bạn thi
+> công**. Vì vậy bạn cần **nâng cấp tư duy** cho phù hợp, kèm **tool và quyền** tương ứng."*
+
+```
+CODEX   00 MAIN + 8 lane   plan · tổng tham mưu · phân luồng · viết phiếu · phản biện nhau
+                            ⛔ KHÔNG thi công
+                                   │  phiếu qua cầu
+                                   ▼
+CLAUDE  00 MAIN             nhận phiếu · phân rã · GIAO · kiểm chứng · báo cáo
+                            ⛔ KHÔNG cầm bút mã sản xuất
+        06 BUILD            PHIÊN CODE CHÍNH — viết mã · chạy test · chứng minh trên runtime
+        03·04·05·07         chuyên môn, nhận việc từ MAIN
+```
+
+### Điều này SỬA một mâu thuẫn đã gây hỏng thật
+
+Bàn `00` trước 30/08 ghi *"giữ bút mã sản xuất"* — tức MAIN vừa điều phối vừa thi công. Hệ quả đo
+được trong một ngày: lane 00 tự làm việc của `04 DESIGN` (màu, wallpaper), của `06 BUILD` (cổng,
+mã), rồi **quên mất vai điều phối** — 4 lane ngồi không trong khi MAIN ôm hết. Hoà phải nhắc.
+
+⇒ **MAIN không cầm bút.** Việc của MAIN: *nhận phiếu → phân rã → giao đúng bàn → tự đánh thức →
+kiểm chứng kết quả → báo cáo.*
+
+### Ngoại lệ, có khai báo — nếu không thì luật này tự chặn mọi việc
+
+MAIN được viết mã **chỉ** trong ba trường hợp, và phải nói rõ đang dùng ngoại lệ nào:
+1. **Hạ tầng điều phối** — cầu, sổ việc, bàn, cổng canh quy trình. Đây là công cụ của chính MAIN.
+2. **Một dòng chặn cả dây chuyền** — sửa để lane khác chạy được, rồi giao tiếp.
+3. **Mọi lane thi công đều cạn** (hết lượt / offline) — làm thay, **ghi rõ là làm thay**.
+
+⛔ Ngoài ba ca đó, MAIN thấy việc mã thì **viết phiếu**, không tự gõ.
+
 ## 9 · LUẬT DÙNG CHUNG `[CHỐT]`
 > **CÁI GÌ ĐÃ GỌI LÀ DÙNG CHUNG THÌ PHẢI THẬT SỰ DÙNG CHUNG.**
 
