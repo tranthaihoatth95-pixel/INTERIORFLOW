@@ -32,10 +32,21 @@
   ],
 
   "//lane": [
-    "Hook đọc lane từ biến IF_LANE. Phiên nào đặt IF_LANE=06 thì nhận phiếu của lane 06.",
-    "Không đặt ⇒ mặc định 00 (MAIN). Cách đặt: `export IF_LANE=06` trước khi mở phiên, hoặc",
+    "Hook đọc địa chỉ từ IF_SYSTEM=cl + IF_LANE=NN. Không còn fallback 00.",
+    "Cách đặt: `export IF_SYSTEM=cl IF_LANE=06` trước khi mở phiên, hoặc",
     "thêm vào `.claude/settings.local.json` mục `env` của riêng máy đó.",
-    "Một biến duy nhất điều khiển cả hai hook — không đẻ cấu hình thứ hai (luật 6).",
+    "Mutation nào cũng cần IF_TASK_ID + IF_SESSION_ID. Sau đó rẽ theo lane:",
+    "  cl:00      chỉ đọc / định tuyến — không có đường ghi nào",
+    "  cl:06      ghi PRODUCTION, cần IF_LEASE_ID trỏ tới lease ACTIVE trong control-plane;",
+    "             lease khoá cả system·lane·session·task·id, allowlist là `files` CỦA LEASE.",
+    "             `git commit -m` được phép sau khi đã `git add` tệp tường minh (cấm -a/--all/-A).",
+    "  lane khác  ghi WORKSPACE của mình, allowlist đọc từ IF_FILE_ALLOWLIST",
+    "             (ngăn bằng `:` hoặc `,`, đường tương đối gốc repo). Không được commit.",
+    "⚠️ IF_FILE_ALLOWLIST đã được HỨA ở dòng này từ 29/08 nhưng tới 30/08 chưa dòng mã nào đọc nó",
+    "— lane khác 06 vì thế không có đường ghi nào cả, dù chú thích nói là có. Nối thật 31/08.",
+    "Lớp VERIFY (`npm test`, `npm run soi:*`, `npx tsc --noEmit`, `node scripts/soi-*.mjs`) chạy",
+    "được ở MỌI lane, không cần lease: bắt người kiểm xin quyền ghi là dạy họ đừng kiểm.",
+    "PreToolUse in đủ SYSTEM · ROLE · TASK · LEASE · KIND · FILES rồi mới cho qua.",
     "",
     "⚠️ CHỈ HOOK NÀY ĐƯỢC GHI `SEEN`, và chỉ vì nó chạy TẠI ĐÍCH. Lệnh nó gọi là `im` —",
     "`peek`/`inbox` là CHỈ ĐỌC tuyệt đối, ai soi cũng được mà không để lại dấu.",
@@ -44,13 +55,39 @@
     "nhận — nó làm cả hệ thống tin rằng phiếu đã tới nơi. Lỗi này có thật, đã đo, đã sửa 29/08."
   ],
 
+  "//guard": [
+    "⛔ MATCHER PHẢI PHỦ MỌI CÔNG CỤ GHI ĐƯỢC TỆP, không chỉ Bash/Write/Edit — lỗ #5, đo 30/08.",
+    "Cổng canh ba cái tên thì ba cái tên đó an toàn; mọi đường khác vào cùng cây tệp vẫn mở:",
+    "  NotebookEdit                       — ghi .ipynb, không đi qua Write/Edit",
+    "  mcp__serena__replace_*/insert_*/   — sửa mã theo symbol, và `replace_in_files` sửa HÀNG LOẠT",
+    "  rename_*/safe_delete_*/write_*     — đổi tên, xoá, ghi memory",
+    "Một luật chỉ là luật khi có CHỖ NẠP · MỘT CỔNG · CA ĐỘT BIẾN chứng minh cổng bắt được.",
+    "Ca ở `scripts/claude-role-guard.test.ts` mục ⑥: tool lạ không khai tệp ⇒ chặn; khai tệp",
+    "ngoài lease ⇒ chặn. Trước 31/08 nhánh mặc định của `inspect()` trả `read`, nên dù matcher",
+    "có kêu thì guard vẫn cho qua — cổng kêu mà không cắn còn tệ hơn không có cổng.",
+    "",
+    "⚠️ Chú thích của tệp này phải nằm ở CẤP GỐC. Khoá lạ đặt trong `hooks` chen vào chỗ dành",
+    "cho TÊN SỰ KIỆN hook — bản nháp 31/08 đã đặt nhầm `//guard` vào đó và bị bắt tại chỗ."
+  ],
+
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Bash|mcp__serena__(replace|insert|rename|safe_delete|write|edit|delete)_.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && node scripts/claude-role-guard.mjs"
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && node scripts/moc.mjs im \"${IF_LANE:-00}\" 2>/dev/null || true"
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && test \"$IF_SYSTEM\" = cl && test -n \"$IF_LANE\" && node scripts/moc.mjs im \"cl:${IF_LANE}\""
           }
         ]
       }
@@ -60,7 +97,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && node scripts/moc.mjs im \"${IF_LANE:-00}\" 2>/dev/null || true"
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && test \"$IF_SYSTEM\" = cl && test -n \"$IF_LANE\" && node scripts/moc.mjs im \"cl:${IF_LANE}\""
           }
         ]
       }

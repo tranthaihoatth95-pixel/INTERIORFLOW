@@ -32,6 +32,20 @@ CẤM:       PASS giả (chỉ NOT ASSESSED / PARTIAL / PASS / FAIL, kèm bề m
            audit lại toàn repo (chỉ delta audit khi chạm security/migration/dữ liệu/tenant/runtime)
 ```
 
+🔒 **QUYỀN GHI NAY CÓ CỔNG MÁY, không chỉ có ô chữ này (31/08).** Ô trên nói *ai được ghi*;
+tới 30/08 nó vẫn chỉ là lời — không gì chặn một phiên khác gõ `Write`. Nay `PreToolUse` gọi
+`scripts/claude-role-guard.mjs` trước MỌI công cụ ghi được tệp, và mỗi lượt ghi phải trình
+`SYSTEM · ROLE · TASK · LEASE · KIND · FILES`:
+- `cl:06` ghi production, phải có **lease ACTIVE** trong `~/PROJECT/SHARED/LOG/claude-writer-leases.jsonl`
+  khớp cả system·lane·session·task·id; allowlist là trường `files` **của lease**, không phải của phiên.
+- `cl:00` chỉ đọc/định tuyến. **Lane khác** ghi workspace của mình theo `IF_FILE_ALLOWLIST`.
+- Lớp **VERIFY** (`npm test`, `npm run soi:*`, `npx tsc --noEmit`, `node scripts/soi-*.mjs`) chạy
+  được ở mọi lane **không cần lease** — bắt người kiểm xin quyền ghi là dạy họ đừng kiểm.
+- Cấp/thu lease cho người thật: `node scripts/claude-lease.mjs issue --issuer-hoa "<ghi chú>" …`.
+  Trước 31/08 không có lối này, nên Hoà muốn cấp lease phải mượn identity `cx:00` — sổ ghi tên
+  một tuyến máy cho quyết định của người, tức nói dối đúng ô quan trọng nhất: *ai đã cho phép*.
+Ca đột biến: `scripts/claude-role-guard.test.ts` (đỏ **và** xanh — cổng luôn kêu là cổng vô dụng).
+
 🔴 **BA Ô NGƯỜI-GHI CŨ ĐÃ XOÁ KHỎI TỆP NÀY (27/08).** Chúng khai `interiorflow-65`,
 `interiorflow-9b`, và một khối "Bàn giao" tự trao bút cho bất kỳ ai đọc. Cả ba đã hết hiệu lực
 nhưng vẫn nằm đây, nên tệp có **ba người ghi cùng sống** — đúng thứ mà chính tệp này cấm.
@@ -430,3 +444,14 @@ nếu còn đếm oan → **rồi mới** hội tụ. ⛔ Cấm sửa 137 chỗ 
 lượt hai **do phiên KHÁC chấm**, và nó nay phải chấm cả **~680 site đổi cỡ icon của đợt 24/08** —
 chúng là thay đổi người dùng nhìn thấy, mới qua máy, **chưa qua mắt**.
 ⚠️ ② chỉ chặn việc CHẤM. Không được đứng yên chờ nó — ① và cả P0 còn lại đều đi được.
+
+**③ NỢ CÓ TÊN CỦA ROLE GUARD (31/08, sau Hướng A).** Cổng đã đóng bốn lỗ đo được — ống thuần
+đọc bị chặn oan · lớp VERIFY phải xin lease · `IF_FILE_ALLOWLIST` hứa mà không đọc · công cụ ghi
+ngoài `Bash/Write/Edit` không ai canh. Còn lại, **chưa làm, đừng tưởng đã xong**:
+- `2>&1` bị chặn cùng lối với `> tệp` (cùng ký tự `>`), nên không gộp được stderr khi chạy lệnh.
+  Chưa tách; hiện phải dùng ống `| tail`.
+- Guard mới chứng minh trên tuyến **Claude**. Tuyến **Codex** chưa lượt nào đi qua cổng này.
+- `npm test` **ĐANG ĐỎ ở `soi:cau`** (4 phiếu đã ghi chưa giao) và `soi:ban` (khối máy giữ của
+  bàn 00 · 06 lệch nguồn, chữa bằng `node scripts/phieu-ca.mjs --ghi-ban`). **Cả hai có trước
+  Hướng A và không thuộc lane nào của nó** — chữa là việc của người giữ cầu, không phải của
+  phiên vừa sửa guard. Ghi ra đây để không ai đọc `npm test` đỏ rồi đổ cho guard.
