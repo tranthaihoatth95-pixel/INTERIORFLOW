@@ -118,3 +118,26 @@ uploads/site/
 
 # rác biên dịch Python — máy soi ảnh chạy tại chỗ, không cần theo dõi
 scripts/__pycache__/
+
+# ── 30/08 — MỌI tệp CSDL, Ở BẤT KỲ ĐÂU trong cây, không riêng prisma/ ──
+# Khuôn cũ chỉ có `prisma/dev.db*` và `prisma/*.db`. Đo 30/08 bằng `scripts/soi-tep-nang.mjs`:
+# HAI tệp CSDL lọt vào git ở GỐC repo — `dev.db` (0 byte, vào từ 16/08) và
+# `dev.db.bak-truoc-hash-20-08` (SQLite rỗng, vào từ 147f66a). Cả hai rỗng nên vô hại, nhưng khe
+# hở thì thật: một bản sao DB có dữ liệu khách lọt qua đúng đường đó là git không bao giờ quên.
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.db.bak*
+*.sqlite
+*.sqlite3
+
+# Bản dựng phát hành — `dist-installer/` đã chặn ở trên, nhưng `release/` thì CHƯA, và đó chính là
+# chỗ tệp .dmg 337,7 MB lọt vào lịch sử ngày 26/08 rồi làm GitHub từ chối cả nhánh (giới hạn
+# 100 MB). Giữ lại tài liệu .md/.txt trong release/ — chỉ chặn phần nhị phân.
+release/**/*.dmg
+release/**/*.blockmap
+release/**/*.zip
+release/**/*.pkg
+release/**/*.exe
+release/**/*.AppImage
