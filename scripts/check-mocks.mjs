@@ -312,4 +312,30 @@ console.log(
   `TỔNG: ${files.length} file quét · ${badFiles.size} file ĐỎ · ${rows.length} loại lỗi · ${totalHits} lần vi phạm`,
 )
 console.log('')
-process.exit(1)
+
+/* ══ BÁNH CÓC, thêm 30/08 ══
+ * Máy này ĐÃ exit 1 từ trước, nhưng **không nằm trong `npm test`** nên chưa từng chặn ai — và một
+ * máy soi ngoài cổng là máy soi không tồn tại. Phiên Codex `00·MAIN` bắt được điều đó 30/08.
+ * Nối thẳng vào `npm test` với 1133 vi phạm thì test đỏ vĩnh viễn, mà cổng luôn đỏ là cổng người
+ * ta học cách ngó lơ (F-02, đã trả giá bằng luật L3). Nên: lấy số ĐO ĐƯỢC hôm nay làm trần, và
+ * CHỈ CHO SIẾT XUỐNG.
+ * ⛔ Nới trần để qua cổng là tháo ngòi dây bẫy (M-52). Sửa mock trước, rồi hạ số trong
+ * `scripts/foundation-tran.json`.
+ * ⚠️ Máy này soi `docs/mocks/` — thư viện bản vẽ hợp đồng thiết kế, KHÔNG phải dữ liệu giả trong
+ * app. Hai chuyện khác nhau, đừng lẫn khi đọc con số. */
+let tranMocks = Infinity
+try {
+  tranMocks = JSON.parse(readFileSync(join(ROOT, 'scripts/foundation-tran.json'), 'utf8'))['T-MOCKS'] ?? Infinity
+} catch { /* thiếu tệp trần ⇒ về hành vi cũ: đỏ là đỏ */ }
+
+console.log(`  bánh cóc T-MOCKS   ${totalHits} / trần ${tranMocks}`)
+if (totalHits > tranMocks) {
+  console.log(`  🔴 VƯỢT TRẦN ${totalHits - tranMocks} vi phạm — mock mới thêm vào đang mang lỗi cũ.`)
+  console.log('  ⛔ CẤM nới trần. Sửa mock, rồi hạ số trong scripts/foundation-tran.json.')
+  process.exit(1)
+}
+if (totalHits < tranMocks) {
+  console.log(`  ✅ ĐÃ SIẾT ${tranMocks - totalHits} — hạ trần xuống ${totalHits} trong foundation-tran.json.`)
+}
+console.log('')
+process.exit(0)

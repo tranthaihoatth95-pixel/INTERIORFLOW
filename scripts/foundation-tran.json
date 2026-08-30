@@ -18,5 +18,7 @@
   "T-cam-hex-inline": 194,
   "F-VANG-MAT": 7,
   "_vang-mat-28-08": "Mở 28/08 sau khi MAIN khẳng định \"bản đóng gói Electron chưa dựng\" trong lời chứng — trong khi dist/InteriorFlow-0.1.0-arm64.dmg 336 MB nằm đó từ 15/07. Khẳng định VẮNG MẶT chỉ đúng trong phạm vi người viết đã nhìn; nhìn nhầm chỗ là sai âm thầm và không ai phát hiện. Thước siết hai lần: lượt đầu bắt cả CÂU LUẬT (kêu oan, đúng lý do bỏ L3), lượt hai chỉ giữ cụm mang hình dạng một phép đo đã chạy.",
-  "T-CHU-VIET": 850
+  "T-CHU-VIET": 850,
+  "T-MOCKS": 1133,
+  "_siet-30-08": "T-MOCKS mở mới ở 1133 — KHÔNG phải vì 1133 là chấp nhận được, mà vì đó là số ĐO ĐƯỢC hôm nay. Trước đó check-mocks.mjs exit 1 với 112/179 tệp đỏ nhưng KHÔNG nằm trong `npm test`, nên chưa từng chặn ai và không ai chạy — máy soi ngoài cổng là máy soi không tồn tại. Phiên Codex 00·MAIN bắt được 30/08. Nay nó nằm trong npm test và chỉ được SIẾT XUỐNG. Đây là thư viện mock hợp đồng thiết kế (docs/mocks/), KHÔNG phải dữ liệu giả trong app — hai chuyện khác nhau."
 }

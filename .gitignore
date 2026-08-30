@@ -141,3 +141,8 @@ release/**/*.zip
 release/**/*.pkg
 release/**/*.exe
 release/**/*.AppImage
+
+# Ảnh chụp màn sinh ra từ `scripts/chup-man-duyet-mat.mjs` — dẫn xuất, dựng lại được bất cứ lúc
+# nào bằng `IF_OUT=... node scripts/chup-man-duyet-mat.mjs`. Không đưa vào git: 8,8 MB mỗi lượt
+# chụp, và git giữ mọi phiên bản. Codex bắt 30/08: 25 tệp chưa track/ignore nên máy báo mồ côi.
+artifacts/man-*/

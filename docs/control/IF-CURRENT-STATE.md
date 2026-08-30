@@ -5,9 +5,12 @@
 > Nhỏ và mới. **Cấm để triết lý dài hạn ở đây** — nó thuộc `IF-CANONICAL.md`.
 > **Cập nhật trước khi kết phiên.**
 
-**Ngày** 28/08/2026 · **Nhánh** `checkpoint/2026-08-24-control-plane` · **HEAD** `65dc66c` · **Cây bẩn** 2 tệp · **Worktree** 0 (đã dọn 28/08) · **Dev server** 0 · **`prisma mcp`** 0
-> Đo lúc ghi, không chép số cũ (M-05). Dòng này TỪNG stale hai lần — khai `main · c7f3ac8` khi
-> thật là nhánh checkpoint, rồi khai `6c9712a · 617 tệp` sau khi đã đi thêm 8 commit.
+**Ngày** 30/08/2026 · **Nhánh** `checkpoint/2026-08-24-control-plane` · **HEAD** `27140602` · **Cây bẩn** 1 tệp · **Worktree** 0 · **Dev server** 1 (cổng 3000) · **`prisma mcp`** 0 · **Lịch sử ĐÃ VIẾT LẠI 30/08** — mọi SHA sau `147f66a` đổi, bảng ánh xạ `.git/filter-repo/commit-map`
+> Đo lúc ghi, không chép số cũ (M-05). Dòng này TỪNG stale **BA** lần — khai `main · c7f3ac8` khi
+> thật là nhánh checkpoint · khai `6c9712a · 617 tệp` sau khi đã đi thêm 8 commit · và **30/08 khai
+> `28/08 · HEAD 65dc66c · Dev server 0`** trong khi thật là `30/08 · 27140602 · 1 server đang mở`.
+> Lần thứ ba do **phiên Codex `00·MAIN` bắt được**, không phải phiên viết tự thấy — đó là bằng
+> chứng: người ghi KHÔNG tự soi được dòng mình vừa bỏ quên. Cần máy, hoặc cần người thứ hai.
 
 ## 🖊️ NGƯỜI GHI SẢN XUẤT — **một ô duy nhất trong cả tệp**
 
