@@ -233,3 +233,45 @@ quan hệ**, và mắt sẽ đọc nó thành "bẩn", "gắt", hoặc "chìm m�
 ⚠️ **Cổng hiện có CHƯA canh việc này.** `soi-trung-tinh.mjs` bắt *trộn trung tính thuần với trung
 tính ám* — nó **không** bắt *nét kẻ quên đảo dấu theo nền*. Đó là **nợ có tên**, không phải chuyện
 đã xong.
+
+---
+
+# 17 · SKILL — **BẢN CHỤP PHẢI TỰ KHAI LÀ BẢN CHỤP**
+
+> Hoà 30/08: *"Luật tôi: tôn trọng sự thật. Và tôi đã nói — nếu đứng trước hai lựa chọn thì phải
+> xét lựa chọn nào **tối ưu nhất trong tương lai**."*
+
+**Ca thật.** Artifact `Thẻ khoá InteriorFlow` là ảnh chụp màn khoá. Ngày 30/08 màn khoá được sửa
+(`ba3668ff`: đường chân trời và kẻ lưới không còn cắt xuyên chữ). Đo lại nội dung artifact: vẫn
+chứa `top: 58` và `84px` — **đúng hai lỗi đã bị bỏ**. Nó không sai lúc xuất bản; nó **hoá sai vì
+thứ nó chụp đã đi tiếp**.
+
+## Vì sao "cập nhật lại" là lựa chọn TỆ về đường dài
+
+Sửa artifact lần này thì hết sai **một lần**, đổi lấy một **nghĩa vụ vĩnh viễn**: từ nay mỗi lần
+đổi màn khoá phải nhớ xuất bản lại. Nghĩa vụ đó **không sống trong hệ thống nào** — nó sống trong
+trí nhớ người, và trí nhớ người là thứ đã hỏng ở mọi ca khác trong ngày. Nó **chắc chắn lệch lại**.
+Đó là chữa ca, không chữa hệ thống (luật 7).
+
+Bật lại watch càng sai vật: watch báo khi **người khác xuất bản lại**, nó **không** phát hiện được
+artifact đã lệch khỏi **mã**. Sai hẳn chiều.
+
+## Lựa chọn tối ưu về đường dài
+
+```
+Ảnh chụp KHÔNG cần luôn đúng.  Nó cần KHÔNG BAO GIỜ NÓI DỐI rằng mình đang đúng.
+```
+
+⇒ **Quy ước cho mọi artifact của IF**, không riêng cái này:
+1. **Đóng dấu ngày sinh** ngay trên trang, đọc được không cần bấm.
+2. **Trỏ về nguồn sống** — route thật trong app, hoặc lệnh chạy được.
+3. Nói thẳng thứ tự thắng thua: **app thật > bản vẽ > lời nói** (luật 4).
+
+Làm thế thì artifact **được phép cũ** mà vẫn không lừa ai — vì nó chưa từng nhận mình là hiện tại.
+Quy ước áp cho **mọi artifact sau này**, nên nó đáng giá hơn nhiều lần việc vá một trang.
+
+## Và một điều KHÔNG được làm
+
+⛔ **Đừng vá mù một artifact 2,7MB mình chưa đọc hết** để "sửa cho đúng sự thật". Sửa một tệp
+chưa đọc, nhân danh sự thật, chính là loại hành động mà cả ngày hôm nay dạy phải tránh. Muốn nó
+đúng thì **sinh lại từ nguồn**, không vá.
