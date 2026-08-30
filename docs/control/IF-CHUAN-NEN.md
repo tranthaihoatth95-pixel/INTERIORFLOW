@@ -9,6 +9,43 @@
 > thứ đã được nghiên cứu và ứng dụng rồi, thậm chí đối thủ đang ứng dụng và làm tốt hơn chúng ta.
 > Vậy không có lý do gì trông chờ vào tôi cả."*
 
+## 000 · BA TẦNG CHUẨN — Hoà chốt 30/08, và đây là khung của mọi thứ dưới
+
+> *"Ngoài những nguyên lý thị giác bao gồm các **hằng số cơ bản**, thì thiết kế sinh ra để phục vụ
+> con người — mà để phục vụ con người thì phải **hiểu họ qua cách họ / cộng đồng / quốc gia phát
+> triển**, để **ánh xạ ra thang đo phản ánh**. Nên đội build, IF, và **Vitals** đều phải được trang
+> bị đầy đủ kiến thức như thế."*
+
+```
+①  HẰNG SỐ           đúng ở mọi nơi, mọi người, mọi thời
+                     fovea ~2° · tương phản WCAG · vật lý ánh sáng · số học
+                     ⇒ máy chấm, không hỏi ai
+
+②  THANG BỐI CẢNH    ánh xạ từ CÁCH một người / cộng đồng / quốc gia PHÁT TRIỂN
+                     nhân trắc theo dân số · chuẩn thiết bị theo thị trường · quy ước nghề
+                     theo vùng · thói quen ở theo khí hậu và lịch sử
+                     ⇒ máy chấm ĐƯỢC, nhưng phải nạp đúng bối cảnh trước
+
+③  GU                cá nhân — thứ làm KHÁC BIỆT, học SAU CÙNG
+```
+
+**Tầng ② là tầng đội build hay bỏ sót nhất**, và nó chính là chỗ hôm nay vừa trả giá: kết luận
+*"Neufert sai với người Việt"* chỉ nhìn **một** thang bối cảnh (nhân trắc) mà bỏ **một** thang khác
+(chuẩn thiết bị 900). Hai thang cùng thuộc tầng ②, kéo ngược nhau, **không thang nào sai**.
+
+### Hệ quả — ba nơi phải mang tầng ②, không chỉ một
+
+| nơi | phải mang gì |
+|---|---|
+| **đội build** | biết trục nào thuộc hằng số, trục nào thuộc bối cảnh — để không tuyên "sai" khi chỉ thấy một trục |
+| **IF** | tham số bối cảnh phải là **đầu vào có tên** (`percentile dân số dự án` · thị trường thiết bị · vùng quy định), không phải hằng số ẩn trong mã |
+| **Vitals** | tư vấn cạnh việc **phải biết bối cảnh dự án đang mở**. Vitals chỉ dựa vào hằng số thì nó khuyên đúng sách mà sai người — đúng lỗi Neufert, chỉ khác là nó nói vào tai người dùng |
+
+⚠️ `IF-CANONICAL` §11 đã chốt Vitals *"kế thừa: dự án · workspace · chặng · vùng chọn · đối tượng
+· nguồn · hành động"*. **Thiếu BỐI CẢNH.** Đó là nợ có tên, chưa ai dựng.
+
+---
+
 ## 00 · CÂU HỎI PHẢI ĐẶT MỌI LẦN ĐÁNH GIÁ — Hoà chốt 30/08
 
 > *"Làm sao biết trong tất cả hình đó, hình nào **đạt chuẩn ngành** + **đúng gu tôi**?

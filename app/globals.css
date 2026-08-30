@@ -2353,12 +2353,29 @@ body[data-if-library-open='true'] .if-bottombar {
   background: radial-gradient(52% 46% at 66% 62%, rgba(58, 64, 120, 0.42) 0%, rgba(40, 44, 86, 0.18) 46%, rgba(30, 32, 60, 0) 74%);
   animation: bong-do 67s ease-in-out infinite;
 }
+/* BƯỚC LƯỚI SUY RA TỪ NHỊP CHỮ — không phải một con số rời (Hoà 30/08, ca Eames).
+   Bản cũ khai cứng `84px` trong khi câu danh ngôn dùng `clamp(19px,2.4vw,27px) × 1.55`, tức
+   line-height CHẤT LỎNG. Một bên cứng, một bên lỏng ⇒ ở đa số bề rộng màn, kẻ lưới rơi vào
+   GIỮA THÂN CHỮ. Đo 30/08 tại 1440×900: 84px trùng gần đúng 2×41,85 nhưng lệch pha đúng
+   NỬA DÒNG (21px) — pha xấu nhất có thể, 4 dòng chữ bị cắt xuyên.
+   Nay bước lưới = ĐÚNG 2 nhịp chữ và pha đẩy nửa nhịp để kẻ rơi vào KHE giữa hai dòng.
+   Hai thứ dùng CHUNG một biến ⇒ chúng không thể trôi khỏi nhau ở bất kỳ bề rộng nào. */
 .nen-dong-luoi {
   inset: 0;
+  --nhip-chu: calc(clamp(19px, 2.4vw, 27px) * 1.55);
   background-image:
     linear-gradient(to right, rgba(215, 224, 235, 0.9) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(215, 224, 235, 0.9) 1px, transparent 1px);
-  background-size: 84px 84px;
+  background-size: calc(var(--nhip-chu) * 2) calc(var(--nhip-chu) * 2);
+  background-position: center calc(50% + var(--nhip-chu) / 2);
+  /* SPOTLIGHT — lưới TAN ĐI ở vùng có chữ. Canh pha ở trên chỉ cứu được cỡ chữ DẪN; màn này có
+     BA cỡ (27 · 13 · 12px) nên còn hai cỡ không nằm trên nhịp đó — đo 30/08 vẫn còn kẻ cắt qua
+     dòng tên tác giả. Không có phép canh pha nào cứu được cả ba cùng lúc, nên chữa bằng cách
+     KHÁC HẲN: cho lưới biến mất ở nơi chữ đứng. Đây đúng thứ đề bài xin ("nền thú vị với
+     spotlight nổi bật câu nói") — nó vừa là hình thức vừa là cổng: mọi cỡ chữ hiện tại và mọi
+     cỡ chữ THÊM SAU NÀY đều nằm trong vùng sạch, không cần ai nhớ canh lại. */
+  -webkit-mask-image: radial-gradient(58% 42% at 50% 47%, transparent 0%, transparent 46%, #000 78%);
+  mask-image: radial-gradient(58% 42% at 50% 47%, transparent 0%, transparent 46%, #000 78%);
   animation: luoi-tho 26s ease-in-out infinite;
 }
 

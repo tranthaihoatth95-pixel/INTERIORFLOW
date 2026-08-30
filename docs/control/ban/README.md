@@ -40,3 +40,21 @@ cat docs/control/ban/<NN>.md           # bàn giao — đọc TRƯỚC khi gõ
 ```
 
 Rời bàn thì **cập nhật mục ĐANG DỞ**. Không cập nhật = để lại một cái bàn nói dối.
+
+## Khối `MÁY GIỮ` cuối mỗi tệp bàn — đọc trước, đừng sửa
+
+Cuối mỗi tệp bàn có một khối nằm giữa `<!-- MÁY GIỮ -->` … `<!-- /MÁY GIỮ -->`.
+**Máy sinh, người cấm sửa** — sửa tay sẽ bị đè ở lần ghi biên nhận kế tiếp, và cổng
+`npm run soi:ban` sẽ đỏ.
+
+Nó trả lời đúng bốn câu, không hơn: **phiếu nào · khi nào · trạng thái · noted**.
+
+- **Chỉ việc ĐANG MỞ.** Việc đã đóng nén còn một dòng đếm — nhồi lịch sử cho người mới là
+  cái bẫy Hoà nêu đích danh 30/08.
+- **Không chép nội dung phiếu.** Nội dung là chữ người viết và **có thể sai**: ca thật cùng
+  ngày, một phiếu mang kết luận đã bị bác vẫn đứng với dấu ✅. Bàn chỉ chở thứ **có biên nhận**.
+- **`noted` là cột quan trọng nhất với người mới** — nó nói *vì sao* ở trạng thái đó và
+  *tránh gì*. Thiếu noted thì khối tự nêu `⚠️ thiếu noted`, không im lặng.
+
+Muốn đọc nội dung gốc: `node scripts/moc.mjs inbox <lane>` · lịch sử cả ngày:
+`node scripts/phieu-ca.mjs`.

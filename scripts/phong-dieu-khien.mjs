@@ -225,6 +225,8 @@ h1{margin:8px 0 0;font-size:27px;font-weight:600;letter-spacing:-.02em}
  box-shadow:0 0 0 1px var(--line);transition:box-shadow .2s,transform .2s}
 .v .n{font-size:13.5px;font-weight:600;letter-spacing:-.005em;line-height:1.35}
 .v .y{font-size:11.5px;color:var(--t3);margin-top:5px;line-height:1.5}
+.v .tuoi{font-size:10.5px;color:var(--t4);margin-top:6px;letter-spacing:.02em}
+.v .tuoi.cu{color:#b4530f;font-weight:600}
 .v .cho{font-size:11.5px;color:var(--t4);margin-top:7px;display:flex;align-items:center;gap:5px}
 .v .bar{height:3px;border-radius:var(--rf);background:var(--line);margin-bottom:9px}
 /* ĐẠT — sáng, có màu, nhấc lên */
@@ -308,6 +310,7 @@ async function veGrid(){
   const d=await (await fetch('/api/so-viec')).json(); soVe=d;
   const pha=['soat','dung'];
   let h='<div class="hd"><div class="ten">Người</div><div class="y">làn việc — ai chịu trách nhiệm</div></div>';
+  const tuoiNgay=(d)=>Math.max(0,Math.round((Date.now()-Date.parse(d))/86400000));
   for(const p of pha) h+='<div class="hd"><div class="ten">'+d.pha[p].ten+'</div><div class="y">'+d.pha[p].y+'</div></div>';
 
   for(const ng of d.nguoi){
@@ -321,6 +324,14 @@ async function veGrid(){
         return '<div class="v '+t+'" title="'+(v.y||'').replace(/"/g,'&quot;')+'">'
           +'<div class="bar"></div><div class="n">'+v.ten+'</div>'
           +'<div class="y">'+(v.y||'')+'</div>'
+          /* TUOI CUA CHU — Hoa canh bao 30/08: noi dung da cu ma trong nhu hien tai.
+             So trong v.y la so VIET TAY, khong phai so may vua chay ra, nen no khong tu tuoi.
+             Bang phai noi ra tuoi cua no, neu khong nguoi doc mac dinh la moi.
+             KHOI NAY NAM TRONG TEMPLATE LITERAL — cam dau backtick va dola-ngoac trong chu thich,
+             chung thoat chuoi va lam gay ca tep (da xay ra dung nhu vay 30/08). */
+          +(v.do ? '<div class="tuoi'+(tuoiNgay(v.do)>14?' cu':'')+'">số đo viết tay · '
+              +v.do+' · '+tuoiNgay(v.do)+' ngày trước'
+              +(tuoiNgay(v.do)>14?' — ĐO LẠI TRƯỚC KHI TIN':'')+'</div>' : '')
           +(cho?'<div class="cho">⏳ '+cho+'</div>':'')
           +(v.kq&&v.kq.trang==='hong'?'<div class="cho" style="color:var(--bad)">'+(v.kq.ghi||'').slice(0,90)+'</div>':'')
           +(v.kq&&v.kq.trang==='tay'?'<div class="cho">👁 '+v.kq.ghi+'</div>':'')

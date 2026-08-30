@@ -450,14 +450,6 @@ function NenDong({ cau, en, onMoLai }: { cau: DanhNgon; en: boolean; onMoLai: ()
       <div className="nen-dong-lop nen-dong-bong" />
       <div className="nen-dong-lop nen-dong-nang" />
       <div className="nen-dong-lop nen-dong-luoi" />
-      {/* Đường chân trời — nét DUY NHẤT đứng yên giữa mọi thứ đang trôi. */}
-      <div
-        className="pointer-events-none absolute left-0 right-0"
-        style={{
-          top: '58%', height: 1,
-          background: 'linear-gradient(to right, rgba(220,228,238,0) 0%, rgba(220,228,238,0.22) 22%, rgba(220,228,238,0.22) 78%, rgba(220,228,238,0) 100%)',
-        }}
-      />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 px-8 text-center">
         <p
           className="m-0 max-w-[30ch] font-medium text-[var(--t1)]"
@@ -474,6 +466,23 @@ function NenDong({ cau, en, onMoLai }: { cau: DanhNgon; en: boolean; onMoLai: ()
             </div>
           )}
         </div>
+        {/* ĐƯỜNG CHÂN TRỜI — nét DUY NHẤT đứng yên giữa mọi thứ đang trôi.
+            🔴 SỬA 30/08 — TRƯỚC ĐÂY NÓ `position:absolute; top:58%`, tức neo vào MÀN trong khi
+            chữ neo vào TÂM CỦA CHÍNH NÓ. Hai hệ toạ độ không liên quan ⇒ chỗ nét rơi xuống là
+            việc của bề rộng cửa sổ, không phải của thiết kế. Đo tại 1440×900: nét ở y=522,5 cắt
+            xuyên hộp chữ dòng ghi nguồn (508,3–523,3) — đúng chỗ Hoà khoanh trên ảnh Eames.
+            Nay nó nằm TRONG cùng cột với chữ, nên khoảng cách tới chữ là `gap-6` của cột và
+            KHÔNG THỂ đè lên chữ ở bất kỳ bề rộng nào hay độ dài câu nào.
+            Đây là ca mẫu của luật: *quan hệ mới là bất biến, không phải giá trị* — chữa bằng
+            việc cho hai thứ chung một hệ toạ độ, không chữa bằng cách dời `58%` thành `62%`. */}
+        <div
+          aria-hidden
+          className="pointer-events-none w-screen"
+          style={{
+            height: 1,
+            background: 'linear-gradient(to right, rgba(220,228,238,0) 0%, rgba(220,228,238,0.22) 22%, rgba(220,228,238,0.22) 78%, rgba(220,228,238,0) 100%)',
+          }}
+        />
         <button
           type="button"
           onClick={onMoLai}

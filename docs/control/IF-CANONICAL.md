@@ -202,6 +202,32 @@ và **lệch nhau sau đúng mười phút** — cầu thi hành tên mới tron
 Chữa: **một nguồn** (`bos-so-viec.mjs` giữ, `moc.mjs` nhập vào). Không dựng cổng canh — vì một
 nguồn thì **không lệch được**.
 
+### NÂNG CẤP 30/08 — **XÁC LẬP TRỤC GIÁ TRỊ TRƯỚC KHI ĐÁNH GIÁ**
+
+> Hoà: *"Đúng, nhưng thiếu. Những trường hợp ngoại lệ **không đúng không sai** — hệ thống chỉ **NÊU**,
+> người dùng **TUỲ CHỌN**, **KHÔNG ÉP**. Và nếu báo thì **phải kèm lý do**."*
+
+**Ca thật, cùng ngày.** Lane 05 báo: *"Neufert sai với người Việt — bếp 850–900 theo sách Âu là cao,
+VN nên 800–850."* Đúng **một nửa**. Hoà bổ sung trục còn thiếu:
+
+| trục giá trị | nói gì về chiều cao bếp |
+|---|---|
+| **nhân trắc học** | người VN thấp hơn TB Đức ~8–10 cm ⇒ **800–850** dễ thao tác hơn |
+| **chuẩn thiết bị** | **đa số máy rửa chén và thiết bị bếp dựng theo chuẩn 900** ⇒ **900** hợp lý hơn cho đa số |
+
+**Không trục nào sai.** Chọn 800 thì thiết bị chuẩn 900 không lắp vừa; chọn 900 thì thao tác mỏi hơn.
+Đây là **đánh đổi có thật**, không phải lỗi cần sửa.
+
+⇒ **Ba luật rút ra, áp cho MỌI đánh giá — của máy lẫn của agent:**
+1. **Liệt kê TRỤC GIÁ TRỊ trước khi kết luận.** Một trục thì chưa đủ để nói "sai".
+2. **Nêu kèm LÝ DO của từng trục.** Kết luận trần *"Neufert sai"* làm người đọc tưởng có bên đúng
+   bên sai, trong khi thật ra là hai ràng buộc kéo ngược nhau.
+3. **Hệ thống NÊU · người dùng CHỌN · KHÔNG ÉP.** IF là công cụ của người làm nghề, không phải
+   trọng tài. Ngoại lệ **không đúng không sai** — máy bày ra đủ trục rồi lùi lại.
+
+⚠️ Điều này đổi cả cách viết **cảnh báo trong sản phẩm**: một cảnh báo chỉ nêu kết luận mà giấu
+trục lý do là **ép người dùng bằng cách giấu thông tin**.
+
 ⚠️ **Đổi tên lane thì phải đồng bộ BA chỗ**, thiếu một là lệch lại: ① sổ `bos-so-viec.mjs` ·
 ② tên phiên bên Codex · ③ tên phiên bên Claude (màn 4173 tự đọc từ ①).
 

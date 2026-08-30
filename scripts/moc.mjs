@@ -27,7 +27,7 @@
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { createHash, randomUUID } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import path from 'node:path';
 import os from 'node:os';
 /* Bản đồ lane — NGUỒN DUY NHẤT ở `bos-so-viec.mjs`. Chép lại là tạo bản thứ hai,
@@ -39,9 +39,27 @@ const SO = path.join(REPO, 'docs/control/IF-MOC.md');
 const KHO = path.join(os.homedir(), '.claude/projects/-Users-tranben-Downloads-interiorflow');
 const LOG_ROOT = process.env.BOS_SHARED_LOG_ROOT || path.join(os.homedir(), 'PROJECT/SHARED/LOG');
 const CAU = path.join(LOG_ROOT, 'agent-handoffs.jsonl');
+/* SỔ BUỘC LANE ↔ PHIÊN — Hoà chốt 30/08: *"đường nó đọc khi nhận việc phải LUÔN MỚI VÀ ĐÚNG"*.
+ * Trước đây lane chỉ sống trong biến `IF_LANE` lúc mở phiên; KHÔNG ĐÂU ghi lại phiên nào đang
+ * giữ lane nào. Hệ quả đo được 30/08: 3 phiếu nằm ~100 phút không ai đánh thức, không phải vì
+ * quên mà vì **không tra được phải gọi ai**. MAIN đánh thức được lane 04 chỉ nhờ còn nhớ ID
+ * trong ngữ cảnh — và ngữ cảnh thì mất.
+ * Nay MÁY tự ghi, tại đúng lúc phiên chạm việc, nên sổ này không thể cũ hơn lần gõ gần nhất. */
+const SO_LANE = path.join(LOG_ROOT, 'lane-phien.json');
 
 const LANES = new Set(Object.keys(VAI));
 const bamNgan = (s) => createHash('sha256').update(s).digest('hex').slice(0, 12);
+
+/** Ghi: lane này đang do phiên nào giữ. Gọi mỗi lần hook chạm — tự lành, không cần ai dọn. */
+function buocLane(lane) {
+  const ct = conTro();
+  if (!ct) return;
+  let so = {};
+  try { so = JSON.parse(readFileSync(SO_LANE, 'utf8')); } catch { /* chưa có sổ */ }
+  so[lane] = { phien: ct.phien, luc: new Date().toISOString() };
+  try { mkdirSync(path.dirname(SO_LANE), { recursive: true }); writeFileSync(SO_LANE, JSON.stringify(so, null, 2)); }
+  catch { /* không ghi được thì thôi — cấm làm hỏng phiên vì một sổ phụ */ }
+}
 
 function docSuKien() {
   if (!existsSync(CAU)) return [];
@@ -53,6 +71,16 @@ function docSuKien() {
 function ghiSuKien(event) {
   mkdirSync(LOG_ROOT, { recursive: true });
   appendFileSync(CAU, `${JSON.stringify(event)}\n`, 'utf8');
+  /* MỘT NGUỒN, BA ĐÍCH, LUÔN CẬP NHẬT — Hoà chốt 30/08.
+   * Đích 3 (`docs/control/PHIEU-CA.md`) là TỆP, và tệp thì già đi. Nó chỉ "luôn cập nhật" nếu
+   * được sinh lại ĐÚNG LÚC NGUỒN ĐỔI — tức ngay đây, chỗ duy nhất ghi vào cầu.
+   * Sinh lại ở nơi khác (cron, tay, đầu phiên) là mở cửa cho một cửa sổ mà tệp nói dối.
+   * Tách tiến trình + `unref` ⇒ không lệnh nào của cầu bị chậm hay chết vì việc phụ này. */
+  try {
+    const con = spawn(process.execPath, [path.join(REPO, 'scripts/phieu-ca.mjs'), '--ghi-ban'],
+      { detached: true, stdio: 'ignore', cwd: REPO });
+    con.unref();
+  } catch { /* sinh lại thất bại KHÔNG được làm hỏng việc ghi biên nhận */ }
 }
 
 /**
@@ -94,6 +122,24 @@ if (lenh === 'handoff') {
  * ⇒ Nay chỉ MỘT lệnh được ghi SEEN: `im`, và nó chỉ do HOOK TẠI ĐÍCH chạy.
  *   `peek`/`inbox` — CHỈ ĐỌC tuyệt đối, ai soi cũng được, không để lại dấu.
  *   `im`           — hook tại đích, in VÀ ghi SEEN. */
+/* AI ĐANG GIỮ LANE NÀO — lệnh MAIN cần để đánh thức đúng người. Chỉ đọc, không ghi gì. */
+if (lenh === 'ai-giu') {
+  let so = {};
+  try { so = JSON.parse(readFileSync(SO_LANE, 'utf8')); } catch { /* chưa có sổ */ }
+  const loc = process.argv[3];
+  const hang = Object.entries(so).filter(([l]) => !loc || l === loc);
+  if (!hang.length) {
+    console.log(loc ? `⚪ lane ${loc}: chưa phiên nào khai giữ lane này` : '⚪ sổ trống — chưa phiên nào chạm việc');
+    process.exit(0);
+  }
+  console.log('── lane ↔ phiên đang giữ ──');
+  for (const [l, v] of hang.sort()) {
+    const phut = Math.round((Date.now() - Date.parse(v.luc)) / 60000);
+    console.log(`  ${l}  ${v.phien}  · gõ lần cuối ${phut} phút trước${phut > 120 ? '  ⚠️ có thể đã đóng' : ''}`);
+  }
+  process.exit(0);
+}
+
 if (lenh === 'im' || lenh === 'inbox' || lenh === 'peek') {
   const cam = lenh === 'im';
   const chiDoc = lenh !== 'im';
@@ -102,6 +148,9 @@ if (lenh === 'im' || lenh === 'inbox' || lenh === 'peek') {
     console.error('Dùng: node scripts/moc.mjs inbox <lane>');
     process.exit(2);
   }
+  // Buộc lane↔phiên NGAY, trước mọi lối thoát sớm: phiên không có phiếu mới vẫn phải khai
+  // mình đang giữ lane nào, nếu không thì lane rảnh = lane vô hình.
+  if (cam) buocLane(lane);
   let daChiBan = false;
   const events = docSuKien();
   const acked = new Set(events.filter((e) => e.type === 'ACK' && e.lane === lane).map((e) => e.handoffId));
@@ -212,9 +261,14 @@ if (lenh === 'chua-nhan') {
 }
 
 if (lenh === 'ack') {
-  const [lane, handoffId] = process.argv.slice(3);
-  if (!LANES.has(lane) || !handoffId) {
-    console.error('Dùng: node scripts/moc.mjs ack <lane> <event-id>');
+  const [lane, handoffId, noted] = process.argv.slice(3);
+  /* NOTED BẮT BUỘC — Hoà 30/08: *"mỗi trạng thái kèm noted… người mới thì biết noted thế nào
+   * mà tránh"*. Một `ACK` trần chỉ nói "xong", và "xong" là thứ vô dụng nhất với người tới sau:
+   * nó không nói đã học được gì, đã bác bỏ gì, hay có bẫy nào còn đó. Ca thật cùng ngày: phiếu
+   * màn khoá được đóng với mô tả SAI, không noted ⇒ bàn phát tán kết luận đã bị bác kèm dấu ✅. */
+  if (!LANES.has(lane) || !handoffId || !noted) {
+    console.error('Dùng: node scripts/moc.mjs ack <lane> <event-id> "<noted — học được gì / tránh gì>"');
+    console.error('⛔ Noted BẮT BUỘC. "Xong" không phải noted — nói điều người sau cần biết để không đi lại vết cũ.');
     process.exit(2);
   }
   const target = docSuKien().find((e) => e.type === 'HANDOFF' && e.id === handoffId);
@@ -222,7 +276,7 @@ if (lenh === 'ack') {
     console.error(`Không thấy handoff ${handoffId} dành cho lane ${lane}.`);
     process.exit(1);
   }
-  ghiSuKien({ schema: 'BOS-HANDOFF-v1', id: `ACK-${randomUUID()}`, type: 'ACK', lane, handoffId, createdAt: new Date().toISOString() });
+  ghiSuKien({ schema: 'BOS-HANDOFF-v1', id: `ACK-${randomUUID()}`, type: 'ACK', lane, handoffId, noted, createdAt: new Date().toISOString() });
   console.log(`✅ ${lane} đã nhận ${handoffId}`);
   process.exit(0);
 }

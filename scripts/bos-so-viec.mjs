@@ -52,13 +52,13 @@ export const PHA = {
  * *"nếu các phiên của bạn thay đổi, đặt tên lại thì phải đồng bộ với Codex + 4173."*
  */
 export const NGUOI = [
-  { ma: '00', ten: 'MAIN', vai: 'điều phối', mo: 'tổng hợp · viết phiếu · giữ bút mã sản xuất · KHÔNG tự nhận việc lane khác' },
+  { ma: '00', ten: 'MAIN', vai: 'điều phối', mo: 'nhận phiếu · phân rã · GIAO đúng bàn · tự đánh thức · kiểm chứng · KHÔNG cầm bút mã' },
   { ma: '01', ten: 'MEMORY', vai: 'trí nhớ', mo: 'chống lặp · chống quên · giữ đường về tri thức đã chưng cất' },
   { ma: '02', ten: 'RESEARCH', vai: 'tra chuẩn ngoài', mo: 'nguồn thật · ca thật · KHÔNG ghi mã sản xuất' },
   { ma: '03', ten: 'PRODUCT', vai: 'sản phẩm', mo: 'phạm vi · cắt việc · thứ người dùng thấy' },
   { ma: '04', ten: 'DESIGN', vai: 'thẩm mỹ', mo: 'ngôn ngữ thị giác · lưới · tỉ lệ · thứ bậc' },
   { ma: '05', ten: 'ARCH', vai: 'kiến trúc', mo: 'hợp đồng · ADR · ranh giới module' },
-  { ma: '06', ten: 'BUILD', vai: 'thi công', mo: 'viết mã · sửa lỗi · dựng bề mặt' },
+  { ma: '06', ten: 'BUILD', vai: 'thi công', mo: 'PHIÊN CODE CHÍNH — viết mã · test · chứng minh runtime' },
   { ma: '07', ten: 'QUALITY', vai: 'bằng chứng', mo: 'SBOM · biên nhận · giấy phép · phản biện' },
   { ma: '08', ten: 'TTT', vai: 'khách đầu tiên', mo: 'ca thật từ studio dùng đầu tiên' },
 ];
@@ -84,6 +84,7 @@ export const VIEC = [
   },
   {
     ma: 'test-xanh', pha: 'soat', lane: '00', ten: 'npm test xanh',
+    do: '2026-08-30',
     y: '20 máy soi + 14 bài kiểm chạy một lượt, kể cả bánh cóc',
     can: ['cong-day-du'], bang: { lenh: 'npm', args: ['test'] },
   },
@@ -94,6 +95,7 @@ export const VIEC = [
   },
   {
     ma: 'kho-gon', pha: 'soat', lane: '00', ten: 'Kho git không mang tệp cấm',
+    do: '2026-08-30',
     y: 'tệp >90MB làm GitHub từ chối CẢ NHÁNH · bản sao CSDL mang dữ liệu người dùng',
     can: [], bang: { lenh: 'node', args: ['scripts/soi-tep-nang.mjs', '--chan'] },
   },
@@ -109,6 +111,7 @@ export const VIEC = [
   },
   {
     ma: 'du-lieu-khong-ro', pha: 'soat', lane: '00', ten: 'Hộp GỬI ĐI sạch dữ liệu cá nhân',
+    do: '2026-08-30',
     y: 'đo 30/08: 5 ảnh chụp màn hiện Gmail cá nhân của Hoà. Chuông canh HỘP GỬI, không canh cả kho',
     /* ⚠️ SỬA TRONG LƯỢT LẬP SỔ: bản đầu trỏ thẳng vào `artifacts/man-30-08` nên nó ĐỎ VĨNH VIỄN —
        trong khi thư mục đó chỉ là ảnh nằm yên, chưa ai định gửi đi đâu. Cổng luôn đỏ là cổng người
@@ -134,6 +137,7 @@ export const VIEC = [
   },
   {
     ma: 'phieu-dinh-huong', pha: 'soat', lane: '05', ten: 'Phiếu định hướng UX toàn cầu',
+    do: '2026-08-30',
     y: 'khảo sát chuẩn nghề + Apple HIG + human-centric, từ 24 ảnh app thật',
     can: [], bang: { lenh: 'test', args: ['-f', 'docs/nc/PHIEU-DINH-HUONG-UX-TOAN-CAU-2026-08-30.md'] },
   },
@@ -147,11 +151,13 @@ export const VIEC = [
 
   {
     ma: 'tuong-len-man', pha: 'dung', lane: '06', ten: 'Hiện 81 bức tường lên màn',
+    do: '2026-08-30',
     y: 'máy đọc được 12.274 nét → 81 tường · 286,0 m, nhưng chưa mặt nào đọc con số đó',
     can: ['nap-dxf-song'], bang: { tay: 'ảnh app thật, phóng to, số trên màn khớp số máy đo' },
   },
   {
     ma: 'chu-12px', pha: 'dung', lane: '03', ten: 'Nâng sàn chữ lên 12px',
+    do: '2026-08-30',
     y: '772/850 vi phạm là cỡ dưới 12px — app nằm dưới sàn đọc được của chữ có dấu',
     /* ⚠️ SỬA NGAY TRONG LƯỢT LẬP SỔ: bằng chứng đầu tiên tôi viết là chạy `soi-chu-viet.mjs`,
        và nó trả ✅ — nhưng chỉ vì con số NẰM TRONG trần bánh cóc, tức CHƯA AI LÀM GÌ CẢ.
