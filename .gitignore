@@ -146,3 +146,6 @@ release/**/*.AppImage
 # nào bằng `IF_OUT=... node scripts/chup-man-duyet-mat.mjs`. Không đưa vào git: 8,8 MB mỗi lượt
 # chụp, và git giữ mọi phiên bản. Codex bắt 30/08: 25 tệp chưa track/ignore nên máy báo mồ côi.
 artifacts/man-*/
+
+# Fixture cổng giấy phép (bàn 07) — sinh lúc chạy, >64MB, KHÔNG commit
+.fixture-giay-phep/
