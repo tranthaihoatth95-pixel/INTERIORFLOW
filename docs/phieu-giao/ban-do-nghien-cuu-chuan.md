@@ -15,6 +15,14 @@
 và kiến trúc**, mở ra toàn bộ Design vì mọi nhánh đều phục vụ cùng một cơ quan: **thị giác**.
 Người dùng IF là người *biến ý định thành không gian, rồi biến không gian thành hồ sơ thuyết phục*.
 
+⚠️ **SỬA 30/08 — đừng đọc "ba chặng" thành toàn bộ nghề.** Bản đầu của phiếu này viết *"ba chặng
+chính là ba trạng thái của một việc"*, và đó là hiểu hẹp. Hoà chỉnh:
+**2D · 3D · Trình bày là TRỤC CÔNG CỤ** — ba luồng sản xuất chính.
+**Trục QUY TRÌNH là xương sống 12 bước** chạy xuyên qua chúng, **có bước trước 2D và bước sau
+Trình bày, không bước nào thiếu được** (`docs/control/IF-CANONICAL.md` §8).
+Nghiên cứu chuẩn phải phủ **cả trục quy trình**, không chỉ ba stage — nếu không sẽ hổng đúng chỗ
+tender · thi công · bàn giao.
+
 **Sáu trụ của một hồ sơ nội thất xuất sắc** (Hoà): kỹ thuật · mỹ thuật · khoa học lý-hoá · ngôn ngữ
 · logic học · tính toán. **Không mỹ thuật bay bổng hoá, không kỹ thuật khô cứng hoá.**
 

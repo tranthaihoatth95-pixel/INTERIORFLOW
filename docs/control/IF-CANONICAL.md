@@ -142,6 +142,38 @@ chatbot AI · một bó ứng dụng nhỏ.
 → Phối hợp → Trình bày → Soát duyệt → Bản sửa → Phát hành → Thi công/Công trường/Bàn giao
 ```
 
+### HAI TRỤC — Hoà xâu chuỗi 30/08, **cả hai đều đã có, chưa ai viết quan hệ giữa chúng**
+
+Đây là chỗ đã gây hiểu sai thật: phiếu `ban-do-nghien-cuu-chuan.md` viết *"ba chặng chính là ba
+trạng thái của một việc"* — câu đó **gộp trục quy trình vào trục công cụ**, và làm mất đúng phần
+Hoà nhấn. Nguyên văn anh:
+
+> *"Ba chặng đó nếu được hiểu về mặt **công cụ** chính là **3 luồng sản xuất chính** để thiết kế.
+> Còn nếu hiểu theo **chặng quy trình** thì **trước nó còn các bước khác, sau nó còn các bước
+> khác** — và **không cái nào thiếu được** nếu hiểu theo quy trình."*
+
+```
+TRỤC CÔNG CỤ   ba luồng sản xuất:  2D  ·  3D  ·  TRÌNH BÀY
+TRỤC QUY TRÌNH xương sống 12 bước, CHẠY XUYÊN QUA ba luồng đó — có bước TRƯỚC 2D
+               (đề bài · ý tưởng) và bước SAU trình bày (soát duyệt · phát hành · thi công · bàn giao)
+WORKSPACE      nơi hai trục gặp nhau: nó GIỮ NGỮ CẢNH và QUẢN LÝ QUY TRÌNH **qua** ba stage
+```
+
+**Bề mặt phụ trợ KHÔNG phải stage thứ tư.** Home quản lý · Dự án · Việc · Cổng · Sổ tay · Vật liệu
+· Màu · Cảm hứng · Tệp · Chia sẻ — chúng phục vụ **các bước quy trình mà ba stage không mang**:
+cộng tác, quản lý, tính BOQ, quản lý cấu kiện, hiểu cấu tạo, vật liệu. Hoà đặt chúng vào để
+*"team work được phát huy tối đa, tối ưu cho tính chất ngành"*.
+⇒ **Đo 30/08: 10/10 bề mặt này ĐÃ tồn tại trong app.** Cái thiếu chưa bao giờ là bề mặt — là
+quan hệ giữa chúng với hai trục.
+
+**Luật giao diện rút ra, và nó là phần khó:** mỗi stage phải quyết **cái gì DÙNG CHUNG, cái gì
+TỐI ƯU RIÊNG**, và **cái nào chính cái nào phụ**. Vì phải nhồi nhiều thứ trông như không liên quan
+vào một mặt công cụ, nên không quyết được hai câu đó thì ra một giao diện ôm đồm.
+
+⚠️ **Nợ đã tự khai, đừng để nó trôi:** `docs/IF-KIEN-TRUC-OS.md:294` ghi *"Design Workflow 🟡 chỉ
+3 chặng — chưa có Research · Moodboard tách riêng · Tender · Construction/Handover"*. Đó chính là
+các bước **trước và sau** mà Hoà nói không cái nào thiếu được.
+
 **Ba nguyên tắc:** một xương sống cho công việc · tự do và niềm vui cho người sáng tạo ·
 trí tuệ cộng dồn cho tổ chức.
 
