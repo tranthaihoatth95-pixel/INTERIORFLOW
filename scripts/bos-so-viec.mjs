@@ -39,14 +39,34 @@ export const PHA = {
   },
 };
 
-/** NHÂN SỰ — ai làm gì. Trùng với lane trên cầu bàn giao. */
+/**
+ * NHÂN SỰ — **NGUỒN DUY NHẤT** của bản đồ lane. `scripts/moc.mjs` NHẬP từ đây, không tự chép.
+ *
+ * ⚠️ CA THẬT 30/08, mười phút sau khi dựng: bản đồ nằm ở HAI chỗ và LỆCH NGAY —
+ * `moc.mjs` đã đổi sang bản đồ Codex (PRODUCT · DESIGN · ARCH · BUILD) còn tệp này vẫn giữ bản cũ
+ * (UI · THIẾT KẾ/NC · 2D3D). Màn 4173 vẽ theo tệp này ⇒ **màn hiện tên cũ trong khi cầu thi hành
+ * tên mới**. Lệch bản đồ ⇒ phiếu tới SAI VAI ⇒ kiểm chéo mất tác dụng, tức hỏng đúng thứ đắt nhất.
+ *
+ * Chữa bằng CẤU TRÚC, không bằng cổng: một nguồn thì không lệch được. Cổng cũng có thể quên.
+ * Bản đồ lấy theo Codex vì nó đầy đủ hơn và đang chạy thật — Hoà 30/08:
+ * *"nếu các phiên của bạn thay đổi, đặt tên lại thì phải đồng bộ với Codex + 4173."*
+ */
 export const NGUOI = [
-  { ma: '00', ten: 'MAIN', vai: 'điều phối', mo: 'giữ bút mã sản xuất · viết phiếu · KHÔNG tự nhận việc của lane' },
-  { ma: '03', ten: 'UI', vai: 'giao diện', mo: 'thang chữ · bố cục · những gì người dùng nhìn thấy' },
-  { ma: '05', ten: 'THIẾT KẾ/NC', vai: 'nghiên cứu', mo: 'khảo sát chuẩn nghề · đặc tả · KHÔNG ghi mã sản xuất' },
-  { ma: '06', ten: '2D3D', vai: 'bản vẽ', mo: 'CAD · hình học · đường nạp DXF' },
-  { ma: '07', ten: 'QUALITY', vai: 'bằng chứng', mo: 'SBOM · biên nhận · giấy phép · dựng lại sạch' },
+  { ma: '00', ten: 'MAIN', vai: 'điều phối', mo: 'tổng hợp · viết phiếu · giữ bút mã sản xuất · KHÔNG tự nhận việc lane khác' },
+  { ma: '01', ten: 'MEMORY', vai: 'trí nhớ', mo: 'chống lặp · chống quên · giữ đường về tri thức đã chưng cất' },
+  { ma: '02', ten: 'RESEARCH', vai: 'tra chuẩn ngoài', mo: 'nguồn thật · ca thật · KHÔNG ghi mã sản xuất' },
+  { ma: '03', ten: 'PRODUCT', vai: 'sản phẩm', mo: 'phạm vi · cắt việc · thứ người dùng thấy' },
+  { ma: '04', ten: 'DESIGN', vai: 'thẩm mỹ', mo: 'ngôn ngữ thị giác · lưới · tỉ lệ · thứ bậc' },
+  { ma: '05', ten: 'ARCH', vai: 'kiến trúc', mo: 'hợp đồng · ADR · ranh giới module' },
+  { ma: '06', ten: 'BUILD', vai: 'thi công', mo: 'viết mã · sửa lỗi · dựng bề mặt' },
+  { ma: '07', ten: 'QUALITY', vai: 'bằng chứng', mo: 'SBOM · biên nhận · giấy phép · phản biện' },
+  { ma: '08', ten: 'TTT', vai: 'khách đầu tiên', mo: 'ca thật từ studio dùng đầu tiên' },
 ];
+
+/** Dạng `moc.mjs` cần: mã → một dòng mô tả vai. Dẫn xuất, không phải bản sao. */
+export const VAI = Object.fromEntries(
+  NGUOI.map((n) => [n.ma, `${n.ten} · ${n.mo}`]).concat([['99', 'tạm / thử']]),
+);
 
 /**
  * ĐẦU VIỆC.
@@ -164,6 +184,7 @@ export const VIEC = [
   },
 ];
 
+/* Đầu việc gán theo SỐ lane; số không đổi khi tên vai đổi, nên không phải sửa lại. */
 export const dem = () => ({
   nguoi: NGUOI.length,
   viec: VIEC.length,

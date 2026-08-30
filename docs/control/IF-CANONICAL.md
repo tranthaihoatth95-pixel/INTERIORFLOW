@@ -185,6 +185,29 @@ Nén phức tạp thành ý định **mà không giết khả năng sửa**.
 phê duyệt · quyền tác giả*. Lõi tất định *hình học · ràng buộc · danh tính · sự thật · bản sửa*.
 ⛔ **AI KHÔNG BAO GIỜ âm thầm biến đổi sự thật canonical.**
 
+## 8b · TRƯỚC KHI ĐỔI BẤT KỲ THỨ GÌ — cân lợi hại, chọn theo ĐƯỜNG DÀI `[CHỐT 30/08]`
+
+> Hoà dạy 30/08: *"Làm gì cũng xác suất trước mặt lợi mặt hại của việc thay đổi. Cách nào đường
+> dài lợi ích hơn thì đề xuất. Đây cũng là một trong những skill bạn nên ghi nhớ."*
+
+Ba câu, hỏi **trước** khi sửa — không phải sau:
+1. **Lợi ngắn hạn** của việc đổi là gì? Của việc **không đổi** là gì?
+2. **Hại dài hạn** nếu không đổi — nó có **chắc chắn tái diễn** không?
+3. Cách nào **không cần cổng canh** vì cấu trúc đã chặn? Cấu trúc thắng cổng, vì **cổng cũng có
+   thể quên**.
+
+**Ca thật cùng ngày, đo được:** bản đồ lane bị chép ra **hai** chỗ (`moc.mjs` + `bos-so-viec.mjs`)
+và **lệch nhau sau đúng mười phút** — cầu thi hành tên mới trong khi màn 4173 vẽ tên cũ. Lệch bản
+đồ ⇒ phiếu tới **sai vai** ⇒ kiểm chéo mất tác dụng, tức hỏng đúng thứ đắt nhất.
+Chữa: **một nguồn** (`bos-so-viec.mjs` giữ, `moc.mjs` nhập vào). Không dựng cổng canh — vì một
+nguồn thì **không lệch được**.
+
+⚠️ **Đổi tên lane thì phải đồng bộ BA chỗ**, thiếu một là lệch lại: ① sổ `bos-so-viec.mjs` ·
+② tên phiên bên Codex · ③ tên phiên bên Claude (màn 4173 tự đọc từ ①).
+
+⚠️ **`node -c` chỉ soi CÚ PHÁP, không soi import.** Cùng ngày nó báo xanh cho một tệp thiếu hẳn
+dòng `import` — chỉ khi **chạy thật** mới lộ `ReferenceError`. Soi cú pháp không thay được chạy thử.
+
 ## 9 · LUẬT DÙNG CHUNG `[CHỐT]`
 > **CÁI GÌ ĐÃ GỌI LÀ DÙNG CHUNG THÌ PHẢI THẬT SỰ DÙNG CHUNG.**
 

@@ -30,6 +30,9 @@ import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import os from 'node:os';
+/* Bản đồ lane — NGUỒN DUY NHẤT ở `bos-so-viec.mjs`. Chép lại là tạo bản thứ hai,
+ * và bản thứ hai đã lệch một lần rồi (30/08, sau đúng mười phút). */
+import { VAI } from './bos-so-viec.mjs';
 
 const REPO = process.cwd();
 const SO = path.join(REPO, 'docs/control/IF-MOC.md');
@@ -37,31 +40,6 @@ const KHO = path.join(os.homedir(), '.claude/projects/-Users-tranben-Downloads-i
 const LOG_ROOT = process.env.BOS_SHARED_LOG_ROOT || path.join(os.homedir(), 'PROJECT/SHARED/LOG');
 const CAU = path.join(LOG_ROOT, 'agent-handoffs.jsonl');
 
-/* ══ BẢN ĐỒ LANE — MỘT bản, dùng chung giữa MỌI hệ agent ══
- *
- * Hoà 30/08 cho xem cấu trúc bên Codex: 9 lane, các phiên **phản biện nhau** rồi dồn về MAIN,
- * MAIN viết phiếu, bỏ vào hộp thư cầu, bên kia đọc và thi hành.
- *
- * ⚠️ LỖI ĐO ĐƯỢC CÙNG NGÀY: bản đồ hai bên **lệch nhau** mà không ai biết.
- *   Codex:  03 PRODUCT · 04 DESIGN · 05 ARCH · 06 BUILD
- *   Claude: 03 UI      · (không có) · 05 THIẾT KẾ/NC · 06 2D3D
- * Lane 00 đã gửi **6 phiếu vào lane 05** nghĩ là thiết kế/nghiên cứu — bên kia 05 là **ARCH**.
- * Và **4 lane `01·02·04·08` chưa từng được dùng** dù bên kia đang chạy chúng.
- * Cầu chở phiếu đúng số nhưng **sai vai** thì kiểm chéo mất tác dụng — người đọc không phải người
- * đáng đọc. ⇒ Lấy bản đồ của Codex làm chuẩn chung, vì nó đầy đủ hơn và đang chạy thật.
- */
-const VAI = {
-  '00': 'MAIN · điều phối, tổng hợp, viết phiếu',
-  '01': 'MEMORY · trí nhớ, chống lặp, chống quên',
-  '02': 'RESEARCH / CASE · tra chuẩn ngoài, ca thật',
-  '03': 'PRODUCT · quyết định sản phẩm, phạm vi',
-  '04': 'DESIGN · thẩm mỹ, bố cục, ngôn ngữ thị giác',
-  '05': 'ARCH · kiến trúc hệ thống, hợp đồng, ADR',
-  '06': 'BUILD · thi công mã',
-  '07': 'QUALITY · bằng chứng, biên nhận, phản biện',
-  '08': 'TTT · khách hàng đầu tiên',
-  '99': 'tạm / thử',
-};
 const LANES = new Set(Object.keys(VAI));
 const bamNgan = (s) => createHash('sha256').update(s).digest('hex').slice(0, 12);
 
