@@ -275,3 +275,50 @@ Quy ước áp cho **mọi artifact sau này**, nên nó đáng giá hơn nhiề
 ⛔ **Đừng vá mù một artifact 2,7MB mình chưa đọc hết** để "sửa cho đúng sự thật". Sửa một tệp
 chưa đọc, nhân danh sự thật, chính là loại hành động mà cả ngày hôm nay dạy phải tránh. Muốn nó
 đúng thì **sinh lại từ nguồn**, không vá.
+
+---
+
+# 18 · SKILL — **BẰNG CHỨNG KHÔNG PHÂN BIỆT ĐƯỢC THÌ KHÔNG PHẢI BẰNG CHỨNG**
+
+> Hoà 30/08, sau khi Codex bắt được một khẳng định sai của lane 00: *"lý do sai"* — hỏi **cơ chế**,
+> không hỏi lời xin lỗi.
+
+**Ca thật.** MAIN báo với Hoà: *"phiên Claude đã nhặt phiếu bưu tá lên thi công."* SAI — `CDX-06`
+phía Codex làm. Chuỗi suy luận đã dùng:
+
+```
+① `peek 06` THẤY phiếu          → nhưng HÀNG ĐỢI DÙNG CHUNG, cả hai hệ đều thấy
+② THẤY scripts/buu-ta-cau.mjs   → nhưng CÂY MÃ DÙNG CHUNG, cả hai hệ đều ghi vào đây
+③ tôi CÓ một phiên 06           → thật, nhưng không liên quan
+⇒ "phiên Claude làm"
+```
+
+`①` và `②` **đúng trong CẢ HAI thế giới**. Nếu bên kia làm, chúng vẫn trông y hệt.
+
+## Câu hỏi phải hỏi trước khi tin bất kỳ bằng chứng nào
+
+> **Nếu điều ngược lại đúng, thứ này có trông KHÁC không?**
+> Không khác ⇒ **không phải bằng chứng**, chỉ là thứ *tương thích* với niềm tin sẵn có.
+
+⚠️ Đây **khác** skill 1 (*đo trước, kết luận sau*). Ở ca này **tôi CÓ đo** — tôi đo nhầm thứ.
+Một phép đo không đổi giá trị theo câu trả lời thì nó **đo bằng không** — cùng họ **M-59**.
+
+## Vì sao không nhận ra: câu chuyện có sẵn chen vào chỗ trống
+
+Tôi vừa tự đánh thức một phiên 06 mấy giờ trước. Nên khi cần lấp khoảng trống giữa `②` và kết
+luận, thứ **gần nhất trong đầu** chen vào trước — không phải thứ đúng nhất. Trí nhớ về việc mình
+vừa làm là nguồn nhiễu **mạnh nhất**, vì nó không thấy giống suy đoán, nó thấy giống hiểu biết.
+
+## Và nó là lỗi HỆ THỐNG, không phải lỗi người
+
+Bằng chứng phân biệt được **có tồn tại**, cách một lệnh:
+
+```
+WAKE · cach = "send_message_to_thread:01a031aa-…"   ← Codex
+WAKE · cach = "SendMessage → interiorflow-ed"        ← Claude
+```
+
+Nhưng nó nằm trong **trường văn bản tự do**, không phải trường định danh: không cổng nào đọc,
+không lệnh nào tra. ⇒ **Hệ thống làm câu trả lời đúng ĐẮT và câu trả lời sai RẺ.** Người đi đường rẻ.
+Chữa: đưa `system` thành trường thật (`CDX-06` / `CLD-06`), và cho `soi-cau` **đỏ** khi một biên
+nhận không xác định được hệ — biên nhận vô danh thì bằng không.
