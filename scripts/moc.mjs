@@ -37,7 +37,32 @@ const KHO = path.join(os.homedir(), '.claude/projects/-Users-tranben-Downloads-i
 const LOG_ROOT = process.env.BOS_SHARED_LOG_ROOT || path.join(os.homedir(), 'PROJECT/SHARED/LOG');
 const CAU = path.join(LOG_ROOT, 'agent-handoffs.jsonl');
 
-const LANES = new Set(['00', '01', '02', '03', '04', '05', '06', '07', '08', '99']);
+/* ══ BẢN ĐỒ LANE — MỘT bản, dùng chung giữa MỌI hệ agent ══
+ *
+ * Hoà 30/08 cho xem cấu trúc bên Codex: 9 lane, các phiên **phản biện nhau** rồi dồn về MAIN,
+ * MAIN viết phiếu, bỏ vào hộp thư cầu, bên kia đọc và thi hành.
+ *
+ * ⚠️ LỖI ĐO ĐƯỢC CÙNG NGÀY: bản đồ hai bên **lệch nhau** mà không ai biết.
+ *   Codex:  03 PRODUCT · 04 DESIGN · 05 ARCH · 06 BUILD
+ *   Claude: 03 UI      · (không có) · 05 THIẾT KẾ/NC · 06 2D3D
+ * Lane 00 đã gửi **6 phiếu vào lane 05** nghĩ là thiết kế/nghiên cứu — bên kia 05 là **ARCH**.
+ * Và **4 lane `01·02·04·08` chưa từng được dùng** dù bên kia đang chạy chúng.
+ * Cầu chở phiếu đúng số nhưng **sai vai** thì kiểm chéo mất tác dụng — người đọc không phải người
+ * đáng đọc. ⇒ Lấy bản đồ của Codex làm chuẩn chung, vì nó đầy đủ hơn và đang chạy thật.
+ */
+const VAI = {
+  '00': 'MAIN · điều phối, tổng hợp, viết phiếu',
+  '01': 'MEMORY · trí nhớ, chống lặp, chống quên',
+  '02': 'RESEARCH / CASE · tra chuẩn ngoài, ca thật',
+  '03': 'PRODUCT · quyết định sản phẩm, phạm vi',
+  '04': 'DESIGN · thẩm mỹ, bố cục, ngôn ngữ thị giác',
+  '05': 'ARCH · kiến trúc hệ thống, hợp đồng, ADR',
+  '06': 'BUILD · thi công mã',
+  '07': 'QUALITY · bằng chứng, biên nhận, phản biện',
+  '08': 'TTT · khách hàng đầu tiên',
+  '99': 'tạm / thử',
+};
+const LANES = new Set(Object.keys(VAI));
 const bamNgan = (s) => createHash('sha256').update(s).digest('hex').slice(0, 12);
 
 function docSuKien() {
@@ -64,6 +89,8 @@ if (lenh === 'handoff') {
   const [from, to, topic, body, source = 'chat-unverified'] = process.argv.slice(3);
   if (!LANES.has(from) || !LANES.has(to) || !topic || !body) {
     console.error('Dùng: node scripts/moc.mjs handoff <from-lane> <to-lane> "chủ đề" "nội dung" "nguồn#hash"');
+    console.error('  Lane — bản đồ DÙNG CHUNG với Codex, gửi sai số là gửi sai VAI:');
+    for (const [k, v] of Object.entries(VAI)) console.error(`    ${k}  ${v}`);
     process.exit(2);
   }
   const createdAt = new Date().toISOString();
