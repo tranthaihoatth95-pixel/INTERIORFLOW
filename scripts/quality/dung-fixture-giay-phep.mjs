@@ -60,10 +60,68 @@ mkdirSync(GOC, { recursive: true });
 writeFileSync(join(GOC, 'fx-sach.js'), '/* khong co dau vet */\n'.repeat(40_000), 'latin1');
 writeFileSync(join(GOC, 'fx-sach.wasm'), Buffer.alloc(2 * MB, 7));
 
-const bang = ['fx-lon.js', 'fx-blob.wasm', 'fx-sach.js', 'fx-sach.wasm'].map((f) => {
-  const s = statSync(join(GOC, f)).size;
-  return `  ${f.padEnd(16)} ${(s / MB).toFixed(1).padStart(6)} MB  ${f.startsWith('fx-sach') ? 'SẠCH (phải xanh)' : 'BẨN (phải đỏ)'}`;
+/* ── ⑤ RENAMED BINARY — cùng payload, đuôi khác, tên không tố cáo (T1, ca B) ───────────────
+   Ca A (.wasm) và ca B (.bin) tách riêng có chủ đích: một cổng chỉ thêm '.wasm' vào allow-list
+   sẽ ĐỎ ở A và XANH ở B — và ta sẽ tưởng đã vá xong. B là thứ phân biệt "thêm một đuôi" với
+   "quét theo nội dung". */
+{
+  const dem = Buffer.alloc(2 * MB, 0x41);
+  Buffer.from(DAU_VET, 'latin1').copy(dem, 900_000);
+  writeFileSync(join(GOC, 'fx-doi-ten.bin'), dem);
+}
+
+/* ── ⑥ ARCHIVE — payload nằm TRONG kho nén (T5, ca C) ──────────────────────────────────────
+   Đo được 30/08: `dist/InteriorFlow-0.1.0-arm64.dmg` 320,6 MB — CHÍNH LÀ bộ cài giao cho người
+   dùng — chưa từng được mở ra soi. Dùng .zip làm bản đại diện chạy được ở mọi máy; cổng thật
+   phải mở được cả .dmg.
+   Zip "stored" (không nén) dựng bằng tay: không kéo thêm phụ thuộc, và payload nằm nguyên văn
+   trong tệp nên cổng nào ĐỌC BYTE cũng thấy — nếu cổng vẫn không thấy thì đó là vì nó chưa
+   enumerate, chứ không phải vì nén che mất. */
+{
+  const ten = Buffer.from('ben-trong.txt', 'latin1');
+  const noi = Buffer.from(`payload ${DAU_VET} het`, 'latin1');
+  const crc = (() => { let c = ~0; for (const b of noi) { c ^= b; for (let i = 0; i < 8; i++) c = (c >>> 1) ^ (0xEDB88320 & -(c & 1)); } return ~c >>> 0; })();
+  const lfh = Buffer.alloc(30);
+  lfh.writeUInt32LE(0x04034b50, 0); lfh.writeUInt16LE(20, 4); lfh.writeUInt16LE(0, 8);
+  lfh.writeUInt32LE(crc, 14); lfh.writeUInt32LE(noi.length, 18); lfh.writeUInt32LE(noi.length, 22);
+  lfh.writeUInt16LE(ten.length, 26);
+  const cdh = Buffer.alloc(46);
+  cdh.writeUInt32LE(0x02014b50, 0); cdh.writeUInt16LE(20, 4); cdh.writeUInt16LE(20, 6);
+  cdh.writeUInt32LE(crc, 16); cdh.writeUInt32LE(noi.length, 20); cdh.writeUInt32LE(noi.length, 24);
+  cdh.writeUInt16LE(ten.length, 28);
+  const off = lfh.length + ten.length + noi.length;
+  const eocd = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0); eocd.writeUInt16LE(1, 8); eocd.writeUInt16LE(1, 10);
+  eocd.writeUInt32LE(cdh.length + ten.length, 12); eocd.writeUInt32LE(off, 16);
+  writeFileSync(join(GOC, 'fx-kho.zip'), Buffer.concat([lfh, ten, noi, cdh, ten, eocd]));
+}
+
+/* ── ⑦ EXCLUDED DEPENDENCY — T4, ca D ──────────────────────────────────────────────────────
+   Đúng gói mà `license:check --excludePackages` đang miễn trừ. Ca này thuộc cổng SOURCE, KHÔNG
+   thuộc cổng ARTIFACT — nó tồn tại để chứng minh việc tách hai cổng (§5 packet) là cần thiết:
+   cổng artifact PHẢI xanh ở đây (gói không vào bộ cài), cổng source PHẢI đỏ. */
+{
+  const d = join(GOC, 'fx-node_modules', '@mlightcad', 'libredwg-web');
+  mkdirSync(d, { recursive: true });
+  writeFileSync(join(d, 'package.json'), JSON.stringify({ name: '@mlightcad/libredwg-web', version: '0.7.7', license: 'GPL-3.0' }, null, 1));
+}
+
+const CA = [
+  ['fx-blob.wasm', 'A · allow-list bypass (T1)', 'ĐỎ'],
+  ['fx-doi-ten.bin', 'B · renamed binary (T1)', 'ĐỎ theo NỘI DUNG'],
+  ['fx-kho.zip', 'C · archive (T5)', 'ĐỎ sau khi mở'],
+  ['fx-node_modules/@mlightcad/libredwg-web/package.json', 'D · excluded dep (T4)', 'ĐỎ ở cổng SOURCE'],
+  ['fx-lon.js', 'E · trần 64MB (T3)', 'ĐỎ — nhưng DORMANT'],
+  ['fx-sach.js', 'counterproof', 'XANH'],
+  ['fx-sach.wasm', 'counterproof', 'XANH'],
+];
+const bang = CA.map(([f, ca, ky]) => {
+  let s = 0;
+  try { s = statSync(join(GOC, f)).size; } catch { /* thư mục con */ }
+  return `  ${f.split('/').pop().padEnd(15)} ${(s / MB).toFixed(1).padStart(6)} MB  ${ca.padEnd(28)} ${ky}`;
 });
 console.log(`fixture tại ${GOC}\n${bang.join('\n')}`);
-console.log('\nKỳ vọng: 2 tệp BẨN bị nêu tên · 2 tệp SẠCH KHÔNG bị nêu tên.');
+console.log('\n⚠️ Ca E (65MB) XANH GIẢ nếu đứng một mình: cổng chỉ sửa trần 64MB sẽ đỏ ở E mà vẫn');
+console.log('   để lọt A/B/C/D. E chỉ có giá trị khi chạy CÙNG bốn ca kia.');
+console.log('⚠️ Không có ca XANH thì không phân biệt được cổng thật với cổng `exit 1` vô điều kiện.');
 console.log('Dọn: node scripts/quality/dung-fixture-giay-phep.mjs --don');
