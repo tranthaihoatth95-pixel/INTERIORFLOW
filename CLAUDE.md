@@ -62,6 +62,31 @@ Tra khi cần, **đừng nạp sẵn**: `docs/control/IF-AUDIT-MEMORY.md` (khi �
 `docs/control/IF-ADVICE-VERIFICATION-GATE.md` (**trước khi biến một khuyến nghị thành quyết định
 bền hoặc thành mã** — `IF-DEC-*` · `EV-*` · `DISS-*` · `GATE-*` · `REC-*`).
 
+## 🔀 BA TUYẾN LÀM VIỆC — nấc động, và một chuông (Hoà chốt 30/08)
+
+Codex hết quota giữa chừng ngày 30/08, lane 07 đứng lại. Ba tuyến, **không thay thế nhau** —
+mỗi tuyến bù một lỗ khác:
+
+| | tuyến | bù lỗ gì | giá phải trả |
+|---|---|---|---|
+| **A** | phiên có repo (Codex · Claude Code) | tuyến chính — đọc mã, chạy lệnh, nhận phiếu qua cầu | chết khi hết quota |
+| **B** | chat ngoài (dán phiếu tự chứa, kể cả trên điện thoại) | **HẾT MÁY** — thứ duy nhất còn chạy khi mọi tuyến có repo đều cạn | **dữ liệu rời máy** + thêm chặng trung chuyển |
+| **C** | subagent trong phiên đang mở | **VIỆC VỤN** — gọn, đo được, không đáng mở cả phiên | KHÔNG cứu lúc hết quota: nó tiêu chính túi đang cạn |
+
+**Nấc động** — dừng ở câu ĐẦU TIÊN trả lời đúng: ① cần đọc mã / chạy lệnh? → **A** (A cạn ⇒ C) ·
+② nghiên cứu-định hướng thuần, ra chữ? → **B** · ③ gọn, phạm vi rõ, một lượt? → **C** ·
+④ mọi tuyến có repo đều cạn? → **B**, hết cách.
+
+🔔 **Chuông bắt buộc trước MỌI lần dùng tuyến B**, vì B đưa thứ ra khỏi máy:
+```
+node scripts/chon-tuyen.mjs --gui <thư-mục|tệp> …
+```
+Ca thật sinh ra nó: bộ 24 ảnh định gửi cho tuyến nghiên cứu có `50-01-cai-dat.png` **hiện rõ
+Gmail cá nhân của Hoà**. Không ai cố ý — ảnh chụp app thật thì app thật có gì nó chụp nấy.
+Máy không đọc được chữ trong ảnh nên nó **soi ngược từ mã**: component nào vẽ dữ liệu cá nhân ⇒
+route nào mang chúng ⇒ ảnh nào rủi ro. Đo 30/08: 4 component ⇒ **5 ảnh**, nhiều hơn số mắt người
+bắt được. Chuông **không có cờ bỏ qua** — muốn gửi thì sửa lô gửi, không sửa chuông.
+
 ## Skill — nạp đúng nhánh, cấm nạp cả kho
 `if-design` bộ định tuyến thiết kế · `if-design-review` trọng tài chấm độc lập ·
 `if-ui-convergence` đưa một bề mặt đi trọn · `if-audit` audit có mục tiêu · `if-handoff` bàn giao phiên.
