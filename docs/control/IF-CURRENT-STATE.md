@@ -5,12 +5,14 @@
 > Nhỏ và mới. **Cấm để triết lý dài hạn ở đây** — nó thuộc `IF-CANONICAL.md`.
 > **Cập nhật trước khi kết phiên.**
 
-**Ngày** 30/08/2026 · **Nhánh** `checkpoint/2026-08-24-control-plane` · **HEAD** `27140602` · **Cây bẩn** 1 tệp · **Worktree** 0 · **Dev server** 1 (cổng 3000) · **`prisma mcp`** 0 · **Lịch sử ĐÃ VIẾT LẠI 30/08** — mọi SHA sau `147f66a` đổi, bảng ánh xạ `.git/filter-repo/commit-map`
+**Ngày** 31/08/2026 tối · **Nhánh** `checkpoint/2026-08-24-control-plane` · **HEAD** `c3b0ec6a` · **Cây bẩn** 9 tệp (**cả 9 là `docs/control/ban/*.md` do MÁY sinh lại sau mỗi biên nhận — nhịp của máy, không phải nợ**) · **Worktree** 0 · **Dev server** 1 (cổng 3001) · **Lịch sử ĐÃ VIẾT LẠI 30/08** — mọi SHA sau `147f66a` đổi, bảng ánh xạ `.git/filter-repo/commit-map`
 > Đo lúc ghi, không chép số cũ (M-05). Dòng này TỪNG stale **BA** lần — khai `main · c7f3ac8` khi
 > thật là nhánh checkpoint · khai `6c9712a · 617 tệp` sau khi đã đi thêm 8 commit · và **30/08 khai
 > `28/08 · HEAD 65dc66c · Dev server 0`** trong khi thật là `30/08 · 27140602 · 1 server đang mở`.
 > Lần thứ ba do **phiên Codex `00·MAIN` bắt được**, không phải phiên viết tự thấy — đó là bằng
 > chứng: người ghi KHÔNG tự soi được dòng mình vừa bỏ quên. Cần máy, hoặc cần người thứ hai.
+> ⚠️ **`prisma mcp` KHÔNG đo lượt này** — trường đó đã bỏ khỏi dòng thay vì chép lại số cũ. Chép
+> một con số không đo được là đúng cách dòng này stale ba lần trước.
 
 ## 🖊️ NGƯỜI GHI SẢN XUẤT — **một ô duy nhất trong cả tệp**
 
@@ -83,6 +85,60 @@ Nội dung gốc giữ trong lịch sử git (`git show 2a454b4:docs/control/IF-
 Hoà (`IF-CANONICAL` §2). Hai phiên cùng tự xưng ⇒ **cả hai DỪNG GHI**, hỏi Hoà (M-51).
 
 ## 🎯 VIỆC KẾ TIẾP — **một việc, không phải danh sách**
+
+🔄 **CẬP NHẬT 31/08 TỐI.** Mọi dòng bên dưới khối này là bản cũ hơn, **giữ làm dấu vết theo lệ**.
+
+**HAI LÔ BẨN ĐÃ ĐÓNG — cây từ 24 tệp bẩn về 0 (ngoài nhịp máy).** Xử theo kiểu Hoà chốt 20:48:
+một phiên cầm lease, một phiên khác review chỉ-đọc, commit **TÁCH BẠCH**, cấm `add -A`.
+
+| commit | lô | người review | verdict |
+|---|---|---|---|
+| `6d70079e` | MÀU BỘ (7 tệp) | `hoa-giay-muc-a` (99) | **PASS có điều kiện** — 3 điểm đánh dấu đã tự kiểm lại |
+| `c3b0ec6a` | CẦU (17 tệp) | `hoa-giay-muc-a` (99) | **PASS có điều kiện** — kẹp `soi:cau` hai đầu, khớp |
+
+Nợ **`commit-d9d92364-không-tự-chứa`** ⇒ **ĐÓNG** ở `c3b0ec6a`.
+
+**Giấy Mực đợt A — xong luật 1·2·3·4·5** (KHÔNG phải 1·2·4 như bản chiều ghi). Neo: luật 2 thang
+mực `lib/cad/render.ts` `BE_DAY_MUC`+`netMuc` · luật 3 poché `GIAY_MUC_PHA.pocheTuong = 0.8` ·
+luật 4 `GiayMuc.khaoSat` + `components/cad/giay-muc-store.ts` · luật 5 `mayDocNguoc()`.
+Commit `dc1a5254` + `8f75aa0d`; ca khoá `lib/cad/render-giay-muc.test.ts` 53/0.
+⛔ **CHƯA chứng minh trên runtime ⇒ cấm tuyên PASS.**
+
+**Sổ nợ chiều 31/08 — cập nhật:**
+1. ~~chống-ăn-lại polyline~~ ⇒ **TRẢ** ở `dc1a5254` (chốt chặn dời lên đầu vòng `docDoanThang` +
+   `laPocheCuaChinhBoNay` trong `lib/cad/tuong-hinh-hoc.ts`; test 59/0, 2 ca ĐỎ đúng lý do trước khi vá)
+2–8. giữ nguyên.
+
+**Nợ MỚI có tên, đừng để chìm:**
+- **`mau-bo-chưa-nối`** — `lib/wallpaper/mau-bo.ts` (495 dòng) chưa có nơi tiêu thụ Ở RUNTIME;
+  `--accent` trong `globals.css` vẫn là hằng số `#6a57f5` (đo trên app thật lúc commit). Nó KHÔNG
+  phải mã chết: `mau-bo.test.ts:66` ghim nó vào CSS bằng cổng máy ⇒ đã có **dây KIỂM**, chưa có
+  **dây CHẠY**. Việc nối token: `docs/control/IF-HE-5-BO-MAU.md` §5.
+- **`soat-toan-dien-đường-cứng`** — `scripts/soat-toan-dien.mjs:67` đọc cầu bằng
+  `os.homedir()/PROJECT/SHARED/LOG`, **bỏ qua `BOS_SHARED_LOG_ROOT`**, trong khi `soi-cau.mjs:55`
+  và `buu-ta-cau.mjs:25` cùng lô đều tôn trọng biến đó. Ai cách ly sổ chạy thử thì `soat` vẫn đọc
+  SỔ THẬT — đúng họ hàng bệnh 31/08. Chưa hại (ngoài `npm test`), nhưng nó có tên từ đây.
+- **`POCHE_TAM-inferred-rộng`** — đường chạy khi KHÔNG có giấy mực vẫn lấy `e.inferred` một mình,
+  cùng cái lỗ đã làm toàn bản vẽ hoá accent. Phía giấy-mực đã vá ở `8f75aa0d` bằng `mayDocNguoc()`
+  (cặp `inferred` + `wallThicknessMm`); **đường cũ chưa vá** vì bị 20 ca `render-z-order.test.ts` khoá.
+
+**Vá scale-âm — `81dd7dd7`** *"defer fit-on-open until canvas is measured"* (tác giả Hoà, 3 tệp,
+`import-summary.test.ts` 18/0). Gốc là **TẤT ĐỊNH, không phải race** — nguyên văn commit:
+`visibilityState hidden ⇒ requestAnimationFrame không chạy ⇒ scheduleResize không tới onResize ⇒
+canvas kẹt 300x150 trong khi khung chứa 963x610`.
+
+**QĐ fit-theo-cụm PHƯƠNG ÁN A — Hoà chốt 20:48, CHƯA THI CÔNG.** Canh vào cụm chính khi tỉ lệ
+thô/cụm vượt `FOCUS_MIN_RATIO=4`, làm bằng **ĐIỀU KIỆN MỚI**; ⛔ **CẤM đụng `ABSURD_FAR_RATIO=30`**;
+bấm `F` vẫn xem toàn bộ; phải chạy lại trên đủ **6 hồ sơ** trong docstring `import-summary` trước
+khi commit. Số đã đo sẵn để khỏi đo lại: `03_TANG5B-TTT.dxf` khung thô **225,9 × 71,4 m** ·
+`mainClusterBox` **28,5 × 26,2 m** · tỉ lệ **21,65×**; `zoomExtentsPlan` vẫn trả `mode 'full',
+farEntities 0` vì `lib/cad/import-summary.ts` có dòng `if (far === 0) return full`.
+⚠️ Giao cho phiên có lease `import-summary.ts` — **không phải** lane này.
+
+**VIỆC KẾ TIẾP CHÍNH XÁC:** chứng minh **Giấy Mực đợt A trên runtime** (ảnh app thật, số trên màn
+khớp số máy đo) — đó là mục duy nhất đang chặn việc tuyên PASS cho đợt A.
+
+---
 
 🔄 **CẬP NHẬT 31/08 CHIỀU.** Mọi dòng bên dưới khối này là bản cũ hơn, **giữ làm dấu vết theo lệ**.
 
