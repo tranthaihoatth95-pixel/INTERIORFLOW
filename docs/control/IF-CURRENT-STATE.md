@@ -44,6 +44,25 @@ tới 30/08 nó vẫn chỉ là lời — không gì chặn một phiên khác g
 - Cấp/thu lease cho người thật: `node scripts/claude-lease.mjs issue --issuer-hoa "<ghi chú>" …`.
   Trước 31/08 không có lối này, nên Hoà muốn cấp lease phải mượn identity `cx:00` — sổ ghi tên
   một tuyến máy cho quyết định của người, tức nói dối đúng ô quan trọng nhất: *ai đã cho phép*.
+- **Điều phối (31/08).** `moc.mjs handoff` vào nhóm governance với luật **from = identity** —
+  ô `from` là ô danh tính, không khớp thì đó là giả danh lane khác phát phiếu. `danh-thuc` gõ
+  vào phiên người khác nên đích của nó là chuyện quyền: **`cl:00` đánh thức mọi địa chỉ đích**,
+  lane thường chỉ đánh thức phiếu gửi **tới chính mình**. Đích không nằm trong dòng lệnh mà nằm
+  trong `agent-handoffs.jsonl` ⇒ cổng tra sổ; tra không ra thì **đóng**.
+- **Commit đối chiếu chỉ mục (31/08).** Trước khi cho `git commit`, cổng chạy
+  `git diff --cached --name-only` và đòi **staged nằm trọn trong allowlist**; chỉ mục rỗng hoặc
+  đọc không được cũng đóng, và biên nhận `FILES` nêu đúng tệp sắp commit. Đây là lỗ đã cho
+  `147f66a` lọt: cổng cũ chỉ nhìn **dạng** lệnh, mà thứ sắp thành commit là **chỉ mục**.
+- **Xoá có kiểm (31/08).** `rm` và `git rm` nay là mutation **kèm danh sách tệp tường minh**, đi
+  qua đúng allowlist; vẫn cấm bulk/glob; **cấm đệ quy** vào thư mục ngoài allowlist **và** vào
+  chính gốc allowlist (đệ quy thì cổng không đọc được ruột). Trước đó chúng bị chặn **mù** —
+  không lane nào xoá nổi tệp của chính mình.
+- **Đường ngoài repo (31/08).** Mutation vào `~/.claude/` và `/private/tmp/claude-*` **qua không
+  cần lease** — guard này canh **repo**, không canh nhà riêng của công cụ. `.claude/` **trong**
+  repo KHÔNG dính luật này (nó resolve dưới cwd). Lô trộn trong-ngoài theo luật của repo.
+  Nguồn: PROPOSAL `HO-guard-v2` §4, qua `cl:07` 30/08, Hoà chưa phủ quyết.
+  ⚠️ **Nợ có tên:** `~/.claude/settings.json` là nơi khai chính hook này ⇒ đường này về lý thuyết
+  cho phép một phiên tự tháo cổng của mình. Chưa có ca chứng minh, chưa vá — chờ Hoà chốt.
 Ca đột biến: `scripts/claude-role-guard.test.ts` (đỏ **và** xanh — cổng luôn kêu là cổng vô dụng).
 
 🔴 **BA Ô NGƯỜI-GHI CŨ ĐÃ XOÁ KHỎI TỆP NÀY (27/08).** Chúng khai `interiorflow-65`,

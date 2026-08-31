@@ -1,4 +1,5 @@
 'use strict';
+const os = require('node:os');
 const path = require('node:path');
 
 // Toán tử shell: thứ nối/chuyển hướng lệnh. Nằm NGOÀI quote thì là cấu trúc, nằm TRONG quote
@@ -67,6 +68,13 @@ const GIT_UNSAFE_FLAGS = ['-c', '--config-env', '--ext-diff', '--textconv', '--o
 // Cờ biến máy soi từ ĐỌC thành GHI.
 const SOI_WRITE_FLAGS = /^--(ghi|fix|write|sua|viet|cap-nhat)/;
 
+// Đối số nào của `rm`/`git rm` là TỆP: mọi thứ không phải cờ. Lọc kín — `rm -- -tep-la`
+// mất tên tệp và rơi vào nhánh "chưa khai tệp", tức đóng, đúng chiều an toàn.
+const dungTep = (args) => args.filter((v) => v !== '--' && !v.startsWith('-'));
+// Cờ đệ quy, kể cả dạng gộp `-rf`. Đệ quy thì cổng KHÔNG đọc được ruột thư mục ⇒ phải
+// đòi mục tiêu nằm HẲN BÊN TRONG một gốc allowlist, không được là chính cái gốc đó.
+const coDeQuy = (args) => args.some((v) => v === '--recursive' || (/^-[A-Za-z]+$/.test(v) && /[rR]/.test(v.slice(1))));
+
 const READ = () => ({ kind: 'read', files: [] });
 const VERIFY = () => ({ kind: 'verify', files: [] });
 const MUTATION = (reason) => ({ kind: 'mutation', files: [], reason });
@@ -100,10 +108,20 @@ function classifyArgv(argv) {
   if (bin === 'node' && sub === 'scripts/moc.mjs') {
     const action = rest[0];
     if (['inbox', 'peek', 'namespace-view'].includes(action)) return READ();
-    if (['im', 'ack', 'sent', 'danh-thuc', 'dispatch-attempt'].includes(action)) return { kind: 'governance', files: [], address: rest[1], action };
+    // `handoff <from> <to> …` cũng là lệnh quản trị, và ô `from` của nó là ô DANH TÍNH —
+    // cùng vị trí với ô tác giả của im/ack/sent/danh-thuc/dispatch-attempt.
+    if (['im', 'ack', 'sent', 'danh-thuc', 'dispatch-attempt', 'handoff'].includes(action)) {
+      return { kind: 'governance', files: [], address: rest[1], action, handoffId: rest[2] };
+    }
   }
 
   if (bin === 'git' && sub === 'add') return { kind: 'mutation', files: rest };
+
+  // ── XOÁ CÓ KIỂM: `rm`/`git rm` mang danh sách tệp tường minh ra cổng rồi đi qua đúng
+  // allowlist như mọi mutation khác. Trước 31/08 chúng rơi vào nhánh "không nằm trong danh
+  // sách": chặn được, nhưng chặn MÙ — không lane nào xoá nổi tệp của chính mình.
+  if (bin === 'rm') return { kind: 'mutation', files: dungTep(argv.slice(1)), recursive: coDeQuy(argv) };
+  if (bin === 'git' && sub === 'rm') return { kind: 'mutation', files: dungTep(rest), recursive: coDeQuy(rest) };
 
   // ── COMMIT: chỉ dạng `-m` trên thứ ĐÃ add tường minh. `-a/-A/--all/--include/-p`
   // gom cả cây làm việc ⇒ commit vượt ra ngoài allowlist mà không khai một tệp nào.
@@ -143,6 +161,19 @@ function isAllowed(candidate, allowlist, cwd) {
   return allowlist.some((allowed) => { const root = path.resolve(cwd, allowed); return exact === root || exact.startsWith(`${root}${path.sep}`); });
 }
 
+// Nhà riêng của CÔNG CỤ, không phải repo: `~/.claude` và scratchpad `/private/tmp/claude-*`.
+// Guard này canh repo; bắt phiên xin lease để ghi vào thư mục tạm của chính nó là bắt người
+// thợ xin phép để mở hộp đồ nghề. Nguồn: PROPOSAL HO-guard-v2 §4, qua cl:07 30/08, Hoà chưa
+// phủ quyết. ⚠️ `.claude/` TRONG repo KHÔNG dính luật này — nó resolve dưới cwd, không dưới HOME.
+const TIEN_TO_TAM = '/private/tmp/claude-';
+function ngoaiRepo(file, env, cwd) {
+  const abs = path.resolve(cwd, file);
+  const nha = path.join(env.HOME || os.homedir(), '.claude');
+  if (abs === nha || abs.startsWith(`${nha}${path.sep}`)) return { ngoai: true, goc: abs === nha };
+  if (abs.startsWith(TIEN_TO_TAM)) return { ngoai: true, goc: abs === TIEN_TO_TAM };
+  return { ngoai: false, goc: false };
+}
+
 // Allowlist workspace của lane, đọc từ env. Chú thích trong .claude/settings.json đã hứa
 // biến này từ 29/08; tới 30/08 vẫn chưa dòng mã nào đọc nó — lời hứa treo, nay nối thật.
 function parseAllowlist(raw) {
@@ -169,7 +200,7 @@ function inspect(toolName, input) {
 
 const BULK = new Set(['-A', '--all', '.', '*']);
 
-function evaluate({ env, hook, lease = null, now = Date.now(), cwd = process.cwd() }) {
+function evaluate({ env, hook, lease = null, now = Date.now(), cwd = process.cwd(), staged = null, handoffTo = null }) {
   const operation = inspect(hook.tool_name, hook.tool_input || {});
   if (operation.kind === 'read') return { allow: true, mutation: false, operation };
   if (operation.kind === 'verify') return { allow: true, mutation: false, verify: true, operation };
@@ -181,6 +212,14 @@ function evaluate({ env, hook, lease = null, now = Date.now(), cwd = process.cwd
   if (!taskId || !sessionId) return { allow: false, reason: 'CONTRACT: thiếu TASK/SESSION', stamp, operation };
   if (operation.kind === 'governance') {
     if (operation.address !== identity.address) return { allow: false, reason: 'GOVERNANCE: địa chỉ lệnh không khớp identity', stamp, operation };
+    // ĐIỀU PHỐI: `danh-thuc` gõ vào phiên của người khác, nên đích của nó là chuyện quyền hạn.
+    // Đích KHÔNG nằm trong argv mà nằm trong sổ cầu ⇒ phải tra sổ mới chấm được. cl:00 là
+    // người điều phối nên đánh thức được mọi đích; lane thường chỉ đánh thức phiếu gửi tới mình.
+    if (operation.action === 'danh-thuc' && identity.lane !== '00') {
+      const dich = typeof handoffTo === 'function' ? handoffTo(operation.handoffId) : null;
+      if (!dich) return { allow: false, reason: `GOVERNANCE: không tra được đích của phiếu ${operation.handoffId || '(thiếu id)'}`, stamp, operation };
+      if (dich !== identity.address) return { allow: false, reason: `GOVERNANCE: chỉ cl:00 đánh thức địa chỉ khác (phiếu tới ${dich})`, stamp, operation };
+    }
     return { allow: true, mutation: true, governance: true, stamp, operation };
   }
   if (identity.lane === '00') return { allow: false, reason: 'ROLE: cl:00 là read/route-only', stamp, operation };
@@ -189,6 +228,14 @@ function evaluate({ env, hook, lease = null, now = Date.now(), cwd = process.cwd
   if (operation.kind !== 'commit') {
     if (operation.files.length === 0) return { allow: false, reason: `FILES: ${hook.tool_name} mutation phải khai tệp tường minh`, stamp, operation };
     if (operation.files.some((v) => BULK.has(v) || /[*?]/.test(v))) return { allow: false, reason: 'FILES: cấm bulk/glob staging', stamp, operation };
+    // Cả lô nằm trong nhà công cụ ⇒ ra ngoài phạm vi guard, không đòi lease. Lô TRỘN
+    // trong-ngoài thì rơi xuống luật của repo, vì phần trong repo mới là thứ được canh.
+    if (operation.files.every((file) => ngoaiRepo(file, env, cwd).ngoai)) {
+      if (operation.recursive && operation.files.some((file) => ngoaiRepo(file, env, cwd).goc)) {
+        return { allow: false, reason: 'FILES: cấm xoá đệ quy chính gốc nhà công cụ', stamp, operation };
+      }
+      return { allow: true, mutation: true, ngoaiRepo: true, stamp, operation };
+    }
   }
 
   let allowlist;
@@ -204,9 +251,24 @@ function evaluate({ env, hook, lease = null, now = Date.now(), cwd = process.cwd
     if (!allowlist.length) return { allow: false, reason: `ROLE: ${identity.address} cần IF_FILE_ALLOWLIST để ghi workspace của lane`, stamp, operation };
   }
 
+  // ── COMMIT ĐỐI CHIẾU CHỈ MỤC: 147f66a lọt vì cổng chỉ nhìn DẠNG lệnh. Thứ thật sự sắp
+  // thành commit là CHỈ MỤC — nó có thể mang tệp mà chẳng lượt `git add` nào khai ra cổng.
+  if (operation.kind === 'commit') {
+    const chiMuc = typeof staged === 'function' ? staged() : null;
+    if (!Array.isArray(chiMuc)) return { allow: false, reason: 'COMMIT: không đọc được chỉ mục (git diff --cached --name-only)', stamp, operation };
+    if (!chiMuc.length) return { allow: false, reason: 'COMMIT: chỉ mục rỗng — add tệp tường minh trước', stamp, operation };
+    stamp.files = chiMuc;
+    const lech = chiMuc.filter((file) => !isAllowed(file, allowlist, cwd));
+    if (lech.length) return { allow: false, reason: `COMMIT: chỉ mục có tệp ngoài allow-list: ${lech.join(', ')}`, stamp, operation };
+  }
+
   const outside = operation.files.filter((file) => !isAllowed(file, allowlist, cwd));
   if (outside.length) return { allow: false, reason: `FILES: ngoài allow-list: ${outside.join(', ')}`, stamp, operation };
+  if (operation.recursive) {
+    const goc = operation.files.filter((file) => allowlist.some((allowed) => path.resolve(cwd, allowed) === path.resolve(cwd, file)));
+    if (goc.length) return { allow: false, reason: `FILES: cấm xoá đệ quy chính gốc allow-list: ${goc.join(', ')}`, stamp, operation };
+  }
   return { allow: true, mutation: true, stamp, operation };
 }
 
-module.exports = { argvSafe, classifyArgv, classifyBash, evaluate, filesFromInput, inspect, isAllowed, parseAddress, parseAllowlist, scan };
+module.exports = { argvSafe, classifyArgv, classifyBash, evaluate, filesFromInput, inspect, isAllowed, ngoaiRepo, parseAddress, parseAllowlist, scan };
