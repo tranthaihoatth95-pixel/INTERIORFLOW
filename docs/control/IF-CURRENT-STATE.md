@@ -84,6 +84,41 @@ Hoà (`IF-CANONICAL` §2). Hai phiên cùng tự xưng ⇒ **cả hai DỪNG GHI
 
 ## 🎯 VIỆC KẾ TIẾP — **một việc, không phải danh sách**
 
+🔄 **CẬP NHẬT 31/08 CHIỀU.** Mọi dòng bên dưới khối này là bản cũ hơn, **giữ làm dấu vết theo lệ**.
+
+**Chuỗi commit + verdict trong ngày:**
+
+| commit | việc | verdict |
+|---|---|---|
+| `d9d92364` | phục hồi bàn | **PASS** |
+| `02216b87` | guard-v3 | **PASS** |
+| `81739ee1` | demo-sạch | **PASS 8/8** — 6,1MB dữ liệu khách rời ship; `test-assets` + `apk` dời `~/Downloads/_IF-KHO/tu-repo-demo-sach` |
+| `a2acd109` | 81-tường | **PASS 7/7**, **cờ vẫn TẮT** — quyền Hoà |
+| `7cf286db` | canvas đợt 1 | **PASS kèm nợ polyline** |
+
+**MẮT CHỦ.** Canvas **2 lượt "chưa ổn"** → **LOOK OUTSIDE 9 tool** → chốt ngôn ngữ **GIẤY MỰC**,
+mock được chấm **"ỔN" 17:20** → `docs/control/IF-GIAY-MUC.md`.
+
+**QĐ accent-theo-bộ (17:24)** → `IF-CHUAN-NEN` §4.
+
+**SỔ NỢ MỚI CHIỀU 31/08:**
+1. chống-ăn-lại polyline `lib/cad/tuong-hinh-hoc.ts:208-212` + ca khoá `docDoanThang`
+2. **GUARD-V4** — gom 10 mục: `mv`/`git mv` · `next build` vào VERIFY · `danh-thuc` address-slot
+   bên giao · env danh tính vào shell lane (`IF_*`/`BOS_SESSION_ID`) · sổ git-branch hở biến thể
+   ghi · VERIFY nhận `npx sucrase-node` · legacy-ack mồ côi · duyệt-lease-từ-xa + matcher mọi tool
+   ghi · TTL theo cỡ việc · khai script TTS `--out` đã dùng đường sổ
+3. sheet UX — đóng sheet không xác nhận đã-tự-lưu; bấm `+` trùng tên "Bản vẽ 2"
+4. bug **số dối** thanh trạng thái *"GFA 30,8m² · 102 phòng"* trên mặt bằng **474m²**
+5. **E-Stair ×12** tính nhầm tường
+6. phiếu design **"bộ minh hoạ trung tính"** (3 TODO trong mã trỏ tên)
+7. `trinh-bay.idfp` dangling `/demo/`
+8. nghiệm thu vàng `npm test` trọn tuyến — **chờ đánh thức 2 phiếu `cx`** (Codex hết quota)
+
+**VIỆC KẾ TIẾP CHÍNH XÁC:** thi công **Giấy Mực** (P1+P3, mock `giay-muc-v1` là spec) + **vá
+polyline cùng lease**; sau đó **guard-v4**.
+
+---
+
 🔄 **CẬP NHẬT 31/08.** Mọi dòng bên dưới khối này là bản cũ (29/08 trở về trước), **giữ làm dấu
 vết theo lệ**.
 

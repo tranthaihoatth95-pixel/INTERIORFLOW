@@ -196,6 +196,11 @@ Tiếng Việt chồng **hai tầng dấu** (`ế` `ộ` `ữ`), nên quy tắc 
 
 ## 4 · MÀU — **HỆ ĐÃ CHỐT 30/08**: 5 bộ, mỗi bộ là *hình nền + bảng màu* đi liền
 
+🔴 **CHỐT 31/08 (Hoà, 17:24): `--accent` dẫn xuất từ BỘ đang chọn nay là LUẬT, hết trạng thái nợ.**
+5 nền mặc định = **5 bộ, mỗi bộ một accent**; ảnh tự chọn → **trích màu qua cổng tương phản AA**,
+**fail-closed** về bộ gần nhất. Áp cho **CẢ** accent phần-máy-suy-ra trên canvas Giấy Mực
+(xem `IF-GIAY-MUC.md`). Accent hằng số `#6a57f5` **chính thức có án thay thế**.
+
 > Hoà chốt: *"Hệ màu accent tôi đã chốt rồi. Sẽ có các bảng màu gắn với hình nền sẵn có, ứng với
 > **5 phong cách và cá tính nghệ thuật đặc trưng**. Ai thích chọn gì thì cài cái đó. Cả hệ, phần
 > nào có thể **tinh chỉnh trong range giá trị mà design system cho phép** thì đổi theo, để tạo ra
