@@ -52,7 +52,7 @@ export const TOKEN: Record<
     t1: [29, 29, 36], // --t1 #1d1d24
     t2: [67, 67, 78], // --t2 #43434e
     t3: [108, 108, 120], // --t3 #6c6c78
-    card: [255, 255, 255], // --card #ffffff
+    card: [253, 253, 255], // --card #fdfdff (sửa 30/08 — xem soi:trung-tinh: #ffffff là trung tính THUẦN nằm cạnh các mặt nền đã ám, mắt lấy nó làm mốc trắng và mọi mặt còn lại đọc thành "xám bẩn")
     nenMoHeader: [249, 249, 251], // --nen-mo-header rgba(249,249,251,.72)
   },
 };

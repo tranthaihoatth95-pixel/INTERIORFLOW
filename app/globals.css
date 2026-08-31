@@ -2344,6 +2344,10 @@ body[data-if-library-open='true'] .if-bottombar {
   0%, 100% { opacity: 0.05; }
   50%      { opacity: 0.095; }
 }
+/* CỠ CHỮ CÂU DANH NGÔN TRÊN NỀN ĐỘNG — MỘT NGUỒN cho cả chữ lẫn bước lưới.
+   Đọc bởi: `components/studio/LockScreen.tsx` (CO_DANH_NGON.man.chu) và `--nhip-chu` bên dưới. */
+:root { --co-cau-man: clamp(19px, 2.4vw, 27px); }
+
 .nen-dong-lop { position: absolute; inset: -30%; will-change: transform, opacity; pointer-events: none; }
 .nen-dong-nang {
   background: radial-gradient(58% 42% at 34% 40%, rgba(255, 214, 150, 0.3) 0%, rgba(255, 196, 120, 0.13) 40%, rgba(255, 180, 100, 0) 72%);
@@ -2362,7 +2366,12 @@ body[data-if-library-open='true'] .if-bottombar {
    Hai thứ dùng CHUNG một biến ⇒ chúng không thể trôi khỏi nhau ở bất kỳ bề rộng nào. */
 .nen-dong-luoi {
   inset: 0;
-  --nhip-chu: calc(clamp(19px, 2.4vw, 27px) * 1.55);
+  /* KHÔNG chép lại con số cỡ chữ ở đây. `--co-cau-man` khai MỘT LẦN ở `:root` và cũng chính là
+     cỡ mà `LoiDanhNgon` (co="man") đọc — hai thứ dùng chung một biến thì không thể trôi khỏi
+     nhau. Bản trước chép cứng `clamp(19px,2.4vw,27px)` ở ĐÂY trong khi TSX chép cứng cùng dãy số
+     ở CHỖ KHÁC: đúng cơ chế đã đẻ ra ca Eames, chỉ khác là lần này nó nằm giữa CSS và TSX nên
+     không grep một chỗ nào thấy được cả hai. */
+  --nhip-chu: calc(var(--co-cau-man) * 1.55);
   background-image:
     linear-gradient(to right, rgba(215, 224, 235, 0.9) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(215, 224, 235, 0.9) 1px, transparent 1px);

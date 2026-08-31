@@ -8,23 +8,41 @@
 
 ## ⭐ NÓI TRƯỚC — NHỮNG ĐIỀU CÓ THỂ HOÀ CHƯA BIẾT (thước đo thành công của phiếu)
 
+> 🔴 **RÀ LẠI 30/08 theo §8b `IF-CANONICAL`** (Hoà chấm bản đầu: *"Đúng, nhưng thiếu"* — thiếu TRỤC):
+> mọi mục dưới đã sửa theo ba luật — **liệt kê đủ TRỤC GIÁ TRỊ trước khi kết luận · mỗi trục kèm
+> LÝ DO · hệ thống NÊU, người dùng CHỌN, KHÔNG ÉP.** Mục nào trước đây mang chữ "sai/lỗi thời"
+> là kết luận một-trục — đã viết lại thành bảng trục. Luật này cũng đổi cách viết CẢNH BÁO trong
+> sản phẩm: cảnh báo chỉ nêu kết luận mà giấu trục lý do = ép người dùng bằng cách giấu thông tin.
+
 1. **Thang nét bút IF đang ĐÚNG CHUẨN QUỐC TẾ mà chưa ai khai nhận.** Dãy lineweight `0.13 · 0.18 ·
    0.25 · 0.35 · 0.5 · 0.7 · 1.0 mm` trong UI lớp chính là **dãy ISO 128-24 nhân √2** — đây là tài
    sản chuẩn có sẵn, chỉ cần tuyên bố và khoá bằng test, 0 công thiết kế. (Ngược với thang chữ/bo
    đang sai — cùng một app, một thang chuẩn một thang tự chế.)
-2. **Neufert KHÔNG đúng cho người Việt.** Neufert dựng trên nhân trắc percentile Trung Âu; người
-   trưởng thành VN thấp hơn trung bình Đức ~8–10cm ⇒ bếp cao 850–900 theo sách Âu là CAO cho đa số
-   khách VN (khuyến nghị nghề VN thường 800–850 ⚠). IF có thể **HƠN mọi đối thủ** bằng MỘT tham số:
-   `percentile dân số dự án` — Neufert là default, nạp bảng VN (TCVN/số đo điều tra nhân trắc ⚠
-   CHƯA KIỂM NGUỒN bản mới nhất) khi dự án ở VN. Không CAD nào phổ biến làm điều này.
-3. **CRI đã là chuẩn LỖI THỜI trong nghề chiếu sáng** — IES TM-30-20 (Rf/Rg + đồ thị vector) thay
-   nó từ 2020; spec hospitality hiện đại ghi TM-30, không ghi CRI đơn. IF ghi cả hai là "hơn chuẩn".
+2. **Chiều cao bếp cho người Việt là ĐÁNH ĐỔI HAI TRỤC — không trục nào sai** (sửa theo Hoà 30/08;
+   bản đầu viết "Neufert KHÔNG đúng" là kết luận một-trục):
+   | trục | nói gì | lý do |
+   |---|---|---|
+   | nhân trắc học | **800–850** dễ thao tác hơn | người VN thấp hơn TB Đức ~8–10cm |
+   | chuẩn thiết bị | **900** hợp lý hơn cho đa số | đa số máy rửa chén/thiết bị bếp dựng theo mô-đun 900 — chọn 800 thì thiết bị chuẩn không lắp vừa |
+   ⇒ IF **NÊU cả hai trục kèm lý do, người dùng CHỌN, không ép** — và vẫn HƠN mọi đối thủ bằng
+   MỘT tham số `percentile dân số dự án` (Neufert default, bảng VN ⚠ CHƯA KIỂM NGUỒN khi dự án ở
+   VN) **cộng** cờ "ưu tiên khớp thiết bị chuẩn" để hệ nêu đánh đổi ngay tại chỗ vẽ.
+3. **CRI ↔ TM-30 là HAI TRỤC cùng sống — không phải "CRI lỗi thời"** (sửa một-trục):
+   trục *chính xác kỹ thuật*: TM-30-20 (Rf/Rg) đo trung thực màu tốt hơn, spec hospitality hiện đại
+   dùng nó · trục *giao tiếp thực địa*: CRI vẫn là ngôn ngữ chung — datasheet thiết bị phổ thông,
+   nhà thầu, khách và nhiều quy chuẩn chỉ ghi CRI. ⇒ IF ghi **CẢ HAI** trên spec vật liệu/đèn, kèm
+   lý do từng số; người dùng chọn số nào lên hồ sơ gửi ra ngoài. Hơn chuẩn = mang được cả hai
+   ngôn ngữ, không ép bên nào.
 4. **WELL v2 đo ánh sáng bằng melanopic EDI (lux sinh học), không phải lux thường** — sàn ~150–240
    EDI tại mắt ban ngày ⚠. Render "đúng lux" chưa đủ để tư vấn wellness — IF có thể tính EDI từ phổ
-   nguồn sáng đã khai, đối thủ render đẹp không làm được.
+   nguồn sáng đã khai, đối thủ render đẹp không làm được. (Trục ngược: WELL là chuẩn TỰ NGUYỆN trả
+   phí — dự án không theo WELL không cần EDI ⇒ con số này là **NÊU khi liên quan**, không phải gate.)
 5. **Tone mapping là chỗ render "đẹp mà sai"**: pipeline chuẩn hiện nay là ACES (điện ảnh) hoặc AgX;
-   albedo vật liệu thật nằm ~30–240 sRGB (không có vật liệu trắng 255/đen 0 trong đời thật) — kho
-   PBR nào chứa albedo ngoài dải này là sai vật lý, máy soi được bằng histogram.
+   albedo vật liệu thật nằm ~30–240 sRGB (không có vật liệu trắng 255/đen 0 trong đời thật). Hai
+   trục: *vật lý* — ngoài dải là sai, máy soi được bằng histogram · *diễn đạt* — stylized render
+   cố ý phi vật lý là lựa chọn hợp lệ (7 lĩnh vực diễn đạt). ⇒ máy **NÊU** "albedo ngoài dải vật
+   lý, render sẽ lệch sáng thật" kèm lý do — **không chặn**; chỉ vật liệu vào kho ĐO ĐẠC (BOQ/spec)
+   mới bị gate.
 6. **"Đơn sắc + 1 accent" của gu Hoà trùng với khoa học thị giác**: vùng nhìn rõ (fovea) chỉ ~2°,
    thị giác màu ngoại vi kém — accent hiếm mới dẫn mắt được; đây là chỗ gu và chuẩn NHẬP MỘT, ghi
    được thành luật máy đếm (số màu nhấn đồng thời trên một màn ≤1 đã có cổng đếm).
@@ -32,9 +50,11 @@
    nghề ~**25–50mm chiều cao chữ cho mỗi 10m khoảng cách đọc** ⚠ (dải theo độ tương phản) — tức một
    bảng A3 dán tường phòng họp đọc từ 3m cần chữ ≥ ~10mm ≈ 28pt in. IF xuất hồ sơ in mà chưa có
    luật này.
-8. **Grid 8pt IF đã có nửa dưới** (`--gap: 8px`, `--row: 28` ⚠ lệch — 28 không chia hết 8): nếu chốt
-   lưới 4/8 thì `--row` phải về 28→28 giữ (bội 4) — tức lưới nên là **bội 4**, không phải bội 8, để
-   khớp token hiện có; đề xuất cụ thể ở lĩnh vực 14.
+8. **Lưới nhịp: bội-4 ↔ bội-8 là hai trục, khuyến nghị bội-4** — trục *tương thích nội bộ*: 5 token
+   hiện hành (`--gap 8 · --row 28 · --tap 32/44 · --pad-card 8/12`) đều bội-4, có cái không bội-8
+   (28) — chốt bội-4 thì 0 token phải đổi · trục *giao tiếp với designer ngoài*: "8pt grid" là ngôn
+   ngữ phổ biến hơn, dễ thuê ngoài/đối chiếu hệ khác. ⇒ khuyến nghị **bội-4 làm luật máy đo, gọi
+   tên hệ là "lưới 4/8"** khi giao tiếp — hai trục đều được nêu, Hoà chọn; chi tiết lĩnh vực 14.
 
 ---
 

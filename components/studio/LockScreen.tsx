@@ -397,27 +397,7 @@ function TheDanhNgon({ cau, en, onMoLai, nhanNut }: { cau: DanhNgon; en: boolean
       </div>
 
       <div className="the-khoa-kinh p-5">
-      <blockquote className="m-0 flex flex-col gap-3 text-center">
-        {/* Ba con số dưới đây là LUẬT chữ tiếng Việt (`knowledge/typography-vietnamese.md`):
-            V-2 line-height ≥1.5 · V-3 letter-spacing không âm · V-6 cỡ sàn ≥12px. */}
-        <p
-          className="m-0 font-medium text-[var(--t1)]"
-          style={{ fontSize: 17, lineHeight: 1.55, letterSpacing: 0, textWrap: 'pretty' }}
-        >
-          “{en ? cau.en : cau.vi}”
-        </p>
-        <footer className="flex flex-col gap-0.5">
-          <div className="text-[13px] font-semibold text-[var(--t1)]">{cau.ai}</div>
-          <div className="text-[12px] leading-normal text-[var(--t3)]">{cau.vai}</div>
-          {/* Công trình + người chụp. `chup` là ĐIỀU KIỆN CỦA GIẤY PHÉP CC BY, không phải chú
-              thích cho đẹp — bỏ nó là vi phạm giấy phép. */}
-          {cau.anh && (
-            <div className="mt-2 text-[12px] leading-normal text-[var(--t3)] opacity-75">
-              {cau.anh.ct} · ảnh {cau.anh.chup} · {cau.anh.lic}
-            </div>
-          )}
-        </footer>
-      </blockquote>
+      <LoiDanhNgon cau={cau} en={en} co="the" />
 
       <button
         type="button"
@@ -430,6 +410,57 @@ function TheDanhNgon({ cau, en, onMoLai, nhanNut }: { cau: DanhNgon; en: boolean
       </button>
       </div>
     </div>
+  );
+}
+
+/**
+ * MỘT KHUÔN DUY NHẤT CHO CÂU DANH NGÔN — dùng ở CẢ HAI chỗ màn khoá dựng nó
+ * (`TheDanhNgon` ngay trên, `NenDong` ngay dưới).
+ *
+ * 🔴 VÌ SAO CÓ KHỐI NÀY (Hoà 30/08, ca Eames): câu danh ngôn TRƯỚC ĐÂY được dựng HAI LẦN —
+ * một lần trong `TheDanhNgon` (thẻ kính rộng 300px) và một lần trong `NenDong` (phủ cả màn).
+ * Hai bản chép tay của cùng một vật thì phân kỳ, và nó ĐÃ phân kỳ, đo được trên app thật:
+ * bản thẻ dùng `<blockquote>` + `gap-3`, bản màn dùng `<div>` thường + `gap-6`, dòng ghi
+ * nguồn lệch `mt-2`/`mt-1`. Một bên có ngữ nghĩa trích dẫn cho trình đọc màn hình, bên kia
+ * không — cùng một câu chữ, hai chất lượng trợ năng. Đó đúng là luật 6: *đẻ khuôn thứ hai là
+ * bắt đầu phân kỳ*.
+ *
+ * ⇒ Nay CHỈ CÒN MỘT chỗ dựng. Thứ được phép khác nhau giữa hai ngữ cảnh chỉ là **cỡ và bề
+ * rộng cột** — khai thành bảng `CO_DANH_NGON` bên dưới, không rải trong JSX. Muốn thêm ngữ
+ * cảnh thứ ba thì thêm MỘT hàng vào bảng, không chép thêm một khối JSX.
+ *
+ * Ba con số cứng trong đây là LUẬT chữ tiếng Việt (`knowledge/typography-vietnamese.md`):
+ * V-2 line-height ≥1.5 · V-3 letter-spacing không âm · V-6 cỡ sàn ≥12px.
+ */
+const CO_DANH_NGON = {
+  /** trong thẻ kính 300px — cột chữ hẹp, cỡ cố định */
+  the: { chu: '17px', rong: undefined as string | undefined, cach: 12 },
+  /** phủ cả màn — cỡ CHẤT LỎNG, dùng chung biến với bước lưới nền động (xem `--co-cau-man`) */
+  man: { chu: 'var(--co-cau-man)', rong: '30ch' as string | undefined, cach: 24 },
+} as const;
+
+function LoiDanhNgon({ cau, en, co }: { cau: DanhNgon; en: boolean; co: keyof typeof CO_DANH_NGON }) {
+  const k = CO_DANH_NGON[co];
+  return (
+    <blockquote className="m-0 flex flex-col items-center text-center" style={{ gap: k.cach }}>
+      <p
+        className="m-0 font-medium text-[var(--t1)]"
+        style={{ fontSize: k.chu, maxWidth: k.rong, lineHeight: 1.55, letterSpacing: 0, textWrap: 'pretty' }}
+      >
+        “{en ? cau.en : cau.vi}”
+      </p>
+      <footer className="flex flex-col gap-0.5">
+        <div className="text-[13px] font-semibold text-[var(--t1)]">{cau.ai}</div>
+        <div className="text-[12px] leading-normal text-[var(--t3)]">{cau.vai}</div>
+        {/* Công trình + người chụp. `chup` là ĐIỀU KIỆN CỦA GIẤY PHÉP CC BY, không phải chú
+            thích cho đẹp — bỏ nó là vi phạm giấy phép. */}
+        {cau.anh && (
+          <div className="mt-2 text-[12px] leading-normal text-[var(--t3)] opacity-75">
+            {cau.anh.ct} · ảnh {cau.anh.chup} · {cau.anh.lic}
+          </div>
+        )}
+      </footer>
+    </blockquote>
   );
 }
 
@@ -451,21 +482,7 @@ function NenDong({ cau, en, onMoLai }: { cau: DanhNgon; en: boolean; onMoLai: ()
       <div className="nen-dong-lop nen-dong-nang" />
       <div className="nen-dong-lop nen-dong-luoi" />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 px-8 text-center">
-        <p
-          className="m-0 max-w-[30ch] font-medium text-[var(--t1)]"
-          style={{ fontSize: 'clamp(19px, 2.4vw, 27px)', lineHeight: 1.55, letterSpacing: 0, textWrap: 'pretty' }}
-        >
-          “{en ? cau.en : cau.vi}”
-        </p>
-        <div className="flex flex-col gap-0.5">
-          <div className="text-[13px] font-semibold text-[var(--t1)]">{cau.ai}</div>
-          <div className="text-[12px] leading-normal text-[var(--t3)]">{cau.vai}</div>
-          {cau.anh && (
-            <div className="mt-1 text-[12px] leading-normal text-[var(--t3)] opacity-75">
-              {cau.anh.ct} · ảnh {cau.anh.chup} · {cau.anh.lic}
-            </div>
-          )}
-        </div>
+        <LoiDanhNgon cau={cau} en={en} co="man" />
         {/* ĐƯỜNG CHÂN TRỜI — nét DUY NHẤT đứng yên giữa mọi thứ đang trôi.
             🔴 SỬA 30/08 — TRƯỚC ĐÂY NÓ `position:absolute; top:58%`, tức neo vào MÀN trong khi
             chữ neo vào TÂM CỦA CHÍNH NÓ. Hai hệ toạ độ không liên quan ⇒ chỗ nét rơi xuống là
