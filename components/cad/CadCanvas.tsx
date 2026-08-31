@@ -23,7 +23,7 @@ import { drawEntities, drawEntity } from '@/lib/cad/render';
 import { mixHex } from '@/lib/cad/plan-depth';
 import { presentProjectionMemo } from '@/lib/cad/plan-present';
 // GỐC B3 (G-M1-04) — luật chọn khung nhìn "Xem vừa màn", thuần + test được bằng file DXF thật.
-import { zoomExtentsPlan, zoomFocusStatusLine, ZOOM_FULL_STATUS_LINE } from '@/lib/cad/import-summary';
+import { zoomExtentsFit, zoomFocusStatusLine, ZOOM_FULL_STATUS_LINE } from '@/lib/cad/import-summary';
 import { usePlanPresent, presentOptionsFrom } from './plan-present-store';
 import { useGiayMuc } from './giay-muc-store';
 import { useTuongSuyRa, locTuongSuyRa } from './tuong-suy-ra-store';
@@ -156,6 +156,9 @@ interface Ix {
   /** GỐC B3 — lần "Xem vừa màn" gần nhất đã CANH VÀO CỤM VẼ CHÍNH (bỏ bản sao để xa) hay chưa.
    *  Bấm lần nữa khi cờ đang bật = xem toàn bộ. Là đường quay lại bắt buộc của G-M1-04. */
   zoomedToCluster: boolean;
+  /** Một lượt "Xem vừa màn" đã tới NHƯNG backing canvas chưa được đo ⇒ đang HOÃN, chờ lần đo
+   *  đầu tiên của `ResizeObserver` rồi fit lại. Xem docstring `zoomExtents()` bên dưới. */
+  fitOnOpenPending: boolean;
   /** VIỆC "ống hút thuộc tính" (lib/cad/eyedropper.ts, MATCHPROP) — KHÔNG phải 1 `Tool` trong
    * union (lệnh CHỒNG lên tool hiện tại, bật/tắt qua CustomEvent 'cad:eyedropper-toggle' từ
    * CadToolbar.tsx). `active` = đang chờ click nguồn/đích; `sourceId` = null cho tới khi đã lấy
@@ -443,6 +446,7 @@ export default function CadCanvas() {
     penSeen: false,
     penUpAt: 0,
     zoomedToCluster: false,
+    fitOnOpenPending: false,
     eyedropper: { active: false, sourceId: null },
     lastMoveCopy: null,
   });
@@ -537,6 +541,10 @@ export default function CadCanvas() {
       c.style.width = '100%';
       c.style.height = '100%';
       ix.current.redraw = true;
+      // Lượt "Xem vừa màn" tới TRƯỚC khi canvas có kích thước thật (đường mở lại hồ sơ — xem
+      // docstring `zoomExtents()`) được để dành tới đây: giờ mới có số thật để fit. `zoomExtents`
+      // tự đặt lại cờ nếu vẫn chưa đo được, nên không có vòng lặp — nó chỉ chạy theo lần đo.
+      if (ix.current.fitOnOpenPending) zoomExtents();
     };
     const scheduleResize = () => {
       cancelAnimationFrame(frame);
@@ -553,6 +561,7 @@ export default function CadCanvas() {
       observer?.disconnect();
       window.removeEventListener('resize', scheduleResize);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // events từ toolbar: zoom-extents / export-png / to-render lo ở CadEditor,
@@ -641,14 +650,29 @@ export default function CadCanvas() {
    *    sơ kỹ thuật (`A-Wall`/`A-Column`/…), gặp layer khác là trả `null` ⇒ chạy y hệt code cũ.
    *  · LUÔN có đường quay lại: bấm F lần nữa thì xem toàn bộ (cờ `zoomedToCluster` bên dưới), và
    *    thanh trạng thái nói thẳng điều đó — không để ai tưởng mình vừa mất hình.
+   *
+   * 🔴 HOÃN KHI MÀN CHƯA ĐO (31/08, bệnh "mở lại hồ sơ vào toạ độ kỳ"): đường MỞ LẠI hồ sơ phát
+   * `cad:zoom-extents` ngay trong `.then()` của lượt nạp IndexedDB/đĩa (`CadSheets.tsx`), có thể
+   * TRƯỚC lần đo đầu tiên của `ResizeObserver` bên dưới. `<canvas>` chưa gán `width/height` mang
+   * kích thước mặc định 300×150 của HTML ⇒ trừ đệm hai bên là bề cao ÂM ⇒ `fitBox()` cho `scale`
+   * âm, ghi thẳng vào store. Nay `zoomExtentsFit()` (thuần, kiểm trong `import-summary.test.ts`)
+   * TỪ CHỐI ca đó; ở đây ta HOÃN lượt fit lại tới khi canvas được đo, thay vì ghi một khung nhìn
+   * vô nghĩa. Không lưu viewport, không đoán kích thước — chỉ đợi số thật.
    */
   function zoomExtents() {
     const { doc, setViewport, setStatus } = useCadStore.getState();
     const { W, H } = screenSize();
     const wasFocused = ix.current.zoomedToCluster;
-    const plan = zoomExtentsPlan(doc, { preferFull: wasFocused });
-    if (!plan) return;
-    setViewport(fitBox(plan.box, W, H, 80));
+    ix.current.fitOnOpenPending = false;
+    const fit = zoomExtentsFit(doc, { W, H }, { preferFull: wasFocused });
+    if (!fit.ok) {
+      // `empty-doc` ⇒ không có gì để nhìn, im lặng y như cũ. `screen-not-measured` ⇒ ĐỂ DÀNH:
+      // `onResize` bên trên gọi lại ngay sau lần đo đầu tiên. Cả hai đều KHÔNG chạm viewport.
+      if (fit.reason === 'screen-not-measured') ix.current.fitOnOpenPending = true;
+      return;
+    }
+    const plan = fit.plan;
+    setViewport(fit.viewport);
     if (plan.mode === 'mainCluster') {
       ix.current.zoomedToCluster = true;
       setStatus(zoomFocusStatusLine(plan.farEntities));

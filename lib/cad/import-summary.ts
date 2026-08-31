@@ -20,8 +20,8 @@
  * ⛔ K3 — KHÔNG BỊA SỐ: chỉ nói con số CÓ THẬT trong báo cáo; không quy đổi, không ước lượng.
  */
 
-import type { Doc, Box } from './model';
-import { docBox, entityBox } from './model';
+import type { Doc, Box, Viewport } from './model';
+import { docBox, entityBox, fitBox } from './model';
 import type { DxfLoadReport } from './dxf';
 import { mainClusterBox } from './dxf-plan';
 
@@ -217,6 +217,54 @@ export function zoomExtentsPlan(doc: Doc, opts: { preferFull?: boolean } = {}): 
   if (far === 0) return { box: full, mode: 'full', farEntities: 0 };
   if (areaOf(full) < FOCUS_MIN_RATIO * areaOf(focus)) return { box: full, mode: 'full', farEntities: 0 };
   return { box: focus, mode: 'mainCluster', farEntities: far };
+}
+
+/**
+ * Đệm mép (px màn) khi fit khung nhìn. Trước đây con số 80 nằm rời ở `CadCanvas`, còn luật chọn
+ * hộp nằm ở đây ⇒ phần THUẦN không tự kiểm được cái nó sinh ra. Nay một chỗ giữ cả hai.
+ */
+export const ZOOM_FIT_PAD = 80;
+
+/**
+ * Kết quả của "fit khung nhìn vào bản vẽ". Có `reason` chứ không phải `null` trần, vì hai ca
+ * KHÔNG-FIT-ĐƯỢC đòi hai cách xử ngược nhau ở nơi gọi:
+ *  · `empty-doc`         — không có gì để nhìn ⇒ im lặng, đúng hành vi cũ.
+ *  · `screen-not-measured` — MÀN chưa có kích thước thật ⇒ **hoãn**, fit lại khi đo xong.
+ */
+export type ZoomExtentsFit =
+  | { ok: true; viewport: Viewport; plan: ZoomExtentsPlan }
+  | { ok: false; reason: 'empty-doc' | 'screen-not-measured' };
+
+/**
+ * FIT-KHI-MỞ — ghép `zoomExtentsPlan()` (chọn hộp) với `fitBox()` (đổi hộp ra viewport) thành MỘT
+ * hàm thuần, để chỗ duy nhất quyết định "khung nhìn lúc mở hồ sơ" kiểm được không cần DOM.
+ *
+ * 🔴 BỆNH NÓ KHOÁ (điều tra 31/08, đường mở-lại hồ sơ): `CadSheets` khôi phục Doc từ IndexedDB/đĩa
+ * rồi phát `cad:zoom-extents` NGAY trong `.then()` của lượt nạp bất đồng bộ. `CadCanvas` nghe được,
+ * nhưng backing canvas lúc đó **có thể chưa được đo** — `ResizeObserver` mới hẹn `requestAnimation
+ * Frame`. Phần tử `<canvas>` chưa gán `width/height` mang kích thước MẶC ĐỊNH của HTML: 300×150.
+ * Chia cho DPR rồi trừ đệm hai bên (`80·2 = 160`) ⇒ **bề cao còn ÂM** ⇒ `fitBox()` trả `scale` âm,
+ * và viewport âm đó được ghi thẳng vào store. Đó chính là "mở lại hồ sơ thì vào toạ độ kỳ": không
+ * phải bản vẽ sai, mà là khung nhìn được tính trên một cái màn chưa tồn tại.
+ * Đối chứng đo được (mặt bằng 34,7×28,1 m):
+ *   dpr 1 · 300×150 → scale −0,000356 · dpr 2 · 150×75  → scale −0,003025
+ *   dpr 2 · đã đo 1200×700 → scale +0,0157  ⇒ chỉ ca CHƯA ĐO mới hỏng.
+ *
+ * ⚖️ Không thêm luật mới: hộp vẫn do `zoomExtentsPlan()` chọn (mọi ngưỡng cũ giữ nguyên), viewport
+ * vẫn do `fitBox()` tính. Thứ duy nhất thêm vào là **điều kiện well-formed của chính phép fit** —
+ * `scale` phải hữu hạn và dương. Không đo lại màn, không lưu viewport, không ngưỡng nào mới.
+ */
+export function zoomExtentsFit(
+  doc: Doc,
+  screen: { W: number; H: number },
+  opts: { preferFull?: boolean; pad?: number } = {},
+): ZoomExtentsFit {
+  const plan = zoomExtentsPlan(doc, opts);
+  if (!plan) return { ok: false, reason: 'empty-doc' };
+  const viewport = fitBox(plan.box, screen.W, screen.H, opts.pad ?? ZOOM_FIT_PAD);
+  const sane = Number.isFinite(viewport.scale) && viewport.scale > 0
+    && Number.isFinite(viewport.panX) && Number.isFinite(viewport.panY);
+  return sane ? { ok: true, viewport, plan } : { ok: false, reason: 'screen-not-measured' };
 }
 
 /**
