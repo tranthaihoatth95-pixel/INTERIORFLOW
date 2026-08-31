@@ -90,6 +90,7 @@ import { ZonePanel, ZonesLegend } from './ZonePanel';
 // S4 — ống kính TRÌNH BÀY của mặt bằng (cùng một Doc, cách vẽ thứ hai). Xem lib/cad/plan-present.ts.
 import PlanPresentPanel from './PlanPresentPanel';
 import { usePlanPresent } from './plan-present-store';
+import { useTuongSuyRa } from './tuong-suy-ra-store';
 import CamPathPanel from './CamPathPanel';
 // Hệ Legend C1+C2 (docs/PROPOSAL-LEGEND-SYSTEM.md) — panel Thống kê · Schedule + Chú giải.
 import SchedulePanel from './SchedulePanel';
@@ -1382,6 +1383,8 @@ function DxfImportReportPanel({
  * comment mà để mặt hiện con số tròn trịa là đúng thứ luật "không PASS giả" cấm.
  */
 function MucTuongHinhHoc({ do: d }: { do: import('@/lib/cad/tuong-hinh-hoc').DoDemTuong }) {
+  const hienTuong = useTuongSuyRa((s) => s.hien);
+  const bat = useTuongSuyRa((s) => s.toggle);
   const soBuc = d.sauGopChum;
   const met = d.tongDaiMm / 1000;
   // Bề dày: nấc dày nhất lên trước — tường bao đọc trước tường ngăn, đúng cách người ta soi mặt bằng.
@@ -1406,6 +1409,16 @@ function MucTuongHinhHoc({ do: d }: { do: import('@/lib/cad/tuong-hinh-hoc').DoD
         </b>{' '}
         m trục
       </p>
+
+      {/* CÔNG TẮC — đặt NGAY DƯỚI con số nó điều khiển, không đẩy xuống panel lớp.
+          Ẩn/hiện là ỐNG KÍNH: `Doc` không đổi, không entity nào bị xoá, nét DXF gốc còn nguyên
+          (xem `components/cad/tuong-suy-ra-store.ts` — vì sao KHÔNG dùng `Layer.visible`). */}
+      <label
+        style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 8px', fontSize: 12, color: 'var(--t2)', cursor: 'pointer' }}
+      >
+        <input type="checkbox" checked={hienTuong} onChange={bat} style={{ accentColor: 'var(--accent)' }} />
+        Tường nhận diện — hiện phần máy suy ra
+      </label>
 
       {soNgo > 0 && (
         <p style={{ margin: '0 0 8px', fontSize: 11, lineHeight: 1.55, color: 'var(--warning)' }}>

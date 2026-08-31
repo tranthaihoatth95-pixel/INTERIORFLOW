@@ -411,7 +411,16 @@ export function tuongThanhEntities(tuong: TrucTuong[]): Entity[] {
   const ra: Entity[] = [];
   for (const t of tuong) {
     if (t.d <= 0) continue;
-    ra.push(...wallSegmentOutline({ x: t.ax, y: t.ay }, { x: t.bx, y: t.by }, t.d, t.layer, 'center'));
+    /* ĐÓNG DẤU NGUỒN GỐC — `inferred` (`model.ts` A5·G-M1-09: *"true = `elementType` do MÁY SUY,
+     * không phải người khai"*). Tường này đọc ngược từ hình học, không ai khai nó là tường.
+     * Luật K3: **suy đoán phải LỘ RA, không được giả vờ là khai báo.**
+     * Đây cũng là thứ DUY NHẤT phân biệt được tường suy ra với tường người vẽ tay — chúng dùng
+     * chung khuôn `wallSegmentOutline`, chung `elementType: 'wall'`, và **chung cả layer nguồn**
+     * (25/81 bức của tệp đo nằm ở `A-Draw`, lẫn với nét gốc của khách). Không có dấu này thì công
+     * tắc ẩn/hiện buộc phải lọc theo layer, tức ẩn nhầm bản vẽ khách. */
+    for (const e of wallSegmentOutline({ x: t.ax, y: t.ay }, { x: t.bx, y: t.by }, t.d, t.layer, 'center')) {
+      ra.push({ ...e, inferred: true });
+    }
   }
   return ra;
 }

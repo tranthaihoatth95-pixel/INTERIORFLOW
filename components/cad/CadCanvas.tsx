@@ -23,6 +23,7 @@ import { presentProjectionMemo } from '@/lib/cad/plan-present';
 // GỐC B3 (G-M1-04) — luật chọn khung nhìn "Xem vừa màn", thuần + test được bằng file DXF thật.
 import { zoomExtentsPlan, zoomFocusStatusLine, ZOOM_FULL_STATUS_LINE } from '@/lib/cad/import-summary';
 import { usePlanPresent, presentOptionsFrom } from './plan-present-store';
+import { useTuongSuyRa, locTuongSuyRa } from './tuong-suy-ra-store';
 import { createMarkupPin, createPhotoEmbed, nearestMarkup, nearestPhoto, formatMarkupTime } from '@/lib/cad/markup';
 import { findSnap, hitTest, idsInRect, type SnapResult } from '@/lib/cad/query';
 import { newId } from '@/lib/cad/store';
@@ -470,10 +471,11 @@ export default function CadCanvas() {
   // docstring ở đó vì sao không nhét vào Doc/useCadStore) ⇒ phải subscribe thêm, không thì bật
   // công tắc mà canvas không vẽ lại.
   useEffect(() => {
+    const unsubTuong = useTuongSuyRa.subscribe(() => { ix.current.redraw = true; });
     const unsub = usePlanPresent.subscribe(() => {
       ix.current.redraw = true;
     });
-    return unsub;
+    return () => { unsubTuong(); unsub(); };
   }, []);
 
   // Việc 3 — ghi nhớ lệnh/tool "thật" vừa phát để lặp lại (Space tap / chuột phải khi rảnh).
@@ -2837,7 +2839,11 @@ export default function CadCanvas() {
     // trang trí phái sinh), **chỉ để vẽ, không bao giờ vào store** — cùng khuôn `docBase` phù du
     // ngay trên (preview lúc kéo grip). K1: một Doc, hai ống kính. Xem lib/cad/plan-present.ts.
     const pv = usePlanPresent.getState();
-    const docToDraw = pv.on ? presentProjectionMemo(docBase, presentOptionsFrom(pv)).doc : docBase;
+    /* CÔNG TẮC "TƯỜNG NHẬN DIỆN" (IF-301) — ống kính THỨ HAI, cùng khuôn ống kính trình bày ngay
+     * dưới: lọc lúc VẼ, `Doc` trong store KHÔNG đổi một byte, không entity nào bị xoá.
+     * Đặt TRƯỚC ống kính trình bày để ống kính kia nhìn đúng thứ người dùng đang thấy. */
+    const docThay = locTuongSuyRa(docBase, useTuongSuyRa.getState().hien);
+    const docToDraw = pv.on ? presentProjectionMemo(docThay, presentOptionsFrom(pv)).doc : docThay;
     drawEntities(ctx, v, docToDraw, { stroke: t3, lineWidth: 1.3, text: true, dimStyle: st.dimStyle, realLineweight: true });
 
     // highlight selection
