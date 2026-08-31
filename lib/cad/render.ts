@@ -7,6 +7,10 @@ import type { Doc, Entity, Layer, Pt, Viewport, DimEntity, LineType, ZoneEntity,
 import { docBox, fitBox, worldToScreen, ZONE_GROUP_META, ZONE_GROUPS, zoneBoundaryPoints, zoneCentroid, roomCentroid } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
 import { hatchLines, hatchDots } from './hatch';
+// B25 REUSE — `mixHex` là bộ pha màu canonical của IF (`plan-depth.ts` §1), đã có test riêng.
+// Không đẻ bộ pha thứ hai ở đây (luật 6). `plan-depth.ts` chỉ import KIỂU từ `model.ts` nên
+// chiều phụ thuộc vẫn một chiều, không sinh vòng.
+import { mixHex } from './plan-depth';
 import { roomLabel } from './room';
 
 /** Dim style tối thiểu dùng khi vẽ (mặc định nếu không truyền — xem store.ts DimStyle). */
@@ -44,6 +48,45 @@ export interface DrawStyle {
    * export PNG đen-trắng (renderDocToDataURL) — export vẫn cần tô đặc poché tường như bản in.
    */
   outlineOnly?: boolean;
+  /**
+   * MÀU NỀN mà bề mặt này đang vẽ lên. Chỉ dùng để **pha nhạt** lớp máy suy ra (`Entity.inferred`)
+   * — xem `POCHE_TAM`. KHÔNG vẽ nền, không đổi gì khác.
+   *
+   * ⚠️ Thiếu field này KHÔNG được đoán: canvas sống của IF là NỀN TỐI (`--bg` ≈ `#141210`), còn
+   * xuất PNG/sheet là NỀN SÁNG. Pha nhầm hướng thì lớp "nhạt" lại SÁNG LÊN, tức đè mạnh hơn cả
+   * lúc chưa sửa. Không có nền ⇒ chỉ vẽ viền, không tô (K3: thà thiếu còn hơn đoán).
+   */
+  background?: string;
+}
+
+/**
+ * NGÔN NGỮ THỊ GIÁC CHO THỨ MÁY SUY RA (`Entity.inferred`, `model.ts` A5·G-M1-09).
+ *
+ * 🔴 **BẢN TẠM — chờ mock poché, phiếu `P1-mock`.** Đây KHÔNG phải ngôn ngữ poché cuối cùng.
+ * Nó chỉ giải đúng một bệnh đo được 31/08: tường máy đọc ra từ hình học (`tuong-hinh-hoc.ts`)
+ * được vẽ bằng hatch SOLID đậm ngang hàng dữ liệu người vẽ, nên **đè mất nét gốc của khách** —
+ * một suy đoán của máy che mất bằng chứng của người. Khi mock poché về, thay chỗ này.
+ *
+ * Hai cần gạt, đúng triết lý `plan-depth.ts:8-13`:
+ *   ① **PHA MÀU về nền** — ⛔ CẤM `alpha`: alpha chồng alpha thì chỗ nét chồng nét cộng dồn ra
+ *      vệt đậm giả, mà tường suy ra thì chồng lên nhau ở mọi góc nhà. Pha màu không bao giờ bị.
+ *   ② **VIỀN MẢNH** — lớp suy đoán mảnh hơn lớp khai báo.
+ */
+const POCHE_TAM = {
+  /** pha bao nhiêu phần về nền. 0.72 ⇒ còn 28% mực: đọc được là "có cái gì ở đây", không tranh nét. */
+  pha: 0.72,
+  /** nhân bề dày nét. Cùng nhịp `DEFAULT_DEPTH_FADE.weightPerStep` họ hàng. */
+  manh: 0.6,
+};
+
+/** Màu của lớp tạm: pha về nền. Không biết nền, hoặc không phải lớp tạm ⇒ TRẢ NGUYÊN màu vào. */
+function tamMau(mau: string, style: DrawStyle, tam: boolean): string {
+  return tam && style.background ? mixHex(mau, style.background, POCHE_TAM.pha) : mau;
+}
+
+/** Bề dày nét của lớp tạm. Không phải lớp tạm ⇒ TRẢ NGUYÊN số vào. */
+function tamNet(px: number, tam: boolean): number {
+  return tam ? Math.max(0.5, px * POCHE_TAM.manh) : px;
 }
 
 /**
@@ -149,8 +192,17 @@ function drawPrim(ctx: CanvasRenderingContext2D, v: Viewport, prim: Prim, tf: (p
 /** Vẽ 1 entity. */
 export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc, e: Entity, style: DrawStyle) {
   const li = layerIndex(doc); // O(1) sau lần đầu — xem chú thích LAYER_INDEX_CACHE
-  ctx.strokeStyle = layerColor(li, e, style);
-  ctx.lineWidth = effectiveLineWidthPx(li, e, v, style);
+  /* BẢN TẠM chờ mock poché (phiếu `P1-mock`) — xem `POCHE_TAM`. Entity KHÔNG mang `inferred` đi
+   * qua đây y hệt trước: `tam` = false ⇒ hai dòng dưới trả đúng giá trị cũ, không lệch một byte.
+   *
+   * ⛔ `forceColor` TẮT lớp tạm. Nơi gọi ép màu là nơi đang vẽ một lớp ACCENT có chủ đích —
+   * highlight vật đang chọn, ghost preview lúc offset/trim/mirror (`CadCanvas.tsx`). Pha nhạt
+   * một lớp accent là làm hỏng đúng thứ nó sinh ra để làm: cho người dùng THẤY. Tường suy ra
+   * được chọn thì phải sáng lên như mọi vật khác, không được mờ đi vì máy đoán ra nó. */
+  const tam = e.inferred === true && !style.forceColor;
+  const mauNet = tamMau(layerColor(li, e, style), style, tam);
+  ctx.strokeStyle = mauNet;
+  ctx.lineWidth = tamNet(effectiveLineWidthPx(li, e, v, style), tam);
   ctx.setLineDash(effectiveLineDashPx(li, e, v, style));
   const S = (p: Pt) => worldToScreen(v, p);
 
@@ -198,7 +250,7 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
     case 'text': {
       if (!style.text) break;
       const at = S(e.at);
-      ctx.fillStyle = layerColor(li, e, style);
+      ctx.fillStyle = mauNet;
       const px = Math.max(9, e.h * v.scale);
       ctx.font = `${px}px ui-sans-serif, system-ui, sans-serif`;
       ctx.textBaseline = 'bottom';
@@ -206,7 +258,7 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
       break;
     }
     case 'dim': {
-      drawDimension(ctx, v, e, layerColor(li, e, style), style);
+      drawDimension(ctx, v, e, mauNet, style);
       break;
     }
     case 'block': {
@@ -219,9 +271,8 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
     case 'hatch': {
       if (e.points.length < 3) break;
       const pattern = e.pattern ?? (e.solid === false ? 'ANSI31' : 'SOLID');
-      const color = layerColor(li, e, style);
-      if (style.outlineOnly) {
-        // chỉ viền — xem giải thích ở khai báo DrawStyle.outlineOnly (tránh tô đặc đè chữ).
+      const color = mauNet;
+      const veBien = () => {
         ctx.beginPath();
         e.points.forEach((p, i) => {
           const s = S(p);
@@ -229,18 +280,32 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
           else ctx.lineTo(s.x, s.y);
         });
         ctx.closePath();
+      };
+      if (style.outlineOnly) {
+        // chỉ viền — xem giải thích ở khai báo DrawStyle.outlineOnly (tránh tô đặc đè chữ).
+        veBien();
+        ctx.strokeStyle = color;
+        ctx.stroke();
+        break;
+      }
+      if (tam) {
+        /* 🔴 BẢN TẠM — chờ mock poché, phiếu `P1-mock`. Xem `POCHE_TAM` để biết vì sao pha màu
+         * chứ không alpha. Mảng tô của MÁY SUY RA không được đậm ngang dữ liệu người vẽ.
+         * Không biết nền (`style.background` thiếu) ⇒ **chỉ viền, không tô** — pha nhầm hướng
+         * nền thì lớp "nhạt" lại sáng lên và đè mạnh hơn cả lúc chưa sửa (K3). */
+        if (style.background) {
+          veBien();
+          ctx.fillStyle = color;
+          ctx.globalAlpha = 1; // ⛔ KHÔNG dùng `e.opacity`/0.9 ở đây — độ nhạt đã nằm trong MÀU.
+          ctx.fill();
+        }
+        veBien();
         ctx.strokeStyle = color;
         ctx.stroke();
         break;
       }
       if (pattern === 'SOLID') {
-        ctx.beginPath();
-        e.points.forEach((p, i) => {
-          const s = S(p);
-          if (i === 0) ctx.moveTo(s.x, s.y);
-          else ctx.lineTo(s.x, s.y);
-        });
-        ctx.closePath();
+        veBien();
         ctx.fillStyle = color;
         // Zone tool (N1) — opacity per-entity; thiếu ⇒ 0.9 GIỮ hành vi cũ (poché tường).
         ctx.globalAlpha = e.opacity ?? 0.9;
@@ -283,7 +348,7 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
     }
     case 'arrow': {
       if (e.path.length < 2) break;
-      const color = layerColor(li, e, style);
+      const color = mauNet;
       ctx.strokeStyle = color;
       // nét đứt mặc định cho circulation flow nếu entity không tự khai lineType (kể cả khi
       // style không bật realLineweight — arrow là diagram, luôn cần thấy nét đứt).
@@ -568,23 +633,43 @@ function drawDimension(ctx: CanvasRenderingContext2D, v: Viewport, e: DimEntity,
 }
 
 /**
- * Vẽ toàn bộ entity (bỏ layer ẩn) — Zone tool (N2): z-order 3 lượt để zone/arrow phủ ĐÈ hình
- * học nhưng nằm DƯỚI dimension/text (nhãn kích thước/ghi chú không bao giờ bị màng màu che):
- *   1) hình học (line/wall/hatch/block/…)  2) zone + arrow  3) dim + text.
- * Doc không có zone/arrow ⇒ lượt 2 rỗng, thứ tự 1→3 giữ nguyên insertion-order cũ trong từng lượt.
+ * Vẽ toàn bộ entity (bỏ layer ẩn) — z-order **5 lượt**, mỗi lượt giữ nguyên insertion-order bên
+ * trong nó (doc thiếu loại nào thì lượt đó rỗng, không đổi thứ tự các lượt còn lại):
+ *
+ *   1) mảng tô MÁY SUY RA   2) mảng tô người vẽ   3) hình học   4) zone + arrow   5) dim + text
+ *
+ * ▸ Lượt **4 → 5** là khuôn Zone tool (N2) có từ trước: zone/arrow phủ ĐÈ hình học nhưng nằm
+ *   DƯỚI dimension/text, để nhãn kích thước/ghi chú không bao giờ bị màng màu che.
+ *
+ * ▸ Lượt **1 + 2 tách ra 31/08 — HATCH LUÔN CHÌM.** Trước đó `hatch` nằm chung lượt hình học,
+ *   tức thứ tự với nét là **thứ tự tình cờ trong stream DXF**: `HATCH` rơi vào sau một `LINE` là
+ *   mảng tô ĐÈ mất chính nét ấy. Bản vẽ nghề thì ngược lại — poché luôn nằm dưới mọi nét, không
+ *   bao giờ có chuyện mảng tô ăn nét. Đây là luật vẽ, không phải sở thích, nên nó nằm ở tầng vẽ
+ *   chứ không đẩy cho từng nơi gọi tự xếp mảng.
+ *
+ * ▸ Lượt **1 dưới lượt 2**: mảng tô do MÁY suy ra (`Entity.inferred`, `tuong-hinh-hoc.ts`) xuống
+ *   đáy cùng — suy đoán của máy không được đè dữ liệu người vẽ, kể cả mảng tô của người.
+ *   Ngôn ngữ thị giác của lớp này: xem `POCHE_TAM` (bản tạm, phiếu `P1-mock`).
+ *
+ * ⚠️ Bản vẽ KHÔNG có hatch ⇒ hai lượt đầu rỗng ⇒ nhật ký thao tác y hệt bản trước 31/08.
  */
 export function drawEntities(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc, style: DrawStyle) {
+  const toSuyRa: Entity[] = [];
+  const toNguoiVe: Entity[] = [];
+  const geom: Entity[] = [];
   const overlay: Entity[] = [];
   const annot: Entity[] = [];
-  const geom: Entity[] = [];
   const li = layerIndex(doc);
   for (const e of doc.entities) {
     const lay = li.get(e.layer);
     if (lay && !lay.visible) continue;
-    if (e.type === 'zone' || e.type === 'arrow') overlay.push(e);
+    if (e.type === 'hatch') (e.inferred ? toSuyRa : toNguoiVe).push(e);
+    else if (e.type === 'zone' || e.type === 'arrow') overlay.push(e);
     else if (e.type === 'dim' || e.type === 'text') annot.push(e);
     else geom.push(e);
   }
+  for (const e of toSuyRa) drawEntity(ctx, v, doc, e, style);
+  for (const e of toNguoiVe) drawEntity(ctx, v, doc, e, style);
   for (const e of geom) drawEntity(ctx, v, doc, e, style);
   for (const e of overlay) drawEntity(ctx, v, doc, e, style);
   for (const e of annot) drawEntity(ctx, v, doc, e, style);

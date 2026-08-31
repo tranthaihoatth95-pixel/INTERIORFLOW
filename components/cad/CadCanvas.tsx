@@ -2844,7 +2844,11 @@ export default function CadCanvas() {
      * Đặt TRƯỚC ống kính trình bày để ống kính kia nhìn đúng thứ người dùng đang thấy. */
     const docThay = locTuongSuyRa(docBase, useTuongSuyRa.getState().hien);
     const docToDraw = pv.on ? presentProjectionMemo(docThay, presentOptionsFrom(pv)).doc : docThay;
-    drawEntities(ctx, v, docToDraw, { stroke: t3, lineWidth: 1.3, text: true, dimStyle: st.dimStyle, realLineweight: true });
+    /* `background: bg` — chính màu vừa `fillRect` lên canvas ngay trên. Nó KHÔNG vẽ gì thêm;
+     * `render.ts` chỉ dùng nó để PHA NHẠT lớp máy suy ra (xem `POCHE_TAM`). Thiếu nó thì
+     * render.ts từ chối tô (K3 — nền của IF hai hướng: canvas sống TỐI, xuất PNG SÁNG; pha nhầm
+     * hướng thì lớp "nhạt" lại sáng lên và đè mạnh hơn cả lúc chưa sửa). */
+    drawEntities(ctx, v, docToDraw, { stroke: t3, lineWidth: 1.3, text: true, dimStyle: st.dimStyle, realLineweight: true, background: bg });
 
     // highlight selection
     if (st.selection.length) {

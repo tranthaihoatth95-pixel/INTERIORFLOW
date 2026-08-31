@@ -84,13 +84,37 @@ export interface TrucTuong {
 export interface TuyChonTuong {
   /** bỏ nét vụn ngắn hơn ngần này (mm). Nét < 30cm không phải mặt tường. */
   minDaiNetMm: number;
-  /** dải bề dày tường coi là hợp lý (mm). Ngoài dải ⇒ không phải cặp OFFSET của một bức tường. */
+  /**
+   * dải bề dày tường coi là hợp lý (mm). Ngoài dải ⇒ không phải cặp OFFSET của một bức tường.
+   *
+   * V2 (31/08): sàn hạ **90 → 50**. Sàn 90 cắt mất cả một họ vách thật — thạch cao một lớp
+   * (75mm) và vách kỹ thuật mỏng. 50 là sàn có lý do: dưới nó không còn là VÁCH nữa mà là hai
+   * nét kính/khe co giãn (ca đối chứng ⑩b khoá đúng chỗ đó — vách kính hai nét 10mm phải trượt).
+   */
   beDayMinMm: number;
   beDayMaxMm: number;
   /** hai nét lệch phương quá ngần này (radian) thì không coi là song song. ~1°. */
   lechPhuongRad: number;
-  /** hai nét phải chồng lấn dọc trục ít nhất ngần này (mm) mới là hai mặt của MỘT bức tường. */
+  /**
+   * hai nét phải chồng lấn dọc trục ít nhất ngần này (mm) mới là hai mặt của MỘT bức tường.
+   * Đây là **TRẦN** của ngưỡng, không còn là ngưỡng tuyệt đối — xem `chongLanTiLeToiThieu`.
+   */
   chongLanMinMm: number;
+  /**
+   * V2 (31/08) — phần chồng lấn tối thiểu tính theo **TỈ LỆ của đoạn NGẮN hơn** (0–1). Ngưỡng
+   * thật = `min(chongLanMinMm, chongLanTiLeToiThieu × dài-đoạn-ngắn-hơn)`.
+   *
+   * VÌ SAO: ngưỡng tuyệt đối 500mm giết oan mọi bức tường ngắn hơn 500mm — má cửa, hộp kỹ thuật,
+   * vách lửng — thứ mà chính người vẽ đã OFFSET ra hai nét đầy đủ. Nhưng **hạ thẳng con số
+   * tuyệt đối là mở cửa cho ghép bừa**: hai nét dài 5m chỉ chạm nhau một mẩu 200mm sẽ thành một
+   * bức tường. Tỉ lệ giải được cả hai: đoạn ngắn thì ngưỡng tự nhỏ theo, đoạn dài thì vẫn phải
+   * chồng nhau cho ra hồn.
+   *
+   * ⚠️ Muốn quay về ĐÚNG hành vi tuyệt đối trước 31/08 thì đặt `Infinity`, **không phải `1`** —
+   * với `1`, hai đoạn dài 400mm chồng nhau trọn vẹn vẫn qua cửa (`min(500, 400) = 400`), tức đã
+   * là hành vi MỚI rồi. Ca đối chứng ⑩c của bộ test khoá đúng chỗ trượt này.
+   */
+  chongLanTiLeToiThieu: number;
   /** ② ĐẢO TRIM — khe hở tối đa còn nối hai mảnh cùng đường (mm). Rộng hơn là nối bừa qua ô cửa. */
   kheHoTrimMm: number;
   /** ③ ĐẢO ARRAY — dải bước lặp coi là "đều" (mm) và số bước tối thiểu để kết luận là ARRAY. */
@@ -104,10 +128,11 @@ export interface TuyChonTuong {
 /** Ngưỡng mặc định — số đo trên bản vẽ nghề thật, không phải số tròn cho đẹp. */
 export const TUONG_MAC_DINH: TuyChonTuong = {
   minDaiNetMm: 300,
-  beDayMinMm: 90,
+  beDayMinMm: 50,
   beDayMaxMm: 400,
   lechPhuongRad: 0.02,
   chongLanMinMm: 500,
+  chongLanTiLeToiThieu: 0.5,
   kheHoTrimMm: 100,
   buocArrayMinMm: 150,
   buocArrayMaxMm: 420,
@@ -146,13 +171,34 @@ const gocDoan = (s: DoanThang) => {
   return g;
 };
 
+/** Bung một vòng điểm thành các cạnh. `khep` = có cạnh nối điểm cuối về điểm đầu. */
+function canhCuaVong(pts: Pt[], layer: string, khep: boolean, ra: DoanThang[]) {
+  for (let i = 0; i + 1 < pts.length; i++) ra.push({ a: pts[i], b: pts[i + 1], layer });
+  if (khep && pts.length > 2) ra.push({ a: pts[pts.length - 1], b: pts[0], layer });
+}
+
 /**
- * Gom mọi đoạn thẳng của bản vẽ: `line`, và **mỗi cạnh** của `polyline`.
+ * Gom mọi đoạn thẳng của bản vẽ: `line`, **mỗi cạnh** của `polyline` (kể cả cạnh khép của
+ * polyline đóng), và — từ V2 31/08 — **mỗi cạnh của BIÊN `hatch`**.
  *
  * ⚠️ POLYLINE PHẢI ĐƯỢC TÍNH. Phép thử gốc (`scripts/proof/tuong-tu-hinh-hoc.ts`) đọc nhầm field
  * `e.pts` — model của IF đặt tên là `points` (`model.ts` `PolylineEntity`) — nên nó âm thầm bỏ
  * **1.858 cạnh polyline** trên chính tệp đo. Không nổ, không cảnh báo, chỉ ra ít tường hơn. Đây là
  * lý do bản trong sản phẩm không chép nguyên phép thử mà đọc đúng model.
+ *
+ * ⚠️ **BIÊN HATCH LÀ BẰNG CHỨNG NGANG HÀNG (V2).** Bản V1 chỉ biết một cách vẽ tường: OFFSET ra
+ * hai nét. Nhưng thợ còn một cách nữa cũng phổ biến — **tô thẳng một mảng** cho vách thạch cao/
+ * vách mỏng, không vẽ nét nào. Với V1 những vách ấy vô hình. Biên của mảng tô mang **đúng cùng
+ * một thông tin** hai nét song song mang: hai cạnh dài, cách nhau đúng bề dày. Đọc nó không phải
+ * là nới tay, mà là đọc nốt phần chứng cứ đã nằm sẵn trong tệp.
+ * (`block` không phải xử riêng: `dxf.ts` đã flatten INSERT thành entity phẳng trước bước này.)
+ *
+ * ⛔ **KHÔNG ĂN ĐẦU RA CỦA CHÍNH MÌNH.** `tuongThanhEntities` sinh ra hatch poché — biên của nó
+ * lại đúng là hai cạnh song song cách nhau đúng bề dày, tức bằng chứng HOÀN HẢO cho chính bức
+ * tường vừa sinh. Chạy hai lượt là tường tự nhân bản. Dấu nhận: hatch vừa mang `inferred` vừa
+ * mang `wallThicknessMm` — bộ đôi đó CHỈ có ở tường máy suy ra (`element-infer.ts` đoán
+ * `elementType` từ tên layer nhưng KHÔNG BAO GIỜ ghi `wallThicknessMm`, nên hatch thật của khách
+ * không bao giờ dính bẫy này).
  */
 export function docDoanThang(doc: Doc, minDaiMm = TUONG_MAC_DINH.minDaiNetMm): DoanThang[] {
   const ra: DoanThang[] = [];
@@ -160,8 +206,10 @@ export function docDoanThang(doc: Doc, minDaiMm = TUONG_MAC_DINH.minDaiNetMm): D
     if (e.type === 'line') {
       ra.push({ a: e.a, b: e.b, layer: e.layer });
     } else if (e.type === 'polyline' && Array.isArray(e.points)) {
-      for (let i = 0; i + 1 < e.points.length; i++) ra.push({ a: e.points[i], b: e.points[i + 1], layer: e.layer });
-      if (e.closed && e.points.length > 2) ra.push({ a: e.points[e.points.length - 1], b: e.points[0], layer: e.layer });
+      canhCuaVong(e.points, e.layer, e.closed === true, ra);
+    } else if (e.type === 'hatch' && Array.isArray(e.points)) {
+      if (e.inferred && e.wallThicknessMm !== undefined) continue; // poché do CHÍNH bộ này sinh
+      canhCuaVong(e.points, e.layer, true, ra);                    // biên hatch luôn khép kín
     }
   }
   return ra.filter((s) => daiDoan(s) > minDaiMm);
@@ -204,7 +252,11 @@ export function ghepDoiDocQuyen(
       const [p0, p1] = [t(p.a), t(p.b)].sort((x, y) => x - y);
       const [q0, q1] = [t(q.a), t(q.b)].sort((x, y) => x - y);
       const lo = Math.max(p0, q0), hi = Math.min(p1, q1);
-      if (hi - lo < o.chongLanMinMm) continue;
+      /* V2 — ngưỡng chồng lấn CO THEO ĐOẠN NGẮN HƠN, trần vẫn là `chongLanMinMm`. Xem lý do đầy
+       * đủ ở `TuyChonTuong.chongLanTiLeToiThieu`: tuyệt đối 500mm giết oan tường ngắn, mà hạ
+       * thẳng con số tuyệt đối thì hai nét dài chạm nhau một mẩu cũng thành tường. */
+      const nguongChongLan = Math.min(o.chongLanMinMm, o.chongLanTiLeToiThieu * Math.min(p1 - p0, q1 - q0));
+      if (hi - lo < nguongChongLan) continue;
       const mx = (p.a.x + q.a.x) / 2, my = (p.a.y + q.a.y) / 2;
       uv.push({
         i, j,
