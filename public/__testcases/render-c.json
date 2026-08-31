@@ -3,7 +3,7 @@
     "node": "ai.relight",
     "label": "Daylight → prompt daylight",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "lighting": "Daylight"
@@ -27,7 +27,7 @@
     "node": "ai.relight",
     "label": "Sunset → hoàng hôn ấm",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "lighting": "Sunset"
@@ -51,7 +51,7 @@
     "node": "ai.relight",
     "label": "Đèn vàng ấm ban đêm",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "lighting": "Đèn vàng ấm ban đêm"
@@ -75,7 +75,7 @@
     "node": "ai.relight",
     "label": "Studio soft light",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "lighting": "Studio soft light"
@@ -110,7 +110,7 @@
     "node": "ai.upscale",
     "label": "scale 2 → job upscale",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "scale": "2"
@@ -130,7 +130,7 @@
     "node": "ai.upscale",
     "label": "scale 4 → job upscale",
     "inputs": {
-      "image": "/demo/clay-4k.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "scale": "4"
@@ -161,7 +161,7 @@
     "node": "util.maskpainter",
     "label": "có ảnh + mask → local, ra mask",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "mask": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
@@ -188,7 +188,7 @@
     "node": "util.maskpainter",
     "label": "chưa vẽ mask → throw",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {},
     "expect": {
@@ -199,7 +199,7 @@
     "node": "util.edit",
     "label": "chỉnh sáng/tương phản → local, ra image",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "brightness": 1.1,
@@ -218,7 +218,7 @@
     "node": "util.edit",
     "label": "tham số trung tính → vẫn ra image",
     "inputs": {
-      "image": "/demo/clay-in.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "brightness": 1,
@@ -251,8 +251,8 @@
     "node": "util.compare",
     "label": "đủ A + B → pass-through B",
     "inputs": {
-      "imageA": "/demo/clay-in.jpg",
-      "imageB": "/demo/clay-out.png"
+      "imageA": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "imageB": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {},
     "expect": {
@@ -266,7 +266,7 @@
     "node": "util.compare",
     "label": "thiếu ảnh A → throw",
     "inputs": {
-      "imageB": "/demo/clay-out.png"
+      "imageB": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {},
     "expect": {
@@ -277,7 +277,7 @@
     "node": "util.compare",
     "label": "thiếu ảnh B → throw",
     "inputs": {
-      "imageA": "/demo/clay-in.jpg"
+      "imageA": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {},
     "expect": {

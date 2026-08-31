@@ -45,7 +45,7 @@
   {
     "node": "util.palette",
     "label": "Palette trích HEX từ ảnh — client-side, KHÔNG gọi job",
-    "inputs": { "image": "/demo/mood1.jpg" },
+    "inputs": { "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" },
     "params": {},
     "expect": {
       "expectNoJob": true,
@@ -64,10 +64,10 @@
     "node": "out.moodboard",
     "label": "Collage 4 ảnh, layout Tự động (Editorial) — client-side, KHÔNG job",
     "inputs": {
-      "img1": "/demo/mood1.jpg",
-      "img2": "/demo/mood2.jpg",
-      "img3": "/demo/mood3.jpg",
-      "img4": "/demo/mood4.jpg"
+      "img1": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "img2": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "img3": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "img4": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "title": "CONCEPT",
@@ -84,9 +84,9 @@
     "node": "out.moodboard",
     "label": "Collage layout Sắp chữ (Justified), 3 ảnh",
     "inputs": {
-      "img1": "/demo/mood1.jpg",
-      "img2": "/demo/mood2.jpg",
-      "img3": "/demo/mood3.jpg"
+      "img1": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "img2": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "img3": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": { "layout": "Sắp chữ (Justified)" },
     "expect": {
@@ -98,8 +98,8 @@
     "node": "out.moodboard",
     "label": "Collage layout Lưới đều, 2 ảnh",
     "inputs": {
-      "img1": "/demo/mood1.jpg",
-      "img2": "/demo/mood2.jpg"
+      "img1": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "img2": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": { "layout": "Lưới đều" },
     "expect": {

@@ -2,7 +2,7 @@
   {
     "node": "ai.sketch2render",
     "label": "smoke — Japandi + user prompt",
-    "inputs": { "image": "/demo/sketch-in.jpg", "prompt": "warm living room" },
+    "inputs": { "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "prompt": "warm living room" },
     "params": { "style": "Japandi", "guidance": 15, "adherence": 0.6 },
     "expect": {
       "task": "sketch2render",
@@ -23,7 +23,7 @@
   {
     "node": "ai.sketch2render",
     "label": "smoke — CỐ Ý SAI để chắc runner bắt được fail",
-    "inputs": { "image": "/demo/sketch-in.jpg" },
+    "inputs": { "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" },
     "params": { "style": "Japandi" },
     "expect": { "promptIncludes": ["CHUOI_KHONG_BAO_GIO_CO"] }
   }

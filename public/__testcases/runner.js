@@ -65,8 +65,12 @@ function assertCase(c, { captured, jobCalled, err, out }) {
     if (!(k in inp)) fails.push(`thiếu input key "${k}"`);
   }
   for (const [k, v] of Object.entries(E.inputEquals || {})) {
-    // client absolutize URL tương đối trước khi submit (lib/ai/client.ts) —
-    // spec ghi '/demo/…' thì chấp nhận cả bản đã absolutize origin + '/demo/…'.
+    // client absolutize URL tương đối trước khi submit (lib/ai/client.ts) — spec ghi
+    // đường dẫn gốc '/…' thì chấp nhận cả bản đã absolutize thành origin + '/…'.
+    // 31/08 — QĐ-1 "demo sạch": các spec nay dùng ảnh `data:` 1×1 NỘI TUYẾN thay cho
+    // '/demo/…', nên nhánh này gần như không còn chạy. Giữ lại vì nó vẫn đúng cho mọi
+    // spec tương lai dùng đường dẫn gốc, và vì `data:` không bắt đầu bằng '/' nên nó
+    // tự bỏ qua, so sánh rơi về đối chiếu chuỗi thẳng — đúng cái ta muốn.
     const matchesAbsolutized =
       typeof v === 'string' && v.startsWith('/') && inp[k] === new URL(v, window.location.origin).href;
     if (inp[k] !== v && !matchesAbsolutized) {

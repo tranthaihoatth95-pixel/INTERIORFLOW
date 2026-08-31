@@ -26,7 +26,7 @@ const VIDEO_TIMEOUT_MS = 300_000;
 const COMFYUI_TIMEOUT_MS = 2_400_000;
 
 /**
- * Ảnh trong app có thể là URL tương đối (/demo/…, /uploads/… từ gallery/demo).
+ * Ảnh trong app có thể là URL tương đối (/uploads/… từ gallery, /covers/… …).
  * Provider chạy SERVER-side fetch ảnh → URL tương đối parse fail ("Failed to parse URL").
  * Tuyệt-đối-hoá mọi string input bắt đầu bằng '/' trước khi submit (data:/http giữ nguyên).
  */

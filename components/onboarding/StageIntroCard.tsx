@@ -19,8 +19,15 @@ import { isStageIntroSeen, markStageIntroSeen, type OnboardingStage } from '@/li
 
 interface StageCopy {
   lines: { vi: string; en: string }[];
-  before: string;
-  after: string;
+  /**
+   * Cặp thumbnail Trước→Sau. TUỲ CHỌN từ 31/08 (QĐ-1 "demo sạch"): chặng nào chưa có
+   * ảnh MINH HOẠ TỰ VẼ thì bỏ trống, thẻ đứng bằng chữ. Trước đó chặng `render` mượn
+   * ảnh trong `public/demo/` — bộ ảnh ấy đã rời bản ship, và mượn tiếp là đưa dữ liệu
+   * demo trở lại đúng bề mặt người dùng mới nhìn thấy đầu tiên.
+   */
+  before?: string;
+  after?: string;
+  /** Mô tả Trước→Sau bằng lời — là alt khi CÓ ảnh, và là nội dung hiển thị khi KHÔNG. */
   alt: { vi: string; en: string };
 }
 
@@ -41,8 +48,8 @@ const COPY: Record<OnboardingStage, StageCopy> = {
       { vi: 'Chọn thẻ việc → thả ảnh → kéo 2 thanh trượt', en: 'Pick a task card → drop an image → drag the two sliders' },
       { vi: '→ Render', en: '→ Render' },
     ],
-    before: '/demo/sketch-in.jpg',
-    after: '/demo/sketch-out.png',
+    // TODO(phiếu "bộ minh hoạ trung tính"): cắm cặp SVG tự vẽ vào đây, cùng khuôn
+    // `/onboarding/cad-*.svg` của hai chặng kia. KHÔNG mượn lại ảnh render dự án khách.
     alt: { vi: 'Phác thảo tay → ảnh render photoreal', en: 'Hand sketch → photoreal render' },
   },
   present: {
@@ -117,26 +124,33 @@ export function StageIntroCard({ stage, userId }: { stage: OnboardingStage; user
           </button>
 
           <div className="flex items-center gap-2 pr-5">
-            {/* thumbnail trước/sau — nhỏ, không choán chỗ */}
-            <div className="flex shrink-0 items-center gap-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={copy.before}
-                alt={tr(copy.alt.vi, copy.alt.en)}
-                width={34}
-                height={34}
-                className="rounded-[6px] border border-[var(--border)] object-cover"
-              />
-              <span className="text-[10px] text-[var(--t4)]">→</span>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={copy.after}
-                alt=""
-                width={34}
-                height={34}
-                className="rounded-[6px] border border-[var(--border)] object-cover"
-              />
-            </div>
+            {/* thumbnail trước/sau — nhỏ, không choán chỗ. Chặng chưa có ảnh tự vẽ thì
+                thẻ nói bằng LỜI thay vì bịa một khung ảnh rỗng hoặc mượn ảnh dự án khách. */}
+            {copy.before && copy.after ? (
+              <div className="flex shrink-0 items-center gap-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={copy.before}
+                  alt={tr(copy.alt.vi, copy.alt.en)}
+                  width={34}
+                  height={34}
+                  className="rounded-[6px] border border-[var(--border)] object-cover"
+                />
+                <span className="text-[10px] text-[var(--t4)]">→</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={copy.after}
+                  alt=""
+                  width={34}
+                  height={34}
+                  className="rounded-[6px] border border-[var(--border)] object-cover"
+                />
+              </div>
+            ) : (
+              <p className="shrink-0 text-[10.5px] leading-snug text-[var(--t4)]">
+                {tr(copy.alt.vi, copy.alt.en)}
+              </p>
+            )}
           </div>
 
           <div className="mt-2.5 space-y-0.5">

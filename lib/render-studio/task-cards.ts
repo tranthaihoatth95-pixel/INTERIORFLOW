@@ -7,9 +7,12 @@
  * "giả" riêng cho Tool Mode).
  *
  * `before`/`after`: ảnh Trước/Sau dạy bằng kết quả (§6 "dạy bằng kết quả, không bằng chữ").
- * Chỉ thẻ Sketch→Ảnh thật có ảnh THẬT sẵn (`public/demo/sketch-in.jpg`/`sketch-out.png`, dùng
- * lại từ `lib/demos/sketch.ts`). Thẻ khác CHƯA có ảnh thật → để trống (component tự hiện
- * "chờ ảnh thật"), TUYỆT ĐỐI không cho AI vẽ minh hoạ giả (đúng yêu cầu B3).
+ * 31/08 — QĐ-1 "demo sạch": HIỆN KHÔNG THẺ NÀO CÓ ẢNH. Thẻ Sketch→Ảnh thật từng mượn
+ * `public/demo/sketch-in.jpg`/`sketch-out.png`; bộ ảnh đó đã rời bản ship cùng mọi dữ liệu
+ * demo khác, nên thẻ này quay về đúng trạng thái của các thẻ còn lại: để trống, component
+ * tự hiện "chờ ảnh thật". Quy tắc cũ giữ nguyên và nay áp cho tất cả — TUYỆT ĐỐI không cho
+ * AI vẽ minh hoạ giả (yêu cầu B3), và cũng không mượn render của dự án khách.
+ * TODO(phiếu "bộ minh hoạ trung tính"): có ảnh tự vẽ thì điền lại `before`/`after` ở đây.
  */
 
 export interface TaskCard {
@@ -35,8 +38,6 @@ export const TASK_CARDS: TaskCard[] = [
     label: 'Sketch → Ảnh thật',
     desc: 'Nét vẽ tay / xuất SketchUp → ảnh render đúng hình khối',
     nodeType: 'ai.sketch2render',
-    before: '/demo/sketch-in.jpg',
-    after: '/demo/sketch-out.png',
   },
   {
     id: 'clay2render',

@@ -196,7 +196,7 @@ export function ParamField({
     );
   }
 
-  // image upload — nhận cả data-URI (upload thật) LẪN URL ('/demo/…', '/covers/…', http…)
+  // image upload — nhận cả data-URI (upload thật) LẪN URL ('/uploads/…', '/covers/…', http…)
   const hasImage =
     typeof value === 'string' &&
     value.length > 0 &&

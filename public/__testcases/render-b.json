@@ -3,7 +3,7 @@
     "node": "ai.emptystaging",
     "label": "Staging Scandinavian, không prompt user",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Scandinavian",
@@ -26,7 +26,7 @@
       "inputEquals": {
         "num_images": 1,
         "strength": 0.85,
-        "image_url": "/demo/clay-out.png"
+        "image_url": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
       },
       "negativeNonEmpty": true
     }
@@ -35,7 +35,7 @@
     "node": "ai.emptystaging",
     "label": "Staging Japandi",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Japandi",
@@ -62,7 +62,7 @@
     "node": "ai.emptystaging",
     "label": "Staging Indochine",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Indochine",
@@ -89,7 +89,7 @@
     "node": "ai.emptystaging",
     "label": "Staging Modern Luxury",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Modern Luxury",
@@ -116,7 +116,7 @@
     "node": "ai.emptystaging",
     "label": "Staging Wabi-sabi",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Wabi-sabi",
@@ -143,7 +143,7 @@
     "node": "ai.emptystaging",
     "label": "Staging Industrial",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Industrial",
@@ -170,7 +170,7 @@
     "node": "ai.emptystaging",
     "label": "Staging có prompt user (extra chèn trước style)",
     "inputs": {
-      "image": "/demo/clay-out.png",
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
       "prompt": "warm oak tones, linen sofa"
     },
     "params": {
@@ -202,7 +202,7 @@
     "node": "ai.emptystaging",
     "label": "Biên strength min 0.6",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Scandinavian",
@@ -231,7 +231,7 @@
     "node": "ai.emptystaging",
     "label": "Biên strength max 0.95",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Industrial",
@@ -272,8 +272,8 @@
     "node": "ai.materialswap",
     "label": "Đổi vật liệu sàn (material EN, verbatim)",
     "inputs": {
-      "image": "/demo/clay-out.png",
-      "mask": "/demo/mood2.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "mask": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "material": "walnut wood herringbone floor"
@@ -296,8 +296,8 @@
         "mask_url"
       ],
       "inputEquals": {
-        "image_url": "/demo/clay-out.png",
-        "mask_url": "/demo/mood2.jpg"
+        "image_url": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+        "mask_url": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
       },
       "negativeNonEmpty": true
     }
@@ -306,8 +306,8 @@
     "node": "ai.materialswap",
     "label": "Vật liệu tiếng Việt (KHÔNG dịch, giữ nguyên chữ)",
     "inputs": {
-      "image": "/demo/clay-out.png",
-      "mask": "/demo/mood2.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "mask": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "material": "đá cẩm thạch trắng vân mây"
@@ -331,8 +331,8 @@
     "node": "ai.materialswap",
     "label": "Đổi vật liệu tường (đồng đánh xước)",
     "inputs": {
-      "image": "/demo/clay-out.png",
-      "mask": "/demo/mood2.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "mask": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "material": "brushed brass wall panel"
@@ -351,7 +351,7 @@
         "mask_url"
       ],
       "inputEquals": {
-        "mask_url": "/demo/mood2.jpg"
+        "mask_url": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
       },
       "negativeNonEmpty": true
     }
@@ -360,7 +360,7 @@
     "node": "ai.materialswap",
     "label": "Thiếu ảnh gốc → throw",
     "inputs": {
-      "mask": "/demo/mood2.jpg"
+      "mask": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "material": "oak floor"
@@ -373,7 +373,7 @@
     "node": "ai.materialswap",
     "label": "Có ảnh nhưng thiếu mask → throw",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "material": "oak floor"
@@ -386,8 +386,8 @@
     "node": "ai.materialswap",
     "label": "Đủ ảnh + mask nhưng chưa nhập vật liệu → throw",
     "inputs": {
-      "image": "/demo/clay-out.png",
-      "mask": "/demo/mood2.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "mask": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {},
     "expect": {
@@ -398,8 +398,8 @@
     "node": "ai.materialswap",
     "label": "Vật liệu chỉ toàn khoảng trắng → trim rỗng → throw",
     "inputs": {
-      "image": "/demo/clay-out.png",
-      "mask": "/demo/mood2.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "mask": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "material": "   "
@@ -412,8 +412,8 @@
     "node": "ai.furniture",
     "label": "Xoá đồ + mask (prompt cố định)",
     "inputs": {
-      "image": "/demo/clay-out.png",
-      "mask": "/demo/mood2.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "mask": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "mode": "Xoá đồ"
@@ -432,8 +432,8 @@
         "mask_url"
       ],
       "inputEquals": {
-        "image_url": "/demo/clay-out.png",
-        "mask_url": "/demo/mood2.jpg"
+        "image_url": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+        "mask_url": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
       },
       "negativeNonEmpty": true
     }
@@ -442,8 +442,8 @@
     "node": "ai.furniture",
     "label": "Xoá đồ nhưng có điền 'what' → what KHÔNG lọt prompt",
     "inputs": {
-      "image": "/demo/clay-out.png",
-      "mask": "/demo/mood2.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "mask": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "mode": "Xoá đồ",
@@ -469,8 +469,8 @@
     "node": "ai.furniture",
     "label": "Thêm đồ + mô tả (what verbatim)",
     "inputs": {
-      "image": "/demo/clay-out.png",
-      "mask": "/demo/mood2.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "mask": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "mode": "Thêm đồ",
@@ -499,8 +499,8 @@
     "node": "ai.furniture",
     "label": "Thêm đồ mô tả tiếng Việt (KHÔNG dịch)",
     "inputs": {
-      "image": "/demo/clay-out.png",
-      "mask": "/demo/mood2.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "mask": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "mode": "Thêm đồ",
@@ -525,8 +525,8 @@
     "node": "ai.furniture",
     "label": "Thêm đồ nhưng bỏ trống 'what' → throw",
     "inputs": {
-      "image": "/demo/clay-out.png",
-      "mask": "/demo/mood2.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "mask": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "mode": "Thêm đồ"
@@ -539,8 +539,8 @@
     "node": "ai.furniture",
     "label": "Không set mode → defaultParams cho Xoá đồ (options[0]), không cần what",
     "inputs": {
-      "image": "/demo/clay-out.png",
-      "mask": "/demo/mood2.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "mask": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {},
     "expect": {
@@ -563,7 +563,7 @@
     "node": "ai.furniture",
     "label": "Thiếu ảnh gốc → throw",
     "inputs": {
-      "mask": "/demo/mood2.jpg"
+      "mask": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "mode": "Xoá đồ"
@@ -576,7 +576,7 @@
     "node": "ai.furniture",
     "label": "Có ảnh nhưng thiếu mask → throw",
     "inputs": {
-      "image": "/demo/clay-out.png"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "mode": "Xoá đồ"

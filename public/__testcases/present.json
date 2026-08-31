@@ -29,8 +29,8 @@
     "label": "Composer Nội dung + ảnh — content JSON + styleref + hero",
     "inputs": {
       "content": "{\"kicker\":\"01 — Vật liệu\",\"title\":\"Đá ấm, gỗ trầm, đồng hun\",\"body\":\"- Travertine\\n- Gỗ óc chó\\n- Đồng hun\"}",
-      "styleref": "/demo/mood2.jpg",
-      "hero": "/demo/mood3.jpg"
+      "styleref": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "hero": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": { "layout": "Nội dung + ảnh", "fonts": "Modern", "mode": "Sáng", "pageNo": "02" },
     "expect": { "expectNoJob": true, "expectOutputKeys": ["image"] }
@@ -40,7 +40,7 @@
     "label": "Composer Quote — nền Tối, có styleref",
     "inputs": {
       "content": "{\"title\":\"Sảnh là ấn tượng đầu tiên được giữ lại.\",\"body\":\"Atelier Nord\"}",
-      "styleref": "/demo/mood1.jpg"
+      "styleref": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": { "layout": "Quote", "fonts": "Elegant", "mode": "Tối", "pageNo": "04" },
     "expect": { "expectNoJob": true, "expectOutputKeys": ["image"] }
@@ -55,7 +55,7 @@
   {
     "node": "slide.deck",
     "label": "Export Deck — 1 slide vẫn hợp lệ",
-    "inputs": { "slide1": "/demo/mood1.jpg" },
+    "inputs": { "slide1": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" },
     "params": { "deckName": "Concept-Sanh-v1" },
     "expect": { "expectNoJob": true, "expectOutputKeys": ["image"] }
   },
@@ -63,9 +63,9 @@
     "node": "slide.deck",
     "label": "Export Deck — gom nhiều slide",
     "inputs": {
-      "slide1": "/demo/mood1.jpg",
-      "slide2": "/demo/mood2.jpg",
-      "slide3": "/demo/mood3.jpg"
+      "slide1": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "slide2": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "slide3": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": { "deckName": "Concept-Sanh-v2" },
     "expect": { "expectNoJob": true, "expectOutputKeys": ["image"] }

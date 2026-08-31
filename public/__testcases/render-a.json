@@ -3,7 +3,7 @@
     "node": "ai.sketch2render",
     "label": "Scandinavian + prompt, guidance min 1, bám thoáng 0.4",
     "inputs": {
-      "image": "/demo/sketch-in.jpg",
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
       "prompt": "cozy reading nook"
     },
     "params": {
@@ -33,7 +33,7 @@
         "guidance_scale": 1,
         "strength": 0.4,
         "num_images": 1,
-        "control_image_url": "/demo/sketch-in.jpg"
+        "control_image_url": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
       },
       "negativeNonEmpty": true
     }
@@ -42,7 +42,7 @@
     "node": "ai.sketch2render",
     "label": "Japandi + prompt (ca chuẩn đã bắt được)",
     "inputs": {
-      "image": "/demo/sketch-in.jpg",
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
       "prompt": "warm living room"
     },
     "params": {
@@ -80,7 +80,7 @@
     "node": "ai.sketch2render",
     "label": "Indochine KHÔNG prompt (nhánh base), guidance max 20, bám chặt 0.8",
     "inputs": {
-      "image": "/demo/sketch-in.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Indochine",
@@ -118,7 +118,7 @@
     "node": "ai.sketch2render",
     "label": "Modern Luxury KHÔNG prompt (style 2 từ)",
     "inputs": {
-      "image": "/demo/sketch-in.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Modern Luxury",
@@ -155,7 +155,7 @@
     "node": "ai.sketch2render",
     "label": "Wabi-sabi + prompt (style có gạch nối)",
     "inputs": {
-      "image": "/demo/sketch-in.jpg",
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
       "prompt": "tea corner"
     },
     "params": {
@@ -193,7 +193,7 @@
     "node": "ai.sketch2render",
     "label": "Industrial KHÔNG prompt (đủ style thứ 6)",
     "inputs": {
-      "image": "/demo/sketch-in.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Industrial",
@@ -243,7 +243,7 @@
     "node": "ai.clay2render",
     "label": "Scandinavian + prompt, preserve default 16 (có hậu tố geometry)",
     "inputs": {
-      "image": "/demo/clay-in.jpg",
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
       "prompt": "cozy bedroom"
     },
     "params": {
@@ -271,7 +271,7 @@
       "inputEquals": {
         "guidance_scale": 16,
         "num_images": 1,
-        "control_image_url": "/demo/clay-in.jpg"
+        "control_image_url": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
       },
       "negativeNonEmpty": true
     }
@@ -280,7 +280,7 @@
     "node": "ai.clay2render",
     "label": "Japandi KHÔNG prompt, preserve min 1 (nhánh base + hậu tố)",
     "inputs": {
-      "image": "/demo/clay-in.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Japandi",
@@ -315,7 +315,7 @@
     "node": "ai.clay2render",
     "label": "Indochine + prompt, preserve max 20",
     "inputs": {
-      "image": "/demo/clay-in.jpg",
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
       "prompt": "villa interior"
     },
     "params": {
@@ -351,7 +351,7 @@
     "node": "ai.clay2render",
     "label": "Modern Luxury KHÔNG prompt",
     "inputs": {
-      "image": "/demo/clay-in.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Modern Luxury",
@@ -385,7 +385,7 @@
     "node": "ai.clay2render",
     "label": "Wabi-sabi + prompt",
     "inputs": {
-      "image": "/demo/clay-in.jpg",
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
       "prompt": "quiet studio"
     },
     "params": {
@@ -420,7 +420,7 @@
     "node": "ai.clay2render",
     "label": "Industrial KHÔNG prompt (đủ style thứ 6)",
     "inputs": {
-      "image": "/demo/clay-in.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Industrial",
@@ -466,7 +466,7 @@
     "node": "ai.styletransfer",
     "label": "Scandinavian + prompt, strength max 0.9 (task camelCase styleTransfer)",
     "inputs": {
-      "image": "/demo/mood1.jpg",
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
       "prompt": "sunlit room"
     },
     "params": {
@@ -493,7 +493,7 @@
       "inputEquals": {
         "strength": 0.9,
         "num_images": 1,
-        "image_url": "/demo/mood1.jpg"
+        "image_url": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
       },
       "negativeNonEmpty": true
     }
@@ -502,7 +502,7 @@
     "node": "ai.styletransfer",
     "label": "Japandi KHÔNG prompt, strength min 0.3 (nhánh base)",
     "inputs": {
-      "image": "/demo/mood1.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Japandi",
@@ -537,7 +537,7 @@
     "node": "ai.styletransfer",
     "label": "Indochine + prompt",
     "inputs": {
-      "image": "/demo/mood1.jpg",
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
       "prompt": "hallway"
     },
     "params": {
@@ -572,7 +572,7 @@
     "node": "ai.styletransfer",
     "label": "Modern Luxury KHÔNG prompt",
     "inputs": {
-      "image": "/demo/mood1.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Modern Luxury",
@@ -606,7 +606,7 @@
     "node": "ai.styletransfer",
     "label": "Wabi-sabi + prompt, strength min 0.3",
     "inputs": {
-      "image": "/demo/mood1.jpg",
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
       "prompt": "loft"
     },
     "params": {
@@ -641,7 +641,7 @@
     "node": "ai.styletransfer",
     "label": "Industrial KHÔNG prompt, strength max 0.9 (đủ style thứ 6)",
     "inputs": {
-      "image": "/demo/mood1.jpg"
+      "image": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
     },
     "params": {
       "style": "Industrial",

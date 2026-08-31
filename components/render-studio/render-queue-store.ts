@@ -385,24 +385,26 @@ declare global {
 }
 
 if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
-  // Ảnh diễn tập lấy từ `public/demo/` — bộ ảnh trung tính sẵn có của app, KHÔNG phải render
-  // của dự án khách nào (luật trung tính).
-  const VIEWS: { name: string; src: string; out: string }[] = [
-    { name: 'Phòng khách · góc 1', src: '/demo/clay-in.jpg', out: '/demo/clay-out.png' },
-    { name: 'Bếp · đảo bếp', src: '/demo/sketch-in.jpg', out: '/demo/sketch-out.png' },
-    { name: 'Phòng ngủ chính', src: '/demo/mood1.jpg', out: '/demo/mood2.jpg' },
-    { name: 'Sảnh thang', src: '/demo/mood3.jpg', out: '/demo/mood4.jpg' },
-    { name: 'Hành lang tầng 2', src: '/demo/clay-4k.jpg', out: '/demo/clay-out.png' },
+  // Máy diễn tập hàng đợi — CHỈ dev, không bao giờ vào bản production (cổng NODE_ENV ở trên).
+  // 31/08 — QĐ-1 "demo sạch": trước đó 5 view này trỏ vào `public/demo/*` để có thumbnail.
+  // Bộ ảnh ấy đã rời bản ship, và `sourceUrl`/`resultUrl` vốn TUỲ CHỌN, nên các view chạy
+  // không ảnh. Không mất gì: thứ máy này dùng để thử là TIẾN TRÌNH · LỖI GIỮA CHỪNG · HUỶ,
+  // không phải chất lượng ảnh — và chạy không ảnh còn đúng hơn, vì đó chính là hình dạng
+  // thật của hàng đợi trong lúc kết quả chưa về.
+  const VIEWS: string[] = [
+    'Phòng khách · góc 1',
+    'Bếp · đảo bếp',
+    'Phòng ngủ chính',
+    'Sảnh thang',
+    'Hành lang tầng 2',
   ];
   window.__ifRenderQueue = {
     demo: (n = 3) => {
       useRenderQueue.getState().setExpanded(true);
       for (let i = 0; i < n; i++) {
-        const v = VIEWS[i % VIEWS.length];
         useRenderQueue.getState().enqueue({
-          viewName: v.name,
-          sourceUrl: v.src,
-          source: { kind: 'demo', durationMs: 9000 + i * 3000, resultUrl: v.out },
+          viewName: VIEWS[i % VIEWS.length],
+          source: { kind: 'demo', durationMs: 9000 + i * 3000 },
         });
       }
     },
@@ -410,7 +412,6 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
       useRenderQueue.getState().setExpanded(true);
       useRenderQueue.getState().enqueue({
         viewName: 'Phòng tắm · gương lớn',
-        sourceUrl: '/demo/mood2.jpg',
         source: { kind: 'demo', durationMs: 8000, failAt: 0.45 },
       });
     },

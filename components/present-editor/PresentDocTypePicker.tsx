@@ -64,16 +64,19 @@ const LIBRARY: Record<Kind, { label: [string, string]; count: string; lead: [str
       // [storySet] Hero output (chốt 11/08): thẻ ĐẦU danh mục Deck. Ảnh minh hoạ Unsplash
       // (Unsplash License, đã verify 200 image/jpeg 12/08) — người dùng thay bằng ảnh dự án.
       { title: ['Bộ hồ sơ kể chuyện', 'The Story Set'], caption: ['Bộ hồ sơ kể chuyện · 8 trang', 'Story Set · 8 pages'], image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=75', enabled: true, storySet: true },
-      { title: ['Không gian có câu chuyện', 'A space with a story'], caption: ['Concept tối giản', 'Minimal concept'], image: '/demo/mood1.jpg', enabled: true },
-      { title: ['Mộc Residence', 'Moc Residence'], caption: ['Hồ sơ khách hàng', 'Client presentation'], image: '/demo/mood2.jpg', enabled: true },
-      { title: ['Phương án 02', 'Option 02'], caption: ['So sánh phương án', 'Option comparison'], image: '/demo/mood3.jpg', enabled: true },
+      // 31/08 — QĐ-1 "demo sạch": ba thẻ này từng lấy thumbnail từ `public/demo/mood*.jpg`.
+      // Bộ ảnh đó đã rời bản ship, nên chúng chuyển sang `tone` — đúng khuôn mà các thẻ
+      // khác trong chính tệp này vẫn dùng, không đẻ khái niệm mới.
+      { title: ['Không gian có câu chuyện', 'A space with a story'], caption: ['Concept tối giản', 'Minimal concept'], tone: '#bcae9e', enabled: true },
+      { title: ['Mộc Residence', 'Moc Residence'], caption: ['Hồ sơ khách hàng', 'Client presentation'], tone: '#829aa0', enabled: true },
+      { title: ['Phương án 02', 'Option 02'], caption: ['So sánh phương án', 'Option comparison'], tone: '#e2ddce', enabled: true },
     ],
   },
   material: {
     label: ['Bảng vật liệu', 'Material board'], count: '04',
     lead: ['Ghép vật liệu, mã hàng và vùng sử dụng trên một tấm rõ ràng.', 'Pair finishes, product codes, and usage zones on a clear board.'],
     templates: [
-      { title: ['Palette hoàn thiện', 'Finish palette'], caption: ['Mở khổ A3 để tự dàn', 'Open an A3 workspace'], image: '/demo/mood4.jpg', enabled: true },
+      { title: ['Palette hoàn thiện', 'Finish palette'], caption: ['Mở khổ A3 để tự dàn', 'Open an A3 workspace'], tone: '#e5dfd1', enabled: true },
       { title: ['Bảng mẫu dự án', 'Project sample board'], caption: ['Mở khổ A3 để tự dàn', 'Open an A3 workspace'], tone: '#bcae9e', enabled: true },
       { title: ['Bề mặt & sắc độ', 'Surface & tone'], caption: ['Mở khổ A3 để tự dàn', 'Open an A3 workspace'], tone: '#829aa0', enabled: true },
     ],
@@ -112,9 +115,9 @@ const LIBRARY: Record<Kind, { label: [string, string]; count: string; lead: [str
     label: ['Video', 'Video'], count: '03',
     lead: ['Dựng footage từ chặng 3D thành một nhịp xem có chủ đích.', 'Shape footage from 3D into an intentional viewing rhythm.'],
     templates: [
-      { title: ['Walkthrough 60 giây', '60-second walkthrough'], caption: ['Chưa có dựng, xem footage ở 3D', 'No timeline editor; view footage in 3D'], image: '/demo/mood2.jpg', enabled: false, unavailableReason: ['Chưa có cắt, ghép hoặc xuất phim.', 'Trimming, editing, and video export are not available yet.'] },
-      { title: ['Phương án ánh sáng', 'Lighting study'], caption: ['Chưa có dựng, xem footage ở 3D', 'No timeline editor; view footage in 3D'], image: '/demo/mood3.jpg', enabled: false, unavailableReason: ['Chưa có dựng phim trong Trình chiếu.', 'There is no video editor in Presenting yet.'] },
-      { title: ['Tổng hợp dự án', 'Project reel'], caption: ['Chưa có dựng, xem footage ở 3D', 'No timeline editor; view footage in 3D'], image: '/demo/mood4.jpg', enabled: false, unavailableReason: ['Dữ liệu video chưa có đường xuất tin cậy.', 'Video data has no reliable export path yet.'] },
+      { title: ['Walkthrough 60 giây', '60-second walkthrough'], caption: ['Chưa có dựng, xem footage ở 3D', 'No timeline editor; view footage in 3D'], tone: '#d7d1c4', enabled: false, unavailableReason: ['Chưa có cắt, ghép hoặc xuất phim.', 'Trimming, editing, and video export are not available yet.'] },
+      { title: ['Phương án ánh sáng', 'Lighting study'], caption: ['Chưa có dựng, xem footage ở 3D', 'No timeline editor; view footage in 3D'], tone: '#cbc4b5', enabled: false, unavailableReason: ['Chưa có dựng phim trong Trình chiếu.', 'There is no video editor in Presenting yet.'] },
+      { title: ['Tổng hợp dự án', 'Project reel'], caption: ['Chưa có dựng, xem footage ở 3D', 'No timeline editor; view footage in 3D'], tone: '#cfc8bb', enabled: false, unavailableReason: ['Dữ liệu video chưa có đường xuất tin cậy.', 'Video data has no reliable export path yet.'] },
     ],
   },
 };

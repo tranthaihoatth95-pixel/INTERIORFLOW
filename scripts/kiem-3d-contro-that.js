@@ -467,8 +467,10 @@ async function main() {
       await di(`/projects/${PROJ}/present`, 8000);
       await chup('17-present', 'Trình bày — deck IF dựng trong chính IF');
 
-      await di('/demo/ghe-3d', 9000);
-      await chup('12-image-to-3d-lincoln', 'Ảnh → 3D — ghế Lincoln 327, xoay/soi ngay');
+      // 31/08 — QĐ-1 "demo sạch": bước chụp '/demo/ghe-3d' đã gỡ cùng route. Ảnh→3D vẫn
+      // còn trong sản phẩm, nhưng nó KHÔNG còn màn demo riêng để chụp thẳng; muốn có lại
+      // ảnh này thì phải đi qua đúng đường người dùng thật (Thư viện → vật thể), không
+      // dựng lại route thử.
 
       // 3D: viewport sạch + khối đang chọn
       await open3D(page);

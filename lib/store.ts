@@ -949,79 +949,26 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       return;
     }
 
-    // mặc định: SẢN PHẨM TEST → flow demo DONE sẵn (Sketch→Render + Clay→Render).
-    // Ảnh before/after thật ở /public/demo (do vòng test tạo ra bằng ComfyUI/SDXL).
-    const done = (url: string) => ({
-      status: 'done' as const,
-      progress: 1,
-      outputs: { image: { dataType: 'image' as const, value: url } },
-    });
-    const s1 = mk('input.image', 40, 60);
-    s1.data.params.file = '/demo/sketch-in.jpg';
-    s1.data.run = done('/demo/sketch-in.jpg');
-    const s2 = mk('ai.sketch2render', 480, 60);
-    s2.data.params.style = 'Scandinavian';
-    s2.data.params.guidance = 15;
-    s2.data.params.adherence = 0.6;
-    s2.data.run = done('/demo/sketch-out.png');
-    // 2) Clay → Photoreal → Upscale 4K (nối thêm 1 bước hậu kỳ)
-    const c1 = mk('input.image', 40, 440);
-    c1.data.params.file = '/demo/clay-in.jpg';
-    c1.data.run = done('/demo/clay-in.jpg');
-    const c2 = mk('ai.clay2render', 480, 440);
-    c2.data.run = done('/demo/clay-out.png');
-    const c3 = mk('ai.upscale', 920, 440);
-    c3.data.params.scale = '4';
-    c3.data.run = done('/demo/clay-4k.jpg'); // 4864×3328 — ESRGAN 4x thật (chi tiết, không interpolate)
-    // 3) Moodboard: prompt → 4 ảnh concept (ảnh interior thật)
-    const m1 = mk('input.prompt', 40, 820);
-    m1.data.params.prompt =
-      'interior moodboard, quiet luxury ấm, gỗ óc chó, đá travertine, ánh sáng tự nhiên';
-    // Nguồn prompt cũng done + output ổn định → moodboard không bị re-exec khi Chạy flow
-    m1.data.run = {
-      status: 'done' as const,
-      progress: 1,
-      outputs: { text: { dataType: 'text' as const, value: String(m1.data.params.prompt) } },
-    };
-    const m2 = mk('ai.moodboard', 480, 820);
-    m2.data.params.style = 'Japandi';
-    m2.data.run = {
-      status: 'done' as const,
-      progress: 1,
-      outputs: {
-        image1: { dataType: 'image' as const, value: '/demo/mood1.jpg' },
-        image2: { dataType: 'image' as const, value: '/demo/mood2.jpg' },
-        image3: { dataType: 'image' as const, value: '/demo/mood3.jpg' },
-        image4: { dataType: 'image' as const, value: '/demo/mood4.jpg' },
-      },
-    };
-    const demoNodes = [s1, s2, c1, c2, c3, m1, m2];
-    const demoEdges = [
-      edge(s1, 'image', s2, 'image'),
-      edge(c1, 'image', c2, 'image'),
-      edge(c2, 'image', c3, 'image'),
-      edge(m1, 'text', m2, 'prompt', 'text'),
-    ];
-    // "Niêm" inputHash cho các node đã done — khớp đúng công thức execNode.hashOf —
-    // để "Chạy flow"/nút ▶ BỎ QUA (đã done), không re-exec. Nếu re-exec, provider
-    // server-side sẽ fetch('/demo/…') = URL tương đối → "Failed to parse URL". Niêm hash chặn hẳn.
-    for (const n of demoNodes) {
-      if (n.data.run.status !== 'done') continue;
-      const def = getDefinition(n.data.defType);
-      const inputs: Record<string, unknown> = {};
-      for (const port of def.inputs) {
-        const e = demoEdges.find((ed) => ed.target === n.id && ed.targetHandle === port.id);
-        if (e) {
-          const srcNode = demoNodes.find((x) => x.id === e.source);
-          inputs[port.id] = srcNode?.data.run.outputs?.[e.sourceHandle ?? ''];
-        }
-      }
-      n.data.run.inputHash = JSON.stringify({ inputs, params: n.data.params });
-    }
+    // ── MẶC ĐỊNH: FLOW RỖNG, TRUNG THỰC (QĐ-1 "demo sạch", Hoà chốt 31/08) ──
+    //
+    // Trước 31/08 nhánh này dựng sẵn 7 node đã `done` trỏ vào 9 ảnh `public/demo/*`
+    // (Sketch→Render · Clay→Render→Upscale · Moodboard 4 ảnh), kèm một khối "niêm
+    // inputHash" chỉ tồn tại để nút ▶ KHÔNG chạy lại mấy node đó — chạy lại thì provider
+    // server-side fetch('/demo/…') = URL tương đối và vỡ "Failed to parse URL". Cả khối
+    // ấy là giàn giáo chống đỡ dữ liệu giả, nên nó đi cùng dữ liệu giả.
+    //
+    // Lý do gỡ, Hoà nói thẳng: "ship lúc đầu chưa có dữ liệu thì thống kê lấy gì mà đếm".
+    // Một app vừa cài đã có sẵn kết quả render là app nói dối về trạng thái của chính nó,
+    // và cái dối đó chảy tiếp vào mọi thống kê đọc từ store.
+    //
+    // ⇒ Người dùng mới mở ra thấy canvas RỖNG. Đó là sự thật, không phải thiếu sót.
+    // Khung dựng giữ nguyên (`mk` · `edge` · `svg` · các nhánh `kind` ở trên vẫn chạy) —
+    // TODO(phiếu "bộ minh hoạ trung tính"): cắm bộ mẫu tự vẽ vào đúng chỗ này, KHÔNG
+    // dùng lại ảnh render của dự án khách.
     set({
-      nodes: demoNodes,
-      edges: demoEdges,
-      flowName: 'Demo — Sketch · Clay · Moodboard',
+      nodes: [],
+      edges: [],
+      flowName: 'Flow mới',
     });
   },
 
