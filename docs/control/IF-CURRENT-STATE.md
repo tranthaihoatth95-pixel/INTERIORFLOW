@@ -84,6 +84,37 @@ Hoà (`IF-CANONICAL` §2). Hai phiên cùng tự xưng ⇒ **cả hai DỪNG GHI
 
 ## 🎯 VIỆC KẾ TIẾP — **một việc, không phải danh sách**
 
+🔄 **CẬP NHẬT 31/08.** Mọi dòng bên dưới khối này là bản cũ (29/08 trở về trước), **giữ làm dấu
+vết theo lệ**.
+
+### 31/08 — hai quyết định, một khung, một nợ guard
+
+**QĐ-1 · `demo:sạch`** — gỡ `public/demo` · `test-assets` · `.apk` · **4 route** `app/demo` +
+**3** `thu-*`. Màn trống ⇒ **hướng dẫn**, không để trắng. Thống kê **đếm thật**.
+Lane **06** thi công, lane **07** chấm.
+
+**QĐ-2 · `db:partial`** — ship kèm **nhãn `PARTIAL`** + `db-target-guard` **bắt buộc**.
+`F-18` **mở**, **không chặn ship**.
+
+**Role Guard** — v1 `3eafa184` + v2 `09b8679f`, lane `cl:07` chấm **PASS-phạm-vi-phiếu**.
+Nợ **`GUARD-V3`**:
+- chuỗi `&&` / `;` thuần đọc
+- redirect lành
+- whitelist đọc thành **sổ JSON**
+- hạng `EXTERNAL`
+- lease **renew** + **TTL theo cỡ việc**
+- cửa **ngoài-repo** đi TRƯỚC chốt lane-00
+- khai script TTS trích `--out`
+- **NGHI ÁN** `phieu-ca --ghi-ban` phá tệp bàn + `soi:ban` **mù** — trọng tài 07 đo 31/08,
+  **chưa xác minh độc lập**
+
+**KHUNG BA TẦNG chốt** → `docs/control/IF-KHUNG-BA-TANG.md`.
+Phán quyết mắt **2/10** ⇒ **vẽ ĐÓNG BĂNG** chờ khung thi công; **3 lô sửa đo được vẫn chạy**.
+
+**Việc kế tiếp:** phát phiếu lane theo khung, qua cầu `moc`.
+
+---
+
 🔄 **CẬP NHẬT 29/08 — HEAD `71667fa`.** Mọi dòng bên dưới mốc này là bản 28/08, giữ làm dấu vết.
 
 ### Hai chốt chặn ship của 28/08 ĐÃ ĐÓNG CẢ HAI

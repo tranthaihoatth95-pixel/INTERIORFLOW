@@ -302,6 +302,25 @@ Thị giác đích: gọn · nổi · có chiều sâu không gian · tĩnh. **K
 **không** phải dải icon CAD, **không** phải bệ phóng.
 Điều hướng hội tụ về: **Home · Projects · Design DNA · Sources · Library**. Cài đặt/Hồ sơ ⇒ vùng avatar.
 
+> ### 🔴 THAY BỞI — KHUNG BA TẦNG, Hoà chốt 31/08/2026
+> Chữ ở trên **giữ nguyên làm dấu vết**, nhưng bốn điểm sau **đã bị thay**. Bản đầy đủ:
+> `docs/control/IF-KHUNG-BA-TANG.md`.
+>
+> **①** Danh sách hội tụ *"Home · Projects · Design DNA · Sources · Library"* → **THAY BỞI**
+> tầng 0 **bốn không gian** (Studio · Dự án · Kho tri thức · [Nghề — chừa ghế]).
+> **Design DNA** về bối cảnh dự án + kệ kho; **Sources** về Tệp dự án + kệ Tham khảo.
+>
+> **②** **VIÊN 2 · CHẶNG toàn cục trên rail** (chốt 23/08) → **BÃI BỎ 31/08**, thay bằng
+> **dải 6 band trong header dự án**. Chuỗi `Ý tưởng → CAD → Render → Present → Movie` **hạ
+> xuống** thành pipeline sáng tác, không còn là điều hướng.
+>
+> **③** **Cảm hứng đứng riêng trên rail** → **nhập kệ Tham khảo** của Kho tri thức; luồng khám
+> phá đi cùng **Nghề** (§4e). Hoà chốt **có ý thức** 31/08.
+>
+> **④** **Cài đặt — GIỮ** chốt 23/08: không lên rail, nằm ở menu avatar.
+>
+> ⚠️ Mock rail và `muc-dieu-huong.ts` / test của nó **CHƯA sửa theo** — việc thi công có phiếu riêng.
+
 ## 11 · VITALS `[CHỐT]`
 Trí tuệ **cạnh việc đang làm**, không phải chatbot ở chỗ khác. Kế thừa: dự án · workspace · chặng ·
 vùng chọn · đối tượng · nguồn · hành động hiện tại. **Người dùng không phải kể lại ngữ cảnh.**
