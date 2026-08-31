@@ -8,6 +8,11 @@ function state(events, now = Date.now()) {
   for (const event of events) {
     if (event.type === 'LEASE_ISSUED') leases.set(event.lease_id, { ...event, status: 'ACTIVE' });
     if (event.type === 'LEASE_REVOKED' && leases.has(event.lease_id)) leases.get(event.lease_id).status = 'REVOKED';
+    // RENEW/AMEND chỉ ĐÈ LÊN trường của lease, không đụng `status`: một lease đã thu hồi mà
+    // được renew vẫn là REVOKED. Sổ là append-only, trạng thái MỚI NHẤT thắng — nhờ vậy phiên
+    // đang chạy hưởng ngay, vì env chỉ giữ `IF_LEASE_ID` chứ không giữ nội dung lease.
+    if (event.type === 'LEASE_RENEWED' && leases.has(event.lease_id)) leases.get(event.lease_id).expires_at = event.expires_at;
+    if (event.type === 'LEASE_AMENDED' && leases.has(event.lease_id)) leases.get(event.lease_id).files = event.files;
   }
   for (const lease of leases.values()) if (lease.status === 'ACTIVE' && lease.expires_at <= now) lease.status = 'EXPIRED';
   return [...leases.values()];
@@ -19,6 +24,25 @@ function issue({ events, system, lane, session_id, task_id, files, expires_at, i
   if (system !== 'cl' || lane !== '06' || !session_id || !task_id || !files.length || expires_at <= now) throw new Error('lease fields không hợp lệ');
   return { v: 1, type: 'LEASE_ISSUED', lease_id: `L-${crypto.randomUUID()}`, system, lane, session_id, task_id, files, expires_at, issuer, generated_at: new Date(now).toISOString() };
 }
+// NỐI HẠN — không đặt lại từ bây giờ. Một lượt việc kéo dài hơn dự tính thì phần đã dùng vẫn
+// phải nằm trong sổ: đặt lại từ `now` là lặng lẽ tặng thêm phần thời gian đã tiêu.
+function renew({ events, lease_id, minutes, issuer, now = Date.now() }) {
+  const lease = findLease(events, lease_id, now);
+  if (!lease || lease.status !== 'ACTIVE') throw new Error('lease không sống hoặc không tồn tại');
+  if (!Number.isFinite(minutes) || minutes <= 0) throw new Error('renew cần --minutes là số > 0');
+  return { v: 1, type: 'LEASE_RENEWED', lease_id, expires_at: lease.expires_at + minutes * 60_000, issuer, generated_at: new Date(now).toISOString() };
+}
+
+// THAY danh sách tệp. Trước 31/08 không có lệnh này, và cái giá đo được: ca đột biến của
+// `phieu-ca` phải TẠM TRÚ nhờ trong `cau-mo-hinh.test.ts` vì lease 15 tệp không sửa được
+// giữa phiên — tức cấu trúc sổ đẩy mã đi sai chỗ, rồi để lại một khoản nợ dọn dẹp.
+function amend({ events, lease_id, files, issuer, now = Date.now() }) {
+  const lease = findLease(events, lease_id, now);
+  if (!lease || lease.status !== 'ACTIVE') throw new Error('lease không sống hoặc không tồn tại');
+  if (!Array.isArray(files) || !files.length || files.some((v) => typeof v !== 'string' || !v.trim())) throw new Error('amend cần --files là mảng đường dẫn không rỗng');
+  return { v: 1, type: 'LEASE_AMENDED', lease_id, files, issuer, generated_at: new Date(now).toISOString() };
+}
+
 function append(file, event) { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.appendFileSync(file, `${JSON.stringify(event)}\n`, { mode: 0o600 }); }
 
 // AI CẤP LEASE. Ba lối, theo thứ tự ưu tiên:
@@ -44,4 +68,4 @@ function resolveIssuer({ args = [], env = {}, handoffs = [] }) {
   return `handoff:${receipt.handoffId}/cx:00/${receipt.session_id}`;
 }
 
-module.exports = { activeWriter, append, findLease, issue, readEvents, resolveIssuer, state };
+module.exports = { activeWriter, amend, append, findLease, issue, readEvents, renew, resolveIssuer, state };

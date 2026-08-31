@@ -97,18 +97,34 @@ Lane **06** thi công, lane **07** chấm.
 `F-18` **mở**, **không chặn ship**.
 
 **Role Guard** — v1 `3eafa184` + v2 `09b8679f`, lane `cl:07` chấm **PASS-phạm-vi-phiếu**.
-Nợ **`GUARD-V3`**:
-- chuỗi `&&` / `;` thuần đọc
-- redirect lành
-- whitelist đọc thành **sổ JSON**
-- hạng `EXTERNAL`
-- lease **renew** + **TTL theo cỡ việc**
-- cửa **ngoài-repo** đi TRƯỚC chốt lane-00
-- khai script TTS trích `--out`
-- **env-prefix**: guard phân loại lệnh dạng `VAR=x cmd` theo `cmd`, để inline `BOS_SESSION_ID`
-  cho governance
-- **NGHI ÁN** `phieu-ca --ghi-ban` phá tệp bàn + `soi:ban` **mù** — trọng tài 07 đo 31/08,
-  **chưa xác minh độc lập**
+Nợ **`GUARD-V3`** — *nguyên văn gốc giữ nguyên, chỉ đeo thêm trạng thái; **`✅` = đã vá 31/08
+trong lượt `HO-guard-v3`, CHƯA có trọng tài chấm** — lane 06 không tự tuyên PASS cho chính mình*:
+- ✅ chuỗi `&&` / `;` thuần đọc — mục 1
+- ✅ redirect lành — mục 2 (`2>&1` · `2>/dev/null` · `>/dev/null`; ghi ra tệp thật vẫn chặn)
+- ✅ whitelist đọc thành **sổ JSON** — mục 3, `scripts/guard-lenh-doc.json`, fail-closed
+- ✅ hạng `EXTERNAL` — mục 4 (tách hạng + thông điệp; **không** mở đường cho lệnh network nào)
+- 🟡 lease **renew** + **TTL theo cỡ việc** — mục 5 vá **NỬA**: có `renew` · `amend` ·
+  `issue --thay`. **`TTL theo cỡ việc` VẪN MỞ** — chưa dòng mã nào suy hạn từ cỡ việc.
+- ✅ cửa **ngoài-repo** đi TRƯỚC chốt lane-00 — mục 6
+- ✅ khai script TTS trích `--out` — mục 8 (đích vẫn qua đúng cửa ngoài-repo, không miễn kiểm)
+- ✅ **env-prefix**: guard phân loại lệnh dạng `VAR=x cmd` theo `cmd`, để inline `BOS_SESSION_ID`
+  cho governance — mục 7
+- ✅ **NGHI ÁN** `phieu-ca --ghi-ban` phá tệp bàn + `soi:ban` **mù** — trọng tài 07 đo 31/08,
+  ~~**chưa xác minh độc lập**~~ → đã xác minh và vá ở `d9d92364`; ca đột biến nay đứng riêng ở
+  `scripts/phieu-ca.test.ts` (32 ca, dời khỏi chỗ tạm trú trong `cau-mo-hinh.test.ts`)
+- ✅ **`npm run` truyền tiếp `--ghi-ban` lọt VERIFY** — `npm run soi:ban -- --ghi-ban` chạy được
+  **không cần lease**, tức đúng cái lệnh vừa phá 9 tệp bàn hôm 30/08 đi lọt qua cổng. Phát hiện
+  bởi **writer `9e`**, **không khai thác**. Vá ở **mục 9** `HO-guard-v3`.
+- ✅ **symlink phía guard** — mục 10: `ngoaiRepo()` giải `realpath` trước khi so, nên symlink
+  trong nhà công cụ trỏ ngược về repo hết được tính là "ngoài repo".
+
+**NỢ CÒN MỞ sau lượt này** (tên theo chung thẩm, không đổi tên):
+- **`symlink-phieu-ca`** — phần symlink của `phieu-ca.mjs`; NGOÀI lease `HO-guard-v3`, chưa đụng
+- **`khoá-mồ-côi`** — khoá `.khoa` còn sót khi tiến trình chết giữa chừng
+- **`từ-chối-câm`** — đường từ chối không nói ra lý do ở một số nhánh
+- **`commit-d9d92364-không-tự-chứa`** — chờ lô `moc.mjs` + `buu-ta-cau*` của lane `cx`
+- **`nghiệm-thu-vàng`** — chờ đánh thức 4 phiếu `47c67b5b5474` · `3db07c32bcd1` ·
+  `8016b4d76198` · `53aae5e63150`
 
 **KHUNG BA TẦNG chốt** → `docs/control/IF-KHUNG-BA-TANG.md`.
 Phán quyết mắt **2/10** ⇒ **vẽ ĐÓNG BĂNG** chờ khung thi công; **3 lô sửa đo được vẫn chạy**.

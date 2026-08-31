@@ -1,0 +1,64 @@
+{
+  "v": 1,
+  "ghi-chu": [
+    "SỔ LỆNH ĐỌC của Claude Role Guard (HO-guard-v3 mục 3 · 8).",
+    "Whitelist đọc là DỮ LIỆU, không phải mã: thêm một lệnh đọc mới thì sửa tệp này, KHÔNG sửa",
+    "scripts/claude-role-guard-core.cjs. Lý do: mỗi lần sửa lõi là một lần phải chứng minh lại",
+    "cả cổng, nên whitelist nằm trong lõi thì thực tế không ai thêm — nó đóng băng ở mức của",
+    "ngày viết ra nó, rồi chặn oan mọi lệnh đọc mới (ca thật: `git worktree list` sáng 31/08).",
+    "",
+    "FAIL-CLOSED: tệp này thiếu, hỏng, hay sai hình dạng ⇒ guard trả rổ RỖNG và rơi về",
+    "whitelist cứng trong lõi. Sổ hỏng KHÔNG BAO GIỜ được mở toang, nếu không nó thành cần gạt",
+    "tắt cả cổng — xoá một tệp JSON dễ hơn nhiều so với sửa lõi có test canh.",
+    "",
+    "doc[]           — `argv-dau` khớp TIỀN TỐ argv; `cam-co` là các mẫu regex, khớp bất kỳ đối",
+    "                  số còn lại nào thì mục KHÔNG áp dụng (rơi về đường phân loại thường).",
+    "script-an-toan[]— lệnh có THAM SỐ GHI: `co-out` nói đích ghi nằm sau cờ nào. Sổ chỉ nói",
+    "                  ĐÍCH Ở ĐÂU; đích đó vẫn phải qua đúng cửa ngoài-repo/allowlist như mọi",
+    "                  mutation khác. Đây không phải danh sách miễn kiểm."
+  ],
+  "doc": [
+    {
+      "vi-sao": "liệt kê nhánh — CLAUDE.md bắt kiểm trước khi mở sprint",
+      "argv-dau": ["git", "branch"],
+      "cam-co": ["^-[dDmMcC]$", "^--(delete|move|copy|force|edit-description|set-upstream-to|unset-upstream)"]
+    },
+    {
+      "vi-sao": "CLAUDE.md: `git worktree list` là bước bắt buộc trước sprint mới",
+      "argv-dau": ["git", "worktree", "list"]
+    },
+    {
+      "vi-sao": "đếm commit giữa hai mốc — dùng để đo độ mốc của đồ thị .ua",
+      "argv-dau": ["git", "rev-list"],
+      "cam-co": ["^--output"]
+    },
+    {
+      "vi-sao": "soi stash còn sót trước khi dọn worktree",
+      "argv-dau": ["git", "stash", "list"]
+    },
+    {
+      "vi-sao": "kiểm remote trước khi bàn về push — `add`/`remove`/`rename` không khớp tiền tố này",
+      "argv-dau": ["git", "remote", "-v"]
+    },
+    {
+      "vi-sao": "tra cổng dev đang sống (luật: KHÔNG tự chạy npm run dev mới, dùng lại server sẵn có)",
+      "argv-dau": ["lsof"]
+    },
+    {
+      "vi-sao": "tra tiến trình còn chạy trong worktree trước khi dọn",
+      "argv-dau": ["ps"]
+    },
+    {
+      "vi-sao": "đọc nhiều biến môi trường một lượt khi tự soi danh tính lane",
+      "argv-dau": ["printenv"]
+    }
+  ],
+  "script-an-toan": [
+    {
+      "vi-sao": "máy TTS cục bộ (skill local-tts) — ghi tệp âm thanh vào scratchpad, bị chặn oan sáng 31/08",
+      "bin": ["python", "python3"],
+      "mau": "local-tts/.*/scripts/generate\\.py$",
+      "co-out": "--out"
+    }
+  ]
+}

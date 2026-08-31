@@ -1,20 +1,41 @@
 'use strict';
+const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-// Toán tử shell: thứ nối/chuyển hướng lệnh. Nằm NGOÀI quote thì là cấu trúc, nằm TRONG quote
-// thì chỉ là dữ liệu — `rg "a|b" x` không hề mở ống, nó tìm chuỗi có gạch đứng.
-const OPERATORS = new Set([';', '&', '|', '<', '>', '\n', '\r']);
+// Toán tử shell NỐI LỆNH: thứ ngăn một dòng thành nhiều khúc. Nằm NGOÀI quote thì là cấu trúc,
+// nằm TRONG quote thì chỉ là dữ liệu — `rg "a|b" x` không hề mở ống, nó tìm chuỗi có gạch đứng.
+// ⚠️ `<` và `>` KHÔNG còn nằm ở đây (v3 mục 2). Chúng không nối lệnh, chúng CHUYỂN HƯỚNG; mà
+// muốn tha `2>&1` thì phải đọc được cả mô tả fd lẫn đích, và gộp chúng vào rọ toán tử chung
+// làm mất đúng hai mẩu đó — `npx tsc --noEmit 2>&1` từng bị xé thành hai TỪ rời `2` và `1`.
+const OPERATORS = new Set([';', '&', '|', '\n', '\r']);
 
-// Quét một dòng lệnh thành TỪ + TOÁN TỬ, biết quote. Trả null khi gặp thứ không đọc nổi:
-// quote hở, thay-lệnh `$(…)` / backtick (kể cả trong nháy kép, nơi shell vẫn chạy chúng).
+// Khúc nối hợp lệ: `&&` · `||` · `|` · `;` · xuống dòng. `&` ĐƠN là chạy nền — nó tách tiến
+// trình ra khỏi tầm nhìn của cổng, nên không bao giờ được tính là nối lệnh bình thường.
+const NOI_OP = (op) => op === '&&' || op === '||' || op === '|' || /^[;\n\r]+$/.test(op);
+
+// Chuyển hướng LÀNH: `>&N` nhân bản fd, `>/dev/null` đổ đi. Cả hai không sinh ra tệp nào, nên
+// bắt chúng xin lease là bắt người kiểm trả giá cho một thói quen gõ lệnh. Mọi dạng còn lại —
+// kể cả `<` đọc vào — giữ nguyên hạng cũ là mutation, và mutation không khai tệp thì nó đóng.
+const CHUYEN_HUONG_LANH = (r) => (r.op === '>' || r.op === '>>') && (r.sao !== null || r.dich === '/dev/null');
+
+// Quét một dòng lệnh thành TỪ + TOÁN TỬ + CHUYỂN HƯỚNG, biết quote. Trả null khi gặp thứ không
+// đọc nổi: quote hở, thay-lệnh `$(…)` / backtick (kể cả trong nháy kép, nơi shell vẫn chạy
+// chúng), hoặc chuyển hướng cụt đuôi — không đọc nổi thì đóng, không đoán.
 function scan(text) {
   const source = String(text == null ? '' : text);
   const words = [];
   const ops = [];
   const segments = [[]];
+  const redirects = [];
   let current = null;
-  const flush = () => { if (current !== null) { words.push(current); segments[segments.length - 1].push(current); current = null; } };
+  let cho = null; // chuyển hướng đang chờ đích: TỪ kế tiếp thuộc về NÓ, không thuộc argv
+  const flush = () => {
+    if (current === null) return;
+    if (cho) { cho.dich = current; cho = null; }
+    else { words.push(current); segments[segments.length - 1].push(current); }
+    current = null;
+  };
   let i = 0;
   while (i < source.length) {
     const ch = source[i];
@@ -36,12 +57,37 @@ function scan(text) {
     }
     if (ch === '`') return null;
     if (ch === '$' && source[i + 1] === '(') return null;
+    if (ch === '>' || ch === '<') {
+      // Chữ số DÍNH LIỀN ngay trước dấu là mô tả fd (`2>`), không phải một TỪ của lệnh. Có
+      // khoảng trắng thì nó đã bị flush thành TỪ rồi — `head 2 > out` khác hẳn `head 2>out`.
+      let fd = null;
+      if (current !== null && /^\d+$/.test(current)) { fd = current; current = null; }
+      flush();
+      if (cho) return null; // chuyển hướng chồng chuyển hướng, cái trước chưa có đích
+      let op = ch;
+      i += 1;
+      if (source[i] === ch) { op += ch; i += 1; }
+      let sao = null;
+      if (source[i] === '&') {
+        i += 1;
+        let so = '';
+        while (i < source.length && /\d/.test(source[i])) { so += source[i]; i += 1; }
+        if (source[i] === '-') { so += '-'; i += 1; }
+        if (!so) return null; // `>&tệp` — dạng gộp cả hai luồng vào một TỆP, không đọc nổi ở đây
+        sao = so;
+      }
+      const r = { op, fd, sao, dich: null, khuc: segments.length - 1 };
+      redirects.push(r);
+      if (sao === null) cho = r;
+      continue;
+    }
     if (OPERATORS.has(ch)) {
       flush();
+      if (cho) return null; // `cmd > ; x` — chuyển hướng không có đích
       let op = '';
       while (i < source.length && OPERATORS.has(source[i])) { op += source[i]; i += 1; }
       ops.push(op);
-      if (op === '|') segments.push([]);
+      if (NOI_OP(op)) segments.push([]);
       continue;
     }
     if (/\s/.test(ch)) { flush(); i += 1; continue; }
@@ -49,13 +95,14 @@ function scan(text) {
     i += 1;
   }
   flush();
-  return { words, ops, segments };
+  if (cho) return null; // `cmd >` — cụt đuôi
+  return { words, ops, segments, redirects };
 }
 
-// argv của MỘT lệnh đơn. Có toán tử ngoài quote ⇒ không phải argv đơn ⇒ null.
+// argv của MỘT lệnh đơn. Có toán tử hoặc chuyển hướng ngoài quote ⇒ không phải argv đơn ⇒ null.
 function argvSafe(command) {
   const scanned = scan(command);
-  if (!scanned || scanned.ops.length || !scanned.words.length) return null;
+  if (!scanned || scanned.ops.length || scanned.redirects.length || !scanned.words.length) return null;
   return scanned.words;
 }
 
@@ -75,14 +122,80 @@ const dungTep = (args) => args.filter((v) => v !== '--' && !v.startsWith('-'));
 // đòi mục tiêu nằm HẲN BÊN TRONG một gốc allowlist, không được là chính cái gốc đó.
 const coDeQuy = (args) => args.some((v) => v === '--recursive' || (/^-[A-Za-z]+$/.test(v) && /[rR]/.test(v.slice(1))));
 
+// ── SỔ LỆNH ĐỌC (v3 mục 3) ────────────────────────────────────────────────────────────────
+// Whitelist đọc là DỮ LIỆU, không phải mã. Nằm trong lõi thì nó đóng băng ở mức của ngày viết
+// ra nó — vì mỗi lần sửa lõi là một lần phải chứng minh lại cả cổng — rồi chặn oan mọi lệnh
+// đọc mới (ca thật: `git worktree list`, đúng thứ CLAUDE.md bắt chạy trước mỗi sprint).
+// FAIL-CLOSED: sổ thiếu/hỏng ⇒ rổ RỖNG, rơi về whitelist cứng ở trên. Sổ hỏng mà mở toang thì
+// tệp JSON này thành cần gạt tắt cổng, và xoá một tệp dữ liệu dễ hơn sửa lõi có test canh.
+const SO_MAC_DINH = path.join(__dirname, 'guard-lenh-doc.json');
+const SO_CACHE = new Map();
+function napSo(file) {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const doc = (Array.isArray(parsed.doc) ? parsed.doc : []).filter((e) => e && Array.isArray(e['argv-dau']) && e['argv-dau'].length && e['argv-dau'].every((v) => typeof v === 'string'));
+    const script = (Array.isArray(parsed['script-an-toan']) ? parsed['script-an-toan'] : []).filter((e) => e && Array.isArray(e.bin) && e.bin.length && typeof e.mau === 'string' && typeof e['co-out'] === 'string');
+    return { doc, script };
+  } catch { return { doc: [], script: [] }; }
+}
+function so() {
+  const file = process.env.IF_GUARD_LENH_DOC || SO_MAC_DINH;
+  if (!SO_CACHE.has(file)) SO_CACHE.set(file, napSo(file));
+  return SO_CACHE.get(file);
+}
+// Khớp TIỀN TỐ argv, rồi loại theo `cam-co`: cùng một `bin` vẫn có biến thể GHI (`git branch`
+// đọc, `git branch -D` xoá nhánh). Mẫu regex hỏng ⇒ mục không áp dụng, không đoán bừa.
+function khopSo(argv, entry) {
+  const dau = entry['argv-dau'];
+  if (argv.length < dau.length) return false;
+  for (let i = 0; i < dau.length; i += 1) if (argv[i] !== dau[i]) return false;
+  const con = argv.slice(dau.length);
+  for (const mau of Array.isArray(entry['cam-co']) ? entry['cam-co'] : []) {
+    let re;
+    try { re = new RegExp(mau); } catch { return false; }
+    if (con.some((v) => re.test(v))) return false;
+  }
+  return true;
+}
+// Script an toàn CÓ THAM SỐ GHI (v3 mục 8): sổ chỉ nói ĐÍCH GHI NẰM Ở ĐÂU. Đích đó vẫn đi qua
+// đúng cửa ngoài-repo/allowlist như mọi mutation khác — đây không phải danh sách miễn kiểm.
+function dichGhiTuSo(argv) {
+  for (const entry of so().script) {
+    if (!entry.bin.includes(argv[0])) continue;
+    let re;
+    try { re = new RegExp(entry.mau); } catch { continue; }
+    if (!argv.slice(1).some((v) => re.test(v))) continue;
+    const i = argv.indexOf(entry['co-out']);
+    if (i < 0 || i + 1 >= argv.length) continue;
+    const dich = argv[i + 1];
+    if (!dich || dich.startsWith('-')) continue;
+    return dich;
+  }
+  return null;
+}
+
+// Tiền tố gán biến môi trường (v3 mục 7): `VAR=x cmd …` phải phân loại theo `cmd`, không theo
+// `VAR=x`. Thiếu mục này thì dạng inline `BOS_SESSION_ID=… node scripts/moc.mjs handoff …` —
+// lệnh quản trị đúng luật — bị chặn chỉ vì cách truyền biến môi trường.
+const GAN_BIEN = /^[A-Za-z_][A-Za-z0-9_]*=/;
+function bocEnv(argv) { let i = 0; while (i < argv.length && GAN_BIEN.test(argv[i])) i += 1; return argv.slice(i); }
+
+// Lệnh đưa dữ liệu RA KHỎI MÁY (v3 mục 4). Chúng vốn đã bị chặn vì không nằm trong whitelist
+// nào; nhưng chặn chung một câu với "ghi sai tệp" thì người bị chặn không đọc được mình vừa
+// chạm luật nào. Mục này TÁCH HẠNG và TÁCH THÔNG ĐIỆP — nó KHÔNG mở đường cho lệnh nào qua.
+const EXTERNAL_BINS = new Set(['curl', 'wget', 'nc', 'ncat', 'netcat', 'telnet', 'ssh', 'scp', 'sftp', 'rsync', 'ftp']);
+
 const READ = () => ({ kind: 'read', files: [] });
 const VERIFY = () => ({ kind: 'verify', files: [] });
 const MUTATION = (reason) => ({ kind: 'mutation', files: [], reason });
+const EXTERNAL = (bin) => ({ kind: 'external', files: [], reason: `EXTERNAL — dữ liệu có thể rời máy (${bin})` });
 
 // Phân loại MỘT lệnh đơn đã tách argv.
-function classifyArgv(argv) {
+function classifyArgv(argvGoc) {
+  const argv = bocEnv(argvGoc);
   const [bin, sub, ...rest] = argv;
   if (!bin) return MUTATION('lệnh rỗng');
+  if (EXTERNAL_BINS.has(bin)) return EXTERNAL(bin);
 
   if (bin === 'ls' && !argv.some((v) => /^--(?:hide-control-chars|quoting-style=)/.test(v))) return READ();
   if (READ_BINS.has(bin)) return READ();
@@ -92,10 +205,17 @@ function classifyArgv(argv) {
   if (bin === 'git' && GIT_READ.has(sub) && !rest.some((v) => GIT_UNSAFE_FLAGS.some((x) => v === x || v.startsWith(`${x}=`)))) return READ();
   if (bin === 'node' && sub === '--check' && rest.length === 1) return READ();
 
+  // Sổ lệnh đọc — phần MỞ RỘNG ĐƯỢC của whitelist trên. Đứng sau whitelist cứng để sổ hỏng
+  // không bao giờ làm mất những lệnh đọc nền tảng.
+  if (so().doc.some((entry) => khopSo(argv, entry))) return READ();
+
   // ── LỚP VERIFY: chạy được ở MỌI lane, không cần lease. Đây là thứ chứng minh một
   // thay đổi đúng; bắt nó xin lease là bắt người kiểm phải mượn quyền của người ghi.
   if (bin === 'npm' && sub === 'test' && rest.length === 0) return VERIFY();
-  if (bin === 'npm' && sub === 'run' && /^(?:soi:|check:|tsc$|test$|lint$)/.test(rest[0] || '')) return VERIFY();
+  // `npm run <máy> -- <cờ>` truyền tiếp nguyên xi xuống máy soi ⇒ phải canh cờ GHI y như khi
+  // gọi thẳng. Lỗ do writer `9e` phát hiện (không khai thác): `npm run soi:ban -- --ghi-ban`
+  // lọt hạng VERIFY — tức đúng cái lệnh vừa phá 9 tệp bàn hôm 30/08 chạy được không cần lease.
+  if (bin === 'npm' && sub === 'run' && /^(?:soi:|check:|tsc$|test$|lint$)/.test(rest[0] || '') && !rest.slice(1).some((v) => SOI_WRITE_FLAGS.test(v))) return VERIFY();
   if (bin === 'npx' && sub === 'tsc' && rest.includes('--noEmit')) return VERIFY();
   if (bin === 'node_modules/.bin/tsc' && argv.includes('--noEmit')) return VERIFY();
   if (bin === 'node_modules/.bin/sucrase-node' && rest.length === 0 && sub && /\.test\.ts$/.test(sub)) return VERIFY();
@@ -133,21 +253,37 @@ function classifyArgv(argv) {
     return { kind: 'commit', files: [] };
   }
 
+  // Script an toàn có tham số ghi — đích lấy TỪ CỜ đã khai trong sổ, rồi đi tiếp qua đúng
+  // đường kiểm ngoài-repo/allowlist. Không khớp sổ, hoặc khớp mà thiếu cờ, thì rơi xuống dưới.
+  const dichGhi = dichGhiTuSo(argv);
+  if (dichGhi) return { kind: 'mutation', files: [dichGhi] };
+
   return MUTATION('lệnh không nằm trong danh sách đọc/verify');
 }
 
 function classifyBash(command) {
   const scanned = scan(command);
   if (!scanned) return MUTATION('shell composition/redirect/subshell bị chặn');
-  if (scanned.ops.some((op) => op !== '|')) return MUTATION('shell composition/redirect/subshell bị chặn');
+  // v3 mục 1: chuỗi nối bằng `&&`/`;`/xuống-dòng đi CÙNG một logic đã có sẵn cho ống `|` —
+  // mọi khúc đều đọc thì cả chuỗi là đọc. Chỉ `&` đơn (chạy nền) là vẫn đóng thẳng.
+  if (scanned.ops.some((op) => !NOI_OP(op))) return MUTATION('shell composition/subshell bị chặn');
+  // v3 mục 2: chuyển hướng lành đi qua; ghi ra TỆP THẬT thì cả lệnh là mutation, và nó không
+  // khai được tệp nào ra cổng nên rơi đúng vào nhánh "chưa khai tệp" — tức đóng.
+  if (scanned.redirects.some((r) => !CHUYEN_HUONG_LANH(r))) return MUTATION('chuyển hướng ghi ra tệp bị chặn');
   const segments = scanned.segments;
-  if (!segments.length || segments.some((argv) => argv.length === 0)) return MUTATION('ống có khúc rỗng');
+  if (!segments.length || segments.some((argv) => argv.length === 0)) return MUTATION('chuỗi lệnh có khúc rỗng');
   const parts = segments.map(classifyArgv);
+  // Một khúc rời máy thì cả chuỗi mang hạng EXTERNAL: `git status && curl …` không được đọc
+  // thành "chỉ là một lệnh ghi", vì thứ đang xảy ra là dữ liệu đi ra ngoài.
+  const ngoai = parts.find((part) => part.kind === 'external');
+  if (ngoai) return ngoai;
   if (parts.every((part) => part.kind === 'read')) return READ();
   if (parts.every((part) => part.kind === 'read' || part.kind === 'verify')) return VERIFY();
-  // Ống mà có khúc ghi thì cả ống là ghi, và KHÔNG thừa kế danh sách tệp của khúc nào —
-  // `cat x | tee y` phải rơi vào nhánh "chưa khai tệp", không được mượn tệp của `cat`.
-  if (segments.length > 1) return MUTATION('ống có khúc mutation');
+  // Chuỗi có khúc ghi thì cả chuỗi là ghi, và KHÔNG thừa kế danh sách tệp của khúc nào —
+  // `cat x | tee y` phải rơi vào nhánh "chưa khai tệp", không được mượn tệp của `cat`; cũng
+  // vậy với `git log && rm <tệp trong lease>`, nếu không khúc đọc đứng trước sẽ cho khúc xoá
+  // mượn quyền của mình.
+  if (segments.length > 1) return MUTATION('chuỗi lệnh có khúc mutation');
   return parts[0];
 }
 
@@ -166,9 +302,29 @@ function isAllowed(candidate, allowlist, cwd) {
 // thợ xin phép để mở hộp đồ nghề. Nguồn: PROPOSAL HO-guard-v2 §4, qua cl:07 30/08, Hoà chưa
 // phủ quyết. ⚠️ `.claude/` TRONG repo KHÔNG dính luật này — nó resolve dưới cwd, không dưới HOME.
 const TIEN_TO_TAM = '/private/tmp/claude-';
+
+// Đường THẬT của một đường dẫn: giải hết symlink. Tệp chưa tồn tại thì lùi dần lên tổ tiên gần
+// nhất còn tồn tại rồi ghép lại — thứ cần giải là các THƯ MỤC trên đường đi, không phải cái lá.
+// v3 mục 10: thiếu bước này, một symlink đặt trong nhà công cụ mà trỏ ngược về repo sẽ được
+// tính là "ngoài repo" chỉ vì chuỗi đường dẫn trông giống — tức một cửa hậu ghi thẳng vào mã
+// sản xuất không cần lease. ⚠️ Phần symlink của `phieu-ca.mjs` là một nợ KHÁC, chưa đụng.
+function duongThat(abs) {
+  let con = abs;
+  const duoi = [];
+  for (;;) {
+    try { return path.join(fs.realpathSync(con), ...duoi.slice().reverse()); }
+    catch {
+      const cha = path.dirname(con);
+      if (cha === con) return abs;
+      duoi.push(path.basename(con));
+      con = cha;
+    }
+  }
+}
+
 function ngoaiRepo(file, env, cwd) {
-  const abs = path.resolve(cwd, file);
-  const nha = path.join(env.HOME || os.homedir(), '.claude');
+  const abs = duongThat(path.resolve(cwd, file));
+  const nha = duongThat(path.join(env.HOME || os.homedir(), '.claude'));
   if (abs === nha || abs.startsWith(`${nha}${path.sep}`)) return { ngoai: true, goc: abs === nha };
   if (abs.startsWith(TIEN_TO_TAM)) return { ngoai: true, goc: abs === TIEN_TO_TAM };
   return { ngoai: false, goc: false };
@@ -204,6 +360,9 @@ function evaluate({ env, hook, lease = null, now = Date.now(), cwd = process.cwd
   const operation = inspect(hook.tool_name, hook.tool_input || {});
   if (operation.kind === 'read') return { allow: true, mutation: false, operation };
   if (operation.kind === 'verify') return { allow: true, mutation: false, verify: true, operation };
+  // Hạng EXTERNAL đứng TRƯỚC mọi chốt danh tính: không lane nào, không lease nào mở được nó.
+  // Đường ra ngoài máy là quyết định của người, đi qua `scripts/chon-tuyen.mjs`, không đi qua đây.
+  if (operation.kind === 'external') return { allow: false, reason: operation.reason, operation };
   const identity = parseAddress(env.IF_SYSTEM, env.IF_LANE);
   if (!identity) return { allow: false, reason: 'IDENTITY: mutation cần IF_SYSTEM=cl và IF_LANE=NN', operation };
   const taskId = env.IF_TASK_ID || '';
@@ -222,8 +381,10 @@ function evaluate({ env, hook, lease = null, now = Date.now(), cwd = process.cwd
     }
     return { allow: true, mutation: true, governance: true, stamp, operation };
   }
-  if (identity.lane === '00') return { allow: false, reason: 'ROLE: cl:00 là read/route-only', stamp, operation };
-
+  // ⚠️ THỨ TỰ CÓ Ý NGHĨA (v3 mục 6). Cửa NGOÀI-REPO đi TRƯỚC chốt lane-00. Bản v2 đặt chốt
+  // `cl:00 read/route-only` lên trước, và hệ quả không ai định: phiên ĐIỀU PHỐI không ghi nổi
+  // memory hay scratchpad của chính nó — hai thứ nằm trong nhà công cụ, chẳng dính gì tới sản
+  // phẩm. Guard này canh REPO; chốt lane-00 vẫn nguyên vẹn với mọi đường TRONG repo bên dưới.
   // Commit là thao tác trên CHỈ MỤC đã khai tường minh trước đó ⇒ nó không mang tệp.
   if (operation.kind !== 'commit') {
     if (operation.files.length === 0) return { allow: false, reason: `FILES: ${hook.tool_name} mutation phải khai tệp tường minh`, stamp, operation };
@@ -237,6 +398,8 @@ function evaluate({ env, hook, lease = null, now = Date.now(), cwd = process.cwd
       return { allow: true, mutation: true, ngoaiRepo: true, stamp, operation };
     }
   }
+
+  if (identity.lane === '00') return { allow: false, reason: 'ROLE: cl:00 là read/route-only', stamp, operation };
 
   let allowlist;
   if (identity.lane === '06') {
@@ -271,4 +434,4 @@ function evaluate({ env, hook, lease = null, now = Date.now(), cwd = process.cwd
   return { allow: true, mutation: true, stamp, operation };
 }
 
-module.exports = { argvSafe, classifyArgv, classifyBash, evaluate, filesFromInput, inspect, isAllowed, ngoaiRepo, parseAddress, parseAllowlist, scan };
+module.exports = { argvSafe, classifyArgv, classifyBash, duongThat, evaluate, filesFromInput, inspect, isAllowed, napSo, ngoaiRepo, parseAddress, parseAllowlist, scan };
