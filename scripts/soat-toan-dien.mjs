@@ -33,6 +33,7 @@
 import { execFileSync, execFile } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { PHA, NGUOI, VIEC, dem } from './bos-so-viec.mjs';
 
@@ -56,8 +57,31 @@ if (co('--chi-cong')) {
 }
 
 /* ══ chạy một đầu việc ══ */
+/* BIÊN NHẬN MẮT NGƯỜI — đọc từ ĐÚNG dòng sự kiện append-only của cầu, không có kho thứ hai.
+ * Trước 30/08 dòng dưới đây trả `tay` VÔ ĐIỀU KIỆN ⇒ đầu việc chờ mắt người **không có đường
+ * nào thành ✅**, kể cả khi đã chứng minh trên app thật. Sổ nói sai thì phiên sau làm lại việc
+ * đã xong — đo được: `tuong-len-man` bị bảo "chưa mặt nào đọc con số đó" sau khi đã có ảnh. */
+const KY_MAT_NGUOI = (() => {
+  const m = new Map();
+  try {
+    const cau = path.join(os.homedir(), 'PROJECT/SHARED/LOG/agent-handoffs.jsonl');
+    for (const l of readFileSync(cau, 'utf8').split('\n')) {
+      if (!l) continue;
+      try { const e = JSON.parse(l); if (e.type === 'MAT_NGUOI' && e.viec) m.set(e.viec, e); } catch { /* dòng hỏng */ }
+    }
+  } catch { /* chưa có sổ cầu — mọi việc tay vẫn 🟡, đúng */ }
+  return m;
+})();
+
 function chayViec(v) {
-  if (v.bang.tay) return { trang: 'tay', ghi: v.bang.tay };
+  if (v.bang.tay) {
+    const ky = KY_MAT_NGUOI.get(v.ma);
+    if (!ky) return { trang: 'tay', ghi: v.bang.tay };
+    /* Mắt người chấm MỘT TRẠNG THÁI MÃ, không chấm vĩnh viễn — nêu commit lúc ký để người đọc
+     * tự biết chữ ký đã cách hiện tại bao xa. Không tự huỷ chữ ký: huỷ ngầm cũng là nói dối. */
+    const ngay = String(ky.createdAt).slice(0, 10);
+    return { trang: 'dat', ghi: `👁 ký ${ngay}${ky.commit ? ' @' + ky.commit : ''} · ${ky.evidence}` };
+  }
   const t0 = Date.now();
   try {
     execFileSync(v.bang.lenh, v.bang.args, { cwd: REPO, encoding: 'utf8', stdio: 'pipe', timeout: 900000 });

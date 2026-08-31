@@ -36,6 +36,7 @@
     "soi:route-dev": "node scripts/soi-route-dev.mjs",
     "soi:worker": "node scripts/soi-worker-sach.mjs",
     "soi:cau": "node scripts/soi-cau.mjs",
+    "moc:postman": "node scripts/buu-ta-cau.mjs --once",
     "soi:trung-tinh": "node scripts/soi-trung-tinh.mjs",
     "soi:tep-nang": "node scripts/soi-tep-nang.mjs",
     "chon-tuyen": "node scripts/chon-tuyen.mjs",

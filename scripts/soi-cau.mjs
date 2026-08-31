@@ -51,6 +51,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { khoaHandoff } from './cau-mo-hinh.mjs';
 
 const CAU = path.join(process.env.BOS_SHARED_LOG_ROOT || path.join(os.homedir(), 'PROJECT/SHARED/LOG'),
   'agent-handoffs.jsonl');
@@ -69,23 +70,24 @@ if (!existsSync(CAU)) {
 const su = readFileSync(CAU, 'utf8').split('\n').filter(Boolean)
   .flatMap((l) => { try { return [JSON.parse(l)]; } catch { return []; } });
 
-const acked = new Set(su.filter((e) => e.type === 'ACK').map((e) => e.handoffId));
+const acked = new Set(su.filter((e) => e.type === 'ACK').map(khoaHandoff));
 const wake = new Map();
-for (const e of su) if (e.type === 'WAKE') wake.set(e.handoffId, e);
+// `WAKE` là schema cũ; `WAKE_ATTEMPTED` nói đúng hơn và không giả đã tới mắt.
+for (const e of su) if (e.type === 'WAKE' || e.type === 'WAKE_ATTEMPTED') wake.set(khoaHandoff(e), e);
 
 const now = Date.now();
 const phut = (e) => Math.round((now - Date.parse(e.createdAt)) / 60000);
 
-const mo = su.filter((e) => e.type === 'HANDOFF' && !acked.has(e.id));
+const mo = su.filter((e) => e.type === 'HANDOFF' && !acked.has(khoaHandoff(e)));
 const quaHan = mo.filter((e) => phut(e) >= NGUONG_PHUT);
-const chuaDanhThuc = quaHan.filter((e) => !wake.has(e.id));
+const chuaDanhThuc = quaHan.filter((e) => !wake.has(khoaHandoff(e)));
 
 console.log('── cầu bàn giao · phiếu đã GHI nhưng chưa GIAO ──');
 console.log('  (cầu = sổ KIỂM CHÉO giữa các hệ agent, KHÔNG phải đường giao việc)');
 console.log(`  ${mo.length} phiếu đang mở · ${quaHan.length} quá ${NGUONG_PHUT} phút · ${mo.length - quaHan.length} còn trong hạn`);
 
 for (const e of quaHan) {
-  const w = wake.get(e.id);
+  const w = wake.get(khoaHandoff(e));
   if (w) console.log(`  ✅ ${e.id}  → ${e.to}  · đánh thức bằng: ${w.cach}`);
   else console.log(`  🔴 ${e.id}  → ${e.to}  · ${phut(e)} phút · CHƯA AI ĐÁNH THỨC\n       "${(e.topic ?? '').slice(0, 76)}"`);
 }
