@@ -105,6 +105,8 @@ Nợ **`GUARD-V3`**:
 - lease **renew** + **TTL theo cỡ việc**
 - cửa **ngoài-repo** đi TRƯỚC chốt lane-00
 - khai script TTS trích `--out`
+- **env-prefix**: guard phân loại lệnh dạng `VAR=x cmd` theo `cmd`, để inline `BOS_SESSION_ID`
+  cho governance
 - **NGHI ÁN** `phieu-ca --ghi-ban` phá tệp bàn + `soi:ban` **mù** — trọng tài 07 đo 31/08,
   **chưa xác minh độc lập**
 

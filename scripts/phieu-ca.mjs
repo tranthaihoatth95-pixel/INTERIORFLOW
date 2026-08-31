@@ -31,11 +31,29 @@
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { VIEC, NGUOI, PHA } from './bos-so-viec.mjs';
+import { khoaHandoff, dichEvent } from './cau-mo-hinh.mjs';
 
 const LOG_ROOT = process.env.BOS_SHARED_LOG_ROOT || path.join(os.homedir(), 'PROJECT/SHARED/LOG');
 const CAU = path.join(LOG_ROOT, 'agent-handoffs.jsonl');
 const SO_LANE = path.join(LOG_ROOT, 'lane-phien.json');
+
+const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+/* ── ĐƯỜNG GHI TỆP BÀN — PHẢI TÁCH KHỎI REPO ĐƯỢC, NẾU KHÔNG TEST SẼ ĂN BÀN THẬT ──
+ *
+ * CA THẬT 30–31/08, hai phiên xác minh độc lập: `moc.mjs` spawn `phieu-ca.mjs --ghi-ban`
+ * (detached + unref, cwd = REPO) sau MỖI lần ghi biên nhận. `cau-mo-hinh.test.ts` chạy `moc.mjs`
+ * THẬT với `BOS_SHARED_LOG_ROOT=<tmp>` nên tưởng đã cách ly — nhưng cách ly ĐÚNG SỔ, SAI REPO:
+ * đường ghi bàn vẫn là `REPO/docs/control/ban`. Hậu quả đo được: mỗi lượt `npm test` ghi đè 9 tệp
+ * bàn thật bằng dữ liệu fixture (hằng số `HO-20260830150000-aaaaaaaaaaaa` lọt vào `ban/06.md`
+ * đúng bằng đường này), và nhiều tiến trình detached ghi chồng không nguyên tử ⇒ khối đôi,
+ * mất nửa-người, UTF-8 vỡ.
+ *
+ * `BOS_BAN_ROOT` là đường thoát. Không đặt ⇒ hành vi cũ, ghi vào repo. */
+const BAN_MAC_DINH = path.join(REPO, 'docs/control/ban');
+const BAN_ROOT = process.env.BOS_BAN_ROOT || BAN_MAC_DINH;
 
 /** KHUNG GIỜ — ranh giới nói rõ, không để ai đoán "trưa" là mấy giờ. */
 const CA = [
@@ -57,9 +75,9 @@ const doc = () => {
 };
 
 const su = doc();
-const ack = new Set(su.filter((e) => e.type === 'ACK').map((e) => e.handoffId));
-const wake = new Set(su.filter((e) => e.type === 'WAKE').map((e) => e.handoffId));
-const seen = new Set(su.filter((e) => e.type === 'SEEN').map((e) => e.handoffId));
+const ack = new Set(su.filter((e) => e.type === 'ACK').map(khoaHandoff));
+const wake = new Set(su.filter((e) => e.type === 'WAKE' || e.type === 'WAKE_ATTEMPTED').map(khoaHandoff));
+const seen = new Set(su.filter((e) => e.type === 'SEEN').map(khoaHandoff));
 
 /* NOTED đi kèm từng biên nhận — Hoà 30/08: *"mỗi trạng thái kèm noted… người mới thì biết
  * noted thế nào mà tránh"*. Noted là thứ DUY NHẤT trên bàn giải thích VÌ SAO, nên nó lấy từ
@@ -67,15 +85,16 @@ const seen = new Set(su.filter((e) => e.type === 'SEEN').map((e) => e.handoffId)
 const ghiChu = new Map();
 for (const e of su) {
   const n = e.cach ?? e.noted;
-  if (e.handoffId && n) ghiChu.set(e.handoffId, String(n));
+  if (e.handoffId && n) ghiChu.set(khoaHandoff(e), String(n));
 }
 
 /** Trạng thái một phiếu — theo BIÊN NHẬN, không theo lời ai kể. */
 const trangThai = (e) => {
-  const noted = ghiChu.get(e.id) ?? '';
-  if (ack.has(e.id))  return { ma: 'xong',   nhan: '✅ đã nhận việc', noted };
-  if (seen.has(e.id)) return { ma: 'daThay', nhan: '👁 đã tới mắt, chưa nhận', noted };
-  if (wake.has(e.id)) return { ma: 'daGoi',  nhan: '🔔 đã gọi, chưa thấy', noted };
+  const k = khoaHandoff(e);
+  const noted = ghiChu.get(k) ?? '';
+  if (ack.has(k))  return { ma: 'xong',   nhan: '✅ đã nhận việc', noted };
+  if (seen.has(k)) return { ma: 'daThay', nhan: '👁 đã tới mắt, chưa nhận', noted };
+  if (wake.has(k)) return { ma: 'daGoi',  nhan: '🔔 đã gọi, chưa thấy', noted };
   return { ma: 'ketSo', nhan: '🔴 KẸT — ghi rồi mà chưa ai gọi', noted };
 };
 
@@ -84,8 +103,9 @@ try { soLane = JSON.parse(readFileSync(SO_LANE, 'utf8')); } catch { /* chưa có
 
 const phieu = su.filter((e) => e.type === 'HANDOFF').map((e) => {
   const d = new Date(e.createdAt);
+  const dich = dichEvent(e);
   return {
-    id: e.id, tu: e.from, den: e.to, viec: e.topic ?? '',
+    id: e.id, tu: e.from, den: dich.legacy ? `LEGACY_AMBIGUOUS:${dich.lane}` : dich.address, viec: e.topic ?? '',
     luc: d, gio: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
     ca: caCua(d).ma, ...trangThai(e),
   };
@@ -109,7 +129,8 @@ if (process.argv.includes('--md')) {
     if (!ds.length) continue;
     o += `## ${c.ten} · ${String(c.tu).padStart(2, '0')}:00–${String(c.den).padStart(2, '0')}:00 — ${ds.length} việc\n\n`;
     for (const [lane, ps] of nhomTheoLane(ds)) {
-      o += `**${lane} · ${ten[lane] ?? '?'}**\n\n`;
+      const laneRole = lane.split(':').at(-1);
+      o += `**${lane} · ${ten[laneRole] ?? '?'}**\n\n`;
       for (const p of ps) o += `- \`${p.gio}\` ${p.nhan} — ${p.viec}\n`;
       o += '\n';
     }
@@ -132,22 +153,41 @@ if (process.argv.includes('--md')) {
    nội dung, vì nội dung là chữ người viết và CÓ THỂ SAI (ca thật 30/08: một phiếu mang kết
    luận đã bị bác, vẫn đứng đó với dấu ✅). Bàn chỉ chở thứ có biên nhận. */
 if (process.argv.includes('--ghi-ban')) {
-  const { writeFileSync, readFileSync: doc, existsSync: co } = await import('node:fs');
-  const { fileURLToPath } = await import('node:url');
-  const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const { writeFileSync, readFileSync: doc, existsSync: co, mkdirSync, renameSync, unlinkSync,
+    openSync, closeSync, statSync } = await import('node:fs');
   const MO = '<!-- MÁY GIỮ · phieu-ca.mjs · CẤM SỬA TAY -->';
   const DONG = '<!-- /MÁY GIỮ -->';
+
+  /* ⛔ FAIL-CLOSED — không cảnh-báo-rồi-cho-qua.
+   * `BOS_SHARED_LOG_ROOT` đặt tường minh nghĩa là NGƯỜI GỌI ĐANG CÁCH LY. Nếu tới đây mà đích ghi
+   * vẫn là bàn thật trong repo thì cách ly đó là giả — và cái giá đã trả một lần rồi. Từ chối ghi. */
+  if (process.env.BOS_SHARED_LOG_ROOT && path.resolve(BAN_ROOT) === path.resolve(BAN_MAC_DINH)) {
+    console.error('⛔ TỪ CHỐI GHI BÀN — cách ly nửa vời.');
+    console.error(`   BOS_SHARED_LOG_ROOT=${process.env.BOS_SHARED_LOG_ROOT} (sổ đã tách)`);
+    console.error(`   nhưng đích ghi bàn vẫn là repo thật: ${BAN_MAC_DINH}`);
+    console.error('   Chữa: đặt BOS_BAN_ROOT=<thư mục tạm> cùng lúc với BOS_SHARED_LOG_ROOT.');
+    process.exit(3);
+  }
+
+  /* Ngủ ĐỒNG BỘ — vòng ghi này chạy tuần tự, không có chỗ cho await giữa khoá và rename. */
+  const nghi = (ms) => { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms); };
+
   const gio = new Date().toISOString().replace('T', ' ').slice(0, 16);
-  let n = 0;
+  let n = 0, tuChoi = 0;
+  mkdirSync(BAN_ROOT, { recursive: true });
   for (const ng of NGUOI) {
-    const tep = path.join(REPO, `docs/control/ban/${ng.ma}.md`);
+    const tep = path.join(BAN_ROOT, `${ng.ma}.md`);
     if (!co(tep)) continue;
-    const cua = phieu.filter((x) => x.den === ng.ma);
+    const cua = phieu.filter((x) => x.den === ng.ma || x.den.endsWith(`:${ng.ma}`));
     const mo = cua.filter((x) => x.ma !== 'xong').sort((a, b) => a.luc - b.luc);
-    const giu = soLane[ng.ma];
+    const giuCacHe = [`cx:${ng.ma}`, `cl:${ng.ma}`].flatMap((a) => soLane[a] ? [{ a, ...soLane[a] }] : []);
+    const giuLegacy = soLane[ng.ma];
 
     let k = `${MO}\n\n## VIỆC ĐANG MỞ — máy sinh ${gio}\n\n`;
-    k += giu ? `Đang ngồi: phiên \`${giu.phien.slice(0, 8)}\`\n\n` : `Đang ngồi: **chưa ai khai giữ lane này**\n\n`;
+    k += giuCacHe.length
+      ? `Đang ngồi: ${giuCacHe.map((g) => `\`${g.a}\` phiên \`${g.phien.slice(0, 8)}\``).join(' · ')}\n\n`
+      : giuLegacy ? `Đang ngồi: **LEGACY_AMBIGUOUS** phiên \`${giuLegacy.phien.slice(0, 8)}\`\n\n`
+        : `Đang ngồi: **chưa ai khai giữ lane này**\n\n`;
     if (!mo.length) {
       k += `✅ Không phiếu nào đang mở.\n\n`;
     } else {
@@ -162,14 +202,55 @@ if (process.argv.includes('--ghi-ban')) {
     k += `⚠️ Bàn chỉ chở thứ CÓ BIÊN NHẬN. Nội dung phiếu nằm trên cầu, không chép vào đây —\n`;
     k += `chữ người viết có thể sai, và bàn không được khuếch đại cái sai.\n\n${DONG}`;
 
-    let cu = doc(tep, 'utf8');
-    cu = cu.includes(MO)
-      ? cu.slice(0, cu.indexOf(MO)) + k + cu.slice(cu.indexOf(DONG) + DONG.length)
-      : `${cu.trimEnd()}\n\n---\n\n${k}\n`;
-    writeFileSync(tep, cu);
-    n++;
+    /* ── KHOÁ THEO TỆP ──
+     * `moc.mjs` spawn tiến trình này DETACHED sau MỖI biên nhận. Hai biên nhận sát nhau ⇒ hai
+     * tiến trình cùng đọc-sửa-ghi một tệp, và bản thua đè bản thắng bằng nội dung đã cũ.
+     * Đó đúng là cách `06.md`/`08.md` mọc ra HAI khối MÁY GIỮ. */
+    const khoa = `${tep}.khoa`;
+    let fd = null;
+    for (let i = 0; i < 100 && fd === null; i++) {
+      try { fd = openSync(khoa, 'wx'); }
+      catch {
+        /* Khoá mồ côi (tiến trình chết giữa chừng) không được treo bàn vĩnh viễn. */
+        try { if (Date.now() - statSync(khoa).mtimeMs > 30_000) unlinkSync(khoa); } catch { /* ai đó vừa gỡ */ }
+        nghi(20);
+      }
+    }
+    if (fd === null) {
+      tuChoi++;
+      console.error(`  🔴 ${ng.ma} — không lấy được khoá sau 2s ⇒ BỎ QUA. Thà thiếu một lần sinh còn hơn ghi chồng.`);
+      continue;
+    }
+
+    try {
+      const cu = doc(tep, 'utf8');
+      /* ĐẾM CẶP MỐC TRƯỚC KHI GHI — ≠1 nghĩa là tệp ĐANG hỏng sẵn.
+       * Không tự đoán rồi sửa: đoán sai ở đây là nuốt mất chữ người viết. Bàn hỏng thì phục hồi
+       * bằng git (thứ có lịch sử), không bằng phỏng đoán của máy sinh. */
+      const soMo = cu.split(MO).length - 1, soDong = cu.split(DONG).length - 1;
+      if (soMo !== 1 || soDong !== 1) {
+        tuChoi++;
+        console.error(`  🔴 ${ng.ma} — ${soMo} mốc MỞ / ${soDong} mốc ĐÓNG (phải đúng 1/1) ⇒ TỪ CHỐI GHI.`);
+        console.error('     Phục hồi tệp bàn này từ git rồi chạy lại. Máy không đoán hộ.');
+        continue;
+      }
+      const moi = cu.slice(0, cu.indexOf(MO)) + k + cu.slice(cu.indexOf(DONG) + DONG.length);
+      /* GHI NGUYÊN TỬ: tệp tạm CÙNG THƯ MỤC (rename chỉ nguyên tử trong cùng filesystem) rồi rename.
+       * Ai đọc bàn giữa chừng thấy bản cũ nguyên vẹn hoặc bản mới nguyên vẹn — không bao giờ bản trộn. */
+      const tam = path.join(BAN_ROOT, `.${ng.ma}.md.tam-${process.pid}`);
+      writeFileSync(tam, moi, 'utf8');
+      renameSync(tam, tep);
+      n++;
+    } finally {
+      closeSync(fd);
+      try { unlinkSync(khoa); } catch { /* đã bị dọn */ }
+    }
   }
   console.log(`✅ ${n} tệp bàn — khối máy giữ đã sinh lại lúc ${gio}`);
+  if (tuChoi) {
+    console.error(`⛔ ${tuChoi} tệp bàn bị TỪ CHỐI ghi — xem lý do ở trên.`);
+    process.exit(1);
+  }
   process.exit(0);
 }
 
@@ -180,8 +261,6 @@ if (process.argv.includes('--ghi-ban')) {
    thời gian (dòng "máy sinh <giờ>" và cột tuổi). Khác ⇒ có bàn tay người. */
 if (process.argv.includes('--kiem-ban')) {
   const { readFileSync: doc, existsSync: co } = await import('node:fs');
-  const { fileURLToPath } = await import('node:url');
-  const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const MO = '<!-- MÁY GIỮ · phieu-ca.mjs · CẤM SỬA TAY -->';
   const DONG = '<!-- /MÁY GIỮ -->';
   /* Bỏ phần biến thiên theo thời gian — cổng canh BÀN TAY NGƯỜI, không canh đồng hồ. */
@@ -190,17 +269,58 @@ if (process.argv.includes('--kiem-ban')) {
     .replace(/\d+ · \d+[ph] trước/g, '· —')
     .replace(/\s+/g, ' ').trim();
   const chan = process.argv.includes('--chan');
-  console.log('── khối MÁY GIỮ trong tệp bàn · cấm sửa tay ──');
+
+  /* ── BA LỖ MÙ CỦA CỔNG NÀY, ĐO 31/08 ──
+   * Bản cũ chỉ so khối MÁY GIỮ với nguồn. Nó XANH suốt trong khi 9 tệp bàn bị writer phá:
+   *   ① `06.md`/`08.md` có HAI khối MÁY GIỮ — cổng lấy `indexOf` nên chỉ thấy khối đầu.
+   *   ② `00.md`/`06.md` mất sạch phần NGOÀI khối (tiêu đề, VAI, CẤM…) — cổng không nhìn ra ngoài.
+   *   ③ `08.md:19` có U+FFFD (UTF-8 vỡ) — cổng không đọc byte.
+   * Một cổng chỉ canh đúng thứ nó biết trước là một cổng báo an-toàn giống hệt báo-chết. */
+  const MUC_BAT_BUOC = ['# BÀN', '## VAI', '## CẤM', '## NGHIỆM THU', '## ĐANG DỞ', '## NẠP TRƯỚC KHI GÕ'];
+  /* U+FFFD trong `dấu nháy ngược` là BẰNG CHỨNG được trích dẫn, không phải hỏng — `07.md` chép
+   * đúng chuỗi vỡ của `08.md` vào bài học. Bóc code span trước khi soi, nếu không cổng sẽ phạt
+   * đúng cái bàn đã ghi lại bài học. */
+  const boCodeSpan = (t) => t.replace(/`[^`\n]*`/g, '``');
+
+  console.log('── tệp bàn · cấu trúc · khối MÁY GIỮ cấm sửa tay ──');
   let loi = 0, xet = 0;
   for (const ng of NGUOI) {
-    const tep = path.join(REPO, `docs/control/ban/${ng.ma}.md`);
+    const tep = path.join(BAN_ROOT, `${ng.ma}.md`);
     if (!co(tep)) continue;
     const noiDung = doc(tep, 'utf8');
+
+    // ① CẶP MỐC — đếm, không indexOf.
+    const soMo = noiDung.split(MO).length - 1, soDong = noiDung.split(DONG).length - 1;
+    if (soMo !== 1 || soDong !== 1) {
+      xet++; loi++;
+      console.log(`  🔴 ${ng.ma} — ${soMo} mốc MỞ / ${soDong} mốc ĐÓNG (phải đúng 1/1) · tệp bàn HỎNG`);
+      continue;
+    }
+
     const i = noiDung.indexOf(MO), j = noiDung.indexOf(DONG);
-    if (i < 0 || j < 0) { console.log(`  ⚪ ${ng.ma} — chưa có khối máy giữ`); continue; }
     xet++;
+
+    // ② PHẦN NGOÀI MỐC — thứ máy KHÔNG sinh lại được, mất là mất hẳn.
+    const ngoai = noiDung.slice(0, i) + noiDung.slice(j + DONG.length);
+    const thieuMuc = MUC_BAT_BUOC.filter((m) => !ngoai.includes(m));
+    if (thieuMuc.length) {
+      loi++;
+      console.log(`  🔴 ${ng.ma} — mất phần người viết: ${thieuMuc.join(' · ')}`);
+      continue;
+    }
+
+    // ③ UTF-8 VỠ.
+    if (boCodeSpan(noiDung).includes('�')) {
+      loi++;
+      console.log(`  🔴 ${ng.ma} — có ký tự U+FFFD (chuỗi UTF-8 vỡ) ngoài code span`);
+      continue;
+    }
     const tren = noiDung.slice(i, j + DONG.length);
-    const cua = phieu.filter((x) => x.den === ng.ma);
+    /* B4 · ĐỌC LEGACY — cổng phải lọc ĐÚNG NHƯ writer, nếu không nó chấm bản dịch của chính nó.
+     * Bản cũ ở đây chỉ khớp `x.den === ng.ma`, tức chỉ thấy địa chỉ NN trần. Writer thì khớp cả
+     * `cx:NN`/`cl:NN`/`LEGACY_AMBIGUOUS:NN`. Hai bộ lọc lệch nhau ⇒ cổng so khối-có-phiếu với
+     * nguồn-rỗng và kêu "có bàn tay người" ở đúng tệp máy vừa ghi. */
+    const cua = phieu.filter((x) => x.den === ng.ma || x.den.endsWith(`:${ng.ma}`));
     const mo = cua.filter((x) => x.ma !== 'xong');
     /* Dựng lại phần KHÔNG biến thiên: số phiếu mở, id, trạng thái, noted. */
     const dau = mo.map((x) => `${x.id.slice(-12)}|${x.nhan}|${x.noted || 'THIẾU'}`).join('||');
@@ -217,12 +337,14 @@ if (process.argv.includes('--kiem-ban')) {
     void dau;
   }
   if (loi) {
-    console.log(`\n  🔴 ${loi}/${xet} tệp bàn có khối máy giữ lệch nguồn.`);
-    console.log('  Chữa:  node scripts/phieu-ca.mjs --ghi-ban');
+    console.log(`\n  🔴 ${loi}/${xet} tệp bàn ĐỎ.`);
+    console.log('  Khối lệch nguồn  → chữa:  node scripts/phieu-ca.mjs --ghi-ban');
+    console.log('  Mốc đôi · mất mục · UTF-8 vỡ → KHÔNG chữa bằng --ghi-ban.');
+    console.log('    Đó là hỏng cấu trúc: phục hồi tệp từ git, giữ lại các bổ sung hợp lệ.');
     console.log('  ⛔ Đừng sửa tay bên trong dấu mốc — lần ghi biên nhận kế tiếp sẽ đè mất.');
     if (chan) process.exit(1);
   } else {
-    console.log(`\n  ✅ ${xet} tệp bàn — khối máy giữ khớp nguồn, không có bàn tay người.`);
+    console.log(`\n  ✅ ${xet} tệp bàn — cấu trúc đủ, khối máy giữ khớp nguồn, không có bàn tay người.`);
   }
   process.exit(0);
 }
@@ -252,7 +374,8 @@ for (const c of CA) {
   for (const [lane, ps] of nhomTheoLane(ds)) {
     const giu = soLane[lane];
     const ai = giu ? `phiên ${giu.phien.slice(0, 8)}` : '⚠️ CHƯA AI NGỒI';
-    console.log(`   ┌ ${lane} · ${(ten[lane] ?? '?').padEnd(9)} ${ai}`);
+    const laneRole = lane.split(':').at(-1);
+    console.log(`   ┌ ${lane} · ${(ten[laneRole] ?? '?').padEnd(9)} ${ai}`);
     for (const p of ps) console.log(`   │ ${p.gio}  ${p.nhan.padEnd(26)} ${p.viec.slice(0, 62)}`);
     console.log('   └');
   }
