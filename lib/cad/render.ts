@@ -57,6 +57,182 @@ export interface DrawStyle {
    * lúc chưa sửa. Không có nền ⇒ chỉ vẽ viền, không tô (K3: thà thiếu còn hơn đoán).
    */
   background?: string;
+  /**
+   * NGÔN NGỮ "GIẤY MỰC" (`docs/control/IF-GIAY-MUC.md`). Thiếu field này ⇒ **đường vẽ cũ chạy y
+   * hệt, không lệch một byte** — hai bộ luật sống song song có chủ đích, xem `GiayMuc`.
+   */
+  giayMuc?: GiayMuc;
+}
+
+/* ════════════════════ GIẤY MỰC — ngôn ngữ canvas 2D (Hoà chốt 31/08) ════════════════════ */
+
+/**
+ * `docs/control/IF-GIAY-MUC.md` — mắt chủ chấm "ỔN" 17:20 · 31/08 trên mock `giay-muc-v1`.
+ * Vì sao có nó: mắt chủ phán **hai lượt "chưa ổn"** trên các bản vá lẻ; vá lượt ba là vá vào chỗ
+ * không có ngôn ngữ để vá. ⇒ chốt NGÔN NGỮ trước, thi công sau.
+ *
+ * Tiền lệ chính là **Rayon** (LOOK OUTSIDE 9 công cụ, 31/08): style tách khỏi layer · wireframe là
+ * *chế độ khảo sát* chứ không phải mặc định · stroke-scale gắn tỉ lệ bản vẽ.
+ *
+ * ⚠️ **BẬT/TẮT, KHÔNG THAY THẾ.** `style.giayMuc` thiếu ⇒ mọi nhánh dưới đây không chạy, đường vẽ
+ * chạy đúng như trước 31/08 (khoá ở `render-giay-muc.test.ts` ca ⑦ + cả 20 ca `render-z-order`).
+ * Đường xuất PNG/PDF và các lớp overlay accent chưa đổi — chúng ép màu riêng, xem `forceColor`.
+ */
+export interface GiayMuc {
+  /** luật 1 — nền giấy ấm, MỘT MÀU PHẲNG (hướng `#FAF9F6`). Cũng là đích PHA khi nét chạm sàn. */
+  giay: string;
+  /** màu mực đơn sắc: mọi màu ACI của tệp nhập biến mất về đây (luật 4, chế độ TRÌNH BÀY). */
+  muc: string;
+  /** luật 5 + 7 — ĐÚNG MỘT màu không phải mực trên toàn canvas, dẫn xuất từ BỘ người dùng chọn. */
+  accent: string;
+  /**
+   * luật 2 — stroke-scale gắn **tỉ lệ bản vẽ** (N của "1:N"), kiểu Rayon: mm thật trên giấy × N ×
+   * `viewport.scale`. Thiếu ⇒ đọc `doc.printScale` (`model.ts`, khái niệm ĐÃ CÓ — không đẻ trường
+   * thứ hai cho cùng một thứ, luật 6), thiếu nốt ⇒ `TI_LE_MAC_DINH`.
+   */
+  strokeScale?: number;
+  /**
+   * luật 4 câu cuối — bảng map `layer → bậc mực` là **heuristic, phải SỬA ĐƯỢC per-layer**.
+   * Khoá theo **id layer HOẶC tên layer** (người dùng nhìn thấy tên, không thấy id). Đợt A chưa có
+   * UI, nhưng đường dây phải có sẵn — nếu không thì "sửa được" chỉ là lời chúc.
+   */
+  theoLayer?: Record<string, BacMuc>;
+  /**
+   * luật 4 — **KHẢO SÁT: van an toàn BẮT BUỘC.** Wireframe 1px **màu layer GỐC**, tắt mọi fill.
+   * Đây là đường về với dữ liệu thật khi bản đồ mực map sai — không có nó thì người dùng mất khả
+   * năng kiểm chứng chính bản vẽ mình gửi vào.
+   */
+  khaoSat?: boolean;
+}
+
+/** Ba bậc mực — ISO 128-24 nội bộ (`CHUAN-DAU-RA-NGHE` §1). mm THẬT trên giấy. */
+export type BacMuc = 'cat' | 'thay' | 'manh';
+export const BE_DAY_MUC: Record<BacMuc, number> = { cat: 0.5, thay: 0.25, manh: 0.13 };
+
+/** Sàn hiển thị: mảnh hơn mức này thì màn hình không vẽ nổi nữa. Chạm sàn ⇒ NHẠT, không mảnh thêm. */
+export const SAN_NET_PX = 1;
+
+/** 1:50 — tỉ lệ mặt bằng nội thất hay gặp. Chỉ là NƯỚC CHÓT: `doc.printScale` có thì nó thắng. */
+export const TI_LE_MAC_DINH = 50;
+
+/**
+ * Các mức pha của ngôn ngữ giấy-mực. **Số nằm trong dải spec, không phải số đẹp tự chọn** —
+ * `render-giay-muc.test.ts` khoá chính cái dải ấy, nên đổi ra ngoài dải là ĐỎ.
+ *
+ * ⛔ MỌI mức đều là **PHA MÀU về giấy**, tuyệt đối không alpha: alpha chồng alpha thì chỗ nét chồng
+ * nét cộng dồn ra vệt đậm giả — mà tường thì chồng nhau ở mọi góc nhà. Cùng lý do `plan-depth.ts:8-13`.
+ */
+export const GIAY_MUC_PHA = {
+  /** luật 3 — poché tường cắt: xám đậm **75–85% mực**, không đen đặc. */
+  pocheTuong: 0.8,
+  /** luật 5 — fill của phần máy suy ra: accent còn lại **8–12%**. */
+  accentTo: 0.1,
+  /** mảng tô SOLID không phải tường, chưa có luật riêng — giữ NHẠT HƠN poché tường để thứ bậc không đảo. */
+  toKhac: 0.45,
+  /** trần pha khi nét chạm sàn — pha quá mức này thì lớp mảnh nhất biến mất khỏi bản vẽ. */
+  nhatToiDa: 0.62,
+} as const;
+
+/**
+ * SỔ NỢ GIẤY MỰC — nói thẳng trên mặt, không giấu trong comment lẻ (luật "không PASS giả").
+ * Đợt A thi công luật **1 · 2 · 3 · 4 · 5**. Còn nợ:
+ */
+export const GIAY_MUC_CON_NO = [
+  'luật 3 — hatch VẬT LIỆU chỉ hiện từ ngưỡng zoom: chưa có ngưỡng, pattern hatch vẫn vẽ ở mọi zoom.',
+  'luật 5 — nét ĐỨT accent = "đề xuất chờ duyệt": chưa vẽ, vì CHƯA CÓ FLOW DUYỆT nào sinh ra trạng thái đó. Vẽ nét đứt lúc này là bịa một trạng thái sản phẩm không có thật.',
+  'luật 6 — halftone khi VẼ ĐÈ lên bản nhập (mượn Revit): cần biết "đang thao tác đè", tức trạng thái của tầng tương tác chứ không phải của tầng vẽ. Chưa nối.',
+  'luật 7 — accent TỰ TRÍCH từ ảnh nền người dùng + cổng tương phản AA: đợt A nhận accent qua tham số. Máy trích màu + cổng nằm ở lô `mau-bo.ts`/`contrast.ts`, chưa nối vào đây.',
+] as const;
+
+/** Tên layer kiểu "nét cắt" — tường/cột/kết cấu/mặt cắt. */
+const TEN_LAYER_CAT = /(WALL|TUONG|TƯỜNG|VACH|VÁCH|COLUMN|COT|CỘT|STRU|KETCAU|SECT|CUT|^S-|-S-)/i;
+/** Tên layer kiểu "nét mảnh" — chú thích, kích thước, lưới trục, gạch. */
+const TEN_LAYER_MANH = /(DIM|TEXT|ANNO|NOTE|LEADER|GRID|AXIS|TRUC|TRỤC|HATCH|PATT|CENTER|TIM)/i;
+
+/**
+ * Entity này thuộc bậc mực nào. **Bốn kênh, dừng ở kênh đầu tiên trả lời được:**
+ *   ① người dùng sửa tay per-layer (`theoLayer`, theo id HOẶC tên) — luôn thắng;
+ *   ② **bề dày KHAI BÁO** trong tệp (entity → layer), bắt về bậc gần nhất — đây là dữ liệu THẬT,
+ *      không phải suy đoán, nên nó đứng trên mọi phép đoán theo tên;
+ *   ③ heuristic tên layer;
+ *   ④ `thay` — bậc giữa, chỗ đứng an toàn nhất khi không biết gì.
+ *
+ * ⚠️ **KHÔNG CÓ KÊNH "ACI → bậc", cố ý.** Phiếu ghi *"map layer/ACI"*, nhưng tới tầng này mã ACI
+ * đã KHÔNG CÒN: `dxf.ts` quy đổi index → hex ngay lúc nhập (`aciToHex`, bảng 13 mã), và bản thân
+ * AutoCAD cũng không có bảng ACI→bề dày chuẩn — mỗi xưởng một bảng bút riêng trong tệp CTB của họ.
+ * Suy ngược bề dày từ màu là **đoán chồng lên một phép quy đổi đã mất mát** (K3). Tệp có khai bề
+ * dày thì kênh ② đọc đúng; tệp in-theo-màu thì kênh ③ đoán và kênh ① cho người sửa. Khi nào IF giữ
+ * được bảng bút của xưởng thì đó là một kênh có nguồn, không phải một phép đoán.
+ */
+export function bacMucCua(e: Entity, lay: Layer | undefined, gm: GiayMuc): BacMuc {
+  const sua = gm.theoLayer;
+  if (sua) {
+    const theoId = sua[e.layer];
+    if (theoId) return theoId;
+    const theoTen = lay ? sua[lay.name] : undefined;
+    if (theoTen) return theoTen;
+  }
+  const mm = e.lineweight ?? lay?.lineweight;
+  if (mm !== undefined) {
+    let gan: BacMuc = 'thay';
+    let lech = Infinity;
+    for (const b of ['cat', 'thay', 'manh'] as BacMuc[]) {
+      const d = Math.abs(BE_DAY_MUC[b] - mm);
+      if (d < lech) { lech = d; gan = b; }
+    }
+    return gan;
+  }
+  const ten = lay?.name ?? '';
+  if (TEN_LAYER_CAT.test(ten)) return 'cat';
+  if (TEN_LAYER_MANH.test(ten)) return 'manh';
+  return 'thay';
+}
+
+/**
+ * Bề dày px + lượng pha của một bậc mực, tại một zoom và một tỉ lệ bản vẽ.
+ *
+ * Luật 2, nguyên văn: *"Zoom đổi ⇒ cả thang co giãn cùng nhau, giữ thứ bậc. Chạm sàn hiển thị thì
+ * NHẠT ĐI bằng pha-màu-về-nền (⛔ CẤM alpha), **không mảnh thêm**."*
+ *
+ * Vì sao không mảnh thêm: dưới 1px màn hình không vẽ được nét mảnh hơn — nó vẽ một nét 1px NHẠT đi
+ * theo cách riêng của trình duyệt, không kiểm soát được, và ba bậc mực sẽ **bẹp thành một**. Chủ
+ * động dừng ở sàn rồi tự pha thì thứ bậc còn nguyên: cắt đậm, thấy nhạt hơn, mảnh nhạt nhất.
+ */
+export function netMuc(bac: BacMuc, v: Viewport, gm: GiayMuc, tiLe: number): { px: number; nhat: number } {
+  const px = BE_DAY_MUC[bac] * tiLe * Math.abs(v.scale);
+  if (px >= SAN_NET_PX) return { px, nhat: 0 };
+  return { px: SAN_NET_PX, nhat: Math.min(GIAY_MUC_PHA.nhatToiDa, 1 - px / SAN_NET_PX) };
+}
+
+/** Tỉ lệ bản vẽ hiệu dụng: nơi gọi ép > `doc.printScale` (N của "1:N") > 1:50. */
+export function tiLeBanVe(doc: Doc, gm: GiayMuc): number {
+  return gm.strokeScale ?? doc.printScale ?? TI_LE_MAC_DINH;
+}
+
+/** Bút của một entity ở chế độ giấy-mực: màu nét · bề dày px · nét đứt. */
+function butGiayMuc(
+  li: LayerIndex, doc: Doc, e: Entity, v: Viewport, gm: GiayMuc, style: DrawStyle, suyRa: boolean,
+): { mau: string; px: number; dash: number[] } {
+  const lay = li.get(e.layer);
+  /* KHẢO SÁT — trả đúng dữ liệu GỐC: màu riêng của entity trước, rồi màu layer. 1px, không thang
+   * mực, không pha. Đây là chế độ để NGỜ VỰC bản đồ mực, nên nó không được đi qua bản đồ mực. */
+  if (gm.khaoSat) {
+    return { mau: e.color ?? lay?.color ?? style.stroke, px: 1, dash: effectiveLineDashPx(li, e, v, style) };
+  }
+  const { px, nhat } = netMuc(bacMucCua(e, lay, gm), v, gm, tiLeBanVe(doc, gm));
+  /* Luật 5 — nét LIỀN accent = **đã xác nhận**. Nét ĐỨT (đề xuất chờ duyệt) chưa vẽ: xem
+   * `GIAY_MUC_CON_NO`. Ép `[]` ở đây để linetype của layer nguồn không biến một thứ máy đã xác
+   * nhận thành một thứ trông như đang chờ duyệt. */
+  if (suyRa) return { mau: gm.accent, px, dash: [] };
+  return { mau: mixHex(gm.muc, gm.giay, nhat), px, dash: effectiveLineDashPx(li, e, v, style) };
+}
+
+/** Màu tô mảng SOLID ở chế độ giấy-mực. `null` = KHÔNG tô (chế độ khảo sát tắt fill). */
+function toGiayMuc(e: Entity, gm: GiayMuc, suyRa: boolean): string | null {
+  if (gm.khaoSat) return null;
+  if (suyRa) return mixHex(gm.accent, gm.giay, 1 - GIAY_MUC_PHA.accentTo);
+  if (e.elementType === 'wall') return mixHex(gm.muc, gm.giay, 1 - GIAY_MUC_PHA.pocheTuong);
+  return mixHex(gm.muc, gm.giay, 1 - GIAY_MUC_PHA.toKhac);
 }
 
 /**
@@ -200,10 +376,14 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
    * một lớp accent là làm hỏng đúng thứ nó sinh ra để làm: cho người dùng THẤY. Tường suy ra
    * được chọn thì phải sáng lên như mọi vật khác, không được mờ đi vì máy đoán ra nó. */
   const tam = e.inferred === true && !style.forceColor;
-  const mauNet = tamMau(layerColor(li, e, style), style, tam);
+  /* GIẤY MỰC — `forceColor` TẮT nó vì cùng lý do đã tắt lớp tạm ngay trên: nơi ép màu là nơi đang
+   * vẽ một lớp ACCENT có chủ đích (highlight/ghost preview), thang mực không được nuốt nó. */
+  const gm = style.giayMuc && !style.forceColor ? style.giayMuc : undefined;
+  const but = gm ? butGiayMuc(li, doc, e, v, gm, style, tam) : null;
+  const mauNet = but ? but.mau : tamMau(layerColor(li, e, style), style, tam);
   ctx.strokeStyle = mauNet;
-  ctx.lineWidth = tamNet(effectiveLineWidthPx(li, e, v, style), tam);
-  ctx.setLineDash(effectiveLineDashPx(li, e, v, style));
+  ctx.lineWidth = but ? but.px : tamNet(effectiveLineWidthPx(li, e, v, style), tam);
+  ctx.setLineDash(but ? but.dash : effectiveLineDashPx(li, e, v, style));
   const S = (p: Pt) => worldToScreen(v, p);
 
   switch (e.type) {
@@ -281,14 +461,32 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
         });
         ctx.closePath();
       };
-      if (style.outlineOnly) {
-        // chỉ viền — xem giải thích ở khai báo DrawStyle.outlineOnly (tránh tô đặc đè chữ).
+      /* CHỈ VIỀN — hai nguồn, cùng một kết quả:
+       *  · `outlineOnly`: lớp overlay accent, xem khai báo ở `DrawStyle` (tránh tô đặc đè chữ);
+       *  · KHẢO SÁT: luật 4 ra lệnh **tắt fill**, wireframe là wireframe. */
+      if (style.outlineOnly || gm?.khaoSat) {
         veBien();
         ctx.strokeStyle = color;
         ctx.stroke();
         break;
       }
-      if (tam) {
+      if (gm && pattern === 'SOLID') {
+        /* Poché GIẤY MỰC: mảng tô rồi VIỀN đè lên chính nó — mảng tô không bao giờ được ăn mất
+         * đường bao của chính nó. Màu tô do `toGiayMuc` quyết (tường cắt 80% mực · máy suy ra
+         * accent 10% · còn lại 45%), luôn `globalAlpha = 1`: độ nhạt nằm trong MÀU, không trong alpha. */
+        const mauTo = toGiayMuc(e, gm, tam);
+        if (mauTo) {
+          veBien();
+          ctx.fillStyle = mauTo;
+          ctx.globalAlpha = 1;
+          ctx.fill();
+        }
+        veBien();
+        ctx.strokeStyle = color;
+        ctx.stroke();
+        break;
+      }
+      if (tam && !gm) {
         /* 🔴 BẢN TẠM — chờ mock poché, phiếu `P1-mock`. Xem `POCHE_TAM` để biết vì sao pha màu
          * chứ không alpha. Mảng tô của MÁY SUY RA không được đậm ngang dữ liệu người vẽ.
          * Không biết nền (`style.background` thiếu) ⇒ **chỉ viền, không tô** — pha nhầm hướng

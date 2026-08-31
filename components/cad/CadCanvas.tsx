@@ -19,10 +19,13 @@ import { useFlowStore } from '@/lib/store';
 import type { Entity, Pt, Viewport, DimEntity, LineEntity, MarkupPin, PhotoEmbed, Box, ZoneEntity } from '@/lib/cad/model';
 import { screenToWorld, worldToScreen, zoomAt, fitBox, dist, entityBox, ZONE_GROUP_META, CAMPATH_LAYER_NAME, CAMPATH_LAYER_COLOR } from '@/lib/cad/model';
 import { drawEntities, drawEntity } from '@/lib/cad/render';
+// B25 REUSE — bộ pha màu canonical của IF (`plan-depth.ts` §1), đã có test riêng. Không đẻ bộ thứ hai.
+import { mixHex } from '@/lib/cad/plan-depth';
 import { presentProjectionMemo } from '@/lib/cad/plan-present';
 // GỐC B3 (G-M1-04) — luật chọn khung nhìn "Xem vừa màn", thuần + test được bằng file DXF thật.
 import { zoomExtentsPlan, zoomFocusStatusLine, ZOOM_FULL_STATUS_LINE } from '@/lib/cad/import-summary';
 import { usePlanPresent, presentOptionsFrom } from './plan-present-store';
+import { useGiayMuc } from './giay-muc-store';
 import { useTuongSuyRa, locTuongSuyRa } from './tuong-suy-ra-store';
 import { createMarkupPin, createPhotoEmbed, nearestMarkup, nearestPhoto, formatMarkupTime } from '@/lib/cad/markup';
 import { findSnap, hitTest, idsInRect, type SnapResult } from '@/lib/cad/query';
@@ -472,10 +475,12 @@ export default function CadCanvas() {
   // công tắc mà canvas không vẽ lại.
   useEffect(() => {
     const unsubTuong = useTuongSuyRa.subscribe(() => { ix.current.redraw = true; });
+    // Cùng lý do: công tắc KHẢO SÁT (giấy mực luật 4) cũng là ống kính, cũng ở store riêng.
+    const unsubGiay = useGiayMuc.subscribe(() => { ix.current.redraw = true; });
     const unsub = usePlanPresent.subscribe(() => {
       ix.current.redraw = true;
     });
-    return () => { unsubTuong(); unsub(); };
+    return () => { unsubTuong(); unsubGiay(); unsub(); };
   }, []);
 
   // Việc 3 — ghi nhớ lệnh/tool "thật" vừa phát để lặp lại (Space tap / chuột phải khi rảnh).
@@ -2805,12 +2810,23 @@ export default function CadCanvas() {
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, W, H);
 
-    const bg = css('--bg', '#141210');
-    const gridMinor = css('--border', '#2a2622');
-    const t3 = css('--t3', '#9a9488');
+    /* GIẤY MỰC luật 1 (`docs/control/IF-GIAY-MUC.md`, Hoà chốt 31/08) — canvas 2D là **nền giấy
+     * ấm, MỘT MÀU PHẲNG**, không gradient, không grid ồn. Trước đây canvas mượn `--bg` của vỏ app
+     * (nền tối `#141210`): bản vẽ kỹ thuật nằm trên nền tối là quy ước của phần mềm dựng hình,
+     * không phải của bản vẽ nghề — và nó ép mọi quyết định mực đi ngược chiều (nét "nhạt" trên nền
+     * tối là nét TỐI hơn, đúng chiều ngược với giấy).
+     *
+     * Đọc qua CSS var trước, hằng số chỉ là nước chót: luật 7 (accent + màu theo BỘ người dùng
+     * chọn) sẽ đổ `--giay`/`--muc` từ `lib/wallpaper/mau-bo.ts` xuống `globals.css`. Dây đó thuộc
+     * lô khác và CHƯA nối — xem `GIAY_MUC_CON_NO` trong `lib/cad/render.ts`. Viết sẵn đường đọc ở
+     * đây để lúc nối không phải sửa lại chỗ này. */
+    const giay = css('--giay', '#FAF9F6');
+    const muc = css('--muc', '#1E1B16');
+    // Lưới: pha gần hết về giấy — "không grid ồn" là một câu trong luật, không phải khẩu vị.
+    const gridMinor = mixHex(muc, giay, 0.86);
     const accent = css('--accent', '#c08a5a');
 
-    ctx.fillStyle = bg;
+    ctx.fillStyle = giay;
     ctx.fillRect(0, 0, W, H);
 
     drawGrid(ctx, v, W, H, st.gridStep, gridMinor);
@@ -2844,11 +2860,25 @@ export default function CadCanvas() {
      * Đặt TRƯỚC ống kính trình bày để ống kính kia nhìn đúng thứ người dùng đang thấy. */
     const docThay = locTuongSuyRa(docBase, useTuongSuyRa.getState().hien);
     const docToDraw = pv.on ? presentProjectionMemo(docThay, presentOptionsFrom(pv)).doc : docThay;
-    /* `background: bg` — chính màu vừa `fillRect` lên canvas ngay trên. Nó KHÔNG vẽ gì thêm;
-     * `render.ts` chỉ dùng nó để PHA NHẠT lớp máy suy ra (xem `POCHE_TAM`). Thiếu nó thì
-     * render.ts từ chối tô (K3 — nền của IF hai hướng: canvas sống TỐI, xuất PNG SÁNG; pha nhầm
-     * hướng thì lớp "nhạt" lại sáng lên và đè mạnh hơn cả lúc chưa sửa). */
-    drawEntities(ctx, v, docToDraw, { stroke: t3, lineWidth: 1.3, text: true, dimStyle: st.dimStyle, realLineweight: true, background: bg });
+    /* `background: giay` — chính màu vừa `fillRect` lên canvas ngay trên. Nó KHÔNG vẽ gì thêm;
+     * `render.ts` dùng nó làm ĐÍCH PHA. Thiếu nó thì render.ts từ chối tô (K3 — pha sai chiều nền
+     * thì lớp "nhạt" lại nổi lên và đè mạnh hơn cả lúc chưa sửa).
+     *
+     * `giayMuc` — TRÌNH BÀY là MẶC ĐỊNH (luật 4): màu ACI của tệp nhập biến mất về thang mực đơn
+     * sắc, poché tường xám đậm, phần máy suy ra là màu accent duy nhất. `khaoSat` là van an toàn
+     * để quay về wireframe màu-gốc-1px, người dùng bật ở panel "Tường nhận ra được".
+     *
+     * ⚠️ **NHƯỜNG ỐNG KÍNH TRÌNH BÀY (`pv.on`).** Hai thứ cùng mang chữ "trình bày" nhưng là hai
+     * việc khác nhau: `plan-present` (S4) ghi đè `color` + `lineweight` cho TỪNG entity theo bảng
+     * màu riêng của nó; thang mực đơn sắc mà chạy đè lên đó thì **nuốt sạch bảng màu ấy** — người
+     * dùng bật một công tắc rồi thấy nó không làm gì. Cái người dùng vừa BẤM thắng cái mặc định.
+     * Hợp nhất hai ngôn ngữ là việc của đợt sau, không phải thứ để lặng lẽ quyết ở một dòng vẽ. */
+    drawEntities(ctx, v, docToDraw, {
+      stroke: pv.on ? css('--t3', '#9a9488') : muc,
+      lineWidth: 1.3, text: true, dimStyle: st.dimStyle, realLineweight: true,
+      background: giay,
+      giayMuc: pv.on ? undefined : { giay, muc, accent, khaoSat: useGiayMuc.getState().khaoSat },
+    });
 
     // highlight selection
     if (st.selection.length) {

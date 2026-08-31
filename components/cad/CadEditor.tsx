@@ -91,6 +91,7 @@ import { ZonePanel, ZonesLegend } from './ZonePanel';
 import PlanPresentPanel from './PlanPresentPanel';
 import { usePlanPresent } from './plan-present-store';
 import { useTuongSuyRa } from './tuong-suy-ra-store';
+import { useGiayMuc } from './giay-muc-store';
 import CamPathPanel from './CamPathPanel';
 // Hệ Legend C1+C2 (docs/PROPOSAL-LEGEND-SYSTEM.md) — panel Thống kê · Schedule + Chú giải.
 import SchedulePanel from './SchedulePanel';
@@ -1385,6 +1386,8 @@ function DxfImportReportPanel({
 function MucTuongHinhHoc({ do: d }: { do: import('@/lib/cad/tuong-hinh-hoc').DoDemTuong }) {
   const hienTuong = useTuongSuyRa((s) => s.hien);
   const bat = useTuongSuyRa((s) => s.toggle);
+  const khaoSat = useGiayMuc((s) => s.khaoSat);
+  const batKhaoSat = useGiayMuc((s) => s.toggle);
   const soBuc = d.sauGopChum;
   const met = d.tongDaiMm / 1000;
   // Bề dày: nấc dày nhất lên trước — tường bao đọc trước tường ngăn, đúng cách người ta soi mặt bằng.
@@ -1418,6 +1421,19 @@ function MucTuongHinhHoc({ do: d }: { do: import('@/lib/cad/tuong-hinh-hoc').DoD
       >
         <input type="checkbox" checked={hienTuong} onChange={bat} style={{ accentColor: 'var(--accent)' }} />
         Tường nhận diện — hiện phần máy suy ra
+      </label>
+
+      {/* GIẤY MỰC luật 4 — **VAN AN TOÀN**, đặt ngay cạnh công tắc trên vì hai công tắc trả lời
+          hai câu hỏi nối nhau: *"máy đọc ra cái gì"* và *"máy đang GIẤU cái gì của tôi"*.
+          TRÌNH BÀY là mặc định: mọi màu ACI của tệp nhập biến mất về thang mực đơn sắc — đẹp, và
+          **có rủi ro**: bản đồ layer → bậc mực chỉ là heuristic, map sai thì người dùng không có
+          cách nào biết. KHẢO SÁT là đường về dữ liệu thật: wireframe 1px đúng màu layer gốc.
+          Cùng khuôn ống kính với công tắc trên — `Doc` không đổi một byte. */}
+      <label
+        style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 8px', fontSize: 12, color: 'var(--t2)', cursor: 'pointer' }}
+      >
+        <input type="checkbox" checked={khaoSat} onChange={batKhaoSat} style={{ accentColor: 'var(--accent)' }} />
+        Khảo sát — wireframe 1px, đúng màu layer gốc
       </label>
 
       {soNgo > 0 && (

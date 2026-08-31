@@ -193,26 +193,45 @@ function canhCuaVong(pts: Pt[], layer: string, khep: boolean, ra: DoanThang[]) {
  * là nới tay, mà là đọc nốt phần chứng cứ đã nằm sẵn trong tệp.
  * (`block` không phải xử riêng: `dxf.ts` đã flatten INSERT thành entity phẳng trước bước này.)
  *
- * ⛔ **KHÔNG ĂN ĐẦU RA CỦA CHÍNH MÌNH.** `tuongThanhEntities` sinh ra hatch poché — biên của nó
- * lại đúng là hai cạnh song song cách nhau đúng bề dày, tức bằng chứng HOÀN HẢO cho chính bức
- * tường vừa sinh. Chạy hai lượt là tường tự nhân bản. Dấu nhận: hatch vừa mang `inferred` vừa
- * mang `wallThicknessMm` — bộ đôi đó CHỈ có ở tường máy suy ra (`element-infer.ts` đoán
- * `elementType` từ tên layer nhưng KHÔNG BAO GIỜ ghi `wallThicknessMm`, nên hatch thật của khách
- * không bao giờ dính bẫy này).
+ * ⛔ **KHÔNG ĂN ĐẦU RA CỦA CHÍNH MÌNH.** `tuongThanhEntities` sinh ra poché — biên của nó lại đúng
+ * là hai cạnh song song cách nhau đúng bề dày, tức bằng chứng HOÀN HẢO cho chính bức tường vừa
+ * sinh. Chạy hai lượt là tường tự nhân bản. Chốt chặn nay đặt ở **đầu vòng lặp, trước khi phân
+ * loại theo `type`** — xem `laPocheCuaChinhBoNay` để biết vì sao chỗ cũ (trong nhánh `hatch`)
+ * để hở đúng một nửa.
  */
 export function docDoanThang(doc: Doc, minDaiMm = TUONG_MAC_DINH.minDaiNetMm): DoanThang[] {
   const ra: DoanThang[] = [];
   for (const e of doc.entities) {
+    if (laPocheCuaChinhBoNay(e)) continue;
     if (e.type === 'line') {
       ra.push({ a: e.a, b: e.b, layer: e.layer });
     } else if (e.type === 'polyline' && Array.isArray(e.points)) {
       canhCuaVong(e.points, e.layer, e.closed === true, ra);
     } else if (e.type === 'hatch' && Array.isArray(e.points)) {
-      if (e.inferred && e.wallThicknessMm !== undefined) continue; // poché do CHÍNH bộ này sinh
       canhCuaVong(e.points, e.layer, true, ra);                    // biên hatch luôn khép kín
     }
   }
   return ra.filter((s) => daiDoan(s) > minDaiMm);
+}
+
+/**
+ * Entity này có phải đầu ra của CHÍNH bộ đọc tường không.
+ *
+ * 🔴 **VÁ 31/08 — chốt chặn cũ đặt SAI TẦNG.** Nó nằm trong nhánh `hatch`, mà `wallSegmentOutline`
+ * (`commands.ts:121-124`) sinh **ĐÔI**: một `hatch` poché **và** một `polyline` đường bao, cả hai
+ * cùng 4 đỉnh, cùng `wallThicknessMm`, và `tuongThanhEntities` đóng `inferred` lên cả hai. Bịt một
+ * cửa, để hở cửa kia: kênh polyline vẫn ăn lại đúng bức tường vừa sinh.
+ *
+ * ⚠️ Vì sao ca test cũ không bắt được: nó chấm `tuong.length` — con số CUỐI, đã qua gộp chùm, mà
+ * gộp chùm nuốt gọn hai trục trùng nhau. Bệnh có thật nhưng triệu chứng bị một tầng sau che đi.
+ * Ca mới khoá thẳng ở `docDoanThang`, đúng tầng bị hở.
+ *
+ * ⛔ Dấu nhận phải là **CẢ CẶP** `inferred` + `wallThicknessMm`, không được nới ra chỉ `inferred`:
+ * `element-infer.ts` cũng gắn `inferred` khi đoán `elementType` từ tên layer nhưng KHÔNG BAO GIỜ
+ * ghi `wallThicknessMm` — quét rộng là bịt mắt bộ đọc trước chính nét của khách.
+ */
+function laPocheCuaChinhBoNay(e: Entity): boolean {
+  return e.inferred === true && e.wallThicknessMm !== undefined;
 }
 
 /* ═══════════════════════ 3 · ① ĐẢO OFFSET — ghép đôi ĐỘC QUYỀN ═══════════════════════ */

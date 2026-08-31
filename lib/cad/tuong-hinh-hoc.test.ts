@@ -209,6 +209,28 @@ const hatchChuNhat = (x0: number, y0: number, x1: number, y1: number, layer = 'l
   const { doc: lan1 } = apDungTuongHinhHoc(goc);
   const { ketQua: lan2 } = apDungTuongHinhHoc(lan1);
   ok('⑩a chạy lần 2 trên chính đầu ra ⇒ vẫn 1 bức, không tự nhân bản', lan2.tuong.length === 1);
+  /* ⚠️ Ca trên MỘT MÌNH KHÔNG ĐỦ, và đó đúng là nợ `7cf286db` đặt tên. Nó chấm con số CUỐI
+   * (`tuong.length`), mà con số cuối đi qua gộp chùm — gộp chùm nuốt gọn hai trục trùng nhau nên
+   * nó vẫn xanh trong khi kênh POLYLINE đang bị ăn lại thật. `wallSegmentOutline` sinh ĐÔI:
+   * một `hatch` + một `polyline` đường bao, CẢ HAI mang `inferred` + `wallThicknessMm`. Chốt chặn
+   * cũ chỉ đặt ở nhánh `hatch`. ⇒ Khoá TRỰC TIẾP ở đúng tầng bị hở: `docDoanThang`. */
+  const chiPoche = docVoi(lan1.entities.filter((e) => e.inferred === true));
+  ok('⑩a poché máy sinh mang ĐỦ CẢ HAI loại — ca dưới mới có nghĩa',
+    chiPoche.entities.some((e) => e.type === 'hatch') && chiPoche.entities.some((e) => e.type === 'polyline'));
+  ok('⑩a KHOÁ KÉP: bản vẽ chỉ gồm poché máy sinh ⇒ docDoanThang ra ĐÚNG 0 đoạn',
+    docDoanThang(chiPoche).length === 0);
+  ok('⑩a lượt 2 chỉ còn thấy 2 nét GỐC của người vẽ, không thấy nét của chính mình',
+    lan2.doDem.netThang === 2);
+}
+{
+  /* ĐỐI CHỨNG — chốt chặn phải hẹp đúng bằng dấu tay của bộ này, không được quét rộng ra:
+   * `element-infer.ts` cũng gắn `inferred` (nó đoán `elementType` từ tên layer) nhưng KHÔNG BAO
+   * GIỜ ghi `wallThicknessMm`. Bỏ cả loại đó là bịt mắt bộ đọc trước chính nét của khách. */
+  const plyKhach = pline([{ x: 0, y: 100 }, { x: 5000, y: 100 }]);
+  ok('⑩a polyline của người vẽ vẫn là bằng chứng như cũ', docDoanThang(docVoi([plyKhach])).length === 1);
+  const plyDoan = { ...plyKhach, id: 'e-doan', inferred: true } as Entity;
+  ok('⑩a polyline chỉ mang `inferred` (không có bề dày) vẫn được đọc — chốt không quét rộng',
+    docDoanThang(docVoi([plyDoan])).length === 1);
 }
 
 /* ══ ⑩b BỀ DÀY 50–400mm — bắt vách mỏng, KHÔNG bắt hai nét kính ══ */
