@@ -127,8 +127,13 @@ export const GIAY_MUC_PHA = {
   pocheTuong: 0.8,
   /** luật 5 — fill của phần máy suy ra: accent còn lại **8–12%**. */
   accentTo: 0.1,
-  /** mảng tô SOLID không phải tường, chưa có luật riêng — giữ NHẠT HƠN poché tường để thứ bậc không đảo. */
-  toKhac: 0.45,
+  /**
+   * mảng tô SOLID không phải tường cắt — spec chưa có luật riêng cho nó.
+   * 🔴 HẠ 0.45 → 0.18 sau ảnh hiện trường 19:03 · 31/08: ở 45% chúng hiện thành **mảng xám nặng**
+   * lấn át poché tường, mà trên bản vẽ thật loại này ĐÔNG HƠN tường nhiều (tô sàn, tô ô gạch).
+   * Poché tường cắt phải là mảng ĐẬM NHẤT và nhìn là thấy khác ngay; 45% cạnh 80% không đủ tách.
+   */
+  toKhac: 0.18,
   /** trần pha khi nét chạm sàn — pha quá mức này thì lớp mảnh nhất biến mất khỏi bản vẽ. */
   nhatToiDa: 0.62,
 } as const;
@@ -173,15 +178,7 @@ export function bacMucCua(e: Entity, lay: Layer | undefined, gm: GiayMuc): BacMu
     if (theoTen) return theoTen;
   }
   const mm = e.lineweight ?? lay?.lineweight;
-  if (mm !== undefined) {
-    let gan: BacMuc = 'thay';
-    let lech = Infinity;
-    for (const b of ['cat', 'thay', 'manh'] as BacMuc[]) {
-      const d = Math.abs(BE_DAY_MUC[b] - mm);
-      if (d < lech) { lech = d; gan = b; }
-    }
-    return gan;
-  }
+  if (mm !== undefined) return bacTuBeDay(mm);
   const ten = lay?.name ?? '';
   if (TEN_LAYER_CAT.test(ten)) return 'cat';
   if (TEN_LAYER_MANH.test(ten)) return 'manh';
@@ -209,30 +206,165 @@ export function tiLeBanVe(doc: Doc, gm: GiayMuc): number {
   return gm.strokeScale ?? doc.printScale ?? TI_LE_MAC_DINH;
 }
 
-/** Bút của một entity ở chế độ giấy-mực: màu nét · bề dày px · nét đứt. */
+/* ─────────────────── HIỆU NĂNG — TÍNH NGOÀI VÒNG VẼ (vá 31/08) ─────────────────── */
+
+/**
+ * 🔴 **BỆNH ĐO ĐƯỢC, KHÔNG PHẢI LO XA.** Bản đầu của giấy-mực gọi `bacMucCua` (tra lớp + tới hai
+ * phép regex trên tên lớp) **và** `mixHex` (2 lần `parseHex` + dựng chuỗi) cho **TỪNG entity, MỖI
+ * KHUNG HÌNH**. Đo trên bản vẽ 12.436 hình / 40 lớp, ctx giả (không raster):
+ *
+ * ```
+ *   KHÔNG giấy mực    6,59 ms/khung
+ *   CÓ giấy mực      19,51 ms/khung     ← +12,92 ms (+196%)
+ *   + KHẢO SÁT        6,74 ms/khung     ← gần như miễn phí, vì nó KHÔNG đi qua hai hàm trên
+ * ```
+ *
+ * Chính con số cuối chỉ đúng thủ phạm: chế độ khảo sát bỏ qua `netMuc`/`mixHex` nên nó không tốn
+ * gì. Việc phải làm là **đưa hai phép ấy RA KHỎI vòng vẽ**, không phải làm chúng nhanh hơn.
+ *
+ * Hai bảng, hai nhịp đổi khác nhau — cố ý tách, không gộp:
+ *  · `BAC_CACHE` **theo LỚP** — chỉ đổi khi danh sách lớp hoặc bảng sửa tay đổi. Zoom KHÔNG đụng.
+ *  · `BANG_CACHE` **theo (màu · tỉ lệ · zoom)** — zoom đổi thì dựng lại, nhưng dựng **3 bậc + 3
+ *    màu tô cho CẢ bản vẽ**, không phải cho từng hình. 12.436 lượt `mixHex` mỗi khung → 6 lượt.
+ *
+ * ⚠️ Bảng chỉ giữ MỘT mục (không phải LRU): tại một thời điểm chỉ có một canvas đang vẽ, và trong
+ * một lượt `drawEntities` thì chữ ký không đổi. Nhiều mục chỉ thêm chỗ cho cache đi lạc.
+ */
+export const GIAY_MUC_DEM = {
+  /** số lần dựng lại bảng nét/màu. Bản vẽ đứng yên vẽ N khung ⇒ con số này phải đứng yên. */
+  bang: 0,
+  /** số lần dựng lại bảng bậc-mực-theo-lớp. Zoom/pan KHÔNG được làm nó nhúc nhích. */
+  bacLayer: 0,
+};
+
+interface BangGiayMuc {
+  net: Record<BacMuc, { px: number; mau: string }>;
+  toTuong: string;
+  toAccent: string;
+  toKhac: string;
+}
+let BANG_CACHE: { sig: string; bang: BangGiayMuc } | null = null;
+
+function bangGiayMuc(gm: GiayMuc, v: Viewport, tiLe: number): BangGiayMuc {
+  const sig = `${gm.muc}|${gm.giay}|${gm.accent}|${tiLe}|${v.scale}`;
+  if (BANG_CACHE && BANG_CACHE.sig === sig) return BANG_CACHE.bang;
+  const net = {} as Record<BacMuc, { px: number; mau: string }>;
+  for (const b of ['cat', 'thay', 'manh'] as BacMuc[]) {
+    const { px, nhat } = netMuc(b, v, gm, tiLe);
+    // `nhat === 0` là ca thường gặp nhất — trả thẳng mực, không pha một lượt vô ích.
+    net[b] = { px, mau: nhat === 0 ? gm.muc : mixHex(gm.muc, gm.giay, nhat) };
+  }
+  const bang: BangGiayMuc = {
+    net,
+    toTuong: mixHex(gm.muc, gm.giay, 1 - GIAY_MUC_PHA.pocheTuong),
+    toAccent: mixHex(gm.accent, gm.giay, 1 - GIAY_MUC_PHA.accentTo),
+    toKhac: mixHex(gm.muc, gm.giay, 1 - GIAY_MUC_PHA.toKhac),
+  };
+  GIAY_MUC_DEM.bang += 1;
+  BANG_CACHE = { sig, bang };
+  return bang;
+}
+
+/**
+ * Bảng `layerId → bậc mực`, dựng MỘT LẦN cho mỗi (danh sách lớp × bảng sửa tay).
+ *
+ * Khoá cache là **chính mảng `doc.layers`** kèm chốt độ dài — y hệt khuôn `LAYER_INDEX_CACHE` ở
+ * đầu tệp (luật 6: không đẻ khuôn cache thứ hai), vì cùng một lý do và cùng một rủi ro: đường NHẬP
+ * file `push` thẳng vào mảng cũ nên khoá không đổi, chốt `n` bắt đúng ca ấy.
+ *
+ * `coSua` giữ ĐÚNG thứ tự ưu tiên của `bacMucCua`: lớp nào người dùng đã sửa tay thì **bề dày khai
+ * báo trên từng entity KHÔNG được lật ngược lại**. Thiếu tập này thì bảng nhanh hơn nhưng trả lời
+ * khác hàm gốc — nhanh mà sai.
+ */
+const BAC_CACHE = new WeakMap<Layer[], { n: number; sua: unknown; map: Map<string, BacMuc>; coSua: Set<string> }>();
+
+function bacTheoLayer(doc: Doc, gm: GiayMuc): { map: Map<string, BacMuc>; coSua: Set<string> } {
+  const layers = doc.layers;
+  const hit = BAC_CACHE.get(layers);
+  if (hit && hit.n === layers.length && hit.sua === gm.theoLayer) return hit;
+  const map = new Map<string, BacMuc>();
+  const coSua = new Set<string>();
+  for (const l of layers) {
+    // entity RỖNG (không màu, không bề dày riêng) ⇒ đúng phần "trả lời được từ LỚP" của hàm gốc.
+    map.set(l.id, bacMucCua({ layer: l.id } as Entity, l, gm));
+    if (gm.theoLayer && (gm.theoLayer[l.id] || gm.theoLayer[l.name])) coSua.add(l.id);
+  }
+  GIAY_MUC_DEM.bacLayer += 1;
+  const muc = { n: layers.length, sua: gm.theoLayer, map, coSua };
+  BAC_CACHE.set(layers, muc);
+  return muc;
+}
+
+/**
+ * Entity này có phải thứ MÁY ĐỌC NGƯỢC TỪ HÌNH HỌC không — tức thứ luật 5 gọi là "phần máy suy ra"
+ * và cho phép mang accent.
+ *
+ * 🔴 **CA HIỆN TRƯỜNG 19:03 · 31/08 — ảnh app thật: TOÀN BẢN VẼ MỘT MÀU ACCENT.** Bản đầu lấy
+ * `e.inferred` một mình làm cờ. Nhưng `Entity.inferred` KHÔNG có nghĩa hẹp như tên nó gợi:
+ * `element-infer.ts` đóng dấu `inferred: true` cho **mọi entity có tên layer khớp luật**, ngay lúc
+ * nhập DXF. Bản vẽ khách có `A-WALL`/`A-DOOR`/`A-FURN` ⇒ gần như CẢ TỆP mang dấu ấy ⇒ accent phủ
+ * kín bản vẽ, và "một màu nóng, phần còn lại câm" thành "tất cả đều nóng" — hỏng đúng thứ luật 5
+ * sinh ra để giữ.
+ *
+ * Dấu ĐÚNG là **CẶP** `inferred` + `wallThicknessMm`: chỉ `tuong-hinh-hoc.ts` ghi cả hai
+ * (`tuongThanhEntities` → `wallSegmentOutline`), và `element-infer` KHÔNG BAO GIỜ ghi bề dày.
+ * Đây đúng là cặp mà `laPocheCuaChinhBoNay` bên `tuong-hinh-hoc.ts` đã dùng để tự nhận ra đầu ra
+ * của chính nó — cùng một câu hỏi thì phải cùng một dấu, không đẻ dấu thứ hai.
+ *
+ * ⚠️ Đường `POCHE_TAM` cũ (chạy khi KHÔNG có giấy mực) vẫn dùng `e.inferred` rộng như trước —
+ * cố ý không đổi ở lô này: nó bị khoá bởi 20 ca `render-z-order.test.ts` và sửa nó là một quyết
+ * định riêng, không phải thứ để đổi kèm. Nợ có tên, nói ra ở đây.
+ */
+function mayDocNguoc(e: Entity): boolean {
+  return e.inferred === true && e.wallThicknessMm !== undefined;
+}
+
+/** Bề dày mm → bậc gần nhất. Tách ra để cả `bacMucCua` lẫn đường nhanh dùng CHUNG một phép bắt. */
+function bacTuBeDay(mm: number): BacMuc {
+  let gan: BacMuc = 'thay';
+  let lech = Infinity;
+  for (const b of ['cat', 'thay', 'manh'] as BacMuc[]) {
+    const d = Math.abs(BE_DAY_MUC[b] - mm);
+    if (d < lech) { lech = d; gan = b; }
+  }
+  return gan;
+}
+
+/**
+ * Bút của một entity ở chế độ giấy-mực: màu nét · bề dày px · nét đứt.
+ *
+ * ⚠️ **ĐÂY LÀ ĐƯỜNG NÓNG** — chạy cho từng hình, mỗi khung. Nó chỉ được phép TRA BẢNG: một lượt
+ * `Map.get` cho bậc, một lượt đọc bảng nét. Mọi phép regex và mọi phép pha màu đã bị đẩy ra
+ * `bangGiayMuc`/`bacTheoLayer` phía trên. Thêm một phép tính vào đây là trả lại đúng 12,92 ms đã
+ * đo được và vừa gỡ đi.
+ */
 function butGiayMuc(
   li: LayerIndex, doc: Doc, e: Entity, v: Viewport, gm: GiayMuc, style: DrawStyle, suyRa: boolean,
 ): { mau: string; px: number; dash: number[] } {
-  const lay = li.get(e.layer);
   /* KHẢO SÁT — trả đúng dữ liệu GỐC: màu riêng của entity trước, rồi màu layer. 1px, không thang
    * mực, không pha. Đây là chế độ để NGỜ VỰC bản đồ mực, nên nó không được đi qua bản đồ mực. */
   if (gm.khaoSat) {
-    return { mau: e.color ?? lay?.color ?? style.stroke, px: 1, dash: effectiveLineDashPx(li, e, v, style) };
+    return { mau: e.color ?? li.get(e.layer)?.color ?? style.stroke, px: 1, dash: effectiveLineDashPx(li, e, v, style) };
   }
-  const { px, nhat } = netMuc(bacMucCua(e, lay, gm), v, gm, tiLeBanVe(doc, gm));
+  const { map, coSua } = bacTheoLayer(doc, gm);
+  const bac = e.lineweight !== undefined && !coSua.has(e.layer)
+    ? bacTuBeDay(e.lineweight)
+    : map.get(e.layer) ?? 'thay';
+  const { px, mau } = bangGiayMuc(gm, v, tiLeBanVe(doc, gm)).net[bac];
   /* Luật 5 — nét LIỀN accent = **đã xác nhận**. Nét ĐỨT (đề xuất chờ duyệt) chưa vẽ: xem
    * `GIAY_MUC_CON_NO`. Ép `[]` ở đây để linetype của layer nguồn không biến một thứ máy đã xác
    * nhận thành một thứ trông như đang chờ duyệt. */
   if (suyRa) return { mau: gm.accent, px, dash: [] };
-  return { mau: mixHex(gm.muc, gm.giay, nhat), px, dash: effectiveLineDashPx(li, e, v, style) };
+  return { mau, px, dash: effectiveLineDashPx(li, e, v, style) };
 }
 
-/** Màu tô mảng SOLID ở chế độ giấy-mực. `null` = KHÔNG tô (chế độ khảo sát tắt fill). */
-function toGiayMuc(e: Entity, gm: GiayMuc, suyRa: boolean): string | null {
+/** Màu tô mảng SOLID ở chế độ giấy-mực. `null` = KHÔNG tô (chế độ khảo sát tắt fill). Tra bảng. */
+function toGiayMuc(e: Entity, gm: GiayMuc, v: Viewport, tiLe: number, suyRa: boolean): string | null {
   if (gm.khaoSat) return null;
-  if (suyRa) return mixHex(gm.accent, gm.giay, 1 - GIAY_MUC_PHA.accentTo);
-  if (e.elementType === 'wall') return mixHex(gm.muc, gm.giay, 1 - GIAY_MUC_PHA.pocheTuong);
-  return mixHex(gm.muc, gm.giay, 1 - GIAY_MUC_PHA.toKhac);
+  const bang = bangGiayMuc(gm, v, tiLe);
+  if (suyRa) return bang.toAccent;
+  if (e.elementType === 'wall') return bang.toTuong;
+  return bang.toKhac;
 }
 
 /**
@@ -379,7 +511,7 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
   /* GIẤY MỰC — `forceColor` TẮT nó vì cùng lý do đã tắt lớp tạm ngay trên: nơi ép màu là nơi đang
    * vẽ một lớp ACCENT có chủ đích (highlight/ghost preview), thang mực không được nuốt nó. */
   const gm = style.giayMuc && !style.forceColor ? style.giayMuc : undefined;
-  const but = gm ? butGiayMuc(li, doc, e, v, gm, style, tam) : null;
+  const but = gm ? butGiayMuc(li, doc, e, v, gm, style, mayDocNguoc(e) && !style.forceColor) : null;
   const mauNet = but ? but.mau : tamMau(layerColor(li, e, style), style, tam);
   ctx.strokeStyle = mauNet;
   ctx.lineWidth = but ? but.px : tamNet(effectiveLineWidthPx(li, e, v, style), tam);
@@ -474,7 +606,7 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
         /* Poché GIẤY MỰC: mảng tô rồi VIỀN đè lên chính nó — mảng tô không bao giờ được ăn mất
          * đường bao của chính nó. Màu tô do `toGiayMuc` quyết (tường cắt 80% mực · máy suy ra
          * accent 10% · còn lại 45%), luôn `globalAlpha = 1`: độ nhạt nằm trong MÀU, không trong alpha. */
-        const mauTo = toGiayMuc(e, gm, tam);
+        const mauTo = toGiayMuc(e, gm, v, tiLeBanVe(doc, gm), mayDocNguoc(e));
         if (mauTo) {
           veBien();
           ctx.fillStyle = mauTo;

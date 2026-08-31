@@ -15,7 +15,7 @@
  * khuôn test thứ ba). Proxy nuốt mọi lệnh vẽ, chỉ ghi NHẬT KÝ THAO TÁC có thứ tự.
  */
 import type { Doc, Entity, Layer, Viewport } from './model';
-import { drawEntities, drawEntity, BE_DAY_MUC, GIAY_MUC_PHA, SAN_NET_PX, TI_LE_MAC_DINH, bacMucCua, netMuc } from './render';
+import { drawEntities, drawEntity, BE_DAY_MUC, GIAY_MUC_DEM, GIAY_MUC_PHA, SAN_NET_PX, TI_LE_MAC_DINH, bacMucCua, netMuc } from './render';
 import type { GiayMuc } from './render';
 import { mixHex } from './plan-depth';
 
@@ -70,6 +70,14 @@ const hatch = (layer = 'l-A', extra: Partial<Entity> = {}) =>
     ...extra,
   }) as Entity;
 const docVoi = (es: Entity[], them: Partial<Doc> = {}): Doc => ({ entities: es, layers, ...them } as Doc);
+/**
+ * Poché của tường MÁY ĐỌC NGƯỢC TỪ HÌNH HỌC — mang ĐỦ CẶP `inferred` + `wallThicknessMm`, đúng
+ * thứ `tuong-hinh-hoc.ts` sinh ra. Có khuôn riêng để không ca nào lỡ tay khoá bằng mỗi `inferred`:
+ * dấu đó rộng hơn nhiều (element-infer đóng nó lúc nhập DXF) và chính chỗ lẫn ấy đã nhuộm accent
+ * cả bản vẽ thật của khách — ảnh hiện trường 19:03 · 31/08.
+ */
+const hatchSuyRa = (layer = 'l-W', extra: Partial<Entity> = {}) =>
+  hatch(layer, { inferred: true, elementType: 'wall', wallThicknessMm: 200, ...extra });
 
 /** v.scale = px/mm. 0.02 ≈ nhìn cả mặt bằng; 0.2 ≈ phóng to một góc phòng. */
 const V = (scale: number): Viewport => ({ scale, panX: 0, panY: 0 });
@@ -93,7 +101,7 @@ console.log('① TRÌNH BÀY: mọi nét về thang mực đơn sắc, màu ACI 
 }
 {
   // ĐỐI CHỨNG: một màu KHÔNG phải mực được phép tồn tại — accent (luật 5). Và chỉ đúng một.
-  const l = veTrinhBay(docVoi([line('l-A'), line('l-B'), hatch('l-W', { inferred: true })]), V(0.2));
+  const l = veTrinhBay(docVoi([line('l-A'), line('l-B'), hatchSuyRa()]), V(0.2));
   ok('① accent có mặt trên canvas', l.some((s) => s.includes(ACCENT)), l);
 }
 
@@ -169,7 +177,7 @@ console.log('④ poché tường cắt: xám đậm 75–85% mực, có viền, 
 /* ═══════════ ⑤ LUẬT 5 · PHẦN MÁY SUY RA = ĐÚNG MỘT MÀU ACCENT ═══════════ */
 console.log('⑤ máy suy ra: accent LIỀN = đã xác nhận · fill pha còn 8–12% · một màu nóng, còn lại câm');
 {
-  const l = veTrinhBay(docVoi([hatch('l-W', { inferred: true, elementType: 'wall' })]), V(0.2));
+  const l = veTrinhBay(docVoi([hatchSuyRa()]), V(0.2));
   const to = l.find((s) => s.startsWith('fill'))!;
   const net = l.find((s) => s.startsWith('stroke'))!;
   ok('⑤ nét của phần máy suy ra dùng ĐÚNG accent', mau(net) === ACCENT, net);
@@ -181,8 +189,26 @@ console.log('⑤ máy suy ra: accent LIỀN = đã xác nhận · fill pha còn 
     l[0].startsWith('fill'), l);
 }
 {
+  /* 🔴 CA HIỆN TRƯỜNG 19:03 · 31/08 — ảnh app thật của Hoà: **TOÀN BẢN VẼ MỘT MÀU ACCENT**.
+   * Gốc bệnh: `Entity.inferred` KHÔNG có nghĩa "máy đọc ngược từ hình học". `element-infer.ts`
+   * đóng dấu `inferred: true` cho MỌI entity có tên layer khớp luật, ngay lúc nhập DXF — trên
+   * bản vẽ thật (A-WALL · A-DOOR · A-FURN…) đó là gần như cả bản vẽ. Lấy `inferred` một mình làm
+   * cờ accent tức là nhuộm accent cả tệp của khách, và "một màu nóng, phần còn lại câm" thành
+   * "tất cả đều nóng" — đúng thứ luật 5 sinh ra để tránh.
+   * Dấu ĐÚNG là CẶP `inferred` + `wallThicknessMm`: chỉ `tuong-hinh-hoc.ts` ghi cả hai
+   * (`laPocheCuaChinhBoNay` ở tệp đó dùng đúng cặp này), `element-infer` không bao giờ ghi bề dày. */
+  const dauElementInfer = hatch('l-W', { inferred: true, elementType: 'wall' });      // dấu của element-infer
+  const dauTuongHinhHoc = hatch('l-W', { inferred: true, elementType: 'wall', wallThicknessMm: 200 });
+  const l1 = veTrinhBay(docVoi([dauElementInfer]), V(0.2));
+  ok('⑤ entity chỉ mang `inferred` (dấu element-infer) KHÔNG được nhuộm accent',
+    !l1.some((s) => s.includes(ACCENT)), l1);
+  ok('⑤ …nó là MỰC như mọi nét khác của khách', l1.some((s) => s.includes(MUC)), l1);
+  const l2 = veTrinhBay(docVoi([dauTuongHinhHoc]), V(0.2));
+  ok('⑤ tường MÁY ĐỌC NGƯỢC (inferred + bề dày) mới là accent', l2.some((s) => s.includes(ACCENT)), l2);
+}
+{
   // "một màu nóng, phần còn lại câm" — nét người vẽ tuyệt đối KHÔNG được nhuộm accent.
-  const l = veTrinhBay(docVoi([line('l-A'), hatch('l-W', { inferred: true })]), V(0.2));
+  const l = veTrinhBay(docVoi([line('l-A'), hatchSuyRa()]), V(0.2));
   const netNguoi = l[l.length - 1];
   ok('⑤ nét người vẽ vẫn là MỰC, không dính accent',
     !netNguoi.includes(ACCENT) && netNguoi.startsWith('stroke'), l);
@@ -191,7 +217,7 @@ console.log('⑤ máy suy ra: accent LIỀN = đã xác nhận · fill pha còn 
   // ĐỐI CHỨNG: highlight/preview ép màu (`forceColor`) vẫn THẮNG — chọn một vật thì nó phải sáng
   // lên, kể cả vật do máy suy ra. Giữ nguyên luật đã khoá ở `render-z-order.test.ts`.
   log = [];
-  drawEntity(ctx, V(0.2), docVoi([]), hatch('l-W', { inferred: true }),
+  drawEntity(ctx, V(0.2), docVoi([]), hatchSuyRa(),
     { ...BASE, background: GIAY, giayMuc: GM, forceColor: '#e0603a', outlineOnly: true } as never);
   ok('⑤ forceColor thắng cả giấy-mực lẫn accent', log.length === 1 && log[0].startsWith('stroke #e0603a'), log);
 }
@@ -244,6 +270,65 @@ console.log('⑦ style KHÔNG mang `giayMuc` ⇒ đường vẽ cũ chạy y h�
   ok('⑦ doc 1:100 cho nét dày hơn doc 1:50 trên cùng zoom', rong(l100[0]) > rong(l50[0]), [l100, l50]);
   const lEp = veTrinhBay(docVoi([line('l-W')], { printScale: 100 }), v, { strokeScale: 50 });
   ok('⑦ nơi gọi truyền strokeScale thì THẮNG printScale của doc', rong(lEp[0]) === rong(l50[0]), [lEp, l50]);
+}
+
+/* ═══════════ ⑧ HIỆU NĂNG — ĐẾM LẦN TÍNH LẠI, KHÔNG ĐO MILI-GIÂY ═══════════ */
+console.log('⑧ phép đắt nằm NGOÀI vòng vẽ: vẽ lại bản vẽ cũ ⇒ không tính lại gì');
+/* Vì sao đếm chứ không đo ms: đo ms trong unit test là tự rước một ca ĐỎ NGẪU NHIÊN theo tải máy.
+ * Cái cần khoá là TÍNH CHẤT — "phép đắt chạy một lần cho cả bản vẽ, không một lần mỗi hình" — và
+ * tính chất đó đếm được, ổn định, đọc ra ngay nguyên nhân khi vỡ.
+ * Con số ms để tham khảo (bản vẽ 12.436 hình, ctx giả): 6,59 → 19,51 ms/khung khi thêm giấy-mực,
+ * xuống 2,15 ms/khung phụ trội sau khi đưa hai phép này ra ngoài vòng vẽ. */
+const dem = () => ({ ...GIAY_MUC_DEM });
+const lech = (a: { bang: number; bacLayer: number }, b: { bang: number; bacLayer: number }) =>
+  ({ bang: b.bang - a.bang, bacLayer: b.bacLayer - a.bacLayer });
+{
+  const nhieu: Entity[] = [];
+  for (let i = 0; i < 400; i++) nhieu.push(line(i % 2 ? 'l-A' : 'l-W'));
+  // Mảng lớp RIÊNG (bản sao) — khoá cache là chính mảng `doc.layers`, nên dùng chung mảng của các
+  // ca trên thì cache đã ấm sẵn và ca này đo nhầm một cái bếp người khác nhóm.
+  const d = docVoi(nhieu, { layers: [...layers] });
+  const v = V(0.2);
+  const t0 = dem();
+  veTrinhBay(d, v);
+  const sauLan1 = lech(t0, dem());
+  ok('⑧ 400 hình ⇒ bảng nét dựng ĐÚNG 1 lần, không 400 lần', sauLan1.bang === 1, sauLan1);
+  ok('⑧ …bảng bậc-theo-lớp cũng đúng 1 lần', sauLan1.bacLayer === 1, sauLan1);
+  const t1 = dem();
+  veTrinhBay(d, v);
+  veTrinhBay(d, v);
+  ok('⑧ vẽ lại CÙNG bản vẽ, CÙNG zoom ⇒ KHÔNG tính lại gì', JSON.stringify(lech(t1, dem())) === '{"bang":0,"bacLayer":0}', lech(t1, dem()));
+}
+{
+  // Zoom là thứ đổi mỗi khung khi người dùng lăn chuột. Nó ĐƯỢC dựng lại bảng nét (3 bậc, rẻ)
+  // nhưng TUYỆT ĐỐI không được đụng bảng bậc-theo-lớp (tra lớp + regex tên — thứ đắt).
+  const d = docVoi([line('l-A'), line('l-W')]);
+  veTrinhBay(d, V(0.2));
+  const t0 = dem();
+  veTrinhBay(d, V(0.21));
+  veTrinhBay(d, V(0.22));
+  const l = lech(t0, dem());
+  ok('⑧ zoom đổi ⇒ dựng lại bảng nét (đúng, màu/bề dày phụ thuộc zoom)', l.bang === 2, l);
+  ok('⑧ …nhưng KHÔNG chạm bảng bậc-theo-lớp — regex tên lớp không chạy lại khi lăn chuột',
+    l.bacLayer === 0, l);
+}
+{
+  // Bảng sửa tay per-layer đổi ⇒ PHẢI tính lại, nếu không người dùng sửa mà màn hình không đổi.
+  const d = docVoi([line('l-D')]);
+  veTrinhBay(d, V(0.2));
+  const t0 = dem();
+  veTrinhBay(d, V(0.2), { theoLayer: { 'l-D': 'cat' } });
+  ok('⑧ đổi bảng sửa tay ⇒ bảng bậc dựng lại (cache không được điếc)', lech(t0, dem()).bacLayer === 1, lech(t0, dem()));
+}
+{
+  // ĐÚNG-TRƯỚC-NHANH-SAU: đường nhanh phải trả lời Y HỆT hàm gốc `bacMucCua`, kể cả ở ca xoắn
+  // nhất — lớp CÓ sửa tay mà entity lại tự khai bề dày. Sửa tay thắng, đúng thứ tự hàm gốc.
+  const gmSua: GiayMuc = { ...GM, theoLayer: { 'l-W': 'manh' } };
+  const e = line('l-W', { lineweight: 0.5 });
+  ok('⑧ hàm gốc: sửa tay thắng bề dày khai báo trên entity', bacMucCua(e, lay('l-W'), gmSua) === 'manh');
+  const l = veTrinhBay(docVoi([e]), V(0.2), { theoLayer: { 'l-W': 'manh' } });
+  const lCat = veTrinhBay(docVoi([line('l-W')]), V(0.2), { theoLayer: { 'l-W': 'cat' } });
+  ok('⑧ đường nhanh trả lời GIỐNG hàm gốc ở ca xoắn ấy (mảnh ≠ cắt)', rong(l[0]) < rong(lCat[0]), [l, lCat]);
 }
 
 console.log(`\nrender-giay-muc: ${pass} pass, ${fail} fail`);
