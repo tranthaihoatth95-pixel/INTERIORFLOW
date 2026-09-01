@@ -13,9 +13,20 @@
     "",
     "doc[]           — `argv-dau` khớp TIỀN TỐ argv; `cam-co` là các mẫu regex, khớp bất kỳ đối",
     "                  số còn lại nào thì mục KHÔNG áp dụng (rơi về đường phân loại thường).",
+    "                  `phai-co` (01/09) là điều kiện DƯƠNG: MỌI mẫu phải khớp ít nhất một đối số,",
+    "                  không đủ thì mục không áp dụng. Nó có vì `cam-co` một mình chỉ loại trừ",
+    "                  được, mà loại trừ thì phải kể hết cái xấu — muốn khai MỘT chế độ chỉ-đọc",
+    "                  của một kịch bản thì phải nói được cái TỐT.",
+    "                  ⛔ `argv-dau` MỘT TỪ là tên THÔNG DỊCH VIÊN, không phải tên một lệnh:",
+    "                  `[\"node\"]` khớp mọi `node <bất cứ gì>`. Lõi BỎ THẲNG mục như vậy nếu nó",
+    "                  không kèm `phai-co` không rỗng. Đừng gỡ luật đó để cho một mục qua.",
     "script-an-toan[]— lệnh có THAM SỐ GHI: `co-out` nói đích ghi nằm sau cờ nào. Sổ chỉ nói",
     "                  ĐÍCH Ở ĐÂU; đích đó vẫn phải qua đúng cửa ngoài-repo/allowlist như mọi",
-    "                  mutation khác. Đây không phải danh sách miễn kiểm."
+    "                  mutation khác. Đây không phải danh sách miễn kiểm.",
+    "                  `cam-co` (01/09) cũng dùng được ở đây, và với kịch bản ĐA CHẾ ĐỘ thì nó",
+    "                  BẮT BUỘC: mô hình `co-out` cho mỗi kịch bản ĐÚNG MỘT đích ghi, nên một",
+    "                  kịch bản có chế độ ghi thứ hai (cờ khác) sẽ được cổng kiểm cờ này rồi ghi",
+    "                  bằng cờ kia. Khai kịch bản mới thì ĐỌC RUỘT NÓ, đếm hết lời gọi ghi."
   ],
   "doc": [
     {
@@ -51,6 +62,12 @@
     {
       "vi-sao": "đọc nhiều biến môi trường một lượt khi tự soi danh tính lane",
       "argv-dau": ["printenv"]
+    },
+    {
+      "vi-sao": "kiểm canvas thiết kế TRƯỚC khi xuất bản — nhánh `--check` của seed-canvas.mjs (dòng 323-346) không có một lời gọi write() nào, chỉ đọc rồi exit 0. Đọc bằng: sed -n '323,346p' <đường dẫn skill>/design/seed-canvas.mjs",
+      "argv-dau": ["node"],
+      "phai-co": ["design/seed-canvas\\.mjs$", "^--check$"],
+      "cam-co": ["^--out$", "^--to$", "^--extract$", "^--force$"]
     }
   ],
   "script-an-toan": [
@@ -59,6 +76,15 @@
       "bin": ["python", "python3"],
       "mau": "local-tts/.*/scripts/generate\\.py$",
       "co-out": "--out"
+    },
+    {
+      "vi-sao": "bộ gieo canvas thiết kế Claude Design — chế độ SEED ghi ĐÚNG MỘT tệp, vào --out (seed-canvas.mjs:462). Đích đó vẫn qua allowlist như mọi mutation.",
+      "canh-bao": "cam-co KHÔNG phải trang trí. Kịch bản còn chế độ --extract ghi N tệp vào --to (dòng 290, 313-314) rồi exit(0) ở 319, TRƯỚC khi --out được đọc. Thiếu cam-co thì `--extract x --to <bất kỳ đâu> --out <tệp hợp lệ>` qua được cổng rồi ghi ra chỗ chưa ai kiểm. Gỡ dòng cam-co là mở lại đúng cửa hậu đó.",
+      "neo-mau": "khớp theo ĐUÔI đường dẫn nên sống qua nâng cấp skill (số phiên bản nằm ở khúc đầu). Đánh đổi: mọi tệp có đuôi design/seed-canvas.mjs đều khớp. cl:00 chọn hướng này 01/09; Hoà phủ quyết được — muốn chặt thì neo cứng bundled-skills/<version>/ và chịu sửa sau mỗi lần nâng.",
+      "bin": ["node"],
+      "mau": "design/seed-canvas\\.mjs$",
+      "co-out": "--out",
+      "cam-co": ["^--extract$", "^--to$"]
     }
   ]
 }

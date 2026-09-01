@@ -468,4 +468,83 @@ assert.equal(ghiVoiPhien('phien-B', () => null).allow, true, 'chưa ai nhận th
 // (Ca thật cần bắt là hai phiên ĐỀU CÓ id; chặn phiên vô danh chỉ đổi lỗi này lấy lỗi khác.)
 assert.equal(ghiVoiPhien(undefined, () => 'phien-A').allow, true, 'thiếu danh tính phiên thì không chấm');
 
-console.log('claude-role-guard: read/pipe/verify/commit+chỉ-mục/per-lane/điều-phối/xoá-có-kiểm/ngoài-repo/issuer/tool-lạ/lease + v3(chuỗi-đọc/redirect-lành/sổ-lệnh/external/renew-amend-thay/ngoài-repo-trước-lane00/env-prefix/script-an-toàn/npm-passthrough/symlink) + v4(nhánh-test/dựng-bản/phiên-đang-giữ) gates OK');
+// ══ v4 ④ · KỊCH BẢN ĐA CHẾ ĐỘ — `co-out` cho MỖI kịch bản một đích, kịch bản thật có hai.
+// Ca sinh ra luật (01/09): `design/seed-canvas.mjs` seed ghi vào `--out` (:462), nhưng nhánh
+// `--extract` ghi N tệp vào `--to` (:313-314) rồi exit TRƯỚC khi `--out` được đọc.
+{
+  // `so()` NHỚ theo đường tệp, và `classifyBash` đọc thẳng `process.env` — nên mỗi kịch bản
+  // phải là một TỆP MỚI, và phải đặt vào chính `process.env`, không phải env giả truyền vào.
+  const thuMuc = fs.mkdtempSync(path.join(os.tmpdir(), 'if-so-'));
+  const soCu = process.env.IF_GUARD_LENH_DOC;
+  let dem = 0;
+  let soTam = '';
+  const ghiSo = (noiDung: any) => {
+    soTam = path.join(thuMuc, `so-${dem += 1}.json`);
+    fs.writeFileSync(soTam, JSON.stringify(noiDung));
+    process.env.IF_GUARD_LENH_DOC = soTam;
+  };
+  const chay = (command: string, env: Record<string, string> = base) =>
+    evaluate({ env, hook: { tool_name: 'Bash', tool_input: { command }, session_id: 'session-1' }, lease, now, cwd: process.cwd() });
+  const KICH = '/private/tmp/claude-501/bundled-skills/2.1.251/abc/design/seed-canvas.mjs';
+  const TRONG = 'components/cad/CadCanvas.tsx';   // nằm trong allowlist của `lease`
+  try {
+    // ⓐ Sổ CHƯA có `cam-co` — đây là hình dạng đã suýt được ký. Nó ĐỂ LỌT đường vòng.
+    ghiSo({ v: 1, doc: [], 'script-an-toan': [{ bin: ['node'], mau: 'design/seed-canvas\\.mjs$', 'co-out': '--out' }] });
+    assert.equal(chay(`node ${KICH} --template t.html --out ${TRONG} --title x`).allow, true, 'seed hợp lệ vẫn phải qua');
+    assert.equal(chay(`node ${KICH} --extract x.html --to /tmp/bat-ky-dau --out ${TRONG}`).allow, true,
+      'TANG VẬT: thiếu cam-co thì đường vòng --extract/--to LỌT — nếu dòng này thành false thì lỗ đã tự đóng ở chỗ khác, đi tìm chỗ đó');
+
+    // ⓑ Thêm `cam-co` ⇒ đường vòng ĐÓNG, seed thẳng vẫn mở.
+    ghiSo({ v: 1, doc: [], 'script-an-toan': [{ bin: ['node'], mau: 'design/seed-canvas\\.mjs$', 'co-out': '--out', 'cam-co': ['^--extract$', '^--to$'] }] });
+    assert.equal(chay(`node ${KICH} --template t.html --out ${TRONG} --title x`).allow, true, 'cam-co không được chặn oan seed thẳng');
+    assert.deepEqual(classifyBash(`node ${KICH} --template t.html --out ${TRONG} --title x`).files, [TRONG], 'đích khai ra cổng đúng là --out');
+    for (const v of [`node ${KICH} --extract x.html --to /tmp/z --out ${TRONG}`, `node ${KICH} --to /tmp/z --out ${TRONG}`, `node ${KICH} --extract x.html --out ${TRONG}`])
+      assert.equal(chay(v).allow, false, `đường vòng phải đóng: ${v}`);
+    // Đích `--out` NGOÀI allowlist vẫn đóng — mục sổ không phải giấy miễn kiểm.
+    assert.equal(chay(`node ${KICH} --template t.html --out scripts/moc.mjs --title x`).allow, false, 'đích ngoài allowlist vẫn đóng');
+
+    // ⓒ `phai-co` — khai được chế độ CHỈ ĐỌC mà không mở tiền tố `node`.
+    ghiSo({ v: 1, doc: [{ 'argv-dau': ['node'], 'phai-co': ['design/seed-canvas\\.mjs$', '^--check$'], 'cam-co': ['^--out$', '^--to$', '^--extract$'] }], 'script-an-toan': [] });
+    assert.equal(classifyBash(`node ${KICH} --check trang.html`).kind, 'read', '--check là đọc');
+    assert.equal(chay(`node ${KICH} --check trang.html`, { IF_SYSTEM: 'cl', IF_LANE: '00' }).allow, true, '--check chạy được ở cl:00, không lease');
+    // ⛔ ĐỐI CHỨNG SỐNG CÒN: mục này KHÔNG được biến mọi `node …` thành đọc.
+    for (const v of [`node scripts/khac.mjs`, `node ${KICH} --extract x.html --to /tmp/z`, `node ${KICH} --out ${TRONG}`, `node -e code`])
+      assert.notEqual(classifyBash(v).kind, 'read', `phai-co không được rò sang: ${v}`);
+
+    // ⓓ FAIL-CLOSED với THÔNG DỊCH VIÊN: tên `node`/`bash`/`npx` không định danh lệnh nào.
+    for (const bin of ['node', 'bash', 'npx', 'python3', 'xargs']) {
+      ghiSo({ v: 1, doc: [{ 'argv-dau': [bin] }], 'script-an-toan': [] });
+      assert.equal(napSo(soTam).doc.length, 0, `tiền tố trần "${bin}" không kèm phai-co bị loại khỏi sổ`);
+    }
+    ghiSo({ v: 1, doc: [{ 'argv-dau': ['node'] }], 'script-an-toan': [] });
+    assert.notEqual(classifyBash('node scripts/khac.mjs').kind, 'read', 'không có đường nào mở tiền tố node');
+    // `node -e` DÀI hơn một từ nhưng vẫn là eval ⇒ vẫn bị loại.
+    ghiSo({ v: 1, doc: [{ 'argv-dau': ['node', '-e'] }], 'script-an-toan': [] });
+    assert.equal(napSo(soTam).doc.length, 0, 'node -e là eval, không phải một lệnh có tên');
+    // Nhưng thông dịch viên + ĐƯỜNG DẪN cụ thể thì hợp lệ — nó đã định danh đúng một kịch bản.
+    ghiSo({ v: 1, doc: [{ 'argv-dau': ['node', 'scripts/soi-cau.mjs'] }], 'script-an-toan': [] });
+    assert.equal(napSo(soTam).doc.length, 1, 'thông dịch viên + đường dẫn cụ thể vẫn khai được');
+    // ⛔ ĐỐI CHỨNG KHÔNG-ĂN-OAN: lệnh đọc MỘT TỪ bình thường không dính luật này.
+    // (Bản đầu 01/09 viết luật thành "tiền tố phải ≥2 từ" và giết đúng ba mục dưới đây.)
+    for (const bin of ['lsof', 'ps', 'printenv']) {
+      ghiSo({ v: 1, doc: [{ 'argv-dau': [bin] }], 'script-an-toan': [] });
+      assert.equal(napSo(soTam).doc.length, 1, `lệnh đọc một từ "${bin}" KHÔNG được bị loại`);
+      assert.equal(classifyBash(`${bin} -x`).kind, 'read', `${bin} vẫn là đọc`);
+    }
+    ghiSo({ v: 1, doc: [{ 'argv-dau': ['git', 'worktree', 'list'] }], 'script-an-toan': [] });
+    assert.equal(napSo(soTam).doc.length, 1, 'mục nhiều từ không bị luật mới ăn oan');
+  } finally {
+    if (soCu === undefined) delete process.env.IF_GUARD_LENH_DOC; else process.env.IF_GUARD_LENH_DOC = soCu;
+    fs.rmSync(thuMuc, { recursive: true, force: true });
+  }
+  // Sổ THẬT của repo phải chạy được qua đúng lõi vừa sửa — không mục nào bị luật mới ăn oan.
+  {
+    const that = napSo(path.join(process.cwd(), 'scripts/guard-lenh-doc.json'));
+    assert.ok(that.doc.length >= 8, `sổ thật giữ đủ mục đọc, đếm được ${that.doc.length}`);
+    assert.ok(that.script.length >= 2, `sổ thật giữ đủ mục script-an-toàn, đếm được ${that.script.length}`);
+    assert.ok(that.script.some((e: any) => /seed-canvas/.test(e.mau) && Array.isArray(e['cam-co']) && e['cam-co'].length),
+      'mục seed-canvas trong sổ THẬT phải mang cam-co — không có nó là cửa hậu --extract/--to mở lại');
+  }
+}
+
+console.log('claude-role-guard: read/pipe/verify/commit+chỉ-mục/per-lane/điều-phối/xoá-có-kiểm/ngoài-repo/issuer/tool-lạ/lease + v3(chuỗi-đọc/redirect-lành/sổ-lệnh/external/renew-amend-thay/ngoài-repo-trước-lane00/env-prefix/script-an-toàn/npm-passthrough/symlink) + v4(nhánh-test/dựng-bản/phiên-đang-giữ/kịch-bản-đa-chế-độ) gates OK');

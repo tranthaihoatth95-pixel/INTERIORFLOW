@@ -128,12 +128,27 @@ const coDeQuy = (args) => args.some((v) => v === '--recursive' || (/^-[A-Za-z]+$
 // đọc mới (ca thật: `git worktree list`, đúng thứ CLAUDE.md bắt chạy trước mỗi sprint).
 // FAIL-CLOSED: sổ thiếu/hỏng ⇒ rổ RỖNG, rơi về whitelist cứng ở trên. Sổ hỏng mà mở toang thì
 // tệp JSON này thành cần gạt tắt cổng, và xoá một tệp dữ liệu dễ hơn sửa lõi có test canh.
+// Bin CHẠY MÃ TUỲ Ý: tên của chúng không nói lệnh nào sắp chạy, chỉ nói ai sắp chạy nó.
+const THONG_DICH = new Set(['node', 'npx', 'npm', 'python', 'python3', 'sh', 'bash', 'zsh', 'perl', 'ruby', 'deno', 'bun', 'osascript', 'env', 'xargs', 'eval']);
+
 const SO_MAC_DINH = path.join(__dirname, 'guard-lenh-doc.json');
 const SO_CACHE = new Map();
 function napSo(file) {
   try {
     const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
-    const doc = (Array.isArray(parsed.doc) ? parsed.doc : []).filter((e) => e && Array.isArray(e['argv-dau']) && e['argv-dau'].length && e['argv-dau'].every((v) => typeof v === 'string'));
+    const doc = (Array.isArray(parsed.doc) ? parsed.doc : [])
+      .filter((e) => e && Array.isArray(e['argv-dau']) && e['argv-dau'].length && e['argv-dau'].every((v) => typeof v === 'string'))
+      // ⛔ TIỀN TỐ LÀ TÊN THÔNG DỊCH VIÊN THÌ NÓ KHÔNG ĐỊNH DANH MỘT LỆNH NÀO CẢ.
+      // `argv-dau: ["node"]` khớp MỌI `node <bất cứ gì>` ⇒ cả rổ rơi hạng READ: không lease,
+      // không identity, mọi lane. Ca thật 01/09: một lane xin thêm đúng mục đó để chạy chế độ
+      // `--check` của một kịch bản. `["node","-e"]` cũng vậy — dài hơn một từ nhưng vẫn là eval.
+      // ⇒ Với thông dịch viên, mục chỉ hợp lệ khi có `phai-co` thu hẹp, HOẶC khi từ thứ hai là
+      // một ĐƯỜNG DẪN cụ thể (không phải cờ). Thiếu ⇒ BỎ MỤC, đúng chiều fail-closed.
+      // ⚠️ Luật này CHỈ áp cho thông dịch viên. Bản đầu 01/09 viết thành "tiền tố phải ≥2 từ"
+      // và lập tức ăn oan `lsof` · `ps` · `printenv` — ba mục đọc một từ hoàn toàn lành.
+      .filter((e) => !THONG_DICH.has(e['argv-dau'][0])
+        || (Array.isArray(e['phai-co']) && e['phai-co'].length)
+        || (e['argv-dau'].length >= 2 && !e['argv-dau'][1].startsWith('-')));
     const script = (Array.isArray(parsed['script-an-toan']) ? parsed['script-an-toan'] : []).filter((e) => e && Array.isArray(e.bin) && e.bin.length && typeof e.mau === 'string' && typeof e['co-out'] === 'string');
     return { doc, script };
   } catch { return { doc: [], script: [] }; }
@@ -155,16 +170,43 @@ function khopSo(argv, entry) {
     try { re = new RegExp(mau); } catch { return false; }
     if (con.some((v) => re.test(v))) return false;
   }
+  // ĐIỀU KIỆN DƯƠNG `phai-co` — MỌI mẫu phải khớp ít nhất một đối số. `cam-co` một mình chỉ
+  // LOẠI TRỪ được, mà loại trừ thì phải kể hết cái xấu; muốn khai một chế độ CHỈ-ĐỌC của một
+  // kịch bản (`--check`) thì phải nói được cái TỐT. Không có nó, cách duy nhất để khai là mở
+  // tiền tố `node` — tức mở cả cổng. Mẫu hỏng ⇒ mục không áp dụng (fail-closed, như `cam-co`).
+  for (const mau of Array.isArray(entry['phai-co']) ? entry['phai-co'] : []) {
+    let re;
+    try { re = new RegExp(mau); } catch { return false; }
+    if (!con.some((v) => re.test(v))) return false;
+  }
   return true;
 }
 // Script an toàn CÓ THAM SỐ GHI (v3 mục 8): sổ chỉ nói ĐÍCH GHI NẰM Ở ĐÂU. Đích đó vẫn đi qua
 // đúng cửa ngoài-repo/allowlist như mọi mutation khác — đây không phải danh sách miễn kiểm.
+//
+// 🔴 GIẢ ĐỊNH NGẦM CỦA v3, VỠ NGÀY 01/09: mô hình này cho MỖI kịch bản ĐÚNG MỘT đích ghi. Kịch
+// bản đa-chế-độ phá nó. Ca thật `design/seed-canvas.mjs` (đọc 464 dòng ruột):
+//   seed        → `write(outPath, …)` :462, đúng một lời ghi vào `--out`  ✅ mô hình đúng
+//   `--extract` → `mkdirSync(to)` :290 + `write(join(to, name), …)` :313-314, ghi N tệp vào
+//                 `--to`, rồi `process.exit(0)` :319 — TRƯỚC KHI `--out` được đọc lần nào
+// ⇒ `… --extract x.html --to <bất kỳ đâu> --out <tệp trong allowlist>`: cổng tìm thấy `--out`,
+//   thấy đích hợp lệ, CHO QUA; kịch bản rẽ nhánh extract và ghi vào `--to` mà cổng chưa hề kiểm.
+//   Một đường ghi ngoài allowlist, đi xuyên qua chính cái mục sổ được thêm để canh nó.
+// `cam-co` bịt đúng nhánh đó: mục KHÔNG áp dụng khi argv mang cờ của một chế độ ghi khác, nên
+// lệnh rơi lại vào "chưa khai tệp" — tức đóng. Đóng nhầm còn sửa được; mở nhầm thì không.
 function dichGhiTuSo(argv) {
   for (const entry of so().script) {
     if (!entry.bin.includes(argv[0])) continue;
     let re;
     try { re = new RegExp(entry.mau); } catch { continue; }
     if (!argv.slice(1).some((v) => re.test(v))) continue;
+    let cam = false;
+    for (const mau of Array.isArray(entry['cam-co']) ? entry['cam-co'] : []) {
+      let reCam;
+      try { reCam = new RegExp(mau); } catch { cam = true; break; }
+      if (argv.slice(1).some((v) => reCam.test(v))) { cam = true; break; }
+    }
+    if (cam) continue;
     const i = argv.indexOf(entry['co-out']);
     if (i < 0 || i + 1 >= argv.length) continue;
     const dich = argv[i + 1];
