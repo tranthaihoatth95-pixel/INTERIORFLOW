@@ -23,7 +23,8 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const dir = process.argv[2];
-if (!dir) { console.error('dùng: node cong-thiet-ke.mjs <thư-mục chứa *.dc.html>'); process.exit(2); }
+const TU_KIEM = process.argv.includes('--tu-kiem');
+if (!dir && !TU_KIEM) { console.error('dùng: node cong-thiet-ke.mjs <thư-mục chứa *.dc.html>  |  --tu-kiem'); process.exit(2); }
 
 // QĐ Hoà 11:20-11:21 01/09: "tao không ấn định teal hay tím quần què gì cả" —
 // accent ĐI THEO BỘ HÌNH NỀN người dùng chọn. Máy vì thế KHÔNG neo mã màu cụ thể:
@@ -43,8 +44,54 @@ function hexToHsl(hex) {
 }
 const CAM_CANH_BAO = h => h >= 15 && h <= 50;   // cam/hổ phách — kênh cảnh báo, không tính là accent
 const VAT_LIEU = (h, s, l) => h >= 15 && h <= 55 && s < 0.45; // gỗ/đất trong ô mẫu vật liệu
+
+// ── MIỄN TRỪ CÓ KHAI BÁO (01/09, sau khi bắt được một lượt vá SAI) ───────────────────────────
+// 🔴 CA THẬT SINH RA MỤC NÀY: một lượt vá định làm cổng xanh bằng cách ĐỔI HEX trong bản vẽ —
+// quả cầu vật liệu xanh `m3` của `BaChieuBang.dc.html` bị đổi stop 0% và 100% sang xám nhưng
+// BỎ SÓT stop 52% ⇒ ra viên vật liệu "xám → teal → xám", tức vỡ gradient; và gizmo trục 3D bị
+// xám hoá X với Y trong khi Z giữ lam ⇒ mất quy ước đỏ-X/lục-Y/lam-Z của nghề (AutoCAD · 3ds Max
+// · Blender), phạm thẳng chốt 9 của Hoà: "đi sau phải giống nó trước rồi mới hơn nó".
+// ⇒ Lỗi KHÔNG ở bản vẽ, lỗi ở MIỄN TRỪ CỦA CỔNG viết quá hẹp: `VAT_LIEU` chỉ phủ hue 15–55°
+// (gỗ/đất) nên vật liệu xanh/lam rơi ra ngoài, còn màu trục thì chưa có mục nào.
+//
+// Hai thứ dưới đây là MÀU NỘI DUNG / MÀU ĐỊNH DANH NGHỀ, cùng hạng với cam-cảnh-báo:
+//   · `data-truc`          — bộ màu trục toạ độ của gizmo 3D.
+//   · `data-mau-vat-lieu`  — ô mẫu vật liệu; bảng vật liệu PHẢI hiện màu thật của vật liệu,
+//                            không thì nó thôi làm bảng vật liệu.
+//
+// ⚠️ KHAI BÁO, KHÔNG SUY ĐOÁN (cùng khuôn cửa `--legacy` của `moc.mjs`): máy không tự đoán đâu là
+// trục hay vật liệu — bản vẽ phải TỰ NÓI bằng thuộc tính. Không khai thì vẫn bị đếm như mọi accent
+// khác. Và miễn trừ chỉ ăn ĐÚNG BÊN TRONG phần tử đã khai, không phải cả tệp: rải accent ở chrome
+// UI vẫn bị bắt dù trong tệp có một gizmo hợp lệ (khoá bằng ca ④ của `--tu-kiem`).
+const THE_MIEN_TRU = ['data-truc', 'data-mau-vat-lieu'];
+
+/** Cắt bỏ TRỌN phần tử mang thuộc tính khai báo (kể cả con của nó), có đếm lồng cùng tên thẻ. */
+function boTheKhai(src, attr) {
+  let out = src;
+  for (;;) {
+    const mo = new RegExp(`<([a-zA-Z][\\w-]*)((?:"[^"]*"|'[^']*'|[^>"'])*?\\b${attr}\\b(?:"[^"]*"|'[^']*'|[^>"'])*)>`).exec(out);
+    if (!mo) return out;
+    const tag = mo[1];
+    const batDau = mo.index;
+    // thẻ tự đóng `<x … />` ⇒ không có ruột, cắt đúng chính nó
+    if (/\/\s*$/.test(mo[2])) { out = out.slice(0, batDau) + out.slice(batDau + mo[0].length); continue; }
+    const quet = new RegExp(`<${tag}\\b|</${tag}\\s*>`, 'g');
+    quet.lastIndex = batDau + mo[0].length;
+    let sau = 1;
+    let ket = -1;
+    for (let m2; (m2 = quet.exec(out)); ) {
+      sau += m2[0][1] === '/' ? -1 : 1;
+      if (sau === 0) { ket = m2.index + m2[0].length; break; }
+    }
+    // không tìm được thẻ đóng ⇒ HTML hỏng; cắt tới hết tệp còn hơn bỏ qua im lặng
+    out = out.slice(0, batDau) + out.slice(ket < 0 ? out.length : ket);
+  }
+}
+
 function cacHoAccent(src) {
-  const hexes = src.match(/#[0-9a-f]{6}\b|#[0-9a-f]{3}\b/gi) || [];
+  let quet = src;
+  for (const attr of THE_MIEN_TRU) quet = boTheKhai(quet, attr);
+  const hexes = quet.match(/#[0-9a-f]{6}\b|#[0-9a-f]{3}\b/gi) || [];
   const dem = new Map(); // hueCluster(30°) -> count
   for (const hx of hexes) {
     const { h, s, l } = hexToHsl(hx.toLowerCase());
@@ -65,6 +112,41 @@ function cacHoAccent(src) {
 }
 const FONT_CAM = /font-family:\s*['"]?(?!Be Vietnam Pro|ui-monospace|-apple-system|monospace|system-ui)([A-Z][A-Za-z ]+)['"]?/g;
 const DATA_GIA = /\b(lorem|ipsum|placeholder|TODO|FIXME)\b/gi;
+
+/* ── TỰ KIỂM: ca đột biến cho chính hai miễn trừ trên ────────────────────────────────────────
+ * Cổng này KHÔNG có tệp `.test.ts` riêng (nó là kịch bản soi, cùng họ `soi-*`), nên ca đột biến
+ * sống ngay trong nó — chạy: `node scripts/cong-thiet-ke.mjs --tu-kiem`.
+ * Điều PHẢI chứng minh: miễn trừ là một CÁI CỬA HẸP, không phải cần gạt tắt cổng.
+ */
+if (TU_KIEM) {
+  let p = 0, f = 0;
+  const ok = (ten, dieu) => { if (dieu) { p++; console.log(`  ok  - ${ten}`); } else { f++; console.log(`  FAIL - ${ten}`); } };
+  const GIZMO = '<circle fill="#b8524f"/><circle fill="#4a8f5f"/><circle fill="#4a6fa5"/>';
+  const VIEN = '<radialGradient><stop stop-color="#c6e2d6"/><stop stop-color="#7fb2a0"/><stop stop-color="#33604f"/></radialGradient>';
+
+  // ① KHÔNG khai báo ⇒ vẫn bị đếm như mọi accent (đỏ + lục + lam = nhiều họ).
+  ok('① gizmo KHÔNG khai data-truc ⇒ vẫn bị bắt tè le', cacHoAccent(`<svg>${GIZMO}</svg>`).length >= 2);
+  // ② Khai `data-truc` ⇒ bộ màu trục biến khỏi phép đếm.
+  ok('② gizmo CÓ data-truc ⇒ miễn trừ, 0 họ accent', cacHoAccent(`<svg data-truc="xyz">${GIZMO}</svg>`).length === 0);
+  // ③ Ô mẫu vật liệu khai báo ⇒ mọi hue trong đó được để yên (kể cả xanh — đúng ca vá hỏng 01/09).
+  ok('③ viên vật liệu CÓ data-mau-vat-lieu ⇒ miễn trừ, 0 họ accent',
+    cacHoAccent(`<div data-mau-vat-lieu><svg>${VIEN}</svg></div>`).length === 0);
+  // ④ ⭐ CA ĐỘT BIẾN CHÍNH — miễn trừ KHÔNG được rò ra ngoài phần tử đã khai. Một tệp có gizmo
+  //    hợp lệ NHƯNG rải accent tè le ở chrome UI thì VẪN PHẢI ĐỎ. Nếu ai đó sau này sửa
+  //    `boTheKhai` thành "thấy thuộc tính là bỏ cả tệp", ca này đỏ ngay.
+  const teLe = '<div style="color:#6a57f5"/><div style="color:#1f7f88"/><div style="color:#c0399f"/>';
+  ok('④ có gizmo khai báo NHƯNG chrome UI rải accent ⇒ VẪN bắt được tè le',
+    cacHoAccent(`<svg data-truc="xyz">${GIZMO}</svg>${teLe}`).length >= 2);
+  // ⑤ Miễn trừ cắt đúng phần tử, không nuốt phần đứng SAU nó.
+  ok('⑤ cắt đúng phạm vi: màu ngay sau thẻ khai báo vẫn được đếm',
+    cacHoAccent(`<svg data-truc="xyz">${GIZMO}</svg><div style="color:#6a57f5"/>`).length === 1);
+  // ⑥ Thẻ lồng cùng tên không làm lệch điểm đóng.
+  ok('⑥ thẻ lồng cùng tên ⇒ vẫn cắt đúng, màu sau đó còn nguyên',
+    cacHoAccent(`<div data-mau-vat-lieu><div>${VIEN}</div></div><div style="color:#6a57f5"/>`).length === 1);
+
+  console.log(`\n— tự kiểm cổng thiết kế: ${p} pass, ${f} fail`);
+  process.exit(f ? 1 : 0);
+}
 
 let loi = 0, canhBao = 0;
 const files = readdirSync(dir).filter(f => f.endsWith('.dc.html'));
