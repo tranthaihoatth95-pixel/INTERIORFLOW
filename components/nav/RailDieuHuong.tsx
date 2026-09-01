@@ -552,21 +552,52 @@ export function RailDieuHuong() {
               // MẶT nay ở đây chứ không ở `<nav>`. Mỗi cụm là một vật có mép riêng, đứng trong
               // máng 52px rỗng. Đây là toàn bộ khác biệt giữa *"thanh dọc dài, thô"* và *"hai
               // viên nổi"* — cùng số mục, cùng bố cục, khác chỗ đặt cái mặt phẳng.
-              background: 'var(--panel)',
+              /* ── DA GĐ2 (02/09) — Hoà 00:33: *"thanh side left bar cũng sai"* ──────────────
+                 GU §2 (`docs/GU-PROFILE.md`, chưng cất từ 4 board Pinterest của Hoà): *liquid-glass
+                 / soft neumorphism · pill bo tròn full · frosted blur · đổ bóng mềm HAI CHIỀU ·
+                 KHÔNG rẽ flat*. Bản trước là `--panel` ĐẶC TRƠN + một bóng đổ một phía ⇒ đọc ra
+                 phẳng, đúng chỗ Hoà chê.
+
+                 ⚠️ VÌ SAO KHÔNG DÙNG `.glass-float` (kính lỏng 34%) — luật `globals.css:1322`:
+                 class đó bị khoá ở ĐÚNG 4 chỗ, cả 4 nằm TRÊN canvas WebGL, và trần đó có lý do
+                 hiệu năng ("quá 4 tấm là giật"), *"thêm tấm thứ 5 = phải gỡ 1 tấm cũ"*. Rail không
+                 nằm trên canvas, nhưng luật thứ HAI mới là luật quyết định ở đây: mặt CÓ CHỮ thì
+                 nền phải ĐẶC ≥92%, blur chỉ là gia vị (`globals.css:1286`, *"kính là gia vị, đọc
+                 được TRƯỚC"* — iOS 27 đã tự sửa Liquid Glass vì lý do y hệt). Rail chở 7 nhãn chữ
+                 ⇒ nó là **frosted DÀY**, không phải kính lỏng. Vẫn "kính mờ có chiều dày" theo GU,
+                 mà không tiêu một suất nào trong 4 tấm canvas và không hạ tương phản chữ. */
+              background: 'color-mix(in srgb, var(--panel) 94%, transparent)',
+              backdropFilter: 'blur(14px) saturate(140%)',
+              // -webkit- BẮT BUỘC (luật nền `kinh-webkit-prefix`): thiếu là Safari/tablet mất mờ.
+              WebkitBackdropFilter: 'blur(14px) saturate(140%)',
               border: '1px solid var(--vien-mo)',
-              // BO ĐỒNG TÂM — TÍNH, KHÔNG CHỌN BẰNG MẮT. Hàng bên trong có `margin: 0 4px` ⇒ đệm
-              // = 4. Luật `rInner = max(4, rOuter − pad)`: muốn hàng ở đúng r2 (10) thì viên phải
-              // là **14 = r3**, vì 14 − 4 = 10. Lấy r4 (20) thì rInner lý tưởng thành 16, hàng r2
-              // sẽ hụt 6px và góc đọc ra lệch tâm — đúng loại lệch mắt thấy mà không gọi tên được.
-              borderRadius: RADIUS.r3,
+              // BO ĐỒNG TÂM — TÍNH, KHÔNG CHỌN BẰNG MẮT. Hàng bên trong có `margin: 0 4px` ⇒ đệm 4.
+              // 🔴 TÍNH LẠI 02/09 vì HÀNG ĐÃ ĐỔI HÌNH. Ghi chú cũ chốt viên `r3` (14) để hàng ra
+              // đúng `r2` (10), và cảnh báo r4 sẽ làm "hàng r2 hụt 6px". Cảnh báo đó đúng CHO HÀNG
+              // r2 — nay hàng là VIÊN NANG (GU §2: "nút dạng pill/capsule"), curvature liên tục nên
+              // không có góc nào để lệch tâm. Với hàng cao `--row`, bán kính viên nang ≈ 18 ⇒ viên
+              // ngoài lý tưởng ≈ 18 + 4 = 22, lấy nấc gần nhất trên thang là **r4 (20)**.
+              // Đây là tính lại theo luật cũ với đầu vào mới, KHÔNG phải bỏ luật.
+              borderRadius: RADIUS.r4,
               padding: '4px 0',
               // TÁCH BẰNG KHOẢNG HỞ, KHÔNG BẰNG ĐƯỜNG KẺ (Hoà 16/08 "không thích đường kẻ ngăn
               // một cái rẹt chia khối"). Nay khoảng hở làm việc mạnh hơn hẳn bản cũ: hai bên nó
               // là hai MÉP VIÊN thật, nên mắt đọc ra hai vật kể cả khi không có chữ nào.
               // 18px — đúng `.cum + .cum{margin-top:18px}` của bản vẽ đã duyệt.
               marginTop: i === 0 ? 0 : 18,
-              // Nấc rộng đè lên nội dung ⇒ viên phải tự đổ bóng (nav không còn mặt để đổ).
-              ...(noi ? { boxShadow: '8px 0 28px -18px rgba(0,0,0,.45)' } : null),
+              /* BÓNG MỀM HAI CHIỀU (neumorphic, GU §2) — bản cũ chỉ có MỘT lớp đổ sang phải
+                 (`8px 0 …`), tức viên chỉ "hắt bóng", không có chiều dày. Nay ba lớp:
+                   ① bóng xa, mềm, đổ XUỐNG-PHẢI  → vật nặng, nổi khỏi nền;
+                   ② bóng gần, chặt              → mép tiếp đất, chống cảm giác dán;
+                   ③ gờ sáng TRONG mép trên      → ánh sáng từ trên, đúng công thức Apple mà
+                                                    `.glass-float` đang dùng (`globals.css:1330`).
+                 Lớp ③ là thứ thật sự gỡ cảm giác "phẳng" — cùng chẩn đoán đã ghi ở `.vitals-pop`
+                 08/08 (*"gờ sáng viền trên … đây là phần thật sự gây cảm giác đục, không phải
+                 opacity"*). Bóng luôn bật, không chỉ khi nấc rộng: chiều dày là thuộc tính của
+                 VẬT, không phải của trạng thái. */
+              boxShadow: noi
+                ? '10px 0 34px -20px rgba(0,0,0,.50), 2px 0 8px -6px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.10)'
+                : '0 6px 20px -14px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.10)',
               ...(cum === 'chang' ? { position: 'relative' as const } : null),
             }}
             // GIÃN DỌC GỌN cho viên chặng: khoảng giữa ba hàng khít hơn viên việc (0 vs 2px) —
@@ -868,7 +899,13 @@ function HangRail({
     padding: gonDoc ? (hienChu ? '3px 10px' : '3px 0') : hienChu ? '5px 10px' : '5px 0',
     margin: '0 4px',
     justifyContent: hienChu ? 'flex-start' : 'center',
-    borderRadius: RADIUS.r2,
+    /* VIÊN NANG (02/09, GU §2 "nút dạng pill/capsule · pill bo tròn full"). Trước là `r2` (10) —
+       một hình chữ nhật bo nhẹ, đọc ra "ô danh sách", không đọc ra "nút". Bo full là thứ phân
+       biệt hai cái đó, và nó là chữ ĐẦU TIÊN trong câu tả gu của Hoà.
+       Viên ngoài đã tính lại lên `r4` cho đồng tâm — xem ghi chú tại chỗ khai `borderRadius` của
+       cụm. Bo full KHÔNG đụng nền `--t1 8%`: hình đổi, kênh màu giữ nguyên (rail vẫn trung tính,
+       accent vẫn để dành cho CTA — chốt GĐ1, và là cổng `muc-dieu-huong.test.ts` đang canh). */
+    borderRadius: RADIUS.full,
     background: dangMo ? NEN_DANG_MO : 'transparent',
     // CHỮ của mục đang mở dùng `--t1`, KHÔNG dùng `--accent`. Đo 17/08: `--accent` trên nền
     // `--accent-soft` chỉ 3,32:1 (Tối) / 3,84:1 (Sáng) — đạt ngưỡng 3:1 cho HÌNH nhưng trượt

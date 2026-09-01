@@ -802,7 +802,9 @@ export function TaskBoardScreen() {
                           aria-label={tr('Đặt ngày', 'Set dates')}
                           onClick={() => setDatNgayId((cu) => (cu === t.id ? null : t.id))}
                         >
-                          <CalendarClock size={13} strokeWidth={1.5} />
+                          {/* 14 chứ không 13: thang quang học của cổng nền là {14,16,18,20}
+                              (`F-ICON-SIZE`). Ô công cụ 22px nên 14 là nấc vừa nhất. */}
+                          <CalendarClock size={14} strokeWidth={1.5} />
                         </button>
                         <button type="button" className="tb-tool" disabled={busy || !adjacentStatusId(states ?? [], t.statusId, -1)} title={tr('Lùi một cột', 'Move one column left')} aria-label={tr('Lùi một cột', 'Move one column left')} onClick={() => moveTask(t, -1)}>‹</button>
                         <button type="button" className="tb-tool" disabled={busy || !adjacentStatusId(states ?? [], t.statusId, 1)} title={tr('Tiến một cột', 'Move one column right')} aria-label={tr('Tiến một cột', 'Move one column right')} onClick={() => moveTask(t, 1)}>›</button>
