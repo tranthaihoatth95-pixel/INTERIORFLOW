@@ -7,6 +7,7 @@ import { ResumeTracker } from '@/components/entry/ResumeTracker';
 import { StoreHydrator } from '@/components/entry/StoreHydrator';
 import StageTransitionProvider from '@/components/studio/StageTransitionProvider';
 import { CanvasWallpaper } from '@/app/settings/_components/CanvasWallpaper';
+import { AccentHydrator } from '@/components/wallpaper/AccentHydrator';
 
 /* 🔴 ĐỔI 23/08 — GEIST KHÔNG ĐÁNH VẦN ĐƯỢC TIẾNG VIỆT. Đây là lỗi nền, không phải chuyện gu.
    Hoà gửi ảnh màn thật: "Thiêt kê 2D" · "gân nhât" · "Quyêt định" — mất sạch dấu chồng.
@@ -90,6 +91,10 @@ try{if(!localStorage.getItem('interiorflow.vitals.stage_drop_cleaned_v1')){local
         {/* G4 (03/08): áp lại hình nền canvas đã lưu ngay khi app mở, kể cả tải lại cứng thẳng
             vào trang canvas — xem app/settings/_components/CanvasWallpaper.tsx. Render null. */}
         <CanvasWallpaper />
+        {/* NỐI DÂY 01/09 (chỉ đạo Hoà 11:20) — áp bốn token --accent* theo BỘ HÌNH NỀN đang
+            chọn, ngay khi app mở, mọi route kể cả deep-link — cùng khuôn StoreHydrator ở trên.
+            Xem components/wallpaper/AccentHydrator.tsx. Render null. */}
+        <AccentHydrator />
         <StageTransitionProvider>{children}</StageTransitionProvider>
         <PWARegister />
         {/* B-3: ghi route đang đứng theo user (resume đúng chỗ khi login lại) — render null */}
