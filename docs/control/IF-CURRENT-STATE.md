@@ -5,7 +5,13 @@
 > Nhỏ và mới. **Cấm để triết lý dài hạn ở đây** — nó thuộc `IF-CANONICAL.md`.
 > **Cập nhật trước khi kết phiên.**
 
-**Ngày** 31/08/2026 tối · **Nhánh** `checkpoint/2026-08-24-control-plane` · **HEAD** `c3b0ec6a` · **Cây bẩn** 9 tệp (**cả 9 là `docs/control/ban/*.md` do MÁY sinh lại sau mỗi biên nhận — nhịp của máy, không phải nợ**) · **Worktree** 0 · **Dev server** 1 (cổng 3001) · **Lịch sử ĐÃ VIẾT LẠI 30/08** — mọi SHA sau `147f66a` đổi, bảng ánh xạ `.git/filter-repo/commit-map`
+**Ngày** 01/09/2026 07:23 · **Nhánh** `checkpoint/2026-08-24-control-plane` · **HEAD** `f2d85fb8` · **Cây bẩn** 9 tệp (**cả 9 là `docs/control/ban/*.md` do MÁY sinh lại sau mỗi biên nhận — nhịp của máy, không phải nợ**; đo: `git status --short`) · **Worktree** 0 (`git worktree list` 1 dòng = repo chính) · **Dev server** 1 · cổng 3001 · PID **72891** · `next-server v14.2.35` · khởi động **01/09 06:59:17** (đo: `lsof -nP -iTCP:3001 -sTCP:LISTEN` + `ps -o lstart=,command=`) · **Lịch sử ĐÃ VIẾT LẠI 30/08** — mọi SHA sau `147f66a` đổi, bảng ánh xạ `.git/filter-repo/commit-map`
+> ⚠️ **Cờ tường: UNKNOWN, KHÔNG phải BẬT.** Lệnh việc lượt e2e ghi *"cờ tường BẬT từ 01/09 07:00"*.
+> Đo được: `NEXT_PUBLIC_IF_TUONG_HINH_HOC` xuất hiện **0 lần trong mọi tệp `.env*`**
+> (`grep -rn IF_TUONG_HINH_HOC .env .env.local .env.local.bak*` ⇒ 0 dòng; `.env.local` sửa lần cuối
+> **30/08 11:20**, trước cả phiên này). `ps eww` trên macOS **không lộ env** của tiến trình nên
+> không bác được khả năng cờ truyền inline lúc gõ `npm run dev`. ⇒ Chỉ **app thật** trả lời được:
+> mở `/projects/<id>/cad`, có mục "Báo cáo nạp bản vẽ" thì cờ đang bật. Chưa ai mở ⇒ `UNKNOWN`.
 > Đo lúc ghi, không chép số cũ (M-05). Dòng này TỪNG stale **BA** lần — khai `main · c7f3ac8` khi
 > thật là nhánh checkpoint · khai `6c9712a · 617 tệp` sau khi đã đi thêm 8 commit · và **30/08 khai
 > `28/08 · HEAD 65dc66c · Dev server 0`** trong khi thật là `30/08 · 27140602 · 1 server đang mở`.
@@ -85,6 +91,73 @@ Nội dung gốc giữ trong lịch sử git (`git show 2a454b4:docs/control/IF-
 Hoà (`IF-CANONICAL` §2). Hai phiên cùng tự xưng ⇒ **cả hai DỪNG GHI**, hỏi Hoà (M-51).
 
 ## 🎯 VIỆC KẾ TIẾP — **một việc, không phải danh sách**
+
+🔄 **CẬP NHẬT 01/09 SÁNG — LƯỢT E2E, lease `L-90a99d21`, writer `hoa-e2e-1` (phiên `223b210d`).**
+Mọi dòng bên dưới khối này là bản cũ hơn, **giữ làm dấu vết theo lệ**.
+
+| commit | nhóm | chứng cứ |
+|---|---|---|
+| `c5304765` | **N1 guard-v4** | tsc 0 · `claude-role-guard.test.ts` xanh · sổ lease có 1 dòng `LEASE_CLAIMED` thật |
+| `f2d85fb8` | **N2 fit-cụm phương án A** | tsc 0 · `import-summary.test.ts` **24/0** · đo đủ **6 hồ sơ** `FILE MBHT` |
+
+**NỢ ĐÃ TRẢ lượt này:**
+- ~~`soat-toan-dien-đường-cứng`~~ ⇒ **TRẢ** ở `c5304765`. Đo: chạy có `BOS_SHARED_LOG_ROOT` trỏ
+  thư mục rỗng ⇒ mất dòng `👁 ký 2026-08-30 @370962a4`, rơi về `chờ: … tuong-len-man …`.
+- ~~`QĐ fit-theo-cụm phương án A — CHƯA THI CÔNG`~~ ⇒ **XONG** ở `f2d85fb8`. `ABSURD_FAR_RATIO=30`
+  không bị đụng; ca ⑤ *"bản vẽ thường vẫn mode full"* vẫn xanh, **không sửa một kỳ vọng nào**.
+- ~~`lease-không-phân-biệt-hai-phiên-cùng-session_id`~~ ⇒ **TRẢ MỘT NỬA** ở `c5304765` (xem nợ mới).
+
+**NỢ GIỮ NGUYÊN, KHÔNG gạch:** `POCHE_TAM-inferred-rộng` · `mau-bo-chưa-nối`.
+
+**🔴 NỢ MỚI CÓ TÊN — đo được, đừng để chìm:**
+1. **`npm-test-chưa-xanh-trọn`.** Tách chuỗi test (N1 mục 1) làm **lộ hai cổng ĐỎ SẴN Ở HEAD** mà
+   dây `&&` cũ che vì `soi:cau` chết trước:
+   `soi:vang-mat` **9 / trần 7** (`docs/control/*.md`) · `soi:thao-tac` `T-cam-hex-inline`
+   **201 / trần 194** (`components/CommentLayer.tsx` và 196 chỗ nữa).
+   Đo lại: `npm run soi:vang-mat` · `npm run soi:thao-tac`. **CẢ HAI NGOÀI lease `L-90a99d21`**
+   (lease 15 tệp, không có tệp nào trong hai nhóm đó — mở ra nhìn: `node scripts/claude-lease.mjs status`)
+   ⇒ writer lượt này **không có quyền sửa**.
+   ⛔ Cấm nới trần (M-52) — cách duy nhất là **sửa nội dung**: thêm lệnh chứng minh dưới câu
+   khẳng định vắng mặt, và bỏ hex nội tuyến. Cần Hoà/`cx:00` amend lease hoặc giao lane khác.
+2. **`guard-chưa-có-heartbeat`.** Ô "phiên đang giữ" khoá theo `hook.session_id`, chết cùng lease
+   nên không khoá vĩnh viễn — nhưng **chưa có đường TRẢ BÀN giữa chừng một lease đang sống**.
+   Phiên chết bất ngờ ⇒ phải `claude-lease.mjs issue --thay`. Ca test cho phần đã làm:
+   `scripts/claude-role-guard.test.ts` nhóm v4③.
+3. **`ack-legacy-catch-22` — CHƯA VÁ.** Phiếu địa chỉ trần (`to: '06'` · `'00'`) không ack/đánh
+   thức được: ô tác giả bắt buộc namespaced (`docDiaChi(…, false)`), còn `eventThuocDiaChi` so
+   với địa chỉ legacy ⇒ không bao giờ khớp. Sâu hơn: `khoaHandoff()` cho HANDOFF legacy ra khoá
+   `legacy:NN|…` còn cho ACK ra `cl:NN|…` ⇒ **hai khoá không gặp nhau**, nên kể cả ack được thì
+   `soi:cau` vẫn không thấy. Cửa sửa nằm ở `scripts/cau-mo-hinh.mjs` + `scripts/soi-cau.mjs`,
+   **cả hai ngoài lease này**. ⛔ Cấm suy `06` → `cl:06`: legacy là `LEGACY_AMBIGUOUS` theo thiết kế.
+4. **`soi-cau-thiếu-ô-địa-chỉ`.** `scripts/soi-cau.mjs` cuối bản in vẫn dạy
+   `moc.mjs danh-thuc <handoffId> "<cơ chế>"` — thiếu ô địa chỉ, đúng lỗi đã sửa trong `moc.mjs`
+   ở `c5304765`. Tệp ngoài lease này.
+5. **`cờ-tường-UNKNOWN`** — xem cảnh báo ở đầu tệp. Cần một lượt mở app thật.
+
+**CẦU sau lượt này:** `b0c8ee44f978` đã có mắt ĐÁNH THỨC (hook phiên `223b210d` in ra inbox).
+Còn **4 phiếu đỏ**, không phiếu nào cl:06 có quyền chạm: `47c67b5b5474` (→ `00`, legacy) ·
+`3db07c32bcd1` (→ `06`, legacy) · `8016b4d76198` (→ `cx:06`) · `53aae5e63150` (→ `cx:00`).
+Luật cổng: lane thường chỉ đánh thức phiếu gửi **tới chính mình**; hai phiếu `cx:*` thuộc tuyến
+Codex, hai phiếu legacy vướng nợ ③. ⇒ **Việc của `cl:00` + Hoà**, không phải của bàn 06.
+
+**📌 QUYẾT ĐỊNH CỦA HOÀ 21:54 31/08 — SÁNG/TỐI** (phiếu `HO-20260831145529-6268f159d6fe`):
+**BỎ** ràng buộc *"nền tối là mặc định làm việc, nền giấy sáng cho canvas"*. Luật mới:
+① sáng/tối **người dùng TỰ CHỌN**, hoặc tự động theo giờ trong ngày;
+② canvas giấy-mực **ĐI CÙNG** theme hệ thống — theme sáng thì giấy sáng, theme tối thì giấy tối;
+không có chuyện UI tối mà canvas cố định sáng.
+Kiến trúc đã sẵn: render giấy-mực đọc token `--giay`/`--muc` (`dc1a5254`) ⇒ đổi theo theme là
+**đổi token, không đổi engine**. ⚠️ Bảng mực pha-màu-về-giấy phải được **KIỂM ĐỦ HAI THEME** —
+nợ `K3 pha nhầm hướng nền` trong `7cf286db` đã cảnh báo đúng ca này.
+**GIỮ NGUYÊN:** đơn sắc + MỘT accent · WCAG 2.2 AA · sàn chữ Việt 12px · thang mô-đun.
+⇒ Việc kéo theo, chưa làm: `IF-CHUAN-NEN.md` cần **một dòng đính chính**; khung chấm mắt theo
+board `1if` bỏ tiêu chí nền-tối-mặc-định.
+
+**📌 CHƯNG CẤT GU** — phiếu `HO-20260831151158-f3f42dc9d551` (→ `cl:04`, đã có mắt đánh thức:
+`cl:00` tự thi hành vì lane 04 không có phiên sống). Canvas thiết kế kèm theo: **`cl:00` đưa URL
+sau** — chỗ này để trống có chủ ý, **cấm điền bằng trí nhớ**. Nền của việc: `docs/GU-PROFILE.md`
+(49 dòng, chưng cất từ 4 board Pinterest) — tệp từng **không có con trỏ nào** trỏ tới, đo 30/08.
+
+---
 
 🔄 **CẬP NHẬT 31/08 TỐI.** Mọi dòng bên dưới khối này là bản cũ hơn, **giữ làm dấu vết theo lệ**.
 
