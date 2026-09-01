@@ -35,6 +35,7 @@ import {
 } from '@/lib/tasks/board';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { RawStyle } from '@/components/filemanager/RawStyle';
+import { GanttChart } from '@/components/tasks/GanttChart';
 
 interface ProjectOpt { id: string; name: string }
 
@@ -341,6 +342,13 @@ export function TaskBoardScreen() {
   const loadingBoard = projectId !== '' && (states === null || tasks === null);
   const boardEmpty = (tasks?.length ?? 0) === 0 && !query;
 
+  /* ── TAB BẢNG | TIẾN ĐỘ (01/09) ────────────────────────────────────────────────────────────
+     Docstring đầu tệp ghi từ 08/08: *"Tab Bảng/Tiến độ/Lịch: chỉ 'Bảng' có thật bản 1 — không vẽ
+     nút giả"*. Nay Tiến độ CÓ THẬT vì `lib/tasks/gantt.ts` đã có, kèm điều kiện làm nó dùng được:
+     dải đó biết TỪ CHỐI vẽ việc thiếu ngày thay vì gán ngầm "hôm nay". "Lịch" vẫn chưa có gì đứng
+     sau nên vẫn KHÔNG vẽ — cùng luật §9, không đổi. */
+  const [che, setChe] = useState<'bang' | 'tien-do'>('bang');
+
   /* ── chip ngữ cảnh (TaskContext Link 11/08) — chỉ hiện khi việc CÓ stage; bấm = deep-link ── */
   const STAGE_ICONS: Record<TaskStage, JSX.Element> = {
     concept: <PencilRuler size={14} />,
@@ -418,6 +426,32 @@ export function TaskBoardScreen() {
             placeholder={tr('Tìm việc', 'Search tasks')}
             style={{ flex: 1, background: 'transparent', border: 0, outline: 'none', fontSize: 12.5, color: 'var(--t1)' }}
           />
+        </div>
+
+        {/* ── công tắc Bảng | Tiến độ. Một dải hai nút, không icon-hoá (G6).
+            ⚠️ KHÔNG dùng `role="tab"`: WAI-ARIA đòi mỗi `tab` trỏ tới một `tabpanel` qua
+            `aria-controls`, mà ở đây thứ đổi là CẢ THÂN MÀN (kể cả nhánh rỗng/hỏng), không phải
+            một ô nội dung. Khai `tab` mà không có panel là nói dối bộ đọc màn hình — và đã đo
+            được hậu quả thật: nút biến mất khỏi `getByRole('button')`, máy chụp nghiệm thu 21:26
+            trượt đúng vì lý do đó. Đây là công tắc HAI TRẠNG THÁI ⇒ `aria-pressed`. */}
+        <div role="group" aria-label={tr('Cách xem bảng việc', 'Task board view')} style={{ display: 'flex', gap: 2, padding: 2, borderRadius: 10, background: 'var(--field)', border: '1px solid var(--border)' }}>
+          {([['bang', 'Bảng', 'Board'], ['tien-do', 'Tiến độ', 'Timeline']] as const).map(([k, vi, en2]) => (
+            <button
+              key={k}
+              type="button"
+              aria-pressed={che === k}
+              onClick={() => setChe(k)}
+              style={{
+                height: 24, padding: '0 10px', border: 0, borderRadius: 6, cursor: 'pointer',
+                fontSize: 11.5, fontWeight: 600, fontFamily: 'inherit',
+                background: che === k ? 'var(--panel)' : 'transparent',
+                color: che === k ? 'var(--t1)' : 'var(--t4)',
+                boxShadow: che === k ? '0 1px 2px rgba(0,0,0,.10)' : 'none',
+              }}
+            >
+              {tr(vi, en2)}
+            </button>
+          ))}
         </div>
 
         {overdue > 0 && (
@@ -570,6 +604,10 @@ export function TaskBoardScreen() {
             </div>
           </div>
         </div>
+      ) : che === 'tien-do' ? (
+        /* DẢI GANTT — cùng danh sách việc mà các cột đang hiện (`visibleTasks`, đã qua lọc/tìm),
+           không truy vấn riêng, không lọc riêng. Một nguồn. */
+        <GanttChart tasks={visibleTasks} />
       ) : (
         <>
           {/* lưới cột — mock: gap 14, padding 16, nền chấm --dots 22px */}
