@@ -606,8 +606,11 @@ export function TaskBoardScreen() {
         </div>
       ) : che === 'tien-do' ? (
         /* DẢI GANTT — cùng danh sách việc mà các cột đang hiện (`visibleTasks`, đã qua lọc/tìm),
-           không truy vấn riêng, không lọc riêng. Một nguồn. */
-        <GanttChart tasks={visibleTasks} />
+           không truy vấn riêng, không lọc riêng. Một nguồn.
+           `states` đi kèm là BẮT BUỘC, không phải trang trí: thiếu nó thì dải không biết cột nào
+           là ĐÃ XONG, và mọi việc hoàn tất quá hạn sẽ bị tô đỏ như việc đang cháy — đúng lỗi
+           02/09 (badge trên thanh lọc đếm theo `countOverdue` loại cột Xong, dải thì không). */
+        <GanttChart tasks={visibleTasks} states={states ?? []} />
       ) : (
         <>
           {/* lưới cột — mock: gap 14, padding 16, nền chấm --dots 22px */}

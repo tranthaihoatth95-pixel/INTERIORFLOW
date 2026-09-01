@@ -6,7 +6,7 @@
  * Gantt nói dối — gán ngầm "hôm nay" rồi vẽ một thanh trông rất thật. Các ca ②
  * là ca chống đúng chuyện đó; ca ① chỉ neo hình học.
  */
-import { docMoc, dungGantt, viecTre } from './gantt';
+import { chiaNgay, docMoc, dungGantt, viecTre, viecTreChuaXong } from './gantt';
 import type { TaskRow } from '../server/tasks';
 
 let pass = 0;
@@ -167,6 +167,66 @@ ok('docMoc ISO ⇒ ms đúng', docMoc('2026-03-01T00:00:00Z') === T('2026-03-01T
     viecTre(d, T('2026-02-01T00:00:00Z')).length === 0);
   ok('đẩy mốc đủ xa thì mọi việc đều trễ',
     viecTre(d, T('2026-03-20T00:00:00Z') + NGAY).length === 2);
+}
+
+// ── ⑤ TRỄ THẬT = QUÁ HẠN **VÀ CHƯA XONG** ─────────────────────────────────────
+//
+// Ca chính không phải phép so sánh ngày — mà là: việc ĐÃ XONG có bị đếm thành báo
+// động không. Đây là lỗi đã lên tới màn hình 02/09 (dải đếm 17 trễ trong khi bảng
+// việc cùng màn đếm theo luật loại-cột-Xong).
+{
+  console.log('⑤ trễ thật (loại cột đã Xong)');
+  const d = dungGantt([
+    viec('a', '2026-03-01T00:00:00Z', '2026-03-05T00:00:00Z'),
+    viec('b', '2026-03-01T00:00:00Z', '2026-03-06T00:00:00Z'),
+    viec('c', '2026-03-01T00:00:00Z', '2026-03-20T00:00:00Z'),
+  ]);
+  const bayGio = T('2026-03-10T00:00:00Z');
+  const tt = new Map([['a', 'xong'], ['b', 'dang-lam'], ['c', 'dang-lam']]);
+  const xong = new Set(['xong']);
+
+  ok('viecTre() thô vẫn đếm cả việc đã xong (không đổi nghĩa hàm cũ)',
+    viecTre(d, bayGio).length === 2);
+  ok('viecTreChuaXong LOẠI việc ở cột đã Xong',
+    viecTreChuaXong(d, bayGio, tt, xong).map((b) => b.id).join('') === 'b');
+  ok('việc chưa tới hạn không bao giờ là trễ, dù ở cột nào',
+    viecTreChuaXong(d, bayGio, tt, xong).every((b) => b.id !== 'c'));
+  ok('mọi việc đã Xong ⇒ KHÔNG còn báo động nào',
+    viecTreChuaXong(d, bayGio, new Map([['a', 'xong'], ['b', 'xong'], ['c', 'xong']]), xong).length === 0);
+  ok('tập cột-Xong rỗng ⇒ trùng kết quả viecTre() thô',
+    viecTreChuaXong(d, bayGio, tt, new Set()).length === viecTre(d, bayGio).length);
+  // Việc không tra được trạng thái thì THÀ BÁO còn hơn giấu: giấu một việc trễ là
+  // đúng chiều nguy hiểm, còn báo thừa thì người đọc nhìn ra ngay.
+  ok('không tra được trạng thái ⇒ VẪN đếm là trễ, không im lặng bỏ qua',
+    viecTreChuaXong(d, bayGio, new Map(), xong).length === 2);
+}
+
+// ── ⑥ LƯỚI NGÀY — không có lưới thì "dải Gantt" chỉ là mấy vạch màu ───────────
+{
+  console.log('⑥ chiaNgay');
+  const d = dungGantt([
+    viec('a', '2026-03-02T00:00:00Z', '2026-03-09T00:00:00Z'), // T2 → T2 tuần sau
+  ]);
+  const o = chiaNgay(d.cuaSo!);
+  ok('7 ngày trọn ⇒ 7 ô', o.length === 7);
+  ok('tổng bề rộng đúng 100% (không tràn, không hụt)',
+    gan(o.reduce((s, x) => s + x.rongPhanTram, 0), 100, 1e-9));
+  ok('ô đầu bắt đầu ở 0%', gan(o[0].traiPhanTram, 0));
+  ok('không ô nào vượt ra ngoài cửa sổ',
+    o.every((x) => x.traiPhanTram >= 0 && x.traiPhanTram + x.rongPhanTram <= 100 + 1e-9));
+  ok('đúng 2 ngày cuối tuần trong một tuần', o.filter((x) => x.cuoiTuan).length === 2);
+  ok('cuối tuần rơi đúng T7+CN',
+    o.filter((x) => x.cuoiTuan).map((x) => new Date(x.ms).getUTCDay()).sort().join() === '0,6');
+  ok('đầu tuần là thứ Hai', o.filter((x) => x.dauTuan).every((x) => new Date(x.ms).getUTCDay() === 1));
+  // Cửa sổ BẮT ĐẦU GIỮA NGÀY — ô đầu phải bị cắt, không được thò ra âm.
+  {
+    const lech = chiaNgay({ batDau: T('2026-03-02T06:00:00Z'), ketThuc: T('2026-03-04T00:00:00Z'), soNgay: 1.75 });
+    ok('cửa sổ lệch giữa ngày ⇒ ô đầu bị CẮT, không âm', lech[0].traiPhanTram === 0);
+    ok('cửa sổ lệch ⇒ tổng vẫn đúng 100%',
+      gan(lech.reduce((s, x) => s + x.rongPhanTram, 0), 100, 1e-9));
+  }
+  ok('cửa sổ dẹt (mọi việc cùng một mốc) ⇒ KHÔNG ô nào, không chia cho 0',
+    chiaNgay({ batDau: 1, ketThuc: 1, soNgay: 0 }).length === 0);
 }
 
 console.log(`\ngantt.test.ts — pass ${pass} · fail ${fail}`);

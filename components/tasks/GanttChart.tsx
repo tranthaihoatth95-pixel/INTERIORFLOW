@@ -3,8 +3,7 @@
 /**
  * components/tasks/GanttChart.tsx — DẢI GANTT của màn "Bảng việc" (tab Tiến độ).
  *
- * Mặt tiền của `lib/tasks/gantt.ts` (01/09) — trước bản này là mã mồ côi: 0 nơi import, tức cái
- * thước đã dựng xong mà không mặt nào đọc.
+ * Mặt tiền của `lib/tasks/gantt.ts` (01/09) — trước bản đó là mã mồ côi: 0 nơi import.
  *
  * ── VÌ SAO TAB "TIẾN ĐỘ" TRỐNG SUỐT TỪ 08/08 ──────────────────────────────────────────────────
  * `TaskBoardScreen` ghi thẳng trong docstring: *"Tab Bảng/Tiến độ/Lịch: chỉ 'Bảng' có thật bản 1
@@ -13,49 +12,81 @@
  *
  * ── ĐIỀU MÀN NÀY KHÔNG LÀM ────────────────────────────────────────────────────────────────────
  *  ⛔ Không gán ngầm "hôm nay" cho việc thiếu ngày. Đó là chỗ mọi phần mềm Gantt nói dối: vẽ một
- *     thanh trông rất thật từ một dữ liệu không có. Ở đây việc thiếu ngày đi xuống khối "chưa xếp
- *     được" KÈM LÝ DO, và người đọc biết ngay phải điền gì.
- *  ⛔ Không bịa cửa sổ thời gian. Không việc nào xếp được ⇒ `cuaSo` là `null` ⇒ màn nói thẳng,
- *     không rơi về "tuần này".
- *  ⛔ Không tự đọc `Date.now()` trong lúc dựng: mốc "bây giờ" là THAM SỐ của `viecTre()`, và màn
- *     này nói rõ nó lấy giờ ở đâu (giờ máy, đọc một lần sau khi gắn — cũng là cách tránh lệch
- *     server/client lúc hydrate).
+ *     thanh trông rất thật từ dữ liệu không có. Ở đây việc thiếu ngày xuống khối "chưa xếp được"
+ *     KÈM LÝ DO, người đọc biết ngay phải điền gì.
+ *  ⛔ Không bịa cửa sổ thời gian. Không việc nào xếp được ⇒ `cuaSo` là `null` ⇒ nói thẳng, không
+ *     rơi về "tuần này".
+ *  ⛔ **Không vẽ % tiến độ.** `TaskRow` KHÔNG có trường tiến độ (`grep progress|percent|tienDo`
+ *     trong `lib/server/tasks.ts` ⇒ 0). Tô một thanh "xong 60%" từ hư không đúng là thứ cả module
+ *     này sinh ra để chống — thiếu thì nói thiếu, không vẽ. Người phụ trách thì CÓ thật
+ *     (`assigneeIds`) nên có hiện, dùng lại `initialsOf` của bảng việc.
+ *  ⛔ Không tự đọc `Date.now()` lúc dựng: mốc "bây giờ" là THAM SỐ của `viecTreChuaXong()`, đọc
+ *     một lần sau khi gắn (cũng là cách tránh lệch server/client lúc hydrate).
+ *
+ * ── MÀU MANG NGHĨA, VÀ NGHĨA ĐÓ PHẢI ĐÚNG (sửa 02/09, mắt Hoà) ─────────────────────────────────
+ * Bản đầu tô đỏ theo `viecTre()` = "hạn đã trôi qua", nên việc ĐÃ XONG cũng đỏ như việc đang
+ * cháy — báo động giả có quy mô. Nay ba nghĩa, ba màu, cùng bộ token bảng việc đang dùng
+ * (`stateDotVar`): xong → `--success` dịu · trễ thật → `--danger` · còn lại → `--accent`.
+ * Luật "trễ thật" lấy từ `viecTreChuaXong()`, cùng luật `board.countOverdue()` đã có — không đẻ
+ * luật thứ hai (luật 6), và hết cảnh hai ô trên CÙNG một màn đếm theo hai kiểu.
  */
 
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarClock } from 'lucide-react';
 import { useT, useLang } from '@/lib/i18n';
-import type { TaskRow } from '@/lib/server/tasks';
-import { dungGantt, viecTre, type ThanhGantt } from '@/lib/tasks/gantt';
+import type { TaskRow, WorkflowStateRow } from '@/lib/server/tasks';
+import { initialsOf } from '@/lib/tasks/board';
+import { chiaNgay, dungGantt, viecTreChuaXong, type ThanhGantt } from '@/lib/tasks/gantt';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 const MOT_NGAY_MS = 86_400_000;
+/** Bề rộng cột tên. Rộng hơn bản đầu (220) vì tên việc thật dài — cắt quá tay thì cột tên
+ *  thành một dãy dấu ba chấm, tức mất đúng thứ người ta vào đây để đọc. */
+const COT_TEN = 280;
+
+type Sac = 'xong' | 'tre' | 'chay';
+const MAU: Record<Sac, string> = { xong: 'var(--success)', tre: 'var(--danger)', chay: 'var(--accent)' };
 
 export interface GanttChartProps {
-  /** Danh sách việc ĐANG HIỆN (đã qua lọc/tìm của màn bảng) — cùng một nguồn với các cột. */
+  /** Việc ĐANG HIỆN (đã qua lọc/tìm của màn bảng) — cùng nguồn với các cột, không truy vấn riêng. */
   tasks: readonly TaskRow[];
+  /** Cột trạng thái của dự án — chỉ dùng để biết cột nào là ĐÃ XONG. Bỏ trống ⇒ không cột nào
+   *  được coi là xong, và dải sẽ báo trễ rộng tay hơn (thà báo thừa còn hơn giấu). */
+  states?: readonly WorkflowStateRow[];
 }
 
-export function GanttChart({ tasks }: GanttChartProps) {
+export function GanttChart({ tasks, states = [] }: GanttChartProps) {
   const tr = useT();
   const en = useLang() === 'en';
   const dai = useMemo(() => dungGantt(tasks), [tasks]);
 
-  /* Giờ máy đọc MỘT LẦN sau khi gắn. Đọc trong lúc dựng sẽ khiến bản server và bản client ra hai
-     kết quả khác nhau (việc trễ / chưa trễ) — đúng loại lệch hydrate đã bắt được ở viewport 3D. */
+  const idDaXong = useMemo(
+    () => new Set(states.filter((s) => s.isDone).map((s) => s.id)),
+    [states],
+  );
+  const trangThai = useMemo(() => new Map(tasks.map((t) => [t.id, t.statusId])), [tasks]);
+  const nguoiLam = useMemo(() => new Map(tasks.map((t) => [t.id, t.assigneeIds])), [tasks]);
+
+  /* Giờ máy đọc MỘT LẦN sau khi gắn. Đọc trong lúc dựng thì bản server và bản client ra hai kết
+     quả khác nhau (việc trễ / chưa trễ) — đúng loại lệch hydrate đã bắt được ở viewport 3D. */
   const [bayGio, setBayGio] = useState<number | null>(null);
   useEffect(() => setBayGio(Date.now()), []);
   const idTre = useMemo(
-    () => new Set(bayGio === null ? [] : viecTre(dai, bayGio).map((b) => b.id)),
-    [dai, bayGio],
+    () => new Set(bayGio === null ? [] : viecTreChuaXong(dai, bayGio, trangThai, idDaXong).map((b) => b.id)),
+    [dai, bayGio, trangThai, idDaXong],
   );
 
   const ngay = (ms: number) =>
     new Date(ms).toLocaleDateString(en ? 'en-GB' : 'vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const sac = (b: ThanhGantt): Sac => {
+    if (idTre.has(b.id)) return 'tre';
+    const tt = trangThai.get(b.id);
+    return tt && idDaXong.has(tt) ? 'xong' : 'chay';
+  };
 
   if (!dai.cuaSo) {
-    /* RỖNG CÓ LÝ DO — khác hẳn "chưa có việc nào": có việc, nhưng không việc nào có đủ ngày để
-       đứng lên một trục thời gian. Nói ra được là sửa được. */
+    /* RỖNG CÓ LÝ DO — khác hẳn "chưa có việc nào": CÓ việc, nhưng không việc nào đủ ngày để đứng
+       lên một trục thời gian. Nói ra được là sửa được. */
     return (
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'grid', alignContent: 'center', justifyItems: 'center', gap: 18, padding: 24 }}>
         <EmptyState
@@ -74,55 +105,87 @@ export function GanttChart({ tasks }: GanttChartProps) {
 
   const { cuaSo } = dai;
   const soNgay = Math.max(1, Math.round(cuaSo.soNgay));
-  // vạch mốc: đầu · giữa · cuối cửa sổ. Không chia theo tuần/tháng — cửa sổ suy từ DỮ LIỆU nên
-  // độ dài của nó tuỳ dự án, một lưới cố định sẽ hoặc dày đặc hoặc trống trơn.
-  const moc = [0, 0.5, 1];
-  const viTriGioMs = bayGio !== null && bayGio >= cuaSo.batDau && bayGio <= cuaSo.ketThuc
-    ? ((bayGio - cuaSo.batDau) / Math.max(1, cuaSo.ketThuc - cuaSo.batDau)) * 100
+  const oNgay = chiaNgay(cuaSo);
+  const nhip = Math.max(1, cuaSo.ketThuc - cuaSo.batDau);
+  const viTriGio = bayGio !== null && bayGio >= cuaSo.batDau && bayGio <= cuaSo.ketThuc
+    ? ((bayGio - cuaSo.batDau) / nhip) * 100
     : null;
+  /* Nhãn ngày thưa dần khi cửa sổ dài — 47 ngày mà ghi đủ 47 nhãn thì thành một vệt mực. */
+  const buocNhan = soNgay <= 14 ? 1 : soNgay <= 45 ? 7 : 14;
 
   return (
-    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 16, display: 'grid', gap: 14, alignContent: 'start' }}>
-      {/* ── đầu dải: cửa sổ THẬT, suy từ dữ liệu ── */}
+    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 16, display: 'grid', gap: 12, alignContent: 'start' }}>
+      {/* ── đầu dải: cửa sổ THẬT (suy từ dữ liệu) + chú giải ── */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 13, fontWeight: 650, color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>
           {ngay(cuaSo.batDau)} → {ngay(cuaSo.ketThuc)}
         </span>
         <span style={{ fontSize: 11.5, color: 'var(--t4)', fontVariantNumeric: 'tabular-nums' }}>
-          {tr(
-            `${soNgay} ngày · ${dai.thanh.length} việc trên trục`,
-            `${soNgay} day(s) · ${dai.thanh.length} task(s) on the timeline`,
-          )}
+          {tr(`${soNgay} ngày · ${dai.thanh.length} việc trên trục`, `${soNgay} day(s) · ${dai.thanh.length} task(s) on the timeline`)}
         </span>
         {idTre.size > 0 && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 22, padding: '0 9px', borderRadius: 6, background: 'color-mix(in srgb, var(--danger) 14%, transparent)', color: 'var(--danger)', fontSize: 11, fontWeight: 600 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--danger)' }} />
-            {tr(`${idTre.size} việc quá hạn theo giờ máy`, `${idTre.size} past due by machine clock`)}
+            {tr(`${idTre.size} việc trễ hạn chưa xong`, `${idTre.size} overdue and unfinished`)}
           </span>
         )}
+        <ChuGiai tr={tr} />
       </div>
 
-      {/* ── lưới ── */}
-      <div style={{ position: 'relative', borderRadius: 14, border: '1px solid var(--border)', background: 'var(--panel)', overflow: 'hidden' }}>
-        {/* vạch mốc + nhãn ngày */}
-        <div style={{ position: 'relative', height: 26, borderBottom: '1px solid var(--border)' }}>
-          {moc.map((m) => (
-            <span
-              key={m}
-              style={{
-                position: 'absolute', top: 6, left: `calc(${m * 100}% ${m === 0 ? '+ 10px' : m === 1 ? '- 10px' : ''})`,
-                transform: m === 0 ? 'none' : m === 1 ? 'translateX(-100%)' : 'translateX(-50%)',
-                fontSize: 10.5, color: 'var(--t4)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
-              }}
-            >
-              {ngay(cuaSo.batDau + (cuaSo.ketThuc - cuaSo.batDau) * m)}
-            </span>
-          ))}
+      {/* ── lưới ─────────────────────────────────────────────────────────── */}
+      <div style={{ borderRadius: 14, border: '1px solid var(--border)', background: 'var(--panel)', overflow: 'hidden' }}>
+        {/* trục ngày */}
+        <div style={{ position: 'relative', height: 24, borderBottom: '1px solid var(--border)' }}>
+          <div style={{ position: 'absolute', left: COT_TEN, right: 0, top: 0, bottom: 0 }}>
+            {oNgay.map((o, i) =>
+              i % buocNhan === 0 ? (
+                <span
+                  key={o.ms}
+                  style={{
+                    position: 'absolute', left: `${o.traiPhanTram}%`, top: 5, fontSize: 10,
+                    color: 'var(--t4)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
+                    transform: o.traiPhanTram > 92 ? 'translateX(-100%)' : 'none',
+                  }}
+                >
+                  {new Date(o.ms).toLocaleDateString(en ? 'en-GB' : 'vi-VN', { day: '2-digit', month: '2-digit' })}
+                </span>
+              ) : null,
+            )}
+            {viTriGio !== null && (
+              <span
+                style={{
+                  position: 'absolute', left: `${viTriGio}%`, top: 4, transform: 'translateX(-50%)',
+                  fontSize: 9.5, fontWeight: 700, letterSpacing: '.06em', color: 'var(--danger)',
+                  background: 'var(--panel)', padding: '0 4px', whiteSpace: 'nowrap',
+                }}
+              >
+                {tr('HÔM NAY', 'TODAY')}
+              </span>
+            )}
+          </div>
         </div>
 
-        <div style={{ display: 'grid' }}>
+        {/* thân: nền lưới + vạch hôm nay là MỘT đường xuyên suốt, nằm dưới các hàng */}
+        <div style={{ position: 'relative' }}>
+          <div aria-hidden style={{ position: 'absolute', left: COT_TEN, right: 0, top: 0, bottom: 0, pointerEvents: 'none' }}>
+            {oNgay.map((o) => (
+              <div
+                key={o.ms}
+                style={{
+                  position: 'absolute', top: 0, bottom: 0,
+                  left: `${o.traiPhanTram}%`, width: `${o.rongPhanTram}%`,
+                  background: o.cuoiTuan ? 'color-mix(in srgb, var(--t1) 4%, transparent)' : 'transparent',
+                  borderLeft: o.dauTuan ? '1px solid var(--border)' : 'none',
+                }}
+              />
+            ))}
+            {viTriGio !== null && (
+              <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${viTriGio}%`, width: 1, background: 'var(--danger)', opacity: 0.75 }} />
+            )}
+          </div>
+
           {dai.thanh.map((b) => (
-            <Hang key={b.id} b={b} tre={idTre.has(b.id)} viTriGio={viTriGioMs} tr={tr} ngay={ngay} />
+            <Hang key={b.id} b={b} sac={sac(b)} nguoi={nguoiLam.get(b.id) ?? []} tr={tr} ngay={ngay} />
           ))}
         </div>
       </div>
@@ -132,55 +195,92 @@ export function GanttChart({ tasks }: GanttChartProps) {
   );
 }
 
-/** Một hàng: tên việc bên trái, thanh (hoặc cột mốc) trên rãnh bên phải. */
+/** Chú giải — không có nó thì màu chỉ là màu, người đọc phải tự đoán nghĩa. */
+function ChuGiai({ tr }: { tr: (vi: string, en: string) => string }) {
+  const o: [string, string][] = [
+    [MAU.chay, tr('Đang làm', 'In progress')],
+    [MAU.tre, tr('Trễ hạn', 'Overdue')],
+    [MAU.xong, tr('Xong', 'Done')],
+  ];
+  return (
+    <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12, fontSize: 10.5, color: 'var(--t4)' }}>
+      {o.map(([mau, nhan]) => (
+        <span key={nhan} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ width: 14, height: 5, borderRadius: 999, background: mau, opacity: nhan === tr('Xong', 'Done') ? 0.55 : 1 }} />
+          {nhan}
+        </span>
+      ))}
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+        <span style={{ width: 8, height: 8, transform: 'rotate(45deg)', borderRadius: 2, background: 'var(--t3)' }} />
+        {tr('Cột mốc', 'Milestone')}
+      </span>
+    </span>
+  );
+}
+
+/** Một hàng: tên việc + người phụ trách bên trái, thanh (hoặc cột mốc) trên rãnh bên phải. */
 function Hang({
-  b, tre, viTriGio, tr, ngay,
+  b, sac, nguoi, tr, ngay,
 }: {
   b: ThanhGantt;
-  tre: boolean;
-  viTriGio: number | null;
+  sac: Sac;
+  nguoi: readonly string[];
   tr: (vi: string, en: string) => string;
   ngay: (ms: number) => string;
 }) {
-  const mau = tre ? 'var(--danger)' : b.nguoc ? 'var(--t3)' : 'var(--accent)';
+  const mau = MAU[sac];
+  const mo = sac === 'xong' ? 0.55 : b.nguoc ? 0.7 : 1;
   const soNgay = Math.max(0, Math.round((b.ketThuc - b.batDau) / MOT_NGAY_MS));
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 220px) 1fr', alignItems: 'center', gap: 10, padding: '0 12px', height: 34, borderTop: '1px solid var(--border)' }}>
-      <span style={{ fontSize: 12, color: 'var(--t1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={b.tieuDe}>
-        {b.tieuDe}
+    <div style={{ display: 'grid', gridTemplateColumns: `${COT_TEN}px 1fr`, alignItems: 'center', height: 32, borderTop: '1px solid var(--border)' }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, padding: '0 12px' }}>
+        <span
+          title={b.tieuDe}
+          style={{ flex: 1, minWidth: 0, fontSize: 12, color: 'var(--t1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+        >
+          {b.tieuDe}
+        </span>
         {b.nguoc && (
-          <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 650, color: 'var(--danger)' }} title={tr('Ngày bắt đầu nằm SAU hạn — dữ liệu mâu thuẫn, vẫn vẽ nhưng phải nói ra', 'Start date is AFTER the due date — contradictory data, still drawn but flagged')}>
+          <span
+            style={{ flex: 'none', fontSize: 9, fontWeight: 700, letterSpacing: '.04em', color: 'var(--danger)' }}
+            title={tr('Ngày bắt đầu nằm SAU hạn — dữ liệu mâu thuẫn, vẫn vẽ nhưng phải nói ra', 'Start date is AFTER the due date — contradictory data, still drawn but flagged')}
+          >
             {tr('NGƯỢC', 'REVERSED')}
+          </span>
+        )}
+        {nguoi.length > 0 && (
+          <span
+            title={nguoi.join(', ')}
+            style={{
+              flex: 'none', width: 18, height: 18, borderRadius: '50%', display: 'grid', placeItems: 'center',
+              background: 'var(--field)', color: 'var(--t3)', fontSize: 8.5, fontWeight: 700,
+            }}
+          >
+            {initialsOf(nguoi[0])}
           </span>
         )}
       </span>
 
-      <div style={{ position: 'relative', height: 18 }}>
-        {/* rãnh */}
-        <div style={{ position: 'absolute', inset: '6px 0', borderRadius: 3, background: 'var(--field)' }} />
-        {viTriGio !== null && (
-          <div aria-hidden style={{ position: 'absolute', top: 0, bottom: 0, left: `${viTriGio}%`, width: 1, background: 'color-mix(in srgb, var(--danger) 55%, transparent)' }} />
-        )}
+      <div style={{ position: 'relative', height: '100%' }}>
         {b.laCotMoc ? (
           /* CỘT MỐC — việc chỉ có hạn, không có ngày bắt đầu. Vẽ một thanh dài ở đây là bịa ra
              một khoảng làm việc chưa ai khai. */
           <span
             title={`${tr('Cột mốc', 'Milestone')} · ${ngay(b.ketThuc)}`}
             style={{
-              position: 'absolute', top: 4, left: `${b.traiPhanTram}%`, width: 10, height: 10,
-              transform: 'translateX(-50%) rotate(45deg)', background: mau, borderRadius: 2,
+              position: 'absolute', top: 'calc(50% - 5px)', left: `${b.traiPhanTram}%`, width: 10, height: 10,
+              transform: 'translateX(-50%) rotate(45deg)', background: mau, opacity: mo, borderRadius: 2,
             }}
           />
         ) : (
           <div
             title={`${ngay(b.batDau)} → ${ngay(b.ketThuc)} · ${soNgay} ${tr('ngày', 'day(s)')}`}
             style={{
-              // thanh dạng viên nang (`--r-full`) — gu IF: pill bo full, không bo số lẻ
-              position: 'absolute', top: 4, height: 10, borderRadius: 999, background: mau,
+              position: 'absolute', top: 'calc(50% - 5px)', height: 10, borderRadius: 999,
+              background: mau, opacity: mo,
               left: `${b.traiPhanTram}%`,
-              // cửa sổ dẹt (mọi việc cùng một mốc) ⇒ rongPhanTram = 0; vẫn phải THẤY được thanh
+              // cửa sổ dẹt / bắt đầu trùng hạn ⇒ rongPhanTram = 0; vẫn phải THẤY được
               width: `max(6px, ${b.rongPhanTram}%)`,
-              opacity: b.nguoc ? 0.65 : 1,
             }}
           />
         )}
