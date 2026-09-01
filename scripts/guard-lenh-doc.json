@@ -68,6 +68,11 @@
       "argv-dau": ["node"],
       "phai-co": ["design/seed-canvas\\.mjs$", "^--check$"],
       "cam-co": ["^--out$", "^--to$", "^--extract$", "^--force$"]
+    },
+    {
+      "vi-sao": "CỔNG THIẾT KẾ (Hoà 01/09 'xây luật bằng máy hết cho tao') — cong-thiet-ke.mjs chỉ readFileSync/readdirSync + console.log + exit, KHÔNG một lời gọi ghi nào. Kiểm lại bằng: grep -n 'writeFileSync\\|appendFileSync\\|mkdirSync\\|rmSync\\|unlink\\|spawn\\|execSync\\|createWriteStream\\|rename' scripts/cong-thiet-ke.mjs ⇒ 0 dòng.",
+      "ghi-chu-hep": "Dùng dạng TIỀN TỐ ĐƯỜNG DẪN CỤ THỂ (`node scripts/cong-thiet-ke.mjs`) chứ không dạng `argv-dau:[node] + phai-co`. Cả hai đều hợp lệ với lõi, nhưng dạng này neo đúng MỘT tệp trong repo — `phai-co` theo đuôi tên sẽ khớp cả bản sao đặt ở bất cứ đâu ngoài repo.",
+      "argv-dau": ["node", "scripts/cong-thiet-ke.mjs"]
     }
   ],
   "script-an-toan": [
