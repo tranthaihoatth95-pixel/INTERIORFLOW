@@ -92,7 +92,110 @@ Hoà (`IF-CANONICAL` §2). Hai phiên cùng tự xưng ⇒ **cả hai DỪNG GHI
 
 ## 🎯 VIỆC KẾ TIẾP — **một việc, không phải danh sách**
 
-🔄 **CẬP NHẬT 01/09 SÁNG — LƯỢT E2E, lease `L-90a99d21`, writer `hoa-e2e-1` (phiên `223b210d`).**
+🔄 **CẬP NHẬT 01/09 TRƯA — LƯỢT E2E **2**, lease `L-1d648167` (27 tệp), writer `hoa-e2e-2`
+(phiên `eb2d7edc`). Mọi dòng bên dưới khối này là bản cũ hơn, **giữ làm dấu vết theo lệ**.
+
+**MỤC TIÊU LƯỢT:** `npm test` xanh trọn + đóng sổ. Hoà duyệt sẵn 4 việc trong `issuer` của lease
+(đọc: `node scripts/claude-lease.mjs status`).
+
+**NỢ ĐÃ TRẢ lượt này:**
+- ~~`npm-test-chưa-xanh-trọn`~~ ⇒ **TRẢ CẢ HAI NỬA.**
+  · `soi:vang-mat` **9 → 7 / trần 7** — trả ở `3c2319b1` (lượt trước), không phải lượt này.
+  · `soi:thao-tac` `T-cam-hex-inline` **201 → 194 / trần 194**, exit 0. Đo lại: `npm run soi:thao-tac`.
+- ~~`ack-legacy-catch-22`~~ ⇒ **TRẢ.** Hai đầu một phiếu legacy nay gặp nhau; phiếu
+  `3db07c32bcd1` **đã đóng thật** (bàn tự sinh lại, 15 → 16 phiếu đã đóng).
+- ~~`soi-cau-thiếu-ô-địa-chỉ`~~ ⇒ **TRẢ, và nó không đứng một mình:** `scripts/phieu-ca.mjs:387`
+  in **đúng câu sai đó**. Hai tệp cùng in sai một câu ⇒ chuỗi hướng dẫn bị CHÉP, không phải một
+  lần gõ nhầm. Sửa cả hai.
+
+**CÁCH SIẾT `cam-hex-inline` — và một phương án ĐÃ THỬ RỒI BỎ, ghi lại để đừng ai thử lại.**
+Ca oan: `components/print/LineweightTable.tsx` `DEMO_LINEWEIGHT_ROWS` giữ 7 màu LAYER của
+**người dùng** (đi qua prop `row.color`) — phạt nó là phạm LUẬT NỀN TẢNG 3.
+⛔ **Phương án soi theo vùng `style={{…}}` — BỎ.** Nó hạ số **201 → 111**, nghe như thắng, thật
+ra 90 hit rơi mất là hex NGOÀI inline style (const `CSSProperties`, chuỗi CSS-in-JS trong `*.ts`)
+— vẫn đúng tinh thần luật. Mà `scripts/foundation-tran.json` **ngoài lease** nên trần đứng yên ở
+194 ⇒ để lại **83 ô trống** cho vi phạm mới chui vào mà cổng vẫn xanh. Đó là **nới trần đi cửa
+sau**, đúng thứ M-52 cấm.
+✅ **Phương án dùng: MIỄN TRỪ CÓ KHAI BÁO tại chỗ** (`scripts/soi-thao-tac.mjs`, hàm `vungMienTru`).
+Khuôn `soi-thao-tac:mien-tru <id-luật> — <lý do>` đặt trên khối; phạm vi = ĐÚNG một cụm ngoặc cân
+bằng **trải nhiều dòng**. Rơi đúng 7 dòng oan, **khe hở bằng không**, grep ra được:
+`grep -rn 'soi-thao-tac:mien-tru'`. Hex nằm gọn một dòng thì **không khai miễn trừ được** — cửa
+hẹp là chủ đích.
+
+**🔴 NỢ MỚI CÓ TÊN — đo được trong lượt này, đừng để chìm:**
+1. **`mẫu-luật-nằm-ngoài-lease`.** Chỗ ĐÚNG của phép siết là ô `vung:`/mẫu trong
+   `scripts/thao-tac-registry.mjs`, và trần ở `scripts/foundation-tran.json` — **cả hai không có
+   trong lease `L-1d648167`**. Nên bảng bắc cầu phải nằm tạm trong máy soi (đã ghi chú tại chỗ).
+   Lần sau ai mở registry: dời sang đó rồi xoá bản tạm, đừng để hai chỗ cùng nói.
+   ⛔ Writer **không tự `claude-lease.mjs amend`** để mở rộng quyền ghi của chính mình.
+2. **`cardFaces-là-mã-chết` — việc ② của lượt CHƯA LÀM, cố ý.** Lệnh việc bảo rút 7 hex trong
+   `components/entry/cardFaces.tsx` thành token và cho *"thẻ đăng nhập đổi theo theme"*. Đo chuỗi
+   import: `cardFaces` ← `components/StageSelect.tsx` + `components/LoginScreen.tsx`, và **cả hai
+   0 nơi import** (`grep -rn "from '@/components/StageSelect'"` ⇒ 0 dòng). `LoginScreen.tsx:1`
+   tự đóng dấu *"MÃ CHẾT 17/08"* kèm lời chứng: một phiếu trước đã grep ra đúng tệp này, sửa xong
+   *"màn hình không đổi một pixel"*. Màn đăng nhập THẬT là `components/entry/LoginScreen.tsx`,
+   dùng `.lq-card` — vốn **đã** có nhánh `:root[data-theme='light'] .lq-card` (`app/globals.css:1205`).
+   ⚠️ Thêm một cái bẫy nếu ai định làm ẩu: trong vùng login, `--t1` bị `[data-login-tone]` ép theo
+   **NỀN**, không theo theme (`globals.css:1560`). Bind mực thẻ vào `var(--t1)` ⇒ nền ảnh tối sẽ
+   cho chữ `#f5f5f7` trên thẻ kem `#f4efe6`. ⇒ **Cần Hoà chỉ đúng bề mặt** trước khi tiêu lượt ghi.
+3. **`47c67b5b5474-chỉ-cl:00-ack-được`.** Phiếu legacy `→ '00'`. Cổng đúng luật: `cl:06` không ack
+   được địa chỉ không phải của mình. Lối `--legacy` nay đã có, **việc còn lại của `cl:00`**.
+4. **`BOS_SESSION_ID-vắng-trong-env-phiên`.** Phiên này được mở với đủ `IF_SYSTEM/IF_LANE/
+   IF_SESSION_ID/IF_TASK_ID/IF_LEASE_ID` nhưng **không có `BOS_SESSION_ID`**, mà `moc.mjs` đòi
+   đúng biến đó ⇒ mọi lệnh ghi biên nhận exit 2 với câu *"thiếu session_id thật"*. Lượt này khai
+   inline `BOS_SESSION_ID=hoa-e2e-2`. Sửa gốc: bộ mở phiên đặt luôn, hoặc `moc.mjs` đọc
+   `IF_SESSION_ID` làm nguồn thứ tư.
+5. **`guard-chặn-oan-vòng-lặp-đọc` — có thêm hai ca THẬT trong lượt này.** `while read … done`
+   (chỉ `grep -c`) và `node <kịch bản chỉ-đọc trong scratchpad>` đều bị xếp `KIND mutation`.
+   Trùng đúng E13 của `NC-VI-SAO-CODEX-KY-LUAT.md`. Sổ lệnh đọc `scripts/guard-lenh-doc.json`
+   là chỗ nới đúng — **cấm sửa lõi**.
+6. **`cờ-tường-UNKNOWN`** — giữ nguyên, xem cảnh báo đầu tệp.
+
+**NỢ GIỮ NGUYÊN, KHÔNG gạch:** `POCHE_TAM-inferred-rộng` · `mau-bo-chưa-nối` · `guard-chưa-có-heartbeat`.
+
+**📌 HAI QUYẾT ĐỊNH MỚI CỦA HOÀ — 01/09, nhập vào sổ lượt này:**
+
+**QĐ 08:32 · HAI PHIÊN BẢN UI THEO PHƯƠNG THỨC NHẬP, CẤM LAI** (phiếu `HO-20260901013338-aa2ddb75a6eb`).
+Mỗi phương thức nhập một bản tối ưu riêng: **desktop** (phím + chuột — mật độ cao, hover, phím
+tắt, con trỏ chính xác) và **cảm ứng + pencil** (target ≥44px, dock trong tầm ngón cái, pencil là
+công cụ vẽ chính trên canvas 2D, **không UI nào phụ thuộc hover**). **CẤM một bản lai phục vụ cả
+hai.** ⚠️ Đây **KHÔNG** phải responsive breakpoint — là hai bộ layout/tương tác có chủ đích, dùng
+chung token + engine. Nó **thay** nợ *"Hai cơ chế Home theo bề rộng màn"* Hoà chê 29/08: phân
+nhánh nay theo **PHƯƠNG THỨC NHẬP**, không theo bề rộng.
+
+**QĐ 09:52 · UX TRƯỚC, UI SAU — HAI GIAI ĐOẠN** (phiếu `HO-20260901025256-b76a803ea132`).
+**GĐ1 = UX**: hành trình · kiến trúc thông tin · bố cục chính-phụ · mô hình tương tác theo phương
+thức nhập · 2 trạng thái Home · vỏ 4 cạnh — **chốt với Hoà xong mới đi tiếp**.
+**GĐ2 = UI**: da thị giác (token màu · chất liệu kính · đèn viền · typography) trên bộ UX đã chốt.
+⚠️ **Nghiệm thu GĐ1 = Hoà duyệt bố cục/luồng, KHÔNG chấm màu ở giai đoạn này.**
+
+**📎 BẢN VẼ + NGHIÊN CỨU của lượt thiết kế — nằm NGOÀI repo, ghi con trỏ vào đây kẻo mất dấu.**
+Canvas thiết kế `fa541dc6` (v3) · 19 bản `.dc.html` (9 cặp desktop/`*Cham` + `Main`) tại
+`/private/tmp/claude-501/-Users-tranben-Downloads-interiorflow/e31f331f-0b13-469e-b14f-2d38fcb5de26/scratchpad/design-if/`.
+Cùng thư mục có 4 báo cáo: `NC-QUY-TRINH-UXUI-APP-THIET-KE.md` · `NC-HANH-VI-KTS-NOI-THAT.md` ·
+`NC-VI-SAO-CODEX-KY-LUAT.md` · `CHUNG-CAT-BOARD-1IF-2026-08-31.md`.
+⚠️ **`/private/tmp` là thư mục TẠM của máy** — mất là mất trắng. Nợ có tên:
+**`bản-vẽ-nghiên-cứu-chưa-có-nhà-bền`**.
+
+**Bốn đề xuất từ `NC-VI-SAO-CODEX-KY-LUAT.md` — chưa ai nhận, ghi tên để không chìm:**
+`phiên-lane-bền-resume` (mục 5 — một session id bền mỗi lane, luôn `--resume`) ·
+`phiếu-kèm-AllowedFiles-CẤM` (mục 6 — bắt chước khuôn `cx` E10, đã có mẫu thật ở phiếu
+`a8707a0ad7d7`) · `nấc-VERIFIED-trên-cầu` (mục 7 — chuỗi hiện là `HANDOFF→WAKE→SENT→SEEN→ACK`,
+thiếu nấc kiểm độc lập trước khi phiếu đóng) · `allowlist-hẹp-theo-prefix` (mục 8).
+
+**🔬 ĐANG ĐIỀU TRA — CAD lag + mở sai khung nhìn** (Hoà báo 10:13; báo cáo chỉ-đọc:
+`…/e31f331f-…/scratchpad/DIEU-TRA-CAD-LAG-MO-SAI.md`). **Chưa có verdict, chưa vá.** Ba kết luận
+đã có bằng chứng dòng mã, đáng đọc trước khi ai đó đoán lại từ đầu:
+- **Đường `/cad` KHÔNG dùng viewport lưu** (mọi nhánh khôi phục rơi về `DEFAULT_VIEWPORT` rồi phát
+  `cad:zoom-extents`) — nhưng **`/render` thì CÓ**: `lib/cad/cad3d-autosave-core.ts:95` áp thẳng
+  `sheet.viewport` **không sanity-check scale > 0** ⇒ viewport âm thời-kỳ-bug sống lại nguyên vẹn.
+- **Nghi phạm lag số 1 không phải cờ tường** (nó chạy đúng một lần mỗi lượt import, trong worker).
+  Là `findSnap` chạy TRỌN doc mỗi `pointermove` (`lib/cad/query.ts:215` lọc visible bằng
+  `layers.find` lồng trong filter ⇒ ~315.000 phép so mỗi lần rê chuột), cộng full-redraw 12.600
+  entity **không viewport-culling**, cộng autosave `JSON.stringify` cả doc trên main thread.
+- **Phương án A (`f2d85fb8`) có thể là chính thủ phạm của "mở lên chưa đúng khung"**: điều kiện 2
+  trả `cluster.box` TRẦN, docstring `lib/cad/import-summary.ts:230` tự ghi **34–88% số hình nằm
+  NGOÀI khung** trên 6 hồ sơ thật.
 Mọi dòng bên dưới khối này là bản cũ hơn, **giữ làm dấu vết theo lệ**.
 
 | commit | nhóm | chứng cứ |
