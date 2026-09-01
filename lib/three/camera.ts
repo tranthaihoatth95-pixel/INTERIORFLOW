@@ -139,3 +139,150 @@ export function placeCamera(bbox: BboxMm, spec: CameraSpec): PlacedCamera {
     lensMm: spec.lensMm,
   };
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * HAI ĐIỂM TỤ — chuẩn nghề ảnh kiến trúc (chốt 9 của Hoà: "đi sau phải giống
+ * nó trước rồi mới hơn nó").
+ *
+ * Nghề chụp/dựng kiến trúc có MỘT quy ước cứng: **đường đứng phải đứng**. Máy
+ * ngóc lên để lấy trần là làm đường đứng đổ về một điểm tụ thứ ba — ảnh đọc ra
+ * "nhà đổ". Nghề chữa bằng ống kính DỊCH (tilt-shift): giữ trục máy NGANG rồi
+ * dịch ống kính lên, khung ăn lên trần mà đường đứng vẫn song song.
+ *
+ * Số điểm tụ suy được TẤT ĐỊNH từ hình học, không cần đoán:
+ *   · trục nhìn không ngang                ⇒ 3 điểm tụ (đường đứng hội tụ) — SAI nghề
+ *   · trục nhìn ngang, phương vị ≈ trục nhà ⇒ 1 điểm tụ (chính diện)
+ *   · trục nhìn ngang, phương vị chéo       ⇒ 2 điểm tụ ← thứ nghề dùng nhiều nhất
+ * `soDiemTu()` là cái thước đó; `datCameraHaiDiemTu()` là chỗ đặt máy theo nó.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** Sai số phương vị (độ) còn tính là "chính diện" ⇒ một điểm tụ. */
+export const NGUONG_CHINH_DIEN_DEG = 5;
+/** Sai số cao độ (m) giữa máy và điểm nhìn còn tính là trục NGANG. */
+export const NGUONG_TRUC_NGANG_M = 1e-6;
+/** Cao trần mặc định khi đề bài không khai (m) — nhà ở VN phổ biến 2,8. */
+export const CAP_TRAN_MAC_DINH_M = 2.8;
+/** Trần dịch ống kính, tính theo NỬA chiều cao khung. Ống tilt-shift 24mm dịch
+ *  12mm trên nửa khung 12mm ⇒ 1.0 là kịch biên vật lý; nghề hiếm khi vượt. */
+export const TRAN_DICH_ONG_KINH = 1.0;
+
+export interface CameraHaiDiemTu extends PlacedCamera {
+  /** dịch ống kính theo trục đứng, chuẩn hoá theo NỬA khung. + = dịch lên. */
+  shiftY: number;
+  /** phương vị trục nhìn (độ, 0 = +X, ngược chiều kim đồng hồ) */
+  yawDeg: number;
+  /** cao trần dùng để tính `shiftY` (m) */
+  capTranM: number;
+  /** số điểm tụ hình học suy ra — phải bằng 2 thì mới đúng tên hàm */
+  soDiemTu: 1 | 2 | 3;
+}
+
+/** FOV ĐỨNG (độ) từ tiêu cự + tỉ lệ khung, cùng mô hình cảm biến rộng 36mm với `fovFromLens`. */
+export function fovDocFromLens(lensMm: number, ratio: string): number {
+  const [w, h] = ratio.split(':').map((n) => parseFloat(n));
+  const tyLe = w > 0 && h > 0 ? h / w : 9 / 16;
+  const caoCamBien = 36 * tyLe;
+  return (2 * Math.atan(caoCamBien / (2 * lensMm)) * 180) / Math.PI;
+}
+
+/**
+ * Số điểm tụ của một thế máy — THƯỚC, không phải ý kiến.
+ * Trả 3 khi trục nhìn nghiêng (đường đứng hội tụ), 1 khi nhìn chính diện một trục
+ * nhà, 2 khi nhìn chéo. `nguongDeg` là bề rộng vùng "coi như chính diện".
+ */
+export function soDiemTu(cam: PlacedCamera, nguongDeg: number = NGUONG_CHINH_DIEN_DEG): 1 | 2 | 3 {
+  const dz = cam.target[2] - cam.pos[2];
+  if (Math.abs(dz) > NGUONG_TRUC_NGANG_M) return 3;
+  const dx = cam.target[0] - cam.pos[0];
+  const dy = cam.target[1] - cam.pos[1];
+  if (dx === 0 && dy === 0) return 1;
+  const yaw = (Math.atan2(dy, dx) * 180) / Math.PI;
+  // khoảng cách tới bội số 90° gần nhất — trục nhà là hai trục vuông góc
+  const lech = Math.abs(((((yaw % 90) + 135) % 90) - 45));
+  return lech <= nguongDeg ? 1 : 2;
+}
+
+/** Trục nhìn có NGANG không — điều kiện cần để đường đứng còn đứng. */
+export function laTrucNgang(cam: PlacedCamera): boolean {
+  return Math.abs(cam.target[2] - cam.pos[2]) <= NGUONG_TRUC_NGANG_M;
+}
+
+/**
+ * Dịch ống kính cần thiết để khung ôm trọn 0 → `capTranM` mà KHÔNG ngóc máy.
+ * Đơn vị: nửa-khung. Kẹp ở `TRAN_DICH_ONG_KINH` (biên vật lý của ống thật);
+ * kẹp rồi thì khung mất một phần trần — đó là sự thật, không giấu bằng cách ngóc.
+ */
+export function dichOngKinh(
+  caoMayM: number,
+  capTranM: number,
+  khoangCachM: number,
+  lensMm: number,
+  ratio: string,
+): number {
+  const nuaKhung = Math.max(
+    1e-9,
+    khoangCachM * Math.tan((fovDocFromLens(lensMm, ratio) * Math.PI) / 360),
+  );
+  const canDich = capTranM / 2 - caoMayM;
+  const chuanHoa = canDich / nuaKhung;
+  return Math.max(-TRAN_DICH_ONG_KINH, Math.min(TRAN_DICH_ONG_KINH, chuanHoa));
+}
+
+export interface TuyChonHaiDiemTu {
+  /** cao trần (m) */
+  capTranM?: number;
+  /** góc chéo so với trục nhà (độ) — nghề hay dùng 30–60; 0 hoặc 90 là một điểm tụ */
+  gocCheoDeg?: number;
+}
+
+/**
+ * Đặt máy HAI ĐIỂM TỤ theo bbox mặt bằng (mm, hệ CAD Y-lên).
+ * Máy đứng ở góc Nam-Tây trong phòng, trục nhìn NGANG (nên đường đứng còn đứng),
+ * phương vị chéo `gocCheoDeg` so với trục X ⇒ hai bó tường ngang tụ về hai điểm.
+ * Phần trần lấy bằng DỊCH ỐNG KÍNH, không bằng ngóc máy.
+ */
+export function datCameraHaiDiemTu(
+  bbox: BboxMm,
+  spec: CameraSpec,
+  tuyChon: TuyChonHaiDiemTu = {},
+): CameraHaiDiemTu {
+  const capTranM = tuyChon.capTranM ?? CAP_TRAN_MAC_DINH_M;
+  const gocRaw = tuyChon.gocCheoDeg ?? 35;
+  // ép ra khỏi vùng chính diện: 0/90 là một điểm tụ, không phải hai
+  const gocCheoDeg =
+    Math.abs(((((gocRaw % 90) + 135) % 90) - 45)) <= NGUONG_CHINH_DIEN_DEG ? 35 : gocRaw;
+  const w = Math.max(0.5, (bbox.maxX - bbox.minX) / 1000);
+  const d = Math.max(0.5, (bbox.maxY - bbox.minY) / 1000);
+  // máy lùi vào trong góc Nam-Tây một khoảng nhỏ để không dính mặt tường
+  const lui = 0.12;
+  const x = bbox.minX / 1000 + w * lui;
+  const y = bbox.minY / 1000 + d * lui;
+  const caoMayM = spec.heightM;
+  const rad = (gocCheoDeg * Math.PI) / 180;
+  // điểm nhìn nằm CÙNG CAO ĐỘ với máy — đây là chỗ quyết định "đường đứng còn đứng"
+  const tam = Math.hypot(w, d);
+  const target: [number, number, number] = [
+    x + Math.cos(rad) * tam,
+    y + Math.sin(rad) * tam,
+    caoMayM,
+  ];
+  const cam: PlacedCamera = { pos: [x, y, caoMayM], target, lensMm: spec.lensMm };
+  return {
+    ...cam,
+    shiftY: dichOngKinh(caoMayM, capTranM, tam, spec.lensMm, spec.ratio),
+    yawDeg: gocCheoDeg,
+    capTranM,
+    soDiemTu: soDiemTu(cam),
+  };
+}
+
+/** Mẩu prompt tiếng Anh cho đường render ảnh — nói đúng thứ hình học ở trên. */
+export function promptHaiDiemTu(cam: CameraHaiDiemTu): string {
+  const dich =
+    cam.shiftY > 0.02
+      ? ', tilt-shift lens rise'
+      : cam.shiftY < -0.02
+        ? ', tilt-shift lens fall'
+        : '';
+  return `two-point perspective architectural photograph, camera perfectly level at ${cam.pos[2].toFixed(2)}m, vertical lines strictly parallel, ${cam.lensMm}mm lens${dich}`;
+}
