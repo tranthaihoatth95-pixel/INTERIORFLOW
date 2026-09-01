@@ -16,7 +16,21 @@ import type { ViewDir } from './ViewCube3D';
 import { RawStyle } from './RawStyle';
 import { VE3D_CSS } from './ve3d-css';
 import { useT } from '@/lib/i18n';
-import { Maximize } from 'lucide-react';
+import { Maximize, RectangleHorizontal } from 'lucide-react';
+/* THƯỚC HAI ĐIỂM TỤ (`lib/three/camera.ts`, 01/09) — module THUẦN, không kéo `three` vào bundle
+   (docstring đầu tệp này cấm import tĩnh `three`; camera.ts chỉ có toán + kiểu). */
+import {
+  CAMERA_PRESETS,
+  CAP_TRAN_MAC_DINH_M,
+  datCameraHaiDiemTu,
+  fovDocFromLens,
+  laTrucNgang,
+  mayTuThree,
+  nhanDiemTu,
+  presetCamera,
+  soDiemTu,
+  threeTuZUp,
+} from '@/lib/three/camera';
 
 /**
  * `Scene3DViewer`/`ViewCube3D` kéo theo `three` (~170KB gzip) ⇒ BẮT BUỘC nạp động, `ssr:false`
@@ -262,6 +276,87 @@ export function Viewport3D({
   // không có khái niệm "toàn cảnh").
   const fitDisabled = mode === 'walk' || mode === 'campath';
 
+  /* ── HAI ĐIỂM TỤ (01/09) — NỐI thước đã có vào khung nhìn, không viết lại thước ─────────────
+     `lib/three/camera.ts` đã có `soDiemTu()` (suy số điểm tụ TỪ HÌNH HỌC) và `datCameraHaiDiemTu()`
+     (đặt máy trục ngang + lấy trần bằng DỊCH ỐNG KÍNH, đúng cách nghề ảnh kiến trúc chữa "nhà đổ").
+     Cả hai nằm mồ côi một lượt vì thiếu đúng một thứ: phép đổi hệ toạ độ giữa Z-up của lib và
+     Y-lên của three. Nay có (`mayTuThree`/`threeTuZUp`), nên ở đây chỉ NỐI.
+
+     ⚠️ Con số trên chip là số ĐO thế máy ĐANG hiện, không phải nhãn dán sau khi bấm nút: xoay máy
+     ra khỏi thế ngang là nó tự nhảy về 3 và nói "đường đứng đổ". Một cái nhãn đứng yên sau khi bấm
+     mới là thứ nói dối. */
+  const [soTu, setSoTu] = useState<1 | 2 | 3 | null>(null);
+  /** Dịch ống kính đang áp (đơn vị NỬA khung). 0 = ống thẳng. */
+  const dichRef = useRef(0);
+  const [theMay, setTheMay] = useState<{ shiftY: number; lensMm: number; capTranM: number } | null>(null);
+
+  useEffect(() => {
+    let raf = 0;
+    const doc = () => {
+      raf = requestAnimationFrame(doc);
+      const api = cameraApiRef.current;
+      if (!api) return;
+      const p = api.camera.position;
+      const t = api.controls.target;
+      const may = mayTuThree([p.x, p.y, p.z], [t.x, t.y, t.z], lensMm ?? 35);
+      const n = soDiemTu(may);
+      setSoTu((cu) => (cu === n ? cu : n)); // cùng giá trị ⇒ React bỏ qua, không dựng lại
+      // Dịch ống kính là một phần của THẾ MÁY hai điểm tụ. Người dùng xoay máy nghiêng đi thì thế
+      // đó không còn — giữ lại phần dịch sẽ thành một khung lệch không ai giải thích được.
+      if (dichRef.current !== 0 && !laTrucNgang(may)) {
+        dichRef.current = 0;
+        api.camera.clearViewOffset();
+        api.camera.updateProjectionMatrix();
+        setTheMay(null);
+      }
+    };
+    raf = requestAnimationFrame(doc);
+    return () => cancelAnimationFrame(raf);
+  }, [cameraApiRef, lensMm]);
+
+  /**
+   * Đặt máy HAI ĐIỂM TỤ cho cảnh đang mở. Ba việc, không hơn:
+   *  ① thế máy ← `datCameraHaiDiemTu(scene.bboxMm, spec)` rồi đổi sang hệ three;
+   *  ② tiêu cự khung nhìn ← ĐÚNG tiêu cự vừa khai (mặc định viewer là FOV 50° cứng, không liên
+   *     quan tới `lensMm`) — không làm bước này thì con số dịch ống kính tính cho một ống, còn
+   *     màn hình vẽ bằng một ống khác;
+   *  ③ dịch ống kính ← `camera.setViewOffset` (đường tilt-shift THẬT của three: nó dời khung
+   *     ngắm chứ không ngóc máy, nên đường đứng vẫn đứng).
+   */
+  function datMayHaiDiemTu() {
+    const api = cameraApiRef.current;
+    const host = boxRef.current;
+    if (!api || !host) return;
+    const r = host.getBoundingClientRect();
+    const w = Math.max(1, Math.round(r.width));
+    const h = Math.max(1, Math.round(r.height));
+    const tyLe = `${w}:${h}`;
+    const spec = {
+      ...presetCamera(CAMERA_PRESETS[0], `${Math.round(lensMm ?? 35)}mm`, '16:9'),
+      // hai số dưới đè lên preset vì chỉ khung nhìn mới biết chúng: cao máy do nơi gọi truyền
+      // xuống, tỉ lệ khung là tỉ lệ THẬT của ô canvas (preset chỉ nhận 4 tỉ lệ in ấn).
+      heightM: (cameraHeightMm ?? 1650) / 1000,
+      ratio: tyLe,
+    };
+    const capTranM = scene.sizeM && scene.sizeM.h > spec.heightM ? scene.sizeM.h : CAP_TRAN_MAC_DINH_M;
+    const dat = datCameraHaiDiemTu(scene.bboxMm, spec, { capTranM });
+    const p = threeTuZUp(dat.pos);
+    const t = threeTuZUp(dat.target);
+    api.camera.position.set(p[0], p[1], p[2]);
+    api.controls.target.set(t[0], t[1], t[2]);
+    api.camera.fov = fovDocFromLens(spec.lensMm, tyLe);
+    if (Math.abs(dat.shiftY) > 1e-6) {
+      // offsetY âm ⇒ khung ngắm dời LÊN (three: `top -= offsetY * height / fullHeight`).
+      api.camera.setViewOffset(w, h, 0, (-dat.shiftY * h) / 2, w, h);
+    } else {
+      api.camera.clearViewOffset();
+    }
+    api.camera.updateProjectionMatrix();
+    api.controls.update();
+    dichRef.current = dat.shiftY;
+    setTheMay({ shiftY: dat.shiftY, lensMm: spec.lensMm, capTranM });
+  }
+
   /**
    * GOTO-3D (19/08) — nhảy-tới-đối-tượng cho `ReviewPanel` (mặt tiền chặng 3D, cùng khuôn
    * `cad:goto-box`/`present:goto-slide`). Nghe TRỰC TIẾP qua `window` (không props) — cùng cách
@@ -341,6 +436,57 @@ export function Viewport3D({
         <Maximize size={18} strokeWidth={2} />
         {tr('Toàn cảnh', 'Fit view')}
       </button>
+
+      {/* ── MÁY HAI ĐIỂM TỤ — mặt tiền của `datCameraHaiDiemTu()`. Dùng lại nguyên khuôn `.fitbtn`
+          (cùng họ nút nổi trên cảnh, không đẻ kiểu nút thứ hai), chỉ hạ xuống một nấc. Mờ đi ở
+          walk/campath vì hai mode đó tự lái camera mỗi khung — đặt thế máy xong là bị ghi đè ngay
+          ở khung kế, tức nút sẽ nói dối. ── */}
+      <button
+        type="button"
+        className="fitbtn"
+        style={{ top: 'calc(120px + var(--tap) + 8px)' }}
+        disabled={fitDisabled}
+        onClick={datMayHaiDiemTu}
+        title={fitDisabled
+          ? tr('Chế độ này camera tự lái mỗi khung — thế máy đặt xong sẽ bị ghi đè ngay', 'This mode drives the camera every frame — a placed pose is overwritten at once')
+          : tr('Đặt máy chuẩn nghề ảnh kiến trúc: trục nhìn NGANG (đường đứng còn đứng), phương vị chéo, lấy trần bằng dịch ống kính', 'Place an architectural-photography camera: level axis (verticals stay vertical), diagonal azimuth, ceiling gained by lens shift')}
+      >
+        <RectangleHorizontal size={18} strokeWidth={1.5} />
+        {tr('Máy 2 điểm tụ', 'Two-point camera')}
+      </button>
+
+      {/* ── CHIP ĐIỂM TỤ — số ĐO, không phải nhãn dán. Xem `soDiemTu()`. ── */}
+      {soTu !== null && (
+        <div
+          className="vpover"
+          style={{
+            position: 'absolute', left: 14, top: 46, zIndex: 4, display: 'flex', alignItems: 'center',
+            gap: 6, borderRadius: 'var(--radius-sm)', fontSize: 'var(--fs-2xs)', padding: '4px 9px',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+          title={tr(
+            'Số điểm tụ suy TỪ HÌNH HỌC thế máy: trục nhìn nghiêng ⇒ 3 (đường đứng hội tụ) · ngang + chính diện ⇒ 1 · ngang + chéo ⇒ 2.',
+            'Vanishing points inferred FROM the camera geometry: tilted axis ⇒ 3 (verticals converge) · level + head-on ⇒ 1 · level + diagonal ⇒ 2.',
+          )}
+        >
+          <span
+            aria-hidden
+            style={{
+              width: 6, height: 6, borderRadius: '50%', flex: 'none',
+              // `.vpover` đã đặt mực sáng cố định cho kính tối này (ngoại lệ CÓ CĂN CỨ ghi ở
+              // `ve3d-css.ts`) ⇒ chấm thường ăn theo `currentColor`, không khai màu lần hai.
+              background: soTu === 3 ? 'var(--danger)' : 'currentColor',
+              opacity: soTu === 3 ? 1 : 0.8,
+            }}
+          />
+          {tr(`${soTu} điểm tụ · ${nhanDiemTu(soTu).vi}`, `${soTu}-point · ${nhanDiemTu(soTu).en}`)}
+          {theMay && (
+            <span style={{ opacity: 0.72 }}>
+              {` · ${theMay.lensMm}mm · ${tr('dịch', 'shift')} ${theMay.shiftY > 0 ? '↑' : '↓'}${Math.abs(theMay.shiftY).toFixed(2)}`}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* ── Trục toạ độ (góc dưới trái) — X đỏ · Y xanh lá · Z xanh dương, đúng mock ── */}
       <svg className="axisg" viewBox="0 0 90 90" aria-label="Trục toạ độ X Y Z">

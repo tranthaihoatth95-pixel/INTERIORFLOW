@@ -16,11 +16,15 @@ import {
   fovDocFromLens,
   fovFromLens,
   laTrucNgang,
+  mayTuThree,
+  nhanDiemTu,
   presetCamera,
   promptHaiDiemTu,
   soDiemTu,
+  threeTuZUp,
+  zUpTuThree,
 } from './camera';
-import type { BboxMm, PlacedCamera } from './camera';
+import type { BboxMm, BoBa, PlacedCamera } from './camera';
 
 let pass = 0;
 let fail = 0;
@@ -163,6 +167,45 @@ console.log('⑤ datCameraHaiDiemTu');
   ok('dịch xuống ⇒ nói "fall"', promptHaiDiemTu(cam).includes('tilt-shift lens fall'));
   const len = datCameraHaiDiemTu(bbox, presetCamera('Tầm mắt (đứng trong phòng)', '35mm', '16:9'), { capTranM: 6 });
   ok('dịch lên ⇒ nói "rise"', len.shiftY > 0 && promptHaiDiemTu(len).includes('tilt-shift lens rise'));
+}
+
+// ── ⑧ CẦU SANG THREE — thước phải đọc được thế máy ĐANG HIỆN trên màn ─────────
+//
+// Ca đột biến nhắm đúng chỗ dễ sai nhất: DẤU TRỪ. Đổi `(x, z, -y)` thành `(x, z, y)`
+// thì mọi phép tính vẫn ra số hữu hạn, khung nhìn vẫn vẽ, và số điểm tụ vẫn ra 2 với
+// một phần lớn thế máy — tức lỗi im lặng. Các ca dưới bắt nó bằng phương vị, không
+// bằng "có phải số không".
+{
+  console.log('⑧ cầu three ↔ Z-up');
+  const zup: BoBa = [1, 2, 3];
+  const t = threeTuZUp(zup);
+  ok('Z-up → three: cao độ Z lên trục Y', t[1] === 3);
+  ok('Z-up → three: trục Y CAD đổi dấu sang Z three', t[2] === -2);
+  ok('đi rồi về là chính nó (round-trip)', zUpTuThree(t).join(',') === zup.join(','));
+  ok('về rồi đi cũng là chính nó', threeTuZUp(zUpTuThree(t)).join(',') === t.join(','));
+
+  // máy three ngang tầm mắt, nhìn chéo ⇒ thước phải đọc ra HAI điểm tụ
+  const may = mayTuThree([0, 1.55, 0], [4, 1.55, -4], 35);
+  ok('cùng cao độ trên three ⇒ trục NGANG sau khi đổi hệ', laTrucNgang(may));
+  ok('nhìn chéo, trục ngang ⇒ 2 điểm tụ', soDiemTu(may) === 2);
+  ok('cao độ đọc từ trục Y của three', gan(may.pos[2], 1.55));
+
+  // ngóc máy trên three (điểm nhìn cao hơn máy) ⇒ BA điểm tụ, đúng thứ nghề tránh
+  ok('ngóc máy ⇒ 3 điểm tụ', soDiemTu(mayTuThree([0, 1.55, 0], [4, 2.6, -4], 35)) === 3);
+  // nhìn thẳng theo trục nhà ⇒ MỘT điểm tụ
+  ok('nhìn chính diện ⇒ 1 điểm tụ', soDiemTu(mayTuThree([0, 1.55, 0], [0, 1.55, -4], 35)) === 1);
+
+  // vòng khép kín: đặt máy hai điểm tụ → đẩy sang three → đọc lại ⇒ vẫn phải là 2.
+  // Đây là ca giữ cho nút trên khung nhìn không bao giờ nói một đằng đặt một nẻo.
+  const bbox2: BboxMm = { minX: 0, minY: 0, maxX: 6000, maxY: 4000 };
+  const dat = datCameraHaiDiemTu(bbox2, presetCamera('Tầm mắt (đứng trong phòng)', '35mm', '16:9'));
+  const quaThree = mayTuThree(threeTuZUp(dat.pos), threeTuZUp(dat.target), dat.lensMm);
+  ok('đặt máy 2 điểm tụ → qua three → đọc lại VẪN 2', soDiemTu(quaThree) === 2);
+  ok('qua three không làm lệch cao máy', gan(quaThree.pos[2], dat.pos[2]));
+
+  ok('nhãn 3 điểm tụ nói ra bệnh, không nói "ổn"', nhanDiemTu(3).vi === 'đường đứng đổ');
+  ok('nhãn 1/2/3 khác nhau đôi một',
+    new Set([nhanDiemTu(1).vi, nhanDiemTu(2).vi, nhanDiemTu(3).vi]).size === 3);
 }
 
 // ── ⑦ Neo phần cũ — lát mới không được đổi nghĩa hàm cũ ────────────────────────

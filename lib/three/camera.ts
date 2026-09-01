@@ -286,3 +286,44 @@ export function promptHaiDiemTu(cam: CameraHaiDiemTu): string {
         : '';
   return `two-point perspective architectural photograph, camera perfectly level at ${cam.pos[2].toFixed(2)}m, vertical lines strictly parallel, ${cam.lensMm}mm lens${dich}`;
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * CẦU SANG KHUNG NHÌN THREE — vì sao cần, và vì sao nó phải là HÀM CÓ TÊN.
+ *
+ * Cả tệp này nói **Z-up, mét** (xem `PlacedCamera`) — khớp toạ độ Blender sau khi
+ * import OBJ. Khung nhìn ba chiều trên màn (`components/three/Scene3DViewer.tsx`)
+ * lại dựng cảnh theo quy ước **Y-lên** của three, với phép đổi `(x, z, -y)` nằm
+ * rải bên trong `fitCameraToScene`/`frameBox` — CÓ, nhưng không có tên.
+ *
+ * Hệ quả đo được 01/09: `soDiemTu()` là cái thước, mà thước KHÔNG đọc nổi thế máy
+ * đang hiện trên màn, chỉ vì không ai đổi được hệ toạ độ giữa hai bên. Module hai
+ * điểm tụ nằm mồ côi một lượt đúng vì thiếu mấy dòng dưới đây.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** Một điểm ba chiều. Hệ nào là do TÊN HÀM nói ra, không do kiểu. */
+export type BoBa = [number, number, number];
+
+/** Z-up (mét) → three (Y-lên). Nghịch đảo đúng của `zUpTuThree`. */
+export function threeTuZUp(p: BoBa): BoBa {
+  return [p[0], p[2], -p[1]];
+}
+
+/** three (Y-lên) → Z-up (mét). Nghịch đảo đúng của `threeTuZUp`. */
+export function zUpTuThree(p: BoBa): BoBa {
+  return [p[0], -p[2], p[1]];
+}
+
+/**
+ * Thế máy ĐANG HIỆN trên khung nhìn three → `PlacedCamera` đo được bằng `soDiemTu()`.
+ * `viTri`/`nhinToi` lấy thẳng từ `camera.position` và `controls.target` (đơn vị three).
+ */
+export function mayTuThree(viTri: BoBa, nhinToi: BoBa, lensMm: number): PlacedCamera {
+  return { pos: zUpTuThree(viTri), target: zUpTuThree(nhinToi), lensMm };
+}
+
+/** Nhãn tiếng người cho số điểm tụ — MỘT chỗ, để mỗi màn khỏi tự đặt chữ khác nhau. */
+export function nhanDiemTu(n: 1 | 2 | 3): { vi: string; en: string } {
+  if (n === 1) return { vi: 'chính diện', en: 'one-point' };
+  if (n === 2) return { vi: 'chuẩn nghề', en: 'two-point' };
+  return { vi: 'đường đứng đổ', en: 'verticals converge' };
+}
