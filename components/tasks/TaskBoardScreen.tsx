@@ -18,7 +18,7 @@
  *    duy nhất); kéo-thả HTML5 làm thêm vì rẻ.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, ClipboardList, Loader2, PencilRuler, Plus, Presentation, Search } from 'lucide-react';
+import { Box, CalendarClock, ClipboardList, Loader2, PencilRuler, Plus, Presentation, Search } from 'lucide-react';
 import { useT, useLang } from '@/lib/i18n';
 import { phanLoaiHong, nhan, HONG_KHONG_DOC_DUOC, type LyDoHong } from '@/lib/ui/trang-thai-tai';
 import { useTrangThaiMang } from '@/lib/home/trang-thai';
@@ -117,6 +117,11 @@ const BOARD_CSS = `
   cursor: pointer; font-size: 12px; line-height: 1; padding: 0; }
 .tb-tool:hover:not(:disabled) { background: var(--hover); color: var(--t1); }
 .tb-tool:disabled { opacity: .35; cursor: not-allowed; }
+/* MÁY CHẠM KHÔNG CÓ HOVER (02/09) — chốt 5 của Hoà "hai bản desktop/chạm, cấm bản lai" +
+   luật nền tablet-khong-giau-sau-hover. Thẻ là một div, chạm vào KHÔNG sinh focus, nên trên
+   tablet cả cụm công cụ trước nay không có đường nào chạm tới. Lỗi cũ, nhưng từ 02/09 nó nặng
+   hơn hẳn: nút đặt NGÀY nằm trong cụm này, mà ngày là thứ DUY NHẤT làm dải Tiến độ vẽ được. */
+@media (hover: none) { .tb-card .tb-tools { opacity: 1; } }
 .tb-col-drop { outline: 1.5px dashed var(--accent); outline-offset: -4px; background: var(--accent-soft) !important; }
 .tb-addbtn:hover { background: var(--hover) !important; color: var(--t1) !important; }
 /* Chip ngữ cảnh (TaskContext Link 11/08) — bấm là nhảy đúng chặng của dự án. */
@@ -348,6 +353,19 @@ export function TaskBoardScreen() {
      dải đó biết TỪ CHỐI vẽ việc thiếu ngày thay vì gán ngầm "hôm nay". "Lịch" vẫn chưa có gì đứng
      sau nên vẫn KHÔNG vẽ — cùng luật §9, không đổi. */
   const [che, setChe] = useState<'bang' | 'tien-do'>('bang');
+
+  /* ── Ô NHẬP NGÀY (02/09) — nợ có tên do chính dải Gantt phơi ra ────────────────────────────
+     Dựng xong tab Tiến độ mới lộ: `startAt`/`dueAt` CÓ trong `TaskRow`, CÓ trong `PATCH
+     /api/tasks/:id`, mà TOÀN APP không có một ô nhập nào (`grep 'type="date"'` ⇒ 0 dòng). Tức
+     dải chỉ vẽ được dữ liệu bơm bằng API — người dùng không có đường nào tự cho nó dữ liệu.
+     Một màn hình phụ thuộc vào trường mà không ai điền nổi thì nó là màn chết.
+     ⇒ Mở ĐÚNG một ô trên thẻ, thu gọn mặc định (gu Hoà: gọn mặc định, sâu khi cần), ghi qua
+     ĐÚNG `patchTask` sẵn có — không đẻ API, không đẻ đường ghi thứ hai. */
+  const [datNgayId, setDatNgayId] = useState<string | null>(null);
+  /** ISO ↔ giá trị `<input type="date">`. Cắt theo UTC, CÙNG hệ với `gantt.chiaNgay()` — lấy
+   *  giờ máy ở một đầu và UTC ở đầu kia là ca lệch 7 tiếng đã trả giá 30/08. */
+  const ngayCuaO = (iso: string | null) => (iso ? iso.slice(0, 10) : '');
+  const oThanhIso = (v: string) => (v ? `${v}T00:00:00.000Z` : null);
 
   /* ── chip ngữ cảnh (TaskContext Link 11/08) — chỉ hiện khi việc CÓ stage; bấm = deep-link ── */
   const STAGE_ICONS: Record<TaskStage, JSX.Element> = {
@@ -733,8 +751,59 @@ export function TaskBoardScreen() {
                         )}
                       </div>
 
+                      {/* ── ô nhập ngày, mở theo yêu cầu. Hai ô rời chứ không một khoảng: việc
+                          CHỈ CÓ HẠN là ca hợp lệ (cột mốc trên dải), ép nhập cả cặp sẽ đẩy người
+                          dùng bịa một ngày bắt đầu — đúng thứ dải Gantt từ chối vẽ. ── */}
+                      {datNgayId === t.id && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          {([
+                            ['startAt', t.startAt, tr('Bắt đầu', 'Start')],
+                            ['dueAt', t.dueAt, tr('Hạn', 'Due')],
+                          ] as const).map(([khoa, giaTri, nhan]) => (
+                            <label key={khoa} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--t4)' }}>
+                              {nhan}
+                              <input
+                                type="date"
+                                value={ngayCuaO(giaTri)}
+                                disabled={busy}
+                                onChange={(e) => void patchTask(t, { [khoa]: oThanhIso(e.target.value) })}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                style={{
+                                  height: 22, padding: '0 4px', borderRadius: 6, fontSize: 10.5,
+                                  fontVariantNumeric: 'tabular-nums', border: '1px solid var(--border)',
+                                  background: 'var(--field)', color: 'var(--t1)', colorScheme: 'light dark',
+                                }}
+                              />
+                            </label>
+                          ))}
+                          {/* XOÁ NGÀY phải làm được: một việc lỡ nhập hạn rồi thấy chưa chốt được
+                              hạn thì phải gỡ ra được, nếu không dải sẽ vẽ mãi một mốc không thật. */}
+                          {(t.startAt || t.dueAt) && (
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => void patchTask(t, { startAt: null, dueAt: null })}
+                              title={tr('Gỡ cả hai ngày — việc quay về “chưa có ngày”', 'Clear both dates — task goes back to “no dates”')}
+                              style={{ height: 22, padding: '0 7px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', color: 'var(--t4)', fontSize: 10, cursor: 'pointer', fontFamily: 'inherit' }}
+                            >
+                              {tr('Gỡ ngày', 'Clear')}
+                            </button>
+                          )}
+                        </div>
+                      )}
+
                       {/* nút hành động — đường CHÍNH đổi trạng thái (G8), hiện khi rê/focus */}
                       <div className="tb-tools" style={{ display: 'flex', gap: 5 }}>
+                        <button
+                          type="button"
+                          className="tb-tool"
+                          aria-pressed={datNgayId === t.id}
+                          title={tr('Đặt ngày bắt đầu / hạn — dải Tiến độ chỉ vẽ việc CÓ HẠN', 'Set start / due date — the Timeline only draws tasks that have a due date')}
+                          aria-label={tr('Đặt ngày', 'Set dates')}
+                          onClick={() => setDatNgayId((cu) => (cu === t.id ? null : t.id))}
+                        >
+                          <CalendarClock size={13} strokeWidth={1.5} />
+                        </button>
                         <button type="button" className="tb-tool" disabled={busy || !adjacentStatusId(states ?? [], t.statusId, -1)} title={tr('Lùi một cột', 'Move one column left')} aria-label={tr('Lùi một cột', 'Move one column left')} onClick={() => moveTask(t, -1)}>‹</button>
                         <button type="button" className="tb-tool" disabled={busy || !adjacentStatusId(states ?? [], t.statusId, 1)} title={tr('Tiến một cột', 'Move one column right')} aria-label={tr('Tiến một cột', 'Move one column right')} onClick={() => moveTask(t, 1)}>›</button>
                         <button type="button" className="tb-tool" title={tr('Sửa tên việc', 'Rename task')} aria-label={tr('Sửa tên việc', 'Rename task')} onClick={() => startEdit(t)}>✎</button>
