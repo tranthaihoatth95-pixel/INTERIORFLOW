@@ -7,9 +7,10 @@
 
 **Ngày** 02/09/2026 00:48 · **Nhánh** `checkpoint/2026-08-24-control-plane` · **HEAD** `2f87f940` · **Cây bẩn** 11 tệp (9 là `docs/control/ban/*.md` do MÁY sinh — nhịp của máy, không phải nợ; **2 rác thật, untracked**: `anh-luot5/` lô ảnh nghiệm thu lượt 5 và `chup-luot5.tam.mjs` bản chép tạm của máy chụp. Cả hai **không phải của lane 06 tạo ra ở gốc repo** ⇒ để nguyên, chờ người đặt nó quyết; đừng để lọt commit) · **Worktree** 0 · **Dev server** 1 · cổng 3001 · PID **12200** · khởi động **01/09 23:02** (đo: `lsof -nP -iTCP:3001 -sTCP:LISTEN`) · **Lịch sử ĐÃ VIẾT LẠI 30/08** — mọi SHA sau `147f66a` đổi, bảng ánh xạ `.git/filter-repo/commit-map`
 
-> 📦 **BẢN CÀI CHO HOÀ — `dist-installer/mac-arm64/InteriorFlow.app`, đóng 02/09 00:46.**
+> 📦 **BẢN CÀI CHO HOÀ — `dist-installer/mac-arm64/InteriorFlow.app`, đóng lại 02/09 03:20.**
 > `npx next build` EXIT 0 rồi `npx electron-builder --mac --dir` EXIT 0 (cả hai chạy KHÔNG qua
-> ống — bài học `| tail` nuốt exit, 31/08). Bản này ăn 5 commit lượt 5 + cờ tường.
+> ống — bài học `| tail` nuốt exit, 31/08). Bản này ăn **9 commit** lượt 5 + cờ tường, gồm cả
+> **da GĐ2 của rail** (`b4dcada1`) và dải Gantt bản 3-màu. Bản 00:46 đã bị thay.
 > ⚠️ **`--dir` là bản THƯ MỤC, chưa phải `.dmg`.** Mở bằng `open` thư mục đó, không phải cài đặt.
 > ⛔ **Chưa ai mở bản này bằng mắt** — đóng gói xong ≠ chạy được.
 
