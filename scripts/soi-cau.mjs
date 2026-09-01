@@ -96,7 +96,12 @@ if (chuaDanhThuc.length) {
   console.log(`\n  🔴 ${chuaDanhThuc.length} phiếu ĐÃ GHI mà CHƯA GIAO.`);
   console.log('  Cầu chỉ chở nội dung — nó KHÔNG đánh thức ai. Bên giao phải tự gọi bằng cơ chế');
   console.log('  của hệ mình (Claude Code: SendMessage · Codex: cơ chế phía đó · người: mở phiên),');
-  console.log('  rồi ghi lại:  node scripts/moc.mjs danh-thuc <handoffId> "<cơ chế đã dùng>"');
+  /* 🔴 SỬA 01/09 — câu này TỪNG THIẾU Ô ĐỊA CHỈ: nó in `danh-thuc <handoffId> "<cơ chế>"`,
+   * trong khi lệnh thật là `danh-thuc <cx:NN|cl:NN> <handoffId> "<cơ chế>"` (moc.mjs:343).
+   * Ai copy đúng câu máy in ra thì `handoffId` rơi vào ô ĐỊA CHỈ, lệnh exit 2, và người đọc
+   * kết luận "cổng hỏng" chứ không nghĩ bản in sai — một cổng dạy sai cách qua nó thì nó
+   * chặn cả người làm đúng. Bản in hướng dẫn là MẶT NGOÀI của cổng, sai ở đó là sai thật. */
+  console.log('  rồi ghi lại:  node scripts/moc.mjs danh-thuc <cx:NN|cl:NN> <handoffId> "<cơ chế đã dùng>"');
   console.log('  ⛔ Không có cờ bỏ qua. Ghi "đã báo" mà không nói cơ chế cũng không tính.');
   if (chan) process.exit(1);
 } else {

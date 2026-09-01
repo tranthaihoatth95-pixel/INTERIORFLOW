@@ -386,7 +386,11 @@ const ketSo = phieu.filter((p) => p.ma === 'ketSo');
 if (ketSo.length) {
   console.log(`🔴 ${ketSo.length} phiếu KẸT — đã ghi mà chưa ai gọi. Tra người đang ngồi:`);
   console.log('   node scripts/moc.mjs ai-giu');
-  console.log('   rồi gọi bằng cơ chế hệ mình, xong ghi:  node scripts/moc.mjs danh-thuc <id> "<cơ chế>"');
+  /* 🔴 SỬA 01/09 — thiếu Ô ĐỊA CHỈ, y hệt câu ở `soi-cau.mjs`. Lệnh thật là
+   * `danh-thuc <cx:NN|cl:NN> <handoffId> "<cơ chế>"` (moc.mjs:343). Copy đúng câu máy in ra thì
+   * `<id>` rơi vào ô địa chỉ và lệnh exit 2. Hai tệp cùng in sai một câu ⇒ đây là chuỗi hướng
+   * dẫn bị CHÉP, không phải một lần gõ nhầm; sửa cả hai chỗ cùng lượt. */
+  console.log('   rồi gọi bằng cơ chế hệ mình, xong ghi:  node scripts/moc.mjs danh-thuc <cx:NN|cl:NN> <id> "<cơ chế>"');
 } else if (!chiAgent) {
   console.log('✅ Không phiếu nào kẹt.');
 }
