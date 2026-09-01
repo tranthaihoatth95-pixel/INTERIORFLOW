@@ -21,6 +21,12 @@ trên `artifacts/man-30-08`.
 | **Kho tri thức** | LOOK INSIDE |
 | **[Nghề]** | LOOK OUTSIDE — **chừa ghế**, chưa dựng |
 
+> Đo lại câu *"chưa dựng"*: `grep -rn --include="*.tsx" "Nghề" components app` — 01/09 trả **đúng
+> một dòng**, `components/studio/LockScreen.tsx:86`, và dòng đó là một **câu danh ngôn** trong
+> bảng chữ chạy màn khoá, không phải mục rail. Không có màn, route hay mục rail nào cho không
+> gian này. (Khẳng định vắng mặt phải kèm cách kiểm lại — luật ở `IF-UXUI-OPERATING-MEMORY.md`
+> mục 2, cổng canh là `npm run soi:vang-mat`.)
+
 ⛔ **Cài đặt KHÔNG lên rail** — nằm ở menu avatar (**GIỮ** chốt 23/08).
 
 ---
@@ -39,6 +45,10 @@ Hồ sơ/Present · Bàn giao`.
 
 ### GIAI ĐOẠN LÀ TRẠNG THÁI, KHÔNG PHẢI MÀN
 Dải **6 chấm** trong header dự án, **0 lần chuyển màn**.
+> 🔴 **ĐÍCH, chưa phải số đo** — nguồn đích `docs/IF-KIEN-TRUC-OS.md` §4b. Trạng thái mã 01/09:
+> `grep -rn --include="*.tsx" "Bàn giao" components` ⇒ **0 dòng** — sáu tên band ở khối trên chưa
+> tồn tại trong mã, nên chưa có dải nào để đo. Dựng xong thì đo bằng
+> `grep -c "router.push\|router.replace\|<Link" <tệp dải>`, con số phải là 0.
 
 Tiến **CHỈ** bằng sự kiện tất định hoặc đề-xuất-chờ-duyệt; đặt tay được; mọi thay đổi ghi
 `log decision`.
