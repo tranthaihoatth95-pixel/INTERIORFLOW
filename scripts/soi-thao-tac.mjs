@@ -32,6 +32,83 @@ function* walk(dir) {
   }
 }
 
+/** MIỄN TRỪ CÓ KHAI BÁO — khối mã tự nhận mình nằm ngoài một luật, kèm lý do, TẠI CHỖ.
+ *
+ * 🔴 THÊM 01/09. Ca sinh ra nó: luật `cam-hex-inline` nói "hex trong INLINE STYLE", nhưng mẫu
+ * `:\s*'#…'` chỉ nói được "hex đứng sau dấu hai chấm" — nó bắt luôn hex trong MẢNG DỮ LIỆU.
+ * `components/print/LineweightTable.tsx` giữ 7 màu LAYER do NGƯỜI DÙNG đặt, đi qua prop
+ * `row.color`; docstring :12-14 đã khai từ lâu, bằng văn xuôi mà máy không đọc được. Phạt nó là
+ * phạm chính LUẬT NỀN TẢNG 3 (không áp ngôn ngữ thiết kế lên nội dung người dùng) — máy soi
+ * quay súng vào đúng tệp đã cân nhắc kỹ nhất, y hệt ca `kinh-webkit-prefix` 28/08 ở trên.
+ *
+ * ⛔ VÌ SAO KHÔNG SOI THEO VÙNG `style={{…}}` — đã thử và đã bỏ, đo 01/09.
+ * Thu phạm vi về đúng các khối `style={{…}}` hạ số từ **201 xuống 111**. Nghe như thắng, thật ra
+ * là hỏng: 90 hit rơi mất là hex NGOÀI inline style (const kiểu `CSSProperties`, chuỗi CSS-in-JS
+ * trong `*.ts`) — vẫn là màu đóng đinh trong component, vẫn đúng tinh thần luật. Mà trần
+ * `foundation-tran.json` không nằm trong lease này nên nó ĐỨNG YÊN ở 194 ⇒ để lại **83 ô trống**
+ * cho vi phạm mới chui vào mà cổng vẫn xanh. Đó là NỚI TRẦN đi cửa sau, đúng thứ M-52 cấm.
+ * ⇒ Miễn trừ phải rơi ĐÚNG chỗ oan, không được rơi theo mảng.
+ *
+ * KHUÔN — đặt ngay TRÊN khối được miễn:
+ *   soi-thao-tac:mien-tru <id-luật> — <lý do>
+ * Phạm vi = ĐÚNG một cụm ngoặc cân bằng (`[` `{` `(`) mở ra sau chú thích chứa dấu, và phải là
+ * cụm TRẢI NHIỀU DÒNG. Không phải cả tệp: miễn cả tệp là tắt đèn một phòng để giấu một vết bẩn.
+ *
+ * Hai cái bẫy phải né, cả hai đều đã cắn một lần trong lượt viết ra hàm này:
+ *   ① ngoặc trong CHÍNH CÂU LÝ DO — `… (CLAUDE.md)` bị chấm làm khối được miễn, phạm vi teo lại
+ *     còn 12 ký tự và miễn trừ im lặng không có tác dụng. ⇒ nhảy qua hết chú thích chứa dấu.
+ *   ② ngoặc của KIỂU — `LineweightRow[]` đứng ngay trước `= [`, đóng ngay trong cùng dòng. ⇒ chỉ
+ *     nhận cụm trải nhiều dòng. Hệ quả cố ý: hex nằm gọn trên MỘT dòng thì không khai miễn trừ
+ *     được — sửa mã, cửa hẹp là chủ đích.
+ *
+ * Đây KHÔNG phải cần gạt tắt cổng: mỗi miễn trừ là một dòng chữ có tên luật, có lý do, grep ra
+ * được (`grep -rn 'soi-thao-tac:mien-tru'`), và nó KHÔNG hạ trần — số đếm rơi đúng bằng số dòng
+ * được miễn, khe hở bằng không. Ai lạm dụng thì thấy ngay trong diff.
+ *
+ * Bỏ qua ngoặc nằm trong chuỗi (`'` `"` `` ` ``) để một dấu `]` trong chuỗi không cắt sớm khối.
+ */
+function vungMienTru(src, idLuat) {
+  const vung = [];
+  const re = new RegExp(`soi-thao-tac:mien-tru\\s+${idLuat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g');
+  const DONG = { '[': ']', '{': '}', '(': ')' };
+  /** cuối cụm ngoặc cân bằng mở tại `dau`, hoặc -1 nếu không đóng. */
+  const dongCum = (dau) => {
+    const mo = src[dau], dg = DONG[mo];
+    let sau = 0, nhay = '';
+    for (let i = dau; i < src.length; i++) {
+      const c = src[i];
+      if (nhay) { if (c === '\\') i++; else if (c === nhay) nhay = ''; continue; }
+      if (c === "'" || c === '"' || c === '`') { nhay = c; continue; }
+      if (c === mo) sau++;
+      else if (c === dg) { sau--; if (sau === 0) return i; }
+    }
+    return -1;
+  };
+  let m;
+  while ((m = re.exec(src))) {
+    // ① ra khỏi chú thích đang chứa dấu miễn trừ.
+    const moKhoi = src.lastIndexOf('/*', m.index), dongKhoi = src.lastIndexOf('*/', m.index);
+    let tu = moKhoi > dongKhoi ? src.indexOf('*/', m.index) : src.indexOf('\n', m.index);
+    if (tu < 0) throw new Error(`soi-thao-tac: miễn trừ '${idLuat}' không có khối nào theo sau`);
+    tu += 2;
+    // ② cụm ngoặc đầu tiên TRẢI NHIỀU DÒNG kể từ đó.
+    let dau = -1, cuoi = -1;
+    for (let i = tu; i < src.length; i++) {
+      if (!DONG[src[i]]) continue;
+      const c = dongCum(i);
+      // Ngoặc không đóng ⇒ NỔ. Nuốt lỗi rồi miễn tới cuối tệp là biến một lỗi cú pháp thành
+      // một miễn trừ toàn tệp không ai khai — đúng kiểu "PASS giả" luật 5 cấm.
+      if (c < 0) throw new Error(`soi-thao-tac: miễn trừ '${idLuat}' có khối không đóng ngoặc`);
+      if (src.slice(i, c).includes('\n')) { dau = i; cuoi = c; break; }
+      i = c;   // cụm gọn trong một dòng (kiểu `Row[]`) — bỏ qua trọn cụm
+    }
+    if (dau < 0) throw new Error(`soi-thao-tac: miễn trừ '${idLuat}' không có khối nhiều dòng nào theo sau`);
+    vung.push([dau, cuoi]);
+    re.lastIndex = Math.max(re.lastIndex, dau + 1);
+  }
+  return vung;
+}
+
 /** danh sách file của một điều kiện (file đơn hoặc quét dir) */
 function filesOf(dk) {
   if (dk.file) {
@@ -42,17 +119,33 @@ function filesOf(dk) {
   return existsSync(d) ? [...walk(d)] : [];
 }
 
-/** tất cả vị trí khớp `mau` — trả [{file, line}] */
-function timKhop(dk) {
+/** tất cả vị trí khớp `mau` — trả [{file, line}].
+ *
+ * `idLuat` (01/09) chỉ dùng để tra MIỄN TRỪ CÓ KHAI BÁO trong chính tệp đang soi. Không tệp nào
+ * khai thì đường đi y hệt bản cũ — số đếm không nhúc nhích. */
+function timKhop(dk, idLuat) {
   const re = new RegExp(dk.mau, 'm');
   const hits = [];
   for (const f of filesOf(dk)) {
     const noiDung = readFileSync(f, 'utf8');
     if (!re.test(noiDung)) continue;
+    const mien = idLuat && noiDung.includes('soi-thao-tac:mien-tru') ? vungMienTru(noiDung, idLuat) : [];
+    // Chỉ khi tệp có khai miễn trừ mới phải tính vị trí ký tự; tệp thường đi đường cũ.
+    const dauDong = [];
+    if (mien.length) { let n = 0; for (const line of noiDung.split('\n')) { dauDong.push(n); n += line.length + 1; } }
     const reLine = new RegExp(dk.mau);
     const lines = noiDung.split('\n');
     let inLine = false;
-    lines.forEach((line, i) => { if (reLine.test(line)) { hits.push({ file: f.replace(ROOT, ''), line: i + 1 }); inLine = true; } });
+    lines.forEach((line, i) => {
+      if (!reLine.test(line)) return;
+      inLine = true;
+      if (mien.length) {
+        const a = dauDong[i], b = a + line.length;
+        // Dòng nằm TRỌN trong một khối đã khai miễn trừ thì bỏ; dòng chỉ chạm mép thì vẫn tính.
+        if (mien.some(([x, y]) => a >= x && b <= y)) return;
+      }
+      hits.push({ file: f.replace(ROOT, ''), line: i + 1 });
+    });
     // mẫu nhiều dòng (không khớp dòng đơn) — vẫn ghi nhận ở mức file
     if (!inLine) hits.push({ file: f.replace(ROOT, ''), line: 0 });
   }
@@ -97,9 +190,9 @@ for (const l of LUAT) {
       const xau = timThieu(dk);
       if (xau.length) loi.push({ kieu: 'thieu', dk, xau });
     } else if (dk.can === true) {
-      if (timKhop(dk).length === 0) loi.push({ kieu: 'mat', dk });
+      if (timKhop(dk, l.id).length === 0) loi.push({ kieu: 'mat', dk });
     } else {
-      const hits = timKhop(dk);
+      const hits = timKhop(dk, l.id);
       if (hits.length) loi.push({ kieu: 'cam', dk, hits });
     }
   }

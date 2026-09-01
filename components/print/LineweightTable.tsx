@@ -30,7 +30,13 @@ export interface LineweightRow {
   mm: number;
 }
 
-/** Dữ liệu MẪU — 7 hàng đúng mock, dùng khi nơi gọi chưa có bảng nét thật (đọc từ `Layer[]`). */
+/** Dữ liệu MẪU — 7 hàng đúng mock, dùng khi nơi gọi chưa có bảng nét thật (đọc từ `Layer[]`).
+ *
+ * soi-thao-tac:mien-tru cam-hex-inline — 7 hex dưới đây là MÀU LAYER của người dùng, đi qua prop
+ * `row.color`, không phải token giao diện. Chúng chỉ trông giống inline style vì `color:` là tên
+ * chung của cả hai. Ép chúng về CSS var là áp bảng màu của app lên dữ liệu của khách — phạm
+ * LUẬT NỀN TẢNG 3 (CLAUDE.md). Ngoại lệ này đã khai bằng văn xuôi ở docstring đầu tệp từ trước;
+ * dòng này là bản MÁY ĐỌC ĐƯỢC của đúng câu đó, thêm 01/09 khi cổng `soi:thao-tac` bắt oan 7 dòng. */
 export const DEMO_LINEWEIGHT_ROWS: LineweightRow[] = [
   { name: 'Tường chịu lực', color: '#e5674f', mm: 0.5 },
   { name: 'Tường ngăn', color: '#6a57f5', mm: 0.35 },
