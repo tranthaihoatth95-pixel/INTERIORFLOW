@@ -389,10 +389,19 @@ ok(
   ok('có DẤU CHỈ hình dạng cho mục đang mở (kênh sống được khi bỏ màu)', /data-chi-dau="dang-mo"/.test(rail));
   ok('có kênh trợ năng độc lập màu: aria-current', /aria-current=/.test(rail));
   // Nền phải là trường tông RẤT NHẸ, không phải "ô vuông tím to" (Hoà bác 20/08).
-  // Khoá bằng SỐ: `--accent-soft` là 14%; trần mới là 6%.
-  const mNen = /color-mix\(in srgb, var\(--accent\) ([0-9.]+)%/.exec(rail);
+  // Khoá bằng SỐ: `--accent-soft` là 14%; trần là 8%.
+  //
+  // 🟣 SỬA 01/09 (amend lease 15:29, QĐ GĐ1) — ĐỔI KÊNH, KHÔNG NỚI LUẬT. Bản cũ neo cứng
+  // `var(--accent)` trần 6%. Bản vẽ GĐ1 (`design-if/Main.dc.html`) chốt hàng đang mở của rail là
+  // sương TRUNG TÍNH (trắng-mờ trên nền tối), KHÔNG tím — accent để dành cho CTA + trạng thái
+  // chạy. Nên cổng nay đòi `var(--t1)` (mực, đảo cực theo theme) trần **8%**.
+  // ⛔ Tinh thần GIỮ NGUYÊN từng chữ: nền vẫn chỉ là trường tông rất nhẹ, VẠCH MÉP vẫn là kênh
+  // chính. Đừng đọc lượt sửa này thành "được phép nâng nền" — trần chỉ nhích 6→8 vì `--t1` là
+  // mực trung tính, tương phản thấp hơn accent bão hoà ở cùng một %.
+  const mNen = /color-mix\(in srgb, var\(--(accent|t1)\) ([0-9.]+)%/.exec(rail);
   ok('nền hàng đang mở khai bằng color-mix, không dùng lại --accent-soft 14%', mNen !== null && !/dangMo \? 'var\(--accent-soft\)'/.test(rail));
-  ok('nền hàng đang mở ≤ 6% — trường tông rất nhẹ, vạch mép mới là kênh chính', mNen !== null && parseFloat(mNen[1]) <= 6);
+  ok('nền hàng đang mở đi kênh TRUNG TÍNH --t1 (GĐ1: rail không tím)', mNen !== null && mNen[1] === 't1');
+  ok('nền hàng đang mở ≤ 8% — trường tông rất nhẹ, vạch mép mới là kênh chính', mNen !== null && parseFloat(mNen[2]) <= 8);
   ok(
     'icon đang mở đổi TƯƠNG PHẢN (--t1), không đổi HUE (--accent) — hue chỉ còn ở vạch mép',
     /color: dangMo \? 'var\(--t1\)'/.test(rail),

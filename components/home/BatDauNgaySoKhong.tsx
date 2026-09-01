@@ -20,6 +20,12 @@
  *   Chính: Tạo dự án · Mở dự án · Nhập nguồn — ba cách DUY NHẤT để dữ liệu đầu tiên vào IF.
  *   Phụ:   Khám phá Thư viện · Ghi chú nhanh · Bắt đầu từ đâu — xem trước, ghi tạm, học đường đi.
  *
+ * 🟣 01/09 — VÁ THỊ GIÁC THEO BẢN VẼ GĐ1 (`design-if/HomeStart.dc.html`): ba việc chính đổi từ
+ * ba THẺ vuông sang MỘT HÀNG PILL bo full đứng giữa (đúng gu liquid-glass · pill bo full ·
+ * đơn sắc + 1 accent). "Tạo dự án" là CTA DUY NHẤT mang `--accent`; hai pill kia kính trung
+ * tính. Handler + khuôn trợ năng (`aria-disabled`/`aria-describedby`) GIỮ NGUYÊN — câu mô tả
+ * từng cửa (`cau`) chuyển vào `sr-only` để trình đọc màn hình vẫn nghe được, mắt thì đọc pill.
+ *
  * Nó CÙNG MỘT vật với trạng thái TRỐNG của ô Dự án, không phải màn chào riêng: hết dự án thì
  * quay lại đúng màn này. Một cửa vào, không hai mô hình.
  */
@@ -38,10 +44,31 @@ export interface ViecChinh {
   lyDoMo?: string;
 }
 
-const THE: CSSProperties = {
-  background: 'var(--field, var(--panel))',
+/** Pill kính trung tính — bo full theo bản vẽ; nền/viền token nên hai theme tự đúng. */
+const PILL: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 9,
+  height: 'var(--tap, 44px)',
+  padding: '0 22px',
+  borderRadius: 'var(--r-full, 999px)',
+  background: 'var(--nen-mo-card, var(--card))',
   border: '1px solid var(--vien-mo, var(--border))',
-  borderRadius: 'var(--r-3)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  color: 'var(--t1)',
+  fontSize: 14,
+  fontFamily: 'inherit',
+};
+
+/** CTA accent — ĐÚNG MỘT pill mang màu nhấn trên màn này ("Tạo dự án"). */
+const PILL_ACCENT: CSSProperties = {
+  ...PILL,
+  background: 'var(--accent)',
+  border: '1px solid transparent',
+  color: 'var(--on-accent, #fff)',
+  fontWeight: 500,
+  boxShadow: '0 10px 30px color-mix(in srgb, var(--accent) 40%, transparent)',
 };
 
 /** Ba bước đường đi — chữ mô tả CƠ CHẾ THẬT của IF, không phải lời quảng cáo. */
@@ -82,14 +109,14 @@ export default function BatDauNgaySoKhong({
   const chinh: ViecChinh[] = [
     {
       ma: 'tao',
-      bieuTuong: <FolderPlus size={18} aria-hidden />,
+      bieuTuong: <FolderPlus size={16} aria-hidden />,
       ten: en ? 'Create a project' : 'Tạo dự án',
       cau: en ? 'Start from an empty document.' : 'Bắt đầu từ một hồ sơ trống.',
       onClick: onTaoDuAn,
     },
     {
       ma: 'mo',
-      bieuTuong: <FolderOpen size={18} aria-hidden />,
+      bieuTuong: <FolderOpen size={16} aria-hidden />,
       ten: en ? 'Open a project' : 'Mở dự án',
       cau: en ? 'Restore one from a file on this machine.' : 'Khôi phục từ tệp có sẵn trên máy.',
       onClick: onMoTuMay,
@@ -97,7 +124,7 @@ export default function BatDauNgaySoKhong({
     },
     {
       ma: 'nhap',
-      bieuTuong: <Import size={18} aria-hidden />,
+      bieuTuong: <Import size={16} aria-hidden />,
       ten: en ? 'Import sources' : 'Nhập nguồn',
       cau: en ? 'Drawings, photos, spreadsheets — IF reads them in.' : 'Bản vẽ, ảnh, bảng tính — IF đọc vào.',
       onClick: onNhapNguon,
@@ -123,61 +150,56 @@ export default function BatDauNgaySoKhong({
   ];
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-5 py-5">
+    <div className="flex h-full min-h-0 w-full flex-col items-center overflow-y-auto px-5 py-5 text-center">
       {/* Đầu ô — một câu nói ĐÚNG sự thật hiện tại, không xin lỗi vì trống. */}
       <div className="shrink-0">
-        <p className="text-[length:var(--fs-md,15px)] font-semibold leading-snug text-[var(--t1)]">
-          {en ? 'Nothing here yet — that is the right state.' : 'Chưa có gì ở đây — đúng như nó phải thế.'}
-        </p>
-        <p className="mt-1 max-w-[52ch] text-[length:var(--fs-xs)] leading-relaxed text-[var(--t3)]">
+        <p className="text-[length:var(--fs-md,15px)] font-medium leading-snug text-[var(--t2)]">
           {en
-            ? 'IF fills up from one of three doors. Pick one and this screen starts working for you.'
-            : 'IF đầy lên từ một trong ba cửa dưới đây. Chọn một cửa là màn này bắt đầu làm việc cho bạn.'}
+            ? 'Nothing here yet — pick a door and IF starts working for you.'
+            : 'Chưa có gì ở đây — chọn một cửa là IF bắt đầu làm việc cho bạn.'}
         </p>
       </div>
 
-      {/* BA VIỆC CHÍNH — lưới tự xếp lại theo bề ngang ô, KHÔNG khai px (điều kiện để cùng
-          widget này chạy trên máy tính · tablet · điện thoại). */}
-      <div
-        className="mt-4 grid shrink-0 gap-[var(--gap)]"
-        /* 160px là NGƯỠNG ĐO ĐƯỢC, không phải số đẹp: ô Dự án ở nấc MỎNG rộng ~536px bên trong
-           lề ⇒ 3×160+2×8 = 496 ≤ 536, ba cửa đứng cùng một hàng đúng như câu chữ nói "ba cửa".
-           Hẹp hơn thì `auto-fit` tự xuống 2 rồi 1 — không khai breakpoint px nào. */
-        style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))' }}
-      >
-        {chinh.map((v) => {
+      {/* BA VIỆC CHÍNH — MỘT HÀNG PILL (HomeStart.dc.html). `flex-wrap` để màn hẹp tự xuống
+          hàng, không khai breakpoint px nào. "Tạo dự án" là pill accent DUY NHẤT. */}
+      <div className="mt-5 flex shrink-0 flex-wrap items-center justify-center gap-2.5">
+        {chinh.map((v, i) => {
           const mo = !!v.lyDoMo;
-          const idLyDo = mo ? `if-bd-${v.ma}` : undefined;
+          const idLyDo = `if-bd-${v.ma}`;
+          const kieu = i === 0 ? PILL_ACCENT : PILL;
           return (
-            <div key={v.ma}>
+            <span key={v.ma} className="inline-flex">
               <button
                 type="button"
                 aria-disabled={mo || undefined}
                 aria-describedby={idLyDo}
                 onClick={mo ? undefined : v.onClick}
-                className="group flex w-full flex-col items-start gap-1.5 p-3.5 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-                style={{ ...THE, opacity: mo ? 'var(--mo-vo-hieu)' : undefined, cursor: mo ? 'not-allowed' : 'pointer' }}
+                className="transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                style={{
+                  ...kieu,
+                  opacity: mo ? 'var(--mo-vo-hieu)' : undefined,
+                  cursor: mo ? 'not-allowed' : 'pointer',
+                }}
               >
-                <span className="text-[var(--t2,var(--t1))]">{v.bieuTuong}</span>
-                <span className="text-[length:var(--fs-sm)] font-semibold text-[var(--t1)]">{v.ten}</span>
-                <span className="text-[length:var(--fs-2xs)] leading-relaxed text-[var(--t3)]">{v.cau}</span>
+                {v.bieuTuong}
+                {v.ten}
               </button>
-              {mo && (
-                <span id={idLyDo} className="sr-only">
-                  {v.lyDoMo}
-                </span>
-              )}
-            </div>
+              {/* Câu mô tả cửa + lý do mờ (nếu có) — vẫn tới được trình đọc màn hình. */}
+              <span id={idLyDo} className="sr-only">
+                {v.cau}
+                {mo ? ` ${v.lyDoMo}` : ''}
+              </span>
+            </span>
           );
         })}
       </div>
 
       {/* Hairline — tách VIỆC LÀM NGAY khỏi ĐƯỜNG XEM TRƯỚC. Đường kẻ mảnh này là ranh giới
           giữa hai loại việc, không phải trang trí. */}
-      <div className="mt-4 h-px w-full shrink-0" style={{ background: 'var(--vien-mo, var(--border))' }} aria-hidden />
+      <div className="mt-5 h-px w-full max-w-[420px] shrink-0" style={{ background: 'var(--vien-mo, var(--border))' }} aria-hidden />
 
       {/* BA LỐI PHỤ — chữ, không phải thẻ: chúng là lối rẽ, không cùng hạng với ba cửa trên. */}
-      <div className="mt-3 flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2">
+      <div className="mt-3 flex shrink-0 flex-wrap items-center justify-center gap-x-4 gap-y-2">
         {phu.map((p) => {
           const mo = !!p.lyDoMo;
           const idLyDo = mo ? `if-bd-phu-${p.ten.replace(/\s+/g, '-').toLowerCase()}` : undefined;
@@ -222,7 +244,7 @@ export default function BatDauNgaySoKhong({
       </div>
 
       {moDuongDi && (
-        <ol className="mt-3 flex shrink-0 flex-col gap-2">
+        <ol className="mt-3 flex shrink-0 flex-col items-start gap-2 text-left">
           {baBuoc(en).map((b) => (
             <li key={b.so} className="flex items-start gap-2.5">
               <span className="mt-px shrink-0 font-mono text-[length:var(--fs-2xs)] font-semibold text-[var(--t4)]">{b.so}</span>

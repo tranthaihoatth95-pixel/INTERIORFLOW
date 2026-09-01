@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { rise, riseNoFade } from '@/lib/motion';
 import {
@@ -39,6 +39,13 @@ import { IFLogo } from '@/components/entry/IFLogo';
  * - TƯƠNG PHẢN THÍCH ỨNG: đo độ sáng vùng ảnh ngay dưới cụm logo+nhãn mỗi khi
  *   trình chiếu đổi ảnh → nền sáng thì logo/chữ chuyển mực, nền tối thì chuyển kem,
  *   kèm quầng sương mềm (không viền, không khối đục). Xem lib/adaptive-contrast.ts.
+ *
+ * 🟣 01/09 — VÁ THỊ GIÁC THEO BẢN VẼ GĐ1 (`design-if/TheKhoa.dc.html`): thêm CỤM ĐỒNG HỒ
+ * MẢNH LỚN (ngày nhỏ · giờ 200-weight cỡ clamp) đứng TRÊN cụm logo — màn vào app đọc ra như
+ * màn khoá của một hệ điều hành, đúng hướng "Local-first Design OS". CƠ CHẾ GIỮ NGUYÊN 100%:
+ * backdrop động, adaptive contrast, form, picker, [data-login-tone]. Màu đồng hồ đi qua
+ * `adaptiveTextStyle(plan)` — CÙNG kênh với logo/nhãn, nên nền sáng thì mực, nền tối thì kem;
+ * KHÔNG bind thẳng --t1 tại đây để không giẫm cơ chế ép tone (globals.css [data-login-tone]).
  */
 
 
@@ -82,6 +89,23 @@ export function LoginScreen({ onAuthed, notice }: { onAuthed: () => void; notice
     fallbackLuminance: cardLuminanceFor(choice) ?? 0.1,
   });
 
+  // 🟣 01/09 — ĐỒNG HỒ MẢNH (TheKhoa.dc.html). Đọc trong effect (client-only) để không lệch
+  // hydrate; nhịp 30s là đủ cho phút (màn này không cần giây). Chưa mount ⇒ không vẽ, không nháy.
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+    const t = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  const gioStr = now ? now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : null;
+  const ngayStr = now
+    ? now.toLocaleDateString(lang === 'en' ? 'en-US' : 'vi-VN', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+      })
+    : null;
+
   // reduce motion → mọi rise() về amplitude 0 (chỉ còn fade)
   const amp = (px: number) => (reduce ? 0 : px);
 
@@ -101,6 +125,39 @@ export function LoginScreen({ onAuthed, notice }: { onAuthed: () => void; notice
 
       <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-md flex-col items-center justify-center px-6 py-16">
         <motion.div initial="hidden" animate="visible" className="flex w-full flex-col items-center text-center">
+          {/* 🟣 01/09 — CỤM ĐỒNG HỒ đứng trên logo. Màu theo `adaptiveTextStyle(plan)` — cùng
+              kênh thích ứng với logo/nhãn; text-shadow rất nhẹ từ plan.logoShadow đã lo phần
+              tách nền. `tabular-nums` để phút nhảy không xô ngang. */}
+          {gioStr && (
+            <motion.div
+              variants={rise(amp(10), 0.02)}
+              className="relative mb-7 flex flex-col items-center"
+              // Nhịp đi qua THANG `--nhip-*` (cổng F-MOTION-TOKEN, `soi:foundation`): cụm logo
+              // cạnh đây còn giữ `900ms` cũ và đã được tính vào trần — phần MỚI thì không được
+              // đẻ thêm một số rời. `--nhip-ngu-canh` (300ms) là nấc "chuyển ngữ cảnh sâu",
+              // đúng vai đổi tông khi trình chiếu sang ảnh khác.
+              style={{ ...adaptiveTextStyle(plan), transition: 'color var(--nhip-ngu-canh) var(--ease-apple)' }}
+              data-login-dong-ho
+            >
+              <div style={{ fontSize: 14, fontWeight: 300, letterSpacing: '.05em', opacity: 0.85 }}>
+                {ngayStr}
+              </div>
+              <div
+                className="tabular-nums"
+                style={{
+                  // vh chứ không vw: màn thấp (laptop 13") thì đồng hồ tự nhún để cả cụm
+                  // clock+logo+card vẫn lọt trong 100dvh (root overflow-hidden, không cuộn).
+                  fontSize: 'clamp(48px, 12vh, 120px)',
+                  fontWeight: 200,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                {gioStr}
+              </div>
+            </motion.div>
+          )}
+
           {/* Cụm LOGO + NHÃN — nay là toàn bộ phần chữ của màn (đã gỡ tít + dòng phụ),
               nằm sát ngay trên card đăng nhập, cả khối cùng nhau cân giữa màn hình.
               Quầng sương thích ứng bọc quanh cụm: tan hẳn ở mép nên không thấy khối nền. */}

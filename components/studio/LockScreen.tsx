@@ -15,6 +15,14 @@
  * NGẮN → Mở lại ↵**, tuyệt đối không ô email/mật khẩu. Bằng chứng "vẫn là anh" nằm ở MẶT SAU
  * của thẻ (`components/auth/TheXacThucLai.tsx`), chỉ lộ ra khi người dùng chủ động mở lại.
  *
+ * 🟣 01/09 — VÁ THỊ GIÁC THEO BẢN VẼ GĐ1 (`design-if/TheKhoa.dc.html`): ĐỒNG HỒ MẢNH LỚN trở
+ * lại mặt khoá TAY (ngày nhỏ phía trên · giờ fontWeight 200 cỡ clamp) + thẻ kính đứng giữa ngay
+ * dưới + dòng-trong-ngày lùi xuống chân cụm. Khoá RẢNH (`NenDong`) nhận cùng cụm đồng hồ ở đỉnh.
+ * CƠ CHẾ GIỮ NGUYÊN 100%: lật thẻ, hai mức khoá, guard, phím tắt, portal. Mọi màu qua token
+ * (`--t1/--t3/--panel/--accent`) ⇒ sống cả hai theme. Ba khối legacy `hidden` (ổ khoá tròn ·
+ * đồng hồ 56px · nút "Mở lại" trần) đã GỠ hẳn — chúng là mã chết display-none từ 29/08; nút
+ * "Mở lại" thật sống trong `TheDanhNgon` (autoFocus, Enter chạy ngay như cũ).
+ *
  * CHUYỂN CẢNH (§6): khoá vào = thẻ xác thực **lật 180° quanh trục Y** để hiện mặt khoá; mở lại =
  * lật ngược về mặt xác thực. Lật ở đây NÓI "đổi trạng thái", không phải hiệu ứng lặp trang trí —
  * mỗi lần khoá/mở chỉ lật đúng một lần. `prefers-reduced-motion` ⇒ NHÁNH TĨNH THẬT: không xoay,
@@ -30,7 +38,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
-import { Lock, CornerDownLeft } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { useLockScreen, startLockGuard, getLockIdleMinutes, canMatKhau, LOCK_REQUEST_EVENT } from '@/lib/lockscreen';
 import { danhNgonNgauNhien, type DanhNgon } from '@/lib/lockscreen-danh-ngon';
@@ -56,15 +63,55 @@ import { useLang, useT } from '@/lib/i18n';
 import { easeApple } from '@/lib/motion';
 import { findAppCommand, matchKeyToken } from '@/lib/commands/registry';
 
-function useClock(): string {
+/**
+ * 🟣 01/09 — đồng hồ trả CẢ GIỜ LẪN NGÀY (bản vẽ TheKhoa: dòng ngày nhỏ đứng trên giờ lớn).
+ * Vẫn một interval 1s như cũ; chưa mount thì trả chuỗi rỗng để không lệch hydrate.
+ */
+function useClock(en: boolean): { time: string; date: string } {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
     setNow(new Date());
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
-  if (!now) return '--:--';
-  return now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  if (!now) return { time: '--:--', date: '' };
+  return {
+    time: now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+    date: now.toLocaleDateString(en ? 'en-US' : 'vi-VN', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+    }),
+  };
+}
+
+/**
+ * 🟣 01/09 — CỤM ĐỒNG HỒ MẢNH LỚN (TheKhoa.dc.html: ngày 15px mảnh · giờ ~clamp 200-weight).
+ * Dùng chung cho CẢ khoá tay (trên thẻ) lẫn khoá rảnh (đỉnh màn) — một khuôn, không hai bản chép.
+ * Token mực (`--t1`/`--t3`) ⇒ hai theme tự đúng.
+ */
+function DongHoKhoa({ time, date }: { time: string; date: string }) {
+  return (
+    <div className="flex flex-col items-center" style={{ gap: 2 }} data-lock-dong-ho>
+      {date && (
+        <div style={{ fontSize: 15, fontWeight: 300, color: 'var(--t3)', letterSpacing: '.04em' }}>
+          {date}
+        </div>
+      )}
+      <div
+        className="tabular-nums"
+        style={{
+          fontSize: 'clamp(72px, 16vh, 150px)',
+          fontWeight: 200,
+          lineHeight: 1,
+          letterSpacing: '-0.02em',
+          color: 'var(--t1)',
+        }}
+      >
+        {time}
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -117,7 +164,7 @@ export function LockScreen() {
   const reduce = useReducedMotion();
   const lang = useLang();
   const tr = useT();
-  const time = useClock();
+  const { time, date } = useClock(lang === 'en');
   const pathname = usePathname();
   const chang = useMemo(() => changDangMo(pathname), [pathname]);
   const [line, setLine] = useState<[string, string] | null>(null);
@@ -168,6 +215,8 @@ export function LockScreen() {
     setMode(canMatKhau(useLockScreen.getState().lyDo) ? 'mat-khoa' : 'xac-thuc');
     // Đưa tiêu điểm vào nút "Mở lại" — vừa để Enter chạy được ngay (bộ chặn phím toàn cục của
     // AppChrome chỉ chừa lối cho phần tử BÊN TRONG [data-lockscreen-root]), vừa đúng trợ năng.
+    // 🟣 01/09: nút "Mở lại" thật nay là autoFocus trong `TheDanhNgon`; ref này giữ làm lưới an
+    // toàn (không gắn ⇒ optional-chaining no-op, autoFocus gánh — Enter vẫn chạy ngay).
     const t = setTimeout(() => nutMoLai.current?.focus(), 80);
     return () => clearTimeout(t);
   }, [locked]);
@@ -201,7 +250,7 @@ export function LockScreen() {
               Hai hướng KHÁC NHAU VỀ CẤP: A là một VẬT đặt giữa màn (có lật, có hai mặt);
               D là CHÍNH CÁI MÀN. Nhét D vào khung của A là ép hai cấp khác nhau vào một chỗ. */}
           {!doiMatKhau && cau ? (
-            <NenDong cau={cau} en={lang === 'en'} onMoLai={unlock} />
+            <NenDong cau={cau} en={lang === 'en'} onMoLai={unlock} time={time} date={date} />
           ) : (
           <div className="relative" style={{ perspective: 1200 }}>
             <motion.div
@@ -216,36 +265,31 @@ export function LockScreen() {
               animate={{ rotateY: reduce ? 0 : xoay }}
               transition={reduce ? { duration: 0 } : { duration: 0.62, ease: easeApple }}
             >
-              {/* ── MẶT KHOÁ: giờ → ngữ cảnh → dòng ngắn → Mở lại ↵ ─────────────────────── */}
+              {/* ── MẶT KHOÁ (bản vẽ TheKhoa.dc.html): ĐỒNG HỒ MẢNH LỚN → thẻ kính → ngữ cảnh
+                  → dòng-trong-ngày. Cơ chế không đổi — nút "Mở lại" trên thẻ lật sang mặt sau. */}
               <div
-                className="flex flex-col items-center justify-center gap-1.5 text-center"
-                style={{ gridArea: '1 / 1', backfaceVisibility: 'hidden', visibility: reduce && mode === 'xac-thuc' ? 'hidden' : undefined }}
+                className="flex flex-col items-center justify-center text-center"
+                style={{ gridArea: '1 / 1', backfaceVisibility: 'hidden', visibility: reduce && mode === 'xac-thuc' ? 'hidden' : undefined, gap: 0 }}
                 aria-hidden={mode === 'xac-thuc'}
               >
+                <DongHoKhoa time={time} date={date} />
+
                 {/* Khoá TAY: mặt trước là THẺ A (ảnh công trình + câu, bọc kính) — Hoà chốt
                     29/08 "giữ cả 2, một cái rảnh tay một cái chủ động". Nút trên thẻ LẬT sang
                     mặt mật khẩu, không mở thẳng: đây là khoá người dùng CHỦ ĐỘNG xin. */}
                 {cau && (
-                  <TheDanhNgon
-                    cau={cau}
-                    en={lang === 'en'}
-                    onMoLai={() => setMode('xac-thuc')}
-                    nhanNut={tr('Mở lại', 'Resume')}
-                  />
+                  <div style={{ marginTop: 'clamp(20px, 5vh, 44px)' }}>
+                    <TheDanhNgon
+                      cau={cau}
+                      en={lang === 'en'}
+                      onMoLai={() => setMode('xac-thuc')}
+                      nhanNut={tr('Mở lại', 'Resume')}
+                    />
+                  </div>
                 )}
-                <div
-                  className="mt-4 mb-2 hidden h-11 w-11 place-items-center rounded-[var(--r-full,999px)]"
-                  style={{ background: 'var(--panel)', border: '1px solid var(--border)' }}
-                >
-                  <Lock size={18} className="text-[var(--t2)]" />
-                </div>
-
-                <div className="hidden text-[56px] font-semibold tabular-nums leading-none tracking-tight text-[var(--t1)]">
-                  {time}
-                </div>
 
                 {/* NGỮ CẢNH — dự án · chặng. Đúng mức "đang ở đâu", không hé nội dung. */}
-                <div className="mt-2 hidden items-center gap-2 text-[12px] text-[var(--t3)]">
+                <div className="mt-5 flex items-center gap-2 text-[12px] text-[var(--t3)]">
                   <span className="text-[var(--t2)]">{flowName || tr('Chưa mở dự án', 'No project open')}</span>
                   {chang && (
                     <>
@@ -256,22 +300,10 @@ export function LockScreen() {
                 </div>
 
                 {line && (
-                  <div className="mt-4 hidden max-w-[300px] text-[13px] italic leading-normal text-[var(--t3)]">
+                  <div className="mt-2 max-w-[340px] text-[12px] leading-normal text-[var(--t4)]">
                     {tr(line[0], line[1])}
                   </div>
                 )}
-
-                <button
-                  ref={nutMoLai}
-                  type="button"
-                  onClick={() => (doiMatKhau ? setMode('xac-thuc') : unlock())}
-                  className="mt-7 hidden items-center gap-2 rounded-[var(--r-full,999px)] px-5 py-2.5 text-[13px] text-[var(--t1)] transition-colors hover:bg-[var(--hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-                  style={{ background: 'var(--panel)', border: '1px solid var(--border)' }}
-                >
-                  {tr('Mở lại', 'Resume')}
-                  <CornerDownLeft size={18} className="text-[var(--t3)]" aria-hidden />
-                </button>
-
               </div>
 
               {/* ── MẶT XÁC THỰC (mặt sau, lật 180° trục Y) ─────────────────────────────── */}
@@ -473,8 +505,11 @@ function LoiDanhNgon({ cau, en, co }: { cau: DanhNgon; en: boolean; co: keyof ty
  *
  * Ba lớp trôi lệch nhịp (48 · 67 · 26 giây, xem `app/globals.css`) nên mắt không bắt được chu
  * kỳ. Một nét đứng yên duy nhất — đường chân trời — làm chỗ mắt bám.
+ *
+ * 🟣 01/09 — thêm CỤM ĐỒNG HỒ MẢNH ở đỉnh (bản vẽ TheKhoa: giờ là vật lớn nhất của màn khoá).
+ * Dùng chung khuôn `DongHoKhoa` với mặt khoá tay — một khuôn, không hai bản chép.
  */
-function NenDong({ cau, en, onMoLai }: { cau: DanhNgon; en: boolean; onMoLai: () => void }) {
+function NenDong({ cau, en, onMoLai, time, date }: { cau: DanhNgon; en: boolean; onMoLai: () => void; time: string; date: string }) {
   const tr = (v: string, e: string) => (en ? e : v);
   return (
     <div className="absolute inset-0 overflow-hidden" style={{ background: 'var(--bg)' }}>
@@ -482,6 +517,7 @@ function NenDong({ cau, en, onMoLai }: { cau: DanhNgon; en: boolean; onMoLai: ()
       <div className="nen-dong-lop nen-dong-nang" />
       <div className="nen-dong-lop nen-dong-luoi" />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 px-8 text-center">
+        <DongHoKhoa time={time} date={date} />
         <LoiDanhNgon cau={cau} en={en} co="man" />
         {/* ĐƯỜNG CHÂN TRỜI — nét DUY NHẤT đứng yên giữa mọi thứ đang trôi.
             🔴 SỬA 30/08 — TRƯỚC ĐÂY NÓ `position:absolute; top:58%`, tức neo vào MÀN trong khi

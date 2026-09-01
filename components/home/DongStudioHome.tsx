@@ -30,6 +30,17 @@
  * MỘT INTERVAL TOÀN TRANG (ràng buộc ⑤ phiếu cũ, GIỮ) — `minuteTick`/`eightSecTick` cùng cấp bởi
  * MỘT `setInterval` 1s (chỉ setState khi mốc thật sự đổi). Ticker/pulse là CSS `@keyframes`
  * thuần, không đụng interval này.
+ *
+ * 🟣 01/09 — VÁ THỊ GIÁC THEO BẢN VẼ GĐ1 (`design-if/Main.dc.html` + `HomeStart.dc.html`).
+ * Ba đổi, KHÔNG đổi logic/route/data:
+ *   ① `beMat` nhận thêm `duAnGanDay` (recentProjects — nguồn thật sẵn có) cho KỆ DỰ ÁN MỘT DÒNG
+ *     và `minuteTick` (interval toàn trang, luật ⑤) cho đồng hồ trạng thái A.
+ *   ② Trạng thái A của BeMatHome nhận `ngaySoKhongTran` — ProjectSelect KHÔNG vỏ WidgetCard
+ *     (bản vẽ HomeStart: ba cửa đứng trần giữa màn, không tường thẻ). `projectTile` có vỏ vẫn
+ *     giữ nguyên cho `xuongLayout`/`stackedList`.
+ *   ③ `noiDungO` thôi cấp `ghiChu` — `product/home.md` §4: *"Ghi chú nhanh làm widget mặc định"*
+ *     bị TỪ CHỐI (nhóm E, chỉ khi người dùng chủ động bật). Widget QuickNotes vẫn sống ở bố cục
+ *     `custom` (xuongLayout) — đây là quyết định của bề mặt năm-trạng-thái, không phải xoá widget.
  */
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
@@ -341,6 +352,25 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
     </div>
   );
 
+  // 🟣 01/09 (bản vẽ HomeStart.dc.html) — BIẾN THỂ KHÔNG VỎ cho trạng thái A của BeMatHome:
+  // ba cửa vào đứng TRẦN giữa màn dưới đồng hồ, không tường thẻ, không tiêu đề "Dự án" (ô phụ
+  // không vỏ — product/home.md). CÙNG một ProjectSelect, cùng handler; chỉ khác vỏ. Chỉ MỘT trong
+  // hai node được mount mỗi lượt render (beMat HOẶC xuongLayout) nên không có chuyện mount đôi.
+  const ngaySoKhongTran: ReactNode = (
+    <div className="min-h-0">
+      <ProjectSelect
+        onEnter={onEnter}
+        hideHeroCopy
+        hideVitalsBar
+        bentoBox
+        openTasksByProject={openTasksByProject}
+        onNoteDrop={handleNoteDrop}
+        armedNoteId={armedNoteId}
+        revealAll={revealAll}
+      />
+    </div>
+  );
+
   // ---------- R5 (19/08) — Ô GHI CHÚ + "VIỆC ĐANG DỞ" xếp chồng ----------
   // ResumeWork mount theo đúng khuôn tiền lệ H/I (WeeklyMaterial `auto` chồng trên NewsFeed):
   // hàng `auto` cao đúng nội dung, phần dư về Ghi chú. KHÔNG đụng lưới 12 cột và KHÔNG sửa
@@ -561,15 +591,11 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
       </WidgetCard>
     ),
     homNay: <TodayStrip summary={s} currentUserId={currentUserId} />,
-    mocToi: <UpcomingList summary={s} />,
-    ghiChu: (
-      <QuickNotes
-        summary={s}
-        armedNoteId={armedNoteId}
-        onArmNote={setArmedNoteId}
-        refreshKey={notesRefreshKey}
-      />
-    ),
+    /* 🟣 01/09 — `ghiChu` THÔI CẤP NỘI DUNG cho bề mặt năm-trạng-thái. `product/home.md` §4:
+       "Ghi chú nhanh làm widget mặc định" bị TỪ CHỐI — nhóm E chỉ hiện khi người dùng CHỦ ĐỘNG
+       bật, mà cơ chế ghim chưa có. Kế hoạch `nam-trang-thai.ts` GIỮ NGUYÊN (test không đổi);
+       BeMatHome bỏ qua mục không có nội dung — đúng khuôn "nơi gọi không cấp ⇒ không vẽ ô rỗng".
+       QuickNotes vẫn sống ở bố cục `custom` (xuongLayout) — người đã quen không mất gì. */
     /* 🔴 23/08 — `bieuDo` và `dongTin` KHÔNG còn nội dung ở Trang chủ. Hai mã này cũng đã rời
        kế hoạch bày (`nam-trang-thai.ts` D) — lý do đầy đủ ở đó. Tóm tắt: lưới tích luỹ là
        "thống kê phù phiếm" đã bị loại tường minh 02/08; biểu đồ chặng mở cổng bằng *số dự án*
@@ -577,6 +603,7 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
        không ai nối lại bằng cách thêm một dòng vào kế hoạch mà tưởng là vô hại.
        `StageChart` · `ContributionGrid` · `NewsFeed` GIỮ NGUYÊN — chúng vẫn sống ở bố cục
        `xuongLayout`; đây là quyết định của TRANG CHỦ, không phải xoá widget. */
+    mocToi: <UpcomingList summary={s} />,
     anhTuan: <WeeklyImage images={weeklyImages} eightSecTick={eightSecTick} />,
     vatLieu: <WeeklyMaterial item={weeklyMaterial} />,
     // `vitals` cố ý KHÔNG có nội dung — xem `vitalsDangNoi` ở trên.
@@ -603,8 +630,13 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
           onDisplayNameChange={setDisplayName}
         />
       }
-      ngaySoKhong={projectTile}
+      /* 🟣 01/09 — trạng thái A nhận bản KHÔNG VỎ (HomeStart.dc.html: ba cửa trần giữa màn). */
+      ngaySoKhong={ngaySoKhongTran}
       noiDung={noiDungO}
+      /* 🟣 01/09 — kệ dự án MỘT DÒNG (Main.dc.html, đáy-phải trạng thái B) — nguồn thật sẵn có. */
+      duAnGanDay={s.recentProjects}
+      /* 🟣 01/09 — nhịp phút cho đồng hồ trạng thái A: interval TOÀN TRANG (luật ⑤), không đẻ mới. */
+      minuteTick={minuteTick}
       vietDangDo={
         theResume
           ? {

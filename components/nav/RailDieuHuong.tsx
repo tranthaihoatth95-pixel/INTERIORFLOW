@@ -106,12 +106,16 @@ function nacMoDau(dangTrongChang: boolean): NacRail {
  * Số làm căn cứ hạ (đo ở lượt trước, thang XÁM tức đã vứt hết hue):
  *   nền 14%  ↔ nền rail : **1,20:1**  — yếu, mà vẫn đủ nặng để đọc ra một khối màu
  *   vạch mép ↔ nền rail : **4,61:1**  — mạnh gấp bội
- * ⇒ Nền vốn KHÔNG phải kênh mạnh; giữ nó dày chỉ đổi lấy cảm giác nặng. Hạ về **5%** để nó lùi
- * hẳn về vai "trường tông rất nhẹ", VẠCH MÉP gánh vai chính.
+ * ⇒ Nền vốn KHÔNG phải kênh mạnh; giữ nó dày chỉ đổi lấy cảm giác nặng.
+ *
+ * 🟣 01/09 — ĐỔI KÊNH MÀU: bản vẽ GĐ1 (`design-if/Main.dc.html`, rail 52px) chốt hàng đang mở là
+ * **sương TRẮNG-MỜ TRUNG TÍNH** (rgba(255,255,255,.08) trên nền tối), KHÔNG tím — accent của mỗi
+ * màn để dành cho ĐÚNG MỘT CTA + trạng thái chạy, rail là bản đồ nên đứng trung tính. Token-hoá
+ * bằng `--t1` (mực đảo cực theo theme) ⇒ theme sáng ra sương MỰC-MỜ, cùng cường độ 8%.
  * ⛔ Đừng nâng lại vì "nhìn không rõ" — không rõ thì tăng vạch/tương phản icon, đừng tăng nền.
  * Dùng `color-mix` tại chỗ chứ không thêm token: `app/globals.css` là vùng lane khác đang ghi.
  */
-const NEN_DANG_MO = 'color-mix(in srgb, var(--accent) 5%, transparent)';
+const NEN_DANG_MO = 'color-mix(in srgb, var(--t1) 8%, transparent)';
 
 /**
  * 🟡 MÀU AI — MỘT BIẾN ĐẶT TẠM, CHỜ HOÀ CHỐT. Đổi đúng MỘT dòng dưới đây là đổi cả nút `+`.
@@ -884,9 +888,13 @@ function HangRail({
 
   const ruot = (
     <>
-      {/* Dải màu đặc 2px đánh dấu mục đang mở (khuôn định danh Hoà chốt 15/08). Nó cũng là KÊNH
+      {/* Dải đặc 2px đánh dấu mục đang mở (khuôn định danh Hoà chốt 15/08). Nó cũng là KÊNH
           THỨ HAI ngoài màu — hình dạng — nên trạng thái "đang mở" không phụ thuộc mỗi việc phân
-          biệt được sắc độ. */}
+          biệt được sắc độ.
+          🟣 01/09 — dải đổi `--accent` → `--t1` (MỰC trung tính): bản vẽ GĐ1 chốt trạng thái
+          đang-mở của rail là TRUNG TÍNH trắng-mờ, không tím — accent để dành cho CTA + trạng
+          thái chạy của từng màn. Kênh HÌNH DẠNG giữ nguyên, chỉ đổi hue; tương phản `--t1` trên
+          `--panel` cao hơn hẳn accent cũ nên không mất khả năng nhận ra. */}
       {dangMo && (
         <span
           aria-hidden
@@ -898,7 +906,7 @@ function HangRail({
             bottom: 6,
             width: 2,
             borderRadius: RADIUS.full,
-            background: 'var(--accent)',
+            background: 'var(--t1)',
           }}
         />
       )}
