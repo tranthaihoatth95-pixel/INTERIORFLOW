@@ -180,6 +180,9 @@ const areaOf = (b: Box): number => Math.max(0, b.maxX - b.minX) * Math.max(0, b.
  *     giữ nguyên hành vi cũ cho khỏi gây bất ngờ.
  *  4. LUÔN có đường quay lại: nơi gọi (`CadCanvas.zoomExtents`) bấm lần thứ hai thì truyền
  *     `preferFull` để xem toàn bộ, kèm câu nói rõ. Không có chuyện hình biến mất mà không lấy lại được.
+ *  5. **KHUNG THÔ RỘNG VÔ ÍCH** (Hoà chốt 31/08): kể cả khi KHÔNG hình nào xa vô lý, nếu khung
+ *     bao đầy vẫn rộng hơn `FOCUS_MIN_RATIO` lần diện tích cụm chính thì canh vào cụm chính.
+ *     Đây là ca tờ bản vẽ nhiều mặt bằng rải ngang — xem chi tiết + số đo ngay tại nhánh đó.
  */
 export function zoomExtentsPlan(doc: Doc, opts: { preferFull?: boolean } = {}): ZoomExtentsPlan | null {
   const full = docBox(doc);
@@ -213,10 +216,40 @@ export function zoomExtentsPlan(doc: Doc, opts: { preferFull?: boolean } = {}): 
     }
   }
 
-  // Không có hình nào xa vô lý ⇒ khung nhìn = khung đầy, KHÔNG giấu gì (đây là ca của mọi tệp bình thường).
-  if (far === 0) return { box: full, mode: 'full', farEntities: 0 };
-  if (areaOf(full) < FOCUS_MIN_RATIO * areaOf(focus)) return { box: full, mode: 'full', farEntities: 0 };
-  return { box: focus, mode: 'mainCluster', farEntities: far };
+  // Có hình xa vô lý VÀ chênh lệch đáng kể ⇒ canh vào vùng đã nới (ôm ghi chú, khung tên quanh mặt bằng).
+  if (far > 0 && areaOf(full) >= FOCUS_MIN_RATIO * areaOf(focus)) return { box: focus, mode: 'mainCluster', farEntities: far };
+
+  // ── ĐIỀU KIỆN THỨ HAI: KHUNG THÔ RỘNG HƠN CỤM CHÍNH QUÁ NHIỀU ────────────────────────────
+  // Hoà chốt phương án A 31/08 20:48, tái xác nhận 20:56 (phiếu HO-20260831135132-e4c854369eda).
+  //
+  // Lỗ mà nó bịt: nhánh trên chỉ bật khi có hình XA VÔ LÝ (>30× cỡ cụm). Một tờ bản vẽ có 6 mặt
+  // bằng rải ngang 225 m thì KHÔNG hình nào xa vô lý cả — và người mở tệp nhận một mặt bằng
+  // 28 m nằm lọt thỏm trong khung 225 m. Đo trên 6 hồ sơ thật (`FILE MBHT`): 5/6 tệp rơi đúng
+  // vào lỗ này (`mode:'full'`) dù tỉ lệ thô/cụm là 21,6× · 56,3× · 46,7× · 29,3× · 29,7×.
+  //
+  // ⚠️ GIÁ PHẢI TRẢ, ĐO ĐƯỢC — ghi ở đây để không ai phải đo lại: khung nhìn = cụm chính TRẦN
+  // nên 34–88% số hình nằm NGOÀI khung khi mở (03: 88,3% · 05: 82,3% · 06: 82,8% · 07: 81,8% ·
+  // 08: 34,2%). Con số đó CAO HƠN mức 31–76% từng khiến luật "nới 25%" bị bỏ. Khác biệt là
+  // đường quay lại: `farEntities` nói thẳng bao nhiêu hình nằm ngoài, và phím F (`preferFull`)
+  // trả về toàn bộ ngay lượt bấm sau. Đây là quyết định của Hoà trên app thật, không phải suy
+  // luận của máy — muốn lật thì lật ở đây, đừng lật bằng cách sửa kỳ vọng của test.
+  //
+  // ⛔ KHÔNG đụng `ABSURD_FAR_RATIO` (30). Hai ngưỡng trả lời hai câu khác nhau: 30 hỏi "hình
+  // này có xa vô lý không", 4 hỏi "khung thô có rộng vô ích so với cụm chính không".
+  const dtCum = areaOf(cluster.box);
+  if (dtCum > 0 && areaOf(full) > FOCUS_MIN_RATIO * dtCum) {
+    let ngoaiKhung = 0;
+    for (const e of doc.entities) {
+      const b = entityBox(e);
+      if (!Number.isFinite(b.minX) || !Number.isFinite(b.maxX)) continue;
+      const ex = (b.minX + b.maxX) / 2;
+      const ey = (b.minY + b.maxY) / 2;
+      if (ex < cluster.box.minX || ex > cluster.box.maxX || ey < cluster.box.minY || ey > cluster.box.maxY) ngoaiKhung += 1;
+    }
+    return { box: { ...cluster.box }, mode: 'mainCluster', farEntities: ngoaiKhung };
+  }
+
+  return { box: full, mode: 'full', farEntities: 0 };
 }
 
 /**

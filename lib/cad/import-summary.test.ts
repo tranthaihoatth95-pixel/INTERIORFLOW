@@ -19,6 +19,7 @@
 import type { Doc, Entity, Layer } from './model';
 import { docBox, fitBox } from './model';
 import { ZOOM_FIT_PAD, zoomExtentsFit, zoomExtentsPlan } from './import-summary';
+import { mainClusterBox } from './dxf-plan';
 
 let pass = 0;
 let fail = 0;
@@ -134,6 +135,35 @@ console.log('⑤ zoomExtentsFit KHÔNG được đổi luật chọn hộp của
   const thuong = zoomExtentsFit(MAT_BANG, { W: 1200, H: 700 });
   ok('⑤ bản vẽ thường vẫn mode full, farEntities 0',
     thuong.ok === true && thuong.plan.mode === 'full' && thuong.plan.farEntities === 0, thuong);
+}
+
+/* ═══════════ ⑥ KHUNG THÔ RỘNG VÔ ÍCH ⇒ CANH VÀO CỤM CHÍNH (Hoà chốt 31/08, phương án A) ═══ */
+console.log('⑥ không hình nào xa vô lý, nhưng khung thô rộng hơn cụm chính >4× ⇒ vẫn canh cụm');
+{
+  // Tờ bản vẽ: mặt bằng 34,7 × 28,1 m (A-Wall) + một khối ghi chú A-Text đặt cách 180 m.
+  // 180 m « 30× cỡ cụm (1.041 m) ⇒ KHÔNG hình nào "xa vô lý" ⇒ nhánh cũ không bật.
+  const toBanVe = docVoi([...MAT_BANG.entities, line(300_000, 94_000, 'l-t')]);
+  const plan = zoomExtentsPlan(toBanVe)!;
+  const cum = mainClusterBox(toBanVe)!;
+  const thoBox = docBox(toBanVe)!;
+  const dt = (b: { minX: number; minY: number; maxX: number; maxY: number }) => (b.maxX - b.minX) * (b.maxY - b.minY);
+
+  // TANG VẬT: nhánh cũ thật sự KHÔNG bật ở fixture này — nếu không, ca dưới đúng một cách rỗng.
+  ok('⑥ tang vật: tỉ lệ thô/cụm > 4 và không hình nào vượt 30× cỡ cụm',
+    dt(thoBox) > 4 * dt(cum.box) && Math.abs(300_500 - (cum.box.minX + cum.box.maxX) / 2) < 30 * Math.max(cum.box.maxX - cum.box.minX, cum.box.maxY - cum.box.minY),
+    { tiLe: dt(thoBox) / dt(cum.box) });
+  ok('⑥ mode mainCluster', plan.mode === 'mainCluster', plan);
+  ok('⑥ hộp CHÍNH LÀ cụm chính, không phải khung thô', plan.box.maxX === cum.box.maxX && plan.box.minX === cum.box.minX, { box: plan.box, cum: cum.box });
+  ok('⑥ farEntities đếm đúng hình nằm ngoài khung cụm', plan.farEntities === 1, plan.farEntities);
+  // Đường quay lại vẫn nguyên: phím F trả toàn bộ.
+  const f = zoomExtentsPlan(toBanVe, { preferFull: true })!;
+  ok('⑥ preferFull ⇒ full, hộp bằng khung thô', f.mode === 'full' && f.box.maxX === thoBox.maxX, f);
+
+  // ĐỐI CHỨNG: ghi chú đặt gần (tỉ lệ < 4) thì KHÔNG đổi gì — luật này không được bật bừa.
+  const gan = docVoi([...MAT_BANG.entities, line(170_000, 94_000, 'l-t')]);
+  const planGan = zoomExtentsPlan(gan)!;
+  ok('⑥ đối chứng: tỉ lệ dưới ngưỡng ⇒ vẫn full, farEntities 0',
+    planGan.mode === 'full' && planGan.farEntities === 0, { plan: planGan, tiLe: dt(docBox(gan)!) / dt(mainClusterBox(gan)!.box) });
 }
 
 console.log(`\nimport-summary: ${pass} pass, ${fail} fail`);
