@@ -19,6 +19,32 @@ function state(events, now = Date.now()) {
 }
 function findLease(events, id, now) { return state(events, now).find((v) => v.lease_id === id) || null; }
 function activeWriter(events, now) { return state(events, now).find((v) => v.status === 'ACTIVE') || null; }
+
+// ── Ô "PHIÊN ĐANG GIỮ" (guard-v4 mục 3) ───────────────────────────────────────────────────
+// CA THẬT 31/08: `interiorflow-cf` [0d90b6] và `interiorflow-1a` [ad3358] được mở với CÙNG bộ
+// env — cùng `IF_SESSION_ID`, cùng `IF_LEASE_ID`. Guard so `lease.session_id` với env, mà env
+// giống nhau, nên nó cấp quyền GHI cho CẢ HAI. Luật "MỘT người ghi sản xuất" khi đó chỉ còn là
+// lời chúc: sổ không có ô nào ghi phiên NÀO đang cầm bút.
+//
+// Ô này lấp bằng một sự thật mà env không giả được: `hook.session_id` — UUID phiên do chính
+// Claude Code cấp, khác nhau giữa hai cửa sổ dù env chép y hệt.
+//
+// CAS trên sổ append-only: chưa ai nhận thì GHI rồi ĐỌC LẠI; ai có dòng `LEASE_CLAIMED` SỚM
+// NHẤT thì người đó giữ. Hai phiên cùng ghi thì cả hai đọc ra CÙNG một người thắng — không cần
+// khoá tệp, không cần trọng tài.
+//
+// ⚠️ CHƯA CÓ HEARTBEAT — và đó là cố ý cho lượt này. Claim CHẾT CÙNG lease (nó khoá theo
+// `lease_id`), nên phiên chết giữa chừng không khoá vĩnh viễn: hết hạn lease, hoặc
+// `claude-lease.mjs issue --thay` sinh lease mới ⇒ claim mới. Cái CÒN THIẾU: trả bàn giữa
+// chừng một lease đang sống. Nợ có tên ở `docs/control/ban/06.md`.
+function claimant(events, lease_id) {
+  for (const event of events) if (event.type === 'LEASE_CLAIMED' && event.lease_id === lease_id) return event.claim_session;
+  return null;
+}
+function claim({ lease_id, claim_session, now = Date.now() }) {
+  if (!lease_id || !claim_session) throw new Error('claim cần lease_id và claim_session');
+  return { v: 1, type: 'LEASE_CLAIMED', lease_id, claim_session, generated_at: new Date(now).toISOString() };
+}
 function issue({ events, system, lane, session_id, task_id, files, expires_at, issuer, now = Date.now() }) {
   if (activeWriter(events, now)) throw new Error('đã có production writer lease sống; thu hồi trước');
   if (system !== 'cl' || lane !== '06' || !session_id || !task_id || !files.length || expires_at <= now) throw new Error('lease fields không hợp lệ');
@@ -68,4 +94,4 @@ function resolveIssuer({ args = [], env = {}, handoffs = [] }) {
   return `handoff:${receipt.handoffId}/cx:00/${receipt.session_id}`;
 }
 
-module.exports = { activeWriter, amend, append, findLease, issue, readEvents, renew, resolveIssuer, state };
+module.exports = { activeWriter, amend, append, claim, claimant, findLease, issue, readEvents, renew, resolveIssuer, state };

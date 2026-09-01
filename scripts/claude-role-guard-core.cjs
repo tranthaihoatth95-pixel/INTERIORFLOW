@@ -185,6 +185,21 @@ function bocEnv(argv) { let i = 0; while (i < argv.length && GAN_BIEN.test(argv[
 // chạm luật nào. Mục này TÁCH HẠNG và TÁCH THÔNG ĐIỆP — nó KHÔNG mở đường cho lệnh nào qua.
 const EXTERNAL_BINS = new Set(['curl', 'wget', 'nc', 'ncat', 'netcat', 'telnet', 'ssh', 'scp', 'sftp', 'rsync', 'ftp']);
 
+// CỜ PHÁT HÀNH của electron-builder. `--publish never` (dạng `electron:pack:*` vẫn dùng) chỉ
+// đóng gói tại chỗ ⇒ vẫn là kiểm. Mọi giá trị khác — `always`, `onTag`, hay cờ trần không kèm
+// giá trị — đều có thể ĐẨY BẢN DỰNG LÊN MẠNG, và hạng verify chạy được ở mọi lane không lease,
+// nên để lọt một cờ ở đây là mở cửa phát hành cho bất kỳ phiên nào.
+function coPhatHanh(rest) {
+  for (let i = 0; i < rest.length; i += 1) {
+    const v = rest[i];
+    const m = /^(?:--publish|-p)(?:=(.*))?$/.exec(v);
+    if (!m) continue;
+    const giaTri = m[1] !== undefined ? m[1] : rest[i + 1];
+    if (giaTri !== 'never') return true;
+  }
+  return false;
+}
+
 const READ = () => ({ kind: 'read', files: [] });
 const VERIFY = () => ({ kind: 'verify', files: [] });
 const MUTATION = (reason) => ({ kind: 'mutation', files: [], reason });
@@ -215,11 +230,24 @@ function classifyArgv(argvGoc) {
   // `npm run <máy> -- <cờ>` truyền tiếp nguyên xi xuống máy soi ⇒ phải canh cờ GHI y như khi
   // gọi thẳng. Lỗ do writer `9e` phát hiện (không khai thác): `npm run soi:ban -- --ghi-ban`
   // lọt hạng VERIFY — tức đúng cái lệnh vừa phá 9 tệp bàn hôm 30/08 chạy được không cần lease.
-  if (bin === 'npm' && sub === 'run' && /^(?:soi:|check:|tsc$|test$|lint$)/.test(rest[0] || '') && !rest.slice(1).some((v) => SOI_WRITE_FLAGS.test(v))) return VERIFY();
+  // `test:` là NHÁNH của `npm test` sau khi chuỗi test được tách làm ba (guard-v4 mục 1):
+  // `test:ky-thuat` · `test:sweep` · `test:so-sach`. Thiếu tiền tố này thì người kiểm gọi được
+  // cả chuỗi nhưng không gọi nổi một khúc — tức bắt họ chạy lại 27 cổng để xem 1 cổng.
+  if (bin === 'npm' && sub === 'run' && /^(?:soi:|check:|test:|tsc$|test$|lint$)/.test(rest[0] || '') && !rest.slice(1).some((v) => SOI_WRITE_FLAGS.test(v))) return VERIFY();
   if (bin === 'npx' && sub === 'tsc' && rest.includes('--noEmit')) return VERIFY();
+  // ── DỰNG BẢN: `next build` và `electron-builder` là bước CHỨNG MINH cuối — mã biên dịch được,
+  // gói đóng được. Chúng chỉ ghi vào `.next/`/`dist/` (đều gitignore), không chạm mã nguồn, nên
+  // bắt chúng xin lease là bắt người kiểm mượn quyền người ghi đúng lúc cần kiểm nhất (nợ
+  // guard-v4 có tên trong sổ: `npx next build` bị chặn ngay lượt e2e 31/08).
+  // ⛔ `--publish` KHÔNG lọt: nó đẩy bản dựng LÊN mạng — đó là phát hành, không phải kiểm.
+  if (bin === 'npx' && sub === 'next' && rest[0] === 'build' && rest.length === 1) return VERIFY();
+  if (bin === 'npx' && sub === 'electron-builder' && !coPhatHanh(rest)) return VERIFY();
   if (bin === 'node_modules/.bin/tsc' && argv.includes('--noEmit')) return VERIFY();
   if (bin === 'node_modules/.bin/sucrase-node' && rest.length === 0 && sub && /\.test\.ts$/.test(sub)) return VERIFY();
-  if (bin === 'node' && /^scripts\/(?:soi-[\w-]+|nang-luc)\.mjs$/.test(sub || '') && !rest.some((v) => SOI_WRITE_FLAGS.test(v))) return VERIFY();
+  // `soat-toan-dien` là máy SOI như họ `soi-*`, chỉ khác cái tên — nó không có một lệnh ghi nào
+  // (`grep -n 'writeFileSync\|appendFileSync\|mkdirSync\|spawn\|execSync\|rmSync' scripts/soat-toan-dien.mjs`
+  // ⇒ 0 dòng). Tên nằm ngoài khuôn `soi-` là lý do duy nhất nó từng bị đòi lease.
+  if (bin === 'node' && /^scripts\/(?:soi-[\w-]+|nang-luc|soat-toan-dien)\.mjs$/.test(sub || '') && !rest.some((v) => SOI_WRITE_FLAGS.test(v))) return VERIFY();
 
   // Soi chính control-plane phải không cần quyền — nếu không, phiên bị chặn không có cách nào
   // biết TẠI SAO mình bị chặn. Đúng ca đầu phiên 31/08: `claude-lease.mjs status` bị khoá.
@@ -356,7 +384,7 @@ function inspect(toolName, input) {
 
 const BULK = new Set(['-A', '--all', '.', '*']);
 
-function evaluate({ env, hook, lease = null, now = Date.now(), cwd = process.cwd(), staged = null, handoffTo = null }) {
+function evaluate({ env, hook, lease = null, now = Date.now(), cwd = process.cwd(), staged = null, handoffTo = null, giuPhien = null }) {
   const operation = inspect(hook.tool_name, hook.tool_input || {});
   if (operation.kind === 'read') return { allow: true, mutation: false, operation };
   if (operation.kind === 'verify') return { allow: true, mutation: false, verify: true, operation };
@@ -406,6 +434,14 @@ function evaluate({ env, hook, lease = null, now = Date.now(), cwd = process.cwd
     if (!lease || lease.status !== 'ACTIVE') return { allow: false, reason: 'LEASE: không có lease sống trong control-plane', stamp, operation };
     if (lease.expires_at <= now) return { allow: false, reason: 'LEASE: stale', stamp, operation };
     if (lease.system !== identity.system || lease.lane !== identity.lane || lease.session_id !== sessionId || lease.task_id !== taskId || lease.lease_id !== env.IF_LEASE_ID) return { allow: false, reason: 'LEASE: wrong system/lane/session/task/id', stamp, operation };
+    // ── Ô "PHIÊN ĐANG GIỮ" (guard-v4 mục 3). Mọi ô ở trên đọc từ ENV, mà env CHÉP ĐƯỢC: hai cửa
+    // sổ mở cùng bộ biến thì cả hai qua hết. `hook.session_id` là thứ duy nhất ở đây do công cụ
+    // cấp chứ không do người truyền vào ⇒ nó phân biệt được hai phiên. Xem `claimant()`.
+    // Không đọc nổi danh tính phiên (`phienThat` rỗng) thì KHÔNG chấm — chặn một phiên vì công
+    // cụ quên gửi id là chặn oan, và ca thật cần bắt là hai phiên ĐỀU CÓ id.
+    const phienThat = hook.session_id || '';
+    const nguoiGiu = typeof giuPhien === 'function' ? giuPhien(lease.lease_id, phienThat) : null;
+    if (phienThat && nguoiGiu && nguoiGiu !== phienThat) return { allow: false, reason: `LEASE: phiên ${nguoiGiu} đang giữ lease này; phiên ${phienThat} không cầm bút`, stamp, operation };
     allowlist = lease.files;
   } else {
     // Lane khác 06 không cầm quyền ghi production, nhưng có workspace riêng của mình.

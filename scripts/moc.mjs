@@ -147,7 +147,7 @@ if (lenh === 'handoff') {
   console.log('');
   console.log('  ⛔ PHIẾU ĐÃ GHI — NHƯNG CHƯA GIAO. Cầu chỉ chở nội dung, nó KHÔNG đánh thức ai.');
   console.log(`  Bên giao phải tự đánh thức lane ${to} bằng cơ chế của hệ mình, rồi ghi lại:`);
-  console.log(`      node scripts/moc.mjs danh-thuc ${id} "<cơ chế đã dùng>"`);
+  console.log(`      node scripts/moc.mjs danh-thuc ${tac.address} ${id} "<cơ chế đã dùng>"`);
   console.log('  Không có mắt ĐÁNH THỨC thì `soi:cau` sẽ đỏ, và đúng như vậy — phiếu chưa tới ai.');
   process.exit(0);
 }
@@ -341,7 +341,7 @@ if (lenh === 'danh-thuc') {
   const dt = danhTinhGhi(author);
   if (!dt.ok || !handoffId || !cach) {
     console.error('Dùng: node scripts/moc.mjs danh-thuc <cx:NN|cl:NN> <handoffId> "<cơ chế đã dùng>"');
-    console.error('  Ví dụ: … danh-thuc HO-2026… "SendMessage → local_51cf773f"');
+    console.error('  Ví dụ: … danh-thuc cl:00 HO-2026… "SendMessage → local_51cf773f"');
     process.exit(2);
   }
   const events = docSuKien();
@@ -411,7 +411,7 @@ if (lenh === 'chua-nhan') {
   for (const e of chuaGui) console.log(`📮 CHƯA GỬI · ${e.id} · lane ${e.to} · ${phutCua(e)} phút · ${e.topic}`);
   for (const e of daGuiChuaNhin) console.log(`⏳ ĐÃ GỬI, CHƯA AI NHÌN · ${e.id} · lane ${e.to} · ${phutCua(e)} phút · ${e.topic}`);
   for (const e of daNhinChuaXuLy) console.log(`👁 ĐÃ NHÌN, CHƯA XỬ LÝ · ${e.id} · lane ${e.to} · ${phutCua(e)} phút · ${e.topic}`);
-  if (chuaGui.length) console.log('   → CHƯA GỬI: việc của BÊN GIAO — đánh thức rồi `moc.mjs danh-thuc <id> "<cơ chế>"`');
+  if (chuaGui.length) console.log('   → CHƯA GỬI: việc của BÊN GIAO — đánh thức rồi `moc.mjs danh-thuc <cx:NN|cl:NN> <id> "<cơ chế>"`');
   if (daGuiChuaNhin.length) console.log('   → ĐÃ GỬI: phiên đích chưa mở lên — gọi lại phiên đó');
   if (daNhinChuaXuLy.length) console.log('   → ĐÃ NHÌN: việc của NGƯỜI NGỒI LANE — `moc.mjs ack <lane> <id> <outcome> "<bằng chứng>"`');
   if (ackCu.length) console.log(`   ⚠️ ${ackCu.length} biên nhận CŨ không có outcome — đọc thành DONE-không-bằng-chứng, KHÔNG viết lại lịch sử`);

@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 const require = createRequire(import.meta.url);
 const { evaluate } = require('./claude-role-guard-core.cjs');
-const { findLease, readEvents } = require('./claude-lease-core.cjs');
+const { append, claim, claimant, findLease, readEvents } = require('./claude-lease-core.cjs');
 
 let raw = '';
 for await (const chunk of process.stdin) raw += chunk;
@@ -42,7 +42,20 @@ function docDichPhieu(handoffId) {
   return null;
 }
 
-const result = evaluate({ env: process.env, hook, lease, cwd, staged: docChiMuc, handoffTo: docDichPhieu });
+// AI ĐANG CẦM BÚT — CAS trên sổ append-only. Chưa ai nhận thì GHI rồi ĐỌC LẠI; dòng
+// `LEASE_CLAIMED` SỚM NHẤT thắng, nên hai phiên cùng ghi vẫn đọc ra cùng một người giữ.
+// Sổ không ghi được (chỉ-đọc, đầy đĩa) ⇒ trả null ⇒ cổng giữ nguyên hành vi cũ, không chặn oan.
+function aiGiuBut(leaseId, phienThat) {
+  if (!leaseId || !phienThat) return null;
+  try {
+    const co = claimant(readEvents(leaseFile), leaseId);
+    if (co) return co;
+    append(leaseFile, claim({ lease_id: leaseId, claim_session: phienThat }));
+    return claimant(readEvents(leaseFile), leaseId);
+  } catch { return null; }
+}
+
+const result = evaluate({ env: process.env, hook, lease, cwd, staged: docChiMuc, handoffTo: docDichPhieu, giuPhien: aiGiuBut });
 const stamp = result.stamp || {
   system: process.env.IF_SYSTEM || 'MISSING', role: process.env.IF_LANE ? `${process.env.IF_SYSTEM || 'MISSING'}:${process.env.IF_LANE}` : 'MISSING',
   task: process.env.IF_TASK_ID || 'MISSING', lease: process.env.IF_LEASE_ID || 'MISSING',

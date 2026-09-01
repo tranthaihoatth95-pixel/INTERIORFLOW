@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 const { argvSafe, classifyBash, evaluate, napSo, ngoaiRepo } = require('./claude-role-guard-core.cjs');
-const { activeWriter, amend, findLease, issue, renew, resolveIssuer, state } = require('./claude-lease-core.cjs');
+const { activeWriter, amend, claim, claimant, findLease, issue, renew, resolveIssuer, state } = require('./claude-lease-core.cjs');
 
 const now = Date.parse('2026-08-30T08:00:00Z');
 const lease = { status: 'ACTIVE', lease_id: 'L-1', system: 'cl', lane: '06', session_id: 'session-1', task_id: 'HO-task', files: ['components/cad/CadCanvas.tsx'], expires_at: now + 60_000 };
@@ -415,4 +415,57 @@ assert.equal(classifyBash('npm test').kind, 'verify');
   } finally { fs.rmSync(nhaTam, { recursive: true, force: true }); }
 }
 
-console.log('claude-role-guard: read/pipe/verify/commit+chỉ-mục/per-lane/điều-phối/xoá-có-kiểm/ngoài-repo/issuer/tool-lạ/lease + v3(chuỗi-đọc/redirect-lành/sổ-lệnh/external/renew-amend-thay/ngoài-repo-trước-lane00/env-prefix/script-an-toàn/npm-passthrough/symlink) gates OK');
+// ══ v4 ① · NHÁNH `test:` — chuỗi test tách làm ba thì người kiểm phải gọi được từng khúc.
+// Thiếu tiền tố này, `npm test` chạy được mà `npm run test:sweep` thì đòi lease.
+for (const command of ['npm run test:ky-thuat', 'npm run test:sweep', 'npm run test:so-sach']) {
+  assert.equal(classifyBash(command).kind, 'verify', `verify: ${command}`);
+  assert.equal(run({ IF_SYSTEM: 'cl', IF_LANE: '03' }, 'Bash', { command }, null).allow, true, `khúc test chạy không lease: ${command}`);
+}
+// COUNTERPROOF: tiền tố `test:` KHÔNG mở cờ ghi — passthrough vẫn bị canh y như `soi:`.
+assert.notEqual(classifyBash('npm run test:so-sach -- --ghi-ban').kind, 'verify');
+// `soat-toan-dien` là máy soi chỉ-đọc, lạc khuôn tên `soi-*` nên từng bị đòi lease.
+assert.equal(classifyBash('node scripts/soat-toan-dien.mjs').kind, 'verify');
+assert.notEqual(classifyBash('node scripts/soat-toan-dien.mjs --ghi').kind, 'verify');
+
+// ══ v4 ② · DỰNG BẢN nằm trong lớp VERIFY — `next build`/`electron-builder` chỉ ghi vào
+// thư mục dựng (gitignore), nên bắt chúng xin lease là chặn đúng bước chứng minh cuối.
+for (const command of ['npx next build', 'npx electron-builder --mac', 'npx electron-builder --win --x64 --publish never']) {
+  assert.equal(classifyBash(command).kind, 'verify', `verify dựng bản: ${command}`);
+  assert.equal(run({ IF_SYSTEM: 'cl', IF_LANE: '03' }, 'Bash', { command }, null).allow, true, `dựng bản không lease: ${command}`);
+}
+// ⛔ ĐỎ: `--publish always` đẩy bản dựng LÊN MẠNG. Đó là phát hành, không phải kiểm — và
+// hạng verify chạy được ở mọi lane, không lease, nên lọt một cờ này là mở cửa phát hành cho
+// bất kỳ phiên nào. `next build` có đuôi lạ cũng không lọt: verify là DẠNG ĐÚNG MỘT lệnh.
+for (const command of ['npx electron-builder --win --publish always', 'npx electron-builder --publish=onTag', 'npx electron-builder -p always', 'npx electron-builder --mac --publish', 'npx next build --experimental-x']) {
+  assert.notEqual(classifyBash(command).kind, 'verify', `không được là verify: ${command}`);
+  assert.equal(run({ IF_SYSTEM: 'cl', IF_LANE: '03' }, 'Bash', { command }, null).allow, false, `phải chặn: ${command}`);
+}
+
+// ══ v4 ③ · Ô "PHIÊN ĐANG GIỮ" — ca thật 31/08: hai phiên CÙNG bộ env (`interiorflow-cf`
+// [0d90b6] và `interiorflow-1a` [ad3358]) đều được cấp quyền ghi, vì mọi ô guard so đều đọc
+// từ env, mà env chép được. `hook.session_id` do công cụ cấp ⇒ không chép được.
+assert.equal(claimant([], 'L-1'), null, 'chưa ai nhận thì rỗng');
+assert.equal(claim({ lease_id: 'L-1', claim_session: 'A', now }).type, 'LEASE_CLAIMED');
+assert.throws(() => claim({ lease_id: 'L-1', claim_session: '' }), /claim cần/);
+// CAS: dòng SỚM NHẤT thắng ⇒ hai phiên cùng ghi vẫn đọc ra CÙNG một người giữ.
+const soClaim = [claim({ lease_id: 'L-1', claim_session: 'A', now }), claim({ lease_id: 'L-1', claim_session: 'B', now }), claim({ lease_id: 'L-2', claim_session: 'C', now })];
+assert.equal(claimant(soClaim, 'L-1'), 'A', 'claim sớm nhất thắng, claim sau không lật được');
+assert.equal(claimant(soClaim, 'L-2'), 'C');
+assert.equal(claimant(soClaim, 'L-khong-co'), null);
+
+const ghiVoiPhien = (phien: string | undefined, giuPhien: any) => evaluate({
+  env: base, hook: { tool_name: 'Write', tool_input: { file_path: 'components/cad/CadCanvas.tsx' }, session_id: phien },
+  lease, now, cwd: process.cwd(), giuPhien,
+});
+assert.equal(ghiVoiPhien('phien-A', () => 'phien-A').allow, true, 'phiên đang giữ thì ghi được');
+const cuop = ghiVoiPhien('phien-B', () => 'phien-A');
+assert.equal(cuop.allow, false, 'phiên THỨ HAI cùng env không được cầm bút');
+assert.match(cuop.reason, /phien-A đang giữ/);
+// COUNTERPROOF 1: bỏ đầu đọc claim thì hành vi cũ nguyên vẹn — ô này không được tự chặn thêm ai.
+assert.equal(ghiVoiPhien('phien-B', null).allow, true, 'không có sổ claim thì giữ nguyên hành vi cũ');
+assert.equal(ghiVoiPhien('phien-B', () => null).allow, true, 'chưa ai nhận thì ai chạm trước người đó ghi');
+// COUNTERPROOF 2: công cụ không gửi `session_id` ⇒ KHÔNG chấm nổi ⇒ không chặn oan.
+// (Ca thật cần bắt là hai phiên ĐỀU CÓ id; chặn phiên vô danh chỉ đổi lỗi này lấy lỗi khác.)
+assert.equal(ghiVoiPhien(undefined, () => 'phien-A').allow, true, 'thiếu danh tính phiên thì không chấm');
+
+console.log('claude-role-guard: read/pipe/verify/commit+chỉ-mục/per-lane/điều-phối/xoá-có-kiểm/ngoài-repo/issuer/tool-lạ/lease + v3(chuỗi-đọc/redirect-lành/sổ-lệnh/external/renew-amend-thay/ngoài-repo-trước-lane00/env-prefix/script-an-toàn/npm-passthrough/symlink) + v4(nhánh-test/dựng-bản/phiên-đang-giữ) gates OK');

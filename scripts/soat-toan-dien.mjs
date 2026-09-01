@@ -64,7 +64,10 @@ if (co('--chi-cong')) {
 const KY_MAT_NGUOI = (() => {
   const m = new Map();
   try {
-    const cau = path.join(os.homedir(), 'PROJECT/SHARED/LOG/agent-handoffs.jsonl');
+    /* `BOS_SHARED_LOG_ROOT` là ĐƯỜNG CHUNG của mọi máy chạm sổ cầu (moc · soi-cau · phieu-ca ·
+     * buu-ta · guard). Đường cứng `os.homedir()` ở đây làm máy này thành máy DUY NHẤT không
+     * cách ly được: test đặt biến, mọi máy khác đi theo, riêng nó vẫn đọc sổ THẬT của Hoà. */
+    const cau = path.join(process.env.BOS_SHARED_LOG_ROOT || path.join(os.homedir(), 'PROJECT/SHARED/LOG'), 'agent-handoffs.jsonl');
     for (const l of readFileSync(cau, 'utf8').split('\n')) {
       if (!l) continue;
       try { const e = JSON.parse(l); if (e.type === 'MAT_NGUOI' && e.viec) m.set(e.viec, e); } catch { /* dòng hỏng */ }
