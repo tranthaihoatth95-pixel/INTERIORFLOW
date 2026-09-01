@@ -17,13 +17,13 @@ import type { Tool } from '@/lib/cad/store';
 import { useCadLiveStatus } from '@/lib/cad/live-status';
 import { useFlowStore } from '@/lib/store';
 import type { Entity, Pt, Viewport, DimEntity, LineEntity, MarkupPin, PhotoEmbed, Box, ZoneEntity } from '@/lib/cad/model';
-import { screenToWorld, worldToScreen, zoomAt, fitBox, dist, entityBox, ZONE_GROUP_META, CAMPATH_LAYER_NAME, CAMPATH_LAYER_COLOR } from '@/lib/cad/model';
+import { screenToWorld, worldToScreen, zoomAt, dist, entityBox, ZONE_GROUP_META, CAMPATH_LAYER_NAME, CAMPATH_LAYER_COLOR } from '@/lib/cad/model';
 import { drawEntities, drawEntity } from '@/lib/cad/render';
 // B25 REUSE — bộ pha màu canonical của IF (`plan-depth.ts` §1), đã có test riêng. Không đẻ bộ thứ hai.
 import { mixHex } from '@/lib/cad/plan-depth';
 import { presentProjectionMemo } from '@/lib/cad/plan-present';
 // GỐC B3 (G-M1-04) — luật chọn khung nhìn "Xem vừa màn", thuần + test được bằng file DXF thật.
-import { zoomExtentsFit, zoomFocusStatusLine, ZOOM_FULL_STATUS_LINE } from '@/lib/cad/import-summary';
+import { gotoBoxFit, zoomExtentsFit, zoomFocusStatusLine, ZOOM_FULL_STATUS_LINE } from '@/lib/cad/import-summary';
 import { usePlanPresent, presentOptionsFrom } from './plan-present-store';
 import { useGiayMuc } from './giay-muc-store';
 import { useTuongSuyRa, locTuongSuyRa } from './tuong-suy-ra-store';
@@ -159,6 +159,11 @@ interface Ix {
   /** Một lượt "Xem vừa màn" đã tới NHƯNG backing canvas chưa được đo ⇒ đang HOÃN, chờ lần đo
    *  đầu tiên của `ResizeObserver` rồi fit lại. Xem docstring `zoomExtents()` bên dưới. */
   fitOnOpenPending: boolean;
+  /** Vá 01/09 — CÙNG HỌ với `fitOnOpenPending`, cho `cad:goto-box`: một lượt bay-tới-hộp đã tới
+   *  nhưng màn chưa đo (tab ẩn ⇒ canvas 300×150 ⇒ `fitBox` cho scale ÂM) ⇒ giữ HỘP lại đây, lần
+   *  đo đầu tiên của `ResizeObserver` fit tiếp. Hai cờ loại trừ nhau — ý định MỚI NHẤT thắng
+   *  (xem `gotoBox()`/`zoomExtents()`), nên không bao giờ vừa hoãn fit-toàn-bộ vừa hoãn goto-box. */
+  gotoBoxPending: Box | null;
   /** VIỆC "ống hút thuộc tính" (lib/cad/eyedropper.ts, MATCHPROP) — KHÔNG phải 1 `Tool` trong
    * union (lệnh CHỒNG lên tool hiện tại, bật/tắt qua CustomEvent 'cad:eyedropper-toggle' từ
    * CadToolbar.tsx). `active` = đang chờ click nguồn/đích; `sourceId` = null cho tới khi đã lấy
@@ -447,6 +452,7 @@ export default function CadCanvas() {
     penUpAt: 0,
     zoomedToCluster: false,
     fitOnOpenPending: false,
+    gotoBoxPending: null,
     eyedropper: { active: false, sourceId: null },
     lastMoveCopy: null,
   });
@@ -545,6 +551,10 @@ export default function CadCanvas() {
       // docstring `zoomExtents()`) được để dành tới đây: giờ mới có số thật để fit. `zoomExtents`
       // tự đặt lại cờ nếu vẫn chưa đo được, nên không có vòng lặp — nó chỉ chạy theo lần đo.
       if (ix.current.fitOnOpenPending) zoomExtents();
+      // Vá 01/09 — cùng cơ chế cho `cad:goto-box` (đổi tab sheet / mở vùng từ paper space khi tab
+      // còn ẩn): hộp để dành được fit ngay lần đo đầu tiên. `gotoBox` tự đặt lại cờ nếu vẫn chưa
+      // đo được — chỉ chạy theo lần đo, không vòng lặp, y khuôn trên.
+      if (ix.current.gotoBoxPending) gotoBox(ix.current.gotoBoxPending);
     };
     const scheduleResize = () => {
       cancelAnimationFrame(frame);
@@ -588,17 +598,20 @@ export default function CadCanvas() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** NC-13 Bước 3 (CadSheets.tsx, đổi tab sheet) — bay camera tới ĐÚNG vùng world (mm) mà
-   * Viewport2D của sheet đang soi vào, khác `cad:zoom-to` (chỉ recenter, giữ scale hiện tại):
-   * ở đây fit CẢ vùng (dùng scale mới) như `zoomExtents()` nhưng với 1 box tuỳ ý thay vì docBox. */
+  /** NC-13 Bước 3 (CadSheets.tsx, "Mở vùng này trong Model" từ paper space) — bay camera tới
+   * ĐÚNG vùng world (mm), khác `cad:zoom-to` (chỉ recenter, giữ scale hiện tại): ở đây fit CẢ
+   * vùng (dùng scale mới) như `zoomExtents()` nhưng với 1 box tuỳ ý thay vì docBox.
+   *
+   * 🔴 Vá 01/09 (cùng họ bệnh 81dd7dd7, khác cửa vào): bản cũ gọi `fitBox(detail, W, H, 80)` với
+   * `screenSize()` CHƯA CANH — tab ẩn/canvas chưa đo mang 300×150 mặc định ⇒ scale ÂM ghi thẳng
+   * store. Nay đi qua `gotoBox()` bên dưới: `gotoBoxFit()` (thuần, kiểm ca ⑦
+   * `import-summary.test.ts`) TỪ CHỐI màn chưa đo, hộp được ĐỂ DÀNH (`gotoBoxPending`) tới lần đo
+   * đầu tiên của `ResizeObserver` — đúng khuôn hoãn của `cad:zoom-extents`. */
   useEffect(() => {
     const onGotoBox = (ev: Event) => {
       const detail = (ev as CustomEvent<Box>).detail;
       if (!detail) return;
-      const { setViewport } = useCadStore.getState();
-      const { W, H } = screenSize();
-      setViewport(fitBox(detail, W, H, 80));
-      ix.current.redraw = true;
+      gotoBox(detail);
     };
     window.addEventListener('cad:goto-box', onGotoBox);
     return () => window.removeEventListener('cad:goto-box', onGotoBox);
@@ -664,6 +677,7 @@ export default function CadCanvas() {
     const { W, H } = screenSize();
     const wasFocused = ix.current.zoomedToCluster;
     ix.current.fitOnOpenPending = false;
+    ix.current.gotoBoxPending = null; // ý định mới nhất thắng — một lượt fit-toàn-bộ huỷ goto-box đang hoãn
     const fit = zoomExtentsFit(doc, { W, H }, { preferFull: wasFocused });
     if (!fit.ok) {
       // `empty-doc` ⇒ không có gì để nhìn, im lặng y như cũ. `screen-not-measured` ⇒ ĐỂ DÀNH:
@@ -681,6 +695,25 @@ export default function CadCanvas() {
       // Chỉ nói khi vừa BỎ chế độ canh cụm — bản vẽ thường thì im lặng như cũ, không thêm nhiễu.
       if (wasFocused) setStatus(ZOOM_FULL_STATUS_LINE);
     }
+    ix.current.redraw = true;
+  }
+
+  /**
+   * Bay-tới-hộp (`cad:goto-box`) qua guard đo-màn — xem docstring listener ở trên. Ý định MỚI
+   * NHẤT thắng: một lượt goto-box huỷ fit-toàn-bộ đang hoãn và ngược lại (`zoomExtents()`), nên
+   * hai cờ hoãn không bao giờ cùng sống — lần đo đầu tiên chỉ chạy đúng một ý định.
+   */
+  function gotoBox(box: Box) {
+    ix.current.gotoBoxPending = null;
+    ix.current.fitOnOpenPending = false;
+    const fit = gotoBoxFit(box, screenSize());
+    if (!fit.ok) {
+      // `screen-not-measured` ⇒ ĐỂ DÀNH nguyên hộp: `onResize` gọi lại ngay sau lần đo đầu tiên.
+      // KHÔNG chạm viewport — không ghi một khung nhìn vô nghĩa nào vào store.
+      ix.current.gotoBoxPending = { ...box };
+      return;
+    }
+    useCadStore.getState().setViewport(fit.viewport);
     ix.current.redraw = true;
   }
 

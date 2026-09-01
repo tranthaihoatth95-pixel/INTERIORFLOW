@@ -300,6 +300,33 @@ export function zoomExtentsFit(
   return sane ? { ok: true, viewport, plan } : { ok: false, reason: 'screen-not-measured' };
 }
 
+/** Kết quả fit 1 HỘP TUỲ Ý vào màn — anh em của `ZoomExtentsFit` nhưng không có `plan` (hộp do
+ * nơi gọi đưa, không đi qua luật chọn hộp) và không có ca `empty-doc` (hộp luôn tồn tại). */
+export type GotoBoxFit =
+  | { ok: true; viewport: Viewport }
+  | { ok: false; reason: 'screen-not-measured' };
+
+/**
+ * FIT HỘP TUỲ Ý — cho `cad:goto-box` (`CadCanvas.tsx`: đổi tab sheet, "Mở vùng này trong Model"
+ * từ paper space) và mọi nơi cần bay camera tới một vùng world cụ thể.
+ *
+ * 🔴 BỆNH NÓ KHOÁ (vá 01/09, cùng họ với bệnh `zoomExtentsFit` đã vá 81dd7dd7): listener
+ * `cad:goto-box` cũ gọi `fitBox(detail, W, H, 80)` với `screenSize()` CHƯA CANH — tab ẩn/canvas
+ * chưa đo mang kích thước mặc định 300×150 của `<canvas>` ⇒ trừ đệm hai bên là bề cao ÂM ⇒
+ * `scale` âm ghi thẳng store, y hệt bệnh cũ chỉ khác cửa vào. Nay CÙNG MỘT điều kiện well-formed
+ * (scale hữu hạn dương, pan hữu hạn) quyết định fit hay TỪ CHỐI; nơi gọi hoãn tới khi canvas đo
+ * thật (cờ `gotoBoxPending`, cùng khuôn `fitOnOpenPending`). Không đo lại màn, không đoán số.
+ *
+ * `pad` mặc định `ZOOM_FIT_PAD` (= 80) — ĐÚNG con số listener cũ dùng, hành vi màn-đã-đo giữ
+ * nguyên từng bit (khoá bằng ca ⑦ `import-summary.test.ts`).
+ */
+export function gotoBoxFit(box: Box, screen: { W: number; H: number }, pad = ZOOM_FIT_PAD): GotoBoxFit {
+  const viewport = fitBox(box, screen.W, screen.H, pad);
+  const sane = Number.isFinite(viewport.scale) && viewport.scale > 0
+    && Number.isFinite(viewport.panX) && Number.isFinite(viewport.panY);
+  return sane ? { ok: true, viewport } : { ok: false, reason: 'screen-not-measured' };
+}
+
 /**
  * Câu báo khi khung nhìn đã canh vào cụm vẽ chính — LUÔN nói cách xem lại toàn bộ (luật 4 ở trên).
  * Nói "nằm ngoài khung nhìn" chứ KHÔNG nói "bản sao rác": phần lớn trong đó là khung tên, ghi chú,

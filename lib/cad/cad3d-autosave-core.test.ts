@@ -80,7 +80,7 @@ import { useCadStore } from './store';
 import { emptyDoc, type Doc, type HatchEntity } from './model';
 import { loadSheets, saveSheets, sheetsKey, type SheetsRecord } from '../sheets-persist';
 import { saveResume } from '../resume';
-import { startCad3DAutosave, type PersistedCadSheet } from './cad3d-autosave-core';
+import { startCad3DAutosave, viewportLanhManh, type PersistedCadSheet } from './cad3d-autosave-core';
 import { isBucketHydrated, markBucketHydrated, __resetHydrationForTest } from './cad-doc-hydration';
 
 const ROUTE = '/cad-editor';
@@ -273,6 +273,75 @@ async function main() {
       threw = true;
     }
     ok('dispose()/flushNow() không throw', !threw);
+  }
+
+  console.log('\nG. Bản ghi IDB mang VIEWPORT THỜI-BUG (scale âm) — KHÔNG được sống lại + bản lưu được DỌN (vá 01/09)');
+  {
+    idbStore.clear();
+    __resetHydrationForTest();
+    const bucket = 'bucket-g';
+    // Đúng hình hài viewport bệnh đo được 31/08: `fitBox()` trên canvas 150×75 (DPR 2) cho
+    // scale −0,003025 — CadSheets đã autosave nó vào IDB trước khi 81dd7dd7 vá đường /cad.
+    const hong: SheetsRecord = {
+      v: 1,
+      activeId: 'cadsheet-0',
+      ts: 1,
+      sheets: [{ id: 'cadsheet-0', name: 'Bản vẽ 1', doc: wallDoc('wall-G'), viewport: { scale: -0.003025, panX: 75, panY: 37.5 }, currentLayer: 'l-wall' }],
+    };
+    await saveSheets(USER, ROUTE, hong, bucket);
+    resetStoreTo(emptyDoc()); // F5 rơi thẳng vào mode 3D — store còn viewport mặc định lành
+
+    const handle = startCad3DAutosave(USER, bucket);
+    await sleep(50);
+    const vp = useCadStore.getState().viewport;
+    ok('doc vẫn nạp bình thường (wall-G)', useCadStore.getState().doc.entities[0]?.id === 'wall-G');
+    ok('viewport thời-bug KHÔNG sống lại: scale > 0, hữu hạn', Number.isFinite(vp.scale) && vp.scale > 0);
+    ok('rơi về DEFAULT_VIEWPORT như mở mới (scale 0.08)', vp.scale === 0.08 && vp.panX === 300 && vp.panY === 400);
+
+    // DỌN: bản lưu hỏng phải bị ghi đè bằng bản lành ngay trong lượt hydrate (không đợi người
+    // dùng sửa gì) — lần mở sau đọc IDB là sạch.
+    await sleep(1300);
+    const rec = await loadSheets<PersistedCadSheet>(USER, ROUTE, bucket);
+    const vpLuu = rec?.sheets.find((s) => s.id === 'cadsheet-0')?.viewport;
+    ok('bản ghi IDB đã được dọn: scale lưu > 0, hữu hạn', !!vpLuu && Number.isFinite(vpLuu.scale) && vpLuu.scale > 0);
+    handle.dispose();
+  }
+
+  console.log('\nG2. ĐỐI CHỨNG — viewport lưu LÀNH MẠNH vẫn áp nguyên vẹn (guard không chặn oan)');
+  {
+    idbStore.clear();
+    __resetHydrationForTest();
+    const bucket = 'bucket-g2';
+    const lanh: SheetsRecord = {
+      v: 1,
+      activeId: 'cadsheet-0',
+      ts: 1,
+      sheets: [{ id: 'cadsheet-0', name: 'Bản vẽ 1', doc: wallDoc('wall-G2'), viewport: { scale: 0.5, panX: 12, panY: 34 }, currentLayer: 'l-wall' }],
+    };
+    await saveSheets(USER, ROUTE, lanh, bucket);
+    resetStoreTo(emptyDoc());
+    const handle = startCad3DAutosave(USER, bucket);
+    await sleep(50);
+    const vp = useCadStore.getState().viewport;
+    ok('viewport lành áp NGUYÊN (0.5 / 12 / 34)', vp.scale === 0.5 && vp.panX === 12 && vp.panY === 34);
+    handle.dispose();
+  }
+
+  console.log('\nH. viewportLanhManh — điều kiện well-formed (thuần)');
+  {
+    const goc = { panX: 0, panY: 0 };
+    ok('scale 0.08 mặc định ⇒ lành', viewportLanhManh({ scale: 0.08, ...goc }));
+    ok('biên dưới 1e-6 ⇒ lành', viewportLanhManh({ scale: 1e-6, ...goc }));
+    ok('biên trên 1e6 ⇒ lành', viewportLanhManh({ scale: 1e6, ...goc }));
+    ok('scale ÂM (bệnh thật −0.003025) ⇒ hỏng', !viewportLanhManh({ scale: -0.003025, ...goc }));
+    ok('scale 0 ⇒ hỏng', !viewportLanhManh({ scale: 0, ...goc }));
+    ok('scale NaN ⇒ hỏng', !viewportLanhManh({ scale: NaN, ...goc }));
+    ok('scale Infinity ⇒ hỏng', !viewportLanhManh({ scale: Infinity, ...goc }));
+    ok('scale dưới sàn (1e-7) ⇒ hỏng', !viewportLanhManh({ scale: 1e-7, ...goc }));
+    ok('scale vượt trần (1e7) ⇒ hỏng', !viewportLanhManh({ scale: 1e7, ...goc }));
+    ok('panX NaN ⇒ hỏng', !viewportLanhManh({ scale: 0.08, panX: NaN, panY: 0 }));
+    ok('panY Infinity ⇒ hỏng', !viewportLanhManh({ scale: 0.08, panX: 0, panY: Infinity }));
+    ok('null/undefined ⇒ hỏng', !viewportLanhManh(null) && !viewportLanhManh(undefined));
   }
 
   console.log('\nsheetsKey — cùng khoá bucket với CadSheets (không phải "cơ chế thứ hai")');

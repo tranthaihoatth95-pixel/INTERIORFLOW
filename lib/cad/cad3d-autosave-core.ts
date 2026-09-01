@@ -33,6 +33,34 @@ export interface PersistedCadSheet {
   [k: string]: unknown;
 }
 
+/**
+ * VIEWPORT WELL-FORMED (vá 01/09, điều tra `DIEU-TRA-CAD-LAG-MO-SAI`) — điều kiện để một viewport
+ * ĐÃ LƯU được phép áp lại vào store khi hydrate.
+ *
+ * 🔴 BỆNH NÓ KHOÁ: trước 81dd7dd7, đường `/cad` từng tính fit trên canvas CHƯA ĐO (300×150 mặc
+ * định của `<canvas>`) ⇒ `fitBox()` trả `scale` ÂM, và autosave `CadSheets` ghi nguyên viewport
+ * âm đó vào IndexedDB. Đường `/cad` nay đã fit lại khi mở (không đọc viewport lưu), nhưng đường
+ * `/render` (mode 3D, chính file này :102 cũ) ÁP THẲNG bản lưu không kiểm tra — viewport thời-bug
+ * SỐNG LẠI nguyên vẹn trong store mỗi lần vào thẳng mode 3D.
+ *
+ * Điều kiện (cùng tinh thần điều kiện well-formed của `zoomExtentsFit`, `lib/cad/import-summary.ts`):
+ * scale hữu hạn, dương, nằm trong [1e-6, 1e6] (px/mm — ngoài dải đó không khung nhìn người nào
+ * dùng thật: 1e-6 là nhìn cả lục địa, 1e6 là soi một phần nghìn mm); pan hữu hạn. Hàm THUẦN,
+ * export để `CadSheets.tsx` dùng CHUNG khi giữ khung-nhìn-phiên theo tab (không đẻ luật thứ hai).
+ */
+const VIEWPORT_SCALE_MIN = 1e-6;
+const VIEWPORT_SCALE_MAX = 1e6;
+export function viewportLanhManh(vp: Viewport | null | undefined): vp is Viewport {
+  return (
+    !!vp &&
+    Number.isFinite(vp.scale) &&
+    vp.scale >= VIEWPORT_SCALE_MIN &&
+    vp.scale <= VIEWPORT_SCALE_MAX &&
+    Number.isFinite(vp.panX) &&
+    Number.isFinite(vp.panY)
+  );
+}
+
 export interface Cad3DAutosaveHandle {
   /** Ép ghi NGAY nếu có thay đổi đang chờ debounce — dùng cho beforeunload/visibilitychange. */
   flushNow: () => void;
@@ -84,6 +112,8 @@ export function startCad3DAutosave(userId: string, bucketId: string): Cad3DAutos
     const resumeSheetId = loadResume(userId)?.sheetId;
     let activeSheetId: string;
     let baseRecord: SheetsRecord<PersistedCadSheet>;
+    // Bản lưu mang viewport HỎNG (scale âm/vô lý thời-bug) — xem `viewportLanhManh` ở trên.
+    let vpLuuHong = false;
 
     if (rec && rec.sheets.length) {
       const sheet = pickActiveSheet(rec.sheets, resumeSheetId, rec.activeId);
@@ -94,14 +124,22 @@ export function startCad3DAutosave(userId: string, bucketId: string): Cad3DAutos
       // 2D vài mili-giây trước, ghi IDB của route cũ có thể chưa kịp xong).
       if (!alreadyHydrated) {
         const doc = backfillRoomTypes(sheet.doc);
+        // Vá 01/09 — KHÔNG áp thẳng viewport lưu nữa: bản ghi thời-bug (scale âm/vô lý) nằm im
+        // trong IDB cho tới khi bị đè, và đường này là chỗ duy nhất còn cho nó sống lại. Viewport
+        // hỏng ⇒ bỏ qua, rơi về DEFAULT như mở mới, và phát `cad:zoom-extents` (best-effort —
+        // canvas 2D nào đang mount sẽ fit; guard hoãn-khi-màn-chưa-đo của nó đã có sẵn, 81dd7dd7).
+        vpLuuHong = !viewportLanhManh(sheet.viewport);
         useCadStore.setState({
           doc,
           past: [],
           future: [],
           selection: [],
-          viewport: sheet.viewport ?? { ...DEFAULT_VIEWPORT },
+          viewport: vpLuuHong ? { ...DEFAULT_VIEWPORT } : sheet.viewport,
           currentLayer: sheet.currentLayer ?? doc.layers[0]?.id ?? 'l-wall',
         });
+        if (vpLuuHong && typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
+        }
       }
     } else {
       // Chưa từng có sheet nào lưu cho bucket này (đi thẳng vào mode 3D, chưa mở 2D lần nào cho
@@ -132,6 +170,12 @@ export function startCad3DAutosave(userId: string, bucketId: string): Cad3DAutos
       onSaved: () => useSaveStatus.getState().setLastSavedAt(Date.now()),
       onSavingChange: (saving) => useSaveStatus.getState().setStatus(saving ? 'saving' : 'saved'),
     });
+
+    // DỌN bản lưu hỏng NGAY trong lượt hydrate (vá 01/09): `getRecord` đọc viewport hiện tại của
+    // store — đã là bản lành ở trên — nên một nhịp `touch()` là bản ghi IDB sạch cho lần mở sau.
+    // Đi qua ĐÚNG autosaver sẵn có (K1 — không mở đường ghi thứ hai), debounce của nó tự gộp với
+    // mọi thao tác kế tiếp.
+    if (vpLuuHong) saver.touch();
 
     unsub = useCadStore.subscribe((s, prev) => {
       if (s.doc !== prev.doc || s.viewport !== prev.viewport || s.currentLayer !== prev.currentLayer) {

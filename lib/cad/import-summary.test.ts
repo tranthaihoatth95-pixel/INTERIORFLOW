@@ -18,7 +18,7 @@
  */
 import type { Doc, Entity, Layer } from './model';
 import { docBox, fitBox } from './model';
-import { ZOOM_FIT_PAD, zoomExtentsFit, zoomExtentsPlan } from './import-summary';
+import { ZOOM_FIT_PAD, gotoBoxFit, zoomExtentsFit, zoomExtentsPlan } from './import-summary';
 import { mainClusterBox } from './dxf-plan';
 
 let pass = 0;
@@ -164,6 +164,47 @@ console.log('⑥ không hình nào xa vô lý, nhưng khung thô rộng hơn c�
   const planGan = zoomExtentsPlan(gan)!;
   ok('⑥ đối chứng: tỉ lệ dưới ngưỡng ⇒ vẫn full, farEntities 0',
     planGan.mode === 'full' && planGan.farEntities === 0, { plan: planGan, tiLe: dt(docBox(gan)!) / dt(mainClusterBox(gan)!.box) });
+}
+
+/* ═══════════ ⑦ `cad:goto-box` — CÙNG KHUÔN GUARD ĐO-MÀN (vá 01/09) ═══════════ */
+console.log('⑦ gotoBoxFit — fit hộp tuỳ ý (đổi tab sheet / mở model từ paper) phải từ chối màn chưa đo');
+{
+  // Hộp world cỡ một tờ A3 tỉ lệ 1:100 (đúng thứ `goToSheetView` cũ phát): 42.000 × 29.700 mm.
+  const box = { minX: -21_000, minY: -14_850, maxX: 21_000, maxY: 14_850 };
+
+  // TANG VẬT: `fitBox()` trần trên canvas chưa đo (300×150 / 150×75) cho scale ÂM — đúng bệnh
+  // đã vá ở `cad:zoom-extents` (81dd7dd7), chỉ khác cửa vào là `cad:goto-box`.
+  const trai1 = fitBox(box, 300, 150, ZOOM_FIT_PAD);
+  const trai2 = fitBox(box, 150, 75, ZOOM_FIT_PAD);
+  ok('⑦ tang vật: fitBox trên canvas chưa đo cho scale ÂM (cả DPR 1 và 2)',
+    trai1.scale < 0 && trai2.scale < 0, { trai1, trai2 });
+
+  const dpr1 = gotoBoxFit(box, { W: 300, H: 150 });
+  ok('⑦ DPR 1 · 300×150 ⇒ ok:false, reason screen-not-measured',
+    dpr1.ok === false && dpr1.reason === 'screen-not-measured', dpr1);
+  const dpr2 = gotoBoxFit(box, { W: 150, H: 75 });
+  ok('⑦ DPR 2 · 150×75 ⇒ ok:false, reason screen-not-measured',
+    dpr2.ok === false && dpr2.reason === 'screen-not-measured', dpr2);
+  const khong = gotoBoxFit(box, { W: 0, H: 0 });
+  ok('⑦ màn 0×0 ⇒ screen-not-measured', khong.ok === false && khong.reason === 'screen-not-measured', khong);
+
+  // ĐỐI CHỨNG: màn ĐÃ ĐO ⇒ viewport BẰNG ĐÚNG `fitBox(box, …, ZOOM_FIT_PAD)` — hành vi cũ của
+  // listener (`fitBox(detail, W, H, 80)`) giữ nguyên vẹn, vì ZOOM_FIT_PAD === 80.
+  ok('⑦ tiền đề đối chứng: ZOOM_FIT_PAD === 80 (đệm cũ của goto-box)', ZOOM_FIT_PAD === 80, ZOOM_FIT_PAD);
+  const daDo = gotoBoxFit(box, { W: 1200, H: 700 });
+  const chuan = fitBox(box, 1200, 700, ZOOM_FIT_PAD);
+  ok('⑦ màn đã đo ⇒ ok:true, viewport == fitBox(box) — không phép tính thứ hai',
+    daDo.ok === true && JSON.stringify(daDo.viewport) === JSON.stringify(chuan), { daDo, chuan });
+
+  // Hộp SUY BIẾN (centerMm chết ⇒ box 1 điểm): `fitBox` đã tự kẹp bw/bh ≥ 1mm — màn đã đo thì
+  // vẫn fit được, KHÔNG được từ chối oan thành "màn chưa đo".
+  const diem = gotoBoxFit({ minX: 0, minY: 0, maxX: 0, maxY: 0 }, { W: 1200, H: 700 });
+  ok('⑦ hộp 1 điểm + màn đã đo ⇒ vẫn ok:true (không từ chối oan)',
+    diem.ok === true && diem.viewport.scale > 0 && Number.isFinite(diem.viewport.scale), diem);
+
+  // Đệm là tham số — nơi gọi khác đệm thì ranh giới dời theo, y khuôn ca ③.
+  const demNho = gotoBoxFit(box, { W: 150, H: 75 }, 10);
+  ok('⑦ cùng màn 150×75 nhưng đệm 10 ⇒ fit được', demNho.ok === true, demNho);
 }
 
 console.log(`\nimport-summary: ${pass} pass, ${fail} fail`);
