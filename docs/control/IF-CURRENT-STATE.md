@@ -92,6 +92,55 @@ Hoà (`IF-CANONICAL` §2). Hai phiên cùng tự xưng ⇒ **cả hai DỪNG GHI
 
 ## 🎯 VIỆC KẾ TIẾP — **một việc, không phải danh sách**
 
+🔄 **CẬP NHẬT 01/09 15:20 — LƯỢT E2E `3`, lease `L-30451b1e` (31 tệp), writer `hoa-e2e-3`.**
+Mọi khối bên dưới là bản cũ hơn, **giữ làm dấu vết theo lệ**.
+
+**ĐÃ LÀM, CÓ BIÊN NHẬN:** áp trọn 4 bộ vá (`va-mo-dung` · `va-cad` · `va-accent` · `va-ui-that`)
+— **34 tệp, mỗi tệp diff BYTE-MỘT với bản `.new.*` sau khi áp: tất cả IDENTICAL.**
+`CadSheets.tsx` (có ở CẢ HAI bộ) gộp 3 chiều bằng tay: so với `va-cad` chỉ còn đúng 10 hunk của
+`va-mo-dung`, so với `va-mo-dung` chỉ còn đúng 2 hunk của `va-cad` ⇒ **không hunk nào bị nuốt**.
+· `npx tsc --noEmit` → **0 lỗi**.
+· Test đã chạy thật: import-summary **32/0** · cad3d-autosave **30/0** · sheets-persist **28/0**
+  (ghi chú bộ vá nói 29 — **thật là 28**, 0 fail) · query-snap-index **11/11** · render-cull
+  **15/15** · accent-css **32/0** · z-order 20/20 · layer-index 8/8 · snap-priority 6/6.
+· Perf đo LẠI trên máy này: `findSnap` 12.000 entity **6,78 ms/lượt → 0,08 ms/lượt**.
+· `npx next build` **XANH, exit 0** (chạy lại KHÔNG QUA ỐNG để lấy exit thật — bài học 31/08),
+  54/54 trang tĩnh. `npx electron-builder --mac --dir` → **`dist-installer/mac-arm64/InteriorFlow.app`**
+  (15:00, arm64, `com.interiorflow.app`). ⚠️ **KHÔNG phải `dist/`** — `build` field trỏ
+  `dist-installer/`; nhìn nhầm `dist/` sẽ tưởng chưa đóng gói.
+· ⚠️ **ENOENT "Collecting page data" KHÔNG tái hiện**: build chạy NGON dù dev :3001 vẫn sống và
+  KHÔNG `rm -rf .next`. Hai bước "tắt dev + xoá .next" của phiếu **không cần thiết** (và đều bị
+  cổng chặn cho lane này — biên nhận trong phiên).
+
+🔴 **BA VIỆC CÒN MỞ — cần Hoà quyết, KHÔNG tự gỡ:**
+1. **`npm test` có 2 DÒNG ĐỎ MỚI** ngoài 3 phiếu `cx` đã biết:
+   `components/nav/muc-dieu-huong.test.ts:393-395` khoá cứng regex
+   `color-mix(in srgb, var(--accent) N%` với N ≤ 6; bộ `va-ui-that` **cố ý** đổi kênh rail sang
+   `var(--t1) 8%` (trung tính theo bản vẽ GĐ1) ⇒ regex hết khớp. Cổng **đúng tinh thần** (trường
+   tông rất nhẹ) nhưng **lỗi thời về chữ** (neo `--accent`). Sửa đúng = cập nhật cổng sang `--t1`
+   trần ≤8 — **một dòng**, nhưng tệp đó **NGOÀI lease**; writer không tự amend lease (đúng thứ bàn
+   06 từ chối ở phiếu ROLE-GUARD 30/08). Phương án B: revert 2 dòng rail.
+2. **Cổng thiết kế chưa nối vào `test:sweep`, CỐ Ý.** `scripts/cong-thiet-ke.mjs` + đăng ký
+   `guard-lenh-doc.json` + `npm run soi:thiet-ke` đã vào. Nhưng chạy thử: **45 lỗi / 11 cảnh báo
+   trên 44 artboard `.dc.html` ở gốc repo**, và **3 lỗi** trên chính `scratchpad/design-if`
+   (`Knowledge` · `KnowledgeCham` 2 họ accent · `Render.dc.html` dính `placeholder`) ⇒ mục (e)
+   của phiếu ("0 lỗi cổng") **KHÔNG ĐẠT**. Nối vào chuỗi bây giờ = `npm test` đỏ vĩnh viễn 45 dòng.
+   Đây là **nợ thiết kế có thật**, phải xử nội dung chứ không nới cổng.
+3. **Chưa nghiệm thu bằng MẮT trên runtime.** Extension Chrome timeout 4 lượt liên tiếp; `open`
+   (mở app đóng gói) bị cổng chặn. ⇒ CAD hồ sơ `cmsl4b5ux0001w9jlrgo2q41t`, accent đổi theo bộ
+   nền, và vòng Home/2D/3D/Render/Present/BOQ **CHƯA có ảnh**. Theo luật 8 + `IF-FORM-TRA-LOI`,
+   lượt này **CHƯA được gọi là xong** — mã xanh, mắt chưa duyệt.
+
+✅ **Nghi vấn ĐÓNG:** `ops[]` KHÔNG lưu vào `.idf` là **BÁO ĐỘNG GIẢ** — round-trip
+`exportIdf()`→`importIdf()` giữ `ops` nguyên văn 1:1, **11/11 pass** (chạy lại độc lập trong phiên
+này). Bằng chứng cũ *"0 chỗ `ops` trong `idf.ts`"* đúng theo grep nhưng kết luận sai — hai hàm đó
+`JSON.stringify`/`JSON.parse` cả object, không liệt kê field theo tên. Đã sửa
+`IF-CON-THIEU-GI.md` §2.
+
+---
+
+⬇️ **BẢN CŨ HƠN — lượt E2E 2, giữ làm dấu vết. Không dùng làm hiện trạng.**
+
 🔄 **CẬP NHẬT 01/09 TRƯA — LƯỢT E2E **2**, lease `L-1d648167` (27 tệp), writer `hoa-e2e-2`
 (phiên `eb2d7edc`). Mọi dòng bên dưới khối này là bản cũ hơn, **giữ làm dấu vết theo lệ**.
 

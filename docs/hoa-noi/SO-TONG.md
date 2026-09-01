@@ -54,3 +54,44 @@
   · Ảnh render (03 THIS WEEK'S FRAME) placeholder không khung
   · Ghi chú: rail router V1 (vừa dựng chiều) CHƯA MOUNT vào HomeScreen → dashboard không có sidebar
   · Đợt C đang chạy (2 phiên): P-ROUTER-HOME + P-DASHBOARD-DS
+
+---
+
+## 01/09 — 12 CHỐT GIAO DIỆN  (12)
+
+> 🔴 **Vì sao mục này tồn tại.** Hoà 01/09 11:22: *"mày không lưu những điều tao nói rồi mày đi
+> hỏi lại."* Đây là bản CANONICAL trong repo của 12 chốt đó (bản nạp-nhanh cho phiên Claude nằm ở
+> memory `project_loi-hoa-ve-giao-dien.md`; hai bản phải khớp — sổ này thắng khi lệch).
+> **Luật hỏi (Hoà 11:24 01/09):** *"cái gì lục lại đéo có thì mới được hỏi tao"* — hỏi CHỈ hợp lệ
+> sau khi đã lục transcript + memory + `docs/` + kho và chứng minh được là KHÔNG có; câu hỏi phải
+> kèm "đã lục ở đâu, không thấy".
+
+1. **Cá nhân hoá là gốc** — *"giao diện thiết kế cho kiến trúc sư hay designer làm việc thì phải
+   cá nhân hoá và làm đúng"* (11:22; anh nói đây là điều đã nói từ trước).
+2. **Accent KHÔNG ấn định** — *"tao không ấn định teal hay tím quần què gì cả… accent đi theo bộ
+   hình nền người dùng chọn, người ta chọn hình gì thì màu theo đó"* (11:20-21).
+   Máy đã có `lib/wallpaper/mau-bo.ts`; việc = nối dây `--accent` động + cổng WCAG.
+   ✅ **ĐÃ NỐI 01/09** — `lib/wallpaper/accent-css.ts` + `components/wallpaper/AccentHydrator.tsx`
+   mount ở `app/layout.tsx` (mọi route, kể cả deep-link). Trượt cổng ⇒ thoái lui `#6a57f5`.
+3. **"Màu xanh màu tím tè le vậy"** (31/08) = chê **RẢI NHIỀU** accent trong một màn — **KHÔNG**
+   phải cấm màu nào. Suy diễn "cấm teal" là lỗi của máy, Hoà bắt 01/09 11:18.
+4. **Sáng/tối người dùng chọn hoặc theo giờ**; canvas giấy đi cùng theme — *"xưởng đêm giấy đêm,
+   xưởng sáng giấy sáng, cấm trộn"* (31/08–01/09).
+5. **HAI phiên bản mọi màn**: desktop (phím+chuột) và tablet/foldable (cảm ứng+pencil).
+   **CẤM bản lai** (QĐ 01/09 08:32).
+6. **Vỏ 4 cạnh**: rail trái = điều hướng chính · góc trên phải = cá nhân + thông báo · đáy =
+   context smart tool (master tool đã triển khai) · cạnh phải = hiển thị/edit kiểu 3ds Max (01/09).
+7. **UX chốt trước, UI sau — 2 giai đoạn** (QĐ 01/09 09:52).
+8. **Cá tính lấy từ Pinterest boards** của anh (`pinterest.com/Bentran_tth`); gu nội thất làm sau ship.
+9. **CAD phải hiểu nghề AutoCAD**: block khối, layer đặt tên quy ước — *"đi sau phải giống nó
+   trước rồi mới hơn nó"* (11:10).
+10. **Soi chiếu đối thủ mọi bề mặt** (Present · 3D · Render) + *"đào kho `docs/` trước — nghiên
+    cứu viết ra phải ĐỌC, không bỏ cho chó ăn"* (11:11).
+11. **"App thật thắng bản vẽ"** — xong = chạy trên runtime, **có biên nhận**; cấm PASS giả.
+12. **Home**: nền = chính việc dở / giấy draft caro lam, **KHÔNG ảnh phong cảnh**; widget do người
+    dùng ghim; ô phụ **không vỏ**; **cấm tường thẻ** (canon `home.md`, Hoà duyệt qua 7 note canvas).
+
+⚠️ **Mâu thuẫn còn treo, cần Hoà phân xử** — chốt 22/08 ghi *"bỏ mặt đồng hồ: người dùng CẢM giờ,
+không ĐỌC giờ"*, nhưng bản vẽ GĐ1 (`HomeStart.dc.html` · `TheKhoa.dc.html`, mới hơn) vẽ **đồng hồ
+số mảnh lớn**. Lượt vá 01/09 đi theo GĐ1 (nguồn mới thắng) ở Home trạng thái A · màn khoá · màn
+đăng nhập. Giữ chốt cũ thì gỡ `DongHoMong` khỏi nhánh A của `BeMatHome.tsx` là xong (một chỗ).

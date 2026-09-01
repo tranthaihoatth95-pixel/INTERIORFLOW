@@ -23,7 +23,8 @@ phiên đã ghi *"poché tường 126–161 mảng/file không neo vào cấu ki
 
 | Thứ | Trạng thái thật | Nguồn |
 |---|---|---|
-| **14 hàm dựng khối 3D** (bevel · chamfer · array · mirror) | đã nối vào UI (`Object3DInspector`, `Command3DPanel`) nhưng **`ops[]` KHÔNG lưu vào `.idf`** ⇒ vát cạnh xong, lưu, **mở lại là mất** | `ĐO` — 14 hàm ở `build-ops.ts`, 0 chỗ `ops` trong `idf.ts` |
+| ~~**14 hàm dựng khối 3D** — `ops[]` KHÔNG lưu vào `.idf`~~ **BÁO ĐỘNG GIẢ, ĐÓNG 01/09** | `ops[]` (extrude/bevel · boolean · array · mirror · taper · sweep…) **LƯU ĐÚNG** vào cả `.idf` lẫn autosave IndexedDB. Vát cạnh xong, lưu, mở lại **vẫn còn**. | `ĐO 01/09` — round-trip thật `exportIdf()`→`importIdf()` với entity mang 2 op: **11/11 pass**, mảng `ops` khớp NGUYÊN VĂN 1:1 (`scratchpad/va-3d-persist/probe-ops-persist.test.ts`). |
+| ↳ **vì sao dòng cũ sai** — bài học suy diễn | Bằng chứng cũ *"0 chỗ `ops` trong `idf.ts`"* **đúng theo grep** nhưng **kết luận rút ra từ nó sai**: `exportIdf` chỉ `JSON.stringify({idfVersion, meta, sheets})` và `importIdf` chỉ `JSON.parse` — **không liệt kê field theo tên**, nên `Doc.entities[].ops` (`model.ts:284`) đi qua nguyên vẹn. Grep một tên field trong hàm serialize-TOÀN-BỘ-object không nói lên điều gì. | `ĐO 01/09` — cùng cơ chế pass-through ở `sheets-persist.ts` (`JSON.stringify`→`JSON.parse`), nên đường IndexedDB cũng giữ. |
 | **`geom3d.heightMm` của `.idfc`** | 3 nơi ghi · **0 nơi đọc** — chiều cao cấu kiện tự khai không tới được cảnh 3D | `ĐO` · đo lại: `grep -rn geom3d lib components app --include='*.ts' --include='*.tsx' \| grep -v '\.test\.'` |
 | **Đường `.idfc → 3D`** | mã có, **cổng G1–G7 chặn** thi công (`IF-DEC-IDFC-3D-001-v0.2`) | `ĐO` |
 | **Nhập DWG trực tiếp** | mã còn nguyên, **cờ TẮT** vì GPL trong bộ cài | `ĐO` |
