@@ -9,8 +9,8 @@
  * `future`/`currentLayer`/`selection` xuyên suốt phiên làm việc — KHÔNG BAO GIỜ bị hoán khi đổi
  * tab. `sheets` ở component này chỉ còn là METADATA (`Sheet`/`Viewport2D`, `lib/cad/model.ts`):
  * tên, khổ giấy, khung tên, và Ô NHÌN (`centerMm`+tỉ lệ in) — không giữ bản sao hình học nào.
- * Đổi tab = đổi khung nhìn (pan/zoom camera tới `centerMm` của viewport, xem `goToSheetView()` +
- * sự kiện `cad:goto-box` ở `CadCanvas.tsx`), KHÔNG đụng `Doc`. Hệ quả đúng ý (và đã verify): sửa
+ * Đổi tab = đổi khung nhìn (vá 01/09: FIT theo nội dung qua `cad:zoom-extents` + nhớ-tạm khung
+ * nhìn phiên theo tờ — xem docstring `denKhungNhinSheet`), KHÔNG đụng `Doc`. Hệ quả đúng ý: sửa
  * hình ở tab này, sang tab khác thấy đổi theo ngay — vì giờ chỉ có MỘT Doc. Undo/redo cũng thành
  * MỘT dòng lịch sử chung (đúng AutoCAD — undo không theo tab/layout).
  *
@@ -86,6 +86,9 @@ import { syncHostedOpenings } from '@/lib/cad/hosting';
 import { syncPocheAnchors } from '@/lib/cad/poche';
 import { useSheetsBucketId } from '@/lib/scope';
 import { markBucketHydrated } from '@/lib/cad/cad-doc-hydration';
+// Vá 01/09 — điều kiện well-formed của viewport dùng CHUNG với đường hydrate mode 3D (một luật,
+// không đẻ bản thứ hai): khung nhìn phiên chỉ được áp lại khi còn lành mạnh.
+import { viewportLanhManh } from '@/lib/cad/cad3d-autosave-core';
 import { useFlowStore } from '@/lib/store';
 import { createProject } from '@/lib/workspace';
 import { saveSheets } from '@/lib/sheets-persist';
@@ -230,8 +233,9 @@ let seq = 1;
 const nextId = () => `cadsheet-${seq++}`;
 
 /** Ô nhìn mặc định của 1 Sheet mới — khổ A3, tỉ lệ in 1:100, tâm đặt ở giữa bbox Doc hiện có
- * (Doc rỗng → gốc toạ độ). Chỉ ảnh hưởng "đổi tab thì camera bay tới đâu" (`goToSheetView`), KHÔNG
- * liên quan gì tới hình học lưu trong Doc. */
+ * (Doc rỗng → gốc toạ độ). `centerMm` nay CHỈ phục vụ paper space (`Viewport2D`: ô nhìn trên giấy,
+ * "Căn vào bản vẽ", "Mở vùng này trong Model") — đường đổi-tab model KHÔNG còn đọc nó (vá 01/09,
+ * xem docstring `denKhungNhinSheet`). KHÔNG liên quan gì tới hình học lưu trong Doc. */
 function defaultSheet(name: string, doc: Doc, id?: string): Sheet {
   const paper: PaperKey = 'A3';
   const orientation: PaperOrientation = defaultPaperOrientation(paper);
@@ -303,30 +307,22 @@ function singleIdfSheet(id: string, name: string, paperSheets: Sheet[] = []): Id
   return [{ id, name, doc: useCadStore.getState().doc, ...(paperSheets.length ? { paperSheets } : {}) }];
 }
 
-/** Đổi tab = đổi KHUNG NHÌN — bay camera 2D tới vùng world mà Viewport2D của sheet đang soi vào
- * (tâm `centerMm`, bề rộng/cao = khổ giấy × tỉ lệ in), KHÔNG đụng Doc/undo. `CadCanvas.tsx` nghe
- * sự kiện `cad:goto-box` (cùng khuôn `cad:zoom-extents`/`cad:zoom-to` đã có). */
-function goToSheetView(sheet: Sheet | undefined) {
-  if (typeof window === 'undefined') return;
-  const vp = sheet?.viewports[0];
-  if (!sheet || !vp) {
-    window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
-    return;
-  }
-  const [paperW, paperH] = paperSizeMm(sheet.paper, sheet.orientation);
-  const worldW = paperW * vp.scale;
-  const worldH = paperH * vp.scale;
-  window.dispatchEvent(
-    new CustomEvent('cad:goto-box', {
-      detail: {
-        minX: vp.centerMm.x - worldW / 2,
-        minY: vp.centerMm.y - worldH / 2,
-        maxX: vp.centerMm.x + worldW / 2,
-        maxY: vp.centerMm.y + worldH / 2,
-      },
-    }),
-  );
-}
+/**
+ * 🔴 Vá 01/09 — ĐỔI TAB KHÔNG BAY THEO `centerMm` CHẾT NỮA (điều tra `DIEU-TRA-CAD-LAG-MO-SAI`
+ * §H3): hàm cũ `goToSheetView()` phát `cad:goto-box` tới `viewports[0].centerMm ± khổ giấy × tỉ
+ * lệ` của metadata Sheet. Nhưng `centerMm` được CHỐT LÚC TẠO sheet từ `docBox` thời điểm đó — tạo
+ * khi doc còn rỗng thì nó là GỐC TOẠ ĐỘ, và pan/zoom ở model space KHÔNG ghi ngược vào
+ * `Viewport2D` — nên sheet 2 khôi phục từ `paperSheets` mở ra đúng một vùng trống.
+ *
+ * Nay theo ĐÚNG triết lý fit-khi-mở đã chọn (81dd7dd7 + f2d85fb8): đổi tab ⇒ FIT theo nội dung
+ * (phát `cad:zoom-extents` — `CadCanvas.zoomExtents()` đi qua `zoomExtentsFit()`/`zoomExtentsPlan()`
+ * thuần, kèm guard hoãn-khi-màn-chưa-đo sẵn có; sau D1 chỉ có MỘT Doc chung nên "nội dung sheet"
+ * chính là Doc đó). RIÊNG trong CÙNG phiên: người dùng pan xong đổi tab qua lại thì khung nhìn
+ * từng tờ được NHỚ TẠM trong bộ nhớ (`sessionVpRef` bên dưới) và áp lại nguyên vẹn — KHÔNG
+ * persist, mở lại hồ sơ vẫn là fit sạch. `centerMm` của `Viewport2D` vẫn sống bình thường cho
+ * paper space (ô nhìn trên giấy, nút "Căn vào bản vẽ", "Mở vùng này trong Model") — chỉ đường
+ * đổi-tab-model thôi không đọc nó nữa.
+ */
 
 export default function CadSheets() {
   const router = useRouter();
@@ -364,13 +360,17 @@ export default function CadSheets() {
   const [hydratedFor, setHydratedFor] = useState<string | null>(null);
   const hydrated = hydratedFor === bucketId;
   const prevBucketRef = useRef<string | null>(null);
+  /** Vá 01/09 — KHUNG NHÌN PHIÊN theo tờ: nhớ viewport model-space của tờ vừa rời, để đổi tab
+   * qua lại trong CÙNG phiên quay về đúng chỗ đang xem. CHỈ là bộ nhớ tạm (ref) — KHÔNG persist,
+   * KHÔNG đụng metadata `Sheet.viewports` — nên mở lại hồ sơ vẫn là fit sạch theo nội dung. */
+  const sessionVpRef = useRef<Map<string, Viewport>>(new Map());
 
   /**
    * B4 (4.1.d) — ÁP dữ liệu `.idf` đã parse vào state sống — ĐÚNG 1 đường dùng chung cho cả
    * nhập thủ công (`onImportIdf`) LẪN nạp tự động khi đĩa thắng lúc mount (Luật Đồng Bộ #6:
    * không viết đường thứ hai). Gộp N sheet cũ thành 1 Doc chung (`docAndSheetsFromIdf`) rồi ÁP
-   * NGUYÊN — zoom-extents để thấy hết (không goToSheetView: mở file muốn thấy TOÀN BỘ, không
-   * phải đúng khung 1 viewport mặc định).
+   * NGUYÊN — zoom-extents để thấy hết (mở file muốn thấy TOÀN BỘ, không phải đúng khung 1
+   * viewport mặc định).
    */
   const applyIdfSheets = (parsedSheets: IdfSheetData[]): { mergedFromCount: number } => {
     const { doc, sheets: newSheets } = docAndSheetsFromIdf(parsedSheets);
@@ -378,6 +378,7 @@ export default function CadSheets() {
     setSheets(newSheets);
     setActiveId(newSheets[0].id);
     resetStoreWithDoc(doc);
+    sessionVpRef.current.clear(); // Doc vừa bị thay — khung nhìn phiên của Doc cũ hết nghĩa
     if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
     return { mergedFromCount: parsedSheets.length };
   };
@@ -394,6 +395,7 @@ export default function CadSheets() {
       setSheets([defaultSheet('Bản vẽ 1', blank, 'cadsheet-0')]);
       setActiveId('cadsheet-0');
       resetStoreWithDoc(blank);
+      sessionVpRef.current.clear(); // khung nhìn phiên là của dự án cũ — không mang sang dự án mới
     }
     prevBucketRef.current = bucketId;
     if (!userId) {
@@ -512,6 +514,24 @@ export default function CadSheets() {
         backup.triggerNow();
       },
       onSavingChange: (saving) => useSaveStatus.getState().setStatus(saving ? 'saving' : 'saved'),
+      /**
+       * VÁ LAG 01/09 (điều tra `DIEU-TRA-CAD-LAG-MO-SAI` mục ③) — pan/zoom là thay đổi NHẸ:
+       * vá `viewport`/`currentLayer` vào BẢN GHI SẠCH của lần lưu đầy gần nhất, KHÔNG
+       * `JSON.stringify` 12.600 entity trên main thread sau mỗi lượt pan (đó chính là cú khựng
+       * ~1,2s sau khi ngừng tay). Tab active đổi/cấu trúc lệch (id không khớp) → trả null,
+       * autosaver tự rơi về lưu ĐẦY — không đường nào làm mất dữ liệu.
+       */
+      applyLight: (last) => {
+        const active = sheetsRef.current.find((sh) => sh.id === activeIdRef.current) ?? sheetsRef.current[0];
+        const sh = last.sheets[0] as PersistedCadSheet | undefined;
+        if (!active || !sh || sh.id !== active.id) return null;
+        const s = useCadStore.getState();
+        return { ...last, ts: Date.now(), sheets: [{ ...sh, viewport: s.viewport, currentLayer: s.currentLayer }] };
+      },
+      // Lưu nhẹ KHÔNG gọi backup.triggerNow(): .ifpack không chứa viewport (`singleIdfSheet`
+      // chỉ mang id/name/doc/paperSheets) — nội dung backup không đổi khi pan/zoom, chạy lại
+      // chỉ tốn một lượt serialize + nén vô ích.
+      onSavedLight: () => useSaveStatus.getState().setLastSavedAt(Date.now()),
     });
     saverRef.current = saver;
 
@@ -561,10 +581,19 @@ export default function CadSheets() {
 
     // CHỈ nghe lát cắt được persist (doc/viewport/layer) — store còn nhiều state phụ
     // (tool, hover, dynamic-input…) đổi liên tục, nghe tất sẽ ghi IDB vô ích mỗi 1.2s.
+    //
+    // VÁ LAG 01/09 — TÁCH THEO LOẠI thay đổi:
+    //  · doc/currentLayer đổi → lưu ĐẦY (IDB + đĩa .idf) y như cũ;
+    //  · CHỈ viewport đổi (pan/zoom) → lưu NHẸ (`touch('viewport')` — xem `applyLight` ở trên)
+    //    và KHÔNG đánh thức diskWriter: `ban-ve.idf` không chứa viewport (`singleIdfSheet`),
+    //    ghi lại chỉ ra đúng tệp cũ — serialize thêm một lần vô ích sau mỗi lượt pan.
     const unsub = useCadStore.subscribe((s, prev) => {
-      if (s.doc !== prev.doc || s.viewport !== prev.viewport || s.currentLayer !== prev.currentLayer) {
-        saver.touch();
+      const docDoi = s.doc !== prev.doc || s.currentLayer !== prev.currentLayer;
+      if (docDoi) {
+        saver.touch('doc');
         diskWriter.touch();
+      } else if (s.viewport !== prev.viewport) {
+        saver.touch('viewport');
       }
     });
     const flush = () => {
@@ -621,11 +650,26 @@ export default function CadSheets() {
     saveResume(userId, { route: ROUTE, sheetId: activeId });
   }, [activeId, hydrated]);
 
-  /** Đổi tab = đổi KHUNG NHÌN — KHÔNG đụng Doc/undo (xem docstring đầu file + `goToSheetView`). */
+  /** Vá 01/09 — ĐẾN khung nhìn của một tờ: phiên đã nhớ (và viewport còn lành mạnh) thì áp lại
+   * NGUYÊN VẸN; chưa nhớ thì FIT theo nội dung — phát `cad:zoom-extents`, đi qua đúng
+   * `zoomExtentsFit()` + guard hoãn-khi-màn-chưa-đo sẵn có ở `CadCanvas.zoomExtents()`. Xem
+   * docstring dài phía trên (chỗ `goToSheetView` cũ) cho lý do bỏ đường bay theo `centerMm`. */
+  const denKhungNhinSheet = (id: string) => {
+    const daNho = sessionVpRef.current.get(id);
+    if (daNho && viewportLanhManh(daNho)) {
+      useCadStore.getState().setViewport({ ...daNho });
+      return;
+    }
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
+  };
+
+  /** Đổi tab = đổi KHUNG NHÌN — KHÔNG đụng Doc/undo (xem docstring đầu file). */
   const switchTo = (id: string) => {
     if (id === activeId) return;
+    // Nhớ chỗ đang xem của tờ vừa rời — để bấm quay lại trong cùng phiên là về đúng chỗ.
+    sessionVpRef.current.set(activeId, { ...useCadStore.getState().viewport });
     setActiveId(id);
-    goToSheetView(sheets.find((s) => s.id === id));
+    denKhungNhinSheet(id);
   };
 
   const addSheet = () => {
@@ -633,9 +677,10 @@ export default function CadSheets() {
     // khung nhìn), thêm tờ không nhân đôi hình học nên hết lý do chặn.
     const doc = useCadStore.getState().doc;
     const sheet = defaultSheet(`Bản vẽ ${sheets.length + 1}`, doc);
+    sessionVpRef.current.set(activeId, { ...useCadStore.getState().viewport });
     setSheets((prev) => [...prev, sheet]);
     setActiveId(sheet.id);
-    goToSheetView(sheet);
+    denKhungNhinSheet(sheet.id); // tờ mới chưa có khung nhìn phiên ⇒ fit theo nội dung
   };
 
   const closeSheet = (id: string) => {
@@ -643,10 +688,11 @@ export default function CadSheets() {
     const idx = sheets.findIndex((s) => s.id === id);
     const rest = sheets.filter((s) => s.id !== id);
     setSheets(rest);
+    sessionVpRef.current.delete(id); // tờ đã đóng — khung nhìn phiên của nó đi theo
     if (id === activeId) {
       const neighbor = rest[Math.max(0, idx - 1)];
       setActiveId(neighbor.id);
-      goToSheetView(neighbor);
+      denKhungNhinSheet(neighbor.id);
     }
   };
 

@@ -3,8 +3,8 @@
  * Không phụ thuộc React. Toạ độ world mm, Y-up → screen px qua Viewport (lật Y).
  */
 
-import type { Doc, Entity, Layer, Pt, Viewport, DimEntity, LineType, ZoneEntity, RoomEntity } from './model';
-import { docBox, fitBox, worldToScreen, ZONE_GROUP_META, ZONE_GROUPS, zoneBoundaryPoints, zoneCentroid, roomCentroid } from './model';
+import type { Box, Doc, Entity, Layer, Pt, Viewport, DimEntity, LineType, ZoneEntity, RoomEntity } from './model';
+import { docBox, entityBox, fitBox, worldToScreen, ZONE_GROUP_META, ZONE_GROUPS, zoneBoundaryPoints, zoneCentroid, roomCentroid } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
 import { hatchLines, hatchDots } from './hatch';
 // B25 REUSE — `mixHex` là bộ pha màu canonical của IF (`plan-depth.ts` §1), đã có test riêng.
@@ -962,6 +962,255 @@ function drawDimension(ctx: CanvasRenderingContext2D, v: Viewport, e: DimEntity,
   else drawDimAligned(ctx, v, e, color, style, ds);
 }
 
+/* ─────────── VIEWPORT CULLING + TẦNG TĨNH cho drawEntities (vá lag 01/09) ─────────── */
+
+/**
+ * 🔴 BỆNH ĐO ĐƯỢC (điều tra `DIEU-TRA-CAD-LAG-MO-SAI` 01/09): mỗi pointermove trên canvas sống
+ * đặt cờ redraw ⇒ khung kế `drawEntities` vẽ lại TRỌN 12.600 entity — kể cả text/dim (fillText
+ * đắt) — dù con trỏ chỉ nhích 1px và chẳng entity nào đổi. Nền đo 6,59 ms/khung là trên ctx giả
+ * KHÔNG raster; canvas thật với nét dày/dash/chữ cao hơn nhiều lần ⇒ rê chuột là giật.
+ *
+ * HAI TẦNG VÁ, đều nằm TRỌN trong drawEntities để mọi nơi gọi (CadCanvas, thumbnail PaperViewport,
+ * export PNG) hưởng chung mà không nơi nào phải sửa:
+ *
+ * ① **TẦNG TĨNH (per-canvas)** — cảnh entity vẽ vào một canvas NGOÀI MÀN HÌNH, khoá theo
+ *    (mảng entities · mảng layers · chữ ký vô hướng: viewport/kích thước/màu/style/trạng thái
+ *    từng lớp). Khung sau cùng chữ ký ⇒ CHỈ BLIT một lượt drawImage (~0-2 ms) thay vì vẽ lại
+ *    12.600 entity. Con trỏ/snap/selection là overlay do CadCanvas vẽ SAU drawEntities nên tự
+ *    khắc sống ở tầng động. Cache theo WeakMap<canvas đích> ⇒ canvas export dùng-một-lần được
+ *    thu hồi cùng cache; giá phải trả cho đường export là MỘT lượt blit thêm (không raster đôi).
+ *    ⚠️ Chỉ bật khi: có `document` (tạo được canvas), ctx đích có canvas thật + transform
+ *    scale-thuần (dpr) — thiếu một điều là rơi về đường vẽ thẳng CŨ, byte-một như trước
+ *    (toàn bộ test ctx-giả đi đường cũ, `render-z-order`/`render-giay-muc` khoá điều đó).
+ *
+ * ② **VIEWPORT CULLING** — khi biết kích thước canvas đích, entity có bao-hình (kèm ĐỆM an toàn
+ *    theo loại) nằm TRỌN ngoài khung nhìn thì bỏ qua, không đi vào 5 lượt vẽ. Bao hình cache
+ *    WeakMap theo entity (bất biến — store thay entity mới mỗi mutation, đúng giả định undo/redo
+ *    đã dựa vào). Đệm CỐ Ý rộng (dim cộng offset + nhãn; text cộng sàn-font-9px khi zoom xa;
+ *    zone/room ôm cả labelPos; block cộng 1400×scale vì bbox block là ước lượng) — cull là tối
+ *    ưu, VẼ THỪA vô hại còn VẼ THIẾU là mất hình, nên mọi ngờ vực đều nghiêng về phía vẽ.
+ *    Đường export fit-toàn-bộ ⇒ không entity nào bị cull ⇒ ảnh xuất y nguyên.
+ */
+export const VE_DEM = {
+  /** số lượt vẽ thẳng trọn vòng (miss tầng tĩnh hoặc tầng tĩnh không bật). */
+  veThang: 0,
+  /** số khung chỉ BLIT lại tầng tĩnh — rê chuột trên bản vẽ đứng yên phải dồn hết vào đây. */
+  tangTinhHit: 0,
+};
+
+interface CullBoxCache { minX: number; minY: number; maxX: number; maxY: number; huuHan: boolean }
+const CULL_BOX_CACHE = new WeakMap<Entity, CullBoxCache>();
+
+/** Bao hình PHỤC VỤ CULLING của 1 entity = entityBox + đệm theo loại (xem docstring ①②). */
+function cullBoxOf(e: Entity): CullBoxCache {
+  const hit = CULL_BOX_CACHE.get(e);
+  if (hit) return hit;
+  const b = entityBox(e);
+  let pad = 0;
+  if (e.type === 'dim') {
+    // dim vẽ RA NGOÀI hộp (a,b): đường kích thước lệch `off`, arc góc bán kính `off`||500,
+    // diameter còn lộn qua điểm đối tâm (xa thêm |ab|). Nhãn cộng ở lượt kiểm theo dimStyle.
+    const off = Math.abs(e.off ?? 0);
+    const kind = e.kind ?? 'aligned';
+    pad = off + 500;
+    if (kind === 'radius' || kind === 'diameter') pad += Math.hypot(e.b.x - e.a.x, e.b.y - e.a.y);
+    if (kind === 'angular' && off === 0) pad += 500;
+  } else if (e.type === 'block') {
+    // entityBox của block là ƯỚC LƯỢNG (±1200×scale quanh điểm chèn) — đệm thêm cùng cỡ để
+    // block def lớn hơn chuẩn không bao giờ bị cắt oan.
+    pad = 1400 * Math.max(Math.abs(e.sx), Math.abs(e.sy)) + 500;
+  } else if ((e.type === 'zone' || e.type === 'room') && e.labelPos) {
+    // labelPos người dùng kéo có thể nằm NGOÀI biên — nhãn vẽ ở đó nên hộp phải ôm cả nó.
+    b.minX = Math.min(b.minX, e.labelPos.x);
+    b.minY = Math.min(b.minY, e.labelPos.y);
+    b.maxX = Math.max(b.maxX, e.labelPos.x);
+    b.maxY = Math.max(b.maxY, e.labelPos.y);
+  }
+  const rec: CullBoxCache = {
+    minX: b.minX - pad,
+    minY: b.minY - pad,
+    maxX: b.maxX + pad,
+    maxY: b.maxY + pad,
+    huuHan: Number.isFinite(b.minX) && Number.isFinite(b.minY) && Number.isFinite(b.maxX) && Number.isFinite(b.maxY),
+  };
+  CULL_BOX_CACHE.set(e, rec);
+  return rec;
+}
+
+/** đệm màn hình cho hình học thuần (nét dày, mũi tên, đầu tick). */
+const PAD_MAN_HINH_PX = 40;
+/** đệm màn hình cho lớp mang NHÃN chữ (dim/text/zone/room) — chữ có sàn px nên khi zoom xa nó
+ * to hơn hình học quanh nó nhiều lần. 260px ôm được nhãn ~14 ký tự cỡ 26px. */
+const PAD_NHAN_PX = 260;
+
+interface VungCull { hinhHoc: Box; chuThich: Box }
+
+/** Khung nhìn world của canvas đích (kèm đệm) — null = KHÔNG cull (ctx giả/không đo được). */
+function vungCull(ctx: CanvasRenderingContext2D, v: Viewport): VungCull | null {
+  const c = (ctx as Partial<CanvasRenderingContext2D>).canvas as HTMLCanvasElement | undefined;
+  if (!c || typeof c.width !== 'number' || typeof c.height !== 'number' || !(c.width > 0) || !(c.height > 0)) return null;
+  const s = Math.abs(v.scale);
+  if (!Number.isFinite(v.scale) || s <= 0 || !Number.isFinite(v.panX) || !Number.isFinite(v.panY)) return null;
+  // Kích thước "CSS px" = device px ÷ transform scale hiện tại (CadCanvas `ctx.scale(dpr,dpr)`).
+  // Transform có xoay/nghiêng/tịnh tiến (không phải scale thuần) ⇒ không suy được khung ⇒ bỏ cull.
+  let tx = 1;
+  let ty = 1;
+  if (typeof ctx.getTransform === 'function') {
+    let t: DOMMatrix;
+    try {
+      t = ctx.getTransform();
+    } catch {
+      return null;
+    }
+    if (t && typeof t.a === 'number') {
+      if (t.b !== 0 || t.c !== 0 || t.e !== 0 || t.f !== 0 || !(t.a > 0) || !(t.d > 0)) return null;
+      tx = t.a;
+      ty = t.d;
+    }
+  }
+  const w = c.width / tx;
+  const h = c.height / ty;
+  if (!Number.isFinite(w) || !Number.isFinite(h)) return null;
+  const x0 = (0 - v.panX) / v.scale;
+  const x1 = (w - v.panX) / v.scale;
+  const y0 = (v.panY - 0) / v.scale;
+  const y1 = (v.panY - h) / v.scale;
+  const goc: Box = {
+    minX: Math.min(x0, x1),
+    maxX: Math.max(x0, x1),
+    minY: Math.min(y0, y1),
+    maxY: Math.max(y0, y1),
+  };
+  const no = (b: Box, px: number): Box => {
+    const mm = px / s;
+    return { minX: b.minX - mm, minY: b.minY - mm, maxX: b.maxX + mm, maxY: b.maxY + mm };
+  };
+  return { hinhHoc: no(goc, PAD_MAN_HINH_PX), chuThich: no(goc, PAD_NHAN_PX) };
+}
+
+/** Entity nằm TRỌN ngoài khung nhìn? Mọi ngờ vực nghiêng về "vẽ" (trả false). */
+function ngoaiKhung(e: Entity, v: Viewport, style: DrawStyle, cull: VungCull): boolean {
+  const cb = cullBoxOf(e);
+  if (!cb.huuHan) return false;
+  const s = Math.abs(v.scale) || 1;
+  let r: Box;
+  let padThem = 0;
+  if (e.type === 'dim') {
+    r = cull.chuThich;
+    // nhãn dim là chữ THẾ GIỚI (textHeight×dimScale mm) — dimScale lớn thì nhãn dài hơn hộp a,b.
+    const ds = style.dimStyle ?? DEFAULT_DIM_STYLE;
+    padThem = 8 * 0.7 * ds.textHeight * ds.dimScale;
+  } else if (e.type === 'text') {
+    r = cull.chuThich;
+    // sàn font 9px: zoom xa thì chữ chiếm màn RỘNG hơn hộp world của nó — quy sàn ngược về mm.
+    if (e.h * s < 9) padThem = (e.text.length * 9 * 0.7) / s;
+  } else if (e.type === 'zone' || e.type === 'room') {
+    r = cull.chuThich;
+  } else {
+    r = cull.hinhHoc;
+  }
+  return cb.maxX + padThem < r.minX || cb.minX - padThem > r.maxX || cb.maxY + padThem < r.minY || cb.minY - padThem > r.maxY;
+}
+
+interface TangTinh {
+  off: HTMLCanvasElement;
+  entities: Entity[];
+  entN: number;
+  layers: Layer[];
+  layN: number;
+  sig: string;
+}
+const TANG_TINH_CACHE = new WeakMap<HTMLCanvasElement, TangTinh>();
+
+/**
+ * Chữ ký VÔ HƯỚNG của một khung tầng tĩnh — mọi đầu vào đổi-được-mà-không-đổi-danh-tính-mảng
+ * phải có mặt: viewport, kích thước + dpr, style (kể cả giấy mực + bảng sửa tay), printScale,
+ * và TRẠNG THÁI TỪNG LỚP (visible/màu/bề dày/nét/tên — lớp sửa TẠI CHỖ không đổi danh tính mảng,
+ * `render-layer-index.test.ts` ca (2) khoá đúng hành vi đó). Xuất cho test.
+ */
+export function tangTinhSig(v: Viewport, doc: Doc, style: DrawStyle, w: number, h: number, ta: number, td: number): string {
+  const gm = style.giayMuc;
+  const ds = style.dimStyle;
+  const lop = doc.layers
+    .map((l) => `${l.id};${l.name};${l.visible ? 1 : 0};${l.color};${l.lineweight ?? ''};${l.lineType ?? ''}`)
+    .join('|');
+  return [
+    v.scale, v.panX, v.panY, w, h, ta, td,
+    style.stroke, style.forceColor ?? '', style.lineWidth, style.text ? 1 : 0,
+    style.realLineweight ? 1 : 0, style.outlineOnly ? 1 : 0, style.background ?? '',
+    ds ? `${ds.textHeight},${ds.arrowSize},${ds.dimScale}` : '',
+    gm ? `${gm.giay},${gm.muc},${gm.accent},${gm.strokeScale ?? ''},${gm.khaoSat ? 1 : 0},${gm.theoLayer ? JSON.stringify(gm.theoLayer) : ''}` : '',
+    doc.printScale ?? '',
+    lop,
+  ].join('~');
+}
+
+function blitTangTinh(ctx: CanvasRenderingContext2D, off: HTMLCanvasElement) {
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(off, 0, 0);
+  ctx.restore();
+}
+
+/** Thử vẽ qua tầng tĩnh — true nếu đã lo xong (blit), false ⇒ caller vẽ thẳng như cũ. */
+function veQuaTangTinh(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc, style: DrawStyle): boolean {
+  if (typeof document === 'undefined') return false;
+  const target = (ctx as Partial<CanvasRenderingContext2D>).canvas as HTMLCanvasElement | undefined;
+  if (!target || typeof target.width !== 'number' || typeof target.height !== 'number' || !(target.width > 0) || !(target.height > 0)) return false;
+  if (typeof ctx.drawImage !== 'function' || typeof ctx.setTransform !== 'function' || typeof ctx.save !== 'function' || typeof ctx.getTransform !== 'function') return false;
+  let t: DOMMatrix;
+  try {
+    t = ctx.getTransform();
+  } catch {
+    return false;
+  }
+  if (!t || typeof t.a !== 'number' || t.b !== 0 || t.c !== 0 || t.e !== 0 || t.f !== 0 || !(t.a > 0) || !(t.d > 0)) return false;
+
+  const sig = tangTinhSig(v, doc, style, target.width, target.height, t.a, t.d);
+  const cu = TANG_TINH_CACHE.get(target);
+  if (
+    cu &&
+    cu.entities === doc.entities &&
+    cu.entN === doc.entities.length &&
+    cu.layers === doc.layers &&
+    cu.layN === doc.layers.length &&
+    cu.sig === sig &&
+    cu.off.width === target.width &&
+    cu.off.height === target.height
+  ) {
+    blitTangTinh(ctx, cu.off);
+    VE_DEM.tangTinhHit += 1;
+    return true;
+  }
+
+  const off = cu?.off ?? document.createElement('canvas');
+  if (off.width !== target.width) off.width = target.width;
+  if (off.height !== target.height) off.height = target.height;
+  const octx = off.getContext('2d');
+  if (!octx) return false;
+  octx.setTransform(1, 0, 0, 1, 0, 0);
+  octx.clearRect(0, 0, off.width, off.height);
+  octx.setTransform(t.a, 0, 0, t.d, 0, 0);
+  // chép trạng thái ctx mà đường vẽ đọc "ambient" (lineJoin/lineCap do CadCanvas set trước).
+  octx.lineJoin = ctx.lineJoin;
+  octx.lineCap = ctx.lineCap;
+  octx.font = ctx.font;
+  octx.textAlign = ctx.textAlign;
+  octx.textBaseline = ctx.textBaseline;
+  octx.globalAlpha = ctx.globalAlpha;
+  veTrucTiep(octx, v, doc, style, vungCull(octx, v));
+  TANG_TINH_CACHE.set(target, {
+    off,
+    entities: doc.entities,
+    entN: doc.entities.length,
+    layers: doc.layers,
+    layN: doc.layers.length,
+    sig,
+  });
+  blitTangTinh(ctx, off);
+  return true;
+}
+
 /**
  * Vẽ toàn bộ entity (bỏ layer ẩn) — z-order **5 lượt**, mỗi lượt giữ nguyên insertion-order bên
  * trong nó (doc thiếu loại nào thì lượt đó rỗng, không đổi thứ tự các lượt còn lại):
@@ -982,8 +1231,19 @@ function drawDimension(ctx: CanvasRenderingContext2D, v: Viewport, e: DimEntity,
  *   Ngôn ngữ thị giác của lớp này: xem `POCHE_TAM` (bản tạm, phiếu `P1-mock`).
  *
  * ⚠️ Bản vẽ KHÔNG có hatch ⇒ hai lượt đầu rỗng ⇒ nhật ký thao tác y hệt bản trước 31/08.
+ *
+ * VÁ LAG 01/09 — hàm này nay là CỬA ĐIỀU PHỐI: thử tầng tĩnh (blit cache) trước, không được thì
+ * vẽ thẳng như cũ kèm viewport-culling; xem docstring khối CULLING + TẦNG TĨNH ngay trên.
  */
 export function drawEntities(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc, style: DrawStyle) {
+  if (veQuaTangTinh(ctx, v, doc, style)) return;
+  veTrucTiep(ctx, v, doc, style, vungCull(ctx, v));
+}
+
+/** Đường vẽ THẲNG — đúng 5 lượt cũ, thêm duy nhất phép bỏ-qua entity ngoài khung (`cull`;
+ * null = vẽ tất, byte-một như trước vá). */
+function veTrucTiep(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc, style: DrawStyle, cull: VungCull | null) {
+  VE_DEM.veThang += 1;
   const toSuyRa: Entity[] = [];
   const toNguoiVe: Entity[] = [];
   const geom: Entity[] = [];
@@ -993,6 +1253,7 @@ export function drawEntities(ctx: CanvasRenderingContext2D, v: Viewport, doc: Do
   for (const e of doc.entities) {
     const lay = li.get(e.layer);
     if (lay && !lay.visible) continue;
+    if (cull && ngoaiKhung(e, v, style, cull)) continue;
     if (e.type === 'hatch') (e.inferred ? toSuyRa : toNguoiVe).push(e);
     else if (e.type === 'zone' || e.type === 'arrow') overlay.push(e);
     else if (e.type === 'dim' || e.type === 'text') annot.push(e);

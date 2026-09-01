@@ -4,6 +4,10 @@
  *
  * IndexedDB không có trong Node → dựng fake tối giản ngay trong file (chỉ get/put/delete
  * trên 1 Map), đủ để kiểm hành vi khoá/di trú mà không kéo thêm phụ thuộc.
+ *
+ * BỔ SUNG 01/09 (vá lag): khối test autosaver — tách lưu ĐẦY (`touch('doc')`, stringify trọn
+ * bản ghi) / lưu NHẸ (`touch('viewport')`, vá viewport vào bản sạch cũ qua `applyLight`,
+ * KHÔNG stringify doc), bậc không hạ, và lượt nhẹ đầu tiên chưa có chỗ dựa thì rơi về lưu đầy.
  */
 
 /* ------------------------- fake IndexedDB ------------------------- */
@@ -65,7 +69,7 @@ function makeDb() {
   },
 };
 
-import { sheetsKey, loadSheets, saveSheets, clearSheets, type SheetsRecord } from './sheets-persist';
+import { sheetsKey, loadSheets, saveSheets, clearSheets, createSheetsAutosaver, type SheetsRecord } from './sheets-persist';
 
 let pass = 0;
 let fail = 0;
@@ -80,6 +84,9 @@ const rec = (name: string): SheetsRecord => ({
   ts: 1,
   sheets: [{ id: 's1', name }],
 });
+
+/** đợi các microtask/macrotask của fake IDB + promise put giải quyết xong. */
+const tick = () => new Promise((r) => setTimeout(r, 10));
 
 async function main() {
   console.log('sheetsKey');
@@ -129,6 +136,94 @@ async function main() {
   store.clear();
   store.set('u1::/cad-editor::prjA', { v: 1, activeId: 's', ts: 1, sheets: [] });
   ok('bản ghi hỏng (0 sheet) → null', (await loadSheets('u1', '/cad-editor', 'prjA')) === null);
+
+  /* ---------------- autosaver — tách lưu ĐẦY / lưu NHẸ (vá lag 01/09) ---------------- */
+  console.log('\nautosaver — lưu ĐẦY vs lưu NHẸ');
+  store.clear();
+  let getRecordCalls = 0;
+  const savedBytes: number[] = [];
+  let savedLight = 0;
+  const docLon = { entities: [{ id: 'e1', mo_ta: 'doc thật, chỉ được stringify ở lượt lưu ĐẦY' }] };
+  const live = { viewport: { scale: 1, panX: 0, panY: 0 }, currentLayer: 'l-wall' };
+  const getRecord = (): SheetsRecord => {
+    getRecordCalls += 1;
+    return {
+      v: 1,
+      activeId: 's1',
+      ts: Date.now(),
+      sheets: [{ id: 's1', name: 'Bản vẽ 1', doc: docLon, viewport: live.viewport, currentLayer: live.currentLayer }],
+    };
+  };
+  const saver = createSheetsAutosaver('u1', '/cad-editor', getRecord, {
+    projectId: 'prjX',
+    onSaved: (bytes) => savedBytes.push(bytes),
+    onSavedLight: () => { savedLight += 1; },
+    applyLight: (last) => ({
+      ...last,
+      ts: Date.now(),
+      sheets: [{ ...last.sheets[0], viewport: live.viewport, currentLayer: live.currentLayer }],
+    }),
+  });
+  const KEY = 'u1::/cad-editor::prjX';
+  const recNow = () => store.get(KEY) as SheetsRecord | undefined;
+
+  // ① lượt viewport ĐẦU TIÊN của phiên (chưa có bản đầy nào làm chỗ dựa) → rơi về lưu đầy.
+  saver.touch('viewport');
+  saver.flush();
+  await tick();
+  ok('① viewport-touch khi chưa có bản đầy → lưu ĐẦY (an toàn trước)', savedBytes.length === 1 && getRecordCalls === 1 && savedLight === 0);
+  ok('① bản ghi nằm trong IDB', recNow()?.sheets[0].id === 's1');
+
+  // ② pan/zoom sau đó → lưu NHẸ: không gọi getRecord (tức không stringify doc), viewport mới vào IDB.
+  live.viewport = { scale: 2, panX: 9, panY: -9 };
+  saver.touch('viewport');
+  saver.flush();
+  await tick();
+  const sau2 = recNow();
+  ok('② lưu nhẹ KHÔNG gọi getRecord / không đếm byte, chỉ báo onSavedLight', getRecordCalls === 1 && savedBytes.length === 1 && savedLight === 1);
+  ok('② viewport MỚI nằm trong bản ghi', (sau2?.sheets[0].viewport as { scale: number }).scale === 2);
+  ok('② doc vẫn NGUYÊN trong bản ghi (không mất dữ liệu)', (sau2?.sheets[0].doc as { entities: { id: string }[] }).entities[0].id === 'e1');
+
+  // ③ bậc không hạ: viewport rồi doc trước khi ghi → MỘT lượt lưu ĐẦY.
+  live.viewport = { scale: 3, panX: 1, panY: 1 };
+  saver.touch('viewport');
+  saver.touch('doc');
+  saver.flush();
+  await tick();
+  ok('③ doc-touch không bị viewport-touch hạ cấp → lưu ĐẦY', getRecordCalls === 2 && savedBytes.length === 2);
+  ok('③ viewport mới nhất vẫn vào theo lượt đầy', (recNow()?.sheets[0].viewport as { scale: number }).scale === 3);
+
+  // ④ applyLight từ chối (vd đổi tab, id lệch) → rơi về lưu đầy, không mất lượt.
+  const saver2 = createSheetsAutosaver('u1', '/cad-editor', getRecord, {
+    projectId: 'prjX',
+    onSaved: (bytes) => savedBytes.push(bytes),
+    onSavedLight: () => { savedLight += 1; },
+    applyLight: () => null,
+  });
+  saver2.touch('doc');
+  saver2.flush();
+  await tick();
+  const callsTruoc = getRecordCalls;
+  saver2.touch('viewport');
+  saver2.flush();
+  await tick();
+  ok('④ applyLight trả null → lượt viewport vẫn ra lưu ĐẦY', getRecordCalls === callsTruoc + 1);
+  saver2.dispose();
+
+  // ⑤ flush khi không dirty → không ghi gì thêm (hành vi cũ).
+  const bytesTruoc = savedBytes.length;
+  const lightTruoc = savedLight;
+  saver.flush();
+  await tick();
+  ok('⑤ flush không dirty → im lặng', savedBytes.length === bytesTruoc && savedLight === lightTruoc);
+  saver.dispose();
+
+  // ⑥ dispose huỷ thay đổi treo — không ghi sau khi dispose (hành vi cũ giữ nguyên).
+  const saver3 = createSheetsAutosaver('u1', '/cad-editor', getRecord, { projectId: 'prjY' });
+  saver3.touch('doc');
+  saver3.dispose();
+  await tick();
+  ok('⑥ dispose trước debounce → không ghi bucket mới', !store.has('u1::/cad-editor::prjY'));
 
   console.log(`\n${pass} pass, ${fail} fail`);
   if (fail > 0) process.exit(1);
