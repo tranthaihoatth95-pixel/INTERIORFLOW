@@ -198,6 +198,51 @@ ${KHOI_CU}
   }
 }
 
+/* ══ TRẠNG THÁI PHIẾU LEGACY — bàn không được đổ oan cho người đang ngồi (thêm 01/09) ══
+ *
+ * `phieu-ca.mjs` đọc trạng thái qua `khoaHandoff`. Khi khoá hai đầu lệch nhau, một phiếu legacy
+ * ĐÃ ĐƯỢC GỌI vẫn in ra "🔴 KẸT — ghi rồi mà chưa ai gọi" — bàn tố cáo người đang ngồi vì một
+ * lỗi của sổ. Đó không phải chuyện thẩm mỹ bản in: bàn là thứ phiên sau đọc để nhận bàn giao,
+ * nên một dòng sai ở đây được chép tiếp sang mọi phiên sau.
+ *
+ * Nhóm này chạy MÁY THẬT trên cầu tạm, và giữ cả ca mong ĐỎ (phiếu chưa gọi vẫn phải KẸT) lẫn
+ * ca mong XANH (phiếu đã gọi phải hết KẸT) — F-17. */
+console.log('\n[phieu-ca] TRẠNG THÁI PHIẾU LEGACY');
+{
+  const { spawnSync } = require('node:child_process') as typeof import('node:child_process');
+  const fs = require('node:fs') as typeof import('node:fs');
+  const os2 = require('node:os') as typeof import('node:os');
+  const p2 = require('node:path') as typeof import('node:path');
+
+  const tam = fs.mkdtempSync(p2.join(os2.tmpdir(), 'phieu-ca-legacy-'));
+  try {
+    const luc = new Date().toISOString();
+    const dong = (o: object) => `${JSON.stringify(o)}\n`;
+    fs.writeFileSync(p2.join(tam, 'agent-handoffs.jsonl'),
+      // ① phiếu legacy ĐÃ được gọi — biên nhận khai target_lane legacy, tác giả là lane KHÁC
+      dong({ type: 'HANDOFF', id: 'HO-GOI-ROI', from: '00', to: '06', topic: 'legacy đã gọi', createdAt: luc })
+      + dong({ type: 'WAKE_ATTEMPTED', handoffId: 'HO-GOI-ROI', system: 'cl', lane: '00', target_system: null, target_lane: '06', cach: 'SendMessage → interiorflow-16', createdAt: luc })
+      // ② phiếu legacy CHƯA gọi — phải vẫn KẸT, nếu không thì bản vá đang bịt mắt cổng
+      + dong({ type: 'HANDOFF', id: 'HO-CHUA-GOI', from: '00', to: '06', topic: 'legacy chưa gọi', createdAt: luc }));
+
+    const moi = { ...process.env, BOS_SHARED_LOG_ROOT: tam, BOS_BAN_ROOT: p2.join(tam, 'ban') };
+    // Đường nóng in theo TOPIC (`p.viec`), không in id — soi đúng thứ mắt người đọc trên bàn.
+    const r = spawnSync('node', ['scripts/phieu-ca.mjs'], { encoding: 'utf8', env: moi });
+    const dongCua = (topic: string) => (r.stdout.split('\n').find((l) => l.includes(topic)) ?? '');
+
+    la('legacy ĐÃ gọi → hết "KẸT"', /KẸT/.test(dongCua('legacy đã gọi')), false);
+    la('legacy ĐÃ gọi → đọc ra là đã gọi', /đã gọi, chưa thấy/.test(dongCua('legacy đã gọi')), true);
+    la('COUNTERPROOF: legacy CHƯA gọi vẫn phải KẸT', /KẸT/.test(dongCua('legacy chưa gọi')), true);
+
+    const js = JSON.parse(spawnSync('node', ['scripts/phieu-ca.mjs', '--json'], { encoding: 'utf8', env: moi }).stdout);
+    const p = js.phieu.find((x: any) => x.viec.includes('legacy đã gọi'));
+    la('legacy ĐÃ gọi → noted của biên nhận đi kèm được trạng thái',
+      /SendMessage/.test(p?.noted ?? ''), true);
+  } finally {
+    fs.rmSync(tam, { recursive: true, force: true });
+  }
+}
+
 console.log(`\n${ok} ok, ${fail} fail`);
 if (fail) process.exit(1);
 })();

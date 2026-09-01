@@ -419,7 +419,18 @@ if (lenh === 'chua-nhan') {
 }
 
 if (lenh === 'ack') {
-  const [address, handoffId, ketQua, bangChung, note] = process.argv.slice(3);
+  /* ⚑ `--legacy` — CỬA KHAI BÁO TƯỜNG MINH cho phiếu chưa có namespace (thêm 01/09).
+   *
+   * Phiếu cũ ghi `to:'06'`. `06` là MÃ VAI, hai hệ cùng mang nó (CDX-06 và CLD-06), nên
+   * `eventThuocDiaChi(phiếu, 'cl:06')` trả FALSE — đúng luật. Hệ quả không ai định: phiếu legacy
+   * KHÔNG CÓ CỬA NÀO để nhận, nằm mãi ở "🔴 KẸT" và bàn đổ lỗi cho người đang ngồi.
+   *
+   * ⛔ Lối thoát KHÔNG được là suy `06 → cl:06`: máy suy hộ thì hai hệ nhận nhầm việc của nhau,
+   * đúng lỗ định danh mà phiếu `3db07c32bcd1` viết ra để bịt. Lối thoát phải là NGƯỜI KHAI:
+   * gõ `--legacy` là tự nhận *"tôi, cl:06, nhận phiếu legacy 06 này"* — có chữ ký trong sổ.
+   * Không gõ thì hành vi y như cũ: chặn. */
+  const legacy = process.argv.includes('--legacy');
+  const [address, handoffId, ketQua, bangChung, note] = process.argv.slice(3).filter((v) => v !== '--legacy');
   const dt = danhTinhGhi(address);
   /* BIÊN NHẬN CÓ CẤU TRÚC (Codex DISS 30/08, tôi đồng ý — nó tốt hơn bản tôi làm).
    * Bản cũ bắt buộc `noted` chữ tự do rồi KHÔNG có cổng nào chấm chất lượng chữ đó. Một ràng
@@ -427,7 +438,8 @@ if (lenh === 'ack') {
    * Luật chấm nằm ở `cau-mo-hinh.mjs` (`chamAck`), nơi có ca đột biến. FAIL CLOSED. */
   const cham = chamAck({ outcome: ketQua, evidence: bangChung, note });
   if (!dt.ok || !handoffId || !cham.ok) {
-    console.error('Dùng: node scripts/moc.mjs ack <cx:NN|cl:NN> <event-id> <' + KET_QUA.join('|') + '> "<bằng chứng>" ["note ngắn"]');
+    console.error('Dùng: node scripts/moc.mjs ack <cx:NN|cl:NN> <event-id> <' + KET_QUA.join('|') + '> "<bằng chứng>" ["note ngắn"] [--legacy]');
+    console.error('  --legacy     phiếu cũ ghi `to:"NN"` chưa có namespace — bạn KHAI mình nhận nó');
     console.error('  DONE/PARTIAL → con trỏ MỞ LẠI ĐƯỢC (đường dẫn · hash · lệnh)');
     console.error('  BLOCKED      → TÊN cái đang chặn');
     console.error('  SUPERSEDED   → phiếu/quyết định đã thay nó');
@@ -436,14 +448,36 @@ if (lenh === 'ack') {
     process.exit(2);
   }
   const target = docSuKien().find((e) => e.type === 'HANDOFF' && e.id === handoffId);
-  if (!target || !eventThuocDiaChi(target, dt.address)) {
+  if (!target) {
     console.error(`Không thấy handoff ${handoffId} dành cho ${dt.address}.`);
+    process.exit(1);
+  }
+  /* Hai cửa, KHÔNG bắc cầu giữa chúng:
+   *   thường  phiếu có namespace  ⇒ đích phải khớp ĐÚNG `cx:NN`/`cl:NN`
+   *   --legacy phiếu chưa có      ⇒ đích khớp mã vai `NN`, và phiếu PHẢI thật sự là legacy.
+   * Ô thứ hai là chốt chống lạm dụng: `--legacy` không cướp được phiếu đã ghi rõ hệ. */
+  const dichPhieu = dichEvent(target);
+  if (legacy && !dichPhieu.legacy) {
+    console.error(`⛔ ${handoffId} ĐÃ có namespace (${dichPhieu.address}) — bỏ --legacy và ack thẳng.`);
+    process.exit(2);
+  }
+  if (!legacy && dichPhieu.legacy) {
+    console.error(`⛔ ${handoffId} là phiếu LEGACY (to:'${target.to}') — `
+      + `'${target.to}' là MÃ VAI, cả cx lẫn cl cùng mang. Máy KHÔNG suy hộ bạn là ai.`);
+    console.error(`   Nhận thì khai tường minh:  node scripts/moc.mjs ack ${dt.address} ${handoffId} <${KET_QUA.join('|')}> "<bằng chứng>" --legacy`);
+    process.exit(2);
+  }
+  if (!eventThuocDiaChi(target, legacy ? dt.lane : dt.address)) {
+    console.error(`Không thấy handoff ${handoffId} dành cho ${legacy ? `legacy ${dt.lane}` : dt.address}.`);
     process.exit(1);
   }
   const ev = bangChung.trim();
   ghiSuKien({
     schema: 'BOS-HANDOFF-v2', id: `ACK-${randomUUID()}`, type: 'ACK',
-    ...tacGia(dt, target.task_id ?? handoffId, handoffId), target_system: dt.system, target_lane: dt.lane,
+    ...tacGia(dt, target.task_id ?? handoffId, handoffId),
+    /* Đích ghi theo ĐÚNG hình dạng của phiếu, để `khoaHandoff` hai đầu ra cùng một chuỗi.
+     * `system`/`lane` trong `tacGia` vẫn ghi AI ĐÃ NHẬN — biên nhận không mất chữ ký. */
+    target_system: legacy ? null : dt.system, target_lane: dt.lane,
     outcome: ketQua,
     evidence: ketQua === 'BLOCKED' ? null : ev,
     blocker: ketQua === 'BLOCKED' ? ev : null,

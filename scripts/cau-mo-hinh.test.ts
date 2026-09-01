@@ -135,6 +135,37 @@ la('③b cùng handoff ID nhưng khác system có khóa retry khác nhau', M.kho
 la('③b legacy chỉ NN vẫn đọc được', M.eventThuocDiaChi({ type: 'HANDOFF', id: 'OLD', to: '06' }, '06'), true);
 la('③b legacy không bị tự gán sang cx', M.eventThuocDiaChi({ type: 'HANDOFF', id: 'OLD', to: '06' }, 'cx:06'), false);
 
+/* ════════ ③c KHOÁ LEGACY — hai đầu một phiếu phải gặp nhau (sửa 01/09) ════════
+ *
+ * Ca THẬT, không bịa: phiếu `3db07c32bcd1` trên cầu. HANDOFF ghi `to:'06'`; WAKE_ATTEMPTED do
+ * `cl:00` ghi hộ bên giao, mang `target_system:null` + `target_lane:'06'`. Bản cũ bỏ qua ô
+ * `target_lane` khi `target_system` rỗng rồi lấy lane TÁC GIẢ ⇒ `legacy:00|…` ≠ `legacy:06|…`,
+ * và phiếu đọc ra "🔴 KẸT" vĩnh viễn dù đã có người gọi.
+ *
+ * Nhóm này có CẢ ca mong ĐỎ lẫn ca mong XANH (F-17): nếu ai đó "sửa" bằng cách suy `06 → cl:06`
+ * cho tiện thì ca ③c-cấm dưới đây phải gãy — đó là lý do nó tồn tại. */
+console.log('\n[③c] KHOÁ LEGACY — biên nhận phải gặp được phiếu legacy');
+{
+  const ID = 'HO-20260830143748-3db07c32bcd1';
+  const hoLegacy = { type: 'HANDOFF', id: ID, from: '00', to: '06' };
+  // đúng tang vật trên cầu: cl:00 ghi hộ, đích là phiếu legacy 06
+  const wakeThat = { type: 'WAKE_ATTEMPTED', handoffId: ID, system: 'cl', lane: '00', target_system: null, target_lane: '06' };
+  la('③c biên nhận khai target_lane legacy GẶP được phiếu legacy',
+    M.khoaHandoff(wakeThat), M.khoaHandoff(hoLegacy));
+  la('③c … và khoá đó là `legacy:06|<id>`, không phải lane tác giả',
+    M.khoaHandoff(wakeThat), `legacy:06|${ID}`);
+  // ⛔ chiều cấm: khai rõ hệ thì KHÔNG được rơi về legacy, nếu không cx và cl ăn biên nhận của nhau
+  const ackCl = { type: 'ACK', handoffId: ID, system: 'cl', lane: '06', target_system: 'cl', target_lane: '06' };
+  const ackCx = { type: 'ACK', handoffId: ID, system: 'cx', lane: '06', target_system: 'cx', target_lane: '06' };
+  la('③c ⛔ ACK có namespace KHÔNG đóng được phiếu legacy (cấm suy 06→cl:06)',
+    M.khoaHandoff(ackCl) === M.khoaHandoff(hoLegacy), false);
+  la('③c ⛔ … và cx/cl vẫn không ăn biên nhận của nhau',
+    M.khoaHandoff(ackCl) === M.khoaHandoff(ackCx), false);
+  // biên nhận không có ô đích nào ⇒ giữ nguyên hành vi cũ, không viết lại lịch sử
+  la('③c biên nhận cũ trống ô đích giữ nguyên khoá theo lane tác giả',
+    M.khoaHandoff({ type: 'SEEN', handoffId: ID, lane: '06' }), `legacy:06|${ID}`);
+}
+
 /* ════════ ④ HAI LỖ "CÔNG CỤ NÓI DỐI BẰNG CÁCH IM LẶNG" (phiếu `bd945a9950bc`) ════════
  *
  * Ca CHẠY THẬT lệnh `moc.mjs`, trên một cây cầu TẠM (`BOS_SHARED_LOG_ROOT`).
@@ -194,6 +225,29 @@ console.log('\n[④] HỘP RỖNG PHẢI NÓI · LỆNH CHẨN ĐOÁN PHẢI CH�
   appendFileSync(pathm.join(tam, 'agent-handoffs.jsonl'), `${JSON.stringify({ type: 'HANDOFF', id: 'HO-LEGACY', from: '00', to: '06', topic: 'legacy', createdAt: new Date().toISOString() })}\n`);
   const legacyRead = chay(['inbox', '06']);
   la('④ legacy không mất và được gắn nhãn LEGACY_AMBIGUOUS', /HO-LEGACY[\s\S]*LEGACY_AMBIGUOUS/.test(legacyRead.ra), true);
+
+  /* ④b CỬA `--legacy` (01/09). Trước bản này phiếu legacy KHÔNG CÓ CỬA NÀO để nhận — ack thẳng
+   * bị chặn đúng luật, và không có lối khai nào khác, nên nó kẹt vĩnh viễn. Cửa mới phải mở
+   * ĐÚNG một chiều: người KHAI thì qua, máy SUY thì không. */
+  const ackTran = chay(['ack', 'cl:06', 'HO-LEGACY', 'DONE', 'scripts/moc.mjs']);
+  la('④b ⛔ ack phiếu legacy mà KHÔNG khai → CHẶN (máy không suy 06→cl:06)', ackTran.ma, 2);
+  la('④b  … và câu chặn phải CHỈ ĐƯỜNG ra, không chỉ nói "sai"', /--legacy/.test(ackTran.ra), true);
+  la('④b ⛔ `--legacy` KHÔNG cướp được phiếu đã có namespace',
+    chay(['ack', 'cl:06', newId, 'DONE', 'scripts/moc.mjs', '--legacy']).ma, 2);
+  la('④b ⛔ `--legacy` không vượt được rào lane: cl:07 vẫn không nhận phiếu legacy 06',
+    chay(['ack', 'cl:07', 'HO-LEGACY', 'DONE', 'scripts/moc.mjs', '--legacy']).ma, 1);
+  la('④b khai `--legacy` → NHẬN', chay(['ack', 'cl:06', 'HO-LEGACY', 'DONE', 'scripts/moc.mjs', '--legacy']).ma, 0);
+  {
+    const su = readFileSync(pathm.join(tam, 'agent-handoffs.jsonl'), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+    const ho = su.find((e) => e.id === 'HO-LEGACY');
+    const ackLegacy = su.find((e) => e.type === 'ACK' && e.handoffId === 'HO-LEGACY');
+    la('④b  … biên nhận vẫn ký rõ AI nhận (system/lane của người ack)',
+      [ackLegacy.system, ackLegacy.lane], ['cl', '06']);
+    la('④b  … và khoá hai đầu GẶP NHAU ⇒ phiếu đóng được thật',
+      M.khoaHandoff(ackLegacy), M.khoaHandoff(ho));
+    la('④b  … phiếu legacy 06 nay đọc ra là đã nhận, không còn KẸT',
+      chay(['inbox', '06']).ra.includes('HO-LEGACY'), false);
+  }
   la('④ receipt authorship thiếu session thật không được suy từ artifact', (() => {
     const old = [process.env.BOS_SESSION_ID, process.env.CODEX_THREAD_ID, process.env.CLAUDE_SESSION_ID];
     delete process.env.BOS_SESSION_ID; delete process.env.CODEX_THREAD_ID; delete process.env.CLAUDE_SESSION_ID;

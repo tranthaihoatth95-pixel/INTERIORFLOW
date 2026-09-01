@@ -170,13 +170,41 @@ export function eventThuocDiaChi(e, diaChi) {
   return q.legacy ? d.legacy && d.lane === q.lane : !d.legacy && d.address === q.address;
 }
 
-/** Khóa state/retry gồm namespace đích + handoff; legacy không được tự gán sang cx/cl. */
+/** Khóa state/retry gồm namespace đích + handoff; legacy không được tự gán sang cx/cl.
+ *
+ * 🔴 SỬA 01/09 — HAI ĐẦU CỦA CÙNG MỘT PHIẾU TỪNG KHOÁ RA HAI CHUỖI KHÁC NHAU.
+ * HANDOFF legacy (`to:'06'`, chưa có namespace) khoá ra `legacy:06|<id>`. Nhưng mọi biên nhận
+ * THEO SAU nó — WAKE · SEEN · ACK — rơi vào nhánh dưới: `target_system` rỗng ⇒ nhảy thẳng xuống
+ * đáy và lấy lane của **TÁC GIẢ** làm đích. Tang vật trên cầu thật:
+ *     HANDOFF        HO-…-3db07c32bcd1  to:'06'                        ⇒ legacy:06|3db07…
+ *     WAKE_ATTEMPTED cùng handoffId, lane:'00' (cl:00 ghi hộ bên giao) ⇒ legacy:00|3db07…
+ * Hai khoá không bao giờ gặp nhau ⇒ phiếu vĩnh viễn đọc ra "🔴 KẸT — ghi rồi mà chưa ai gọi",
+ * kể cả khi đã có người gọi thật. Cái mất không phải một dòng sai, mà là **lối ra**: phiếu legacy
+ * KHÔNG CÓ CÁCH NÀO đóng được, và bàn thì hiển thị nó như lỗi của người đang ngồi.
+ *
+ * Gốc: nhánh đáy SUY đích từ lane tác giả. Đó là suy diễn — đúng thứ cả sổ này sinh ra để cấm.
+ *
+ * ⇒ Nay đọc Ô KHAI BÁO TƯỜNG MINH đã có sẵn trong schema: `target_system:null` **kèm**
+ * `target_lane:'NN'`. Cặp đó do người ghi đặt (moc.mjs lấy từ `dichEvent(handoff)` của chính
+ * phiếu legacy), nghĩa đen là *"đích là phiếu LEGACY NN"* — dữ liệu, không phải phỏng đoán.
+ * ⛔ VẪN CẤM chiều ngược lại: `06` KHÔNG bao giờ tự thành `cl:06`. Muốn nhận một phiếu legacy
+ * thì phải KHAI (`moc.mjs ack … --legacy`), vì hai hệ dùng chung mã vai `06`.
+ */
 export function khoaHandoff(e) {
   const id = e?.type === 'HANDOFF' ? e.id : e?.handoffId;
-  const d = e?.type === 'HANDOFF' ? dichEvent(e) : (e?.target_system
-    ? { address: `${e.target_system}:${e.target_lane}`, legacy: false, lane: e.target_lane }
-    : { address: `legacy:${e?.lane ?? '?'}`, legacy: true, lane: e?.lane ?? null });
-  const scope = d.legacy ? `legacy:${d.lane ?? '?'}` : d.address;
+  let scope;
+  if (e?.type === 'HANDOFF') {
+    const d = dichEvent(e);
+    scope = d.legacy ? `legacy:${d.lane ?? '?'}` : d.address;
+  } else if (e?.target_system) {
+    scope = `${e.target_system}:${e.target_lane}`;
+  } else if (/^\d{2}$/.test(e?.target_lane ?? '')) {
+    scope = `legacy:${e.target_lane}`;
+  } else {
+    // Không ô đích nào ⇒ hết đường khai. Giữ nguyên hành vi cũ để không viết lại khoá của biên
+    // nhận cũ; `id` trong khoá vẫn giữ hai phiếu khác nhau không lẫn vào nhau.
+    scope = `legacy:${e?.lane ?? '?'}`;
+  }
   return `${scope ?? 'LEGACY_AMBIGUOUS'}|${id ?? '?'}`;
 }
 
