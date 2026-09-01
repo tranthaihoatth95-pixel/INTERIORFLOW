@@ -8,11 +8,13 @@
  */
 import {
   FPS_MAC_DINH,
+  docThoiLuongGiay,
   dungStringout,
   inStringout,
   maThoiGian,
+  stringoutTuKho,
 } from './stringout';
-import type { CanhStringout } from './stringout';
+import type { BanGhiCanh, CanhStringout } from './stringout';
 
 let pass = 0;
 let fail = 0;
@@ -132,6 +134,65 @@ console.log('⑤ inStringout');
     txt.split('\n').filter((d) => /^\d{3} /.test(d)).length === 2);
   ok('không có cảnh bị bỏ ⇒ KHÔNG in khối BỎ RA',
     !inStringout(dungStringout([c('a', 10)])).includes('BỎ RA'));
+}
+
+// ── ⑧ CỬA VÀO TỪ KHO KẾT QUẢ ─────────────────────────────────────────────────
+//
+// Chỗ nguy hiểm ở cửa này KHÔNG phải phép nhân `giây × fps`. Nó là câu hỏi: khi
+// bản ghi KHÔNG khai thời lượng thì lấy số nào? Mọi lời giải "rơi về mặc định"
+// đều sinh ra một thanh phim trông rất thật. Các ca dưới khoá đúng chỗ đó.
+{
+  console.log('⑧ cửa vào từ kho kết quả');
+  const bg = (id: string, loai: 'anh' | 'phim', url: string | undefined, thamSo?: Record<string, string | number>, luc = 0): BanGhiCanh =>
+    ({ id, ten: `cảnh ${id}`, loai, url, thamSo, luc });
+
+  ok('đọc "10s" ⇒ 10', docThoiLuongGiay('10s') === 10);
+  ok('đọc "5" ⇒ 5', docThoiLuongGiay('5') === 5);
+  ok('đọc số 7 ⇒ 7', docThoiLuongGiay(7) === 7);
+  ok('đọc "5,5s" (dấu phẩy VN) ⇒ 5,5', docThoiLuongGiay('5,5s') === 5.5);
+  ok('chuỗi rác ⇒ null, KHÔNG rơi về mặc định', docThoiLuongGiay('vài giây') === null);
+  ok('rỗng ⇒ null', docThoiLuongGiay('') === null);
+  ok('0 giây ⇒ null (không phải một thời lượng)', docThoiLuongGiay('0s') === null);
+  ok('âm ⇒ null', docThoiLuongGiay(-4) === null);
+  ok('undefined ⇒ null', docThoiLuongGiay(undefined) === null);
+
+  const kho: BanGhiCanh[] = [
+    bg('p2', 'phim', 'blob:2', { thoiLuong: '10s' }, 200),
+    bg('anh1', 'anh', 'blob:a', { }, 150),
+    bg('p1', 'phim', 'blob:1', { thoiLuong: '5s' }, 100),
+    bg('chua', 'phim', undefined, { thoiLuong: '5s' }, 300),
+    bg('mu', 'phim', 'blob:3', { }, 400),
+  ];
+  const s = stringoutTuKho(kho, { fps: 25 });
+  ok('ảnh KHÔNG lọt vào trục phim', s.canh.every((c) => c.id !== 'anh1'));
+  ok('ảnh cũng KHÔNG bị gọi là cảnh bị bỏ', s.boQua.every((b) => b.id !== 'anh1'));
+  ok('xếp theo mốc sinh, không theo thứ tự mảng', s.canh.map((c) => c.id).join(',') === 'p1,p2');
+  ok('5s @25fps ⇒ 125 khung', s.canh[0].soKhung === 125);
+  ok('10s @25fps ⇒ 250 khung', s.canh[1].soKhung === 250);
+  ok('nối đuôi: cảnh 2 bắt đầu đúng chỗ cảnh 1 kết thúc', s.canh[1].batDauKhung === 125);
+  ok('tổng đúng 375 khung = 15 giây', s.tongKhung === 375 && gan(s.tongGiay, 15));
+
+  const chua = s.boQua.find((b) => b.id === 'chua');
+  ok('phim chưa có tệp ⇒ BỎ RA, không độn khung', !!chua);
+  ok('… và nói đúng lý do "chưa render xong"', !!chua && chua.lyDo.includes('chưa render xong'));
+  const mu = s.boQua.find((b) => b.id === 'mu');
+  ok('phim không khai thời lượng ⇒ BỎ RA, KHÔNG lấy số mặc định', !!mu);
+  ok('… và nói ra là không khai', !!mu && mu.lyDo.includes('không khai thời lượng'));
+  ok('bỏ ra không làm phồng tổng thời lượng', s.tongKhung === 375);
+
+  const xau = stringoutTuKho([bg('x', 'phim', 'blob:x', { thoiLuong: 'khoảng 8 giây' })], { fps: 25 });
+  ok('thời lượng đọc không ra ⇒ BỎ RA kèm giá trị nguyên văn',
+    xau.canh.length === 0 && xau.boQua.length === 1 && xau.boQua[0].lyDo.includes('khoảng 8 giây'));
+
+  ok('kho rỗng ⇒ trục rỗng, tổng 0, KHÔNG nổ',
+    stringoutTuKho([]).canh.length === 0 && stringoutTuKho([]).tongKhung === 0);
+  ok('kho toàn ảnh ⇒ trục rỗng và không có ai bị bỏ',
+    stringoutTuKho([bg('a', 'anh', 'blob:a')]).canh.length === 0 &&
+    stringoutTuKho([bg('a', 'anh', 'blob:a')]).boQua.length === 0);
+  ok('fps mặc định là FPS_MAC_DINH', stringoutTuKho([]).fps === FPS_MAC_DINH);
+  no('fps ≤ 0 ở cửa vào cũng NỔ, không im lặng', () => stringoutTuKho([], { fps: 0 }));
+  ok('khoá "duration" (tên EN) cũng đọc được',
+    stringoutTuKho([bg('d', 'phim', 'blob:d', { duration: '4s' })], { fps: 25 }).canh[0].soKhung === 100);
 }
 
 console.log(`\nstringout.test.ts — pass ${pass} · fail ${fail}`);

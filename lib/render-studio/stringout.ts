@@ -153,3 +153,96 @@ export function inStringout(s: Stringout): string {
   }
   return dong.join('\n');
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * CỬA VÀO TỪ KHO KẾT QUẢ — chỗ dựng thô gặp dữ liệu THẬT của app.
+ *
+ * Kho kết quả (`lib/capabilities/render.ts`, `BanGhiKetQua`) là nơi mọi lượt render
+ * rơi vào. Nó KHÔNG lưu số khung: một bản ghi phim chỉ mang `thamSo` người dùng đã
+ * khai (`thoiLuong: '5s'`) — số khung phải suy ra, và **suy ra là chỗ dễ bịa nhất
+ * trong cả module này**. Nên đường suy đó nằm ở đây, thuần, có ca đột biến riêng:
+ *   · không có `url`            ⇒ chưa có tệp phim  ⇒ BỎ RA (soKhung 0, module tự gọi tên);
+ *   · có `url`, không đọc nổi thời lượng ⇒ BỎ RA kèm lý do — KHÔNG rơi về một số mặc định;
+ *   · bản ghi ẢNH               ⇒ không phải cảnh phim, không thuộc dựng thô.
+ *
+ * Kiểu vào khai theo CẤU TRÚC (không `import` từ `lib/capabilities/*`): tệp này chạy
+ * test bằng `sucrase-node`, mà sucrase-node không giải được alias `@/`. `BanGhiKetQua`
+ * gán vừa khít kiểu dưới — cùng một dữ liệu, không phải bản mô phỏng thứ hai.
+ * ══════════════════════════════════════════════════════════════════════════════ */
+
+/** Phần bản ghi kết quả mà dựng thô thật sự đọc — cổng hẹp, cố ý. */
+export interface BanGhiCanh {
+  id: string;
+  ten: string;
+  loai: 'anh' | 'phim';
+  /** URL tệp kết quả. Rỗng/thiếu = chưa render xong. */
+  url?: string;
+  thamSo?: Record<string, string | number>;
+  /** mốc sinh ra (ms epoch) — dùng để xếp thứ tự ổn định khi người dựng chưa xếp tay. */
+  luc?: number;
+}
+
+/**
+ * Đọc thời lượng (giây) từ một giá trị tham số. Nhận `10`, `'10'`, `'10s'`, `'10 s'`.
+ * KHÔNG đoán: mọi thứ khác trả `null` để nơi gọi phải nói ra là không đọc được.
+ */
+export function docThoiLuongGiay(v: unknown): number | null {
+  if (typeof v === 'number') return Number.isFinite(v) && v > 0 ? v : null;
+  if (typeof v !== 'string') return null;
+  const m = /^\s*(\d+(?:[.,]\d+)?)\s*(?:s|giây|sec|secs|seconds?)?\s*$/i.exec(v);
+  if (!m) return null;
+  const n = parseFloat(m[1].replace(',', '.'));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** Khoá tham số có thể chở thời lượng — theo đúng tên node đang ghi (`motion-core.THOI_LUONG`). */
+const KHOA_THOI_LUONG = ['thoiLuong', 'duration', 'thời lượng', 'thoi_luong'];
+
+/**
+ * Dựng thô TỪ KHO KẾT QUẢ. Chỉ bản ghi `loai: 'phim'` được xét — ảnh tĩnh không phải
+ * một cảnh trong bản dựng, và nói "bỏ ra" về một tấm ảnh thì lại là một kiểu nói sai khác.
+ * Nơi gọi đếm số ảnh và tự nói ra nếu cần (nó đang cầm cả mảng).
+ */
+export function stringoutTuKho(
+  kho: readonly BanGhiCanh[],
+  tuyChon: TuyChonStringout = {},
+): Stringout {
+  const fps = tuyChon.fps ?? FPS_MAC_DINH;
+  if (!Number.isFinite(fps) || fps <= 0) {
+    throw new Error(`stringout: fps phải > 0, nhận ${fps}`);
+  }
+  const phim = kho
+    .filter((b) => b.loai === 'phim')
+    .slice()
+    // xếp theo mốc sinh: người dựng chưa xếp tay thì thứ tự QUAY là thứ tự hợp lý nhất,
+    // và nó tất định (không phụ thuộc thứ tự React trả mảng).
+    .sort((a, b) => (a.luc ?? 0) - (b.luc ?? 0));
+
+  const boQuaTruoc: CanhBoQua[] = [];
+  const canh: CanhStringout[] = [];
+  for (const b of phim) {
+    if (!b.url) {
+      // để chính `dungStringout` gọi tên — một lý do, một chỗ viết ra.
+      canh.push({ id: b.id, nhan: b.ten, soKhung: 0 });
+      continue;
+    }
+    const thoV = KHOA_THOI_LUONG.map((k) => b.thamSo?.[k]).find((v) => v !== undefined);
+    const giay = docThoiLuongGiay(thoV);
+    if (giay === null) {
+      boQuaTruoc.push({
+        id: b.id,
+        nhan: b.ten,
+        lyDo:
+          thoV === undefined
+            ? 'bản ghi không khai thời lượng — không suy được số khung'
+            : `không đọc được thời lượng (${String(thoV)})`,
+      });
+      continue;
+    }
+    canh.push({ id: b.id, nhan: b.ten, soKhung: Math.round(giay * fps) });
+  }
+
+  const s = dungStringout(canh, { fps });
+  // Bỏ-ra của cửa vào đứng TRƯỚC bỏ-ra của lõi: chúng là lỗi khai báo, đọc trước thì sửa trước.
+  return { ...s, boQua: [...boQuaTruoc, ...s.boQua] };
+}

@@ -14,8 +14,9 @@
  * đây sẽ ảnh hưởng 2 chặng kia. Popover này viết riêng, cục bộ cho chặng Render.
  */
 
+import dynamic from 'next/dynamic';
 import { useRef, useState, type ReactNode } from 'react';
-import { Files, FileDown, FileText, Printer, FileUp, ChevronDown } from 'lucide-react';
+import { Files, FileDown, FileText, Printer, FileUp, ChevronDown, Clapperboard } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { addImageNodesFromFiles } from '@/components/studio/UploadButton';
 import { deckImagesFromNodes } from '@/lib/present-editor/handoff';
@@ -37,8 +38,12 @@ interface FileItem {
   disabledReason?: string;
 }
 
+/** Bản dựng thô chỉ mở khi được gọi — nạp động để nó không nằm trong gói của thanh công cụ. */
+const StringoutCreator = dynamic(() => import('@/components/render-studio/StringoutCreator'), { ssr: false });
+
 export function RenderIOMenus() {
   const [open, setOpen] = useState(false);
+  const [moDungTho, setMoDungTho] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -123,6 +128,16 @@ export function RenderIOMenus() {
       onSelect: exportPptx,
     },
     {
+      /* Mặt tiền của `lib/render-studio/stringout.ts`. Đứng ở nhóm XUẤT vì nó là bản dựng ĐẦU
+         TIÊN của đường phim — thứ người dựng nhìn trước khi quyết xuất gì. Không tốn credit,
+         không gọi mạng: chỉ đọc kho kết quả đã có. */
+      id: 'stringout',
+      label: tr('Bản dựng thô (stringout)', 'Rough assembly (stringout)'),
+      sub: tr('Xếp mọi clip đã render nối đuôi nhau · mã thời gian vào/ra · cảnh chưa xong bị gọi tên', 'Every rendered clip end to end · in/out timecode · unfinished shots are named'),
+      icon: <Clapperboard size={16} />,
+      onSelect: () => setMoDungTho(true),
+    },
+    {
       id: 'flow-export',
       label: tr('Bảng làm việc (.json)', 'Board (.json)'),
       icon: <FileUp size={16} />,
@@ -146,6 +161,7 @@ export function RenderIOMenus() {
 
   return (
     <div ref={menuRef} className="relative shrink-0">
+      {moDungTho && <StringoutCreator onClose={() => setMoDungTho(false)} />}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
