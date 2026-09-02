@@ -31,10 +31,24 @@ import { useT } from '@/lib/i18n';
 import WidgetCard from './WidgetCard';
 import type { HomeSummary } from './types';
 
-export function todayHasSignal(summary: HomeSummary, currentUserId?: string | null): boolean {
-  const taskSignal = summary.greeting.dueTodayCount > 0 || summary.today.tasksDoneToday > 0;
-  const onlineOthersSignal = summary.today.online.some((u) => u.id !== currentUserId);
-  return taskSignal && onlineOthersSignal;
+/**
+ * 🔴 ĐẢO NGƯỠNG v4 — 02/09. Bản cũ: `taskSignal && onlineOthersSignal`, tức ĐÒI CÙNG LÚC hai
+ * phạm trù (có việc hôm nay **và** có người khác online). Giữ nguyên chú thích v4 phía trên vì
+ * lập luận của nó không sai — nó chỉ đúng cho một studio NHIỀU NGƯỜI.
+ *
+ * ĐẢO VÌ: đo trên app thật 02/09, ô "Hôm nay" KHÔNG BAO GIỜ mọc. Người dùng một mình thì
+ * `online` sau khi lọc bản thân luôn rỗng ⇒ vế thứ hai luôn false ⇒ widget chết cứng bất kể có
+ * bao nhiêu việc đến hạn. Một điều kiện mà người dùng ĐƠN LẺ không có cách nào thoả không phải
+ * là ngưỡng chất lượng, nó là công tắc tắt. Và pilot của Hoà đúng là một người dùng đơn lẻ.
+ *
+ * Nay: chỉ `taskSignal` — ô nói về VIỆC, nên nguồn sống của nó phải là việc.
+ * Phần hiện diện KHÔNG mất: thân component vẫn chỉ vẽ hàng online khi `online.length > 0`, nên
+ * studio nhiều người thấy y như cũ. Tức đây là NỚI ngưỡng mọc, không phải bỏ tính năng.
+ * ⚠️ `currentUserId` vẫn giữ trong chữ ký — nó còn dùng để lọc bản thân khỏi hàng hiện diện.
+ * Gỡ tham số là làm hỏng chỗ đó, dù ở đây nó thôi tham gia quyết định hiện/ẩn.
+ */
+export function todayHasSignal(summary: HomeSummary, _currentUserId?: string | null): boolean {
+  return summary.greeting.dueTodayCount > 0 || summary.today.tasksDoneToday > 0;
 }
 
 export default function TodayStrip({

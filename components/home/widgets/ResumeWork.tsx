@@ -80,7 +80,14 @@ export default function ResumeWork({
   const meta = PHASES.find((p) => p.id === card.stage);
   const stageName = meta ? tr(meta.label, meta.labelEn) : card.stage;
   const Icon = STAGE_ICON[card.stage];
-  const projectName = card.projectName ?? tr('Dự án gần nhất', 'Most recent project');
+  /* 🔴 02/09 — BỎ CHỮ GIỮ CHỖ. Bản cũ: `card.projectName ?? tr('Dự án gần nhất', …)`, nên ô LỚN
+   * NHẤT của Home in một cái tên KHÔNG PHẢI TÊN — phạm F6 ("Home biết im lặng: cấm chữ giữ
+   * chỗ"), và tệ hơn: nó khiến lỗi tra tên trông như một thiết kế. Lỗi thật đã vá ở
+   * `resume-card.ts` (chỉ nhận `flowId` khi `scopeKind === 'project'`).
+   * Khi vẫn KHÔNG tra được tên: nói thứ mình BIẾT CHẮC — tên CHẶNG đang dở. Đó là tin thật,
+   * không phải chỗ trống độn chữ. Nhãn trợ năng ở dưới cũng dùng cùng chuỗi này, nên người
+   * dùng bàn phím nghe đúng thứ người dùng mắt đọc. */
+  const projectName = card.projectName ?? stageName;
   const timeLabel = daysAgoLabel(card.daysAgo, false);
   const timeLabelEn = daysAgoLabel(card.daysAgo, true);
   const time = timeLabel && timeLabelEn ? tr(timeLabel, timeLabelEn) : null;
@@ -146,14 +153,20 @@ export default function ResumeWork({
                 className="inline-flex items-center gap-1 rounded-[var(--r-1)] px-1.5 py-0.5 text-[length:var(--fs-2xs)] text-[var(--t3)]"
                 style={{ background: 'var(--field)' }}
               >
-                <Icon size={14} aria-hidden /> {stageName}
+                {/* ⚠️ KHÔNG để dấu cách chữ giữa icon và nhãn. Thẻ này đã `gap-1`; dấu cách
+                    trong JSX là một TEXT NODE, mà text node trong flex thành một item riêng ⇒
+                    khe hoá thành gap + dấu cách = "hôm  nay" hở đôi. Đo trên ảnh 1054 (02/09,
+                    bảng đối chiếu dòng 10). Khoảng cách do `gap` lo, chữ không lo. */}
+                <Icon size={14} aria-hidden />
+                {stageName}
               </span>
               {time && (
                 <span
                   className="inline-flex items-center gap-1 rounded-[var(--r-1)] px-1.5 py-0.5 font-mono text-[length:var(--fs-2xs)] tabular-nums text-[var(--t3)]"
                   style={{ background: 'var(--field)' }}
                 >
-                  <Clock size={14} aria-hidden /> {time}
+                  <Clock size={14} aria-hidden />
+                  {time}
                 </span>
               )}
             </div>

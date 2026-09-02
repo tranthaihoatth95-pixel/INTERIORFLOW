@@ -25,6 +25,16 @@ import { isPhase, type Phase } from '../../../lib/phases';
 export interface ResumeLite {
   route: string;
   flowId?: string;
+  /**
+   * `flowId` ở trên đang là loại danh tính nào — GƯƠNG của `lib/resume.ts:54`, thêm ở đây 02/09.
+   * Thiếu trường này là lý do ô LỚN NHẤT của Home in chữ mặc định "Dự án gần nhất": `flowId`
+   * gần như luôn là FLOW id, đem khớp với `recentProjects[].id` (PROJECT id) thì trượt, và
+   * `projectName` về null. Cùng một bệnh đã hạ `RailDieuHuong` ngày 27/08 (đo: 42/48 flow không
+   * có `projectId`) — nhầm flow-id ↔ project-id là bệnh HỆ THỐNG, không phải lỗi một chỗ.
+   * `undefined` = dữ liệu ghi TRƯỚC 27/08 ⇒ **không biết**, và "không biết" phải xử như
+   * "không dùng được" (lời chứng gốc ở `lib/resume.ts:52-53`).
+   */
+  scopeKind?: 'project' | 'flow';
   phase?: Phase;
   ts: number;
 }
@@ -77,7 +87,15 @@ export function buildResumeCard(
     ROUTE_TO_PHASE[resume.route] ?? (isPhase(resume.phase) ? resume.phase : null);
   if (!stage) return null;
 
-  const routeId = opts.currentProjectId || resume.flowId || null;
+  /* `currentProjectId` đến từ store ⇒ luôn là PROJECT id thật, tin được.
+   * `resume.flowId` thì KHÔNG: nó chỉ là project id khi bản ghi tự khai `scopeKind === 'project'`
+   * (`lib/resume.ts:94` ghi hai trường thành CẶP). Khai 'flow', hoặc không khai (dữ liệu cũ),
+   * thì đem nó dựng `/projects/<id>/…` là trỏ vào một dự án không tồn tại — đúng lỗi
+   * `RailDieuHuong` đã trả giá 27/08 và nay canh bằng `lib/rail-project-scope.test.ts`.
+   * ⇒ Từ chối. `routeId` null KHÔNG làm mất lối về: `resumeHref` rơi sang route toàn cục có
+   * `LegacyStageRedirect` tự tra lại dự án, vẫn đúng một cú bấm. */
+  const idTuResume = resume.scopeKind === 'project' ? (resume.flowId ?? null) : null;
+  const routeId = opts.currentProjectId || idTuResume;
   const recent = opts.recentProjects ?? [];
   const projectName = routeId ? (recent.find((p) => p.id === routeId)?.name ?? null) : null;
 
