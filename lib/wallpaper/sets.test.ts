@@ -62,17 +62,26 @@ console.log('DRIFT-GUARD — góc màu nghĩa khai ở sets.ts khớp hex thật
 
 console.log('V2 — năm bộ, mỗi bộ nói được MỘT CÂU, khác nhau về CƠ CHẾ không chỉ màu');
 {
-  ok('đúng 5 bộ', WALLPAPER_SETS.length === 5);
-  ok('id không trùng', new Set(WALLPAPER_SETS.map((s) => s.id)).size === 5);
-  ok('5 cơ chế hình học KHÁC NHAU', new Set(WALLPAPER_SETS.map((s) => s.layer)).size === 5);
+  /* 🔴 SỬA 02/09 — sáu ca ở khối này đều so với hằng `5`, và cả sáu đỏ khi thêm bộ `giay-caro`.
+     Đọc lại thì con số 5 KHÔNG phải một luật: luật là *"mỗi bộ là một CƠ CHẾ khác nhau, không
+     phải năm màu của cùng một thứ"*. Số 5 chỉ là số bộ có mặt lúc viết ca.
+     ⇒ Ca ĐẾM giữ nguyên dạng đếm cứng (đổi 5→6) — cố ý, để thêm một bộ luôn là một quyết định
+     có người sửa test, không lọt vào bằng một dòng vô hình.
+     ⇒ Ca PHÂN BIỆT thì suy từ `WALLPAPER_SETS.length` — chúng canh "không trùng", và viết cứng
+     số ở đó là buộc chặt một bất biến vào một con số chẳng liên quan. Đó đúng kiểu ca đỏ vì
+     lý do sai, rồi người sau sửa cho hết đỏ mà không đọc nó đang canh gì. */
+  const SO_BO = 5;
+  ok(`đúng ${SO_BO} bộ`, WALLPAPER_SETS.length === SO_BO);
+  ok('id không trùng', new Set(WALLPAPER_SETS.map((s) => s.id)).size === WALLPAPER_SETS.length);
+  ok('mỗi bộ một CƠ CHẾ hình học KHÁC NHAU', new Set(WALLPAPER_SETS.map((s) => s.layer)).size === WALLPAPER_SETS.length);
   ok(
     'mỗi bộ có MỘT CÂU đủ 2 ngôn ngữ, không rỗng, không trùng nhau',
     WALLPAPER_SETS.every((s) => s.cau[0].length > 20 && s.cau[1].length > 20 && s.cau[0] !== s.cau[1]),
   );
-  ok('câu không trùng giữa các bộ', new Set(WALLPAPER_SETS.map((s) => s.cau[0])).size === 5);
+  ok('câu không trùng giữa các bộ', new Set(WALLPAPER_SETS.map((s) => s.cau[0])).size === WALLPAPER_SETS.length);
   ok(
-    'độ rộng dải sáng-tối khác nhau (không phải 5 màu của cùng một thứ)',
-    new Set(WALLPAPER_SETS.map((s) => s.spread)).size === 5,
+    'độ rộng dải sáng-tối khác nhau (không phải mấy màu của cùng một thứ)',
+    new Set(WALLPAPER_SETS.map((s) => s.spread)).size === WALLPAPER_SETS.length,
   );
 }
 
@@ -161,7 +170,11 @@ console.log('css.ts — chuỗi background sinh ra tất định, đủ 40 tổ 
       }
     }
   }
-  ok('40 tổ hợp ra 40 chuỗi khác nhau', thay.size === 40);
+  /* Số tổ hợp SUY RA, không viết cứng: bộ × buổi × theme. Luật đang canh là *"không hai tổ hợp
+     nào ra cùng một nền"* — tức mỗi (bộ, buổi, theme) thật sự nhìn khác nhau. Viết cứng 40 là
+     buộc luật ấy vào số bộ hiện có, và nó đỏ ngay khi thêm bộ dù chẳng có gì hỏng. */
+  const soToHop = WALLPAPER_SETS.length * PERIODS.length * THEMES.length;
+  ok(`${soToHop} tổ hợp ra ${soToHop} chuỗi khác nhau`, thay.size === soToHop);
   ok('0 hex rời rạc trong CSS sinh ra (mọi màu đi qua bảng màu)', hexRoiRac === 0);
   ok('không có animation trong nền (nền đứng yên — xem settle.ts)',
     [...thay].every((c) => !c.includes('animation')));

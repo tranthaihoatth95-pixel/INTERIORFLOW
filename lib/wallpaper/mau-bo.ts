@@ -207,6 +207,9 @@ export const BANG_MAU_BO: BangMauBo[] = [
   {
     setId: 'binh-do',
     phongCach: ['Kiến tạo · trường phái Thuỵ Sĩ', 'Constructivist · Swiss International Style'],
+    /* 02/09 — hình học của bộ này đổi từ ĐỒNG MỨC sang CARO cho khớp với chính dòng `nguon`
+       ngay dưới (chốt 12 Hoà: *"giấy draft caro lam"*). `nguon` GIỮ NGUYÊN TỪNG CHỮ: nó không
+       hề sai, nó là thứ đã chỉ ra rằng phần hình học mới là chỗ lệch. */
     nguon: 'Josef Müller-Brockmann, "Grid Systems in Graphic Design" · bản in lam (cyanotype) — chỉ nét và lưới, không giả vờ có chiều sâu',
     caTinh: [
       'Người tin bản vẽ hơn phối cảnh; đọc công trình bằng nét trước khi bằng ảnh.',

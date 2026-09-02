@@ -81,14 +81,32 @@ export const WALLPAPER_SETS: WallpaperSet[] = [
     sat: 0.07,
     spread: 0.92,
   },
+  /* 🔴 02/09 — HÌNH HỌC ĐỔI TỪ ĐỒNG MỨC SANG CARO, cho khớp với chính danh tính của bộ này.
+     Chốt 12 của Hoà đòi *"nền = giấy draft caro lam"*. Lượt đầu tôi định thêm một bộ THỨ SÁU,
+     và cổng chặn (xem dưới). Đọc kỹ lại mới thấy: `nguon` của chính bộ này ở `mau-bo.ts:210`
+     ghi **"Grid Systems in Graphic Design"** và **"bản in lam (cyanotype) — chỉ nét và LƯỚI"**.
+     ⇒ Bộ này VỐN ĐÃ là giấy caro lam về danh tính; chỉ có `layer` vẽ đường ĐỒNG MỨC. Phần hình
+     học lệch phần danh tính, và lệch đó có TỪ TRƯỚC — không phải hệ quả của lát này.
+     Sửa cho khớp danh tính rẻ hơn và thật hơn đắp thêm một bộ.
+
+     ⛔ `id` GIỮ NGUYÊN `binh-do`: người dùng đã chọn bộ này thì `localStorage` của họ đang lưu
+     đúng chuỗi đó — đổi id là âm thầm vứt lựa chọn của họ về mặc định.
+     ✅ `ten` thì ĐỔI: "Bình độ / Contours" trên một nền kẻ ô là nói dối người dùng. Tên phải tả
+     đúng thứ họ nhìn thấy, kể cả khi id bên dưới mang tên cũ.
+
+     📌 PHÁT HIỆN, không sửa ở đây: hệ 5 accent đã BÃO HOÀ. Accent đang dùng 82 · 215 · 247,2 ·
+     285 · 322; luật `mau-bo.test.ts:122` đòi hai accent cách nhau ≥25°, vùng cấm màu nghĩa
+     (10 · 37 · 145 · 187) mỗi cái ±20. Quét cả vòng, chỗ còn hợp lệ chỉ còn ~107–124° và
+     ~347–349°. Bộ thứ sáu NÀO cũng phải rơi vào hai khe đó hoặc phải đổi luật 25° — đó là
+     quyết định của Hoà khi tới lúc, không phải của một lát mã. */
   {
     id: 'binh-do',
-    ten: ['Bình độ', 'Contours'],
+    ten: ['Giấy caro', 'Grid paper'],
     cau: [
-      'Bản vẽ — chỉ có nét, ánh sáng làm nét lộ ra hay chìm đi.',
-      'A drawing — only lines; light decides which ones surface.',
+      'Giấy kẻ ô của bản nháp — chỉ có nét, ánh sáng làm lưới lộ ra hay chìm đi.',
+      'Draft grid paper — only lines; light decides whether the grid surfaces.',
     ],
-    layer: 'contour',
+    layer: 'caro',
     hue: 205,
     sat: 0.05,
     spread: 0.42,

@@ -40,12 +40,22 @@ export type WallpaperLayer =
   | 'horizon'
   /** vệt nắng lọt qua ô cửa — GÓC vệt nghiêng theo giờ */
   | 'aperture'
-  /** đường đồng mức mảnh đều, không có bầu trời — thuần sơ đồ/bản vẽ */
-  | 'contour'
+  /* 🔴 `'contour'` (đường đồng mức) GỠ 02/09. Bộ duy nhất dùng nó là `binh-do`, và bộ đó nay
+     vẽ `caro` cho khớp danh tính của chính nó (*"Grid Systems" · cyanotype · "chỉ nét và lưới"*).
+     ⛔ Không giữ lại làm "dự trữ": một nhánh `layer` không ai dùng là NỢ, không phải tài sản —
+     nó vẫn phải được đọc, được kiểm, được cân nhắc mỗi lần ai đó sửa họ này, mà không trả lại
+     gì. Cần đồng mức thật thì viết lại, rẻ hơn nuôi một nhánh chết. */
   /** nhiều lớp lùi dần, sương dày lên về đêm — chiều sâu khí quyển */
   | 'strata'
   /** một mặt phẳng vật liệu, ánh sáng liếm ngang từ mép */
-  | 'plane';
+  | 'plane'
+  /**
+   * giấy kẻ caro của bản vẽ nháp — hai lưới vuông lồng nhau, ô nhỏ và ô lớn theo nhịp 5.
+   * ⚠️ KHÁC `contour`: bình độ là đường đồng mức (nét cong, thưa, chéo) — nó là BẢN ĐỒ.
+   * Caro là lưới vuông đều — nó là GIẤY. Chốt 12 của Hoà nói *"giấy draft caro lam"*, và
+   * suốt một thời gian `binh-do` bị đọc nhầm thành thứ đó chỉ vì cả hai đều "chỉ có nét".
+   */
+  | 'caro';
 
 export interface WallpaperSet {
   id: string;

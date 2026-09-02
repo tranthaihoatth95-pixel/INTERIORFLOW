@@ -86,6 +86,12 @@ console.log('V5 — lựa chọn được NHỚ, dữ liệu hỏng không làm 
    * Đảo ca là chưa đủ — đảo xong thì con số 'binh-do' thành một hằng không ai giải thích, và
    * sáu tháng nữa người sau lại "dọn" nó về WALLPAPER_SETS[0]. Nên ca dưới khoá Ý ĐỊNH: */
   ok('mặc định = bộ Hoà chốt (binh-do), nấc 0, bật', MAC_DINH.setId === 'binh-do' && MAC_DINH.nacGiamChoi === 0 && MAC_DINH.bat === true);
+  /* 🔴 THÊM 02/09 — ca này mới là thứ khoá CHỐT 12, và ca `setId === 'binh-do'` ở trên KHÔNG
+   * khoá nổi. `binh-do` là một cái ID; chốt 12 nói về thứ người dùng NHÌN THẤY (*"giấy draft
+   * caro lam"*). Suốt một thời gian id đó trỏ vào một bộ vẽ đường ĐỒNG MỨC, và mọi ca kiểm id
+   * vẫn xanh trong khi chốt 12 chưa hề được thoả. ⇒ Khoá bằng HÌNH HỌC, không bằng tên. */
+  ok('mặc định vẽ lưới CARO — chốt 12 nói về thứ NHÌN THẤY, không về id',
+    WALLPAPER_SETS.find((b) => b.id === MAC_DINH.setId)?.layer === 'caro');
   ok('mặc định KHÔNG đi theo thứ tự khai báo — sắp lại sets.ts không được đổi mặt tiền app', WALLPAPER_SETS.length > 1 && MAC_DINH.setId !== WALLPAPER_SETS[0].id);
   ok('bộ mặc định có thật trong danh sách (không trỏ vào id chết)', WALLPAPER_SETS.some((b) => b.id === MAC_DINH.setId));
   ok('null → mặc định', chuanHoa(null).setId === MAC_DINH.setId);

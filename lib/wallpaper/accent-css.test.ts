@@ -11,7 +11,7 @@ import {
   ACCENT_MAC_DINH,
   tokenAccentCuaBo,
 } from './accent-css';
-import { accentDat, accentRgb, bangMauCua } from './mau-bo';
+import { accentDat, accentRgb, bangMauCua, khoangSang } from './mau-bo';
 import { WALLPAPER_SETS } from './sets';
 
 let pass = 0;
@@ -54,6 +54,18 @@ console.log('\nCẢ NĂM BỘ — accent phải THẬT SỰ đi theo bộ, và p
 for (const s of WALLPAPER_SETS) {
   const bo = bangMauCua(s.id);
   const rgb = accentRgb(bo);
+  /* 🔴 THÊM 02/09 — khi ca này đỏ, IN RA CỬA SỔ ĐỘ SÁNG HỢP LỆ.
+     Trước đây nó chỉ báo "đỏ", nên người thêm một bộ mới phải MÒ giá trị `l`: tôi vừa mò hai
+     lượt (0.5 rồi 0.48) và trượt cả hai. Cửa sổ hợp lệ phụ thuộc (hue, sat) nên không đoán
+     được bằng cách nhìn một bộ hàng xóm — nó phải được TÍNH. `khoangSang()` đã có sẵn, cổng
+     chỉ việc gọi. Một cổng nói được "sai, và đây là khoảng đúng" rẻ hơn nhiều lượt mò. */
+  if (!accentDat(rgb)) {
+    const cua = khoangSang(bo.accent.h, bo.accent.s);
+    console.log(
+      `        ↳ ${s.id}: l=${bo.accent.l} TRƯỢT. Cửa sổ hợp lệ cho (hue ${bo.accent.h}°, sat ${bo.accent.s}) = ` +
+      (cua ? `[${cua[0].toFixed(3)} … ${cua[1].toFixed(3)}]` : 'KHÔNG CÓ — phải đổi hue hoặc sat, không kẹp được'),
+    );
+  }
   ok(`${s.id}: accentDat() xanh (accent hợp lệ cả theme sáng lẫn tối)`, accentDat(rgb));
   const t = tokenAccentCuaBo(s.id);
   ok(`${s.id}: không rơi về thoái lui (accentDat xanh ⇒ token ≠ ACCENT_MAC_DINH trừ chan-troi)`,

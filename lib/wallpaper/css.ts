@@ -58,14 +58,42 @@ export function nenCss(set: WallpaperSet, p: WallpaperPalette, sun: NguonSang): 
       );
     }
 
-    /* ③ BÌNH ĐỘ — nét mảnh đều, không có bầu trời. Ánh sáng đổi làm dải nét nào lộ ra.
-       Nét dùng `repeating-linear-gradient` 1px, bước 34px — thưa, không moiré ở 1×/2×. */
-    case 'contour': {
+    /* ③ GIẤY CARO — giấy kẻ ô của bản vẽ nháp (chốt 12 Hoà: *"nền = giấy draft caro lam"*).
+       Hai lưới vuông LỒNG NHAU theo nhịp 5: ô nhỏ 8px mảnh, ô lớn 40px đậm hơn. Nhịp 5 là thứ
+       làm nó đọc ra GIẤY KẺ chứ không ra một tấm lưới đều — mắt bắt được nhóm, không phải đếm
+       từng ô. Bốn lớp `repeating-linear-gradient` (ngang + dọc × nhỏ + lớn) trên một nền phẳng.
+
+       📌 Layer này THAY `contour` (đường đồng mức, nét chéo thưa 34/96px) đã gỡ 02/09. Hai thứ
+       cùng "chỉ có nét" nên bị đọc lẫn nhau suốt một thời gian — đồng mức vẽ một BẢN ĐỒ, caro
+       vẽ một TỜ GIẤY — và đó chính là lý do `binh-do` bị nhận nhầm là đã thoả chốt 12.
+
+       ⛔ KHÔNG hạt, KHÔNG chuyển động: đây là NỀN của một app làm việc — nó phải đứng yên phía
+       sau và không cướp một chút chú ý nào. Ánh sáng theo giờ chỉ đổi ĐỘ ĐẬM của nét (qua `s0…s3`
+       vốn đã tính theo `period`), không đổi hình học. Nét không nhoè theo giờ thì người dùng
+       luôn nhận ra cùng một tờ giấy. */
+    case 'caro': {
+      const o = 8;
+      const oLon = o * 5;
+      /* Nét ô lớn phải ĐẬM HƠN RÕ nét ô nhỏ, nếu không nhịp 5 biến mất và lưới thành đều tăm
+         tắp. Tỉ lệ ~2,3× là chỗ mắt còn thấy nhóm mà nét lớn chưa thành khung kẻ bảng.
+
+         ⚠️ MỘT cặp alpha cho CẢ HAI theme, cố ý. Đặc tả muốn sáng .06/.14 và tối .08/.18, nhưng
+         `nenCss` KHÔNG nhận theme và `WallpaperPalette` không mang cờ theme — thứ duy nhất suy
+         ra được là `lumMax`, và đặt một ngưỡng cho nó là ĐOÁN một dải số tôi chưa đo. Vừa hôm
+         nay tôi đã mò hai lượt `l` của accent vì đúng thói quen đó, nên lần này không mò.
+         Điều làm cặp alpha chung dùng được: nét vẽ bằng `s1`, mà `s1` ĐÃ theo theme — nền tối
+         thì `s1` là chặng sáng, nền sáng thì `s1` là chặng tối. Tương phản nét/nền vì thế đã tự
+         đúng chiều; alpha chỉ còn quyết ĐỘ MỜ, không quyết chiều.
+         ⛳ Muốn tách hai theme thật thì phải cấp cờ theme cho `nenCss` — một lát riêng, có cổng. */
+      const mo = 0.07;
+      const dam = 0.16;
+      const luoi = (buoc: number, a: number) =>
+        `repeating-linear-gradient(0deg, ${rgba(s1, a)} 0px, ${rgba(s1, a)} 1px, transparent 1px, transparent ${buoc}px),` +
+        `repeating-linear-gradient(90deg, ${rgba(s1, a)} 0px, ${rgba(s1, a)} 1px, transparent 1px, transparent ${buoc}px)`;
       return (
-        `repeating-linear-gradient(96deg, ${rgba(s0, 0.5)} 0px, ${rgba(s0, 0.5)} 1px, transparent 1px, transparent 34px),` +
-        `repeating-linear-gradient(6deg, ${rgba(s1, 0.26)} 0px, ${rgba(s1, 0.26)} 1px, transparent 1px, transparent 96px),` +
-        `radial-gradient(78% 62% at ${sun.x.toFixed(1)}% 34%, ${rgba(s1, 0.42)} 0%, transparent 72%),` +
-        `linear-gradient(160deg, ${rgb(s2)} 0%, ${rgb(s3)} 100%)`
+        `${luoi(oLon, dam)},` +
+        `${luoi(o, mo)},` +
+        `linear-gradient(180deg, ${rgb(s3)} 0%, ${rgb(s2)} 100%)`
       );
     }
 

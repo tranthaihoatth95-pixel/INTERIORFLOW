@@ -20,6 +20,10 @@ export const MAC_DINH: WallpaperPrefs = {
    * đổi nền mặc định mà không ai định. Khai TÊN bộ thì ý định nằm ở đây, đọc được.
    * ⚠️ Chỉ đổi MẶC ĐỊNH. Người dùng đã chọn bộ khác thì `localStorage` vẫn thắng — đường đọc
    * prefs không đụng tới. */
+  /* 02/09 — id GIỮ NGUYÊN, nhưng nghĩa của nó đã đổi: bộ `binh-do` nay vẽ LƯỚI CARO chứ không
+   * còn vẽ đường đồng mức (`sets.ts`, chốt 12 *"giấy draft caro lam"*). Chọn giữ id thay vì đặt
+   * id mới là cố ý — người dùng đã lưu chuỗi này trong `localStorage`, đổi id là vứt lựa chọn
+   * của họ về mặc định mà không ai báo. */
   setId: 'binh-do',
   nacGiamChoi: 0,
   bat: true,
