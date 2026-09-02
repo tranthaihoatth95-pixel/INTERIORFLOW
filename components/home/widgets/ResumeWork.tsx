@@ -204,7 +204,22 @@ export default function ResumeWork({
           )}
         </div>
 
-        <span className="text-[length:var(--fs-2xs)] text-[var(--t3)]">
+        {/* 🔴 R-2c (02/09) — CTA ACCENT DUY NHẤT CỦA MÀN.
+            Ảnh 18:28: *"Mở lại →"* là chữ xám 12px, không nổi hơn bất cứ dòng nào quanh nó —
+            nên bảng chấm ghi Home có **0 accent**, và màn không có chỗ nào cho mắt rơi vào.
+            H-3 giao accent cho ĐÚNG một chỗ: chính nút này. Đây là hành động người dùng đến
+            Home để làm, nên nó xứng đáng là điểm nhấn — và là điểm nhấn DUY NHẤT.
+            ⛔ Thêm accent ở bất kỳ ô nào khác trên Home là phạm chốt 3 (*"xanh tím tè le"* =
+            chê RẢI accent nhiều chỗ một màn). Đã quét `components/home`: các chỗ `--accent`
+            còn lại là `focus-visible` (chỉ hiện khi đi bàn phím) và nhánh trạng thái A/B, không
+            cùng màn với lưới này.
+            Màu KHÔNG ấn định: `--accent` do `AccentHydrator` bơm, suy từ BỘ HÌNH NỀN người dùng
+            chọn (chốt 2). Chữ dùng token `--on-accent` có sẵn — không tự chọn trắng/đen, vì
+            cặp đó đã được `mau-bo.ts` khoá bằng cổng WCAG. */}
+        <span
+          className="inline-flex items-center gap-1 self-start rounded-[var(--r-full)] px-3 py-1.5 text-[length:var(--fs-xs)] font-[var(--fw-semi)]"
+          style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
+        >
           {tr('Mở lại →', 'Reopen →')}
         </span>
       </button>
