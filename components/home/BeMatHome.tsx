@@ -538,9 +538,22 @@ export default function BeMatHome({
    * định, không do một trần px tính ngược từ nhịp. Giữ lại hai biến không ai đọc là để lại đúng
    * loại rác mà lượt sau phải đi hỏi "cái này còn dùng không". */
 
+  /* 🔴 R-2 (02/09) — BÁM TRÊN-TRÁI, THÔI CĂN GIỮA. Chốt 14: "Home = 1 màn + widget y chang
+   * iPad". Springboard iPad neo lưới ở GÓC TRÊN-TRÁI vùng nội dung rồi mọc xuống; nó không bao
+   * giờ thả một đảo nội dung vào giữa màn.
+   * Đo trên ảnh 18:28 (1440×900): đảo ~720×480 nằm giữa, lời chào lơ lửng ở 42% chiều cao,
+   * ~70% màn trống. Đó là hệ quả của BA lệnh căn giữa chồng nhau, ở BA chỗ khác nhau:
+   *   ① `justify-center` khung ngoài (trục ngang)
+   *   ② `justifyContent:'safe center'` cột trong (trục DỌC — cùng tên thuộc tính, khác trục)
+   *   ③ `justifyContent:'center'` trên chính hộp lưới (căn giữa các CỘT)
+   * ⚠️ Ba chỗ cùng mang chữ `center` nhưng làm ba việc khác nhau, nên gỡ một hoặc hai cái thì
+   * lưới VẪN trôi khỏi mép trái, trong khi mã đọc như đã sửa xong. Đó là kiểu sửa nửa vời khó
+   * thấy nhất. Gỡ CẢ BA trong cùng một lát.
+   * Hệ quả kèm theo, cố ý: lời chào và lưới nay ăn CÙNG một mép trái nên thẳng cột — trước đó
+   * lời chào bám trái còn lưới căn giữa, tạo đúng cái lỗ ở giữa mà bảng chấm gọi tên. */
   return (
     <div
-      className="flex h-full w-full justify-center overflow-y-auto"
+      className="flex h-full w-full justify-start overflow-y-auto"
       data-home-trang-thai={kh.trangThai}
       data-home-mat-do={kh.matDo}
     >
@@ -553,8 +566,8 @@ export default function BeMatHome({
           gap,
           paddingTop: 'clamp(16px, 3vh, 40px)',
           paddingBottom: 40,
-          /* `safe center`: nội dung dày tự cư xử như `start`, không cắt mất phần trên. */
-          justifyContent: 'safe center' as const,
+          /* Bám TRÊN. Bản cũ `safe center` — nội dung ít thì đảo trôi xuống giữa màn. */
+          justifyContent: 'flex-start',
         }}
         data-home-cot={cotDung}
       >
@@ -582,7 +595,12 @@ export default function BeMatHome({
                  và khe đều của springboard, không cắt chữ. */
               gridAutoRows: `minmax(${O_DON_VI}, auto)`,
               gap: GAP_O,
-              justifyContent: 'center',
+              /* 🔴 R-2 — lưới bám MÉP TRÁI của vùng nội dung, thẳng cột với lời chào ngay trên.
+                 `center` ở đây là cái căn giữa THỨ BA (ngoài hai cái đã gỡ phía trên): nó căn
+                 giữa các CỘT bên trong hộp lưới. Sót nó lại thì lưới vẫn trôi khỏi mép trái dù
+                 hai cái kia đã bỏ — và đó chính là kiểu sửa nửa vời khó thấy nhất, vì mã đọc
+                 như đã sửa rồi. */
+              justifyContent: 'start',
             }}
           >
             {kh.bay.map((m) => {

@@ -166,8 +166,26 @@ assert.equal(d.trangThai, 'D');
 assert.equal(d.bay[0].ma, 'tiepTuc', 'bản vẽ EXS-C: ô ĐẦU TIÊN của Studio Focus là Việc đang dở');
 assert.equal(d.bay[0].vai, 'hero', 'EXS-C giữ nguyên: Resume là HERO, không phải AI/KPI');
 assert.equal(d.bay[0].co, '2x1', 'chốt 14: hero mang tiêu đề + chip ⇒ 2x1, không phải 2x2');
-assert.ok(!d.bay.some((m) => m.co === '2x2' && m.ma !== 'keDuAn'),
-  'chốt 14: 2x2 CHỈ dành cho lưới ảnh (keDuAn) — không ô chữ nào được lấy khổ đó');
+/* 🔴 SIẾT 02/09 — ca cũ là `m.co === '2x2' && m.ma !== 'keDuAn'`, tức nó MIỄN TRỪ sẵn cho
+   `keDuAn`. Miễn trừ ấy đúng theo KẾ HOẠCH (keDuAn sẽ là lưới 2×2 bìa dự án) nhưng SAI theo
+   app thật: `keDuAn` đang vẽ một DANH SÁCH CHỮ, và trong ô 2x2 nó cho ra 3 dòng chữ + ~40% vỏ
+   rỗng — đúng lỗi F4 mà chốt 14 sinh ra để chữa.
+   ⇒ Ca cũ là một cổng MÙ: nó canh mọi ô KHÁC nhưng bỏ trống đúng ô đang phạm luật, và nó xanh
+   suốt trong khi ảnh thật đỏ. ⇒ Bỏ miễn trừ. Hôm nay KHÔNG ô nào được `2x2`.
+   ⛳ Dựng xong lưới bìa ảnh thật thì mở lại miễn trừ cho `keDuAn` — nhưng lúc đó phải kèm một
+   ca chứng minh nó ĐANG vẽ ảnh, chứ không phải chỉ khai tên. */
+assert.ok(!d.bay.some((m) => m.co === '2x2'),
+  'chốt 14: 2x2 CHỈ cho lưới ảnh, mà chưa widget nào vẽ lưới ảnh ⇒ hôm nay không ô nào được 2x2');
+/* Khoá riêng `keDuAn` — nó là ô DUY NHẤT từng mang 2x2, nên nếu ai trả nó về thì phải trả có ý
+   thức. Tách ca vì "không ô nào 2x2" và "keDuAn là 2x1" là HAI luật: luật đầu là nhịp lưới,
+   luật sau là cỡ đúng cho một danh sách. Một con số đừng chở hai luật. */
+const keD = d.bay.find((m) => m.ma === 'keDuAn');
+assert.equal(keD?.co, '2x1', 'keDuAn đang vẽ DANH SÁCH ⇒ 2x1; 2x2 chỉ khi nó thật sự vẽ lưới bìa');
+for (const [ten, kh2] of [['C', keHoachHome({ tinHieu: KHONG_DO, gio: 8, daQuayLai: false })],
+                          ['E', keHoachHome({ tinHieu: KHONG_DO, gio: 19, daQuayLai: false })]] as const) {
+  const k = kh2.bay.find((m) => m.ma === 'keDuAn');
+  if (k) assert.equal(k.co, '2x1', `trạng thái ${ten}: keDuAn cũng phải 2x1, luật cỡ không đổi theo giờ`);
+}
 assert.equal(nhipCua('day').cot, 4, 'bản vẽ EXS-C: lưới 4 cột');
 assert.equal(nhipCua('day').heSoGap, 1, 'bản vẽ EXS-C: gap = đúng --gap, không nhân thêm');
 

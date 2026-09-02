@@ -263,6 +263,15 @@ export interface MucBay {
  * Thứ bậc KHÔNG mất — nó chuyển sang `vai` + VỊ TRÍ (hero đứng đầu dòng chảy), đúng cách
  * springboard phân cấp. Hệ quả: hero nay là `2x1`, và ô `2x2` có thể mang `vai: 'chinh'`.
  *
+ * 🔴 `keDuAn` 2x2 → 2x1 (02/09, sau khi NHÌN ảnh 18:28). Luật ngay trên nói `2x2` **CHỈ** cho
+ * lưới ảnh. Kế hoạch H-3 định cho `keDuAn` thành lưới 2×2 bìa dự án — nhưng **thứ đó chưa dựng**:
+ * trên app thật nó đang vẽ một DANH SÁCH CHỮ ("Căn hộ mẫu · Studio 48m²" / "Nháp" / "Dự án mới").
+ * Danh sách trong ô 2x2 ⇒ 3 dòng chữ và ~40% vỏ rỗng bên dưới — đúng lỗi F4 mà chính lát này
+ * sinh ra để chữa.
+ * ⇒ Cỡ phải theo thứ ô ĐANG VẼ, không theo thứ ô SẼ vẽ. Cấp cỡ trước cho một tính năng chưa có
+ * là cách một ô rỗng được hợp thức hoá bằng một lời hứa.
+ * ⛳ Dựng xong lưới bìa thật thì trả lại `2x2` — lúc đó `2x2` mới có nghĩa.
+ *
  * B không có mục nào ở đây: State B là **một câu và một nút trên nền công việc**, nó không đi
  * qua lưới ô. Trả mảng rỗng là đúng, không phải thiếu.
  */
@@ -274,7 +283,7 @@ const BAY_THEO_TRANG_THAI: Record<TrangThaiHome, readonly MucBay[]> = {
   // nào để làm hero. Nhẹ hơn D: bỏ ghi chú · biểu đồ · dòng tin.
   C: [
     { ma: 'homNay', tang: 'core', co: '2x1', vai: 'hero' },
-    { ma: 'keDuAn', tang: 'core', co: '2x2', vai: 'chinh' },
+    { ma: 'keDuAn', tang: 'core', co: '2x1', vai: 'chinh' },
     { ma: 'canToiXu', tang: 'core', co: '1x1', vai: 'chinh' },
     { ma: 'mocToi', tang: 'core', co: '2x1', vai: 'phu' },
     { ma: 'anhTuan', tang: 'personal', co: '2x1', vai: 'phu' },
@@ -284,7 +293,7 @@ const BAY_THEO_TRANG_THAI: Record<TrangThaiHome, readonly MucBay[]> = {
   // *"Hero là Resume, không phải AI, không phải KPI."* — chú thích của chính bản vẽ.
   D: [
     { ma: 'tiepTuc', tang: 'core', co: '2x1', vai: 'hero' },
-    { ma: 'keDuAn', tang: 'core', co: '2x2', vai: 'chinh' },
+    { ma: 'keDuAn', tang: 'core', co: '2x1', vai: 'chinh' },
     { ma: 'homNay', tang: 'core', co: '1x1', vai: 'chinh' },
     { ma: 'canToiXu', tang: 'core', co: '1x1', vai: 'chinh' },
     { ma: 'mocToi', tang: 'core', co: '2x1', vai: 'phu' },
@@ -311,7 +320,7 @@ const BAY_THEO_TRANG_THAI: Record<TrangThaiHome, readonly MucBay[]> = {
   E: [
     { ma: 'homNay', tang: 'core', co: '2x1', vai: 'hero' },
     { ma: 'tiepTuc', tang: 'core', co: '2x1', vai: 'chinh' },
-    { ma: 'keDuAn', tang: 'core', co: '2x2', vai: 'chinh' },
+    { ma: 'keDuAn', tang: 'core', co: '2x1', vai: 'chinh' },
     { ma: 'mocToi', tang: 'core', co: '2x1', vai: 'phu' },
   ],
 };
