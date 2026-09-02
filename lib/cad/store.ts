@@ -412,6 +412,26 @@ interface CadState {
   addModel3DSource: (source: Model3DSource) => void;
 }
 
+/**
+ * D1 — giữ lại những id CÒN TỒN TẠI trong `doc`, bỏ id đã biến mất.
+ *
+ * Vì sao phải lọc chứ không giữ nguyên cả mảng: undo có thể lùi về một trạng thái mà entity
+ * đang chọn CHƯA ĐƯỢC TẠO (vừa vẽ xong một tường rồi Ctrl+Z). Giữ nguyên id đó là để lại con
+ * trỏ trỏ vào hư không — Inspector đọc ra `undefined`, và những chỗ giả định "đã chọn thì phải
+ * tra được" sẽ nổ.
+ *
+ * Vì sao KHÔNG xoá sạch cho an toàn: đó chính là bản cũ, và nó vứt luôn phần vẫn dùng được.
+ *
+ * Trả về CHÍNH mảng cũ khi không có gì bị loại — tránh sinh mảng mới mỗi lượt undo, thứ làm
+ * mọi thứ đăng ký `selection` vẽ lại dù chẳng có gì đổi.
+ */
+function locChonConSong(selection: string[], doc: Doc): string[] {
+  if (!selection.length) return selection;
+  const conSong = new Set(doc.entities.map((e) => e.id));
+  const giu = selection.filter((id) => conSong.has(id));
+  return giu.length === selection.length ? selection : giu;
+}
+
 function clone(d: Doc): Doc {
   return {
     // ...d TRƯỚC: giữ mọi field scalar optional của Doc (printScale/paperKey B1 + field tương lai)
@@ -530,18 +550,29 @@ export const useCadStore = create<CadState>((set, get) => ({
       future: [],
     })),
 
+  /* 🔴 D1 (02/09) — UNDO/REDO GIỮ VẬT ĐANG CHỌN.
+   * Bản cũ trả `selection: []` ⇒ mỗi lần Ctrl+Z là **mất luôn vật đang chọn**. Đó là lùi một
+   * bước rồi phải đi chọn lại — trong khi cả AutoCAD lẫn mọi trình vẽ đều giữ vùng chọn qua
+   * undo, vì undo là *"trả lại trạng thái trước"*, KHÔNG phải *"bỏ chọn"*.
+   * Xoá sạch vùng chọn là cách AN TOÀN nhưng SAI: nó tránh được một lỗi thật (con trỏ trỏ vào
+   * entity đã biến mất ở doc mới) bằng cách vứt cả thứ vẫn còn dùng được.
+   * ⇒ GIỮ vùng chọn, chỉ LỌC những id không còn tồn tại trong doc mới. Id còn thì chọn còn.
+   *
+   * ⚠️ Lọc theo `Set` chứ không `arr.find` trong vòng lặp: undo là đường NÓNG (giữ Ctrl+Z là
+   * hàng chục lượt/giây) và bản vẽ thật có hàng chục nghìn entity — `O(n·m)` ở đây là khựng tay.
+   */
   undo: () =>
     set((s) => {
       if (!s.past.length) return s;
       const prev = s.past[s.past.length - 1];
-      return { doc: prev, past: s.past.slice(0, -1), future: [clone(s.doc), ...s.future].slice(0, MAX_HISTORY), selection: [] };
+      return { doc: prev, past: s.past.slice(0, -1), future: [clone(s.doc), ...s.future].slice(0, MAX_HISTORY), selection: locChonConSong(s.selection, prev) };
     }),
 
   redo: () =>
     set((s) => {
       if (!s.future.length) return s;
       const next = s.future[0];
-      return { doc: next, future: s.future.slice(1), past: [...s.past, clone(s.doc)].slice(-MAX_HISTORY), selection: [] };
+      return { doc: next, future: s.future.slice(1), past: [...s.past, clone(s.doc)].slice(-MAX_HISTORY), selection: locChonConSong(s.selection, next) };
     }),
 
   addEntity: (e) => {
