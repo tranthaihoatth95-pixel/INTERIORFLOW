@@ -294,7 +294,10 @@ export function RailDieuHuong() {
     fetch('/api/flows')
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (huy || !d?.flows?.length) return;
+        /* `!d.flows.length` KHÔNG còn được thoát sớm: phản hồi này chở CẢ `projects`, và ca cần
+         * cứu nhất chính là *có dự án mà chưa có flow nào*. Thoát ở đây là bỏ luôn nấc lùi thứ
+         * hai bên dưới trước khi nó kịp chạy. */
+        if (huy || !d) return;
         /**
          * 🔴 SỬA 27/08 — P0 `L2-02`. Bản cũ: `setDuAnMayChu(moiNhat.id)`.
          * `moiNhat.id` là **FLOW id**, và nó được ghép vào `/projects/<id>/<chặng>`. Lane
@@ -320,7 +323,18 @@ export function RailDieuHuong() {
             (a: { updatedAt?: string }, b: { updatedAt?: string }) =>
               new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime(),
           )[0] as { project?: { id?: string } } | undefined;
-        if (moiNhatCoDuAn?.project?.id) setDuAnMayChu(moiNhatCoDuAn.project.id);
+        /* 🔴 THÊM NẤC LÙI THỨ HAI — Hoà 02/09 09:15, chốt 15.
+         * Nhánh trên chỉ tìm được dự án khi có FLOW trỏ vào nó. Tài khoản CÓ dự án mà chưa dựng
+         * flow nào (rất thường: dự án mới tạo, hoặc dự án chỉ có bản vẽ CAD) ⇒ `moiNhatCoDuAn`
+         * rỗng ⇒ ba chặng khoá, đúng cảnh Hoà gặp. Nhưng `/api/flows` ĐÃ trả kèm mảng `projects`
+         * (`app/api/flows/route.ts`) — chính nguồn mà `/tasks` đang dùng để đổ dropdown. Dữ liệu
+         * nằm sẵn trong cùng một phản hồi; thiếu chỉ là chưa ai đọc tới.
+         * ⚠️ Vẫn KHÔNG bịa URL: chỉ nhận `projects[0].id` là id DỰ ÁN thật. Không có dự án nào
+         * thì để `null` và rail giữ mờ — nay kèm câu lý do NÓI VIỆC LÀM ĐƯỢC (tạo dự án),
+         * không phải câu chỉ sang một Trang chủ trống. */
+        const duAnDauTien = (d.projects as { id?: string }[] | undefined)?.find((p) => !!p?.id)?.id;
+        const chon = moiNhatCoDuAn?.project?.id ?? duAnDauTien;
+        if (chon) setDuAnMayChu(chon);
       })
       .catch(() => {
         /* mất mạng/401 — giữ nguyên trạng thái mờ kèm lý do, không bịa đường vào */
@@ -636,7 +650,14 @@ export function RailDieuHuong() {
               />
             ))}
             {/* `+` ĐỨNG CUỐI VIÊN CHẶNG — phần tử MÀU duy nhất của cả thanh (Hoà chốt 23/08). */}
-            {cum === 'chang' && <NutTaoAi hienChu={hienChu} />}
+            {/* 🔴 GỠ KHỎI MÀN 02/09 — Hoà đang cầm app soi từng màn và nút này là một CỬA CHẾT.
+                `NutTaoAi` được dựng ĐÚNG luật §9 (mờ KÈM lý do "đang dựng — chưa nối"), và nó vẫn
+                phải đi: §9 cho phép mờ khi việc CHƯA LÀM ĐƯỢC, nhưng không biến một chỗ chưa có
+                gì thành một món đồ trên thanh điều hướng chính. Cùng phán quyết với "Ask AI" —
+                AI chỉ được lên màn dưới danh VITALS theo khuôn đã thiết kế, hoặc không lên.
+                ⚠️ CHỈ gỡ CHỖ HIỆN, giữ nguyên hàm bên dưới: nó chở lời chứng về `aria-disabled`
+                vs `disabled` (đo 16/08) — xoá hàm là xoá luôn bài học đó. Nối được cửa AI thật
+                thì trả lại một dòng này. */}
           </div>
         ))}
       </div>

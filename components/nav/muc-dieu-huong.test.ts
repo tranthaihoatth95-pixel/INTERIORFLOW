@@ -169,8 +169,11 @@ ok(
 );
 
 console.log('\n[5] Mục mờ LUÔN có lý do đọc được — §9 cấm nút giả');
-ok('mục cần dự án, chưa mở dự án → mờ kèm lý do', Boolean(lyDoMo(byId('thiet-ke-2d'), false)?.vi));
-ok('mục cần dự án, đã mở dự án → dùng được', lyDoMo(byId('thiet-ke-2d'), true) === null);
+/* Cờ thứ hai NAY nghĩa là "CÓ dự án dùng được", không còn là "đang mở một dự án" — xem
+ * `lyDoMo`. Đổi nghĩa cờ chứ không xoá nhánh: bất biến "không có đường đi ⇒ phải có lý do"
+ * (ca ngay dưới) là thứ chặn nút giả, gỡ nó là mở cửa cho đúng thứ §9 cấm. */
+ok('CHƯA CÓ dự án nào → chặng mờ kèm lý do (vẫn không có nút giả)', Boolean(lyDoMo(byId('thiet-ke-2d'), false)?.vi));
+ok('CÓ dự án → chặng dùng được NGAY, không bắt chọn trước (chốt 15)', lyDoMo(byId('thiet-ke-2d'), true) === null);
 ok('Dự án (sổ toàn cục) KHÔNG BAO GIỜ mờ', lyDoMo(byId('du-an'), false) === null);
 ok(
   'Cảm hứng/Thư viện KHÔNG bị dự án khoá',
@@ -198,10 +201,18 @@ ok(
     return r === null || (r.vi.trim().length > 0 && r.en.trim().length > 0);
   }),
 );
-ok(
-  'lý do "chưa mở dự án" chỉ đúng chỗ CHỌN dự án là Trang chủ (không còn "Tổng quan" — mục đó đã đổi tên)',
-  (lyDoMo(byId('thiet-ke-2d'), false)?.vi ?? '').includes('Trang chủ'),
-);
+/* 🔴 ĐỔI 02/09 (chốt 15 — Hoà 09:15 "rail khoá 2D/3D/Trình chiếu").
+ * Ca cũ khoá câu *"chọn một dự án ở Trang chủ"*. Câu đó giả định người dùng ĐÃ CÓ dự án và chỉ
+ * chưa chọn — mà đó chính là ca nay KHÔNG còn mờ nữa (rail tự lùi về dự án gần nhất). Ca mờ duy
+ * nhất còn lại là tài khoản CHƯA CÓ dự án nào, và khi đó chỉ người ta sang Trang chủ để "chọn"
+ * là chỉ sang một chỗ trống.
+ * ⇒ Ca nay khoá điều KHÓ HƠN và đúng hơn: lý do phải nói VIỆC LÀM ĐƯỢC (tạo dự án), và KHÔNG
+ * được bảo đi chọn. Đây là luật X2 ("empty state làm được việc tại chỗ") ở dạng đo được. */
+{
+  const ly = lyDoMo(byId('thiet-ke-2d'), false)?.vi ?? '';
+  ok('chưa có dự án nào ⇒ lý do nói VIỆC LÀM ĐƯỢC (tạo dự án)', /tạo/i.test(ly));
+  ok('… và KHÔNG bảo đi "chọn" ở một Trang chủ đang trống', !/chọn/i.test(ly));
+}
 
 console.log('\n[6] Nấc 320 — bỏ thì phải kèm lý do, không im lặng');
 ok(

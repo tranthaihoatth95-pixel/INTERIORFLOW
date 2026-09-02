@@ -355,10 +355,32 @@ export function mucDangMo(duong: string | null | undefined): string | null {
  */
 export function lyDoMo(muc: MucRail, daMoDuAn: boolean): { vi: string; en: string } | null {
   if (muc.chuaCoTrang) return muc.chuaCoTrang;
+  /* 🔴 GỠ NHÁNH "CHƯA MỞ DỰ ÁN" — Hoà 02/09 09:15, chốt 15.
+   *
+   * Nhánh cũ: `muc.duoi && !daMoDuAn` ⇒ cả ba chặng 2D/3D/Trình chiếu MỜ kèm tooltip
+   * *"Chưa mở dự án — chọn một dự án ở Trang chủ"*. Nó tuân đúng luật §9 (mờ phải kèm lý do)
+   * nên trông rất hợp lệ — và vẫn sai, vì nó phạm một luật LỚN HƠN: X2 (`00-CHOT` 03/08)
+   * *"không màn nào chặn vì chưa làm bước trước — chặng trống hiện empty state LÀM ĐƯỢC VIỆC
+   * tại chỗ"*. Người mở app lần đầu gặp ba cửa khoá và một câu bảo đi chỗ khác.
+   *
+   * ⚠️ Ghi lại vì nó là bẫy dễ lặp: "mờ KÈM LÝ DO" chỉ hợp lệ khi việc đó THẬT SỰ chưa làm
+   * được. Ở đây làm được — chỉ là chưa ai chọn hộ cái dự án. Khoá một cửa mở được rồi dán
+   * giấy giải thích thì vẫn là cửa khoá.
+   *
+   * ⛔ NHƯNG KHÔNG GỠ TRẮNG. Cổng đã bắt đúng lúc tôi định gỡ: bất biến *"hễ không có đường đi
+   * thì PHẢI có lý do"* là thứ chặn **nút giả bấm không ra gì**. Bỏ lý do mà chặng vẫn không có
+   * đích ⇒ đúng cái nút giả đó. Nên nghĩa của cờ ĐỔI, không phải nhánh bị xoá:
+   *   TRƯỚC: `daMoDuAn` = "đang mở một dự án"  ⇒ mờ khi chưa CHỌN dự án nào (Hoà gặp cửa khoá
+   *          dù tài khoản anh ấy có sẵn dự án — đây chính là chỗ sai).
+   *   NAY  : `daMoDuAn` = "CÓ dự án dùng được" ⇒ rail tự lùi về dự án gần nhất (xem
+   *          `RailDieuHuong`), nên có dự án là có đích, không còn cửa khoá nào.
+   * Chỉ còn MỘT ca mờ thật: tài khoản CHƯA CÓ dự án nào. Và câu lý do cũng phải đổi theo — bảo
+   * người ta *"chọn một dự án ở Trang chủ"* khi chưa có dự án nào để chọn là chỉ sang một chỗ
+   * trống. Nói việc làm được: tạo dự án. */
   if (muc.duoi && !daMoDuAn) {
     return {
-      vi: 'Chưa mở dự án — chọn một dự án ở Trang chủ',
-      en: 'No project open — pick one from Home',
+      vi: 'Chưa có dự án nào — tạo một dự án để mở chặng này',
+      en: 'No project yet — create one to open this stage',
     };
   }
   return null;
