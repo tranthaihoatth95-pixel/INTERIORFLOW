@@ -93,6 +93,10 @@ const GLASS_SHELL: CSSProperties = {
   backdropFilter: 'saturate(180%) blur(var(--blur-strong))',
   WebkitBackdropFilter: 'saturate(180%) blur(var(--blur-strong))',
   boxShadow: 'var(--shadow-node), inset 0 1px 0 var(--vien-mo)',
+  /* Bo `--r-5` (24px, thêm 02/09) — nấc trên `--r-4`, dành riêng cho ô widget lớn kiểu iPad.
+     Khai ở ĐÂY chứ không ở class Tailwind: vỏ nay là MỘT khuôn cho mọi vai, nên bo cũng phải
+     nằm cùng chỗ với phần còn lại của khuôn, không tách ra một chuỗi class song song. */
+  borderRadius: 'var(--r-5)',
 };
 
 export default function WidgetCard({
@@ -126,16 +130,20 @@ export default function WidgetCard({
   bodyClassName?: string;
 }) {
   const vai = useVaiO();
-  const laPhu = vai === 'phu';
+  /* `laPhu` đã gỡ (02/09): vai `phu` không còn đổi CHẤT LIỆU nào — nó chỉ còn nghĩa ở CỠ Ô, mà
+   * cỡ ô do lưới quyết định chứ không do thẻ. Giữ `VaiOProvider`/`useVaiO` nguyên vẹn: 12 nơi
+   * gọi vẫn khai vai, và lát sau (thứ bậc theo cỡ) sẽ cần đúng thông tin đó. */
 
-  /* Ô PHỤ KHÔNG CÓ VỎ. Không phải "vỏ nhạt hơn" — không có vỏ. Nửa vời (viền mờ đi một chút)
-     vẫn đọc ra một tấm thẻ, và tấm thẻ nhạt cạnh tấm thẻ đậm thì vẫn là tường thẻ. */
-  const vo: CSSProperties = laPhu
-    ? { borderTop: '1px solid var(--vien-mo, var(--border))' }
-    : GLASS_SHELL;
-  const lopVo = laPhu ? '' : 'nen-mo-card rounded-[var(--r-3)]';
-  /* Ô trần không cần đệm ngang — nó đứng thẳng trên nền, đệm chỉ đẩy chữ lệch khỏi cột hàng xóm. */
-  const dem = laPhu ? 'pt-3' : dense ? 'p-3' : 'p-4';
+  /* 🔴 MỘT CHẤT LIỆU CHO MỌI Ô (02/09, chốt 14 Hoà: widget giống y chang iPad).
+     GHI ĐÈ chốt 23/08 "ô phụ KHÔNG vỏ". Chốt cũ giải đúng bài của nó — chống TƯỜNG THẺ, bằng
+     cách bỏ vỏ ở ô phụ. iPad giải cùng bài đó bằng đường khác và đó là đường Hoà chọn: mọi ô
+     CÙNG một chất liệu, thứ bậc đi bằng **CỠ Ô + VỊ TRÍ**, không bằng vật liệu. Trộn hai lời
+     giải mới là thứ đọc ra lộn xộn — nửa số ô có kính, nửa không.
+     ⚠️ Ô phụ nay CÓ vỏ, nên rủi ro tường-thẻ quay lại phải chặn ở chỗ khác: bằng SỐ Ô (H-4 cắt
+     bớt widget) và bằng khe thoáng của lưới, không bằng cách bỏ vỏ. */
+  const vo: CSSProperties = GLASS_SHELL;
+  const lopVo = 'nen-mo-card';
+  const dem = dense ? 'p-3.5' : 'p-4';
 
   if (noPad) {
     return (
@@ -166,12 +174,10 @@ export default function WidgetCard({
               Hệ quả thứ hai, cũng đáng: sáu nhãn hoa mono giống hệt nhau thì **không nhãn nào
               nổi**, mắt không phân được cái nào quan trọng. Nay thứ bậc đi bằng CỠ + CÂN NẶNG +
               vai của ô, không bằng chữ hoa. Ô phụ có nhãn nhỏ hơn và nhạt hơn ô chính. */}
+          {/* 02/09 — MỘT kiểu tiêu đề, cùng lý do với một chất liệu vỏ: thứ bậc đi bằng CỠ Ô,
+              không bằng cỡ chữ nhãn. Hai cỡ nhãn trên cùng một lưới ô vuông đọc ra "hai hệ". */}
           <h3
-            className={
-              laPhu
-                ? 'flex items-baseline gap-1.5 text-[length:var(--fs-2xs)] font-medium tracking-[.01em] text-[var(--t3)]'
-                : 'flex items-baseline gap-1.5 text-[length:var(--fs-xs)] font-semibold tracking-[.01em] text-[var(--t2)]'
-            }
+            className="flex items-baseline gap-1.5 text-[length:var(--fs-xs)] font-semibold tracking-[.01em] text-[var(--t2)]"
           >
             {title}
           </h3>

@@ -37,7 +37,7 @@
 
 import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Plus, Import, Sparkles } from 'lucide-react';
+import { ArrowRight, Plus, Import } from 'lucide-react';
 // 🔴 KHÔNG dùng được `<Icon glyph={...}>` ở đây (lỗi kiểu của primitive `components/ui/Icon.tsx`,
 // xem ghi chú bản trước). Lấy `ICON_STROKE` từ chính primitive để luật nét vẫn có MỘT nguồn.
 import { ICON_STROKE } from '@/components/ui/Icon';
@@ -57,6 +57,18 @@ import { VaiOProvider } from './widgets/WidgetCard';
  * `minmax(88, auto)` chứ không phải `88px` cứng — nội dung tràn thì hàng nở, không cắt chữ.
  */
 const CAO_O = 'minmax(88px, auto)';
+
+/**
+ * Ô ĐƠN VỊ CỦA LƯỚI HOME (02/09, chốt 14 Hoà: *"1 màn home + widget giống y chang iPad"*).
+ *
+ * iPad không xếp widget bằng tỉ lệ co giãn — nó có MỘT ô đơn vị vuông, và mọi widget là bội số
+ * của ô đó (2×2 · 4×2 · 4×4). Đó là thứ làm springboard đọc ra "một hệ" thay vì "một trang dàn".
+ * `clamp` để ô còn co được trên màn nhỏ mà KHÔNG vỡ tỉ lệ vuông: cận dưới 148 giữ ô còn đọc
+ * được chữ, cận trên 188 chặn ô phình thành tấm áp phích trên màn rộng.
+ * ⚠️ `CAO_O` giữ lại: các nhánh bố cục khác (`vua`/`mong`/`stacked`) vẫn dùng, chưa đụng lượt này.
+ */
+const O_DON_VI = 'clamp(148px, 11.5vw, 188px)';
+const GAP_O = 20;
 
 export interface BeMatHomeProps {
   /** Dữ kiện thô — bề mặt tự tính kế hoạch để nơi gọi không phải nhớ gọi hai hàm. */
@@ -143,7 +155,6 @@ const CHIP_MASTER: CSSProperties = {
 
 function MasterToolHome() {
   const tr = useT();
-  const idLyDoAi = 'home-ly-do-hoi-ai';
   return (
     <div className="relative flex shrink-0 justify-center" style={{ paddingBottom: 6 }}>
       <div
@@ -180,27 +191,13 @@ function MasterToolHome() {
           <Import size={16} strokeWidth={ICON_STROKE} aria-hidden />
           {tr('Nhập DXF', 'Import DXF')}
         </Link>
-        <button
-          type="button"
-          aria-disabled
-          aria-describedby={idLyDoAi}
-          style={{
-            ...CHIP_MASTER,
-            background: 'transparent',
-            opacity: 'var(--mo-vo-hieu)',
-            cursor: 'not-allowed',
-          }}
-          className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-        >
-          <Sparkles size={16} strokeWidth={ICON_STROKE} aria-hidden />
-          {tr('Hỏi AI', 'Ask AI')}
-        </button>
-        <span id={idLyDoAi} className="if-tooltip-a11y">
-          {tr(
-            'Cửa hỏi AI trung tính đang dựng — chưa nối bề mặt nào.',
-            'The neutral Ask-AI surface is not wired yet.',
-          )}
-        </span>
+        {/* 🔴 GỠ NÚT "Hỏi AI" (02/09) — Hoà 08:50 nói thẳng vào đúng nút này.
+            Nó được dựng ĐÚNG luật §9 (mờ KÈM lý do thật, `aria-disabled` + `aria-describedby`,
+            không phải nút giả câm) — và vẫn phải đi. §9 cho phép mờ khi việc CHƯA LÀM ĐƯỢC;
+            nó KHÔNG cho phép biến một chỗ chưa có gì thành một MÓN ĐỒ trên thanh việc chính.
+            Ba chỗ, một phán quyết: nút này · `NutTaoAi` ở rail (`61afd30c`) · và mọi nhãn AI
+            generic khác — **AI lên màn dưới danh Vitals theo khuôn đã thiết kế, hoặc không lên.**
+            Gỡ luôn cả `<span>` lý do: giữ lại là để một câu giải thích cho một vật không còn. */}
       </div>
     </div>
   );
@@ -537,8 +534,9 @@ export default function BeMatHome({
   /* ─── C · D · E — LƯỚI Ô CO THEO SỐ Ô THẬT (giữ nguyên bản 23/08, lỗi ⑩ đã vá) ─── */
   const cotCanDung = kh.bay.reduce((s, m) => s + nhipO(m.co).cot, 0);
   const cotDung = Math.max(1, Math.min(kh.nhip.cot, cotCanDung));
-  const RONG_DAY = 1280;
-  const rongKhung = `min(100%, ${Math.round((RONG_DAY * cotDung) / kh.nhip.cot)}px)`;
+  /* `RONG_DAY`/`rongKhung` đã gỡ cùng lưới cũ (02/09): bề rộng nay do Ô ĐƠN VỊ × số cột quyết
+   * định, không do một trần px tính ngược từ nhịp. Giữ lại hai biến không ai đọc là để lại đúng
+   * loại rác mà lượt sau phải đi hỏi "cái này còn dùng không". */
 
   return (
     <div
@@ -549,7 +547,9 @@ export default function BeMatHome({
       <div
         className="flex w-full flex-col"
         style={{
-          maxWidth: rongKhung,
+          /* Khung ngoài thôi giới hạn bề rộng: lưới nay tự căn giữa theo ô đơn vị, nên `maxWidth`
+             tính theo số cột chỉ tạo thêm một cái kẹp thứ hai lệch với cái thứ nhất. */
+          maxWidth: 'none',
           gap,
           paddingTop: 'clamp(16px, 3vh, 40px)',
           paddingBottom: 40,
@@ -563,10 +563,26 @@ export default function BeMatHome({
         {kh.bay.length > 0 && (
           <div
             className="grid"
+            /* 🔴 LƯỚI Ô VUÔNG ĐƠN VỊ (02/09, chốt 14 — "widget giống y chang iPad").
+               TRƯỚC: cột `1fr` co giãn + hàng `minmax(88px, auto)` ⇒ ô CAO THẤP KHÁC NHAU và
+               RỘNG theo khung ⇒ đọc ra một tờ báo dàn trang, không đọc ra springboard.
+               NAY: ô là hình VUÔNG cạnh cố định, khe đều, cả lưới căn giữa — đúng cách iPad xếp
+               widget: kích thước là bội số của một đơn vị, không phải hệ quả của bề ngang cửa sổ.
+               `clamp` giữ ô co được trên màn nhỏ mà không vỡ tỉ lệ vuông. */
             style={{
-              gridTemplateColumns: `repeat(${cotDung}, minmax(0, 1fr))`,
-              gridAutoRows: CAO_O,
-              gap,
+              gridTemplateColumns: `repeat(${cotDung}, ${O_DON_VI})`,
+              /* 🔴 `minmax(ô, auto)` CHỨ KHÔNG phải ô vuông CỨNG — sửa sau khi nhìn ảnh thật.
+                 Đặc tả nói `gridAutoRows: O_DON_VI` (vuông tuyệt đối, đúng iPad). Chụp ra thì
+                 nội dung TRÀN RA NGOÀI VỎ: ô "Dự án" đẩy chữ xuống dưới đáy thẻ, ô "Việc đang dở"
+                 vỡ cột. Lý do: 11 widget hiện có được viết cho hàng `minmax(88px, auto)` — chúng
+                 CO THEO NỘI DUNG. Ép vuông tuyệt đối là cắt chiều cao chúng cần.
+                 Ô vuông tuyệt đối chỉ đúng SAU khi nội dung được cắt cho vừa (H-3 dựng lại
+                 `ResumeWork`, H-4 bớt widget). Làm lưới trước nội dung là đổi một màn lộn xộn
+                 lấy một màn vỡ chữ. Nay: cạnh ô là SÀN, không phải trần — giữ được nhịp vuông
+                 và khe đều của springboard, không cắt chữ. */
+              gridAutoRows: `minmax(${O_DON_VI}, auto)`,
+              gap: GAP_O,
+              justifyContent: 'center',
             }}
           >
             {kh.bay.map((m) => {

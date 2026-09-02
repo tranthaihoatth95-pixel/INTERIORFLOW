@@ -234,10 +234,17 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
     }
   }, []);
 
-  // ---------- <1100px xếp lại, cuộn tự nhiên (mặc định desktop — sửa đúng lúc mount) ----------
+  /* ---------- NGƯỠNG XẾP LẠI: 1100 → 1000 (02/09) ----------------------------------------
+     🔴 1100 CẮT NGANG ĐÚNG KHỔ iPad NGANG (1024–1180). Hệ quả đo được hôm nay: mọi ảnh nghiệm
+     thu Home chụp ở bề ngang 1054 rơi vào nhánh `stackedList` — một cột thẻ trắng đè kín nền —
+     nên cả hai lane soi ảnh Home suốt buổi mà KHÔNG HỀ nhìn thấy `BeMatHome`. Tức ngưỡng này
+     không chỉ làm hỏng bố cục trên iPad, nó còn làm hỏng cả việc ĐO bố cục.
+     iPad ngang là thiết bị Hoà chốt (chốt 5: hai bản desktop/chạm; chốt 14: mốc là iPad) ⇒ khổ
+     đó phải rơi vào bố cục THẬT, không vào nhánh xếp-dọc dự phòng. `stackedList` từ nay chỉ còn
+     phục vụ khổ DỌC hẹp thật sự. Bản chạm riêng là việc sau pilot, không phải lát này. */
   const [isWide, setIsWide] = useState(true);
   useEffect(() => {
-    const check = () => setIsWide(window.innerWidth >= 1100);
+    const check = () => setIsWide(window.innerWidth >= 1000);
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
