@@ -12,6 +12,7 @@
 import assert from 'node:assert/strict';
 import {
   chonTrangThai,
+  coDuLieu,
   keHoachHome,
   matDoCua,
   nhipCua,
@@ -96,8 +97,19 @@ for (const gio of [8, 14, 20]) {
   assert.ok(!kh.bay.some((m) => m.ma === 'vitals'),
     'không insight đáng giá ⇒ KHÔNG card nào. Vitals không nói để chứng minh nó tồn tại');
 }
+/* 🔴 ĐẢO CA NÀY 02/09 — Vitals KHÔNG còn chiếm một ô của lưới Home.
+   Ca cũ khoá: "có insight thật ⇒ vitals PHẢI lên tiếng trên Home". Luật đó đúng khi Home còn
+   là một bảng widget; nay Home là springboard kiểu iPad (chốt 14) và mỗi ô phải trả giá bằng
+   một ô vuông. `vitalsDangNoi` gần như luôn `false` trên dữ liệu thật ⇒ ô đó hầu hết thời gian
+   là một tấm kính rỗng chiếm chỗ. Cộng thêm Hoà 09:08 nói thẳng vào chính bề mặt Vitals.
+   ⚠️ Đây là gỡ CHỖ ĐỨNG, không phải gỡ năng lực: `vitals` vẫn còn trong `MaWidget` và
+   `coDuLieu` vẫn chấm nó, nên trả lại một dòng trong `BAY_THEO_TRANG_THAI` là nó về. Ca dưới
+   khoá đúng điều đó — để lượt sau biết mình đang bỏ gì. */
 const coVitals = keHoachHome({ tinHieu: { ...DAY, coViecDo: false }, gio: 14, daQuayLai: false });
-assert.ok(coVitals.bay.some((m) => m.ma === 'vitals'), 'có insight thật ⇒ mới được lên tiếng');
+assert.ok(!coVitals.bay.some((m) => m.ma === 'vitals'),
+  'Vitals KHÔNG chiếm ô trên Home nữa, kể cả khi có insight thật — nó nói ở bề mặt khác');
+assert.ok(coDuLieu('vitals', { ...DAY, coViecDo: false }),
+  'nhưng NĂNG LỰC vẫn còn: coDuLieu vẫn chấm được vitals ⇒ trả lại một dòng là nó về');
 
 /* ── ⑤ MỘT HERO, ĐÚNG BA CỠ ────────────────────────────────────────────────────────────── */
 for (const tt of NAM) {
@@ -106,7 +118,12 @@ for (const tt of NAM) {
     gio: tt === 'C' ? 8 : tt === 'E' ? 20 : 14,
     daQuayLai: tt === 'D',
   });
-  const hero = kh.bay.filter((m) => m.co === '2x2');
+  /* Đổi tên biến cho đúng nghĩa 02/09: `2x2` KHÔNG còn là hero — nó là khổ của lưới ảnh.
+     Trần "nhiều nhất một ô 2x2 mỗi màn" thì GIỮ: hai mảng vuông lớn trên một lưới 4 cột là
+     mất hết nhịp. Và khoá thêm điều mới: đúng MỘT hero theo `vai`. */
+  const oLon = kh.bay.filter((m) => m.co === '2x2');
+  assert.ok(oLon.length <= 1, `${kh.trangThai}: nhiều nhất MỘT ô 2x2 mỗi màn`);
+  const hero = kh.bay.filter((m) => m.vai === 'hero');
   assert.ok(hero.length <= 1, `${kh.trangThai}: nhiều hơn một hero thì không còn hero nào`);
   for (const m of kh.bay) {
     const hopLe: CoO[] = ['1x1', '2x1', '2x2'];
@@ -139,10 +156,18 @@ assert.equal(b.bay.length, 0,
    Khoá lại để không ai lặng lẽ đổi hero sang một ô số liệu. */
 const d = keHoachHome({ tinHieu: DAY, gio: 14, daQuayLai: true });
 assert.equal(d.trangThai, 'D');
+/* 🔴 CẬP NHẬT 02/09 — GIỮ phần mang NGHĨA của hợp đồng EXS-C, đổi phần chỉ là QUY ƯỚC CỠ.
+   Điều EXS-C thật sự bảo vệ, và vẫn được bảo vệ nguyên vẹn: *"Hero là Resume, không phải AI,
+   không phải KPI"* ⇒ ô ĐẦU TIÊN vẫn là `tiepTuc`, và ca đó giữ y nguyên.
+   Điều đổi: con số `2x2`. Nó là cách bản vẽ NÓI "hero to nhất" dưới luật cũ (cỡ = mức quan
+   trọng). Chốt 14 đổi luật cỡ sang LOẠI NỘI DUNG, nên hero — một dòng tiêu đề + vài chip —
+   thuộc `2x1`, còn `2x2` để dành cho lưới ảnh (`keDuAn`). Thứ bậc nay đi bằng `vai` + VỊ TRÍ.
+   ⇒ Ca mới khoá đúng cái đáng khoá: hero là Resume, đứng đầu, và KHÔNG phải ô số liệu. */
 assert.equal(d.bay[0].ma, 'tiepTuc', 'bản vẽ EXS-C: ô ĐẦU TIÊN của Studio Focus là Việc đang dở');
-assert.equal(d.bay[0].co, '2x2', 'bản vẽ EXS-C: hero là 2×2');
-assert.ok(!d.bay.some((m) => m.ma !== 'tiepTuc' && m.co === '2x2'),
-  'bản vẽ EXS-C: ngoài hero, mọi ô của Studio Focus đều nhỏ hơn 2×2');
+assert.equal(d.bay[0].vai, 'hero', 'EXS-C giữ nguyên: Resume là HERO, không phải AI/KPI');
+assert.equal(d.bay[0].co, '2x1', 'chốt 14: hero mang tiêu đề + chip ⇒ 2x1, không phải 2x2');
+assert.ok(!d.bay.some((m) => m.co === '2x2' && m.ma !== 'keDuAn'),
+  'chốt 14: 2x2 CHỈ dành cho lưới ảnh (keDuAn) — không ô chữ nào được lấy khổ đó');
 assert.equal(nhipCua('day').cot, 4, 'bản vẽ EXS-C: lưới 4 cột');
 assert.equal(nhipCua('day').heSoGap, 1, 'bản vẽ EXS-C: gap = đúng --gap, không nhân thêm');
 

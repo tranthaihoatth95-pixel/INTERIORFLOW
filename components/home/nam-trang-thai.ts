@@ -250,9 +250,18 @@ export interface MucBay {
 /**
  * THỨ TỰ + CỠ theo từng trạng thái. Đây là chỗ *"cỡ card = mức quan trọng"* thành số.
  *
- * ⛔ Cố ý KHÔNG phải một lưới đều. Bản chốt: *"KHÔNG lưới đồng đều. Editorial có trọng lượng:
- * hero LỚN · priority vừa · todo nhỏ · signal cực nhỏ."* Mỗi trạng thái có ĐÚNG MỘT mục cỡ
- * `2x2` (hero) — nhiều hơn một hero thì không còn hero nào.
+ * 🔴 ĐỔI LUẬT CỠ Ô 02/09 (chốt 14 Hoà: *"widget giống y chang iPad"*).
+ * Luật cũ: *"hero LỚN (2x2) · priority vừa · todo nhỏ"* — cỡ ô đi theo MỨC QUAN TRỌNG.
+ * Nó cho ra đúng thứ ảnh 10:12 chụp được: `tiepTuc` 2x2 chứa ba dòng chữ ⇒ **~70% vỏ rỗng**,
+ * còn `keDuAn` 1x1 chứa một DANH SÁCH ⇒ tên dự án **vỡ mỗi dòng một chữ**. Cỡ đúng theo thứ
+ * bậc, sai theo nội dung — và mắt đọc ra cái sai trước.
+ * Luật mới, lấy từ cách iPad làm (chốt 9: giống nó trước rồi mới hơn nó) — **cỡ ô đi theo
+ * LOẠI NỘI DUNG**:
+ *   · `1x1` = MỘT cái nhìn — một số lớn, một ảnh, một tên. KHÔNG chứa danh sách.
+ *   · `2x1` = một danh sách ngắn, hoặc một dòng tiêu đề + vài chip.
+ *   · `2x2` = CHỈ cho lưới ảnh (bìa dự án), thứ duy nhất thật sự cần một mảng vuông.
+ * Thứ bậc KHÔNG mất — nó chuyển sang `vai` + VỊ TRÍ (hero đứng đầu dòng chảy), đúng cách
+ * springboard phân cấp. Hệ quả: hero nay là `2x1`, và ô `2x2` có thể mang `vai: 'chinh'`.
  *
  * B không có mục nào ở đây: State B là **một câu và một nút trên nền công việc**, nó không đi
  * qua lưới ô. Trả mảng rỗng là đúng, không phải thiếu.
@@ -264,27 +273,27 @@ const BAY_THEO_TRANG_THAI: Record<TrangThaiHome, readonly MucBay[]> = {
   // C — mở đầu ngày, CHƯA có phiên dở (có thì đã là B). Hero là *hôm nay* vì không có resume
   // nào để làm hero. Nhẹ hơn D: bỏ ghi chú · biểu đồ · dòng tin.
   C: [
-    { ma: 'homNay', tang: 'core', co: '2x2', vai: 'hero' },
+    { ma: 'homNay', tang: 'core', co: '2x1', vai: 'hero' },
+    { ma: 'keDuAn', tang: 'core', co: '2x2', vai: 'chinh' },
     { ma: 'canToiXu', tang: 'core', co: '1x1', vai: 'chinh' },
-    { ma: 'keDuAn', tang: 'core', co: '1x1', vai: 'chinh' },
-    { ma: 'mocToi', tang: 'core', co: '1x1', vai: 'phu' },
-    { ma: 'vitals', tang: 'ai', co: '1x1', vai: 'phu' },
-    { ma: 'anhTuan', tang: 'personal', co: '1x1', vai: 'phu' },
+    { ma: 'mocToi', tang: 'core', co: '2x1', vai: 'phu' },
+    { ma: 'anhTuan', tang: 'personal', co: '2x1', vai: 'phu' },
   ],
   // D — TỔNG ĐÀI, dày nhất. ⭐ THỨ TỰ + CỠ PORT TỪ BẢN VẼ `mocks/mock-exs-c-home-work-os.html`
   // (H1 · Studio Focus): hero 2×2 là **Việc đang dở**, phần còn lại là ô 1×1.
   // *"Hero là Resume, không phải AI, không phải KPI."* — chú thích của chính bản vẽ.
   D: [
-    { ma: 'tiepTuc', tang: 'core', co: '2x2', vai: 'hero' },
-    { ma: 'canToiXu', tang: 'core', co: '1x1', vai: 'chinh' },
+    { ma: 'tiepTuc', tang: 'core', co: '2x1', vai: 'hero' },
+    { ma: 'keDuAn', tang: 'core', co: '2x2', vai: 'chinh' },
     { ma: 'homNay', tang: 'core', co: '1x1', vai: 'chinh' },
-    { ma: 'keDuAn', tang: 'core', co: '1x1', vai: 'chinh' },
-    // Từ đây xuống là ô TRẦN (không vỏ) — chúng nuôi mắt / ghi nhanh, không phải nơi ra quyết
-    // định. Cho chúng cùng một tấm kính với ba ô trên là san bằng thứ bậc.
-    { ma: 'ghiChu', tang: 'core', co: '1x1', vai: 'phu' },
-    { ma: 'anhTuan', tang: 'personal', co: '1x1', vai: 'phu' },
-    { ma: 'mocToi', tang: 'core', co: '1x1', vai: 'phu' },
-    { ma: 'vitals', tang: 'ai', co: '1x1', vai: 'phu' },
+    { ma: 'canToiXu', tang: 'core', co: '1x1', vai: 'chinh' },
+    { ma: 'mocToi', tang: 'core', co: '2x1', vai: 'phu' },
+    { ma: 'anhTuan', tang: 'personal', co: '2x1', vai: 'phu' },
+    /* 🔴 GỠ 02/09: `ghiChu` và `vitals`.
+       Không phải vì chúng xấu — vì chúng KHÔNG CÓ NỘI DUNG được cấp. `DongStudioHome` không
+       truyền node cho `ghiChu`, và `vitalsDangNoi` là `false`, nên hai ô này hoặc không vẽ
+       hoặc vẽ ra một tấm kính rỗng chiếm đúng một ô của lưới. Bớt ô rỗng chính là cách tạo
+       khoảng thở — không phải bằng cách nới khe. */
     /* 🔴 23/08 — `bieuDo` và `dongTin` ĐÃ GỠ KHỎI TRANG CHỦ. Lý do là LUẬT, không phải gu:
        · `dongTin` rơi vào nhánh `ContributionGrid` = lưới tích luỹ kiểu GitHub. Đúng thứ
          `NGHIEN-CUU-NODE-CANVAS-DOITHU-2026-08-02` đã loại tường minh là **"thống kê phù
@@ -300,12 +309,10 @@ const BAY_THEO_TRANG_THAI: Record<TrangThaiHome, readonly MucBay[]> = {
   // E — tạo CLOSURE: hôm nay đã đóng · còn mở · mai tiếp. ⛔ Không điểm số, không gamification.
   // Cố ý KHÔNG có `anhTuan`/`vatLieu`: cuối ngày là lúc ĐÓNG LẠI, không phải lúc nuôi mắt.
   E: [
-    { ma: 'homNay', tang: 'core', co: '2x2', vai: 'hero' },
+    { ma: 'homNay', tang: 'core', co: '2x1', vai: 'hero' },
     { ma: 'tiepTuc', tang: 'core', co: '2x1', vai: 'chinh' },
-    { ma: 'canToiXu', tang: 'core', co: '1x1', vai: 'chinh' },
+    { ma: 'keDuAn', tang: 'core', co: '2x2', vai: 'chinh' },
     { ma: 'mocToi', tang: 'core', co: '2x1', vai: 'phu' },
-    { ma: 'ghiChu', tang: 'core', co: '2x1', vai: 'phu' },
-    { ma: 'vitals', tang: 'ai', co: '1x1', vai: 'phu' },
   ],
 };
 
@@ -366,13 +373,12 @@ export function keHoachHome(d: DuKienHome): KeHoachHome {
 
   const song = BAY_THEO_TRANG_THAI[trangThai]
     .filter((m) => coDuLieu(m.ma, d.tinHieu))
-    /* ③ CỠ CO THEO RUỘT — hero mỏng thì thôi đòi khung `2x2`. Xem `DuKienHome.heroDayRuot`
-       để biết vì sao: `WidgetCard` là `h-full`, nên một khung to hơn ruột KHÔNG để lại
-       khoảng trống ở dưới mà **kéo giãn cái vỏ trắng ra cho bằng khung**. Đó chính xác là
-       "thẻ trắng khổng lồ gần như rỗng" Hoà chỉ. Cắt ở đây, tại nguồn cấp cỡ. */
-    .map((m): MucBay =>
-      m.vai === 'hero' && m.co === '2x2' && d.heroDayRuot === false ? { ...m, co: '2x1' } : m,
-    );
+    /* ③ NHÁNH HẠ HERO `2x2 → 2x1` ĐÃ GỠ 02/09 — nó chữa một bệnh không còn nữa.
+       Nó sinh ra để cứu ca "hero mỏng ruột mà đòi khung 2x2 ⇒ vỏ trắng khổng lồ gần như rỗng".
+       Nay KHÔNG hero nào còn là `2x2` (xem luật cỡ ô mới ở `BAY_THEO_TRANG_THAI`), nên nhánh
+       này không bao giờ khớp — giữ lại chỉ là một điều kiện chết mà lượt sau phải đi hỏi.
+       ⚠️ `heroDayRuot` GIỮ NGUYÊN trong `DuKienHome`: nó vẫn là một dữ kiện thật về ruột hero,
+       và H-3 (dựng lại ruột `tiepTuc`) sẽ cần đúng nó. Gỡ CHỖ DÙNG, không gỡ dữ kiện. */
 
   const bay: MucBay[] = [];
   let dung = 0;
