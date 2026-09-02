@@ -35,7 +35,7 @@
  *     `aria-describedby`) — đúng khuôn `NutTaoAi` của rail, cấm nút giả (§9).
  */
 
-import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Plus, Import } from 'lucide-react';
 // 🔴 KHÔNG dùng được `<Icon glyph={...}>` ở đây (lỗi kiểu của primitive `components/ui/Icon.tsx`,
@@ -51,6 +51,7 @@ import {
   type VaiO,
 } from './nam-trang-thai';
 import { VaiOProvider } from './widgets/WidgetCard';
+import { O_DON_VI, GAP_O, nhipLuoi } from './nhip-luoi';
 
 /**
  * Chiều cao một hàng ô — **88px, số của bản vẽ** `mocks/mock-exs-c-home-work-os.html` H1.
@@ -67,8 +68,11 @@ const CAO_O = 'minmax(88px, auto)';
  * được chữ, cận trên 188 chặn ô phình thành tấm áp phích trên màn rộng.
  * ⚠️ `CAO_O` giữ lại: các nhánh bố cục khác (`vua`/`mong`/`stacked`) vẫn dùng, chưa đụng lượt này.
  */
-const O_DON_VI = 'clamp(148px, 11.5vw, 188px)';
-const GAP_O = 20;
+/* 🔴 R-2b (02/09) — cạnh ô · số cột · khe nay ở `./nhip-luoi.ts`, lõi THUẦN.
+ * Chúng là SỐ HỌC, mà số học thì phải có cổng chấm được. Nằm trong tệp này thì cổng không nhập
+ * nổi (`sucrase-node` không giải bí danh `@/`, còn tệp này thì đầy import UI), và đường duy nhất
+ * còn lại là CHÉP công thức sang test — hai bản của một luật, bản trong test xanh mãi kể cả khi
+ * bản thật đã đổi. Vì sao đo bằng JS chứ không để CSS lo: xem docstring của module đó. */
 
 export interface BeMatHomeProps {
   /** Dữ kiện thô — bề mặt tự tính kế hoạch để nơi gọi không phải nhớ gọi hai hàm. */
@@ -427,6 +431,28 @@ export default function BeMatHome({
   const kh = keHoachHome(duKien);
   const gap = `calc(var(--gap) * ${kh.nhip.heSoGap})`;
 
+  /* R-2b — ĐO vùng nội dung để lưới phủ hết bề ngang. Hook phải nằm TRƯỚC mọi `return` sớm
+   * (nhánh A/B thoát ở dưới): gọi hook có điều kiện là vi phạm luật hook của React, và nó nổ
+   * đúng lúc người dùng đổi trạng thái Home — tức lúc khó tái hiện nhất. */
+  const oLuoi = useRef<HTMLDivElement>(null);
+  const [vung, setVung] = useState<{ rong: number; cuaSo: number } | null>(null);
+  useEffect(() => {
+    const el = oLuoi.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const do_ = () => setVung({ rong: el.clientWidth, cuaSo: window.innerWidth });
+    do_();
+    const ro = new ResizeObserver(do_);
+    ro.observe(el);
+    /* Ô co theo `vw`, mà `ResizeObserver` chỉ báo khi HỘP đổi — đổi bề ngang cửa sổ mà hộp
+     * không đổi (vd cột trái đang co bù lại) thì cạnh ô đổi mà ta không hay. Nghe thêm `resize`. */
+    window.addEventListener('resize', do_);
+    return () => { ro.disconnect(); window.removeEventListener('resize', do_); };
+  }, []);
+  /* Chưa đo được (lượt vẽ đầu, hoặc máy chủ) ⇒ dùng nhịp thiết kế. KHÔNG bịa bề ngang từ
+   * `window` ở đây: trên máy chủ không có `window`, và đoán rồi vẽ lại là một cú nhảy lưới
+   * ngay trước mắt người dùng. Thà một khung hình theo nhịp cũ. */
+  const nhip = vung ? nhipLuoi(vung.rong, vung.cuaSo) : { cot: kh.nhip.cot, gap: GAP_O };
+
   /* ── B ── (Main.dc.html) không đi qua lưới: hero trái-dưới trên nền công việc, tín hiệu
      phải-trên không vỏ, kệ dự án một dòng đáy-phải, master-tool đáy giữa. */
   if (kh.trangThai === 'B' && vietDangDo) {
@@ -531,12 +557,15 @@ export default function BeMatHome({
     );
   }
 
-  /* ─── C · D · E — LƯỚI Ô CO THEO SỐ Ô THẬT (giữ nguyên bản 23/08, lỗi ⑩ đã vá) ─── */
-  const cotCanDung = kh.bay.reduce((s, m) => s + nhipO(m.co).cot, 0);
-  const cotDung = Math.max(1, Math.min(kh.nhip.cot, cotCanDung));
-  /* `RONG_DAY`/`rongKhung` đã gỡ cùng lưới cũ (02/09): bề rộng nay do Ô ĐƠN VỊ × số cột quyết
-   * định, không do một trần px tính ngược từ nhịp. Giữ lại hai biến không ai đọc là để lại đúng
-   * loại rác mà lượt sau phải đi hỏi "cái này còn dùng không". */
+  /* ─── C · D · E — LƯỚI Ô ĐƠN VỊ, SỐ CỘT THEO BỀ NGANG THẬT ───
+   * `cotCanDung`/`cotDung` đã GỠ 02/09 cùng lát R-2b. Chúng tính số cột từ TỔNG BỀ NGANG CÁC Ô
+   * ĐANG CÓ (`Math.min(kh.nhip.cot, tổng)`) — tức lưới rộng bằng đúng số widget hiện có, nên
+   * năm widget cho ra một đảo 722px giữa vùng 1276px. Nay số cột đến từ BỀ NGANG VÙNG NỘI DUNG
+   * (`nhipLuoi`), đúng cách springboard làm: khung có bao nhiêu chỗ thì có bấy nhiêu cột, ít
+   * widget thì cuối hàng để trống — trống ở CUỐI, không phải trống ở HAI BÊN.
+   * ⚠️ Gỡ hẳn chứ không để lại: `RONG_DAY`/`rongKhung` của lượt trước từng được giữ lại làm
+   * "rác không ai đọc", và chú thích cũ ở đúng chỗ này đã tự chê điều đó. Giữ thêm một cặp nữa
+   * là lặp lại lỗi mình vừa gọi tên. */
 
   /* 🔴 R-2 (02/09) — BÁM TRÊN-TRÁI, THÔI CĂN GIỮA. Chốt 14: "Home = 1 màn + widget y chang
    * iPad". Springboard iPad neo lưới ở GÓC TRÊN-TRÁI vùng nội dung rồi mọc xuống; nó không bao
@@ -558,6 +587,7 @@ export default function BeMatHome({
       data-home-mat-do={kh.matDo}
     >
       <div
+        ref={oLuoi}
         className="flex w-full flex-col"
         style={{
           /* Khung ngoài thôi giới hạn bề rộng: lưới nay tự căn giữa theo ô đơn vị, nên `maxWidth`
@@ -569,7 +599,7 @@ export default function BeMatHome({
           /* Bám TRÊN. Bản cũ `safe center` — nội dung ít thì đảo trôi xuống giữa màn. */
           justifyContent: 'flex-start',
         }}
-        data-home-cot={cotDung}
+        data-home-cot={nhip.cot}
       >
         <section data-home-dai="khong-khi">{ambient}</section>
 
@@ -583,7 +613,7 @@ export default function BeMatHome({
                widget: kích thước là bội số của một đơn vị, không phải hệ quả của bề ngang cửa sổ.
                `clamp` giữ ô co được trên màn nhỏ mà không vỡ tỉ lệ vuông. */
             style={{
-              gridTemplateColumns: `repeat(${cotDung}, ${O_DON_VI})`,
+              gridTemplateColumns: `repeat(${nhip.cot}, ${O_DON_VI})`,
               /* 🔴 `minmax(ô, auto)` CHỨ KHÔNG phải ô vuông CỨNG — sửa sau khi nhìn ảnh thật.
                  Đặc tả nói `gridAutoRows: O_DON_VI` (vuông tuyệt đối, đúng iPad). Chụp ra thì
                  nội dung TRÀN RA NGOÀI VỎ: ô "Dự án" đẩy chữ xuống dưới đáy thẻ, ô "Việc đang dở"
@@ -594,7 +624,11 @@ export default function BeMatHome({
                  lấy một màn vỡ chữ. Nay: cạnh ô là SÀN, không phải trần — giữ được nhịp vuông
                  và khe đều của springboard, không cắt chữ. */
               gridAutoRows: `minmax(${O_DON_VI}, auto)`,
-              gap: GAP_O,
+              /* 🔴 R-2b — KHE nhận phần dư, Ô giữ nguyên. Đây là cách iPad phủ hết bề ngang mà
+                 widget vẫn đúng một cỡ: số cột theo màn, khe giãn, ô CỐ ĐỊNH.
+                 Dùng CHUNG một khe cho cả hai chiều — hở ngang 56 mà hở dọc 20 thì đọc ra bảng
+                 biểu, không ra springboard. */
+              gap: nhip.gap,
               /* 🔴 R-2 — lưới bám MÉP TRÁI của vùng nội dung, thẳng cột với lời chào ngay trên.
                  `center` ở đây là cái căn giữa THỨ BA (ngoài hai cái đã gỡ phía trên): nó căn
                  giữa các CỘT bên trong hộp lưới. Sót nó lại thì lưới vẫn trôi khỏi mép trái dù
