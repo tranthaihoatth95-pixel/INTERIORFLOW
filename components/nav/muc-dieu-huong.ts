@@ -130,7 +130,10 @@ import { House, Folders, Compass, GalleryHorizontalEnd, Grid2x2, Box, Monitor } 
    BỎ nấc đó cho riêng mục ấy (`mat320.kieu === 'khong'` + lý do đọc được).
    ───────────────────────────────────────────────────────────────────────────────────────── */
 
-export const BE_RONG_NAC = { dinhVi: 52, dieuHuong: 240, duyet: 320 } as const;
+/* `dinhVi` 52 → 72 (02/09): nấc hẹp nay chở CHỮ DƯỚI ICON (dáng tab bar iPad, chốt 14), không
+ * còn là một cột hình câm. 52 chỉ vừa ô icon 26 + đệm; nhãn 10.5px cần ~64 để không cắt cụt
+ * mọi nhãn. 72 = 64 nhãn + 4 lề mỗi bên. */
+export const BE_RONG_NAC = { dinhVi: 72, dieuHuong: 240, duyet: 320 } as const;
 
 export type NacRail = keyof typeof BE_RONG_NAC;
 

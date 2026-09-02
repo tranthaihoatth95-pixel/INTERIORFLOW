@@ -241,7 +241,9 @@ console.log('\n[7] Bước nấc chi tiết — dừng ở hai đầu, KHÔNG cu
 // 52/240/320 — `docs/control/IF-CANONICAL.md` §10 `[CHỐT]` **Neo 52px**. Mâu thuẫn 28↔52 ĐÃ ĐÓNG
 // 23/08 theo chỉ thị cuối của Hoà (§SIDEBAR MAP "52px anchor rail"); bản vẽ `mock-rail-hai-cum.html`
 // (28px) LỖI THỜI ở con số này. Khoá số ở đây để không ai lặng lẽ hạ về 28 rồi quên báo.
-ok('ba nấc chi tiết đúng 52 / 240 / 320', BE_RONG_NAC.dinhVi === 52 && BE_RONG_NAC.dieuHuong === 240 && BE_RONG_NAC.duyet === 320);
+/* 52 → 72 (02/09): nấc hẹp nay chở CHỮ DƯỚI ICON, không còn là cột hình câm. */
+ok('ba nấc chi tiết đúng 72 / 240 / 320', BE_RONG_NAC.dinhVi === 72 && BE_RONG_NAC.dieuHuong === 240 && BE_RONG_NAC.duyet === 320);
+ok('nấc hẹp đủ chỗ cho nhãn 64px + lề', BE_RONG_NAC.dinhVi >= 72);
 ok('thứ tự từ hẹp tới rộng', THU_TU_NAC.join(',') === 'dinhVi,dieuHuong,duyet');
 ok('hẹp nhất không lui được nữa', nacKe('dinhVi', -1) === null);
 ok('rộng nhất không tiến được nữa', nacKe('duyet', 1) === null);
@@ -411,9 +413,22 @@ ok(
 // trạng thái (nét là thuộc tính của HỌ), và phải có dấu chỉ HÌNH DẠNG.
 {
   const rail = readFileSync('components/nav/RailDieuHuong.tsx', 'utf8');
+  /* 🔴 ĐẢO CHIỀU CA NÀY 02/09 — và đảo có điều kiện, không phải nới.
+   * Ca cũ CẤM nét đổi theo trạng thái, đúng khi hàng còn GẠCH DỌC 2px làm kênh hình dạng: lúc
+   * đó nét đổi chỉ là thừa, đổi lại làm icon lệch họ. Gạch nay đã gỡ (viên nang thay nó), nên
+   * nếu vẫn cấm thì "đang mở" chỉ còn sống bằng NỀN — tức chỉ còn kênh TÔNG MÀU, chết khi in
+   * trắng đen hoặc với mắt kém phân biệt sắc độ. Ca nay đòi ĐÚNG HAI kênh phi-màu thay gạch. */
   ok(
-    'nét icon KHÔNG đổi theo trạng thái — không còn ternary `dangMo ?` trên strokeWidth',
-    /strokeWidth=\{HE_BIEU_TUONG\.net\}/.test(rail) && !/strokeWidth=\{dangMo \?/.test(rail),
+    'nét icon ĐỔI theo trạng thái — kênh phi-màu ① thay gạch dọc đã gỡ',
+    /strokeWidth=\{dangMo \? ICON_RAIL\.netDangMo : ICON_RAIL\.net\}/.test(rail),
+  );
+  ok(
+    'nhãn dưới icon ĐẬM lên khi đang mở — kênh phi-màu ②',
+    /fontWeight: dangMo \? 600 : 500/.test(rail),
+  );
+  ok(
+    'gạch dọc 2px đã gỡ THẬT (không còn span width:2 làm dấu chỉ)',
+    !/data-chi-dau="dang-mo"\s*\n?\s*style=\{\{[^}]*width: 2/.test(rail),
   );
   ok('có DẤU CHỈ hình dạng cho mục đang mở (kênh sống được khi bỏ màu)', /data-chi-dau="dang-mo"/.test(rail));
   ok('có kênh trợ năng độc lập màu: aria-current', /aria-current=/.test(rail));
@@ -430,7 +445,10 @@ ok(
   const mNen = /color-mix\(in srgb, var\(--(accent|t1)\) ([0-9.]+)%/.exec(rail);
   ok('nền hàng đang mở khai bằng color-mix, không dùng lại --accent-soft 14%', mNen !== null && !/dangMo \? 'var\(--accent-soft\)'/.test(rail));
   ok('nền hàng đang mở đi kênh TRUNG TÍNH --t1 (GĐ1: rail không tím)', mNen !== null && mNen[1] === 't1');
-  ok('nền hàng đang mở ≤ 8% — trường tông rất nhẹ, vạch mép mới là kênh chính', mNen !== null && parseFloat(mNen[2]) <= 8);
+  /* Trần 8 → 14 (02/09). Trần cũ đặt khi VẠCH MÉP là kênh chính và nền chỉ là trường tông rất
+   * nhẹ. Vạch đã gỡ ⇒ viên nang phải tự đủ rõ (8% gần như tan trên mặt frosted). Vẫn giữ TRẦN,
+   * không mở tự do: quá 14% là quay lại "ô đặc to" mà Hoà bác 20/08. */
+  ok('nền hàng đang mở ≤ 14% — đủ rõ khi không còn vạch, chưa thành ô đặc', mNen !== null && parseFloat(mNen[2]) <= 14);
   ok(
     'icon đang mở đổi TƯƠNG PHẢN (--t1), không đổi HUE (--accent) — hue chỉ còn ở vạch mép',
     /color: dangMo \? 'var\(--t1\)'/.test(rail),
@@ -448,9 +466,17 @@ ok(
     !/color-mix\(in srgb, var\(--t1\) 3%/.test(rail),
   );
   ok('đảo chặng giãn dọc GỌN hơn đảo việc', /gonDoc \? 30 :/.test(rail));
-  ok('có VIÊN NHÃN mọc từ tâm khi rê/focus ở nấc định vị', /data-vien-nhan/.test(rail) && /transformOrigin: 'left center'/.test(rail));
-  ok('viên nhãn mở bằng CẢ chuột lẫn bàn phím', /onFocus: \(\) => setReVao\(true\)/.test(rail));
-  ok('viên nhãn tuân prefers-reduced-motion', /reduceMotion \? 'none' : 'transform/.test(rail));
+  /* 🔴 VIÊN NHÃN NỞ-KHI-RÊ ĐÃ THAY BẰNG NHÃN TĨNH (02/09, dáng tab bar iPad — chốt 14).
+   * Ba ca cũ canh chất lượng của một cơ chế HOVER. Cơ chế đó có một lỗ mà chính chúng không
+   * bắt được: máy CHẠM không có hover ⇒ ở nấc hẹp, bảy mục là bảy hình câm, muốn biết hình nào
+   * là gì phải rê từng cái — phạm luật nền `tablet-khong-giau-sau-hover` và chốt 5 của Hoà.
+   * Ca mới canh điều MẠNH HƠN: nhãn phải LUÔN có mặt, không núp sau tương tác nào. */
+  ok('nấc hẹp có NHÃN TĨNH dưới icon (không núp sau hover)', /data-nhan-rail=""/.test(rail));
+  ok(
+    'nhãn KHÔNG còn phụ thuộc trạng thái rê — không có viên nở từ tâm nữa',
+    !/data-vien-nhan/.test(rail) && !/transformOrigin: 'left center'/.test(rail),
+  );
+  ok('nhãn tĩnh aria-hidden — tên mục đã ở aria-label, không đọc hai lần', /data-nhan-rail=""/.test(rail) && /aria-hidden\s*\n?\s*data-nhan-rail/.test(rail));
   ok('ô đặt icon cố định để tâm quang học thẳng trục', /data-o-icon/.test(rail));
 }
 

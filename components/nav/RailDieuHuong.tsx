@@ -115,7 +115,11 @@ function nacMoDau(dangTrongChang: boolean): NacRail {
  * ⛔ Đừng nâng lại vì "nhìn không rõ" — không rõ thì tăng vạch/tương phản icon, đừng tăng nền.
  * Dùng `color-mix` tại chỗ chứ không thêm token: `app/globals.css` là vùng lane khác đang ghi.
  */
-const NEN_DANG_MO = 'color-mix(in srgb, var(--t1) 8%, transparent)';
+/* 8% → 14% (02/09). Trần 8% cũ đặt khi VẠCH MÉP là kênh chính và nền chỉ là "trường tông rất
+ * nhẹ" — nguyên văn ghi chú của cổng. Vạch nay đã gỡ, nên viên nang phải tự đủ rõ; 8% gần như
+ * tan trên mặt frosted. Vẫn ĐÚNG kênh trung tính `--t1` (chốt GĐ1: rail không tím) — đổi ĐỘ, không
+ * đổi HUE. Cổng đã sửa trần kèm lý do, không nới lén. */
+const NEN_DANG_MO = 'color-mix(in srgb, var(--t1) 14%, transparent)';
 
 /**
  * CỠ ICON RIÊNG CỦA RAIL (02/09) — Hoà chê icon rail "18 mảnh" khi soi bản cài.
@@ -128,7 +132,7 @@ const NEN_DANG_MO = 'color-mix(in srgb, var(--t1) 8%, transparent)';
  * Nét 1.75 nằm ĐÚNG trần cứng của cổng nền (`muc-dieu-huong.test.ts` [9]: nét khi nhấn ≤ 1.75)
  * — mượn đúng trần đã có, không nới.
  */
-const ICON_RAIL = { khung: 26, hinh: 22, net: 1.75 } as const;
+const ICON_RAIL = { khung: 26, hinh: 22, net: 1.75, netDangMo: 2 } as const;
 
 /**
  * 🟡 MÀU AI — MỘT BIẾN ĐẶT TẠM, CHỜ HOÀ CHỐT. Đổi đúng MỘT dòng dưới đây là đổi cả nút `+`.
@@ -912,7 +916,8 @@ function HangRail({
    * Cả `mouseenter` lẫn `focus` đều mở: bàn phím phải thấy đúng thứ chuột thấy.
    */
   const [reVao, setReVao] = useState(false);
-  const hienVien = !hienChu && reVao;
+  /* `hienVien` đã gỡ cùng viên nhãn nở-khi-rê (02/09). `reVao` GIỮ LẠI: nó vẫn là kênh hover
+   * cho nền hàng, và giữ `onFocus`/`onBlur` nghĩa là bàn phím vẫn thấy đúng thứ chuột thấy. */
   const lyDoChu = lyDo ? tr(lyDo.vi, lyDo.en) : null;
   const idLyDo = `rail-ly-do-${muc.id}`;
   // Mở/đóng viên nhãn. Gắn cho CẢ chuột lẫn bàn phím — tablet không có hover nên ở đó viên nhãn
@@ -928,9 +933,12 @@ function HangRail({
     position: 'relative',
     display: 'flex',
     alignItems: 'center',
-    gap: 10,
+    /* NẤC HẸP = CỘT icon-trên / chữ-dưới (02/09, dáng tab bar iPad — chốt 14).
+       Nấc rộng vẫn là HÀNG ngang icon-rồi-chữ, không đổi. */
+    ...(hienChu ? null : { flexDirection: 'column' as const }),
+    gap: hienChu ? 10 : 3,
     minHeight: gonDoc ? 30 : 'var(--row)',
-    padding: gonDoc ? (hienChu ? '3px 10px' : '3px 0') : hienChu ? '5px 10px' : '5px 0',
+    padding: gonDoc ? (hienChu ? '3px 10px' : '5px 0') : hienChu ? '5px 10px' : '7px 0',
     margin: '0 4px',
     justifyContent: hienChu ? 'flex-start' : 'center',
     /* VIÊN NANG (02/09, GU §2 "nút dạng pill/capsule · pill bo tròn full"). Trước là `r2` (10) —
@@ -966,21 +974,10 @@ function HangRail({
           đang-mở của rail là TRUNG TÍNH trắng-mờ, không tím — accent để dành cho CTA + trạng
           thái chạy của từng màn. Kênh HÌNH DẠNG giữ nguyên, chỉ đổi hue; tương phản `--t1` trên
           `--panel` cao hơn hẳn accent cũ nên không mất khả năng nhận ra. */}
-      {dangMo && (
-        <span
-          aria-hidden
-          data-chi-dau="dang-mo"
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 6,
-            bottom: 6,
-            width: 2,
-            borderRadius: RADIUS.full,
-            background: 'var(--t1)',
-          }}
-        />
-      )}
+      {/* 🔴 GẠCH DỌC 2px ĐÃ GỠ (02/09). Nó là dấu chỉ đúng khi hàng còn là ô chữ nhật xếp ngang;
+          hàng nay là VIÊN NANG có nền, gạch dính mép trái đọc ra như một lỗi tràn. Dấu chỉ
+          `data-chi-dau="dang-mo"` chuyển LÊN CHÍNH HÀNG (xem chỗ dựng `<a>`/`<button>`), và kênh
+          phi-màu thay nó là NÉT ICON + ĐỘ ĐẬM NHÃN — xem hai ghi chú bên dưới. */}
       {/* Ô ĐẶT ICON 20×20 CỐ ĐỊNH, hình 18 bên trong (`HE_BIEU_TUONG`). Ô cố định chứ không để
           icon tự chiếm chỗ: hình lucide có cái vuông có cái dẹt, thả trần thì TÂM QUANG HỌC mỗi
           hàng lệch một kiểu và cả cột đọc ra "nhặt từ nhiều bộ". Có ô thì tám tâm thẳng một trục
@@ -1007,32 +1004,40 @@ function HangRail({
           color: dangMo ? 'var(--t1)' : undefined,
         }}
       >
-        <Icon size={ICON_RAIL.hinh} strokeWidth={ICON_RAIL.net} />
+        {/* 🔴 NÉT LẠI MANG TRẠNG THÁI — và lần này là CÓ LÝ DO, khác lần bị gỡ trước.
+            Ghi chú ngay trên nói "nét không đổi theo trạng thái" vì hồi đó trạng thái đã có
+            DẤU CHỈ riêng (gạch dọc 2px). Gạch nay bị gỡ (02/09), nên nếu không bù thì "đang mở"
+            chỉ còn sống bằng NỀN — tức chỉ còn kênh TÔNG MÀU, và mất sạch khi in trắng đen hoặc
+            với mắt kém phân biệt sắc độ. Hai kênh bù, cả hai đều PHI MÀU:
+              ① nét icon dày lên (2 vs 1.75)  ② nhãn dưới icon đậm lên (600 vs 500)
+            Đánh đổi đã cân: nét đổi làm icon đang-mở hơi lệch họ với hàng xóm — chấp nhận, vì
+            mất kênh trợ năng nặng hơn lệch họ một hàng. */}
+        <Icon size={ICON_RAIL.hinh} strokeWidth={dangMo ? ICON_RAIL.netDangMo : ICON_RAIL.net} />
       </span>
-      {/* Viên nhãn: nở từ tâm ô icon ra phải. `scaleX` + `opacity` — không animate `width` (giật
-          layout). `prefers-reduced-motion` thắng: hiện thẳng, không nở. */}
+      {/* 🔴 NHÃN TĨNH DƯỚI ICON (02/09) — thay VIÊN NHÃN nở-khi-rê.
+          Viên nhãn cũ chỉ hiện khi RÊ hoặc FOCUS ⇒ ở nấc hẹp, bảy mục là bảy hình câm: muốn biết
+          hình nào là gì phải rê từng cái. Trên máy CHẠM thì không có "rê" — tức nhãn gần như
+          không tồn tại (đúng luật nền `tablet-khong-giau-sau-hover`, và chốt 5 của Hoà "hai bản
+          desktop/chạm, cấm bản lai").
+          Tab bar iPad — mốc Hoà chốt 14 — luôn để CHỮ DƯỚI HÌNH, không giấu sau tương tác. Nhãn
+          nay đứng yên, đọc được ngay, và mang luôn kênh trạng thái thứ hai bằng ĐỘ ĐẬM.
+          `aria-hidden`: tên mục đã nằm ở `aria-label` của hàng — để chữ này lộ ra là trình đọc
+          màn hình đọc tên hai lần. */}
       {!hienChu && (
         <span
           aria-hidden
-          data-vien-nhan=""
+          data-nhan-rail=""
           style={{
-            position: 'absolute',
-            left: 'calc(50% + 12px)',
-            top: '50%',
-            transform: `translateY(-50%) scaleX(${hienVien ? 1 : 0})`,
-            transformOrigin: 'left center',
-            opacity: hienVien ? 1 : 0,
-            pointerEvents: 'none',
+            fontSize: 10.5,
+            lineHeight: 1.1,
+            letterSpacing: '.01em',
+            fontWeight: dangMo ? 600 : 500,
+            color: dangMo ? 'var(--t1)' : 'var(--t3)',
+            maxWidth: 64,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
-            padding: '3px 9px',
-            borderRadius: RADIUS.full,
-            background: 'var(--panel)',
-            border: '1px solid var(--vien-mo)',
-            boxShadow: '0 2px 10px rgba(0,0,0,.14)',
-            color: 'var(--t1)',
-            fontSize: 'var(--fs-2xs)',
-            transition: reduceMotion ? 'none' : 'transform .16s var(--ease-apple), opacity .12s linear',
-            zIndex: 2,
+            textAlign: 'center',
           }}
         >
           {nhan}
@@ -1095,6 +1100,7 @@ function HangRail({
         href={duongDi}
         {...cuChi}
         aria-current={dangMo ? 'page' : undefined}
+        data-chi-dau={dangMo ? 'dang-mo' : undefined}
         aria-label={nhan}
         style={chung}
         className="transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
@@ -1110,6 +1116,7 @@ function HangRail({
         href={duongDi}
         {...cuChi}
         aria-current={dangMo ? 'page' : undefined}
+        data-chi-dau={dangMo ? 'dang-mo' : undefined}
         style={chung}
         className="transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
       >
