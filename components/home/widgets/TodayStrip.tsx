@@ -72,25 +72,47 @@ export default function TodayStrip({
 
   const onlineMembers: PresenceMember[] = online.map((u) => ({ id: u.id, name: u.name, online: true }));
 
+  /* 🔴 R-3b (02/09) — BA LỖI ĐO ĐƯỢC TRÊN ẢNH 18:28, sửa cùng chỗ vì cùng một khối chữ.
+   *
+   * ① CON SỐ QUÁ NHỎ SO VỚI Ô. `--fs-xl` = 28px trong ô `clamp(148px, 11.5vw, 188px)` ⇒ số chiếm
+   *    ~1/6 chiều cao ô. Luật H-4 nói ô 1×1 = MỘT cái nhìn; một cái nhìn thì con số phải là thứ
+   *    ĐẦU TIÊN mắt bắt được, không phải một dòng chữ hơi to hơn dòng bên cạnh.
+   *    Cỡ đi theo cùng nhịp `vw` với ô (ô 11.5vw, số 3.9vw) nên tỉ lệ số/ô gần như không đổi khi
+   *    đổi khổ màn: 1440 ⇒ 56px, 1180 ⇒ ô chạm sàn 148 và số 46px.
+   *    ⚠️ KHÔNG hardcode 56px: ô co được thì số phải co theo, nếu không nó tràn ở khổ hẹp.
+   *    ⚠️ Muốn đúng "một nửa CHIỀU CAO Ô" theo nghĩa hình học thì phải `cqh` + container query —
+   *    đó là đổi kiến trúc ô, không phải một lát chữ. Ghi ra đây để lần sau khỏi bàn lại.
+   *
+   * ② TRÀN DỌC 2px. Máy đo: `{chu:'1', chieu:'doc', sh:30, ch:28}`. `leading-none` đặt
+   *    line-height = 1 = đúng bằng cỡ chữ, trong khi hộp chữ THẬT còn phần trên/dưới của phông
+   *    (ascender/descender) ⇒ luôn cao hơn 1em một chút. Số càng to thì 2px đó càng thành nhiều.
+   *    `lineHeight: 1.1` cho hộp cao hơn phần vẽ ra — hết tràn, và không ai thấy khác gì.
+   *
+   * ③ CHỮ MONO LẠC GU — và nó là NGUYÊN NHÂN CHUNG với chip "hôm  nay" ở `ResumeWork.tsx`.
+   *    Trong phông đều nét, dấu cách rộng bằng một chữ cái, nên `'hôm nay'` với ĐÚNG MỘT dấu
+   *    cách vẽ ra trông như hai. Bảng chấm ghi thành hai lỗi riêng (chữ mono · chip hở đôi);
+   *    thật ra một nguyên nhân, một sửa. `tracking-[.01em]` cộng thêm vào cùng chiều.
+   *    ⇒ Bỏ `font-mono` khỏi NHÃN. `tabular-nums` thì GIỮ ở con số — nó là thứ giữ chữ số cùng
+   *    bề ngang khi số đổi (1 → 2 không nhảy chỗ), và nó KHÔNG đổi phông. */
+  const LOP_SO = 'font-light tabular-nums text-[var(--t1)]';
+  const KIEU_SO = { fontSize: 'clamp(44px, 3.9vw, 64px)', lineHeight: 1.1 } as const;
+  const LOP_NHAN = 'mt-1 text-[length:var(--fs-2xs)] text-[var(--t4)]';
+
   return (
     <WidgetCard dense index={index} title={tr('Hôm nay', 'Today')}>
       <div className="flex h-full flex-col justify-between gap-3">
         {dueTodayCount > 0 ? (
           <div className={reduce ? undefined : 'today-count-in'}>
-            <div className="font-mono text-[length:var(--fs-xl)] font-semibold leading-none tabular-nums text-[var(--t1)]">
-              {dueTodayCount}
-            </div>
-            <div className="mt-1 font-mono text-[length:var(--fs-2xs)] tracking-[.01em] text-[var(--t4)]">
+            <div className={LOP_SO} style={KIEU_SO}>{dueTodayCount}</div>
+            <div className={LOP_NHAN}>
               {tr(dueTodayCount === 1 ? 'việc đến hạn' : 'việc đến hạn', dueTodayCount === 1 ? 'task due' : 'tasks due')}
             </div>
           </div>
         ) : (
           tasksDoneToday > 0 && (
             <div className={reduce ? undefined : 'today-count-in'}>
-              <div className="font-mono text-[length:var(--fs-xl)] font-semibold leading-none tabular-nums text-[var(--t1)]">
-                {tasksDoneToday}
-              </div>
-              <div className="mt-1 font-mono text-[length:var(--fs-2xs)] tracking-[.01em] text-[var(--t4)]">
+              <div className={LOP_SO} style={KIEU_SO}>{tasksDoneToday}</div>
+              <div className={LOP_NHAN}>
                 {tr('việc xong hôm nay', tasksDoneToday === 1 ? 'task done' : 'tasks done')}
               </div>
             </div>

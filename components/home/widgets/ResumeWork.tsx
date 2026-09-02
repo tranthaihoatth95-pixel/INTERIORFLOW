@@ -149,6 +149,15 @@ export default function ResumeWork({
             /* NẤC GỌN — ký hiệu + số. Mỗi chip có SỐ/CHỮ đi kèm (luật icon-nén-tin: icon một
                mình không mang tin, nó chỉ nói "số này là số gì"). */
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              {/* 🔴 ẨN CHIP VÌ TRÙNG TIÊU ĐỀ KHI FALLBACK CHẶNG (02/09).
+                  Ảnh 18:28 cho thấy ô hero in tiêu đề "Thiết kế 3D" rồi ngay dưới một chip cũng
+                  "Thiết kế 3D" — nói hai lần cùng một tin trong 40px. Đây là hệ quả của chính
+                  lát bỏ chữ giữ chỗ sáng nay: khi không tra được tên dự án, tiêu đề rơi về tên
+                  CHẶNG, và chip chặng lập tức thành thừa.
+                  Bỏ theo F6 (*Home biết im lặng*), không phải để cho gọn mắt: một mẩu tin lặp
+                  lại chính nó thì nó không còn là tin. Có tên dự án thật ⇒ chip lại có việc
+                  (nói dự án ĐANG dở ở chặng nào), nên nó quay lại — không xoá vĩnh viễn. */}
+              {projectName !== stageName && (
               <span
                 className="inline-flex items-center gap-1 rounded-[var(--r-1)] px-1.5 py-0.5 text-[length:var(--fs-2xs)] text-[var(--t3)]"
                 style={{ background: 'var(--field)' }}
@@ -160,9 +169,15 @@ export default function ResumeWork({
                 <Icon size={14} aria-hidden />
                 {stageName}
               </span>
+              )}
               {time && (
                 <span
-                  className="inline-flex items-center gap-1 rounded-[var(--r-1)] px-1.5 py-0.5 font-mono text-[length:var(--fs-2xs)] tabular-nums text-[var(--t3)]"
+                  /* 🔴 BỎ `font-mono` 02/09 — đây là nguyên nhân THẬT của "hôm  nay" hở đôi.
+                     Chuỗi chỉ có ĐÚNG MỘT dấu cách (`daysAgoLabel` trả `'hôm nay'`), nhưng phông
+                     đều nét cho dấu cách bề ngang bằng một chữ cái nên mắt đọc ra hai. Bảng chấm
+                     ghi thành hai lỗi riêng (chip hở đôi · chữ mono lạc gu) — một nguyên nhân.
+                     `tabular-nums` GIỮ: nó canh bề ngang chữ số cho "3 ngày trước", không đổi phông. */
+                  className="inline-flex items-center gap-1 rounded-[var(--r-1)] px-1.5 py-0.5 text-[length:var(--fs-2xs)] tabular-nums text-[var(--t3)]"
                   style={{ background: 'var(--field)' }}
                 >
                   <Clock size={14} aria-hidden />
