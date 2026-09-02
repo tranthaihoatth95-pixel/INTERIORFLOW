@@ -15,7 +15,8 @@
 > ⛔ **Chưa ai mở bản này bằng mắt** — đóng gói xong ≠ chạy được.
 
 > ✅ **Cờ tường: BẬT — đo 02/09 00:44.** `grep NEXT_PUBLIC_IF_TUONG_HINH_HOC .env.local` ⇒
-> `NEXT_PUBLIC_IF_TUONG_HINH_HOC=1`. Dòng cũ ghi *"UNKNOWN · 0 lần trong mọi tệp `.env*`"* là
+> `NEXT_PUBLIC_IF_TUONG_HINH_HOC=1`. Dòng cũ ghi *"UNKNOWN · 0 lần trong mọi tệp `.env*`"*
+> (kiểm lại được bằng `grep -l NEXT_PUBLIC_IF_TUONG_HINH_HOC .env*`) — câu đó là
 > ĐÚNG LÚC VIẾT (01/09 07:23) và **đã hết đúng**: cờ được thêm vào đêm 01/09 theo lệnh Hoà 23:05.
 > Vẫn còn một nửa chưa đo: cờ có mặt trong tệp ≠ mục "Báo cáo nạp bản vẽ" hiện trên màn. Muốn
 > đóng nốt thì mở `/projects/<id>/cad` và nhìn.
