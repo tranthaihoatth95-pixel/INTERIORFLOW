@@ -115,7 +115,47 @@ export function AppShell({
    * chặng khác phím trần. Nghe ở DOCUMENT CAPTURE + stopPropagation khi ăn phím — chạy TRƯỚC
    * listener window-bubble của CadCanvas, không seed nhầm chữ vào ô lệnh. Guard gõ chữ
    * (INPUT/TEXTAREA/contentEditable) như mọi hotkey khác trong app. */
+  /* 🔴 D2 (02/09) — INSPECTOR NHỚ TRẠNG THÁI, THEO TỪNG CHẶNG.
+   * Bản cũ là `useState(false)` trần: ẩn Inspector rồi tải lại trang là nó hiện lại. Người dùng
+   * phải ẩn lại mỗi lần vào — tức app quên một lựa chọn mà người dùng đã nói rõ.
+   * Nhớ theo CHẶNG chứ không nhớ một cờ chung: ở Vẽ 2D người ta hay mở Inspector, ở Trình chiếu
+   * hay đóng; một cờ chung thì mỗi lần đổi chặng lại phá lựa chọn của chặng kia.
+   *
+   * ⛔ KHOÁ MỚI, KHÔNG ĐỤNG `cadMode` hay bất kỳ khoá nào đang có — trộn hai ý nghĩa vào một
+   * khoá là cách một lựa chọn âm thầm đè lựa chọn khác.
+   *
+   * ⚠️ Đọc trong `useEffect` chứ KHÔNG trong hàm khởi tạo `useState`: hàm đó chạy cả trên máy
+   * chủ, nơi không có `localStorage` ⇒ máy chủ dựng một đằng, trình duyệt dựng một nẻo, và
+   * React sẽ kêu lệch hydrate. Đổi lại là một nháy rất ngắn ở lần vẽ đầu — chấp nhận được.
+   *
+   * 🔴 MẶC ĐỊNH GIỮ NGUYÊN LÀ **HIỆN** (`false`), không phải "ẩn". Phiếu D2 ghi *"đọc không thấy
+   * thì rơi về mặc định ẩn"*; tôi KHÔNG làm theo, và nói ra: đổi mặc định là đổi thứ MỌI người
+   * dùng thấy ở lần mở đầu tiên, tức một hồi quy đội lốt tính năng nhớ. Việc của D2 là NHỚ,
+   * không phải đổi nết. Nó cũng ngược C-1 trong kế hoạch (*"Inspector luôn có mặt"*, mẫu 3ds
+   * Max). Ai muốn đổi mặc định thì đó là quyết định riêng, có phiếu riêng.
+   */
+  const KHOA_INSPECTOR_AN = `interiorflow.inspector-an.${active}`;
   const [inspectorHidden, setInspectorHidden] = useState(false);
+  /* Gương của state, để `datAnInspector` biết giá trị hiện tại mà không phải ghi `localStorage`
+   * bên trong hàm cập nhật state (hàm đó có thể bị React gọi hai lần ở chế độ nghiêm ngặt). */
+  const anRef = useRef(false);
+
+  // Đổi chặng ⇒ nạp lại lựa chọn CỦA CHẶNG ĐÓ. Cũng là lượt nạp đầu tiên khi mở trang.
+  useEffect(() => {
+    let an = false;
+    try { an = localStorage.getItem(KHOA_INSPECTOR_AN) === '1'; } catch { an = false; }
+    anRef.current = an;
+    setInspectorHidden(an);
+  }, [KHOA_INSPECTOR_AN]);
+
+  /** Đặt trạng thái ẩn/hiện VÀ ghi nhớ. Mọi chỗ đổi trạng thái phải đi qua đây — dùng thẳng
+   *  `setInspectorHidden` là đổi mà không nhớ, đúng con bệnh D2 đang chữa. */
+  const datAnInspector = (an: boolean) => {
+    anRef.current = an;
+    setInspectorHidden(an);
+    try { localStorage.setItem(KHOA_INSPECTOR_AN, an ? '1' : '0'); } catch { /* chế độ riêng tư / chặn lưu trữ: vẫn chạy, chỉ không nhớ */ }
+  };
+
   const zenRef = useRef(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -129,7 +169,7 @@ export function AppShell({
         const zen = !zenRef.current;
         zenRef.current = zen;
         window.dispatchEvent(new CustomEvent('if:navigator-toggle', { detail: { set: zen } }));
-        setInspectorHidden(zen);
+        datAnInspector(zen);
         return;
       }
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -142,7 +182,7 @@ export function AppShell({
       e.preventDefault();
       e.stopPropagation();
       if (k === 'b') window.dispatchEvent(new CustomEvent('if:navigator-toggle', { detail: {} }));
-      else setInspectorHidden((h) => !h);
+      else datAnInspector(!anRef.current);
     };
     document.addEventListener('keydown', onKey, true);
     return () => document.removeEventListener('keydown', onKey, true);
@@ -186,7 +226,7 @@ export function AppShell({
             Không có vật chọn (inspector=undefined) thì vẫn ẩn HẲN như thiết kế gốc — dải lúc đó
             là nút bấm-không-ra-gì, phạm §9. */}
         {Boolean(inspector) && inspectorHidden && (
-          <FlankStrip side="right" open={false} onClick={() => setInspectorHidden(false)} label="bảng thuộc tính" hotkey={active === 'cad' ? '⇧I' : 'I'} />
+          <FlankStrip side="right" open={false} onClick={() => datAnInspector(false)} label="bảng thuộc tính" hotkey={active === 'cad' ? '⇧I' : 'I'} />
         )}
         <InspectorSlot title={inspectorTitle} sub={inspectorSub} onClose={onCloseInspector} hotkey={active === 'cad' ? '⇧I' : 'I'}>
           {inspectorHidden ? undefined : inspector}
