@@ -126,6 +126,14 @@ const LOI: CSSProperties = {
   borderRadius: 'var(--r-4)',
 };
 
+/* 🔴 `data-widget=""` trên vỏ VÀNH — DẤU CHO MÁY ĐỌC, thêm 02/09 sau một ca đo mù.
+ * Máy chụp đang đếm ô bằng `querySelectorAll('.nen-mo-card')`. Lát kính hai tầng bỏ class đó
+ * khỏi vỏ (vỏ nay dùng `--nen-mo-vanh`), nên lô ảnh 20:36 in `soO: 0, oTran: []` — đọc ra như
+ * *"hết tràn rồi"*, trong khi thật là MÁY KHÔNG THẤY Ô NÀO.
+ * ⇒ Neo một phép đo vào TÊN CHẤT LIỆU là buộc dụng cụ vào một quyết định thẩm mỹ: đổi vật liệu
+ * là dụng cụ mù, và nó mù theo chiều IM LẶNG (báo 0 lỗi), tức chiều nguy hiểm nhất.
+ * Dấu này nói *"đây là một widget"*, không nói nó làm bằng gì — nên nó sống qua mọi lần đổi da. */
+
 export default function WidgetCard({
   title,
   index,
@@ -172,13 +180,13 @@ export default function WidgetCard({
 
   if (noPad) {
     return (
-      <div className={`relative h-full overflow-hidden ${className}`} style={VANH}>
+      <div data-widget="" className={`relative h-full overflow-hidden ${className}`} style={VANH}>
         <div className="h-full overflow-hidden" style={LOI}>{children}</div>
       </div>
     );
   }
   return (
-    <div className={`h-full overflow-hidden ${className}`} style={VANH}>
+    <div data-widget="" className={`h-full overflow-hidden ${className}`} style={VANH}>
     <div
       className={`flex h-full flex-col overflow-hidden ${dem}`}
       style={LOI}

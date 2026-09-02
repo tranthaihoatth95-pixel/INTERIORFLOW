@@ -90,6 +90,16 @@ export interface WallpaperPalette {
   lumMin: number;
   /** Độ sáng tương đối WCAG lớn nhất — ca xấu nhất của chữ TỐI. */
   lumMax: number;
+  /**
+   * 🔴 THÊM 02/09 — theme mà bảng màu này được dựng cho.
+   *
+   * `bangMau()` VỐN ĐÃ biết theme (nó là tham số), nhưng trước đây không đóng dấu lại vào kết
+   * quả, nên `nenCss()` — nơi thật sự vẽ — mù về theme. Hệ quả đo được: lớp `caro` phải dùng
+   * một cặp alpha chung cho cả hai theme, và tôi đã tự trấn an bằng chú thích *"nét vẽ bằng s1
+   * mà s1 đã theo theme nên tương phản tự đúng chiều"* — đúng CHIỀU, sai ĐỘ LỚN, xem `css.ts`.
+   * Một trường, không đổi chữ ký hàm nào.
+   */
+  theme: WallpaperTheme;
 }
 
 /** Nấc giảm chói — bắt buộc có, và **cắt ánh kim chứ không bao giờ cắt độ đọc**. */

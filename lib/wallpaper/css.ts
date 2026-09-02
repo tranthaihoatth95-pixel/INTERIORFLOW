@@ -9,7 +9,7 @@
  */
 
 import type { WallpaperPalette, WallpaperSet } from './types';
-import { rgb, rgba, type NguonSang } from './sets';
+import { rgb, rgba, hslToRgb, type NguonSang } from './sets';
 
 /**
  * `stops` xếp sáng→tối. Đặt tên cho dễ đọc chỗ dùng.
@@ -74,22 +74,37 @@ export function nenCss(set: WallpaperSet, p: WallpaperPalette, sun: NguonSang): 
     case 'caro': {
       const o = 8;
       const oLon = o * 5;
-      /* Nét ô lớn phải ĐẬM HƠN RÕ nét ô nhỏ, nếu không nhịp 5 biến mất và lưới thành đều tăm
-         tắp. Tỉ lệ ~2,3× là chỗ mắt còn thấy nhóm mà nét lớn chưa thành khung kẻ bảng.
+      /* 🔴 SỬA 02/09 SAU KHI NHÌN ẢNH 20:36 — LƯỚI VÔ HÌNH Ở CẢ 6 ẢNH.
+         Bản trước vẽ nét bằng `s1`, tức lấy MỰC TỪ TRONG BẢNG MÀU CỦA NỀN. Tôi đã tự trấn an
+         bằng một chú thích nghe rất hợp lý: *"nét vẽ bằng s1 mà s1 đã theo theme nên tương phản
+         tự đúng chiều"*. Đúng CHIỀU, **sai ĐỘ LỚN** — và không ai tính con số đó, kể cả tôi.
+         Tính ra thì: `NEO_DO_SANG` cố ý HẸP (dark night [0.05 … 0.17]) để chữ trên kính còn qua
+         AA. Với `spread` .42, `s1` và `s3` chênh ~0,034 đơn vị L ⇒ **~8 đơn vị kênh sRGB**, nhân
+         alpha .16 còn **~1,3 đơn vị**. Theme sáng còn tệ hơn: ~0,8. Mắt không phân giải nổi.
+         ⇒ Mực lấy từ trong dải nền thì KHÔNG BAO GIỜ hiện, dù alpha bao nhiêu — nới alpha chỉ
+         làm nét dày lên chứ không làm nó khác màu.
+         📌 Đây là lần THỨ HAI cùng một bệnh: `sets.ts:172-177` đã ghi ca y hệt hôm 26/08 ("qua
+         hết cửa tương phản nhưng mở ra thì năm bộ gần như đen tuyền"). Bài học chung: **một chú
+         thích hay đứng cạnh một con số chưa ai tính vẫn là một con số chưa ai tính.**
 
-         ⚠️ MỘT cặp alpha cho CẢ HAI theme, cố ý. Đặc tả muốn sáng .06/.14 và tối .08/.18, nhưng
-         `nenCss` KHÔNG nhận theme và `WallpaperPalette` không mang cờ theme — thứ duy nhất suy
-         ra được là `lumMax`, và đặt một ngưỡng cho nó là ĐOÁN một dải số tôi chưa đo. Vừa hôm
-         nay tôi đã mò hai lượt `l` của accent vì đúng thói quen đó, nên lần này không mò.
-         Điều làm cặp alpha chung dùng được: nét vẽ bằng `s1`, mà `s1` ĐÃ theo theme — nền tối
-         thì `s1` là chặng sáng, nền sáng thì `s1` là chặng tối. Tương phản nét/nền vì thế đã tự
-         đúng chiều; alpha chỉ còn quyết ĐỘ MỜ, không quyết chiều.
-         ⛳ Muốn tách hai theme thật thì phải cấp cờ theme cho `nenCss` — một lát riêng, có cổng. */
-      const mo = 0.07;
-      const dam = 0.16;
+         NAY: mực là MÀU RIÊNG, đứng NGOÀI dải palette.
+         · hue = `set.hue` — lam của chính tờ giấy, nên nét vẫn thuộc về bộ, không phải màu lạ.
+         · sat .40 — cao hơn nền (.05) rất nhiều: nền là GIẤY, nét là MỰC. Lam nằm ở NÉT.
+         · L theo theme: giấy sáng thì mực phải TỐI hơn giấy; giấy tối thì mực phải SÁNG hơn.
+           Đây đúng là thứ cặp alpha chung không làm được, và là lý do `theme` được đóng dấu vào
+           `WallpaperPalette` ở lát này — đúng "lát riêng có cổng" mà chú thích cũ đã hẹn.
+         ⚠️ Trần kênh 138 của `sets.ts:164` vẫn phải giữ ở theme tối (chữ `--t3` trên pill kính
+         cần nền hiệu dụng đủ tối). Mực .58 với alpha ≤ .22 nằm dưới trần đó — và cổng
+         `caro-hien.test.ts` đo lại, không tin dòng này. */
+      const toi = p.theme === 'dark';
+      const muc = hslToRgb(set.hue, 0.4, toi ? 0.58 : 0.62);
+      /* Nét ô lớn phải ĐẬM HƠN RÕ nét ô nhỏ, nếu không nhịp 5 biến mất và lưới thành đều tăm
+         tắp. Tỉ lệ ~2,1× là chỗ mắt còn thấy nhóm mà nét lớn chưa thành khung kẻ bảng. */
+      const mo = toi ? 0.1 : 0.2;
+      const dam = toi ? 0.22 : 0.42;
       const luoi = (buoc: number, a: number) =>
-        `repeating-linear-gradient(0deg, ${rgba(s1, a)} 0px, ${rgba(s1, a)} 1px, transparent 1px, transparent ${buoc}px),` +
-        `repeating-linear-gradient(90deg, ${rgba(s1, a)} 0px, ${rgba(s1, a)} 1px, transparent 1px, transparent ${buoc}px)`;
+        `repeating-linear-gradient(0deg, ${rgba(muc, a)} 0px, ${rgba(muc, a)} 1px, transparent 1px, transparent ${buoc}px),` +
+        `repeating-linear-gradient(90deg, ${rgba(muc, a)} 0px, ${rgba(muc, a)} 1px, transparent 1px, transparent ${buoc}px)`;
       return (
         `${luoi(oLon, dam)},` +
         `${luoi(o, mo)},` +

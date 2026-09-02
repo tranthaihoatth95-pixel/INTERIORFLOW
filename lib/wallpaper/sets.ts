@@ -266,7 +266,7 @@ export function bangMau(
     stops.push(hslToRgb(hue, sat * (0.85 + 0.3 * t), l));
   }
   const lums = stops.map(relLuminance);
-  return { stops, lumMin: Math.min(...lums), lumMax: Math.max(...lums) };
+  return { stops, lumMin: Math.min(...lums), lumMax: Math.max(...lums), theme };
 }
 
 /* ------------------------------------------------------------------ *
