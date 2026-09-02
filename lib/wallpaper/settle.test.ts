@@ -79,7 +79,15 @@ console.log('V3 — giờ thập phân đúng, nối được vào sunPosition')
 
 console.log('V5 — lựa chọn được NHỚ, dữ liệu hỏng không làm vỡ giao diện');
 {
-  ok('mặc định là bộ đầu, nấc 0, bật', MAC_DINH.setId === WALLPAPER_SETS[0].id && MAC_DINH.nacGiamChoi === 0 && MAC_DINH.bat === true);
+  /* 🔴 ĐẢO 02/09 — ca này TRƯỚC ĐÂY đòi `MAC_DINH.setId === WALLPAPER_SETS[0].id`, và nó đã ĐỎ
+   * kể từ khi mặc định đổi sang 'binh-do' theo chốt 12 của Hoà (*"nền = giấy draft caro lam,
+   * KHÔNG ảnh phong cảnh"*). Tức cổng đang canh đúng thứ Hoà đã bác.
+   * Đây là bài học ① của bàn 06 (02/09) ở dạng thật: ĐỔI THIẾT KẾ THÌ PHẢI MANG THEO CỔNG.
+   * Đảo ca là chưa đủ — đảo xong thì con số 'binh-do' thành một hằng không ai giải thích, và
+   * sáu tháng nữa người sau lại "dọn" nó về WALLPAPER_SETS[0]. Nên ca dưới khoá Ý ĐỊNH: */
+  ok('mặc định = bộ Hoà chốt (binh-do), nấc 0, bật', MAC_DINH.setId === 'binh-do' && MAC_DINH.nacGiamChoi === 0 && MAC_DINH.bat === true);
+  ok('mặc định KHÔNG đi theo thứ tự khai báo — sắp lại sets.ts không được đổi mặt tiền app', WALLPAPER_SETS.length > 1 && MAC_DINH.setId !== WALLPAPER_SETS[0].id);
+  ok('bộ mặc định có thật trong danh sách (không trỏ vào id chết)', WALLPAPER_SETS.some((b) => b.id === MAC_DINH.setId));
   ok('null → mặc định', chuanHoa(null).setId === MAC_DINH.setId);
   ok('id lạ → mặc định', chuanHoa({ setId: 'xxx' }).setId === MAC_DINH.setId);
   ok('id thật giữ nguyên', chuanHoa({ setId: 'binh-do' }).setId === 'binh-do');
