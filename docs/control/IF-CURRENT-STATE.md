@@ -5,7 +5,16 @@
 > Nhỏ và mới. **Cấm để triết lý dài hạn ở đây** — nó thuộc `IF-CANONICAL.md`.
 > **Cập nhật trước khi kết phiên.**
 
-**Ngày** 02/09/2026 00:48 · **Nhánh** `checkpoint/2026-08-24-control-plane` · **HEAD** `2f87f940` · **Cây bẩn** 11 tệp (9 là `docs/control/ban/*.md` do MÁY sinh — nhịp của máy, không phải nợ; **2 rác thật, untracked**: `anh-luot5/` lô ảnh nghiệm thu lượt 5 và `chup-luot5.tam.mjs` bản chép tạm của máy chụp. Cả hai **không phải của lane 06 tạo ra ở gốc repo** ⇒ để nguyên, chờ người đặt nó quyết; đừng để lọt commit) · **Worktree** 0 · **Dev server** 1 · cổng 3001 · PID **12200** · khởi động **01/09 23:02** (đo: `lsof -nP -iTCP:3001 -sTCP:LISTEN`) · **Lịch sử ĐÃ VIẾT LẠI 30/08** — mọi SHA sau `147f66a` đổi, bảng ánh xạ `.git/filter-repo/commit-map`
+**Ngày** 02/09/2026 ~18:00 · **Nhánh** `checkpoint/2026-08-24-control-plane` · **HEAD** `8585c5ea` · **Cây bẩn** 10 tệp (8 là `docs/control/ban/*.md` do MÁY sinh — nhịp của máy, không phải nợ; **2 rác thật, untracked**: `anh-luot5/` lô ảnh nghiệm thu lượt 5 và `chup-luot5.tam.mjs` bản chép tạm của máy chụp. Cả hai **không phải của lane 06 tạo ra ở gốc repo** ⇒ để nguyên, chờ người đặt nó quyết; đừng để lọt commit. `anh-luot5/` cũng là 1 trong 4 thư mục MỒ CÔI mà `soi:thu-muc` đang nêu tên) · **Worktree** 0 · **Dev server** 1 · cổng 3001 · **PID 75921** · **Lịch sử ĐÃ VIẾT LẠI 30/08** — mọi SHA sau `147f66a` đổi, bảng ánh xạ `.git/filter-repo/commit-map`
+
+> 🔴 **DÒNG TRÊN VỪA STALE LẦN THỨ TƯ — và lần này bắt được bằng máy.** Bản 00:48 khai
+> `HEAD 2f87f940 · PID 12200 · khởi động 01/09 23:02`. Đo lại 02/09 (`lsof -nP -iTCP:3001
+> -sTCP:LISTEN`): **PID 75921** — dev server đã khởi động lại, và HEAD đã đi thêm 7 commit.
+> Ba lần trước đã ghi ngay dưới đây; lần này thêm một quan sát mới: **ô PID stale nguy hiểm hơn
+> ô HEAD stale**. HEAD sai thì `git log` cãi lại ngay; PID sai thì `ps -p 12200` báo "không có
+> tiến trình" và người đọc kết luận **dev server đã chết** trong khi nó đang chạy khoẻ ở PID
+> khác — đúng cùng họ với bài học "kiểm sống bằng `ListAgents`, KHÔNG bằng `ps -p`" ở mục dưới.
+> ⇒ Ô này phải đo lại MỖI lượt ghi, hoặc bỏ hẳn con số PID và chỉ giữ câu lệnh đo.
 
 > 📦 **BẢN CÀI CHO HOÀ — `dist-installer/mac-arm64/InteriorFlow.app`, đóng lại 02/09 03:20.**
 > `npx next build` EXIT 0 rồi `npx electron-builder --mac --dir` EXIT 0 (cả hai chạy KHÔNG qua
