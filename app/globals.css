@@ -254,6 +254,17 @@
   --nen-mo-header: rgba(20, 20, 23, 0.72);
   --nen-mo-panel: rgba(20, 20, 23, 0.68);
   --nen-mo-card: rgba(26, 26, 30, 0.82);
+  /* 🔴 VÀNH + LÕI (02/09) — hai tầng của ô widget Home, cho kính có BỀ DÀY.
+     Bản vẽ `Widget.dc.html:77-84` dựng tấm bằng hai lớp, và luật lớp thứ ④ của nó nói:
+     *"chỉ mặt ĐỌC CHỮ mới đặc"*. Vành là kính thật (trong, thấy nền xuyên qua); lõi là mặt
+     giấy đặt chữ lên (đục hơn, để chữ còn đọc được).
+     Một lớp .82 duy nhất — thứ đang chạy — cho ra một tấm phẳng: quá đục để thấy nền, quá đều
+     để có mép. Đó là dòng 4 của bảng chấm (*"đọc ra thẻ flat, giấy dán lên giấy"*).
+     ⛔ KHÔNG hạ thẳng `--nen-mo-card` xuống .55 để chữa: token đó có **57 chỗ dùng** (panel,
+     sheet, popover…), hạ nó là đổi mọi bề mặt kính trong app để chữa đúng một ô Home. Hai
+     token mới có phạm vi bằng đúng thứ chúng phục vụ. */
+  --nen-mo-vanh: rgba(26, 26, 30, 0.55);
+  --nen-mo-loi: rgba(26, 26, 30, 0.9);
   --nen-mo-overlay: rgba(6, 6, 8, 0.56);
 
   /* ---------- BỀ MẶT KÍNH NỔI — 3 nấc theo LƯỢNG CHỮ ĐỨNG TRÊN ----------
@@ -407,6 +418,9 @@
   --nen-mo-header: rgba(249, 249, 251, 0.72);
   --nen-mo-panel: rgba(249, 249, 251, 0.7);
   --nen-mo-card: rgba(255, 255, 255, 0.82);
+  /* Cặp vành/lõi bản SÁNG — xem lý do đầy đủ ở khối theme tối. Cùng alpha, khác màu nền. */
+  --nen-mo-vanh: rgba(255, 255, 255, 0.55);
+  --nen-mo-loi: rgba(255, 255, 255, 0.9);
   --nen-mo-overlay: rgba(46, 46, 56, 0.28);
 
   /* Bề mặt kính nổi — xem lý do 3 nấc ở khối Tối. Nền sáng dùng alpha CAO HƠN một nhịp:

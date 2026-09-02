@@ -87,16 +87,43 @@ export function useVaiO(): VaiO {
  * chốt 16/08); bo `--r-3` (thang RADIUS chốt 12/08); bóng `--shadow-node` (một-khối-một-bóng §2c
  * SPEC-DESIGN-SYSTEM-IF).
  * KHÔNG hex/số ma — mọi giá trị đều là token đã khai. */
-const GLASS_SHELL: CSSProperties = {
-  background: 'var(--nen-mo-card, var(--card))',
+/* 🔴 R-2d (02/09) — HAI TẦNG: VÀNH kính + LÕI đọc chữ.
+ *
+ * Bản trước là MỘT lớp `--nen-mo-card` .82. Đo trên ảnh 19:32 và đúng dòng 4 bảng chấm: nó đọc
+ * ra *"thẻ flat — giấy dán lên giấy"*. Lý do không phải màu mà là CẤU TẠO: một lớp đục đều thì
+ * không có mép, không có bề dày, và `backdrop-filter` gần như vô nghĩa vì .82 đã che hết nền.
+ *
+ * Bản vẽ `Widget.dc.html:77-84` dựng tấm bằng hai lớp, kèm luật lớp ④: *"chỉ mặt ĐỌC CHỮ mới
+ * đặc"*. Áp đúng vậy:
+ *   · VÀNH — kính thật, `--nen-mo-vanh` .55, blur mạnh, bo `--r-5`, đệm 4px. Nền xuyên qua
+ *     được nên lưới caro phía sau đọc ra ⇒ mắt thấy đây là một tấm ĐẶT TRÊN một mặt, không
+ *     phải một mảng màu dán vào.
+ *   · LÕI — mặt giấy, `--nen-mo-loi` .90, bo `--r-4`. Chữ đứng trên đây nên nó phải đủ đặc;
+ *     độ đọc không được trả giá cho hiệu ứng.
+ * Chênh 4px giữa hai bo (`--r-5` 24 và `--r-4` 20) là thứ làm vành đọc ra một VIỀN đều, không
+ * ra hai hộp lồng lệch.
+ *
+ * ⚠️ Thứ tự bắt buộc, và lát này chỉ đúng vì bước trước đã xong: kính chỉ "hiện" khi nền CÓ
+ * HÌNH để xuyên qua. Trên nền xám gần trắng của sáng nay, hạ .82 xuống .55 sẽ không cho ra
+ * kính — nó cho ra một thẻ NHẠT MÀU, mất cả độ đặc lẫn độ trong. Nền caro (`8da927cd`) phải
+ * vào trước, và nó đã vào. */
+const VANH: CSSProperties = {
+  background: 'var(--nen-mo-vanh, var(--card))',
   border: '1px solid var(--vien-mo, var(--border))',
   backdropFilter: 'saturate(180%) blur(var(--blur-strong))',
   WebkitBackdropFilter: 'saturate(180%) blur(var(--blur-strong))',
+  /* Bóng đổ XUỐNG TRƯỜNG (luật lớp ②) + mép trên bắt sáng (luật ③). Hai luật này ở VÀNH chứ
+     không ở lõi: chúng nói về quan hệ giữa TẤM và NỀN, mà lõi thì không chạm nền. */
   boxShadow: 'var(--shadow-node), inset 0 1px 0 var(--vien-mo)',
   /* Bo `--r-5` (24px, thêm 02/09) — nấc trên `--r-4`, dành riêng cho ô widget lớn kiểu iPad.
      Khai ở ĐÂY chứ không ở class Tailwind: vỏ nay là MỘT khuôn cho mọi vai, nên bo cũng phải
      nằm cùng chỗ với phần còn lại của khuôn, không tách ra một chuỗi class song song. */
   borderRadius: 'var(--r-5)',
+  padding: 4,
+};
+const LOI: CSSProperties = {
+  background: 'var(--nen-mo-loi, var(--card))',
+  borderRadius: 'var(--r-4)',
 };
 
 export default function WidgetCard({
@@ -141,24 +168,20 @@ export default function WidgetCard({
      giải mới là thứ đọc ra lộn xộn — nửa số ô có kính, nửa không.
      ⚠️ Ô phụ nay CÓ vỏ, nên rủi ro tường-thẻ quay lại phải chặn ở chỗ khác: bằng SỐ Ô (H-4 cắt
      bớt widget) và bằng khe thoáng của lưới, không bằng cách bỏ vỏ. */
-  const vo: CSSProperties = GLASS_SHELL;
-  const lopVo = 'nen-mo-card';
   const dem = dense ? 'p-3.5' : 'p-4';
 
   if (noPad) {
     return (
-      <div
-        className={`relative h-full overflow-hidden ${lopVo} ${className}`}
-        style={vo}
-      >
-        {children}
+      <div className={`relative h-full overflow-hidden ${className}`} style={VANH}>
+        <div className="h-full overflow-hidden" style={LOI}>{children}</div>
       </div>
     );
   }
   return (
+    <div className={`h-full overflow-hidden ${className}`} style={VANH}>
     <div
-      className={`flex h-full flex-col ${lopVo} ${dem} ${className}`}
-      style={vo}
+      className={`flex h-full flex-col overflow-hidden ${dem}`}
+      style={LOI}
     >
       {title && (
         <div className={`flex items-center justify-between gap-2 ${dense ? 'mb-1.5' : 'mb-2.5'} shrink-0`}>
@@ -185,6 +208,7 @@ export default function WidgetCard({
         </div>
       )}
       <div className={`min-h-0 flex-1 ${bodyClassName}`}>{children}</div>
+    </div>
     </div>
   );
 }
