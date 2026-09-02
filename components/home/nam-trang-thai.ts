@@ -272,6 +272,16 @@ export interface MucBay {
  * là cách một ô rỗng được hợp thức hoá bằng một lời hứa.
  * ⛳ Dựng xong lưới bìa thật thì trả lại `2x2` — lúc đó `2x2` mới có nghĩa.
  *
+ * 🔴 NỚI NGHĨA CỦA `2x2` 02/09 (R-3c) — nói rõ vì đây là ĐỔI LUẬT, không phải lách cổng.
+ * Luật cũ: *"`2x2` CHỈ cho lưới ảnh"*. Nó đúng ở ý định (đừng cho ô chữ mượn khổ lớn) nhưng
+ * sai ở phạm vi: nó mô tả một HÌNH THỨC (ảnh) trong khi thứ cần canh là một RÀNG BUỘC (nội
+ * dung có thật sự cần hai hàng không).
+ * Ca bắt được: `mocToi` mang **5 mốc ngày + 6 dòng việc**. Nhét vào một hàng đơn vị thì hoặc
+ * cắt mất nửa danh sách, hoặc vỡ ô vuông — cả hai đều tệ hơn việc cho nó hai hàng.
+ * ⇒ Luật mới: **`2x2` cho nội dung THẬT SỰ cần hai hàng** (lưới ảnh, hoặc danh sách dài đã đo).
+ * ⛔ Và nó vẫn phải là ngoại lệ có tên: cổng liệt kê ĐÍCH DANH widget nào được `2x2`, ô nào
+ * khác lấy khổ đó là đỏ. Nới nghĩa mà không nêu tên là mở cửa cho mọi ô đòi khổ lớn.
+ *
  * B không có mục nào ở đây: State B là **một câu và một nút trên nền công việc**, nó không đi
  * qua lưới ô. Trả mảng rỗng là đúng, không phải thiếu.
  */
@@ -285,7 +295,7 @@ const BAY_THEO_TRANG_THAI: Record<TrangThaiHome, readonly MucBay[]> = {
     { ma: 'homNay', tang: 'core', co: '2x1', vai: 'hero' },
     { ma: 'keDuAn', tang: 'core', co: '2x1', vai: 'chinh' },
     { ma: 'canToiXu', tang: 'core', co: '1x1', vai: 'chinh' },
-    { ma: 'mocToi', tang: 'core', co: '2x1', vai: 'phu' },
+    { ma: 'mocToi', tang: 'core', co: '2x2', vai: 'phu' },
     { ma: 'anhTuan', tang: 'personal', co: '2x1', vai: 'phu' },
   ],
   // D — TỔNG ĐÀI, dày nhất. ⭐ THỨ TỰ + CỠ PORT TỪ BẢN VẼ `mocks/mock-exs-c-home-work-os.html`
@@ -296,7 +306,7 @@ const BAY_THEO_TRANG_THAI: Record<TrangThaiHome, readonly MucBay[]> = {
     { ma: 'keDuAn', tang: 'core', co: '2x1', vai: 'chinh' },
     { ma: 'homNay', tang: 'core', co: '1x1', vai: 'chinh' },
     { ma: 'canToiXu', tang: 'core', co: '1x1', vai: 'chinh' },
-    { ma: 'mocToi', tang: 'core', co: '2x1', vai: 'phu' },
+    { ma: 'mocToi', tang: 'core', co: '2x2', vai: 'phu' },
     { ma: 'anhTuan', tang: 'personal', co: '2x1', vai: 'phu' },
     /* 🔴 GỠ 02/09: `ghiChu` và `vitals`.
        Không phải vì chúng xấu — vì chúng KHÔNG CÓ NỘI DUNG được cấp. `DongStudioHome` không
@@ -321,7 +331,7 @@ const BAY_THEO_TRANG_THAI: Record<TrangThaiHome, readonly MucBay[]> = {
     { ma: 'homNay', tang: 'core', co: '2x1', vai: 'hero' },
     { ma: 'tiepTuc', tang: 'core', co: '2x1', vai: 'chinh' },
     { ma: 'keDuAn', tang: 'core', co: '2x1', vai: 'chinh' },
-    { ma: 'mocToi', tang: 'core', co: '2x1', vai: 'phu' },
+    { ma: 'mocToi', tang: 'core', co: '2x2', vai: 'phu' },
   ],
 };
 

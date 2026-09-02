@@ -141,10 +141,21 @@ export default function ResumeWork({
         className="flex h-full w-full flex-col justify-between gap-2 rounded-[var(--r-2)] p-1 text-left transition-colors hover:bg-[var(--hover)]"
       >
         <div className="min-w-0">
-          <div className="truncate text-[length:var(--fs-sm)] font-[var(--fw-semi)] text-[var(--t1)]">
+          {/* Tiêu đề 16/600 — ô này là HERO của màn, và trước đây nó 14px, tức chỉ nhỉnh hơn
+              chữ thân 2px. Thứ bậc phải đọc được ngay chứ không phải đoán ra. */}
+          <div className="truncate text-[length:var(--fs-md)] font-[var(--fw-semi)] leading-[1.25] text-[var(--t1)]">
             {projectName}
           </div>
+        </div>
 
+        {/* 🔴 R-3c (02/09) — HÀNG HÀNH ĐỘNG: chip và CTA ĐỨNG CHUNG MỘT HÀNG, neo đáy.
+            Trước: ba khối xếp dọc (tiêu đề · chip · CTA) trong một `justify-between` ⇒ ảnh 19:32
+            cho thấy một LỖ ~200px giữa ô — chip dính sát tiêu đề còn CTA rơi tận đáy.
+            Nay hai khối: tiêu đề trên, hàng hành động dưới. Khoảng thở còn lại thành MỘT nhịp
+            có chủ ý thay vì một cái lỗ, và nó tự nhỏ đi vì ô nay vuông cứng 165 chứ không phải
+            242 như lúc hàng còn `auto`. */}
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <div className="min-w-0">
           {shown === 'gon' ? (
             /* NẤC GỌN — ký hiệu + số. Mỗi chip có SỐ/CHỮ đi kèm (luật icon-nén-tin: icon một
                mình không mang tin, nó chỉ nói "số này là số gì"). */
@@ -217,11 +228,12 @@ export default function ResumeWork({
             chọn (chốt 2). Chữ dùng token `--on-accent` có sẵn — không tự chọn trắng/đen, vì
             cặp đó đã được `mau-bo.ts` khoá bằng cổng WCAG. */}
         <span
-          className="inline-flex items-center gap-1 self-start rounded-[var(--r-full)] px-3 py-1.5 text-[length:var(--fs-xs)] font-[var(--fw-semi)]"
+          className="inline-flex shrink-0 items-center gap-1 rounded-[var(--r-full)] px-3 py-1.5 text-[length:var(--fs-xs)] font-[var(--fw-semi)]"
           style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
         >
           {tr('Mở lại →', 'Reopen →')}
         </span>
+        </div>
       </button>
     </WidgetCard>
   );

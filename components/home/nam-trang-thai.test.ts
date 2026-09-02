@@ -174,8 +174,22 @@ assert.equal(d.bay[0].co, '2x1', 'chốt 14: hero mang tiêu đề + chip ⇒ 2x
    suốt trong khi ảnh thật đỏ. ⇒ Bỏ miễn trừ. Hôm nay KHÔNG ô nào được `2x2`.
    ⛳ Dựng xong lưới bìa ảnh thật thì mở lại miễn trừ cho `keDuAn` — nhưng lúc đó phải kèm một
    ca chứng minh nó ĐANG vẽ ảnh, chứ không phải chỉ khai tên. */
-assert.ok(!d.bay.some((m) => m.co === '2x2'),
-  'chốt 14: 2x2 CHỈ cho lưới ảnh, mà chưa widget nào vẽ lưới ảnh ⇒ hôm nay không ô nào được 2x2');
+/* 🔴 NỚI CÓ TÊN 02/09 (R-3c) — nói rõ đây là ĐỔI LUẬT, không phải lách cổng đang đỏ.
+   Luật cũ *"2x2 CHỈ cho lưới ảnh"* đúng ở Ý ĐỊNH (đừng cho ô chữ mượn khổ lớn) nhưng sai ở
+   PHẠM VI: nó mô tả một HÌNH THỨC (ảnh) trong khi thứ cần canh là một RÀNG BUỘC (nội dung có
+   thật sự cần hai hàng không). `mocToi` mang 5 mốc ngày + 6 dòng việc — nhét vào một hàng đơn
+   vị thì hoặc cắt mất nửa danh sách, hoặc vỡ ô vuông.
+   ⛔ Nới nghĩa mà không nêu TÊN là mở cửa cho mọi ô đòi khổ lớn. Nên cổng nay là DANH SÁCH
+   ĐÍCH DANH: thêm một ô vào đây phải là một quyết định có người ký, không phải một dòng sửa
+   nhanh cho test hết đỏ. */
+const DUOC_2X2: readonly string[] = ['mocToi'];
+assert.ok(!d.bay.some((m) => m.co === '2x2' && !DUOC_2X2.includes(m.ma)),
+  `2x2 chỉ cho ô ĐÍCH DANH (${DUOC_2X2.join(', ')}) — ô khác lấy khổ đó là phạm chốt 14`);
+/* Và ca ngược lại: ô có tên trong danh sách phải THẬT SỰ đang dùng khổ đó. Thiếu ca này thì
+   danh sách trên có thể mục ruỗng dần — ai đó hạ `mocToi` về 2x1 mà tên vẫn nằm đây, và cổng
+   vẫn xanh trong khi nó đang canh một ngoại lệ không còn tồn tại. */
+assert.ok(d.bay.some((m) => m.ma === 'mocToi' && m.co === '2x2'),
+  'mocToi có tên trong danh sách 2x2 thì nó phải đang thật sự dùng khổ đó');
 /* Khoá riêng `keDuAn` — nó là ô DUY NHẤT từng mang 2x2, nên nếu ai trả nó về thì phải trả có ý
    thức. Tách ca vì "không ô nào 2x2" và "keDuAn là 2x1" là HAI luật: luật đầu là nhịp lưới,
    luật sau là cỡ đúng cho một danh sách. Một con số đừng chở hai luật. */

@@ -95,14 +95,24 @@ export default function TodayStrip({
    *    ⇒ Bỏ `font-mono` khỏi NHÃN. `tabular-nums` thì GIỮ ở con số — nó là thứ giữ chữ số cùng
    *    bề ngang khi số đổi (1 → 2 không nhảy chỗ), và nó KHÔNG đổi phông. */
   const LOP_SO = 'font-light tabular-nums text-[var(--t1)]';
-  const KIEU_SO = { fontSize: 'clamp(44px, 3.9vw, 64px)', lineHeight: 1.1 } as const;
+  /* 🔴 R-3c — `lineHeight` 1.1 VẪN TRÀN. Đo ảnh 19:32: `{chu:'1', chieu:'doc', sh:66, ch:62}`
+   * ở cỡ 56px ⇒ hộp chữ thật cao ~1,18em, còn 1,1em chỉ cho 61,6px. Lát trước tôi chọn 1.1
+   * bằng ƯỚC LƯỢNG chứ không bằng số đo — và ước lượng đó hụt đúng 4px.
+   * 1.2 phủ được ~1,18em của phông đang dùng, còn dư một chút cho phông khác. ⚠️ Nếu ai đổi
+   * phông chữ toàn app thì con số này phải ĐO LẠI, không suy: cổng `oTran` chiều dọc là thứ
+   * bắt được, đừng chờ mắt. */
+  const KIEU_SO = { fontSize: 'clamp(44px, 3.9vw, 64px)', lineHeight: 1.2 } as const;
   const LOP_NHAN = 'mt-1 text-[length:var(--fs-2xs)] text-[var(--t4)]';
 
   return (
     <WidgetCard dense index={index} title={tr('Hôm nay', 'Today')}>
       <div className="flex h-full flex-col justify-between gap-3">
+        {/* 🔴 R-3c — SỐ NEO ĐÁY. Ảnh 19:32: tiêu đề và số dính trên, ~55% ô trống bên dưới —
+            `justify-between` với MỘT khối con thì khối đó rơi về đầu, không có gì để "between".
+            `mt-auto` đẩy khối số xuống đáy ⇒ tiêu đề trên, số dưới, khoảng thở ở GIỮA hai thứ
+            có nghĩa, đúng cách widget iPad xếp một con số. */}
         {dueTodayCount > 0 ? (
-          <div className={reduce ? undefined : 'today-count-in'}>
+          <div className={`mt-auto ${reduce ? '' : 'today-count-in'}`}>
             <div className={LOP_SO} style={KIEU_SO}>{dueTodayCount}</div>
             <div className={LOP_NHAN}>
               {tr(dueTodayCount === 1 ? 'việc đến hạn' : 'việc đến hạn', dueTodayCount === 1 ? 'task due' : 'tasks due')}
@@ -110,7 +120,7 @@ export default function TodayStrip({
           </div>
         ) : (
           tasksDoneToday > 0 && (
-            <div className={reduce ? undefined : 'today-count-in'}>
+            <div className={`mt-auto ${reduce ? '' : 'today-count-in'}`}>
               <div className={LOP_SO} style={KIEU_SO}>{tasksDoneToday}</div>
               <div className={LOP_NHAN}>
                 {tr('việc xong hôm nay', tasksDoneToday === 1 ? 'task done' : 'tasks done')}

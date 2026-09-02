@@ -47,13 +47,16 @@ export default function UpcomingList({ summary, index }: { summary: HomeSummary;
           ⇒ Một cột dọc: ngày là nhãn, việc là hàng, mỗi hàng tự cắt bằng `…`. Bề ngang thành
           ràng buộc CỨNG (không còn đường tràn ngang), chiều cao thì `WidgetCard` đã có
           `overflow-y-auto` — cuộn DỌC là thứ ai cũng biết làm, cuộn ngang thì không. */}
-      <div className="flex flex-col gap-2.5">
+      {/* 🔴 R-3c (02/09) — MẬT ĐỘ THEO NHỊP iPad, đo được chứ không phải gu:
+          mốc ngày 12/600 hàng 20 · việc 14 hàng 26 · khe nhóm 8. Trước là khe 10 và hàng ~28,
+          nên 5 mốc + 6 việc không vừa ô 2×2 (386px ở 1440) và bị cắt mất phần đuôi. */}
+      <div className="flex flex-col gap-2">
         {days.map((day) => (
           <div key={day.date} className="min-w-0">
             {/* v3 (ⓖ "hover ngày → tooltip tên việc") — tooltip native liệt kê MỌI việc trong
                 ngày, kể cả phần bị "+N việc khác" gấp gọn bên dưới. */}
             <div
-              className="mb-1.5 text-[length:var(--fs-2xs)] font-semibold tracking-[.01em] text-[var(--t4)]"
+              className="mb-0.5 flex h-5 items-center text-[length:var(--fs-2xs)] font-semibold tracking-[.01em] text-[var(--t4)]"
               title={day.items.map((t) => t.title).join('\n')}
             >
               {fmtDayHeader(day.date, lang === 'en')}
@@ -68,10 +71,15 @@ export default function UpcomingList({ summary, index }: { summary: HomeSummary;
                   <button
                     type="button"
                     onClick={() => goToProjectStage(router, t.projectId, t.stage)}
-                    className="block w-full min-w-0 truncate rounded-[var(--r-2)] px-2 py-1 text-left text-[length:var(--fs-xs)] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+                    className="flex h-[26px] w-full min-w-0 items-center rounded-[var(--r-2)] px-2 text-left text-[length:var(--fs-sm)] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
                     title={t.projectName ? `${t.title} · ${t.projectName}` : t.title}
                   >
-                    {t.title}
+                    {/* ⚠️ Chữ phải nằm trong SPAN riêng mang `truncate`, không đặt `truncate`
+                        lên chính nút. Nút nay là `flex` để có chiều cao hàng 26px cố định, mà
+                        `truncate` trên một hộp flex thì không cắt gì — nó cần một hộp block có
+                        bề ngang bị chặn. Tôi vừa tự dẫm phải chỗ này khi đổi nút sang flex:
+                        gỡ mất `truncate` và lập tức trả lại đúng lỗi (b) vừa chữa xong. */}
+                    <span className="min-w-0 truncate">{t.title}</span>
                   </button>
                 </li>
               ))}

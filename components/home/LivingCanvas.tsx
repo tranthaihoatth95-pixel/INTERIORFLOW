@@ -50,13 +50,13 @@ export interface LivingCanvasProps {
  * Là THẺ `<a>` chứ không phải `<button>`: hàng kệ ĐI ĐẾN một nơi. Anchor cho sẵn mở-tab-mới,
  * chuột giữa, copy link, và trình đọc màn hình đọc đúng là "liên kết" — `button`+`router.push`
  * mất sạch những thứ đó. Đường `/projects/<id>/overview` là route THẬT (rail đang dùng chính nó). */
-function HangDuAn({ id, name }: { id: string; name: string }) {
+function HangDuAn({ id, name, nhipHang = NHIP_HANG }: { id: string; name: string; nhipHang?: number }) {
   return (
     <a
       href={`/projects/${id}/overview`}
       className="group flex w-full items-center justify-between text-left"
       style={{
-        height: NHIP_HANG,
+        height: nhipHang,
         padding: '0 14px',
         borderRadius: 'var(--r-2)',
         color: 'var(--t2)',
@@ -65,7 +65,7 @@ function HangDuAn({ id, name }: { id: string; name: string }) {
         textDecoration: 'none',
       }}
     >
-      <span style={{ fontSize: 15, letterSpacing: '.01em' }}>{name}</span>
+      <span style={{ fontSize: nhipHang <= 40 ? 14 : 15, letterSpacing: '.01em' }} className="min-w-0 truncate">{name}</span>
       <ArrowRight
         size={16}
         aria-hidden
@@ -85,8 +85,19 @@ function HangDuAn({ id, name }: { id: string; name: string }) {
 export function KeDuAn({
   projects,
   khongTieuDe = false,
+  nhipHang = NHIP_HANG,
 }: {
   projects: readonly { id: string; name: string }[];
+  /**
+   * 🔴 R-3c (02/09) — chiều cao một hàng. Mặc định 64 là nhịp của `LivingCanvas`, nơi kệ đứng
+   * MỘT MÌNH trên một bề mặt rộng. Trong ô lưới Home thì 64 là quá cao: ba hàng = 192px trong
+   * một ô vuông 165px ⇒ tràn, và trước khi ô thành vuông cứng thì nó âm thầm kéo cả HÀNG lưới
+   * cao lên 242px — đó là nguồn thật của "tờ báo dàn trang" trên ảnh 19:32.
+   * ⛔ KHÔNG hạ `NHIP_HANG` toàn cục để chữa: `LivingCanvas` là bề mặt ĐANG SỐNG
+   * (`DongStudioHome.tsx:535`), hạ hằng chung là sửa một màn bằng cách đổi một màn khác mà
+   * không ai yêu cầu. Tham số hoá là cách một khuôn phục vụ hai ngữ cảnh mà không phân kỳ.
+   */
+  nhipHang?: number;
   /**
    * Nơi gọi đã tự cấp tiêu đề (ô lưới Home bọc `WidgetCard title="Dự án"`) ⇒ kệ thôi tự in nhãn.
    * Không có cờ này thì chữ "Dự án" hiện HAI LẦN chồng nhau trong cùng một ô.
@@ -108,7 +119,7 @@ export function KeDuAn({
       )}
       <div className="flex flex-col">
         {projects.map((p) => (
-          <HangDuAn key={p.id} id={p.id} name={p.name} />
+          <HangDuAn key={p.id} id={p.id} name={p.name} nhipHang={nhipHang} />
         ))}
       </div>
     </section>

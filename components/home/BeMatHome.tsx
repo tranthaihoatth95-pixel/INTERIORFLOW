@@ -614,16 +614,18 @@ export default function BeMatHome({
                `clamp` giữ ô co được trên màn nhỏ mà không vỡ tỉ lệ vuông. */
             style={{
               gridTemplateColumns: `repeat(${nhip.cot}, ${O_DON_VI})`,
-              /* 🔴 `minmax(ô, auto)` CHỨ KHÔNG phải ô vuông CỨNG — sửa sau khi nhìn ảnh thật.
-                 Đặc tả nói `gridAutoRows: O_DON_VI` (vuông tuyệt đối, đúng iPad). Chụp ra thì
-                 nội dung TRÀN RA NGOÀI VỎ: ô "Dự án" đẩy chữ xuống dưới đáy thẻ, ô "Việc đang dở"
-                 vỡ cột. Lý do: 11 widget hiện có được viết cho hàng `minmax(88px, auto)` — chúng
-                 CO THEO NỘI DUNG. Ép vuông tuyệt đối là cắt chiều cao chúng cần.
-                 Ô vuông tuyệt đối chỉ đúng SAU khi nội dung được cắt cho vừa (H-3 dựng lại
-                 `ResumeWork`, H-4 bớt widget). Làm lưới trước nội dung là đổi một màn lộn xộn
-                 lấy một màn vỡ chữ. Nay: cạnh ô là SÀN, không phải trần — giữ được nhịp vuông
-                 và khe đều của springboard, không cắt chữ. */
-              gridAutoRows: `minmax(${O_DON_VI}, auto)`,
+              /* 🔴 R-3c (02/09) — Ô VUÔNG CỨNG. Điều kiện mà chú thích cũ đặt ra NAY ĐÃ ĐỦ.
+                 Bản trước để `minmax(ô, auto)` và tự ghi lý do: *"ô vuông tuyệt đối chỉ đúng SAU
+                 khi nội dung được cắt cho vừa"* — lúc đó ruột chưa được cắt, ép vuông là vỡ chữ.
+                 Nay R-3/R-3b đã cắt ruột (cỡ số theo ô, danh sách xếp dọc có `…`, bỏ chữ giữ
+                 chỗ), nên điều kiện đã thoả và cạnh ô trả về CỨNG.
+                 Vì sao phải cứng: `auto` cho hàng cao theo ô cao nhất ⇒ đo trên ảnh 19:32, hàng
+                 1 cao **242px** trong khi ô đơn vị là 165 — lưới đọc ra "tờ báo dàn trang", đúng
+                 thứ chốt 14 bác. `auto` cũng làm mọi lỗi F4 VÔ HÌNH: ruột thừa thì vỏ tự phình
+                 ra ôm lấy, nên không cổng nào và không con mắt nào bắt được.
+                 ⇒ Ô cứng biến "ruột không vừa" thành một lỗi NHÌN THẤY NGAY — đó là mục đích,
+                 không phải tác dụng phụ. */
+              gridAutoRows: O_DON_VI,
               /* 🔴 R-2b — KHE nhận phần dư, Ô giữ nguyên. Đây là cách iPad phủ hết bề ngang mà
                  widget vẫn đúng một cỡ: số cột theo màn, khe giãn, ô CỐ ĐỊNH.
                  Dùng CHUNG một khe cho cả hai chiều — hở ngang 56 mà hở dọc 20 thì đọc ra bảng

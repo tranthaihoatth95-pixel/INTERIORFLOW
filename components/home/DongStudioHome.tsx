@@ -594,7 +594,9 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
        `KeDuAn` nhận `khongTieuDe` để không in "Dự án" HAI LẦN. */
     keDuAn: (
       <WidgetCard title={tr('Dự án', 'Projects')}>
-        <KeDuAn projects={s.recentProjects} khongTieuDe />
+        {/* 🔴 R-3c — nhịp hàng 32 trong ô lưới (mặc định 64 là nhịp của LivingCanvas, nơi kệ
+            đứng một mình trên bề mặt rộng). Ba hàng 64 = 192px không vừa ô vuông 165px. */}
+        <KeDuAn projects={s.recentProjects} khongTieuDe nhipHang={32} />
       </WidgetCard>
     ),
     homNay: <TodayStrip summary={s} currentUserId={currentUserId} />,
