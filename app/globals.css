@@ -92,6 +92,7 @@
   --r-2: 10px;     /* nút, hàng list, field */
   --r-3: 14px;     /* card, popover, panel con */
   --r-4: 20px;     /* tấm/sheet/modal, khối kính lớn */
+  --r-5: 24px;     /* ô widget Home kiểu iPad (02/09) — nấc trên r-4, chỉ cho ô lớn trên nền */
   --r-full: 999px; /* capsule/tròn — mọi thanh, pill, switch, track */
   /* Token cũ = BÍ DANH trỏ về thang mới — KHÔNG xoá (62 usage), migrate dần. */
   --radius-sm: var(--r-2);

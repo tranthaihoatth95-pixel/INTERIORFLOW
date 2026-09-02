@@ -118,6 +118,19 @@ function nacMoDau(dangTrongChang: boolean): NacRail {
 const NEN_DANG_MO = 'color-mix(in srgb, var(--t1) 8%, transparent)';
 
 /**
+ * CỠ ICON RIÊNG CỦA RAIL (02/09) — Hoà chê icon rail "18 mảnh" khi soi bản cài.
+ *
+ * Rail là thanh điều hướng CHÍNH và nay đứng trên nền frosted; hình 18px nét 1.5 đọc ra mảnh và
+ * chìm. Tab bar của iPad — thứ Hoà lấy làm mốc (chốt 14) — dùng hình to hơn hẳn so với icon
+ * trong panel.
+ * ⛔ KHÔNG đổi `HE_BIEU_TUONG` toàn cục: hệ đó dùng chung với command icon và nhiều bảng khác,
+ * đổi ở đó là kéo theo những chỗ chưa ai nhìn. Một hằng CỤC BỘ cho đúng một bề mặt.
+ * Nét 1.75 nằm ĐÚNG trần cứng của cổng nền (`muc-dieu-huong.test.ts` [9]: nét khi nhấn ≤ 1.75)
+ * — mượn đúng trần đã có, không nới.
+ */
+const ICON_RAIL = { khung: 26, hinh: 22, net: 1.75 } as const;
+
+/**
  * 🟡 MÀU AI — MỘT BIẾN ĐẶT TẠM, CHỜ HOÀ CHỐT. Đổi đúng MỘT dòng dưới đây là đổi cả nút `+`.
  *
  * Vì sao chưa chốt được ở lane này: IF có **một** màu nhấn (tím `--accent`); màu nhấn **thứ hai**
@@ -982,8 +995,8 @@ function HangRail({
         aria-hidden
         data-o-icon=""
         style={{
-          width: HE_BIEU_TUONG.khung,
-          height: HE_BIEU_TUONG.khung,
+          width: ICON_RAIL.khung,
+          height: ICON_RAIL.khung,
           flexShrink: 0,
           display: 'grid',
           placeItems: 'center',
@@ -994,7 +1007,7 @@ function HangRail({
           color: dangMo ? 'var(--t1)' : undefined,
         }}
       >
-        <Icon size={HE_BIEU_TUONG.hinh} strokeWidth={HE_BIEU_TUONG.net} />
+        <Icon size={ICON_RAIL.hinh} strokeWidth={ICON_RAIL.net} />
       </span>
       {/* Viên nhãn: nở từ tâm ô icon ra phải. `scaleX` + `opacity` — không animate `width` (giật
           layout). `prefers-reduced-motion` thắng: hiện thẳng, không nở. */}

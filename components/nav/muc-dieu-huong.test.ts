@@ -343,6 +343,24 @@ for (const [cam, viSao] of [
   };
   const khung = so('khung');
   const hinh = so('hinh');
+  /* 🔴 THÊM 02/09 — CỔNG NÀY VỪA HOÁ MÙ, và tôi tự gây ra.
+   * Rail nay dùng hằng CỤC BỘ `ICON_RAIL` (26/22/1.75) chứ không còn `HE_BIEU_TUONG`. Khối đo
+   * bên trên vẫn đọc `command-icon.tsx` và vẫn XANH — tức nó đang chấm một con số mà thanh
+   * điều hướng không dùng nữa. Cổng xanh trong khi thứ nó canh đã đổi là dạng hỏng tệ nhất:
+   * nó cho cảm giác đã kiểm.
+   * ⇒ Đo THÊM chính hằng của rail. Trần nét 1.75 giữ nguyên (mượn trần cũ, KHÔNG nới); khung
+   * phải ôm được hình, và hình không được vượt khung. */
+  {
+    const rail = readFileSync('components/nav/RailDieuHuong.tsx', 'utf8');
+    const m = /ICON_RAIL\s*=\s*\{\s*khung:\s*([0-9.]+),\s*hinh:\s*([0-9.]+),\s*net:\s*([0-9.]+)/.exec(rail);
+    ok('rail khai hằng icon riêng, đọc được bằng máy', m !== null);
+    if (m) {
+      const [kR, hR, nR] = [parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3])];
+      ok('nét icon rail ≤ 1,75 — ĐÚNG trần cũ, không nới', nR <= 1.75);
+      ok('hình icon rail không vượt khung của nó', hR <= kR);
+      ok('icon rail TO HƠN icon panel (lý do cả lát này tồn tại)', hR > (hinh ?? 0));
+    }
+  }
   const net = so('net');
   const netNhan = so('netNhan');
   ok('khung icon = 20', khung === 20);

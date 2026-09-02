@@ -14,7 +14,13 @@ import type { NacGiamChoi, WallpaperPrefs } from './types';
 const LS_KEY = 'interiorflow.wallpaper';
 
 export const MAC_DINH: WallpaperPrefs = {
-  setId: WALLPAPER_SETS[0].id,
+  /* 'binh-do' (bản vẽ, chỉ có nét) chứ KHÔNG phải bộ đầu danh sách — chốt 12 của Hoà:
+   * *"nền = chính việc dở/giấy draft caro lam, KHÔNG ảnh phong cảnh"*. Lấy `WALLPAPER_SETS[0]`
+   * là để thứ tự khai báo trong `sets.ts` quyết định mặt tiền của app: thêm/sắp lại một bộ là
+   * đổi nền mặc định mà không ai định. Khai TÊN bộ thì ý định nằm ở đây, đọc được.
+   * ⚠️ Chỉ đổi MẶC ĐỊNH. Người dùng đã chọn bộ khác thì `localStorage` vẫn thắng — đường đọc
+   * prefs không đụng tới. */
+  setId: 'binh-do',
   nacGiamChoi: 0,
   bat: true,
 };
