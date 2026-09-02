@@ -55,7 +55,12 @@ export default function VitalsPill() {
             boxShadow: '0 10px 28px -14px rgba(0,0,0,0.4)',
           }}
         >
-          <VitalsIcon size={14} className="shrink-0" style={{ color: 'var(--accent)' }} />
+          {/* 🔴 ĐỔI 02/09 — icon THÔI dùng `--accent`. Chốt 3 (Hoà 31/08, đọc lại 01/09 11:18)
+              chê **RẢI** accent nhiều chỗ một màn, và lát H-3 giao accent cho ĐÚNG MỘT CTA của
+              Home ("Mở lại"). Pill này mount lại vào header Home ⇒ để nguyên `--accent` là màn
+              có hai điểm accent, tức tự tay phạm chốt ngay lúc khôi phục tính năng.
+              Kênh phân biệt của nó là HÌNH (glyph Vitals) + chữ, không phải màu. */}
+          <VitalsIcon size={14} className="shrink-0" style={{ color: 'var(--t2)' }} />
           <span className="text-[length:var(--fs-xs)] font-medium text-[var(--t2)]">Vitals</span>
         </button>
       ) : (

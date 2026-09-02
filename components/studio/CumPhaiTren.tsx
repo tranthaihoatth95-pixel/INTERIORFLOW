@@ -11,9 +11,16 @@
  * kèm theo là **cấm lặp**: đã ở đây thì không được có bản thứ hai bên trái.
  *
  * ── LUẬT KHÔNG GIAN: ĐÂY KHÔNG PHẢI VITALS ───────────────────────────────────────────────────
- * MÉP TRÊN (`VitalsAperture`, đã LIVE) = *"tôi nên biết gì"* — thứ hệ thống thấy đáng nói.
- * PHẢI TRÊN (tệp này)                  = *"tôi là ai / ai đang ở đây"* — danh tính và người.
+ * CỤM TÌM KIẾM (Home) = *"tôi nên biết gì"* — Vitals, thứ hệ thống thấy đáng nói.
+ * PHẢI TRÊN (tệp này) = *"tôi là ai / ai đang ở đây"* — danh tính và người.
  * Hai hệ KHÁC NHAU, ⛔ cấm nhập một. Đừng gom badge Vitals vào chuông, đừng cho avatar mở Vitals.
+ *
+ * 🔴 SỬA 02/09 — dòng trên trước ghi *"MÉP TRÊN (`VitalsAperture`, đã LIVE)"*. Khẩu độ đó đã
+ * THÔI MOUNT hôm nay (V-3a, `AppChrome.tsx`); Vitals nay vào bằng `VitalsPill` ở cụm tìm kiếm.
+ * ⚠️ Chỗ ĐỨNG của Vitals đổi, LUẬT thì KHÔNG: phiếu V-3b đề nghị đặt nút Vitals vào chính tệp
+ * này. Đã từ chối, vì nó phạm đúng dòng "cấm nhập một" ngay trên, và phạm chốt 6 của Hoà
+ * (*"góc trên phải = cá nhân + thông báo"*, `docs/hoa-noi/SO-TONG.md`). Ai định làm lại việc đó
+ * thì phải lật được hai nguồn ấy trước, đừng lật bằng một phiếu.
  *
  * ── VÌ SAO CHỖ NÀY HIỆN ÍT HƠN BA MÓN — CÓ Ý, KHÔNG PHẢI THIẾU ────────────────────────────────
  * Phiếu ghi rõ: *"chưa có nhóm/hiện diện thật ⇒ TỰ THU GỌN, không vẽ chỗ trống"*. Áp thẳng:

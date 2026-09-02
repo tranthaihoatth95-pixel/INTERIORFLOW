@@ -222,9 +222,12 @@ export default function StatusBar({ stage, hidden }: Props) {
           = 0 nơi mount. Nghĩa là từ 17/08 tới nay, gõ câu hỏi vào ô này rồi Enter thì câu hỏi
           ĐI VÀO HƯ KHÔNG. Phím ⌘J cũng đăng ký trong StageSwitcher nên đã chết cùng lúc — không
           phải mất ở lần gỡ này.
-          Vitals nay có ĐÚNG MỘT chỗ đứng: khẩu độ mép trên `components/studio/VitalsAperture.tsx`
-          (chốt 16/08 — "mỗi màn ĐÚNG MỘT Vitals"). Giữ chip lại là để hai lối vào trên một màn
-          mà một trong hai không chạy.
+          Vitals nay có ĐÚNG MỘT chỗ đứng (chốt 16/08 — "mỗi màn ĐÚNG MỘT Vitals"). Giữ chip lại
+          là để hai lối vào trên một màn mà một trong hai không chạy.
+          🔴 SỬA 02/09: chỗ đứng đó TỪNG là khẩu độ mép trên `VitalsAperture.tsx`; hôm nay khẩu
+          độ thôi mount (V-3a) và lối vào chuyển sang `VitalsPill` ở cụm tìm kiếm của Home.
+          Lý do gỡ chip **không đổi một chữ** — nó vẫn là nút bấm-không-ra-gì. Đừng đọc lần đổi
+          chỗ này thành lời mời hồi sinh chip.
           CÒN NỢ, KHÔNG làm ở phiếu này: ô GÕ NHANH (gõ thẳng ở đáy, không phải mở panel rồi mới
           gõ) là cơ chế RIÊNG và đáng giá. Muốn cứu thì cấp cho `VitalsChatSurface` một câu mở
           đầu rồi nối lại — đừng mount lại panel cũ. */}

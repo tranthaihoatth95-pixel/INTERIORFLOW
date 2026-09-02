@@ -36,10 +36,22 @@ import { MobileMenu } from '@/components/MobileMenu';
 // P-V 17/08 — ô tìm dự án + Vitals ở top bar (chỉ Home; chặng có Vitals cạnh trục phải riêng).
 import SearchProjectsInput from '@/components/SearchProjectsInput';
 // COHERENCE-SHELL 20/08 — mép trên có HAI thứ mới, cả hai sống ở MỌI màn (không còn "chỉ Home"):
-// dải ngữ cảnh (đang ở đâu) + khẩu độ Vitals (nên biết gì). `VitalsPill` (bản chỉ-Home) nay
-// KHÔNG mount ở đây nữa — khẩu độ dùng lại ĐÚNG bề mặt chat của nó (`VitalsChatSurface`).
+// dải ngữ cảnh (đang ở đâu) + khẩu độ Vitals (nên biết gì).
+//
+// 🔴 ĐẢO NỬA SAU 02/09 (V-3a) — KHẨU ĐỘ VITALS THÔI MOUNT Ở HEADER. Hoà 09:08 02/09: *"VITAL
+// HẢ? DM"* ⇒ chốt sau thắng chốt duyệt-mắt 20/08. Nhưng Vitals là tính năng THẬT, không được
+// mất cùng chỗ đứng của nó (luật: gỡ CHỖ ĐỨNG ≠ gỡ NĂNG LỰC — bàn 06, 02/09).
+// ⇒ `VitalsPill` (bản chỉ-Home, `components/home/widgets/VitalsPill.tsx`) MOUNT LẠI vào đúng
+// cụm `data-tour="home-search-vitals"` bên dưới. Đây là CONNECT, không phải NEW (B25): tệp đó
+// đã làm sẵn việc "nút nhỏ → mở `VitalsChatSurface`", nó chỉ mất chỗ mount từ 20/08.
+// Vì sao cụm tìm kiếm chứ không phải `CumPhaiTren`: SO-TONG mục `vitals` (Hoà 17/08) đặt Vitals
+// *"nằm TRÊN thanh tìm kiếm"*, còn chốt 6 giao góc phải cho *cá nhân + thông báo* — và chính
+// `CumPhaiTren.tsx:14-17` cấm nhập hai hệ. Phiếu V-3b đề nghị góc phải; nguồn thắng phiếu.
+// ⛳ NỢ CÓ TÊN: cụm này chỉ render khi `active === 'home'` ⇒ Vitals nay CHỈ CÒN Ở HOME, trong
+// khi khẩu độ cũ sống ở mọi màn. Thu hẹp có chủ ý cho pilot, không phải quên. Muốn trả lại
+// "mọi màn" thì đó là việc THÊM một chỗ đứng, không phải khôi phục `<VitalsAperture/>`.
 import { DaiNguCanh } from '@/components/studio/DaiNguCanh';
-import { VitalsAperture } from '@/components/studio/VitalsAperture';
+import VitalsPill from '@/components/home/widgets/VitalsPill';
 import { CumPhaiTren } from '@/components/studio/CumPhaiTren';
 import { useStageTransition } from '@/components/studio/StageTransitionProvider';
 import { stageHrefFrom } from '@/lib/project-scope';
@@ -369,23 +381,25 @@ export function AppChrome({ active, logoMenu }: Props) {
       {/* Ô TÌM DỰ ÁN — vẫn CHỈ Home (tìm giữa các dự án chỉ có nghĩa khi chưa mở dự án nào).
           KHẨU ĐỘ VITALS thì ở MỌI màn: chốt 16/08 nói "cùng MỘT vật, di chuyển theo chỗ tay
           đang đặt", và mép trên là chỗ vật đó đứng khi tay chưa ở trục phải. Vẫn đúng ràng buộc
-          "mỗi màn ĐÚNG MỘT Vitals" — `VitalsPill` bản chỉ-Home đã thôi mount, `VitalsGesture`
-          bản cũ thì đã mồ côi từ 17/08 (xem đầu `VitalsAperture.tsx`). */}
+          "mỗi màn ĐÚNG MỘT Vitals" — `VitalsGesture` bản cũ đã mồ côi từ 17/08 (xem đầu
+          `VitalsAperture.tsx`).
+          🔴 SỬA 02/09: câu cũ ở đây ghi *"`VitalsPill` bản chỉ-Home đã thôi mount"* — nay SAI,
+          nó vừa mount lại ngay dưới đây (V-3a). Sửa tại chỗ thay vì để lại: một chú thích tả
+          hiện trạng đã hết đúng thì phiên sau đọc nó như FACT rồi đi tìm bug không tồn tại. */}
       <div className="flex shrink-0 items-center gap-2" data-tour="home-search-vitals">
         {active === 'home' && <SearchProjectsInput />}
+        {active === 'home' && <VitalsPill />}
       </div>
 
-      {/* ⓶ Ổ VITALS — VÙNG NGỮ NGHĨA GIỮA, chỗ DÀNH RIÊNG trong vỏ app.
-          🔴 ĐỔI TẦNG 20/08: trước đây `<VitalsAperture/>` đứng NGAY TRONG cụm phải-trên (cùng
-          `<div>` với ô tìm dự án) và tự tính `position:fixed` từ ref của chính cụm đó ⇒ nó
-          **bám vào hệ danh-tính**, đúng cái hệ nó không được sống trong. Đó là lý do nó đọc ra
-          như "gắn thêm vào sau": không phải neo sai chỗ, mà **neo nhầm hệ**.
-          Nay nó là con TRỰC TIẾP của `<header>` (đã `relative`), tự đặt mình bằng toạ độ tuyệt
-          đối theo **tâm vùng làm việc** (`useVungLamViec` → `viTriO`). Header thôi là một dòng
-          flex phẳng: trái = Dự án·Chặng · giữa = Ổ Vitals · phải = Thông báo·Hiện diện·Avatar.
-          ⛔ Đừng đưa nó trở lại vào một cụm flex nào — vào flex là mất chỗ dành riêng, và tâm
-          của nó lại chạy theo độ dài của thứ đứng cạnh. */}
-      <VitalsAperture />
+      {/* ⓶ Ổ VITALS — ĐÃ GỠ 02/09 (V-3a). Khối cũ dựng một VÙNG NGỮ NGHĨA GIỮA riêng cho
+          `<VitalsAperture/>`: con trực tiếp của `<header>`, tự đặt mình bằng toạ độ tuyệt đối
+          theo tâm vùng làm việc (`useVungLamViec` → `viTriO`), cố ý ĐỨNG NGOÀI mọi cụm flex.
+          Thiết kế đó không sai về mặt kỹ thuật — nó bị Hoà bác về mặt SỰ CÓ MẶT (09:08 02/09).
+          ⛔ Đừng dựng lại chỗ đứng này. `VitalsAperture.tsx` giữ nguyên trên đĩa (mức Peek +
+          quỹ đạo là công sức thật, và bản thân tệp đã là lời chứng vì sao chip StatusBar chết);
+          nó chỉ THÔI MOUNT. Lối vào Vitals nay ở cụm tìm kiếm phía trên — xem chú thích ở import.
+          Header nay là một dòng flex phẳng: trái = Dự án·Chặng · giữa = tìm + Vitals ·
+          phải = Thông báo·Hiện diện·Avatar. */}
 
       {/* NAV-HAI-DAO 20/08 — CỤM PHẢI TRÊN: "tôi là ai / ai đang ở đây".
           Hoà chốt thanh trái CHỈ CÒN VIỆC ⇒ Hồ sơ · Credit · Cài đặt · Tài khoản · Đăng xuất rời
