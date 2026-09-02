@@ -594,9 +594,17 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
        `KeDuAn` nhận `khongTieuDe` để không in "Dự án" HAI LẦN. */
     keDuAn: (
       <WidgetCard title={tr('Dự án', 'Projects')}>
-        {/* 🔴 R-3c — nhịp hàng 32 trong ô lưới (mặc định 64 là nhịp của LivingCanvas, nơi kệ
-            đứng một mình trên bề mặt rộng). Ba hàng 64 = 192px không vừa ô vuông 165px. */}
-        <KeDuAn projects={s.recentProjects} khongTieuDe nhipHang={32} />
+        {/* 🔴 Nhịp hàng 28 trong ô lưới (mặc định 64 là nhịp của LivingCanvas, nơi kệ đứng một
+            mình trên bề mặt rộng). Ba hàng 64 = 192px không vừa ô vuông 165px.
+            28 chứ không phải 32, và TÍNH cho ô NHỎ NHẤT chứ không cho ô ở 1440:
+              ô 148 (sàn `clamp`) − đệm vành 4×2 = 140 lõi − đệm lõi 14×2 = 112 nội dung
+              − tiêu đề ô (~16 + khe 6 = 22) = **90px** cho danh sách.
+            3 hàng × 32 = 96 > 90 ⇒ tràn 6px. Đo trên ảnh 20:56 ở 1180 và 1054: `sh 140 / ch 138`.
+            3 hàng × 28 = 84 ≤ 90 ⇒ còn dư 6px.
+            ⚠️ Vết này SINH RA từ lát kính hai tầng: vành ăn 8px mà tôi không tính lại ruột.
+            Thêm một lớp vỏ là bớt chỗ cho ruột — hai thứ đó phải đi cùng một lượt, không thì
+            lớp vỏ mới âm thầm đẩy mọi widget qua mép. */}
+        <KeDuAn projects={s.recentProjects} khongTieuDe nhipHang={28} />
       </WidgetCard>
     ),
     homNay: <TodayStrip summary={s} currentUserId={currentUserId} />,

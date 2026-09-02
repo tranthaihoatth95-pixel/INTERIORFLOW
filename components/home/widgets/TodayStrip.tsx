@@ -95,13 +95,17 @@ export default function TodayStrip({
    *    ⇒ Bỏ `font-mono` khỏi NHÃN. `tabular-nums` thì GIỮ ở con số — nó là thứ giữ chữ số cùng
    *    bề ngang khi số đổi (1 → 2 không nhảy chỗ), và nó KHÔNG đổi phông. */
   const LOP_SO = 'font-light tabular-nums text-[var(--t1)]';
-  /* 🔴 R-3c — `lineHeight` 1.1 VẪN TRÀN. Đo ảnh 19:32: `{chu:'1', chieu:'doc', sh:66, ch:62}`
-   * ở cỡ 56px ⇒ hộp chữ thật cao ~1,18em, còn 1,1em chỉ cho 61,6px. Lát trước tôi chọn 1.1
-   * bằng ƯỚC LƯỢNG chứ không bằng số đo — và ước lượng đó hụt đúng 4px.
-   * 1.2 phủ được ~1,18em của phông đang dùng, còn dư một chút cho phông khác. ⚠️ Nếu ai đổi
-   * phông chữ toàn app thì con số này phải ĐO LẠI, không suy: cổng `oTran` chiều dọc là thứ
-   * bắt được, đừng chờ mắt. */
-  const KIEU_SO = { fontSize: 'clamp(44px, 3.9vw, 64px)', lineHeight: 1.2 } as const;
+  /* 🔴 `lineHeight: 'normal'` — THÔI ĐOÁN HỆ SỐ. Tôi đã đoán HAI LẦN và trượt cả hai:
+   *   1.1 → đo 66/62, hụt 4px (ảnh 19:32)
+   *   1.2 → đo 69/67, hụt 2px (ảnh 20:56)
+   * Mỗi lần tôi lại lấy số đo cũ cộng thêm một chút, và mỗi lần lại thiếu — vì hộp chữ thật
+   * phụ thuộc METRIC CỦA PHÔNG, không phải một tỉ lệ tôi chọn. Đuổi theo nó bằng cách cộng dần
+   * là một vòng lặp không có đáy: đổi phông là trượt lại từ đầu.
+   * `normal` = ĐÚNG hộp dòng tự nhiên của phông đang dùng ⇒ `scrollHeight === clientHeight`
+   * theo cấu tạo, không phải theo may mắn. Không còn con số nào để ai đó phải chỉnh lại.
+   * ⚠️ Giá phải trả, chấp nhận: hộp dòng cao hơn 1,2em một chút nên số ngồi thấp hơn vài px.
+   * Ở ô này số đã neo đáy nên không ai thấy khác. */
+  const KIEU_SO = { fontSize: 'clamp(44px, 3.9vw, 64px)', lineHeight: 'normal' } as const;
   const LOP_NHAN = 'mt-1 text-[length:var(--fs-2xs)] text-[var(--t4)]';
 
   return (

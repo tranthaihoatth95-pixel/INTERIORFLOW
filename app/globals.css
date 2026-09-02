@@ -263,8 +263,19 @@
      ⛔ KHÔNG hạ thẳng `--nen-mo-card` xuống .55 để chữa: token đó có **57 chỗ dùng** (panel,
      sheet, popover…), hạ nó là đổi mọi bề mặt kính trong app để chữa đúng một ô Home. Hai
      token mới có phạm vi bằng đúng thứ chúng phục vụ. */
-  --nen-mo-vanh: rgba(26, 26, 30, 0.55);
-  --nen-mo-loi: rgba(26, 26, 30, 0.9);
+  /* 🔴 SỬA 02/09 SAU KHI ĐO — bản đầu dùng `rgba(26,26,30, …)` cho cả vành lẫn lõi, tức CÙNG
+     VÙNG MÀU VỚI NỀN (nền đêm của bộ caro là `rgb(21,22,23)`). Hoà lên nhau ra ba lớp
+     21,22,23 → 24,24,27 → 26,26,30: tỉ số **1,023 và 1,021**. Mắt không tách nổi ⇒ thẻ dark đọc
+     ra một khối đặc, không ra kính. Theme sáng thì đúng (1,159 / 1,112) — nên lỗi nằm ở CHỌN
+     MÀU cho theme tối, không ở cấu tạo hai tầng.
+     📌 Cùng họ với lỗi MỰC-TRONG-DẢI của lưới caro, sửa cách đây một giờ: lấy màu của vật NẰM
+     TRONG vùng màu của nền thì alpha bao nhiêu cũng không tách được. Alpha điều khiển ĐỘ MỜ,
+     nó không tạo ra ĐỘ TƯƠNG PHẢN. Hai lần trong một ngày, hai bề mặt, cùng một cách sai.
+     Số dưới TÍNH NGƯỢC từ ngưỡng chứ không chọn cho hợp mắt: cần vành/nền ≥ 1,15 ⇒ vành sau khi
+     hoà phải đạt kênh ~35; với alpha .55 trên nền 21 thì màu gốc phải ~48. Tương tự cho lõi.
+     `kinh-hien.test.ts` đo lại, không tin dòng này. */
+  --nen-mo-vanh: rgba(52, 53, 60, 0.55);
+  --nen-mo-loi: rgba(48, 49, 56, 0.9);
   --nen-mo-overlay: rgba(6, 6, 8, 0.56);
 
   /* ---------- BỀ MẶT KÍNH NỔI — 3 nấc theo LƯỢNG CHỮ ĐỨNG TRÊN ----------
