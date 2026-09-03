@@ -210,6 +210,34 @@ async function main() {
   const emptyBuf = await ffeSheetToXlsxBuffer(empty);
   ok('vẫn xuất được file', emptyBuf.length > 0);
 
+  /* ═══ [9] Slice 5 — độ đảm bảo: dòng nào đã đảm bảo, dòng nào proxy; tổng tách hai lớp ═══ */
+  console.log('\n[9] độ đảm bảo theo thang chung (lib/distill/assurance)');
+  const items9: FfeItem[] = [
+    makeFfeItem({ id: 'a9_lib', name: 'Ghế thư viện', source: 'library', specId: 'spec_1', room: 'A', qty: 2, unit: 'cai', priceVnd: 100 }),
+    makeFfeItem({ id: 'a9_lib_verified', name: 'Ghế danh mục duyệt', source: 'library', specId: 'spec_2', room: 'A', qty: 1, unit: 'cai', priceVnd: 1000 }),
+    makeFfeItem({ id: 'a9_vision', name: 'Sofa máy đo', source: 'vision', confidence: 'inferred', room: 'A', qty: 1, unit: 'cai', priceVnd: 10 }),
+    makeFfeItem({ id: 'a9_vision_measured', name: 'Bàn máy đo được', source: 'vision', confidence: 'measured', room: 'B', qty: 1, unit: 'cai', priceVnd: 10000 }),
+    makeFfeItem({ id: 'a9_manual_fix', name: 'Đèn người sửa số', source: 'vision', confidence: 'manual', room: 'B', qty: 1, unit: 'cai', priceVnd: 100000 }),
+    makeFfeItem({ id: 'a9_vision_nogia', name: 'Kệ máy đoán chưa giá', source: 'vision', room: 'B', qty: 1, unit: 'cai', priceVnd: null }),
+  ];
+  const s9 = buildFfeSheet(items9, { specVerified: { spec_2: true } });
+  const grade = (id: string) => s9.groups.flatMap((g) => g.rows).find((r) => r.item.id === id)?.assurance;
+  ok('library chưa duyệt = declared', grade('a9_lib') === 'declared');
+  ok('library specVerified = catalog-approved', grade('a9_lib_verified') === 'catalog-approved');
+  ok('vision inferred = inferred', grade('a9_vision') === 'inferred');
+  ok('vision measured = declared', grade('a9_vision_measured') === 'declared');
+  ok('vision + manual = user-override', grade('a9_manual_fix') === 'user-override');
+  ok('vision không confidence = inferred', grade('a9_vision_nogia') === 'inferred');
+  ok('proxyRowCount toàn bảng = 2 (kể cả dòng chưa giá)', s9.proxyRowCount === 2);
+  ok('nhóm A proxy 1, nhóm B proxy 1', s9.groups[0].proxyRowCount === 1 && s9.groups[1].proxyRowCount === 1);
+  ok('verified = 200 + 1000 + 10000 + 100000', s9.amountByAssurance.verified === 111_200);
+  ok('proxy = 10 (dòng chưa giá không cộng)', s9.amountByAssurance.proxy === 10);
+  ok('BẤT BIẾN verified + proxy === totalAmount', s9.amountByAssurance.verified + s9.amountByAssurance.proxy === s9.totalAmount);
+  ok('totalAmount giữ nghĩa cũ (mọi dòng có giá)', s9.totalAmount === 111_210);
+  const s9b = buildFfeSheet(items9);
+  ok('không truyền specVerified ⇒ món thư viện vẫn declared, không tụt xuống proxy', s9b.groups.flatMap((g) => g.rows).find((r) => r.item.id === 'a9_lib_verified')?.assurance === 'declared');
+  ok('hồ sơ rỗng: amountByAssurance 0/0, proxyRowCount 0', empty.amountByAssurance.verified === 0 && empty.amountByAssurance.proxy === 0 && empty.proxyRowCount === 0);
+
   console.log(`\nKẾT QUẢ: ${pass} pass, ${fail} fail`);
   if (fail) process.exit(1);
 }
