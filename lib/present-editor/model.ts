@@ -531,6 +531,38 @@ export interface EditorSlide {
   transition?: SlideTransition;
   /** kiểu build-in cho phần tử của slide (mặc định kế thừa deck.reveal). */
   reveal?: ElementReveal;
+  /**
+   * PHỤ LỤC BOQ (02/09, slice "Present + BOQ" — `lib/present-editor/boq-appendix.ts`): slide này
+   * là MỘT TRANG bảng khối lượng dựng TỪ nguồn (Doc 2D + Kho giá + sửa-tay `boq-overrides`),
+   * không phải trang tự do. Meta ghi vân tay Doc lúc dựng để Inspector báo "đã cũ so với bản vẽ"
+   * + nút "Làm mới" thay đúng cụm trang này (một lượt undo). Bỏ trống = slide thường (mọi deck
+   * cũ, HÀNH VI CŨ). Element bên trong là text/shape thường — người dùng sửa tay tự do, nhưng
+   * "Làm mới" sẽ DỰNG LẠI (sửa tay trên trang mất, số sửa-tay trong BOQ thì KHÔNG mất vì nó
+   * sống ở `boq-overrides`, không ở trang).
+   */
+  boqAppendix?: BoqAppendixMeta;
+}
+
+/** Meta 1 trang phụ lục BOQ — THUẦN, serialize được (đi theo `.idfp`). Xem `EditorSlide.boqAppendix`. */
+export interface BoqAppendixMeta {
+  /** dự án NGUỒN (Doc 2D + override) — trang neo theo dự án lúc dựng, như `LinkedAssetRecipe.projectId`. */
+  projectId: string;
+  /** vân tay NGẮN của Doc lúc dựng (`shortBoqFingerprint(boqFingerprint(doc))`) — so với Doc SỐNG
+   * để báo cũ. Chỉ so bản vẽ; giá đổi trong Kho KHÔNG bắt được (khai thật ở UI). */
+  fingerprint: string;
+  /** epoch ms lúc dựng. */
+  generatedAt: number;
+  /** trang thứ mấy / tổng số trang của CÙNG một lần dựng (1-based). */
+  page: number;
+  pages: number;
+  /** tổng số dòng hạng mục của cả bảng (không đếm dòng nhóm/tổng). */
+  rowCount: number;
+  /** số dòng có ÍT NHẤT 1 ô sửa tay (`countOverrideStatus`). */
+  handEdited: number;
+  /** số lỗi engine (thiếu giá, thiếu mã…) — trang PHẢI lộ, không giấu. */
+  errorCount: number;
+  groupMode?: 'storey' | 'room';
+  lang: 'vi' | 'en';
 }
 
 /**
