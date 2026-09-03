@@ -8,11 +8,12 @@
 // sau này UI muốn tuỳ biến (vd ẩn nút không hợp desktop). Không mở quyền Node.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const { contextBridge } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 
 // Chỉ expose dữ liệu tĩnh, không hàm nào chạm tới hệ thống tệp / tiến trình.
 contextBridge.exposeInMainWorld('interiorflowDesktop', {
   isElectron: true,
+  startGoogleSignIn: () => ipcRenderer.invoke('oauth:google:start'),
   platform: process.platform, // 'win32' | 'darwin' | 'linux'
   versions: {
     electron: process.versions.electron,

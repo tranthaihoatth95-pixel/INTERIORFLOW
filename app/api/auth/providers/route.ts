@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { googleConfigured, appleConfigured, microsoftConfigured } from '@/lib/server/oauth';
+import { googleConfigured, googleDesktopConfigured, appleConfigured, microsoftConfigured } from '@/lib/server/oauth';
 
 /**
  * Cho UI biết provider nào đã cấu hình env — nút social luôn HIỂN THỊ,
@@ -11,6 +11,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   return NextResponse.json({
     google: googleConfigured(),
+    googleDesktop: googleDesktopConfigured(),
     apple: appleConfigured(),
     microsoft: microsoftConfigured(),
   });

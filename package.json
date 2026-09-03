@@ -183,6 +183,12 @@
     "extraMetadata": {
       "main": "electron/main.js"
     },
+    "protocols": [
+      {
+        "name": "InteriorFlow Authentication",
+        "schemes": ["interiorflow"]
+      }
+    ],
     "win": {
       "target": [
         {

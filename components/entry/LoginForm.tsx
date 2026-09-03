@@ -44,7 +44,16 @@ import type { CardTextPlan } from '@/lib/adaptive-contrast';
 const ACCENT_WARM = 'var(--accent)';
 
 type Mode = 'login' | 'register';
-type Providers = { google: boolean; apple: boolean; microsoft: boolean };
+type Providers = { google: boolean; googleDesktop?: boolean; apple: boolean; microsoft: boolean };
+
+declare global {
+  interface Window {
+    interiorflowDesktop?: {
+      isElectron: boolean;
+      startGoogleSignIn?: () => Promise<{ ok: boolean; error?: string }>;
+    };
+  }
+}
 
 /**
  * Đọc thân phản hồi thành JSON MỘT CÁCH AN TOÀN (07/08, G-AUTH-01).
@@ -186,7 +195,21 @@ export function LoginForm({
 
   // Social: env đủ → sang trang consent (full-page redirect, quay lại bằng cookie session).
   // Chưa cấu hình → nói rõ tại chỗ thay vì điều hướng vào lỗi 503.
-  const googleSignIn = () => {
+  const googleSignIn = async () => {
+    const desktop = window.interiorflowDesktop;
+    if (desktop?.isElectron) {
+      if (!providers?.googleDesktop || !desktop.startGoogleSignIn) {
+        setError(
+          en
+            ? 'Google Sign-In needs a Desktop OAuth Client ID in the app configuration.'
+            : 'Đăng nhập Google cần Desktop OAuth Client ID trong cấu hình ứng dụng.',
+        );
+        return;
+      }
+      const result = await desktop.startGoogleSignIn();
+      if (!result.ok) setError(result.error || (en ? 'Could not open the system browser.' : 'Không mở được trình duyệt hệ thống.'));
+      return;
+    }
     if (providers?.google) {
       window.location.assign('/api/auth/google');
       return;

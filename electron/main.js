@@ -21,7 +21,7 @@
 //   Nhờ vậy KHÔNG phải sửa bất kỳ API route nào.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const { app, BrowserWindow, Menu, shell, dialog } = require('electron');
+const { app, BrowserWindow, Menu, shell, dialog, ipcMain } = require('electron');
 // Tự cập nhật OTA (chỉ bản đóng gói): kiểm GitHub Releases → tải + cài bản mới.
 // require phòng thủ: lúc dev trên Mac chưa cài electron-updater thì bỏ qua, không crash.
 let autoUpdater = null;
@@ -52,10 +52,37 @@ const PREFERRED_PORT = 3777;
 let mainWindow = null;
 let serverProcess = null;
 let resolvedPort = PREFERRED_PORT;
+let pendingOAuthDeepLink = null;
 
 // URL cửa sổ sẽ load: dev URL nếu có, ngược lại là server production nội bộ.
 function getAppUrl() {
   return DEV_START_URL || `http://127.0.0.1:${resolvedPort}/`;
+}
+
+function handleOAuthDeepLink(rawUrl) {
+  let url;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== 'interiorflow:' || url.hostname !== 'auth' || url.pathname !== '/google') return false;
+  const ticket = url.searchParams.get('ticket');
+  if (!ticket || !/^[A-Za-z0-9_-]{43}$/.test(ticket)) return false;
+  const completeUrl = new URL('/api/auth/google/desktop/complete', getAppUrl());
+  completeUrl.searchParams.set('ticket', ticket);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.loadURL(completeUrl.toString());
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  } else {
+    pendingOAuthDeepLink = rawUrl;
+  }
+  return true;
+}
+
+function deepLinkFromArgs(argv) {
+  return argv.find((arg) => typeof arg === 'string' && arg.startsWith('interiorflow://')) || null;
 }
 
 // ── Tiện ích: dò một cổng TCP trống, bắt đầu từ `startPort` ───────────────────
@@ -191,8 +218,7 @@ const CONFIG_KEYS = [
   'FAL_KEY',
   'NVIDIA_API_KEY',
   'COMFYUI_URL',
-  'GOOGLE_CLIENT_ID',
-  'GOOGLE_CLIENT_SECRET',
+  'GOOGLE_DESKTOP_CLIENT_ID',
 ];
 let configJsonPath = null; // giữ để menu "Mở file cấu hình…" dùng
 
@@ -500,13 +526,45 @@ function buildMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
+ipcMain.handle('oauth:google:start', async (event) => {
+  let sender;
+  try {
+    sender = new URL(event.senderFrame.url);
+  } catch {
+    return { ok: false, error: 'Nguồn yêu cầu đăng nhập không hợp lệ.' };
+  }
+  if (!['127.0.0.1', 'localhost'].includes(sender.hostname)) {
+    return { ok: false, error: 'Nguồn yêu cầu đăng nhập không hợp lệ.' };
+  }
+  const startUrl = new URL('/api/auth/google/desktop', getAppUrl()).toString();
+  try {
+    await shell.openExternal(startUrl);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: 'Không mở được trình duyệt hệ thống.' };
+  }
+});
+
+// OAuth desktop quay về bằng custom scheme. Chỉ nhận đúng host/path và ticket 256-bit.
+if (process.defaultApp && process.argv[1]) {
+  app.setAsDefaultProtocolClient('interiorflow', process.execPath, [path.resolve(process.argv[1])]);
+} else {
+  app.setAsDefaultProtocolClient('interiorflow');
+}
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  handleOAuthDeepLink(url);
+});
+
 // ── Single-instance lock: chỉ cho 1 tiến trình app chạy ───────────────────────
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit(); // đã có instance khác -> thoát ngay
 } else {
   // Nếu người dùng mở app lần 2, đưa cửa sổ hiện có lên trước.
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, argv) => {
+    const deepLink = deepLinkFromArgs(argv);
+    if (deepLink) handleOAuthDeepLink(deepLink);
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
@@ -526,6 +584,14 @@ if (!gotLock) {
     } catch (err) {
       dialog.showErrorBox('InteriorFlow', `Khởi động thất bại:\n${err && err.message}`);
       app.quit();
+    }
+
+    const launchDeepLink = deepLinkFromArgs(process.argv);
+    if (launchDeepLink) handleOAuthDeepLink(launchDeepLink);
+    if (pendingOAuthDeepLink) {
+      const pending = pendingOAuthDeepLink;
+      pendingOAuthDeepLink = null;
+      handleOAuthDeepLink(pending);
     }
 
     // Bản nội bộ chỉ cập nhật khi người vận hành bật rõ ràng biến môi trường này.
@@ -567,5 +633,3 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', killServer); // chắc chắn kill server trước khi thoát
 app.on('quit', killServer);
-
-

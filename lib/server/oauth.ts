@@ -10,6 +10,12 @@ export const OAUTH_STATE_COOKIE = 'if_oauth_state';
 export const googleConfigured = () =>
   Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
+/**
+ * Desktop là OAuth public client: Authorization Code + PKCE, KHÔNG có client secret.
+ * Dùng client riêng để không vô tình đem Web client (redirect cố định + secret) vào app cài máy.
+ */
+export const googleDesktopConfigured = () => Boolean(process.env.GOOGLE_DESKTOP_CLIENT_ID);
+
 /** Apple cần tài khoản Apple Developer trả phí + key .p8 — hiện chỉ dựng khung, gate bằng env. */
 export const appleConfigured = () =>
   Boolean(process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID && process.env.APPLE_KEY_ID && process.env.APPLE_PRIVATE_KEY);
