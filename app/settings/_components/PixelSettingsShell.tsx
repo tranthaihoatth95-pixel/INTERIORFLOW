@@ -6,6 +6,7 @@ import { ArrowLeft, Check, LogOut, PanelsTopLeft, Boxes, ClipboardList, ScrollTe
 import { resetAllRolloutLayouts } from '@/components/studio/Rollout';
 import { useFlowStore } from '@/lib/store';
 import { AiDependencySettings } from '@/components/settings/AiDependencySettings';
+import { AiTiersCard } from './AiTiersCard';
 import { GuModelSettings } from '@/components/settings/GuModelSettings';
 import { ExperienceSettings } from '@/components/settings/ExperienceSettings';
 import { LockScreenSettings } from '@/components/settings/LockScreenSettings';
@@ -213,6 +214,9 @@ export function PixelSettingsShell() {
               <TaskBoardRow />
               <LegalRows />
               <AiDependencySettings />
+              {/* Slice 10 (03/09): bốn mức AI theo nghĩa + năng lực/kiểm tra provider — lớp giải nghĩa
+                  cạnh bộ chọn thật ở trên (một nguồn chọn, nhiều mặt tiền). */}
+              <AiTiersCard />
               <GuModelSettings />
               <ExperienceSettings />
               <LockScreenSettings />
