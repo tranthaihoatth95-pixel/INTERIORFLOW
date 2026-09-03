@@ -12,6 +12,7 @@ import { prisma } from '@/lib/server/db';
 import { ROLE_RANK, canEditStage, isProjectRole, type ProjectRole } from './access-policy';
 import { excludeHiddenNotebookProjects } from '@/lib/notebook/resolveProject';
 import { projectScopeEnforced, canReadLibraryAsset } from './access-scope';
+import { tenantContextV1Enabled } from './tenant-context-policy';
 
 export * from './access-policy';
 
@@ -45,11 +46,19 @@ export async function assertProjectAccess(
     }),
     prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } }),
     // Project bị xoá mềm cũng không còn truy cập được, kể cả admin coi như owner ở nhánh trên.
-    prisma.project.findUnique({ where: { id: projectId }, select: { deletedAt: true } }),
+    prisma.project.findUnique({ where: { id: projectId }, select: { deletedAt: true, organizationId: true } }),
   ]);
   if (!p || p.deletedAt) throw new AccessError(404, 'Không tìm thấy dự án.');
-  if (u?.isAdmin) return 'owner';
+  // Platform admin is not a tenant/project owner. Keep the historical bypass only while v1 is off.
+  if (!tenantContextV1Enabled() && u?.isAdmin) return 'owner';
   if (!m || !isProjectRole(m.role)) throw new AccessError(404, 'Không tìm thấy dự án.');
+  if (tenantContextV1Enabled() && p.organizationId) {
+    const orgMember = await prisma.organizationMember.findUnique({
+      where: { organizationId_userId: { organizationId: p.organizationId, userId }, deletedAt: null },
+      select: { id: true },
+    });
+    if (!orgMember) throw new AccessError(404, 'Không tìm thấy dự án.');
+  }
   const role = m.role;
   if (ROLE_RANK[role] < ROLE_RANK[minRole]) throw new AccessError(403, 'Không đủ quyền.');
   return role;
@@ -115,7 +124,7 @@ export async function projectScope(userId: string, opts: TuyChonPhamVi = {}): Pr
 
   // Cửa hậu admin: giữ NGUYÊN ngữ nghĩa `assertProjectAccess` (admin ≡ owner mọi dự án).
   // Không có nhánh này thì bật lọc = admin mất sạch dashboard — chính là hồi quy ②.
-  if (u?.isAdmin) {
+  if (!tenantContextV1Enabled() && u?.isAdmin) {
     const all = await prisma.project.findMany({
       where: { deletedAt: null, ...anBucket },
       select: { id: true },

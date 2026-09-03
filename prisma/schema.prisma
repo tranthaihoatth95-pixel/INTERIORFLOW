@@ -43,7 +43,36 @@ model User {
   integrations IntegrationAccount[]
   larkUserMaps LarkUserMap[]
   memberships  ProjectMember[]
+  organizationMemberships OrganizationMember[]
   guModels     GuModel[]
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members  OrganizationMember[]
+  projects Project[]
+  assets   LibraryAsset[]
+}
+
+model OrganizationMember {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  orgRole        String // 'admin' | 'member'
+  joinedAt       DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId, deletedAt])
 }
 
 // Token OAuth của user cho từng dịch vụ ngoài (google/ms365/zoom/zalo/spotify/youtube/team...).
@@ -69,6 +98,7 @@ model IntegrationAccount {
 model Project {
   id              String   @id @default(cuid())
   userId          String
+  organizationId  String?
   name            String
   clientName      String?
   createdAt       DateTime @default(now())
@@ -100,6 +130,7 @@ model Project {
   lastEditedDevice String?
 
   user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   flows    Flow[]
   notebook ProjectNotebook?
   members  ProjectMember[]
@@ -115,6 +146,7 @@ model Project {
 
   @@index([larkProjectCode])
   @@index([deletedAt])
+  @@index([organizationId, deletedAt])
 }
 
 // ══ MỚI (ACCESS-CONTROL M1) ══ Thành viên dự án — nguồn chân lý DUY NHẤT cho "ai thấy/sửa
@@ -288,6 +320,7 @@ model LibraryAsset {
   // regenerate sẽ khiến phiên main đang chạy lỗi P2022 khi SELECT cột dev.db của nó chưa có). Least-disruptive.
   id        String   @id @default(cuid())
   userId    String
+  organizationId String?
   name      String
   category  String
   tags      String   @default("")
@@ -313,6 +346,7 @@ model LibraryAsset {
   lastEditedDevice String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
   // ══ MỚI 19/08 (Q5-SCHEMA) ══ — where-used: asset này đang được project nào REUSE.
   usages ProjectAssetUsage[]
@@ -337,6 +371,7 @@ model LibraryAsset {
   // Tra chống trùng LUÔN theo phạm vi người dùng (không có dedupe toàn cục — asset mang userId,
   // dùng chung xuyên người là rò tài sản) ⇒ index GHÉP, không index contentHash trần.
   @@index([userId, contentHash])
+  @@index([organizationId, deletedAt])
 }
 
 /// ══ MỚI 20/08 (cửa duyệt 02, Hoà chốt) ══ MỘT MÓN ĐỒ — NHIỀU CÁCH THỂ HIỆN.
