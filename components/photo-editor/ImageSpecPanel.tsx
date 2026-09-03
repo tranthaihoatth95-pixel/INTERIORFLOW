@@ -159,7 +159,7 @@ function FieldRow({ f, onEdit }: { f: SpecField; onEdit: (id: string, v: string)
       {swatches && (
         <div style={{ display: 'flex', gap: 4 }} aria-hidden="true">
           {swatches.map((s) => (
-            <span key={s.hex} style={{ flex: Math.max(0.05, s.share), height: 14, background: s.hex, borderRadius: 4, border: '1px solid var(--border)' }} />
+            <span key={s.hex} style={{ flex: Math.max(0.05, s.share), height: 14, background: s.hex, borderRadius: 'var(--r-1)', border: '1px solid var(--border)' }} />
           ))}
         </div>
       )}
@@ -171,7 +171,7 @@ function FieldRow({ f, onEdit }: { f: SpecField; onEdit: (id: string, v: string)
         style={{
           fontSize: 12,
           padding: '5px 8px',
-          borderRadius: 8,
+          borderRadius: 'var(--r-2)',
           border: '1px solid var(--border)',
           background: 'var(--field)',
           color: 'var(--t1)',
@@ -195,7 +195,7 @@ function Btn({ children, onClick, disabled, reason }: { children: React.ReactNod
         style={{
           fontSize: 12,
           padding: '6px 10px',
-          borderRadius: 10,
+          borderRadius: 'var(--r-2)',
           border: '1px solid var(--border)',
           background: 'var(--field)',
           color: 'var(--t2)',
