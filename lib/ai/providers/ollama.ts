@@ -33,7 +33,8 @@ export const OLLAMA_CHAT_TIMEOUT_MS = 120000;
 /** Lỗi Ollama — lớp trên CHỈ BÁO, tụt xuống lõi tất định, không giả kết quả. */
 export class OllamaError extends Error {}
 
-interface Msg { role: 'system' | 'user' | 'assistant'; content: string }
+type Part = { type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } };
+interface Msg { role: 'system' | 'user' | 'assistant'; content: string | Part[] }
 
 /**
  * Rút phần chữ từ response — chịu CẢ 2 shape:
@@ -150,4 +151,39 @@ export async function completeText(prompt: string, system?: string, opts: ChatOp
   if (system) msgs.push({ role: 'system', content: system });
   msgs.push({ role: 'user', content: prompt });
   return chat(msgs, opts);
+}
+
+/* ───────────────────────────── THỊ GIÁC LOCAL (VLM qua Ollama) ─────────────────────────────
+ * Ollama phục vụ model đa phương thức (llava · llama3.2-vision · moondream · minicpm-v · qwen-vl ·
+ * gemma3…) qua CÙNG endpoint OpenAI-compatible với content parts `image_url` (data-URI base64).
+ * Đây là TẦNG GIỮA cho Image→Spec (`lib/ai/vision-tier.ts`): cloud VLM (NVIDIA) → VLM local → không AI.
+ * Model chữ thuần (llama3/gemma) KHÔNG đọc được ảnh → `pickVisionModel` chỉ chọn tên có dấu hiệu
+ * thị giác; không có → trả null để lớp trên báo "không có model thị giác local", KHÔNG gửi ảnh mù
+ * cho model chữ rồi nhận chữ bịa. Không bao giờ tự `ollama pull`.
+ */
+
+/** Tên model Ollama có khả năng đọc ảnh — nhận diện theo tên đã kéo về máy (không probe năng lực). */
+export const OLLAMA_VISION_NAME_RE = /llava|vision|moondream|minicpm-v|bakllava|qwen[\d.]*-?vl|gemma3|llama4|granite3\.2-vision|pixtral/i;
+
+/**
+ * Chọn model THỊ GIÁC: `OLLAMA_VISION_MODEL` (env) nếu đã kéo (hoặc danh sách rỗng → vẫn thử) →
+ * model đầu tiên khớp `OLLAMA_VISION_NAME_RE` → null (không có gì đọc được ảnh).
+ */
+export function pickVisionModel(available: string[], envModel?: string): string | null {
+  const want = (envModel ?? process.env.OLLAMA_VISION_MODEL ?? '').trim();
+  if (want && (available.length === 0 || available.includes(want))) return want;
+  const hit = available.find((m) => OLLAMA_VISION_NAME_RE.test(m));
+  return hit ?? null;
+}
+
+/** VLM local: prompt + 1 ảnh (data-URI/URL) → chữ thô. `model` BẮT BUỘC là model thị giác đã chọn. */
+export async function visionChat(
+  prompt: string,
+  imageDataUri: string,
+  opts: { model: string; max_tokens?: number; timeoutMs?: number },
+): Promise<string> {
+  return chat(
+    [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: imageDataUri } }] }],
+    { model: opts.model, max_tokens: opts.max_tokens ?? 512, timeoutMs: opts.timeoutMs },
+  );
 }
