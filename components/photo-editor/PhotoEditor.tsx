@@ -37,6 +37,7 @@ import DocCanvas from './DocCanvas';
 import LayersPanel from './LayersPanel';
 import AdjustPanel from './AdjustPanel';
 import LibraryPickerModal from './LibraryPickerModal';
+import ImageSpecPanel from './ImageSpecPanel';
 
 interface Props {
   initialDoc: PhotoDoc;
@@ -488,6 +489,9 @@ export default function PhotoEditor({ initialDoc, onWriteBack }: Props) {
               <AdjustPanel layer={ed.selected} onParams={onParams} onPreset={onPreset} />
             </div>
           )}
+
+          {/* Image→Spec: composite CÙNG exportDoc của nút xuất (JPEG nhẹ để gửi lên máy đọc). */}
+          <ImageSpecPanel getImage={() => exportDoc(ed.doc, 'jpeg', 0.85)} imageId={ed.doc.name || 'photo'} />
         </aside>
       </div>
 

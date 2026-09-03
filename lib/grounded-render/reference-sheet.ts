@@ -5,23 +5,27 @@
  * nguồn (ảnh B đã caption) vào `DistillEngine.distill()` với field-spec riêng của phiếu,
  * cờ/nguồn theo đúng khuôn `DistilledField`.
  *
- * Đường vision TÁI DÙNG (không gọi API mới): route `/api/vision/caption` →
- * `captionImage()` (lib/ai/providers/nvidia.ts:50, VLM NVIDIA free) — cùng đường mà
- * `app/library/ingest/page.tsx:104` đang dùng để auto-caption ảnh ref. Route này trả
- * JSON cố định {caption, style, materials, room} nên v0 CHỈ điền được cấp ①+③;
- * cấp ②(trần/tường/sàn) + ④(chi tiết) cần prompt 4-cấp riêng — xem
- * `draftReferenceSheetPrompt()` (CHƯA NỐI, chờ route vision nhận prompt tuỳ biến, việc T).
+ * Đường vision (02/09 — ĐÃ NỐI đủ 4 cấp): `readReferenceSheet()` gọi `/api/vision/analyze`
+ * (Image→Spec, `lib/vision/image-spec.ts`): đo pixel tất định + VLM theo tầng cloud→local
+ * (`lib/ai/vision-tier.ts`) với prompt 4 cấp `imageSpecPrompt()` → phiếu điền cả cấp ②
+ * (trần/tường/sàn) + ④ (chi tiết) + dòng đo pixel (bảng màu · nhiệt màu · phối cảnh).
+ * Route cũ `/api/vision/caption` (prompt cố định, chỉ cấp ①③) giữ làm ĐƯỜNG LÙI khi route
+ * analyze không có (bản cũ) — `sheetFromCaption` vẫn dùng cho đường lùi đó.
+ * Hợp đồng KHÔNG đổi với node `ai.refsheet`: VLM không chạy được → THROW chữ rõ (route trả
+ * `spec.ai.tier === 'none'` kèm lý do) — không trả phiếu chỉ-đo-pixel dưới nhãn "VLM đọc ảnh".
  *
  * Import tương đối để test sucrase-node chạy được (không '@/').
  */
 import { DistillEngine, type DistillFieldSpec } from '../distill/engine';
 import type { ProvenanceInput } from '../distill/types';
 import {
+  decodeReferenceSheet,
   emptyReferenceSheet,
   type ReferenceSheet,
   type ReferenceSheetLine,
   type MucPhieu,
 } from './types';
+import { decodeImageSpec, imageSpecPrompt, type ImageSpec } from '../vision/image-spec';
 
 /** Khớp shape `RefCaption` của lib/ai/providers/nvidia.ts:47 — copy SHAPE (type thuần),
  * không import module server (giữ file này thuần client/test được). */
@@ -95,6 +99,56 @@ export function sheetFromCaption(cap: CaptionKetQua, imageBId: string): Referenc
  * Chạy client-side (node execute) — cùng cách node ai.text2image fetch API nội bộ.
  */
 export async function readReferenceSheet(imageB: string, imageBId = 'anh-b'): Promise<ReferenceSheet> {
+  // Đường chính: Image→Spec (đủ 4 cấp). 404 = bản build cũ chưa có route → lùi về caption.
+  const full = await readImageSpec(imageB, imageBId, { ai: true });
+  if (full.status !== 404) {
+    if (!full.ok) throw new Error(full.error ?? `Máy đọc ảnh tham khảo lỗi (HTTP ${full.status}).`);
+    if (full.spec.ai.tier === 'none') {
+      throw new Error(`Máy đọc ảnh chưa chạy được: ${full.spec.ai.reason}`);
+    }
+    const decoded = decodeReferenceSheet(JSON.stringify(full.sheet));
+    if (decoded.sheet) return decoded.sheet;
+    throw new Error(decoded.error ?? 'Phiếu từ máy đọc ảnh không đúng cấu trúc.');
+  }
+  return readReferenceSheetViaCaption(imageB, imageBId);
+}
+
+/** Kết quả gọi `/api/vision/analyze` — giữ nguyên phần đo pixel kể cả khi AI không chạy. */
+export type ImageSpecResult =
+  | { ok: true; status: number; spec: ImageSpec; sheet: ReferenceSheet; text: string }
+  | { ok: false; status: number; error?: string };
+
+/**
+ * Gọi Image→Spec (client-side). KHÔNG throw — trả `{ok:false,status}` để caller quyết
+ * (node: throw; panel: hiện lỗi tại chỗ). `ai:false` = chỉ đo pixel, 0 AI, 0 credit.
+ */
+export async function readImageSpec(
+  image: string,
+  imageId = 'anh',
+  opts: { ai?: boolean } = {},
+): Promise<ImageSpecResult> {
+  let res: Response;
+  try {
+    res = await fetch('/api/vision/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image, imageId, ai: opts.ai !== false }),
+    });
+  } catch {
+    return { ok: false, status: 0, error: 'Mất kết nối tới máy đọc ảnh (/api/vision/analyze).' };
+  }
+  const body = (await res.json().catch(() => ({}))) as Partial<{ spec: unknown; sheet: unknown; text: string; error: string }>;
+  if (!res.ok) return { ok: false, status: res.status, error: body.error };
+  const spec = decodeImageSpec(JSON.stringify(body.spec ?? null));
+  const sheet = decodeReferenceSheet(JSON.stringify(body.sheet ?? null));
+  if (!spec.spec || !sheet.sheet) {
+    return { ok: false, status: res.status, error: spec.error ?? sheet.error ?? 'Kết quả máy đọc ảnh sai cấu trúc.' };
+  }
+  return { ok: true, status: res.status, spec: spec.spec, sheet: sheet.sheet, text: String(body.text ?? '') };
+}
+
+/** ĐƯỜNG LÙI: route caption cũ (prompt cố định) → phiếu chỉ cấp ①③. */
+async function readReferenceSheetViaCaption(imageB: string, imageBId: string): Promise<ReferenceSheet> {
   const res = await fetch('/api/vision/caption', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -116,18 +170,9 @@ export async function readReferenceSheet(imageB: string, imageBId = 'anh-b'): Pr
 }
 
 /**
- * CHƯA NỐI — prompt 4 cấp ĐẦY ĐỦ cho VLM (điền được cả cấp ② trần/tường/sàn + ④ chi tiết).
- * Route `/api/vision/caption` hiện dùng prompt CỐ ĐỊNH server-side (nvidia.ts:52) nên chưa
- * truyền prompt này được; thêm route/param là việc ngoài vùng file phiếu → đề xuất lên T.
- * Để sẵn đây (kèm shape JSON kỳ vọng) để v1 nối là chạy, không phải nghĩ lại.
+ * Prompt 4 cấp ĐẦY ĐỦ cho VLM — ĐÃ NỐI qua `/api/vision/analyze` (02/09). Nguồn duy nhất là
+ * `imageSpecPrompt()` (lib/vision/image-spec.ts); hàm này giữ tên cũ để nơi gọi/test không đổi.
  */
 export function draftReferenceSheetPrompt(): string {
-  return (
-    'Bạn là chuyên gia nội thất. Đọc ảnh tham khảo và CHỈ trả JSON thuần theo 4 cấp: ' +
-    '{"tongThe":{"tone":"<tone & không khí>","anhSang":"<hướng/nhiệt độ ánh sáng>","nuocHinh":"<nước hình/finish>"},' +
-    '"tranTuongSan":{"tran":"<vật liệu + sắc độ trần>","tuong":"<vật liệu + sắc độ tường>","san":"<vật liệu + sắc độ sàn>"},' +
-    '"vatLieu":["<vật liệu chính>","..."],' +
-    '"chiTiet":["<chi tiết/cấu kiện/đồ rời đáng chú ý>","..."]} ' +
-    '— không giải thích, không markdown.'
-  );
+  return imageSpecPrompt();
 }
