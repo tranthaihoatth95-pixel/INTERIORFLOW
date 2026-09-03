@@ -29,6 +29,13 @@ export interface ProviderConfig {
   configured: () => boolean;
   /** ghi chú rủi ro/ToS hiển thị cho dev. */
   note?: string;
+  /**
+   * Endpoint THU HỒI token phía provider (RFC 7009 hoặc tương đương). Có ⇒ `revokeAndDisconnect`
+   * gọi best-effort TRƯỚC khi xoá hàng IntegrationAccount. Không có ⇒ chỉ xoá bản lưu — và khai
+   * thật ở `revokeNote` để UI nói "đã xoá khỏi IF, gỡ quyền app ở trang tài khoản của nhà cung cấp".
+   */
+  revokeUrl?: string;
+  revokeNote?: string;
 }
 
 const env = (k: string) => (process.env[k] ?? '').trim();
@@ -51,6 +58,7 @@ export const REGISTRY: Record<IntegrationProvider, ProviderConfig> = {
       'https://www.googleapis.com/auth/drive.file',
     ],
     configured: () => has('GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'),
+    revokeUrl: 'https://oauth2.googleapis.com/revoke',
   },
   ms365: {
     id: 'ms365',
@@ -61,6 +69,9 @@ export const REGISTRY: Record<IntegrationProvider, ProviderConfig> = {
     tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
     scopes: ['offline_access', 'User.Read', 'Calendars.Read', 'Mail.Read'],
     configured: () => has('MS365_CLIENT_ID', 'MS365_CLIENT_SECRET'),
+    // Entra ID KHÔNG có endpoint thu hồi refresh token cho app (chỉ admin/người dùng gỡ ở
+    // https://myapps.microsoft.com hoặc admin revokeSignInSessions). Nói thật, không giả vờ đã thu hồi.
+    revokeNote: 'Microsoft không cho app tự thu hồi token — gỡ quyền tại myapps.microsoft.com → ứng dụng.',
   },
   zoom: {
     id: 'zoom',
@@ -101,6 +112,7 @@ export const REGISTRY: Record<IntegrationProvider, ProviderConfig> = {
     scopes: ['user-read-playback-state', 'user-read-currently-playing'],
     configured: () => has('SPOTIFY_CLIENT_ID', 'SPOTIFY_CLIENT_SECRET'),
     note: 'Playback đầy đủ cần Web Playback SDK + premium — hiện chỉ metadata/nhúng.',
+    revokeNote: 'Spotify không có endpoint thu hồi — gỡ tại spotify.com/account/apps.',
   },
   youtube: {
     id: 'youtube',
