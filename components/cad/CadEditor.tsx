@@ -24,6 +24,7 @@ import {
 import IOMenu from '@/components/ui/IOMenu';
 import MenuButton from '@/components/ui/MenuButton';
 import { useCadStore } from '@/lib/cad/store';
+import { useChinhLenh } from '@/lib/commands/chinh-lenh-store';
 import { useT } from '@/lib/i18n';
 import { useCadLiveStatus } from '@/lib/cad/live-status';
 import type { HatchPattern } from '@/lib/cad/model';
@@ -2615,6 +2616,9 @@ function CommandLine({ status }: { status: string }) {
         setTool('lengthen');
       },
       LENGTHEN: () => setTool('lengthen'),
+      // B4 — gõ ADJ/ADJUST = F9: focus mặt tiền "Chỉnh lệnh vừa chạy" (cùng store với registry `cad.edit.adjustlast`).
+      ADJ: () => useChinhLenh.getState().yeuCauFocus(),
+      ADJUST: () => useChinhLenh.getState().yeuCauFocus(),
       DIMTXT: () => {
         if (arg && Number.isFinite(parseFloat(arg))) setDimStyle({ textHeight: parseFloat(arg) });
       },

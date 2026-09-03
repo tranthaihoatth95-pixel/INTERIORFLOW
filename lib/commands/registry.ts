@@ -69,6 +69,8 @@ import { CAD_COMMANDS } from '../cad/command-aliases';
 // `icon` (chuỗi → component là việc của components/ui/command-icon.tsx), nên lib/ vẫn THUẦN,
 // test sucrase-node không kéo React vào. Kho hình + ràng buộc "cấm làm nút" sống ở chính file đó.
 import type { ThaoTacKey } from '../ui/thao-tac-glyph';
+// B4 — mặt tiền "Chỉnh lệnh vừa chạy" (lệnh `cad.edit.adjustlast` bên dưới), cùng lib/commands.
+import { useChinhLenh } from './chinh-lenh-store';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // Kiểu dữ liệu
@@ -438,6 +440,15 @@ export const COMMANDS: CommandDef[] = [
       if (d !== undefined) store().setLengthenDelta(d);
       store().setTool('lengthen');
     },
+  },
+  {
+    // B4 (tầng ③ ticket KIEN-TRUC-LENH-3-TANG) — "Chỉnh lệnh vừa chạy" (Blender F9 Adjust Last
+    // Operation). `run` KHÔNG đổi tool: chỉ yêu cầu mặt tiền `components/cad/ChinhLenhVuaChay.tsx`
+    // focus ô đầu; chưa có lệnh vừa chạy thì store tự báo ở thanh trạng thái (§9 cấm nút giả).
+    // `key: ['F9']` là phím THẬT — CadCanvas.tsx xử F9 cùng nhánh với F8/F12.
+    id: 'cad.edit.adjustlast', label: ['Chỉnh lệnh vừa chạy (F9)', 'Adjust last command (F9)'], aliases: ['ADJ', 'ADJUST'],
+    key: ['F9'], when: CAD_BASIC, group: 'edit@18', surfaces: ['statusbar', 'shortcut'],
+    run: () => useChinhLenh.getState().yeuCauFocus(),
   },
   { id: 'cad.edit.divide', label: ['Divide/Measure — click đối tượng rồi nhập', 'Divide/Measure — click object then enter N'], aliases: ['DIV', 'DIVIDE'], when: gateFor('divide'), group: 'edit@18', surfaces: ['statusbar'], run: activate('divide') },
 
