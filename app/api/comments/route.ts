@@ -1,40 +1,155 @@
 /**
- * app/api/comments/route.ts — Lưu GÓP Ý của user (bấm vào giao diện để comment).
+ * app/api/comments/route.ts — GÓP Ý. HAI CHẾ ĐỘ, phân biệt bằng `projectId`:
  *
- * Ghi ra file JSON ở gốc dự án (`comments-review.json`) để Claude đọc trực tiếp bằng
- * công cụ file — không cần DB. Dùng cho vòng review app + chặng Present.
- *   GET    → toàn bộ góp ý
- *   POST   → thêm 1 góp ý {text, x, y, route, stage, elementHint}
- *   PATCH  → cập nhật 1 góp ý theo id {id, resolved} (đánh dấu đã xử lý / bỏ)
- *   DELETE → xoá 1 (?id=) hoặc tất cả (?all=1)
+ * ① CÓ `projectId` (slice 6, 02/09) — GÓP Ý GHIM THEO DỰ ÁN, xuyên thiết bị: lưu server
+ *    (`lib/auth/collab-store.ts`, KHÔNG localStorage), kiểm quyền qua `lib/auth` TRƯỚC khi trả
+ *    byte nào, idempotent theo `opId`.
+ *      GET    ?projectId=&approvalId?      (comment:read)
+ *      POST   {projectId, opId, text, anchor?}   (comment:write — editor/reviewer/admin/owner)
+ *      PATCH  {projectId, opId, id, resolved}    (tác giả, hoặc comment:resolve)
+ *      DELETE ?projectId=&id=&opId=              (tác giả, hoặc members:manage)
+ *    Viewer đọc được, KHÔNG viết được — đúng ma trận năng lực, không phải nhãn.
+ *
+ * ② KHÔNG `projectId` — đường CŨ "góp ý giao diện cho Claude đọc" (`components/CommentLayer.tsx`,
+ *    bật bằng NEXT_PUBLIC_COMMENT_LAYER=1): tệp `comments-review.json` ở gốc repo, chỉ user đã
+ *    đăng nhập, xoá-tất-cả chỉ admin. GIỮ NGUYÊN hợp đồng — CommentLayer nằm ngoài phạm vi phiếu.
  */
 
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { getSessionUser } from '@/lib/server/auth';
+import { prisma } from '@/lib/server/db';
+import { authorizeRequest } from '@/lib/auth/authorize-request';
+import { requireCapability, hasCapability, DenialError } from '@/lib/auth/authorize';
+import { applyOp, isValidOpId, newId, readCollab, type CommentAnchor, type ProjectComment } from '@/lib/auth/collab-store';
+import { jsonNoStore, readJson, respondError, str } from '@/lib/auth/route-helpers';
 
 export const dynamic = 'force-dynamic';
 
+/* ═════════════════════════ ① GÓP Ý THEO DỰ ÁN ═════════════════════════ */
+
+function parseAnchor(a: unknown): CommentAnchor {
+  if (!a || typeof a !== 'object') return {};
+  const o = a as Record<string, unknown>;
+  const out: CommentAnchor = {};
+  if (typeof o.route === 'string') out.route = o.route.slice(0, 200);
+  if (typeof o.stage === 'string') out.stage = o.stage.slice(0, 32);
+  if (typeof o.entityId === 'string') out.entityId = o.entityId.slice(0, 128);
+  if (typeof o.approvalId === 'string') out.approvalId = o.approvalId.slice(0, 128);
+  if (Number.isFinite(o.x)) out.x = Number(o.x);
+  if (Number.isFinite(o.y)) out.y = Number(o.y);
+  if (Number.isFinite(o.slide)) out.slide = Number(o.slide);
+  return out;
+}
+
+async function projectGet(projectId: string, approvalId: string | null) {
+  try {
+    requireCapability(await authorizeRequest(projectId), 'comment:read');
+    const f = await readCollab(projectId);
+    const list = approvalId ? f.comments.filter((c) => c.anchor.approvalId === approvalId) : f.comments;
+    return jsonNoStore({ comments: list, rev: f.rev });
+  } catch (e) {
+    return respondError(e);
+  }
+}
+
+async function projectPost(body: Record<string, unknown>, projectId: string) {
+  const text = str(body.text, 4000);
+  const opId = body.opId;
+  if (!text) return jsonNoStore({ error: 'Trống' }, 400);
+  if (!isValidOpId(opId)) return jsonNoStore({ error: 'Thiếu/sai opId (client sinh, 8..128 ký tự).' }, 400);
+  try {
+    const grant = requireCapability(await authorizeRequest(projectId), 'comment:write');
+    const me = await prisma.user.findUnique({ where: { id: grant.userId }, select: { name: true } });
+    const now = new Date().toISOString();
+    const out = await applyOp(projectId, opId, (f) => {
+      const c: ProjectComment = {
+        id: newId('c'),
+        projectId,
+        authorId: grant.userId,
+        authorName: me?.name ?? '',
+        text,
+        anchor: parseAnchor(body.anchor),
+        resolved: false,
+        createdAt: now,
+        updatedAt: now,
+        opId,
+      };
+      f.comments.push(c);
+      return c;
+    });
+    return jsonNoStore({ ok: true, duplicate: out.duplicate, comment: out.result }, out.duplicate ? 200 : 201);
+  } catch (e) {
+    return respondError(e);
+  }
+}
+
+async function projectPatch(body: Record<string, unknown>, projectId: string) {
+  const id = str(body.id, 128);
+  const opId = body.opId;
+  if (!id || typeof body.resolved !== 'boolean') return jsonNoStore({ error: 'Cần id + resolved:boolean.' }, 400);
+  if (!isValidOpId(opId)) return jsonNoStore({ error: 'Thiếu/sai opId.' }, 400);
+  try {
+    const grant = requireCapability(await authorizeRequest(projectId), 'comment:read');
+    const resolved = body.resolved as boolean;
+    const out = await applyOp(projectId, opId, (f) => {
+      const c = f.comments.find((x) => x.id === id);
+      if (!c) return { missing: true as const };
+      // tác giả đóng/mở góp ý của mình; người khác cần comment:resolve
+      if (c.authorId !== grant.userId && !hasCapability(grant, 'comment:resolve')) {
+        throw new DenialError({ denied: true, reason: 'insufficient', capability: 'comment:resolve', role: grant.role });
+      }
+      c.resolved = resolved;
+      c.resolvedBy = resolved ? grant.userId : undefined;
+      c.resolvedAt = resolved ? new Date().toISOString() : undefined;
+      c.updatedAt = new Date().toISOString();
+      return { comment: c };
+    });
+    if ('missing' in out.result) return jsonNoStore({ error: 'Không thấy' }, 404);
+    return jsonNoStore({ ok: true, duplicate: out.duplicate, comment: out.result.comment });
+  } catch (e) {
+    return respondError(e);
+  }
+}
+
+async function projectDelete(projectId: string, id: string, opId: string | null) {
+  if (!id) return jsonNoStore({ error: 'Thiếu id' }, 400);
+  if (!isValidOpId(opId)) return jsonNoStore({ error: 'Thiếu/sai opId.' }, 400);
+  try {
+    const grant = requireCapability(await authorizeRequest(projectId), 'comment:read');
+    const out = await applyOp(projectId, opId, (f) => {
+      const c = f.comments.find((x) => x.id === id);
+      if (!c) return { removed: false };
+      if (c.authorId !== grant.userId && !hasCapability(grant, 'members:manage')) {
+        throw new DenialError({ denied: true, reason: 'insufficient', capability: 'members:manage', role: grant.role });
+      }
+      f.comments = f.comments.filter((x) => x.id !== id);
+      return { removed: true };
+    });
+    return jsonNoStore({ ok: true, duplicate: out.duplicate, removed: out.result.removed });
+  } catch (e) {
+    return respondError(e);
+  }
+}
+
+/* ═════════════════════════ ② ĐƯỜNG CŨ (CommentLayer) ═════════════════════════ */
+
 const FILE = path.join(process.cwd(), 'comments-review.json');
 
-interface Comment {
+interface LegacyComment {
   id: string;
   text: string;
-  x: number; // % ngang của viewport khi bấm
-  y: number; // % dọc
+  x: number;
+  y: number;
   route: string;
   stage?: string;
   elementHint?: string;
-  image?: string; // đường dẫn ảnh minh hoạ đính kèm (comments-images/<id>.<ext>)
-  resolved?: boolean; // true = đã xử lý (thiếu field = chưa xử lý, tương thích comment cũ)
+  image?: string;
+  resolved?: boolean;
   ts: number;
 }
 
-/**
- * Giải mã data URL ảnh → ghi vào public/comments-images/ → trả URL để hiển thị lại
- * trong danh sách (và Claude đọc file public/comments-images/<id>.<ext>).
- */
 async function saveImage(id: string, dataUrl: string): Promise<string | undefined> {
   const m = /^data:image\/(png|jpe?g|webp|gif);base64,(.+)$/.exec(dataUrl);
   if (!m) return undefined;
@@ -42,32 +157,37 @@ async function saveImage(id: string, dataUrl: string): Promise<string | undefine
   const dir = path.join(process.cwd(), 'public', 'comments-images');
   await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(path.join(dir, `${id}.${ext}`), Buffer.from(m[2], 'base64'));
-  return `/comments-images/${id}.${ext}`; // URL public
+  return `/comments-images/${id}.${ext}`;
 }
 
-async function readAll(): Promise<Comment[]> {
+async function readAll(): Promise<LegacyComment[]> {
   try {
-    const raw = await fs.readFile(FILE, 'utf8');
-    return JSON.parse(raw) as Comment[];
+    return JSON.parse(await fs.readFile(FILE, 'utf8')) as LegacyComment[];
   } catch {
     return [];
   }
 }
-
-async function writeAll(list: Comment[]): Promise<void> {
+async function writeAll(list: LegacyComment[]): Promise<void> {
   await fs.writeFile(FILE, JSON.stringify(list, null, 2), 'utf8');
 }
 
-export async function GET() {
+/* ═════════════════════════ HANDLERS ═════════════════════════ */
+
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const projectId = url.searchParams.get('projectId');
+  if (projectId) return projectGet(projectId, url.searchParams.get('approvalId'));
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   return NextResponse.json({ comments: await readAll() });
 }
 
 export async function POST(req: Request) {
+  const body = await readJson(req);
+  const projectId = str(body.projectId, 64);
+  if (projectId) return projectPost(body, projectId);
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  const body = await req.json().catch(() => ({}));
   const text = String(body.text ?? '').trim();
   if (!text) return NextResponse.json({ error: 'Trống' }, { status: 400 });
   const list = await readAll();
@@ -80,7 +200,7 @@ export async function POST(req: Request) {
       /* ảnh lỗi — vẫn lưu góp ý */
     }
   }
-  const c: Comment = {
+  const c: LegacyComment = {
     id,
     text,
     x: Number(body.x ?? 50),
@@ -97,9 +217,11 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
+  const body = await readJson(req);
+  const projectId = str(body.projectId, 64);
+  if (projectId) return projectPatch(body, projectId);
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  const body = await req.json().catch(() => ({}));
   const id = String(body.id ?? '');
   if (!id) return NextResponse.json({ error: 'Thiếu id' }, { status: 400 });
   const list = await readAll();
@@ -111,11 +233,12 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const url = new URL(req.url);
+  const projectId = url.searchParams.get('projectId');
+  if (projectId) return projectDelete(projectId, url.searchParams.get('id') ?? '', url.searchParams.get('opId'));
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  const url = new URL(req.url);
   if (url.searchParams.get('all')) {
-    // Xoá sạch là hành động huỷ diệt — chỉ admin (không phải cứ đăng nhập là được).
     if (!user.isAdmin) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     await writeAll([]);
     return NextResponse.json({ ok: true, count: 0 });
