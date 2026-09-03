@@ -1,8 +1,8 @@
 /**
  * lib/library/knowledge.ts — KHO TRI THỨC của Thư viện: tri thức MÁY DÙNG ĐƯỢC, CÓ NGUỒN GỐC.
  *
- * VÌ SAO CÓ FILE NÀY (02/09, slice Home + Thư viện): `docs/00-CHOT.md` [15/08] khai
- * "kho-mot-cua-han-dung" + chiều thời gian trên tri thức (`effectiveFrom`/`supersededBy`), và
+ * VÌ SAO CÓ FILE NÀY (02/09, slice Home + Thư viện): `docs/00-CHOT.md` [15/08] khai entry
+ * "KHO TRI THỨC: MỘT CỬA GHI + CHIỀU THỜI GIAN" + `effectiveFrom`/`supersededBy` trên bản ghi, và
  * `docs/BAN-THIET-KE-HE-THONG-IF` liệt Knowledge Base là mục của Master Library. Đo tại nguồn
  * 02/09: `grep -rniE "knowledge" lib components app` — KHÔNG có mô-đun tri thức nào; thứ gần nhất
  * là hai kho ĐÃ CÓ dữ liệu cấu trúc + nguồn gốc mà chưa nơi nào gọi chung một tên:
@@ -12,6 +12,10 @@
  *     RAG (`lib/notebook/rag.ts`), có `originalUrl`/`hasFile`/`chunkCount`.
  * ⇒ [Đ2] NHÌN VÀO TRONG TRƯỚC: file này KHÔNG đẻ kho thứ ba. Nó là LỚP ĐỌC CHUNG (adapter) đưa
  * hai kho ấy về MỘT hình dạng `KnowledgeEntry` để trang Kho tri thức bày + lọc + đếm. Không ghi.
+ * ⚠️ CỐ Ý KHÔNG viết MÃ ĐỊNH DANH của entry đó ra đây: `scripts/frontier-registry.mjs` lấy chính
+ *   chuỗi mã ấy làm BẰNG CHỨNG grep trong `lib/`, nên một dòng chú thích nhắc tên là đủ khiến
+ *   `soi:frontier` báo 🔴 "code có mà sổ chưa ghi" — trong khi file này chỉ ĐỌC, tuyệt nhiên chưa
+ *   thi công vế "một cửa GHI". Phiên sau đừng "sửa cho đầy đủ" bằng cách chép mã vào lại.
  *
  * LUẬT GIỮ (chốt 15/08 "kiểm chuẩn = việc của máy" + rào ①-③ `lib/cad/standards/types.ts`):
  *   · KHÔNG suy `loaiNguon` từ `severity`/`binding`/chuỗi `source` — thiếu thì ghi "chưa phân loại".
