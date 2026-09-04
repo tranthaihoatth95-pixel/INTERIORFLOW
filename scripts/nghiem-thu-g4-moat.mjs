@@ -50,6 +50,8 @@ const { baMatCuaVatLieu } = require(GOC + '/lib/materials/ba-mat.ts');
 const { inspectMaterialImpact, replaceMaterialReferences } = require(GOC + '/lib/materials/impact.ts');
 const { exportIdf, importIdf } = require(GOC + '/lib/cad/idf.ts');
 const { exportIdfc, importIdfc } = require(GOC + '/lib/cad/idfc.ts');
+const { normalizeAssetFamily } = require(GOC + '/lib/idfc-import/asset-family.ts');
+const { resolveIdfcCommerceToSpec } = require(GOC + '/lib/materials/warehouse/catalog-link.ts');
 const { buildBoqAppendixSlides, isBoqAppendixStale, shortBoqFingerprint } = require(GOC + '/lib/present-editor/boq-appendix.ts');
 
 /* ─────────────────────── tham số + sổ ghi ─────────────────────── */
@@ -432,11 +434,67 @@ function chayChuoi(pha = {}) {
     doi('③ .idfc — mã cấu kiện còn nguyên', f.meta.code === 'SOFA-3S', `code=${f.meta.code}`);
     doi('③ .idfc — hình học 2D còn nguyên', (f.body.geom2d?.prims ?? []).length === 1, `${(f.body.geom2d?.prims ?? []).length} prim · ${f.body.geom2d?.w}×${f.body.geom2d?.h}`);
     doi('③ .idfc — mã vật liệu 3D còn nguyên', f.body.geom3d?.matId === 'ps-sofa-3s', `matId=${f.body.geom3d?.matId ?? '—'}`);
-    // ⚠️ Đây là chỗ ĐO ĐƯỢC một lỗ, không phải chỗ khoe: `IdfcCommerce` (idfc.ts:189-199) KHÔNG
-    // có trường nối về `ProductSpec.id`. Cấu kiện rời chỉ nối bằng `sku` (business key, ĐỔI ĐƯỢC)
-    // — trong khi cả Doc lẫn BOQ đều neo bằng `specId` (= ProductSpec.id, BẤT BIẾN).
-    const coSpecId = Object.prototype.hasOwnProperty.call(f.commerce ?? {}, 'specId');
-    doi('③ .idfc — nối về bản ghi thương mại bằng khoá BẤT BIẾN', coSpecId, `commerce có specId = ${coSpecId} · chỉ có sku='${f.commerce?.sku}' (business key, đổi được)`);
+    /* ── ③b · NỐI VỀ KHO BẰNG KHOÁ BẤT BIẾN — đo HÀNH VI, không đo hình dạng ──────────
+     * ⚠️ BẢN TRƯỚC 04/09 CỦA MẮT NÀY ĐO SAI CHỖ: nó hỏi `hasOwnProperty(commerce,'specId')`
+     * trên object mà CHÍNH bộ moat vừa viết ra vài dòng trên. Thực nghiệm: `exportIdfc`
+     * pass-through và `importIdfc:465` cast nguyên object commerce ⇒ chỉ cần bộ moat tự thêm
+     * `specId` vào input là mắt XANH, KHÔNG đổi một dòng mã sản xuất nào. Đó là tự chấm điểm,
+     * và nó phạm đúng lời mở đầu tệp này: "có kiểu không bằng có dây, có dây không bằng có điện".
+     *
+     * Bản này SIẾT LÊN, không nới xuống — đi qua ĐƯỜNG SINH THẬT (`normalizeAssetFamily`) rồi
+     * hỏi câu duy nhất đáng hỏi: NHÀ CUNG CẤP ĐỔI MÃ HÀNG THÌ TỆP CŨ CÒN NỐI ĐÚNG KHÔNG.
+     */
+    const NGUON = 'https://ncc.example/sofa-3s';
+    const ungVien = {
+      name: 'Sofa 3 chỗ vải lanh',
+      code: 'SOFA-3S',
+      kind: 'furniture',
+      origin: { kind: 'user-upload', originalName: 'sofa.json', contentHash: 'a'.repeat(64) },
+      license: { id: 'proprietary', sourceUrl: NGUON },
+      dims: {
+        wMm: { value: 1800, flag: 'verified', source: NGUON },
+        dMm: { value: 800, flag: 'verified', source: NGUON },
+        hMm: { value: 800, flag: 'verified', source: NGUON },
+      },
+      // ĐÚNG hình dạng UI đưa vào: `CatalogLink` vốn ĐÃ mang cả khoá bất biến lẫn business key.
+      catalog: { specId: 'ps-sofa-3s', sku: 'SOFA-3S', vendor: 'NCC A' },
+    };
+    const ho = normalizeAssetFamily(ungVien, { now: '2026-09-04T00:00:00.000Z' });
+    const idfcThat = ho.idfc.ok ? ho.idfc.parsed : null;
+    doi('③b .idfc — đường sinh THẬT dựng được cấu kiện', !!idfcThat,
+      ho.idfc.ok ? `code=${idfcThat.meta.code} · ${ho.idfc.json.length} byte` : `từ chối: ${ho.idfc.reason}`);
+
+    // ① đường sinh phải CHUYỂN khoá bất biến sang commerce — không bỏ lại trong khoá mở rộng.
+    doi('③b .idfc — commerce mang khoá BẤT BIẾN (specId), không chỉ business key',
+      idfcThat?.commerce?.specId === 'ps-sofa-3s',
+      `commerce.specId=${idfcThat?.commerce?.specId ?? '(không có)'} · sku=${idfcThat?.commerce?.sku ?? '—'}`);
+
+    // ② HÀNH VI THEN CHỐT — kho ĐỔI SKU (NCC đổi mã hàng, chuyện thường), tệp .idfc KHÔNG đổi byte.
+    const khoDoiSku = KHO_GIA.map((s) => (s.id === 'ps-sofa-3s' ? { ...s, sku: 'SOFA-3S-V2', matId: null } : { ...s, matId: null }));
+    const noiSauDoi = resolveIdfcCommerceToSpec(idfcThat?.commerce, khoDoiSku);
+    doi('③b .idfc — SAU KHI KHO ĐỔI SKU, tệp cũ VẪN nối đúng bản ghi',
+      noiSauDoi?.spec?.id === 'ps-sofa-3s' && noiSauDoi?.ben === true,
+      noiSauDoi
+        ? `nối tới ${noiSauDoi.spec.id} qua '${noiSauDoi.via}' · bền=${noiSauDoi.ben} · sku kho nay='${noiSauDoi.spec.sku}' ≠ sku trong tệp='${idfcThat?.commerce?.sku}'`
+        : `MẤT NỐI (null) sau khi kho đổi sku`);
+
+    /* ③ ĐƯỜNG LÙI — tệp .idfc GHI TRƯỚC 04/09 chỉ có `sku`. Nó PHẢI mở được và PHẢI nối được
+     * khi sku chưa đổi. Đây là mắt canh luật "phần mềm ≠ dữ liệu thiết kế": nâng cấp không được
+     * làm hỏng tệp người dùng đã có trên máy. */
+    const banCu = importIdfc(chuoiIdfc); // chuoiIdfc dựng ở trên, commerce CHỈ có sku
+    const noiBanCu = resolveIdfcCommerceToSpec(banCu?.commerce, KHO_GIA.map((s) => ({ ...s, matId: null })));
+    doi('③b .idfc BẢN CŨ (chỉ có sku) vẫn mở được và vẫn nối được — đường lùi còn sống',
+      !!banCu && noiBanCu?.spec?.id === 'ps-sofa-3s' && noiBanCu?.via === 'sku',
+      banCu
+        ? `mở được · nối tới ${noiBanCu?.spec?.id ?? 'null'} qua '${noiBanCu?.via ?? '—'}' · bền=${noiBanCu?.ben}`
+        : 'KHÔNG mở được tệp bản cũ');
+
+    /* ④ ĐỐI CHỨNG — chứng minh khẳng định ② KHÔNG tự đúng: CÙNG cú đổi sku đó, tệp bản CŨ
+     * (chỉ có business key) thì MẤT NỐI. Không có mắt này thì ② có thể xanh vì lý do tầm thường. */
+    const banCuSauDoi = resolveIdfcCommerceToSpec(banCu?.commerce, khoDoiSku);
+    doi('③b ĐỐI CHỨNG — tệp chỉ-có-sku thì CÙNG cú đổi đó làm MẤT NỐI (nên khoá bất biến mới đáng)',
+      banCuSauDoi === null,
+      banCuSauDoi ? `vẫn nối được qua '${banCuSauDoi.via}' ⇒ phép thử không phân biệt được gì` : 'mất nối (null) — đúng như dự đoán');
     // ⚠️ `grep -n recipe lib/cad/idfc.ts` = 0 dòng. Cấu kiện lưu vào kho MẤT ngăn xếp dựng hình.
     const idfcCoRecipe = /recipe/.test(require('node:fs').readFileSync(path.join(GOC, 'lib/cad/idfc.ts'), 'utf8'));
     doi('③ .idfc — CÔNG THỨC KHỐI đi cùng cấu kiện', idfcCoRecipe, `chữ "recipe" trong lib/cad/idfc.ts = ${idfcCoRecipe ? 'có' : '0 dòng'}`);

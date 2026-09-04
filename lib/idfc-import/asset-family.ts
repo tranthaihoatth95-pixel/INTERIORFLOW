@@ -561,6 +561,11 @@ function buildIdfc(
     (SELLABLE_KINDS as readonly string[]).includes(c.kind) && (c.commerce || c.catalog)
       ? {
           ...(c.commerce ?? {}),
+          // ⭐ 04/09 — KHOÁ BẤT BIẾN đi TRƯỚC business key. Trước đó chỗ này chỉ chép
+          // `brand/sku/vendor`, bỏ lại `specId`/`matId` trong `xAssetFamily.catalog` ⇒ cấu kiện
+          // rời nối về kho CHỈ bằng `sku` (đổi được), trong khi `Doc`/BOQ neo bằng `specId`.
+          ...(c.catalog?.specId ? { specId: c.catalog.specId } : {}),
+          ...(c.catalog?.matId ? { matId: c.catalog.matId } : {}),
           ...(c.catalog?.brand ? { brand: c.catalog.brand } : {}),
           ...(c.catalog?.sku ? { sku: c.catalog.sku } : {}),
           ...(c.catalog?.vendor ? { vendor: c.catalog.vendor } : {}),
