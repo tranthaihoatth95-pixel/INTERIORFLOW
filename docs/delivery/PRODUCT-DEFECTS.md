@@ -88,3 +88,41 @@ người dùng là ai nhưng không nói cho ai biết.
 ### Kèm hai điều đo được ở cùng lần soi, chưa chặn ship
 - **D5b** — PDF deck của IF là **ẢNH**: 0 ký tự trích được, mỗi trang một JPEG full-page; 14 font khai mà không font nào mang glyph. Cố ý theo thiết kế WYSIWYG, nhưng phải **khai thẳng** vì nó nghĩa là không tìm chữ được, không chọn chữ được, và trợ năng bằng 0.
 - **D5c** — khổ **2560×1440pt** với ảnh 2560×1440px ⇒ **72 dpi**. Luật `LUAT-300DPI` đòi ≥300dpi cho sản phẩm giao. Đường in 300 dpi là **hàm riêng, chưa hành trình nào chạm**.
+
+---
+
+## D6 · P1 — RESUME GHI THIẾU `flowId` KHI VÀO THẲNG ROUTE STUDIO ⇒ thẻ Resume dội về Home
+
+**Phát hiện 04/09** khi chạy J05 lần đầu (ngoài phạm vi phiếu thẻ Resume — khai, không tự vá).
+
+**Triệu chứng đo được trên app thật.** Phiên có cookie hợp lệ, vào thẳng `/projects/<id>/cad`, vẽ
+một nét, quay về Home. `localStorage['interiorflow.resume.<uid>']` đọc ra:
+```
+{"route":"/cad-editor","sheetId":"cadsheet-0","ts":…}     ← KHÔNG có flowId
+```
+⇒ `buildResumeCard()` tính `routeId = null` ⇒ `resumeHref()` trả route toàn cục cũ `/cad-editor`
+⇒ `LegacyStageRedirect` tra lại (store rỗng + resume không id) ⇒ **dội về `/`**. Bấm thẻ Resume
+xong người dùng đứng nguyên ở Home.
+
+**Cơ chế.** `computeResumePatch()` (`lib/resume.ts`) **đúng** — nó có trả `{route, flowId}` cho
+route scope dự án. Chỗ đứt nằm ở `components/entry/ResumeTracker.tsx:41-44`:
+```
+const userId = getLastUserId();
+if (!userId) return;        ← bỏ qua lượt ghi, và KHÔNG hẹn làm lại
+```
+`ResumeTracker` chỉ chạy khi `pathname` ĐỔI. Vào thẳng deep-link thì lúc nó chạy, `lastUserId`
+chưa kịp gieo (`lib/danh-tinh-phien.ts` — docstring `:202` tự khai *"`danhTinhSanSang()` chỉ KHỞI
+ĐỘNG một request; `setLastUserId` xảy ra sau"*). Khi định danh có rồi thì **pathname không đổi nữa
+⇒ không ai ghi lại**. Bản ghi `{route, sheetId}` mà `CadSheets.tsx:601` viết sau đó không mang
+`flowId`, và `saveResume` merge nông nên **không có gì để kế thừa**.
+
+⇒ Đây là **cùng gốc với D1** (định danh neo vào `localStorage` thay vì phiên máy chủ), nhưng biểu
+hiện khác: D1 làm **mất việc**, D6 làm **mất đường quay lại**. Sửa D1 ở tầng nguồn nhiều khả năng
+đóng luôn D6; nếu D1 sửa theo kiểu vá điểm thì D6 vẫn sống.
+
+**Vì sao chưa đỏ ở J05.** J05 đi đúng luồng của nó (mở app ở Home → vào chặng → về Home), luồng đó
+gieo `lastUserId` trước nên resume đủ `flowId`. Nhánh deep-link là hành trình **J16**, và J16 hiện
+đo IndexedDB chứ không đo resume ⇒ **chưa hành trình nào canh D6**. Việc cho lượt sau: thêm khẳng
+định `flowId` vào J16, hoặc một hành trình riêng.
+
+**Trạng thái:** 🟡 khai, chưa sửa — nằm ngoài vùng ghi của phiếu thẻ Resume (`components/entry/**`).

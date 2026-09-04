@@ -78,7 +78,7 @@ function duongHoSo(ma) {
  * Mở một phiên trình duyệt trên hồ sơ CÓ SẴN trên đĩa. Lần 1 và lần 2 dùng CÙNG thư mục —
  * đó là điều kiện để câu "đóng app rồi mở lại" có nghĩa.
  */
-async function moPhienTrinhDuyet(ma, { chanIdb = false, canThiep = [] } = {}) {
+async function moPhienTrinhDuyet(ma, { chanIdb = false, chanResume = false, canThiep = [] } = {}) {
   const dir = duongHoSo(ma);
   mkdirSync(dir, { recursive: true });
   const opt = {
@@ -98,6 +98,19 @@ async function moPhienTrinhDuyet(ma, { chanIdb = false, canThiep = [] } = {}) {
         IDBObjectStore.prototype.put = function (...a) {
           if (this.transaction?.db?.name === 'interiorflow-sheets') throw new DOMException('QuotaExceededError', 'QuotaExceededError');
           return goc.apply(this, a);
+        };
+      } catch {}
+    })();`);
+  }
+  if (chanResume) {
+    // THẾ GIỚI BIẾT CHẮC HỎNG cho J05: chặn ĐÚNG đường ghi dấu vết việc-đang-dở, không chặn
+    // localStorage nói chung — chặn hết thì app không dựng nổi và bộ ngã vì HẠ TẦNG (đỏ giả).
+    await ctx.addInitScript(`(() => {
+      try {
+        const goc = Storage.prototype.setItem;
+        Storage.prototype.setItem = function (k, v) {
+          if (String(k).startsWith('interiorflow.resume.')) return;
+          return goc.call(this, k, v);
         };
       } catch {}
     })();`);
@@ -1173,7 +1186,184 @@ const J22 = {
   },
 };
 
-const HANH_TRINH = [J16, J17, J19, J20, J07, J12, J04, J06, J18, J22];
+/**
+ * J05 — THẺ TIÊU ĐIỂM Ở HOME ĐƯA VỀ ĐÚNG CHỖ ĐANG DỞ, VÀ VẪN ĐÚNG SAU KHI ĐÓNG APP.
+ *
+ * VÌ SAO CÓ (đo 04/09, TRƯỚC khi sửa): thân thẻ Resume KHÔNG bắt cú bấm nào — `hienVat.href`
+ * được tính rồi bỏ đó — trong khi chân thẻ ghi hẳn "bấm để về đúng chỗ bạn rời đi". Giao diện
+ * khẳng định một việc, việc đó không xảy ra (cùng họ D-J04a và WorkHub tự xưng trợ lý).
+ *
+ * ⭐ BẤM BẰNG BÀN PHÍM THUẦN, KHÔNG BẤM CHUỘT. Chuột chạy mà bàn phím không thì đó là CHƯA
+ * XONG, và đúng loại lỗi 5 máy soi không bắt nổi (bài học 16/08: lý do CÓ trong mã nhưng
+ * không bao giờ tới người dùng). Nên phép đo đi bằng Tab → Enter, và còn đọc luôn ring focus
+ * đang vẽ ra màu gì.
+ *
+ * ⭐ ĐỌC TỪ NƠI LƯU THẬT: `localStorage['interiorflow.resume.<userId>']` (`lib/resume.ts:25`),
+ * KHÔNG đọc chữ trên màn. Chữ trên thẻ có thể đúng trong khi đường dây đã đứt — đó chính là
+ * trạng thái mà hành trình này sinh ra để bắt.
+ */
+const J05 = {
+  ma: 'J05',
+  ten: 'Home → bấm thẻ tiêu điểm → về đúng chặng đang dở → đóng app → thẻ vẫn trỏ đúng chỗ',
+  chan: 'G2',
+  loai: 'trinh-duyet',
+  hieuChuanMo: 'chặn localStorage.setItem cho khoá resume — không còn dấu vết việc đang dở',
+  async moPhien(mt, st, lan) {
+    const p = await moPhienTrinhDuyet(`J05${mt.hauTo}`, { chanResume: mt.hongCoY });
+    const me = await p.ctx.request.get(`${GOC}/api/auth/me`);
+    st.userId = (await me.json())?.user?.id || (await dangNhap(p.ctx));
+    st.duAnMongDoi = mt.duAn; // `soSanh` không nhận `mt` — đích phải đi qua `st`
+    st.lan = lan;
+    return p;
+  },
+  async thaoTac(p, mt, st) {
+    // ⓪ MỞ APP Ở HOME TRƯỚC — đây là luồng của J05 (Home → thẻ → chặng), KHÔNG phải liều thuốc.
+    //   Deep-link thẳng vào studio là hành trình KHÁC (J16). Phân biệt này quan trọng vì lượt
+    //   chạy đầu 04/09 đã lộ một LỖI THẬT ở nhánh deep-link: `ResumeTracker` bỏ qua lượt ghi khi
+    //   `lastUserId` chưa kịp gieo (đua với `lib/danh-tinh-phien.ts`, docstring `:202` tự khai),
+    //   và nó KHÔNG chạy lại vì `pathname` không đổi ⇒ resume ghi ra THIẾU `flowId` ⇒ thẻ Resume
+    //   trỏ về route toàn cục cũ ⇒ dội về '/'. Lỗ đó nằm ngoài phạm vi phiếu này, đã khai ở
+    //   `docs/delivery/PRODUCT-DEFECTS.md`; J05 đo đúng luồng của mình chứ không che nó.
+    await p.page.goto(`${GOC}/`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(5000);
+    await boQuaLopChe(p.page);
+
+    // ① làm một việc THẬT ở chặng 2D ⇒ sinh dấu vết "đang dở" đúng cách người dùng sinh ra nó
+    await moMatVe(p.page, mt.duAn);
+    await veMotDuong(p.page);
+
+    // ② về Home. ResumeTracker cố ý KHÔNG ghi '/' (docstring ResumeTracker.tsx) và HomeScreen
+    //    chỉ ghi khi `stageDone` — Home mới không bật cờ đó ⇒ dấu vết 2D không bị đè.
+    await p.page.goto(`${GOC}/`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(6000);
+    await boQuaLopChe(p.page);
+    await chup(p.page, 'J05-1-home-co-viec-do');
+
+    st.dauVetHome = await docTheTieuDiem(p.page);
+    st.resumeLucBam = await p.page.evaluate(
+      (u) => { try { return JSON.parse(localStorage.getItem('interiorflow.resume.' + u) || 'null'); } catch { return null; } },
+      st.userId,
+    );
+
+    // ③ BẤM BẰNG BÀN PHÍM THUẦN — Tab cho tới khi tiêu điểm rơi vào lớp phủ, rồi Enter.
+    st.banPhim = await bamTheBangBanPhim(p.page);
+    if (st.banPhim.toiDuoc) {
+      await p.page.keyboard.press('Enter');
+      await p.page.waitForURL((u) => !new URL(String(u)).pathname.match(/^\/$/), { timeout: 20000 }).catch(() => {});
+      await cho(2500);
+    }
+    st.urlSauBam = p.page.url();
+    await chup(p.page, 'J05-2-sau-khi-bam-bang-ban-phim');
+
+    // ④ về lại Home để `ghiXuong` đọc thẻ ở cùng một chỗ với lần 2
+    await p.page.goto(`${GOC}/`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(6000);
+    await boQuaLopChe(p.page);
+  },
+  async vaoLai(p, mt, st) {
+    await p.page.goto(`${GOC}/`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(6000);
+    await boQuaLopChe(p.page);
+    await chup(p.page, 'J05-3-mo-lai-sau-khi-dong-han');
+  },
+  async ghiXuong(p, mt, st) {
+    const the = await docTheTieuDiem(p.page);
+    const resume = await p.page.evaluate(
+      (uid) => {
+        try {
+          const raw = localStorage.getItem('interiorflow.resume.' + uid);
+          return raw ? JSON.parse(raw) : null;
+        } catch (e) { return { loi: String(e).slice(0, 80) }; }
+      },
+      st.userId,
+    );
+    return { ...the, resume };
+  },
+  soSanh(truoc, sau, st) {
+    const dich = `/projects/${st.duAnMongDoi ?? ''}`;
+    // ⓪ dấu vết phải tồn tại ở NƠI LƯU THẬT — không tin chữ trên thẻ
+    if (!truoc.resume || truoc.resume.route !== '/cad-editor')
+      return { dat: false, vi: `sau khi vẽ, localStorage resume không ghi chặng 2D (đọc được: ${JSON.stringify(truoc.resume)})` };
+
+    // ① thẻ phải THẬT SỰ có đường đi, không chỉ có câu hứa ở chân thẻ
+    if (!truoc.coLopPhu)
+      return { dat: false, vi: `Home có việc đang dở nhưng thẻ tiêu điểm KHÔNG có lớp phủ bấm được (chân thẻ ghi: "${truoc.chanCuoi}")` };
+    if (truoc.chanCuoi.includes('bấm') && !truoc.coLopPhu)
+      return { dat: false, vi: 'chân thẻ hứa "bấm" mà không có gì bấm được — đúng lỗi J05 sinh ra để bắt' };
+
+    // ② BÀN PHÍM: Tab tới được + Enter đi được. Chuột chạy mà bàn phím không là CHƯA XONG.
+    if (!st.banPhim?.toiDuoc)
+      return { dat: false, vi: `Tab KHÔNG tới được lớp phủ sau ${st.banPhim?.soTab ?? '?'} lần (tiêu điểm dừng ở: ${st.banPhim?.dungO ?? 'không rõ'})` };
+    if (!st.banPhim?.coRing)
+      return { dat: false, vi: `lớp phủ nhận tiêu điểm nhưng KHÔNG vẽ vòng focus (outline đo được: "${st.banPhim?.ring}")` };
+    if (!String(st.urlSauBam || '').includes(dich))
+      return {
+        dat: false,
+        vi: `Enter trên thẻ KHÔNG đưa tới dự án đang dở — đứng ở ${st.urlSauBam}. Lúc bấm thẻ trỏ "${st.dauVetHome?.href}" (lớp phủ ${st.dauVetHome?.coLopPhu ? 'có' : 'KHÔNG'}), resume lúc đó ${JSON.stringify(st.resumeLucBam)}`,
+      };
+
+    // ③ SỰ THẬT CÒN NGUYÊN sau khi ĐÓNG HẲN trình duyệt
+    if (!sau.coLopPhu)
+      return { dat: false, vi: `mở lại: thẻ tiêu điểm mất khả năng bấm (chân thẻ: "${sau.chanCuoi}")` };
+    if (sau.href !== truoc.href)
+      return { dat: false, vi: `mở lại: thẻ trỏ sang chỗ KHÁC — trước "${truoc.href}", sau "${sau.href}"` };
+    if (!sau.resume || sau.resume.route !== truoc.resume.route || sau.resume.flowId !== truoc.resume.flowId)
+      return { dat: false, vi: `mở lại: dấu vết ở localStorage đổi — trước ${JSON.stringify(truoc.resume)}, sau ${JSON.stringify(sau.resume)}` };
+
+    return {
+      dat: true,
+      vi: `Tab ${st.banPhim.soTab} lần tới lớp phủ (ring ${st.banPhim.ring}) → Enter → ${st.urlSauBam}; ĐÓNG HẲN rồi mở lại: thẻ vẫn trỏ "${sau.href}", resume vẫn ${sau.resume.route}+${sau.resume.flowId}`,
+    };
+  },
+};
+
+/**
+ * ĐỌC THẺ TIÊU ĐIỂM Ở HOME — đọc CẤU TRÚC (có lớp phủ không, trỏ đi đâu), không đọc chữ
+ * quảng cáo. `chanCuoi` lấy về chỉ để nói được câu "hứa mà không làm" cho rõ khi FAIL.
+ */
+function docTheTieuDiem(page) {
+  return page.evaluate(() => {
+    const vat = document.querySelector('.xuong-home .vat');
+    if (!vat) return { coThe: false, coLopPhu: false, href: '', chanCuoi: '' };
+    const a = vat.querySelector('a.mo-lai');
+    return {
+      coThe: true,
+      coLopPhu: !!a,
+      href: a ? new URL(a.getAttribute('href') || '', location.origin).pathname : '',
+      nhan: a?.getAttribute('aria-label') || '',
+      chanCuoi: vat.querySelector('.vat-chan .day2')?.textContent?.trim() || '',
+    };
+  });
+}
+
+/**
+ * TAB TỚI LỚP PHỦ RỒI ĐO VÒNG FOCUS. Trả về cả `ring` (giá trị `outline` tính được) để câu
+ * FAIL nói được thẳng "nhận tiêu điểm nhưng không thấy gì" — thứ `tsc`/grep không bao giờ biết.
+ */
+async function bamTheBangBanPhim(page, tran = 40) {
+  await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
+  for (let i = 1; i <= tran; i++) {
+    await page.keyboard.press('Tab');
+    const d = await page.evaluate(() => {
+      const el = document.activeElement;
+      if (!el || el === document.body) return { la: '', ring: '' };
+      const cs = getComputedStyle(el);
+      return {
+        la: el.className && typeof el.className === 'string' ? el.className : el.tagName,
+        ring: `${cs.outlineWidth} ${cs.outlineStyle} ${cs.outlineColor}`,
+        moTa: (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 50),
+      };
+    });
+    if (String(d.la).includes('mo-lai')) {
+      const rong = parseFloat(d.ring) || 0;
+      return { toiDuoc: true, soTab: i, ring: d.ring, coRing: rong > 0 && !d.ring.includes('none'), dungO: d.la };
+    }
+    if (i === tran) return { toiDuoc: false, soTab: i, ring: d.ring, coRing: false, dungO: `${d.la} · ${d.moTa}` };
+  }
+  return { toiDuoc: false, soTab: tran, coRing: false, dungO: '' };
+}
+
+const HANH_TRINH = [J16, J17, J19, J20, J07, J12, J04, J06, J18, J22, J05];
 
 /* ─────────────────────────── khung chạy ─────────────────────────── */
 

@@ -63,7 +63,7 @@ Ký hiệu chủ sở hữu: `01` CORE · `02` WORKFLOW · `04` DESIGN · `05` A
 | # | KHỞI ĐIỂM | THAO TÁC | KẾT QUẢ HỆ THỐNG | KẾT QUẢ ĐÃ LƯU | VÀO LẠI | TRẠNG THÁI | CHỦ | CHẶN CỔNG |
 |---|---|---|---|---|---|---|---|---|
 | **J04** | Home rỗng | tạo dự án mới | ✅ dự án + bản vẽ sinh thật | ✅ `Project` 5 → **6** · `Flow` **6** (đọc bằng SQL) | ✅ **đóng HẲN trình duyệt rồi mở lại vẫn thấy** | **PASS trên app thật 04/09** (`--ca=J04`) sau khi đóng **D-J04a** (xem §1.7). Hành trình đầy-đủ: Home → *"Tạo dự án mới"* → **bảng khởi tạo dự án** → *"Tạo dự án"* → URL nhảy sang `/projects/<id>/render`. Hiệu chuẩn nay **hết thoái hoá**: chặn `POST /api/flows` ⇒ ĐỎ, thế giới lành ⇒ XANH | 04 + 02 | **G2** |
-| **J05** | Home có việc dở | bấm thẻ Resume | nhảy đúng chặng đang dở | `lastStage` | — | 🔴 **KHÔNG CHẠY ĐƯỢC — thẻ Resume KHÔNG bắt cú bấm nào.** Đo 04/09 khi sửa D-J04a: `grep onClick` trong `components/home/XuongHome.tsx` chỉ ra ba nút lối vào · cột dự án · widget — **thân thẻ tiêu điểm không có handler**, trong khi chân thẻ vẫn ghi *"bấm để về đúng chỗ bạn rời đi"* và `hienVat.href` (= `resumeHref(the)`) **không có ai tiêu thụ**. Cùng họ D-J04a: chữ hứa một thao tác chưa tồn tại. **Khai, KHÔNG vá ở lượt này** — làm cả thẻ bấm được là quyết định thị giác (vùng chạm · vòng focus · con trỏ), phải qua cửa mắt | 04 + 02 | cổng thị giác (lane 04) |
+| **J05** | Home có việc dở | bấm thẻ Resume | ✅ nhảy đúng chặng đang dở | ✅ `interiorflow.resume.<userId>` đọc thẳng từ localStorage (route + flowId) | ✅ **đóng HẲN trình duyệt rồi mở lại, thẻ vẫn trỏ đúng đường đó** | **PASS trên app thật 04/09** (`--ca=J05`). Sửa: thẻ tiêu điểm nay bấm được CẢ THÂN qua lớp phủ `<Link>` (`XuongHome.tsx` `.mo-lai`), lời hứa ở chân thẻ và đường dây dùng CHUNG một nguồn `duongMoLai()` (`lib/home/the-tieu-diem.ts`) nên không còn trạng thái hứa-mà-không-làm. **Đo bằng BÀN PHÍM THUẦN**: Tab 19 lần tới lớp phủ · ring `2px solid rgb(106,87,245)` (= `--focus-ring`) · Enter → `/projects/<id>/cad`. Hiệu chuẩn hai tầng: chặn ghi resume ⇒ ĐỎ · gỡ hẳn lớp phủ trong mã ⇒ ĐỎ ở đúng khẳng định trung tâm · cắm lại ⇒ XANH | 04 + 02 | **G2** |
 | **J06** | dự án đã có | mở lại dự án cũ, sửa tiếp | tải lại doc, sửa được | ✅ **1 → 2 thực thể** trong IndexedDB | ✅ **TOÀN BỘ ID của lần trước còn nguyên** | **PASS trên app thật 04/09** (`--ca=J06`) — ba phiên gói trong khuôn hai phiên: vẽ nét A → đóng hẳn → mở lại vẽ nét B → đọc lại. **Điểm đo là DANH TÍNH, không phải số đếm**: xoá sạch rồi vẽ lại hai nét cũng làm số tăng, và đó đúng là *đứt gia phả*. Ghi đè có kiểm `rev` vẫn do `app/api/flows/[id]/route.test.ts` khoá (Prisma thật, P2025) | 02 | **G2** |
 
 ### 1.3 · Ba chặng nghề
@@ -160,21 +160,21 @@ hoặc bỏ đi — và trong ca D-J04b thì cái Flow vừa sinh ra vẫn nằm
 
 | Trạng thái | Số hành trình | Ghi chú |
 |---|---|---|
-| **PASS đầy đủ (có cột ĐÃ LƯU)** | **8** | J16 · J17 · J19 · J20 · J07 · J12 · J06 · **J04** — chạy bằng bộ `nghiem-thu-g2-hanh-trinh.mjs` (J04 vào nhóm này ở đợt 3, 04/09, sau khi đóng D-J04a) |
+| **PASS đầy đủ (có cột ĐÃ LƯU)** | **9** | J16 · J17 · J19 · J20 · J07 · J12 · J06 · J04 · **J05** — chạy bằng bộ `nghiem-thu-g2-hanh-trinh.mjs` (J04 vào ở đợt 3; **J05 vào ở đợt 4**, 04/09, sau khi thẻ tiêu điểm bấm được cả thân) |
 | **PASS không có cột ĐÃ LƯU để kiểm** | **1** | J22 — bản chất nó không sinh gì để lưu; điều phải chứng minh là *báo rõ, không chạy giả* |
 | **PASS chỉ ở cột hệ thống** | **4** | J08 · J09 · J10 · J11 — lượt kiểm 04/09, không chạm chuyện *còn sau khi đóng app* |
 | **PASS một phần** | **1** | J18 — tầng cơ chế nay đo trên **app thật + đọc SQL**; tầng người dùng vẫn chưa |
 | **FAIL** | **0** | — (J04 đã chuyển sang PASS đợt 3; hai lỗi chặn D-J04a/D-J04b đã đóng, xem §1.7) |
-| **UNVERIFIED** | **7** | J01 J02 **J05** J13 J14 J15 J21 — 🔴 J05 nay có lý do CỤ THỂ chứ không còn là "chưa ai đo": thẻ Resume **không bắt cú bấm nào** |
+| **UNVERIFIED** | **6** | J01 J02 J13 J14 J15 J21 — J05 đã rời nhóm này (đợt 4, 04/09) |
 | **BLOCKED** | **1** | J03 (D3) |
 
-⚠️ Đếm lại cho đúng: 22 = 8 PASS-đủ + 1 PASS-không-có-cột + 4 PASS-hệ-thống + 1 PASS-một-phần
-+ 0 FAIL + **7 UNVERIFIED** + 1 BLOCKED.
+⚠️ Đếm lại cho đúng: 22 = 9 PASS-đủ + 1 PASS-không-có-cột + 4 PASS-hệ-thống + 1 PASS-một-phần
++ 0 FAIL + **6 UNVERIFIED** + 1 BLOCKED.
 
-### ⭐ CỘT **KẾT QUẢ ĐÃ LƯU**: **1/22 → 4/22 → 7/22 → 8/22**
+### ⭐ CỘT **KẾT QUẢ ĐÃ LƯU**: **1/22 → 4/22 → 7/22 → 8/22 → 9/22**
 
 Con số này là thứ duy nhất đáng theo dõi ở cổng G2. Đợt 2 (04/09) thêm **J07 · J12 · J06**;
-đợt 3 cùng ngày thêm **J04** sau khi đóng hai lỗi chặn ở §1.7.
+đợt 3 cùng ngày thêm **J04** sau khi đóng hai lỗi chặn ở §1.7; **đợt 4 thêm J05**.
 🔴 Đợt 2 tăng 3 chứ không tăng 6, và ba chữ "chưa" đó là số thật: **J04 đỏ thật** (lỗi sản phẩm,
 không phải lỗi bộ đo — nay đã sửa), **J18 mới xong nửa dưới** (cơ chế), **J22 không có cột này để
 mà đầy**.

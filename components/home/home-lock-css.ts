@@ -327,6 +327,31 @@ export const HOME_LOCK_CSS = `
 .xuong-home .len-bac:nth-child(2){animation-delay:35ms}
 .xuong-home .len-bac:nth-child(n+3){animation-delay:70ms}
 
+/* ══ THẺ TIÊU ĐIỂM BẤM ĐƯỢC CẢ THÂN (J05) ══
+   '.mo-lai' là một <a href> THẬT phủ kín thẻ ("stretched link"). Nó là con TRỰC TIẾP của
+   '.vat' — đặt trong '.vat-dau' thì bị 'overflow:hidden' của hàng tiêu đề xén còn 46px.
+   Ba nút lối vào (thân 'bat-dau') KHÔNG bao giờ sống chung với lớp phủ này: 'duongMoLai()'
+   trả null cho thân có nút, nên không có ca nút-nằm-dưới-lớp-phủ.
+   ⚠️ Vòng focus phải là ring TRONG (offset ÂM): '.vat' có 'overflow:hidden' nên ring ngoài
+   bị xén mất — cùng lý do '.if-focus-inset' tồn tại trong globals. */
+.xuong-home .vat.co-mo-lai{cursor:pointer}
+.xuong-home .mo-lai{position:absolute;inset:0;z-index:3;display:block;
+  border-radius:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.xuong-home .mo-lai:focus-visible{outline:var(--stroke-focus) solid var(--focus-ring);
+  outline-offset:calc(-1 * var(--stroke-focus))}
+/* Trỏ vào: CHỈ đổi nền + độ nổi. Thẻ LỚN thì CẤM scale (SPEC-HOVER-FOCUS-IDF: scale chỉ cho
+   vật nhỏ/đơn lẻ). Nền pha từ token có sẵn, không hex — cùng cách '--surface-rim' làm.
+   Vào chậm (180ms) ra nhanh (120ms) theo luật hover đã chốt. */
+.xuong-home .vat.co-mo-lai{transition:background 120ms ease-out,box-shadow 120ms ease-out}
+.xuong-home .vat.sang:has(.mo-lai:hover){
+  background:color-mix(in srgb,var(--nen-sang) 95%,var(--muc));
+  box-shadow:0 30px 66px -26px rgba(0,0,0,.78),0 0 0 1px var(--vien-mo);
+  transition:background 180ms ease-in,box-shadow 180ms ease-in}
+.xuong-home .vat.toi:has(.mo-lai:hover){
+  background:color-mix(in srgb,var(--canh-0) 92%,var(--canh-7));
+  box-shadow:0 30px 66px -26px rgba(0,0,0,.78),0 0 0 1px var(--vien-mo);
+  transition:background 180ms ease-in,box-shadow 180ms ease-in}
+
 /* Vòng tiêu điểm bàn phím — --accent ĐẶC, không bị overflow:hidden xén (bản khoá §8). */
 .xuong-home .ke-ben:focus-visible,.xuong-home .khi-goi:focus-visible,
 .xuong-home .nut-chinh:focus-visible,.xuong-home .nut-phu:focus-visible,
@@ -337,6 +362,7 @@ export const HOME_LOCK_CSS = `
 @media (prefers-reduced-motion:reduce){
   .xuong-home .len-bac{animation:none}
   .xuong-home .vat,.xuong-home .ke-ben,.xuong-home .o-nen,.xuong-home .khi-goi,
-  .xuong-home .o-w,.xuong-home .nut-chinh,.xuong-home .nut-phu{transition:none}
+  .xuong-home .o-w,.xuong-home .nut-chinh,.xuong-home .nut-phu,
+  .xuong-home .vat.co-mo-lai,.xuong-home .mo-lai{transition:none}
 }
 `;

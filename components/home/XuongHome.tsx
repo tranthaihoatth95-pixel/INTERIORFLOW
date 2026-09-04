@@ -33,6 +33,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { RawStyle } from '@/components/filemanager/RawStyle';
 import SystemWallpaper from '@/components/wallpaper/SystemWallpaper';
@@ -41,6 +42,7 @@ import { loadResume, type ResumeState } from '@/lib/resume';
 import { buildResumeCard, resumeHref } from './widgets/resume-card';
 import type { HomeSummary } from './widgets/types';
 import { xepThang, cauKhiGoi, type VatHome } from '@/lib/home/thang-chu-y';
+import { duongMoLai } from '@/lib/home/the-tieu-diem';
 import {
   boDemo,
   laCanhDemo,
@@ -164,12 +166,43 @@ function NutLoiVao({
   );
 }
 
-/** BẬC 1 — THÂN DUY NHẤT trên màn. Nền của nó là nền NỘI DUNG, nên mọi chữ trong nó máy đo được. */
+/**
+ * BẬC 1 — THÂN DUY NHẤT trên màn. Nền của nó là nền NỘI DUNG, nên mọi chữ trong nó máy đo được.
+ *
+ * ⭐ THẺ BẤM ĐƯỢC CẢ THÂN (J05) — vùng bấm và vì sao chọn nó:
+ *   Đây là TIÊU ĐIỂM CHÍNH của Home (D-DR2 04/09: một tiêu điểm, rồi tới cụm phụ hạng dưới hẳn).
+ *   Chân thẻ ghi "bấm để về đúng chỗ bạn rời đi" ⇒ chữ "bấm" phải trỏ vào CẢ THẺ, không phải
+ *   vào một con chip 24px ở góc. Vật hạng nhất mà vùng chạm bằng một cái chip là tự hạ cấp nó.
+ *
+ *   Cách làm: một `<Link>` phủ kín thẻ (`.mo-lai`, `position:absolute; inset:0`) — khuôn
+ *   "stretched link". Ba lý do chọn nó thay hai cách kia:
+ *     ① bọc cả thẻ trong `<button>` ⇒ ca thân `bat-dau` có BA nút lối vào bên trong ⇒
+ *        NÚT-TRONG-NÚT: HTML không hợp lệ, thứ tự Tab loạn, trình đọc màn hình đọc sai.
+ *        Ràng buộc "ca có href thì thân là tom-tat" chỉ là quy ước dữ liệu — TypeScript KHÔNG
+ *        chặn, nên chặn bằng `duongMoLai()` + test, không bằng lời dặn.
+ *     ② một nút nhỏ trong thẻ thì an toàn nhưng vùng chạm ~100×28 trên một thẻ cao ~400 —
+ *        và câu ở chân thẻ vẫn hứa mơ hồ "bấm" vào cái gì.
+ *     ③ `<Link>` cho `<a href>` THẬT ⇒ ⌘-click / chuột giữa mở tab mới, trạng thái đích hiện
+ *        ở thanh trình duyệt, và luật focus toàn app `:where(a[href], …):focus-visible`
+ *        (`globals.css:435`) tự nhận — không phải chế thêm affordance.
+ *   Cái giá, khai thẳng: lớp phủ chặn bôi-đen chữ trong thẻ. Đó là giá CỐ HỮU của mọi phương án
+ *   "cả thẻ bấm được"; với thân `tom-tat` bốn dòng thì đổi được.
+ *
+ *   Overlay là con TRỰC TIẾP của `.vat` chứ KHÔNG nằm trong `.vat-dau`: `.vat-dau` có
+ *   `overflow:hidden` và cao cố định 46px (`home-lock-css.ts:133`) ⇒ đặt trong đó thì lớp phủ
+ *   bị xén còn đúng dải tiêu đề.
+ */
 function BacMotThan({ v, hanh }: { v: HienVat; hanh?: HanhBatDau }) {
   const than = v.than;
   const pct = typeof v.tienDo === 'number' ? Math.round(v.tienDo * 100) : null;
+  const duong = duongMoLai(v);
   return (
-    <section className={`vat len-bac ${v.nen}`} aria-label={v.ten}>
+    <section className={`vat len-bac ${v.nen}${duong ? ' co-mo-lai' : ''}`} aria-label={v.ten}>
+      {duong && (
+        // Nhãn đọc được PHẢI tự nói đích đến: người dùng bàn phím nghe "liên kết, mở lại chỗ cũ"
+        // mà không biết chỗ cũ là gì thì vẫn phải đi dò. Ghép tên vật + câu ngữ cảnh.
+        <Link href={duong} className="mo-lai" aria-label={`Mở lại: ${v.ten} — ${v.kem}`} />
+      )}
       <div className="vat-dau">
         <span className={`dau ${v.dau}`} aria-hidden="true" />
         <span className="ten">{v.ten}</span>
@@ -429,13 +462,9 @@ export default function XuongHome({
             { manh: String(summary?.today.tasksDoneToday ?? 0), nhe: 'việc xong hôm nay' },
             { manh: String(summary?.today.online.length ?? 0), nhe: 'người đang trong xưởng' },
           ],
-          chanCuoi: 'bấm để về đúng chỗ bạn rời đi',
-          // 🔴 CHƯA CÓ AI TIÊU THỤ `href` NÀY (đo 04/09) — thẻ Resume KHÔNG bắt sự kiện bấm nào
-          // (`grep onClick` trong tệp này: chỉ có ở ba nút lối vào · cột dự án · widget). Tức
-          // dòng `chanCuoi` trên đang HỨA một thao tác chưa tồn tại. Đây là hành trình **J05**
-          // trong `docs/delivery/JOURNEY-MATRIX.md` (đang UNVERIFIED) — khai ra, KHÔNG vá ở
-          // lượt này vì làm cả thẻ bấm được là quyết định thị giác (vùng chạm · vòng focus ·
-          // con trỏ), phải qua cửa mắt chứ không nối dây lặng lẽ.
+          // ⚠️ Câu này HỨA một thao tác. Nó KHÔNG được gõ cứng ở đây — bên dưới có đúng MỘT
+          // chỗ quyết định lời-hứa-hay-không, tính từ chính `duongMoLai()`. Gán tạm cho đủ kiểu.
+          chanCuoi: '',
           href: resumeHref(the),
         }
       : // CÓ dự án nhưng KHÔNG có việc dở trên máy này. Đây vẫn là bậc NGAY BÂY GIỜ — *việc*
@@ -475,6 +504,18 @@ export default function XuongHome({
           ],
           chanCuoi: 'chọn một dự án ở cột bên để vào việc',
         };
+
+    // ⭐ MỘT NGUỒN CHO LỜI HỨA (J05) — chữ ở chân thẻ và lớp phủ bấm-được đọc CÙNG một hàm.
+    //   Trước 04/09 hai thứ này rời nhau: `chanCuoi` gõ cứng "bấm để về…" trong khi `href`
+    //   không ai tiêu thụ ⇒ thẻ hứa một việc nó không làm. Nay `duongMoLai()` quyết cả hai, nên
+    //   KHÔNG còn trạng thái nào mà một nửa hứa còn nửa kia im.
+    //   Ca `null` có thật: chặng 3D mà chưa có id dự án ⇒ `resumeHref()` trả `/` = chính trang
+    //   này. Lúc đó thẻ không bấm được, và chân thẻ phải nói ra điều đó chứ không im lặng (§26).
+    if (!hienVat.chanCuoi) {
+      hienVat.chanCuoi = duongMoLai(hienVat)
+        ? 'bấm để về đúng chỗ bạn rời đi'
+        : 'chưa đủ dấu vết để quay lại — chọn một dự án ở cột bên';
+    }
 
     // HAI nhãn trên dải môi trường — ĐÚNG HAI, và cả hai là TIN THẬT:
     //   trái  = dự án gần đây nhất + số dự án trong xưởng
