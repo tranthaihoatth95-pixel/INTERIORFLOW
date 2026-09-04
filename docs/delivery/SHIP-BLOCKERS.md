@@ -7,7 +7,7 @@
 | **G1 · DATA SAFE** | 🟡 PARTIAL | 01 CORE | **7/8 ca PASS trên app thật**; bắt và vá được **rò dữ liệu chéo người dùng** + 2 test đang khoá cứng lỗi đó. Ca 3 (kho bị chặn) đã vá riêng. **Khe còn mở**: `clearLastUserId()` chưa nối vào đường đăng xuất; mới phủ chặng 2D. |
 | **G2 · PROFESSIONAL FLOW** | 🔴 BLOCKED | 02 WORKFLOW | Ma trận 22 hành trình đã có, nhưng **0 hành trình xác minh ở cột KẾT QUẢ ĐÃ LƯU**. |
 | **G3 · WORKSPACES & TOOLS** | 🟡 PARTIAL | 04 DESIGN + 02 | Máy canh `soi:cong-cu-chet` đã chạy (**27 ca**: 26 mồ côi · 1 dây đứt), tự hiệu chuẩn và bắt lại được ca Vitals lịch sử. Audit 2D/3D xong. **Chưa mở app lần nào** ⇒ mọi ô 'cơ chế có' là đọc mã. Vật liệu · Thư viện · Trình chiếu · BOQ · Duyệt **chưa audit**. |
-| **G4 · DESIGN TRUTH / MOAT** | 🟡 PARTIAL | 01 CORE + 02 | Lát cắt dọc chạy **hết chuỗi, 49/54 đạt**, có máy canh thường trực trong `npm test` và bộ tự hiệu chuẩn. Mắt đóng/tải-lại **0/22 → 1/22**. 🔴 **Đứt: mặt sàn/trần không mang danh tính lên 3D** — đang sửa (xem khối dưới). |
+| **G4 · DESIGN TRUTH / MOAT** | 🟢 **PASS** (chủ dự án chốt 04/09 theo bằng chứng hiện có; **chỉ mở lại nếu hành trình hoặc hồi quy tìm ra đứt gãy MỚI**) | 01 CORE + 02 | Lát cắt dọc **57/59**, K3 **5/5**. Chỗ đứt mặt sàn **ĐÃ ĐÓNG**: `slab` sinh nhóm 3D theo khuôn tường, vật liệu đọc từ chính entity; ca then chốt *đổi vật liệu sàn → 3D mang mã mới* lật từ false sang **true**, và giữ được qua lưu→mở lại. Hai đứt còn lại ở `.idfc` **không chặn ship**. |
 | **G5 · EXPERIENCE** | 🟡 PARTIAL | 04 DESIGN | ✅ Home **đã khoá và đã thi công**: `xepThang()` thuần có test, trần `{keBen:3, nen:5}`, mật độ tăng thì vật **tụt bậc**. MAIN tự kiểm: khung 3 việc và khung 14 dự án **trùng khít từng con số hình học**. Bất biến *bỏ ảnh nền vẫn đọc được* chứng minh bằng gỡ-DOM. **Còn lại**: dải môi trường **gần như vô hình ở nền sáng** · rail ngoài đang **240 thay vì 52** (thuộc AppShell) · bậc NỀN với dữ liệu THẬT chưa lần nào chạy trên màn · Vitals · khung app · các workspace khác chưa phán. |
 | **G6 · CONTENT & INTELLIGENCE** | 🟡 PARTIAL | 05 ASSET · 06 MEDIA · 03 AI | Hợp đồng chốt, bước 1 xong. **3D = 1 tệp.** Vật liệu 0 dữ liệu. Intro chưa có. ⛔ **Cấm nhân nội dung trước khi lát cắt dọc moat PASS.** |
 | **G7 · DESKTOP RELEASE** | 🟡 PARTIAL | 07 RELEASE | ✅ `db push` **đã đóng** — nay `migrate deploy` + bắc cầu + đóng mốc + rà SQL phá huỷ + sao lưu; ca nguy cơ mất dữ liệu **ném lỗi** thay vì lặng lẽ đổi bảng. ✅ **Cổng 6 mở lần đầu**: AppImage 338 MB, ~3 phút. 🔴 **Cổng 7 (mở bộ cài) vẫn trống** — chưa mở gói nào. 🔴 **macOS = ĐÍCH CHÍNH** (chủ dự án đính chính 04/09) — xem khối dưới. |
@@ -45,7 +45,11 @@ Ba trạng thái phải trả lời dứt khoát, có bằng chứng, cho **cả
 
 Thiếu bất kỳ mắt nào ⇒ **KHÔNG PASS**, dù mã có chạy. Đây chính là lỗ mà ma trận hành trình vừa lộ ra: mọi bằng chứng hiện có chứng minh *app phản ứng đúng lúc bấm*, **chưa mẩu nào** chứng minh *việc còn đó sau khi đóng app*.
 
-## 🔴 CHỖ ĐỨT CỦA MOAT — **MẶT SÀN/TRẦN**, chẩn đoán đã đào tới đáy
+## ✅ CHỖ ĐỨT CỦA MOAT — **ĐÃ ĐÓNG 04/09** (giữ lại làm bệnh án, đừng đọc như việc đang mở)
+
+Giữ nguyên phần chẩn đoán dưới đây vì nó là **ca mẫu**: chẩn đoán đầu nói *thiếu `entityId`*, đào tới đáy thì bệnh khác hẳn — `mats.floor` là **màu theme gõ cứng**, và **2D đã biết `slab` trong khi 3D không xử lý một dòng nào**. Bài học: *chẩn đoán đầu tiên hiếm khi là bệnh thật.*
+
+## 📋 BỆNH ÁN — chỗ đứt của moat (đã đóng)
 
 Đổi vật liệu **mặt sàn**: BOQ đổi ✅ · deck báo cũ ✅ · **3D KHÔNG HỀ BIẾT** 🔴.
 Câu *"một vật, ba chặng"* hôm nay **đúng cho tường và đồ rời, SAI cho mọi mặt hoàn thiện sàn/trần** — mà sàn/trần là phần diện tích lớn nhất của mọi hồ sơ nội thất.
