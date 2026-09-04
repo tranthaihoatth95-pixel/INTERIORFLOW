@@ -1,45 +1,47 @@
 # SHIP BLOCKERS — thứ THẬT SỰ chặn việc phát hành IF
 
-## ⬛ NĂM CỔNG PHÁT HÀNH — IF ship được khi cả năm XANH
+## ⬛ BẢY CỔNG PHÁT HÀNH (chủ dự án đính chính 04/09 — thay bản năm cổng)
 
 | Cổng | Trạng thái | Chủ sở hữu | Còn thiếu đúng cái gì |
 |---|---|---|---|
-| **G1 · DATA SAFE** | 🟡 PARTIAL | 01 CORE | Bản vá P0 xong-máy. **Chưa chạy trên app thật một lần nào.** 8 ca đang nghiệm thu. `UNVERIFIED ≠ PASS`. |
-| **G2 · CORE JOURNEYS** | 🔴 BLOCKED | 02 WORKFLOW | Chưa có ma trận hành trình. Số test **không phải** bằng chứng hoàn thành. |
-| **G3 · EXPERIENCE** | 🟡 PARTIAL | 04 DESIGN | Home chưa khoá thiết kế. H1/H2/H3 là **bản thăm dò**, không phải ứng viên chờ chọn. Vitals · khung app · workspace chưa phán. |
-| **G4 · CONTENT** | 🟡 PARTIAL | 05 ASSET · 06 MEDIA | Hợp đồng đã chốt (`G4-HOP-DONG-TAI-SAN.md`). **Lỗ thật: 3D = 1 tệp.** Vật liệu 0 dữ liệu. Intro chưa có. Nền đã xong. |
-| **G5 · RELEASE** | 🔴 BLOCKED | 07 RELEASE | Chưa dựng lại đường phát hành từ máy sạch sau 11 lát ghép. Electron 33 chưa khảo. **Bằng chứng cuối là app ĐÓNG GÓI, không phải Vercel.** |
+| **G1 · DATA SAFE** | 🟡 PARTIAL | 01 CORE | Vá P0 xong-máy, **chưa chạy app thật**. 8 ca đang nghiệm thu. |
+| **G2 · PROFESSIONAL FLOW** | 🔴 BLOCKED | 02 WORKFLOW | Ma trận 22 hành trình đã có, nhưng **0 hành trình xác minh ở cột KẾT QUẢ ĐÃ LƯU**. |
+| **G3 · WORKSPACES & TOOLS** | 🔴 BLOCKED | 04 DESIGN + 02 | Bàn làm việc nghề (2D · 3D · Vật liệu · Thư viện · Trình bày · BOQ · Duyệt) **chưa audit**. Chuẩn vi-tương-tác §8 chưa có máy canh. |
+| **G4 · DESIGN TRUTH / MOAT** | 🔴 BLOCKED | 01 CORE + 02 | Định danh ngữ nghĩa · gia phả · ký ức quyết định · ảnh hưởng sửa lại — **chưa có phép thử xuyên bề mặt nào**. |
+| **G5 · EXPERIENCE** | 🟡 PARTIAL | 04 DESIGN | Home đang khoá→thi công. **Home KHÔNG được chiếm đường găng toàn app.** Vitals · khung app · workspace chưa phán. |
+| **G6 · CONTENT & INTELLIGENCE** | 🟡 PARTIAL | 05 ASSET · 06 MEDIA · 03 AI | Hợp đồng chốt, bước 1 xong. **3D = 1 tệp.** Vật liệu 0 dữ liệu. Intro chưa có. ⛔ **Cấm nhân nội dung trước khi lát cắt dọc moat PASS.** |
+| **G7 · DESKTOP RELEASE** | 🔴 BLOCKED | 07 RELEASE | `db push` trên CSDL người dùng (rủi ro P0) đang sửa. **Cổng đóng gói chưa thử lần nào.** Bằng chứng cuối là **APP ĐÃ ĐÓNG GÓI**, Vercel xanh không tính. |
 
-**Bất biến tối cao (G1):** *KHÔNG BAO GIỜ MẤT HOẶC GÁN NHẦM VIỆC THIẾT KẾ.*
-Không xác lập được định danh an toàn ⇒ **hỏng phải nhìn thấy được / chặn ghi**, cấm âm thầm rơi về kho mơ hồ.
+## 🔴 LUẬT PASS MỚI — áp cho MỌI luồng có ghi dữ liệu (chủ dự án ban 04/09)
 
-## ⬛ BẢN ĐỒ CHUYÊN GIA — ai sở hữu miền nào
+> **THAO TÁC → GHI XUỐNG → ĐÓNG/TẢI LẠI → VÀO LẠI → CÙNG MỘT SỰ THẬT.**
+
+Thiếu bất kỳ mắt nào ⇒ **KHÔNG PASS**, dù mã có chạy. Đây chính là lỗ mà ma trận hành trình vừa lộ ra: mọi bằng chứng hiện có chứng minh *app phản ứng đúng lúc bấm*, **chưa mẩu nào** chứng minh *việc còn đó sau khi đóng app*.
+
+## 🔴 LÁT CẮT DỌC MOAT — cổng chặn việc nhân nội dung
+
+Trước khi dựng 24 món 3D, phải chứng minh bằng **vài vật đại diện**:
+
+`Thư viện → 2D → ĐỊNH DANH NGỮ NGHĨA → 3D BuildRecipe → Vật liệu → BOQ/Spec → Trình bày → lưu → ĐÓNG → mở lại → gia phả + định danh CÒN NGUYÊN`
+
+Lát cắt PASS mới được nhân nội dung. Moat chỉ tồn tại trong kiểu dữ liệu/tài liệu mà người dùng **không trải nghiệm được hiệu ứng của nó** ⇒ **CHƯA HOÀN THÀNH**.
+
+## ⬛ BẢN ĐỒ CHUYÊN GIA
 
 | # | Chuyên gia | Sở hữu | Cổng |
 |---|---|---|---|
-| 01 | **CORE** | dữ liệu · sự thật dự án · định danh · lưu trữ | G1 |
-| 02 | **WORKFLOW** | hành trình nghề đầu-cuối | G2 |
-| 03 | **AI** | Vitals · khẩu độ · ngữ cảnh · ranh giới người-quyết | G3 |
-| 04 | **DESIGN** | UX/UI · chuyển động · kiểm thị giác | G3 |
-| 05 | **ASSET** | thư viện 2D · 3D · vật liệu | G4 |
-| 06 | **MEDIA** | Wallgallery · intro · media thương hiệu | G4 |
-| 07 | **RELEASE** | QA · hiệu năng · Electron · đóng gói | G5 |
+| 01 | **CORE** | dữ liệu · sự thật dự án · định danh · lưu trữ | G1 · G4 |
+| 02 | **WORKFLOW** | hành trình nghề đầu-cuối | G2 · G3 · G4 |
+| 03 | **AI** | Vitals · khẩu độ · ranh giới người-quyết | G6 |
+| 04 | **DESIGN** | UX/UI toàn sản phẩm · chuyển động · kiểm thị giác | G3 · G5 |
+| 05 | **ASSET** | thư viện 2D · 3D · vật liệu | G6 |
+| 06 | **MEDIA** | Wallgallery · intro · media thương hiệu | G6 |
+| 07 | **RELEASE** | QA · hiệu năng · Electron · đóng gói | G7 |
 
-**MAIN giữ tích hợp.** Worker **không** merge/rebase/đẩy nhánh tích hợp, không đổi quyền sở hữu của chuyên gia khác.
+**MAIN giữ tích hợp.** Worker không merge/rebase/đẩy nhánh tích hợp, không đổi quyền sở hữu của chuyên gia khác.
 
 ### Dây phụ thuộc chéo — cấm hai chuyên gia giải cùng một biên độc lập
-`04 DESIGN ↔ 06 MEDIA` bố cục Home cần hướng Wallgallery · `04 ↔ 03 AI` Home cần quan hệ với Vitals ·
-`05 ASSET ↔ 02 WORKFLOW` thư viện phải **đặt được vật vào việc thật** · `01 CORE ↔ 02` bằng chứng lưu trữ phụ thuộc định danh an toàn ·
-`02 ↔ 07 RELEASE` bằng chứng hành trình phải sống sót ở môi trường sạch.
-
-
-> Lập 04/09 theo lệnh **SHIP INTERIORFLOW · DELIVERY OVERRIDES INVESTIGATION**.
-> Một câu lọc mọi việc: **việc này có CHẶN hay có GIẢM RỦI RO ĐÁNG KỂ cho việc ship không?**
-> Không ⇒ **không được chen vào đường tới đích**.
->
-> Thang: **P0** mất dữ liệu/hỏng/bảo mật/chặn build · **P1** luồng nghề lõi gãy ·
-> **P2** chặn duyệt sản phẩm/thị giác · **P3** tích hợp/phát hành bắt buộc · **P4** nợ không chặn.
-> **Chỉ P0/P1 được tự động ngắt việc hoàn thiện thị giác. P4 không được làm chỉ vì máy đang rảnh.**
+`04 ↔ 06` bố cục Home cần hướng Wallgallery · `04 ↔ 03` Home cần quan hệ với Vitals · `05 ↔ 02` thư viện phải **đặt được vật vào việc thật** · `01 ↔ 02` bằng chứng lưu trữ phụ thuộc định danh an toàn · `02 ↔ 07` bằng chứng hành trình phải sống sót ở môi trường sạch · `01 ↔ 02 ↔ 05` lát cắt moat cắt ngang cả ba.
 
 ## ĐANG CHẶN
 
