@@ -117,3 +117,61 @@ export function tronHatGiong(dbItems: readonly MaterialSpecDto[] | null | undefi
   );
   return [...hangHatGiong().filter((h) => !daCo.has(h.matId ?? '')), ...db];
 }
+
+/**
+ * MẶT TIỀN THỨ NĂM — Ô CHỌN VẬT LIỆU Ở CHẶNG 2D (`components/cad/MaterialPalette.tsx`).
+ *
+ * ⛔ VÌ SAO CẦN HÀM RIÊNG chứ không gọi thẳng `tronHatGiong` (đo 04/09): ô chọn vật liệu 2D không
+ * đọc `MaterialSpecDto` — nó đọc `MaterialPick` (`lib/library/spec-refs.ts`), hình lát MỎNG hơn,
+ * cố ý **không mang `matId`** vì thứ ghi xuống `HatchEntity.specId` là `id`, không phải `matId`.
+ * Hai hình khác nhau nên không dùng chung một hàm trộn được.
+ *
+ * 🔴 KHỬ TRÙNG Ở ĐÂY YẾU HƠN Ở TẦNG DTO — nói thẳng, đừng để phiên sau tưởng hai chỗ ngang nhau:
+ * `tronHatGiong` khử theo `matId` (danh tính máy); ở đây chỉ khử được theo `sku` (mã nghề người
+ * đọc), vì picks không mang `matId`. Hệ quả: studio nhập một `ProductSpec` mang ĐÚNG `matId` của
+ * một hạt giống nhưng đặt `sku` khác thì ô chọn 2D hiện HAI dòng cho cùng một vật. Nhìn thấy
+ * được, không âm thầm — cách chữa tận gốc là cho `MaterialPick` mang `matId`, việc của lượt sau
+ * (đụng `lib/library/spec-refs.ts`, ngoài vùng ghi của lượt này).
+ *
+ * Trả hình CẤU TRÚC khớp `MaterialPick` mà KHÔNG import type đó — giữ `lib/materials/` không phụ
+ * thuộc ngược lên `lib/library/`.
+ */
+export interface PickHatGiong {
+  /** `id` của dòng hạt giống (`hat-giong:<uuid>`) — thứ rơi xuống `HatchEntity.specId`. */
+  id: string;
+  name: string;
+  sku: string | null;
+  colorHex: string | null;
+  unit: string | null;
+  priceVnd: number | null;
+}
+
+/** Chuẩn hoá `sku` để so trùng — mã nghề gõ tay nên hoa/thường và khoảng trắng không đáng kể. */
+function chuanSku(s: string | null | undefined): string | null {
+  const t = typeof s === 'string' ? s.trim().toUpperCase() : '';
+  return t === '' ? null : t;
+}
+
+/** Dòng hạt giống dưới hình `MaterialPick`. Giá để `null` — luật 2.1.9.i, không chép giá. */
+export function pickHatGiong(): PickHatGiong[] {
+  return hangHatGiong().map((m) => ({
+    id: m.id,
+    name: m.name,
+    sku: m.sku,
+    colorHex: m.colorHex,
+    unit: m.unit,
+    priceVnd: m.priceVnd,
+  }));
+}
+
+/**
+ * Trộn hạt giống vào danh sách kho của ô chọn 2D. Cùng thứ tự và cùng luật nhường như
+ * `tronHatGiong`: hạt giống đứng TRƯỚC, dòng kho thật THẮNG khi trùng.
+ */
+export function tronPickHatGiong<T extends { sku: string | null }>(
+  kho: readonly T[] | null | undefined,
+): (T | PickHatGiong)[] {
+  const db = kho ?? [];
+  const daCo = new Set(db.map((m) => chuanSku(m.sku)).filter((x): x is string => !!x));
+  return [...pickHatGiong().filter((h) => !daCo.has(chuanSku(h.sku) ?? '')), ...db];
+}

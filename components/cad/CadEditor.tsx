@@ -2750,7 +2750,16 @@ function CommandLine({ status }: { status: string }) {
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 34, flex: '0 0 auto', padding: '0 12px', borderTop: '1px solid var(--border)', background: 'var(--panel)' }}>
+    /* 🔴 `position:relative; zIndex:7` — sửa lỗi ĐO ĐƯỢC 04/09, không phải trang trí.
+       Slot toolbelt của `AppShell` là `absolute bottom-4 z-[6]`, và hộp `.pointer-events-auto`
+       bên trong nó cao đúng bằng dock (gồm cả 34px margin dock dùng để "né" thanh này) ⇒ hộp đó
+       neo đáy tại y=852 trong khi thanh lệnh chiếm y 834–868. Kết quả đo trên app thật: bấm vào
+       TÂM ô nhập lệnh (y=852) rơi trúng `div` rỗng của dock, KHÔNG vào ô lệnh — gõ lệnh bằng
+       chuột là bất khả.
+       Dock ở lớp nổi phía trên MẶT VẼ; thanh lệnh là nội dung in-flow của Stage. Ở đúng dải hai
+       thứ chồng nhau, nội dung phải thắng. Không đụng `AppShell` (bố cục chung, nhiều chặng dùng)
+       và không đổi bố cục chặng Vẽ — chỉ nói rõ ai đứng trên ai ở đúng 18px chồng lấn. */
+    <div style={{ position: 'relative', zIndex: 7, display: 'flex', alignItems: 'center', gap: 10, height: 34, flex: '0 0 auto', padding: '0 12px', borderTop: '1px solid var(--border)', background: 'var(--panel)' }}>
       <Command size={14} style={{ color: 'var(--t4)' }} />
       <div style={{ position: 'relative', width: 340 }}>
         {acOpen && suggestions.length > 0 && (
