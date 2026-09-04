@@ -9,7 +9,7 @@
  * các route rời không bản đồ chung. File này là bản đồ ấy.
  * 20/08 nâng theo `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md` điều 3 (BA CỤM: Workspace chung ·
  * dự án/ba chặng · cá nhân — ba "đảo dọc" cùng trục, tách bằng khoảng thở) + điều 4 (Rail
- * icon-only 52px · Context Shelf 240 · Work Panel 320, trần resize 440 là NỢ phiếu riêng).
+ * icon-only 52px · Context Shelf 240 · Work Panel 320–440 KÉO ĐƯỢC — chốt #4 Experience System).
  *
  * Nguồn cấu trúc: `docs/HOP-DONG-CAU-TRUC-DIEU-HUONG.md` (§5 ba nấc chi tiết · §6 ràng buộc).
  * Danh sách mục + mọi quyết định "mục nào có gì" nằm ở `./muc-dieu-huong.ts` — file
@@ -69,6 +69,10 @@ import {
 
 /** Khoá nhớ nấc chi tiết. Lưu THEO MÁY, không vào `.idf` (§6.4 — cách bày trên màn của tôi ≠ tài sản). */
 const KHOA_NAC = 'interiorflow.rail.nac_v1';
+const KHOA_RONG_DUYET = 'interiorflow.rail.rongDuyet_v1';
+/** Dải chốt #4 Experience System — Work Panel 320–440. */
+const RONG_DUYET_MIN = 320;
+const RONG_DUYET_MAX = 440;
 const NAC_MAC_DINH: NacRail = 'dieuHuong';
 
 const laNac = (v: unknown): v is NacRail => v === 'dinhVi' || v === 'dieuHuong' || v === 'duyet';
@@ -104,7 +108,56 @@ export function RailDieuHuong() {
     }
   };
 
-  const beRong = BE_RONG_NAC[nac];
+  /**
+   * NỚI TRẦN NẤC "DUYỆT" — thi hành chốt #4 `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md`
+   * (Work Panel 320–440 **resizable**) và đóng dòng nợ ghi sẵn ở `muc-dieu-huong.ts`.
+   * Trước bản này nấc duyệt đứng cứng ở SÀN 320 — tức mức "duyệt nội dung" không bao giờ có đủ
+   * chỗ cho chính thứ nó sinh ra để bày (cột ô tròn vật liệu, màn dang dở của chặng).
+   *
+   * CHỈ nấc `duyet` kéo được: `dinhVi`/`dieuHuong` là hai mức có bề rộng MANG NGHĨA (định vị ·
+   * điều hướng) — kéo chúng là phá nhịp ba-nấc, vì nấc thôi còn là công năng mà thành cỡ.
+   */
+  const [beRongDuyet, setBeRongDuyet] = useState<number>(BE_RONG_NAC.duyet);
+  useEffect(() => {
+    try {
+      const luu = Number(localStorage.getItem(KHOA_RONG_DUYET));
+      if (Number.isFinite(luu) && luu >= RONG_DUYET_MIN && luu <= RONG_DUYET_MAX) setBeRongDuyet(luu);
+    } catch {
+      /* im lặng — bề rộng là tiện nghi, không được phép chặn rail */
+    }
+  }, []);
+
+  const luuBeRong = (px: number) => {
+    try {
+      localStorage.setItem(KHOA_RONG_DUYET, String(px));
+    } catch {
+      /* im lặng */
+    }
+  };
+  const kep = (px: number) => Math.min(RONG_DUYET_MAX, Math.max(RONG_DUYET_MIN, px));
+
+  const batDauKeo = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const x0 = e.clientX;
+    const r0 = beRongDuyet;
+    // 🔴 Bản 22/08 lưu `beRongDuyet` đọc từ closure của lượt render lúc bấm chuột ⇒ luôn ghi lại
+    // bề rộng TRƯỚC KHI KÉO, nên kéo xong tải lại trang là mất. Giữ giá trị mới nhất ở biến cục
+    // bộ của chính lượt kéo này thay vì đọc lại state.
+    let moiNhat = r0;
+    const keo = (ev: PointerEvent) => {
+      moiNhat = kep(r0 + (ev.clientX - x0));
+      setBeRongDuyet(moiNhat);
+    };
+    const tha = () => {
+      window.removeEventListener('pointermove', keo);
+      window.removeEventListener('pointerup', tha);
+      luuBeRong(moiNhat);
+    };
+    window.addEventListener('pointermove', keo);
+    window.addEventListener('pointerup', tha);
+  };
+
+  const beRong = nac === 'duyet' ? beRongDuyet : BE_RONG_NAC[nac];
   const hienChu = nac !== 'dinhVi';
   const hienTinhTrang = nac === 'duyet';
   const dangMo = mucDangMo(duong);
@@ -136,9 +189,35 @@ export function RailDieuHuong() {
         width: beRong,
         // Ẩn tới khi biết nấc chi tiết đã lưu — nhấp nháy đổi bề rộng lúc mở app đọc ra như lỗi.
         visibility: daNap ? 'visible' : 'hidden',
-        transition: reduceMotion ? 'none' : 'width .2s var(--ease-apple)',
+        // Đang ở nấc kéo được thì tắt transition — nếu không, con trỏ đi trước, mép rail đuổi theo.
+        transition: reduceMotion || nac === 'duyet' ? 'none' : 'width .2s var(--ease-apple)',
+        position: 'relative',
       }}
     >
+      {/* TAY NẮM KÉO — chỉ ở nấc "duyệt". Dải 6px sát mép phải, TRONG SUỐT: nó là vùng CHẠM chứ
+          không phải vạch trang trí; thêm một đường kẻ dọc nữa ở đây là thêm chrome đúng chỗ đang
+          muốn nhường cho nội dung. Bàn phím: mũi tên trái/phải đổi 16px một nhịp — kéo-thả không
+          bao giờ được là kênh DUY NHẤT (luật a11y của phiếu kéo-thả 16/08). */}
+      {nac === 'duyet' && (
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label={tr('Kéo để đổi bề rộng bảng', 'Drag to resize the panel')}
+          aria-valuenow={beRongDuyet}
+          aria-valuemin={RONG_DUYET_MIN}
+          aria-valuemax={RONG_DUYET_MAX}
+          tabIndex={0}
+          onPointerDown={batDauKeo}
+          onKeyDown={(e) => {
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+            e.preventDefault();
+            const moi = kep(beRongDuyet + (e.key === 'ArrowRight' ? 16 : -16));
+            setBeRongDuyet(moi);
+            luuBeRong(moi);
+          }}
+          style={{ position: 'absolute', top: 0, right: -3, width: 6, height: '100%', cursor: 'col-resize', zIndex: 6 }}
+        />
+      )}
       <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden py-2" style={{ scrollbarWidth: 'thin' }}>
         {THU_TU_CUM.map((cum, i) => (
           <div
