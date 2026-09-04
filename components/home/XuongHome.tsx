@@ -53,6 +53,7 @@ import { docKe, ghiKe, apDung, doiCho, an as anWidget, hien as hienWidget, type 
 import { HOME_LOCK_CSS } from './home-lock-css';
 import { MatVat, kieuMatTuTen, CanhBangVatLieu, KhungPhoiCanh } from './mat-vat';
 import { PHASE_MAP, type Phase } from '@/lib/phases';
+import { timeOfDayNow } from '@/lib/home/time-of-day';
 
 /* ══════════════════════════ NGUỒN THẬT ══════════════════════════ */
 
@@ -177,28 +178,23 @@ function BacMotThan({ v, onMo }: { v: HienVat; onMo?: () => void }) {
         {than.kieu === 'bat-dau' && (
           <>
             <div className="moi">
-              <h2>Dựng dự án đầu tiên của bạn</h2>
-              <p>
-                Khai vị trí công trình là đủ để IF gợi ngay bộ quy chuẩn áp dụng, khí hậu và vật liệu sẵn có
-                tại đó. Vẽ 2D, dựng 3D hay dán ảnh tham chiếu — vào cửa nào cũng được, không cửa nào bị khoá.
-              </p>
+              <h2>{than.tieuDe}</h2>
+              <p>{than.moTa}</p>
               <div className="loi-vao">
                 <button type="button" className="nut-chinh" onClick={onMo}>
-                  Tạo dự án mới
+                  {than.nut[0]}
                 </button>
                 <button type="button" className="nut-phu" onClick={onMo}>
-                  Mở dự án có sẵn
+                  {than.nut[1]}
                 </button>
                 <button type="button" className="nut-phu" onClick={onMo}>
-                  Nhập từ tệp · dwg · pdf · ảnh
+                  {than.nut[2]}
                 </button>
               </div>
-              <span className="loi-ba">
-                Chưa muốn bắt đầu? Xem thư viện mẫu hồ sơ và kho vật liệu ở cột bên.
-              </span>
+              <span className="loi-ba">{than.loiBa}</span>
             </div>
             <div className="von">
-              <span className="tit">xưởng này đã có sẵn</span>
+              <span className="tit">{than.titVon}</span>
               <div className="dai-mau" aria-hidden="true">
                 {than.daiMau.map((c, i) => (
                   <i key={i} style={{ background: c }} />
@@ -383,27 +379,56 @@ export default function XuongHome({ onEnter }: { onEnter: () => void }) {
           chanCuoi: 'bấm để về đúng chỗ bạn rời đi',
           href: resumeHref(the),
         }
-      : {
+      : // CÓ dự án nhưng KHÔNG có việc dở trên máy này. Đây vẫn là bậc NGAY BÂY GIỜ — *việc*
+        // lúc này chính là CHỌN CHỖ ĐỂ VÀO. Dùng đúng thân `bat-dau` (lời mời + cột "xưởng đã
+        // có sẵn") thay vì một bảng ba dòng lơ lửng: bảng ba dòng để lại 2/3 thân TRỐNG, đúng
+        // cờ đỏ "hộp rỗng khổng lồ" (N-10). Mọi số trong cột vốn là SỐ THẬT từ summary.
+        {
           nen: 'sang',
           dau: 'cho',
-          ten: 'Chọn việc để bắt đầu',
-          kem: 'chưa có việc nào đang dở trên máy này',
+          ten: 'Chọn chỗ để vào việc',
+          kem: 'chưa có việc nào đang dở trên máy này — xưởng thì đang chạy',
           chip: `${vat.length} thứ đang chờ`,
           than: {
-            kieu: 'tom-tat',
-            hang: [
+            kieu: 'bat-dau',
+            tieuDe: 'Mở lại một dự án, hoặc bắt đầu cái mới',
+            moTa:
+              'Máy này chưa giữ dấu vết việc đang dở. Chọn một dự án ở cột bên để vào đúng chặng ' +
+              'nó đang đứng — hoặc mở một hướng mới. Vào cửa nào cũng được, không cửa nào bị khoá.',
+            nut: ['Tạo dự án mới', 'Mở dự án có sẵn', 'Nhập từ tệp · dwg · pdf · ảnh'],
+            loiBa: 'Lần sau vào lại, chỗ này thành đúng việc bạn đang dở.',
+            titVon: 'xưởng đang có',
+            daiMau: ['var(--vl-go)', 'var(--vl-da)', 'var(--vl-vai)', 'var(--vl-kl)', 'var(--vl-son)'],
+            von: [
               { n: 'Dự án trong xưởng', v: String(summary?.stageChart.reduce((a, c) => a + c.projects, 0) ?? 0) },
-              { n: 'Việc mở', v: String(summary?.stageChart.reduce((a, c) => a + c.openTasks, 0) ?? 0) },
+              { n: 'Việc đang mở', v: String(summary?.stageChart.reduce((a, c) => a + c.openTasks, 0) ?? 0) },
               { n: 'Đến hạn hôm nay', v: String(summary?.greeting.dueTodayCount ?? 0) },
+              { n: 'Đang trong xưởng', v: String(summary?.today.online.length ?? 0) },
             ],
           },
-          chan: [{ manh: String(vat.length), nhe: 'thứ đang chờ bạn' }],
+          chan: [
+            { manh: String(vat.length), nhe: 'thứ đang chờ bạn' },
+            { manh: String(summary?.today.tasksDoneToday ?? 0), nhe: 'việc xong hôm nay' },
+          ],
           chanCuoi: 'chọn một dự án ở cột bên để vào việc',
         };
 
+    // HAI nhãn trên dải môi trường — ĐÚNG HAI, và cả hai là TIN THẬT:
+    //   trái  = dự án gần đây nhất + số dự án trong xưởng
+    //   phải  = giờ thật + sắc ánh sáng của giờ đó (`time-of-day`, cùng nguồn nuôi LightClock)
+    // Không có dự án nào thì bỏ nhãn trái — thà trống còn hơn độn chữ cho đầy chỗ.
+    const gio = timeOfDayNow();
+    const dongHo = `${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`;
+    const ganNhat = summary?.recentProjects[0];
+
     return {
-      nhanDaiTrai: null,
-      nhanDaiPhai: null,
+      nhanDaiTrai: ganNhat
+        ? {
+            manh: ganNhat.name,
+            nhe: `· gần đây nhất trong ${summary?.recentProjects.length ?? 1} dự án`,
+          }
+        : null,
+      nhanDaiPhai: `${dongHo} · ${gio.lightLabel[0]}`,
       hienVat,
       nguCanhTit: 'việc này đi từ đâu tới',
       nguCanhChip: 'một nguồn — ba chặng soi vào',
@@ -496,6 +521,16 @@ export default function XuongHome({ onEnter }: { onEnter: () => void }) {
 
         {/* ══════════════ THANG CHÚ Ý ══════════════ */}
         <aside className="thang" aria-label="Thang chú ý">
+          {/* Nhãn DEMO — §28: dùng dữ liệu mẫu thì PHẢI ghi rõ TRÊN MÀN, và ghi ở chỗ MẮT
+              GẶP TRƯỚC. Bản vẽ đặt nó ở mép trên; mép trên trong app là `AppChrome` (ngoài
+              vùng ghi của phiếu này) nên nó đứng ở đỉnh thang — vẫn là chỗ cao nhất mà Home
+              sở hữu. Chỉ gỡ khi dữ liệu đã thật, và gỡ là thay đổi phải nêu trong báo cáo. */}
+          {canhDemo && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingBottom: 10 }}>
+              <span className="the-demo">demo · dữ liệu mẫu</span>
+            </div>
+          )}
+
           {/* ── BẬC 2 · KỀ BÊN — một MẶT NHÌN, nhận ra bằng mắt ── */}
           {thang.keBen.length > 0 && (
             <>
@@ -628,14 +663,6 @@ export default function XuongHome({ onEnter }: { onEnter: () => void }) {
           )}
 
           <div className="dan" />
-
-          {/* Nhãn DEMO — §28: dùng dữ liệu mẫu thì PHẢI ghi rõ trên màn. Chỉ gỡ khi dữ liệu
-              đã thật, và gỡ là một thay đổi phải nêu trong báo cáo. */}
-          {canhDemo && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 8 }}>
-              <span className="the-demo">demo · dữ liệu mẫu</span>
-            </div>
-          )}
         </aside>
       </div>
     </>

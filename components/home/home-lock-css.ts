@@ -84,20 +84,31 @@ export const HOME_LOCK_CSS = `
   box-shadow:0 26px 60px -28px rgba(0,0,0,.72),0 0 0 1px var(--vien-mo)}
 .xuong-home .vat.sang{background:var(--nen-sang)}
 .xuong-home .vat.toi{background:var(--canh-0)}
-.xuong-home .vat-dau{flex:0 0 46px;display:flex;align-items:center;gap:10px;padding:0 18px}
+/* Hàng đầu và hàng chân của hiện vật là hàng CAO CỐ ĐỊNH (46 / 44). Chữ dài mà xuống dòng thì
+   nó TRÀN RA NGOÀI hàng — đo được ở khổ 1280 với khung "mẻ đêm": tên vật xuống 2 dòng, chip
+   "còn khoảng 22 phút" vỡ trong viên nang. ⇒ mọi con chữ ở hai hàng này đi MỘT DÒNG + cắt đuôi,
+   và chip thì KHÔNG BAO GIỜ co (nó là con số, cắt đuôi con số là nói dối).
+   Cắt đuôi chỉ giấu phần thừa với MẮT — trình đọc màn hình vẫn đọc trọn câu. */
+.xuong-home .vat-dau{flex:0 0 46px;display:flex;align-items:center;gap:10px;padding:0 18px;
+  min-width:0;white-space:nowrap;overflow:hidden}
 .xuong-home .vat.sang .vat-dau{border-bottom:1px solid var(--net-sang)}
 .xuong-home .vat.toi .vat-dau{border-bottom:1px solid var(--canh-2)}
-.xuong-home .vat-dau .ten{font-size:var(--fs-md,16px);font-weight:600;line-height:1.5}
+.xuong-home .vat-dau .ten{font-size:var(--fs-md,16px);font-weight:600;line-height:1.5;
+  flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .xuong-home .vat.sang .vat-dau .ten{color:var(--muc)}
 .xuong-home .vat.toi .vat-dau .ten{color:var(--canh-7)}
-.xuong-home .vat-dau .kem{font-size:var(--fs-xs,12px);line-height:1.5}
+.xuong-home .vat-dau .kem{font-size:var(--fs-xs,12px);line-height:1.5;
+  flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .xuong-home .vat.sang .vat-dau .kem{color:var(--muc-2)}
 .xuong-home .vat.toi .vat-dau .kem{color:var(--canh-6)}
-.xuong-home .vat-dau .cuoi{margin-left:auto;display:flex;align-items:center;gap:10px}
+.xuong-home .vat-dau .cuoi{margin-left:auto;display:flex;align-items:center;gap:10px;flex:0 0 auto}
 .xuong-home .vat-than{flex:1;min-height:0;display:flex}
 /* CHÂN — con số THẬT của chính vật đó. Viết bằng HTML nên máy đo được. */
 .xuong-home .vat-chan{flex:0 0 44px;display:flex;align-items:center;gap:16px;padding:0 18px;
-  font-size:var(--fs-xs,12px);line-height:1.5}
+  font-size:var(--fs-xs,12px);line-height:1.5;min-width:0;white-space:nowrap;overflow:hidden}
+/* Con SỐ không co (cắt đuôi một con số là nói dối); CÂU GIẢI THÍCH thì co và cắt đuôi được. */
+.xuong-home .vat-chan>span{flex:0 0 auto}
+.xuong-home .vat-chan .day2{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .xuong-home .vat.sang .vat-chan{border-top:1px solid var(--net-sang);color:var(--muc-2)}
 .xuong-home .vat.toi .vat-chan{border-top:1px solid var(--canh-2);color:var(--canh-6)}
 .xuong-home .vat-chan b{font-weight:600}
@@ -105,10 +116,10 @@ export const HOME_LOCK_CSS = `
 .xuong-home .vat.toi .vat-chan b{color:var(--canh-7)}
 .xuong-home .vat-chan .day2{margin-left:auto}
 .xuong-home .chip-sang{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;
-  border-radius:var(--r-full);background:var(--net-sang);color:var(--muc);
+  border-radius:var(--r-full);background:var(--net-sang);color:var(--muc);white-space:nowrap;
   font-size:var(--fs-xs,12px);line-height:1.5}
 .xuong-home .chip-toi{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;
-  border-radius:var(--r-full);background:var(--canh-2);color:var(--canh-7);
+  border-radius:var(--r-full);background:var(--canh-2);color:var(--canh-7);white-space:nowrap;
   font-size:var(--fs-xs,12px);line-height:1.5}
 
 /* BẢNG MẪU VẬT LIỆU — một trong các LOẠI biểu diễn (chỉ thị E: vật, không phải thẻ) */

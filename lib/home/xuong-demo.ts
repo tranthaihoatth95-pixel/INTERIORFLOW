@@ -44,7 +44,18 @@ export interface DongThongSo {
 export type ThanVat =
   | { kieu: 'bang-vat-lieu'; hang: HangVatLieu[]; conLai: string; boHoanThien: string[] }
   | { kieu: 'khung-anh'; thongSo: DongThongSo[] }
-  | { kieu: 'bat-dau'; von: DongThongSo[]; daiMau: string[] }
+  // Thân "lời mời" — dùng cho CẢ hai ca: xưởng chưa có gì, và xưởng có dự án mà máy này chưa
+  // có việc dở. Câu chữ đi theo dữ liệu nên khai ở đây, KHÔNG gõ cứng trong component.
+  | {
+      kieu: 'bat-dau';
+      tieuDe: string;
+      moTa: string;
+      nut: [string, string, string];
+      loiBa: string;
+      titVon: string;
+      von: DongThongSo[];
+      daiMau: string[];
+    }
   | { kieu: 'tom-tat'; hang: DongThongSo[] };
 
 export interface HienVat {
@@ -242,6 +253,13 @@ const RONG: BoDuLieuHome = {
     chip: '3 lối vào',
     than: {
       kieu: 'bat-dau',
+      tieuDe: 'Dựng dự án đầu tiên của bạn',
+      moTa:
+        'Khai vị trí công trình là đủ để IF gợi ngay bộ quy chuẩn áp dụng, khí hậu và vật liệu sẵn có ' +
+        'tại đó. Vẽ 2D, dựng 3D hay dán ảnh tham chiếu — vào cửa nào cũng được, không cửa nào bị khoá.',
+      nut: ['Tạo dự án mới', 'Mở dự án có sẵn', 'Nhập từ tệp · dwg · pdf · ảnh'],
+      loiBa: 'Chưa muốn bắt đầu? Xem thư viện mẫu hồ sơ và kho vật liệu ở cột bên.',
+      titVon: 'xưởng này đã có sẵn',
       daiMau: ['var(--vl-go)', 'var(--vl-da)', 'var(--vl-vai)', 'var(--vl-kl)', 'var(--vl-son)'],
       von: [
         { n: 'Vật liệu trong kho chung', v: '248' },
