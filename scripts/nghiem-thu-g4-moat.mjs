@@ -115,7 +115,11 @@ const id = (tien) => `${tien}-${String(++demId).padStart(3, '0')}`;
    ═══════════════════════════════════════════════════════════════════ */
 
 /**
- * @param {{beGayDinhDanh3D?: boolean}} pha — cờ hiệu chuẩn: bẻ đúng một sợi dây.
+ * @param {{beGayDinhDanh3D?: boolean, beGayVatLieuSan3D?: boolean}} pha — cờ hiệu chuẩn: bẻ đúng
+ *   MỘT sợi dây mỗi lần. `beGayDinhDanh3D` cắt định danh của MỌI nhóm 3D (ca tổng);
+ *   `beGayVatLieuSan3D` chỉ gỡ `specId` khỏi nhóm MẶT SÀN — ca hẹp, để chứng minh rằng ca then
+ *   chốt "đổi vật liệu sàn → 3D mang mã mới" thật sự ĐỎ được khi dây đó đứt (nếu không thì nó
+ *   xanh vì lý do khác, và chữ PASS của nó vô giá trị).
  */
 function chayChuoi(pha = {}) {
   so.length = 0;
@@ -333,7 +337,13 @@ function chayChuoi(pha = {}) {
   doi('vân tay Doc đổi ⇒ phụ lục deck BÁO CŨ', isBoqAppendixStale(meta, vanTaySau) === true, `stale=${isBoqAppendixStale(meta, vanTaySau)} · ${shortBoqFingerprint(vanTayTruoc)} → ${shortBoqFingerprint(vanTaySau)}`);
 
   const scene2 = docToObjScene(doc2, { wallHeightMm: 2700 });
-  const specTrong3DSau = new Set(scene2.groups.map((g) => g.specId).filter(Boolean));
+  // ⚠️ CHỈ CHẠY Ở CHẾ ĐỘ HIỆU CHUẨN HẸP: gỡ `specId` khỏi ĐÚNG nhóm mặt sàn — đúng sợi dây mà
+  // khâu này đo. Nhóm khác giữ nguyên, nên nếu khẳng định dưới vẫn xanh thì nó đang xanh nhờ
+  // vật liệu của ĐỒ RỜI, không phải nhờ mặt sàn ⇒ khẳng định sai chỗ.
+  const nhom2 = pha.beGayVatLieuSan3D
+    ? scene2.groups.map((g) => (g.semanticKind === 'floor' ? { ...g, specId: undefined } : g))
+    : scene2.groups;
+  const specTrong3DSau = new Set(nhom2.map((g) => g.specId).filter(Boolean));
   doi(
     '3D cũng đọc mã MỚI (một nguồn, không bản sao)',
     specTrong3DSau.has('ps-go-ocho') && !specTrong3DSau.has('ps-go-soi'),
@@ -379,6 +389,24 @@ function chayChuoi(pha = {}) {
     doi('① .idf — BOQ sau mở lại RA ĐÚNG SỐ CŨ', boqSauMo.totalAmount === boq2.totalAmount && boqSauMo.rows.length === boq2.rows.length, `${boqSauMo.totalAmount?.toLocaleString('vi-VN')}₫ vs ${boq2.totalAmount?.toLocaleString('vi-VN')}₫ · ${boqSauMo.rows.length} vs ${boq2.rows.length} dòng`);
     doi('① .idf — QUYẾT ĐỊNH của người còn hiệu lực', docMoLai.entities.find((e) => e.type === 'hatch')?.specId === 'ps-go-ocho', `specId sau mở lại = ${docMoLai.entities.find((e) => e.type === 'hatch')?.specId}`);
     doi('① .idf — vân tay khớp ⇒ deck KHÔNG báo cũ oan', boqFingerprint(docMoLai) === vanTaySau, `${shortBoqFingerprint(boqFingerprint(docMoLai))} vs ${shortBoqFingerprint(vanTaySau)}`);
+
+    // ── LUẬT PASS ĐẦY ĐỦ: THAO TÁC → GHI XUỐNG → ĐÓNG/TẢI LẠI → VÀO LẠI → CÙNG MỘT SỰ THẬT.
+    // Mọi khẳng định 3D ở K3/K8 phía trên đo trên Doc CÒN TRONG BỘ NHỚ. Chưa đủ: nếu định danh
+    // chỉ sống một phiên chạy thì người dùng đóng máy mở lại là mất. Ở đây DỰNG LẠI 3D từ Doc VỪA
+    // ĐỌC RA TỪ TỆP và đòi mặt sàn vẫn neo đúng entity + đúng vật liệu người đã chọn.
+    const sceneMoLai = docToObjScene(docMoLai, { wallHeightMm: 2700 });
+    const sanMoLai = sceneMoLai.groups.filter((g) => g.semanticKind === 'floor' && g.entityId);
+    const idSanTrongTep = new Set(docMoLai.entities.filter((e) => e.elementType === 'slab').map((e) => e.id));
+    doi(
+      '① .idf — sau MỞ LẠI, mặt sàn 3D vẫn neo đúng entity 2D',
+      sanMoLai.length === idSanTrongTep.size && sanMoLai.every((g) => idSanTrongTep.has(g.entityId)),
+      `${sanMoLai.length} nhóm sàn mang entityId / ${idSanTrongTep.size} slab trong tệp · id=${sanMoLai.map((g) => g.entityId).join(',') || '—'}`,
+    );
+    doi(
+      '① .idf — sau MỞ LẠI, mặt sàn 3D vẫn mang vật liệu NGƯỜI ĐÃ CHỌN',
+      sanMoLai.length > 0 && sanMoLai.every((g) => g.specId === 'ps-go-ocho'),
+      `specId ở 3D sau mở lại = ${sanMoLai.map((g) => g.specId ?? '(trống)').join(',') || '(không nhóm sàn nào)'} · người đã chọn = ps-go-ocho`,
+    );
   }
 
   // ② IndexedDB (vòng JSON mà sheets-persist áp trước khi ghi)
@@ -413,6 +441,30 @@ function chayChuoi(pha = {}) {
     const idfcCoRecipe = /recipe/.test(require('node:fs').readFileSync(path.join(GOC, 'lib/cad/idfc.ts'), 'utf8'));
     doi('③ .idfc — CÔNG THỨC KHỐI đi cùng cấu kiện', idfcCoRecipe, `chữ "recipe" trong lib/cad/idfc.ts = ${idfcCoRecipe ? 'có' : '0 dòng'}`);
   }
+
+  /* ── K10 · ĐƯỜNG LÙI · bản vẽ CŨ (chưa ai khai `slab`) vẫn phải dựng được ────────
+     Thêm nhánh mặt sàn khai báo mà làm chết sàn của bản vẽ cũ thì đó là hồi quy, không phải tiến
+     bộ. Doc dưới đây KHÔNG có entity nào khai `elementType='slab'` — đúng hình dạng của mọi `.idf`
+     vẽ trước 04/09. Nó phải ra một nhóm sàn `derived` (bbox), KHÔNG mang entityId (vì không ứng
+     với entity nào — gán id giả ở đây mới là sai). */
+  khau('K10 · Đường lùi · bản vẽ chưa khai `slab` vẫn dựng được sàn');
+  const docCu = {
+    layers: doc.layers,
+    entities: doc.entities.map((e) => {
+      const { elementType, ...conLai } = e;
+      return e.type === 'hatch' ? { ...conLai, elementType: undefined } : { ...conLai, elementType };
+    }),
+  };
+  const coSlabTrongDocCu = docCu.entities.filter((e) => e.elementType === 'slab').length;
+  doi('bản vẽ cũ đúng là KHÔNG khai slab nào', coSlabTrongDocCu === 0, `slab=${coSlabTrongDocCu}`);
+  const sceneCu = docToObjScene(docCu, { wallHeightMm: 2700 });
+  const sanCu = sceneCu.groups.filter((g) => g.semanticKind === 'floor');
+  doi('vẫn dựng được mặt sàn', sanCu.length > 0 && sanCu.some((g) => g.positions.length > 0), `${sanCu.length} nhóm sàn · tên: ${sanCu.map((g) => g.name).join(',') || '—'}`);
+  doi(
+    'sàn đường lùi khai THẬT là hình học suy ra (derived, không entityId)',
+    sanCu.every((g) => g.semanticProvenance === 'derived' && g.entityId === undefined),
+    `provenance=${[...new Set(sanCu.map((g) => g.semanticProvenance))].join(',')} · entityId=${sanCu.map((g) => g.entityId ?? '(trống)').join(',')}`,
+  );
 
   return { doc, doc2, docMoLai, boq1, boq2, vanTayTruoc, vanTaySau };
 }
@@ -463,6 +515,27 @@ if (!CHI_HIEU_CHUAN) {
     console.log(`\n✅ HIỆU CHUẨN ĐẠT — ca biết-hỏng làm ĐỎ ${doK3.length} khẳng định ở K3.`);
   } else {
     console.log('\n🔴 HIỆU CHUẨN TRƯỢT — bộ nghiệm thu KHÔNG đỏ nổi ở ca hỏng ⇒ mọi chữ PASS của nó vô giá trị.');
+    maThoat = 1;
+  }
+}
+
+/* ── HIỆU CHUẨN HẸP: bẻ ĐÚNG dây vật liệu của mặt sàn, đòi CA THEN CHỐT phải đỏ ──
+   Ca hiệu chuẩn tổng ở trên bẻ mọi dây một lượt, nên nó KHÔNG chứng minh được rằng khẳng định
+   "đổi vật liệu sàn → 3D mang mã mới" đang xanh NHỜ MẶT SÀN. Ca này chỉ gỡ `specId` của nhóm sàn:
+   nếu khẳng định đó vẫn xanh thì nó đang đọc vật liệu của đồ rời, tức đo sai chỗ. */
+{
+  console.log('\n═══ HIỆU CHUẨN HẸP · gỡ vật liệu khỏi nhóm MẶT SÀN, ca then chốt PHẢI đỏ ═══');
+  try {
+    chayChuoi({ beGayVatLieuSan3D: true });
+  } catch (e) {
+    console.log(`  (chuỗi nổ ở ca hỏng: ${e?.message ?? e})`);
+  }
+  const caThenChot = so.find((d) => d.nhan.startsWith('3D cũng đọc mã MỚI'));
+  console.log(`   ${caThenChot?.dat ? '✅' : '❌'} ${caThenChot?.nhan} — ${caThenChot?.chiTiet}`);
+  if (caThenChot && !caThenChot.dat) {
+    console.log('\n✅ HIỆU CHUẨN HẸP ĐẠT — gỡ vật liệu khỏi mặt sàn thì ca then chốt ĐỎ ⇒ nó thật sự đo mặt sàn.');
+  } else {
+    console.log('\n🔴 HIỆU CHUẨN HẸP TRƯỢT — ca then chốt vẫn xanh dù mặt sàn mất vật liệu ⇒ nó đang đo nhầm chỗ.');
     maThoat = 1;
   }
 }

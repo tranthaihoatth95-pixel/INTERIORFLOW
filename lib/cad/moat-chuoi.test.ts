@@ -10,10 +10,14 @@
  *
  * 🔴 KỶ LUẬT QUAN TRỌNG NHẤT — HỌC TỪ CA HOUGH (00-CHOT 15/08): *"test khẳng định 'trả về đường
  * thoái lui' mà KHÔNG có test nào khẳng định đường CHÍNH chạy được thì đó là test che bug."*
- * ⇒ File này **KHÔNG khẳng định chỗ đang đứt là đúng**. Ba chỗ đứt đo được 04/09 (mặt sàn đã gán
- * vật liệu không tới được 3D · `.idfc` không nối bằng khoá bất biến · `.idfc` không mang
- * `BuildRecipe`) **cố ý KHÔNG có test nào ở đây** — chúng nằm ĐỎ trong bộ nghiệm thu và trong
- * `docs/delivery/G4-MOAT-SLICE.md`. Viết chúng thành kỳ vọng ở đây là biến lỗi thành hợp đồng.
+ * ⇒ File này **KHÔNG khẳng định chỗ đang đứt là đúng**. Hai chỗ đứt CÒN LẠI (04/09: `.idfc` không
+ * nối bằng khoá bất biến · `.idfc` không mang `BuildRecipe`) **cố ý KHÔNG có test nào ở đây** —
+ * chúng nằm ĐỎ trong bộ nghiệm thu và trong `docs/delivery/G4-MOAT-SLICE.md`. Viết chúng thành
+ * kỳ vọng ở đây là biến lỗi thành hợp đồng.
+ *
+ * ✅ 04/09 — chỗ đứt thứ ba ĐÃ ĐÓNG và nay CÓ khoá ở đây (mục ⑥): mặt sàn khai `elementType='slab'`
+ * sinh nhóm 3D riêng mang `entityId` + `specId`, sống qua vòng lưu `.idf`, và bản vẽ chưa khai
+ * `slab` vẫn dựng được sàn qua đường lùi. Đúng luật khoá: chỉ khoá cái ĐÃ chứng minh chạy.
  *
  * THUẦN — không DOM/FS/mạng. Dùng ĐÚNG hàm sản xuất, không hàm mô phỏng nào.
  */
@@ -141,6 +145,44 @@ console.log('⑤ Lưu → đóng → mở lại — định danh · gia phả ·
     ok('IndexedDB — vòng JSON không rơi trường nào', JSON.stringify(quaIdb) === JSON.stringify(sauKhiDoi), '');
     ok('IndexedDB — BOQ sau nạp lại ra đúng số', computeBoq(quaIdb, KHO).totalAmount === boqTruoc.totalAmount, '');
   }
+}
+
+/* ═════════ ⑥ MẶT SÀN KHAI BÁO — 2D → 3D → LƯU → MỞ LẠI, và ĐƯỜNG LÙI ═════════
+   G4 · MOAT (04/09). `ElementType` có `'slab'` từ 24/07 và chặng 2D đã đọc thẳng nó
+   (`lib/cad/plan-present.ts` nền sàn phẳng, "không suy đoán"), nhưng 3D KHÔNG xử lý dòng nào ⇒
+   đổi vật liệu mặt sàn thì BOQ đổi, deck báo cũ, mà 3D KHÔNG hề biết. Đây là cái khoá cho chỗ vừa
+   nối, gồm CẢ đường lùi — thêm nhánh mới mà làm chết bản vẽ cũ thì là hồi quy, không phải tiến bộ. */
+console.log('⑥ Mặt sàn khai báo — lên 3D mang đủ danh tính, sống qua vòng lưu, đường lùi còn nguyên');
+{
+  const scene = docToObjScene(doc, { wallHeightMm: 2700 });
+  const nhomSan = scene.groups.filter((g) => g.semanticKind === 'floor');
+  ok('mặt sàn khai báo sinh ĐÚNG một nhóm 3D', nhomSan.length === 1, `${nhomSan.length} nhóm · ${nhomSan.map((g) => g.name).join(',')}`);
+  ok('nhóm sàn neo về ĐÚNG entity 2D vẽ ra nó', nhomSan[0]?.entityId === 'e-san', `entityId=${nhomSan[0]?.entityId ?? '(trống)'}`);
+  ok('nhóm sàn mang CHÍNH mã vật liệu của entity, không mã thứ hai', nhomSan[0]?.specId === 'ps-soi', `specId=${nhomSan[0]?.specId ?? '(trống)'}`);
+  // Đây là chỗ moat được quảng cáo: KHAI thì không được gắn cờ suy đoán.
+  ok('sàn KHAI BÁO không bị gắn nhãn suy đoán', nhomSan[0]?.semanticProvenance === 'declared', `provenance=${nhomSan[0]?.semanticProvenance}`);
+  // Màu KHÔNG được là màu theme khi entity đã có màu riêng đến từ vật liệu người chọn.
+  const sanCoMau: HatchEntity = { ...san, color: '#5a3a1f' };
+  const scMau = docToObjScene({ ...doc, entities: [sanCoMau, ghe] }, { wallHeightMm: 2700 });
+  const sanMau = scMau.groups.find((g) => g.semanticKind === 'floor');
+  ok('màu mặt sàn 3D đến từ entity, KHÔNG phải màu theme', sanMau?.colorHex === '#5a3a1f', `colorHex=${sanMau?.colorHex}`);
+
+  // ĐỔI VẬT LIỆU → 3D PHẢI MANG MÃ MỚI (ca then chốt của cổng G4).
+  const sauDoi = replaceMaterialReferences(doc, 'ps-soi', 'ps-ocho').doc;
+  const sanSauDoi = docToObjScene(sauDoi, { wallHeightMm: 2700 }).groups.find((g) => g.semanticKind === 'floor');
+  ok('đổi vật liệu sàn ở 2D ⇒ 3D đọc mã MỚI (một nguồn, không bản sao)', sanSauDoi?.specId === 'ps-ocho', `specId ở 3D sau khi đổi = ${sanSauDoi?.specId ?? '(trống)'}`);
+
+  // LUẬT PASS: sống qua ĐÓNG/MỞ LẠI, không chỉ trong một phiên chạy.
+  const moLai = importIdf(exportIdf([{ id: 's1', name: 'Mặt bằng', doc: sauDoi }], { projectName: 'Moat guard' }))?.sheets?.[0]?.doc as Doc | undefined;
+  const sanMoLai = moLai ? docToObjScene(moLai, { wallHeightMm: 2700 }).groups.find((g) => g.semanticKind === 'floor') : undefined;
+  ok('sau LƯU → MỞ LẠI, mặt sàn 3D vẫn neo đúng entity', sanMoLai?.entityId === 'e-san', `entityId=${sanMoLai?.entityId ?? '(trống)'}`);
+  ok('sau LƯU → MỞ LẠI, mặt sàn 3D vẫn mang vật liệu người đã chọn', sanMoLai?.specId === 'ps-ocho', `specId=${sanMoLai?.specId ?? '(trống)'}`);
+
+  // ĐƯỜNG LÙI — bản vẽ cũ chưa ai khai `slab`. Sàn vẫn phải dựng, và phải KHAI THẬT là suy ra.
+  const docCu: Doc = { ...doc, entities: [{ ...san, elementType: undefined }, ghe] };
+  const sanCu = docToObjScene(docCu, { wallHeightMm: 2700 }).groups.filter((g) => g.semanticKind === 'floor');
+  ok('bản vẽ chưa khai `slab` VẪN dựng được sàn', sanCu.length > 0 && sanCu[0].positions.length > 0, `${sanCu.length} nhóm · tên=${sanCu.map((g) => g.name).join(',')}`);
+  ok('sàn đường lùi khai THẬT là suy ra (derived, không entityId giả)', sanCu.every((g) => g.semanticProvenance === 'derived' && g.entityId === undefined), `provenance=${sanCu.map((g) => g.semanticProvenance).join(',')}`);
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);

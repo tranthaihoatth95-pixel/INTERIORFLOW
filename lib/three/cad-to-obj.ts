@@ -268,6 +268,31 @@ function themeMats(theme: SceneTheme, palette: string[]): Record<'wall' | 'floor
   };
 }
 
+/**
+ * G4 · MOAT (04/09) — VẬT LIỆU CỦA MỘT MẶT SÀN KHAI BÁO (`elementType === 'slab'`).
+ *
+ * ⛔ VÌ SAO KHÔNG DÙNG `mats.floor`. `mats.floor` là MÀU CỦA THEME (`themeMats`) — nó là gu hiển
+ * thị của scene, KHÔNG phải vật liệu người dùng gán cho mặt sàn đó. Trước 04/09 mọi mặt sàn dựng
+ * ra CÙNG một màu theme bất kể gán vật liệu gì ⇒ đổi vật liệu ở 2D thì 3D không nhúc nhích, đúng
+ * chỗ moat được quảng cáo mà lại đứt (đo ở `scripts/nghiem-thu-g4-moat.mjs` khâu K3/K8).
+ *
+ * NGUỒN MÀU, theo thứ tự "khai báo thắng suy đoán":
+ *  1. `e.color` — màu ghi NGAY TRÊN entity. Đây là màu mà `applyMaterial()` (`lib/cad/store.ts`)
+ *     ghi xuống khi người dùng chọn một preset vật liệu, tức nó ĐẾN TỪ vật liệu, không phải theme.
+ *  2. màu sàn của theme — chỉ khi entity chưa có màu riêng. Nói thật: đây là bậc lùi hiển thị,
+ *     KHÔNG phải "vật liệu", nên `specId` vẫn được truyền đi nguyên văn để tầng tiêu thụ
+ *     (`SceneGroup.specId` → panel vật liệu → `getMaterial`) tra bản ghi thật.
+ *
+ * TÊN VẬT LIỆU (`Mat.name` → `usemtl` trong OBJ/MTL) neo theo `specId`, nên HAI mặt sàn khác vật
+ * liệu ra HAI `usemtl` khác nhau khi mở ở Blender/3ds Max — thay vì gộp chung một `floor`.
+ * Ký tự ngoài `[A-Za-z0-9_-]` bị thay `_` vì cú pháp MTL không cho khoảng trắng trong tên.
+ */
+function slabMat(e: HatchEntity, themeFloor: Mat): Mat {
+  const hex = e.color && hexToRgb(e.color) ? e.color : themeFloor.hex;
+  const name = e.specId ? `floor_${e.specId.replace(/[^A-Za-z0-9_-]/g, '_')}` : themeFloor.name;
+  return { name, hex };
+}
+
 function mtlOf(mats: Mat[]): string {
   const lines: string[] = ['# InteriorFlow — MTL sinh tất định từ bản vẽ CAD'];
   for (const m of mats) {
@@ -601,8 +626,65 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
   if (!wallHatches.length) warnings.push('Không tìm thấy poché tường (hatch) — chỉ dựng sàn + nội thất.');
 
   const builder = new ObjBuilder('scene.mtl');
+  /** vật liệu phát sinh theo `specId` của mặt sàn — gom để ghi vào MTL cuối hàm (dedupe theo tên). */
+  const slabMats: Mat[] = [];
 
-  // ---- Sàn: slab bbox (dày 100mm, mặt trên z=0) ----
+  // ---- Mặt sàn KHAI BÁO (`elementType === 'slab'`) — MỘT entity, MỘT nhóm 3D, MANG ĐỦ DANH TÍNH ----
+  // G4 · MOAT (04/09). `ElementType` đã có `'slab'` từ B1 (24/07) và chặng 2D ĐÃ đọc nó thẳng
+  // (`lib/cad/plan-present.ts` nền sàn phẳng, ghi rõ "không suy đoán") — nhưng 3D KHÔNG xử lý một
+  // dòng nào, nên mặt sàn đã gán vật liệu không có đường nào lên 3D. Đây KHÔNG phải thiếu loại
+  // entity và KHÔNG chờ `RoomEntity`: loại đã có, 2D đã dùng, việc là nối 3D vào đúng cái đã có.
+  // Khuôn dùng lại NGUYÊN VĂN khuôn tường bên dưới (`spatialIdentity` + specId + storey + ops +
+  // recipe) — không cơ chế thứ hai.
+  //
+  // CHỈ NHẬN `hatch`: mặt sàn có DIỆN TÍCH phải là vùng tô, và đó cũng là đúng loại mà
+  // `lib/boq/compute.ts` quét để ra m² (`hatchAreaM2`) ⇒ 3D và BOQ đọc CÙNG một hình học. Entity
+  // khai `slab` mà không phải vùng tô thì KHÔNG dựng — và nói thật ra `warnings`, không nuốt.
+  const slabHatches = doc.entities.filter(
+    (e): e is HatchEntity => e.elementType === 'slab' && e.type === 'hatch' && e.points.length >= 3,
+  );
+  const slabKhongDung = doc.entities.filter(
+    (e) => e.elementType === 'slab' && !(e.type === 'hatch' && e.points.length >= 3),
+  );
+  if (slabKhongDung.length) {
+    warnings.push(
+      `${slabKhongDung.length} phần tử khai \`elementType='slab'\` nhưng không phải vùng tô kín (${slabKhongDung
+        .map((e) => `${e.type}#${e.id}`)
+        .join(', ')}) — chưa dựng được mặt sàn 3D cho chúng. Vẽ lại bằng lệnh Hatch để có diện tích.`,
+    );
+  }
+
+  slabHatches.forEach((sl, i) => {
+    const hh = computeHeights(sl, doc);
+    const baseMm = hh.baseMm;
+    // BỀ DÀY: `heightMm` khai trên chính entity (cùng field push-pull đã dùng cho tường) nếu có,
+    // không thì 100mm — ĐÚNG bề dày mà `Floor` bbox dùng từ trước, nên bản vẽ chưa khai dày không
+    // thấy hình đổi. Mặt TRÊN nằm ở `baseMm` (đúng quy ước cũ: mặt sàn ở cốt 0, khối đi xuống).
+    const dayMm = Number.isFinite(sl.heightMm) && (sl.heightMm as number) > 0 ? (sl.heightMm as number) : 100;
+    const recipeOps = sl.recipe?.steps.map((s) => s.op) ?? [];
+    const opCutters = buildOpCutters([...(sl.ops ?? []), ...recipeOps], doc, dayMm, baseMm - dayMm);
+    const mat = slabMat(sl, mats.floor);
+    if (!slabMats.some((m) => m.name === mat.name)) slabMats.push(mat);
+    // `semanticKind: 'floor'` cho MỌI slab — KHÔNG đoán sàn/trần. Xem chú thích "trần" bên dưới.
+    // ⚠️ CỐ Ý KHÔNG truyền `heightMm`. `isMassingWallGroup()` (`obj-scene-to-geometry.ts:107`) là
+    // `entityId !== undefined && heightMm !== undefined` — có CẢ HAI thì group bị TÁCH khỏi scene
+    // tĩnh sang danh sách tường push-pull, và cú kéo ở đó neo scale.y quanh ĐÁY rồi mọc LÊN. Mặt
+    // sàn dày xuống dưới (`baseMm - dayMm` → `baseMm`) nên kéo sẽ mọc ngược. Mặt sàn KHÔNG phải
+    // tường ⇒ ở lại scene tĩnh, đúng như Furn_i/Window_i (có entityId, không heightMm). Bề dày
+    // vẫn nằm trong hình học; khi nào có thao tác kéo bề dày sàn thật thì mở ở ĐÚNG chỗ đó.
+    builder.object(`Floor_${i + 1}`, mat, {
+      ...spatialIdentity(sl, 'floor', 'declared'),
+      ...(baseMm !== 0 ? { baseMm } : {}),
+      storey: sl.storey,
+      specId: sl.specId,
+      ops: sl.ops,
+      opCutters,
+      recipe: sl.recipe,
+    });
+    builder.prism(sl.points, baseMm - dayMm, baseMm);
+  });
+
+  // ---- ĐƯỜNG LÙI: slab bbox (dày 100mm, mặt trên z=0) — CHỈ khi bản vẽ chưa khai `slab` nào ----
   const pad = 50; // nở 50mm cho kín mép tường
   const floorPoly: Pt[] = [
     { x: bbox.minX - pad, y: bbox.minY - pad },
@@ -613,9 +695,13 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
   // Floor KHÔNG gán entityId — bbox nở 50mm của TOÀN BỘ tường, không phải hình học của 1 entity
   // riêng lẻ nào trong Doc (không như Wall_i/Furn_i/Window_i đều bắt nguồn từ đúng 1 entity).
   // Đ1 (SPEC-TANG-DU-LIEU-CAU-KIEN §8) chỉ đòi "mọi group PHẢI có entityId" khi group đó THỰC SỰ
-  // ứng với entity — Floor chưa có entity nguồn (chờ §6 RoomEntity/slab entity, P5, chưa code).
-  builder.object('Floor', mats.floor, { ...derivedSpatial('floor') });
-  builder.prism(floorPoly, -100, 0);
+  // ứng với entity — đường lùi này KHÔNG ứng với entity nào, nên nó ĐÚNG khi để trống entityId và
+  // mang `provenance: 'derived'`. GIỮ NGUYÊN chỗ này: bản vẽ cũ (chưa ai khai `slab`) vẫn phải
+  // dựng được sàn như trước 04/09, không hồi quy.
+  if (!slabHatches.length) {
+    builder.object('Floor', mats.floor, { ...derivedSpatial('floor') });
+    builder.prism(floorPoly, -100, 0);
+  }
 
   // ---- Phòng: dò biên qua findHatchBoundary tại tâm mỗi block nội thất (import-only) ----
   // Sàn phòng nổi 2mm trên slab → vật liệu phòng đọc được trong Max/Blender.
@@ -718,6 +804,13 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
   });
 
   // ---- Trần (tuỳ chọn) ----
+  // 04/09 — CỐ Ý KHÔNG suy `slab` nào là TRẦN. IfcSlab gộp cả sàn lẫn trần, và `Doc` hôm nay
+  // KHÔNG có tín hiệu KHAI BÁO nào tách hai vai đó: không field riêng, `RoomEntity` cố ý chưa khai
+  // `ceilingSpecId` (`model.ts` §"Field vật liệu phòng … CHƯA khai — luật K4/L7"), còn cao độ/tên
+  // layer chỉ là SUY ĐOÁN. Luật repo: khai báo thắng suy đoán, và suy đoán phải lộ cờ `inferred`.
+  // Đoán ở đây thì một mặt sàn tầng trên sẽ bị dựng thành trần tầng dưới — sai im lặng, đúng loại
+  // lỗi đắt nhất. ⇒ mọi `slab` dựng là SÀN (`semanticKind: 'floor'`); trần vẫn là khối bbox suy ra
+  // (`derived`) như trước. Khi Doc có tín hiệu khai báo thật cho trần thì mở rộng ở ĐÚNG chỗ này.
   if (opts.ceiling) {
     builder.object('Ceiling', mats.ceil, { ...derivedSpatial('ceiling') });
     builder.prism(floorPoly, H, H + 100);
@@ -826,7 +919,9 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
 
   return {
     obj: builder.toString(),
-    mtl: mtlOf([mats.wall, mats.floor, mats.ceil, mats.furn, mats.room]),
+    // vật liệu slab đứng SAU bộ theme và đã dedupe theo tên — `slabMat()` trả đúng tên theme
+    // khi mặt sàn chưa có màu/`specId` riêng, nên không sinh mục MTL trùng.
+    mtl: mtlOf([mats.wall, mats.floor, mats.ceil, mats.furn, mats.room, ...slabMats.filter((m) => m.name !== mats.floor.name)]),
     stats,
     warnings,
     groups: builder.groups(),
