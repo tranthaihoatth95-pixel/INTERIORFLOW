@@ -189,3 +189,25 @@ Cột theo khuôn chủ dự án đặt. ACTION ∈ {RECOVER · ADAPT · ALREADY
 **Không đụng cho tới khi có quyết định:** `A9` · `A11` · `A13` · `B10-viết-lại` · `C4` · **D-DR1 (chỗ đứng Vitals)** · **D-DR2 (bố cục Home)** — hai mục cuối là authority chống authority, đã trình chủ dự án.
 
 **Nguồn thu hồi**: lấy blob từ `origin/checkpoint/2026-08-24-control-plane` chứ **không** từ `backup` — checkpoint là bản muộn hơn của cùng những tệp đó, và là nơi duy nhất có các module phụ thuộc mà backup thiếu. Chép NỘI DUNG, không merge lịch sử.
+
+---
+
+## 4 · TIẾN ĐỘ THU HỒI (cập nhật 04/09)
+
+Chủ dự án chốt **THU CÓ CHỌN LỌC**; mục RECOVER/ADAPT không đụng authority thì tự thi công, mỗi cụm một commit riêng.
+
+| Mục | Trạng thái | Bằng chứng |
+|---|---|---|
+| **D18 · 22 tài liệu bằng chứng + sổ kiểm kê toàn app** | ✅ thu về | `3cefdd95` — 4.971 dòng; rà trung tính 0 dấu vết, 0 khoá lộ |
+| **A5 · viewport 3D cắt cụt trên retina** | ✅ thu về + máy canh | `ab43f1c1` — đo Chromium: DPR=2 không vá **tràn 300px**, có vá **0px**, buffer vẫn 900×600 |
+| **A7 · kệ hết món CÂM** | ✅ thu về | `8eb248d1` — 4 món câm hết câm, `SCALE-H` trả null **có lý do** thay vì im lặng; test đọc kho THẬT |
+| **C1 · Promote thôi ghi tài sản 0×0** | ✅ thu về | `f35fffa4` — đo thật: `0×0` → `37×21`, palette rỗng → 4 màu, `contentHash` trùng khít `ProjectFile` |
+| **D1-D4 · tầng hành vi nền UI** | ✅ thu về | `31a1c6cc` — đặt chỗ 7 bước · hiện dần 6 bậc · máy kéo · `--kinh-chu-phu`; `globals.css` thuần thêm 19/0 |
+| **D13 · Work Panel kéo được 320–440** | ✅ thu về (port, không dán đè) | `366c6fba` — kèm **sửa lỗi closure của chính bản cũ** (lưu bề rộng trước-khi-kéo) |
+| **C8 · migration `reviewState`** | ⛔ loại | schema hai bên đều không có cột đó ⇒ thêm vào là dựng cột Prisma không biết |
+| Rủi ro phát hành migration *(ngoài phạm vi nhánh này)* | ✅ đóng | `fd83f343` — `migrate deploy` từ CSDL sạch nay dựng **24/24 bảng** |
+
+**Cổng tích hợp**: `tsc` 0 · `npm test` **EXIT 0 hai lần liên tiếp** · `build` 0. Trong lúc soi diff, cổng bắt được một lỗi đua giữa các test chạm CSDL dùng chung `dev.db` — root-cause bằng thí nghiệm (chạy riêng PASS, chạy cùng FAIL), sửa ở **khâu chạy test**, không đụng sản phẩm (`ac751327`).
+
+### Còn trong hàng, chưa đụng
+`A2+A3` (chọn/xoá khối 3D — bó chung) · `A4+A12` (dựng khối bằng cử chỉ) · `A6+mime-sniff` và `B1` (bản sao bền trên máy chủ) · `B2→B4` (tờ bản vẽ sang Trình chiếu) · `B6` (deep-link slide) · `B12` (bốn nghĩa sự thật) · `A10` (bộ kiểm con-trỏ-thật, phải tham số hoá trước) · `D5-D7` (gộp trục vật liệu/nhịp) · `D8-D12` (dải ngữ cảnh · cụm phải-trên · chuông · Live Guide) · `D15` (nấc "ngoại tuyến" cho EmptyState) · `C2 · C5 · C6`.
