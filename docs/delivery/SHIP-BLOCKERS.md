@@ -23,7 +23,7 @@
 🔴 **Rủi ro đo được 04/09, chưa đóng:**
 | Việc | Hiện trạng đo tại nguồn |
 |---|---|
-| Kiến trúc máy | `build.mac` chỉ dựng **`arm64`** — **không ai đo kiến trúc MÁY B**; nếu B là Intel thì bản dựng **không mở được** |
+| ~~Kiến trúc máy~~ ✅ **ĐÓNG 04/09** | Chủ dự án xác nhận **cả hai máy đều Apple Silicon** ⇒ **giữ `arm64`**, KHÔNG thêm `x64`, KHÔNG dùng `universal`. Lý do: gói đã 338 MB, `universal` làm phình gần gấp đôi để đổi lấy một kiến trúc không ai dùng — trái đúng chữ *FAST* chủ dự án đòi. **Quyết định có điều kiện**: ngày có máy Intel thì mở lại, một dòng cấu hình. |
 | Phím ⌘ | `metaKey` 54 · `ctrlKey` 68 · cùng dòng 51 ⇒ **~17 chỗ chỉ nhận Ctrl** — trên Mac bấm ⌘ **không ăn** |
 | Sẵn sàng ký | **không có tệp entitlements**, không thấy `hardenedRuntime` |
 | Mất dữ liệu khi gỡ cài | **CHƯA AI TRẢ LỜI**: gỡ cài Windows / kéo app vào Thùng rác trên Mac **có xoá `userData` (chứa `dev.db` = toàn bộ việc thiết kế) không** |
