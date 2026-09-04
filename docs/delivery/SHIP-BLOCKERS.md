@@ -10,7 +10,25 @@
 | **G4 · DESIGN TRUTH / MOAT** | 🔴 BLOCKED | 01 CORE + 02 | Định danh ngữ nghĩa · gia phả · ký ức quyết định · ảnh hưởng sửa lại — **chưa có phép thử xuyên bề mặt nào**. |
 | **G5 · EXPERIENCE** | 🟡 PARTIAL | 04 DESIGN | Home đang khoá→thi công. **Home KHÔNG được chiếm đường găng toàn app.** Vitals · khung app · workspace chưa phán. |
 | **G6 · CONTENT & INTELLIGENCE** | 🟡 PARTIAL | 05 ASSET · 06 MEDIA · 03 AI | Hợp đồng chốt, bước 1 xong. **3D = 1 tệp.** Vật liệu 0 dữ liệu. Intro chưa có. ⛔ **Cấm nhân nội dung trước khi lát cắt dọc moat PASS.** |
-| **G7 · DESKTOP RELEASE** | 🟡 PARTIAL | 07 RELEASE | ✅ `db push` **đã đóng** — nay `migrate deploy` + bắc cầu + đóng mốc + rà SQL phá huỷ + sao lưu; ca nguy cơ mất dữ liệu **ném lỗi** thay vì lặng lẽ đổi bảng. ✅ **Cổng 6 mở lần đầu**: AppImage 338 MB, ~3 phút. 🔴 **Cổng 7 (mở bộ cài) vẫn trống** — chưa mở gói nào. 🔴 **macOS chờ QUYẾT ĐỊNH của chủ dự án** (ký mã). |
+| **G7 · DESKTOP RELEASE** | 🟡 PARTIAL | 07 RELEASE | ✅ `db push` **đã đóng** — nay `migrate deploy` + bắc cầu + đóng mốc + rà SQL phá huỷ + sao lưu; ca nguy cơ mất dữ liệu **ném lỗi** thay vì lặng lẽ đổi bảng. ✅ **Cổng 6 mở lần đầu**: AppImage 338 MB, ~3 phút. 🔴 **Cổng 7 (mở bộ cài) vẫn trống** — chưa mở gói nào. 🔴 **macOS = ĐÍCH CHÍNH** (chủ dự án đính chính 04/09) — xem khối dưới. |
+
+## 🍎 G7 · macOS LÀ ĐÍCH CHÍNH (chủ dự án đính chính 04/09)
+
+**macOS = trải nghiệm desktop CHÍNH** (chủ dự án dùng hằng ngày) · **Windows = đích phân phối công ty**.
+⛔ *"Electron dựng xong"* **KHÔNG PHẢI** Mac PASS. PASS = **dùng được IF như một ứng dụng desktop thật**.
+⛔ Không có Developer ID **KHÔNG được dùng làm cớ hạ chuẩn bản Mac**. Tách **chất lượng sản phẩm** khỏi **ký để phân phối công khai**; giữ kiến trúc **sẵn sàng ký**. Ký chỉ thành blocker **nếu bảo mật macOS thật sự chặn cài/chạy trên máy A hoặc B — phải có bằng chứng, cấm giả định trước.**
+
+**Hai máy kiểm**: MÁY A (chủ dự án) · MÁY B (em chủ dự án) — dùng làm **hai môi trường sạch**, mục đích bắt **phụ thuộc ngầm vào máy dev**.
+
+🔴 **Rủi ro đo được 04/09, chưa đóng:**
+| Việc | Hiện trạng đo tại nguồn |
+|---|---|
+| Kiến trúc máy | `build.mac` chỉ dựng **`arm64`** — **không ai đo kiến trúc MÁY B**; nếu B là Intel thì bản dựng **không mở được** |
+| Phím ⌘ | `metaKey` 54 · `ctrlKey` 68 · cùng dòng 51 ⇒ **~17 chỗ chỉ nhận Ctrl** — trên Mac bấm ⌘ **không ăn** |
+| Sẵn sàng ký | **không có tệp entitlements**, không thấy `hardenedRuntime` |
+| Mất dữ liệu khi gỡ cài | **CHƯA AI TRẢ LỜI**: gỡ cài Windows / kéo app vào Thùng rác trên Mac **có xoá `userData` (chứa `dev.db` = toàn bộ việc thiết kế) không** |
+
+🔴 **Giới hạn phải nói thẳng**: phiên này chạy trong **container Linux** ⇒ **không dựng nổi bản Mac dùng được, không mở được app Mac, không ký được**. Mọi kết luận về hành vi Mac là **suy từ cấu hình + mã**. Nghiệm thu Mac **phải chạy trên máy thật** — bộ nghiệm thu đang được soạn để chủ dự án chạy.
 
 ## 🔴 LUẬT PASS MỚI — áp cho MỌI luồng có ghi dữ liệu (chủ dự án ban 04/09)
 
