@@ -16,6 +16,11 @@ export const GALLERY_CSS = `
      border:1px solid var(--border);border-radius:var(--r-2);display:flex;align-items:center;
      gap:7px;padding:0 10px;color:var(--t4)}
 .gal-search input{flex:1;min-width:0;border:0;background:none;outline:none;color:var(--t1);font-size:var(--fs-xs)}
+/* Ô tìm nằm SÁT trong vỏ pill (input cao bằng vỏ) — ring ngoài sẽ đè viền vỏ, nên dùng ring TRONG
+   đúng khuôn .if-focus-inset của globals.css. "outline:none" ở trên có đặc hiệu 0-1-1, THẮNG luật
+   :where(...):focus-visible toàn app (0-1-0) ⇒ không trả ring ở đây là mất dấu bàn phím. */
+.gal-search input:focus-visible{outline:var(--stroke-focus) solid var(--focus-ring);
+     outline-offset:calc(-1 * var(--stroke-focus))}
 .gal-search input::placeholder{color:var(--t4)}
 
 /* ── Chip hàng lọc: nhóm ngành + giấy phép, cùng công thức chip đã có ở Thư viện sheet ── */
@@ -94,6 +99,9 @@ export const GALLERY_CSS = `
 .gal-source-row input{flex:1;min-width:220px;height:30px;background:var(--field);border:1px solid var(--border);
      border-radius:var(--r-2);padding:0 10px;color:var(--t1);font-size:var(--fs-xs);outline:none}
 .gal-source-row input:focus{border-color:var(--accent)}
+/* Đổi màu viền là affordance, KHÔNG thay được vòng focus (SPEC-HOVER-FOCUS-IDF §3.6) — và nó bắn
+   cả khi bấm chuột. Trả lại ring accent chỉ cho bàn phím. */
+.gal-source-row input:focus-visible{outline:var(--stroke-focus) solid var(--focus-ring);outline-offset:2px}
 .gal-source-row button{height:30px;padding:0 13px;border-radius:var(--r-2);border:0;background:var(--accent);
      color:var(--on-accent,#fff);font-size:var(--fs-xs);font-weight:var(--fw-semi);cursor:pointer;
      display:inline-flex;align-items:center;gap:5px}

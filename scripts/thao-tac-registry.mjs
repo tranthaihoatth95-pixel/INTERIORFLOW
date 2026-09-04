@@ -55,8 +55,23 @@ export const LUAT = [
   { id: 'outline-can-focus-visible', toiDanh: 3, loai: 'grep',
     luat: 'Bàn phím = chuột: file bỏ outline phải có :focus-visible thay thế (vòng focus accent)',
     nguon: 'SPEC-HOVER-FOCUS-IDF §3.6',
-    soi: [{ dir: 'components', mauCo: 'outline:\\s*none|outline-none', mauThieu: 'focus-visible' },
-          { dir: 'app', mauCo: 'outline:\\s*none|outline-none', mauThieu: 'focus-visible' }] },
+    // ⭐ THU HẸP 04/09 sau khi ĐO trên Chromium thật (không suy từ đặc hiệu). Mẫu cũ
+    // `outline:\s*none|outline-none` gộp BA cơ chế khác hẳn nhau vào một rọ ⇒ 32 tệp báo, chỉ 8 tệp
+    // là lỗ thật. Số đo (getComputedStyle lúc Tab tới, CSS bundle thật của Next):
+    //   · class `outline-none` (Tailwind v3 = `outline:2px solid transparent`, đặc hiệu 0-1-0, nằm
+    //     TRƯỚC luật globals trong bundle vì `@tailwind utilities` ở đầu app/globals.css)
+    //     → ring VẪN HIỆN 2px #6a57f5. KHÔNG phải lỗ ⇒ không soi nữa.
+    //   · `focus:outline-none` (đặc hiệu 0-2-0 — một class + một pseudo-class) → THẮNG luật
+    //     `:where(...):focus-visible` (0-1-0) → outline 2px solid TRANSPARENT ⇒ MẤT ring. LỖ THẬT.
+    //   · `outline:none` khai trong chuỗi CSS / style inline → thắng bằng đặc hiệu hoặc thứ tự
+    //     ⇒ outline 0px none. LỖ THẬT.
+    // ⚠️ Thế cân bằng của nhánh 1 dựa vào THỨ TỰ trong bundle, không phải đặc hiệu. Đảo thứ tự
+    //    `@tailwind utilities` xuống cuối globals.css, hoặc lên Tailwind v4 (utilities vào @layer,
+    //    thua mọi thứ ngoài layer), là 24 tệp kia thành lỗ thật ngay — lúc đó nới mẫu này trở lại.
+    // ⚠️ `mauThieu` xét theo TỆP: tệp có `focus-visible` ở bất kỳ đâu là được miễn cả tệp. Nên một
+    //    tệp vừa tự dựng ring cho vật A vừa giết ring của vật B vẫn lọt (xem báo cáo 04/09 §7).
+    soi: [{ dir: 'components', mauCo: "[\\w-]+:outline-none|outline:\\s*['\"`]?none", mauThieu: 'focus-visible' },
+          { dir: 'app', mauCo: "[\\w-]+:outline-none|outline:\\s*['\"`]?none", mauThieu: 'focus-visible' }] },
 
   { id: 'keydown-ne-o-nhap', toiDanh: 3, loai: 'grep',
     luat: 'Phím tắt toàn cục không kích hoạt khi đang nhập chữ — listener keydown toàn cục phải né INPUT/TEXTAREA/contentEditable',

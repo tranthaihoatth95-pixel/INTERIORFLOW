@@ -341,7 +341,7 @@ export function LightTab() {
                   value={sunUi.dateIso}
                   onChange={(e) => applyDateTime({ dateIso: e.target.value })}
                   aria-label={tr('Ngày', 'Date')}
-                  className="h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--focus-ring)] focus:outline-none"
+                  className="h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--focus-ring)]"
                 />
               </label>
               <p className="text-[9.5px] leading-relaxed text-[var(--t5)]">
@@ -420,7 +420,7 @@ export function LightTab() {
           value={lighting.sky.hdriId ?? ''}
           onChange={(e) => writeSky({ hdriId: e.target.value || undefined })}
           aria-label={tr('Chọn bầu trời', 'Pick a sky')}
-          className="h-[var(--tap)] w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--focus-ring)] focus:outline-none"
+          className="h-[var(--tap)] w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--focus-ring)]"
         >
           <option value="">{tr('— môi trường mặc định —', '— default environment —')}</option>
           {HDRI_OPTIONS.map((o) => (
@@ -523,7 +523,7 @@ export function LightTab() {
                       patchRoomLight(l.id, { kind, ...(def ? { lumens: def.lumens, colorK: def.colorK } : {}) });
                     }}
                     aria-label={tr('Loại đèn', 'Light kind')}
-                    className="h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[10.5px] leading-[1.6] text-[var(--t1)] focus:border-[var(--focus-ring)] focus:outline-none"
+                    className="h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[10.5px] leading-[1.6] text-[var(--t1)] focus:border-[var(--focus-ring)]"
                   >
                     {ROOM_LIGHT_KINDS.map((k) => (
                       <option key={k.id} value={k.id}>{tr(k.vi, k.en)}</option>
@@ -580,7 +580,7 @@ export function LightTab() {
                         value={l.levelId ?? ''}
                         onChange={(e) => patchRoomLight(l.id, { levelId: e.target.value || undefined })}
                         aria-label={tr('Gắn tầng', 'Level')}
-                        className="h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[10.5px] leading-[1.6] text-[var(--t1)] focus:border-[var(--focus-ring)] focus:outline-none"
+                        className="h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[10.5px] leading-[1.6] text-[var(--t1)] focus:border-[var(--focus-ring)]"
                       >
                         <option value="">{tr('— cao độ tuyệt đối —', '— absolute elevation —')}</option>
                         {levels.map((lv) => (

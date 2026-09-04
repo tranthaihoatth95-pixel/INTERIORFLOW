@@ -173,7 +173,7 @@ export function WallTypePanel3D() {
             <input
               value={editing.name}
               onChange={(e) => patchType(editing.id, { name: e.target.value })}
-              className="mt-0.5 h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--focus-ring)] focus:outline-none"
+              className="mt-0.5 h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--focus-ring)]"
             />
           </label>
 
@@ -196,7 +196,7 @@ export function WallTypePanel3D() {
               <select
                 value={editing.kind}
                 onChange={(e) => patchType(editing.id, { kind: e.target.value as WallKind })}
-                className="mt-0.5 h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1 text-[10.5px] leading-[1.6] text-[var(--t1)] focus:border-[var(--focus-ring)] focus:outline-none"
+                className="mt-0.5 h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1 text-[10.5px] leading-[1.6] text-[var(--t1)] focus:border-[var(--focus-ring)]"
               >
                 {WALL_KIND_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
