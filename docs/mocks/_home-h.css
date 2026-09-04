@@ -1,0 +1,48 @@
+/* docs/mocks/_home-h.css — NỀN CHUNG cho ba study Home (H1·H2·H3), 04/09.
+   Token CHÉP NGUYÊN VĂN từ app/globals.css. Chỉ chứa thứ CẢ BA dùng chung: token · rail · chữ.
+   ⛔ Bố cục KHÔNG nằm ở đây — mỗi study có hệ bố cục riêng, đó là điểm của việc so ba hướng. */
+:root{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --border:#2a2a31;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --accent:#6a57f5; --vien-mo:rgba(255,255,255,.06);
+  --giay:#fbfaf7; --muc:#22201c;
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px;
+  color-scheme:dark;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#fff; --border:#e3ded4;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --vien-mo:rgba(0,0,0,.07); color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1600px;height:900px;overflow:hidden;background:var(--bg);color:var(--t1);
+  font-family:-apple-system,'SF Pro Text','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  font-size:var(--fs-sm);-webkit-font-smoothing:antialiased;position:relative}
+.nhan{font-size:var(--fs-2xs);letter-spacing:.15em;text-transform:uppercase;color:var(--t3);
+  font-family:ui-monospace,'SF Mono',Menlo,monospace}
+.so{font-variant-numeric:tabular-nums}
+
+/* ── CHROME IM (N-13 · §15): rail là HẠ TẦNG, không phải chủ thể ──
+   Ở Home nó mờ hẳn và không có nền — trên môi trường thì một cột đặc sẽ cắt màn làm hai. */
+.rail{position:absolute;left:0;top:0;bottom:0;width:52px;z-index:6;display:flex;flex-direction:column;
+  align-items:center;gap:6px;padding:14px 0}
+.rail i{width:32px;height:32px;border-radius:var(--r-2);background:currentColor;opacity:.20;display:block}
+.rail i.on{opacity:.62}
+.rail hr{width:14px;border:0;border-top:1px solid currentColor;opacity:.16;margin:7px 0}
+
+/* ── KHẨU ĐỘ VITALS — mép trên, đúng EXS §7. Study chỉ BIỂU DIỄN VAI, không thiết kế lại ── */
+.khaudo{position:absolute;left:50%;top:0;transform:translateX(-50%);z-index:7;
+  width:132px;height:26px;border-radius:0 0 var(--r-3) var(--r-3);
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  background:rgba(10,10,12,.55);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.10);
+  border-top:0}
+:root[data-theme='light'] .khaudo{background:rgba(255,255,255,.62);border-color:rgba(0,0,0,.08)}
+.khaudo .cham{width:6px;height:6px;border-radius:var(--r-full);background:var(--accent)}
+.khaudo span{font:600 9px/1 ui-monospace,monospace;letter-spacing:.16em;color:var(--t2);opacity:.9}
+
+/* nhãn chú giải cho phiếu duyệt — KHÔNG thuộc sản phẩm */
+.ghi{position:absolute;z-index:20;font:600 9px/1.25 ui-monospace,monospace;letter-spacing:.06em;
+  background:var(--accent);color:#fff;padding:3px 6px;border-radius:var(--r-1);text-transform:uppercase}
+.demo{position:absolute;z-index:9;font:600 9px/1 ui-monospace,monospace;letter-spacing:.14em;
+  color:#5c564d;background:rgba(255,255,255,.92);padding:4px 7px;border-radius:var(--r-1)}

@@ -46,7 +46,45 @@ for (const [tep, W, H] of ca) {
     await p.waitForTimeout(250);
     const r = await p.evaluate(([W,H]) => {
       const out = { tran: [], chuMo: [], canhLe: [] };
-      const nenCua = (el) => { let n = el; while (n && n !== document.documentElement) { const bg = getComputedStyle(n).backgroundColor; if (bg && !/rgba?\(0, 0, 0, 0\)/.test(bg)) return bg; n = n.parentElement; } return getComputedStyle(document.body).backgroundColor; };
+      /* NỀN THẬT SỰ SAU MỘT ĐOẠN CHỮ — ba đường, theo thứ tự tin cậy giảm dần:
+         ① nếu chữ nằm trong <svg> có một <rect> phủ kín làm nền vẽ ⇒ lấy `fill` của rect đó
+            (bộ study vẽ giấy/slide bằng rect, không bằng CSS — đó là nền THẬT của chữ);
+         ② đi lên tìm tổ tiên đầu tiên có `background-color` đặc;
+         ③ nếu trên đường đi gặp `background-image` (ảnh hoặc gradient) ⇒ **KHÔNG ĐO ĐƯỢC**, trả
+            `null`. Đây là chỗ trước đây máy báo bừa: chữ trắng trên ảnh ở nền SÁNG bị so với màu
+            giấy của trang và ra 1,15:1 — một con số vô nghĩa. Chữ trên ảnh phải soi bằng MẮT hoặc
+            bằng phép đo điểm ảnh, không bằng cách tra `backgroundColor`. Nói "không đo được" là
+            câu trả lời đúng; nói "trượt" là nói dối theo hướng ngược lại. */
+      const nenSvg = (el) => {
+        const svgg = el.ownerSVGElement; if (!svgg) return null;
+        const vb = svgg.viewBox?.baseVal, r = svgg.querySelector('rect');
+        if (!r || !vb) return null;
+        const w = r.width?.baseVal?.value ?? 0, h = r.height?.baseVal?.value ?? 0;
+        if (vb.width && w >= vb.width * .98 && h >= vb.height * .98) {
+          const f = getComputedStyle(r).fill;
+          if (f && !/none|rgba?\(0, 0, 0, 0\)/.test(f)) return f;
+        }
+        return null;
+      };
+      const nenCua = (el) => {
+        const tuSvg = nenSvg(el); if (tuSvg) return tuSvg;
+        /* Chữ TRONG một <svg> mà svg đó không có nền vẽ phủ kín ⇒ nó nằm trên hình do chính svg
+           vẽ ra. CSS không biết gì về hình đó ⇒ KHÔNG ĐO ĐƯỢC, phải soi bằng mắt. */
+        if (el.ownerSVGElement) return null;
+        /* Khai báo tường minh: bản vẽ tự nhận "chỗ này chữ nằm trên ảnh". Cần vì ảnh nền có thể
+           là PHẦN TỬ ANH EM xếp lớp bằng z-index — quan hệ đó CSS không diễn đạt qua tổ tiên,
+           nên không có phép đo tự động nào bắt được. Bắt bản vẽ khai là cách trung thực nhất. */
+        for (let n = el; n && n !== document.documentElement; n = n.parentElement)
+          if (n.hasAttribute && n.hasAttribute('data-tren-anh')) return null;
+        let n = el;
+        while (n && n !== document.documentElement) {
+          const cs = getComputedStyle(n);
+          if (cs.backgroundImage && cs.backgroundImage !== 'none') return null; // ③ không đo được
+          if (cs.backgroundColor && !/rgba?\(0, 0, 0, 0\)/.test(cs.backgroundColor)) return cs.backgroundColor;
+          n = n.parentElement;
+        }
+        return getComputedStyle(document.body).backgroundColor;
+      };
       for (const el of document.querySelectorAll('body *')) {
         const b = el.getBoundingClientRect();
         if (b.width < 1 || b.height < 1) continue;
@@ -58,19 +96,26 @@ for (const [tep, W, H] of ca) {
              vì đọc nhầm `color` kế thừa từ body. Đó là lỗi của MÁY ĐO, không phải của bản vẽ. */
           const svg = el.namespaceURI && el.namespaceURI.includes('svg');
           const mau = svg ? cs.fill : cs.color;
-          const nen = svg ? (getComputedStyle(el.closest('.chinh, .to')||document.body).backgroundColor) : nenCua(el);
+          /* 🔴 SỬA LẦN BA cùng một bệnh: hai bản trước gõ cứng tên class ('.to', rồi '.chinh') để tìm nền
+             của chữ SVG ⇒ mỗi lần đổi tên class là máy đo lại so nhầm nền và báo lỗi giả. Nay KHÔNG
+             hỏi tên nữa: đi từ chính phần tử <svg> lên trên, lấy tổ tiên ĐẦU TIÊN có nền thật.
+             Bài học: mẫu bằng chứng bám TÊN thì hỏng mỗi lần đổi tên; bám CẤU TRÚC thì không. */
+          const nen = nenCua(svg ? (el.ownerSVGElement ?? el) : el);
           out.chuMo.push([el.textContent.trim().slice(0,26), mau, nen, parseFloat(cs.fontSize), cs.fontWeight]); }
       }
       out.cuon = { docW: document.documentElement.scrollWidth, docH: document.documentElement.scrollHeight };
       return out;
     }, [W,H]);
-    const duoi = r.chuMo.filter(([,c,bg,fs,fw]) => { const t = tp(rgb(c), rgb(bg)); const to = fs>=24 || (fs>=18.66 && +fw>=600); return t < (to?3:4.5); })
+    const khongDo = r.chuMo.filter(([,,bg]) => bg === null).length;
+    const duoi = r.chuMo.filter(([,c,bg,fs,fw]) => { if (bg === null) return false;
+        const t = tp(rgb(c), rgb(bg)); const to = fs>=24 || (fs>=18.66 && +fw>=600); return t < (to?3:4.5); })
       .map(([tx,c,bg,fs]) => `"${tx}" ${tp(rgb(c),rgb(bg)).toFixed(2)}:1 @${fs}px`);
     const nhan = `${tep.split('/').pop().replace('.html','')} ${W}×${H} ${nen}`;
     console.log(`\n── ${nhan}`);
     console.log(`   tràn khung: ${r.tran.length ? '🔴 '+r.tran.join(' · ') : '0'}`);
     console.log(`   cuộn: ${r.cuon.docW}×${r.cuon.docH} ${(r.cuon.docW>W||r.cuon.docH>H)?'🔴 vượt':'✓ vừa khung'}`);
     console.log(`   chữ dưới ngưỡng: ${duoi.length ? '🔴 '+duoi.join(' · ') : '0'}`);
+    if (khongDo) console.log(`   ⚠️  ${khongDo} đoạn chữ NẰM TRÊN ẢNH/GRADIENT — máy không đo được, phải soi bằng mắt`);
     if (r.tran.length || duoi.length || r.cuon.docW>W || r.cuon.docH>H) loi++;
     await p.close();
   }
