@@ -59,9 +59,26 @@ Hai chỗ **cố ý** khác bản mô tả chữ, khai thẳng để Hoà bác �
    arrangement"*. Muốn xoá hẳn thì nói, máy xoá được ngay.
 2. **Ngưỡng 1100px do máy chọn**, luật không cho số.
 
-🟡 Một chỗ nhỏ còn hở, đã thấy trên ảnh: thẻ cuối cột phụ (*BẢNG TIN STUDIO*) **chạm sát mép dưới
-màn**. Cột có `overflow-y: auto` nên cuộn được, nhưng ở khung đầu tiên nó đọc ra như bị xén hơn là
-như cuộn. Lane đo bằng máy ở 1600×1000 thì **không bắt được** — bệnh phụ thuộc chiều cao cửa sổ.
+🟡 **Một chỗ còn hở, nay ĐO ĐƯỢC chứ không còn là cảm giác** (1600×900):
+```
+cột phụ   overflow-y: auto   scrollHeight 1293  vs  clientHeight 775
+⇒ 518px nội dung nằm DƯỚI TẦM NHÌN = 40% chiều cao nội dung của cột
+thẻ cuối (BẢNG TIN STUDIO) vượt quá đáy cột 519px
+```
+Tức nó **cuộn được thật** — máy dò của lane báo sạch là **đúng**, không mâu thuẫn. Vấn đề là ở
+khung đầu tiên **không có gì báo rằng còn 40% nữa ở dưới**: thanh cuộn kiểu phủ nên không hiện, và
+thẻ cuối bị cắt ngang giữa chừng — mắt đọc ra *"bị xén"* chứ không đọc ra *"còn nữa, cuộn đi"*.
+
+⚖️ Hai cách nhìn, và **Hoà là người phán**:
+· *chấp nhận được* — cụm phụ vốn là hạng dưới, ai cần thì cuộn;
+· *phải sửa* — 40% một cột mà không có dấu hiệu nào thì với người dùng nó **không tồn tại**; luật
+  §9 *"cấm xoá ô trống cho gọn mắt — ô trống là bằng chứng còn việc"* nói cùng một tinh thần:
+  thứ có thật mà không nhìn thấy được thì coi như chưa làm.
+
+📌 Lane đo bằng máy ở 1600×1000 báo **sạch cả 8 ô** (4 màn × 2 khổ). Không phải máy sai: tiêu chí
+của nó là *"đáy chạm sát mép cửa sổ ≤8px"*, mà ở đây đáy cột **cách mép cửa sổ 42px** — cắt xảy ra
+ở **đáy CỘT**, không phải ở mép màn. Ghi lại vì đây là bài học về phép đo: **máy dò đúng tiêu chí
+của nó vẫn có thể mù đúng thứ mắt bắt được** — hai bên không bác nhau, chúng đo hai thứ khác nhau.
 
 ### ④ MÁY ĐÃ XÁC MINH GÌ
 | Kiểm | Kết quả |
