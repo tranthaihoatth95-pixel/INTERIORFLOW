@@ -225,3 +225,16 @@ Chủ dự án chốt **THU CÓ CHỌN LỌC**; mục RECOVER/ADAPT không đụ
 **⚠️ ĐỔI HÀNH VI SẢN PHẨM đáng nêu** (authority rõ, không cần quyết): món chỉ **bấm "Nhận"** mà không gõ số và không nêu tham chiếu nay **KHÔNG vào BOQ** — đúng luật *"BOQ chỉ nhận số đo được"* (15/08). Trước đây nó lọt.
 
 **Chưa port có chủ ý**, đã tách sẵn thành một hunk rời: bản vá *"tụt bậc khi bậc 4 trả số rỗng"* — bug fix của tầng ĐO, không thuộc trục bốn-nghĩa.
+
+### Thu hồi đợt 3 (04/09) — đóng hàng ưu tiên
+
+| Mục | Trạng thái | Bằng chứng |
+|---|---|---|
+| **A4+A12 · dựng khối bằng cử chỉ + cửa vào 3D rỗng** | ✅ | `3a4af296` — kéo trên mặt sàn ra tường/hộp/trụ, Ctrl+Z lùi được. **Chứng minh không đẻ engine thứ hai bằng máy**: `tool3d.ts` **0 thay đổi so main**, `entityTuCuChi` có **3 lời gọi** sang nó và **0 dòng tự dựng entity**; 34 test cũ của `tool3d` vẫn xanh |
+| **B2+B5 · tờ bản vẽ sang Trình chiếu** | ✅ | `3a4af296` — hai luật nghề nay **có máy canh**: cấm co giãn âm thầm (tràn khổ vẫn trả đúng tỉ lệ người chọn, không bịa số ngoài dãy chuẩn) · nguồn đổi thì đầu ra không tự sửa (tờ đã phát hành máy không được đụng) |
+
+**Hai chỗ làn thi công sửa lại quyết định của bản cũ, đều đúng:**
+- Bỏ `duongBaoKhoiDac()` vì nó **chép y nguyên** một hàm đã có trong `tool3d`; đổi hình dạng payload để nơi nhận không cần bộ phát entity riêng. Đây chính là khoá để không đẻ engine thứ hai.
+- Màn 3D rỗng bỏ **nút khoá kèm cảnh báo vàng** khi chưa có mặt bằng — nó trái **luật X2/X3** (*"không màn nào được chặn vì chưa làm bước trước"*, *"ba đường vào ngang nhau"*). Nay chỉ còn chữ mờ chỉ lối phụ.
+
+**🔧 Ghi lại một chỗ tôi đổi kỷ luật lấy an toàn, để phiên sau cân nhắc lại:** mốc `81a7c7ec` ghim tệp của hai làn **trước khi tôi soi diff của chúng** — lý do là cây phải sạch để không mất việc nếu container chết. Nội dung sau đó đối chiếu trùng khít từng byte nên không mất gì, nhưng **cổng tích hợp §23 đúng ra phải đi trước commit**. Lần sau: hoặc cho worker chạy trong worktree riêng, hoặc chờ báo cáo rồi mới ghim.
