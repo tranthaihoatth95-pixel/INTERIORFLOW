@@ -1,0 +1,59 @@
+# .github/workflows/kiem.yml — CỔNG KIỂM TỐI THIỂU.
+#
+# VÌ SAO CÓ: trước 04/09 repo KHÔNG có workflow nào ⇒ mọi PR mở ra đều không có một check nào
+# chạy, và mọi cổng chất lượng (tsc · test · 5 máy soi · build) chỉ chạy khi có người nhớ gõ tay.
+#
+# NGUYÊN TẮC: cổng này chỉ chạy thứ ĐANG THẬT SỰ CÓ GIÁ TRỊ, và KHÔNG được làm xanh bằng cách bỏ
+# bớt check đang bắt lỗi thật. Thêm bước mới thì phải trả lời được "bước này bắt được lỗi gì".
+#
+# `npm test` cần CSDL ⇒ dựng bằng scripts/dung-moi-truong-kiem.sh (dùng-xong-bỏ, không khoá thật,
+# không dữ liệu thật). Đó cũng là lý do script đó phải nằm trong repo chứ không phải mẹo cục bộ.
+
+name: Kiểm
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: kiem-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kiem:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Cài phụ thuộc
+        run: npm ci
+
+      - name: Dựng môi trường xác minh (dùng-xong-bỏ)
+        run: bash scripts/dung-moi-truong-kiem.sh
+
+      - name: Kiểu (tsc)
+        run: npx tsc --noEmit
+
+      # `npm test` đã tự chạy tsc + license:check + check:chot rồi mới tới các tệp .test.ts.
+      - name: Bộ kiểm
+        run: npm test
+
+      # Năm máy soi nội bộ — thứ bắt được loại lệch mà tsc/test không thấy:
+      # sổ frontier lệch code · hợp đồng năng lực chưa nối dây · mã chết · nhãn lệch từ điển ·
+      # bo góc ngoài thang. Chúng exit 0 khi chỉ có cảnh báo, exit 1 khi có LỆCH thật.
+      - name: Máy soi
+        run: |
+          npm run soi:frontier
+          npm run soi:contract
+          npm run soi:cam-dien
+          npm run soi:hinh-hoc
+
+      - name: Dựng bản sản phẩm
+        run: npm run build
