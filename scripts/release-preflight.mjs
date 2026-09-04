@@ -34,6 +34,15 @@ if (!main.includes('snapshotBeforeUpgrade(userDataDir, dbPath)')) {
 if (!main.includes("path.join(userDataDir, 'backups'")) {
   failures.push('Thiếu thư mục backup phiên bản trong userData.');
 }
+// 04/09 — CSDL người dùng phải nâng cấp bằng `migrate deploy`, KHÔNG bằng `db push`.
+// `db push` không có lịch sử, không có đường lùi, và được phép đổi/bỏ cột để ép CSDL
+// khớp schema. Hai phép so dưới đây canh đúng lần đổi đó, chống tái phát.
+if (!main.includes("'migrate', 'deploy'")) {
+  failures.push('Đường nâng cấp CSDL không còn dùng `prisma migrate deploy`.');
+}
+if (main.includes("'db', 'push'")) {
+  failures.push('Đường nâng cấp CSDL đã quay lại `prisma db push` trên dữ liệu người dùng.');
+}
 
 if (failures.length) {
   console.error('Release preflight không đạt:');

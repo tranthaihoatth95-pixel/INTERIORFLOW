@@ -184,9 +184,9 @@ Chi phí: **S** một lượt sửa nhỏ · **M** một phiếu · **L** cần 
 | 1 | checkout mới | ✅ CI `.github/workflows/kiem.yml` | — | — |
 | 2 | cài đặt | ✅ `npm ci` (CI) | — | — |
 | 3 | dựng môi trường | ✅ `scripts/dung-moi-truong-kiem.sh` (CI) | — | — |
-| 4 | `migrate deploy` | ✅ trong script trên — **cố ý** dùng deploy để phát hiện lệch migrations | ⚠️ **đường đóng gói lại KHÔNG dùng deploy** — xem **M1** | **M** (M1) |
+| 4 | `migrate deploy` | ✅ trong script trên — **cố ý** dùng deploy để phát hiện lệch migrations | ✅ **ĐÓNG 04/09** — đường đóng gói nay cũng dùng `migrate deploy`, có test CSDL thật + máy canh trong `release:preflight` (§B6-M1) | — |
 | 5 | build sản phẩm | ✅ `npm run build` (CI) | — | — |
-| 6 | **build/đóng gói Electron** | ⬜ **không có** | CI chạy `ubuntu-latest`, **không dựng installer nào**; chưa ai chạy `electron:build` trong phạm vi ghi nhận được | **M** — cộng **M2** (lệnh mặc định sai đích) |
+| 6 | **build/đóng gói Electron** | 🟡 **đã chạy TAY một lần 04/09** — Linux x64, rc=0, ~3 phút, AppImage 338 MB (§B6-cổng-6) | chưa ai dựng bản **Windows/macOS** thật; CI vẫn **không dựng installer nào** | **M** — nối vào CI |
 | 7 | **mở app đã đóng gói** | ⬜ **không có** | 🔴 **đây là bằng chứng phát hành**, và nó đang trống hẳn. Trên macOS còn bị **M3** chặn cứng | **L** — cần máy thật + quyết định ký số |
 | 8 | đăng nhập | 🟡 `scripts/tai-khoan-kiem.mjs` (đồ nghề, dựng tài khoản; **không** kiểm hành trình) | J01 · J02 — chưa chạy trên bản đóng gói; **M5** chưa xử | **M** |
 | 9 | Home | 🟡 ảnh chụp qua `scripts/audit-routes.mjs` | ảnh ≠ hành trình; Home còn đang trong vòng thiết kế (`SHIP-BLOCKERS` B2) | **M** (theo lane 04) |
@@ -261,10 +261,176 @@ DB đang nằm trên máy người dùng — thứ được dựng bằng `db pu
 
 ---
 
+## B6 · THI CÔNG 04/09 — M1 · M2 · M3 · M5 (lane 07 · RELEASE)
+
+Pha khảo sát ở trên đã đóng. Mục này ghi **cái gì đã đổi thật** và **cái gì còn chờ chủ dự án bấm**.
+
+### M1 ✅ ĐÓNG — CSDL người dùng nâng cấp bằng `migrate deploy`
+
+`electron/main.js` bỏ hẳn `db push` trên dữ liệu người dùng. Hàm mới `nangCapCsdl()` phân **ba
+trạng thái CSDL**, vì chạy thẳng `migrate deploy` lên CSDL cũ **sẽ gãy** (đã tái hiện, không phải lo xa):
+
+| Trạng thái | Nhận ra bằng | Xử lý |
+|---|---|---|
+| `moi` | chưa có `dev.db`, hoặc tệp rỗng | `migrate deploy` dựng từ đầu |
+| `daCoLichSu` | có bảng `_prisma_migrations` | `migrate deploy` áp phần còn thiếu |
+| `cuDbPush` | **có bảng nhưng KHÔNG có lịch sử** — mọi CSDL do bản cũ dựng | **bắc cầu → đóng mốc** (dưới) |
+
+**Đường bắc cầu** cho CSDL cũ: `migrate diff --from-url <db thật> --to-schema-datamodel` → **rà soát
+câu lệnh phá huỷ** → ghi SQL ra `<userData>/nang-cap-bac-cau.sql` (đọc được, không phải hộp đen) →
+áp → `migrate resolve --applied` cho toàn bộ 6 migration. Từ lần mở kế tiếp, CSDL đó thuộc nhánh
+`daCoLichSu` vĩnh viễn.
+
+**Bất biến giữ nguyên**: nghi ngờ thì **DỪNG**. `raSoatSqlBacCau()` chặn mọi `DROP COLUMN` và mọi
+`DROP TABLE` **nằm ngoài khuôn dựng-lại-bảng của Prisma** (khuôn đó có `INSERT INTO new_X … FROM X`
+nên dữ liệu được chép sang — an toàn). Lỗi ném ra chặn khởi động; snapshot tạo trước đó là đường lùi.
+
+**Nghiệm thu bằng CSDL SQLite THẬT** (`electron/nang-cap-csdl.test.ts`, 24/24 đạt) — không mock, không
+dữ liệu giả trong bộ nhớ:
+
+| Ca | Trước | Sau |
+|---|---|---|
+| ① CSDL trống | — | 24 bảng · lịch sử 6 |
+| ②a CSDL kiểu cũ, có dữ liệu | 24 bảng · **2 bản ghi** · lịch sử −1 | 24 bảng · **2 bản ghi** · lịch sử 6 |
+| ②b CSDL cũ **tụt sau schema** | **21 bảng** · **2 bản ghi** · lịch sử −1 | **24 bảng** · **2 bản ghi** · lịch sử 6 |
+| ③ chạy lại trên CSDL đã đúng | 24 · 2 · 6 | 24 · 2 · 6 (idempotent) |
+| ④ nâng cấp có nguy cơ mất dữ liệu | 25 bảng · 2 bản ghi | **ném lỗi** · CSDL gốc **không bị đụng** · bản sao lưu **mở được, đủ bản ghi** |
+
+**Bộ rà soát được hiệu chuẩn trước khi tin nó**, trên SQL THẬT do Prisma sinh: khuôn dựng-lại-bảng
+(có `DROP TABLE` nhưng chép dữ liệu) → **không báo quá tay**; bảng lạ bị xoá → **báo đỏ**. Và chiều
+đỏ của chính test cũng đã kiểm: tắt nhánh bắc cầu thì `migrate deploy` **gãy thật** trên CSDL kiểu cũ.
+
+**Máy canh chống tái phát**: `release:preflight` thêm 2 phép so — phải có `migrate deploy`, cấm
+`db push`. Đã hiệu chuẩn: giả lập quay lại `db push` thì rc=1.
+
+> Tên log **giữ nguyên `db-push.log`** dù đường này không còn `db push`: bốn tài liệu ngoài lane
+> release đang trỏ đúng tên đó (`README-electron.md` · `installers/windows/HUONG-DAN-CAI.md` ·
+> `docs/RELEASE-CHECKLIST-INTERNAL.md` · `docs/BAN-DO-DU-LIEU-IF-*`). Đổi tên ở đây là làm mồ côi
+> bốn con trỏ ⇒ phải đổi **cùng lượt** với bốn tệp đó, không đổi lẻ.
+
+### M2 ✅ ĐÓNG — `electron:build` dựng cho nền tảng đang chạy
+
+`electron:build` = `next build && electron-builder` (bỏ `--win --x64` gõ cứng). electron-builder
+không có cờ nền tảng thì dựng cho **nền tảng đang chạy** ⇒ trên máy Mac ra `.dmg` mở được ngay tại
+chỗ, hết cảnh dựng ra thứ không mở nổi trên chính máy vừa dựng. `electron:build:win` ·
+`electron:build:mac` giữ nguyên cho ai muốn chỉ đích danh. `electron:publish` **không đụng**.
+
+### M3 🔶 CÒN CHỜ CHỦ DỰ ÁN — macOS ký số
+
+**Đã đổi**: bỏ `"identity": null`, thêm `"notarize": false`.
+
+**Vì sao bỏ `identity: null` — đọc thẳng mã electron-builder 25, không đoán**
+(`node_modules/app-builder-lib/out/macPackager.js:183-188`): `identity === null` làm nó **thoát ngay
+và bỏ hẳn khâu ký**, kể cả khi máy CÓ chứng chỉ hợp lệ. Đó là một cái bẫy: ngày Hoà mua chứng chỉ
+về, bản dựng **vẫn không ký** mà không báo gì.
+
+Bỏ dòng đó thì hành vi rẽ theo máy, và **không làm gãy bản dựng hiện tại** (`:202-212` +
+`codeSign/macCodeSign.js:77-82`: không có chứng chỉ thì **cảnh báo rồi chạy tiếp**, chỉ ném lỗi khi
+bật `forceCodeSigning` — mặc định tắt):
+
+| Máy dựng | Trước | Sau |
+|---|---|---|
+| chưa có chứng chỉ | không ký (im lặng) | không ký, **có cảnh báo trong log dựng** |
+| đã có Developer ID | **vẫn không ký** ← bẫy | **tự ký** |
+
+🔴 **Điều phải nói thẳng: cổng 7 (mở app trên máy sạch) VẪN CHƯA QUA ĐƯỢC trên macOS**, và không có
+cách nào lách bằng cấu hình. Bản `.dmg` không ký thì máy Mac thứ hai sẽ chặn. Đường tạm cho **nội
+bộ** là người nhận tự gỡ cờ kiểm dịch sau khi tải:
+
+```
+xattr -dr com.apple.quarantine /Applications/InteriorFlow.app
+```
+
+⚠️ Đây là **đường nội bộ, không phải đường phát hành** — nó bắt người dùng chạy lệnh terminal để mở
+một app, thứ không thể yêu cầu ở bản bán ra.
+
+**Thứ chủ dự án phải bấm** (không ai làm thay được, vì nó cần tài khoản và tiền):
+1. Đăng ký **Apple Developer Program** (có phí năm) → xin **chứng chỉ Developer ID Application**.
+2. Cài chứng chỉ vào Keychain của máy dựng — từ lúc đó `electron:build:mac` **tự ký**, không phải sửa mã.
+3. Muốn qua trọn cổng máy sạch thì bật thêm **notarize** (`build.mac.notarize` → `true` + biến môi
+   trường `APPLE_ID` · `APPLE_APP_SPECIFIC_PASSWORD` · `APPLE_TEAM_ID`). Để `false` là **cố ý**: bật
+   mà thiếu khoá thì bản dựng gãy giữa chừng, còn im lặng bật thì lại là một cái bẫy khác.
+
+⚖️ **Hoặc chốt Windows là đích duy nhất của G5 này** — khi đó `identity` không chặn gì và cổng 7 chỉ
+cần một máy Windows sạch. **Đây là quyết định sản phẩm, lane 07 không tự quyết.**
+
+### M5 ✅ ĐÓNG — hỏng ghi cấu hình không còn im lặng
+
+`loadUserConfig()` **giữ nguyên đường lùi** (ổ đĩa chỉ-đọc thì vẫn chạy tiếp với cấu hình trong RAM —
+đó là chủ ý cũ, không bịt), nhưng nay **nói ra**: ghi `<userData>/cau-hinh.log` + hộp thoại nêu đúng
+hậu quả. Và nó **phân biệt hai mức nặng nhẹ**, vì hai ca này khác hẳn nhau:
+
+| Ca | Hậu quả thật | Câu app nói |
+|---|---|---|
+| `AUTH_SECRET` **vừa sinh** mà không ghi xuống được | mỗi lần mở app là một secret mới ⇒ **đăng xuất mỗi lần mở** | *"Bạn sẽ bị đăng xuất mỗi lần mở lại app…"* |
+| secret **đọc được từ config.json sẵn có** | đăng nhập vẫn sống, chỉ khoá API vừa nhập không được nhớ | *"…Đăng nhập vẫn giữ."* |
+
+Đã đo trên hệ tệp thật (ép `writeFileSync` hỏng bằng `EISDIR`): **không ném lỗi** · **vẫn trả
+`AUTH_SECRET`** (app chạy tiếp) · **có `cau-hinh.log`** ghi đúng *"AUTH_SECRET vừa sinh, KHÔNG persist
+được"*. Ca ghi được thì **không** đẻ log rác.
+
+Kèm một chỗ giòn có sẵn: nhánh báo `config.json` hỏng JSON gọi `dialog` **không guard** — nay guard
+như mọi chỗ khác.
+
+### CỔNG 6 ✅ MỞ — đã dựng gói LẦN ĐẦU, biến số thành con số
+
+Trước lượt này, cổng 6 và 7 **trống hoàn toàn**: trong repo không có bằng chứng nào về một lần dựng
+gói. Nay đã chạy thật **một lần trên Linux x64** — mục đích không phải ra bộ cài để giao, mà để trả
+lời: *cấu hình có chạy được không · thiếu gì · mất bao lâu · nặng bao nhiêu.*
+
+| Bước | Lệnh | rc | Thời gian | Kết quả |
+|---|---|---|---|---|
+| 1 | `npx next build` | **0** | **116 s** | `.next` = **823 MB** |
+| 2 | `npx electron-builder --linux appimage` | **0** | **58 s** | `InteriorFlow-0.1.0.AppImage` = **338 MB** · `linux-unpacked` = **1,2 GB** |
+
+**⇒ Câu hỏi lớn nhất đã đóng: cấu hình `electron-builder` CHẠY ĐƯỢC.** `asar: false` + gói nguyên
+`node_modules` không làm gãy gì; `@electron/rebuild` chạy xong, native deps cài xong; tổng ~**3 phút**,
+xa dưới trần 12 phút. Nhị phân Electron **đã nằm sẵn trong cache** từ `npm ci` (102 MB), và hai lượt
+tải còn lại (`electron-v33.4.11-linux-x64.zip` · `appimage-12.0.1.7z`) **qua được proxy** — nên rủi
+ro mạng mà pha khảo sát lo là **không xảy ra**.
+
+**Ba số đáng nhớ, đo tại nguồn:**
+- `.next` trên đĩa **823 MB** nhưng vào gói chỉ **46 MB** ⇒ luật `!.next/cache/**` **đang chạy đúng**,
+  và cache chiếm ~**94%** thư mục `.next`.
+- Sản phẩm dựng ra **KHÔNG lọt vào git**: `dist-installer/` đã bị chặn (`.gitignore:18`), `git status`
+  sạch sau khi dựng.
+- 🔴 **Engine Prisma bị nhân bản: 7 tệp, tổng 109 MB, cùng một engine nằm 2-3 chỗ**
+  (`debian-openssl-3.0.x` **3 bản**; `linux-arm64` và `linux-musl-arm64` mỗi thứ **2 bản**) — nằm ở
+  `node_modules/prisma/` · `node_modules/@prisma/engines/` · `node_modules/.prisma/client/`.
+  Đáng nói hơn: hai luật loại trừ `!node_modules/.prisma/client/libquery_engine-linux-*` và
+  `!node_modules/@prisma/engines/*linux*` **KHÔNG có tác dụng ở đây** — `extraResources` chép nguyên
+  `node_modules/.prisma` sang `app/node_modules/.prisma` **độc lập với bộ lọc `files`**, nên thứ vừa
+  bị loại ở cửa trước lại vào bằng cửa sau.
+  ⚠️ **Chưa sửa, cố ý**: đường `extraResources` đó nhiều khả năng đang là thứ giữ cho bản Windows
+  chạy được, gỡ mù là rủi ro thật; và đây là **chuyện dung lượng, không phải chuyện đúng-sai**. Ghi
+  lại làm việc riêng, phải đo trên bản Windows/macOS thật trước khi đụng.
+
+⚠️ **AppImage này KHÔNG phải sản phẩm giao được, và không nên thử dùng nó như vậy**: Linux không nằm
+trong `build` (chỉ có `win` · `mac`), lượt dựng này chỉ để kiểm cấu hình. Cảnh báo
+*"asar usage is disabled — this is strongly not recommended"* xuất hiện **2 lần**; đó là **chủ ý** của
+IF (Prisma + `next start` cần đọc tệp thật), ghi ra để phiên sau không tưởng là lỗi mới.
+
+🔴 **CỔNG 7 VẪN TRỐNG.** Dựng được gói **không phải** là mở được gói. Cổng 7 cần **máy thật, đúng nền
+tảng đích**, và trên macOS còn bị **M3** chặn cứng.
+
+---
+
 ## CHƯA CHẮC · CHƯA KIỂM
 
-- **Chưa chạy `electron:build`, chưa mở bộ cài nào.** Toàn bộ §B1 là **đọc mã + đọc cấu hình**.
-  Mọi kết luận về hành vi lúc đóng gói (M2, M3, M5) là **suy từ cấu hình**, chưa quan sát.
+> ⏱️ Danh sách này viết ở **pha khảo sát**. Mấy dòng đầu đã được §B6 đóng một phần — giữ nguyên chữ
+> cũ, đánh dấu tại chỗ, không viết lại lịch sử.
+
+- 🔄 **Chưa mở bộ cài nào** *(cập nhật 04/09: §B6 đã chạy `electron-builder` thật một lần trên
+  Linux — xem §B6-cổng-6 cho mã thoát, thời gian, kích thước. Vẫn **chưa ai MỞ** một bộ cài
+  Windows/macOS, tức **cổng 7 còn trống**.)* Kết luận về **M3** vẫn là **suy từ cấu hình + đọc mã
+  electron-builder**, chưa quan sát trên máy Mac thật. **M1 và M5 thì nay đã đo trên hệ tệp thật**,
+  không còn là suy luận.
+- ⚠️ **M5 mới kiểm được MỘT nhánh**: ca *"AUTH_SECRET vừa sinh mà không ghi được"* đã đo thật. Nhánh
+  *"secret cũ đọc được, chỉ ghi hỏng"* **chưa dựng được ca thử** (cần đọc thành công + ghi thất bại
+  trên cùng một đường dẫn) — mới đọc mã, chưa chạy.
+- ⚠️ **M1 đo trên SQLite/Linux**. Đường dẫn Windows kiểu `file:C:\…` cho `migrate diff --from-url`
+  **chưa chạy thử trên Windows thật**; và `migrate resolve` chạy tuần tự 6 lượt nên khởi động lần
+  đầu của CSDL cũ **sẽ chậm hơn** — chưa ai đo con số đó trên máy người dùng.
 - **M4 (vòng đời Electron) không xác minh được** từ môi trường này — không ra được mạng. Đã ghi là
   *câu phải tra*, không ghi là *kết luận*.
 - **Chi phí S/M/L là ước lượng theo hình dạng công việc**, không phải đo. M1 rất dễ bị đánh giá
