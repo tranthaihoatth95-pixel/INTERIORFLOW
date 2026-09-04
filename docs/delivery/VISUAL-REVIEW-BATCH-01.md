@@ -135,8 +135,9 @@ Hai lỗi máy phán được **đã đóng** (`51d4a0d9`): nhãn chặng nay su
 sẵn có = *không thuộc chặng nào*, không đẻ mã mới; ở màn không-chặng nhãn rút về đúng chữ
 **"Vitals"**) · mức Ambient nay đo **4,61:1**, nét quỹ đạo **2,10**.
 
-⚠️ **Ảnh trong `docs/delivery/anh-duyet-mat/lo-01/` là ảnh TRƯỚC hai bản vá này** — giữ làm bằng
-chứng của lỗi, **không** phải bản để phán. Lô trình sẽ dùng ảnh chụp lại sau bản dựng mới.
+✅ **Ảnh trong `docs/delivery/anh-duyet-mat/lo-01/` nay là bộ CHỤP LẠI SAU hai bản vá** (20 khung:
+3 màn × 2 nền × 3 mức + 2 khung ⌘J). Kiểm bằng mắt: đứng ở Trang chủ nhãn nay đúng là **"VITALS"**,
+không còn "· THIẾT KẾ 3D".
 
 🟡 Một chỗ còn hở, cùng họ: `changTheoDuong()` chưa nhận route soạn ảnh đứng riêng `/photo-editor`
 (có trong danh sách khung chụp) nên màn đó rơi về `'gallery'` thay vì `'render'`.
