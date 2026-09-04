@@ -51,6 +51,8 @@ import { ColorLibraryScreen } from '@/components/colors/ColorLibraryScreen';
 import PanelFlank from '@/components/ui/PanelFlank';
 import { AssetWhereUsed, useAssetWhereUsed } from './AssetWhereUsed';
 import { daGanVaoDuAn } from './da-gan-du-an';
+import { object3dModelForName } from '@/lib/library/object-3d-models';
+import { taiVeJson } from '@/lib/library/tai-ve-json';
 
 // 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md) — "Vẽ"/"Dựng ảnh" là tên
 // round trước, nay đồng bộ theo bộ tên chính thức.
@@ -88,16 +90,10 @@ const CARD_SIZE_OPTIONS: { id: LibCardSize; label: [string, string] }[] = [
 ];
 
 /** Cửa sổ xem 3D (Object3DWindow) cho asset "Ghế bar Lincoln 327" (proof CW 14/08,
- * `docs/phieu-giao/ghe-3d-window-app.md`) — hình học CHUẨN-NÉT (`chuanNet`, `.obj`+`.mtl`) ưu tiên
- * hơn GLB Trellis thô theo biên phiếu ("có bản chuẩn-nét thì dùng bản đó"). Nhận diện qua TÊN món
- * — kho `LibraryAsset` chưa có cờ "có model 3D xem được" riêng; khi có cấu kiện 3D thứ hai, đường
- * đúng là đọc tag `has3d:` từ `LibraryApiAsset` (`lib/library/db-items.ts`) thay vì so tên ở đây. */
-const OBJECT_3D_MODELS: { match: RegExp; glbUrl: string; mtlUrl?: string }[] = [
-  { match: /lincoln 327/i, glbUrl: '/library-assets/lincoln-327/lincoln-327-chuannet.obj', mtlUrl: '/library-assets/lincoln-327/lincoln-327-chuannet.mtl' },
-];
+ * `docs/phieu-giao/ghe-3d-window-app.md`). Bảng nhận diện DỜI sang `lib/library/object-3d-models.ts`
+ * (02/09) vì trang tổng `/library` cũng đếm "Mô hình 3D" — một danh sách, hai nơi đọc. */
 function object3dModelFor(item: SheetItem): { glbUrl: string; mtlUrl?: string } | null {
-  const hit = OBJECT_3D_MODELS.find((m) => m.match.test(item.name));
-  return hit ? { glbUrl: hit.glbUrl, mtlUrl: hit.mtlUrl } : null;
+  return object3dModelForName(item.name);
 }
 
 const BAY_ICON: Record<string, LucideIcon> = {
@@ -1130,11 +1126,9 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                               ? { brand: specHit.brand ?? undefined, sku: specHit.sku ?? undefined, unit: specHit.unit ?? undefined, priceVnd: specHit.priceVnd ?? undefined }
                               : undefined,
                           });
-                          const a = document.createElement('a');
-                          a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-                          a.download = `${displayItem.code}.idfc`;
-                          a.click();
-                          URL.revokeObjectURL(a.href);
+                          // 03/09: dùng chung `taiVeJson` — bản chép tay ở đây thu hồi blob NGAY
+                          // sau click, có thể cắt ngang lúc trình duyệt đang đọc (hỏng không báo).
+                          taiVeJson(json, `${displayItem.code}.idfc`);
                           pushLibraryToast(tr(`Đã xuất ${displayItem.code}.idfc`, `Exported ${displayItem.code}.idfc`));
                         }}
                       >
