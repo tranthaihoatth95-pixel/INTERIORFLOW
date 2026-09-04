@@ -48,3 +48,19 @@ new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } })
 ```
 Và **vẫn phải đếm lại** bản ghi CSDL repo chính trước/sau.
 ⚠️ Khi nhiều lane chạy song song, **đếm-trước-sau không còn là bằng chứng sạch** — phải truy theo **dấu vết của chính mình** (tiền tố email/tên dự án), không chỉ theo tổng số.
+
+## 🔴 BẪY 3b · MỐC CẮT LỆCH — LẦN THỨ HAI, và MAIN KHÔNG TỰ KIỂM ĐƯỢC SAU KHI XONG
+
+Lô 04/09 thứ hai: một lane khai phiếu ghi mốc `5cb4db6c` nhưng HEAD thật lúc nó vào là
+**`f43de304` — lệch 192 commit**. Lane tự chữa đúng quy trình ⓪b (`merge --ff-only`) rồi mới làm.
+Xác minh lại: `git rev-list --count f43de304..5cb4db6c` = **192**, `git cat-file -t f43de304` = commit.
+
+⚠️ **Điều MAIN cần biết, và đã suýt bị lừa**: `git worktree list` in **mốc HIỆN TẠI**, không in
+**mốc lúc cắt**. MAIN chạy `git worktree list` ngay sau khi phóng và thấy cả ba worktree ở
+`5cb4db6c` ⇒ **tưởng cắt đúng**. Thật ra ít nhất một cái cắt ở `f43de304` rồi tự nâng lên trước
+khi MAIN nhìn. ⇒ **Không có cách nào cho MAIN xác minh mốc cắt sau sự việc.**
+
+**Hệ quả vận hành:** ô ⓪b **không phải nghi thức thừa** — nó là **cơ chế phòng thủ duy nhất**
+đối với loại lỗi này, vì cả người giao lẫn người kiểm đều không thấy được mốc cắt. Hai lần trong
+một ngày nó cứu một lô agent khỏi chạy mù (lần đầu 128 commit, lần này 192). **Cấm gỡ ⓪b khỏi
+phiếu để cho gọn.**
