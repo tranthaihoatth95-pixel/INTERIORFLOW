@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check, LogOut, PanelsTopLeft, Boxes, ClipboardList, ScrollText, Info } from 'lucide-react';
 import { resetAllRolloutLayouts } from '@/components/studio/Rollout';
 import { useFlowStore } from '@/lib/store';
+import { quenDangXuat } from '@/lib/danh-tinh-phien';
 import { AiDependencySettings } from '@/components/settings/AiDependencySettings';
 import { AiTiersCard } from './AiTiersCard';
 import { GuModelSettings } from '@/components/settings/GuModelSettings';
@@ -189,6 +190,8 @@ export function PixelSettingsShell() {
               type="button"
               onClick={async () => {
                 await fetch('/api/auth/me', { method: 'DELETE' });
+                // G1 · xoá bộ đệm định danh NGAY khi đăng xuất (xem lib/danh-tinh-phien.ts).
+                quenDangXuat();
                 setUser(null);
                 router.push('/');
               }}

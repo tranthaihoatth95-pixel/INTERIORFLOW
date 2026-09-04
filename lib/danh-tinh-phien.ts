@@ -29,7 +29,7 @@
  * · JSON hỏng ⇒ KHÔNG ghi gì, KHÔNG ném lỗi, app chạy tiếp y như cũ.
  */
 
-import { getLastUserId, setLastUserId } from './resume';
+import { getLastUserId, setLastUserId, clearLastUserId } from './resume';
 
 /**
  * HẠN HỎI MÁY CHỦ. Có timeout là BẮT BUỘC: ba đường ghi `await` hàm này trước khi khôi phục
@@ -215,7 +215,32 @@ export async function danhTinhChoLuot(
   return { tiepTuc: true, userId: getLastUserId() };
 }
 
-/** Chỉ dùng trong test — quên lượt đã chạy để ca sau bắt đầu sạch. */
+/** Quên lượt đã chạy để lượt sau hỏi lại máy chủ từ đầu. Dùng trong test VÀ ở `quenDangXuat()`. */
 export function quenLuotDanhTinh(): void {
   dangChay = null;
+}
+
+/**
+ * ⛔ GỌI Ở MỌI ĐƯỜNG ĐĂNG XUẤT PHÍA CLIENT — đóng khe "đăng xuất → mất mạng → người mới vẽ".
+ *
+ * Vì sao lớp thứ hai này CẦN dù `giaiDanhTinh()` đã cho máy chủ thắng bộ đệm: khi máy chủ KHÔNG
+ * với tới (mạng đứt · hết giờ · 503) thì đường lui-về-đệm được dùng lại — đó là chỗ local-first
+ * sống, và cố ý giữ. Nhưng nếu bộ đệm còn id người VỪA ĐĂNG XUẤT thì đúng lúc đó nó trỏ nhầm
+ * người ⇒ việc của người mới rơi vào kho người cũ. Xoá bộ đệm ngay lúc đăng xuất làm cho đường
+ * lui đó không còn gì sai để lui về: `getLastUserId()` trả null ⇒ chạy thuần bộ nhớ, không ghi.
+ *
+ * Hai việc, cố ý gói làm MỘT hàm để bốn nơi bấm Đăng xuất (`components/AccountMenu.tsx` ·
+ * `components/MobileMenu.tsx` · `components/settings/AccountSettings.tsx` ·
+ * `app/settings/_components/PixelSettingsShell.tsx`) không phải nhớ hai bước — nhớ một nửa là
+ * đúng lại lỗ cũ:
+ *   ① xoá bộ đệm định danh (localStorage + đường lùi trong bộ nhớ);
+ *   ② quên lượt giải định danh của tab. Đăng xuất/đăng nhập trong SPA KHÔNG tải lại trang, nên
+ *      không có bước này thì lượt cũ (đã resolve với người cũ) nằm lì cả vòng đời tab và tab đó
+ *      không bao giờ hỏi lại máy chủ nữa.
+ *
+ * KHÔNG gọi mạng, KHÔNG ném lỗi — chạy được cả khi localStorage bị chặn hẳn.
+ */
+export function quenDangXuat(): void {
+  clearLastUserId();
+  quenLuotDanhTinh();
 }

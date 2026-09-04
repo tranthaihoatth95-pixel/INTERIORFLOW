@@ -17,7 +17,7 @@
  *
  * Chạy: node_modules/.bin/sucrase-node lib/danh-tinh-phien-nghiem-thu.test.ts
  */
-import { danhTinhSanSang, danhTinhChoLuot, quenLuotDanhTinh } from './danh-tinh-phien';
+import { danhTinhSanSang, danhTinhChoLuot, quenLuotDanhTinh, quenDangXuat } from './danh-tinh-phien';
 import { getLastUserId, setLastUserId, quenDemTrongBoNho, clearLastUserId } from './resume';
 import { sheetsKey, saveSheets, type SheetsRecord } from './sheets-persist';
 
@@ -145,6 +145,42 @@ function batDauPhien(): void {
     ok('trước khi xoá: đệm còn id người cũ', getLastUserId() === 'NGUOI-CU-KHAC-HAN');
     clearLastUserId();
     ok('sau khi xoá: đệm rỗng ⇒ không còn gì để trỏ nhầm người', getLastUserId() === null);
+  }
+
+  console.log('⑤d quenDangXuat — LỚP THỨ HAI ĐÃ ĐƯỢC NỐI, và nó phải làm ĐỦ HAI VIỆC');
+  {
+    /**
+     * ⛔ CA HỎNG ĐANG CHẶN: đăng xuất → MẤT MẠNG → người mới làm việc. Máy chủ không với tới nên
+     * `giaiDanhTinh` lui về bộ đệm (đường lui đó là CỐ Ý, giữ local-first) — mà bộ đệm còn id
+     * người vừa rời đi ⇒ việc của người mới rơi vào kho người cũ.
+     *
+     * Nhớ MỘT NỬA là đúng lại lỗ cũ, nên phải khoá cả hai vế:
+     *   ① xoá bộ đệm — không còn gì sai để lui về;
+     *   ② quên lượt định danh của tab — đăng xuất/đăng nhập trong SPA KHÔNG tải lại trang, nên
+     *      không quên thì tab đó không bao giờ hỏi lại máy chủ nữa.
+     */
+    batDauPhien();
+    await danhTinhSanSang();
+    ok('trước khi đăng xuất: đệm có người đang dùng', getLastUserId() === USER);
+    const truocKhiXuat = soLanHoiMayChu;
+
+    quenDangXuat();
+    ok('① đăng xuất ⇒ đệm rỗng', getLastUserId() === null);
+
+    // Mất mạng NGAY sau khi đăng xuất — đúng khe hẹp đang chặn.
+    const fetchCu = g.fetch;
+    // Vẫn ĐẾM lượt hỏi rồi mới ném — nếu không đếm thì phép đo "có hỏi lại không" tự mù,
+    // và ta sẽ đọc ra một chữ FAIL của chính bàn thử chứ không phải của mã đang kiểm.
+    g.fetch = () => {
+      soLanHoiMayChu += 1;
+      return Promise.reject(new Error('mạng đứt'));
+    };
+    const r = await danhTinhChoLuot(() => true);
+    luuMotLuot(r.userId);
+    ok('② đăng xuất rồi mất mạng ⇒ KHÔNG lui về id người cũ', r.userId === null);
+    ok('② ⇒ 0 lần ghi, không byte nào vào kho người vừa rời đi', dia.length === 0);
+    ok('② lượt định danh của tab đã được quên ⇒ có hỏi lại máy chủ', soLanHoiMayChu > truocKhiXuat);
+    g.fetch = fetchCu;
   }
 
   console.log('⑥ ĐỔI DỰ ÁN GIỮA CHỪNG — lượt cũ phải DỪNG, không ghi đè bucket mới');
