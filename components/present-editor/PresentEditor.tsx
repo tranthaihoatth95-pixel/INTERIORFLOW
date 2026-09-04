@@ -52,6 +52,7 @@ import { DEFAULT_SPEC, applySpecToSlide, type LayoutSpec } from '@/lib/present-e
 import { classifyWheel } from '@/lib/input/wheel';
 import { buildGuProfile, type GuAsset, type GuProfile } from '@/lib/gu';
 import { exportDeckToPdf, exportDeckToPptxFromModel, exportDeckToPng, exportDeckToPdfAtPaperSize } from '@/lib/present-editor/export';
+import { buildDeckChuanDauRaChecks } from '@/lib/present-editor/export-checks';
 import { estimatePrintUpscale, UpscaleCreditError } from '@/lib/present-editor/print-upscale';
 import { useFlowStore } from '@/lib/store';
 import { useEditor } from './useEditor';
@@ -1474,7 +1475,32 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
   );
 
   /* ------------------------------ export ----------------------------- */
+
+  /**
+   * CỔNG CHUAN_DAU_RA trước MỌI tệp giao khách (lỗi F1, 04/09: trang PDF in ra đúng một dòng
+   * "Nhập nội dung" — mặc định của `makeText()`, là DỮ LIỆU THẬT chứ không phải chữ mờ).
+   *
+   * KHÔNG chặn tuyệt đối và KHÔNG tự xoá nội dung người dùng: nêu rõ TRANG nào · MẤY ô · CÁCH
+   * SỬA, rồi để người xuất quyết (human-in-the-loop, [T5] con-người-quyết-cuối). Bấm "Huỷ" =
+   * quay lại sửa; bấm "OK" = cố ý xuất, vẫn cho đi.
+   *
+   * Trả `true` = được phép xuất tiếp.
+   */
+  const quaCongChuanDauRa = useCallback((): boolean => {
+    const findings = buildDeckChuanDauRaChecks(ed.deck);
+    if (findings.length === 0) return true;
+    const dong = findings.map((f) => `• ${f.message}\n  → ${f.fix}`).join('\n');
+    const oke = window.confirm(
+      `Hồ sơ còn nội dung mẫu chưa sửa:\n\n${dong}\n\nSửa xong hãy xuất — hoặc bấm OK để xuất luôn.`,
+    );
+    if (!oke) {
+      setExportMsg({ ok: false, text: 'Đã dừng — sửa ô chữ còn nội dung mẫu rồi xuất lại.' });
+    }
+    return oke;
+  }, [ed.deck]);
+
   const onExportPdf = useCallback(async () => {
+    if (!quaCongChuanDauRa()) return;
     setBusy('pdf');
     try {
       await exportDeckToPdf(ed.deck);
@@ -1485,9 +1511,10 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
     } finally {
       setBusy(null);
     }
-  }, [ed.deck]);
+  }, [ed.deck, quaCongChuanDauRa]);
 
   const onExportPptx = useCallback(async () => {
+    if (!quaCongChuanDauRa()) return;
     setBusy('pptx');
     try {
       const res = await exportDeckToPptxFromModel(ed.deck);
@@ -1514,7 +1541,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
     } finally {
       setBusy(null);
     }
-  }, [ed.deck]);
+  }, [ed.deck, quaCongChuanDauRa]);
 
   const onExportPng = useCallback(async () => {
     setBusy('png');
@@ -1540,6 +1567,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
    * có ở `Toolbar.tsx`, không thêm component mới) trước khi thật sự trừ credit.
    */
   const onExportPrint300 = useCallback(async () => {
+    if (!quaCongChuanDauRa()) return;
     setBusy('print300');
     try {
       const aiTier = useFlowStore.getState().aiTier;
@@ -1583,7 +1611,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
     } finally {
       setBusy(null);
     }
-  }, [ed.deck]);
+  }, [ed.deck, quaCongChuanDauRa]);
 
   /* ------------------------- splitter kéo dãn panel trái ------------------------- */
   const dragStart = useRef<{ x: number; w: number } | null>(null);
