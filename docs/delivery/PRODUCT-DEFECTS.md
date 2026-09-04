@@ -36,3 +36,37 @@ nhớ đệm**, không phải nguồn sự thật. Không đổi hình dạng kh
 khẳng định *"đang dùng ngữ cảnh từ …"* mà **không dòng nào đọc nội dung pane**.
 Trái chốt 04/09 *trong IF mặt AI là Vitals*. **Không chặn ship** (WorkHub không nằm trong luồng nghề
 lõi), nhưng nút-nói-dối tệ hơn nút-chết ⇒ gỡ mặt trợ lý khi mở phiếu WorkHub. ⬜ chưa mở.
+
+---
+
+## D3 · P1 — ĐỆM ĐỊNH DANH KHÔNG ĐƯỢC RỬA KHI ĐĂNG XUẤT
+
+**Phát hiện 04/09, ngoài phạm vi phiếu D1** — và nó là **ca ghi-nhầm-khoá**, thứ mà D1 kết luận
+*không* xảy ra ở đường deep-link. Nó tới bằng một cửa khác.
+
+**Đo tại nguồn.** Bốn chỗ đăng xuất — `AccountSettings:54` · `AccountMenu:137` · `MobileMenu:160` ·
+`PixelSettingsShell:191` — chỉ xoá cookie và `setUser(null)`. **Không chỗ nào xoá `lastUserId`.**
+`quenDemTrongBoNho()` tự khai *"chỉ dùng trong test"*. Cộng thêm `danh-tinh-phien.ts:82-83` trả
+`da-co` **không xác thực lại**.
+
+**Hệ quả trên MÁY DÙNG CHUNG:** A đăng xuất → B đăng nhập → việc trong tab cũ vẫn còn của A có thể
+ghi vào **bucket của A**. Đây đúng thứ docstring của chính mô-đun đó cấm.
+
+**Vì sao nay mới thành nghiêm trọng:** bệnh có sẵn từ trước, nhưng D1 vừa nâng định danh lên vai
+**nguồn sự thật** cho đường lưu trữ — nên một đệm bẩn nay kéo theo hậu quả nặng hơn nhiều so với
+khi nó chỉ phục vụ coachmark.
+
+**Hướng sửa.** Đăng xuất phải rửa đệm ở **một chỗ dùng chung** (bốn chỗ tự rửa là mọc chỗ thứ năm),
+và `docDem()` không được tin đệm mà không đối chiếu phiên máy chủ khi phiên đã đổi.
+
+**Trạng thái:** ⬜ chưa mở phiếu — **không chặn ship** cho bản dùng một-người-một-máy, nhưng phải
+đóng trước khi có studio nhiều người dùng chung máy.
+
+---
+
+## D4 · P4 — NĂM NƠI ĐỘC LẬP CÙNG GỌI `/api/auth/me`
+
+`HomeScreen:366` · `SessionWatch:36` · `PresentStageScreen:66` · `danh-tinh-phien:143` — không dùng
+chung một lượt gọi, **mỗi nơi tự diễn giải 401/503 theo kiểu riêng**. Và `SessionWatch` **biết**
+người dùng là ai nhưng không nói cho ai biết.
+Đúng cụm *"một cỗ máy nhiều mặt tiền"*. Không chặn ship; gom khi mở phiếu phiên đăng nhập.
