@@ -13,9 +13,14 @@
 ## Nguồn sự thật — ĐỌC TRƯỚC KHI LÀM BẤT KỲ VIỆC GÌ
 0. `docs/memory/LATEST.md` — bản NÉN trí nhớ phiên gần nhất (đọc trước tiên, rẻ nhất) — cần chi
    tiết đầy đủ 1 nhánh việc thì mở đúng thư mục `docs/memory/sessions/<ngày>/<nhánh>/`
-1a. ⭐⭐ **`docs/IF-KIEN-TRUC-OS.md` — HIẾN PHÁP KIẾN TRÚC GỐC (Hoà chốt 18/08).**
+1a. ⭐⭐ **`docs/IF-KIEN-TRUC-OS.md` — HIẾN PHÁP GỐC + NORTH STAR SẢN PHẨM. Trên mọi chốt khác.**
    IF = Local-first Design Operating System, AI chỉ là engine bên trong. 4 nguyên tắc:
-   *Own your data · Own your workflow · Own your memory · Replace your AI*. Trên mọi chốt khác.
+   *Own your data · Own your workflow · Own your memory · Replace your AI* (Hoà chốt 18/08).
+   ⭐ **Bổ sung 04/09 — NORTH STAR SẢN PHẨM/TRẢI NGHIỆM `N-1…N-20`** (§ ngay đầu tệp): IF là
+   **hệ điều hành sáng tạo cho thiết kế nội thất**, lời hứa *"từ ý tưởng tới sự thật thiết kế —
+   không đánh rơi ngữ cảnh"*. Đọc ít nhất **N-8** (Home), **N-10** (13 cờ đỏ), **N-16/N-17**
+   (máy không phán được gu · bố cục trước đánh bóng sau) và **N-20** (cổng hai câu: *chạy được?*
+   **và** *có đẩy về north star không?*) TRƯỚC KHI chạm bất kỳ bề mặt lớn nào.
 1. ⭐ **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md` — BẢN ĐỒ KIẾN TRÚC CHÍNH TẮC (19/08). ĐỌC THẬT, KHÔNG LƯỚT.**
    (Tên cũ `IF-KIEN-TRUC.md` đã đóng dấu chuyển hướng 19/08, giữ làm dấu vết.)
 1b. ⭐ **`docs/IF-ARCHITECTURE-BLUEPRINT.md` — CANONICAL BLUEPRINT v1.0 (19/08, gate MISSING=0).**

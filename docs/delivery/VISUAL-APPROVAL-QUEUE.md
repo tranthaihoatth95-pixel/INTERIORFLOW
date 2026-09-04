@@ -2,6 +2,18 @@
 
 **Lập** 04/09/2026 · theo chỉ thị D3 của chủ dự án. **Cửa HARD STOP của EXS vẫn còn hiệu lực** — không thi công board chưa được duyệt mắt; hàng đợi này là để việc duyệt **rẻ và nhanh**, không phải để lách cửa.
 
+## ⛓ AUTHORITY — đọc trước khi trình bất cứ thứ gì
+
+**`docs/IF-KIEN-TRUC-OS.md` §NORTH STAR `N-1…N-20`** (Hoà ban 04/09) là nguồn phán cuối cho mọi
+quyết định thị giác. Bốn điều ràng buộc thẳng vào hàng đợi này:
+· **N-16** — máy **không** phán được bố cục/gu/thứ bậc/cảm giác cao cấp. Đường đi bắt buộc:
+  `AUTHORITY → NGHIÊN CỨU BỐ CỤC → MẮT CHỦ DỰ ÁN → THI CÔNG → MÁY KIỂM → ẢNH → MẮT DUYỆT CUỐI`.
+· **N-17** — trượt vì bố cục thì **DỪNG ĐÁNH BÓNG**, quay về bố cục. Cấm chữa bằng màu/bóng/bo/mờ.
+· **N-20** — cổng **hai câu**: *nó chạy được?* **và** *nó đẩy sản phẩm về north star?* Câu A đạt mà
+  câu B trượt thì **chưa xong về mặt sản phẩm**.
+· **Gói trình mắt: TỐI ĐA 4 ẢNH**, mỗi ảnh ghi cực ngắn `TRẠNG THÁI · PHÁN GÌ · GIỚI HẠN ĐÃ BIẾT`.
+  Chủ dự án chỉ cần đánh **ĐẠT** hoặc **SỬA**. Cấm bắt chủ dự án lục kho bằng chứng.
+
 ## Luật của hàng đợi
 
 1. **Không đưa chủ dự án xem thứ chưa qua máy.** Điều kiện tối thiểu để một mục vào cột *SẴN SÀNG*: `tsc` 0 · `npm test` 0 · dựng được · và có **ảnh chụp thật** ở khổ chuẩn, đủ hai theme.

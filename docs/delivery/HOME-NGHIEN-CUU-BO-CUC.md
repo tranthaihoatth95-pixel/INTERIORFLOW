@@ -1,4 +1,11 @@
-# HOME · BA NGHIÊN CỨU BỐ CỤC — trình duyệt mắt, CHƯA THI CÔNG
+# HOME · BA NGHIÊN CỨU BỐ CỤC — ⚖️ ĐÃ XÉT XONG 04/09
+
+> ## 🔒 TRẠNG THÁI: **ỨNG VIÊN ĐÃ XÉT — KHÔNG PHẢI BẢN ĐANG DÙNG.**
+> Hoà đã duyệt cả ba và **không chọn nguyên bản nào**. Quyết định chính thức:
+> **HOME = HYBRID B×A, C chỉ làm lớp khí quyển** — xem `docs/delivery/HOME-HYBRID-BA.md`.
+> Ba bản dưới đây **bị đè với tư cách ứng viên độc lập**, giữ lại làm **dấu vết lập luận**:
+> chúng là chỗ ghi *vì sao* xương sống lấy của B và ngôn ngữ lấy của A.
+> ⛔ Không thi công A, B hoặc C nguyên bản. Không trích bản nào làm authority.
 
 > **Bối cảnh:** Hoà phán bản Home hiện tại **TRƯỢT** EXS §6. Nguyên nhân **không phải** khoảng
 > cách/màu/chi tiết mà là **MÔ HÌNH BỐ CỤC**: *"một thẻ trắng quá khổ + một cột dashboard phụ"*
