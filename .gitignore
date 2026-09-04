@@ -93,3 +93,6 @@ nhat-ky-chup-man.txt
 .ua/tmp/
 .ua/.trash-*/
 .ua/diff-overlay.json
+
+# 03/09 — ảnh + HTML đo bộ nền chrome (scripts/nen-chrome). Số đo chép vào báo cáo, ẢNH KHÔNG vào repo.
+.nen-chrome-out/

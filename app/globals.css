@@ -315,6 +315,210 @@
   --surface-page: #faf8f4;
 }
 
+/* ============================================================
+   BỘ NỀN CHROME (Cloud Slice 9, 03/09) — token + lớp bề mặt dùng chung cho rail nổi
+   trái · dock/MasterTool dưới · Inspector phải · widget · lớp nổi.
+   NGUYÊN TẮC (B25 NO-REBUILD): CHỈ THÊM BÍ DANH + LỚP GHÉP từ công thức ĐÃ CÓ
+   (`--nen-mo-*` · `.glass-float` · `.vitals-pop` · thang `--r-*` · `--shadow-*`). Không đổi
+   một giá trị nào của token cũ; `--accent*` KHÔNG ĐỤNG (Hoà chưa chọn màu nhấn thứ hai).
+   Mọi số dưới đây là số ĐO TỪ CODE HIỆN HÀNH, không phải số mới:
+     · lh 1.3 / 1.5 / 1.6  = ba giá trị `lineHeight` đứng đầu trong components (32·135·45 chỗ);
+       1.5 là SÀN cho chữ Việt nhiều dòng (luật G4, dấu chồng lên nhau khi lh < 1.5).
+     · fs-min 11px          = `MIN_LABEL_PX` của lib/adaptive-contrast (đã chốt bỏ 9.5px).
+     · dur-instant .12s     = con số đang gõ rời ở .dock-icon-btn / .if-tooltip-tag.
+     · z: 30·31·40·60·80·1000 = các nấc đang dùng thật (ToolWindow 31 · popover 60 · tooltip 1000).
+   Máy canh: lib/ui/design-tokens.test.ts (tương phản · đồng bộ hai theme · giấy không theo theme ·
+   var() chưa khai · thứ tự z · cỡ chạm). Sửa token ở đây thì test đó là chỗ nói cho biết vỡ gì.
+   ============================================================ */
+:root {
+  /* — chữ: nhịp dòng + giãn chữ (chữ Việt: nhiều dòng ≥ 1.5, một dòng nhãn 1.3) — */
+  --lh-ui: 1.3;    /* nhãn một dòng: nút, chip, tiêu đề ngắn */
+  --lh-doc: 1.5;   /* SÀN chữ Việt nhiều dòng (mô tả, ô giải nghĩa, thông báo) */
+  --lh-loose: 1.6; /* đoạn đọc dài (Notebook, mô tả lỗi) */
+  --fs-min: 11px;  /* cỡ chữ NHỎ NHẤT còn được phép hiện (= MIN_LABEL_PX) */
+  --ls-ui: -0.011em; /* = letter-spacing của body — nhãn giao diện */
+  --ls-caps: 0.04em; /* chữ HOA nhỏ (nhãn kệ, caption) cần giãn để đọc được */
+
+  /* — nét kẻ: một thang, không gõ 1px/2px rời — */
+  --stroke-hair: 1px;   /* viền panel, gạch ngăn, vạch chia nhóm */
+  --stroke-key: 1.5px;  /* keyline nhấn (viền gradient chạy, mép chọn) */
+  --stroke-focus: 2px;  /* vòng focus bàn phím (WCAG 2.4.11/12) */
+  /* MÀU vòng focus: `--accent` ĐẶC, KHÔNG phải `--accent-ring` (alpha .55). Đo 03/09 bằng máy
+     (design-tokens.test): ring alpha .55 đắp lên --bg/--panel/--card chỉ còn 1,93–2,23:1 ở CẢ HAI
+     theme — dưới ngưỡng 3:1 của WCAG 1.4.11 cho chỉ báo focus. Accent đặc đạt ≥3:1 trên cả ba nền,
+     hai theme. Đây là bí danh: Hoà chọn màu nhấn thứ hai xong thì đổi MỘT chỗ này. */
+  --focus-ring: var(--accent);
+
+  /* — chuyển động: bổ sung hai nấc còn thiếu quanh --dur-fast/--dur-base — */
+  --dur-instant: 0.12s; /* hover đổi nền, bật/tắt chip (SPEC-HOVER-FOCUS: nút chỉ đổi nền 120ms) */
+  --dur-exit: 0.14s;    /* ĐÓNG nhanh hơn MỞ (luật "vào chậm ra nhanh") */
+  --dur-slow: 0.5s;     /* chuyển trang / sheet lớn */
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* — lớp xếp chồng: một thang, đọc được ai đè ai — */
+  --z-canvas: 0;
+  --z-rail: 30;      /* rail điều hướng nổi trái */
+  --z-inspector: 30; /* trục phải — cùng tầng rail, hai bên không đè nhau */
+  --z-dock: 31;      /* dock/cửa sổ công cụ dưới (= ToolWindow 31 hiện hành) */
+  --z-sheet: 40;     /* tấm thư viện, modal */
+  --z-popover: 60;   /* menu, popover, Vitals */
+  --z-toast: 80;
+  --z-tooltip: 1000; /* = .if-tooltip-tag hiện hành */
+
+  /* — ô chạm CHÍNH (rail · dock · nút hành động đầu): 44 desktop → 56 cảm ứng —
+     Khác `--tap` (32→44, nút thường) và `--tap-lg` (44 cố định). Đây là nấc dành cho cụm
+     người dùng bấm liên tục cả ngày; trên máy tính bảng ngón cái cần 56 mới không trượt. */
+  --tap-chinh: 44px;
+
+  /* — BỀ MẶT theo VAI TRÒ (bí danh — đổi vật liệu một chỗ, mọi mặt đổi theo) —
+     Kính CHỌN LỌC (SPEC-APPLE-MOTION: "kính là gia vị, đọc được TRƯỚC"; chốt 16/08 "kính chỉ ở
+     lớp VỎ đè lên thứ khác"): rail/dock/sheet NỔI trên canvas ⇒ kính; Inspector là NỘI DUNG
+     dày chữ ⇒ ĐẶC (luật G2, cùng lý do .vitals-pop ≥92%); widget Home đứng trên hình nền ⇒
+     kính card (`--nen-mo-card`, đã dùng thật ở dashboard 17/08). */
+  --surface-canvas: var(--bg);
+  --surface-rail: var(--nen-mo-panel);
+  --surface-dock: var(--nen-mo-panel);
+  --surface-inspector: var(--panel);
+  --surface-widget: var(--nen-mo-card);
+  --surface-sheet: var(--nen-mo-panel);
+  /* mép trên bắt sáng — tầng ① "kính nhận ánh sáng" (chốt 16/08), công thức lấy từ .vitals-pop */
+  --surface-rim: color-mix(in srgb, var(--t1) 22%, var(--border));
+
+  /* — NHÃN NGUỒN SỰ THẬT (Measured/Verified/Inferred/External/Stale — EXS điều 9) —
+     Bí danh của màu NGHĨA đã có, theo quy ước đang chạy ở ToolModeForm.tsx:835 (ĐO = success ·
+     SUY = warning) + DesignDnaCardPanel.tsx:45 (đã xác nhận = accent). Không mở màu mới:
+     phổ chỉ còn hai cửa sạch (đo 16/08), nhãn nguồn KHÔNG được ăn thêm cửa nào. External/Stale
+     dùng mực phụ — phân biệt bằng CHỮ + DẤU (màu không là kênh duy nhất). */
+  --truth-measured: var(--success);
+  --truth-verified: var(--accent);
+  --truth-inferred: var(--warning);
+  --truth-external: var(--t3);
+  --truth-stale: var(--t3);
+}
+@media (hover: none) and (pointer: coarse) {
+  :root {
+    --tap-chinh: 56px;
+  }
+}
+
+/* GIẤY VẼ KHÔNG THEO THEME — khai lại thành luật để máy canh: `--paper*` ở trên CHỈ được khai
+   trong khối :root dùng chung, KHÔNG BAO GIỜ trong `[data-theme=…]`. Tờ giấy đi theo CHẾ ĐỘ
+   LÀM VIỆC (in/giấy/xuất), không theo sáng/tối của vỏ app — trộn hai thứ là bản in xem trước
+   đổi màu theo theme, sai với PDF thật (lib/cad/pdf.ts). Test: design-tokens.test.ts [giấy]. */
+
+/* ---------- VÒNG FOCUS BÀN PHÍM TOÀN APP (WCAG 2.4.7 / 2.4.11) ----------
+   Đo 03/09: 0 luật `:focus-visible` trong CSS, 18 chỗ tự chế trong .tsx, 94 chỗ `outline:none`.
+   Người dùng bàn phím mất dấu con trỏ ở phần lớn app. `:where()` cho specificity (0,0,0) ⇒ mọi
+   ring tự chế hiện có (RailDieuHuong, Rollout, InspectorPages…) VẪN THẮNG, không đổi pixel nào ở
+   chỗ đã làm đúng; chỉ chỗ CHƯA có ring mới nhận ring này. Màu = `--focus-ring` (accent ĐẶC — ring
+   alpha .55 đo chỉ ~2:1, xem khai báo token), dày = `--stroke-focus`, cách mép 2px để không dính viền nút.
+   Chuột bấm KHÔNG hiện ring (`:focus:not(:focus-visible)`), đúng hành vi hệ điều hành. */
+:where(a[href], button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: var(--stroke-focus) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+:where(a[href], button, input, select, textarea, summary, [tabindex]):focus:not(:focus-visible) {
+  outline: none;
+}
+/* Phần tử nằm trong vùng cuộn/overflow:hidden — ring ngoài bị cắt, dùng ring TRONG. */
+.if-focus-inset:focus-visible {
+  outline: var(--stroke-focus) solid var(--focus-ring);
+  outline-offset: calc(-1 * var(--stroke-focus));
+}
+
+/* ---------- LỚP BỀ MẶT `.if-surface-*` — MỘT công thức kính, NHIỀU vai ----------
+   Rút từ công thức đang sống (`.nen-mo-panel` blur+saturate · `.vitals-pop` gờ sáng mép trên ·
+   `.glass-float` bo --r-4). Hình theo ngữ pháp §7: rail = rounded-rect (--r-4) · dock = CAPSULE
+   (--r-full, có việc: cụm hành động) · inspector = RECTANGLE (không gian, dính mép) · widget/sheet
+   = rounded-rect (--r-4). Không lớp nào là "kính lồng kính": đặt nội dung ĐẶC bên trong.
+   ⚠️ Trần 4 tấm backdrop-filter trên canvas WebGL (luật .glass-float) VẪN ÁP: rail + dock đã là
+   hai tấm — chặng 3D thêm tấm thứ ba/tư phải đếm lại. */
+.if-surface-rail,
+.if-surface-dock,
+.if-surface-sheet {
+  background: var(--surface-rail);
+  backdrop-filter: saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter: saturate(180%) blur(var(--blur));
+  border: var(--stroke-hair) solid var(--border);
+  border-top-color: var(--surface-rim);
+}
+.if-surface-rail {
+  border-radius: var(--r-4);
+  box-shadow: var(--shadow-pop);
+  z-index: var(--z-rail);
+}
+.if-surface-dock {
+  background: var(--surface-dock);
+  border-radius: var(--r-full);
+  box-shadow: var(--shadow-pop);
+  z-index: var(--z-dock);
+}
+.if-surface-sheet {
+  background: var(--surface-sheet);
+  border-radius: var(--r-4);
+  box-shadow: var(--shadow-sheet);
+  z-index: var(--z-sheet);
+}
+/* Inspector: ĐẶC, hình chữ nhật dính mép phải — chữ dày không đứng trên kính (luật G2). */
+.if-surface-inspector {
+  background: var(--surface-inspector);
+  border-left: var(--stroke-hair) solid var(--border);
+  border-radius: 0;
+  z-index: var(--z-inspector);
+}
+/* Widget Home: card kính trên hình nền, blur mạnh vì nền có chi tiết (= .nen-mo-card). */
+.if-surface-widget {
+  background: var(--surface-widget);
+  backdrop-filter: saturate(180%) blur(var(--blur-strong));
+  -webkit-backdrop-filter: saturate(180%) blur(var(--blur-strong));
+  border: var(--stroke-hair) solid var(--vien-mo);
+  border-top-color: var(--surface-rim);
+  border-radius: var(--r-4);
+  box-shadow: var(--shadow-node);
+}
+/* NẤC GIẢM CHÓI (NT-16, học từ iOS 27 tự sửa Liquid Glass): tắt kính, về màu ĐẶC — cả khi người
+   dùng bật `prefers-reduced-transparency` ở hệ điều hành lẫn khi app gắn `.if-surface--solid`.
+   Giảm chói cắt ÁNH KIM, không bao giờ cắt ĐỘ ĐỌC (luật rút 16/08 lượt 2). */
+.if-surface--solid {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--panel);
+}
+.if-surface-widget.if-surface--solid {
+  background: var(--card);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .if-surface-rail,
+  .if-surface-dock,
+  .if-surface-sheet,
+  .if-surface-widget {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--panel);
+  }
+  .if-surface-widget {
+    background: var(--card);
+  }
+}
+
+/* ---------- MỞ RA TỪ TÂM (`.if-reveal`, luật FROM-THE-CENTER §7) ----------
+   Surface mở ra từ NGUỒN của chính nó: nơi gọi đặt `--if-origin` = toạ độ nút/aperture đã bấm
+   (mặc định tâm). CHỈ animate `transform` — không animate opacity trên phần tử có backdrop-filter
+   (luật G1, bài học kính lỏng K1). Giảm chuyển động: khối `*` đầu file đã đưa duration về ~0. */
+@keyframes if-reveal {
+  from {
+    transform: scale(0.96);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+.if-reveal {
+  transform-origin: var(--if-origin, 50% 50%);
+  animation: if-reveal var(--dur-base) var(--ease-apple) both;
+}
+
+
 html,
 body {
   height: 100%;
@@ -1575,6 +1779,7 @@ body[data-if-library-open='true'] .if-bottombar {
 }
 .if-tooltip-tag {
   --tt-offset: 0px;
+  --tt-offset-y: 0px; /* 03/09: default — thiếu là calc() ở nhánh right/left vô hiệu khi JS chưa kịp đặt */
   position: fixed;
   z-index: 1000;
   padding: 4px 9px;
@@ -1843,4 +2048,54 @@ body[data-if-library-open='true'] .if-bottombar {
     width: 100%;
     opacity: 0.5;
   }
+}
+
+/* ---------- NHÃN NGUỒN SỰ THẬT `.if-truth` (lib/ui/truth.tsx · components/ui/TruthBadge.tsx) ----------
+   Capsule 20px = "capsule có việc: trạng thái" (§7). Chữ MỰC `--t1` (kênh ①), dấu mang màu
+   (kênh ②+③), viền/nền pha loãng từ bí danh `--truth-*` — KHÔNG mở màu mới. Kênh dự phòng khi
+   mất màu: Inferred viền CHẤM · Stale viền ĐỨT · External/Stale cùng màu mực phụ nhưng khác dấu.
+   Bo đồng tâm tự đúng nhờ --r-full (kẹp về nửa cạnh ngắn) — không khai số. */
+.if-truth {
+  --truth-color: var(--t3);
+  box-sizing: border-box; /* 20px là cỡ NGOÀI kể cả viền — không phụ thuộc reset của nơi nhúng */
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--r-full);
+  border: var(--stroke-hair) solid color-mix(in srgb, var(--truth-color) 45%, transparent);
+  background: color-mix(in srgb, var(--truth-color) 12%, transparent);
+  color: var(--t1);
+  font-size: var(--fs-min);
+  font-weight: var(--fw-semi);
+  line-height: var(--lh-ui);
+  letter-spacing: var(--ls-ui);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.if-truth--compact {
+  padding: 0 6px;
+}
+.if-truth-dau {
+  color: var(--truth-color);
+  font-weight: 700;
+  letter-spacing: -0.06em; /* "✓✓" đứng sát thành một dấu */
+}
+.if-truth[data-truth='measured'] {
+  --truth-color: var(--truth-measured);
+}
+.if-truth[data-truth='verified'] {
+  --truth-color: var(--truth-verified);
+}
+.if-truth[data-truth='inferred'] {
+  --truth-color: var(--truth-inferred);
+  border-style: dotted;
+}
+.if-truth[data-truth='external'] {
+  --truth-color: var(--truth-external);
+}
+.if-truth[data-truth='stale'] {
+  --truth-color: var(--truth-stale);
+  border-style: dashed;
 }

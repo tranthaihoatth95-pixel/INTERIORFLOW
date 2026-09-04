@@ -440,8 +440,8 @@ const nutPhu: CSSProperties = {
 const hopLoi: CSSProperties = {
   padding: 9,
   borderRadius: RADIUS.r2,
-  border: '1px solid color-mix(in srgb, var(--danger, #e05252) 45%, transparent)',
-  background: 'color-mix(in srgb, var(--danger, #e05252) 12%, transparent)',
+  border: '1px solid color-mix(in srgb, var(--danger) 45%, transparent)',
+  background: 'color-mix(in srgb, var(--danger) 12%, transparent)',
   fontSize: 11,
 };
 
