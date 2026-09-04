@@ -163,3 +163,40 @@ của lane khác**, vì không lane nào biết lane kia đang ở bước nào.
 
 **Việc còn nợ:** nới `claim-keys-va-cham` để khai được **tài nguyên dùng chung**, không chỉ đường
 dẫn tệp. Bốn dòng bảng trên là danh sách khởi điểm.
+
+---
+
+## 04/09 · ĐÍNH CHÍNH MỘT BÁO CÁO CỦA LANE — "bản sao bền không ghi được gì" là SAI
+
+**Lane 3D/Present báo:** *"`ProjectFile` trong CSDL = 0 hàng ⇒ bản sao bền trên máy chủ
+(`dfd5537d`) hiện KHÔNG ghi được gì cho cả bản vẽ lẫn deck."*
+
+**Kiểm lại tại nguồn — hai nửa, một đúng một sai:**
+
+| Khẳng định | Phán quyết | Bằng chứng |
+|---|---|---|
+| `ProjectFile` = 0 hàng | ✅ **ĐÚNG** | `prisma.projectFile.count()` = **0** (Project 4 · Flow 5) |
+| ⇒ đường ghi hỏng | 🔴 **SAI** | `POST /api/project-files` trả **200**, ghi hàng thật kèm `contentHash` `015df7d5…` |
+
+**Sự thật:** đường ghi **chạy tốt**. Số 0 đến từ chỗ **cò chưa bao giờ bóp**:
+`PresentSheets.tsx:436` chạy sao lưu theo **nhịp 30 giây**, và có cổng chặn
+`if (!rec?.sheets.length …) return`. Muốn nó ghi thì phải có **deck ≥1 tờ mở liên tục >30s**.
+Phép đo của lane chờ **20 giây** — chưa tới nhịp đầu tiên.
+
+⭐ **BÀI HỌC, và nó là bài học về CÁCH ĐỌC BẰNG CHỨNG chứ không về deck:**
+**"đếm ra 0" không phải bằng chứng "đường ống hỏng" — nó là bằng chứng "chưa có gì đi qua".**
+Hai kết luận khác hẳn nhau và dẫn tới hai việc sửa khác hẳn nhau: một bên đi sửa đường ống đang
+tốt, một bên đi tìm xem vì sao cò không bóp. Muốn phân biệt thì phải **bơm thử một giọt qua ống** —
+đúng phép thử đã làm ở đây, tốn một phút.
+
+🪤 **MỘT CÁI BẪY NỮA, cùng ca, đã cắn CHÍNH TÔI trước khi cắn ai khác**: `flow.id ≠ project.id`.
+`/api/flows` trả `{ id: <flow>, project: { id: <project> } }`, mà **đường dẫn app dùng flow id**
+(`/projects/<flowId>/present`). Lấy nhầm id thì `/api/project-files` trả *"Không tìm thấy dự án"* —
+đọc hệt như "không có dữ liệu". Máy chụp trong repo lấy ĐÚNG
+(`it?.projectId ?? it?.project?.id ?? it?.id`); phép thử đầu tiên của tôi thì lấy SAI, và tôi
+suýt ghi kết luận từ đó.
+
+**Còn chưa biết (không được kết luận thay):** deck **có** sống qua tải lại khi IndexedDB còn
+nguyên hay không. Phép đo của tôi rơi vào hồ sơ **0 tờ** nên cổng chặn không cho ghi, và
+`interiorflow-sheets/sheets` = 0 trước lẫn sau tải lại — tức **chưa dựng được tiền đề của phép
+thử**, chứ không phải đã chứng minh điều gì.
