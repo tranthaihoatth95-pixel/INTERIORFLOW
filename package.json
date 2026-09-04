@@ -159,7 +159,7 @@
           ]
         }
       ],
-      "icon": "electron/icons/icon.png",
+      "icon": "electron/icons/icon-mac.png",
       "category": "public.app-category.graphics-design",
       "notarize": false,
       "hardenedRuntime": true,
