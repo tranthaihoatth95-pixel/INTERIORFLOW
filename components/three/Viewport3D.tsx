@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
 import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
 import { useTool3D } from '@/lib/render-studio/tool3d';
+import { COMMANDS } from '@/lib/commands/registry';
 import { useCadStore } from '@/lib/cad/store';
 import { entityTuCuChi, type CreateTool3D, type CreateSolidPayload } from '@/lib/three/tao-khoi-3d';
 import { applyArrayGrid, parseArrayCommand } from '@/lib/render-studio/array-grid-ops';
@@ -176,6 +177,44 @@ export function Viewport3D({
     window.addEventListener('render:goto-entity', onGotoEntity);
     return () => window.removeEventListener('render:goto-entity', onGotoEntity);
   }, [scene]);
+
+  /**
+   * PHÍM XOÁ Ở CHẶNG 3D (04/09) — vá lỗ ĐO ĐƯỢC TRÊN APP THẬT, không phải suy từ mã.
+   *
+   * ĐO: dựng một khối bằng cử chỉ → bấm chọn → nhấn `Delete` ⇒ huy hiệu đếm của cây đối tượng
+   * vẫn là 2, nhãn khung nhìn vẫn "Khối xám · chưa vật liệu" (KHÔNG xoá gì). Bấm CHIP "Xoá" thì
+   * xoá đúng, nhãn về "Không gian trống". Tức năng lực xoá CHẠY, chỉ mất đúng đường BÀN PHÍM.
+   *
+   * GỐC: `cad.sel.delete` khai `key:['Delete']` + `surfaces:[…,'shortcut']`, nhưng `grep` toàn
+   * repo cho `'shortcut'` NGOÀI `registry.ts` = 0 — chưa có ai đọc mặt tiền đó, nên khai phím ở
+   * registry hiện KHÔNG tự sinh ra phím. Đường `Delete` thật duy nhất nằm ở `CadCanvas.tsx:2799`,
+   * tức CHỈ chặng 2D. Đây đúng họ với lỗ ⌘Z từng vá ở `Render3DModeSkeleton.tsx` (docstring VIỆC 4
+   * ghi nguyên văn *"KHÔNG CÓ listener nào gọi nó trong mode này"*) — nay lặp lại với phím xoá.
+   *
+   * ⛔ KHÔNG ĐẺ ĐƯỜNG XOÁ THỨ HAI: handler này KHÔNG tự gọi `removeIds`. Nó tra ĐÚNG lệnh
+   * `cad.sel.delete` trong registry rồi gọi `run()` — cùng một lệnh mà chip "Xoá" bấm, nên hành
+   * vi/undo/điều kiện `when` không thể phân kỳ. Vẫn hỏi `when({stage:'render'})` trước khi chạy để
+   * chưa-chọn-gì thì phím im lặng đúng như chip đang mờ (§9 cấm nút bấm-không-ra-gì).
+   *
+   * Nhận cả `Backspace`: bàn phím Mac không numpad gửi 'Backspace' cho phím xoá vật lý — cùng lý
+   * do đã ghi ở `CadCanvas.tsx:2876`.
+   */
+  useEffect(() => {
+    const onXoaKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      // Né ô nhập (luật keydown-ne-o-nhap): xoá chữ trong ô không được xoá khối.
+      const el = e.target;
+      if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
+      if (!useTree3DUi.getState().selectedEntityId) return;
+      const cmd = COMMANDS.find((c) => c.id === 'cad.sel.delete');
+      if (!cmd || !cmd.when({ stage: 'render' })) return;
+      e.preventDefault();
+      cmd.run();
+    };
+    window.addEventListener('keydown', onXoaKey);
+    return () => window.removeEventListener('keydown', onXoaKey);
+  }, []);
 
   return (
     <div className="if-ve3d vp3d">
