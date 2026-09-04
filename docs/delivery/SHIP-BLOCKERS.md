@@ -24,11 +24,20 @@
 | Việc | Hiện trạng đo tại nguồn |
 |---|---|
 | ~~Kiến trúc máy~~ ✅ **ĐÓNG 04/09** | Chủ dự án xác nhận **cả hai máy đều Apple Silicon** ⇒ **giữ `arm64`**, KHÔNG thêm `x64`, KHÔNG dùng `universal`. Lý do: gói đã 338 MB, `universal` làm phình gần gấp đôi để đổi lấy một kiến trúc không ai dùng — trái đúng chữ *FAST* chủ dự án đòi. **Quyết định có điều kiện**: ngày có máy Intel thì mở lại, một dòng cấu hình. |
-| Phím ⌘ | `metaKey` 54 · `ctrlKey` 68 · cùng dòng 51 ⇒ **~17 chỗ chỉ nhận Ctrl** — trên Mac bấm ⌘ **không ăn** |
-| Sẵn sàng ký | **không có tệp entitlements**, không thấy `hardenedRuntime` |
-| Mất dữ liệu khi gỡ cài | **CHƯA AI TRẢ LỜI**: gỡ cài Windows / kéo app vào Thùng rác trên Mac **có xoá `userData` (chứa `dev.db` = toàn bộ việc thiết kế) không** |
+| Phím ⌘ | `metaKey` 54 · `ctrlKey` 68 · cùng dòng 51 ⇒ **~17 chỗ chỉ nhận Ctrl** — trên Mac bấm ⌘ **không ăn**. **Cách sửa đã chốt: một nguồn chung `PrimaryModifier`** (⌘ trên macOS · Ctrl trên Windows/Linux), **cấm vá 17 chỗ rời** — vá rời là 17 chỗ sẽ phân kỳ |
+| Sẵn sàng ký | **không có tệp entitlements**, không thấy `hardenedRuntime` — ⚠️ **KHÔNG phải blocker** nếu đường cài trực tiếp trên hai máy Mac chạy an toàn; chỉ thành blocker khi có **bằng chứng** bảo mật macOS chặn, cấm giả định trước |
+| Mất dữ liệu khi gỡ cài | **CHƯA AI TRẢ LỜI** — nay thuộc **BẤT BIẾN** ở khối trên, không còn là câu hỏi khảo sát |
 
 🔴 **Giới hạn phải nói thẳng**: phiên này chạy trong **container Linux** ⇒ **không dựng nổi bản Mac dùng được, không mở được app Mac, không ký được**. Mọi kết luận về hành vi Mac là **suy từ cấu hình + mã**. Nghiệm thu Mac **phải chạy trên máy thật** — bộ nghiệm thu đang được soạn để chủ dự án chạy.
+
+## 🔴 BẤT BIẾN · PHẦN MỀM ≠ DỮ LIỆU THIẾT KẾ CỦA NGƯỜI DÙNG (chủ dự án ban 04/09)
+
+> **Nâng cấp · cài lại · gỡ cài đặt thông thường KHÔNG ĐƯỢC âm thầm xoá dự án / `userData`.**
+> **Xoá sạch phải là một HÀNH ĐỘNG RIÊNG, người dùng chủ động chọn, gọi đúng tên nó là xoá.**
+
+Ba trạng thái phải trả lời dứt khoát, có bằng chứng, cho **cả Windows lẫn macOS**: nâng cấp đè · cài lại · gỡ cài. Cấu hình không bảo đảm được ⇒ sửa; sửa không nổi bằng cấu hình ⇒ **khiếm khuyết P0**, không để lửng.
+
+🔴 **Kèm theo — dữ liệu thiết kế không được KHOÁ CHẾT trong `userData` của Electron.** Dù gỡ cài có giữ thư mục đó, nếu **đường duy nhất** lấy việc thiết kế ra là qua thư mục nội bộ Electron thì người dùng **bị giam dữ liệu của chính mình**. Phải có đường xuất `.idf`/`.idfc` **cầm đi được và bấm được từ giao diện** — mở ở máy khác, sao lưu, chuyển máy. Chỉ tồn tại trong mã ⇒ **là lỗ**.
 
 ## 🔴 LUẬT PASS MỚI — áp cho MỌI luồng có ghi dữ liệu (chủ dự án ban 04/09)
 
