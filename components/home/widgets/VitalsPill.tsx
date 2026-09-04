@@ -1,6 +1,20 @@
 'use client';
 
 /**
+ * ⛔ **LỖI THỜI 04/09 — KHÔNG CÒN ĐƯỢC MOUNT Ở ĐÂU. Đừng cắm lại.**
+ *
+ * `AppChrome.tsx` từng mount tệp này ở header, CHỈ khi `active === 'home'`. Đó là **chỗ đứng vật
+ * lý thứ hai** của Vitals, và `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md` §7 (Hoà duyệt mắt
+ * 20/08) chốt Vitals nằm **VẬT LÝ trong TOP EDGE như một khẩu độ sống** — một vật, MỘT chỗ đứng.
+ * Thay bằng `components/studio/VitalsAperture.tsx`, có mặt ở MỌI chặng chứ không riêng Home.
+ *
+ * ⚠️ Nó KHÔNG chỉ là một cái vỏ khác: pill này có **kho hội thoại RIÊNG** (state cục bộ) và gọi
+ * `/api/ai-assist-chat` với `stage:'gallery'`, tách hẳn khỏi phiên chat của `VitalsGesture.tsx`.
+ * Tức app từng có HAI cuộc trò chuyện Vitals không biết nhau. Giữ tệp làm bia mộ theo luật
+ * *"mã bị thay phải đóng dấu tại chỗ, không im lặng bỏ hoang"*; hồi sinh nó là dựng lại đúng cái
+ * lỗi vừa dọn (và làm đỏ `components/studio/mot-cho-dung.test.ts`).
+ *
+ * ── Nguyên văn mô tả cũ, giữ nguyên để tra lịch sử ────────────────────────────────────────────
  * components/home/widgets/VitalsPill.tsx — [marker: DongStudio] Vitals thu về PILL góc màn
  * (phiếu docs/phieu-giao/home-dong-studio.md, việc ④.3 — khuôn Siri §4b `docs/00-CHOT.md` 12/08:
  * pill nhỏ tại chỗ → bấm bung thẻ kết quả, KHÔNG chatbot toàn màn, KHÔNG orb).

@@ -1,112 +1,42 @@
 'use client';
 
 /**
- * components/studio/VitalsRightEdgeHost.tsx — CHỖ MOUNT DUY NHẤT của `VitalsGesturePanel` trong
- * các chặng thiết kế, neo cạnh TRỤC PHẢI (chốt 16/08: "Vitals ở chặng làm việc = nút RỜI cạnh
- * trục phải — cùng một vật, di chuyển theo chỗ tay đang đặt").
+ * components/studio/VitalsRightEdgeHost.tsx — ⛔ **LỖI THỜI 04/09. BIA MỘ, KHÔNG PHẢI CODE SỐNG.**
  *
- * VÌ SAO CẦN (đo 03/09, Slice 12): `StageSwitcher.tsx` — nơi mount duy nhất của panel theo
- * `lib/vitals-ui.ts` — đã bị gỡ khỏi `AppChrome` từ 17/08 (Hoà chốt hạ sidebar thành router).
- * Từ đó ô gõ nhanh ở `StatusBar` vẫn gọi `useVitalsUi.open()` nhưng KHÔNG CÓ panel nào nhận:
- * gõ Enter là mất câu hỏi. ⌘J cũng chết theo (đăng ký ở StageSwitcher). Host này trả lại đúng
- * MỘT chỗ mount, đọc đúng store dùng chung — không luồng mở thứ hai, không mount đôi
- * (SO-KIEM-TONG §1 "cấm mount cùng một panel ở 2 ổ").
+ * Tệp này từng là chỗ mount `VitalsGesturePanel` neo **cạnh TRỤC PHẢI**, theo chốt 16/08
+ * (*"Vitals ở chặng làm việc = nút RỜI cạnh trục phải — cùng một vật, di chuyển theo chỗ tay
+ * đang đặt"*). Chỗ đứng đó **ĐÃ BỊ ĐÈ**:
  *
- * Cách lắp (một dòng, ngoài phạm vi phiên này — vùng AppShell/CadStageScreen):
- *   <VitalsRightEdgeHost stage="cad" />   // hoặc 'render' | 'present'
- * Host tự gate theo `useVitalsUi.panelOpen`; đóng thì chỉ còn nút tròn 44px ở mép phải.
+ *   `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md` §7 (Hoà duyệt mắt 20/08) — Vitals nằm **VẬT LÝ
+ *   trong TOP EDGE như một khẩu độ sống**, ba mức Ambient → Peek → Engage, *"không phải popover
+ *   gắn lên"*. ⇒ `components/studio/VitalsAperture.tsx`.
+ *
+ * ⭐ HÀNH VI THÌ KHÔNG MẤT — tách hành vi khỏi chỗ đứng, hai thứ nó làm đúng đã chuyển sang khẩu độ:
+ *   · **chỗ mount duy nhất của `VitalsGesturePanel`** → mức ③ Engage của khẩu độ;
+ *   · **⌘J / Ctrl+J** → đăng ký duy nhất trong `VitalsAperture.tsx` (kèm guard né ô nhập);
+ *   · **đọc kho dùng chung `lib/vitals-ui.ts`** (để ô gõ nhanh ở `StatusBar` gọi `open()` là câu
+ *     hỏi tới được panel — trước đó gõ Enter là mất câu hỏi) → khẩu độ soi gương `panelOpen`.
+ *
+ * ⚠️ GIỮ TỆP LẠI, KHÔNG XOÁ MÙ — luật *"văn bản/mã bị thay phải đóng dấu TẠI CHỖ, không im lặng
+ * bỏ hoang"* (`00-CHOT` 15/08, rút từ ca `QUY_TRINH_SPIRAL`). Nó chưa từng được mount ở đâu
+ * (`grep` toàn repo lúc gỡ: 0 nơi dùng), nên xoá cũng không gãy gì — nhưng để lại một bia mộ có
+ * ghi *bị thay bởi cái gì và vì sao* thì phiên sau khỏi dựng lại đúng chỗ đứng vừa bị bỏ.
+ *
+ * ⛔ ĐỪNG HỒI SINH: mount lại tệp này = **HAI chỗ đứng vật lý cho MỘT Vitals**, phá luật
+ * `SO-KIEM-TONG` §1 (*"cấm mount cùng một panel ở 2 ổ"*) và làm đỏ máy canh
+ * `components/studio/mot-cho-dung.test.ts`.
  */
-
-import { useCallback, useEffect } from 'react';
-import { useVitalsUi } from '@/lib/vitals-ui';
-import type { Phase } from '@/lib/phases';
-import VitalsGesturePanel from './VitalsGesture';
-import VitalsIcon from './VitalsIcon';
 
 export type VitalsHostStage = 'cad' | 'render' | 'present';
 
-/** `cad` là khoá kỹ thuật chặng 2D; panel + backend nhận `Phase` ('concept'). Giữ nguyên khoá. */
-export function phaseOf(stage: VitalsHostStage): Phase {
-  return stage === 'cad' ? 'concept' : stage;
-}
-
-export default function VitalsRightEdgeHost({ stage, offsetRightPx = 12, offsetBottomPx = 56 }: {
-  stage: VitalsHostStage;
-  /** cách mép phải (px) — mặc định né dải tay cầm PanelFlank 14px. */
+/**
+ * Không render gì. Giữ chữ ký cũ để mọi nơi gọi (nếu có) vẫn biên dịch được trong lúc dọn,
+ * nhưng KHÔNG dựng lại chỗ đứng cạnh trục phải.
+ */
+export default function VitalsRightEdgeHost(_props?: {
+  stage?: VitalsHostStage;
   offsetRightPx?: number;
   offsetBottomPx?: number;
 }) {
-  const panelOpen = useVitalsUi((s) => s.panelOpen);
-  const initialInput = useVitalsUi((s) => s.initialInput);
-  const autoSend = useVitalsUi((s) => s.autoSend);
-  const close = useVitalsUi((s) => s.close);
-  const toggle = useVitalsUi((s) => s.toggle);
-  const consumeInitial = useVitalsUi((s) => s.consumeInitial);
-
-  // ⌘J / Ctrl+J — chép đúng tổ hợp StageSwitcher từng đăng ký (đã gỡ 17/08), không thêm phím mới.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'j' || e.key === 'J')) {
-        e.preventDefault();
-        toggle();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [toggle]);
-
-  const onClose = useCallback(() => close(), [close]);
-
-  return (
-    <div
-      data-vitals-host=""
-      style={{
-        position: 'absolute',
-        right: offsetRightPx,
-        bottom: offsetBottomPx,
-        zIndex: 40,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-end',
-        pointerEvents: 'none',
-      }}
-    >
-      <div style={{ position: 'relative', pointerEvents: 'auto' }}>
-        <button
-          type="button"
-          aria-label="Vitals — hỏi trợ lý (⌘J / Ctrl+J)"
-          aria-expanded={panelOpen}
-          onClick={() => toggle()}
-          data-vitals-host-toggle=""
-          style={{
-            display: 'grid',
-            placeItems: 'center',
-            width: 44,
-            height: 44,
-            borderRadius: 999,
-            border: '1px solid var(--border)',
-            background: 'var(--panel)',
-            color: panelOpen ? 'var(--accent)' : 'var(--t3)',
-            boxShadow: 'var(--shadow-pop)',
-            cursor: 'pointer',
-          }}
-        >
-          <VitalsIcon size={20} />
-        </button>
-        {/* Panel xổ LÊN từ nút (direction='up'), neo mép phải: panel rộng 380px → dịch trái. */}
-        <div style={{ position: 'absolute', right: 0, bottom: 0, width: 'min(380px, calc(100vw - 24px))', height: 0 }}>
-          <VitalsGesturePanel
-            originPx={null}
-            open={panelOpen}
-            direction="up"
-            initialInput={initialInput}
-            autoSend={autoSend}
-            onConsumeInitial={consumeInitial}
-            onClose={onClose}
-            stage={phaseOf(stage)}
-          />
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 }
