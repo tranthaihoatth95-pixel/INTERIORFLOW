@@ -125,23 +125,47 @@ export function clearResume(userId: string): void {
 
 /* ---------- lastUserId — cho ResumeTracker ở route không có user trong store ---------- */
 
+/**
+ * ĐƯỜNG LÙI TRONG BỘ NHỚ (P0 04/09 — ca NẶNG HƠN ca deep-link).
+ *
+ * `localStorage.setItem` CÓ THỂ NÉM hoặc bị chặn: chế độ riêng tư, vài cấu hình Safari, webview
+ * nhúng, hoặc bộ nhớ origin bị trình duyệt thu hồi khi máy hết chỗ. `catch { bỏ qua }` bên dưới
+ * nuốt lỗi đó ⇒ người dùng đăng nhập THÀNH CÔNG, cookie hợp lệ, mà đệm KHÔNG BAO GIỜ được ghi
+ * ⇒ mất dữ liệu ở MỌI route, MỌI phiên — không riêng lúc vào thẳng URL.
+ *
+ * Giữ id trong biến của module để cả vòng đời tab vẫn dùng được. ⚠️ KHAI GIỚI HẠN THẬT: đường lùi
+ * này CHẾT khi tải lại trang — và đó là điều đúng, vì lúc đó KHÔNG có chỗ nào bền để lưu. Nó mua
+ * lại được phiên làm việc đang chạy, không mua được tính bền.
+ */
+let demTrongBoNho: string | null = null;
+
 export function setLastUserId(userId: string): void {
   // THÀ KHÔNG LƯU CÒN HƠN LƯU NHẦM: id rỗng từng được ghi đè lên id thật (localStorage nhận
   // mọi chuỗi), làm mọi khoá `userId::route::projectId` trượt sang bucket rỗng.
   if (!userId) return;
+  demTrongBoNho = userId; // luôn giữ trước — không phụ thuộc localStorage có ghi nổi hay không
   try {
     localStorage.setItem(LAST_USER_KEY, userId);
   } catch {
-    /* bỏ qua */
+    /* localStorage bị chặn — đã có đường lùi trong bộ nhớ ở trên */
   }
 }
 
 export function getLastUserId(): string | null {
+  // BỘ NHỚ THẮNG localStorage, không phải ngược lại: `demTrongBoNho` chỉ được đặt bởi một lần
+  // định danh THÀNH CÔNG trong CHÍNH tab này, nên nó luôn mới hơn. Đọc localStorage trước sẽ trả
+  // về id CŨ của phiên trước khi ghi mới thất bại ⇒ ghi việc của người này vào bucket người kia.
+  if (demTrongBoNho) return demTrongBoNho;
   try {
     return localStorage.getItem(LAST_USER_KEY);
   } catch {
     return null;
   }
+}
+
+/** Chỉ dùng trong test — xoá đường lùi để ca sau bắt đầu sạch. */
+export function quenDemTrongBoNho(): void {
+  demTrongBoNho = null;
 }
 
 /**

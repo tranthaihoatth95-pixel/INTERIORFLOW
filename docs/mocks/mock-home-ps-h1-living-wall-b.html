@@ -7,11 +7,16 @@
    chứ không theo --border: nó nằm TRÊN ảnh, không nằm trên nền app. */
 .tuong{position:absolute;left:0;top:0;width:1548px;height:856px}
 .treo{position:absolute;left:56px;top:214px;width:1436px;height:1px;background:var(--treo)}
-.treo-nhan{position:absolute;left:56px;top:186px;font:500 11px/1.5 ui-monospace,Menlo,monospace;
-  letter-spacing:.08em;color:#e6e2da}
+.treo-nhan{position:absolute;left:52px;top:182px;font:500 11px/1.5 ui-monospace,Menlo,monospace;
+  letter-spacing:.08em;color:#ece9e3;background:linear-gradient(180deg,rgba(8,9,11,.78),rgba(8,9,11,.52));
+  border-radius:var(--r-1);padding:4px 8px}
 .day{position:absolute;top:215px;width:1px;height:31px;background:var(--treo-day)}
 .gan{position:absolute;left:56px;top:246px;width:620px;height:372px;border-radius:var(--r-3);
-  overflow:hidden;box-shadow:0 22px 48px -20px rgba(0,0,0,.72)}
+  overflow:hidden;box-shadow:0 22px 48px -20px rgba(0,0,0,.72);background:var(--giay)}
+/* ⚠️ NỀN KHAI TRÊN VỎ, không phải trang trí: máy soi đọc nền của chữ SVG bằng cách đi ngược
+   cây HTML (nó không nhìn thấy <rect> nền bên trong <svg>). Vỏ không khai nền ⇒ máy so mực
+   giấy với nền APP và báo 1,29:1 — số sai. Khai đúng màu nền thật của hiện vật là cách để
+   phép đo nói thật, KHÔNG phải mẹo qua cửa. Hiệu chuẩn máy đo trước khi tin nó. */
 .the-gan{position:absolute;left:56px;top:630px;width:620px;height:126px;padding:14px 18px;
   background:var(--panel);border-radius:var(--r-3);display:flex;flex-direction:column;gap:8px}
 .the-gan h1{font-size:17px;line-height:1.5;font-weight:600}
@@ -21,21 +26,33 @@
   background:var(--nen-mo-header);backdrop-filter:blur(14px);border-radius:var(--r-full)}
 .dungcu i{width:26px;height:26px;border-radius:var(--r-full);display:block;background:var(--t2);opacity:.62}
 .dungcu i.on{background:var(--accent);opacity:1}
-.vua{position:absolute;border-radius:var(--r-2);overflow:hidden;box-shadow:0 10px 24px -12px rgba(0,0,0,.6)}
+.vua{position:absolute;border-radius:var(--r-2);overflow:hidden;background:var(--canh-0);
+  box-shadow:0 10px 24px -12px rgba(0,0,0,.6)}
+.vua.giay{background:var(--giay)} .vua.the{background:var(--card)}
+/* PHỦ CHUYỂN SẮC CỤC BỘ Ở CHÂN CHỮ (§9) — chỉ dìm dải có chữ, ảnh giữ nguyên độ nét.
+   Không dìm cả tấm: nền là phần đẹp, và dìm cả tấm là đúng thứ đã bị lật 16/08. */
+.chan-chu{background:linear-gradient(180deg,rgba(8,9,11,.80),rgba(8,9,11,.56));
+  border-radius:var(--r-1);padding:4px 8px}
 .nhan-vua{position:absolute;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;
   border-radius:var(--r-full);background:var(--card);color:var(--t2);font-size:12px;
   box-shadow:inset 0 0 0 1px var(--vien-mo)}
 .xa-dau{position:absolute;left:716px;top:486px;width:776px;display:flex;align-items:center;gap:10px}
 .xa-dau .ke2{flex:1;height:1px;background:var(--treo-day)}
-.xa-dau span{font:500 11px/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:#ddd9d1}
+.xa-dau span{font:500 11px/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:#ece9e3;
+  background:linear-gradient(180deg,rgba(8,9,11,.78),rgba(8,9,11,.52));border-radius:var(--r-1);padding:4px 8px}
+.xa-dau .ke2{background:var(--treo-day)!important;padding:0!important}
 .in-nho{position:absolute;width:132px}
 .in-nho .anh{width:132px;height:84px;border-radius:var(--r-1);overflow:hidden;opacity:.86;
-  box-shadow:0 6px 14px -8px rgba(0,0,0,.6)}
-.in-nho b{display:block;margin-top:6px;font-size:12px;font-weight:500;color:#efece6;
+  background:var(--canh-0);box-shadow:0 6px 14px -8px rgba(0,0,0,.6)}
+.in-nho .chu{margin-top:6px;background:linear-gradient(180deg,rgba(8,9,11,.80),rgba(8,9,11,.50));
+  border-radius:var(--r-1);padding:4px 7px}
+.in-nho b{display:block;font-size:12px;font-weight:500;color:#efece6;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.in-nho em{display:block;font:500 10px/1.5 ui-monospace,Menlo,monospace;font-style:normal;color:#c3bfb6}
-.hoat-dong{position:absolute;font-size:12px;line-height:1.5;color:#dedad2}
-.hoat-dong b{color:#f4f2ee;font-weight:600}
+.in-nho em{display:block;font:500 10px/1.5 ui-monospace,Menlo,monospace;font-style:normal;color:#c8c4bb}
+.hoat-dong{position:absolute;font-size:12px;line-height:1.5;color:#e6e2db}
+.hoat-dong b{color:#f7f5f1;font-weight:600}
+.hoat-dong .kh{background:linear-gradient(180deg,rgba(8,9,11,.80),rgba(8,9,11,.56));
+  border-radius:var(--r-2);padding:8px 10px}
 .dungcu-ca{position:absolute;left:56px;top:772px;display:flex;gap:12px;align-items:flex-start}
 .o-1{width:82px;height:82px}.o-2{width:176px;height:82px}
 .o{background:var(--panel);border-radius:var(--r-3);padding:10px 12px;display:flex;flex-direction:column;
@@ -45,7 +62,8 @@
   display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:20px;opacity:var(--mo-vo-hieu)}
 .trong{position:absolute;left:56px;top:246px;width:620px;height:372px;border-radius:var(--r-3);
   box-shadow:inset 0 0 0 1.5px var(--treo);display:flex;flex-direction:column;align-items:flex-start;
-  justify-content:center;gap:16px;padding:0 40px}
+  justify-content:center;gap:16px;padding:0 40px;
+  background:linear-gradient(104deg,rgba(8,9,11,.80),rgba(8,9,11,.34))}
 </style></head>
 <body>
 <div class="khung">
@@ -132,7 +150,7 @@
   <g opacity=".5" stroke="#5d5347" stroke-width="1" fill="none">
     <path d="M18 24.4 q 18.1 -8 37.4 0"/>
   </g></svg></div>
-      <b>Gỗ + đá, ánh chiều</b><em>nội thất · 12 tấm</em></div><div class="in-nho" style="left:864px;top:510px">
+      <div class="chu"><b>Gỗ + đá, ánh chiều</b><em>nội thất · 12 tấm</em></div></div><div class="in-nho" style="left:864px;top:510px">
       <div class="anh"><svg viewBox="0 0 132 84" width="132" height="84">
   <rect x="0" y="0" width="132" height="84" fill="var(--canh-0)"/>
   <polygon points="0,0 132,0 92.4,15.1 29,15.1" fill="var(--canh-1)"/>
@@ -167,7 +185,7 @@
     <rect x="108.9" y="58.8" width="2" height="11.8"/>
   </g>
 </svg></div>
-      <b>Bếp mở, trần thấp</b><em>nội thất · 8 tấm</em></div><div class="in-nho" style="left:1012px;top:510px">
+      <div class="chu"><b>Bếp mở, trần thấp</b><em>nội thất · 8 tấm</em></div></div><div class="in-nho" style="left:1012px;top:510px">
       <div class="anh"><svg viewBox="0 0 132 84" width="132" height="84">
   <rect x="0" y="0" width="132" height="84" fill="var(--giay)"/>
   <defs>
@@ -175,10 +193,10 @@
     <pattern id="hvan" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#f0ebe0"/><path d="M0 0 L6 6" stroke="#a89f8d" stroke-width=".9"/></pattern>
   </defs><rect x="15.6" y="12.5" width="69.5" height="4.5" fill="url(#hgo)" stroke="var(--muc)" stroke-width="1"/><rect x="15.6" y="17" width="4.5" height="52.1" fill="url(#hvan)" stroke="var(--muc)" stroke-width="1"/><rect x="80.6" y="17" width="4.5" height="52.1" fill="url(#hvan)" stroke="var(--muc)" stroke-width="1"/><rect x="20.1" y="38.5" width="60.4" height="3.8" fill="url(#hvan)" stroke="var(--muc)" stroke-width="1"/><rect x="20.1" y="63.9" width="60.4" height="5.2" fill="url(#hvan)" stroke="var(--muc)" stroke-width="1"/><rect x="20.1" y="17" width="60.4" height="21.5" fill="none" stroke="var(--muc)" stroke-width="0.8"/><rect x="20.1" y="42.3" width="60.4" height="21.5" fill="none" stroke="var(--muc)" stroke-width="0.8"/><path d="M 20.8 19.4 h 120 v 96 h -120 z" fill="none" stroke="var(--muc)" stroke-width=".8" opacity=".5"/><line x1="41.7" y1="19.4" x2="62.5" y2="27.8" stroke="var(--muc)" stroke-width=".8" opacity=".45"/><line x1="93.8" y1="12.5" x2="93.8" y2="69.1" stroke="var(--muc)" stroke-width="1"/><line x1="92.4" y1="12.5" x2="95.2" y2="12.5" stroke="var(--muc)" stroke-width="1"/><line x1="92.4" y1="38.5" x2="95.2" y2="38.5" stroke="var(--muc)" stroke-width="1"/><line x1="92.4" y1="69.1" x2="95.2" y2="69.1" stroke="var(--muc)" stroke-width="1"/><text x="96.6" y="26.4" font-family="ui-monospace,Menlo,monospace" font-size="10" text-anchor="start" fill="var(--muc)">720</text><text x="96.6" y="55" font-family="ui-monospace,Menlo,monospace" font-size="10" text-anchor="start" fill="var(--muc)">860</text><line x1="15.6" y1="74" x2="85.1" y2="74" stroke="var(--muc)" stroke-width="1"/><text x="50.4" y="77.4" font-family="ui-monospace,Menlo,monospace" font-size="10" text-anchor="middle" fill="var(--muc)">2.400</text><line x1="52.1" y1="14.7" x2="107.7" y2="9" stroke="var(--muc)" stroke-width=".8"/><text x="108.4" y="9.7" font-family="ui-monospace,Menlo,monospace" font-size="10" text-anchor="start" fill="var(--muc)">DA-04 · dày 20</text><line x1="52.1" y1="40.4" x2="107.7" y2="43.7" stroke="var(--muc)" stroke-width=".8"/><text x="108.4" y="44.4" font-family="ui-monospace,Menlo,monospace" font-size="10" text-anchor="start" fill="var(--muc)">GO-01 · ván 18</text>
   <text x="15.6" y="80.6" font-family="-apple-system,Segoe UI,sans-serif" font-size="11.5" font-weight="600" fill="var(--muc)">Mặt cắt A — tủ bếp dưới · tỉ lệ 1:10</text></svg></div>
-      <b>Chi tiết nẹp đồng</b><em>chi tiết · 9 tấm</em></div><div class="in-nho" style="left:1160px;top:510px">
+      <div class="chu"><b>Chi tiết nẹp đồng</b><em>chi tiết · 9 tấm</em></div></div><div class="in-nho" style="left:1160px;top:510px">
       <div class="anh"><svg viewBox="0 0 132 84" width="132" height="84">
   <rect x="0" y="0" width="132" height="84" fill="var(--canh-0)"/><polygon points="56.3,-12.9 114.7,16 73.3,36.5 14.8,7.6" fill="var(--canh-3)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="56.3,-12.9 114.7,16 114.7,17.5 56.3,-11.4" fill="var(--canh-2)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="114.7,16 73.3,36.5 73.3,37.9 114.7,17.5" fill="var(--canh-1)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="56.3,-39.4 58.2,-38.4 16.8,-17.9 14.8,-18.9" fill="var(--canh-5)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="56.3,-39.4 58.2,-38.4 58.2,-11.9 56.3,-12.9" fill="var(--canh-4)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="58.2,-38.4 16.8,-17.9 16.8,8.6 58.2,-11.9" fill="var(--canh-2)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="56.3,-39.4 114.7,-10.5 112.8,-9.5 54.3,-38.4" fill="var(--canh-5)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="56.3,-39.4 114.7,-10.5 114.7,16 56.3,-12.9" fill="var(--canh-4)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="114.7,-10.5 112.8,-9.5 112.8,17 114.7,16" fill="var(--canh-2)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="48.9,-5.9 72.3,5.7 61.1,11.2 37.7,-0.4" fill="var(--canh-6)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="48.9,-5.9 72.3,5.7 72.3,16.7 48.9,5.2" fill="var(--canh-5)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="72.3,5.7 61.1,11.2 61.1,22.3 72.3,16.7" fill="var(--canh-4)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="85.5,-5.7 100.1,1.6 91.8,5.7 77.2,-1.6" fill="var(--canh-6)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="85.5,-5.7 100.1,1.6 100.1,18.4 85.5,11.2" fill="var(--canh-5)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="100.1,1.6 91.8,5.7 91.8,22.5 100.1,18.4" fill="var(--canh-4)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="67,1.6 75.3,5.7 69.4,8.6 61.1,4.5" fill="var(--canh-7)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="67,1.6 75.3,5.7 75.3,11 67,6.9" fill="var(--canh-6)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><polygon points="75.3,5.7 69.4,8.6 69.4,13.8 75.3,11" fill="var(--canh-5)" opacity="1" stroke="var(--canh-6)" stroke-width=".8"/><line x1="56.3" y1="-53.4" x2="114.7" y2="-24.5" stroke="var(--canh-7)" stroke-width="1" opacity=".7"/><text x="85.5" y="-44.9" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="var(--canh-7)" opacity=".9">5.520</text></svg></div>
-      <b>Khối và ánh sáng</b><em>kiến trúc · 11 tấm</em></div><div class="in-nho" style="left:1308px;top:510px">
+      <div class="chu"><b>Khối và ánh sáng</b><em>kiến trúc · 11 tấm</em></div></div><div class="in-nho" style="left:1308px;top:510px">
       <div class="anh"><svg viewBox="0 0 132 84" width="132" height="84">
   <rect x="0" y="0" width="132" height="84" fill="var(--giay)"/><rect x="10" y="10" width="32" height="48" fill="#ffffff" stroke="var(--giay-mep)"/><rect x="16" y="16" width="20" height="25" fill="#8d7c66"/>
       <rect x="16" y="38.8" width="19.8" height="4" fill="var(--muc)" opacity=".7"/>
@@ -191,7 +209,7 @@
       <line x1="98" y1="24" x2="114" y2="24"/><line x1="98" y1="28.8" x2="114" y2="28.8"/><line x1="98" y1="33.6" x2="114" y2="33.6"/><line x1="98" y1="38.4" x2="114" y2="38.4"/><line x1="98" y1="43.2" x2="114" y2="43.2"/>
       <line x1="107.6" y1="18" x2="107.6" y2="50"/></g>
       <rect x="98" y="18" width="16" height="4.8" fill="var(--muc)" opacity=".12"/><text x="90" y="76" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="var(--muc)" opacity=".75">06</text></svg></div>
-      <b>Bố cục tạp chí</b><em>đồ hoạ · 8 tấm</em></div></div>
+      <div class="chu"><b>Bố cục tạp chí</b><em>đồ hoạ · 8 tấm</em></div></div></div>
     <div class="con-tiep" style="position:absolute;left:716px;top:646px;width:724px" data-tren-anh>
       <span class="vach-mo"></span><span style="color:#d6d2ca">còn 43 tấm — cuộn xuống</span></div>
     <div class="dungcu-ca"><div class="o o-1"><span class="nhan">ánh sáng</span>
