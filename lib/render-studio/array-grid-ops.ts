@@ -10,6 +10,7 @@
  */
 import type { BuildOp } from '../cad/model';
 import { useCadStore } from '../cad/store';
+import { modKey } from '@/lib/kbd'; // nhãn phím theo hệ: Mac ⌘ · Windows Ctrl
 
 export interface ArrayGridParams {
   cols: number;
@@ -32,8 +33,8 @@ export function applyArrayGrid(entityId: string, grid: ArrayGridParams | null): 
   store.updateEntities([{ ...entity, ops: next.length ? next : undefined }]);
   store.setStatus(
     grid
-      ? `Array ${Math.round(grid.cols)}×${Math.round(grid.rows)} — Ctrl+Z để lùi`
-      : 'Đã gỡ Array — Ctrl+Z để lùi',
+      ? `Array ${Math.round(grid.cols)}×${Math.round(grid.rows)} — ${modKey('Z')} để lùi`
+      : `Đã gỡ Array — ${modKey('Z')} để lùi`,
   );
   return true;
 }

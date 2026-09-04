@@ -22,7 +22,8 @@
 | Vì sao phải vậy | app có `app/api/**` + Prisma/SQLite ⇒ bắt buộc có server Node chạy nền | `electron/main.js:5-6` |
 | Mẹo đường ghi | `cwd` của server = `userData` (ghi được), còn `next start <appRoot>` để Next đọc `.next` đúng chỗ đóng gói ⇒ **không phải sửa một API route nào** | `electron/main.js:13-21`, `:336-347` |
 | Đóng gói | `asar: false`, gói nguyên `node_modules/**/*`, `extraMetadata.main` trỏ `electron/main.js` | `package.json` build |
-| Đích | Windows `nsis` x64 · macOS `dmg` arm64 | `package.json` build.win / build.mac |
+| Đích | Windows `nsis` x64 · macOS `dmg` **arm64** | `package.json` build.win / build.mac |
+| Vì sao chỉ arm64 | **chủ dự án xác nhận CẢ HAI máy Mac đều Apple Silicon** — không phải suy đoán. Thêm `x64`/`universal` là gói phình gần gấp đôi cho một kiến trúc không ai dùng. **Quyết định CÓ ĐIỀU KIỆN**: ngày có máy Intel thì mở lại bằng một dòng cấu hình, và `release:preflight` sẽ **chặn** nếu thêm Intel mà `prisma/schema.prisma` chưa có `binaryTargets` `"darwin"` | `scripts/release-preflight.mjs` |
 | Bản khoá | `electron 33.4.11` · `electron-builder 25.1.8` · `electron-updater 6.8.9` · `next 14.2.35` · `prisma 6.19.3` | `package-lock.json` |
 | Tự cập nhật | có `electron-updater`, nhưng **chỉ chạy khi bật rõ ràng** `INTERIORFLOW_AUTO_UPDATE=1` | `electron/main.js:486-493` |
 | Khoá API | **không nhúng vào bộ cài**; đọc từ `<userData>/config.json`, mở bằng menu *Tệp* | `electron/main.js:186-232`, `:407-421` |
@@ -315,9 +316,23 @@ không có cờ nền tảng thì dựng cho **nền tảng đang chạy** ⇒ t
 chỗ, hết cảnh dựng ra thứ không mở nổi trên chính máy vừa dựng. `electron:build:win` ·
 `electron:build:mac` giữ nguyên cho ai muốn chỉ đích danh. `electron:publish` **không đụng**.
 
-### M3 🔶 CÒN CHỜ CHỦ DỰ ÁN — macOS ký số
+### M3 ✅ HẠ CẤP 04/09 — ký mã là SẴN SÀNG, không còn là cổng chặn
 
-**Đã đổi**: bỏ `"identity": null`, thêm `"notarize": false`.
+> 🔴 **Mục này từng được viết như một blocker. Nay KHÔNG phải.** Chốt 04/09: tách **chất lượng sản
+> phẩm** khỏi **ký để phân phối công khai** — không có Developer ID **không được dùng làm cớ hạ
+> chuẩn bản Mac**. Điều kiện thật là: **đường cài trực tiếp trên hai máy Mac hiện có chạy an toàn
+> không** — đo bằng mục **T11** của `G7-NGHIEM-THU-MAC.md`, chưa ai đo. T11 đạt ⇒ ký mã là việc
+> sau. T11 trượt ⇒ lúc đó mới thành blocker, **và khi đó đã có bằng chứng**.
+
+**Đã chuẩn bị 04/09 để ngày có chứng chỉ không phải sửa mã**: `electron/entitlements.mac.plist`
+(4 quyền, mỗi quyền kèm lý do; **không** bật App Sandbox) · `entitlements.mac.inherit.plist` (bộ hẹp
+hơn cho tiến trình con) · `hardenedRuntime: true` · `gatekeeperAssess: false`.
+Ngày có Developer ID: **3 bước, 0 dòng mã** — cài chứng chỉ · đặt `APPLE_ID`/
+`APPLE_APP_SPECIFIC_PASSWORD`/`APPLE_TEAM_ID` · đổi `notarize` thành `true`.
+`npm run release:preflight` nay **chặn** nếu ai gỡ `hardenedRuntime`, gỡ entitlements, hoặc đưa
+`identity: null` quay lại.
+
+**Đã đổi (lượt trước)**: bỏ `"identity": null`, thêm `"notarize": false`.
 
 **Vì sao bỏ `identity: null` — đọc thẳng mã electron-builder 25, không đoán**
 (`node_modules/app-builder-lib/out/macPackager.js:183-188`): `identity === null` làm nó **thoát ngay

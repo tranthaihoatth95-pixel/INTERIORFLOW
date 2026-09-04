@@ -40,6 +40,7 @@ import { polygonVertices, ellipsePoints, catmullRomSpline, divideEntity, measure
 import { loadManifest, insertBlockById } from '@/lib/cad/block-library';
 import { isCoachmarkSeen, markCoachmarkSeen, effectiveUserId } from '@/lib/resume';
 import { useT } from '@/lib/i18n';
+import { modKey, laPhimChinh, coPhimHeThong } from '@/lib/kbd'; // nhãn phím theo hệ: Mac ⌘ · Windows Ctrl
 import {
   trimEntity,
   extendEntity,
@@ -2614,14 +2615,14 @@ export default function CadCanvas() {
       const st = useCadStore.getState();
 
       // undo/redo — đồng bộ Mac (⌘Z / ⌘⇧Z) và Windows (Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y)
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+      if (laPhimChinh(e) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         if (e.shiftKey) st.redo();
         else st.undo();
         ix.current.redraw = true;
         return;
       }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
+      if (laPhimChinh(e) && e.key.toLowerCase() === 'y') {
         e.preventDefault();
         st.redo();
         ix.current.redraw = true;
@@ -2630,14 +2631,14 @@ export default function CadCanvas() {
       // Sprint 4 — Việc 1: Copy-paste bàn phím kiểu Office/Canva (Ctrl+C/Cmd+C, Ctrl+V/Cmd+V),
       // KHÁC tool "Copy" AutoCAD hiện có (cần chọn base point). Dán lệch nhẹ (offset mặc định)
       // để thấy được ngay là đã dán, không đè lên bản gốc.
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c') {
+      if (laPhimChinh(e) && e.key.toLowerCase() === 'c') {
         if (!st.selection.length) return;
         e.preventDefault();
         st.copySelection();
-        st.setStatus(`Đã chép ${st.selection.length} đối tượng (Ctrl+V để dán).`);
+        st.setStatus(`Đã chép ${st.selection.length} đối tượng (${modKey('V')} để dán).`);
         return;
       }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'v') {
+      if (laPhimChinh(e) && e.key.toLowerCase() === 'v') {
         if (!st.clipboard.length) return;
         e.preventDefault();
         st.pasteClipboard();
@@ -2649,7 +2650,7 @@ export default function CadCanvas() {
       // (st.doc = đúng tờ đang mở, mỗi tờ là 1 Doc riêng — không phải toàn tài liệu nhiều tờ).
       // Tái dùng st.select() sẵn có: tự loại entity thuộc layer khoá/ẩn (đúng thói quen AutoCAD),
       // không viết luồng chọn mới.
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+      if (laPhimChinh(e) && e.key.toLowerCase() === 'a') {
         e.preventDefault();
         st.select(st.doc.entities.map((en) => en.id), false);
         ix.current.redraw = true;
@@ -2662,7 +2663,7 @@ export default function CadCanvas() {
       // cadMenuDuplicate() (copySelection()+pasteClipboard()+setStatus, dùng cho menu chuột phải
       // "Nhân bản") — không viết luồng nhân bản mới. Hàm tự setCadMenu(null) ở cuối, vô hại khi
       // menu đang đóng sẵn (idempotent, cùng nguyên tắc đã áp dụng ở 2.2.89).
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd') {
+      if (laPhimChinh(e) && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         cadMenuDuplicate();
         return;
@@ -2674,19 +2675,19 @@ export default function CadCanvas() {
       // quen thuộc với người dùng ứng dụng khác — KHÔNG xoá `f`, thêm ⌘9 chạy song song.
       // VIỆC 2 UI (04/08) — ĐỔI TỪ ⌘0 SANG ⌘9: ⌘0 nay là phím TOÀN CỤC "về Gallery"
       // (AppChrome.tsx, docs/SO-KIEM-TONG.md) — nhường chỗ, không đụng lib/cad/model.ts.
-      if ((e.metaKey || e.ctrlKey) && e.key === '9') {
+      if (laPhimChinh(e) && e.key === '9') {
         e.preventDefault();
         zoomExtents();
         return;
       }
-      if ((e.metaKey || e.ctrlKey) && (e.key === '=' || e.key === '+')) {
+      if (laPhimChinh(e) && (e.key === '=' || e.key === '+')) {
         e.preventDefault();
         const { W, H } = screenSize();
         st.setViewport(zoomAt(st.viewport, { x: W / 2, y: H / 2 }, 1.2));
         ix.current.redraw = true;
         return;
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === '-') {
+      if (laPhimChinh(e) && e.key === '-') {
         e.preventDefault();
         const { W, H } = screenSize();
         st.setViewport(zoomAt(st.viewport, { x: W / 2, y: H / 2 }, 1 / 1.2));
@@ -2697,7 +2698,7 @@ export default function CadCanvas() {
       // nút "Lưu tay" — auto-backup.ts). preventDefault() BẮT BUỘC, thiếu là trình duyệt tự mở
       // hộp "Lưu trang web". Ctrl/⌘+Shift+S = xuất .idf, TÁI DÙNG event 'cad:idf-export-request'
       // đã có (CadEditor.tsx doExportIdf) — không viết luồng xuất mới.
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+      if (laPhimChinh(e) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         if (e.shiftKey) window.dispatchEvent(new CustomEvent('cad:idf-export-request'));
         else window.dispatchEvent(new CustomEvent('cad:force-save-request'));
@@ -2706,7 +2707,7 @@ export default function CadCanvas() {
       // 10/08 — ⌘P/Ctrl+P là lối vào chuẩn của Xuất PDF Paper. Chặn hộp in trang web của
       // trình duyệt và tái dùng đúng dialog/engine PDF mà nút "Xuất PDF" đang gọi; không tạo
       // đường xuất thứ hai. Shift/Alt phải rỗng để dành tổ hợp mở rộng sau này.
-      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'p') {
+      if (laPhimChinh(e) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'p') {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('cad:paper-export-dialog-request'));
         return;
@@ -2817,7 +2818,7 @@ export default function CadCanvas() {
         // CHINH-4 (`SPEC-PANEL-ROLLOUT-IDF` §4e): thêm `!e.shiftKey` — chữ CÓ ⇧ để dành cho
         // phím tắt tầng app trong chặng Vẽ (⇧L Thư viện · ⇧B Navigator · ⇧I Inspector), vì chữ
         // TRẦN thuộc type-anywhere (L=đường…). Không ai gõ lệnh AutoCAD bằng Shift — không mất gì.
-        !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey &&
+        !coPhimHeThong(e) && !e.altKey && !e.shiftKey &&
         /^[a-zA-Z]$/.test(e.key) &&
         isIdle()
       ) {

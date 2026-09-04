@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  electron/entitlements.mac.plist — quyền cho tiến trình CHÍNH của bản macOS.
+
+  Nguyên tắc: TỐI THIỂU ĐỦ DÙNG. Chép một tệp entitlements đầy quyền là hạ bảo
+  mật của chính mình, nên mỗi mục dưới đây kèm lý do IF thật sự cần nó.
+
+  App KHÔNG bật App Sandbox (`com.apple.security.app-sandbox`) — cố ý:
+  IF là công cụ desktop đọc/ghi thư mục dự án của người dùng và chạy một máy chủ
+  Next cục bộ. Vào sandbox là phải dựng lại toàn bộ đường truy cập tệp qua
+  security-scoped bookmark. Không sandbox thì KHÔNG cần khai quyền tệp/mạng —
+  đó là lý do danh sách này ngắn.
+
+  ⚠️ CHƯA CHẠY THỬ TRÊN MÁY MAC. Bốn mục dưới là bộ chuẩn của Electron + Node,
+  suy từ cấu hình và mã; phải xác nhận bằng lần dựng + mở app thật (G7 §T3).
+-->
+<plist version="1.0">
+<dict>
+  <!-- V8 biên dịch JavaScript lúc chạy. Không có mục này thì Electron không
+       khởi động nổi dưới hardened runtime. -->
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+
+  <!-- Node/V8 còn cấp phát vùng nhớ thực thi ngoài đường JIT thuần. -->
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+
+  <!-- electron/main.js sinh tiến trình con `next start` và truyền cấu hình qua
+       biến môi trường (DATABASE_URL, HOSTNAME, PORT). Hardened runtime lọc sạch
+       biến môi trường của tiến trình con nếu thiếu mục này. -->
+  <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+  <true/>
+
+  <!-- Prisma nạp engine truy vấn gốc (.node) từ `extraResources`, tức NGOÀI phạm
+       vi chữ ký của gói app. Thiếu mục này thì macOS từ chối nạp và app mở lên
+       KHÔNG NỐI ĐƯỢC CSDL — đúng thứ hỏng âm thầm khó chẩn nhất. -->
+  <key>com.apple.security.cs.disable-library-validation</key>
+  <true/>
+</dict>
+</plist>

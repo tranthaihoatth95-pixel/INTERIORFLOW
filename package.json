@@ -32,7 +32,7 @@
     "electron:build": "next build && electron-builder",
     "electron:build:win": "next build && electron-builder --win --x64",
     "electron:pack:win": "electron-builder --win --x64",
-    "electron:build:mac": "next build && electron-builder --mac",
+    "electron:build:mac": "next build && electron-builder --mac --arm64",
     "electron:publish": "next build && electron-builder --win --x64 --publish always"
   },
   "dependencies": {
@@ -117,17 +117,6 @@
       "!node_modules/.prisma/client/libquery_engine-linux-*",
       "!node_modules/@prisma/engines/*linux*"
     ],
-    "extraResources": [
-      {
-        "from": "node_modules/.prisma",
-        "to": "app/node_modules/.prisma",
-        "filter": [
-          "**/*",
-          "!**/*.db",
-          "!**/*.db-journal"
-        ]
-      }
-    ],
     "asar": false,
     "extraMetadata": {
       "main": "electron/main.js"
@@ -141,7 +130,25 @@
           ]
         }
       ],
-      "icon": "electron/icons/icon.png"
+      "icon": "electron/icons/icon.png",
+      "extraResources": [
+        {
+          "from": "node_modules/.prisma",
+          "to": "app/node_modules/.prisma",
+          "filter": [
+            "**/*",
+            "!**/*.db",
+            "!**/*.db-journal",
+            "!**/libquery_engine-linux-*",
+            "!**/libquery_engine-darwin-*",
+            "!**/*debian*"
+          ]
+        }
+      ],
+      "files": [
+        "!node_modules/.prisma/client/libquery_engine-darwin-*",
+        "!node_modules/**/*debian*"
+      ]
     },
     "mac": {
       "target": [
@@ -154,7 +161,29 @@
       ],
       "icon": "electron/icons/icon.png",
       "category": "public.app-category.graphics-design",
-      "notarize": false
+      "notarize": false,
+      "hardenedRuntime": true,
+      "entitlements": "electron/entitlements.mac.plist",
+      "entitlementsInherit": "electron/entitlements.mac.inherit.plist",
+      "gatekeeperAssess": false,
+      "extraResources": [
+        {
+          "from": "node_modules/.prisma",
+          "to": "app/node_modules/.prisma",
+          "filter": [
+            "**/*",
+            "!**/*.db",
+            "!**/*.db-journal",
+            "!**/query_engine-windows.dll.node",
+            "!**/libquery_engine-linux-*",
+            "!**/*debian*"
+          ]
+        }
+      ],
+      "files": [
+        "!node_modules/.prisma/client/query_engine-windows.dll.node",
+        "!node_modules/**/*debian*"
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -162,7 +191,23 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "InteriorFlow"
+      "shortcutName": "InteriorFlow",
+      "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "extraResources": [
+        {
+          "from": "node_modules/.prisma",
+          "to": "app/node_modules/.prisma",
+          "filter": [
+            "**/*",
+            "!**/*.db",
+            "!**/*.db-journal",
+            "!**/query_engine-windows.dll.node",
+            "!**/libquery_engine-darwin-*"
+          ]
+        }
+      ]
     }
   }
 }

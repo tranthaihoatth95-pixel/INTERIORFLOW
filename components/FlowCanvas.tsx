@@ -33,6 +33,7 @@ import DrawToolbar from '@/components/render-studio/DrawToolbar';
 import { useCollabStore } from '@/lib/collabStore';
 import { classifyWheel, findScrollableAncestor, normalizeWheelDelta, zoomAtPoint } from '@/lib/input/wheel';
 import Popover from '@/components/ui/Popover';
+import { laPhimChinh } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 
 const nodeTypes = { interior: InteriorNode, note: NoteNode };
 
@@ -540,7 +541,7 @@ export function FlowCanvas() {
         e.target instanceof HTMLElement &&
         ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
       if (inField) return;
-      const mod = e.metaKey || e.ctrlKey;
+      const mod = laPhimChinh(e);
       if (mod && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         useFlowStore.getState().duplicateSelected();

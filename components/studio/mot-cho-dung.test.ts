@@ -74,10 +74,14 @@ ok('nơi đó là khẩu độ mép trên', mount[0] === 'components/studio/Vita
 
 /* ── [2] ⌘J ──────────────────────────────────────────────────────────────────────────────────
    Bắt theo mẫu điều kiện phím thật (`e.key === 'j'`), không bắt chữ "⌘J" trong chú thích —
-   chú thích nhắc lại phím tắt là chuyện bình thường và không được tính là một nơi đăng ký. */
+   chú thích nhắc lại phím tắt là chuyện bình thường và không được tính là một nơi đăng ký.
+   04/09: phím chính về MỘT nguồn `lib/kbd.ts` ⇒ chỗ đăng ký nay viết `laPhimChinh(e)` chứ không
+   còn `e.metaKey || e.ctrlKey`. Mẫu cũ chỉ dò `metaKey|ctrlKey` nên sau lần đổi đó nó đếm ra 0 và
+   **im lặng mất tác dụng canh** — máy soi đếm 0 rồi báo đạt là kiểu hỏng nguy hiểm nhất. Nhận cả
+   hai cách viết, và giữ luôn cách cũ để bắt được chỗ nào lỡ quay về đọc phím thô. */
 console.log('\n[2] ⌘J / Ctrl+J đăng ký ở ĐÚNG MỘT tệp');
 const phimJ = [...doc.entries()]
-  .filter(([, n]) => /\.key\s*===\s*['"]j['"]/i.test(n) && /metaKey|ctrlKey/.test(n))
+  .filter(([, n]) => /\.key\s*===\s*['"]j['"]/i.test(n) && /metaKey|ctrlKey|laPhimChinh/.test(n))
   .map(([f]) => f);
 ok('đúng 1 nơi đăng ký', phimJ.length === 1, `thấy ${phimJ.length}: ${phimJ.join(' · ') || '(không nơi nào)'}`);
 ok('nơi đó là khẩu độ mép trên', phimJ[0] === 'components/studio/VitalsAperture.tsx', phimJ[0] ?? '(trống)');

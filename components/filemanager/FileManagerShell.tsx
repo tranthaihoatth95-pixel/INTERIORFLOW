@@ -28,6 +28,7 @@ import {
 import { RawStyle } from './RawStyle';
 import { FILES_MOCK_CSS } from './files-mock-css';
 import { FmContextMenu, type FmMenuTarget } from './FmContextMenu';
+import { laPhimChinh } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 
 type ViewMode = 'grid' | 'list';
 type InspTab = 'mota' | 'binhluan';
@@ -435,7 +436,7 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
       type="button"
       key={f.id}
       className={`filerow${sel.selectedIds.includes(f.id) ? ' sel' : ''}`}
-      onClick={(e) => onFileActivate(f, { shift: e.shiftKey, toggle: e.metaKey || e.ctrlKey })}
+      onClick={(e) => onFileActivate(f, { shift: e.shiftKey, toggle: laPhimChinh(e) })}
       onContextMenu={(e) => onFileContextMenu(e, f)}
     >
       <span className="ficon">{(f.ext || '—').toUpperCase().slice(0, 4)}</span>
@@ -589,7 +590,7 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
                     type="button"
                     key={f.id}
                     className={`filecard${sel.selectedIds.includes(f.id) ? ' sel' : ''}`}
-                    onClick={(e) => onFileActivate(f, { shift: e.shiftKey, toggle: e.metaKey || e.ctrlKey })}
+                    onClick={(e) => onFileActivate(f, { shift: e.shiftKey, toggle: laPhimChinh(e) })}
                     onContextMenu={(e) => onFileContextMenu(e, f)}
                   >
                     <span className="fcthumb"><FileThumb f={f} /></span>
