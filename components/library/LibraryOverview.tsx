@@ -18,13 +18,16 @@
 import Link from 'next/link';
 import { useMemo, type ReactNode } from 'react';
 import {
-  ArrowUpRight, BookOpenText, Box, Boxes, Dna, FileStack, Folder, Images, LayoutTemplate, Layers, Palette, PencilRuler, RefreshCw, type LucideIcon,
+  ArrowUpRight, BookOpenText, Box, Boxes, Dna, Download, FileStack, Folder, Images, LayoutTemplate, Layers, Palette, PencilRuler, RefreshCw, type LucideIcon,
 } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { useT } from '@/lib/i18n';
 import WidgetCard from '@/components/home/widgets/WidgetCard';
 import Tooltip from '@/components/ui/Tooltip';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
+import { exportIdfcStoreJson } from '@/lib/library/idfc-store';
+import { taiVeJson } from '@/lib/library/tai-ve-json';
+import { pushLibraryToast } from '@/components/library/LibraryToast';
 import { useLibraryOverview } from '@/lib/library/use-library-overview';
 import { sectionIndexMap, type HanhDong, type OverviewSection, type OverviewSectionId } from '@/lib/library/overview';
 
@@ -152,10 +155,42 @@ function MucCard({ muc, index, projectId }: { muc: OverviewSection; index: strin
                 <ArrowUpRight size={13} aria-hidden="true" />
               </HanhDongNut>
             )}
+            {muc.id === 'cau-kien' && (muc.count ?? 0) > 0 && <XuatKhoIdfc soMon={muc.count ?? 0} />}
           </div>
         </div>
       </WidgetCard>
     </section>
+  );
+}
+
+
+/** Nút XUẤT KHO CẤU KIỆN — mặt cho một năng lực đã có mà chưa ai gọi.
+ *
+ * `exportIdfcStoreJson()` (`lib/library/idfc-store.ts:84`) ra đời ở W0.3 kèm ghi chú "năng lực
+ * trước, nút UI gọi sau (luật 7)" và từ đó đứng im **0 caller** — audit của repo xếp nó vào diện
+ * cân nhắc gỡ. Nó không đáng gỡ: kho `.idfc` studio nằm trong IndexedDB của MỘT trình duyệt, nên
+ * không có đường mang sang máy khác thì đó là dữ liệu bị nhốt. Trang tổng là chỗ đứng đúng của
+ * nút này — nơi người dùng đang NHÌN cả kho, không phải nơi đang thao tác một món.
+ *
+ * Chỉ hiện khi kho có món: nút xuất ra tệp rỗng là nút nói dối về việc mình vừa làm.
+ */
+function XuatKhoIdfc({ soMon }: { soMon: number }) {
+  const tr = useT();
+  return (
+    <button
+      type="button"
+      className={BTN_PHU}
+      onClick={() => {
+        // Ngày trong tên tệp theo giờ MÁY NGƯỜI DÙNG — bản sao lưu là để họ tìm lại, không phải
+        // để máy đọc; `sv-SE` cho đúng dạng YYYY-MM-DD tự xếp thứ tự trong thư mục.
+        const ngay = new Date().toLocaleDateString('sv-SE');
+        taiVeJson(exportIdfcStoreJson(), `if-cau-kien-${ngay}.json`);
+        pushLibraryToast(tr(`Đã xuất ${soMon} cấu kiện ra tệp JSON`, `Exported ${soMon} components to a JSON file`));
+      }}
+    >
+      <Download size={13} aria-hidden="true" />
+      {tr('Xuất JSON', 'Export JSON')}
+    </button>
   );
 }
 

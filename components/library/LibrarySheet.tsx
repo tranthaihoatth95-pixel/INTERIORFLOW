@@ -52,6 +52,7 @@ import PanelFlank from '@/components/ui/PanelFlank';
 import { AssetWhereUsed, useAssetWhereUsed } from './AssetWhereUsed';
 import { daGanVaoDuAn } from './da-gan-du-an';
 import { object3dModelForName } from '@/lib/library/object-3d-models';
+import { taiVeJson } from '@/lib/library/tai-ve-json';
 
 // 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md) — "Vẽ"/"Dựng ảnh" là tên
 // round trước, nay đồng bộ theo bộ tên chính thức.
@@ -1125,11 +1126,9 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                               ? { brand: specHit.brand ?? undefined, sku: specHit.sku ?? undefined, unit: specHit.unit ?? undefined, priceVnd: specHit.priceVnd ?? undefined }
                               : undefined,
                           });
-                          const a = document.createElement('a');
-                          a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-                          a.download = `${displayItem.code}.idfc`;
-                          a.click();
-                          URL.revokeObjectURL(a.href);
+                          // 03/09: dùng chung `taiVeJson` — bản chép tay ở đây thu hồi blob NGAY
+                          // sau click, có thể cắt ngang lúc trình duyệt đang đọc (hỏng không báo).
+                          taiVeJson(json, `${displayItem.code}.idfc`);
                           pushLibraryToast(tr(`Đã xuất ${displayItem.code}.idfc`, `Exported ${displayItem.code}.idfc`));
                         }}
                       >
