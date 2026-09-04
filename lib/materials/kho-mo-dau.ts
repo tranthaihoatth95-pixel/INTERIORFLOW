@@ -47,7 +47,12 @@ export function laHangHatGiong(m: Pick<MaterialSpecDto, 'id'>): boolean {
  *  · dòng DB ⇒ giữ nguyên `sku` như trước 04/09 (callsite legacy chưa migrate, chốt 19/08).
  * Trả `null` khi không có khoá nào — món chưa có mã, `MaterialsScreen` đã có nhánh riêng.
  */
-export function khoaBaMat(m: Pick<MaterialSpecDto, 'id' | 'sku' | 'matId'>): string | null {
+export function khoaBaMat(
+  /* `matId` nhận cả `undefined`: `CommercialFacet` (resolve.ts:43) cố ý khai `matId?` cho spec cũ
+     chưa backfill, và ngăn Phần thô dùng đúng kiểu đó. Cả `undefined` lẫn `null` đều nghĩa "chưa
+     có matId" ⇒ rơi về `sku`, không đổi hành vi. */
+  m: Pick<MaterialSpecDto, 'id' | 'sku'> & { matId?: string | null },
+): string | null {
   if (laHangHatGiong(m)) return m.matId ?? null;
   return m.sku ?? null;
 }

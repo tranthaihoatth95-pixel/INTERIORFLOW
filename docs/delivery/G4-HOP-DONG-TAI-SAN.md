@@ -88,3 +88,45 @@ Ràng buộc cho người thi công:
 - `inferPbrFromCategory` (17 họ) là **đường suy khi thiếu**, không phải kho — giữ nguyên vai, đừng biến nó thành nơi chứa vật liệu.
 
 ⇒ **Gộp bước 2 (32 vật liệu tham số) và bước 3 (24 món 3D) vào CÙNG một lượt của 05 ASSET.** Cả hai cùng cần `matId` ổn định và cùng cần tầng hạt giống; tách ra là dựng tầng đó hai lần.
+
+## 9 · ĐỢT 2 (04/09) — TẦNG HẠT GIỐNG ĐÃ TỚI MỌI MẶT TIỀN, VÀ CÂU "ĐỦ BÁN CHƯA"
+
+Đợt 1 cắm điện tầng hạt giống vào **kho vật liệu**. Đợt này đo tiếp **bốn mặt tiền còn lại** và
+tìm ra: mỗi mặt tiền đọc kho theo **một đường riêng**, nên cắm một chỗ không có nghĩa là xong.
+
+| Mặt tiền | Trước đợt 2 | Sau |
+|---|---|---|
+| Ngăn ② *Phần thô dùng chung* (`/files`) | chỉ đọc `/api/specs` ⇒ máy sạch luôn nói *"Kho chung chưa có món nào"* | trộn hạt giống; máy chủ 401 vẫn có hàng, **và nói rõ mặt thương mại đang thiếu** |
+| Trang tổng Thư viện (`/library`) | *"Kho trống"* ở **Cấu kiện** và **Vật liệu** trong khi kệ có hàng | đếm cả hàng theo bản cài — **1 món / 2 món**, khớp đúng số trên kệ |
+| Cửa chất liệu render | đọc **mỗi tầng studio** ⇒ vật liệu ship sẵn mở ra là **màu ĐOÁN TỪ TÊN** (`#9a9a9a` thay vì `#b98a54`) | đọc ba tầng qua `phanGiaiPbr` |
+| Nút Xuất V-Ray / D5 | **khoá** cho vật liệu ship sẵn, kèm câu sai *"chưa lưu — lưu rồi mới có gì để xuất"* | mở, xuất được ngay |
+
+🔴 **Lỗi nặng nhất của đợt này KHÔNG phải kho rỗng mà là GHI ĐÈ ÂM THẦM**: cửa chất liệu khởi tạo
+bằng `inferPbrFromCategory(tên)` khi `getPbr()` rỗng ⇒ người dùng mở vật liệu ship sẵn ra, bấm
+**Lưu**, là **màu đoán mò đè lên tham số thật trong repo**. Sau khi vá, bản ghi đè lưu ra mang đúng
+`baseColor: "#b98a54"` của mẫu gốc. Đây là ca thật cho luật *"có trong mã ≠ tới được người dùng"*.
+
+### Kho vật liệu ĐỦ BÁN CHƯA — trả lời thẳng
+
+**Đường đi thì ĐỦ, bề rộng thì CHƯA.** Vòng nghề `tìm → xem trước → đặt → biến đổi → thay thế →
+lưu → mở lại` chạy trọn trên app thật cho vật liệu PBR (25/25 khẳng định, `nghiem-thu-g6-dot-2.mjs
+--tren-app`), sống qua **lần tắt hẳn trình duyệt**, xuất được sang V-Ray/D5.
+
+Còn thiếu, theo đúng thứ tự đắt dần:
+1. **Bề rộng: 2/32.** Mục §4 hẹn 32 vật liệu phủ 17 họ; hiện có **gỗ sồi + gỗ óc chó** — phủ
+   **1/17 họ**. Đường dây đã chứng minh, phần còn lại là nhân bản dữ liệu, **rẻ và không rủi ro**.
+2. **Cấu kiện 3D: 1 món.** Bước 3 (24 món `BuildRecipe`) vẫn là lỗ thật duy nhất, không đổi.
+3. 🔴 **ĐỔI VẬT LIỆU TRÊN BẢN VẼ KHÔNG TỚI BOQ** — đo được, khâu K13: `applyMaterial`
+   (`lib/cad/store.ts:811`, đường UI **duy nhất** của bảng vật liệu 2D) ghi `pattern`/`patternScale`/
+   `patternAngle` mà **KHÔNG ghi `specId`**, trong khi `specId` mới là thứ `lib/boq/compute.ts` và
+   `lib/materials/impact.ts` đọc. ⇒ **bản vẽ nhìn đã đổi vật liệu, BOQ vẫn tính vật liệu cũ.**
+   `replaceMaterialReferences` — hàm đúng cho việc này, đã có test chứng minh nó giữ nguyên vị trí —
+   có **0 nơi gọi** trong `app/` và `components/`: có dây, chưa có nút.
+   ⚠️ Đây là **lời hứa ĐỒNG BỘ** (chốt 16/08: *"BOQ đúng vì CHỈ CÓ MỘT VẬT"*) đang hở ở đúng chỗ
+   đắt nhất. **Không vá ở lượt này** — `lib/cad/store.ts` ngoài vùng ghi, và đổi ngữ nghĩa
+   `applyMaterial` là quyết định chạm BOQ, phải đi bằng phiếu riêng.
+4. Texture vẫn **cố ý không ship** (§4 không đổi).
+
+⇒ **Bán được phần "vật liệu render được và nhớ gốc gác"; CHƯA bán được phần "đổi vật liệu thì con
+số tự đúng"** — mà vế sau mới là câu quảng cáo của IF. Việc kế tiếp đáng làm nhất là mục 3, không
+phải nhân bản thêm vật liệu.

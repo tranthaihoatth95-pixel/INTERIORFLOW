@@ -30,6 +30,7 @@
  */
 import { getMaterial, type CommercialFacet, type MaterialSources } from '../../../lib/materials/resolve';
 import { baMatCuaVatLieu, dinhDangVnd, type BaMatText, type MatMotMat } from '../../../lib/materials/ba-mat';
+import { khoaBaMat } from '../../../lib/materials/kho-mo-dau';
 
 /** Hai ngăn của Files. Khác BẢN CHẤT ⇒ khác khoá, không phải hai giá trị của một bộ lọc. */
 export type NganKey = 'duAn' | 'thoChung';
@@ -138,8 +139,14 @@ export function locMonTho(mon: readonly MonKhoChung[], nguon: MaterialSources = 
   const ra: MonTho[] = [];
   const nhoDaTinh = new Map<string, KhoangGia | null>();
   for (const m of mon) {
-    if (!m.sku) continue;
-    const facets = getMaterial(m.sku, { ...nguon, specs: nguon.specs ?? mon });
+    /* KHOÁ TRA PHẢI QUA `khoaBaMat`, KHÔNG phải `m.sku` — đo được 04/09, ca hỏng thật:
+       dòng hạt giống mang `sku` là mã nghề (`IF-MAT-GO-SOI`) còn kho PBR của nó khoá theo
+       **UUID**; tra bằng sku thì KHÔNG BAO GIỜ khớp ⇒ hai vật liệu ship sẵn, vốn ĐÃ ĐỦ định
+       nghĩa, bị bày ra ngăn thô như hàng chưa có thông số. Cùng họ lệch-namespace đã vá ở
+       `tang-phan-giai.ts`; `khoaBaMat` là nơi DUY NHẤT biết chọn khoá cho từng loại dòng. */
+    const khoa = khoaBaMat(m);
+    if (!khoa) continue;
+    const facets = getMaterial(khoa, { ...nguon, specs: nguon.specs ?? mon });
     const ba = baMatCuaVatLieu(facets);
     const dung3d = ba.mats.find((x) => x.khoa === 'dung3d');
     if (!dung3d || dung3d.trangThai === 'du') continue;

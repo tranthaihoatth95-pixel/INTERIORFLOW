@@ -20,6 +20,7 @@
 import { BAY_OF_SHELF, builtinCount, type SheetItem } from './shelves';
 import type { StageKey } from './types';
 import { IDFC_KIND_LABEL } from './thumb-kinds';
+import { cauKienHatGiongTrenKe } from './hat-giong-3d';
 import { object3dModelForName } from './object-3d-models';
 import type { IdfcKind } from '../cad/idfc';
 import type { KnowledgeStats } from './knowledge';
@@ -186,17 +187,35 @@ export function buildLibraryOverview(input: OverviewInput): OverviewSection[] {
   const moHinh3d = items.filter((i) => object3dModelForName(i.name) !== null);
   const mau = items.filter((i) => MAU_SHELVES.has(i.shelfId));
   const kyHieuBuiltin = builtinCount('cad-kyhieu');
+  /* ⚡ 04/09 — TRANG TỔNG PHẢI ĐẾM CẢ TẦNG HẠT GIỐNG.
+     Đo được trên app thật: tấm Thư viện bày *Vật liệu ATLAS 2* và *Cấu kiện 1*, trong khi trang
+     tổng ngay phía sau ghi **"Kho trống"** cho đúng hai mục đó — vì `items` ở đây chỉ là
+     `LibraryAsset` của DB và `idfcKinds` chỉ là kho studio (IndexedDB), cả hai đều bỏ qua thứ
+     **ship theo bản cài**. Trên máy sạch thì thứ ĐẦU TIÊN người mua thấy ở Thư viện là chữ "trống"
+     — sai hiện trạng, đúng họ lỗi *cột Nguồn nói sai*. `builtinCount` đã có sẵn và đã dùng cho kệ
+     ký hiệu 2D ngay dòng trên; đây chỉ là áp đúng nó cho hai kệ còn lại, không đẻ cơ chế thứ hai. */
+  const vatLieuBuiltin = builtinCount('common-atlas');
+  /* Cấu kiện hạt giống KHÔNG đi qua `BUILTIN_ITEMS` (kệ `common-idfc` bơm thẳng từ
+     `cauKienHatGiongTrenKe()` trong `LibrarySheet.tsx`) ⇒ `builtinCount('common-idfc')` = 0.
+     Đọc đúng nguồn mà kệ đọc, để hai chỗ không bao giờ lệch số. */
+  const cauKienBuiltin = cauKienHatGiongTrenKe().length;
 
   return OVERVIEW_SECTIONS.map((def): OverviewSection => {
     switch (def.id) {
       case 'files':
         return { ...def, count: null, trangThai: 'song', chiTiet: [], thumbs: [] };
       case 'cau-kien': {
-        const n = input.idfcKinds.length;
+        const n = input.idfcKinds.length + cauKienBuiltin;
         return { ...def, count: n, trangThai: trangThaiTheoSo(true, n), chiTiet: idfcKindBreakdown(input.idfcKinds), thumbs: [] };
       }
-      case 'vat-lieu':
-        return { ...def, count: daTaiKho ? vatLieu.length : null, trangThai: trangThaiTheoSo(daTaiKho, vatLieu.length), chiTiet: [], thumbs: thumbsOf(vatLieu) };
+      case 'vat-lieu': {
+        /* `daTaiKho` chỉ nói về DB. Hạt giống có mặt TRƯỚC khi DB trả lời, nên khi kho chưa tải mà
+           đã có hạt giống thì con số đã đúng một phần — hiện nó thật hơn là để `null` rồi nhảy
+           sang "trống". Chỉ giữ `null` khi thật sự chưa có gì để nói. */
+        const coGiDeNoi = daTaiKho || vatLieuBuiltin > 0;
+        const n = vatLieu.length + vatLieuBuiltin;
+        return { ...def, count: coGiDeNoi ? n : null, trangThai: trangThaiTheoSo(coGiDeNoi, n), chiTiet: [], thumbs: thumbsOf(vatLieu) };
+      }
       case 'anh-tai-san':
         return { ...def, count: daTaiKho ? anh.length : null, trangThai: trangThaiTheoSo(daTaiKho, anh.length), chiTiet: [], thumbs: thumbsOf(anh) };
       case 'ky-hieu-2d': {
