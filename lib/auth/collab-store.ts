@@ -111,26 +111,55 @@ function fileOf(projectId: string): string {
   return path.join(collabRoot(), `${safeProjectId(projectId)}.json`);
 }
 
+/**
+ * ⛔ "KHÔNG ĐỌC ĐƯỢC" ≠ "RỖNG" — phân biệt hai thứ này là chốt chặn AN TOÀN, không phải chuyện gọn code.
+ *
+ * Bản đầu bắt MỌI lỗi rồi trả kho rỗng. Hệ quả nếu tệp có thật nhưng hỏng (JSON cụt vì đầy đĩa,
+ * ai đó sửa tay, sai quyền đọc): đọc ra rỗng → mutation KẾ TIẾP `writeCollab` đè bản rỗng đó lên
+ * → **mất trắng** góp ý/yêu cầu duyệt, VÀ — nặng hơn — mất luôn SỔ THU HỒI lời mời, tức mọi link
+ * đã thu hồi SỐNG LẠI (lớp ② của ba lớp thu hồi, xem `lib/auth/invite.ts`). Một tệp hỏng biến
+ * thành một lỗ hổng quyền.
+ *
+ * Nay: chỉ ENOENT (chưa từng có tệp) mới là kho rỗng hợp lệ. Mọi thứ khác — không parse được,
+ * sai shape, sai projectId, không đọc được — NÉM, để route trả lỗi và KHÔNG ghi đè gì cả.
+ */
+export class CollabStoreCorruptError extends Error {
+  constructor(public projectId: string, cause: string) {
+    super(`[collab] Kho cộng tác của dự án ${projectId} không đọc được (${cause}) — TỪ CHỐI ghi đè để không mất dữ liệu.`);
+    this.name = 'CollabStoreCorruptError';
+  }
+}
+
 export async function readCollab(projectId: string): Promise<CollabFile> {
   const target = fileOf(projectId); // ném NGOÀI try — projectId lạ không được nuốt thành "kho rỗng"
+  let raw: string;
   try {
-    const raw = await fs.readFile(target, 'utf8');
-    const parsed = JSON.parse(raw) as Partial<CollabFile>;
-    if (parsed && parsed.v === 1 && parsed.projectId === projectId) {
-      return {
-        v: 1,
-        projectId,
-        rev: typeof parsed.rev === 'number' ? parsed.rev : 0,
-        comments: Array.isArray(parsed.comments) ? parsed.comments : [],
-        approvals: Array.isArray(parsed.approvals) ? parsed.approvals : [],
-        invites: Array.isArray(parsed.invites) ? parsed.invites : [],
-        appliedOps: parsed.appliedOps && typeof parsed.appliedOps === 'object' ? parsed.appliedOps : {},
-      };
-    }
-    return emptyCollab(projectId);
-  } catch {
-    return emptyCollab(projectId);
+    raw = await fs.readFile(target, 'utf8');
+  } catch (e) {
+    // Chưa từng có tệp = kho rỗng thật. Lỗi khác (EACCES/EISDIR/EIO…) KHÔNG được đọc thành rỗng.
+    if ((e as { code?: string })?.code === 'ENOENT') return emptyCollab(projectId);
+    throw new CollabStoreCorruptError(projectId, (e as { code?: string })?.code ?? 'không đọc được');
   }
+  // Tệp rỗng 0 byte: ghi dở dang ở đâu đó — vẫn coi là hỏng, không phải "kho rỗng".
+  let parsed: Partial<CollabFile>;
+  try {
+    parsed = JSON.parse(raw) as Partial<CollabFile>;
+  } catch {
+    throw new CollabStoreCorruptError(projectId, 'JSON hỏng');
+  }
+  if (!parsed || parsed.v !== 1) throw new CollabStoreCorruptError(projectId, `phiên bản lạ: ${String(parsed?.v)}`);
+  if (parsed.projectId !== projectId) {
+    throw new CollabStoreCorruptError(projectId, `tệp mang projectId khác (${String(parsed.projectId)})`);
+  }
+  return {
+    v: 1,
+    projectId,
+    rev: typeof parsed.rev === 'number' ? parsed.rev : 0,
+    comments: Array.isArray(parsed.comments) ? parsed.comments : [],
+    approvals: Array.isArray(parsed.approvals) ? parsed.approvals : [],
+    invites: Array.isArray(parsed.invites) ? parsed.invites : [],
+    appliedOps: parsed.appliedOps && typeof parsed.appliedOps === 'object' ? parsed.appliedOps : {},
+  };
 }
 
 async function writeCollab(file: CollabFile): Promise<void> {

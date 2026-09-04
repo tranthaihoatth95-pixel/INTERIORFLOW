@@ -11,7 +11,8 @@ import path from 'node:path';
 const dir = mkdtempSync(path.join(tmpdir(), 'if-collab-'));
 process.env.IF_COLLAB_DIR = dir;
 
-import { readCollab, mutateCollab, applyOp, isValidOpId, newId, isInviteRevoked, safeProjectId } from './collab-store';
+import { writeFileSync } from 'node:fs';
+import { readCollab, mutateCollab, applyOp, isValidOpId, newId, isInviteRevoked, safeProjectId, CollabStoreCorruptError, collabRoot } from './collab-store';
 
 let pass = 0;
 const ok = (l: string) => { pass += 1; console.log(`  ✓ ${l}`); };
@@ -49,6 +50,31 @@ async function main() {
     const fa = await readCollab('projA');
     assert.ok(!isInviteRevoked(fa, 'j1') && isInviteRevoked(fa, 'j2') && !isInviteRevoked(fa, 'unknown'));
     ok('isInviteRevoked: đúng jti có revokedAt');
+
+    /* ⛔ HỎNG ≠ RỖNG — chốt chặn chống mất dữ liệu + chống lời-mời-đã-thu-hồi sống lại.
+       Ca thật: tệp có nhưng JSON cụt. Đọc PHẢI ném, và mutation kế tiếp cũng phải ném
+       (không được ghi đè bản rỗng lên dữ liệu thật). */
+    await mutateCollab('projC', (f) => {
+      f.invites.push({ jti: 'jRevoked', role: 'viewer', inviterId: 'u', inviterName: 'U', createdAt: 'x', expiresAt: 'y', revokedAt: 'z' });
+    });
+    const hong = path.join(collabRoot(), 'projC.json');
+    const nguyenVan = require('node:fs').readFileSync(hong, 'utf8');
+    writeFileSync(hong, nguyenVan.slice(0, Math.floor(nguyenVan.length / 2)), 'utf8'); // JSON cụt
+    await assert.rejects(readCollab('projC'), (e: unknown) => e instanceof CollabStoreCorruptError);
+    await assert.rejects(mutateCollab('projC', (f) => f.comments.push({ id: 'x', projectId: 'projC', authorId: 'u', authorName: 'U', text: 't', anchor: {}, resolved: false, createdAt: 'x', updatedAt: 'x', opId: 'op:x:00000001' })));
+    assert.strictEqual(require('node:fs').readFileSync(hong, 'utf8').length, Math.floor(nguyenVan.length / 2));
+    ok('tệp hỏng → readCollab NÉM, mutation NÉM, tệp trên đĩa KHÔNG bị ghi đè (sổ thu hồi không sống lại)');
+
+    writeFileSync(hong, JSON.stringify({ v: 1, projectId: 'projKHAC', comments: [] }), 'utf8');
+    await assert.rejects(readCollab('projC'), (e: unknown) => e instanceof CollabStoreCorruptError);
+    writeFileSync(hong, JSON.stringify({ v: 99, projectId: 'projC' }), 'utf8');
+    await assert.rejects(readCollab('projC'), (e: unknown) => e instanceof CollabStoreCorruptError);
+    writeFileSync(hong, '', 'utf8');
+    await assert.rejects(readCollab('projC'), (e: unknown) => e instanceof CollabStoreCorruptError);
+    ok('tệp mang projectId khác / phiên bản lạ / rỗng 0 byte → cũng NÉM, không đọc thành kho rỗng');
+
+    assert.deepStrictEqual((await readCollab('projChuaTungCo')).comments, []);
+    ok('CHƯA TỪNG CÓ tệp (ENOENT) vẫn là kho rỗng hợp lệ — không nhầm sang lỗi');
 
     console.log(`\n${pass} nhóm khẳng định pass`);
   } finally {
