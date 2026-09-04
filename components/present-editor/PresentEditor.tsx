@@ -61,6 +61,14 @@ import { slidesFromReference, detectGridFromUrl } from '@/lib/present-editor/ref
 import type { GridGeometryInput } from '@/lib/present-editor/suggest';
 import { consumePresentHandoffWithIds, deckImagesWithIdsFromNodes } from '@/lib/present-editor/handoff';
 import { consumeCadPresentHandoff } from '@/lib/cad/present-handoff';
+/**
+ * CỬA NHẬN TỜ BẢN VẼ (04/09) — ĐƯỜNG THỨ HAI, SONG SONG với `consumeCadPresentHandoff` ở trên.
+ *   · đường ẢNH (ngay trên)  → chèn MỘT SLIDE ảnh vào deck; đứt dây với nguồn sau khi chèn.
+ *   · đường TỜ  (component)  → giữ một TỜ có tỉ lệ · khổ · lề · khung tên · NEO NGUỒN; không chèn
+ *     slide nào, và nguồn đổi thì tờ tự đánh dấu "Có bản mới".
+ * Hai khoá sessionStorage riêng ⇒ dùng cùng phiên không giẫm nhau. Không có tờ ⇒ render `null`.
+ */
+import CongThietLapTrang from './CongThietLapTrang';
 import {
   stashPhotoEditorIn,
   readPhotoEditorReturn,
@@ -2025,6 +2033,8 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
         onInsertBoqAppendix={onInsertBoqAppendix}
         boqAppendixBusy={boqAppendixBusy}
       />
+      {/* Cửa nhận tờ từ 2D/3D — tự ẩn khi chưa ai gửi tờ nào (không bày cửa rỗng). */}
+      <CongThietLapTrang />
 
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         {/* trái: panel 3 tab (kéo dãn + ẩn/hiện — tham khảo Photoshop dock/Canva sidebar) */}
