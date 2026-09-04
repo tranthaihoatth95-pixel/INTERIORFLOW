@@ -81,10 +81,31 @@ Phải bù ở đợt sau, không để sang đợt thứ ba.
 | 1 | **4 phán quyết mắt** — `vitals` · `h1` · `h2` · `h3` | toàn bộ Home; luật KHÔNG CODE còn hiệu lực |
 | 2 | Board 3 lô #1 (chrome/điều hướng) — **chưa từng được phán** | nợ nghiệm thu tồn |
 | 3 | 3 mục di sản `LEGACY-RECONCILIATION.md §6` | gác lại sau Home, đúng thứ tự Hoà đặt |
-| 4 | 🔴 **Migration tụt sau schema** | **phát hành** — máy chủ mới `migrate deploy` sẽ thiếu bảng |
+| 4 | ~~Migration tụt sau schema~~ | ✅ **ĐÃ ĐÓNG** — xem đính chính dưới |
 
-Mục 4 nặng nhất trong sổ hiện giờ: không chặn việc hôm nay, chặn ngày phát hành,
-và là loại lỗi chỉ lộ ra trên máy sạch.
+### 🔧 ĐÍNH CHÍNH mục 4 — đo lại lúc 09:5x, nó KHÔNG còn mở
+
+Bản đầu của báo cáo này gọi mục 4 là *"nặng nhất trong sổ hiện giờ"*. **Sai — nó đã được đóng
+từ 01:15 cùng ngày**, bởi một lane khác trong chính phiên này
+(`fd83f343` *"migration bù — migrate deploy dựng đủ 24/24 bảng"*).
+
+Đo lại, không chép:
+```
+prisma migrate diff --from-migrations → --to-schema-datamodel   ⇒ "This is an empty migration."
+CREATE TABLE dựng từ migrations : 24
+CREATE TABLE khai trong schema  : 24
+bảng schema có mà migrations thiếu : 0
+ProductSpec.matId trong migrations : có
+```
+⇒ Máy chủ mới chạy `migrate deploy` **dựng đủ 24/24 bảng**. Rủi ro phát hành **đóng**.
+Blocker 19/08 *"Hoà phải chạy tay Prisma migration cho `ProductSpec.matId`"* cũng đổi bản chất:
+tệp migration **đã có sẵn**, việc còn lại chỉ là chạy `migrate deploy` trên CSDL thật — thao tác
+thường lệ, không còn phải soạn migration.
+
+🔴 **Bài học của chính lượt này, đắt hơn con số:** trạng thái cũ **tự lan**. Nó nằm trong phần
+"Nợ để lại" của PR #15, tôi chép sang báo cáo, rồi báo miệng cho Hoà — **ba lần khẳng định, không
+lần nào đo lại**, trong khi thứ đóng nó đã nằm trong repo 8 tiếng. Đúng luật đã ghi:
+**đo tại nguồn, đừng nhớ hộ máy** — và "nhớ hộ" gồm cả nhớ hộ chính báo cáo của mình.
 
 ## ⑤ SAU KHI HOÀ PHÁN
 
