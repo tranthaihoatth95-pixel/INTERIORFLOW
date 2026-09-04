@@ -31,6 +31,7 @@ import {
 } from '@/lib/library/shelves';
 import { useLibraryDbItems } from '@/lib/library/db-items';
 import { loadIdfcStore, hydrateIdfcStore, type StoredIdfc } from '@/lib/library/idfc-store';
+import { cauKienHatGiongTrenKe } from '@/lib/library/hat-giong-3d';
 import { getPbr } from '@/lib/materials/pbr-store';
 import { exportIdfc, IDFC_KINDS, type IdfcKind } from '@/lib/cad/idfc';
 import { resolveLibraryItem } from '@/lib/cad/library-item-resolve';
@@ -288,7 +289,18 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   const [idfcItems, setIdfcItems] = useState<StoredIdfc[]>([]);
   useEffect(() => {
     // W0.3: kho `.idfc` nay ở IndexedDB — chờ hydrate xong mới đọc để không hiện bản cầu cũ.
-    if (open) void hydrateIdfcStore().then(() => setIdfcItems(loadIdfcStore()));
+    // ⚡ 04/09: xếp CẤU KIỆN HẠT GIỐNG xuống DƯỚI kho studio — máy sạch (kho rỗng) vẫn có món để
+    // duyệt/kéo. Cùng thứ tự ba tầng của vật liệu; món studio TRÙNG MÃ thì studio thắng, vì đó là
+    // bản người dùng tự nhập đè lên mẫu theo bản cài.
+    if (open) {
+      void hydrateIdfcStore().then(() => {
+        const studio = loadIdfcStore();
+        const maStudio = new Set(studio.map((s) => s.meta.code));
+        const hatGiong = cauKienHatGiongTrenKe()
+          .filter((h) => !maStudio.has(h.meta.code)) as StoredIdfc[];
+        setIdfcItems([...hatGiong, ...studio]);
+      });
+    }
   }, [open, mode]);
   /* 12/08 (`library-data-that`) — kệ đọc kho THẬT `LibraryAsset` qua `/api/library`
    * (lib/library/db-items.ts), trộn với món built-in trong `itemsFor`. */
@@ -311,7 +323,10 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
           id: `idfc:${s.meta.code}`, shelfId: 'common-idfc', name: s.meta.name, code: s.meta.code,
           kind: THUMB_OF_IDFC_KIND[s.meta.kind], scope: s.meta.scope ?? 'studio', mechanic: 'keo',
         }))
-        .filter((i) => (chip === 'all' || chip === 'studio') && (!q || i.name.toLowerCase().includes(q) || i.code.toLowerCase().includes(q)));
+        /* 04/09: chip lọc theo ĐÚNG phạm vi của món, không gõ cứng 'studio' — kệ nay có cả món
+           phạm vi 'chung' (cấu kiện hạt giống theo bản cài), gõ cứng là chúng biến mất khi người
+           dùng bấm chip "Chung". */
+        .filter((i) => (chip === 'all' || chip === i.scope) && (!q || i.name.toLowerCase().includes(q) || i.code.toLowerCase().includes(q)));
     }
     return itemsFor(activeStage, shelfId, chip, query, matGroup, dbItems);
   }, [activeStage, shelfId, chip, query, matGroup, idfcItems, idfcKindFilter, dbItems]);

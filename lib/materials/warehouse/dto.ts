@@ -49,7 +49,16 @@ export interface MaterialSpecDto {
  * ở đây vẫn được nhưng gốc là Lark); ngược lại là do studio tự nhập (tay hoặc nhập Excel — 2 lối
  * vào NHƯNG cùng kết quả "studio tự quản", không có field nào phân biệt sâu hơn ở schema hiện
  * tại nên không giả vờ phân biệt được). */
-export function materialSourceLabel(m: Pick<MaterialSpecDto, 'larkRecordId'>): { vi: string; en: string } {
+export function materialSourceLabel(m: Pick<MaterialSpecDto, 'larkRecordId' | 'id'>): { vi: string; en: string } {
+  /* 04/09 — NGUỒN THỨ BA: vật liệu đi kèm bản cài (`lib/materials/hat-giong.ts`). Trước dòng này
+     hàm chỉ biết hai nguồn nên mọi dòng không-Lark đều bị gắn "Studio tự nhập" — với vật liệu hạt
+     giống đó là **nói sai một sự thật kiểm chứng được**: chúng nằm trong repo, chưa studio nào
+     chạm vào. Cột "Nguồn" nói dối còn tệ hơn cột trống, vì người dùng tin nó rồi đi tìm ai đã
+     nhập. Nhận diện qua tiền tố `id` (`lib/materials/kho-mo-dau.ts`) — chép chuỗi tiền tố ở đây
+     thay vì import ngược để `dto.ts` giữ nguyên vai kiểu-thuần, không phụ thuộc tầng trên. */
+  if (typeof m.id === 'string' && m.id.startsWith('hat-giong:')) {
+    return { vi: 'Theo bản cài', en: 'Ships with the app' };
+  }
   return m.larkRecordId
     ? { vi: 'ATLAS · Lark', en: 'ATLAS · Lark' }
     : { vi: 'Studio tự nhập', en: 'Studio-entered' };

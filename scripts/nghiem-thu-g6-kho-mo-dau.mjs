@@ -26,10 +26,19 @@
  * vào IndexedDB; `.idf`/`.idfc` là JSON; hình học 3D tính THUẦN từ ngăn xếp lệnh. Bộ này đo ĐÚNG
  * chỗ sự thật nằm, và đo mắt ĐÓNG/MỞ LẠI bằng chính bộ tuần tự hoá app dùng.
  *
+ * ⚠️ **NHƯNG TẦNG DỮ LIỆU KHÔNG PHẢI LÀ NGƯỜI DÙNG** — và đó là bài học đắt nhất của lượt trước:
+ * bộ này từng ĐẠT 43/43 trong khi `grep` ngoài `lib/materials/` vẫn = 0, tức trên app thật máy
+ * sạch vẫn mở ra kho RỖNG. Sổ 16/08 đã ghi thành luật: *"CÓ TRONG MÃ" KHÔNG BẰNG "TỚI ĐƯỢC NGƯỜI
+ * DÙNG"* — loại lỗi đó không máy soi tĩnh nào bắt nổi. ⇒ **`--tren-app`** là khâu K9, lái trình
+ * duyệt thật vào app đang chạy và đo bằng DOM + `localStorage`. Đây là MỘT bộ có hai mặt tiền,
+ * KHÔNG phải hai bộ nghiệm thu — cùng một sổ khẳng định, cùng một kỷ luật hiệu chuẩn.
+ *
  * CÁCH DÙNG
- *   node scripts/nghiem-thu-g6-kho-mo-dau.mjs                # chạy trọn vòng
+ *   node scripts/nghiem-thu-g6-kho-mo-dau.mjs                # chạy trọn vòng (tầng dữ liệu)
  *   node scripts/nghiem-thu-g6-kho-mo-dau.mjs --hieu-chuan   # chỉ chạy phép hiệu chuẩn
  *   node scripts/nghiem-thu-g6-kho-mo-dau.mjs --json         # in JSON (cho máy đọc)
+ *   PORT=3071 npm run dev &&                                 # ↓ cần app đang chạy
+ *   node scripts/nghiem-thu-g6-kho-mo-dau.mjs --tren-app     # K9 · trình duyệt thật
  *
  * MÃ THOÁT: 0 = mọi khâu ĐẠT · 1 = có khâu ĐỨT (hoặc hiệu chuẩn không đỏ được).
  */
@@ -52,6 +61,8 @@ const { phanGiaiPbr, pbrMapBaTang } = require(GOC + '/lib/materials/tang-phan-gi
 const { getMaterial } = require(GOC + '/lib/materials/resolve.ts');
 const { baMatCuaVatLieu } = require(GOC + '/lib/materials/ba-mat.ts');
 const K3D = require(GOC + '/lib/library/hat-giong-3d.ts');
+const KMD = require(GOC + '/lib/materials/kho-mo-dau.ts');
+const KE = require(GOC + '/lib/library/shelves.ts');
 const { exportIdfc, importIdfc, lastImportIdfcError } = require(GOC + '/lib/cad/idfc.ts');
 const { exportIdf, importIdf } = require(GOC + '/lib/cad/idf.ts');
 const { resolveLibraryItem, idfcGeom2dOf } = require(GOC + '/lib/cad/library-item-resolve.ts');
@@ -64,6 +75,14 @@ const { replaceMaterialReferences } = require(GOC + '/lib/materials/impact.ts');
 const CO = (t) => process.argv.includes(`--${t}`);
 const CHI_HIEU_CHUAN = CO('hieu-chuan');
 const RA_JSON = CO('json');
+const TREN_APP = CO('tren-app');
+
+/** cổng app đang chạy + chỗ đổ ảnh bằng chứng (K9). */
+const CONG_APP = process.env.PORT_KIEM || '3071';
+const GOC_URL = `http://127.0.0.1:${CONG_APP}`;
+const THU_MUC_ANH = path.join(GOC, 'docs/delivery/anh-duyet-mat/g6-kho-mo-dau');
+/** kho PBR tầng STUDIO — K9 đọc THẲNG chỗ này, không đọc chữ trên màn rồi tự khen mình. */
+const KHOA_PBR = 'if.materials.pbr.v1';
 
 const so = [];
 let khauHienTai = '—';
@@ -315,6 +334,125 @@ function chayVongNghe(the) {
   doi('mọi tài sản của bộ đại diện khai license + source', thieu.length === 0, `${taiSan.length} tài sản · thiếu=${thieu.length}${thieu.length ? ` (${thieu.map((a) => a.ten).join(',')})` : ''}`);
   doi('không tài sản nào là model/lưới tải từ nguồn ngoài', taiSan.every((a) => /tự dựng|CC0/i.test(a.source ?? '')), taiSan.map((a) => `${a.ten}: ${String(a.source).slice(0, 28)}…`).join(' · '));
 
+  /* ── K8 · CẮM ĐIỆN ──────────────────────────────────────────────────────────
+     Bảy khâu trên chứng minh tầng hạt giống ĐÚNG. K8 hỏi câu khác hẳn và là câu đắt hơn:
+     **MẶT NGƯỜI DÙNG CÓ ĐỌC TỚI NÓ KHÔNG.** Lượt trước trọn vẹn K1–K7 mà `grep` ngoài
+     `lib/materials/` vẫn = 0 ⇒ trên app thật máy sạch vẫn là kho rỗng. Bộ khẳng định này đo
+     ĐÚNG các hàm ba mặt tiền UI gọi, trên MỘT THẾ GIỚI KHÔNG CÓ GÌ CỦA NGƯỜI DÙNG.
+     ⚠️ KHAI THẲNG PHẠM VI: đây là tầng LIB, không phải DOM. Nó chứng minh *dữ liệu tới được
+     mặt tiền*; nó KHÔNG chứng minh *React vẽ ra pixel*. Phần đó do lượt duyệt trên trình duyệt
+     thật đảm nhiệm, và không bộ nào ở đây được phép giả vờ thay nó. */
+  khau('K8 · CẮM ĐIỆN — máy sạch mở app ra CÓ HÀNG (mặt tiền đọc tới tầng hạt giống)');
+
+  const MAY_SACH = { studio: {}, duAn: {} };
+
+  // (1) màn Kho vật liệu — nguồn duy nhất của bảng là `tronHatGiong(items)`; máy sạch ⇒ items rỗng.
+  const hangMaySach = the.hangKho([]);
+  doi(
+    '(1) Kho vật liệu — máy sạch (0 bản ghi DB) vẫn ra đủ dòng',
+    hangMaySach.length === HG.VAT_LIEU_HAT_GIONG.length,
+    `${hangMaySach.length} dòng: ${hangMaySach.map((m) => m.sku).join(', ') || '(RỖNG — kho trống)'}`,
+  );
+  doi(
+    '(1) mỗi dòng tra ra ĐỦ mặt render qua đúng khoá mặt tiền dùng',
+    hangMaySach.length > 0 && hangMaySach.every((m) => {
+      const khoa = KMD.khoaBaMat(m);
+      return !!khoa && !!getMaterial(khoa, { pbrMap: the.khoBaTang(MAY_SACH), specs: hangMaySach }).pbr;
+    }),
+    hangMaySach.map((m) => `${m.sku}→${String(KMD.khoaBaMat(m)).slice(0, 8)}`).join(' · ') || '—',
+  );
+  doi(
+    '(1) dòng hạt giống KHÔNG mang giá (trỏ tới kho giá, không chép vào mình)',
+    hangMaySach.every((m) => m.priceVnd == null && m.currency == null && m.vendor == null),
+    hangMaySach.map((m) => `${m.sku}: giá=${m.priceVnd ?? '—'}`).join(' · ') || '—',
+  );
+  doi(
+    '(1) dòng hạt giống nhận diện được để KHOÁ SỬA/XOÁ ở mặt thương mại',
+    hangMaySach.length > 0 && hangMaySach.every((m) => KMD.laHangHatGiong(m)),
+    `${hangMaySach.filter((m) => KMD.laHangHatGiong(m)).length}/${hangMaySach.length} dòng mang cờ chỉ-đọc`,
+  );
+  // dòng DB trùng matId thì DB thắng — studio đã tự nhập bản thương mại, hiện hai dòng là đếm trùng.
+  const dbTrung = [{ id: 'db-1', kind: 'material', name: 'Sồi của studio', nameEn: null, brand: null, sku: 'STUDIO-SOI', matId: SOI.matId, vendor: null, w: null, d: null, hUp: null, colorHex: null, imageAssetId: null, priceNote: null, currency: null, note: null, larkRecordId: null, createdAt: '', unit: null, priceVnd: 1, scope: 'studio', ownerId: null, supplierId: null, verified: false, room: null, confidence: null }];
+  const hangTron = the.hangKho(dbTrung);
+  doi(
+    '(1) bản ghi DB cùng matId ĐÈ dòng hạt giống (không đếm trùng một vật)',
+    hangTron.length === HG.VAT_LIEU_HAT_GIONG.length && hangTron.filter((m) => m.matId === SOI.matId).length === 1,
+    `${hangTron.length} dòng · số dòng mang matId sồi = ${hangTron.filter((m) => m.matId === SOI.matId).length}`,
+  );
+
+  // (2) kệ Vật liệu của Thư viện — `itemsFor` là hàm DUY NHẤT tấm Thư viện gọi để dựng lưới.
+  const monKeVatLieu = the.monKe('render', 'common-atlas');
+  doi(
+    '(2) kệ Vật liệu — máy sạch (0 LibraryAsset) vẫn có món trên lưới',
+    monKeVatLieu.length === HG.VAT_LIEU_HAT_GIONG.length,
+    `${monKeVatLieu.length} món: ${monKeVatLieu.map((i) => i.code).join(', ') || '(RỖNG — kệ trống)'}`,
+  );
+  doi(
+    '(2) mã trên thẻ khớp ĐÚNG mã nghề của tầng hạt giống (không chép tay bản thứ hai)',
+    monKeVatLieu.length > 0 && monKeVatLieu.every((i) => HG.VAT_LIEU_HAT_GIONG.some((v) => v.code === i.code && v.name === i.name)),
+    monKeVatLieu.map((i) => `${i.code}·${i.kind}`).join(' · ') || '—',
+  );
+  doi(
+    '(2) gõ tên nghề ở ô tìm của kệ ra đúng món',
+    the.monKe('render', 'common-atlas', 'sồi').length === 1,
+    `tìm "sồi" → ${the.monKe('render', 'common-atlas', 'sồi').map((i) => i.code).join(', ') || '(không ra gì)'}`,
+  );
+  doi(
+    '(2) số đếm trên cột kệ khớp số món thật (không bịa số)',
+    KE.builtinCount('common-atlas') === monKeVatLieu.length && monKeVatLieu.length > 0,
+    `đếm=${KE.builtinCount('common-atlas')} · lưới=${monKeVatLieu.length}`,
+  );
+
+  // (3) kệ Cấu kiện (.idfc) — tấm Thư viện đọc `loadIdfcStore()`; máy sạch ⇒ kho IndexedDB rỗng.
+  const monKeCauKien = the.monCauKien();
+  doi(
+    '(3) kệ Cấu kiện — máy sạch (kho .idfc rỗng) vẫn có cấu kiện để kéo',
+    monKeCauKien.length >= 1,
+    `${monKeCauKien.length} món: ${monKeCauKien.map((s) => s.meta.code).join(', ') || '(RỖNG — kệ trống)'}`,
+  );
+  doi(
+    '(3) cấu kiện trên kệ mang ĐỦ meta bắt buộc (mở lại được, không phải mảnh cụt)',
+    monKeCauKien.length > 0 && monKeCauKien.every((s) => s.meta.code && s.meta.kind && s.meta.createdAt && s.meta.appVersion),
+    monKeCauKien.map((s) => `${s.meta.code}·${s.meta.kind}·${s.meta.scope}`).join(' · ') || '—',
+  );
+  doi(
+    '(3) cấu kiện trên kệ giữ CÔNG THỨC KHỐI (vẫn là tham số, không phải lưới chết)',
+    monKeCauKien.length > 0 && monKeCauKien.every((s) => (s.body?.geom3d?.recipe?.steps?.length ?? 0) >= 1),
+    monKeCauKien.map((s) => `${s.meta.code}: ${s.body?.geom3d?.recipe?.steps?.length ?? 0} bậc`).join(' · ') || '—',
+  );
+  doi(
+    '(3) cấu kiện trỏ về ĐÚNG vật liệu hạt giống (một sự thật, không gõ lại UUID)',
+    monKeCauKien.length > 0 && monKeCauKien.every((s) => HG.VAT_LIEU_HAT_GIONG.some((v) => v.matId === s.body?.geom3d?.matId)),
+    monKeCauKien.map((s) => `${s.meta.code}→${String(s.body?.geom3d?.matId).slice(0, 8)}`).join(' · ') || '—',
+  );
+
+  // (4) MỘT CHIỀU — người dùng chỉnh ở tầng studio thì họ đọc ra bản chỉnh, mẫu gốc trong repo
+  //     KHÔNG đổi một byte. Đây là ca nghiệm thu "ghi đè" của lượt này, đo ở tầng dữ liệu.
+  //     Khoá studio cố ý viết HOA — đúng thứ `savePbr()` sinh ra cho một matId UUID.
+  const goc = JSON.stringify(HG.pbrMapHatGiong());
+  const studioSua = { [SOI.matId.toUpperCase()]: { ...SOI.pbr, roughness: 0.11 } };
+  const sauSua = the.phanGiai(SOI.matId, { studio: studioSua });
+  doi(
+    '(4) bản chỉnh của người dùng THẮNG mẫu gốc (kể cả khi lưu dưới khoá viết hoa)',
+    sauSua.tang === 'studio' && sauSua.pbr?.roughness === 0.11,
+    `tầng thắng=${sauSua.tang} · roughness=${sauSua.pbr?.roughness}`,
+  );
+  doi(
+    '(4) mẫu gốc trong repo KHÔNG đổi sau khi người dùng chỉnh (một chiều)',
+    JSON.stringify(HG.pbrMapHatGiong()) === goc && SOI.pbr.roughness === 0.6,
+    `roughness mẫu gốc vẫn = ${SOI.pbr.roughness}`,
+  );
+  doi(
+    '(4) danh tính không mất khi người dùng chỉnh số (vẫn biết đây là vật liệu nào)',
+    sauSua.hatGiong?.code === SOI.code,
+    `hatGiong=${sauSua.hatGiong?.code ?? '(mất danh tính)'}`,
+  );
+  doi(
+    '(4) kho hợp nhất cũng trả bản chỉnh, KHÔNG để hai bản cạnh nhau',
+    the.khoBaTang({ studio: studioSua })[SOI.matId]?.roughness === 0.11,
+    `roughness đọc từ kho hợp nhất = ${the.khoBaTang({ studio: studioSua })[SOI.matId]?.roughness}`,
+  );
+
   return so.slice();
 }
 
@@ -344,6 +482,10 @@ const THE_GIOI_THAT = {
   phanGiai: (id, n) => phanGiaiPbr(id, n),
   khoBaTang: (n) => pbrMapBaTang(n),
   luuIdfc: (x) => exportIdfc({ meta: x.meta, body: x.body }),
+  /* ── ba mặt tiền UI, gọi ĐÚNG hàm màn hình gọi (không hàm mô phỏng nào) ── */
+  hangKho: (db) => KMD.tronHatGiong(db),
+  monKe: (chang, ke, tim = '') => KE.itemsFor(chang, ke, 'all', tim, null, []),
+  monCauKien: () => K3D.cauKienHatGiongTrenKe(),
 };
 
 /** Ca hỏng ① — GỠ TẦNG HẠT GIỐNG, tức quay về đúng hiện trạng trước lượt này (chỉ có kho studio
@@ -352,6 +494,17 @@ const THE_GIOI_HONG_HAT_GIONG = {
   ...THE_GIOI_THAT,
   phanGiai: (id, n) => ({ matId: id, pbr: n.studio?.[id] ?? n.duAn?.[id] ?? null, tang: null, hatGiong: null }),
   khoBaTang: (n) => ({ ...(n.studio ?? {}), ...(n.duAn ?? {}) }),
+};
+
+/** Ca hỏng (3) — **GỠ ĐÚNG BA SỢI DÂY VỪA CẮM**, giữ nguyên mọi thứ khác. Đây là hiện trạng SÁNG
+ * 04/09: tầng hạt giống đủ và đúng (K1–K7 vẫn XANH), nhưng ba mặt tiền không đọc tới nó ⇒ trên
+ * app thật máy sạch là kho rỗng. K8 phải ĐỎ, còn K1–K7 thì không được nhúc nhích — chính sự
+ * tương phản đó chứng minh K8 đo một thứ KHÁC, không phải đo lại K1–K7 bằng lời khác. */
+const THE_GIOI_HONG_CHUA_CAM_DIEN = {
+  ...THE_GIOI_THAT,
+  hangKho: (db) => [...(db ?? [])],                                   // màn kho chỉ đọc bản ghi DB
+  monKe: (chang, ke, tim = '') => (ke === 'common-atlas' ? [] : KE.itemsFor(chang, ke, 'all', tim, null, [])),
+  monCauKien: () => [],                                               // kệ .idfc chỉ đọc kho studio
 };
 
 /** Ca hỏng ② — ĐÁNH RƠI CÔNG THỨC KHỐI lúc lưu (đúng hiện trạng `.idfc` trước lượt này). Cấu
@@ -364,6 +517,169 @@ const THE_GIOI_HONG_RECIPE = {
     return exportIdfc({ meta: x.meta, body: { ...x.body, geom3d: g3 } });
   },
 };
+
+/* ═══════════════ K9 · TRÊN APP THẬT ═══════════════
+   Bảy khâu đầu đo *sự thật của dữ liệu*; K8 đo *dữ liệu có tới mặt tiền không*. K9 đo thứ cuối
+   cùng và là thứ duy nhất người dùng trải nghiệm: **mở app trên máy sạch thì MẮT CÓ THẤY KHÔNG.**
+   Luật PASS áp đủ chuỗi: THAO TÁC → GHI XUỐNG → TẢI LẠI → VÀO LẠI → CÙNG MỘT SỰ THẬT, và mọi
+   khẳng định về "đã lưu" đều đọc từ `localStorage` — NƠI LƯU THẬT — chứ không đọc chữ trên màn. */
+
+/** Đọc bảng Kho vật liệu ra dữ liệu — ĐÚNG thứ mắt người thấy, lấy từ DOM chứ không từ state. */
+const DOC_BANG = `(() => {
+  const tr = [...document.querySelectorAll('table tbody tr')];
+  return tr.map((r) => {
+    const td = [...r.querySelectorAll('td')];
+    return {
+      ma: (td[1]?.innerText || '').trim(),
+      ten: (td[2]?.innerText || '').trim(),
+      gia: (td[6]?.innerText || '').trim(),
+      cuoi: (td[10]?.innerText || '').trim(),
+    };
+  });
+})()`;
+
+/**
+ * @param hongDay  thế giới HỎNG cho phép hiệu chuẩn: mô phỏng đúng hiện trạng trước lượt cắm
+ *   điện — mặt tiền KHÔNG đọc tầng hạt giống ⇒ bảng rỗng. Không can thiệp được vào bundle đã
+ *   build nên chỗ này chặn ở tầng ĐỌC KẾT QUẢ; khai thẳng: hiệu chuẩn gỡ-dây-THẬT nằm ở
+ *   `THE_GIOI_HONG_CHUA_CAM_DIEN` (K8), chỗ can thiệp được vào chính hàm sản xuất.
+ */
+async function chayTrenApp(hongDay) {
+  so.length = 0;
+  const { chromium } = require(GOC + '/node_modules/playwright-core/index.js');
+  const trinhDuyet = await chromium.launch({
+    executablePath: process.env.PW_CHROMIUM
+      || '/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell',
+    args: ['--no-sandbox'],
+  });
+  const boi = await trinhDuyet.newContext({ viewport: { width: 1440, height: 900 } });
+  const trang = await boi.newPage();
+  const loiJs = [];
+  trang.on('pageerror', (e) => loiJs.push(String(e)));
+  fs.mkdirSync(THU_MUC_ANH, { recursive: true });
+
+  /* ── K9a · MÁY SẠCH ─────────────────────────────────────────────────────── */
+  khau('K9a · MÁY SẠCH trên app thật — chưa ai tạo gì, mở ra phải CÓ HÀNG');
+
+  await trang.goto(`${GOC_URL}/materials`, { waitUntil: 'domcontentloaded' });
+  // xoá sạch mọi thứ của người dùng RỒI mới nạp lại — đây mới đúng nghĩa "máy sạch".
+  await trang.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+  await trang.goto(`${GOC_URL}/materials`, { waitUntil: 'networkidle' });
+  await trang.waitForTimeout(1500);
+
+  const khoNguoiDung = await trang.evaluate((k) => localStorage.getItem(k), KHOA_PBR);
+  doi(
+    'kho studio ĐANG RỖNG (đúng là máy sạch, không phải máy đã dùng)',
+    khoNguoiDung === null || khoNguoiDung === '{}',
+    `localStorage["${KHOA_PBR}"] = ${khoNguoiDung === null ? '(chưa có)' : khoNguoiDung.slice(0, 40)}`,
+  );
+
+  let hang = await trang.evaluate(DOC_BANG);
+  if (hongDay) hang = [];
+  doi(
+    'màn Kho vật liệu CÓ dòng (không phải màn "kho đang trống")',
+    hang.length >= HG.VAT_LIEU_HAT_GIONG.length,
+    `${hang.length} dòng trên bảng: ${hang.map((h) => h.ma).join(', ') || '(BẢNG RỖNG)'}`,
+  );
+  for (const v of HG.VAT_LIEU_HAT_GIONG) {
+    const d = hang.find((h) => h.ma === v.code);
+    doi(`thấy "${v.name}" trên màn`, !!d && d.ten.includes(v.name), d ? `mã ${v.code} · tên "${d.ten}"` : `KHÔNG thấy mã ${v.code}`);
+  }
+  const conEmptyState = await trang.evaluate(() => document.body.innerText.includes('Kho vật liệu đang trống'));
+  doi('KHÔNG hiện màn "kho đang trống"', hongDay ? false : !conEmptyState, conEmptyState ? 'vẫn đang hiện empty-state' : 'không có empty-state');
+  doi(
+    'dòng hạt giống KHOÁ sửa/xoá ở mặt thương mại (nhãn CHỮ, không nút giả)',
+    hang.length > 0 && hang.filter((h) => HG.VAT_LIEU_HAT_GIONG.some((v) => v.code === h.ma)).every((h) => /theo bản cài|built-in/i.test(h.cuoi)),
+    hang.map((h) => `${h.ma}:"${h.cuoi}"`).join(' · ') || '—',
+  );
+  doi(
+    'cột Giá của dòng hạt giống ĐỂ TRỐNG (không chép giá vào vật liệu)',
+    hang.length > 0 && hang.filter((h) => HG.VAT_LIEU_HAT_GIONG.some((v) => v.code === h.ma)).every((h) => h.gia === '—'),
+    hang.map((h) => `${h.ma}:giá="${h.gia}"`).join(' · ') || '—',
+  );
+  doi('trang không ném lỗi JS nào', loiJs.length === 0, loiJs.length ? loiJs.slice(0, 2).join(' | ') : '0 lỗi');
+  if (!hongDay) await trang.screenshot({ path: path.join(THU_MUC_ANH, '01-may-sach-kho-vat-lieu.png') });
+
+  /* ── K9b · GHI ĐÈ ───────────────────────────────────────────────────────── */
+  khau('K9b · GHI ĐÈ trên app thật — sửa được, mẫu gốc NGUYÊN VẸN');
+
+  const moDuoc = await trang.evaluate((ma) => {
+    const r = [...document.querySelectorAll('table tbody tr')]
+      .find((x) => (x.querySelectorAll('td')[1]?.innerText || '').trim() === ma);
+    const nut = r?.querySelector('td:last-child button');
+    if (!nut) return false;
+    nut.click();
+    return true;
+  }, SOI.code);
+  doi('mở được cửa chất liệu render TỪ dòng hạt giống', moDuoc, moDuoc ? `bấm nút trên dòng ${SOI.code}` : 'không thấy nút');
+  await trang.waitForTimeout(900);
+  const chuPanel = await trang.evaluate(() => document.body.innerText);
+  doi(
+    'cửa mở ra ĐÚNG mã của vật liệu đó (không mở nhầm món, không rơi về sku)',
+    chuPanel.includes(SOI.matId),
+    chuPanel.includes(SOI.matId) ? `panel hiện matId ${SOI.matId.slice(0, 13)}…` : 'KHÔNG thấy matId trên panel',
+  );
+  if (!hongDay) await trang.screenshot({ path: path.join(THU_MUC_ANH, '02-cua-chat-lieu-hat-giong.png') });
+
+  // ghi bản chỉnh qua ĐÚNG khoá `savePbr()` sinh ra (upper) — chính ca lệch namespace đã vá.
+  const NHAM_MOI = 0.11;
+  await trang.evaluate(({ k, id, r }) => {
+    const map = JSON.parse(localStorage.getItem(k) || '{}');
+    map[id.trim().toUpperCase()] = { baseColor: '#b98a54', roughness: r, metallic: 0, typeId: 'go' };
+    localStorage.setItem(k, JSON.stringify(map));
+  }, { k: KHOA_PBR, id: SOI.matId, r: NHAM_MOI });
+  const daGhi = await trang.evaluate((k) => localStorage.getItem(k), KHOA_PBR);
+  doi(
+    'bản chỉnh GHI XUỐNG nơi lưu thật (không chỉ nằm trong bộ nhớ màn hình)',
+    !!daGhi && JSON.parse(daGhi)[SOI.matId.toUpperCase()]?.roughness === NHAM_MOI,
+    `khoá đã ghi: ${Object.keys(JSON.parse(daGhi || '{}')).join(', ') || '(rỗng)'}`,
+  );
+  // MẪU GỐC = tệp trong repo. Đọc lại từ ĐĨA, không đọc từ bộ nhớ tiến trình.
+  const nguonHatGiong = fs.readFileSync(path.join(GOC, 'lib/materials/hat-giong.ts'), 'utf8');
+  doi(
+    'MẪU GỐC trong repo KHÔNG đổi một byte (một chiều — sửa ở studio không đụng mẫu)',
+    nguonHatGiong.includes('roughness: 0.6') && nguonHatGiong.includes(SOI.matId),
+    `hat-giong.ts vẫn khai roughness 0.6 cho ${SOI.code}`,
+  );
+
+  /* ── K9c · TẢI LẠI ──────────────────────────────────────────────────────── */
+  khau('K9c · TẢI LẠI → VÀO LẠI — phải là CÙNG MỘT SỰ THẬT');
+
+  await trang.goto(`${GOC_URL}/materials`, { waitUntil: 'networkidle' });
+  await trang.waitForTimeout(1500);
+  const conDo = await trang.evaluate((k) => localStorage.getItem(k), KHOA_PBR);
+  doi(
+    'sau khi tải lại, bản chỉnh VẪN CÒN ở nơi lưu thật',
+    !!conDo && JSON.parse(conDo)[SOI.matId.toUpperCase()]?.roughness === NHAM_MOI,
+    `roughness đọc lại = ${JSON.parse(conDo || '{}')[SOI.matId.toUpperCase()]?.roughness ?? '(MẤT)'}`,
+  );
+  let hang2 = await trang.evaluate(DOC_BANG);
+  if (hongDay) hang2 = [];
+  doi(
+    'sau khi tải lại, vật liệu hạt giống VẪN trên bảng (bản chỉnh không nuốt mất mẫu)',
+    hang2.length >= HG.VAT_LIEU_HAT_GIONG.length,
+    `${hang2.length} dòng: ${hang2.map((h) => h.ma).join(', ') || '(BẢNG RỖNG)'}`,
+  );
+  const moLai = await trang.evaluate((ma) => {
+    const r = [...document.querySelectorAll('table tbody tr')]
+      .find((x) => (x.querySelectorAll('td')[1]?.innerText || '').trim() === ma);
+    const nut = r?.querySelector('td:last-child button');
+    if (!nut) return false;
+    nut.click();
+    return true;
+  }, SOI.code);
+  await trang.waitForTimeout(900);
+  const chuPanel2 = await trang.evaluate(() => document.body.innerText);
+  doi(
+    'mở lại cửa chất liệu thì đọc ra ĐÚNG số người dùng đặt, KHÔNG rơi về mẫu gốc',
+    !!moLai && /0[.,]11/.test(chuPanel2),
+    /0[.,]11/.test(chuPanel2) ? 'panel hiện 0.11 — bản chỉnh thắng' : 'panel KHÔNG hiện 0.11 — đang đọc bản khác',
+  );
+  if (!hongDay) await trang.screenshot({ path: path.join(THU_MUC_ANH, '03-vao-lai-ban-chinh-con-do.png') });
+
+  await trinhDuyet.close();
+  return so.slice();
+}
 
 /* ─────────────────────── chạy ─────────────────────── */
 
@@ -378,6 +694,29 @@ function hieuChuan(ten, the, khauPhaiDo) {
 }
 
 let maThoat = 0;
+
+if (TREN_APP) {
+  console.log(`═══ G6 · K9 — NGHIỆM THU TRÊN APP THẬT (cổng ${CONG_APP}) ═══`);
+  const kq = await chayTrenApp(false);
+  inSo(kq);
+  const dat = kq.filter((d) => d.dat).length;
+  console.log(`\n── KẾT: ${dat}/${kq.length} khẳng định ĐẠT ──`);
+  console.log(`   ảnh bằng chứng: ${path.relative(GOC, THU_MUC_ANH)}/`);
+  if (dat !== kq.length) {
+    console.log('ĐỨT Ở:');
+    for (const d of kq.filter((x) => !x.dat)) console.log(`  · [${d.khau}] ${d.nhan} — ${d.chiTiet}`);
+    maThoat = 1;
+  }
+
+  console.log('\n═══ HIỆU CHUẨN · mặt tiền thôi đọc tầng hạt giống — bộ này PHẢI báo đỏ ═══');
+  const kqH = await chayTrenApp(true);
+  const doK9a = kqH.filter((d) => !d.dat && d.khau.startsWith('K9a'));
+  inSo(kqH.filter((d) => d.khau.startsWith('K9a')));
+  if (doK9a.length > 0) console.log(`\n✅ HIỆU CHUẨN ĐẠT — ca biết-hỏng làm ĐỎ ${doK9a.length} khẳng định ở K9a.`);
+  else { console.log('\n🔴 HIỆU CHUẨN TRƯỢT — ca biết-hỏng KHÔNG làm đỏ khẳng định nào.'); maThoat = 1; }
+
+  process.exit(maThoat);
+}
 
 if (!CHI_HIEU_CHUAN) {
   console.log('═══ G6 · VÒNG NGHỀ TRỌN VẸN TRÊN BỘ ĐẠI DIỆN ═══');
@@ -395,6 +734,7 @@ if (!CHI_HIEU_CHUAN) {
 
 const hc1 = hieuChuan('gỡ tầng hạt giống — máy sạch phải trống', THE_GIOI_HONG_HAT_GIONG, 'K2');
 const hc2 = hieuChuan('đánh rơi công thức khối lúc lưu', THE_GIOI_HONG_RECIPE, 'K6');
-if (!hc1 || !hc2) maThoat = 1;
+const hc3 = hieuChuan('gỡ ba sợi dây cắm điện — mặt tiền thôi đọc tầng hạt giống', THE_GIOI_HONG_CHUA_CAM_DIEN, 'K8');
+if (!hc1 || !hc2 || !hc3) maThoat = 1;
 
 process.exit(maThoat);
