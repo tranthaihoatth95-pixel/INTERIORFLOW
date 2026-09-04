@@ -22,6 +22,22 @@ function ok(msg: string, cond: unknown) {
   else { fail += 1; console.log('  FAIL -', msg); }
 }
 const ROOT = join(__dirname, '..', '..');
+
+/* Bộ giải alias `@/` cho `sucrase-node` — nó không đọc `paths` của tsconfig, nên MỌI component
+   nhập `@/lib/...` đều `MODULE_NOT_FOUND` khi render trong test. Đó chính là lý do các test
+   trước nay phải khớp CHỮ TRONG MÃ thay vì render thật; mười hai dòng dưới đây gỡ trần đó. */
+{
+  const Mod = require('module');
+  const gocResolve = Mod._resolveFilename;
+  Mod._resolveFilename = function (req: string, ...rest: unknown[]) {
+    return gocResolve.call(this, req.startsWith('@/') ? join(ROOT, req.slice(2)) : req, ...rest);
+  };
+  /* `sucrase-node` dịch JSX theo lối CỔ ĐIỂN (`React.createElement`) trong khi mã sản phẩm viết
+     theo lối TỰ ĐỘNG của Next (không `import React`). Đặt React vào phạm vi toàn cục là cách rẻ
+     nhất để render được component thật ở đây — chỉ sống trong tiến trình test, không đụng mã sản
+     phẩm và không đổi cách app biên dịch. */
+  (globalThis as { React?: unknown }).React = require('react');
+}
 const CSS = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 const SRC = readFileSync(join(ROOT, 'components', 'ui', 'Surface.tsx'), 'utf8');
 
@@ -70,14 +86,40 @@ ok('Surface.tsx 0 backdropFilter inline', !/backdropFilter/.test(SRC));
 console.log('\n[5] EmptyState ba tone + nút mờ đúng đường');
 {
   const es = readFileSync(join(ROOT, 'components', 'ui', 'EmptyState.tsx'), 'utf8');
-  ok("tone?: 'empty' | 'loading' | 'error'", /tone\?:\s*'empty'\s*\|\s*'loading'\s*\|\s*'error'/.test(es));
   ok('loading dùng LightBar (một lõi tiến trình, không thanh thứ hai)', /import LightBar from '\.\/LightBar'/.test(es) && /createElement\(LightBar|<LightBar/.test(es));
   ok('loading không bịa %: value = progress (undefined ⇒ không đếm được)', /value=\{progress\}/.test(es));
   ok('nút mờ: aria-disabled + aria-describedby', /aria-disabled=/.test(es) && /aria-describedby=/.test(es));
   ok('nút mờ: không dùng thuộc tính disabled= hay title=', !/\sdisabled=\{a\.disabled\}/.test(es) && !/\stitle=\{/.test(es));
   ok('nút chính chữ var(--on-accent), không #fff', es.includes("'var(--on-accent)'") && !/'#fff'/.test(es));
   ok('độ mờ nút qua token --mo-vo-hieu', es.includes("'var(--mo-vo-hieu)'"));
-  ok('error tone: role="alert"', /role=\{tone === 'error' \? 'alert'/.test(es));
+  // Khẳng định HÀNH VI chứ không khớp chữ trong mã: cả `error` lẫn `offline` đều là hỏng-việc-ngay
+  // ⇒ đều phải `role="alert"`. (Bản trước khớp nguyên văn `tone === 'error' ? 'alert'` nên đỏ ngay
+  // khi thêm nấc thứ tư, dù hành vi không xấu đi — đó là test khoá cách viết, không khoá hành vi.)
+  ok("tone='error' | 'offline': đều role=alert", /role=\{nangNe \? 'alert'/.test(es) && /tone === 'error' \|\| tone === 'offline'/.test(es));
+  ok("tone?: có đủ bốn nấc kể cả 'offline'", /tone\?:\s*'empty'\s*\|\s*'loading'\s*\|\s*'error'\s*\|\s*'offline'/.test(es));
+  ok('ngoại tuyến LỌC BỎ nút Thử lại ngay trong component (không dặn nơi gọi)', /tone === 'offline'\s*\?\s*actions\.filter/.test(es) && /thử lại\|retry/i.test(es));
+}
+
+console.log('\n[6] EmptyState — RENDER THẬT, không khớp chữ trong mã');
+{
+  // `any` có chủ đích: component nạp động qua require nên TS không suy được kiểu props ở đây.
+  const { EmptyState } = require('../../components/ui/EmptyState') as { EmptyState: any };
+  const nut = [
+    { label: 'Thử lại', onClick: () => {} },
+    { label: 'Mở thư mục cục bộ', onClick: () => {} },
+  ];
+  const loi = renderToStaticMarkup(createElement(EmptyState, { title: 'Hỏng', actions: nut, tone: 'error' }));
+  const ngoai = renderToStaticMarkup(createElement(EmptyState, { title: 'Mất mạng', actions: nut, tone: 'offline' }));
+  ok('lỗi: GIỮ nút Thử lại', loi.includes('Thử lại'));
+  ok('ngoại tuyến: BỎ nút Thử lại (bấm lại là lời khuyên vô ích khi mất mạng)', !ngoai.includes('Thử lại'));
+  ok('ngoại tuyến: GIỮ việc cục bộ vẫn làm được', ngoai.includes('Mở thư mục cục bộ'));
+  ok('cả hai đều role=alert', /role="alert"/.test(loi) && /role="alert"/.test(ngoai));
+  ok('ngoại tuyến không aria-busy (không phải đang tải)', !/aria-busy/.test(ngoai));
+  const thuong = renderToStaticMarkup(createElement(EmptyState, { title: 'Trống', tone: 'empty' }));
+  ok('trống: không role=alert', !/role="alert"/.test(thuong));
+  const day = renderToStaticMarkup(createElement(EmptyState, { title: 'x', tone: 'empty', lapDayO: true }));
+  ok('lapDayO: lấp đầy ô chứa (height:100%)', /height:100%/.test(day.replace(/\s/g, '')));
+  ok('mặc định KHÔNG lấp đầy (không đổi hành vi ~40 nơi đang gọi)', !/height:100%/.test(thuong.replace(/\s/g, '')));
 }
 
 console.log(`\n${fail ? '❌' : '✅'} surface: ${fail ? fail + ' fail' : 'tất cả đạt'}`);

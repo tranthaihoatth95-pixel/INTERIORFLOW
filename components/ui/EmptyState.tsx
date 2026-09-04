@@ -18,6 +18,12 @@
  * Ghost structure: `ghost="bays"` = lưới ngăn kệ 4:3 nét đứt (mock Thư viện) · `ghost="rows"` =
  * 3 hàng bảng ghost (bảng vật liệu/BOQ) · `ghost="none"` = chỉ icon+chữ+nút (panel hẹp).
  *
+ * 04/09 — thêm trạng thái thứ TƯ `tone="offline"` (thu về từ `TrangThaiO` của dòng phát triển
+ * 20/08, gộp vào đây thay vì dựng component thứ hai). Ngoại tuyến dùng chung dấu hiệu nặng-nề với
+ * lỗi, nhưng khác ở chỗ quan trọng nhất: **không có nút "Thử lại"** — máy tự lọc, không dặn nơi
+ * gọi. Kèm `lapDayO` cho ô có chiều cao cố định: khối trạng thái phải chiếm đúng chỗ nội dung
+ * thật sẽ chiếm, không phải một viên 44px lơ lửng giữa ô 400px.
+ *
  * 03/09 (Cloud Slice 9) — BA TRẠNG THÁI, MỘT KHUÔN: `tone="empty"` (mặc định, như cũ) ·
  * `tone="loading"` (thanh `LightBar` — lõi tiến trình chung, KHÔNG bịa %: chỉ truyền `progress`
  * khi có số thật, bỏ trống thì thanh tự sang hình thái không-đếm-được) · `tone="error"` (khung
@@ -56,8 +62,14 @@ export interface EmptyStateProps {
   bayCaptions?: string[];
   /** gọn cho panel hẹp (padding nhỏ, ghost thu lại). */
   compact?: boolean;
-  /** trạng thái: trống (mặc định) · đang tải · lỗi — một khuôn cho cả ba. */
-  tone?: 'empty' | 'loading' | 'error';
+  /** trạng thái: trống (mặc định) · đang tải · lỗi · ngoại tuyến — MỘT khuôn cho cả bốn. */
+  tone?: 'empty' | 'loading' | 'error' | 'offline';
+  /**
+   * Lấp đầy ô chứa (`height:100%`). Cái bị chê không phải "có khối trạng thái" mà là **một viên
+   * 44px lơ lửng giữa một ô cao 400px** — khối trạng thái phải chiếm đúng chỗ nội dung thật sẽ
+   * chiếm. Mặc định TẮT để không đổi hành vi của ~40 nơi đang gọi; bật ở ô có chiều cao cố định.
+   */
+  lapDayO?: boolean;
   /** 0..100 CHỈ khi đo được thật; bỏ trống = không đếm được (LightBar không in số). */
   progress?: number;
   style?: CSSProperties;
@@ -80,19 +92,32 @@ export function EmptyState({
   compact = false,
   tone = 'empty',
   progress,
+  lapDayO = false,
   style,
 }: EmptyStateProps) {
   const reasonBase = useId();
-  const isError = tone === 'error';
+  /**
+   * NGOẠI TUYẾN THÌ KHÔNG CÓ "THỬ LẠI". Mất mạng mà bảo người ta bấm lại là lời khuyên vô ích —
+   * bấm mười lần cũng vậy, và mỗi lần bấm hụt là một lần app nói dối rằng nó làm được gì đó.
+   * Đường đúng là nêu việc CỤC BỘ nào vẫn dùng được, rồi để app tự biết lúc mạng về (sự kiện
+   * `online`). Lọc ở ĐÂY chứ không dặn nơi gọi: dặn thì sẽ có chỗ quên, lọc thì không.
+   */
+  const nutHienRa =
+    tone === 'offline' ? actions.filter((a) => !/thử lại|retry|tải lại|reload/i.test(a.label)) : actions;
+  // NGOẠI TUYẾN cũng là hỏng-việc-ngay ⇒ cùng dấu hiệu màu/khung với lỗi. Khác ở CHỖ KHÁC: nó
+  // KHÔNG được có nút "Thử lại" (xem chỗ lọc `actions` dưới đây).
+  const nangNe = tone === 'error' || tone === 'offline';
   return (
     <div
-      role={tone === 'error' ? 'alert' : undefined}
+      role={nangNe ? 'alert' : undefined}
       aria-live={tone === 'loading' ? 'polite' : undefined}
       aria-busy={tone === 'loading' || undefined}
       data-tone={tone}
       style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
-        padding: compact ? '18px 14px' : '28px 26px', gap: 0, minWidth: 0, ...style,
+        padding: compact ? '18px 14px' : '28px 26px', gap: 0, minWidth: 0,
+        ...(lapDayO ? { height: '100%', justifyContent: 'center' } : null),
+        ...style,
       }}
     >
       {/* ── cấu trúc thật: kệ có ngăn (mock .shelf/.bays) hoặc hàng bảng ghost ── */}
@@ -143,8 +168,8 @@ export function EmptyState({
         <div
           style={{
             width: 44, height: 44, display: 'grid', placeItems: 'center', borderRadius: 'var(--radius-sm)',
-            border: `1px solid ${isError ? 'var(--danger)' : 'var(--border-strong)'}`, background: 'var(--field)',
-            color: isError ? 'var(--danger)' : 'var(--t4)',
+            border: `1px solid ${nangNe ? 'var(--danger)' : 'var(--border-strong)'}`, background: 'var(--field)',
+            color: nangNe ? 'var(--danger)' : 'var(--t4)',
             boxShadow: 'inset 0 2px 4px rgba(0,0,0,.14)', marginBottom: 12,
           }}
         >
@@ -161,9 +186,9 @@ export function EmptyState({
         </p>
       )}
 
-      {actions.length > 0 && (
+      {nutHienRa.length > 0 && (
         <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginTop: 14 }}>
-          {actions.map((a, i) => (
+          {nutHienRa.map((a, i) => (
             <button
               key={a.label}
               type="button"
