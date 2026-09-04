@@ -1,12 +1,35 @@
 # LÔ DUYỆT MẮT #1 — HOME (khổ rộng) · VITALS (khẩu độ mép trên) · CHROME TRÊN ĐI KÈM
 
-> **Trạng thái: CHỜ MẮT HOÀ.** Máy đã xác minh hết phần máy xác minh được. Dưới đây **không có
-> việc đang làm dở** — chỉ có ba tấm đã qua cổng máy, trình để Hoà phán bằng mắt.
+> ## 🔴 TRẠNG THÁI: **GIỮ LẠI — CHƯA TRÌNH MẮT.** (soát lại 04/09 sau khi MỞ ẢNH THẬT)
 >
-> Mỗi tấm đúng năm mục: **NGUỒN LUẬT · BẢN ĐANG CÓ · LỆCH · MÁY ĐÃ XÁC MINH GÌ · HOÀ PHẢI PHÁN GÌ.**
-> Trả lời chỉ cần: *"Tấm N — ĐẠT"* hoặc *"Tấm N — lệch chỗ …"*.
+> Bản đầu của tệp này ghi *"chờ mắt Hoà"*. **Sai, đã sửa.** Lúc đó tôi mới đọc SỐ ĐO, chưa MỞ ẢNH.
+> Mở ra thì thấy **hai lỗi máy phán được** còn nằm nguyên — mà luật của Hoà là *"chỉ trình cái đã
+> qua hết cổng máy, đừng đưa việc đang làm dở"*. Nên lô này **dừng lại**, đóng hai lỗ rồi mới trình.
 >
-> Mốc mã: nhánh `integration/2026-09-04`, các commit `711d5c73` (thi hành D-DR1 + D-DR2) và
+> ⭐ Bài học đắt hơn cả hai lỗi: **số đo xanh không có nghĩa là bố cục đứng được.** Tỉ lệ 1,62 đúng
+> tới hai chữ số thập phân trong khi vùng tiêu điểm trên màn thật gần như **trống rỗng**. Đây đúng
+> luật đã ghi trong sổ từ 11/08 — *frontier nào sinh ra thứ NHÌN ĐƯỢC thì nghiệm thu = MỞ RA NHÌN;
+> tsc/test/số đo KHÔNG đủ.* Tôi vừa phạm đúng điều đó, ghi lại để không phạm lần nữa.
+>
+> ### Hai lỗ phải đóng trước khi trình
+> | # | Lỗ | Ai đóng |
+> |---|---|---|
+> | 1 | **Nhãn chặng SAI ở mọi màn không phải chặng** — đứng ở Home mà khẩu độ ghi *"VITALS · THIẾT KẾ 3D"*. Gốc: `AppChrome.tsx:366` truyền `stage={currentPhase}`, mà `activeToPhase` (`lib/studio/stage-nav.ts:18-23`) **rơi thẳng vào `return 'render'`** cho mọi thứ không phải cad/photo/present. | lane Vitals (đang giữ tệp) — đã báo |
+> | 2 | **Mức Ambient gần như vô hình** — khẩu độ nhạt hơn cả ô tìm kiếm ngay cạnh, trong khi EXS điều 7 gọi nó là *signature interaction*. Phải đo tương phản với `--bg` ở cả hai nền, đối chiếu ngưỡng 3:1. | lane Vitals — đã báo |
+>
+> ### Một điều Hoà nên biết ngay, vì nó đổi cách đọc tấm 1
+> Ảnh chụp trên studio **chỉ có 1 dự án và 0 việc đang dở**. Ở trạng thái đó, dải *"Tiếp tục việc
+> dở"* — thứ EXS chốt là **HERO** của Home — **không mọc ra** (`banViecDo = coDuAn && coViecDo`),
+> nên vùng tiêu điểm chỉ còn ô Dự án với hai thẻ nằm ở góc trên, phần còn lại là **thẻ trắng cao
+> gần hết màn**. Cái đó **phạm chính luật ① của nó** (*"phần dư trả về cho NỀN, không nhồi vào thẻ"*).
+> ⇒ **Chưa kết luận được đây là lỗi bố cục hay chỉ là dữ liệu mỏng** — phải chụp lại trên studio có
+> vài dự án + có việc dở rồi mới trình. Trình bây giờ là bắt Hoà phán một bố cục chưa từng được
+> nhìn ở trạng thái nó sinh ra để phục vụ.
+>
+> Ba tấm dưới đây **giữ nguyên nội dung**, dùng làm bản nháp của lô sẽ trình. Mỗi tấm đúng năm mục:
+> **NGUỒN LUẬT · BẢN ĐANG CÓ · LỆCH · MÁY ĐÃ XÁC MINH GÌ · HOÀ PHẢI PHÁN GÌ.**
+>
+> Mốc mã: nhánh `integration/2026-09-04`, commit `711d5c73` (thi hành D-DR1 + D-DR2) và
 > `4ce173c2` (đóng bất biến MỘT CHỖ ĐỨNG).
 
 ---
@@ -38,11 +61,21 @@
   cùng chỗ**; dữ liệu cập bến thì dải *"Tiếp tục việc dở"* mọc lên trong đó, tiêu điểm không nhảy.
 
 ### ③ LỆCH so với nguồn luật
-Không còn lệch cấu trúc. Hai điểm **cố ý** khác bản mô tả chữ, khai thẳng để Hoà bác được:
-1. **Bento vẫn còn trong mã** — nhưng chỉ chạy dưới 1100px. Đúng câu *"may remain as responsive/
-   narrow arrangement"*. Nếu Hoà muốn xoá hẳn thì nói, máy xoá được ngay.
-2. **Ngưỡng 1100px là do máy chọn**, luật không cho số. Đây là chỗ Hoà có thể thấy sai khi nhìn
-   màn thật ở khổ trung gian.
+🔴 **Soát lại sau khi mở ảnh — bản đầu ghi "không còn lệch cấu trúc", đó là kết luận rút từ SỐ, không phải từ MÀN.**
+
+1. **VÙNG TIÊU ĐIỂM TRỐNG.** Trên ảnh thật, ô Dự án cao gần hết màn nhưng chỉ có hai thẻ ở góc
+   trên; khoảng trống nằm **BÊN TRONG thẻ trắng**, đúng thứ luật ① của chính nó cấm
+   (*"phần dư trả về cho NỀN"*). Chưa phân định được **lỗi bố cục** hay **dữ liệu mỏng** — xem ô
+   dưới. Đây là điều phải giải trước khi tấm này đi tiếp.
+2. **HERO KHÔNG XUẤT HIỆN.** EXS §6 chốt *Hero = Resume*. `banViecDo = coDuAn && coViecDo`, mà
+   studio chụp thử có **0 việc dở** ⇒ dải Resume không mọc ⇒ **thứ đáng ra là tiêu điểm thì vắng
+   mặt**, tiêu điểm rơi về ô Dự án. Không thể phán bố cục một-tiêu-điểm khi tiêu điểm chưa có mặt.
+3. **THẺ PHỤ CUỐI BỊ CẮT** ở mép dưới màn (*BẢNG TIN STUDIO*). Cột phụ có `overflow-y: auto` nên
+   về mặt cơ chế là cuộn được, nhưng ở khung đầu tiên nó **đọc ra như bị xén**, không ra như cuộn.
+4. Hai chỗ **cố ý** khác bản mô tả chữ, khai thẳng để Hoà bác được:
+   · **Bento vẫn còn trong mã**, chỉ chạy dưới 1100px — đúng câu *"may remain as responsive/narrow
+     arrangement"*. Hoà muốn xoá hẳn thì nói, máy xoá được ngay.
+   · **Ngưỡng 1100px do máy chọn**, luật không cho số.
 
 ### ④ MÁY ĐÃ XÁC MINH GÌ
 | Kiểm | Kết quả |
@@ -86,9 +119,18 @@ Không còn lệch cấu trúc. Hai điểm **cố ý** khác bản mô tả ch�
   chỗ đăng ký. **Gõ câu hỏi rồi Enter là mất câu hỏi.** Nay nó sống trong khẩu độ.
 
 ### ③ LỆCH so với nguồn luật
-Không còn lệch chỗ đứng. Còn **một câu chữ Hoà chưa xác nhận**, sổ đã ghi từ 20/08:
-*"không phải popover gắn lên"* nghiêng về **V3-a — morph mọc ra từ chính khẩu độ**, chứ không
-phải mở một tấm mới. Bản đang có làm theo V3-a. **Đây là thứ chỉ nhìn mới phán được.**
+**Chỗ đứng vật lý: ĐÚNG.** Ảnh xác nhận mức Engage **mọc xuống từ chính khẩu độ**, tâm trùng tâm
+khẩu độ — đúng V3-a và đúng luật hình học 20/08 *"FROM THE CENTER"*. Nhưng còn **hai lỗi máy phán
+được**, đã báo lane đang giữ tệp (xem đầu tệp này):
+
+1. 🔴 **Nhãn chặng sai** — đứng ở Home mà ghi *"VITALS · THIẾT KẾ 3D"*. Không phải lỗi hiển thị:
+   `activeToPhase` **không diễn đạt được "đang không ở chặng nào"**, nên mọi màn ngoài ba chặng đều
+   bị gán *Thiết kế 3D*. Phải sửa ở tầng kiểu, không vá bằng đoán.
+2. 🟡 **Mức Ambient nhạt hơn ô tìm kiếm ngay cạnh** — thứ được chốt là *signature interaction* đang
+   là vật mờ nhất trên thanh trên. Đo tương phản với `--bg` hai nền, ngưỡng 3:1.
+
+Còn **một câu chữ Hoà chưa xác nhận** (ghi từ 20/08): *"không phải popover gắn lên"* nghiêng về
+**V3-a**. Bản đang có làm theo V3-a — và ảnh cho thấy nó ra đúng như vậy.
 
 ### ④ MÁY ĐÃ XÁC MINH GÌ
 | Kiểm | Kết quả |

@@ -24,20 +24,26 @@
 ⇒ Trọng tâm chuyển từ **thu hồi** sang **hoàn tất thị giác**. Đường đi cố định cho mọi board:
 `AUTHORITY → THI CÔNG → MÁY KIỂM → ẢNH CHUẨN → DELTA → MẮT HOÀ`.
 
-## A2 · LÔ DUYỆT MẮT #1 — ✅ ĐÃ TRÌNH, CHỜ MẮT HOÀ
+## A2 · LÔ DUYỆT MẮT #1 — 🔴 GIỮ LẠI, CHƯA TRÌNH
 
-📄 **Bản trình: `docs/delivery/VISUAL-REVIEW-BATCH-01.md`** — ba tấm, mỗi tấm đúng năm mục
-(NGUỒN LUẬT · BẢN ĐANG CÓ · LỆCH · MÁY ĐÃ XÁC MINH GÌ · HOÀ PHẢI PHÁN GÌ).
+📄 Bản nháp của lô: `docs/delivery/VISUAL-REVIEW-BATCH-01.md` (ba tấm, mỗi tấm đúng năm mục).
 
 Ba mục **cùng một lô** vì chúng chạm nhau ở mép trên màn hình; duyệt rời là bắt nhìn ba lần cùng một vùng.
 
 | Tấm | Cổng máy | Trạng thái |
 |---|---|---|
-| **1 · HOME khổ rộng** | tỉ lệ 1,62 đo ở 1600 và 1280 · bốn chiều cao mục phụ khác nhau · tsc 0 · test lõi xanh · ảnh 3 khổ × 2 nền | **CHỜ MẮT** |
-| **2 · VITALS khẩu độ mép trên** | `mot-cho-dung.test.ts` 8/8 — đúng một chỗ mắc, đúng một ⌘J, hai bản cũ không mắc ở đâu · ảnh 3 mức × 2 nền × 2 stage | **CHỜ MẮT** |
-| **3 · Chrome/điều hướng mép trên** | ba nấc 52/240/320 khoá bằng test · ba cụm khớp điều 3 | **CHỜ MẮT** — kèm **một chỗ CHƯA XÁC MINH** đã khai thẳng: kéo Work Panel 320→440 |
+| **1 · HOME khổ rộng** | tỉ lệ 1,62 (đo ở 1600 và 1280) · bốn chiều cao mục phụ khác nhau · tsc 0 · test lõi xanh | 🔴 **GIỮ** — mở ảnh thật thấy vùng tiêu điểm **trống**, dải Resume (hero theo EXS §6) **không mọc** vì studio thử có 0 việc dở. Phải chụp lại trên dữ liệu đủ dày rồi mới phán được là lỗi bố cục hay dữ liệu mỏng |
+| **2 · VITALS khẩu độ mép trên** | `mot-cho-dung.test.ts` 8/8 · chỗ đứng + hướng morph **đúng** trên ảnh | 🔴 **GIỮ** — 2 lỗi máy phán được: nhãn chặng sai ở mọi màn ngoài ba chặng (`activeToPhase` rơi về `'render'`) · mức Ambient nhạt hơn ô tìm kiếm cạnh nó |
+| **3 · Chrome/điều hướng mép trên** | ba nấc 52/240/320 khoá bằng test · ba cụm khớp điều 3, ảnh xác nhận | 🟡 gần đạt — còn **một chỗ CHƯA XÁC MINH**: kéo Work Panel 320→440 |
 
-⚠️ Mục 3 mang theo một dòng **CHƯA XÁC MINH ≠ ĐẠT** — khai trong bản trình, không giấu.
+⭐ **Vì sao giữ:** cổng máy xanh **không có nghĩa** là bố cục đứng được — tỉ lệ đúng tới hai chữ số
+thập phân trong khi vùng tiêu điểm trên màn gần như trống. Đây đúng luật đã ghi 11/08: *frontier
+sinh ra thứ NHÌN ĐƯỢC thì nghiệm thu = MỞ RA NHÌN, tsc/test/số đo KHÔNG đủ.*
+
+⚠️ **Ảnh bằng chứng phải nằm TRONG repo.** `.nen-chrome-out/` bị gitignore và **đã bị dọn giữa
+chừng** khi các lane chạy song song — lô `home-that-*.png` biến mất khỏi đĩa. Ảnh duyệt mắt là
+deliverable: chép vào `docs/delivery/anh-duyet-mat/lo-01/` và commit, đúng luật *phiên là sức tính,
+không phải kho chứa*.
 
 ## B · ĐANG DỰNG BẰNG CHỨNG — chưa đủ điều kiện trình
 
