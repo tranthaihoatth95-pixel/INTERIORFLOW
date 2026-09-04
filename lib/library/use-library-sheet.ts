@@ -15,6 +15,7 @@
 
 import { useEffect, useState } from 'react';
 import type { StageKey } from './types';
+import { coPhimHeThong } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 
 const OPEN_EVENT = 'if:library-open';
 
@@ -92,7 +93,7 @@ export function useLibrarySheetState(stage?: StageKey) {
         });
         return;
       }
-      if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (typing || coPhimHeThong(e) || e.altKey) return;
       if (e.key.toLowerCase() === 'l') {
         // §4e: chặng Vẽ cần ⇧ (L trần = lệnh ĐƯỜNG của type-anywhere); chặng khác phím trần.
         const needShift = stage === 'cad';

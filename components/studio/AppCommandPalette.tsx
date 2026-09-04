@@ -34,6 +34,7 @@ import { textScore } from '@/lib/nodes/search';
 import { useDismissable } from '@/lib/useDismissable';
 import { useT } from '@/lib/i18n';
 import type { AppChromeActive } from '@/components/studio/AppChrome';
+import { laPhimChinh } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 
 interface Row {
   id: string;
@@ -79,7 +80,7 @@ export function AppCommandPalette({ active }: { active: AppChromeActive }) {
   const stateRef = useRef<{ rows: Row[]; idx: number }>({ rows: [], idx: 0 });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      if (laPhimChinh(e) && e.key.toLowerCase() === 'k') {
         const el = e.target as HTMLElement | null;
         const typing = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
         if (typing && el !== inputRef.current) return;

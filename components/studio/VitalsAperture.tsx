@@ -69,6 +69,7 @@ import { useVungLamViec } from '@/components/ui/useVungLamViec';
 import { viTriO, viTriTamXo } from '@/lib/ui/vung-lam-viec';
 import VitalsGesturePanel from '@/components/studio/VitalsGesture';
 import { useVitalsUi } from '@/lib/vitals-ui';
+import { laPhimChinh } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 import {
   chonTinHieu, trangThaiAmbient, mucKhauDo, nhanKhauDo, domKhauDo,
   type TinHieu, type VitalsStage,
@@ -313,7 +314,7 @@ export function VitalsAperture({ stage }: {
    */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'j' || e.key === 'J')) {
+      if (laPhimChinh(e) && (e.key === 'j' || e.key === 'J')) {
         e.preventDefault();
         if (useVitalsUi.getState().panelOpen) dong();
         else moKho();

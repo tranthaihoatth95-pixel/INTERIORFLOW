@@ -41,6 +41,7 @@ import { useTool3D, type Tool3DId } from '@/lib/render-studio/tool3d';
 import { ToolbarChip, ToolbarBar } from '@/components/ui/ToolbarChip';
 import { commonCommandsFor, bindStage } from '@/lib/commands/toolbar-source';
 import { CommandIcon, commandHinh } from '@/components/ui/command-icon';
+import { coPhimHeThong } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 
 interface ToolDock3DProps {
   open: boolean;
@@ -77,7 +78,7 @@ export default function ToolDock3D({ open, onToggleOpen, onCreateWall, onOpenLib
   // như mọi hotkey khác của mode 3D (`Render3DModeSkeleton.tsx` đã làm cùng kiểu).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+      if (coPhimHeThong(e) || e.altKey || e.shiftKey) return;
       const el = e.target;
       if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
       if (e.key === 'Tab') {

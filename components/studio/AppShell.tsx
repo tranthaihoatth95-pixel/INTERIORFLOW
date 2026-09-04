@@ -43,6 +43,7 @@ import ReviewPanel from '@/components/review/ReviewPanel';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import type { StageKey } from '@/lib/library/types';
 import { tweenBase } from '@/lib/motion';
+import { laPhimChinh, coPhimHeThong } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 
 const INSPECTOR_WIDTH = 236;
 
@@ -123,7 +124,7 @@ export function AppShell({
       const typing = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
       if (typing) return;
       // ⌘\ — ẩn cả hai panel, bấm lại hiện lại (deterministic qua detail.set).
-      if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+      if (laPhimChinh(e) && e.key === '\\') {
         e.preventDefault();
         e.stopPropagation();
         const zen = !zenRef.current;
@@ -132,7 +133,7 @@ export function AppShell({
         setInspectorHidden(zen);
         return;
       }
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (coPhimHeThong(e) || e.altKey) return;
       const k = e.key.toLowerCase();
       if (k !== 'b' && k !== 'i') return;
       // CAD: chỉ ăn khi có ⇧ (phím trần thuộc type-anywhere gõ lệnh — §0c luật 2); chặng khác:

@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { pressable, springNode, prefersReducedMotion } from '@/lib/motion';
 import { parseStageRoute } from '@/lib/scope-core';
+import { laPhimChinh } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 
 interface Comment {
   id: string;
@@ -253,7 +254,7 @@ export function CommentLayer() {
               if (it) { e.preventDefault(); attachFrom([it.getAsFile()!]); }
             }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) save();
+              if (e.key === 'Enter' && laPhimChinh(e)) save();
               if (e.key === 'Escape') setDraft(null);
             }}
             placeholder="Anh góp ý gì ở đây… (dán ảnh ⌘V để đính kèm · ⌘/Ctrl+Enter lưu)"

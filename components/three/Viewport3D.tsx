@@ -16,6 +16,7 @@ import type { ViewDir } from './ViewCube3D';
 import { RawStyle } from './RawStyle';
 import { VE3D_CSS } from './ve3d-css';
 import { useT } from '@/lib/i18n';
+import { modKey, coPhimHeThong } from '@/lib/kbd'; // nhãn phím theo hệ: Mac ⌘ · Windows Ctrl
 import { Maximize } from 'lucide-react';
 
 /**
@@ -202,7 +203,7 @@ export function Viewport3D({
   useEffect(() => {
     const onXoaKey = (e: KeyboardEvent) => {
       if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (coPhimHeThong(e) || e.altKey) return;
       // Né ô nhập (luật keydown-ne-o-nhap): xoá chữ trong ô không được xoá khối.
       const el = e.target;
       if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
@@ -349,7 +350,7 @@ function QuickCommandBox({ scene }: { scene: Scene3DData }) {
     function onKey(e: KeyboardEvent) {
       const ae = document.activeElement;
       const typingElsewhere = ae instanceof HTMLElement && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable);
-      if (typingElsewhere || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (typingElsewhere || coPhimHeThong(e) || e.altKey) return;
       if (e.key.length === 1 && /[\p{L}\p{N} x×@,./]/u.test(e.key)) {
         inputRef.current?.focus();
         setValue((v) => v + e.key);
@@ -371,7 +372,7 @@ function QuickCommandBox({ scene }: { scene: Scene3DData }) {
       return;
     }
     applyArrayGrid(entityId, grid);
-    setMsg({ text: `Array ${grid.cols}×${grid.rows} — Ctrl+Z ${tr('để lùi', 'to undo')}`, err: false });
+    setMsg({ text: `Array ${grid.cols}×${grid.rows} — ${modKey('Z')} ${tr('để lùi', 'to undo')}`, err: false });
     setValue(''); // gõ lệnh mới là CHỈNH LẠI được (áp lại thay bậc cũ, đúng tinh thần VCB)
   };
 

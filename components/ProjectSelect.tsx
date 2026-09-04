@@ -45,6 +45,7 @@ import { adaptiveTextStyle, useAdaptiveContrast } from '@/components/ui/Adaptive
 import type { ContrastPlan } from '@/lib/adaptive-contrast';
 import { timeAgo } from '@/lib/home/format-time';
 import { useHomeSearch } from '@/lib/home/search-store';
+import { coPhimHeThong } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 
 /**
  * Home/Gallery ↔ Larkbase (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md, M1) — BỔ SUNG dữ liệu vào
@@ -1007,7 +1008,7 @@ export function ProjectSelect({
   useEffect(() => {
     if (!bentoBox) return;
     const onDigit = (e: KeyboardEvent) => {
-      if (busy || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (busy || coPhimHeThong(e) || e.altKey) return;
       const digit = Number(e.key);
       if (!Number.isInteger(digit) || digit < 1 || digit > 9) return;
       const target = e.target as HTMLElement | null;
