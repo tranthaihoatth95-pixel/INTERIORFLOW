@@ -96,3 +96,8 @@ nhat-ky-chup-man.txt
 
 # 03/09 — ảnh + HTML đo bộ nền chrome (scripts/nen-chrome). Số đo chép vào báo cáo, ẢNH KHÔNG vào repo.
 .nen-chrome-out/
+
+# 04/09 — harness tạm của các phiên đo (chụp màn, gỡ lỗi). Đầu ra thật đi vào
+# .nen-chrome-out/ hoặc scripts/; những tệp này KHÔNG bao giờ được vào lịch sử.
+*-tmp.mjs
+*-tmp.js
