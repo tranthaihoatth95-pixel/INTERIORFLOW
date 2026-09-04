@@ -64,7 +64,7 @@ Toàn văn N-1…N-20: `docs/IF-KIEN-TRUC-OS.md`.
 | **Chiều sâu tiến dần** | Mặc định gọn và tươm tất; chiều sâu chỉ hiện khi người dùng cần |
 | **Chrome im lặng** | Giao diện lùi, nội dung tiến |
 | **Ánh sáng/màu MANG NGHĨA** | Cấm trang trí. Mọi chi tiết thị giác phải mang tin |
-| **Một hệ, bốn mật độ** | Home thoáng · Files/Thư viện cân · 2D/3D chặt · Trình bày kiểu tạp chí — **khác mật độ, không khác hệ** |
+| **Một hệ, bốn mật độ** | Home thoáng · Files/Thư viện cân · 2D/3D chặt · Trình chiếu kiểu tạp chí — **khác mật độ, không khác hệ** |
 
 ---
 
@@ -101,7 +101,7 @@ Toàn văn N-1…N-20: `docs/IF-KIEN-TRUC-OS.md`.
 | **HOME-LIVE** | 04/09 | **Home = STUDIO CÁ NHÂN ĐANG SỐNG**, không phải trang Resume. Việc đang làm là **một** đối tượng trội **trong** Home, không phải toàn bộ Home |
 | **NGỮ NGHĨA** | 04/09 | `LIVE WORK FRAGMENT` — **mảnh việc sống**, suy từ ngữ cảnh thiết kế (concept/planning/3D/render/vật liệu/present/review/research). **Mặt bằng 2D là MỘT trạng thái, không phải bản sắc Home**. `WORK > ATMOSPHERE` |
 | **HÌNH HỌC** | 20/08 | Một ngôn ngữ hình học: `RECTANGLE → ROUNDED RECT (chủ đạo) → CAPSULE → CIRCLE`. Capsule có việc, circle có việc — không trang trí. Phép thử cứng: **che logo, đặt 9 màn cạnh nhau vẫn nhận ra cùng một hệ** |
-| **AUTO GRID** | 20/08 | Là **master capability compose nội dung TRONG stage Trình bày**, chạy tại chỗ trên canvas. **KHÔNG** phải pattern 5 màn toàn app. "Layout Ghost" là phản hồi *của capability này*, không phải skeleton loading toàn app |
+| **AUTO GRID** | 20/08 | Là **master capability compose nội dung TRONG stage Trình chiếu**, chạy tại chỗ trên canvas. **KHÔNG** phải pattern 5 màn toàn app. "Layout Ghost" là phản hồi *của capability này*, không phải skeleton loading toàn app |
 | **MẶT AI** | 04/09 | Trong IF, mặt AI là **Vitals**. Không có mặt AI thứ hai |
 | **KIỂM CHUẨN** | 15/08 | Kiểm tiêu chuẩn là việc của **MÁY** (tất định, 0đ, dẫn được điều khoản). AI chỉ đứng ở **lớp góp ý**, và góp ý **không bao giờ chặn** |
 
@@ -138,7 +138,7 @@ Home phải trả lời được, **không cần bấm**: *đang làm gì · d�
 
 ## §6 · YÊU CẦU LUỒNG NGHỀ
 
-- **Ba chặng** `2D Kỹ thuật · 3D Thiết kế · Trình bày` là **ống kính soi vào MỘT nguồn**, không phải
+- **Ba chặng** `2D Kỹ thuật · 3D Thiết kế · Trình chiếu` là **ống kính soi vào MỘT nguồn**, không phải
   ba app. Vào chặng nào cũng dựng được; **không màn nào được chặn vì "chưa làm bước trước"**.
 - **Dòng chảy của vật:** `Files (thô, nhiều người góp) → cửa sổ công cụ (thêm ĐỊNH NGHĨA) →
   Thư viện (.idfc đủ định nghĩa) → đề xuất đúng chỗ đang làm`.
