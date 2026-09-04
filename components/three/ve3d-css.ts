@@ -126,6 +126,14 @@ export const VE3D_CSS = `
 /* ══════ VIEWPORT 3D (ổ ③ canvas) ══════ */
 .if-ve3d.vp3d{position:relative;width:100%;height:100%;overflow:hidden;background:var(--bg)}
 .if-ve3d .vpscene{position:absolute;inset:0}
+/* 21/08 — GỐC BỆNH "3D không dùng được" trên màn retina: Scene3DViewer gọi renderer.setSize(w,h,
+   FALSE) (không ghi style, :742) + setPixelRatio(min(dpr,1.5)) (:225) ⇒ buffer canvas = container
+   × 1.5, và vì KHÔNG có luật CSS nào ghim cỡ HIỂN THỊ, trình duyệt vẽ canvas Ở ĐÚNG CỠ BUFFER —
+   tràn 50% ra ngoài container rồi bị .vp3d overflow:hidden cắt cụt: chỉ thấy 2/3 khung hình,
+   raycast/NDC lệch theo. DPR=1 thì buffer=container nên không ai thấy — bệnh CHỈ PHÁT TRÊN RETINA,
+   nên bộ kiểm headless mặc định (DPR=1) không bao giờ bắt được. Đây là khuôn chuẩn three.js cho
+   setSize(…,false): CSS phải tự ghim canvas theo container. */
+.if-ve3d .vpscene>canvas{display:block;width:100%;height:100%}
 /* PHIẾU ĐỢT 7 NHÓM B — 96×96 (spec), khung ViewCube3D thật (renderer riêng, xem ViewCube3D.tsx);
    không còn <button> con — cube tự vẽ nhãn bằng texture, tự bắt pointer trên canvas của nó. */
 .if-ve3d .viewcube{position:absolute;right:14px;top:14px;width:76px;height:76px;z-index:4;overflow:hidden;
