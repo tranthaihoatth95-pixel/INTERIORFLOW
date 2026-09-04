@@ -125,7 +125,54 @@ Cột theo khuôn chủ dự án đặt. ACTION ∈ {RECOVER · ADAPT · ALREADY
 | C10 | 9 ảnh mẫu vật liệu + `scripts/sinh-mau-vat-lieu.mjs` | `public/mau-vat-lieu/*` | KHÔNG | **RECOVER** *(rẻ, có script sinh lại)* |
 
 ### D · Vỏ app · EXS · Vitals · nền UI
-*Đang do một agent chỉ-đọc soi. Đã biết chắc: `VitalsAperture.tsx` **chỉ có ở backup và checkpoint**, không có ở INT, và **bản checkpoint mới hơn 245 dòng**. Điểm phải kết luận: `components/ui/BeMatNoi.tsx` + `lib/ui/vat-lieu.ts` + `lib/ui/nhip.ts` (backup) so với `Surface.tsx` + `design-tokens.ts` + `truth.tsx` (INT, 03/09) — có phải hai bản của cùng MỘT lớp nền không.*
+
+**Sự thật nền:** 32/32 đường dẫn của cụm này **đều vắng ở INT**, và grep khái niệm dưới tên khác cũng ra 0 ⇒ INT trống hẳn mảng này.
+
+#### D-0 · Câu quan trọng nhất đã có lời: nền UI hai bên **GỘP ĐƯỢC**, không phải chọn một
+`BeMatNoi`+`vat-lieu`+`nhip` (BK) và `Surface`+`design-tokens`+`truth` (INT) là **hai bản của cùng một lớp nền, cắt theo hai trục khác nhau**:
+
+| | BK rộng hơn | INT rộng hơn |
+|---|---|---|
+| | **HÀNH VI**: portal body + tự tính `transform-origin` từ hộp nguồn · luật ĐẶT CHỖ 7 bước (vùng cấm trên 48/dưới 56 bảo vệ chỗ đứng Vitals) · hiện-dần 6 bậc · máy KÉO dùng chung · **ba mức vật liệu có test** | **VỆ SINH TOKEN + MÁY KIỂM**: parser CSS đo tương phản bằng số · `surface.test.ts` · thang `--z-*` · `--tap-chinh` · `--focus-ring` đặc · `truth.tsx` |
+
+**Đường gộp**: `.if-surface--solid` của INT chính là **bản 2 giá trị** của trục vật liệu 3 giá trị của BK (`kinh/ganDac/dac`). ⇒ **giữ tên lớp + tên khe của INT** (đã cắm vào mã và có test), **thu trục vật liệu + toàn bộ tầng hành vi của BK**, sửa `LOP_VAT_LIEU` trỏ sang `.if-surface--{kinh|gan-dac|dac}`. Một lần đổi tên lớp, không mất bên nào.
+
+| # | CAPABILITY | BACKUP | INT | AUTHORITY | GIÁ TRỊ | ACTION |
+|---|---|---|---|---|---|---|
+| D1 | **Luật ĐẶT CHỖ 7 bước** — kích-cỡ-đổi-LOẠI, vùng cấm trên 48 / dưới 56 | `lib/ui/dat-cho.ts:140-277` | **KHÔNG** | điều 2 · 10 | **RẤT CAO** — thứ chặn "popover 700px lơ lửng giữa màn", và là cái bảo vệ chỗ đứng Vitals | **RECOVER** |
+| D2 | Hiện dần 6 bậc + nén dần 3 trạng thái | `lib/ui/hien-dan.ts` + `HienDan` + `MucNenDan` | **KHÔNG** | điều 1 · 9 | CAO — nguyên thể chung cho MỌI chuỗi cổng duyệt | **RECOVER** |
+| D3 | Máy KÉO cửa sổ nổi (pointer capture + phím mũi tên + hút mép + nhớ chỗ) | `useKeoBeMat.ts` | **KHÔNG** | điều 11 | CAO | **RECOVER** ⚠️ `lib/ui/keo-be-mat.ts` **thiếu ở BK** — lấy từ checkpoint |
+| D4 | Chữ phụ đọc được trên kính `--kinh-chu-phu` (5,26/5,34 vs 3,83/4,08) | globals BK | **KHÔNG**, nhưng INT có **đúng máy đo** để xác thực | điều 1 + a11y | CAO, đo lại được ngay | **RECOVER** |
+| D5 | Primitive bề mặt nổi (portal + mọc-từ-nguồn) | `BeMatNoi.tsx` 428 dòng | bản khác: `Surface.tsx` chỉ gắn lớp | điều 2 · 11 | CAO — giải bài K4 kính-lồng-kính | **ADAPT** |
+| D6 | Ba mức vật liệu theo vai trò (17 vai → 3 mức, có test) | `lib/ui/vat-lieu.ts` | bản rút gọn 2 giá trị | điều 1 · 11 | CAO | **ADAPT** |
+| D7 | Nhịp chuyển động theo VAI TRÒ + một chỗ duy nhất quyết reduce-motion | `lib/ui/nhip.ts` | `--dur-*` hẹp hơn | điều 1 · 11 | VỪA-CAO | **ADAPT** |
+| D8 | **DẢI NGỮ CẢNH mép trên** (dự án · chặng, 2 tầng có chứng cứ) | `DaiNguCanh.tsx` 209 dòng | **KHÔNG** | điều 2 "Left = Where am I" | CAO | **RECOVER** |
+| D9 | **CỤM PHẢI TRÊN** (thông báo · hiện diện · avatar) tách khỏi rail | `CumPhaiTren.tsx` 176 dòng | **KHÔNG** — INT còn avatar ở rail | **điều 3** + tiêu chí trượt của chủ dự án | CAO — INT **đang ở đúng trạng thái bị khai là TRƯỢT** | **RECOVER** (kèm dọn bản trùng ở rail) |
+| D10 | Chuông hoạt động 3 mức, gộp 2 hàng đợi THẬT | `HoatDongChuong.tsx` + `hoat-dong-luong.ts` | **KHÔNG** (nhưng 2 nguồn dữ liệu thì INT có đủ) | điều 7 ranh giới Vitals ≠ notification | CAO | **RECOVER** |
+| D11 | Live Guide / Demo Conductor tự tiến theo trạng thái thật | `LiveGuide.tsx` + `live-guide.ts` | **KHÔNG** | điều 6 | VỪA-CAO | **RECOVER** |
+| D12 | Xương demo 9 bước | `lib/studio/demo-spine.ts` | **KHÔNG** | điều 6 | VỪA | **RECOVER** |
+| D13 | **Work Panel kéo được 320→440** | `RailDieuHuong.tsx:79-81` | **CHƯA** — INT tự ghi *"trần resize 440 là NỢ phiếu riêng"* | **điều 4** | CAO — BK thi hành đúng chốt, INT tự khai là nợ | **RECOVER** |
+| D14 | Lõi chọn tín hiệu Peek — chỉ dữ liệu thật, trần 3, `undefined ≠ 0` | `vitals-tin-hieu.ts` + test | **KHÔNG** (INT `vitals-eval-*` là việc KHÁC) | điều 7 · 9 | CAO — chống bịa tín hiệu | **RECOVER** |
+| D15 | Bốn trạng thái ô (tải · trống · lỗi · **ngoại tuyến**) + luật khung-xương mang hình dạng thứ sắp tới | `TrangThaiO.tsx` 246 dòng | `EmptyState.tsx` chỉ 3 tone, **thiếu ngoại tuyến** | pattern "empty state = workflow surface" | CAO | **ADAPT** — gộp nấc thứ tư vào `EmptyState.tsx`, không dựng component thứ hai |
+| D16 | Rail 3 nấc 52/240/320 | có | **ĐÃ CÓ y hệt** | điều 4 | — | **ALREADY REPLACED** |
+| D17 | Nhãn nguồn sự thật 5 nấc | **BK không có** | `truth.tsx` | **điều 9** | — | **ALREADY REPLACED** (INT thắng) |
+| D18 | 6 báo cáo phiên 20/08 (chứa số đo tương phản 4 nền × 2 theme + lý do từng quyết định) | `docs/bao-cao-phien/2026-08-20-*` | **KHÔNG** (6/6 vắng) | điều 1 | CAO — thứ duy nhất giải thích các con số trong globals BK | **RECOVER** ⭐ *thu trước tiên, 0 rủi ro* |
+
+#### 🔴 D-DR1 · CHỖ ĐỨNG VẬT LÝ CỦA VITALS — authority chống authority
+| | |
+|---|---|
+| **EXS điều 7** (chốt 20/08, đã duyệt mắt) | *"Vitals nằm VẬT LÝ trong top edge như aperture sống, không phải popover gắn lên"*; §hệ quả sổ sách đóng dấu **SUPERSEDED** cho "Vitals neo theo ngữ cảnh — nút rời trục phải (16/08)" |
+| **BK** | `VitalsAperture.tsx` 477 dòng mount ở `AppChrome.tsx:376`; docstring `:23-27` ghi rõ `VitalsGesture` là *"BẢN CŨ, ĐÃ MỒ CÔI"* và khẩu độ này **không hồi sinh nó** |
+| **INT (Slice 12, 03/09)** | `components/studio/VitalsRightEdgeHost.tsx` — **hồi sinh `VitalsGesture` cạnh trục phải**, đúng thứ chốt 20/08 đã đóng dấu SUPERSEDED. `AppChrome.tsx:39,347` vẫn mount `VitalsPill` **chỉ ở Home** |
+⇒ **Hai bên loại trừ nhau về chỗ đứng vật lý.** Không tự chọn.
+
+#### 🔴 D-DR2 · BỐ CỤC HOME — authority chống authority
+| | |
+|---|---|
+| **EXS điều 6** | Home = Personal Work OS, **hero = Resume**; tiêu chí trượt do chủ dự án đặt: *"TRƯỢT nếu Home vẫn trông như dashboard SaaS"* |
+| **BK** | `components/home/xuong-layout.ts` — **MỘT TIÊU ĐIỂM + MỘT CỤM PHỤ**, bỏ lưới bento; tự khai *"NÓ ĐÈ HƯỚNG CŨ… bento giữ nguyên cho bản xếp dọc hẹp"* + `BatDauNgaySoKhong.tsx` (Home ngày-số-không) + `widget-prefs.ts` (ẩn/hiện/thứ tự per-user) |
+| **INT** | vẫn **bento 9 ô** (`components/home/widgets/bento-layout.ts`), và slice Home 03/09 còn **đầu tư thêm** vào bento |
+⇒ **Hai bố cục Home loại trừ nhau trên màn rộng.** BK có sẵn đường sống chung (bento → nhánh hẹp <1100px) nhưng chọn hướng chính là quyết định của chủ dự án.
 
 ---
 
@@ -139,4 +186,6 @@ Cột theo khuôn chủ dự án đặt. ACTION ∈ {RECOVER · ADAPT · ALREADY
 **Thứ tự thu về đề xuất** (rẻ→đắt, mỗi nhóm tự đứng được):
 `A5` (1 dòng CSS) → `C1` · `A7` · `C8-loại` (lỗi dữ liệu, có test) → `A6+mime-sniff` · `B1` (chống mất việc) → `A2+A3` → `A4+A12` → `B2→B3→B4` → `B6` (hoà tay 1 chỗ) → `A10` (tham số hoá).
 
-**Không đụng cho tới khi có quyết định:** `A9` · `A11` · `A13` · `B10-viết-lại` · `C4` · toàn bộ nhóm D.
+**Không đụng cho tới khi có quyết định:** `A9` · `A11` · `A13` · `B10-viết-lại` · `C4` · **D-DR1 (chỗ đứng Vitals)** · **D-DR2 (bố cục Home)** — hai mục cuối là authority chống authority, đã trình chủ dự án.
+
+**Nguồn thu hồi**: lấy blob từ `origin/checkpoint/2026-08-24-control-plane` chứ **không** từ `backup` — checkpoint là bản muộn hơn của cùng những tệp đó, và là nơi duy nhất có các module phụ thuộc mà backup thiếu. Chép NỘI DUNG, không merge lịch sử.
