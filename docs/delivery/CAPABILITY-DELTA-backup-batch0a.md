@@ -211,3 +211,17 @@ Chủ dự án chốt **THU CÓ CHỌN LỌC**; mục RECOVER/ADAPT không đụ
 
 ### Còn trong hàng, chưa đụng
 `A2+A3` (chọn/xoá khối 3D — bó chung) · `A4+A12` (dựng khối bằng cử chỉ) · `A6+mime-sniff` và `B1` (bản sao bền trên máy chủ) · `B2→B4` (tờ bản vẽ sang Trình chiếu) · `B6` (deep-link slide) · `B12` (bốn nghĩa sự thật) · `A10` (bộ kiểm con-trỏ-thật, phải tham số hoá trước) · `D5-D7` (gộp trục vật liệu/nhịp) · `D8-D12` (dải ngữ cảnh · cụm phải-trên · chuông · Live Guide) · `D15` (nấc "ngoại tuyến" cho EmptyState) · `C2 · C5 · C6`.
+
+### Thu hồi đợt 2 (04/09, cùng phiên)
+
+| Mục | Trạng thái | Bằng chứng |
+|---|---|---|
+| **A2+A3 · chọn + xoá khối trong khung nhìn 3D** | ✅ | `0b310a39` — bấm chọn được ở mọi mặt; Xoá thật khi đã chọn. Cổng tích hợp bắt được một khẳng định **âm thầm đổi nghĩa**, đã khoá cả hai nhánh (105→107) |
+| **A6+B1 · bản sao bền trên máy chủ (bản vẽ + deck)** | ✅ | `dfd5537d` — ba mảnh đi cùng nhau; cổng chặn ghi đè giữ đúng ngữ nghĩa *chưa-hydrate ⇒ từ chối · trống-đã-hydrate ⇒ vẫn lưu* |
+| **B12 · flag luôn suy từ căn cứ** | ✅ | `c5901659` — `grep "flag: '"` = **0**; `ProvenanceFlag` ba giá trị nguyên vẹn; 97 khẳng định (từ 62) |
+| **D15 · EmptyState nấc ngoại tuyến** | ✅ | `13ecd08a` — tự lọc nút "Thử lại"; 8 khẳng định **render thật** |
+| Ba chuỗi/comment lỗi thời theo bản vá | ✅ | `d2800416` · `(schema)` — thông báo 415 và comment `truthLevel` nói đúng lại |
+
+**⚠️ ĐỔI HÀNH VI SẢN PHẨM đáng nêu** (authority rõ, không cần quyết): món chỉ **bấm "Nhận"** mà không gõ số và không nêu tham chiếu nay **KHÔNG vào BOQ** — đúng luật *"BOQ chỉ nhận số đo được"* (15/08). Trước đây nó lọt.
+
+**Chưa port có chủ ý**, đã tách sẵn thành một hunk rời: bản vá *"tụt bậc khi bậc 4 trả số rỗng"* — bug fix của tầng ĐO, không thuộc trục bốn-nghĩa.
