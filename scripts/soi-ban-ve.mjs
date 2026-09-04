@@ -58,7 +58,7 @@ for (const [tep, W, H] of ca) {
              vì đọc nhầm `color` kế thừa từ body. Đó là lỗi của MÁY ĐO, không phải của bản vẽ. */
           const svg = el.namespaceURI && el.namespaceURI.includes('svg');
           const mau = svg ? cs.fill : cs.color;
-          const nen = svg ? (getComputedStyle(el.closest('.to')||document.body).backgroundColor) : nenCua(el);
+          const nen = svg ? (getComputedStyle(el.closest('.chinh, .to')||document.body).backgroundColor) : nenCua(el);
           out.chuMo.push([el.textContent.trim().slice(0,26), mau, nen, parseFloat(cs.fontSize), cs.fontWeight]); }
       }
       out.cuon = { docW: document.documentElement.scrollWidth, docH: document.documentElement.scrollHeight };

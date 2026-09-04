@@ -7,46 +7,59 @@
 > **Trạng thái: 0 DÒNG MÃ.** Bốn khung dưới đây là bản vẽ HTML, khổ thật, token chép từ
 > `app/globals.css`. Máy đã soi hết phần máy phán được. **Hoà chỉ cần đánh ĐẠT hoặc SỬA.**
 >
-> Bản vẽ: `docs/mocks/mock-home-hybrid.html` · `-rong.html` · nền chung `_home-hybrid.css`
-> Ảnh: `docs/delivery/anh-duyet-mat/lo-03-home-hybrid/` (6 tệp — 4 khung quyết định + 2 biến thể nền)
+> Bản vẽ: `mock-home-hybrid-ytuong.html` · `mock-home-hybrid.html` · `mock-home-hybrid-3d.html` ·
+> `mock-home-hybrid-rong.html` — nền chung `_home-hybrid.css` (tất cả trong `docs/mocks/`)
+> Ảnh: `docs/delivery/anh-duyet-mat/lo-03-home-hybrid/` (10 tệp — 4 khung quyết định + biến thể nền + khổ hẹp)
 
-## BỐN KHUNG QUYẾT ĐỊNH
+## ĐÍNH CHÍNH NGỮ NGHĨA 04/09 — điều Hoà bắt được
 
-| # | Trạng thái | Phán gì | Giới hạn đã biết |
-|---|---|---|---|
-| **1** | **1600×900 · CÓ VIỆC DỞ** (nền tối) | Bản vẽ có **trội** đúng mức không? Cột chữ trái có **đủ nặng** để cân với nó không? | Bản vẽ là **dữ liệu DEMO** (đã đóng dấu trên ảnh) — hình học thật, số liệu bịa |
-| **2** | **1600×900 · TRẠNG THÁI RỖNG** (nền sáng) | `RESUME → BEGIN` có ra **studio tĩnh** không, hay ra màn onboarding? Khoảng trống phải nửa màn: **có chủ ý** hay **bỏ hoang**? | Chưa có chuyển động; chưa có trạng thái *"đang tải"* |
-| **3** | **1280×800 · CÓ VIỆC DỞ** (nền sáng) | Thứ bậc **trội → đỡ → nền** có giữ nguyên khi hẹp lại không? | Eyebrow xuống dòng lẻ chữ *"QUA"*; chưa vẽ dưới 1280 |
-| **4** | **1600×900 · CÓ VIỆC DỞ** (nền sáng) | Cùng bố cục ở nền sáng — khí quyển LightClock có **quá tay** không? | Khí quyển mới có **một** thời điểm (chiều muộn); chưa vẽ sáng/trưa/đêm |
+Hoà: hướng bố cục **đúng hơn rõ rệt**, giữ nguyên; nhưng bản trước **nghiêng quá mạnh về bản sắc
+CAD/2D**. Gốc: `HIỆN VẬT CÔNG VIỆC THẬT` bị tôi hiểu thành **MẶT BẰNG**.
+⇒ Home kể sai câu chuyện: *"IF là nơi quay lại BẢN VẼ"* thay vì *"nơi quay lại QUÁ TRÌNH THIẾT KẾ"*.
 
-## BẢN NÀY THI HÀNH ĐIỀU GÌ
+**Đổi tên + đổi nghĩa: `MẢNH VIỆC SỐNG` (LIVE WORK FRAGMENT).** Nó **suy từ ngữ cảnh/chặng đang
+làm**, không phải một loại tệp cố định:
 
-**§21 · XƯƠNG SỐNG B** — không còn cột widget phải. Đối tượng trội là **hiện vật công việc thật**:
-mặt bằng tầng 2 với tường, cửa có cung mở, cửa sổ, đường kích thước, tên phòng và diện tích — và
-**vùng khoanh đỏ đứt nét ngay chỗ chưa xong**. Nhìn phát biết *đang làm gì · đang ở đâu · còn gì*.
+| Chặng | Mảnh việc sống là gì |
+|---|---|
+| Ý tưởng | tham chiếu · mood · vật liệu · phác |
+| Mặt bằng | bản vẽ |
+| 3D | cảnh · đối tượng · trạng thái vật liệu |
+| Render | ảnh render + trạng thái duyệt |
+| Vật liệu | bảng màu · mẫu · quy cách |
+| Trình bày | mảnh slide/hồ sơ |
+| Duyệt | hiện vật + góp ý chưa xử |
+| Nghiên cứu | chùm tham chiếu |
 
-**§22 · QUAY LẠI** — nhãn nói chặng và giờ dừng · tên dự án 52px · ba dữ kiện ngữ cảnh · **một
-dòng "vì sao nên quay lại"** (*khu bếp + ăn chưa gán vật liệu sàn*) · CTA cụ thể
-**"Mở lại mặt bằng tầng 2 →"**. Không có ô đánh dấu, không danh sách việc — không phải thẻ quản lý việc.
+**Mặt bằng 2D là MỘT trạng thái hợp lệ, KHÔNG phải bản sắc của Home.**
 
-**§23 · NGÔN NGỮ A** — **không một thẻ nào** cho lời chào · ghi chú · hoạt động · số chặng · tin tức.
-Gom nhóm bằng **canh lề · cỡ chữ · khoảng trắng · vạch mảnh · vị trí**. Lời chào + giờ + ánh sáng
-gộp thành **một dòng** ở đỉnh.
+**Ghép mảnh** (được phép, có kiểm soát): một mảnh **chính** + một-hai mảnh **ngữ cảnh nhỏ hơn hẳn**,
+để nói **TRẠNG THÁI THIẾT KẾ** thay vì chụp màn một công cụ. Ràng buộc giữ thứ bậc:
+**mảnh chính ≥ 3 lần diện tích mảnh ngữ cảnh**; không collage, không bento.
 
-**§24 · KHÔNG BIẾN THÀNH THANH CÔNG CỤ** — thứ phụ **xếp hạng**, không dàn đều:
-· *Dự án khác* = **danh sách đọc được**, có thumbnail nhỏ (chuyển việc là hành vi tần suất cao)
-· *Số chặng + tin xưởng* = **cụm chữ căn phải**, nhỏ hơn hẳn
-· *Ghi nhanh* = **theo yêu cầu** — một dòng mời gõ kèm phím `N`, không chiếm chỗ thường trực.
+**Khí quyển hạ hẳn** — `WORK > ATMOSPHERE`. Vệt sáng LightClock từ `.13/.20` xuống **`.06/.09`** và
+thu vùng lại. Bản trước đọc ra như *một mảng sáng* — tức nó đã thành **chủ thể thị giác**, đúng
+điều Hoà cảnh báo. Nay **cảm được là chiều muộn nhưng không có "vệt" nào để nhìn**.
 
-**§25 · KHÍ QUYỂN C** — một vệt sáng ấm rất nhạt ở góc trên-trái, đọc ra là *chiều muộn* chứ không
-đọc ra *hiệu ứng*. Không ảnh nền, không landing page.
+**Trạng thái rỗng mở vào Ý ĐỊNH, không mở vào một cách biểu diễn.**
+*"Bắt đầu từ một mặt bằng"* → **"Bắt đầu một không gian"**. Bốn lối vào: tạo dự án · mở việc đang
+có · nhập DWG/PDF/ảnh · **bắt đầu từ một tham chiếu**. Mặt bằng thôi là điểm khởi hành bắt buộc.
 
-**§26 · TRẠNG THÁI RỖNG** — `RESUME → BEGIN`. Một lời mời, **một** hành động chính (*Tạo dự án
-mới →*), hai lối phụ là **chữ có gạch chân** chứ không phải nút, một dòng thứ ba dẫn sang thư
-viện cảm hứng. **Không sáu thẻ onboarding.**
+## BỐN KHUNG QUYẾT ĐỊNH — PHÉP THỬ NGỮ NGHĨA
 
-**§27 · CHROME LÙI** — rail 52px, không nền, không viền đậm; icon mờ 34%.
-**§30 · DẤU HIỆU CÒN TIẾP** — *"còn 4 dự án nữa ↓"* nói bằng **chữ**, không trông vào thanh cuộn.
+> **Tiêu chí Hoà đặt:** nếu **cùng MỘT bố cục Home** chứa tự nhiên cả ba loại việc mà **không
+> trạng thái nào trông như bị nhét vào khuôn của trạng thái khác** ⇒ mô hình ngữ nghĩa **ĐẠT**.
+> Ba khung dưới đây dùng **y hệt một bố cục** — chỉ đổi mảnh việc sống, nhãn chặng, dòng
+> *"còn lại"* và CTA.
+
+| # | Trạng thái | Mảnh việc sống | Phán gì | Giới hạn đã biết |
+|---|---|---|---|---|
+| **1** | **Ý TƯỞNG / VẬT LIỆU** 1600×900 tối | ảnh tham chiếu phòng khách ngược sáng **+ 3 ô vật liệu + thẻ "đang so 3 tông"** | Có đọc ra **giai đoạn ý tưởng** không, hay vẫn đọc ra "một cái ảnh"? | Ảnh là **hình vẽ DEMO**, không phải render thật |
+| **2** | **MẶT BẰNG** 1600×900 tối | bản vẽ tầng 2, vùng khoanh đỏ chỗ chưa xong | Nay nó là **một trạng thái trong nhiều trạng thái** — có còn đọc ra "app CAD" nữa không? | Số liệu bịa; bản thật nhiều lớp hơn |
+| **3** | **3D / PHỐI CẢNH** 1600×900 tối | cảnh đất sét **+ thẻ "đang thử vật liệu 2/3" + ô vải** | Ghép mảnh có nói được **trạng thái thiết kế** không, hay chỉ là ảnh + nhãn dán? | Cảnh đất sét vẽ tay, không phải render engine |
+| **4** | **RỖNG** 1600×900 sáng | — | `RESUME → BEGIN` có mở vào **ý định** không? Khoảng trống nửa màn: **có chủ ý** hay **bỏ hoang**? | Chưa có chuyển động, chưa có trạng thái đang tải |
+
+Kèm (không tính trong 4 khung phán): **1280×800 mặt bằng** — kiểm thứ bậc khi hẹp lại.
 
 ## MÁY ĐÃ KIỂM GÌ (§33)
 ```
@@ -79,6 +92,11 @@ bản vẽ** là **1,04:1**. Bản vẽ không hỏng — **máy đo hỏng**: S
 6. **Chưa đo bằng trình đọc màn hình.**
 7. Trạng thái rỗng để trống gần nửa màn bên phải — **có chủ ý**, nhưng đây đúng là chỗ Hoà đã bắt
    lỗi *"khoảng trống tình cờ"* lần trước, nên xin phán riêng.
+8. **Chưa vẽ trạng thái RENDER · TRÌNH BÀY · DUYỆT · NGHIÊN CỨU.** Bốn cái đó nằm trong bảng ngữ
+   nghĩa nhưng chưa dựng — ba khung đã dựng là ba loại **xa nhau nhất** (ảnh · nét vẽ · khối 3D),
+   cố ý chọn thế để phép thử khó nhất. Nếu ba loại này đứng chung được thì bốn loại kia dễ hơn.
+9. **Ghép mảnh mới thử ở hai khung.** Chưa biết mảnh ngữ cảnh cư xử thế nào khi nội dung dài hơn
+   (vd góp ý duyệt nhiều dòng) — đó là chỗ dễ trượt thành collage nhất.
 
 ## SAU KHI HOÀ ĐÁNH
 · **ĐẠT** → mới thi công: `code → máy kiểm → ảnh app thật → so bản vẽ ↔ app → mắt duyệt cuối`.

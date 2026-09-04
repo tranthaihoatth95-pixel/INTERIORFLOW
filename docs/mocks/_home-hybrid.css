@@ -22,10 +22,13 @@ body{width:1600px;height:900px;overflow:hidden;background:var(--bg);color:var(--
 body.hep{width:1280px;height:800px}
 
 /* ── C · KHÍ QUYỂN: LightClock. TIẾT CHẾ — không thấy "hiệu ứng", chỉ thấy giờ giấc. ── */
+/* 🔴 HẠ KHÍ QUYỂN 04/09 (lệnh: WORK > ATMOSPHERE). Bản trước .13/.20 đọc ra như một mảng sáng
+   — tức nó thành CHỦ THỂ thị giác. Nay .06/.09 và thu vùng lại: cảm được là chiều muộn, nhưng
+   không có "vệt" nào để nhìn. Khí quyển là MÔI TRƯỜNG, không phải hình. */
 .khiquyen{position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(58% 44% at 12% 0%, rgba(199,154,99,.13), transparent 68%)}
+  background:radial-gradient(46% 34% at 10% 0%, rgba(199,154,99,.06), transparent 62%)}
 :root[data-theme='light'] .khiquyen{
-  background:radial-gradient(58% 44% at 12% 0%, rgba(199,154,99,.20), transparent 68%)}
+  background:radial-gradient(46% 34% at 10% 0%, rgba(199,154,99,.09), transparent 62%)}
 
 /* ── §27 · CHROME LÙI VỀ SAU: rail 52, không nền, không viền đậm ── */
 .khung{display:flex;height:100%;position:relative}
@@ -70,7 +73,9 @@ body.hep .hero-chu .ten{font-size:42px}
   box-shadow:0 26px 62px rgba(0,0,0,.44);transform:rotate(-.7deg)}
 :root[data-theme='light'] .to{box-shadow:0 22px 52px rgba(80,66,44,.22)}
 .to svg{display:block;width:100%;height:100%}
-.demo{position:absolute;right:12px;bottom:10px;z-index:2;font:600 9px/1 ui-monospace,monospace;
+/* nhãn DEMO về góc TRÁI-DƯỚI: góc phải là chỗ mảnh ngữ cảnh đứng, để đó thì hai thứ
+   chồng lên nhau và lời khai DEMO bị che — mà đó là thứ không được phép mờ đi. */
+.demo{position:absolute;left:12px;bottom:10px;z-index:2;font:600 9px/1 ui-monospace,monospace;
   letter-spacing:.14em;color:#5c564d;background:rgba(255,255,255,.92);padding:4px 7px;
   border-radius:var(--r-1);border:1px solid var(--net-mo)}
 /* 🔴 máy bắt 3,04:1 — nhãn DEMO phải đọc được, nó là lời khai chứ không phải trang trí */
@@ -116,3 +121,42 @@ body.hep .hero-chu .ten{font-size:42px}
 .rong .buoc span{color:var(--t3);font-size:var(--fs-sm)}
 .rong .ba{margin-top:44px;padding-top:18px;color:var(--t3);font-size:var(--fs-xs)}
 .rong .ba a{color:var(--t3);text-decoration:none;border-bottom:1px solid var(--vien-mo)}
+
+
+/* ══════════ MẢNH VIỆC SỐNG (LIVE WORK FRAGMENT) ══════════
+   🔴 ĐỔI TÊN + ĐỔI NGHĨA 04/09. Bản trước gọi là "hiện vật công việc thật" và mặc định vẽ MẶT
+   BẰNG ⇒ Home kể sai câu chuyện: *"IF là nơi quay lại BẢN VẼ"* thay vì *"nơi quay lại QUÁ TRÌNH
+   THIẾT KẾ"*. Mặt bằng chỉ là MỘT trạng thái hợp lệ, KHÔNG phải bản sắc của Home.
+
+   Mảnh việc sống suy từ NGỮ CẢNH/CHẶNG đang làm:
+     Ý TƯỞNG   → tham chiếu · mood · vật liệu · phác
+     MẶT BẰNG  → bản vẽ
+     3D        → cảnh · đối tượng · trạng thái vật liệu
+     RENDER    → ảnh render + trạng thái duyệt
+     VẬT LIỆU  → bảng màu · mẫu · quy cách
+     TRÌNH BÀY → mảnh slide/hồ sơ
+     DUYỆT     → hiện vật + góp ý chưa xử
+     NGHIÊN CỨU→ chùm tham chiếu
+
+   GHÉP MẢNH: được phép một mảnh CHÍNH + một-hai mảnh NGỮ CẢNH nhỏ hơn hẳn, để nói TRẠNG THÁI
+   THIẾT KẾ thay vì chụp màn một công cụ. ⛔ Không thành collage, không thành bento — thứ bậc
+   trội phải còn rõ: mảnh chính ≥ 3 lần diện tích mảnh ngữ cảnh. */
+.vat{position:relative;justify-self:stretch;height:100%;max-height:472px;display:flex}
+.chinh{position:relative;flex:1;border-radius:var(--r-2);overflow:hidden;
+  box-shadow:0 26px 62px rgba(0,0,0,.44)}
+:root[data-theme='light'] .chinh{box-shadow:0 22px 52px rgba(80,66,44,.22)}
+.chinh.giay{background:var(--giay);transform:rotate(-.7deg)}
+.chinh svg,.chinh img{display:block;width:100%;height:100%}
+/* mảnh ngữ cảnh: NHỎ HẲN, nép mép dưới mảnh chính — đọc ra là "kèm theo", không ngang hàng */
+.ngucanh{position:absolute;right:16px;bottom:16px;display:flex;gap:9px;align-items:center;z-index:3;
+  max-width:calc(100% - 32px);flex-wrap:nowrap}
+.mau{width:46px;height:46px;flex:0 0 46px;border-radius:var(--r-1);border:1px solid rgba(255,255,255,.5);
+  box-shadow:0 6px 18px rgba(0,0,0,.34);position:relative}
+/* 🔴 BỎ nhãn chữ ĐẶT TRÊN ô màu (bản trước: trắng + đổ bóng, 9px). Hai lý do, không phải gu:
+   ① nó nằm trên một mảng MÀU THAY ĐỔI ⇒ tương phản không kiểm được, đo bao nhiêu cũng chỉ đúng
+      cho đúng cái màu đó — đúng bệnh "kính quá trong" đã chốt 16/08;
+   ② 9px + đổ bóng là cách giả-đọc-được. Tên vật liệu chuyển vào thẻ ngữ cảnh có nền đặc. */
+.the-nho{background:rgba(18,16,14,.82);color:#fff;border-radius:var(--r-2);padding:9px 12px;
+  font-size:var(--fs-xs);line-height:1.35;max-width:210px;backdrop-filter:blur(6px)}
+.the-nho b{display:block;font-weight:600;margin-bottom:2px}
+.the-nho s{text-decoration:none;color:rgba(255,255,255,.68);font-size:10px}
