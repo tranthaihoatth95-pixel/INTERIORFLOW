@@ -125,3 +125,38 @@ phải cơ chế mới — ảnh vẫn nằm trong repo, trang chỉ bưng chún
 ⚠️ **Phiên này KHÔNG được đánh thức khi Hoà bấm** (`subscribe_forbidden` — dịch vụ artifact từ chối
 đăng ký đánh thức cho phiên này). Phán quyết ghi vào kho `phan-quyet/<id>`; T phải **chủ động đọc
 lại** (`read_db`), không có chuông báo. Đừng khai là "đang theo dõi".
+
+---
+
+## 🌐 ĐƯỜNG THỨ HAI VÀO CỬA DUYỆT MẮT — bản xem trước Vercel (phát hiện 04/09)
+
+PR #15 có bản xem trước tự dựng. Bot báo **Ready/DEPLOYED** lúc 09:37 và 09:30:
+
+| | |
+|---|---|
+| Theo nhánh | `https://interiorflow-git-integration-2026-09-04-vitals-ttt.vercel.app` |
+| Bản chính | `https://interiorflow-bice.vercel.app` |
+
+**Vì sao đáng giá:** nó phá đúng giới hạn của cửa duyệt mắt hiện tại — Hoà **mở app THẬT trên điện
+thoại**, thay vì chỉ soi ảnh tĩnh do máy chụp.
+
+### 🔴 PHIÊN ĐÁM MÂY KHÔNG VỚI TỚI — và đây là bằng chứng, không phải phỏng đoán
+`curl` trả `http=000`. Tra `$HTTPS_PROXY/__agentproxy/status` ra đúng nguyên nhân:
+```
+09:23:03  connect_rejected  gateway answered 403 to CONNECT  interiorflow-git-...vercel.app:443
+09:39:48  connect_rejected  gateway answered 403 to CONNECT  interiorflow-git-...vercel.app:443
+09:39:48  connect_rejected  gateway answered 403 to CONNECT  interiorflow-bice.vercel.app:443
+```
+⇒ **`000` là proxy của phiên chặn, KHÔNG phải bản dựng hỏng.** (Cùng họ bài học: *máy trả về RỖNG
+là câu trả lời về PHÉP ĐO trước, về THẾ GIỚI sau.*) Mọi kiểm chứng trên bản xem trước **phải do máy
+Hoà làm**, phiên này không tự kiểm được.
+
+### CÁI GÌ CHẠY, CÁI GÌ KHÔNG — suy từ cấu hình, chưa mở bằng mắt
+| | |
+|---|---|
+| ✅ Giao diện | `app/page.tsx` là **client component**, không gọi Prisma ⇒ màn đăng nhập + vỏ app render được |
+| 🔴 Dữ liệu | `prisma/schema.prisma:16` provider **`sqlite`** — tệp CSDL trên Vercel là **ephemeral**, mỗi lần gọi một sandbox mới ⇒ đăng nhập/ghi dữ liệu **không bền**, nhiều khả năng lỗi |
+| ⚠️ Kết luận | Bản xem trước dùng để **SOI GIAO DIỆN**, không dùng để làm việc thật |
+
+⇒ Muốn nó thành đường duyệt mắt đầy đủ thì phải đổi sang CSDL chạy được trên serverless
+(Postgres/Turso) — **việc hạ tầng, cần Hoà quyết**, chưa mở phiếu.
