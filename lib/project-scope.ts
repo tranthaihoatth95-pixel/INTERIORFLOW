@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { fetchFlows, openFlow } from '@/lib/workspace';
 import { getLastUserId, loadResume } from '@/lib/resume';
+import { danhTinhChoLuot } from '@/lib/danh-tinh-phien';
 import {
   LEGACY_STAGE_ROUTE,
   parseScope,
@@ -51,17 +52,63 @@ export async function describeMissingScope(routeId: string): Promise<ScopeMissin
 }
 
 /**
- * "Dự án đang hoạt động" để REDIRECT từ route toàn cục cũ (`/cad-editor`…).
- * Thứ tự: store (điều hướng trong phiên) → resume-state theo user gần nhất
- * (mở lại tab/bookmark). Null = user mới/chưa mở dự án nào → giữ hành vi cũ.
+ * HAI NGUỒN của "dự án đang hoạt động", tách rời vì chúng có ĐIỀU KIỆN KHÁC NHAU:
+ *
+ *   · `tuStore` — điều hướng trong phiên. Có sẵn NGAY, **không cần định danh**.
+ *   · `tuResume` — mở lại tab/bookmark. **Phải có định danh trước** thì mới tra được bản ghi
+ *     resume (khoá là `interiorflow.resume.<userId>`).
+ *
+ * Tách ra để mỗi nhánh có ĐÚNG MỘT định nghĩa, dùng chung cho cả bản đồng bộ lẫn bản chờ bên
+ * dưới — không chép đôi.
  */
-export function activeProjectRouteId(): string | null {
+function tuStore(): string | null {
   const s = useFlowStore.getState();
-  const fromStore = pickStableRouteId(s.currentProjectId, s.currentFlowId, '');
-  if (fromStore) return fromStore;
+  return pickStableRouteId(s.currentProjectId, s.currentFlowId, '') || null;
+}
+
+function tuResume(): string | null {
   const uid = getLastUserId();
   const resumed = uid ? loadResume(uid) : null;
   return resumed?.flowId ?? null;
+}
+
+/**
+ * "Dự án đang hoạt động" — bản ĐỒNG BỘ. Dùng ở chỗ render/tính href, nơi không await được.
+ *
+ * ⚠️ ĐỌC KỸ TRƯỚC KHI DÙNG Ở EFFECT MOUNT: nhánh `tuResume` đọc bộ đệm định danh, mà bộ đệm đó
+ * CHƯA được gieo ở lượt vào đầu tiên của một deep-link (xem `lib/danh-tinh-phien.ts`). Ở đó hàm
+ * này trả `null` cho một người dùng ĐANG đăng nhập hợp lệ và có resume đủ trên đĩa. Chỗ nào
+ * QUYẾT ĐỊNH ĐIỀU HƯỚNG dựa trên kết quả thì phải dùng `activeProjectRouteIdCho()` bên dưới.
+ */
+export function activeProjectRouteId(): string | null {
+  return tuStore() ?? tuResume();
+}
+
+/**
+ * Bản CHỜ ĐỊNH DANH — dùng cho đường QUYẾT ĐỊNH ĐIỀU HƯỚNG lúc mount (D7, 04/09).
+ *
+ * ⛔ BỆNH ĐÃ CHỮA. `LegacyStageRedirect` gọi bản đồng bộ trong effect mount (deps `[router,
+ * stage]` ⇒ chạy đúng MỘT lần, không bao giờ chạy lại). Mở bookmark cũ `/cad-editor` bằng tab
+ * mới ⇒ store rỗng + bộ đệm định danh chưa gieo ⇒ trả `null` ⇒ dội về `/?notice=choose-project`
+ * DÙ resume trên đĩa đã đủ `flowId`. Tái hiện có đối chứng:
+ * `scripts/nghiem-thu-ban-lam-viec/tai-hien-d7.mjs` (hai thế giới khác nhau đúng một biến).
+ *
+ * Cùng họ với D1/D6 (đường GHI) và chữa bằng ĐÚNG cỗ máy đó — `danhTinhChoLuot`, không chế cơ
+ * chế đợi thứ hai (lệnh cấm ở `danh-tinh-phien.ts:19`).
+ *
+ * ⚡ HỎI STORE TRƯỚC, CHỜ SAU — cố ý, không phải tối ưu vặt: điều hướng trong phiên vốn KHÔNG
+ * cần định danh, nên bắt nó chờ `/api/auth/me` là đổi một lỗi sai-đích lấy một lỗi chậm-đích.
+ * Chỉ ca thật sự thiếu dữ kiện (store rỗng = deep-link/bookmark) mới trả giá chờ.
+ *
+ * `conSong` là cờ huỷ của chính lượt effect gọi nó — hết hiệu lực thì trả `null` để nơi gọi
+ * DỪNG, không điều hướng bằng kết luận của một lượt đã bị dọn.
+ */
+export async function activeProjectRouteIdCho(conSong: () => boolean): Promise<string | null> {
+  const ngay = tuStore();
+  if (ngay) return ngay;
+  const { tiepTuc } = await danhTinhChoLuot(conSong);
+  if (!tiepTuc) return null;
+  return tuResume();
 }
 
 /**
