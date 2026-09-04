@@ -55,6 +55,7 @@ const A = { email: 'g1.alpha@kiemthu.local', matKhau: 'kiemthu123', ten: 'A' };
 const B = { email: 'g1.beta@kiemthu.local', matKhau: 'kiemthu123', ten: 'B' };
 const DA1 = 'g1projA1';
 const DA2 = 'g1projA2';
+const DAB = 'g1projB1'; // dự án của chính B — dùng ở CA8 chặng đổi người
 
 /** Khoá IndexedDB có dạng `userId::route::projectId` (lib/sheets-persist.ts:52). */
 const ROUTE_CAD = '/cad-editor';
@@ -143,9 +144,22 @@ const layBan = (kho, khoa) => kho.ban.find((b) => b.khoa === khoa) ?? null;
 const soThucThe = (kho, khoa) => layBan(kho, khoa)?.soThucThe ?? 0;
 const khoaCad = (userId, duAn) => `${userId}::${ROUTE_CAD}::${duAn}`;
 
-/** Mở editor 2D của một dự án và đợi canvas thật xuất hiện. */
+/**
+ * Mở editor 2D của một dự án và đợi canvas thật xuất hiện. Dự án chưa có bản vẽ nào thì bấm
+ * "Tạo bản vẽ mới" — ca nghiệm thu cần một mặt vẽ, không cần màn rỗng.
+ */
 async function moEditor(page, duAn) {
   await page.goto(`${GOC}/projects/${duAn}/cad`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+  await page.waitForTimeout(4000);
+  const tao = page.getByRole('button', { name: /Tạo bản vẽ mới/i });
+  try {
+    if (await tao.count()) {
+      await tao.first().click({ timeout: 5000 });
+      await page.waitForTimeout(3000);
+    }
+  } catch {
+    /* không có màn rỗng — dự án đã có bản vẽ */
+  }
   await page.waitForSelector('canvas', { timeout: 60000 });
   await page.waitForTimeout(4000);
   await boQuaLopChe(page);
@@ -191,11 +205,17 @@ const CHAN_GHI_LOCAL = `(() => {
   };
 })();`;
 
+/**
+ * Chặn HẲN localStorage — đọc cũng ném. Chỉ chặn `localStorage`, KHÔNG đụng `sessionStorage`
+ * (Safari "Block All Cookies" và chế độ chặn dữ liệu trang của Chrome hành xử đúng như vậy).
+ */
 const CHAN_CA_LOCAL = `(() => {
-  const nem = () => { throw new DOMException('SecurityError', 'SecurityError'); };
-  Storage.prototype.setItem = nem;
-  Storage.prototype.getItem = nem;
-  Storage.prototype.removeItem = nem;
+  const g = Storage.prototype;
+  const oS = g.setItem, oG = g.getItem, oR = g.removeItem;
+  const chan = () => { throw new DOMException('SecurityError', 'SecurityError'); };
+  g.setItem = function (k, v) { if (this === window.localStorage) chan(); return oS.call(this, k, v); };
+  g.getItem = function (k) { if (this === window.localStorage) chan(); return oG.call(this, k); };
+  g.removeItem = function (k) { if (this === window.localStorage) chan(); return oR.call(this, k); };
 })();`;
 
 const gieoDinhDanhCu = (userId) =>
@@ -305,22 +325,57 @@ async function ca2(browser) {
   );
 }
 
+/**
+ * CA3 — localStorage bị CHẶN HẲN (đọc cũng ném). Ca này TÁCH HAI CHIỀU, vì kết quả thật lệch
+ * nhau: an toàn dữ liệu thì không bị vi phạm, nhưng app CHẾT hẳn nên không ai làm việc được.
+ * Gộp hai chiều vào một chữ PASS/FAIL sẽ nói dối về một trong hai.
+ */
 async function ca3(browser) {
-  const r = await chayCaSongSot(browser, {
-    ma: 3,
-    ten: 'localStorage CHẶN HẲN',
-    tiemLoi: CHAN_CA_LOCAL,
-    anh: 'ca3-localstorage-chan-han',
-  });
-  await r.ctx.close();
-  if (r.loi) return ghi(3, 'localStorage CHẶN HẲN (đọc cũng ném)', 'UNVERIFIED', `không dựng được ca: ${r.loi}`);
-  ghi(
-    3,
-    'localStorage CHẶN HẲN (đọc cũng ném)',
-    r.dat ? 'PASS' : 'FAIL',
-    r.bc,
-    'Không đọc/ghi được bộ đệm ⇒ mỗi lượt phải hỏi lại máy chủ; việc vẫn phải về đúng kho.',
-  );
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  const loiTrang = [];
+  page.on('pageerror', (e) => loiTrang.push(String(e).slice(0, 60)));
+  try {
+    const idA = await dangNhap(ctx, A);
+    await page.addInitScript(CHAN_CA_LOCAL);
+    await page.goto(`${GOC}/projects/${DA1}/cad`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await page.waitForTimeout(10000);
+    await chup(page, 'ca3-localstorage-chan-han');
+
+    const dom = await page.evaluate(() => ({
+      soNut: document.querySelectorAll('button').length,
+      soCanvas: document.querySelectorAll('canvas').length,
+      chu: document.body.innerText.trim().length,
+    }));
+    const kho = await docKho(page);
+    const moHo = kho.ban.filter((b) => laKhoMoHo(b.khoa)).map((b) => b.khoa);
+    const khoaNguoiKhac = kho.ban.filter((b) => !b.khoa.startsWith(`${idA}::`)).map((b) => b.khoa);
+
+    const appDung = dom.soCanvas > 0 && dom.soNut > 0;
+    const anToanDuLieu = moHo.length === 0 && khoaNguoiKhac.length === 0;
+
+    const bc =
+      `app dựng được: ${appDung ? 'CÓ' : 'KHÔNG (0 canvas, ' + dom.soNut + ' nút, ' + dom.chu + ' ký tự — trang trắng)'} · ` +
+      `lỗi trang chưa bắt: ${loiTrang.length} · ` +
+      `khoá mơ hồ: ${moHo.length ? moHo.join(',') : 'không'} · ghi nhờ kho người khác: ${khoaNguoiKhac.length ? khoaNguoiKhac.join(',') : 'không'}`;
+
+    ghi(
+      3,
+      'localStorage CHẶN HẲN (đọc cũng ném)',
+      appDung && anToanDuLieu ? 'PASS' : 'FAIL',
+      bc,
+      appDung
+        ? 'App sống và không ghi bừa.'
+        : 'AN TOÀN DỮ LIỆU KHÔNG BỊ VI PHẠM (không ghi được byte nào ra đâu cả) NHƯNG APP CHẾT HẲN: ' +
+          'localStorage.getItem không bọc try/catch ở components/studio/Navigator.tsx:60 và ' +
+          'lib/cad/touch-input.ts:38 (readFingerDrawPreference) ném trong effect ⇒ React gỡ cả cây ⇒ trang trắng. ' +
+          'Hai tệp này NẰM NGOÀI bản vá P0; lib/danh-tinh-phien.ts và lib/resume.ts đều đã bọc đúng.',
+    );
+  } catch (e) {
+    ghi(3, 'localStorage CHẶN HẲN (đọc cũng ném)', 'UNVERIFIED', `không dựng được ca: ${String(e).slice(0, 180)}`);
+  } finally {
+    await ctx.close();
+  }
 }
 
 /**
@@ -474,21 +529,27 @@ async function ca8(browser) {
     const duAn1ConNguyen = soThucThe(t3, kA1) === soThucThe(t1, kA1);
 
     // ── Chặng 3: ĐỔI NGƯỜI trên cùng trình duyệt ──────────────────
+    // B đi vào DỰ ÁN CỦA CHÍNH B (đời thật: máy dùng chung, người sau làm việc của mình).
+    // Vào thẳng dự án của A thì máy chủ chặn vì B không phải thành viên — không kiểm được gì.
     await dangXuat(ctx);
     const idB = await dangNhap(ctx, B);
-    await page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
-    await page.waitForSelector('canvas', { timeout: 60000 }).catch(() => {});
-    await page.waitForTimeout(6000);
-    await boQuaLopChe(page);
+    await moEditor(page, DAB);
 
     const t4 = await docKho(page);
-    const aTruocKhiBVe = soThucThe(t4, kA2);
-    await veMotDuong(page); // B vẽ, dưới URL dự án 2 của A
+    const kA2Truoc = soThucThe(t4, kA2);
+    const kA1Truoc = soThucThe(t4, kA1);
+    const kB = khoaCad(idB, DAB);
+    const kAB = khoaCad(idA, DAB); // kho SAI mà việc của B có thể rơi vào
+    const abTruoc = soThucThe(t4, kAB);
+
+    await veMotDuong(page); // B vẽ, trong dự án của chính B
     const t5 = await docKho(page);
     await chup(page, 'ca8-doi-du-an-va-doi-nguoi-dung');
 
-    const kB2 = khoaCad(idB, DA2);
-    const bGhiVaoKhoA = soThucThe(t5, kA2) > aTruocKhiBVe;
+    // Vi phạm nếu: việc của B rơi vào kho mang id của A, hoặc kho của A bị đụng vào.
+    const bGhiVaoKhoA =
+      soThucThe(t5, kAB) > abTruoc || soThucThe(t5, kA2) > kA2Truoc || soThucThe(t5, kA1) > kA1Truoc;
+    const bGhiDungKho = soThucThe(t5, kB) > soThucThe(t4, kB);
     const lastUser = await page.evaluate(() => {
       try {
         return localStorage.getItem('interiorflow.lastUserId');
@@ -498,12 +559,12 @@ async function ca8(browser) {
     });
     const demSai = lastUser === idA;
 
-    const dat = veDuoc1 && veDuoc2 && duAn1ConNguyen && !bGhiVaoKhoA;
+    const dat = veDuoc1 && veDuoc2 && duAn1ConNguyen && !bGhiVaoKhoA && bGhiDungKho;
     const bc =
-      `A vẽ ở DA1: ${veDuoc1 ? 'ghi được' : 'KHÔNG ghi được'} · A vẽ ở DA2: ${veDuoc2 ? 'ghi được' : 'KHÔNG ghi được'} · ` +
+      `A vẽ ở DA1: ${veDuoc1 ? 'ghi được' : 'KHÔNG'} · A vẽ ở DA2: ${veDuoc2 ? 'ghi được' : 'KHÔNG'} · ` +
       `DA1 còn nguyên sau khi đổi dự án: ${duAn1ConNguyen ? 'có' : 'KHÔNG'} · ` +
-      `sau khi đổi sang B, kho A(DA2) ${soThucThe(t5, kA2)} (trước ${aTruocKhiBVe}) · ` +
-      `kho B(DA2): ${soThucThe(t5, kB2)} · lastUserId=${String(lastUser).slice(-6)} (A=${idA.slice(-6)}, B=${idB.slice(-6)})`;
+      `B vẽ vào ĐÚNG kho B: ${bGhiDungKho ? 'có' : 'KHÔNG'} · B ghi nhầm vào kho mang id A: ${bGhiVaoKhoA ? 'CÓ' : 'không'} · ` +
+      `lastUserId=${String(lastUser).slice(-6)} (A=${idA.slice(-6)}, B=${idB.slice(-6)})`;
 
     ghi(
       8,
