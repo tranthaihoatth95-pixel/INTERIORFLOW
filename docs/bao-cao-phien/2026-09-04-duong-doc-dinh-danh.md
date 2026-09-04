@@ -98,14 +98,21 @@ hướng tới 8 s ở ca máy chủ không với tới** — đổi một rủi
 `scripts/nghiem-thu-ban-lam-viec/quet-doc-dinh-danh.mjs` — quét ba cửa đọc **đồng bộ**
 (`getLastUserId` · `effectiveUserId` · `activeProjectRouteId`) trong `components/` `lib/` `app/`.
 
-**34 chỗ gọi · 17 là mã sản phẩm** (còn lại: 11 trong test, 6 là chính định nghĩa hàm).
+**34 chỗ gọi = 17 mã sản phẩm + 11 trong test + 6 là chính định nghĩa hàm** (`getLastUserId` ·
+`effectiveUserId` · `activeProjectRouteId` · hai nhánh vừa tách). 17 chỗ sản phẩm, đọc tay từng chỗ:
 
-| nhóm | số | vá | khai |
-|---|---|---|---|
-| **effect mount quyết định điều hướng / ghi bền** | **0** | — | — |
-| thân render (`effectiveUserId(storeUserId)`) | **11** | 0 | **11 → D8** |
-| hàm xử lý sự kiện | 4 | 0 | 4 (rủi ro thấp, §3) |
-| định nghĩa / bắc cầu trong `lib/` | 2 | **2** | — |
+| nhóm | số | vá | khai | vì sao |
+|---|---|---|---|---|
+| **effect mount quyết định điều hướng / ghi bền** | **0** | — | — | **nhánh D1/D6/D7 đã đóng trọn** |
+| thân render · `effectiveUserId(storeUserId)` | 11 | 0 | **11 → D8** | không phản ứng theo bộ đệm |
+| thân render · `getLastUserId()` chốt bằng `useState(() => …)` | 1 | 0 | **1 → D8** | `LockScreenSettings:22` — chốt MỘT lần, ghi bị nuốt |
+| hàm xử lý sự kiện / theo hoạt động người dùng | 4 | 0 | 4 | `CongThietLapTrang:166` · `LibrarySheet:422` · `AppChrome:204` · `VitalsGesture:485` — chạy sau khi bộ đệm đã gieo (§3) |
+| helper tính href lúc render (`stageHrefFrom`) | 1 | 0 | 1 | rơi về route toàn cục cũ ⇒ **tự lành qua chính cầu vừa vá** |
+| **tổng** | **17** | — | — | |
+
+⇒ **Vá trong lượt này là 2 chỗ ở `lib/` + 1 chỗ gọi** (`activeProjectRouteId` tách hai nhánh ·
+thêm bản chờ · `LegacyStageRedirect` đổi sang bản chờ) — sau khi vá, `LegacyStageRedirect` **rời
+hẳn** khỏi danh sách quét vì nó không còn đọc đồng bộ nữa.
 
 ⇒ **Nhánh của D1/D6/D7 đã đóng trọn: 0 chỗ còn lại thuộc loại đó.** Ba ca ấy không phải "ba trong
 nhiều", chúng là **cả nhánh**.
