@@ -76,3 +76,59 @@ Thêm: **0 nhánh** đụng `prisma/schema.prisma` · **0** migration mới · *
 2. **Không xoá nhánh nào trong sổ này** — lưu trữ là bằng chứng, và là đường lùi nếu bản dọn sót thứ gì.
 3. **Slice mới phải cắt từ `origin/main`**, không cắt từ `2dfed165` nữa (mốc đó nay đã lùi 2 commit).
 4. Sổ này cập nhật **mỗi lần một slice được thu về hoặc một nhánh đổi ACTION**. Không đẻ sổ thứ hai.
+
+---
+
+## 5 · KẾT QUẢ THU VỀ — 04/09, nhánh `integration/2026-09-04`
+
+Cắt từ `origin/main` (`f43de304`), gộp **11/11 nhánh, không một xung đột nào**.
+
+| Cổng | Kết quả |
+|---|---|
+| `tsc --noEmit` | **0 lỗi** — 11 slice không đụng kiểu nhau |
+| `npm run build` | **exit 0** · **119 route** (từ 96 ⇒ **+23**) |
+| `npm test` | **exit 0**, 0 lỗi Prisma *(sau W0)* |
+| `soi:frontier` · `soi:contract` | 0 LỆCH · 0 LỆCH |
+| `soi:cam-dien` | 🟢 91 sống (từ 86) · 🔴 **2** kho chưa mở (từ 1) |
+| `soi:hinh-hoc` | **37** ngoài thang (từ 26) |
+| Tổng | **203 tệp · +21.968 / −297** |
+
+**Hai món nợ do tích hợp sinh ra, ghi để không rơi:** thêm **1 kho chưa mở** (mã 0 nơi gọi) và **+11 giá trị radius ngoài thang**. Không chặn, nhưng phải đóng trước khi gọi là xong.
+
+### CORE E2E — LƯỢT ĐẦU CÓ BẰNG CHỨNG **PASS**
+Chạy trên máy chủ thật (`next start`) + CSDL thật, đăng nhập thật:
+
+| Bước | Kết quả |
+|---|---|
+| Đăng nhập `POST /api/auth/login` | **200**, trả hồ sơ người dùng |
+| Tạo bản vẽ `POST /api/flows` | **200** `rev=0` |
+| Lưu `PUT` kèm `expectedRev` | **200** `rev=1` |
+| **Tải lại đọc ra đúng dữ liệu đã lưu** | ✅ `Tường W-01 / 2700mm` sống nguyên |
+| Gửi lại `rev` cũ | **409 `REV_CONFLICT`** — chốt chống ghi đè **có thật, chạy đúng** |
+| Ảnh chụp phiên bản · chia sẻ link | **200** · token sinh ra |
+| Mở link chia sẻ **không đăng nhập** | **200** |
+| 20 trang (14 cấp app + 6 trong dự án) | **200 tất cả**, gồm `/inspiration` và `/library/knowledge` mới thu về |
+
+⇒ **Xương sống một-nguồn (tạo → lưu → tải lại → chống ghi đè → chia sẻ) đã có bằng chứng chạy được**, không còn là INFERENCE.
+
+### 🔴 RỦI RO PHÁT HÀNH PHÁT HIỆN Ở W0 — CHƯA XỬ
+`prisma migrate deploy` áp đủ 6 migration nhưng chỉ dựng **21/24 bảng**: thư mục `prisma/migrations` **tụt sau `schema.prisma`** (3 model chỉ sống nhờ `db push` trước đây — xem chính tên migration `catchup_db_push_baseline`). ⇒ **Máy chủ mới triển khai bằng `migrate deploy` sẽ có CSDL THIẾU BẢNG.** Phải sinh migration bù trước khi phát hành. *(P1, không chặn phát triển.)*
+
+---
+
+## 6 · `backup/2026-08-19-batch0a` — MÃ MỒ CÔI, CẦN CHỦ DỰ ÁN QUYẾT
+
+| Đo | Giá trị |
+|---|---|
+| Commit chưa vào main | **59** (21–22/08) |
+| `git cherry origin/main` | **59/59 dấu `+`** — không commit nào có bản tương đương trong main |
+| Diff so main | **201 tệp · +28.955 / −1.779** — *lớn hơn cả 11 slice cộng lại* |
+| Có ở nơi khác không | **KHÔNG.** `checkpoint` có **0 commit ngày 21–22/08**, 0 tiêu đề trùng; **19 tệp chỉ tồn tại ở nhánh này** |
+| Gốc | `388a8932` — **cùng dòng với main**, nên merge được về mặt lịch sử |
+| Chồng lấn với 11 slice | **10 tệp**, gồm `app/globals.css` · `lib/commands/registry.ts` · `CadCanvas.tsx` · `PresentEditor.tsx` |
+
+**Nội dung (đọc từ tiêu đề commit):** gizmo 3D bám vật kéo được · dựng khối bằng cử chỉ · deck + bản vẽ có **bản sao bền trên máy chủ** (sống qua xoá sạch trình duyệt) · mở đường về 2D từ Present · **Live Guide / Demo Conductor** · CÔNG THỨC HÌNH gom ngăn xếp theo ý định · và **`fix(rail): nới trần Work Panel 320→440 — thi hành chốt #4 Experience System`** — đúng một trong các mục DRIFT mà báo cáo bootstrap ghi là *"chưa sửa"*.
+
+**Vì sao main hụt 10 ngày:** `main` có 26 commit ngày 19/08 + 24 ngày 20/08 rồi **đứng im tới 03/09**. Việc ngày 21–22/08 chạy trên nhánh này; việc sau đó chạy trên dòng cũ `checkpoint` (tới 01/09). Không nhánh nào được thu về.
+
+**ACTION: `INVESTIGATE` → chờ chủ dự án.** Không tự merge: 29 nghìn dòng hành vi sản phẩm, đụng 10 tệp hợp đồng dùng chung, và cái tên `backup/` để ngỏ khả năng nó **cố ý** không được thu về.
