@@ -1,0 +1,46 @@
+/* docs/mocks/_home-nc-nen.css — NỀN CHUNG cho 3 nghiên cứu bố cục Home (04/09).
+   ⚠️ Mọi giá trị dưới đây CHÉP NGUYÊN VĂN từ app/globals.css — không chế màu, không chế số.
+   Nguồn: --bg/--panel/--card/--t1..t5/--border tại :root (tối) và :root[data-theme='light'].
+   Thang bo 6/10/14/20 là thang đã duyệt 12/08. Cấm thêm giá trị ngoài thang. */
+:root{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14);
+  --vien-mo:rgba(255,255,255,.06);
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --gap:12px;
+  color-scheme:dark;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#fff;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --vien-mo:rgba(0,0,0,.07);
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  width:1600px;height:900px;overflow:hidden;background:var(--bg);color:var(--t1);
+  font-family:-apple-system,'SF Pro Text','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  font-size:var(--fs-sm);-webkit-font-smoothing:antialiased;
+}
+/* chữ hiển thị — nhịp EDITORIAL, đây là chỗ hệ hiện tại không có */
+.hien{font-size:56px;line-height:1.04;letter-spacing:-.022em;font-weight:600}
+.hien-nho{font-size:34px;line-height:1.1;letter-spacing:-.018em;font-weight:600}
+.nhan{font-size:var(--fs-2xs);letter-spacing:.14em;text-transform:uppercase;color:var(--t4);
+  font-family:ui-monospace,'SF Mono',Menlo,monospace}
+.phu{color:var(--t3);font-size:var(--fs-sm);line-height:1.55}
+.so{font-variant-numeric:tabular-nums}
+/* rail — GIỮ NGUYÊN kiến trúc điều hướng đã duyệt (3 cụm, nấc 52/240/320) */
+.rail{width:52px;height:100%;flex:0 0 52px;display:flex;flex-direction:column;align-items:center;
+  gap:6px;padding:14px 0;border-right:1px solid var(--vien-mo)}
+.rail i{width:36px;height:36px;border-radius:var(--r-2);display:block;background:var(--t5);opacity:.42}
+.rail i.on{opacity:1;background:var(--accent)}
+.rail hr{width:20px;border:0;border-top:1px solid var(--vien-mo);margin:8px 0}
+.khung{display:flex;height:100%}
+.than{flex:1;min-width:0;position:relative;overflow:hidden}
+/* nhãn chú giải cho phiếu duyệt — KHÔNG thuộc sản phẩm */
+.ghi{position:absolute;z-index:9;font:600 10px/1.3 ui-monospace,monospace;letter-spacing:.06em;
+  background:var(--accent);color:#fff;padding:3px 6px;border-radius:var(--r-1);text-transform:uppercase}

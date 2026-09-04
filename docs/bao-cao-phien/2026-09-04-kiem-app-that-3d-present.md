@@ -51,6 +51,9 @@ không hiện thì vẫn là hỏng — đúng bài học "mã có, đường d�
 | 4 | Bản vẽ → Trình chiếu | **PASS 3/3 sau khi sửa BỘ ĐO** — bản FAIL 9/10 bên dưới là **hiện vật của bộ đo**, giữ nguyên vì nó dẫn tới một rủi ro thật |
 | 5 | Hàng tab ở khổ desktop hẹp | **PASS** |
 
+> ✅ **Lượt chạy GỘP — mỗi mục một trang trình duyệt riêng — cho PASS CẢ NĂM MỤC trong một lượt,
+> `loiTrang: []`** (`.nen-chrome-out/ket-qua-tat-ca.json`, 04:09:46Z). Chi tiết ở §12.1.
+
 ---
 
 ## 1 · Dựng khối bằng cử chỉ 3D — **PASS**
@@ -265,7 +268,7 @@ Chạy: `IF_MATKHAU='…' IF_BASE=http://localhost:3145 node scripts/kiem-3d-con
 ## 8 · Tệp đã sửa
 | Tệp | Việc |
 |---|---|
-| `scripts/kiem-3d-contro-that.js` | thu về + tham số hoá + viết lại phép đo 5 mục (555 → ~640 dòng) |
+| `scripts/kiem-3d-contro-that.js` | thu về + tham số hoá + viết lại phép đo 5 mục (722 → 773 dòng) |
 | `components/three/Viewport3D.tsx` | **+1 import, +1 effect** — nối phím `Delete`/`Backspace` vào lệnh `cad.sel.delete` |
 | `docs/bao-cao-phien/2026-09-04-kiem-app-that-3d-present.md` | báo cáo này |
 | `docs/delivery/anh-duyet-mat/lo-01/` | ảnh bằng chứng |
@@ -315,3 +318,71 @@ Chạy: `IF_MATKHAU='…' IF_BASE=http://localhost:3145 node scripts/kiem-3d-con
    `title` · lưu trữ bám nguồn yếu): **mã có, đường dây tới người dùng đứt ở đoạn cuối.** Không có
    máy soi nào hiện bắt được loại này — chúng chỉ bắt lệch nhãn, lệch hình học, lệch sổ. Chỉ
    **thao tác thật** mới bắt được. Đây là lý lẽ mạnh nhất cho việc giữ bộ đo con-trỏ-thật chạy đều.
+
+## 11 · Ảnh bằng chứng — `docs/delivery/anh-duyet-mat/lo-01/`
+
+Ảnh nằm TRONG repo, không nằm ở `.nen-chrome-out/`: thư mục đó bị gitignore **và đã bị dọn giữa
+chừng** trong chính buổi này — lô ảnh đầu của tôi biến mất khỏi đĩa trước khi kịp nhìn.
+
+| Tệp | Chứng minh điều gì |
+|---|---|
+| `kiem-3d-1a-truoc-khi-dung-khoi.png` | cảnh trống, nhãn "Không gian trống" |
+| `kiem-3d-1b-keo-tren-san-ra-tuong.png` | **kéo ra tường thật** — nhãn đổi, cây đối tượng mọc `Sàn` + `Tường 1` |
+| `kiem-3d-1c-ctrl-z-lui-duoc.png` | Ctrl+Z đưa về cảnh trống |
+| `kiem-3d-1d-keo-1px-bi-huy.png` | kéo 1 điểm ảnh không sinh khối |
+| `kiem-3d-2a-truoc-khi-chon.png` | khối chưa chọn (0 điểm ảnh màu nhấn) |
+| `kiem-3d-2b-vien-hop-bao-hien-ra.png` | **viền hộp bao tím quanh khối** + Inspector "Cao 2.700 mm" |
+| `kiem-3d-2c-sau-phim-delete.png` | sau khi nhấn `Delete` — cảnh đã trống (bản ĐÃ VÁ) |
+| `kiem-3d-2d-sau-khi-xoa.png` | trạng thái cuối sau khi xoá |
+| `kiem-3d-3a-viewport-retina-dpr2.png` | khung nhìn ở DPR 2, không mép nào bị cắt |
+| `kiem-present-4a-chang-2d-hang-tab.png` | chặng 2D + hàng tab + nút "Gửi sang Trình chiếu" |
+| `kiem-present-4b-sau-khi-gui.png` | ngay sau khi bấm gửi |
+| `kiem-present-4c-nhan-to-a3-1-100.png` | **Trình chiếu nhận đúng**: chip `A3 · 1:100`, panel Khổ giấy/Tỉ lệ/Khung tên |
+| `kiem-present-4d-sau-khi-tai-lai.png` | sau khi tải lại trang — tờ vẫn còn |
+| `kiem-tab-5a-1280x800-10-tab.png` | 10 tab + nút mới ở 1280×800, hàng cao 36px |
+| `kiem-tab-5b-1152x720-10-tab.png` | 10 tab + nút mới ở 1152×720, hàng cao 36px |
+
+## 12 · Một bài học về chính BỘ ĐO (ghi vì nó sẽ lặp lại)
+
+Trong buổi này bộ đo **tự tạo ra hai lỗi không có thật**, và cả hai đều suýt được ghi thành lỗi
+sản phẩm:
+
+| Hiện vật | Nguyên nhân | Cách phát hiện |
+|---|---|---|
+| "Trình chiếu mất tờ khi tải lại" (§4) | đăng nhập bằng API ⇒ `localStorage.lastUserId` rỗng ⇒ lớp lưu trữ chạy in-memory | đổi **một** bước: ghé Home trước |
+| "Cầu ra không ghi gì" | đọc `sessionStorage` ở +1500ms trong khi nó bị **tiêu thụ trong vài trăm ms** | dò 100ms/lượt |
+| "Mục 2 không dựng được khối" (chỉ khi chạy gộp) | mục 1 đóng card chào ⇒ mục 2 không còn đường cầm công cụ | cấp **trang riêng** cho từng mục |
+
+⇒ **Luật rút ra:** trước khi kết luận sản phẩm hỏng, hỏi *"tiền đề của phép đo có giống người dùng
+thật không"* và *"trạng thái do phép đo TRƯỚC để lại có làm hỏng phép đo này không"*. Hai câu đó
+rẻ hơn nhiều so với việc cử người đi sửa một lỗi không tồn tại.
+
+⚠️ Và chỗ ngược lại cũng đúng: **kết quả chập chờn không phải nhiễu để làm ngơ.** Lượt PASS lẻ loi
+1/10 ở §4 chính là chỗ chứa lời giải. Làm tròn nó đi cho gọn là mất luôn manh mối.
+
+### 12.1 · Lượt chạy GỘP — **cả năm mục PASS trong MỘT lượt**
+
+Sau khi cấp **trang riêng cho từng mục**, lượt gộp chạy trọn và sạch
+(`.nen-chrome-out/ket-qua-tat-ca.json`, `2026-09-04T04:09:46Z`, DPR 2, **`loiTrang: []`**):
+
+```
+PASS   3 · viewport 3D không bị cắt trên retina
+PASS   1 · dựng khối bằng cử chỉ 3D
+PASS   2 · chọn / viền hộp bao / xoá khối 3D
+PASS   4 · bản vẽ → Trình chiếu
+PASS   5 · hàng tab bản vẽ ở khổ desktop hẹp
+```
+
+Số khớp đúng với các lượt chạy lẻ: viewport `824×881` tràn `0×0` · cử chỉ đổi **57,36%** điểm ảnh ·
+viền hộp bao **+1.569** điểm ảnh màu nhấn · phím `Delete` **2 → 0** · cầu ra `A3 · 1:100` sang bên
+nhận `A3 · 1:100` · 10 tab, hàng cao 36px, không tràn ở cả hai khổ.
+
+> ⭐ Chi tiết đáng ghi ở mục 4 lượt này: `phaiTaoHoSoTruoc: false` — hồ sơ từ lượt trước **vẫn còn**,
+> tức deck ĐÃ được lưu bền. Thêm một xác nhận độc lập rằng "mất hồ sơ" là hiện vật của bộ đo chứ
+> không phải lỗi sản phẩm.
+
+**⚠️ Một tật của bộ đo, chưa sửa — khai để phiên sau không vấp:** mục 5 bấm "Thêm bản vẽ" **8 lượt
+mỗi khổ** để ép hàng tab chịu tải ⇒ mỗi lượt chạy để lại **+16 tờ** trong dự án kiểm. Chạy vài lượt
+là dự án phình tới hàng chục tờ và bước đó chậm dần (một lượt gộp trước đó đã bị cắt vì hết giờ
+chính vì lý do này — **do bộ đo, không phải app chậm**). ⇒ Việc nên làm khi dùng lại: cho mục 5
+**dọn tờ đã thêm sau khi đo**, hoặc chạy nó trên một dự án dùng-một-lần.

@@ -398,13 +398,11 @@ async function lenhChonXoa(page, duAn) {
        trước. Đường thứ hai — nút `Wall` ở bảng lệnh trái — luôn có. */
     const batDau = page.locator('button', { hasText: /Bắt đầu trong 3D|Start in 3D/ }).first();
     if (await batDau.count().catch(() => 0)) { await batDau.click().catch(() => {}); await page.waitForTimeout(1400); }
-    else {
-      /* Công cụ VẼ nằm ở nhóm "VẼ RỒI ĐÙN" (Rectangle · Circle · Polygon) — KHÔNG phải nhóm
-         "CẤU KIỆN" (Wall · Floor · Roof…): nhóm sau là CHÈN cấu kiện có sẵn, bấm vào không cầm
-         công cụ kéo. Đã nhầm một lượt và mục này báo KHÔNG ĐO ĐƯỢC vì thế. */
-      const rect = page.locator('button', { hasText: /^\s*Rectangle/ }).first();
-      if (await rect.count().catch(() => 0)) { await rect.click().catch(() => {}); await page.waitForTimeout(1200); }
-    }
+    // ⛔ KHÔNG có đường dự phòng bằng nút bảng lệnh. Đã thử `Rectangle` và ĐO ĐƯỢC là nó
+    //    ĐIỀU HƯỚNG SANG `/cad` (khớp nhầm một nút khác cùng chữ) — khung nhìn 3D biến mất,
+    //    `.vplabel` thành `null`, và mục này báo sai. Thà KHÔNG ĐO ĐƯỢC còn hơn đo một màn khác.
+    //    Điều kiện để mục này chạy được là card chào còn nguyên ⇒ xem cách `tat-ca` cấp
+    //    TRANG RIÊNG cho từng mục ở `main()`.
     box = (await hopViewport(page)) || box;
     const cx = box.x + box.w * 0.5, cy = box.y + box.h * 0.62;
     await keo(page, cx - box.w * 0.16, cy, cx + box.w * 0.16, cy - box.h * 0.06);
@@ -729,15 +727,37 @@ async function main() {
         console.log(`· nhãn khung nhìn: "${await nhanKhungNhin(page)}"`);
         console.log(`· ảnh: ${await chup(page, '0-probe')}`);
       }
-      // Mỗi mục dùng TRANG SẠCH (goto lại) để không thừa hưởng trạng thái của mục trước.
-      if (tatCa || cmd === 'retina') ketQua.push(await lenhRetina(page, duAn));
-      if (tatCa || cmd === 'cu-chi') ketQua.push(await lenhCuChi(page, duAn));
-      if (tatCa || cmd === 'chon-xoa') ketQua.push(await lenhChonXoa(page, duAn));
-      if (tatCa || cmd === 'to-present') ketQua.push(await lenhToPresent(page, duAn));
+      if (!tatCa) {
+        if (cmd === 'retina') ketQua.push(await lenhRetina(page, duAn));
+        if (cmd === 'cu-chi') ketQua.push(await lenhCuChi(page, duAn));
+        if (cmd === 'chon-xoa') ketQua.push(await lenhChonXoa(page, duAn));
+        if (cmd === 'to-present') ketQua.push(await lenhToPresent(page, duAn));
+      }
     } finally {
       await browser.close();
     }
   }
+  /**
+   * MỖI MỤC MỘT TRANG RIÊNG khi chạy gộp — KHÔNG dùng chung một trang.
+   * Lý do đo được, không phải cẩn thận thừa: mục 1 ĐÓNG card chào "Bắt đầu trong 3D" và card đó
+   * KHÔNG quay lại sau khi điều hướng ⇒ mục 2 chạy sau không còn đường cầm công cụ dựng và báo
+   * KHÔNG ĐO ĐƯỢC — một mục PASS khi chạy lẻ lại đỏ khi chạy gộp, thuần vì thứ tự. Trang riêng
+   * làm mỗi phép đo độc lập, đúng như `hep` vốn đã làm.
+   */
+  if (tatCa) {
+    for (const [ten, ham] of [['retina', lenhRetina], ['cu-chi', lenhCuChi], ['chon-xoa', lenhChonXoa], ['to-present', lenhToPresent]]) {
+      const { browser, page } = await moTrinhDuyet();
+      try {
+        await dangNhap(page);
+        ketQua.push(await ham(page, duAn));
+      } catch (e) {
+        ketQua.push({ muc: ten, ketQua: 'KHÔNG ĐO ĐƯỢC', vuong: `lỗi khi chạy: ${e.message.slice(0, 120)}`, anh: [], doDuoc: {} });
+      } finally {
+        await browser.close();
+      }
+    }
+  }
+
   if (tatCa || cmd === 'hep') ketQua.push(await lenhHep(duAn));
 
   if (ketQua.length) {
