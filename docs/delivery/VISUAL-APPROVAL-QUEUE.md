@@ -24,17 +24,20 @@
 ⇒ Trọng tâm chuyển từ **thu hồi** sang **hoàn tất thị giác**. Đường đi cố định cho mọi board:
 `AUTHORITY → THI CÔNG → MÁY KIỂM → ẢNH CHUẨN → DELTA → MẮT HOÀ`.
 
-## A2 · LÔ DUYỆT MẮT #1 — đang dựng bằng chứng
+## A2 · LÔ DUYỆT MẮT #1 — ✅ ĐÃ TRÌNH, CHỜ MẮT HOÀ
+
+📄 **Bản trình: `docs/delivery/VISUAL-REVIEW-BATCH-01.md`** — ba tấm, mỗi tấm đúng năm mục
+(NGUỒN LUẬT · BẢN ĐANG CÓ · LỆCH · MÁY ĐÃ XÁC MINH GÌ · HOÀ PHẢI PHÁN GÌ).
 
 Ba mục **cùng một lô** vì chúng chạm nhau ở mép trên màn hình; duyệt rời là bắt nhìn ba lần cùng một vùng.
 
-| Board | Trạng thái |
-|---|---|
-| **HOME · bố cục khổ rộng** | đang thi công + chụp ở 1600 · 1280 · 900, hai theme |
-| **VITALS · khẩu độ mép trên** | đang thi công + đo mount đơn, ⌘J, đường gõ-nhanh |
-| **Chrome/điều hướng mép trên** đi kèm hai mục trên | theo hai mục trên, không tách |
+| Tấm | Cổng máy | Trạng thái |
+|---|---|---|
+| **1 · HOME khổ rộng** | tỉ lệ 1,62 đo ở 1600 và 1280 · bốn chiều cao mục phụ khác nhau · tsc 0 · test lõi xanh · ảnh 3 khổ × 2 nền | **CHỜ MẮT** |
+| **2 · VITALS khẩu độ mép trên** | `mot-cho-dung.test.ts` 8/8 — đúng một chỗ mắc, đúng một ⌘J, hai bản cũ không mắc ở đâu · ảnh 3 mức × 2 nền × 2 stage | **CHỜ MẮT** |
+| **3 · Chrome/điều hướng mép trên** | ba nấc 52/240/320 khoá bằng test · ba cụm khớp điều 3 | **CHỜ MẮT** — kèm **một chỗ CHƯA XÁC MINH** đã khai thẳng: kéo Work Panel 320→440 |
 
-⛔ Chưa mục nào đủ điều kiện trình. Điều kiện là **toàn bộ những gì máy phán được đã xanh** — chưa đạt thì không đưa lên.
+⚠️ Mục 3 mang theo một dòng **CHƯA XÁC MINH ≠ ĐẠT** — khai trong bản trình, không giấu.
 
 ## B · ĐANG DỰNG BẰNG CHỨNG — chưa đủ điều kiện trình
 
