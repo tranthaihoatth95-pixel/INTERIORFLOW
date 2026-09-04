@@ -55,8 +55,32 @@ giữ nguyên, bỏ hẳn ẩn dụ mặt bàn (chỉ thị A):
 | **NỀN** | MỘT DÒNG có số, không tranh chỗ | phẳng | chữ + số + dấu |
 | **KHI GỌI** | MỘT CON SỐ có tên loại | mờ | đếm |
 
-**Lưới (1600×900):** rail 52 · sân co giãn 1148 · thang 400 (trong dải Work Panel 320–440 của
-EXS §4) · mép trên 44. Sân: dải ảnh 420 · hiện vật `top 168`, cao còn lại · dải ngữ cảnh 184.
+**Lưới (1600×900):** mép trên **42** (đo thật, `AppChrome`) · rail **do rail quyết, không do Home** ·
+khung Home = `viewport − rail` · thang 400 (trong dải Work Panel 320–440 của EXS §4). Sân: dải ảnh
+420 · hiện vật `top 168`, cao còn lại · dải ngữ cảnh 184.
+
+> 🔴 **SỬA BẢN KHOÁ 04/09 — vì thực tế đúng, bản khoá sai.** Bản này từng ghi *"rail 52 · sân co
+> giãn 1148"* như thể Home định đoạt bề rộng rail. Không phải: rail là **hệ router toàn app**
+> (chốt 16/08) với **ba nấc 52 / 240 / 320** (EXS §4 rail 52-56 · shelf 220-280 · panel 320-440),
+> **người dùng tự bấm** và **mặc định là 240** (`components/nav/RailDieuHuong.tsx:76` `dieuHuong`).
+> Con số 1148 chỉ đúng ở nấc HẸP NHẤT. Đo trên app thật ở màn 1600×900:
+>
+> | nấc rail | rail | khung Home | sân | thang | hiện vật |
+> |---|---|---|---|---|---|
+> | `dinhVi` | 52 | 1548 | **1148** | 400 | 1036 |
+> | `dieuHuong` ⭐ mặc định | 240 | 1360 | 960 | 400 | 848 |
+> | `duyet` | 320 | 1280 | 960 | 320 | 896 |
+>
+> **Sửa bản khoá chứ không sửa rail** vì rail có thẩm quyền riêng và cao hơn: Home không được ra
+> lệnh cho một hệ dùng chung. Cái Home ĐƯỢC quyết là **hình học của chính nó theo khung nó có**.
+>
+> ⚠️ Và chỗ đó thì Home đang SAI THẬT, đã sửa cùng lượt: ngưỡng khổ hẹp hỏi `@media` tức hỏi
+> **cửa sổ trình duyệt**, trong khi chỗ Home thật sự có là **cửa sổ trừ rail**. Hệ quả đo được
+> trước khi sửa: rail 320 trên màn 1600 cho khung **1280** — hẹp hơn cả ca khung 1040 mà bản khoá
+> gọi là hẹp — nhưng vẫn nhận bố cục RỘNG, hiện vật tụt **1036 → 768 px (−26%)** mà thang vẫn 400.
+> Nay điều kiện hỏi **chính khung** (`@container`, ngưỡng 1348 = 1400 − 52, tức dịch đúng ngưỡng
+> cũ sang hệ toạ độ khung). Cấu hình mặc định ra **y hệt trước** — lượt này chỉ sửa ca hỏng.
+> Bằng chứng: `components/home/home-lock-css.ts` khối `@container xuong`.
 
 **Mật độ:** Home **thoáng** — và chỉ Home. Chỉ thị mật-độ-không-đồng-nhất: xưởng 2D/3D phải
 **DÀY** hơn, đi qua token `--tap/--row/--gap/--pad-card/--fs-ui`, **không đổi hệ**.
@@ -232,9 +256,12 @@ máy nói *"không đo được"* thường là chỗ thiết kế đang dựa v
 
 ## 13 · CHƯA CHẮC / CHƯA KIỂM — bắt buộc khai
 
-- **Chưa chạy trên app thật.** Toàn bộ là bản vẽ tĩnh. Luật PASS mới (*thao tác → ghi xuống →
-  đóng/tải lại → vào lại → cùng một sự thật*) **chưa mắt nào trong chuỗi được chứng minh** — ảnh
-  tĩnh không chứng minh được. Đó là việc của phiếu thi công.
+- ✅ **04/09 — ĐÃ CHẠY TRÊN APP THẬT.** Home dựng bằng **dữ liệu THẬT** (`/api/home/summary`:
+  3 dự án · 12 việc có hạn trong CSDL), đo ở 1600×900 · hai nền · ba nấc rail; bậc NỀN nay có
+  **5 dòng thật** và bậc KHI GỌI đếm **3 việc đang ngủ**. Ảnh:
+  `docs/delivery/anh-duyet-mat/g3-ban-lam-viec/00-home-nen-{sang,toi}-sau-sua.png`.
+  🔴 Còn MỘT mục chưa đóng: **dải môi trường ở nền SÁNG vẫn TỐI HƠN trang** — xem §14.
+  ~~*(bản gốc: "Chưa chạy trên app thật. Toàn bộ là bản vẽ tĩnh…" — giữ để truy nguyên.)*~~
 - **Chuyển động chưa chạy lần nào.** §7 là **quy cách**, không phải thứ đã đo. Nhánh
   `prefers-reduced-motion` chưa kích hoạt.
 - **Chỉ đo Chromium.** Safari/Firefox là suy. `mask-image` có tiền tố `-webkit-`, nhưng
@@ -248,3 +275,55 @@ máy nói *"không đo được"* thường là chỗ thiết kế đang dựa v
   ghi chặng ba là **"Trình bày"** ở 3 chỗ (`:67` `:104` `:141`), nhưng `lib/phases.ts:101`,
   `lib/tasks/context.ts:23` (kèm test `:41`) và từ điển máy đều là **"Trình chiếu"** (P7 đổi tên
   04/08, sau chốt 03/08). Bản vẽ đã theo code. **Người sở hữu tệp đó cần sửa một nhãn.**
+
+---
+
+## 14 · CHẠM BIÊN MIỀN KHÁC — GHI SỔ, KHÔNG VÁ (04/09)
+
+Một mục, đo đủ, **cố ý không sửa** vì nó nằm ngoài vùng ghi của lượt này (`lib/wallpaper/**`).
+
+### Dải môi trường ở nền SÁNG đi NGƯỢC CHIỀU ÁNH SÁNG
+
+Đo bằng pixel thật trên app (không suy từ CSS), lấy ở **cột lề trái của sân** — dải trần, không
+vật nào đè:
+
+| | nền TỐI | nền SÁNG |
+|---|---|---|
+| thân dải | `rgb(19,22,24)` | `rgb(222,226,229)` |
+| nền trang `--bg` | `rgb(12,12,14)` | `rgb(242,239,233)` |
+| **chiều** | dải **SÁNG hơn** nền ✅ | dải **TỐI hơn** nền 🔴 |
+| biến thiên BÊN TRONG dải | 1,078 | **1,039** — bằng nửa |
+
+**Vì sao đây là lỗi chứ không phải gu.** Lớp này tự khai là *"ánh sáng theo giờ"* (LightClock).
+Một lớp ánh sáng mà **tối hơn trang** thì không đọc ra ÁNH SÁNG — nó đọc ra **một tấm xám**. Cộng
+với biến thiên bên trong chỉ 1,039 (phẳng lì), nó mất luôn cấu trúc để mắt bám vào.
+
+**Gốc, tra được tới dòng.** `lib/wallpaper/sets.ts` `NEO_DO_SANG.light` neo độ sáng theo buổi:
+
+```
+day   [0.930, 0.998]   ≥ --bg  ✅ ban ngày đúng chiều
+dawn  [0.892, 0.966]   straddle
+dusk  [0.874, 0.950]   🔴 phần lớn DƯỚI --bg
+night [0.862, 0.935]   🔴 phần lớn DƯỚI --bg
+```
+`--bg` nền sáng `#f2efe9` có L ≈ **0,931**. ⇒ **ban ngày thì đúng, chiều và đêm thì lật ngược.**
+Ảnh bằng chứng chụp lúc 18:44 (`dusk`) — đúng buổi hỏng.
+
+**Sửa một dòng, KHÔNG phải tôi sửa:** cận dưới của `light.dusk`/`light.night` phải **≥ L của
+`--bg`**; buổi tối trên nền sáng nghĩa là *ánh sáng ấm hơn và dịu hơn*, không phải *tối hơn trang*.
+
+**Lượt này đã làm được gì trong vùng của mình.** Ba mép cứng (đỉnh giáp thanh trên · trái giáp
+rail · phải giáp thang) là thứ **khoá cái đọc sai đó lại thành một hình chữ nhật**. Đã cho dải
+**tan ở mọi mép tự do**, đúng lý lẽ §4.3 vốn đã đúng cho mép đáy — lý do đó đúng cho cả bốn mép.
+⇒ Hết hình chữ nhật; còn lại là một vùng nhạt dần. **Nửa còn lại (chiều của ánh sáng) vẫn mở.**
+
+### Hai mục nhỏ hơn, cùng loại
+
+- **`--bg` nền sáng vẫn là kem `#f2efe9`** — đúng giá trị `00-CHOT` 16/08 gọi là "sến" và Hoà đã
+  chốt *"nền sáng canh theo Apple"* (`#F2F2F7`, ngả LAM). Dải hình nền thì đã trung tính-lạnh
+  (đúng chốt), `--bg` thì chưa ⇒ **mối nối giữa chúng là một mối nối LỆCH SẮC**, không chỉ lệch
+  độ sáng. Đổi `--bg` là đổi token đang dùng toàn app ⇒ ngoài vùng, và cần mắt Hoà.
+- **Bậc NỀN mới có 1/3 nguồn được nối.** `vatTuThat()` (`components/home/XuongHome.tsx`) chỉ đọc
+  `recentProjects` + `upcoming`; bản khoá §5 khai bậc NỀN gồm **hàng đợi render** (`dang-chay`) và
+  **lệch chuẩn `lib/review`** (`lech`) — cả hai **CHƯA CÓ NGUỒN NÀO** nối vào. Không phải hỏng:
+  là **chưa nối**. Nói thẳng ở đây để đừng ai đọc bậc NỀN đang chạy là "đã đủ nguồn".

@@ -130,3 +130,107 @@ xếp vào đây sẽ là đoán).
    ai cần chi tiết từng lệnh phải mở `lib/commands/registry.ts`.
 5. Chuỗi mount 3D đi qua `HomeScreen` (`app/projects/[id]/render/page.tsx:18`) — **không đọc hết**
    `HomeScreen`, nên có thể còn nhánh điều kiện quyết định 3D hiện hay không mà bảng này không thấy.
+
+---
+
+# E · ĐI BẰNG TAY TRÊN APP THẬT — 04/09
+
+> Bảng A/B ở trên **đọc mã**. Phần này **mở app, đăng nhập, bấm chuột thật, gõ phím thật**
+> (Chromium 1194 · 1600×900 · dev 3081 · CSDL nháp của worktree · tài khoản kiểm).
+> ⇒ Nay có quyền đổi `CƠ CHẾ CÓ` → **ĐẠT** cho những dòng thật sự đi hết vòng
+> *thao tác → ghi → tải lại → vào lại → cùng một sự thật*.
+> Ảnh: `docs/delivery/anh-duyet-mat/g3-ban-lam-viec/`.
+
+## E1 · Luồng nghề đi tới đâu
+
+`Home → vào dự án → 2D đặt vật → sửa → 3D → Trình chiếu → về Home`
+
+| Chặng | Kết quả | Bằng chứng |
+|---|---|---|
+| Home → dự án | ✅ bấm thẻ dự án ở bậc KỀ BÊN → `/projects/<id>/overview` | url đổi thật |
+| 2D · bật công cụ | ✅ **W + Enter** → công cụ đổi `Chọn` → `Tường` | `aria-pressed` đọc trên DOM |
+| 2D · vẽ tường | ✅ hai điểm + Enter → tường hiện thật, kèm panel **"Chỉnh lệnh vừa chạy"** (dày tường 110 mm · Hoàn tác/Xong · *Enter áp · Esc đóng giữ kết quả · F9 mở lại*) | `01-2D-tuong-ve-duoc-va-panel-chinh-lenh.png` |
+| 2D · **LUẬT PASS** | ✅ **ĐẠT** — tải lại trang, tường **vẫn còn**, lớp phủ bàn-trống không quay lại, "Đã lưu lúc 19:04" | `02-2D-tuong-song-sot-sau-tai-lai.png` |
+| 2D → 3D | 🔴 **GÃY, đã sửa** — xem E2① | `03` → `04` |
+| 3D · mở môi trường dựng | ✅ sau sửa: Command3DPanel (Sửa·Vật liệu·Camera·Đèn·Bản vẽ) · CẤU KIỆN · BIẾN ĐỔI · ToolDock3D · ViewCube · WebGL 824×781 | `04-3D-mo-duoc-bang-chuot-sau-sua.png` |
+| 3D · thấy tường vừa vẽ ở 2D | ❌ **KHÔNG** — viewport báo *"Không gian trống"*, panel trái *"Chưa có khối nào trong cảnh"* | xem E3 |
+| Trình chiếu | ✅ "Tạo hồ sơ trống" → trình dàn trang thật (kệ mẫu BÌA 3 · BÌA PHỤ 2 · NỘI DUNG 14 · thanh Chữ/Ảnh/Hình/Thiết kế · dải slide · "Đã lưu lúc 19:13") | `05-trinh-chieu-ho-so-trong.png` |
+| Về Home | ✅ | — |
+
+## E2 · TRƯỢT theo ba câu chuẩn vi-tương-tác — **3 ca**
+
+### ① 🔴 Công cụ bấm vào IM LẶNG KHÔNG LÀM GÌ — *lối vào mode Vẽ 3D bị chặn* **[ĐÃ SỬA]**
+
+Đây là ca **máy soi không bắt được** và là chỗ luồng nghề đứt.
+
+`StageIntroCard` (thẻ mách nước onboarding) là `fixed bottom-4 right-4 z-[45]`, chiếm hộp
+**(1284, 756, 300×128)**. Công tắc **"Vẽ 3D"** của dock chặng 3D ở **(1296, 817, 112×34)** —
+**nằm TRỌN bên trong**. `document.elementFromPoint` tại **tâm nút · núm · nhãn** đều trả về
+`DIV.mt-2.5` của thẻ mách nước ⇒ bấm vào công tắc **không có gì xảy ra, không báo gì**.
+
+Chứng minh công tắc tự nó KHÔNG hỏng: gọi `.click()` bằng DOM (bỏ qua lớp phủ) thì
+`interiorflow.stagemode.render` = `model3d` và canvas WebGL 824×781 mọc ra ngay.
+⇒ **Không phải tính năng thiếu — là tính năng bị che.**
+
+Trớ trêu: docstring của chính thẻ đó viết *"Thẻ nhỏ, **KHÔNG chặn thao tác** (khác Tầng 1 modal)"*.
+Lời hứa có trong mã, **không tới được người dùng** — đúng họ bệnh đã ghi ở `00-CHOT` 16/08.
+
+**Sửa (`components/onboarding/StageIntroCard.tsx`):** vỏ thẻ `pointer-events-none`, nút ✕ bật lại
+`pointer-events-auto` + nới ô chạm lên `--tap`. Ruột thẻ chỉ có chữ + 2 ảnh minh hoạ nên **không
+mất chức năng nào**, và **0 delta pixel**. Kèm: `z-[45]` (số trần ngoài thang z của `globals.css`)
+→ `var(--z-sheet)` = 40, vẫn trên dock 31 nên nhìn y hệt.
+**Đo lại sau sửa:** `elementFromPoint` tại tâm và tại nhãn → **chính nút** (`laNut: true`); bấm
+chuột thật → vào được mode Vẽ 3D.
+
+### ② 🔴 Phím tắt khai mà KHÔNG mặt nào tiêu thụ — `⌘J / Ctrl+J` (Vitals) **[không sửa — ngoài lane]**
+
+Bấm `Meta+J` rồi `Control+J` ở **cả bốn màn** (Home · 2D · 3D · Trình chiếu): DOM **không đổi**
+(số phần tử y nguyên, url y nguyên) trên mọi màn. Và ở Trình chiếu có hẳn một nút mang nhãn
+**"Vitals — hỏi trợ lý (⌘J / Ctrl+J)"** ⇒ giao diện **quảng cáo một phím không ai nghe**.
+Khớp đúng chẩn đoán đã ghi `00-CHOT` 04/09 (D-DR1: `⌘J` chỉ đăng ký ở `StageSwitcher` đã chết và
+`VitalsRightEdgeHost` chưa từng mount) — nay **có bằng chứng thao tác tay**, không còn là suy từ mã.
+⇒ Thuộc lane Vitals/khẩu độ mép trên. **Không vá ở đây.**
+
+### ③ 🔴 Chỉ dẫn dạy SAI PHÍM và THIẾU MỘT NHỊP **[ĐÃ SỬA]**
+
+Trên **cùng một màn 2D, cùng một lúc**, hai thẻ dạy hai phím khác nhau cho **cùng một việc**:
+
+| Nơi | Chữ trước khi sửa | Sự thật (`lib/commands/registry.ts`) |
+|---|---|---|
+| `StageIntroCard.tsx:31` (thẻ góc phải-dưới) | *"Gõ **L** vẽ tường"* | `:288` **L = `cad.draw.line`** — Đường thẳng, KHÔNG phải tường |
+| `CadEditor.tsx:832` (thẻ bàn-trống giữa canvas) | *"Gõ **W** để vẽ tường"* | `:304` **W = `cad.draw.wall`** ✅ |
+
+`CadEditor` đã sửa đúng và còn để lại chú thích *cấm đổi ngược về L* — nhưng thẻ kia bị bỏ sót.
+Đo thêm: **gõ chữ trần chỉ NẠP vào dòng lệnh**, phải **Enter** mới chạy (nhánh type-anywhere của
+`CadCanvas.tsx` bắn `cad:cmd-key`). Đo: gõ `W` ⇒ ô lệnh hiện `"W"`, công cụ **vẫn là "Chọn"**;
+`W`+`Enter` ⇒ công cụ thành **"Tường"**. ⇒ cả hai thẻ đều **thiếu nhịp Enter**.
+**Sửa:** cả hai nay ghi **"Gõ W ↵ …"**.
+
+## E3 · Quan sát luồng, KHÔNG xếp là lỗi
+
+- **2D → 3D không tự chảy.** Tường vẽ ở 2D không hiện trong mode Vẽ 3D; 3D mở ra ở trạng thái
+  rỗng kèm hai lối đi tay: *"Bắt đầu trong 3D"* và *"Vẽ / nhập mặt bằng →"*, cộng node
+  *"Bản vẽ → Khối 3D"* ở kệ trái. Luật X1 (03/08) nói chiều **3D → 2D** phải tự có; chiều
+  **2D → 3D** là một bước có chủ ý (đùn) ⇒ **đúng luật về câu chữ**. Nhưng người đi luồng lần
+  đầu đọc *"Không gian trống"* trong khi mình vừa vẽ xong một bức tường ở chặng ngay trước —
+  đó là chỗ **mạch nghề đứt**, đáng đưa vào lô duyệt mắt.
+- **Esc giữa chuỗi tường = huỷ, không phải kết thúc.** Đo được: hai điểm rồi `Esc` ⇒ mất tường;
+  hai điểm rồi `Enter` ⇒ được tường. Dòng trạng thái có nói (*"Enter/double-click kết thúc"*)
+  nên **không xếp là lỗi**, nhưng nó giải thích vì sao vòng đo đầu tiên tưởng 2D hỏng.
+- **Lớp phủ bàn-trống nuốt cú chạm đầu.** `data-empty-drawing-overlay` chỉ tự đóng, không chuyển
+  tiếp cú chạm xuống canvas. Mã đã tự thú chỗ này; nay chỉ còn ở nhánh `cadTool==='select'` nên
+  **không còn nuốt điểm của công cụ vẽ**. Ghi lại để không ai "sửa lại cho tiện tay".
+- **`/api/cursors` trả 404 hai lần mỗi phiên** (`lib/collabStore.ts:106,121`) — route tồn tại
+  (`app/api/cursors/route.ts`) nhưng trả 404 cho `flowId=local`. Không chặn việc; là tiếng ồn
+  trong console. Ngoài lane.
+
+## E4 · CHƯA CHẮC / CHƯA KIỂM
+
+1. Chỉ **Chromium 1194**. Safari/Firefox là suy.
+2. Chỉ **một dự án · một tờ · một bức tường**. Chưa thử nhiều tờ, nhiều tầng, tài liệu nặng.
+3. **Chưa gán vật liệu trong 3D** — cảnh rỗng nên không có mặt nào để gán; dòng "vật liệu" ở
+   bảng B vẫn là `CHƯA ĐO`.
+4. **Chưa đo bằng bàn phím thuần và trình đọc màn hình.** Ba ca TRƯỢT ở E2 tìm được bằng
+   chuột + phím tắt; lớp trợ năng còn nguyên chưa soi.
+5. Ô chạm mới của nút ✕ (`--tap`) **chưa soi bằng mắt** xem có đè lên chữ trong thẻ không —
+   nó trong suốt và nằm ở góc, nhưng đó là suy, không phải đo.
