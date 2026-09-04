@@ -17,7 +17,9 @@
  * BYTES, **không tin nhãn MIME client khai** — §6.2 `docs/AUDIT-BACKEND-2026-08-03.md`) · cùng
  * khuôn tên file. **KHÔNG đẻ thư mục lưu thứ hai.**
  *
- * ⚠️ GIỚI HẠN KHAI THẲNG — v0 chỉ nhận thứ `sniffKind` nhận ra: PNG/JPEG/WEBP/GIF/AVIF/PDF.
+ * ⚠️ GIỚI HẠN KHAI THẲNG — chỉ nhận thứ `sniffKind` nhận ra: PNG/JPEG/WEBP/GIF/AVIF/PDF,
+ * và từ 04/09 thêm `.idf`/`.idfp` (hồ sơ của CHÍNH IF, nhận bằng kiểm CẤU TRÚC — dùng cho bản sao
+ * bền trên máy chủ của bản vẽ và deck).
  * DWG/DXF/XLSX/DOCX **chưa nhận được**, vì mở cửa cho chúng là một quyết định AN TOÀN (nới
  * whitelist magic-bytes, hoặc chấp nhận binary không nhận diện được) — không phải việc làm lén
  * trong một phiếu về ProjectFile. Ai cần: nới `lib/server/mime-sniff.ts` bằng một phiếu riêng.
@@ -80,7 +82,7 @@ export async function luuProjectFile(buf: Buffer): Promise<LuuFileResult> {
     return {
       ok: false,
       error:
-        'Loại file chưa nhận được — v0 chỉ nhận PNG/JPEG/WEBP/GIF/AVIF/PDF. ' +
+        'Loại file chưa nhận được — hiện nhận PNG/JPEG/WEBP/GIF/AVIF/PDF và .idf/.idfp. ' +
         '(DWG/DXF/XLSX cần nới lib/server/mime-sniff.ts bằng một phiếu riêng.)',
       status: 415,
     };

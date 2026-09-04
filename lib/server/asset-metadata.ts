@@ -57,7 +57,8 @@ export interface SieuDuLieuAsset {
 /* ══════════════════════ ① KÍCH THƯỚC TỪ HEADER — THUẦN, KHÔNG PHỤ THUỘC ══════════════════════
  * Đọc thẳng header của định dạng. Tất định, không native module, test được bằng buffer tự dựng.
  * Đây là đường CHÍNH cho w/h; sharp chỉ là lưới đỡ cho định dạng header này chưa parse (AVIF).
- * Chỉ phủ đúng whitelist `sniffKind` đang nhận (PNG/JPEG/GIF/WEBP/AVIF/PDF) — không hơn.
+ * Chỉ phủ phần ẢNH RASTER của whitelist `sniffKind` (PNG/JPEG/GIF/WEBP/AVIF) — PDF và `.idf`/
+ * `.idfp` không có kích thước ảnh nên không đi qua đây; đó là ĐÚNG, không phải thiếu sót.
  */
 export function docKichThuocTuHeader(buf: Buffer): { w: number; h: number } | null {
   if (buf.length < 12) return null;
