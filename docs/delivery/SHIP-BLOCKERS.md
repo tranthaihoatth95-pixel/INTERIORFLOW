@@ -7,7 +7,7 @@
 | **G1 · DATA SAFE** | 🟡 PARTIAL | 01 CORE | **7/8 ca PASS trên app thật**; bắt và vá được **rò dữ liệu chéo người dùng** + 2 test đang khoá cứng lỗi đó. Ca 3 (kho bị chặn) đã vá riêng. **Khe còn mở**: `clearLastUserId()` chưa nối vào đường đăng xuất; mới phủ chặng 2D. |
 | **G2 · PROFESSIONAL FLOW** | 🔴 BLOCKED | 02 WORKFLOW | Ma trận 22 hành trình đã có, nhưng **0 hành trình xác minh ở cột KẾT QUẢ ĐÃ LƯU**. |
 | **G3 · WORKSPACES & TOOLS** | 🟡 PARTIAL | 04 DESIGN + 02 | Máy canh `soi:cong-cu-chet` đã chạy (**27 ca**: 26 mồ côi · 1 dây đứt), tự hiệu chuẩn và bắt lại được ca Vitals lịch sử. Audit 2D/3D xong. **Chưa mở app lần nào** ⇒ mọi ô 'cơ chế có' là đọc mã. Vật liệu · Thư viện · Trình chiếu · BOQ · Duyệt **chưa audit**. |
-| **G4 · DESIGN TRUTH / MOAT** | 🔴 BLOCKED | 01 CORE + 02 | Định danh ngữ nghĩa · gia phả · ký ức quyết định · ảnh hưởng sửa lại — **chưa có phép thử xuyên bề mặt nào**. |
+| **G4 · DESIGN TRUTH / MOAT** | 🟡 PARTIAL | 01 CORE + 02 | Lát cắt dọc chạy **hết chuỗi, 49/54 đạt**, có máy canh thường trực trong `npm test` và bộ tự hiệu chuẩn. Mắt đóng/tải-lại **0/22 → 1/22**. 🔴 **Đứt: mặt sàn/trần không mang danh tính lên 3D** — đang sửa (xem khối dưới). |
 | **G5 · EXPERIENCE** | 🟡 PARTIAL | 04 DESIGN | Home đang khoá→thi công. **Home KHÔNG được chiếm đường găng toàn app.** Vitals · khung app · workspace chưa phán. |
 | **G6 · CONTENT & INTELLIGENCE** | 🟡 PARTIAL | 05 ASSET · 06 MEDIA · 03 AI | Hợp đồng chốt, bước 1 xong. **3D = 1 tệp.** Vật liệu 0 dữ liệu. Intro chưa có. ⛔ **Cấm nhân nội dung trước khi lát cắt dọc moat PASS.** |
 | **G7 · DESKTOP RELEASE** | 🟡 PARTIAL | 07 RELEASE | ✅ `db push` **đã đóng** — nay `migrate deploy` + bắc cầu + đóng mốc + rà SQL phá huỷ + sao lưu; ca nguy cơ mất dữ liệu **ném lỗi** thay vì lặng lẽ đổi bảng. ✅ **Cổng 6 mở lần đầu**: AppImage 338 MB, ~3 phút. 🔴 **Cổng 7 (mở bộ cài) vẫn trống** — chưa mở gói nào. 🔴 **macOS = ĐÍCH CHÍNH** (chủ dự án đính chính 04/09) — xem khối dưới. |
@@ -44,6 +44,23 @@ Ba trạng thái phải trả lời dứt khoát, có bằng chứng, cho **cả
 > **THAO TÁC → GHI XUỐNG → ĐÓNG/TẢI LẠI → VÀO LẠI → CÙNG MỘT SỰ THẬT.**
 
 Thiếu bất kỳ mắt nào ⇒ **KHÔNG PASS**, dù mã có chạy. Đây chính là lỗ mà ma trận hành trình vừa lộ ra: mọi bằng chứng hiện có chứng minh *app phản ứng đúng lúc bấm*, **chưa mẩu nào** chứng minh *việc còn đó sau khi đóng app*.
+
+## 🔴 CHỖ ĐỨT CỦA MOAT — **MẶT SÀN/TRẦN**, chẩn đoán đã đào tới đáy
+
+Đổi vật liệu **mặt sàn**: BOQ đổi ✅ · deck báo cũ ✅ · **3D KHÔNG HỀ BIẾT** 🔴.
+Câu *"một vật, ba chặng"* hôm nay **đúng cho tường và đồ rời, SAI cho mọi mặt hoàn thiện sàn/trần** — mà sàn/trần là phần diện tích lớn nhất của mọi hồ sơ nội thất.
+
+**Chẩn đoán đầu tiên nói thiếu `entityId`. Đào tiếp thì khác, và nặng hơn:**
+| Bằng chứng | Nghĩa |
+|---|---|
+| `lib/three/cad-to-obj.ts:617` | sàn là **bbox nở 50mm của toàn bộ tường**, không `entityId`, không `specId` |
+| `lib/three/cad-to-obj.ts:241` | `mats.floor` là **MÀU CỦA THEME gõ cứng** (`#c7c3bb`) — 3D **không đọc vật liệu dự án**, gán gì cũng ra một màu |
+| `lib/cad/model.ts:97` | `ElementType` **CÓ `'slab'`** |
+| `lib/cad/plan-present.ts:579-581` | chặng **2D đọc thẳng** entity `elementType==='slab'`, ghi rõ *"không suy đoán"* |
+| `grep "'slab'" lib/three/cad-to-obj.ts` | **0** |
+
+⇒ **2D biết `slab`. 3D không xử lý một dòng nào.** KHÔNG phải thiếu loại entity, KHÔNG cần đợi `RoomEntity` — loại đã có, 2D đã dùng. Việc là **nối 3D vào đúng cái đã có**, theo khuôn tường ở `:700-712`.
+⛔ Giữ `Floor` bbox làm **đường lùi** cho bản vẽ không có `slab`. ⛔ Cấm bịa `entityId` cho `Room_i` — chú thích tại chỗ đã giải thích vì sao id giả ở đó là sai.
 
 ## 🔴 LÁT CẮT DỌC MOAT — cổng chặn việc nhân nội dung
 
