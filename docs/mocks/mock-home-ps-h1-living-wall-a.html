@@ -2,15 +2,14 @@
 <html lang="vi"><head><meta charset="utf-8"><title>Home · H1 Living Wall · ngày thường</title>
 <link rel="stylesheet" href="_home-ps-nen.css">
 <style>
-:root{ --treo:rgba(255,255,255,.26); --treo-day:rgba(255,255,255,.18); }
 /* ⚠️ Ảnh tường là HÌNH VẼ tông cố định (không theo theme), nên đường treo khai theo ảnh
    chứ không theo --border: nó nằm TRÊN ảnh, không nằm trên nền app. */
 .tuong{position:absolute;left:0;top:0;width:1548px;height:856px}
-.treo{position:absolute;left:56px;top:214px;width:1436px;height:1px;background:var(--treo)}
+.treo{position:absolute;left:56px;top:214px;width:1436px;height:1px;background:var(--net-tren-anh)}
 .treo-nhan{position:absolute;left:52px;top:182px;font:500 11px/1.5 ui-monospace,Menlo,monospace;
-  letter-spacing:.08em;color:#ece9e3;background:linear-gradient(180deg,rgba(8,9,11,.78),rgba(8,9,11,.52));
+  letter-spacing:.08em;color:var(--muc-tren-anh-2);background:linear-gradient(180deg,var(--chan-dam),var(--chan-vua));
   border-radius:var(--r-1);padding:4px 8px}
-.day{position:absolute;top:215px;width:1px;height:31px;background:var(--treo-day)}
+.day{position:absolute;top:215px;width:1px;height:31px;background:var(--net-tren-anh-mo)}
 .gan{position:absolute;left:56px;top:246px;width:620px;height:372px;border-radius:var(--r-3);
   overflow:hidden;box-shadow:0 22px 48px -20px rgba(0,0,0,.72);background:var(--giay)}
 /* ⚠️ NỀN KHAI TRÊN VỎ, không phải trang trí: máy soi đọc nền của chữ SVG bằng cách đi ngược
@@ -31,27 +30,27 @@
 .vua.giay{background:var(--giay)} .vua.the{background:var(--card)}
 /* PHỦ CHUYỂN SẮC CỤC BỘ Ở CHÂN CHỮ (§9) — chỉ dìm dải có chữ, ảnh giữ nguyên độ nét.
    Không dìm cả tấm: nền là phần đẹp, và dìm cả tấm là đúng thứ đã bị lật 16/08. */
-.chan-chu{background:linear-gradient(180deg,rgba(8,9,11,.80),rgba(8,9,11,.56));
+.chan-chu{background:linear-gradient(180deg,var(--chan-dam),var(--chan-vua));
   border-radius:var(--r-1);padding:4px 8px}
 .nhan-vua{position:absolute;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;
   border-radius:var(--r-full);background:var(--card);color:var(--t2);font-size:12px;
   box-shadow:inset 0 0 0 1px var(--vien-mo)}
 .xa-dau{position:absolute;left:716px;top:486px;width:776px;display:flex;align-items:center;gap:10px}
-.xa-dau .ke2{flex:1;height:1px;background:var(--treo-day)}
-.xa-dau span{font:500 11px/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:#ece9e3;
-  background:linear-gradient(180deg,rgba(8,9,11,.78),rgba(8,9,11,.52));border-radius:var(--r-1);padding:4px 8px}
-.xa-dau .ke2{background:var(--treo-day)!important;padding:0!important}
+.xa-dau .ke2{flex:1;height:1px;background:var(--net-tren-anh-mo)}
+.xa-dau span{font:500 11px/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--muc-tren-anh-2);
+  background:linear-gradient(180deg,var(--chan-dam),var(--chan-vua));border-radius:var(--r-1);padding:4px 8px}
+.xa-dau .ke2{background:var(--net-tren-anh-mo)!important;padding:0!important}
 .in-nho{position:absolute;width:132px}
 .in-nho .anh{width:132px;height:84px;border-radius:var(--r-1);overflow:hidden;opacity:.86;
   background:var(--canh-0);box-shadow:0 6px 14px -8px rgba(0,0,0,.6)}
-.in-nho .chu{margin-top:6px;background:linear-gradient(180deg,rgba(8,9,11,.80),rgba(8,9,11,.50));
+.in-nho .chu{margin-top:6px;background:linear-gradient(180deg,var(--chan-dam),var(--chan-vua));
   border-radius:var(--r-1);padding:4px 7px}
-.in-nho b{display:block;font-size:12px;font-weight:500;color:#efece6;
+.in-nho b{display:block;font-size:12px;font-weight:500;color:var(--muc-tren-anh-1);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.in-nho em{display:block;font:500 10px/1.5 ui-monospace,Menlo,monospace;font-style:normal;color:#c8c4bb}
-.hoat-dong{position:absolute;font-size:12px;line-height:1.5;color:#e6e2db}
-.hoat-dong b{color:#f7f5f1;font-weight:600}
-.hoat-dong .kh{background:linear-gradient(180deg,rgba(8,9,11,.80),rgba(8,9,11,.56));
+.in-nho em{display:block;font:500 10px/1.5 ui-monospace,Menlo,monospace;font-style:normal;color:var(--muc-tren-anh-3)}
+.hoat-dong{position:absolute;font-size:12px;line-height:1.5;color:var(--muc-tren-anh-2)}
+.hoat-dong b{color:var(--muc-tren-anh-1);font-weight:600}
+.hoat-dong .kh{background:linear-gradient(180deg,var(--chan-dam),var(--chan-vua));
   border-radius:var(--r-2);padding:8px 10px}
 .dungcu-ca{position:absolute;left:56px;top:772px;display:flex;gap:12px;align-items:flex-start}
 .o-1{width:82px;height:82px}.o-2{width:176px;height:82px}
@@ -61,9 +60,9 @@
 .o-them{width:82px;height:82px;border-radius:var(--r-3);box-shadow:inset 0 0 0 1px var(--border-strong);
   display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:20px;opacity:var(--mo-vo-hieu)}
 .trong{position:absolute;left:56px;top:246px;width:620px;height:372px;border-radius:var(--r-3);
-  box-shadow:inset 0 0 0 1.5px var(--treo);display:flex;flex-direction:column;align-items:flex-start;
+  box-shadow:inset 0 0 0 1.5px var(--net-tren-anh);display:flex;flex-direction:column;align-items:flex-start;
   justify-content:center;gap:16px;padding:0 40px;
-  background:linear-gradient(104deg,rgba(8,9,11,.80),rgba(8,9,11,.34))}
+  background:linear-gradient(104deg,var(--chan-dam),var(--chan-nhat))}
 </style></head>
 <body>
 <div class="khung">
@@ -357,11 +356,11 @@
       <div class="chu"><b>Cà phê Nguyễn Huệ</b><em>gu · 1 tuần</em></div></div></div>
   <div class="hoat-dong" style="left:716px;top:640px;width:724px" data-tren-anh>
          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-           <span class="nhan" style="color:#c9c5bd">vừa đổi</span><span style="flex:1;height:1px;background:var(--treo-day);display:block"></span></div>
+           <span class="nhan" style="color:var(--muc-tren-anh-3)">vừa đổi</span><span style="flex:1;height:1px;background:var(--net-tren-anh-mo);display:block"></span></div>
          <div style="margin-bottom:5px"><b>Trâm</b> đổi sàn phòng ngủ sang GO-01 — khối lượng đổi theo, 3 dòng</div>
          <div style="margin-bottom:5px"><b>Vitals</b> góp ý: đèn thả trên bàn ăn đang thấp hơn thói quen 120mm — góp ý, không chặn</div>
          <div><b>Hoà</b> khoá bản 3 của hồ sơ trình · 09:12</div>
-         <div class="con-tiep" style="margin-top:10px"><span class="vach-mo"></span><span style="color:#d6d2ca">còn 12 việc trong 7 ngày</span></div>
+         <div class="con-tiep" style="margin-top:10px"><span class="vach-mo"></span><span style="color:var(--muc-tren-anh-3)">còn 12 việc trong 7 ngày</span></div>
        </div>
   <div class="dungcu-ca"><div class="o o-1"><span class="nhan">ánh sáng</span>
   <svg width="58" height="30" viewBox="0 0 58 30" fill="none" aria-hidden="true">

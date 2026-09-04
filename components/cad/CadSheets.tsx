@@ -40,7 +40,8 @@ import SheetTabBar, { type SheetTab } from '@/components/studio/SheetTabBar';
 import { useCadStore, newId, type Tool } from '@/lib/cad/store';
 import type { Doc, Viewport, Sheet, PaperKey, PaperOrientation } from '@/lib/cad/model';
 import { emptyDoc, docBox, paperSizeMm, defaultPaperOrientation } from '@/lib/cad/model';
-import { getLastUserId, loadResume, saveResume } from '@/lib/resume';
+import { loadResume, saveResume } from '@/lib/resume';
+import { danhTinhChoLuot } from '@/lib/danh-tinh-phien';
 import {
   createSheetsAutosaver,
   loadSheets,
@@ -399,8 +400,6 @@ export default function CadSheets() {
 
   /** KHÔI PHỤC 1 lần lúc mount: IDB → Doc chung + sheet active (ưu tiên resume.sheetId nếu còn). */
   useEffect(() => {
-    const userId = getLastUserId();
-    userIdRef.current = userId;
     // ĐỔI DỰ ÁN giữa phiên (client-nav /projects/A/cad → /projects/B/cad, component KHÔNG
     // remount): dọn tab + doc + canvas trước, để bản vẽ dự án cũ không nằm lại dưới URL
     // dự án mới. Lần mount đầu KHÔNG dọn — giữ nguyên bản demo/blank store đang mở.
@@ -411,76 +410,85 @@ export default function CadSheets() {
       resetStoreWithDoc(blank);
     }
     prevBucketRef.current = bucketId;
-    if (!userId) {
-      setHydratedFor(bucketId); // chưa đăng nhập → thuần in-memory (y bản cũ)
-      markBucketHydrated(bucketId); // lib/cad/cad3d-autosave.ts đọc cờ này — không có gì để nạp lại
-      return;
-    }
     let cancelled = false;
-    void loadSheets<PersistedCadSheet>(userId, ROUTE, bucketId).then(async (rec) => {
-      if (cancelled) return;
-      const valid = rec?.sheets.filter((s) => s.doc && s.viewport) ?? [];
-
-      // B4 (4.1.d) — quyết định NGUỒN NÀO thắng TRƯỚC khi áp bất kỳ state nào, tránh 1 khung
-      // hình hiện cache rồi ngay sau đó bị đĩa ghi đè (nhấp nháy). `cacheTs=0` khi CHƯA có bản
-      // ghi IndexedDB nào (máy mới) — để B5 "copy thư mục dự án sang máy khác" hoạt động đúng:
-      // cache rỗng phải LUÔN thua đĩa thật, không bị coi nhầm là "cache mới hơn vì vừa mới now()".
-      //
-      // BUG BẮT ĐƯỢC KHI BROWSER-VERIFY (31/07, xem PresentSheets.tsx docstring y hệt) —
-      // `flowName` nạp bất đồng bộ qua `ensureProjectScope()`, effect này có thể chạy TRƯỚC khi
-      // nạp xong ⇒ tạo NHẦM thư mục theo tên mặc định `'Untitled flow'`. Gọi lại
-      // `ensureProjectScope()` — IDEMPOTENT, không tốn request nếu trang đã nạp xong.
-      if (bucketId) await ensureProjectScope(bucketId);
-      if (cancelled) return;
-      const projectName = useFlowStore.getState().flowName || 'InteriorFlow project';
-      const cacheSheets: IdfSheetData[] = valid.map((s) => ({ id: s.id, name: s.name, doc: s.doc, ...(s.paperSheets?.length ? { paperSheets: s.paperSheets } : {}) }));
-      const diskSheets = await resolveAndSyncCadDisk(bucketId, projectName, cacheSheets, rec?.ts ?? 0);
-      if (cancelled) return;
-
-      if (diskSheets) {
-        applyIdfSheets(diskSheets);
-        saverRef.current?.touch(); // đồng bộ ngược lại IndexedDB — cache luôn ấm cho lần mở kế
-      } else if (!rec || valid.length === 0) {
-        /**
-         * LƯỚI ĐỠ CUỐI — MÁY CHỦ. Bản vẽ là SỰ THẬT NGHỀ NGHIỆP: mất deck thì dựng lại được, mất
-         * bản vẽ là mất công việc. Chạy KHI VÀ CHỈ KHI đĩa không thắng VÀ cache rỗng (trình duyệt
-         * mới, vừa xoá dữ liệu duyệt web, vừa đăng nhập máy khác) — đúng ca mà đồng bộ đĩa KHÔNG
-         * phủ được vì nó opt-in, đòi người dùng tự chọn thư mục gốc.
-         * Không thấy bản sao ⇒ im lặng đi tiếp, KHÔNG dựng tờ trắng đè lên việc đang làm.
-         */
-        const tuMayChu = await taiBanVeTuMayChu(bucketId);
-        if (cancelled) return;
-        if (tuMayChu?.length) {
-          applyIdfSheets(tuMayChu);
-          saverRef.current?.touch();
-        }
-      } else if (rec && valid.length > 0) {
-        const { doc, sheets: newSheets } = docAndSheetsFromIdf(cacheSheets);
-        seq = Math.max(seq, nextSeqFrom(newSheets.map((s) => s.id), 'cadsheet'));
-        // sheet active: resume trỏ tận sheet nếu id còn sống, kế đến activeId đã lưu. Sau khi gộp
-        // (>1 sheet cũ) không id nào khớp nữa → rơi đúng vào newSheets[0] (chỉ còn 1 sheet).
-        const resumeSheet = loadResume(userId)?.sheetId;
-        const wantId =
-          (resumeSheet && newSheets.some((s) => s.id === resumeSheet) && resumeSheet) ||
-          (newSheets.some((s) => s.id === rec.activeId) && rec.activeId) ||
-          newSheets[0].id;
-        const activeOriginal = valid.find((s) => s.id === wantId) ?? valid[0];
-        setSheets(newSheets);
-        setActiveId(wantId);
-        resetStoreWithDoc(doc, { currentLayer: activeOriginal.currentLayer });
-        if (cacheSheets.length > 1) {
-          // Cache CŨ (trước luật MỘT Doc) có nhiều sheet khác Doc — vừa gộp về 1, ghi lại NGAY để
-          // lần sau không phải gộp lại nữa (saverRef có thể chưa sẵn sàng ở đúng dòng này — effect
-          // autosave bên dưới còn chưa mount lần đầu; best-effort, autosave bình thường sẽ chốt
-          // lại ở lần sửa/đổi tab kế tiếp nếu dòng này không kịp).
-          saverRef.current?.touch();
-          diskWriterRef.current?.touch();
-        }
-        window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
+    void (async () => {
+      // P0 04/09 — CHỜ định danh giải từ PHIÊN MÁY CHỦ rồi mới đọc. Đọc đồng bộ ở đây là
+      // thua cuộc chạy đua TẤT ĐỊNH (deps [bucketId] chỉ chạy 1 lần trên deep-link) ⇒ mất
+      // trắng việc đang làm. Khối dọn-đổi-dự-án ở TRÊN cố ý nằm ngoài async: đẩy nó vào đây
+      // là để bản của dự án CŨ nằm lại dưới URL dự án MỚI thêm một vòng mạng.
+      const { tiepTuc, userId } = await danhTinhChoLuot(() => !cancelled);
+      if (!tiepTuc) return;
+      userIdRef.current = userId;
+      if (!userId) {
+        setHydratedFor(bucketId); // chưa đăng nhập → thuần in-memory (y bản cũ)
+        markBucketHydrated(bucketId); // lib/cad/cad3d-autosave.ts đọc cờ này — không có gì để nạp lại
+        return;
       }
-      setHydratedFor(bucketId);
-      markBucketHydrated(bucketId); // lib/cad/cad3d-autosave.ts: mode 3D tin thẳng store, khỏi nạp lại
-    });
+      await loadSheets<PersistedCadSheet>(userId, ROUTE, bucketId).then(async (rec) => {
+        if (cancelled) return;
+        const valid = rec?.sheets.filter((s) => s.doc && s.viewport) ?? [];
+
+        // B4 (4.1.d) — quyết định NGUỒN NÀO thắng TRƯỚC khi áp bất kỳ state nào, tránh 1 khung
+        // hình hiện cache rồi ngay sau đó bị đĩa ghi đè (nhấp nháy). `cacheTs=0` khi CHƯA có bản
+        // ghi IndexedDB nào (máy mới) — để B5 "copy thư mục dự án sang máy khác" hoạt động đúng:
+        // cache rỗng phải LUÔN thua đĩa thật, không bị coi nhầm là "cache mới hơn vì vừa mới now()".
+        //
+        // BUG BẮT ĐƯỢC KHI BROWSER-VERIFY (31/07, xem PresentSheets.tsx docstring y hệt) —
+        // `flowName` nạp bất đồng bộ qua `ensureProjectScope()`, effect này có thể chạy TRƯỚC khi
+        // nạp xong ⇒ tạo NHẦM thư mục theo tên mặc định `'Untitled flow'`. Gọi lại
+        // `ensureProjectScope()` — IDEMPOTENT, không tốn request nếu trang đã nạp xong.
+        if (bucketId) await ensureProjectScope(bucketId);
+        if (cancelled) return;
+        const projectName = useFlowStore.getState().flowName || 'InteriorFlow project';
+        const cacheSheets: IdfSheetData[] = valid.map((s) => ({ id: s.id, name: s.name, doc: s.doc, ...(s.paperSheets?.length ? { paperSheets: s.paperSheets } : {}) }));
+        const diskSheets = await resolveAndSyncCadDisk(bucketId, projectName, cacheSheets, rec?.ts ?? 0);
+        if (cancelled) return;
+
+        if (diskSheets) {
+          applyIdfSheets(diskSheets);
+          saverRef.current?.touch(); // đồng bộ ngược lại IndexedDB — cache luôn ấm cho lần mở kế
+        } else if (!rec || valid.length === 0) {
+          /**
+           * LƯỚI ĐỠ CUỐI — MÁY CHỦ. Bản vẽ là SỰ THẬT NGHỀ NGHIỆP: mất deck thì dựng lại được, mất
+           * bản vẽ là mất công việc. Chạy KHI VÀ CHỈ KHI đĩa không thắng VÀ cache rỗng (trình duyệt
+           * mới, vừa xoá dữ liệu duyệt web, vừa đăng nhập máy khác) — đúng ca mà đồng bộ đĩa KHÔNG
+           * phủ được vì nó opt-in, đòi người dùng tự chọn thư mục gốc.
+           * Không thấy bản sao ⇒ im lặng đi tiếp, KHÔNG dựng tờ trắng đè lên việc đang làm.
+           */
+          const tuMayChu = await taiBanVeTuMayChu(bucketId);
+          if (cancelled) return;
+          if (tuMayChu?.length) {
+            applyIdfSheets(tuMayChu);
+            saverRef.current?.touch();
+          }
+        } else if (rec && valid.length > 0) {
+          const { doc, sheets: newSheets } = docAndSheetsFromIdf(cacheSheets);
+          seq = Math.max(seq, nextSeqFrom(newSheets.map((s) => s.id), 'cadsheet'));
+          // sheet active: resume trỏ tận sheet nếu id còn sống, kế đến activeId đã lưu. Sau khi gộp
+          // (>1 sheet cũ) không id nào khớp nữa → rơi đúng vào newSheets[0] (chỉ còn 1 sheet).
+          const resumeSheet = loadResume(userId)?.sheetId;
+          const wantId =
+            (resumeSheet && newSheets.some((s) => s.id === resumeSheet) && resumeSheet) ||
+            (newSheets.some((s) => s.id === rec.activeId) && rec.activeId) ||
+            newSheets[0].id;
+          const activeOriginal = valid.find((s) => s.id === wantId) ?? valid[0];
+          setSheets(newSheets);
+          setActiveId(wantId);
+          resetStoreWithDoc(doc, { currentLayer: activeOriginal.currentLayer });
+          if (cacheSheets.length > 1) {
+            // Cache CŨ (trước luật MỘT Doc) có nhiều sheet khác Doc — vừa gộp về 1, ghi lại NGAY để
+            // lần sau không phải gộp lại nữa (saverRef có thể chưa sẵn sàng ở đúng dòng này — effect
+            // autosave bên dưới còn chưa mount lần đầu; best-effort, autosave bình thường sẽ chốt
+            // lại ở lần sửa/đổi tab kế tiếp nếu dòng này không kịp).
+            saverRef.current?.touch();
+            diskWriterRef.current?.touch();
+          }
+          window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
+        }
+        setHydratedFor(bucketId);
+        markBucketHydrated(bucketId); // lib/cad/cad3d-autosave.ts: mode 3D tin thẳng store, khỏi nạp lại
+      });
+    })();
     return () => {
       cancelled = true;
     };

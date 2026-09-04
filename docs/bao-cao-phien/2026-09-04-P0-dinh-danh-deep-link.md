@@ -167,10 +167,9 @@ Rủi ro chính là làm hỏng thứ tự dọn canvas khi đổi dự án gi�
   `localStorage` rỗng (nghi: callback OAuth không đi qua `LoginForm`, hoặc xoá dữ liệu site theo kiểu giữ
   cookie, hoặc chuyện dùng chung cổng `localhost` mà `lib/server/auth.ts:14` đã ghi) — cần MAIN xác nhận.
 - **Không đo được tần suất.** Không biết P0 này chạm bao nhiêu % lượt vào; chỉ chắc chắn về cơ chế.
-- **`fetch` trong `danhTinhSanSang()` chưa có timeout.** Nếu máy chủ treo (không trả lời, không lỗi), promise
-  treo theo. Hiện vô hại vì `AppChrome` chỉ `void`; sẽ **thành hại** nếu MAIN duyệt patch trên (3 đường ghi
-  `await` nó ⇒ treo luôn phần khôi phục sheet). **Duyệt patch thì phải kèm timeout** — tôi cố ý chưa thêm để
-  không đoán ngưỡng thay MAIN.
+- ~~**`fetch` trong `danhTinhSanSang()` chưa có timeout.**~~ **ĐÃ ĐÓNG trong chính lượt này** — xem
+  `lib/danh-tinh-phien.ts:45` `HAN_HOI_MS = 8000` + `chuongHetGio`/`cat` (`:90-101`, `:144-150`): hết giờ thì
+  buông, cắt request, **không ghi gì**. Điều kiện mà mục này đặt ra cho patch 3 đường ghi nay đã thoả.
 - Chưa thử: Safari/Firefox, chế độ riêng tư (localStorage ném), nhiều tab cùng lúc.
 
 ---
@@ -189,3 +188,189 @@ Rủi ro chính là làm hỏng thứ tự dọn canvas khi đổi dự án gi�
 4. **Chưa có máy soi nào canh được lỗi loại này.** `soi:frontier`/`soi:contract`/`soi:tu-dien` đều xanh suốt
    trong khi bản vẽ người dùng bay. Chúng canh sổ↔code, nhãn, hợp đồng — không canh
    *"đường ghi dữ liệu có thật sự chạy tới nơi không"*.
+
+---
+---
+
+# PHỤ LỤC — LƯỢT NGHIỆM THU (làn A, tiếp sau khi container chết 15:3x)
+
+Lượt trước dựng xong **lõi** (`lib/danh-tinh-phien.ts` + test) và cắm vào `AppChrome`. Lượt này làm phần
+**nghiệm thu** còn thiếu. Không sửa lõi, không commit. Thay đổi duy nhất trên đĩa: **thêm 1 tệp test**
+`lib/danh-tinh-phien-nghiem-thu.test.ts` (+ 2 chỗ sửa văn bản trong chính báo cáo này).
+
+## A · KẾT LUẬN NGẮN GỌN
+
+> 🔴 **CA HỎNG VẪN CÒN SỐNG TRONG APP.** Lõi đúng và đã được test, nhưng `danhTinhChoLuot()` —
+> hàm sinh ra riêng cho 3 đường ghi — **được gọi ở ĐÚNG 0 nơi ngoài test**. Ba đường ghi vẫn đọc
+> `getLastUserId()` đồng bộ y như trước. Bệnh chưa được chữa, mới chỉ có **thuốc**.
+
+Bằng chứng một dòng:
+
+```
+$ grep -rn "danhTinhChoLuot" --include=*.ts --include=*.tsx . | grep -v node_modules | grep -v '\.test\.'
+./lib/danh-tinh-phien.ts:22   (câu dặn trong docstring)
+./lib/danh-tinh-phien.ts:170  (chỗ định nghĩa)
+```
+
+Chính docstring của lõi (`lib/danh-tinh-phien.ts:158-163`) đã tự khai điều này: *"ba đường đó KHÔNG tự lành
+khi chỉ gieo ở `AppChrome`"*. Lượt trước ghi đúng nhận định, chỉ chưa thi hành.
+
+## B · CHỨNG MINH BẰNG TEST, KHÔNG BẰNG LẬP LUẬN
+
+`lib/danh-tinh-phien-nghiem-thu.test.ts` dựng lại **đúng hình dạng effect mount hiện tại** rồi **đếm số lần
+ghi xuống đĩa**. Đây là đỏ-trước-xanh-sau ở cấp cơ chế:
+
+| Ca | Dựng lại cái gì | Kết quả |
+|---|---|---|
+| ① | `void danhTinhSanSang()` rồi `getLastUserId()` **đồng bộ** (= 3 đường ghi hôm nay) | `userId === null` ⇒ **0 lần ghi** — chính là P0 |
+| ② | `await danhTinhChoLuot()` rồi mới đọc (= đường đã chữa) | ⇒ **1 lần ghi**, đúng khoá `usr::route::bucket` |
+| ③ | Hình dạng khoá | vẫn `userId::route::projectId` — **không đổi** |
+| ④ | `saveSheets('', …)` | trả `0`, không mở DB ⇒ **không ghi nhầm khoá** |
+| ⑤ | Đệm đã có (đường thường) | **0 request** — không làm chậm lượt vào bình thường |
+| ⑥ | Đổi dự án giữa chừng | lượt cũ `tiepTuc=false` ⇒ **0 lần ghi**, không đè bucket mới |
+
+15 khẳng định, 0 fail.
+
+**Vì sao ca ① là tất định, không phải "hên xui"** — lập luận này KHÔNG phụ thuộc thứ tự effect cha/con:
+`danhTinhSanSang()` chỉ **khởi động** một request; `setLastUserId` sớm nhất cũng phải đợi một microtask +
+một vòng mạng. Nên **mọi** lời gọi `getLastUserId()` đồng bộ trong cùng lượt flush effect đó đều trả `null`,
+bất kể ai chạy trước.
+
+**Vì sao không bao giờ tự lành sau đó** (đo tại nguồn, không nhớ hộ):
+`userIdRef.current` chỉ được gán bên trong effect hydrate (`CadSheets.tsx:403` · `PresentSheets.tsx:323`),
+mà effect đó có deps `[bucketId]` (`CadSheets.tsx:487` · `PresentSheets.tsx:404`) và `bucketId` lấy từ URL
+nên **không đổi trên một deep-link**. Effect autosave đọc `userIdRef.current` (`CadSheets.tsx:491` ·
+`PresentSheets.tsx:402`) rồi `if (!hydrated || !userId) return;` ⇒ **`saverRef.current` mãi mãi là `null`**
+⇒ mọi `saverRef.current?.touch()` (11 chỗ ở CadSheets, 6 chỗ ở PresentSheets) là **no-op im lặng**.
+
+## C · CA HỎNG LÀ **MẤT HẲN**, KHÔNG PHẢI GHI NHẦM KHOÁ — ba cổng chặn độc lập
+
+Xác nhận lại kết luận mục ③ bằng cách đọc mã từng cổng:
+
+1. **Không có saver nào được tạo** — `CadSheets.tsx:491-492`, `PresentSheets.tsx:402-403`.
+   Không hàm ghi nào được gọi, nên **không có khoá nào để mà sai**.
+2. **`saveSheets` tự chặn** — `lib/sheets-persist.ts:157` `if (!userId || !route) return 0;`.
+   Kể cả bị gọi với `''` (autosave 3D truyền `userId ?? ''`, `cad3d-autosave.ts:33`) thì trả `0`, chưa kịp
+   mở DB. Nếu **không** có cổng này, khoá hỏng sẽ là `::/present-editor::prj_x` — ca ④ trong test in ra
+   đúng chuỗi đó để làm chứng cứ hình dạng.
+3. **`startCad3DAutosave` tự chặn** — `cad3d-autosave-core.ts:75-77` trả handle rỗng.
+4. **`setLastUserId('')` không đè được id thật** — `lib/resume.ts:145`.
+
+⇒ Dữ liệu **chỉ sống trong `useCadStore`/React state** rồi bay theo tab. **Không có bản ghi nào của người
+này rơi vào bucket người khác.** Đây là tin tốt duy nhất của ca hỏng: mất là mất của chính mình, không lây.
+
+Điều làm nó **im lặng**: `onSavingChange` nằm trong tuỳ chọn của saver — không có saver thì `useSaveStatus`
+**không bao giờ đổi trạng thái**, nên StatusBar không hiện "Đang lưu…"/"Đã lưu", cũng không hiện lỗi.
+Người dùng không có một tín hiệu nào để nghi ngờ.
+
+## D · BẢNG MỌI NƠI TIÊU THỤ × ĐÃ CHE CHƯA
+
+Phân loại theo **thời điểm đọc** — đó mới là thứ quyết định có tự lành hay không, không phải tên hàm.
+
+| # | Nơi tiêu thụ | Thời điểm đọc | Hậu quả nếu null | Đã che? |
+|---|---|---|---|---|
+| 1 | **`components/cad/CadSheets.tsx:402`** | effect mount `[bucketId]` | 🔴 **MẤT BẢN VẼ** | 🔴 **CHƯA** |
+| 2 | **`components/present-editor/PresentSheets.tsx:322`** | effect mount `[bucketId]` | 🔴 **MẤT DECK** | 🔴 **CHƯA** |
+| 3 | **`lib/cad/cad3d-autosave.ts:32`** | effect mount `[bucketId]` | 🔴 **MẤT KHỐI 3D** | 🔴 **CHƯA** |
+| 4 | `components/entry/ResumeTracker.tsx:42` | effect `[pathname]` | quên chỗ đang đứng | 🟡 đúng **từ lần điều hướng thứ 2** |
+| 5 | `lib/project-scope.ts:62` `activeProjectRouteId` | lúc điều hướng | redirect route cũ dội về `/?notice=choose-project` | 🟡 đúng nếu bấm sau khi định danh về |
+| 6 | `components/library/LibrarySheet.tsx:407` | trong handler | `addedBy` rỗng | ✅ |
+| 7 | `components/studio/AppChrome.tsx:203` | mỗi lần chuột/phím | phút khoá màn về mặc định | ✅ |
+| 8 | `components/present-editor/CongThietLapTrang.tsx:166` | handler `veLai2D` | về 2D không đúng tờ | ✅ |
+| 9 | `components/settings/LockScreenSettings.tsx:21` | render | cài đặt về mặc định | 🟡 cần một lượt re-render |
+| 10 | `components/studio/VitalsGesture.tsx:485` | render | — (thành phần này hiện **không mount ở đâu**, xem ⑦.5) | — |
+| 11-18 | 8 chỗ `effectiveUserId(storeUserId)`: `CadStageScreen:82` · `CadCanvas:354` · `AiBriefPanel:181` · `PresentStageScreen:47` · `PresentEditor:1270` · `Toolbar:194,1169` · `Inspector:1416` · `LayoutShelf:171` · `BoqAppendixStatus:26` · `GuModelSettings:30` | render | onboarding/coachmark im lặng; **nút BOQ bấm không ra gì** | 🟡 cần một lượt re-render sau khi gieo |
+
+**Điểm phải nói rõ về nhóm 11-18**: `setLastUserId` **không phải state phản ứng** — gieo xong **không** kích
+hoạt re-render. Chúng chỉ đúng ở lượt render kế tiếp do nguyên nhân khác. Riêng `/projects/[id]/present` có
+đường tự lành riêng (`PresentStageScreen.tsx:61-75` hỏi `/api/auth/me` rồi `setUser` ⇒ store đổi ⇒ re-render);
+**`/projects/[id]/cad` KHÔNG có** (`grep "auth/me\|setUser" components/studio/CadStageScreen.tsx` = 0 dòng).
+
+## E · BẢNG CA BIÊN × HÀNH VI
+
+Đọc từ `lib/danh-tinh-phien.ts:98-122` đối chiếu hợp đồng `app/api/auth/me/route.ts:9-30`.
+
+| Ca biên | Máy chủ trả | Hành vi | Có ghi đệm? | Đánh giá |
+|---|---|---|---|---|
+| Mất mạng khi hỏi | `fetch` reject | `khong-ket-luan/mang-dut` (`:103`) | **KHÔNG** | ✅ đúng — không kết luận nhầm "chưa đăng nhập" |
+| Phiên hết hạn | `401` (+ máy chủ tự xoá cookie, `route.ts:25`) | `chua-dang-nhap` (`:108`) | **KHÔNG** | ✅ |
+| Hạ tầng lỗi | `503` | `khong-ket-luan/may-chu-loi` (`:107`) | **KHÔNG** | ✅ đúng — người dùng **vẫn** đang đăng nhập, không đá ra oan |
+| Thân JSON hỏng / thiếu `user.id` | `200` nhưng lạ | `than-hong` / `thieu-id` (`:114`, `:119`) | **KHÔNG** | ✅ |
+| Gọi chậm / treo | không trả lời | hết giờ **8s** ⇒ `cat()` huỷ request (`:98-101`) | **KHÔNG** | ✅ **không chặn hiển thị** — `AppChrome` chỉ `void`, không `await` |
+| `localStorage` bị chặn | — | đường lùi trong bộ nhớ (`resume.ts:140,146`) | trong RAM | ✅ sống hết vòng đời tab; **chết khi F5** (đã khai) |
+| Hai tab, **hai tài khoản khác nhau** | — | `demTrongBoNho` là biến module ⇒ **riêng từng tab**, và nó **thắng** `localStorage` (`resume.ts:158`) | riêng tab | ✅ tab đã định danh không bị tab kia kéo sang |
+| Tab **chưa** định danh, tab kia vừa đăng nhập tài khoản khác | — | `docDem()` đọc `localStorage` **dùng chung** ⇒ có thể lấy id của tài khoản kia, và **trả `da-co` luôn, không hỏi máy chủ** | có sẵn | 🔴 **xem ⑦.4** |
+| Đăng xuất → đăng nhập tài khoản khác **cùng tab** | — | `LoginForm.tsx:135` `setLastUserId(id mới)` đè cả RAM lẫn localStorage | đúng id mới | ✅ |
+| Đăng xuất rồi **không** đăng nhập, F5 vào deep-link | `401` | đệm **vẫn còn id cũ** ⇒ `docDem()` trả `da-co`, không hỏi máy chủ | id **cũ** | 🔴 **xem ⑦.4** |
+
+## F · NGHIỆM THU — MÃ THOÁT BẮT TRỰC TIẾP
+
+Bắt bằng `cmd > /tmp/x 2>&1; echo "name=$?"` (không qua ống dẫn — `cmd | tail; echo $?` bắt mã thoát của
+`tail`, luôn ra 0; lỗi này đã làm báo sai một con số trong ngày).
+
+| Cổng | Mã thoát | Ghi chú |
+|---|---|---|
+| `npx tsc --noEmit` | **0** | trước và sau đều 0 |
+| `npm test` | **0** | 311 tệp test, **tất cả `0 fail`** (kiểm bằng `grep -oE "[0-9]+ fail" \| grep -v "^0 fail"` = rỗng); +15 khẳng định mới |
+| `npm run soi:frontier` | **0** | 🔴 0 lệch · 👁1 · ✅77 · ⬜56 — **y hệt trước**, không tệ đi |
+| `npm run soi:contract` | **0** | 🔴 0 lệch · 🔗21 có dây · 🟡1 chờ dây — **y hệt trước** |
+
+`git status --short` = đúng một dòng `?? lib/danh-tinh-phien-nghiem-thu.test.ts`; `git diff --stat` rỗng.
+Không commit, không push.
+
+## G · VIỆC CÒN LẠI — CẦN MAIN MỞ 3 TỆP NGOÀI FILES_ALLOWED
+
+Không tự mở rộng phạm vi. Patch đề nghị, **sửa lại so với đề xuất lượt trước**: dùng thẳng
+`danhTinhChoLuot(conSong)` thay vì `danhTinhSanSang()` + `getLastUserId()` — đó là API lõi viết riêng cho
+đúng ca này, nó **gộp sẵn cờ huỷ** (`tiepTuc`) nên không phải tự chế cách chờ, và nay đã có test canh:
+
+```ts
+    let cancelled = false;
+    void (async () => {
+      const { tiepTuc, userId } = await danhTinhChoLuot(() => !cancelled);
+      if (!tiepTuc) return;
+      userIdRef.current = userId;
+      if (!userId) { setHydratedFor(bucketId); markBucketHydrated(bucketId); return; }
+      /* … phần thân hiện có, giữ nguyên … */
+    })();
+    return () => { cancelled = true; };
+```
+
+⚠️ **Khối dọn-khi-đổi-dự-án phải Ở LẠI nhánh đồng bộ** (`CadSheets.tsx:405-413`,
+`PresentSheets.tsx:325-333`) — đẩy nó vào trong `async` thì bản vẽ dự án cũ sẽ nằm lại dưới URL dự án mới
+thêm một vòng mạng. Đây là rủi ro chính của patch và là thứ **bắt buộc phải verify trên app thật**.
+
+Ba tệp: `components/cad/CadSheets.tsx` · `components/present-editor/PresentSheets.tsx` ·
+`lib/cad/cad3d-autosave.ts` (tệp thứ ba khác khuôn: nó gọi từ hook, cần `await` trước `startCad3DAutosave`).
+
+## H · CHƯA CHẮC / CHƯA KIỂM (lượt này)
+
+- **Chưa mở app thật một lần nào.** Test dựng lại *hình dạng* effect bằng lời gọi hàm trần — nó chứng minh
+  **cơ chế**, không chứng minh **React thật chạy đúng như vậy**. Vẫn cần một lượt verify trình duyệt.
+- **Chưa tái hiện ca hỏng bằng bước bấm thật**, và vẫn **chưa biết con đường thực tế nào** tạo ra một trình
+  duyệt có cookie hợp lệ mà `localStorage` rỗng (nghi vấn của lượt trước còn nguyên).
+- **Bảng D nhóm 11-18 chưa đo bằng cách đếm số lượt render thật** — kết luận "cần một lượt re-render" là suy
+  từ ngữ nghĩa zustand, không phải đo.
+- Chưa thử Safari/Firefox, chế độ riêng tư, nhiều tab thật, trình đọc màn hình.
+- **Con số "3 đường ghi" là SÀN, không phải trần.** Tôi phân loại theo `grep getLastUserId|effectiveUserId`;
+  đường nào lấy userId qua biến trung gian hoặc qua props thì grep không thấy.
+
+## I · PHÁT HIỆN NGOÀI PHẠM VI (thêm vào danh sách ⑦)
+
+4. 🔴 **Đệm định danh KHÔNG được rửa khi đăng xuất, và `docDem()` tin đệm mà không hỏi lại.**
+   Cả 4 chỗ đăng xuất (`AccountSettings.tsx:54` · `AccountMenu.tsx:137` · `MobileMenu.tsx:160` ·
+   `PixelSettingsShell.tsx:191`) chỉ xoá cookie máy chủ + `setUser(null)` — **không chỗ nào** xoá
+   `lastUserId`; `quenDemTrongBoNho()` thì tự khai *"chỉ dùng trong test"*. Cộng với `giaiDanhTinh` đọc đệm
+   trước và **trả `da-co` mà không hề xác thực** (`lib/danh-tinh-phien.ts:82-83`), hệ quả là: trên **máy dùng
+   chung**, sau khi A đăng xuất, việc làm tiếp trong tab cũ có thể ghi vào **bucket của A**. Đây đúng thứ mà
+   docstring của chính mô-đun cấm (*"thà không lưu còn hơn lưu nhầm chỗ người khác"*). Là bệnh **có sẵn**,
+   không do lượt này gây ra — nhưng nay định danh đã được nâng thành *nguồn sự thật* thì nó phải vào sổ.
+   Hướng rẻ nhất: đăng xuất gọi một hàm rửa đệm dùng chung (một cửa, không vá 4 chỗ).
+5. **`components/studio/VitalsGesture.tsx` không được mount ở đâu** — khớp mục D-DR1 trong `00-CHOT`
+   (04/09): `VitalsRightEdgeHost` chưa từng mount, `StageSwitcher` đã thôi được mount từ 17/08. Dòng 485 của
+   nó vì thế là mã chết; ghi ở đây để đợt di trú Vitals sang khẩu độ mép trên không bỏ sót.
+6. **Đã có 5 nơi độc lập cùng gọi `/api/auth/me`** — `HomeScreen:366` · `SessionWatch:36` ·
+   `PresentStageScreen:66` · `danh-tinh-phien:143` (+ 4 chỗ `DELETE` để đăng xuất). Chúng **không dùng chung
+   single-flight**, mỗi cái tự diễn giải 401/503 theo kiểu riêng, và **chỉ `LoginForm`/`HomeScreen` là ghi
+   đệm** — `SessionWatch` biết người dùng là ai nhưng không nói cho ai biết. Đúng cụm *"một cỗ máy nhiều mặt
+   tiền"*: nên gộp về `danhTinhSanSang()` làm cửa duy nhất. Không làm trong lượt này.

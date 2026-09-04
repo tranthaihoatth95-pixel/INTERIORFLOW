@@ -58,7 +58,8 @@ import type { EditorDeck, EditorSlide } from '@/lib/present-editor/model';
 import { newId } from '@/lib/present-editor/model';
 import { buildStorySetDeck } from '@/lib/present-editor/story-set';
 import type { StagePresetId } from '@/lib/present-editor/stage-presets';
-import { getLastUserId, loadResume, saveResume } from '@/lib/resume';
+import { loadResume, saveResume } from '@/lib/resume';
+import { danhTinhChoLuot } from '@/lib/danh-tinh-phien';
 import { getActiveBrandKit, seedDeckWithBrandKit } from '@/lib/present-editor/brand-kit';
 import { exportIdfp, importIdfp, lastImportIdfpError, type IdfpSheetData } from '@/lib/present-editor/idfp';
 import {
@@ -319,8 +320,6 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
 
   /** KHÔI PHỤC 1 lần lúc mount: IDB → bộ sheet + sheet active (ưu tiên resume.sheetId). */
   useEffect(() => {
-    const userId = getLastUserId();
-    userIdRef.current = userId;
     // ĐỔI DỰ ÁN giữa phiên (component KHÔNG remount khi client-nav): dọn tab + deck sống
     // trước khi nạp bộ sheet dự án mới, để deck dự án cũ không nằm lại dưới URL dự án mới.
     // Lần mount đầu KHÔNG dọn — giữ `initialDeck` mà trang truyền vào.
@@ -331,67 +330,76 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
       liveDeck.current = fresh;
     }
     prevBucketRef.current = bucketId;
-    if (!userId) {
-      setHydratedFor(bucketId); // chưa đăng nhập → thuần in-memory (y bản cũ)
-      return;
-    }
     let cancelled = false;
-    void loadSheets<PersistedPresentSheet>(userId, ROUTE, bucketId).then(async (rec) => {
-      if (cancelled) return;
-      const valid =
-        rec?.sheets.filter((s) => s.deck && Array.isArray(s.deck.slides)) ?? [];
-
-      // B4 (4.1.d) — quyết định NGUỒN NÀO thắng TRƯỚC khi áp bất kỳ state nào (tránh nhấp nháy
-      // cache→đĩa). `cacheTs=0` khi CHƯA có bản ghi IndexedDB nào — B5 "copy thư mục dự án sang
-      // máy khác" cần cache rỗng LUÔN thua đĩa thật (xem docstring resolveAndSyncPresentDisk).
-      //
-      // BUG BẮT ĐƯỢC KHI BROWSER-VERIFY (31/07, không phải suy đoán): `ensureProjectScope()`
-      // (chạy trong `useProjectScopeSync()` ở trang `/projects/[id]/present/page.tsx`) nạp
-      // `flowName` THẬT bất đồng bộ — hydrate effect này có thể chạy TRƯỚC khi nạp xong, đọc
-      // phải tên mặc định `'Untitled flow'` ⇒ `getProjectFolderHandle()` tạo NHẦM thư mục khác
-      // tên cho ĐÚNG 1 dự án (verify thật thấy 2 thư mục `<id> — Untitled flow/` VÀ
-      // `<id> — Dự án mẫu/` cùng tồn tại cho cùng 1 project). Sửa: `ensureProjectScope()` chính
-      // nó IDEMPOTENT ("khớp sẵn thì trả 'ready' ngay, không tốn request") — gọi lại ở đây AN
-      // TOÀN, không tốn thêm request nếu trang đã nạp xong, và ĐẢM BẢO `flowName` đúng trước khi
-      // dùng để đặt tên thư mục (tái dùng cơ chế có sẵn, không tự chế cờ "đã sẵn sàng" mới).
-      if (bucketId) await ensureProjectScope(bucketId);
-      if (cancelled) return;
-      const projectName = useFlowStore.getState().flowName || 'InteriorFlow project';
-      const cacheSheets: IdfpSheetData[] = valid.map((s) => ({ id: s.id, name: s.name, deck: s.deck }));
-      const diskSheets = await resolveAndSyncPresentDisk(bucketId, projectName, cacheSheets, rec?.ts ?? 0);
-      if (cancelled) return;
-
-      if (diskSheets) {
-        applyIdfpSheets(diskSheets);
-        saverRef.current?.touch(); // đồng bộ ngược lại IndexedDB — cache luôn ấm cho lần mở kế
-      } else if (!rec || valid.length === 0) {
-        /**
-         * LƯỚI ĐỠ CUỐI — MÁY CHỦ. Chạy KHI VÀ CHỈ KHI đĩa không thắng VÀ cache rỗng: trình duyệt
-         * mới, vừa xoá dữ liệu duyệt web, vừa đăng nhập máy khác. Trước bản này đúng ca đó là mất
-         * trắng deck (đã xảy ra thật, một deck 24 trang) vì đồng bộ đĩa mặc định TẮT — nó đòi
-         * người dùng tự chọn thư mục gốc, còn bản sao máy chủ thì không cần cài gì.
-         * Không thấy bản sao ⇒ im lặng đi tiếp, KHÔNG dựng deck rỗng đè lên việc đang làm.
-         */
-        const tuMayChu = await taiDeckTuMayChu(bucketId);
-        if (cancelled) return;
-        if (tuMayChu?.length) {
-          applyIdfpSheets(tuMayChu);
-          saverRef.current?.touch();
-        }
-      } else if (rec && valid.length > 0) {
-        seq = Math.max(seq, nextSeqFrom(valid.map((s) => s.id), 'presheet'));
-        const resumeSheet = loadResume(userId)?.sheetId;
-        const wantId =
-          (resumeSheet && valid.some((s) => s.id === resumeSheet) && resumeSheet) ||
-          (valid.some((s) => s.id === rec.activeId) && rec.activeId) ||
-          valid[0].id;
-        const restored = valid.map(({ id, name, deck }) => ({ id, name, deck }));
-        setSheets(restored);
-        setActiveId(wantId);
-        liveDeck.current = restored.find((s) => s.id === wantId)?.deck ?? restored[0].deck;
+    void (async () => {
+      // P0 04/09 — CHỜ định danh giải từ PHIÊN MÁY CHỦ rồi mới đọc. Đọc đồng bộ ở đây là
+      // thua cuộc chạy đua TẤT ĐỊNH (deps [bucketId] chỉ chạy 1 lần trên deep-link) ⇒ mất
+      // trắng việc đang làm. Khối dọn-đổi-dự-án ở TRÊN cố ý nằm ngoài async: đẩy nó vào đây
+      // là để bản của dự án CŨ nằm lại dưới URL dự án MỚI thêm một vòng mạng.
+      const { tiepTuc, userId } = await danhTinhChoLuot(() => !cancelled);
+      if (!tiepTuc) return;
+      userIdRef.current = userId;
+      if (!userId) {
+        setHydratedFor(bucketId); // chưa đăng nhập → thuần in-memory (y bản cũ)
+        return;
       }
-      setHydratedFor(bucketId);
-    });
+      await loadSheets<PersistedPresentSheet>(userId, ROUTE, bucketId).then(async (rec) => {
+        if (cancelled) return;
+        const valid =
+          rec?.sheets.filter((s) => s.deck && Array.isArray(s.deck.slides)) ?? [];
+
+        // B4 (4.1.d) — quyết định NGUỒN NÀO thắng TRƯỚC khi áp bất kỳ state nào (tránh nhấp nháy
+        // cache→đĩa). `cacheTs=0` khi CHƯA có bản ghi IndexedDB nào — B5 "copy thư mục dự án sang
+        // máy khác" cần cache rỗng LUÔN thua đĩa thật (xem docstring resolveAndSyncPresentDisk).
+        //
+        // BUG BẮT ĐƯỢC KHI BROWSER-VERIFY (31/07, không phải suy đoán): `ensureProjectScope()`
+        // (chạy trong `useProjectScopeSync()` ở trang `/projects/[id]/present/page.tsx`) nạp
+        // `flowName` THẬT bất đồng bộ — hydrate effect này có thể chạy TRƯỚC khi nạp xong, đọc
+        // phải tên mặc định `'Untitled flow'` ⇒ `getProjectFolderHandle()` tạo NHẦM thư mục khác
+        // tên cho ĐÚNG 1 dự án (verify thật thấy 2 thư mục `<id> — Untitled flow/` VÀ
+        // `<id> — Dự án mẫu/` cùng tồn tại cho cùng 1 project). Sửa: `ensureProjectScope()` chính
+        // nó IDEMPOTENT ("khớp sẵn thì trả 'ready' ngay, không tốn request") — gọi lại ở đây AN
+        // TOÀN, không tốn thêm request nếu trang đã nạp xong, và ĐẢM BẢO `flowName` đúng trước khi
+        // dùng để đặt tên thư mục (tái dùng cơ chế có sẵn, không tự chế cờ "đã sẵn sàng" mới).
+        if (bucketId) await ensureProjectScope(bucketId);
+        if (cancelled) return;
+        const projectName = useFlowStore.getState().flowName || 'InteriorFlow project';
+        const cacheSheets: IdfpSheetData[] = valid.map((s) => ({ id: s.id, name: s.name, deck: s.deck }));
+        const diskSheets = await resolveAndSyncPresentDisk(bucketId, projectName, cacheSheets, rec?.ts ?? 0);
+        if (cancelled) return;
+
+        if (diskSheets) {
+          applyIdfpSheets(diskSheets);
+          saverRef.current?.touch(); // đồng bộ ngược lại IndexedDB — cache luôn ấm cho lần mở kế
+        } else if (!rec || valid.length === 0) {
+          /**
+           * LƯỚI ĐỠ CUỐI — MÁY CHỦ. Chạy KHI VÀ CHỈ KHI đĩa không thắng VÀ cache rỗng: trình duyệt
+           * mới, vừa xoá dữ liệu duyệt web, vừa đăng nhập máy khác. Trước bản này đúng ca đó là mất
+           * trắng deck (đã xảy ra thật, một deck 24 trang) vì đồng bộ đĩa mặc định TẮT — nó đòi
+           * người dùng tự chọn thư mục gốc, còn bản sao máy chủ thì không cần cài gì.
+           * Không thấy bản sao ⇒ im lặng đi tiếp, KHÔNG dựng deck rỗng đè lên việc đang làm.
+           */
+          const tuMayChu = await taiDeckTuMayChu(bucketId);
+          if (cancelled) return;
+          if (tuMayChu?.length) {
+            applyIdfpSheets(tuMayChu);
+            saverRef.current?.touch();
+          }
+        } else if (rec && valid.length > 0) {
+          seq = Math.max(seq, nextSeqFrom(valid.map((s) => s.id), 'presheet'));
+          const resumeSheet = loadResume(userId)?.sheetId;
+          const wantId =
+            (resumeSheet && valid.some((s) => s.id === resumeSheet) && resumeSheet) ||
+            (valid.some((s) => s.id === rec.activeId) && rec.activeId) ||
+            valid[0].id;
+          const restored = valid.map(({ id, name, deck }) => ({ id, name, deck }));
+          setSheets(restored);
+          setActiveId(wantId);
+          liveDeck.current = restored.find((s) => s.id === wantId)?.deck ?? restored[0].deck;
+        }
+        setHydratedFor(bucketId);
+      });
+    })();
     return () => {
       cancelled = true;
     };
