@@ -42,6 +42,7 @@
  */
 
 import type { Prim } from './furniture';
+import type { BuildRecipe } from './model';
 import type { BlockGroup, ShapeVariant, SnapAnchor, ClearanceZone } from './shared-types';
 import type { MaterialPbr } from '../materials/schema';
 
@@ -142,6 +143,21 @@ export interface IdfcGeom3d {
   bevelMm?: number;
   matId?: string;
   pbr?: MaterialPbr;
+  /**
+   * ⭐ G6 (04/09) — CÔNG THỨC KHỐI đi cùng cấu kiện. Trước dòng này `grep "recipe" lib/cad/idfc.ts`
+   * = **0**: `BuildRecipe` sống được qua `.idf` (tệp dự án, `Base.recipe`) nhưng **MẤT** ngay khi
+   * cấu kiện rời khỏi bản vẽ để lên kho studio dưới dạng `.idfc` — tức đúng lúc nó thành TÀI SẢN
+   * DÙNG LẠI thì nó thôi là tham số và trở lại thành lưới chết. Đó là thứ hợp đồng G4 §3 cấm.
+   *
+   * ADDITIVE, optional: `.idfc` v1-v3 đã ghi ra đĩa KHÔNG có trường này vẫn đọc y nguyên, không
+   * cần bậc migration nào (v3 giữ nguyên số hiệu — thêm trường tuỳ chọn không đổi nghĩa trường
+   * nào đã có). Kiểu lấy từ `./model` — lõi THUẦN, `idfc.ts` không vì thế mà chạm `three`.
+   *
+   * Ngữ nghĩa GIỐNG HỆT `Base.recipe`: thứ tự mảng là thứ tự áp dụng; bậc `enabled:false` giữ
+   * nguyên tham số. Nơi tiêu thụ là `evalRecipe`/`resolveSceneGroupGeometry` sẵn có — KHÔNG
+   * evaluator thứ hai.
+   */
+  recipe?: BuildRecipe;
 }
 
 /** Ký hiệu 2D của VẬT LIỆU (hatch trên bản vẽ) — khuôn con `MaterialDef` (lib/cad/materials.ts),
@@ -171,6 +187,15 @@ export type IdfcBody =
   | { type: 'component'; geom2d: IdfcGeom2d; geom3d?: IdfcGeom3d; params?: ShapeVariant[] }
   | {
       type: 'material';
+      /**
+       * ⭐ G6 (04/09) — DANH TÍNH của vật liệu đi theo tệp. Trước dòng này ruột `material` mang đủ
+       * PBR và hatch nhưng **không mang mã**: xuất một vật liệu ra `.idfc` rồi nhập lại ở máy
+       * khác là ra một vật liệu **vô danh** — mọi bản chèn `.idf` đang trỏ vào `matId` cũ không
+       * tìm lại được nó. `meta.code` KHÔNG thay được vai này: code là business key (đổi được),
+       * `matId` là UUID bất biến (chốt 19/08, `matid-identity.ts`).
+       * Optional vì tệp cũ không có — nhập lại vẫn đọc được, chỉ là không nối được danh tính.
+       */
+      matId?: string;
       pbr: MaterialPbr;
       hatch2d?: IdfcHatch2d;
       /** ký hiệu 2D dạng block (vật liệu có swatch vẽ được) — cũng là nơi giữ `geom2d` của file
