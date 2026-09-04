@@ -56,6 +56,13 @@ import { useStageMode, useHydrateRenderMode } from '@/lib/stage-mode';
 // `SystemWallpaper` · `loadResume`/`buildResumeCard`/`resumeHref` · `/api/home/summary`.
 // `DongStudioHome.tsx` GIỮ LẠI trong cây làm bằng chứng vòng thăm dò — không xoá, không mount.
 import XuongHome from '@/components/home/XuongHome';
+// 04/09 — ĐƯỜNG TẠO DỰ ÁN THẬT cho Home. KHÔNG dựng mới: `ProjectInitBoard` đã là cửa tạo dự án
+// chuẩn từ 12/08 (createProject → createFlow gắn thẳng projectId → gieo hồ sơ/việc), trước nay chỉ
+// mở được từ `ProjectSelect` — mà `ProjectSelect` thôi mount ở '/' từ khi Home đổi sang XuongHome.
+// Đây là CONNECT theo NO-REBUILD §B25, không phải NEW.
+import { ProjectInitBoard } from '@/components/project-init/ProjectInitBoard';
+import { createFlow, openFlow } from '@/lib/workspace';
+import { useLang } from '@/lib/i18n';
 import { CommentLayer } from '@/components/CommentLayer';
 import { useFlowStore } from '@/lib/store';
 // [marker: cuaVaoDashboard] `bootstrapWorkspace`/`openFlow` ĐÃ BỎ khỏi file này (16/08): nơi gọi
@@ -238,6 +245,11 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
   // simulated-remount nên chặn được lần 2; remount THẬT (điều hướng) ref mới → chạy lại.
   const bootRan = useRef(false);
 
+  /* ── ĐƯỜNG TẠO DỰ ÁN TỪ HOME (04/09, đóng lỗi chặn D-J04a) ────────────────────────────── */
+  const lang = useLang();
+  const [initOpen, setInitOpen] = useState(false);
+  const [initLoi, setInitLoi] = useState<string | null>(null);
+
   /**
    * Task #21 — NÂNG URL từ route toàn cục `/` lên scope dự án `/projects/[id]/render`
    * sau khi đã biết chắc đang mở dự án nào (store vừa nạp flow). Chỉ chạy ở chế độ toàn
@@ -252,6 +264,45 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
     if (!id || id === projectRouteId) return;
     router.replace(stageRoutePath(id, 'render'));
   }, [router, projectRouteId]);
+
+  /**
+   * VÀO DỰ ÁN VỪA TẠO. Đi đúng đường cũ của `ProjectSelect`: nạp graph vào store (`openFlow`)
+   * → consume handoff CAD nếu có → điều hướng sang chặng của dự án. `router.push` chứ không
+   * `replace`: người dùng vừa CHỦ ĐỘNG tạo, nút Lùi phải đưa họ về Home được.
+   */
+  const vaoDuAnVuaTao = useCallback(
+    async (flowId: string) => {
+      setInitLoi(null);
+      try {
+        await openFlow(flowId);
+        applyCadHandoff();
+        const id = stableProjectRouteId('');
+        setInitOpen(false);
+        if (id) router.push(stageRoutePath(id, 'render'));
+        else setStageDone(true);
+      } catch {
+        // Dự án ĐÃ được tạo trên máy chủ; chỉ khâu mở là hỏng ⇒ nói đúng như thế, đừng để
+        // người dùng bấm tạo lần hai rồi đẻ dự án trùng.
+        setInitLoi(
+          lang === 'en'
+            ? 'The project was created but could not be opened — reload the page and pick it in the project column.'
+            : 'Dự án đã tạo xong nhưng chưa mở được — tải lại trang rồi chọn nó ở cột dự án.',
+        );
+      }
+    },
+    [router, lang],
+  );
+
+  /** "Bỏ qua, tạo trống" trong bảng khởi tạo — đường 1-click cũ, giữ nguyên (luật X2). */
+  const taoTrongRoiVao = useCallback(async () => {
+    setInitLoi(null);
+    try {
+      const flowId = await createFlow(lang === 'en' ? 'New project' : 'Dự án mới', JSON.stringify({ nodes: [], edges: [] }));
+      await vaoDuAnVuaTao(flowId);
+    } catch {
+      setInitLoi(lang === 'en' ? 'Could not create the project — try again.' : 'Không tạo được dự án — thử lại.');
+    }
+  }, [vaoDuAnVuaTao, lang]);
 
   /**
    * Điều phối SAU-AUTH — gọi khi có user (session cũ qua /api/auth/me hoặc vừa login).
@@ -570,19 +621,41 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
         {/* Home BẢN KHOÁ 04/09 — THANG CHÚ Ý bốn bậc, đúng một tiêu điểm (D-DR2).
             Bậc do TRẠNG THÁI tính ra (`lib/home/thang-chu-y.ts`, hàm thuần có test), và bậc
             quyết định vật được cấp bao nhiêu thân ⇒ mật độ tăng thì vật TỤT BẬC chứ không
-            đòi thêm chỗ. `onEnter` giữ NGUYÊN hợp đồng cũ. */}
-        <XuongHome
-          onEnter={() => {
-            setStageDone(true);
-            // [marker: cuaVaoDashboard] 16/08 — ĐÃ BỎ `localStorage.setItem('interiorflow.stageDone')`
-            // ở đây: cờ đó chỉ có MỘT tác dụng là "lần sau về '/' thì vào thẳng canvas", đúng
-            // hành vi Hoà bảo đổi. Cắt xong thì không còn nơi nào ĐỌC nó nữa ⇒ thôi ghi luôn,
-            // không nuôi cờ chết (xem 2 nơi đọc đã gỡ ở `useState` + `enterAfterAuth` trên).
-            // Task #21: ProjectSelect đã openFlow/createFlow xong → store biết dự án nào →
-            // đưa URL sang `/projects/[id]/render` (URL = nguồn sự thật, F5 vào đúng dự án).
-            toProjectRender();
-          }}
+            đòi thêm chỗ.
+            🔴 04/09 — prop `onEnter` cũ ĐÃ BỎ (đóng lỗi chặn D-J04a). Nó là đường DUY NHẤT Home
+            gọi ra ngoài và chỉ nối vào ba nút "lối vào"; ba nút đó dùng chung một `onClick` nên
+            bấm cái nào cũng gọi `onEnter`, mà `onEnter` → `toProjectRender()` thì trên máy chưa
+            có dự án nào sẽ `return` ngay ⇒ bấm xong KHÔNG có gì xảy ra (đo: `Project` 20 → 20).
+            Nay Home nhận `onTaoDuAn` — mở đúng bảng khởi tạo dự án. */}
+        <XuongHome onTaoDuAn={() => setInitOpen(true)} />
+        {/* Bảng khởi tạo dự án — CÙNG component `ProjectSelect` vẫn dùng, không bản thứ hai. */}
+        <ProjectInitBoard
+          open={initOpen}
+          en={lang === 'en'}
+          onClose={() => setInitOpen(false)}
+          onSkip={() => void taoTrongRoiVao()}
+          onCreated={(flowId) => void vaoDuAnVuaTao(flowId)}
         />
+        {initLoi && (
+          <div
+            role="alert"
+            style={{
+              position: 'fixed',
+              bottom: 20,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 60,
+              padding: '10px 18px',
+              borderRadius: 'var(--r-2, 10px)',
+              background: 'var(--panel)',
+              border: '1px solid var(--border)',
+              color: 'var(--t2)',
+              fontSize: 13,
+            }}
+          >
+            {initLoi}
+          </div>
+        )}
         {/* Onboarding Tầng 1 — modal căn giữa TRÊN gallery, thay bước 'gallery' cũ của
             SmartTour. onEnter dùng CHUNG callback đưa cho DongStudioHome ở trên (nút
             "Tạo dự án của tôi" đi đúng đường "+ Dự án mới" cũ đi). */}

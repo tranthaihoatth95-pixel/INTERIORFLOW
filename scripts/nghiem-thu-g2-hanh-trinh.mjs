@@ -249,25 +249,24 @@ async function boQuaLopChe(page) {
 /**
  * QUA CỬA "DỰ ÁN CHƯA CÓ BẢN VẼ" (`components/studio/ProjectScopeEmptyState.tsx`).
  *
- * 🔴 ĐI VÒNG MỘT LỖI CHẶN ĐANG SỐNG — KHÔNG PHẢI THAO TÁC CỦA NGƯỜI DÙNG THẬT. Đo 04/09 trên
- * app thật, dự án mới tinh, CẢ HAI chặng `/cad` và `/present`: bấm "Tạo bản vẽ mới" thì MÁY CHỦ
- * sinh Flow thật (0 → 1) nhưng MÀN HÌNH kẹt ở "Đang tạo…" vô hạn (đo 20s, `canvas` = 0). Chỉ
- * TẢI LẠI TRANG mới vào được. Gốc: `handleCreate` kết bằng `goToStage(routeId)` →
- * `router.push(stageRoutePath(routeId, stage))` = **ĐÚNG URL ĐANG ĐỨNG** ⇒ Next không dựng lại,
- * `useProjectScopeSync` không chạy lại, `status` vẫn `missing`, cờ `busy` không bao giờ được gỡ.
- * `handleAttachOrphan` kết y hệt nên dính cùng bệnh.
- *
- * ⚠️ Cái `reload()` dưới đây LÀ liều thuốc giấu bệnh cho bộ đo. Nó ở đây để các hành trình khác
- * còn đo được thứ chúng sinh ra để đo; nó KHÔNG phải bằng chứng rằng cửa này chạy được.
- * `components/studio/**` nằm trong vùng CẤM GHI của phiếu này ⇒ lỗi khai vào báo cáo, không vá.
+ * ✅ 04/09 — ĐÂY LẠI LÀ THAO TÁC THẬT CỦA NGƯỜI DÙNG. Trước đó hàm này phải `reload()` để đi
+ * vòng lỗi chặn D-J04b: bấm "Tạo bản vẽ mới" thì máy chủ sinh Flow thật (0 → 1) nhưng màn hình
+ * kẹt "Đang tạo…" vô hạn, vì `handleCreate` kết bằng `router.push` tới ĐÚNG URL đang đứng ⇒
+ * `useProjectScopeSync` không tính lại `status` ⇒ màn rỗng không bao giờ nhường chỗ.
+ * Gốc đã sửa (hook nhận `currentFlowId` làm đầu vào; đường tắt của `ensureProjectScope` đòi có
+ * flow thật) ⇒ **cái `reload()` giấu bệnh ĐÃ GỠ**. Nay hàm chỉ bấm rồi ĐỢI canvas hiện ra —
+ * nếu bệnh quay lại, các hành trình dùng hàm này sẽ ĐỎ chứ không âm thầm xanh nhờ liều thuốc.
  */
 async function quaCuaDuAnRong(page) {
   const tao = page.getByRole('button', { name: /Tạo bản vẽ mới/i });
   if (!(await tao.count().catch(() => 0))) return false;
   await tao.first().click({ timeout: 8000 }).catch(() => {});
-  await cho(4000);
-  await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
-  await cho(6000);
+  // KHÔNG reload. Màn phải TỰ nhường chỗ — đó chính là điều đang được kiểm.
+  // Điều kiện dừng là "màn RỖNG biến mất", KHÔNG phải "có <canvas>": chặng Trình bày không
+  // dựng canvas nào, đợi canvas ở đó là đợi một thứ không bao giờ tới (ngã vì hạ tầng, không
+  // phải vì khẳng định — đúng thứ khung này cấm).
+  await tao.first().waitFor({ state: 'hidden', timeout: 30000 });
+  await cho(2500);
   return true;
 }
 
@@ -895,10 +894,24 @@ const J04 = {
     st.nutThay = [];
     st.urlTruoc = p.page.url();
     // Bấm ĐÚNG nút mang nhãn "Tạo dự án mới" — hành trình là của NGƯỜI DÙNG, không gọi API tắt.
-    const nut = p.page.getByRole('button', { name: /Tạo dự án/i });
+    const nut = p.page.getByRole('button', { name: /Tạo dự án mới/i });
     st.soNut = await nut.count().catch(() => 0);
     if (st.soNut) {
       await nut.first().click({ timeout: 10000 }).catch((e) => { st.loiBam = String(e.message || e).slice(0, 120); });
+      await cho(2500);
+      // Nút chính mở BẢNG KHỞI TẠO DỰ ÁN (`ProjectInitBoard`) — cửa tạo dự án chuẩn của app,
+      // dùng chung với ProjectSelect. Hành trình của người dùng chưa xong ở cú bấm đầu: phải
+      // bấm nốt nút tạo trong bảng. Mọi ô của bảng đều TUỲ CHỌN (tên trống ⇒ "Dự án mới").
+      const bang = p.page.getByRole('dialog', { name: /Bảng khởi tạo dự án|New project setup/i });
+      st.moBang = await bang.count().catch(() => 0);
+      await chup(p.page, 'J04-2a-bang-khoi-tao');
+      if (st.moBang) {
+        const xacNhan = bang.getByRole('button', { name: /^Tạo dự án/i });
+        st.nutXacNhan = await xacNhan.count().catch(() => 0);
+        if (st.nutXacNhan) {
+          await xacNhan.first().click({ timeout: 10000 }).catch((e) => { st.loiBam = String(e.message || e).slice(0, 120); });
+        }
+      }
       await cho(7000);
     }
     st.urlSau = p.page.url();
@@ -923,12 +936,14 @@ const J04 = {
     return { soDuAnSql: so.project, soFlowSql: so.flow, tuApi };
   },
   soSanh(truoc, sau, st) {
-    if (!st.soNut) return { dat: false, vi: 'Home KHÔNG có nút nào mang nhãn "Tạo dự án" — không vào được hành trình' };
+    if (!st.soNut) return { dat: false, vi: 'Home KHÔNG có nút nào mang nhãn "Tạo dự án mới" — không vào được hành trình' };
+    if (!st.moBang) return { dat: false, vi: 'bấm "Tạo dự án mới" xong KHÔNG có bảng khởi tạo nào mở ra — nút không dẫn đi đâu' };
+    if (!st.nutXacNhan) return { dat: false, vi: 'bảng khởi tạo mở nhưng KHÔNG có nút tạo nào bấm được' };
     if (st.loiBam) return { dat: false, vi: `bấm nút không được: ${st.loiBam}` };
     if (truoc.soDuAnSql <= st.soDuAnDau)
       return {
         dat: false,
-        vi: `bấm "Tạo dự án mới" xong: SỐ DỰ ÁN TRONG CSDL KHÔNG ĐỔI (${st.soDuAnDau} → ${truoc.soDuAnSql}). URL ${st.urlTruoc} → ${st.urlSau}. Nút đổi màn nhưng KHÔNG tạo gì`,
+        vi: `bấm "Tạo dự án mới" → bảng khởi tạo → "Tạo dự án": SỐ DỰ ÁN TRONG CSDL KHÔNG ĐỔI (${st.soDuAnDau} → ${truoc.soDuAnSql}). URL ${st.urlTruoc} → ${st.urlSau}. Nút đổi màn nhưng KHÔNG tạo gì`,
       };
     if (sau.soDuAnSql < truoc.soDuAnSql)
       return { dat: false, vi: `mở lại: dự án biến mất khỏi CSDL (${truoc.soDuAnSql} → ${sau.soDuAnSql})` };
@@ -936,7 +951,7 @@ const J04 = {
       return { dat: false, vi: `mở lại Home: nguồn dữ liệu của Home (GET /api/flows) không trả dự án nào (${JSON.stringify(sau.tuApi)})` };
     return {
       dat: true,
-      vi: `dự án tạo thật trong CSDL (${st.soDuAnDau} → ${truoc.soDuAnSql} hàng Project, ${truoc.soFlowSql} Flow) và Home mở lại vẫn thấy (${sau.tuApi.soDuAn} dự án qua GET /api/flows)`,
+      vi: `dự án tạo thật trong CSDL (${st.soDuAnDau} → ${truoc.soDuAnSql} hàng Project, ${truoc.soFlowSql} Flow) · URL ${st.urlTruoc} → ${st.urlSau} · Home mở lại vẫn thấy (${sau.tuApi.soDuAn} dự án qua GET /api/flows)`,
     };
   },
 };
