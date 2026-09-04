@@ -122,19 +122,54 @@ void (async () => {
     ok('ghi đệm ĐÚNG MỘT lần, đúng giá trị', b.daGhi.length === 1 && b.daGhi[0] === 'usr_abc');
   }
 
-  console.log('③ ĐƯỜNG THƯỜNG (đã qua Home) KHÔNG ĐƯỢC CHẬM — 0 request, 0 đồng hồ, xong microtask');
+  console.log('③ ĐỆM KHÔNG ĐƯỢC TỰ QUYẾT — máy chủ luôn được hỏi để XÁC NHẬN (bất biến #2)');
   {
+    /**
+     * 🔴 CA NÀY TRƯỚC ĐÂY KHẲNG ĐỊNH ĐIỀU NGƯỢC LẠI, VÀ ĐÓ LÀ MỘT LỖI — gỡ 04/09, cổng G1.
+     *
+     * Bản cũ dựng ĐÚNG bàn thử này (đệm `usr_cu`, máy chủ `usr_moi`) rồi đòi hàm phải trả về
+     * `usr_cu` và KHÔNG hỏi máy chủ lần nào. Tức nó lấy CHÍNH KỊCH BẢN RÒ DỮ LIỆU làm tiêu
+     * chuẩn đúng: bộ đệm mang id người TRƯỚC thắng phiên máy chủ của người ĐANG đăng nhập.
+     *
+     * Hệ quả đã đo được trên app thật (`scripts/nghiem-thu-g1.mjs` CA4 + CA8): A đăng xuất,
+     * B đăng nhập trên cùng máy, B vẽ trong dự án của chính B ⇒ nét vẽ ghi vào
+     * `<idA>::/cad-editor::<dự án của B>`.
+     *
+     * Bài học 15/08 (`calibrateFromImage`) lặp lại nguyên si: test khẳng định đúng-hành-vi-hỏng
+     * làm kỳ vọng thì nó KHÔNG bảo vệ gì — nó giữ cho lỗi sống và làm mọi người yên tâm.
+     *
+     * Cái giá của bản đúng: thêm MỘT request `/api/auth/me` mỗi tab. Đổi lại là không bao giờ
+     * ghi việc của người này vào kho người kia. Đó là món hời.
+     */
     const b = ban('usr_cu', traLoi(200, { user: { id: 'usr_moi' } }));
-    let xong = false;
-    const p = giaiDanhTinh(b.deps).then((r) => { xong = true; return r; });
-    // Nhường vài microtask — KHÔNG nhường macrotask (không setTimeout). Chạm mạng là trượt ca này.
-    await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
-    ok('xong ngay trong microtask (không chờ mạng)', xong);
-    const r = await p;
-    ok('trả thẳng id trong đệm', r.trangThai === 'da-co' && r.userId === 'usr_cu');
-    ok('KHÔNG hỏi máy chủ lần nào', b.soLanHoi() === 0);
-    ok('KHÔNG cả đụng tới đồng hồ hết giờ', b.soLanXemDongHo() === 0);
-    ok('KHÔNG ghi đè đệm đang có', b.daGhi.length === 0);
+    const r = await giaiDanhTinh(b.deps);
+    ok('có đệm vẫn HỎI máy chủ đúng 1 lần', b.soLanHoi() === 1);
+    ok('máy chủ THẮNG đệm lệch → trả id của phiên thật',
+      r.trangThai === 'gieo-moi' && r.userId === 'usr_moi');
+    ok('đệm lệch bị GHI ĐÈ, tự chữa ngay trong lượt', b.daGhi.length === 1 && b.daGhi[0] === 'usr_moi');
+  }
+  {
+    // Đệm KHỚP máy chủ (đường thường nhất): xác nhận xong thì KHÔNG ghi lại thừa.
+    const b = ban('usr_cu', traLoi(200, { user: { id: 'usr_cu' } }));
+    const r = await giaiDanhTinh(b.deps);
+    ok('đệm khớp máy chủ → trạng thái "da-co"', r.trangThai === 'da-co' && r.userId === 'usr_cu');
+    ok('đệm khớp → KHÔNG ghi đè thừa', b.daGhi.length === 0);
+  }
+  {
+    // LOCAL-FIRST: máy chủ KHÔNG với tới thì đệm được dùng lại — chặn ghi khi mất mạng sẽ
+    // biến app local-first thành app không dùng được offline.
+    const b = ban('usr_cu', 'nem');
+    const r = await giaiDanhTinh(b.deps);
+    ok('mạng đứt + có đệm → lui về đệm (giữ local-first)', r.trangThai === 'da-co' && r.userId === 'usr_cu');
+    ok('mạng đứt → KHÔNG ghi đè đệm', b.daGhi.length === 0);
+  }
+  {
+    // Máy chủ TRẢ LỜI ĐƯỢC nhưng nói "không có ai đăng nhập" ⇒ đệm chắc chắn là rác phiên
+    // trước ⇒ TUYỆT ĐỐI không lui về nó (nếu không thì đúng lại lỗ CA4/CA8).
+    const b = ban('usr_cu', traLoi(401, { user: null, reason: 'anonymous' }));
+    const r = await giaiDanhTinh(b.deps);
+    ok('401 + có đệm → KHÔNG lui về đệm, kết luận "chưa đăng nhập"', r.trangThai === 'chua-dang-nhap');
+    ok('401 + có đệm → KHÔNG ghi gì', b.daGhi.length === 0);
   }
 
   console.log('④ MÁY CHỦ TREO → hết giờ thì buông, KHÔNG treo app, KHÔNG ghi gì');

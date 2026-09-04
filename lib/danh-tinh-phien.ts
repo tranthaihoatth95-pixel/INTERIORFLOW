@@ -77,10 +77,38 @@ export interface PhuThuocDanhTinh {
  * thì hỏi máy chủ đúng MỘT lần rồi gieo. Mọi nhánh không chắc chắn đều KHÔNG ghi.
  */
 export async function giaiDanhTinh(deps: PhuThuocDanhTinh): Promise<KetQuaDanhTinh> {
-  // ĐƯỜNG THƯỜNG (đi qua Home/đăng nhập): trả về NGAY, không chạm mạng, không chạm đồng hồ.
-  // Đây là ràng buộc hiệu năng, không phải tối ưu vặt — ba đường ghi `await` hàm này.
+  /**
+   * 🔴 BỘ ĐỆM KHÔNG ĐƯỢC LÀM TIẾNG NÓI CUỐI VỀ ĐỊNH DANH (sửa 04/09, cổng G1).
+   *
+   * BẢN CŨ trả về NGAY khi bộ đệm có giá trị, KHÔNG bao giờ đối chiếu với máy chủ. Đó là một
+   * lỗ RÒ DỮ LIỆU CHÉO NGƯỜI DÙNG, đã tái hiện được trên app thật bằng hai đường độc lập
+   * (`scripts/nghiem-thu-g1.mjs` CA4 và CA8):
+   *
+   *   A đăng xuất → B đăng nhập trên CÙNG trình duyệt → B vẽ trong DỰ ÁN CỦA CHÍNH B
+   *   ⇒ nét vẽ ghi vào `<idA>::/cad-editor::<dự án của B>`.
+   *
+   * Không cần bơm lỗi gì cả — đó là đường đăng xuất/đăng nhập bình thường của một máy dùng
+   * chung, và trong repo KHÔNG có chỗ nào xoá `interiorflow.lastUserId` lúc đăng xuất
+   * (`clearLastUserId` trước 04/09 không tồn tại). Vi phạm thẳng bất biến "dữ liệu người A
+   * KHÔNG BAO GIỜ vào kho người B".
+   *
+   * NAY: máy chủ LUÔN được hỏi để XÁC NHẬN, và tiếng nói của máy chủ THẮNG bộ đệm — đúng như
+   * chính docstring đầu tệp này đã tuyên bố ("phiên máy chủ = NGUỒN SỰ THẬT, lastUserId = BỘ
+   * ĐỆM của nguồn đó"). Bộ đệm lệch thì được GHI ĐÈ, tự chữa ngay trong lượt.
+   *
+   * ⚖️ CÁI GIÁ, nói thẳng: đường thường mất thêm MỘT request `/api/auth/me` mỗi tab (đã
+   * single-flight, không nhân lên theo số nơi gọi). Chấp nhận được vì app VỐN ĐÃ gọi đúng
+   * endpoint đó lúc nạp trang, và vì đổi lại là chặn hẳn một lỗi hỏng-âm-thầm ở hạng nặng
+   * nhất. Đây KHÔNG phải hy sinh hiệu năng cho sự sạch sẽ — là hy sinh ~40ms để không ghi
+   * việc của người này vào kho người kia.
+   *
+   * 🛟 VẪN GIỮ ĐƯỢC LOCAL-FIRST: máy chủ KHÔNG VỚI TỚI (mạng đứt · hết giờ · 503) thì bộ đệm
+   * lại được dùng — lúc đó không có bằng chứng nào nói nó sai, và chặn ghi khi mất mạng sẽ
+   * biến một app local-first thành app không dùng được offline. Còn khi máy chủ TRẢ LỜI ĐƯỢC
+   * mà câu trả lời không mạch lạc (401 · thân hỏng · thiếu id) thì KHÔNG dùng bộ đệm nữa —
+   * thà không ghi còn hơn ghi nhầm chỗ.
+   */
   const dem = deps.docDem();
-  if (dem) return { trangThai: 'da-co', userId: dem };
 
   type Dua =
     | { loai: 'dap'; r: DapAnMayChu }
@@ -95,22 +123,29 @@ export async function giaiDanhTinh(deps: PhuThuocDanhTinh): Promise<KetQuaDanhTi
     deps.chuongHetGio().then(() => ({ loai: 'het-gio' }) as const),
   ]);
 
+  /** Máy chủ KHÔNG với tới ⇒ bộ đệm được dùng lại (giữ local-first, xem ghi chú 🛟 ở trên). */
+  const luiVeDem = (lyDo: string): KetQuaDanhTinh =>
+    dem ? { trangThai: 'da-co', userId: dem } : { trangThai: 'khong-ket-luan', lyDo };
+
   if (dua.loai === 'het-gio') {
     deps.cat?.();
-    return { trangThai: 'khong-ket-luan', lyDo: 'het-gio' };
+    return luiVeDem('het-gio');
   }
   // Mạng đứt / máy chủ không với tới — KHÔNG kết luận là "chưa đăng nhập".
-  if (dua.loai === 'loi') return { trangThai: 'khong-ket-luan', lyDo: 'mang-dut' };
+  if (dua.loai === 'loi') return luiVeDem('mang-dut');
 
   const dapAn = dua.r;
   // 503 = hạ tầng lỗi, người dùng VẪN đang đăng nhập hợp lệ (xem app/api/auth/me/route.ts).
-  if (dapAn.status === 503) return { trangThai: 'khong-ket-luan', lyDo: 'may-chu-loi' };
+  if (dapAn.status === 503) return luiVeDem('may-chu-loi');
+  // 401 = máy chủ nói RÕ không có ai đăng nhập. Bộ đệm lúc này chắc chắn là rác của phiên
+  // trước ⇒ TUYỆT ĐỐI không lui về nó, nếu không thì đúng lại lỗ CA4/CA8.
   if (!dapAn.ok) return { trangThai: 'chua-dang-nhap' };
 
   let than: unknown;
   try {
     than = await dapAn.json();
   } catch {
+    // Máy chủ TRẢ LỜI ĐƯỢC nhưng thân hỏng — không phải ca offline, không lui về đệm.
     return { trangThai: 'khong-ket-luan', lyDo: 'than-hong' };
   }
 
@@ -118,8 +153,13 @@ export async function giaiDanhTinh(deps: PhuThuocDanhTinh): Promise<KetQuaDanhTi
   const id = typeof u?.id === 'string' ? u.id.trim() : '';
   if (!id) return { trangThai: 'khong-ket-luan', lyDo: 'thieu-id' };
 
-  deps.ghiDem(id);
-  return { trangThai: 'gieo-moi', userId: id };
+  // Máy chủ đã lên tiếng ⇒ tiếng nói của nó THẮNG. Đệm lệch (người trước còn sót) thì ghi đè,
+  // tự chữa ngay trong lượt này — đây chính là chỗ vá lỗ rò chéo người dùng.
+  if (id !== dem) {
+    deps.ghiDem(id);
+    return { trangThai: 'gieo-moi', userId: id };
+  }
+  return { trangThai: 'da-co', userId: id };
 }
 
 /** Một lượt duy nhất cho cả vòng đời tab — nhiều nơi gọi cũng chỉ MỘT request. */
