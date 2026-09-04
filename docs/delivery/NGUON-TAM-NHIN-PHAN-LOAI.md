@@ -36,6 +36,8 @@ Hai gói này **chưa bao giờ vào repo**. Chúng có thể nằm ngoài (máy
 
 🔴 **Không tệp nào trong repo mô tả quy trình 12 bước NGHỀ của người dùng cuối.** Ai đọc lướt sẽ nhặt nhầm một trong hai bảng trên — đó đúng là bệnh *cùng một chữ, nhiều nghĩa*.
 
+✅ **CHỦ DỰ ÁN ĐÓNG VIỆC SĂN TỆP NÀY 04/09** — nguyên văn: *"không cần tiếp tục săn 'file quy trình 12 bước' như blocker"*. **02 WORKFLOW tự dựng lại Xương Sống Nghề** từ North Star + bằng chứng trong repo + thực hành thiết kế nội thất chuyên nghiệp; **không ép đúng con số 12**. Tệp/tầm nhìn cũ nếu sau này tìm được thì **chỉ dùng đối chiếu**, và **chỉ đè khi thẩm quyền thật sự cao hơn**.
+
 ## ✅ XƯƠNG SỐNG NGHỀ ĐANG DÙNG — lấy từ chính chỉ thị 04/09 §0
 
 Chủ dự án đã ban chuỗi liên tục, **đây là bản dùng cho cổng G2**:
