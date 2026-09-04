@@ -32,7 +32,7 @@
  *   `/api/home/summary` (`lib/home/aggregate.ts`) · đường vào dự án.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { RawStyle } from '@/components/filemanager/RawStyle';
 import SystemWallpaper from '@/components/wallpaper/SystemWallpaper';
@@ -48,6 +48,7 @@ import {
   type HienVat,
   type NutMach,
   type OWidget,
+  type ViecBatDau,
 } from '@/lib/home/xuong-demo';
 import { docKe, ghiKe, apDung, doiCho, an as anWidget, hien as hienWidget, type BayKe, KE_RONG } from '@/lib/home/ke-widget-store';
 import { HOME_LOCK_CSS } from './home-lock-css';
@@ -120,8 +121,51 @@ function widgetTuThat(s: HomeSummary | null): OWidget[] {
 
 /* ══════════════════════════ CÁC BẬC ══════════════════════════ */
 
+/**
+ * BA LỐI VÀO — mỗi việc một hàm thi hành, hoặc một LÝ DO vì sao chưa đi được.
+ * `null` = đường chưa sống ⇒ nút hiện MỜ kèm lý do (luật §9 "cấm nút giả bấm không ra gì"),
+ * đi bằng `aria-disabled` + `aria-describedby` chứ KHÔNG bằng `disabled` — nút `disabled` bị
+ * Tab bỏ qua nên lý do không bao giờ tới người dùng bàn phím/trình đọc màn hình (bài học 16/08).
+ */
+export interface HanhBatDau {
+  lam: Partial<Record<ViecBatDau, (() => void) | undefined>>;
+  lyDo: Partial<Record<ViecBatDau, string>>;
+}
+
+function NutLoiVao({
+  nut,
+  hang,
+  hanh,
+}: {
+  nut: { nhan: string; viec: ViecBatDau };
+  hang: 'nut-chinh' | 'nut-phu';
+  hanh?: HanhBatDau;
+}) {
+  const lam = hanh?.lam[nut.viec];
+  const lyDo = hanh?.lyDo[nut.viec];
+  const mo = !lam;
+  const idLyDo = `loi-vao-${nut.viec}-lydo`;
+  return (
+    <button
+      type="button"
+      className={hang}
+      onClick={mo ? undefined : lam}
+      aria-disabled={mo || undefined}
+      aria-describedby={mo && lyDo ? idLyDo : undefined}
+      style={mo ? { opacity: 'var(--mo-vo-hieu)', cursor: 'not-allowed' } : undefined}
+    >
+      {nut.nhan}
+      {mo && lyDo && (
+        <span id={idLyDo} className="if-tooltip-a11y">
+          {lyDo}
+        </span>
+      )}
+    </button>
+  );
+}
+
 /** BẬC 1 — THÂN DUY NHẤT trên màn. Nền của nó là nền NỘI DUNG, nên mọi chữ trong nó máy đo được. */
-function BacMotThan({ v, onMo }: { v: HienVat; onMo?: () => void }) {
+function BacMotThan({ v, hanh }: { v: HienVat; hanh?: HanhBatDau }) {
   const than = v.than;
   const pct = typeof v.tienDo === 'number' ? Math.round(v.tienDo * 100) : null;
   return (
@@ -181,15 +225,9 @@ function BacMotThan({ v, onMo }: { v: HienVat; onMo?: () => void }) {
               <h2>{than.tieuDe}</h2>
               <p>{than.moTa}</p>
               <div className="loi-vao">
-                <button type="button" className="nut-chinh" onClick={onMo}>
-                  {than.nut[0]}
-                </button>
-                <button type="button" className="nut-phu" onClick={onMo}>
-                  {than.nut[1]}
-                </button>
-                <button type="button" className="nut-phu" onClick={onMo}>
-                  {than.nut[2]}
-                </button>
+                <NutLoiVao nut={than.nut[0]} hang="nut-chinh" hanh={hanh} />
+                <NutLoiVao nut={than.nut[1]} hang="nut-phu" hanh={hanh} />
+                <NutLoiVao nut={than.nut[2]} hang="nut-phu" hanh={hanh} />
               </div>
               <span className="loi-ba">{than.loiBa}</span>
             </div>
@@ -274,7 +312,20 @@ function DaiNguCanh({ tit, chip, mach }: { tit: string; chip: string; mach: NutM
 
 /* ══════════════════════════ THÂN CHÍNH ══════════════════════════ */
 
-export default function XuongHome({ onEnter }: { onEnter: () => void }) {
+export default function XuongHome({
+  onTaoDuAn,
+}: {
+  /**
+   * Mở đường TẠO DỰ ÁN (bảng khởi tạo). Không truyền ⇒ nút "Tạo dự án mới" hiện MỜ kèm lý do,
+   * KHÔNG hiện như nút bấm được rồi im lặng — đó đúng là lỗi chặn D-J04a vừa sửa.
+   *
+   * 🔴 THAY prop `onEnter` cũ (04/09). `onEnter` là đường DUY NHẤT Home gọi ra ngoài, và nó chỉ
+   * được nối vào ba nút "lối vào" — ba nút đó dùng chung một `onClick` nên bấm cái nào cũng gọi
+   * `onEnter`, mà `onEnter` thì không tạo gì (đo: `Project` 20 → 20, URL không đổi). Bỏ một hợp
+   * đồng CHẾT còn hơn giữ nó để phiên sau tưởng Home đã có đường vào.
+   */
+  onTaoDuAn?: () => void;
+}) {
   const router = useRouter();
   const params = useSearchParams();
   const user = useFlowStore((s) => s.user);
@@ -286,6 +337,8 @@ export default function XuongHome({ onEnter }: { onEnter: () => void }) {
   const [daHoi, setDaHoi] = useState(false);
   const [resume, setResume] = useState<ResumeState | null>(null);
   const [khoHep, setKhoHep] = useState(false);
+  /** Cột dự án (bậc KỀ BÊN) — nút "Mở dự án có sẵn" đưa tiêu điểm về đúng đây. */
+  const thangRef = useRef<HTMLElement>(null);
 
   /* ---------- dữ liệu thật ---------- */
   useEffect(() => {
@@ -377,6 +430,12 @@ export default function XuongHome({ onEnter }: { onEnter: () => void }) {
             { manh: String(summary?.today.online.length ?? 0), nhe: 'người đang trong xưởng' },
           ],
           chanCuoi: 'bấm để về đúng chỗ bạn rời đi',
+          // 🔴 CHƯA CÓ AI TIÊU THỤ `href` NÀY (đo 04/09) — thẻ Resume KHÔNG bắt sự kiện bấm nào
+          // (`grep onClick` trong tệp này: chỉ có ở ba nút lối vào · cột dự án · widget). Tức
+          // dòng `chanCuoi` trên đang HỨA một thao tác chưa tồn tại. Đây là hành trình **J05**
+          // trong `docs/delivery/JOURNEY-MATRIX.md` (đang UNVERIFIED) — khai ra, KHÔNG vá ở
+          // lượt này vì làm cả thẻ bấm được là quyết định thị giác (vùng chạm · vòng focus ·
+          // con trỏ), phải qua cửa mắt chứ không nối dây lặng lẽ.
           href: resumeHref(the),
         }
       : // CÓ dự án nhưng KHÔNG có việc dở trên máy này. Đây vẫn là bậc NGAY BÂY GIỜ — *việc*
@@ -395,7 +454,11 @@ export default function XuongHome({ onEnter }: { onEnter: () => void }) {
             moTa:
               'Máy này chưa giữ dấu vết việc đang dở. Chọn một dự án ở cột bên để vào đúng chặng ' +
               'nó đang đứng — hoặc mở một hướng mới. Vào cửa nào cũng được, không cửa nào bị khoá.',
-            nut: ['Tạo dự án mới', 'Mở dự án có sẵn', 'Nhập từ tệp · dwg · pdf · ảnh'],
+            nut: [
+              { nhan: 'Tạo dự án mới', viec: 'tao-du-an' },
+              { nhan: 'Mở dự án có sẵn', viec: 'mo-du-an' },
+              { nhan: 'Nhập từ tệp · dwg · pdf · ảnh', viec: 'nhap-tep' },
+            ],
             loiBa: 'Lần sau vào lại, chỗ này thành đúng việc bạn đang dở.',
             titVon: 'xưởng đang có',
             daiMau: ['var(--vl-go)', 'var(--vl-da)', 'var(--vl-vai)', 'var(--vl-kl)', 'var(--vl-son)'],
@@ -453,11 +516,43 @@ export default function XuongHome({ onEnter }: { onEnter: () => void }) {
     return apDung(co, bay);
   }, [bo, bay]);
 
-  const moVat = useCallback(() => {
-    const h = bo?.hienVat.href;
-    if (h) router.push(h);
-    else onEnter();
-  }, [bo, router, onEnter]);
+  /**
+   * BA LỐI VÀO — mỗi nút MỘT việc thật (sửa lỗi chặn D-J04a 04/09: trước đây cả ba nút dùng
+   * chung một `onClick` và không nút nào tạo được gì; đo trên app thật `Project` 20 → 20).
+   *   · Tạo dự án mới      → mở bảng khởi tạo dự án (đường tạo THẬT, `POST /api/flows`)
+   *   · Mở dự án có sẵn    → đưa tiêu điểm sang cột dự án bên phải (chỗ dự án đang nằm)
+   *   · Nhập từ tệp        → CHƯA CÓ đường tạo dự án thẳng từ tệp ⇒ mờ kèm lý do, không nút giả
+   */
+  const moCotDuAn = useCallback(() => {
+    const g = thangRef.current;
+    if (!g) return;
+    // Ưu tiên một DỰ ÁN thật; cột kề bên còn chứa việc và vật khác, mà nhãn nút nói "dự án".
+    // Không có dự án nào trên cột thì về mục đầu — nút vẫn làm đúng điều nó hứa ở mức thấp
+    // nhất: ĐƯA MẮT SANG CỘT BÊN. Câu chữ của nhánh mờ (bên dưới) khai đúng ca cột rỗng.
+    const nut =
+      g.querySelector<HTMLButtonElement>('[data-vat-ke-ben][data-loai="du-an"]') ??
+      g.querySelector<HTMLButtonElement>('[data-vat-ke-ben]');
+    if (!nut) return;
+    nut.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    nut.focus();
+  }, []);
+
+  const hanhBatDau: HanhBatDau = useMemo(
+    () => ({
+      lam: {
+        'tao-du-an': onTaoDuAn,
+        'mo-du-an': thang.keBen.length > 0 ? moCotDuAn : undefined,
+        'nhap-tep': undefined,
+      },
+      lyDo: {
+        'tao-du-an': 'Chưa mở được bảng khởi tạo dự án ở màn này.',
+        'mo-du-an': 'Cột bên chưa có gì để mở — tạo dự án mới trước.',
+        'nhap-tep':
+          'Chưa có đường tạo dự án thẳng từ tệp. Tạo dự án trước, rồi nhập tệp vào bản vẽ của dự án đó.',
+      },
+    }),
+    [onTaoDuAn, thang.keBen.length, moCotDuAn],
+  );
 
   const moThu = useCallback(
     (v: VatHome) => {
@@ -515,12 +610,12 @@ export default function XuongHome({ onEnter }: { onEnter: () => void }) {
             </div>
           )}
 
-          <BacMotThan v={bo.hienVat} onMo={moVat} />
+          <BacMotThan v={bo.hienVat} hanh={hanhBatDau} />
           <DaiNguCanh tit={bo.nguCanhTit} chip={bo.nguCanhChip} mach={bo.mach} />
         </main>
 
         {/* ══════════════ THANG CHÚ Ý ══════════════ */}
-        <aside className="thang" aria-label="Thang chú ý">
+        <aside className="thang" aria-label="Thang chú ý" ref={thangRef}>
           {/* Nhãn DEMO — §28: dùng dữ liệu mẫu thì PHẢI ghi rõ TRÊN MÀN, và ghi ở chỗ MẮT
               GẶP TRƯỚC. Bản vẽ đặt nó ở mép trên; mép trên trong app là `AppChrome` (ngoài
               vùng ghi của phiếu này) nên nó đứng ở đỉnh thang — vẫn là chỗ cao nhất mà Home
@@ -542,7 +637,14 @@ export default function XuongHome({ onEnter }: { onEnter: () => void }) {
               {thang.keBen.map((v) => {
                 const kieu = kieuMatTuTen(v.ten);
                 return (
-                  <button type="button" className="ke-ben len-bac" key={v.id} onClick={() => moThu(v)}>
+                  <button
+                    type="button"
+                    className="ke-ben len-bac"
+                    key={v.id}
+                    data-vat-ke-ben
+                    data-loai={v.loai}
+                    onClick={() => moThu(v)}
+                  >
                     <MatVat kieu={kieu} khoa={v.id} />
                     <span className="chu">
                       <span className="ten">{v.ten}</span>

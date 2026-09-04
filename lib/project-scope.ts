@@ -82,7 +82,12 @@ export function stageHrefFrom(pathname: string | null | undefined, stage: StageS
 export async function ensureProjectScope(routeId: string): Promise<ScopeSyncStatus> {
   if (!routeId) return 'missing';
   const s = useFlowStore.getState();
-  if (storeMatchesRouteId(routeId, s.currentProjectId, s.currentFlowId)) return 'ready';
+  // ⚠️ ĐƯỜNG TẮT PHẢI ĐÒI CÓ FLOW THẬT (sửa 04/09, lỗi chặn D-J04b).
+  // Nhánh 'missing' bên dưới tự đặt `currentProjectId = routeId` để dọn canvas ⇒ chỉ hỏi
+  // `storeMatchesRouteId` thôi thì trạng thái RỖNG cũng "khớp", và lượt đồng bộ kế tiếp sẽ
+  // trả 'ready' cho một dự án KHÔNG có bản vẽ nào — canvas trắng, đúng thứ màn rỗng sinh ra
+  // để chặn. Đường tắt chỉ đúng khi store đang GIỮ một flow.
+  if (s.currentFlowId && storeMatchesRouteId(routeId, s.currentProjectId, s.currentFlowId)) return 'ready';
 
   try {
     const { flows } = await fetchFlows();
@@ -123,6 +128,15 @@ export async function ensureProjectScope(routeId: string): Promise<ScopeSyncStat
 export function useProjectScopeSync(routeId: string, stage?: StageSegment): ScopeSyncStatus {
   const [status, setStatus] = useState<ScopeSyncStatus>('idle');
   const router = useRouter();
+  // GỐC của lỗi chặn D-J04b (04/09): `status` trước đây chỉ tính lại khi `[id]` trên URL đổi.
+  // Màn "dự án chưa có bản vẽ" tạo bản vẽ xong thì URL KHÔNG đổi (nó đang đứng đúng ở đó),
+  // nên hook không chạy lại, `status` kẹt ở 'missing', màn rỗng không bao giờ nhường chỗ cho
+  // chặng thật ⇒ người dùng đọc ra là app treo dù máy chủ đã ghi xong.
+  // Sửa Ở GỐC: coi "flow đang mở" là một ĐẦU VÀO của phép đồng bộ. Ai mở/đổi flow (màn rỗng ·
+  // FlowsPanel · lệnh khác) thì scope tự tính lại — không nơi nào phải nhớ gọi hàm làm mới.
+  // Không có vòng lặp: nhánh 'missing' đặt `currentFlowId = null` (vốn đã null ở ca đó) nên
+  // giá trị chọn không đổi ⇒ hook không tự kích lại chính nó.
+  const currentFlowId = useFlowStore((s) => s.currentFlowId);
 
   useEffect(() => {
     if (!routeId) return;
@@ -145,7 +159,7 @@ export function useProjectScopeSync(routeId: string, stage?: StageSegment): Scop
     return () => {
       alive = false;
     };
-  }, [routeId, stage, router]);
+  }, [routeId, stage, router, currentFlowId]);
 
   return status;
 }

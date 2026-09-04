@@ -62,8 +62,8 @@ Ký hiệu chủ sở hữu: `01` CORE · `02` WORKFLOW · `04` DESIGN · `05` A
 
 | # | KHỞI ĐIỂM | THAO TÁC | KẾT QUẢ HỆ THỐNG | KẾT QUẢ ĐÃ LƯU | VÀO LẠI | TRẠNG THÁI | CHỦ | CHẶN CỔNG |
 |---|---|---|---|---|---|---|---|---|
-| **J04** | Home rỗng | tạo dự án mới | 🔴 **KHÔNG GÌ CẢ** | 🔴 `Project` 20 → **20** | 🔴 không có gì để hiện | **FAIL trên app thật 04/09** (`--ca=J04`) — **lỗi chặn D-J04a**, xem §1.7. Nút *"Tạo dự án mới"* trên Home bấm xong: URL không đổi, CSDL không đổi, lệnh gọi API khác GET **chỉ có `POST /api/cursors`** (nhịp presence). Cơ chế chống-đẻ-mồ-côi phía máy chủ vẫn có khoá riêng (`lib/server/draft-project.test.ts`) — **cửa vào mới là chỗ đứt** | 02 | **G2** |
-| **J05** | Home có việc dở | bấm thẻ Resume | nhảy đúng chặng đang dở | `lastStage` | — | **UNVERIFIED** — Home đang trong vòng thiết kế (`SHIP-BLOCKERS` B2); hành vi Resume **chưa được chạy đo** | 04 + 02 | cổng thị giác (lane 04) |
+| **J04** | Home rỗng | tạo dự án mới | ✅ dự án + bản vẽ sinh thật | ✅ `Project` 5 → **6** · `Flow` **6** (đọc bằng SQL) | ✅ **đóng HẲN trình duyệt rồi mở lại vẫn thấy** | **PASS trên app thật 04/09** (`--ca=J04`) sau khi đóng **D-J04a** (xem §1.7). Hành trình đầy-đủ: Home → *"Tạo dự án mới"* → **bảng khởi tạo dự án** → *"Tạo dự án"* → URL nhảy sang `/projects/<id>/render`. Hiệu chuẩn nay **hết thoái hoá**: chặn `POST /api/flows` ⇒ ĐỎ, thế giới lành ⇒ XANH | 04 + 02 | **G2** |
+| **J05** | Home có việc dở | bấm thẻ Resume | nhảy đúng chặng đang dở | `lastStage` | — | 🔴 **KHÔNG CHẠY ĐƯỢC — thẻ Resume KHÔNG bắt cú bấm nào.** Đo 04/09 khi sửa D-J04a: `grep onClick` trong `components/home/XuongHome.tsx` chỉ ra ba nút lối vào · cột dự án · widget — **thân thẻ tiêu điểm không có handler**, trong khi chân thẻ vẫn ghi *"bấm để về đúng chỗ bạn rời đi"* và `hienVat.href` (= `resumeHref(the)`) **không có ai tiêu thụ**. Cùng họ D-J04a: chữ hứa một thao tác chưa tồn tại. **Khai, KHÔNG vá ở lượt này** — làm cả thẻ bấm được là quyết định thị giác (vùng chạm · vòng focus · con trỏ), phải qua cửa mắt | 04 + 02 | cổng thị giác (lane 04) |
 | **J06** | dự án đã có | mở lại dự án cũ, sửa tiếp | tải lại doc, sửa được | ✅ **1 → 2 thực thể** trong IndexedDB | ✅ **TOÀN BỘ ID của lần trước còn nguyên** | **PASS trên app thật 04/09** (`--ca=J06`) — ba phiên gói trong khuôn hai phiên: vẽ nét A → đóng hẳn → mở lại vẽ nét B → đọc lại. **Điểm đo là DANH TÍNH, không phải số đếm**: xoá sạch rồi vẽ lại hai nét cũng làm số tăng, và đó đúng là *đứt gia phả*. Ghi đè có kiểm `rev` vẫn do `app/api/flows/[id]/route.test.ts` khoá (Prisma thật, P2025) | 02 | **G2** |
 
 ### 1.3 · Ba chặng nghề
@@ -98,7 +98,7 @@ Ký hiệu chủ sở hữu: `01` CORE · `02` WORKFLOW · `04` DESIGN · `05` A
 
 | # | KHỞI ĐIỂM | THAO TÁC | KẾT QUẢ HỆ THỐNG | KẾT QUẢ ĐÃ LƯU | VÀO LẠI | TRẠNG THÁI | CHỦ | CHẶN CỔNG |
 |---|---|---|---|---|---|---|---|---|
-| **J20** | Trình bày có nội dung | xuất PDF | tệp sinh ra | ✅ tệp trên đĩa, mở được **độc lập với app** | 👁 **đã mở tệp ra soi bằng mắt** | **PASS invariant, KÈM 3 PHÁT HIỆN CHUẨN ĐẦU RA** (xem dưới bảng) — 04/09, tệp 24 KB · 1 trang · khổ **2560×1440pt** · 1 ảnh JPEG nhúng. 🔴 Lượt ĐẦU cho **trang TRẮNG TINH** đi qua với chữ PASS — chỉ lộ khi bóc ảnh ra NHÌN; bộ soi nay đo mực (mọi điểm ảnh = 255 ⇒ FAIL) | 02 + 07 | **G5** |
+| **J20** | Trình bày có nội dung | xuất PDF | tệp sinh ra | ✅ tệp trên đĩa, mở được **độc lập với app** | 👁 **đã mở tệp ra soi bằng mắt** | **PASS invariant, KÈM 3 PHÁT HIỆN CHUẨN ĐẦU RA** (xem dưới bảng) — 04/09, tệp 24 KB · 1 trang · khổ **2560×1440pt** · 1 ảnh JPEG nhúng. 🔴 Lượt ĐẦU cho **trang TRẮNG TINH** đi qua với chữ PASS — chỉ lộ khi bóc ảnh ra NHÌN; bộ soi nay đo mực (mọi điểm ảnh = 255 ⇒ FAIL). ⚠️ **Lượt chạy lại đợt 3 (04/09) KHÔNG KẾT LUẬN được ở đây**: `waitForEvent('download')` hết 120 s, khung ghi **LỖI (hạ tầng)** chứ không phải FAIL — đúng luật *ngã vì hạ tầng thì không tính là đỏ*. Đã A/B trên đúng nghi phạm: hoàn nguyên `lib/project-scope.ts` về HEAD rồi chạy lại ⇒ **ngã y hệt** ⇒ **không phải hồi quy của đợt 3**. Bằng chứng PASS của đợt 2 còn nguyên (`J20-deck-xuat.pdf` · `J20-trang-1.png` không bị lượt sau ghi đè) | 02 + 07 | **G5** |
 | **J21** | dự án | xuất `.idf` / gói `.idfp` | gói sinh ra | — | nạp lại được | **UNVERIFIED** — `SHIP-BLOCKERS` **B4**: *".idf/.idfc sinh từ máy sạch chưa chạy lại sau khi thu 11 slice"*, ⬜ chưa mở. Tầng định dạng có khoá: `lib/present-editor/idfp.test.ts` | 07 | **G5** |
 | **J22** | mất mạng / không có API key | dùng một năng lực cần cloud | ✅ **503 · `PROVIDER_NOT_CONFIGURED`**, câu báo nói rõ việc phải làm | — (không sinh gì, đúng bản chất) | — | **PASS trên app thật 04/09** (`--ca=J22`) — môi trường kiểm **thật sự không có `FAL_KEY`** nên đây là ca thật, không mô phỏng. Gọi `POST /api/jobs` từ trong app với phiên thật: **không trả hàng giả**, không nút chạy-mà-không-làm-gì. Hiệu chuẩn: ép cửa đó trả 200 kèm job bịa ⇒ khẳng định ĐỎ đúng như phải thế | 02 | **G5** |
 
@@ -126,7 +126,7 @@ và giữ lại `J20-trang-1.jpg` làm bằng chứng **nhìn được**. **F1 t
 
 ---
 
-### 1.7 · HAI LỖI CHẶN ĐỢT 2 TÌM RA — cùng một họ: **nút làm một nửa rồi đứng im**
+### 1.7 · HAI LỖI CHẶN ĐỢT 2 TÌM RA — cùng một họ: **nút làm một nửa rồi đứng im** · ✅ ĐÃ ĐÓNG 04/09
 
 Cả hai đều đo trên app thật, dự án mới tinh, và cả hai đều **không** bị `tsc` · `npm test` ·
 `soi:cong-cu-chet` bắt: nút CÓ mount, CÓ handler, handler CÓ chạy — nó chỉ không đi tới đích.
@@ -136,10 +136,18 @@ Cả hai đều đo trên app thật, dự án mới tinh, và cả hai đều *
 | **D-J04a** 🔴 | `components/home/XuongHome.tsx:184` nút *"Tạo dự án mới"* → `moVat` (`:456-460`) → `onEnter` → `HomeScreen.tsx:575` `toProjectRender()` | bấm xong: URL `/` **không đổi** · `Project` **20 → 20** · `Flow` **12 → 12** · lệnh gọi API khác GET **chỉ `POST /api/cursors`** (nhịp presence) | **không tạo được dự án từ Home.** Kèm theo: ba nút *"Tạo dự án mới"* · *"Mở dự án có sẵn"* · *"Nhập từ tệp"* (`:184,187,190`) **dùng CHUNG một `onClick={onMo}`** — ba nhãn khác nhau, một hành vi |
 | **D-J04b** 🔴 | `components/studio/ProjectScopeEmptyState.tsx` `handleCreate` (`:64-77`) kết bằng `goToStage(routeId)` → `router.push(stageRoutePath(routeId, stage))` = **ĐÚNG URL đang đứng** | dự án mới tinh, **cả `/cad` LẪN `/present`**: máy chủ sinh Flow thật **0 → 1**, nhưng màn **kẹt "Đang tạo…" vô hạn** (đo 20s, `canvas` = 0). **Tải lại trang thì vào được** | bấm một nút, dữ liệu ĐÃ được tạo, mà màn hình đứng im ⇒ người dùng đọc ra là *app treo*. `handleAttachOrphan` (`:79-93`) kết y hệt nên dính cùng bệnh |
 
-⚠️ **CẢ HAI NẰM TRONG VÙNG CẤM GHI của phiếu đợt 2** (`components/home/**` · `components/studio/**`
-đang thuộc lane DESIGN) ⇒ **khai, không vá**. Bộ chạy đi vòng D-J04b bằng một `reload()` có ghi rõ
-trong `quaCuaDuAnRong()` rằng đó là **liều thuốc giấu bệnh cho bộ đo**, không phải bằng chứng cửa
-đó chạy được.
+✅ **ĐÃ SỬA 04/09 (lane 04 DESIGN + 02 WORKFLOW), đo lại trên app thật:**
+
+| Mã | Sửa ở đâu | Đo lại được gì |
+|---|---|---|
+| **D-J04a** | `lib/home/xuong-demo.ts` — ba nút thôi là ba chuỗi nhãn, thành ba mã việc `tao-du-an` · `mo-du-an` · `nhap-tep` (kiểu bắt buộc khai, thêm lối vào mà quên nối là `tsc` đỏ). `XuongHome.tsx` — mỗi mã một hàm thi hành riêng; nút chưa có đường thì MỜ kèm lý do qua `aria-describedby` (không dùng `disabled`, vì Tab bỏ qua thì lý do không tới ai). `HomeScreen.tsx` — nối `ProjectInitBoard` (cửa tạo dự án đã có từ 12/08, trước nay chỉ mở được từ `ProjectSelect` vốn đã thôi mount ở `/`) | **J04 PASS**: `Project` **5 → 6** · `Flow` **6** · URL `/` → `/projects/<id>/render` · đóng HẲN trình duyệt rồi mở lại vẫn thấy dự án qua `GET /api/flows` |
+| **D-J04b** | Gốc ở `lib/project-scope.ts`: `useProjectScopeSync` nay nhận `currentFlowId` làm **đầu vào** nên mở flow xong là scope tự tính lại; đường tắt của `ensureProjectScope` đòi **có flow thật** (nhánh dọn canvas tự đặt `currentProjectId = routeId` nên chỉ khớp id thôi là sai). `ProjectScopeEmptyState.tsx`: gỡ cờ bận trong `finally` (không chỉ `catch`), khoá bấm-hai-lần bằng `ref`, điều hướng cùng-đường thì không `push` | **J07 · J12 PASS mà KHÔNG cần `reload()`**; probe riêng `scripts/nghiem-thu-ban-lam-viec/kiem-cua-du-an-rong.mjs` **4/4 đạt ở cả `/cad` lẫn `/present`**, gồm ca **bấm hai lần → vẫn đúng 1 bản vẽ** (đọc bằng SQL) |
+
+⇒ **`reload()` giấu bệnh trong `quaCuaDuAnRong()` ĐÃ GỠ.** Nay hàm đó bấm rồi **đợi màn rỗng biến
+mất** — bệnh quay lại là các hành trình dùng nó sẽ ĐỎ, không còn xanh nhờ liều thuốc.
+⚠️ Điều kiện dừng cố ý **không** phải "có `<canvas>`": chặng Trình bày không dựng canvas nào, đợi
+canvas ở đó là ngã vì **hạ tầng** chứ không vì khẳng định — đúng thứ khung này cấm (và đã trượt
+một lượt thật vì lỗi đó trước khi sửa).
 
 📌 **Vì sao đáng ghi thành một mục riêng**: đây là biến thể nặng hơn của *nút chết*. Nút chết thì
 người dùng biết mà đi đường khác; nút này **ghi dữ liệu xong rồi đứng im**, nên người dùng bấm lại
@@ -152,24 +160,28 @@ hoặc bỏ đi — và trong ca D-J04b thì cái Flow vừa sinh ra vẫn nằm
 
 | Trạng thái | Số hành trình | Ghi chú |
 |---|---|---|
-| **PASS đầy đủ (có cột ĐÃ LƯU)** | **7** | J16 · J17 · J19 · J20 · **J07 · J12 · J06** — chạy bằng bộ `nghiem-thu-g2-hanh-trinh.mjs` (đợt 2, 04/09) |
+| **PASS đầy đủ (có cột ĐÃ LƯU)** | **8** | J16 · J17 · J19 · J20 · J07 · J12 · J06 · **J04** — chạy bằng bộ `nghiem-thu-g2-hanh-trinh.mjs` (J04 vào nhóm này ở đợt 3, 04/09, sau khi đóng D-J04a) |
 | **PASS không có cột ĐÃ LƯU để kiểm** | **1** | J22 — bản chất nó không sinh gì để lưu; điều phải chứng minh là *báo rõ, không chạy giả* |
 | **PASS chỉ ở cột hệ thống** | **4** | J08 · J09 · J10 · J11 — lượt kiểm 04/09, không chạm chuyện *còn sau khi đóng app* |
 | **PASS một phần** | **1** | J18 — tầng cơ chế nay đo trên **app thật + đọc SQL**; tầng người dùng vẫn chưa |
-| **FAIL** | **1** | **J04** — lỗi chặn D-J04a, xem §1.7 |
-| **UNVERIFIED** | **7** | J01 J02 J05 J13 J14 J15 J21 |
+| **FAIL** | **0** | — (J04 đã chuyển sang PASS đợt 3; hai lỗi chặn D-J04a/D-J04b đã đóng, xem §1.7) |
+| **UNVERIFIED** | **7** | J01 J02 **J05** J13 J14 J15 J21 — 🔴 J05 nay có lý do CỤ THỂ chứ không còn là "chưa ai đo": thẻ Resume **không bắt cú bấm nào** |
 | **BLOCKED** | **1** | J03 (D3) |
 
-⚠️ Đếm lại cho đúng: 22 = 7 PASS-đủ + 1 PASS-không-có-cột + 4 PASS-hệ-thống + 1 PASS-một-phần
-+ 1 FAIL + **7 UNVERIFIED** + 1 BLOCKED.
+⚠️ Đếm lại cho đúng: 22 = 8 PASS-đủ + 1 PASS-không-có-cột + 4 PASS-hệ-thống + 1 PASS-một-phần
++ 0 FAIL + **7 UNVERIFIED** + 1 BLOCKED.
 
-### ⭐ CỘT **KẾT QUẢ ĐÃ LƯU**: **1/22 → 4/22 → 7/22**
+### ⭐ CỘT **KẾT QUẢ ĐÃ LƯU**: **1/22 → 4/22 → 7/22 → 8/22**
 
-Con số này là thứ duy nhất đáng theo dõi ở cổng G2. Đợt 2 (04/09) thêm **J07 · J12 · J06**.
-🔴 Và nó tăng 3 chứ không tăng 6: **J04 đỏ thật** (lỗi sản phẩm, không phải lỗi bộ đo), **J18 mới
-xong nửa dưới** (cơ chế), **J22 không có cột này để mà đầy**. Ba chữ "chưa" đó là số thật.
+Con số này là thứ duy nhất đáng theo dõi ở cổng G2. Đợt 2 (04/09) thêm **J07 · J12 · J06**;
+đợt 3 cùng ngày thêm **J04** sau khi đóng hai lỗi chặn ở §1.7.
+🔴 Đợt 2 tăng 3 chứ không tăng 6, và ba chữ "chưa" đó là số thật: **J04 đỏ thật** (lỗi sản phẩm,
+không phải lỗi bộ đo — nay đã sửa), **J18 mới xong nửa dưới** (cơ chế), **J22 không có cột này để
+mà đầy**.
+⭐ Và J04 đáng ghi riêng một dòng: nó là hành trình duy nhất tới giờ **đỏ vì sản phẩm hỏng chứ
+không vì bộ đo thiếu** — tức bộ G2 đã làm đúng việc nó sinh ra để làm.
 
-Bảy hành trình nay đi trọn bất biến:
+Tám hành trình nay đi trọn bất biến:
 
 > **THAO TÁC → GHI XUỐNG → ĐÓNG/TẢI LẠI HẲN → VÀO LẠI → CÙNG MỘT SỰ THẬT**
 

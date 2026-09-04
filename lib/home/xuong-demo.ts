@@ -40,6 +40,28 @@ export interface DongThongSo {
   v: string;
 }
 
+/**
+ * BA LỐI VÀO của thân "lời mời" — mỗi nút một VIỆC KHÁC NHAU.
+ *
+ * 🔴 Vì sao phải khai bằng MÃ VIỆC chứ không để nơi gọi đoán theo thứ tự: tới 04/09 cả ba nút
+ * dùng chung đúng một `onClick` (`XuongHome.tsx:184,187,190` → `moVat`) — ba nhãn khác nhau,
+ * một hành vi, và không cái nào tạo được dự án (lỗi chặn D-J04a: bấm xong `Project` 20 → 20).
+ * Buộc khai mã việc thì kiểu dữ liệu tự bắt lỗi đó: thêm một lối vào mà quên nối dây là `tsc`
+ * đỏ ở nhánh `switch`, không phải một nút im lặng.
+ */
+export type ViecBatDau =
+  /** tạo dự án mới — LỐI CHÍNH (§26 `RESUME → BEGIN`) */
+  | 'tao-du-an'
+  /** mở một dự án đã có — đưa mắt/tiêu điểm sang cột dự án bên phải */
+  | 'mo-du-an'
+  /** bắt đầu từ tệp có sẵn (dwg · pdf · ảnh) */
+  | 'nhap-tep';
+
+export interface NutBatDau {
+  nhan: string;
+  viec: ViecBatDau;
+}
+
 /** THÂN của bậc NGAY BÂY GIỜ — hình thức đổi theo NGHĨA của vật (chỉ thị E), không theo thẻ. */
 export type ThanVat =
   | { kieu: 'bang-vat-lieu'; hang: HangVatLieu[]; conLai: string; boHoanThien: string[] }
@@ -50,7 +72,7 @@ export type ThanVat =
       kieu: 'bat-dau';
       tieuDe: string;
       moTa: string;
-      nut: [string, string, string];
+      nut: [NutBatDau, NutBatDau, NutBatDau];
       loiBa: string;
       titVon: string;
       von: DongThongSo[];
@@ -257,7 +279,11 @@ const RONG: BoDuLieuHome = {
       moTa:
         'Khai vị trí công trình là đủ để IF gợi ngay bộ quy chuẩn áp dụng, khí hậu và vật liệu sẵn có ' +
         'tại đó. Vẽ 2D, dựng 3D hay dán ảnh tham chiếu — vào cửa nào cũng được, không cửa nào bị khoá.',
-      nut: ['Tạo dự án mới', 'Mở dự án có sẵn', 'Nhập từ tệp · dwg · pdf · ảnh'],
+      nut: [
+        { nhan: 'Tạo dự án mới', viec: 'tao-du-an' },
+        { nhan: 'Mở dự án có sẵn', viec: 'mo-du-an' },
+        { nhan: 'Nhập từ tệp · dwg · pdf · ảnh', viec: 'nhap-tep' },
+      ],
       loiBa: 'Chưa muốn bắt đầu? Xem thư viện mẫu hồ sơ và kho vật liệu ở cột bên.',
       titVon: 'xưởng này đã có sẵn',
       daiMau: ['var(--vl-go)', 'var(--vl-da)', 'var(--vl-vai)', 'var(--vl-kl)', 'var(--vl-son)'],

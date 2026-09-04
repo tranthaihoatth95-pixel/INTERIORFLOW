@@ -5,7 +5,7 @@
       "ma": "J16",
       "ten": "Deep-link studio → vẽ → đóng app → mở lại",
       "trangThai": "PASS",
-      "vi": "1 thực thể còn nguyên ở cmtncgj4d00007dinnpearls7::/cad-editor::cmtncgj4x00027dinq9qhzl5d sau khi ĐÓNG HẲN trình duyệt và mở lại",
+      "vi": "1 thực thể còn nguyên ở cmtnerfou00007dlozlryzcvs::/cad-editor::cmtnerfqb00027dlouwh6ak91 sau khi ĐÓNG HẲN trình duyệt và mở lại",
       "ghiChu": ""
     },
     {
@@ -19,35 +19,35 @@
       "ma": "J19",
       "ten": "Máy đã có dữ liệu → cài đè bản mới → dữ liệu còn nguyên + có bản sao lùi",
       "trangThai": "PASS",
-      "vi": "bản sao 2026-09-04T20-06-05-012Z-before-0.0.9 đọc lại bằng SQL thật: {\"user\":2,\"project\":20,\"flow\":25,\"projectMember\":19} — khớp gốc, kèm uploads",
+      "vi": "bản sao 2026-09-04T21-06-17-294Z-before-0.0.9 đọc lại bằng SQL thật: {\"user\":2,\"project\":20,\"flow\":20,\"projectMember\":19} — khớp gốc, kèm uploads",
       "ghiChu": ""
     },
     {
       "ma": "J20",
       "ten": "Trình bày có nội dung → xuất PDF → mở tệp ra soi",
-      "trangThai": "PASS",
-      "vi": "tệp J20-deck-xuat.pdf (24 KB) mở được độc lập: 1 trang, khổ 2560×1440pt, 1 ảnh nhúng, có mực, độ sáng trung bình 254/254/254; chữ trích được 0 ký tự (0 = trang raster, chữ KHÔNG chọn/tìm được)",
+      "trangThai": "LOI",
+      "vi": "page.waitForEvent: Timeout 120000ms exceeded while waiting for event \"download\"\n=========================== logs ===========================\nwaiting for event \"download\"\n============================================================",
       "ghiChu": ""
     },
     {
       "ma": "J07",
       "ten": "Vẽ 2D → lưu → MÁY SẠCH (xoá hồ sơ) mở lại vẫn thấy nét",
       "trangThai": "PASS",
-      "vi": "XOÁ SẠCH hồ sơ trình duyệt rồi mở lại: 3 thực thể quay về đúng ID cũ, khôi phục từ hàng ProjectFile trên máy chủ (1554 byte, 3 thực thể parse lại được)",
+      "vi": "XOÁ SẠCH hồ sơ trình duyệt rồi mở lại: 3 thực thể quay về đúng ID cũ, khôi phục từ hàng ProjectFile trên máy chủ (1501 byte, 3 thực thể parse lại được)",
       "ghiChu": ""
     },
     {
       "ma": "J12",
       "ten": "Trình bày: đặt nội dung lên trang → đóng app → mở lại còn nguyên",
       "trangThai": "PASS",
-      "vi": "7 phần tử trên 1 trang còn nguyên ở cmtncgj4d00007dinnpearls7::/present-editor::cmtnct0k200087dij5e616mrf sau khi ĐÓNG HẲN trình duyệt và mở lại",
+      "vi": "7 phần tử trên 1 trang còn nguyên ở cmtnerfou00007dlozlryzcvs::/present-editor::cmtnfcmla00087d4y309osbln sau khi ĐÓNG HẲN trình duyệt và mở lại",
       "ghiChu": ""
     },
     {
       "ma": "J04",
       "ten": "Home → bấm \"Tạo dự án mới\" → dự án có thật trong CSDL và còn sau khi mở lại",
-      "trangThai": "FAIL",
-      "vi": "bấm \"Tạo dự án mới\" xong: SỐ DỰ ÁN TRONG CSDL KHÔNG ĐỔI (20 → 20). URL http://localhost:3091/ → http://localhost:3091/. Nút đổi màn nhưng KHÔNG tạo gì",
+      "trangThai": "PASS",
+      "vi": "dự án tạo thật trong CSDL (20 → 21 hàng Project, 21 Flow) · URL http://localhost:3096/ → http://localhost:3096/projects/cmtng76fo001d7de8ds9jzotj/render · Home mở lại vẫn thấy (17 dự án qua GET /api/flows)",
       "ghiChu": ""
     },
     {
