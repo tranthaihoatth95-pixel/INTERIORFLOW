@@ -192,6 +192,30 @@ async function dangNhap(page) {
     { e: EMAIL, m: MATKHAU },
   );
   if (ma !== 200) throw new Error(`đăng nhập thất bại (HTTP ${ma}) — kiểm IF_EMAIL/IF_MATKHAU`);
+
+  /**
+   * ⚠️ BƯỚC NÀY KHÔNG THỪA — thiếu nó là bộ đo TỰ TẠO RA một lỗi không có thật (đã dính, và suýt
+   * ghi thành lỗi sản phẩm).
+   *
+   * App có HAI nguồn cho "ai đang đăng nhập": ① cookie phiên (máy chủ cấp, `/api/auth/login` ở
+   * trên đã có) ② `localStorage['interiorflow.lastUserId']` — và **lớp LƯU TRỮ bám vào nguồn ②**:
+   * `PresentSheets.tsx:322` mở bằng `getLastUserId()`, rỗng thì `:335-338` rẽ nhánh THUẦN
+   * IN-MEMORY và `saveSheets()` chặn ngay dòng đầu ⇒ không ghi IndexedDB dòng nào, tải lại là
+   * trắng. Khoá ② chỉ được ghi ở `LoginForm.tsx:135` (đăng nhập BẰNG BIỂU MẪU) và
+   * `HomeScreen.tsx:264` (ghé Home).
+   *
+   * Đăng nhập bằng API rồi vào thẳng `/projects/<id>/present` ⇒ cookie hợp lệ, app chạy bình
+   * thường, nhưng ② rỗng ⇒ đo ra "mất hồ sơ khi tải lại" trong khi người dùng thật (đăng nhập
+   * bằng biểu mẫu) KHÔNG gặp. Ghé Home một lượt để ② được ghi, đưa bộ đo về đúng trạng thái của
+   * người dùng thật. Đo xong xác nhận `lastUserId` có giá trị, không tin suông.
+   */
+  await diToi(page, `${BASE}/`, 4000);
+  for (let i = 0; i < 8; i += 1) {
+    const uid = await page.evaluate(() => { try { return localStorage.getItem('interiorflow.lastUserId'); } catch { return null; } });
+    if (uid) return true;
+    await page.waitForTimeout(800);
+  }
+  console.log('⚠ lastUserId vẫn rỗng sau khi ghé Home — lớp lưu trữ sẽ chạy in-memory, số đo về "tải lại" KHÔNG đáng tin');
   return true;
 }
 

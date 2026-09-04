@@ -119,3 +119,135 @@ không đẩy trang tràn ngang. Ảnh: `5-tab-1280x800.png` · `5-tab-1152x720.
 > ⚠️ Ghi thêm cho đúng: ở 10 tab, dải tab **chưa** phải cuộn (`scrollWidth == clientWidth`) — các tab
 > tự co lại vừa chỗ. Nên phép đo này chứng minh **nút mới không phá hàng tab**, chứ CHƯA chứng minh
 > hành vi khi tab nhiều tới mức phải cuộn. Muốn biết ngưỡng đó phải đẩy số tờ lên cao hơn.
+
+## 2 · Chọn · viền hộp bao · xoá khối 3D — **PASS sau khi vá** (trước khi vá: FAIL)
+
+### Đo lần đầu — bắt được một lỗi thật
+| Phép đo | Kết quả |
+|---|---|
+| Bấm vào khối để chọn | **trúng ngay điểm đầu** (fx .36 / fy .40) — Inspector hiện "Đã chọn trong khung nhìn 3D" + "Cao 2.700 mm" |
+| Viền hộp bao có nhìn thấy được | **CÓ** — đếm điểm ảnh MÀU NHẤN `#6a57f5` trong khung nhìn: **0 → 1.569 điểm** |
+| Chip "Xoá" | chỉ xuất hiện KHI đang chọn; `aria-disabled` = không |
+| **Phím `Delete`** | 🔴 **KHÔNG XOÁ GÌ** — huy hiệu cây đối tượng vẫn `2`, nhãn vẫn "Khối xám" |
+| Bấm CHIP "Xoá" | ✅ xoá đúng — huy hiệu biến mất, nhãn về "Không gian trống" |
+
+⇒ Năng lực xoá CHẠY; mất đúng **đường bàn phím**.
+
+### Gốc bệnh (đo, không suy)
+`cad.sel.delete` khai `key:['Delete']` + `surfaces:['statusbar','shortcut']` (`registry.ts:523-524`),
+**nhưng `grep "'shortcut'"` toàn repo NGOÀI `registry.ts` = 0** — chưa có ai đọc mặt tiền `shortcut`,
+nên khai phím ở registry hiện **không tự sinh ra phím nào**. Đường `Delete` thật duy nhất nằm ở
+`components/cad/CadCanvas.tsx:2799`, tức **chỉ chặng 2D**.
+
+> 🔁 Đây là **ca thứ hai cùng một gốc**. Lần đầu là ⌘Z: `Render3DModeSkeleton.tsx:304-311` ghi
+> nguyên văn *"⌘Z/⌘⇧Z chặng 3D trước đây KHÔNG BẮT ĐƯỢC PHÍM GÌ … thiếu duy nhất là KHÔNG CÓ
+> listener nào gọi nó trong mode này"* và phải vá tay. Nay lặp lại y hệt với phím xoá.
+
+### Đã vá — TỐI THIỂU, trong vùng được giao
+`components/three/Viewport3D.tsx`: thêm một listener `Delete`/`Backspace` **gọi ĐÚNG lệnh
+`cad.sel.delete` trong registry rồi `run()`** — KHÔNG tự viết `removeIds`, nên hành vi · undo ·
+điều kiện `when` không thể phân kỳ với chip "Xoá". Vẫn hỏi `when({stage:'render'})` trước khi chạy
+để chưa-chọn-gì thì phím im lặng (§9 cấm nút bấm-không-ra-gì), và né ô nhập.
+
+### Đo lại sau khi vá
+| Phép đo | Trước vá | Sau vá |
+|---|---|---|
+| Huy hiệu cây đối tượng, phím `Delete` | `2` → **`2`** | `2` → **`0`** |
+| Nhãn khung nhìn sau khi xoá | "Khối xám · chưa vật liệu" | **"Không gian trống"** |
+| Viền hộp bao (điểm ảnh màu nhấn) | +1.569 | +1.569 |
+
+Ảnh: `2a-truoc-khi-chon.png` · `2b-sau-khi-chon.png` (thấy rõ hộp bao tím quanh tường + Inspector) ·
+`2c-sau-phim-delete.png` · `2d-sau-khi-xoa.png`.
+
+> 🔴 **LỖ HỆ THỐNG CÒN NGUYÊN — ngoài vùng tệp của phiếu này, KHÔNG tự sửa.** Bản vá trên chỉ nối
+> phím cho MỘT lệnh ở MỘT chặng. Mặt tiền `shortcut` vẫn không có ai đọc, nên `F9` ·
+> `Zoom Extents` · `undo`/`redo` (đều khai `surfaces:[…,'shortcut']`) vẫn ở tình trạng cũ. Vá điểm
+> lần thứ ba là nuôi bệnh — cần sửa GỐC: một nơi đọc `surfaces:'shortcut'` rồi gắn phím.
+
+## 4 · Bản vẽ → Trình chiếu — **FAIL** (nhận đúng, nhưng tải lại là mất)
+
+### Nửa ĐÚNG: cầu chuyển tờ mang đủ và mang đúng
+Bấm "Gửi sang Trình chiếu" ở chặng 2D ghi vào `sessionStorage['interiorflow.toBanVeHandoff']`:
+
+| Trường | Giá trị đo được |
+|---|---|
+| `khoGiay` | `A3` |
+| `huong` | `landscape` |
+| `le` | `10` |
+| `tyLe` | `1:100` |
+| `khungTen.tenBanVe` | `Bản vẽ 1` |
+| `khungTen.duAn` | `Bản vẽ mới` |
+| `neo` | `{chang:'cad2d', docId:…}` — có neo nguồn |
+
+Bên Trình chiếu nhận **đúng từng giá trị**: chip `Thiết lập trang · A3 · 1:100 · ● Hiện hành`;
+panel phải có KHỔ GIẤY (A3 sáng) · HƯỚNG Ngang · `420 × 297 mm` · TỈ LỆ BẢN VẼ (1:100 sáng) ·
+LỀ 10mm · KHUNG TÊN "Bản vẽ 1"; có đường về "Quay lại 2D". Ảnh `4c-trinh-chieu-nhan-to.png`.
+
+⇒ **Tỉ lệ · khổ · khung tên: ĐẠT.**
+
+### Nửa HỎNG: tải lại trang là mất — nhưng KHÔNG PHẢI mất tờ
+| Mốc | Màn hình | `sessionStorage` tờ | IndexedDB `sheets` |
+|---|---|---|---|
+| sau khi nhận | `1 slide`, cửa Thiết lập trang hiện | **58.493 byte** | 0 bản ghi |
+| chờ 40 giây (quá nhịp sao lưu 30s) | `1 slide` | 58.493 byte | 0 bản ghi |
+| **sau khi tải lại** | **`0 slide`**, về màn chọn mẫu | **58.493 byte — y hệt** | 0 bản ghi |
+
+⭐ **Thứ mất KHÔNG phải TỜ mà là HỒ SƠ.** Tờ còn nguyên, byte y hệt. Deck về 0 slide ⇒
+`PresentEditor` không dựng ⇒ `CongThietLapTrang` không mount ⇒ tờ thành **vô hình**.
+**Ai đi sửa mà nhắm vào `CongThietLapTrang` là sửa nhầm chỗ.**
+
+**Tần suất:** FAIL **9/10 lượt** — 4 lượt chạy thẳng mục 4 · 2 lượt đối chứng đi thẳng `/present`
+(hồ sơ trống **và** mẫu 8 trang, đều `→ 0`) · 3 lượt quét thời gian chờ (2s · 15s · 45s, đều `→ 0`).
+**1 lượt PASS duy nhất** nằm trong lần chạy gộp `tat-ca` — **tôi KHÔNG giải thích được vì sao**, và
+ghi ra đúng như vậy thay vì chọn con số tiện tay.
+
+**Không phải hụt nhịp sao lưu:** đã chờ 40 giây (nhịp là 30 giây, `PresentSheets.tsx:436`) với deck
+có tờ. IndexedDB `interiorflow-sheets/sheets` đứng ở **0 bản ghi suốt cả ba mốc** ⇒ nghi vấn nên
+nhắm vào **cổng chặn `!rec?.sheets.length` luôn đúng / `rec` rỗng**, không phải vào nhịp.
+
+> ⚠️ **Một chỗ tôi đã suy quá bằng chứng, sửa lại cho đúng:** tôi đo `prisma.projectFile.count() = 0`
+> rồi viết *"bản sao bền không ghi được gì"*. **Sai.** Số 0 chỉ chứng minh **chưa có gì đi qua**,
+> không chứng minh ống hỏng — điều phối đã bơm thử một giọt qua `POST /api/project-files`, trả
+> **200** và ghi hàng thật. Ống **tốt**; cò chưa bóp. Hai kết luận đó dẫn tới hai việc sửa khác hẳn.
+
+⇒ Sửa chỗ này nằm ở **lưu HỒ SƠ** (`PresentSheets` / `lib/present-editor/*`) — **ngoài
+`FILES_ALLOWED`, tôi KHÔNG đụng**, khai để điều phối định đoạt.
+
+---
+
+## 🔎 GHI CHÚ CỦA ĐIỀU PHỐI — nghi phạm mục 4, có đường mã (04/09)
+
+Nối tiếp đúng chỗ báo cáo dừng lại (*"nghi vấn nên nhắm vào `rec` rỗng / cổng chặn luôn đúng"*).
+Đọc mã thì nghi phạm **đứng trước cổng chặn đó một bước**:
+
+```
+PresentSheets.tsx:322   const userId = getLastUserId();
+PresentSheets.tsx:335   if (!userId) { setHydratedFor(bucketId); return; }   ← thuần in-memory
+PresentSheets.tsx:522   if (hydrated) saverRef.current?.touch();             ← chỉ ghi khi đã hydrate
+lib/resume.ts:131       getLastUserId() ⇒ CHỈ đọc localStorage 'interiorflow.lastUserId'
+lib/sheets-persist.ts:157  saveSheets(): if (!userId || !route) return 0;
+```
+
+Khoá `lastUserId` **chỉ được ghi ở hai chỗ**: `LoginForm.tsx:135` (đăng nhập **bằng biểu mẫu**) và
+`HomeScreen.tsx:264` (ghé **Home** lúc đã đăng nhập). Bộ đo đăng nhập bằng `POST /api/auth/login`
+rồi vào **thẳng** `/projects/<id>/present` ⇒ cookie hợp lệ, app chạy bình thường, **`lastUserId`
+rỗng** ⇒ nhánh in-memory ⇒ IndexedDB **không bao giờ** được ghi. Khớp đúng cột *"IndexedDB `sheets`
+= 0 bản ghi ở CẢ BA mốc"* trong bảng trên — và cũng giải thích được **lượt PASS lẻ loi** mà báo cáo
+thành thật khai là không giải thích nổi: lượt gộp `tat-ca` **có đi qua Home trước**.
+
+### ⚠️ Rủi ro THẬT đã lộ ra, độc lập với việc phép đo có phải hiện vật hay không
+Trạng thái đăng nhập của app có **HAI nguồn** — cookie (máy chủ) và `localStorage.lastUserId`
+(trình duyệt) — và **lớp lưu trữ bám vào nguồn YẾU HƠN**. Người dùng thật rơi vào được: cookie còn
+sống mà site data bị xoá; hoặc mở thẳng một bookmark vào `/projects/<id>/present` trong trình duyệt
+mới. Lúc đó app **trông vẫn đăng nhập, vẫn cho làm việc, mà im lặng không lưu gì** — không cảnh
+báo, không dấu hiệu. Đó là hình dạng tệ nhất của một lỗi mất dữ liệu.
+
+### Bằng chứng phụ, tự cắn trong lúc đo việc khác
+Lượt đo bố cục Home đầu tiên trên cổng **mới** cho `hero = null` và số trống sai hẳn — vì
+**localStorage theo ORIGIN**, đổi cổng là mất `lastUserId`. Tức bộ đo của điều phối **vô tình tái
+hiện lại đúng con bug này** khi đang đo một thứ khác. Chạy lượt hai (sau khi Home đã ghi khoá) mới
+ra số thật. Một dấu hiệu nữa cho thấy nghi phạm nằm đúng chỗ.
+
+**Phép thử chốt đã giao lại lane** (đổi đúng MỘT bước): ghé `/` trước rồi mới vào Trình chiếu.
+Deck còn ⇒ mục 4 là **hiện vật của bộ đo** + rủi ro im-lặng-không-lưu ở trên vẫn phải sửa.
+Deck vẫn mất ⇒ **lỗi thật**, giả thuyết này sai, điều phối nhận về đào tiếp.
