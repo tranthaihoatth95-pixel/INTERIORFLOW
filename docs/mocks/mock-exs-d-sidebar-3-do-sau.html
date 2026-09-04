@@ -1,0 +1,128 @@
+<!-- @dsCard group="Experience System" title="EXS-D · Sidebar 3 độ sâu" -->
+<!--
+  EXS-D — SIDEBAR SYSTEM (deliverable D): Rail · Context Shelf · Work Panel cho Home/2D/3D/Present.
+  Ba độ sâu = BA CÂU HỎI, nấc to THÊM MỘT LỚP TIN (luật "ba nấc = ba công năng" đã chốt 16/08).
+  Nền code: RailDieuHuong (BE_RONG_NAC 28/240/320) + PanelFlank — board này là bản tiến hoá,
+  KHÔNG dựng nav thứ hai. Cửa nghiệm thu: che nấc to → nấc nhỏ vẫn đứng; nấc to có thứ nấc nhỏ KHÔNG THỂ có.
+-->
+<div class="exd-root">
+<style>
+  .exd-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --success:#46b876; --warning:#d9a34a;
+    background:var(--bg); color:var(--t2); padding:36px;
+    font:13px/1.5 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exd-root *{box-sizing:border-box}
+  .exd-h1{font-size:22px;font-weight:700;color:var(--t1);margin:0 0 4px}
+  .exd-sub{color:var(--t3);margin:0 0 22px}
+  .lane{display:grid;grid-template-columns:150px 90px 250px 1fr;gap:12px;margin-bottom:14px;align-items:stretch}
+  .lbl{font-size:11px;color:var(--t4);letter-spacing:.1em;text-transform:uppercase;font-weight:700;padding-top:10px}
+  .lbl b{display:block;color:var(--t1);font-size:13px;letter-spacing:0;text-transform:none;margin-bottom:2px}
+  .col{border:1px solid var(--border);border-radius:12px;background:var(--panel);padding:10px;font-size:11px;color:var(--t3);position:relative;overflow:hidden}
+  .col h6{margin:0 0 7px;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--t5);font-weight:700}
+  .ric{width:24px;height:24px;border-radius:8px;background:var(--card);border:1px solid var(--border);display:grid;place-items:center;margin:0 auto 7px;color:var(--t3);font-size:11px}
+  .ric.on{background:var(--accent-soft);border-color:var(--accent-ring);color:var(--t1)}
+  .gap{height:9px}
+  .row{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:8px;margin-bottom:3px}
+  .row.on{background:var(--accent-soft);color:var(--t1)}
+  .row .sq{width:13px;height:13px;border-radius:4px;background:var(--field);border:1px solid var(--border);flex:none}
+  .row .ct{margin-left:auto;color:var(--t5);font-size:10px}
+  .thumb{width:26px;height:19px;border-radius:4px;background:var(--field);border:1px solid var(--border);flex:none}
+  .pgroup{border:1px solid var(--border);border-radius:9px;padding:7px 9px;margin-bottom:7px;background:var(--card)}
+  .pgroup b{color:var(--t1);font-size:11px;display:block;margin-bottom:3px}
+  .kv{display:flex;justify-content:space-between;padding:2px 0;font-size:10.5px}
+  .kv i{font-style:normal;color:var(--t5)}
+  .kv em{font-style:normal;color:var(--t2)}
+  .tf{display:inline-block;width:7px;height:7px;border-radius:99px;margin-right:4px}
+  .note{font-size:11.5px;color:var(--t4);margin:2px 2px 26px}
+</style>
+
+  <div class="exd-h1">EXS-D · Sidebar 3 độ sâu — mỗi độ sâu trả lời MỘT câu hỏi khác</div>
+  <p class="exd-sub">RAIL “tôi đi đâu?” (52–56px) · SHELF “trong này có gì?” (220–280) · WORK PANEL “chỉnh sâu thế nào?” (320–440, resizable). Rail là default ở 2D/3D/Present — canvas là vua.</p>
+
+  <!-- 2D -->
+  <div class="lane">
+    <div class="lbl"><b>2D Kỹ thuật</b>shelf = nội dung chặng,<br>không phải nav hệ thống</div>
+    <div class="col" style="text-align:center"><h6>Rail</h6>
+      <span class="ric">⌂</span><span class="ric">🗀</span><div class="gap"></div>
+      <span class="ric on">2D</span><span class="ric">3D</span><span class="ric">▶</span><div class="gap"></div><span class="ric">◔</span>
+    </div>
+    <div class="col"><h6>Context shelf — browse · select</h6>
+      <div class="row on"><span class="sq"></span>Lớp — Tường<span class="ct">5</span></div>
+      <div class="row"><span class="sq"></span>Views / tờ giấy<span class="ct">2</span></div>
+      <div class="row"><span class="sq"></span>Ngữ cảnh vẽ (mode · tỉ lệ)</div>
+      <div class="row"><span class="sq"></span>Thư viện ký hiệu<span class="ct">54</span></div>
+      <div class="row"><span class="sq"></span>Review · bảng kiểm<span class="ct" style="color:var(--warning)">1</span></div>
+    </div>
+    <div class="col"><h6>Work panel — chỉnh sâu (chỉ hiện khi có chọn)</h6>
+      <div class="pgroup"><b>Tường W-01 · đang chọn</b><div class="kv"><i>Dày</i><em>200 mm <span class="tf" style="background:var(--success)"></span>measured</em></div><div class="kv"><i>Cao</i><em>2700 mm <span class="tf" style="background:var(--warning)"></span>inferred</em></div><div class="kv"><i>Vật liệu</i><em>Gạch block · matId ✓</em></div></div>
+      <div class="pgroup"><b>Where used · genealogy</b><div class="kv"><i>3D scene</i><em>1 khối đùn</em></div><div class="kv"><i>BOQ</i><em>dòng #12 · 18,4 m²</em></div><div class="kv"><i>Nguồn</i><em>bản vẽ nhập 12/08 → Go to source ↗</em></div></div>
+    </div>
+  </div>
+  <div class="note">Nấc panel mang thứ shelf KHÔNG THỂ có: số đo + cờ truth + where-used. Không phải chữ to hơn.</div>
+
+  <!-- 3D -->
+  <div class="lane">
+    <div class="lbl"><b>3D Thiết kế</b></div>
+    <div class="col" style="text-align:center"><h6>Rail</h6>
+      <span class="ric">⌂</span><span class="ric">🗀</span><div class="gap"></div>
+      <span class="ric">2D</span><span class="ric on">3D</span><span class="ric">▶</span><div class="gap"></div><span class="ric">◔</span>
+    </div>
+    <div class="col"><h6>Context shelf</h6>
+      <div class="row"><span class="sq"></span>Scene · tầng<span class="ct">2</span></div>
+      <div class="row on"><span class="sq"></span>Objects<span class="ct">34</span></div>
+      <div class="row"><span class="sq"></span>Materials<span class="ct">12</span></div>
+      <div class="row"><span class="sq"></span>Cameras · shot<span class="ct">4</span></div>
+      <div class="row"><span class="sq"></span>Library — mang đồ tới</div>
+    </div>
+    <div class="col"><h6>Work panel</h6>
+      <div class="pgroup"><b>Ghế Lincoln · instance</b><div class="kv"><i>Transform</i><em>x 2400 · y 800 · r 15°</em></div><div class="kv"><i>Vật liệu</i><em>Óc chó <span class="tf" style="background:var(--accent)"></span>verified</em></div><div class="kv"><i>Spec</i><em style="color:var(--warning)">thiếu — thêm từ Library</em></div></div>
+      <div class="pgroup"><b>BuildRecipe · non-destructive</b><div class="kv"><i>1 revolve chân</i><em>👁 bật</em></div><div class="kv"><i>2 mirror ×2</i><em>👁 bật</em></div><div class="kv"><i>＋ bước</i><em>Array · Bevel…</em></div></div>
+    </div>
+  </div>
+  <div class="note">BuildRecipe stack (đã có trong code) sống ở panel — đúng vai “create/stack” của trục phải.</div>
+
+  <!-- PRESENT -->
+  <div class="lane">
+    <div class="lbl"><b>Present</b></div>
+    <div class="col" style="text-align:center"><h6>Rail</h6>
+      <span class="ric">⌂</span><span class="ric">🗀</span><div class="gap"></div>
+      <span class="ric">2D</span><span class="ric">3D</span><span class="ric on">▶</span><div class="gap"></div><span class="ric">◔</span>
+    </div>
+    <div class="col"><h6>Context shelf</h6>
+      <div class="row"><span class="thumb"></span>Story · dàn ý<span class="ct">6 chương</span></div>
+      <div class="row on"><span class="thumb" style="border-color:var(--accent-ring)"></span>Slides<span class="ct">14</span></div>
+      <div class="row"><span class="thumb"></span>Assets · nguồn</div>
+      <div class="row"><span class="thumb"></span>Review<span class="ct" style="color:var(--warning)">2</span></div>
+      <div class="row"><span class="thumb"></span>Release · xuất</div>
+    </div>
+    <div class="col"><h6>Work panel</h6>
+      <div class="pgroup"><b>Slide 4 · Phối cảnh khách</b><div class="kv"><i>Nguồn render</i><em><span class="tf" style="border:1.5px solid var(--warning);background:transparent"></span>STALE — rev cũ R02</em></div><div class="kv"><i>Hành động</i><em>Cập nhật từ nguồn ↗ · giữ bản cũ</em></div></div>
+      <div class="pgroup"><b>Release readiness</b><div class="kv"><i>Review</i><em style="color:var(--warning)">2 chờ decision</em></div><div class="kv"><i>BOQ</i><em>specId đủ ✓</em></div><div class="kv"><i>Brand Kit</i><em>dự án ✓</em></div></div>
+    </div>
+  </div>
+  <div class="note">Panel Present đọc TRUTH xuyên chặng: slide biết render của mình stale — “đồng bộ = không tách ra từ đầu”.</div>
+
+  <!-- HOME -->
+  <div class="lane">
+    <div class="lbl"><b>Home</b>shelf mặc định MỞ<br>(Home là nơi duyệt)</div>
+    <div class="col" style="text-align:center"><h6>Rail</h6>
+      <span class="ric on">⌂</span><span class="ric">🗀</span><div class="gap"></div>
+      <span class="ric">2D</span><span class="ric">3D</span><span class="ric">▶</span><div class="gap"></div><span class="ric">◔</span>
+    </div>
+    <div class="col"><h6>Context shelf</h6>
+      <div class="row on"><span class="sq"></span>Dự án đang chạy<span class="ct">3</span></div>
+      <div class="row"><span class="sq"></span>Cần tôi xử<span class="ct" style="color:var(--warning)">2</span></div>
+      <div class="row"><span class="sq"></span>Gần đây</div>
+      <div class="row"><span class="sq"></span>Đã ghim ★</div>
+    </div>
+    <div class="col"><h6>Work panel (mở khi chọn 1 dự án)</h6>
+      <div class="pgroup"><b>Thảo Điền · tổng quan sống</b><div class="kv"><i>Chặng dở</i><em>3D · phối cảnh khách</em></div><div class="kv"><i>Ai đang ở đó</i><em>Hoà ● · Minh ○</em></div><div class="kv"><i>Mốc</i><em>gửi CĐT 22/08</em></div><div class="kv"><i>Review</i><em style="color:var(--warning)">1 chờ</em></div></div>
+    </div>
+  </div>
+  <div class="note">Không phải mục nào cũng xứng 3 nấc — Settings dừng ở 2 (không có gì để “duyệt nội dung”). Nhớ độ sâu theo MÁY, không auto-hide (luật cũ giữ).</div>
+</div>

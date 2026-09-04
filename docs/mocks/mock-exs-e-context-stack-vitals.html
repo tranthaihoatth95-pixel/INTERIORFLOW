@@ -1,0 +1,136 @@
+<!-- @dsCard group="Experience System" title="EXS-E · Context Stack + Vitals Aperture" -->
+<!--
+  EXS-E — deliverable E + F + K: Right-edge Context Intelligence Stack (5 lens trên CÙNG một
+  selection) · 3 độ sâu Peek/Inspect/Deep · Vitals Aperture V1/V2/V3 (3 phương án interaction để
+  Hoà SO BẰNG MẮT, không quyết bằng text) · Voice flow có visual companion + human confirm.
+  ⚠️ Aperture ở TOP EDGE là ĐỀ XUẤT MỚI — đè chốt 16/08 "Vitals neo theo ngữ cảnh". Hoà quyết.
+-->
+<div class="exe-root">
+<style>
+  .exe-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --success:#46b876; --warning:#d9a34a; --danger:#e5674f;
+    --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+    background:var(--bg); color:var(--t2); padding:36px;
+    font:13px/1.5 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exe-root *{box-sizing:border-box}
+  .h1{font-size:22px;font-weight:700;color:var(--t1);margin:0 0 4px}
+  .sub{color:var(--t3);margin:0 0 22px}
+  .sec{margin:30px 0 10px;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--t4);text-transform:uppercase}
+  .lensrow{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+  .lens{border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden}
+  .lens h5{margin:0;padding:7px 11px;font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--t4);border-bottom:1px solid var(--border);display:flex;gap:6px;align-items:center}
+  .lens h5 .d{width:6px;height:6px;border-radius:99px;background:var(--accent)}
+  .lens .bd{padding:10px 11px;font-size:11px;color:var(--t3);min-height:118px}
+  .kv{display:flex;justify-content:space-between;padding:2.5px 0}
+  .kv i{font-style:normal;color:var(--t5)}
+  .kv em{font-style:normal;color:var(--t2)}
+  .tf{display:inline-block;width:7px;height:7px;border-radius:99px;margin-right:4px}
+  .chip{display:inline-block;padding:2px 9px;border-radius:999px;border:1px solid var(--border);background:var(--card);font-size:10.5px;color:var(--t3);margin:2px 3px 0 0}
+  .depth3{display:grid;grid-template-columns:220px 300px 1fr;gap:12px;align-items:start}
+  .dp{border:1px solid var(--border);border-radius:12px;background:var(--panel);padding:11px;font-size:11px;color:var(--t3)}
+  .dp b{color:var(--t1);display:block;margin-bottom:5px;font-size:12px}
+  .sig{display:flex;align-items:center;gap:7px;padding:4px 0}
+  /* aperture strip */
+  .apdemo{border:1px solid var(--border-strong);border-radius:13px;background:var(--card);padding:0 0 12px;overflow:hidden;margin-bottom:12px}
+  .apdemo h5{margin:0;padding:7px 12px;font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--t4);background:var(--panel);border-bottom:1px solid var(--border)}
+  .topedge{height:34px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative}
+  .apc{display:flex;align-items:center;gap:7px;padding:4px 14px;border-radius:999px;background:var(--card);border:1px solid var(--border);font-size:11px;color:var(--t3)}
+  .apc .d{width:6px;height:6px;border-radius:99px}
+  .peek{width:340px;margin:10px auto 0;border-radius:12px;background:var(--card);border:1px solid var(--border-strong);box-shadow:var(--shadow-pop);padding:11px 13px;font-size:11.5px}
+  .peek .it{display:flex;gap:8px;align-items:center;padding:4px 0;color:var(--t2)}
+  .peek .cta{margin-top:7px}
+  .btn{display:inline-block;padding:4px 12px;border-radius:999px;font-size:11px;border:1px solid var(--border-strong);color:var(--t2);margin-right:6px}
+  .btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .voice{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:8px}
+  .vstep{border:1px solid var(--border);border-radius:10px;background:var(--panel);padding:9px 10px;font-size:10.5px;color:var(--t3);position:relative}
+  .vstep b{display:block;color:var(--t1);font-size:11px;margin-bottom:3px}
+  .vstep:after{content:"→";position:absolute;right:-11px;top:40%;color:var(--t5)}
+  .vstep:last-child:after{content:""}
+  .note{font-size:11.5px;color:var(--t4);margin-top:8px}
+</style>
+
+  <div class="h1">EXS-E · Right edge = Context Intelligence Stack · Vitals Aperture</div>
+  <p class="sub">Bên phải KHÔNG phải sidebar thứ hai — nó là <b style="color:var(--t1)">một entity nhìn qua nhiều góc nghề</b>. Vitals không phải chatbot — nó là lớp intelligence sống ở cạnh giao diện, <b style="color:var(--t1)">biết im lặng</b>.</p>
+
+  <div class="sec">① Context Lens — CÙNG một cái ghế, năm góc nhìn (bấm lens đổi góc, entity đứng yên)</div>
+  <div class="lensrow">
+    <div class="lens"><h5><span class="d"></span>Selection</h5><div class="bd">
+      <div class="kv"><i>Transform</i><em>x2400 · r15°</em></div>
+      <div class="kv"><i>Vật liệu</i><em>Óc chó</em></div>
+      <div class="kv"><i>Kích thước</i><em>W600 D580 H820</em></div>
+      <span class="chip">Duplicate</span><span class="chip">Replace</span></div></div>
+    <div class="lens"><h5><span class="d" style="background:var(--warning)"></span>Vitals</h5><div class="bd">
+      <div class="sig"><span class="tf" style="background:var(--warning)"></span>Spec NCC còn thiếu</div>
+      <div class="sig"><span class="tf" style="background:var(--warning)"></span>Kích thước đang <i>inferred</i></div>
+      <div class="sig"><span class="tf" style="background:var(--t5)"></span>Không cảnh báo khác — im lặng</div></div></div>
+    <div class="lens"><h5><span class="d" style="background:var(--t4)"></span>History</h5><div class="bd">
+      <div class="kv"><i>R03 ★</i><em>đổi vật liệu sồi→óc chó</em></div>
+      <div class="kv"><i>R02</i><em>client feedback</em></div>
+      <div class="kv"><i>Nguồn</i><em>.idfc kho studio ↗</em></div></div></div>
+    <div class="lens"><h5><span class="d" style="background:var(--danger)"></span>Review</h5><div class="bd">
+      <div class="sig">💬 “ghế này thấp quá?” — Minh</div>
+      <div class="kv"><i>Decision</i><em style="color:var(--warning)">đang chờ</em></div>
+      <span class="chip">Trả lời</span><span class="chip">Tạo task</span></div></div>
+    <div class="lens"><h5><span class="d" style="background:var(--success)"></span>Output</h5><div class="bd">
+      <div class="kv"><i>Where used</i><em>2 view · 1 slide</em></div>
+      <div class="kv"><i>BOQ</i><em>dòng #7 · 4 cái</em></div>
+      <span class="chip">Go to source ↗</span></div></div>
+  </div>
+
+  <div class="sec">② Ba độ sâu của stack — progressive disclosure</div>
+  <div class="depth3">
+    <div class="dp"><b>A · PEEK — 3–5 tín hiệu</b>
+      <div class="sig"><span class="tf" style="background:var(--success)"></span>Material ✓</div>
+      <div class="sig"><span class="tf" style="background:var(--warning)"></span>Spec missing</div>
+      <div class="sig"><span class="tf" style="background:var(--t4)"></span>2 usages</div>
+      <div class="sig"><span class="tf" style="background:var(--accent)"></span>Rev current</div>
+      <div class="sig"><span class="tf" style="background:var(--danger)"></span>1 review</div></div>
+    <div class="dp"><b>B · INSPECT — thuộc tính + quick action</b>
+      <div class="kv"><i>Vật liệu</i><em>Óc chó · matId ✓</em></div>
+      <div class="kv"><i>Spec</i><em style="color:var(--warning)">thiếu NCC</em></div>
+      <div class="kv"><i>Giá</i><em>trỏ ProductSpec (không chép)</em></div>
+      <span class="chip">＋ Spec từ Library</span><span class="chip">Comment</span></div>
+    <div class="dp"><b>C · DEEP — spec · provenance · genealogy · revision · where-used · BOQ impact</b>
+      <div class="kv"><i>Provenance</i><em>chụp từ ảnh 12/08 · <span class="tf" style="background:var(--warning)"></span>inferred → chờ verify</em></div>
+      <div class="kv"><i>Genealogy</i><em>kho .idfc → instance dự án (đè cao 450)</em></div>
+      <div class="kv"><i>Blast radius nếu đổi vật liệu</i><em>4 view · 2 slide · 1 dòng BOQ</em></div></div>
+  </div>
+
+  <div class="sec">③ Vitals Aperture — TOP EDGE · ba mức · BA PHƯƠNG ÁN ENGAGE để Hoà so</div>
+  <div class="apdemo"><h5>V1 · Ambient — cực nhỏ, không giành attention (hover có phản hồi nhẹ, vẫn discoverable)</h5>
+    <div class="topedge"><span class="apc"><span class="d" style="background:var(--warning)"></span><span class="d" style="background:var(--t5)"></span><span class="d" style="background:var(--t5)"></span></span></div>
+    <div class="note" style="padding:0 14px">Chỉ semantic dots + pulse rất nhẹ. KHÔNG số đếm đỏ kiểu notification. Không có gì đáng nói → chỉ một khe mờ.</div>
+  </div>
+  <div class="apdemo"><h5>V2 · Peek — hover/focus/click: mở xuống nhẹ, 1–3 insight, KHÔNG thành notification drawer</h5>
+    <div class="topedge" style="height:auto;padding:8px 0 14px;flex-direction:column">
+      <span class="apc" style="border-color:var(--accent-ring)"><span class="d" style="background:var(--warning)"></span>2 điều đáng chú ý</span>
+      <div class="peek">
+        <div class="it"><span class="tf" style="background:var(--warning)"></span>3 vật liệu chưa có spec — phòng khách</div>
+        <div class="it"><span class="tf" style="border:1.5px solid var(--danger);background:transparent"></span>Slide 4 dùng render của revision cũ</div>
+        <div class="cta"><span class="btn pri">Review</span><span class="btn">Hỏi Vitals</span><span class="btn">Để sau</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="three">
+    <div class="dp"><b>V3-a · DROPDOWN từ aperture</b>Mở EXPAND từ chính aperture, đẩy nhẹ canvas lùi (+3/RECEDE). Giữ spatial continuity mạnh nhất — intelligence “sống ở cạnh trên”.<div class="note">Hợp màn nghề: không che trục phải.</div></div>
+    <div class="dp"><b>V3-b · DOCK vào Context Stack phải</b>Engage nhảy về lens “Vitals” của right stack — một chỗ đọc intelligence duy nhất.<div class="note">Ít bề mặt nhất, nhưng mất liên hệ thị giác với aperture (TRANSFER phải vẽ đường đi).</div></div>
+    <div class="dp"><b>V3-c · FLOATING overlay giữa</b>Thẻ nổi +4, nền recede. Chứa insight sâu: impact · source · suggestion · voice · proposed actions.<div class="note">Mạnh cho phiên hỏi-đáp dài; rủi ro thành “chatbot hero” — phải giữ nó là THẺ, không phải trang.</div></div>
+  </div>
+
+  <div class="sec">④ Voice — input thật, có visual companion, KHÔNG silent mutation</div>
+  <div class="voice">
+    <div class="vstep"><b>Activate</b>giữ aperture · <kbd style="font:10px monospace;border:1px solid var(--border-strong);border-radius:4px;padding:0 4px">⌘J</kbd> · “Vitals ơi”</div>
+    <div class="vstep"><b>Listening</b>aperture nở nhẹ, sóng chạy TRONG khe — không orb</div>
+    <div class="vstep"><b>Transcript</b>“Cái ghế này đang dùng ở đâu?” — luôn thấy chữ</div>
+    <div class="vstep"><b>Interpretation</b>hiểu context sẵn: Project Thảo Điền · selection Ghế</div>
+    <div class="vstep"><b>Context answer</b>“2 view + 1 slide + BOQ #7” + nút Go to source</div>
+    <div class="vstep"><b>Confirm nếu mutation</b>“Tạo task?” → <span class="btn pri" style="padding:2px 8px">Tạo</span><span class="btn" style="padding:2px 8px">Thôi</span></div>
+  </div>
+  <div class="note">Voice chỉ NHANH hơn tay ở query + hands-busy — không giành quyền quyết. Mọi mutation dừng ở human confirm (luật 8 + [T5]).</div>
+</div>

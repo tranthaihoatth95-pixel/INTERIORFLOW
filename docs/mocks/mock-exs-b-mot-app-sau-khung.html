@@ -1,0 +1,167 @@
+<!-- @dsCard group="Experience System" title="EXS-B · Một app, sáu khung" -->
+<!--
+  EXS-B — SHELL CONTINUITY BOARD (deliverable B).
+  6 khung Home/Files/2D/3D/Review/Present đặt cạnh nhau — chỉ nhìn hình phải thấy "cùng một IF":
+  rail 3 đảo đứng yên · aperture mép trên · right stack · chỉ CENTER + spotlight đổi.
+  Hàng cuối: 2 khung lặp ở THEME SÁNG (token light :263 globals.css) chứng minh cùng DNA 2 theme.
+-->
+<div class="exb-root">
+<style>
+  .exb-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --success:#46b876; --warning:#d9a34a; --danger:#e5674f;
+    background:var(--bg); color:var(--t2); padding:36px;
+    font:13px/1.5 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exb-root *{box-sizing:border-box}
+  .exb-root .light{
+    --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb;
+    --border:#e3ded4; --border-strong:#cbc4b6;
+    --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+    --success:#107043; --warning:#9a6304; --danger:#c9341d;
+  }
+  .exb-h1{font-size:22px;font-weight:700;color:var(--t1);margin:0 0 4px}
+  .exb-sub{color:var(--t3);margin:0 0 24px}
+  .row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
+  .fr{border-radius:14px;overflow:hidden;border:1px solid var(--border-strong);background:var(--bg)}
+  .fr h4{margin:0;padding:7px 12px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--t4);background:var(--panel);border-bottom:1px solid var(--border)}
+  .sh{display:flex;height:172px;background:var(--bg)}
+  .rail{width:26px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:8px}
+  .isl{display:flex;flex-direction:column;gap:4px;padding:4px 3px;border-radius:7px;background:var(--card);border:1px solid var(--border)}
+  .ic{width:12px;height:12px;border-radius:4px;background:var(--t5)}
+  .ic.on{background:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .mid{flex:1;display:flex;flex-direction:column;min-width:0}
+  .ap{height:14px;display:flex;align-items:center;justify-content:center;gap:4px;border-bottom:1px solid var(--border);background:var(--panel)}
+  .ap i{width:16px;height:5px;border-radius:99px;background:var(--field);border:1px solid var(--border)}
+  .ap i.warn{background:var(--warning);width:5px}
+  .cv{flex:1;position:relative;margin:6px;border-radius:9px;border:1px solid var(--border);background:var(--card);overflow:hidden}
+  .cv .tag{position:absolute;left:8px;top:6px;font-size:9.5px;color:var(--t4);letter-spacing:.08em;text-transform:uppercase}
+  .cv .prim{position:absolute;inset:auto 8px 8px 8px;border-radius:7px;padding:5px 8px;font-size:10px;color:var(--t1);background:var(--accent-soft);border:1px solid var(--accent-ring)}
+  .stack{width:34px;border-left:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;gap:5px;padding:8px 5px}
+  .sg{height:12px;border-radius:5px;background:var(--card);border:1px solid var(--border)}
+  .sg.hot{border-color:var(--warning)}
+  /* ruột từng chặng — nét gợi, không chi tiết */
+  .g2d{position:absolute;inset:24px 12px 34px;background:
+    linear-gradient(var(--border) 1px,transparent 1px) 0 0/22px 22px,
+    linear-gradient(90deg,var(--border) 1px,transparent 1px) 0 0/22px 22px}
+  .wall{position:absolute;border:1.6px solid var(--t2)}
+  .g3d{position:absolute;inset:20px 10px 30px;background:radial-gradient(120% 90% at 50% 20%,#1d1d27 0,#101014 70%)}
+  .box3{position:absolute;width:44px;height:30px;border:1.4px solid var(--t3);transform:skewX(-18deg)}
+  .slide{position:absolute;border-radius:5px;background:var(--field);border:1px solid var(--border)}
+  .note{font-size:11.5px;color:var(--t3);margin:6px 2px 0}
+</style>
+
+  <div class="exb-h1">EXS-B · Một app, sáu khung</div>
+  <p class="exb-sub">Rail 3 đảo + Aperture mép trên + Context Stack phải: <b style="color:var(--t1)">đứng yên ở cả 6 ngữ cảnh</b>. Chỉ CENTER và spotlight đổi — user học điều hướng đúng một lần.</p>
+
+  <div class="row">
+    <!-- HOME -->
+    <div class="fr"><h4>Home · Personal Work OS</h4><div class="sh">
+      <div class="rail"><span class="isl"><span class="ic on"></span><span class="ic"></span><span class="ic"></span><span class="ic"></span></span><span class="isl"><span class="ic"></span><span class="ic"></span><span class="ic"></span></span><span class="isl" style="margin-top:auto"><span class="ic"></span></span></div>
+      <div class="mid"><div class="ap"><i></i></div>
+        <div class="cv"><span class="tag">Bento widgets</span>
+          <span class="slide" style="left:10px;top:24px;width:46%;height:52px;border-color:var(--accent-ring);background:var(--accent-soft)"></span>
+          <span class="slide" style="right:10px;top:24px;width:38%;height:24px"></span>
+          <span class="slide" style="right:10px;top:52px;width:38%;height:24px"></span>
+          <span class="slide" style="left:10px;top:82px;width:30%;height:28px"></span>
+          <span class="slide" style="left:calc(10px + 32%);top:82px;width:26%;height:28px"></span>
+          <div class="prim">PRIMARY · Resume — “Căn hộ Thảo Điền · dở 2 ngày”</div>
+        </div></div>
+      <div class="stack"><span class="sg hot"></span><span class="sg"></span><span class="sg"></span></div>
+    </div><div class="note">Hero = Resume. Secondary = Needs attention. AI không lấn Resume.</div></div>
+
+    <!-- FILES -->
+    <div class="fr"><h4>Files / Library</h4><div class="sh">
+      <div class="rail"><span class="isl"><span class="ic"></span><span class="ic"></span><span class="ic on"></span><span class="ic"></span></span><span class="isl"><span class="ic"></span><span class="ic"></span><span class="ic"></span></span><span class="isl" style="margin-top:auto"><span class="ic"></span></span></div>
+      <div class="mid"><div class="ap"><i></i></div>
+        <div class="cv"><span class="tag">Project sources</span>
+          <span class="slide" style="left:10px;top:24px;width:26%;height:34px"></span>
+          <span class="slide" style="left:calc(12px + 27%);top:24px;width:26%;height:34px;border-color:var(--accent-ring)"></span>
+          <span class="slide" style="left:calc(14px + 54%);top:24px;width:26%;height:34px"></span>
+          <span class="slide" style="left:10px;top:64px;width:26%;height:34px"></span>
+          <span class="slide" style="left:calc(12px + 27%);top:64px;width:26%;height:34px"></span>
+          <div class="prim">Understand → Promote → Reusable asset (dòng chảy của VẬT)</div>
+        </div></div>
+      <div class="stack"><span class="sg"></span><span class="sg hot"></span><span class="sg"></span></div>
+    </div><div class="note">Spotlight phụ = trạng thái hiểu/chưa hiểu của nguồn — không phải folder browser.</div></div>
+
+    <!-- 2D -->
+    <div class="fr"><h4>2D Kỹ thuật</h4><div class="sh">
+      <div class="rail"><span class="isl"><span class="ic"></span><span class="ic"></span><span class="ic"></span><span class="ic"></span></span><span class="isl"><span class="ic on"></span><span class="ic"></span><span class="ic"></span></span><span class="isl" style="margin-top:auto"><span class="ic"></span></span></div>
+      <div class="mid"><div class="ap"><i></i><i class="warn"></i></div>
+        <div class="cv"><span class="tag">Canvas — được bảo vệ</span><div class="g2d"></div>
+          <span class="wall" style="left:26px;top:40px;width:90px;height:52px"></span>
+          <span class="wall" style="left:70px;top:40px;width:1px;height:52px"></span>
+          <div class="prim" style="left:auto;right:8px;bottom:8px;width:auto">Tool: Tường · <b>W</b></div>
+        </div></div>
+      <div class="stack"><span class="sg"></span><span class="sg"></span><span class="sg"></span></div>
+    </div><div class="note">Aperture báo 1 việc (vàng) nhưng im — canvas là vua.</div></div>
+  </div>
+
+  <div class="row">
+    <!-- 3D -->
+    <div class="fr"><h4>3D Thiết kế</h4><div class="sh">
+      <div class="rail"><span class="isl"><span class="ic"></span><span class="ic"></span><span class="ic"></span><span class="ic"></span></span><span class="isl"><span class="ic"></span><span class="ic on"></span><span class="ic"></span></span><span class="isl" style="margin-top:auto"><span class="ic"></span></span></div>
+      <div class="mid"><div class="ap"><i></i></div>
+        <div class="cv"><span class="tag">Viewport</span><div class="g3d"></div>
+          <span class="box3" style="left:52px;top:56px;border-color:var(--accent)"></span>
+          <span class="box3" style="left:110px;top:70px;width:30px;height:20px"></span>
+          <div class="prim" style="left:auto;right:8px;width:auto">Selection: Ghế · vật liệu ✓ · spec ⚠</div>
+        </div></div>
+      <div class="stack"><span class="sg hot"></span><span class="sg"></span><span class="sg"></span></div>
+    </div><div class="note">Secondary = selection/material — stack phải thắp đúng lens.</div></div>
+
+    <!-- REVIEW -->
+    <div class="fr"><h4>Review / Decision</h4><div class="sh">
+      <div class="rail"><span class="isl"><span class="ic"></span><span class="ic"></span><span class="ic"></span><span class="ic on"></span></span><span class="isl"><span class="ic"></span><span class="ic"></span><span class="ic"></span></span><span class="isl" style="margin-top:auto"><span class="ic"></span></span></div>
+      <div class="mid"><div class="ap"><i></i></div>
+        <div class="cv"><span class="tag">Thứ đang được review = primary</span>
+          <span class="slide" style="left:10px;top:22px;right:52px;height:78px;border-color:var(--border-strong)"></span>
+          <span style="position:absolute;left:36%;top:44px;width:14px;height:14px;border-radius:99px;background:var(--warning);color:#151009;font-size:9px;display:grid;place-items:center;font-weight:700">1</span>
+          <div class="prim">Issue neo vào ĐÚNG vùng ảnh · Decision là nút, không phải chat</div>
+        </div></div>
+      <div class="stack"><span class="sg"></span><span class="sg"></span><span class="sg hot"></span></div>
+    </div><div class="note">Review là LỚP trên nội dung — không cướp spotlight của nội dung.</div></div>
+
+    <!-- PRESENT -->
+    <div class="fr"><h4>Present / Release</h4><div class="sh">
+      <div class="rail"><span class="isl"><span class="ic"></span><span class="ic"></span><span class="ic"></span><span class="ic"></span></span><span class="isl"><span class="ic"></span><span class="ic"></span><span class="ic on"></span></span><span class="isl" style="margin-top:auto"><span class="ic"></span></span></div>
+      <div class="mid"><div class="ap"><i></i><i class="warn"></i></div>
+        <div class="cv"><span class="tag">Story canvas</span>
+          <span class="slide" style="left:10px;top:24px;width:58%;height:64px;border-color:var(--accent-ring)"></span>
+          <span class="slide" style="right:10px;top:24px;width:24%;height:18px"></span>
+          <span class="slide" style="right:10px;top:46px;width:24%;height:18px"></span>
+          <span class="slide" style="right:10px;top:68px;width:24%;height:18px"></span>
+          <div class="prim">Aperture: “render slide 4 dựa revision cũ” — stale, nói trước khi Release</div>
+        </div></div>
+      <div class="stack"><span class="sg"></span><span class="sg hot"></span><span class="sg"></span></div>
+    </div><div class="note">Release đọc truth signal — không xuất mù.</div></div>
+  </div>
+
+  <div class="exb-h1" style="font-size:15px;margin-top:26px">Cùng DNA ở THEME SÁNG</div>
+  <div class="row light" style="margin-top:10px">
+    <div class="fr"><h4>Home · light</h4><div class="sh">
+      <div class="rail"><span class="isl"><span class="ic on"></span><span class="ic"></span><span class="ic"></span><span class="ic"></span></span><span class="isl"><span class="ic"></span><span class="ic"></span><span class="ic"></span></span><span class="isl" style="margin-top:auto"><span class="ic"></span></span></div>
+      <div class="mid"><div class="ap"><i></i></div>
+        <div class="cv"><span class="tag">Bento widgets</span>
+          <span class="slide" style="left:10px;top:24px;width:46%;height:52px;border-color:var(--accent-ring);background:var(--accent-soft)"></span>
+          <span class="slide" style="right:10px;top:24px;width:38%;height:24px"></span>
+          <span class="slide" style="right:10px;top:52px;width:38%;height:24px"></span>
+          <div class="prim">PRIMARY · Resume</div>
+        </div></div>
+      <div class="stack"><span class="sg hot"></span><span class="sg"></span><span class="sg"></span></div>
+    </div></div>
+    <div class="fr"><h4>2D · light</h4><div class="sh">
+      <div class="rail"><span class="isl"><span class="ic"></span><span class="ic"></span><span class="ic"></span><span class="ic"></span></span><span class="isl"><span class="ic on"></span><span class="ic"></span><span class="ic"></span></span><span class="isl" style="margin-top:auto"><span class="ic"></span></span></div>
+      <div class="mid"><div class="ap"><i></i></div>
+        <div class="cv"><span class="tag">Canvas</span><div class="g2d"></div>
+          <span class="wall" style="left:26px;top:40px;width:90px;height:52px"></span>
+        </div></div>
+      <div class="stack"><span class="sg"></span><span class="sg"></span><span class="sg"></span></div>
+    </div></div>
+    <div class="fr" style="border-style:dashed"><h4>Luật</h4><div style="padding:14px;font-size:12px;color:var(--t3)">Cùng token hệ (bảng light <code>globals.css:263</code>) — KHÔNG palette mới, KHÔNG đổi <code>--accent*</code>. Hai theme = hai giá trị của CÙNG vai trò màu.</div></div>
+  </div>
+</div>

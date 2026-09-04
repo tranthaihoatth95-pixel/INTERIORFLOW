@@ -1,0 +1,368 @@
+<!-- @dsCard group="Experience System" title="EXS-O · IDFC — bộ mẫu chuẩn 8 asset" -->
+<!--
+  EXS-O — QUALITY SAMPLE SET (phiếu §29): 8 asset × Plan/Elevation/3D/Material/Card, vẽ đúng
+  line-weight grammar EXS-N (primary 0.5-0.7 · visible 0.25-0.35 · secondary 0.18 · soft 0.13 ·
+  hidden dash · axis chain). ĐÍCH: Hoà chấm CAD LINE QUALITY · 3D REALISM · MATERIAL · CARD ·
+  CONSISTENCY — duyệt chuẩn rồi mới scale library. Mock = minh hoạ chuẩn; asset production sẽ
+  dựng từ geometry thật (54 block DXF + chuan-net + .idfc), không phải chép SVG này.
+-->
+<div class="exo-root">
+<style>
+  .exo-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --success:#46b876; --warning:#d9a34a;
+    background:var(--bg); color:var(--t2); padding:36px;
+    font:13px/1.5 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exo-root *{box-sizing:border-box}
+  .h1{font-size:22px;font-weight:700;color:var(--t1);margin:0 0 4px}
+  .sub{color:var(--t3);margin:0 0 18px;max-width:960px}
+  .hd{display:grid;grid-template-columns:150px repeat(3,1fr) 150px 168px;gap:10px;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--t5);padding:0 2px 6px}
+  .row{display:grid;grid-template-columns:150px repeat(3,1fr) 150px 168px;gap:10px;margin-bottom:12px;align-items:stretch}
+  .who{border:1px solid var(--border);border-radius:11px;background:var(--panel);padding:10px;font-size:10.5px;color:var(--t4)}
+  .who b{display:block;color:var(--t1);font-size:12px;margin-bottom:2px}
+  .cell{border:1px solid var(--border);border-radius:11px;background:var(--card);display:grid;place-items:center;min-height:118px;position:relative}
+  .cell svg{display:block}
+  .cell .cap{position:absolute;left:8px;bottom:5px;font-size:8.5px;color:var(--t5)}
+  /* CAD stroke grammar */
+  .p{stroke:#f5f5f7;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .v{stroke:#e9e9ec;stroke-width:1.35;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .s{stroke:#c9c9cf;stroke-width:.9;fill:none;stroke-linecap:round}
+  .m{stroke:#9e9ea8;stroke-width:.55;fill:none;stroke-linecap:round}
+  .hid{stroke:#9e9ea8;stroke-width:.9;fill:none;stroke-dasharray:5 3.5}
+  .ax{stroke:#6e6e78;stroke-width:.6;fill:none;stroke-dasharray:9 3 2 3}
+  .dim{stroke:#8b86c9;stroke-width:.6;fill:none}
+  .dimt{font:7.5px ui-monospace,monospace;fill:#8b86c9}
+  /* material + card */
+  .mats{display:flex;flex-direction:column;gap:7px;justify-content:center;padding:10px;width:100%}
+  .sw{display:flex;gap:8px;align-items:center;font-size:10px;color:var(--t3)}
+  .sw i{width:22px;height:22px;border-radius:99px;border:1px solid var(--border-strong);flex:none}
+  .lcard{width:100%;padding:9px;display:flex;flex-direction:column;gap:5px}
+  .lcard .th{height:58px;border-radius:8px;background:var(--field);border:1px solid var(--border);display:grid;place-items:center}
+  .lcard b{color:var(--t1);font-size:10.5px;font-weight:600}
+  .lcard small{color:var(--t4);font-size:9px}
+  .reps{display:flex;gap:3px}
+  .reps i{padding:1px 6px;border-radius:99px;border:1px solid var(--border-strong);font-style:normal;font-size:8px;color:var(--t3)}
+  .reps i.on{border-color:var(--accent-ring);color:var(--t1);background:var(--accent-soft)}
+</style>
+
+  <div class="h1">EXS-O · Bộ mẫu chuẩn — 8 asset, 5 mặt của CÙNG một vật</div>
+  <p class="sub">Chấm theo khuôn §30: <b style="color:var(--t1)">CAD · REALISM · MATERIAL · CARD · MORE/LESS DETAIL</b>. Mọi nét theo grammar EXS-N — không nét nào cùng weight với nét nào sai vai. Plan/elevation/3D cùng hình học. Duyệt chuẩn này xong mới scale.</p>
+
+  <div class="hd"><span></span><span>Plan · LOD 1</span><span>Elevation</span><span>3D preview</span><span>Material slots</span><span>Library card</span></div>
+
+  <!-- 1 · GHẾ ĂN -->
+  <div class="row">
+    <div class="who"><b>Ghế ăn gỗ</b>furniture · residential<br>W450 · D500 · H790 · SH450</div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <path class="p" d="M45 34 h60 a8 8 0 0 1 8 8 v44 a8 8 0 0 1 -8 8 h-60 a8 8 0 0 1 -8 -8 v-44 a8 8 0 0 1 8 -8z"/>
+      <path class="v" d="M45 34 h60 a8 8 0 0 1 8 8 v6 h-76 v-6 a8 8 0 0 1 8 -8z"/>
+      <path class="s" d="M46 56 h58 M46 78 h58"/>
+      <path class="ax" d="M75 22 v78 M28 61 h94"/>
+      <path class="dim" d="M37 100 h76"/><text class="dimt" x="66" y="98">450</text>
+    </svg><span class="cap">tựa = dải trên · nan mặt = secondary</span></div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <path class="p" d="M50 14 v52 M100 14 v52"/>
+      <path class="v" d="M50 14 q25 -5 50 0"/>
+      <path class="v" d="M46 60 h58 l-2 7 h-54 z"/>
+      <path class="s" d="M50 26 q25 -4 50 0 M50 38 q25 -4 50 0"/>
+      <path class="v" d="M49 67 l-4 34 M101 67 l4 34 M56 67 l-2 34 M94 67 l2 34"/>
+      <path class="s" d="M47 84 h56"/>
+      <path class="dim" d="M116 14 v87"/><text class="dimt" x="120" y="60">790</text>
+    </svg><span class="cap">thanh tựa cong · chân thuôn + giằng</span></div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <defs><linearGradient id="w1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d5a41"/><stop offset="1" stop-color="#403526"/></linearGradient></defs>
+      <ellipse cx="75" cy="100" rx="36" ry="5" fill="#000" opacity=".35"/>
+      <path d="M52 16 q23 -5 46 0 l-3 42 -40 0 z" fill="url(#w1)" stroke="#2a2a31" stroke-width=".6"/>
+      <path d="M50 58 l50 0 6 8 -62 0 z" fill="#5c4b36" stroke="#2a2a31" stroke-width=".6"/>
+      <path d="M46 66 l-4 34 M104 66 l4 34 M58 68 l-2 32 M92 68 l2 32" stroke="#4a3c2b" stroke-width="3.4" stroke-linecap="round"/>
+      <path d="M52 22 q23 -4 46 0 M52 34 q23 -4 46 0" stroke="#2f2619" stroke-width="1"/>
+    </svg><span class="cap">gỗ tiện thật — không low-poly</span></div>
+    <div class="cell"><div class="mats">
+      <span class="sw"><i style="background:linear-gradient(135deg,#6d5a41,#403526)"></i>Frame — sồi dầu</span>
+      <span class="sw"><i style="background:#403526"></i>Seat — sồi (liền frame)</span>
+      <span class="sw"><i style="border-style:dashed;background:transparent"></i>Đệm rời — slot trống</span>
+    </div></div>
+    <div class="cell"><div class="lcard">
+      <span class="th"><svg width="52" height="44" viewBox="0 0 150 112"><path class="p" d="M45 34 h60 a8 8 0 0 1 8 8 v44 a8 8 0 0 1 -8 8 h-60 a8 8 0 0 1 -8 -8 v-44 a8 8 0 0 1 8 -8z"/><path class="v" d="M45 34 h60 a8 8 0 0 1 8 8 v6 h-76 v-6 a8 8 0 0 1 8 -8z"/></svg></span>
+      <b>Ghế ăn Oslo</b><small>450 × 500 × 790</small>
+      <span class="reps"><i class="on">2D</i><i class="on">EL</i><i class="on">3D</i><i class="on">MAT</i><i>§</i></span>
+    </div></div>
+  </div>
+
+  <!-- 2 · SOFA -->
+  <div class="row">
+    <div class="who"><b>Sofa 3 chỗ</b>furniture · living<br>W2200 · D950 · H780 · SH420</div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <path class="p" d="M22 30 h106 a7 7 0 0 1 7 7 v44 a7 7 0 0 1 -7 7 h-106 a7 7 0 0 1 -7 -7 v-44 a7 7 0 0 1 7 -7z"/>
+      <path class="v" d="M22 30 h106 a7 7 0 0 1 7 7 v8 h-120 v-8 a7 7 0 0 1 7 -7z"/>
+      <path class="v" d="M15 45 h14 v43 h-14 M135 45 h-14 v43 h14"/>
+      <path class="s" d="M29 45 v43 M63.5 45 v43 M98 45 v43 M121 45 v43"/>
+      <path class="m" d="M33 66 q13 4 26 0 M67 66 q13 4 26 0 M100 66 q9 3 18 0"/>
+      <path class="ax" d="M75 20 v76"/>
+      <path class="dim" d="M15 102 h120"/><text class="dimt" x="66" y="100">2200</text>
+    </svg><span class="cap">tay + 3 khoang nệm + đường may soft</span></div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <path class="p" d="M18 44 h114 v40 a5 5 0 0 1 -5 5 h-104 a5 5 0 0 1 -5 -5 z"/>
+      <path class="v" d="M18 44 v-14 a6 6 0 0 1 6 -6 h8 a6 6 0 0 1 6 6 v14 M132 44 v-14 a6 6 0 0 0 -6 -6 h-8 a6 6 0 0 0 -6 6 v14"/>
+      <path class="v" d="M38 44 q18 -12 37 -12 q19 0 37 12"/>
+      <path class="s" d="M38 62 h74 M63 44 v18 M87 44 v18"/>
+      <path class="v" d="M26 89 v11 M124 89 v11"/>
+      <path class="m" d="M42 52 q12 3 21 0 M67 52 q12 3 20 0 M91 52 q11 3 19 0"/>
+      <path class="dim" d="M138 30 v70"/><text class="dimt" x="128" y="26">780</text>
+    </svg><span class="cap">gối tựa cong · seat 420 · chân thấp</span></div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <defs><linearGradient id="f2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b5f66"/><stop offset="1" stop-color="#33363c"/></linearGradient></defs>
+      <ellipse cx="75" cy="101" rx="55" ry="6" fill="#000" opacity=".35"/>
+      <path d="M20 46 q0 -22 12 -22 l86 0 q12 0 12 22 l0 38 q0 8 -9 8 l-92 0 q-9 0 -9 -8 z" fill="url(#f2)" stroke="#22242a" stroke-width=".6"/>
+      <path d="M32 56 q21 10 43 10 q22 0 43 -10 l0 24 q0 6 -7 6 l-72 0 q-7 0 -7 -6 z" fill="#41454c" stroke="#26282e" stroke-width=".7"/>
+      <path d="M63 30 l0 60 M97 32 l0 58" stroke="#2b2e34" stroke-width="1"/>
+      <path d="M30 92 l-2 9 M120 92 l2 9" stroke="#1d1f23" stroke-width="3" stroke-linecap="round"/>
+    </svg><span class="cap">nệm có độ phồng — silhouette thật</span></div>
+    <div class="cell"><div class="mats">
+      <span class="sw"><i style="background:linear-gradient(135deg,#5b5f66,#33363c)"></i>Upholstery — bouclé xám</span>
+      <span class="sw"><i style="background:#2a2118"></i>Frame — plywood + gỗ</span>
+      <span class="sw"><i style="background:linear-gradient(135deg,#8a8d92,#5c5f64)"></i>Leg — thép sơn tĩnh điện</span>
+    </div></div>
+    <div class="cell"><div class="lcard">
+      <span class="th"><svg width="66" height="44" viewBox="0 0 150 112"><path class="p" d="M22 30 h106 a7 7 0 0 1 7 7 v44 a7 7 0 0 1 -7 7 h-106 a7 7 0 0 1 -7 -7 v-44 a7 7 0 0 1 7 -7z"/><path class="v" d="M15 45 h14 v43 h-14 M135 45 h-14 v43 h14 M22 30 h106 a7 7 0 0 1 7 7 v8 h-120 v-8 a7 7 0 0 1 7 -7z"/><path class="s" d="M29 45 v43 M63.5 45 v43 M98 45 v43"/></svg></span>
+      <b>Sofa Nara 3 chỗ</b><small>2200 × 950 × 780</small>
+      <span class="reps"><i class="on">2D</i><i class="on">EL</i><i class="on">3D</i><i class="on">MAT</i><i class="on">§</i></span>
+    </div></div>
+  </div>
+
+  <!-- 3 · BÀN ĂN TRÒN -->
+  <div class="row">
+    <div class="who"><b>Bàn ăn tròn</b>furniture · dining<br>Ø1200 · H740</div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <circle class="p" cx="75" cy="56" r="42"/>
+      <circle class="s" cx="75" cy="56" r="12"/>
+      <circle class="hid" cx="75" cy="56" r="26"/>
+      <path class="ax" d="M75 6 v100 M25 56 h100"/>
+      <path class="dim" d="M33 104 h84"/><text class="dimt" x="68" y="102">Ø1200</text>
+    </svg><span class="cap">mặt · trụ · vành chân (hidden)</span></div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <path class="p" d="M25 34 h100 v7 h-100 z"/>
+      <path class="v" d="M68 41 l-4 46 h22 l-4 -46"/>
+      <path class="v" d="M52 96 a23 6 0 0 1 46 0 l0 3 a23 6 0 0 1 -46 0 z"/>
+      <path class="m" d="M28 37.5 h94"/>
+      <path class="ax" d="M75 26 v80"/>
+      <path class="dim" d="M132 34 v65"/><text class="dimt" x="124" y="30">740</text>
+    </svg><span class="cap">mặt 40mm · trụ thuôn · đế đĩa</span></div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <defs><radialGradient id="t3" cx=".4" cy=".3" r="1"><stop offset="0" stop-color="#7a6749"/><stop offset="1" stop-color="#453824"/></radialGradient></defs>
+      <ellipse cx="75" cy="99" rx="34" ry="5" fill="#000" opacity=".35"/>
+      <ellipse cx="75" cy="34" rx="48" ry="13" fill="url(#t3)" stroke="#2a2a31" stroke-width=".6"/>
+      <path d="M27 34 a48 13 0 0 0 96 0 l0 5 a48 13 0 0 1 -96 0 z" fill="#332a1b"/>
+      <path d="M69 51 l-4 40 h20 l-4 -40 z" fill="#3d3220"/>
+      <ellipse cx="75" cy="94" rx="22" ry="5.5" fill="#453824" stroke="#241d12" stroke-width=".6"/>
+    </svg><span class="cap">mặt vân gỗ · trụ tiện</span></div>
+    <div class="cell"><div class="mats">
+      <span class="sw"><i style="background:radial-gradient(circle at 35% 30%,#7a6749,#453824)"></i>Top — óc chó veneer</span>
+      <span class="sw"><i style="background:#3d3220"></i>Base — gỗ tiện nguyên khối</span>
+      <span class="sw"><i style="border-style:dashed;background:transparent"></i>Top đá — variant</span>
+    </div></div>
+    <div class="cell"><div class="lcard">
+      <span class="th"><svg width="46" height="44" viewBox="0 0 150 112"><circle class="p" cx="75" cy="56" r="42"/><circle class="s" cx="75" cy="56" r="12"/><path class="ax" d="M75 10 v92 M29 56 h92"/></svg></span>
+      <b>Bàn ăn Đà 12</b><small>Ø1200 × 740</small>
+      <span class="reps"><i class="on">2D</i><i class="on">EL</i><i class="on">3D</i><i class="on">MAT</i><i>§</i></span>
+    </div></div>
+  </div>
+
+  <!-- 4 · DAYBED NGOÀI TRỜI -->
+  <div class="row">
+    <div class="who"><b>Daybed ngoài trời</b>hospitality · resort/pool<br>W2000 · D1500 · H320(+tựa)</div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <rect class="p" x="20" y="22" width="110" height="70" rx="10"/>
+      <rect class="v" x="27" y="29" width="96" height="56" rx="6"/>
+      <path class="m" d="M20 32 q6 -4 10 -8 M20 44 q10 -6 18 -20 M20 56 q14 -8 26 -32 M130 32 q-6 -4 -10 -8 M130 44 q-10 -6 -18 -20 M130 56 q-14 -8 -26 -32"/>
+      <path class="s" d="M34 36 h36 a5 5 0 0 1 5 5 v10 h-46 v-10 a5 5 0 0 1 5 -5z M80 36 h36 a5 5 0 0 1 5 5 v10 h-46 v-10 a5 5 0 0 1 5 -5z"/>
+      <path class="ax" d="M75 12 v92"/>
+      <path class="dim" d="M20 104 h110"/><text class="dimt" x="63" y="102">2000</text>
+    </svg><span class="cap">khung mây đan (soft, tiết chế) + nệm + 2 gối</span></div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <path class="p" d="M20 66 h110 v14 a4 4 0 0 1 -4 4 h-102 a4 4 0 0 1 -4 -4 z"/>
+      <path class="v" d="M20 66 v-8 q0 -5 5 -5 h100 q5 0 5 5 v8"/>
+      <path class="v" d="M118 53 q14 -2 14 -18 l-6 0 q0 12 -10 13"/>
+      <path class="m" d="M24 60 h102 M26 72 q24 6 49 6 q25 0 49 -6"/>
+      <path class="v" d="M28 84 v14 M122 84 v14"/>
+      <path class="s" d="M36 53 h30 a4 4 0 0 1 4 4 v9 M70 53 h30 a4 4 0 0 1 4 4 v9"/>
+    </svg><span class="cap">nệm dày · tựa mây cuộn · chân thấp</span></div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <defs><linearGradient id="d4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8e2d4"/><stop offset="1" stop-color="#bdb5a1"/></linearGradient></defs>
+      <ellipse cx="75" cy="100" rx="52" ry="5.5" fill="#000" opacity=".35"/>
+      <path d="M20 68 q0 -8 8 -8 h94 q8 0 8 8 v14 q0 6 -7 6 h-96 q-7 0 -7 -6 z" fill="#8a7354" stroke="#4c3f2c" stroke-width=".7"/>
+      <path d="M118 60 q16 -3 15 -22 l-7 1 q1 13 -10 15" fill="#8a7354" stroke="#4c3f2c" stroke-width=".7"/>
+      <path d="M26 60 q0 -9 9 -9 h80 q9 0 9 9 l0 4 h-98 z" fill="url(#d4)" stroke="#8f8875" stroke-width=".6"/>
+      <path d="M24 66 h102 M28 74 h94" stroke="#6b593f" stroke-width=".8" opacity=".6"/>
+      <path d="M32 88 l-2 11 M118 88 l2 11" stroke="#3f3423" stroke-width="3" stroke-linecap="round"/>
+    </svg><span class="cap">mây tự nhiên + nệm QD vải outdoor</span></div>
+    <div class="cell"><div class="mats">
+      <span class="sw"><i style="background:repeating-linear-gradient(45deg,#8a7354 0 3px,#756144 3px 6px)"></i>Frame — mây đan outdoor</span>
+      <span class="sw"><i style="background:linear-gradient(180deg,#e8e2d4,#bdb5a1)"></i>Cushion — vải QD kem</span>
+      <span class="sw"><i style="background:#3f3423"></i>Leg — teak</span>
+    </div></div>
+    <div class="cell"><div class="lcard">
+      <span class="th"><svg width="60" height="44" viewBox="0 0 150 112"><rect class="p" x="20" y="22" width="110" height="70" rx="10"/><rect class="v" x="27" y="29" width="96" height="56" rx="6"/><path class="s" d="M34 36 h36 a5 5 0 0 1 5 5 v10 h-46 v-10 a5 5 0 0 1 5 -5z M80 36 h36 a5 5 0 0 1 5 5 v10 h-46 v-10 a5 5 0 0 1 5 -5z"/></svg></span>
+      <b>Daybed Sả Đông</b><small>2000 × 1500 × 320</small>
+      <span class="reps"><i class="on">2D</i><i class="on">EL</i><i class="on">3D</i><i class="on">MAT</i><i>§</i></span>
+    </div></div>
+  </div>
+
+  <!-- 5 · CÂY KÈ -->
+  <div class="row">
+    <div class="who"><b>Kè cảnh (areca)</b>planting · indoor<br>H1800 · chậu Ø400</div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <circle class="hid" cx="75" cy="56" r="44"/>
+      <circle class="v" cx="75" cy="56" r="4"/>
+      <path class="s" d="M75 56 q-20 -8 -38 -26 M75 56 q4 -22 20 -40 M75 56 q22 -6 42 -18 M75 56 q18 12 36 32 M75 56 q-4 22 -16 40 M75 56 q-24 6 -44 20 M75 56 q-14 -18 -14 -42 M75 56 q26 4 34 8"/>
+      <path class="m" d="M60 40 l-4 -2 M55 33 l-5 -1 M88 30 l2 -5 M94 42 l5 -3 M96 70 l6 2 M66 84 l-3 5 M52 68 l-6 2"/>
+      <path class="ax" d="M75 8 v96"/>
+    </svg><span class="cap">tán = organic CÓ KIỂM SOÁT — cấm blob</span></div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <path class="v" d="M62 98 h26 l-4 -22 h-18 z"/>
+      <path class="s" d="M64 82 q11 4 22 0"/>
+      <path class="v" d="M75 76 q-2 -26 -14 -44 M75 76 q0 -30 6 -50 M75 76 q6 -24 20 -38"/>
+      <path class="s" d="M61 32 q-12 -8 -24 -6 M61 32 q-8 -12 -20 -16 M81 26 q-2 -14 6 -24 M81 26 q8 -10 20 -12 M95 38 q12 -8 26 -6 M95 38 q10 -2 22 6"/>
+      <path class="m" d="M50 29 l-3 -3 M45 24 l-3 -2 M85 14 l1 -4 M92 17 l3 -3 M106 35 l4 -2 M112 40 l4 0"/>
+      <path class="dim" d="M134 8 v90"/><text class="dimt" x="137" y="56">1800</text>
+    </svg><span class="cap">thân + tàu lá cong, lá chét chấm phá</span></div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <defs><linearGradient id="g5" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d7a4e"/><stop offset="1" stop-color="#395030"/></linearGradient></defs>
+      <ellipse cx="75" cy="102" rx="26" ry="4" fill="#000" opacity=".35"/>
+      <path d="M63 100 h24 l-3 -20 h-18 z" fill="#6e5b45" stroke="#41352a" stroke-width=".6"/>
+      <path d="M75 80 q-3 -24 -16 -42 q14 4 18 20 q0 -26 8 -44 q6 20 0 42 q8 -20 22 -28 q-6 22 -20 32 q16 -8 28 -6 q-12 14 -28 14 q-16 2 -12 12z" fill="url(#g5)" stroke="#2c3d25" stroke-width=".7"/>
+      <path d="M52 40 q-10 -6 -20 -4 M98 32 q10 -8 22 -8" stroke="#46603a" stroke-width="1.6" fill="none"/>
+    </svg><span class="cap">đọc ra species — không billboard</span></div>
+    <div class="cell"><div class="mats">
+      <span class="sw"><i style="background:linear-gradient(180deg,#5d7a4e,#395030)"></i>Leaf — areca</span>
+      <span class="sw"><i style="background:#7d6a4a"></i>Stem</span>
+      <span class="sw"><i style="background:#6e5b45"></i>Pot — terracotta</span>
+    </div></div>
+    <div class="cell"><div class="lcard">
+      <span class="th"><svg width="46" height="44" viewBox="0 0 150 112"><circle class="hid" cx="75" cy="56" r="44"/><circle class="v" cx="75" cy="56" r="4"/><path class="s" d="M75 56 q-20 -8 -38 -26 M75 56 q4 -22 20 -40 M75 56 q22 -6 42 -18 M75 56 q18 12 36 32 M75 56 q-4 22 -16 40 M75 56 q-24 6 -44 20"/></svg></span>
+      <b>Kè cảnh 1m8</b><small>H1800 · Ø tán 1100</small>
+      <span class="reps"><i class="on">2D</i><i class="on">EL</i><i class="on">3D</i><i class="on">MAT</i><i>LOD×3</i></span>
+    </div></div>
+  </div>
+
+  <!-- 6 · ĐÈN THẢ -->
+  <div class="row">
+    <div class="who"><b>Đèn thả đồng</b>lighting · decorative<br>Ø450 · H380 · thả 1200</div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <circle class="p" cx="75" cy="56" r="34"/>
+      <circle class="s" cx="75" cy="56" r="9"/>
+      <circle class="v" cx="75" cy="56" r="2.4"/>
+      <path class="ax" d="M75 12 v88 M31 56 h88"/>
+      <path class="dim" d="M41 100 h68"/><text class="dimt" x="66" y="98">Ø450</text>
+    </svg><span class="cap">mounting center = anchor</span></div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <path class="p" d="M20 12 h110"/>
+      <path class="v" d="M75 12 v34"/>
+      <circle class="s" cx="75" cy="18" r="3"/>
+      <path class="p" d="M43 74 q0 -28 32 -28 q32 0 32 28 z"/>
+      <path class="s" d="M49 68 q26 -8 52 0"/>
+      <path class="m" d="M75 74 v6 a4 4 0 0 0 4 -4"/>
+      <path class="dim" d="M134 12 v62"/><text class="dimt" x="137" y="46">1580</text>
+    </svg><span class="cap">trần · dây · chao dome · bóng hint</span></div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <defs><linearGradient id="b6" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c79a63"/><stop offset=".55" stop-color="#8a6437"/><stop offset="1" stop-color="#5c421f"/></linearGradient></defs>
+      <path d="M75 8 v36" stroke="#3a3a41" stroke-width="1.4"/>
+      <path d="M41 78 q0 -32 34 -32 q34 0 34 32 z" fill="url(#b6)" stroke="#42311a" stroke-width=".6"/>
+      <ellipse cx="75" cy="78" rx="34" ry="5" fill="#2a1f10"/>
+      <ellipse cx="75" cy="78" rx="10" ry="2.6" fill="#f2d9a0" opacity=".9"/>
+      <ellipse cx="63" cy="56" rx="9" ry="14" fill="#fff" opacity=".14" transform="rotate(-18 63 56)"/>
+    </svg><span class="cap">đồng xước — highlight thật</span></div>
+    <div class="cell"><div class="mats">
+      <span class="sw"><i style="background:linear-gradient(135deg,#c79a63,#5c421f)"></i>Shade — đồng xước</span>
+      <span class="sw"><i style="background:#efe0b8"></i>Inner — sơn trắng ngà</span>
+      <span class="sw"><i style="background:#3a3a41"></i>Cord — dệt đen</span>
+    </div></div>
+    <div class="cell"><div class="lcard">
+      <span class="th"><svg width="46" height="44" viewBox="0 0 150 112"><path class="p" d="M43 74 q0 -28 32 -28 q32 0 32 28 z"/><path class="v" d="M75 20 v26"/><path class="s" d="M49 68 q26 -8 52 0"/></svg></span>
+      <b>Đèn thả Nón Đồng</b><small>Ø450 · thả 1200 · E27</small>
+      <span class="reps"><i class="on">2D</i><i class="on">EL</i><i class="on">3D</i><i class="on">MAT</i><i>IES?</i></span>
+    </div></div>
+  </div>
+
+  <!-- 7 · XE SEDAN -->
+  <div class="row">
+    <div class="who"><b>Sedan (entourage)</b>vehicle · parking/drop-off<br>4900 × 1850</div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <path class="p" d="M22 40 q0 -8 10 -9 q40 -5 86 0 q10 1 10 9 l0 32 q0 8 -10 9 q-46 5 -86 0 q-10 -1 -10 -9 z"/>
+      <path class="v" d="M46 38 q30 -3 62 0 l6 10 -74 0 z M46 74 q30 3 62 0 l6 -10 -74 0 z" transform="translate(0 0)"/>
+      <path class="s" d="M52 48 h48 M52 64 h48"/>
+      <rect class="v" x="30" y="30" width="16" height="7" rx="3"/><rect class="v" x="104" y="30" width="16" height="7" rx="3"/>
+      <rect class="v" x="30" y="75" width="16" height="7" rx="3"/><rect class="v" x="104" y="75" width="16" height="7" rx="3"/>
+      <path class="m" d="M27 44 l-5 -3 M27 68 l-5 3"/>
+      <path class="ax" d="M14 56 h122"/>
+      <path class="dim" d="M22 100 h106"/><text class="dimt" x="63" y="98">4900</text>
+    </svg><span class="cap">cabin kính · trục bánh · gương — không capsule</span></div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <path class="p" d="M16 74 q0 -10 12 -12 l10 -2 q10 -16 30 -16 l22 0 q18 0 30 14 l14 3 q8 2 8 11 l0 6 q0 4 -4 4 l-6 0"/>
+      <path class="p" d="M118 82 h-56 M38 82 h-18 q-4 0 -4 -4 z"/>
+      <path class="v" d="M42 60 q9 -13 26 -13 l10 0 0 13 z M82 47 l16 0 q10 0 18 12 l-34 1 z"/>
+      <circle class="p" cx="48" cy="82" r="11"/><circle class="s" cx="48" cy="82" r="5.5"/>
+      <circle class="p" cx="106" cy="82" r="11"/><circle class="s" cx="106" cy="82" r="5.5"/>
+      <path class="s" d="M78 47 v27 M20 68 h10"/>
+      <path class="m" d="M118 66 l10 2"/>
+    </svg><span class="cap">profile thật: nắp ca-pô · mui · cốp · vòm bánh</span></div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <defs><linearGradient id="c7" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7f858d"/><stop offset="1" stop-color="#41454c"/></linearGradient></defs>
+      <ellipse cx="75" cy="96" rx="56" ry="6" fill="#000" opacity=".38"/>
+      <path d="M18 76 q0 -10 12 -13 l10 -2 q11 -16 30 -16 l22 0 q18 0 30 14 l13 3 q9 3 9 12 l0 6 q0 5 -5 5 l-121 0 q-5 0 -5 -5 z" fill="url(#c7)" stroke="#26282d" stroke-width=".6"/>
+      <path d="M44 61 q10 -12 26 -12 l9 0 0 12 z M81 49 l15 0 q10 0 17 11 l-32 1 z" fill="#161b22" stroke="#0e1116" stroke-width=".5"/>
+      <circle cx="48" cy="85" r="11" fill="#14161a"/><circle cx="48" cy="85" r="5" fill="#3a3f46"/>
+      <circle cx="106" cy="85" r="11" fill="#14161a"/><circle cx="106" cy="85" r="5" fill="#3a3f46"/>
+      <ellipse cx="52" cy="52" rx="16" ry="5" fill="#fff" opacity=".1" transform="rotate(-12 52 52)"/>
+    </svg><span class="cap">tách body/kính/bánh — đủ, không automotive-viz</span></div>
+    <div class="cell"><div class="mats">
+      <span class="sw"><i style="background:linear-gradient(180deg,#7f858d,#41454c)"></i>Body — ghi thép</span>
+      <span class="sw"><i style="background:#161b22"></i>Glass — smoke</span>
+      <span class="sw"><i style="background:#14161a"></i>Tyre + trim</span>
+    </div></div>
+    <div class="cell"><div class="lcard">
+      <span class="th"><svg width="60" height="44" viewBox="0 0 150 112"><path class="p" d="M22 40 q0 -8 10 -9 q40 -5 86 0 q10 1 10 9 l0 32 q0 8 -10 9 q-46 5 -86 0 q-10 -1 -10 -9 z"/><path class="v" d="M46 38 q30 -3 62 0 l6 10 -74 0 z"/><rect class="v" x="30" y="30" width="16" height="7" rx="3"/><rect class="v" x="104" y="75" width="16" height="7" rx="3"/></svg></span>
+      <b>Sedan D-class</b><small>4900 × 1850 · đỗ 90°/45°</small>
+      <span class="reps"><i class="on">2D</i><i class="on">EL</i><i class="on">3D</i><i>MAT</i><i>proxy</i></span>
+    </div></div>
+  </div>
+
+  <!-- 8 · BÌNH GỐM -->
+  <div class="row">
+    <div class="who"><b>Bình gốm decor</b>decor · styling/hotel<br>Ø260 · H420</div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <circle class="p" cx="75" cy="56" r="26"/>
+      <circle class="s" cx="75" cy="56" r="9"/>
+      <path class="ax" d="M75 22 v68 M41 56 h68"/>
+    </svg><span class="cap">plan = 2 vòng, đủ — không vẽ thừa</span></div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <path class="p" d="M68 16 h14 M68 16 q-2 10 -8 16 q-14 14 -14 34 q0 30 29 30 q29 0 29 -30 q0 -20 -14 -34 q-6 -6 -8 -16"/>
+      <path class="s" d="M50 62 q25 8 50 0"/>
+      <path class="m" d="M52 76 q23 7 46 0"/>
+      <path class="ax" d="M75 10 v92"/>
+      <path class="dim" d="M120 16 v80"/><text class="dimt" x="123" y="58">420</text>
+    </svg><span class="cap">profile cổ–vai–bụng đúng gốm</span></div>
+    <div class="cell"><svg width="150" height="112" viewBox="0 0 150 112">
+      <defs><radialGradient id="v8" cx=".38" cy=".3" r="1"><stop offset="0" stop-color="#b9aa93"/><stop offset="1" stop-color="#6e614e"/></radialGradient></defs>
+      <ellipse cx="75" cy="99" rx="24" ry="4" fill="#000" opacity=".35"/>
+      <path d="M68 16 h14 q-2 10 8 18 q13 12 13 32 q0 30 -28 30 q-28 0 -28 -30 q0 -20 13 -32 q10 -8 8 -18z" fill="url(#v8)" stroke="#4a4136" stroke-width=".5"/>
+      <ellipse cx="64" cy="46" rx="7" ry="16" fill="#fff" opacity=".12" transform="rotate(-14 64 46)"/>
+      <path d="M50 66 q25 9 50 0" stroke="#57503f" stroke-width=".8" fill="none" opacity=".7"/>
+    </svg><span class="cap">men mộc, highlight lệch</span></div>
+    <div class="cell"><div class="mats">
+      <span class="sw"><i style="background:radial-gradient(circle at 35% 30%,#b9aa93,#6e614e)"></i>Body — gốm men mộc</span>
+      <span class="sw"><i style="border-style:dashed;background:transparent"></i>Variant — men đen</span>
+    </div></div>
+    <div class="cell"><div class="lcard">
+      <span class="th"><svg width="40" height="44" viewBox="0 0 150 112"><path class="p" d="M68 16 h14 M68 16 q-2 10 -8 16 q-14 14 -14 34 q0 30 29 30 q29 0 29 -30 q0 -20 -14 -34 q-6 -6 -8 -16"/></svg></span>
+      <b>Bình Thổ 42</b><small>Ø260 × 420</small>
+      <span class="reps"><i class="on">2D</i><i class="on">EL</i><i class="on">3D</i><i class="on">MAT</i></span>
+    </div></div>
+  </div>
+
+  <p style="font-size:11px;color:var(--t4);margin-top:4px">Khuôn chấm cho Hoà, từng hàng: <b style="color:var(--t2)">CAD: · REALISM: · MATERIAL: · CARD: · MORE DETAIL: · LESS DETAIL:</b> — duyệt chuẩn xong mới scale sang 9 họ asset (§9 phiếu).</p>
+</div>

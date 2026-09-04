@@ -1,0 +1,504 @@
+<!-- @dsCard group="Experience System" title="EXS-S · Cấu kiện & lắp ghép" -->
+<!--
+  EXS-S — PART-BASED ASSEMBLY (Hoà chốt 20/08): vẽ TỪNG CẤU KIỆN rời, khai định nghĩa, khai quan hệ
+  (giống nhau thì vẽ một rồi gương/lặp), mỗi cấu kiện vẽ theo đúng hình chiếu của chính nó, rồi ghép.
+  Neo vào cái đã có: BuildRecipe (mirror · arrayLinear · arrayRadial đã có evaluator) + PartLock +
+  mirror-completion. Cả hai hình dưới sinh từ CÙNG một danh sách cấu kiện — khác nhau đúng một số:
+  hệ số nổ khối = 1 hay = 0. DESIGN ONLY.
+-->
+<div class="exs-root">
+<style>
+  .exs-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#161619; --field:#1e1e22;
+    --border:#232329; --border-strong:#34343c;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.13); --accent-ring:rgba(106,87,245,.5);
+    --success:#46b876; --warning:#d9a34a; --danger:#e5674f;
+    background:var(--bg); color:var(--t2); padding:56px 52px 64px;
+    font:13px/1.6 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exs-root *{box-sizing:border-box}
+  .h1{font-size:26px;font-weight:600;letter-spacing:-.01em;color:var(--t1);margin:0 0 6px}
+  .sub{color:var(--t3);margin:0;max-width:760px;font-size:13.5px}
+  .sec{margin:60px 0 22px;display:flex;align-items:baseline;gap:14px}
+  .sec b{font-size:12px;font-weight:600;letter-spacing:.16em;color:var(--t4);text-transform:uppercase}
+  .sec span{font-size:12px;color:var(--t5)}
+  .cap{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--t5);margin:0 0 14px}
+  .note{font-size:12px;color:var(--t4);max-width:660px;margin:16px 0 0}
+  .note b{color:var(--t2);font-weight:500}
+  /* bảng cấu kiện */
+  .plist{display:grid;grid-template-columns:repeat(3,1fr);gap:26px 34px}
+  .pr{display:grid;grid-template-columns:1fr;gap:10px}
+  .pn{display:flex;align-items:baseline;gap:9px}
+  .pn .g{font:12px ui-monospace,monospace;color:var(--accent)}
+  .pn b{color:var(--t1);font-size:13.5px;font-weight:500}
+  .pn s{text-decoration:none;font:10px ui-monospace,monospace;color:var(--t5);margin-left:auto}
+  .pv{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pv svg{width:100%;height:auto;background:var(--card);border-radius:9px;padding:6px}
+  .pm{display:flex;gap:14px;font:10.5px ui-monospace,monospace;color:var(--t4)}
+  .pm i{font-style:normal}
+  .pl{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--t3);border-top:1px dashed var(--border);padding-top:8px}
+  .pl em{font-style:normal;color:var(--t4)}
+  .pl u{display:inline-block;width:13px;height:13px;border-radius:99px;text-decoration:none;vertical-align:-2px;margin-right:6px;box-shadow:0 0 0 1px var(--border-strong)}
+  /* quan hệ */
+  .rel{display:grid;grid-template-columns:repeat(3,1fr);gap:34px}
+  .rl svg{width:100%;height:auto;background:var(--card);border-radius:11px;margin-bottom:12px}
+  .rl p{margin:0;font-size:12px;color:var(--t3);line-height:1.6}
+  .rl p b{color:var(--t1);font-weight:500}
+  /* nổ khối */
+  .asm{display:grid;grid-template-columns:1.5fr 1fr;gap:44px;align-items:start}
+  .asm svg{width:100%;height:auto}
+  .kpi{display:flex;gap:34px;margin:22px 0 0}
+  .kpi div b{display:block;color:var(--t1);font-size:24px;font-weight:600;letter-spacing:-.02em}
+  .kpi div span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--t5)}
+  .scope{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:8px}
+  .scope p{margin:0;font-size:12.5px;color:var(--t3);line-height:1.65}
+  .flag{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 10px;display:flex;align-items:center;gap:7px}
+  .flag.no{color:var(--danger)} .flag.ok{color:var(--success)}
+  .flag em{font-style:normal;width:7px;height:7px;background:currentColor}
+  .flag.ok em{border-radius:99px}
+</style>
+
+  <div class="h1">Cấu kiện &amp; lắp ghép — cách một món đồ được dựng</div>
+  <p class="sub">Không vẽ cả món trong một hình. Vẽ <b style="color:var(--t2)">từng cấu kiện rời</b> theo đúng hình chiếu của nó, khai cấu kiện nào giống cấu kiện nào, rồi ghép. Cái giống nhau chỉ vẽ một lần — phần còn lại là gương hoặc lặp. Ghép xong thì mỗi mảng vật liệu nằm gọn trong cấu kiện của nó, không mảng nào chồm sang mảng nào.</p>
+
+  <div class="sec"><b>Bảng cấu kiện</b><span>daybed hồ bơi · chín định nghĩa, ba mươi tám bộ phận</span></div>
+  <div class="plist">
+    <div class="pr">
+      <div class="pn"><span class="g">①</span><b>Đệm chân</b><s>FOOT</s></div>
+      <div class="pv">
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="26" y="16" width="34" height="34" rx="3"/></g></svg>
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="26" y="34" width="34" height="10" rx="2"/></g></svg>
+      </div>
+      <div class="pm"><i>90 × 90 × 14</i><i>×4</i></div>
+      <div class="pl"><em>gương hai trục X · Y</em><span><u style="background:#3a352c"></u>Foot</span></div>
+    </div>
+    <div class="pr">
+      <div class="pn"><span class="g">②</span><b>Chân</b><s>LEG</s></div>
+      <div class="pv">
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="26" y="16" width="34" height="34" rx="2"/></g></svg>
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="30" y="8" width="26" height="42" rx="2"/></g></svg>
+      </div>
+      <div class="pm"><i>90 × 90 × 110</i><i>×4</i></div>
+      <div class="pl"><em>gương hai trục X · Y</em><span><u style="background:#c8a26a"></u>Frame</span></div>
+    </div>
+    <div class="pr">
+      <div class="pn"><span class="g">③</span><b>Thanh dọc</b><s>SRAIL</s></div>
+      <div class="pv">
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="8" y="26" width="130" height="14" rx="2"/></g></svg>
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="8" y="18" width="130" height="30" rx="2"/></g></svg>
+      </div>
+      <div class="pm"><i>2000 × 90 × 176</i><i>×2</i></div>
+      <div class="pl"><em>gương trục Y</em><span><u style="background:#bd9760"></u>Frame</span></div>
+    </div>
+    <div class="pr">
+      <div class="pn"><span class="g">④</span><b>Thanh ngang</b><s>ERAIL</s></div>
+      <div class="pv">
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="60" y="8" width="16" height="50" rx="2"/></g></svg>
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="52" y="18" width="32" height="30" rx="2"/></g></svg>
+      </div>
+      <div class="pm"><i>90 × 720 × 176</i><i>×2</i></div>
+      <div class="pl"><em>gương trục X</em><span><u style="background:#bd9760"></u>Frame</span></div>
+    </div>
+    <div class="pr">
+      <div class="pn"><span class="g">⑤</span><b>Nẹp đỡ nan</b><s>LEDG</s></div>
+      <div class="pv">
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="12" y="30" width="120" height="7" rx="2"/></g></svg>
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="12" y="28" width="120" height="9" rx="2"/></g></svg>
+      </div>
+      <div class="pm"><i>1820 × 40 × 40</i><i>×2</i></div>
+      <div class="pl"><em>gương trục Y</em><span><u style="background:#c8a26a"></u>Frame</span></div>
+    </div>
+    <div class="pr">
+      <div class="pn"><span class="g">⑥</span><b>Nan sàn</b><s>SLAT</s></div>
+      <div class="pv">
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="64" y="10" width="12" height="46" rx="2"/></g></svg>
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="16" y="30" width="112" height="7" rx="2"/></g></svg>
+      </div>
+      <div class="pm"><i>70 × 640 × 30</i><i>×19</i></div>
+      <div class="pl"><em>lặp thẳng, bước 95</em><span><u style="background:#c8a26a"></u>Frame</span></div>
+    </div>
+    <div class="pr">
+      <div class="pn"><span class="g">⑦</span><b>Tấm nệm</b><s>CUSH</s></div>
+      <div class="pv">
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="24" y="12" width="92" height="42" rx="6"/></g></svg>
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="24" y="24" width="92" height="20" rx="8"/></g></svg>
+      </div>
+      <div class="pm"><i>920 × 740 × 110</i><i>×2</i></div>
+      <div class="pl"><em>lặp thẳng, bước 980</em><span><u style="background:#ece5d7"></u>Cushion</span></div>
+    </div>
+    <div class="pr">
+      <div class="pn"><span class="g">⑧</span><b>Gối tựa</b><s>PILL</s></div>
+      <div class="pv">
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="38" y="18" width="64" height="30" rx="5"/></g></svg>
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="38" y="12" width="64" height="44" rx="7"/></g></svg>
+      </div>
+      <div class="pm"><i>470 × 330 × 290</i><i>×2</i></div>
+      <div class="pl"><em>gương trục Y</em><span><u style="background:#e6dfd2"></u>Cushion</span></div>
+    </div>
+    <div class="pr">
+      <div class="pn"><span class="g">⑨</span><b>Gối ôm</b><s>BOLS</s></div>
+      <div class="pv">
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><rect x="34" y="22" width="72" height="24" rx="12"/></g></svg>
+        <svg viewBox="0 0 140 66"><g fill="none" stroke="#d6d6db" stroke-width="1.4"><circle cx="70" cy="34" r="16"/></g></svg>
+      </div>
+      <div class="pm"><i>Ø190 × 360</i><i>×1</i></div>
+      <div class="pl"><em>một mình, không cặp</em><span><u style="background:#a4ada3"></u>Accent</span></div>
+    </div>
+  </div>
+  <p class="note">Hai hình chiếu nhỏ của mỗi cấu kiện là <b>hình chiếu của chính nó</b>, không phải hình cắt ra từ bản vẽ tổng. Thợ mộc đọc được từng dòng này là đủ để cắt.</p>
+
+  <div class="sec"><b>Quan hệ giữa các cấu kiện</b><span>vẽ một lần, máy sinh phần còn lại — không chép tay</span></div>
+  <div class="rel">
+    <div class="rl">
+      <svg viewBox="0 0 300 150" role="img" aria-label="Gương một trục">
+        <path d="M150 14 v122" stroke="#6a57f5" stroke-width="1" stroke-dasharray="9 4"/>
+        <text x="156" y="26" fill="#8b86c9" font-size="10" font-family="ui-monospace,monospace">trục Y</text>
+        <rect x="34" y="52" width="80" height="46" rx="3" fill="#8c6b42" stroke="#00000050"/>
+        <rect x="186" y="52" width="80" height="46" rx="3" fill="#8c6b42" stroke="#00000050" opacity=".55"/>
+        <text x="34" y="118" fill="#9e9ea8" font-size="10.5">định nghĩa</text>
+        <text x="186" y="118" fill="#6e6e78" font-size="10.5">bản gương</text>
+      </svg>
+      <p><b>Gương</b> — thanh dọc, nẹp đỡ, gối tựa. Sửa cái gốc là cái gương đổi theo trong cùng một nhịp; không có chuyện lệch một bên.</p>
+    </div>
+    <div class="rl">
+      <svg viewBox="0 0 300 150" role="img" aria-label="Gương hai trục">
+        <path d="M150 14 v122 M18 75 h264" stroke="#6a57f5" stroke-width="1" stroke-dasharray="9 4"/>
+        <rect x="52" y="30" width="52" height="30" rx="3" fill="#c8a26a" stroke="#00000050"/>
+        <rect x="196" y="30" width="52" height="30" rx="3" fill="#c8a26a" stroke="#00000050" opacity=".55"/>
+        <rect x="52" y="92" width="52" height="30" rx="3" fill="#c8a26a" stroke="#00000050" opacity=".55"/>
+        <rect x="196" y="92" width="52" height="30" rx="3" fill="#c8a26a" stroke="#00000050" opacity=".4"/>
+        <text x="52" y="24" fill="#9e9ea8" font-size="10.5">định nghĩa</text>
+      </svg>
+      <p><b>Gương hai trục</b> — bốn chân là một cấu kiện, không phải bốn. Đổi tiết diện chân một chỗ, cả bốn đổi, và bảng khối lượng vẫn đếm đúng bốn.</p>
+    </div>
+    <div class="rl">
+      <svg viewBox="0 0 300 150" role="img" aria-label="Lặp thẳng">
+        <g fill="#c8a26a" stroke="#00000050">
+          <rect x="26" y="46" width="14" height="58" rx="2"/>
+          <rect x="52" y="46" width="14" height="58" rx="2" opacity=".78"/>
+          <rect x="78" y="46" width="14" height="58" rx="2" opacity=".7"/>
+          <rect x="104" y="46" width="14" height="58" rx="2" opacity=".64"/>
+          <rect x="130" y="46" width="14" height="58" rx="2" opacity=".58"/>
+          <rect x="156" y="46" width="14" height="58" rx="2" opacity=".52"/>
+          <rect x="182" y="46" width="14" height="58" rx="2" opacity=".46"/>
+          <rect x="208" y="46" width="14" height="58" rx="2" opacity=".42"/>
+          <rect x="234" y="46" width="14" height="58" rx="2" opacity=".38"/>
+        </g>
+        <path d="M26 34 h26 M26 28 v12 M52 28 v12" stroke="#8b86c9" stroke-width=".7"/>
+        <text x="58" y="33" fill="#9b96d6" font-size="10" font-family="ui-monospace,monospace">bước 95</text>
+      </svg>
+      <p><b>Lặp thẳng</b> — mười chín nan là một cấu kiện cộng một con số bước. Đổi bước nan là đổi số nan, và mặt bằng vẽ lại theo, không ai phải xoá tay.</p>
+    </div>
+  </div>
+
+  <div class="sec"><b>Nổ khối và ghép lại</b><span>hai hình dưới sinh từ cùng một danh sách — khác nhau đúng một hệ số</span></div>
+  <div class="asm">
+    <div>
+      <p class="cap">Nổ khối · theo trục lắp</p>
+      <svg viewBox="0 296 700 476" role="img" aria-label="Nổ khối daybed theo cấu kiện">
+  <path d="M174.9 510.4 L554.9 510.4 L562.5 504.8 L182.6 504.8 Z" fill="#bd9760" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M174.9 543.9 L554.9 543.9 L554.9 510.4 L174.9 510.4 Z" fill="#8c6b42" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M554.9 543.9 L562.5 538.3 L562.5 504.8 L554.9 510.4 Z" fill="#664d2e" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M175.0 507.6 L520.8 507.6 L524.2 505.1 L178.4 505.1 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M175.0 515.2 L520.8 515.2 L520.8 507.6 L175.0 507.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M520.8 515.2 L524.2 512.7 L524.2 505.1 L520.8 507.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M173.9 627.7 L191.0 627.7 L198.7 622.1 L181.6 622.1 Z" fill="#3a352c" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M173.9 630.4 L191.0 630.4 L191.0 627.7 L173.9 627.7 Z" fill="#2c2822" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M191.0 630.4 L198.7 624.8 L198.7 622.1 L191.0 627.7 Z" fill="#221f1a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M491.2 627.7 L508.3 627.7 L516.0 622.1 L498.9 622.1 Z" fill="#3a352c" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M491.2 630.4 L508.3 630.4 L508.3 627.7 L491.2 627.7 Z" fill="#2c2822" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M508.3 630.4 L516.0 624.8 L516.0 622.1 L508.3 627.7 Z" fill="#221f1a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M173.9 585.9 L191.0 585.9 L198.7 580.3 L181.6 580.3 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M173.9 606.8 L191.0 606.8 L191.0 585.9 L173.9 585.9 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M191.0 606.8 L198.7 601.2 L198.7 580.3 L191.0 585.9 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M491.2 585.9 L508.3 585.9 L516.0 580.3 L498.9 580.3 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M491.2 606.8 L508.3 606.8 L508.3 585.9 L491.2 585.9 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M508.3 606.8 L516.0 601.2 L516.0 580.3 L508.3 585.9 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M158.8 337.9 L248.1 337.9 L276.2 317.4 L186.9 317.4 Z" fill="#e6dfd2" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M150.8 398.9 L240.1 398.9 L248.1 337.9 L158.8 337.9 Z" fill="#cec5b3" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M240.1 398.9 L268.1 378.4 L276.2 317.4 L248.1 337.9 Z" fill="#a9a091" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M17.2 575.5 L34.4 575.5 L95.6 530.9 L78.5 530.9 Z" fill="#bd9760" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M17.2 609.0 L34.4 609.0 L34.4 575.5 L17.2 575.5 Z" fill="#8c6b42" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M34.4 609.0 L95.6 564.3 L95.6 530.9 L34.4 575.5 Z" fill="#664d2e" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M517.0 575.5 L534.0 575.5 L595.2 530.9 L578.2 530.9 Z" fill="#bd9760" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M517.0 609.0 L534.0 609.0 L534.0 575.5 L517.0 575.5 Z" fill="#8c6b42" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M534.0 609.0 L595.2 564.3 L595.2 530.9 L534.0 575.5 Z" fill="#664d2e" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M108.0 524.6 L121.3 524.6 L175.8 484.9 L162.4 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M108.0 530.3 L121.3 530.3 L121.3 524.6 L108.0 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M121.3 530.3 L175.8 490.6 L175.8 484.9 L121.3 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M126.1 524.6 L139.4 524.6 L193.8 484.9 L180.5 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M126.1 530.3 L139.4 530.3 L139.4 524.6 L126.1 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M139.4 530.3 L193.8 490.6 L193.8 484.9 L139.4 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M144.2 524.6 L157.4 524.6 L211.9 484.9 L198.6 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M144.2 530.3 L157.4 530.3 L157.4 524.6 L144.2 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M157.4 530.3 L211.9 490.6 L211.9 484.9 L157.4 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M162.2 524.6 L175.5 524.6 L229.9 484.9 L216.6 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M162.2 530.3 L175.5 530.3 L175.5 524.6 L162.2 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M175.5 530.3 L229.9 490.6 L229.9 484.9 L175.5 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M180.2 524.6 L193.6 524.6 L247.9 484.9 L234.7 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M180.2 530.3 L193.6 530.3 L193.6 524.6 L180.2 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M193.6 530.3 L247.9 490.6 L247.9 484.9 L193.6 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M198.3 524.6 L211.6 524.6 L266.0 484.9 L252.7 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M198.3 530.3 L211.6 530.3 L211.6 524.6 L198.3 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M211.6 530.3 L266.0 490.6 L266.0 484.9 L211.6 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M216.3 524.6 L229.7 524.6 L284.1 484.9 L270.8 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M216.3 530.3 L229.7 530.3 L229.7 524.6 L216.3 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M229.7 530.3 L284.1 490.6 L284.1 484.9 L229.7 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M234.4 524.6 L247.7 524.6 L302.1 484.9 L288.8 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M234.4 530.3 L247.7 530.3 L247.7 524.6 L234.4 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M247.7 530.3 L302.1 490.6 L302.1 484.9 L247.7 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M252.5 524.6 L265.8 524.6 L320.1 484.9 L306.9 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M252.5 530.3 L265.8 530.3 L265.8 524.6 L252.5 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M265.8 530.3 L320.1 490.6 L320.1 484.9 L265.8 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M270.5 524.6 L283.8 524.6 L338.2 484.9 L324.9 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M270.5 530.3 L283.8 530.3 L283.8 524.6 L270.5 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M283.8 530.3 L338.2 490.6 L338.2 484.9 L283.8 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M288.6 524.6 L301.9 524.6 L356.2 484.9 L342.9 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M288.6 530.3 L301.9 530.3 L301.9 524.6 L288.6 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M301.9 530.3 L356.2 490.6 L356.2 484.9 L301.9 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M306.6 524.6 L319.9 524.6 L374.3 484.9 L361.0 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M306.6 530.3 L319.9 530.3 L319.9 524.6 L306.6 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M319.9 530.3 L374.3 490.6 L374.3 484.9 L319.9 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M324.6 524.6 L337.9 524.6 L392.4 484.9 L379.1 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M324.6 530.3 L337.9 530.3 L337.9 524.6 L324.6 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M337.9 530.3 L392.4 490.6 L392.4 484.9 L337.9 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M342.7 524.6 L356.0 524.6 L410.4 484.9 L397.1 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M342.7 530.3 L356.0 530.3 L356.0 524.6 L342.7 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M356.0 530.3 L410.4 490.6 L410.4 484.9 L356.0 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M360.8 524.6 L374.1 524.6 L428.4 484.9 L415.1 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M360.8 530.3 L374.1 530.3 L374.1 524.6 L360.8 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M374.1 530.3 L428.4 490.6 L428.4 484.9 L374.1 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M378.8 524.6 L392.1 524.6 L446.5 484.9 L433.2 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M378.8 530.3 L392.1 530.3 L392.1 524.6 L378.8 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M392.1 530.3 L446.5 490.6 L446.5 484.9 L392.1 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M396.9 524.6 L410.2 524.6 L464.6 484.9 L451.2 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M396.9 530.3 L410.2 530.3 L410.2 524.6 L396.9 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M410.2 530.3 L464.6 490.6 L464.6 484.9 L410.2 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M414.9 524.6 L428.2 524.6 L482.6 484.9 L469.3 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M414.9 530.3 L428.2 530.3 L428.2 524.6 L414.9 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M428.2 530.3 L482.6 490.6 L482.6 484.9 L428.2 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M432.9 524.6 L446.2 524.6 L500.6 484.9 L487.3 484.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M432.9 530.3 L446.2 530.3 L446.2 524.6 L432.9 524.6 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M446.2 530.3 L500.6 490.6 L500.6 484.9 L446.2 524.6 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M100.0 467.8 L274.8 467.8 L337.7 422.0 L162.9 422.0 Z" fill="#ece5d7" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M100.0 488.7 L274.8 488.7 L274.8 467.8 L100.0 467.8 Z" fill="#d3cab8" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M274.8 488.7 L337.7 442.9 L337.7 422.0 L274.8 467.8 Z" fill="#b0a695" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M100.0 467.8 L274.8 467.8 L337.7 422.0" fill="none" stroke="#fdf8ee" stroke-width="1" opacity=".55"/>
+  <path d="M286.2 467.8 L449.6 467.8 L512.5 422.0 L349.1 422.0 Z" fill="#ece5d7" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M286.2 488.7 L449.6 488.7 L449.6 467.8 L286.2 467.8 Z" fill="#d3cab8" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M449.6 488.7 L512.5 442.9 L512.5 422.0 L449.6 467.8 Z" fill="#b0a695" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M286.2 467.8 L449.6 467.8 L512.5 422.0" fill="none" stroke="#fdf8ee" stroke-width="1" opacity=".55"/>
+  <path d="M228.8 349.7 L297.2 349.7 L292.8 343.1 L224.4 343.1 Z" fill="#a4ada3" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M224.4 343.1 L292.8 343.1 L286.6 347.6 L218.2 347.6 Z" fill="#a4ada3" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M218.2 347.6 L286.6 347.6 L282.2 360.6 L213.8 360.6 Z" fill="#8d968c" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M213.8 360.6 L282.2 360.6 L282.2 374.4 L213.8 374.4 Z" fill="#767f76" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M213.8 374.4 L282.2 374.4 L286.6 381.0 L218.2 381.0 Z" fill="#767f76" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M218.2 381.0 L286.6 381.0 L292.8 376.5 L224.4 376.5 Z" fill="#767f76" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M224.4 376.5 L292.8 376.5 L297.2 363.5 L228.8 363.5 Z" fill="#8d968c" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M228.8 363.5 L297.2 363.5 L297.2 349.7 L228.8 349.7 Z" fill="#a4ada3" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M297.2 349.7 L292.8 343.1 L286.6 347.6 L282.2 360.6 L282.2 374.4 L286.6 381.0 L292.8 376.5 L297.2 363.5 Z" fill="#a4ada3" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M106.1 376.3 L195.4 376.3 L223.5 355.9 L134.2 355.9 Z" fill="#ece5d7" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M98.0 437.3 L187.4 437.3 L195.4 376.3 L106.1 376.3 Z" fill="#d3cab8" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M187.4 437.3 L215.4 416.9 L223.5 355.9 L195.4 376.3 Z" fill="#b0a695" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M106.1 376.3 L195.4 376.3 L223.5 355.9" fill="none" stroke="#fefbf4" stroke-width="1" opacity=".55"/>
+  <path d="M96.5 684.1 L113.7 684.1 L121.3 678.6 L104.2 678.6 Z" fill="#3a352c" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M96.5 686.8 L113.7 686.8 L113.7 684.1 L96.5 684.1 Z" fill="#2c2822" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M113.7 686.8 L121.3 681.2 L121.3 678.6 L113.7 684.1 Z" fill="#221f1a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M413.9 684.1 L430.9 684.1 L438.6 678.6 L421.5 678.6 Z" fill="#3a352c" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M413.9 686.8 L430.9 686.8 L430.9 684.1 L413.9 684.1 Z" fill="#2c2822" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M430.9 686.8 L438.6 681.2 L438.6 678.6 L430.9 684.1 Z" fill="#221f1a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M96.5 642.3 L113.7 642.3 L121.3 636.8 L104.2 636.8 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M96.5 663.2 L113.7 663.2 L113.7 642.3 L96.5 642.3 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M113.7 663.2 L121.3 657.7 L121.3 636.8 L113.7 642.3 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M413.9 642.3 L430.9 642.3 L438.6 636.8 L421.5 636.8 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M413.9 663.2 L430.9 663.2 L430.9 642.3 L413.9 642.3 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M430.9 663.2 L438.6 657.7 L438.6 636.8 L430.9 642.3 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M88.3 570.9 L434.1 570.9 L437.5 568.4 L91.7 568.4 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M88.3 578.5 L434.1 578.5 L434.1 570.9 L88.3 570.9 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M434.1 578.5 L437.5 576.0 L437.5 568.4 L434.1 570.9 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M50.0 601.6 L429.9 601.6 L437.6 596.0 L57.6 596.0 Z" fill="#bd9760" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M50.0 635.0 L429.9 635.0 L429.9 601.6 L50.0 601.6 Z" fill="#8c6b42" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M429.9 635.0 L437.6 629.4 L437.6 596.0 L429.9 601.6 Z" fill="#664d2e" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M50.0 601.6 L429.9 601.6 L437.6 596.0" fill="none" stroke="#e2be86" stroke-width="1" opacity=".55"/>
+  <text x="482" y="674" fill="#8b86c9" font-size="12" font-family="ui-monospace,monospace">①</text>
+  <text x="498" y="674" fill="#6e6e78" font-size="11">Đệm chân</text>
+  <path d="M470 670 L478 670" stroke="#4e4e57" stroke-width=".8"/>
+  <text x="482" y="653" fill="#8b86c9" font-size="12" font-family="ui-monospace,monospace">②</text>
+  <text x="498" y="653" fill="#6e6e78" font-size="11">Chân</text>
+  <path d="M470 649 L478 649" stroke="#4e4e57" stroke-width=".8"/>
+  <text x="28" y="602" fill="#8b86c9" font-size="12" font-family="ui-monospace,monospace">③</text>
+  <text x="44" y="602" fill="#6e6e78" font-size="11">Thanh dọc</text>
+  <path d="M16 598 L24 598" stroke="#4e4e57" stroke-width=".8"/>
+  <text x="579" y="553" fill="#8b86c9" font-size="12" font-family="ui-monospace,monospace">④</text>
+  <text x="595" y="553" fill="#6e6e78" font-size="11">Thanh ngang</text>
+  <path d="M567 549 L575 549" stroke="#4e4e57" stroke-width=".8"/>
+  <text x="448" y="571" fill="#8b86c9" font-size="12" font-family="ui-monospace,monospace">⑤</text>
+  <text x="464" y="571" fill="#6e6e78" font-size="11">Nẹp đỡ nan</text>
+  <path d="M436 567 L444 567" stroke="#4e4e57" stroke-width=".8"/>
+  <text x="493" y="505" fill="#8b86c9" font-size="12" font-family="ui-monospace,monospace">⑥</text>
+  <text x="509" y="505" fill="#6e6e78" font-size="11">Nan sàn</text>
+  <path d="M481 501 L489 501" stroke="#4e4e57" stroke-width=".8"/>
+  <text x="520" y="445" fill="#8b86c9" font-size="12" font-family="ui-monospace,monospace">⑦</text>
+  <text x="536" y="445" fill="#6e6e78" font-size="11">Tấm nệm</text>
+  <path d="M508 441 L516 441" stroke="#4e4e57" stroke-width=".8"/>
+  <text x="30" y="380" fill="#8b86c9" font-size="12" font-family="ui-monospace,monospace">⑧</text>
+  <text x="46" y="380" fill="#6e6e78" font-size="11">Gối tựa</text>
+  <path d="M18 376 L26 376" stroke="#4e4e57" stroke-width=".8"/>
+  <text x="304" y="362" fill="#8b86c9" font-size="12" font-family="ui-monospace,monospace">⑨</text>
+  <text x="320" y="362" fill="#6e6e78" font-size="11">Gối ôm</text>
+  <path d="M292 358 L300 358" stroke="#4e4e57" stroke-width=".8"/>
+</svg>
+    </div>
+    <div>
+      <p class="cap">Đã ghép</p>
+      <svg viewBox="0 0 460 330" role="img" aria-label="Daybed đã lắp">
+  <defs><radialGradient id="sSh" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>
+  <ellipse cx="220" cy="292" rx="172" ry="22" fill="url(#sSh)"/>
+  <path d="M105.6 222.8 L379.2 222.8 L384.7 218.8 L111.1 218.8 Z" fill="#bd9760" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M105.6 246.9 L379.2 246.9 L379.2 222.8 L105.6 222.8 Z" fill="#8c6b42" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M379.2 246.9 L384.7 242.9 L384.7 218.8 L379.2 222.8 Z" fill="#664d2e" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M115.4 228.7 L364.4 228.7 L366.9 226.9 L117.9 226.9 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M115.4 234.2 L364.4 234.2 L364.4 228.7 L115.4 228.7 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M364.4 234.2 L366.9 232.4 L366.9 226.9 L364.4 228.7 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M114.6 267.3 L127.0 267.3 L132.5 263.3 L120.2 263.3 Z" fill="#3a352c" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M114.6 269.2 L127.0 269.2 L127.0 267.3 L114.6 267.3 Z" fill="#2c2822" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M127.0 269.2 L132.5 265.2 L132.5 263.3 L127.0 267.3 Z" fill="#221f1a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M343.1 267.3 L355.4 267.3 L360.9 263.3 L348.6 263.3 Z" fill="#3a352c" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M343.1 269.2 L355.4 269.2 L355.4 267.3 L343.1 267.3 Z" fill="#2c2822" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M355.4 269.2 L360.9 265.2 L360.9 263.3 L355.4 267.3 Z" fill="#221f1a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M114.6 252.2 L127.0 252.2 L132.5 248.2 L120.2 248.2 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M114.6 267.3 L127.0 267.3 L127.0 252.2 L114.6 252.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M127.0 267.3 L132.5 263.3 L132.5 248.2 L127.0 252.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M343.1 252.2 L355.4 252.2 L360.9 248.2 L348.6 248.2 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M343.1 267.3 L355.4 267.3 L355.4 252.2 L343.1 252.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M355.4 267.3 L360.9 263.3 L360.9 248.2 L355.4 252.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M105.6 179.0 L169.9 179.0 L190.1 164.3 L125.8 164.3 Z" fill="#e6dfd2" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M99.8 222.9 L164.1 222.9 L169.9 179.0 L105.6 179.0 Z" fill="#cec5b3" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M164.1 222.9 L184.3 208.2 L190.1 164.3 L169.9 179.0 Z" fill="#a9a091" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M61.5 254.9 L73.8 254.9 L117.9 222.8 L105.6 222.8 Z" fill="#bd9760" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M61.5 279.0 L73.8 279.0 L73.8 254.9 L61.5 254.9 Z" fill="#8c6b42" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M73.8 279.0 L117.9 246.9 L117.9 222.8 L73.8 254.9 Z" fill="#664d2e" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M322.8 254.9 L335.1 254.9 L379.2 222.8 L366.9 222.8 Z" fill="#bd9760" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M322.8 279.0 L335.1 279.0 L335.1 254.9 L322.8 254.9 Z" fill="#8c6b42" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M335.1 279.0 L379.2 246.9 L379.2 222.8 L335.1 254.9 Z" fill="#664d2e" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M77.6 253.2 L87.2 253.2 L126.4 224.6 L116.8 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M77.6 257.3 L87.2 257.3 L87.2 253.2 L77.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M87.2 257.3 L126.4 228.7 L126.4 224.6 L87.2 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M90.6 253.2 L100.2 253.2 L139.4 224.6 L129.8 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M90.6 257.3 L100.2 257.3 L100.2 253.2 L90.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M100.2 257.3 L139.4 228.7 L139.4 224.6 L100.2 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M103.6 253.2 L113.2 253.2 L152.4 224.6 L142.8 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M103.6 257.3 L113.2 257.3 L113.2 253.2 L103.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M113.2 257.3 L152.4 228.7 L152.4 224.6 L113.2 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M116.6 253.2 L126.2 253.2 L165.4 224.6 L155.8 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M116.6 257.3 L126.2 257.3 L126.2 253.2 L116.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M126.2 257.3 L165.4 228.7 L165.4 224.6 L126.2 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M129.6 253.2 L139.2 253.2 L178.4 224.6 L168.8 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M129.6 257.3 L139.2 257.3 L139.2 253.2 L129.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M139.2 257.3 L178.4 228.7 L178.4 224.6 L139.2 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M142.6 253.2 L152.2 253.2 L191.4 224.6 L181.8 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M142.6 257.3 L152.2 257.3 L152.2 253.2 L142.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M152.2 257.3 L191.4 228.7 L191.4 224.6 L152.2 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M155.6 253.2 L165.2 253.2 L204.4 224.6 L194.8 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M155.6 257.3 L165.2 257.3 L165.2 253.2 L155.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M165.2 257.3 L204.4 228.7 L204.4 224.6 L165.2 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M168.6 253.2 L178.2 253.2 L217.4 224.6 L207.8 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M168.6 257.3 L178.2 257.3 L178.2 253.2 L168.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M178.2 257.3 L217.4 228.7 L217.4 224.6 L178.2 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M181.6 253.2 L191.2 253.2 L230.3 224.6 L220.8 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M181.6 257.3 L191.2 257.3 L191.2 253.2 L181.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M191.2 257.3 L230.3 228.7 L230.3 224.6 L191.2 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M194.6 253.2 L204.2 253.2 L243.3 224.6 L233.8 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M194.6 257.3 L204.2 257.3 L204.2 253.2 L194.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M204.2 257.3 L243.3 228.7 L243.3 224.6 L204.2 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M207.6 253.2 L217.2 253.2 L256.3 224.6 L246.8 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M207.6 257.3 L217.2 257.3 L217.2 253.2 L207.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M217.2 257.3 L256.3 228.7 L256.3 224.6 L217.2 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M220.6 253.2 L230.2 253.2 L269.3 224.6 L259.8 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M220.6 257.3 L230.2 257.3 L230.2 253.2 L220.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M230.2 257.3 L269.3 228.7 L269.3 224.6 L230.2 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M233.6 253.2 L243.2 253.2 L282.3 224.6 L272.8 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M233.6 257.3 L243.2 257.3 L243.2 253.2 L233.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M243.2 257.3 L282.3 228.7 L282.3 224.6 L243.2 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M246.6 253.2 L256.2 253.2 L295.3 224.6 L285.8 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M246.6 257.3 L256.2 257.3 L256.2 253.2 L246.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M256.2 257.3 L295.3 228.7 L295.3 224.6 L256.2 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M259.6 253.2 L269.2 253.2 L308.3 224.6 L298.7 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M259.6 257.3 L269.2 257.3 L269.2 253.2 L259.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M269.2 257.3 L308.3 228.7 L308.3 224.6 L269.2 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M272.6 253.2 L282.2 253.2 L321.3 224.6 L311.7 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M272.6 257.3 L282.2 257.3 L282.2 253.2 L272.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M282.2 257.3 L321.3 228.7 L321.3 224.6 L282.2 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M285.6 253.2 L295.1 253.2 L334.3 224.6 L324.7 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M285.6 257.3 L295.1 257.3 L295.1 253.2 L285.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M295.1 257.3 L334.3 228.7 L334.3 224.6 L295.1 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M298.6 253.2 L308.1 253.2 L347.3 224.6 L337.7 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M298.6 257.3 L308.1 257.3 L308.1 253.2 L298.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M308.1 257.3 L347.3 228.7 L347.3 224.6 L308.1 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M311.6 253.2 L321.1 253.2 L360.3 224.6 L350.7 224.6 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M311.6 257.3 L321.1 257.3 L321.1 253.2 L311.6 253.2 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M321.1 257.3 L360.3 228.7 L360.3 224.6 L321.1 253.2 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M71.8 240.3 L197.7 240.3 L243.0 207.3 L117.1 207.3 Z" fill="#ece5d7" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M71.8 255.4 L197.7 255.4 L197.7 240.3 L71.8 240.3 Z" fill="#d3cab8" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M197.7 255.4 L243.0 222.4 L243.0 207.3 L197.7 240.3 Z" fill="#b0a695" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M71.8 240.3 L197.7 240.3 L243.0 207.3" fill="none" stroke="#fdf8ee" stroke-width="1" opacity=".55"/>
+  <path d="M205.9 240.3 L323.6 240.3 L368.8 207.3 L251.2 207.3 Z" fill="#ece5d7" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M205.9 255.4 L323.6 255.4 L323.6 240.3 L205.9 240.3 Z" fill="#d3cab8" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M323.6 255.4 L368.8 222.4 L368.8 207.3 L323.6 240.3 Z" fill="#b0a695" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M205.9 240.3 L323.6 240.3 L368.8 207.3" fill="none" stroke="#fdf8ee" stroke-width="1" opacity=".55"/>
+  <path d="M164.5 208.6 L213.8 208.6 L210.6 203.9 L161.4 203.9 Z" fill="#a4ada3" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M161.4 203.9 L210.6 203.9 L206.2 207.1 L157.0 207.1 Z" fill="#a4ada3" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M157.0 207.1 L206.2 207.1 L203.1 216.5 L153.8 216.5 Z" fill="#8d968c" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M153.8 216.5 L203.1 216.5 L203.1 226.4 L153.8 226.4 Z" fill="#767f76" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M153.8 226.4 L203.1 226.4 L206.2 231.2 L157.0 231.2 Z" fill="#767f76" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M157.0 231.2 L206.2 231.2 L210.6 227.9 L161.4 227.9 Z" fill="#767f76" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M161.4 227.9 L210.6 227.9 L213.8 218.6 L164.5 218.6 Z" fill="#8d968c" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M164.5 218.6 L213.8 218.6 L213.8 208.6 L164.5 208.6 Z" fill="#a4ada3" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M213.8 208.6 L210.6 203.9 L206.2 207.1 L203.1 216.5 L203.1 226.4 L206.2 231.2 L210.6 227.9 L213.8 218.6 Z" fill="#a4ada3" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M84.8 194.2 L149.1 194.2 L169.3 179.5 L105.0 179.5 Z" fill="#ece5d7" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M79.0 238.1 L143.3 238.1 L149.1 194.2 L84.8 194.2 Z" fill="#d3cab8" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M143.3 238.1 L163.5 223.4 L169.3 179.5 L149.1 194.2 Z" fill="#b0a695" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M84.8 194.2 L149.1 194.2 L169.3 179.5" fill="none" stroke="#fefbf4" stroke-width="1" opacity=".55"/>
+  <path d="M79.8 292.7 L92.1 292.7 L97.6 288.7 L85.3 288.7 Z" fill="#3a352c" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M79.8 294.6 L92.1 294.6 L92.1 292.7 L79.8 292.7 Z" fill="#2c2822" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M92.1 294.6 L97.6 290.6 L97.6 288.7 L92.1 292.7 Z" fill="#221f1a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M308.2 292.7 L320.5 292.7 L326.0 288.7 L313.7 288.7 Z" fill="#3a352c" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M308.2 294.6 L320.5 294.6 L320.5 292.7 L308.2 292.7 Z" fill="#2c2822" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M320.5 294.6 L326.0 290.6 L326.0 288.7 L320.5 292.7 Z" fill="#221f1a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M79.8 277.7 L92.1 277.7 L97.6 273.7 L85.3 273.7 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M79.8 292.7 L92.1 292.7 L92.1 277.7 L79.8 277.7 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M92.1 292.7 L97.6 288.7 L97.6 273.7 L92.1 277.7 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M308.2 277.7 L320.5 277.7 L326.0 273.7 L313.7 273.7 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M308.2 292.7 L320.5 292.7 L320.5 277.7 L308.2 277.7 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M320.5 292.7 L326.0 288.7 L326.0 273.7 L320.5 277.7 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M73.8 259.0 L322.8 259.0 L325.2 257.3 L76.3 257.3 Z" fill="#c8a26a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M73.8 264.5 L322.8 264.5 L322.8 259.0 L73.8 259.0 Z" fill="#96744a" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M322.8 264.5 L325.2 262.7 L325.2 257.3 L322.8 259.0 Z" fill="#6e5433" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M56.0 259.0 L329.6 259.0 L335.1 254.9 L61.5 254.9 Z" fill="#bd9760" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M56.0 283.0 L329.6 283.0 L329.6 259.0 L56.0 259.0 Z" fill="#8c6b42" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M329.6 283.0 L335.1 279.0 L335.1 254.9 L329.6 259.0 Z" fill="#664d2e" stroke="#00000050" stroke-width="0.7"/>
+  <path d="M56.0 259.0 L329.6 259.0 L335.1 254.9" fill="none" stroke="#e2be86" stroke-width="1" opacity=".55"/>
+</svg>
+      <div class="kpi">
+        <div><b>9</b><span>định nghĩa</span></div>
+        <div><b>38</b><span>bộ phận</span></div>
+        <div><b>4</b><span>khe vật liệu</span></div>
+      </div>
+      <p class="note" style="margin-top:20px">Ghép là <b>đặt cấu kiện vào đúng chỗ</b>, không phải vẽ đè lên nhau cho giống. Nên tháo ra lúc nào cũng được: đổi một cấu kiện, cả món cập nhật, bảng khối lượng cũng vậy.</p>
+    </div>
+  </div>
+
+  <div class="sec"><b>Vật liệu bám theo cấu kiện</b><span>đây là lý do phải tách rời ngay từ đầu</span></div>
+  <div class="scope">
+    <div>
+      <p class="flag no"><em></em>Nếu vẽ cả món thành một khối</p>
+      <p>Vật liệu phải gán theo <i>mặt</i> hoặc theo <i>vùng vẽ</i>. Nan và thanh dọc dính nhau thành một mảng, muốn đổi riêng vân nan là phải cắt mặt ra — cắt xong thì bảng khối lượng không còn biết đâu là nan, đâu là khung. Phạm vi chồng lấn từ đó mà ra.</p>
+    </div>
+    <div>
+      <p class="flag ok"><em></em>Khi cấu kiện là đơn vị</p>
+      <p>Mỗi cấu kiện mang đúng một khe vật liệu, nên phạm vi <b>không thể chồng</b>. Đổi khe Frame là năm loại cấu kiện gỗ đổi cùng lúc; đổi riêng nan thì tách khe cho nan, mọi thứ khác đứng yên. Và bảng khối lượng đọc thẳng ra: 19 nan × 640, 2 thanh dọc × 2000, 4 chân.</p>
+    </div>
+  </div>
+  <p class="note">Cùng cơ chế này áp được cho mọi món: tủ bếp là thùng · cánh · bản lề · tay nắm; ghế là chân · khung · nệm · tựa. Vẽ cấu kiện là cách duy nhất để một món vừa dựng được nhanh, vừa tính được tiền.</p>
+</div>

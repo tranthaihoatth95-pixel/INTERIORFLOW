@@ -1,0 +1,108 @@
+<!-- @dsCard group="Experience System" title="EXS-F · Flows nghề" -->
+<!--
+  EXS-F — deliverable G+H+I+J (+§20 blast radius · §21 near-pointer · §23 alive states · §28 empty
+  · §31 handoff). Mỗi flow là một dải bước — đọc trái sang phải.
+-->
+<div class="exf-root">
+<style>
+  .exf-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --success:#46b876; --warning:#d9a34a; --danger:#e5674f;
+    --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+    background:var(--bg); color:var(--t2); padding:36px;
+    font:13px/1.5 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exf-root *{box-sizing:border-box}
+  .h1{font-size:22px;font-weight:700;color:var(--t1);margin:0 0 4px}
+  .sub{color:var(--t3);margin:0 0 20px}
+  .sec{margin:28px 0 10px;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--t4);text-transform:uppercase}
+  .flow{display:grid;gap:9px}
+  .f5{grid-template-columns:repeat(5,1fr)} .f6{grid-template-columns:repeat(6,1fr)}
+  .st{border:1px solid var(--border);border-radius:11px;background:var(--panel);padding:9px 11px;font-size:11px;color:var(--t3);position:relative;min-height:96px}
+  .st b{display:block;color:var(--t1);font-size:11.5px;margin-bottom:4px}
+  .st:after{content:"→";position:absolute;right:-9px;top:42%;color:var(--t5);z-index:1}
+  .st:last-child:after{content:""}
+  .cvs{height:46px;border-radius:7px;background:var(--card);border:1px solid var(--border);position:relative;margin-bottom:5px;overflow:hidden}
+  .obj{position:absolute;width:26px;height:18px;border:1.4px solid var(--t2);border-radius:3px}
+  .obj.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .obj.mo{opacity:.4;border-style:dashed}
+  .halo{position:absolute;display:flex;gap:3px;padding:2px 5px;border-radius:999px;background:var(--card);border:1px solid var(--accent-ring);box-shadow:var(--shadow-pop)}
+  .halo i{width:9px;height:9px;border-radius:3px;background:var(--field);border:1px solid var(--border)}
+  .num{position:absolute;padding:1px 6px;border-radius:5px;background:var(--field);border:1px solid var(--accent);font:10px ui-monospace,monospace;color:var(--t1)}
+  .chip{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);background:var(--card);font-size:10px;color:var(--t3);margin:1px 2px 0 0}
+  .tf{display:inline-block;width:7px;height:7px;border-radius:99px;margin-right:3px}
+  .strip{border:1px solid var(--warning);border-radius:9px;background:rgba(217,163,74,.08);padding:6px 10px;font-size:10.5px;color:var(--t2)}
+  .note{font-size:11.5px;color:var(--t4);margin-top:6px}
+  .states{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
+  .stt{border:1px solid var(--border);border-radius:10px;background:var(--panel);padding:8px;text-align:center;font-size:10px;color:var(--t4)}
+  .demo{width:70%;height:26px;margin:0 auto 6px;border-radius:8px;background:var(--card);border:1px solid var(--border);display:grid;place-items:center;font-size:10px;color:var(--t3)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .pane{border:1px solid var(--border);border-radius:12px;background:var(--panel);padding:12px;font-size:11.5px;color:var(--t3)}
+  .pane b{color:var(--t1)}
+  .ghost{border:1.5px dashed var(--border-strong);border-radius:9px;padding:10px;display:flex;gap:10px;align-items:center;margin:8px 0;color:var(--t5);font-size:11px}
+  .ghost .sw{width:30px;height:30px;border-radius:7px;border:1.5px dashed var(--border-strong)}
+</style>
+
+  <div class="h1">EXS-F · Flows nghề — select → làm → xác nhận → lùi được</div>
+  <p class="sub">Chuột · bàn phím · số · kéo-thả · voice = MỘT ngôn ngữ nhập. Input field không bị global handler ăn (luật <code>shouldDirectKeyFire</code> đã có trong code).</p>
+
+  <div class="sec">H · Professional tool flow (2D — dời tường có số)</div>
+  <div class="flow f6">
+    <div class="st"><b>1 · Select</b><div class="cvs"><span class="obj sel" style="left:20px;top:14px"></span></div>Click chọn · kéo khung chọn nhiều · <span class="chip">Esc</span> về select</div>
+    <div class="st"><b>2 · Near-pointer halo</b><div class="cvs"><span class="obj sel" style="left:14px;top:18px"></span><span class="halo" style="left:44px;top:8px"><i></i><i></i><i></i><i></i></span></div>3–6 action đúng ngữ cảnh: Dời · Chép · Vật liệu · Comment</div>
+    <div class="st"><b>3 · Drag</b><div class="cvs"><span class="obj mo" style="left:12px;top:18px"></span><span class="obj sel" style="left:52px;top:18px"></span></div>Vị trí cũ nét đứt — thấy “trước → sau”</div>
+    <div class="st"><b>4 · Numeric</b><div class="cvs"><span class="obj sel" style="left:52px;top:18px"></span><span class="num" style="left:16px;top:18px">1200</span></div>Gõ số TRỰC TIẾP khi đang kéo · <span class="chip">Tab</span> trường kế</div>
+    <div class="st"><b>5 · Confirm</b><div class="cvs"><span class="obj" style="left:52px;top:18px;border-color:var(--success)"></span></div><span class="chip">Enter</span> chốt · <span class="chip">Esc</span> huỷ — không silent apply</div>
+    <div class="st"><b>6 · History</b><div class="cvs" style="display:grid;place-items:center;color:var(--t4);font-size:10px">Dời tường · 1200mm ↶</div>Một bước undo = một ý định — <span class="chip">⌘Z</span></div>
+  </div>
+
+  <div class="sec">I · Genealogy flow (asset/material) + Blast Radius</div>
+  <div class="flow f5">
+    <div class="st"><b>1 · Source</b>Ảnh NCC 12/08 → <span class="tf" style="background:var(--warning)"></span>inferred spec<div class="chip" style="margin-top:5px">Understand</div></div>
+    <div class="st"><b>2 · Use in project</b>TRANSFER: kho → dự án, instance giữ liên kết + đè cục bộ<div class="chip" style="margin-top:5px">ghim phiên bản</div></div>
+    <div class="st"><b>3 · Where used</b>4 view · 2 slide · 1 BOQ<div class="chip" style="margin-top:5px">bấm = tới thẳng nơi dùng</div></div>
+    <div class="st"><b>4 · Change</b>Đổi óc chó → sồi khói<div class="strip" style="margin-top:6px">⚠ Ảnh hưởng: 4 view · 2 slide · 1 dòng BOQ</div></div>
+    <div class="st"><b>5 · Impact preview</b>Dải nhỏ, KHÔNG modal chặn. <span class="chip">Áp dụng</span><span class="chip">Xem từng chỗ</span><span class="chip">Thôi</span><div class="note" style="margin-top:4px">Không silent propagation — user quyết.</div></div>
+  </div>
+  <div class="note">Nền code THẬT: MaterialImpactPreview (2D) đã có — blast radius = EXTEND nó xuyên chặng, không engine mới.</div>
+
+  <div class="sec">J · Review flow — content trước, review là lớp</div>
+  <div class="flow f6">
+    <div class="st"><b>1 · Content</b>Render phòng khách R03 chiếm spotlight</div>
+    <div class="st"><b>2 · Anchored issue</b>Ghim ① vào ĐÚNG vùng ảnh (không phải comment trôi)</div>
+    <div class="st"><b>3 · Discussion</b>Thread ngắn cạnh phải — “ghế thấp?”</div>
+    <div class="st"><b>4 · Decision</b><span class="chip" style="border-color:var(--success);color:var(--success)">Approve</span><span class="chip" style="border-color:var(--warning);color:var(--warning)">Sửa lại</span> — nút, không phải chat dài</div>
+    <div class="st"><b>5 · Go to source</b>Nhảy đúng entity ghế trong 3D — mang theo ngữ cảnh issue</div>
+    <div class="st"><b>6 · Revise</b>Sửa xong → issue tự trỏ bản mới · lịch sử decision giữ nguyên</div>
+  </div>
+
+  <div class="sec">§28 Smart empty state · §31 Stage handoff</div>
+  <div class="two">
+    <div class="pane"><b>Vật đang chọn chưa có vật liệu</b> — empty state là bề mặt LÀM VIỆC (EmptyState component sẵn có):
+      <div class="ghost"><span class="sw"></span>No material — chọn từ: <span class="chip">Library</span><span class="chip">Reference</span><span class="chip">Tạo mới</span></div>
+      Files chưa promote: <i>Project source → Understand → Promote → Reusable asset</i> — nút ngay tại chỗ, không đá đi màn khác (luật X2).</div>
+    <div class="pane"><b>Handoff = readiness signal nhẹ, không wizard.</b>
+      <div class="ghost" style="border-style:solid;border-color:var(--border)">2D → 3D &nbsp;<span class="tf" style="background:var(--success)"></span>Spatial ready — tường/phòng đủ khép kín</div>
+      <div class="ghost" style="border-style:solid;border-color:var(--warning)">3D → Present &nbsp;<span class="tf" style="background:var(--warning)"></span>2 review đang chờ — “nếu đi tiếp, đây là điều cần biết”</div>
+      Không chặn — chỉ nói. (Khuôn LY_DO_MO của sổ lệnh dùng lại cho câu chữ.)</div>
+  </div>
+
+  <div class="sec">§23 Mọi bề mặt tương tác đều SỐNG — 11 trạng thái, không toy</div>
+  <div class="states">
+    <div class="stt"><span class="demo">idle</span>nghỉ</div>
+    <div class="stt"><span class="demo" style="box-shadow:0 4px 12px rgba(0,0,0,.5);transform:translateY(-1px)">hover</span>LIFT nhẹ — “tôi interactive”</div>
+    <div class="stt"><span class="demo" style="outline:2px solid var(--accent-ring);outline-offset:2px">focus</span>vòng focus thấy rõ</div>
+    <div class="stt"><span class="demo" style="transform:scale(.97);background:var(--field)">pressed</span>press response</div>
+    <div class="stt"><span class="demo" style="border-color:var(--accent-ring);background:var(--accent-soft);color:var(--t1)">selected</span>ghost khi bật</div>
+    <div class="stt"><span class="demo" style="border-style:dashed;color:var(--t5)">drop target</span>ô nét đứt</div>
+    <div class="stt"><span class="demo" style="opacity:.55">disabled</span>mờ + LÝ DO (aria-describedby)</div>
+    <div class="stt"><span class="demo"><span style="width:34px;height:4px;border-radius:99px;background:linear-gradient(90deg,var(--accent) 60%,var(--field) 60%)"></span></span>loading — LightBar, cấm bịa %</div>
+    <div class="stt"><span class="demo" style="border-color:var(--success);color:var(--success)">✓ success</span>xác nhận ngắn</div>
+    <div class="stt"><span class="demo" style="border-color:var(--warning);color:var(--warning)">⚠ warning</span>kèm chữ, không chỉ màu</div>
+    <div class="stt"><span class="demo" style="border-color:var(--accent-ring)">drag</span>nhấc +2, chỗ cũ nét đứt</div>
+    <div class="stt"><span class="demo" style="color:var(--t5)">reduced motion</span>mọi verb có bản tĩnh</div>
+  </div>
+</div>

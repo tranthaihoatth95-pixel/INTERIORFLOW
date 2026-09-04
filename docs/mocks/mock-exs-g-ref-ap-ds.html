@@ -1,0 +1,145 @@
+<!-- @dsCard group="Experience System" title="EXS-G · 5 ref → DS của IF" -->
+<!--
+  EXS-G — 5 ảnh tham chiếu Hoà gửi 20/08, VẼ LẠI bằng token IF (không copy skin).
+  Chưng cất + luật ràng: docs/nc/REF-VISUAL-EXS-2026-08-20.md.
+  2 chỗ ref đụng luật đã chốt được ghi ĐỎ ngay trên board — Hoà quyết, board không tự hoà giải.
+-->
+<div class="exg-root">
+<style>
+  .exg-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --success:#46b876; --warning:#d9a34a; --danger:#e5674f;
+    --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+    background:var(--bg); color:var(--t2); padding:36px;
+    font:13px/1.5 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exg-root *{box-sizing:border-box}
+  .h1{font-size:22px;font-weight:700;color:var(--t1);margin:0 0 4px}
+  .sub{color:var(--t3);margin:0 0 24px}
+  .sec{margin:30px 0 10px;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--t4);text-transform:uppercase}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  .pane{border:1px solid var(--border);border-radius:13px;background:var(--panel);padding:14px;font-size:11.5px;color:var(--t3)}
+  .pane b{color:var(--t1)}
+  .law{border:1px solid var(--danger);border-radius:9px;background:rgba(229,103,79,.07);padding:7px 11px;font-size:11px;color:var(--t2);margin-top:9px}
+  .note{font-size:11px;color:var(--t4);margin-top:7px}
+  .chip{display:inline-block;padding:2px 9px;border-radius:999px;border:1px solid var(--border);background:var(--card);font-size:10.5px;color:var(--t3);margin:2px 3px 0 0}
+  /* R1 thước vạch */
+  .scrub{display:flex;align-items:center;gap:12px;height:52px;border-radius:999px;background:var(--card);border:1px solid var(--border);padding:0 16px;max-width:520px}
+  .scrub .val{font-size:17px;color:var(--t1);font-variant-numeric:tabular-nums;width:34px}
+  .ticks{flex:1;display:flex;align-items:center;gap:4px;height:100%;position:relative}
+  .ticks i{flex:1;border-radius:99px;background:var(--t5);height:10px;max-width:4px;min-width:2.5px}
+  .ticks i.on{background:var(--t2);height:20px}
+  .ticks .mid{position:absolute;left:52%;top:8px;bottom:8px;width:1.5px;background:var(--accent)}
+  .reset{width:30px;height:30px;border-radius:99px;border:1px solid var(--border-strong);display:grid;place-items:center;color:var(--t3);font-size:14px}
+  .lenslbl{display:flex;gap:26px;justify-content:center;margin:0 0 9px;font-size:12px;color:var(--t4)}
+  .lenslbl b{color:var(--t1)}
+  /* R2 strip */
+  .strip{display:flex;align-items:flex-end;gap:6px;height:64px;padding:8px;border-radius:12px;background:var(--card);border:1px solid var(--border);max-width:420px}
+  .th{width:52px;height:38px;border-radius:7px;background:var(--field);border:1px solid var(--border)}
+  .th.h1x{height:44px;border-color:var(--border-strong)}
+  .th.hov{height:50px;border-color:var(--accent-ring);box-shadow:var(--shadow-pop)}
+  /* R3 stack */
+  .stack{position:relative;max-width:360px;height:118px}
+  .sc{position:absolute;left:0;right:0;border-radius:11px;border:1px solid var(--border);background:var(--card);padding:9px 12px;font-size:11.5px;color:var(--t2)}
+  .sc small{display:block;color:var(--t4);font-size:10.5px}
+  /* R4 object cards */
+  .objrow{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:560px}
+  .folder{position:relative;border-radius:16px;background:var(--card);border:1px solid var(--border);padding:52px 14px 13px;overflow:hidden}
+  .folder .paper{position:absolute;top:10px;left:14px;right:70px;height:34px;border-radius:6px 6px 0 0;background:var(--field);border:1px solid var(--border-strong);border-bottom:0}
+  .folder .paper2{position:absolute;top:16px;left:26px;right:96px;height:28px;border-radius:6px 6px 0 0;background:var(--panel);border:1px solid var(--border);border-bottom:0}
+  .folder .flap{position:absolute;top:34px;left:0;right:0;bottom:0;background:linear-gradient(180deg,var(--field),var(--card) 60%);border-top:1px solid var(--border-strong);border-radius:14px 14px 0 0}
+  .folder .in{position:relative}
+  .folder .date{position:absolute;top:-14px;right:0;padding:2px 9px;border-radius:999px;background:var(--panel);border:1px solid var(--border);font-size:10px;color:var(--t3)}
+  .folder h5{margin:16px 0 2px;color:var(--t1);font-size:14px}
+  .folder .meta{display:flex;justify-content:space-between;font-size:10.5px;color:var(--t4)}
+  .call{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:
+    radial-gradient(80% 60% at 60% 30%,#26303a 0,#12161b 70%);min-height:150px}
+  .call .mic{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:99px;background:var(--accent);display:grid;place-items:center;color:#fff;font-size:13px}
+  .call .cap{position:absolute;left:0;right:0;bottom:0;padding:26px 12px 10px;background:linear-gradient(180deg,transparent, rgba(0,0,0,.72));color:#fff;font-size:12.5px;text-align:center}
+  .call .cap small{display:block;color:rgba(255,255,255,.75);font-variant-numeric:tabular-nums}
+  /* R5 presence */
+  .team{position:relative;border-radius:16px;background:var(--panel);border:1px solid var(--border);padding:14px;max-width:360px}
+  .team .glow{position:absolute;inset:20% 12% 30% 12%;background:radial-gradient(60% 60% at 50% 40%,var(--accent-soft),transparent 75%);pointer-events:none}
+  .avs{display:flex;margin:6px 0 12px}
+  .av{width:26px;height:26px;border-radius:99px;background:var(--field);border:2px solid var(--panel);margin-left:-7px}
+  .av:first-child{margin-left:0}
+  .av.on{box-shadow:0 0 0 2px var(--success)}
+  .av.n{display:grid;place-items:center;font-size:10px;color:var(--t2);background:var(--card)}
+  .mrow{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:9px;background:var(--card);border:1px solid var(--border);margin-bottom:5px;font-size:11.5px}
+  .mrow .cb{width:13px;height:13px;border-radius:4px;border:1.5px solid var(--accent);background:var(--accent-soft)}
+  .addbtn{position:absolute;left:50%;transform:translateX(-50%);bottom:44px;padding:7px 16px;border-radius:999px;background:var(--t1);color:var(--bg);font-weight:600;font-size:12px;box-shadow:var(--shadow-pop)}
+</style>
+
+  <div class="h1">EXS-G · 5 ref của Hoà → vẽ lại bằng DS của IF</div>
+  <p class="sub">Học CƠ CHẾ, không copy skin. 0 hex mới — toàn token. Hai chỗ ref đụng luật đã chốt: ghi đỏ tại chỗ.</p>
+
+  <div class="sec">R1 · Thước vạch chỉnh số — MỘT ngữ pháp vạch cho cả progress lẫn input</div>
+  <div class="two">
+    <div class="pane">
+      <div class="lenslbl"><span>Roughness</span><b>Metallic</b><span>IOR</span></div>
+      <div class="scrub">
+        <span class="val">52</span>
+        <span class="ticks"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><span class="mid"></span></span>
+        <span class="reset">↺</span>
+      </div>
+      <div class="note">Số = GIÁ TRỊ người đặt (khác progress — progress cấm bịa %). ↺ = "về mặc định" đặt NGAY TẠI control (guardrail §34), tooltip nói rõ về đâu.</div>
+    </div>
+    <div class="pane"><b>Áp vào đâu:</b> MaterialPbrEditor (panel IF-RNA tự sinh — đổi MỘT khuôn control, lan cả panel) · FOV/DOF camera · núm mức-bám Grounded Render · density Home.<br><br><b>Token:</b> capsule <code>--field</code> + <code>--r-full</code> · vạch <code>--t2/--t5</code> · mốc <code>--accent</code> · cùng họ vạch với <code>LightBar</code> (chốt 16/08 “thanh = dãy vạch”).<br><span class="chip">Nhãn anh em mờ vẫn bấm được</span><span class="chip">Enter chốt · Esc huỷ</span></div>
+  </div>
+
+  <div class="sec">R2 · Proximity emphasis — CHỈ cho dải vật nhỏ xếp dày (thumbnail/swatch), CẤM toolbar</div>
+  <div class="two">
+    <div class="pane">
+      <div style="font-size:10.5px;color:var(--t4);margin-bottom:5px">a · DIRECT — chỉ phần tử dưới trỏ nở (1.06)</div>
+      <div class="strip"><span class="th"></span><span class="th"></span><span class="th hov"></span><span class="th"></span><span class="th"></span><span class="th"></span></div>
+      <div style="font-size:10.5px;color:var(--t4);margin:10px 0 5px">b · PROXIMITY-1 — hàng xóm ±1 nở nhẹ theo (1.02)</div>
+      <div class="strip"><span class="th"></span><span class="th h1x"></span><span class="th hov"></span><span class="th h1x"></span><span class="th"></span><span class="th"></span></div>
+      <div class="note">Chờ Hoà chọn a ↔ b. Reduce-motion: đổi viền thay scale.</div>
+    </div>
+    <div class="pane"><b>Áp vào đâu:</b> SlideStrip (Present) · dải ảnh shelf/gallery · dải swatch vật liệu.<div class="law">⚠ ĐỤNG LUẬT: SPEC-HOVER đã chốt <i>“nút toolbar · hàng list · ảnh lớn CẤM scale”</i> ⇒ KHÔNG áp cho ToolbarChip/rail — toolbar giữ đổi-nền 120ms. Board chỉ áp cho vật NHỎ/ĐƠN LẺ đúng phạm vi luật cho phép.</div></div>
+  </div>
+
+  <div class="sec">R3 · Stack lùi sau — “còn n cái nữa” bằng một hình, không liệt kê hết</div>
+  <div class="two">
+    <div class="pane">
+      <div class="stack">
+        <span class="sc" style="top:44px;transform:scale(.92);opacity:.35;filter:blur(1.5px)"></span>
+        <span class="sc" style="top:26px;transform:scale(.96);opacity:.6;filter:blur(.8px)"><small>Render dựa revision cũ…</small></span>
+        <span class="sc" style="top:0;box-shadow:var(--shadow-pop)">⚠ 3 vật liệu chưa có spec — phòng khách<small>bấm để xoè · <b style="color:var(--t2)">+2 mục nữa</b></small></span>
+      </div>
+    </div>
+    <div class="pane"><b>Áp vào đâu:</b> Vitals Peek khi &gt;3 insight (giữ trần 3–5 UI budget — phần dư thành stack) · widget “Cần tôi xử” · issue cùng vùng trong Review · hàng đợi render.<br><br><b>Token:</b> verb RECEDE + depth +3 (EXS-A) · blur <code>--blur</code> sẵn có · scale 0.96/0.92 · mép ló 8–10px · <b>bắt buộc kèm SỐ “+n”</b>. Xoè = EXPAND từ chính stack; reduce-motion xoè tức thì.</div>
+  </div>
+
+  <div class="sec">R4 · Thẻ là VẬT — widget có hình dạng của thứ nó chứa</div>
+  <div class="two">
+    <div class="objrow">
+      <div class="folder">
+        <span class="paper"></span><span class="paper2"></span><span class="flap"></span>
+        <div class="in"><span class="date">📅 Thứ 6, 22/08</span>
+          <h5>Brief Thảo Điền</h5>
+          <div class="meta"><span>Nguồn khách + ghi chú nội bộ</span><span><b style="color:var(--t2)">320</b> mục</span></div>
+        </div>
+      </div>
+      <div class="call"><span class="mic">🎙</span><div class="cap">Họp duyệt concept<small>00:05:28 · 3 người</small></div></div>
+    </div>
+    <div class="pane"><b>Áp vào đâu:</b> thẻ Collection+/Files (folder-as-object — đúng “hai tầng” 17/08) · widget Chat/Họp khi có call sống · WeeklyImage · thẻ dự án.<br><br><b>Token:</b> ảnh TRÀN thẻ + <b>lớp phủ chuyển sắc CỤC BỘ</b> ở dải có chữ (chốt 16/08 — đo tương phản tại chân chữ) · chip metadata = icon-nén-tin LUÔN kèm số thật · bo <code>--r-4</code>.<br><span class="chip">Vật-hoá không thay nhãn chữ (NT-8)</span><span class="chip">Số giả = vi phạm — widget thiếu dữ liệu tự ẩn</span></div>
+  </div>
+
+  <div class="sec">R5 · Presence + hành động nổi + quầng CÓ NGHĨA</div>
+  <div class="two">
+    <div class="team">
+      <span class="glow"></span>
+      <div style="font-size:12px;color:var(--t1);position:relative">Đang trong dự án</div>
+      <div class="avs" style="position:relative"><span class="av on"></span><span class="av on"></span><span class="av"></span><span class="av n">+2</span></div>
+      <div class="mrow" style="position:relative"><span class="cb"></span>Minh Anh — thiết kế chính<span style="margin-left:auto;color:var(--t5);font-size:10px">3D</span></div>
+      <div class="mrow" style="position:relative;opacity:.55"><span class="cb" style="border-color:var(--border-strong);background:transparent"></span>Tùng — draft 2D</div>
+      <span class="addbtn">＋ Mời duyệt</span>
+      <div style="height:26px"></div>
+    </div>
+    <div class="pane"><b>Áp vào đâu:</b> <code>PresenceRow</code> (ĐÃ CÓ — icon loại 7, luật chồng +N) trong Overview/thẻ dự án · Review Gate mời người duyệt · panel thành viên. Nút hành động chính NỔI đè mép danh sách = đúng UI budget 1 primary.<div class="law">⚠ ĐỤNG LUẬT NT-11 (cấm glow trang trí tĩnh): quầng ấm CHỈ sáng khi CÓ NGƯỜI đang online/đang họp — ánh sáng = presence sống; tĩnh thì tắt. Và câu hỏi mở: quầng dùng <code>--accent-soft</code> hay màu nhấn thứ hai (chờ chốt mòng két↔mận)?</div></div>
+  </div>
+</div>
