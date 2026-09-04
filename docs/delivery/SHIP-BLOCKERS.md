@@ -1,5 +1,38 @@
 # SHIP BLOCKERS — thứ THẬT SỰ chặn việc phát hành IF
 
+## ⬛ NĂM CỔNG PHÁT HÀNH — IF ship được khi cả năm XANH
+
+| Cổng | Trạng thái | Chủ sở hữu | Còn thiếu đúng cái gì |
+|---|---|---|---|
+| **G1 · DATA SAFE** | 🟡 PARTIAL | 01 CORE | Bản vá P0 xong-máy. **Chưa chạy trên app thật một lần nào.** 8 ca đang nghiệm thu. `UNVERIFIED ≠ PASS`. |
+| **G2 · CORE JOURNEYS** | 🔴 BLOCKED | 02 WORKFLOW | Chưa có ma trận hành trình. Số test **không phải** bằng chứng hoàn thành. |
+| **G3 · EXPERIENCE** | 🟡 PARTIAL | 04 DESIGN | Home chưa khoá thiết kế. H1/H2/H3 là **bản thăm dò**, không phải ứng viên chờ chọn. Vitals · khung app · workspace chưa phán. |
+| **G4 · CONTENT** | 🟡 PARTIAL | 05 ASSET · 06 MEDIA | Hợp đồng đã chốt (`G4-HOP-DONG-TAI-SAN.md`). **Lỗ thật: 3D = 1 tệp.** Vật liệu 0 dữ liệu. Intro chưa có. Nền đã xong. |
+| **G5 · RELEASE** | 🔴 BLOCKED | 07 RELEASE | Chưa dựng lại đường phát hành từ máy sạch sau 11 lát ghép. Electron 33 chưa khảo. **Bằng chứng cuối là app ĐÓNG GÓI, không phải Vercel.** |
+
+**Bất biến tối cao (G1):** *KHÔNG BAO GIỜ MẤT HOẶC GÁN NHẦM VIỆC THIẾT KẾ.*
+Không xác lập được định danh an toàn ⇒ **hỏng phải nhìn thấy được / chặn ghi**, cấm âm thầm rơi về kho mơ hồ.
+
+## ⬛ BẢN ĐỒ CHUYÊN GIA — ai sở hữu miền nào
+
+| # | Chuyên gia | Sở hữu | Cổng |
+|---|---|---|---|
+| 01 | **CORE** | dữ liệu · sự thật dự án · định danh · lưu trữ | G1 |
+| 02 | **WORKFLOW** | hành trình nghề đầu-cuối | G2 |
+| 03 | **AI** | Vitals · khẩu độ · ngữ cảnh · ranh giới người-quyết | G3 |
+| 04 | **DESIGN** | UX/UI · chuyển động · kiểm thị giác | G3 |
+| 05 | **ASSET** | thư viện 2D · 3D · vật liệu | G4 |
+| 06 | **MEDIA** | Wallgallery · intro · media thương hiệu | G4 |
+| 07 | **RELEASE** | QA · hiệu năng · Electron · đóng gói | G5 |
+
+**MAIN giữ tích hợp.** Worker **không** merge/rebase/đẩy nhánh tích hợp, không đổi quyền sở hữu của chuyên gia khác.
+
+### Dây phụ thuộc chéo — cấm hai chuyên gia giải cùng một biên độc lập
+`04 DESIGN ↔ 06 MEDIA` bố cục Home cần hướng Wallgallery · `04 ↔ 03 AI` Home cần quan hệ với Vitals ·
+`05 ASSET ↔ 02 WORKFLOW` thư viện phải **đặt được vật vào việc thật** · `01 CORE ↔ 02` bằng chứng lưu trữ phụ thuộc định danh an toàn ·
+`02 ↔ 07 RELEASE` bằng chứng hành trình phải sống sót ở môi trường sạch.
+
+
 > Lập 04/09 theo lệnh **SHIP INTERIORFLOW · DELIVERY OVERRIDES INVESTIGATION**.
 > Một câu lọc mọi việc: **việc này có CHẶN hay có GIẢM RỦI RO ĐÁNG KỂ cho việc ship không?**
 > Không ⇒ **không được chen vào đường tới đích**.
