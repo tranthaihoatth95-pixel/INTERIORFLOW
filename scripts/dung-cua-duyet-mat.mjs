@@ -49,6 +49,7 @@ const phan = (id, hoi) =>
        <input class="ghi" type="text" placeholder="Sai chỗ nào — một câu là đủ" aria-label="Ghi chú cho ${id}">
      </div>
      <p class="phan-tt" role="status">chưa phán</p>
+     <p class="phan-in">Đạt ☐&nbsp;&nbsp;&nbsp;Sửa ☐&nbsp;&nbsp;&nbsp;ghi chú: &nbsp;<span class="ke"></span></p>
    </div>`;
 
 const VT = [
@@ -197,6 +198,28 @@ figcaption .ma{color:var(--muc);font-size:12px;font-weight:500;flex:0 0 auto}
 
 .cuoi{margin-top:56px;padding-top:26px;border-top:1px solid var(--vien);
   font-size:14px;color:var(--mo);max-width:70ch;display:flex;flex-direction:column;gap:10px}
+
+/* ── BẢN IN / PDF ───────────────────────────────────────────
+   Trang này có hai đời sống: trên màn thì bấm được, in ra thì viết tay lên.
+   Nút bấm và ô nhập vô nghĩa trên giấy ⇒ thay bằng ô tick + dòng kẻ. */
+.phan-in{display:none}
+.ke{display:inline-block;flex:1;min-width:180px;border-bottom:1px solid var(--vien-dam);
+  height:1.1em;vertical-align:bottom}
+@media print{
+  :root{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  .dinh{display:none}
+  .doi,.phan-nut,.ghi,.phan-tt{display:none}
+  .phan-in{display:flex;align-items:baseline;gap:6px;margin:0;font-size:14px;font-weight:600}
+  main{max-width:none;padding:0}
+  .mo{padding:0 0 22px}
+  h1{font-size:32px}
+  .lo{break-before:page;page-break-before:always;margin-top:0;padding-top:0;border-top:0}
+  .khung,.phan{break-inside:avoid;page-break-inside:avoid}
+  h3{break-after:avoid;page-break-after:avoid}
+  .day{gap:18px}
+  a{color:inherit}
+}
+@page{size:A4;margin:14mm 13mm}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media (max-width:640px){
   main{padding:0 16px 72px} .dinh-trong{padding:10px 16px;gap:12px}
