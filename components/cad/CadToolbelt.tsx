@@ -50,7 +50,10 @@ export default function CadToolbelt() {
         nhau — một cái là một cú bấm, một cái là cả dây chuyền có tiêu tiền và có cửa duyệt. Xếp
         chung hàng là nói dối rằng chúng ngang giá. Danh sách đọc từ `workingSetChips()`, thanh 2D
         không biết gì về nó. */}
-    <div style={{ pointerEvents: 'auto', maxWidth: '100%', minWidth: 0 }}>
+    {/* `pointerEvents:'none'` — hộp này chỉ giữ chỗ/chặn bề rộng; `StageToolbelt` tự bật lại trên
+        thanh nút và cửa duyệt của nó. Để `auto` ở đây thì phần thừa của hộp (đo được: mép phải,
+        2 điểm) nuốt cú bấm xuống mặt vẽ. */}
+    <div style={{ pointerEvents: 'none', maxWidth: '100%', minWidth: 0 }}>
       <StageToolbelt stage="cad" />
     </div>
     <div
@@ -101,7 +104,10 @@ function PaperToolbelt() {
     paperAction('report');
     return () => window.removeEventListener('cad:paper-selection-state', onState);
   }, []);
-  return <div className="cad-pill-scroll" style={{ display: 'flex', alignItems: 'center', gap: 5, minHeight: 52, padding: 6, maxWidth: 'calc(100vw - 40px)', overflowX: 'auto', borderRadius: concentricRadius(RADIUS.r4, 0), background: 'color-mix(in srgb, var(--panel) 82%, transparent)', backdropFilter: 'blur(18px) saturate(1.35)', WebkitBackdropFilter: 'blur(18px) saturate(1.35)', border: '1px solid var(--border)', boxShadow: '0 8px 28px rgba(0,0,0,.2)' }}>
+  /* `pointerEvents:'auto'` — ổ toolbelt của `AppShell` nay là hộp bố cục KHÔNG bắt chuột
+     (04/09, để trả 428 điểm mặt vẽ bị nuốt). Khối kính nhìn thấy được phải tự bật lại cho mình,
+     nếu không cả thanh Paper thành câm. Nhánh Model bật ở hai khối con phía trên. */
+  return <div className="cad-pill-scroll" style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 5, minHeight: 52, padding: 6, maxWidth: 'calc(100vw - 40px)', overflowX: 'auto', borderRadius: concentricRadius(RADIUS.r4, 0), background: 'color-mix(in srgb, var(--panel) 82%, transparent)', backdropFilter: 'blur(18px) saturate(1.35)', WebkitBackdropFilter: 'blur(18px) saturate(1.35)', border: '1px solid var(--border)', boxShadow: '0 8px 28px rgba(0,0,0,.2)' }}>
     <button type="button" onClick={() => setWorkspace('model')} style={paperToolBtn}><span style={paperModeBadge}>PAPER</span><span style={{ color: 'var(--t3)' }}>Model</span></button>
     <Divider />
     <button type="button" onClick={() => paperAction('add')} style={paperToolBtn} title="Thêm một ô nhìn"><Plus size={15} /> Ô nhìn</button>

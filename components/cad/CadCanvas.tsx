@@ -913,7 +913,8 @@ export default function CadCanvas() {
     // Ống hút thuộc tính (MATCHPROP) — chặn TRƯỚC switch theo tool: đây là lệnh CHỒNG lên tool
     // hiện tại (thường vẫn là 'select' trong lúc dùng), không phải 1 nhánh của switch theo `tool`.
     if (ix.current.eyedropper.active) {
-      const hitId = hitTest(st.doc, ix.current.cursorWorld, tolMm());
+      // Ống hút là một phép CHỌN (hút thuộc tính của vật được trỏ) ⇒ cùng luật, lòng vùng tô tính.
+      const hitId = hitTest(st.doc, ix.current.cursorWorld, tolMm(), { pickInsideFill: true });
       if (!hitId) {
         st.setStatus(
           ix.current.eyedropper.sourceId
@@ -1171,7 +1172,10 @@ export default function CadCanvas() {
         const ids = idsInRect(st.doc, a, b, windowMode);
         st.select(ids, ev.shiftKey);
       } else {
-        const id = hitTest(st.doc, ix.current.cursorWorld, tolMm());
+        // `pickInsideFill` — đường CHỌN bằng chuột: bấm giữa lòng một vùng tô phải chọn được nó,
+        // đúng thói quen mọi công cụ vẽ. Cờ này CỐ Ý không bật ở các lệnh sửa hình (TRIM/FILLET/…)
+        // vì chúng chỉ làm việc với đường; xem docstring `hitTest` trong `lib/cad/query.ts`.
+        const id = hitTest(st.doc, ix.current.cursorWorld, tolMm(), { pickInsideFill: true });
         st.select(id ? [id] : [], ev.shiftKey);
       }
       ix.current.selDrag = null;
@@ -2313,8 +2317,8 @@ export default function CadCanvas() {
   function needSelection(): string[] {
     const st = useCadStore.getState();
     if (st.selection.length) return st.selection;
-    // chưa chọn → click này để chọn 1 đối tượng
-    const id = hitTest(st.doc, ix.current.cursorWorld, tolMm());
+    // chưa chọn → click này để chọn 1 đối tượng (cùng luật với chọn bằng chuột: lòng vùng tô tính)
+    const id = hitTest(st.doc, ix.current.cursorWorld, tolMm(), { pickInsideFill: true });
     if (id) {
       st.select([id]);
       return [id];

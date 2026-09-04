@@ -86,10 +86,14 @@ export default function StageToolbelt({ stage, coDoiTuongChon = false }: StageTo
   }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
+    /* `pointerEvents:'none'` — cùng luật với ổ toolbelt của `AppShell` (04/09): hộp chỉ để BỐ TRÍ
+       thì không bắt chuột, phần tử nhìn thấy được tự bật lại. Hộp này nằm đè lên mặt vẽ 2D và
+       rộng/cao hơn thanh nút bên trong (đo được: 2 điểm hở ở mép phải), nên phần thừa của nó
+       đang nuốt cú bấm xuống mặt vẽ. */
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', pointerEvents: 'none' }}>
       {mo && <CuaDuyet onDong={() => setMo(false)} />}
 
-      <ToolbarBar>
+      <ToolbarBar style={{ pointerEvents: 'auto' }}>
         {/* Bước SOURCE — nút này KHÔNG phải năng lực gộp (không nằm trong `compound.ts`): nó chỉ
             đưa nguyên liệu vào tay. Đặt trước dấu ngăn để đọc đúng thứ tự dây chuyền. */}
         <ToolbarChip
@@ -384,6 +388,9 @@ const panel: CSSProperties = {
   boxShadow: '0 8px 30px rgba(0,0,0,.22)',
   color: 'var(--t2)',
   fontSize: 11.5,
+  // Hộp cha (`StageToolbelt`) cố ý KHÔNG bắt chuột để trả mặt vẽ lại cho người dùng; cửa duyệt
+  // là vật nhìn thấy được nên tự bật lại cho mình — quên dòng này là cả cửa duyệt thành câm.
+  pointerEvents: 'auto',
 };
 
 const anhNho: CSSProperties = {
