@@ -25,6 +25,7 @@
  */
 
 import { BLOCKS, type BlockDef } from './furniture';
+import { KE_ITEM_TARGET } from './library-code-map';
 import type { LibraryBlockMeta, LibraryManifest } from './block-library';
 import type { IdfcBody, IdfcGeom2d } from './idfc';
 import { matchSpec } from '../library/spec-panel';
@@ -181,6 +182,25 @@ export function resolveLibraryItem(
   }
 
   if (item.kind && !(DROPPABLE_ITEM_KINDS as readonly string[]).includes(item.kind)) return null;
+
+  /* 20/08 — BẢNG GHIM mã → id kho ĐỨNG TRƯỚC khớp-tên. Lý do đầy đủ ở `library-code-map.ts`:
+   * dây nối cũ là TÊN HIỂN THỊ, mà tên đổi thì dây đứt im lặng (đo được: 4/12 món kệ
+   * `cad-kyhieu` thả xuống ra Δ entity = 0, trong đó 3 món CÓ hình thật trong kho).
+   * Ghim theo mã + id ⇒ đổi tên hai bên đều không đứt. Ghim mà không tra được (kho ② chưa tải
+   * xong) ⇒ RƠI XUỐNG khớp-tên như cũ, không trả null sớm — bảng này thêm đường, không cắt đường. */
+  const pinned = KE_ITEM_TARGET[item.code];
+  if (pinned) {
+    // Kho khai THẲNG là chưa có ⇒ dừng ngay, không để khớp-tên vồ bừa một món gần giống.
+    if (pinned.missing) return null;
+    if (pinned.blockId) {
+      const hit = BLOCKS.find((b) => b.id === pinned.blockId);
+      if (hit) return { via: 'blockdef', def: hit, keepsIdentity: true, approximate: pinned.approximate ?? false, specId };
+    }
+    if (pinned.manifestId && manifest?.blocks?.length) {
+      const hit = manifest.blocks.find((m) => m.id === pinned.manifestId);
+      if (hit) return { via: 'manifest', meta: hit, keepsIdentity: false, approximate: pinned.approximate ?? false, specId };
+    }
+  }
 
   const def = matchByName(BLOCKS, item);
   if (def) return { via: 'blockdef', def: def.hit, keepsIdentity: true, approximate: def.approximate, specId };
