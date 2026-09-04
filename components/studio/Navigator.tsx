@@ -51,6 +51,17 @@ interface Props {
   shiftHotkeys?: boolean;
 }
 
+/** Ghi nhớ trạng thái thu/mở. Kho bị chặn thì BỎ QUA — cú bấm vẫn phải ăn, chỉ là lần mở
+ * sau không nhớ. Ném ở đây là ném BÊN TRONG hàm cập nhật state ⇒ chết cả cú bấm, không chỉ
+ * mất ghi nhớ (ca 3 nghiệm thu G1). */
+function ghiNhoThuMo(key: string, next: boolean): void {
+  try {
+    localStorage.setItem(key, next ? '1' : '0');
+  } catch {
+    /* kho bị chặn — chỉ mất phần ghi nhớ */
+  }
+}
+
 export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, collapsedLabel, width = DEFAULT_WIDTH, shiftHotkeys = false }: Props) {
   const [collapsed, setCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -64,7 +75,16 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
   const kLibrary = shiftHotkeys ? '⇧L' : 'L';
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    // Trình duyệt chặn hẳn site data (Safari riêng tư, thiết lập siết) thì `getItem` NÉM,
+    // không phải trả null — ném trong effect là sập cả cây React, màn trắng bóc. Ca 3 của
+    // nghiệm thu G1 bắt được đúng chỗ này: an toàn dữ liệu không vi phạm, nhưng app không
+    // dùng được. Không đọc được thì cứ mở panel — mất một tuỳ chọn, không mất cả app.
+    let stored: string | null = null;
+    try {
+      stored = localStorage.getItem(STORAGE_KEY);
+    } catch {
+      /* kho bị chặn — dùng mặc định */
+    }
     if (stored === '1') setCollapsed(true);
     else if (window.innerWidth < COLLAPSE_BREAKPOINT) setCollapsed(true);
     setHydrated(true);
@@ -82,7 +102,7 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
   const toggle = () => {
     setCollapsed((c) => {
       const next = !c;
-      localStorage.setItem(STORAGE_KEY, next ? '1' : '0');
+      ghiNhoThuMo(STORAGE_KEY, next);
       return next;
     });
   };
@@ -95,7 +115,7 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
       const set = (e as CustomEvent<{ set?: boolean }>).detail?.set;
       setCollapsed((c) => {
         const next = set ?? !c;
-        localStorage.setItem(STORAGE_KEY, next ? '1' : '0');
+        ghiNhoThuMo(STORAGE_KEY, next);
         return next;
       });
     };
