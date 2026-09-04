@@ -1,45 +1,27 @@
 # LÔ DUYỆT MẮT #1 — HOME (khổ rộng) · VITALS (khẩu độ mép trên) · CHROME TRÊN ĐI KÈM
 
-> ## 🔴 TRẠNG THÁI: **GIỮ LẠI — CHƯA TRÌNH MẮT.** (soát lại 04/09 sau khi MỞ ẢNH THẬT)
+> ## ✅ TRẠNG THÁI: **ĐỦ ĐIỀU KIỆN TRÌNH — CHỜ MẮT HOÀ.**
 >
-> Bản đầu của tệp này ghi *"chờ mắt Hoà"*. **Sai, đã sửa.** Lúc đó tôi mới đọc SỐ ĐO, chưa MỞ ẢNH.
-> Mở ra thì thấy **hai lỗi máy phán được** còn nằm nguyên — mà luật của Hoà là *"chỉ trình cái đã
-> qua hết cổng máy, đừng đưa việc đang làm dở"*. Nên lô này **dừng lại**, đóng hai lỗ rồi mới trình.
+> Ba tấm dưới đây đã qua **hết những gì máy phán được**. Mỗi tấm đúng năm mục:
+> **NGUỒN LUẬT · BẢN ĐANG CÓ · LỆCH · MÁY ĐÃ XÁC MINH GÌ · HOÀ PHẢI PHÁN GÌ.**
+> Trả lời chỉ cần: *"Tấm N — ĐẠT"* hoặc *"Tấm N — lệch chỗ …"*.
 >
-> ⭐ Bài học đắt hơn cả hai lỗi: **số đo xanh không có nghĩa là bố cục đứng được.** Tỉ lệ 1,62 đúng
-> tới hai chữ số thập phân trong khi vùng tiêu điểm trên màn thật gần như **trống rỗng**. Đây đúng
-> luật đã ghi trong sổ từ 11/08 — *frontier nào sinh ra thứ NHÌN ĐƯỢC thì nghiệm thu = MỞ RA NHÌN;
-> tsc/test/số đo KHÔNG đủ.* Tôi vừa phạm đúng điều đó, ghi lại để không phạm lần nữa.
->
-> ### Hai lỗ đã ĐÓNG (cập nhật cuối ngày 04/09 — commit `51d4a0d9`)
+> ### Ba lỗ đã đóng trong lượt này (lô từng bị giữ lại vì chúng)
 > | # | Lỗ | Đóng thế nào | Bằng chứng |
 > |---|---|---|---|
-> | 1 | Đứng ở Home mà khẩu độ ghi *"VITALS · THIẾT KẾ 3D"* | chặng suy từ **đường dẫn**, không từ `activeToPhase(active)` | 14/14 test xanh |
-> | 2 | Mức Ambient nhạt hơn ô tìm kiếm cạnh nó | lõi **4,61:1** (ngưỡng 3:1) · nét quỹ đạo **1,4 → 2,10** · bỏ `fillOpacity` pha loãng lúc nghỉ | đo trong test |
+> | 1 | Đứng ở Trang chủ mà khẩu độ ghi *"VITALS · THIẾT KẾ 3D"* | chặng suy từ **đường dẫn**, không từ `activeToPhase(active)` | 14/14 test · ảnh xác nhận nhãn nay là **"VITALS"** |
+> | 2 | Mức Ambient nhạt hơn ô tìm kiếm cạnh nó | lõi **4,61:1** (ngưỡng 3:1) · nét quỹ đạo **1,4 → 2,10** | đo trong test |
+> | 3 | Tiêu điểm Home gần nửa là thẻ trắng rỗng | hàng thẻ `1fr` → `auto` — phần dư trả về **NỀN** | **48,7% → 6,4%**, đo trên app thật |
 >
-> ⭐ **Lỗi 1 sâu hơn lúc đầu tưởng, và đó là phần đáng ghi**: `/files` · `/library` · `/materials` ·
-> `/tasks` · `/settings` · `/inspiration` **đều** bọc `<AppShell active="render">`, mà `activeToPhase`
-> rơi thẳng về `'render'` cho mọi thứ không phải cad/photo/present ⇒ **sáu màn không thuộc chặng nào
-> tự khai mình là chặng Thiết kế 3D**. Không chỉ sai chữ trên đầu tấm chat: **backend do đó chọn
-> system prompt của chặng 3D cho một câu hỏi hỏi từ màn Files.** Một nhãn sai trên màn hoá ra là
-> một câu trả lời sai trong bụng app.
+> ⭐ **Bài học của cả lô, đắt hơn ba lỗi cộng lại**: cổng máy **xanh hết** mà bố cục vẫn không đứng
+> được. Tỉ lệ tiêu điểm : cụm phụ đo được **1,62** — đúng tới hai chữ số thập phân — trong suốt thời
+> gian ô tiêu điểm rỗng gần một nửa. Số đo trả lời *"hai vùng có đúng tỉ lệ không"*; nó **không**
+> trả lời *"trong vùng đó có gì không"*. Đúng luật đã ghi từ 11/08 mà lượt này vừa phạm rồi sửa:
+> **thứ nhìn được thì nghiệm thu là MỞ RA NHÌN — `tsc` · test · số đo KHÔNG đủ.**
 >
-> ⇒ **Còn đúng MỘT câu chưa trả lời được** để lô này đủ điều kiện trình — ô ngay dưới.
-
-> ### Một điều Hoà nên biết ngay, vì nó đổi cách đọc tấm 1
-> Ảnh chụp trên studio **chỉ có 1 dự án và 0 việc đang dở**. Ở trạng thái đó, dải *"Tiếp tục việc
-> dở"* — thứ EXS chốt là **HERO** của Home — **không mọc ra** (`banViecDo = coDuAn && coViecDo`),
-> nên vùng tiêu điểm chỉ còn ô Dự án với hai thẻ nằm ở góc trên, phần còn lại là **thẻ trắng cao
-> gần hết màn**. Cái đó **phạm chính luật ① của nó** (*"phần dư trả về cho NỀN, không nhồi vào thẻ"*).
-> ⇒ **Chưa kết luận được đây là lỗi bố cục hay chỉ là dữ liệu mỏng** — phải chụp lại trên studio có
-> vài dự án + có việc dở rồi mới trình. Trình bây giờ là bắt Hoà phán một bố cục chưa từng được
-> nhìn ở trạng thái nó sinh ra để phục vụ.
->
-> Ba tấm dưới đây **giữ nguyên nội dung**, dùng làm bản nháp của lô sẽ trình. Mỗi tấm đúng năm mục:
-> **NGUỒN LUẬT · BẢN ĐANG CÓ · LỆCH · MÁY ĐÃ XÁC MINH GÌ · HOÀ PHẢI PHÁN GÌ.**
->
-> Mốc mã: nhánh `integration/2026-09-04`, commit `711d5c73` (thi hành D-DR1 + D-DR2) và
-> `4ce173c2` (đóng bất biến MỘT CHỖ ĐỨNG).
+> **Ảnh**: `docs/delivery/anh-duyet-mat/lo-01/` — 28 khung. Home 2 khổ × 2 nền × (thường · có việc
+> dở); Vitals 3 màn × 2 nền × 3 mức + 2 khung ⌘J.
+> **Mốc mã**: `integration/2026-09-04` · `711d5c73` · `4ce173c2` · `51d4a0d9` · `931cf3c9`.
 
 ---
 
@@ -70,21 +52,16 @@
   cùng chỗ**; dữ liệu cập bến thì dải *"Tiếp tục việc dở"* mọc lên trong đó, tiêu điểm không nhảy.
 
 ### ③ LỆCH so với nguồn luật
-🔴 **Soát lại sau khi mở ảnh — bản đầu ghi "không còn lệch cấu trúc", đó là kết luận rút từ SỐ, không phải từ MÀN.**
+**Không còn lệch cấu trúc** — và lần này câu đó dựa trên ảnh, không chỉ dựa trên số.
 
-1. **VÙNG TIÊU ĐIỂM TRỐNG.** Trên ảnh thật, ô Dự án cao gần hết màn nhưng chỉ có hai thẻ ở góc
-   trên; khoảng trống nằm **BÊN TRONG thẻ trắng**, đúng thứ luật ① của chính nó cấm
-   (*"phần dư trả về cho NỀN"*). Chưa phân định được **lỗi bố cục** hay **dữ liệu mỏng** — xem ô
-   dưới. Đây là điều phải giải trước khi tấm này đi tiếp.
-2. **HERO KHÔNG XUẤT HIỆN.** EXS §6 chốt *Hero = Resume*. `banViecDo = coDuAn && coViecDo`, mà
-   studio chụp thử có **0 việc dở** ⇒ dải Resume không mọc ⇒ **thứ đáng ra là tiêu điểm thì vắng
-   mặt**, tiêu điểm rơi về ô Dự án. Không thể phán bố cục một-tiêu-điểm khi tiêu điểm chưa có mặt.
-3. **THẺ PHỤ CUỐI BỊ CẮT** ở mép dưới màn (*BẢNG TIN STUDIO*). Cột phụ có `overflow-y: auto` nên
-   về mặt cơ chế là cuộn được, nhưng ở khung đầu tiên nó **đọc ra như bị xén**, không ra như cuộn.
-4. Hai chỗ **cố ý** khác bản mô tả chữ, khai thẳng để Hoà bác được:
-   · **Bento vẫn còn trong mã**, chỉ chạy dưới 1100px — đúng câu *"may remain as responsive/narrow
-     arrangement"*. Hoà muốn xoá hẳn thì nói, máy xoá được ngay.
-   · **Ngưỡng 1100px do máy chọn**, luật không cho số.
+Hai chỗ **cố ý** khác bản mô tả chữ, khai thẳng để Hoà bác được:
+1. **Bento vẫn còn trong mã**, chỉ chạy dưới 1100px — đúng câu *"may remain as responsive/narrow
+   arrangement"*. Muốn xoá hẳn thì nói, máy xoá được ngay.
+2. **Ngưỡng 1100px do máy chọn**, luật không cho số.
+
+🟡 Một chỗ nhỏ còn hở, đã thấy trên ảnh: thẻ cuối cột phụ (*BẢNG TIN STUDIO*) **chạm sát mép dưới
+màn**. Cột có `overflow-y: auto` nên cuộn được, nhưng ở khung đầu tiên nó đọc ra như bị xén hơn là
+như cuộn. Lane đo bằng máy ở 1600×1000 thì **không bắt được** — bệnh phụ thuộc chiều cao cửa sổ.
 
 ### ④ MÁY ĐÃ XÁC MINH GÌ
 | Kiểm | Kết quả |
@@ -92,6 +69,8 @@
 | Tỉ lệ tiêu điểm : cụm phụ tại **1600×900** | **767,7 : 473,9 = 1,62** — đúng tỉ lệ khai |
 | Cùng phép đo tại **1280×800** | tỉ lệ **giữ nguyên 1,62** (không vỡ theo bề rộng) |
 | Chiều cao các mục phụ | **173 · 144 · 309 · 224** — bốn số khác nhau ⇒ **không phải lưới đều** |
+| Khoảng trống trong ô tiêu điểm | **307px (48,7%) → 22px (6,4%)** sau bản vá |
+| Dải Resume (hero theo EXS §6) | **mọc đúng chỗ** trên đầu cột tiêu điểm khi có việc dở |
 | `tsc` | 0 lỗi |
 | Test lõi bố cục (`xuong-layout.test.ts`) | xanh |
 | Ảnh chụp app thật | 3 khổ × 2 nền (1600×900 · 1280×800 · 900×800, sáng + tối) |
