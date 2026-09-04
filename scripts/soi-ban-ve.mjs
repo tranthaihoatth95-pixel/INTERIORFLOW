@@ -53,7 +53,7 @@ const br = await chromium.launch(TU_CHI ? { executablePath: TU_CHI } : {});
 const lum = (c) => { const [r,g,b]=c.map(v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4}); return .2126*r+.7152*g+.0722*b; };
 const tp = (a,b)=>{const L1=lum(a),L2=lum(b);return ((Math.max(L1,L2)+.05)/(Math.min(L1,L2)+.05));};
 const rgb = (s)=>s.match(/\d+/g).slice(0,3).map(Number);
-let loi = 0;
+let loi = 0, daSoi = 0, tongKhongDo = 0;
 for (const [tep, W, H] of ca) {
   const duong = resolve(tep);
   for (const nen of ['light','dark']) {
@@ -133,9 +133,18 @@ for (const [tep, W, H] of ca) {
     console.log(`   cuộn: ${r.cuon.docW}×${r.cuon.docH} ${(r.cuon.docW>W||r.cuon.docH>H)?'🔴 vượt':'✓ vừa khung'}`);
     console.log(`   chữ dưới ngưỡng: ${duoi.length ? '🔴 '+duoi.join(' · ') : '0'}`);
     if (khongDo) console.log(`   ⚠️  ${khongDo} đoạn chữ NẰM TRÊN ẢNH/GRADIENT — máy không đo được, phải soi bằng mắt`);
+    daSoi++;
+    tongKhongDo += khongDo;
     if (r.tran.length || duoi.length || r.cuon.docW>W || r.cuon.docH>H) loi++;
     await p.close();
   }
 }
 await br.close();
-console.log(`\n${loi ? '🔴 '+loi+' khung có vấn đề' : '✅ 6/6 khung sạch'}`);
+/* Dòng tổng ĐẾM THẬT, không gõ cứng. Trước 04/09 nó in "✅ 6/6 khung sạch" bất kể chạy bao nhiêu
+   lượt — làn dựng Home chạy 18 lượt vẫn thấy 6/6. Máy soi tự báo cáo sai là loại lỗi tệ nhất:
+   người đọc tin nó, và nó bào mòn niềm tin vào mọi con số khác cùng bản báo cáo. */
+console.log(`\n${loi ? `🔴 ${loi}/${daSoi} lượt có vấn đề` : `✅ ${daSoi}/${daSoi} lượt sạch`}`);
+if (tongKhongDo) console.log(
+  `⚠️  ${tongKhongDo} đoạn chữ máy KHÔNG ĐO ĐƯỢC (nằm trên ảnh/gradient) — "sạch" ở trên KHÔNG bao gồm chúng.\n` +
+  `   Và máy có thể báo ĐẸP HƠN SỰ THẬT: chữ nằm trên vùng SÁNG của hình mà nền tra được lại là <rect> TỐI\n` +
+  `   của cùng svg thì tỉ số tính ra đẹp hơn thực tế. Chỗ này chỉ mắt người phán.`);
