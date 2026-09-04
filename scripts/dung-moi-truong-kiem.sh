@@ -7,12 +7,12 @@
 # ⛔ KHÔNG DÙNG CHO DỮ LIỆU THẬT. Không khoá thật, không dữ liệu người dùng.
 #    `.env` và `prisma/dev.db*` đều đã gitignore (.gitignore:3,6).
 #
-# VÌ SAO `db push` CHỨ KHÔNG `migrate deploy` (đo 04/09, ghi lại để khỏi thử lại):
-#    `migrate deploy` áp đủ 6 migration nhưng chỉ dựng **21/24 bảng** — thư mục
-#    migrations đang TỤT SAU `schema.prisma` (3 model chỉ tồn tại nhờ `db push`
-#    trước đây; xem tên migration `catchup_db_push_baseline`). Với DB rỗng
-#    dùng-xong-bỏ thì `db push` cho cây đúng bằng schema. ⚠️ Nhưng đây là RỦI RO
-#    PHÁT HÀNH THẬT: máy chủ mới chạy `migrate deploy` sẽ có CSDL THIẾU BẢNG.
+# DÙNG `migrate deploy` — CỐ Ý, và đây là điều kiện để script này có giá trị: nó dựng CSDL bằng
+#    ĐÚNG đường mà máy chủ thật dùng, nên mỗi lần chạy cũng là một lần kiểm rằng thư mục
+#    migrations còn dựng được đủ schema. `db push` tiện hơn nhưng CHE MẤT lệch migrations — đúng
+#    cái bẫy đã cắn một lần: sáng 04/09 `migrate deploy` chỉ dựng 21/24 bảng vì 3 model chỉ từng
+#    tồn tại nhờ `db push` gõ tay (xem tên migration cũ `catchup_db_push_baseline`). Đã vá bằng
+#    migration `20260904000000_catchup_schema_drift`.
 #
 # CHẠY:  bash scripts/dung-moi-truong-kiem.sh
 set -euo pipefail
@@ -34,7 +34,7 @@ fi
 
 set -a; . ./.env; set +a
 echo "· sinh Prisma client"; npx prisma generate >/dev/null
-echo "· đồng bộ CSDL theo schema"; npx prisma db push --skip-generate --accept-data-loss >/dev/null
+echo "· dựng CSDL bằng migrations (đúng đường máy chủ thật dùng)"; npx prisma migrate deploy >/dev/null
 
 MODEL=$(grep -cE '^model ' prisma/schema.prisma)
 BANG=$(node -e "const{PrismaClient}=require('@prisma/client');const p=new PrismaClient();p.\$queryRawUnsafe(\"SELECT count(*) c FROM sqlite_master WHERE type='table' AND name NOT LIKE '_prisma%' AND name NOT LIKE 'sqlite_%'\").then(r=>{process.stdout.write(String(r[0].c));return p.\$disconnect()})")
@@ -43,5 +43,10 @@ if [ "$MODEL" = "$BANG" ]; then
   echo "✅ môi trường xác minh sẵn sàng — $BANG/$MODEL bảng khớp schema"
   echo "   chạy: npm test   ·   npm run build   ·   npx next start"
 else
-  echo "❌ lệch: schema $MODEL model nhưng CSDL $BANG bảng"; exit 1
+  echo "❌ LỆCH MIGRATIONS: schema có $MODEL model nhưng migrate deploy chỉ dựng $BANG bảng."
+  echo "   ⇒ prisma/migrations đang tụt sau schema.prisma. Sinh migration bù bằng:"
+  echo "     npx prisma migrate diff --from-migrations prisma/migrations \\"
+  echo "       --to-schema-datamodel prisma/schema.prisma --shadow-database-url file:/tmp/shadow.db --script"
+  echo "   ĐỪNG chữa bằng db push — nó làm script xanh mà máy chủ thật vẫn thiếu bảng."
+  exit 1
 fi
