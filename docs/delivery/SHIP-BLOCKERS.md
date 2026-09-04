@@ -12,10 +12,35 @@
 
 | # | Mức | Việc | Trạng thái |
 |---|---|---|---|
-| B1 | **P0** | Mất dữ liệu âm thầm khi vào thẳng deep-link — định danh lưu trữ đọc từ `localStorage` thay vì trạng thái đăng nhập máy chủ | 🔵 **ĐANG SỬA** (làn A) |
+| B1 | **P0** | Mất dữ liệu âm thầm khi vào thẳng deep-link | 🟡 **SỬA XONG-MÁY, CHỜ APP THẬT** — xem dưới |
 | B2 | **P2** | Home chưa có hướng được duyệt mắt ⇒ bề mặt lớn nhất của sản phẩm chưa đạt *Product Complete* | 🔵 **ĐANG LÀM** (làn B) |
 | B3 | **P2** | Khẩu độ Vitals — ảnh app thật đã sẵn, **chưa được phán** | 🟡 chờ mắt Hoà |
 | B4 | **P3** | Đường phát hành: `.idf`/`.idfc` sinh từ máy sạch chưa chạy lại sau khi thu 11 slice | ⬜ chưa mở |
+
+### B1 — trạng thái chi tiết (04/09 16:0x)
+
+**Đã cắm đủ ba đường ghi** qua `danhTinhChoLuot()`: `CadSheets.tsx` · `PresentSheets.tsx` ·
+`lib/cad/cad3d-autosave.ts`. Không đẻ đường thứ tư.
+
+Bằng chứng là **số lần ghi xuống đĩa**, không phải lập luận:
+```
+trước patch  → 0 lần ghi
+sau  patch   → 3 lần ghi, đúng khoá
+   CadSheets      usr::/cad-editor::prj
+   PresentSheets  usr::/present-editor::prj
+   autosave 3D    DÙNG CHUNG khoá với CadSheets — không đẻ bucket thứ hai
+401 thật     → vẫn 0 lần ghi (không nới cổng chặn để lấy số đẹp)
+```
+Ca "hình dạng CŨ" giữ lại làm **chốt chống tái phát**: quay về đọc đồng bộ là test đỏ ngay.
+Ràng buộc *khối dọn phải đồng bộ* nay có **máy canh** chứ không chỉ lời dặn — ca ⑦ khẳng định
+mọi lượt dọn chạy xong trước khi bất kỳ lượt định danh nào về.
+4 cổng: `tsc` 0 · `test` 0 · `soi:frontier` 0 lệch · `soi:contract` 0 lệch.
+
+🔴 **VÌ SAO CHƯA ĐÓNG:** *chưa mở app thật một dòng nào.* Test dựng lại **hình dạng** effect bằng
+lời gọi hàm trần — chứng minh **cơ chế và thứ tự**, KHÔNG chứng minh React thật chạy đúng vậy.
+`UNVERIFIED ≠ PASS`. Còn một hồi quy nhỏ chưa đo: `bucketIdRef.current || userIdRef.current ||
+'local'` (tên thư mục backup `.ifpack`) — trên route toàn cục cũ `/cad-editor`, trong cửa sổ chờ
+định danh nó rơi về `'local'` thay vì userId.
 
 ## KHÔNG CHẶN — phân loại rõ để không ai kéo vào đường tới đích
 
