@@ -149,6 +149,55 @@
   --paper-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6); /* tờ giấy cỡ thật */
   --paper-shadow-sm: 0 12px 30px -14px rgba(0, 0, 0, 0.6); /* tờ thu nhỏ trong hộp thoại xuất */
 
+  /* ---------- TÔNG NỘI DUNG (làn D · hiện vật công việc trên Home) ----------
+     Nguồn: :root của `docs/mocks/_home-lock-nen.css` (bản khoá Home 04/09). Cùng lý do
+     KHÔNG theo theme với hai khối --illus-* và --paper-* ngay trên: một bảng vật liệu,
+     một khung phối cảnh hay một mẫu gỗ KHÔNG lật màu khi người dùng đổi theme app —
+     nó là NỘI DUNG của người dùng, không phải giao diện.
+
+     ⚠️ Ba màu mặt sáng của bản vẽ (--nen-sang · --net-sang · --muc) ĐÃ TỒN TẠI dưới tên
+     --paper · --paper-edge · --paper-ink. Khai BÍ DANH thay vì hex thứ hai — đúng lối
+     --ok/--warn ngay dưới, và tránh đúng bệnh "cùng một thứ khai hai chỗ rồi phân kỳ". */
+  --nen-sang: var(--paper); /* mặt nội dung SÁNG (bảng vật liệu, tờ hồ sơ) */
+  --net-sang: var(--paper-edge); /* đường kẻ trên mặt sáng */
+  --muc: var(--paper-ink); /* chữ chính trên mặt sáng */
+  --muc-2: #6b6459; /* chữ phụ trên mặt sáng — ĐO 04/09: 5,37:1 trên --paper, đạt ngưỡng 4,5 */
+
+  /* Thang tông CẢNH — nền mà việc đứng lên (dải môi trường, khung phối cảnh tối). */
+  --canh-0: #14161a;
+  --canh-1: #1e222a;
+  --canh-2: #2c313b;
+  --canh-3: #454c59;
+  --canh-4: #6e6a63;
+  --canh-5: #9b9184;
+  --canh-6: #cabfae;
+  --canh-7: #ece3d3;
+
+  /* Tông VẬT LIỆU — ô mẫu trong bảng vật liệu và dải mẫu bậc KỀ BÊN. */
+  --vl-go: #9c7449;
+  --vl-da: #cfc9bd;
+  --vl-vai: #6f7b74;
+  --vl-kl: #b9b4ab;
+  --vl-son: #e9e2d4;
+
+  /* MỰC TRÊN ẢNH — ngoại lệ khai được của luật "chữ trên nền app chỉ lấy --t1/--t2/--t3":
+     chữ ĐÈ LÊN ảnh không được lật theo theme vì ảnh thì không lật. */
+  --muc-tren-anh-1: #f7f5f1;
+  --muc-tren-anh-3: #c9c5bd;
+
+  /* SCRIM CỤC BỘ — chỉ dìm DẢI CÓ CHỮ, không dìm cả tấm ảnh (chỉ thị D cấm lớp phủ tối
+     khổng lồ). 🔴 ĐẶC, KHÔNG chuyển sắc — đo được, không phải chuyện gu: lớp phủ chuyển
+     sắc mỏng dần về .46 ở CHÂN chữ, đặt lên vùng sáng nhất của ảnh thì nền hoà ra
+     rgb(131,127,119) ⇒ chữ chỉ còn 2,32:1 — TRƯỢT. Scrim đặc .86 thì nền hoà luôn nằm
+     trong rgb(10,11,13)…rgb(40,40,39) với MỌI ảnh ⇒ 8,58:1 … 11,44:1, tức tương phản
+     thành HẰNG SỐ do cấu trúc, không phải may rủi theo từng tấm ảnh người dùng thả vào. */
+  --scrim-manh: rgba(8, 9, 11, 0.86);
+  --scrim-vua: rgba(8, 9, 11, 0.58);
+  --scrim-nhe: rgba(8, 9, 11, 0.3);
+  /* Chuyển sắc ở chân chữ CHỈ dùng cho DẢI CHỮ LỚN (chuyển sắc trải dài quá thân chữ) —
+     cấm dùng cho chip nhỏ, xem phép tính ngay trên. */
+  --phu-chan-chu: linear-gradient(180deg, var(--scrim-manh), var(--scrim-vua));
+
   /* Bí danh trạng thái của làn in — mock khai --ok/--warn (đúng bằng hex của
      --success/--warning bản Tối). Khai BÍ DANH thay vì hex mới, đúng lối --p-img
      ở trên: theme Sáng tự lấy bản đủ tương phản, không kẹt lại màu nền Mực. */
