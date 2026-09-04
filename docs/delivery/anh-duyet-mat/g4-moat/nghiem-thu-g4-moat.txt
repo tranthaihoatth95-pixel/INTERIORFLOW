@@ -16,11 +16,11 @@
    ✅ món từ Thư viện mang mã lần-chèn (gia phả) — 2 entity có srcInsertId
 
 ▸ K3 · 2D → 3D · cùng một mã hay mỗi nơi một mã
-   ✅ nhóm 3D neo về entity 2D — 2/3 nhóm mang entityId · tên: Floor, Furn_1_sofa3, Furn_2_wardrobe
+   ✅ nhóm 3D neo về entity 2D — 3/3 nhóm mang entityId · tên: Floor_1, Furn_1_sofa3, Furn_2_wardrobe
    ✅ KHÔNG nhóm 3D nào mang mã lạ (không có trong Doc) — mã lạ=0
-   ✅ vật liệu ở 3D là CÙNG mã vật liệu ở 2D — 2 nhóm mang specId · lạ=0 · mã: ps-sofa-3s,ps-wrd-240
-   ❌ mọi entity 2D tìm lại được ở 3D bằng CHÍNH mã của nó — 2/3 entity có nhóm 3D mang đúng id · MẤT: hatch#e-005(slab)
-   ❌ mọi vật liệu gán ở 2D đều tới được 3D — 2/3 vật liệu tới 3D · KHÔNG TỚI: hatch#e-005 specId=ps-go-soi (slab)
+   ✅ vật liệu ở 3D là CÙNG mã vật liệu ở 2D — 3 nhóm mang specId · lạ=0 · mã: ps-go-soi,ps-sofa-3s,ps-wrd-240
+   ✅ mọi entity 2D tìm lại được ở 3D bằng CHÍNH mã của nó — 3/3 entity có nhóm 3D mang đúng id
+   ✅ mọi vật liệu gán ở 2D đều tới được 3D — 3/3 vật liệu tới 3D
 
 ▸ K4 · BuildRecipe · ngăn xếp không phá huỷ
    ✅ bật 2 bước ≠ tắt bước 2 (ngăn xếp có tác dụng thật) — bật=12 đỉnh · tắt=6 đỉnh
@@ -51,7 +51,7 @@
    ✅ Doc cũ KHÔNG bị sửa tại chỗ (lùi được) — doc gốc vẫn specId=ps-go-soi
    ✅ BOQ tự đổi theo — KHÔNG ai đi đồng bộ tay — trước=27.000.000₫ → sau=51.840.000₫
    ✅ vân tay Doc đổi ⇒ phụ lục deck BÁO CŨ — stale=true · c293e2a5:2b → 4dc1e07b:2c
-   ❌ 3D cũng đọc mã MỚI (một nguồn, không bản sao) — mã 3D sau khi đổi: ps-sofa-3s,ps-wrd-240 · có mã mới=false
+   ✅ 3D cũng đọc mã MỚI (một nguồn, không bản sao) — mã 3D sau khi đổi: ps-go-ocho,ps-sofa-3s,ps-wrd-240 · có mã mới=true
    ✅ cache KHÔNG cắm số cũ khi Doc đổi — lần2 hit=true · sau khi đổi hit=false
 
 ▸ K9 · LƯU → ĐÓNG → MỞ LẠI (ba đường lưu thật)
@@ -63,6 +63,8 @@
    ✅ ① .idf — BOQ sau mở lại RA ĐÚNG SỐ CŨ — 102.340.000₫ vs 102.340.000₫ · 3 vs 3 dòng
    ✅ ① .idf — QUYẾT ĐỊNH của người còn hiệu lực — specId sau mở lại = ps-go-ocho
    ✅ ① .idf — vân tay khớp ⇒ deck KHÔNG báo cũ oan — 4dc1e07b:2c vs 4dc1e07b:2c
+   ✅ ① .idf — sau MỞ LẠI, mặt sàn 3D vẫn neo đúng entity 2D — 1 nhóm sàn mang entityId / 1 slab trong tệp · id=e-005
+   ✅ ① .idf — sau MỞ LẠI, mặt sàn 3D vẫn mang vật liệu NGƯỜI ĐÃ CHỌN — specId ở 3D sau mở lại = ps-go-ocho · người đã chọn = ps-go-ocho
    ✅ ② IndexedDB — Doc qua vòng JSON không rơi trường nào — 1033 byte
    ✅ ② IndexedDB — BOQ sau nạp lại ra đúng số — 102.340.000₫
    ✅ ③ .idfc mở lại được — 466 byte · kind=furniture
@@ -72,19 +74,26 @@
    ❌ ③ .idfc — nối về bản ghi thương mại bằng khoá BẤT BIẾN — commerce có specId = false · chỉ có sku='SOFA-3S' (business key, đổi được)
    ❌ ③ .idfc — CÔNG THỨC KHỐI đi cùng cấu kiện — chữ "recipe" trong lib/cad/idfc.ts = 0 dòng
 
-── KẾT: 49/54 khẳng định ĐẠT ──
+▸ K10 · Đường lùi · bản vẽ chưa khai `slab` vẫn dựng được sàn
+   ✅ bản vẽ cũ đúng là KHÔNG khai slab nào — slab=0
+   ✅ vẫn dựng được mặt sàn — 1 nhóm sàn · tên: Floor
+   ✅ sàn đường lùi khai THẬT là hình học suy ra (derived, không entityId) — provenance=derived · entityId=(trống)
+
+── KẾT: 57/59 khẳng định ĐẠT ──
 ĐỨT Ở:
-  · [K3 · 2D → 3D · cùng một mã hay mỗi nơi một mã] mọi entity 2D tìm lại được ở 3D bằng CHÍNH mã của nó — 2/3 entity có nhóm 3D mang đúng id · MẤT: hatch#e-005(slab)
-  · [K3 · 2D → 3D · cùng một mã hay mỗi nơi một mã] mọi vật liệu gán ở 2D đều tới được 3D — 2/3 vật liệu tới 3D · KHÔNG TỚI: hatch#e-005 specId=ps-go-soi (slab)
-  · [K8 · Đổi thượng nguồn → ảnh hưởng xuôi dòng + NGƯỜI quyết] 3D cũng đọc mã MỚI (một nguồn, không bản sao) — mã 3D sau khi đổi: ps-sofa-3s,ps-wrd-240 · có mã mới=false
   · [K9 · LƯU → ĐÓNG → MỞ LẠI (ba đường lưu thật)] ③ .idfc — nối về bản ghi thương mại bằng khoá BẤT BIẾN — commerce có specId = false · chỉ có sku='SOFA-3S' (business key, đổi được)
   · [K9 · LƯU → ĐÓNG → MỞ LẠI (ba đường lưu thật)] ③ .idfc — CÔNG THỨC KHỐI đi cùng cấu kiện — chữ "recipe" trong lib/cad/idfc.ts = 0 dòng
 
 ═══ HIỆU CHUẨN · bẻ dây định danh 2D↔3D, bộ này PHẢI báo đỏ ═══
-   ✅ nhóm 3D neo về entity 2D — 3/3 nhóm mang entityId · tên: Floor, Furn_1_sofa3, Furn_2_wardrobe
+   ✅ nhóm 3D neo về entity 2D — 3/3 nhóm mang entityId · tên: Floor_1, Furn_1_sofa3, Furn_2_wardrobe
    ❌ KHÔNG nhóm 3D nào mang mã lạ (không có trong Doc) — mã lạ=3 → 3d-rieng-0,3d-rieng-1,3d-rieng-2
-   ❌ vật liệu ở 3D là CÙNG mã vật liệu ở 2D — 2 nhóm mang specId · lạ=2 · mã: mat-3d-1,mat-3d-2
+   ❌ vật liệu ở 3D là CÙNG mã vật liệu ở 2D — 3 nhóm mang specId · lạ=3 · mã: mat-3d-0,mat-3d-1,mat-3d-2
    ❌ mọi entity 2D tìm lại được ở 3D bằng CHÍNH mã của nó — 0/3 entity có nhóm 3D mang đúng id · MẤT: hatch#e-005(slab), block#e-002(furniture), block#e-004(furniture)
    ❌ mọi vật liệu gán ở 2D đều tới được 3D — 0/3 vật liệu tới 3D · KHÔNG TỚI: hatch#e-005 specId=ps-go-soi (slab), block#e-002 specId=ps-sofa-3s (furniture), block#e-004 specId=ps-wrd-240 (furniture)
 
 ✅ HIỆU CHUẨN ĐẠT — ca biết-hỏng làm ĐỎ 4 khẳng định ở K3.
+
+═══ HIỆU CHUẨN HẸP · gỡ vật liệu khỏi nhóm MẶT SÀN, ca then chốt PHẢI đỏ ═══
+   ❌ 3D cũng đọc mã MỚI (một nguồn, không bản sao) — mã 3D sau khi đổi: ps-sofa-3s,ps-wrd-240 · có mã mới=false
+
+✅ HIỆU CHUẨN HẸP ĐẠT — gỡ vật liệu khỏi mặt sàn thì ca then chốt ĐỎ ⇒ nó thật sự đo mặt sàn.

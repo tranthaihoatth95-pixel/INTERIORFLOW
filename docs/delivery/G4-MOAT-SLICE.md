@@ -3,13 +3,18 @@
 > **Luật của cổng này:** *"Nếu moat chỉ tồn tại dưới dạng type/interface/tài liệu mà người dùng
 > KHÔNG trải nghiệm được hiệu ứng của nó ⇒ CHƯA HOÀN THÀNH."*
 >
-> **Kết quả một dòng: 49/54 khẳng định ĐẠT. Chuỗi đi được tới cuối. Ba chỗ đứt, đã định vị tới
-> tệp:dòng. Mắt ĐÓNG/TẢI LẠI — thứ cả dự án chưa từng chứng minh — nay CÓ BẰNG CHỨNG.**
+> **Kết quả một dòng (04/09, sau đợt vá mặt sàn): 57/59 khẳng định ĐẠT.** Chuỗi đi tới cuối.
+> Chỗ đứt NẶNG NHẤT (Đ1 — vật liệu mặt sàn không tới được 3D) **ĐÃ ĐÓNG**; còn hai chỗ đứt ở
+> `.idfc`, đã định vị tới tệp:dòng. Mắt ĐÓNG/TẢI LẠI — thứ cả dự án chưa từng chứng minh — nay CÓ
+> BẰNG CHỨNG, và **nay áp cả cho 3D**: sau khi lưu `.idf` rồi mở lại, mặt sàn dựng lại ở 3D vẫn
+> neo đúng entity và vẫn mang đúng vật liệu người đã chọn.
+>
+> *(Lần đo đầu 04/09, trước khi vá: **49/54**, K3 3/5.)*
 
 | | |
 |---|---|
 | Bộ nghiệm thu | `scripts/nghiem-thu-g4-moat.mjs` (tự hiệu chuẩn) |
-| Máy canh thường trực | `lib/cad/moat-chuoi.test.ts` — 24 khẳng định, vào `npm test` |
+| Máy canh thường trực | `lib/cad/moat-chuoi.test.ts` — 34 khẳng định, vào `npm test` |
 | Bằng chứng chạy | `docs/delivery/anh-duyet-mat/g4-moat/nghiem-thu-g4-moat.txt` |
 | Ngày đo | 04/09/2026 · mốc `fc69d747` |
 
@@ -36,7 +41,11 @@ Mọi hàm trong chuỗi là **hàm sản xuất thật**: `resolveLibraryItem` 
 
 Chế độ `--hieu-chuan` dựng một thế giới **biết chắc hỏng**: cấp cho mỗi nhóm 3D một mã riêng
 (đúng bệnh *"mỗi bề mặt một danh tính riêng"*), rồi chạy **chính bộ khẳng định đó** lên nó.
-Kết quả: **4 khẳng định ở K3 chuyển ĐỎ** (`mã lạ=3` · `vật liệu lạ=2` · `0/3 entity tìm lại được`
+Từ 04/09 có **HAI** phép hiệu chuẩn, vì phép tổng không chứng minh được ca then chốt đang xanh
+*nhờ mặt sàn*: ngoài ca tổng dưới đây còn ca hẹp `beGayVatLieuSan3D` — gỡ `specId` khỏi **đúng**
+nhóm mặt sàn rồi đòi khẳng định *"đổi vật liệu sàn → 3D mang mã mới"* phải ĐỎ (đã đỏ).
+
+Kết quả ca tổng: **4 khẳng định ở K3 chuyển ĐỎ** (`mã lạ=3` · `vật liệu lạ=2` · `0/3 entity tìm lại được`
 · `0/3 vật liệu tới 3D`). Gỡ cờ ra thì chúng xanh lại. ⇒ Bộ này **không phải máy in chữ PASS**.
 
 ---
@@ -47,13 +56,14 @@ Kết quả: **4 khẳng định ở K3 chuyển ĐỎ** (`mã lạ=3` · `vật
 |---|---|---|
 | K1 | Thư viện → đặt vào 2D (đường `LibraryDropBridge` nhánh `blockdef`) | ✅ 8/8 |
 | K2 | Định danh ngữ nghĩa — `elementType` · `storey` · cờ suy đoán | ✅ 3/3 |
-| K3 | 2D → 3D — cùng một mã hay mỗi nơi một mã | 🔴 **3/5** |
+| K3 | 2D → 3D — cùng một mã hay mỗi nơi một mã | ✅ **5/5** *(trước vá: 3/5)* |
 | K4 | `BuildRecipe` — ngăn xếp không phá huỷ | ✅ 3/3 |
 | K5 | Một mã vật liệu → ba mặt (2D · 3D · Trình bày) | ✅ 3/3 |
 | K6 | BOQ đọc CÙNG `Doc`, CÙNG `specId` | ✅ 5/5 |
 | K7 | Trình chiếu neo vào vân tay `Doc` | ✅ 3/3 |
-| K8 | Đổi thượng nguồn → xuôi dòng + NGƯỜI quyết | 🔴 **6/7** |
-| K9 | LƯU → ĐÓNG → MỞ LẠI (ba đường lưu thật) | 🔴 **15/17** |
+| K8 | Đổi thượng nguồn → xuôi dòng + NGƯỜI quyết | ✅ **7/7** *(trước vá: 6/7)* |
+| K9 | LƯU → ĐÓNG → MỞ LẠI (ba đường lưu thật) | 🔴 **17/19** — +2 khẳng định mới cho 3D-sau-mở-lại |
+| K10 | Đường lùi — bản vẽ chưa khai `slab` vẫn dựng được sàn | ✅ 3/3 *(khâu mới 04/09)* |
 
 Vật đại diện: **1 sofa** (`furniture`, `SOFA-3S` → `BLOCKS.sofa3`) · **1 tủ áo** (`WRD-240` →
 `BLOCKS.wardrobe`, khớp gần đúng — resolver tự khai `approximate:true`) · **1 mặt sàn gỗ**
@@ -61,33 +71,58 @@ Vật đại diện: **1 sofa** (`furniture`, `SOFA-3S` → `BLOCKS.sofa3`) · *
 
 ---
 
-## 2 · BA CHỖ ĐỨT — tệp:dòng, không suy đoán
+## 2 · CHỖ ĐỨT — tệp:dòng, không suy đoán
 
-### Đ1 · 🔴 NẶNG NHẤT — vật liệu gán cho MẶT (sàn/trần) KHÔNG tới được 3D
+> 04/09: lần đo đầu ghi **ba** chỗ đứt. Đ1 (nặng nhất) đã đóng trong cùng ngày — giữ nguyên phần
+> mô tả bệnh bên dưới vì nó là bằng chứng *vì sao từng đứt*, và bổ sung cách vá. **Còn hai chỗ đứt
+> ở `.idfc` (Đ2, Đ3).**
 
-**Đo được:** `2/3 vật liệu tới 3D · KHÔNG TỚI: hatch#e-005 specId=ps-go-soi (slab)`.
+### Đ1 · ✅ ĐÃ ĐÓNG 04/09 — vật liệu gán cho MẶT SÀN nay tới được 3D
+
+**Đo được TRƯỚC khi vá:** `2/3 vật liệu tới 3D · KHÔNG TỚI: hatch#e-005 specId=ps-go-soi (slab)`.
 Sau khi người dùng đổi sàn gỗ sồi → gỗ óc chó: BOQ đổi (27.000.000₫ → 51.840.000₫), deck báo cũ,
 **nhưng 3D không hề biết** — `mã 3D sau khi đổi: ps-sofa-3s, ps-wrd-240 · có mã mới = false`.
 
-**Gốc, đọc thẳng từ mã:**
+**Gốc, đọc thẳng từ mã (bản đo cũ, giữ lại để hiểu vì sao từng đứt):**
 
-* `lib/three/cad-to-obj.ts:617` — `builder.object('Floor', mats.floor, { ...derivedSpatial('floor') })`.
+* `lib/three/cad-to-obj.ts` — `builder.object('Floor', mats.floor, { ...derivedSpatial('floor') })`.
   Nhóm `Floor` là **slab bbox nở 50mm của toàn bản vẽ**, không phải hình học của một entity nào ⇒
-  cố ý **không** mang `entityId`, và cũng **không** mang `specId` (chú thích `:613-616` tự khai
-  điều thứ nhất, không nói điều thứ hai).
-* `lib/three/cad-to-obj.ts:701-710` — chỉ **`Wall_i`** (hatch được xếp loại TƯỜNG) mới nhận
-  `specId: h.specId`. `Furn_i` (`:747`) · `Window_i` (`:792`) · `Door_i` (`:801`) cũng có.
+  cố ý **không** mang `entityId`, và cũng **không** mang `specId`.
+* `mats.floor` là **MÀU CỦA THEME** (`themeMats`, `#c7c3bb`/`#b08d63`) ⇒ mặt sàn 3D ra **cùng một
+  màu bất kể người dùng gán vật liệu gì**.
+* Chỉ **`Wall_i`** (hatch xếp loại TƯỜNG) · `Furn_i` · `Window_i` · `Door_i` mới nhận `specId`.
   **Không nhánh nào dựng nhóm từ một `HatchEntity` KHÔNG-phải-tường.**
+* Và điểm quyết định: `ElementType` **ĐÃ CÓ `'slab'`** (`lib/cad/model.ts:97`, từ B1 24/07), chặng
+  **2D đã đọc thẳng nó** (`lib/cad/plan-present.ts:579-581`, kèm ghi chú *"không suy đoán"*) —
+  nhưng `grep "'slab'" lib/three/cad-to-obj.ts` = **0**. ⇒ Đây KHÔNG phải thiếu loại entity và
+  KHÔNG phải chờ `RoomEntity`: **loại đã có, 2D đã dùng, 3D chưa nối.**
 
-⇒ Trong Doc, một `HatchEntity` mang `specId` là **hoàn toàn hợp lệ và BOQ tính đúng tiền của nó**
-(`lib/boq/compute.ts:274`), nhưng nếu nó không được xếp loại tường thì **nó không tồn tại ở 3D**.
-Câu quảng cáo *"đổi vật liệu trong phối cảnh thì BOQ đúng vì chỉ có MỘT vật"* hôm nay đúng cho
-**tường và đồ rời**, **sai cho mọi mặt hoàn thiện sàn/trần** — mà đó chính là hạng mục lớn nhất
-của hồ sơ nội thất.
+**CÁCH VÁ (04/09) — mở rộng khuôn đã có, không dựng cơ chế mới:**
 
-**KHÔNG VÁ Ở PHIÊN NÀY.** `lib/three/**` nằm ngoài vùng ghi của phiếu, và đây không phải dây đứt
-nhỏ: phải quyết *nhóm 3D của một mặt hoàn thiện là gì* (một slab riêng theo đa giác hatch? một lớp
-phủ 2mm trên `Floor`?) — quyết định kiến trúc, không phải sửa một dòng.
+1. Entity `elementType === 'slab'` (và là vùng tô kín) sinh **nhóm 3D riêng `Floor_i`**, mang
+   `entityId` + `specId` + `storey` + `ops`/`opCutters`/`recipe` — **khuôn dùng lại nguyên văn
+   khuôn `Wall_i`** (`spatialIdentity(sl, 'floor', 'declared')`).
+2. **Vật liệu đọc từ chính entity**, không lấy màu theme: `slabMat()` ưu tiên `e.color` (màu mà
+   `applyMaterial()` ghi xuống khi người dùng chọn preset vật liệu), theme chỉ là bậc lùi hiển
+   thị; tên `usemtl` neo theo `specId` nên hai mặt sàn khác vật liệu ra hai mục MTL khác nhau.
+3. **`Floor` bbox GIỮ NGUYÊN làm ĐƯỜNG LÙI**, chỉ dựng khi bản vẽ **không có** `slab` nào — và
+   vẫn **không** gán `entityId` (đúng: nó không ứng với entity nào), vẫn `provenance: 'derived'`.
+4. **Trần: CỐ Ý CHƯA XỬ.** IfcSlab gộp cả sàn lẫn trần, mà `Doc` hôm nay **không có tín hiệu KHAI
+   BÁO nào** tách hai vai (không field riêng; `RoomEntity` cố ý chưa khai `ceilingSpecId` — luật
+   K4/L7; cao độ và tên layer chỉ là suy đoán). Luật repo: khai báo thắng suy đoán. Đoán ở đây thì
+   sàn tầng trên bị dựng thành trần tầng dưới — sai im lặng. ⇒ mọi `slab` dựng là **SÀN**; trần
+   vẫn là khối bbox `derived` như trước.
+
+⚠️ **Một quyết định phải ghi lại vì nó KHÔNG hiển nhiên:** nhóm sàn **cố ý KHÔNG mang `heightMm`**.
+`isMassingWallGroup()` (`lib/three/obj-scene-to-geometry.ts:107`) = `entityId !== undefined &&
+heightMm !== undefined`; có cả hai thì group bị **tách khỏi scene tĩnh** sang danh sách tường
+push-pull, mà cú kéo ở đó neo `scale.y` quanh ĐÁY rồi mọc LÊN — trong khi mặt sàn dày **xuống
+dưới**. Truyền `heightMm` cho đẹp bảng là đổi hành vi hiển thị và tạo một cú kéo ngược chiều.
+Bề dày vẫn nằm trong hình học; khi có thao tác kéo bề dày sàn thật thì mở ở đúng chỗ đó.
+
+**Đo được SAU khi vá:** K3 **5/5** · ca then chốt `có mã mới = true`
+(`mã 3D sau khi đổi: ps-go-ocho, ps-sofa-3s, ps-wrd-240`) · sau `.idf` mở lại, nhóm sàn 3D vẫn
+`entityId=e-005` và `specId=ps-go-ocho`.
 
 ### Đ2 · 🔴 `.idfc` nối về thương mại bằng khoá ĐỔI ĐƯỢC, không phải khoá bất biến
 
@@ -124,13 +159,16 @@ mất ngăn xếp dựng hình, người mở lại chỉ còn hình chết. Tr�
 
 **Sống, nhưng KHÔNG phủ hết.** Đọc từ nơi lưu thật:
 
-* Nhóm 3D mang `entityId`: **2/3** — thiếu đúng nhóm `Floor` (bbox tổng hợp, không có entity nguồn).
-* Nhóm 3D mang `specId`: **2/3 vật liệu** — thiếu vật liệu của mặt sàn.
+* Nhóm 3D mang `entityId`: **3/3** *(trước vá 04/09: 2/3 — thiếu đúng nhóm `Floor`, khi đó là bbox
+  tổng hợp không có entity nguồn; nay mặt sàn KHAI BÁO sinh nhóm riêng neo về đúng entity, còn
+  bbox chỉ là đường lùi cho bản vẽ chưa khai `slab`)*.
+* Nhóm 3D mang `specId`: **3/3 vật liệu** *(trước vá 04/09: 2/3 — thiếu vật liệu của mặt sàn)*.
 * **Không nơi nào đẻ mã thứ hai**: mã lạ = **0**, vật liệu lạ = **0**. Cái gì tới được 3D thì tới
   bằng **CHÍNH mã của nó**, không qua bảng ánh xạ nào.
 * `specId === matId` trên **100% dòng BOQ** (`lib/boq/model.ts:53` giữ bất biến này bằng test).
 
-⇒ Không phải *"mỗi nơi một mã"*; là *"một mã, nhưng có bề mặt chưa nhận được mã"*.
+⇒ Không phải *"mỗi nơi một mã"*. Sau vá 04/09: **một mã, và mọi bề mặt đã khai báo đều nhận
+được nó** — kể cả sau khi đóng tệp mở lại.
 
 ### ② Gia phả có truy ngược được không?
 
