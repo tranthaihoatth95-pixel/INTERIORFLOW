@@ -313,3 +313,30 @@ Ma trận hành trình đo ra **0/22** hành trình được xác minh ở cột
 ⇒ Đây đúng cái bẫy `docs/delivery/LUAT-WORKTREE-LANE.md` cảnh báo, và nó **đang xảy ra ở một lane
 khác**. Việc cho IF COMMAND: truy lane nào đang trỏ Prisma vào CSDL repo chính và bịt lại — phiên
 này không có quyền chạm lane đó.
+
+---
+
+## 04/09 · MỘT ĐỘNG CƠ, BỐN MẶT TIỀN — và mặt tiền thứ tư chưa cắm
+
+Hai lane cùng ngày **nói ngược nhau** về tầng hạt giống. MAIN đo lại: **cả hai đều đúng, khác
+mặt tiền.**
+
+| Mặt tiền | Đọc tầng hạt giống? | Bằng chứng |
+|---|---|---|
+| `components/materials/MaterialsScreen.tsx` | ✅ | `:24` `import { khoaBaMat, laHangHatGiong, tronHatGiong }` |
+| `app/files/_components/NganPhanTho.tsx` | ✅ | `:24` `import { tronHatGiong }` |
+| `app/files/_lib/ngan-tho.ts` | ✅ | `:33` `import { khoaBaMat }` |
+| `components/library/LibrarySheet.tsx` | ✅ (kệ 3D) | `:34,299-301` `cauKienHatGiongTrenKe()` |
+| 🔴 **`components/cad/MaterialPalette.tsx`** | ❌ | `:23` chỉ `import { MATERIALS } from '@/lib/cad/materials'` — **0 dòng chạm tầng hạt giống** |
+
+⇒ Câu *"tầng hạt giống có 0 nơi gọi"* **sai** (có 5). Câu *"máy sạch không có vật liệu nào để
+chọn"* **đúng — ở đúng chỗ nó đứng**: bảng chọn vật liệu **bên trong mặt vẽ 2D**, tức chỗ KTS
+thật sự cầm vật liệu lúc đang làm việc.
+
+⚠️ **Bài học đắt hơn con số**: `grep <tên module>` trả về *"có người gọi"* — nó **không** trả lời
+*"mặt tiền TÔI đang đứng có gọi không"*. Với kiến trúc **một-cỗ-máy-nhiều-mặt-tiền** mà IF cố ý
+theo đuổi, hai câu đó khác hẳn nhau, và trộn chúng làm hai lane tưởng mâu thuẫn nhau.
+⇒ Khi khai *"đã cắm điện"*, phải khai **cắm vào mặt tiền NÀO**, đừng khai chung.
+
+**Việc còn lại**: cắm tầng hạt giống vào `MaterialPalette` (mặt tiền thứ tư). Đây là CONNECT —
+`lib/materials/tang-phan-giai.ts` đã có sẵn thứ tự ba tầng SEED → STUDIO → PROJECT.
