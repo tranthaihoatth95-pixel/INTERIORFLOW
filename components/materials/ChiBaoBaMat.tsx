@@ -63,7 +63,7 @@ export function ChiBaoBaMat({ baMat, onMo }: { baMat: BaMat; onMo: () => void })
         type="button"
         onClick={onMo}
         aria-label={`${tongQuat}. ${cau}. ${tr('Bấm để xem ba mặt', 'Open the three faces')}`}
-        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]"
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
         style={{
           /* `--tap` = 32 chuột / 44 cảm ứng — vòng chạm đủ lớn ở cả hai lối, và vẫn lọt trong
              hàng bảng cao 46. Gõ cứng 24px là hụt vòng chạm ngay khi cầm tablet. */

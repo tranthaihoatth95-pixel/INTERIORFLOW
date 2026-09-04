@@ -295,7 +295,7 @@ export function ConceptForm() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={defaultTitle(variant)}
-            className="w-full rounded-[14px] border border-[var(--border)] bg-[var(--field)] px-3 py-3 text-[14px] text-[var(--t1)] outline-none placeholder:text-[var(--t5)] focus:border-[var(--accent-ring)]"
+            className="w-full rounded-[14px] border border-[var(--border)] bg-[var(--field)] px-3 py-3 text-[14px] text-[var(--t1)] outline-none placeholder:text-[var(--t5)] focus:border-[var(--focus-ring)]"
           />
         </Field>
 
@@ -305,7 +305,7 @@ export function ConceptForm() {
               value={style}
               onChange={(e) => setStyle(e.target.value)}
               placeholder="Japandi ấm, đá travertine, gỗ sồi…"
-              className="w-full rounded-[14px] border border-[var(--border)] bg-[var(--field)] px-3 py-3 text-[14px] text-[var(--t1)] outline-none placeholder:text-[var(--t5)] focus:border-[var(--accent-ring)]"
+              className="w-full rounded-[14px] border border-[var(--border)] bg-[var(--field)] px-3 py-3 text-[14px] text-[var(--t1)] outline-none placeholder:text-[var(--t5)] focus:border-[var(--focus-ring)]"
             />
           </Field>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -353,7 +353,7 @@ export function ConceptForm() {
                     ? 'Vòng tuần hoàn vô cực — thiên nhiên · con người · công nghệ'
                     : 'Không gian mời gọi sự tĩnh lặng, nơi ánh sáng và vật liệu tự nhiên…'
                 }
-                className="w-full resize-none rounded-[14px] border border-[var(--border)] bg-[var(--field)] px-3 py-3 text-[14px] text-[var(--t1)] outline-none placeholder:text-[var(--t5)] focus:border-[var(--accent-ring)]"
+                className="w-full resize-none rounded-[14px] border border-[var(--border)] bg-[var(--field)] px-3 py-3 text-[14px] text-[var(--t1)] outline-none placeholder:text-[var(--t5)] focus:border-[var(--focus-ring)]"
               />
             </Field>
           </div>

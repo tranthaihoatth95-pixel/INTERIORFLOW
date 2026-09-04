@@ -229,6 +229,32 @@ console.log('\n[focus] vòng focus bàn phím toàn app');
   ok('--stroke-focus ≥ 2px', px(resolveToken(sheet, '--stroke-focus', 'dark')) >= 2);
 }
 
+/* ── [focus · di trú] ─────────────────────────────────────────────────────────── */
+console.log('\n[focus · di trú] không còn vòng focus nào bám --accent-ring');
+{
+  // Đo 04/09: `--accent-ring` (alpha .55) TRƯỢT ngưỡng WCAG 1.4.11 (3:1 cho chỉ báo giao diện) ở
+  // MỌI nền, cả hai theme — 1,87 · 1,95 · 1,93 (tối) và 2,14 · 2,20 · 2,23 (sáng). `--focus-ring`
+  // (accent ĐẶC) đạt hết: 3,32–4,89. 32 chỗ ở 18 tệp đã di trú.
+  // ⚠️ KHÔNG cấm `--accent-ring` nói chung — nó vẫn đúng cho viền/nền trang trí và cho outline
+  // đánh dấu VẬT ĐANG CHỌN (2 chỗ ở present-editor). Chỉ cấm nó làm CHỈ BÁO FOCUS BÀN PHÍM.
+  for (const theme of ['dark', 'light'] as const) {
+    for (const nen of ['--field', '--panel', '--card']) {
+      const bg = tokenColor(sheet, nen, theme);
+      const ring = tokenColor(sheet, '--focus-ring', theme);
+      const r = bg && ring ? contrastOn(ring, bg) : 0;
+      ok(`${theme}: --focus-ring trên ${nen} = ${r.toFixed(2)}:1 (≥3)`, r >= 3);
+    }
+  }
+  const viPham: string[] = [];
+  for (const f of [...walk(join(ROOT, 'components')), ...walk(join(ROOT, 'app'))]) {
+    const src = readFileSync(f, 'utf8');
+    for (const [i, dong] of src.split('\n').entries()) {
+      if (/focus(-visible)?:[a-z-]*-\[var\(--accent-ring\)\]/.test(dong)) viPham.push(`${f}:${i + 1}`);
+    }
+  }
+  ok(`0 chỗ dùng --accent-ring làm vòng focus (thấy: ${viPham.slice(0, 3).join(' · ') || 'không'})`, viPham.length === 0);
+}
+
 /* ── [chuyển động] ─────────────────────────────────────────────────────────────── */
 console.log('\n[chuyển động] reduced-motion / reduced-transparency');
 {

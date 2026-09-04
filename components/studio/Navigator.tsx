@@ -131,7 +131,7 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
           type="button"
           onClick={toggle}
           title={tr(`Mở lại bảng — ${kPanel}`, `Expand panel — ${kPanel}`)}
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] text-[var(--t3)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] text-[var(--t3)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
         >
           <ChevronLeft size={15} className="rotate-180" />
         </button>

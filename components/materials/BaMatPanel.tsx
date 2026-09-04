@@ -101,7 +101,7 @@ export function BaMatPanel({
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--t1)' }}>{tr('Một vật, ba mặt', 'One item, three faces')}</span>
           <button
             type="button" onClick={onClose} aria-label={tr('Đóng', 'Close')}
-            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
             style={{ marginLeft: 'auto', width: 26, height: 26, display: 'grid', placeItems: 'center', border: 0, borderRadius: 'var(--r-1)', background: 'transparent', color: 'var(--t3)', cursor: 'pointer' }}
           >
             <X size={14} />
@@ -169,7 +169,7 @@ export function BaMatPanel({
                 {viec && (
                   <button
                     type="button" onClick={viec.chay}
-                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]"
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
                     style={{
                       marginTop: 8, height: 'var(--tap)', padding: '0 12px', border: '1px solid var(--border)',
                       borderRadius: 'var(--r-2)', background: 'var(--field)', color: 'var(--t2)',

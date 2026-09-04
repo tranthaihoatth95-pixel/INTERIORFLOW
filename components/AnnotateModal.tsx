@@ -265,7 +265,7 @@ export function AnnotateModal() {
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Gõ chú thích rồi click lên ảnh…"
-              className="w-52 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] outline-none focus:border-[var(--accent-ring)]"
+              className="w-52 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] outline-none focus:border-[var(--focus-ring)]"
             />
           )}
           <div className="flex items-center gap-1.5">

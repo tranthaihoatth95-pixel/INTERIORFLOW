@@ -52,7 +52,7 @@ export function InspectorPages({ pages }: { pages: InspectorPage[] }) {
                 onClick={() => setActive(p.id)}
                 className={cn(
                   'grid h-[26px] w-[30px] place-items-center rounded-[10px] transition-colors duration-[120ms]',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]',
                   on ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t1)]',
                 )}
               >
