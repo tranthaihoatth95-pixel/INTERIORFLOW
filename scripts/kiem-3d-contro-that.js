@@ -501,56 +501,75 @@ async function lenhToPresent(page, duAn) {
   kq.doDuoc.coNutGui = (await nut.count().catch(() => 0)) > 0;
   if (!kq.doDuoc.coNutGui) {
     kq.ketQua = 'KHÔNG ĐO ĐƯỢC';
-    kq.vuong = 'không thấy nút "Gửi sang Trình chiếu" ở chặng 2D';
+    kq.vuong = 'chặng 2D không có bản vẽ nào nên hàng tab + nút gửi không tồn tại';
     return kq;
   }
-  // Ghi lại tỉ lệ/khổ đang dùng ở chặng 2D để đối chiếu bên Trình chiếu.
-  kq.doDuoc.truocKhiGui = await page.evaluate(() => {
-    const t = document.body.innerText || '';
-    const tyLe = /1\s*:\s*\d+/.exec(t);
-    const kho = /\bA[0-4]\b/.exec(t);
-    return { tyLe: tyLe ? tyLe[0] : null, kho: kho ? kho[0] : null };
-  });
   await nut.click();
-  await page.waitForTimeout(2500);
-  kq.doDuoc.thongBaoSauGui = await page.evaluate(() => {
-    const t = document.body.innerText || '';
-    const i = t.indexOf('Trình chiếu');
-    return i >= 0 ? t.slice(Math.max(0, i - 90), i + 90).replace(/\n+/g, ' | ') : '';
-  });
-  kq.anh.push(await chup(page, '4b-sau-khi-gui'));
-  kq.doDuoc.urlSauGui = page.url();
+  await page.waitForTimeout(1500);
 
-  // Chờ tới được Trình chiếu (nút có thể tự điều hướng; nếu không thì đi tay).
-  if (!/\/present/.test(page.url())) {
-    await diToi(page, `${BASE}/projects/${duAn}/present`, 3000);
-  }
-  await page.waitForTimeout(6000);
-  const docCua = () =>
-    page.evaluate(() => {
-      const t = document.body.innerText || '';
-      const tyLe = /1\s*:\s*\d+/.exec(t);
-      const kho = /\bA[0-4]\b/.exec(t);
+  // ① CẦU RA: tờ có được ghi sang kho vận chuyển không, và mang theo NHỮNG GÌ.
+  const stash = await page.evaluate(() => {
+    try { return sessionStorage.getItem('interiorflow.toBanVeHandoff'); } catch { return null; }
+  });
+  kq.doDuoc.cauRa = (() => {
+    if (!stash) return { coTo: false };
+    try {
+      const t = JSON.parse(stash)[0];
       return {
-        coCuaNhanTo: /Tờ bản vẽ|Nhận tờ|Thiết lập trang|Khung tên/i.test(t),
-        tyLe: tyLe ? tyLe[0] : null,
-        kho: kho ? kho[0] : null,
-        coKhungTen: /Khung tên/i.test(t),
-        coNeoNguon: /Thiết kế 2D|cad2d|Nguồn/i.test(t),
+        coTo: true, khoGiay: t.khoGiay, huong: t.huong, le: t.le,
+        tyLe: t.tyLe ? `1:${t.tyLe.n}` : null,
+        tenBanVe: t.khungTen?.tenBanVe ?? null, duAnKhungTen: t.khungTen?.duAn ?? null,
+        neoChang: t.neo?.chang ?? null, coNeoDocId: !!t.neo?.docId,
+      };
+    } catch { return { coTo: true, loi: 'không đọc được JSON' }; }
+  })();
+
+  await page.waitForTimeout(5000);
+  kq.doDuoc.urlSauGui = page.url();
+  if (!/\/present/.test(page.url())) await diToi(page, `${BASE}/projects/${duAn}/present`, 4000);
+
+  /**
+   * ⚠️ CỬA NHẬN CHỈ MOUNT KHI ĐÃ CÓ HỒ SƠ. `CongThietLapTrang` nằm trong `PresentEditor`; dự án
+   * chưa có deck nào thì chặng Trình chiếu đứng ở màn CHỌN MẪU và cửa nhận chưa dựng ⇒ đo lúc đó
+   * sẽ báo "mất tờ" oan. Tờ KHÔNG mất (còn nguyên trong sessionStorage, consume-once chưa chạy) —
+   * nên ở đây tạo hồ sơ trống rồi mới đo.
+   */
+  const taoTrong = page.locator('text=Tạo hồ sơ trống').first();
+  kq.doDuoc.phaiTaoHoSoTruoc = (await taoTrong.count().catch(() => 0)) > 0;
+  if (kq.doDuoc.phaiTaoHoSoTruoc) { await taoTrong.click().catch(() => {}); await page.waitForTimeout(6000); }
+
+  /** Đọc mặt CỬA NHẬN. Regex KHÔNG PHÂN BIỆT HOA/THƯỜNG — panel viết nhãn bằng `text-transform`
+   *  nên `innerText` trả về "KHỔ GIẤY", bắt bằng /Khổ giấy/ là trượt (đã dính một lượt). */
+  const docCua = async () => {
+    await page.waitForTimeout(1500);
+    return page.evaluate(() => {
+      const t = document.body.innerText || '';
+      const chip = /Thiết lập trang\s*([A-Z]\d)\s*[·.]?\s*(1\s*:\s*\d+)/i.exec(t);
+      return {
+        coCuaNhanTo: /thiết lập trang/i.test(t),
+        chipKho: chip ? chip[1] : null,
+        chipTyLe: chip ? chip[2].replace(/\s/g, '') : null,
+        coKhungTen: /khung tên/i.test(t),
+        coKhoGiay: /khổ giấy/i.test(t),
+        coTyLeBanVe: /tỉ lệ bản vẽ/i.test(t),
+        coDuongVe2D: /quay lại 2d/i.test(t),
+        nguon: (/Nguồn:\s*([^\n]+)/i.exec(t) || [])[1] || null,
       };
     });
+  };
   kq.doDuoc.benTrinhChieu = await docCua();
   kq.anh.push(await chup(page, '4c-trinh-chieu-nhan-to'));
 
-  // TẢI LẠI TRANG rồi mở lại — cầu consume-once từng làm MẤT tờ.
+  // ② TẢI LẠI TRANG rồi mở lại — cầu consume-once từng làm MẤT tờ khi component dựng hai lần.
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(7000);
+  await page.waitForTimeout(9000);
   kq.doDuoc.sauTaiLai = await docCua();
   kq.anh.push(await chup(page, '4d-sau-tai-lai'));
-  kq.doDuoc.songQuaTaiLai =
-    !!kq.doDuoc.benTrinhChieu.coCuaNhanTo && !!kq.doDuoc.sauTaiLai.coCuaNhanTo;
 
-  kq.ketQua = kq.doDuoc.benTrinhChieu.coCuaNhanTo ? (kq.doDuoc.songQuaTaiLai ? 'PASS' : 'FAIL') : 'FAIL';
+  const b = kq.doDuoc.benTrinhChieu, r = kq.doDuoc.sauTaiLai, c = kq.doDuoc.cauRa;
+  kq.doDuoc.mangDungTyLeVaKho = !!c.coTo && b.chipKho === c.khoGiay && b.chipTyLe === c.tyLe;
+  kq.doDuoc.songQuaTaiLai = !!r.coCuaNhanTo && r.chipKho === b.chipKho && r.chipTyLe === b.chipTyLe;
+  kq.ketQua = b.coCuaNhanTo && kq.doDuoc.mangDungTyLeVaKho && b.coKhungTen && kq.doDuoc.songQuaTaiLai ? 'PASS' : 'FAIL';
   return kq;
 }
 
@@ -562,43 +581,64 @@ async function lenhHep(duAn) {
     try {
       await dangNhap(page);
       await diToi(page, `${BASE}/projects/${duAn}/cad`, 5500);
-      await baoDamCoBanVe(page);
+      if (!(await baoDamCoBanVe(page))) {
+        kq.doDuoc.khoDo.push({ kho: `${kho.width}×${kho.height}`, coNut: false });
+        continue;
+      }
+      /* ÉP HÀNG TAB CHỊU TẢI. Một tờ thì không gì tràn được — câu hỏi thật là "nút mới có bóp
+         chết hàng tab khi có nhiều tờ không". Thêm tờ tới khi dải tab bắt đầu phải cuộn, trần 8
+         lượt để không chạy vô tận. */
+      const them = page.locator('button[aria-label="Thêm bản vẽ"], button[title="Thêm bản vẽ"]').first();
+      kq.doDuoc.coNutThem = (await them.count().catch(() => 0)) > 0;
+      let daThem = 0;
+      for (let i = 0; i < 8 && kq.doDuoc.coNutThem; i += 1) {
+        await them.click().catch(() => {});
+        await page.waitForTimeout(900);
+        daThem += 1;
+      }
+      await page.waitForTimeout(1500);
+
       const d = await page.evaluate(() => {
-        const els = [...document.querySelectorAll('button')];
-        const nut = els.find((e) => /Gửi sang Trình chiếu/.test(e.textContent || ''));
+        const nut = [...document.querySelectorAll('button')].find((e) => /Gửi sang Trình chiếu/.test(e.textContent || ''));
         if (!nut) return { coNut: false };
-        // Hàng tab = ô flex bọc SheetTabBar + ổ phải; đi lên 2 bậc từ nút.
-        const oPhai = nut.parentElement;
-        const hang = oPhai?.parentElement;
-        const oTab = hang?.firstElementChild;
         const rN = nut.getBoundingClientRect();
+        // HÀNG TAB = tổ tiên đầu tiên RỘNG HƠN HẲN nút (nút nằm trong ổ phải hẹp, đi lên 1-2 bậc
+        // vẫn chỉ là ổ phải — đã đo nhầm một lượt vì lấy đúng ổ đó làm "hàng").
+        let hang = nut.parentElement;
+        for (let i = 0; i < 6 && hang; i += 1) {
+          const r = hang.getBoundingClientRect();
+          if (r.width > rN.width * 2.5) break;
+          hang = hang.parentElement;
+        }
         const rH = hang.getBoundingClientRect();
+        const oTab = hang.firstElementChild;
         const rT = oTab.getBoundingClientRect();
+        const soTab = oTab.querySelectorAll('button').length;
         return {
           coNut: true,
-          nut: { x: rN.left, w: rN.width, phai: rN.right },
-          hang: { x: rH.left, w: rH.width, phai: rH.right, cao: rH.height },
-          oTab: { w: rT.width, cuonNgang: oTab.scrollWidth, tran: oTab.scrollWidth - oTab.clientWidth },
-          // body có tràn ngang không (luật: trang không được cuộn ngang)
+          soTab,
+          nut: { x: Math.round(rN.left), w: Math.round(rN.width), phai: Math.round(rN.right) },
+          hang: { x: Math.round(rH.left), w: Math.round(rH.width), phai: Math.round(rH.right), cao: Math.round(rH.height) },
+          oTab: { w: Math.round(rT.width), cuonNgang: oTab.scrollWidth, tran: oTab.scrollWidth - oTab.clientWidth },
+          nutBiCat: rN.right > rH.right + 1 || rN.left < rH.left - 1,
+          nutHepDi: Math.round(rN.width) < 90,
           bodyTran: document.documentElement.scrollWidth - document.documentElement.clientWidth,
           rongCuaSo: window.innerWidth,
         };
       });
       const anh = await chup(page, `5-tab-${kho.width}x${kho.height}`);
       kq.anh.push(anh);
-      const vo =
-        !d.coNut ||
-        d.nut.phai > d.hang.phai + 1 ||
-        d.bodyTran > 0 ||
-        d.hang.cao > 80; // hàng tab cao gấp đôi = đã xuống dòng/vỡ khổ
-      kq.doDuoc.khoDo.push({ kho: `${kho.width}×${kho.height}`, ...d, vo, anh });
+      /* VỠ = một trong bốn: nút bị cắt ra ngoài hàng · hàng cao gấp đôi (đã xuống dòng) · trang
+         cuộn ngang · nút bị bóp hẹp tới mức mất chữ. Dải tab TRÀN thì KHÔNG tính là vỡ nếu nó
+         cuộn được — đó là hành vi đúng của một dải tab nhiều tờ. */
+      const vo = !d.coNut || d.nutBiCat || d.hang.cao > 60 || d.bodyTran > 0 || d.nutHepDi;
+      kq.doDuoc.khoDo.push({ kho: `${kho.width}×${kho.height}`, daThemTo: daThem, ...d, vo, anh });
     } finally {
       await browser.close();
     }
   }
-  const coVo = kq.doDuoc.khoDo.some((k) => k.vo);
   const doDu = kq.doDuoc.khoDo.every((k) => k.coNut);
-  kq.ketQua = !doDu ? 'KHÔNG ĐO ĐƯỢC' : coVo ? 'FAIL' : 'PASS';
+  kq.ketQua = !doDu ? 'KHÔNG ĐO ĐƯỢC' : kq.doDuoc.khoDo.some((k) => k.vo) ? 'FAIL' : 'PASS';
   if (!doDu) kq.vuong = 'không thấy nút "Gửi sang Trình chiếu" ở một trong hai khổ';
   return kq;
 }

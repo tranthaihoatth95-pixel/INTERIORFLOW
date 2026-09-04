@@ -19,6 +19,8 @@
  *   IF_NEN=sang,toi                  chụp cả hai nền (mặc định: nền đang lưu trong phiên)
  *   IF_KHO=1600x900,1280x800         chụp nhiều khổ màn (mặc định: 1440x900)
  *   IF_KHUNG=01-01,10-               chỉ chụp khung có tên bắt đầu bằng tiền tố này
+ *   IF_TRINH_DUYET=<đường dẫn>       trình duyệt tự chỉ (khi bản Playwright trong repo lệch
+ *                                    bản Chromium cài sẵn trên máy — xem ghi chú dưới)
  *
  * Mật khẩu KHÔNG được ghi vào file nào, không vào git, chỉ sống trong biến môi
  * trường của đúng lệnh đó.
@@ -188,7 +190,14 @@ async function donLopChe(page) {
 async function main() {
   mkdirSync(OUT, { recursive: true });
 
+  /* TRÌNH DUYỆT — vì sao có đường tự chỉ (04/09).
+     Playwright tra trình duyệt theo SỐ HIỆU BẢN đóng đinh trong chính gói `playwright` đang cài.
+     Máy dựng sẵn có `chromium-1194`, còn gói trong repo đi tìm `chromium_headless_shell-1234`
+     ⇒ nổ *"Executable doesn't exist"* rồi khuyên chạy `npx playwright install` — tức tải lại cả
+     một bộ trình duyệt chỉ vì lệch số hiệu, trong khi bản đang có chạy tốt.
+     `IF_TRINH_DUYET` trỏ thẳng vào bản có sẵn. Không đặt thì hành vi y như cũ. */
   const ctx = await chromium.launchPersistentContext(PHIEN, {
+    ...(process.env.IF_TRINH_DUYET ? { executablePath: process.env.IF_TRINH_DUYET } : {}),
     headless: !MO_DANG_NHAP,
     viewport: { width: 1440, height: 900 },
     deviceScaleFactor: 2, // ảnh nét khi Hoà zoom trên điện thoại
