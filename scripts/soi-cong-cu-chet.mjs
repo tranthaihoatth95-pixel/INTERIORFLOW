@@ -74,6 +74,19 @@
  * vặt thì chết theo đúng cách docstring này đã cảnh báo: người ta học cách bỏ qua nó.
  * ⇒ `playwright` nạp bằng **dynamic import** chỉ khi có cờ; không cờ thì hành vi cũ y nguyên.
  *
+ * ⚠️ H5 XÉT ĐÚNG MỘT ĐIỂM — TÂM. Với `<canvas>` (thêm vào bộ chọn 04/09) điều đó bắt được lớp
+ * phủ TRỌN MẶT — loại lỗi làm cả mặt vẽ chết, mà không máy nào khác thấy. Nó **cố ý KHÔNG** rải
+ * lưới nhiều điểm trên mặt vẽ, vì hai lý do đo được:
+ *   ① dock kính nổi trên mặt vẽ là THIẾT KẾ ĐÃ CHỐT (03/08). Rải lưới thì mọi điểm rơi vào dock
+ *      đều "bị đè bởi phần tử không họ hàng" ⇒ H5 kêu đỏ vĩnh viễn về một thứ đúng ⇒ chết theo
+ *      đúng cách docstring này cảnh báo ba lần: người ta học cách bỏ qua nó.
+ *   ② muốn rải lưới thì phải phân biệt "che THẤY ĐƯỢC" (dock, hợp lệ) với "che TRONG SUỐT" (hộp
+ *      bố cục rỗng, mới là lỗi) — việc đó cần bộ phân loại riêng, và nó ĐÃ CÓ:
+ *      `scripts/nghiem-thu-ban-lam-viec/mat-ve-2d-cham-toi-duoc.mjs`. Chép sang đây là dựng bản
+ *      thứ hai của cùng một cỗ máy.
+ * ⇒ RANH GIỚI: H5 hỏi *"tâm có bị đè không"*; máy kia hỏi *"đứng ở điểm này thì cú bấm rơi vào
+ *   ai"*. Hai câu khác nhau, hai máy, không gộp.
+ *
  * ⚠️ BẢO THỦ CÓ CHỦ Ý (vá sẵn cạm bẫy "báo quá tay" lần thứ tư): CHỈ tính TRƯỢT khi tâm bị
  * che bởi phần tử KHÔNG có quan hệ họ hàng. Bỏ qua: `disabled`/`aria-disabled` (không kỳ
  * vọng bấm) · `pointer-events:none` (cố ý không nhận chuột) · tâm ngoài khung nhìn ·
@@ -355,6 +368,12 @@ for (const k of khoUi) {
 const DO_TRONG_TRANG = () => {
   const CHON = [
     'button', 'a[href]', 'input', 'select', 'textarea', 'summary',
+    /* 🔴 `canvas` — vá LỖ ĐO ĐƯỢC 04/09. Luật H5 phát biểu "MỌI phần tử bấm được", nhưng bộ
+       chọn cũ chỉ liệt các thẻ điều khiển HTML ⇒ H5 **không bao giờ xét mặt vẽ**, tức mù đúng
+       bề mặt bấm-được QUAN TRỌNG NHẤT của chặng Vẽ và chặng 3D. Chạy H5 trên 2D hôm đó ra 2 ca,
+       cả hai ở màn 3D, 0 ca ở 2D — 0 vì MÙ, không vì sạch. Một luật mù đúng chỗ đắt nhất thì
+       tệ hơn không có luật, vì nó cho cảm giác đã canh. */
+    'canvas',
     '[role="button"]', '[role="link"]', '[role="tab"]', '[role="switch"]',
     '[role="checkbox"]', '[role="menuitem"]', '[role="option"]',
     '[tabindex]:not([tabindex="-1"])',
@@ -376,7 +395,12 @@ const DO_TRONG_TRANG = () => {
 
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const ra = { xet: 0, boQua: 0, truot: [] };
+  /* `peNone` — đếm RIÊNG số phần tử bấm-được bị bỏ qua VÌ `pointer-events:none` (thêm 04/09).
+     H5 bỏ qua chúng là ĐÚNG (cố ý không nhận chuột thì không phải lỗi bị-che), nhưng gộp chúng
+     vào `boQua` chung thì máy MÙ đúng chiều ngược lại: một cú sửa lỡ tay đặt `pointer-events:none`
+     lên cả cụm nút sẽ làm chúng BIẾN MẤT khỏi phép đo, và H5 báo "0 ca" — sạch một cách giả.
+     Tách ra thành con số riêng để so được trước/sau mỗi lần đụng lớp phủ. */
+  const ra = { xet: 0, boQua: 0, peNone: [], truot: [] };
 
   for (const e of document.querySelectorAll(CHON)) {
     const r = e.getBoundingClientRect();
@@ -384,7 +408,7 @@ const DO_TRONG_TRANG = () => {
     if (r.width < 2 || r.height < 2) { ra.boQua++; continue; }
     const cs = getComputedStyle(e);
     if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0) { ra.boQua++; continue; }
-    if (cs.pointerEvents === 'none') { ra.boQua++; continue; }
+    if (cs.pointerEvents === 'none') { ra.boQua++; if (ra.peNone.length < 40) ra.peNone.push(ten(e)); continue; }
     if (e.disabled || e.getAttribute('aria-disabled') === 'true') { ra.boQua++; continue; }
     const cx = r.x + r.width / 2;
     const cy = r.y + r.height / 2;
@@ -411,8 +435,10 @@ const DO_TRONG_TRANG = () => {
 
 const H5 = [];
 let h5Xet = 0;
+const h5PeNone = [];   // phần tử bấm-được bị vô hiệu bởi `pointer-events:none`, theo màn
 let h5Man = 0;
 let h5HieuChuan = null;
+let h5HieuChuanCanvas = null;
 if (CHAM) {
   const { chromium } = await import('/home/user/INTERIORFLOW/node_modules/playwright/index.mjs');
   const b = await chromium.launch({ executablePath: H5_CHROME });
@@ -448,9 +474,21 @@ if (CHAM) {
       await page.goto(`${H5_URL}${duong}`, { waitUntil: 'networkidle', timeout: 45000 });
     } catch { /* mạng lặng không về — vẫn đo cái đang có */ }
     await page.waitForTimeout(2600);
+    /* ĐO Ở TRẠNG THÁI LÀM VIỆC, không ở trạng thái chào (04/09).
+       Chặng Vẽ khi bản vẽ còn trống dựng một card trạng-thái-rỗng phủ TRỌN mặt vẽ (`inset:0`,
+       `CadEditor.tsx`), cố ý: chạm một cái là nó tự đóng rồi vẽ tiếp. Đo ở đúng khoảnh khắc đó
+       thì H5 kêu "mặt vẽ bị đè" mãi mãi về một thứ ĐÚNG THEO THIẾT KẾ — báo quá tay, và máy soi
+       báo quá tay là máy soi chết mà chưa ai tuyên bố (xem ba ca đã trả giá ở đầu tệp).
+       ⇒ Bấm đúng nút mà người dùng sẽ bấm, rồi mới đo. KHÔNG dùng để giấu lỗi: card này đóng
+       bằng MỘT cú chạm bất kỳ, nên trạng thái sau khi đóng mới là chỗ người dùng sống. */
+    for (const ten2 of [/^Vẽ ngay$|^Start drawing$/]) {
+      const n = page.getByRole('button', { name: ten2 });
+      if (await n.count().catch(() => 0)) { await n.first().click().catch(() => {}); await page.waitForTimeout(700); }
+    }
     const r = await page.evaluate(DO_TRONG_TRANG);
     h5Man++;
     h5Xet += r.xet;
+    if (r.peNone?.length) h5PeNone.push({ man: ten, so: r.peNone.length, vd: r.peNone.slice(0, 6) });
     for (const t of r.truot) H5.push({ man: ten, ...t });
 
     /* HIỆU CHUẨN — chỉ ở màn đầu, và chỉ khi `--tu-kiem`. Dựng lại ĐÚNG ca thật: một tấm
@@ -483,6 +521,39 @@ if (CHAM) {
         h5HieuChuan = {
           chay: true, nut: ok.ten, truoc: truocKhiChe, khiChe: sauKhiChe, sauGo: goRa,
           DAT: sauKhiChe > truocKhiChe && goRa === truocKhiChe,
+        };
+      }
+    }
+
+    /* HIỆU CHUẨN RIÊNG CHO `canvas` (04/09) — thêm `canvas` vào bộ chọn mà không chứng minh nó
+       bắt được gì thì đó là VÁ SUÔNG: mặt vẽ lành nên số vẫn 0, y hệt lúc còn mù. Ở màn ĐẦU
+       TIÊN có `<canvas>`, phủ một tấm TRONG SUỐT trọn mặt vẽ — đúng loại lỗi làm cả mặt vẽ chết
+       mà mắt không thấy gì. Phải ĐỎ; gỡ ra phải XANH. */
+    if (TU_KIEM && !h5HieuChuanCanvas) {
+      const truoc = r.truot.length;
+      const co = await page.evaluate(() => {
+        /* Lấy mặt vẽ TO NHẤT còn LÀNH (tâm chưa bị che). Màn 2D lúc bản vẽ trống có card
+           trạng-thái-rỗng nằm đúng giữa ⇒ không hiệu chuẩn được ở đó; thử màn kế. */
+        const cv = [...document.querySelectorAll('canvas')]
+          .map((c) => ({ c, b: c.getBoundingClientRect() }))
+          .filter(({ c, b }) => b.width >= 40 && b.height >= 40
+            && document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2) === c)
+          .sort((p, q) => q.b.width * q.b.height - p.b.width * p.b.height)[0]?.c;
+        if (!cv) return null;
+        const b = cv.getBoundingClientRect();
+        const d = document.createElement('div');
+        d.id = '__hieu-chuan-h5-canvas';
+        d.style.cssText = `position:fixed;left:${b.x}px;top:${b.y}px;width:${b.width}px;height:${b.height}px;background:transparent;z-index:2147483647`;
+        document.body.appendChild(d);
+        return { w: Math.round(b.width), h: Math.round(b.height) };
+      });
+      if (co) {
+        const khiChe = (await page.evaluate(DO_TRONG_TRANG)).truot.length;
+        await page.evaluate(() => document.getElementById('__hieu-chuan-h5-canvas')?.remove());
+        const sauGo = (await page.evaluate(DO_TRONG_TRANG)).truot.length;
+        h5HieuChuanCanvas = {
+          man: ten, co: `${co.w}×${co.h}`, truoc, khiChe, sauGo,
+          DAT: khiChe > truoc && sauGo === truoc,
         };
       }
     }
@@ -526,6 +597,19 @@ if (CHAM) {
         + `thường ${h5HieuChuan.truoc} → khi bị che ${h5HieuChuan.khiChe} → gỡ che ${h5HieuChuan.sauGo}`
         + `${h5HieuChuan.DAT ? '' : '  ⇐ KHÔNG ĐẠT, đừng tin số H5'}`);
     }
+  }
+  if (h5HieuChuanCanvas) {
+    in_(`   ${h5HieuChuanCanvas.DAT ? '✅' : '🔴'} HIỆU CHUẨN trên MẶT VẼ [${h5HieuChuanCanvas.man}] ${h5HieuChuanCanvas.co}`
+      + ` (tấm phủ TRONG SUỐT trọn mặt): thường ${h5HieuChuanCanvas.truoc} → khi bị che ${h5HieuChuanCanvas.khiChe}`
+      + ` → gỡ che ${h5HieuChuanCanvas.sauGo}${h5HieuChuanCanvas.DAT ? '' : '  ⇐ KHÔNG ĐẠT, `canvas` trong bộ chọn chưa bắt được gì'}`);
+  } else if (TU_KIEM) {
+    in_('   ⚠️  KHÔNG hiệu chuẩn được trên mặt vẽ (không màn nào có <canvas> lành) — nhánh `canvas` CHƯA được bảo chứng.');
+  }
+  if (h5PeNone.length) {
+    in_(`   ℹ️  phần tử bấm-được đang \`pointer-events:none\` (H5 bỏ qua — CHỈ để so trước/sau khi đụng lớp phủ):`);
+    for (const p of h5PeNone) in_(`        [${p.man}] ${p.so} — ${p.vd.join(' · ')}`);
+  } else if (CHAM) {
+    in_('   ℹ️  0 phần tử bấm-được nào bị `pointer-events:none` trên 8 màn.');
   }
   if (HIEN_SONG) {
     for (const o of H5) {

@@ -65,8 +65,20 @@ const QUET_MAT_VE = (buoc) => {
    *     rơi vào hư không. **Đây mới là lỗi.**
    * Phân loại bằng chính style đã tính, không đoán theo tên class.
    */
+  /**
+   * 🔴 BIÊN DỪNG LÀ TỔ TIÊN CHUNG VỚI MẶT VẼ — sửa 04/09, thay cho "leo tối đa 4 tầng".
+   * Số 4 là số chọn bừa: một chip nằm sâu 5-6 tầng trong thanh công cụ KÍNH (nền nằm ở tầng
+   * ngoài cùng của thanh) bị đọc thành "hộp trong suốt", tức máy soi BÁO QUÁ TAY đúng chỗ người
+   * dùng đang NHÌN THẤY một thanh công cụ. Đo được: 11 điểm ở y 666–750, toàn bộ nằm trong hai
+   * hàng dock hiện rõ trên màn.
+   * Biên đúng: leo tới TỔ TIÊN CHUNG GẦN NHẤT với `<canvas>` rồi dừng. Dưới biên đó là "đồ của
+   * lớp phủ" — nó tự sơn thì người dùng thấy nó. Trên biên đó là nền của cả app (`--bg`), tính
+   * vào thì MỌI thứ đều "thấy được" ⇒ hiệu chuẩn thoái hoá, máy soi hết bắt được gì.
+   */
+  const bien = (el0) => { let a = el0; while (a && !a.contains(cv)) a = a.parentElement; return a; };
   const trongSuot = (el) => {
-    for (let e = el, i = 0; e && e !== document.body && i < 4; e = e.parentElement, i++) {
+    const stop = bien(el);
+    for (let e = el; e && e !== stop && e !== document.body; e = e.parentElement) {
       const cs = getComputedStyle(e);
       const bg = cs.backgroundColor || '';
       const coNen = bg && bg !== 'transparent' && !/rgba\(\s*0,\s*0,\s*0,\s*0\s*\)/.test(bg);
@@ -82,6 +94,9 @@ const QUET_MAT_VE = (buoc) => {
 
   const tong = { xet: 0, toi: 0, che: 0, cheTrongSuot: 0 };
   const thuPham = new Map();
+  /* Toạ độ thật của tối đa 12 điểm hở — biết "hở 11 điểm" mà không biết hở Ở ĐÂU thì không sửa
+     được; bảng thủ phạm chỉ cho dải BAO của cả phần tử, không cho đúng chỗ thủng. */
+  const diemHo = [];
   for (let y = r.y + 4; y < r.y + r.height - 4; y += buoc) {
     for (let x = r.x + 4; x < r.x + r.width - 4; x += buoc) {
       if (x < 0 || y < 0 || x > innerWidth || y > innerHeight) continue;
@@ -92,10 +107,27 @@ const QUET_MAT_VE = (buoc) => {
       if (top === cv || cv.contains(top)) { tong.toi++; continue; }
       tong.che++;
       const ts = trongSuot(top);
-      if (ts) tong.cheTrongSuot++;
+      if (ts) {
+        tong.cheTrongSuot++;
+        if (diemHo.length < 12) {
+          const cs = getComputedStyle(top);
+          const rr = top.getBoundingClientRect();
+          diemHo.push({
+            x: Math.round(x), y: Math.round(y), nut: mo(top), bg: cs.backgroundColor, cha: mo(top.parentElement),
+            hop: `${Math.round(rr.x)},${Math.round(rr.y)} ${Math.round(rr.width)}×${Math.round(rr.height)}`,
+            con: [...top.children].map((c) => `${mo(c)}[${Math.round(c.getBoundingClientRect().y)}..${Math.round(c.getBoundingClientRect().bottom)}]`).join(' '),
+          });
+        }
+      }
       const k = mo(top);
-      const cu = thuPham.get(k) ?? { so: 0, yMin: 1e9, yMax: -1e9, xMin: 1e9, xMax: -1e9, ten: '', trongSuot: ts };
+      /* `soTrongSuot` đếm THEO ĐIỂM, không theo phần tử — thêm 04/09 vì bản cũ chỉ ghi cờ
+         `trongSuot` của ĐIỂM ĐẦU TIÊN chạm phải phần tử đó. Một `div` có nền ở chỗ này mà rỗng
+         ở chỗ kia sẽ bị dán nhãn "thấy được" cho cả cụm ⇒ số tổng và bảng thủ phạm lệch nhau,
+         và chỗ hở còn lại không tra được là của ai. Đúng họ lỗi "máy soi xét theo TỆP thay vì
+         theo DÒNG" đã ghi trong sổ. */
+      const cu = thuPham.get(k) ?? { so: 0, soTrongSuot: 0, yMin: 1e9, yMax: -1e9, xMin: 1e9, xMax: -1e9, ten: '', trongSuot: ts };
       cu.so++;
+      if (ts) cu.soTrongSuot++;
       cu.yMin = Math.min(cu.yMin, y); cu.yMax = Math.max(cu.yMax, y);
       cu.xMin = Math.min(cu.xMin, x); cu.xMax = Math.max(cu.xMax, x);
       if (!cu.ten) cu.ten = (top.getAttribute?.('aria-label') || (top.textContent || '').trim().slice(0, 36) || '');
@@ -105,6 +137,7 @@ const QUET_MAT_VE = (buoc) => {
   return {
     canvas: { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) },
     tong,
+    diemHo,
     thuPham: [...thuPham.entries()]
       .map(([k, v]) => ({ nut: k, ...v, yMin: Math.round(v.yMin), yMax: Math.round(v.yMax), xMin: Math.round(v.xMin), xMax: Math.round(v.xMax) }))
       .sort((a, b) => b.so - a.so),
@@ -182,8 +215,16 @@ if (q.loi) {
   in_(`   🎯 CHE TRONG SUỐT ${q.tong.cheTrongSuot} (${pctTs}%) ← đây mới là lỗi`);
   if (!q.thuPham.length) in_('   ✅ không lớp nào đứng trên mặt vẽ');
   for (const t of q.thuPham) {
-    in_(`   ${t.trongSuot ? '🔴 TRONG SUỐT' : '·  thấy được '} ${t.so} điểm — ${t.nut}${t.ten ? ` "${t.ten.replace(/\s+/g, ' ')}"` : ''}`);
+    const co = (t.soTrongSuot ?? 0) > 0;
+    in_(`   ${co ? '🔴 TRONG SUỐT' : '·  thấy được '} ${t.so} điểm${co ? ` (trong suốt ${t.soTrongSuot})` : ''} — ${t.nut}${t.ten ? ` "${t.ten.replace(/\s+/g, ' ')}"` : ''}`);
     in_(`        dải x ${t.xMin}–${t.xMax} · y ${t.yMin}–${t.yMax}`);
+  }
+  if (q.diemHo?.length) {
+    in_('   ── điểm hở (toạ độ thật, tối đa 12):');
+    for (const d of q.diemHo) {
+      in_(`        ${d.x},${d.y} → ${d.nut} · hộp ${d.hop} · nền ${d.bg} · cha ${d.cha}`);
+      if (d.con) in_(`             con: ${d.con}`);
+    }
   }
   if (q.tong.cheTrongSuot > 0) ket.fail.push(`ca 2 · ${q.tong.cheTrongSuot}/${q.tong.xet} điểm mặt vẽ bị hộp TRONG SUỐT nuốt`);
 }
