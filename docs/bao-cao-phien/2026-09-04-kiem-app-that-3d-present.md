@@ -164,121 +164,60 @@ nên khai phím ở registry hiện **không tự sinh ra phím nào**. Đườn
 > `Zoom Extents` · `undo`/`redo` (đều khai `surfaces:[…,'shortcut']`) vẫn ở tình trạng cũ. Vá điểm
 > lần thứ ba là nuôi bệnh — cần sửa GỐC: một nơi đọc `surfaces:'shortcut'` rồi gắn phím.
 
-## 4 · Bản vẽ → Trình chiếu — **PASS 3/3** (bản FAIL bên dưới là hiện vật của bộ đo, GIỮ NGUYÊN)
+## 4 · Bản vẽ → Trình chiếu — **PASS** (sau khi sửa TIỀN ĐỀ của chính bộ đo)
 
-> 🔄 **ĐỌC MỤC NÀY THEO ĐÚNG THỨ TỰ THỜI GIAN.** Phần dưới đây là bản đo **TRƯỚC** khi tìm ra
-> nguyên nhân — nó ghi FAIL 9/10. Nguyên nhân + phép thử chốt + kết quả PASS nằm ở **cuối mục**.
-> **Cố ý không xoá phần FAIL**: chính nó dẫn tới một rủi ro mất-dữ-liệu **có thật** vẫn đang mở
-> (xem ghi chú điều phối cuối tệp). Xoá đi là mất luôn đường dẫn tới rủi ro đó.
+### Kết quả
+Bấm "Gửi sang Trình chiếu" ở chặng 2D → Trình chiếu nhận đúng tờ, **và sống qua lần tải lại**.
+Chạy lại 3 lượt liên tiếp: **PASS · PASS · PASS**.
 
-### Nửa ĐÚNG: cầu chuyển tờ mang đủ và mang đúng
-Bấm "Gửi sang Trình chiếu" ở chặng 2D ghi vào `sessionStorage['interiorflow.toBanVeHandoff']`:
-
-| Trường | Giá trị đo được |
-|---|---|
-| `khoGiay` | `A3` |
-| `huong` | `landscape` |
-| `le` | `10` |
-| `tyLe` | `1:100` |
-| `khungTen.tenBanVe` | `Bản vẽ 1` |
-| `khungTen.duAn` | `Bản vẽ mới` |
-| `neo` | `{chang:'cad2d', docId:…}` — có neo nguồn |
-
-Bên Trình chiếu nhận **đúng từng giá trị**: chip `Thiết lập trang · A3 · 1:100 · ● Hiện hành`;
-panel phải có KHỔ GIẤY (A3 sáng) · HƯỚNG Ngang · `420 × 297 mm` · TỈ LỆ BẢN VẼ (1:100 sáng) ·
-LỀ 10mm · KHUNG TÊN "Bản vẽ 1"; có đường về "Quay lại 2D". Ảnh `4c-trinh-chieu-nhan-to.png`.
-
-⇒ **Tỉ lệ · khổ · khung tên: ĐẠT.**
-
-### Nửa HỎNG: tải lại trang là mất — nhưng KHÔNG PHẢI mất tờ
-| Mốc | Màn hình | `sessionStorage` tờ | IndexedDB `sheets` |
+| Mốc | Khổ | Tỉ lệ | Cửa nhận tờ |
 |---|---|---|---|
-| sau khi nhận | `1 slide`, cửa Thiết lập trang hiện | **58.493 byte** | 0 bản ghi |
-| chờ 40 giây (quá nhịp sao lưu 30s) | `1 slide` | 58.493 byte | 0 bản ghi |
-| **sau khi tải lại** | **`0 slide`**, về màn chọn mẫu | **58.493 byte — y hệt** | 0 bản ghi |
+| Cầu ra (`sessionStorage`) | `A3` | `1:100` | — |
+| Bên Trình chiếu nhận | `A3` | `1:100` | có · khung tên có · "Quay lại 2D" có · Nguồn "Hiện hành" |
+| **Sau khi tải lại trang** | `A3` | `1:100` | **còn** |
 
-⭐ **Thứ mất KHÔNG phải TỜ mà là HỒ SƠ.** Tờ còn nguyên, byte y hệt. Deck về 0 slide ⇒
-`PresentEditor` không dựng ⇒ `CongThietLapTrang` không mount ⇒ tờ thành **vô hình**.
-**Ai đi sửa mà nhắm vào `CongThietLapTrang` là sửa nhầm chỗ.**
+Tờ mang đủ: `khoGiay:A3` · `huong:landscape` · `le:10` · `tyLe:1:100` ·
+`khungTen.tenBanVe:"Bản vẽ 1"` · `neo:{chang:'cad2d', docId}`. Panel phải hiện KHỔ GIẤY (A3 sáng) ·
+`420 × 297 mm` · TỈ LỆ BẢN VẼ (1:100 sáng) · LỀ 10mm · KHUNG TÊN. Ảnh `4c-trinh-chieu-nhan-to.png`.
 
-**Tần suất:** FAIL **9/10 lượt** — 4 lượt chạy thẳng mục 4 · 2 lượt đối chứng đi thẳng `/present`
-(hồ sơ trống **và** mẫu 8 trang, đều `→ 0`) · 3 lượt quét thời gian chờ (2s · 15s · 45s, đều `→ 0`).
-**1 lượt PASS duy nhất** nằm trong lần chạy gộp `tat-ca` — **tôi KHÔNG giải thích được vì sao**, và
-ghi ra đúng như vậy thay vì chọn con số tiện tay.
+### 🔴 Vì sao lúc đầu tôi đo ra FAIL — và vì sao đó là lỗi của BỘ ĐO
+Lần đo đầu, deck về `0 slide` sau khi tải lại (9/10 lượt), `IndexedDB interiorflow-sheets/sheets` = 0
+bản ghi ở **cả ba mốc**. Nguyên nhân **không phải sản phẩm**:
 
-**Không phải hụt nhịp sao lưu:** đã chờ 40 giây (nhịp là 30 giây, `PresentSheets.tsx:436`) với deck
-có tờ. IndexedDB `interiorflow-sheets/sheets` đứng ở **0 bản ghi suốt cả ba mốc** ⇒ nghi vấn nên
-nhắm vào **cổng chặn `!rec?.sheets.length` luôn đúng / `rec` rỗng**, không phải vào nhịp.
+App có **HAI nguồn** cho "ai đang đăng nhập" — ① cookie phiên (máy chủ) ② `localStorage`
+`interiorflow.lastUserId`. **Lớp LƯU TRỮ bám vào nguồn ②**: `PresentSheets.tsx:322` mở bằng
+`getLastUserId()`, rỗng thì `:335-338` rẽ nhánh **thuần in-memory** và `saveSheets()` chặn ngay
+dòng đầu. Khoá ② chỉ được ghi ở `LoginForm.tsx:135` (đăng nhập **bằng biểu mẫu**) và
+`HomeScreen.tsx:264` (**ghé Home**). Bộ đo đăng nhập bằng `POST /api/auth/login` rồi vào thẳng
+`/projects/<id>/present` ⇒ cookie hợp lệ, app chạy bình thường, **nhưng ② rỗng**.
 
-> ⚠️ **Một chỗ tôi đã suy quá bằng chứng, sửa lại cho đúng:** tôi đo `prisma.projectFile.count() = 0`
-> rồi viết *"bản sao bền không ghi được gì"*. **Sai.** Số 0 chỉ chứng minh **chưa có gì đi qua**,
-> không chứng minh ống hỏng — điều phối đã bơm thử một giọt qua `POST /api/project-files`, trả
-> **200** và ghi hàng thật. Ống **tốt**; cò chưa bóp. Hai kết luận đó dẫn tới hai việc sửa khác hẳn.
+Phép thử chốt, chỉ đổi MỘT bước:
 
-⇒ Sửa chỗ này nằm ở **lưu HỒ SƠ** (`PresentSheets` / `lib/present-editor/*`) — **ngoài
-`FILES_ALLOWED`, tôi KHÔNG đụng**, khai để điều phối định đoạt.
+| | `lastUserId` | IDB `sheets` | Sau khi tải lại |
+|---|---|---|---|
+| **KHÔNG** ghé Home | `null` | 0 | `0 slide` ❌ |
+| **CÓ** ghé Home | `cmtm9hop7…` | **1** | **`1 slide`** ✅ |
 
----
+⇒ Bộ đo đã sửa: `dangNhap()` ghé Home một lượt rồi **xác nhận `lastUserId` có giá trị** trước khi đo.
 
-## 🔎 GHI CHÚ CỦA ĐIỀU PHỐI — nghi phạm mục 4, có đường mã (04/09)
+> ⭐ Chỗ này cũng giải luôn "1 lượt PASS không giải thích được" mà tôi từng khai: trong lượt chạy
+> gộp, trang `/login` kịp tự điều hướng về Home trước lượt đi kế tiếp nên `lastUserId` được ghi;
+> các lượt chạy lẻ thì lượt `goto` kế tiếp cướp mất. **Kết quả chập chờn không phải nhiễu — nó là
+> chỗ hai đường đi khác nhau lộ ra.**
 
-Nối tiếp đúng chỗ báo cáo dừng lại (*"nghi vấn nên nhắm vào `rec` rỗng / cổng chặn luôn đúng"*).
-Đọc mã thì nghi phạm **đứng trước cổng chặn đó một bước**:
+> ⚠️ Và một suy luận của tôi đã đi quá bằng chứng, ghi lại để không lặp: tôi đo
+> `prisma.projectFile.count() = 0` rồi viết *"bản sao bền không ghi được gì"*. **Sai.** Số 0 chỉ
+> chứng minh **chưa có gì đi qua**, không chứng minh ống hỏng — điều phối bơm thử một giọt qua
+> `POST /api/project-files`, trả **200** và ghi hàng thật. Ống tốt; cò chưa bóp. Hai kết luận đó
+> dẫn tới hai việc sửa khác hẳn.
 
-```
-PresentSheets.tsx:322   const userId = getLastUserId();
-PresentSheets.tsx:335   if (!userId) { setHydratedFor(bucketId); return; }   ← thuần in-memory
-PresentSheets.tsx:522   if (hydrated) saverRef.current?.touch();             ← chỉ ghi khi đã hydrate
-lib/resume.ts:131       getLastUserId() ⇒ CHỈ đọc localStorage 'interiorflow.lastUserId'
-lib/sheets-persist.ts:157  saveSheets(): if (!userId || !route) return 0;
-```
+### 🔴 RỦI RO THẬT LỘ RA TỪ ĐÂY — không tan cùng với hiện vật, đề nghị mở phiếu riêng
+Trạng thái đăng nhập có hai nguồn, và **lớp lưu trữ bám vào nguồn YẾU HƠN**. Người dùng thật vẫn
+rơi vào được: cookie còn sống mà site data bị xoá · mở thẳng một bookmark
+`/projects/<id>/present` trong hồ sơ trình duyệt mới · vào bằng deep-link mà chưa từng ghé Home.
+Lúc đó app **trông vẫn đăng nhập**, vẫn cho dựng deck, vẫn hiện `1 slide` — rồi **im lặng không lưu
+gì**; người dùng chỉ biết mình mất việc SAU KHI tải lại. Không cảnh báo, không dấu hiệu.
+Đây là hình dạng tệ nhất của một lỗi mất dữ liệu, và **cùng họ với hai ca khác trong ngày**
+(surface `shortcut` khai mà không ai đọc · lý do nút mờ nằm trong `title` mà bàn phím không tới):
+**mã có, đường dây tới người dùng đứt ở đoạn cuối.** Ngoài `FILES_ALLOWED` ⇒ khai, không tự sửa.
 
-Khoá `lastUserId` **chỉ được ghi ở hai chỗ**: `LoginForm.tsx:135` (đăng nhập **bằng biểu mẫu**) và
-`HomeScreen.tsx:264` (ghé **Home** lúc đã đăng nhập). Bộ đo đăng nhập bằng `POST /api/auth/login`
-rồi vào **thẳng** `/projects/<id>/present` ⇒ cookie hợp lệ, app chạy bình thường, **`lastUserId`
-rỗng** ⇒ nhánh in-memory ⇒ IndexedDB **không bao giờ** được ghi. Khớp đúng cột *"IndexedDB `sheets`
-= 0 bản ghi ở CẢ BA mốc"* trong bảng trên — và cũng giải thích được **lượt PASS lẻ loi** mà báo cáo
-thành thật khai là không giải thích nổi: lượt gộp `tat-ca` **có đi qua Home trước**.
-
-### ⚠️ Rủi ro THẬT đã lộ ra, độc lập với việc phép đo có phải hiện vật hay không
-Trạng thái đăng nhập của app có **HAI nguồn** — cookie (máy chủ) và `localStorage.lastUserId`
-(trình duyệt) — và **lớp lưu trữ bám vào nguồn YẾU HƠN**. Người dùng thật rơi vào được: cookie còn
-sống mà site data bị xoá; hoặc mở thẳng một bookmark vào `/projects/<id>/present` trong trình duyệt
-mới. Lúc đó app **trông vẫn đăng nhập, vẫn cho làm việc, mà im lặng không lưu gì** — không cảnh
-báo, không dấu hiệu. Đó là hình dạng tệ nhất của một lỗi mất dữ liệu.
-
-### Bằng chứng phụ, tự cắn trong lúc đo việc khác
-Lượt đo bố cục Home đầu tiên trên cổng **mới** cho `hero = null` và số trống sai hẳn — vì
-**localStorage theo ORIGIN**, đổi cổng là mất `lastUserId`. Tức bộ đo của điều phối **vô tình tái
-hiện lại đúng con bug này** khi đang đo một thứ khác. Chạy lượt hai (sau khi Home đã ghi khoá) mới
-ra số thật. Một dấu hiệu nữa cho thấy nghi phạm nằm đúng chỗ.
-
-### ✅ PHÉP THỬ CHỐT — ĐÃ CHẠY, giả thuyết ĐÚNG tới từng con số
-```
-A) KHÔNG ghé Home   lastUserId = null                        idb{sheets}=0  → tải lại: 0 slide
-B) CÓ   ghé Home    lastUserId = "cmtm9hop700007d4oxrr5cwxd"  idb{sheets}=1  → tải lại: 1 slide ✅
-```
-Đo lại mục 4 bằng bộ đo đã sửa, 3 lượt liên tiếp: **PASS · PASS · PASS**
-(`A3 1:100` ở cầu ra → bên nhận → **vẫn còn sau tải lại**).
-
-⭐ **Và nó giải luôn "1 lượt PASS không giải thích được"** mà lane đã thành thật khai: lượt gộp
-`tat-ca` có trang `/login` kịp tự điều hướng về Home trước lượt đi kế, nên `lastUserId` được ghi;
-các lượt lẻ thì `goto` kế tiếp cướp mất. **Chính chỗ khai "không giải thích được" lại chứa lời
-giải** — một kết quả chập chờn không phải nhiễu để làm ngơ, nó là chỗ hai đường đi khác nhau lộ ra.
-
-### 🔴 RỦI RO VẪN MỞ — không tan cùng với hiện vật
-Trạng thái đăng nhập có **HAI nguồn** (cookie máy chủ ↔ `localStorage.lastUserId`) và **lớp lưu
-trữ bám vào nguồn YẾU HƠN**. Đường vào có thật: cookie còn sống mà site data bị xoá · mở thẳng
-bookmark `/projects/<id>/present` trong hồ sơ trình duyệt mới · vào bằng deep-link mà chưa từng ghé
-Home. Khi rơi vào, app **trông vẫn đăng nhập**, vẫn cho dựng deck, vẫn hiện *1 slide* — rồi **im
-lặng không lưu gì**; người dùng chỉ biết mình mất việc **sau khi tải lại**. Nhánh A ở trên chính là
-hình dạng đó, đo được.
-⇒ **Việc còn mở, cần phiếu riêng** (vùng `PresentSheets` / `lib/present-editor/*`).
-
-### Hai chỗ đã sửa trong BỘ ĐO (không phải trong sản phẩm)
-① `dangNhap()` **ghé Home một lượt** sau khi đăng nhập bằng API, rồi **xác nhận `lastUserId` có
-giá trị** — không tin suông. Đưa bộ đo về đúng trạng thái của người đăng nhập bằng biểu mẫu.
-② Chỗ đọc cầu ra `sessionStorage` nay **dò 100ms/lượt** thay vì đọc một phát ở +1500ms: khi hồ sơ
-đã có sẵn thì `CongThietLapTrang` mount ngay và **tiêu thụ tờ trong vài trăm mili-giây**
-(consume-once); đọc muộn là thấy rỗng rồi lại tưởng *"cầu ra hỏng"* — **suýt là hiện vật thứ hai
-chồng lên hiện vật thứ nhất**.
