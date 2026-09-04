@@ -200,3 +200,43 @@ suýt ghi kết luận từ đó.
 nguyên hay không. Phép đo của tôi rơi vào hồ sơ **0 tờ** nên cổng chặn không cho ghi, và
 `interiorflow-sheets/sheets` = 0 trước lẫn sau tải lại — tức **chưa dựng được tiền đề của phép
 thử**, chứ không phải đã chứng minh điều gì.
+
+---
+
+## 04/09 · MỤC 4 (bản vẽ → Trình chiếu) — NGHI PHẠM CÓ ĐƯỜNG MÃ, chờ một phép thử chốt
+
+**Lane tái hiện đúng hai điều kiện đã đặt** (deck ≥1 tờ · chờ 40s > nhịp 30s) — deck **vẫn về 0**
+sau tải lại. Nhưng con số đắt nhất trong lượt đo là con số khác: `interiorflow-sheets/sheets` = **0
+ở CẢ BA MỐC** (trước · sau 40s · sau reload). Nếu nhịp lưu có chạy thì IndexedDB phải có gì đó.
+⇒ Nghi vấn dời khỏi "nhịp 30 giây", về thẳng **"lớp lưu chưa bao giờ được bật"**.
+
+**Đường mã của nghi phạm:**
+```
+PresentSheets.tsx:322   const userId = getLastUserId();
+PresentSheets.tsx:335   if (!userId) { setHydratedFor(bucketId); return; }   ← thuần in-memory
+lib/resume.ts:131       getLastUserId() ⇒ chỉ đọc localStorage 'interiorflow.lastUserId'
+lib/sheets-persist.ts:157  saveSheets(): if (!userId || !route) return 0;
+```
+Khoá `lastUserId` **chỉ được ghi ở hai chỗ**: `LoginForm.tsx:135` (đăng nhập **bằng biểu mẫu**) và
+`HomeScreen.tsx:264` (ghé **Home** lúc đã đăng nhập). Bộ đo đăng nhập bằng `POST /api/auth/login`
+rồi vào **thẳng** `/projects/<id>/present` ⇒ cookie hợp lệ, app chạy bình thường, **`lastUserId`
+rỗng** ⇒ nhánh in-memory ⇒ tải lại là trắng.
+
+**Phép thử chốt (đã giao lane, đổi đúng MỘT bước):** ghé `/` trước rồi mới vào Trình chiếu.
+Deck còn ⇒ hiện vật của bộ đo. Deck vẫn mất ⇒ lỗi thật, giả thuyết sai.
+
+⚠️ **DÙ KẾT QUẢ NÀO, một điều đã lộ ra và nó là phát hiện thật:** trạng thái đăng nhập có **HAI
+nguồn** — cookie (máy chủ) và `localStorage.lastUserId` (trình duyệt) — và **lớp lưu trữ bám vào
+nguồn YẾU HƠN**. Người dùng thật rơi vào được: cookie còn sống mà site data bị xoá; hoặc mở thẳng
+một bookmark vào `/projects/<id>/present` trong trình duyệt mới. Lúc đó app **trông vẫn đăng nhập,
+vẫn cho làm việc, mà im lặng không lưu gì** — không cảnh báo, không dấu hiệu. Đó là hình dạng tệ
+nhất của một lỗi mất dữ liệu, và nó có thật kể cả khi phép đo hôm nay là hiện vật.
+
+⭐ **Ba lượt liên tiếp trong một ngày, cùng một hình dạng — đáng thành luật đọc bằng chứng:**
+| Lượt | Quan sát | Kết luận vội | Sự thật |
+|---|---|---|---|
+| 1 | `ProjectFile` = 0 hàng | "đường ghi hỏng" | ống tốt, **cò chưa bóp** |
+| 2 | Home tiêu điểm trống | "dữ liệu mỏng" | **cả hai** — hero vắng vì dữ liệu, 48,7% trống vì `1fr` |
+| 3 | deck mất sau reload | "lưu trữ hỏng" | **chưa biết** — nhiều khả năng lớp lưu chưa bật |
+**Cả ba lần, thứ quan sát được là ĐÚNG; thứ suy ra từ nó thì vội.** Khoảng cách giữa *"tôi thấy 0"*
+và *"cái đó hỏng"* luôn cần thêm một phép thử — và phép thử đó thường tốn một phút.
