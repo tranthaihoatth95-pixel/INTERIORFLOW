@@ -10,7 +10,9 @@
   display:flex;flex-direction:column;gap:0}
 .canh-so .tit{font:500 var(--fs-2xs)/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;
   color:var(--canh-6);margin-bottom:8px}
-.ts{display:flex;align-items:center;gap:10px;height:34px;flex:0 0 34px}
+.ts{display:flex;align-items:center;gap:10px;min-height:34px;flex:1}
+/* Hàng GIÃN ĐỀU thay vì cao cố định: cột thông số cao hơn tổng 6 hàng, để cố định thì
+   dư ra một khoảng trống ở đáy — đọc ra là lỗ, không đọc ra là khoảng thở. */
 .ts+.ts{border-top:1px solid var(--canh-2)}
 .ts .n{flex:1;font-size:var(--fs-ui);color:var(--canh-6);line-height:1.5}
 .ts .v{font-size:var(--fs-xs);font-weight:600;color:var(--canh-7);line-height:1.5}
