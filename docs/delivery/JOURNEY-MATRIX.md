@@ -89,18 +89,40 @@ Ký hiệu chủ sở hữu: `01` CORE · `02` WORKFLOW · `04` DESIGN · `05` A
 
 | # | KHỞI ĐIỂM | THAO TÁC | KẾT QUẢ HỆ THỐNG | KẾT QUẢ ĐÃ LƯU | VÀO LẠI | TRẠNG THÁI | CHỦ | CHẶN CỔNG |
 |---|---|---|---|---|---|---|---|---|
-| **J16** | **đã đăng nhập**, mở **thẳng** deep-link studio (tab mới · bookmark · F5) | làm việc | màn hiện bình thường | ⚠️ **việc KHÔNG được lưu — không báo lỗi, không dấu hiệu nào** | mở lại: **mất trắng** | **BLOCKED → 🟡 sửa xong-máy, CHƯA xác minh trên app thật** — `PRODUCT-DEFECTS.md` **D1** (P0): định danh đọc từ `localStorage` (`lib/resume.ts:22`), mà khoá đó **chỉ được ghi ở hai chỗ** — `components/home/HomeScreen.tsx:264` và `components/entry/LoginForm.tsx:135` ⇒ không qua hai cửa đó thì `getLastUserId()` trả `null` và `lib/project-scope.ts:62` rơi về đường không-có-user. Đã cắm ba đường ghi qua `danhTinhChoLuot()`; bằng chứng là **số lần ghi xuống đĩa** (0 → 3, đúng khoá) — nhưng **chưa mở app thật một dòng nào** | 01 | **G2 + G5** |
-| **J17** | đang làm việc | đóng app đột ngột (không bấm lưu) | — | autosave có kịp không | — | **UNVERIFIED** — `lib/cad/cad3d-autosave.ts` dùng chung khoá với `CadSheets` (không đẻ bucket thứ hai), nhưng **chưa đo trên bản đóng gói**, nơi `killServer()` (`electron/main.js:503-513`) gửi SIGTERM cho tiến trình server Next | 01 + 07 | **G5** |
+| **J16** | **đã đăng nhập**, mở **thẳng** deep-link studio (tab mới · bookmark · F5) | làm việc | màn hiện bình thường | ✅ **`userId::/cad-editor::projectId`, 1 thực thể** — đọc từ IndexedDB, không đọc chữ trên màn | ✅ **đóng HẲN trình duyệt rồi mở lại: còn nguyên** | **PASS trên app thật 04/09** — bộ chạy `scripts/nghiem-thu-g2-hanh-trinh.mjs` (hồ sơ Chromium trên đĩa = máy người dùng; đóng bối cảnh = đóng app). Bằng chứng: `docs/bao-cao-phien/2026-09-04-g2-chay-that.md` · ảnh `anh-duyet-mat/g2-hanh-trinh/J16-*.png`. Bản vá D1 nay có người nhìn: **0 khoá mơ hồ**, không rơi về `local`/rỗng | 01 | **G2 + G5** |
+| **J17** | đang làm việc | đóng app đột ngột (không bấm lưu) | — | ✅ **autosave kịp** | ✅ còn việc sau khi mở lại | **PASS trên app thật 04/09** — bối cảnh bị **SIGKILL** giữa lúc vẽ (không `beforeunload`, không `flush()`): neo an toàn 2 thực thể, mở lại đọc IndexedDB thấy **3**. ⚠️ **Chỉ đo trên bản WEB** — bản đóng gói Electron (`killServer()` gửi SIGTERM cho server Next) **chưa đo**, vẫn thuộc lượt G5 | 01 + 07 | **G5** |
 | **J18** | hai tab cùng một dự án | cùng sửa, cùng lưu | tab sau nhận 409 | không ghi đè âm thầm | — | **PASS ở tầng cơ chế** — `app/api/flows/[id]/route.test.ts` chứng minh trên Prisma thật; **UNVERIFIED ở tầng người dùng** (client có xử 409 tử tế không thì chưa ai nhìn) | 01 | **G2** |
-| **J19** | máy đã có dữ liệu | cài đè bản app mới hơn | snapshot trước khi đụng schema | `backups/<thời-gian>-before-<phiên-bản>` | dữ liệu còn nguyên | **UNVERIFIED** — cơ chế có, và **chặn khởi động nếu snapshot thất bại** (`electron/main.js:156-181`); nhưng `release:preflight` chỉ kiểm **chuỗi ký tự** của cơ chế đó, không kiểm nó chạy | 07 | **G5** |
+| **J19** | máy đã có dữ liệu | cài đè bản app mới hơn | snapshot trước khi đụng schema | ✅ `backups/<thời-gian>-before-0.0.9` | ✅ dữ liệu gốc **không đổi một hàng** | **PASS 04/09** — chạy **đúng thân hàm đang ship** (`snapshotBeforeUpgrade` trích từ `electron/main.js`, chỉ thay `app.getVersion()`), trên CSDL SQLite **thật có hàng thật**; bản sao đọc lại **bằng SQL** khớp gốc `{user 2, project 6, flow 6, member 5}` + kèm `uploads/`. ⚠️ **KHÔNG chạy Electron đóng gói** — phần đó vẫn là G5/lane 07 | 07 | **G5** |
 
 ### 1.6 · Đầu ra
 
 | # | KHỞI ĐIỂM | THAO TÁC | KẾT QUẢ HỆ THỐNG | KẾT QUẢ ĐÃ LƯU | VÀO LẠI | TRẠNG THÁI | CHỦ | CHẶN CỔNG |
 |---|---|---|---|---|---|---|---|---|
-| **J20** | Trình bày có nội dung | xuất PDF | tệp sinh ra | tệp trên đĩa | **mở tệp bằng mắt** | **UNVERIFIED** — và theo LUẬT nghiệm thu chốt 11/08, hành trình sinh tệp thì **nghiệm thu = MỞ TỆP ĐẦU RA soi theo `docs/CHUAN-DAU-RA-NGHE.md`**; `tsc`/test/ảnh chụp **không đủ** | 02 + 07 | **G5** |
+| **J20** | Trình bày có nội dung | xuất PDF | tệp sinh ra | ✅ tệp trên đĩa, mở được **độc lập với app** | 👁 **đã mở tệp ra soi bằng mắt** | **PASS invariant, KÈM 3 PHÁT HIỆN CHUẨN ĐẦU RA** (xem dưới bảng) — 04/09, tệp 24 KB · 1 trang · khổ **2560×1440pt** · 1 ảnh JPEG nhúng. 🔴 Lượt ĐẦU cho **trang TRẮNG TINH** đi qua với chữ PASS — chỉ lộ khi bóc ảnh ra NHÌN; bộ soi nay đo mực (mọi điểm ảnh = 255 ⇒ FAIL) | 02 + 07 | **G5** |
 | **J21** | dự án | xuất `.idf` / gói `.idfp` | gói sinh ra | — | nạp lại được | **UNVERIFIED** — `SHIP-BLOCKERS` **B4**: *".idf/.idfc sinh từ máy sạch chưa chạy lại sau khi thu 11 slice"*, ⬜ chưa mở. Tầng định dạng có khoá: `lib/present-editor/idfp.test.ts` | 07 | **G5** |
 | **J22** | mất mạng / không có API key | dùng một năng lực cần cloud | báo rõ, không nút giả | — | — | **UNVERIFIED** — `RELEASE-CHECKLIST-INTERNAL.md` §1 đã đặt yêu cầu này thành mục kiểm tay; chưa ai chạy | 02 | **G5** |
+
+---
+
+### 1.6b · J20 — MỞ TỆP RA SOI: thứ không máy soi nào trong repo bắt được
+
+> LUẬT nghiệm thu 11/08: hành trình sinh tệp thì nghiệm thu = **mở tệp đầu ra** soi theo
+> `docs/CHUAN-DAU-RA-NGHE.md`. Đây là lần đầu luật đó được thi hành cho PDF deck.
+
+| # | Soi thấy gì | Đối chiếu chuẩn | Nặng nhẹ |
+|---|---|---|---|
+| **F1** | Trang in ra đúng **một dòng chữ `Nhập nội dung`** — và đo tiếp ra: đó là **giá trị mặc định trong MODEL** (`lib/present-editor/model.ts:654`, `makeText()`), **không phải chữ mờ lúc hiển thị** ⇒ nó là dữ liệu thật, xuất ra như mọi nội dung khác | `CHUAN-DAU-RA-NGHE` §4 đòi **0 placeholder** trong tệp giao khách | 🔴 **nặng nhất**: KTS thêm ô chữ, quên điền, xuất gửi khách ⇒ hồ sơ khách có chữ "Nhập nội dung". Đường xuất **không lọc placeholder**, cũng không cảnh báo |
+| **F2** | **0 ký tự trích được** — mỗi trang là **một ảnh JPEG full-page** (`/Filter /DCTDecode`), 14 font khai trong tệp nhưng **không font nào mang glyph thật** | chữ trong PDF **không chọn/tìm/copy được** | 🟡 **cố ý theo thiết kế** (WYSIWYG 1:1 với editor, `lib/present-editor/export.ts:53-66`) — nhưng phải khai thẳng: PDF deck của IF là **ảnh**, không phải văn bản. Chữ-sửa-được là đường PPTX |
+| **F3** | Khổ trang **2560×1440 pt = 35,6 × 20 inch**; ảnh nhúng 2560×1440 px ⇒ **72 dpi** | `LUAT-300DPI` (29/07) | 🟡 đúng vai *deck màn hình*; đường in 300dpi là hàm **riêng** (`exportDeckToPdfAtPaperSize`, chỉ chạy với A4/A3) — **chưa hành trình nào chạm**, xếp việc lượt sau |
+
+**Đọc được bằng mắt, ghi lại vì nó là điểm sáng:** dấu tiếng Việt dựng chồng đúng
+(`Nhập nội` — không vỡ, không mất mũ), đúng `LUAT-CHU-VIET-7.1.23`.
+
+🔴 **Bài học của chính bộ đo, không phải của sản phẩm:** vòng đầu bộ khẳng định chỉ hỏi
+*mở được · có trang · đủ byte* ⇒ nó **cho một trang trắng tinh đi qua với chữ PASS**. Ba câu đó
+đều đúng mà kết luận vẫn sai. Nay bộ soi bóc ảnh nhúng ra **đo mực** (mọi điểm ảnh = 255 ⇒ FAIL)
+và giữ lại `J20-trang-1.jpg` làm bằng chứng **nhìn được**. **F1 thì máy vẫn KHÔNG bắt nổi** — chữ
+đã thành điểm ảnh, không grep được; nó chỉ chết dưới mắt người. Đó đúng là lý do luật 11/08 tồn tại.
 
 ---
 
@@ -108,59 +130,68 @@ Ký hiệu chủ sở hữu: `01` CORE · `02` WORKFLOW · `04` DESIGN · `05` A
 
 | Trạng thái | Số hành trình | Ghi chú |
 |---|---|---|
-| **PASS** | **4** | J08 · J09 · J10 · J11 — **tất cả đến từ MỘT lượt kiểm duy nhất ngày 04/09**, và **tất cả đều nằm ở cột "kết quả hệ thống"** |
-| **PASS một phần** | **2** | J06 · J18 — cơ chế lõi có bằng chứng chạy thật trên Prisma thật; tầng người dùng thì chưa |
-| **UNVERIFIED** | **14** | J01 J02 J04 J05 J07 J12 J13 J14 J15 J17 J19 J20 J21 J22 |
-| **BLOCKED** | **2** | J03 (D3) · J16 (D1 — P0, đang ở trạng thái *sửa xong-máy chờ app thật*) |
+| **PASS đầy đủ (có cột ĐÃ LƯU)** | **4** | J16 · J17 · J19 · J20 — chạy bằng bộ `nghiem-thu-g2-hanh-trinh.mjs` 04/09 |
+| **PASS chỉ ở cột hệ thống** | **4** | J08 · J09 · J10 · J11 — lượt kiểm 04/09, không chạm chuyện *còn sau khi đóng app* |
+| **PASS một phần** | **2** | J06 · J18 — cơ chế lõi có bằng chứng trên Prisma thật; tầng người dùng chưa |
+| **UNVERIFIED** | **10** | J01 J02 J04 J05 J07 J12 J13 J14 J15 J21 J22 → còn **11**, xem ghi chú dưới |
+| **BLOCKED** | **1** | J03 (D3) |
 
-🔴 **Con số đáng chú ý nhất không phải "14 UNVERIFIED".** Nó là: **0 hành trình được xác minh ở cột
-KẾT QUẢ ĐÃ LƯU.** Toàn bộ bằng chứng đang có chứng minh *app phản ứng đúng lúc bấm*; chưa có mẩu
-nào chứng minh *việc còn đó sáng hôm sau*. Với một sản phẩm local-first mà lời hứa là
-*"từ ý tưởng tới sự thật thiết kế — không đánh rơi ngữ cảnh"*, chỗ trống này nằm đúng giữa mệnh đề
-bán hàng.
+⚠️ Đếm lại cho đúng: 22 hành trình = 4 PASS-đủ + 4 PASS-hệ-thống + 2 PASS-một-phần + **11 UNVERIFIED**
+(J01 J02 J04 J05 J07 J12 J13 J14 J15 J21 J22) + 1 BLOCKED.
 
-Điều đó **không có nghĩa là app đang mất dữ liệu ở 14 chỗ**. Nó có nghĩa là: nếu app đang mất dữ
-liệu ở một trong 14 chỗ đó, **hôm nay không ai biết** — đúng như J16 đã chứng minh là chuyện có
-thật, chứ không phải lo xa.
+### ⭐ CỘT **KẾT QUẢ ĐÃ LƯU**: **1/22 → 4/22**
+
+Con số này là thứ duy nhất đáng theo dõi ở cổng G2, và nó vừa đổi lần đầu kể từ khi lập ma trận.
+Bốn hành trình nay đi trọn bất biến:
+
+> **THAO TÁC → GHI XUỐNG → ĐÓNG/TẢI LẠI HẲN → VÀO LẠI → CÙNG MỘT SỰ THẬT**
+
+🔴 **"ĐÓNG HẲN" nay có nghĩa thật.** Bộ chạy dùng `launchPersistentContext(<hồ sơ trên đĩa>)` —
+đóng bối cảnh = đóng app, mở lại cùng thư mục = mở lại app. Dùng `browser.newContext()` (cách bộ
+G1 làm) thì IndexedDB **bị vứt lúc đóng**, nên phép "mở lại" vô nghĩa ngay từ định nghĩa —
+**đó là lý do mắt này chưa từng được chứng minh, chứ không phải vì chưa ai thử.**
+
+**Hiệu chuẩn:** mỗi lượt chạy dựng trước một **thế giới biết chắc hỏng** (chặn ghi IndexedDB cho
+J16 · chặn thư mục `backups` cho J19) và đòi ĐÚNG bộ khẳng định đó phải ĐỎ. Bộ chỉ tính là đỏ khi
+đỏ **vì khẳng định**; ngã vì hạ tầng bị đánh dấu *không kết luận* — vì thứ đỏ ở mọi thế giới thì
+không chứng minh được gì. Lần chạy 04/09: **hiệu chuẩn ĐẠT**.
+
+## 3 · BA HÀNH TRÌNH ĐÁNG CHẠY TRƯỚC NHẤT — **ĐÃ CHẠY 04/09**
+
+✅ Cả ba đã chạy trên app thật và **PASS**: J16 (P0 duy nhất đang mở, nay có người nhìn) ·
+J19+J17 (hành trình duy nhất phá được dữ liệu thật và không sửa được sau phát hành) ·
+J20 (đầu ra người ngoài cầm trên tay — mở tệp ra soi, ra 3 phát hiện ở §1.6b).
+Lý do xếp hạng ban đầu giữ nguyên trong lịch sử tệp này; phần còn lại của mục 3 là **bối cảnh**,
+không còn là hàng đợi.
 
 ---
 
-## 3 · BA HÀNH TRÌNH ĐÁNG CHẠY TRƯỚC NHẤT
+## 4 · BỘ CHẠY — THÊM HÀNH TRÌNH LÀ THÊM MỘT MỤC KHAI BÁO
 
-Tiêu chí xếp: **phủ nhiều rủi ro nhất trên mỗi đồng bỏ ra** — ưu tiên hành trình vừa *chặn cổng*,
-vừa *đi qua nhiều mắt xích chưa ai chạm*, vừa *có sẵn đường chạy nên rẻ*.
+`scripts/nghiem-thu-g2-hanh-trinh.mjs` · một lệnh chạy cả lô:
 
-### ① J16 — vào thẳng deep-link, làm việc, rồi mở lại
+```
+node scripts/nghiem-thu-g2-hanh-trinh.mjs --db='file:<đường TUYỆT ĐỐI>/prisma/dev.db'
+node scripts/nghiem-thu-g2-hanh-trinh.mjs --ca=J20        # một hành trình
+node scripts/nghiem-thu-g2-hanh-trinh.mjs --hieu-chuan    # chỉ phép hiệu chuẩn
+```
 
-**Vì sao đứng đầu.** Đây là lỗi **P0 duy nhất đang mở**, và nó đang ở trạng thái nguy hiểm nhất mà
-một lỗi có thể ở: **"đã sửa" nhưng chưa ai nhìn.** Test hiện có dựng lại *hình dạng* effect bằng
-lời gọi hàm trần — chứng minh **cơ chế và thứ tự**, không chứng minh React thật chạy đúng vậy.
+**Khung sở hữu bất biến; hành trình chỉ khai 6 việc nhỏ** — `chuẩn bị · mở phiên · thao tác ·
+đọc sự thật · vào lại · so sánh`. Thứ tự (thao tác → đọc → **đóng hẳn** → mở phiên MỚI trên
+CÙNG thế giới → đọc lại → so) nằm ở `chayMot()`, không nằm trong hành trình ⇒ **thêm hành trình
+thứ năm = thêm một mục vào mảng `HANH_TRINH`, không sửa khung.**
 
-Một lượt chạy đóng luôn ba câu hỏi tách biệt: định danh có đúng không · ghi có xuống đĩa không ·
-mở lại có thấy không. **Rẻ**: đường chạy đã dựng sẵn (`scripts/nen-chrome/`, `scripts/tai-khoan-kiem.mjs`,
-`scripts/dung-moi-truong-kiem.sh`) — không phải xây gì mới.
+Hành trình **không cần trình duyệt** cũng vừa khuôn: J19 khai `moPhien` trả một vật rỗng, "thế
+giới" của nó là **thư mục trên đĩa**, "mở lại" là **đọc lại đĩa bằng SQL**. Đó là lý do khung
+tách *phiên* khỏi *trình duyệt*.
 
-### ② J19 + J17 gộp một lượt — nâng cấp trên máy đã có dữ liệu
+⛔ **Ba luật của bộ, đừng nới:**
+1. **Đọc từ nơi lưu thật** — IndexedDB · SQL trên tệp `.db` · byte của tệp xuất ra. Không đọc DOM,
+   không tin chữ "đã lưu" trên màn.
+2. **Đóng là đóng thật** — hồ sơ Chromium trên đĩa, không phải `reload()`, không phải `newContext()`.
+3. **Hiệu chuẩn trước khi tin** — mỗi lượt chạy tự dựng thế giới hỏng và đòi mình phải đỏ ở đó.
 
-**Vì sao đứng nhì.** Đây là hành trình **duy nhất có thể phá dữ liệu thật của người dùng**, và là
-hành trình **duy nhất không sửa được sau khi phát hành**: bản cài đã ra khỏi tay thì mọi bản nâng
-cấp sau phải sống chung với hậu quả.
-
-Nó cũng là chỗ có mâu thuẫn kỹ thuật nặng nhất đang tồn tại — xem `G5-RELEASE-READINESS.md` §B1-③:
-bản đóng gói nâng cấp dữ liệu bằng `db push` (không lịch sử, không đường lùi) dựa trên một lý do
-**đã đo được là sai**. Chạy J19 cũng chính là chạy J17, vì cả hai xoay quanh cùng một thứ: vòng đời
-tiến trình server nền.
-
-### ③ J20 — xuất PDF rồi MỞ TỆP RA SOI
-
-**Vì sao đứng ba.** Đây là hành trình duy nhất trong ba cái đi tới **đầu ra người ngoài cầm trên
-tay** — thứ khách của studio nhìn thấy. Và nó là loại lỗi mà **không máy soi nào trong repo bắt
-được**: chữ đè hình, tỷ lệ lẻ kiểu "1:47", khung tên lộ jargon đều **xanh** với `tsc`, test và ảnh
-chụp màn. Bài học 11/08 đã trả giá đúng một lần cho chuyện này. Rẻ: một dự án nháp và một lần mở
-tệp bằng mắt.
-
-### Vì sao KHÔNG chọn J01/J02 cho đợt đầu
-
-**Không phải vì ít rủi ro** — J02 mang một rủi ro thật đáng lo (secret đổi mỗi lần khởi động ⇒ đăng
-xuất âm thầm). Lý do là nó **bắt buộc phải đóng gói Electron trước**, tức nó thuộc lượt G5 chứ
-không phải lượt chạy nhanh. Nó là hành trình **số một của lượt kế tiếp**, ngay khi có bộ cài đầu tiên.
+⚠️ `DATABASE_URL` phải **TUYỆT ĐỐI**: Prisma nạp `.env` theo đường THẬT của `node_modules`, nên
+worktree dùng symlink sẽ âm thầm ghi vào CSDL repo chính — **đã xảy ra thật trong chính phiên
+lập bộ này** (một hàng `User` lọt sang repo chính, phải dọn tay). Bộ chạy nay nhận `--db` và
+truyền thẳng `datasources.db.url`, không nhờ `.env` nữa.
