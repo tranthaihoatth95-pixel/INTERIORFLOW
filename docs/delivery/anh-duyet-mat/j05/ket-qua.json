@@ -1,0 +1,12 @@
+{
+  "okHieuChuan": null,
+  "ketQua": [
+    {
+      "ma": "J05",
+      "ten": "Home → bấm thẻ tiêu điểm → về đúng chặng đang dở → đóng app → thẻ vẫn trỏ đúng chỗ",
+      "trangThai": "PASS",
+      "vi": "Tab 19 lần tới lớp phủ (ring 2px solid rgb(106, 87, 245)) → Enter → http://localhost:3098/projects/cmtnh6d3300027dnao0eqzz6l/cad; ĐÓNG HẲN rồi mở lại: thẻ vẫn trỏ \"/projects/cmtnh6d3300027dnao0eqzz6l/cad\", resume vẫn /cad-editor+cmtnh6d3300027dnao0eqzz6l",
+      "ghiChu": ""
+    }
+  ]
+}
