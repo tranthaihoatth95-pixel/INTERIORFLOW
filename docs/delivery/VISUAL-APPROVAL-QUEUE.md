@@ -14,16 +14,27 @@
 
 ---
 
-## A · CHỜ CHỦ DỰ ÁN QUYẾT — chặn thi công, không chặn nhau
+## A · HAI QUYẾT ĐỊNH — ĐÃ ĐÓNG 04/09
 
-| BOARD | AUTHORITY | THAM CHIẾU | HIỆN TẠI | DELTA | QUYẾT ĐỊNH CẦN | ĐỀ XUẤT |
-|---|---|---|---|---|---|---|
-| **EXS-E · chỗ đứng Vitals** | EXS **điều 7**: *"nằm VẬT LÝ trong top edge như aperture sống, không phải popover gắn lên"*; §hệ quả đóng dấu **SUPERSEDED** cho bản neo-theo-ngữ-cảnh 16/08 | `VitalsAperture.tsx` (dòng cũ) — docstring ghi `VitalsGesture` là *"BẢN CŨ, ĐÃ MỒ CÔI"* | `VitalsRightEdgeHost.tsx` (Slice 12, 03/09) **hồi sinh** bản trục phải; `VitalsPill` chỉ mount ở Home | Aperture mép trên ↔ nút cạnh trục phải — **loại trừ nhau về chỗ đứng** | Giữ điều 7 và gỡ bản trục phải, **hay** Slice 12 lật điều 7? | Giữ **điều 7** — nó là chốt mới hơn VÀ đã qua mắt; Slice 12 không mang bằng chứng lật |
-| **EXS-C · bố cục Home** | EXS **điều 6** + tiêu chí trượt: *"TRƯỢT nếu Home vẫn trông như dashboard SaaS"* | `xuong-layout.ts` — **một tiêu điểm + một cụm phụ**, tự khai *"NÓ ĐÈ HƯỚNG CŨ"* | **bento 9 ô**, slice Home 03/09 còn đầu tư thêm | Trên màn rộng: một-tiêu-điểm ↔ lưới thẻ đều | Hướng chính là gì? | Theo **điều 6**. Không phải xoá bento — bản cũ đã chừa sẵn: **bento tụt xuống nhánh xếp dọc hẹp** |
+| | Chốt | Hệ quả thi công |
+|---|---|---|
+| **Chỗ đứng Vitals** | **GIỮ EXS §7** — khẩu độ sống **vật lý ở mép trên**, 3 mức Ambient→Peek→Engage. Trục phải **SUPERSEDED** | Tách **hành vi** khỏi **chỗ đứng**: hành vi Slice 12 không đụng EXS thì ADAPT vào khẩu độ; sau di trú còn **đúng một chỗ đứng vật lý**. 🔴 Kèm một **lỗi chức năng đang sống**: panel Vitals không còn nơi mount nào từ 17/08 ⇒ gõ ở thanh trạng thái + Enter là mất câu hỏi, ⌘J chết |
+| **Bố cục Home** | **GIỮ EXS §6** — desktop: **một tiêu điểm chính** (Resume) + **một cụm phụ hạng dưới hẳn**. Không dashboard SaaS, không bento 9 thẻ | Bento **ở lại làm nhánh khổ hẹp**, không định nghĩa thứ bậc desktop. *"Đừng giữ bento chỉ vì mã đã có sẵn"* |
 
-⚠️ Hai mục này **chưa có ảnh** — chúng là quyết định *hướng*, không phải duyệt *hình*. Chọn hướng xong tôi mới dựng ảnh cho đúng hướng đó; dựng cả hai để so là tiêu băng thông mắt vào thứ sẽ bỏ đi một nửa.
+⇒ Trọng tâm chuyển từ **thu hồi** sang **hoàn tất thị giác**. Đường đi cố định cho mọi board:
+`AUTHORITY → THI CÔNG → MÁY KIỂM → ẢNH CHUẨN → DELTA → MẮT HOÀ`.
 
----
+## A2 · LÔ DUYỆT MẮT #1 — đang dựng bằng chứng
+
+Ba mục **cùng một lô** vì chúng chạm nhau ở mép trên màn hình; duyệt rời là bắt nhìn ba lần cùng một vùng.
+
+| Board | Trạng thái |
+|---|---|
+| **HOME · bố cục khổ rộng** | đang thi công + chụp ở 1600 · 1280 · 900, hai theme |
+| **VITALS · khẩu độ mép trên** | đang thi công + đo mount đơn, ⌘J, đường gõ-nhanh |
+| **Chrome/điều hướng mép trên** đi kèm hai mục trên | theo hai mục trên, không tách |
+
+⛔ Chưa mục nào đủ điều kiện trình. Điều kiện là **toàn bộ những gì máy phán được đã xanh** — chưa đạt thì không đưa lên.
 
 ## B · ĐANG DỰNG BẰNG CHỨNG — chưa đủ điều kiện trình
 
