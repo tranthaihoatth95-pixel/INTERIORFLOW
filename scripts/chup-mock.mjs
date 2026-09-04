@@ -21,7 +21,7 @@
  * `IF_TRINH_DUYET` vào bản có sẵn, ĐỪNG chạy `npx playwright install`.
  */
 import { chromium } from 'playwright';
-import { mkdirSync, existsSync } from 'fs';
+import { mkdirSync, existsSync, readdirSync } from 'fs';
 import { basename, resolve, join } from 'path';
 
 const TEP = process.argv.slice(2);
@@ -31,10 +31,27 @@ if (!TEP.length) {
 }
 const [W, H] = (process.env.IF_KHO ?? '1600x900').split('x').map(Number);
 const OUT = process.env.IF_OUT ?? 'docs/delivery/anh-duyet-mat/nc';
-const CHROME = process.env.IF_TRINH_DUYET ?? '';
+/* DÒ TRÌNH DUYỆT THẬT TRƯỚC KHI ĐỂ PLAYWRIGHT TỰ CHỌN.
+   Bệnh: gói `playwright` trong repo đóng đinh MỘT số hiệu bản (vd 1234) còn máy dựng cài bản
+   khác (vd 1194) ⇒ lỗi đọc ra như "thiếu trình duyệt", thật ra chỉ lệch số hiệu, và nó làm
+   CHẾT cả máy tiền kiểm — tức là cửa chặn "không trình bản chưa qua máy" tự sập.
+   ⚠️ Cố ý KHÔNG gõ cứng số hiệu bản (gõ cứng 1194 là lặp lại đúng con bug đang chữa):
+   quét thư mục rồi lấy tệp có thật. Không thấy thì trả undefined để Playwright tự lo. */
+function doTrinhDuyet() {
+  if (process.env.IF_TRINH_DUYET) return process.env.IF_TRINH_DUYET;
+  const goc = '/opt/pw-browsers';
+  const duoi = ['chrome-linux/chrome', 'chrome-linux/headless_shell',
+    'chrome-headless-shell-linux64/chrome-headless-shell'];
+  try {
+    for (const thu of readdirSync(goc).filter((d) => d.startsWith('chromium')).sort().reverse())
+      for (const d of duoi) { const p = join(goc, thu, d); if (existsSync(p)) return p; }
+  } catch { /* không có thư mục thì thôi, để Playwright tự chọn */ }
+  return undefined;
+}
+const TU_CHI = doTrinhDuyet();
 
 mkdirSync(OUT, { recursive: true });
-const browser = await chromium.launch(CHROME && existsSync(CHROME) ? { executablePath: CHROME } : {});
+const browser = await chromium.launch(TU_CHI ? { executablePath: TU_CHI } : {});
 let n = 0;
 for (const t of TEP) {
   const duong = resolve(t);

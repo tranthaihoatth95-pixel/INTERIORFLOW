@@ -2,17 +2,30 @@
  * lib/danh-tinh-phien.test.ts — KHOÁ HÀNH VI cho P0 mất dữ liệu 04/09.
  *
  * Bệnh: người dùng ĐANG ĐĂNG NHẬP mở thẳng `/projects/[id]/cad` (tab mới/bookmark/F5) thì bộ
- * đệm `lastUserId` rỗng ⇒ CadSheets/PresentSheets chạy nhánh "thuần in-memory" ⇒ KHÔNG ghi gì
- * xuống IndexedDB, KHÔNG báo lỗi. Máy chủ vẫn biết người này là ai — nên định danh phải giải
- * từ PHIÊN MÁY CHỦ, localStorage chỉ là bộ đệm.
+ * đệm `lastUserId` rỗng ⇒ CadSheets/PresentSheets/autosave 3D chạy nhánh "thuần in-memory" ⇒
+ * KHÔNG ghi gì xuống IndexedDB, KHÔNG báo lỗi. Máy chủ vẫn biết người này là ai — nên định danh
+ * phải giải từ PHIÊN MÁY CHỦ, localStorage chỉ là bộ đệm.
  *
- * Hai bất biến test này canh, theo đúng thứ tự quan trọng:
+ * Năm bất biến test này canh, theo đúng thứ tự quan trọng:
  *   ① KHÔNG CHẮC THÌ KHÔNG GHI — thà không lưu còn hơn lưu nhầm chỗ người khác.
  *   ② CÓ PHIÊN MÁY CHỦ THÌ PHẢI GIẢI RA ĐƯỢC ĐỊNH DANH (đúng id, ghi đúng một lần).
+ *   ③ ĐƯỜNG THƯỜNG KHÔNG ĐƯỢC CHẬM — đệm đã có thì 0 request, 0 đồng hồ, xong trong microtask.
+ *   ④ MÁY CHỦ TREO KHÔNG ĐƯỢC TREO APP — hết giờ thì buông, không ghi gì (đừng đổi bệnh
+ *      mất-dữ-liệu thành bệnh treo-app).
+ *   ⑤ ĐỔI DỰ ÁN GIỮA PHIÊN — lượt cũ phải DỪNG, không ghi đè trạng thái lượt mới.
  *
  * Chạy: node_modules/.bin/sucrase-node lib/danh-tinh-phien.test.ts
  */
-import { giaiDanhTinh, danhTinhSanSang, quenLuotDanhTinh, type DapAnMayChu } from './danh-tinh-phien';
+import {
+  giaiDanhTinh,
+  danhTinhSanSang,
+  danhTinhChoLuot,
+  quenLuotDanhTinh,
+  HAN_HOI_MS,
+  type DapAnMayChu,
+  type PhuThuocDanhTinh,
+} from './danh-tinh-phien';
+import { setLastUserId, getLastUserId, quenDemTrongBoNho } from './resume';
 
 let pass = 0;
 let fail = 0;
@@ -26,23 +39,35 @@ function ok(label: string, cond: boolean) {
   }
 }
 
+/** Đồng hồ KHÔNG BAO GIỜ reo — dùng cho mọi ca không thử nhánh hết giờ (không để timer treo). */
+const chuongCam = () => new Promise<void>(() => {});
+
 /** Bàn thử: đếm request + bắt mọi lần ghi đệm, để phân biệt "im lặng" với "ghi bừa". */
-function ban(dem: string | null, dapAn: (() => Promise<DapAnMayChu>) | 'nem') {
+function ban(
+  dem: string | null,
+  dapAn: (() => Promise<DapAnMayChu>) | 'nem' | 'treo',
+  chuong: () => Promise<void> = chuongCam,
+) {
   const daGhi: string[] = [];
   let soLanHoi = 0;
-  return {
-    daGhi,
-    soLanHoi: () => soLanHoi,
-    deps: {
-      docDem: () => dem,
-      ghiDem: (id: string) => { daGhi.push(id); },
-      hoiMayChu: () => {
-        soLanHoi += 1;
-        if (dapAn === 'nem') return Promise.reject(new Error('mạng đứt'));
-        return dapAn();
-      },
+  let soLanXemDongHo = 0;
+  let daCat = false;
+  const deps: PhuThuocDanhTinh = {
+    docDem: () => dem,
+    ghiDem: (id: string) => { daGhi.push(id); },
+    hoiMayChu: () => {
+      soLanHoi += 1;
+      if (dapAn === 'nem') return Promise.reject(new Error('mạng đứt'));
+      if (dapAn === 'treo') return new Promise<DapAnMayChu>(() => {}); // không bao giờ trả lời
+      return dapAn();
     },
+    chuongHetGio: () => {
+      soLanXemDongHo += 1;
+      return chuong();
+    },
+    cat: () => { daCat = true; },
   };
+  return { deps, daGhi, soLanHoi: () => soLanHoi, soLanXemDongHo: () => soLanXemDongHo, daCat: () => daCat };
 }
 
 const traLoi = (status: number, than: unknown, hongJson = false): (() => Promise<DapAnMayChu>) =>
@@ -97,16 +122,72 @@ void (async () => {
     ok('ghi đệm ĐÚNG MỘT lần, đúng giá trị', b.daGhi.length === 1 && b.daGhi[0] === 'usr_abc');
   }
 
-  console.log('③ ĐỆM ĐÃ CÓ → KHÔNG tốn request (đường thường, tuyệt đại đa số lượt vào trang)');
+  console.log('③ ĐƯỜNG THƯỜNG (đã qua Home) KHÔNG ĐƯỢC CHẬM — 0 request, 0 đồng hồ, xong microtask');
   {
     const b = ban('usr_cu', traLoi(200, { user: { id: 'usr_moi' } }));
-    const r = await giaiDanhTinh(b.deps);
+    let xong = false;
+    const p = giaiDanhTinh(b.deps).then((r) => { xong = true; return r; });
+    // Nhường vài microtask — KHÔNG nhường macrotask (không setTimeout). Chạm mạng là trượt ca này.
+    await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+    ok('xong ngay trong microtask (không chờ mạng)', xong);
+    const r = await p;
     ok('trả thẳng id trong đệm', r.trangThai === 'da-co' && r.userId === 'usr_cu');
     ok('KHÔNG hỏi máy chủ lần nào', b.soLanHoi() === 0);
+    ok('KHÔNG cả đụng tới đồng hồ hết giờ', b.soLanXemDongHo() === 0);
     ok('KHÔNG ghi đè đệm đang có', b.daGhi.length === 0);
   }
 
-  console.log('④ Ngoài trình duyệt (SSR/test) → im lặng, không đụng gì');
+  console.log('④ MÁY CHỦ TREO → hết giờ thì buông, KHÔNG treo app, KHÔNG ghi gì');
+  {
+    // Máy chủ không bao giờ trả lời; chuông reo ngay (đồng hồ giả — không chờ 8 giây thật).
+    const b = ban(null, 'treo', () => Promise.resolve());
+    const r = await giaiDanhTinh(b.deps);
+    ok('hết giờ → khong-ket-luan, lý do "het-gio"', r.trangThai === 'khong-ket-luan' && r.lyDo === 'het-gio');
+    ok('hết giờ → KHÔNG ghi đệm (không đoán bừa là ai)', b.daGhi.length === 0);
+    ok('hết giờ → CẮT request, không để kết nối mồ côi', b.daCat());
+  }
+  {
+    // Máy chủ trả lời TRƯỚC chuông ⇒ chuông thua, không được cắt oan.
+    const b = ban(null, traLoi(200, { user: { id: 'usr_kip' } }), chuongCam);
+    const r = await giaiDanhTinh(b.deps);
+    ok('trả lời kịp → vẫn gieo bình thường', r.trangThai === 'gieo-moi');
+    ok('trả lời kịp → KHÔNG cắt request', !b.daCat());
+  }
+  ok('hạn hỏi là số hữu hạn, đủ rộng cho máy chủ chậm', HAN_HOI_MS > 0 && HAN_HOI_MS <= 15000);
+
+  console.log('⑤ ĐỔI DỰ ÁN GIỮA PHIÊN — lượt cũ phải DỪNG, không ghi đè lượt mới');
+  {
+    quenLuotDanhTinh();
+    quenDemTrongBoNho();
+    let conSong = true;
+    const p = danhTinhChoLuot(() => conSong);
+    conSong = false; // effect cũ bị dọn NGAY trong lúc đang chờ định danh (bucketId đổi)
+    const r = await p;
+    ok('lượt đã huỷ → tiepTuc = false', r.tiepTuc === false);
+    ok('lượt đã huỷ → KHÔNG trả userId để caller lỡ tay dùng', r.userId === null);
+  }
+  {
+    quenLuotDanhTinh();
+    quenDemTrongBoNho();
+    const r = await danhTinhChoLuot(() => true);
+    ok('lượt còn sống → tiepTuc = true', r.tiepTuc === true);
+  }
+
+  console.log('⑥ ĐƯỜNG LÙI BỘ NHỚ — localStorage bị chặn thì định danh vẫn dùng được cả tab');
+  {
+    // Trong node KHÔNG có `localStorage` ⇒ `setItem` ném ⇒ ĐÚNG ca trình duyệt chặn ghi
+    // (chế độ riêng tư / Safari / webview / origin bị thu hồi bộ nhớ).
+    quenDemTrongBoNho();
+    ok('trước khi định danh: đệm rỗng', getLastUserId() === null);
+    setLastUserId('usr_ls_chan');
+    ok('localStorage ném mà vẫn đọc lại được id (đường lùi bộ nhớ)', getLastUserId() === 'usr_ls_chan');
+    setLastUserId('');
+    ok('id rỗng KHÔNG được đè lên id thật', getLastUserId() === 'usr_ls_chan');
+    quenDemTrongBoNho();
+    ok('quên đường lùi → về rỗng (không rò sang ca sau)', getLastUserId() === null);
+  }
+
+  console.log('⑦ Ngoài trình duyệt (SSR/test) → im lặng, không đụng gì');
   {
     quenLuotDanhTinh();
     const r = await danhTinhSanSang();

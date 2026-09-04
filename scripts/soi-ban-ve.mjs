@@ -16,8 +16,8 @@
  *        IF_TRINH_DUYET=<đường dẫn chrome>  (gói playwright đóng đinh số hiệu bản — xem chup-mock.mjs)
  */
 import { chromium } from 'playwright';
-import { resolve } from 'path';
-import { existsSync } from 'fs';
+import { resolve, join } from 'path';
+import { existsSync, readdirSync } from 'fs';
 
 const MAC_DINH = [
   ['docs/mocks/mock-home-hybrid.html', 1600, 900],
@@ -31,8 +31,25 @@ const ca = process.argv.length > 2
       return [t, w, h];
     })
   : MAC_DINH;
-const CHROME = process.env.IF_TRINH_DUYET ?? '';
-const br = await chromium.launch(CHROME && existsSync(CHROME) ? { executablePath: CHROME } : {});
+/* DÒ TRÌNH DUYỆT THẬT TRƯỚC KHI ĐỂ PLAYWRIGHT TỰ CHỌN.
+   Bệnh: gói `playwright` trong repo đóng đinh MỘT số hiệu bản (vd 1234) còn máy dựng cài bản
+   khác (vd 1194) ⇒ lỗi đọc ra như "thiếu trình duyệt", thật ra chỉ lệch số hiệu, và nó làm
+   CHẾT cả máy tiền kiểm — tức là cửa chặn "không trình bản chưa qua máy" tự sập.
+   ⚠️ Cố ý KHÔNG gõ cứng số hiệu bản (gõ cứng 1194 là lặp lại đúng con bug đang chữa):
+   quét thư mục rồi lấy tệp có thật. Không thấy thì trả undefined để Playwright tự lo. */
+function doTrinhDuyet() {
+  if (process.env.IF_TRINH_DUYET) return process.env.IF_TRINH_DUYET;
+  const goc = '/opt/pw-browsers';
+  const duoi = ['chrome-linux/chrome', 'chrome-linux/headless_shell',
+    'chrome-headless-shell-linux64/chrome-headless-shell'];
+  try {
+    for (const thu of readdirSync(goc).filter((d) => d.startsWith('chromium')).sort().reverse())
+      for (const d of duoi) { const p = join(goc, thu, d); if (existsSync(p)) return p; }
+  } catch { /* không có thư mục thì thôi, để Playwright tự chọn */ }
+  return undefined;
+}
+const TU_CHI = doTrinhDuyet();
+const br = await chromium.launch(TU_CHI ? { executablePath: TU_CHI } : {});
 const lum = (c) => { const [r,g,b]=c.map(v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4}); return .2126*r+.7152*g+.0722*b; };
 const tp = (a,b)=>{const L1=lum(a),L2=lum(b);return ((Math.max(L1,L2)+.05)/(Math.min(L1,L2)+.05));};
 const rgb = (s)=>s.match(/\d+/g).slice(0,3).map(Number);

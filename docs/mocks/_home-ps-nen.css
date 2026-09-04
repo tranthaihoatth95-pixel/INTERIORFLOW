@@ -53,6 +53,25 @@
   --canh-0:#14161a; --canh-1:#1e222a; --canh-2:#2c313b; --canh-3:#454c59;
   --canh-4:#6e6a63; --canh-5:#9b9184; --canh-6:#cabfae; --canh-7:#ece3d3;
   --giay:#f7f5f0; --giay-mep:#d8d2c6; --muc:#2a251d; --muc-mo:rgba(42,37,29,.36);
+  /* ---- TÔNG HIỆN VẬT: mẫu vật liệu · tông moodboard · nét cắt ----
+     Cố ý gom vào ĐÂY thay vì gõ trong từng SVG. Lý do không phải "cho sạch": ba hướng H1/H2/H3
+     dùng chung một bảng ⇒ khi so ba bản, mắt so BỐ CỤC chứ không bị nhiễu vì mỗi bản một tông.
+     Cùng lý do khối --illus-*/--paper-* của globals.css: hình tự mang nền nên không theo theme. */
+  --vl-go:#9c7449; --vl-go-net:#7d5a34;
+  --vl-da:#cfc9bd; --vl-da-1:#a49c8e; --vl-da-2:#8d8578; --vl-da-3:#b5ada0;
+  --vl-vai:#6f7b74; --vl-vai-1:#5d6862; --vl-vai-2:#7d8a82;
+  --vl-kl-1:#b9b4ab; --vl-kl-2:#8e8a83; --vl-kl-3:#d3cec5; --vl-kl-4:#7c7871;
+  --vl-dh:#e6e3dc; --vl-dh-1:#b7b2a6; --vl-dh-2:#cbc6ba;
+  --vl-son:#e9e2d4; --to-trang:#ffffff;
+  --gu-am-1:#8d7c66; --gu-am-2:#c9b99f; --gu-am-3:#5d5347;
+  --gu-lanh-1:#6f7b74; --gu-lanh-2:#c3ccc4; --gu-lanh-3:#3f4a45;
+  --gu-dat-1:#a08163; --gu-dat-2:#e0d3bd; --gu-dat-3:#5a4635;
+  --net-1:#eae5da; --net-2:#8d8578; --net-3:#f0ebe0; --net-4:#a89f8d;
+  /* chữ NẰM TRÊN ẢNH + lớp phủ chuyển sắc cục bộ ở chân chữ (§9) */
+  --chu-anh:#f0ede7; --chu-anh-phu:#cbc7be;
+  --chan-1:rgba(8,9,11,.80); --chan-2:rgba(8,9,11,.54);
+  --treo-sang:rgba(255,255,255,.26); --treo-mo:rgba(255,255,255,.18);
+
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:1600px;height:900px;overflow:hidden}
