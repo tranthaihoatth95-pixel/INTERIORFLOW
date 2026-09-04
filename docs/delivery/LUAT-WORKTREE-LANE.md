@@ -36,3 +36,15 @@ set -euo pipefail
 export DATABASE_URL="file:$(pwd)/prisma/dev.db"
 [ -f .env ] || cp /home/user/INTERIORFLOW/.env .env 2>/dev/null || true
 ```
+
+## 🔴 BẪY 1b · `DATABASE_URL` TUYỆT ĐỐI VẪN CHƯA ĐỦ — phát hiện 04/09
+
+Lane G2 suýt ghi một hàng `User` vào CSDL repo chính **dù đã đặt `DATABASE_URL` tuyệt đối**.
+Lý do sâu hơn bẫy 1: **`@prisma/client` là symlink**, nên Prisma nạp `.env` theo **đường THẬT của module** (tức repo chính), **không theo `cwd`**. Biến môi trường của bạn có thể bị `.env` kia đè.
+
+⇒ Cách chắc chắn: **truyền thẳng URL vào client**, đừng nhờ `.env`:
+```js
+new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } })
+```
+Và **vẫn phải đếm lại** bản ghi CSDL repo chính trước/sau.
+⚠️ Khi nhiều lane chạy song song, **đếm-trước-sau không còn là bằng chứng sạch** — phải truy theo **dấu vết của chính mình** (tiền tố email/tên dự án), không chỉ theo tổng số.

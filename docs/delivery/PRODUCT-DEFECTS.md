@@ -70,3 +70,21 @@ và `docDem()` không được tin đệm mà không đối chiếu phiên máy 
 chung một lượt gọi, **mỗi nơi tự diễn giải 401/503 theo kiểu riêng**. Và `SessionWatch` **biết**
 người dùng là ai nhưng không nói cho ai biết.
 Đúng cụm *"một cỗ máy nhiều mặt tiền"*. Không chặn ship; gom khi mở phiếu phiên đăng nhập.
+
+## D5 · P1 · Hồ sơ xuất cho khách in ra chữ mặc định "Nhập nội dung"
+
+**Bắt được 04/09 bằng cách MỞ TỆP PDF RA SOI** — không máy soi nào bắt nổi, vì lúc đó chữ đã thành điểm ảnh.
+
+| | |
+|---|---|
+| Hiện tượng | Trang PDF xuất ra in đúng một dòng **`Nhập nội dung`** |
+| Gốc | `lib/present-editor/model.ts:654` `makeText()` — đó là **giá trị mặc định trong model**, tức **dữ liệu thật**, không phải chữ mờ gợi ý |
+| Vì sao nghiêm trọng | Nó **xuất thẳng vào hồ sơ giao khách**. `grep "Nhập nội dung"` ngoài `model.ts` = **0** ⇒ **không nơi nào lọc, không nơi nào cảnh báo** |
+| Trái luật | `CHUAN-DAU-RA-NGHE §4` — *0 placeholder trong bản nộp* |
+| Bằng chứng | `docs/delivery/anh-duyet-mat/g2-hanh-trinh/J20-deck-xuat.pdf` + `J20-trang-1.png` (MAIN đã tự mở xem) |
+
+**Hướng sửa, chưa làm**: chặn ở **cửa xuất** (`export-checks`, nơi đã có marker `CHUAN_DAU_RA`) chứ không đổi giá trị mặc định — đổi mặc định thành chuỗi rỗng thì ô chữ mới tạo trông như hỏng. Cửa xuất phải **cảnh báo người dùng**, không tự sửa hộ.
+
+### Kèm hai điều đo được ở cùng lần soi, chưa chặn ship
+- **D5b** — PDF deck của IF là **ẢNH**: 0 ký tự trích được, mỗi trang một JPEG full-page; 14 font khai mà không font nào mang glyph. Cố ý theo thiết kế WYSIWYG, nhưng phải **khai thẳng** vì nó nghĩa là không tìm chữ được, không chọn chữ được, và trợ năng bằng 0.
+- **D5c** — khổ **2560×1440pt** với ảnh 2560×1440px ⇒ **72 dpi**. Luật `LUAT-300DPI` đòi ≥300dpi cho sản phẩm giao. Đường in 300 dpi là **hàm riêng, chưa hành trình nào chạm**.
