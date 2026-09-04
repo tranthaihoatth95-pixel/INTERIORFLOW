@@ -1,0 +1,90 @@
+═══ G4 · MOAT — chuỗi thật, hàm sản xuất thật ═══
+
+▸ K1 · Thư viện → đặt vào 2D (đường LibraryDropBridge nhánh blockdef)
+   ✅ resolve "SOFA-3S" — via=blockdef keepsIdentity=true approximate=false specId=ps-sofa-3s
+   ✅ "SOFA-3S" giữ danh tính — via=blockdef
+   ✅ "SOFA-3S" mang specId từ kho giá — specId=ps-sofa-3s
+   ✅ resolve "WRD-240" — via=blockdef keepsIdentity=true approximate=true specId=ps-wrd-240
+   ✅ "WRD-240" giữ danh tính — via=blockdef
+   ✅ "WRD-240" mang specId từ kho giá — specId=ps-wrd-240
+   ✅ số món xuống được bản vẽ — 2/2
+   ✅ mặt sàn mang specId vật liệu — specId=ps-go-soi · 5000×4000mm = 20 m²
+
+▸ K2 · Định danh ngữ nghĩa (elementType · storey · cờ suy đoán)
+   ✅ mọi entity có elementType khai báo — 3/3
+   ✅ không entity nào bị gắn cờ suy đoán khi người đã khai — inferred=0
+   ✅ món từ Thư viện mang mã lần-chèn (gia phả) — 2 entity có srcInsertId
+
+▸ K3 · 2D → 3D · cùng một mã hay mỗi nơi một mã
+   ✅ nhóm 3D neo về entity 2D — 2/3 nhóm mang entityId · tên: Floor, Furn_1_sofa3, Furn_2_wardrobe
+   ✅ KHÔNG nhóm 3D nào mang mã lạ (không có trong Doc) — mã lạ=0
+   ✅ vật liệu ở 3D là CÙNG mã vật liệu ở 2D — 2 nhóm mang specId · lạ=0 · mã: ps-sofa-3s,ps-wrd-240
+   ❌ mọi entity 2D tìm lại được ở 3D bằng CHÍNH mã của nó — 2/3 entity có nhóm 3D mang đúng id · MẤT: hatch#e-005(slab)
+   ❌ mọi vật liệu gán ở 2D đều tới được 3D — 2/3 vật liệu tới 3D · KHÔNG TỚI: hatch#e-005 specId=ps-go-soi (slab)
+
+▸ K4 · BuildRecipe · ngăn xếp không phá huỷ
+   ✅ bật 2 bước ≠ tắt bước 2 (ngăn xếp có tác dụng thật) — bật=12 đỉnh · tắt=6 đỉnh
+   ✅ lỗi một bước KHÔNG làm sập cả ngăn xếp — stepErrors={}
+   ✅ tắt bước KHÔNG xoá tham số của bước đó — n=2 dx=1800
+
+▸ K5 · Một mã vật liệu → ba mặt (2D · 3D · Trình bày)
+   ✅ mặt Trình bày đọc được từ bản ghi thương mại — trạng thái=du · 1 250 000 ₫/m2
+   ✅ mặt 3D KHAI THẬT khi chưa có PBR (không bịa mặc định) — trạng thái=chuaCo
+   ✅ giá KHÔNG bị chép sang mặt thị giác (luật 2.1.9.i) — pbr chứa priceVnd = false
+
+▸ K6 · BOQ đọc CÙNG Doc, CÙNG specId
+   ✅ mặt sàn ra 1 dòng BOQ đúng mã — specId=ps-go-soi qty=20 m2 · 27.000.000₫
+   ✅ diện tích BOQ = diện tích hình học thật (20 m²) — qty=20
+   ✅ món rời từ Thư viện lên BOQ (không rơi âm thầm) — 2/2 dòng đếm
+   ✅ không món nào thiếu mã — lỗi thiếu mã=0
+   ✅ BOQ có tổng tiền tính được — tổng=77.500.000₫
+
+▸ K7 · Trình chiếu neo vào vân tay Doc
+   ✅ dựng được phụ lục BOQ trong deck — 1 trang
+   ✅ phụ lục GHI vân tay Doc lúc dựng — vân tay ngắn=c293e2a5:2b
+   ✅ lúc chưa đổi gì thì phụ lục KHÔNG báo cũ — stale=false
+
+▸ K8 · Đổi thượng nguồn → ảnh hưởng xuôi dòng + NGƯỜI quyết
+   ✅ máy trình được BẢNG TÁC ĐỘNG trước khi đổi — 1 tham chiếu · surface=1 · đầu ra ăn theo: 2D=true 3D=true BOQ=true Present=true
+   ✅ KHÔNG có đường tự áp — người phải bấm — trong inspectMaterialImpact gọi replace = false
+   ✅ áp xong đổi đúng số tham chiếu — đổi=1/1
+   ✅ Doc cũ KHÔNG bị sửa tại chỗ (lùi được) — doc gốc vẫn specId=ps-go-soi
+   ✅ BOQ tự đổi theo — KHÔNG ai đi đồng bộ tay — trước=27.000.000₫ → sau=51.840.000₫
+   ✅ vân tay Doc đổi ⇒ phụ lục deck BÁO CŨ — stale=true · c293e2a5:2b → 4dc1e07b:2c
+   ❌ 3D cũng đọc mã MỚI (một nguồn, không bản sao) — mã 3D sau khi đổi: ps-sofa-3s,ps-wrd-240 · có mã mới=false
+   ✅ cache KHÔNG cắm số cũ khi Doc đổi — lần2 hit=true · sau khi đổi hit=false
+
+▸ K9 · LƯU → ĐÓNG → MỞ LẠI (ba đường lưu thật)
+   ✅ .idf mở lại được — 3 entity · 1249 byte
+   ✅ ① .idf — ĐỊNH DANH còn nguyên sau mở lại — mất=0 · 3/3 entity
+   ✅ ① .idf — GIA PHẢ (srcBlock·srcInsertId) còn nguyên — mất=0
+   ✅ ① .idf — CÔNG THỨC KHỐI còn nguyên — mất=0
+   ✅ ① .idf — ĐỊNH DANH NGỮ NGHĨA còn nguyên — mất=0
+   ✅ ① .idf — BOQ sau mở lại RA ĐÚNG SỐ CŨ — 102.340.000₫ vs 102.340.000₫ · 3 vs 3 dòng
+   ✅ ① .idf — QUYẾT ĐỊNH của người còn hiệu lực — specId sau mở lại = ps-go-ocho
+   ✅ ① .idf — vân tay khớp ⇒ deck KHÔNG báo cũ oan — 4dc1e07b:2c vs 4dc1e07b:2c
+   ✅ ② IndexedDB — Doc qua vòng JSON không rơi trường nào — 1033 byte
+   ✅ ② IndexedDB — BOQ sau nạp lại ra đúng số — 102.340.000₫
+   ✅ ③ .idfc mở lại được — 466 byte · kind=furniture
+   ✅ ③ .idfc — mã cấu kiện còn nguyên — code=SOFA-3S
+   ✅ ③ .idfc — hình học 2D còn nguyên — 1 prim · 1800×800
+   ✅ ③ .idfc — mã vật liệu 3D còn nguyên — matId=ps-sofa-3s
+   ❌ ③ .idfc — nối về bản ghi thương mại bằng khoá BẤT BIẾN — commerce có specId = false · chỉ có sku='SOFA-3S' (business key, đổi được)
+   ❌ ③ .idfc — CÔNG THỨC KHỐI đi cùng cấu kiện — chữ "recipe" trong lib/cad/idfc.ts = 0 dòng
+
+── KẾT: 49/54 khẳng định ĐẠT ──
+ĐỨT Ở:
+  · [K3 · 2D → 3D · cùng một mã hay mỗi nơi một mã] mọi entity 2D tìm lại được ở 3D bằng CHÍNH mã của nó — 2/3 entity có nhóm 3D mang đúng id · MẤT: hatch#e-005(slab)
+  · [K3 · 2D → 3D · cùng một mã hay mỗi nơi một mã] mọi vật liệu gán ở 2D đều tới được 3D — 2/3 vật liệu tới 3D · KHÔNG TỚI: hatch#e-005 specId=ps-go-soi (slab)
+  · [K8 · Đổi thượng nguồn → ảnh hưởng xuôi dòng + NGƯỜI quyết] 3D cũng đọc mã MỚI (một nguồn, không bản sao) — mã 3D sau khi đổi: ps-sofa-3s,ps-wrd-240 · có mã mới=false
+  · [K9 · LƯU → ĐÓNG → MỞ LẠI (ba đường lưu thật)] ③ .idfc — nối về bản ghi thương mại bằng khoá BẤT BIẾN — commerce có specId = false · chỉ có sku='SOFA-3S' (business key, đổi được)
+  · [K9 · LƯU → ĐÓNG → MỞ LẠI (ba đường lưu thật)] ③ .idfc — CÔNG THỨC KHỐI đi cùng cấu kiện — chữ "recipe" trong lib/cad/idfc.ts = 0 dòng
+
+═══ HIỆU CHUẨN · bẻ dây định danh 2D↔3D, bộ này PHẢI báo đỏ ═══
+   ✅ nhóm 3D neo về entity 2D — 3/3 nhóm mang entityId · tên: Floor, Furn_1_sofa3, Furn_2_wardrobe
+   ❌ KHÔNG nhóm 3D nào mang mã lạ (không có trong Doc) — mã lạ=3 → 3d-rieng-0,3d-rieng-1,3d-rieng-2
+   ❌ vật liệu ở 3D là CÙNG mã vật liệu ở 2D — 2 nhóm mang specId · lạ=2 · mã: mat-3d-1,mat-3d-2
+   ❌ mọi entity 2D tìm lại được ở 3D bằng CHÍNH mã của nó — 0/3 entity có nhóm 3D mang đúng id · MẤT: hatch#e-005(slab), block#e-002(furniture), block#e-004(furniture)
+   ❌ mọi vật liệu gán ở 2D đều tới được 3D — 0/3 vật liệu tới 3D · KHÔNG TỚI: hatch#e-005 specId=ps-go-soi (slab), block#e-002 specId=ps-sofa-3s (furniture), block#e-004 specId=ps-wrd-240 (furniture)
+
+✅ HIỆU CHUẨN ĐẠT — ca biết-hỏng làm ĐỎ 4 khẳng định ở K3.
