@@ -22,7 +22,7 @@
  * màn hình không hiện thì vẫn là hỏng.
  *
  * BIẾN MÔI TRƯỜNG
- *   IF_BASE       gốc máy chủ            (mặc định http://localhost:3132)
+ *   IF_BASE       gốc máy chủ            (mặc định http://localhost:3142)
  *   IF_EMAIL      tài khoản kiểm thử     (mặc định kiem@localhost.test)
  *   IF_MATKHAU    mật khẩu — BẮT BUỘC, không có mặc định, không ghi trong mã
  *   IF_DU_AN      id dự án; trống thì tự tạo và nhớ ở <SHOT_DIR>/du-an.txt
@@ -30,6 +30,23 @@
  *   IF_DPR        deviceScaleFactor      (mặc định 2 — lỗi cắt cụt viewport CHỈ phát ở retina)
  *   IF_CHROMIUM   đường dẫn Chromium     (mặc định /opt/pw-browsers/chromium)
  *   IF_HEADED=1   hiện cửa sổ trình duyệt
+ *
+ * ⚠️ DỰNG MÁY CHỦ SAO CHO KHÔNG BỊ PHIÊN KHÁC GIẪM (đã mất một vòng đo vì chuyện này):
+ * `.next` là MỘT thư mục dùng chung. Hai phiên cùng `npm run build` thì máy chủ đang chạy giữ
+ * manifest cũ trong khi tệp đã đổi băm ⇒ mọi trang trả về TRẮNG TINH và `/_next/static/css/…css`
+ * trả 404 — đọc hệt như "giao diện hỏng". Cách thoát, không phải sửa tệp nào trong repo:
+ *     RUN=/tmp/if-run; rm -rf $RUN; mkdir -p $RUN
+ *     cp -al .next $RUN/.next            # chép CỨNG (hardlink) — tức thì, 0 byte thêm
+ *     for f in node_modules public next.config.mjs package.json prisma; do ln -s "$PWD/$f" $RUN/$f; done
+ *     printf 'DATABASE_URL="file:%s/prisma/dev.db"\n' "$PWD" > $RUN/.env   # + AUTH_SECRET, INTEGRATION_ENC_KEY
+ *     cd $RUN && node <repo>/node_modules/next/dist/bin/next start -p 3142
+ * `cp -al` là mấu chốt: `next build` XOÁ rồi TẠO MỚI tệp chứ không ghi đè tại chỗ, nên bản
+ * hardlink giữ nguyên inode và máy chủ SỐNG SÓT qua một lượt dựng của người khác.
+ * ⇒ Chỉ lúc DỰNG mới cần độc quyền, lúc CHẠY thì không.
+ *
+ * ⚠️ TRÌNH DUYỆT: gói `playwright` trong repo đóng đinh số hiệu 1234 còn máy có sẵn 1194 — lỗi
+ * "Executable doesn't exist" đọc như thiếu trình duyệt, thật ra chỉ lệch số hiệu. Trỏ `IF_CHROMIUM`
+ * vào bản có sẵn; ĐỪNG chạy `npx playwright install`.
  *
  * CHẠY:  IF_MATKHAU=... node scripts/kiem-3d-contro-that.js <lệnh>
  *   probe        đăng nhập, vào 3D, báo trạng thái
@@ -47,7 +64,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const GOC = path.resolve(__dirname, '..');
-const BASE = process.env.IF_BASE || 'http://localhost:3132';
+const BASE = process.env.IF_BASE || 'http://localhost:3142';
 const EMAIL = process.env.IF_EMAIL || 'kiem@localhost.test';
 const MATKHAU = process.env.IF_MATKHAU || '';
 const OUT = process.env.IF_SHOT_DIR || path.join(GOC, '.nen-chrome-out');
