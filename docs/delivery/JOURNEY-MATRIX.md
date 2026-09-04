@@ -90,6 +90,7 @@ Ký hiệu chủ sở hữu: `01` CORE · `02` WORKFLOW · `04` DESIGN · `05` A
 | # | KHỞI ĐIỂM | THAO TÁC | KẾT QUẢ HỆ THỐNG | KẾT QUẢ ĐÃ LƯU | VÀO LẠI | TRẠNG THÁI | CHỦ | CHẶN CỔNG |
 |---|---|---|---|---|---|---|---|---|
 | **J16** | **đã đăng nhập**, mở **thẳng** deep-link studio (tab mới · bookmark · F5) | làm việc | màn hiện bình thường | ✅ **`userId::/cad-editor::projectId`, 1 thực thể** — đọc từ IndexedDB, không đọc chữ trên màn | ✅ **đóng HẲN trình duyệt rồi mở lại: còn nguyên** | **PASS trên app thật 04/09** — bộ chạy `scripts/nghiem-thu-g2-hanh-trinh.mjs` (hồ sơ Chromium trên đĩa = máy người dùng; đóng bối cảnh = đóng app). Bằng chứng: `docs/bao-cao-phien/2026-09-04-g2-chay-that.md` · ảnh `anh-duyet-mat/g2-hanh-trinh/J16-*.png`. Bản vá D1 nay có người nhìn: **0 khoá mơ hồ**, không rơi về `local`/rỗng | 01 | **G2 + G5** |
+| **J16b** | **đã đăng nhập**, mở **thẳng** deep-link studio rồi **về Home** | không thao tác gì | màn hiện bình thường | ✅ **`interiorflow.resume.<userId>` mang ĐỦ `flowId`** — đọc từ localStorage, không đọc chữ trên màn | ✅ **đóng HẲN trình duyệt rồi mở lại: vẫn đủ** | **PASS trên app thật 04/09** (`--ca=J16b`). Tách khỏi J16 **có lý do đo được**: thế giới hỏng của J16 là *chặn IndexedDB*, ở đó khẳng định IDB đỏ TRƯỚC nên khẳng định `flowId` **không bao giờ chạy tới** ⇒ hiệu chuẩn của J16 không chứng minh được khẳng định đường-quay-lại. J16b có thế giới hỏng RIÊNG (`chanResume`). Đóng **D6**: trước vá, resume ghi ra `{route,sheetId}` thiếu `flowId` ⇒ thẻ tiêu điểm dội về `/` | 01 | **G2** |
 | **J17** | đang làm việc | đóng app đột ngột (không bấm lưu) | — | ✅ **autosave kịp** | ✅ còn việc sau khi mở lại | **PASS trên app thật 04/09** — bối cảnh bị **SIGKILL** giữa lúc vẽ (không `beforeunload`, không `flush()`): neo an toàn 2 thực thể, mở lại đọc IndexedDB thấy **3**. ⚠️ **Chỉ đo trên bản WEB** — bản đóng gói Electron (`killServer()` gửi SIGTERM cho server Next) **chưa đo**, vẫn thuộc lượt G5 | 01 + 07 | **G5** |
 | **J18** | hai tab cùng một dự án | cùng sửa, cùng lưu | ✅ tab A **200** · tab B **409** | ✅ **đọc SQL: CSDL giữ đúng bản của tab A (`rev 1`)** | — | **PASS tầng cơ chế TRÊN APP THẬT 04/09** (`--ca=J18`, hai tab thật trong cùng hồ sơ, đọc lại bằng Prisma). **TẦNG NGƯỜI DÙNG VẪN UNVERIFIED — và bộ đo tự khai vì sao**: tab B gửi `fetch` PUT thô nên **đi vòng** qua bộ xử 409 của client (`lib/store.ts:1224`), nên "màn không hiện gì" ở đây KHÔNG phải bằng chứng app im lặng. Ba dữ kiện về tầng người dùng thì **đọc được từ mã** và đáng soi bằng mắt: client CÓ xử 409 (`lib/store.ts:1224-1228`, `setNotice`) · nhưng `notice` chỉ render ở `components/FlowCanvas.tsx:884` (route canvas) · **tự tắt sau 4,5s** (`:437-440`) và mang **màu emerald** — tức cảnh báo mất-việc đang mặc áo màu thành-công | 01 | **G2** |
 | **J19** | máy đã có dữ liệu | cài đè bản app mới hơn | snapshot trước khi đụng schema | ✅ `backups/<thời-gian>-before-0.0.9` | ✅ dữ liệu gốc **không đổi một hàng** | **PASS 04/09** — chạy **đúng thân hàm đang ship** (`snapshotBeforeUpgrade` trích từ `electron/main.js`, chỉ thay `app.getVersion()`), trên CSDL SQLite **thật có hàng thật**; bản sao đọc lại **bằng SQL** khớp gốc `{user 2, project 6, flow 6, member 5}` + kèm `uploads/`. ⚠️ **KHÔNG chạy Electron đóng gói** — phần đó vẫn là G5/lane 07 | 07 | **G5** |
@@ -171,7 +172,14 @@ hoặc bỏ đi — và trong ca D-J04b thì cái Flow vừa sinh ra vẫn nằm
 ⚠️ Đếm lại cho đúng: 22 = 9 PASS-đủ + 1 PASS-không-có-cột + 4 PASS-hệ-thống + 1 PASS-một-phần
 + 0 FAIL + **6 UNVERIFIED** + 1 BLOCKED.
 
-### ⭐ CỘT **KẾT QUẢ ĐÃ LƯU**: **1/22 → 4/22 → 7/22 → 8/22 → 9/22**
+### ⭐ CỘT **KẾT QUẢ ĐÃ LƯU**: **1/22 → 4/22 → 7/22 → 8/22 → 9/22** (đợt 5: **vẫn 9/22**)
+
+🔴 **ĐỢT 5 (04/09, D6) KHÔNG LÀM CON SỐ NÀY TĂNG — nói thẳng thay vì thổi lên 10.** `J16b` là
+hành trình **MỚI THÊM**, không phải một trong 22 hành trình gốc; cộng nó vào tử số mà giữ mẫu số
+22 là **tự chấm điểm bằng cách đổi luật đếm**. Thứ đợt 5 thật sự đổi là **CHẤT của J16**: nó thôi
+chỉ hỏi *"việc còn không"* mà hỏi thêm *"quay lại được không"* — hai câu khác nhau, và ca deep-link
+hỏng đúng câu thứ hai trong khi câu thứ nhất vẫn xanh. Một hành trình xanh nửa vời **đắt hơn** một
+hành trình đỏ, vì nó phát chứng chỉ cho thứ nó chưa từng đo.
 
 Con số này là thứ duy nhất đáng theo dõi ở cổng G2. Đợt 2 (04/09) thêm **J07 · J12 · J06**;
 đợt 3 cùng ngày thêm **J04** sau khi đóng hai lỗi chặn ở §1.7; **đợt 4 thêm J05**.

@@ -125,4 +125,66 @@ gieo `lastUserId` trước nên resume đủ `flowId`. Nhánh deep-link là hàn
 đo IndexedDB chứ không đo resume ⇒ **chưa hành trình nào canh D6**. Việc cho lượt sau: thêm khẳng
 định `flowId` vào J16, hoặc một hành trình riêng.
 
-**Trạng thái:** 🟡 khai, chưa sửa — nằm ngoài vùng ghi của phiếu thẻ Resume (`components/entry/**`).
+**Trạng thái:** ✅ **ĐÃ SỬA + ĐÃ TÁI HIỆN 04/09** (lane 01 · CORE).
+
+### D6 · TÁI HIỆN TRƯỚC, SỬA SAU — ba thế giới, biến duy nhất là thứ tự gieo định danh
+
+Kết luận nhân quả ở trên vốn **đọc từ mã**, chưa dựng lại ca hỏng. Đã dựng:
+`scripts/nghiem-thu-ban-lam-viec/tai-hien-d6.mjs`, đọc từ **nơi lưu thật**
+(`localStorage['interiorflow.resume.<uid>']`), không đọc chữ trên màn.
+
+| Thế giới | Là gì | TRƯỚC vá | SAU vá |
+|---|---|---|---|
+| `deep-link` | hồ sơ sạch, đăng nhập bằng API (không trang nào chạy JS) — **ca hỏng tự nhiên, không bơm gì** | ❌ `{"route":"/cad-editor","sheetId":"cadsheet-0","ts":…}` | ✅ có `flowId` |
+| `deep-link` + dự án **còn rỗng** | phải bấm "Tạo bản vẽ mới" trước | ❌ **`raw: null`** — nặng hơn: thẻ tiêu điểm còn **không hiện ra để mà bấm** | ✅ có `flowId` |
+| `cham` | như trên, làm chậm `/api/auth/me` thêm 4-5s — **phóng đại** cùng cuộc đua | ❌ thiếu `flowId` | ✅ có `flowId` |
+| `qua-home` | gieo sẵn `lastUserId` trước khi vào studio — **ĐỐI CHỨNG** | ✅ có `flowId` | ✅ có `flowId` |
+
+⇒ Hai thế giới hỏng + một đối chứng lành, khác nhau **đúng một biến** ⇒ nhân quả khoá chặt.
+Nếu đối chứng cũng hỏng thì giả thuyết "đua khởi động" đã sai và phải đi tìm nguyên nhân khác.
+
+### D6 · SỬA Ở TẦNG NGUỒN, KHÔNG VÁ ĐIỂM
+
+`components/entry/ResumeTracker.tsx` nay dùng **`danhTinhChoLuot()`** — đúng cỗ máy mà `CadSheets`
+· `PresentSheets` · autosave-3D đã dùng khi D1 được chữa. `ResumeTracker` là **đường đọc-một-lần-
+lúc-mount THỨ TƯ**, và là đường duy nhất chưa được nối. **0 chỗ gọi `getLastUserId()` mới** (lệnh
+cấm ở `danh-tinh-phien.ts:20`), **0 `setTimeout` đoán chừng**.
+
+**Nửa thứ hai của bệnh tự tan, không phải vá riêng.** Lượt ghi thôi bị **BỎ** — nó **ĐỢI**; nên
+"pathname không đổi nên không chạy lại" hết là vấn đề: một lượt chạy là đủ vì lượt đó không bỏ
+cuộc. Cờ huỷ `conSong` lo ca điều hướng đi chỗ khác giữa lúc đang đợi.
+
+**Vì sao KHÔNG chọn hướng ngược lại** ("gieo định danh đồng bộ trước khi ai đọc"): nguồn sự thật
+của định danh là **phiên máy chủ**, tức một vòng mạng — không đồng bộ hoá được. Ép nó đồng bộ là
+quay về neo vào `localStorage`, tức **lật chính bản vá D1** và mở lại lỗ rò chéo người dùng
+(`nghiem-thu-g1.mjs` CA4/CA8).
+
+**Máy canh tái phát:** `J16` + `J16b` trong `scripts/nghiem-thu-g2-hanh-trinh.mjs`.
+⚠️ Khẳng định đặt trên **lượt vào ĐẦU TIÊN** (`truoc`), không phải lượt thứ hai: `sau` chạy trên
+cùng hồ sơ đĩa nên `lastUserId` đã ấm và **ca hỏng không tái diễn ở đó** — bộ đo đã báo PASS đúng
+như vậy một lần trước khi khẳng định được đặt đúng chỗ.
+
+---
+
+## D7 · P1 — CÙNG GỐC D6, ĐƯỜNG ĐUA THỨ HAI: BOOKMARK ROUTE CŨ DỘI VỀ HOME
+
+**Tìm được khi quét "còn đường ghi/đọc nào khác cũng đua với gieo định danh không" (04/09).
+Đã TÁI HIỆN, không phải suy đoán từ mã.**
+
+`components/studio/LegacyStageRedirect.tsx:37` đọc `activeProjectRouteId()` **ĐỒNG BỘ** trong
+effect mount (deps `[router, stage]` ⇒ chạy đúng một lần), mà hàm đó rơi về `getLastUserId()`
+(`lib/project-scope.ts:62`). ⇒ Mở **bookmark cũ** `/cad-editor` bằng tab mới: store rỗng + bộ đệm
+định danh chưa gieo ⇒ `router.replace('/?notice=choose-project')`.
+
+**Đo được** (`tai-hien-d6.mjs --the-gioi=bookmark-cu`), resume trên đĩa **ĐÃ ĐỦ `flowId`**:
+```
+resumeTruocKhiVao : {"route":"/cad-editor","flowId":"cmtni3y8p…","sheetId":"cadsheet-0","ts":…}
+dichSauRedirect   : http://localhost:3100/          ← dội về Home
+```
+⇒ Cùng một họ bệnh với D1/D6, chỉ khác đây là đường **ĐỌC** chứ không phải đường **GHI**. Cách sửa
+đã biết sẵn và giống hệt: `activeProjectRouteId` phải chờ định danh (`danhTinhChoLuot`) thay vì đọc
+đồng bộ — nhưng nó là **hàm thuần đồng bộ** đang được nhiều nơi gọi, nên phải đổi ở nơi gọi
+(`LegacyStageRedirect`) chứ không đổi chữ ký hàm.
+
+**Trạng thái:** 🟡 khai, **chưa sửa — ngoài vùng ghi của lane 01** (`components/studio/**` và
+`lib/project-scope.ts` không thuộc phạm vi được giao). Không tự vá.
