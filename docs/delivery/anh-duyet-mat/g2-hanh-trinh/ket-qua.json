@@ -1,11 +1,74 @@
 {
-  "okHieuChuan": null,
+  "okHieuChuan": true,
   "ketQua": [
+    {
+      "ma": "J16",
+      "ten": "Deep-link studio → vẽ → đóng app → mở lại",
+      "trangThai": "PASS",
+      "vi": "1 thực thể còn nguyên ở cmtncgj4d00007dinnpearls7::/cad-editor::cmtncgj4x00027dinq9qhzl5d sau khi ĐÓNG HẲN trình duyệt và mở lại",
+      "ghiChu": ""
+    },
+    {
+      "ma": "J17",
+      "ten": "Đang vẽ → app bị tắt ngang (SIGKILL) → mở lại",
+      "trangThai": "PASS",
+      "vi": "bị SIGKILL giữa lúc vẽ: nhịp autosave giữ được 3 thực thể (neo an toàn 2, trên màn lúc chết là 3)",
+      "ghiChu": ""
+    },
+    {
+      "ma": "J19",
+      "ten": "Máy đã có dữ liệu → cài đè bản mới → dữ liệu còn nguyên + có bản sao lùi",
+      "trangThai": "PASS",
+      "vi": "bản sao 2026-09-04T20-06-05-012Z-before-0.0.9 đọc lại bằng SQL thật: {\"user\":2,\"project\":20,\"flow\":25,\"projectMember\":19} — khớp gốc, kèm uploads",
+      "ghiChu": ""
+    },
     {
       "ma": "J20",
       "ten": "Trình bày có nội dung → xuất PDF → mở tệp ra soi",
       "trangThai": "PASS",
       "vi": "tệp J20-deck-xuat.pdf (24 KB) mở được độc lập: 1 trang, khổ 2560×1440pt, 1 ảnh nhúng, có mực, độ sáng trung bình 254/254/254; chữ trích được 0 ký tự (0 = trang raster, chữ KHÔNG chọn/tìm được)",
+      "ghiChu": ""
+    },
+    {
+      "ma": "J07",
+      "ten": "Vẽ 2D → lưu → MÁY SẠCH (xoá hồ sơ) mở lại vẫn thấy nét",
+      "trangThai": "PASS",
+      "vi": "XOÁ SẠCH hồ sơ trình duyệt rồi mở lại: 3 thực thể quay về đúng ID cũ, khôi phục từ hàng ProjectFile trên máy chủ (1554 byte, 3 thực thể parse lại được)",
+      "ghiChu": ""
+    },
+    {
+      "ma": "J12",
+      "ten": "Trình bày: đặt nội dung lên trang → đóng app → mở lại còn nguyên",
+      "trangThai": "PASS",
+      "vi": "7 phần tử trên 1 trang còn nguyên ở cmtncgj4d00007dinnpearls7::/present-editor::cmtnct0k200087dij5e616mrf sau khi ĐÓNG HẲN trình duyệt và mở lại",
+      "ghiChu": ""
+    },
+    {
+      "ma": "J04",
+      "ten": "Home → bấm \"Tạo dự án mới\" → dự án có thật trong CSDL và còn sau khi mở lại",
+      "trangThai": "FAIL",
+      "vi": "bấm \"Tạo dự án mới\" xong: SỐ DỰ ÁN TRONG CSDL KHÔNG ĐỔI (20 → 20). URL http://localhost:3091/ → http://localhost:3091/. Nút đổi màn nhưng KHÔNG tạo gì",
+      "ghiChu": ""
+    },
+    {
+      "ma": "J06",
+      "ten": "Mở lại dự án cũ → vẽ tiếp → nét cũ còn nguyên ID (gia phả không đứt)",
+      "trangThai": "PASS",
+      "vi": "mở lại dự án cũ vẽ tiếp: 1 → 2 thực thể, TOÀN BỘ 1 ID của lần trước còn nguyên (không phải vẽ đè lên bản trắng)",
+      "ghiChu": ""
+    },
+    {
+      "ma": "J18",
+      "ten": "Hai tab cùng lưu → tab sau bị chặn, KHÔNG ghi đè âm thầm (tầng cơ chế)",
+      "trangThai": "PASS",
+      "vi": "hai tab tranh ghi CÙNG một Flow: tab A 200 · tab B 409 · CSDL giữ đúng bản của A (rev 1), KHÔNG ghi đè âm thầm",
+      "ghiChu": "CHỈ chứng minh TẦNG CƠ CHẾ. Tab B ở đây gửi `fetch` PUT thô nên nó ĐI VÒNG qua bộ xử 409 của client (`lib/store.ts:1224`) ⇒ màn hình không hiện gì là ĐÚNG với phép đo này, KHÔNG phải bằng chứng app im lặng. Tầng người dùng vẫn UNVERIFIED — muốn đo phải làm tab B sửa bằng THAO TÁC THẬT trên canvas để `persistNow()` tự chạy."
+    },
+    {
+      "ma": "J22",
+      "ten": "Không có khoá cloud → báo rõ, không nút giả",
+      "trangThai": "PASS",
+      "vi": "gọi năng lực cloud khi máy không có khoá: 503 · code PROVIDER_NOT_CONFIGURED · câu báo nói rõ việc phải làm (\"Chưa nối máy render (COMFYUI_URL) cho mức \"oneAI\" — xem comfyui/README.md.\") · KHÔNG trả hàng giả",
       "ghiChu": ""
     }
   ]

@@ -62,20 +62,20 @@ Ký hiệu chủ sở hữu: `01` CORE · `02` WORKFLOW · `04` DESIGN · `05` A
 
 | # | KHỞI ĐIỂM | THAO TÁC | KẾT QUẢ HỆ THỐNG | KẾT QUẢ ĐÃ LƯU | VÀO LẠI | TRẠNG THÁI | CHỦ | CHẶN CỔNG |
 |---|---|---|---|---|---|---|---|---|
-| **J04** | Home rỗng | tạo dự án mới | `POST /api/flows` tạo `Project` **và** `Flow` cùng lượt (`app/api/flows/route.ts:61,74,106,112`) | `Project` + `Flow` | dự án hiện ở Home | **UNVERIFIED** đầu-cuối. Cơ chế chống-đẻ-mồ-côi có khoá riêng: `lib/server/draft-project.test.ts` | 02 | **G2** |
+| **J04** | Home rỗng | tạo dự án mới | 🔴 **KHÔNG GÌ CẢ** | 🔴 `Project` 20 → **20** | 🔴 không có gì để hiện | **FAIL trên app thật 04/09** (`--ca=J04`) — **lỗi chặn D-J04a**, xem §1.7. Nút *"Tạo dự án mới"* trên Home bấm xong: URL không đổi, CSDL không đổi, lệnh gọi API khác GET **chỉ có `POST /api/cursors`** (nhịp presence). Cơ chế chống-đẻ-mồ-côi phía máy chủ vẫn có khoá riêng (`lib/server/draft-project.test.ts`) — **cửa vào mới là chỗ đứt** | 02 | **G2** |
 | **J05** | Home có việc dở | bấm thẻ Resume | nhảy đúng chặng đang dở | `lastStage` | — | **UNVERIFIED** — Home đang trong vòng thiết kế (`SHIP-BLOCKERS` B2); hành vi Resume **chưa được chạy đo** | 04 + 02 | cổng thị giác (lane 04) |
-| **J06** | dự án đã có | mở lại dự án cũ, sửa tiếp | tải lại doc, sửa được | ghi đè có kiểm `rev` | gia phả không đứt | **UNVERIFIED** đầu-cuối; **cơ chế lõi thì có bằng chứng chạy thật** — `app/api/flows/[id]/route.test.ts` chạy Prisma **thật** trên `dev.db` để chứng minh `where:{id, rev}` sinh P2025 chứ không bị âm thầm bỏ qua | 02 | **G2** |
+| **J06** | dự án đã có | mở lại dự án cũ, sửa tiếp | tải lại doc, sửa được | ✅ **1 → 2 thực thể** trong IndexedDB | ✅ **TOÀN BỘ ID của lần trước còn nguyên** | **PASS trên app thật 04/09** (`--ca=J06`) — ba phiên gói trong khuôn hai phiên: vẽ nét A → đóng hẳn → mở lại vẽ nét B → đọc lại. **Điểm đo là DANH TÍNH, không phải số đếm**: xoá sạch rồi vẽ lại hai nét cũng làm số tăng, và đó đúng là *đứt gia phả*. Ghi đè có kiểm `rev` vẫn do `app/api/flows/[id]/route.test.ts` khoá (Prisma thật, P2025) | 02 | **G2** |
 
 ### 1.3 · Ba chặng nghề
 
 | # | KHỞI ĐIỂM | THAO TÁC | KẾT QUẢ HỆ THỐNG | KẾT QUẢ ĐÃ LƯU | VÀO LẠI | TRẠNG THÁI | CHỦ | CHẶN CỔNG |
 |---|---|---|---|---|---|---|---|---|
-| **J07** | `/projects/[id]/cad` | vẽ 2D → lưu | nét vào doc | `Flow` version | mở lại thấy nét | **UNVERIFIED** đầu-cuối | 02 | **G2** |
+| **J07** | `/projects/[id]/cad` | vẽ 2D → lưu | nét vào doc | ✅ **hàng `ProjectFile` `ban-ve.sao-luu.idf`** — parse lại ra đúng số thực thể | ✅ **XOÁ SẠCH hồ sơ trình duyệt rồi mở lại: nét quay về đúng ID cũ** | **PASS trên app thật 04/09** (`--ca=J07`). 🔴 **Cột ĐÃ LƯU của hàng này ghi sai từ đầu**: bản vẽ **KHÔNG** đi qua `Flow` — `grep "api/flows"` trong `components/cad/` + `lib/cad/` = **0**; đường thật là `lib/cad/luu-len-may-chu.ts` → `POST /api/project-files`, nhịp 30s, và lưới đỡ khôi phục ở `components/cad/CadSheets.tsx:458`. Vì thế J07 mạnh hơn J16: J16 mở lại **cùng hồ sơ** (chứng minh IndexedDB), J07 **xoá hồ sơ** nên sự thật chỉ có thể đến từ máy chủ | 02 | **G2** |
 | **J08** | chặng 3D | dựng khối bằng cử chỉ | khối hiện trong khung nhìn | — | — | **PASS** — chạy trên app thật 04/09: `docs/bao-cao-phien/2026-09-04-kiem-app-that-3d-present.md` mục 1 | 02 | **G2** |
 | **J09** | chặng 3D, có khối | chọn khối → `Delete` | khối bị xoá | — | — | **PASS sau khi vá** — cùng báo cáo mục 2. **Trước khi vá là FAIL**: đường bàn phím không nối lệnh registry (`components/three/Viewport3D.tsx`). Đây là **ca thứ hai cùng một gốc** với ⌘Z ⇒ chiều **LÙI** của 3D là vùng đã gãy hai lần, đáng nghi nhất khi mở rộng kiểm | 02 | **G2** |
 | **J10** | chặng 3D trên màn retina | mở khung nhìn | không bị cắt | — | — | **PASS** — cùng báo cáo mục 3 | 04 | cổng thị giác |
 | **J11** | có bản vẽ 2D | đưa bản vẽ sang Trình bày | trang Trình bày nhận đúng bản vẽ | — | — | **PASS 3/3 lượt** — cùng báo cáo mục 4. ⚠️ Bản FAIL 9/10 trước đó là **hiện vật của bộ đo**, không phải lỗi sản phẩm; giữ lại vì chính nó dẫn tới rủi ro J16 | 02 | **G2** |
-| **J12** | chặng Trình bày | sửa bố cục → lưu → mở lại | — | — | — | **UNVERIFIED** — J11 chứng minh **đưa sang được**, hoàn toàn không chứng minh **lưu rồi mở lại được** | 02 | **G2** |
+| **J12** | chặng Trình bày | sửa bố cục → lưu → mở lại | trang nhận nội dung | ✅ **`userId::/present-editor::projectId`, 7 phần tử / 1 trang** — đọc từ IndexedDB, không đọc chữ trên màn | ✅ **đóng HẲN trình duyệt rồi mở lại: còn nguyên 7** | **PASS trên app thật 04/09** (`--ca=J12`). Payload là `deck.slides[].elements[]` (`components/present-editor/PresentSheets.tsx:426`), KHÔNG phải `doc.entities` như chặng Vẽ. ⚠️ Đường vào phải đi vòng lỗi chặn D-J04b (xem §1.7) | 02 | **G2** |
 
 ### 1.4 · Vật liệu · thư viện · tài sản
 
@@ -91,7 +91,7 @@ Ký hiệu chủ sở hữu: `01` CORE · `02` WORKFLOW · `04` DESIGN · `05` A
 |---|---|---|---|---|---|---|---|---|
 | **J16** | **đã đăng nhập**, mở **thẳng** deep-link studio (tab mới · bookmark · F5) | làm việc | màn hiện bình thường | ✅ **`userId::/cad-editor::projectId`, 1 thực thể** — đọc từ IndexedDB, không đọc chữ trên màn | ✅ **đóng HẲN trình duyệt rồi mở lại: còn nguyên** | **PASS trên app thật 04/09** — bộ chạy `scripts/nghiem-thu-g2-hanh-trinh.mjs` (hồ sơ Chromium trên đĩa = máy người dùng; đóng bối cảnh = đóng app). Bằng chứng: `docs/bao-cao-phien/2026-09-04-g2-chay-that.md` · ảnh `anh-duyet-mat/g2-hanh-trinh/J16-*.png`. Bản vá D1 nay có người nhìn: **0 khoá mơ hồ**, không rơi về `local`/rỗng | 01 | **G2 + G5** |
 | **J17** | đang làm việc | đóng app đột ngột (không bấm lưu) | — | ✅ **autosave kịp** | ✅ còn việc sau khi mở lại | **PASS trên app thật 04/09** — bối cảnh bị **SIGKILL** giữa lúc vẽ (không `beforeunload`, không `flush()`): neo an toàn 2 thực thể, mở lại đọc IndexedDB thấy **3**. ⚠️ **Chỉ đo trên bản WEB** — bản đóng gói Electron (`killServer()` gửi SIGTERM cho server Next) **chưa đo**, vẫn thuộc lượt G5 | 01 + 07 | **G5** |
-| **J18** | hai tab cùng một dự án | cùng sửa, cùng lưu | tab sau nhận 409 | không ghi đè âm thầm | — | **PASS ở tầng cơ chế** — `app/api/flows/[id]/route.test.ts` chứng minh trên Prisma thật; **UNVERIFIED ở tầng người dùng** (client có xử 409 tử tế không thì chưa ai nhìn) | 01 | **G2** |
+| **J18** | hai tab cùng một dự án | cùng sửa, cùng lưu | ✅ tab A **200** · tab B **409** | ✅ **đọc SQL: CSDL giữ đúng bản của tab A (`rev 1`)** | — | **PASS tầng cơ chế TRÊN APP THẬT 04/09** (`--ca=J18`, hai tab thật trong cùng hồ sơ, đọc lại bằng Prisma). **TẦNG NGƯỜI DÙNG VẪN UNVERIFIED — và bộ đo tự khai vì sao**: tab B gửi `fetch` PUT thô nên **đi vòng** qua bộ xử 409 của client (`lib/store.ts:1224`), nên "màn không hiện gì" ở đây KHÔNG phải bằng chứng app im lặng. Ba dữ kiện về tầng người dùng thì **đọc được từ mã** và đáng soi bằng mắt: client CÓ xử 409 (`lib/store.ts:1224-1228`, `setNotice`) · nhưng `notice` chỉ render ở `components/FlowCanvas.tsx:884` (route canvas) · **tự tắt sau 4,5s** (`:437-440`) và mang **màu emerald** — tức cảnh báo mất-việc đang mặc áo màu thành-công | 01 | **G2** |
 | **J19** | máy đã có dữ liệu | cài đè bản app mới hơn | snapshot trước khi đụng schema | ✅ `backups/<thời-gian>-before-0.0.9` | ✅ dữ liệu gốc **không đổi một hàng** | **PASS 04/09** — chạy **đúng thân hàm đang ship** (`snapshotBeforeUpgrade` trích từ `electron/main.js`, chỉ thay `app.getVersion()`), trên CSDL SQLite **thật có hàng thật**; bản sao đọc lại **bằng SQL** khớp gốc `{user 2, project 6, flow 6, member 5}` + kèm `uploads/`. ⚠️ **KHÔNG chạy Electron đóng gói** — phần đó vẫn là G5/lane 07 | 07 | **G5** |
 
 ### 1.6 · Đầu ra
@@ -100,7 +100,7 @@ Ký hiệu chủ sở hữu: `01` CORE · `02` WORKFLOW · `04` DESIGN · `05` A
 |---|---|---|---|---|---|---|---|---|
 | **J20** | Trình bày có nội dung | xuất PDF | tệp sinh ra | ✅ tệp trên đĩa, mở được **độc lập với app** | 👁 **đã mở tệp ra soi bằng mắt** | **PASS invariant, KÈM 3 PHÁT HIỆN CHUẨN ĐẦU RA** (xem dưới bảng) — 04/09, tệp 24 KB · 1 trang · khổ **2560×1440pt** · 1 ảnh JPEG nhúng. 🔴 Lượt ĐẦU cho **trang TRẮNG TINH** đi qua với chữ PASS — chỉ lộ khi bóc ảnh ra NHÌN; bộ soi nay đo mực (mọi điểm ảnh = 255 ⇒ FAIL) | 02 + 07 | **G5** |
 | **J21** | dự án | xuất `.idf` / gói `.idfp` | gói sinh ra | — | nạp lại được | **UNVERIFIED** — `SHIP-BLOCKERS` **B4**: *".idf/.idfc sinh từ máy sạch chưa chạy lại sau khi thu 11 slice"*, ⬜ chưa mở. Tầng định dạng có khoá: `lib/present-editor/idfp.test.ts` | 07 | **G5** |
-| **J22** | mất mạng / không có API key | dùng một năng lực cần cloud | báo rõ, không nút giả | — | — | **UNVERIFIED** — `RELEASE-CHECKLIST-INTERNAL.md` §1 đã đặt yêu cầu này thành mục kiểm tay; chưa ai chạy | 02 | **G5** |
+| **J22** | mất mạng / không có API key | dùng một năng lực cần cloud | ✅ **503 · `PROVIDER_NOT_CONFIGURED`**, câu báo nói rõ việc phải làm | — (không sinh gì, đúng bản chất) | — | **PASS trên app thật 04/09** (`--ca=J22`) — môi trường kiểm **thật sự không có `FAL_KEY`** nên đây là ca thật, không mô phỏng. Gọi `POST /api/jobs` từ trong app với phiên thật: **không trả hàng giả**, không nút chạy-mà-không-làm-gì. Hiệu chuẩn: ép cửa đó trả 200 kèm job bịa ⇒ khẳng định ĐỎ đúng như phải thế | 02 | **G5** |
 
 ---
 
@@ -126,23 +126,50 @@ và giữ lại `J20-trang-1.jpg` làm bằng chứng **nhìn được**. **F1 t
 
 ---
 
+### 1.7 · HAI LỖI CHẶN ĐỢT 2 TÌM RA — cùng một họ: **nút làm một nửa rồi đứng im**
+
+Cả hai đều đo trên app thật, dự án mới tinh, và cả hai đều **không** bị `tsc` · `npm test` ·
+`soi:cong-cu-chet` bắt: nút CÓ mount, CÓ handler, handler CÓ chạy — nó chỉ không đi tới đích.
+
+| Mã | Chỗ đứt | Đo được gì | Hệ quả cho người dùng |
+|---|---|---|---|
+| **D-J04a** 🔴 | `components/home/XuongHome.tsx:184` nút *"Tạo dự án mới"* → `moVat` (`:456-460`) → `onEnter` → `HomeScreen.tsx:575` `toProjectRender()` | bấm xong: URL `/` **không đổi** · `Project` **20 → 20** · `Flow` **12 → 12** · lệnh gọi API khác GET **chỉ `POST /api/cursors`** (nhịp presence) | **không tạo được dự án từ Home.** Kèm theo: ba nút *"Tạo dự án mới"* · *"Mở dự án có sẵn"* · *"Nhập từ tệp"* (`:184,187,190`) **dùng CHUNG một `onClick={onMo}`** — ba nhãn khác nhau, một hành vi |
+| **D-J04b** 🔴 | `components/studio/ProjectScopeEmptyState.tsx` `handleCreate` (`:64-77`) kết bằng `goToStage(routeId)` → `router.push(stageRoutePath(routeId, stage))` = **ĐÚNG URL đang đứng** | dự án mới tinh, **cả `/cad` LẪN `/present`**: máy chủ sinh Flow thật **0 → 1**, nhưng màn **kẹt "Đang tạo…" vô hạn** (đo 20s, `canvas` = 0). **Tải lại trang thì vào được** | bấm một nút, dữ liệu ĐÃ được tạo, mà màn hình đứng im ⇒ người dùng đọc ra là *app treo*. `handleAttachOrphan` (`:79-93`) kết y hệt nên dính cùng bệnh |
+
+⚠️ **CẢ HAI NẰM TRONG VÙNG CẤM GHI của phiếu đợt 2** (`components/home/**` · `components/studio/**`
+đang thuộc lane DESIGN) ⇒ **khai, không vá**. Bộ chạy đi vòng D-J04b bằng một `reload()` có ghi rõ
+trong `quaCuaDuAnRong()` rằng đó là **liều thuốc giấu bệnh cho bộ đo**, không phải bằng chứng cửa
+đó chạy được.
+
+📌 **Vì sao đáng ghi thành một mục riêng**: đây là biến thể nặng hơn của *nút chết*. Nút chết thì
+người dùng biết mà đi đường khác; nút này **ghi dữ liệu xong rồi đứng im**, nên người dùng bấm lại
+hoặc bỏ đi — và trong ca D-J04b thì cái Flow vừa sinh ra vẫn nằm đó. Cùng họ với ca WorkHub
+*"nút nói dối việc nó vừa làm"* đã ghi trong `00-CHOT` 04/09.
+
+---
+
 ## 2 · TỔNG KẾT SỐ
 
 | Trạng thái | Số hành trình | Ghi chú |
 |---|---|---|
-| **PASS đầy đủ (có cột ĐÃ LƯU)** | **4** | J16 · J17 · J19 · J20 — chạy bằng bộ `nghiem-thu-g2-hanh-trinh.mjs` 04/09 |
+| **PASS đầy đủ (có cột ĐÃ LƯU)** | **7** | J16 · J17 · J19 · J20 · **J07 · J12 · J06** — chạy bằng bộ `nghiem-thu-g2-hanh-trinh.mjs` (đợt 2, 04/09) |
+| **PASS không có cột ĐÃ LƯU để kiểm** | **1** | J22 — bản chất nó không sinh gì để lưu; điều phải chứng minh là *báo rõ, không chạy giả* |
 | **PASS chỉ ở cột hệ thống** | **4** | J08 · J09 · J10 · J11 — lượt kiểm 04/09, không chạm chuyện *còn sau khi đóng app* |
-| **PASS một phần** | **2** | J06 · J18 — cơ chế lõi có bằng chứng trên Prisma thật; tầng người dùng chưa |
-| **UNVERIFIED** | **10** | J01 J02 J04 J05 J07 J12 J13 J14 J15 J21 J22 → còn **11**, xem ghi chú dưới |
+| **PASS một phần** | **1** | J18 — tầng cơ chế nay đo trên **app thật + đọc SQL**; tầng người dùng vẫn chưa |
+| **FAIL** | **1** | **J04** — lỗi chặn D-J04a, xem §1.7 |
+| **UNVERIFIED** | **7** | J01 J02 J05 J13 J14 J15 J21 |
 | **BLOCKED** | **1** | J03 (D3) |
 
-⚠️ Đếm lại cho đúng: 22 hành trình = 4 PASS-đủ + 4 PASS-hệ-thống + 2 PASS-một-phần + **11 UNVERIFIED**
-(J01 J02 J04 J05 J07 J12 J13 J14 J15 J21 J22) + 1 BLOCKED.
+⚠️ Đếm lại cho đúng: 22 = 7 PASS-đủ + 1 PASS-không-có-cột + 4 PASS-hệ-thống + 1 PASS-một-phần
++ 1 FAIL + **7 UNVERIFIED** + 1 BLOCKED.
 
-### ⭐ CỘT **KẾT QUẢ ĐÃ LƯU**: **1/22 → 4/22**
+### ⭐ CỘT **KẾT QUẢ ĐÃ LƯU**: **1/22 → 4/22 → 7/22**
 
-Con số này là thứ duy nhất đáng theo dõi ở cổng G2, và nó vừa đổi lần đầu kể từ khi lập ma trận.
-Bốn hành trình nay đi trọn bất biến:
+Con số này là thứ duy nhất đáng theo dõi ở cổng G2. Đợt 2 (04/09) thêm **J07 · J12 · J06**.
+🔴 Và nó tăng 3 chứ không tăng 6: **J04 đỏ thật** (lỗi sản phẩm, không phải lỗi bộ đo), **J18 mới
+xong nửa dưới** (cơ chế), **J22 không có cột này để mà đầy**. Ba chữ "chưa" đó là số thật.
+
+Bảy hành trình nay đi trọn bất biến:
 
 > **THAO TÁC → GHI XUỐNG → ĐÓNG/TẢI LẠI HẲN → VÀO LẠI → CÙNG MỘT SỰ THẬT**
 
@@ -151,10 +178,26 @@ Bốn hành trình nay đi trọn bất biến:
 G1 làm) thì IndexedDB **bị vứt lúc đóng**, nên phép "mở lại" vô nghĩa ngay từ định nghĩa —
 **đó là lý do mắt này chưa từng được chứng minh, chứ không phải vì chưa ai thử.**
 
-**Hiệu chuẩn:** mỗi lượt chạy dựng trước một **thế giới biết chắc hỏng** (chặn ghi IndexedDB cho
-J16 · chặn thư mục `backups` cho J19) và đòi ĐÚNG bộ khẳng định đó phải ĐỎ. Bộ chỉ tính là đỏ khi
-đỏ **vì khẳng định**; ngã vì hạ tầng bị đánh dấu *không kết luận* — vì thứ đỏ ở mọi thế giới thì
-không chứng minh được gì. Lần chạy 04/09: **hiệu chuẩn ĐẠT**.
+**Hiệu chuẩn:** mỗi lượt chạy dựng trước một **thế giới biết chắc hỏng** và đòi ĐÚNG bộ khẳng định
+đó phải ĐỎ. Bộ chỉ tính là đỏ khi đỏ **vì khẳng định**; ngã vì hạ tầng bị đánh dấu *không kết luận*
+— vì thứ đỏ ở mọi thế giới thì không chứng minh được gì. Lần chạy 04/09 (đợt 2): **hiệu chuẩn ĐẠT**
+trên **9 hành trình khai thế-giới-hỏng** (J20 chưa khai, bộ tự in dòng cảnh báo *"mọi chữ PASS của
+nó chỉ là lời khai"*).
+
+Ba thứ đợt 2 phải sửa trong chính phép hiệu chuẩn, ghi lại vì cả ba đều là bẫy chung:
+
+1. **ĐỎ GIẢ VÌ CHẶN SAI ĐƯỜNG.** Bản đầu của J07 dựng thế giới hỏng bằng cách chặn
+   `IDBObjectStore.put` ⇒ `CadSheets` không chốt được cờ hydrate, canvas không mount, bộ ngã ở
+   `waitForSelector` sau 60s. Đó là **LỖI (hạ tầng)**, không phải **FAIL (khẳng định)** — và
+   khung đã bắt đúng, in *"HIỆU CHUẨN KHÔNG KẾT LUẬN"*. ⇒ Thế giới hỏng phải cắt **đúng đường mà
+   hành trình đó khẳng định** (với J07 là đường máy chủ), để mọi thứ khác chạy y như thật.
+2. **HIỆU CHUẨN THOÁI HOÁ.** Hành trình đã ĐỎ ở **thế giới lành** thì phép hiệu chuẩn của nó
+   không chứng minh gì — nó đỏ ở cả hai thế giới. Bộ nay **tự in cảnh báo** cho đúng những mã đó
+   (lượt 04/09: `J04`), thay vì để chữ "HIỆU CHUẨN ĐẠT" che mất.
+3. **CUỘC ĐUA DO CHÍNH BỘ ĐO TẠO RA.** J18 bản đầu mở tab ở `/projects/[id]/render`; mount
+   `FlowCanvas` là `persistNow()` tự PUT và **đẩy `rev`** ⇒ tab A nhận 409 trước cả khi ca tranh
+   ghi được dựng. Đứng ở route trung tính (`/files`) thì hai lệnh PUT của bộ đo là **hai người
+   viết duy nhất** ⇒ phép đo tất định.
 
 ## 3 · BA HÀNH TRÌNH ĐÁNG CHẠY TRƯỚC NHẤT — **ĐÃ CHẠY 04/09**
 
@@ -180,6 +223,17 @@ node scripts/nghiem-thu-g2-hanh-trinh.mjs --hieu-chuan    # chỉ phép hiệu c
 đọc sự thật · vào lại · so sánh`. Thứ tự (thao tác → đọc → **đóng hẳn** → mở phiên MỚI trên
 CÙNG thế giới → đọc lại → so) nằm ở `chayMot()`, không nằm trong hành trình ⇒ **thêm hành trình
 thứ năm = thêm một mục vào mảng `HANH_TRINH`, không sửa khung.**
+
+✅ **Khuôn đó đã chịu được phép thử thật**: đợt 2 thêm **sáu** hành trình (J07 · J12 · J04 · J06 ·
+J18 · J22) — `HANH_TRINH` nay **10 mục** — mà khung `chayMot()` **không đổi một dòng logic nào**.
+Ba thứ thêm vào đều là **năng lực dùng chung**, không phải nhánh riêng cho một hành trình:
+`canThiep` (chặn/giả lập mạng, CHỈ để dựng thế giới hỏng — lượt chạy thật luôn rỗng) ·
+`docBanSaoMayChu()` (đọc nơi lưu thật thứ hai: hàng `ProjectFile` + parse ruột tệp) · và
+`docKhoSheets()` mọc thêm `dsId`/`soPhanTu`/`soTrang` để đo được **danh tính** chứ không chỉ số
+đếm. Hai thứ khác cũng hoá dùng-chung: **danh sách hiệu chuẩn nay sinh từ chính khai báo hành
+trình** (`hieuChuanMo`) nên quên khai là bị bêu tên, và mỗi hành trình có **dự án riêng**
+(`duAnRieng`) — bắt buộc, vì lưới đỡ khôi phục-từ-máy-chủ ở `CadSheets.tsx:458` sẽ khiến hành
+trình sau nhặt được nét của hành trình trước rồi báo PASS nhầm.
 
 Hành trình **không cần trình duyệt** cũng vừa khuôn: J19 khai `moPhien` trả một vật rỗng, "thế
 giới" của nó là **thư mục trên đĩa**, "mở lại" là **đọc lại đĩa bằng SQL**. Đó là lý do khung
