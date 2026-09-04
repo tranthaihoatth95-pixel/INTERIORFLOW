@@ -6,6 +6,12 @@
 > trên **cả 18 lượt** (9 khung × 2 nền).
 >
 > Hoà chỉ cần phán **bố cục · thứ bậc · cá tính · gu · trải nghiệm**. Bốn câu hỏi ở cuối.
+>
+> ⚠️ **ĐÍNH CHÍNH con số "chữ dưới ngưỡng 0" — nó yếu hơn vẻ ngoài.** Với H1/H2 có những đoạn chữ
+> nằm trên vùng **SÁNG** của hình, mà máy lại so với `<rect>` nền **TỐI** của cùng svg ⇒ **máy có
+> thể đang báo đẹp hơn sự thật**. Các hiện vật mới đã né bằng dải nền tối ngay dưới chữ, nhưng
+> **chưa rà lại toàn bộ H1**. ⇒ Với H1/H2, "0 dưới ngưỡng" là **chưa đủ để tin**; H3 thì con số
+> sạch vì nó không có chữ trên hình.
 
 ---
 
