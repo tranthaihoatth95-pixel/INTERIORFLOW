@@ -375,8 +375,16 @@ async function lenhChonXoa(page, duAn) {
 
   // cần MỘT khối để chọn — dựng bằng chính cử chỉ vừa kiểm ở mục 1
   if (!(await trangThaiKhoi(page)).coKhoiTheoNhan) {
+    /* Cầm công cụ tường. HAI đường, vì đường thứ nhất chỉ tồn tại LẦN ĐẦU: nút "Bắt đầu trong 3D"
+       nằm trên card chào, mà card chào đã đóng thì không quay lại (mục 1 chạy trước trong lượt
+       `tat-ca` đã đóng nó) ⇒ mục này từng báo KHÔNG ĐO ĐƯỢC vì thừa hưởng trạng thái của mục
+       trước. Đường thứ hai — nút `Wall` ở bảng lệnh trái — luôn có. */
     const batDau = page.locator('button', { hasText: /Bắt đầu trong 3D|Start in 3D/ }).first();
     if (await batDau.count().catch(() => 0)) { await batDau.click().catch(() => {}); await page.waitForTimeout(1400); }
+    else {
+      const wall = page.locator('button', { hasText: /^\s*Wall/ }).first();
+      if (await wall.count().catch(() => 0)) { await wall.click().catch(() => {}); await page.waitForTimeout(1200); }
+    }
     box = (await hopViewport(page)) || box;
     const cx = box.x + box.w * 0.5, cy = box.y + box.h * 0.62;
     await keo(page, cx - box.w * 0.16, cy, cx + box.w * 0.16, cy - box.h * 0.06);
@@ -529,12 +537,19 @@ async function lenhToPresent(page, duAn) {
     return kq;
   }
   await nut.click();
-  await page.waitForTimeout(1500);
 
-  // ① CẦU RA: tờ có được ghi sang kho vận chuyển không, và mang theo NHỮNG GÌ.
-  const stash = await page.evaluate(() => {
-    try { return sessionStorage.getItem('interiorflow.toBanVeHandoff'); } catch { return null; }
-  });
+  /* ① CẦU RA — tờ có được ghi sang kho vận chuyển không, và mang theo NHỮNG GÌ.
+     ⚠️ PHẢI BẮT NHANH: kho này là CONSUME-ONCE. Khi chặng Trình chiếu đã có hồ sơ sẵn thì
+     `CongThietLapTrang` mount ngay và tiêu thụ tờ trong vài trăm mili-giây — đọc ở mốc +1500ms là
+     thấy rỗng và tưởng "cầu ra hỏng" (đã dính). Nên dò 100ms một lần, lấy giá trị đầu tiên bắt
+     được. Bắt hụt KHÔNG phải bằng chứng hỏng — xem cách tính kết luận ở cuối hàm. */
+  let stash = null;
+  for (let i = 0; i < 30 && !stash; i += 1) {
+    stash = await page
+      .evaluate(() => { try { return sessionStorage.getItem('interiorflow.toBanVeHandoff'); } catch { return null; } })
+      .catch(() => null);
+    if (!stash) await page.waitForTimeout(100);
+  }
   kq.doDuoc.cauRa = (() => {
     if (!stash) return { coTo: false };
     try {
@@ -591,9 +606,15 @@ async function lenhToPresent(page, duAn) {
   kq.anh.push(await chup(page, '4d-sau-tai-lai'));
 
   const b = kq.doDuoc.benTrinhChieu, r = kq.doDuoc.sauTaiLai, c = kq.doDuoc.cauRa;
-  kq.doDuoc.mangDungTyLeVaKho = !!c.coTo && b.chipKho === c.khoGiay && b.chipTyLe === c.tyLe;
+  // Bắt được cầu ra ⇒ đối chiếu ĐÚNG hai đầu. Bắt hụt (bị tiêu thụ quá nhanh) ⇒ KHÔNG kết luận
+  // hỏng, chỉ khai là không quan sát được; bằng chứng lúc đó là giá trị hợp lệ ở bên NHẬN.
+  kq.doDuoc.mangDungTyLeVaKho = c.coTo
+    ? b.chipKho === c.khoGiay && b.chipTyLe === c.tyLe
+    : 'không quan sát được cầu ra (tiêu thụ quá nhanh) — đối chiếu bằng giá trị bên nhận';
+  kq.doDuoc.benNhanCoGiaTriThat = !!b.chipKho && !!b.chipTyLe;
   kq.doDuoc.songQuaTaiLai = !!r.coCuaNhanTo && r.chipKho === b.chipKho && r.chipTyLe === b.chipTyLe;
-  kq.ketQua = b.coCuaNhanTo && kq.doDuoc.mangDungTyLeVaKho && b.coKhungTen && kq.doDuoc.songQuaTaiLai ? 'PASS' : 'FAIL';
+  const hopCauRa = c.coTo ? kq.doDuoc.mangDungTyLeVaKho === true : kq.doDuoc.benNhanCoGiaTriThat;
+  kq.ketQua = b.coCuaNhanTo && hopCauRa && b.coKhungTen && kq.doDuoc.songQuaTaiLai ? 'PASS' : 'FAIL';
   return kq;
 }
 

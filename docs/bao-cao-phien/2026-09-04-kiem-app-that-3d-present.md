@@ -48,7 +48,7 @@ không hiện thì vẫn là hỏng — đúng bài học "mã có, đường d�
 | 1 | Dựng khối bằng cử chỉ 3D | **PASS** |
 | 2 | Chọn · viền hộp bao · xoá khối 3D | **PASS sau khi vá** (trước khi vá: FAIL đường bàn phím) |
 | 3 | Viewport 3D không bị cắt trên retina | **PASS** |
-| 4 | Bản vẽ → Trình chiếu | **FAIL** — nhận đúng, nhưng **tải lại trang là mất** (4/5 lượt) |
+| 4 | Bản vẽ → Trình chiếu | **PASS 3/3 sau khi sửa BỘ ĐO** — bản FAIL 9/10 bên dưới là **hiện vật của bộ đo**, giữ nguyên vì nó dẫn tới một rủi ro thật |
 | 5 | Hàng tab ở khổ desktop hẹp | **PASS** |
 
 ---
@@ -164,7 +164,12 @@ nên khai phím ở registry hiện **không tự sinh ra phím nào**. Đườn
 > `Zoom Extents` · `undo`/`redo` (đều khai `surfaces:[…,'shortcut']`) vẫn ở tình trạng cũ. Vá điểm
 > lần thứ ba là nuôi bệnh — cần sửa GỐC: một nơi đọc `surfaces:'shortcut'` rồi gắn phím.
 
-## 4 · Bản vẽ → Trình chiếu — **FAIL** (nhận đúng, nhưng tải lại là mất)
+## 4 · Bản vẽ → Trình chiếu — **PASS 3/3** (bản FAIL bên dưới là hiện vật của bộ đo, GIỮ NGUYÊN)
+
+> 🔄 **ĐỌC MỤC NÀY THEO ĐÚNG THỨ TỰ THỜI GIAN.** Phần dưới đây là bản đo **TRƯỚC** khi tìm ra
+> nguyên nhân — nó ghi FAIL 9/10. Nguyên nhân + phép thử chốt + kết quả PASS nằm ở **cuối mục**.
+> **Cố ý không xoá phần FAIL**: chính nó dẫn tới một rủi ro mất-dữ-liệu **có thật** vẫn đang mở
+> (xem ghi chú điều phối cuối tệp). Xoá đi là mất luôn đường dẫn tới rủi ro đó.
 
 ### Nửa ĐÚNG: cầu chuyển tờ mang đủ và mang đúng
 Bấm "Gửi sang Trình chiếu" ở chặng 2D ghi vào `sessionStorage['interiorflow.toBanVeHandoff']`:
@@ -248,6 +253,32 @@ Lượt đo bố cục Home đầu tiên trên cổng **mới** cho `hero = null
 hiện lại đúng con bug này** khi đang đo một thứ khác. Chạy lượt hai (sau khi Home đã ghi khoá) mới
 ra số thật. Một dấu hiệu nữa cho thấy nghi phạm nằm đúng chỗ.
 
-**Phép thử chốt đã giao lại lane** (đổi đúng MỘT bước): ghé `/` trước rồi mới vào Trình chiếu.
-Deck còn ⇒ mục 4 là **hiện vật của bộ đo** + rủi ro im-lặng-không-lưu ở trên vẫn phải sửa.
-Deck vẫn mất ⇒ **lỗi thật**, giả thuyết này sai, điều phối nhận về đào tiếp.
+### ✅ PHÉP THỬ CHỐT — ĐÃ CHẠY, giả thuyết ĐÚNG tới từng con số
+```
+A) KHÔNG ghé Home   lastUserId = null                        idb{sheets}=0  → tải lại: 0 slide
+B) CÓ   ghé Home    lastUserId = "cmtm9hop700007d4oxrr5cwxd"  idb{sheets}=1  → tải lại: 1 slide ✅
+```
+Đo lại mục 4 bằng bộ đo đã sửa, 3 lượt liên tiếp: **PASS · PASS · PASS**
+(`A3 1:100` ở cầu ra → bên nhận → **vẫn còn sau tải lại**).
+
+⭐ **Và nó giải luôn "1 lượt PASS không giải thích được"** mà lane đã thành thật khai: lượt gộp
+`tat-ca` có trang `/login` kịp tự điều hướng về Home trước lượt đi kế, nên `lastUserId` được ghi;
+các lượt lẻ thì `goto` kế tiếp cướp mất. **Chính chỗ khai "không giải thích được" lại chứa lời
+giải** — một kết quả chập chờn không phải nhiễu để làm ngơ, nó là chỗ hai đường đi khác nhau lộ ra.
+
+### 🔴 RỦI RO VẪN MỞ — không tan cùng với hiện vật
+Trạng thái đăng nhập có **HAI nguồn** (cookie máy chủ ↔ `localStorage.lastUserId`) và **lớp lưu
+trữ bám vào nguồn YẾU HƠN**. Đường vào có thật: cookie còn sống mà site data bị xoá · mở thẳng
+bookmark `/projects/<id>/present` trong hồ sơ trình duyệt mới · vào bằng deep-link mà chưa từng ghé
+Home. Khi rơi vào, app **trông vẫn đăng nhập**, vẫn cho dựng deck, vẫn hiện *1 slide* — rồi **im
+lặng không lưu gì**; người dùng chỉ biết mình mất việc **sau khi tải lại**. Nhánh A ở trên chính là
+hình dạng đó, đo được.
+⇒ **Việc còn mở, cần phiếu riêng** (vùng `PresentSheets` / `lib/present-editor/*`).
+
+### Hai chỗ đã sửa trong BỘ ĐO (không phải trong sản phẩm)
+① `dangNhap()` **ghé Home một lượt** sau khi đăng nhập bằng API, rồi **xác nhận `lastUserId` có
+giá trị** — không tin suông. Đưa bộ đo về đúng trạng thái của người đăng nhập bằng biểu mẫu.
+② Chỗ đọc cầu ra `sessionStorage` nay **dò 100ms/lượt** thay vì đọc một phát ở +1500ms: khi hồ sơ
+đã có sẵn thì `CongThietLapTrang` mount ngay và **tiêu thụ tờ trong vài trăm mili-giây**
+(consume-once); đọc muộn là thấy rỗng rồi lại tưởng *"cầu ra hỏng"* — **suýt là hiện vật thứ hai
+chồng lên hiện vật thứ nhất**.
