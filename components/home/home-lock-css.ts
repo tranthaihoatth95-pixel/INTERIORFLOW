@@ -39,12 +39,42 @@ export const HOME_LOCK_CSS = `
   --lePhai:56px; --khe:32px;
   display:flex;min-height:0;flex:1;background:var(--bg);color:var(--t1);
   font-size:var(--fs-sm,14px);
+  /* 🔴 KHUNG ĐO LÀ CHÍNH NÓ, KHÔNG PHẢI CỬA SỔ TRÌNH DUYỆT — xem khối @container dưới. */
+  container-type:inline-size;container-name:xuong;
 }
 /* KHỔ HẸP — thang KHÔNG đổi, chỉ đổi SỐ NGƯỜI ĐỨNG TRÊN MỖI BẬC (bản khoá §6).
    Thứ bị thu KHÔNG biến mất: nó tụt xuống bậc KHI GỌI và được ĐẾM ở đó (§30) —
-   phần đếm do \`xepThang(vat, khoHep)\` lo, CSS chỉ lo chỗ. */
+   phần đếm do \`xepThang(vat, khoHep)\` lo, CSS chỉ lo chỗ.
+
+   🔴 ĐO 04/09 TRÊN APP THẬT — VÌ SAO PHẢI LÀ @container CHỨ KHÔNG PHẢI @media:
+   rail là hệ router chung, có BA NẤC 52/240/320 và người dùng tự bấm (mặc định 240).
+   Home KHÔNG sở hữu bề rộng đó ⇒ chỗ Home thật sự có = viewport − rail:
+     màn 1600 · rail  52 ⇒ khung 1548   (rộng)
+     màn 1600 · rail 240 ⇒ khung 1360   (rộng)
+     màn 1600 · rail 320 ⇒ khung 1280   (đáng lẽ HẸP)
+     màn 1280 · rail 240 ⇒ khung 1040   (hẹp — @media bắt đúng)
+   Hai dòng cuối có KHUNG 1280 vs 1040 nhưng dòng 1280 lại nhận bố cục RỘNG, chỉ vì
+   @media đọc cửa sổ (1600). Đo được: hiện vật tụt 1036 → 768 px (−26%) mà thang vẫn 400.
+   ⇒ Điều kiện phải hỏi CHÍNH KHUNG. @media giữ lại làm đường lùi cho trình duyệt cũ;
+   @container đứng sau nên thắng ở nơi có hỗ trợ (Chromium 105+ / Safari 16 / FF 110).
+
+   NGƯỠNG 1348 = 1400 − 52, tức DỊCH ngưỡng cũ sang hệ toạ độ khung: bản khoá tính lưới
+   ở rail nấc hẹp nhất (52) nên "cửa sổ 1400" của nó chính là "khung 1348". Giữ đúng con
+   số này để cấu hình MẶC ĐỊNH (rail 240, màn 1600 ⇒ khung 1360) ra y hệt trước — lượt
+   này chỉ sửa ca thật sự hỏng (rail 320), không đẻ thêm delta cho mắt phải duyệt. */
 @media (max-width:1400px){
   .xuong-home{--thangW:320px;--daiH:330px;--vatTop:126px;--gpH:150px;--lePhai:32px;--khe:24px}
+}
+/* ⚠️ RÀNG BUỘC CỦA CHÍNH CƠ CHẾ: một truy vấn khung KHÔNG tô được cho chính phần tử
+   dựng ra khung đó. Vì thế hai khối dưới nhắm vào CON trực tiếp (".san" · ".thang") —
+   mọi nơi tiêu thụ sáu biến này đều là hậu duệ của hai con đó, nên thừa kế phủ đủ.
+   Khối "min-width" là bắt buộc: khi @media (cửa sổ) đã hạ xuống hẹp mà khung THẬT vẫn
+   rộng (rail thu về 52 trên màn 1360) thì phải kéo lại về bộ rộng, không để lệch. */
+@container xuong (max-width:1348px){
+  .xuong-home>*{--thangW:320px;--daiH:330px;--vatTop:126px;--gpH:150px;--lePhai:32px;--khe:24px}
+}
+@container xuong (min-width:1348.01px){
+  .xuong-home>*{--thangW:400px;--daiH:420px;--vatTop:168px;--gpH:184px;--lePhai:56px;--khe:32px}
 }
 .xuong-home *{box-sizing:border-box}
 .xuong-home svg{display:block}
@@ -60,11 +90,22 @@ export const HOME_LOCK_CSS = `
    Nó là NỀN mà việc đứng lên, KHÔNG phải mặt phẳng để dán chữ — đó là chỗ khác H1.
    Có biên: nhờ có biên nên nền sáng vẫn đọc ra là nền sáng (H1 hỏng đúng chỗ này). */
 .xuong-home .dai{position:absolute;left:0;right:0;top:0;height:var(--daiH);overflow:hidden;z-index:0;
-  /* TAN DẦN Ở ĐÁY, không cắt ngang một nhát. Mép cứng đọc ra là "một vệt lạ", không đọc ra
-     là chiều sâu — soi bằng mắt mới thấy, máy không bắt được. Đây là MẶT PHẲNG CHIỀU SÂU
-     (chỉ thị D), không phải lớp phủ tối: ảnh vẫn nét 100% ở phần thân. */
-  -webkit-mask-image:linear-gradient(180deg,#000 0,#000 74%,transparent 100%);
-  mask-image:linear-gradient(180deg,#000 0,#000 74%,transparent 100%)}
+  /* TAN DẦN Ở MỌI MÉP TỰ DO, không cắt ngang một nhát. Mép cứng đọc ra là "một vệt lạ",
+     không đọc ra là chiều sâu — soi bằng mắt mới thấy, máy không bắt được. Đây là MẶT PHẲNG
+     CHIỀU SÂU (chỉ thị D), không phải lớp phủ tối: ảnh vẫn nét 100% ở phần thân.
+
+     🔴 04/09 — LÝ DO CỦA BẢN KHOÁ ĐÚNG CHO CẢ BỐN MÉP, KHÔNG RIÊNG MÉP ĐÁY. Đo trên app
+     thật ở nền SÁNG: thân dải nằm quanh rgb(222,226,229) còn nền trang là rgb(242,239,233)
+     ⇒ dải TỐI HƠN nền, biến thiên bên trong chỉ 1,039 (nền tối là 1,078). Một lớp tự khai
+     là "ánh sáng theo giờ" mà tối hơn trang và phẳng thì không đọc ra ÁNH SÁNG — nó đọc ra
+     MỘT TẤM XÁM, và ba mép cứng (đỉnh giáp thanh trên · trái giáp rail · phải giáp thang)
+     là thứ khoá cái đọc sai đó lại thành hình chữ nhật. Tan mép ⇒ không còn hình chữ nhật
+     nào để đọc; thứ còn lại là một vùng sáng nhạt dần, đúng vai khí quyển ở CẢ HAI nền.
+     ⚠️ Vẫn giữ "có biên" của §4.1: dải vẫn chỉ chiếm --daiH đầu sân, KHÔNG phủ cả màn. */
+  --daiTanTren:12%; --daiTanBen:5%;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 var(--daiTanTren),#000 74%,transparent 100%),linear-gradient(90deg,transparent 0,#000 var(--daiTanBen),#000 calc(100% - var(--daiTanBen)),transparent 100%);
+  mask-image:linear-gradient(180deg,transparent 0,#000 var(--daiTanTren),#000 74%,transparent 100%),linear-gradient(90deg,transparent 0,#000 var(--daiTanBen),#000 calc(100% - var(--daiTanBen)),transparent 100%);
+  -webkit-mask-composite:source-in;mask-composite:intersect}
 .xuong-home .dai>*{position:absolute;inset:0}
 /* VÙNG AN TOÀN NGỮ NGHĨA — nhãn chỉ được đặt trong hai ô này; cắt ảnh phải giữ hai ô đó "lặng".
    🔴 SCRIM ĐẶC, KHÔNG CHUYỂN SẮC — phép tính ở khối --scrim-* trong app/globals.css. */

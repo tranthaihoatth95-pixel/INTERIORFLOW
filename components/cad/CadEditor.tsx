@@ -829,7 +829,12 @@ export default function CadEditor() {
               <div style={{ fontSize: 12, color: 'var(--t3)', lineHeight: 1.5 }}>
                 {/* W = cad.draw.wall (lib/commands/registry.ts:274, alias 'W'/'WALL'). KHÔNG đổi lại
                     thành L — L là cad.draw.line ("Đường thẳng", registry.ts:258), không phải tường. */}
-                {t('Gõ W để vẽ tường ngay tại chỗ, hoặc mở file có sẵn (.idf · .dxf · .dwg).', 'Type W to draw a wall right here, or open an existing file (.idf · .dxf · .dwg).')}
+                {/* 🔴 04/09 — THÊM "↵" vì đo được trên app thật: gõ chữ trần chỉ NẠP vào dòng
+                    lệnh (nhánh type-anywhere của `CadCanvas.tsx` bắn `cad:cmd-key`), phải ENTER
+                    mới chạy. Trước sửa: gõ W ⇒ ô lệnh hiện "W", công cụ vẫn "Chọn" ⇒ người dùng
+                    làm đúng lời dặn mà không có gì xảy ra. Sau Enter ⇒ công cụ đổi thành "Tường"
+                    và vẽ được thật (bằng chứng `.nen-kiem/out/2d-D-enter.png`). */}
+                {t('Gõ W ↵ để vẽ tường ngay tại chỗ, hoặc mở file có sẵn (.idf · .dxf · .dwg).', 'Type W ↵ to draw a wall right here, or open an existing file (.idf · .dxf · .dwg).')}
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
                 <button
