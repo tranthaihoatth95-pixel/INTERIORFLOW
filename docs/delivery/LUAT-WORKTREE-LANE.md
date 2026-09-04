@@ -64,3 +64,21 @@ khi MAIN nhìn. ⇒ **Không có cách nào cho MAIN xác minh mốc cắt sau s
 đối với loại lỗi này, vì cả người giao lẫn người kiểm đều không thấy được mốc cắt. Hai lần trong
 một ngày nó cứu một lô agent khỏi chạy mù (lần đầu 128 commit, lần này 192). **Cấm gỡ ⓪b khỏi
 phiếu để cho gọn.**
+
+## 🟡 BẪY 4 · `npm test` CỦA CHÍNH REPO GHI VÀO `prisma/dev.db` REPO CHÍNH
+
+Đo 04/09, chứng minh bằng thí nghiệm chứ không suy: ghi lại `mtime` → chạy **một** tệp
+`app/api/flows/[id]/route.test.ts` → `mtime` **đổi**. Tệp đó cố ý chạy **Prisma thật trên
+`dev.db`** để chứng minh `where:{id, rev}` sinh P2025 chứ không âm thầm bỏ qua — tức đây là
+hành vi **có chủ ý**, không phải lỗi.
+
+⚠️ **Hệ quả cho quy trình canh CSDL**: heuristic *"số bản ghi đổi ⇒ truy lane nào rò ghi"* có một
+**nguồn báo động giả nằm ngay trong repo**. Test dọn sau khi chạy nên **số bản ghi không đổi**,
+nhưng `mtime` đổi và **nội dung hàng có thể bị viết lại** (một lane đã kết luận nhầm rằng lane
+khác sửa hàng `User`; thủ phạm thật là `npm test` của MAIN).
+
+⇒ **Cách canh đúng, theo thứ tự tin cậy:**
+1. **Số bản ghi** so với mốc sạch (`User 1 · Project 4 · Flow 5 · Member 3 · File 2 · Credit 1`).
+2. **Dấu vết riêng của lane** — tiền tố email / tên dự án lane tự đặt. Đây mới là bằng chứng.
+3. `mtime` **KHÔNG phải bằng chứng rò ghi** — đọc không đụng `mtime`, nhưng `npm test` thì có.
+4. Nghi lane nào thì **đọc `DATABASE_URL` trong `/proc/<pid>/environ` của server nó**, đừng đoán.
