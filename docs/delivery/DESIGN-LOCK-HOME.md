@@ -33,7 +33,7 @@ giãn vô hạn — nhưng trạng thái ngữ nghĩa **không có thân xác** 
 
 | Điểm chết | Bản khoá xử thế nào | Bằng chứng |
 |---|---|---|
-| **H1** — 23–28 đoạn chữ nằm trên ảnh, máy không phán được; nền sáng vẫn tối vì ảnh không lật | Ảnh là **NỀN mà việc đứng lên**, không phải mặt phẳng dán chữ. Chữ sống trên **nền nội dung riêng** của hiện vật (tờ sáng / khung hình) hoặc trên panel app. Dải ảnh **có biên** nên nền sáng vẫn đọc ra là nền sáng | **3 đoạn/khung** thay vì 23–28. Ảnh nền sáng: rail · cột phải · dải ngữ cảnh đều lật, chỉ ảnh giữ tông nội dung |
+| **H1** — 23–28 đoạn chữ nằm trên ảnh, máy không phán được; nền sáng vẫn tối vì ảnh không lật | Ảnh là **NỀN mà việc đứng lên**, không phải mặt phẳng dán chữ. Chữ sống trên **nền nội dung riêng** của hiện vật (tờ sáng / khung hình) hoặc trên panel app. Dải ảnh **có biên** nên nền sáng vẫn đọc ra là nền sáng | **0 đoạn không đo được** (H1: 23–28) — xem §12 để biết con số này đến từ đâu. Ảnh nền sáng: rail · cột phải · dải ngữ cảnh đều lật, chỉ ảnh giữ tông nội dung |
 | **H2** — hết chỗ ở ~9 món, cơ chế "ló chân trang" sập | Mật độ tăng thì vật **TỤT BẬC**, không đòi thêm chỗ. Bậc 1 luôn đúng 1 · bậc 2 luôn 2–3 · bậc 3 nở ít · bậc 4 nuốt phần còn lại thành **một con số có tên loại** | Khung `day-du` = 14 dự án · 11 việc chờ, **hình học không đổi một pixel** so với khung `co-viec` |
 | **H3** — gần như bỏ môi trường, đọc ra lạnh | Môi trường **còn nguyên** và là khối lớn thứ hai trên màn; nhưng nó đỡ việc chứ không tranh việc | Dải ảnh chiếm 420px đầu sân, hiện vật bậc 1 **chồng lên nó** để tạo chiều sâu thật |
 
