@@ -49,7 +49,13 @@ import {
 import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
 import ModeShell from '@/components/shell/ModeShell';
 import { useStageMode, useHydrateRenderMode } from '@/lib/stage-mode';
-import DongStudioHome from '@/components/home/DongStudioHome';
+// 04/09 (bản khoá Home, `docs/delivery/DESIGN-LOCK-HOME.md`) — thân Home đổi từ lưới bento
+// (`DongStudioHome`) sang THANG CHÚ Ý bốn bậc (`XuongHome`). D-DR2 đòi ĐÚNG MỘT tiêu điểm và
+// N-10 xếp "bento làm mặc định" vào cờ đỏ; NO-REBUILD §B25 bảo vệ NĂNG LỰC/HỢP ĐỒNG/DỮ LIỆU,
+// **không** bảo vệ bố cục thị giác đã bị đè. Năng lực của bản cũ được mang sang nguyên vẹn:
+// `SystemWallpaper` · `loadResume`/`buildResumeCard`/`resumeHref` · `/api/home/summary`.
+// `DongStudioHome.tsx` GIỮ LẠI trong cây làm bằng chứng vòng thăm dò — không xoá, không mount.
+import XuongHome from '@/components/home/XuongHome';
 import { CommentLayer } from '@/components/CommentLayer';
 import { useFlowStore } from '@/lib/store';
 // [marker: cuaVaoDashboard] `bootstrapWorkspace`/`openFlow` ĐÃ BỎ khỏi file này (16/08): nơi gọi
@@ -561,10 +567,11 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
             </button>
           </div>
         )}
-        {/* Home "Dòng Studio" (13/08, docs/phieu-giao/home-dong-studio.md) — thay <ProjectSelect>
-            trực tiếp: DongStudioHome mount NGUYÊN VẸN ProjectSelect làm Tầng 2 "triển lãm" +
-            thêm dải ánh sáng-giờ-thật/lời chào (Tầng 1) + Trang 2 6 widget "studio đang thở". */}
-        <DongStudioHome
+        {/* Home BẢN KHOÁ 04/09 — THANG CHÚ Ý bốn bậc, đúng một tiêu điểm (D-DR2).
+            Bậc do TRẠNG THÁI tính ra (`lib/home/thang-chu-y.ts`, hàm thuần có test), và bậc
+            quyết định vật được cấp bao nhiêu thân ⇒ mật độ tăng thì vật TỤT BẬC chứ không
+            đòi thêm chỗ. `onEnter` giữ NGUYÊN hợp đồng cũ. */}
+        <XuongHome
           onEnter={() => {
             setStageDone(true);
             // [marker: cuaVaoDashboard] 16/08 — ĐÃ BỎ `localStorage.setItem('interiorflow.stageDone')`
