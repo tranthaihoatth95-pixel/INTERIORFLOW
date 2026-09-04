@@ -1,4 +1,26 @@
-# HOME · HYBRID B×A (khí quyển C) — NGHIÊN CỨU CHI TIẾT · CHỜ MẮT HOÀ
+# HOME · HYBRID B×A — 🕘 ỨNG VIÊN LỊCH SỬ / HỌC ĐƯỢC MỘT PHẦN
+
+> ## 🔒 TRẠNG THÁI 04/09: **KHÔNG PHẢI BẢN ĐANG DÙNG.** Giữ nguyên, không xoá khỏi lịch sử.
+> Hoà ra **đính chính mô hình sản phẩm** sau khi xem bản này: giả định nền của nó — **HOME =
+> BỐ CỤC LẤY RESUME LÀM TRUNG TÂM** — **bị đè**. Home rộng hơn thế:
+> **STUDIO CÁ NHÂN ĐANG SỐNG (LIVING PERSONAL STUDIO).**
+> *"Việc đang làm là MỘT đối tượng trội trong Home, không phải TOÀN BỘ Home."*
+>
+> ### Những gì bản này làm ĐÚNG và được mang sang bản sau (Hoà chỉ đích danh)
+> · không có nghĩa địa widget thường trực · thứ bậc editorial · Resume mang **ngữ cảnh thật**
+> · chrome im · không thẻ-cho-mọi-thứ · **mảnh việc sống** (khái niệm này SỐNG TIẾP, xem §10 directive)
+>
+> ### Cái bị đè
+> Home **không** được đồng nhất với Resume. Bản mới phải mang thêm: nhiều dự án cùng sống ·
+> vật sáng tạo cá nhân · Wallgallery động · tuỳ biến có kiểm soát · tổng quan toàn app.
+>
+> ➡️ **Bản đang dựng: BA STUDY HỆ THỐNG** `H1 LIVING WALL` · `H2 PERSONAL STUDIO` ·
+> `H3 QUIET DESKTOP` — xem `docs/delivery/HOME-SYSTEM-STUDIES.md`.
+> Nghiên cứu khuôn cấu trúc làm trước: `docs/nc/NC-HOME-KHUON-CAU-TRUC-2026-09-04.md`.
+
+---
+
+## (bản gốc của phiếu, giữ nguyên để đối chiếu)
 
 > **Quyết định của Hoà 04/09:** không chọn nguyên A, B hay C. Bản chính thức là
 > **xương sống B × ngôn ngữ A × khí quyển C**. Ba nghiên cứu A/B/C thành **ứng viên đã xét**
