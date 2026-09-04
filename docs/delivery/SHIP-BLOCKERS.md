@@ -4,13 +4,13 @@
 
 | Cổng | Trạng thái | Chủ sở hữu | Còn thiếu đúng cái gì |
 |---|---|---|---|
-| **G1 · DATA SAFE** | 🟡 PARTIAL | 01 CORE | Vá P0 xong-máy, **chưa chạy app thật**. 8 ca đang nghiệm thu. |
+| **G1 · DATA SAFE** | 🟡 PARTIAL | 01 CORE | **7/8 ca PASS trên app thật**; bắt và vá được **rò dữ liệu chéo người dùng** + 2 test đang khoá cứng lỗi đó. Ca 3 (kho bị chặn) đã vá riêng. **Khe còn mở**: `clearLastUserId()` chưa nối vào đường đăng xuất; mới phủ chặng 2D. |
 | **G2 · PROFESSIONAL FLOW** | 🔴 BLOCKED | 02 WORKFLOW | Ma trận 22 hành trình đã có, nhưng **0 hành trình xác minh ở cột KẾT QUẢ ĐÃ LƯU**. |
-| **G3 · WORKSPACES & TOOLS** | 🔴 BLOCKED | 04 DESIGN + 02 | Bàn làm việc nghề (2D · 3D · Vật liệu · Thư viện · Trình bày · BOQ · Duyệt) **chưa audit**. Chuẩn vi-tương-tác §8 chưa có máy canh. |
+| **G3 · WORKSPACES & TOOLS** | 🟡 PARTIAL | 04 DESIGN + 02 | Máy canh `soi:cong-cu-chet` đã chạy (**27 ca**: 26 mồ côi · 1 dây đứt), tự hiệu chuẩn và bắt lại được ca Vitals lịch sử. Audit 2D/3D xong. **Chưa mở app lần nào** ⇒ mọi ô 'cơ chế có' là đọc mã. Vật liệu · Thư viện · Trình chiếu · BOQ · Duyệt **chưa audit**. |
 | **G4 · DESIGN TRUTH / MOAT** | 🔴 BLOCKED | 01 CORE + 02 | Định danh ngữ nghĩa · gia phả · ký ức quyết định · ảnh hưởng sửa lại — **chưa có phép thử xuyên bề mặt nào**. |
 | **G5 · EXPERIENCE** | 🟡 PARTIAL | 04 DESIGN | Home đang khoá→thi công. **Home KHÔNG được chiếm đường găng toàn app.** Vitals · khung app · workspace chưa phán. |
 | **G6 · CONTENT & INTELLIGENCE** | 🟡 PARTIAL | 05 ASSET · 06 MEDIA · 03 AI | Hợp đồng chốt, bước 1 xong. **3D = 1 tệp.** Vật liệu 0 dữ liệu. Intro chưa có. ⛔ **Cấm nhân nội dung trước khi lát cắt dọc moat PASS.** |
-| **G7 · DESKTOP RELEASE** | 🔴 BLOCKED | 07 RELEASE | `db push` trên CSDL người dùng (rủi ro P0) đang sửa. **Cổng đóng gói chưa thử lần nào.** Bằng chứng cuối là **APP ĐÃ ĐÓNG GÓI**, Vercel xanh không tính. |
+| **G7 · DESKTOP RELEASE** | 🟡 PARTIAL | 07 RELEASE | ✅ `db push` **đã đóng** — nay `migrate deploy` + bắc cầu + đóng mốc + rà SQL phá huỷ + sao lưu; ca nguy cơ mất dữ liệu **ném lỗi** thay vì lặng lẽ đổi bảng. ✅ **Cổng 6 mở lần đầu**: AppImage 338 MB, ~3 phút. 🔴 **Cổng 7 (mở bộ cài) vẫn trống** — chưa mở gói nào. 🔴 **macOS chờ QUYẾT ĐỊNH của chủ dự án** (ký mã). |
 
 ## 🔴 LUẬT PASS MỚI — áp cho MỌI luồng có ghi dữ liệu (chủ dự án ban 04/09)
 
