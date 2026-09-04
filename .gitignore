@@ -101,3 +101,5 @@ nhat-ky-chup-man.txt
 # .nen-chrome-out/ hoặc scripts/; những tệp này KHÔNG bao giờ được vào lịch sử.
 *-tmp.mjs
 *-tmp.js
+*.tmp.mjs
+*.tmp.js
