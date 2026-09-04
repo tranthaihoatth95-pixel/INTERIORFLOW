@@ -240,3 +240,35 @@ nhất của một lỗi mất dữ liệu, và nó có thật kể cả khi ph�
 | 3 | deck mất sau reload | "lưu trữ hỏng" | **chưa biết** — nhiều khả năng lớp lưu chưa bật |
 **Cả ba lần, thứ quan sát được là ĐÚNG; thứ suy ra từ nó thì vội.** Khoảng cách giữa *"tôi thấy 0"*
 và *"cái đó hỏng"* luôn cần thêm một phép thử — và phép thử đó thường tốn một phút.
+
+
+---
+
+## 04/09 · 🔴 ĐÍNH CHÍNH CHÍNH SỔ NÀY — "hai dòng lịch sử không chung tổ tiên" CHƯA TỪNG ĐƯỢC CHỨNG MINH
+
+Phần đầu sổ này khẳng định hai dòng lịch sử **không có tổ tiên chung**, dựa trên `git merge-base`
+trả rỗng. Phiên forensic đo lại và **bác đúng chỗ**:
+
+```
+.git/shallow            → 388a8932 · d49eaea3     (kho này là BẢN SAO NÔNG)
+git cat-file -p 388a8932 → parent 073881e3…       (nó CÓ cha — không phải root)
+073881e3                → không tồn tại trong kho
+```
+⇒ `merge-base` trả rỗng ở đây là **hệ quả bắt buộc của việc bị cắt lịch sử**, không phải bằng
+chứng về quan hệ giữa hai dòng. Tôi đã đọc một **hiện vật của phép đo** thành một **sự thật về
+kho**.
+
+**Điều KHÔNG đổi:** quyết định *"không merge lịch sử, chỉ chép nội dung"* vẫn đứng — nhưng nay nó
+đứng trên **bằng chứng nội dung** (164 tệp riêng của nhóm cũ: **106 là tài sản khách** — `detech` ·
+`covers` · `san pham dau ra` · `amanoi`; 28 demo; 15 tệp mã đều là vỏ app trước 17/08), chứ không
+đứng trên một khẳng định về tổ tiên mà kho này không đủ dữ liệu để phán.
+
+⭐ **Đây là lần thứ TƯ trong một ngày cùng một hình dạng lỗi, và lần này là của tôi:**
+| # | Quan sát | Kết luận vội | Sự thật |
+|---|---|---|---|
+| 1 | `ProjectFile` = 0 hàng | "đường ghi hỏng" | ống tốt, cò chưa bóp |
+| 2 | `interiorflow-sheets` = 0 | "lưu trữ hỏng" | `lastUserId` rỗng nên lớp lưu chưa bật |
+| 3 | grep `facesFromDcel` = 0 | "năng lực chưa làm" | có rồi, **viết bằng tên khác** |
+| 4 | `merge-base` = rỗng | "không chung tổ tiên" | **kho bị cắt, không đủ dữ liệu để phán** |
+**Cả bốn lần, thứ đo được là ĐÚNG; thứ suy ra từ nó thì vội.** Và cả bốn đều cùng một câu:
+**"máy trả về RỖNG" là câu trả lời về PHÉP ĐO trước, về THẾ GIỚI sau.**

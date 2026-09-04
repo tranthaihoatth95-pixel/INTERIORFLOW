@@ -80,8 +80,16 @@ export const FRONTIER = [
   { id: 'bento-align-2d', vai: 'do', ten: 'Căn lưới bento vùng đầu chặng 2D (tab Bản vẽ · Mở tệp · rail LỚP chung một lề — Hoà chụp lệch 11/08)', he: 'DocCore', dot: 1, trangThai: 'chua',
     bangChung: [{ dir: 'components/cad', mau: 'BENTO_GRID|--bento-gutter' }] },
 
-  { id: 'hatch-t-junction-cay-lai', vai: 'do', ten: 'Đánh giá + cấy lại nhánh fix/hatch-t-junction (11/07, +244 dòng DCEL biên phòng vách chữ T + 29 test — GIỮ nhánh, merge thẳng sẽ conflict vì lib/cad đã đổi)', he: 'DocCore', dot: 2, trangThai: 'chua',
-    bangChung: [{ dir: 'lib/cad', mau: 'facesFromDcel|hatch-t-junction' }] },
+  /* 🔴 SỬA 04/09 — 'chua' là BÁO SAI, và gốc bệnh nằm ở MẪU BẰNG CHỨNG chứ không ở năng lực.
+     Mẫu cũ tìm TÊN HÀM `facesFromDcel` của nhánh `fix/hatch-t-junction`. Bản trong HEAD giải cùng
+     bài toán nhưng viết ĐỘC LẬP, không dùng cái tên đó ⇒ grep ra 0 ⇒ sổ báo "chưa làm" suốt.
+     Đo lại tại nguồn: `lib/cad/hatch.ts` **610 dòng** (bản nhánh 336) nói thẳng DCEL toàn cục,
+     `hatch.test.ts` có test **[7]** (2 phòng, vách đâm chữ T vào tường bao) và **[8]** (mặt bằng
+     thật 4 phòng + hành lang có chữ T) — đúng hai ca nhánh kia sinh ra để chữa.
+     ⭐ Bài học đúng họ với ba ca khác trong ngày: **grep ra 0 là bằng chứng "cái TÊN đó không có",
+     KHÔNG phải bằng chứng "năng lực vắng mặt".** Mẫu bằng chứng phải bám HÀNH VI, không bám tên. */
+  { id: 'hatch-t-junction-cay-lai', vai: 'do', ten: 'Biên hatch qua vách chữ T — DCEL toàn cục (đã có trong HEAD ở `lib/cad/hatch.ts`, viết độc lập với nhánh fix/hatch-t-junction; nhánh đó nay SUPERSEDED, giữ làm dấu vết)', he: 'DocCore', dot: 2, trangThai: 'xong',
+    bangChung: [{ dir: 'lib/cad', mau: 'dcel|DCEL' }] },
   { id: 'gallery-lien-nganh', vai: 'mvp', ten: 'GALLERY liên ngành (12/08 Đợt 4: route /library/gallery + quy ước tag nganh/license/nguon/bosuutap trên LibraryAsset 0 cột mới + bộ sưu tập bắt buộc nguồn + chặn Pinterest; seed 17 ảnh đã gắn tag trong script — CẦN CHẠY LẠI SEED để tag vào DB; đề xuất K: PATCH /api/library/[id] cho đề xuất nguồn ghi thật)', he: 'LibraryFirst', dot: 2, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'GalleryLienNganh|gallery-curated' }] },
   { id: 'home-overview-card', vai: 'do', ten: 'Home = Tổng quan dự án (12/08: card quy mô ProjectProfile + PresenceRow thành viên thật + click nhảy lastStage, thiếu dữ liệu tự ẩn; ⚠️ đổi hành vi: mặc định concept thay render — Hoà xem ở phiên duyệt mắt)', he: 'Workspace', dot: 2, trangThai: 'xong',
