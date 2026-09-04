@@ -171,3 +171,37 @@ ok('demo-flow + lỗi thật thì ambient vẫn alert (lỗi thắng)', trangTha
   const domSet = new Set(['yen', 'dang-chay', 'can-xem', 'khong-biet'].map((m: any) => domKhauDo(m)));
   ok('4 mức → 4 giá trị DOM riêng biệt', domSet.size === 4);
 }
+
+/* ═══════════ [chặng] MÀN KHÔNG PHẢI CHẶNG THÌ KHÔNG ĐƯỢC KHAI MÌNH LÀ CHẶNG (04/09) ═══════════
+ * Ca thật: ảnh chụp app 04/09 — đứng ở Trang chủ mà tấm chat ghi "VITALS · THIẾT KẾ 3D".
+ * Gốc: `activeToPhase` trả `'render'` cho MỌI thứ không phải cad/photo/present, mà sáu màn cấp app
+ * đều bọc `<AppShell active="render">`. Khoá lại bằng máy: đường dẫn quyết định, không phải `active`.
+ */
+{
+  const { changTheoDuong } = require('./vitals-tin-hieu');
+  console.log('\n[chặng] đường dẫn quyết định, KHÔNG phải `active`');
+
+  ok('/projects/x/cad → concept', changTheoDuong('/projects/abc/cad') === 'concept');
+  ok('/projects/x/render → render', changTheoDuong('/projects/abc/render') === 'render');
+  ok('/projects/x/present → present', changTheoDuong('/projects/abc/present') === 'present');
+  ok('/projects/x/photo → render (photo là mặt của chặng 3D)', changTheoDuong('/projects/abc/photo') === 'render');
+  ok('/cad-editor → concept', changTheoDuong('/cad-editor') === 'concept');
+  ok('/present-editor → present', changTheoDuong('/present-editor') === 'present');
+
+  // Sáu màn cấp app — đều `active="render"` trong mã, và ĐỀU PHẢI trả 'gallery'.
+  for (const d of ['/', '/files', '/library', '/library/gallery', '/materials', '/tasks', '/settings', '/inspiration', '/colors']) {
+    ok(`${d} → gallery (không thuộc chặng nào)`, changTheoDuong(d) === 'gallery');
+  }
+  ok('null/undefined → gallery, không nổ', changTheoDuong(null) === 'gallery' && changTheoDuong(undefined) === 'gallery');
+  ok('/projects/x/overview → gallery (tổng quan không phải chặng)', changTheoDuong('/projects/abc/overview') === 'gallery');
+
+  /* Nhãn tấm chat: 'gallery' KHÔNG được chứa tên chặng nào. Đọc thẳng chuỗi từ nơi vẽ để test
+     không tự chép lại một bản nhãn thứ hai (chép là hai nguồn, và chúng sẽ lệch). */
+  const nguon = readFileSync(join(__dirname, 'VitalsGesture.tsx'), 'utf8');
+  ok('`nhanTamChat` là NGUỒN DUY NHẤT của nhãn (tiêu đề + aria cùng gọi nó)',
+    (nguon.match(/nhanTamChat\(stage\)/g) || []).length >= 2 && !/Vitals · \{STAGE_LABEL/.test(nguon));
+  const nhanTamChat = (st: string) => (st === 'gallery' ? 'Vitals' : null);
+  ok('gallery ⇒ nhãn chỉ còn "Vitals", không kèm tên chặng', nhanTamChat('gallery') === 'Vitals');
+  ok('mã nguồn có nhánh gallery bỏ tên chặng',
+    /stage === 'gallery' \? 'Vitals'/.test(nguon));
+}

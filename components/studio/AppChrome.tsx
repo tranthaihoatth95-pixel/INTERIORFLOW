@@ -37,6 +37,7 @@ import { MobileMenu } from '@/components/MobileMenu';
 // P-V 17/08 — ô tìm dự án + Vitals ở top bar (chỉ Home; chặng có Vitals cạnh trục phải riêng).
 import SearchProjectsInput from '@/components/SearchProjectsInput';
 import { VitalsAperture } from '@/components/studio/VitalsAperture';
+import { changTheoDuong } from '@/components/studio/vitals-tin-hieu';
 import { pressable } from '@/lib/motion';
 import { useStageTransition } from '@/components/studio/StageTransitionProvider';
 import { stageHrefFrom } from '@/lib/project-scope';
@@ -361,9 +362,12 @@ export function AppChrome({ active, logoMenu }: Props) {
       {/* ⭐⭐ KHẨU ĐỘ VITALS — chỗ đứng vật lý DUY NHẤT của Vitals trong app (EXS §7).
           Nó là con `absolute` của chính `<header>` này (header đã `relative` ở trên), neo vào TÂM
           VÙNG LÀM VIỆC chứ không vào tâm cửa sổ — xem `lib/ui/vung-lam-viec.ts`.
-          `activeToPhase` là bảng ánh xạ SẴN CÓ (`lib/studio/stage-nav.ts`), không đẻ bảng thứ hai;
-          Home không thuộc chặng nào nên rơi về mặc định của hàm đó. */}
-      <VitalsAperture stage={currentPhase} />
+          🔴 Chặng suy từ ĐƯỜNG DẪN, KHÔNG từ `activeToPhase(active)` — sửa 04/09 sau khi soi ảnh
+          thật: `/files` · `/library` · `/materials` · `/tasks` · `/settings` · `/inspiration` đều
+          bọc `<AppShell active="render">`, nên `activeToPhase` trả `'render'` cho cả sáu ⇒ tấm chat
+          ghi "VITALS · THIẾT KẾ 3D" khi đứng ở Trang chủ. `active` KHÔNG phân biệt nổi
+          `/projects/<id>/render` với `/files`; chỉ đường dẫn phân biệt được. */}
+      <VitalsAperture stage={changTheoDuong(pathname)} />
 
       {/* 2.2.86 (30/07, Hoà chốt) — "Chạy flow" KHÔNG còn đứng riêng trên bar (~110px trả lại
           ngân sách bề rộng). Khởi chạy giờ CẠNH ĐỐI TƯỢNG: nút ▶ trên node, "Kết xuất" trên thẻ

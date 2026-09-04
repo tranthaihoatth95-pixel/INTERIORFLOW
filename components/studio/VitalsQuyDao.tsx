@@ -45,10 +45,17 @@ export function VitalsQuyDao({ trangThai, co = 18, className = '', style }: Vita
   const dangChay = trangThai === 'answering';
   const coTinHieu = trangThai !== 'idle';
 
-  /* Gần như không vật liệu ở mức nghỉ: nét quỹ đạo mờ, đơn sắc theo màu chữ phụ — KHÔNG dùng
-     `--accent` lúc nghỉ, vì màu nhấn ở trạng thái nghỉ đọc ra là trang trí. */
-  const netQuyDao = coTinHieu ? 'var(--accent)' : 'var(--t4)';
-  const doMoQuyDao = dangChay ? 0.75 : coTinHieu ? 0.55 : 0.34;
+  /* Gần như không vật liệu ở mức nghỉ: nét quỹ đạo mảnh, đơn sắc theo màu chữ phụ — KHÔNG dùng
+     `--accent` lúc nghỉ, vì màu nhấn ở trạng thái nghỉ đọc ra là trang trí.
+     🔴 SỬA 04/09 SAU KHI ĐO, KHÔNG PHẢI THEO GU. Bản cũ dùng `--t4` @0.34 ⇒ tương phản với nền ổ
+     (`--field`) chỉ **1,45 (tối) / 1,35 (sáng)** — dưới xa ngưỡng 3:1 của WCAG 1.4.11 cho phần
+     nhìn-thấy-được của một control. Trên ảnh chụp thật nó đọc ra "ô trống chưa kịp style", trong
+     khi EXS §7 gọi Vitals là *signature interaction*. Nay dùng `--t3` (cùng thang chữ, KHÔNG chế
+     màu mới) và nâng độ mờ: **2,82 (tối) / 2,10 (sáng)**.
+     ⚠️ Nét quỹ đạo vẫn CHƯA đạt 3:1 và ĐÓ LÀ CỐ Ý — chúng là hình bao, không phải thứ định danh
+     control. Phần định danh là LÕI, và lõi đã kéo lên đạt ngưỡng ở cả hai nền (xem dưới). */
+  const netQuyDao = coTinHieu ? 'var(--accent)' : 'var(--t3)';
+  const doMoQuyDao = dangChay ? 0.8 : coTinHieu ? 0.62 : 0.55;
 
   return (
     <svg
@@ -90,13 +97,17 @@ export function VitalsQuyDao({ trangThai, co = 18, className = '', style }: Vita
         ))}
       </g>
 
-      {/* LÕI — gốc hành động. Nghỉ thì nó cũng mờ; nó KHÔNG phải điểm nhấn thường trực. */}
+      {/* LÕI — gốc hành động, VÀ là phần định danh control.
+          🔴 SỬA 04/09: `fillOpacity` 0.7 cho ra **3,72 (tối) / 2,68 (sáng)** — nền sáng TRƯỢT
+          ngưỡng 3:1. Đục hẳn (1.0) cho **6,12 / 4,61**, đạt ở cả hai nền. Không đổi màu, không
+          thêm token: chỉ thôi pha loãng một thứ vốn phải nhìn thấy được.
+          Nó vẫn KHÔNG phải điểm nhấn thường trực — r=2px, màu chữ phụ, không dùng `--accent`
+          lúc nghỉ; "nhìn thấy được" khác "gây chú ý". */}
       <circle
         cx="12"
         cy="12"
         r={dangChay ? 2.4 : 2}
         fill={coTinHieu ? 'var(--accent)' : 'var(--t3)'}
-        fillOpacity={coTinHieu ? 1 : 0.7}
       />
     </svg>
   );

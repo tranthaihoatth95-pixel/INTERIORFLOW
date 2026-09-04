@@ -69,10 +69,9 @@ import { useVungLamViec } from '@/components/ui/useVungLamViec';
 import { viTriO, viTriTamXo } from '@/lib/ui/vung-lam-viec';
 import VitalsGesturePanel from '@/components/studio/VitalsGesture';
 import { useVitalsUi } from '@/lib/vitals-ui';
-import type { Phase } from '@/lib/phases';
 import {
   chonTinHieu, trangThaiAmbient, mucKhauDo, nhanKhauDo, domKhauDo,
-  type TinHieu,
+  type TinHieu, type VitalsStage,
 } from '@/components/studio/vitals-tin-hieu';
 
 type Muc = 'ambient' | 'peek' | 'engage';
@@ -153,9 +152,14 @@ function doQuyChuan(): number | undefined {
 }
 
 export function VitalsAperture({ stage }: {
-  /** Chặng đang mở — `VitalsGesturePanel` gửi kèm để backend chọn system prompt.
-   *  Nơi mount (`AppChrome`) suy ra bằng `activeToPhase()` sẵn có, không đẻ bảng ánh xạ thứ hai. */
-  stage: Phase;
+  /**
+   * Chặng đang mở — `VitalsGesturePanel` gửi kèm để backend chọn system prompt, và in lên đầu
+   * tấm chat. Nơi mount (`AppChrome`) suy ra bằng `changTheoDuong(pathname)`.
+   * ⚠️ CỐ Ý là `VitalsStage` chứ không phải `Phase`: `'gallery'` = **không ở chặng nào**. Kiểu
+   * `Phase` không diễn đạt được điều đó, nên nơi gọi buộc phải nói dối — xem khối chú thích
+   * `changTheoDuong` ở `vitals-tin-hieu.ts` để biết lời nói dối đó đã hiện lên màn thế nào.
+   */
+  stage: VitalsStage;
 }) {
   const tr = useT();
   const [muc, setMuc] = useState<Muc>('ambient');
@@ -290,21 +294,33 @@ export function VitalsAperture({ stage }: {
   /**
    * ⌘J / Ctrl+J — ĐĂNG KÝ DUY NHẤT TRONG APP. Trước 04/09 tổ hợp này đăng ký ở `StageSwitcher`
    * (không còn mount ⇒ chết) và ở `VitalsRightEdgeHost` (chưa từng được mount). Cả hai đã gỡ.
-   * Né ô nhập theo đúng khuôn `keydown-ne-o-nhap` đang dùng ở AppShell/AppChrome — chép nguyên
-   * guard của `StageSwitcher`, không nới lỏng.
+   *
+   * 🔴 CỐ Ý **KHÔNG** CHÉP GUARD "NÉ Ô NHẬP" CỦA `StageSwitcher` — đo trên app thật 04/09 cho
+   * thấy guard đó biến ⌘J thành đường MỘT CHIỀU: panel vừa mở là tự đưa con trỏ vào ô nhập
+   * (`VitalsGesture.tsx` focus ô khi `open`), nên cú ⌘J thứ hai rơi đúng nhánh "đang ở INPUT →
+   * bỏ qua" ⇒ **mở được mà không đóng được**. Đo được: sau lần bấm thứ hai, `[data-vitals-chat]`
+   * vẫn còn trong DOM.
+   * Luật `keydown-ne-o-nhap` nhắm vào phím TRẦN (gõ chữ "j" trong ô tìm không được mở panel);
+   * một tổ hợp có ⌘/Ctrl thì không bao giờ là ký tự người dùng đang gõ, nên nó không thuộc phạm
+   * vi luật đó. Vẫn `preventDefault()` để không rơi vào phím tắt trình duyệt.
+   *
+   * 🔴 `capture: true` — BẮT BUỘC, không phải cho chắc. Ô nhập của `VitalsGesture.tsx:765` gọi
+   * `e.stopPropagation()` cho MỌI phím, nên ở pha nổi thì listener trên `window` KHÔNG BAO GIỜ
+   * thấy ⌘J khi con trỏ đang ở trong ô — đo được: bỏ guard rồi mà lần bấm thứ hai vẫn không
+   * đóng. Pha BẮT chạy từ `window` xuống mục tiêu nên nó tới trước cú chặn đó.
+   * (Cùng lý do và cùng cách `lib/useDismissable.ts:13` đã dùng cho Escape — không phát minh
+   * cơ chế mới, chỉ dùng lại cách của hệ.)
    */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const el = document.activeElement;
-      if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
       if ((e.metaKey || e.ctrlKey) && (e.key === 'j' || e.key === 'J')) {
         e.preventDefault();
         if (useVitalsUi.getState().panelOpen) dong();
         else moKho();
       }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey, { capture: true });
+    return () => window.removeEventListener('keydown', onKey, { capture: true });
   }, [dong, moKho]);
 
   /* §14 CHUYỂN ĐỘNG TỪ GỐC — bề mặt NỞ RA TỪ CHÍNH TÂM LÕI quỹ đạo, không mọc từ hư không.

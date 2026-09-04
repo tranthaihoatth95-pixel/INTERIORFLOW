@@ -40,7 +40,7 @@ import { vitalsStateFor } from './vitals-eval-ui';
 import { summarizeDoc, type DocContext } from '@/lib/ai/doc-context';
 import { topViolations, type TopViolationsResult } from '@/lib/ai/violations-context';
 import { useCadStore } from '@/lib/cad/store';
-import type { Phase } from '@/lib/phases';
+import type { VitalsStage } from './vitals-tin-hieu';
 import { easeApple } from '@/lib/motion';
 import { useFlowStore } from '@/lib/store';
 import { brandContextForVitals } from '@/lib/present-editor/brand-kit';
@@ -66,10 +66,13 @@ const ACCENT = 'var(--accent)';
  * quy chuẩn. Riêng BA GỢI Ý này vẫn là bảng TĨNH theo chặng — nâng thành
  * `suggestionsFor(stage, docContext)` (ô 6.8, gợi ý theo đối tượng đang chọn) là việc RIÊNG,
  * chưa làm ở phiên nối payload này. */
-const STAGE_SUGGESTIONS: Record<Phase, [string, string, string]> = {
+const STAGE_SUGGESTIONS: Record<VitalsStage, [string, string, string]> = {
   concept: ['kiểm chuẩn tờ này', 'phòng nào chưa có vật liệu', 'xuất PDF'],
   render: ['đặt đèn nắng chiều', 'vật liệu sàn phòng ngủ', 'render thử'],
   present: ['sinh bảng khối lượng', 'thêm trang bìa', 'xuất hồ sơ khách'],
+  // 'gallery' = KHÔNG ở chặng nào (Trang chủ · Files · Thư viện · Bảng việc · Cài đặt).
+  // Gợi ý phải ở mức bàn phương án, đúng `ChatStage.gallery` của `lib/ai/chat-assist.ts`.
+  gallery: ['bắt đầu dự án thế nào', 'chọn chặng nào tiếp', 'gợi ý phong cách'],
 };
 
 /**
@@ -87,7 +90,7 @@ const STAGE_SUGGESTIONS: Record<Phase, [string, string, string]> = {
  * chặng nào cũng đọc nó). Doc rỗng → trả {} — prompt y hệt trước, không hồi quy.
  */
 function buildVitalsDocPayload(
-  stage: Phase,
+  stage: VitalsStage,
   level: ThinkLevel = 'deep',
 ): {
   docContext?: DocContext;
@@ -251,17 +254,27 @@ export function wasVitalsUsed() {
 /** Nhãn hiển thị theo chặng — dùng ở header panel để user biết đang hỏi Vitals ở đâu.
  * 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md).
  * 04/08 [P7 ĐỔI TÊN] — 2D Kỹ thuật→Thiết kế 2D · 3D Thiết kế→Thiết kế 3D · Trình bày→Trình chiếu. */
-const STAGE_LABEL: Record<Phase, string> = {
+const STAGE_LABEL: Record<Exclude<VitalsStage, 'gallery'>, string> = {
   concept: 'Thiết kế 2D',
   render: 'Thiết kế 3D',
   present: 'Trình chiếu',
 };
 
-const STAGE_PLACEHOLDER: Record<Phase, string> = {
+const STAGE_PLACEHOLDER: Record<VitalsStage, string> = {
   concept: 'Hỏi Vitals — TCVN, kích thước, dossier check…',
   render: 'Hỏi Vitals — materials, lighting, camera angle…',
   present: 'Hỏi Vitals — brand guideline, typography, layout…',
+  gallery: 'Hỏi Vitals — dự án, phong cách, bắt đầu từ đâu…',
 };
+
+/**
+ * Nhãn tấm chat. `'gallery'` KHÔNG có tên chặng — và đó là điểm của cả lát sửa này: ở màn không
+ * thuộc chặng nào thì nói **"Vitals"**, đừng bịa ra một chặng. Nguồn DUY NHẤT của chuỗi này, để
+ * tiêu đề nhìn thấy và `aria-label` không thể lệch nhau.
+ */
+export function nhanTamChat(stage: VitalsStage): string {
+  return stage === 'gallery' ? 'Vitals' : `Vitals · ${STAGE_LABEL[stage]}`;
+}
 
 export default function VitalsGesturePanel({
   originPx,
@@ -277,7 +290,14 @@ export default function VitalsGesturePanel({
   open: boolean;
   onClose: () => void;
   /** Chặng hiện tại — gửi vào payload để backend pick system prompt phù hợp. */
-  stage: Phase;
+  /**
+   * Chặng hiện tại — gửi vào payload để backend pick system prompt phù hợp.
+   * `'gallery'` (04/09) = **KHÔNG ở chặng nào** (Trang chủ · Files · Thư viện · Bảng việc · Cài
+   * đặt). Thêm giá trị này vì `Phase` chỉ có 3 chặng nên nơi gọi buộc phải nói dối một trong ba;
+   * đo được hậu quả: tấm chat ghi "VITALS · THIẾT KẾ 3D" khi đứng ở Trang chủ.
+   * Mã `'gallery'` KHÔNG mới — `lib/ai/chat-assist.ts#ChatStage` đã có đúng nghĩa đó từ trước.
+   */
+  stage: VitalsStage;
   /**
    * 'down' (mặc định, hành vi CŨ) = panel xổ XUỐNG từ mép trên container (gesture kéo ở
    * StageSwitcher, trên cùng màn). 'up' (VIỆC A, 28/07) = xổ LÊN từ mép dưới container —
@@ -467,6 +487,9 @@ export default function VitalsGesturePanel({
 
   const runEval = useCallback(async () => {
     if (evalBusy) return;
+    // Nút "Đánh giá bản vẽ" chỉ render khi `stage === 'concept'`; canh lại ở đây để kiểu THU HẸP
+    // đúng chỗ, thay vì ép kiểu. `buildEvalRecord` chấm bản vẽ 2D — 'gallery' không có bản vẽ nào.
+    if (stage !== 'concept') return;
     const doc = useCadStore.getState().doc;
     if (!doc || !Array.isArray(doc.entities) || doc.entities.length === 0) {
       setEvalNote('Bản vẽ đang trống — chưa có gì để đánh giá.');
@@ -533,7 +556,7 @@ export default function VitalsGesturePanel({
     <motion.div
       ref={rootRef}
       role="dialog"
-      aria-label={`Vitals AI · ${STAGE_LABEL[stage]}`}
+      aria-label={nhanTamChat(stage)}
       aria-hidden={!open}
       data-vitals-chat=""
       initial={reduce ? { opacity: 0 } : { opacity: 0, scaleY: 0.7, scaleX: 0.95, y: direction === 'up' ? 6 : -6 }}
@@ -594,7 +617,7 @@ export default function VitalsGesturePanel({
               }}
             >
               <VitalsStateDot state={vitalsState} size={7} />
-              Vitals · {STAGE_LABEL[stage]}
+              {nhanTamChat(stage)}
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               {stage === 'concept' && (

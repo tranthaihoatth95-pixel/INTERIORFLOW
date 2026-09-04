@@ -257,3 +257,37 @@ export function nhanKhauDo(muc: MucKhauDo, en: boolean): string {
 export function domKhauDo(muc: MucKhauDo): 'calm' | 'attention' | 'running' | 'unknown' {
   return muc === 'can-xem' ? 'attention' : muc === 'dang-chay' ? 'running' : muc === 'yen' ? 'calm' : 'unknown';
 }
+
+/* ═══════════════ CHẶNG CỦA VITALS — sửa một lời nói dối, 04/09 ═══════════════
+ *
+ * 🔴 CA THẬT: ảnh chụp app ngày 04/09 cho thấy đứng ở **Trang chủ** mà tấm chat Vitals ghi
+ * *"VITALS · THIẾT KẾ 3D"*. Gốc bệnh đo được, và nó KHÔNG nằm ở nơi vẽ:
+ *   · `AppChrome` truyền `activeToPhase(active)` (`lib/studio/stage-nav.ts:18-23`);
+ *   · hàm đó map `cad→concept · photo→render · present→present`, **còn lại rơi vào
+ *     `return 'render'`**;
+ *   · mà `/files` · `/library` · `/materials` · `/tasks` · `/settings` · `/inspiration` đều bọc
+ *     `<AppShell active="render">` (kiểm bằng `grep "<AppShell"`).
+ *   ⇒ SÁU màn không thuộc chặng nào tự khai mình là chặng Thiết kế 3D. Không chỉ sai nhãn: nó
+ *     còn khiến backend chọn system prompt của chặng 3D cho một câu hỏi hỏi từ màn Files.
+ *
+ * ⛔ VÌ SAO KHÔNG SỬA BẰNG `active`: `active` KHÔNG phân biệt được `/projects/<id>/render` (chặng
+ * 3D thật) với `/files` — cả hai đều `'render'`. Thứ duy nhất phân biệt được là ĐƯỜNG DẪN.
+ *
+ * ⚠️ Kiểu `Phase` chỉ có 3 giá trị nên nó KHÔNG diễn đạt nổi *"đang không ở chặng nào"*. Dùng
+ * `'gallery'` — mã đã có sẵn và đúng nghĩa ở `lib/ai/chat-assist.ts#ChatStage` ("người dùng đang
+ * ở Gallery/chọn dự án"). KHÔNG đẻ mã mới.
+ */
+
+/** Chặng mà tấm chat Vitals tự khai. `'gallery'` = **không thuộc chặng nào**, không phải một chặng. */
+export type VitalsStage = 'concept' | 'render' | 'present' | 'gallery';
+
+/** Các route thật sự LÀ một chặng thiết kế. Ngoài danh sách này, mọi màn đều là `'gallery'`. */
+export function changTheoDuong(duong: string | null | undefined): VitalsStage {
+  const d = duong ?? '';
+  const m = /^\/projects\/[^/]+\/(cad|render|present|photo)(?:\/|$)/.exec(d);
+  if (m) return m[1] === 'cad' ? 'concept' : m[1] === 'photo' ? 'render' : (m[1] as VitalsStage);
+  // Hai route soạn thảo đứng riêng (không nằm dưới `/projects/<id>`) — vẫn là chặng thật.
+  if (d === '/cad-editor' || d.startsWith('/cad-editor/')) return 'concept';
+  if (d === '/present-editor' || d.startsWith('/present-editor/')) return 'present';
+  return 'gallery';
+}

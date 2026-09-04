@@ -100,5 +100,44 @@ for (const bia of ['VitalsPill', 'VitalsRightEdgeHost']) {
   ok(`\`${bia}\` không được mount ở đâu`, nguoiDung.length === 0, nguoiDung.join(' · '));
 }
 
+/* ── [5] AMBIENT PHẢI NHÌN THẤY ĐƯỢC ────────────────────────────────────────────────────────
+   Lô ảnh 04/09: khẩu độ ở mức Ambient đọc ra như "ô trống chưa kịp style" — mờ hơn cả ô tìm
+   kiếm ngay cạnh, trong khi EXS §7 gọi Vitals là *signature interaction*. Đó KHÔNG phải chuyện
+   gu: WCAG 1.4.11 đòi phần nhìn-thấy-được định danh một control đạt ≥3:1 với nền của nó.
+   Đo thẳng trên giá trị token ĐANG CHẠY, ở CẢ HAI nền — cùng cách `lib/ui/design-tokens.test.ts`
+   đã làm cho `--focus-ring` và nút mờ. */
+console.log('\n[5] Mức Ambient đạt ngưỡng nhìn-thấy-được (WCAG 1.4.11, 3:1)');
+{
+  const css = readFileSync(join(GOC, 'app', 'globals.css'), 'utf8');
+  const hex = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const lin = (c: number) => { const v = c / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const L = (c: number[]) => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
+  const tp = (a: number[], b: number[]) => { const x = L(a), y = L(b); const [hi, lo] = x > y ? [x, y] : [y, x]; return (hi + 0.05) / (lo + 0.05); };
+  const pha = (fg: number[], bg: number[], a: number) => fg.map((c, i) => c * a + bg[i] * (1 - a));
+
+  /** Lấy giá trị token trong khối `:root` (nền tối) hoặc khối theme sáng — đọc lần XUẤT HIỆN thứ n. */
+  const doc = (ten: string, lan: number) => {
+    const m = [...css.matchAll(new RegExp(`--${ten}:\\s*(#[0-9a-fA-F]{6})`, 'g'))];
+    if (!m[lan]) throw new Error(`không đọc được --${ten} (lần ${lan})`);
+    return hex(m[lan][1]);
+  };
+  // lần 0 = khối `:root` (nền tối) · lần 1 = khối theme sáng. Cùng quy ước design-tokens.test.
+  for (const [ten, lan] of [['tối', 0], ['sáng', 1]] as const) {
+    const field = doc('field', lan);
+    const t3 = doc('t3', lan);
+    const loi_ = tp(t3, field);                 // lõi: đục hẳn
+    const net = tp(pha(t3, field, 0.55), field); // nét quỹ đạo lúc nghỉ
+    ok(`[${ten}] LÕI (phần định danh) ≥ 3:1 — đo ${loi_.toFixed(2)}`, loi_ >= 3);
+    // Nét quỹ đạo là hình bao, không phải phần định danh ⇒ không áp 3:1; nhưng phải hơn hẳn bản
+    // cũ (`--t4` @0.34 = 1,45/1,35) để thôi đọc ra "ô trống".
+    ok(`[${ten}] nét quỹ đạo > 1,8:1 (bản cũ 1,4) — đo ${net.toFixed(2)}`, net > 1.8);
+  }
+
+  // Khoá luôn ở tầng MÃ: lõi không được pha loãng lại, nét không được rơi về `--t4`.
+  const qd = readFileSync(join(GOC, 'components', 'studio', 'VitalsQuyDao.tsx'), 'utf8');
+  ok('lõi KHÔNG còn `fillOpacity` pha loãng lúc nghỉ', !/fillOpacity=\{coTinHieu \? 1 : 0\.7\}/.test(qd));
+  ok('nét quỹ đạo lúc nghỉ dùng `--t3`, không rơi lại `--t4`', /coTinHieu \? 'var\(--accent\)' : 'var\(--t3\)'/.test(qd));
+}
+
 console.log(`\n${loi.length === 0 ? '✅' : '❌'} mot-cho-dung: ${pass} pass · ${loi.length} fail`);
 if (loi.length) process.exit(1);
