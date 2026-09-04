@@ -51,6 +51,7 @@ import { LeaveConfirmBar } from '@/components/studio/LeaveConfirmBar';
 import { LockScreen } from '@/components/studio/LockScreen';
 import { useLockScreen, lockScreenNow, getLockIdleMinutes } from '@/lib/lockscreen';
 import { getLastUserId } from '@/lib/resume';
+import { danhTinhSanSang } from '@/lib/danh-tinh-phien';
 import { useDismissable } from '@/lib/useDismissable';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import { activeToPhase, pickStage } from '@/lib/studio/stage-nav';
@@ -99,6 +100,22 @@ export function AppChrome({ active, logoMenu }: Props) {
 
   const currentPhase = activeToPhase(active);
   const tint = STAGE_TINT[active === 'render' ? (workspace ?? DEFAULT_PHASE) : currentPhase];
+
+  /**
+   * P0 04/09 — GIEO ĐỊNH DANH TỪ PHIÊN MÁY CHỦ. `AppChrome` là thanh đầu DUY NHẤT của mọi route
+   * studio, nên đây là chỗ vỏ app khởi động sớm nhất và dùng chung được cho cả 4 route.
+   *
+   * Vì sao ở đây chứ không vá tại từng nơi cần userId: bộ đệm `lastUserId` chỉ được ghi khi đi
+   * qua Home/đăng nhập. Vào THẲNG `/projects/[id]/cad` (tab mới/bookmark/F5) thì bộ đệm rỗng
+   * dù phiên máy chủ vẫn hợp lệ ⇒ mọi đường tiêu thụ đọc ra null và lặng lẽ chạy nhánh
+   * không-có-user (nặng nhất: sheet không ghi xuống IndexedDB). Gieo MỘT lần ở tầng nguồn thì
+   * các đường tiêu thụ hiện có tự đúng — không thêm chỗ gọi `getLastUserId()` nào nữa.
+   *
+   * `danhTinhSanSang()` single-flight + bỏ qua khi đệm đã có ⇒ không tốn request ở đường thường.
+   */
+  useEffect(() => {
+    void danhTinhSanSang();
+  }, []);
 
   // Route studio (cad/present/photo) đứng riêng, page không tự gọi hydrate/applyTheme — route
   // `/` đã có hydrate riêng nhưng gọi lại đây vô hại (applyTheme thuần, idempotent).

@@ -10,6 +10,11 @@
  * `lastUserId`: các route studio (/cad-editor…) KHÔNG nạp user vào store — ResumeTracker
  * cần biết "user gần nhất là ai" để ghi resume mà không tốn thêm request /api/auth/me.
  * Ghi khi auth thành công; chỉ là id định danh cục bộ, không phải dữ liệu nhạy cảm.
+ *
+ * ⚠️ 04/09 — `lastUserId` là **BỘ ĐỆM**, KHÔNG phải nguồn sự thật. Nguồn sự thật của định danh
+ * là PHIÊN MÁY CHỦ (`/api/auth/me`). Vào thẳng route studio bằng tab mới/bookmark/F5 thì bộ đệm
+ * rỗng trong khi phiên vẫn hợp lệ — `lib/danh-tinh-phien.ts` gieo lại bộ đệm từ phiên. Đọc bộ
+ * đệm rồi kết luận "không có user" là ĐỌC SAI NGUỒN (đã gây P0 mất bản vẽ).
  */
 
 import { create } from 'zustand';
@@ -121,6 +126,9 @@ export function clearResume(userId: string): void {
 /* ---------- lastUserId — cho ResumeTracker ở route không có user trong store ---------- */
 
 export function setLastUserId(userId: string): void {
+  // THÀ KHÔNG LƯU CÒN HƠN LƯU NHẦM: id rỗng từng được ghi đè lên id thật (localStorage nhận
+  // mọi chuỗi), làm mọi khoá `userId::route::projectId` trượt sang bucket rỗng.
+  if (!userId) return;
   try {
     localStorage.setItem(LAST_USER_KEY, userId);
   } catch {
