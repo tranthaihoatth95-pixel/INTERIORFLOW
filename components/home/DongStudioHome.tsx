@@ -448,7 +448,19 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
             Không có vùng thứ hai nào trên màn ngang hạng với vùng này. */}
         <div
           className="grid min-h-0"
-          style={{ gridTemplateRows: bc.banViecDo ? 'auto minmax(0,1fr)' : 'minmax(0,1fr)', gap: 'var(--gap)' }}
+          style={{
+            /* 04/09 — `1fr` → `minmax(0, auto)` + `alignContent:'start'`.
+               🔴 ĐO ĐƯỢC trên app thật (1600×900, studio có 5 dự án, CÓ việc dở): ô "Dự án" cao
+               631px mà hàng thẻ kết thúc ở 551 ⇒ **307px = 48,7% chiều cao ô là THẺ TRẮNG RỖNG**.
+               Đó chính là thứ luật ① của bố cục này cấm — *"phần dư trả về cho NỀN, không nhồi vào
+               thẻ"* — và là thứ làm Home đọc ra "dashboard SaaS", đúng điều Hoà chốt 20/08 là TRƯỢT.
+               `1fr` bắt hàng thẻ CĂNG ra hết chỗ được cấp dù chỉ có một hàng thẻ; `auto` cho nó cao
+               đúng nội dung, `min-h-0` giữ nguyên nên nhiều dự án thì ô vẫn cuộn trong lòng nó
+               thay vì tràn. Phần dư nay là NỀN — cùng cách cột phụ đã làm từ đầu (`hangPhu`). */
+            gridTemplateRows: bc.banViecDo ? 'auto minmax(0, auto)' : 'minmax(0, auto)',
+            alignContent: 'start',
+            gap: 'var(--gap)',
+          }}
         >
           {bc.banViecDo && resumeNode}
           <div className="min-h-0">{projectTile}</div>
