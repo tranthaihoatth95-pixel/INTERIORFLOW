@@ -2241,6 +2241,11 @@ export default function CadCanvas() {
       // Sprint 5 — Việc 1: màu preset vật liệu (nếu đang chọn 1 vật liệu từ MaterialPalette);
       // '' = không override, dùng màu layer như hành vi cũ (Nấc 4).
       ...(st.hatchColor ? { color: st.hatchColor } : {}),
+      // G4 · MOAT (04/09) — DANH TÍNH đi cùng lúc vẽ, không phải gán bù sau. Trước đây vùng tô mới
+      // rơi xuống bản vẽ KHÔNG mã nào ⇒ `lib/boq/compute.ts` đếm vào `missing-specId` và mặt sàn
+      // lên 3D không mang vật liệu. `null` = đang cầm pattern kỹ thuật chỉnh tay, không phải vật
+      // liệu có mã ⇒ để trống THẬT, không bịa mã (BOQ báo thiếu là đúng, không phải lỗi).
+      ...(st.hatchSpecId ? { specId: st.hatchSpecId } : {}),
     });
     const materialTxt = st.hatchMaterialId ? ` vật liệu "${st.hatchMaterialId}"` : ` ${st.hatchPattern}`;
     st.setStatus(`Hatch: đã tô${materialTxt} (${poly.length} đỉnh biên).`);
