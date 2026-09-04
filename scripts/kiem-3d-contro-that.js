@@ -413,17 +413,18 @@ async function lenhChonXoa(page, duAn) {
   kq.doDuoc.xoaBangPhim = { truoc, sau: sauPhim, chay: sauPhim < truoc };
   kq.anh.push(await chup(page, '2c-sau-phim-delete', cat(box)));
 
-  if (!kq.doDuoc.xoaBangPhim.chay) {
+  // Chip chỉ được thử KHI phím đã trượt — để biết "hỏng cả hai" hay "chỉ hỏng đường bàn phím".
+  if (kq.doDuoc.xoaBangPhim.chay) {
+    kq.doDuoc.xoaBangChip = { thu: false, lyDo: 'phím đã xoá được, không cần thử tới chip' };
+  } else {
     const chip = page.locator('[aria-label="Xoá"]').first();
-    if (await chip.count().catch(() => 0)) {
-      await chip.click({ force: true }).catch(() => {});
-      await page.waitForTimeout(1600);
-    }
+    const coChip = (await chip.count().catch(() => 0)) > 0;
+    if (coChip) { await chip.click({ force: true }).catch(() => {}); await page.waitForTimeout(1600); }
+    const sauChip = await soKhoiTrenCay(page);
+    kq.doDuoc.xoaBangChip = { thu: true, coChip, sau: sauChip, chay: coChip && sauChip < truoc };
   }
-  const sauChip = await soKhoiTrenCay(page);
-  kq.doDuoc.xoaBangChip = { sau: sauChip, chay: sauChip < (kq.doDuoc.xoaBangPhim.chay ? sauPhim : truoc) };
   kq.doDuoc.nhanSauXoa = await nhanKhungNhin(page);
-  kq.doDuoc.xoaDuoc = kq.doDuoc.xoaBangPhim.chay || kq.doDuoc.xoaBangChip.chay;
+  kq.doDuoc.xoaDuoc = kq.doDuoc.xoaBangPhim.chay || kq.doDuoc.xoaBangChip.chay === true;
   kq.anh.push(await chup(page, '2d-sau-khi-xoa', cat(box)));
 
   // PASS đòi ĐỦ BA: chọn được · viền hộp bao hiện ra · xoá chạy BẰNG PHÍM. Cố ý tính phím vào
@@ -469,10 +470,31 @@ async function lenhRetina(page, duAn) {
   return kq;
 }
 
+
+/**
+ * Chặng 2D của một dự án MỚI mở ra ở màn rỗng ("… chưa có bản vẽ nào") — hàng tab và nút
+ * "Gửi sang Trình chiếu" chỉ tồn tại KHI đã có ít nhất một bản vẽ. Bấm "Tạo bản vẽ mới" cho tới
+ * khi hàng tab xuất hiện; trả về việc có bản vẽ hay không để nơi gọi khai KHÔNG ĐO ĐƯỢC thay vì
+ * đoán.
+ */
+async function baoDamCoBanVe(page) {
+  for (let i = 0; i < 3; i += 1) {
+    const daCo = await page.locator('button', { hasText: /Gửi sang Trình chiếu/ }).count().catch(() => 0);
+    if (daCo) return true;
+    const tao = page.locator('button', { hasText: /^\s*Tạo bản vẽ mới\s*$/ }).first();
+    if (!(await tao.count().catch(() => 0))) return false;
+    await tao.click().catch(() => {});
+    await page.waitForTimeout(3500);
+  }
+  return (await page.locator('button', { hasText: /Gửi sang Trình chiếu/ }).count().catch(() => 0)) > 0;
+}
+
 /* ── (4) TỜ BẢN VẼ → TRÌNH CHIẾU ───────────────────────────────────────────────────────────── */
 async function lenhToPresent(page, duAn) {
   const kq = { muc: '4 · bản vẽ → Trình chiếu', anh: [], doDuoc: {} };
   await diToi(page, `${BASE}/projects/${duAn}/cad`, 5000);
+  kq.doDuoc.daCoSanBanVe = (await page.locator('button', { hasText: /Gửi sang Trình chiếu/ }).count().catch(() => 0)) > 0;
+  await baoDamCoBanVe(page);
   kq.anh.push(await chup(page, '4a-chang-2d'));
 
   const nut = page.locator('button', { hasText: /Gửi sang Trình chiếu/ }).first();
@@ -540,6 +562,7 @@ async function lenhHep(duAn) {
     try {
       await dangNhap(page);
       await diToi(page, `${BASE}/projects/${duAn}/cad`, 5500);
+      await baoDamCoBanVe(page);
       const d = await page.evaluate(() => {
         const els = [...document.querySelectorAll('button')];
         const nut = els.find((e) => /Gửi sang Trình chiếu/.test(e.textContent || ''));
