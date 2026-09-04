@@ -11,12 +11,28 @@
 >
 > *(Lần đo đầu 04/09, trước khi vá: **49/54**, K3 3/5.)*
 
+> ---
+>
+> 🔴 **HỒI QUY 04/09 — CHỖ ĐỨT THỨ TƯ, VÀ NÓ Ở NGOÀI TẦM VỚI CỦA BỘ ĐO NÀY. ĐÃ ĐÓNG.**
+> Bộ trên xanh 58/59 mà moat vẫn đứt trên app thật, vì nó **đo tầng mô hình** — gọi thẳng
+> `replaceMaterialReferences` · `computeBoq` · `exportIdf`, **không chạm một dòng UI nào**. Đường
+> người dùng thật thì: `applyMaterial()` chỉ đổi nét vẽ ⇒ **hình đổi mà `specId` đứng yên**, và vùng
+> tô mới vẽ rơi xuống bản vẽ **không mã nào**. `grep replaceMaterialReferences` trong `app/` +
+> `components/` = **0 nơi gọi**. Dây có, chưa cắm điện.
+> ⇒ Nay có bộ đo **thứ hai**, đo đúng khúc UI: `scripts/nghiem-thu-g4-moat-danh-tinh.mjs`,
+> **13/13 đạt** trên app thật, gồm mắt LUẬT PASS (đóng hẳn trình duyệt → vào lại → vẫn đúng vật
+> liệu mới VÀ đúng con số mới). Chi tiết + số đo: `docs/bao-cao-phien/2026-09-04-moat-danh-tinh.md`.
+> ⭐ **Bài học cho mọi cổng về sau:** một bộ đo xanh chỉ chứng minh cho **tầng nó chạm tới**. Bộ
+> tầng-mô-hình và bộ tầng-UI **không thay thế nhau được** — thiếu bộ thứ hai thì "engine có, có
+> test" đọc ra y hệt "tính năng chạy được".
+
 | | |
 |---|---|
-| Bộ nghiệm thu | `scripts/nghiem-thu-g4-moat.mjs` (tự hiệu chuẩn) |
-| Máy canh thường trực | `lib/cad/moat-chuoi.test.ts` — 34 khẳng định, vào `npm test` |
-| Bằng chứng chạy | `docs/delivery/anh-duyet-mat/g4-moat/nghiem-thu-g4-moat.txt` |
-| Ngày đo | 04/09/2026 · mốc `fc69d747` |
+| Bộ nghiệm thu · tầng MÔ HÌNH | `scripts/nghiem-thu-g4-moat.mjs` (tự hiệu chuẩn) — 58/59 |
+| Bộ nghiệm thu · tầng UI (04/09) | `scripts/nghiem-thu-g4-moat-danh-tinh.mjs` — **13/13**, hiệu chuẩn bằng **gỡ dây thật** (5/13 khi cắt, 13/13 khi cắm lại) |
+| Máy canh thường trực | `lib/cad/moat-chuoi.test.ts` (34) + `lib/cad/moat-danh-tinh.test.ts` (**13**) — cả hai trong `npm test` |
+| Bằng chứng chạy | `docs/delivery/anh-duyet-mat/g4-moat/nghiem-thu-g4-moat.txt` · `…/g4-danh-tinh/nghiem-thu-g4-moat-danh-tinh.txt` + 6 ảnh |
+| Ngày đo | 04/09/2026 · mốc `fc69d747` (mô hình) · `5390c984`+ (UI) |
 
 ---
 

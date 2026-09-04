@@ -29,8 +29,20 @@ export interface MaterialImpactPreviewProps {
   specIds: readonly string[];
   /** Tên vật liệu MỚI người dùng vừa chọn — chỉ để hiển thị, nhãn lấy từ nơi cắm, không tự bịa. */
   nextName: string;
+  /** Áp cho ĐÚNG những vật đang chọn. */
   onApply: () => void;
   onCancel: () => void;
+  /**
+   * G4 · MOAT (04/09) — nút thứ hai: áp cho MỌI chỗ trong dự án đang dùng vật liệu này
+   * (`replaceMaterialReferences` không truyền `entityIds`, gồm cả `wallTypes`).
+   *
+   * Chỉ hiện khi nơi cắm CÓ đường đó VÀ phạm vi rộng thật sự lớn hơn tập đang chọn — bày một nút
+   * "toàn dự án" đổi đúng bằng số vật đang chọn là bày một lựa chọn giả. Bảng phía trên chính là
+   * con số của phạm vi rộng, nên người bấm biết trước mình vừa đụng vào bao nhiêu chỗ.
+   */
+  onApplyProject?: () => void;
+  /** Số vật đang chọn — để nhãn nút nói đúng phạm vi hẹp, không nói chung chung. */
+  selectedCount?: number;
 }
 
 interface ConsumerRow {
@@ -65,7 +77,9 @@ function buildRows(impacts: MaterialImpact[]): ConsumerRow[] {
   ];
 }
 
-export default function MaterialImpactPreview({ doc, specIds, nextName, onApply, onCancel }: MaterialImpactPreviewProps) {
+export default function MaterialImpactPreview({
+  doc, specIds, nextName, onApply, onCancel, onApplyProject, selectedCount,
+}: MaterialImpactPreviewProps) {
   const tr = useT();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -137,13 +151,24 @@ export default function MaterialImpactPreview({ doc, specIds, nextName, onApply,
           {tr('Áp xong vẫn hoàn tác được (⌘Z).', 'You can still undo afterwards (⌘Z).')}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
           <button type="button" onClick={onCancel} style={ghostBtn} className="if-impact-ghost">
             {tr('Huỷ', 'Cancel')}
           </button>
+          {/* Phạm vi HẸP luôn là mặc định (autoFocus) — đổi ít là bước lùi được rẻ nhất. Phạm vi
+              RỘNG phải bấm có chủ ý, và nhãn nói thẳng con số nó sẽ đụng. */}
           <button type="button" onClick={onApply} style={applyBtn} className="if-impact-apply" autoFocus>
-            {tr('Áp dụng', 'Apply')}
+            {typeof selectedCount === 'number' && selectedCount > 0
+              ? tr(`Chỉ ${selectedCount} vùng đang chọn`, `Only ${selectedCount} selected`)
+              : tr('Áp dụng', 'Apply')}
           </button>
+          {onApplyProject && (
+            <button type="button" onClick={onApplyProject} style={ghostBtn} className="if-impact-ghost">
+              {total > 0
+                ? tr(`Toàn dự án (${total} chỗ)`, `Whole project (${total})`)
+                : tr('Toàn dự án', 'Whole project')}
+            </button>
+          )}
         </div>
       </div>
       {/* Hover chỉ đổi nền 120ms, không scale (SPEC-HOVER-FOCUS-IDF: nút = đổi nền, cấm zoom). */}

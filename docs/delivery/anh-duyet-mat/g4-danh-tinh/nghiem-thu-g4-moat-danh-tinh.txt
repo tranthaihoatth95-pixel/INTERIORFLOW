@@ -1,0 +1,35 @@
+═══ G4 · MOAT — ĐƯỜNG UI CÓ MANG DANH TÍNH KHÔNG ═══
+   máy chủ http://localhost:3095 · dự án cmtmdaaws00017dmmhactp691
+
+▸ B1 · vẽ biên kín (REC) rồi tô vật liệu A
+   biên kín đã vẽ: 1 rect
+   vùng tô sau khi tô A: specId=ps-kiem-go-soi · color=#b98a54
+   ✅ B2 · vùng tô VỪA VẼ đã mang mã kho (đường `handleHatch`) — specId=ps-kiem-go-soi · mong ps-kiem-go-soi
+
+▸ B3 · chọn vùng tô → đổi sang vật liệu B (qua cửa duyệt)
+   đã chọn: 2 đối tượng
+   ✅ B3 · CỬA DUYỆT hiện ra TRƯỚC khi ghi (máy trình, người quyết) — hộp "Ảnh hưởng khi đổi" đã hiện
+   chữ trên cửa duyệt: «Ảnh hưởng khi đổi Đổi sang Sàn gỗ óc chó — 1 tham chiếu trong dự án đọc lại. Bản vẽ 2D 1 tham chiếu Mô hình 3D 1 tham chiếu BOQ / dự toán 1 tham chiếu Mặt đứng không đổi Bảng vật liệu 1 tham chiếu Hồ sơ trình bày đọc lại từ Doc Áp xong vẫn »
+   ✅ B3 · cửa duyệt bày phạm vi HẸP với số vật thật — Ảnh hưởng khi đổi Đổi sang Sàn gỗ óc chó — 1 tham chiếu trong dự án đọc lại. Bản vẽ 2D 1 tham chiếu Mô hình 3D 1 tham ch
+   diện tích hình học đo được = 26.5500 m²
+
+▸ TRƯỚC KHI ĐÓNG — ba mắt
+   ✅ trước khi đóng · ① HÌNH — vùng tô mang màu của vật liệu đã chọn — color=#5a3a26 · mong #5a3a26
+   ✅ trước khi đóng · ② DANH TÍNH — vùng tô mang ĐÚNG mã kho — specId=ps-kiem-go-ocho · mong ps-kiem-go-ocho
+   ✅ trước khi đóng · ③ CON SỐ — BOQ ra đúng một dòng cho vật liệu đã chọn — rows=ps-kiem-go-ocho
+   ✅ trước khi đóng · ③ CON SỐ — thành tiền khớp giá của vật liệu đã chọn — thanhTien=68817600 · mong 68817600 (26.55m² +8% hao × 2400000)
+
+▸ B4 · ĐÓNG HẲN trình duyệt (hồ sơ đĩa) rồi vào lại
+   khoá IndexedDB đọc lại: cmtm9hop700007d4oxrr5cwxd::/cad-editor::cmtmdaaws00017dmmhactp691
+
+▸ SAU KHI VÀO LẠI — ba mắt (đây là mắt LUẬT PASS)
+   ✅ sau khi vào lại · ① HÌNH — vùng tô mang màu của vật liệu đã chọn — color=#5a3a26 · mong #5a3a26
+   ✅ sau khi vào lại · ② DANH TÍNH — vùng tô mang ĐÚNG mã kho — specId=ps-kiem-go-ocho · mong ps-kiem-go-ocho
+   ✅ sau khi vào lại · ③ CON SỐ — BOQ ra đúng một dòng cho vật liệu đã chọn — rows=ps-kiem-go-ocho
+   ✅ sau khi vào lại · ③ CON SỐ — thành tiền khớp giá của vật liệu đã chọn — thanhTien=68817600 · mong 68817600 (26.55m² +8% hao × 2400000)
+
+▸ B5 · override cục bộ (`boq-overrides`) — nuốt hay rò?
+   ✅ B5 · phần ĐÈ của dự án KHÔNG bị thao tác thay vật liệu xoá mất — còn trong kho: [{"specId":"ps-kiem-go-soi","field":"donGia","value":999000}]
+   ✅ B5 · giá đè của vật liệu CŨ không rò sang vật liệu MỚI — donGia dòng B = 2400000 · giá kho của B = 2400000 · giá đè của A = 999000
+
+── KẾT: 13 đạt · 0 trượt ──
