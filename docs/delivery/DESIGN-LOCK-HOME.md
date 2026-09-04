@@ -210,16 +210,23 @@ trục hẳn). ⛔ **Cấm ép cả app trông giống Home.**
 | `soi-ban-ve` tràn khung | **0** |
 | `soi-ban-ve` vượt khổ | **0** |
 | `soi-ban-ve` chữ dưới ngưỡng | **0** — 12/12 lượt (3 khung × 2 khổ × 2 nền) |
-| **Chữ máy không phán được** | **3 mỗi khung** · H1 23–28 · H2 6–14 · H3 0 |
+| **Chữ máy không phán được** | **0** · H1 23–28 · H2 6–14 · H3 0 |
 | `soi:hinh-hoc` | không chạm tệp mới (0 giá trị bo gõ tay) |
 | `soi:tu-dien` | 0 lệch nhãn |
 | Hex gõ tay trong bản vẽ | **0** |
 
-**Biện minh cho con số 3:** đó là **hai nhãn** trên dải ảnh (tên dự án + nguồn ảnh · giờ + chất
-sáng). Không phải nợ, mà là **thiết kế có chủ đích** — Home phải nói được *ảnh này là của ai, lúc
-mấy giờ*, và câu đó chỉ có nghĩa khi đứng trên chính tấm ảnh. Máy trả *"không đo được"* là câu
-trả lời ĐÚNG; phần đo thật đã làm bằng tay ở §4.5 và ra **8,58:1 với ảnh sáng nhất**. Không hạ
-xuống 0 được nếu vẫn muốn giữ *"nền vẫn nên có hình"*.
+**Con số 0 đến từ đâu — nói cho đúng, đừng khoe.** Ban đầu là **3 đoạn/khung** (hai nhãn trên dải
+ảnh). Sau khi đổi scrim từ **chuyển sắc** sang **đặc `.86`** ở §4.5, máy tra ra một `background-color`
+thật nên nó **đo được** và báo đạt ⇒ về 0.
+
+⚠️ **Nhưng máy bỏ qua kênh alpha** — nó chấm với `rgb(8,9,11)` đặc, tức **lạc quan hơn thực tế**.
+Thứ thật sự bảo đảm không phải con số của máy mà là **phép tính tay ở §4.5**: nền hoà thật nằm
+trong `rgb(10,11,13)…rgb(40,40,39)` với mọi ảnh ⇒ **8,58:1 ở ca xấu nhất**. Hai đường độc lập cùng
+kết luận đạt, nên tin được; nhưng **đừng đọc số 0 này thành "máy đã chứng minh"** — máy chỉ chứng
+minh sau khi con người đã chọn đúng cấu trúc để máy đo được.
+
+⭐ Bài học đáng giữ: **sửa cho đúng thì máy soi tự đo được thứ trước đó nó phải bó tay.** Chỗ nào
+máy nói *"không đo được"* thường là chỗ thiết kế đang dựa vào may rủi.
 
 ---
 
