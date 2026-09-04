@@ -1,9 +1,32 @@
 'use client';
 
+/**
+ * WorkHub — nhiều cửa sổ web cạnh nhau (chia 1/2/3 ngăn, thanh địa chỉ, dock tạo tệp).
+ *
+ * 🔴 04/09 — ĐÃ GỠ "TRỢ LÝ CÔNG VIỆC" KHỎI MÀN NÀY. Hai lý do, cả hai đo được:
+ *
+ *   ① **Trong IF, mặt AI là VITALS — không có mặt AI thứ hai** (chủ dự án chốt 04/09,
+ *      nguyên văn: *"chat gpt ko liên quan, trong if AI tương tác là vitals"*). Một ngăn
+ *      trợ lý riêng ở đây là bề mặt AI thứ hai cạnh tranh với khẩu độ Vitals.
+ *
+ *   ② **Nó nói dối việc nó vừa làm — tệ hơn một nút chết.** `submitMessage()` cũ nối thẳng
+ *      một câu trả lời gõ cứng vào danh sách tin nhắn; `grep "fetch("` trong tệp này = **0**,
+ *      không route API nào được gọi. Tệ hơn nữa, câu gõ cứng đó còn KHẲNG ĐỊNH
+ *      *"đang dùng ngữ cảnh từ Mail · Pinterest"* và có công tắc *"Dùng ngữ cảnh cửa sổ ·
+ *      Bật"*, trong khi **không dòng nào đọc nội dung pane** — pane là `<iframe>` khác gốc,
+ *      trình duyệt KHÔNG cho đọc. Nút chết thì người dùng biết mà đi đường khác; nút nói dối
+ *      thì họ tin.
+ *
+ * ⇒ Đường hỏi AI ở màn này (nếu cần) đi qua ĐÚNG khẩu độ Vitals như mọi màn khác
+ *   (`components/studio/VitalsAperture.tsx`), không dựng bề mặt riêng ở đây.
+ *
+ * GIỮ NGUYÊN phần WorkHub thật sự làm được: rail đổi dịch vụ · chia 1/2/3 ngăn · thanh địa
+ * chỉ + mở trang · đổi sáng/tối · dock tạo tệp.
+ */
+
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   AppWindow,
-  Bot,
   ChevronDown,
   CirclePlus,
   FileSpreadsheet,
@@ -16,14 +39,10 @@ import {
   MessageCircle,
   Moon,
   MoreHorizontal,
-  Paperclip,
-  PanelLeftClose,
-  PanelLeftOpen,
   Pin,
   Play,
   Plus,
   Search,
-  Send,
   Settings2,
   Sparkles,
   Sun,
@@ -40,8 +59,6 @@ type Service = {
   detail: string;
 };
 
-type Message = { id: number; role: 'assistant' | 'user'; text: string };
-
 const SERVICES: Service[] = [
   { id: 'mail', name: 'Mail', short: 'ML', url: 'https://outlook.office.com', icon: Mail, detail: 'Hộp thư và lịch làm việc' },
   { id: 'zalo', name: 'Zalo', short: 'ZL', url: 'https://chat.zalo.me', icon: MessageCircle, detail: 'Trao đổi với đồng đội' },
@@ -49,14 +66,6 @@ const SERVICES: Service[] = [
   { id: 'youtube', name: 'YouTube', short: 'YT', url: 'https://www.youtube.com', icon: Play, detail: 'Video và nội dung tham khảo' },
   { id: 'office', name: 'Microsoft 365', short: 'M3', url: 'https://www.microsoft365.com', icon: FileText, detail: 'Word, Excel và PowerPoint' },
   { id: 'canvas', name: 'Canvas', short: 'CV', url: 'https://www.canva.com', icon: Sparkles, detail: 'Thiết kế nội dung trực quan' },
-];
-
-const INITIAL_MESSAGES: Message[] = [
-  {
-    id: 1,
-    role: 'assistant',
-    text: 'Chào Hoa. Tôi có thể đọc ngữ cảnh từ các cửa sổ đang mở và giúp bạn biến chúng thành công việc, email hoặc tài liệu.',
-  },
 ];
 
 function normalizeUrl(value: string) {
@@ -106,12 +115,8 @@ function WebPane({ service, onClose }: { service: Service; onClose?: () => void 
 }
 
 export default function WorkHubShell() {
-  const [assistantOpen, setAssistantOpen] = useState(true);
   const [paneCount, setPaneCount] = useState<1 | 2 | 3>(2);
   const [paneServices, setPaneServices] = useState(['mail', 'pinterest', 'office']);
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
-  const [draft, setDraft] = useState('');
-  const [contextEnabled, setContextEnabled] = useState(true);
   const [activeCreator, setActiveCreator] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
@@ -135,24 +140,6 @@ export default function WorkHubShell() {
 
   const setPaneService = (index: number, id: string) => {
     setPaneServices((current) => current.map((item, itemIndex) => itemIndex === index ? id : item));
-  };
-
-  const submitMessage = (event: FormEvent) => {
-    event.preventDefault();
-    const clean = draft.trim();
-    if (!clean) return;
-    setMessages((current) => [
-      ...current,
-      { id: Date.now(), role: 'user', text: clean },
-      {
-        id: Date.now() + 1,
-        role: 'assistant',
-        text: contextEnabled
-          ? `Tôi đã ghi nhận yêu cầu và đang dùng ngữ cảnh từ ${panes.map((pane) => pane.name).join(' · ')}. Bạn muốn tôi tạo tài liệu hay chuẩn bị các bước thực hiện?`
-          : 'Tôi đã ghi nhận yêu cầu. Hãy bật “Dùng ngữ cảnh cửa sổ” nếu bạn muốn tôi tham chiếu nội dung đang mở.',
-      },
-    ]);
-    setDraft('');
   };
 
   return (
@@ -180,50 +167,6 @@ export default function WorkHubShell() {
           <div className={styles.avatar}>H</div>
         </div>
       </aside>
-
-      {assistantOpen ? (
-        <aside className={styles.assistant}>
-          <header className={styles.assistantHeader}>
-            <div className={styles.assistantTitle}>
-              <span className={styles.aiMark}><Bot size={17} /></span>
-              <div><strong>Trợ lý công việc</strong><small>ChatGPT</small></div>
-            </div>
-            <button className={styles.iconButton} aria-label="Thu gọn trợ lý" onClick={() => setAssistantOpen(false)}><PanelLeftClose size={16} /></button>
-          </header>
-
-          <div className={styles.contextRow}>
-            <button className={contextEnabled ? styles.contextOn : styles.contextOff} onClick={() => setContextEnabled((value) => !value)}>
-              <AppWindow size={14} /> Dùng ngữ cảnh cửa sổ <span>{contextEnabled ? 'Bật' : 'Tắt'}</span>
-            </button>
-          </div>
-
-          <div className={styles.messages}>
-            {messages.map((message) => (
-              <div key={message.id} className={message.role === 'user' ? styles.userMessage : styles.aiMessage}>
-                {message.role === 'assistant' && <span className={styles.messageAvatar}><Bot size={14} /></span>}
-                <p>{message.text}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className={styles.quickActions}>
-            <button onClick={() => setDraft('Tóm tắt các cửa sổ đang mở')}><Sparkles size={13} /> Tóm tắt</button>
-            <button onClick={() => setDraft('Tạo danh sách công việc tiếp theo')}><LayoutPanelLeft size={13} /> Tạo việc</button>
-            <button onClick={() => setDraft('Soạn email phản hồi dựa trên nội dung đang mở')}><Mail size={13} /> Soạn email</button>
-          </div>
-
-          <form className={styles.composer} onSubmit={submitMessage}>
-            <textarea rows={3} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Bạn muốn làm gì?" />
-            <div>
-              <button type="button" className={styles.iconButton} aria-label="Đính kèm"><Paperclip size={16} /></button>
-              <span>Enter để gửi</span>
-              <button type="submit" className={styles.sendButton} aria-label="Gửi"><Send size={15} /></button>
-            </div>
-          </form>
-        </aside>
-      ) : (
-        <button className={styles.openAssistant} onClick={() => setAssistantOpen(true)} aria-label="Mở trợ lý"><PanelLeftOpen size={18} /></button>
-      )}
 
       <section className={styles.workspace}>
         <header className={styles.topbar}>
@@ -264,8 +207,14 @@ export default function WorkHubShell() {
           {panes.map((pane, index) => <WebPane key={`${pane.id}-${index}`} service={pane} />)}
         </div>
 
+        {/* 04/09 — nhãn cũ ghi "Tạo cùng trợ lý · Từ nội dung đang mở": SAI HAI LẦN. Trợ lý đã gỡ
+            khỏi màn này, và "từ nội dung đang mở" vốn chưa bao giờ đúng — pane là `<iframe>` khác
+            gốc nên không đọc được nội dung. Nhãn nay chỉ nói đúng thứ dock làm: chọn loại tệp.
+            🟡 NỢ CÒN LẠI, khai thẳng: ba nút dưới mới chỉ đổi mục đang chọn (`setActiveCreator`),
+            CHƯA tạo tệp nào. Đó là nút chưa nối — khác họ với "nút nói dối" mà lượt này đi đóng,
+            nên không tự sửa ở đây; ai nối thì nối vào đường tạo tệp thật. */}
         <footer className={styles.creatorDock}>
-          <div className={styles.dockLabel}><Sparkles size={15} /><span><strong>Tạo cùng trợ lý</strong><small>Từ nội dung đang mở</small></span></div>
+          <div className={styles.dockLabel}><Sparkles size={15} /><span><strong>Tạo tệp mới</strong><small>Chọn loại tệp</small></span></div>
           {[
             ['doc', 'Tài liệu', FileText],
             ['sheet', 'Bảng tính', FileSpreadsheet],

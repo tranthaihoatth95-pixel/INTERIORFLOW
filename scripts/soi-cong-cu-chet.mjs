@@ -58,8 +58,32 @@
  * ⛔ KHÔNG dùng AI. Tất định, 0đ, chạy 10 lần ra 10 kết quả giống nhau (Hoà chốt 15/08:
  *    *"kiểm tiêu chuẩn = việc của MÁY, không phải của AI"*).
  *
+ * ─── H5 · CHẠM-TỚI-ĐƯỢC — nhánh CHẠY TRÊN TRÌNH DUYỆT, cố ý OPT-IN ──────────────
+ * Bốn họ trên đều là suy luận TĨNH trên đồ thị import, nên chúng mù đúng thứ giới hạn ở
+ * trên tự khai: *một nút mount thật, có đường chạy thật, vẫn có thể bị vật khác nằm đè lên
+ * và người dùng bấm không trúng.* Ca thật 04/09: công tắc "Vẽ 3D" (1296,817,112×34) bị thẻ
+ * mách nước (1284,756,300×128) đè TRỌN ⇒ người bấm thì im lặng, trong khi `.click()` của
+ * Playwright vẫn chạy qua DOM nên **mọi test tự động đều xanh**. Không họ nào H1-H4 thấy nó.
+ *
+ * LUẬT H5 (chủ dự án phát biểu): *mọi phần tử bấm được và đang hiện phải có
+ * `elementFromPoint(tâm)` trả về CHÍNH NÓ (hoặc con nó)*.
+ *
+ * ⚠️ VÌ SAO OPT-IN CHỨ KHÔNG CHẠY MẶC ĐỊNH: bốn họ trên là tất định, 0 phụ thuộc, chạy
+ * được ở mọi nơi kể cả CI không mạng. H5 cần **dev server sống + Chromium**. Gộp cứng vào
+ * là biến một máy soi luôn-chạy-được thành máy soi hay-hỏng-vì-môi-trường — mà máy soi hỏng
+ * vặt thì chết theo đúng cách docstring này đã cảnh báo: người ta học cách bỏ qua nó.
+ * ⇒ `playwright` nạp bằng **dynamic import** chỉ khi có cờ; không cờ thì hành vi cũ y nguyên.
+ *
+ * ⚠️ BẢO THỦ CÓ CHỦ Ý (vá sẵn cạm bẫy "báo quá tay" lần thứ tư): CHỈ tính TRƯỢT khi tâm bị
+ * che bởi phần tử KHÔNG có quan hệ họ hàng. Bỏ qua: `disabled`/`aria-disabled` (không kỳ
+ * vọng bấm) · `pointer-events:none` (cố ý không nhận chuột) · tâm ngoài khung nhìn ·
+ * `elementFromPoint` trả `null`. Và PASS cả khi kết quả là TỔ TIÊN của nó — `<label>` bọc
+ * `<input>` là ca hợp lệ, bấm vào nhãn vẫn kích hoạt ô.
+ *
  * CỜ: `--goc=<thư mục>` chạy trên cây khác (dùng để HIỆU CHUẨN trên ảnh chụp lịch sử)
  *     `--gon` chỉ in bảng tổng · `--nghiem` exit 1 khi còn ca
+ *     `--cham` bật H5 (cần dev server) · `--url=` gốc app · `--pid=` projectId
+ *     `--tu-kiem` tự chèn lớp phủ để HIỆU CHUẨN H5 (phải ĐỎ rồi XANH mới tin được máy)
  */
 
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
@@ -69,6 +93,16 @@ const coGoc = process.argv.find((a) => a.startsWith('--goc='));
 const ROOT = coGoc ? duongTuyetDoi(coGoc.slice(6)) : duongTuyetDoi(new URL('..', import.meta.url).pathname);
 const HIEN_SONG = !process.argv.includes('--gon');
 const NGHIEM = process.argv.includes('--nghiem');
+/* H5 — nhánh chạy-trên-trình-duyệt, mặc định TẮT (xem docstring: giữ 4 họ tĩnh luôn chạy được). */
+const CHAM = process.argv.includes('--cham');
+const TU_KIEM = process.argv.includes('--tu-kiem');
+const layCo = (ten, mac) => {
+  const a = process.argv.find((x) => x.startsWith(`--${ten}=`));
+  return a ? a.slice(ten.length + 3) : mac;
+};
+const H5_URL = layCo('url', process.env.IF_URL ?? 'http://localhost:3094');
+const H5_PID = layCo('pid', process.env.IF_PID ?? '');
+const H5_CHROME = process.env.IF_CHROME ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
 /* ── QUÉT CÂY ───────────────────────────────────────────────────────────────── */
 const BO_QUA = new Set(['node_modules', '.next', '.git', 'dist', 'dist-installer', 'out', 'coverage', 'uploads', 'public']);
@@ -313,6 +347,149 @@ for (const k of khoUi) {
   }
 }
 
+/* ── H5 · CHẠM-TỚI-ĐƯỢC (chỉ khi `--cham`) ─────────────────────────────────── */
+/**
+ * Hàm chạy TRONG trang. Tách rời khỏi phần tĩnh ở trên: nó không đọc tệp nào, chỉ hỏi
+ * trình duyệt một câu duy nhất — *ai đang đứng tại tâm của phần tử bấm được này?*
+ */
+const DO_TRONG_TRANG = () => {
+  const CHON = [
+    'button', 'a[href]', 'input', 'select', 'textarea', 'summary',
+    '[role="button"]', '[role="link"]', '[role="tab"]', '[role="switch"]',
+    '[role="checkbox"]', '[role="menuitem"]', '[role="option"]',
+    '[tabindex]:not([tabindex="-1"])',
+  ].join(',');
+
+  const mo = (el) => {
+    if (!el) return 'null';
+    const cls = typeof el.className === 'string' ? el.className : (el.className?.baseVal ?? '');
+    const id = el.id ? `#${el.id}` : '';
+    return `${el.tagName.toLowerCase()}${id}${cls ? '.' + cls.trim().split(/\s+/).slice(0, 2).join('.') : ''}`;
+  };
+  const ten = (el) => (
+    el.getAttribute('aria-label')
+    || el.getAttribute('title')
+    || (el.textContent || '').trim().slice(0, 40)
+    || el.getAttribute('placeholder')
+    || mo(el)
+  );
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const ra = { xet: 0, boQua: 0, truot: [] };
+
+  for (const e of document.querySelectorAll(CHON)) {
+    const r = e.getBoundingClientRect();
+    // ── loại trừ BẢO THỦ: thứ không kỳ vọng bấm, hoặc không nằm trong khung nhìn ──
+    if (r.width < 2 || r.height < 2) { ra.boQua++; continue; }
+    const cs = getComputedStyle(e);
+    if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0) { ra.boQua++; continue; }
+    if (cs.pointerEvents === 'none') { ra.boQua++; continue; }
+    if (e.disabled || e.getAttribute('aria-disabled') === 'true') { ra.boQua++; continue; }
+    const cx = r.x + r.width / 2;
+    const cy = r.y + r.height / 2;
+    if (cx < 0 || cy < 0 || cx > vw || cy > vh) { ra.boQua++; continue; }
+
+    const top = document.elementFromPoint(cx, cy);
+    if (!top) { ra.boQua++; continue; }          // ngoài vùng vẽ — không kết luận
+    ra.xet++;
+    // PASS: chính nó · con nó · TỔ TIÊN nó (<label> bọc <input> là ca hợp lệ)
+    if (top === e || e.contains(top) || top.contains(e)) continue;
+
+    const tr = top.getBoundingClientRect();
+    ra.truot.push({
+      ten: ten(e),
+      nut: mo(e),
+      hop: { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) },
+      che: mo(top),
+      cheTen: ten(top).slice(0, 40),
+      cheHop: { x: Math.round(tr.x), y: Math.round(tr.y), w: Math.round(tr.width), h: Math.round(tr.height) },
+    });
+  }
+  return ra;
+};
+
+const H5 = [];
+let h5Xet = 0;
+let h5Man = 0;
+let h5HieuChuan = null;
+if (CHAM) {
+  const { chromium } = await import('/home/user/INTERIORFLOW/node_modules/playwright/index.mjs');
+  const b = await chromium.launch({ executablePath: H5_CHROME });
+  const ctx = await b.newContext({ viewport: { width: 1600, height: 900 } });
+  {
+    const p = await ctx.newPage();
+    const r = await p.request.post(`${H5_URL}/api/auth/login`, {
+      data: { identifier: 'kiem@localhost.test', password: 'matkhau123' },
+    });
+    if (!r.ok()) console.error(`⚠️  login ${r.status()} — màn sau đây có thể là màn đăng nhập, không phải app.`);
+    const me = await (await p.request.get(`${H5_URL}/api/auth/me`)).json().catch(() => ({}));
+    await p.goto(H5_URL);
+    await p.evaluate((id) => { try { localStorage.setItem(`interiorflow.tourDone.${id}`, '1'); } catch {} }, me?.user?.id ?? '');
+    await p.close();
+  }
+  const page = await ctx.newPage();
+
+  const MAN = [
+    ['Home', '/'],
+    ['Files', '/files'],
+    ['Thư viện', '/library'],
+    ['Bảng việc', '/tasks'],
+    ['Cài đặt', '/settings'],
+    ...(H5_PID ? [
+      ['2D', `/projects/${H5_PID}/cad`],
+      ['3D', `/projects/${H5_PID}/render`],
+      ['Trình chiếu', `/projects/${H5_PID}/present`],
+    ] : []),
+  ];
+
+  for (const [ten, duong] of MAN) {
+    try {
+      await page.goto(`${H5_URL}${duong}`, { waitUntil: 'networkidle', timeout: 45000 });
+    } catch { /* mạng lặng không về — vẫn đo cái đang có */ }
+    await page.waitForTimeout(2600);
+    const r = await page.evaluate(DO_TRONG_TRANG);
+    h5Man++;
+    h5Xet += r.xet;
+    for (const t of r.truot) H5.push({ man: ten, ...t });
+
+    /* HIỆU CHUẨN — chỉ ở màn đầu, và chỉ khi `--tu-kiem`. Dựng lại ĐÚNG ca thật: một tấm
+       phủ lên tâm một nút đang lành. Luật phải ĐỎ; gỡ tấm ra phải XANH lại. Không có bước
+       này thì luật chỉ là lời khai. */
+    if (TU_KIEM && !h5HieuChuan) {
+      const truocKhiChe = r.truot.length;
+      const ok = await page.evaluate(() => {
+        const n = [...document.querySelectorAll('button')].find((e) => {
+          const b = e.getBoundingClientRect();
+          const cs = getComputedStyle(e);
+          return b.width > 30 && b.height > 20 && cs.display !== 'none' && cs.visibility !== 'hidden'
+            && b.x >= 0 && b.y >= 0 && b.x + b.width <= innerWidth && b.y + b.height <= innerHeight
+            && document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2) === e;
+        });
+        if (!n) return null;
+        const b = n.getBoundingClientRect();
+        const d = document.createElement('div');
+        d.id = '__hieu-chuan-h5';
+        d.style.cssText = `position:fixed;left:${b.x - 6}px;top:${b.y - 6}px;width:${b.width + 12}px;height:${b.height + 12}px;background:rgba(255,0,0,.25);z-index:2147483647`;
+        document.body.appendChild(d);
+        return { ten: (n.textContent || '').trim().slice(0, 30) };
+      });
+      if (!ok) {
+        h5HieuChuan = { chay: false, ly_do: 'không tìm được nút lành để thử — KHÔNG KẾT LUẬN (đây là LỖI hạ tầng, không phải TRƯỢT)' };
+      } else {
+        const sauKhiChe = (await page.evaluate(DO_TRONG_TRANG)).truot.length;
+        await page.evaluate(() => document.getElementById('__hieu-chuan-h5')?.remove());
+        const goRa = (await page.evaluate(DO_TRONG_TRANG)).truot.length;
+        h5HieuChuan = {
+          chay: true, nut: ok.ten, truoc: truocKhiChe, khiChe: sauKhiChe, sauGo: goRa,
+          DAT: sauKhiChe > truocKhiChe && goRa === truocKhiChe,
+        };
+      }
+    }
+  }
+  await b.close();
+}
+
 /* ── IN ─────────────────────────────────────────────────────────────────────── */
 const in_ = (...a) => console.log(...a);
 in_('\n🔦 SOI CÔNG CỤ CHẾT — mặt tiền có đường chạy không');
@@ -338,9 +515,35 @@ if (HIEN_SONG) for (const o of H3) in_(`   ${o.song ? '🔴' : '🟡'} ${o.tep}:
 in_(`\nH4 · DÂY ĐỨT — ${H4.length}`);
 if (HIEN_SONG) for (const o of H4) in_(`   🔴 ${o.kho} — ${o.bat} nơi SỐNG bấm (vd ${o.batVd}) · ${o.mat} mặt dựng ra nhưng CHẾT HẾT (vd ${o.matVd})`);
 
-const tong = H1.length + H2.length + H3.length + H4.length;
-in_(`\n── TỔNG ${tong} ca · H1 ${H1.length} · H2 ${H2.length} · H3 ${H3.length} · H4 ${H4.length}`);
-in_('⚠️  Máy chứng minh CÓ ĐƯỜNG MOUNT, KHÔNG chứng minh BẤM VÀO CÓ VIỆC XẢY RA.');
-in_('   Cửa cuối vẫn là: thao tác → ghi xuống → tải lại → vào lại → cùng một sự thật.');
+if (CHAM) {
+  in_(`\nH5 · BỊ CHE, BẤM KHÔNG TRÚNG — ${H5.length}   (${h5Man} màn · ${h5Xet} phần tử bấm-được đã xét)`);
+  if (h5HieuChuan) {
+    if (!h5HieuChuan.chay) {
+      in_(`   ⚠️  HIỆU CHUẨN KHÔNG CHẠY ĐƯỢC — ${h5HieuChuan.ly_do}`);
+      in_('       ⇒ số H5 dưới đây CHƯA ĐƯỢC BẢO CHỨNG. LỖI hạ tầng ≠ ĐẠT.');
+    } else {
+      in_(`   ${h5HieuChuan.DAT ? '✅' : '🔴'} HIỆU CHUẨN trên nút "${h5HieuChuan.nut}": `
+        + `thường ${h5HieuChuan.truoc} → khi bị che ${h5HieuChuan.khiChe} → gỡ che ${h5HieuChuan.sauGo}`
+        + `${h5HieuChuan.DAT ? '' : '  ⇐ KHÔNG ĐẠT, đừng tin số H5'}`);
+    }
+  }
+  if (HIEN_SONG) {
+    for (const o of H5) {
+      in_(`   🔴 [${o.man}] "${o.ten}" ${o.nut} (${o.hop.x},${o.hop.y},${o.hop.w}×${o.hop.h})`);
+      in_(`        bị đè bởi ${o.che} "${o.cheTen}" (${o.cheHop.x},${o.cheHop.y},${o.cheHop.w}×${o.cheHop.h})`);
+    }
+  }
+}
+
+const tong = H1.length + H2.length + H3.length + H4.length + (CHAM ? H5.length : 0);
+in_(`\n── TỔNG ${tong} ca · H1 ${H1.length} · H2 ${H2.length} · H3 ${H3.length} · H4 ${H4.length}`
+  + (CHAM ? ` · H5 ${H5.length}` : ' · H5 (tắt — thêm --cham)'));
+if (!CHAM) {
+  in_('⚠️  Máy chứng minh CÓ ĐƯỜNG MOUNT, KHÔNG chứng minh BẤM VÀO CÓ VIỆC XẢY RA.');
+  in_('   Cửa cuối vẫn là: thao tác → ghi xuống → tải lại → vào lại → cùng một sự thật.');
+} else {
+  in_('⚠️  H5 chứng minh TÂM NÚT KHÔNG BỊ VẬT KHÁC ĐỨNG ĐÈ. Vẫn KHÔNG chứng minh bấm vào thì có việc xảy ra.');
+  in_('   Cửa cuối vẫn là: thao tác → ghi xuống → tải lại → vào lại → cùng một sự thật.');
+}
 if (!NGHIEM) in_('ℹ️  Không chặn build (exit 0) ở phát đầu — xem ĐIỀU KIỆN SIẾT trong docstring.');
 process.exit(NGHIEM && tong ? 1 : 0);
