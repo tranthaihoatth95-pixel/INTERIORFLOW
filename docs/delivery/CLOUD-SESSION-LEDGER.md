@@ -132,3 +132,34 @@ Chạy trên máy chủ thật (`next start`) + CSDL thật, đăng nhập thậ
 **Vì sao main hụt 10 ngày:** `main` có 26 commit ngày 19/08 + 24 ngày 20/08 rồi **đứng im tới 03/09**. Việc ngày 21–22/08 chạy trên nhánh này; việc sau đó chạy trên dòng cũ `checkpoint` (tới 01/09). Không nhánh nào được thu về.
 
 **ACTION: `INVESTIGATE` → chờ chủ dự án.** Không tự merge: 29 nghìn dòng hành vi sản phẩm, đụng 10 tệp hợp đồng dùng chung, và cái tên `backup/` để ngỏ khả năng nó **cố ý** không được thu về.
+
+---
+
+## 04/09 · VA CHẠM DỰNG SONG SONG — ghi lại vì nó sẽ tái diễn
+
+**Triệu chứng:** `npx next start` báo *"Could not find a production build in the '.next' directory"*
+**hai lần liên tiếp**, ngay sau khi một bản dựng vừa báo xong.
+
+**Đo được:** `pgrep -af "next build"` ra **ba** tiến trình dựng chạy chồng nhau. Next dựng vào
+**MỘT** thư mục cố định (`.next`), nên hai bản dựng song song **ghi đè lẫn nhau** — `BUILD_ID` sinh
+ra rồi biến mất giữa chừng. Đây **không phải chậm, mà là hỏng**: cả ba lane cùng không có server.
+
+**Cùng họ với một mất mát thật hôm nay:** `.nen-chrome-out/` bị gitignore và **đã bị dọn giữa
+chừng** — lô ảnh `home-that-*.png` của lane Home **biến mất khỏi đĩa** trước khi ai kịp nhìn.
+
+⭐ **Bài học chung của cả hai ca: `claim-keys-va-cham` mới khai được TỆP, chưa khai được TÀI
+NGUYÊN DÙNG CHUNG.** Hai lane không đụng một tệp nguồn nào của nhau vẫn giẫm nhau, vì cùng ghi vào:
+| Tài nguyên | Ai đụng | Hậu quả khi va |
+|---|---|---|
+| `.next/` | mọi lệnh `build` / `dev` | bản dựng hỏng, không ai chạy được |
+| cổng 3000–30xx | mọi server | cổng bị chiếm, lane sau tưởng app chết |
+| `prisma/dev.db` | mọi test chạm CSDL | đã cắn một lần — đã vá bằng cách chạy test CSDL **tuần tự** |
+| `.nen-chrome-out/` | mọi lane chụp màn | **mất bằng chứng**, không ai biết đã mất |
+
+**Cách xử đã dùng (không phải luật, mới là tiền lệ):** lane nào đang chạy dở thì **giữ quyền dựng
+và giữ server**; lane còn lại **dừng dựng**, chờ được nhắn cổng rồi dùng nhờ. Điều phối bằng
+`SendMessage`, không bằng cách giết tiến trình của nhau — **không lane nào được giết tiến trình
+của lane khác**, vì không lane nào biết lane kia đang ở bước nào.
+
+**Việc còn nợ:** nới `claim-keys-va-cham` để khai được **tài nguyên dùng chung**, không chỉ đường
+dẫn tệp. Bốn dòng bảng trên là danh sách khởi điểm.
