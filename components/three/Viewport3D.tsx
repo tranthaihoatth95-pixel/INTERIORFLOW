@@ -156,6 +156,17 @@ export function Viewport3D({
         snap3d={snap3d}
         className="vpscene"
         cameraApiRef={cameraApiRef}
+        // Khối đang chọn được TÔ TRONG KHÔNG GIAN (viền hộp bao + emissive khi có đèn) thay vì
+        // chỉ có gizmo phủ 2D ở dưới — cùng một `selectedId`, không thêm nguồn chọn thứ hai.
+        selectedId={selectedId}
+        // Bấm thẳng vào khối trên khung nhìn là CHỌN (viewport-first). Map entityId→group Y HỆT
+        // đường `render:goto-entity` ngay trên; dùng `pick` (đặt thẳng, KHÔNG toggle) để bấm lại
+        // cùng khối vẫn giữ chọn — khác `select` của hàng cây Navigator. Inspector/Tool3DBar tự
+        // ăn theo `useTree3DUi.selectedName` như cũ, `selectedEntityId` là thứ lệnh xoá đọc.
+        onPickEntity={(id) => {
+          const g = scene.groups.find((x) => x.entityId === id);
+          if (g) useTree3DUi.getState().pick(g.name, id);
+        }}
       />
 
       <div className="vplabel vpover">{label}</div>
