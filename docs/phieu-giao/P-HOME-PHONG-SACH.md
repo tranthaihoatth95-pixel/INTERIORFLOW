@@ -1,8 +1,7 @@
 # PHIẾU · HOME — VÒNG PHÒNG SẠCH
 
-> **TRẠNG THÁI: SOẠN SẴN, CHƯA PHÓNG.** Chờ đúng một câu của Hoà: *context đã sạch chưa*.
-> Hoà gật ⇒ IF COMMAND phóng ngay, không soạn lại.
-> Lý do soạn trước: Hoà không phải đường truyền tin — lúc anh gật thì việc phải chạy được liền.
+> **TRẠNG THÁI: ĐANG CHẠY (phóng 04/09).** Cửa *"context đã sạch chưa"* **đã mở** — lệnh SHIP
+> 04/09 đặt *"Continue Home H1/H2/H3 eye-review pipeline"* làm mục THI HÀNH NGAY, đè cửa cũ.
 
 ---
 
@@ -40,7 +39,19 @@ Mở tệp cũ **chỉ khi** cần truy nguyên · cứu vốn · giữ hành vi
 **Bản cài đặt hiện tại chỉ được soi SAU**, và chỉ để lập hai danh sách:
 `HÀNH VI PHẢI GIỮ` và `RÀNG BUỘC KỸ THUẬT`. Không để bản cài đặt quyết định bố cục.
 
-## BA CƠ CHẾ — tự dẫn xuất, KHÔNG chép tên cũ
+## BA HƯỚNG — TÊN DO HOÀ ĐẶT, BỐ CỤC PHẢI DỰNG LẠI TỪ ĐẦU
+
+Lệnh SHIP 04/09 gọi đích danh: **H1 LIVING WALL · H2 PERSONAL STUDIO · H3 QUIET DESKTOP**.
+Ba cái tên đó là **cách Hoà đặt vấn đề** ⇒ **giữ nguyên tên**.
+⛔ Nhưng **bố cục cũ mang ba tên đó đã bị cách ly** (`LEGACY-DESIGN-QUARANTINE.md`) — **cấm mở
+`mock-home-h{1,2,3}-*` ra xem rồi vẽ lại cho giống**. Phải **dẫn xuất lại cơ chế từ §5**, và trong
+báo cáo phải nói rõ **đi tới cơ chế đó bằng đường lập luận nào**. Trùng tinh thần bản cũ thì được;
+chép bố cục bản cũ thì không.
+
+Home phải đại diện **cả hệ sinh thái IF**, không chỉ việc đang dở: dự án · việc đang làm · cảm hứng ·
+công cụ · widget cá nhân · Vitals · hoạt động · trí tuệ thiết kế.
+
+## BA CƠ CHẾ — mỗi hướng phải khác nhau ở CƠ CHẾ
 Ba hướng phải khác nhau ở **cách tổ chức không gian và cách thông tin lộ dần**, mỗi hướng trả lời
 khác nhau ba câu:
 - việc đang làm chiếm chỗ thế nào trong một **studio đang sống** (nó là **một** đối tượng trội,
@@ -50,9 +61,8 @@ khác nhau ba câu:
   được nén · gập · hé dần · đưa về theo yêu cầu);
 - môi trường (nền/ánh sáng/ảnh) đóng vai gì mà **không** cạnh tranh với việc (`WORK > ATMOSPHERE`).
 
-⚠️ Ba tên cũ (Tường sống · Xưởng cá nhân · Bàn lặng) là **cách đặt vấn đề của Hoà**, không phải bản
-vẽ — **không được lấy bố cục cũ của chúng làm điểm xuất phát**. Nếu dẫn xuất lại mà ra cơ chế trùng
-tinh thần thì phải **tự đi tới bằng lập luận từ §5**, và nói rõ đã đi bằng đường nào.
+⚠️ Wallgallery động · LightClock · bố cục chữ-với-ảnh là **nghiên cứu môi trường/sản phẩm**, KHÔNG
+phải cớ để mở việc thi công không liên quan.
 
 ## MỖI HƯỚNG PHẢI DỰNG BA KHUNG
 `a` ngày thường có việc dở · `b` **studio rỗng** · `c` **bảy dự án**.
