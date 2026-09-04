@@ -64,7 +64,12 @@
   /* ---- TÔNG HIỆN VẬT: mẫu vật liệu · tông moodboard · nét cắt ----
      Cố ý gom vào ĐÂY thay vì gõ trong từng SVG. Lý do không phải "cho sạch": ba hướng H1/H2/H3
      dùng chung một bảng ⇒ khi so ba bản, mắt so BỐ CỤC chứ không bị nhiễu vì mỗi bản một tông.
-     Cùng lý do khối --illus-*/--paper-* của globals.css: hình tự mang nền nên không theo theme. */
+     Cùng lý do khối --illus-* và --paper-* của globals.css: hình tự mang nền nên không theo theme.
+     ⚠️ ĐỪNG viết "--illus-*" và "--paper-*" cạnh nhau bằng dấu gạch chéo trong chú thích CSS:
+     chuỗi ngôi-sao-gạch-chéo ĐÓNG chú thích ngay tại đó, phần còn lại thành rác cú pháp và
+     NUỐT LUÔN khai báo đứng ngay sau. Đó chính là cách --vl-go im lặng biến mất (đo được:
+     getPropertyValue('--vl-go') trả chuỗi rỗng, ô gỗ trong bản vẽ tô ĐEN) suốt từ lượt H1 —
+     H1 không lộ vì nó gõ thẳng #9c7449 vào <pattern>, H2 là bản đầu tiên gọi token nên mới lòi. */
   --vl-go:#9c7449; --vl-go-net:#7d5a34;
   --vl-da:#cfc9bd; --vl-da-1:#a49c8e; --vl-da-2:#8d8578; --vl-da-3:#b5ada0;
   --vl-vai:#6f7b74; --vl-vai-1:#5d6862; --vl-vai-2:#7d8a82;
