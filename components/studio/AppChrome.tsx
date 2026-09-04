@@ -36,7 +36,7 @@ import { DEFAULT_PHASE, STAGE_TINT, type Phase } from '@/lib/phases';
 import { MobileMenu } from '@/components/MobileMenu';
 // P-V 17/08 — ô tìm dự án + Vitals ở top bar (chỉ Home; chặng có Vitals cạnh trục phải riêng).
 import SearchProjectsInput from '@/components/SearchProjectsInput';
-import VitalsPill from '@/components/home/widgets/VitalsPill';
+import { VitalsAperture } from '@/components/studio/VitalsAperture';
 import { pressable } from '@/lib/motion';
 import { useStageTransition } from '@/components/studio/StageTransitionProvider';
 import { stageHrefFrom } from '@/lib/project-scope';
@@ -309,7 +309,12 @@ export function AppChrome({ active, logoMenu }: Props) {
           bị cấm overflow-hidden vì có Tệp/MoreMenu). Không có nó: khi flex bóp hộp này xuống gần
           0, nút tên dự án vẫn cần 1 mức rộng tối thiểu để vẽ (padding + 1 ký tự + "…") và TRÀN
           khỏi hộp — đè lên StageSwitcher (phát hiện 30/07, đo được 4px chồng ở 1024px). */}
-      <div className="flex min-w-0 flex-1 items-center overflow-hidden">
+      {/* ⛔ THỨ TỰ NHƯỜNG CHỖ (Hoà chốt, thi hành ở `lib/ui/vung-lam-viec.ts#viTriO`):
+          ① nén/cắt ĐẦU ĐỀ DỰ ÁN trước → ② GIỮ NEO VITALS ĐỨNG YÊN → ③ co bề rộng Peek →
+          ④ chỉ khi đó mới dịch ổ. `--if-tran-cum-trai` do chính khẩu độ ghi lên `<header>` mỗi
+          lần đo lại; chưa có khẩu độ (hoặc chưa đo được) thì `100%` như cũ. Không có nó thì tên
+          dự án dài chạy thẳng xuống dưới ổ Vitals — hai vật chồng nhau ở giữa header. */}
+      <div className="flex min-w-0 flex-1 items-center overflow-hidden" style={{ maxWidth: 'var(--if-tran-cum-trai, 100%)' }}>
         {editing ? (
           <input
             autoFocus
@@ -337,16 +342,28 @@ export function AppChrome({ active, logoMenu }: Props) {
           gọi onPick), lối bàn phím không mất. Không xoá StageSwitcher.tsx — giữ để có thể
           dùng lại nếu quay đầu. */}
 
-      {/* P-V 17/08 — Ô TÌM DỰ ÁN + VITALS chỉ hiện ở Home. Chặng thiết kế (cad/render/present/
-          photo) có Vitals cạnh TRỤC PHẢI theo chốt 16/08 ("cùng một vật, di chuyển theo chỗ tay
-          đang đặt") — việc dời Vitals sang trục phải là phiếu KHÁC, không thuộc P-V; ở đây chỉ
-          bảo đảm KHÔNG mount đôi trên chặng. */}
+      {/* 🔴 ĐÍNH CHÍNH 04/09 — chốt 16/08 "Vitals cạnh trục phải" ĐÃ BỊ ĐÈ.
+          `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md` §7 (Hoà duyệt mắt 20/08): Vitals nằm **VẬT
+          LÝ trong TOP EDGE như một khẩu độ sống**, ba mức Ambient → Peek → Engage, *"không phải
+          popover gắn lên"*. Nên ở đây:
+            · `<VitalsPill/>` (chỉ Home, chat riêng gọi `stage:'gallery'`) → GỠ. Nó là chỗ đứng
+              thứ hai, và app chỉ được có MỘT.
+            · Khẩu độ mount ở NGOÀI nhánh `active === 'home'` (ngay dưới) ⇒ có mặt ở MỌI chặng,
+              đúng "Ambient luôn thấy ở mọi màn".
+          Ô tìm dự án GIỮ NGUYÊN chỗ cũ — nó không phải Vitals. `data-marker="cumPhaiTren"` là
+          mốc ĐO cho khẩu độ: ổ Vitals không bao giờ được chạm vào cụm này (`viTriO`). */}
       {active === 'home' && (
-        <div className="flex shrink-0 items-center gap-2" data-tour="home-search-vitals">
+        <div className="flex shrink-0 items-center gap-2" data-marker="cumPhaiTren" data-tour="home-search-vitals">
           <SearchProjectsInput />
-          <VitalsPill />
         </div>
       )}
+
+      {/* ⭐⭐ KHẨU ĐỘ VITALS — chỗ đứng vật lý DUY NHẤT của Vitals trong app (EXS §7).
+          Nó là con `absolute` của chính `<header>` này (header đã `relative` ở trên), neo vào TÂM
+          VÙNG LÀM VIỆC chứ không vào tâm cửa sổ — xem `lib/ui/vung-lam-viec.ts`.
+          `activeToPhase` là bảng ánh xạ SẴN CÓ (`lib/studio/stage-nav.ts`), không đẻ bảng thứ hai;
+          Home không thuộc chặng nào nên rơi về mặc định của hàm đó. */}
+      <VitalsAperture stage={currentPhase} />
 
       {/* 2.2.86 (30/07, Hoà chốt) — "Chạy flow" KHÔNG còn đứng riêng trên bar (~110px trả lại
           ngân sách bề rộng). Khởi chạy giờ CẠNH ĐỐI TƯỢNG: nút ▶ trên node, "Kết xuất" trên thẻ

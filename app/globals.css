@@ -2118,3 +2118,21 @@ body[data-if-library-open='true'] .if-bottombar {
   --truth-color: var(--truth-stale);
   border-style: dashed;
 }
+
+/* ═══ KHẨU ĐỘ VITALS — quỹ đạo quay (04/09, `components/studio/VitalsQuyDao.tsx`) ═══
+   §18 ánh sáng/chuyển động MANG TRẠNG THÁI: chỉ mức `answering` (đang chạy) mới quay, và quay
+   CHẬM + ĐỀU — không nhấp nháy, không neon. Tái dùng đúng nhịp `vitals-state-orbit-spin` sẵn có
+   (1,9s linear) thay vì đẻ nhịp thứ hai; ở đây quay chậm hơn vì nó là cả cụm quỹ đạo, không
+   phải một hạt nhỏ.
+   ♿ `prefers-reduced-motion` bỏ QUAY nhưng GIỮ độ sáng: trạng thái không được mất kênh báo. */
+.vitals-quy-dao--quay {
+  animation: vitals-quy-dao-quay 7s linear infinite;
+}
+@keyframes vitals-quy-dao-quay {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vitals-quy-dao--quay {
+    animation: none !important;
+  }
+}
