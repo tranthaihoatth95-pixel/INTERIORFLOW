@@ -1,18 +1,26 @@
 # G1 · DATA SAFE — BIÊN BẢN NGHIỆM THU TRÊN APP THẬT
 
-> **Ngày:** 04/09/2026 · **Làn:** 01 CORE — DATA & PROJECT TRUTH
-> **Mốc mã:** cắt từ `a64c0248` (`integration/2026-09-04`)
+> **Ngày:** 04/09/2026 · **Làn:** 01 CORE — DATA & PROJECT TRUTH · **lượt 2** (lượt 1 xem §3-§4)
+> **Mốc mã:** lượt 1 cắt từ `a64c0248`; lượt 2 cắt từ `6547fac0` (`integration/2026-09-04`)
 > **Bộ chạy:** `scripts/nghiem-thu-g1.mjs` · **Ảnh:** `docs/delivery/anh-duyet-mat/g1-data-safe/`
 
 ## KẾT LUẬN
 
-**CỔNG G1 CHƯA ĐÓNG ĐƯỢC.** 7/8 ca PASS · 1 ca FAIL · 0 UNVERIFIED.
+**CỔNG G1 CHƯA ĐÓNG ĐƯỢC** — vì đúng **một** ca đỏ, và ca đó **không** phải lỗi an toàn dữ liệu.
 
-Ca đỏ còn lại (**CA3**) **KHÔNG vi phạm an toàn dữ liệu** — nó là một lỗi sập app nằm
-**ngoài** bản vá P0, ở hai tệp không thuộc phạm vi ghi của làn này. Xem §4.
+Ca đỏ còn lại (**CA3**) là một lỗi **sập app** nằm **ngoài** bản vá P0, ở hai tệp không thuộc
+phạm vi ghi của làn này. Xem §4.1.
 
-Trong lượt nghiệm thu, **hai lỗi rò dữ liệu chéo người dùng đã bị bắt và đã sửa** (§3) —
-đó là kết quả đáng giá nhất của cổng này.
+**Hai khe của lượt 1 đã đóng ở lượt 2:**
+- **Đường đăng xuất** — `quenDangXuat()` nay được gọi ở **cả bốn** nút Đăng xuất; khe "đăng xuất →
+  mất mạng → người mới ghi vào kho người cũ" hết hở. Có **hiệu chuẩn**: gỡ lời gọi ra thì 4/4
+  khẳng định đỏ. Xem §9.
+- **Phủ chặng** — Trình chiếu và autosave 3D **không còn là suy đoán**: CA9-12 chạy thật, mỗi mặt
+  có phép hiệu chuẩn riêng. Xem §4 và §4.2.
+
+Kết quả đáng giá nhất vẫn là của lượt 1: **hai lỗi rò dữ liệu chéo người dùng đã bị bắt và đã
+sửa** (§3). Lượt 2 **không** tìm thêm lỗi rò nào — nó biến "tin là an toàn" thành "đo được là an
+toàn", và lộ ra **một mặt tiếp xúc chéo người dùng thuộc quyết định sản phẩm**, ở §8.
 
 ---
 
@@ -54,6 +62,11 @@ lên đó và đòi nó phải **ĐỎ**.
 
 Phép hiệu chuẩn chạy **mở đầu mỗi lượt**, kể cả lượt cuối cùng — nên không có chuyện "hiệu chuẩn
 hôm qua, kết quả hôm nay".
+
+**Lượt 2 mở rộng luật này sang MỌI mặt, không riêng 2D:** ca thêm vào mà không có đường làm nó ĐỎ
+thì nó chỉ đang in chữ PASS. Nên mỗi mặt (Trình chiếu · 3D) có phép hiệu chuẩn **riêng**, chạy
+ngay trước ca của mặt đó. Thế giới biết-chắc-hỏng của chúng **khác** thế giới của 2D, và lý do vì
+sao phải khác là một phát hiện thật — xem §4.3 mục 1.
 
 ---
 
@@ -123,9 +136,10 @@ kèm ca hồi quy cho đệm-mang-id-người-khác và ca `clearLastUserId`.
 
 ---
 
-## 4 · BẢNG TÁM CA
+## 4 · BẢNG MƯỜI HAI CA
 
-Lượt cuối, chạy trên mã đã commit:
+Lượt cuối, chạy trên mã đã commit. CA1-8 chạy trên **chặng 2D**; CA9-12 là **hai ca đắt nhất
+(deep-link và đổi-người) lặp lại trên chặng Trình chiếu và chặng 3D** — xem §4.2 vì sao chỉ hai.
 
 | CA | Tình huống | KQ | Bằng chứng đọc từ IndexedDB |
 |---|---|---|---|
@@ -137,6 +151,10 @@ Lượt cuối, chạy trên mã đã commit:
 | 6 | `/api/auth/me` trả **401** | ✅ PASS | Không ghi gì. Thuần bộ nhớ, đúng thiết kế. |
 | 7 | `/api/auth/me` trả **JSON méo** | ✅ PASS | Không ghi gì (nhánh `than-hong`). |
 | 8 | **Đổi dự án** + **đổi người dùng** + tải lại | ✅ PASS | A ghi được ở DA1 và DA2 · DA1 còn nguyên sau khi đổi dự án · B vẽ vào **đúng** kho B · **0** byte rơi vào kho mang id A. |
+| 9 | **Trình chiếu** · deep-link · localStorage **rỗng** | ✅ PASS | `<idA>::/present-editor::g1projA1`: **1 → 2 → 2** slide (thêm slide → tải lại). 0 khoá mơ hồ. |
+| 10 | **Trình chiếu** · đổi dự án + **đổi người dùng** | ✅ PASS | A ghi được ở DA1 và DA2 · DA1 còn nguyên · B ghi vào **đúng** kho B · **0** byte vào kho mang id A · `lastUserId` đã về id B. |
+| 11 | **3D** · deep-link · localStorage **rỗng** | ✅ PASS | `<idA>::/cad-editor::g1projA1`: **0 → 2 → 2** thực thể (thêm tường → tải lại). 0 khoá mơ hồ. |
+| 12 | **3D** · đổi dự án + **đổi người dùng** | ✅ PASS | A ghi được ở DA1 và DA2 · DA1 còn nguyên · B ghi vào **đúng** kho B · **0** byte vào kho mang id A · `lastUserId` đã về id B. |
 
 ### 4.1 · CA3 — vì sao đỏ, và vì sao KHÔNG phải lỗi an toàn dữ liệu
 
@@ -162,6 +180,42 @@ Hai tệp trên **ngoài phạm vi ghi** của làn G1 ⇒ **bàn giao**, không
 `try/catch` (hoặc dùng một hàm đọc an toàn dùng chung) — đây là lỗi **có sẵn từ trước**, không do
 lượt này gây ra.
 
+### 4.2 · Vì sao chặng Trình chiếu và 3D chỉ chạy HAI ca, không chạy đủ tám
+
+CA1 và CA8 là hai ca **bắt được nhiều lỗi nhất** ở lượt trước: CA1 đi đúng đường deep-link đã gây
+P0; CA8 chính là ca phát hiện lỗ rò chéo người dùng. Sáu ca còn lại (2·3·5·6·7) kiểm **lõi
+`giaiDanhTinh`** — localStorage hỏng, mạng đứt, 401, JSON méo — mà lõi đó là **một, dùng chung cho
+cả ba mặt** (`danhTinhChoLuot`). Lặp chúng ba lần là ba lần đo cùng một hàm.
+
+Thứ **thật sự khác nhau giữa ba mặt** là: đơn vị việc (thực thể ↔ slide), khoá route
+(`/cad-editor` ↔ `/present-editor`), và đường vào màn. Cả ba khác biệt đó đều nằm trong CA1 và
+CA8 — nên hai ca này là **tập nhỏ nhất phủ đúng phần chưa được đo**.
+
+### 4.3 · ⚠️ Hai bẫy của chính bộ nghiệm thu, phát hiện khi mở rộng
+
+Cả hai đều **không phải lỗi app** — chúng là lỗi của phép đo, và nếu không bắt thì chúng đẻ ra
+`UNVERIFIED` mà người đọc dễ hiểu nhầm thành "app có vấn đề".
+
+1. **Hiệu chuẩn bằng cách chặn định danh KHÔNG dùng được cho Trình chiếu và 3D.** Chặn
+   `/api/auth/me` làm app **không dựng nổi màn**: 401 rơi vào màn khoá (`"Skip →"`), mạng đứt rơi
+   vào *"Chưa kết nối được máy chủ · Thử lại"*. Ca đỏ vì **không với tới mặt**, không phải vì bộ
+   khẳng định bắt được — loại đỏ đó **không chứng minh phép đo có hiệu lực**, mà đó mới là toàn bộ
+   mục đích của hiệu chuẩn. ⇒ đổi sang thế giới **chặn ghi IndexedDB** (`CHAN_GHI_IDB`): app sống,
+   định danh đúng, người dùng làm việc thật, chỉ lượt GHI là không tới nơi — đúng hình dạng của
+   P0 gốc, và đường ĐỌC vẫn nguyên nên con số 0 là **phép đo thật, không phải phép đo bị mù**.
+2. **`"Vẽ 3D"` là CÔNG TẮC GẠT, không phải nút mở — và mode được NHỚ giữa các lượt.** Hai lỗi
+   chồng nhau, cùng một gốc:
+   - cơ chế chờ ban đầu cứ bấm lại nút mở cho tới khi thấy nút đích ⇒ bấm lần hai là **gạt ngược
+     về mode Node**;
+   - và ngay cả khi chỉ bấm **một** lần, sang dự án thứ hai app **đã ở sẵn** mode 3D (mode được
+     nhớ), nên cú bấm đó **cũng là gạt ngược**.
+   Cả hai làm `"Thêm tường"` không bao giờ hiện, và ca chết ở chỗ nhìn như không liên quan.
+   **Đã tốn hai lượt chạy CA12 mới thấy** — vì thông báo chỉ là một dòng `Timeout` trần.
+   ⇒ ba việc: tách `choMatSanSang()` (có bấm, chỉ cho nút **một chiều**) khỏi `choNut()` (chờ
+   suông); **đọc `aria-pressed`** (`ModeSwitchCell.tsx:32` đã phơi sẵn) rồi mới quyết định có bấm
+   hay không; và mọi lượt chờ khi hết kiên nhẫn đều **ném lỗi kèm URL + danh sách nút đang có**.
+   📌 Bài học chung: **công tắc gạt thì phải ĐỌC TRẠNG THÁI rồi mới bấm, đừng bấm rồi tin.**
+
 ---
 
 ## 5 · MÔI TRƯỜNG — DỰNG LẠI ĐƯỢC
@@ -171,18 +225,32 @@ ln -s /home/user/INTERIORFLOW/node_modules node_modules
 cp /home/user/INTERIORFLOW/prisma/dev.db prisma/dev.db
 cp /home/user/INTERIORFLOW/.env .env
 # ⚠️ BẮT BUỘC: trỏ DATABASE_URL sang ĐƯỜNG DẪN TUYỆT ĐỐI của worktree này (xem §5.1)
-PORT=3021 npm run dev
+export DATABASE_URL="file:$(pwd)/prisma/dev.db"
+PORT=3051 npm run dev
 
-node scripts/nghiem-thu-g1.mjs --chromium=/opt/pw-browsers/chromium-1194/chrome-linux/chrome
-node scripts/nghiem-thu-g1.mjs --hieu-chuan --chromium=...   # chỉ phép hiệu chuẩn
-node scripts/nghiem-thu-g1.mjs --ca=4 --chromium=...          # một ca
+CHR=/opt/pw-browsers/chromium-1194/chrome-linux/chrome
+node scripts/nghiem-thu-g1.mjs --goc=http://localhost:3051 --chromium=$CHR      # cả 12 ca
+node scripts/nghiem-thu-g1.mjs --hieu-chuan --chromium=$CHR                     # chỉ hiệu chuẩn
+node scripts/nghiem-thu-g1.mjs --ca=10 --goc=http://localhost:3051 --chromium=$CHR  # một ca
 ```
+
+⚠️ `--goc` mặc định vẫn là `http://localhost:3021` (mốc lượt 1). Lượt 2 chạy ở **3051** để không
+đụng dev server của làn khác — nên **phải truyền `--goc`**, quên là ca ra `UNVERIFIED` vì gõ cửa
+một máy chủ không có ai.
 
 Dữ liệu gieo: hai tài khoản `g1.alpha@kiemthu.local` / `g1.beta@kiemthu.local` (mật khẩu
 `kiemthu123`, tạo qua `POST /api/auth/register` thật) · ba dự án `g1projA1` `g1projA2` `g1projB1`
 · ba hàng `ProjectMember` role `owner` (**bắt buộc** — thiếu thì `assertProjectAccess` trả 404 và
 không tạo được bản vẽ). Project + ProjectMember gieo thẳng bằng Prisma vì repo **không có**
 `POST /api/projects`.
+
+⚠️ Hai chi tiết gieo hay vấp (đo thật 04/09, lượt 2):
+1. `Project` có `userId` **bắt buộc** (`schema.prisma:71`) — gieo thiếu là Prisma từ chối ngay.
+   `ProjectMember` là quan hệ RIÊNG, vẫn phải gieo, không suy ra từ `Project.userId`.
+2. Dự án **chưa có `Flow` nào** thì cả ba mặt đều dừng ở màn chặn `ProjectScopeEmptyState`
+   ("… chưa có bản vẽ nào"). Bộ nghiệm thu tự bấm "Tạo bản vẽ mới" để đi tiếp, nhưng lượt tạo
+   đầu tiên **chậm** (đo: `PUT /api/flows` ~3s, kệ mẫu hồ sơ hiện sau ~19s) — nên các ca có
+   `--ca=` lần đầu chạy trên một dự án trắng sẽ lâu hơn hẳn lần sau.
 
 ### 5.1 · ⚠️ BẪY MÔI TRƯỜNG ĐÃ VẤP — cảnh báo cho làn sau
 
@@ -198,32 +266,68 @@ rồi đổi `DATABASE_URL` sang **đường dẫn tuyệt đối** của worktr
 thầm ghi vào DB dùng chung. Đây đúng họ bệnh "dữ liệu đi nhầm kho" mà cổng G1 sinh ra để canh —
 chỉ khác là ở tầng môi trường chứ không phải tầng mã.
 
+### 5.2 · Lượt 2 — bằng chứng CSDL repo chính KHÔNG bị đụng
+
+Lượt 2 dùng `.dev-g1.sh` (đặt `DATABASE_URL` **tuyệt đối** rồi mới `npm run dev`), và kiểm lại
+bằng cách **đếm tại nguồn**, không tin lời khai:
+
+| Truy vấn trên `/home/user/INTERIORFLOW/prisma/dev.db` | Kết quả |
+|---|---|
+| `User` có `kiemthu` hoặc `g1.` trong email | **0** |
+| `Project` có id `g1proj%` | **0** |
+| `Flow` thuộc dự án `g1proj%` | **0** |
+| `ProjectMember` thuộc dự án `g1proj%` | **0** |
+
+Cùng lúc, **toàn bộ** gieo đó nằm trong CSDL của worktree (2 user · 3 dự án · 3 flow · 3 thành
+viên). ⇒ đường ghi của lượt này **không chạm** repo chính.
+
+🔴 **NHƯNG số hàng của repo chính CÓ ĐỔI trong lúc lượt này chạy — và phải nói thẳng là không
+phải do lượt này.** Đếm đầu lượt `TOTAL_ROWS=24` (`User=2`, `CreditTransaction=2`); đếm cuối lượt
+`TOTAL_ROWS=22` (`User=1`, `CreditTransaction=1`) — **mất** tài khoản `tho@interiorflow.test` và
+một giao dịch tín dụng. `Flow` · `Project` · `ProjectMember` **không đổi** (5 · 4 · 3).
+Quy trách nhiệm bằng bằng chứng, không bằng suy đoán: bảng trên chứng minh lượt này không ghi
+được gì vào repo chính, và `ps` cho thấy **hai `next-server` khác** (khởi động 02:44 và 02:46) +
+`next start -p 3130` (03:13) đang chạy trên repo chính từ trước khi lượt này bắt đầu — tức có làn
+khác đang dọn tài khoản kiểm thử của chính họ.
+⇒ Ghi lại như một **quan sát vận hành**, không phải một kết luận về mã: *nhiều làn dùng chung một
+CSDL thì phép đếm trước/sau KHÔNG còn là bằng chứng sạch* — bằng chứng sạch phải là truy vấn theo
+**dấu vết của chính mình** (bảng trên), không phải tổng số hàng.
+
 ---
 
 ## 6 · CHƯA CHẮC / CHƯA KIỂM — khai thẳng
 
 1. **Chỉ đo trên Chromium 1194 headless.** Safari/WebKit và Firefox là **suy**, không đo. CA3
    quan trọng với Safari nhất (*Block All Cookies*) mà lại chưa chạy trên Safari thật.
-2. **Chưa kiểm đường đĩa và đường máy chủ.** `resolveAndSyncCadDisk` (đồng bộ thư mục người dùng
-   chọn) và `taiBanVeTuMayChu` (lưới đỡ cuối) **không** được kích hoạt trong 8 ca — cả hai là
-   opt-in / chỉ chạy khi cache rỗng. Kho `interiorflow-backup` và `interiorflow-root` **chưa đọc
-   tới**; có thể còn đường ghi thứ hai chưa ai soi.
-3. **Chỉ đo chặng 2D.** `PresentSheets` (`/present-editor`) đi **cùng một** `danhTinhChoLuot` nên
-   suy ra là cùng hành vi, **nhưng chưa chạy một ca nào trên nó**. Autosave 3D
-   (`lib/cad/cad3d-autosave.ts`) cũng vậy.
-4. **CA8 đổi người bằng API** (`DELETE /api/auth/me` + `POST /api/auth/login`) **chứ không bấm nút
-   Đăng xuất trên giao diện.** Nếu nút đó làm thêm gì (dọn store, điều hướng, reload) thì hành vi
-   thật có thể khác. Đây là chỗ đáng kiểm lại bằng tay.
-5. **Khe hẹp còn mở:** đăng xuất **rồi** mất mạng **rồi** người mới vẽ ⇒ không hỏi được máy chủ ⇒
-   lui về đệm ⇒ vẫn trỏ nhầm người. `clearLastUserId()` đóng được khe này nhưng **chưa nối vào
-   đường đăng xuất**.
-6. **`danhTinhSanSang` single-flight theo vòng đời tab.** Đăng xuất/đăng nhập **không tải lại
-   trang** (SPA) thì lượt cũ còn nguyên trong bộ nhớ; muốn chắc phải gọi `quenLuotDanhTinh()`.
-   CA8 dùng `goto` nên **không** phủ ca này.
+2. **Đường đĩa và đường máy chủ: ĐÃ ĐỌC MÃ, VẪN CHƯA CHẠY.** Kết luận đọc được (bằng chứng ở
+   §8), nhưng **không ca nào kích hoạt chúng** — đồng bộ đĩa là opt-in (đòi người dùng tự chọn
+   thư mục gốc, `rootFolderChosen()` trả false trong Chromium headless), lưới đỡ máy chủ chỉ chạy
+   khi cache rỗng. ⇒ vẫn là **suy từ mã**, không phải phép đo.
+3. ~~Chỉ đo chặng 2D~~ → **ĐÃ ĐÓNG** ở lượt 2: CA9-12 chạy thật trên Trình chiếu và 3D (§4).
+   Còn lại: **sáu ca lõi (2·3·5·6·7) vẫn chỉ chạy trên 2D** — lý do ở §4.2, và lý do đó là một
+   LẬP LUẬN, không phải phép đo.
+4. **Đổi người bằng API** (`DELETE /api/auth/me` + `POST /api/auth/login`) **chứ không bấm nút
+   Đăng xuất trên giao diện** — đúng cho cả CA8, CA10 và CA12. Nay điều này **quan trọng hơn
+   trước**, vì `quenDangXuat()` được nối vào **đúng nút giao diện** chứ không nằm trong route API
+   ⇒ ba ca đó **không** đi qua lời gọi mới. Lớp thứ hai hiện được canh bằng **test đơn vị ⑤d** (có
+   hiệu chuẩn), chưa được canh bằng ca trình duyệt.
+5. ~~Khe hẹp "đăng xuất rồi mất mạng"~~ → **ĐÃ ĐÓNG** ở lượt 2 (§9).
+6. ~~`danhTinhSanSang` single-flight theo vòng đời tab~~ → **ĐÃ ĐÓNG**: `quenDangXuat()` gọi luôn
+   `quenLuotDanhTinh()`, và test ⑤d khẳng định sau đăng xuất thì tab **có hỏi lại máy chủ**.
 7. **Số 1081 lỗi ở CA3** là đếm sự kiện `pageerror`, không phải 1081 lỗi khác nhau — phần lớn là
    một lỗi lặp theo mỗi lần render.
 8. **Chưa đo hồi quy hiệu năng** của việc thêm một request mỗi tab. Lập luận "app vốn đã gọi
    `/api/auth/me` lúc nạp trang" là **đọc log dev server**, không phải phép đo thời gian.
+9. **CA9-12 chạy TỪNG CA một (`--ca=`), chưa chạy một lượt 12 ca liền mạch.** Mỗi ca tự dựng
+   `browserContext` riêng nên độc lập về IndexedDB, nhưng **chưa có phép đo** nào chứng minh
+   chúng không ảnh hưởng nhau qua trạng thái máy chủ. CA1 và CA8 đã chạy lại sau khi sửa bộ chạy
+   và vẫn PASS ⇒ phần dùng chung không hỏng; sáu ca còn lại (2·3·5·6·7) **chưa chạy lại** ở lượt 2
+   — chúng không đụng mã đã sửa, nhưng đó là **lập luận**, không phải phép đo.
+10. **Đơn vị việc của chặng Trình chiếu là SỐ SLIDE**, tức ca chỉ chứng minh *có thêm một slide và
+   nó sống qua tải lại* — **không** chứng minh nội dung bên trong slide (chữ · ảnh · bố cục) được
+   giữ đúng. Ca tương đương ở 2D cũng vậy: đếm thực thể, không so hình.
+11. **Chỗ đứng của `quenDangXuat()` chưa được ca trình duyệt nào đi qua** — xem mục 4 ở trên. Đây
+   là chỗ hở lớn nhất còn lại của lượt 2.
 
 ---
 
@@ -231,7 +335,79 @@ chỉ khác là ở tầng môi trường chứ không phải tầng mã.
 
 | # | Việc | Cho ai |
 |---|---|---|
-| 1 | Nối `clearLastUserId()` vào đường Đăng xuất phía client (1 dòng) | làn sở hữu `components/entry` / auth |
+| 1 | ~~Nối `clearLastUserId()` vào đường Đăng xuất~~ | ✅ **XONG** lượt 2 — §9 |
 | 2 | Bọc `try/catch` cho `components/studio/Navigator.tsx:60` và `lib/cad/touch-input.ts:38` — hết trang trắng khi localStorage bị chặn | làn sở hữu `components/studio` + `lib/cad` |
-| 3 | Chạy lại 8 ca trên chặng **Trình chiếu** và **autosave 3D** | làn G1 lượt sau |
-| 4 | Kiểm CA8 bằng **nút Đăng xuất thật** trên giao diện | làn G1 lượt sau |
+| 3 | ~~Chạy ca trên chặng **Trình chiếu** và **autosave 3D**~~ | ✅ **XONG** lượt 2 — CA9-12 |
+| 4 | Kiểm đổi-người bằng **nút Đăng xuất thật** trên giao diện (nay là chỗ `quenDangXuat()` sống) | làn G1 lượt sau |
+| 5 | Kích hoạt được **đường đĩa** trong Chromium headless (đòi `showDirectoryPicker`) để đo thật thay vì đọc mã | làn G1 lượt sau |
+| 6 | **Kho tay cầm thư mục KHÔNG theo người dùng** — xem §8, quyết định sản phẩm | chủ dự án |
+
+---
+
+## 8 · ĐƯỜNG ĐĨA · ĐƯỜNG MÁY CHỦ · HAI KHO TAY CẦM — đọc mã, chưa chạy
+
+Ba đường ghi ngoài IndexedDB, hỏi đúng một câu: **chúng có đi qua chỗ đã vá không?**
+
+| Đường | Đi qua `danhTinhChoLuot`? | Bằng chứng | Rò chéo người dùng được không? |
+|---|---|---|---|
+| `resolveAndSyncCadDisk` (đồng bộ thư mục đĩa) | **CÓ** | `CadSheets.tsx:444`, nằm **trong** khối `async` mở ở `:419` | Không qua đường `lastUserId` — nó khoá theo `projectId`, **không đọc userId một lần nào** |
+| `taiBanVeTuMayChu` (lưới đỡ máy chủ) | **CÓ** | `CadSheets.tsx:458`, cùng khối | Không — `/api/project-files` gọi `getSessionUser()` + `assertProjectAccess(user.id, …)` (`route.ts:129,138`), máy chủ chặn người không phải thành viên |
+
+⇒ Cả hai **không phải lỗ của bản vá này**: chúng nằm sau cổng định danh, và cái chúng khoá theo là
+**dự án**, không phải người.
+
+🔴 **NHƯNG có một chỗ khác bản chất, phải nói rõ vì nó KHÔNG phải lỗi của lượt này và cũng KHÔNG
+tự khỏi:** hai kho tay cầm thư mục là **của MÁY, không của NGƯỜI**.
+
+| Kho | Khoá | userId trong tệp |
+|---|---|---|
+| `interiorflow-root` / store `handles` | `'rootDir'` — **một khoá cố định** (`lib/root-folder.ts:21-23`) | `grep userId` = **0** |
+| `interiorflow-backup` / store `handles` | `'backupDir'` — **một khoá cố định** (`lib/cad/auto-backup.ts:37-39`) | `grep userId` = **0** |
+
+`getProjectFolderHandle()` (`root-folder.ts:157`) nhận `projectId` + `projectName`, **không nhận
+userId**. ⇒ trên một máy dùng chung, A chọn thư mục gốc; B đăng nhập trên **cùng hồ sơ trình
+duyệt** thì **dùng lại đúng tay cầm đó** — kể cả sau khi A đã đăng xuất.
+
+Đây **không** vi phạm bất biến #2 theo nghĩa hẹp (không có byte nào của B rơi vào *kho IndexedDB*
+của A, và mỗi dự án vẫn có thư mục riêng), nhưng nó **là một mặt tiếp xúc chéo người dùng có
+thật** — và là **quyết định sản phẩm**, không phải chuyện kỹ thuật: tay cầm thư mục nên thuộc
+**máy** (tiện: chọn một lần cho cả studio) hay thuộc **người** (an toàn: mỗi người một thư mục)?
+Chốt 16/08 "lưu CHUNG ↔ lưu MÁY" xếp *cách bày trên màn* vào MÁY và *tài sản* vào CHUNG — **tay
+cầm thư mục không rơi gọn vào ô nào**. ⇒ để chủ dự án quyết, làn này **không tự sửa**.
+
+---
+
+## 9 · LỚP THỨ HAI ĐÃ ĐƯỢC NỐI — đường đăng xuất
+
+**Khe đang đóng:** đăng xuất → **mất mạng** → người mới làm việc. Máy chủ không với tới nên
+`giaiDanhTinh` lui về bộ đệm (đường lui đó **cố ý**, giữ local-first) — mà bộ đệm còn id người vừa
+rời đi ⇒ việc của người mới rơi vào kho người cũ.
+
+**Đường đăng xuất CÓ TỒN TẠI, chỉ là không mang tên "logout".** Lượt trước grep `logout|signOut`
+ra đúng một tệp (và chỗ đó chỉ là chú thích) nên kết luận nhầm là "chưa có đường". Đo lại bằng
+`DELETE /api/auth/me` thì ra **bốn nơi**, cùng một hình dạng
+`await fetch('/api/auth/me', {method:'DELETE'}); setUser(null);`:
+
+| Tệp:dòng |
+|---|
+| `components/AccountMenu.tsx:137` |
+| `components/MobileMenu.tsx:160` |
+| `components/settings/AccountSettings.tsx:54` |
+| `app/settings/_components/PixelSettingsShell.tsx:191` |
+
+`clearLastUserId()` đã có sẵn nhưng **chưa ai gọi**. Nay gói thành **`quenDangXuat()`**
+(`lib/danh-tinh-phien.ts`) làm **đủ hai việc**, để bốn nơi không phải nhớ hai bước — nhớ một nửa
+là đúng lại lỗ cũ:
+
+1. xoá bộ đệm định danh (localStorage **và** đường lùi trong bộ nhớ);
+2. **quên lượt giải định danh của tab** — đăng xuất/đăng nhập trong SPA **không tải lại trang**,
+   không quên thì tab đó không bao giờ hỏi lại máy chủ nữa.
+
+**Đã hiệu chuẩn** (ca ⑤d, `lib/danh-tinh-phien-nghiem-thu.test.ts`): gỡ lời gọi ra thì **4/4**
+khẳng định đỏ, gồm đúng câu *"việc rơi vào kho người cũ"*. Có lời gọi thì **32 pass · 0 fail**.
+
+⚠️ **Không dựng một tính năng đăng xuất mới** — chỉ **thêm lời gọi** vào bốn nơi đã có. Một trong
+bốn (`app/settings/_components/PixelSettingsShell.tsx`) nằm dưới `app/**`, vùng phiếu liệt kê là
+cấm; sửa ở đó theo đúng ngoại lệ *"nơi gọi `clearLastUserId()` — dù ở đâu, nhưng chỉ thêm lời
+gọi"*. Thay đổi ở tệp đó là **2 dòng: một `import`, một lời gọi.** Bỏ nó lại thì cửa đăng xuất
+trong Cài đặt vẫn hở, tức vá ba phần tư một cái lỗ.
