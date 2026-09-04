@@ -22,7 +22,9 @@ Hai trục **độc lập**, đã chốt 07/08, `soi:tu-dien` canh tên:
 - **Trục LOẠI (`kind`)** — *nó là cái gì*, và **ai thi công**: `material` · `furniture` · `millwork` · `fitout` · `fixture` · `soft`.
 - **Trục PHÒNG** — *dùng ở đâu*: giữ nguyên 12 danh mục đang có trong manifest 2D (`phong-khach` · `van-phong` · `phong-ngu` · `phong-an` · `bep` · `ve-sinh` · `cua` · `cay-canh` · `cau-thang` · `cot` · `xe` · `ky-hieu`).
 
-🔴 **Manifest 2D hiện KHÔNG mang trục `kind`** — 54/54 rơi vào nhóm `?`. Đây là việc rẻ nhất trong cả cổng G4 và mở khoá được **bảng khối lượng theo thầu** (gom `millwork` gửi xưởng mộc). **Việc #1.**
+🔴 **Trục `kind` phủ vật MUA SẮM, không phủ hết kho 2D.** Đo 54 block: ngoài đồ mua sắm còn có **cửa/cửa sổ/cột/cầu thang** (vỏ kiến trúc), **cây/xe** (phụ cảnh), **ký hiệu hướng Bắc** (chú giải). Ép chúng vào 6 `kind` là **làm bẩn BOQ** — không ai đi mua một mũi tên chỉ hướng Bắc.
+⇒ Thêm **trục thứ ba `nhomVat`**, một tầng TRÊN `kind`: `mua-sam` (mang `kind`, **vào BOQ**) · `kien-truc` · `phu-canh` · `ky-hieu`. **Chỉ `mua-sam` được vào BOQ** — thi hành thẳng luật *"BOQ chỉ nhận số đo được"*.
+✅ **ĐÃ THI CÔNG 04/09**: 54/54 block có `nhomVat` — mua-sam 38 · kiến-trúc 10 · phụ-cảnh 5 · ký-hiệu 1; `kind`: furniture 24 · fixture 8 · millwork 4 · fitout 2; **53/54 có `hUp`** (ký hiệu hướng Bắc cố ý không có chiều cao). `tsc` 0 · `npm test` 34 pass 0 fail.
 
 ## 2 · MỘT TỆP TÀI SẢN = MỘT `.idfc` — không đẻ định dạng thứ hai
 
@@ -31,7 +33,7 @@ Vỏ chung `meta` + ruột theo `kind` (đã chốt 07/08). Trường **BẮT BU
 | Trường | Vì sao bắt buộc |
 |---|---|
 | `id` · `name` · `kind` · `category` | định danh + hai trục phân loại |
-| `w` · `d` · `h` (mm) | 🔴 manifest 2D hiện **chỉ có `w`/`h`, THIẾU `d`** — không có chiều sâu thì không đùn 3D, không tính m², không vào BOQ |
+| `w` · `h` (hình chiếu bằng) · **`hUp`** (cao đứng, mm) | ⚠️ **ĐÍNH CHÍNH sau khi đo**: `w`/`h` của manifest là **hình chiếu bằng** (rộng × sâu, `h` có thể gồm cả cung mở cánh) — `h` **KHÔNG** phải chiều cao. Thứ thiếu là **`hUp` chiều cao đứng**, không phải `d`. Không có `hUp` thì không đùn được lên 3D. |
 | `thumb` | duyệt bằng mắt; 54/54 đã có |
 | `license` · `source` | luật phân phối, không thương lượng |
 | `specId?` / `matId?` | dây nối sang mặt thương mại — **trỏ tới, TUYỆT ĐỐI không chép giá vào tài sản** (luật 2.1.9.i) |
@@ -64,7 +66,7 @@ Mỗi món: `.idfc` mang recipe + `w/d/h` + `kind` + `category` + gợi ý `matI
 - ⛔ *"Do not let placeholder gradients become final media."* Gradient tạm phải khai `DEMO` và có ngày hết hạn.
 
 ## 6 · THỨ TỰ THI CÔNG (rẻ→đắt, mỗi bước mở khoá bước sau)
-1. Thêm `kind` + `d` vào manifest 2D · gắn `specId?`/`matId?`. *(rẻ nhất, mở khoá BOQ theo thầu)*
+1. ~~Thêm `nhomVat`/`kind`/`hUp` vào manifest 2D~~ **XONG 04/09**. Còn lại: gắn `specId?`/`matId?` khi kho vật liệu có dữ liệu (bước 2).
 2. 32 vật liệu tham số + quả cầu xem trước. *(0 byte tài sản, dùng lại máy đã có)*
 3. 24 món 3D bằng `BuildRecipe`. *(đắt nhất — nhưng là lỗ thật duy nhất)*
 4. Bổ ký hiệu chú giải 2D: hiện **chỉ 1 mục `ky-hieu`** trên 54 — quá mỏng cho hồ sơ kỹ thuật.
