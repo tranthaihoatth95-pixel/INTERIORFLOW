@@ -11,12 +11,21 @@
 > luật đã ghi trong sổ từ 11/08 — *frontier nào sinh ra thứ NHÌN ĐƯỢC thì nghiệm thu = MỞ RA NHÌN;
 > tsc/test/số đo KHÔNG đủ.* Tôi vừa phạm đúng điều đó, ghi lại để không phạm lần nữa.
 >
-> ### Hai lỗ phải đóng trước khi trình
-> | # | Lỗ | Ai đóng |
-> |---|---|---|
-> | 1 | **Nhãn chặng SAI ở mọi màn không phải chặng** — đứng ở Home mà khẩu độ ghi *"VITALS · THIẾT KẾ 3D"*. Gốc: `AppChrome.tsx:366` truyền `stage={currentPhase}`, mà `activeToPhase` (`lib/studio/stage-nav.ts:18-23`) **rơi thẳng vào `return 'render'`** cho mọi thứ không phải cad/photo/present. | lane Vitals (đang giữ tệp) — đã báo |
-> | 2 | **Mức Ambient gần như vô hình** — khẩu độ nhạt hơn cả ô tìm kiếm ngay cạnh, trong khi EXS điều 7 gọi nó là *signature interaction*. Phải đo tương phản với `--bg` ở cả hai nền, đối chiếu ngưỡng 3:1. | lane Vitals — đã báo |
+> ### Hai lỗ đã ĐÓNG (cập nhật cuối ngày 04/09 — commit `51d4a0d9`)
+> | # | Lỗ | Đóng thế nào | Bằng chứng |
+> |---|---|---|---|
+> | 1 | Đứng ở Home mà khẩu độ ghi *"VITALS · THIẾT KẾ 3D"* | chặng suy từ **đường dẫn**, không từ `activeToPhase(active)` | 14/14 test xanh |
+> | 2 | Mức Ambient nhạt hơn ô tìm kiếm cạnh nó | lõi **4,61:1** (ngưỡng 3:1) · nét quỹ đạo **1,4 → 2,10** · bỏ `fillOpacity` pha loãng lúc nghỉ | đo trong test |
 >
+> ⭐ **Lỗi 1 sâu hơn lúc đầu tưởng, và đó là phần đáng ghi**: `/files` · `/library` · `/materials` ·
+> `/tasks` · `/settings` · `/inspiration` **đều** bọc `<AppShell active="render">`, mà `activeToPhase`
+> rơi thẳng về `'render'` cho mọi thứ không phải cad/photo/present ⇒ **sáu màn không thuộc chặng nào
+> tự khai mình là chặng Thiết kế 3D**. Không chỉ sai chữ trên đầu tấm chat: **backend do đó chọn
+> system prompt của chặng 3D cho một câu hỏi hỏi từ màn Files.** Một nhãn sai trên màn hoá ra là
+> một câu trả lời sai trong bụng app.
+>
+> ⇒ **Còn đúng MỘT câu chưa trả lời được** để lô này đủ điều kiện trình — ô ngay dưới.
+
 > ### Một điều Hoà nên biết ngay, vì nó đổi cách đọc tấm 1
 > Ảnh chụp trên studio **chỉ có 1 dự án và 0 việc đang dở**. Ở trạng thái đó, dải *"Tiếp tục việc
 > dở"* — thứ EXS chốt là **HERO** của Home — **không mọc ra** (`banViecDo = coDuAn && coViecDo`),
@@ -120,14 +129,17 @@
 
 ### ③ LỆCH so với nguồn luật
 **Chỗ đứng vật lý: ĐÚNG.** Ảnh xác nhận mức Engage **mọc xuống từ chính khẩu độ**, tâm trùng tâm
-khẩu độ — đúng V3-a và đúng luật hình học 20/08 *"FROM THE CENTER"*. Nhưng còn **hai lỗi máy phán
-được**, đã báo lane đang giữ tệp (xem đầu tệp này):
+khẩu độ — đúng V3-a và đúng luật hình học 20/08 *"FROM THE CENTER"*.
 
-1. 🔴 **Nhãn chặng sai** — đứng ở Home mà ghi *"VITALS · THIẾT KẾ 3D"*. Không phải lỗi hiển thị:
-   `activeToPhase` **không diễn đạt được "đang không ở chặng nào"**, nên mọi màn ngoài ba chặng đều
-   bị gán *Thiết kế 3D*. Phải sửa ở tầng kiểu, không vá bằng đoán.
-2. 🟡 **Mức Ambient nhạt hơn ô tìm kiếm ngay cạnh** — thứ được chốt là *signature interaction* đang
-   là vật mờ nhất trên thanh trên. Đo tương phản với `--bg` hai nền, ngưỡng 3:1.
+Hai lỗi máy phán được **đã đóng** (`51d4a0d9`): nhãn chặng nay suy từ **đường dẫn** (mã `'gallery'`
+sẵn có = *không thuộc chặng nào*, không đẻ mã mới; ở màn không-chặng nhãn rút về đúng chữ
+**"Vitals"**) · mức Ambient nay đo **4,61:1**, nét quỹ đạo **2,10**.
+
+⚠️ **Ảnh trong `docs/delivery/anh-duyet-mat/lo-01/` là ảnh TRƯỚC hai bản vá này** — giữ làm bằng
+chứng của lỗi, **không** phải bản để phán. Lô trình sẽ dùng ảnh chụp lại sau bản dựng mới.
+
+🟡 Một chỗ còn hở, cùng họ: `changTheoDuong()` chưa nhận route soạn ảnh đứng riêng `/photo-editor`
+(có trong danh sách khung chụp) nên màn đó rơi về `'gallery'` thay vì `'render'`.
 
 Còn **một câu chữ Hoà chưa xác nhận** (ghi từ 20/08): *"không phải popover gắn lên"* nghiêng về
 **V3-a**. Bản đang có làm theo V3-a — và ảnh cho thấy nó ra đúng như vậy.
