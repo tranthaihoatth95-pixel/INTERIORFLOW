@@ -184,6 +184,20 @@
   --t3: #9e9ea8;
   --t4: #6e6e78;
   --t5: #4e4e57;
+
+  /* ⛔ CHỮ PHỤ TRÊN KÍNH — dùng token này, KHÔNG dùng `--t3`.
+     Đo trên app thật 20/08 (4 nền × 2 theme, lấy nền XẤU NHẤT của mỗi môi trường):
+       --t3 trên kính mỏng → Tối 4.08 · Sáng 3.83  ❌ DƯỚI 4.5
+       --t3 trên nền ĐẶC   → Sáng 4.90            ⇒ chính token đã sát ngưỡng, KHÔNG CÒN BIÊN
+     ⇒ Gốc bệnh không phải kính: `--t3` là màu phụ vốn chỉ vừa đủ 4.5 trên nền đặc, mà kính
+     ăn mất ~0.5-1.0 điểm. Thêm độ đặc không cứu được (kính đặc nhất cũng chỉ lên 4.65 ở nền
+     Sáng) — phải đổi CHÍNH MÀU CHỮ. Giữ đúng thứ tự Hoà đặt: ĐỌC ĐƯỢC THẮNG TRONG SUỐT.
+     Giá trị dưới đây đo lại được 5.26 (Tối) · 5.34 (Sáng) ở nền xấu nhất trên kính MỎNG NHẤT —
+     vẫn đọc ra là chữ phụ (nhạt hơn hẳn --t1/--t2), nhưng có biên thật.
+     ⚠️ Khai ở KHỐI THEME chứ không ở khối dùng chung "BỘ NỀN CHROME": hai theme phải hai giá
+     trị, và luật [hai theme] của lib/ui/design-tokens.test.ts đòi khai đủ ở CẢ tối lẫn sáng. */
+  --kinh-chu-phu: #b4b4bd;
+
   --dots: #26262d;
   --minimap-mask: rgba(12, 12, 14, 0.7);
 
@@ -273,6 +287,11 @@
   --t3: #726c62;
   --t4: #9a938a;
   --t5: #b8b1a7;
+
+  /* Chữ phụ trên kính — xem bảng số + lý do ở khối Tối. Đo lại nền Sáng: 5.34 ở nền xấu nhất
+     trên kính mỏng nhất (so với 3.83 nếu dùng `--t3`). */
+  --kinh-chu-phu: #5c564d;
+
   --dots: #ddd8ce;
   --minimap-mask: rgba(242, 239, 233, 0.72);
 
