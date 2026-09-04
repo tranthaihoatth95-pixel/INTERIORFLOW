@@ -55,10 +55,31 @@ function chuanHoa(input: string): string {
   return isMatIdUuid(input) ? normalizeMatIdCanonical(input) : normalizeMatId(input);
 }
 
-/** Tra một kho theo cả hai cách chuẩn hoá — kho studio của người dùng có thể còn khoá sku cũ. */
+/**
+ * Tra một kho theo MỌI cách chuẩn hoá đang cùng sống — kho studio của người dùng có thể còn khoá
+ * sku cũ, VÀ (ca đắt hơn, bắt được lúc cắm điện 04/09) còn có thể mang khoá **UUID VIẾT HOA**:
+ * `savePbr()` ghi qua `normalizeMatId` (upper+trim) nên người dùng chỉnh một vật liệu hạt giống —
+ * `matId` của nó là UUID lowercase — thì bản chỉnh nằm dưới khoá UPPERCASE. Chỉ tra lowercase thì
+ * **bản chỉnh của chính họ trở nên vô hình**, và họ thấy app "không lưu". Đây là cửa sổ tương
+ * thích, không phải hành vi vĩnh viễn: `pbr-store.ts` GIỮ NGUYÊN (dữ liệu localStorage đang sống
+ * giả định đúng ngữ nghĩa đó), nên đường ĐỌC phải biết cả hai.
+ */
 function traKho(kho: Record<string, MaterialPbr> | undefined, input: string, khoa: string): MaterialPbr | null {
   if (!kho) return null;
-  return kho[khoa] ?? kho[input] ?? null;
+  return kho[khoa] ?? kho[input] ?? kho[normalizeMatId(input)] ?? null;
+}
+
+/**
+ * Đưa kho STUDIO về CÙNG MỘT NAMESPACE khoá với tầng hạt giống trước khi xếp chồng.
+ * Khoá là UUID (bất kể hoa/thường) ⇒ hạ về canonical lowercase; khoá khác (sku legacy) giữ
+ * nguyên. Không bước này thì `{...hatGiong, ...studio}` để bản gốc lowercase và bản chỉnh
+ * UPPERCASE **nằm cạnh nhau như hai vật khác nhau** — hợp nhất xong người dùng vẫn đọc ra bản gốc.
+ */
+function dongNamespace(kho: Record<string, MaterialPbr> | undefined): Record<string, MaterialPbr> {
+  if (!kho) return {};
+  const out: Record<string, MaterialPbr> = {};
+  for (const [k, v] of Object.entries(kho)) out[isMatIdUuid(k) ? normalizeMatIdCanonical(k) : k] = v;
+  return out;
 }
 
 /**
@@ -93,5 +114,5 @@ export function phanGiaiPbr(input: string, nguon: NguonBaTang = {}): KetQuaPhanG
  * Thứ tự hợp nhất = thứ tự ghi đè: hạt giống trước, studio đè lên, dự án đè cuối.
  */
 export function pbrMapBaTang(nguon: NguonBaTang = {}): Record<string, MaterialPbr> {
-  return { ...pbrMapHatGiong(), ...(nguon.studio ?? {}), ...(nguon.duAn ?? {}) };
+  return { ...pbrMapHatGiong(), ...dongNamespace(nguon.studio), ...dongNamespace(nguon.duAn) };
 }

@@ -32,6 +32,7 @@ import type { Pt } from '../cad/model';
 import type { BuildRecipe, BuildRecipeStep } from '../cad/model';
 import type { Prim } from '../cad/furniture';
 import type { IdfcBody, IdfcCommerce, IdfcMeta } from '../cad/idfc';
+import { VAT_LIEU_HAT_GIONG } from '../materials/hat-giong';
 
 /** Tham số của kệ — MỘT nguồn cho cả mặt bằng 2D lẫn ngăn xếp 3D. */
 export interface ThamSoKe {
@@ -165,4 +166,55 @@ export function cauKienKeSach(matId: string, t: ThamSoKe = KE_SACH_LIEN_TUONG): 
     source: 'tự dựng bằng BuildRecipe (extrude + arrayLinear) — không tải model ngoài, không lưới nhập khẩu',
     block2dId: 'living-bookshelf',
   };
+}
+
+/* ═══════════════ CẮM ĐIỆN — đưa cấu kiện hạt giống LÊN KỆ THƯ VIỆN ═══════════════ */
+
+/**
+ * ⚡ 04/09 — kệ "Cấu kiện (.idfc)" đọc `loadIdfcStore()` (IndexedDB, tầng STUDIO). Trên **máy
+ * sạch** kho đó RỖNG ⇒ trước hàm này, cấu kiện hạt giống dựng xong nằm im trong repo, **không kệ
+ * nào hiện nó**. Hàm này là mặt tiền để `LibrarySheet` xếp nó xuống DƯỚI kho studio — cùng thứ
+ * tự ba tầng của vật liệu (hạt giống → studio → dự án), không đẻ luật xếp hạng thứ hai.
+ *
+ * ⛔ KHÔNG GHI VÀO KHO: hàm này chỉ TRẢ VỀ dữ liệu. Nhét cấu kiện hạt giống vào `idfc-store` là
+ * biến mẫu-theo-bản-cài thành tài sản-của-studio — người dùng xoá được, và bản cài sau không cập
+ * nhật được nữa. Một chiều: hạt giống ĐỌC, studio GHI.
+ *
+ * `scope: 'chung'` (không phải `'studio'`) nói đúng bản chất: **mọi studio đều có món này**.
+ */
+export interface CauKienHatGiongTrenKe {
+  meta: IdfcMeta;
+  body: IdfcBody;
+  commerce?: IdfcCommerce;
+  /** thời điểm vào kho — hạt giống đi theo bản cài, KHÔNG phải "vừa nhập lúc mở app". */
+  storedAt: string;
+}
+
+/** Ngày cố định — cùng lý do với `NGAY_THEO_BAN_CAI` ở `lib/materials/kho-mo-dau.ts`. */
+const NGAY_THEO_BAN_CAI = '1970-01-01T00:00:00.000Z';
+
+/**
+ * Mọi cấu kiện hạt giống dưới hình dạng `StoredIdfc` mà kệ Thư viện đọc thẳng.
+ * `matId` truyền vào từ tầng hạt giống VẬT LIỆU — một sự thật một chỗ, không gõ lại UUID.
+ */
+export function cauKienHatGiongTrenKe(matId?: string): CauKienHatGiongTrenKe[] {
+  /* Mặc định = vật liệu hạt giống ĐẦU TIÊN (gỗ sồi). Đọc từ bảng vật liệu chứ KHÔNG gõ lại chuỗi
+     UUID — một sự thật một chỗ; gõ lại là đẻ bản sao thứ hai để rồi lệch (ràng buộc 1 của
+     `lib/materials/hat-giong.ts`). */
+  const mac = matId ?? VAT_LIEU_HAT_GIONG[0]?.matId ?? '';
+  const c = cauKienKeSach(mac);
+  return [
+    {
+      meta: {
+        ...c.meta,
+        tags: [...c.meta.tags ?? []],
+        createdAt: NGAY_THEO_BAN_CAI,
+        modifiedAt: NGAY_THEO_BAN_CAI,
+        appVersion: 'ban-cai',
+      },
+      body: c.body,
+      commerce: c.commerce,
+      storedAt: NGAY_THEO_BAN_CAI,
+    },
+  ];
 }
