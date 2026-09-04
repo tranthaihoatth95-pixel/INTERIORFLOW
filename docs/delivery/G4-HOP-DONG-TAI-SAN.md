@@ -74,3 +74,17 @@ Mỗi món: `.idfc` mang recipe + `w/d/h` + `kind` + `category` + gợi ý `matI
 
 ## 7 · CÁI GÌ CỐ Ý KHÔNG LÀM Ở ĐỢT NÀY
 Thư viện lớn · texture PBR quét thật · model tải từ nguồn ngoài · cây/người/xe chất lượng render · thư viện ánh sáng IES/LDT · phim giới thiệu dài. Tất cả vào **hàng đợi tải sau**, không chặn phát hành.
+
+## 8 · PHÁT HIỆN 04/09 — KHO PBR HIỆN LÀ `localStorage`, THIẾU TẦNG HẠT GIỐNG
+
+Đo `lib/materials/pbr-store.ts`: vật liệu PBR đang lưu ở **`localStorage` khoá `if.materials.pbr.v1`**, tầng *studio*. Lựa chọn đó **đúng cho vật liệu người dùng tự tạo** (và có lý do ghi rõ tại chỗ: nhồi PBR vào `ProductSpec` là phá luật 2.1.9.i; thêm cột lúc migrate đang treo là chồng mìn).
+
+🔴 **Nhưng thư viện MỞ ĐẦU thì KHÔNG được sống ở đó.** Thứ ship theo sản phẩm phải có mặt ở **máy sạch, lần chạy đầu tiên, trước khi người dùng chạm vào gì** — `localStorage` thì trống trơn lúc đó.
+⇒ **Cần tầng thứ ba, thứ tự phân giải: HẠT GIỐNG (tệp trong repo, chỉ đọc) → STUDIO (`localStorage`, người dùng ghi đè) → DỰ ÁN (bản chèn ghi đè cục bộ).** Cùng khuôn `.idfc` một-chiều đã chốt 07/08: sửa ở dự án **không** đổi mẫu gốc.
+
+Ràng buộc cho người thi công:
+- `matId` của vật liệu hạt giống là **UUID cố định, gõ cứng một lần, không bao giờ đổi** — nó đi vào tệp `.idf` người dùng lưu. Sinh lại mỗi lần build là **làm mồ côi dữ liệu cũ**.
+- Không đụng `normalizeMatId` cũ (`upper+trim`) — dữ liệu `localStorage` đang sống giả định đúng ngữ nghĩa đó.
+- `inferPbrFromCategory` (17 họ) là **đường suy khi thiếu**, không phải kho — giữ nguyên vai, đừng biến nó thành nơi chứa vật liệu.
+
+⇒ **Gộp bước 2 (32 vật liệu tham số) và bước 3 (24 món 3D) vào CÙNG một lượt của 05 ASSET.** Cả hai cùng cần `matId` ổn định và cùng cần tầng hạt giống; tách ra là dựng tầng đó hai lần.
