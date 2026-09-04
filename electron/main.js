@@ -196,6 +196,9 @@ const CONFIG_KEYS = [
   'GOOGLE_CLIENT_SECRET',
 ];
 let configJsonPath = null; // giữ để menu "Mở file cấu hình…" dùng
+// Log riêng cho cấu hình: tách khỏi log nâng cấp CSDL vì hai thứ hỏng vì lý do khác nhau,
+// và người vận hành cần đọc đúng tệp khi đi tìm nguyên nhân "tự nhiên bị đăng xuất".
+const TEP_LOG_CAU_HINH = 'cau-hinh.log';
 
 function loadUserConfig(userDataDir) {
   configJsonPath = path.join(userDataDir, 'config.json');
@@ -204,10 +207,13 @@ function loadUserConfig(userDataDir) {
     try {
       cfg = JSON.parse(fs.readFileSync(configJsonPath, 'utf8'));
     } catch (e) {
-      dialog.showErrorBox(
-        'InteriorFlow — config.json lỗi',
-        `File cấu hình ${configJsonPath} không phải JSON hợp lệ:\n${e.message}\n\nApp vẫn chạy nhưng bỏ qua cấu hình này.`
-      );
+      // `dialog` chỉ tồn tại khi chạy trong Electron — guard để hàm này gọi được từ Node thuần.
+      if (dialog && typeof dialog.showErrorBox === 'function') {
+        dialog.showErrorBox(
+          'InteriorFlow — config.json lỗi',
+          `File cấu hình ${configJsonPath} không phải JSON hợp lệ:\n${e.message}\n\nApp vẫn chạy nhưng bỏ qua cấu hình này.`
+        );
+      }
       cfg = {};
     }
   } else {
@@ -222,13 +228,40 @@ function loadUserConfig(userDataDir) {
   }
   // AUTH_SECRET bắt buộc để cookie đăng nhập sống qua các lần mở app:
   // thiếu/để trống → sinh ngẫu nhiên 1 lần rồi persist.
-  if (!cfg.AUTH_SECRET || typeof cfg.AUTH_SECRET !== 'string' || cfg.AUTH_SECRET.trim() === '') {
+  const vuaSinhSecret =
+    !cfg.AUTH_SECRET || typeof cfg.AUTH_SECRET !== 'string' || cfg.AUTH_SECRET.trim() === '';
+  if (vuaSinhSecret) {
     cfg.AUTH_SECRET = crypto.randomBytes(32).toString('hex');
   }
   try {
     fs.writeFileSync(configJsonPath, JSON.stringify(cfg, null, 2) + '\n', 'utf8');
-  } catch {
-    /* ổ đĩa read-only? — vẫn chạy tiếp với cfg trong RAM */
+  } catch (e) {
+    // GIỮ NGUYÊN đường lùi: ổ đĩa read-only thì vẫn chạy tiếp với cfg trong RAM.
+    // NHƯNG KHÔNG ĐƯỢC IM LẶNG. Nếu secret VỪA được sinh mà không ghi xuống được thì
+    // mỗi lần mở app lại sinh một secret khác ⇒ mọi cookie phiên cũ chết ⇒ người dùng
+    // BỊ ĐĂNG XUẤT MỖI LẦN MỞ APP và không có gì trên màn nói cho họ biết vì sao.
+    // (Nếu secret đọc được từ config.json sẵn có thì đăng nhập vẫn sống — chỉ là các
+    //  khoá API vừa nhập sẽ không được nhớ; nhẹ hơn hẳn, nên nói khác đi.)
+    const hauQua = vuaSinhSecret
+      ? 'Bạn sẽ bị đăng xuất mỗi lần mở lại app, và các khoá API vừa nhập sẽ không được nhớ.'
+      : 'Các thay đổi cấu hình vừa rồi sẽ không được nhớ khi mở lại app. Đăng nhập vẫn giữ.';
+    const loiNhan =
+      `Không ghi được file cấu hình:\n${configJsonPath}\n\n${e && e.message}\n\n` +
+      `${hauQua}\n\nApp vẫn chạy bình thường. Thường do thư mục dữ liệu bị khoá hoặc ổ đĩa chỉ-đọc — ` +
+      'kiểm tra quyền ghi của thư mục rồi mở lại app.';
+    try {
+      fs.appendFileSync(
+        path.join(userDataDir, TEP_LOG_CAU_HINH),
+        `[${new Date().toISOString()}] ghi config.json thất bại: ${e && e.message}` +
+          ` — ${vuaSinhSecret ? 'AUTH_SECRET vừa sinh, KHÔNG persist được' : 'AUTH_SECRET cũ vẫn đọc được'}\n`,
+        'utf8',
+      );
+    } catch {
+      /* cả log cũng không ghi được — vẫn còn hộp thoại bên dưới */
+    }
+    if (dialog && typeof dialog.showErrorBox === 'function') {
+      dialog.showErrorBox('InteriorFlow — không lưu được cấu hình', loiNhan);
+    }
   }
   // Chỉ nhặt các key hợp lệ, giá trị chuỗi khác rỗng.
   const env = {};
@@ -703,4 +736,4 @@ if (chayTrongElectron) {
 
 // Để lộ đúng đường nâng cấp CSDL cho test (electron/nang-cap-csdl.test.ts). Không có tác
 // dụng phụ khi chạy trong Electron — main process không ai require tệp này.
-module.exports = { nangCapCsdl, doTrangThaiCsdl, raSoatSqlBacCau, danhSachMigration };
+module.exports = { nangCapCsdl, doTrangThaiCsdl, raSoatSqlBacCau, danhSachMigration, loadUserConfig };

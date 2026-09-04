@@ -28,7 +28,7 @@
     "postinstall": "prisma generate",
     "electron": "electron .",
     "electron:dev": "cross-env ELECTRON_START_URL=http://localhost:3000 concurrently -k -n NEXT,ELECTRON -c blue,magenta \"next dev\" \"wait-on tcp:3000 && electron .\"",
-    "electron:build": "next build && electron-builder --win --x64",
+    "electron:build": "next build && electron-builder",
     "electron:build:win": "next build && electron-builder --win --x64",
     "electron:pack:win": "electron-builder --win --x64",
     "electron:build:mac": "next build && electron-builder --mac",
@@ -153,7 +153,7 @@
       ],
       "icon": "electron/icons/icon.png",
       "category": "public.app-category.graphics-design",
-      "identity": null
+      "notarize": false
     },
     "nsis": {
       "oneClick": false,
