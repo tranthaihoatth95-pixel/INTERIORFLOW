@@ -105,3 +105,23 @@ bất kể Hoà chọn bản nào.
 · `scripts/nen-chrome/` — dựng + đo nguyên thể chrome **không cần server/CSDL**, cho những mục chưa có màn thật.
 
 Mỗi lô nên gộp **theo TRẠM** (cùng một màn, nhiều mục) chứ không theo mục — chủ dự án mở một màn là duyệt được cả cụm.
+
+---
+
+## 🚪 CỬA ĐANG MỞ — 04/09, bốn mục chờ mắt
+
+Trang duyệt: **https://claude.ai/code/artifact/c4acf8f4-c486-417e-8900-0b41fc2fef8e**
+Dựng lại bất cứ lúc nào: `node scripts/dung-cua-duyet-mat.mjs` (đọc thẳng `docs/delivery/anh-duyet-mat/`).
+
+| Mục | Nguồn ảnh | Loại bằng chứng |
+|---|---|---|
+| `vitals` — khẩu độ mép trên, 3 mức | `lo-01/vitals-*.png` (03:19) | **app thật**, sau bản sửa `51d4a0d9` (03:15) |
+| `h1` · `h2` · `h3` — ba hướng Home | `lo-04-home-system/*.png` | **bản vẽ**, 0 dòng mã |
+
+**Vì sao có trang này chứ không dùng thư mục Drive (chốt 16/08):** cơ chế Drive chạy trên máy Hoà;
+phiên đám mây không với tới thư mục sync đó. Đây là **mặt tiền thứ hai của cùng một cơ chế**, không
+phải cơ chế mới — ảnh vẫn nằm trong repo, trang chỉ bưng chúng ra.
+
+⚠️ **Phiên này KHÔNG được đánh thức khi Hoà bấm** (`subscribe_forbidden` — dịch vụ artifact từ chối
+đăng ký đánh thức cho phiên này). Phán quyết ghi vào kho `phan-quyet/<id>`; T phải **chủ động đọc
+lại** (`read_db`), không có chuông báo. Đừng khai là "đang theo dõi".
