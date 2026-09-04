@@ -63,6 +63,13 @@ import { BLOCK_MAP } from '@/lib/cad/furniture';
 import { matchPropsOne } from '@/lib/cad/eyedropper';
 // VIỆC "gõ số sau thao tác" (VCB) — SPEC-LENH-VE-IF §4 khuyết ② (kho §1#6 trong DOI-CHIEU-42-SPEC).
 import { parseVcbToken, applyVcbToMoveCopy } from '@/lib/commands/vcb';
+// B4 "Chỉnh lệnh vừa chạy" (tầng ③ TICKET-KIEN-TRUC-LENH-3-TANG) — canvas giữ BẢN GỐC + hàm tái áp,
+// store/mặt tiền chỉ mô tả + vẽ. Xem `lib/commands/chinh-lenh-vua-chay.ts` cho lõi thuần.
+import { useChinhLenh } from '@/lib/commands/chinh-lenh-store';
+import { RAD_TO_DEG, viTriBanSao, type LenhVuaChay } from '@/lib/commands/chinh-lenh-vua-chay';
+import { taiApOffset, taiApTuong, taiApXoay } from '@/lib/commands/chinh-lenh-tai-ap';
+import ChinhLenhVuaChay from './ChinhLenhVuaChay';
+import { canvasSafeAreaInsets } from '@/lib/cad/safe-area';
 import {
   autoSnapToWall,
   detectCollisions,
@@ -181,6 +188,18 @@ interface Ix {
     /** kế hoạch ĐANG áp dụng — đổi sau mỗi lần gõ số qua `applyVcbToMoveCopy`. */
     plan: { copyCount: number; stepMm: number };
   } | null;
+  /** B4 "Chỉnh lệnh vừa chạy" — bản gốc của lệnh nhiều bước VỪA chốt (ngoài move/copy đã có
+   * `lastMoveCopy` ở trên) để tái áp từ 0 khi người dùng đổi tham số trên mặt tiền. null khi chưa
+   * có / vừa Esc / đổi tool / doc bị người khác đổi (undo, xoá…) — xem `xoaChinhLenh()`. */
+  lastEdit:
+    | { kind: 'xoay'; originals: Entity[]; center: Pt }
+    | { kind: 'offset'; sourceId: string; side: Pt; createdId: string }
+    | { kind: 'tuong'; pts: Pt[]; closed: boolean; layer: string; createdIds: string[] }
+    | null;
+  /** Cờ "đang tái áp từ mặt tiền" — để subscriber doc-đổi không tự xoá lệnh đang chỉnh. */
+  applyingLastOp: boolean;
+  /** `doc` ngay sau lần áp/tái áp gần nhất — doc khác đi mà không phải do ta ⇒ bản gốc hết căn cứ. */
+  lastOpDoc: unknown;
 }
 
 function css(varName: string, fallback: string): string {
@@ -441,6 +460,9 @@ export default function CadCanvas() {
     zoomedToCluster: false,
     eyedropper: { active: false, sourceId: null },
     lastMoveCopy: null,
+    lastEdit: null,
+    applyingLastOp: false,
+    lastOpDoc: null,
   });
 
   // ── vòng vẽ rAF ──
@@ -488,6 +510,7 @@ export default function CadCanvas() {
         // chốt — đổi sang tool khác (kể cả bấm lại Move/Copy để bắt đầu lượt MỚI) làm mất căn cứ
         // "đã kéo theo hướng nào" của lượt cũ, xoá để khỏi áp nhầm VCB cũ vào ngữ cảnh mới.
         ix.current.lastMoveCopy = null;
+        xoaChinhLenh();
         // Ống hút (lib/cad/eyedropper.ts) là lệnh CHỒNG lên tool hiện tại, không phải bản thân
         // 1 tool — đổi tool (kể cả bấm phím tắt L/M/CO khi đang armed) coi như huỷ phiên ống hút,
         // giống cách Escape huỷ (xem nhánh Escape bên dưới) — báo ngược cho nút toolbar tắt sáng.
@@ -498,6 +521,21 @@ export default function CadCanvas() {
       }
     });
     return unsub;
+  }, []);
+
+  // B4 — doc đổi mà KHÔNG do tái áp của chính mặt tiền (undo/redo, xoá, sửa tay, nạp file…) ⇒ bản
+  // gốc của lệnh vừa chạy hết căn cứ; đóng mặt tiền thay vì tái áp lên ID có thể đã biến mất.
+  useEffect(() => {
+    const unsub = useCadStore.subscribe((s) => {
+      if (ix.current.applyingLastOp) return;
+      if (useChinhLenh.getState().lenh && s.doc !== ix.current.lastOpDoc) xoaChinhLenh();
+    });
+    return () => {
+      unsub();
+      // Rời chặng: closure tái áp trỏ vào `ix` của canvas đã chết — gỡ để lần mount sau không mọc
+      // mặt tiền ma áp lên bản gốc không còn tồn tại.
+      xoaChinhLenh();
+    };
   }, []);
 
   // Canvas vẽ bằng màu đọc trực tiếp từ CSS var (--bg/--t1/...) mỗi lần draw(), nhưng
@@ -2225,7 +2263,28 @@ export default function CadCanvas() {
     const st = useCadStore.getState();
     const pts = ix.current.pts;
     if (pts.length >= 2) {
-      st.addEntities(wallChain(pts.slice(), st.wallThickness, st.currentLayer, closed));
+      const es = wallChain(pts.slice(), st.wallThickness, st.currentLayer, closed);
+      st.addEntities(es);
+      // B4 — Tường: vẽ xong thấy dày sai là ca đau nhất; đổi số ⇒ dựng lại CHUỖI y hệt từ cùng điểm
+      // (1 undo). Có cửa/cửa sổ đã đặt lên tường thì TỪ CHỐI kèm lý do — không âm thầm xoá con.
+      const segmentCount = pts.length - 1 + (closed && pts.length >= 3 ? 1 : 0);
+      ix.current.lastEdit = { kind: 'tuong', pts: pts.slice(), closed, layer: st.currentLayer, createdIds: es.map((e) => e.id) };
+      datChinhLenh({ kind: 'tuong', thicknessMm: st.wallThickness, closed, segmentCount }, (l) => {
+        const ctx = ix.current.lastEdit;
+        if (l.kind !== 'tuong' || !ctx || ctx.kind !== 'tuong') return;
+        const s2 = useCadStore.getState();
+        const plan = taiApTuong(s2.doc, ctx, l);
+        if (!plan.ok || plan.kieu !== 'replace') {
+          // Từ chối (vd tường đã có cửa) — nói lý do, GIỮ mặt tiền và hình học nguyên trạng.
+          s2.setStatus(`Chỉnh dày tường: ${plan.ok ? 'kế hoạch không hợp lệ.' : plan.lyDo[0]}`);
+          return;
+        }
+        taiAp(l, () => {
+          s2.replaceEntities(plan.removeIds, plan.add);
+          s2.setWallThickness(l.thicknessMm);
+        });
+        ctx.createdIds = plan.add.map((e) => e.id);
+      });
     }
     ix.current.pts = [];
     ix.current.redraw = true;
@@ -2296,7 +2355,43 @@ export default function CadCanvas() {
         plan: { copyCount: 1, stepMm: baseSpanMm },
       };
       ix.current.pts = [];
+      // B4 — mở mặt tiền Chỉnh lệnh vừa chạy cho Dời/Chép; tái áp đi qua CÙNG `reapplyMoveCopyPlan`
+      // với VCB bàn phím (một đường tái áp cho hai cửa vào).
+      datChinhLenh(
+        isCopy
+          ? { kind: 'chep', stepMm: baseSpanMm, copyCount: 1, baseSpanMm }
+          : { kind: 'doi', stepMm: baseSpanMm, baseSpanMm },
+        (l) => {
+          if (l.kind !== 'doi' && l.kind !== 'chep') return;
+          reapplyMoveCopyPlan({ copyCount: l.kind === 'chep' ? l.copyCount : 1, stepMm: l.stepMm });
+        },
+      );
     }
+  }
+
+  /** B4 — ghi bản gốc + hàm tái áp vào store mặt tiền, neo tại chỗ con trỏ vừa chốt. */
+  function datChinhLenh(lenh: LenhVuaChay, apDung: (l: LenhVuaChay) => void) {
+    ix.current.lastOpDoc = useCadStore.getState().doc;
+    useChinhLenh.getState().datLenh(lenh, { ...ix.current.cursorScreen }, apDung);
+  }
+
+  /** B4 — gói một lần tái áp: giữ cờ để subscriber doc-đổi không tự đóng mặt tiền, rồi cập nhật
+   * mốc doc + lệnh hiển thị. Mọi đường tái áp (VCB bàn phím lẫn mặt tiền) đều đi qua đây. */
+  function taiAp(lenh: LenhVuaChay, run: () => void) {
+    ix.current.applyingLastOp = true;
+    try {
+      run();
+    } finally {
+      ix.current.applyingLastOp = false;
+    }
+    ix.current.lastOpDoc = useCadStore.getState().doc;
+    useChinhLenh.getState().capNhat(lenh);
+    ix.current.redraw = true;
+  }
+
+  function xoaChinhLenh() {
+    ix.current.lastEdit = null;
+    useChinhLenh.getState().xoa();
   }
 
   /**
@@ -2323,22 +2418,36 @@ export default function CadCanvas() {
       return;
     }
     const plan = applyVcbToMoveCopy(state.plan, token, state.baseSpanMm);
+    reapplyMoveCopyPlan(plan);
+  }
+
+  /**
+   * B4 — MỘT đường tái áp Dời/Chép cho cả VCB bàn phím lẫn mặt tiền Chỉnh lệnh vừa chạy. Luôn tính
+   * từ `originals` (không cộng dồn), 1 snapshot undo mỗi lần.
+   */
+  function reapplyMoveCopyPlan(plan: { copyCount: number; stepMm: number }) {
+    const state = ix.current.lastMoveCopy;
+    if (!state) return;
+    const st = useCadStore.getState();
+    const lenh: LenhVuaChay = state.isCopy
+      ? { kind: 'chep', stepMm: plan.stepMm, copyCount: plan.copyCount, baseSpanMm: state.baseSpanMm }
+      : { kind: 'doi', stepMm: plan.stepMm, baseSpanMm: state.baseSpanMm };
     const results: Entity[] = [];
-    for (let i = 1; i <= plan.copyCount; i++) {
-      const dx = state.ux * plan.stepMm * i;
-      const dy = state.uy * plan.stepMm * i;
+    for (const { dx, dy } of viTriBanSao(lenh, state.ux, state.uy)) {
       for (const e of state.originals) {
         results.push(translateEntity(state.isCopy ? withNewId(e) : e, dx, dy));
       }
     }
-    if (state.isCopy) {
-      // 1 snapshot undo cho cả gỡ-bản-cũ + thêm-bản-mới (giống mọi "sửa tham số" khác trong file
-      // này, xem `setEntityBevel`/`cutHoleInWall` ở store.ts) — không phải 2 bước rời rạc.
-      st.replaceEntities(state.currentIds, results);
-      st.select(state.sourceIds);
-    } else {
-      st.updateEntities(results);
-    }
+    taiAp(lenh, () => {
+      if (state.isCopy) {
+        // 1 snapshot undo cho cả gỡ-bản-cũ + thêm-bản-mới (giống mọi "sửa tham số" khác trong file
+        // này, xem `setEntityBevel`/`cutHoleInWall` ở store.ts) — không phải 2 bước rời rạc.
+        st.replaceEntities(state.currentIds, results);
+        st.select(state.sourceIds);
+      } else {
+        st.updateEntities(results);
+      }
+    });
     state.currentIds = results.map((e) => e.id);
     state.plan = plan;
     st.setStatus(
@@ -2364,6 +2473,15 @@ export default function CadCanvas() {
       const targets = st.doc.entities.filter((e) => sel.has(e.id));
       st.updateEntities(targets.map((e) => rotateEntity(e, c, ang)));
       ix.current.pts = [];
+      // B4 — Xoay: giữ bản gốc + tâm, cho sửa lại góc (87,3° → 90) mà không Undo-rồi-click-lại.
+      ix.current.lastEdit = { kind: 'xoay', originals: targets, center: c };
+      datChinhLenh({ kind: 'xoay', angleDeg: ang * RAD_TO_DEG }, (l) => {
+        const ctx = ix.current.lastEdit;
+        if (l.kind !== 'xoay' || !ctx || ctx.kind !== 'xoay') return;
+        const plan = taiApXoay(ctx, l);
+        if (!plan.ok || plan.kieu !== 'update') return;
+        taiAp(l, () => useCadStore.getState().updateEntities(plan.entities));
+      });
     }
   }
 
@@ -2399,7 +2517,29 @@ export default function CadCanvas() {
     const target = st.doc.entities.find((e) => e.id === st.selection[0]);
     if (target) {
       const off = offsetEntity(target, st.offsetDist, w);
-      if (off) st.addEntity(off);
+      if (off) {
+        st.addEntity(off);
+        // B4 — Offset: nhớ nguồn + phía đã click + bản vừa sinh; sửa khoảng = thay bản đó (1 undo),
+        // đồng thời đặt lại `offsetDist` để lần Offset kế dùng số mới (thói quen AutoCAD).
+        ix.current.lastEdit = { kind: 'offset', sourceId: target.id, side: w, createdId: off.id };
+        datChinhLenh({ kind: 'offset', distMm: st.offsetDist }, (l) => {
+          const ctx = ix.current.lastEdit;
+          if (l.kind !== 'offset' || !ctx || ctx.kind !== 'offset') return;
+          const s2 = useCadStore.getState();
+          const plan = taiApOffset(s2.doc, ctx, l);
+          if (!plan.ok || plan.kieu !== 'replace') {
+            s2.setStatus(`Chỉnh offset: ${plan.ok ? 'kế hoạch không hợp lệ.' : plan.lyDo[0]}`);
+            xoaChinhLenh();
+            return;
+          }
+          taiAp(l, () => {
+            s2.replaceEntities(plan.removeIds, plan.add);
+            s2.setOffsetDist(l.distMm);
+            s2.select([ctx.sourceId]);
+          });
+          ctx.createdId = plan.add[0].id;
+        });
+      }
     }
     ix.current.pts = [];
   }
@@ -2598,6 +2738,7 @@ export default function CadCanvas() {
         ix.current.angularFirst = null;
         // VCB "gõ số sau thao tác" — thao tác kế tiếp (kể cả Esc trần) làm mất căn cứ chỉnh lại.
         ix.current.lastMoveCopy = null;
+        xoaChinhLenh();
         // Ống hút thuộc tính — Esc huỷ phiên đang chờ nguồn/đích, báo ngược cho nút toolbar tắt sáng.
         if (ix.current.eyedropper.active) {
           ix.current.eyedropper = { active: false, sourceId: null };
@@ -2618,6 +2759,13 @@ export default function CadCanvas() {
       if (e.key === 'F8') {
         e.preventDefault();
         st.setOrthoLock(!st.orthoLock);
+        return;
+      }
+      // B4 — F9 (Blender "Adjust Last Operation"): focus mặt tiền Chỉnh lệnh vừa chạy; chưa có lệnh
+      // thì store tự báo ở thanh trạng thái. Cùng nhánh với gõ ADJ/ADJUST ở ô lệnh + registry.
+      if (e.key === 'F9') {
+        e.preventDefault();
+        useChinhLenh.getState().yeuCauFocus();
         return;
       }
       // Việc 4 — F12: bật/tắt Dynamic Input heads-up cạnh con trỏ (thói quen AutoCAD).
@@ -3818,6 +3966,8 @@ export default function CadCanvas() {
           </div>
         </div>
       )}
+      {/* B4 — mặt tiền "Chỉnh lệnh vừa chạy": mọc cạnh chỗ vừa chốt Dời/Chép/Xoay/Offset/Tường. */}
+      <ChinhLenhVuaChay wrapRef={wrapRef} bottomInset={canvasSafeAreaInsets(cadMode).bottom} />
       {/* Hộp xác nhận nổi (xoá ghim markup) — thay window.confirm. */}
       {inlineConfirm && (
         <div
