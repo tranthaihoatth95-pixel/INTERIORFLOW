@@ -246,6 +246,30 @@ function docKhoSheets(page) {
   );
 }
 
+/**
+ * ĐỌC NƠI LƯU THẬT của DẤU VẾT VIỆC-ĐANG-DỞ — `localStorage['interiorflow.resume.<uid>']`.
+ *
+ * ⛔ VÌ SAO PHẢI CÓ (D6, `docs/delivery/PRODUCT-DEFECTS.md`). J16 trước nay chỉ đo IndexedDB, nên
+ * nó chứng minh được *bản vẽ còn đó* mà KHÔNG chứng minh được *người dùng quay lại được chỗ đó*.
+ * Hai thứ khác nhau, và ca deep-link hỏng đúng thứ thứ hai: resume ghi ra
+ * `{route:'/cad-editor', sheetId}` **không có `flowId`** ⇒ `buildResumeCard()` tính `routeId=null`
+ * ⇒ `resumeHref()` trả route toàn cục cũ ⇒ bấm thẻ tiêu điểm là **dội về `/`**.
+ *
+ * Trả NGUYÊN VĂN chuỗi đã lưu để bảng lỗi chép được, không diễn giải hộ.
+ */
+function docResumeKho(page, userId) {
+  return page.evaluate((uid) => {
+    try {
+      const raw = localStorage.getItem('interiorflow.resume.' + uid);
+      let j = null;
+      try { j = raw ? JSON.parse(raw) : null; } catch { j = null; }
+      return { raw, route: j?.route ?? null, flowId: j?.flowId ?? null, sheetId: j?.sheetId ?? null };
+    } catch {
+      return { raw: null, route: null, flowId: null, sheetId: null, loi: 'localStorage-bi-chan' };
+    }
+  }, userId);
+}
+
 const KHO_MO_HO = ['local', '', 'undefined', 'null', 'anon'];
 const laKhoMoHo = (khoa) => KHO_MO_HO.includes(String(khoa).split('::')[0]);
 
@@ -360,9 +384,14 @@ const J16 = {
       soThucThe: ban?.soThucThe ?? 0,
       moHo: kho.ban.filter((b) => laKhoMoHo(b.khoa)).map((b) => b.khoa),
       moiKhoa: kho.ban.map((b) => b.khoa),
+      // `soSanh` chỉ nhận (truoc, sau, st) — không có `mt`. Mang id dự án theo bản đọc thay vì
+      // với tay ra biến ngoài phạm vi (đã ngã một lần vì đúng chỗ này).
+      duAn: mt.duAn,
+      // D6 — dấu vết ĐƯỜNG QUAY LẠI, đọc cùng lượt với dấu vết BẢN VẼ (xem `docResumeKho`).
+      resume: await docResumeKho(p.page, st.userId),
     };
   },
-  soSanh(truoc, sau) {
+  soSanh(truoc, sau, st) {
     if (truoc.moHo.length) return { dat: false, vi: `rơi vào kho mơ hồ: ${truoc.moHo.join(',')}` };
     if (!truoc.coBanGhi || truoc.soThucThe < 1)
       return { dat: false, vi: `sau khi vẽ, IndexedDB KHÔNG có bản ghi ở ${truoc.khoaDung} (khoá thấy: ${truoc.moiKhoa.join('|') || 'không có'})` };
@@ -370,7 +399,100 @@ const J16 = {
       return { dat: false, vi: `mở lại: bản ghi biến mất khỏi ${sau.khoaDung}` };
     if (sau.soThucThe !== truoc.soThucThe)
       return { dat: false, vi: `số thực thể đổi sau khi mở lại: ${truoc.soThucThe} → ${sau.soThucThe}` };
-    return { dat: true, vi: `${sau.soThucThe} thực thể còn nguyên ở ${sau.khoaDung} sau khi ĐÓNG HẲN trình duyệt và mở lại` };
+
+    /**
+     * ⭐ KHẲNG ĐỊNH D6 — VIỆC CÒN ĐÓ CHƯA ĐỦ, PHẢI QUAY LẠI ĐƯỢC.
+     * Bản vẽ nằm nguyên trong IndexedDB mà resume mất `flowId` thì thẻ tiêu điểm ở Home dội
+     * người dùng về `/`: việc vẫn còn, nhưng không có đường nào đi tới nó bằng một cú bấm.
+     *
+     * 🔴 KHẲNG ĐỊNH TRÊN `truoc` TRƯỚC, VÀ ĐÓ MỚI LÀ CHỖ ĐAU. `truoc` là LƯỢT VÀO ĐẦU TIÊN sau
+     * khi đăng nhập — đúng lúc cuộc đua xảy ra (`interiorflow.lastUserId` chưa gieo). `sau` là
+     * phiên thứ hai trên CÙNG hồ sơ đĩa, nên `lastUserId` đã ấm sẵn từ phiên trước và ca hỏng
+     * KHÔNG tái diễn ở đó. Đo bản vá chỉ bằng `sau` là đo một thế giới đã hết bệnh: bộ này đã
+     * báo PASS đúng như vậy một lần trước khi khẳng định được đặt đúng chỗ.
+     */
+    const kiem = (r, khi) => {
+      if (!r?.raw)
+        return `${khi}: bản vẽ còn ${sau.soThucThe} thực thể, NHƯNG không có dấu vết việc-đang-dở nào (interiorflow.resume.${st.userId} rỗng) ⇒ thẻ tiêu điểm ở Home không hiện`;
+      if (!r.flowId)
+        return `${khi}: resume ghi ra THIẾU flowId: ${r.raw} ⇒ buildResumeCard() tính routeId=null ⇒ bấm thẻ tiêu điểm dội về '/'`;
+      if (r.flowId !== sau.duAn)
+        return `${khi}: resume trỏ SAI dự án: flowId=${r.flowId} nhưng đang đứng ở ${sau.duAn}`;
+      return null;
+    };
+    const loiTruoc = kiem(truoc.resume, 'LƯỢT VÀO ĐẦU TIÊN sau đăng nhập');
+    if (loiTruoc) return { dat: false, vi: loiTruoc };
+    const loiSau = kiem(sau.resume, 'sau khi đóng hẳn rồi mở lại');
+    if (loiSau) return { dat: false, vi: loiSau };
+
+    return {
+      dat: true,
+      vi: `${sau.soThucThe} thực thể còn nguyên ở ${sau.khoaDung} sau khi ĐÓNG HẲN trình duyệt và mở lại; đường quay lại còn đủ NGAY TỪ LƯỢT ĐẦU (resume ${truoc.resume.route} → flowId ${truoc.resume.flowId})`,
+    };
+  },
+};
+
+/**
+ * J16b — DEEP-LINK: ĐƯỜNG QUAY LẠI CÓ ĐỦ KHÔNG (tách riêng khỏi J16, có lý do).
+ *
+ * ⛔ VÌ SAO KHÔNG GỘP VÀO J16. J16 khai thế giới hỏng là *chặn IndexedDB*; ở thế giới đó bản
+ * ghi bản vẽ mất nên khẳng định IDB đỏ TRƯỚC, và khẳng định `flowId` **không bao giờ chạy tới**
+ * ⇒ phép hiệu chuẩn của J16 chứng minh được khẳng định IDB, **KHÔNG** chứng minh được khẳng định
+ * đường-quay-lại. Một khẳng định chưa từng thấy mình đỏ là một khẳng định chưa đáng tin.
+ * Nên nó cần THẾ GIỚI HỎNG RIÊNG: chặn đúng đường ghi `interiorflow.resume.*` (`chanResume`,
+ * cơ chế đã có sẵn cho J05) — chặn hẹp, app vẫn dựng lên bình thường, đỏ vì khẳng định.
+ *
+ * Thêm một mục vào `HANH_TRINH`, KHÔNG sửa khung — đúng cách bộ này khai bản thân nó.
+ *
+ * KHÔNG VẼ. Chủ ý: đường ghi resume chạy ngay lúc vào route (`ResumeTracker`), không phụ thuộc
+ * người dùng có thao tác gì. Bỏ bước vẽ làm hành trình này nhanh và cô lập đúng thứ nó đo — nếu
+ * nó đỏ thì chắc chắn là chuyện resume, không lẫn với chuyện lưu bản vẽ.
+ */
+const J16b = {
+  ma: 'J16b',
+  ten: 'Deep-link studio → về Home → thẻ tiêu điểm còn trỏ đúng dự án',
+  chan: 'G2',
+  loai: 'trinh-duyet',
+  hieuChuanMo: 'chặn đường ghi interiorflow.resume.* (dấu vết việc-đang-dở)',
+  async moPhien(mt, st, lan) {
+    const p = await moPhienTrinhDuyet(`J16b${mt.hauTo}`, { chanResume: mt.hongCoY });
+    const me = await p.ctx.request.get(`${GOC}/api/auth/me`);
+    st.userId = (await me.json())?.user?.id || (await dangNhap(p.ctx));
+    st.lan = lan;
+    return p;
+  },
+  async thaoTac(p, mt, st) {
+    // ⭐ ĐI THẲNG vào route studio rồi VỀ HOME — đúng đường người dùng đi trước khi bấm thẻ.
+    await p.page.goto(`${GOC}/projects/${mt.duAn}/cad`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(6000);
+    await boQuaLopChe(p.page);
+    await p.page.goto(`${GOC}/`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(5000);
+    await chup(p.page, 'J16b-1-ve-home');
+  },
+  async vaoLai(p, mt, st) {
+    await p.page.goto(`${GOC}/`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(5000);
+    await chup(p.page, 'J16b-2-mo-lai');
+  },
+  async ghiXuong(p, mt, st) {
+    return { duAn: mt.duAn, resume: await docResumeKho(p.page, st.userId) };
+  },
+  soSanh(truoc, sau, st) {
+    const kiem = (r, khi) => {
+      if (!r?.raw) return `${khi}: không có dấu vết việc-đang-dở (interiorflow.resume.${st.userId} rỗng) ⇒ thẻ tiêu điểm không hiện`;
+      if (!r.flowId) return `${khi}: resume THIẾU flowId: ${r.raw} ⇒ bấm thẻ tiêu điểm dội về '/'`;
+      if (r.flowId !== sau.duAn) return `${khi}: resume trỏ SAI dự án: ${r.flowId} ≠ ${sau.duAn}`;
+      return null;
+    };
+    const loiTruoc = kiem(truoc.resume, 'LƯỢT VÀO ĐẦU TIÊN sau đăng nhập');
+    if (loiTruoc) return { dat: false, vi: loiTruoc };
+    const loiSau = kiem(sau.resume, 'sau khi đóng hẳn rồi mở lại');
+    if (loiSau) return { dat: false, vi: loiSau };
+    return {
+      dat: true,
+      vi: `vào thẳng deep-link, chưa thao tác gì, đường quay lại đã đủ: ${truoc.resume.route} → flowId ${truoc.resume.flowId}; còn nguyên sau khi ĐÓNG HẲN trình duyệt`,
+    };
   },
 };
 
@@ -1363,7 +1485,7 @@ async function bamTheBangBanPhim(page, tran = 40) {
   return { toiDuoc: false, soTab: tran, coRing: false, dungO: '' };
 }
 
-const HANH_TRINH = [J16, J17, J19, J20, J07, J12, J04, J06, J18, J22, J05];
+const HANH_TRINH = [J16, J16b, J17, J19, J20, J07, J12, J04, J06, J18, J22, J05];
 
 /* ─────────────────────────── khung chạy ─────────────────────────── */
 
