@@ -184,9 +184,9 @@ Chi phí: **S** một lượt sửa nhỏ · **M** một phiếu · **L** cần 
 | 1 | checkout mới | ✅ CI `.github/workflows/kiem.yml` | — | — |
 | 2 | cài đặt | ✅ `npm ci` (CI) | — | — |
 | 3 | dựng môi trường | ✅ `scripts/dung-moi-truong-kiem.sh` (CI) | — | — |
-| 4 | `migrate deploy` | ✅ trong script trên — **cố ý** dùng deploy để phát hiện lệch migrations | ⚠️ **đường đóng gói lại KHÔNG dùng deploy** — xem **M1** | **M** (M1) |
+| 4 | `migrate deploy` | ✅ trong script trên — **cố ý** dùng deploy để phát hiện lệch migrations | ✅ **ĐÓNG 04/09** — đường đóng gói nay cũng dùng `migrate deploy`, có test CSDL thật + máy canh trong `release:preflight` (§B6-M1) | — |
 | 5 | build sản phẩm | ✅ `npm run build` (CI) | — | — |
-| 6 | **build/đóng gói Electron** | ⬜ **không có** | CI chạy `ubuntu-latest`, **không dựng installer nào**; chưa ai chạy `electron:build` trong phạm vi ghi nhận được | **M** — cộng **M2** (lệnh mặc định sai đích) |
+| 6 | **build/đóng gói Electron** | 🟡 **đã chạy TAY một lần 04/09** — Linux x64, rc=0, ~3 phút, AppImage 338 MB (§B6-cổng-6) | chưa ai dựng bản **Windows/macOS** thật; CI vẫn **không dựng installer nào** | **M** — nối vào CI |
 | 7 | **mở app đã đóng gói** | ⬜ **không có** | 🔴 **đây là bằng chứng phát hành**, và nó đang trống hẳn. Trên macOS còn bị **M3** chặn cứng | **L** — cần máy thật + quyết định ký số |
 | 8 | đăng nhập | 🟡 `scripts/tai-khoan-kiem.mjs` (đồ nghề, dựng tài khoản; **không** kiểm hành trình) | J01 · J02 — chưa chạy trên bản đóng gói; **M5** chưa xử | **M** |
 | 9 | Home | 🟡 ảnh chụp qua `scripts/audit-routes.mjs` | ảnh ≠ hành trình; Home còn đang trong vòng thiết kế (`SHIP-BLOCKERS` B2) | **M** (theo lane 04) |
@@ -371,6 +371,47 @@ hậu quả. Và nó **phân biệt hai mức nặng nhẹ**, vì hai ca này kh
 
 Kèm một chỗ giòn có sẵn: nhánh báo `config.json` hỏng JSON gọi `dialog` **không guard** — nay guard
 như mọi chỗ khác.
+
+### CỔNG 6 ✅ MỞ — đã dựng gói LẦN ĐẦU, biến số thành con số
+
+Trước lượt này, cổng 6 và 7 **trống hoàn toàn**: trong repo không có bằng chứng nào về một lần dựng
+gói. Nay đã chạy thật **một lần trên Linux x64** — mục đích không phải ra bộ cài để giao, mà để trả
+lời: *cấu hình có chạy được không · thiếu gì · mất bao lâu · nặng bao nhiêu.*
+
+| Bước | Lệnh | rc | Thời gian | Kết quả |
+|---|---|---|---|---|
+| 1 | `npx next build` | **0** | **116 s** | `.next` = **823 MB** |
+| 2 | `npx electron-builder --linux appimage` | **0** | **58 s** | `InteriorFlow-0.1.0.AppImage` = **338 MB** · `linux-unpacked` = **1,2 GB** |
+
+**⇒ Câu hỏi lớn nhất đã đóng: cấu hình `electron-builder` CHẠY ĐƯỢC.** `asar: false` + gói nguyên
+`node_modules` không làm gãy gì; `@electron/rebuild` chạy xong, native deps cài xong; tổng ~**3 phút**,
+xa dưới trần 12 phút. Nhị phân Electron **đã nằm sẵn trong cache** từ `npm ci` (102 MB), và hai lượt
+tải còn lại (`electron-v33.4.11-linux-x64.zip` · `appimage-12.0.1.7z`) **qua được proxy** — nên rủi
+ro mạng mà pha khảo sát lo là **không xảy ra**.
+
+**Ba số đáng nhớ, đo tại nguồn:**
+- `.next` trên đĩa **823 MB** nhưng vào gói chỉ **46 MB** ⇒ luật `!.next/cache/**` **đang chạy đúng**,
+  và cache chiếm ~**94%** thư mục `.next`.
+- Sản phẩm dựng ra **KHÔNG lọt vào git**: `dist-installer/` đã bị chặn (`.gitignore:18`), `git status`
+  sạch sau khi dựng.
+- 🔴 **Engine Prisma bị nhân bản: 7 tệp, tổng 109 MB, cùng một engine nằm 2-3 chỗ**
+  (`debian-openssl-3.0.x` **3 bản**; `linux-arm64` và `linux-musl-arm64` mỗi thứ **2 bản**) — nằm ở
+  `node_modules/prisma/` · `node_modules/@prisma/engines/` · `node_modules/.prisma/client/`.
+  Đáng nói hơn: hai luật loại trừ `!node_modules/.prisma/client/libquery_engine-linux-*` và
+  `!node_modules/@prisma/engines/*linux*` **KHÔNG có tác dụng ở đây** — `extraResources` chép nguyên
+  `node_modules/.prisma` sang `app/node_modules/.prisma` **độc lập với bộ lọc `files`**, nên thứ vừa
+  bị loại ở cửa trước lại vào bằng cửa sau.
+  ⚠️ **Chưa sửa, cố ý**: đường `extraResources` đó nhiều khả năng đang là thứ giữ cho bản Windows
+  chạy được, gỡ mù là rủi ro thật; và đây là **chuyện dung lượng, không phải chuyện đúng-sai**. Ghi
+  lại làm việc riêng, phải đo trên bản Windows/macOS thật trước khi đụng.
+
+⚠️ **AppImage này KHÔNG phải sản phẩm giao được, và không nên thử dùng nó như vậy**: Linux không nằm
+trong `build` (chỉ có `win` · `mac`), lượt dựng này chỉ để kiểm cấu hình. Cảnh báo
+*"asar usage is disabled — this is strongly not recommended"* xuất hiện **2 lần**; đó là **chủ ý** của
+IF (Prisma + `next start` cần đọc tệp thật), ghi ra để phiên sau không tưởng là lỗi mới.
+
+🔴 **CỔNG 7 VẪN TRỐNG.** Dựng được gói **không phải** là mở được gói. Cổng 7 cần **máy thật, đúng nền
+tảng đích**, và trên macOS còn bị **M3** chặn cứng.
 
 ---
 
