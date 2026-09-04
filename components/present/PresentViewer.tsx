@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useT } from '@/lib/i18n';
 import { useDismissable } from '@/lib/useDismissable';
+import VoiceNav from '@/components/voice/VoiceNav';
 
 export interface PresentViewerProps {
   /** JPEG dataURL 1920×1080 mỗi slide (đã render sẵn). */
@@ -136,6 +137,8 @@ export default function PresentViewer({
         <span style={{ fontWeight: 600, fontSize: 14, letterSpacing: 0.2 }}>{title}</span>
         <span style={{ fontSize: 12, color: 'var(--t3)' }}>{status ?? (total ? `${idx + 1} / ${total}` : '')}</span>
         <div style={{ flex: 1 }} />
+        {/* Giọng nói (02/09) — cùng `go` như phím Home/End/←/→; không ghi gì. */}
+        <VoiceNav idx={idx} total={total} onGo={go} tone="theme" />
         {onDownloadPdf && (
           <button onClick={onDownloadPdf} disabled={loading || slides.length === 0} style={btnStyle(loading || slides.length === 0)}>
             {tr('Tải PDF', 'Download PDF')}

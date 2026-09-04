@@ -54,6 +54,7 @@ import {
   Loader2,
   X,
   MoreHorizontal,
+  TableProperties,
 } from 'lucide-react';
 import IOMenu from '@/components/ui/IOMenu';
 import LightArc from '@/components/ui/LightArc';
@@ -137,6 +138,10 @@ interface Props {
    * 1 nút cạnh Khoá, cùng khuôn toggle-cả-cụm với onToggleLock. */
   /** ẩn/hiện cả lựa chọn — 1 nút, đổi icon/nhãn theo trạng thái (xem `anyVisible` bên dưới). */
   onToggleHide: () => void;
+  /* Phụ lục BOQ (02/09) — dựng/làm mới trang bảng khối lượng từ Doc 2D + Kho giá + sửa tay. Logic ở
+   * PresentEditor#onInsertBoqAppendix; toolbar chỉ là mặt tiền (cùng khuôn export). */
+  onInsertBoqAppendix?: () => void | Promise<void>;
+  boqAppendixBusy?: boolean;
 }
 
 /**
@@ -150,6 +155,7 @@ export interface ToolbarHandle {
 }
 
 const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
+  const tr = useT();
   const fileRef = useRef<HTMLInputElement>(null);
   const gatewayFileRef = useRef<HTMLInputElement>(null);
   const [libOpen, setLibOpen] = useState(false);
@@ -567,6 +573,20 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
             sub: 'Ảnh · PPTX · PDF (chữ sống, bậc 1) · IDFP · XLSX/CSV; định dạng chưa hỗ trợ sẽ nói rõ lý do',
             icon: <FileUp size={15} />,
             onSelect: () => gatewayFileRef.current?.click(),
+          },
+          {
+            id: 'boq-appendix',
+            label: tr('Phụ lục BOQ từ bản vẽ', 'BOQ appendix from the drawing'),
+            sub: tr(
+              'Dựng trang bảng khối lượng từ Doc 2D + Kho giá + số sửa tay · mỗi dòng ghi rõ Bản vẽ ↔ Sửa tay ✎ · làm mới được · PDF/PNG đúng bố cục, PPTX xuất trang này dạng ảnh',
+              'Build BOQ pages from the 2D doc + price library + hand edits · every row labelled Drawing ↔ Hand-edited ✎ · refreshable · PDF/PNG keep the layout, PPTX exports these pages as images',
+            ),
+            icon: <TableProperties size={15} />,
+            onSelect: () => { void p.onInsertBoqAppendix?.(); },
+            disabled: !p.onInsertBoqAppendix || !!p.boqAppendixBusy,
+            disabledReason: p.boqAppendixBusy
+              ? tr('Đang dựng phụ lục — chờ xong lượt trước.', 'Building the appendix — wait for the previous run.')
+              : tr('Chưa nối với hồ sơ đang mở.', 'Not connected to the open document.'),
           },
         ]}
       />
