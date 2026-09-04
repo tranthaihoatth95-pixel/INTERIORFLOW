@@ -186,5 +186,70 @@ dichSauRedirect   : http://localhost:3100/          ← dội về Home
 đồng bộ — nhưng nó là **hàm thuần đồng bộ** đang được nhiều nơi gọi, nên phải đổi ở nơi gọi
 (`LegacyStageRedirect`) chứ không đổi chữ ký hàm.
 
-**Trạng thái:** 🟡 khai, **chưa sửa — ngoài vùng ghi của lane 01** (`components/studio/**` và
-`lib/project-scope.ts` không thuộc phạm vi được giao). Không tự vá.
+**Trạng thái:** ✅ **ĐÃ SỬA 04/09**, tái hiện có đối chứng trước khi sửa.
+
+**Tái hiện** (`scripts/nghiem-thu-ban-lam-viec/tai-hien-d7.mjs`, hai thế giới khác nhau **đúng một
+biến** — cùng một hàm, một `boolean`):
+```
+lanh-dinh-danh   lastUserId CÒN   → /projects/<id>/cad   ✅
+nguoi-dinh-danh  lastUserId XOÁ   → /?notice=choose-project → /   ❌
+                 (resume trên đĩa của CẢ HAI: {"route":"/cad-editor","flowId":"…","sheetId":"cadsheet-0"})
+```
+⚠️ Lượt chạy ĐẦU của bộ tái hiện suýt cho một đối chứng GIẢ: thế giới lành trả `resume: null` vì
+dev server biên dịch route lần đầu mất ~3 giây, **ăn hết ngân sách chờ** ⇒ hai thế giới lệch nhau
+**hai** biến (bộ đệm định danh **và** máy chủ nguội/ấm). Đã thêm bước hâm nóng; nếu không thì "cả
+hai đều đỏ" đã bị đọc thành "không tái hiện được".
+
+**Sửa ở tầng nguồn** — `lib/project-scope.ts` tách hai nhánh của `activeProjectRouteId` (`tuStore`
+không cần định danh · `tuResume` cần) rồi thêm `activeProjectRouteIdCho(conSong)`; chữ ký đồng bộ
+cũ **giữ nguyên** cho các nơi gọi lúc render. `components/studio/LegacyStageRedirect.tsx:54` đổi
+sang bản chờ. **CONNECT chứ không dựng cơ chế mới**: dùng đúng `danhTinhChoLuot` mà `ResumeTracker`
+· `CadSheets` · `PresentSheets` · autosave-3D đã dùng (lệnh cấm ở `danh-tinh-phien.ts:19`).
+
+**Hỏi store TRƯỚC, chờ SAU** — điều hướng trong phiên vốn không cần định danh, nên nó **không phải
+trả giá chờ mạng**; chỉ ca store rỗng (bookmark/deep-link) mới chờ. **Không loé Home**: đúng MỘT
+lần `router.replace`, xảy ra SAU khi đã biết đích; trong lúc chờ trang vẫn là spinner sẵn có.
+
+**Máy canh tái phát:** `J23` trong `scripts/nghiem-thu-g2-hanh-trinh.mjs`. Hiệu chuẩn **hai lớp**:
+thế giới khai báo `chanResume` ĐỎ, **và** gỡ bản vá ra thì ĐỎ đúng khẳng định lượt-hai. Khẳng định
+đặt ở lượt vào **có bộ đệm định danh NGUỘI** — lượt ấm không tái hiện được bệnh.
+
+---
+
+## D8 · P2 — CÙNG HỌ, TẦNG THỨ BA: ĐỌC ĐỊNH DANH Ở **THÂN RENDER** KHÔNG CÓ GÌ KÍCH LẠI
+
+**Tìm được khi quét cho hết họ bệnh sau D7 (04/09). ĐO TRÊN APP THẬT, không suy từ mã.**
+
+D1/D6/D7 đều là **đọc trong effect mount**. Quét hết các cửa đọc đồng bộ
+(`scripts/nghiem-thu-ban-lam-viec/quet-doc-dinh-danh.mjs`) thì **0 chỗ còn lại thuộc loại đó** —
+ba ca kia đã đóng trọn nhánh ấy. Nhưng lộ ra **một tầng khác chưa ai nêu**: `effectiveUserId(storeUserId)`
+gọi ở **thân render**. Nó phản ứng theo `storeUserId`, **không** phản ứng theo bộ đệm — `getLastUserId()`
+đọc `localStorage`, mà `localStorage` không phải state, nên **gieo bộ đệm KHÔNG kích một lượt render nào**.
+
+**Đo được** (`do-dinh-danh-sau-mount.mjs`, hồ sơ sạch, đăng nhập bằng API, 24 mẫu × 700ms):
+
+| deep-link | bộ đệm được gieo | `useFlowStore.user` được đặt | thân render tự lành? |
+|---|---|---|---|
+| `/projects/<id>/**cad**` | ✅ lúc **2.654 ms** | ❌ **KHÔNG BAO GIỜ** (hết 17 s vẫn null) | ❌ |
+| `/projects/<id>/**present**` | ✅ lúc 11.890 ms | ✅ lúc **12.593 ms** | ✅ |
+
+Chặng Trình chiếu lành vì `components/present-editor/PresentStageScreen.tsx:61` **tự hỏi
+`/api/auth/me` rồi `setUser`** (vá 06/08 cho một nút giả) — tức nó có **cơ chế định danh THỨ HAI**,
+sinh trước `lib/danh-tinh-phien.ts` và không biết gì về nhau. Chặng 2D không có cơ chế đó.
+
+**Hệ quả thật, và phải nói cho đúng mức:** ở chặng 2D, mọi chỗ đọc thân-render nhận `null` ở lượt
+render đầu và **giữ nguyên `null` cho tới khi có thứ KHÁC kích render lại**. Phần lớn tự chữa sau
+đó (`CadCanvas` re-render theo selection, `AiBriefPanel`/`LayoutShelf` có `useEffect` deps
+`[modelKey]` chạy lại khi giá trị tới) ⇒ **đây là lỗi CHẬM, không phải lỗi MẤT** — trừ chỗ nào
+chốt giá trị bằng bộ khởi tạo chạy-một-lần. Ca rõ nhất là
+`components/settings/LockScreenSettings.tsx:22` `useState(() => getLockIdleMinutes(userId))`: chốt
+một lần, và `commit()` sau đó gọi `setLockIdleMinutes('')` mà hàm ấy `if (!userId) return` ⇒ **ghi
+bị nuốt im lặng**.
+
+**Vì sao KHÔNG vá trong lượt này:** vá đúng là **hợp nhất hai cơ chế định danh** (cho
+`danh-tinh-phien` đặt luôn `store.user`, xoá đường `/api/auth/me` riêng của `PresentStageScreen`) —
+việc đó chạm `lib/store.ts` + chặng Trình chiếu, ngoài vùng ghi của làn này, và là **thay đổi kiến
+trúc chứ không phải sửa một dòng**. Vá điểm từng chỗ đọc là đúng thứ `danh-tinh-phien.ts:19` cấm.
+
+**Trạng thái:** 🟡 khai, chưa sửa. Bằng chứng:
+`docs/delivery/anh-duyet-mat/d7/do-dinh-danh-sau-mount-{cad,present}.json`.

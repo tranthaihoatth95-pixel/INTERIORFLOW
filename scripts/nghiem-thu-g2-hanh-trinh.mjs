@@ -319,6 +319,37 @@ async function moMatVe(page, duAn) {
   await boQuaLopChe(page);
 }
 
+/**
+ * MỞ BOOKMARK ROUTE CŨ (`/cad-editor`) và ĐO CẢ ĐƯỜNG ĐI, không chỉ đích (D7, 04/09).
+ *
+ * `components/studio/LegacyStageRedirect.tsx` tra "dự án đang hoạt động" rồi `router.replace`.
+ * Chỉ đọc URL cuối thì không phân biệt được "đưa thẳng tới việc đang dở" với "dội về Home rồi
+ * mới bò về" — với mắt người dùng đó là hai chuyện khác hẳn. `framenavigated` ghi lại từng chặng
+ * nên khẳng định `loeHome` đứng trên bằng chứng, không đứng trên ảnh chụp.
+ */
+async function moBookmark(page, duAn) {
+  const chang = [];
+  const nghe = (f) => {
+    if (f === page.mainFrame()) chang.push({ url: f.url().replace(GOC, ''), t: Date.now() });
+  };
+  page.on('framenavigated', nghe);
+  try {
+    await page.goto(`${GOC}/cad-editor`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(12000);
+  } finally {
+    page.off('framenavigated', nghe);
+  }
+  const t0 = chang.length ? chang[0].t : Date.now();
+  const duong = chang.map((c) => ({ url: c.url, sau_ms: c.t - t0 }));
+  const iDich = duong.findIndex((d) => d.url.startsWith(`/projects/${duAn}/`));
+  return {
+    dich: page.url().replace(GOC, ''),
+    chang: duong,
+    // "Loé Home" = có chặng dừng ở Home/`?notice=` TRƯỚC khi tới đích dự án.
+    loeHome: iDich > 0 && duong.slice(0, iDich).some((d) => d.url === '/' || d.url.startsWith('/?')),
+  };
+}
+
 /** VẼ THẬT một đoạn thẳng — đây là "việc thiết kế" mà bất biến bảo vệ. */
 async function veMotDuong(page, { doiAutosave = 6000 } = {}) {
   await page.getByRole('button', { name: 'Đường', exact: true }).first().click();
@@ -492,6 +523,114 @@ const J16b = {
     return {
       dat: true,
       vi: `vào thẳng deep-link, chưa thao tác gì, đường quay lại đã đủ: ${truoc.resume.route} → flowId ${truoc.resume.flowId}; còn nguyên sau khi ĐÓNG HẲN trình duyệt`,
+    };
+  },
+};
+
+/**
+ * J23 — BOOKMARK ROUTE CŨ: mở `/cad-editor` thẳng, phải về ĐÚNG dự án đang dở (D7, đường ĐỌC).
+ *
+ * ⛔ VÌ SAO TÁCH KHỎI J16b, dù nghe rất giống. J16b hỏi **đường GHI**: dấu vết việc-đang-dở có
+ * được ghi đủ `flowId` không. J23 hỏi **đường ĐỌC**: có ai chịu ĐỌC dấu vết ấy rồi đưa người
+ * dùng tới đúng chỗ không. Hai câu độc lập — D7 là ca resume ĐÃ ĐỦ trên đĩa mà cầu chuyển hướng
+ * vẫn dội về Home, tức J16b XANH trong khi người dùng vẫn không vào được việc của mình.
+ *
+ * ⭐ ĐO CẢ ĐƯỜNG ĐI, KHÔNG CHỈ ĐÍCH. "Về đúng chỗ" và "về đúng chỗ SAU KHI đã nháy qua Home" là
+ * hai trải nghiệm khác nhau; chỉ đọc URL cuối thì không phân biệt được. `framenavigated` ghi
+ * lại từng chặng ⇒ khẳng định `loeHome` có bằng chứng, không phải cảm nhận từ ảnh chụp.
+ *
+ * THẾ GIỚI HỎNG = `chanResume` (chặn đường ghi `interiorflow.resume.*`). Chọn cái này vì nó làm
+ * ĐỎ ĐÚNG KHẲNG ĐỊNH NÀY mà KHÔNG chặn đường khẳng định phải đi qua: cầu chuyển hướng vẫn chạy,
+ * vẫn quyết định, chỉ là không còn dấu vết nào để quyết đúng ⇒ nó về Home và khẳng định bắt được.
+ * (Bài học J16: hiệu chuẩn chặn mất đường mà khẳng định cần đi qua thì khẳng định không bao giờ
+ * chạy tới, và phép hiệu chuẩn đó không chứng minh gì.)
+ *
+ * ⚠️ KHẲNG ĐỊNH ĐẶT TRÊN `truoc` — LƯỢT VÀO ĐẦU TIÊN. `sau` chạy trên CÙNG hồ sơ đĩa nên bộ đệm
+ * định danh đã ấm; ca hỏng của họ bệnh này KHÔNG tái diễn ở lượt thứ hai. Đúng cái bẫy J16/J16b
+ * đã dính một lần.
+ */
+const J23 = {
+  ma: 'J23',
+  ten: 'Bookmark /cad-editor → vào thẳng việc đang dở, không dội về Home',
+  chan: 'G2',
+  loai: 'trinh-duyet',
+  hieuChuanMo: 'chặn đường ghi interiorflow.resume.* ⇒ không còn dấu vết để cầu chuyển hướng đọc',
+  async chuanBi(mt) {
+    return { duAn: await duAnRieng(mt, 'J23') };
+  },
+  async moPhien(mt, st, lan) {
+    const p = await moPhienTrinhDuyet(`J23${mt.hauTo}`, { chanResume: mt.hongCoY });
+    const me = await p.ctx.request.get(`${GOC}/api/auth/me`);
+    st.userId = (await me.json())?.user?.id || (await dangNhap(p.ctx));
+    st.lan = lan;
+    return p;
+  },
+  /** Lượt 1: vào thẳng studio (gieo dấu vết), rồi mở BOOKMARK route cũ ngay trong phiên đó. */
+  async thaoTac(p, mt, st) {
+    await p.page.goto(`${GOC}/projects/${st.duAn}/cad`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(7000);
+    await boQuaLopChe(p.page);
+    st.diChuyen = await moBookmark(p.page, st.duAn);
+    await chup(p.page, 'J23-1-bookmark-luot-dau');
+  },
+  /**
+   * Lượt 2: máy đã tắt hẳn rồi mở lại — và ở đây dựng ĐÚNG trạng thái của D7.
+   *
+   * 🔴 VÌ SAO PHẢI DỰNG, KHÔNG ĐỢI NÓ TỰ XẢY RA. Hồ sơ đĩa mang sẵn `interiorflow.lastUserId` từ
+   * lượt 1 ⇒ bộ đệm định danh ĐÃ ẤM ⇒ đường đọc đồng bộ vẫn tra ra dự án ⇒ hành trình này XANH
+   * ngay cả khi bệnh D7 còn nguyên. Đó đúng cái bẫy "thế giới đã ấm" mà J16/J16b đã dính một lần.
+   *
+   * Trạng thái dựng ở đây là TRẠNG THÁI NGƯỜI DÙNG HỢP LỆ, không phải lỗi bơm vào: **phiên máy
+   * chủ còn hiệu lực (cookie trong hồ sơ) nhưng bộ đệm định danh trong localStorage trống, trong
+   * khi dấu vết `interiorflow.resume.<uid>` vẫn còn.** Nó sinh ra thật ở ít nhất hai đường:
+   *   · `quenDangXuat()` (4 nơi bấm Đăng xuất) xoá `lastUserId` mà **cố ý giữ** `resume.<uid>`;
+   *     phiên máy chủ chưa kịp/không kịp bị huỷ (mạng đứt giữa chừng, đóng tab ngay lúc đó).
+   *   · người dùng xoá dữ liệu trang theo mục (Chrome cho xoá "site data" tách khỏi cookie).
+   * Trong cả hai, người dùng ĐANG đăng nhập và việc đang dở vẫn còn — dội họ về Home là sai.
+   *
+   * Cần một lượt tải trang cùng gốc thì mới chạm được localStorage; dùng `/api/auth/me` vì nó
+   * KHÔNG chạy JS của app ⇒ không vô tình gieo lại đúng thứ vừa xoá.
+   */
+  async vaoLai(p, mt, st) {
+    await p.page.goto(`${GOC}/api/auth/me`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    st.demTruocKhiVao = await p.page.evaluate(() => {
+      try {
+        const v = localStorage.getItem('interiorflow.lastUserId');
+        localStorage.removeItem('interiorflow.lastUserId');
+        return v;
+      } catch {
+        return null;
+      }
+    });
+    st.diChuyen = await moBookmark(p.page, st.duAn);
+    await chup(p.page, 'J23-2-bookmark-dinh-danh-nguoi');
+  },
+  async ghiXuong(p, mt, st) {
+    return {
+      duAn: st.duAn,
+      diChuyen: st.diChuyen,
+      resume: await docResumeKho(p.page, st.userId),
+    };
+  },
+  soSanh(truoc, sau, st) {
+    const kiem = (r, khi) => {
+      const d = r.diChuyen;
+      if (!d) return `${khi}: không đo được đường đi`;
+      if (!d.dich.startsWith(`/projects/${r.duAn}/`))
+        return `${khi}: bookmark /cad-editor dội về "${d.dich}" thay vì /projects/${r.duAn}/cad — dấu vết trên đĩa lúc đó: ${r.resume?.raw ?? 'RỖNG'}`;
+      if (d.loeHome)
+        return `${khi}: về đúng dự án NHƯNG loé qua Home dọc đường (${d.chang.map((c) => c.url).join(' → ')})`;
+      return null;
+    };
+    // `truoc` = bộ đệm định danh ẤM (vừa đi qua route studio) — đường bookmark thông thường.
+    const loiTruoc = kiem(truoc, 'bookmark ngay trong phiên (bộ đệm định danh ẤM)');
+    if (loiTruoc) return { dat: false, vi: loiTruoc };
+    // `sau` = ĐÓNG HẲN + bộ đệm định danh NGUỘI, phiên máy chủ vẫn hợp lệ — đúng trạng thái D7.
+    const loiSau = kiem(sau, 'đóng hẳn rồi mở lại, bộ đệm định danh NGUỘI (đúng ca D7)');
+    if (loiSau) return { dat: false, vi: loiSau };
+    return {
+      dat: true,
+      vi: `bookmark /cad-editor về thẳng ${sau.diChuyen.dich} (không loé Home) ở CẢ hai ca: bộ đệm định danh ẤM, và NGUỘI sau khi đóng hẳn (đệm đã xoá: ${st.demTruocKhiVao ?? 'vốn đã rỗng'})`,
     };
   },
 };
@@ -1485,7 +1624,7 @@ async function bamTheBangBanPhim(page, tran = 40) {
   return { toiDuoc: false, soTab: tran, coRing: false, dungO: '' };
 }
 
-const HANH_TRINH = [J16, J16b, J17, J19, J20, J07, J12, J04, J06, J18, J22, J05];
+const HANH_TRINH = [J16, J16b, J23, J17, J19, J20, J07, J12, J04, J06, J18, J22, J05];
 
 /* ─────────────────────────── khung chạy ─────────────────────────── */
 
