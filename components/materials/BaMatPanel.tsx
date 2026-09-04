@@ -54,7 +54,7 @@ export function BaMatPanel({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey); // esc-only: chỉ xử Escape đóng lớp — đúng chuẩn dialog, không cần né ô nhập
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 

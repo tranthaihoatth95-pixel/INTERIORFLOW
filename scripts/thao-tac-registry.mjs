@@ -63,8 +63,10 @@ export const LUAT = [
     nguon: 'Chốt hệ phím tắt toàn app 10/08 (00-CHOT)',
     // `esc-only` (phán quyết T 13/08): Escape là lệnh ĐÓNG, không phải phím tắt chức năng — listener
     // thật sự chỉ xử Escape thì ghi marker `esc-only` cạnh addEventListener thay vì guard (agent kiểm từng ca).
-    soi: [{ dir: 'components', mauCo: "(window|document)\\.addEventListener\\('keydown'", mauThieu: 'INPUT|TEXTAREA|isContentEditable|isTyping|isEditable|esc-only' },
-          { dir: 'lib', mauCo: "(window|document)\\.addEventListener\\('keydown'", mauThieu: 'INPUT|TEXTAREA|isContentEditable|isTyping|isEditable|esc-only' }] },
+    // `mienTruTrongChuThich`: marker `esc-only` là LỜI KHAI của tác giả nên được phép nằm trong
+    // chú thích — khác với vi phạm, thứ bắt buộc phải nằm trong mã thật (xem docstring `timThieu`).
+    soi: [{ dir: 'components', mienTruTrongChuThich: true, mauCo: "(window|document)\\.addEventListener\\('keydown'", mauThieu: 'INPUT|TEXTAREA|isContentEditable|isTyping|isEditable|esc-only' },
+          { dir: 'lib', mienTruTrongChuThich: true, mauCo: "(window|document)\\.addEventListener\\('keydown'", mauThieu: 'INPUT|TEXTAREA|isContentEditable|isTyping|isEditable|esc-only' }] },
 
   { id: 'cam-chu-tu-dong', toiDanh: 4, loai: 'grep',
     luat: 'CẤM chữ "tự động" trong UI — AI đoán phải mang dấu Magic, không tự xưng chắc chắn',

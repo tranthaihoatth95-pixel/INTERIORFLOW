@@ -40,12 +40,57 @@ function filesOf(dk) {
   return existsSync(d) ? [...walk(d)] : [];
 }
 
+
+/* ── BÓC CHÚ THÍCH TRƯỚC KHI SOI (thêm 04/09) ───────────────────────────────────
+   VÌ SAO: máy này đọc văn bản thô, nên nó bắt cả chữ nằm trong CHÚ THÍCH. Ngày 04/09
+   nó báo 3 lệch, kiểm ra CẢ BA đều là báo nhầm — và cái thứ ba là ca kinh điển:
+     · `Surface.tsx` "vi phạm" thiếu -webkit vì docstring có chữ `backdrop-filter`;
+     · `SearchProjectsInput.tsx` cũng vậy, ở đúng dòng ghi *"Không chồng backdrop-filter"*;
+     · `VitalsEvalPanel.tsx` "dùng chữ tự động" ở đúng câu tự dặn *"Không có chữ 'tự động'"*.
+   Máy bắt chính câu cấm là dấu hiệu nó đang đọc sai tầng. Và đỏ-mà-không-sửa-được là
+   cách nhanh nhất giết một máy soi — người ta học cách bỏ qua nó.
+
+   CÁCH LÀM: thay ký tự bên trong chú thích bằng khoảng trắng, GIỮ NGUYÊN xuống dòng ⇒
+   số dòng báo ra không lệch. Chuỗi được bảo toàn (một `//` trong chuỗi không phải chú thích).
+   ⚠️ GIỚI HẠN KHAI THẲNG: không dò regex literal, nên `/a\/\/b/` về lý thuyết có thể bị
+   đọc nhầm thành chú thích. Chưa gặp ca thật; gặp thì vá ở đây, đừng nới luật. */
+function bocChuThich(s) {
+  let ra = '';
+  let i = 0;
+  let trong = null; // "'" | '"' | '`' | '//' | '/*'
+  while (i < s.length) {
+    const c = s[i], d = s[i + 1];
+    if (trong === null) {
+      if (c === '/' && d === '/') { trong = '//'; ra += '  '; i += 2; continue; }
+      if (c === '/' && d === '*') { trong = '/*'; ra += '  '; i += 2; continue; }
+      if (c === "'" || c === '"' || c === '`') { trong = c; ra += c; i++; continue; }
+      ra += c; i++; continue;
+    }
+    if (trong === '//') {
+      if (c === '\n') { trong = null; ra += c; } else ra += ' ';
+      i++; continue;
+    }
+    if (trong === '/*') {
+      if (c === '*' && d === '/') { trong = null; ra += '  '; i += 2; continue; }
+      ra += c === '\n' ? c : ' '; i++; continue;
+    }
+    // trong chuỗi
+    if (c === '\\') { ra += c + (d ?? ''); i += 2; continue; }
+    if (c === trong) trong = null;
+    ra += c; i++;
+  }
+  return ra;
+}
+
+/** Đọc tệp ở dạng CHỈ CÒN MÃ — mọi luật grep soi trên bản này. */
+function docMa(f) { return bocChuThich(readFileSync(f, 'utf8')); }
+
 /** tất cả vị trí khớp `mau` — trả [{file, line}] */
 function timKhop(dk) {
   const re = new RegExp(dk.mau, 'm');
   const hits = [];
   for (const f of filesOf(dk)) {
-    const noiDung = readFileSync(f, 'utf8');
+    const noiDung = docMa(f);
     if (!re.test(noiDung)) continue;
     const reLine = new RegExp(dk.mau);
     const lines = noiDung.split('\n');
@@ -57,14 +102,26 @@ function timKhop(dk) {
   return hits;
 }
 
-/** kiểu mauCo/mauThieu — file có mauCo mà thiếu mauThieu */
+/** kiểu mauCo/mauThieu — file có mauCo mà thiếu mauThieu.
+ *
+ * ⭐ HAI TẦNG ĐỌC KHÁC NHAU, cố ý (sửa 04/09 sau khi bóc chú thích làm hỏng lối thoát):
+ *   · VI PHẠM (`mauCo`) phải nằm trong **MÃ THẬT** — chữ trong chú thích không chạy, không hại ai.
+ *   · MIỄN TRỪ (`mauThieu`) mặc định **cũng phải là mã** — vd tiền tố `-webkit-` viết trong chú
+ *     thích thì trình duyệt đâu có đọc.
+ *   · NGOẠI LỆ: luật nào cố ý dùng **marker do người viết khai** thì đặt cờ
+ *     `mienTruTrongChuThich: true` — lúc đó miễn trừ được phép nằm trong chú thích, vì bản chất
+ *     nó LÀ một lời khai của tác giả, không phải một hành vi của mã. Ca thật: `esc-only`.
+ * 🔴 Bài học đắt của lượt này: bóc chú thích diệt được 2 báo nhầm nhưng lập tức đẻ ra 6 báo nhầm
+ *    mới (7 tệp mất lối thoát `esc-only`). Sửa một máy soi mà không chạy lại ngay là tự tay thay
+ *    một loại nhiễu bằng một loại nhiễu to hơn. */
 function timThieu(dk) {
   const reCo = new RegExp(dk.mauCo, 'm');
   const reThieu = new RegExp(dk.mauThieu, 'm');
   const xau = [];
   for (const f of filesOf(dk)) {
-    const s = readFileSync(f, 'utf8');
-    if (reCo.test(s) && !reThieu.test(s)) xau.push(f.replace(ROOT, ''));
+    const ma = docMa(f);
+    const noiTimMienTru = dk.mienTruTrongChuThich ? readFileSync(f, 'utf8') : ma;
+    if (reCo.test(ma) && !reThieu.test(noiTimMienTru)) xau.push(f.replace(ROOT, ''));
   }
   return xau;
 }
