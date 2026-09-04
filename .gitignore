@@ -121,3 +121,16 @@ nhat-ky-chup-man.txt
 *-tmp.js
 *.tmp.mjs
 *.tmp.js
+
+# ── RÁC CỦA CÔNG CỤ ĐỒNG BỘ (thêm 04/09, Hoà nghi thất thoát do repo nằm trong ~/Downloads) ──
+# Không phải để "cho gọn": các tệp này lọt vào repo là DẤU HIỆU thư mục đang bị đồng bộ, và bản
+# thân chúng gây lệch giữa máy Hoà với CI. Chặn ở đây để chúng không âm thầm thành lịch sử.
+# ⚠️ Chặn rác KHÔNG chữa được gốc bệnh — gốc bệnh là chỗ đặt repo. Chạy:
+#      bash scripts/chan-doan-noi-luu-repo.sh
+*conflicted copy*
+*Conflict [0-9]*
+desktop.ini
+Icon?
+.*.icloud
+.dropbox
+.dropbox.attr
