@@ -70,6 +70,24 @@ import { startAutoBackup, type AutoBackupSession } from '@/lib/cad/auto-backup';
 import { backfillRoomTypes } from '@/lib/cad/standards/checker';
 import { syncHostedOpenings } from '@/lib/cad/hosting';
 import { syncPocheAnchors } from '@/lib/cad/poche';
+/**
+ * GỬI SANG TRÌNH CHIẾU (thu 04/09) — thi hành luật nền "2D/3D sáng tác nội dung · Trình chiếu dàn
+ * trang và phát hành". Chặng 2D KHÔNG mất năng lực in nào (hộp thoại xuất PDF ở dưới giữ nguyên,
+ * đó là đường GỬI-NHANH); nút này thêm ĐIỂM VÀO ĐÚNG: đẩy một TỜ có tỉ lệ · khổ · lề · khung tên
+ * · NEO NGUỒN sang Present để dàn trang và phát hành ở một chỗ. Không nhân bản engine trang —
+ * chỉ chuyển metadata + dấu vết, hình do nguồn cấp.
+ *
+ * ⛔ KHÁC đường ẢNH `lib/cad/present-handoff.ts` ("Đưa sang Present" ở CadEditor) — đường đó chèn
+ * MỘT SLIDE ảnh vào deck và đứt dây với nguồn. Hai khoá storage riêng, hai bề mặt riêng, dùng
+ * song song được. Không gộp, không thay.
+ */
+import {
+  guiToSangTrinhChieu,
+  dauVetNguon,
+  ghiDauVetNguon,
+  khungTenRong,
+  type ToBanVe,
+} from '@/lib/present-editor/to-ban-ve';
 import { useSheetsBucketId } from '@/lib/scope';
 import { markBucketHydrated } from '@/lib/cad/cad-doc-hydration';
 import { useFlowStore } from '@/lib/store';
@@ -77,9 +95,9 @@ import { createProject } from '@/lib/workspace';
 import { saveSheets } from '@/lib/sheets-persist';
 import { useSaveStatus } from '@/lib/save-status';
 import { useRouter } from 'next/navigation';
-import { drawEntities } from '@/lib/cad/render';
+import { drawEntities, renderDocToDataURL } from '@/lib/cad/render';
 import { clampViewportRect, docForViewport, moveViewportRect, patchSheetViewport, removeSheetViewport, resizeViewportRect, setViewportLayerVisibility, viewportLayerVisible, viewportWorldBox } from '@/lib/cad/paper-space';
-import { Grip, Lock, LockOpen, ScanSearch, Trash2 } from 'lucide-react';
+import { FileOutput, Grip, Lock, LockOpen, ScanSearch, Trash2 } from 'lucide-react';
 
 const ROUTE = '/cad-editor' as const;
 const DEFAULT_VIEWPORT: Viewport = { scale: 0.08, panX: 300, panY: 400 };
@@ -908,16 +926,35 @@ export default function CadSheets() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-      <SheetTabBar
-        sheets={sheets.map(({ id, name }): SheetTab => ({ id, name }))}
-        activeId={activeId}
-        onSelect={switchTo}
-        onAdd={addSheet}
-        onRename={renameSheet}
-        onClose={closeSheet}
-        onReorder={reorder}
-        addLabel="Thêm bản vẽ"
-      />
+      {/* Ổ PHẢI của hàng tab — "Gửi sang Trình chiếu" đứng CÙNG HÀNG với tab, không chiếm thêm
+          một dải ngang toàn khổ cho một hành động thỉnh thoảng mới bấm. `SheetTabBar` là
+          presentational dùng chung cho cả CAD lẫn Present nên không đụng vào nó: bọc ngoài bằng
+          một hàng flex, đường kẻ đáy nối liền qua cả hai ô. */}
+      <div style={{ display: 'flex', alignItems: 'stretch', flex: '0 0 auto' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <SheetTabBar
+            sheets={sheets.map(({ id, name }): SheetTab => ({ id, name }))}
+            activeId={activeId}
+            onSelect={switchTo}
+            onAdd={addSheet}
+            onRename={renameSheet}
+            onClose={closeSheet}
+            onReorder={reorder}
+            addLabel="Thêm bản vẽ"
+          />
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 8px',
+            borderBottom: '1px solid var(--border)',
+            background: 'var(--bg)',
+          }}
+        >
+          <GuiSangTrinhChieu sheets={sheets} activeId={activeId} />
+        </div>
+      </div>
       {/* Sketch luôn ở Model; Pro đổi thật giữa hình học 1:1 và tờ giấy. */}
       {cadMode === 'sketch' || cadWorkspace === 'model' ? <CadEditor /> : (
         <PaperSpace
@@ -947,6 +984,117 @@ export default function CadSheets() {
           onClose={() => setBackupBrowserOpen(false)}
         />
       )}
+    </div>
+  );
+}
+
+
+/**
+ * Ổ PHẢI hàng tab bản vẽ — ĐIỂM VÀO "gửi sang Trình chiếu" của chặng 2D.
+ *
+ * ⭐ Phân vai nhìn thấy được: ở đây KHÔNG có núm khổ giấy/tỉ lệ nào. Tờ mang theo khổ/tỉ lệ đang
+ * dùng làm ĐIỂM KHỞI ĐẦU, còn quyết định về trang giấy thì làm bên Trình chiếu.
+ *
+ * SỔ DẤU VẾT: effect dưới đây ghi dấu vết nội dung nguồn mỗi khi `doc` đổi (hoãn 600ms để không
+ * chạy theo từng khung kéo chuột). Nhờ vậy Present — vốn KHÔNG đọc được `Doc` vì khác route —
+ * biết tờ đã cũ chưa. Nó chỉ GHI SỔ, không đụng vào tờ nào đã gửi (luật ②: nguồn đổi thì ĐÁNH
+ * DẤU, máy không tự sửa đầu ra).
+ */
+function GuiSangTrinhChieu({ sheets, activeId }: { sheets: Sheet[]; activeId: string }) {
+  const router = useRouter();
+  const doc = useCadStore((s) => s.doc);
+  const bucketId = useSheetsBucketId();
+  const docId = bucketId || 'local';
+  const [msg, setMsg] = useState<string | null>(null);
+  const sheet = sheets.find((s) => s.id === activeId) ?? sheets[0];
+
+  // Dấu vết nội dung nguồn — hoãn 600ms, chỉ chạy khi người dùng ngừng tay.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        ghiDauVetNguon(docId, dauVetNguon([docId, doc.entities.length, JSON.stringify(doc.entities)]));
+      } catch {
+        /* doc quá lớn/vòng lặp tham chiếu — bỏ qua, Present sẽ báo 'Cần xem lại' thay vì đoán bừa */
+      }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [doc, docId]);
+
+  const gui = () => {
+    if (!sheet) return;
+    const box = docBox(doc);
+    const noiDungMm = box
+      ? { rongMm: Math.max(0, box.maxX - box.minX), caoMm: Math.max(0, box.maxY - box.minY) }
+      : { rongMm: 0, caoMm: 0 };
+    const vp = sheet.viewports[0];
+    const dauVet = dauVetNguon([docId, doc.entities.length, JSON.stringify(doc.entities)]);
+    ghiDauVetNguon(docId, dauVet);
+    const to: ToBanVe = {
+      id: `to-${sheet.id}-${Date.now().toString(36)}`,
+      nhan: sheet.name,
+      khoGiay: sheet.paper,
+      huong: sheet.orientation,
+      le: 10,
+      // Tỉ lệ ĐANG dùng ở ô nhìn đi theo tờ — KHÔNG tự đổi sang "vừa khung" cho tiện mắt (luật ①).
+      tyLe: vp?.scale ? { kieu: 'chuan', n: vp.scale } : { kieu: 'chuan', n: 50 },
+      khungTen: {
+        ...khungTenRong(),
+        duAn: useFlowStore.getState().flowName || '',
+        tenBanVe: sheet.name,
+        soTo: sheet.number || '',
+        banSua: sheet.titleBlock?.revision || '',
+        nguoiVe: sheet.titleBlock?.drawnBy || '',
+        ngay: sheet.titleBlock?.date || '',
+      },
+      neo: { chang: 'cad2d', docId, sheetId: sheet.id, dauVet, luc: Date.now() },
+      noiDungMm,
+      // Ảnh xem trước THẬT — cùng hàm dùng cho Export PNG/"Đưa sang Render", không dựng renderer
+      // thứ hai. Rỗng (SSR/lỗi canvas) thì để trống — Trình chiếu vẽ khung trống, không bịa hình.
+      anh: renderDocToDataURL(doc, 1400) || undefined,
+    };
+    guiToSangTrinhChieu([to]);
+    setMsg(`Đã gửi "${sheet.name}" sang Trình chiếu.`);
+    // Chặng Trình chiếu có HAI lối vào thật: trong một dự án là `/projects/<id>/present`, ngoài
+    // dự án là `/present-editor`. Đi nhầm lối thì tờ vừa gửi nằm chờ ở màn người dùng không tới —
+    // suy lối từ đường đang đứng thay vì gõ cứng một đường.
+    const duAn = /^\/projects\/([^/]+)\//.exec(window.location.pathname)?.[1];
+    router.push(duAn ? `/projects/${duAn}/present` : '/present-editor');
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <button
+        title="Khổ giấy · tỉ lệ · lề · khung tên đặt bên Trình chiếu."
+        type="button"
+        onClick={gui}
+        aria-disabled={!sheet}
+        aria-describedby={!sheet ? 'gui-tc-ly' : undefined}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '3px 10px',
+          minHeight: 26,
+          borderRadius: 'var(--r-2)',
+          border: '1px solid var(--vien-mo)',
+          background: 'var(--card)',
+          color: 'var(--t1)',
+          fontSize: 12,
+          whiteSpace: 'nowrap',
+          cursor: sheet ? 'pointer' : 'default',
+          opacity: sheet ? 1 : 'var(--mo-vo-hieu)',
+        }}
+      >
+        <FileOutput size={14} /> Gửi sang Trình chiếu
+      </button>
+      {!sheet && (
+        <span id="gui-tc-ly" style={{ fontSize: 11, color: 'var(--t3)' }}>
+          Chưa có tờ nào để gửi — thêm một bản vẽ trước.
+        </span>
+      )}
+      {/* Phản hồi TẠM THỜI sau khi gửi — chỉ hiện khi có; câu giải thích thường trực đã về
+          `title` của nút, không chiếm chỗ ngang nữa. */}
+      {msg && <span style={{ fontSize: 11, color: 'var(--t3)', whiteSpace: 'nowrap' }}>{msg}</span>}
     </div>
   );
 }
