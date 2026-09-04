@@ -212,6 +212,27 @@ export type IdfcBody =
 /** ③ mặt Trình chiếu/thương mại — khuôn con `ProductSpec`. V2 BỎ `kind` (đã lên `meta.kind` —
  * một sự thật một chỗ); `priceVnd` để `number` (JSON không có Decimal — tầng ghi DB tự đổi). */
 export interface IdfcCommerce {
+  /**
+   * ⭐ KHOÁ BẤT BIẾN — `ProductSpec.id` (FK mềm, CÙNG namespace `BlockEntity.specId`/
+   * `HatchEntity.specId` mà `Doc` và `computeBoq` đang neo). ADDITIVE 04/09, KHÔNG bump
+   * `IDFC_VERSION`: trường optional thuần, tệp v3 cũ (chỉ có `sku`) mở lại y nguyên và rơi về
+   * đường lùi sku — xem `resolveIdfcCommerceToSpec` (lib/materials/warehouse/catalog-link.ts).
+   *
+   * ⚠️ VÌ SAO CẦN, đo được: `sku` là BUSINESS KEY — nhà cung cấp đổi mã là mất nối. Trước 04/09
+   * cấu kiện rời chỉ nối bằng `sku`, trong khi bản chèn trong `Doc` nối bằng `specId`; hai đầu
+   * của CÙNG một vật neo bằng hai khoá khác hạng bền. `CatalogLink` (idfc-import/asset-family.ts
+   * :129) vốn ĐÃ mang `specId`+`matId`, nhưng đường sinh chỉ chép `brand/sku/vendor` sang
+   * `commerce` — hai khoá bất biến bị bỏ lại trong khoá mở rộng `xAssetFamily`, nên chỗ tiêu thụ
+   * (`catalog-link.ts:readCatalog`) phải parse lại JSON thô mới lấy được, và `.idfc` sinh bằng
+   * `exportIdfc` thuần (không có `xAssetFamily`) thì mất hẳn.
+   *
+   * ⛔ KHÔNG phá luật 2.1.9.i: đây là CON TRỎ, không phải bản sao. Giá vẫn nằm ở `ProductSpec`;
+   * `priceVnd` dưới đây chỉ là ảnh chụp lúc nhập của cấu kiện rời, `specId` mới là đường về nguồn.
+   */
+  specId?: string;
+  /** Khoá bất biến hạng vật liệu — matId UUID canonical (`lib/materials/matid-identity.ts`).
+   * Cùng lý do như `specId`; dùng khi vật là `material` và kho đã backfill `ProductSpec.matId`. */
+  matId?: string;
   brand?: string;
   sku?: string;
   vendor?: string;
