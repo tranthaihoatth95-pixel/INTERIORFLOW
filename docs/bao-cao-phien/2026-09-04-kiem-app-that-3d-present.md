@@ -221,3 +221,97 @@ gì**; người dùng chỉ biết mình mất việc SAU KHI tải lại. Khôn
 (surface `shortcut` khai mà không ai đọc · lý do nút mờ nằm trong `title` mà bàn phím không tới):
 **mã có, đường dây tới người dùng đứt ở đoạn cuối.** Ngoài `FILES_ALLOWED` ⇒ khai, không tự sửa.
 
+---
+
+## 6 · Lỗi thật tìm ra — trước / sau
+
+### 6.1 · Phím `Delete` không xoá được khối ở chặng 3D · **ĐÃ VÁ**
+| | Trước | Sau |
+|---|---|---|
+| Nhấn `Delete` khi đang chọn khối | huy hiệu cây `2` → `2`, nhãn vẫn "Khối xám" | huy hiệu `2` → `0`, nhãn "Không gian trống" |
+| Bấm chip "Xoá" | xoá đúng | xoá đúng (không đổi) |
+
+Sửa ở `components/three/Viewport3D.tsx` — gọi ĐÚNG lệnh `cad.sel.delete` của registry, không đẻ
+đường xoá thứ hai. Xem §2.
+
+### 6.2 · Ba việc chưa vá, đều NGOÀI `FILES_ALLOWED` — khai, không tự sửa
+1. **Không ai đọc mặt tiền `surfaces:'shortcut'`** ⇒ `F9` · `Zoom Extents` · `undo`/`redo` khai phím
+   mà phím không tự sinh ra. Cần sửa GỐC, đây đã là ca thứ hai (ca đầu: ⌘Z).
+2. **Lưu trữ bám vào `localStorage.lastUserId` chứ không bám cookie** ⇒ vào bằng deep-link là app
+   im lặng không lưu gì. Xem §4.
+3. **`fitCameraToScene` chạy lại mỗi khi đổi khối đang chọn** ⇒ bấm chọn một khối thì camera tự
+   khung lại. Không sai chức năng nhưng gây mất phương hướng; nên đưa qua mắt Hoà.
+
+## 7 · Tham số hoá bộ đo — đã đưa gì ra biến môi trường
+
+Bản cũ (`origin/checkpoint/2026-08-24-control-plane`) gõ cứng ba thứ không chạy được ở máy khác:
+
+| Bản cũ | Nay |
+|---|---|
+| `OUT = '/Users/tranben/Downloads/interiorflow/present-demo/screens'` | `IF_SHOT_DIR`, mặc định `<repo>/.nen-chrome-out` (đã gitignore) |
+| `/Users/tranben/…/_debug-no-hit.png` gõ thẳng trong thân hàm | dùng chung `chup()` |
+| `PROJ = 'cmsl8prn80001w9i2ud3bfdgr'` | `IF_DU_AN`; trống thì tự tạo qua `POST /api/flows` và nhớ ở `<SHOT_DIR>/du-an.txt` |
+| **`pwd.fill('demo1234')` — MẬT KHẨU TRONG MÃ** | `IF_MATKHAU`, **không có mặc định**; thiếu thì dừng và chỉ cách truyền. **Không mật khẩu nào nằm trong tệp.** |
+| `BASE` mặc định `:3000` | `IF_BASE` |
+| — | `IF_EMAIL` · `IF_DPR` (mặc định 2) · `IF_CHROMIUM` (mặc định `/opt/pw-browsers/chromium`) · `IF_HEADED` |
+
+Chạy: `IF_MATKHAU='…' IF_BASE=http://localhost:3145 node scripts/kiem-3d-contro-that.js tat-ca`
+(lệnh lẻ: `probe` · `cu-chi` · `chon-xoa` · `retina` · `to-present` · `hep`).
+
+> ⚠️ `IF_CHROMIUM` cần thiết vì gói `playwright` trong repo đóng đinh số hiệu **1234** còn máy có
+> sẵn **1194** — báo lỗi *"Executable doesn't exist"* đọc như thiếu trình duyệt, thật ra chỉ lệch
+> số hiệu. Trỏ thẳng vào bản có sẵn, **đừng chạy `npx playwright install`**.
+
+## 8 · Tệp đã sửa
+| Tệp | Việc |
+|---|---|
+| `scripts/kiem-3d-contro-that.js` | thu về + tham số hoá + viết lại phép đo 5 mục (555 → ~640 dòng) |
+| `components/three/Viewport3D.tsx` | **+1 import, +1 effect** — nối phím `Delete`/`Backspace` vào lệnh `cad.sel.delete` |
+| `docs/bao-cao-phien/2026-09-04-kiem-app-that-3d-present.md` | báo cáo này |
+| `docs/delivery/anh-duyet-mat/lo-01/` | ảnh bằng chứng |
+
+`npx tsc --noEmit` → **0 lỗi**. `npm test` **KHÔNG chạy** (phiên khác đang chạy song song, dùng chung `dev.db`).
+
+## 9 · ⚠️ CHƯA CHẮC / CHƯA KIỂM — bắt buộc khai
+1. **Không đọc kho, chỉ đọc màn hình.** `window.__cadStore` là dev-only nên mọi kết luận về "có
+   khối / mất khối" dựa trên **nhãn khung nhìn + huy hiệu cây đối tượng + điểm ảnh**. Nếu hai thứ
+   đó nói dối (hiện sai trạng thái) thì phép đo sai theo — chưa có gì bắt chéo được điều đó.
+2. **Ngưỡng 20mm chưa đo được bằng mm.** Mục 1 chứng minh **kéo 1 điểm ảnh thì không sinh khối**,
+   KHÔNG chứng minh ngưỡng đúng bằng `MIN_KICH_THUOC_MM = 20`. Muốn khẳng định con số phải đọc
+   được kích thước thật của khối — mà UI chỉ hiện "Cao", không hiện dài/rộng.
+3. **Chỉ một cỡ cửa sổ cho mục 1-4** (1600×1000, DPR 2). Mục 5 có hai khổ. Chưa đo 1920, chưa đo
+   màn dọc, chưa đo DPR 1 và DPR 3.
+4. **Chỉ Chromium**, chỉ headless. Safari/WebKit và Firefox chưa chạm — mà `backdrop-filter`,
+   pointer capture và WebGL là ba chỗ hay lệch nhất giữa các engine.
+5. **WebGL chạy bằng swiftshader (phần mềm)**, không phải GPU thật. Hình học/raycast không phụ
+   thuộc điều này, nhưng thời gian dựng cảnh thì có ⇒ mọi `waitForTimeout` trong bộ đo là **kinh
+   nghiệm, không phải hợp đồng**; máy chậm hơn có thể làm phép đo trượt.
+6. **Mục 5 chưa chạm ngưỡng cuộn.** Ở 10 tab dải tab vẫn vừa chỗ; chưa biết hành vi khi phải cuộn.
+7. **Chưa dùng trình đọc màn hình.** Mục 2 khẳng định chip "Xoá" chỉ hiện khi có chọn, nhưng chưa
+   kiểm cây trợ năng — đúng loại lỗi mà "có trong mã ≠ tới được người dùng" hay ẩn nấp.
+8. **Cây làm việc DÙNG CHUNG.** Lúc dựng, `components/studio/StatusBar.tsx` ·
+   `VitalsPill.tsx` · `VitalsRightEdgeHost.tsx` đang có sửa đổi chưa commit của phiên khác. Bản
+   dựng tôi đo **có** những sửa đổi đó. `StatusBar` là nơi chip "Xoá" sống ⇒ mục 2 có thể chịu ảnh
+   hưởng; tôi không tách được.
+9. **Mục 4 chỉ PASS trên đường "đã ghé Home".** Đường deep-link vẫn mất dữ liệu im lặng (§4) —
+   PASS ở đây KHÔNG có nghĩa là mọi đường vào đều an toàn.
+10. **Một lượt PASS bất thường đã giải thích được** (§4), nhưng lời giải là **suy luận có căn cứ mã**,
+    tôi không dựng lại được đúng lượt đó để chứng minh trực tiếp.
+
+## 10 · Rủi ro
+1. **`.next` dùng chung là rủi ro vận hành thật, không phải phiền toái.** Ba phiên cùng dựng làm
+   máy chủ phục vụ manifest cũ ⇒ **trang trắng, CSS 404**, đọc hệt như "giao diện hỏng". Đã mất một
+   vòng đo vì nó. Cách thoát ở §0; nếu không ai áp dụng thì phiên sau sẽ vấp lại.
+2. **`dev.db` và tài khoản kiểm dùng chung.** Mật khẩu `kiem@localhost.test` bị ba lượt đặt lại
+   trong một buổi ⇒ phép đo chết giữa chừng bằng 401. Đã chốt `kiemthu123`.
+3. **`.nen-chrome-out/` bị gitignore VÀ bị dọn giữa chừng** — lô ảnh đầu của tôi biến mất khỏi đĩa
+   trước khi ai kịp nhìn. Ảnh nghiệm thu là **deliverable**; đã chép sang
+   `docs/delivery/anh-duyet-mat/lo-01/`. Phiếu giao việc ghi ngược lại ("không commit ảnh") — điều
+   phối đã sửa hướng, ghi ra để hai chỗ không tiếp tục nói khác nhau.
+4. **Bộ đo tự tạo ra lỗi giả.** Mục 4 suýt được ghi thành lỗi sản phẩm. Bài học rút thành luật cho
+   bộ đo: **trước khi kết luận sản phẩm hỏng, phải hỏi "tiền đề của phép đo có giống người dùng
+   thật không"** — ở đây là "đăng nhập bằng API ≠ đăng nhập bằng biểu mẫu".
+5. **Ba ca cùng một bệnh trong một ngày** (surface `shortcut` không ai đọc · lý do nút mờ kẹt trong
+   `title` · lưu trữ bám nguồn yếu): **mã có, đường dây tới người dùng đứt ở đoạn cuối.** Không có
+   máy soi nào hiện bắt được loại này — chúng chỉ bắt lệch nhãn, lệch hình học, lệch sổ. Chỉ
+   **thao tác thật** mới bắt được. Đây là lý lẽ mạnh nhất cho việc giữ bộ đo con-trỏ-thật chạy đều.

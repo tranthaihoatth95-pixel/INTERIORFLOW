@@ -382,8 +382,11 @@ async function lenhChonXoa(page, duAn) {
     const batDau = page.locator('button', { hasText: /Bắt đầu trong 3D|Start in 3D/ }).first();
     if (await batDau.count().catch(() => 0)) { await batDau.click().catch(() => {}); await page.waitForTimeout(1400); }
     else {
-      const wall = page.locator('button', { hasText: /^\s*Wall/ }).first();
-      if (await wall.count().catch(() => 0)) { await wall.click().catch(() => {}); await page.waitForTimeout(1200); }
+      /* Công cụ VẼ nằm ở nhóm "VẼ RỒI ĐÙN" (Rectangle · Circle · Polygon) — KHÔNG phải nhóm
+         "CẤU KIỆN" (Wall · Floor · Roof…): nhóm sau là CHÈN cấu kiện có sẵn, bấm vào không cầm
+         công cụ kéo. Đã nhầm một lượt và mục này báo KHÔNG ĐO ĐƯỢC vì thế. */
+      const rect = page.locator('button', { hasText: /^\s*Rectangle/ }).first();
+      if (await rect.count().catch(() => 0)) { await rect.click().catch(() => {}); await page.waitForTimeout(1200); }
     }
     box = (await hopViewport(page)) || box;
     const cx = box.x + box.w * 0.5, cy = box.y + box.h * 0.62;
