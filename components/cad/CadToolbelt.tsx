@@ -36,13 +36,23 @@ export default function CadToolbelt() {
   const twoRows = cadMode === 'sketch';
   if (cadMode !== 'sketch' && workspace === 'paper') return <PaperToolbelt />;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, maxWidth: '100%', minWidth: 0 }}>
+    /* 🔴 `pointerEvents:'none'` Ở GỐC — sửa lỗi đo được 04/09, KHÔNG phải chuyện thẩm mỹ.
+       Khối kính dùng `marginBottom: 34` để "nổi TRÊN ô lệnh, không đè" (xem docstring đầu tệp).
+       Nhưng margin của CON nằm BÊN TRONG hộp CHA, mà cha là con trực tiếp của `.pointer-events-auto`
+       trong `AppShell` ⇒ **chính 34px dùng để né lại là 34px nuốt chuột**. Số đo trên app thật
+       (1600×900): khối kính đáy y=818, hộp cha đáy y=**852** — mà tâm ô lệnh đúng y=852 ⇒ bấm vào
+       ô lệnh rơi trúng `div` rỗng, KHÔNG vào được ô lệnh.
+       Cách sửa giữ nguyên bố cục (phiếu cấm thiết kế lại): gốc không nhận sự kiện, hai khối con
+       tự nhận. Vùng hở giữa/quanh chúng trả lại cho mặt vẽ và cho ô lệnh. */
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, maxWidth: '100%', minWidth: 0, pointerEvents: 'none' }}>
     {/* 20/08 (LANE A) — hàng NĂNG LỰC GỘP đứng RIÊNG, trên khối kính công cụ. Cố ý không nhét
         chung một khối: lệnh đơn ("xoay", "đo") và năng lực gộp ("dựng hình ảnh") là hai HẠT khác
         nhau — một cái là một cú bấm, một cái là cả dây chuyền có tiêu tiền và có cửa duyệt. Xếp
         chung hàng là nói dối rằng chúng ngang giá. Danh sách đọc từ `workingSetChips()`, thanh 2D
         không biết gì về nó. */}
-    <StageToolbelt stage="cad" />
+    <div style={{ pointerEvents: 'auto', maxWidth: '100%', minWidth: 0 }}>
+      <StageToolbelt stage="cad" />
+    </div>
     <div
       style={{
         display: 'flex',
@@ -50,6 +60,7 @@ export default function CadToolbelt() {
         maxWidth: '100%',
         minWidth: 0,
         overflow: 'hidden',
+        pointerEvents: 'auto',
         marginBottom: 34,
         borderRadius: RADIUS.r4,
         background: 'color-mix(in srgb, var(--panel) 78%, transparent)',

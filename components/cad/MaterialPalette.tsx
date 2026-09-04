@@ -36,6 +36,7 @@ import { materialTextureDataUrl } from '@/lib/cad/material-texture';
 import MaterialImpactPreview from '@/components/materials/MaterialImpactPreview';
 import { useT } from '@/lib/i18n';
 import { loadMaterialPicks, type MaterialPick } from '@/lib/library/spec-refs';
+import { tronPickHatGiong } from '@/lib/materials/kho-mo-dau';
 
 const PATTERNS: HatchPattern[] = ['SOLID', 'ANSI31', 'ANSI32', 'ANSI37', 'DOTS'];
 
@@ -78,7 +79,15 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     let con = true;
-    loadMaterialPicks().then((r) => { if (con) setKho(r); });
+    /* CẮM ĐIỆN TẦNG HẠT GIỐNG (04/09) — trước dòng này ô chọn vật liệu 2D đọc THUẦN `/api/specs`
+       (tức bảng `ProductSpec`), mà vật liệu ship kèm bản cài KHÔNG phải bản ghi DB — nó là tệp
+       trong repo. Đo trên máy sạch: `ProductSpec` = 0 ⇒ mặt tiền này LUÔN hiện "Kho chưa có vật
+       liệu nào" ⇒ **không có gì để chọn, mọi vùng tô vẽ ra đều không mang mã**. Bốn mặt tiền kia
+       (`MaterialsScreen` · `NganPhanTho` · Phần thô · Thư viện) đã trộn hạt giống từ lượt trước;
+       đây là mặt tiền còn sót. CONNECT, không NEW: dùng đúng `kho-mo-dau.ts` bốn mặt kia đang dùng.
+       Kho hỏng/chưa đăng nhập (`loadMaterialPicks` trả `[]`) thì vẫn còn hạt giống — đúng tinh
+       thần local-first: thứ đi theo bản cài không phụ thuộc mạng. */
+    loadMaterialPicks().then((r) => { if (con) setKho(tronPickHatGiong(r)); });
     return () => { con = false; };
   }, []);
 
