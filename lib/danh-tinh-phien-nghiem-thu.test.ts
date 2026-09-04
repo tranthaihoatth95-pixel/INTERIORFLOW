@@ -58,7 +58,7 @@ function batDauPhien(): void {
 }
 
 (async () => {
-  console.log('① CA HỎNG — đọc ĐỒNG BỘ lúc mount (hình dạng ba đường ghi HIỆN TẠI)');
+  console.log('① HÌNH DẠNG CŨ (đã bị thay 04/09) — đọc ĐỒNG BỘ lúc mount ⇒ mất trắng');
   {
     batDauPhien();
     void danhTinhSanSang();          // AppChrome: chỉ KHỞI ĐỘNG request, không await
@@ -118,6 +118,57 @@ function batDauPhien(): void {
     if (tiepTuc) luuMotLuot(userId);
     ok('lượt đã huỷ ⇒ tiepTuc=false', tiepTuc === false);
     ok('lượt đã huỷ ⇒ KHÔNG ghi gì (không đè dự án mới)', dia.length === 0);
+  }
+
+  console.log('⑦ SAU PATCH — dựng lại hình dạng THẬT của cả ba đường ghi, mỗi đường 1 lần ghi');
+  {
+    /**
+     * Khuôn chung sau patch (`CadSheets.tsx:402` · `PresentSheets.tsx:321` · `cad3d-autosave.ts:31`):
+     *   ① khối dọn-đổi-dự-án chạy ĐỒNG BỘ, TRƯỚC mọi `await`
+     *   ② rồi mới `await danhTinhChoLuot(() => !cancelled)`
+     *   ③ có userId thì ghi; `!tiepTuc` thì im lặng rút
+     */
+    const nhatKy: string[] = [];
+    async function duongGhiSauPatch(route: string, huy?: () => boolean) {
+      nhatKy.push(`don:${route}`);              // ① ĐỒNG BỘ — phải luôn đứng trước `dinh-danh:`
+      const { tiepTuc, userId } = await danhTinhChoLuot(huy ?? (() => true));
+      nhatKy.push(`dinh-danh:${route}`);
+      if (!tiepTuc || !userId) return;
+      dia.push(sheetsKey(userId, route, BUCKET));
+    }
+
+    batDauPhien();
+    nhatKy.length = 0;
+    void danhTinhSanSang();                      // AppChrome gieo, không await
+    await Promise.all([
+      duongGhiSauPatch('/cad-editor'),           // CadSheets  (ROUTE = '/cad-editor')
+      duongGhiSauPatch('/present-editor'),       // PresentSheets (ROUTE = '/present-editor')
+      duongGhiSauPatch('/cad-editor'),           // autosave 3D (CAD3D_AUTOSAVE_ROUTE = '/cad-editor')
+    ]);
+
+    ok('cả BA đường ghi đều xuống đĩa (trước patch: 0)', dia.length === 3);
+    ok('CadSheets ghi đúng khoá', dia.includes(`${USER}::/cad-editor::${BUCKET}`));
+    ok('PresentSheets ghi đúng khoá', dia.includes(`${USER}::/present-editor::${BUCKET}`));
+    ok('autosave 3D dùng CHUNG khoá với CadSheets (không đẻ bucket thứ hai)',
+      dia.filter((k) => k === `${USER}::/cad-editor::${BUCKET}`).length === 2);
+
+    // ⛔ RÀNG BUỘC SỐ MỘT: dọn-đổi-dự-án phải ở nhánh ĐỒNG BỘ. Nếu ai đó đẩy nó vào trong
+    // `async`, bản vẽ dự án CŨ nằm lại dưới URL dự án MỚI thêm một vòng mạng — đổi lỗi
+    // mất-dữ-liệu-im-lặng lấy lỗi lẫn-dự-án, tệ hơn. Khoá bằng THỨ TỰ, không bằng lời dặn.
+    const donCuoi = nhatKy.lastIndexOf(nhatKy.filter((x) => x.startsWith('don:')).slice(-1)[0]);
+    const danhTinhDau = nhatKy.findIndex((x) => x.startsWith('dinh-danh:'));
+    ok('MỌI lượt dọn chạy XONG trước khi bất kỳ lượt định danh nào về', donCuoi < danhTinhDau);
+  }
+
+  console.log('⑧ SAU PATCH — chưa đăng nhập THẬT thì vẫn không ghi (không nới cổng chặn)');
+  {
+    batDauPhien();
+    (globalThis as unknown as { fetch: unknown }).fetch = () =>
+      Promise.resolve({ ok: false, status: 401, json: () => Promise.resolve({ user: null }) });
+    const { tiepTuc, userId } = await danhTinhChoLuot(() => true);
+    if (tiepTuc && userId) dia.push(sheetsKey(userId, ROUTE, BUCKET));
+    ok('401 ⇒ không có userId', !userId);
+    ok('401 ⇒ 0 lần ghi (thà không lưu còn hơn lưu nhầm)', dia.length === 0);
   }
 
   console.log(`\n${pass} pass · ${fail} fail`);
