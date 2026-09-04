@@ -15,7 +15,7 @@
     <hr>
     <b aria-label="2D Kỹ thuật"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="13" height="10" rx="1"/><path d="M2.5 11h6v3.5"/><path d="M8.5 4.5v3"/></svg></b>
     <b aria-label="3D Thiết kế"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.4 15.6 6v7L9 16.6 2.4 13V6z"/><path d="M2.4 6 9 9.5 15.6 6"/><path d="M9 9.5v7.1"/></svg></b>
-    <b aria-label="Trình bày"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="13" height="9" rx="1"/><path d="M9 12.5V16"/><path d="M6 16h6"/></svg></b>
+    <b aria-label="Trình chiếu"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="13" height="9" rx="1"/><path d="M9 12.5V16"/><path d="M6 16h6"/></svg></b>
     <div class="day"></div><hr>
     <b aria-label="Hồ sơ của tôi"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3.6 15.6a5.6 5.6 0 0 1 10.8 0"/></svg></b>
     <b aria-label="Cài đặt"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="2.6"/><path d="M9 2v2.2M9 13.8V16M2 9h2.2M13.8 9H16M4 4l1.6 1.6M12.4 12.4 14 14M14 4l-1.6 1.6M5.6 12.4 4 14"/></svg></b>
@@ -48,29 +48,41 @@
                 <stop offset="0" stop-color="var(--canh-2)"/><stop offset="1" stop-color="var(--canh-1)"/>
               </linearGradient>
               <linearGradient id="nang" x1="0.18" y1="0" x2="0.72" y2="1">
-                <stop offset="0" stop-color="var(--canh-6)" stop-opacity=".30"/>
+                <stop offset="0" stop-color="var(--canh-6)" stop-opacity=".40"/>
                 <stop offset="1" stop-color="var(--canh-6)" stop-opacity="0"/>
               </linearGradient>
             </defs>
             <rect x="0" y="0" width="1148" height="420" fill="url(#troi)"/>
             <!-- tường sau + hốc -->
-            <rect x="0" y="0" width="1148" height="286" fill="var(--canh-1)"/>
-            <rect x="96" y="46" width="292" height="240" fill="var(--canh-2)"/>
+            <rect x="0" y="0" width="1148" height="286" fill="var(--canh-2)"/>
+            <!-- hốc kệ: có TẦNG và có ĐỒ, không phải một mảng xám trơn.
+                 Mảng trơn to đọc ra là "hộp rỗng" (cờ đỏ N-10), dù nó chỉ là nền. -->
+            <rect x="96" y="46" width="292" height="240" fill="var(--canh-3)"/>
             <rect x="104" y="54" width="276" height="224" fill="var(--canh-0)"/>
+            <g fill="var(--canh-3)">
+              <rect x="104" y="118" width="276" height="4"/><rect x="104" y="186" width="276" height="4"/></g>
+            <g fill="var(--canh-4)" opacity=".8">
+              <rect x="122" y="80" width="14" height="38"/><rect x="140" y="88" width="11" height="30"/>
+              <rect x="156" y="84" width="16" height="34"/><rect x="300" y="92" width="46" height="26" rx="3"/>
+              <rect x="122" y="150" width="52" height="36" rx="3"/><rect x="188" y="158" width="12" height="28"/>
+              <rect x="204" y="152" width="15" height="34"/><rect x="316" y="146" width="30" height="40" rx="2"/>
+              <rect x="122" y="228" width="70" height="50" rx="3"/><rect x="210" y="240" width="40" height="38" rx="2"/></g>
+            <g fill="var(--canh-6)" opacity=".5">
+              <rect x="266" y="226" width="18" height="52" rx="9"/></g>
             <!-- cửa sổ ánh chiều -->
-            <rect x="742" y="30" width="316" height="256" fill="var(--canh-6)" opacity=".22"/>
+            <rect x="742" y="30" width="316" height="256" fill="var(--canh-6)" opacity=".38"/>
             <rect x="742" y="30" width="316" height="256" fill="none" stroke="var(--canh-4)" stroke-width="2"/>
             <line x1="900" y1="30" x2="900" y2="286" stroke="var(--canh-4)" stroke-width="2"/>
             <line x1="742" y1="150" x2="1058" y2="150" stroke="var(--canh-4)" stroke-width="2"/>
             <!-- vệt nắng đổ xuống sàn -->
-            <polygon points="742,286 1058,286 1148,420 596,420" fill="var(--canh-6)" opacity=".10"/>
+            <polygon points="742,286 1058,286 1148,420 596,420" fill="var(--canh-6)" opacity=".16"/>
             <!-- sàn -->
             <rect x="0" y="286" width="1148" height="134" fill="var(--canh-3)"/>
             <rect x="0" y="286" width="1148" height="3" fill="var(--canh-4)" opacity=".6"/>
             <!-- đồ nội thất, dáng khối, không chi tiết -->
-            <rect x="150" y="214" width="330" height="86" rx="6" fill="var(--canh-2)"/>
+            <rect x="150" y="214" width="330" height="86" rx="6" fill="var(--canh-1)"/>
             <rect x="150" y="204" width="330" height="14" rx="4" fill="var(--canh-4)" opacity=".45"/>
-            <rect x="524" y="238" width="118" height="62" rx="4" fill="var(--canh-2)"/>
+            <rect x="524" y="238" width="118" height="62" rx="4" fill="var(--canh-1)"/>
             <rect x="836" y="228" width="150" height="72" rx="5" fill="var(--canh-0)" opacity=".55"/>
             <!-- đèn thả -->
             <line x1="646" y1="0" x2="646" y2="118" stroke="var(--canh-4)" stroke-width="1.4"/>
@@ -198,14 +210,13 @@
 
         <div class="khi-goi"><span>còn 4 việc và 6 dự án đang ngủ</span><span class="vach-mo" aria-hidden="true"></span><span class="so">gọi ra</span></div>
 
-        <div class="dan"></div>
-
         <div class="muc"><span class="nhan">tôi tự đặt</span><span class="ke2"></span><span class="dem">3</span></div>
         <div class="ke-widget">
           <div class="o-w w2"><span class="nh">giờ đã ghi tuần này</span><span class="gt so">18,5 <small>giờ · 4 dự án</small></span></div>
           <div class="o-w w1"><span class="nh">mẫu mới trong kho</span><span class="gt so">12</span></div>
           <div class="o-w w1"><span class="nh">thẻ DNA</span><span class="gt so">6</span></div>
         </div>
+        <div class="dan"></div>
       </aside>
     </div>
   </div>

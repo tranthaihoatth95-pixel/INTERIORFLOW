@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<title>Home · BẢN KHOÁ · xưởng rỗng</title>
+<link rel="stylesheet" href="_home-lock-nen.css">
+<style>
+/* Trạng thái RỖNG dùng CHUNG mọi khối của bản khoá. Chỉ thêm ba mảnh riêng cho lối vào —
+   và cả ba đều là mảnh có việc thật, không phải thẻ onboarding (§26). */
+.moi{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:22px 26px}
+.moi h2{font-size:26px;line-height:1.5;font-weight:600;color:var(--muc)}
+.moi p{font-size:var(--fs-sm);line-height:1.6;color:var(--muc-2);max-width:460px}
+.loi-vao{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.nut-chinh{display:inline-flex;align-items:center;gap:8px;height:var(--tap-lg);padding:0 22px;
+  border-radius:var(--r-full);background:var(--accent);color:var(--on-accent);
+  font-size:var(--fs-ui);font-weight:600;line-height:1.5}
+.nut-phu{display:inline-flex;align-items:center;gap:8px;height:var(--tap-lg);padding:0 18px;
+  border-radius:var(--r-full);background:transparent;color:var(--muc);font-size:var(--fs-ui);
+  line-height:1.5;box-shadow:inset 0 0 0 1px var(--net-sang)}
+.loi-ba{font-size:var(--fs-xs);line-height:1.5;color:var(--muc-2)}
+.von{flex:0 0 38%;min-width:0;border-left:1px solid var(--net-sang);padding:18px 20px;
+  display:flex;flex-direction:column;gap:12px}
+.von .tit{font:500 var(--fs-2xs)/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--muc-2)}
+.dai-mau{display:flex;height:44px;border-radius:var(--r-1);overflow:hidden}
+.dai-mau i{flex:1}
+.von-hang{display:flex;align-items:center;gap:10px;height:34px;flex:0 0 34px}
+.von-hang+.von-hang{border-top:1px solid var(--net-sang)}
+.von-hang .n{flex:1;font-size:var(--fs-ui);color:var(--muc);line-height:1.5}
+.von-hang .v{font-size:var(--fs-xs);font-weight:600;color:var(--muc);line-height:1.5}
+</style>
+</head>
+<body>
+<div class="khung">
+
+  <nav class="rail" aria-label="Điều hướng">
+    <b class="on" aria-label="Tổng quan"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.5 9 3l7 5.5V16H2z"/><path d="M7 16v-5h4v5"/></svg></b>
+    <b aria-label="Tệp"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h3.2l1.6 2h6.2A1.5 1.5 0 0 1 16 7.5v6A1.5 1.5 0 0 1 14.5 15h-11A1.5 1.5 0 0 1 2 13.5z"/></svg></b>
+    <b aria-label="Thư viện"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="4" height="12" rx="1"/><rect x="7.5" y="3.5" width="4" height="12" rx="1"/><path d="M12.6 4.6 15.5 5.4 13.2 15.2 10.4 14.4z"/></svg></b>
+    <b aria-label="Bảng việc"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M6 9.6l2 2 4-4.4"/></svg></b>
+    <b aria-label="Trao đổi"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5.5A1.5 1.5 0 0 1 4 4h11a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 15 13H7l-4 3z"/></svg></b>
+    <hr>
+    <b aria-label="2D Kỹ thuật"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="13" height="10" rx="1"/><path d="M2.5 11h6v3.5"/><path d="M8.5 4.5v3"/></svg></b>
+    <b aria-label="3D Thiết kế"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.4 15.6 6v7L9 16.6 2.4 13V6z"/><path d="M2.4 6 9 9.5 15.6 6"/><path d="M9 9.5v7.1"/></svg></b>
+    <b aria-label="Trình chiếu"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="13" height="9" rx="1"/><path d="M9 12.5V16"/><path d="M6 16h6"/></svg></b>
+    <div class="day"></div><hr>
+    <b aria-label="Hồ sơ của tôi"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3.6 15.6a5.6 5.6 0 0 1 10.8 0"/></svg></b>
+    <b aria-label="Cài đặt"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="2.6"/><path d="M9 2v2.2M9 13.8V16M2 9h2.2M13.8 9H16M4 4l1.6 1.6M12.4 12.4 14 14M14 4l-1.6 1.6M5.6 12.4 4 14"/></svg></b>
+  </nav>
+
+  <div class="cot">
+    <header class="dinh">
+      <div class="duong-di"><strong>Xưởng của Hoà</strong><span>·</span><span>Tổng quan</span></div>
+      <div class="khau-do" role="status" aria-label="Vitals · mức thường trực">
+        <span class="mat" aria-hidden="true"></span>
+        <span class="tin">Xưởng chưa có dự án nào <i>· kho chung đã sẵn</i></span>
+        <span class="vach" aria-hidden="true"></span>
+        <span class="tin"><i>Hỏi Vitals</i></span>
+      </div>
+      <div class="phai-dinh">
+        <span class="the-demo">demo · dữ liệu mẫu</span>
+      </div>
+    </header>
+
+    <div class="than">
+      <main class="san">
+
+        <!-- DẢI MÔI TRƯỜNG vẫn còn — xưởng rỗng KHÔNG có nghĩa là Home trừ ảnh (§26).
+             Chưa có render của mình thì lấy từ kho ảnh tuyển của IF, và NÓI RÕ nguồn. -->
+        <div class="dai" aria-hidden="true">
+          <svg viewBox="0 0 1148 420" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <linearGradient id="troi2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="var(--canh-2)"/><stop offset="1" stop-color="var(--canh-1)"/>
+              </linearGradient>
+              <linearGradient id="sang2" x1="0.62" y1="0" x2="0.2" y2="1">
+                <stop offset="0" stop-color="var(--canh-6)" stop-opacity=".34"/>
+                <stop offset="1" stop-color="var(--canh-6)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="1148" height="420" fill="url(#troi2)"/>
+            <rect x="0" y="0" width="1148" height="300" fill="var(--canh-2)"/>
+            <!-- dãy cửa lớn, ánh sáng ban mai -->
+            <g fill="var(--canh-6)" opacity=".36">
+              <rect x="120" y="40" width="150" height="256"/><rect x="300" y="40" width="150" height="256"/>
+              <rect x="480" y="40" width="150" height="256"/></g>
+            <g stroke="var(--canh-4)" stroke-width="2" fill="none">
+              <rect x="120" y="40" width="150" height="256"/><rect x="300" y="40" width="150" height="256"/>
+              <rect x="480" y="40" width="150" height="256"/></g>
+            <polygon points="120,300 630,300 720,420 30,420" fill="var(--canh-6)" opacity=".15"/>
+            <rect x="0" y="300" width="1148" height="120" fill="var(--canh-3)"/>
+            <rect x="0" y="300" width="1148" height="3" fill="var(--canh-4)" opacity=".6"/>
+            <!-- bàn làm việc trống + ghế: xưởng đã dựng, chưa có việc -->
+            <rect x="760" y="232" width="270" height="12" rx="3" fill="var(--canh-4)" opacity=".7"/>
+            <rect x="774" y="244" width="10" height="56" fill="var(--canh-2)"/>
+            <rect x="1006" y="244" width="10" height="56" fill="var(--canh-2)"/>
+            <rect x="846" y="248" width="70" height="52" rx="6" fill="var(--canh-1)"/>
+            <rect x="0" y="0" width="1148" height="420" fill="url(#sang2)"/>
+            <path d="M120 150 A 96 96 0 0 1 296 150" fill="none" stroke="var(--canh-6)" stroke-width="1.4" opacity=".45"/>
+            <circle cx="146" cy="106" r="5" fill="var(--canh-7)"/>
+            <circle cx="146" cy="106" r="12" fill="var(--canh-7)" opacity=".18"/>
+          </svg>
+        </div>
+        <div class="nhan-dai" style="left:var(--lePhai);top:22px"><b>Xưởng chưa có dự án</b><span>· nền lấy từ kho ảnh tuyển của IF</span></div>
+        <div class="nhan-dai" style="right:var(--lePhai);top:22px"><span>08:10 · sáng sớm</span></div>
+
+        <!-- ===== BẬC 1 · NGAY BÂY GIỜ — khi chưa có việc thì việc CHÍNH LÀ bắt đầu.
+             Vẫn đúng một tiêu điểm, vẫn một thân duy nhất, vẫn cùng hình dạng. ===== -->
+        <section class="vat sang" aria-label="Bắt đầu">
+          <div class="vat-dau">
+            <span class="dau cho" aria-hidden="true"></span>
+            <span class="ten">Bắt đầu</span>
+            <span class="kem">chưa có việc nào đang dở — xưởng thì đã sẵn sàng</span>
+            <span class="cuoi"><span class="chip-sang">3 lối vào</span></span>
+          </div>
+          <div class="vat-than">
+            <div class="moi">
+              <h2>Dựng dự án đầu tiên của bạn</h2>
+              <p>Khai vị trí công trình là đủ để IF gợi ngay bộ quy chuẩn áp dụng, khí hậu và vật liệu sẵn có tại đó. Vẽ 2D, dựng 3D hay dán ảnh tham chiếu — vào cửa nào cũng được, không cửa nào bị khoá.</p>
+              <div class="loi-vao">
+                <span class="nut-chinh">Tạo dự án mới</span>
+                <span class="nut-phu">Mở dự án có sẵn</span>
+                <span class="nut-phu">Nhập từ tệp · dwg · pdf · ảnh</span>
+              </div>
+              <span class="loi-ba">Chưa muốn bắt đầu? Xem thư viện mẫu hồ sơ và kho vật liệu ở cột bên.</span>
+            </div>
+            <div class="von">
+              <span class="tit">xưởng này đã có sẵn</span>
+              <div class="dai-mau" aria-hidden="true">
+                <i style="background:var(--vl-go)"></i><i style="background:var(--vl-da)"></i>
+                <i style="background:var(--vl-vai)"></i><i style="background:var(--vl-kl)"></i>
+                <i style="background:var(--vl-son)"></i></div>
+              <div class="von-hang"><span class="n">Vật liệu trong kho chung</span><span class="v so">248</span></div>
+              <div class="von-hang"><span class="n">Mẫu hồ sơ trình bày</span><span class="v so">12</span></div>
+              <div class="von-hang"><span class="n">Bộ quy chuẩn theo vùng</span><span class="v so">12</span></div>
+              <div class="von-hang"><span class="n">Thẻ DNA thiết kế mẫu</span><span class="v so">6</span></div>
+            </div>
+          </div>
+          <div class="vat-chan">
+            <span><b>0</b> dự án · <b>0</b> việc đang chạy</span>
+            <span>kho chung là của IF, không phải dữ liệu của ai</span>
+            <span class="day2">tạo dự án xong, chỗ này thành việc bạn đang dở</span>
+          </div>
+        </section>
+
+        <!-- DẢI NGỮ CẢNH — rỗng thì nó nói ĐƯỜNG ĐI SẮP TỚI, không biến mất. -->
+        <section class="ngu-canh" aria-label="Một dự án sẽ đi qua đâu">
+          <div class="nc-dau"><span class="nhan">một dự án ở IF đi qua đâu</span><span class="ke2"></span><span class="chip">vào cửa nào cũng được</span></div>
+          <div class="mach">
+            <div class="nut-mach"><span class="khi">bước 1</span><span class="cai">Vị trí và đề bài</span><span class="no">một biến kéo theo cả bộ quy chuẩn áp dụng</span></div>
+            <div class="nut-mach"><span class="khi">bước 2</span><span class="cai">Ý tưởng và thẻ DNA</span><span class="no">moodboard · ảnh tham chiếu · quyết định có nguồn</span></div>
+            <div class="nut-mach"><span class="khi">bước 3</span><span class="cai">Bản vẽ · khối · phối cảnh</span><span class="no">ba chặng soi vào cùng một nguồn</span></div>
+            <div class="nut-mach cho"><span class="khi">bước 4</span><span class="cai">Hồ sơ giao khách</span><span class="no">con số trong hồ sơ truy được về khối đã dựng</span></div>
+          </div>
+        </section>
+      </main>
+
+      <aside class="thang" aria-label="Thang chú ý">
+
+        <!-- Thang KHÔNG biến mất khi rỗng — nó đổi thứ đứng trên bậc:
+             từ "việc cần tôi" sang "vốn tôi có". Đó là chỗ khác "Home trừ ảnh hero". -->
+        <div class="muc"><span class="nhan">sẵn để mở ngay</span><span class="ke2"></span><span class="dem">2</span></div>
+
+        <div class="ke-ben">
+          <span class="mat-vat" aria-hidden="true"><svg viewBox="0 0 104 64" preserveAspectRatio="xMidYMid slice">
+            <rect x="0" y="0" width="104" height="64" fill="var(--nen-sang)"/>
+            <rect x="10" y="9" width="46" height="30" fill="var(--vl-da)"/>
+            <rect x="60" y="9" width="34" height="14" fill="var(--vl-go)"/>
+            <rect x="60" y="25" width="34" height="14" fill="var(--vl-vai)"/>
+            <g stroke="var(--muc)" stroke-width="1" opacity=".28"><path d="M10 46h84M10 53h58"/></g></svg></span>
+          <span class="chu">
+            <span class="ten">Mẫu hồ sơ · căn hộ hoàn thiện</span>
+            <span class="con-so so">14 trang · đã có khung tên</span>
+            <span class="khi">mẫu đi kèm IF</span>
+          </span>
+        </div>
+
+        <div class="ke-ben">
+          <span class="mat-mau" aria-hidden="true">
+            <i style="background:var(--gu-am-1,var(--vl-go))"></i><i style="background:var(--vl-da)"></i>
+            <i style="background:var(--vl-vai)"></i><i style="background:var(--vl-son)"></i></span>
+          <span class="chu">
+            <span class="ten">Thẻ DNA mẫu · “Trầm · gỗ sồi”</span>
+            <span class="con-so so">8 lớp · 6 ảnh tham chiếu</span>
+            <span class="khi">mẫu đi kèm IF</span>
+          </span>
+        </div>
+
+        <div class="muc" style="margin-top:18px"><span class="nhan">kho của xưởng</span><span class="ke2"></span><span class="dem">4</span></div>
+
+        <div class="o-nen"><span class="dau chay" aria-hidden="true"></span><span class="ten">Vật liệu · có giá và nhà cung cấp</span><span class="num so">248</span></div>
+        <div class="o-nen"><span class="dau chay" aria-hidden="true"></span><span class="ten">Cấu kiện dựng sẵn</span><span class="num so">54</span></div>
+        <div class="o-nen"><span class="dau chay" aria-hidden="true"></span><span class="ten">Bộ quy chuẩn theo vùng</span><span class="num so">12</span></div>
+        <div class="o-nen an-hep"><span class="dau chay" aria-hidden="true"></span><span class="ten">Ảnh tuyển liên ngành</span><span class="num so">1.240</span></div>
+
+        <div class="khi-goi"><span>còn kho mẫu hồ sơ và bộ nhận diện</span><span class="vach-mo" aria-hidden="true"></span><span class="so">gọi ra</span></div>
+
+        <div class="muc"><span class="nhan">tôi tự đặt</span><span class="ke2"></span><span class="dem">2</span></div>
+        <div class="ke-widget">
+          <div class="o-w w1"><span class="nh">mẫu mới trong kho</span><span class="gt so">12</span></div>
+          <div class="o-w w1"><span class="nh">thẻ DNA</span><span class="gt so">6</span></div>
+        </div>
+        <div class="dan"></div>
+      </aside>
+    </div>
+  </div>
+</div>
+</body></html>

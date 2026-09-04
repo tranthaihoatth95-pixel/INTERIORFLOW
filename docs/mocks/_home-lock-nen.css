@@ -77,6 +77,14 @@
    ⇒ html vẫn giữ 1600px và máy báo "vượt khổ" dù thân đã co đúng. */
 :root:has(body.hep){ --w:1280px; --h:800px; --thangW:320px; --daiH:330px;
   --vatTop:126px; --gpH:150px; --lePhai:32px; --khe:24px; }
+/* Và tự co theo KHUNG NHÌN, không cần ai gắn class — để bản vẽ chụp ở khổ hẹp là ra đúng
+   khổ hẹp. Hai đường cùng đặt một bộ giá trị nên không bao giờ đánh nhau. */
+@media (max-width:1400px){
+  :root{ --w:1280px; --h:800px; --thangW:320px; --daiH:330px;
+    --vatTop:126px; --gpH:150px; --lePhai:32px; --khe:24px; }
+  .an-hep{display:none}
+  .chi-hep{display:inline}
+}
 
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:var(--w);height:var(--h);overflow:hidden}
@@ -129,11 +137,23 @@ svg{display:block}
 /* DẢI MÔI TRƯỜNG — Wallgallery. Ảnh THẬT của xưởng, để SẮC NÉT.
    Nó là NỀN mà việc đứng lên, KHÔNG phải mặt phẳng để dán chữ — đó là chỗ khác H1.
    Có biên: nhờ có biên nên nền sáng vẫn đọc ra là nền sáng (H1 hỏng đúng chỗ này). */
-.dai{position:absolute;left:0;right:0;top:0;height:var(--daiH);overflow:hidden;z-index:0}
+.dai{position:absolute;left:0;right:0;top:0;height:var(--daiH);overflow:hidden;z-index:0;
+  /* TAN DẦN Ở ĐÁY, không cắt ngang một nhát. Mép cứng đọc ra là "một vệt lạ", không đọc ra
+     là chiều sâu — soi bằng mắt mới thấy, máy không bắt được. Đây là MẶT PHẲNG CHIỀU SÂU
+     (chỉ thị D), không phải lớp phủ tối: ảnh vẫn nét 100% ở phần thân. */
+  -webkit-mask-image:linear-gradient(180deg,#000 0,#000 74%,transparent 100%);
+  mask-image:linear-gradient(180deg,#000 0,#000 74%,transparent 100%)}
 .dai svg{width:100%;height:100%}
-/* VÙNG AN TOÀN NGỮ NGHĨA — nhãn chỉ được đặt trong hai ô này; cắt ảnh phải giữ hai ô đó "lặng". */
+/* VÙNG AN TOÀN NGỮ NGHĨA — nhãn chỉ được đặt trong hai ô này; cắt ảnh phải giữ hai ô đó "lặng".
+   🔴 SCRIM ĐẶC, KHÔNG CHUYỂN SẮC — đo được, không phải chuyện gu:
+   lớp phủ chuyển sắc mỏng dần về .46 ở CHÂN chữ; đặt lên vùng SÁNG nhất của dải thì nền hoà ra
+   rgb(131,127,119) và chữ --muc-tren-anh-3 chỉ còn **2,32:1** — TRƯỢT. Scrim ĐẶC .86 thì nền hoà
+   luôn nằm trong khoảng rgb(10,11,13)…rgb(40,40,39) với MỌI ảnh ⇒ **8,58:1 … 11,44:1**, tức
+   tương phản thành HẰNG SỐ không phụ thuộc ảnh người dùng thả vào (yêu cầu H).
+   ⇒ Chuyển sắc ở chân chữ là kỹ thuật cho DẢI CHỮ LỚN (chuyển sắc trải dài quá thân chữ),
+   KHÔNG dùng cho chip nhỏ. Token --phu-chan-chu giữ lại cho đúng ca đó. */
 .nhan-dai{position:absolute;z-index:1;display:inline-flex;align-items:center;gap:8px;
-  padding:5px 10px;border-radius:var(--r-1);background:var(--phu-chan-chu);
+  padding:5px 10px;border-radius:var(--r-1);background:var(--scrim-manh);
   font:500 var(--fs-2xs)/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--muc-tren-anh-3)}
 .nhan-dai b{color:var(--muc-tren-anh-1);font-weight:600}
 
