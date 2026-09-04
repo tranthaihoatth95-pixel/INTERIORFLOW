@@ -24,18 +24,42 @@
 ⇒ Trọng tâm chuyển từ **thu hồi** sang **hoàn tất thị giác**. Đường đi cố định cho mọi board:
 `AUTHORITY → THI CÔNG → MÁY KIỂM → ẢNH CHUẨN → DELTA → MẮT HOÀ`.
 
-## A2 · LÔ DUYỆT MẮT #1 — ✅ ĐÃ TRÌNH, CHỜ MẮT HOÀ
+## A2 · LÔ DUYỆT MẮT #1 — Hoà đã phán MỘT tấm
 
-📄 **`docs/delivery/VISUAL-REVIEW-BATCH-01.md`** · 🖼 **`docs/delivery/anh-duyet-mat/lo-01/`** (28 khung)
+📄 `docs/delivery/VISUAL-REVIEW-BATCH-01.md` · 🖼 `docs/delivery/anh-duyet-mat/lo-01/`
 
-| Tấm | Trạng thái |
+| Tấm | Phán quyết |
 |---|---|
-| **1 · HOME khổ rộng** | CHỜ MẮT — trống trong ô tiêu điểm **48,7% → 6,4%**; hero Resume mọc đúng chỗ |
-| **2 · VITALS khẩu độ mép trên** | CHỜ MẮT — một chỗ đứng duy nhất (test khoá) · nhãn hết nói dối chặng · Ambient **4,61:1** |
-| **3 · Chrome/điều hướng trên** | CHỜ MẮT — ba nấc 52/240/320 khoá bằng test · **một chỗ CHƯA XÁC MINH** khai thẳng: kéo Work Panel 320→440 |
+| **1 · HOME khổ rộng** | 🔴 **TRƯỢT** (04/09). Gốc **không phải** khoảng cách/màu/chi tiết mà là **MÔ HÌNH BỐ CỤC**: *"một thẻ trắng quá khổ + một cột dashboard phụ"* không phải là *"một tiêu điểm"*. ⇒ **DỪNG thi công Home**, chuyển sang nghiên cứu bố cục (§A3) |
+| **2 · VITALS khẩu độ mép trên** | ⏳ **CHƯA PHÁN** — Hoà chỉ nói về Home |
+| **3 · Chrome/điều hướng trên** | ⏳ **CHƯA PHÁN** |
 
-⭐ Lô này từng bị **giữ lại hai lần** vì mở ảnh ra thấy lỗi mà mọi cổng máy đều xanh. Giữ lại là
-đúng: ba lỗi đó đều là thứ **máy phán được**, đưa lên là tiêu băng thông mắt vào việc của máy.
+⛔ **Không suy ra tấm 2 và 3 đã đạt.** Hoà phán đúng một tấm; hai tấm kia vẫn nằm nguyên trong
+hàng đợi, không được tự chuyển sang xong-mắt.
+
+⭐ **Bài học lớn nhất của lô #1, ghi để không lặp**: lô đã qua **hết** cổng máy — tsc · test ·
+tương phản · năm máy soi — và vẫn **trượt ở tầng bố cục**. Máy đo được *"hai vùng có đúng tỉ lệ
+không"*; nó **không** đo được *"màn này đọc ra là gì"*. Đó là ranh giới thật giữa việc của máy và
+việc của mắt, và nó không dịch chuyển được bằng cách thêm máy soi.
+
+## A3 · HOME — BA NGHIÊN CỨU BỐ CỤC (04/09) · CHỜ HOÀ CHỌN
+
+📄 `docs/delivery/HOME-NGHIEN-CUU-BO-CUC.md` · 🖼 `docs/delivery/anh-duyet-mat/lo-02-home-nc/`
+(6 ảnh · khổ thật 1600×900 · cả hai nền) · bản vẽ ở `docs/mocks/mock-home-nc-{A,B,C}-*.html`
+
+| | Mô hình | Điểm khác biệt cốt lõi |
+|---|---|---|
+| **A** | BÌA TẠP CHÍ | tiêu điểm **tràn mép, không vỏ thẻ**; cột phụ **không có thẻ nào** |
+| **B** | DẢI LIÊN TỤC | **BỎ HẲN cột phải** — chẩn: nghĩa địa widget sinh ra từ CÁI CỘT |
+| **C** | CHIỀU SÂU | **đúng MỘT vật có vỏ** trên cả màn; nền là ánh sáng theo giờ |
+
+**Trạng thái: 0 dòng mã.** Cùng dữ liệu, cùng kiến trúc điều hướng đã duyệt — chỉ khác bố cục.
+Hoà chọn một hướng (hoặc **ghép**: *"tiêu điểm của B, lớp nền của A"*) → dựng bản chi tiết cho
+hướng đó (trạng thái rỗng · khổ hẹp · hover · đo tương phản) → **rồi mới code**.
+
+🔴 Rủi ro nặng nhất đã khai trong phiếu: **chưa có trạng thái RỖNG.** A và C dựa vào một ảnh lớn;
+studio chưa có dự án nào thì **cả hai yếu hẳn**. Đây là chỗ phải dựng thêm trước khi thi công,
+bất kể Hoà chọn bản nào.
 
 ## B · ĐANG DỰNG BẰNG CHỨNG — chưa đủ điều kiện trình
 
