@@ -18,7 +18,7 @@
  * Chạy: node_modules/.bin/sucrase-node lib/danh-tinh-phien-nghiem-thu.test.ts
  */
 import { danhTinhSanSang, danhTinhChoLuot, quenLuotDanhTinh } from './danh-tinh-phien';
-import { getLastUserId, quenDemTrongBoNho } from './resume';
+import { getLastUserId, setLastUserId, quenDemTrongBoNho, clearLastUserId } from './resume';
 import { sheetsKey, saveSheets, type SheetsRecord } from './sheets-persist';
 
 let pass = 0;
@@ -98,13 +98,53 @@ function batDauPhien(): void {
       sheetsKey('', ROUTE, BUCKET) === `::${ROUTE}::${BUCKET}`);
   }
 
-  console.log('⑤ ĐƯỜNG THƯỜNG (đã qua Home/đăng nhập) KHÔNG ĐƯỢC TỐN THÊM REQUEST');
+  console.log('⑤ ĐƯỜNG THƯỜNG — ĐỆM PHẢI ĐƯỢC MÁY CHỦ XÁC NHẬN, KHÔNG ĐƯỢC TỰ QUYẾT');
   {
+    /**
+     * 🔴 KHẲNG ĐỊNH CŨ Ở ĐÂY LÀ SAI VÀ ĐÃ BỊ GỠ (04/09, cổng G1).
+     *
+     * Ca này TRƯỚC ĐÂY đòi "đệm đã có ⇒ 0 request tới máy chủ". Nghe như một ràng buộc hiệu
+     * năng, thật ra nó KHOÁ CỨNG chính lỗ rò dữ liệu chéo người dùng: không hỏi máy chủ thì
+     * không đời nào phát hiện được bộ đệm đang mang id của NGƯỜI TRƯỚC. Lỗi đó đã tái hiện
+     * trên app thật bằng hai đường độc lập — `scripts/nghiem-thu-g1.mjs` CA4 (bơm đệm cũ) và
+     * CA8 (đăng xuất/đăng nhập bình thường trên máy dùng chung).
+     *
+     * Cùng họ với bài học 15/08 về `calibrateFromImage`: một test khẳng định ĐÚNG HÀNH VI
+     * HỎNG làm kỳ vọng thì nó không bảo vệ gì cả — nó che lỗi và giữ cho lỗi sống.
+     *
+     * Nay ca này canh điều NGƯỢC LẠI: có đệm thì VẪN phải hỏi máy chủ đúng một lần để xác
+     * nhận, và kết quả cuối phải là tiếng nói của máy chủ.
+     */
     const truoc = soLanHoiMayChu;
     quenLuotDanhTinh(); // đệm VẪN còn id từ ca trên — mô phỏng phiên đã đăng nhập bình thường
     const r = await danhTinhChoLuot(() => true);
-    ok('đệm đã có ⇒ trả về ngay', r.userId === USER);
-    ok('đệm đã có ⇒ 0 request tới máy chủ', soLanHoiMayChu === truoc);
+    ok('đệm đã có ⇒ vẫn trả đúng người dùng', r.userId === USER);
+    ok('đệm đã có ⇒ VẪN hỏi máy chủ đúng 1 lần để xác nhận', soLanHoiMayChu === truoc + 1);
+  }
+
+  console.log('⑤b BỘ ĐỆM MANG ID NGƯỜI KHÁC ⇒ MÁY CHỦ THẮNG, ĐỆM BỊ GHI ĐÈ (bất biến #2)');
+  {
+    /**
+     * Ca hồi quy cho lỗ CA4/CA8: localStorage còn id người dùng TRƯỚC, phiên máy chủ là người
+     * MỚI. Việc của người mới TUYỆT ĐỐI không được rơi vào kho người cũ.
+     */
+    batDauPhien();
+    setLastUserId('NGUOI-CU-KHAC-HAN'); // đệm sót lại của phiên TRƯỚC
+    const r = await danhTinhChoLuot(() => true);
+    ok('máy chủ thắng bộ đệm lệch', r.userId === USER);
+    ok('bộ đệm được ghi đè, tự chữa ngay trong lượt', getLastUserId() === USER);
+    luuMotLuot(r.userId);
+    ok('việc ghi vào ĐÚNG kho người đang đăng nhập, không vào kho người cũ',
+      dia.length === 1 && dia[0] === sheetsKey(USER, ROUTE, BUCKET));
+  }
+
+  console.log('⑤c clearLastUserId — lớp thứ hai, đóng khe "đăng xuất rồi mất mạng"');
+  {
+    batDauPhien();
+    setLastUserId('NGUOI-CU-KHAC-HAN');
+    ok('trước khi xoá: đệm còn id người cũ', getLastUserId() === 'NGUOI-CU-KHAC-HAN');
+    clearLastUserId();
+    ok('sau khi xoá: đệm rỗng ⇒ không còn gì để trỏ nhầm người', getLastUserId() === null);
   }
 
   console.log('⑥ ĐỔI DỰ ÁN GIỮA CHỪNG — lượt cũ phải DỪNG, không ghi đè bucket mới');

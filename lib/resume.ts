@@ -169,6 +169,31 @@ export function quenDemTrongBoNho(): void {
 }
 
 /**
+ * XOÁ BỘ ĐỆM ĐỊNH DANH — gọi lúc ĐĂNG XUẤT.
+ *
+ * ⛔ Trước 04/09 hàm này KHÔNG TỒN TẠI (`grep clearLastUserId` = 0 kết quả toàn repo), nên
+ * `interiorflow.lastUserId` của người dùng TRƯỚC nằm lì trong localStorage sau khi đăng xuất.
+ * Người kế tiếp đăng nhập trên cùng máy thì việc của họ bị ghi vào kho của người trước — đã tái
+ * hiện trên app thật, xem `scripts/nghiem-thu-g1.mjs` CA8.
+ *
+ * `lib/danh-tinh-phien.ts` nay đã tự chữa bộ đệm lệch bằng cách hỏi lại máy chủ, nên đây là
+ * LỚP THỨ HAI: nó đóng nốt khe hẹp "đăng xuất rồi mất mạng" — lúc đó không hỏi được máy chủ,
+ * và nếu bộ đệm vẫn còn id người cũ thì đường lui-về-đệm sẽ trỏ nhầm người.
+ *
+ * ⚠️ CHƯA ĐƯỢC NỐI VÀO ĐƯỜNG ĐĂNG XUẤT — chỗ gọi nằm ngoài phạm vi ghi của làn nghiệm thu G1.
+ * Việc còn lại đúng một dòng: gọi hàm này ở nơi client bấm Đăng xuất (cùng chỗ gọi
+ * `DELETE /api/auth/me`).
+ */
+export function clearLastUserId(): void {
+  demTrongBoNho = null;
+  try {
+    localStorage.removeItem(LAST_USER_KEY);
+  } catch {
+    /* localStorage bị chặn — bộ nhớ đã xoá ở trên, đó mới là đường đọc thắng */
+  }
+}
+
+/**
  * userId "tốt nhất có được" cho onboarding Tầng 2/3 — CÁC ROUTE STUDIO (`/projects/[id]/cad`,
  * `/present`, hay `/cad-editor`/`/present-editor` cũ) KHÔNG nạp `user` vào store khi vào bằng
  * hard-reload/URL trực tiếp (xem ghi chú `lastUserId` phía trên + components/entry/ResumeTracker.tsx
