@@ -51,7 +51,7 @@ Mọi phát hiện gắn nhãn: **OBSERVED** (đo tại nguồn) · **INFERENCE*
 4. **Không có CI**: PR #8 đang mở và sẽ **không bao giờ có check nào báo**. Mọi cổng chất lượng hiện chạy bằng tay.
 
 ### P3 — UI lệch Design Authority
-5. **DRIFT đã biết, chưa sửa** (từ chốt EXS 20/08): `BE_RONG_NAC` 28 → 52-56 · trần Work Panel 320 → 440 · bento hero 2×2 Resume · nguyên thể aperture chưa có.
+5. **DRIFT so với chốt EXS 20/08** — 🔧 *đính chính 04/09 sau khi đo lại tại nguồn:* mục `BE_RONG_NAC` 28 → 52-56 tôi ghi **SAI**, main **đã có** rail BA CỤM và ba nấc 52/240/320 (`components/nav/muc-dieu-huong.test.ts:170` khẳng định, commit `3e1dde32` EXS-BUILD-1). Còn lại đúng là chưa có: **trần Work Panel 320 → 440** · **bento hero 2×2 Resume** · **nguyên thể aperture**. Hai mục đầu và cuối đã tìm thấy bản thi công trên `backup/2026-08-19-batch0a` (`components/studio/VitalsAperture.tsx`, commit `fbd65213`) — xem `docs/delivery/CLOUD-SESSION-LEDGER.md` §6.
 6. **Nợ di trú của Slice 9** (đã khai trong PR #8, ngoài phạm vi slice đó): 18 vòng focus tự chế bám `--accent-ring` (~2:1) chưa đổi sang `--focus-ring` · 82 `backdrop-filter` viết tay chưa qua `Surface` · ~20 `zIndex` số trần chưa qua `--z-*` · `--tap-chinh` khai rồi nhưng chưa rail/dock nào đọc.
 7. `soi:thao-tac` 🔴4 lệch: `outline-can-focus-visible` 32 tệp · `cam-hex-inline` 186 chỗ · `keydown-ne-o-nhap` 1 tệp · `kinh-webkit-prefix` 2 tệp — **2 tệp cuối là báo nhầm**, đã kiểm: cả `components/ui/Surface.tsx` lẫn `components/SearchProjectsInput.tsx:94` chỉ nhắc `backdrop-filter` **trong lời chú thích**, 0 dòng thật; regex của máy soi khớp cả comment. *OBSERVED.*
 
