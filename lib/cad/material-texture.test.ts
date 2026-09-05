@@ -139,12 +139,28 @@ function testLuminanceOrder() {
   ok('gỗ sồi sáng hơn gỗ óc chó', soi > ocCho);
 }
 
+/* ── 05/09 — CỠ LẺ KHÔNG ĐƯỢC RA TẤM ĐEN ────────────────────────────────────────────────────
+ * Ca thật: nấc chi tiết INSPECT của kho vật liệu tính cạnh tấm theo bề rộng ĐO ĐƯỢC (418 / 1,5
+ * = 279) ⇒ `size / 2` và `size / 3` thành số lẻ phần thập phân ⇒ lưới noise cấp phát hụt ⇒ NaN
+ * ⇒ **cả tấm đen, không một lời báo**. `tsc` xanh, mọi test cũ xanh, ảnh ở 1440 cũng xanh — chỉ
+ * lộ ra khi MỞ ẢNH ở bề rộng thứ hai. Test này khoá luôn cả dải cỡ, không chỉ một con số. */
+function testCoLe() {
+  console.log('\n[7] cỡ lẻ vẫn ra vân, không ra tấm đen');
+  for (const size of [63, 97, 139, 279, 281, 383]) {
+    for (const id of ['san-go-soi', 'da-marble-trang', 'gach-terrazzo']) {
+      const lum = avgLum(generateTexturePixels(byId(id), size));
+      ok(`${id} @ ${size}px: không đen (độ sáng ${lum.toFixed(1)} > 8)`, lum > 8);
+    }
+  }
+}
+
 testUtils();
 testBufferShape();
 testDeterministic();
 testDistinct();
 testTexturedNotFlat();
 testLuminanceOrder();
+testCoLe();
 
 console.log(`\n${fail === 0 ? 'PASS' : 'FAIL'} — ${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

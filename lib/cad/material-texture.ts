@@ -75,8 +75,19 @@ function toneRgb(m: MaterialDef, i: number): RGB {
   return hexToRgb(t[Math.min(i, t.length - 1)]);
 }
 
-/** Value-noise mượt trên lưới thô (bilinear) — dùng làm vân/nhiễu tần thấp. */
-function makeValueNoise(size: number, cells: number, rnd: () => number): (x: number, y: number) => number {
+/** Value-noise mượt trên lưới thô (bilinear) — dùng làm vân/nhiễu tần thấp.
+ *
+ * 🔴 05/09 — `cells` PHẢI LÀ SỐ NGUYÊN DƯƠNG, và trước lượt này không ai ép.
+ * Nơi gọi truyền `size / 2` và `size / 3`; hễ `size` không chia hết thì `g = cells + 1` lẻ phần
+ * thập phân ⇒ `new Float32Array(g * g)` cấp phát theo phần nguyên ⇒ chỉ số bilinear chạy ra
+ * ngoài mảng ⇒ `undefined` ⇒ NaN ⇒ `clamp255(NaN | 0) = 0` ⇒ **cả tấm vân ra ĐEN, không một lời
+ * báo**. Đo được: `generateTexturePixels(gỗ, 279)` cho R trung bình **0,0**, còn 280 cho 176,9.
+ * Bắt được bằng cách MỞ ẢNH RA NHÌN ở bề rộng thứ hai — `tsc`, test và ảnh ở 1440 đều xanh.
+ * ⇒ Không phải "làm cho chắc": đây là ca hỏng-âm-thầm đã xảy ra thật. Ép về số nguyên KHÔNG đổi
+ * một pixel nào ở các cỡ đang chạy (96 · 280 · 384 đều chia hết), vì cỡ nào chia không hết thì
+ * hôm nay đang đen. */
+function makeValueNoise(size: number, cellsThuc: number, rnd: () => number): (x: number, y: number) => number {
+  const cells = Math.max(1, Math.floor(cellsThuc));
   const g = cells + 1;
   const grid = new Float32Array(g * g);
   for (let i = 0; i < grid.length; i++) grid[i] = rnd();
