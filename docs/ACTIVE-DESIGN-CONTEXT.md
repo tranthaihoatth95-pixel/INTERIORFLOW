@@ -248,6 +248,54 @@ luồng nghề thật (§6)
 **Không bắt đầu từ ảnh chụp màn hình hiện tại.** Không để bản cài đặt quyết định bố cục.
 Bài học từ các bản cũ thì **giữ**; **bố cục** của chúng **không** được giữ mặc định.
 
+## ⛔ LUẬT NGHIỆM THU — HOÀ BAN 05/09
+
+> *"Không có gì đảm bảo thì **SPEC phải đảm bảo**. Và **không biết thì tại sao không hỏi?**"*
+
+Hoà ban sau khi tôi trả lời rằng lỗi *"hộp rỗng"* của Vitals **không có gì đảm bảo không tái
+diễn, chỉ mắt người mới phán được**. Câu đó là **buông việc**, không phải câu trả lời — nó biến
+mắt Hoà thành lưới chắn cuối cùng cho thứ lẽ ra không được lọt tới đó.
+
+### N1 · "MÁY KHÔNG PHÁN ĐƯỢC" KHÔNG PHẢI KẾT LUẬN — LÀ MỘT VIỆC CHƯA LÀM
+
+Gặp một tiêu chí tưởng là *gu*, phải đi hết ba nấc **theo thứ tự**, chỉ được xuống nấc sau khi
+nấc trước thật sự bí:
+
+| Nấc | Làm gì | Ca đã chạy thật |
+|---|---|---|
+| ① **QUY VỀ SỐ** | tìm đại lượng đo được đứng sau cái "gu" đó | *"nút mờ nhìn không rõ"* → tỉ số tương phản 2,55 → 3,36 · *"màu này đụng màu kia"* → khoảng cách góc màu OKLCH ±20° |
+| ② **QUY VỀ LUẬT NHỊ PHÂN** | không ra số thì ra câu **đúng/sai**, máy đọc được | *"hộp rỗng"* → **cấm dựng tấm khi `tinHieu.length === 0`** — ba chốt, khoá bằng test |
+| ③ **KHAI LÀ CÂU HỎI CÓ TÊN** | thật sự bí thì **ghi ra một CÂU HỎI cụ thể cho Hoà**, kèm 2-3 phương án + cái giá của mỗi phương án | — |
+
+⛔ **Nấc ③ KHÔNG phải "để mắt Hoà tự bắt".** Câu hỏi phải được **hỏi TRƯỚC khi giao**, đặt cạnh
+ảnh chụp của đúng bề mặt đó. Để Hoà tự phát hiện rồi mới bàn là **đã trượt rồi mới chữa**.
+
+### N2 · SPEC PHẢI MANG ĐIỀU KIỆN NGHIỆM THU, KHÔNG CHỈ MANG MÔ TẢ
+
+Mỗi bề mặt trong spec phải trả lời được: **"nhìn vào đâu để biết nó SAI?"**
+Spec chỉ tả *nó nên trông thế nào* thì không nghiệm thu được — hai người đọc ra hai bản khác nhau,
+và đó đúng là chỗ lỗi chui vào. Không viết được điều kiện sai ⇒ **spec chưa xong**, không phải
+*"phần này thuộc về gu"*.
+
+### N3 · KHÔNG BIẾT THÌ HỎI — VÀ ĐÂY LÀ NGOẠI LỆ CỦA LUẬT "THÔI HỎI CHUYỆN GU"
+
+Luật *STOP ASKING FOR TASTE DECISIONS* (đợt chạy nước rút) **vẫn còn hiệu lực** và **không**
+mâu thuẫn với luật này. Ranh giới:
+
+| | |
+|---|---|
+| **Tự quyết, cấm hỏi** | thứ suy được từ luật đã ghi · thứ quy được về số · thứ chỉ là **phép trừ** (bỏ bớt thì không đẻ ra lỗi gu mới) |
+| **Phải hỏi, cấm đoán** | thứ **thêm mới** một bề mặt/bố cục · thứ mà hai cách đọc dẫn tới **hai việc khác hẳn nhau** · thứ tôi đang định biện minh bằng *"chắc là ý Hoà muốn…"* |
+
+Dấu hiệu nhận ra mình đang đoán: **câu giải thích dài hơn thay đổi.**
+
+### N4 · TRÌNH TRƯỚC KHI ĐÓNG GÓI, KHÔNG PHẢI SAU KHI HOÀ MỞ RA
+
+Gốc của ca 05/09: bộ cài rời tay tôi mà **chưa có một tấm ảnh nào của Vitals** được đưa cho Hoà.
+Con số `xong-máy / qua-mắt` (76 / 1 lúc đó) đã báo trước, tôi vẫn gửi.
+⇒ **Bộ cài không rời tay khi chưa chụp hết bề mặt và chưa trình ảnh.** Đây là điều kiện cứng của
+`docs/delivery/VISUAL-APPROVAL-QUEUE.md`, không phải lời hứa cố gắng.
+
 ## HẠN DÙNG
 Hoà lật thì sửa **tại chỗ, viết lại** — không cộng dồn đuôi. Thấy tệp này dài ra là dấu hiệu nó
 đang biến thành nhật ký; nhật ký thuộc `docs/00-CHOT.md`, không thuộc đây.
