@@ -1,0 +1,194 @@
+{
+  "id": "cmtoq50cr000w7dyff4pqus4a",
+  "soDuAn": 1,
+  "man": [
+    {
+      "ten": "01-home",
+      "duong": "/",
+      "chu": 1398,
+      "nut": 55,
+      "anh": 42,
+      "loi": []
+    },
+    {
+      "ten": "02-du-an",
+      "duong": "/projects",
+      "chu": 447,
+      "nut": 55,
+      "anh": 54,
+      "loi": []
+    },
+    {
+      "ten": "03-2d",
+      "duong": "/projects/cmtoq50cr000w7dyff4pqus4a/cad",
+      "chu": 2254,
+      "nut": 106,
+      "anh": 110,
+      "loi": []
+    },
+    {
+      "ten": "04-3d",
+      "duong": "/projects/cmtoq50cr000w7dyff4pqus4a/render",
+      "chu": 406,
+      "nut": 67,
+      "anh": 62,
+      "loi": []
+    },
+    {
+      "ten": "05-trinh-chieu",
+      "duong": "/projects/cmtoq50cr000w7dyff4pqus4a/present",
+      "chu": 642,
+      "nut": 58,
+      "anh": 54,
+      "loi": []
+    },
+    {
+      "ten": "06-tong-quan-du-an",
+      "duong": "/projects/cmtoq50cr000w7dyff4pqus4a/overview",
+      "chu": 584,
+      "nut": 52,
+      "anh": 52,
+      "loi": []
+    },
+    {
+      "ten": "07-so-tay",
+      "duong": "/projects/cmtoq50cr000w7dyff4pqus4a/notebook",
+      "chu": 818,
+      "nut": 18,
+      "anh": 10,
+      "loi": []
+    },
+    {
+      "ten": "08-anh-du-an",
+      "duong": "/projects/cmtoq50cr000w7dyff4pqus4a/photo",
+      "chu": 441,
+      "nut": 27,
+      "anh": 24,
+      "loi": []
+    },
+    {
+      "ten": "09-vat-lieu",
+      "duong": "/materials",
+      "chu": 1672,
+      "nut": 57,
+      "anh": 62,
+      "loi": []
+    },
+    {
+      "ten": "10-mau",
+      "duong": "/colors",
+      "loi": "ĐI TRẬT → /"
+    },
+    {
+      "ten": "11-thu-vien",
+      "duong": "/library",
+      "chu": 1846,
+      "nut": 64,
+      "anh": 58,
+      "loi": []
+    },
+    {
+      "ten": "12-gallery",
+      "duong": "/library/gallery",
+      "chu": 462,
+      "nut": 50,
+      "anh": 45,
+      "loi": []
+    },
+    {
+      "ten": "13-nhap-tai-san",
+      "duong": "/library/ingest",
+      "chu": 1018,
+      "nut": 5,
+      "anh": 4,
+      "loi": []
+    },
+    {
+      "ten": "14-kho-tri-thuc",
+      "duong": "/library/knowledge",
+      "chu": 36921,
+      "nut": 53,
+      "anh": 190,
+      "loi": []
+    },
+    {
+      "ten": "15-cam-hung",
+      "duong": "/inspiration",
+      "chu": 1133,
+      "nut": 49,
+      "anh": 45,
+      "loi": []
+    },
+    {
+      "ten": "16-files",
+      "duong": "/files",
+      "chu": 2711,
+      "nut": 67,
+      "anh": 72,
+      "loi": []
+    },
+    {
+      "ten": "17-viec",
+      "duong": "/tasks",
+      "chu": 801,
+      "nut": 57,
+      "anh": 46,
+      "loi": []
+    },
+    {
+      "ten": "18-cai-dat",
+      "duong": "/settings",
+      "chu": 5233,
+      "nut": 116,
+      "anh": 86,
+      "loi": []
+    },
+    {
+      "ten": "19-cai-dat-avatar",
+      "duong": "/settings/avatar",
+      "chu": 195,
+      "nut": 30,
+      "anh": 19,
+      "loi": []
+    },
+    {
+      "ten": "20-cai-dat-gioi-thieu",
+      "duong": "/settings/about",
+      "chu": 62,
+      "nut": 2,
+      "anh": 2,
+      "loi": []
+    },
+    {
+      "ten": "21-cai-dat-giay-phep",
+      "duong": "/settings/licenses",
+      "chu": 37609,
+      "nut": 1,
+      "anh": 1,
+      "loi": []
+    },
+    {
+      "ten": "22-workhub",
+      "duong": "/workhub",
+      "chu": 307,
+      "nut": 1,
+      "anh": 0,
+      "loi": []
+    },
+    {
+      "ten": "23-soan-2d-doc-lap",
+      "duong": "/cad-editor",
+      "loi": "ĐI TRẬT → /projects/cmtoq50cr000w7dyff4pqus4a/cad"
+    },
+    {
+      "ten": "24-soan-trinh-chieu",
+      "duong": "/present-editor",
+      "loi": "ĐI TRẬT → /projects/cmtoq50cr000w7dyff4pqus4a/present"
+    },
+    {
+      "ten": "25-soan-anh",
+      "duong": "/photo-editor",
+      "loi": "ĐI TRẬT → /projects/cmtoq50cr000w7dyff4pqus4a/photo"
+    }
+  ]
+}

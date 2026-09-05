@@ -1,0 +1,214 @@
+{
+  "xuatXu": "REAL APP",
+  "khiChup": "2026-09-05 18:36 UTC",
+  "nhanh": "nen-checkpoint",
+  "cong": 3277,
+  "boiCanh": "tài khoản mới + 1 dự án thật \"Căn hộ Thảo Điền\"; 1440×900; theme mặc định",
+  "boChup": "scripts/soi-mat/chup-toan-man.mjs (bản đã vá thước chờ — chờ CHỮ ĐỨNG YÊN, không chờ có-chữ)",
+  "soMan": {
+    "chupDuoc": 21,
+    "tong": 25
+  },
+  "man": [
+    {
+      "tep": "01-home.png",
+      "route": "/",
+      "chu": 1398,
+      "nut": 55,
+      "hinh": 42,
+      "loi": null
+    },
+    {
+      "tep": "02-du-an.png",
+      "route": "/projects",
+      "chu": 447,
+      "nut": 55,
+      "hinh": 54,
+      "loi": null
+    },
+    {
+      "tep": "03-2d.png",
+      "route": "/projects/cmtoq50cr000w7dyff4pqus4a/cad",
+      "chu": 2254,
+      "nut": 106,
+      "hinh": 110,
+      "loi": null
+    },
+    {
+      "tep": "04-3d.png",
+      "route": "/projects/cmtoq50cr000w7dyff4pqus4a/render",
+      "chu": 406,
+      "nut": 67,
+      "hinh": 62,
+      "loi": null
+    },
+    {
+      "tep": "05-trinh-chieu.png",
+      "route": "/projects/cmtoq50cr000w7dyff4pqus4a/present",
+      "chu": 642,
+      "nut": 58,
+      "hinh": 54,
+      "loi": null
+    },
+    {
+      "tep": "06-tong-quan-du-an.png",
+      "route": "/projects/cmtoq50cr000w7dyff4pqus4a/overview",
+      "chu": 584,
+      "nut": 52,
+      "hinh": 52,
+      "loi": null
+    },
+    {
+      "tep": "07-so-tay.png",
+      "route": "/projects/cmtoq50cr000w7dyff4pqus4a/notebook",
+      "chu": 818,
+      "nut": 18,
+      "hinh": 10,
+      "loi": null
+    },
+    {
+      "tep": "08-anh-du-an.png",
+      "route": "/projects/cmtoq50cr000w7dyff4pqus4a/photo",
+      "chu": 441,
+      "nut": 27,
+      "hinh": 24,
+      "loi": null
+    },
+    {
+      "tep": "09-vat-lieu.png",
+      "route": "/materials",
+      "chu": 1672,
+      "nut": 57,
+      "hinh": 62,
+      "loi": null
+    },
+    {
+      "tep": "10-mau.png",
+      "route": "/colors",
+      "chu": null,
+      "nut": null,
+      "hinh": null,
+      "loi": "ĐI TRẬT → /"
+    },
+    {
+      "tep": "11-thu-vien.png",
+      "route": "/library",
+      "chu": 1846,
+      "nut": 64,
+      "hinh": 58,
+      "loi": null
+    },
+    {
+      "tep": "12-gallery.png",
+      "route": "/library/gallery",
+      "chu": 462,
+      "nut": 50,
+      "hinh": 45,
+      "loi": null
+    },
+    {
+      "tep": "13-nhap-tai-san.png",
+      "route": "/library/ingest",
+      "chu": 1018,
+      "nut": 5,
+      "hinh": 4,
+      "loi": null
+    },
+    {
+      "tep": "14-kho-tri-thuc.png",
+      "route": "/library/knowledge",
+      "chu": 36921,
+      "nut": 53,
+      "hinh": 190,
+      "loi": null
+    },
+    {
+      "tep": "15-cam-hung.png",
+      "route": "/inspiration",
+      "chu": 1133,
+      "nut": 49,
+      "hinh": 45,
+      "loi": null
+    },
+    {
+      "tep": "16-files.png",
+      "route": "/files",
+      "chu": 2711,
+      "nut": 67,
+      "hinh": 72,
+      "loi": null
+    },
+    {
+      "tep": "17-viec.png",
+      "route": "/tasks",
+      "chu": 801,
+      "nut": 57,
+      "hinh": 46,
+      "loi": null
+    },
+    {
+      "tep": "18-cai-dat.png",
+      "route": "/settings",
+      "chu": 5233,
+      "nut": 116,
+      "hinh": 86,
+      "loi": null
+    },
+    {
+      "tep": "19-cai-dat-avatar.png",
+      "route": "/settings/avatar",
+      "chu": 195,
+      "nut": 30,
+      "hinh": 19,
+      "loi": null
+    },
+    {
+      "tep": "20-cai-dat-gioi-thieu.png",
+      "route": "/settings/about",
+      "chu": 62,
+      "nut": 2,
+      "hinh": 2,
+      "loi": null
+    },
+    {
+      "tep": "21-cai-dat-giay-phep.png",
+      "route": "/settings/licenses",
+      "chu": 37609,
+      "nut": 1,
+      "hinh": 1,
+      "loi": null
+    },
+    {
+      "tep": "22-workhub.png",
+      "route": "/workhub",
+      "chu": 307,
+      "nut": 1,
+      "hinh": 0,
+      "loi": null
+    },
+    {
+      "tep": "23-soan-2d-doc-lap.png",
+      "route": "/cad-editor",
+      "chu": null,
+      "nut": null,
+      "hinh": null,
+      "loi": "ĐI TRẬT → /projects/cmtoq50cr000w7dyff4pqus4a/cad"
+    },
+    {
+      "tep": "24-soan-trinh-chieu.png",
+      "route": "/present-editor",
+      "chu": null,
+      "nut": null,
+      "hinh": null,
+      "loi": "ĐI TRẬT → /projects/cmtoq50cr000w7dyff4pqus4a/present"
+    },
+    {
+      "tep": "25-soan-anh.png",
+      "route": "/photo-editor",
+      "chu": null,
+      "nut": null,
+      "hinh": null,
+      "loi": "ĐI TRẬT → /projects/cmtoq50cr000w7dyff4pqus4a/photo"
+    }
+  ]
+}
