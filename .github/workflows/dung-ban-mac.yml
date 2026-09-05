@@ -1,0 +1,187 @@
+# Dựng bộ cài macOS (.dmg) trên máy Mac của GitHub — để chủ dự án KHÔNG phải gõ lệnh nào.
+#
+# VÌ SAO CÓ TỆP NÀY: bản .dmg chỉ dựng được trên macOS. Phiên trợ lý chạy trong container Linux
+# nên không dựng được, và cũng không chạm được vào máy người dùng. Máy Mac của GitHub là bên thứ
+# ba duy nhất trong tay có thể làm việc đó.
+#
+# CÁCH DÙNG (không cần Terminal): mở repo trên github.com → tab Actions → chọn
+# "Dựng bộ cài macOS (.dmg)" → nút "Run workflow" → đợi ~15-25 phút → tải mục "Artifacts".
+#
+# ⚠️ App KHÔNG ký Apple (notarize: false). macOS sẽ chặn lần mở đầu — chuột phải vào app → Mở.
+#    Đó là hành vi dự kiến, không phải app hỏng. Xem docs/delivery/G7-NGHIEM-THU-MAC.md mục T11.
+# ⚠️ Runner macos-14 là Apple Silicon (arm64) — khớp cấu hình `--mac --arm64` trong package.json.
+#    Máy Intel KHÔNG chạy được bản này.
+name: Dựng bộ cài CHECKPOINT (để so sánh)
+
+permissions:
+  contents: write   # cần để electron-builder tạo/đẩy bản phát hành nháp
+
+on:
+  # Hai cửa kích hoạt, CỐ Ý:
+  #  · workflow_dispatch — nút "Run workflow" trong tab Actions. ⚠️ GitHub CHỈ hiện nút này khi
+  #    tệp workflow đã có trên NHÁNH MẶC ĐỊNH (main). Trước khi nhánh tích hợp được gộp vào main
+  #    thì nút chưa xuất hiện và API trả 404 — đã đo 05/09, không phải lỗi cấu hình.
+  #  · push vào nhánh `dung-mac` — cửa dùng được NGAY, vì workflow chạy theo tệp CỦA CHÍNH nhánh
+  #    được push, không cần có mặt trên main. Muốn dựng lại: push nhánh `dung-mac` lên mốc mới.
+  workflow_dispatch:
+  push:
+    branches:
+      - dung-checkpoint
+
+jobs:
+  dung-dmg:
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Kiến trúc máy dựng (phải là arm64)
+        run: |
+          uname -m
+          sw_vers
+
+      - name: Cài phụ thuộc
+        run: npm ci
+        env:
+          # `postinstall` chạy `prisma generate`; nó KHÔNG cần CSDL sống, nhưng khai biến cho
+          # chắc để không lệ thuộc hành vi mặc định của từng bản Prisma.
+          DATABASE_URL: file:./prisma/dev.db
+
+      - name: Kiểm trước phát hành
+        run: node scripts/release-preflight.mjs
+
+      - name: Dựng bản web (.next)
+        # TÁCH RIÊNG khỏi bước đóng gói: `electron:build:mac` gộp `next build && electron-builder`,
+        # gộp thì log lỗi lẫn nhau, không biết hỏng ở dựng web hay ở đóng gói. Bước này BẮT BUỘC —
+        # thiếu `.next` thì gói vẫn ra .dmg nhưng mở lên KHÔNG có gì (máy chủ nội bộ không có trang).
+        run: npx next build
+        env:
+          DATABASE_URL: file:./prisma/dev.db
+
+      - name: Có .next chưa (chặn gói rỗng)
+        run: test -f .next/BUILD_ID && echo "BUILD_ID = $(cat .next/BUILD_ID)"
+
+      - name: Đóng gói .dmg + đưa lên trang tải
+        # `--publish always` để electron-builder tự tạo BẢN PHÁT HÀNH NHÁP trên GitHub và đính
+        # tệp vào đó. Lý do: Artifacts của Actions bắt người tải phải lần vào đúng lần chạy rồi
+        # cuộn xuống đáy; trang Releases thì MỘT trang, hai tệp, bấm là tải. Chủ dự án không phải
+        # là người đi dò giao diện CI.
+        # Bản nháp (draft) — KHÔNG công khai cho tới khi có người bấm phát hành.
+        run: npx electron-builder --mac --arm64 --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DATABASE_URL: file:./prisma/dev.db
+          # Không có Developer ID trên runner ⇒ tắt dò chứng chỉ để electron-builder ký ad-hoc
+          # thay vì dừng lại. Ra .dmg chưa ký là KỲ VỌNG của lượt này (xem T1 trong G7-NGHIEM-THU-MAC).
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: Gói có nuốt bí mật không (chặn cứng)
+        # ĐO ĐƯỢC 05/09: `build.mac.files` THAY THẾ danh sách `files` gốc (không cộng vào), mà nó
+        # chỉ có dòng loại-trừ ⇒ electron-builder rơi về mặc định `**/*` và gói nuốt `.env`
+        # (AUTH_SECRET, INTEGRATION_ENC_KEY), `dev.db`, cả `.claude/worktrees/`. Gói 4,2 GB.
+        # Đã gỡ hai khối đè đó; bước này canh để lỗi KHÔNG tái phát trong im lặng — vì nó là loại
+        # hỏng mà mọi dấu hiệu bề mặt vẫn xanh: app chạy bình thường, chỉ là đem theo bí mật.
+        run: |
+          set -e
+          APP="dist-installer/mac-arm64/InteriorFlow CP.app/Contents/Resources/app"
+          # CHẶN QUA-RỖNG: `find` trên đường dẫn KHÔNG TỒN TẠI trả 0 kết quả, và `2>/dev/null`
+          # nuốt luôn lời báo lỗi ⇒ cổng "đạt" trong khi nó chẳng soi cái gì. Đo 05/09 bằng phép
+          # thử rút ruột: ca "đường dẫn sai" cho ra y hệt ca "gói sạch". Nên phải khẳng định thư
+          # mục CÓ THẬT trước đã — đổi tên thư mục đầu ra là cổng ĐỎ, không phải im lặng qua.
+          test -d "$APP" || { echo "::error::Không thấy $APP — cổng này soi rỗng, DỪNG"; exit 1; }
+          echo "soi trong: $APP ($(find "$APP" -type f | wc -l) tệp)"
+          for pat in ".env" "*.db" ".claude"; do
+            n=$(find "$APP" -name "$pat" 2>/dev/null | wc -l)
+            echo "$pat trong gói: $n"
+            if [ "$n" -ne 0 ]; then echo "::error::Gói macOS chứa $pat — DỪNG phát hành"; exit 1; fi
+          done
+
+      - name: Liệt kê thành phẩm
+        run: ls -lh dist-installer/*.dmg dist-installer/*.zip 2>/dev/null || ls -lh dist-installer
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: InteriorFlowCP-macOS-arm64
+          path: dist-installer/*.dmg
+          if-no-files-found: error
+          retention-days: 14
+
+  dung-exe:
+    # Bộ cài Windows — bản công ty phát cho máy nhân viên. Chạy SONG SONG với job macOS:
+    # một lần push ra cả hai bộ cài, không phải nhớ chạy hai lần.
+    # `shell: bash` cho MỌI bước để câu lệnh giống hệt job macOS (runner Windows có sẵn bash) —
+    # tránh cảnh cùng một việc mà hai job viết hai kiểu rồi phân kỳ.
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Cài phụ thuộc
+        run: npm ci
+        env:
+          DATABASE_URL: file:./prisma/dev.db
+
+      - name: Kiểm trước phát hành
+        run: node scripts/release-preflight.mjs
+
+      - name: Dựng bản web (.next)
+        run: npx next build
+        env:
+          DATABASE_URL: file:./prisma/dev.db
+
+      - name: Có .next chưa (chặn gói rỗng)
+        run: test -f .next/BUILD_ID && echo "BUILD_ID = $(cat .next/BUILD_ID)"
+
+      - name: Đóng gói .exe + đưa lên trang tải
+        run: npx electron-builder --win --x64 --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DATABASE_URL: file:./prisma/dev.db
+          # Không có chứng chỉ ký Windows trên runner ⇒ trình cài KHÔNG ký. Windows sẽ hiện màn
+          # SmartScreen xanh "Windows protected your PC" ở lần chạy đầu — bấm "More info" →
+          # "Run anyway". Đây là KỲ VỌNG của bản nội bộ, không phải lỗi; giống hệt vai trò của
+          # Gatekeeper bên macOS (xem G7-NGHIEM-THU-MAC T11).
+          CSC_LINK: ''
+          CSC_KEY_PASSWORD: ''
+
+      - name: Gói có nuốt bí mật không (chặn cứng)
+        # Cùng lỗ đã đo 05/09 trên bản macOS: `build.win.files` từng THAY THẾ danh sách gốc nên
+        # gói nuốt cả `.env` và CSDL. Đã sửa; bước này canh để nó KHÔNG tái phát trong im lặng.
+        run: |
+          set -e
+          APP="dist-installer/win-unpacked/resources/app"
+          # CHẶN QUA-RỖNG: `find` trên đường dẫn KHÔNG TỒN TẠI trả 0 kết quả, và `2>/dev/null`
+          # nuốt luôn lời báo lỗi ⇒ cổng "đạt" trong khi nó chẳng soi cái gì. Đo 05/09 bằng phép
+          # thử rút ruột: ca "đường dẫn sai" cho ra y hệt ca "gói sạch". Nên phải khẳng định thư
+          # mục CÓ THẬT trước đã — đổi tên thư mục đầu ra là cổng ĐỎ, không phải im lặng qua.
+          test -d "$APP" || { echo "::error::Không thấy $APP — cổng này soi rỗng, DỪNG"; exit 1; }
+          echo "soi trong: $APP ($(find "$APP" -type f | wc -l) tệp)"
+          for pat in ".env" "*.db" ".claude"; do
+            n=$(find "$APP" -name "$pat" 2>/dev/null | wc -l)
+            echo "$pat trong gói: $n"
+            if [ "$n" -ne 0 ]; then echo "::error::Gói Windows chứa $pat — DỪNG phát hành"; exit 1; fi
+          done
+
+      - name: Liệt kê thành phẩm
+        run: ls -lh dist-installer/*.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: InteriorFlowCP-Windows-x64
+          path: dist-installer/*.exe
+          if-no-files-found: error
+          retention-days: 14
+

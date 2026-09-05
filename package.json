@@ -1,6 +1,6 @@
 {
   "name": "interiorflow",
-  "version": "0.1.0",
+  "version": "0.1.0-cp",
   "private": true,
   "description": "InteriorFlow — integrated workspace for interior design delivery (native desktop).",
   "author": "InteriorFlow",
@@ -117,8 +117,8 @@
     "wait-on": "^8.0.1"
   },
   "build": {
-    "appId": "com.interiorflow.app",
-    "productName": "InteriorFlow",
+    "appId": "com.interiorflow.cp",
+    "productName": "InteriorFlow CP",
     "copyright": "InteriorFlow",
     "publish": [
       {
@@ -186,7 +186,9 @@
     "protocols": [
       {
         "name": "InteriorFlow Authentication",
-        "schemes": ["interiorflow"]
+        "schemes": [
+          "interiorflow"
+        ]
       }
     ],
     "win": {
