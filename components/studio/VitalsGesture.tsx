@@ -796,12 +796,13 @@ export default function VitalsGesturePanel({
               disabled={sending}
               aria-label="Hỏi Vitals"
               placeholder={STAGE_PLACEHOLDER[stage]}
+              /* ring TRONG: ô nằm trong vỏ pill của khẩu độ Vitals — ring ngoài đè viền vỏ */
+              className="if-focus-inset"
               style={{
                 flex: 1,
                 minWidth: 0,
                 background: 'transparent',
                 border: 'none',
-                outline: 'none',
                 fontSize: 12.5,
                 color: 'var(--t1)',
               }}

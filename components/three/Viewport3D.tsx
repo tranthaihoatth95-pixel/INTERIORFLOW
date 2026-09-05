@@ -410,7 +410,7 @@ function QuickCommandBox({ scene }: { scene: Scene3DData }) {
           width: 236, padding: '4px 8px', borderRadius: 6, fontSize: 11, lineHeight: 1.5,
           fontVariantNumeric: 'tabular-nums',
           background: 'color-mix(in srgb, var(--panel) 96%, transparent)',
-          border: '1px solid var(--border-strong)', color: 'var(--t1)', outline: 'none',
+          border: '1px solid var(--border-strong)', color: 'var(--t1)',
         }}
       />
     </div>

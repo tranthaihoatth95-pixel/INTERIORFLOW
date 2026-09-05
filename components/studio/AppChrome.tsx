@@ -337,7 +337,7 @@ export function AppChrome({ active, logoMenu }: Props) {
         {editing ? (
           <input
             autoFocus
-            className="w-36 shrink rounded-[10px] border border-[var(--accent-ring)] bg-[var(--field)] px-2 py-1 text-sm text-[var(--t1)] outline-none sm:w-56"
+            className="w-36 shrink rounded-[10px] border border-[var(--accent-ring)] bg-[var(--field)] px-2 py-1 text-sm text-[var(--t1)] sm:w-56"
             value={flowName}
             onChange={(e) => setFlowName(e.target.value)}
             onBlur={() => setEditing(false)}

@@ -572,7 +572,7 @@ function WallBuilder({
               type="number"
               value={field.value}
               onChange={(event) => set(field.key, event.target.value)}
-              className="mt-0.5 h-7 w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[10px] text-[var(--t1)] outline-none focus:border-[var(--accent)]"
+              className="mt-0.5 h-7 w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[10px] text-[var(--t1)] focus:border-[var(--accent)]"
             />
           </label>
         ))}
@@ -720,7 +720,7 @@ function ArrayGridSection({ scene }: { scene: Scene3DData | null }) {
   };
 
   const num =
-    'w-full rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-right text-[11px] tabular-nums text-[var(--t1)] outline-none focus:border-[var(--focus-ring)]';
+    'w-full rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-right text-[11px] tabular-nums text-[var(--t1)] focus:border-[var(--focus-ring)]';
   const lab = 'text-[9px] font-medium leading-[1.5] text-[var(--t4)]';
 
   return (
@@ -837,7 +837,7 @@ function NoSelectionNote({ group, tr }: { group: unknown; tr: (vi: string, en: s
 }
 
 const numCls =
-  'w-full rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-right text-[11px] tabular-nums text-[var(--t1)] outline-none focus:border-[var(--focus-ring)]';
+  'w-full rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-right text-[11px] tabular-nums text-[var(--t1)] focus:border-[var(--focus-ring)]';
 const labCls = 'text-[9px] font-medium leading-[1.5] text-[var(--t4)]';
 const sectionTitle = (en: string) => (
   <p className="px-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--t2)]">{en}</p>

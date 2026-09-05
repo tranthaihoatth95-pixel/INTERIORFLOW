@@ -17,6 +17,8 @@ export const INSPIRATION_CSS = `
      border:1px solid var(--border);border-radius:var(--r-2);display:flex;align-items:center;gap:7px;
      padding:0 10px;color:var(--t4)}
 .ins-search input{flex:1;min-width:0;border:0;background:none;outline:none;color:var(--t1);font-size:var(--fs-xs)}
+/* Ring TRONG: ô nằm trong vỏ pill — ring ngoài đè viền vỏ. Cùng khuôn .gal-search input. */
+.ins-search input:focus-visible{outline:var(--stroke-focus) solid var(--focus-ring);outline-offset:calc(-1 * var(--stroke-focus))}
 .ins-search input::placeholder{color:var(--t4)}
 
 /* ── hàng điều khiển: dự án + nhập ── */

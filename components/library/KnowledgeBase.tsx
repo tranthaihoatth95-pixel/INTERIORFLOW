@@ -101,7 +101,7 @@ export function KnowledgeBase() {
             onChange={(e) => setQ(e.target.value)}
             placeholder={tr('Tìm theo tên, nguồn, điều khoản…', 'Search title, source, clause…')}
             aria-label={tr('Tìm trong kho tri thức', 'Search the knowledge base')}
-            className="min-w-0 flex-1 bg-transparent text-[length:var(--fs-ui)] text-[var(--t1)] outline-none placeholder:text-[var(--t4)]"
+            className="min-w-0 flex-1 bg-transparent text-[length:var(--fs-ui)] text-[var(--t1)] placeholder:text-[var(--t4)]"
           />
         </label>
       </div>

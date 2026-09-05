@@ -54,7 +54,7 @@ export function ParamField({
         <span className="mb-1 block text-[10px] uppercase tracking-wider text-[var(--t4)]">{param.label}</span>
         {param.multiline ? (
           <textarea
-            className="nodrag w-full resize-none rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none focus:border-[var(--focus-ring)]"
+            className="nodrag w-full resize-none rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] focus:border-[var(--focus-ring)]"
             rows={3}
             placeholder={param.placeholder}
             value={String(value)}
@@ -62,7 +62,7 @@ export function ParamField({
           />
         ) : (
           <input
-            className="nodrag w-full rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none focus:border-[var(--focus-ring)]"
+            className="nodrag w-full rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] focus:border-[var(--focus-ring)]"
             placeholder={param.placeholder}
             value={String(value)}
             onChange={(e) => updateParam(nodeId, param.id, e.target.value)}
@@ -77,7 +77,7 @@ export function ParamField({
       <label className="block">
         <span className="mb-1 block text-[10px] uppercase tracking-wider text-[var(--t4)]">{param.label}</span>
         <select
-          className="nodrag w-full rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] outline-none focus:border-[var(--focus-ring)]"
+          className="nodrag w-full rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] focus:border-[var(--focus-ring)]"
           value={String(value)}
           onChange={(e) => updateParam(nodeId, param.id, e.target.value)}
         >

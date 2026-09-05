@@ -169,7 +169,7 @@ export default function VitalsPill() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={tr('Hỏi Vitals…', 'Ask Vitals…')}
-              className="min-w-0 flex-1 rounded-full px-3 py-1.5 text-[length:var(--fs-xs)] text-[var(--t1)] outline-none"
+              className="min-w-0 flex-1 rounded-full px-3 py-1.5 text-[length:var(--fs-xs)] text-[var(--t1)]"
               style={{ background: 'var(--field)' }}
             />
             <button

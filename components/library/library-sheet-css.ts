@@ -99,6 +99,8 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .srch{flex:1;max-width:250px;height:28px;background:var(--field);border:1px solid var(--border);
       border-radius:var(--radius-sm);display:flex;align-items:center;gap:7px;padding:0 9px;color:var(--t4);font-size:var(--fs-xs)}
 .if-lib-root .srch input{flex:1;min-width:0;border:0;background:none;outline:none;color:var(--t1);font:inherit}
+/* Ring TRONG: ô nằm trong vỏ pill — ring ngoài đè viền vỏ. Cùng khuôn .gal-search input. */
+.if-lib-root .srch input:focus-visible{outline:var(--stroke-focus) solid var(--focus-ring);outline-offset:calc(-1 * var(--stroke-focus))}
 .if-lib-root .srch input::placeholder{color:var(--t4)}
 .if-lib-root .libbody{flex:1;display:flex;min-height:0}
 /* flex-column (trước là block) — CHỈ để ghim khối CTA đáy cột bằng "margin-top:auto" đúng như

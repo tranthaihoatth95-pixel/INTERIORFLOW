@@ -194,7 +194,7 @@ function GroupRect({ group }: { group: NodeGroup }) {
           <input
             autoFocus
             list="if-room-name-presets"
-            className="nodrag w-24 rounded border border-[var(--border)] bg-[var(--field)] px-1 py-0.5 text-[10px] text-[var(--t1)] outline-none"
+            className="nodrag w-24 rounded border border-[var(--border)] bg-[var(--field)] px-1 py-0.5 text-[10px] text-[var(--t1)]"
             defaultValue={group.label}
             onBlur={(e) => {
               renameGroup(group.id, e.target.value || group.label);

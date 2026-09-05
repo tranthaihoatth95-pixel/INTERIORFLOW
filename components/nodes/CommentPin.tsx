@@ -106,7 +106,7 @@ export default function CommentPin({ nodeId }: { nodeId: string }) {
                     }
                   }}
                   placeholder={tr('Viết bình luận…', 'Write a comment…')}
-                  className="h-12 flex-1 resize-none rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-[11px] text-[var(--t1)] outline-none focus:border-[var(--focus-ring)]"
+                  className="h-12 flex-1 resize-none rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-[11px] text-[var(--t1)] focus:border-[var(--focus-ring)]"
                 />
                 <button
                   type="button"

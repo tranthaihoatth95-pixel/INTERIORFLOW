@@ -417,7 +417,9 @@ export function TaskBoardScreen() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={tr('Tìm việc', 'Search tasks')}
-            style={{ flex: 1, background: 'transparent', border: 0, outline: 'none', fontSize: 12.5, color: 'var(--t1)' }}
+            /* ring TRONG: ô nằm trong vỏ pill — ring ngoài đè viền vỏ */
+            className="if-focus-inset"
+            style={{ flex: 1, background: 'transparent', border: 0, fontSize: 12.5, color: 'var(--t1)' }}
           />
         </div>
 
@@ -485,7 +487,7 @@ export function TaskBoardScreen() {
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
                   placeholder={tr('Tên dự án', 'Project name')}
-                  style={{ height: 32, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, outline: 'none', minWidth: 220 }}
+                  style={{ height: 32, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, minWidth: 220 }}
                 />
                 <button type="submit" disabled={busy || !newProjectName.trim()} style={{ height: 32, padding: '0 14px', border: 0, borderRadius: 10, background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: busy || !newProjectName.trim() ? 0.5 : 1 }}>
                   {tr('Tạo dự án', 'Create project')}
@@ -604,7 +606,7 @@ export function TaskBoardScreen() {
                         onChange={(e) => setNewTitle(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Escape') setAdding(null); }}
                         placeholder={tr('Tên việc, Enter để lưu', 'Task title, Enter to save')}
-                        style={{ border: 0, outline: 'none', background: 'transparent', fontSize: 12.5, fontWeight: 600, color: 'var(--t1)' }}
+                        style={{ border: 0, background: 'transparent', fontSize: 12.5, fontWeight: 600, color: 'var(--t1)' }}
                       />
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button type="submit" disabled={busy || !newTitle.trim()} style={{ height: 24, padding: '0 10px', border: 0, borderRadius: 6, background: 'var(--accent)', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', opacity: busy || !newTitle.trim() ? 0.5 : 1 }}>
@@ -640,7 +642,7 @@ export function TaskBoardScreen() {
                             if (e.key === 'Enter') commitEdit(t);
                             if (e.key === 'Escape') setEditingId(null);
                           }}
-                          style={{ border: 0, outline: 'none', background: 'transparent', fontSize: 12.5, fontWeight: 600, color: 'var(--t1)', borderBottom: '1px dashed var(--accent)' }}
+                          style={{ border: 0, background: 'transparent', fontSize: 12.5, fontWeight: 600, color: 'var(--t1)', borderBottom: '1px dashed var(--accent)' }}
                         />
                       ) : (
                         <div

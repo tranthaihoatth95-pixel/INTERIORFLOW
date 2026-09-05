@@ -103,7 +103,7 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
   };
 
   const field =
-    'w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--field)] px-3.5 py-2.5 text-sm text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[color:var(--fc)]';
+    'w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--field)] px-3.5 py-2.5 text-sm text-[var(--t1)] placeholder-[var(--t5)] transition-colors focus:border-[color:var(--fc)]';
 
   return (
     <div

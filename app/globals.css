@@ -485,6 +485,7 @@
   outline: var(--stroke-focus) solid var(--focus-ring);
   outline-offset: 2px;
 }
+/* focus-ring-ok: đây CHÍNH LÀ luật tắt ring khi bấm chuột — nó không cướp ring của ai. */
 :where(a[href], button, input, select, textarea, summary, [tabindex]):focus:not(:focus-visible) {
   outline: none;
 }
@@ -1088,6 +1089,12 @@ input[type='range'].if-slider {
   transition: filter 0.15s ease;
 }
 input[type='range'].if-slider:hover { filter: brightness(1.08); }
+/* `outline: none` ở khối trên có đặc hiệu 0-2-1 nên THẮNG luật `:where(...):focus-visible` toàn app
+   (0-1-0) ⇒ thanh trượt mất hẳn vòng focus khi Tab tới. Trả lại ring cho bàn phím, cùng token. */
+input[type='range'].if-slider:focus-visible {
+  outline: var(--stroke-focus) solid var(--focus-ring);
+  outline-offset: 2px;
+}
 input[type='range'].if-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 17px;

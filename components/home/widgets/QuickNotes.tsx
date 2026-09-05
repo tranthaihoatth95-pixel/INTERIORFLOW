@@ -163,7 +163,7 @@ export default function QuickNotes({
               ? tr(`Ghi cho ${projectName(projectId)}…`, `Note for ${projectName(projectId)}…`)
               : tr('Gõ ghi chú rồi Enter…', 'Type a note, then Enter…')
           }
-          className="min-w-0 flex-1 rounded-full px-3.5 py-1.5 text-[length:var(--fs-sm)] text-[var(--t1)] outline-none"
+          className="min-w-0 flex-1 rounded-full px-3.5 py-1.5 text-[length:var(--fs-sm)] text-[var(--t1)]"
           style={{ background: 'var(--field)' }}
         />
         {/* aria-disabled (không phải disabled) — nút mờ vẫn focus được và LÝ DO tới được bàn phím/
