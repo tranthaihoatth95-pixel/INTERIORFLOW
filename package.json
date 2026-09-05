@@ -16,6 +16,8 @@
     "soi:frontier": "node scripts/soi-frontier.mjs",
     "soi:quan-tri": "node scripts/soi-quan-tri.mjs",
     "soi:hinh-hoc": "node scripts/soi-hinh-hoc.mjs",
+    "soi:bo-cuc": "node scripts/soi-bo-cuc.mjs",
+    "soi:bo-cuc:tu-kiem": "node scripts/soi-bo-cuc.mjs --tu-kiem",
     "soi:tu-dien": "node scripts/soi-tu-dien.mjs",
     "soi:dong-dang": "node scripts/soi-dong-dang.mjs",
     "soi:thao-tac": "node scripts/soi-thao-tac.mjs",
