@@ -323,6 +323,41 @@ Mọi bề mặt đụng vào phải kèm bảng: | Bề mặt | ① tầm nhìn
 Mỗi ô ghi **điều khoản cụ thể** (`N-10`, `NT-8`, `EXS §7`, `EXS-D`) — không ghi *"đạt"* trống trơn.
 Ô nào không tra được nguồn ⇒ ghi **`[KHÔNG TRA ĐƯỢC]`** kèm câu hỏi, **không** được ghi *"đạt"*.
 
+### N6 · CỔNG CUỐI — **THAO TÁC THẬT NHƯ NGƯỜI DÙNG**, HAI LỐI NHẬP
+
+> Hoà ban 05/09: *"Gate cuối là audit với thao tác đi như một người thật ở hai bản **cảm ứng và
+> phím**, với **xác suất bao gồm hầu hết các trường hợp thực tế** sử dụng. Ở cửa cuối này nếu đạt:
+> **không bất tiện thao tác · không khó hiểu trong cách sử dụng · đúng design pattern tham chiếu**."*
+
+Bốn cột `N4` chứng minh **thiết kế đúng**. `N6` chứng minh **dùng được**. Hai việc khác nhau —
+đúng spec mà vẫn khó dùng là chuyện **thường xuyên xảy ra**, và chỉ lộ khi có người đi thật.
+
+**Bắt buộc CHẠY, cấm ĐỌC MÃ.** Đây là cổng duy nhất không được thay bằng grep. Bài học đã trả giá:
+*nút mờ kèm lý do* từng qua mọi máy soi vì lý do **có trong mã** — chỉ khi đi bằng **bàn phím thật**
+mới lộ ra nó **không bao giờ tới được người dùng**.
+
+#### Hai lối nhập, chạy CẢ HAI — không suy từ nhau
+| | Chuột + bàn phím (desktop) | Cảm ứng (tablet) |
+|---|---|---|
+| đi được tới đích | Tab · mũi tên · phím tắt · Enter | chạm · nhấn giữ · vuốt |
+| phải kiểm riêng | vòng focus thấy được · thứ tự Tab hợp lý · phím tắt khớp `hotkey-registry` | **không có hover ⇒ mọi thứ giấu sau hover là MẤT** · vùng chạm ≥44px · không kẹt cạnh màn |
+
+#### Ba điều kiện ĐẠT — quy về câu hỏi trả lời được, không để dạng cảm giác
+| Điều kiện Hoà nêu | Kiểm bằng gì |
+|---|---|
+| **không bất tiện thao tác** | việc thường gặp có đi thẳng được không · có đường **cụt** nào không (bấm rồi không có gì xảy ra, hoặc vào rồi không ra được) · có phải **rê chuột mới biết** không |
+| **không khó hiểu** | phép thử 3 giây: nhìn màn hình có trả lời được **đang ở đâu · làm được gì ở đây · quay về thế nào** không (`SPEC-NGON-NGU-CHI-DAN`) |
+| **đúng design pattern tham chiếu** | đối chiếu cột ④ của `N4` — board `EXS-*` · `REF-VISUAL-EXS` · `docs/mocks/`. Không có tham chiếu cho ca đó ⇒ nêu câu hỏi, **không tự chế rồi khai đạt** |
+
+#### "Hầu hết trường hợp thực tế" — phủ theo XÁC SUẤT, không phủ theo đường sung sướng
+Mỗi bề mặt phải đi ít nhất bốn ca, vì lỗi hay nằm ở ba ca sau:
+1. **đường sung sướng** — có dữ liệu, làm đúng thứ tự
+2. **rỗng** — chưa có dự án · chưa có tín hiệu · kho trống *(đúng ca đẻ ra lỗi hộp rỗng 05/09)*
+3. **vào ngang** — mở thẳng bằng đường dẫn/bookmark, bỏ qua các bước trước
+4. **quay về / bỏ dở** — thoát giữa chừng, vào lại, tìm đường ra *(đúng ca Hoà kẹt trong màn vẽ 05/09)*
+
+⛔ Đi mỗi ca 1 rồi khai đạt là **khai sai**, không phải khai thiếu.
+
 ## HẠN DÙNG
 Hoà lật thì sửa **tại chỗ, viết lại** — không cộng dồn đuôi. Thấy tệp này dài ra là dấu hiệu nó
 đang biến thành nhật ký; nhật ký thuộc `docs/00-CHOT.md`, không thuộc đây.
