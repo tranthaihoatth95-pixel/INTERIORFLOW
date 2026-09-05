@@ -145,7 +145,7 @@ export function FlowsPanel() {
                   await assignProject(f.id, e.target.value || null);
                   refresh();
                 }}
-                className="min-w-0 flex-1 truncate rounded border border-transparent bg-transparent text-[10px] text-[var(--t4)] outline-none hover:border-[var(--border)]"
+                className="min-w-0 flex-1 truncate rounded border border-transparent bg-transparent text-[10px] text-[var(--t4)] hover:border-[var(--border)]"
               >
                 <option value="">— không thuộc project —</option>
                 {projects.map((p) => (

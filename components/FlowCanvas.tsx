@@ -773,7 +773,6 @@ export function FlowCanvas() {
                 background: 'var(--field)',
                 color: 'var(--t1)',
                 fontSize: 12,
-                outline: 'none',
               }}
             />
             <button
@@ -815,7 +814,6 @@ export function FlowCanvas() {
                 background: 'var(--field)',
                 color: 'var(--t1)',
                 fontSize: 12,
-                outline: 'none',
               }}
             />
           </div>

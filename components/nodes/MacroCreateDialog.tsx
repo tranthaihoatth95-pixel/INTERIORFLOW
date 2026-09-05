@@ -156,7 +156,7 @@ export function MacroCreateDialog({ selectedIds, onClose }: { selectedIds: strin
                     autoFocus
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="h-9 w-full rounded-[10px] border border-[var(--accent)] bg-[var(--field)] px-2.5 text-[14px] leading-[1.5] text-[var(--t1)] shadow-[0_0_0_3px_var(--accent-soft)] outline-none"
+                    className="h-9 w-full rounded-[10px] border border-[var(--accent)] bg-[var(--field)] px-2.5 text-[14px] leading-[1.5] text-[var(--t1)] shadow-[0_0_0_3px_var(--accent-soft)]"
                   />
                 </div>
                 <div>
@@ -167,7 +167,7 @@ export function MacroCreateDialog({ selectedIds, onClose }: { selectedIds: strin
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder={tr('Tuỳ chọn — hiện khi rê chuột vào nút tổng', 'Optional — shown on hover')}
-                    className="h-9 w-full rounded-[10px] border border-transparent bg-[var(--field)] px-2.5 text-[12px] leading-[1.5] text-[var(--t2)] outline-none placeholder:text-[var(--t5)] focus:border-[var(--border-strong)]"
+                    className="h-9 w-full rounded-[10px] border border-transparent bg-[var(--field)] px-2.5 text-[12px] leading-[1.5] text-[var(--t2)] placeholder:text-[var(--t5)] focus:border-[var(--border-strong)]"
                   />
                 </div>
               </div>
@@ -246,7 +246,7 @@ export function MacroCreateDialog({ selectedIds, onClose }: { selectedIds: strin
                             const v = e.target.value;
                             setRows((prev) => prev.map((r, j) => (j === i ? { ...r, label: v } : r)));
                           }}
-                          className="h-7 w-full rounded-[10px] border-0 bg-[var(--field)] px-2.5 text-[12px] leading-[1.5] text-[var(--t1)] outline-none"
+                          className="h-7 w-full rounded-[10px] border-0 bg-[var(--field)] px-2.5 text-[12px] leading-[1.5] text-[var(--t1)]"
                         />
                       ) : (
                         <span className="flex h-7 w-full items-center rounded-[10px] bg-[var(--field)] px-2.5 text-[12px] leading-[1.5] text-[var(--t4)]">

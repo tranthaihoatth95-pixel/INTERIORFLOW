@@ -86,7 +86,7 @@ function MacroParamRow({ nodeId, param, value }: { nodeId: string; param: ParamD
 
       {param.kind === 'select' && (
         <select
-          className="nodrag h-7 min-w-0 flex-1 rounded-[10px] border-0 bg-[var(--field)] px-2.5 text-[11px] leading-[1.5] text-[var(--t1)] outline-none"
+          className="nodrag h-7 min-w-0 flex-1 rounded-[10px] border-0 bg-[var(--field)] px-2.5 text-[11px] leading-[1.5] text-[var(--t1)]"
           value={String(value)}
           onChange={(e) => updateParam(nodeId, param.id, e.target.value)}
         >
@@ -100,7 +100,7 @@ function MacroParamRow({ nodeId, param, value }: { nodeId: string; param: ParamD
 
       {param.kind === 'text' && (
         <input
-          className="nodrag h-7 min-w-0 flex-1 rounded-[10px] border-0 bg-[var(--field)] px-2.5 text-[11px] leading-[1.5] text-[var(--t1)] placeholder-[var(--t5)] outline-none"
+          className="nodrag h-7 min-w-0 flex-1 rounded-[10px] border-0 bg-[var(--field)] px-2.5 text-[11px] leading-[1.5] text-[var(--t1)] placeholder-[var(--t5)]"
           placeholder={param.placeholder}
           value={String(value)}
           onChange={(e) => updateParam(nodeId, param.id, e.target.value)}

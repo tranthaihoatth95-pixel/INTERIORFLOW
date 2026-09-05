@@ -177,7 +177,9 @@ export function MaterialsScreen() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={tr('Tìm tên, mã, hãng…', 'Search name, SKU, brand…')}
-            style={{ flex: 1, background: 'transparent', border: 0, outline: 'none', fontSize: 12.5, color: 'var(--t1)' }}
+            /* ring TRONG: ô nằm trong vỏ pill — ring ngoài sẽ đè viền vỏ (cùng khuôn .gal-search input) */
+            className="if-focus-inset"
+            style={{ flex: 1, background: 'transparent', border: 0, fontSize: 12.5, color: 'var(--t1)' }}
           />
         </div>
 

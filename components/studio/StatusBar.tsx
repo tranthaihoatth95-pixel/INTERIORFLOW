@@ -264,11 +264,12 @@ export default function StatusBar({ stage, hidden }: Props) {
                   }
                 }}
                 placeholder="Hỏi Vitals…"
+                /* ring TRONG: ô nằm trong vỏ pill của thanh trạng thái — ring ngoài đè viền vỏ */
+                className="if-focus-inset"
                 style={{
                   flex: 1,
                   minWidth: 0,
                   border: 'none',
-                  outline: 'none',
                   background: 'transparent',
                   color: 'var(--t1)',
                   fontSize: 11.5,

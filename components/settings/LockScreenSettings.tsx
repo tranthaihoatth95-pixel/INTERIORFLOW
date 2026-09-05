@@ -83,7 +83,7 @@ export function LockScreenSettings() {
             onChange={(e) => commit(Number(e.target.value) || DEFAULT_LOCK_IDLE_MINUTES)}
             disabled={!sanSang}
             aria-describedby={sanSang ? undefined : 'lock-idle-cho-dinh-danh'}
-            className="w-16 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-center text-[13px] text-[var(--t1)] outline-none disabled:opacity-[var(--mo-vo-hieu)]"
+            className="w-16 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1 text-center text-[13px] text-[var(--t1)] disabled:opacity-[var(--mo-vo-hieu)]"
           />
           {!sanSang && (
             <span id="lock-idle-cho-dinh-danh" className="sr-only">

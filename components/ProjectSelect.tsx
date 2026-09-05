@@ -1195,7 +1195,7 @@ export function ProjectSelect({
                     else if (e.key === 'Escape') setStatusFor(null);
                   }}
                   placeholder={en ? 'Short status…' : 'Ghi chú ngắn…'}
-                  className="w-full bg-transparent text-[length:var(--fs-xs)] text-white placeholder:text-white/40 focus:outline-none"
+                  className="w-full bg-transparent text-[length:var(--fs-xs)] text-white placeholder:text-white/40"
                 />
                 <button
                   type="button"
@@ -1804,7 +1804,7 @@ export function ProjectSelect({
                   else if (e.key === 'Escape') setStatusFor(null);
                 }}
                 placeholder={en ? 'Short status…' : 'Ghi chú ngắn…'}
-                className="w-full bg-transparent text-[length:var(--fs-xs)] text-white placeholder:text-white/40 focus:outline-none"
+                className="w-full bg-transparent text-[length:var(--fs-xs)] text-white placeholder:text-white/40"
               />
               <button
                 type="button"
@@ -2069,7 +2069,7 @@ export function ProjectSelect({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={en ? 'Search name, note, project…' : 'Tìm tên, ghi chú, dự án…'}
-              className="w-48 bg-transparent text-[length:var(--fs-sm)] text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none sm:w-56"
+              className="w-48 bg-transparent text-[length:var(--fs-sm)] text-[var(--t1)] placeholder:text-[var(--t4)] sm:w-56"
             />
             {query && (
               <button
@@ -2087,7 +2087,7 @@ export function ProjectSelect({
           value={projFilter}
           onChange={(e) => setProjFilter(e.target.value)}
           aria-label={en ? 'Filter by project' : 'Lọc theo dự án'}
-          className="cursor-pointer appearance-none rounded-full px-3.5 py-2 text-[length:var(--fs-xs)] text-[var(--t1)] focus:outline-none"
+          className="cursor-pointer appearance-none rounded-full px-3.5 py-2 text-[length:var(--fs-xs)] text-[var(--t1)]"
           style={{ ...glass}}
         >
           <option value="">{en ? 'All projects' : 'Tất cả dự án'}</option>
@@ -2484,7 +2484,7 @@ export function ProjectSelect({
                 disabled={chatSending}
                 aria-label="Vitals AI"
                 placeholder=""
-                className="w-full bg-transparent text-[length:var(--fs-sm)] text-[var(--t1)] focus:outline-none disabled:opacity-60"
+                className="w-full bg-transparent text-[length:var(--fs-sm)] text-[var(--t1)] disabled:opacity-60"
                 style={showAmbient ? adaptiveTextStyle(heroPlan) : undefined}
               />
               {/* placeholder động xoay vòng — chỉ hiện khi ô trống */}

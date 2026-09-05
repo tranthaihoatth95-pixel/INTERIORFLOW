@@ -2793,7 +2793,7 @@ function CommandLine({ status }: { status: string }) {
           onKeyDown={onInputKeyDown}
           onBlur={() => setAcOpen(false)}
           placeholder="Gõ lệnh: L · PL · REC · C · W 200 · ROOM · D · WIN · M · CO · RO · MI · O 150 · DIM · T · E · U…"
-          style={{ width: '100%', background: 'var(--field)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 8px', fontSize: 12, color: 'var(--t1)', outline: 'none', fontFamily: 'ui-monospace, monospace' }}
+          style={{ width: '100%', background: 'var(--field)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 8px', fontSize: 12, color: 'var(--t1)', fontFamily: 'ui-monospace, monospace' }}
         />
       </div>
       <span style={{ fontSize: 11.5, color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{status}</span>

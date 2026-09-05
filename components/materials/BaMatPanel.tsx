@@ -92,6 +92,8 @@ export function BaMatPanel({
         aria-modal
         aria-label={tr('Ba mặt của vật liệu', 'The three faces of this material')}
         onClick={(e) => e.stopPropagation()}
+        /* focus-ring-ok: hộp thoại `tabIndex={-1}` — nhận focus bằng mã lúc mở, KHÔNG nằm trong
+           đường Tab. Vẽ ring quanh cả tấm là nhiễu, không phải chỉ dấu điều hướng. */
         className="focus-visible:outline-none"
         /* `maxWidth` chứ không chỉ `width`: cửa sổ hẹp (chia đôi màn, tablet dọc) thì tấm 460 cứng
            sẽ tràn ra ngoài mép và nút ✕ đi mất — người dùng kẹt trong hộp thoại. */

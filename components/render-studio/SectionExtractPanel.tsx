@@ -202,7 +202,7 @@ export function SectionExtractPanel({ scene, onNhan }: SectionExtractPanelProps)
             step={100}
             value={atMm}
             onChange={(e) => setAtMm(Number(e.target.value))}
-            className="w-full rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-[11px] leading-normal text-[var(--t1)] outline-none focus:border-[var(--accent)]"
+            className="w-full rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-[11px] leading-normal text-[var(--t1)] focus:border-[var(--accent)]"
           />
           {caoDo && (
             <span className="block px-0.5 text-[9.5px] leading-normal text-[var(--t5)]">
@@ -228,7 +228,7 @@ export function SectionExtractPanel({ scene, onNhan }: SectionExtractPanelProps)
               value={names[key]}
               onChange={(e) => setNames((n) => ({ ...n, [key]: e.target.value }))}
               disabled={mode === 'elevation' && key === 'cut'}
-              className="min-w-0 flex-1 rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-[10px] leading-normal text-[var(--t1)] outline-none focus:border-[var(--accent)] disabled:opacity-40"
+              className="min-w-0 flex-1 rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-[10px] leading-normal text-[var(--t1)] focus:border-[var(--accent)] disabled:opacity-40"
             />
           </label>
         ))}

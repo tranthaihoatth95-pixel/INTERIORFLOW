@@ -266,7 +266,6 @@ export function CommentLayer() {
               padding: 8,
               fontSize: 'var(--fs-ui)',
               resize: 'vertical',
-              outline: 'none',
               fontFamily: 'inherit',
             }}
           />

@@ -3888,7 +3888,7 @@ export default function CadCanvas() {
             }}
             placeholder="Tên phòng…"
             className="text-xs text-[var(--t1)]"
-            style={{ width: 140, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', padding: '5px 8px', outline: 'none' }}
+            style={{ width: 140, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', padding: '5px 8px' }}
           />
           <button
             type="button"
@@ -3952,7 +3952,7 @@ export default function CadCanvas() {
                   }
                 }}
                 className="text-xs text-[var(--t1)]"
-                style={{ width: '100%', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', padding: '5px 8px', outline: 'none' }}
+                style={{ width: '100%', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', padding: '5px 8px' }}
               />
             </label>
           ))}

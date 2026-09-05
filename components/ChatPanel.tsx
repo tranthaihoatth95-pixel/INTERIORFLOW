@@ -154,7 +154,7 @@ export function ChatPanel() {
             }
           }}
           placeholder="Nhắn team… (Enter gửi)"
-          className="max-h-24 min-w-0 flex-1 resize-none rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--focus-ring)]"
+          className="max-h-24 min-w-0 flex-1 resize-none rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 text-xs text-[var(--t1)] placeholder-[var(--t5)] transition-colors focus:border-[var(--focus-ring)]"
         />
         <motion.button
           {...pressableIcon}

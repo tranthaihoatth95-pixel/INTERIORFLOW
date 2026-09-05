@@ -304,7 +304,7 @@ export default function Tool3DBar({ selectedEntityId, bottomPx = 130 }: Tool3DBa
                         // RADIUS.full kẹp về nửa cạnh ngắn ⇒ tự đồng tâm với vỏ capsule (ghi chú ToolbarBar).
                         width: 58, padding: '3px 8px', borderRadius: RADIUS.full, border: '1px solid var(--border-strong)',
                         background: 'var(--field)', color: 'var(--t1)', fontSize: 11, lineHeight: 1.5,
-                        fontVariantNumeric: 'tabular-nums', outline: 'none', fontFamily: 'inherit',
+                        fontVariantNumeric: 'tabular-nums', fontFamily: 'inherit',
                       }}
                     />
                   </label>

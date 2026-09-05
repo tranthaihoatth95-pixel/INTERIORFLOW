@@ -85,7 +85,7 @@ export function PublishModal({ open, defaultStage, onClose, onSubmit }: Props) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="vd. Bảng tiêu chí chọn vật liệu — phòng khách"
-              className="rounded-[var(--radius-sm)] px-3 py-2 text-[13px] outline-none"
+              className="rounded-[var(--radius-sm)] px-3 py-2 text-[13px]"
               style={{ background: 'var(--field)', color: 'var(--t1)', border: '1px solid var(--border)' }}
             />
           </label>
@@ -95,7 +95,7 @@ export function PublishModal({ open, defaultStage, onClose, onSubmit }: Props) {
             <select
               value={stage}
               onChange={(e) => setStage(e.target.value as StageKey)}
-              className="rounded-[var(--radius-sm)] px-3 py-2 text-[13px] outline-none"
+              className="rounded-[var(--radius-sm)] px-3 py-2 text-[13px]"
               style={{ background: 'var(--field)', color: 'var(--t1)', border: '1px solid var(--border)' }}
             >
               {(Object.keys(STAGE_META) as StageKey[]).map((s) => (
@@ -110,7 +110,7 @@ export function PublishModal({ open, defaultStage, onClose, onSubmit }: Props) {
               value={kind}
               onChange={(e) => setKind(e.target.value)}
               placeholder="vd. Form lập luận, Template moodboard…"
-              className="rounded-[var(--radius-sm)] px-3 py-2 text-[13px] outline-none"
+              className="rounded-[var(--radius-sm)] px-3 py-2 text-[13px]"
               style={{ background: 'var(--field)', color: 'var(--t1)', border: '1px solid var(--border)' }}
             />
           </label>
@@ -139,7 +139,7 @@ export function PublishModal({ open, defaultStage, onClose, onSubmit }: Props) {
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               placeholder="Dùng khi nào, cho ai…"
-              className="resize-none rounded-[var(--radius-sm)] px-3 py-2 text-[13px] outline-none"
+              className="resize-none rounded-[var(--radius-sm)] px-3 py-2 text-[13px]"
               style={{ background: 'var(--field)', color: 'var(--t1)', border: '1px solid var(--border)' }}
             />
           </label>

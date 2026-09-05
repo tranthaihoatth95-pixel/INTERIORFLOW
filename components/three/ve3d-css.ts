@@ -32,6 +32,8 @@ export const VE3D_CSS = `
 .if-ve3d .search{display:flex;align-items:center;gap:7px;border:1px solid var(--border);
   border-radius:var(--radius-sm);padding:8px 10px;font-size:var(--fs-xs);color:var(--t3);background:var(--field);flex:none}
 .if-ve3d .search input{flex:1;min-width:0;border:0;background:none;outline:none;color:var(--t1);font:inherit}
+/* Ring TRONG: ô nằm trong vỏ pill — ring ngoài đè viền vỏ. Cùng khuôn .gal-search input. */
+.if-ve3d .search input:focus-visible{outline:var(--stroke-focus) solid var(--focus-ring);outline-offset:calc(-1 * var(--stroke-focus))}
 .if-ve3d .search input::placeholder{color:var(--t4)}
 
 /* engine chips — pill, hover đổi nền (không scale: nằm trong hàng lặp) */
@@ -103,6 +105,8 @@ export const VE3D_CSS = `
 .if-ve3d .fld .box{display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:var(--radius-sm);
   background:var(--field);padding:6px 8px}
 .if-ve3d .fld input{flex:1;min-width:0;border:0;background:none;outline:none;color:var(--t1);font:inherit;
+/* Ring TRONG: ô nằm trong vỏ pill — ring ngoài đè viền vỏ. Cùng khuôn .gal-search input. */
+.if-ve3d .fld input:focus-visible{outline:var(--stroke-focus) solid var(--focus-ring);outline-offset:calc(-1 * var(--stroke-focus))}
   font-size:var(--fs-xs);font-variant-numeric:tabular-nums}
 .if-ve3d .fld .u{font-size:var(--fs-3xs);color:var(--t4);flex:none}
 .if-ve3d .fld .box:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}

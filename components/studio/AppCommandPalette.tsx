@@ -232,7 +232,7 @@ export function AppCommandPalette({ active }: { active: AppChromeActive }) {
               setIdx(0);
             }}
             placeholder={tr('Tìm lệnh hoặc nơi cần tới…', 'Search commands or places…')}
-            className="flex-1 bg-transparent py-3.5 text-sm text-[var(--t1)] placeholder-[var(--t5)] outline-none"
+            className="flex-1 bg-transparent py-3.5 text-sm text-[var(--t1)] placeholder-[var(--t5)]"
           />
           <kbd className="shrink-0 rounded border border-[var(--border)] bg-[var(--field)] px-1.5 py-0.5 text-[10px] text-[var(--t4)]">Esc</kbd>
         </div>
