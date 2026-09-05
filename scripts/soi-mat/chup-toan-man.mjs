@@ -90,9 +90,19 @@ for (const [ten, duong] of MAN) {
   loi.length = 0;
   try {
     await p.goto(BASE + duong, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    for (let k = 0; k < 14; k++) {                    // chờ trang thôi quay (bẫy ②)
-      const c = await p.evaluate(() => document.body.innerText.trim().length);
-      if (c > 60) break;
+    /* 🔴 BẪY ② — BẢN VÁ 05/09. Điều kiện cũ `chu > 60` ĐỦ NGAY khi vỏ app hiện ra (rail +
+     * thanh trên đã ~580 ký tự), trong khi RUỘT màn còn đang tải ⇒ chụp trúng vòng quay.
+     * Ca thật: `/materials` chụp ra ảnh spinner, suýt bị đọc thành "kho vật liệu hỏng";
+     * đo lại với 20 giây thì màn tải đủ 3 hàng, 0 lỗi — hỏng là ở THƯỚC, không ở app.
+     * ⇒ Chờ tới khi lượng chữ ĐỨNG YÊN hai lần liên tiếp, và không còn phần tử quay. */
+    let truoc = -1, yen = 0;
+    for (let k = 0; k < 20; k++) {
+      const s = await p.evaluate(() => ({
+        chu: document.body.innerText.trim().length,
+        quay: !!document.querySelector('[class*=animate-spin],[class*=spinner],[aria-busy=true]'),
+      }));
+      if (s.chu > 60 && s.chu === truoc && !s.quay) { if (++yen >= 2) break; } else yen = 0;
+      truoc = s.chu;
       await p.waitForTimeout(1500);
     }
     await p.waitForTimeout(1200);
