@@ -309,6 +309,17 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .speccol .spbar i{display:block;height:100%;border-radius:2px;background:var(--accent)}
 .if-lib-root .speccol .spwhy{padding:10px 12px;font-size:var(--fs-2xs);line-height:1.5;color:var(--t4);
        border-bottom:1px solid var(--vien-mo)}
+/* 05/09 — dòng "nối về kho" (nhanNoiKho). Cùng khuôn .spwhy (cùng vùng giải thích, cùng viền
+   dưới, cùng line-height 1,5 cho chữ Việt có dấu chồng) — KHÔNG đẻ khuôn thứ hai.
+   Màu chỉ là kênh PHỤ: nghĩa nằm trọn trong câu chữ, chấm 6px chỉ để quét mắt nhanh trên cột
+   236px. Bỏ hết màu đi vẫn đọc đủ nghĩa (luật màu-không-là-kênh-duy-nhất). */
+.if-lib-root .speccol .spnoi{padding:10px 12px;font-size:var(--fs-2xs);line-height:1.5;color:var(--t4);
+       border-bottom:1px solid var(--vien-mo);display:flex;flex-direction:column;gap:3px}
+.if-lib-root .speccol .spnoi b{display:flex;align-items:flex-start;gap:6px;font-weight:var(--fw-semi);color:var(--t2)}
+.if-lib-root .speccol .spnoi b i{flex:0 0 auto;width:6px;height:6px;margin-top:5px;border-radius:var(--r-full);
+       background:var(--t5)}
+.if-lib-root .speccol .spnoi[data-kieu="ben"] b i{background:var(--success)}
+.if-lib-root .speccol .spnoi[data-kieu="mong"] b i{background:var(--warning)}
 /* VIỆC 4 (08/08) — hàng gán mã tay, cùng viền dưới với .spwhy (cùng vùng "chưa nối kho"). Line-
    height 1,5 đúng G4 (chữ Việt có dấu chồng). select/button dùng --tap cho vùng chạm ≥44 theo
    G8 (không phải đường duy nhất — kéo thả vẫn còn, đây chỉ là lối thay thế khi khớp tự động thua). */

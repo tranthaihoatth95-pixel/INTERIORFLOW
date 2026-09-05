@@ -340,3 +340,48 @@ theo đuổi, hai câu đó khác hẳn nhau, và trộn chúng làm hai lane t�
 
 **Việc còn lại**: cắm tầng hạt giống vào `MaterialPalette` (mặt tiền thứ tư). Đây là CONNECT —
 `lib/materials/tang-phan-giai.ts` đã có sẵn thứ tự ba tầng SEED → STUDIO → PROJECT.
+
+---
+
+## 05/09 · CẮM ĐIỆN `resolveIdfcCommerceToSpec` — mặt tiền: cột thông số tấm Thư viện
+
+Nấc thứ năm của cùng một bệnh trong hai ngày: **hàm moat có, test có, 0 nơi gọi trong mã sản
+phẩm.** Đo trước khi làm: `grep resolveIdfcCommerceToSpec` trong `app/` + `components/` + `lib/`
+= 1 chỗ khai (`lib/materials/warehouse/catalog-link.ts:59`) · 1 chỗ test · 1 dòng chú thích
+(`lib/cad/idfc.ts:219`) · **0 nơi gọi thật**.
+
+**Mặt tiền chọn**: cột thông số ④ của `LibrarySheet` — nơi DUY NHẤT người dùng mở một cấu kiện
+`.idfc` ra hỏi *"món này là hàng nào, giá bao nhiêu"* trước khi kéo vào bản vẽ.
+
+**Chỗ trước lượt này làm NGƯỢC LUẬT 2.1.9.i**: nhánh `displayIdfc?.commerce` (`LibrarySheet`)
+lấy thẳng `brand/unit/priceVnd` **nhúng trong tệp** rồi dừng — không lần nào tra về kho. Kho sửa
+giá xong, tấm Thư viện vẫn hiện giá cũ, và người dùng không có dấu hiệu nào để biết. Hai khoá
+bất biến `commerce.specId`/`commerce.matId` nằm im trong tệp.
+
+**Nay**: `.idfc` tra về kho TRƯỚC (`lib/library/idfc-noi-kho.ts` → `resolveIdfcCommerceToSpec`).
+Nối được ⇒ **kho thắng, giá SỐNG** (đúng docstring của chính `IdfcCommerce`: *"priceVnd chỉ là
+ảnh chụp lúc nhập, specId mới là đường về nguồn"*). Không nối được ⇒ **vẫn** rơi về số của tệp
+như cũ (chốt G-M16-03 giữ hiệu lực khi kho không có món đó) — nhưng nay có câu **nói ra** đó là
+ảnh chụp. Đây là đổi **thứ tự ưu tiên**, không bỏ đường cũ.
+
+**Người dùng thấy gì** — bốn tình trạng, bốn câu khác nhau (`nhanNoiKho`, `lib/library/spec-panel.ts`):
+
+| Tình trạng | Câu chính | Câu phụ |
+|---|---|---|
+| khoá bất biến | Nối chắc với kho — đổi mã hàng vẫn đúng | Hãng, đơn vị và giá đang đọc sống từ "…" trong kho. |
+| chỉ có mã hàng | Nối tạm bằng mã hàng — đổi mã là đứt | Đang đọc từ "…". Nhà cung cấp đổi mã hàng này là mất nối. |
+| kho không có | Kho chưa có món này | Số dưới đây chép trong tệp lúc nhập, không phải giá sống của kho. |
+| tệp không khai | Mẫu này chưa khai thông tin mua hàng | Chưa có gì để nối về kho — hãng, đơn vị và giá còn trống. |
+
+**Chứng minh trên app thật** (`scripts/nghiem-thu-ban-lam-viec/noi-kho-idfc-song-sot.mjs`, 16/16):
+nhập hai `.idfc` qua đúng cửa nhập → đọc trạng thái → **đổi `sku` trong kho** → **đóng hẳn trình
+duyệt** → vào lại (hồ sơ đĩa) → đọc từ IndexedDB `studio::/studio-idfc` → tệp khoá-bất-biến **vẫn
+đúng, vẫn 4 200 000 sống từ kho**; tệp mã-hàng **đứt**, rơi về 3 100 000 chép trong tệp và nói ra
+điều đó. **Hai tệp đi qua CÙNG một lần đổi mã và rẽ hai hướng** — đó là phép hiệu chuẩn nội tại.
+
+**Máy canh mới**: `scripts/nghiem-thu-ban-lam-viec/moat-co-mat-tien-chua.mjs` hỏi câu cổng moat
+chưa hỏi — *"hàm moat này có mặt tiền không, và mặt tiền đó có đổi kết quả không"*. Hai vế, và
+vế ② mới là vế chống xanh-giả: chạy hàm trên **hai thế giới khác nhau đúng một điểm** và đòi
+**hai kết quả khác nhau**. Hàm bị gọi mà kết quả không đổi ⇒ ĐỎ. Đã hiệu chuẩn cả hai vế.
+⚠️ Chưa hợp nhất vào `scripts/nghiem-thu-g4-moat.mjs` vì lane khác đang giữ tệp đó — bảng `MUC`
+chuyển thẳng sang được, logic không phải viết lại.
