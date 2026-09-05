@@ -117,7 +117,26 @@
       "!prisma/*.db*",
       "!**/*.map",
       "!node_modules/.prisma/client/libquery_engine-linux-*",
-      "!node_modules/@prisma/engines/*linux*"
+      "!node_modules/@prisma/engines/*linux*",
+      "!node_modules/.prisma/client/libquery_engine-*",
+      "!node_modules/.prisma/client/query_engine-*",
+      "!node_modules/prisma/libquery_engine-*",
+      "!node_modules/prisma/query_engine-*",
+      "!.env",
+      "!.env.*",
+      "!**/.env",
+      "!**/.env.*",
+      "!**/*.db",
+      "!**/*.db-journal",
+      "!**/*.db-wal",
+      "!**/*.db-shm",
+      "!.claude/**",
+      "!.git/**",
+      "!dist-installer/**",
+      "!docs/**",
+      "!.nen-*/**",
+      "!node_modules/@prisma/engines/*query_engine*",
+      "!node_modules/@prisma/engines/*libquery*"
     ],
     "asar": false,
     "extraMetadata": {
@@ -146,10 +165,6 @@
             "!**/*debian*"
           ]
         }
-      ],
-      "files": [
-        "!node_modules/.prisma/client/libquery_engine-darwin-*",
-        "!node_modules/**/*debian*"
       ]
     },
     "mac": {
@@ -181,10 +196,6 @@
             "!**/*debian*"
           ]
         }
-      ],
-      "files": [
-        "!node_modules/.prisma/client/query_engine-windows.dll.node",
-        "!node_modules/**/*debian*"
       ]
     },
     "nsis": {
