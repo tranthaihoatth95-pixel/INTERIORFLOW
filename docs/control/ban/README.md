@@ -58,3 +58,25 @@ Nó trả lời đúng bốn câu, không hơn: **phiếu nào · khi nào · tr
 
 Muốn đọc nội dung gốc: `node scripts/moc.mjs inbox <lane>` · lịch sử cả ngày:
 `node scripts/phieu-ca.mjs`.
+
+---
+
+## BA BÀN CHUYÊN TRÁCH — đợt dựng lại giao diện (Hoà chốt 05/09)
+
+Khác với bàn `00..08` (chia theo **công đoạn**), ba bàn dưới đây chia theo **vai** trong đúng một
+việc: dựng lại UX/UI từ đầu. Định nghĩa đầy đủ ở `.claude/agents/`, tra ở đây để không mồ côi —
+hai lần trước một tài liệu nền chết chỉ vì **không ai trỏ tới nó** (`IF-ARCHITECTURE-COMPASS` mồ
+côi 19 ngày · `GU-PROFILE` 0 con trỏ tới 30/08).
+
+| bàn | tệp | vai một câu | được cầm bút mã? |
+|---|---|---|---|
+| **A · CHUẨN** | `.claude/agents/if-chuan.md` | đặt THƯỚC — nghiên cứu pattern có nguồn → ngưỡng đo được → cổng máy | chỉ mã **cổng**, không mã giao diện |
+| **B · THỊ GIÁC** | `.claude/agents/if-thi-giac.md` | người DỰNG — tỉ lệ · đường nét · bố cục · Brand Kit · DS · chuyển động | **có** |
+| **C · NGƯỜI DÙNG NGHỀ** | `.claude/agents/if-nguoi-nghe.md` | designer đang hành nghề, khó tính, đi trọn một hành trình rồi kể chỗ vấp | **không** — chỉ đọc |
+
+**Vì sao tách ba:** luật đã có trong repo — *"người vẽ ra nó không được là người duy nhất chấm
+nó"*. A đặt thước · B dựng · C thử. Không bàn nào tự chấm bài mình.
+
+**Cửa chặn trước khi đập bất kỳ màn nào:** `docs/delivery/KIEM-KE-NANG-LUC.md` phải có mục cho màn
+đó. `§B25` bảo vệ **năng lực · hợp đồng · dữ liệu**, KHÔNG bảo vệ bố cục lỗi thời — nên được đập
+bố cục, nhưng đánh rơi một hành vi đang chạy được thì là mất mát, không phải dọn dẹp.

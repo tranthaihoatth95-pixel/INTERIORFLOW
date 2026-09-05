@@ -32,6 +32,15 @@ build.log
 # Cửa hẹp đúng bằng một tệp: `settings.local.json` (thứ mang khoá và tuỳ chọn riêng máy) VẪN bị
 # chặn, vì `.claude/*` ở trên vẫn phủ nó. Kiểm hai chiều bằng `git check-ignore -v`.
 !.claude/settings.json
+
+# CỬA HẸP THỨ BA (05/09) — `.claude/agents/**/*.md`, ba bàn chuyên trách của đợt dựng lại
+# giao diện (chuẩn · thị giác · người dùng nghề). Cùng lý do đã mở cửa cho `.claude/skills/`:
+# đây là TRÍ NHỚ BỀN của dự án, không phải rác phiên. Để `.claude/*` chặn thì định nghĩa bàn
+# chỉ sống trong một container và chết theo nó — đúng bệnh 24/08. Chỉ mở `.md`, không mở gì khác.
+!.claude/agents/
+.claude/agents/**
+!.claude/agents/**/
+!.claude/agents/**/*.md
 *.tsbuildinfo
 
 # Electron — output đóng gói (.exe/nsis) do electron-builder tạo
