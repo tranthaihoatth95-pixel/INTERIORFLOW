@@ -81,9 +81,9 @@ Ký hiệu chủ sở hữu: `01` CORE · `02` WORKFLOW · `04` DESIGN · `05` A
 
 | # | KHỞI ĐIỂM | THAO TÁC | KẾT QUẢ HỆ THỐNG | KẾT QUẢ ĐÃ LƯU | VÀO LẠI | TRẠNG THÁI | CHỦ | CHẶN CỔNG |
 |---|---|---|---|---|---|---|---|---|
-| **J13** | `/library/ingest` | nhập tệp thô → gắn định nghĩa → lưu vào thư viện | asset có định nghĩa | `LibraryAsset` + tệp trên đĩa | mở lại còn tệp | **UNVERIFIED** đầu-cuối; tầng ghi có khoá riêng: `lib/server/library-save.test.ts` · `lib/server/mime-sniff.test.ts` | 05 | **G5** (mục *tài sản*) |
-| **J14** | dự án đang mở | dùng một vật liệu → xuất BOQ | số trong BOQ khớp vật liệu | `ProductSpec.matId` | — | **UNVERIFIED**; kèm **nợ dữ liệu đã biết**: hàng cũ chưa có `matId`, phải chạy `scripts/backfill-material-matid.ts` (mặc định dry-run) — `SHIP-BLOCKERS` xếp **P3** | 05 + 07 | **G5** |
-| **J15** | thư viện | mở lại một `.idfc` đã lưu, sửa, ghi lại | — | — | — | **UNVERIFIED** đầu-cuối. **Không dựng lại** phần đã khoá: `lib/library/idfc-store.test.ts` · `lib/idfc-import/part-lock.test.ts` · `lib/idfc-import/chuan-net.test.ts` · `lib/idfc-import/asset-family.test.ts` | 05 | **G5** |
+| **J13** | `/library/ingest` **+** `/inspiration` | nhập tệp thô → gắn định nghĩa → lưu vào thư viện | asset có định nghĩa | `LibraryAsset` + **byte thật trong `uploads/`** | mở lại còn hàng DB + tệp | ✅ **PASS đầy đủ** (đợt 7, 05/09 — `--ca=J13`, hiệu chuẩn ĐỎ khi chặn `POST /api/library`). 🔴 **LỆCH MA TRẬN đo được**: đường `/library/ingest` **KHÔNG** sinh `LibraryAsset` và **KHÔNG** đặt byte nào lên đĩa — `page.tsx:98` chỉ `saveManifest` xuống IndexedDB (`grep '/api/library'` trong tệp đó = **0**). Hàng DB + tệp đĩa đến từ `/inspiration` → `POST /api/library`. **Hai đường, một cột** | 05 | **G5** (mục *tài sản*) |
+| **J14** | dự án đang mở | thả cấu kiện từ Thư viện → BOQ | số trong BOQ khớp kho giá | `Doc.entities[].specId` (IndexedDB) + `ProductSpec` (CSDL) | mở lại vẫn ra đúng bảng | ✅ **PASS đầy đủ** (đợt 7, 05/09 — đơn giá 1 500 000 · hao 10% · thành tiền 1 650 000 đúng bằng hàng CSDL; hiệu chuẩn ĐỎ khi chặn ghi IndexedDB). ⚠️ **`matId` vẫn `null`** ⇒ nhánh matId-UUID **chưa chạy sống lần nào**; hành trình đo nhánh `specId` — nhánh `computeBoq` thật sự dùng. 🔴 **LỖ CHẶN tìm được**: cấu kiện thả từ kho `.idfc` ra **nét rời**, `specId` KHÔNG gắn được (`LibraryDropBridge.tsx:112`) ⇒ **không bao giờ lên BOQ, và BOQ cũng không báo lỗi** | 05 + 07 | **G5** |
+| **J15** | thư viện | mở lại một `.idfc` đã lưu, **sửa**, ghi lại | kho cấu kiện đổi theo | khoá IndexedDB `studio::/studio-idfc` | bản SỬA còn nguyên, không nhân bản | ✅ **PASS đầy đủ** (đợt 7, 05/09 — **ba** lần đóng app: nhập → đóng → mở lại thấy bản gốc → sửa → đóng → mở lại thấy bản sửa; hiệu chuẩn ĐỎ khi chặn ghi IndexedDB). 📌 *"Sửa"* ở đây là **nhập lại cùng `meta.code` để đè** — ngữ nghĩa DUY NHẤT app có (`idfc-store.ts:14-15` khai kho một chiều) | 05 | **G5** |
 
 ### 1.5 · Lưu · tải lại · vào thẳng — vùng rủi ro nặng nhất
 
@@ -101,7 +101,7 @@ Ký hiệu chủ sở hữu: `01` CORE · `02` WORKFLOW · `04` DESIGN · `05` A
 | # | KHỞI ĐIỂM | THAO TÁC | KẾT QUẢ HỆ THỐNG | KẾT QUẢ ĐÃ LƯU | VÀO LẠI | TRẠNG THÁI | CHỦ | CHẶN CỔNG |
 |---|---|---|---|---|---|---|---|---|
 | **J20** | Trình bày có nội dung | xuất PDF | tệp sinh ra | ✅ tệp trên đĩa, mở được **độc lập với app** | 👁 **đã mở tệp ra soi bằng mắt** | **PASS invariant, KÈM 3 PHÁT HIỆN CHUẨN ĐẦU RA** (xem dưới bảng) — 04/09, tệp 24 KB · 1 trang · khổ **2560×1440pt** · 1 ảnh JPEG nhúng. 🔴 Lượt ĐẦU cho **trang TRẮNG TINH** đi qua với chữ PASS — chỉ lộ khi bóc ảnh ra NHÌN; bộ soi nay đo mực (mọi điểm ảnh = 255 ⇒ FAIL). ⚠️ **Lượt chạy lại đợt 3 (04/09) KHÔNG KẾT LUẬN được ở đây**: `waitForEvent('download')` hết 120 s, khung ghi **LỖI (hạ tầng)** chứ không phải FAIL — đúng luật *ngã vì hạ tầng thì không tính là đỏ*. Đã A/B trên đúng nghi phạm: hoàn nguyên `lib/project-scope.ts` về HEAD rồi chạy lại ⇒ **ngã y hệt** ⇒ **không phải hồi quy của đợt 3**. Bằng chứng PASS của đợt 2 còn nguyên (`J20-deck-xuat.pdf` · `J20-trang-1.png` không bị lượt sau ghi đè) | 02 + 07 | **G5** |
-| **J21** | dự án | xuất `.idf` / gói `.idfp` | gói sinh ra | — | nạp lại được | **UNVERIFIED** — `SHIP-BLOCKERS` **B4**: *".idf/.idfc sinh từ máy sạch chưa chạy lại sau khi thu 11 slice"*, ⬜ chưa mở. Tầng định dạng có khoá: `lib/present-editor/idfp.test.ts` | 07 | **G5** |
+| **J21** | dự án | xuất `.idf` / gói `.idfp` | gói sinh ra | tệp `.idfp` trên đĩa | **nạp lại được vào dự án khác** | ✅ **PASS đầy đủ** cho `.idfp` (đợt 7, 05/09 — 1 hồ sơ · 1 trang · 14 phần tử; xoá sạch hồ sơ trình duyệt rồi nạp vào một dự án CHƯA TỪNG CÓ GÌ → kho mọc lên đúng 14 phần tử; hiệu chuẩn ĐỎ khi chặn ghi IndexedDB ở lượt nạp). 🔴 **MỞ TỆP RA SOI**: **14/14 ô chữ là placeholder `"Nhập nội dung"`** + **0 ô có `x`/`y`** — xem §1.6c. ⬜ nhánh `.idf` (bản vẽ 2D) **chưa chạm** | 07 | **G5** |
 | **J22** | mất mạng / không có API key | dùng một năng lực cần cloud | ✅ **503 · `PROVIDER_NOT_CONFIGURED`**, câu báo nói rõ việc phải làm | — (không sinh gì, đúng bản chất) | — | **PASS trên app thật 04/09** (`--ca=J22`) — môi trường kiểm **thật sự không có `FAL_KEY`** nên đây là ca thật, không mô phỏng. Gọi `POST /api/jobs` từ trong app với phiên thật: **không trả hàng giả**, không nút chạy-mà-không-làm-gì. Hiệu chuẩn: ép cửa đó trả 200 kèm job bịa ⇒ khẳng định ĐỎ đúng như phải thế | 02 | **G5** |
 
 ---
@@ -125,6 +125,26 @@ Ký hiệu chủ sở hữu: `01` CORE · `02` WORKFLOW · `04` DESIGN · `05` A
 đều đúng mà kết luận vẫn sai. Nay bộ soi bóc ảnh nhúng ra **đo mực** (mọi điểm ảnh = 255 ⇒ FAIL)
 và giữ lại `J20-trang-1.jpg` làm bằng chứng **nhìn được**. **F1 thì máy vẫn KHÔNG bắt nổi** — chữ
 đã thành điểm ảnh, không grep được; nó chỉ chết dưới mắt người. Đó đúng là lý do luật 11/08 tồn tại.
+
+---
+
+### 1.6c · J21 — MỞ TỆP `.idfp` RA SOI: cùng lỗi F1 của J20, nhưng lần này **máy bắt được**
+
+> Cùng luật nghiệm thu 11/08 đã dựng §1.6b cho PDF. Khác biệt đắt giá: `.idfp` là **JSON**, nên
+> thứ mà trong PDF đã thành điểm ảnh (chỉ mắt người bắt nổi) thì ở đây **grep được**.
+
+| # | Soi thấy gì | Đối chiếu chuẩn | Nặng nhẹ |
+|---|---|---|---|
+| **G1** | **14/14 ô chữ** trong gói mang nguyên văn `"Nhập nội dung"` — giá trị mặc định của `makeText()` (`lib/present-editor/model.ts`), tức **dữ liệu thật**, không phải chữ mờ lúc hiển thị | `CHUAN-DAU-RA-NGHE` §4 đòi **0 placeholder** trong tệp giao khách | 🟡 **`.idfp` là gói "mở lại chỉnh tiếp", chưa phải tệp giao khách** ⇒ chưa vi phạm trực tiếp. Nhưng nó là **hạt giống của đúng lỗi F1**: xuất tiếp sang PDF là placeholder đi thẳng vào hồ sơ khách |
+| **G2** | **0/14 ô có `x`/`y`** — mọi phần tử chồng khít một chỗ. Trên màn chỉ thấy **một** dòng chữ, panel Lớp thì đếm **14** | — | 🔴 người dùng **không có cách nào biết** mình đang có 14 ô đè nhau; xoá một ô thì lại lộ ô kế, tưởng "xoá không được" |
+| **G3** | Nạp gói vào **một dự án khác chưa từng có gì**: kho mọc lên **đúng 14 phần tử / 1 trang** | vòng đời gói phải khép | ✅ điểm sáng — `.idfp` mang trọn nội dung **sang dự án khác** được, không chỉ "mở lại chỗ cũ" |
+
+🔴 **Bài học cho chính bộ đo, giống hệt §1.6b nhưng ở tầng khác:** khẳng định đầu tiên tôi viết là
+*"tệp phải mang đúng chữ người dùng gõ"* — nó ĐỎ, và ĐỎ đúng: `page.keyboard.type()` sau khi bấm
+nút *Chữ* **gõ vào canvas chứ không vào ô** (ô chữ chỉ vào chế độ sửa khi **nháp đúp**,
+`Element.tsx:349`). ⇒ Bằng chứng *"deck có nội dung thật"* mà **J20 đang dựa vào cũng chỉ là ô
+placeholder** — J20 vẫn PASS vì nó chỉ hỏi *"trang có mực không"*, và mực của placeholder cũng là
+mực. **Một cột xanh chỉ bảo chứng cho câu hỏi mà nó thật sự hỏi.**
 
 ---
 
@@ -162,18 +182,28 @@ hoặc bỏ đi — và trong ca D-J04b thì cái Flow vừa sinh ra vẫn nằm
 
 | Trạng thái | Số hành trình | Ghi chú |
 |---|---|---|
-| **PASS đầy đủ (có cột ĐÃ LƯU)** | **9** | J16 · J17 · J19 · J20 · J07 · J12 · J06 · J04 · **J05** — chạy bằng bộ `nghiem-thu-g2-hanh-trinh.mjs` (J04 vào ở đợt 3; **J05 vào ở đợt 4**, 04/09, sau khi thẻ tiêu điểm bấm được cả thân) |
+| **PASS đầy đủ (có cột ĐÃ LƯU)** | **13** | J16 · J17 · J19 · J20 · J07 · J12 · J06 · J04 · J05 · **J13 · J14 · J15 · J21** (bốn cái cuối vào ở **đợt 7**, 05/09) — chạy bằng bộ `nghiem-thu-g2-hanh-trinh.mjs` |
 | **PASS không có cột ĐÃ LƯU để kiểm** | **1** | J22 — bản chất nó không sinh gì để lưu; điều phải chứng minh là *báo rõ, không chạy giả* |
 | **PASS chỉ ở cột hệ thống** | **4** | J08 · J09 · J10 · J11 — lượt kiểm 04/09, không chạm chuyện *còn sau khi đóng app* |
 | **PASS một phần** | **1** | J18 — tầng cơ chế nay đo trên **app thật + đọc SQL**; tầng người dùng vẫn chưa |
 | **FAIL** | **0** | — (J04 đã chuyển sang PASS đợt 3; hai lỗi chặn D-J04a/D-J04b đã đóng, xem §1.7) |
-| **UNVERIFIED** | **6** | J01 J02 J13 J14 J15 J21 — J05 đã rời nhóm này (đợt 4, 04/09) |
+| **UNVERIFIED** | **2** | J01 J02 — **J13 J14 J15 J21 đã rời nhóm này (đợt 7, 05/09)** |
 | **BLOCKED** | **1** | J03 (D3) |
 
-⚠️ Đếm lại cho đúng: 22 = 9 PASS-đủ + 1 PASS-không-có-cột + 4 PASS-hệ-thống + 1 PASS-một-phần
-+ 0 FAIL + **6 UNVERIFIED** + 1 BLOCKED.
+⚠️ Đếm lại cho đúng: 22 = **13** PASS-đủ + 1 PASS-không-có-cột + 4 PASS-hệ-thống + 1 PASS-một-phần
++ 0 FAIL + **2 UNVERIFIED** + 1 BLOCKED.
 
-### ⭐ CỘT **KẾT QUẢ ĐÃ LƯU**: **1/22 → 4/22 → 7/22 → 8/22 → 9/22** (đợt 5: **vẫn 9/22** · đợt 6: **vẫn 9/22**)
+### ⭐ CỘT **KẾT QUẢ ĐÃ LƯU**: **1/22 → 4/22 → 7/22 → 8/22 → 9/22** (đợt 5 · 6: **vẫn 9/22**) → **13/22** (đợt 7, 05/09)
+
+✅ **ĐỢT 7 LÀM CON SỐ NÀY TĂNG THẬT — và mẫu số KHÔNG đổi, vì bốn hành trình đều nằm trong 22
+hành trình gốc**: `J13` `J14` `J15` `J21` là bốn trong sáu mục **UNVERIFIED** của bảng trên, không
+phải hành trình mới thêm như `J16b`/`J23`. Đây đúng là ca mà luật đếm của đợt 5-6 chừa ra: *cộng
+tử số mà giữ mẫu số 22 chỉ sai khi hành trình là **mới thêm***; bốn cái này thì mẫu số vốn đã tính
+chúng từ đầu. ⇒ **9/22 → 13/22**, `UNVERIFIED` **6 → 2** (chỉ còn J01 · J02).
+
+⚠️ **Bộ chạy nay có 17 hành trình** (13 gốc + `J16b` + `J23` + …), nhưng **con số 13/22 chỉ đếm
+hành trình thuộc 22 mục gốc** — hành trình thêm vẫn KHÔNG được cộng vào tử số. Giữ nguyên luật.
+
 
 🔴 **ĐỢT 6 (04/09, D7) CŨNG KHÔNG LÀM CON SỐ NÀY TĂNG — cùng lý do, giữ nguyên luật đếm.** `J23`
 là hành trình **MỚI THÊM** như `J16b`, không nằm trong 22 hành trình gốc ⇒ **không cộng vào tử số,
