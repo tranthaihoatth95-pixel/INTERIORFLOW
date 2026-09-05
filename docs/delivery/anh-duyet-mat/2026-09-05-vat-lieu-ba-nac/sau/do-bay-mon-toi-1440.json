@@ -1,8 +1,8 @@
 {
   "chuaDangNhap": {
-    "tongImg": 2,
+    "tongImg": 7,
     "tongCanvas": 0,
-    "soHang": 2,
+    "soHang": 7,
     "oHong": 0,
     "coBang": true,
     "tieuDe": "InteriorFlow | Thiết kế 3D | Việc | Trang chủ | Dự án | Cảm hứng",
@@ -10,9 +10,9 @@
     "loi": []
   },
   "scan": {
-    "tongImg": 2,
+    "tongImg": 7,
     "tongCanvas": 0,
-    "soHang": 3,
+    "soHang": 8,
     "oHong": 0,
     "coBang": true,
     "tieuDe": "InteriorFlow | Thiết kế 3D | Việc | Trang chủ | Dự án | Cảm hứng",
@@ -20,9 +20,9 @@
     "loi": []
   },
   "judge": {
-    "tongImg": 3,
+    "tongImg": 8,
     "tongCanvas": 0,
-    "soHang": 3,
+    "soHang": 8,
     "oHong": 0,
     "coBang": true,
     "tieuDe": "InteriorFlow | Thiết kế 3D | Việc | Trang chủ | Dự án | Cảm hứng",
@@ -36,9 +36,9 @@
     "soTamNgang": 1.5
   },
   "inspect": {
-    "tongImg": 2,
+    "tongImg": 7,
     "tongCanvas": 0,
-    "soHang": 3,
+    "soHang": 8,
     "oHong": 0,
     "coBang": true,
     "tieuDe": "InteriorFlow | Thiết kế 3D | Việc | Trang chủ | Dự án | Cảm hứng",
@@ -46,9 +46,9 @@
     "loi": []
   },
   "judgeMon2": {
-    "tongImg": 3,
+    "tongImg": 8,
     "tongCanvas": 0,
-    "soHang": 3,
+    "soHang": 8,
     "oHong": 0,
     "coBang": true,
     "tieuDe": "InteriorFlow | Thiết kế 3D | Việc | Trang chủ | Dự án | Cảm hứng",
