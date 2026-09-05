@@ -70,8 +70,20 @@ export const LUAT = [
     //    thua mọi thứ ngoài layer), là 24 tệp kia thành lỗ thật ngay — lúc đó nới mẫu này trở lại.
     // ⚠️ `mauThieu` xét theo TỆP: tệp có `focus-visible` ở bất kỳ đâu là được miễn cả tệp. Nên một
     //    tệp vừa tự dựng ring cho vật A vừa giết ring của vật B vẫn lọt (xem báo cáo 04/09 §7).
-    soi: [{ dir: 'components', mauCo: "[\\w-]+:outline-none|outline:\\s*['\"`]?none", mauThieu: 'focus-visible' },
-          { dir: 'app', mauCo: "[\\w-]+:outline-none|outline:\\s*['\"`]?none", mauThieu: 'focus-visible' }] },
+    // NANG 05/09 — soi theo DONG chu khong theo TEP. `mauThieu` kieu cu mien CA TEP neu tep co
+    //   chu `focus-visible` o bat ky dau => tep vua dung ring cho vat A vua giet ring vat B thi
+    //   lot sach. Do 05/09: luat cu bao 21 tep; soi theo dong lo them 8 LO THAT nam trong tep da
+    //   duoc mien — o tim cua ve3d/library-sheet/files-mock/inspiration, 5 cho ProjectSelect, va
+    //   slider `input[type=range].if-slider` (dac hieu 0-2-1 thang luat toan app => mat han ring).
+    //   `mauKem` = tin hieu ring thay the; CO `mauKem` la may tu chuyen sang nhanh soi-theo-dong.
+    //   `mauKhai` = loi thoat cho ca tat ring CO Y va DUNG: chinh luat tat-ring-khi-bam-chuot o
+    //   globals, va hop thoai `tabIndex={-1}` nhan focus bang ma nen khong nam trong duong Tab.
+    soi: [{ dir: 'components', mauCo: "[\\w-]+:outline-none|outline:\\s*['\"`]?none", mauThieu: 'focus-visible',
+            mauKem: "box-shadow|boxShadow|ring-\\d|ring-\\[|border-color|border-\\[|outline:\\s*(var|\\d)",
+            mauKhai: 'focus-ring-ok' },
+          { dir: 'app', mauCo: "[\\w-]+:outline-none|outline:\\s*['\"`]?none", mauThieu: 'focus-visible',
+            mauKem: "box-shadow|boxShadow|ring-\\d|ring-\\[|border-color|border-\\[|outline:\\s*(var|\\d)",
+            mauKhai: 'focus-ring-ok' }] },
 
   { id: 'keydown-ne-o-nhap', toiDanh: 3, loai: 'grep',
     luat: 'Phím tắt toàn cục không kích hoạt khi đang nhập chữ — listener keydown toàn cục phải né INPUT/TEXTAREA/contentEditable',
