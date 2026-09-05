@@ -19,7 +19,7 @@ import { useT, useLang } from '@/lib/i18n';
 import { phanLoaiHong, nhan, HONG_KHONG_DOC_DUOC, type LyDoHong } from '@/lib/ui/trang-thai-tai';
 import { useTrangThaiMang } from '@/lib/home/trang-thai';
 import type { MaterialSpecDto } from '@/lib/materials/warehouse/dto';
-import { IMPORT_KIND_LABEL } from '@/lib/materials/warehouse/dto';
+import { IMPORT_KIND_LABEL, materialSourceLabel } from '@/lib/materials/warehouse/dto';
 import { getMaterial } from '@/lib/materials/resolve';
 import { loadPbrMap, ensurePbrCanonicalKeys } from '@/lib/materials/pbr-store';
 import { pbrMapBaTang } from '@/lib/materials/tang-phan-giai';
@@ -211,7 +211,18 @@ export function MaterialsScreen() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 46, padding: '0 14px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--t1)' }}>{tr('Kho vật liệu', 'Materials warehouse')}</span>
-        <span style={{ fontSize: 11.5, color: 'var(--t4)' }}>{hangHienThi ? tr(`${hangHienThi.length} mục`, `${hangHienThi.length} item(s)`) : ''}</span>
+        {/* 🔴 05/09 — SỐ ĐẾM PHẢI KHỚP THÂN TRANG. Bản trước: chưa đăng nhập thì thân trang ra
+            "Cần đăng nhập lại" với 0 hàng, mà tiêu đề vẫn đếm "2 mục" — một màn vừa nói *tôi
+            không có gì* vừa nói *tôi có 2*. Sự thật đã chọn: **kho CÓ 2 món đi kèm bản cài**
+            (chúng nằm trong repo, không phụ thuộc máy chủ); thứ thiếu là mặt THƯƠNG MẠI. Nên số
+            được giữ, và nó tự khai đang đếm cái gì. */}
+        <span style={{ fontSize: 11.5, color: 'var(--t4)' }}>
+          {hangHienThi == null
+            ? ''
+            : lyDoHong
+              ? tr(`${hangHienThi.length} mục theo bản cài`, `${hangHienThi.length} built-in item(s)`)
+              : tr(`${hangHienThi.length} mục`, `${hangHienThi.length} item(s)`)}
+        </span>
 
         <div style={{ marginLeft: 16, display: 'flex', alignItems: 'center', gap: 6, height: 30, padding: '0 10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', minWidth: 200 }}>
           <Search size={18} style={{ color: 'var(--t4)' }} />
@@ -267,9 +278,12 @@ export function MaterialsScreen() {
         </div>
       </div>
 
-      {lyDoHong ? (
-        /* Trạng thái HỎNG chiếm CHỖ CỦA NỘI DUNG, không phải một thanh mỏng đứng trên một bảng
-           rỗng. Bản cũ để cả hai cùng hiện ⇒ "không có quyền" và "chưa có gì" đọc như một. */
+      {lyDoHong && (hangHienThi?.length ?? 0) === 0 ? (
+        /* HỎNG **VÀ KHÔNG CÒN GÌ ĐỂ BÀY** ⇒ trạng thái hỏng chiếm CHỖ CỦA NỘI DUNG. Đây vẫn là
+           nhánh đúng cho ca đó: để một thanh mỏng đứng trên một bảng rỗng thì "không có quyền"
+           và "chưa có gì" đọc như một.
+           ⚠️ Nhưng khi kho VẪN CÒN hàng theo bản cài thì nhánh này là SAI: nó vứt đi 2 vật liệu
+           đang dùng được và vẫn để tiêu đề đếm chúng — xem chú thích ở số đếm phía trên. */
         (() => {
           const n = nhan(lyDoHong.lyDo, { vi: 'vật liệu', en: 'materials' }, en);
           return (
@@ -321,24 +335,62 @@ export function MaterialsScreen() {
           />
         </div>
       ) : (
-        <MaterialTable
-          items={filtered}
-          onEdit={setEditing}
-          onDelete={(m) => void onDelete(m)}
-          onEditPbr={setPbrEditing}
-          baMatCua={layBaMat}
-          xemTruocCua={layXemTruoc}
-          onMoBaMat={setBaMatCua}
-          /* MỘT CHIỀU: mẫu gốc theo bản cài không sửa/xoá được ở màn kho. Mặt THỊ GIÁC vẫn chỉnh
-             được (nút chất liệu render) — bản chỉnh rơi xuống tầng studio, mẫu gốc nguyên vẹn. */
-          chiDocThuongMai={laHangHatGiong}
-        />
+        <>
+          {lyDoHong && (() => {
+            /* DẢI BÁO — cùng bộ chữ với màn hỏng (`nhan()`), không chế lời thứ hai. Nó nói đúng
+               HAI điều, và cả hai đều đúng cùng lúc: kho chung chưa đọc được · thứ đang bày là
+               vật liệu đi kèm bản cài. Người dùng vẫn dùng được 2 món đó ngay bây giờ. */
+            const n = nhan(lyDoHong.lyDo, { vi: 'vật liệu', en: 'materials' }, en);
+            return (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderBottom: '1px solid var(--border)', background: 'var(--card)', flexShrink: 0 }}>
+                {lyDoHong.lyDo === 'khong-quyen' ? <LogIn size={16} style={{ color: 'var(--warning)', flexShrink: 0 }} />
+                  : lyDoHong.lyDo === 'ngoai-tuyen' ? <WifiOff size={16} style={{ color: 'var(--warning)', flexShrink: 0 }} />
+                  : <RefreshCw size={16} style={{ color: 'var(--warning)', flexShrink: 0 }} />}
+                <span style={{ fontSize: 12, color: 'var(--t2)', lineHeight: 1.5 }}>
+                  <strong style={{ color: 'var(--t1)', fontWeight: 600 }}>{n.tieuDe}</strong>
+                  {' — '}
+                  {tr(
+                    'chưa đọc được kho chung (hãng · giá · kích thước). Bên dưới là vật liệu đi kèm bản cài, nằm sẵn trên máy này và dùng được ngay.',
+                    'the shared catalogue (brand · price · size) could not be read. Below are the materials that ship with the app — they live on this machine and work right now.',
+                  )}
+                </span>
+                {n.hanhDong && (
+                  <button
+                    type="button"
+                    onClick={lyDoHong.lyDo === 'khong-quyen' ? () => { window.location.href = '/'; } : () => { void load(); }}
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+                    style={{ marginLeft: 'auto', flexShrink: 0, height: 'var(--tap)', padding: '0 12px', borderRadius: 'var(--r-2)', border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    {n.hanhDong}
+                  </button>
+                )}
+              </div>
+            );
+          })()}
+          <MaterialTable
+            items={filtered}
+            onEdit={setEditing}
+            onDelete={(m) => void onDelete(m)}
+            onEditPbr={setPbrEditing}
+            baMatCua={layBaMat}
+            xemTruocCua={layXemTruoc}
+            onMoBaMat={setBaMatCua}
+            /* MỘT CHIỀU: mẫu gốc theo bản cài không sửa/xoá được ở màn kho. Mặt THỊ GIÁC vẫn
+               chỉnh được (nút chất liệu render) — bản chỉnh rơi xuống tầng studio, mẫu gốc
+               nguyên vẹn. */
+            chiDocThuongMai={laHangHatGiong}
+          />
+        </>
       )}
 
       {baMatCua && (
         <BaMatPanel
           baMat={layBaMat(baMatCua)}
           ten={baMatCua.name}
+          /* CÙNG một `getMaterial()` đã tra cho bảng — ba nấc chi tiết là ba mức của MỘT sự
+             thật, không phải ba đường đọc (luật M5: cấm đường đọc thứ hai). */
+          xemTruoc={layXemTruoc(baMatCua)}
+          nguon={(() => { const s = materialSourceLabel(baMatCua); return tr(s.vi, s.en); })()}
           onClose={() => setBaMatCua(null)}
           /* món chưa có mã thì KHÔNG mở được cửa chất liệu render (matId = mã vật liệu) — không
              truyền hàm ⇒ panel không mọc nút giả bấm không ra gì. */
