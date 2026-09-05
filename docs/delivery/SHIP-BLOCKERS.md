@@ -233,3 +233,51 @@ sản phẩm ngược với định vị local-first**, không phải việc vá
 > **Cổng báo `Ready` chỉ chứng minh bản dựng lên được, KHÔNG chứng minh app dùng được.**
 > Trước khi đưa bất kỳ đường xem nào cho Hoà: **tự đi hết một hành trình trên chính đường đó**.
 > Đây là ca thứ hai cùng họ trong 24h (ca một: `soi:thao-tac` chết mà đọc ra như chưa chạy).
+
+---
+
+## ✅ 05/09 · LẦN ĐẦU MỘT GÓI ĐƯỢC MỞ — và nó CHẠY, CSDL SỐNG (Linux, chưa phải Mac)
+
+Việc #18 ghi *"chưa ai mở gói nào lần nào"* từ đầu sprint. Nay đã mở — trên Linux, bằng Xvfb.
+
+### Đo được, từng bước
+| Bước | Kết quả |
+|---|---|
+| `electron-builder --linux dir` | **dựng xong**, không lỗi |
+| Gói có `.next` đã dựng | ✅ `resources/app/.next/BUILD_ID` |
+| Gói có engine Prisma gốc | ✅ `.prisma/client/libquery_engine-*.so.node` |
+| Mở gói (`xvfb-run ./interiorflow`) | **sống 90s, không sập** |
+| Gói tự spawn `next start` cổng 3777 | ✅ **HTTP 200 sau ~6 giây** |
+| `/api/auth/me` | `{"user":null,"reason":"anonymous"}` — đúng |
+| `/api/auth/login` sai mật khẩu | **401**, KHÔNG phải 500 ⇒ **CSDL sống trong gói** |
+
+### ⭐ Kết quả nặng ký nhất — MÁY SẠCH TỰ DỰNG CSDL
+Máy này **chưa từng chạy InteriorFlow**. Sau khi mở gói:
+```
+/root/.config/interiorflow/dev.db   413.696 byte
+6/6 migration chạy XONG (không cái nào dở dang)
+24/24 bảng dựng đủ
+```
+⇒ Nỗi lo M1 (*"người dùng phải chạy tay `prisma db push`"*) — **đã chết bằng bằng chứng**.
+Người dùng mới cài xong mở lên là có CSDL đầy đủ, không gõ một lệnh nào.
+
+### 🔴 ĐỐI LẬP TRỰC TIẾP VỚI BẢN CLOUD — cùng mã, khác vỏ
+| | Vercel | Gói desktop |
+|---|---|---|
+| `/api/auth/login` | **500** | **401** |
+| CSDL | không có tệp nào | tự dựng đủ 24 bảng |
+⇒ Xác nhận bằng số: **vỏ desktop là vỏ đúng của IF**, không phải vỏ cloud.
+
+### ⛔ CHƯA ĐƯỢC TÍNH LÀ MAC PASS
+Luật đã ghi: *không được coi "Electron build thành công" là Mac PASS*. Phần **CHỈ máy Mac trả lời được**:
+`.dmg` đóng gói · ký/Gatekeeper · biểu tượng Dock (đã biết sẽ ra ô vuông vì `icon.png` thiếu kênh alpha,
+việc #22) · phím ⌘ · gỡ cài có xoá dữ liệu không. ⇒ **Việc #18 GIỮ NGUYÊN trạng thái mở.**
+
+### 🔴 NỢ CHẤT LƯỢNG PHÁT HÀNH PHÁT HIỆN CÙNG LƯỢT
+| Vấn đề | Số đo |
+|---|---|
+| **`asar: false`** — electron-builder cảnh báo thẳng *"strongly not recommended"* | mã nguồn nằm trần trong gói |
+| **Gói 1,2 GB** chưa nén | `.dmg` sẽ rất nặng, cài lâu |
+| `node_modules/@next` | **275 MB** — binary SWC cho MỌI nền, chỉ cần một |
+| `node_modules/prisma` + `@prisma` | **201 MB** — gồm engine postgres/cockroach/mysql mà IF **không dùng** |
+⇒ Cắt được ~400 MB bằng `files` globs, không đụng một dòng mã. Việc riêng, không chặn.
