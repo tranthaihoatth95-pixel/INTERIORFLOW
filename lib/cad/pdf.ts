@@ -35,8 +35,8 @@
  * chật là do dữ liệu người dùng nhập dài, không phải do bước xuất.
  */
 
-import type { Doc, Entity, Pt, Viewport, DimEntity, Sheet } from './model';
-import { docBox, fitBox, fitScaleLabel, worldToScreen, ellipseBoundaryPoints, zoneBoundaryPoints, zoneCentroid, ZONE_GROUP_META, fixedScaleViewport, fitsAtScale, docPaperMm, defaultPaperOrientation, paperSizeMm, snapPrintScale } from './model';
+import type { Doc, Entity, Pt, Viewport, DimEntity, Sheet, Box } from './model';
+import { docBox, entityBox, fitBox, fitScaleLabel, worldToScreen, ellipseBoundaryPoints, zoneBoundaryPoints, zoneCentroid, ZONE_GROUP_META, fixedScaleViewport, fitsAtScale, docPaperMm, defaultPaperOrientation, paperSizeMm, snapPrintScale, resolveDocPrintScaleN } from './model';
 import { planExportLabelShifts, stripInternalJargon, type ExportLabelShift } from './label-placer';
 import { BLOCK_MAP, type Prim } from './furniture';
 import { hatchLines, hatchDots } from './hatch';
@@ -77,6 +77,121 @@ export function applyRealScaleToTitleBlock(entities: Entity[], scaleLabel: strin
   );
 }
 
+/* ─────────── P0-GIAY (05/09) — KHUNG TÊN LÀ VẬT CỦA TỜ GIẤY, KHÔNG PHẢI VẬT CỦA MÔ HÌNH ───────────
+ *
+ * 🔴 GỐC BỆNH ĐO ĐƯỢC (A2-01): khung tên do `titleBlockPro()` sinh ra là entity **trong model
+ * space**, đặt tại `box.maxX + 500 + 180*k` với `k` = tỉ lệ ĐOÁN lúc chèn. Tờ giấy thì in qua
+ * `Viewport2D` có `scale` RIÊNG (mặc định 1:100, `CadSheets.defaultSheet()`), và `centerMm` chốt
+ * theo bao hình TẠI LÚC TẠO TỜ. Hai con số không liên hệ nhau ⇒
+ *   · chèn 1 lần trên bản demo A3: khối rộng 180×50 = 9000mm world, in ở 1:100 ra **90mm** thay vì
+ *     180mm — chữ "Tỷ lệ" 3,4mm co còn **1,70mm** (đúng con số A2-05 đo được);
+ *   · chèn lần 2 (`box.maxX` đã nở): khối văng tới world x=32230 trong khi cửa sổ ô nhìn chỉ tới
+ *     24485 ⇒ cả cột phải rơi NGOÀI vùng cắt — đo trên PDF thật: chuỗi ở **x=1489pt trên trang
+ *     1190pt**. Người đọc bản vẽ thấy "1:5" của một tờ 1:50 — sai mười lần.
+ *
+ * ⇒ Cách chữa KHÔNG phải nới cửa sổ ô nhìn (thế là phá "plot to scale"), mà là trả khung tên về
+ * ĐÚNG CHỖ của nó trong nghề: **paper space**. Ô nhìn cắt hình mô hình là chuyện bình thường của
+ * CAD; khung tên bị cắt thì không bao giờ bình thường. Đặt ở paper space ⇒ luôn đủ 180×42mm, luôn
+ * nằm trong khung viền, không phụ thuộc `k` đoán lúc chèn, và KHÔNG THỂ bị cắt.
+ */
+
+/** Khổ chuẩn của khung tên trên GIẤY (mm) — khớp template `titleBlockPro()` (180×42). */
+const TITLE_BLOCK_PAPER_W_MM = 180;
+const TITLE_BLOCK_PAPER_H_MM = 42;
+
+export interface KhungTenPhatHien {
+  /** bao hình world của cả khối khung tên. */
+  box: Box;
+  /** mọi entity thuộc khối (kể cả khung, vạch chia, chữ). */
+  entities: Entity[];
+  /** id các entity thuộc khối — để loại khỏi vòng vẽ model space. */
+  ids: Set<string>;
+}
+
+/**
+ * Tìm khối khung tên đã bake trong `entities`: một `rect` có chứa TRỌN một text ô tỉ lệ
+ * (`/^Tỷ lệ \d/`) bên trong. Cả `titleBlock()` cũ lẫn `titleBlockPro()` đều đẩy `rect` bao ngoài
+ * làm entity ĐẦU TIÊN rồi mới tới vạch/chữ nằm trong, nên nhận diện theo "rect nào bao ô tỉ lệ"
+ * là đủ và không cần thêm field mới vào Entity (thêm field sẽ đụng DXF/IDF — xem ghi chú
+ * `TITLE_BLOCK_SCALE_PREFIX`).
+ *
+ * Nhiều khối cùng tờ (bản demo tự mang một khung tên cũ, người dùng chèn thêm khung tên 9 ô) thì
+ * lấy khối **rộng nhất** — đó là khung tên chính của tờ; khối còn lại vẫn vẽ bình thường trong ô
+ * nhìn như một ghi chú model space.
+ */
+export function timCacKhungTen(entities: Entity[]): KhungTenPhatHien[] {
+  const rects = entities.filter((e): e is Extract<Entity, { type: 'rect' }> => e.type === 'rect');
+  if (!rects.length) return [];
+  const oTiLe = entities.filter((e) => e.type === 'text' && TITLE_BLOCK_SCALE_RE.test((e as { text: string }).text));
+  if (!oTiLe.length) return [];
+
+  const trong = (box: Box, b: Box) =>
+    b.minX >= box.minX - 1e-6 && b.maxX <= box.maxX + 1e-6 && b.minY >= box.minY - 1e-6 && b.maxY <= box.maxY + 1e-6;
+
+  const raw: KhungTenPhatHien[] = [];
+  for (const r of rects) {
+    const box: Box = {
+      minX: Math.min(r.x, r.x + r.w), minY: Math.min(r.y, r.y + r.h),
+      maxX: Math.max(r.x, r.x + r.w), maxY: Math.max(r.y, r.y + r.h),
+    };
+    const bw = box.maxX - box.minX;
+    const bh = box.maxY - box.minY;
+    if (bw <= 0 || bh <= 0) continue;
+    // Chặn nhận nhầm: khung tên là khối NẰM NGANG dẹt (180/42 = 4,3 · khối cũ 2600/900 = 2,9).
+    // Không có rào này thì một `rect` phòng to bao trọn ô tỉ lệ cũng bị nuốt theo cả bản vẽ.
+    const ti = bw / bh;
+    if (ti < 1.5 || ti > 8) continue;
+    if (!oTiLe.some((t) => trong(box, entityBox(t)))) continue;
+    // Chữ thuộc khối tính theo ĐIỂM NEO, không theo bao hình: `fitTextHeightMm()` chỉ co chữ tới
+    // sàn 60% rồi CHẤP NHẬN tràn, nên dòng dài (tên bản vẽ, dòng "Vẽ · Kiểm") thò ra khỏi chính
+    // hộp của nó — đo trên bản demo: 2/5 dòng thò. Lọc theo bao hình thì hai dòng đó BỊ BỎ LẠI
+    // trong ô nhìn trong khi phần còn lại của khối đã lên giấy ⇒ khung tên in ra thiếu dòng, và
+    // dòng bị bỏ lại thì nằm chờ vùng cắt xén. Khối khung tên phải đi TRỌN hoặc không đi.
+    const thuoc = entities.filter((e) => {
+      if (e.type === 'text') return trong(box, { minX: e.at.x, minY: e.at.y, maxX: e.at.x, maxY: e.at.y });
+      const b = entityBox(e);
+      return Number.isFinite(b.minX) && trong(box, b);
+    });
+    // Ngưỡng 2 chứ không phải 3, và đây là con số ĐO chứ không phải đoán: khung tên cũ của bản
+    // demo có 5 dòng chữ nhưng **2 dòng tràn ra ngoài chính hộp của nó** (đúng nửa sau của A2-04),
+    // nên chỉ 2 dòng nằm trọn bên trong. Đặt ngưỡng 3 là bỏ sót đúng khối khung tên thật — mà bỏ
+    // sót nghĩa là để nó lại trong ô nhìn cho vùng cắt xén chữ, tức là ca P0 này.
+    if (thuoc.filter((e) => e.type === 'text').length < 2) continue;
+    // Bao hình của khối = HỢP bao hình mọi thành viên (không phải chỉ cái `rect`): có thế thì
+    // `viewportKhopO` mới ép được CẢ phần chữ thò ra vào trong ô giấy. Lấy mỗi `rect` thì đúng
+    // phần thò đó lại lọt ra ngoài mép — tức tái lập chính lỗi A2-01 ở quy mô nhỏ hơn.
+    const hop: Box = { ...box };
+    for (const e of thuoc) {
+      const b = entityBox(e);
+      if (!Number.isFinite(b.minX)) continue;
+      hop.minX = Math.min(hop.minX, b.minX); hop.minY = Math.min(hop.minY, b.minY);
+      hop.maxX = Math.max(hop.maxX, b.maxX); hop.maxY = Math.max(hop.maxY, b.maxY);
+    }
+    raw.push({ box: hop, entities: thuoc, ids: new Set(thuoc.map((e) => e.id)) });
+  }
+  // Khối lồng trong khối khác (rect con của chính khung tên) — bỏ, giữ khối ngoài cùng.
+  const ngoai = raw.filter((a) => !raw.some((b) => b !== a && a.ids.size < b.ids.size && trong(b.box, a.box)));
+  return ngoai.sort((a, b) => (b.box.maxX - b.box.minX) - (a.box.maxX - a.box.minX));
+}
+
+/** Khung tên CHÍNH của tờ = khối rộng nhất. `null` khi bản vẽ chưa chèn khung tên nào. */
+export function timKhungTen(entities: Entity[]): KhungTenPhatHien | null {
+  return timCacKhungTen(entities)[0] ?? null;
+}
+
+/**
+ * Viewport đưa bao hình `box` (world) khớp ĐÚNG ô chữ nhật `slot` trên giấy (mm), giữ tỉ lệ khung
+ * hình và căn giữa. Dùng để vẽ khung tên ở paper space bất kể nó được bake ở `k` nào.
+ */
+export function viewportKhopO(box: Box, slot: { x: number; y: number; w: number; h: number }): Viewport {
+  const bw = Math.max(1e-6, box.maxX - box.minX);
+  const bh = Math.max(1e-6, box.maxY - box.minY);
+  const scale = Math.min(slot.w / bw, slot.h / bh);
+  const cx = (box.minX + box.maxX) / 2;
+  const cy = (box.minY + box.maxY) / 2;
+  return { scale, panX: slot.x + slot.w / 2 - cx * scale, panY: slot.y + slot.h / 2 + cy * scale };
+}
+
 /** VIỆC 2 `khung-ten-sach` (CHUAN-DAU-RA §1) — gỡ jargon nội bộ khỏi MỌI text sẽ in ra file
  * (bắt được 11/08: "(đã rà công năng)" nằm trong tên bản vẽ đã BAKE thành entity từ trước, sửa
  * ở `titleBlockPro` không cứu được doc cũ). Chỉ clone entity có chữ đổi — giữ reference còn lại
@@ -100,12 +215,10 @@ export function stripJargonFromEntities(entities: Entity[]): Entity[] {
  * Export để `export-checks.ts` kiểm CÙNG con số với file xuất thật (một nguồn, không lệch nhau).
  */
 export function resolveExportScaleN(doc: Doc, pw: number, ph: number, margin: number): number | null {
-  const box = docBox(doc) ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
-  if (doc.printScale && fitsAtScale(box, [pw, ph], margin, doc.printScale)) return doc.printScale;
-  const fit = fitBox(box, pw, ph, margin);
-  if (!Number.isFinite(fit.scale) || fit.scale <= 0) return 100;
-  const snapped = snapPrintScale(1 / fit.scale);
-  return fitsAtScale(box, [pw, ph], margin, snapped) ? snapped : null;
+  // P0-GIAY (05/09) — phép tính đã DỜI về `model.ts:resolveDocPrintScaleN` để màn hình (khung tên)
+  // và đường xuất đọc CÙNG một hàm. Giữ tên + chữ ký ở đây vì `export-checks.ts` và test cũ đang
+  // gọi; đây nay chỉ là vỏ, KHÔNG được tính lại (hai phép tính là gốc bệnh A2-02).
+  return resolveDocPrintScaleN(doc, [pw, ph], margin);
 }
 
 /** 2.1.8.m (30/07) — nhãn "Khổ · Hướng" cho mục lục bộ hồ sơ (VD "A4 · Dọc") — khổ và hướng là
@@ -525,6 +638,30 @@ function drawDocOntoPdfPage(pdf: JsPdf, doc: Doc, pw: number, ph: number, opts: 
 /** Vẽ đúng bố cục Paper: mỗi ô nhìn có rect/tâm/tỉ lệ/layer riêng, không fit lại toàn Doc. */
 function drawPaperSheetOntoPdfPage(pdf: JsPdf, doc: Doc, sheet: Sheet, opts: CadPdfOptions): void {
   const ds = opts.dimStyle ?? DEFAULT_DIM_STYLE;
+  const [pw, ph] = paperSizeMm(sheet.paper, sheet.orientation);
+
+  // P0-GIAY ① — KHUNG TÊN RA PAPER SPACE. Xem khối ghi chú "KHUNG TÊN LÀ VẬT CỦA TỜ GIẤY" ở trên:
+  // để nó nằm trong ô nhìn là để nó bị cắt. Tìm một lần, vẽ ở cuối hàm, và LOẠI khỏi vòng vẽ model.
+  const cacKhungTen = timCacKhungTen(doc.entities);
+  const khungTen = cacKhungTen[0] ?? null;
+  // Loại MỌI khối khung tên khỏi ô nhìn, không riêng khối chính: khối thừa (chèn hai lần) nằm
+  // trong vùng cắt sẽ bị xén giữa chừng — mà chữ khung tên bị xén là in ra một GIÁ TRỊ SAI, đúng
+  // ca P0 này. Một tờ giấy có đúng MỘT khung tên; khối thừa là rác dựng hình, cổng kiểm sẽ báo
+  // cho người dùng biết chứ đường xuất không im lặng in bản cụt.
+  const idKhungTen = new Set<string>();
+  for (const kt of cacKhungTen) for (const id of kt.ids) idKhungTen.add(id);
+  // Tỉ lệ THẬT của tờ = tỉ lệ ô nhìn LỚN NHẤT (ô chính). Sheet nhiều ô khác tỉ lệ thì ô chính là
+  // con số ghi ở khung tên, đúng thông lệ hồ sơ (ô phụ ghi tỉ lệ riêng cạnh ô đó).
+  const oChinh = sheet.viewports.length
+    ? sheet.viewports.reduce((a, b) => (a.rectOnPaper.w * a.rectOnPaper.h >= b.rectOnPaper.w * b.rectOnPaper.h ? a : b))
+    : null;
+  const nhanTiLe = `1:${oChinh ? oChinh.scale : 100}`;
+
+  /** P0-GIAY ② — CÙNG bộ hậu kỳ với `drawDocOntoPdfPage`. Đường Paper trước 05/09 KHÔNG chạy bước
+   * nào trong ba bước này, nên cùng một tờ in ra vừa còn jargon nội bộ, vừa mang HAI con số tỉ lệ
+   * mâu thuẫn (khung tên demo "1:100" cạnh khung tên chèn "1:47" — đo được trên PDF thật). */
+  const hauKy = (entities: Entity[]): Entity[] => stripJargonFromEntities(applyRealScaleToTitleBlock(entities, nhanTiLe));
+
   for (const viewport of sheet.viewports) {
     const { x, y, w, h } = viewport.rectOnPaper;
     const scale = 1 / viewport.scale;
@@ -534,14 +671,22 @@ function drawPaperSheetOntoPdfPage(pdf: JsPdf, doc: Doc, sheet: Sheet, opts: Cad
       panY: y + h / 2 + viewport.centerMm.y * scale,
     };
     const viewportDoc = docForViewport(doc, viewport);
+    const entities = hauKy(viewportDoc.entities).filter((e) => !idKhungTen.has(e.id));
+    const pageWorldBox: Box = {
+      minX: (x - v.panX) / v.scale,
+      maxX: (x + w - v.panX) / v.scale,
+      minY: (v.panY - (y + h)) / v.scale,
+      maxY: (v.panY - y) / v.scale,
+    };
+    const labelShifts = planExportLabelShifts({ entities, layers: viewportDoc.layers }, ds, { scaleN: viewport.scale, pageWorldBox });
     pdf.saveGraphicsState();
     pdf.rect(x, y, w, h);
     pdf.clip();
     pdf.discardPath?.();
-    for (const entity of viewportDoc.entities) {
+    for (const entity of entities) {
       const layer = viewportDoc.layers.find((candidate) => candidate.id === entity.layer);
       if (layer && !layer.visible) continue;
-      drawEntityPdf(pdf, v, viewportDoc, entity, ds);
+      drawEntityPdf(pdf, v, viewportDoc, entity, ds, labelShifts.get(entity.id));
     }
     pdf.restoreGraphicsState();
     pdf.setDrawColor('#8D8880');
@@ -549,30 +694,54 @@ function drawPaperSheetOntoPdfPage(pdf: JsPdf, doc: Doc, sheet: Sheet, opts: Cad
     pdf.rect(x, y, w, h);
   }
 
-  // Khung giấy + khung tên metadata của Sheet; không ghi ngược vào Doc.
-  const [pw, ph] = paperSizeMm(sheet.paper, sheet.orientation);
+  // Khung giấy.
   pdf.setDrawColor('#555555');
   pdf.setLineWidth(0.18);
   pdf.rect(8, 8, pw - 16, ph - 16);
-  const titleW = Math.min(180, pw - 16);
-  const titleH = Math.min(34, ph - 16);
-  const tx = pw - 8 - titleW;
-  const ty = ph - 8 - titleH;
-  pdf.rect(tx, ty, titleW, titleH);
-  pdf.line(tx, ty + 12, tx + titleW, ty + 12);
-  pdf.line(tx + titleW - 42, ty, tx + titleW - 42, ty + titleH);
-  pdf.setTextColor('#25221E');
-  pdf.setFontSize(9);
-  pdf.text(sheet.titleBlock.project || opts.title || 'InteriorFlow project', tx + 4, ty + 7);
-  pdf.setFontSize(8);
-  pdf.text(sheet.name, tx + 4, ty + 18);
-  pdf.text(`Người vẽ: ${sheet.titleBlock.drawnBy || '—'}`, tx + 4, ty + 25);
-  pdf.text(`Rev: ${sheet.titleBlock.revision || '—'}`, tx + 4, ty + 31);
-  pdf.setFontSize(11);
-  pdf.text(sheet.number || '—', tx + titleW - 38, ty + 8);
-  pdf.setFontSize(7);
-  pdf.text(`${sheet.paper} · ${sheet.orientation === 'portrait' ? 'Dọc' : 'Ngang'}`, tx + titleW - 38, ty + 18);
-  pdf.text(`${sheet.viewports.length} ô nhìn`, tx + titleW - 38, ty + 25);
+
+  if (khungTen) {
+    // P0-GIAY ③ — vẽ khung tên THẬT (dữ liệu người dùng đã điền) ở góc phải-dưới, ĐÚNG 180×42mm
+    // trên giấy: `viewportKhopO` khớp bao hình world của khối vào ô giấy nên cỡ in KHÔNG còn phụ
+    // thuộc `k` đoán lúc chèn (trước đây in ra 90×21mm, chữ tụt còn 1,70mm — dưới sàn đọc được).
+    const tbW = Math.min(TITLE_BLOCK_PAPER_W_MM, pw - 16);
+    const tbH = Math.min(TITLE_BLOCK_PAPER_H_MM, ph - 16);
+    const slot = { x: pw - 8 - tbW, y: ph - 8 - tbH, w: tbW, h: tbH };
+    const v = viewportKhopO(khungTen.box, slot);
+    // A2-04 "chữ đè hình": ô nhìn (thụt 15mm) TRÙM lên chỗ khung tên đứng, nên nét mô hình vẫn
+    // chạy xuyên qua chữ khung tên — đúng ca đường trục ⑥ cắt ngang dòng tên bản vẽ trong bản nộp
+    // 05/09. Khung tên là lớp TRÊN CÙNG của tờ giấy: xoá nền dưới nó trước khi vẽ, đúng thông lệ
+    // khung tên đặc trên bản vẽ. Không đụng nét mô hình gốc — chỉ là thứ tự vẽ trên giấy.
+    pdf.setFillColor('#FFFFFF');
+    pdf.rect(slot.x, slot.y, slot.w, slot.h, 'F');
+    pdf.setDrawColor('#555555');
+    pdf.setLineWidth(0.18);
+    for (const e of hauKy(khungTen.entities)) {
+      const layer = doc.layers.find((l) => l.id === e.layer);
+      if (layer && !layer.visible) continue;
+      drawEntityPdf(pdf, v, doc, e, ds);
+    }
+  } else {
+    // Chưa chèn khung tên → khối metadata tối thiểu của Sheet, hành vi cũ giữ nguyên.
+    const titleW = Math.min(180, pw - 16);
+    const titleH = Math.min(34, ph - 16);
+    const tx = pw - 8 - titleW;
+    const ty = ph - 8 - titleH;
+    pdf.rect(tx, ty, titleW, titleH);
+    pdf.line(tx, ty + 12, tx + titleW, ty + 12);
+    pdf.line(tx + titleW - 42, ty, tx + titleW - 42, ty + titleH);
+    pdf.setTextColor('#25221E');
+    pdf.setFontSize(9);
+    pdf.text(sheet.titleBlock.project || opts.title || 'InteriorFlow project', tx + 4, ty + 7);
+    pdf.setFontSize(8);
+    pdf.text(sheet.name, tx + 4, ty + 18);
+    pdf.text(`Người vẽ: ${sheet.titleBlock.drawnBy || '—'}`, tx + 4, ty + 25);
+    pdf.text(`Rev: ${sheet.titleBlock.revision || '—'}`, tx + 4, ty + 31);
+    pdf.setFontSize(11);
+    pdf.text(sheet.number || '—', tx + titleW - 38, ty + 8);
+    pdf.setFontSize(7);
+    pdf.text(`${sheet.paper} · ${sheet.orientation === 'portrait' ? 'Dọc' : 'Ngang'}`, tx + titleW - 38, ty + 18);
+    pdf.text(`${sheet.viewports.length} ô nhìn`, tx + titleW - 38, ty + 25);
+  }
 }
 
 /**

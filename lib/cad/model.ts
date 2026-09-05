@@ -1178,9 +1178,36 @@ export function fitsAtScale(box: Box | null, paperMm: [number, number], margin: 
  * hàm này nên 2 con số không bao giờ lệch nhau.
  */
 export function docScaleLabel(doc: Doc, paperMm: [number, number], margin: number): string {
-  const box = docBox(doc);
-  if (doc.printScale && fitsAtScale(box, paperMm, margin, doc.printScale)) return `1:${doc.printScale}`;
-  return fitScaleLabel(box, paperMm, margin);
+  const n = resolveDocPrintScaleN(doc, paperMm, margin);
+  return n !== null ? `1:${n}` : fitScaleLabel(docBox(doc), paperMm, margin);
+}
+
+/**
+ * P0-GIAY (05/09) — TỈ LỆ IN HIỆU DỤNG của 1 Doc, **một nguồn duy nhất** cho: nhãn khung tên trên
+ * màn, con số bake vào entity lúc chèn khung tên, viewport lúc xuất PDF, dòng mục lục bộ hồ sơ,
+ * và cổng kiểm `CHUAN_DAU_RA`.
+ *
+ * 🔴 VÌ SAO PHẢI DỜI VỀ ĐÂY (đo được, A2-02): trước 05/09 có **HAI** phép tính cho cùng một con số —
+ * `docScaleLabel()` rơi thẳng về `fitScaleLabel()` (auto-fit THÔ, không neo dãy chuẩn) còn đường
+ * xuất PDF thì gọi `resolveExportScaleN()` (CÓ bắt nấc chuẩn). Hệ quả đo trên bản demo A3 ngang:
+ * màn hình + khung tên đã bake ghi **1:47** trong khi trang PDF vẽ ở **1:100** — và dòng chữ trên
+ * màn còn tự khẳng định *"khung tên + PDF dùng CÙNG con số này"*. Sai 0/10 tổ hợp khổ×hướng.
+ * Nay `resolveExportScaleN()` (lib/cad/pdf.ts) chỉ còn là vỏ gọi thẳng hàm này — một phép tính.
+ *
+ * Trả về:
+ *   · `doc.printScale` NGUYÊN VẸN khi người dùng đã chọn tường minh và nó lọt giấy — kể cả nấc lẻ
+ *     cố ý gõ; đường xuất KHÔNG tự sửa lựa chọn của người dùng, cổng `CHUAN_DAU_RA` sẽ báo đỏ.
+ *   · nấc chuẩn gần nhất PHÍA NHỎ (`snapPrintScale`) cho nấc "Vừa khổ" — hết cảnh in "1:47".
+ *   · `null` khi không nấc chuẩn nào lọt giấy (vượt 1:500) — caller rơi về auto-fit thô và cổng
+ *     kiểm chặn, KHÔNG im lặng in số lẻ.
+ */
+export function resolveDocPrintScaleN(doc: Doc, paperMm: [number, number], margin: number): number | null {
+  const box = docBox(doc) ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
+  if (doc.printScale && fitsAtScale(box, paperMm, margin, doc.printScale)) return doc.printScale;
+  const fit = fitBox(box, paperMm[0], paperMm[1], margin);
+  if (!Number.isFinite(fit.scale) || fit.scale <= 0) return 100;
+  const snapped = snapPrintScale(1 / fit.scale);
+  return fitsAtScale(box, paperMm, margin, snapped) ? snapped : null;
 }
 
 /** Khổ giấy hiệu dụng của Doc (mm) — paperKey+paperOrientation per-sheet. Doc cũ không có 2

@@ -13,7 +13,7 @@
 
 import type { Doc, PaperKey, PaperOrientation } from '../cad/model';
 import { docBox, paperSizeMm, fitsAtScale, suggestStandardScale, isStandardPrintScale, snapPrintScale } from '../cad/model';
-import { DEFAULT_PDF_MARGIN_MM, MIN_PRINTABLE_LINE_MM, resolveExportScaleN } from '../cad/pdf';
+import { DEFAULT_PDF_MARGIN_MM, MIN_PRINTABLE_LINE_MM, resolveExportScaleN, timCacKhungTen } from '../cad/pdf';
 import { TITLE_BLOCK_REQUIRED_CELLS } from '../cad/commands';
 import { countUnresolvedLabelCollisions } from '../cad/label-placer';
 
@@ -36,7 +36,15 @@ const DEFAULT_LAYER_LINEWEIGHT_MM = 0.25;
  */
 const FAR_FROM_ORIGIN_MM = 50_000;
 
-export function buildExportChecks(doc: Doc, paper: PaperKey, orientation: PaperOrientation): ExportCheckItem[] {
+export function buildExportChecks(
+  doc: Doc,
+  paper: PaperKey,
+  orientation: PaperOrientation,
+  /** P0-GIAY — tỉ lệ ô nhìn chính của tờ Paper sắp in (`Sheet.viewports[].scale`). Truyền vào thì
+   * cổng kiểm ĐÚNG con số tờ đó in ra; bỏ trống = suy từ Doc như cũ. Nơi gọi có `Sheet` trong tay
+   * (`components/cad/CadSheets.tsx`) nên truyền — xem ①b bên dưới. */
+  tiLeInThat?: number,
+): ExportCheckItem[] {
   const items: ExportCheckItem[] = [];
   const entities = doc.entities ?? [];
   const layers = doc.layers ?? [];
@@ -98,7 +106,7 @@ export function buildExportChecks(doc: Doc, paper: PaperKey, orientation: PaperO
   // ⑥ VIỆC 4 — bộ kiểm CHUAN_DAU_RA nối thẳng vào danh sách (CadSheets đã truyền items này cho
   //    ExportPdfDialog, không cần dây mới). Sạch cả bộ thì báo 1 dòng ✓ để người xuất biết bộ
   //    kiểm CÓ chạy (khác với "không kiểm gì").
-  const chuan = buildChuanDauRaChecks(doc, paper, orientation);
+  const chuan = buildChuanDauRaChecks(doc, paper, orientation, tiLeInThat);
   if (chuan.length === 0) {
     items.push({ label: 'Đạt chuẩn đầu ra: tỷ lệ · khung tên · nhãn', ok: true });
   } else {
@@ -127,14 +135,20 @@ export const CHUAN_DAU_RA = 'CHUAN_DAU_RA';
  * bản sao 3 số này là hợp đồng đã tài liệu hoá ở render.ts/pdf.ts). */
 const GATE_DIM_STYLE = { textHeight: 120, dimScale: 1 };
 
-export function buildChuanDauRaChecks(doc: Doc, paper: PaperKey, orientation: PaperOrientation): ChuanDauRaFinding[] {
+export function buildChuanDauRaChecks(
+  doc: Doc,
+  paper: PaperKey,
+  orientation: PaperOrientation,
+  /** P0-GIAY — tỉ lệ tờ giấy THẬT sẽ in (ô nhìn chính của Sheet). Bỏ trống = suy từ Doc như cũ. */
+  tiLeInThat?: number,
+): ChuanDauRaFinding[] {
   const findings: ChuanDauRaFinding[] = [];
   const entities = doc.entities ?? [];
   if (!entities.length) return findings; // bản vẽ trống — dòng ① của buildExportChecks đã báo
 
   // ① Tỷ lệ in phải thuộc dãy chuẩn — đọc CÙNG nguồn số với file xuất thật (resolveExportScaleN).
   const [pw, ph] = paperSizeMm(paper, orientation);
-  const n = resolveExportScaleN(doc, pw, ph, DEFAULT_PDF_MARGIN_MM);
+  const n = tiLeInThat ?? resolveExportScaleN(doc, pw, ph, DEFAULT_PDF_MARGIN_MM);
   if (n === null) {
     findings.push({
       level: 'error',
@@ -148,6 +162,25 @@ export function buildChuanDauRaChecks(doc: Doc, paper: PaperKey, orientation: Pa
       fix: `Đổi tỷ lệ in về 1:${snapPrintScale(n)}`,
     });
   }
+
+  // ①b P0-GIAY (05/09) — VÌ SAO ① NAY MỚI ĐỎ ĐƯỢC, ghi lại để đừng ai "tối ưu" nó về như cũ:
+  //
+  // 🔴 Trước 05/09 mục ① gọi `resolveExportScaleN()` — mà hàm đó ĐÃ tự bắt về nấc chuẩn rồi mới
+  // trả về ⇒ `isStandardPrintScale(n)` gần như LUÔN đúng ⇒ cổng **không thể** đỏ trên nhánh
+  // "Vừa khổ". Cùng lúc, con số THẬT đi ra giấy lại đến từ `docScaleLabel()` (auto-fit THÔ) nên
+  // giấy ghi **"Tỷ lệ 1:47"** trong khi cổng vẫn tick xanh *"Đạt chuẩn đầu ra: tỷ lệ"*. Cổng gật
+  // cho đúng thứ nó sinh ra để chặn — vì nó kiểm MỘT con số khác với con số in ra.
+  //
+  // Cách chữa KHÔNG phải thêm một mục kiểm thứ hai (thế là ba con số), mà là **gộp về một**:
+  //   · `model.ts:resolveDocPrintScaleN` nay là phép tính DUY NHẤT — màn hình, chữ bake vào khung
+  //     tên, viewport lúc xuất và cổng này đọc chung nó ⇒ số cổng kiểm CHÍNH LÀ số in ra giấy;
+  //   · `tiLeInThat` bịt lỗ cuối: tờ Paper in theo `Viewport2D.scale` của Sheet — một con số thứ
+  //     ba mà trước nay KHÔNG mục kiểm nào chạm tới. Caller có Sheet thì truyền vào, tờ 1:47 đỏ.
+  //
+  // ⇒ Luật rút ra, áp cho mọi cổng về sau: **kiểm thứ ĐI RA FILE, đừng kiểm thứ mình vừa tính lại.**
+  // Cố ý KHÔNG đối chiếu thêm chuỗi đã bake trong entity với `n`: đường xuất chạy
+  // `applyRealScaleToTitleBlock()` ghi đè ô tỉ lệ ngay trước khi vẽ, nên chuỗi bake cũ KHÔNG bao
+  // giờ tới được giấy — báo nó là báo động giả về một thứ người dùng không sửa được.
 
   // ② Khung tên đủ 9 ô bắt buộc — nhận diện caption trong text entity (khung tên đã bake).
   const texts = entities.filter((e) => e.type === 'text').map((e) => (e as { text: string }).text.trim());
@@ -163,6 +196,19 @@ export function buildChuanDauRaChecks(doc: Doc, paper: PaperKey, orientation: Pa
       level: 'error',
       message: `Khung tên thiếu ${missing.length} ô bắt buộc`,
       fix: `Bổ sung: ${missing.map((m) => m.label).join(' · ')}`,
+    });
+  }
+
+  // ②b P0-GIAY — MỘT TỜ CHỈ CÓ MỘT KHUNG TÊN. Bấm "Chèn khung tên" hai lần là ra hai khối, khối
+  // thứ hai nằm xa hơn về bên phải (`box.maxX` đã nở) nên rơi ra ngoài vùng cắt của ô nhìn và bị
+  // xén giữa chừng — in ra "1:5" của một tờ 1:50. Đường xuất nay chỉ dựng khối LỚN NHẤT lên giấy
+  // và bỏ khối thừa khỏi ô nhìn; báo ở đây để việc bỏ đó KHÔNG im lặng.
+  const soKhungTen = timCacKhungTen(entities).length;
+  if (soKhungTen > 1) {
+    findings.push({
+      level: 'warn',
+      message: `Bản vẽ có ${soKhungTen} khung tên — tờ in chỉ dùng khối lớn nhất`,
+      fix: 'Xoá khung tên thừa trong bản vẽ để giữ đúng một khối',
     });
   }
 

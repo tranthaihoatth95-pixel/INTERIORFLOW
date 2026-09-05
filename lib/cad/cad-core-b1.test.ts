@@ -63,8 +63,14 @@ function testScales() {
   doc.printScale = 50;
   ok('docScaleLabel = "1:50" khi printScale lọt giấy', docScaleLabel(doc, A3_LANDSCAPE, 15) === '1:50');
   doc.printScale = 20;
-  const fallback = fitScaleLabel(box, A3_LANDSCAPE, 15);
-  ok(`docScaleLabel fallback auto-fit ("${fallback}") khi 1:20 không lọt`, docScaleLabel(doc, A3_LANDSCAPE, 15) === fallback);
+  // P0-GIAY (05/09) — ĐỔI KỲ VỌNG CÓ CHỦ ĐÍCH. Trước đây dòng này khẳng định fallback trả về
+  // `fitScaleLabel()` THÔ ("1:26"), tức nó **ghi nhận đúng hành vi hỏng làm kỳ vọng**: bản vẽ thi
+  // công không được ghi tỉ lệ ngoài dãy chuẩn (CHUAN-DAU-RA-NGHE.md §1 nêu đích danh "1:47" làm ví
+  // dụ CẤM). Test xanh mà giấy in ra vẫn sai. Nay fallback phải BẮT về nấc chuẩn gần nhất phía nhỏ
+  // và nấc đó phải thật sự lọt giấy — cùng một con số với đường xuất PDF.
+  const nhan = docScaleLabel(doc, A3_LANDSCAPE, 15);
+  ok(`docScaleLabel fallback = nấc CHUẨN ("${nhan}") khi 1:20 không lọt`, nhan === '1:50');
+  ok('fallback không còn là số thô ngoài dãy chuẩn', nhan !== fitScaleLabel(box, A3_LANDSCAPE, 15));
 
   doc.paperKey = 'A2';
   ok('docPaperMm đọc paperKey per-sheet (A2)', docPaperMm(doc)[0] === 594 && docPaperMm(doc)[1] === 420);
