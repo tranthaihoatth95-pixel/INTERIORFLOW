@@ -65,7 +65,7 @@ export function JoinWithInvite({ onJoined }: { onJoined?: (projectId: string) =>
         </div>
       )}
       <button type="submit" disabled={busy || !raw.trim()} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 28, padding: '0 12px', border: 0, borderRadius: 999, background: preview ? 'var(--accent)' : 'var(--field)', color: preview ? '#fff' : 'var(--t1)', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: busy || !raw.trim() ? 'var(--mo-vo-hieu, .6)' : 1 }}>
-        {busy ? <Loader2 size={12} className="animate-spin" aria-hidden /> : <DoorOpen size={12} aria-hidden />}
+        {busy ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <DoorOpen size={14} aria-hidden />}
         {preview ? tr('Nhận lời mời', 'Accept invite') : tr('Xem lời mời', 'Preview invite')}
       </button>
       {msg && <p role={msg.kind === 'error' ? 'alert' : 'status'} style={{ margin: 0, fontSize: 11, lineHeight: 1.5, color: msg.kind === 'error' ? 'var(--danger)' : 'var(--t2)' }}>{msg.text}</p>}

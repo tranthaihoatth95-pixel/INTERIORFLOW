@@ -695,7 +695,7 @@ export function VitalsAperture({ stage }: {
         data-vitals-state={muc === 'ambient' ? domKhauDo(mucTin) : muc}
         aria-haspopup="dialog"
         aria-label={tr(`Vitals — ${nhanTrangThai}`, `Vitals — ${nhanTrangThai}`)}
-        className="flex items-center gap-1.5 rounded-[var(--r-full)] px-2.5 py-1 transition-colors duration-[120ms] hover:bg-[var(--hover)]"
+        className="flex items-center gap-1.5 rounded-[var(--r-full)] px-2.5 py-1 transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)]"
         style={{ background: muc !== 'ambient' ? 'var(--hover)' : 'transparent' }}
       >
         {/* ⭐ AMBIENT = LÕI + QUỸ ĐẠO, gần như KHÔNG vật liệu: nền trong suốt, nét mảnh, đơn
@@ -825,7 +825,7 @@ export function VitalsAperture({ stage }: {
                             // phải Soát duyệt / Tổng quan chung / một trang Site riêng.
                             if (duAnHienTai) window.location.assign(`/projects/${encodeURIComponent(duAnHienTai)}/overview#ngu-canh-dia-diem`);
                           }}
-                          className="flex-1 rounded-[var(--r-2)] border border-[var(--border)] px-2 py-1 text-[length:var(--fs-2xs)] text-[var(--t2)] transition-colors duration-[120ms] hover:bg-[var(--hover)]"
+                          className="flex-1 rounded-[var(--r-2)] border border-[var(--border)] px-2 py-1 text-[length:var(--fs-2xs)] text-[var(--t2)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)]"
                         >
                           {tr('Mở phân tích nắng', 'Open solar analysis')}
                         </button>
@@ -843,7 +843,7 @@ export function VitalsAperture({ stage }: {
                               dong();
                             });
                           }}
-                          className="flex-1 rounded-[var(--r-2)] px-2 py-1 text-[length:var(--fs-2xs)] font-semibold text-[var(--on-accent,#fff)] transition-colors duration-[120ms]"
+                          className="flex-1 rounded-[var(--r-2)] px-2 py-1 text-[length:var(--fs-2xs)] font-semibold text-[var(--on-accent,#fff)] transition-colors duration-[var(--nhip-bam)]"
                           style={{ background: 'var(--accent)' }}
                         >
                           {tr('Tính lại', 'Recalculate')}
@@ -860,7 +860,7 @@ export function VitalsAperture({ stage }: {
                       // Đi qua kho dùng chung — MỘT lối vào Engage, xem hiệu ứng đồng bộ ở trên.
                       moKho();
                     }}
-                    className="mt-2 w-full rounded-[var(--r-2)] border border-[var(--border)] px-2 py-1.5 text-center text-[length:var(--fs-xs)] font-medium text-[var(--t2)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+                    className="mt-2 w-full rounded-[var(--r-2)] border border-[var(--border)] px-2 py-1.5 text-center text-[length:var(--fs-xs)] font-medium text-[var(--t2)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
                   >
                     {tr('Mở Vitals…', 'Open Vitals…')}
                   </button>

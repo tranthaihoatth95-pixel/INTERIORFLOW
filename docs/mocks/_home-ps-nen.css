@@ -116,7 +116,7 @@ svg{display:block}
    thì mắt không thấy), nhưng giá trị vẫn sai và H2/H3 có câu nhiều dòng thì nó lộ ngay. */
 .hien{font-size:var(--fs-hien);line-height:1.5;font-weight:600;letter-spacing:0}
 .hien-nho{font-size:var(--fs-hien-nho);line-height:1.5;font-weight:600;letter-spacing:0}
-.nhan{font:500 var(--fs-2xs)/1.5 ui-monospace,'SF Mono',Menlo,monospace;letter-spacing:.08em;color:var(--t3)}
+.nhan{font-weight:500;font-size:var(--fs-2xs);line-height:1.5;font-family:ui-monospace,'SF Mono',Menlo,monospace;letter-spacing:.08em;color:var(--t3)}
 .phu{color:var(--t3);font-size:var(--fs-xs);line-height:1.5}
 .than-chu{color:var(--t2);font-size:var(--fs-sm);line-height:1.55}
 .so{font-variant-numeric:tabular-nums;letter-spacing:.01em}
@@ -153,7 +153,7 @@ svg{display:block}
 .mat-nguoi i{width:22px;height:22px;border-radius:var(--r-full);display:block;margin-left:-6px;
   box-shadow:0 0 0 2px var(--panel);background:var(--t5)}
 .mat-nguoi i:first-child{margin-left:0}
-.the-demo{font:500 var(--fs-2xs)/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;
+.the-demo{font-weight:500;font-size:var(--fs-2xs);line-height:1.5;font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em;
   color:var(--t3);border:1px dashed var(--border-strong);border-radius:var(--r-1);padding:2px 7px}
 
 .san{flex:1;min-height:0;position:relative;overflow:hidden}

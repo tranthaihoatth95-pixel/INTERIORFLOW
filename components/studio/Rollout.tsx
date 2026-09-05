@@ -399,7 +399,7 @@ export function RolloutGroup({ kindKey, children }: GroupProps) {
                   fn();
                   setMenu(null);
                 }}
-                className="flex w-full items-center rounded-[6px] px-2 py-1.5 text-left text-[11.5px] text-[var(--t2)] transition-colors duration-[100ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+                className="flex w-full items-center rounded-[6px] px-2 py-1.5 text-left text-[11.5px] text-[var(--t2)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
               >
                 {label}
               </button>

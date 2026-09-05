@@ -455,7 +455,7 @@ export function RailDieuHuong() {
       // Giữ trọn cả hai luật: canvas không bao giờ bị bóp · nấc mở không bao giờ che nội dung.
       style={{
         width: dangTrongChang ? BE_RONG_NAC.dinhVi : BE_RONG_NAC[nac],
-        transition: 'width 180ms cubic-bezier(.32,.72,0,1)',
+        transition: 'width var(--nhip-vien) cubic-bezier(.32,.72,0,1)',
         flexShrink: 0,
         position: 'relative',
         zIndex: 5,

@@ -94,7 +94,7 @@ body{background:var(--bg);color:var(--t1);font-size:var(--fs-sm);
 svg{display:block}
 
 /* ---------- CHỮ ---------- */
-.nhan{font:500 var(--fs-2xs)/1.5 ui-monospace,'SF Mono',Menlo,monospace;letter-spacing:.08em;color:var(--t3)}
+.nhan{font-weight:500;font-size:var(--fs-2xs);line-height:1.5;font-family:ui-monospace,'SF Mono',Menlo,monospace;letter-spacing:.08em;color:var(--t3)}
 .so{font-variant-numeric:tabular-nums;letter-spacing:.01em}
 
 /* ---------- KHUNG: rail ba cụm · mép trên có khẩu độ · sàn ---------- */
@@ -122,7 +122,7 @@ svg{display:block}
 .khau-do .tin i{font-style:normal;color:var(--t3)}
 .khau-do .vach{width:1px;height:14px;background:var(--vien-mo)}
 .phai-dinh{margin-left:auto;display:flex;align-items:center;gap:10px}
-.the-demo{font:500 var(--fs-2xs)/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--t3);
+.the-demo{font-weight:500;font-size:var(--fs-2xs);line-height:1.5;font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--t3);
   border:1px dashed var(--border-strong);border-radius:var(--r-1);padding:2px 7px}
 .mat-nguoi{display:flex}
 .mat-nguoi i{width:22px;height:22px;border-radius:var(--r-full);display:block;margin-left:-6px;
@@ -154,7 +154,7 @@ svg{display:block}
    KHÔNG dùng cho chip nhỏ. Token --phu-chan-chu giữ lại cho đúng ca đó. */
 .nhan-dai{position:absolute;z-index:1;display:inline-flex;align-items:center;gap:8px;
   padding:5px 10px;border-radius:var(--r-1);background:var(--scrim-manh);
-  font:500 var(--fs-2xs)/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--muc-tren-anh-3)}
+  font-weight:500;font-size:var(--fs-2xs);line-height:1.5;font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--muc-tren-anh-3)}
 .nhan-dai b{color:var(--muc-tren-anh-1);font-weight:600}
 
 /* ===== BẬC 1 · NGAY BÂY GIỜ — THÂN DUY NHẤT trên màn (luật ④) =====
@@ -197,7 +197,7 @@ svg{display:block}
 .hang-vl .o{width:34px;height:24px;border-radius:var(--r-1);flex:0 0 34px}
 .hang-vl .ten{flex:1;min-width:0;font-size:var(--fs-ui);color:var(--muc);line-height:1.5;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hang-vl .ma{font:500 var(--fs-2xs)/1.5 ui-monospace,Menlo,monospace;letter-spacing:.06em;color:var(--muc-2)}
+.hang-vl .ma{font-weight:500;font-size:var(--fs-2xs);line-height:1.5;font-family:ui-monospace,Menlo,monospace;letter-spacing:.06em;color:var(--muc-2)}
 .hang-vl .dm{font-size:var(--fs-xs);color:var(--muc);font-weight:600;line-height:1.5;width:74px;text-align:right}
 .hang-vl .ng{font-size:var(--fs-2xs);color:var(--muc-2);line-height:1.5;width:96px;text-align:right}
 .canh-vl{flex:0 0 40%;min-width:0;border-left:1px solid var(--net-sang)}
@@ -215,7 +215,7 @@ svg{display:block}
 .mach{display:flex;align-items:stretch;flex:1;min-height:0}
 .nut-mach{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;padding-right:16px}
 .nut-mach+.nut-mach{padding-left:16px;border-left:1px solid var(--vien-mo)}
-.nut-mach .khi{font:500 var(--fs-2xs)/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--t3)}
+.nut-mach .khi{font-weight:500;font-size:var(--fs-2xs);line-height:1.5;font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--t3)}
 .nut-mach .cai{font-size:var(--fs-ui);line-height:1.5;color:var(--t1);font-weight:600}
 .nut-mach .no{font-size:var(--fs-xs);line-height:1.5;color:var(--t3)}
 .nut-mach.cho .cai{color:var(--t2);font-weight:500}
@@ -225,7 +225,7 @@ svg{display:block}
   border-left:1px solid var(--vien-mo);padding:14px 20px 16px;display:flex;flex-direction:column;overflow:hidden}
 .muc{display:flex;align-items:center;gap:10px;height:26px;flex:0 0 26px}
 .muc .ke2{flex:1;height:1px;background:var(--vien-mo)}
-.muc .dem{font:500 var(--fs-2xs)/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--t3)}
+.muc .dem{font-weight:500;font-size:var(--fs-2xs);line-height:1.5;font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--t3)}
 
 /* ===== BẬC 2 · KỀ BÊN — nhận ra bằng MẮT, không phải bằng đọc =====
    Không có nền thẻ (luật ④). Hình thức MẶT đổi theo NGHĨA CỦA VẬT (chỉ thị E):
@@ -276,7 +276,7 @@ svg{display:block}
 .o-w{background:var(--card);border-radius:var(--r-3);box-shadow:inset 0 0 0 1px var(--vien-mo);
   padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between}
 .o-w.w2{flex:1 1 100%;height:82px} .o-w.w1{flex:1 1 0;min-width:0;height:82px}
-.o-w .nh{font:500 var(--fs-2xs)/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--t3)}
+.o-w .nh{font-weight:500;font-size:var(--fs-2xs);line-height:1.5;font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--t3)}
 .o-w .gt{font-size:var(--fs-lg);line-height:1.5;font-weight:600;color:var(--t1)}
 .o-w .gt small{font-size:var(--fs-xs);font-weight:400;color:var(--t3)}
 .dan{flex:1;min-height:0}

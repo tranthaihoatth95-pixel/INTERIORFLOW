@@ -210,7 +210,7 @@ export default function NhanDienCauKien() {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
-        <Box size={15} aria-hidden style={{ color: 'var(--accent)' }} />
+        <Box size={16} aria-hidden style={{ color: 'var(--accent)' }} />
         <h2 style={{ fontSize: 15, margin: 0, fontWeight: 600 }}>Nhận diện cấu kiện</h2>
         <span style={{ fontSize: 12, color: 'var(--t3)' }}>
           Máy tháo khối thành cấu kiện có tên, kèm mức tin cậy từng số.
@@ -233,7 +233,7 @@ export default function NhanDienCauKien() {
           />
           {anh && (
             <span style={{ fontSize: 11.5, color: 'var(--t2)' }}>
-              <ImageIcon size={11} aria-hidden /> {anh.ten}
+              <ImageIcon size={14} aria-hidden /> {anh.ten}
             </span>
           )}
         </label>
@@ -253,7 +253,7 @@ export default function NhanDienCauKien() {
           />
           {khoi && (
             <span style={{ fontSize: 11.5, color: 'var(--t2)' }}>
-              <FileUp size={11} aria-hidden /> {khoi.ten}
+              <FileUp size={14} aria-hidden /> {khoi.ten}
             </span>
           )}
         </label>

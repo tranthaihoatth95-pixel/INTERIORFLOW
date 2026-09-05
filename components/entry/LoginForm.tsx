@@ -446,7 +446,7 @@ export function LoginForm({
           <>
             {mode === 'login' ? (en ? 'Enter the studio' : 'Vào xưởng') : en ? 'Create account' : 'Tạo tài khoản'}
             {/* Mũi tên nhích 2px khi rê vào — tín hiệu "đi tới", không phải trang trí. */}
-            <ArrowRight size={14} className="transition-transform duration-[140ms] group-hover:translate-x-[2px] motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
+            <ArrowRight size={14} className="transition-transform duration-[var(--nhip-bam)] group-hover:translate-x-[2px] motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
           </>
         )}
       </motion.button>

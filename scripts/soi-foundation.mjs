@@ -318,10 +318,24 @@ for (const p of TEP) {
 
   // ── MOTION: thang cũ + ms thô trong transition/animation ────────────────────
   {
+    /* 🔬 AUDIT THƯỚC 05/09 — BÁO OAN ①: THƯỚC BẮT CHÍNH CHÚ THÍCH GIẢI THÍCH LUẬT NÓ ÉP.
+       Đo được 9 ca, và cả 9 đều là văn xuôi nói VỀ thang cũ chứ không phải mã dùng thang cũ:
+         · `lib/ui/nhip.ts:11`   "[Đ2] EXTEND không NEW: `--ease-apple` + `--dur-fast/--dur-base` đã có sẵn"
+         · `lib/motion.ts:24,25` "không khớp `--dur-fast` (180ms) lẫn `--dur-base` (320ms)"
+         · `app/globals.css:616` "/* bổ sung hai nấc còn thiếu quanh --dur-fast/--dur-base *​/"
+       ⇒ Hai tệp ĐẦU chính là nơi ĐỊNH NGHĨA thang MỚI. Thước đang phạt đúng bản vá của nó, y hệt
+       ca `_siet-28-08` ("lượt đầu bắt luôn chú thích của chính bản vá"). Ai tin số rồi đi "sửa"
+       sẽ xoá lời giải thích vì sao thang mới tồn tại — tức phá tài liệu để làm đẹp một con số.
+       ⛔ KHÔNG nới luật: thang vẫn là --nhip-*. Chỉ thôi đọc văn xuôi như thể là mã.
+       `trongChuThich` đã có sẵn và đã import từ 28/08 — nhưng chỉ nối vào F-NHAN-BIA. Nối nốt. */
     let thay = false;
     for (const cu of NHIP_CU) {
       const re = new RegExp(cu.replace(/[-]/g, '\\-'), 'g'); let m;
       while ((m = re.exec(src))) {
+        if (trongChuThich(src, m.index)) {
+          NGOAI_PHAM_VI.push({ ho: 'F-MOTION-TOKEN', p, dong: soDong(src, m.index), vi: `${cu} nhắc trong CHÚ THÍCH, không phải mã` });
+          continue;
+        }
         thay = true; ho['F-MOTION-TOKEN'].ungVien++;
         viPham('F-MOTION-TOKEN', p, soDong(src, m.index), cu, '--nhip-*', 'Sheet chốt thang --nhip-* (130/170/220/300/460); đây là thang CŨ');
       }
@@ -340,10 +354,28 @@ for (const p of TEP) {
       });
     const trongGiamCD = (i) => KHOI_GIAM_CD.some(([a, b]) => i >= a && i <= b);
 
+    /* 🔬 AUDIT THƯỚC 05/09 — BÁO OAN ②: ĐỘ TRỄ KHÔNG PHẢI THỜI LƯỢNG.
+       `animation-delay:35ms` khớp mẫu vì nó bắt đầu bằng chữ "animation", nhưng nó đo một
+       ĐẠI LƯỢNG KHÁC: khoảng CHỜ trước khi chạy, không phải thời gian chạy. Thang --nhip-*
+       (130…460) là thang THỜI LƯỢNG; ép một stagger 35ms lên 130ms không phải "sửa cho đúng
+       nhịp" mà là **giết hiệu ứng so le** — các phần tử sẽ vào cách nhau 130ms thay vì 35ms.
+       Đây không phải suy diễn: `SPEC-APPLE-MOTION-MATERIAL` (chốt 02/08) ghi thẳng
+       **"stagger 30-60ms"** — một dải nằm HOÀN TOÀN dưới nấc thấp nhất của thang nhịp.
+       Hai luật cùng hiệu lực mà mâu thuẫn thì phép đo sai, không phải mã sai.
+       ⛔ KHÔNG nới: chỉ `*-delay` được ra ngoài phạm vi. `transition-duration`,
+       `animation-duration` và mọi ms trong shorthand VẪN bị bắt như cũ. */
     const re2 = /(?:transition|animation)[^;\n]*?\b([0-9]{2,4})ms\b/g; let m2;
     while ((m2 = re2.exec(src))) {
       if (trongGiamCD(m2.index)) {
         NGOAI_PHAM_VI.push({ ho: 'F-MOTION-TOKEN', p, dong: soDong(src, m2.index), vi: 'lối thoát prefers-reduced-motion' });
+        continue;
+      }
+      if (trongChuThich(src, m2.index)) {
+        NGOAI_PHAM_VI.push({ ho: 'F-MOTION-TOKEN', p, dong: soDong(src, m2.index), vi: `${m2[1]}ms nhắc trong CHÚ THÍCH, không phải mã` });
+        continue;
+      }
+      if (/-delay\s*:[^;\n]*$/.test(src.slice(m2.index, m2.index + m2[0].length))) {
+        NGOAI_PHAM_VI.push({ ho: 'F-MOTION-TOKEN', p, dong: soDong(src, m2.index), vi: `${m2[1]}ms là ĐỘ TRỄ (stagger), không phải thời lượng` });
         continue;
       }
       thay = true; ho['F-MOTION-TOKEN'].ungVien++;

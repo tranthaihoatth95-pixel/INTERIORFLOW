@@ -52,7 +52,7 @@ export function PermissionNotice({ resolution }: { resolution: PermissionResolut
   if (resolution.kind === 'grant' && resolution.stale) {
     return (
       <p role="status" style={{ display: 'flex', alignItems: 'center', gap: 6, margin: 0, padding: '6px 10px', fontSize: 11, lineHeight: 1.5, color: 'var(--t2)', background: 'color-mix(in srgb, var(--warning) 14%, transparent)', borderRadius: 10 }}>
-        <WifiOff size={12} aria-hidden />
+        <WifiOff size={14} aria-hidden />
         {tr('Không liên lạc được máy chủ — đang dùng quyền đã lưu. Thao tác sẽ được gửi khi có mạng.', 'Server unreachable — using cached permissions. Actions will be sent when back online.')}
       </p>
     );
@@ -61,7 +61,7 @@ export function PermissionNotice({ resolution }: { resolution: PermissionResolut
     const loading = resolution.reason === 'loading';
     return (
       <p role="status" style={{ display: 'flex', alignItems: 'center', gap: 6, margin: 0, padding: '6px 10px', fontSize: 11, lineHeight: 1.5, color: 'var(--t3)' }}>
-        {loading ? <Loader2 size={12} className="animate-spin" aria-hidden /> : <WifiOff size={12} aria-hidden />}
+        {loading ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <WifiOff size={14} aria-hidden />}
         {loading
           ? tr('Đang kiểm quyền…', 'Checking permissions…')
           : resolution.reason === 'cache-expired'

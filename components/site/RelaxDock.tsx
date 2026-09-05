@@ -35,7 +35,7 @@ export default function RelaxDock({ provider = 'spotify' }: { provider?: 'spotif
   const d = kq.data;
   return (
     <div className="inline-flex items-center gap-2 rounded-[var(--r-full)] border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide" style={{ borderColor: 'var(--vien-mo)', color: 'var(--t3)' }} title={t('Thư giãn — không liên quan sự thật dự án', 'Relaxation — unrelated to project truth')}>
-      <Music size={11} aria-hidden />
+      <Music size={14} aria-hidden />
       {kq.trangThai === 'ok' && d?.kind === 'now-playing' && <span style={{ color: 'var(--t2)' }}>{d.track} · {d.artist}</span>}
       {kq.trangThai === 'ok' && d?.kind === 'idle' && <span>{t('không phát', 'idle')}</span>}
       {kq.trangThai !== 'ok' && kq.ketNoiUrl && <a href={kq.ketNoiUrl} style={{ color: 'var(--t2)' }}>{t('nối Spotify', 'connect Spotify')}</a>}

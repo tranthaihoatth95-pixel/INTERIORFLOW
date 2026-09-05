@@ -100,7 +100,7 @@ export default function LightArc({
             style={{
               filter: `drop-shadow(0 0 ${Math.max(2, strokeWidth)}px ${color})`,
               // determinate: chỉ dashoffset chuyển động (luật G1 — không opacity)
-              transition: indeterminate ? undefined : 'stroke-dashoffset 320ms var(--ease-apple, ease)',
+              transition: indeterminate ? undefined : 'stroke-dashoffset var(--nhip-ngu-canh) var(--ease-apple, ease)',
             }}
           />
         </g>

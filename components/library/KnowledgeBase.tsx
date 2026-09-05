@@ -31,7 +31,7 @@ import {
   type KnowledgeKind,
 } from '@/lib/library/knowledge';
 
-const CHIP = 'inline-flex h-7 items-center gap-1 rounded-[var(--r-full)] border px-2.5 text-[length:var(--fs-2xs)] font-medium transition-colors duration-[120ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]';
+const CHIP = 'inline-flex h-7 items-center gap-1 rounded-[var(--r-full)] border px-2.5 text-[length:var(--fs-2xs)] font-medium transition-colors duration-[var(--nhip-bam)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]';
 const CHIP_OFF = `${CHIP} border-[var(--vien-mo)] bg-[var(--field)] text-[var(--t2)] hover:text-[var(--t1)] hover:bg-[var(--hover)]`;
 const CHIP_ON = `${CHIP} border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--t1)]`;
 const TAG = 'inline-flex h-5 items-center gap-1 rounded-[var(--r-1)] border border-[var(--vien-mo)] bg-[var(--field)] px-1.5 text-[length:var(--fs-2xs)] text-[var(--t2)]';
@@ -88,14 +88,14 @@ export function KnowledgeBase() {
         ))}
         <span aria-hidden className="mx-1 h-4 w-px bg-[var(--vien-mo)]" />
         <button type="button" aria-pressed={chiDaKiem} onClick={() => setChiDaKiem((v) => !v)} className={chiDaKiem ? CHIP_ON : CHIP_OFF}>
-          <ShieldCheck size={12} aria-hidden="true" />
+          <ShieldCheck size={14} aria-hidden="true" />
           {tr('Chỉ đã đối chiếu', 'Verified only')}
         </button>
         <button type="button" aria-pressed={hienDaThayThe} onClick={() => setHienDaThayThe((v) => !v)} className={hienDaThayThe ? CHIP_ON : CHIP_OFF}>
           {tr('Hiện cả đã thay thế', 'Include superseded')}
         </button>
         <label className="ml-auto flex h-8 min-w-[220px] items-center gap-2 rounded-[var(--r-2)] border border-[var(--vien-mo)] bg-[var(--field)] px-2.5 text-[var(--t3)] focus-within:ring-2 focus-within:ring-[var(--accent)]">
-          <Search size={13} aria-hidden="true" />
+          <Search size={14} aria-hidden="true" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -146,7 +146,7 @@ function DongTriThuc({ e, en }: { e: KnowledgeEntry; en: boolean }) {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
-            {e.kind === 'quy-chuan' ? <Scale size={15} className="mt-0.5 shrink-0 text-[var(--t3)]" aria-hidden="true" /> : <FileText size={15} className="mt-0.5 shrink-0 text-[var(--t3)]" aria-hidden="true" />}
+            {e.kind === 'quy-chuan' ? <Scale size={16} className="mt-0.5 shrink-0 text-[var(--t3)]" aria-hidden="true" /> : <FileText size={16} className="mt-0.5 shrink-0 text-[var(--t3)]" aria-hidden="true" />}
             <p className="text-[length:var(--fs-sm)] leading-[1.5] text-[var(--t1)]">{e.title}</p>
           </div>
           <p className="mt-1 pl-[23px] font-mono text-[length:var(--fs-2xs)] text-[var(--t3)]">
@@ -161,7 +161,7 @@ function DongTriThuc({ e, en }: { e: KnowledgeEntry; en: boolean }) {
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           <span className={TAG} style={daKiem ? { color: 'var(--t1)' } : undefined}>
-            {daKiem ? <ShieldCheck size={11} aria-hidden="true" /> : <CircleDashed size={11} aria-hidden="true" />}
+            {daKiem ? <ShieldCheck size={14} aria-hidden="true" /> : <CircleDashed size={14} aria-hidden="true" />}
             {tr(NHAN_XAC_MINH[p.xacMinh][0], NHAN_XAC_MINH[p.xacMinh][1])}
           </span>
           {e.kind === 'quy-chuan' && <span className={TAG}>{en ? nguonNhan.en : nguonNhan.vi}</span>}
@@ -194,7 +194,7 @@ function DongTriThuc({ e, en }: { e: KnowledgeEntry; en: boolean }) {
       {e.href && (
         <Link href={e.href} className="mt-2 inline-flex items-center gap-1 pl-[23px] text-[length:var(--fs-2xs)] text-[var(--t2)] hover:text-[var(--t1)]">
           {tr('Mở Sổ tay dự án', 'Open project notebook')}
-          <ArrowUpRight size={12} aria-hidden="true" />
+          <ArrowUpRight size={14} aria-hidden="true" />
         </Link>
       )}
     </li>

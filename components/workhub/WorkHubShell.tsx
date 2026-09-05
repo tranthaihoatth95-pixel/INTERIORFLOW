@@ -114,7 +114,7 @@ function WebPane({ service, onClose }: { service: Service; onClose?: () => void 
       <header className={styles.browserBar}>
         <div className={styles.traffic} aria-hidden="true"><i /><i /><i /></div>
         <form className={styles.addressBar} onSubmit={openAddress}>
-          <Globe2 size={13} />
+          <Globe2 size={14} />
           <input
             aria-label={tr('Địa chỉ trang web', 'Web address')}
             value={address}
@@ -123,8 +123,8 @@ function WebPane({ service, onClose }: { service: Service; onClose?: () => void 
           />
           <button type="submit" disabled={!nhungNgoai}>{tr('Mở', 'Open')}</button>
         </form>
-        <button className={styles.iconButton} aria-label="Phóng to cửa sổ"><Maximize2 size={15} /></button>
-        {onClose && <button className={styles.iconButton} aria-label="Đóng cửa sổ" onClick={onClose}><X size={15} /></button>}
+        <button className={styles.iconButton} aria-label="Phóng to cửa sổ"><Maximize2 size={16} /></button>
+        {onClose && <button className={styles.iconButton} aria-label="Đóng cửa sổ" onClick={onClose}><X size={16} /></button>}
       </header>
 
       {liveUrl ? (
@@ -136,7 +136,7 @@ function WebPane({ service, onClose }: { service: Service; onClose?: () => void 
           <h2>{service.name}</h2>
           <p>{service.detail}</p>
           <button className={styles.primaryButton} onClick={() => setLiveUrl(service.url)}>
-            <Globe2 size={15} /> Mở trang web
+            <Globe2 size={16} /> Mở trang web
           </button>
           <span>Một số dịch vụ yêu cầu mở trong ứng dụng desktop để đăng nhập.</span>
         </div>
@@ -212,16 +212,16 @@ export default function WorkHubShell() {
           <div className={styles.topActions}>
             <label className={styles.search}><Search size={14} /><input placeholder="Tìm tab hoặc công cụ" /></label>
             <button className={styles.themeButton} onClick={toggleTheme} aria-label={theme === 'light' ? 'Dùng giao diện tối' : 'Dùng giao diện sáng'}>
-              {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
+              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
             </button>
             <div className={styles.layoutPicker}>
               {[1, 2, 3].map((count) => (
                 <button key={count} className={paneCount === count ? styles.layoutActive : ''} onClick={() => setPaneCount(count as 1 | 2 | 3)} aria-label={`${count} cửa sổ`}>
-                  {count === 1 ? <AppWindow size={15} /> : count === 2 ? <LayoutPanelLeft size={15} /> : <Grid2X2 size={15} />}
+                  {count === 1 ? <AppWindow size={16} /> : count === 2 ? <LayoutPanelLeft size={16} /> : <Grid2X2 size={16} />}
                 </button>
               ))}
             </div>
-            <button className={styles.addButton}><Plus size={15} /> Thêm cửa sổ</button>
+            <button className={styles.addButton}><Plus size={16} /> Thêm cửa sổ</button>
           </div>
         </header>
 
@@ -232,7 +232,7 @@ export default function WorkHubShell() {
               <select value={pane.id} onChange={(event) => setPaneService(index, event.target.value)} aria-label={`Dịch vụ cửa sổ ${index + 1}`}>
                 {SERVICES.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}
               </select>
-              <ChevronDown size={13} />
+              <ChevronDown size={14} />
             </label>
           ))}
           <button aria-label="Tùy chọn cửa sổ"><MoreHorizontal size={16} /></button>
@@ -249,17 +249,17 @@ export default function WorkHubShell() {
             CHƯA tạo tệp nào. Đó là nút chưa nối — khác họ với "nút nói dối" mà lượt này đi đóng,
             nên không tự sửa ở đây; ai nối thì nối vào đường tạo tệp thật. */}
         <footer className={styles.creatorDock}>
-          <div className={styles.dockLabel}><Sparkles size={15} /><span><strong>Tạo tệp mới</strong><small>Chọn loại tệp</small></span></div>
+          <div className={styles.dockLabel}><Sparkles size={16} /><span><strong>Tạo tệp mới</strong><small>Chọn loại tệp</small></span></div>
           {[
             ['doc', 'Tài liệu', FileText],
             ['sheet', 'Bảng tính', FileSpreadsheet],
             ['design', 'Thiết kế', Sparkles],
           ].map(([id, label, Icon]) => (
             <button key={id as string} className={activeCreator === id ? styles.creatorActive : ''} onClick={() => setActiveCreator(id as string)}>
-              <Icon size={15} /> {label as string}
+              <Icon size={16} /> {label as string}
             </button>
           ))}
-          <button className={styles.moreCreator}><Plus size={15} /> Công cụ khác</button>
+          <button className={styles.moreCreator}><Plus size={16} /> Công cụ khác</button>
         </footer>
       </section>
     </main>

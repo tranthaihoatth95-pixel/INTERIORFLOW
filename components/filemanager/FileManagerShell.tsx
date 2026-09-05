@@ -538,7 +538,7 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
 
           {gwNote && (
             <p className="fsnote">
-              <HardDriveDownload size={12} /> {gwNote}
+              <HardDriveDownload size={14} /> {gwNote}
             </p>
           )}
 

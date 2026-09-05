@@ -11,7 +11,7 @@ import { BookOpenText, Images, LayoutGrid, Palette } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { OVERVIEW_SECTIONS } from '@/lib/library/overview';
 
-const ROW = 'flex h-[30px] w-full items-center gap-2.5 rounded-[var(--r-2)] px-2 text-[length:var(--fs-ui)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]';
+const ROW = 'flex h-[30px] w-full items-center gap-2.5 rounded-[var(--r-2)] px-2 text-[length:var(--fs-ui)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]';
 
 export function LibraryOverviewNavigator({ trang }: { trang: 'tong' | 'tri-thuc' }) {
   const tr = useT();

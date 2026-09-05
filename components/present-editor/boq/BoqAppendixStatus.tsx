@@ -80,7 +80,7 @@ export function BoqAppendixStatus({ meta, onRefresh, busy }: { meta: BoqAppendix
             cursor: busy ? 'progress' : 'pointer', opacity: busy ? 'var(--mo-vo-hieu, 0.6)' : 1,
           }}
         >
-          <RefreshCw size={13} aria-hidden /> {busy ? tr('Đang dựng lại…', 'Rebuilding…') : tr('Làm mới từ bản vẽ + BOQ', 'Rebuild from drawing + BOQ')}
+          <RefreshCw size={14} aria-hidden /> {busy ? tr('Đang dựng lại…', 'Rebuilding…') : tr('Làm mới từ bản vẽ + BOQ', 'Rebuild from drawing + BOQ')}
         </button>
       )}
     </div>

@@ -309,7 +309,7 @@ export function InspirationBoard() {
           </p>
         </div>
         <span className="ins-search">
-          <Search size={13} strokeWidth={1.75} />
+          <Search size={14} strokeWidth={1.75} />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr('Tìm theo tên…', 'Search by name…')} aria-label={tr('Tìm ảnh cảm hứng', 'Search inspiration')} />
         </span>
       </div>
@@ -324,12 +324,12 @@ export function InspirationBoard() {
         </select>
         {projectId && (
           <Link href={`/projects/${encodeURIComponent(projectId)}/overview`} className="ins-btn">
-            <Sparkles size={13} /> {tr('Mở Thẻ DNA dự án', 'Open project DNA card')}
+            <Sparkles size={14} /> {tr('Mở Thẻ DNA dự án', 'Open project DNA card')}
           </Link>
         )}
         <span style={{ flex: 1 }} />
         <button type="button" className={importOpen ? 'ins-btn primary' : 'ins-btn'} onClick={() => setImportOpen((v) => !v)} aria-expanded={importOpen}>
-          {importOpen ? <X size={13} /> : <ImagePlus size={13} />}
+          {importOpen ? <X size={14} /> : <ImagePlus size={14} />}
           {importOpen ? tr('Đóng nhập ảnh', 'Close import') : tr('Nhập ảnh có nguồn', 'Import sourced image')}
         </button>
       </div>
@@ -354,7 +354,7 @@ export function InspirationBoard() {
             </select>
             <input ref={fileRef} type="file" accept="image/*,.tif,.tiff,.heic,.psd" hidden onChange={onUpload} />
             <button type="button" className="ins-btn" onClick={() => fileRef.current?.click()} disabled={importBusy}>
-              <Upload size={13} /> {tr('Chọn tệp', 'Choose file')}
+              <Upload size={14} /> {tr('Chọn tệp', 'Choose file')}
             </button>
             {importBusy && <span className="ins-note">{tr('Đang nhập…', 'Importing…')}</span>}
           </div>
@@ -403,7 +403,7 @@ export function InspirationBoard() {
             <div className="ins-empty">
               <span>{tr('Chưa có ảnh nào. Nhập ảnh có nguồn để bắt đầu — mỗi ảnh mang giấy phép và xuất xứ.', 'No images yet. Import a sourced image to start — each carries a license and origin.')}</span>
               <button type="button" className="ins-btn primary" onClick={() => setImportOpen(true)}>
-                <ImagePlus size={13} /> {tr('Nhập ảnh có nguồn', 'Import sourced image')}
+                <ImagePlus size={14} /> {tr('Nhập ảnh có nguồn', 'Import sourced image')}
               </button>
             </div>
           )}

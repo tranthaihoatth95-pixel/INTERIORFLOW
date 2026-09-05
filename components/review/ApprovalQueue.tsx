@@ -104,9 +104,9 @@ export function ApprovalQueue({ projectId, stage }: { projectId: string; stage: 
   const done = (items ?? []).filter((a) => a.status !== 'pending').slice(0, 5);
 
   const statusIcon = (s: ApprovalRequest['status']) =>
-    s === 'approved' ? <CheckCircle2 size={12} aria-hidden style={{ color: 'var(--success)' }} />
-      : s === 'pending' ? <CircleDashed size={12} aria-hidden style={{ color: 'var(--warning)' }} />
-        : <XCircle size={12} aria-hidden style={{ color: 'var(--t3)' }} />;
+    s === 'approved' ? <CheckCircle2 size={14} aria-hidden style={{ color: 'var(--success)' }} />
+      : s === 'pending' ? <CircleDashed size={14} aria-hidden style={{ color: 'var(--warning)' }} />
+        : <XCircle size={14} aria-hidden style={{ color: 'var(--t3)' }} />;
   const statusLbl: Record<ApprovalRequest['status'], string> = {
     pending: tr('Chờ duyệt', 'Pending'), approved: tr('Đã duyệt', 'Approved'), changes: tr('Cần sửa', 'Changes requested'), rejected: tr('Từ chối', 'Rejected'), withdrawn: tr('Đã rút', 'Withdrawn'),
   };
@@ -122,7 +122,7 @@ export function ApprovalQueue({ projectId, stage }: { projectId: string; stage: 
         <p role="status" style={{ margin: '4px 12px', fontSize: 10.5, lineHeight: 1.5, color: 'var(--t3)' }}>
           {q.summary.pending > 0 && tr(`${q.summary.pending} thao tác chờ gửi. `, `${q.summary.pending} action(s) queued. `)}
           {q.summary.denied > 0 && tr(`${q.summary.denied} thao tác bị từ chối (giữ lại để bạn xem).`, `${q.summary.denied} action(s) denied (kept for review).`)}
-          {q.summary.pending > 0 && <button type="button" onClick={() => void q.flush()} style={{ ...btnNho, marginLeft: 6 }}><RotateCcw size={10} aria-hidden />{tr('Gửi lại', 'Retry')}</button>}
+          {q.summary.pending > 0 && <button type="button" onClick={() => void q.flush()} style={{ ...btnNho, marginLeft: 6 }}><RotateCcw size={14} aria-hidden />{tr('Gửi lại', 'Retry')}</button>}
         </p>
       )}
       {q.items.filter((x) => x.state === 'denied').map((x) => (
@@ -135,7 +135,7 @@ export function ApprovalQueue({ projectId, stage }: { projectId: string; stage: 
       {canRequest ? (
         <form onSubmit={(e) => { e.preventDefault(); void request(); }} style={{ display: 'flex', gap: 6, padding: '4px 12px 8px' }}>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={tr('Xin duyệt: ví dụ "Mặt bằng tầng 1 v3"', 'Request: e.g. "Level 1 plan v3"')} aria-label={tr('Tiêu đề yêu cầu duyệt', 'Approval request title')} style={{ flex: 1, minWidth: 0, height: 26, padding: '0 8px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', fontSize: 11, fontFamily: 'inherit' }} />
-          <button type="submit" disabled={busy || !title.trim()} style={btnNho}>{busy ? <Loader2 size={11} className="animate-spin" aria-hidden /> : <ClipboardPlus size={11} aria-hidden />}{tr('Xin duyệt', 'Request')}</button>
+          <button type="submit" disabled={busy || !title.trim()} style={btnNho}>{busy ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <ClipboardPlus size={14} aria-hidden />}{tr('Xin duyệt', 'Request')}</button>
         </form>
       ) : perm.resolution.kind === 'grant' && (
         <p style={{ margin: '2px 12px 8px', fontSize: 10.5, lineHeight: 1.5, color: 'var(--t3)' }}>
@@ -162,9 +162,9 @@ export function ApprovalQueue({ projectId, stage }: { projectId: string; stage: 
             <div style={{ display: 'flex', gap: 5, marginTop: 6, flexWrap: 'wrap' }}>
               {a.status === 'pending' && canDecide && !mine && (
                 <>
-                  <button type="button" disabled={busy} onClick={() => void decide(a, 'approved')} style={btnNho}><CheckCircle2 size={11} aria-hidden />{tr('Duyệt', 'Approve')}</button>
+                  <button type="button" disabled={busy} onClick={() => void decide(a, 'approved')} style={btnNho}><CheckCircle2 size={14} aria-hidden />{tr('Duyệt', 'Approve')}</button>
                   <button type="button" disabled={busy} onClick={() => void decide(a, 'changes')} style={btnNho}>{tr('Cần sửa', 'Changes')}</button>
-                  <button type="button" disabled={busy} onClick={() => void decide(a, 'rejected')} style={btnNho}><XCircle size={11} aria-hidden />{tr('Từ chối', 'Reject')}</button>
+                  <button type="button" disabled={busy} onClick={() => void decide(a, 'rejected')} style={btnNho}><XCircle size={14} aria-hidden />{tr('Từ chối', 'Reject')}</button>
                 </>
               )}
               {a.status === 'pending' && canDecide && mine && (
@@ -174,7 +174,7 @@ export function ApprovalQueue({ projectId, stage }: { projectId: string; stage: 
                 <button type="button" disabled={busy} onClick={() => void decide(a, 'withdrawn')} style={btnNho}>{tr('Rút', 'Withdraw')}</button>
               )}
               <button type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : a.id)} style={{ ...btnNho, marginLeft: 'auto' }}>
-                <MessageSquarePlus size={11} aria-hidden />{tr('Ghi chú', 'Notes')}{notes[a.id] ? ` (${notes[a.id].length})` : ''}
+                <MessageSquarePlus size={14} aria-hidden />{tr('Ghi chú', 'Notes')}{notes[a.id] ? ` (${notes[a.id].length})` : ''}
               </button>
             </div>
             {isOpen && (
@@ -186,7 +186,7 @@ export function ApprovalQueue({ projectId, stage }: { projectId: string; stage: 
                     </p>
                     {!c.resolved && perm.can('task:write') && (
                       <button type="button" disabled={busy} onClick={() => void noteToTask(c)} style={btnNho} title={tr('Tạo việc từ ghi chú này', 'Create a task from this note')}>
-                        <ClipboardPlus size={10} aria-hidden />{tr('Tạo việc', 'Task')}
+                        <ClipboardPlus size={14} aria-hidden />{tr('Tạo việc', 'Task')}
                       </button>
                     )}
                   </div>

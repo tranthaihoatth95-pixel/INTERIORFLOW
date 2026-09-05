@@ -48,10 +48,10 @@ export default function MeetingContextCard({ provider = 'ms365' }: { provider?: 
     <section className="flex flex-col gap-2 rounded-[var(--r-2)] border p-3" style={{ borderColor: 'var(--vien-mo)', background: 'var(--card)' }} aria-busy={dangTai}>
       <header className="flex items-center justify-between gap-2">
         <h4 className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wide" style={{ color: 'var(--t3)' }}>
-          <CalendarClock size={12} aria-hidden /> {t('Họp · lịch', 'Meetings · calendar')} · {provider === 'ms365' ? 'Microsoft 365' : 'Google'}
+          <CalendarClock size={14} aria-hidden /> {t('Họp · lịch', 'Meetings · calendar')} · {provider === 'ms365' ? 'Microsoft 365' : 'Google'}
         </h4>
         <button type="button" onClick={() => void tai()} className="inline-flex items-center gap-1 text-[11px]" style={{ color: 'var(--t3)' }} aria-label={t('Tải lại lịch', 'Reload calendar')}>
-          <RefreshCw size={12} aria-hidden className={dangTai ? 'animate-spin' : ''} />
+          <RefreshCw size={14} aria-hidden className={dangTai ? 'animate-spin' : ''} />
         </button>
       </header>
       {kq === null && <p className="text-[12px]" style={{ color: 'var(--t3)' }}>{t('Đang đọc…', 'Loading…')}</p>}
@@ -65,7 +65,7 @@ export default function MeetingContextCard({ provider = 'ms365' }: { provider?: 
           </p>
           {kq.ketNoiUrl && (
             <a href={kq.ketNoiUrl} className="inline-flex w-fit items-center gap-1 rounded-[var(--r-full)] border px-2.5 py-1 text-[11px]" style={{ borderColor: 'var(--vien-mo)', color: 'var(--t1)' }}>
-              {kq.trangThai === 'thieu-scope' ? t('Cấp quyền đọc lịch', 'Grant calendar access') : t('Kết nối', 'Connect')} <ExternalLink size={11} aria-hidden />
+              {kq.trangThai === 'thieu-scope' ? t('Cấp quyền đọc lịch', 'Grant calendar access') : t('Kết nối', 'Connect')} <ExternalLink size={14} aria-hidden />
             </a>
           )}
         </div>
@@ -90,7 +90,7 @@ export default function MeetingContextCard({ provider = 'ms365' }: { provider?: 
               </span>
               {m.joinUrl && (
                 <a href={m.joinUrl} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1 text-[11px]" style={{ color: 'var(--t2)' }} aria-label={t(`Vào họp ${m.tieuDe}`, `Join ${m.tieuDe}`)}>
-                  <Video size={12} aria-hidden /> {t('Vào', 'Join')}
+                  <Video size={14} aria-hidden /> {t('Vào', 'Join')}
                 </a>
               )}
             </li>

@@ -85,7 +85,7 @@ export function InvitePanel({ projectId, canRevoke }: { projectId: string; canRe
           </select>
         </label>
         <button type="submit" disabled={busy} style={btnPrimary}>
-          {busy ? <Loader2 size={12} className="animate-spin" aria-hidden /> : <Link2 size={12} aria-hidden />}
+          {busy ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <Link2 size={14} aria-hidden />}
           {tr('Tạo link mời', 'Create invite link')}
         </button>
       </form>
@@ -93,7 +93,7 @@ export function InvitePanel({ projectId, canRevoke }: { projectId: string; canRe
         <div role="status" style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8, borderRadius: 10, background: 'var(--field)', border: '1px solid var(--border)' }}>
           <input readOnly value={link.url} aria-label={tr('Link mời', 'Invite link')} onFocus={(e) => e.currentTarget.select()} style={{ ...fieldStyle, fontSize: 10.5 }} />
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <button type="button" onClick={copy} style={btnGhost}><Copy size={11} aria-hidden />{copied ? tr('Đã chép', 'Copied') : tr('Chép link', 'Copy link')}</button>
+            <button type="button" onClick={copy} style={btnGhost}><Copy size={14} aria-hidden />{copied ? tr('Đã chép', 'Copied') : tr('Chép link', 'Copy link')}</button>
             <span style={{ fontSize: 10, color: 'var(--t3)' }}>{tr('Hết hạn', 'Expires')} {new Date(link.expiresAt).toLocaleDateString()}</span>
           </div>
           {link.insecure && (
@@ -116,7 +116,7 @@ export function InvitePanel({ projectId, canRevoke }: { projectId: string; canRe
               </span>
               {canRevoke && r.status === 'active' && (
                 <button type="button" disabled={busy} onClick={() => void revoke(r.jti)} style={btnGhost} aria-label={tr('Thu hồi lời mời này', 'Revoke this invite')}>
-                  <Ban size={11} aria-hidden />{tr('Thu hồi', 'Revoke')}
+                  <Ban size={14} aria-hidden />{tr('Thu hồi', 'Revoke')}
                 </button>
               )}
             </li>

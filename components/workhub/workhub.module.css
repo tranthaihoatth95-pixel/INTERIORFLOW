@@ -105,5 +105,5 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .railButton, .creatorDock button, .layoutPicker button { transition: background-color var(--dur-fast), color var(--dur-fast); }
+  .railButton, .creatorDock button, .layoutPicker button { transition: background-color var(--nhip-vien), color var(--nhip-vien); }
 }

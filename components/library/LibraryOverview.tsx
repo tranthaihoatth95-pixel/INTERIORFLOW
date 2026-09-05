@@ -44,7 +44,7 @@ const ICON: Record<OverviewSectionId, LucideIcon> = {
   'bo-suu-tap': Layers,
 };
 
-const BTN = 'inline-flex h-[var(--tap)] items-center gap-1.5 rounded-[var(--r-2)] px-3 text-[length:var(--fs-ui)] font-medium transition-colors duration-[120ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--card)]';
+const BTN = 'inline-flex h-[var(--tap)] items-center gap-1.5 rounded-[var(--r-2)] px-3 text-[length:var(--fs-ui)] font-medium transition-colors duration-[var(--nhip-bam)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--card)]';
 const BTN_CHINH = `${BTN} bg-[var(--accent)] text-white hover:bg-[var(--accent-strong)]`;
 const BTN_PHU = `${BTN} border border-[var(--vien-mo)] bg-[var(--field)] text-[var(--t2)] hover:text-[var(--t1)] hover:bg-[var(--hover)]`;
 
@@ -152,7 +152,7 @@ function MucCard({ muc, index, projectId }: { muc: OverviewSection; index: strin
             {muc.phu && (
               <HanhDongNut hanhDong={muc.phu.hanhDong} className={BTN_PHU}>
                 {tr(muc.phu.label[0], muc.phu.label[1])}
-                <ArrowUpRight size={13} aria-hidden="true" />
+                <ArrowUpRight size={14} aria-hidden="true" />
               </HanhDongNut>
             )}
             {muc.id === 'cau-kien' && (muc.count ?? 0) > 0 && <XuatKhoIdfc soMon={muc.count ?? 0} />}
@@ -188,7 +188,7 @@ function XuatKhoIdfc({ soMon }: { soMon: number }) {
         pushLibraryToast(tr(`Đã xuất ${soMon} cấu kiện ra tệp JSON`, `Exported ${soMon} components to a JSON file`));
       }}
     >
-      <Download size={13} aria-hidden="true" />
+      <Download size={14} aria-hidden="true" />
       {tr('Xuất JSON', 'Export JSON')}
     </button>
   );

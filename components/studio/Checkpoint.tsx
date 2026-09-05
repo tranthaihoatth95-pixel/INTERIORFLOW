@@ -138,7 +138,7 @@ export function Checkpoint(props: CheckpointProps) {
               borderRadius: 999,
               background: 'var(--accent)',
               width: pct === null ? '35%' : `${Math.round(Math.max(0, Math.min(1, pct)) * 100)}%`,
-              transition: 'width 240ms ease-out',
+              transition: 'width var(--nhip-bang) ease-out',
             }}
             className={pct === null ? 'if-indeterminate' : undefined}
           />

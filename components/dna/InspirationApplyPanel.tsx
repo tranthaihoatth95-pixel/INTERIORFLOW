@@ -158,13 +158,13 @@ export function InspirationApplyPanel({ asset, summary, license, source, project
       <h4>{tr('Cổng đầu vào', 'Input gate')}</h4>
       <div className="ins-gate" role="list">
         {gate.issues.length === 0 && (
-          <div className="ins-issue info" role="listitem"><Check size={12} /> {tr('Không có vấn đề — ảnh dùng được.', 'No issues — image is usable.')}</div>
+          <div className="ins-issue info" role="listitem"><Check size={14} /> {tr('Không có vấn đề — ảnh dùng được.', 'No issues — image is usable.')}</div>
         )}
         {gate.issues.map((i) => {
           const Icon = ICON[i.severity];
           return (
             <div key={i.code} className={`ins-issue ${i.severity}`} role="listitem">
-              <Icon size={12} style={{ flex: 'none', marginTop: 2 }} />
+              <Icon size={14} style={{ flex: 'none', marginTop: 2 }} />
               <span>{vi ? i.vi : i.en}</span>
             </div>
           );
@@ -242,7 +242,7 @@ export function InspirationApplyPanel({ asset, summary, license, source, project
 
           <div className="ins-actions" style={{ marginTop: 10 }}>
             <button type="button" className="ins-btn primary" onClick={apply} disabled={!applicable || busy} aria-disabled={!applicable || busy}>
-              {busy ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+              {busy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
               {tr('Áp vào Thẻ DNA', 'Apply to DNA card')}
             </button>
             {err && <span className="ins-note" style={{ color: 'var(--danger)' }}>{err}</span>}
@@ -259,7 +259,7 @@ export function InspirationApplyPanel({ asset, summary, license, source, project
                 {e.cardName} · {e.layers.length} {tr('lớp', 'layers')} · {new Date(e.appliedAt).toLocaleString()}
               </span>
               <button type="button" className="ins-btn" onClick={() => revert(e)} disabled={busy}>
-                <RotateCcw size={12} /> {tr('Hoàn tác', 'Undo')}
+                <RotateCcw size={14} /> {tr('Hoàn tác', 'Undo')}
               </button>
             </div>
           ))}

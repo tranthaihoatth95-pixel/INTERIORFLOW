@@ -300,9 +300,9 @@ export const HOME_LOCK_CSS = `
    phím — :focus-within là mắt xích bắt buộc, thiếu nó thì người dùng bàn phím Tab vào một
    nút vô hình (đúng loại lỗi "có trong mã mà không tới được người dùng"). */
 .xuong-home .o-w-tay{position:absolute;right:8px;top:8px;display:flex;gap:2px;opacity:0;
-  transition:opacity 90ms ease}
+  transition:opacity var(--nhip-bam) ease}
 .xuong-home .o-w{position:relative}
-.xuong-home .o-w:hover .o-w-tay,.xuong-home .o-w:focus-within .o-w-tay{opacity:1;transition-duration:160ms}
+.xuong-home .o-w:hover .o-w-tay,.xuong-home .o-w:focus-within .o-w-tay{opacity:1;transition-duration:var(--nhip-vien)}
 .xuong-home .o-w-tay button{width:var(--tap);height:22px;display:inline-flex;align-items:center;
   justify-content:center;border:0;border-radius:var(--r-1);background:var(--hover);color:var(--t2);
   font-size:var(--fs-xs,12px);line-height:1.5;cursor:pointer;font-family:inherit}
@@ -314,15 +314,15 @@ export const HOME_LOCK_CSS = `
    Mọi chuyển cảnh ở Home là một lần LÊN hoặc XUỐNG BẬC. Chỉ chuyển transform/opacity.
    Trỏ vào: vào 160ms · ra 90ms — vào chậm ra nhanh. Lên/xuống bậc: 320ms spring nhẹ. */
 .xuong-home .vat,.xuong-home .ke-ben,.xuong-home .o-nen,.xuong-home .khi-goi,.xuong-home .o-w{
-  transition:opacity 90ms ease,transform 90ms ease,box-shadow 90ms ease}
-.xuong-home .ke-ben:hover,.xuong-home .khi-goi:hover{transition-duration:160ms}
+  transition:opacity var(--nhip-bam) ease,transform var(--nhip-bam) ease,box-shadow var(--nhip-bam) ease}
+.xuong-home .ke-ben:hover,.xuong-home .khi-goi:hover{transition-duration:var(--nhip-vien)}
 .xuong-home .ke-ben:hover .ten{color:var(--accent)}
-.xuong-home .nut-chinh:hover,.xuong-home .nut-phu:hover{transition-duration:160ms}
+.xuong-home .nut-chinh:hover,.xuong-home .nut-phu:hover{transition-duration:var(--nhip-vien)}
 @keyframes if-home-len-bac{
   from{opacity:0;transform:translateY(8px) scale(.985)}
   to{opacity:1;transform:none}
 }
-.xuong-home .len-bac{animation:if-home-len-bac 320ms cubic-bezier(.32,.72,0,1) both}
+.xuong-home .len-bac{animation:if-home-len-bac var(--nhip-ngu-canh) cubic-bezier(.32,.72,0,1) both}
 /* Xếp so le — TỐI ĐA 3 vật (bản khoá §7). Vật thứ tư trở đi vào cùng lúc với vật thứ ba. */
 .xuong-home .len-bac:nth-child(2){animation-delay:35ms}
 .xuong-home .len-bac:nth-child(n+3){animation-delay:70ms}
@@ -341,16 +341,17 @@ export const HOME_LOCK_CSS = `
   outline-offset:calc(-1 * var(--stroke-focus))}
 /* Trỏ vào: CHỈ đổi nền + độ nổi. Thẻ LỚN thì CẤM scale (SPEC-HOVER-FOCUS-IDF: scale chỉ cho
    vật nhỏ/đơn lẻ). Nền pha từ token có sẵn, không hex — cùng cách '--surface-rim' làm.
-   Vào chậm (180ms) ra nhanh (120ms) theo luật hover đã chốt. */
-.xuong-home .vat.co-mo-lai{transition:background 120ms ease-out,box-shadow 120ms ease-out}
+   Vào chậm (--nhip-vien 170ms) ra nhanh (--nhip-bam 130ms) theo luật hover đã chốt.
+   05/09: hai số cũ là 180/120 gõ thẳng — đã về thang --nhip-*; chênh 10ms, thứ tự chậm/nhanh giữ nguyên. */
+.xuong-home .vat.co-mo-lai{transition:background var(--nhip-bam) ease-out,box-shadow var(--nhip-bam) ease-out}
 .xuong-home .vat.sang:has(.mo-lai:hover){
   background:color-mix(in srgb,var(--nen-sang) 95%,var(--muc));
   box-shadow:0 30px 66px -26px rgba(0,0,0,.78),0 0 0 1px var(--vien-mo);
-  transition:background 180ms ease-in,box-shadow 180ms ease-in}
+  transition:background var(--nhip-vien) ease-in,box-shadow var(--nhip-vien) ease-in}
 .xuong-home .vat.toi:has(.mo-lai:hover){
   background:color-mix(in srgb,var(--canh-0) 92%,var(--canh-7));
   box-shadow:0 30px 66px -26px rgba(0,0,0,.78),0 0 0 1px var(--vien-mo);
-  transition:background 180ms ease-in,box-shadow 180ms ease-in}
+  transition:background var(--nhip-vien) ease-in,box-shadow var(--nhip-vien) ease-in}
 
 /* Vòng tiêu điểm bàn phím — --accent ĐẶC, không bị overflow:hidden xén (bản khoá §8). */
 .xuong-home .ke-ben:focus-visible,.xuong-home .khi-goi:focus-visible,

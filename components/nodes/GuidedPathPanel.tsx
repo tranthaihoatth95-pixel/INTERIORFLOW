@@ -130,10 +130,10 @@ function ProvenanceChip({ p }: { p: Provenance }) {
 }
 
 function StatusIcon({ status }: { status: string }) {
-  if (status === 'running' || status === 'queued') return <Loader2 size={13} className="animate-spin text-[var(--accent)]" />;
-  if (status === 'done') return <CircleCheck size={13} className="text-[var(--success)]" />;
-  if (status === 'error') return <CircleAlert size={13} className="text-[var(--danger)]" />;
-  return <Circle size={13} className="text-[var(--t4)]" />;
+  if (status === 'running' || status === 'queued') return <Loader2 size={14} className="animate-spin text-[var(--accent)]" />;
+  if (status === 'done') return <CircleCheck size={14} className="text-[var(--success)]" />;
+  if (status === 'error') return <CircleAlert size={14} className="text-[var(--danger)]" />;
+  return <Circle size={14} className="text-[var(--t4)]" />;
 }
 
 /* ═══════════════════════════ danh sách đường dẫn (người mới) ═══════════════════════════ */
@@ -176,7 +176,7 @@ export function GuidedPathList({ onBuilt }: { onBuilt: (groupId: string) => void
               onClick={() => setOpen(isOpen ? null : path.id)}
               className="flex w-full items-start gap-2 px-3 py-2 text-left transition-colors hover:bg-[var(--hover)]"
             >
-              {isOpen ? <ChevronDown size={13} className="mt-0.5 flex-none text-[var(--t4)]" /> : <ChevronRight size={13} className="mt-0.5 flex-none text-[var(--t4)]" />}
+              {isOpen ? <ChevronDown size={14} className="mt-0.5 flex-none text-[var(--t4)]" /> : <ChevronRight size={14} className="mt-0.5 flex-none text-[var(--t4)]" />}
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[12px] font-semibold leading-[1.5] text-[var(--t1)]">{tr(path.label, path.labelEn)}</span>
                 <span className="block text-[10px] leading-[1.5] text-[var(--t4)]">
@@ -210,7 +210,7 @@ export function GuidedPathList({ onBuilt }: { onBuilt: (groupId: string) => void
                   onClick={() => build(path, plan)}
                   className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-[10px] bg-[var(--accent)] text-[11.5px] font-semibold text-white transition-opacity hover:opacity-90"
                 >
-                  <Route size={13} /> {tr(nodesCount ? 'Dựng cạnh khối đang có' : 'Dựng lên bảng', nodesCount ? 'Build next to current blocks' : 'Build on canvas')}
+                  <Route size={14} /> {tr(nodesCount ? 'Dựng cạnh khối đang có' : 'Dựng lên bảng', nodesCount ? 'Build next to current blocks' : 'Build on canvas')}
                 </button>
               </div>
             )}
@@ -287,7 +287,7 @@ export function MacroStepList({ group, justBuilt, onUndoBuilt }: { group: NodeGr
                     title={tr('Chạy lại khối này (kèm khối nguồn)', 'Retry this block (with sources)')}
                     className="flex h-5 w-5 flex-none items-center justify-center rounded-[6px] text-[var(--danger)] hover:bg-[var(--field)]"
                   >
-                    <RotateCcw size={11} />
+                    <RotateCcw size={14} />
                   </button>
                 )}
               </div>
@@ -315,7 +315,7 @@ export function MacroStepList({ group, justBuilt, onUndoBuilt }: { group: NodeGr
             onClick={() => requestCancelFlowRun(activeRun.id)}
             className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--vien-mo)] text-[11px] font-semibold text-[var(--t1)] hover:bg-[var(--hover)]"
           >
-            <Square size={11} /> {tr('Huỷ (dừng ở khối kế)', 'Cancel (stops at next block)')}
+            <Square size={14} /> {tr('Huỷ (dừng ở khối kế)', 'Cancel (stops at next block)')}
           </button>
         ) : (
           <button
@@ -326,7 +326,7 @@ export function MacroStepList({ group, justBuilt, onUndoBuilt }: { group: NodeGr
             title={lockedByTier ? tr('Bị khoá ở mức Không AI', 'Locked at No-AI tier') : tr('Chạy các khối cuối (kèm nguồn) — khối không đổi sẽ dùng lại kết quả, không tốn credit', 'Run terminal blocks (with sources) — unchanged blocks reuse results, no credit')}
             className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[var(--accent)] text-[11px] font-semibold text-white disabled:opacity-[var(--mo-vo-hieu)]"
           >
-            <Play size={11} /> {tr(`Chạy · ${aiCost} credit`, `Run · ${aiCost} credits`)}
+            <Play size={14} /> {tr(`Chạy · ${aiCost} credit`, `Run · ${aiCost} credits`)}
           </button>
         )}
         {justBuilt && (
@@ -336,7 +336,7 @@ export function MacroStepList({ group, justBuilt, onUndoBuilt }: { group: NodeGr
             title={tr('Gỡ chuỗi vừa dựng (hoàn tác)', 'Remove the chain just built (undo)')}
             className="flex h-7 w-7 flex-none items-center justify-center rounded-[10px] border border-[var(--vien-mo)] text-[var(--t2)] hover:bg-[var(--hover)]"
           >
-            <Undo2 size={12} />
+            <Undo2 size={14} />
           </button>
         )}
       </div>

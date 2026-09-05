@@ -132,7 +132,7 @@ function FindingCard({
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {canSelect && (
           <button type="button" onClick={() => onSelect(f.evidence.entityIds)} style={btn(false)} aria-label={t(...f.action.label)}>
-            <MousePointerClick size={12} />
+            <MousePointerClick size={14} />
             {t(...f.action.label)}
           </button>
         )}
@@ -142,7 +142,7 @@ function FindingCard({
           aria-pressed={verdict === 'accept'}
           style={btn(verdict === 'accept')}
         >
-          <CheckCircle2 size={12} />
+          <CheckCircle2 size={14} />
           {t(...VERDICT_LABEL.accept)}
         </button>
         <button
@@ -151,7 +151,7 @@ function FindingCard({
           aria-pressed={verdict === 'reject'}
           style={btn(verdict === 'reject')}
         >
-          <XCircle size={12} />
+          <XCircle size={14} />
           {t(...VERDICT_LABEL.reject)}
         </button>
       </div>
@@ -200,7 +200,7 @@ export default function VitalsEvalPanel({
           onClick={onClose}
           style={{ display: 'grid', placeItems: 'center', width: 32, height: 32, borderRadius: 999, border: 'none', background: 'transparent', color: 'var(--t4)', cursor: 'pointer', flex: 'none' }}
         >
-          <X size={12} />
+          <X size={14} />
         </button>
       </div>
 
@@ -237,7 +237,7 @@ export default function VitalsEvalPanel({
           onClick={onAsk}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 32, padding: '0 12px', borderRadius: 999, border: `1px solid ${ACCENT}`, background: 'transparent', color: ACCENT, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
         >
-          <MessageCircleQuestion size={12} />
+          <MessageCircleQuestion size={14} />
           {t('Hỏi Vitals về kết quả (AI tuỳ chọn)', 'Ask Vitals about this (optional AI)')}
         </button>
       </div>

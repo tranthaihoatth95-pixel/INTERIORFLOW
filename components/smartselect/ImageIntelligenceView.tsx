@@ -286,7 +286,7 @@ export function ImageIntelligenceView({ asset, onAnalyzed }: Props) {
             {result.semantic.caption && <p className="ins-note">“{result.semantic.caption}”</p>}
             <div className="ins-actions" style={{ marginTop: 6 }}>
               <button type="button" className="ins-btn" onClick={askVlm} disabled={vlmBusy || !!vlm}>
-                {vlmBusy ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                {vlmBusy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                 {vlm ? tr('Đã đọc bằng VLM', 'VLM read done') : tr('Đọc sâu bằng VLM', 'Deep read with VLM')}
               </button>
               {vlmMsg && <span className="ins-note" style={{ color: 'var(--warning)' }}>{vlmMsg}</span>}
@@ -362,7 +362,7 @@ export function ImageIntelligenceView({ asset, onAnalyzed }: Props) {
           </div>
 
           <p className="ins-note">
-            <ScanSearch size={11} style={{ verticalAlign: '-1px', marginRight: 4 }} />
+            <ScanSearch size={14} style={{ verticalAlign: '-1px', marginRight: 4 }} />
             {tr('Độ tin tổng hợp', 'Overall confidence')} {Math.round(result.overallConfidence * 100)}% — {tr('dùng cho cổng đầu vào, không phải điểm chấm.', 'used by the input gate, not a score.')}
           </p>
         </>

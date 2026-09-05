@@ -65,14 +65,14 @@ export default function SiteCompassPanel({ projectId, packs = [], hienLich = tru
     <div className="flex flex-col gap-3 rounded-[var(--r-3)] border p-3" style={{ borderColor: 'var(--vien-mo)', background: 'var(--panel)', color: 'var(--t1)' }} aria-busy={!daNap}>
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h3 className={H4} style={{ color: 'var(--t3)' }}>
-          <Compass size={13} aria-hidden /> {t('La bàn dự án', 'Project compass')}
+          <Compass size={14} aria-hidden /> {t('La bàn dự án', 'Project compass')}
         </h3>
         <div className="flex flex-wrap items-center gap-1.5 font-mono text-[10px] uppercase" style={{ color: 'var(--t3)' }}>
           <span className="rounded-[var(--r-full)] border px-1.5 py-0.5" style={{ borderColor: 'var(--vien-mo)' }} title={t('Chỉ lưu trên máy này — chưa có kênh đồng bộ (schema chưa mở)', 'Stored on this machine only — no sync channel yet (schema pending)')}>{t('chỉ máy này', 'local only')}</span>
-          {ngoaiTuyen && <span className="inline-flex items-center gap-1" style={{ color: 'var(--warning)' }}><WifiOff size={11} aria-hidden /> {t('ngoại tuyến', 'offline')}</span>}
+          {ngoaiTuyen && <span className="inline-flex items-center gap-1" style={{ color: 'var(--warning)' }}><WifiOff size={14} aria-hidden /> {t('ngoại tuyến', 'offline')}</span>}
           {cu.cu && s && (
             <button type="button" onClick={tinhLai} className={btn} style={{ borderColor: 'var(--warning)', color: 'var(--warning)' }} title={cu.lyDo.join(', ')}>
-              <RefreshCw size={11} aria-hidden /> {t('CŨ — tính lại', 'STALE — recompute')}
+              <RefreshCw size={14} aria-hidden /> {t('CŨ — tính lại', 'STALE — recompute')}
             </button>
           )}
         </div>
@@ -80,13 +80,13 @@ export default function SiteCompassPanel({ projectId, packs = [], hienLich = tru
 
       {/* ① GHIM */}
       <section className="flex flex-col gap-1.5">
-        <h4 className={H4} style={{ color: 'var(--t3)' }}><MapPin size={12} aria-hidden /> {t('Ghim vị trí', 'Site pin')}</h4>
+        <h4 className={H4} style={{ color: 'var(--t3)' }}><MapPin size={14} aria-hidden /> {t('Ghim vị trí', 'Site pin')}</h4>
         <div className="grid grid-cols-[1fr_1fr_1.4fr_auto] gap-1.5">
           <input className={inp} style={inpStyle} inputMode="decimal" placeholder={t('vĩ độ', 'lat')} aria-label={t('Vĩ độ', 'Latitude')} value={latRaw} onChange={(e) => setLatRaw(e.target.value)} />
           <input className={inp} style={inpStyle} inputMode="decimal" placeholder={t('kinh độ', 'lng')} aria-label={t('Kinh độ', 'Longitude')} value={lngRaw} onChange={(e) => setLngRaw(e.target.value)} />
           <input className={inp} style={inpStyle} placeholder={t('nhãn (tuỳ chọn)', 'label (optional)')} aria-label={t('Nhãn ghim', 'Pin label')} value={nhanGhim} onChange={(e) => setNhanGhim(e.target.value)} />
           <button type="button" onClick={luuGhim} disabled={!ghimOk} aria-disabled={!ghimOk} className={btn} style={{ borderColor: 'var(--vien-mo)', color: 'var(--t1)', opacity: ghimOk ? 1 : 'var(--mo-vo-hieu)' }} title={ghimOk ? undefined : t('Cần vĩ độ −90..90 và kinh độ −180..180', 'Needs lat −90..90 and lng −180..180')}>
-            <Check size={11} aria-hidden /> {t('Ghim', 'Pin')}
+            <Check size={14} aria-hidden /> {t('Ghim', 'Pin')}
           </button>
         </div>
         {ctx.pin ? (
@@ -105,7 +105,7 @@ export default function SiteCompassPanel({ projectId, packs = [], hienLich = tru
             <section className="grid grid-cols-[120px_1fr] items-center gap-3">
               <SunArc s={s.matTroi.value} lat={ctx.pin.lat} />
               <div className="flex flex-col gap-1 text-[12px]" style={{ color: 'var(--t2)' }}>
-                <h4 className={H4} style={{ color: 'var(--t3)' }}><Sun size={12} aria-hidden /> {t('Mặt trời', 'Sun')} <NhanNguon fact={s.matTroi} gon /></h4>
+                <h4 className={H4} style={{ color: 'var(--t3)' }}><Sun size={14} aria-hidden /> {t('Mặt trời', 'Sun')} <NhanNguon fact={s.matTroi} gon /></h4>
                 <span className="font-mono">{s.matTroi.value.ngay} · {t('mọc', 'rise')} {s.matTroi.value.binhMinh ?? '—'} · {t('lặn', 'set')} {s.matTroi.value.hoangHon ?? '—'}</span>
                 <span className="font-mono">{t('giữa trưa', 'noon')} {s.matTroi.value.giuaTrua} · {s.matTroi.value.doCaoGiuaTruaDo}°</span>
                 <span className="font-mono" style={{ color: 'var(--t3)' }}>{t('chí hè', 'summer')} {s.matTroi.value.chiHe.doCaoGiuaTruaDo}° · {t('chí đông', 'winter')} {s.matTroi.value.chiDong.doCaoGiuaTruaDo}°</span>
@@ -117,11 +117,11 @@ export default function SiteCompassPanel({ projectId, packs = [], hienLich = tru
           {/* ③ KHÍ HẬU · GIÓ */}
           <section className="grid grid-cols-2 gap-2 text-[12px]" style={{ color: 'var(--t2)' }}>
             <div className="flex flex-col gap-1">
-              <h4 className={H4} style={{ color: 'var(--t3)' }}><Thermometer size={12} aria-hidden /> {t('Dải khí hậu', 'Climate band')}</h4>
+              <h4 className={H4} style={{ color: 'var(--t3)' }}><Thermometer size={14} aria-hidden /> {t('Dải khí hậu', 'Climate band')}</h4>
               {s.daiKhiHau ? <span className="flex items-center gap-1.5">{s.daiKhiHau.value} <NhanNguon fact={s.daiKhiHau} /></span> : <span style={{ color: 'var(--t3)' }}>—</span>}
             </div>
             <div className="flex flex-col gap-1">
-              <h4 className={H4} style={{ color: 'var(--t3)' }}><Wind size={12} aria-hidden /> {t('Gió chủ đạo', 'Prevailing wind')}</h4>
+              <h4 className={H4} style={{ color: 'var(--t3)' }}><Wind size={14} aria-hidden /> {t('Gió chủ đạo', 'Prevailing wind')}</h4>
               {s.gio ? (
                 <span className="flex items-center gap-1.5 font-mono">
                   {s.gio.value.map((g) => `${g.huongDo}°${g.tocDoMs !== undefined ? ` ${g.tocDoMs}m/s` : ''}${g.mua ? ` (${g.mua})` : ''}`).join(' · ')}
@@ -135,7 +135,7 @@ export default function SiteCompassPanel({ projectId, packs = [], hienLich = tru
 
           {/* ④ CÂU CHUYỆN */}
           <section className="flex flex-col gap-1.5 text-[12px]" style={{ color: 'var(--t2)' }}>
-            <h4 className={H4} style={{ color: 'var(--t3)' }}><BookOpen size={12} aria-hidden /> {t('Bối cảnh · vật liệu địa phương', 'Local context · materials')}</h4>
+            <h4 className={H4} style={{ color: 'var(--t3)' }}><BookOpen size={14} aria-hidden /> {t('Bối cảnh · vật liệu địa phương', 'Local context · materials')}</h4>
             {s.cauChuyen.length === 0 && <p style={{ color: 'var(--t3)' }}>{t('Chưa có câu chuyện nào có nguồn.', 'No sourced story yet.')}</p>}
             <ul className="flex flex-col gap-1">
               {s.cauChuyen.map((c) => (
@@ -162,7 +162,7 @@ export default function SiteCompassPanel({ projectId, packs = [], hienLich = tru
             <div className="flex flex-wrap gap-1.5">
               {ctx.bienSo.map((b) => (
                 <span key={b.ma} className="inline-flex items-center gap-1 rounded-[var(--r-full)] border px-2 py-0.5" style={{ borderColor: 'var(--success)', color: 'var(--t1)' }} title={b.lyDo}>
-                  <Check size={11} aria-hidden /> {t(NHAN_BIEN_SO[b.ma].vi, NHAN_BIEN_SO[b.ma].en)}
+                  <Check size={14} aria-hidden /> {t(NHAN_BIEN_SO[b.ma].vi, NHAN_BIEN_SO[b.ma].en)}
                 </span>
               ))}
               {s.goiY.map((g) => (
@@ -177,7 +177,7 @@ export default function SiteCompassPanel({ projectId, packs = [], hienLich = tru
 
           {/* ⑥ PHIẾU KHẢO SÁT */}
           <section className="flex flex-col gap-1.5 text-[12px]" style={{ color: 'var(--t2)' }}>
-            <h4 className={H4} style={{ color: 'var(--t3)' }}><ClipboardList size={12} aria-hidden /> {t('Phiếu khảo sát → ArchiNote', 'Survey brief → ArchiNote')} <span className="font-normal normal-case" style={{ color: 'var(--t4)' }}>({phieu.cauHoi.length})</span></h4>
+            <h4 className={H4} style={{ color: 'var(--t3)' }}><ClipboardList size={14} aria-hidden /> {t('Phiếu khảo sát → ArchiNote', 'Survey brief → ArchiNote')} <span className="font-normal normal-case" style={{ color: 'var(--t4)' }}>({phieu.cauHoi.length})</span></h4>
             <ul className="flex flex-col gap-0.5">
               {phieu.cauHoi.map((c) => (
                 <li key={c.ma} className="flex items-baseline gap-2"><span className="font-mono text-[10px] uppercase" style={{ color: 'var(--t4)' }}>{c.ma}</span> {t(c.cauHoi.vi, c.cauHoi.en)}</li>
@@ -195,7 +195,7 @@ export default function SiteCompassPanel({ projectId, packs = [], hienLich = tru
 
       {!s && ctx.pin && (
         <button type="button" onClick={tinhLai} className={btn} style={{ borderColor: 'var(--vien-mo)', color: 'var(--t1)', width: 'fit-content' }}>
-          <RefreshCw size={11} aria-hidden /> {t('Chưa suy diễn — tính ngay', 'Not derived yet — compute now')}
+          <RefreshCw size={14} aria-hidden /> {t('Chưa suy diễn — tính ngay', 'Not derived yet — compute now')}
         </button>
       )}
 

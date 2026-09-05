@@ -78,9 +78,9 @@ export function MacroShelf() {
           onClick={() => setPathsOpen((v) => !v)}
           className="flex h-8 w-full items-center gap-1.5 px-3 text-left text-[10.5px] font-semibold uppercase tracking-wide text-[var(--t3)] hover:bg-[var(--hover)]"
         >
-          <Route size={12} className="text-[var(--accent)]" />
+          <Route size={14} className="text-[var(--accent)]" />
           <span className="flex-1">{tr('Đường dẫn cho người mới', 'Guided paths')}</span>
-          {pathsOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          {pathsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </button>
         {pathsOpen && (
           <GuidedPathList
@@ -96,7 +96,7 @@ export function MacroShelf() {
         {macros.length > 0 && (
           <div className="border-t border-[var(--border)]">
             <div className="flex h-8 items-center gap-1.5 px-3 text-[10.5px] font-semibold uppercase tracking-wide text-[var(--t3)]">
-              <Boxes size={12} className="text-[var(--accent)]" />
+              <Boxes size={14} className="text-[var(--accent)]" />
               {tr('Nút tổng của tôi', 'My macro nodes')}
             </div>
             {macros.map((g) => {
@@ -112,7 +112,7 @@ export function MacroShelf() {
                     onClick={() => setOpenMacro(isOpen ? null : g.id)}
                   >
                     <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[10px] bg-[var(--field)]">
-                      <Icon size={15} className={!g.collapsed ? 'text-[var(--accent)]' : 'text-[var(--t3)]'} />
+                      <Icon size={16} className={!g.collapsed ? 'text-[var(--accent)]' : 'text-[var(--t3)]'} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span
@@ -138,7 +138,7 @@ export function MacroShelf() {
                       title={tr(g.collapsed ? 'Mở ra xem các khối bên trong' : 'Thu gọn thành nút tổng', g.collapsed ? 'Expand to see inner blocks' : 'Collapse into macro')}
                       className="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-[10px] text-[var(--t4)] transition-colors hover:bg-[var(--field)] hover:text-[var(--t1)]"
                     >
-                      {g.collapsed ? <LayersIcon size={13} /> : <Boxes size={13} />}
+                      {g.collapsed ? <LayersIcon size={14} /> : <Boxes size={14} />}
                     </button>
                     <button
                       type="button"
@@ -152,7 +152,7 @@ export function MacroShelf() {
                         g.shared ? 'bg-[var(--field)] text-[var(--success)]' : 'text-[var(--t4)] hover:bg-[var(--field)] hover:text-[var(--t1)]',
                       )}
                     >
-                      {g.shared ? <Check size={13} /> : <Share2 size={13} />}
+                      {g.shared ? <Check size={14} /> : <Share2 size={14} />}
                     </button>
                   </div>
                   {isOpen && (
