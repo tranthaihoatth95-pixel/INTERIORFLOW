@@ -69,7 +69,8 @@
     "dev:electron": "node scripts/dev-electron.mjs",
     "soi:foundation": "node scripts/soi-foundation.mjs",
     "soi:design-school": "node scripts/soi-design-school.mjs",
-    "soi:css-can": "node scripts/soi-css-can.mjs"
+    "soi:css-can": "node scripts/soi-css-can.mjs",
+    "soi:moat": "node scripts/soi-moat.mjs"
   },
   "dependencies": {
     "@fal-ai/client": "^1.10.1",
