@@ -33,7 +33,7 @@ export function InspirationNavigator() {
   return (
     <div className="px-1.5 py-1 flex flex-col gap-0.5">
       <Link href="/inspiration" className={`${row} ${!active ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'text-[var(--t1)]'}`} aria-current={!active ? 'page' : undefined}>
-        <Lightbulb size={14} strokeWidth={1.75} className="shrink-0" />
+        <Lightbulb size={14} strokeWidth={1.5} className="shrink-0" />
         {tr('Tất cả cảm hứng', 'All inspiration')}
       </Link>
       {projects.map((p) => (
@@ -43,7 +43,7 @@ export function InspirationNavigator() {
           className={`${row} ${active === p.id ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'text-[var(--t2)]'}`}
           aria-current={active === p.id ? 'page' : undefined}
         >
-          <FolderKanban size={14} strokeWidth={1.75} className="shrink-0 text-[var(--t4)]" />
+          <FolderKanban size={14} strokeWidth={1.5} className="shrink-0 text-[var(--t4)]" />
           <span className="truncate">{p.name}</span>
         </Link>
       ))}

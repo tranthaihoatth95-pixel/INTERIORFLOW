@@ -309,7 +309,7 @@ export function InspirationBoard() {
           </p>
         </div>
         <span className="ins-search">
-          <Search size={14} strokeWidth={1.75} />
+          <Search size={14} strokeWidth={1.5} />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr('Tìm theo tên…', 'Search by name…')} aria-label={tr('Tìm ảnh cảm hứng', 'Search inspiration')} />
         </span>
       </div>

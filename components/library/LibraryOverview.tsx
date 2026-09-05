@@ -113,7 +113,7 @@ function MucCard({ muc, index, projectId }: { muc: OverviewSection; index: strin
 
   return (
     <section id={`muc-${muc.id}`} aria-labelledby={`muc-${muc.id}-h`} className="min-h-[220px] scroll-mt-4" style={mo ? { opacity: 'var(--mo-vo-hieu)' } : undefined}>
-      <WidgetCard title={tr(muc.label[0], muc.label[1])} index={index} action={<Icon size={16} strokeWidth={1.75} className="text-[var(--t3)]" aria-hidden="true" />}>
+      <WidgetCard title={tr(muc.label[0], muc.label[1])} index={index} action={<Icon size={16} strokeWidth={1.5} className="text-[var(--t3)]" aria-hidden="true" />}>
         <div className="flex h-full flex-col gap-3">
           <SoDem muc={muc} />
           <p id={`muc-${muc.id}-h`} className="text-[length:var(--fs-xs)] leading-[1.5] text-[var(--t3)]">
