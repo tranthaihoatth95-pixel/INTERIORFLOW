@@ -669,7 +669,7 @@ export default function VitalsGesturePanel({
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {evalBusy ? <Loader2 size={11} className="animate-spin" /> : <ClipboardCheck size={11} />}
+                  {evalBusy ? <Loader2 size={14} className="animate-spin" /> : <ClipboardCheck size={14} />}
                   Đánh giá
                 </button>
               )}

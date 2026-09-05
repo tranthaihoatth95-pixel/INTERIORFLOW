@@ -580,7 +580,7 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
               'Dựng trang bảng khối lượng từ Doc 2D + Kho giá + số sửa tay · mỗi dòng ghi rõ Bản vẽ ↔ Sửa tay ✎ · làm mới được · PDF/PNG đúng bố cục, PPTX xuất trang này dạng ảnh',
               'Build BOQ pages from the 2D doc + price library + hand edits · every row labelled Drawing ↔ Hand-edited ✎ · refreshable · PDF/PNG keep the layout, PPTX exports these pages as images',
             ),
-            icon: <TableProperties size={15} />,
+            icon: <TableProperties size={16} />,
             onSelect: () => { void p.onInsertBoqAppendix?.(); },
             disabled: !p.onInsertBoqAppendix || !!p.boqAppendixBusy,
             disabledReason: p.boqAppendixBusy

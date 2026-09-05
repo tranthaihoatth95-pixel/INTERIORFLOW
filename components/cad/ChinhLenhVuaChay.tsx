@@ -160,7 +160,7 @@ export default function ChinhLenhVuaChay({ wrapRef, bottomInset }: Props) {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, color: 'var(--t1)' }}>
-        <SlidersHorizontal size={13} aria-hidden />
+        <SlidersHorizontal size={14} aria-hidden />
         <span style={{ fontSize: 11.5, fontWeight: 600 }}>{t(...tenLenh(lenh.kind))}</span>
         <span style={{ fontSize: 10.5, color: 'var(--t3)', marginLeft: 'auto', fontVariantNumeric: 'tabular-nums' }}>
           {t(...moTaLenh(lenh))}
@@ -212,7 +212,7 @@ export default function ChinhLenhVuaChay({ wrapRef, bottomInset }: Props) {
       ))}
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6 }}>
         <button type="button" onClick={hoanTac} style={btnStyle(false)} aria-label={t('Hoàn tác lệnh vừa chạy', 'Undo last command')}>
-          <Undo2 size={13} aria-hidden /> {t('Hoàn tác', 'Undo')}
+          <Undo2 size={14} aria-hidden /> {t('Hoàn tác', 'Undo')}
         </button>
         <span style={{ display: 'flex', gap: 6 }}>
           <button
@@ -225,7 +225,7 @@ export default function ChinhLenhVuaChay({ wrapRef, bottomInset }: Props) {
             style={btnStyle(true)}
             aria-label={t('Áp dụng và đóng', 'Apply and close')}
           >
-            <Check size={13} aria-hidden /> {t('Xong', 'Done')}
+            <Check size={14} aria-hidden /> {t('Xong', 'Done')}
           </button>
         </span>
       </div>

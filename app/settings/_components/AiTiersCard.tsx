@@ -82,9 +82,9 @@ export function AiTiersCard() {
               )}
             >
               <div className="flex items-center gap-1.5">
-                <Icon size={15} className={active ? 'text-[var(--accent)]' : 'text-[var(--t3)]'} />
+                <Icon size={16} className={active ? 'text-[var(--accent)]' : 'text-[var(--t3)]'} />
                 <span className="text-[13px] font-medium text-[var(--t1)]">{tr(v.label, v.labelEn)}</span>
-                {active && <Check size={12} className="ml-auto text-[var(--accent)]" />}
+                {active && <Check size={14} className="ml-auto text-[var(--accent)]" />}
               </div>
               <p className="mt-1 text-[12px] leading-snug text-[var(--t4)]">{tr(v.blurb, v.blurbEn)}</p>
               <div className="mt-1.5 flex flex-wrap gap-1">
@@ -128,7 +128,7 @@ export function AiTiersCard() {
           disabled={probing}
           className="flex h-7 items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2.5 text-[11.5px] font-medium text-[var(--t2)] transition-colors hover:bg-[var(--hover)] disabled:opacity-[var(--mo-vo-hieu)]"
         >
-          <RefreshCw size={12} className={probing ? 'animate-spin' : ''} />
+          <RefreshCw size={14} className={probing ? 'animate-spin' : ''} />
           {tr('Kiểm tra kết nối', 'Test connection')}
         </button>
       </div>
