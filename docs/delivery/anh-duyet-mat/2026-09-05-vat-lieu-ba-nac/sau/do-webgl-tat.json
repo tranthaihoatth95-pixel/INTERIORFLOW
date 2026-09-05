@@ -1,0 +1,69 @@
+{
+  "chuaDangNhap": {
+    "tongImg": 0,
+    "tongCanvas": 0,
+    "soHang": 2,
+    "oHong": 2,
+    "coBang": true,
+    "tieuDe": "InteriorFlow | Thiết kế 3D | Việc | Trang chủ | Dự án | Cảm hứng",
+    "baMat": [],
+    "loi": []
+  },
+  "scan": {
+    "tongImg": 0,
+    "tongCanvas": 0,
+    "soHang": 3,
+    "oHong": 2,
+    "coBang": true,
+    "tieuDe": "InteriorFlow | Thiết kế 3D | Việc | Trang chủ | Dự án | Cảm hứng",
+    "baMat": [],
+    "loi": []
+  },
+  "judge": {
+    "tongImg": 0,
+    "tongCanvas": 0,
+    "soHang": 3,
+    "oHong": 3,
+    "coBang": true,
+    "tieuDe": "InteriorFlow | Thiết kế 3D | Việc | Trang chủ | Dự án | Cảm hứng",
+    "baMat": [],
+    "loi": []
+  },
+  "themeThat": "dark",
+  "latDungKho": {
+    "rongDai": 418,
+    "coNen": "279px 44px",
+    "soTamNgang": 1.5
+  },
+  "inspect": {
+    "tongImg": 0,
+    "tongCanvas": 0,
+    "soHang": 3,
+    "oHong": 2,
+    "coBang": true,
+    "tieuDe": "InteriorFlow | Thiết kế 3D | Việc | Trang chủ | Dự án | Cảm hứng",
+    "baMat": [],
+    "loi": []
+  },
+  "judgeMon2": {
+    "tongImg": 0,
+    "tongCanvas": 0,
+    "soHang": 3,
+    "oHong": 3,
+    "coBang": true,
+    "tieuDe": "InteriorFlow | Thiết kế 3D | Việc | Trang chủ | Dự án | Cảm hứng",
+    "baMat": [],
+    "loi": []
+  },
+  "webglTat": {
+    "tongImg": 0,
+    "tongCanvas": 0,
+    "soHang": 3,
+    "oHong": 3,
+    "coBang": true,
+    "tieuDe": "InteriorFlow | Thiết kế 3D | Việc | Trang chủ | Dự án | Cảm hứng",
+    "baMat": [],
+    "loi": [],
+    "cauBaoThayDuoc": true
+  }
+}
