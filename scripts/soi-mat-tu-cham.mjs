@@ -283,9 +283,80 @@ function phanTich(tepTuongDoi) {
     }
     void reSs;
 
+    /* 🪞 SO GƯƠNG — tín hiệu thứ BA, nạp 05/09 sau khi bắt được 7 ca thật.
+     * Khuôn bệnh: hai vế của một phép `===` cùng đi qua **MỘT hàm sản phẩm**, khác nhau chỉ ở
+     * đầu vào. Hàm đó hỏng thì hai vế cùng sai GIỐNG NHAU ⇒ vẫn bằng nhau ⇒ mắt vẫn xanh.
+     * Ca đã chứng minh bằng đột biến: `boqSauMo.totalAmount === boq2.totalAmount` (bẻ
+     * `computeBoq` trả rỗng ⇒ 0 === 0, XANH) · `boqFingerprint(a) === vanTaySau` (bẻ trả hằng ⇒
+     * XANH) · `soDinh(ketBatLai) === dinhGoc` (bẻ `evalRecipe` ⇒ 0 === 0, XANH).
+     * ⚠️ Tín hiệu này KHÔNG kết tội — nó chỉ khoanh vùng, y như ⭕:
+     *   · `!==` KHÔNG tính: hàm trả hằng làm hai vế BẰNG nhau ⇒ mắt ĐỎ, tức đang đo thật.
+     *   · có neo ngoài trong cùng điều kiện (so với một hằng số, hoặc một hàm sản phẩm KHÁC)
+     *     thì rủi ro đã giảm — vẫn báo, nhưng nói rõ là "có neo kèm".
+     * Cách chữa đã dùng: neo vào con số tính TAY ngoài hàm đang nghi, hoặc một bất biến độc lập
+     * (kích thước hình học, sức phân biệt của hàm băm). Xem `nghiem-thu-g4-moat.mjs` khối
+     * "NEO NGOÀI" và `nghiem-thu-g6-kho-mo-dau.mjs` `hopBaoMm`. */
+    /* ⚠️ CHỈ NHẬN NGUỒN TRỰC TIẾP, cố ý KHÔNG truy ngược nhiều bậc. Bản đầu của tín hiệu này
+       BFS như phần chấm hạng ở trên và BÁO QUÁ TAY nặng: `doc` → `datVaoBanVe` →
+       `resolveLibraryItem` → … làm gần như mọi biến "đi qua" gần như mọi hàm, tới mức chính
+       khối NEO NGOÀI (`TONG_TAY`, thuần phép nhân) cũng bị chấm là qua `computeBoq`.
+       So gương theo đúng nghĩa là **vế này gán THẲNG từ f(...), vế kia cũng gán THẲNG từ f(...)**
+       — như `boqSauMo = computeBoq(a)` ↔ `boq2 = computeBoq(b)`. Đi xa hơn một bậc là mất nghĩa. */
+    const hamNgoaiCung = (rhs) => {
+      const mm = /^\s*(?:await\s+)?([A-Za-z_$][\w$]*)\s*\(/.exec(rhs);
+      return mm && hamSanPham.has(mm[1]) ? mm[1] : null;
+    };
+    /* Đi tối đa BA bậc, và chỉ theo đúng hai đường: ① hàm ngoài cùng của RHS gán ② nếu hàm ngoài
+       cùng là hàm BỌC CỤC BỘ của bộ đo (không phải hàm sản phẩm) thì bóc vào đối số của nó.
+       Bậc ② là bắt buộc cho khuôn `soDinh(evalRecipe(A).geometry) === dinhGoc` ở G6 — bốn mắt so
+       gương ở đó nằm sau một hàm đếm đỉnh cục bộ, truy một bậc thì không thấy. Vẫn KHÔNG mở
+       thành BFS toàn phần: đi rộng là mọi biến "qua" mọi hàm, và tín hiệu chết. */
+    const hamGocCua = (bt, sau = 0) => {
+      const thay = new Set();
+      if (sau > 3) return thay;
+      const sach = boChuoi(bt);
+      for (const mm of sach.matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)) {
+        if (hamSanPham.has(mm[1])) thay.add(mm[1]);
+        else if (sau < 3) { // hàm bọc cục bộ — bóc vào đối số
+          const i = sach.indexOf('(', mm.index);
+          for (const f of hamGocCua(sach.slice(i + 1, i + 200), sau + 1)) thay.add(f);
+        }
+      }
+      for (const ten of dinhDanhGoc(bt)) {
+        for (const rhs of ganCua.get(ten) ?? []) {
+          const f = hamNgoaiCung(rhs);
+          if (f) thay.add(f);
+          else if (sau < 3) for (const g of hamGocCua(rhs, sau + 1)) thay.add(g);
+        }
+      }
+      return thay;
+    };
+    let soGuong = null;
+    for (const menh of dieuKien.split('&&')) {
+      const c = /^([\s\S]+?)(===|==)([\s\S]+)$/.exec(menh);
+      if (!c || /!==|!=/.test(menh)) continue;
+      const trai = hamGocCua(c[1]), phai = hamGocCua(c[3]);
+      const chung = [...trai].filter((t) => phai.has(t));
+      if (!chung.length) continue;
+      /* NEO KÈM = có mệnh đề khác trong cùng điều kiện mà bản thân nó KHÔNG so gương: so với một
+         hằng số, với một giá trị tính ngoài hàm đang nghi (`=== TONG_TAY`), với `!==` (đòi KHÁC
+         nhau — hàm trả hằng làm nó đỏ), hay đi qua một hàm sản phẩm khác. Có neo kèm thì mắt
+         vẫn đo được; máy vẫn nêu tên để người đọc biết mệnh đề nào là phần vô dụng. */
+      const coNeo = dieuKien.split('&&').some((k) => {
+        if (k === menh || !/(===|==|!==|!=|>=|<=|>|<)/.test(k)) return false;
+        const c2 = /^([\s\S]+?)(===|==|!==|!=|>=|<=|>|<)([\s\S]+)$/.exec(k);
+        if (!c2) return false;
+        if (/!==|!=/.test(c2[2])) return true;
+        const t2 = hamGocCua(c2[1]), p2 = hamGocCua(c2[3]);
+        return ![...t2].some((t) => p2.has(t)); // hai vế KHÔNG chung hàm ⇒ là neo thật
+      });
+      soGuong = `${chung.join('/')} ở CẢ HAI vế của "${menh.trim().slice(0, 60)}"${coNeo ? ' (có neo kèm ở mệnh đề khác)' : ' — KHÔNG neo ngoài'}`;
+      if (!coNeo) break;
+    }
+
     ket.push({
       tep: tepTuongDoi, dong: l, nhan, dieuKien,
-      hang, vongTron,
+      hang, vongTron, soGuong,
       qua: chamSanPham ?? (chamNguon ? '(đọc mã nguồn)' : '(chỉ dữ liệu của chính bộ đo)'),
     });
   }
@@ -309,29 +380,31 @@ if (RA_JSON) {
   console.log(JSON.stringify(tatCa, null, 1));
 } else {
   console.log('═══ SOI CHÍNH BỘ MÁY KIỂM — khẳng định nào đo hành vi, khẳng định nào tự chấm điểm ═══\n');
-  console.log('bộ đo'.padEnd(40) + 'tổng'.padStart(6) + '🟢 hành vi'.padStart(12) + '🟡 hình dạng'.padStart(14) + '🔴 tự chấm'.padStart(12) + '⭕ vòng tròn'.padStart(14));
-  console.log('─'.repeat(98));
-  let tX = 0, tV = 0, tD = 0, tO = 0;
+  console.log('bộ đo'.padEnd(38) + 'tổng'.padStart(6) + '🟢 hành vi'.padStart(12) + '🟡 hình dạng'.padStart(14) + '🔴 tự chấm'.padStart(12) + '⭕ vòng tròn'.padStart(14) + '🪞 so gương'.padStart(13));
+  console.log('─'.repeat(110));
+  let tX = 0, tV = 0, tD = 0, tO = 0, tG = 0;
   for (const b of tatCa) {
     const x = b.ket.filter((k) => k.hang === 'XANH').length;
     const v = b.ket.filter((k) => k.hang === 'VANG').length;
     const d = b.ket.filter((k) => k.hang === 'DO').length;
     const o = b.ket.filter((k) => k.vongTron).length;
-    tX += x; tV += v; tD += d; tO += o;
-    console.log(path.basename(b.tep).padEnd(40) + String(b.ket.length).padStart(6) + String(x).padStart(12) + String(v).padStart(14) + String(d).padStart(12) + String(o).padStart(14));
+    const g = b.ket.filter((k) => k.soGuong).length;
+    tX += x; tV += v; tD += d; tO += o; tG += g;
+    console.log(path.basename(b.tep).padEnd(38) + String(b.ket.length).padStart(6) + String(x).padStart(12) + String(v).padStart(14) + String(d).padStart(12) + String(o).padStart(14) + String(g).padStart(13));
   }
-  console.log('─'.repeat(98));
-  console.log('TỔNG'.padEnd(40) + String(tX + tV + tD).padStart(6) + String(tX).padStart(12) + String(tV).padStart(14) + String(tD).padStart(12) + String(tO).padStart(14));
+  console.log('─'.repeat(110));
+  console.log('TỔNG'.padEnd(38) + String(tX + tV + tD).padStart(6) + String(tX).padStart(12) + String(tV).padStart(14) + String(tD).padStart(12) + String(tO).padStart(14) + String(tG).padStart(13));
 
   if (CHI_TIET || CHI_DO) {
     for (const b of tatCa) {
-      const muc = b.ket.filter((k) => !CHI_DO || k.hang === 'DO' || k.vongTron);
+      const muc = b.ket.filter((k) => !CHI_DO || k.hang === 'DO' || k.vongTron || k.soGuong);
       if (!muc.length) continue;
       console.log(`\n▸ ${b.tep}`);
       for (const k of muc) {
-        console.log(`  ${bieuTuong[k.hang]}${k.vongTron ? '⭕' : '  '} :${k.dong}  ${k.nhan}`);
+        console.log(`  ${bieuTuong[k.hang]}${k.vongTron ? '⭕' : '  '}${k.soGuong ? '🪞' : '  '} :${k.dong}  ${k.nhan}`);
         console.log(`        qua: ${k.qua}`);
         if (k.vongTron) console.log(`        ⭕ : ${k.vongTron}`);
+        if (k.soGuong) console.log(`        🪞 : ${k.soGuong}`);
         console.log(`        đk : ${k.dieuKien.slice(0, 150)}`);
       }
     }
@@ -351,6 +424,14 @@ if (RA_JSON) {
   console.log('   Tỉ lệ báo nhầm đã đo 04/09: trong 10 ca 🔴 của phát đầu, 6 là BÁO NHẦM (biến đếm');
   console.log('   tăng trong vòng lặp · lambda truyền vào tham số · handler sự kiện) — dùng để');
   console.log('   KHOANH VÙNG rồi đọc tay, đừng dùng làm con số nộp lên.');
+  console.log('\n🪞 SO GƯƠNG (nạp 05/09) — hai vế cùng qua MỘT hàm sản phẩm ⇒ hàm hỏng thì cả hai');
+  console.log('   cùng sai giống nhau ⇒ mắt vẫn xanh. Hiệu chuẩn trên bản TRƯỚC khi siết: bắt đúng');
+  console.log('   3/3 ca ở g4-moat và 6 ca ở g6 (4 ca đã chứng minh bằng đột biến + 2 ca người');
+  console.log('   soi tay BỎ SÓT, trong đó có một tautology JSON round-trip còn sót từ lượt trước).');
+  console.log('   ⚠️ Báo nhầm đã đo 05/09: 1/9 ca (`coGiaPha === datVaoBanVe.length` — một vế là');
+  console.log('   mảng literal của chính bộ đo, máy truy 3 bậc nên gán nhầm nguồn). Chữ "có neo');
+  console.log('   kèm" chỉ nói CÓ neo, KHÔNG nói neo đủ mạnh: `> 0` là neo hợp lệ về cú pháp mà');
+  console.log('   vẫn để lọt hàm trả hằng số dương — máy không chấm được sức mạnh của neo.');
   if (!CHI_TIET && !CHI_DO) console.log('   Chi tiết: --chi-tiet · chỉ đỏ: --do');
 }
 

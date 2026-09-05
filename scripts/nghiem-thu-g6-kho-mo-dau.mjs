@@ -68,6 +68,10 @@ const { exportIdf, importIdf } = require(GOC + '/lib/cad/idf.ts');
 const { resolveLibraryItem, idfcGeom2dOf } = require(GOC + '/lib/cad/library-item-resolve.ts');
 const { clusterPrimsToEntities } = require(GOC + '/lib/cad/block-library.ts');
 const { evalRecipe } = require(GOC + '/lib/three/build-recipe.ts');
+const { sheetsKey } = require(GOC + '/lib/sheets-persist.ts');
+// Đổi trục+đơn vị CAD→three bằng CHÍNH hàm sản phẩm (`cadAxesToThree` bọc trong `cadToThreeM`) —
+// bộ đo KHÔNG được chép công thức trục lần thứ hai, chép là đẻ ra nguồn sự thật thứ hai.
+const { cadToThreeM } = require(GOC + '/lib/three/cad-to-obj.ts');
 const { replaceMaterialReferences } = require(GOC + '/lib/materials/impact.ts');
 
 /* ─────────────────────── tham số + sổ ghi ─────────────────────── */
@@ -219,6 +223,23 @@ function chayVongNghe(the) {
   const dinhGoc = soDinh(ketDung.geometry);
   doi('ngăn xếp chạy sạch, không bậc nào lỗi', Object.keys(ketDung.stepErrors).length === 0, `lỗi: ${JSON.stringify(ketDung.stepErrors)}`);
   doi('dựng ra khối 3D thật', dinhGoc > 0, `${dinhGoc} đỉnh · ${t.soTang} tầng ván`);
+
+  /* ═══ NEO NGOÀI · KÍCH THƯỚC KHỐI, tính TAY từ tham số — không so hai kết quả cùng hàm ═══
+     ⚠️ VÌ SAO CÓ (đo 05/09): bốn mắt của K4/K6 dưới đây so `soDinh(A) === soDinh(B)` — hai vế
+     cùng qua `evalRecipe`. Bẻ hàm đó trả hình rỗng ⇒ `0 === 0` ⇒ **cả bốn vẫn XANH**. Và số
+     đỉnh không nói gì về VỊ TRÍ: bộ này từng 60/60 trong khi khối dựng ra là 5 tấm ván **chồng
+     khít lên nhau** (nền dựng sai hệ toạ độ — xem `daysToPositions`), cao 25 mm thay vì 1525 mm.
+     ⇒ Neo phải đến từ NGOÀI `evalRecipe`: kích thước suy thẳng từ tham số cấu kiện.
+       rộng = rongMm 900 · sâu = sauMm 350 · cao = từ caoDayMm 100
+       tới caoDayMm + dayVanMm + (soTang−1)×buocTangMm = 100 + 25 + 4×350 = 1525 mm */
+  const CAO_DINH_TAY = t.caoDayMm + t.dayVanMm + (t.soTang - 1) * t.buocTangMm;
+  const bboxGoc = hopBaoMm(ketDung.geometry);
+  doi('NEO NGOÀI · khối ra ĐÚNG KÍCH THƯỚC tính tay từ tham số (không chỉ đúng số đỉnh)',
+    !!bboxGoc && bboxGoc.rong === t.rongMm && bboxGoc.sau === t.sauMm && bboxGoc.caoTu === t.caoDayMm && bboxGoc.caoDen === CAO_DINH_TAY,
+    bboxGoc ? `máy: rộng ${bboxGoc.rong} · sâu ${bboxGoc.sau} · cao ${bboxGoc.caoTu}→${bboxGoc.caoDen}mm · tay: ${t.rongMm} · ${t.sauMm} · ${t.caoDayMm}→${CAO_DINH_TAY}mm` : 'KHÔNG có hình học');
+  doi('NEO NGOÀI · 5 tầng thật sự CÁCH NHAU (không phải 5 bản chồng khít)',
+    !!bboxGoc && bboxGoc.caoDen - bboxGoc.caoTu > t.dayVanMm * 2,
+    bboxGoc ? `cao khối = ${bboxGoc.caoDen - bboxGoc.caoTu}mm · một tấm dày ${t.dayVanMm}mm` : '—');
   doi('cấu kiện mang mã vật liệu, không phải khối vô danh', cauKien.body.geom3d.matId === SOI.matId, `matId=${cauKien.body.geom3d.matId}`);
 
   /* ── K4 · BIẾN ĐỔI ──────────────────────────────────────────────────────── */
@@ -230,11 +251,21 @@ function chayVongNghe(the) {
 
   const tatBacLap = cauKien.body.geom3d.recipe.steps.map((s) => (s.id === 'ke-lap-tang' ? { ...s, enabled: false } : s));
   const ketTat = evalRecipe(nenKhoi, tatBacLap);
-  doi('tắt bậc lặp ⇒ còn đúng MỘT tấm ván', soDinh(ketTat.geometry) === dinhGoc / t.soTang, `${soDinh(ketTat.geometry)} đỉnh · một tấm = ${dinhGoc / t.soTang}`);
+  // Neo bằng KÍCH THƯỚC, không chỉ số đỉnh: tắt bậc lặp ⇒ khối phải TỤT XUỐNG còn đúng một tấm
+  // dày `dayVanMm`. Vế `soDinh === dinhGoc/soTang` một mình là SO GƯƠNG (0 === 0/5 khi hình rỗng).
+  const bboxTat = hopBaoMm(ketTat.geometry);
+  doi('tắt bậc lặp ⇒ còn đúng MỘT tấm ván (đo cả chiều cao, không chỉ đếm đỉnh)',
+    soDinh(ketTat.geometry) === dinhGoc / t.soTang && soDinh(ketTat.geometry) > 0
+      && !!bboxTat && bboxTat.caoDen - bboxTat.caoTu === t.dayVanMm,
+    `${soDinh(ketTat.geometry)} đỉnh · một tấm = ${dinhGoc / t.soTang} · cao khối ${bboxTat ? bboxTat.caoDen - bboxTat.caoTu : '—'}mm (ván dày ${t.dayVanMm}mm)`);
   const bacLap = tatBacLap.find((s) => s.id === 'ke-lap-tang');
   doi('tắt bậc KHÔNG xoá tham số của bậc đó (không phá huỷ)', bacLap.op.n === t.soTang && bacLap.op.dz === t.buocTangMm, `n=${bacLap.op.n} dz=${bacLap.op.dz}mm vẫn còn nguyên`);
   const ketBatLai = evalRecipe(nenKhoi, tatBacLap.map((s) => ({ ...s, enabled: true })));
-  doi('bật lại ra ĐÚNG hình cũ (lùi được)', soDinh(ketBatLai.geometry) === dinhGoc, `${soDinh(ketBatLai.geometry)} vs ${dinhGoc} đỉnh`);
+  const bboxBatLai = hopBaoMm(ketBatLai.geometry);
+  doi('bật lại ra ĐÚNG hình cũ (lùi được) — khớp cả kích thước, không chỉ số đỉnh',
+    soDinh(ketBatLai.geometry) === dinhGoc && dinhGoc > 0
+      && !!bboxBatLai && JSON.stringify(bboxBatLai) === JSON.stringify(bboxGoc),
+    `${soDinh(ketBatLai.geometry)} vs ${dinhGoc} đỉnh · hộp bao ${bboxBatLai ? `${bboxBatLai.rong}×${bboxBatLai.sau}, cao ${bboxBatLai.caoTu}→${bboxBatLai.caoDen}` : '—'}mm`);
 
   /* ── K5 · THAY THẾ ──────────────────────────────────────────────────────── */
   khau('K5 · THAY THẾ — đổi vật liệu, giữ nguyên vị trí');
@@ -283,18 +314,21 @@ function chayVongNghe(the) {
     );
     // Không đủ: công thức "còn đó" mà dựng ra hình khác thì vẫn là mất. Dựng lại TỪ TỆP VỪA ĐỌC.
     const dungLai = rcMoLai ? evalRecipe(nenKhoi, rcMoLai.steps) : null;
+    const bboxDungLai = dungLai ? hopBaoMm(dungLai.geometry) : null;
     doi(
-      '① .idfc — dựng lại TỪ TỆP ra ĐÚNG khối cũ',
-      !!dungLai && soDinh(dungLai.geometry) === dinhGoc,
-      dungLai ? `${soDinh(dungLai.geometry)} vs ${dinhGoc} đỉnh` : 'không dựng lại được',
+      '① .idfc — dựng lại TỪ TỆP ra ĐÚNG khối cũ (khớp cả kích thước tính tay)',
+      !!dungLai && soDinh(dungLai.geometry) === dinhGoc && dinhGoc > 0
+        && !!bboxDungLai && bboxDungLai.caoDen === CAO_DINH_TAY && bboxDungLai.rong === t.rongMm,
+      dungLai ? `${soDinh(dungLai.geometry)} vs ${dinhGoc} đỉnh · cao đỉnh ${bboxDungLai?.caoDen ?? '—'}mm (tay=${CAO_DINH_TAY}) · rộng ${bboxDungLai?.rong ?? '—'}mm` : 'không dựng lại được',
     );
     // Và vẫn còn SỬA ĐƯỢC BẰNG THAM SỐ sau khi mở lại — đây là cả lý do không tải model ngoài.
     const bacSauMo = rcMoLai?.steps.find((s) => s.id === 'ke-lap-tang');
     const sua = bacSauMo ? evalRecipe(nenKhoi, rcMoLai.steps.map((s) => (s.id === 'ke-lap-tang' ? { ...s, op: { ...s.op, n: 7 } } : s))) : null;
     doi(
-      '① .idfc — sau mở lại vẫn SỬA ĐƯỢC BẰNG THAM SỐ',
-      !!sua && soDinh(sua.geometry) === (dinhGoc / t.soTang) * 7,
-      sua ? `đổi n=5→7 sau khi mở lại: ${soDinh(sua.geometry)} đỉnh` : 'không sửa được — hết là tham số',
+      '① .idfc — sau mở lại vẫn SỬA ĐƯỢC BẰNG THAM SỐ (khối CAO LÊN thật, không chỉ thêm đỉnh)',
+      !!sua && soDinh(sua.geometry) === (dinhGoc / t.soTang) * 7 && dinhGoc > 0
+        && hopBaoMm(sua.geometry)?.caoDen === t.caoDayMm + t.dayVanMm + 6 * t.buocTangMm,
+      sua ? `đổi n=5→7 sau khi mở lại: ${soDinh(sua.geometry)} đỉnh · cao đỉnh ${hopBaoMm(sua.geometry)?.caoDen ?? '—'}mm (tay=${t.caoDayMm + t.dayVanMm + 6 * t.buocTangMm})` : 'không sửa được — hết là tham số',
     );
     doi('① .idfc — hình học 2D còn nguyên', moLai.body.geom2d?.prims.length === g2d.prims.length && moLai.body.geom2d?.w === g2d.w, `${moLai.body.geom2d?.prims.length} prims · ${moLai.body.geom2d?.w}×${moLai.body.geom2d?.h}`);
     doi('① .idfc — KHÔNG chép giá vào tài sản', !moLai.commerce, `commerce=${moLai.commerce ? JSON.stringify(moLai.commerce) : '(không có — trỏ tới kho giá qua matId)'}`);
@@ -312,15 +346,40 @@ function chayVongNghe(the) {
     const cumMoLai = docMoLai.entities.filter((e) => e.srcInsertId === 'ins-ke-1');
     doi(
       '② .idf — GIA PHẢ về mẫu gốc còn nguyên',
-      cumMoLai.length === cum.length && cumMoLai.every((e) => e.srcBlock === cauKien.meta.code),
+      // `cum.length > 0` là neo bắt buộc: không có nó thì `clusterPrimsToEntities` trả rỗng ⇒
+      // `0 === 0` và `.every()` trên mảng rỗng = true ⇒ mắt xanh trên một bản vẽ TRỐNG.
+      cumMoLai.length === cum.length && cum.length > 0 && cumMoLai.every((e) => e.srcBlock === cauKien.meta.code),
       `${cumMoLai.length}/${cum.length} entity của cụm · srcBlock=${cumMoLai[0]?.srcBlock ?? '(mất)'}`,
     );
     doi('② .idf — QUYẾT ĐỊNH đổi vật liệu của người còn hiệu lực', docMoLai.entities.find((e) => e.id === 'e-san')?.specId === 'ps-van-oc-cho', `specId mặt sàn sau mở lại = ${docMoLai.entities.find((e) => e.id === 'e-san')?.specId}`);
   }
 
-  // ③ IndexedDB — vòng JSON mà sheets-persist áp trước khi ghi
+  /* ③ IndexedDB — vòng JSON mà `sheets-persist` áp trước khi ghi.
+     🔴 BẢN CŨ LÀ TAUTOLOGY, sửa 05/09 — và nó là **bản sao còn sót** của đúng ca đã siết ở
+     `nghiem-thu-g4-moat.mjs` hôm 04/09: lượt đó chữa một bộ, quên bộ này.
+       `JSON.stringify(JSON.parse(JSON.stringify(x))) === JSON.stringify(x)` **đúng với MỌI x** —
+       `Date` thành chuỗi, `Map` thành `{}`, `undefined`/hàm bị rơi hẳn, mà hai vế vẫn khớp ⇒ mắt
+       không thể phát hiện đúng thứ nhãn nó hứa ("không rơi trường nào"). Và nó KHÔNG gọi
+       `sheets-persist` một dòng nào — xoá hẳn tệp đó thì mắt vẫn xanh.
+     ⇒ Siết cùng cách g4-moat: ① đếm khoá ĐỆ QUY trên object THẬT (không qua JSON) ② gọi ĐÚNG
+       `sheetsKey()` của sản phẩm và đòi khoá mang cả người lẫn dự án, không rơi vào kho mơ hồ. */
   const quaIdb = JSON.parse(JSON.stringify({ v: 1, activeId: 's1', sheets: [{ id: 's1', name: 'Mặt bằng', doc: doiVL.doc }], ts: 1 }));
-  doi('③ IndexedDB — Doc qua vòng JSON không rơi trường nào', JSON.stringify(quaIdb.sheets[0].doc) === JSON.stringify(doiVL.doc), `${JSON.stringify(quaIdb.sheets[0].doc).length} byte`);
+  const demKhoaSau = (v, sau = 0) => {
+    if (sau > 12 || v === null || typeof v !== 'object') return 0;
+    let n = 0;
+    for (const k of Object.keys(v)) { n += 1; n += demKhoaSau(v[k], sau + 1); }
+    return n;
+  };
+  const khoaGoc = demKhoaSau(doiVL.doc);
+  const khoaSau = demKhoaSau(quaIdb.sheets[0].doc);
+  doi('③ IndexedDB — Doc qua vòng JSON không rơi trường nào (đếm khoá ĐỆ QUY trên object thật)',
+    khoaSau === khoaGoc && khoaGoc > 0,
+    `khoá đệ quy: gốc=${khoaGoc} → sau vòng=${khoaSau}${khoaSau === khoaGoc ? '' : ` · RƠI ${khoaGoc - khoaSau}`}`);
+  const KHO_MO_HO = ['local', '', 'undefined', 'null', 'anon'];
+  const khoaIdb = sheetsKey('u-g6', '/projects/g6/cad', 'g6');
+  doi('③ IndexedDB — khoá kho do CHÍNH sheets-persist sinh, mang cả người lẫn dự án',
+    khoaIdb === 'u-g6::/projects/g6/cad::g6' && !KHO_MO_HO.includes(khoaIdb.split('::')[0]),
+    `khoá=${khoaIdb}`);
 
   /* ── K7 · GIẤY PHÉP ─────────────────────────────────────────────────────── */
   khau('K7 · GIẤY PHÉP — không tài sản nào ship với nguồn gốc mù mờ');
@@ -456,24 +515,52 @@ function chayVongNghe(the) {
   return so.slice();
 }
 
-/** Đùn một đa giác đáy thành lăng trụ — dựng `positions` mà `evalRecipe` nhận làm nền, đúng hình
- * dạng `SceneGroup.positions` (mảng phẳng x,y,z theo tam giác) mà `cad-to-obj.ts` sinh ra. */
+/**
+ * Đùn một đa giác đáy (mm, hệ CAD) thành lăng trụ — dựng `positions` mà `evalRecipe` nhận làm nền.
+ *
+ * 🔴 BẢN CŨ SAI HỆ TOẠ ĐỘ, sửa 05/09. Nó đẩy thẳng `x, y, z` mm hệ CAD vào mảng rồi chú thích là
+ * *"đúng hình dạng `SceneGroup.positions` mà cad-to-obj.ts sinh ra"* — khai sai hai tầng:
+ *   · ĐƠN VỊ — hợp đồng `SceneGroup.positions` (`lib/three/cad-to-obj.ts:124-129`) là **MÉT**,
+ *     bản cũ để **mm** ⇒ lệch 1000 lần.
+ *   · TRỤC — hợp đồng là **Y-up `(x, cao, −y)`**, bản cũ để cao độ ở **Z**.
+ * Hậu quả đo được: bước `arrayLinear{dz:350}` đi qua `cadToThreeM` (đúng hợp đồng) thành dịch
+ * **0,35 trên trục Y** — với nền mm thì đó là **0,35 mm theo CHIỀU SÂU**. Tức "kệ 5 tầng" mà bộ
+ * này chứng nhận thực ra là **5 tấm ván chồng khít lên nhau, lệch nhau 0,35 mm**, cao đúng 25 mm.
+ * Không mắt nào thấy vì mọi mắt đếm **số đỉnh** (180 = 5×36 ✅) chứ không đo **vị trí**.
+ * ⚠️ Mã sản phẩm KHÔNG sai: `repeatGeometry` + `cadToThreeM` đúng hợp đồng; nền dựng đúng thì
+ * khối ra cao 100→1525 mm, rộng 900, sâu 350 — khớp tham số. Sai là ở phép đo này.
+ * ⇒ Nay dựng nền qua CHÍNH `cadToThreeM` của sản phẩm, không tự chép công thức trục lần thứ hai.
+ */
 function daysToPositions(poly, z0, z1) {
   const out = [];
+  const P = (p, z) => out.push(...cadToThreeM(p.x, p.y, z));
   const day = (z) => {
-    for (let i = 1; i + 1 < poly.length; i++) {
-      out.push(poly[0].x, poly[0].y, z, poly[i].x, poly[i].y, z, poly[i + 1].x, poly[i + 1].y, z);
-    }
+    for (let i = 1; i + 1 < poly.length; i++) { P(poly[0], z); P(poly[i], z); P(poly[i + 1], z); }
   };
   day(z0);
   day(z1);
   for (let i = 0; i < poly.length; i++) {
     const a = poly[i];
     const b = poly[(i + 1) % poly.length];
-    out.push(a.x, a.y, z0, b.x, b.y, z0, b.x, b.y, z1);
-    out.push(a.x, a.y, z0, b.x, b.y, z1, a.x, a.y, z1);
+    P(a, z0); P(b, z0); P(b, z1);
+    P(a, z0); P(b, z1); P(a, z1);
   }
   return out;
+}
+
+/** Hộp bao của một geometry, trả về **mm hệ CAD** để so thẳng với tham số cấu kiện.
+ * Ngược `cadAxesToThree` (x, cao, −y): rộng ← x · sâu ← −z · cao ← y. */
+function hopBaoMm(geom) {
+  const p = geom?.attributes?.position?.array;
+  if (!p || !p.length) return null;
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, c0 = Infinity, c1 = -Infinity;
+  for (let i = 0; i < p.length; i += 3) {
+    x0 = Math.min(x0, p[i] * 1000); x1 = Math.max(x1, p[i] * 1000);
+    c0 = Math.min(c0, p[i + 1] * 1000); c1 = Math.max(c1, p[i + 1] * 1000);
+    y0 = Math.min(y0, -p[i + 2] * 1000); y1 = Math.max(y1, -p[i + 2] * 1000);
+  }
+  const r = (v) => Math.round(v * 1000) / 1000;
+  return { rong: r(x1 - x0), sau: r(y1 - y0), caoTu: r(c0), caoDen: r(c1) };
 }
 
 /* ─────────────────────── thế giới THẬT + hai thế giới HỎNG ─────────────────────── */
