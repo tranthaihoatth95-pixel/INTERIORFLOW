@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { renderMaterialPreviewAsync, type PreviewSpec } from './material-preview';
 import { xepLuotXemTruoc } from '@/lib/materials/hang-doi-xem-truoc';
+import { veOAnToan } from '@/lib/materials/o-an-toan';
 
 interface Props {
   spec: PreviewSpec;
@@ -46,10 +47,17 @@ interface Props {
    * chưa ai duyệt. Ai cần thì bật, không ép cả nhà.
    */
   hoanLaiToiKhiThay?: boolean;
+  /**
+   * 05/09 — Ô NÀY NGÃ THÌ BÁO RA, KHÔNG IM. Nhận đúng MỘT câu tiếng người (`o-an-toan.ts`), hoặc
+   * `null` khi lượt vẽ về đích. Nơi gọi quyết định nói to tới đâu (`loiOMau`) — component này
+   * KHÔNG tự dán cờ đỏ lên mọi ô, vì ô còn vân procedural thì vẫn đang bày một mẫu vật THẬT.
+   */
+  onLoi?: (lyDo: string | null) => void;
 }
 
-export default function MaterialSphere({ spec, fallback, size = 96, resolution = 0.25, className, style, title, fit = 'cover', backdrop, children, hoanLaiToiKhiThay = false }: Props) {
+export default function MaterialSphere({ spec, fallback, size = 96, resolution = 0.25, className, style, title, fit = 'cover', backdrop, children, hoanLaiToiKhiThay = false, onLoi }: Props) {
   const [url, setUrl] = useState<string | null>(null);
+  const [lyDo, setLyDo] = useState<string | null>(null);
   const [dangThay, setDangThay] = useState(!hoanLaiToiKhiThay);
   const oRef = useRef<HTMLSpanElement | null>(null);
 
@@ -77,8 +85,15 @@ export default function MaterialSphere({ spec, fallback, size = 96, resolution =
     // thì async đó tương đương bản sync — một nhánh gọi cho cả hai, fallback giữ nguyên lúc chờ.
     // 05/09: nhánh hoãn-lại đi qua VAN CHI PHÍ (≤4 lượt đồng thời, chạy lúc rảnh, huỷ được);
     // nhánh mặc định giữ nguyên rAF như trước, không đổi một li cho bảy nơi gọi cũ.
-    const ve = () => renderMaterialPreviewAsync(spec, size, resolution).then((u) => {
-      if (alive) setUrl(u);
+    /* 🔴 MỌI đường vẽ đi qua `veOAnToan` — KHÔNG chỉ đường hàng đợi. Bản trước để nhánh mặc
+       định gọi thẳng `renderMaterialPreviewAsync` trong rAF: một lượt ngã ở đó thành **unhandled
+       rejection**, và ở Next dev/Electron thứ đó nổ overlay lỗi toàn trang ⇒ MỘT ô hỏng làm
+       trắng cả kho. Bảy nơi gọi cũ đều đi nhánh này, nên lỗ nằm đúng ở chỗ đông người qua nhất. */
+    const ve = () => veOAnToan(() => renderMaterialPreviewAsync(spec, size, resolution)).then((kq) => {
+      if (!alive) return;
+      setUrl(kq.url);
+      setLyDo(kq.lyDo);
+      onLoi?.(kq.lyDo);
     });
     const huy = hoanLaiToiKhiThay
       ? xepLuotXemTruoc(ve)
@@ -97,7 +112,10 @@ export default function MaterialSphere({ spec, fallback, size = 96, resolution =
       aria-hidden
       ref={oRef}
       className={className}
-      title={title}
+      /* Ngã thì NÓI RA ngay trên chính ô đó. `data-o-hong` là chỗ máy đo đọc được (ảnh chụp
+         không phân biệt nổi "quả cầu chưa render" với "quả cầu màu xám"). */
+      data-o-hong={lyDo ? '1' : undefined}
+      title={lyDo ? [title, lyDo].filter(Boolean).join(' — ') : title}
       style={{
         display: 'block',
         position: 'relative',

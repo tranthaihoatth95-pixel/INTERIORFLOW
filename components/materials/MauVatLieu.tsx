@@ -25,10 +25,11 @@
  * ⚠️ `aria-hidden` là CỐ Ý: mẫu vật là kênh THỊ GIÁC, không mang tin mới cho trình đọc màn hình —
  * tên · mã · ba mặt đều đã là chữ thật ở các cột bên cạnh. Đọc thêm "ảnh gỗ sồi" là lặp.
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import MaterialSphere from '@/components/three/MaterialSphere';
 import { materialTextureDataUrl } from '@/lib/cad/material-texture';
 import { SAN_PX } from '@/lib/materials/nac-xem-truoc';
+import { loiOMau } from '@/lib/materials/o-an-toan';
 import type { XemTruocO } from '@/lib/materials/xem-truoc-o';
 
 /** Cạnh ô ở nấc SCAN. Bằng đúng sàn nhận dạng của hợp đồng ba nấc — **đọc từ đó, không gõ lại**:
@@ -53,6 +54,8 @@ export function MauVatLieu({
   canh?: number;
 }) {
   const nen = mauPhang ?? xemTruoc?.mauA ?? 'var(--field)';
+  /* 05/09 — lượt vẽ quả cầu ngã thì ô này phải tự nói, không để người dùng đoán. */
+  const [lyDo, setLyDo] = useState<string | null>(null);
 
   /* Vân procedural — đồng bộ và ĐÃ CÓ CACHE trong `material-texture.ts` theo `id+size`, nên
      `useMemo` ở đây chỉ để khỏi gọi qua lớp cache mỗi lần render lại hàng. Không có preset 2D
@@ -93,12 +96,27 @@ export function MauVatLieu({
     ? { backgroundImage: `url(${van})`, backgroundSize: 'cover', backgroundPosition: 'center' }
     : { background: nen };
 
+  /* CÒN VÂN thì ô vẫn là mẫu vật thật, chỉ mất mặt bóng ⇒ nói ở chỗ người dùng đang soi (panel
+     ba mặt), không dán cờ lên bảng. TRỐNG TRƠN mới là ca phải kêu ngay tại ô: người dùng đang
+     nhìn một mảng màu và không có cách nào biết đó không phải màu của vật liệu. */
+  const loi = loiOMau(!!van, lyDo);
+
   return (
+    /* 🔴 DẤU BÁO PHẢI NẰM NGOÀI `MaterialSphere`. Thân quả cầu mang `aria-hidden` (cố ý — nó là
+       kênh thị giác, chữ đã có ở các cột bên), mà `aria-hidden` che TRỌN cây con: đặt dấu vào
+       trong thì `aria-label` của nó **không bao giờ tới trình đọc màn hình**. Đúng cái bẫy
+       "có trong mã nhưng không tới được người dùng" (16/08) — lần này bắt được lúc đọc lại mã,
+       trước khi nó thành một dòng khai sai trong báo cáo. */
+    /* `block`, KHÔNG `inline-block`: nhánh không-có-quả-cầu trả về một `div` (block), nên vỏ
+       inline sẽ ngồi trên đường chân chữ và đẩy ô lệch ~2 px so với hàng bên cạnh — đo được bằng
+       cách so hai ảnh chụp trước/sau, không thấy được bằng cách đọc mã. */
+    <span style={{ position: 'relative', display: 'block', lineHeight: 0 }}>
     <MaterialSphere
       title={ten}
       style={khung}
       fit="contain"
       size={canh}
+      onLoi={setLyDo}
       /* Nấc SCAN = 0.25 (spec §5.4 P3). Máy render có SÀN 96 px nguồn nên ảnh vẫn nét trên
          màn Retina; mở màn ở nấc 1 là đúng thứ P3 cấm. */
       resolution={0.25}
@@ -110,5 +128,22 @@ export function MauVatLieu({
       backdrop={undefined}
       spec={{ id: xemTruoc.id, colorA: xemTruoc.mauA, colorB: xemTruoc.mauB, kind: xemTruoc.ho, pbr: xemTruoc.pbr ?? undefined }}
     />
+      {loi.nang === 'nang' && loi.cau && (
+        /* CHỮ chứ không phải chấm màu: dấu `!` đọc được cả khi bỏ hết màu, và `aria-label` mang
+           trọn câu cho trình đọc màn hình — `title` một mình thì câm trên cảm ứng (bài học 16/08). */
+        <span
+          role="img"
+          aria-label={loi.cau}
+          title={loi.cau}
+          style={{
+            position: 'absolute', right: 2, bottom: 2, width: 12, height: 12, display: 'grid',
+            placeItems: 'center', borderRadius: 'var(--r-1)', background: 'var(--card)',
+            color: 'var(--warning)', fontSize: 10, fontWeight: 700, lineHeight: 1,
+          }}
+        >
+          !
+        </span>
+      )}
+    </span>
   );
 }
