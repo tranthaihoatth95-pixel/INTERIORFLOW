@@ -89,6 +89,12 @@ jobs:
         run: |
           set -e
           APP="dist-installer/mac-arm64/InteriorFlow.app/Contents/Resources/app"
+          # CHẶN QUA-RỖNG: `find` trên đường dẫn KHÔNG TỒN TẠI trả 0 kết quả, và `2>/dev/null`
+          # nuốt luôn lời báo lỗi ⇒ cổng "đạt" trong khi nó chẳng soi cái gì. Đo 05/09 bằng phép
+          # thử rút ruột: ca "đường dẫn sai" cho ra y hệt ca "gói sạch". Nên phải khẳng định thư
+          # mục CÓ THẬT trước đã — đổi tên thư mục đầu ra là cổng ĐỎ, không phải im lặng qua.
+          test -d "$APP" || { echo "::error::Không thấy $APP — cổng này soi rỗng, DỪNG"; exit 1; }
+          echo "soi trong: $APP ($(find "$APP" -type f | wc -l) tệp)"
           for pat in ".env" "*.db" ".claude"; do
             n=$(find "$APP" -name "$pat" 2>/dev/null | wc -l)
             echo "$pat trong gói: $n"
@@ -157,6 +163,12 @@ jobs:
         run: |
           set -e
           APP="dist-installer/win-unpacked/resources/app"
+          # CHẶN QUA-RỖNG: `find` trên đường dẫn KHÔNG TỒN TẠI trả 0 kết quả, và `2>/dev/null`
+          # nuốt luôn lời báo lỗi ⇒ cổng "đạt" trong khi nó chẳng soi cái gì. Đo 05/09 bằng phép
+          # thử rút ruột: ca "đường dẫn sai" cho ra y hệt ca "gói sạch". Nên phải khẳng định thư
+          # mục CÓ THẬT trước đã — đổi tên thư mục đầu ra là cổng ĐỎ, không phải im lặng qua.
+          test -d "$APP" || { echo "::error::Không thấy $APP — cổng này soi rỗng, DỪNG"; exit 1; }
+          echo "soi trong: $APP ($(find "$APP" -type f | wc -l) tệp)"
           for pat in ".env" "*.db" ".claude"; do
             n=$(find "$APP" -name "$pat" 2>/dev/null | wc -l)
             echo "$pat trong gói: $n"
