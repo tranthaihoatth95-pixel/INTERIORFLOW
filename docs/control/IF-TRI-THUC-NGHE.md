@@ -77,8 +77,11 @@ Audit mà không biết đầu ra nghề gồm những gì thì không biết ap
 | BOQ / dự toán | khối lượng theo đơn vị đo được + hao hụt | — |
 
 **Tỷ lệ chuẩn (ISO 5455):** 1:1 · 1:2 · 1:5 · 1:10 · 1:20 · 1:50 · 1:100 · 1:200 · 1:500.
-`1:47` **không tồn tại trong nghề** — thấy nó là thấy engine tự tính tỷ lệ cho vừa khung giấy,
-lỗi đã bắt được ngày 11/08. (1:25 · 1:30 dùng thực tế ngoài ISO ⇒ được, nhưng phải cố ý.)
+`1:47` **không tồn tại trong nghề** — thấy nó là thấy engine tự tính tỷ lệ cho vừa khung giấy.
+Kiểm: `grep -rn "1:47\|scaleDenom\|tyLe" lib/cad/export-checks.ts lib/present-editor/` — nhưng
+grep là cách YẾU; tỷ lệ lẻ chỉ lộ ở khung tên bản in, nên cách chắc là **mở tệp xuất ra soi**
+theo `docs/CHUAN-DAU-RA-NGHE.md`. Lỗi bắt được 11/08. (1:25 · 1:30 dùng thật ngoài ISO ⇒ được,
+nhưng phải cố ý.)
 
 **Khổ giấy (ISO 216):** hồ sơ thi công A1 · A2 · A3; thuyết trình khách A3. In **≥300dpi**.
 

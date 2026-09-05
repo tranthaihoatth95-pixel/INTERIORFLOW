@@ -73,6 +73,8 @@ const CONG = [
  * ⛔ Cấm: "thêm 14 test" · "99 commit" · "CI xanh". Mỗi dòng phải nói được một việc người dùng
  * làm được hôm nay mà hôm qua không, hoặc một cách mất dữ liệu nay không xảy ra nữa. */
 const TOT_HON = [
+  { ngay: '05/09', chu: 'Mở Kho vật liệu là NHÌN THẤY vật liệu — phân biệt gỗ sồi với gỗ óc chó bằng mắt.',
+    them: 'Trước đó ô mẫu 32×32 chứa biểu tượng ảnh-hỏng 14 px: 3/3 ô hỏng, 0 pixel vật liệu. Nay 44×44 mẫu vật vẽ ra, 0/202 ô hỏng dưới tải.', cong: 'G6' },
   { ngay: '05/09', chu: 'Đăng nhập tài khoản khác trên cùng một máy KHÔNG còn mở được thư mục dự án của người trước.',
     them: 'Trước đó lời cấp quyền thư mục nằm dưới một khoá cố định, ai đăng nhập sau cũng dùng lại được.', cong: 'G1' },
   { ngay: '05/09', chu: 'Món cấu kiện thả từ Thư viện xuống bản vẽ nay HIỆN RA trong bảng khối lượng.',
@@ -112,11 +114,19 @@ const BE_MAT = [
   ['KHO TRI THỨC', '14-kho-tri-thuc.png'], ['CÀI ĐẶT', '18-cai-dat.png'], ['WORKHUB', '22-workhub.png'],
 ];
 
+/* GHI ĐÈ CÓ NGUỒN — bề mặt vừa đổi sau khi bản trích chạy. Khai rõ vì sao không để bản trích
+ * quyết: nó đọc sổ lúc 20:xx, còn V1–V4 lên lúc 21:xx. Đè bằng thứ ĐO ĐƯỢC, không bằng lời hứa,
+ * và cố ý KHÔNG nâng lên PASS — hai điểm trượt còn nguyên. */
+const DE_LEN = {
+  'VẬT LIỆU': { trangThai: 'PARTIAL',
+    chan: 'V1–V4 xong (2/2 vật liệu có mã hiện mẫu vật thật, ba mặt 2D✓3D✓). CÒN: ở nấc SCAN 44px đọc ra MÀU và ĐỘ BÓNG, chưa đọc ra VÂN — quả cầu PBR phủ kín lớp vân; và chưa đăng nhập thì /materials ra màn "Cần đăng nhập lại", 0 hàng. V5–V9 chưa làm.' },
+};
 const beMatTheoTen = new Map(bangChung.beMat.map((b) => [String(b.ten).split(' ')[0].toUpperCase(), b]));
 function trangThaiBeMat(ten, tep) {
   const khoa = ten.split(' ')[0].toUpperCase();
   const b = beMatTheoTen.get(khoa) || bangChung.beMat.find((x) => String(x.ten).toUpperCase().includes(khoa));
-  return b || null;
+  const de = DE_LEN[ten];
+  return de ? { ...(b || {}), ...de } : (b || null);
 }
 
 const theMan = ([ten, tep]) => {

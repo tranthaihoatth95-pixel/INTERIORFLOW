@@ -77,10 +77,11 @@
     {
       "tep": "09-vat-lieu.png",
       "route": "/materials",
-      "chu": 1672,
-      "nut": 57,
-      "hinh": 62,
-      "loi": null
+      "chu": 1774,
+      "nut": null,
+      "hinh": 2,
+      "loi": null,
+      "ghiChu": "chụp lại 05/09 sau V1–V4 — 2 ảnh mẫu vật thật (trước: 0)"
     },
     {
       "tep": "10-mau.png",
@@ -210,5 +211,6 @@
       "hinh": null,
       "loi": "ĐI TRẬT → /projects/cmtoq50cr000w7dyff4pqus4a/photo"
     }
-  ]
+  ],
+  "ghiChuLo": "09-vat-lieu.png chụp LẠI sau khi V1–V4 lên; 20 ảnh còn lại là lô 18:36."
 }
