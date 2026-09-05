@@ -205,3 +205,57 @@ ok('demo-flow + lỗi thật thì ambient vẫn alert (lỗi thắng)', trangTha
   ok('mã nguồn có nhánh gallery bỏ tên chặng',
     /stage === 'gallery' \? 'Vitals'/.test(nguon));
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   [CẤM HỘP RỖNG] — Hoà cấm 05/09, kèm ảnh chụp: Peek mở ra một tấm chỉ để nói
+   "Không có tín hiệu nào." + một dòng "Mở Vitals…".
+
+   Ba luật cùng cấm nó: N-10 cờ đỏ *hộp rỗng* · khuôn thông điệp TRỐNG phải hành
+   động được · định nghĩa Peek §17 (một tín hiệu lớn + ngữ cảnh + một hành động)
+   — không tín hiệu thì Peek KHÔNG CÓ RUỘT.
+
+   Đây là test ĐỌC MÃ, không dựng DOM: nó canh cho ba điều kiện dưới đây không
+   bị gỡ ra trong lúc sửa việc khác. Gỡ một trong ba là hộp rỗng sống lại.
+   ═══════════════════════════════════════════════════════════════════════════ */
+{
+  const fs = require('node:fs') as typeof import('node:fs');
+  const path = require('node:path') as typeof import('node:path');
+  const nguon = fs.readFileSync(
+    path.join(__dirname, 'VitalsAperture.tsx'),
+    'utf8',
+  );
+
+  // [1] Lối vào: `moPeek` phải bỏ đi khi không có tín hiệu.
+  if (!/if \(tinHieu\.length === 0\) \{/.test(nguon)) {
+    throw new Error(
+      '[CẤM HỘP RỖNG] `moPeek` không còn chặn `tinHieu.length === 0` — rê chuột ' +
+        'vào ổ khi không có tín hiệu sẽ bật ra một tấm rỗng. Hoà cấm 05/09.',
+    );
+  }
+
+  // [2] Cổng dựng tấm: Peek chỉ được dựng khi CÓ tín hiệu (Engage thì miễn).
+  if (!/muc === 'engage' \|\| tinHieu\.length > 0/.test(nguon)) {
+    throw new Error(
+      '[CẤM HỘP RỖNG] Cổng portal không còn điều kiện ' +
+        "`muc === 'engage' || tinHieu.length > 0` — tín hiệu tắt trong lúc tấm " +
+        'đang mở sẽ để lộ một tấm rỗng.',
+    );
+  }
+
+  // [3] Không được dựng lại câu chết. Chỉ cho phép nó tồn tại trong CHÚ THÍCH
+  //     (dòng bắt đầu bằng * hoặc //) — đó là chỗ ghi vì sao nó bị cấm.
+  const dongChet = nguon
+    .split('\n')
+    .map((d, i) => [i + 1, d] as const)
+    .filter(([, d]) => d.includes('Không có tín hiệu nào'))
+    .filter(([, d]) => !/^\s*(\*|\/\/)/.test(d));
+  if (dongChet.length > 0) {
+    throw new Error(
+      '[CẤM HỘP RỖNG] Câu "Không có tín hiệu nào." quay lại thành GIAO DIỆN ở dòng ' +
+        dongChet.map(([n]) => n).join(', ') +
+        ' — trống thì phải hành động được, không phải một câu chết.',
+    );
+  }
+
+  console.log('  ✓ [CẤM HỘP RỖNG] ba chốt chặn còn nguyên');
+}

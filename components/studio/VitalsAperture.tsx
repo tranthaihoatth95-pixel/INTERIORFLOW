@@ -258,14 +258,36 @@ export function VitalsAperture({ stage }: {
     setNeo({ tren: r.bottom, trai: r.left, tam: r.left + r.width / 2 });
   }, []);
 
+  /**
+   * ⛔ HOÀ CẤM 05/09 — "HỘP RỖNG". Peek TỪNG mở ra một tấm chỉ để nói *"Không có tín hiệu nào."*
+   * Ba luật cùng cấm nó, không phải chuyện gu:
+   *   · N-10 cờ đỏ — *hộp rỗng khổng lồ*;
+   *   · khuôn thông điệp TRỐNG (`SPEC-NGON-NGU-CHI-DAN`) — trống thì phải **hành động được**,
+   *     không phải một câu chết + một dòng chữ;
+   *   · chính định nghĩa Peek ở §17 — *MỘT tín hiệu lớn + một dòng ngữ cảnh + một hành động*.
+   *     KHÔNG có tín hiệu ⇒ Peek không có ruột ⇒ **không được mở**.
+   *
+   * Hai lối vào xử KHÁC NHAU, cố ý:
+   *   · rê chuột, 0 tín hiệu → **không mở gì**. Ổ vẫn thở ở Ambient, không hộp nào bật ra.
+   *   · BẤM,      0 tín hiệu → nhảy **thẳng Engage** (Vitals thật, có ô hỏi). Nút KHÔNG chết —
+   *     và đây vốn đã là chỗ duy nhất nút "Mở Vitals…" trong tấm cũ dẫn tới, nên không mất
+   *     đường nào; chỉ bỏ một trạm trung gian rỗng.
+   */
   const moPeek = useCallback(
     (ghimLai: boolean) => {
+      if (tinHieu.length === 0) {
+        if (ghimLai) {
+          doNeo();
+          moKho();
+        }
+        return;
+      }
       doNeo();
       setQuyChuan(doQuyChuan()); // đo LƯỜI, đúng lúc mở
       if (ghimLai) datGhim(true);
       setMuc((m) => (m === 'engage' ? m : 'peek'));
     },
-    [doNeo, datGhim],
+    [doNeo, datGhim, moKho, tinHieu.length],
   );
 
   const dong = useCallback(() => {
@@ -613,7 +635,11 @@ export function VitalsAperture({ stage }: {
         )}
       </button>
 
-      {muc !== 'ambient' && neo && typeof document !== 'undefined'
+      {/* ⛔ CỔNG CHỐNG HỘP RỖNG (Hoà cấm 05/09). `moPeek` đã chặn ở lối vào, nhưng tín hiệu
+          có thể TẮT trong lúc tấm đang mở (lượt render xong, cảnh báo hết hạn) — lúc đó tấm
+          sẽ tự rỗng ra. Chặn ở cả hai đầu nên không có khung hình nào lọt. Engage KHÔNG chịu
+          điều kiện này: nó là chỗ ĐỌC và HỎI, rỗng tín hiệu vẫn có việc để làm. */}
+      {muc !== 'ambient' && (muc === 'engage' || tinHieu.length > 0) && neo && typeof document !== 'undefined'
         ? createPortal(
             // PORTAL ra body — luật K4 (02/08): tấm nổi không được lồng trong chrome kính.
             <div
@@ -660,14 +686,10 @@ export function VitalsAperture({ stage }: {
                   }}
                   className="overflow-hidden rounded-[var(--r-3)] p-2"
                 >
-                  {tinHieu.length === 0 ? (
-                    // Câu này nói về KHẨU ĐỘ, không nói về sức khoẻ hồ sơ. Cố ý KHÔNG viết
-                    // "bản vẽ không có lỗi": bộ kiểm chỉ bắt được thứ đo được, "0 vi phạm" ≠
-                    // "đạt chuẩn" (luật đã ghi thành chữ ở `violationsPromptBlock`).
-                    <p className="px-1.5 py-1 text-[length:var(--fs-xs)] leading-relaxed text-[var(--t3)]">
-                      {tr('Không có tín hiệu nào.', 'No signals.')}
-                    </p>
-                  ) : (
+                  {/* ⛔ NHÁNH "0 tín hiệu" ĐÃ XOÁ 05/09 (Hoà cấm hộp rỗng). KHÔNG để lại nhánh JSX
+                      không bao giờ chạy: một khối UI không bao giờ hiện là thứ phiên sau tưởng
+                      đã có rồi — đúng cơ chế đẻ ra luật N8. Điều kiện `tinHieu.length > 0` nay
+                      nằm ở CỔNG PORTAL bên trên, nên tới được đây là chắc chắn có tín hiệu. */}
                     <>
                       {/* TÍN HIỆU LỚN — số đứng riêng, cỡ lớn; chữ đi kèm ngắn. */}
                       <div className="flex items-baseline gap-2 px-1.5 pt-0.5">
@@ -703,7 +725,6 @@ export function VitalsAperture({ stage }: {
                         </ul>
                       )}
                     </>
-                  )}
 
                   {/* ⛔ Ở BẢN GỐC còn một khối CHI TIẾT (cái gì · vì sao · nguồn · ảnh hưởng +
                       2 nút) cho tín hiệu `dia-diem`. Cắt cùng lúc với nguồn của nó — giữ lại
@@ -718,7 +739,7 @@ export function VitalsAperture({ stage }: {
                       // Đi qua kho dùng chung — MỘT lối vào Engage, xem hiệu ứng đồng bộ ở trên.
                       moKho();
                     }}
-                    className="mt-1.5 w-full rounded-[var(--r-2)] px-2 py-1.5 text-left text-[length:var(--fs-xs)] text-[var(--t2)] transition-colors duration-[120ms] hover:bg-[var(--hover)]"
+                    className="mt-2 w-full rounded-[var(--r-2)] border border-[var(--border)] px-2 py-1.5 text-center text-[length:var(--fs-xs)] font-medium text-[var(--t2)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
                   >
                     {tr('Mở Vitals…', 'Open Vitals…')}
                   </button>
