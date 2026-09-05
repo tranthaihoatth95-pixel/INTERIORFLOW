@@ -78,9 +78,11 @@ import VitalsGesturePanel from '@/components/studio/VitalsGesture';
 import { useVitalsUi } from '@/lib/vitals-ui';
 import { laPhimChinh } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 import {
-  chonTinHieu, trangThaiAmbient, mucKhauDo, nhanKhauDo, domKhauDo,
+  chonTinHieu, trangThaiAmbient, mucKhauDo, nhanKhauDo, domKhauDo, TEN_MIEN,
   type TinHieu, type MaMien, type VitalsStage,
 } from '@/components/studio/vitals-tin-hieu';
+import { tinHieuDiaDiem, baoSiteDoi, SU_KIEN_SITE_DOI } from '@/lib/site/vitals-site';
+import type { HoSoDiaDiem } from '@/lib/site/types';
 import { useDemoSpine, tomTatSpine, useCheDoDemo } from '@/lib/studio/demo-spine';
 import { NHAN_GIU_MS, SLOP_PX, TRE_RE_VAO_MS } from '@/components/studio/cu-chi-nhan-giu';
 
@@ -148,6 +150,22 @@ function doQuyChuan(): number | undefined {
     // Bộ kiểm gặp hình học lạ → KHÔNG bịa số 0, và KHÔNG làm hỏng cả khẩu độ.
     return undefined;
   }
+}
+
+/**
+ * ⭐ CỬA CHẶN CHỮ LẠ — thay cho phép ép kiểu mù `as MaMien[]` dùng tới 05/09.
+ *
+ * `diaDiemMien` cố ý là UNION CHỮ CHẾT chứ không phải `string[]`: `vitals-tin-hieu.ts` tự khai
+ * *"nguồn tín hiệu không được nhận chữ tự do, nếu không đây thành cửa sau cho một câu AI sinh lọt
+ * lên khẩu độ"*. Nhưng `as MaMien[]` **tắt đúng lời hứa đó** — nó không kiểm gì, chỉ bảo trình
+ * biên dịch im. Đo được hậu quả: `daCu: ['la.x']` ⇒ mã miền `'la'` ⇒ `TEN_MIEN['la']` là
+ * `undefined` ⇒ `chiTiet` thành `'Phân tích nắng · '` (dấu chấm giữa cụt đuôi), tức chữ lạ đi
+ * thẳng tới mắt người dùng dưới dạng một khoảng trống không giải thích được.
+ *
+ * Lọc theo CHÍNH bảng nhãn — miền nào không có tên người đọc thì không có gì để nói về nó.
+ */
+function locMien(ds: readonly string[]): MaMien[] {
+  return ds.filter((m): m is MaMien => Object.prototype.hasOwnProperty.call(TEN_MIEN, m));
 }
 
 export function VitalsAperture({ stage }: {
@@ -242,11 +260,20 @@ export function VitalsAperture({ stage }: {
        */
       fetch(`/api/projects/${encodeURIComponent(duAnHienTai)}/site`)
         .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-        .then((d) => {
+        .then((d: HoSoDiaDiem | null) => {
           if (huy) return;
-          const ds: string[] = Array.isArray(d?.daCu) ? d.daCu : [];
-          setSoCu(ds.length);
-          setMienCu([...new Set(ds.map((k) => k.split('.')[0]))] as MaMien[]);
+          // Thân 200 mà rỗng là hồ sơ DỊ DẠNG, không phải "hồ sơ sạch". Vào nhánh hỏng để nhãn
+          // nói "chưa đo được" — im ở đây là dựng lại đúng F-02 (calm giả) ở một cửa khác.
+          if (!d) { setNguonSite('hong'); return; }
+          /* ⭐ K1 — MỘT VIỆC, MỘT NƠI LÀM. Trước lát này khối dưới đây tự tách `daCu` bằng tay
+             (`ds.map((k) => k.split('.')[0])`) rồi tự đếm `ds.length`, trong khi
+             `lib/site/vitals-site.ts` đã làm đúng hai việc đó, thuần và CÓ TEST. Bản tay không
+             chỉ thừa — nó không có gì canh, nên mọi sửa về sau chỉ đúng ở một trong hai nơi. */
+          const tin = tinHieuDiaDiem(d);
+          // `null` = đã đọc được và KHÔNG có gì cũ ⇒ 0 (im vì sạch), khác hẳn `undefined`
+          // (chưa/không đọc được ⇒ im vì không biết). Hai lý do im khác nhau, giữ tách bạch.
+          setSoCu(tin?.so ?? 0);
+          setMienCu(locMien(tin?.mien ?? []));
           setNguonSite('doc-duoc');
         })
         .catch(() => {
@@ -257,8 +284,8 @@ export function VitalsAperture({ stage }: {
     doc();
     // Sự thật địa điểm đổi ở nơi khác (Tổng quan, bảng Đèn) ⇒ khẩu độ phải biết mà không cần F5.
     const nghe = () => doc();
-    window.addEventListener('if:site-changed', nghe);
-    return () => { huy = true; window.removeEventListener('if:site-changed', nghe); };
+    window.addEventListener(SU_KIEN_SITE_DOI, nghe);
+    return () => { huy = true; window.removeEventListener(SU_KIEN_SITE_DOI, nghe); };
   }, [duAnHienTai]);
 
   /**
@@ -812,7 +839,7 @@ export function VitalsAperture({ stage }: {
                               body: JSON.stringify({ mien: mienCu }),
                             }).then(() => {
                               // Đọc lại trạng thái miền — Vitals tự tắt vì `daCu` đã rỗng.
-                              window.dispatchEvent(new Event('if:site-changed'));
+                              baoSiteDoi();
                               dong();
                             });
                           }}

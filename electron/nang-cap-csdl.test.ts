@@ -253,7 +253,7 @@ async function ca5(thuMuc: string) {
 
   // Dựng SỔ LỆCH: xoá sổ thật rồi ghi lại đúng hình dạng sổ của bản cũ — có các mốc tới
   // 11/08, CỘNG một mốc mang tên đã bị xoá khỏi bộ cài. Đây là hình dạng thật, không phải mô phỏng.
-  const moc = danhSachMigration(goc).filter((t) => t <= '20260811182705_them_project_profile');
+  const moc = danhSachMigration(goc).filter((t: string) => t <= '20260811182705_them_project_profile');
   const dong = [...moc, '20260904000000_catchup_schema_drift']
     .map(
       (t, i) =>

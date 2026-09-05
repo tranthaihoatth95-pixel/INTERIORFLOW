@@ -22,6 +22,7 @@ import { create } from 'zustand';
 import { useScope, useActiveProjectRouteId } from '@/lib/scope';
 import { hoSoRong, type HoSoDiaDiem, type HuongCongTrinh, type ViTriDuAn } from '@/lib/site/types';
 import type { ThayDoi } from '@/lib/site/anh-huong';
+import { baoSiteDoi, SU_KIEN_SITE_DOI } from '@/lib/site/vitals-site';
 
 /** Dự án đang mở. URL trước (route `/projects/[id]/…`), rồi tới flow đang mở trong store. */
 export function useDuAnHienTai(): string {
@@ -92,25 +93,39 @@ export function useHoSoDiaDiem(duAnId: string): HoSoClient {
   const [loiDoc, setLoiDoc] = useState<LoaiLoi | null>(null);
   const [dangLuu, setDangLuu] = useState(false);
 
+  /* ⭐ K2 — NGHE, chứ không đọc một lần lúc mount rồi đứng yên.
+     Kho bên trên cố ý chỉ tải KHI CHƯA CÓ (`trongKho` là cổng chặn tải lại). Nó đúng cho lần đầu,
+     nhưng nó cũng có nghĩa: sự thật đổi ở nơi khác thì hook này **giữ bản cũ tới hết phiên**. Ca
+     thật đang sống: nút "Tính lại" ở khẩu độ Vitals POST `/site/tinh-lai` làm `daCu` rỗng đi, mà
+     Tổng quan đang mở vẫn bày dấu "cần cập nhật" đã chết. ⇒ tải lại KHI CÓ TIẾNG, và chỉ khi đó.
+     Không đẻ vòng lặp: đường này chỉ GET rồi ghi kho, nó không phát tiếng. */
   useEffect(() => {
-    if (!duAnId || trongKho) return;
+    if (!duAnId) return;
     let song = true;
-    setDangTai(true);
-    setLoiDoc(null);
-    fetch(`/api/projects/${encodeURIComponent(duAnId)}/site`)
-      .then(async (r) => {
-        if (!song) return;
-        if (!r.ok) {
-          setLoiDoc(loaiTheoMa(r.status));
-          return;
-        }
-        const j = (await r.json()) as HoSoDiaDiem;
-        if (song) dat(duAnId, j);
-      })
-      .catch(() => song && setLoiDoc('khong-ro'))
-      .finally(() => song && setDangTai(false));
+    const taiVe = () => {
+      setDangTai(true);
+      setLoiDoc(null);
+      fetch(`/api/projects/${encodeURIComponent(duAnId)}/site`)
+        .then(async (r) => {
+          if (!song) return;
+          if (!r.ok) {
+            setLoiDoc(loaiTheoMa(r.status));
+            return;
+          }
+          const j = (await r.json()) as HoSoDiaDiem;
+          if (song) dat(duAnId, j);
+        })
+        .catch(() => song && setLoiDoc('khong-ro'))
+        .finally(() => song && setDangTai(false));
+    };
+    // Lần đầu: chỉ tải khi kho chưa có (giữ nguyên hành vi cũ, không thêm lượt gọi mạng nào).
+    if (!trongKho) taiVe();
+    // Về sau: có tiếng thì tải lại BẤT KỂ kho đã có — đó chính là lúc bản trong kho đã cũ.
+    const nghe = () => taiVe();
+    window.addEventListener(SU_KIEN_SITE_DOI, nghe);
     return () => {
       song = false;
+      window.removeEventListener(SU_KIEN_SITE_DOI, nghe);
     };
     // `trongKho` cố ý KHÔNG nằm trong deps: có rồi thì thôi tải, thêm vào sẽ thành vòng lặp.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -129,6 +144,15 @@ export function useHoSoDiaDiem(duAnId: string): HoSoClient {
         if (!r.ok) return { ok: false, loai: loaiTheoMa(r.status) };
         const j = (await r.json()) as { hoSo: HoSoDiaDiem; thayDoi: ThayDoi[]; daCu: string[] };
         dat(duAnId, j.hoSo);
+        /* ⭐ K2 — TỰ LÊN TIẾNG, KHÔNG CHỜ AI GỌI. Đây là NỬA CÒN THIẾU của kênh `if:site-changed`.
+           Đo 05/09: cả repo có đúng 3 chỗ nhắc tên sự kiện này và **cả 3 đều nằm trong
+           `VitalsAperture.tsx`** — khẩu độ nghe, rồi cũng chính khẩu độ phát (nút "Tính lại").
+           Tức nó chỉ nghe được tiếng của chính mình. Đường GHI THẬT của sự thật địa điểm đi qua
+           đúng hàm này (Tổng quan qua `<NhapViTri>`, bảng Đèn 3D qua `LightTab`) và nó PATCH xong
+           là im ⇒ đổi hướng ở Tổng quan thì Vitals **không hay biết cho tới lần F5**. Đó đúng là
+           lớp lỗi K2 mô tả: "đúng lúc mở, sai về sau" — mắt người khó bắt vì nó chỉ sai muộn.
+           Phát SAU khi máy chủ đã nhận: phát trước là báo một sự thật chưa tồn tại. */
+        baoSiteDoi();
         return { ok: true, thayDoi: j.thayDoi, daCu: j.daCu };
       } catch {
         return { ok: false, loai: 'khong-ro' };
