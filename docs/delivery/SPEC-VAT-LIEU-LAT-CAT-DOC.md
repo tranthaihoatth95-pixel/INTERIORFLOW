@@ -570,3 +570,56 @@ khi coi ngưỡng 80/6,7 là bất biến; và **mở phiếu riêng** cho nghi 
 
 *Bàn CHUYÊN MÔN (B) lập 05/09/2026. Số trong tệp này đo tại nguồn (mã + DOM sống trên `:3277`),
 không chép sổ; chỗ nào là suy luận đã ghi thẳng là suy luận. Không sửa mã sản phẩm trong lượt này.*
+
+---
+
+## §9 · SIẾT LẠI 05/09 — sau probe đường ống ảnh (chủ dự án chốt)
+
+Probe `docs/delivery/PROBE-DUONG-ONG-ANH.md` đổi hai chỗ trong kế hoạch. Ghi vào đây chứ không
+đẻ tệp mới — đây vẫn là **một** lát cắt, không phải một dự án thứ hai.
+
+### 9.1 · V5 nhận thêm: nối 9 ảnh mồ côi — QUA HỢP ĐỒNG, không qua giao diện
+
+`public/mau-vat-lieu/` có **9 ảnh vật liệu thật**, gồm đúng hai món đang ship
+(`go-soi-trang.png` · `go-oc-cho.png`). `grep -rn "mau-vat-lieu" lib/ components/ app/ prisma/`
+= **0 dòng** ⇒ chưa ai trỏ tới. Vân không hiện **không phải** vì quả cầu che, mà vì **chưa có
+ảnh nào đi vào hệ**.
+
+| ⛔ cấm | ✅ đúng |
+|---|---|
+| `<img src="/mau-vat-lieu/…">` trong component | `baseColorMapUrl` khai ở tầng hạt giống / `MaterialPbr` |
+| hằng số đường dẫn ảnh nằm trong giao diện | ảnh vào hệ đúng **một cửa**, giao diện chỉ **đọc** |
+| vẽ vân bằng CSS | ảnh thật, `uvScaleMm` thật |
+| cho 3D một cách biểu diễn vật liệu **thứ hai** | Kho · Xem trước · 3D cùng đọc **một** `MaterialPbr` |
+
+**Mặt 2D GIỮ NGUYÊN là hatch VECTOR.** Chủ dự án nói rõ: *cùng một sự thật vật liệu KHÔNG đòi
+hỏi cùng một cách biểu diễn ở 2D và 3D.* Bản vẽ kỹ thuật dùng **ký hiệu**, không dùng ảnh raster.
+Cái chung giữa hai chặng là **`matId`**, không phải pixel.
+
+### 9.2 · V8 nhận thêm ba ràng buộc
+
+1. **Đi qua máy dựng ĐÃ CÓ** — `lib/three/pbr-three.ts` (`buildPbrMaterial` · `loadPbrTextures`).
+   Nó đã đúng: 7 map · `uvScaleMm → repeat` · colorSpace tách sRGB/linear · `RepeatWrapping`.
+   Việc của V8 là **cho scene đi qua nó**, không phải viết lại nó.
+2. **Giữ cache / dùng lại / giải phóng texture** như `pbr-three.ts` đang làm.
+   ⛔ **Cấm mỗi mesh một `TextureLoader` riêng.** Một cảnh có 200 khối cùng vật liệu phải dùng
+   **một** texture, không phải 200 lượt tải — đây đúng là ca `AdPreviewGenerator` của Revit ở
+   quy mô scene.
+3. **Cầu 2D→3D phải mang `matId`/`specId` xuống tới `Scene3DViewer`**, thay vì bóp thành một
+   `colorHex` ở `lib/three/cad-to-obj.ts:361`. Sửa **ranh giới**, không vá từng vật liệu.
+
+### 9.3 · HAI PHÉP NGHIỆM THU TÁCH BẠCH — một phép KHÔNG thay được phép kia
+
+| | đo cái gì | dùng ảnh nào |
+|---|---|---|
+| **ĐÚNG** | hướng · tỉ lệ vật lý UV · các map → lưu → **thoát hẳn** → mở lại → **y hệt** | ảnh chẩn đoán `public/textures/chan-doan/` (1 chu kỳ = **400×400 mm**) |
+| **DÙNG ĐƯỢC** | KTS **phán được** thớ · **chiều vân** · **cỡ vân** ở nấc JUDGE và ở 3D | gỗ sồi + gỗ óc chó thật |
+
+Ảnh chẩn đoán chứng minh **máy không nói dối**. Ảnh gỗ chứng minh **người dùng được việc**.
+⇒ Ô cờ đúng hướng mà vân gỗ vẫn không phán được thì **CHƯA XONG**. Và ngược lại: vân gỗ trông
+đẹp mà ô cờ lật/sai tỉ lệ thì cũng **CHƯA XONG** — chỉ là hỏng ở chỗ mắt không bắt được.
+
+### 9.4 · Nền / Wallgallery — **NOT IMPLEMENTED**, cấm gấp vào lát cắt vật liệu
+
+`lib/wallpaper/css.ts` là `linear-gradient`; `SystemWallpaper.tsx` có **0** `<img>`. Khai thẳng
+là chưa làm. ⛔ Không lấy gradient CSS gọi là PASS, và không mượn công việc vật liệu để làm nó.
