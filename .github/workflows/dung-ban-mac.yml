@@ -13,6 +13,9 @@
 #    Máy Intel KHÔNG chạy được bản này.
 name: Dựng bộ cài macOS + Windows
 
+permissions:
+  contents: write   # cần để electron-builder tạo/đẩy bản phát hành nháp
+
 on:
   # Hai cửa kích hoạt, CỐ Ý:
   #  · workflow_dispatch — nút "Run workflow" trong tab Actions. ⚠️ GitHub CHỈ hiện nút này khi
@@ -63,9 +66,15 @@ jobs:
       - name: Có .next chưa (chặn gói rỗng)
         run: test -f .next/BUILD_ID && echo "BUILD_ID = $(cat .next/BUILD_ID)"
 
-      - name: Đóng gói .dmg
-        run: npx electron-builder --mac --arm64 --publish never
+      - name: Đóng gói .dmg + đưa lên trang tải
+        # `--publish always` để electron-builder tự tạo BẢN PHÁT HÀNH NHÁP trên GitHub và đính
+        # tệp vào đó. Lý do: Artifacts của Actions bắt người tải phải lần vào đúng lần chạy rồi
+        # cuộn xuống đáy; trang Releases thì MỘT trang, hai tệp, bấm là tải. Chủ dự án không phải
+        # là người đi dò giao diện CI.
+        # Bản nháp (draft) — KHÔNG công khai cho tới khi có người bấm phát hành.
+        run: npx electron-builder --mac --arm64 --publish always
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DATABASE_URL: file:./prisma/dev.db
           # Không có Developer ID trên runner ⇒ tắt dò chứng chỉ để electron-builder ký ad-hoc
           # thay vì dừng lại. Ra .dmg chưa ký là KỲ VỌNG của lượt này (xem T1 trong G7-NGHIEM-THU-MAC).
@@ -130,9 +139,10 @@ jobs:
       - name: Có .next chưa (chặn gói rỗng)
         run: test -f .next/BUILD_ID && echo "BUILD_ID = $(cat .next/BUILD_ID)"
 
-      - name: Đóng gói .exe
-        run: npx electron-builder --win --x64 --publish never
+      - name: Đóng gói .exe + đưa lên trang tải
+        run: npx electron-builder --win --x64 --publish always
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DATABASE_URL: file:./prisma/dev.db
           # Không có chứng chỉ ký Windows trên runner ⇒ trình cài KHÔNG ký. Windows sẽ hiện màn
           # SmartScreen xanh "Windows protected your PC" ở lần chạy đầu — bấm "More info" →
