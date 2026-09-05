@@ -404,3 +404,14 @@ Mỗi bề mặt phải đi ít nhất bốn ca, vì lỗi hay nằm ở ba ca s
 ## HẠN DÙNG
 Hoà lật thì sửa **tại chỗ, viết lại** — không cộng dồn đuôi. Thấy tệp này dài ra là dấu hiệu nó
 đang biến thành nhật ký; nhật ký thuộc `docs/00-CHOT.md`, không thuộc đây.
+
+## 📐 ĐIỀU TRA 05/09 — LUẬT NGẦM CỦA GIAO DIỆN (đọc trước khi chạm bất kỳ vùng cuộn nào)
+
+| tệp | trả lời câu gì |
+|---|---|
+| `docs/delivery/LUAT-NGAM-MEP-CUON.md` | **Vì sao chạm giao diện là sai.** `AppShell.tsx:193` khoá `height:100dvh; overflow:hidden` — một dòng CSS ra mệnh lệnh cho 48 tệp, không tài liệu nào ghi, không cổng nào canh (tới 05/09). Hệ quả: 122 chỗ tự dựng hộp cuộn, 0 chỗ có dấu hiệu "còn tiếp", Cài đặt giấu 2879px. Kèm quyết định **GIỮ khoá vỏ · SỬA cái mép** và lý do không đập đi xây lại. |
+| `docs/delivery/SOI-MAT-05-09.md` | **Ảnh + số của 8 màn** trên app thật (tự đăng ký, tự đi, đo trên DOM). Kèm đính chính một phép đo sai của chính tôi (`900/900` là số bịp — đo nhầm `documentElement`). |
+| `docs/delivery/FIX-NET-ICON.md` | Nét icon 1.75 → 1.5 ở 4 tệp mới, và **9 ca báo oan** của thước (nét bản vẽ · lưới đồ thị · dây nối react-flow) — tiêu chí phân biệt icon ↔ không-phải-icon. |
+
+⛔ **Ba tệp trên là THẨM QUYỀN cho vùng cuộn và cho cách đo**, không phải nhật ký. Cổng máy
+`F-MEP-CUON` (trong `soi:foundation`) thi hành phần đo được; phần còn lại đọc bằng mắt.
