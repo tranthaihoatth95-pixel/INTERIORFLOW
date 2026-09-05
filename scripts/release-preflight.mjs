@@ -153,9 +153,13 @@ function soiPhimTho(dir) {
       continue;
     }
     if (!/\.(ts|tsx)$/.test(entry.name) || /\.test\.tsx?$/.test(entry.name)) continue;
-    const rel = path.relative(root, p);
-    if (rel === path.join('lib', 'kbd.ts')) continue; // chính nguồn
-    if (rel === path.join('lib', 'input', 'wheel.ts')) continue; // ctrlKey = cử chỉ chụm trackpad, trình duyệt tự đặt
+    // CHUẨN HOÁ VỀ DẤU `/` TRƯỚC KHI SO. Bảng `ngoaiLePhimTho` khai bằng `/`, còn
+    // `path.relative` trên Windows trả về `\` ⇒ `.has(rel)` trượt, và bộ kiểm BÁO SAI bốn tệp
+    // đã có ngoại lệ hợp lệ. Đo 05/09 trên runner windows-latest: job Windows ĐỎ trong khi job
+    // macOS cùng mã thì XANH — hỏng ở BỘ ĐO, không phải ở sản phẩm.
+    const rel = path.relative(root, p).split(path.sep).join('/');
+    if (rel === 'lib/kbd.ts') continue; // chính nguồn
+    if (rel === 'lib/input/wheel.ts') continue; // ctrlKey = cử chỉ chụm trackpad, trình duyệt tự đặt
     if (ngoaiLePhimTho.has(rel)) continue;
     fs.readFileSync(p, 'utf8')
       .split('\n')

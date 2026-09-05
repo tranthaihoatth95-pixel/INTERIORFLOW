@@ -94,7 +94,8 @@
       {
         "provider": "github",
         "owner": "tranthaihoatth95-pixel",
-        "repo": "INTERIORFLOW"
+        "repo": "INTERIORFLOW",
+        "releaseType": "release"
       }
     ],
     "directories": {
