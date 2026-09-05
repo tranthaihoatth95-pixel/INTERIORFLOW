@@ -77,8 +77,10 @@ const STAGE_CAPTION: Record<StageKey, [string, string]> = {
  * `useCadStore.addEntities()`, nên thả là có hình ngay. Ghi lại để phiên nối canvas biết.
  * ✅ 06/08 (G-M3-14): ĐÃ NỐI. Chỗ nghe = `components/cad/LibraryDropBridge.tsx` (mount trong
  * `CadEditor`), đối chiếu món qua `lib/cad/library-item-resolve.ts` rồi ghi vào ĐÚNG đường
- * `addEntities()` nói trên. `LIBRARY_APPLY_EVENT` (áp preset/vật liệu lên vật đang chọn) thì
- * VẪN CÒN 0 nơi nghe — việc khác, chưa làm, đừng tưởng đã xong theo. */
+ * `addEntities()` nói trên.
+ * ✅ 05/09 (`[3D-VL-01]`): `LIBRARY_APPLY_EVENT` ĐÃ CÓ NƠI NGHE — `components/render-studio/
+ * Library3DApplyBridge.tsx` (mount trong `Render3DModeSkeleton`), ghi `specId` vào entity đang
+ * chọn qua `useCadStore.updateEntities()`. Cùng khuôn cờ `claimed` như đường instantiate. */
 export const LIBRARY_INSTANTIATE_EVENT = 'if:library-instantiate';
 export const LIBRARY_APPLY_EVENT = 'if:library-apply';
 
@@ -559,9 +561,36 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
     );
   };
 
+  /**
+   * 05/09 (`[3D-VL-01]`) — SỬA LỜI BÁO NÓI DỐI, LẦN THỨ HAI. Đường `instantiate` ngay trên đã
+   * được vá đúng bài này từ 06/08 (G-M3-14) bằng cờ `claimed`; đường `ap` thì KHÔNG vá theo, nên
+   * nó tiếp tục bắn toast xanh *"Đã áp …"* VÔ ĐIỀU KIỆN trong khi `LIBRARY_APPLY_EVENT` có **0
+   * nơi nghe** (chính chú thích ở đầu tệp này đã khai từ 06/08). Đo trên app thật 05/09: toast
+   * xanh hiện, panel phải vẫn "Chưa gán vật liệu", F5 vẫn không có gì — đúng ca `00-CHOT` 04/09
+   * *"nút nói dối việc nó vừa làm, tệ hơn nút chết"*.
+   *
+   * Nay dùng CÙNG khuôn `claimed`: nơi nghe (`Library3DApplyBridge`) bật cờ khi ĐÃ ghi thật, và
+   * điền `loi` khi nhận việc mà không ghi được. Ba ngả, không ngả nào nói sai:
+   *  · có người nhận + ghi được  → báo đã áp;
+   *  · có người nhận + không ghi → báo ĐÚNG lý do của nơi nghe (chưa chọn khối, mã lạ, lớp khoá…);
+   *  · không ai nhận             → nói thẳng màn đang mở không đón được.
+   * Spread `item` chứ KHÔNG gửi chính nó: nơi nghe ghi cờ lên `detail`, gửi thẳng là làm bẩn món
+   * trên kệ.
+   */
   const applyPreset = (item: SheetItem) => {
-    window.dispatchEvent(new CustomEvent(LIBRARY_APPLY_EVENT, { detail: item }));
-    pushLibraryToast(tr(`Đã áp "${item.name}" lên vật đang chọn`, `Applied "${item.name}" to the current selection`));
+    const detail: SheetItem & { claimed?: boolean; loi?: string } = { ...item, claimed: false };
+    window.dispatchEvent(new CustomEvent(LIBRARY_APPLY_EVENT, { detail }));
+    if (detail.claimed && !detail.loi) {
+      pushLibraryToast(tr(`Đã áp "${item.name}" lên vật đang chọn`, `Applied "${item.name}" to the current selection`));
+      return;
+    }
+    pushLibraryToast(
+      detail.loi ??
+        tr(
+          `Chưa áp được "${item.name}" — màn đang mở không có vật nào để áp. Mở chặng Thiết kế 3D rồi chọn một khối.`,
+          `Can't apply "${item.name}" here — this screen has nothing to apply to. Open the 3D Design stage and select a block.`,
+        ),
+    );
   };
 
   const use = (item: SheetItem) => (item.mechanic === 'ap' ? applyPreset(item) : instantiate(item));
