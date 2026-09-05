@@ -289,12 +289,39 @@ mâu thuẫn với luật này. Ranh giới:
 
 Dấu hiệu nhận ra mình đang đoán: **câu giải thích dài hơn thay đổi.**
 
-### N4 · TRÌNH TRƯỚC KHI ĐÓNG GÓI, KHÔNG PHẢI SAU KHI HOÀ MỞ RA
+### N4 · CỔNG NGHIỆM THU LÀ BỐN THỨ ĐO ĐƯỢC — **KHÔNG PHẢI MẮT HOÀ**
 
-Gốc của ca 05/09: bộ cài rời tay tôi mà **chưa có một tấm ảnh nào của Vitals** được đưa cho Hoà.
-Con số `xong-máy / qua-mắt` (76 / 1 lúc đó) đã báo trước, tôi vẫn gửi.
-⇒ **Bộ cài không rời tay khi chưa chụp hết bề mặt và chưa trình ảnh.** Đây là điều kiện cứng của
-`docs/delivery/VISUAL-APPROVAL-QUEUE.md`, không phải lời hứa cố gắng.
+> Hoà ban 05/09, sửa thẳng bản N4 đầu tiên tôi vừa viết (bản đó đặt *"trình ảnh cho Hoà duyệt"*
+> làm cổng — **sai**, vì nó biến mắt Hoà thành thứ sản phẩm phụ thuộc vào):
+> *"Yêu cầu cứng: sản phẩm phải đi theo **tầm nhìn và mô tả của Hoà**, **không phụ thuộc mắt Hoà**.
+> Đúng tầm nhìn · đúng chuẩn ngành đã nghiên cứu · đúng spec mô tả · đúng visual chưng cất → PASS."*
+
+**Cổng gồm bốn cột. Đủ bốn thì PASS — không cần ai nhìn.** Thiếu một cột thì **chưa xong**, và
+*"chờ Hoà xem"* **không phải** cách lấp cột thiếu.
+
+| # | Cột | Nguồn sự thật trong repo | Trượt thì sao |
+|---|---|---|---|
+| ① | **Tầm nhìn** | `docs/IF-KIEN-TRUC-OS.md` — north star `N-1…N-20`, 13 cờ đỏ `N-10` | trượt north star = sai sản phẩm, sửa màu không cứu được (`N-17`) |
+| ② | **Chuẩn ngành đã nghiên cứu** | `NC-NGUYEN-TAC-GIAO-DIEN` `NT-1..18` · `NC-TRIET-LY-GIAO-DIEN` `KB-1..5` · `CHUAN-DAU-RA-NGHE` · Apple HIG/WWDC đã trích | nghiên cứu **đã làm rồi** — không tra là tự chế lại (tội `N8`) |
+| ③ | **Spec mô tả** | `CHOT-EXPERIENCE-SYSTEM-2026-08-20` 12 điều · `SPEC-DESIGN-SYSTEM-IF` §7 · luật hình học 14 mục · quyết định Hoà trong `00-CHOT` | spec không nói ⇒ **spec chưa xong** (`N2`), không phải *"phần này tuỳ gu"* |
+| ④ | **Visual chưng cất** | board `EXS-A…L` trên Claude Design · `REF-VISUAL-EXS` `R1-R16` · `docs/mocks/` | chưng cất **từ ảnh của chính Hoà** — nó LÀ mô tả của Hoà ở dạng nhìn được |
+
+⭐ **Vì sao bốn cột này đủ, không cần mắt**: cả bốn đều **đã là ý Hoà**, chỉ ở bốn dạng khác nhau —
+lời (①), nghề (②), chữ (③), hình (④). Đối chiếu đủ bốn tức là **đã hỏi Hoà rồi**, hỏi qua thứ
+Hoà để lại. Mắt Hoà chỉ còn là **phép thử ngẫu nhiên**, không phải mắt xích.
+
+⛔ **Cấm hai câu chống chế**:
+· *"để Hoà xem rồi tính"* — đẩy việc phán lên người ra đề, đúng thứ vừa bị cấm.
+· *"cái này thuộc về gu"* — trước khi nói câu đó phải đi hết `N1` ba nấc và tra đủ bốn cột trên.
+
+**Ảnh chụp vẫn phải có** — nhưng đổi vai: nó là **bằng chứng đã qua cổng**, không phải **đơn xin
+duyệt**. Trình cùng bảng bốn cột, ghi rõ cột nào đối chiếu với đoạn nào.
+
+### N5 · TỰ CHẤM TRƯỚC KHI GIAO — BẢNG BỐN CỘT LÀ BẮT BUỘC
+
+Mọi bề mặt đụng vào phải kèm bảng: | Bề mặt | ① tầm nhìn | ② chuẩn ngành | ③ spec | ④ visual | Kết |
+Mỗi ô ghi **điều khoản cụ thể** (`N-10`, `NT-8`, `EXS §7`, `EXS-D`) — không ghi *"đạt"* trống trơn.
+Ô nào không tra được nguồn ⇒ ghi **`[KHÔNG TRA ĐƯỢC]`** kèm câu hỏi, **không** được ghi *"đạt"*.
 
 ## HẠN DÙNG
 Hoà lật thì sửa **tại chỗ, viết lại** — không cộng dồn đuôi. Thấy tệp này dài ra là dấu hiệu nó
