@@ -2,6 +2,27 @@
 
 ## ⬛ BẢY CỔNG PHÁT HÀNH (chủ dự án đính chính 04/09 — thay bản năm cổng)
 
+## 🔴 05/09 · 13,5% VIỆC KHAI "XONG" KHÔNG TỚI ĐƯỢC NGƯỜI DÙNG
+
+`npm run soi:mat-tien` (mới) chấm **52** năng lực khai `xong` theo bậc *có mặt tiền nào gọi tới không*:
+
+| bậc | nghĩa | số |
+|---|---|---|
+| **0** | không ai import | **3** |
+| **1** | có import, không dùng | **0** |
+| **2** | **có dùng, nhưng MỌI nơi dùng đều chết** | **4** |
+| **3** | dùng từ tệp sống | 45 |
+
+⇒ **7/52 = 13,5%**, và **sáu trong bảy mang vai ⭐MVP**. ⭐ **Năm trong bảy là MỘT HÒN ĐẢO** — `chuan-net ↔ part-lock ↔ surface-graph ↔ from-photo` — **không phải bảy lỗi rời, một mạch bị tháo**. 🔴 **Bậc 2 là bậc bẫy**: *có người gọi, nhưng người gọi ấy không còn sống* (đúng hình dạng ca `⌘J` và ca *cửa tạo dự án mất tay nắm*). Bắt được nhờ **đồ thị với-tới từ 111 gốc route**, không nhờ đếm caller — đếm caller là thứ để lọt đúng hai ca đó. Đo thêm: **90/1030 tệp không với tới được**.
+
+🔧 **Ba tiền đề của MAIN sai, lane sửa** — nặng nhất: *"không cổng nào đang hỏi câu này"* **SAI**. `scripts/soi-cam-dien.mjs` đã hỏi đúng câu đó **từ 17/08** (docstring: *"máy canh ENGINE NÀY ĐÃ TỚI TAY NGƯỜI DÙNG CHƯA"*), và `soi-cong-cu-chet` hỏi từ chiều ngược lại. Phần thêm thật sự là **ĐỘ HẠT**: `soi-cam-dien` chấm **cấp thư mục** nên in *"🟢 `lib/idfc-import` sống"*, che mất **4 entry chết ở cấp ký hiệu** bên trong. Theo NO-REBUILD §B25 đây là **EXTEND**, không phải chiều đo mới. ⇒ Hòn đảo này đã bị máy ghi từ **17/08 và nằm im 19 ngày** — **thiếu ở đây không phải thiếu máy soi**.
+
+⚠️ **Hai trong bảy ca thì "sửa" nghĩa là XOÁ**, không phải cắm: `home-dong-studio` + `home-overview-card` thuộc hướng Home **đã bị D-DR2 đè**; cắm lại là hồi sinh hướng bị đè. Đây là lý do lượt đếm **cố ý không vá** (0 dòng mã sản phẩm bị sửa).
+
+🟡 **Bậc 0/1/2 là SÀN** (chỉ soi năng lực có entry registry) · **bậc 3 là TRẦN** — chiều đo thứ ba (**dòng chảy dữ liệu**) máy không đo, ca đã đo: `congThucKe` chấm bậc 3 vì gọi từ tệp sống, nhưng `geom3d.recipe` nó sinh **không tệp nào đưa vào `evalRecipe`** — hàm có người gọi mà **kết quả không ai tiêu thụ**. Kèm **4 entry có bằng chứng chỉ sống trong chú thích** — xoá mã giữ docstring thì `soi-frontier` vẫn xanh.
+
+---
+
 ## 🔴 05/09 · MỘT PHÁT HIỆN VỀ CHÍNH BỘ MÁY KIỂM — đọc trước khi tin bất kỳ con số nào dưới đây
 
 Bốn mắt trong các bộ nghiệm thu **đang tự chấm điểm**: chúng xanh được bằng cách sửa **dữ liệu mẫu của chính bộ đo**, **không đổi một dòng mã sản phẩm**. Ba trong bốn được chứng minh bằng thí nghiệm rút-ruột:
