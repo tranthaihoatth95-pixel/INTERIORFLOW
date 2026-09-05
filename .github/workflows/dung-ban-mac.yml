@@ -1,0 +1,73 @@
+# Dựng bộ cài macOS (.dmg) trên máy Mac của GitHub — để chủ dự án KHÔNG phải gõ lệnh nào.
+#
+# VÌ SAO CÓ TỆP NÀY: bản .dmg chỉ dựng được trên macOS. Phiên trợ lý chạy trong container Linux
+# nên không dựng được, và cũng không chạm được vào máy người dùng. Máy Mac của GitHub là bên thứ
+# ba duy nhất trong tay có thể làm việc đó.
+#
+# CÁCH DÙNG (không cần Terminal): mở repo trên github.com → tab Actions → chọn
+# "Dựng bộ cài macOS (.dmg)" → nút "Run workflow" → đợi ~15-25 phút → tải mục "Artifacts".
+#
+# ⚠️ App KHÔNG ký Apple (notarize: false). macOS sẽ chặn lần mở đầu — chuột phải vào app → Mở.
+#    Đó là hành vi dự kiến, không phải app hỏng. Xem docs/delivery/G7-NGHIEM-THU-MAC.md mục T11.
+# ⚠️ Runner macos-14 là Apple Silicon (arm64) — khớp cấu hình `--mac --arm64` trong package.json.
+#    Máy Intel KHÔNG chạy được bản này.
+name: Dựng bộ cài macOS (.dmg)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  dung-dmg:
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Kiến trúc máy dựng (phải là arm64)
+        run: |
+          uname -m
+          sw_vers
+
+      - name: Cài phụ thuộc
+        run: npm ci
+        env:
+          # `postinstall` chạy `prisma generate`; nó KHÔNG cần CSDL sống, nhưng khai biến cho
+          # chắc để không lệ thuộc hành vi mặc định của từng bản Prisma.
+          DATABASE_URL: file:./prisma/dev.db
+
+      - name: Kiểm trước phát hành
+        run: node scripts/release-preflight.mjs
+
+      - name: Dựng bản web (.next)
+        # TÁCH RIÊNG khỏi bước đóng gói: `electron:build:mac` gộp `next build && electron-builder`,
+        # gộp thì log lỗi lẫn nhau, không biết hỏng ở dựng web hay ở đóng gói. Bước này BẮT BUỘC —
+        # thiếu `.next` thì gói vẫn ra .dmg nhưng mở lên KHÔNG có gì (máy chủ nội bộ không có trang).
+        run: npx next build
+        env:
+          DATABASE_URL: file:./prisma/dev.db
+
+      - name: Có .next chưa (chặn gói rỗng)
+        run: test -f .next/BUILD_ID && echo "BUILD_ID = $(cat .next/BUILD_ID)"
+
+      - name: Đóng gói .dmg
+        run: npx electron-builder --mac --arm64 --publish never
+        env:
+          DATABASE_URL: file:./prisma/dev.db
+          # Không có Developer ID trên runner ⇒ tắt dò chứng chỉ để electron-builder ký ad-hoc
+          # thay vì dừng lại. Ra .dmg chưa ký là KỲ VỌNG của lượt này (xem T1 trong G7-NGHIEM-THU-MAC).
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: Liệt kê thành phẩm
+        run: ls -lh dist-installer/*.dmg dist-installer/*.zip 2>/dev/null || ls -lh dist-installer
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: InteriorFlow-macOS-arm64
+          path: dist-installer/*.dmg
+          if-no-files-found: error
+          retention-days: 14
