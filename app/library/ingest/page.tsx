@@ -31,7 +31,7 @@ interface Pick {
 type SaveState = 'idle' | 'saving' | 'done' | 'error';
 const RANK_META: Record<string, { label: string; tone: string }> = {
   best: { label: 'Tốt nhất', tone: '#7C9A6B' },
-  uncertain: { label: 'Phân vân', tone: '#C79A63' },
+  uncertain: { label: 'Phân vân', tone: 'var(--accent)' },
   reject: { label: 'Để loại', tone: '#9A6B84' },
 };
 
@@ -241,14 +241,14 @@ function IngestPageInner() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0E0C09', color: '#EFE9DC', fontFamily: 'system-ui', padding: 28 }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--t1)', fontFamily: 'system-ui', padding: 28 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <button
           type="button"
           onClick={goBack}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            background: '#1B1712', border: '1px solid #33302a', color: '#EFE9DC',
+            background: 'var(--field)', border: '1px solid var(--border)', color: 'var(--t1)',
             borderRadius: 8, padding: '6px 10px', fontSize: 12.5, cursor: 'pointer',
           }}
         >
@@ -256,7 +256,7 @@ function IngestPageInner() {
         </button>
         <h1 style={{ fontSize: 20, margin: 0 }}>Thư viện · Reference Ingest</h1>
         <input value={project} onChange={(e) => setProject(e.target.value)}
-          style={{ background: '#1B1712', border: '1px solid #33302a', color: '#EFE9DC', borderRadius: 8, padding: '6px 10px', fontSize: 13 }} />
+          style={{ background: 'var(--field)', border: '1px solid var(--border)', color: 'var(--t1)', borderRadius: 8, padding: '6px 10px', fontSize: 13 }} />
       </div>
       <p style={{ opacity: 0.6, fontSize: 12.5, maxWidth: 720 }}>
         Nạp ảnh/file tham khảo → chưng cất JSON nhẹ (palette · công dụng · tag), ảnh giữ dạng thumbnail.
@@ -269,31 +269,31 @@ function IngestPageInner() {
       <NhanDienCauKien />
 
       {/* AI Content Strategist — 3 kịch bản trình khách */}
-      <div style={{ border: '1px solid #2A261F', borderRadius: 12, background: 'linear-gradient(180deg,#141009,transparent)', padding: 18, margin: '16px 0' }}>
+      <div style={{ border: '1px solid var(--border)', borderRadius: 12, background: 'linear-gradient(180deg,var(--panel),transparent)', padding: 18, margin: '16px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-          <span style={{ fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: '#C79A63' }}>AI · Chiến lược content</span>
-          <span style={{ fontSize: 11.5, color: '#8B887F' }}>khai thác → hiểu → biện luận → tốt nhất · phân vân · loại</span>
+          <span style={{ fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--accent)' }}>AI · Chiến lược content</span>
+          <span style={{ fontSize: 11.5, color: 'var(--t3)' }}>khai thác → hiểu → biện luận → tốt nhất · phân vân · loại</span>
         </div>
         <textarea value={brief} onChange={(e) => setBrief(e.target.value)} rows={2}
           placeholder="Đề bài / input dự án: khách là ai, mục tiêu, ràng buộc, mong muốn… (càng rõ, kịch bản càng sắc)"
-          style={{ width: '100%', boxSizing: 'border-box', background: '#1B1712', color: '#EFE9DC', border: '1px solid #33302a', borderRadius: 8, padding: '9px 11px', fontSize: 13, resize: 'vertical' }} />
+          style={{ width: '100%', boxSizing: 'border-box', background: 'var(--field)', color: 'var(--t1)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 11px', fontSize: 13, resize: 'vertical' }} />
         <button onClick={suggestStrategy} disabled={thinking}
           style={{ ...btnPrimary, marginTop: 10 }}>{thinking ? 'Đang tư duy…' : '◆ Đề xuất 3 kịch bản content'}</button>
 
         {strategy && (
           <div style={{ marginTop: 16 }}>
-            {strategy.understanding && <p style={{ fontSize: 13, color: '#CFC7B8', margin: '0 0 14px', lineHeight: 1.6 }}><b style={{ color: '#C79A63' }}>Hiểu đề:</b> {strategy.understanding}</p>}
+            {strategy.understanding && <p style={{ fontSize: 13, color: 'var(--t2)', margin: '0 0 14px', lineHeight: 1.6 }}><b style={{ color: 'var(--accent)' }}>Hiểu đề:</b> {strategy.understanding}</p>}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12 }}>
               {(strategy.scenarios ?? []).map((s, i) => {
-                const rm = RANK_META[s.rank] ?? { label: s.rank, tone: '#8B887F' };
+                const rm = RANK_META[s.rank] ?? { label: s.rank, tone: 'var(--t3)' };
                 return (
                   <div key={i} style={{ border: `1px solid ${rm.tone}55`, borderRadius: 10, padding: 14, background: `${rm.tone}0D` }}>
                     <span style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: rm.tone }}>{rm.label}</span>
-                    <h3 style={{ fontSize: 15, margin: '6px 0 4px', color: '#EFE9DC', fontWeight: 600 }}>{s.title}</h3>
-                    <p style={{ fontSize: 12, color: '#9C8E76', margin: '0 0 8px', fontStyle: 'italic' }}>{s.angle}</p>
-                    <p style={{ fontSize: 12, color: '#CFC7B8', margin: '0 0 8px', lineHeight: 1.5 }}>{s.why}</p>
+                    <h3 style={{ fontSize: 15, margin: '6px 0 4px', color: 'var(--t1)', fontWeight: 600 }}>{s.title}</h3>
+                    <p style={{ fontSize: 12, color: 'var(--t2)', margin: '0 0 8px', fontStyle: 'italic' }}>{s.angle}</p>
+                    <p style={{ fontSize: 12, color: 'var(--t2)', margin: '0 0 8px', lineHeight: 1.5 }}>{s.why}</p>
                     {s.outline && s.outline.length > 0 && (
-                      <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11.5, color: '#8B887F', lineHeight: 1.6 }}>
+                      <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11.5, color: 'var(--t3)', lineHeight: 1.6 }}>
                         {s.outline.map((o, k) => <li key={k}>{o}</li>)}
                       </ul>
                     )}
@@ -306,28 +306,28 @@ function IngestPageInner() {
       </div>
 
       {/* Illustration Picker — thác nguồn ảnh */}
-      <div style={{ border: '1px solid #2A261F', borderRadius: 12, background: 'linear-gradient(180deg,#100D14,transparent)', padding: 18, margin: '0 0 16px' }}>
+      <div style={{ border: '1px solid var(--border)', borderRadius: 12, background: 'linear-gradient(180deg,var(--panel),transparent)', padding: 18, margin: '0 0 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: '#6B84A8' }}>Hình minh hoạ · thác nguồn</span>
-          <span style={{ fontSize: 11.5, color: '#8B887F' }}>Reference → Openverse (CC) → Unsplash → sinh khi cần</span>
+          <span style={{ fontSize: 11.5, color: 'var(--t3)' }}>Reference → Openverse (CC) → Unsplash → sinh khi cần</span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <input value={illusQuery} onChange={(e) => setIllusQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && pickIllustrations()}
             placeholder="Từ khoá mood/nội dung: vd 'warm minimalist bedroom oak', 'quiet luxury lobby stone'…"
-            style={{ flex: 1, background: '#1B1712', color: '#EFE9DC', border: '1px solid #33302a', borderRadius: 8, padding: '9px 11px', fontSize: 13 }} />
+            style={{ flex: 1, background: 'var(--field)', color: 'var(--t1)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 11px', fontSize: 13 }} />
           <button onClick={pickIllustrations} disabled={picking} style={{ ...btn, borderColor: '#6B84A8', color: '#9DB8DE' }}>{picking ? 'Đang tìm…' : '◆ Pick hình'}</button>
         </div>
         {picks && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10, marginTop: 14 }}>
-            {picks.length === 0 && <p style={{ fontSize: 12, color: '#8B887F', gridColumn: '1/-1' }}>Không tìm thấy — thử từ khoá khác, hoặc bật sinh hình.</p>}
+            {picks.length === 0 && <p style={{ fontSize: 12, color: 'var(--t3)', gridColumn: '1/-1' }}>Không tìm thấy — thử từ khoá khác, hoặc bật sinh hình.</p>}
             {picks.map((p, i) => {
               const ref = p.source === 'reference' ? assets.find((a) => a.id === p.refId) : null;
               const src = p.source === 'reference' ? ref?.thumb : p.thumb;
               const tone = p.source === 'reference' ? '#7C9A6B' : p.source === 'unsplash' ? '#A88A5B' : '#6B84A8';
               return (
-                <div key={i} style={{ border: `1px solid ${tone}55`, borderRadius: 9, overflow: 'hidden', background: '#0B0906' }}>
-                  <div style={{ height: 104, background: '#0B0906' }}>
+                <div key={i} style={{ border: `1px solid ${tone}55`, borderRadius: 9, overflow: 'hidden', background: 'var(--bg)' }}>
+                  <div style={{ height: 104, background: 'var(--bg)' }}>
                     {src ? <img src={src} alt={p.title ?? ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
                   </div>
                   <div style={{ padding: '7px 8px' }}>
@@ -340,7 +340,7 @@ function IngestPageInner() {
                     </span>
                     {/* GHI CÔNG — Unsplash/CC đều bắt buộc hiện tên tác giả. */}
                     {p.source !== 'reference' && p.credit && (
-                      <p style={{ fontSize: 9.5, color: '#8B887F', margin: '3px 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`© ${p.credit}`}>© {p.credit}</p>
+                      <p style={{ fontSize: 9.5, color: 'var(--t3)', margin: '3px 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`© ${p.credit}`}>© {p.credit}</p>
                     )}
                     {p.source !== 'reference' && (
                       <button
@@ -371,7 +371,7 @@ function IngestPageInner() {
         onDragLeave={() => setDrag(false)}
         onDrop={(e) => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) add(e.dataTransfer.files); }}
         style={{
-          border: `2px dashed ${drag ? '#C79A63' : '#3A362F'}`, borderRadius: 14, padding: 28, textAlign: 'center',
+          border: `2px dashed ${drag ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 14, padding: 28, textAlign: 'center',
           cursor: 'pointer', background: drag ? 'rgba(199,154,99,0.08)' : 'transparent', margin: '14px 0',
         }}>
         <input ref={inputRef} type="file" multiple hidden accept="image/*,.pdf,.xlsx,.xls,.csv,.dxf,.dwg"
@@ -382,7 +382,7 @@ function IngestPageInner() {
 
       {/* thanh thống kê — bằng chứng "không vỡ context" */}
       {assets.length > 0 && (
-        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 12.5, background: '#151109', border: '1px solid #2A261F', borderRadius: 10, padding: '10px 14px', margin: '4px 0 14px' }}>
+        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 12.5, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', margin: '4px 0 14px' }}>
           <span><b>{assets.length}</b> ref</span>
           <span>Ảnh gốc: <b>{human(rawBytes)}</b></span>
           <span style={{ color: '#9FCB8B' }}>→ AI manifest: <b>{human(aiBytes)}</b> {rawBytes > 0 && `(${Math.max(1, Math.round(rawBytes / Math.max(aiBytes, 1)))}× gọn)`}</span>
@@ -391,9 +391,9 @@ function IngestPageInner() {
 
       {/* banner "chỉ báo" — hết free / chưa nối, KHÔNG tự tụt */}
       {notice && (
-        <div style={{ background: '#2A1E12', border: '1px solid #C79A6366', color: '#E9D9BE', borderRadius: 10, padding: '10px 14px', margin: '0 0 14px', fontSize: 12.5, display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div style={{ background: 'var(--field)', border: '1px solid color-mix(in srgb, var(--accent) 40%, transparent)', color: 'var(--t1)', borderRadius: 10, padding: '10px 14px', margin: '0 0 14px', fontSize: 12.5, display: 'flex', gap: 10, alignItems: 'center' }}>
           <span style={{ flex: 1 }}>{notice}</span>
-          <button onClick={() => setNotice(null)} style={{ background: 'none', border: 'none', color: '#C79A63', cursor: 'pointer', fontSize: 16 }}>×</button>
+          <button onClick={() => setNotice(null)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 16 }}>×</button>
         </div>
       )}
 
@@ -417,8 +417,8 @@ function IngestPageInner() {
         {assets.map((a) => {
           const u = USAGES.find((x) => x.id === a.usage)!;
           return (
-            <div key={a.id} style={{ background: '#151109', border: `1px solid ${u.tone}55`, borderRadius: 12, overflow: 'hidden' }}>
-              <div style={{ height: 130, background: '#0B0906', display: 'grid', placeItems: 'center', position: 'relative' }}>
+            <div key={a.id} style={{ background: 'var(--panel)', border: `1px solid ${u.tone}55`, borderRadius: 12, overflow: 'hidden' }}>
+              <div style={{ height: 130, background: 'var(--bg)', display: 'grid', placeItems: 'center', position: 'relative' }}>
                 {a.thumb
                   ? <img src={a.thumb} alt={a.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   : <span style={{ fontSize: 22, fontWeight: 700, opacity: 0.5 }}>{TYPE_BADGE[a.type] ?? 'FILE'}</span>}
@@ -432,12 +432,12 @@ function IngestPageInner() {
                   </div>
                 )}
                 <select value={a.usage} onChange={(e) => patch(a.id, { usage: e.target.value as RefUsage })}
-                  style={{ width: '100%', background: '#1B1712', color: u.tone, border: `1px solid ${u.tone}66`, borderRadius: 7, padding: '5px 6px', fontSize: 12, marginTop: 4 }}>
+                  style={{ width: '100%', background: 'var(--field)', color: u.tone, border: `1px solid ${u.tone}66`, borderRadius: 7, padding: '5px 6px', fontSize: 12, marginTop: 4 }}>
                   {USAGES.map((x) => <option key={x.id} value={x.id} style={{ color: '#111' }}>{x.label}</option>)}
                 </select>
                 <input placeholder="tag: NCC, mã, style…" defaultValue={a.tags.join(', ')}
                   onBlur={(e) => patch(a.id, { tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean) })}
-                  style={{ width: '100%', boxSizing: 'border-box', background: '#1B1712', color: '#CFC7B8', border: '1px solid #2A261F', borderRadius: 7, padding: '5px 6px', fontSize: 11.5, marginTop: 6 }} />
+                  style={{ width: '100%', boxSizing: 'border-box', background: 'var(--field)', color: 'var(--t2)', border: '1px solid var(--border)', borderRadius: 7, padding: '5px 6px', fontSize: 11.5, marginTop: 6 }} />
                 {a.caption
                   ? <p style={{ fontSize: 11, color: '#9FCB4B', margin: '7px 0 0', lineHeight: 1.45 }}>✨ {a.caption}</p>
                   : a.type === 'image' && <button onClick={() => captionOne(a)} style={{ marginTop: 7, background: 'none', border: '1px solid #76b90055', color: '#9FCB4B', borderRadius: 6, padding: '3px 8px', fontSize: 10.5, cursor: 'pointer' }}>✨ caption</button>}
@@ -452,8 +452,8 @@ function IngestPageInner() {
   );
 }
 
-const btn: React.CSSProperties = { background: '#1B1712', color: '#EFE9DC', border: '1px solid #33302a', borderRadius: 8, padding: '7px 12px', fontSize: 12.5, cursor: 'pointer' };
-const btnPrimary: React.CSSProperties = { ...btn, background: '#C79A63', color: '#151109', border: 'none', fontWeight: 600 };
+const btn: React.CSSProperties = { background: 'var(--field)', color: 'var(--t1)', border: '1px solid var(--border)', borderRadius: 8, padding: '7px 12px', fontSize: 12.5, cursor: 'pointer' };
+const btnPrimary: React.CSSProperties = { ...btn, background: 'var(--accent)', color: 'var(--accent-ink, #fff)', border: 'none', fontWeight: 600 };
 function chip(tone: string): React.CSSProperties {
   return { background: `${tone}22`, color: tone, border: `1px solid ${tone}66`, borderRadius: 999, padding: '4px 10px', fontSize: 11.5, cursor: 'pointer' };
 }
