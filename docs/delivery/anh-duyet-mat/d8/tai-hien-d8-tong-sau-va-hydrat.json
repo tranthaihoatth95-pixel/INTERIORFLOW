@@ -1,0 +1,73 @@
+{
+  "luc": "2026-09-05T13:03:02.651Z",
+  "ds": [
+    {
+      "theGioi": "co-dem",
+      "gieoDem": true,
+      "userId": "cmtoe72ry00007diyvlxo3z7s",
+      "coONhap": false,
+      "oBiVoHieu": false,
+      "ketCuc": "ghi-bi-nuot",
+      "phutDaGo": 42,
+      "truocKhiGo": {
+        "phutTrenDia": null,
+        "dem": "cmtoe72ry00007diyvlxo3z7s",
+        "moiKhoaPhut": [],
+        "storeUser": "cmtoe72ry00007diyvlxo3z7s",
+        "coStore": true,
+        "oHienThi": null
+      },
+      "sauKhiGo": {
+        "phutTrenDia": null,
+        "dem": "cmtoe72ry00007diyvlxo3z7s",
+        "moiKhoaPhut": [],
+        "storeUser": "cmtoe72ry00007diyvlxo3z7s",
+        "coStore": true,
+        "oHienThi": null
+      },
+      "sauKhiMoLai": {
+        "phutTrenDia": null,
+        "dem": "cmtoe72ry00007diyvlxo3z7s",
+        "moiKhoaPhut": [],
+        "storeUser": "cmtoe72ry00007diyvlxo3z7s",
+        "coStore": true,
+        "oHienThi": null
+      },
+      "dat": false
+    },
+    {
+      "theGioi": "khong-dem",
+      "gieoDem": false,
+      "userId": "cmtoe72ry00007diyvlxo3z7s",
+      "coONhap": false,
+      "oBiVoHieu": false,
+      "ketCuc": "ghi-bi-nuot",
+      "phutDaGo": 42,
+      "truocKhiGo": {
+        "phutTrenDia": null,
+        "dem": "cmtoe72ry00007diyvlxo3z7s",
+        "moiKhoaPhut": [],
+        "storeUser": "cmtoe72ry00007diyvlxo3z7s",
+        "coStore": true,
+        "oHienThi": null
+      },
+      "sauKhiGo": {
+        "phutTrenDia": null,
+        "dem": "cmtoe72ry00007diyvlxo3z7s",
+        "moiKhoaPhut": [],
+        "storeUser": "cmtoe72ry00007diyvlxo3z7s",
+        "coStore": true,
+        "oHienThi": null
+      },
+      "sauKhiMoLai": {
+        "phutTrenDia": null,
+        "dem": "cmtoe72ry00007diyvlxo3z7s",
+        "moiKhoaPhut": [],
+        "storeUser": "cmtoe72ry00007diyvlxo3z7s",
+        "coStore": true,
+        "oHienThi": null
+      },
+      "dat": false
+    }
+  ]
+}
