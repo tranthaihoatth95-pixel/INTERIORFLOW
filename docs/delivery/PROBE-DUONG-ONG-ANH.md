@@ -127,3 +127,66 @@ Cùng gốc với chỗ V5 đang vướng: nấc **JUDGE** không có gì để 
 
 **Chưa đo được** — không thể chứng minh *"mở lại thấy đúng texture/tỉ lệ"* khi chưa có texture nào
 đi vào hệ. Sẽ đo sau bước 1 và 2, bằng chính ảnh chẩn đoán này.
+
+---
+
+## 🔬 ĐO LẦN HAI 05/09 — CHẠY TRÊN WEBGL THẬT, KHÔNG CÒN SUY LUẬN
+
+Hai lượt V8 liên tiếp dừng ở ô ⓪ và **bác phiếu của tôi**, cả hai lần đều đúng. Lần thứ ba tôi
+thôi đọc mã đoán hành vi, và đo bằng GL thật.
+
+### Chặn A — THIẾU UV: đo được, và nó HỎNG IM LẶNG
+
+`geometryOf()` (`lib/three/build-ops.ts:23-29`) — **nơi DUY NHẤT** dựng `BufferGeometry` từ dữ liệu
+`cad-to-obj` — chỉ `setAttribute('position')` + `computeVertexNormals()`. **Không có `uv`.**
+`csg.ts:30` còn cố ý gỡ `uv` khỏi danh sách attribute bắt buộc.
+
+Dựng đúng khuôn đó trong Chromium + WebGL 2.0 (swiftshader), dán chính ảnh chẩn đoán:
+
+| hình học | biến thiên RGB toàn khung | số màu khác nhau |
+|---|---|---|
+| **không `uv`** | `[0, 0, 0]` | **1** |
+| có `uv`, repeat 1 | `[255, 222, 255]` | 50+ |
+| có `uv`, repeat 4 | `[255, 222, 252]` | 50+ |
+
+⇒ **Gán `material.map` lên hình học không UV cho ra ĐÚNG MỘT MÀU trên toàn mặt, và KHÔNG ném lỗi.**
+`pageerror` = 0. Không cảnh báo, không màu tím báo hỏng — nó **im lặng trông y hệt hôm nay**.
+
+🔴 **Vì sao đây là cái bẫy đắt nhất trong cả đường ống**: làm xong V8 kiểu cũ thì `tsc` sạch, test
+xanh, ảnh chụp *"trông như cũ"* — và **không máy soi nào của IF bắt được**, vì không có gì sai để
+bắt. Đúng loại lỗi mà ảnh chẩn đoán sinh ra để chống: dò bằng ảnh gỗ thì một mảng nâu phẳng vẫn
+"trông như gỗ".
+
+⇒ **UV phải làm TRƯỚC mọi việc gán vật liệu.** Thứ tự cũ (trường dữ liệu trước, người tiêu thụ sau)
+là thứ tự đẻ ra dây chết.
+
+### Chặn B — khoá gộp mesh VỨT danh tính, và gộp mọi tường làm một
+
+`BuiltGroup = { name, geometry, colorHex }` (`obj-scene-to-geometry.ts:21-25`); `buildMergedGeometries`
+gom `byColor.get(g.colorHex)` (`:63-76`) rồi xuất `merged_${colorHex}`. Đây là đường của **cả hai**
+người đọc (`Scene3DViewer.tsx:454` · `capture.ts:92,106,118`).
+⇒ Tới chỗ dựng mesh thì `group` **không còn**, chỉ còn một màu. Và vì mọi tường dùng chung một hex
+(`cad-to-obj.ts:244/254/263`), **hai bức tường không thể mang hai vật liệu khác nhau** chừng nào
+khoá gộp còn là màu. (Sàn là ngoại lệ — `slabMat()` `:290` đọc `e.color` nên đã tách sẵn.)
+
+### Chặn C — nguồn `matId` ở mặt 2D chưa tồn tại
+`MATERIALS` — **0/13** preset khai `matId`; `MaterialPick`/`PickHatGiong` **cố ý chưa mang** `matId`
+(`kho-mo-dau.ts:135-141` tự khai là việc của lượt sau). ⇒ Thêm trường hôm nay = trường vĩnh viễn
+`undefined`.
+
+### ⓪.3 của phiếu SAI — entity CÓ danh tính, chết vì 7 KÝ TỰ
+
+Tôi viết *"chọn hạt giống ở 2D thì entity không nhận danh tính nào"*. Sai. Nó nhận
+`specId = 'hat-giong:<uuid>'` (`kho-mo-dau.ts:230`). `pbr` null vì **tiền tố `hat-giong:` đá chuỗi
+khỏi nhánh `isMatIdUuid`**. Cùng một chuỗi, bỏ 7 ký tự đầu ⇒ `resolvedVia:'uuid'` + ảnh
+`/mau-vat-lieu/go-soi-trang.png` + `uvScaleMm {190,1200}`.
+
+### 🛠 CHROMIUM CÓ SẴN — hai lượt trước kết luận nhầm là không có
+Playwright của repo đòi build **1234**, máy có **1194** ⇒ `chromium.launch()` trần **thất bại**, và
+`~/.cache/ms-playwright` thì trống nên dễ tưởng là không có trình duyệt. Đường chạy được:
+```
+chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+  args: ['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--no-sandbox'] })
+```
+Đo được `WebGL 2.0 (OpenGL ES 3.0 Chromium)`. ⇒ **Kiểm bằng GL thật là làm được**, đừng khai là
+không kiểm được nữa.
