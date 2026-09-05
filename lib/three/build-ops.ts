@@ -15,6 +15,7 @@ import * as THREE from 'three';
 import type { BuildOp, Pt } from '../cad/model';
 import { cadToThreeM, type SceneGroup } from './cad-to-obj';
 import { booleanOp } from './csg';
+import { chieuHopUv } from './uv-chieu-hop';
 
 /** Dựng `BufferGeometry` thô từ mảng vị trí tam-giác-hoá phẳng (`SceneGroup.positions`) — không
  * CSG, không cache. Nơi DUY NHẤT tạo `BufferGeometry` từ dữ liệu `cad-to-obj.ts`, dùng chung cho
@@ -23,6 +24,12 @@ export function geometryOf(positions: number[] | Float32Array): THREE.BufferGeom
   const geometry = new THREE.BufferGeometry();
   const arr = positions instanceof Float32Array ? positions : new Float32Array(positions);
   geometry.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+  /* 05/09 (V8c bước 1) — `uv` CHIẾU HỘP, mét thế giới. Trước dòng này mọi hình học của app KHÔNG
+     có `uv`, và đo trên WebGL thật cho thấy `material.map` khi đó ra ĐÚNG MỘT MÀU toàn mặt mà
+     KHÔNG ném lỗi (xem docstring `uv-chieu-hop.ts`) ⇒ mọi việc gán vật liệu PBR trước bước này
+     đều là dây chết trông-y-như-thật. Tính ở ĐÂY vì đây là nơi DUY NHẤT dựng `BufferGeometry` từ
+     `SceneGroup.positions` — làm ở nơi tiêu thụ là chép công thức ra nhiều chỗ rồi lệch nhau. */
+  geometry.setAttribute('uv', new THREE.BufferAttribute(chieuHopUv(arr), 2));
   geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
   return geometry;

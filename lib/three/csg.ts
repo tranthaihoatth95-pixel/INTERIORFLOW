@@ -13,6 +13,7 @@
  */
 import * as THREE from 'three';
 import { Brush, Evaluator, ADDITION, SUBTRACTION, INTERSECTION } from 'three-bvh-csg';
+import { chieuHopUv } from './uv-chieu-hop';
 
 export type BooleanKind = 'union' | 'subtract' | 'intersect';
 
@@ -27,11 +28,15 @@ const OP_OF: Record<BooleanKind, CSGOp> = { union: ADDITION, subtract: SUBTRACTI
 // (khối gốc/mặt mới cắt), không có state nào khác cần tách riêng giữa các lần gọi.
 const evaluator = new Evaluator();
 evaluator.useGroups = true;
-// Bỏ `uv` khỏi danh sách attribute bắt buộc (mặc định của Evaluator là ['position','uv','normal']):
-// hình học của app (tam-giác-hoá thẳng từ `cad-to-obj.ts`, vật liệu màu phẳng không texture) KHÔNG
-// có `uv` — `GeometryBuilder.initFromGeometry` đọc thẳng `geometry.attributes[key].array` không
-// guard `undefined`, thiếu `uv` là crash cứng ("Cannot read properties of undefined"). App không
-// cần UV (không PBR/texture ở tầng preview này, xem `SPEC-3D-CORE.md` §6 "xám trơn không PBR").
+// Bỏ `uv` khỏi danh sách attribute Evaluator mang theo (mặc định là ['position','uv','normal']).
+//
+// 🔴 ĐÍNH CHÍNH 05/09 (V8c) — LÝ DO CŨ ĐÃ HẾT HIỆU LỰC, LÝ DO MỚI MẠNH HƠN. Lý do cũ ghi ở đây là
+// *"hình học của app KHÔNG có `uv` nên `initFromGeometry` crash"*; từ bước 1 của V8c thì `geometryOf`
+// LUÔN gắn `uv`, nên lập luận đó không còn đúng. Vẫn giữ nguyên dòng này, vì lý do KHÁC:
+// CSG cắt ra MẶT MỚI (lòng hố cửa/cửa sổ) mà mặt mới đó vuông góc với trục KHÁC hẳn mặt gốc. Bảo
+// Evaluator nội suy `uv` của mặt gốc sang mặt mới là dán vân theo phép chiếu của một mặt khác ⇒
+// vân trên má cửa bị kéo thành vệt. Đúng cách là CHIẾU LẠI theo pháp tuyến THẬT của từng tam giác
+// sau khi cắt — đúng việc `boxUvSauBoolean` dưới làm.
 evaluator.attributes = ['position', 'normal'];
 
 /**
@@ -43,5 +48,27 @@ export function booleanOp(a: THREE.BufferGeometry, b: THREE.BufferGeometry, kind
   const brushA = new Brush(a);
   const brushB = new Brush(b);
   const result = evaluator.evaluate(brushA, brushB, OP_OF[kind]);
-  return result.geometry;
+  return boxUvSauBoolean(result.geometry);
+}
+
+/**
+ * Gắn lại `uv` chiếu hộp cho hình học VỪA RA KHỎI CSG. **Đây là cái bịt lỗ, không phải trang trí**:
+ * mọi bức tường có cửa/cửa sổ đều đi qua `booleanOp`, và trước dòng này kết quả CSG không mang `uv`
+ * ⇒ đúng những bức tường người ta nhìn nhiều nhất sẽ phẳng lì một màu trong khi tường đặc thì có
+ * vân — hỏng lệch nhau, khó lần ra hơn hẳn hỏng đều.
+ *
+ * Vì phép chiếu chỉ phụ thuộc TOẠ ĐỘ THẾ GIỚI, mảng tường sau khi khoét vẫn khớp vân liền mạch với
+ * chính nó trước khi khoét và với tường bên cạnh.
+ *
+ * Hình học có `index` thì phải rã ra không-chỉ-mục trước: một đỉnh dùng chung giữa hai mặt vuông góc
+ * hai trục khác nhau **không thể** mang hai `uv`. Ba đường của app hiện đều không chỉ mục nên nhánh
+ * này thường không chạy — giữ để không lặng lẽ sai nếu thư viện CSG đổi cách xuất.
+ */
+function boxUvSauBoolean(g: THREE.BufferGeometry): THREE.BufferGeometry {
+  const phang = g.index ? g.toNonIndexed() : g;
+  if (phang !== g) g.dispose();
+  const pos = phang.getAttribute('position');
+  if (!pos) return phang;
+  phang.setAttribute('uv', new THREE.BufferAttribute(chieuHopUv(pos.array as ArrayLike<number>), 2));
+  return phang;
 }
