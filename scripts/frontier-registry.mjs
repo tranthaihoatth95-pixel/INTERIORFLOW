@@ -98,8 +98,15 @@ export const FRONTIER = [
     bangChung: [{ dir: 'lib/cad', mau: 'dcel|DCEL' }] },
   { id: 'gallery-lien-nganh', vai: 'mvp', ten: 'GALLERY liên ngành (12/08 Đợt 4: route /library/gallery + quy ước tag nganh/license/nguon/bosuutap trên LibraryAsset 0 cột mới + bộ sưu tập bắt buộc nguồn + chặn Pinterest; seed 17 ảnh đã gắn tag trong script — CẦN CHẠY LẠI SEED để tag vào DB; đề xuất K: PATCH /api/library/[id] cho đề xuất nguồn ghi thật)', he: 'LibraryFirst', dot: 2, trangThai: 'xong',
     bangChung: [{ dir: 'components', mau: 'GalleryLienNganh|gallery-curated' }] },
-  { id: 'home-overview-card', vai: 'do', ten: 'Home = Tổng quan dự án (12/08: card quy mô ProjectProfile + PresenceRow thành viên thật + click nhảy lastStage, thiếu dữ liệu tự ẩn; ⚠️ đổi hành vi: mặc định concept thay render — Hoà xem ở phiên duyệt mắt)', he: 'Workspace', dot: 2, trangThai: 'xong',
-    bangChung: [{ dir: 'components', mau: 'lastStage|ProjectOverviewCard' }] },
+  // 05/09 — entry `home-overview-card` GỠ. `ProjectOverviewCard.tsx` chỉ sống nhờ `ProjectSelect`,
+  // mà `ProjectSelect` chỉ sống nhờ `DongStudioHome` — cả chuỗi ba tầng thuộc hướng Home bento đã
+  // bị D-DR2 (04/09) đè, nên xoá thay vì cắm lại. Bằng chứng + lý do: sổ cách ly
+  // `docs/delivery/LEGACY-DESIGN-QUARANTINE.md`. ⚠️ NĂNG LỰC `lastStage` KHÔNG MẤT, đã đo tại nguồn:
+  // ghi ở `lib/studio/stage-nav.ts:39` · kho `lib/shell/last-stage.ts` · ĐỌC ở
+  // `components/nav/RailDieuHuong.tsx:166` ("chặng đang dở"). Chỉ MẶT TIỀN bento cũ bị gỡ.
+  // ⚠️ Cũng vì `lastStage` còn sống mà mẫu bằng chứng cũ `lastStage|ProjectOverviewCard` vẫn khớp
+  // sau khi xoá — tức giữ entry lại thì máy soi VẪN XANH trong khi thứ nó canh đã chết. Đó là lý do
+  // phải gỡ hẳn entry chứ không sửa mẫu.
   { id: 'chong-lech-dinh-nghia', vai: 'day', ten: 'Máy soi TỪ ĐIỂN CHUẨN (12/08: soi-tu-dien.mjs — phát đầu bắt 81 chỗ nhãn lệch; sửa khi chạm, nhãn hiển thị sửa ngay)', he: 'DocCore', dot: 1, trangThai: 'xong',
     bangChung: [{ dir: 'scripts', mau: 'soi-tu-dien' }] },
   { id: 'backup-offsite', vai: 'do', ten: 'Backup offsite (12/08: sqlite .backup + integrity trên bản sao + rsync --link-dest + rotation 7 + manifest — audit T tự chạy đích riêng OK)', he: 'DocCore', dot: 1, trangThai: 'xong',
@@ -122,8 +129,12 @@ export const FRONTIER = [
   { id: 'build-recipe', vai: 'mvp', ten: 'Công Thức Khối (12/08 Đợt 4: evalRecipe + Base.recipe additive không vỡ .idf cũ + UI ngăn xếp tab Sửa; ops[]/opsDisabled cũ giữ nguyên — recipe ưu tiên khi có; nợ D2 flag: opsDisabled 0 caller + hasOpsGeometry nhánh ops[] sót array/mirror/shape)', he: 'BuildRecipe', dot: 2, trangThai: 'xong',
     bangChung: [{ dir: 'lib/three', mau: 'BuildRecipe' }] },
   // 13/08 Đợt 5 — Hoà chốt kép: ĐỢT GIAO DIỆN THỐNG NHẤT + HOME "Dòng Studio" (00-CHOT 13/08):
-  { id: 'home-dong-studio', vai: 'mvp', ten: 'HOME bento v4 (13/08 H1d sau 2 lần Hoà lật: CO GIÃN THEO ĐỘ DÀY DỮ LIỆU 3 nấc, widget dưới ngưỡng không render, seed CẤM lên Home, card fix tên+avatar+token theme, cung mặt trời đậm, shadow phân tầng sáng — T verify DOM app thật: seed sạch, tự ẩn đúng, card chuẩn, 1 màn; độ ĐẸP theme sáng chờ mắt Hoà)', he: 'Workspace', dot: 5, trangThai: 'xong',
-    bangChung: [{ dir: 'components/home', mau: 'DongStudio|dong-studio' }] },
+  // 05/09 — entry `home-dong-studio` (HOME bento v4) GỠ. `DongStudioHome.tsx` có 0 nơi import và đã
+  // XOÁ khỏi cây; hướng bento làm bố cục Home đã bị D-DR2 04/09 đè (Home = ĐÚNG MỘT tiêu điểm) và
+  // N-10 liệt "bento làm mặc định" vào cờ đỏ. Home nay là `XuongHome`. Bằng chứng chết + mã commit
+  // lấy lại được: `docs/delivery/LEGACY-DESIGN-QUARANTINE.md`.
+  // ⚠️ Mẫu cũ `DongStudio|dong-studio` vẫn khớp ~14 tệp widget (marker trong chú thích) dù thân
+  // Home đã chết ⇒ giữ entry là để máy soi báo XANH cho một hướng đã bị đè. Gỡ hẳn, không sửa mẫu.
   { id: 'panel-handle-chung', vai: 'do', ten: 'Tay cầm thu/mở panel dùng chung — ĐÃ CÓ từ 07/08 dưới tên PanelFlank (ad2d23b): components/ui/PanelFlank.tsx lắp LibrarySheet + Render3DModeSkeleton + AppShell/FlankStrip; H2 13/08 phát hiện sổ ghi sai tên marker ("PanelHandle") nên soi lọt — đúng ca "khai chưa mà code có". Navigator 2D giữ cơ chế riêng CÓ CHỦ ĐÍCH (rail điều hướng có hàng nút đáy, không phải panel mép — T chốt 13/08)', he: 'DocCore', dot: 5, trangThai: 'xong',
     bangChung: [{ dir: 'components/ui', mau: 'PanelFlank' }] },
   { id: 'mat-do-con-tro', vai: 'do', ten: 'Token mật độ con trỏ đủ 5 (13/08 H3: +--pad-card/--fs-ui globals.css:117 + override cảm ứng :167; áp 28 chỗ hardcode trùng giá trị mặc định trong 7 file inline-style; 28 lượt Tailwind trùng số = hàng đợi có chủ ý, tránh đổi thị giác)', he: 'DocCore', dot: 5, trangThai: 'xong',

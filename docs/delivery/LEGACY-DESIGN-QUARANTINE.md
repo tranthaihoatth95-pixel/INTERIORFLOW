@@ -77,5 +77,45 @@ dòng drift bento) · `NC-NGUYEN-TAC-GIAO-DIEN-TOAN-APP-2026-08-14.md` (NT-1…1
 **Và toàn bộ CODE.** Cách ly là chuyện **hướng thị giác**, không phải chuyện năng lực. Không dòng
 mã nào bị cách ly bởi sổ này.
 
+## ⑥ MÃ CHẾT ĐÃ XOÁ KHỎI CÂY — 05/09
+
+> 🔴 **Đây là lần ĐẦU sổ này ghi một cú xoá mã. Phải đọc đúng ranh giới, kẻo thành cớ cho lần sau.**
+>
+> Mục ⑤ nói *"không dòng mã nào bị cách ly bởi sổ này"* — **vẫn đúng, không mâu thuẫn**. Cách ly là
+> dán nhãn cho mã **đang sống**. Ba tệp dưới đây **không sống**: 0 tệp sống nào với tới được chúng,
+> `tsc` xanh ngay sau khi xoá. Xoá một tệp chết ≠ cách ly một tệp sống.
+>
+> ⚠️ **Điều kiện đã phải đạt TRƯỚC khi xoá** (giữ nguyên cho mọi lần sau): ① đồ thị với-tới từ gốc
+> route không chạm ② `grep` toàn repo, kể cả chuỗi động và `next.config` ③ không test nào là người
+> dùng cuối cùng có nghĩa ④ **mã còn nguyên trong lịch sử git**. Thiếu một điều là **GIỮ LẠI và khai
+> "nghi chết, chưa chắc"** — xoá nhầm một tệp sống tệ hơn để lại mười tệp chết.
+
+| Tệp | Dòng | Vì sao chết | Commit cuối để lấy lại |
+|---|---|---|---|
+| `components/home/DongStudioHome.tsx` | 582 | **0 nơi import.** Thân Home bento cũ; Home nay là `XuongHome` | `931cf3c9` |
+| `components/ProjectSelect.tsx` | 2807 | Chỉ `DongStudioHome:46` import — **chết theo** | `a2bc9bda` |
+| `components/home/ProjectOverviewCard.tsx` | 173 | Chỉ `ProjectSelect:35` import — **chết theo tầng hai** | `388a8932` |
+
+**Tổng 3562 dòng.** Lấy lại: `git show <commit>:<đường dẫn>`. Lịch sử git **không** bị đụng.
+
+**Vì sao xoá thay vì cắm lại:** cả chuỗi ba tầng là mặt tiền của **hướng Home bento** — mục ③ dòng 1
+và dòng 2 đã ghi hướng đó bị **D-DR2** và **N-10** đè. Cắm lại là **hồi sinh một hướng bị đè**, trái
+luật cách ly. Và Hoà đã nói rõ 04/09: *"đừng giữ bento chỉ vì mã đã có sẵn — có sẵn không phải là
+lý do"*.
+
+**Hai entry registry gỡ cùng lượt** (`scripts/frontier-registry.mjs`): `home-dong-studio` ·
+`home-overview-card`. Lý do gỡ hẳn thay vì sửa mẫu: mẫu bằng chứng cũ (`lastStage|ProjectOverviewCard`
+và `DongStudio|dong-studio`) **vẫn khớp** sau khi xoá — nhờ marker trong chú thích widget và nhờ
+`lastStage` còn sống ở đường khác ⇒ giữ entry thì máy soi **báo xanh cho một hướng đã chết**.
+
+⚠️ **NĂNG LỰC KHÔNG MẤT, đã đo tại nguồn:** `lastStage` vẫn ghi ở `lib/studio/stage-nav.ts:39`, kho
+ở `lib/shell/last-stage.ts`, **đọc** ở `components/nav/RailDieuHuong.tsx:166`. `SystemWallpaper` ·
+`loadResume`/`buildResumeCard`/`resumeHref` · `/api/home/summary` đều đã được `XuongHome` dùng lại.
+
+🟡 **Sinh ra 13 tệp mồ côi mới, CỐ Ý KHÔNG xoá lượt này** — 11 widget (`components/home/widgets/*.tsx`)
++ `xuong-layout.ts` + `useDisplayName.ts`. Chúng chỉ sống nhờ `DongStudioHome`, nay còn 0 nơi import.
+Không xoá vì **ngoài phạm vi hai entry**, và vì widget là **năng lực có thể tái dùng ở Home khổ hẹp**
+— quyết định đó thuộc mắt Hoà, không thuộc một lượt dọn mã.
+
 ## HẠN DÙNG
 Hoà lật một mục thì sửa **dòng đó tại chỗ** và ghi ngày. Sổ này chỉ dài thêm khi có hướng mới bị đè.

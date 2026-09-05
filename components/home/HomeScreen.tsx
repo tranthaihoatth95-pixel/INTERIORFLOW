@@ -54,7 +54,11 @@ import { useStageMode, useHydrateRenderMode } from '@/lib/stage-mode';
 // N-10 xếp "bento làm mặc định" vào cờ đỏ; NO-REBUILD §B25 bảo vệ NĂNG LỰC/HỢP ĐỒNG/DỮ LIỆU,
 // **không** bảo vệ bố cục thị giác đã bị đè. Năng lực của bản cũ được mang sang nguyên vẹn:
 // `SystemWallpaper` · `loadResume`/`buildResumeCard`/`resumeHref` · `/api/home/summary`.
-// `DongStudioHome.tsx` GIỮ LẠI trong cây làm bằng chứng vòng thăm dò — không xoá, không mount.
+// 🔴 05/09 — `DongStudioHome.tsx` (+ `ProjectSelect.tsx` + `ProjectOverviewCard.tsx`) ĐÃ XOÁ khỏi
+// cây. Câu cũ ở đây ("giữ lại làm bằng chứng — không xoá, không mount") HẾT HIỆU LỰC: giữ mã chết
+// trong cây KHÔNG phải cách lưu bằng chứng — lịch sử git mới là chỗ đó (`931cf3c9` · `a2bc9bda` ·
+// `388a8932`), còn mã chết nằm lại chỉ khiến phiên sau tưởng nó là khuôn mẫu đang dùng.
+// Sổ cách ly: `docs/delivery/LEGACY-DESIGN-QUARANTINE.md`.
 import XuongHome from '@/components/home/XuongHome';
 // 04/09 — ĐƯỜNG TẠO DỰ ÁN THẬT cho Home. KHÔNG dựng mới: `ProjectInitBoard` đã là cửa tạo dự án
 // chuẩn từ 12/08 (createProject → createFlow gắn thẳng projectId → gieo hồ sơ/việc), trước nay chỉ
@@ -213,8 +217,9 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
   // 🟢 [marker: cuaVaoDashboard] 16/08 (Hoà chốt, phiếu P-N) — ĐĂNG NHẬP LUÔN DỪNG Ở DASHBOARD.
   //    Khối đọc `localStorage 'interiorflow.stageDone'` ở đây ĐÃ GỠ: nó là nhánh "returning-user
   //    thì vào thẳng canvas, bỏ qua Home" — chính thứ Hoà bảo đổi. Nay route TOÀN CỤC '/' luôn
-  //    khởi tạo `false` ⇒ luôn dựng `<DongStudioHome/>`. Việc đang dở KHÔNG mất: nó nuôi widget
-  //    "Việc đang dở" (components/home/widgets/ResumeWork.tsx) — đổi từ ÉP sang MỜI.
+  //    khởi tạo `false` ⇒ luôn dựng `<XuongHome/>` (04/09 đổi từ `<DongStudioHome/>`; tệp đó nay
+  //    đã xoá — xem khối chú thích ở đầu tệp). Việc đang dở KHÔNG mất: nó lên bậc tiêu điểm của
+  //    thang chú ý — đổi từ ÉP sang MỜI.
   //    Bug flash 21/07 (ghi ở khối comment trên) KHÔNG tái phát: nó xảy ra vì Gallery là màn
   //    TRUNG GIAN nháy qua trước khi nhảy canvas; nay Gallery/dashboard LÀ ĐÍCH, không có cú
   //    nhảy nào sau nó nên không còn gì để nháy.
