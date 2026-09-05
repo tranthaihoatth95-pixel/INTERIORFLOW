@@ -165,6 +165,16 @@ export function startCad3DAutosave(userId: string, bucketId: string): Cad3DAutos
       return { v: 1, activeId: activeSheetId, ts: Date.now(), sheets };
     };
 
+    /**
+     * P0-LUU (05/09) — KHAI THẲNG: mode 3D **KHÔNG có kênh máy chủ**. `CadSheets`/`PresentSheets`
+     * mới là nơi đẩy `.idf`/`.idfp` lên `POST /api/project-files`, và cả hai đều KHÔNG mount ở
+     * đường này. Không đặt `'off'` thì `serverStatus` giữ nguyên giá trị CŨ do màn trước để lại —
+     * vào 3D sau một phiên 2D đã `'synced'` là nhãn tiếp tục hứa "Đã lưu lúc HH:MM" cho những nét
+     * mới vẽ mà máy chủ chưa từng thấy. Đúng loại nói dối P0-LUU sinh ra để diệt, chỉ khác chỗ đứng.
+     * `'off'` ⇒ nhãn ra "Đã lưu trong máy HH:MM" — đúng sự thật của mode này.
+     */
+    useSaveStatus.getState().setServerStatus('off');
+
     saver = createSheetsAutosaver(userId, CAD3D_AUTOSAVE_ROUTE, getRecord, {
       projectId: bucketId,
       onSaved: () => useSaveStatus.getState().setLastSavedAt(Date.now()),

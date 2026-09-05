@@ -41,7 +41,7 @@ import { countBoardNodes, countMistypedEdges } from '@/lib/nodes/edge-validity';
 import { useCadLiveStatus } from '@/lib/cad/live-status';
 import { useCadStore, type SnapSettings } from '@/lib/cad/store';
 import { useStageMode } from '@/lib/stage-mode';
-import { useSaveStatus } from '@/lib/save-status';
+import { useSaveStatus, nhanTrangThaiLuu } from '@/lib/save-status';
 import { useProjectPresence } from '@/lib/project-presence-ui';
 // Ô GÕ NHANH — kho dùng chung; panel NHẬN nó là khẩu độ mép trên `VitalsAperture.tsx`.
 import { useVitalsUi } from '@/lib/vitals-ui';
@@ -125,13 +125,6 @@ function SnapIndicator({ snap, dense }: { snap: SnapSettings; dense: boolean }) 
 }
 
 
-/** 2.1.8.n — "HH:MM" giờ lưu gần nhất, không giây (không cần chính xác tới giây cho mục đích
- * xác nhận thị giác "đã lưu chưa"). */
-function formatHHMM(ts: number): string {
-  const d = new Date(ts);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
-
 export default function StatusBar({ stage, hidden }: Props) {
   const tr = useT();
   const flowName = useFlowStore((s) => s.flowName);
@@ -147,6 +140,11 @@ export default function StatusBar({ stage, hidden }: Props) {
   const lastSavedAt = useSaveStatus((s) => s.lastSavedAt);
   const diskStatus = useSaveStatus((s) => s.diskStatus);
   const diskMessage = useSaveStatus((s) => s.diskMessage);
+  // P0-LUU (05/09) — đích ③ máy chủ. Đọc thẳng ở đây thay vì suy từ `lastSavedAt`: xem
+  // `lib/save-status.ts` (kênh ③ và vì sao nhãn cũ nói dối 19,6 s).
+  const serverStatus = useSaveStatus((s) => s.serverStatus);
+  const serverSavedAt = useSaveStatus((s) => s.serverSavedAt);
+  const serverMessage = useSaveStatus((s) => s.serverMessage);
   const otherTabOpen = useProjectPresence((s) => s.otherTabOpen);
 
   /* 🔀 HOÀ NHÁNH — Ô GÕ NHANH SỐNG LẠI, và đây là lý do đo được.
@@ -217,7 +215,17 @@ export default function StatusBar({ stage, hidden }: Props) {
     () => (showBoardCount ? countMistypedEdges(boardNodes, boardEdges, getDefinition) : 0),
     [showBoardCount, boardNodes, boardEdges],
   );
-  const showSave = (stage === 'concept' || stage === 'present') && saveState !== 'idle';
+  /**
+   * P0-LUU — câu chữ do hàm THUẦN `nhanTrangThaiLuu()` dựng, KHÔNG dựng bằng biểu thức ba ngôi
+   * tại chỗ nữa. Lý do không phải gọn mắt: luật "nhãn không được nói dối" chỉ trở thành thứ
+   * MÁY CANH ĐƯỢC khi nó nằm trong một hàm thuần có test (`lib/save-status.test.ts`). Nhánh cũ
+   * `lastSavedAt ? 'Đã lưu lúc …' : 'Đã lưu'` còn khai cả một lần lưu KHÔNG HỀ XẢY RA.
+   */
+  const nhanLuu =
+    stage === 'concept' || stage === 'present'
+      ? nhanTrangThaiLuu({ status: saveState, lastSavedAt, serverStatus, serverSavedAt, serverMessage })
+      : null;
+
   const showStandards = stage === 'concept' && lastViolationCount !== null;
   // B4 (4.1.d) — 'off' (chưa bật lưu trữ dự án) KHÔNG hiện gì, đúng thiết kế opt-in.
   const showDisk = (stage === 'concept' || stage === 'present') && diskStatus !== 'off';
@@ -380,19 +388,33 @@ export default function StatusBar({ stage, hidden }: Props) {
             <Loader2 size={14} className="animate-spin" /> {jobsActive} đang render
           </span>
         )}
-        {showSave && (
-          // 2.1.8.n (31/07) — thêm giờ lưu gần nhất ("Đã lưu lúc HH:MM"), kiến trúc sư quen
-          // AutoCAD không tin autosave nếu không đọc được bằng mắt. Cỡ chữ/line-height ghi đè
-          // riêng (7.1.23 ⑤c, ≥12px/≥1.5) — CHỈ cho dòng này, KHÔNG đổi `fontSize:11.5` chung
-          // của cả StatusBar (thuộc đợt sửa token 7.1.23 riêng, đang chờ Hoà gật, ngoài phạm vi
-          // việc gấp này).
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', fontSize: 12, lineHeight: 1.5, minWidth: 0 }}>
-            <Save size={14} style={{ flexShrink: 0 }} />
-            {/* A2 — khổ hẹp: chữ tự cụt bằng ellipsis thay vì tràn đè pill Vitals */}
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {saveState === 'saving' ? 'Đang lưu…' : lastSavedAt ? `Đã lưu lúc ${formatHHMM(lastSavedAt)}` : 'Đã lưu'}
+        {nhanLuu && (
+          // 2.1.8.n (31/07) — thêm giờ lưu gần nhất, kiến trúc sư quen AutoCAD không tin autosave
+          // nếu không đọc được bằng mắt. Cỡ chữ/line-height ghi đè riêng (7.1.23 ⑤c, ≥12px/≥1.5)
+          // — CHỈ cho dòng này, KHÔNG đổi `fontSize:11.5` chung của cả StatusBar.
+          // P0-LUU (05/09) — câu chữ đến từ `nhanTrangThaiLuu()`; `giaiThich` vào ô giải nghĩa để
+          // người dùng đọc được BẢN SAO NÀO đã có (màu KHÔNG phải kênh duy nhất — mức cảnh báo
+          // luôn kèm chữ "Chưa lưu lên máy chủ", đúng luật màu-không-là-kênh-duy-nhất).
+          <Tooltip label={nhanLuu.chu} desc={nhanLuu.giaiThich} side="top">
+            <span
+              tabIndex={0}
+              data-nhan-luu={nhanLuu.huaBenVung ? 'ben-vung' : 'trong-may'}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                whiteSpace: 'nowrap',
+                fontSize: 12,
+                lineHeight: 1.5,
+                minWidth: 0,
+                color: nhanLuu.muc === 'canh-bao' ? 'var(--warning)' : undefined,
+              }}
+            >
+              <Save size={14} style={{ flexShrink: 0 }} />
+              {/* A2 — khổ hẹp: chữ tự cụt bằng ellipsis thay vì tràn đè pill Vitals */}
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{nhanLuu.chu}</span>
             </span>
-          </span>
+          </Tooltip>
         )}
         {showDisk && (
           // B4 (4.1.d) — VIỆC THỨ HAI, tách khỏi `showSave` ở trên (bài học sự cố 31/07: cache

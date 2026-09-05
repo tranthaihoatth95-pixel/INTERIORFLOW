@@ -67,6 +67,8 @@ import {
   createSheetsAutosaver,
   loadSheets,
   nextSeqFrom,
+  taoNhipSaoLuuMayChu,
+  type NhipSaoLuuMayChu,
   type SheetsAutosaver,
   type SheetsRecord,
 } from '@/lib/sheets-persist';
@@ -277,6 +279,8 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
   const sheetsRef = useRef(sheets);
   const activeIdRef = useRef(activeId);
   const saverRef = useRef<SheetsAutosaver | null>(null);
+  /** P0-LUU (05/09) — nhịp đẩy bản sao máy chủ, CÙNG khuôn `CadSheets`. Xem `lib/save-status.ts`. */
+  const nhipMayChuRef = useRef<NhipSaoLuuMayChu | null>(null);
   // B4 (4.1.d) — writer đĩa RIÊNG, nhịp chậm hơn IndexedDB (③), tạo lại mỗi khi đổi dự án.
   const diskWriterRef = useRef<DiskWriter | null>(null);
   /**
@@ -444,31 +448,48 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
     saverRef.current = saver;
 
     /**
-     * SAO LƯU MÁY CHỦ — nhịp CHẬM 30s, khác hẳn IndexedDB (debounce ~1s).
-     * Vì sao chậm: mỗi lần ghi là một tệp `.idfp` vài chục KB (có ảnh thì vài MB) đi qua mạng +
-     * ghi đĩa máy chủ; deck không đổi mỗi giây, và đây là BẢN SAO chứ không phải nguồn làm việc.
-     * Cổng chặn deck-rỗng nằm trong `saoLuuDeckLenMayChu`; effect này lại gate bằng `hydrated`
-     * nên ca "chưa nạp xong đã ghi đè" bị chặn ở hai lớp.
-     * Im lặng khi hỏng: bản sao là lưới đỡ, tuyệt đối không được làm gãy editor.
+     * SAO LƯU MÁY CHỦ — bản sao KHÔNG phụ thuộc trình duyệt.
+     *
+     * 🔴 ĐỔI 05/09 (P0-LUU): trước là `setInterval(30_000)` — cùng bệnh với `CadSheets` mà `A2-03`
+     * đo được: đồng hồ treo tường không dính gì tới lúc người dùng sửa, nên có tới ~30 s deck chỉ
+     * tồn tại trong một hồ sơ trình duyệt trong khi nhãn đã nói "Đã lưu". Nay đi qua
+     * `taoNhipSaoLuuMayChu` (bám thay đổi + báo `serverStatus` thật).
+     *
+     * ⚠️ KHÁC CAD một điểm, và phải nói thẳng: deck mang ảnh dataURL nên gói tin thường VƯỢT trần
+     * 64 KiB của `sendBeacon`/`keepalive` ⇒ đường-sống-sót-lúc-đóng-tab gần như KHÔNG dùng được ở
+     * đây (nên không khai `goiKhiRoiTrang`, thà không có còn hơn có mà im lặng hỏng). Thứ bảo vệ
+     * người dùng ở chặng này là nhịp NGẮN + nhãn nói thật, không phải beacon.
+     *
+     * Cổng chặn deck-rỗng vẫn nằm trong `saoLuuDeckLenMayChu`; effect gate bằng `hydrated` nên ca
+     * "chưa nạp xong đã ghi đè" vẫn bị chặn hai lớp. Im lặng khi hỏng ở tầng gửi, nhưng KHÔNG im
+     * lặng ở tầng NHÃN — đó là chỗ đổi.
      */
-    const nhipSaoLuu = window.setInterval(() => {
-      const rec = getRecord();
-      if (!rec?.sheets.length || !bucketId) return;
-      const deck = liveDeck.current;
-      const daLuu = daSaoLuuMayChuRef.current;
-      // Không có gì đổi từ lần gửi thành công gần nhất ⇒ bỏ qua (xem docstring `daSaoLuuMayChuRef`).
-      if (daLuu && daLuu.deck === deck && daLuu.sheets === sheetsRef.current && daLuu.activeId === activeIdRef.current)
-        return;
-      const anhChup = { deck, sheets: sheetsRef.current, activeId: activeIdRef.current };
-      void saoLuuDeckLenMayChu(
-        bucketId,
-        rec.sheets.map((x) => ({ id: x.id, name: x.name, deck: (x as unknown as { deck: EditorDeck }).deck })),
-        getActiveBrandKit(),
-        useFlowStore.getState().flowName || 'InteriorFlow project',
-      ).then((kq) => {
+    const nhipMayChu = taoNhipSaoLuuMayChu({
+      gui: async () => {
+        const rec = getRecord();
+        // `khongGuiGi` — xem `CadSheets`: không có lượt nhận mới thì không cấp mốc cho nhãn.
+        if (!rec?.sheets.length || !bucketId) return { ok: true, khongGuiGi: true };
+        const deck = liveDeck.current;
+        const daLuu = daSaoLuuMayChuRef.current;
+        // Không có gì đổi từ lần gửi thành công gần nhất ⇒ coi như xong (docstring `daSaoLuuMayChuRef`).
+        if (daLuu && daLuu.deck === deck && daLuu.sheets === sheetsRef.current && daLuu.activeId === activeIdRef.current)
+          return { ok: true, khongGuiGi: true };
+        const anhChup = { deck, sheets: sheetsRef.current, activeId: activeIdRef.current };
+        const kq = await saoLuuDeckLenMayChu(
+          bucketId,
+          rec.sheets.map((x) => ({ id: x.id, name: x.name, deck: (x as unknown as { deck: EditorDeck }).deck })),
+          getActiveBrandKit(),
+          useFlowStore.getState().flowName || 'InteriorFlow project',
+        );
         if (kq.ok) daSaoLuuMayChuRef.current = anhChup;
-      });
-    }, 30_000);
+        return kq.ok ? { ok: true } : { ok: false, loi: kq.loi };
+      },
+      onTrangThai: (st, msg) => useSaveStatus.getState().setServerStatus(st, msg),
+      onDaGui: (t) => useSaveStatus.getState().setServerSavedAt(t),
+    });
+    nhipMayChuRef.current = nhipMayChu;
+    if (bucketId) nhipMayChu.touch();
+    else useSaveStatus.getState().setServerStatus('off');
 
     /**
      * B4 (4.1.d, bổ sung ③) — ghi đĩa THEO NHỊP RIÊNG, chậm hơn IndexedDB (throttle 10s, không
@@ -501,21 +522,31 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
     const flush = () => {
       saver.flush();
       diskWriter.flushNow();
+      nhipMayChu.flushKhiRoiTrang();
     };
     const onHide = () => {
       if (document.visibilityState === 'hidden') flush();
     };
-    const onForceSave = () => flush();
+    // ⌘S ở Present: ép cả ba đích, và bỏ qua giãn cách 12 s của nhịp máy chủ.
+    const onForceSave = () => {
+      saver.flush();
+      diskWriter.flushNow();
+      nhipMayChu.flushNow();
+    };
     window.addEventListener('beforeunload', flush);
+    window.addEventListener('pagehide', flush); // Safari/iOS không chạy `beforeunload` khi đóng tab
     document.addEventListener('visibilitychange', onHide);
     window.addEventListener('present:force-save-request', onForceSave);
     return () => {
       window.removeEventListener('beforeunload', flush);
+      window.removeEventListener('pagehide', flush);
       document.removeEventListener('visibilitychange', onHide);
       window.removeEventListener('present:force-save-request', onForceSave);
       saver.flush(); // rời route (client-nav) → không mất nhịp cuối
       saver.dispose();
-      window.clearInterval(nhipSaoLuu);
+      nhipMayChu.dispose();
+      nhipMayChuRef.current = null;
+      useSaveStatus.getState().setServerStatus('off');
       saverRef.current = null;
       diskWriter.flushNow();
       diskWriter.dispose();
@@ -540,6 +571,7 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
     if (hydrated) {
       saverRef.current?.touch();
       diskWriterRef.current?.touch();
+      nhipMayChuRef.current?.touch(); // P0-LUU — cấu trúc tờ cũng vào `.idfp`, phải lên máy chủ
     }
   }, [sheets, activeId, hydrated]);
 
@@ -586,6 +618,7 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
       const { keptCount } = applyIdfpSheets(parsed.sheets);
       saverRef.current?.touch(); // ghi ngay vào IDB, không đợi debounce thao tác kế tiếp
       diskWriterRef.current?.touch(); // B4 — cũng đánh dấu đĩa cần ghi lại (nhịp riêng)
+      nhipMayChuRef.current?.touch(); // P0-LUU — nhập `.idfp` là nội dung đổi thật
       window.dispatchEvent(new CustomEvent('present:idfp-import-done', {
         detail: {
           ok: true,
@@ -675,6 +708,7 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
     setImportGen((g) => g + 1);
     saverRef.current?.touch();
     diskWriterRef.current?.touch();
+    nhipMayChuRef.current?.touch(); // P0-LUU
   };
 
   /**
@@ -698,6 +732,7 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
     setImportGen((g) => g + 1);
     saverRef.current?.touch();
     diskWriterRef.current?.touch();
+    nhipMayChuRef.current?.touch(); // P0-LUU
   };
 
   const closeSheet = (id: string) => {
@@ -762,6 +797,7 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
               setSlideCount(d.slides.length);
               saverRef.current?.touch();
               diskWriterRef.current?.touch();
+              nhipMayChuRef.current?.touch(); // P0-LUU — sửa slide là nội dung đổi thật
             }}
           />
         ) : null}

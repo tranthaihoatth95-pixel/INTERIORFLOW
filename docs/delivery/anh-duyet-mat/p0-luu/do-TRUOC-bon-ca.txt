@@ -1,0 +1,25 @@
+
+══════════════════ TRUOC ══════════════════
+
+### CA 1 — vẽ → đóng ngay khi nhãn nói "Đã lưu lúc" → mở lại (hồ sơ MỚI = máy khác)
+  vẽ được chưa          : ✅ có (19106 điểm nét)
+
+══════════════════ TRUOC ══════════════════
+
+### CA 1 — vẽ → đóng ngay khi nhãn nói "Đã lưu lúc" → mở lại (hồ sơ MỚI = máy khác)
+  vẽ được chưa          : ✅ có (19106 điểm nét)
+  nhãn hứa bền vững lúc : 1.2 s
+  POST (sau khi vẽ)     : 24.5 s[200]
+  (POST lúc mở dự án)   : 0
+  >>> CỬA SỔ NÓI DỐI    : 23.3 giây
+  nhãn lúc đóng         : Đã lưu lúc 09:39
+  máy chủ trước khi đóng: {"so":1,"entities":8,"at":"2026-09-05T09:39:50.138Z"}
+  >>> MỞ LẠI hồ sơ MỚI  : ✅ CÒN NGUYÊN (60869 điểm nét)
+  máy chủ sau           : {"so":1,"entities":8,"at":"2026-09-05T09:39:50.138Z"}
+
+### CA 3 — chặn POST /api/project-files → nhãn phải nói ĐÚNG là chưa lưu được
+  số POST bị chặn       : 0
+  nhãn cuối             : Đã lưu lúc 09:40
+  >>> nói "Đã lưu lúc" trong khi máy chủ hỏng? 🔴 CÓ — nói dối
+
+=== HET ===

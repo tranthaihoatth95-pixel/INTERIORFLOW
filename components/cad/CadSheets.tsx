@@ -46,11 +46,13 @@ import {
   createSheetsAutosaver,
   loadSheets,
   nextSeqFrom,
+  taoNhipSaoLuuMayChu,
+  type NhipSaoLuuMayChu,
   type SheetsAutosaver,
   type SheetsRecord,
 } from '@/lib/sheets-persist';
 import { exportIdf, importIdf, lastImportIdfError, type IdfSheetData } from '@/lib/cad/idf';
-import { saoLuuBanVeLenMayChu, taiBanVeTuMayChu } from '@/lib/cad/luu-len-may-chu';
+import { saoLuuBanVeLenMayChu, taiBanVeTuMayChu, TEN_TEP_SAO_LUU_2D } from '@/lib/cad/luu-len-may-chu';
 import { mergeIdfSheetsToDoc } from '@/lib/cad/sheet-migrate';
 import { rootFolderChosen, getProjectFolderHandle, writeTextFile, readTextFile } from '@/lib/root-folder';
 import { resolveSourceOfTruth, createDiskWriter, watchProjectPresence, type DiskWriter } from '@/lib/disk-sync';
@@ -352,6 +354,19 @@ export default function CadSheets() {
   // B4 (4.1.d) — writer đĩa RIÊNG, nhịp chậm hơn IndexedDB (③), tạo lại mỗi khi đổi dự án.
   const diskWriterRef = useRef<DiskWriter | null>(null);
   /**
+   * P0-LUU (05/09) — NHỊP ĐẨY BẢN SAO MÁY CHỦ. Thay `setInterval(30_000)` cũ: đồng hồ treo tường
+   * không dính gì tới lúc người dùng vẽ, nên vẽ xong ngay sau một nhịp là chờ gần trọn 30 s
+   * (`A2-03` đo 21,1 s) trong khi nhãn đã nói "Đã lưu". Nay bám THAY ĐỔI + báo trạng thái thật
+   * vào `useSaveStatus.serverStatus` để nhãn không còn hứa thay nó.
+   */
+  const nhipMayChuRef = useRef<NhipSaoLuuMayChu | null>(null);
+  /**
+   * P0-LUU — "người dùng ĐÃ chạm vào hình trong phiên này chưa". Bật ở ĐÚNG chỗ `useCadStore`
+   * báo `doc` đổi. Đây là thứ phân biệt **rỗng-do-người** (vừa xoá sạch — hợp lệ, PHẢI lưu) với
+   * **rỗng-do-máy** (hydrate chưa ra gì / khôi phục hỏng — cấm đẩy lên, xem `gui()` bên dưới).
+   */
+  const nguoiDungDaSuaRef = useRef(false);
+  /**
    * Ảnh chụp thứ đã sao lưu LÊN MÁY CHỦ thành công gần nhất — dùng để nhịp 30s KHÔNG tải lên lại
    * y nguyên. Cần thật, không phải tối ưu cho vui: `POST /api/project-files` tạo BẢN GHI MỚI mỗi
    * lần (không ghi đè hàng cũ), nên editor mở suốt buổi mà không đụng vào bản vẽ vẫn đẻ ~120
@@ -563,31 +578,93 @@ export default function CadSheets() {
     saverRef.current = saver;
 
     /**
-     * SAO LƯU MÁY CHỦ — nhịp CHẬM 30s, khác IndexedDB (~1s). Bản vẽ là sự thật nghề nghiệp nên
-     * nó phải có bản sao KHÔNG phụ thuộc trình duyệt; đồng bộ đĩa sẵn có không phủ được vì mặc
-     * định tắt.
-     * Cổng chặn nằm trong `duDieuKienSaoLuu` — truyền cờ hydrate thật để phân biệt "bản vẽ trống
-     * CÓ CHỦ Ý" (hợp lệ, phải lưu) với "chưa nạp xong / vừa bị xoá sạch" (số 0 của máy, cấm ghi
-     * đè). KHÔNG lấy số lượng entity làm cớ từ chối — từ chối nó là nuốt mất thao tác xoá.
-     * Chỉ ghi ảnh chụp khi máy chủ NHẬN THẬT (`kq.ok`): thất bại thì nhịp sau thử lại.
+     * SAO LƯU MÁY CHỦ — đích ③. Bản vẽ là sự thật nghề nghiệp nên nó phải có bản sao KHÔNG phụ
+     * thuộc trình duyệt; đồng bộ đĩa sẵn có không phủ được vì mặc định tắt.
+     *
+     * 🔴 ĐỔI 05/09 (P0-LUU, lỗi `A2-03`): trước đây là `setInterval(30_000)` khởi động lúc
+     * hydrate ⇒ thời điểm gửi **không dính gì tới lúc người dùng vẽ**; A2 đo được nhãn nói
+     * "Đã lưu" ở giây 1,5 còn `POST` mãi giây 21,1. Nay đi qua `taoNhipSaoLuuMayChu`
+     * (`lib/sheets-persist.ts`, cạnh `createSheetsAutosaver` — không mở cơ chế lưu thứ tư):
+     * bám THAY ĐỔI, debounce 2,5 s, giãn cách tối thiểu 12 s, và **báo trạng thái thật** vào
+     * `useSaveStatus.serverStatus` để StatusBar thôi hứa hộ nó.
+     *
+     * Cổng chặn vẫn nằm trong `duDieuKienSaoLuu` — cờ hydrate phân biệt "bản vẽ trống CÓ CHỦ Ý"
+     * (hợp lệ, phải lưu) với "chưa nạp xong / vừa bị xoá sạch" (số 0 của máy, cấm ghi đè).
+     * `daSaoLuuMayChuRef` GIỮ NGUYÊN vai chống-gửi-lại-y-nguyên: nhịp chỉ hẹn giờ, nó mới là thứ
+     * biết nội dung có thật sự đổi hay không (so bằng THAM CHIẾU, O(1)).
      */
-    const nhipSaoLuu2D = window.setInterval(() => {
+    const anhChupHienTai = () => {
       const active = sheetsRef.current.find((x) => x.id === activeIdRef.current) ?? sheetsRef.current[0];
-      if (!active || !bucketId) return;
-      const doc = useCadStore.getState().doc;
+      if (!active || !bucketId) return null;
+      return { active, doc: useCadStore.getState().doc, sheets: sheetsRef.current, activeId: active.id };
+    };
+    const chuaDoiTuLanGuiCuoi = (a: NonNullable<ReturnType<typeof anhChupHienTai>>) => {
       const daLuu = daSaoLuuMayChuRef.current;
-      // Không có gì đổi từ lần gửi thành công gần nhất ⇒ bỏ qua (xem docstring `daSaoLuuMayChuRef`).
-      if (daLuu && daLuu.doc === doc && daLuu.sheets === sheetsRef.current && daLuu.activeId === active.id) return;
-      const anhChup = { doc, sheets: sheetsRef.current, activeId: active.id };
-      void saoLuuBanVeLenMayChu(
-        bucketId,
-        singleIdfSheet(active.id, active.name, sheetsRef.current),
-        true, // tới được đây là effect autosave đã chạy ⇒ hydrate xong (effect này gate bằng `hydrated`)
-        useFlowStore.getState().flowName || 'InteriorFlow project',
-      ).then((kq) => {
-        if (kq.ok) daSaoLuuMayChuRef.current = anhChup;
-      });
-    }, 30_000);
+      return !!daLuu && daLuu.doc === a.doc && daLuu.sheets === a.sheets && daLuu.activeId === a.activeId;
+    };
+
+    const nhipMayChu = taoNhipSaoLuuMayChu({
+      gui: async () => {
+        const a = anhChupHienTai();
+        // Ba nhánh dưới KHÔNG có lượt nhận mới nào ⇒ `khongGuiGi` để nhịp không cấp mốc giờ cho
+        // câu hứa bền vững của nhãn (mốc đó chỉ được sinh khi máy chủ THẬT SỰ nhận một lượt).
+        if (!a) return { ok: true, khongGuiGi: true }; // không có tờ / không dự án
+        if (chuaDoiTuLanGuiCuoi(a)) return { ok: true, khongGuiGi: true }; // máy chủ đang giữ đúng bản này
+        /**
+         * 🔴 CẤM ĐẨY BẢN VẼ RỖNG KHI NGƯỜI DÙNG CHƯA CHẠM GÌ — bắt được lúc nghiệm thu trên app
+         * thật, không phải lo xa. `POST /api/project-files` tạo bản ghi MỚI mỗi lần, còn
+         * `taiBanVeTuMayChu()` lấy bản **mới nhất đọc được**; một `.idf` rỗng vẫn đọc được (1 tờ,
+         * 0 entity) ⇒ nó **CHÔN bản sao tốt cũ**. Ca thật: mở dự án ở máy khác, khôi phục từ máy
+         * chủ hỏng giữa chừng, cache rỗng ⇒ bộ nhớ trắng ⇒ nhịp đẩy đúng cái trắng ấy lên.
+         *
+         * ⚠️ KHÔNG mâu thuẫn với `duDieuKienSaoLuu` (nơi cố ý TỪ CHỐI lấy "0 entity" làm cớ không
+         * lưu): ở đó là bản vẽ NGƯỜI DÙNG vừa xoá sạch — phải lưu, nếu không thao tác xoá bị nuốt.
+         * Ở đây là bộ nhớ CHƯA AI CHẠM tới. Rỗng-do-người và rỗng-do-máy là hai chuyện, và
+         * `nguoiDungDaSuaRef` là chỗ phân biệt chúng — bật ngay khi `doc` đổi lần đầu, nên mọi
+         * thao tác xoá thật vẫn đi lên máy chủ như thường.
+         */
+        if (!nguoiDungDaSuaRef.current && Object.keys(a.doc.entities ?? {}).length === 0)
+          return { ok: true, khongGuiGi: true };
+        const kq = await saoLuuBanVeLenMayChu(
+          bucketId,
+          singleIdfSheet(a.active.id, a.active.name, a.sheets),
+          true, // tới được đây là effect autosave đã chạy ⇒ hydrate xong (effect gate bằng `hydrated`)
+          useFlowStore.getState().flowName || 'InteriorFlow project',
+        );
+        if (kq.ok) daSaoLuuMayChuRef.current = { doc: a.doc, sheets: a.sheets, activeId: a.activeId };
+        return kq.ok ? { ok: true } : { ok: false, loi: kq.loi };
+      },
+      /**
+       * ĐƯỜNG SỐNG SÓT lúc đóng tab — phải ĐỒNG BỘ, nên dựng gói tin ngay tại đây thay vì gọi
+       * `saoLuuBanVeLenMayChu` (async). Dùng ĐÚNG `exportIdf` + `TEN_TEP_SAO_LUU_2D` mà đường
+       * thường dùng, để hai đường không bao giờ đẻ ra hai định dạng khác nhau.
+       */
+      goiKhiRoiTrang: () => {
+        const a = anhChupHienTai();
+        if (!a || chuaDoiTuLanGuiCuoi(a)) return null;
+        try {
+          const json = exportIdf(singleIdfSheet(a.active.id, a.active.name, a.sheets), {
+            projectName: useFlowStore.getState().flowName || 'InteriorFlow project',
+          });
+          const dataUrl = `data:application/json;base64,${btoa(unescape(encodeURIComponent(json)))}`;
+          return {
+            url: '/api/project-files',
+            body: JSON.stringify({ projectId: bucketId, name: TEN_TEP_SAO_LUU_2D, dataUrl }),
+          };
+        } catch {
+          return null;
+        }
+      },
+      onTrangThai: (st, msg) => useSaveStatus.getState().setServerStatus(st, msg),
+      onDaGui: (t) => useSaveStatus.getState().setServerSavedAt(t),
+    });
+    nhipMayChuRef.current = nhipMayChu;
+    nguoiDungDaSuaRef.current = false; // phiên/dự án mới ⇒ đếm lại từ đầu
+    // ĐẨY LƯỢT ĐẦU NGAY KHI MỞ — dự án mở-rồi-đóng-không-sửa trước đây vĩnh viễn không có bản sao
+    // máy chủ (chú thích của `diskWriter` bên dưới đã ghi đúng bệnh này cho đường đĩa). Cổng chặn
+    // "rỗng-do-máy" nằm trong `gui()` ở trên, nên lượt này an toàn kể cả khi hydrate chưa ra gì.
+    if (bucketId) nhipMayChu.touch();
+    else useSaveStatus.getState().setServerStatus('off');
 
     /**
      * B4 (4.1.d, bổ sung ③) — ghi đĩa THEO NHỊP RIÊNG, chậm hơn IndexedDB (throttle 10s, không
@@ -625,28 +702,44 @@ export default function CadSheets() {
     const unsub = useCadStore.subscribe((s, prev) => {
       const docDoi = s.doc !== prev.doc || s.currentLayer !== prev.currentLayer;
       if (docDoi) {
+        nguoiDungDaSuaRef.current = true; // từ đây, "rỗng" là ý người dùng chứ không phải số 0 của máy
         saver.touch('doc');
         diskWriter.touch();
+        nhipMayChu.touch(); // P0-LUU — bản sao máy chủ bám ĐÚNG nhịp sửa hình, không bám đồng hồ
       } else if (s.viewport !== prev.viewport) {
         saver.touch('viewport');
+        // pan/zoom KHÔNG đụng `ban-ve.sao-luu.idf` (`singleIdfSheet` không mang viewport) —
+        // đánh thức nhịp máy chủ ở đây chỉ tốn một lượt tải lên y nguyên.
       }
     });
+    /**
+     * RỜI TRANG — ba việc, KHÔNG được thiếu việc thứ ba (P0-LUU).
+     * `pagehide` thêm cạnh `beforeunload`: trên Safari/iOS `beforeunload` thường KHÔNG chạy khi
+     * tab bị đóng/đưa vào bfcache, còn `pagehide` thì có. Cả ba đường đều idempotent — `flush`
+     * không có gì treo thì là no-op.
+     */
     const flush = () => {
       saver.flush();
       diskWriter.flushNow();
+      nhipMayChu.flushKhiRoiTrang();
     };
     const onHide = () => {
       if (document.visibilityState === 'hidden') flush();
     };
     window.addEventListener('beforeunload', flush);
+    window.addEventListener('pagehide', flush);
     document.addEventListener('visibilitychange', onHide);
     return () => {
       unsub();
       window.removeEventListener('beforeunload', flush);
+      window.removeEventListener('pagehide', flush);
       document.removeEventListener('visibilitychange', onHide);
       saver.flush(); // rời route (client-nav) → không mất nhịp cuối
       saver.dispose();
-      window.clearInterval(nhipSaoLuu2D);
+      nhipMayChu.flushKhiRoiTrang(); // rời route: gửi nốt lượt cuối trước khi tháo nhịp
+      nhipMayChu.dispose();
+      nhipMayChuRef.current = null;
+      useSaveStatus.getState().setServerStatus('off');
       saverRef.current = null;
       diskWriter.flushNow();
       diskWriter.dispose();
@@ -672,6 +765,7 @@ export default function CadSheets() {
     activeIdRef.current = activeId;
     if (hydrated) {
       saverRef.current?.touch();
+      nhipMayChuRef.current?.touch(); // P0-LUU — cấu trúc tờ cũng vào `.idf`, phải lên máy chủ
       diskWriterRef.current?.touch(); // B4 (4.1.d) — thiếu dòng này thì dự án CAD mới, chưa ai
       // vẽ gì, sẽ KHÔNG BAO GIỜ có ban-ve.idf đầu tiên (bắt được khi browser-verify: Present có
       // dòng này nên tự ghi lần đầu ngay cả khi không ai thao tác, CAD thiếu nên treo mãi).
@@ -953,9 +1047,13 @@ export default function CadSheets() {
     const onForceSave = () => {
       saverRef.current?.flush();
       diskWriterRef.current?.flushNow(); // B4 (4.1.d) — ⌘S cũng ép ghi đĩa ngay, không đợi nhịp 10s
+      nhipMayChuRef.current?.flushNow(); // P0-LUU — ⌘S bỏ qua giãn cách 12 s, đẩy máy chủ ngay
       const d = new Date();
       const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-      useCadStore.getState().setStatus(`Đã lưu — ${hhmm}`);
+      // P0-LUU — câu cũ "Đã lưu — HH:MM" nói về kho NÀO thì không ai biết, mà lúc bấm ⌘S thì
+      // chỉ IndexedDB là chắc chắn xong ngay. Nói đúng phần chắc chắn; phần máy chủ do chỉ báo
+      // ở StatusBar (`serverStatus`) báo khi nó THẬT SỰ xong.
+      useCadStore.getState().setStatus(`Đã lưu trong máy — ${hhmm}`);
     };
 
     // Làn C — CadEditor (nơi có menu Xuất) không giữ sheets[], nên bắc cầu bằng CustomEvent y hệt

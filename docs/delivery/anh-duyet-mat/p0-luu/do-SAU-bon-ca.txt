@@ -1,0 +1,56 @@
+
+══════════════════ SAU ══════════════════
+
+### CA 1 — vẽ → đóng ngay khi nhãn nói "Đã lưu lúc" → mở lại (hồ sơ MỚI = máy khác)
+  vẽ được chưa          : ✅ có (19106 điểm nét)
+  nhãn hứa bền vững lúc : 10.1 s
+  POST (sau khi vẽ)     : 10.0 s[200]
+  (POST lúc mở dự án)   : 0
+  >>> CỬA SỔ NÓI DỐI    : 0 giây (nhãn đi SAU máy chủ 0.1 s)
+  nhãn lúc đóng         : Đã lưu lúc 09:33 | Đã lưu lúc 09:33
+  máy chủ trước khi đóng: {"so":1,"entities":8,"at":"2026-09-05T09:33:45.221Z"}
+  >>> MỞ LẠI hồ sơ MỚI  : ✅ CÒN NGUYÊN (58022 điểm nét)
+  máy chủ sau           : {"so":2,"entities":8,"at":"2026-09-05T09:33:54.264Z"}
+
+### CA 2 — vẽ → đóng NGAY (trước khi nhãn kịp nói) → app phải KHÔNG hứa gì
+  nhãn ngay lúc đóng    : Đang lưu… | Đang lưu…
+  >>> có hứa bền vững?  : ✅ KHÔNG — đúng, chưa hứa gì
+  mở lại hồ sơ MỚI      : mất (BAN-VE-TRONG) — nhưng KHÔNG hứa trước nên không lừa
+
+### CA 3 — chặn POST /api/project-files → nhãn phải nói ĐÚNG là chưa lưu được
+  số POST bị chặn       : 5
+  nhãn cuối             : Chưa lưu lên máy chủ | Chưa lưu lên máy chủ
+  >>> nói "Đã lưu lúc" trong khi máy chủ hỏng? ✅ KHÔNG
+
+### CA 4 — vẽ bằng BÀN PHÍM → chờ đủ lâu → tải lại ⇒ còn nguyên
+  vẽ bằng bàn phím được : ✅ có (6637 điểm)
+  POST                  : 7.6 s
+  nhãn                  : Đã lưu lúc 09:35 | Đã lưu lúc 09:35
+  sau TẢI LẠI cùng tab  : ✅ còn nguyên (49644 điểm)
+  máy chủ               : {"so":2,"entities":4,"at":"2026-09-05T09:35:54.908Z"}
+  mở lại hồ sơ MỚI      : ✅ còn nguyên (50708 điểm)
+
+=== HET ===
+
+══════════════════ SAU2 ══════════════════
+
+### CA 1 — vẽ → đóng ngay khi nhãn nói "Đã lưu lúc" → mở lại (hồ sơ MỚI = máy khác)
+  vẽ được chưa          : ✅ có (19106 điểm nét)
+  nhãn hứa bền vững lúc : 2.9 s
+  POST (sau khi vẽ)     : 2.5 s[200]
+  (POST lúc mở dự án)   : 0
+  >>> CỬA SỔ NÓI DỐI    : 0 giây (nhãn đi SAU máy chủ 0.4 s)
+  nhãn lúc đóng         : Đã lưu lúc 09:36 | Đã lưu lúc 09:36
+  máy chủ trước khi đóng: {"so":1,"entities":8,"at":"2026-09-05T09:36:37.477Z"}
+  >>> MỞ LẠI hồ sơ MỚI  : ✅ CÒN NGUYÊN (59511 điểm nét)
+  máy chủ sau           : {"so":2,"entities":8,"at":"2026-09-05T09:36:46.812Z"}
+
+=== HET ===
+
+### CA 2b [SAU] — vẽ → RỜI TRANG NGAY (chưa kịp tới nhịp) → máy chủ có nhận không?
+  nhãn ngay trước khi rời: Đang lưu… | Đang lưu…
+  máy chủ TRƯỚC          : {"so":0,"entities":null}
+  máy chủ SAU khi rời    : {"so":3,"entities":8,"at":"2026-09-05T09:37:05.912Z"}
+  >>> beacon lúc rời trang cứu được? ✅ CÓ — có thêm bản sao
+  mở lại hồ sơ MỚI       : Bàn vẽ đang trống? ✅ KHÔNG — còn nguyên
+=== HET ===
