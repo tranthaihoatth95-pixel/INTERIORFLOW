@@ -181,4 +181,11 @@ console.log(`👁 ${mat} qua mắt Hoà · ✅ ${mayOnly} xong-MÁY (NỢ NGHI�
 }
 if (engineOnly) console.log('   ⓘ 🧩 KHÔNG tính là xong: engine chạy được nhưng chưa có đường tới người dùng (soi:cam-dien gác bậc này).');
 console.log('');
-process.exit(red ? 1 : 0);
+/* 🔴 `process.exitCode` CHỨ KHÔNG `process.exit()` — ĐO ĐƯỢC 05/09.
+ * `console.log` ra PIPE là BẤT ĐỒNG BỘ trong Node (ra TTY/tệp thì đồng bộ). Máy soi in nhiều KB;
+ * khi bên đọc rút chậm (xargs -P8, CI, `| less`, spawnSync) thì đường ống đầy, phần in còn lại nằm
+ * trong hàng đợi, và `process.exit()` VỨT HÀNG ĐỢI ĐÓ ĐI — mã thoát vẫn đúng, CHỮ THÌ MẤT.
+ * Đo thật trên `soi-frontier.mjs`: đọc nhanh 104.201 byte · đọc chậm 3 giây còn 56.930 byte,
+ * MẤT 45%%. Tức chính cỗ máy canh "việc nào xong việc nào thiếu" có thể im lặng giấu một nửa
+ * báo cáo của nó. Đặt exitCode rồi để Node tự thoát ⇒ nó chỉ thoát sau khi xả hết. */
+process.exitCode = red ? 1 : 0;

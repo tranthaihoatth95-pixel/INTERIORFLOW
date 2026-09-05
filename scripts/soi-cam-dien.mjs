@@ -555,8 +555,24 @@ console.log(`CẮM ĐIỆN — 🟢 ${theoTt(SONG).length} sống · 🔵 ${theo
 // người audit đọc rồi quyết) — chỉ đỏ khi VI PHẠM HỢP ĐỒNG FRONTIER đã khai: entry tự nhận
 // 'xong' mà toàn bộ bằng chứng nằm ngoài đường tới người dùng. Đó là lời khai sai, không phải
 // một lựa chọn kiến trúc.
+/* 🔴 CẤM `process.exit()` Ở ĐÂY — ĐO ĐƯỢC 05/09, và nó là bug THẬT chứ không phải test đỏ vặt.
+ *
+ * `console.log` ghi ra PIPE là BẤT ĐỒNG BỘ trong Node (ra TTY hoặc tệp thì đồng bộ). Máy này in
+ * ~32 KB. Chạy một mình thì đường ống rỗng, ghi xong ngay, `process.exit(0)` vô hại. Nhưng khi
+ * `test:sweep` chạy 8 tiến trình song song (`xargs -P8`), bên đọc rút chậm, đường ống đầy, phần
+ * ghi còn lại nằm trong hàng đợi — và `process.exit()` **VỨT HÀNG ĐỢI ĐÓ ĐI**.
+ *
+ * Hệ quả đã bắt tận tay: `soi-cam-dien.test.ts` đỏ với HAI thông điệp KHÁC NHAU ở hai lượt chạy
+ * liên tiếp — lượt một mất dòng `theo gốc:`, lượt hai còn dòng đó nhưng mất sạch 43 dòng `📄`.
+ * Hai chỗ cắt khác nhau của cùng một hiện tượng. Chạy đơn lẻ thì XANH. CI cũng đỏ.
+ *
+ * ⇒ Máy soi này lúc bị đọc qua đường ống thì **NÓI SAI VỀ THẾ GIỚI** — đúng họ bệnh mà chính nó
+ * sinh ra để bắt. Ai đọc stdout của nó bằng `spawnSync`/pipe đều có thể nhận bản cụt mà không
+ * hay biết, vì mã thoát vẫn là 0.
+ *
+ * Cách chữa: đặt `process.exitCode` rồi ĐỂ NODE TỰ THOÁT — nó chỉ thoát sau khi xả hết hàng đợi.
+ * Không đổi một dòng in nào, không đổi mã thoát nào. */
 if (chuaCamDien.length) {
   console.log(`🔴 ${chuaCamDien.length} entry khai 'xong' mà bằng chứng KHÔNG tới được người dùng — sửa trạng thái trong frontier-registry.mjs, đừng sửa máy soi.\n`);
-  process.exit(1);
+  process.exitCode = 1;
 }
-process.exit(0);

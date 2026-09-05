@@ -7,8 +7,9 @@
 > khi cần biết hôm nay làm gì.
 
 <!-- MÁY GIỮ · sinh bởi scripts/sinh-muc-luc-nhat-ky.mjs — đừng sửa tay trong khối này -->
-**24 tệp** · mục lục sinh lúc dựng, sắp mới→cũ.
+**25 tệp** · mục lục sinh lúc dựng, sắp mới→cũ.
 
+- [`2026-09-05/TRI-NHO-PHIEN-05-09.md`](2026-09-05/TRI-NHO-PHIEN-05-09.md) — Trí nhớ phiên — 05/09/2026 · nhánh nen-checkpoint
 - [`2026-08-22/10-core-completion/HANDOFF-NEXT.md`](2026-08-22/10-core-completion/HANDOFF-NEXT.md) — HANDOFF-NEXT — 22/08/2026 (MAIN)
 - [`2026-08-22/10-core-completion/BANG-TRANG-THAI.md`](2026-08-22/10-core-completion/BANG-TRANG-THAI.md) — BẢNG HOÀN TẤT LÕI IF — sống, cập nhật mỗi wave (§23)
 - [`2026-08-22/10-core-completion/BANG-5-TRUC.md`](2026-08-22/10-core-completion/BANG-5-TRUC.md) — BẢNG TRẠNG THÁI — KHUÔN 5 TRỤC (§11, từ 22/08)

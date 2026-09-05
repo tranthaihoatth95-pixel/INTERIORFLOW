@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { usePageVisible } from '@/lib/usePageVisible';
+import { coPhimHeThong } from '@/lib/kbd';
 import {
   ChevronLeft,
   ChevronRight,
@@ -1081,7 +1082,8 @@ export function ProjectSelect({
   useEffect(() => {
     if (!bentoBox) return;
     const onDigit = (e: KeyboardEvent) => {
-      if (busy || e.metaKey || e.ctrlKey || e.altKey) return;
+      // 05/09 — nhánh "nhường OS": đúng vai của `coPhimHeThong()`, không đọc phím thô.
+      if (busy || coPhimHeThong(e) || e.altKey) return;
       const digit = Number(e.key);
       if (!Number.isInteger(digit) || digit < 1 || digit > 9) return;
       const target = e.target as HTMLElement | null;

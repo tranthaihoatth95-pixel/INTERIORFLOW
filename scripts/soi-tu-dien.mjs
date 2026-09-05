@@ -347,4 +347,11 @@ console.log(
   `   Bật chặt: \`--strict\` chặn lớp ①. \`--strict-da-nghia\` chặn thêm lớp ② — CHƯA dùng, để dành khi §V5 thi hành xong.\n`
 );
 
-process.exit(tongDaNhau || (STRICT && tongNhan) || (STRICT_DA_NGHIA && tongDaNghia) ? 1 : 0);
+/* 🔴 `process.exitCode` CHỨ KHÔNG `process.exit()` — ĐO ĐƯỢC 05/09.
+ * `console.log` ra PIPE là BẤT ĐỒNG BỘ trong Node (ra TTY/tệp thì đồng bộ). Máy soi in nhiều KB;
+ * khi bên đọc rút chậm (xargs -P8, CI, `| less`, spawnSync) thì đường ống đầy, phần in còn lại nằm
+ * trong hàng đợi, và `process.exit()` VỨT HÀNG ĐỢI ĐÓ ĐI — mã thoát vẫn đúng, CHỮ THÌ MẤT.
+ * Đo thật trên `soi-frontier.mjs`: đọc nhanh 104.201 byte · đọc chậm 3 giây còn 56.930 byte,
+ * MẤT 45%%. Tức chính cỗ máy canh "việc nào xong việc nào thiếu" có thể im lặng giấu một nửa
+ * báo cáo của nó. Đặt exitCode rồi để Node tự thoát ⇒ nó chỉ thoát sau khi xả hết. */
+process.exitCode = tongDaNhau || (STRICT && tongNhan) || (STRICT_DA_NGHIA && tongDaNghia) ? 1 : 0;

@@ -61,6 +61,7 @@
 // Import TƯƠNG ĐỐI (không dùng alias '@/') — theo đúng quy ước lib/* THUẦN test bằng sucrase-
 // node (xem lib/boq/compute.ts, lib/cad/if2-nen.test.ts): alias '@/' chỉ resolve được qua
 // bundler Next.js, không resolve trong `node_modules/.bin/sucrase-node` chạy trực tiếp.
+import { IS_MAC } from '../kbd';
 import type { Tool } from '../cad/store';
 import { useCadStore, PRO_ONLY_TOOLS } from '../cad/store';
 import { useTree3DUi } from '../render-studio/tree3d-ui';
@@ -665,8 +666,11 @@ export function findAppCommand(id: string): CommandDef | undefined {
  * không component nào phải tự đoán `metaKey` hay `ctrlKey`.
  */
 export function matchKeyToken(tokens: KeyToken[], e: KeyboardEvent): boolean {
-  const mac =
-    typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+  /* 05/09 — BỎ BẢN DÒ macOS THỨ HAI. Chỗ này từng tự viết lại `navigator.platform` test, tức
+   * một bản sao của `IS_MAC` trong `lib/kbd.ts` — đúng bệnh "một danh sách nhiều bản" mà bảng
+   * ngoại lệ của `release-preflight.mjs` đã ghi (trước 04/09 có 50 chỗ tự viết
+   * `e.metaKey || e.ctrlKey`). Hai bản dò nền tảng thì sớm muộn cũng lệch nhau. */
+  const mac = IS_MAC;
   const canMod = tokens.includes('mod');
   const canShift = tokens.includes('shift');
   const canAlt = tokens.includes('alt');
