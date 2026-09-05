@@ -124,3 +124,21 @@ chỉ ra nó **đọc ghé khai báo của rule bên cạnh** (cách ~60 ký t�
 - **Mới phủ 4 hộp cuộn khai-bằng-thuộc-tính** (`.main` · `.shelf` · `.insp` · `.uplist`); hộp cuộn
   không tên ở Files (`HaiTang.tsx`, giấu 1690px) **chưa có vệt** — nó dùng style nội tuyến.
 - **Chưa soi mắt bản TỐI.** Vệt dùng `color-mix(--t1 12%)` nên tự đảo theo theme, nhưng chưa đo.
+
+## ⑦ HỌ "NÚT TRÔI KHỎI TẦM NHÌN" — đã quét hết, chỉ 1 ca thật
+
+Ca `ProjectInitBoard` (nút ở `y=909`, dưới mép 900) làm dấy nghi: **còn hộp thoại nào như vậy không?**
+Quét cả họ — **24 tệp** khai `role="dialog"`/`aria-modal`:
+
+| | |
+|---|---|
+| nghi theo phép soi TĨNH (thân cuộn · không thấy `sticky` · ≥2 nút) | **1** — `components/studio/HoatDongChuong.tsx` |
+| xác minh trên **app thật** | **0 nút dưới mép** ⇒ **báo oan** |
+| **ca thật** | **1/24** — chỉ `ProjectInitBoard`, đã sửa (`y 909 → 786`) |
+
+⚠️ Phép soi tĩnh **yếu ở chỗ đã biết**: nó tìm chữ `sticky` ở **bất kỳ đâu trong tệp**, nên tệp
+dùng `sticky` cho việc khác sẽ được tha oan. Nó dùng để **khoanh vùng đi kiểm**, không dùng để
+tuyên trắng án — và đúng lần này nó khoanh trúng một tệp lành.
+
+⇒ Kết luận đáng giá: **đây KHÔNG phải bệnh lan rộng.** Bản vá là ca lẻ, không cần đổi khuôn hộp
+thoại toàn app. Máy soi lại: `node scripts/soi-mat/do-chuong.mjs` · `node scripts/soi-mat/do-hop-thoai.mjs`.
