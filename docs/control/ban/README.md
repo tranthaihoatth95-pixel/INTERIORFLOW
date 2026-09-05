@@ -76,12 +76,26 @@ côi 19 ngày · `GU-PROFILE` 0 con trỏ tới 30/08).
                         ↓ giao đề
 ② NGHIÊN CỨU  đào đúng đầu mục được giao → báo cáo có nguồn + ngưỡng đo được
                         ↓ báo cáo về
-③ CHUYÊN MÔN  → PLAN (bố cục + thứ tự thi công + tiêu chí nghiệm thu + năng lực phải giữ)
-                        ↓ giao
-④ THỰC THI    dựng trên app thật
+③ TRÌNH HOÀ   ◀── CỬA NGƯỜI. Trình kết quả nghiên cứu, CHƯA viết spec
                         ↓
-⑤ AUDIT       chấm — CÓ/KHÔNG dám giao hồ sơ cho khách
+④ SPEC        chuyên môn viết — mỗi mảng một khối BA CÂU HỎI + tiêu chí nghiệm thu
+                        ↓
+⑤ HOÀ CHỐT SPEC ◀── CỬA NGƯỜI, CỨNG. Chưa chốt thì không ai gõ một dòng
+                        ↓
+⑥ THỰC THI    build MỘT MẠCH cho xong — không dừng giữa chừng hỏi lại
+                        ↓
+⑦ AUDIT       chấm — CÓ/KHÔNG dám giao hồ sơ cho khách
 ```
+
+### Hai cửa NGƯỜI — Hoà chốt 05/09
+
+> *"nghiên cứu xong thì về trình bày tôi rồi spec, chốt spec rồi dựa vào đó build 1 mạch cho xong."*
+
+- **Cửa ③** — nghiên cứu xong **trình Hoà trước**, chưa viết spec. Trình sớm để hướng sai thì chết
+  ở đây, chỗ rẻ nhất.
+- **Cửa ⑤** — Hoà **chốt spec** rồi mới build, và chốt xong là **build một mạch, không dừng hỏi lại**.
+  ⇒ Hệ quả đè lên đầu spec: **spec phải đủ để xây mà không cần hỏi thêm câu nào.** Chỗ nào còn mơ
+  hồ sẽ nổ ra giữa lúc build — đúng lúc không được phép dừng. Chưa đủ ⇒ **chưa được trình**.
 
 | bàn | tệp | vai một câu | cầm bút mã? |
 |---|---|---|---|

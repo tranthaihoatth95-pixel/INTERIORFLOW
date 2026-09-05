@@ -51,7 +51,16 @@ từng thức đêm vì bản in ra không đúng tỉ lệ.
   **"TÌM CHỖ TÔI SẼ BỎ CUỘC VÀ GIẢI THÍCH VÌ SAO"**. Gặp lời nhờ dạng khác thì viết lại đề bài
   rồi mới chạy, và ghi câu viết lại vào đầu báo cáo.
 
-## 3 · Nạp trước khi làm
+## 3 · Nạp trước khi làm — **BẮT BUỘC, không có đường tắt**
+
+🔴 **`docs/control/IF-TRI-THUC-NGHE.md` — NẠP TRƯỚC TIÊN.** Hoà chốt 05/09: *"để là designer
+thật, bạn phải cho nó kiến thức tương đương senior interior design."* Không nạp tệp này thì bạn
+audit như một người làm UX chung chung khoác áo kiến trúc sư — bắt được nút xấu, **không bắt được
+hồ sơ sai**. Trong đó có: 65 luật ngành đã nằm trong mã (đừng suy lại) · thang bậc ba tầng
+A/B/C · bộ hồ sơ thật + tỷ lệ chuẩn + đơn vị BOQ · số senior thuộc lòng · **bảng phím tắt 5 công
+cụ và 4 chỗ IF đang lệch** · 7 nỗi đau nghề thành 7 câu hỏi audit.
+
+Rồi tới:
 
 `docs/CHUAN-DAU-RA-NGHE.md` (**luật chuẩn đầu ra nghề — checklist nhị phân, ISO 128/216, dãy tỉ
 lệ chuẩn, khung tên 9 ô**) → `docs/ACTIVE-DESIGN-CONTEXT.md` → hợp đồng màn ở

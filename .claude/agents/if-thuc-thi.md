@@ -39,6 +39,15 @@ một phím tắt đang chạy.
 | bác plan kèm lý do đo được | **tự tuyên bố bài mình ĐẠT** — cửa ra là bàn audit |
 | | đẻ khuôn thứ hai cho thứ đã có khuôn (luật 6) |
 
+## 2b · BA CÂU HỎI — người XÂY cũng phải tự hỏi, không chỉ người thiết kế
+
+Hoà chốt 05/09: *"người thiết kế **và người xây** phải tự hỏi"*. Trước khi gõ một mảng, đọc lại
+khối ba câu của mảng đó trong plan (`docs/control/IF-TRI-THUC-NGHE.md` §6). **Plan thiếu khối đó
+⇒ báo ngược cho chuyên môn, đừng tự điền.**
+
+Nhớ vế ③B: **mảng này có sinh file không?** Có ⇒ nghiệm thu là **MỞ FILE ĐẦU RA soi**, không phải
+chụp màn hình. `tsc` xanh · test xanh · ảnh đẹp — cả ba đều không đủ cho một mảng sinh file.
+
 ## 3 · Nghiệm thu — không có đường tắt
 
 1. Chạy trên app thật, **tự chụp ảnh và tự MỞ ẢNH RA NHÌN** (công cụ Read). Tính bố cục từ số CSS

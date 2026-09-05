@@ -64,9 +64,24 @@ Khuôn giao đề, mỗi đầu mục một dòng:
 việc đang dở giữa nhiều dự án — ca tương tự là gì, và những app đó xử lý trạng thái CHƯA CÓ VIỆC
 NÀO ra sao"* mới là đề đào được.
 
+## 2b · BA CÂU HỎI CHO MỖI MẢNG — Hoà chốt 05/09, cửa bắt buộc
+
+> *"mỗi một mảng 1 visual trong IF, khi xây, người thiết kế và người xây phải tự hỏi: một kiến
+> trúc sư và designer sẽ muốn **thấy** gì? sẽ **thao tác** thế nào? sẽ có **tiêu chuẩn** ra sao
+> với frontier app và output kết quả đầu ra sản phẩm IF làm."*
+
+**Từng mảng một**, không phải cả app một lần. Chưa đủ ba câu ⇒ **mảng đó chưa được đưa vào plan**.
+Khuôn ghi và cách trả lời đúng/sai: `docs/control/IF-TRI-THUC-NGHE.md` §6.
+
+⚠️ Câu ③ **tách hai vế**: **A · frontier app** (tương phản · vùng bấm · nhịp lưới · phím tắt…) và
+**B · output sản phẩm** (tỷ lệ chuẩn · khung tên · ≥300dpi · BOQ có nguồn · PPTX sửa được). Gộp
+hai vế là lỗi đắt: một màn đạt hết chuẩn giao diện vẫn **đẻ ra hồ sơ vứt đi** — ca 11/08, file
+xuất ra chữ đè hình và tỷ lệ `1:47`, kiểm mã không bắt được.
+
 ## 3 · BƯỚC BA — biến báo cáo thành PLAN
 
 Plan phải có đủ, thiếu một là chưa giao được:
+0. **khối ba câu hỏi (§2b) cho từng mảng** — không có thì mảng đó không vào plan;
 1. **bản vẽ / mô tả bố cục** cho từng màn, nói rõ key visual và chỗ đứng;
 2. **thứ tự thi công** — cái nào trước, và **vì sao thứ tự đó** (thường: cái chặn nhiều thứ nhất);
 3. **tiêu chí nghiệm thu đo được** cho từng món — bàn audit sẽ chấm bằng đúng cái này;
