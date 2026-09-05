@@ -7,7 +7,33 @@ import path from 'node:path';
 
 const root = process.cwd();
 const mainPath = path.join(root, 'electron', 'main.js');
+
+/* 🔴 QUÉT CẢ THƯ MỤC `electron/`, KHÔNG CHỈ `main.js` — ĐO ĐƯỢC 05/09, và đây là BÁO OAN thật.
+ *
+ * Cổng này từng đọc mỗi `electron/main.js` rồi kết luận theo kiểu "không thấy chuỗi ⇒ mất bảo
+ * đảm". Ngày 05/09 nó báo đỏ hai dòng nặng nhất của mình:
+ *     "Lỗi đồng bộ schema chưa dừng khởi động với thông báo rõ ràng."
+ *     "Đường nâng cấp CSDL không còn dùng `prisma migrate deploy`."
+ * Đọc thẳng thì tưởng bộ cài sắp ăn mất dữ liệu người dùng lúc nâng cấp. Đo lại thì NGƯỢC HẲN:
+ * khối đó **không mất — nó được TÁCH RA** `electron/nang-cap-csdl.js`, và **tốt lên** vì nay có
+ * tệp kiểm riêng `electron/nang-cap-csdl.test.ts` (16,7 KB) mà bản nằm-trong-main.js không có.
+ *
+ * ⇒ BÀI HỌC, và nó là luật cho mọi cổng kiểu này: **thước đo theo TỆP không phân biệt được
+ * "mất" với "dời đi và tốt lên"**. Một cổng chỉ biết grep một tệp sẽ trừng phạt đúng việc tái
+ * cấu trúc mà nó lẽ ra phải khen. Đo theo NĂNG LỰC (chuỗi bảo đảm có tồn tại ở đâu đó trong
+ * vùng chịu trách nhiệm không), đừng đo theo CHỖ NGỒI.
+ *
+ * Vùng chịu trách nhiệm ở đây = toàn bộ `electron/` (trừ tệp kiểm — test nhắc tên chuỗi không
+ * có nghĩa là sản phẩm có nó, đó đúng là kiểu tự-chấm-điểm mà repo đã cấm). */
+const NGUON_ELECTRON = fs
+  .readdirSync(path.join(root, 'electron'))
+  .filter((t) => t.endsWith('.js') && !t.includes('.test.'))
+  .map((t) => fs.readFileSync(path.join(root, 'electron', t), 'utf8'));
+
+/** `main` giữ nguyên cho các phép so CẤM (thứ không được xuất hiện) — chúng phải soi đúng main.
+ *  Còn phép so ĐÒI (thứ phải tồn tại) thì hỏi cả vùng, qua `coTrongElectron`. */
 const main = fs.readFileSync(mainPath, 'utf8');
+const coTrongElectron = (s) => NGUON_ELECTRON.some((t) => t.includes(s));
 const failures = [];
 
 if (main.includes("HOSTNAME: '0.0.0.0'")) {
@@ -16,28 +42,28 @@ if (main.includes("HOSTNAME: '0.0.0.0'")) {
 if (main.includes("'-H', '0.0.0.0'")) {
   failures.push('Lệnh next start vẫn bind 0.0.0.0.');
 }
-if (!main.includes("HOSTNAME: '127.0.0.1'")) {
+if (!coTrongElectron("HOSTNAME: '127.0.0.1'")) {
   failures.push('Không thấy HOSTNAME loopback trong electron/main.js.');
 }
-if (!main.includes("'-H', '127.0.0.1'")) {
+if (!coTrongElectron("'-H', '127.0.0.1'")) {
   failures.push('Không thấy next start bind loopback trong electron/main.js.');
 }
-if (!main.includes('INTERIORFLOW_AUTO_UPDATE === \'1\'')) {
+if (!coTrongElectron('INTERIORFLOW_AUTO_UPDATE === \'1\'')) {
   failures.push('Auto-update chưa yêu cầu bật rõ ràng cho bản nội bộ.');
 }
-if (!main.includes('Dữ liệu chưa được mở để tránh ghi tiếp')) {
+if (!coTrongElectron('Dữ liệu chưa được mở để tránh ghi tiếp')) {
   failures.push('Lỗi đồng bộ schema chưa dừng khởi động với thông báo rõ ràng.');
 }
-if (!main.includes('snapshotBeforeUpgrade(userDataDir, dbPath)')) {
+if (!coTrongElectron('snapshotBeforeUpgrade(userDataDir, dbPath)')) {
   failures.push('Thiếu snapshot DB + uploads trước khi kiểm tra schema của bản nâng cấp.');
 }
-if (!main.includes("path.join(userDataDir, 'backups'")) {
+if (!coTrongElectron("path.join(userDataDir, 'backups'")) {
   failures.push('Thiếu thư mục backup phiên bản trong userData.');
 }
 // 04/09 — CSDL người dùng phải nâng cấp bằng `migrate deploy`, KHÔNG bằng `db push`.
 // `db push` không có lịch sử, không có đường lùi, và được phép đổi/bỏ cột để ép CSDL
 // khớp schema. Hai phép so dưới đây canh đúng lần đổi đó, chống tái phát.
-if (!main.includes("'migrate', 'deploy'")) {
+if (!coTrongElectron("'migrate', 'deploy'")) {
   failures.push('Đường nâng cấp CSDL không còn dùng `prisma migrate deploy`.');
 }
 if (main.includes("'db', 'push'")) {
@@ -143,6 +169,12 @@ const ngoaiLePhimTho = new Map([
   ['components/present-editor/Element.tsx', 'lane Present đang giữ — di trú ở lượt sau'],
   ['components/present-editor/PresentEditor.tsx', 'lane Present đang giữ — di trú ở lượt sau'],
   ['components/present-editor/boq/BoqScreen.tsx', 'lane Present đang giữ — di trú ở lượt sau'],
+  // 05/09 — `matchKeyToken` LÀ bộ dịch nền tảng cho KeyToken, không phải nơi tiêu thụ nó.
+  // Nó cần so KHỚP CHÍNH XÁC (canMod !== …), trong khi `laPhimChinh()` là phép HOẶC
+  // (`ctrlKey || metaKey` ngoài Mac) — dùng helper ở đây sẽ khiến ⌘K trên Windows kích hoạt
+  // một phím tắt khai là Ctrl+K, tức nới lỏng đúng chỗ phải chặt. Đã đồng bộ phần đồng bộ
+  // được: bản dò macOS thứ hai bị bỏ, nay dùng chung `IS_MAC` của `lib/kbd.ts`.
+  ['lib/commands/registry.ts', 'matchKeyToken là BỘ DỊCH KeyToken — cần so khớp chính xác, không phải phép HOẶC của laPhimChinh(); mac detect đã dùng chung IS_MAC'],
 ]);
 const phimTho = [];
 function soiPhimTho(dir) {
