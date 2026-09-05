@@ -22,10 +22,28 @@ const SOI = VAT_LIEU_HAT_GIONG[0].pbr;
 console.log('BỐN KHẲNG ĐỊNH CỦA SPEC §5.5');
 ok('judge @168 px ⇒ ĐẠT', nacXemTruoc(SOI, 'judge', 168).datNguong === true, JSON.stringify(nacXemTruoc(SOI, 'judge', 168)));
 ok('judge @32 px ⇒ ĐỎ (đúng cỡ ô đang chạy hôm nay)', nacXemTruoc(SOI, 'judge', 32).datNguong === false);
+/* 🔴 05/09 — KHẲNG ĐỊNH NÀY TỪNG ĐÒI **MỌI** MÓN ĐẠT `inspect ≥ 10× judge`, và nó chỉ đúng khi
+   kho toàn ván gỗ 1200 mm. Kho nay có vải lanh lặp 60 mm: nấc JUDGE (khung 25 mm) đã ôm gần trọn
+   một chu kỳ, nên INSPECT **KHÔNG thêm được gì** và hợp đồng KHOÁ nó lại kèm lý do — đó chính là
+   dây bẫy chống "ba nấc = kéo dãn" đang làm đúng việc, không phải một lỗi.
+   ⇒ Khẳng định đúng là PHÉP TUYỂN: mỗi món hoặc **thật sự rộng gấp ≥10 lần**, hoặc **bị khoá kèm
+   câu giải thích**. Cấm đúng một thứ ở giữa: hiện ra mà chỉ là ảnh phóng to. Và cấm luôn ca khoá
+   mà câm. */
 for (const v of VAT_LIEU_HAT_GIONG) {
   const j = nacXemTruoc(v.pbr, 'judge', 168), i = nacXemTruoc(v.pbr, 'inspect', 168);
-  ok(`${v.code}: span(inspect) ≥ ${LAN_KHAC_KHO}× span(judge)`,
-    (i.spanMm ?? 0) >= LAN_KHAC_KHO * (j.spanMm ?? Infinity), `${i.spanMm} vs ${j.spanMm}`);
+  const khacHan = (i.spanMm ?? 0) >= LAN_KHAC_KHO * (j.spanMm ?? Infinity);
+  const khoaCoLyDo = i.datNguong === false && !!i.lyDo;
+  ok(`${v.code}: INSPECT hoặc khác hẳn JUDGE, hoặc bị KHOÁ kèm lý do`,
+    khacHan || khoaCoLyDo, `span ${i.spanMm} vs ${j.spanMm} · đạt=${i.datNguong} · lyDo=${i.lyDo}`);
+  ok(`${v.code}: KHÔNG có ca "hiện ra mà chỉ là ảnh phóng to"`,
+    !(i.datNguong === true && !khacHan), `span ${i.spanMm} vs ${j.spanMm}`);
+}
+/* Ca vải lanh, gọi tên hẳn ra: bước lặp NHỎ ⇒ nấc soi khổ thật tự khoá. Nếu ai đó nới
+   `LAN_KHAC_KHO` xuống cho "đỡ vướng" thì dòng này đỏ trước. */
+const lanh = VAT_LIEU_HAT_GIONG.find((v) => v.code === 'IF-MAT-VAI-LANH-BE');
+if (lanh) {
+  const i = nacXemTruoc(lanh.pbr, 'inspect', 168);
+  ok('vải lanh (lặp 60 mm) ⇒ INSPECT bị khoá, không hiện ảnh phóng to', i.datNguong === false && !!i.lyDo, String(i.lyDo));
 }
 const khongKhoi: MaterialPbr = { ...SOI, uvScaleMm: undefined };
 ok('thiếu uvScaleMm ⇒ inspect.spanMm null', nacXemTruoc(khongKhoi, 'inspect', 200).spanMm === null);

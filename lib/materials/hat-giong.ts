@@ -30,6 +30,12 @@
  *     ⇒ Luật không bị bỏ, nó bị **thu hẹp đúng phần đã hết lý do**: test nay chặn ảnh NGOÀI
  *     (http · data: · thư mục khác) và chặn cả URL trỏ vào tệp KHÔNG TỒN TẠI.
  *
+ * 📄 HỢP ĐỒNG NÀY LÀ THỨ SCENE 3D SẼ ĐỌC — `docs/phieu-giao/P-V8-SCENE-DOC-VAT-LIEU.md`.
+ * Khai đủ ở ĐÂY để V8 chỉ việc **đọc**, không phải đoán thêm gì: `baseColorMapUrl` (đường dẫn
+ * cùng gốc) · `uvScaleMm` (mm thật, đúng thứ tự w×h theo hướng vân) · `baseColor` trắng làm hệ
+ * số nhân. `lib/three/pbr-three.ts` đã dịch trọn bộ đó ra `MeshPhysicalMaterial` — V8 gọi
+ * `buildPbrMaterial`, không dựng đường thứ hai.
+ *
  * KHÔNG ĐỤNG `normalizeMatId` cũ (upper+trim) — dữ liệu `localStorage` đang sống giả định đúng
  * ngữ nghĩa đó. Tệp này chỉ dùng `normalizeMatIdCanonical` (lowercase, RFC 4122) vì mọi matId
  * hạt giống ĐỀU là UUID thật.
@@ -91,10 +97,24 @@ const KHO_VAN_GO = { w: 190, h: 1200 } as const;
  * ⚠️ MỖI DÒNG UUID Ở ĐÂY LÀ MỘT CAM KẾT VĨNH VIỄN. Thêm vật liệu ⇒ thêm UUID mới; SỬA một UUID
  * đã ship ⇒ mọi tệp `.idf`/`.idfc` đang trỏ vào nó thành mồ côi.
  *
- * VÌ SAO CHỈ HAI MÓN (khai thật, không tô): lượt này làm **bộ đại diện tối thiểu** để chạy trọn
- * vòng nghề `tìm → xem trước → đặt → biến đổi → thay thế → lưu → đóng → mở lại`. Cần ĐÚNG HAI
- * vật liệu vì khâu **thay thế** phải đổi từ mã này sang mã kia — một món thì không có gì để đổi.
- * Bộ phủ đủ 17 họ là mục tiêu sau, và nó là DỮ LIỆU thêm vào bảng này, KHÔNG phải máy móc mới.
+ * BẢY MÓN, NĂM HỌ (05/09 — trước đó hai món, cùng một họ GỖ).
+ * Hai món gỗ đủ để chạy vòng nghề *tìm → xem trước → đặt → thay thế → lưu → mở lại* (khâu **thay
+ * thế** cần đúng hai mã để đổi qua lại). Nhưng chúng KHÔNG đủ để chứng minh **đường ống**: cả hai
+ * cùng `metallic: 0`, cùng độ nhám, cùng previewKind `wood` ⇒ nhánh kim loại và nhánh nhám-cao
+ * chưa chạy thật lần nào. Năm món thêm rơi vào **năm họ khác nhau** (đá · gạch terrazzo · vải ·
+ * kim loại · sơn) chính là để ép các nhánh đó chạy — và cũng là thứ nấc SCAN cần để có nghĩa: hai
+ * ô gỗ nâu cạnh nhau thì "nhận ra món nào" không phải một câu hỏi thật.
+ *
+ * 🔴 BA MÓN CÓ ẢNH VÂN, HAI MÓN KHÔNG — và đó là QUYẾT ĐỊNH, không phải bỏ sót:
+ * `uvScaleMm` là **tỉ lệ vật lý**, không phải một trường cho đủ. Ảnh nào không suy ra được bước
+ * lặp thật thì món đó ship THAM SỐ, không ship ảnh — bịa tỉ lệ tệ hơn không có ảnh.
+ *   · **kim loại đồng xước** — ảnh nướng sẵn một VỆT SÁNG vào màu gốc (`kimLoai()` trong
+ *     `scripts/sinh-mau-vat-lieu.mjs`: `anh = (1 − |v − 0.38|·1.5)²`). Đó là ÁNH SÁNG, không phải
+ *     vật liệu: lát nó ra sẽ thành một dải sáng lặp lại mỗi tấm, và nhét ánh sáng vào `baseColor`
+ *     là đúng lỗi chiếu-sáng-hai-lần. Thêm nữa, cái làm kim loại xước ra "xước" là **nhám dị
+ *     hướng**, thứ `MaterialPbr` chưa mang.
+ *   · **sơn matt** — sơn KHÔNG CÓ bước lặp. Ảnh gần như phẳng (`fbm(u·2, v·2) · 0.07`); khai bất
+ *     kỳ `uvScaleMm` nào cũng là dựng một con số vật lý không tồn tại.
  */
 export const VAT_LIEU_HAT_GIONG: readonly VatLieuHatGiong[] = [
   {
@@ -142,6 +162,125 @@ export const VAT_LIEU_HAT_GIONG: readonly VatLieuHatGiong[] = [
       typeId: 'go',
     },
     hatch2d: { hatchPattern: 'ANSI31', patternScale: 0.9, patternAngle: 0, color: '#5a3a26' },
+    license: GIAY_PHEP_CC0,
+    source: NGUON_TU_DUNG,
+  },
+  {
+    matId: '2c7d5e10-9b64-4f2a-8e31-5d0a7c4b1f68',
+    code: 'IF-MAT-DA-CAM-THACH-TRANG',
+    name: 'Đá cẩm thạch trắng',
+    nameEn: 'White marble',
+    hoPbr: 'da',
+    danhMuc: 'Đá tự nhiên',
+    tags: ['đá', 'cẩm thạch', 'marble', 'stone', 'trắng'],
+    pbr: {
+      baseColor: '#ffffff',
+      roughness: 0.3,
+      metallic: 0,
+      specular: 0.05,
+      baseColorMapUrl: '/mau-vat-lieu/da-cam-thach-trang.png',
+      /* 600×600 — khổ VIÊN ĐÁ LÁT thông dụng nhất, và vân trong ảnh trải trọn một viên
+         (`daVan()` dựng vân theo toạ độ 0..1 của tấm). Lát ở khổ khác thì mạch rơi sai chỗ so
+         với bản vẽ, và mạch là thứ người nghề nhìn đầu tiên trên sàn đá. */
+      uvScaleMm: { w: 600, h: 600 },
+      reflectance: 0.7,
+      typeId: 'da-tu-nhien',
+    },
+    hatch2d: { hatchPattern: 'ANSI37', patternScale: 1, patternAngle: 0, color: '#e6e4de' },
+    license: GIAY_PHEP_CC0,
+    source: NGUON_TU_DUNG,
+  },
+  {
+    matId: '8f3a6b22-1c47-4d95-a0e8-6b2f9d31c704',
+    code: 'IF-MAT-TERRAZZO-XAM',
+    name: 'Gạch terrazzo xám',
+    nameEn: 'Grey terrazzo',
+    hoPbr: 'gach',
+    danhMuc: 'Gạch terrazzo',
+    tags: ['terrazzo', 'gạch', 'đá mài', 'tile', 'xám'],
+    pbr: {
+      baseColor: '#ffffff',
+      roughness: 0.3,
+      metallic: 0,
+      specular: 0.05,
+      baseColorMapUrl: '/mau-vat-lieu/da-terrazzo-xam.png',
+      /* 400×400 — SUY TỪ CHÍNH HẠT ĐÁ trong ảnh, không phải chọn cho tròn số. `terrazzo()` rải
+         190 hạt bán kính 0,012–0,038 của tấm ⇒ đường kính 2,4–7,6% cạnh tấm. Ở 400 mm ra hạt
+         **9,6–30 mm**, đúng dải hạt terrazzo thật; ở 600 mm thành 14–46 mm (thô quá cỡ thường),
+         ở 300 mm thành 7–23 mm (mịn hơn thực tế của mẫu này). 400×400 cũng là khổ viên thông dụng. */
+      uvScaleMm: { w: 400, h: 400 },
+      reflectance: 0.55,
+      typeId: 'gach-men',
+    },
+    hatch2d: { hatchPattern: 'DOTS', patternScale: 1, patternAngle: 0, color: '#c9c7c1' },
+    license: GIAY_PHEP_CC0,
+    source: NGUON_TU_DUNG,
+  },
+  {
+    matId: 'b41e8d07-53f6-4a28-9c6d-7e0b2a95f3d1',
+    code: 'IF-MAT-VAI-LANH-BE',
+    name: 'Vải lanh be',
+    nameEn: 'Beige linen',
+    hoPbr: 'vai',
+    danhMuc: 'Vải lanh',
+    tags: ['vải', 'lanh', 'linen', 'fabric', 'be'],
+    pbr: {
+      baseColor: '#ffffff',
+      roughness: 0.9,
+      metallic: 0,
+      specular: 0.03,
+      baseColorMapUrl: '/mau-vat-lieu/vai-lanh-be.png',
+      /* 60×60 — SUY TỪ MẬT ĐỘ SỢI. `vai()` dệt **78 sợi** ngang và 78 sợi dọc trên một tấm ⇒ ở
+         60 mm ra **13 sợi/cm**, đúng dải lanh dệt trung bình. Ở 200 mm chỉ còn 3,9 sợi/cm (thưa
+         như bao tải), ở 20 mm thành 39 sợi/cm (dày như lụa). */
+      uvScaleMm: { w: 60, h: 60 },
+      sheen: 0.35,
+      reflectance: 0.5,
+      typeId: 'vai',
+    },
+    hatch2d: { hatchPattern: 'ANSI31', patternScale: 0.4, patternAngle: 45, color: '#d0c6b4' },
+    license: GIAY_PHEP_CC0,
+    source: NGUON_TU_DUNG,
+  },
+  {
+    matId: 'd90c47f5-6ab3-4e71-b28f-3c5e1074a9b6',
+    code: 'IF-MAT-KIM-LOAI-DONG-XUOC',
+    name: 'Đồng xước',
+    nameEn: 'Brushed bronze',
+    hoPbr: 'kim-loai',
+    danhMuc: 'Kim loại đồng',
+    tags: ['kim loại', 'đồng', 'bronze', 'brass', 'metal', 'xước'],
+    pbr: {
+      /* KHÔNG có ảnh vân ⇒ `baseColor` là MÀU THẬT (không phải hệ số nhân). Xem 🔴 ở đầu bảng. */
+      baseColor: '#a07a4d',
+      roughness: 0.35,
+      metallic: 1,
+      specular: 0.5,
+      reflectance: 0.35,
+      typeId: 'kim-loai',
+    },
+    hatch2d: { hatchPattern: 'ANSI32', patternScale: 1, patternAngle: 0, color: '#a07a4d' },
+    license: GIAY_PHEP_CC0,
+    source: NGUON_TU_DUNG,
+  },
+  {
+    matId: '6e25b93a-8d10-4c5f-91a7-04f8e2b6d3c9',
+    code: 'IF-MAT-SON-MATT-TRANG-NGA',
+    name: 'Sơn matt trắng ngà',
+    nameEn: 'Ivory matt paint',
+    hoPbr: 'son',
+    danhMuc: 'Sơn nước',
+    tags: ['sơn', 'matt', 'paint', 'trắng ngà', 'tường'],
+    pbr: {
+      baseColor: '#ece7dd',
+      roughness: 0.7,
+      metallic: 0,
+      specular: 0.03,
+      reflectance: 0.78,
+      typeId: 'son',
+    },
+    /* SOLID: lớp sơn mỏng, mặt cắt bản vẽ tô đặc — không có hoạ tiết để vẽ. */
+    hatch2d: { hatchPattern: 'SOLID', patternScale: 1, patternAngle: 0, color: '#ece7dd' },
     license: GIAY_PHEP_CC0,
     source: NGUON_TU_DUNG,
   },

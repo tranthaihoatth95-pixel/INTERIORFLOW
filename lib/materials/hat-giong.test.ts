@@ -135,8 +135,15 @@ for (const v of VAT_LIEU_HAT_GIONG) {
   ok(`"${v.code}" có baseColor sRGB`, /^#[0-9a-f]{6}$/i.test(v.pbr.baseColor ?? ''), v.pbr.baseColor);
   ok(`"${v.code}" roughness trong [0,1]`, typeof v.pbr.roughness === 'number' && v.pbr.roughness >= 0 && v.pbr.roughness <= 1, String(v.pbr.roughness));
   ok(`"${v.code}" metallic là 0 hoặc 1 (glTF metal/rough)`, v.pbr.metallic === 0 || v.pbr.metallic === 1, String(v.pbr.metallic));
-  // Thiếu bước lặp vân ⇒ tấm ván 1200mm render ra vân sai tỉ lệ. Đây là lỗi NHÌN THẤY ĐƯỢC.
-  ok(`"${v.code}" khai bước lặp vân bằng mm thật`, !!v.pbr.uvScaleMm && v.pbr.uvScaleMm.w > 0 && v.pbr.uvScaleMm.h > 0);
+  /* 🔴 05/09 — LUẬT NÀY TỪNG LÀ VÔ ĐIỀU KIỆN, và nó SAI với vật liệu không có ảnh vân.
+     `uvScaleMm` là tỉ lệ để LÁT MỘT ẢNH; không có ảnh thì `uvRepeatOf` không áp vào đâu cả, nên
+     bắt khai là bắt dựng một con số vật lý **không ai kiểm được và không ai dùng** — đúng thứ
+     "bịa tỉ lệ" mà chính bảng này cấm. Ca thật: đồng xước và sơn matt ship THAM SỐ (lý do ghi ở
+     `hat-giong.ts`), và chúng render đúng mà không cần trường này.
+     ⇒ Bắt buộc **khi và chỉ khi** có ảnh vân — khẳng định đó nằm ở khối ③ phía trên. */
+  if (v.pbr.baseColorMapUrl) {
+    ok(`"${v.code}" có ảnh vân ⇒ khai bước lặp vân bằng mm thật`, !!v.pbr.uvScaleMm && v.pbr.uvScaleMm.w > 0 && v.pbr.uvScaleMm.h > 0);
+  }
   // Hạt giống là giá trị CHỌN CÓ CHỦ Ý, không phải máy suy ⇒ không được đeo cờ suyDoan.
   ok(`"${v.code}" KHÔNG đeo cờ suyDoan`, v.pbr.suyDoan !== true);
   // `inferPbrFromCategory` là ĐƯỜNG SUY KHI THIẾU, không phải kho. Nhưng hạt giống không được
