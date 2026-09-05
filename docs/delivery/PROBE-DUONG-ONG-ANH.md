@@ -24,11 +24,36 @@ năng** dùng ảnh; chúng chỉ chưa bao giờ nhận được một ảnh n�
 > **Scene 3D chỉ tiêu thụ MÀU.** `components/three/Scene3DViewer.tsx` — đếm mọi tham chiếu
 > `.map=` · `map:` · `TextureLoader` · `buildPbrMaterial` · `MaterialPbr` = **0**.
 > Nó dựng `MeshStandardMaterial({ color: b.colorHex, roughness: 0.78, metalness: 0.02 })`
-> (`:478`, `:491`). Cầu 2D→3D `lib/three/cad-to-obj.ts:361` chỉ chuyển tiếp **một `colorHex`**.
+> (`:478`, `:491`).
 >
 > Máy dựng vật liệu ĐỦ MAP **đã tồn tại và đúng** — `lib/three/pbr-three.ts`: 7 map, `uvScaleMm`
-> → `repeat`, colorSpace tách sRGB/linear đúng chỗ, `RepeatWrapping`. Nhưng **nơi gọi duy nhất là
-> quả cầu xem trước** (`components/three/material-preview.ts:301`). Scene thật không gọi.
+> → `repeat`, colorSpace tách sRGB/linear đúng chỗ, `RepeatWrapping`, cache theo URL. Nhưng **nơi
+> gọi duy nhất là quả cầu xem trước** (`components/three/material-preview.ts:301`).
+
+> ### 🔧 ĐÍNH CHÍNH 05/09 — TÔI ĐỔ LỖI SAI TẦNG, CẦU KHÔNG HỀ ĐỨT
+>
+> Bản đầu của probe này viết: *"Cầu 2D→3D `cad-to-obj.ts:361` chỉ chuyển tiếp **một `colorHex`**"*.
+> **SAI.** Đo lại tại nguồn:
+> · `SceneGroup.specId` khai ở `cad-to-obj.ts:178` và **được gán ở 6 chỗ** (`:679` `:792` `:840`
+>   `:885` `:894` và mặt sàn `:292`), đi qua `flushGroup():372` vào `groupList`.
+> · `Scene3DData = Pick<ObjScene,'groups'> & {…}` (`:213`) ⇒ **không tầng nào rơi mất `specId`**.
+>   Nó nằm sẵn trong dữ liệu `Scene3DViewer` đang cầm.
+> · Chú thích của chính hợp đồng (`:174-178`) đã ghi sẵn chuỗi tiêu thụ định làm:
+>   *"Panel phải tra `ProductSpec` qua id này…"*, và `:284` ghi thẳng
+>   `SceneGroup.specId → panel vật liệu → getMaterial`.
+>
+> ⇒ Lỗ **không phải** ở cầu, mà ở **NGƯỜI ĐỌC**: `Scene3DViewer` chọn đọc `colorHex` và
+> **chưa bao giờ đọc `specId`** (`grep specId Scene3DViewer.tsx` = **0**).
+> Điều này làm V8 **nhỏ hơn hẳn**: không phải luồn thêm trường qua nhiều tầng, không đổi hợp đồng —
+> chỉ là **đọc trường đã có** rồi tra qua `getMaterial` (`lib/materials/resolve.ts:88`, đang sống).
+> Ghi lại nguyên văn chẩn đoán sai thay vì lặng lẽ sửa cho khớp: sai ở chỗ tôi **suy từ triệu chứng
+> ra nguyên nhân** (viewer chỉ dùng màu ⇒ *"chắc nó chỉ nhận được màu"*) thay vì đọc hợp đồng.
+
+> **NGƯỜI ĐỌC THỨ BA, probe đầu bỏ sót:** `lib/three/capture.ts:94` dựng cảnh ngoài màn cho
+> **ảnh chụp / video / depth nuôi ControlNet** — cũng `MeshBasicMaterial({ color: b.colorHex })`.
+> Sửa mỗi `Scene3DViewer` thì **khung hình xuất ra vẫn phẳng**. Ba nơi tiêu thụ cùng một
+> `SceneGroup[]`: viewer · capture · (panel vật liệu). Một sự thật vật liệu, ba nơi đọc —
+> nên đường tra phải là **hàm dùng chung**, không phải mã dán vào viewer.
 
 ---
 
@@ -41,7 +66,8 @@ năng** dùng ảnh; chúng chỉ chưa bao giờ nhận được một ảnh n�
 | **C · NỀN / WALLGALLERY** | **NOT IMPLEMENTED** | `lib/wallpaper/css.ts` là `linear-gradient` + `repeating-linear-gradient`; `SystemWallpaper.tsx` có **0** `<img>` · **0** `url(` · **0** `next/image`. Không có kho ảnh nền nào | ngoài lát cắt vật liệu |
 | **D · XEM TRƯỚC VẬT LIỆU** | **PARTIAL** | đường map **có** (`material-preview.ts:301` gọi `buildPbrMaterial` khi `spec.pbr` có map) nhưng **không vật liệu nào ship map** ⇒ luôn rơi về `twoToneTexture` — hai màu, không vân | **V5** |
 | **E · MẶT 2D** | **PASS** | V1 `defsHatGiong()` — hatch vector, không cần pixel. `2D ✓` trên 2/2 món | xong |
-| **F · 3D TIÊU THỤ MAP** | **FAIL** | 0 tham chiếu map trong `Scene3DViewer.tsx`; `cad-to-obj.ts:361` chỉ mang `colorHex` | **V8** |
+| **F · 3D TIÊU THỤ MAP** | **FAIL** | 0 tham chiếu map trong `Scene3DViewer.tsx`; `grep specId` = 0 ⇒ **trường có sẵn mà không ai đọc** (không phải cầu đứt — xem đính chính) | **V8** |
+| **F0 · CHỤP ẢNH / VIDEO** | **FAIL** | `capture.ts:94` cũng chỉ `color: b.colorHex` ⇒ khung xuất ra phẳng dù viewer đã sửa | **V8** |
 | **F1 · baseColor map** | **FAIL** | như trên | V8 |
 | **F2 · normal map** | **FAIL** | như trên | V8 |
 | **F3 · roughness map** | **FAIL** | như trên | V8 |
@@ -88,8 +114,10 @@ Cùng gốc với chỗ V5 đang vướng: nấc **JUDGE** không có gì để 
 1. **Nối 9 ảnh mồ côi vào vật liệu ship** (`baseColorMapUrl` + `uvScaleMm` thật) — **thuộc V5**.
    Đây là *cắm dây*, không phải *tạo nội dung mới*: ảnh đã có, hợp đồng đã có, máy dựng đã có.
    Vá xong thì nấc JUDGE có vân THẬT, không phải vân vẽ bằng CSS.
-2. **Cho scene 3D đi qua `buildPbrMaterial`** — **thuộc V8**. Cầu `cad-to-obj` phải mang
-   `matId`/`specId` xuống tới `Scene3DViewer` thay vì bóp thành `colorHex`.
+2. **Cho scene 3D đi qua `buildPbrMaterial`** — **thuộc V8**. ⚠️ Sửa theo đính chính ở trên:
+   **KHÔNG phải luồn `specId` xuống** (nó đã ở đó rồi) mà là **đọc nó**: `specId → getMaterial →
+   buildPbrMaterial`, viết MỘT hàm dùng chung cho cả `Scene3DViewer` **và** `capture.ts`.
+   Thiếu `specId`/thiếu map ⇒ rơi về `colorHex` như hôm nay — không bịa vân, không chặn cảnh.
 3. **Nền/Wallgallery**: khai thẳng **NOT IMPLEMENTED**. ⛔ Không lấy gradient CSS gọi là PASS.
 
 ⛔ **Cấm** nhúng cứng texture vào Home · vẽ vân giả bằng CSS · cho 3D một cách biểu diễn vật liệu
