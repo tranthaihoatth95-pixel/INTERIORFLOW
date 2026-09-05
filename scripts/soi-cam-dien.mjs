@@ -42,10 +42,26 @@
  * ③ Loại trừ theo **tên thư mục CHỨA chữ của cây phụ**, không so chuỗi cứng — bug này
  *    đã phải vá **ba lần** (`npm test` 16/08 · `soi-that` 17/08 · `check-chot` còn nợ).
  *
+ * ─── VÙNG MÙ ĐÃ VÁ 05/09: `components/` CŨNG LÀ CHỦ THỂ ────────────────────────
+ * Trước 05/09 `moduleCua()` trả `null` cho mọi thứ ngoài `lib/`, và bảng mồ côi lọc
+ * `t.startsWith('lib/')` ⇒ `app/` và `components/` **chỉ bao giờ đóng vai NGƯỜI GỌI**, không
+ * bao giờ bị hỏi ngược *"có ai gọi mày không"*. Một nguyên thể dựng trong `components/` mà
+ * không ai import thì **vô hình với máy**. Đo được lúc vá: 24 tệp như vậy, trong đó
+ * `components/home/DongStudioHome.tsx` 900 dòng và `components/studio/StageSwitcher.tsx` 462
+ * dòng — cả hai đã bị thay mà chưa ai đóng dấu.
+ * ⚠️ Phần khó KHÔNG phải mã, là **định nghĩa "mồ côi"**: đo thô ra 149 tệp 0-nơi-gọi, nhưng
+ * **125 là ĐIỂM VÀO khung Next** (`route.ts`/`page.tsx`/`layout.tsx` — khung gọi theo TÊN TỆP,
+ * không qua import). Gộp vào là báo quá tay 5 lần. ⇒ tha có LÝ DO IN RA, không lọc im lặng.
+ * ⚠️ VẪN MÙ Ở CẤP TÊN XUẤT: tệp được import CHO MỘT HẰNG SỐ vẫn tính là "có nơi gọi" dù
+ * component chính chưa ai dùng — ca thật `components/ui/Icon.tsx` (`BeMatHome.tsx:43` lấy
+ * `ICON_STROKE`, còn `<Icon>` thì 0 nơi dùng). Đó là câu hỏi CẤP TÊN XUẤT, đất của
+ * `soi-that.mjs`; máy này KHÔNG nhận đã phủ. Xem `docs/delivery/SOI-CAM-DIEN-VUNG-MU.md`.
+ *
  * ─── ĐỌC KẾT QUẢ ───────────────────────────────────────────────────────────────
  *   🟢 SỐNG        ≥1 tệp trong `app/` hoặc `components/` gọi tới
  *   🔵 CHỈ NỘI BỘ  chỉ lib khác gọi — chưa lên tới mặt
  *   🔴 KHO CHƯA MỞ 0 nơi gọi ngoài test của chính nó
+ *   📄 MỒ CÔI      cấp TỆP, gốc `lib/`+`components/`+`app/` — 0 nơi gọi từ người dùng
  *
  * ⚠️ GIỚI HẠN — in mỗi lần chạy, cố ý: máy chứng minh **CÓ ĐƯỜNG DÂY**, KHÔNG chứng minh
  *    **CÓ NÚT BẤM**. Một engine được import vào component sống vẫn có thể nằm sau nhánh
@@ -322,8 +338,23 @@ const theoTt = (tt) => BANG.filter((r) => r.tt === tt);
  * khẳng định đường chính chạy được thì là test che bug.)
  */
 const duocGoi = new Set();
+/**
+ * 🔴 TỰ LOẠI TRỪ CHÍNH MÌNH — 05/09. Máy này QUÉT VĂN BẢN và bản thân nó nằm trong vùng quét
+ * (`GOC_PHU` có `scripts`). Docstring của nó nêu đích danh hàng chục đường dẫn thật
+ * (`lib/cad/dwg-worker.ts`, `components/ui/Icon.tsx`, bảng hiệu chuẩn…). `laChuThich` đã lọc
+ * dòng chú thích, nhưng đó là hàng rào MỎNG: chỉ cần một ví dụ viết ở dạng mã sống trong tệp
+ * này là một tệp CHẾT hoá ra "còn sống", và máy tự cấp chứng chỉ cho chính mình.
+ * Ba lần trong ngày 04/09 đã hỏng đúng kiểu này: `soi-thao-tac` đọc trúng chú thích của nó ·
+ * mẫu `outline-none` gộp ba cơ chế · máy chẩn đoán `pgrep` tự khớp mình rồi báo 9 công cụ đang
+ * chạy trong container trống trơn. ⇒ Lời khai của máy soi KHÔNG được tính là bằng chứng.
+ * Kiểm được: `grep -c "components/ui/Icon.tsx" <kết quả>` không được xanh hoá tệp đó.
+ */
+const TU_LOAI_TRU = new Set([
+  relative(ROOT, duongTuyetDoi(new URL(import.meta.url).pathname)), // chính tệp này
+  'scripts/soi-cam-dien.test.ts',                                   // và bài kiểm của nó
+]);
 for (const tuTep of TEP) {
-  if (laTest(tuTep)) continue;
+  if (laTest(tuTep) || TU_LOAI_TRU.has(tuTep)) continue;
   const src = doc(tuTep);
   for (const mau of MAU_IMPORT) {
     for (const m of src.matchAll(mau)) {
@@ -333,13 +364,60 @@ for (const tuTep of TEP) {
     }
   }
 }
+
+/* ── VÙNG MÙ 05/09: `components/` CŨNG LÀ CHỦ THỂ ───────────────────────────────
+ * Đo được: `moduleCua()` trả `null` cho mọi thứ ngoài `lib/`, và bảng mồ côi lọc
+ * `t.startsWith('lib/')`. ⇒ `app/` và `components/` chỉ bao giờ đóng vai NGƯỜI GỌI, không
+ * bao giờ bị hỏi ngược "có ai gọi mày không". Một primitive dựng trong `components/` mà không
+ * ai import thì VÔ HÌNH với máy — mà đó đúng là chỗ `components/ui/BeMatNoi.tsx` (432 dòng,
+ * docstring tự xưng "nguyên thể dùng chung") và `components/studio/StageSwitcher.tsx` (462
+ * dòng, đã bị sidebar-router thay từ 17/08) đang nằm.
+ *
+ * 🔴 PHẦN KHÓ KHÔNG PHẢI MÃ — LÀ ĐỊNH NGHĨA "MỒ CÔI". Đo thô: 149 tệp 0-nơi-gọi, trong đó
+ * **125 là ĐIỂM VÀO khung Next** (94 `route.ts` · 29 `page.tsx` · 2 `layout.tsx`) — khung gọi
+ * chúng theo QUY ƯỚC TÊN TỆP, không qua import. Gộp chúng vào là báo quá tay 5 lần, và một
+ * máy soi đỏ thứ không sửa được thì chết theo cách tệ nhất: người ta học cách bỏ qua nó.
+ * ⇒ Tha có LÝ DO ĐỌC ĐƯỢC, in kèm mỗi lần chạy — không im lặng lọc.
+ */
+/**
+ * ⚠️ BẪY TỰ GÂY: `icon.tsx` là tên quy ước của App Router, nhưng `components/ui/Icon.tsx` thì
+ * KHÔNG. Luật này vì thế phải NEO VÀO `app/`, không so tên trần toàn cây — so tên trần là tự
+ * bịt mắt mình ở đúng tệp đang muốn soi.
+ */
+const TEN_QUY_UOC_APP = new Set([
+  'page', 'layout', 'template', 'loading', 'error', 'global-error', 'not-found', 'default',
+  'route', 'middleware', 'instrumentation', 'sitemap', 'robots', 'manifest',
+  'opengraph-image', 'twitter-image', 'icon', 'apple-icon',
+]);
+
 /** Tha = máy VẪN THẤY nhưng cố ý không kêu, kèm lý do đọc được (khuôn `soi-tu-dien.mjs`). */
 const THA_MO_COI = [
-  [/\.d\.ts$/, 'khai báo kiểu cho gói ngoài — theo bản chất KHÔNG ai import, TypeScript nạp qua `include` của tsconfig. "0 nơi gọi" ở đây là đúng, không phải thiếu.'],
+  [(t) => /\.d\.ts$/.test(t),
+    'khai báo kiểu cho gói ngoài — theo bản chất KHÔNG ai import, TypeScript nạp qua `include` của tsconfig. "0 nơi gọi" ở đây là đúng, không phải thiếu.'],
+  [(t) => t.startsWith('app/') && TEN_QUY_UOC_APP.has(t.split('/').pop().replace(/\.(ts|tsx|mjs)$/, '')),
+    'điểm vào App Router — Next gọi theo TÊN TỆP (`page`/`layout`/`route`…), không qua import. 0 nơi gọi là ĐÚNG BẢN CHẤT. Neo vào `app/`: `components/ui/Icon.tsx` KHÔNG dính luật này.'],
 ];
-const moCoi = TEP.filter((t) => t.startsWith('lib/') && !laTest(t) && !duocGoi.has(t) && !THA_MO_COI.some(([re]) => re.test(t)))
-  .map((t) => ({ t, dong: doc(t).split('\n').length, rieng: TEP.some((x) => laTest(x) && doc(x).includes(t.split('/').pop().replace(/\.[^.]+$/, ''))) }))
-  .sort((a, b) => b.dong - a.dong);
+
+/** Gốc được HỎI NGƯỢC. `lib` là phần cũ; `components`+`app` là phần mở rộng 05/09. */
+const GOC_CHU_THE = ['lib/', 'components/', 'app/'];
+const thaVi = (t) => THA_MO_COI.find(([hop]) => hop(t))?.[1] ?? null;
+const demTha = new Map(THA_MO_COI.map(([, ly]) => [ly, 0]));
+
+const moCoi = [];
+for (const t of TEP) {
+  if (!GOC_CHU_THE.some((g) => t.startsWith(g)) || laTest(t) || duocGoi.has(t)) continue;
+  const ly = thaVi(t);
+  if (ly) { demTha.set(ly, demTha.get(ly) + 1); continue; }
+  moCoi.push({
+    t,
+    goc: t.split('/')[0],
+    dong: doc(t).split('\n').length,
+    // ⚠️ Đây là GỢI Ý hiển thị (khớp chuỗi tên trần), KHÔNG phải phép đo — không tham gia
+    // quyết định mồ côi. Với tên ngắn/phổ biến nó báo dư; khai ở mục CHƯA CHẮC của báo cáo.
+    rieng: TEP.some((x) => laTest(x) && doc(x).includes(t.split('/').pop().replace(/\.[^.]+$/, ''))),
+  });
+}
+moCoi.sort((a, b) => (a.goc === b.goc ? b.dong - a.dong : GOC_CHU_THE.indexOf(a.goc + '/') - GOC_CHU_THE.indexOf(b.goc + '/')));
 
 /* ── ĐỐI CHIẾU FRONTIER (④.5) — CHỈ IN, KHÔNG SỬA REGISTRY ──────────────────── */
 const ttCua = new Map(BANG.map((r) => [r.id, r.tt]));
@@ -409,10 +487,20 @@ inNhom(NOI_BO, 'lib khác dùng, chưa lên tới mặt');
 if (HIEN_SONG) inNhom(SONG, 'SỔ TRA MÁY SẴN CÓ — đọc trước khi định xây mới [Đ2]');
 else console.log(`\n${CO[SONG]} ${SONG} — ${theoTt(SONG).length} module (ẩn bởi --gon; bỏ cờ để hiện sổ tra)`);
 
-console.log(`\n📄 TỆP MỒ CÔI trong lib/ — 0 nơi gọi TỪ NGƯỜI DÙNG ở cấp TỆP (${moCoi.length} tệp · ${moCoi.reduce((s, x) => s + x.dong, 0)} dòng)`);
+const demGoc = (g) => moCoi.filter((x) => x.goc === g).length;
+console.log(`\n📄 TỆP MỒ CÔI — 0 nơi gọi TỪ NGƯỜI DÙNG ở cấp TỆP (${moCoi.length} tệp · ${moCoi.reduce((s, x) => s + x.dong, 0)} dòng)`);
+console.log(`   ⓘ theo gốc: lib ${demGoc('lib')} · components ${demGoc('components')} · app ${demGoc('app')}`);
 console.log('   ⓘ "có test" = engine chạy đúng nhưng chưa ai dùng — hai chuyện khác nhau.');
-for (const { t, dong, rieng } of moCoi) console.log(`  📄 ${t.padEnd(52)} ${n(dong, 5)} dòng${rieng ? ' · có test' : ''}`);
-for (const [, ly] of THA_MO_COI) console.log(`  ⚪ tha: ${ly}`);
+console.log('   ⛔ MỒ CÔI ≠ RÁC. Ba loại khác hẳn: (a) CHƯA CẮM — phải cắm · (b) ĐÃ BỊ THAY — phải đóng');
+console.log('      dấu lỗi thời tại chỗ, đừng bỏ hoang · (c) MÁY ĐO SAI — siết máy. Máy KHÔNG phân loại hộ,');
+console.log('      KHÔNG xoá, KHÔNG sửa registry. Phân biệt ba loại đó là việc của người audit.');
+let gocDangIn = '';
+for (const { t, goc, dong, rieng } of moCoi) {
+  if (goc !== gocDangIn) { gocDangIn = goc; console.log(`  ── ${goc}/`); }
+  console.log(`  📄 ${t.padEnd(56)} ${n(dong, 5)} dòng${rieng ? ' · có test' : ''}`);
+}
+if (!moCoi.length) console.log('  (không có)');
+for (const [, ly] of THA_MO_COI) console.log(`  ⚪ tha ${n(demTha.get(ly), 3)}: ${ly}`);
 
 console.log(`\n🔗 FRONTIER "✅ nhưng CHƯA CẮM ĐIỆN" — entry khai xong, mọi bằng chứng nằm trong ${CHUA_MO} (${chuaCamDien.length})`);
 for (const { e, ds } of chuaCamDien) {
