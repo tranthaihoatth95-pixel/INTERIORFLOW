@@ -53,7 +53,7 @@ import { ColorLibraryScreen } from '@/components/colors/ColorLibraryScreen';
 import PanelFlank from '@/components/ui/PanelFlank';
 import { AssetWhereUsed, useAssetWhereUsed } from './AssetWhereUsed';
 import { daGanVaoDuAn } from './da-gan-du-an';
-import { object3dModelForName } from '@/lib/library/object-3d-models';
+import { object3dModelForItem } from '@/lib/library/object-3d-models';
 import { taiVeJson } from '@/lib/library/tai-ve-json';
 
 // 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md) — "Vẽ"/"Dựng ảnh" là tên
@@ -91,11 +91,12 @@ const CARD_SIZE_OPTIONS: { id: LibCardSize; label: [string, string] }[] = [
   { id: 'lg', label: ['Lớn', 'Large'] },
 ];
 
-/** Cửa sổ xem 3D (Object3DWindow) cho asset "Ghế bar Lincoln 327" (proof CW 14/08,
- * `docs/phieu-giao/ghe-3d-window-app.md`). Bảng nhận diện DỜI sang `lib/library/object-3d-models.ts`
- * (02/09) vì trang tổng `/library` cũng đếm "Mô hình 3D" — một danh sách, hai nơi đọc. */
+/** Cửa sổ xem 3D (Object3DWindow). Bảng nhận diện ở `lib/library/object-3d-models.ts` (02/09) vì
+ * trang tổng `/library` cũng đếm "Mô hình 3D" — một danh sách, hai nơi đọc.
+ * 🔄 05/09: đi qua `object3dModelForItem` — DỮ LIỆU (`item.model3d`, do cửa nhận diện cấu kiện ghi
+ * vào kho) TRƯỚC, bảng tên gõ cứng chỉ còn là đường lùi cho proof Lincoln. */
 function object3dModelFor(item: SheetItem): { glbUrl: string; mtlUrl?: string } | null {
-  return object3dModelForName(item.name);
+  return object3dModelForItem(item);
 }
 
 const BAY_ICON: Record<string, LucideIcon> = {
