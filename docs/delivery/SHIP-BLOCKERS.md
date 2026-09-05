@@ -196,3 +196,40 @@ Luồng nghề lõi chạy đầu-cuối · việc đã lưu sống qua tải l�
 tái lập được · thẩm quyền và mã khớp nhau · **không năng lực trọng yếu nào chỉ nằm ở nhánh di sản chưa
 tích hợp** · cài và chạy được từ nguồn chính tắc.
 **KHÔNG cần để xong:** sạch nợ kỹ thuật · sạch nhánh lưu trữ · giải thích trọn lịch sử · hết mọi cảnh báo.
+
+---
+
+## 🔴 05/09 · BẢN XEM THỬ CLOUD KHÔNG DÙNG ĐƯỢC QUÁ MÀN ĐĂNG NHẬP — và MAIN đã đưa link mà chưa thử
+
+**Hoà mở link preview Vercel, bấm "Vào xưởng" → `HTTP 500`.** MAIN đưa link sau khi thấy Vercel
+báo `Ready`, **chưa lần nào thử đăng nhập trên chính link đó** — đúng thói "tin trạng thái cổng
+thay vì đo hành vi" mà cả phiên đang sửa.
+
+### Gốc — đo được, không đoán
+| Bằng chứng | Số |
+|---|---|
+| `prisma/schema.prisma:16` | `provider = "sqlite"` |
+| `.env.example` | `DATABASE_URL="file:./prisma/dev.db"` |
+| `git ls-files prisma/` | **`dev.db` KHÔNG được theo dõi** — không có trong bản deploy |
+| `vercel.json` buildCommand | `prisma generate && next build` — **không chạy `migrate deploy`** |
+| Cùng mã, chạy local có DB | `POST /api/auth/login` → **401** (đúng: sai mật khẩu) |
+| Trên Vercel | **500** — Prisma không có tệp CSDL nào để mở |
+
+⇒ **Mọi route chạm CSDL đều 500 trên cloud.** Đăng nhập · dự án · Thư viện · BOQ · lưu.
+Chỉ những màn không chạm CSDL mới hiện (đúng cái Hoà thấy: màn đăng nhập).
+
+### Đây KHÔNG phải bug — là bản chất
+IF là **local-first, desktop**. `docs/CLAUDE.md` An toàn dữ liệu: không phụ thuộc cloud bên thứ ba
+cho dữ liệu dự án. Bản Vercel chỉ là **cổng xem tĩnh**, chưa bao giờ được thiết kế để chạy nghiệp vụ.
+Muốn nó chạy thật thì phải đổi `provider` sang postgres + dựng CSDL đám mây — **đó là quyết định
+sản phẩm ngược với định vị local-first**, không phải việc vá.
+
+### Hệ quả cho cách giao hàng
+🔴 **GẠCH BỎ đường "① xem preview, không cần cài gì".** Nó KHÔNG phải cửa nghiệm thu mắt.
+✅ Cửa duy nhất còn lại để Hoà thấy sản phẩm thật: **chạy trên máy Hoà** (đã chứng minh
+`next build` sạch 30 route ngày 05/09) hoặc **gói `.dmg` dựng trên macOS**.
+
+### Luật rút ra
+> **Cổng báo `Ready` chỉ chứng minh bản dựng lên được, KHÔNG chứng minh app dùng được.**
+> Trước khi đưa bất kỳ đường xem nào cho Hoà: **tự đi hết một hành trình trên chính đường đó**.
+> Đây là ca thứ hai cùng họ trong 24h (ca một: `soi:thao-tac` chết mà đọc ra như chưa chạy).
