@@ -53,3 +53,19 @@ export function gomHoAccent(mau, boQua = () => false) {
   }
   return ho;
 }
+
+/**
+ * Luật BỎ QUA chuẩn — dùng chung cho cả hai mặt tiền, vì đây chính là chỗ chúng dễ phân kỳ nhất.
+ * 🔴 CA THẬT (05/09): bản đầu của `cham-pattern.mjs` KHÔNG mang theo hai luật này, nên nó kết tội
+ * cam-cảnh-báo là một họ accent — cùng một màu, cùng một luật, hai cỗ máy phán khác nhau. Bắt được
+ * ngay lượt chạy thứ hai (theme sáng), trước khi kịp có ai tin con số. Đó đúng là lý do tách lõi.
+ */
+export const CAM_CANH_BAO = (h) => h >= 15 && h <= 50;          // cam/hổ phách — kênh cảnh báo
+export const VAT_LIEU = (h, s, l) => h >= 15 && h <= 55 && s < 0.45; // gỗ/đất trong ô mẫu
+export const boQuaChuan = (h, s, l) => CAM_CANH_BAO(h) || VAT_LIEU(h, s, l);
+
+/** Trần lần xuất hiện của MỘT họ — CHỈ dùng cho BẢN VẼ. Mặt tiền app cố ý không dùng; lý do
+ * ghi tại `scripts/soi-mat/cham-pattern.mjs` (số lần xuất hiện trên màn app đi theo số phần tử
+ * đang hiển thị, không theo ý đồ người vẽ). */
+export const TRAN_MOI_HO = 12;   // >12 = đang rải màu, không còn là accent
+export const CHUAN_MOI_HO = 8;   // 9–12 phải giải thích được là "một trạng thái chọn nhiều nét"

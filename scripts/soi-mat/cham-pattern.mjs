@@ -20,7 +20,7 @@
  *    đúng ra cũng không nên tính.
  */
 import { chromium } from 'playwright';
-import { rgbToHsl, gomHoAccent } from '../lib/mau-ho.mjs';
+import { rgbToHsl, gomHoAccent, boQuaChuan } from '../lib/mau-ho.mjs';
 
 const CONG = process.env.CONG || '3230';
 const BASE = `http://localhost:${CONG}`;
@@ -76,11 +76,25 @@ for (const m of MAN) {
   const tho = await p.evaluate(HUT);
   const mau = [];
   for (const x of tho) for (const c of [x.nen, x.chu, x.vien]) { const h = c && rgbToHsl(c); if (h) mau.push(h); }
-  const ho = gomHoAccent(mau);
+  const ho = gomHoAccent(mau, boQuaChuan);
   const day = ho.filter((x) => x.n >= 3); // 1-2 lần là nhiễu (một viền, một dấu), chưa thành họ
   const mo = day.map((x) => `hue ${x.tu}°${x.toi !== x.tu ? `–${x.toi}°` : ''}: ${x.n}`).join(' · ');
   if (day.length >= 2) { tongLoi++; console.log(`✗ ${m.ten.padEnd(16)} L1 "tè le" — ${day.length} họ accent (${mo})`); }
   else console.log(`✓ ${m.ten.padEnd(16)} ${day.length ? mo : 'không họ accent nào ≥3'}`);
+  /* ⛔ KHÔNG áp TRẦN MỖI HỌ ở mặt tiền APP — và đây là một quyết định, không phải bỏ sót.
+   * Tôi ĐÃ áp thử rồi gỡ ra, sau khi đo: `/settings` theme sáng dùng hue 210° **19 lần**, vượt
+   * trần 12 của cổng bản vẽ. Truy ra thì `rgb(24,106,220)` = `#186adc` chính là `--accent` mà
+   * trình duyệt tính ra lúc chạy (accent ĐI THEO BỘ HÌNH NỀN — QĐ Hoà 01/09), tức 19 chỗ đó là
+   * MỘT accent duy nhất dùng đúng chỗ trên một trang đầy công tắc.
+   *
+   * ⇒ Trần đếm-lần hợp cho BẢN VẼ (một artboard tĩnh, mỗi nét là một lựa chọn của người vẽ),
+   * KHÔNG hợp cho MÀN APP (số lần xuất hiện đi theo số phần tử màn đang có, không theo ý đồ).
+   * Ép cùng một con số cho hai corpus khác bản chất là "đồng bộ giả" — hỏng ngược lại với cái
+   * hỏng ngay trước đó (hai mặt tiền phân kỳ ở luật BỎ QUA). Luật CHUNG là "một họ accent";
+   * luật ĐẾM LẦN thì mỗi mặt tiền một ngưỡng, và app thì không có ngưỡng.
+   *
+   * ⚠️ Kèm một sự thật dễ đọc nhầm: `app/globals.css:19` khai `--accent: #6a57f5` (tím), nhưng
+   * app ĐANG CHẠY tính ra `#186adc` (lam). Ai chỉ đọc globals.css sẽ tin app màu tím. */
 }
 console.log(`\n— ${MAN.length} màn · ${tongLoi} màn tè le`);
 await b.close();
