@@ -41,25 +41,6 @@ const IS_WORKTREE = (() => {
   }
 })();
 
-/**
- * ⛔ Ở PRODUCTION, THIẾU `AUTH_SECRET` LÀ TỪ CHỐI KHỞI ĐỘNG — không rơi về hằng số dưới.
- *
- * Vì sao phải chặn cứng thay vì cảnh báo: `'dev-secret-change-me'` nằm CÔNG KHAI trong mã
- * nguồn. Server nào ký phiên đăng nhập bằng nó thì bất kỳ ai đọc được repo cũng tự làm ra
- * cookie hợp lệ. Đây là loại hỏng KHÔNG có triệu chứng — app chạy trơn tru, đăng nhập bình
- * thường, và không ai biết cho tới lúc bị lợi dụng.
- *
- * Bê từ nhánh checkpoint 05/09. Bản desktop KHÔNG bị chặn: `electron/main.js` tự sinh và lưu
- * `AUTH_SECRET` vào `<userData>/config.json` trước khi bật server, nên mỗi máy có khoá riêng.
- * Máy dựng CI phải cấp khoá dùng-một-lần (xem `.github/workflows/dung-ban-mac.yml`).
- */
-if (process.env.NODE_ENV === 'production' && !HAS_AUTH_SECRET) {
-  throw new Error(
-    'AUTH_SECRET chưa cấu hình ở production — TỪ CHỐI khởi động thay vì ký JWT bằng hằng số ' +
-      'công khai trong mã. Tạo: openssl rand -base64 32',
-  );
-}
-
 const COOKIE = !HAS_AUTH_SECRET ? 'if_session_noenv' : IS_WORKTREE ? 'if_session_wt' : 'if_session';
 
 /**
@@ -68,10 +49,17 @@ const COOKIE = !HAS_AUTH_SECRET ? 'if_session_noenv' : IS_WORKTREE ? 'if_session
  * Trước đây thiếu `AUTH_SECRET` thì JWT ký bằng hằng số `'dev-secret-change-me'` — chuỗi này
  * NẰM CÔNG KHAI TRONG MÃ NGUỒN. Bản Electron được cứu vì `electron/main.js` tự sinh secret và
  * persist, nhưng repo có `vercel.json`: một lần deploy web quên đặt biến là ai cũng tự đúc được
- * cookie `sub=<userId bất kỳ>`, kể cả `isAdmin`. Đó là chiếm quyền, không phải bất tiện.
+ * cookie `sub=<userId bất kỳ>`, kể cả `isAdmin`. Đó là chiếm quyền, không phải bất tiện — và là loại hỏng
+ * KHÔNG CÓ TRIỆU CHỨNG: app chạy trơn tru, đăng nhập bình thường, không ai biết cho tới
+ * lúc bị lợi dụng.
  *
  * KHÔNG bỏ fallback ở dev: chế độ `if_session_noenv` ở trên là CÁCH LY CÓ CHỦ Ý (worktree /
  * server tạm không được đụng phiên thật ở cùng localhost). Bỏ nó là phá một thứ đang làm đúng.
+ *
+ * Bản desktop KHÔNG bị chặn: `electron/main.js` tự sinh và lưu `AUTH_SECRET` vào
+ * `<userData>/config.json` trước khi bật server, nên mỗi máy có khoá riêng. Máy dựng CI phải
+ * cấp khoá dùng-một-lần (xem `.github/workflows/dung-ban-mac.yml`). Deploy web (`vercel.json`)
+ * phải đặt biến trong cấu hình dự án — build ĐỎ ở đây là lá chắn LÀM ĐÚNG VIỆC, không phải lỗi mã.
  *
  * ⇒ Chỉ chặn ở `production`. Cùng khuôn với `lib/integrations/crypto.ts:15` — thiếu key thì NÉM,
  * không chạy tiếp lặng lẽ. Ném ở tầng module: hỏng thì hỏng LÚC KHỞI ĐỘNG, không phải hỏng
