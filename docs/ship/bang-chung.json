@@ -1,0 +1,1088 @@
+{
+  "ngayTrich": "2026-09-05",
+  "vai": "TRÍCH BẰNG CHỨNG — không phán, không thiết kế. Mọi trạng thái đều phải có `nguon`. Không nguồn ⇒ UNVERIFIED + nguon:null.",
+  "luatTrangThai": {
+    "giaTriHopLe": ["PASS", "PARTIAL", "FAIL", "UNVERIFIED"],
+    "chuoiGhi": "ACTION → PERSIST → ĐÓNG/TẢI LẠI HẲN → VÀO LẠI → CÙNG SỰ THẬT",
+    "ghiChu": "Hành trình có ghi chỉ PASS khi đủ chuỗi. Mới tới ACTION ⇒ PARTIAL, ghi toiDauRoi.",
+    "anhXaTuNguon": {
+      "BLOCKED (JOURNEY-MATRIX)": "FAIL — biết chắc hỏng, có tệp:dòng",
+      "PASS chỉ ở cột hệ thống (JOURNEY-MATRIX)": "PARTIAL — toiDauRoi=ACTION"
+    }
+  },
+
+  "hanhTrinh": [
+    {
+      "ma": "J01",
+      "ten": "máy sạch → đăng ký tài khoản → User vào DB + cookie phiên",
+      "trangThai": "UNVERIFIED",
+      "trangThaiGoc": "UNVERIFIED",
+      "toiDauRoi": null,
+      "bangChung": "chưa ai chạy trên bản đóng gói; chỉ chạm gián tiếp qua scripts/tai-khoan-kiem.mjs (tự khai là đồ nghề, không phải tính năng)",
+      "chanCong": "G5",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.1"
+    },
+    {
+      "ma": "J02",
+      "ten": "đã đăng nhập → thoát app → mở lại vẫn đăng nhập",
+      "trangThai": "UNVERIFIED",
+      "trangThaiGoc": "UNVERIFIED",
+      "toiDauRoi": null,
+      "bangChung": "electron/main.js:215-222 AUTH_SECRET sinh-ngẫu-nhiên-rồi-persist; nhánh catch rỗng :224-226 ⇒ rủi ro đăng xuất âm thầm mỗi lần khởi động nếu ghi config.json hỏng — CHƯA AI ĐO",
+      "chanCong": "G5",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.1"
+    },
+    {
+      "ma": "J03",
+      "ten": "hai người dùng chung một máy — A đăng xuất, B đăng nhập",
+      "trangThai": "FAIL",
+      "trangThaiGoc": "BLOCKED",
+      "toiDauRoi": "PERSIST",
+      "bangChung": "AccountSettings:54 · AccountMenu:137 · MobileMenu:160 · PixelSettingsShell:191 chỉ xoá cookie, KHÔNG chỗ nào xoá lastUserId; danh-tinh-phien.ts:82-83 trả 'da-co' không xác thực lại",
+      "chanCong": "không chặn bản một-người-một-máy; CHẶN bản dùng chung máy",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.1 + docs/delivery/PRODUCT-DEFECTS.md D3"
+    },
+    {
+      "ma": "J04",
+      "ten": "Home rỗng → tạo dự án mới",
+      "trangThai": "PASS",
+      "toiDauRoi": "SAME-TRUTH",
+      "bangChung": "app thật 04/09 (--ca=J04): Project 5→6 · Flow 6 (đọc bằng SQL) · URL / → /projects/<id>/render · đóng HẲN trình duyệt rồi mở lại vẫn thấy. Hiệu chuẩn: chặn POST /api/flows ⇒ ĐỎ",
+      "chanCong": "G2",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.2 + §1.7 (D-J04a đã đóng)"
+    },
+    {
+      "ma": "J05",
+      "ten": "Home có việc dở → bấm thẻ Resume",
+      "trangThai": "PASS",
+      "toiDauRoi": "SAME-TRUTH",
+      "bangChung": "app thật 04/09 (--ca=J05); khoá interiorflow.resume.<userId> đọc thẳng localStorage; đo bằng BÀN PHÍM THUẦN — Tab 19 lần, ring 2px solid rgb(106,87,245) = --focus-ring, Enter → /projects/<id>/cad. Hiệu chuẩn hai tầng",
+      "chanCong": "G2",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.2"
+    },
+    {
+      "ma": "J06",
+      "ten": "mở lại dự án cũ, sửa tiếp — giữ ID cũ",
+      "trangThai": "PASS",
+      "toiDauRoi": "SAME-TRUTH",
+      "bangChung": "app thật 04/09 (--ca=J06): 1→2 thực thể trong IndexedDB, TOÀN BỘ ID lần trước còn nguyên (điểm đo là DANH TÍNH, không phải số đếm). Ghi đè có kiểm rev khoá bởi app/api/flows/[id]/route.test.ts (Prisma thật, P2025)",
+      "chanCong": "G2",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.2"
+    },
+    {
+      "ma": "J07",
+      "ten": "vẽ 2D → lưu → xoá sạch hồ sơ trình duyệt → mở lại",
+      "trangThai": "PASS",
+      "toiDauRoi": "SAME-TRUTH",
+      "bangChung": "app thật 04/09 (--ca=J07): hàng ProjectFile 'ban-ve.sao-luu.idf', parse lại ra đúng số thực thể; XOÁ SẠCH hồ sơ trình duyệt rồi mở lại nét quay về đúng ID cũ. Đường thật: lib/cad/luu-len-may-chu.ts → POST /api/project-files (nhịp 30s), lưới đỡ khôi phục components/cad/CadSheets.tsx:458",
+      "lech": "cột ĐÃ LƯU của hàng này ghi SAI từ đầu — bản vẽ KHÔNG đi qua Flow; grep 'api/flows' trong components/cad/ + lib/cad/ = 0",
+      "chanCong": "G2",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.3"
+    },
+    {
+      "ma": "J08",
+      "ten": "chặng 3D — dựng khối bằng cử chỉ",
+      "trangThai": "PARTIAL",
+      "trangThaiGoc": "PASS chỉ ở cột hệ thống",
+      "toiDauRoi": "ACTION",
+      "bangChung": "app thật 04/09 — docs/bao-cao-phien/2026-09-04-kiem-app-that-3d-present.md mục 1. Không chạm chuyện còn-sau-khi-đóng-app",
+      "chanCong": "G2",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.3 + §2"
+    },
+    {
+      "ma": "J09",
+      "ten": "chặng 3D — chọn khối → Delete",
+      "trangThai": "PARTIAL",
+      "trangThaiGoc": "PASS sau khi vá, chỉ ở cột hệ thống",
+      "toiDauRoi": "ACTION",
+      "bangChung": "cùng báo cáo mục 2. TRƯỚC vá là FAIL: đường bàn phím không nối lệnh registry (components/three/Viewport3D.tsx). Ca THỨ HAI cùng gốc với ⌘Z ⇒ chiều LÙI của 3D đã gãy hai lần",
+      "chanCong": "G2",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.3"
+    },
+    {
+      "ma": "J10",
+      "ten": "chặng 3D trên màn retina — khung nhìn không bị cắt",
+      "trangThai": "PARTIAL",
+      "trangThaiGoc": "PASS chỉ ở cột hệ thống",
+      "toiDauRoi": "ACTION",
+      "bangChung": "cùng báo cáo mục 3; đo Chromium DPR=2: tràn 300px → 0px, có máy canh",
+      "chanCong": "cổng thị giác",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.3 + docs/delivery/VISUAL-APPROVAL-QUEUE.md §B"
+    },
+    {
+      "ma": "J11",
+      "ten": "đưa bản vẽ 2D sang Trình bày",
+      "trangThai": "PARTIAL",
+      "trangThaiGoc": "PASS 3/3 lượt, chỉ ở cột hệ thống",
+      "toiDauRoi": "ACTION",
+      "bangChung": "cùng báo cáo mục 4. Bản FAIL 9/10 trước đó là hiện vật của bộ đo, không phải lỗi sản phẩm",
+      "chanCong": "G2",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.3"
+    },
+    {
+      "ma": "J12",
+      "ten": "Trình bày — sửa bố cục → lưu → mở lại",
+      "trangThai": "PASS",
+      "toiDauRoi": "SAME-TRUTH",
+      "bangChung": "app thật 04/09 (--ca=J12): khoá userId::/present-editor::projectId, 7 phần tử / 1 trang đọc từ IndexedDB; đóng HẲN trình duyệt rồi mở lại còn nguyên 7. Payload là deck.slides[].elements[] (components/present-editor/PresentSheets.tsx:426)",
+      "chanCong": "G2",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.3"
+    },
+    {
+      "ma": "J13",
+      "ten": "nhập tệp thô → gắn định nghĩa → lưu vào thư viện",
+      "trangThai": "PASS",
+      "toiDauRoi": "SAME-TRUTH",
+      "bangChung": "đợt 7, 05/09 (--ca=J13), hiệu chuẩn ĐỎ khi chặn POST /api/library. LibraryAsset + byte thật trong uploads/",
+      "lech": "LỆCH MA TRẬN đo được: đường /library/ingest KHÔNG sinh LibraryAsset và KHÔNG đặt byte nào lên đĩa — page.tsx:98 chỉ saveManifest xuống IndexedDB (grep '/api/library' trong tệp đó = 0). Hàng DB + tệp đĩa đến từ /inspiration. HAI ĐƯỜNG, MỘT CỘT",
+      "chanCong": "G5 (mục tài sản)",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.4"
+    },
+    {
+      "ma": "J14",
+      "ten": "thả cấu kiện từ Thư viện → BOQ khớp kho giá",
+      "trangThai": "PASS",
+      "toiDauRoi": "SAME-TRUTH",
+      "bangChung": "đợt 7, 05/09: đơn giá 1 500 000 · hao 10% · thành tiền 1 650 000 đúng bằng hàng CSDL; hiệu chuẩn ĐỎ khi chặn ghi IndexedDB",
+      "lech": "matId vẫn null ⇒ nhánh matId-UUID CHƯA CHẠY SỐNG lần nào (hành trình đo nhánh specId). LỖ CHẶN: cấu kiện thả từ kho .idfc ra nét rời, specId KHÔNG gắn được (LibraryDropBridge.tsx:112) ⇒ không bao giờ lên BOQ, và BOQ cũng không báo lỗi",
+      "chanCong": "G5",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.4"
+    },
+    {
+      "ma": "J15",
+      "ten": "mở lại .idfc đã lưu, sửa, ghi lại",
+      "trangThai": "PASS",
+      "toiDauRoi": "SAME-TRUTH",
+      "bangChung": "đợt 7, 05/09 — BA lần đóng app: nhập → đóng → mở lại thấy bản gốc → sửa → đóng → mở lại thấy bản sửa; hiệu chuẩn ĐỎ khi chặn ghi IndexedDB",
+      "ghiChu": "'Sửa' = nhập lại cùng meta.code để đè — ngữ nghĩa DUY NHẤT app có (idfc-store.ts:14-15 khai kho một chiều)",
+      "chanCong": "G5",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.4"
+    },
+    {
+      "ma": "J16",
+      "ten": "deep-link studio (tab mới · bookmark · F5) → làm việc → lưu",
+      "trangThai": "PASS",
+      "toiDauRoi": "SAME-TRUTH",
+      "bangChung": "app thật 04/09, scripts/nghiem-thu-g2-hanh-trinh.mjs (hồ sơ Chromium trên đĩa = máy người dùng; đóng bối cảnh = đóng app). docs/bao-cao-phien/2026-09-04-g2-chay-that.md · ảnh anh-duyet-mat/g2-hanh-trinh/J16-*.png. 0 khoá mơ hồ",
+      "chanCong": "G2 + G5",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.5"
+    },
+    {
+      "ma": "J16b",
+      "ten": "deep-link studio rồi về Home — resume mang đủ flowId",
+      "trangThai": "PASS",
+      "toiDauRoi": "SAME-TRUTH",
+      "bangChung": "app thật 04/09 (--ca=J16b), thế giới hỏng riêng (chanResume). Đóng D6",
+      "ghiChu": "HÀNH TRÌNH MỚI THÊM — KHÔNG nằm trong 22 hành trình gốc, không cộng vào tử số 13/22",
+      "chanCong": "G2",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.5 + §2"
+    },
+    {
+      "ma": "J23",
+      "ten": "bookmark route cũ /cad-editor → về đúng /projects/<id>/cad, không loé Home",
+      "trangThai": "PASS",
+      "toiDauRoi": "SAME-TRUTH",
+      "bangChung": "app thật 04/09 (--ca=J23), đo bằng framenavigated; đóng HẲN trình duyệt, mở lại với bộ đệm định danh NGUỘI vẫn về đúng dự án. Đóng D7. Hiệu chuẩn hai lớp",
+      "ghiChu": "HÀNH TRÌNH MỚI THÊM — không cộng vào tử số",
+      "chanCong": "G2",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.5 + docs/delivery/PRODUCT-DEFECTS.md D7"
+    },
+    {
+      "ma": "J17",
+      "ten": "đóng app đột ngột (không bấm lưu) — autosave kịp",
+      "trangThai": "PASS",
+      "toiDauRoi": "SAME-TRUTH",
+      "bangChung": "app thật 04/09: bối cảnh bị SIGKILL giữa lúc vẽ (không beforeunload, không flush()); neo an toàn 2 thực thể, mở lại đọc IndexedDB thấy 3",
+      "gioiHan": "CHỈ đo trên bản WEB — bản đóng gói Electron (killServer() gửi SIGTERM cho next start) CHƯA ĐO, vẫn thuộc lượt G5",
+      "chanCong": "G5",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.5"
+    },
+    {
+      "ma": "J18",
+      "ten": "hai tab cùng một dự án cùng sửa cùng lưu",
+      "trangThai": "PARTIAL",
+      "toiDauRoi": "PERSIST",
+      "bangChung": "app thật 04/09 (--ca=J18): tab A 200 · tab B 409 · đọc SQL, CSDL giữ đúng bản tab A (rev 1)",
+      "conThieu": "TẦNG NGƯỜI DÙNG VẪN UNVERIFIED — tab B gửi fetch PUT thô nên đi vòng qua bộ xử 409 của client (lib/store.ts:1224). Đọc được từ mã: notice chỉ render ở components/FlowCanvas.tsx:884 (route canvas), TỰ TẮT sau 4,5s (:437-440), mang MÀU EMERALD — cảnh báo mất-việc đang mặc áo màu thành-công",
+      "chanCong": "G2",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.5"
+    },
+    {
+      "ma": "J19",
+      "ten": "cài đè bản mới hơn — snapshot trước khi đụng schema",
+      "trangThai": "PASS",
+      "toiDauRoi": "SAME-TRUTH",
+      "bangChung": "04/09 chạy ĐÚNG thân hàm đang ship (snapshotBeforeUpgrade trích từ electron/main.js) trên SQLite thật có hàng thật; bản sao đọc lại BẰNG SQL khớp gốc {user 2, project 6, flow 6, member 5} + kèm uploads/",
+      "gioiHan": "KHÔNG chạy Electron đóng gói — phần đó vẫn là G5/lane 07",
+      "chanCong": "G5",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.5"
+    },
+    {
+      "ma": "J20",
+      "ten": "Trình bày có nội dung → xuất PDF → mở tệp độc lập với app",
+      "trangThai": "PASS",
+      "toiDauRoi": "SAME-TRUTH",
+      "bangChung": "04/09 — tệp 24 KB · 1 trang · khổ 2560×1440pt · 1 ảnh JPEG nhúng; ĐÃ MỞ TỆP RA SOI BẰNG MẮT (J20-deck-xuat.pdf + J20-trang-1.png)",
+      "phatHienChuanDauRa": [
+        "F1 🔴 trang in ra đúng một dòng 'Nhập nội dung' — giá trị mặc định trong MODEL (lib/present-editor/model.ts:654 makeText()), tức DỮ LIỆU THẬT. Trái CHUAN-DAU-RA-NGHE §4 (0 placeholder)",
+        "F2 🟡 0 ký tự trích được — mỗi trang là một ảnh JPEG full-page (/Filter /DCTDecode); 14 font khai, không font nào mang glyph thật. Cố ý theo thiết kế WYSIWYG (lib/present-editor/export.ts:53-66)",
+        "F3 🟡 khổ 2560×1440pt = 35,6×20 inch, ảnh 2560×1440px ⇒ 72 dpi. Trái LUAT-300DPI. Đường in 300dpi là hàm riêng (exportDeckToPdfAtPaperSize) CHƯA hành trình nào chạm"
+      ],
+      "gioiHan": "lượt chạy lại đợt 3 (04/09) KHÔNG KẾT LUẬN được — waitForEvent('download') hết 120s, ghi LỖI (hạ tầng) không phải FAIL; A/B xác nhận không phải hồi quy đợt 3",
+      "chanCong": "G5",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.6 + §1.6b"
+    },
+    {
+      "ma": "J21",
+      "ten": "xuất .idf / gói .idfp → nạp lại vào dự án khác",
+      "trangThai": "PASS",
+      "toiDauRoi": "SAME-TRUTH",
+      "bangChung": "đợt 7, 05/09 cho .idfp: 1 hồ sơ · 1 trang · 14 phần tử; xoá sạch hồ sơ trình duyệt rồi nạp vào dự án CHƯA TỪNG CÓ GÌ → kho mọc lên đúng 14 phần tử; hiệu chuẩn ĐỎ khi chặn ghi IndexedDB",
+      "phatHienChuanDauRa": [
+        "G1 🟡 14/14 ô chữ mang nguyên văn 'Nhập nội dung' — cùng hạt giống lỗi F1 của J20",
+        "G2 🔴 0/14 ô có x/y — mọi phần tử chồng khít một chỗ; trên màn thấy MỘT dòng chữ, panel Lớp đếm 14",
+        "G3 ✅ nạp gói sang dự án khác được — vòng đời gói khép"
+      ],
+      "gioiHan": "nhánh .idf (bản vẽ 2D) CHƯA CHẠM",
+      "chanCong": "G5",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.6 + §1.6c"
+    },
+    {
+      "ma": "J22",
+      "ten": "mất mạng / không có API key → dùng năng lực cần cloud",
+      "trangThai": "PASS",
+      "toiDauRoi": "ACTION",
+      "bangChung": "app thật 04/09 (--ca=J22), môi trường THẬT SỰ không có FAL_KEY: POST /api/jobs trả 503 · PROVIDER_NOT_CONFIGURED, không trả hàng giả. Hiệu chuẩn: ép cửa trả 200 kèm job bịa ⇒ ĐỎ",
+      "ghiChu": "bản chất không sinh gì để lưu ⇒ không có cột ĐÃ LƯU để kiểm; điều phải chứng minh là 'báo rõ, không chạy giả'",
+      "chanCong": "G5",
+      "nguon": "docs/delivery/JOURNEY-MATRIX.md §1.6"
+    }
+  ],
+
+  "hanhTrinhTongKet": {
+    "cotDaLuu": "13/22",
+    "lichSuCotDaLuu": "1/22 → 4/22 → 7/22 → 8/22 → 9/22 (đợt 5·6 vẫn 9/22) → 13/22 (đợt 7, 05/09)",
+    "phanLoai": {
+      "PASS đầy đủ (có cột ĐÃ LƯU)": 13,
+      "PASS không có cột ĐÃ LƯU để kiểm": 1,
+      "PASS chỉ ở cột hệ thống": 4,
+      "PASS một phần": 1,
+      "FAIL": 0,
+      "UNVERIFIED": 2,
+      "BLOCKED": 1
+    },
+    "luatDem": "J16b và J23 là hành trình MỚI THÊM, KHÔNG cộng vào tử số 13/22 (mẫu số giữ 22 hành trình gốc). Bộ chạy nay có 17 hành trình.",
+    "nguon": "docs/delivery/JOURNEY-MATRIX.md §2"
+  },
+
+  "beMat": [
+    {
+      "ten": "HOME (/)",
+      "trangThai": "FAIL",
+      "loaiPhan": "thị giác",
+      "chan": "B2 (P2) — Home chưa có hướng được duyệt mắt; Lô duyệt mắt #1 tấm 1 TRƯỢT 04/09 (gốc là MÔ HÌNH BỐ CỤC, không phải màu/khoảng cách)",
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "do.json 01-home: chữ 1398 · nút 55 · ảnh 42 · 0 lỗi console",
+      "nguon": "docs/bao-cao-phien/2026-09-05-cham-4-man-design-review.md ⑦ + docs/delivery/VISUAL-APPROVAL-QUEUE.md §A2 + /tmp/toan-man/do.json"
+    },
+    {
+      "ten": "2D (/projects/[id]/cad)",
+      "trangThai": "FAIL",
+      "loaiPhan": "thị giác",
+      "chan": "PH-02 [H1] hàng công cụ dưới bị cắt cụt ngay tại 1440, không có cửa tràn; trượt cổng A1·A3·A6",
+      "trangThaiChucNang": "PASS (đi tay app thật 04/09: W+Enter → công cụ Tường → vẽ tường → tải lại tường VẪN CÒN, 'Đã lưu lúc 19:04')",
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "do.json 03-2d: chữ 490 · nút 61 · ảnh 66 · 0 lỗi console",
+      "nguon": "docs/bao-cao-phien/2026-09-05-cham-4-man-design-review.md ⑦ + docs/delivery/G3-BAN-LAM-VIEC-2D-3D.md §E1"
+    },
+    {
+      "ten": "3D (/projects/[id]/render)",
+      "trangThai": "FAIL",
+      "loaiPhan": "thị giác",
+      "chan": "PH-07 watermark 'React Flow' của thư viện hiện trong sản phẩm · PH-08 '0 nút · 0 nối sai'; trượt cổng A1·A6",
+      "trangThaiChucNang": "PARTIAL — xoay và tỉ lệ KHÔNG TỒN TẠI ở khung nhìn (grep TransformControls toàn repo = 0); di chuyển chỉ NHÍCH CỨNG 100mm/lần bấm (Viewport3D.tsx:308 → Render3DModeSkeleton.tsx:415)",
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "do.json 04-3d: chữ 406 · nút 67 · ảnh 62 · 0 lỗi console",
+      "nguon": "docs/bao-cao-phien/2026-09-05-cham-4-man-design-review.md ⑦ + docs/delivery/G3-BAN-LAM-VIEC-2D-3D.md §B·§C"
+    },
+    {
+      "ten": "TRÌNH CHIẾU (/projects/[id]/present)",
+      "trangThai": "FAIL",
+      "loaiPhan": "thị giác",
+      "chan": "PH-01 [H1] canvas trắng trơn, KHÔNG có trạng thái rỗng nào · PH-06 ổ trái nói chắc trong khi thanh trên nói 0 slide; trượt cổng A1·A2·A6",
+      "trangThaiChucNang": "PASS — 'Tạo hồ sơ trống' → trình dàn trang thật (kệ mẫu BÌA 3 · BÌA PHỤ 2 · NỘI DUNG 14, 'Đã lưu lúc 19:13')",
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "do.json 05-trinh-chieu: chữ 61 · nút 20 · ảnh 21 · 0 lỗi console",
+      "nguon": "docs/bao-cao-phien/2026-09-05-cham-4-man-design-review.md ⑦ + docs/delivery/G3-BAN-LAM-VIEC-2D-3D.md §E1"
+    },
+    {
+      "ten": "VẬT LIỆU (/materials)",
+      "trangThai": "FAIL",
+      "loaiPhan": "chức năng + thị giác",
+      "chan": "F1 kho vật liệu có 0 pixel vật liệu (img=0 · canvas=0, ô xem trước 32×32 chứa SVG biểu tượng ảnh-hỏng) · F2 3/3 ô là biểu tượng hỏng · F5 mặt 2D CHẾT trên 100% vật liệu ship sẵn ('2D –' cả hai hạt giống) · F9 matDangCam đặt mà 0 nơi đọc = NÚT GIẢ · F10 khung nhìn 3D không đọc PBR (buildPbrMaterial 0 nơi gọi ngoài material-preview.ts)",
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "đo sống localhost:3277 tài khoản mới tinh: /materials có 3 hàng; do.json 09-vat-lieu: chữ 582 · nút 48 · ảnh 45 · 0 lỗi console",
+      "nguon": "docs/delivery/SPEC-VAT-LIEU-LAT-CAT-DOC.md §0 + §5.1"
+    },
+    {
+      "ten": "THƯ VIỆN (/library + /gallery + /ingest + /knowledge)",
+      "trangThai": "PARTIAL",
+      "chan": "L9 — /library/ingest KHÔNG sinh LibraryAsset (page.tsx:98 chỉ saveManifest xuống IndexedDB); L4/C18 — specId không gắn được khi thả cấu kiện (LibraryDropBridge.tsx:112)",
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "J13/J15 PASS đợt 7; kệ Thư viện qua mắt trên app thật (G6); do.json 11-thu-vien chữ 1391 · 13-nhap-tai-san chữ 907 · 14-kho-tri-thuc chữ 36921 — 0 lỗi console",
+      "nguon": "docs/delivery/KIEM-KE-NANG-LUC.md §15 + docs/delivery/JOURNEY-MATRIX.md §1.4 + docs/delivery/SHIP-BLOCKERS.md G6"
+    },
+    {
+      "ten": "FILES (/files) — hai tầng",
+      "trangThai": "UNVERIFIED",
+      "chan": null,
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "do.json 16-files: chữ 2513 · nút 35 · ảnh 45 · 0 lỗi console",
+      "ghiChu": "NganPhanTho đã cắm sẵn nhưng ĐỌC SAI NGUỒN — chỉ hỏi /api/specs nên máy sạch nói 'Kho chung chưa có món nào'",
+      "nguon": "docs/delivery/KIEM-KE-NANG-LUC.md §11 + docs/delivery/SHIP-BLOCKERS.md G6"
+    },
+    {
+      "ten": "BẢNG VIỆC (/tasks)",
+      "trangThai": "UNVERIFIED",
+      "chan": null,
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "do.json 17-viec: chữ 511 · nút 50 · ảnh 45 · 0 lỗi console (chỉ chứng minh trang dựng lên được)",
+      "nguon": "/tmp/toan-man/do.json + docs/delivery/KIEM-KE-NANG-LUC.md §10"
+    },
+    {
+      "ten": "CÀI ĐẶT (/settings + avatar + about + licenses)",
+      "trangThai": "PARTIAL",
+      "chan": "LockScreenSettings.tsx:22 — gõ 42 → ô hiện 42 → đĩa null → mở lại về 15; giao diện nói dối và KHÔNG một dòng báo (D8, ghi bị nuốt im lặng)",
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "do.json 18-cai-dat chữ 5024 nút 83 · 19-avatar chữ 106 NÚT 0 ẢNH 0 · 20-about chữ 62 · 21-licenses chữ 37609 nút 1 — 0 lỗi console",
+      "nguon": "docs/delivery/SHIP-BLOCKERS.md G1 + docs/delivery/PRODUCT-DEFECTS.md D8 + /tmp/toan-man/do.json"
+    },
+    {
+      "ten": "WORKHUB (/workhub)",
+      "trangThai": "FAIL",
+      "chan": "D2 (P2) — mặt AI THỨ HAI: WorkHubShell.tsx:140 submitMessage() nối câu trả lời GÕ CỨNG, grep 'fetch(' = 0, mà mặt đó TỰ XƯNG LÀ TRỢ LÝ và :150/:195 khẳng định 'đang dùng ngữ cảnh từ…' trong khi 0 dòng đọc pane. Trái chốt 04/09 'trong IF mặt AI là Vitals'. PHẢI GỠ, không phải dựng lại",
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "do.json 22-workhub: chữ 307 · nút 1 · ảnh 0 · 0 lỗi console",
+      "nguon": "docs/delivery/KIEM-KE-NANG-LUC.md §13 + docs/delivery/PRODUCT-DEFECTS.md D2"
+    },
+    {
+      "ten": "SỔ TAY (/projects/[id]/notebook)",
+      "trangThai": "UNVERIFIED",
+      "chan": null,
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "do.json 07-so-tay: chữ 818 · nút 18 · ảnh 10 · 0 lỗi console. KIEM-KE ghi 🟡 (có mã, chưa chứng minh) — lib/notebook/rag.ts, 14 import",
+      "nguon": "docs/delivery/KIEM-KE-NANG-LUC.md §13"
+    },
+    {
+      "ten": "TỔNG QUAN DỰ ÁN (/projects/[id]/overview)",
+      "trangThai": "UNVERIFIED",
+      "chan": null,
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "do.json 06: chữ 555 · nút 51 · ảnh 52 · 0 lỗi console; KIEM-KE 🟡",
+      "nguon": "docs/delivery/KIEM-KE-NANG-LUC.md §13"
+    },
+    {
+      "ten": "ẢNH DỰ ÁN (/projects/[id]/photo)",
+      "trangThai": "UNVERIFIED",
+      "chan": null,
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "do.json 08: chữ 441 · nút 27 · ảnh 24 · 0 lỗi console; KIEM-KE 🟡. G1 ghi 'photo là màn CHƯA TỪNG ĐO và nó ❌ trước vá'",
+      "nguon": "docs/delivery/KIEM-KE-NANG-LUC.md §13 + docs/delivery/SHIP-BLOCKERS.md G1"
+    },
+    {
+      "ten": "CẢM HỨNG (/inspiration)",
+      "trangThai": "PASS",
+      "chan": null,
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "J13 PASS — đường /inspiration → POST /api/library là đường THẬT sinh LibraryAsset + byte đĩa; do.json 15: chữ 314 · 0 lỗi console",
+      "nguon": "docs/delivery/KIEM-KE-NANG-LUC.md §13 + docs/delivery/JOURNEY-MATRIX.md §1.4"
+    },
+    {
+      "ten": "MÀU (/colors)",
+      "trangThai": "PASS",
+      "chan": null,
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "do.json 10-mau: 'ĐI TRẬT → /' — khớp chốt 16/08 'màu là một BƯỚC trong vật liệu, thôi là trang'",
+      "nguon": "/tmp/toan-man/do.json + docs/delivery/KIEM-KE-NANG-LUC.md §13"
+    },
+    {
+      "ten": "REDIRECT route cũ (/cad-editor · /present-editor · /photo-editor)",
+      "trangThai": "PASS",
+      "chan": null,
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "do.json 23·24·25 đều 'ĐI TRẬT → /projects/<id>/…'; J23 PASS — bookmark cũ về đúng dự án, không loé Home",
+      "nguon": "/tmp/toan-man/do.json + docs/delivery/KIEM-KE-NANG-LUC.md §13"
+    },
+    {
+      "ten": "SỔ DỰ ÁN (/projects)",
+      "trangThai": "UNVERIFIED",
+      "chan": null,
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "do.json 02-du-an: chữ 671 · nút 55 · ảnh 54 · 0 lỗi console; KIEM-KE ghi 🟢 sổ dự án toàn cục (chốt 22/08)",
+      "nguon": "docs/delivery/KIEM-KE-NANG-LUC.md §13"
+    },
+    {
+      "ten": "BẢN XEM THỬ CLOUD (Vercel)",
+      "trangThai": "FAIL",
+      "chan": "Mọi route chạm CSDL trả 500 — prisma provider sqlite, dev.db KHÔNG được git theo dõi, vercel.json buildCommand không chạy migrate deploy. Bấm 'Vào xưởng' → HTTP 500",
+      "kiemLanCuoi": "2026-09-05",
+      "bangChungDung": "cùng mã chạy local có DB: POST /api/auth/login → 401 (đúng); trên Vercel → 500",
+      "ghiChu": "KHÔNG phải bug — là bản chất local-first. GẠCH BỎ đường 'xem preview không cần cài gì' làm cửa nghiệm thu mắt",
+      "nguon": "docs/delivery/SHIP-BLOCKERS.md §05/09 bản xem thử cloud"
+    }
+  ],
+
+  "moat": [
+    {
+      "truc": "SEMANTIC IDENTITY — định danh sống xuyên bề mặt",
+      "trangThai": "PASS",
+      "hanhTrinhChung": "K2 (elementType · storey · cờ suy đoán) 3/3 · K3 (2D→3D cùng một mã) 5/5 (trước vá 3/5)",
+      "so": "nhóm 3D mang entityId 3/3 · mang specId 3/3 · mã lạ = 0 · vật liệu lạ = 0 · specId === matId trên 100% dòng BOQ (lib/boq/model.ts:53)",
+      "nguon": "docs/delivery/G4-MOAT-SLICE.md §1 + §3①"
+    },
+    {
+      "truc": "PROVENANCE — gia phả truy ngược",
+      "trangThai": "PASS",
+      "hanhTrinhChung": "BoqRow.entityIds → entity → srcBlock/srcInsertId → specId → ProductSpec",
+      "so": "sau lưu→mở lại: mất = 0 trên srcBlock, srcInsertId, specId, elementType, storey, recipe",
+      "nguon": "docs/delivery/G4-MOAT-SLICE.md §3②"
+    },
+    {
+      "truc": "DOWNSTREAM IMPACT — máy đề xuất, người quyết",
+      "trangThai": "PASS",
+      "hanhTrinhChung": "K8 7/7 (trước vá 6/7)",
+      "so": "inspectMaterialImpact trình bảng TRƯỚC khi đổi; KHÔNG đường tự áp; Doc cũ không sửa tại chỗ; vân tay Doc đổi c293e2a5:2b → 4dc1e07b:2c ⇒ isBoqAppendixStale = true",
+      "canhBao": "Trừ 3D — xem Đ1",
+      "nguon": "docs/delivery/G4-MOAT-SLICE.md §3③"
+    },
+    {
+      "truc": "PERSISTENCE — đóng app rồi mở lại còn nguyên mấy phần trăm",
+      "trangThai": "PARTIAL",
+      "hanhTrinhChung": "K9 17/19",
+      "so": "14/16 = 87,5% — .idf 8/8 · IndexedDB 2/2 · .idfc 4/6. Hai chỗ trượt ở .idfc chính là Đ2 và Đ3",
+      "nguon": "docs/delivery/G4-MOAT-SLICE.md §3④"
+    },
+    {
+      "truc": "Đ1 — vật liệu gán cho MẶT SÀN tới được 3D",
+      "trangThai": "PASS",
+      "hanhTrinhChung": "K10 đường lùi 3/3 (khâu mới 04/09)",
+      "so": "đã đóng 04/09. Bệnh án: mats.floor từng là MÀU THEME gõ cứng #c7c3bb (cad-to-obj.ts:241); 2D đã đọc slab (plan-present.ts:579-581) trong khi grep \"'slab'\" trong cad-to-obj.ts = 0",
+      "nguon": "docs/delivery/G4-MOAT-SLICE.md §2 Đ1 + docs/delivery/SHIP-BLOCKERS.md bệnh án"
+    },
+    {
+      "truc": "Đ2 — .idfc nối về thương mại bằng khoá BẤT BIẾN",
+      "trangThai": "PARTIAL",
+      "hanhTrinhChung": ".idfc → cột thông số Thư viện → BOQ",
+      "so": "G4-MOAT-SLICE §2 đo: commerce có specId = FALSE, chỉ có sku='SOFA-3S'; sku là khoá ĐỔI ĐƯỢC (matid-identity.ts:5-8 'mutable OK'). §5 ghi 'chưa làm ở phiên này'. Mục 05/09 CÙNG TỆP ghi resolveIdfcCommerceToSpec ĐÃ CẮM ĐIỆN; SHIP-BLOCKERS G4 ghi ngược lại '0 nơi gọi trong sản phẩm' — xem mauThuan M-08",
+      "nguon": "docs/delivery/G4-MOAT-SLICE.md §2 Đ2 + §5 + §05/09; docs/delivery/SHIP-BLOCKERS.md G4"
+    },
+    {
+      "truc": "Đ3 — BuildRecipe đi cùng cấu kiện khi vào kho studio",
+      "trangThai": "FAIL",
+      "hanhTrinhChung": "dự án → kho studio (.idfc)",
+      "so": "chữ 'recipe' trong lib/cad/idfc.ts = 0 dòng. IdfcBody nhánh component (idfc.ts:171) có geom2d · geom3d? · params? — KHÔNG chỗ nào chứa BuildRecipe. Recipe sống tốt qua .idf (mất=0) ⇒ đứt ĐÚNG ở biên giới dự án → kho studio",
+      "nguon": "docs/delivery/G4-MOAT-SLICE.md §2 Đ3"
+    },
+    {
+      "truc": "MATERIAL — một vật liệu, ba mặt (2D · 3D · thương mại)",
+      "trangThai": "FAIL",
+      "hanhTrinhChung": "K5 (một mã vật liệu → ba mặt) khai 3/3 ở tầng dữ liệu, nhưng đo sống trên /materials thì mặt 2D CHẾT",
+      "so": "grep -c 'matId:' lib/cad/materials.ts = 0 (13 preset, 0 khai mã); defsHatGiong() KHÔNG TỒN TẠI trong khi pbrMapHatGiong() và hangHatGiong() đã có. Chỉ báo ba mặt đọc sống: '2D – · 3D ✓ · Giá !' cho CẢ HAI hạt giống",
+      "nguon": "docs/delivery/SPEC-VAT-LIEU-LAT-CAT-DOC.md §0 + docs/delivery/G4-MOAT-SLICE.md §1 K5"
+    },
+    {
+      "truc": "LÁT CẮT DỌC MOAT — cổng chặn việc nhân nội dung",
+      "trangThai": "PARTIAL",
+      "hanhTrinhChung": "Thư viện → 2D → ĐỊNH DANH NGỮ NGHĨA → 3D BuildRecipe → Vật liệu → BOQ/Spec → Trình bày → lưu → ĐÓNG → mở lại → gia phả + định danh CÒN NGUYÊN",
+      "so": "bộ moat 63/63 → 65/65 (62 bằng chứng sản phẩm + 3 tiền đề). Tầng UI 13/13 sau khi ĐÓNG HẲN trình duyệt (hình #b98a54→#5a3a26 · danh tính ps-kiem-go-soi→ps-kiem-go-ocho · BOQ 68.817.600), hiệu chuẩn gỡ dây thật 5/13 ↔ 13/13",
+      "conThieu": "① CHƯA QUA MẮT HOÀ (nút cổ chai thật) ② Đ2/Đ3 chưa đóng ⇒ chưa được nhân nội dung",
+      "nguon": "docs/delivery/SHIP-BLOCKERS.md G4 + LÁT CẮT DỌC MOAT"
+    }
+  ],
+
+  "phatHanh": {
+    "dinhNghiaBonNac": {
+      "BUILT": "next build / electron-builder chạy xong, rc=0",
+      "PACKAGED": "ra tệp cài đặt (.dmg / .exe / .AppImage)",
+      "INSTALLED": "mở được gói đã đóng trên máy đích, app chạy",
+      "REAL-MACHINE VERIFIED": "đi hết mạch nghề trên máy thật, có bằng chứng"
+    },
+    "macos": {
+      "vaiTro": "ĐÍCH CHÍNH — trải nghiệm desktop chính (chủ dự án dùng hằng ngày)",
+      "BUILT": "UNVERIFIED",
+      "PACKAGED": "UNVERIFIED",
+      "INSTALLED": "UNVERIFIED",
+      "REAL-MACHINE VERIFIED": "UNVERIFIED",
+      "kienTruc": "arm64 duy nhất — chủ dự án xác nhận CẢ HAI máy Mac đều Apple Silicon; KHÔNG thêm x64, KHÔNG universal",
+      "bangChung": "docs/delivery/G7-NGHIEM-THU-MAC.md tự khai: 'TOÀN BỘ TỆP NÀY CHƯA TỪNG CHẠY'. Soạn trong container Linux — không dựng được bản macOS, không mở được app Mac, không ký được",
+      "canhBaoDaBiet": [
+        "T3 icon Dock nhiều khả năng TRƯỢT — electron/icons/icon.png là 1024×1024 8-bit RGB, KHÔNG có kênh alpha; macOS đòi RGBA ⇒ đọc ra ô vuông đặc",
+        "T7 Vitals nhiều khả năng TRƯỢT — panel Vitals mồ côi, ⌘J đăng ký ở nơi không còn được mount (xem mauThuan M-06)",
+        "T9 phím ⌘ — metaKey 54 · ctrlKey 68 · cùng dòng 51 ⇒ ~17 chỗ CHỈ nhận Ctrl; trên Mac bấm ⌘ không ăn. Cách sửa đã chốt: một nguồn chung PrimaryModifier, CẤM vá 17 chỗ rời",
+        "T9 ⌃⌘Q là khoá màn của IF, cũng là khoá màn của macOS ⇒ macOS nhiều khả năng nuốt trước",
+        "M3 identity: null trong package.json build.mac — tắt hẳn ký số. Gatekeeper trên máy khác có thể chặn; điều kiện quyết định là T11 (máy B)"
+      ],
+      "kySo": {
+        "trangThai": "SẴN SÀNG, CHƯA PHẢI CỔNG CHẶN",
+        "daChuanBi": "electron/entitlements.mac.plist (4 quyền có lý do) · entitlements.mac.inherit.plist · hardenedRuntime true · gatekeeperAssess false · release:preflight chặn nếu ai gỡ hardenedRuntime/entitlements hoặc đưa identity:null quay lại",
+        "dieuKienThanhBlocker": "chỉ khi T11 (máy B) KHÔNG có đường nào mở được — phải có BẰNG CHỨNG, cấm giả định trước"
+      },
+      "goCai": {
+        "trangThai": "PASS theo lý thuyết, UNVERIFIED thực nghiệm",
+        "bangChung": "macOS không có trình gỡ cài; kéo .app vào Thùng rác chỉ xoá gói ứng dụng, ~/Library/Application Support/… KHÔNG bị đụng. Rủi ro NGƯỢC LẠI: không có đường nào trong app để xoá sạch có chủ ý — CHƯA CÓ",
+        "phepDoChuaLam": "M1 — dùng app → kéo vào Thùng rác → cài lại → mở: dự án còn nguyên"
+      },
+      "nguon": "docs/delivery/G7-NGHIEM-THU-MAC.md + docs/delivery/G5-RELEASE-READINESS.md §B1·M2·M3 + docs/delivery/SHIP-BLOCKERS.md 🍎 G7"
+    },
+    "windows": {
+      "vaiTro": "đích phân phối công ty",
+      "BUILT": "UNVERIFIED",
+      "PACKAGED": "UNVERIFIED",
+      "INSTALLED": "UNVERIFIED",
+      "REAL-MACHINE VERIFIED": "UNVERIFIED",
+      "kienTruc": "nsis x64 (package.json build.win)",
+      "bangChung": "npm run electron:build = next build && electron-builder --win --x64 nhưng CHƯA AI DỰNG/ MỞ bản Windows thật. Cổng 7 (mở app đã đóng gói) = ⬜ không có máy kiểm nào",
+      "goCai": {
+        "trangThai": "PASS theo đọc mã, UNVERIFIED thực nghiệm",
+        "bangChung": "uninstaller.nsh:214 lệnh xoá dữ liệu chỉ chạy trong nhánh $isDeleteAppData == '1'; NsisTarget.js:435-437 chỉ định nghĩa khi options.deleteAppDataOnUninstall; 04/09 đã ghi TƯỜNG MINH deleteAppDataOnUninstall: false. Nâng cấp đè an toàn HAI LỚP (installUtil.nsh:204-206)",
+        "chuaChac": "installUtil.nsh:202 ${if} ${isDeleteAppData} — grep toàn app-builder-lib thì định danh isDeleteAppData KHÔNG được định nghĩa ở đâu khác ⇒ chưa khẳng định được nó luôn sai",
+        "phepDoChuaLam": ["W1 — cài → tạo dự án → gỡ qua Cài đặt › Ứng dụng → %APPDATA% còn dev.db nguyên cỡ", "W2 — cài bản cũ → tạo dự án → cài đè bản mới → dự án còn + có backups/<mốc>-before-<bản cũ>"]
+      },
+      "nguon": "docs/delivery/G5-RELEASE-READINESS.md §B3 cổng 6-7 + M2 + docs/delivery/G7-NGHIEM-THU-MAC.md phụ lục"
+    },
+    "linux": {
+      "vaiTro": "KHÔNG nằm trong build targets (chỉ có win · mac) — dựng để kiểm cấu hình, KHÔNG phải sản phẩm giao được",
+      "BUILT": "PASS",
+      "PACKAGED": "PASS",
+      "INSTALLED": "PASS",
+      "REAL-MACHINE VERIFIED": "UNVERIFIED",
+      "bangChung": "05/09 mở gói bằng Xvfb: electron-builder --linux dir dựng xong · gói có .next/BUILD_ID · engine Prisma gốc · mở gói sống 90s không sập · tự spawn next start cổng 3777 HTTP 200 sau ~6s · /api/auth/me trả {\"user\":null,\"reason\":\"anonymous\"} · /api/auth/login sai mật khẩu trả 401 (KHÔNG phải 500) ⇒ CSDL sống trong gói",
+      "ketQuaNangKyNhat": "MÁY SẠCH TỰ DỰNG CSDL — /root/.config/interiorflow/dev.db 413.696 byte · 6/6 migration chạy XONG · 24/24 bảng dựng đủ ⇒ nỗi lo M1 ('người dùng phải chạy tay prisma db push') CHẾT bằng bằng chứng",
+      "soDo": "AppImage 338 MB (~3 phút, rc=0) · linux-unpacked 1,2 GB · next build 116s · .next 823 MB trên đĩa nhưng vào gói chỉ 46 MB",
+      "nguon": "docs/delivery/SHIP-BLOCKERS.md §05/09 LẦN ĐẦU MỘT GÓI ĐƯỢC MỞ + docs/delivery/G5-RELEASE-READINESS.md §B6 cổng 6"
+    },
+    "bangCong21": {
+      "kin": "cổng 1-5 (checkout · npm ci · dựng môi trường · migrate deploy · build) — có CI canh",
+      "trong": "cổng 6-7 (đóng gói + mở bộ cài) — cổng 6 đã chạy TAY một lần trên Linux 04-05/09; cổng 7 trên Windows/macOS VẪN TRỐNG",
+      "yeu": "cổng 8-21 phần lớn dựa vào test đơn vị và ảnh chụp ⇒ kiểm được MÃ, chưa kiểm được SẢN PHẨM",
+      "loLonNhat": "chỗ đứt giữa cổng 5 và cổng 6 — mọi thứ kiểm trên ubuntu-latest bằng next build, trong khi thứ giao cho người dùng là bộ cài Windows/macOS chưa ai dựng thử",
+      "nguon": "docs/delivery/G5-RELEASE-READINESS.md §B3"
+    },
+    "noChatLuongPhatHanh": [
+      { "van_de": "asar: false — electron-builder cảnh báo 'strongly not recommended'", "soDo": "mã nguồn nằm trần trong gói; cảnh báo xuất hiện 2 lần; là CHỦ Ý của IF (Prisma + next start cần đọc tệp thật)" },
+      { "van_de": "Gói 1,2 GB chưa nén", "soDo": ".dmg sẽ rất nặng, cài lâu" },
+      { "van_de": "node_modules/@next", "soDo": "275 MB — binary SWC cho MỌI nền, chỉ cần một" },
+      { "van_de": "node_modules/prisma + @prisma", "soDo": "201 MB — gồm engine postgres/cockroach/mysql mà IF không dùng" },
+      { "van_de": "Engine Prisma nhân bản", "soDo": "7 tệp / 109 MB, cùng engine nằm 2-3 chỗ; extraResources chép nguyên node_modules/.prisma ĐỘC LẬP với bộ lọc files ⇒ thứ bị loại cửa trước vào bằng cửa sau. CHƯA SỬA, cố ý" }
+    ],
+    "chuaXacMinh": [
+      "M4 vòng đời hỗ trợ Electron 33.4.11 — môi trường không ra được mạng, KHÔNG xác minh được dòng nào đang được hỗ trợ tại 09/2026",
+      "M1 đo trên SQLite/Linux; đường dẫn Windows kiểu file:C:\\… cho migrate diff --from-url chưa chạy thử trên Windows thật",
+      "M5 mới kiểm MỘT nhánh — nhánh 'secret cũ đọc được, chỉ ghi hỏng' chưa dựng được ca thử",
+      "Tên thư mục userData chưa chắc: package.json không có productName ở mức trên cùng; macOS lấy theo Info.plist, Windows lấy theo package.json ⇒ hai nền có thể ra hai tên khác nhau. Chú thích main.js:119 ghi %APPDATA%/InteriorFlow — CÓ THỂ SAI"
+    ]
+  },
+
+  "chan": [
+    {
+      "ma": "B1 / D1",
+      "mucDo": "P0",
+      "cong": "G1",
+      "ten": "Mất dữ liệu âm thầm khi vào thẳng deep-link",
+      "anhHuongNguoiDung": "Người dùng đã đăng nhập mở thẳng route studio (tab mới · bookmark · F5), làm việc, và việc KHÔNG được lưu. Không báo lỗi, không dấu hiệu nào",
+      "canChuDuAn": false,
+      "trangThai": "PARTIAL — SHIP-BLOCKERS ghi 'SỬA XONG-MÁY, CHỜ APP THẬT'; PRODUCT-DEFECTS ghi '🔵 đang sửa'; nhưng J16 + G1 CA1 đã PASS TRÊN APP THẬT 04/09 (xem mauThuan M-04)",
+      "bangChung": "trước patch 0 lần ghi → sau patch 3 lần ghi đúng khoá (CadSheets · PresentSheets · autosave 3D dùng CHUNG khoá); 401 thật vẫn 0 lần ghi",
+      "nguon": "docs/delivery/SHIP-BLOCKERS.md ĐANG CHẶN B1 + docs/delivery/PRODUCT-DEFECTS.md D1 + docs/delivery/JOURNEY-MATRIX.md J16"
+    },
+    {
+      "ma": "B2",
+      "mucDo": "P2",
+      "cong": "G5",
+      "ten": "Home chưa có hướng được duyệt mắt",
+      "anhHuongNguoiDung": "Bề mặt lớn nhất của sản phẩm chưa đạt Product Complete",
+      "canChuDuAn": true,
+      "trangThai": "ĐANG LÀM (làn B) — Lô #1 tấm 1 TRƯỢT; 3 nghiên cứu bố cục A/B/C đã dựng, 0 dòng mã, CHỜ HOÀ CHỌN",
+      "bangChung": "docs/delivery/HOME-NGHIEN-CUU-BO-CUC.md · anh-duyet-mat/lo-02-home-nc/ (6 ảnh 1600×900, hai nền) · mocks/mock-home-nc-{A,B,C}-*.html",
+      "nguon": "docs/delivery/SHIP-BLOCKERS.md ĐANG CHẶN + docs/delivery/VISUAL-APPROVAL-QUEUE.md §A2·§A3"
+    },
+    {
+      "ma": "B3",
+      "mucDo": "P2",
+      "cong": "G5",
+      "ten": "Khẩu độ Vitals — ảnh app thật đã sẵn, chưa được phán",
+      "anhHuongNguoiDung": "Mặt AI chính thức của IF chưa có hình dạng được duyệt",
+      "canChuDuAn": true,
+      "trangThai": "chờ mắt Hoà — tấm 2 của Lô #1 CHƯA PHÁN",
+      "bangChung": "anh-duyet-mat/lo-01/vitals-*.png (03:19), app thật sau bản sửa 51d4a0d9",
+      "nguon": "docs/delivery/SHIP-BLOCKERS.md ĐANG CHẶN + docs/delivery/VISUAL-APPROVAL-QUEUE.md CỬA ĐANG MỞ"
+    },
+    {
+      "ma": "B4",
+      "mucDo": "P3",
+      "cong": "G5",
+      "ten": "Đường phát hành .idf/.idfc sinh từ máy sạch chưa chạy lại sau khi thu 11 slice",
+      "anhHuongNguoiDung": "chưa xác định",
+      "canChuDuAn": false,
+      "trangThai": "⬜ chưa mở",
+      "nguon": "docs/delivery/SHIP-BLOCKERS.md ĐANG CHẶN"
+    },
+    {
+      "ma": "D2",
+      "mucDo": "P2",
+      "cong": "G6",
+      "ten": "WorkHub có mặt AI thứ hai, và nó nói dối việc nó vừa làm",
+      "anhHuongNguoiDung": "Nút NÓI DỐI tệ hơn nút CHẾT — người dùng tin app đang đọc ngữ cảnh cửa sổ trong khi 0 dòng nào đọc",
+      "canChuDuAn": false,
+      "trangThai": "⬜ chưa mở phiếu — KHÔNG chặn ship (WorkHub ngoài luồng nghề lõi)",
+      "bangChung": "WorkHubShell.tsx:140 · grep 'fetch(' = 0 · :150/:195 khẳng định 'đang dùng ngữ cảnh từ…'",
+      "nguon": "docs/delivery/PRODUCT-DEFECTS.md D2"
+    },
+    {
+      "ma": "D3",
+      "mucDo": "P1",
+      "cong": "G1",
+      "ten": "Đệm định danh không được rửa khi đăng xuất",
+      "anhHuongNguoiDung": "Tab cũ của A có thể ghi vào bucket của A sau khi B đã đăng nhập — rò dữ liệu chéo người dùng",
+      "canChuDuAn": false,
+      "trangThai": "⬜ chưa mở phiếu — KHÔNG chặn bản một-người-một-máy, PHẢI đóng trước khi có studio nhiều người dùng chung máy",
+      "bangChung": "4 nút đăng xuất (AccountSettings:54 · AccountMenu:137 · MobileMenu:160 · PixelSettingsShell:191) chỉ xoá cookie + setUser(null), không chỗ nào xoá lastUserId; danh-tinh-phien.ts:82-83",
+      "nguon": "docs/delivery/PRODUCT-DEFECTS.md D3 + docs/delivery/JOURNEY-MATRIX.md J03"
+    },
+    {
+      "ma": "D4",
+      "mucDo": "P4",
+      "cong": "G1",
+      "ten": "Nhiều nơi độc lập cùng gọi /api/auth/me",
+      "anhHuongNguoiDung": "mỗi nơi tự diễn giải 401/503 theo kiểu riêng",
+      "canChuDuAn": false,
+      "trangThai": "không chặn ship; gom khi mở phiếu phiên đăng nhập. G1 05/09 đính chính: cơ chế định danh là BA chứ không phải NĂM (4/5 chỗ gọi là DELETE đăng xuất, một chỗ vứt kết quả); đã gỡ 1 đường thừa (PresentStageScreen), giữ 4 có lý do",
+      "nguon": "docs/delivery/PRODUCT-DEFECTS.md D4 + docs/delivery/SHIP-BLOCKERS.md G1"
+    },
+    {
+      "ma": "D5",
+      "mucDo": "P1",
+      "cong": "G5",
+      "ten": "Hồ sơ xuất cho khách in ra chữ mặc định 'Nhập nội dung'",
+      "anhHuongNguoiDung": "KTS thêm ô chữ, quên điền, xuất gửi khách ⇒ hồ sơ khách có chữ 'Nhập nội dung'. Đường xuất KHÔNG lọc placeholder, cũng không cảnh báo",
+      "canChuDuAn": false,
+      "trangThai": "🟡 khai, hướng sửa đã chốt CHƯA LÀM — chặn ở CỬA XUẤT (export-checks, đã có marker CHUAN_DAU_RA), KHÔNG đổi giá trị mặc định",
+      "bangChung": "lib/present-editor/model.ts:654 makeText(); grep 'Nhập nội dung' ngoài model.ts = 0 ⇒ không nơi nào lọc, không nơi nào cảnh báo; anh-duyet-mat/g2-hanh-trinh/J20-deck-xuat.pdf",
+      "nguon": "docs/delivery/PRODUCT-DEFECTS.md D5 + docs/delivery/JOURNEY-MATRIX.md §1.6b F1"
+    },
+    {
+      "ma": "D5b",
+      "mucDo": "P2",
+      "cong": "G5",
+      "ten": "PDF deck của IF là ẢNH, không phải văn bản",
+      "anhHuongNguoiDung": "không tìm chữ được, không chọn chữ được, TRỢ NĂNG BẰNG 0",
+      "canChuDuAn": true,
+      "trangThai": "cố ý theo thiết kế WYSIWYG — phải KHAI THẲNG, chưa chặn ship",
+      "nguon": "docs/delivery/PRODUCT-DEFECTS.md D5b"
+    },
+    {
+      "ma": "D5c",
+      "mucDo": "P2",
+      "cong": "G5",
+      "ten": "PDF deck 72 dpi (khổ 2560×1440pt, ảnh 2560×1440px)",
+      "anhHuongNguoiDung": "Trái LUAT-300DPI cho sản phẩm giao khách",
+      "canChuDuAn": true,
+      "trangThai": "đường in 300 dpi là hàm RIÊNG (exportDeckToPdfAtPaperSize), CHƯA hành trình nào chạm",
+      "nguon": "docs/delivery/PRODUCT-DEFECTS.md D5c"
+    },
+    {
+      "ma": "D6",
+      "mucDo": "P1",
+      "cong": "G2",
+      "ten": "Resume ghi thiếu flowId khi vào thẳng route studio ⇒ thẻ Resume dội về Home",
+      "anhHuongNguoiDung": "vào lại app không quay về được việc đang dở",
+      "canChuDuAn": false,
+      "trangThai": "✅ ĐÃ SỬA + ĐÃ TÁI HIỆN 04/09 (lane 01 CORE); 4 thế giới đối chứng",
+      "nguon": "docs/delivery/PRODUCT-DEFECTS.md D6 + JOURNEY-MATRIX J16b"
+    },
+    {
+      "ma": "D7",
+      "mucDo": "P1",
+      "cong": "G2",
+      "ten": "Bookmark route cũ dội về Home (đường ĐỌC, khác D6 là đường GHI)",
+      "anhHuongNguoiDung": "J16b xanh trong khi người dùng vẫn không vào được việc của mình",
+      "canChuDuAn": false,
+      "trangThai": "✅ ĐÃ SỬA 04/09, tái hiện có đối chứng trước khi sửa; J23 PASS",
+      "nguon": "docs/delivery/PRODUCT-DEFECTS.md D7"
+    },
+    {
+      "ma": "D8",
+      "mucDo": "P2",
+      "cong": "G1",
+      "ten": "Đọc định danh ở THÂN RENDER không có gì kích lại",
+      "anhHuongNguoiDung": "Chặng 2D: mọi chỗ đọc thân-render nhận null lượt đầu. Ca rõ nhất LockScreenSettings.tsx:22 — gõ 42 → ô hiện 42 → đĩa null → mở lại về 15; GHI BỊ NUỐT IM LẶNG",
+      "canChuDuAn": false,
+      "trangThai": "🟡 khai, chưa sửa (vá đúng = hợp nhất hai cơ chế định danh, chạm lib/store.ts + Trình chiếu, là thay đổi KIẾN TRÚC). G1 05/09 ghi D8 đã vá: trước 2/5 màn có store.user, sau 5/5 — xem mauThuan M-09",
+      "bangChung": "do-dinh-danh-sau-mount.mjs: /cad bộ đệm gieo lúc 2.654ms nhưng useFlowStore.user KHÔNG BAO GIỜ được đặt (hết 17s vẫn null); /present lành lúc 12.593ms nhờ PresentStageScreen.tsx:61 có cơ chế định danh THỨ HAI",
+      "nguon": "docs/delivery/PRODUCT-DEFECTS.md D8 + docs/delivery/SHIP-BLOCKERS.md G1"
+    },
+    {
+      "ma": "G1-CA3",
+      "mucDo": "P1",
+      "cong": "G1",
+      "ten": "localStorage chặn hẳn (đọc cũng ném) ⇒ app CHẾT HẲN",
+      "anhHuongNguoiDung": "0 canvas · 0 nút · 0 ký tự · 1081 lỗi chưa bắt",
+      "canChuDuAn": false,
+      "trangThai": "❌ FAIL — ca đỏ DUY NHẤT giữ cổng G1 chưa đóng được. KHÔNG phải lỗi an toàn dữ liệu (0 khoá mơ hồ, 0 ghi nhờ kho người khác); nằm NGOÀI bản vá P0, ở hai tệp không thuộc phạm vi ghi của làn 01",
+      "nguon": "docs/delivery/G1-DATA-SAFE-ACCEPTANCE.md §4 CA3 + §4.1"
+    },
+    {
+      "ma": "C18 / L4",
+      "mucDo": "P1",
+      "cong": "G4/G6",
+      "ten": "Thả cấu kiện .idfc từ Thư viện vào bản vẽ — specId KHÔNG gắn được",
+      "anhHuongNguoiDung": "cấu kiện ra NÉT RỜI, không bao giờ lên BOQ, VÀ BOQ CŨNG KHÔNG BÁO LỖI",
+      "canChuDuAn": false,
+      "trangThai": "🔴 LỖ CHẶN đang mở — LibraryDropBridge.tsx:112",
+      "nguon": "docs/delivery/KIEM-KE-NANG-LUC.md §15 + JOURNEY-MATRIX J14 + docs/delivery/SPEC-VAT-LIEU-LAT-CAT-DOC.md §4.1"
+    },
+    {
+      "ma": "L9",
+      "mucDo": "P1",
+      "cong": "G5",
+      "ten": "/library/ingest không sinh LibraryAsset, không đặt byte nào lên đĩa",
+      "anhHuongNguoiDung": "Nhập tài sản qua đường ingest thì tài sản chỉ nằm trong IndexedDB của trình duyệt",
+      "canChuDuAn": false,
+      "trangThai": "🔴 lỗ chặn — app/library/ingest/page.tsx:98 chỉ saveManifest; grep '/api/library' trong tệp = 0",
+      "nguon": "docs/delivery/KIEM-KE-NANG-LUC.md §15 + JOURNEY-MATRIX J13"
+    },
+    {
+      "ma": "S12",
+      "mucDo": "P3",
+      "cong": "G6",
+      "ten": "5 provider tích hợp mồ côi (lark-write · google · zalo · zoom · team)",
+      "anhHuongNguoiDung": "năng lực đã xây, không đường nào gọi",
+      "canChuDuAn": false,
+      "trangThai": "🔴 dây chưa cắm — lib/integrations/providers/, 177 dòng",
+      "nguon": "docs/delivery/KIEM-KE-NANG-LUC.md §14.1 + §15"
+    },
+    {
+      "ma": "MAT-F1..F5",
+      "mucDo": "P1",
+      "cong": "G6",
+      "ten": "Kho vật liệu: 0 pixel vật liệu · mặt 2D chết 100% · 3D không đọc PBR · nút giả matDangCam",
+      "anhHuongNguoiDung": "Màn duy nhất có nhiệm vụ BÀY vật liệu đang bày một dòng bản ghi CSDL (trái N-5); bấm ô vật liệu ở panel 3D KHÔNG CÓ GÌ XẢY RA và không dòng nào nói vì sao; đổi vật liệu ở 3D đổi được MÀU, không đổi được VẬT LIỆU",
+      "canChuDuAn": false,
+      "trangThai": "🔴 mở — lát cắt dọc đã có spec đủ để build (SPEC-VAT-LIEU-LAT-CAT-DOC §5)",
+      "bangChung": "F1 img+canvas=0 · F2 3/3 ô ImageIcon · F3 32px (sàn 80px) · F5 '2D –' cả hai hạt giống · F9 grep matDangCam = ĐÚNG 2 dòng cả hai ở Render3DModeSkeleton.tsx:86, 0 nơi đọc · F10 grep buildPbrMaterial = chỉ material-preview.ts; Scene3DViewer.tsx:478,491 gõ cứng MeshStandardMaterial",
+      "nguon": "docs/delivery/SPEC-VAT-LIEU-LAT-CAT-DOC.md §0.3·§5.1"
+    },
+    {
+      "ma": "3D-TRANSFORM",
+      "mucDo": "P1",
+      "cong": "G3",
+      "ten": "Xoay và tỉ lệ trong 3D KHÔNG TỒN TẠI; di chuyển chỉ nhích cứng 100mm",
+      "anhHuongNguoiDung": "Dựng được khối nhưng KHÔNG XOAY ĐƯỢC NÓ; muốn dời 250mm không có cách nào, muốn dời 3m phải bấm 30 lần. Chặn việc bày đồ nội thất — đúng phần IF nhận là điểm nhấn",
+      "canChuDuAn": false,
+      "trangThai": "🔴 mở — grep TransformControls toàn repo = 0; 'gizmo' hiện tại là ba nút SVG role=button onPointerDown nhích trục (Viewport3D.tsx:308)",
+      "nguon": "docs/delivery/G3-BAN-LAM-VIEC-2D-3D.md §B + §C mục 1-2"
+    },
+    {
+      "ma": "2D-ALIGN",
+      "mucDo": "P2",
+      "cong": "G3",
+      "ten": "2D thiếu canh hàng (align) và nhóm cấp entity",
+      "anhHuongNguoiDung": "canh bằng mắt hoặc gõ toạ độ tay khi bày mặt bằng",
+      "canChuDuAn": false,
+      "trangThai": "🔴 mở — grep -i align lib/commands/registry.ts = 0 giữa 56 lệnh có cả fillet/chamfer/divide. Rẻ: đã có translateEntity + bounding box + undo snapshot",
+      "nguon": "docs/delivery/G3-BAN-LAM-VIEC-2D-3D.md §A + §C mục 5"
+    },
+    {
+      "ma": "LOGIN-DOI",
+      "mucDo": "P2",
+      "cong": "G3",
+      "ten": "Hai bản LoginScreen cùng tồn tại và đã phân kỳ",
+      "anhHuongNguoiDung": "sửa màn đăng nhập ở bản sai là mất công mà không ai thấy đổi",
+      "canChuDuAn": false,
+      "trangThai": "🔴 mở — components/LoginScreen.tsx (12.104 byte) MỒ CÔI; bản sống là components/entry/LoginScreen.tsx (8.874 byte). Kéo theo StageSelect.tsx · entry/StackedCards.tsx · entry/cardFaces.tsx",
+      "nguon": "docs/delivery/G3-BAN-LAM-VIEC-2D-3D.md §C mục 3 + docs/delivery/KIEM-KE-NANG-LUC.md §14.2"
+    },
+    {
+      "ma": "MAT-TIEN-13.5",
+      "mucDo": "P2",
+      "cong": "G6",
+      "ten": "13,5% việc khai 'xong' không tới được người dùng",
+      "anhHuongNguoiDung": "7/52 năng lực khai xong nhưng không mặt tiền sống nào gọi tới; SÁU trong bảy mang vai ⭐MVP; NĂM trong bảy là MỘT HÒN ĐẢO (chuan-net ↔ part-lock ↔ surface-graph ↔ from-photo)",
+      "canChuDuAn": true,
+      "trangThai": "🔴 đo 05/09 bằng soi:mat-tien: bậc 0 = 3 · bậc 1 = 0 · bậc 2 = 4 · bậc 3 = 45. Đo thêm 90/1030 tệp không với tới được. HAI trong bảy thì 'sửa' nghĩa là XOÁ (home-dong-studio + home-overview-card thuộc hướng Home đã bị D-DR2 đè)",
+      "nguon": "docs/delivery/SHIP-BLOCKERS.md §05/09 13,5%"
+    },
+    {
+      "ma": "NO-MAT",
+      "mucDo": "P1",
+      "cong": "G4/G5",
+      "ten": "Nợ nghiệm thu mắt — nút cổ chai thật của dự án",
+      "anhHuongNguoiDung": "bề mặt trải nghiệm lớn chưa qua mắt Hoà ⇒ chưa đạt ĐỊNH NGHĨA XONG",
+      "canChuDuAn": true,
+      "trangThai": "🔴 SHIP-BLOCKERS ghi 77 xong-máy / 1 qua mắt; VISUAL-APPROVAL-QUEUE ghi 76 / 1 — xem mauThuan M-01",
+      "nguon": "docs/delivery/SHIP-BLOCKERS.md G4·G5 + docs/delivery/VISUAL-APPROVAL-QUEUE.md"
+    },
+    {
+      "ma": "SOI-FOUNDATION",
+      "mucDo": "P2",
+      "cong": "G5",
+      "ten": "soi:foundation đang ĐỎ (exit 1)",
+      "anhHuongNguoiDung": "theo §3 của bộ chuẩn: máy đỏ thì mắt không cứu được — chặn PASS ở cấp app",
+      "canChuDuAn": false,
+      "trangThai": "🔴 185 vi phạm: F-ICON-STROKE 28 · F-ICON-VIEWBOX 49 · F-MOTION-TOKEN 5 · F-MAT-VOCAB 1 · F-MEP-CUON 102. Đạt: F-ICON-SIZE, F-NHAN-BIA. Trần F14 giữ ở 185",
+      "nguon": "docs/bao-cao-phien/2026-09-05-cham-4-man-design-review.md ④ + docs/delivery/SPEC-VAT-LIEU-LAT-CAT-DOC.md §5.1 F14"
+    },
+    {
+      "ma": "KHONG-CHAN",
+      "mucDo": "P4",
+      "cong": "—",
+      "ten": "Phân loại rõ để không ai kéo vào đường tới đích",
+      "anhHuongNguoiDung": "không chặn ship",
+      "canChuDuAn": false,
+      "trangThai": "Dời repo khỏi ~/Downloads (P4, RỦI RO ĐANG ĐIỀU TRA) · 21 lỗ vòng focus còn lại (P4) · 186 hex viết thẳng (P4) · 37 radius ngoài thang (P4) · 2 kho chưa mở slide-templates + idfc-seed (P4) · backfill matId (P3)",
+      "nguon": "docs/delivery/SHIP-BLOCKERS.md KHÔNG CHẶN"
+    }
+  ],
+
+  "matMau": [
+    {
+      "man": "HOME",
+      "phan": "FAIL",
+      "viPhamNang": [
+        "PH-03 [H2] dải 5 ô màu GÕ CỨNG nằm dưới tiêu đề khẳng định 'xưởng đang có'",
+        "PH-04 [H2] hai dòng cùng chữ 'trong xưởng' đếm HAI đơn vị khác nhau, không dòng nào ghi đơn vị",
+        "PH-05 [H2] thẻ tự nói ngược mình — 'chưa có việc nào đang dở' cạnh '1 thứ đang chờ bạn'",
+        "PH-09 [H3] F-01 sống lại — 5600K in ra chữ, và máy canh F-01 KHÔNG THỂ nhìn thấy nó",
+        "PH-13 [H3] kệ 'tôi tự đặt' nói người dùng đã tự đặt, nhưng người dùng chưa đặt gì",
+        "PH-19 [H3] D4 DESIGN MISSING — không có bản vẽ hiệu lực",
+        "PH-24 [H4] nền — thứ hợp đồng gọi là quan trọng nhất — bị che gần hết"
+      ],
+      "cong_truot": ["A1 việc của con người", "A3 cái gì biến mất được", "A4 tường thẻ 4/4", "A5 SaaS chung chung", "A6 sự thật dữ liệu"],
+      "nguon": "docs/bao-cao-phien/2026-09-05-cham-4-man-design-review.md ⑤·⑥·⑦"
+    },
+    {
+      "man": "THIẾT KẾ 2D",
+      "phan": "FAIL",
+      "viPhamNang": [
+        "PH-02 [H1] hàng công cụ dưới BỊ CẮT CỤT NGAY TẠI 1440, không có cửa tràn",
+        "PH-11 [H3] BẢY dải chrome quanh canvas — trần hợp đồng là HAI",
+        "PH-12 [H3] nhãn nhóm HOA TOÀN PHẦN tiếng Việt — luật có từ 31/07, phạm lần thứ BA",
+        "PH-15 [H3] cụm ba nút nổi lơ lửng giữa canvas — y nguyên ca đã viết thành ví dụ xấu",
+        "PH-21 [H4] lệnh không làm gì được vẫn đen đậm — và 3D thì làm ngược lại",
+        "PH-22 [H4] một chỉ dẫn in HAI LẦN trên cùng màn"
+      ],
+      "cong_truot": ["A1", "A3", "A6", "C1 chữ (HOA)", "C6 co giãn (cắt cụt ở 1440)"],
+      "nguon": "docs/bao-cao-phien/2026-09-05-cham-4-man-design-review.md ⑤·⑥·⑦"
+    },
+    {
+      "man": "THIẾT KẾ 3D",
+      "phan": "FAIL",
+      "viPhamNang": [
+        "PH-07 [H2] watermark 'React Flow' của thư viện HIỆN TRONG SẢN PHẨM",
+        "PH-08 [H2] '0 nút · 0 nối sai' — vụn 0/0, và 'nút' là từ dịch của node",
+        "PH-17 [H3] chấm hổ phách KHÔNG NHÃN cạnh 'Việc'",
+        "PH-19 [H3] chưa có bản vẽ cho canvas node"
+      ],
+      "cong_truot": ["A1", "A6", "C2 icon", "C7 thuật ngữ", "E3 cá tính IF"],
+      "nguon": "docs/bao-cao-phien/2026-09-05-cham-4-man-design-review.md ⑤·⑥·⑦"
+    },
+    {
+      "man": "TRÌNH CHIẾU",
+      "phan": "FAIL",
+      "viPhamNang": [
+        "PH-01 [H1] canvas TRẮNG TRƠN, KHÔNG có trạng thái rỗng nào (trắng 71% màn)",
+        "PH-06 [H2] UNKNOWN bị quy về một khẳng định — ổ trái nói chắc trong khi thanh trên nói 0 slide",
+        "PH-19 [H3] D4 DESIGN MISSING",
+        "PH-23 [H4] ổ trái ~650px trống, chỉ dẫn đứng ở chỗ đáng lẽ là tiêu đề"
+      ],
+      "cong_truot": ["A1", "A2 nhân vật chính", "A6", "B1 thứ bậc", "B3 mật độ (editorial → trắng trơn)"],
+      "nguon": "docs/bao-cao-phien/2026-09-05-cham-4-man-design-review.md ⑤·⑥·⑦"
+    },
+    {
+      "man": "TOÀN APP (3 lỗi CƠ CHẾ, đáng chữa trước)",
+      "phan": "FAIL",
+      "viPhamNang": [
+        "PH-09 — máy canh một lỗi phạm vi SYSTEM lại canh theo DANH SÁCH TỆP; lỗi đổi tệp là thoát ⇒ mọi lỗi đã đóng đều có thể sống lại mà sổ vẫn báo xanh",
+        "PH-19 — hai bề mặt đang chạy KHÔNG CÓ BẢN VẼ HIỆU LỰC ⇒ mọi vòng sau là tranh luận gu",
+        "PH-11+PH-12+PH-15 — ba lỗi ở 2D đã được viết thành VÍ DỤ XẤU CHUẨN của repo và vẫn còn nguyên ⇒ ví dụ xấu đang không được đọc lúc dựng",
+        "PH-10 [H3] ba màn có HAI cửa Vitals cùng lúc",
+        "PH-18 [H3] khẩu độ Vitals: cùng một vật, BA toạ độ khác nhau, và gần như vô hình",
+        "PH-16 [H3] cùng một khái niệm, BỐN cặp tên khác nhau giữa các chặng"
+      ],
+      "cong_truot": ["B4 lộ dần · B5 mềm dẻo · C4 chuyển động · C5 cảm ứng — CHƯA CHỨNG MINH ở cả 4 màn"],
+      "nguon": "docs/bao-cao-phien/2026-09-05-cham-4-man-design-review.md ⑥·⑦"
+    }
+  ],
+
+  "maySoi": [
+    { "may": "soi:foundation", "ketQua": "🔴 185 vi phạm · exit 1", "ngay": "2026-09-05", "nguon": "docs/bao-cao-phien/2026-09-05-cham-4-man-design-review.md ④" },
+    { "may": "soi:hinh-hoc", "ketQua": "🟡 exit 0 — 584 tệp · 1136 khai báo bo · 53 ngoài thang (11 giá trị lẻ)", "ngay": "2026-09-05", "nguon": "cùng trên" },
+    { "may": "soi:tu-dien", "ketQua": "🟢 exit 0 — 0 cặp chữ đá nhau · 🟡 461 chỗ dùng chữ trần", "ngay": "2026-09-05", "nguon": "cùng trên" },
+    { "may": "soi:thao-tac", "ketQua": "🔴 3 lệch · exit 0 — outline-can-focus-visible 7× · cam-hex-inline 190/trần 190 · cam-hex-inline-app 14/trần 14 (hai bánh cóc ĐÃ KỊCH TRẦN)", "ngay": "2026-09-05", "nguon": "cùng trên" },
+    { "may": "soi:mat-tien", "ketQua": "🔴 7/52 = 13,5% năng lực khai xong không tới được người dùng", "ngay": "2026-09-05", "nguon": "docs/delivery/SHIP-BLOCKERS.md" },
+    { "may": "soi:cam-dien", "ketQua": "43 tệp mồ côi · 6871 dòng (lib 19 · components 23 · app 1) + 1 module kho-chưa-mở + 9 module chỉ-nội-bộ", "ngay": "2026-09-05", "nguon": "docs/delivery/KIEM-KE-NANG-LUC.md §14" },
+    { "may": "soi:cong-cu-chet", "ketQua": "27 ca — 26 mồ côi · 1 dây đứt", "ngay": "2026-09-04", "nguon": "docs/delivery/SHIP-BLOCKERS.md G3" },
+    { "may": "soi:frontier · soi:contract", "ketQua": "0 lệch — NHƯNG độ tin cậy bị chính SHIP-BLOCKERS nghi ngờ (xem mauThuan M-10)", "ngay": "2026-09-04", "nguon": "docs/delivery/VISUAL-APPROVAL-QUEUE.md §C + docs/delivery/SHIP-BLOCKERS.md §05/09" },
+    { "may": "nghiem-thu-g4-moat", "ketQua": "65/65 (62 bằng chứng sản phẩm + 3 tiền đề); tầng UI 13/13", "ngay": "2026-09-05", "nguon": "docs/delivery/SHIP-BLOCKERS.md §05/09 đợt 2" },
+    { "may": "soi:mat-tu-cham", "ketQua": "tự in tỉ lệ báo nhầm của CHÍNH NÓ — 6/10 ở phát đầu, để không ai dùng số của nó làm số nộp", "ngay": "2026-09-05", "nguon": "docs/delivery/SHIP-BLOCKERS.md §05/09" },
+    { "may": "audit toàn màn (do.json)", "ketQua": "22/25 route dựng lên được, 0 lỗi console ở TẤT CẢ; 3 route redirect có chủ ý (/colors → / · /cad-editor · /present-editor · /photo-editor → /projects/<id>/…)", "ngay": "2026-09-05", "nguon": "/tmp/toan-man/do.json" }
+  ],
+
+  "mauThuan": [
+    {
+      "ma": "M-01",
+      "ve": "Nợ nghiệm thu mắt — 76 hay 77?",
+      "nguonA": "docs/delivery/SHIP-BLOCKERS.md G4 và G5 (cùng tệp, hai dòng) nói 'nợ nghiệm thu mắt 77 xong-máy / 1 qua mắt'",
+      "nguonB": "docs/delivery/VISUAL-APPROVAL-QUEUE.md nói 'soi:frontier đếm 76 mục xong-MÁY đối 1 mục qua mắt'; docs/delivery/VISUAL-REVIEW-BATCH-01.md:202 cũng ghi '76 xong-máy / 1 xong-mắt'",
+      "ghiChu": "Cả hai nguồn cùng viện dẫn soi:frontier. Chưa chạy lại để phân xử."
+    },
+    {
+      "ma": "M-02",
+      "ve": "Số hành trình UNVERIFIED và cột ĐÃ LƯU",
+      "nguonA": "docs/delivery/G5-RELEASE-READINESS.md §B3 cổng 10-12 nói 'J04 UNVERIFIED' · '14 UNVERIFIED — xem JOURNEY-MATRIX' · '🔴 0 hành trình xác minh ở cột KẾT QUẢ ĐÃ LƯU; J16 là P0 đang mở'",
+      "nguonB": "docs/delivery/JOURNEY-MATRIX.md §2 nói cột ĐÃ LƯU = 13/22, UNVERIFIED = 2 (chỉ J01 · J02), J04 PASS, J16 PASS trên app thật",
+      "ghiChu": "G5 viết 04/09 ở pha khảo sát, ma trận cập nhật tới đợt 7 05/09. Chưa ai đóng dấu lỗi thời lên bảng 21 cổng của G5."
+    },
+    {
+      "ma": "M-03",
+      "ve": "Cổng 7 (mở bộ cài) — trống hay đã mở?",
+      "nguonA": "docs/delivery/SHIP-BLOCKERS.md bảng bảy cổng, dòng G7: '🔴 Cổng 7 (mở bộ cài) vẫn trống — chưa mở gói nào'; docs/delivery/G5-RELEASE-READINESS.md §B6: '🔴 CỔNG 7 VẪN TRỐNG. Dựng được gói KHÔNG PHẢI mở được gói'",
+      "nguonB": "docs/delivery/SHIP-BLOCKERS.md §05/09 (CÙNG TỆP, phần dưới): 'LẦN ĐẦU MỘT GÓI ĐƯỢC MỞ — và nó CHẠY, CSDL SỐNG' — mở gói bằng Xvfb, sống 90s, HTTP 200, /api/auth/login trả 401, máy sạch tự dựng 24/24 bảng",
+      "ghiChu": "MÂU THUẪN NỘI BỘ TRONG MỘT TỆP. Có thể hoà giải bằng 'trống trên Windows/macOS, đã mở trên Linux' — nhưng cả hai dòng đều không nói rõ phạm vi nền tảng, và §05/09 tự khai '⛔ CHƯA ĐƯỢC TÍNH LÀ MAC PASS'."
+    },
+    {
+      "ma": "M-04",
+      "ve": "B1/D1 — đã chạy app thật chưa?",
+      "nguonA": "docs/delivery/SHIP-BLOCKERS.md B1: '🔴 VÌ SAO CHƯA ĐÓNG: chưa mở app thật một dòng nào. Test dựng lại HÌNH DẠNG effect bằng lời gọi hàm trần'; docs/delivery/PRODUCT-DEFECTS.md D1: '🔵 đang sửa — làn A'",
+      "nguonB": "docs/delivery/JOURNEY-MATRIX.md J16: 'PASS trên app thật 04/09 — hồ sơ Chromium trên đĩa, bản vá D1 nay CÓ NGƯỜI NHÌN: 0 khoá mơ hồ'; docs/delivery/G1-DATA-SAFE-ACCEPTANCE.md CA1-CA12 chạy trên app thật, 11/12 PASS",
+      "ghiChu": "Nếu J16 và G1 đúng thì dòng 'chưa mở app thật một dòng nào' của B1 đã lỗi thời. Chưa ai đóng dấu."
+    },
+    {
+      "ma": "M-05",
+      "ve": "getMaterial() — 0 nơi gọi hay 2 nơi gọi?",
+      "nguonA": "sổ 00-CHOT 17/08 (và SHIP-BLOCKERS trích lại): 'lib/materials ↔ ProductSpec = 0 code' / 'grep toàn repo: 0 nơi gọi ngoài chính test của nó'",
+      "nguonB": "docs/delivery/KIEM-KE-NANG-LUC.md §15 (đính chính tường minh) và docs/delivery/SPEC-VAT-LIEU-LAT-CAT-DOC.md §0.1: 'getMaterial() lib/materials/resolve.ts:87 — ✅ 2 nơi gọi thật (MaterialsScreen.tsx:145 · app/files/_lib/ngan-tho.ts:149)'",
+      "ghiChu": "KIEM-KE khai đây là ĐÍNH CHÍNH cho sổ. Nguồn B mới hơn và có tệp:dòng."
+    },
+    {
+      "ma": "M-06",
+      "ve": "⌘J — chết hay đã sống lại?",
+      "nguonA": "docs/delivery/SHIP-BLOCKERS.md G5: '⌘J không mặt nào tiêu thụ (nút Trình chiếu ghi hẳn phím tắt đó)'; docs/delivery/G3-BAN-LAM-VIEC-2D-3D.md §E2②: 'Phím tắt khai mà KHÔNG mặt nào tiêu thụ — ⌘J/Ctrl+J (Vitals)'; docs/delivery/VISUAL-APPROVAL-QUEUE.md §A: 'panel Vitals không còn nơi mount nào từ 17/08 ⇒ gõ ở thanh trạng thái + Enter là mất câu hỏi, ⌘J chết'",
+      "nguonB": "docs/delivery/KIEM-KE-NANG-LUC.md §3.1 + §15: '⌘J mở khẩu độ Vitals — VitalsAperture.tsx:419 · sổ 00-CHOT 04/09 ghi phím này CHẾT; ĐO LẠI 05/09 thì nó đã được nối lại. StageSwitcher:223 (mồ côi) và VitalsRightEdgeHost:49 (chưa từng mount) đều đã gỡ'",
+      "ghiChu": "Nguồn B là đo 05/09, mới hơn. Nhưng G7-NGHIEM-THU-MAC T7 vẫn dặn 'nếu ⌘J không làm gì thì đúng như dự kiến' ⇒ tài liệu Mac cũng đang mang trạng thái cũ."
+    },
+    {
+      "ma": "M-07",
+      "ve": "KIEM-KE tự mâu thuẫn — 59 hay 89 dòng 🟡?",
+      "nguonA": "docs/delivery/KIEM-KE-NANG-LUC.md §15 bảng tổng: '🟡 CÓ MÃ, CHƯA CHỨNG MINH = 59 — 45% của app' (và 67 + 59 + 4 = 130 khớp tổng)",
+      "nguonB": "docs/delivery/KIEM-KE-NANG-LUC.md §15 ô RỦI RO, CÙNG TRANG: 'Rủi ro thứ hai: 89 dòng 🟡 là mảng lớn nhất'",
+      "ghiChu": "59/130 = 45% khớp; 89 không khớp tổng nào. MÂU THUẪN NỘI BỘ trong một mục."
+    },
+    {
+      "ma": "M-08",
+      "ve": "resolveIdfcCommerceToSpec() — đã cắm điện hay 0 nơi gọi?",
+      "nguonA": "docs/delivery/SHIP-BLOCKERS.md G4: 'resolveIdfcCommerceToSpec() 0 nơi gọi trong sản phẩm (MAIN tự grep xác nhận) ⇒ mới ở nấc dây-có-chưa-cắm-điện'",
+      "nguonB": "docs/delivery/G4-MOAT-SLICE.md §05/09: 'CẮM ĐIỆN resolveIdfcCommerceToSpec — mặt tiền: cột thông số tấm Thư viện' kèm bảng 4 tình trạng câu chính/câu phụ",
+      "ghiChu": "Hai tệp cùng ngày 05/09. Chưa grep lại để phân xử."
+    },
+    {
+      "ma": "M-09",
+      "ve": "D8 — đã vá hay chưa vá?",
+      "nguonA": "docs/delivery/PRODUCT-DEFECTS.md D8: 'Trạng thái: 🟡 khai, CHƯA SỬA. Vì sao KHÔNG vá trong lượt này: vá đúng là hợp nhất hai cơ chế định danh… ngoài vùng ghi của làn này'",
+      "nguonB": "docs/delivery/SHIP-BLOCKERS.md G1: '✅ 05/09 — hợp nhất định danh (D8): trước vá 2/5 màn có store.user, sau vá 5/5, và store tới CÙNG MILI GIÂY với bộ đệm ⇒ một lượt giải duy nhất. Gỡ 1 đường thừa (PresentStageScreen), giữ 4'",
+      "ghiChu": "Nguồn B mới hơn (05/09) và mô tả đúng cách vá mà nguồn A nói là 'ngoài vùng'. Nhưng B CŨNG ghi ca LockScreenSettings:22 'MẤT THẬT, không phải chậm' ⇒ phần lỗi của D8 chưa đóng hết."
+    },
+    {
+      "ma": "M-10",
+      "ve": "'soi:frontier · soi:contract 0 lệch' có đáng tin không?",
+      "nguonA": "docs/delivery/VISUAL-APPROVAL-QUEUE.md §C: 'Sổ ↔ mã — soi:frontier · soi:contract — 0 lệch'",
+      "nguonB": "docs/delivery/SHIP-BLOCKERS.md §05/09: thí nghiệm rút-ruột chứng minh frontier-registry:23 h4-picker thay 185 dòng bằng chữ 'x' VẪN 0 LỆCH (mẫu là '.' nên bằng chứng thật ra là 'tệp không rỗng'); và gỡ hẳn RadialToolMenu để lại chữ trong CHÚ THÍCH cũng VẪN 0 LỆCH — 6/77 entry có bằng chứng sống trong chú thích",
+      "ghiChu": "'0 lệch' đúng về mặt số nhưng phép đo đã bị chứng minh là không phân biệt được. Không được dùng con số đó làm bảo chứng."
+    },
+    {
+      "ma": "M-11",
+      "ve": "Số hex viết thẳng — 186, 190, 193, 231, hay 252?",
+      "nguonA": "docs/delivery/SHIP-BLOCKERS.md KHÔNG CHẶN: '186 hex viết thẳng (P4)'; cùng tệp §05/09 đợt 2: 'soi-thao-tac hex 186 → 231 (+45 ở app/)'; cùng tệp mục trước: 'soi:thao-tac luật hex chỉ khai components ⇒ app/ còn 59 hex (193 → thật ≥252)'",
+      "nguonB": "docs/bao-cao-phien/2026-09-05-cham-4-man-design-review.md ④: 'cam-hex-inline 190/trần 190 · cam-hex-inline-app 14/trần 14'",
+      "ghiChu": "Ít nhất năm con số cho cùng một luật. SHIP-BLOCKERS tự đính chính 'sổ từng ước 59, đo thật 45'. Con số nào là mốc trần hiện tại thì chưa nguồn nào nói dứt khoát."
+    },
+    {
+      "ma": "M-12",
+      "ve": "Số radius ngoài thang — 32, 37, 51 hay 53?",
+      "nguonA": "docs/delivery/SHIP-BLOCKERS.md: '37 radius ngoài thang (P4)' và §05/09 'soi-hinh-hoc 32 → 51 (thêm app/, 368→507 tệp)'; docs/delivery/VISUAL-APPROVAL-QUEUE.md §C: 'Bo góc ngoài thang — soi:hinh-hoc — 37 mục'",
+      "nguonB": "docs/bao-cao-phien/2026-09-05-cham-4-man-design-review.md ④: 'soi:hinh-hoc — 584 tệp · 1136 khai báo bo · 53 ngoài thang (11 giá trị lẻ)'",
+      "ghiChu": "Cùng họ M-11: mốc di chuyển theo vùng quét, và các tệp không đồng bộ mốc."
+    },
+    {
+      "ma": "M-13",
+      "ve": "Số route — 25, 28, 30, 81 hay 95?",
+      "nguonA": "docs/delivery/JOURNEY-MATRIX.md: '28 trang và 81 route API'; docs/delivery/KIEM-KE-NANG-LUC.md §13: 'Repo có 28 route trang'",
+      "nguonB": "docs/delivery/KIEM-KE-NANG-LUC.md §1.4: 'Endpoint API — 95 route'; docs/delivery/SHIP-BLOCKERS.md §05/09: 'next build sạch 30 route ngày 05/09'; /tmp/toan-man/do.json: 25 mục (22 trang dựng lên được + 3 redirect)",
+      "ghiChu": "Bốn cách đếm khác nhau cho hai đại lượng (trang / API). Không nguồn nào khai định nghĩa đếm."
+    },
+    {
+      "ma": "M-14",
+      "ve": "J13 — PASS đầy đủ, nhưng đường được nêu tên lại không sinh gì",
+      "nguonA": "docs/delivery/JOURNEY-MATRIX.md J13: '✅ PASS đầy đủ (đợt 7, 05/09), hiệu chuẩn ĐỎ khi chặn POST /api/library'",
+      "nguonB": "CÙNG Ô J13: '🔴 LỆCH MA TRẬN đo được: đường /library/ingest KHÔNG sinh LibraryAsset và KHÔNG đặt byte nào lên đĩa (grep /api/library trong page.tsx = 0). Hàng DB + tệp đĩa đến từ /inspiration. HAI ĐƯỜNG, MỘT CỘT'; và docs/delivery/KIEM-KE-NANG-LUC.md xếp L9 vào nhóm '🔴 DÂY CHƯA CẮM / có lỗ chặn'",
+      "ghiChu": "Cột PASS bảo chứng cho đường /inspiration, KHÔNG bảo chứng cho /library/ingest — nhưng ô ghi cả hai khởi điểm."
+    },
+    {
+      "ma": "M-15",
+      "ve": "ProductSpec — 0 hàng hay có hàng để BOQ khớp?",
+      "nguonA": "docs/delivery/SHIP-BLOCKERS.md §05/09: 'ProductSpec: 0 HÀNG ⇒ không có dòng nào để backfill'; và mốc sạch CSDL repo chính là 6/24 bảng có dữ liệu",
+      "nguonB": "docs/delivery/JOURNEY-MATRIX.md J14: PASS với 'đơn giá 1 500 000 · hao 10% · thành tiền 1 650 000 ĐÚNG BẰNG HÀNG CSDL'",
+      "ghiChu": "Có thể hoà giải bằng 'hai CSDL khác nhau (mốc sạch vs CSDL của bộ đo)' — nhưng KHÔNG nguồn nào nói rõ, và SHIP-BLOCKERS còn cảnh báo gieo vào CSDL repo chính là mất phép đo rò-ghi. Cần xác định J14 chạy trên CSDL nào."
+    },
+    {
+      "ma": "M-16",
+      "ve": "Đường đóng gói dùng db push hay migrate deploy?",
+      "nguonA": "docs/delivery/G5-RELEASE-READINESS.md §B1-③ M1: 'electron/main.js:241-243 — Bản đóng gói nâng cấp dữ liệu bằng db push, dựa trên một lý do ĐÃ ĐO ĐƯỢC LÀ SAI… đây là việc phải làm CẨN THẬN, và là lý do nó đứng ĐẦU danh sách'",
+      "nguonB": "docs/delivery/G5-RELEASE-READINESS.md §B3 cổng 4 (CÙNG TỆP): '✅ ĐÓNG 04/09 — đường đóng gói nay cũng dùng migrate deploy, có test CSDL thật + máy canh trong release:preflight'; docs/delivery/SHIP-BLOCKERS.md G7: '✅ db push ĐÃ ĐÓNG'",
+      "ghiChu": "M1 là văn bản pha khảo sát, §B6 là pha thi công cùng ngày. Tệp có ghi chú '⏱️ giữ nguyên chữ cũ, đánh dấu tại chỗ' — nhưng phần thân M1 không mang dấu."
+    },
+    {
+      "ma": "M-17",
+      "ve": "Bộ moat — 58/59, 63/63 hay 65/65?",
+      "nguonA": "docs/delivery/G4-MOAT-SLICE.md đầu tệp: 'Bộ nghiệm thu · tầng MÔ HÌNH — scripts/nghiem-thu-g4-moat.mjs (tự hiệu chuẩn) — 58/59'",
+      "nguonB": "docs/delivery/SHIP-BLOCKERS.md G4: 'Bộ moat 58/59 → 63/63'; §05/09 đợt 2 CÙNG TỆP: 'g4-moat 63/63 → 65/65, và nay nói đúng hơn: 62 bằng chứng sản phẩm + 3 tiền đề'",
+      "ghiChu": "Header G4-MOAT-SLICE chưa cập nhật theo hai lượt siết sau đó."
+    },
+    {
+      "ma": "M-18",
+      "ve": "Đ2 (.idfc khoá bất biến) — đã vá hay để lại có chủ ý?",
+      "nguonA": "docs/delivery/G4-MOAT-SLICE.md §5 việc-phải-làm-tiếp: 'Đ2 — thêm khoá bất biến vào IdfcCommerce. Additive, nhưng CHƯA LÀM Ở PHIÊN NÀY vì repo có luật K4 không khai field chết'",
+      "nguonB": "docs/delivery/SHIP-BLOCKERS.md G4: 'Lỗ thật: asset-family.ts:565 chép brand/sku/vendor mà bỏ đúng hai khoá bất biến. Additive thuần, cố ý KHÔNG bump IDFC_VERSION, 6 ca round-trip khoá tệp v3 cũ mở nguyên vẹn' ⇒ mô tả một bản vá đã thi công",
+      "ghiChu": "Liên quan M-08. Trạng thái thật của Đ2 hiện không đọc được từ sổ."
+    },
+    {
+      "ma": "M-19",
+      "ve": "Bốn màn FAIL (thị giác) vs cùng bốn màn có hành trình PASS (chức năng)",
+      "nguonA": "docs/bao-cao-phien/2026-09-05-cham-4-man-design-review.md ⑦: Home · 2D · 3D · Trình chiếu — BỐN MÀN ĐỀU FAIL",
+      "nguonB": "docs/delivery/JOURNEY-MATRIX.md: J04·J05 (Home) · J07 (2D) · J08-J09 (3D) · J12 (Trình chiếu) đều PASS trên app thật",
+      "ghiChu": "KHÔNG nhất thiết là mâu thuẫn — hai bộ hỏi hai câu khác nhau (việc có sống qua tải lại ↔ màn này đọc ra là gì). Ghi vào đây vì bảng tổng nào gộp hai loại 'PASS/FAIL' làm một sẽ tự sinh mâu thuẫn giả."
+    },
+    {
+      "ma": "M-20",
+      "ve": "Vật liệu ship — 32 món (mục tiêu) vs 2 món (thực có) vs 3 hàng (trên màn)",
+      "nguonA": "docs/delivery/G4-HOP-DONG-TAI-SAN.md §4: 'Ship ~32 vật liệu tham số phủ 17 họ'",
+      "nguonB": "docs/delivery/SHIP-BLOCKERS.md G6: 'Còn lại: 2/32 vật liệu (phủ 1/17 họ)'; docs/delivery/SPEC-VAT-LIEU-LAT-CAT-DOC.md: đo sống /materials có 3 hàng (2 hạt giống + 1 do người dùng tạo)",
+      "ghiChu": "Có thể đọc là mục tiêu ↔ hiện trạng chứ không phải mâu thuẫn — nhưng G4-HOP-DONG viết 'Ship' ở thì hiện tại, dễ bị đọc thành đã có."
+    }
+  ],
+
+  "chuaChac": [
+    "KHÔNG chạy lại bất kỳ bộ nghiệm thu, máy soi, hay lệnh nào trong lượt trích này. Mọi con số đều là TRÍCH từ văn bản, không phải ĐO. Nếu một tệp nguồn lệch thì bản này lệch theo.",
+    "KIEM-KE-NANG-LUC tự khai (⑦b mục 7): 'JOURNEY-MATRIX là bằng chứng mượn… các hàng PASS gắn mốc a64c0248/04-05/09, còn cây này ở af381ac6 — CÓ COMMIT Ở GIỮA MÀ TÔI CHƯA ĐỐI CHIẾU.' Cảnh báo đó áp cho cả bản này.",
+    "Không mở /tmp/mat-3255/*.png hay bất kỳ ảnh nào — phần matMau chép nguyên phán quyết của bản design review, KHÔNG tự nhìn ảnh.",
+    "Không đọc đủ 572 dòng SPEC-VAT-LIEU-LAT-CAT-DOC (đọc §0, §5.1 và grep các số 🔴), không đọc đủ 586 dòng KIEM-KE-NANG-LUC (đọc §0, §13, §14, §15, ⑦b — BỎ QUA phần thân §4-§12 liệt kê 130 năng lực từng dòng), không đọc đủ 413 dòng G1 (đọc kết luận + bảng 12 ca) ⇒ có thể còn mâu thuẫn trong phần chưa đọc.",
+    "Mảng `beMat` KHÔNG phủ hết 28 route trang — chỉ gồm bề mặt có ít nhất một nguồn nói về trạng thái. Route có trong do.json mà không nguồn nào phán (ví dụ /library/gallery) được ghi UNVERIFIED hoặc bỏ ra.",
+    "Trường `kiemLanCuoi` cho phần lớn beMat = ngày của do.json (2026-09-05), tức ngày TRANG ĐƯỢC CHỤP, KHÔNG phải ngày hành vi được kiểm. do.json tự nó chỉ chứng minh trang dựng lên và 0 lỗi console.",
+    "Ánh xạ BLOCKED → FAIL và 'PASS chỉ ở cột hệ thống' → PARTIAL là QUY ƯỚC CỦA BẢN TRÍCH NÀY để vừa 4 giá trị được cho phép, không phải chữ của nguồn. Trường `trangThaiGoc` giữ chữ gốc.",
+    "Danh sách `mauThuan` là SÀN, không phải trần: chỉ gồm mâu thuẫn tìm được trong phần văn bản đã đọc. Ba loại chắc chắn còn sót: ① số liệu trong phần thân KIEM-KE chưa đọc ② các tệp delivery khác không nằm trong danh sách nguồn (43 tệp trong docs/delivery/) ③ mâu thuẫn giữa sổ 00-CHOT và các tệp delivery.",
+    "M-19 và M-20 có thể KHÔNG phải mâu thuẫn thật (khác trục đo / mục tiêu-vs-hiện-trạng). Ghi vào để bên đọc tự phán, đã đánh dấu trong ghiChu.",
+    "Phần `phatHanh.macos` toàn UNVERIFIED là ĐÚNG THEO NGUỒN, không phải thiếu dữ liệu: G7-NGHIEM-THU-MAC tự khai 'TOÀN BỘ TỆP NÀY CHƯA TỪNG CHẠY'.",
+    "Không chạm lib/materials/** · components/materials/** · components/three/** · lib/sheets-persist.ts · lib/hen-luc-ranh.ts theo lệnh phiếu — mọi khẳng định về các tệp đó là TRÍCH từ nguồn, không đọc mã.",
+    "Không có nguồn nào trong danh sách nói về hiệu năng (thời gian mở app, FPS 3D) ngoài G5 cổng 21 ghi '⬜ không có số nền nào' ⇒ trục hiệu năng vắng mặt hoàn toàn trong bản này."
+  ]
+}

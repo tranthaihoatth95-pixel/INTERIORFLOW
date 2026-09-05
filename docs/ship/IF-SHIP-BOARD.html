@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>InteriorFlow · Ship Board</title>
+<style>
+:root{--nen:#0d0e11;--tam:#15171c;--vien:#23262e;--muc:#e8eaed;--muc2:#a0a6b0;--muc3:#6b7280;--nhan:#7c5cff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--nen);color:var(--muc);font:15px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+.bao{max-width:1240px;margin:0 auto;padding:40px 28px 96px}
+h1{font-size:30px;letter-spacing:-.02em;margin:0 0 6px}
+h2{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--muc3);
+   margin:56px 0 18px;font-weight:600;border-top:1px solid var(--vien);padding-top:18px}
+h3{font-size:15px;margin:12px 0 2px;font-weight:600}
+p{margin:0 0 8px}
+.deu{color:var(--muc2)}
+.nho{font-size:12.5px;color:var(--muc3)}
+.tt{display:inline-block;padding:1px 9px;border-radius:999px;font:600 11px/1.7 ui-monospace,Menlo,monospace;
+    letter-spacing:.06em;color:#fff;background:var(--c);vertical-align:2px}
+/* cổng */
+.cong{display:grid;gap:10px}
+.hang{display:grid;grid-template-columns:52px 1fr auto;gap:16px;align-items:start;
+      padding:15px 18px;background:var(--tam);border:1px solid var(--vien);border-radius:12px}
+.hang b{font:600 13px/1.6 ui-monospace,Menlo,monospace;color:var(--muc3)}
+.hang .ten{font-weight:600}
+.hang .cau{color:var(--muc2);font-size:14px}
+.hang .ghi{color:var(--muc3);font-size:12.5px;margin-top:5px}
+.hang .so{font:600 12px/1.7 ui-monospace,Menlo,monospace;color:var(--muc2);text-align:right;white-space:nowrap}
+/* tốt hơn */
+.tot li{margin:0 0 14px;padding-left:2px}
+.tot .chu{font-size:16px}
+.tot .them{color:var(--muc3);font-size:13px}
+/* màn */
+.luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:22px}
+.man .khung{position:relative;aspect-ratio:16/10;overflow:hidden;border-radius:10px;
+            border:1px solid var(--vien);background:#000}
+.man img{width:100%;height:100%;object-fit:cover;object-position:top left;display:block}
+.man .xx{position:absolute;left:8px;bottom:8px;padding:2px 8px;border-radius:5px;
+         background:rgba(0,0,0,.78);font:600 10px/1.8 ui-monospace,Menlo,monospace;
+         letter-spacing:.05em;color:#8ee0b0}
+.man .khong{display:grid;place-items:center;height:100%;color:#c04a4a;
+            font:600 11px/1.6 ui-monospace,Menlo,monospace;text-align:center;padding:16px}
+.man .do{font:12px/1.6 ui-monospace,Menlo,monospace;color:var(--muc3);margin:2px 0 0;overflow-wrap:anywhere}
+.man .chan{font-size:12.5px;color:#d08a8a;margin-top:6px;overflow-wrap:anywhere}
+/* bảng */
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font:600 11px/1.8 ui-monospace,Menlo,monospace;letter-spacing:.09em;
+   color:var(--muc3);border-bottom:1px solid var(--vien);padding:0 12px 9px 0}
+td{padding:11px 12px 11px 0;border-bottom:1px solid var(--vien);vertical-align:top;color:var(--muc2)}
+td.ma{font:600 12px/1.6 ui-monospace,Menlo,monospace;color:var(--muc);white-space:nowrap}
+/* phát hành */
+.hai{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}
+.hop{background:var(--tam);border:1px solid var(--vien);border-radius:12px;padding:18px 20px}
+.nac{display:grid;grid-template-columns:1fr auto;gap:8px;padding:7px 0;border-bottom:1px solid var(--vien);font-size:13.5px}
+.nac:last-child{border:0}
+.nac span:first-child{font:600 11.5px/1.7 ui-monospace,Menlo,monospace;letter-spacing:.07em;color:var(--muc3)}
+/* mâu thuẫn */
+.mt{background:var(--tam);border:1px solid var(--vien);border-left:3px solid #8b5cf6;
+    border-radius:10px;padding:14px 18px;margin-bottom:10px}
+.mt .ve{font-weight:600;margin-bottom:6px}
+.mt .n{font-size:12.5px;color:var(--muc3);margin:3px 0}
+@media(max-width:760px){.hai{grid-template-columns:1fr}.hang{grid-template-columns:44px 1fr}.hang .so{display:none}}
+</style></head><body><div class="bao">
+
+<h1>InteriorFlow · Ship Board</h1>
+<p class="deu">Sản phẩm đang thành hình tới đâu — đọc trong 10 giây, không phải đọc nhật ký.</p>
+<p class="nho">Ảnh chụp app thật 2026-09-05 18:36 UTC · nhánh <code>nen-checkpoint</code> ·
+21/25 màn · bằng chứng trích 2026-09-05.
+Mọi trạng thái đọc từ sổ có sẵn — bảng này không tự chấm.</p>
+
+<h2>Người dùng nay làm được gì tốt hơn</h2>
+<ul class="tot"><li>
+  <div class="chu">Đăng nhập tài khoản khác trên cùng một máy KHÔNG còn mở được thư mục dự án của người trước.</div>
+  <div class="them">05/09 · G1 — Trước đó lời cấp quyền thư mục nằm dưới một khoá cố định, ai đăng nhập sau cũng dùng lại được.</div></li><li>
+  <div class="chu">Món cấu kiện thả từ Thư viện xuống bản vẽ nay HIỆN RA trong bảng khối lượng.</div>
+  <div class="them">05/09 · G4 — Trước đó nó rã thành nét rời, không lên BOQ, và BOQ cũng không báo thiếu — mất một dòng tiền, im lặng.</div></li><li>
+  <div class="chu">Vào thẳng màn Cài đặt không còn làm trang tự dựng lại giữa chừng.</div>
+  <div class="them">05/09 · G5 — 11 lỗi khi mở trang → còn 2, và 2 cái còn lại là theo hợp đồng.</div></li><li>
+  <div class="chu">Mở thẳng một bản vẽ bằng bookmark rồi làm việc — việc được ghi xuống đĩa.</div>
+  <div class="them">04/09 · G1 — Trước đó app im lặng không ghi một byte nào và không báo gì.</div></li><li>
+  <div class="chu">Bấm bàn phím đi khắp app nay luôn thấy vòng sáng đang-ở-đâu.</div>
+  <div class="them">05/09 · G5 — 8 chỗ trước đây tắt vòng đó; 24 chỗ khác đang an toàn nhờ thứ tự nạp CSS — đã ghi cảnh báo tại chỗ.</div></li></ul>
+
+<h2>Bảy cổng ship</h2>
+<div class="cong"><div class="hang">
+  <b>G1</b>
+  <div><div class="ten">DATA SAFE <span class="tt" style="--c:#2f9e6b">PASS</span></div>
+    <div class="cau">Việc anh làm có được ghi xuống đĩa không, và có ghi nhầm sang kho người khác không.</div><div class="ghi">Hoà đóng băng 05/09 — chỉ mở lại nếu có hồi quy.</div></div>
+  <div class="so">12 ca trên app thật · 5/5 màn có định danh</div></div><div class="hang">
+  <b>G2</b>
+  <div><div class="ten">PROFESSIONAL FLOW <span class="tt" style="--c:#c08a2e">PARTIAL</span></div>
+    <div class="cau">Một kiến trúc sư đi trọn được bao nhiêu mạch việc nghề.</div><div class="ghi">Mạch có GHI chỉ tính PASS khi đủ: làm → lưu → đóng hẳn → vào lại → cùng sự thật.</div></div>
+  <div class="so">13/22 hành trình có cột ĐÃ LƯU</div></div><div class="hang">
+  <b>G3</b>
+  <div><div class="ten">WORKSPACES &amp; TOOLS <span class="tt" style="--c:#c08a2e">PARTIAL</span></div>
+    <div class="cau">Bàn làm việc có đủ đồ nghề, và đồ nghề có chạm tới được không.</div><div class="ghi">Vật liệu · Thư viện · Trình chiếu · BOQ · Duyệt CHƯA audit.</div></div>
+  <div class="so">27 ca công cụ chết (26 mồ côi · 1 dây đứt)</div></div><div class="hang">
+  <b>G4</b>
+  <div><div class="ten">DESIGN TRUTH / MOAT <span class="tt" style="--c:#c08a2e">PARTIAL</span></div>
+    <div class="cau">Sửa một chỗ thì mọi nơi khác có tự đúng theo không.</div><div class="ghi">Sổ ghi &quot;CHỜ MẮT HOÀ&quot; — trạng thái đó bị BÃI 05/09; nay chấm bằng bằng chứng.</div></div>
+  <div class="so">định danh 13/13 sau khi đóng hẳn trình duyệt</div></div><div class="hang">
+  <b>G5</b>
+  <div><div class="ten">EXPERIENCE <span class="tt" style="--c:#c08a2e">PARTIAL</span></div>
+    <div class="cau">Nhìn có ra sản phẩm nghề không, dùng có vấp không.</div><div class="ghi">Metric &quot;nợ mắt chủ dự án&quot; đã BỎ (§9). Chưa đạt thì ghi FAIL/PARTIAL, không chờ phán.</div></div>
+  <div class="so">4/4 màn chính TRƯỢT bản chấm độc lập</div></div><div class="hang">
+  <b>G6</b>
+  <div><div class="ten">CONTENT &amp; INTELLIGENCE <span class="tt" style="--c:#c08a2e">PARTIAL</span></div>
+    <div class="cau">Mở app ra có sẵn thứ để làm việc, hay là một cái kho rỗng.</div><div class="ghi">Bán được &quot;vật liệu render được và nhớ gốc gác&quot;; CHƯA bán được &quot;đổi vật liệu thì số tự đúng&quot;.</div></div>
+  <div class="so">2 vật liệu · 1 cấu kiện 3D — phủ 1/17 họ</div></div><div class="hang">
+  <b>G7</b>
+  <div><div class="ten">DESKTOP RELEASE <span class="tt" style="--c:#c08a2e">PARTIAL</span></div>
+    <div class="cau">Có bộ cài mở được trên máy thật không.</div><div class="ghi">Cổng &quot;mở bộ cài&quot; VẪN TRỐNG. Dựng được ≠ phát hành đạt.</div></div>
+  <div class="so">AppImage 338 MB dựng được · macOS chưa ai mở</div></div></div>
+
+<h2>Bản đồ app — 18 bề mặt</h2>
+<div class="luoi"><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/01-home.png" alt="HOME — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>HOME <span class="tt" style="--c:#c04a4a">FAIL</span></h3>
+    <p class="do">/ — 1398 ký tự · 55 nút · 42 hình</p>
+    <p class="chan">⛔ B2 (P2) — Home chưa có hướng được duyệt mắt; Lô duyệt mắt #1 tấm 1 TRƯỢT 04/09 (gốc là MÔ HÌNH BỐ CỤC, không phải màu/khoảng cách)</p>
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/02-du-an.png" alt="DỰ ÁN — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>DỰ ÁN <span class="tt" style="--c:#6b7280">UNVERIFIED</span></h3>
+    <p class="do">/projects — 447 ký tự · 55 nút · 54 hình</p>
+    
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/03-2d.png" alt="THIẾT KẾ 2D — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>THIẾT KẾ 2D <span class="tt" style="--c:#6b7280">UNVERIFIED</span></h3>
+    <p class="do">/projects/cmtoq50cr000w7dyff4pqus4a/cad — 2254 ký tự · 106 nút · 110 hình</p>
+    
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/04-3d.png" alt="THIẾT KẾ 3D — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>THIẾT KẾ 3D <span class="tt" style="--c:#6b7280">UNVERIFIED</span></h3>
+    <p class="do">/projects/cmtoq50cr000w7dyff4pqus4a/render — 406 ký tự · 67 nút · 62 hình</p>
+    
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/05-trinh-chieu.png" alt="TRÌNH CHIẾU — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>TRÌNH CHIẾU <span class="tt" style="--c:#c04a4a">FAIL</span></h3>
+    <p class="do">/projects/cmtoq50cr000w7dyff4pqus4a/present — 642 ký tự · 58 nút · 54 hình</p>
+    <p class="chan">⛔ PH-01 [H1] canvas trắng trơn, KHÔNG có trạng thái rỗng nào · PH-06 ổ trái nói chắc trong khi thanh trên nói 0 slide; trượt cổng A1·A2·A6</p>
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/09-vat-lieu.png" alt="VẬT LIỆU — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>VẬT LIỆU <span class="tt" style="--c:#c04a4a">FAIL</span></h3>
+    <p class="do">/materials — 1672 ký tự · 57 nút · 62 hình</p>
+    <p class="chan">⛔ F1 kho vật liệu có 0 pixel vật liệu (img=0 · canvas=0, ô xem trước 32×32 chứa SVG biểu tượng ảnh-hỏng) · F2 3/3 ô là biểu tượng hỏng · F5 mặt 2D CHẾT trên 100% vật liệu ship sẵn ('2D –' cả…</p>
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/11-thu-vien.png" alt="THƯ VIỆN — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>THƯ VIỆN <span class="tt" style="--c:#c08a2e">PARTIAL</span></h3>
+    <p class="do">/library — 1846 ký tự · 64 nút · 58 hình</p>
+    <p class="chan">⛔ L9 — /library/ingest KHÔNG sinh LibraryAsset (page.tsx:98 chỉ saveManifest xuống IndexedDB); L4/C18 — specId không gắn được khi thả cấu kiện (LibraryDropBridge.tsx:112)</p>
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/16-files.png" alt="FILES — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>FILES <span class="tt" style="--c:#6b7280">UNVERIFIED</span></h3>
+    <p class="do">/files — 2711 ký tự · 67 nút · 72 hình</p>
+    
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/17-viec.png" alt="BẢNG VIỆC — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>BẢNG VIỆC <span class="tt" style="--c:#6b7280">UNVERIFIED</span></h3>
+    <p class="do">/tasks — 801 ký tự · 57 nút · 46 hình</p>
+    
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/12-gallery.png" alt="GALLERY — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>GALLERY <span class="tt" style="--c:#c08a2e">PARTIAL</span></h3>
+    <p class="do">/library/gallery — 462 ký tự · 50 nút · 45 hình</p>
+    <p class="chan">⛔ L9 — /library/ingest KHÔNG sinh LibraryAsset (page.tsx:98 chỉ saveManifest xuống IndexedDB); L4/C18 — specId không gắn được khi thả cấu kiện (LibraryDropBridge.tsx:112)</p>
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/15-cam-hung.png" alt="CẢM HỨNG — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>CẢM HỨNG <span class="tt" style="--c:#2f9e6b">PASS</span></h3>
+    <p class="do">/inspiration — 1133 ký tự · 49 nút · 45 hình</p>
+    
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/13-nhap-tai-san.png" alt="NHẬP TÀI SẢN — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>NHẬP TÀI SẢN <span class="tt" style="--c:#6b7280">UNVERIFIED</span></h3>
+    <p class="do">/library/ingest — 1018 ký tự · 5 nút · 4 hình</p>
+    
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/06-tong-quan-du-an.png" alt="TỔNG QUAN DỰ ÁN — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>TỔNG QUAN DỰ ÁN <span class="tt" style="--c:#6b7280">UNVERIFIED</span></h3>
+    <p class="do">/projects/cmtoq50cr000w7dyff4pqus4a/overview — 584 ký tự · 52 nút · 52 hình</p>
+    
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/07-so-tay.png" alt="SỔ TAY — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>SỔ TAY <span class="tt" style="--c:#6b7280">UNVERIFIED</span></h3>
+    <p class="do">/projects/cmtoq50cr000w7dyff4pqus4a/notebook — 818 ký tự · 18 nút · 10 hình</p>
+    
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/08-anh-du-an.png" alt="ẢNH DỰ ÁN — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>ẢNH DỰ ÁN <span class="tt" style="--c:#6b7280">UNVERIFIED</span></h3>
+    <p class="do">/projects/cmtoq50cr000w7dyff4pqus4a/photo — 441 ký tự · 27 nút · 24 hình</p>
+    
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/14-kho-tri-thuc.png" alt="KHO TRI THỨC — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>KHO TRI THỨC <span class="tt" style="--c:#6b7280">UNVERIFIED</span></h3>
+    <p class="do">/library/knowledge — 36921 ký tự · 53 nút · 190 hình</p>
+    
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/18-cai-dat.png" alt="CÀI ĐẶT — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>CÀI ĐẶT <span class="tt" style="--c:#c08a2e">PARTIAL</span></h3>
+    <p class="do">/settings — 5233 ký tự · 116 nút · 86 hình</p>
+    <p class="chan">⛔ LockScreenSettings.tsx:22 — gõ 42 → ô hiện 42 → đĩa null → mở lại về 15; giao diện nói dối và KHÔNG một dòng báo (D8, ghi bị nuốt im lặng)</p>
+  </article><article class="man">
+    <div class="khung"><img loading="lazy" src="anh/22-workhub.png" alt="WORKHUB — ảnh app thật">
+       <span class="xx">REAL APP · 2026-09-05 18:36 UTC</span></div>
+    <h3>WORKHUB <span class="tt" style="--c:#c04a4a">FAIL</span></h3>
+    <p class="do">/workhub — 307 ký tự · 1 nút · 0 hình</p>
+    <p class="chan">⛔ D2 (P2) — mặt AI THỨ HAI: WorkHubShell.tsx:140 submitMessage() nối câu trả lời GÕ CỨNG, grep 'fetch(' = 0, mà mặt đó TỰ XƯNG LÀ TRỢ LÝ và :150/:195 khẳng định 'đang dùng ngữ cảnh từ…' trong…</p>
+  </article></div>
+
+<h2>Hành trình nghề — 13/22 có cột ĐÃ LƯU</h2>
+<p class="nho">Mạch có GHI chỉ tính <b>PASS</b> khi đủ chuỗi:
+làm → lưu → <b>đóng/tải lại hẳn</b> → vào lại → <b>cùng sự thật</b>. Mới tới bước làm ⇒ PARTIAL.</p>
+<table><thead><tr><th>Mã</th><th>Hành trình</th><th>Trạng thái</th><th>Tới đâu rồi</th></tr></thead><tbody>
+<tr><td class="ma">J03</td><td>hai người dùng chung một máy — A đăng xuất, B đăng nhập</td>
+<td><span class="tt" style="--c:#c04a4a">FAIL</span></td><td class="nho">PERSIST</td></tr><tr><td class="ma">J08</td><td>chặng 3D — dựng khối bằng cử chỉ</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span></td><td class="nho">ACTION</td></tr><tr><td class="ma">J09</td><td>chặng 3D — chọn khối → Delete</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span></td><td class="nho">ACTION</td></tr><tr><td class="ma">J10</td><td>chặng 3D trên màn retina — khung nhìn không bị cắt</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span></td><td class="nho">ACTION</td></tr><tr><td class="ma">J11</td><td>đưa bản vẽ 2D sang Trình bày</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span></td><td class="nho">ACTION</td></tr><tr><td class="ma">J18</td><td>hai tab cùng một dự án cùng sửa cùng lưu</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span></td><td class="nho">PERSIST</td></tr><tr><td class="ma">J01</td><td>máy sạch → đăng ký tài khoản → User vào DB + cookie phiên</td>
+<td><span class="tt" style="--c:#6b7280">UNVERIFIED</span></td><td class="nho">—</td></tr><tr><td class="ma">J02</td><td>đã đăng nhập → thoát app → mở lại vẫn đăng nhập</td>
+<td><span class="tt" style="--c:#6b7280">UNVERIFIED</span></td><td class="nho">—</td></tr><tr><td class="ma">J04</td><td>Home rỗng → tạo dự án mới</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td class="nho">SAME-TRUTH</td></tr><tr><td class="ma">J05</td><td>Home có việc dở → bấm thẻ Resume</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td class="nho">SAME-TRUTH</td></tr><tr><td class="ma">J06</td><td>mở lại dự án cũ, sửa tiếp — giữ ID cũ</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td class="nho">SAME-TRUTH</td></tr><tr><td class="ma">J07</td><td>vẽ 2D → lưu → xoá sạch hồ sơ trình duyệt → mở lại</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td class="nho">SAME-TRUTH</td></tr><tr><td class="ma">J12</td><td>Trình bày — sửa bố cục → lưu → mở lại</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td class="nho">SAME-TRUTH</td></tr><tr><td class="ma">J13</td><td>nhập tệp thô → gắn định nghĩa → lưu vào thư viện</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td class="nho">SAME-TRUTH</td></tr><tr><td class="ma">J14</td><td>thả cấu kiện từ Thư viện → BOQ khớp kho giá</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td class="nho">SAME-TRUTH</td></tr><tr><td class="ma">J15</td><td>mở lại .idfc đã lưu, sửa, ghi lại</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td class="nho">SAME-TRUTH</td></tr><tr><td class="ma">J16</td><td>deep-link studio (tab mới · bookmark · F5) → làm việc → lưu</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td class="nho">SAME-TRUTH</td></tr><tr><td class="ma">J16b</td><td>deep-link studio rồi về Home — resume mang đủ flowId</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td class="nho">SAME-TRUTH</td></tr><tr><td class="ma">J23</td><td>bookmark route cũ /cad-editor → về đúng /projects/&lt;id&gt;/cad, không loé Home</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td class="nho">SAME-TRUTH</td></tr><tr><td class="ma">J17</td><td>đóng app đột ngột (không bấm lưu) — autosave kịp</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td class="nho">SAME-TRUTH</td></tr><tr><td class="ma">J19</td><td>cài đè bản mới hơn — snapshot trước khi đụng schema</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td class="nho">SAME-TRUTH</td></tr><tr><td class="ma">J20</td><td>Trình bày có nội dung → xuất PDF → mở tệp độc lập với app</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td class="nho">SAME-TRUTH</td></tr><tr><td class="ma">J21</td><td>xuất .idf / gói .idfp → nạp lại vào dự án khác</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td class="nho">SAME-TRUTH</td></tr><tr><td class="ma">J22</td><td>mất mạng / không có API key → dùng năng lực cần cloud</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td class="nho">ACTION</td></tr>
+</tbody></table>
+
+<h2>Moat — sự thật thiết kế</h2>
+<table><thead><tr><th>Trục</th><th>Trạng thái</th><th>Hành trình chứng minh</th></tr></thead><tbody>
+<tr><td class="ma">SEMANTIC IDENTITY</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td>K2 (elementType · storey · cờ suy đoán) 3/3 · K3 (2D→3D cùng một mã) 5/5 (trước vá 3/5)</td></tr><tr><td class="ma">PROVENANCE</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td>BoqRow.entityIds → entity → srcBlock/srcInsertId → specId → ProductSpec</td></tr><tr><td class="ma">DOWNSTREAM IMPACT</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td>K8 7/7 (trước vá 6/7)</td></tr><tr><td class="ma">PERSISTENCE</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span></td><td>K9 17/19</td></tr><tr><td class="ma">Đ1</td>
+<td><span class="tt" style="--c:#2f9e6b">PASS</span></td><td>K10 đường lùi 3/3 (khâu mới 04/09)</td></tr><tr><td class="ma">Đ2</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span></td><td>.idfc → cột thông số Thư viện → BOQ</td></tr><tr><td class="ma">Đ3</td>
+<td><span class="tt" style="--c:#c04a4a">FAIL</span></td><td>dự án → kho studio (.idfc)</td></tr><tr><td class="ma">MATERIAL</td>
+<td><span class="tt" style="--c:#c04a4a">FAIL</span></td><td>K5 (một mã vật liệu → ba mặt) khai 3/3 ở tầng dữ liệu, nhưng đo sống trên /materials thì mặt 2D CHẾT</td></tr><tr><td class="ma">LÁT CẮT DỌC MOAT</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span></td><td>Thư viện → 2D → ĐỊNH DANH NGỮ NGHĨA → 3D BuildRecipe → Vật liệu → BOQ/Spec → Trình bày → lưu → ĐÓNG → mở lại → gia phả + định danh CÒN NGUYÊN</td></tr>
+</tbody></table>
+
+<h2>Phát hành desktop</h2>
+<p class="nho">Bốn nấc, không gộp: <b>BUILT</b> dựng xong · <b>PACKAGED</b> ra tệp cài ·
+<b>INSTALLED</b> mở được trên máy đích · <b>REAL-MACHINE VERIFIED</b> đi hết mạch nghề trên máy thật.
+Dựng được <b>không phải</b> là phát hành đạt.</p>
+<div class="hai">
+<div class="hop"><h3>macOS</h3>
+  <p class="nho">ĐÍCH CHÍNH — trải nghiệm desktop chính (chủ dự án dùng hằng ngày)</p>
+  <div class="nac"><span>BUILT</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div><div class="nac"><span>PACKAGED</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div><div class="nac"><span>INSTALLED</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div><div class="nac"><span>REAL-MACHINE VERIFIED</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div>
+  <p class="nho" style="margin-top:10px">arm64 duy nhất — chủ dự án xác nhận CẢ HAI máy Mac đều Apple Silicon; KHÔNG thêm x64, KHÔNG universal</p></div><div class="hop"><h3>Windows</h3>
+  <p class="nho">đích phân phối công ty</p>
+  <div class="nac"><span>BUILT</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div><div class="nac"><span>PACKAGED</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div><div class="nac"><span>INSTALLED</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div><div class="nac"><span>REAL-MACHINE VERIFIED</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div>
+  <p class="nho" style="margin-top:10px">nsis x64 (package.json build.win)</p></div><div class="hop"><h3>Linux</h3>
+  <p class="nho">KHÔNG nằm trong build targets (chỉ có win · mac) — dựng để kiểm cấu hình, KHÔNG phải sản phẩm giao được</p>
+  <div class="nac"><span>BUILT</span><span class="tt" style="--c:#2f9e6b">PASS</span></div><div class="nac"><span>PACKAGED</span><span class="tt" style="--c:#2f9e6b">PASS</span></div><div class="nac"><span>INSTALLED</span><span class="tt" style="--c:#2f9e6b">PASS</span></div><div class="nac"><span>REAL-MACHINE VERIFIED</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div>
+  </div><div class="hop"><h3>bangCong21</h3>
+  <p class="nho">UNVERIFIED</p>
+  <div class="nac"><span>BUILT</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div><div class="nac"><span>PACKAGED</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div><div class="nac"><span>INSTALLED</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div><div class="nac"><span>REAL-MACHINE VERIFIED</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div>
+  </div><div class="hop"><h3>noChatLuongPhatHanh</h3>
+  <p class="nho">UNVERIFIED</p>
+  <div class="nac"><span>BUILT</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div><div class="nac"><span>PACKAGED</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div><div class="nac"><span>INSTALLED</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div><div class="nac"><span>REAL-MACHINE VERIFIED</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div>
+  </div><div class="hop"><h3>chuaXacMinh</h3>
+  <p class="nho">UNVERIFIED</p>
+  <div class="nac"><span>BUILT</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div><div class="nac"><span>PACKAGED</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div><div class="nac"><span>INSTALLED</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div><div class="nac"><span>REAL-MACHINE VERIFIED</span><span class="tt" style="--c:#6b7280">UNVERIFIED</span></div>
+  </div>
+</div>
+
+<h2>Chặn thật — 11 mục P0/P1</h2>
+<table><thead><tr><th>Mã</th><th>Ảnh hưởng người dùng</th><th>Mức</th><th>Cổng</th><th>Cần Hoà?</th></tr></thead><tbody>
+<tr><td class="ma">B1 / D1</td>
+<td>Người dùng đã đăng nhập mở thẳng route studio (tab mới · bookmark · F5), làm việc, và việc KHÔNG được lưu. Không báo lỗi, không dấu hiệu nào</td>
+<td><span class="tt" style="--c:#c04a4a">FAIL</span> <span class="nho">P0</span></td>
+<td class="nho">G1</td><td class="nho">không</td></tr><tr><td class="ma">D3</td>
+<td>Tab cũ của A có thể ghi vào bucket của A sau khi B đã đăng nhập — rò dữ liệu chéo người dùng</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span> <span class="nho">P1</span></td>
+<td class="nho">G1</td><td class="nho">không</td></tr><tr><td class="ma">D5</td>
+<td>KTS thêm ô chữ, quên điền, xuất gửi khách ⇒ hồ sơ khách có chữ 'Nhập nội dung'. Đường xuất KHÔNG lọc placeholder, cũng không cảnh báo</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span> <span class="nho">P1</span></td>
+<td class="nho">G5</td><td class="nho">không</td></tr><tr><td class="ma">D6</td>
+<td>vào lại app không quay về được việc đang dở</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span> <span class="nho">P1</span></td>
+<td class="nho">G2</td><td class="nho">không</td></tr><tr><td class="ma">D7</td>
+<td>J16b xanh trong khi người dùng vẫn không vào được việc của mình</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span> <span class="nho">P1</span></td>
+<td class="nho">G2</td><td class="nho">không</td></tr><tr><td class="ma">G1-CA3</td>
+<td>0 canvas · 0 nút · 0 ký tự · 1081 lỗi chưa bắt</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span> <span class="nho">P1</span></td>
+<td class="nho">G1</td><td class="nho">không</td></tr><tr><td class="ma">C18 / L4</td>
+<td>cấu kiện ra NÉT RỜI, không bao giờ lên BOQ, VÀ BOQ CŨNG KHÔNG BÁO LỖI</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span> <span class="nho">P1</span></td>
+<td class="nho">G4/G6</td><td class="nho">không</td></tr><tr><td class="ma">L9</td>
+<td>Nhập tài sản qua đường ingest thì tài sản chỉ nằm trong IndexedDB của trình duyệt</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span> <span class="nho">P1</span></td>
+<td class="nho">G5</td><td class="nho">không</td></tr><tr><td class="ma">MAT-F1..F5</td>
+<td>Màn duy nhất có nhiệm vụ BÀY vật liệu đang bày một dòng bản ghi CSDL (trái N-5); bấm ô vật liệu ở panel 3D KHÔNG CÓ GÌ XẢY RA và không dòng nào nói vì sao; đổi vật liệu ở 3D đổi được MÀU, không đổi đư</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span> <span class="nho">P1</span></td>
+<td class="nho">G6</td><td class="nho">không</td></tr><tr><td class="ma">3D-TRANSFORM</td>
+<td>Dựng được khối nhưng KHÔNG XOAY ĐƯỢC NÓ; muốn dời 250mm không có cách nào, muốn dời 3m phải bấm 30 lần. Chặn việc bày đồ nội thất — đúng phần IF nhận là điểm nhấn</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span> <span class="nho">P1</span></td>
+<td class="nho">G3</td><td class="nho">không</td></tr><tr><td class="ma">NO-MAT</td>
+<td>bề mặt trải nghiệm lớn chưa qua mắt Hoà ⇒ chưa đạt ĐỊNH NGHĨA XONG</td>
+<td><span class="tt" style="--c:#c08a2e">PARTIAL</span> <span class="nho">P1</span></td>
+<td class="nho">G4/G5</td><td class="nho"><b>CÓ</b></td></tr>
+</tbody></table>
+
+<h2>Đang dựng</h2>
+<div class="hop" style="margin-bottom:12px">
+<h3 style="margin-top:0">Vật liệu · lát cắt dọc V1–V4</h3>
+<p class="deu" style="font-size:14px"><b>Vì sao:</b> Kho vật liệu đang bày TÊN chứ không bày VẬT — ô mẫu 32×32 px, không đủ để phân biệt gỗ sồi với gỗ óc chó.</p>
+<p class="deu" style="font-size:14px;margin:0"><b>Người dùng sẽ được:</b> Mở kho là NHÌN ra vân gỗ và phán được, không phải đọc tên rồi đoán.</p></div><div class="hop" style="margin-bottom:12px">
+<h3 style="margin-top:0">Ranh giới danh tính khi thả cấu kiện</h3>
+<p class="deu" style="font-size:14px"><b>Vì sao:</b> Cờ trong mã đang trả lời &quot;đây có phải BlockEntity không&quot; — một câu về cách vẽ — trong khi cái cần biết là &quot;nó có còn là một món có danh tính không&quot;.</p>
+<p class="deu" style="font-size:14px;margin:0"><b>Người dùng sẽ được:</b> Đặt món xuống giữ danh tính; chỉ khi người dùng CHỦ ĐỘNG rã món thì nó mới thành hình học rời.</p></div>
+
+<h2>Hai nguồn đá nhau — 20 chỗ</h2>
+<p class="nho">Không chọn số đẹp hơn. Chỗ nào hai sổ nói khác nhau thì hiện cả hai.</p>
+<div class="mt">
+<div class="ve"><span class="tt" style="--c:#8b5cf6">CONFLICT</span> Nợ nghiệm thu mắt — 76 hay 77?</div>
+<div class="n">A — docs/delivery/SHIP-BLOCKERS.md G4 và G5 (cùng tệp, hai dòng) nói 'nợ nghiệm thu mắt 77 xong-máy / 1 qua mắt'</div>
+<div class="n">B — docs/delivery/VISUAL-APPROVAL-QUEUE.md nói 'soi:frontier đếm 76 mục xong-MÁY đối 1 mục qua mắt'; docs/delivery/VISUAL-REVIEW-BATCH-01.md:202 cũng ghi '76 xong-máy / 1 xong-mắt'</div></div><div class="mt">
+<div class="ve"><span class="tt" style="--c:#8b5cf6">CONFLICT</span> Số hành trình UNVERIFIED và cột ĐÃ LƯU</div>
+<div class="n">A — docs/delivery/G5-RELEASE-READINESS.md §B3 cổng 10-12 nói 'J04 UNVERIFIED' · '14 UNVERIFIED — xem JOURNEY-MATRIX' · '🔴 0 hành trình xác minh ở cột KẾT QUẢ ĐÃ LƯU; J16 là P0 đang mở'</div>
+<div class="n">B — docs/delivery/JOURNEY-MATRIX.md §2 nói cột ĐÃ LƯU = 13/22, UNVERIFIED = 2 (chỉ J01 · J02), J04 PASS, J16 PASS trên app thật</div></div><div class="mt">
+<div class="ve"><span class="tt" style="--c:#8b5cf6">CONFLICT</span> Cổng 7 (mở bộ cài) — trống hay đã mở?</div>
+<div class="n">A — docs/delivery/SHIP-BLOCKERS.md bảng bảy cổng, dòng G7: '🔴 Cổng 7 (mở bộ cài) vẫn trống — chưa mở gói nào'; docs/delivery/G5-RELEASE-READINESS.md §B6: '🔴 CỔNG 7 VẪN TRỐNG. Dựng được gói KHÔNG PHẢI mở được gói'</div>
+<div class="n">B — docs/delivery/SHIP-BLOCKERS.md §05/09 (CÙNG TỆP, phần dưới): 'LẦN ĐẦU MỘT GÓI ĐƯỢC MỞ — và nó CHẠY, CSDL SỐNG' — mở gói bằng Xvfb, sống 90s, HTTP 200, /api/auth/login trả 401, máy sạch tự dựng 24/24 bảng</div></div><div class="mt">
+<div class="ve"><span class="tt" style="--c:#8b5cf6">CONFLICT</span> B1/D1 — đã chạy app thật chưa?</div>
+<div class="n">A — docs/delivery/SHIP-BLOCKERS.md B1: '🔴 VÌ SAO CHƯA ĐÓNG: chưa mở app thật một dòng nào. Test dựng lại HÌNH DẠNG effect bằng lời gọi hàm trần'; docs/delivery/PRODUCT-DEFECTS.md D1: '🔵 đang sửa — làn A'</div>
+<div class="n">B — docs/delivery/JOURNEY-MATRIX.md J16: 'PASS trên app thật 04/09 — hồ sơ Chromium trên đĩa, bản vá D1 nay CÓ NGƯỜI NHÌN: 0 khoá mơ hồ'; docs/delivery/G1-DATA-SAFE-ACCEPTANCE.md CA1-CA12 chạy trên app thật, 11/12 </div></div><div class="mt">
+<div class="ve"><span class="tt" style="--c:#8b5cf6">CONFLICT</span> getMaterial() — 0 nơi gọi hay 2 nơi gọi?</div>
+<div class="n">A — sổ 00-CHOT 17/08 (và SHIP-BLOCKERS trích lại): 'lib/materials ↔ ProductSpec = 0 code' / 'grep toàn repo: 0 nơi gọi ngoài chính test của nó'</div>
+<div class="n">B — docs/delivery/KIEM-KE-NANG-LUC.md §15 (đính chính tường minh) và docs/delivery/SPEC-VAT-LIEU-LAT-CAT-DOC.md §0.1: 'getMaterial() lib/materials/resolve.ts:87 — ✅ 2 nơi gọi thật (MaterialsScreen.tsx:145 · app/fil</div></div><div class="mt">
+<div class="ve"><span class="tt" style="--c:#8b5cf6">CONFLICT</span> ⌘J — chết hay đã sống lại?</div>
+<div class="n">A — docs/delivery/SHIP-BLOCKERS.md G5: '⌘J không mặt nào tiêu thụ (nút Trình chiếu ghi hẳn phím tắt đó)'; docs/delivery/G3-BAN-LAM-VIEC-2D-3D.md §E2②: 'Phím tắt khai mà KHÔNG mặt nào tiêu thụ — ⌘J/Ctrl+J (Vitals)';</div>
+<div class="n">B — docs/delivery/KIEM-KE-NANG-LUC.md §3.1 + §15: '⌘J mở khẩu độ Vitals — VitalsAperture.tsx:419 · sổ 00-CHOT 04/09 ghi phím này CHẾT; ĐO LẠI 05/09 thì nó đã được nối lại. StageSwitcher:223 (mồ côi) và VitalsRightE</div></div><div class="mt">
+<div class="ve"><span class="tt" style="--c:#8b5cf6">CONFLICT</span> KIEM-KE tự mâu thuẫn — 59 hay 89 dòng 🟡?</div>
+<div class="n">A — docs/delivery/KIEM-KE-NANG-LUC.md §15 bảng tổng: '🟡 CÓ MÃ, CHƯA CHỨNG MINH = 59 — 45% của app' (và 67 + 59 + 4 = 130 khớp tổng)</div>
+<div class="n">B — docs/delivery/KIEM-KE-NANG-LUC.md §15 ô RỦI RO, CÙNG TRANG: 'Rủi ro thứ hai: 89 dòng 🟡 là mảng lớn nhất'</div></div><div class="mt">
+<div class="ve"><span class="tt" style="--c:#8b5cf6">CONFLICT</span> resolveIdfcCommerceToSpec() — đã cắm điện hay 0 nơi gọi?</div>
+<div class="n">A — docs/delivery/SHIP-BLOCKERS.md G4: 'resolveIdfcCommerceToSpec() 0 nơi gọi trong sản phẩm (MAIN tự grep xác nhận) ⇒ mới ở nấc dây-có-chưa-cắm-điện'</div>
+<div class="n">B — docs/delivery/G4-MOAT-SLICE.md §05/09: 'CẮM ĐIỆN resolveIdfcCommerceToSpec — mặt tiền: cột thông số tấm Thư viện' kèm bảng 4 tình trạng câu chính/câu phụ</div></div>
+<p class="nho">…còn 12 chỗ nữa trong <code>docs/ship/bang-chung.json</code>.</p>
+
+<h2>Bảng này KHÔNG nói gì</h2>
+<p class="deu">Không đếm commit · không đếm test · không đếm dòng mã · không đếm route ·
+không kể CI hay Vercel. Cũng không còn mục <i>nợ nghiệm thu mắt chủ dự án</i> —
+Hoà bỏ nó ngày 05/09: chưa đạt thì ghi thẳng FAIL/PARTIAL, không treo chờ ai phán.</p>
+<p class="nho">Sinh bằng <code>node scripts/sinh-ship-board.mjs</code>.
+Nguồn: <code>docs/ship/bang-chung.json</code> · <code>docs/ship/anh/xuat-xu.json</code>.
+Cập nhật khi <b>cổng đổi trạng thái · hành trình đổi · bề mặt có bản dựng mới · có ảnh app mới ·
+chặn mở/đóng · gói desktop đổi</b> — không cập nhật vì có commit mới.</p>
+
+</div></body></html>
