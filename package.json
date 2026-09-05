@@ -195,17 +195,6 @@
       "!node_modules/@prisma/engines/*query_engine*",
       "!node_modules/@prisma/engines/*libquery*"
     ],
-    "extraResources": [
-      {
-        "from": "node_modules/.prisma",
-        "to": "app/node_modules/.prisma",
-        "filter": [
-          "**/*",
-          "!**/*.db",
-          "!**/*.db-journal"
-        ]
-      }
-    ],
     "asar": false,
     "extraMetadata": {
       "main": "electron/main.js"
