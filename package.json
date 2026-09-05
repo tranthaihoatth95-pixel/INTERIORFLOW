@@ -17,6 +17,7 @@
     "soi:quan-tri": "node scripts/soi-quan-tri.mjs",
     "soi:hinh-hoc": "node scripts/soi-hinh-hoc.mjs",
     "soi:tu-dien": "node scripts/soi-tu-dien.mjs",
+    "soi:dong-dang": "node scripts/soi-dong-dang.mjs",
     "soi:thao-tac": "node scripts/soi-thao-tac.mjs",
     "ship:map": "node scripts/sinh-ship-map.mjs",
     "soi:contract": "node scripts/soi-contract.mjs",
