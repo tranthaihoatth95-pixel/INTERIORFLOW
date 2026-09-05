@@ -63,6 +63,7 @@ import {
   duongCua,
   mucDangMo,
   lyDoMo,
+  goiYCua,
   type MucRail,
   type NacRail,
 } from './muc-dieu-huong';
@@ -248,7 +249,8 @@ export function RailDieuHuong() {
                 key={muc.id}
                 muc={muc}
                 duongDi={duongCua(muc, duAnId ?? flowId)}
-                lyDo={lyDoMo(muc, daMoDuAn)}
+                lyDo={lyDoMo(muc)}
+                goiY={goiYCua(muc, daMoDuAn)}
                 dangMo={dangMo === muc.id}
                 hienChu={hienChu}
                 tinhTrang={tinhTrangCua(muc)}
@@ -315,6 +317,7 @@ function HangRail({
   muc,
   duongDi,
   lyDo,
+  goiY,
   dangMo,
   hienChu,
   tinhTrang,
@@ -322,6 +325,8 @@ function HangRail({
   muc: MucRail;
   duongDi: string | null;
   lyDo: { vi: string; en: string } | null;
+  /** Gợi ý cho mục CÒN bấm được (khác `lyDo` = lý do TẮT). */
+  goiY?: { vi: string; en: string } | null;
   dangMo: boolean;
   hienChu: boolean;
   tinhTrang: string | null;
@@ -330,6 +335,7 @@ function HangRail({
   const Icon = muc.icon;
   const nhan = tr(muc.vi, muc.en);
   const lyDoChu = lyDo ? tr(lyDo.vi, lyDo.en) : null;
+  const goiYChu = goiY ? tr(goiY.vi, goiY.en) : null;
   const idLyDo = `rail-ly-do-${muc.id}`;
 
   const chung: React.CSSProperties = {
@@ -427,14 +433,22 @@ function HangRail({
   }
 
   return (
-    <Tooltip label={nhan} style={{ width: '100%' }}>
+    <Tooltip label={nhan} desc={goiYChu ?? undefined} style={{ width: '100%' }}>
       <Link
         href={duongDi}
+        aria-describedby={goiYChu ? idLyDo : undefined}
         aria-current={dangMo ? 'page' : undefined}
         style={chung}
         className="transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
       >
         {ruot}
+        {/* Gợi ý đi kèm mục CÒN bấm được — cùng đường `aria-describedby` với lý-do-tắt, vì
+            `title=` câm trên cảm ứng và trình đọc màn hình đọc không nhất quán (bài học 16/08). */}
+        {goiYChu && (
+          <span id={idLyDo} className="if-tooltip-a11y">
+            {goiYChu}
+          </span>
+        )}
       </Link>
     </Tooltip>
   );

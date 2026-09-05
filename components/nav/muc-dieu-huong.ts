@@ -269,10 +269,26 @@ export const NHAN_CUM: Record<CumRail, { vi: string; en: string }> = {
 export const THU_TU_CUM: readonly CumRail[] = ['chung', 'duAn', 'caNhan'] as const;
 
 /** Đường đi thật của một mục — `null` khi mục chưa dùng được (chưa có trang / chưa mở dự án). */
+/** Đường tới chỗ MỞ/TẠO dự án — Home tự bung hộp khởi tạo khi thấy tham số này. */
+export const DUONG_MO_DU_AN = '/?mo=du-an';
+
 export function duongCua(muc: MucRail, duAnId: string | null): string | null {
   if (muc.chuaCoTrang) return null;
   if (muc.cum !== 'duAn') return muc.duong ?? null;
-  return duAnId ? `/projects/${duAnId}/${muc.duoi}` : null;
+  // ⚠️ CHƯA CÓ DỰ ÁN THÌ VẪN TRẢ ĐƯỜNG — dẫn về chỗ tạo, KHÔNG trả null.
+  //
+  // Trước 05/09 chỗ này trả `null` ⇒ cả năm mục chặng (Dự án này · Sổ tay · 2D · 3D · Trình
+  // chiếu) thành nút `aria-disabled`, bấm không ra gì. Chủ dự án mở bản cài lần đầu, chưa có
+  // dự án nào, gặp đúng năm nút chết — báo "app không chạy được chặng". Đo lại trên app thật:
+  // cả 5 đều `aria-disabled="true"`, không href.
+  //
+  // Trái LUẬT X2 (00-CHOT 03/08): "KHÔNG màn nào được chặn vì chưa làm bước trước — chặng trống
+  // hiện empty state LÀM ĐƯỢC VIỆC tại chỗ". Nút chết còn tệ hơn màn trống: nó không nói được
+  // phải làm gì tiếp.
+  //
+  // Nay: chưa có dự án ⇒ bấm chặng là về Home và BUNG SẴN hộp tạo dự án. Một cú bấm ra đúng
+  // việc người dùng đang muốn, thay vì một cú bấm vào hư không.
+  return duAnId ? `/projects/${duAnId}/${muc.duoi}` : DUONG_MO_DU_AN;
 }
 
 /**
@@ -308,12 +324,26 @@ export function mucDangMo(duong: string | null | undefined): string | null {
  * `<button disabled>` bị Tab bỏ qua hẳn và `title=` câm trên cảm ứng ⇒ đúng cái nút cần giải
  * thích nhất lại là cái mất sạch kênh giải thích.
  */
-export function lyDoMo(muc: MucRail, daMoDuAn: boolean): { vi: string; en: string } | null {
+export function lyDoMo(muc: MucRail): { vi: string; en: string } | null {
+  // CHỈ mục THẬT SỰ chưa có trang mới bị tắt. "Chưa mở dự án" KHÔNG còn là lý do tắt — nó là
+  // GỢI Ý đi kèm một đường dẫn sống (xem `goiYCua` + `duongCua`), vì nút chết không nói được
+  // phải làm gì tiếp; nó chỉ bảo người dùng rằng họ đã sai ở đâu đó.
   if (muc.chuaCoTrang) return muc.chuaCoTrang;
-  if (muc.cum === 'duAn' && !daMoDuAn) {
+  return null;
+}
+
+/**
+ * Gợi ý đi kèm mục CÒN BẤM ĐƯỢC — khác hẳn `lyDoMo` (lý do TẮT).
+ *
+ * Ranh giới, để lần sau không lẫn: `lyDoMo` = "bấm cũng không ra gì, và đây là vì sao";
+ * `goiYCua` = "bấm được, và đây là điều sẽ xảy ra". Trước 05/09 hai thứ này bị gộp làm một,
+ * nên "chưa mở dự án" — vốn chỉ là một trạng thái tạm — lại đi tắt mất năm mục chặng.
+ */
+export function goiYCua(muc: MucRail, daMoDuAn: boolean): { vi: string; en: string } | null {
+  if (muc.cum === 'duAn' && !daMoDuAn && !muc.chuaCoTrang) {
     return {
-      vi: 'Chưa mở dự án — chọn một dự án ở Tổng quan',
-      en: 'No project open — pick one from Overview',
+      vi: 'Chưa có dự án nào — bấm để tạo dự án rồi vào chặng này',
+      en: 'No project yet — click to create one, then enter this stage',
     };
   }
   return null;

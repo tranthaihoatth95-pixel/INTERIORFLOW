@@ -18,6 +18,8 @@
 
 import {
   MUC_RAIL,
+  DUONG_MO_DU_AN,
+  goiYCua,
   BE_RONG_NAC,
   THU_TU_NAC,
   nacKe,
@@ -84,12 +86,14 @@ ok('Files → /files', duongCua(byId('files'), null) === '/files');
 ok('Tổng quan → /', duongCua(byId('tong-quan'), null) === '/');
 ok('Chat · Họp → null (chưa có trang)', duongCua(byId('chat-hop'), 'p1') === null);
 ok('Thiết kế 2D + dự án p1 → /projects/p1/cad', duongCua(byId('thiet-ke-2d'), 'p1') === '/projects/p1/cad');
-ok('Thiết kế 2D KHÔNG dự án → null', duongCua(byId('thiet-ke-2d'), null) === null);
+// ĐỔI 05/09: trước đây khẳng định `=== null` — chính nó hợp thức hoá năm nút chặng CHẾT khi
+// chưa có dự án. Nay chưa có dự án thì dẫn về chỗ TẠO dự án. Xem khối [5b].
+ok('Thiết kế 2D KHÔNG dự án → dẫn về chỗ tạo dự án', duongCua(byId('thiet-ke-2d'), null) === DUONG_MO_DU_AN);
 ok(
   'không đường nào của cụm DỰ ÁN chứa chữ "null"/"undefined"',
   MUC_RAIL.filter((m) => m.cum === 'duAn').every((m) => {
     const d = duongCua(m, null);
-    return d === null;
+    return d === null || !/null|undefined/.test(d);
   }),
 );
 ok('Dự án này giữ route /overview (deep-link không vỡ)', duongCua(byId('du-an-nay'), 'p1') === '/projects/p1/overview');
@@ -116,17 +120,13 @@ ok(
 );
 
 console.log('\n[5] Mục mờ LUÔN có lý do đọc được — §9 cấm nút giả');
-ok('Chat · Họp mờ kèm lý do dù đã mở dự án', Boolean(lyDoMo(byId('chat-hop'), true)?.vi));
-ok('cụm DỰ ÁN chưa mở dự án → mờ kèm lý do', Boolean(lyDoMo(byId('thiet-ke-2d'), false)?.vi));
-ok('cụm DỰ ÁN đã mở dự án → dùng được', lyDoMo(byId('thiet-ke-2d'), true) === null);
-ok('cụm CHUNG không bị dự án khoá', lyDoMo(byId('files'), false) === null);
-ok('cụm CÁ NHÂN không bị dự án khoá', lyDoMo(byId('ca-nhan'), false) === null && lyDoMo(byId('cai-dat'), false) === null);
+ok('Chat · Họp mờ kèm lý do (chưa có trang)', Boolean(lyDoMo(byId('chat-hop'))?.vi));
 ok(
   'HỄ không có đường đi thì PHẢI có lý do (và ngược lại)',
   MUC_RAIL.every((m) => {
     for (const duAn of [null, 'p1']) {
       const coDuong = duongCua(m, duAn) !== null;
-      const coLyDo = lyDoMo(m, duAn !== null) !== null;
+      const coLyDo = lyDoMo(m) !== null;
       if (coDuong === coLyDo) return false;
     }
     return true;
@@ -135,10 +135,39 @@ ok(
 ok(
   'mọi lý do đều song ngữ và không rỗng',
   MUC_RAIL.every((m) => {
-    const r = lyDoMo(m, false);
+    const r = lyDoMo(m);
     return r === null || (r.vi.trim().length > 0 && r.en.trim().length > 0);
   }),
 );
+
+console.log('\n[5b] CHƯA CÓ DỰ ÁN THÌ CHẶNG VẪN BẤM ĐƯỢC — ghim bản vá 05/09');
+// Chủ dự án mở bản cài lần đầu, chưa có dự án nào, bấm năm mục chặng thì KHÔNG RA GÌ:
+// cả năm là `aria-disabled`, không href. Trái LUẬT X2 ("không màn nào chặn vì chưa làm bước
+// trước"). Gốc là chính khẳng định ở trên khi nó còn coi "chưa mở dự án" là lý do TẮT.
+// Bốn ca dưới ghim để lỗi đó không quay lại trong im lặng.
+const CHANG = ['du-an-nay', 'so-tay', 'thiet-ke-2d', 'thiet-ke-3d', 'trinh-chieu'] as const;
+const chang = CHANG.map(byId).filter((m) => !m.chuaCoTrang);
+ok(
+  'chưa có dự án → MỌI mục chặng vẫn có đường đi (không mục nào chết)',
+  chang.length > 0 && chang.every((m) => duongCua(m, null) === DUONG_MO_DU_AN),
+);
+ok(
+  'chưa có dự án → KHÔNG mục chặng nào bị coi là tắt',
+  chang.every((m) => lyDoMo(m) === null),
+);
+ok(
+  'chưa có dự án → mỗi mục chặng có GỢI Ý song ngữ nói bấm vào thì gì xảy ra',
+  chang.every((m) => {
+    const g = goiYCua(m, false);
+    return g !== null && g.vi.trim().length > 0 && g.en.trim().length > 0;
+  }),
+);
+ok(
+  'ĐÃ có dự án → đường đi trỏ đúng dự án đó, và thôi gợi ý',
+  chang.every((m) => duongCua(m, 'p1') === `/projects/p1/${m.duoi}` && goiYCua(m, true) === null),
+);
+ok('cụm CHUNG và CÁ NHÂN không bao giờ mang gợi ý dự án',
+  [byId('files'), byId('ca-nhan'), byId('cai-dat')].every((m) => goiYCua(m, false) === null));
 
 console.log('\n[6] Nấc 320 — bỏ thì phải kèm lý do, không im lặng');
 ok(

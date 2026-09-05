@@ -253,6 +253,20 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
   /* ── ĐƯỜNG TẠO DỰ ÁN TỪ HOME (04/09, đóng lỗi chặn D-J04a) ────────────────────────────── */
   const lang = useLang();
   const [initOpen, setInitOpen] = useState(false);
+
+  // Rail dẫn về đây kèm `?mo=du-an` khi người dùng bấm một chặng mà CHƯA có dự án nào
+  // (xem `components/nav/muc-dieu-huong.ts` → `duongCua`). Bung sẵn hộp khởi tạo để một cú bấm
+  // ra đúng việc họ đang muốn, thay vì đổ họ về Home rồi để tự mò.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get('mo') !== 'du-an') return;
+    setInitOpen(true);
+    // Dọn tham số khỏi thanh địa chỉ: F5 hay chia sẻ link không nên bung lại hộp thoại.
+    sp.delete('mo');
+    const q = sp.toString();
+    window.history.replaceState(null, '', window.location.pathname + (q ? `?${q}` : ''));
+  }, []);
   const [initLoi, setInitLoi] = useState<string | null>(null);
 
   /**
