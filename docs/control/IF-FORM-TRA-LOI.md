@@ -61,3 +61,28 @@ câu hỏi đơn giản 1–5 câu · tư vấn 5–12 dòng · báo cáo hiện
 
 **Mục tiêu cuối:** người đọc biết ngay *điều gì đúng · điều gì chưa chắc · việc gì đang xảy ra ·
 ai cần làm gì tiếp*.
+
+---
+
+## MẪU 6 — Ô KẾT (Hoà chốt 05/09) · **BẮT BUỘC ở cuối mọi lượt giải nghĩa**
+
+> Nguyên văn: *"khi bạn giải nghĩa xong, bước cuối bạn phải cho tôi thấy **tổng kết vấn đề và
+> giải pháp** của bạn bao gồm cả **rủi ro** và **cái đạt được**."*
+
+Giải nghĩa xong mà không có ô này thì **lượt đó chưa xong**. Bốn ô, đúng thứ tự, không đảo:
+
+| ô | trả lời câu gì | luật riêng |
+|---|---|---|
+| **① VẤN ĐỀ** | hỏng cái gì, đo được bao nhiêu | một câu + con số. Không có số thì ghi thẳng *chưa đo được* |
+| **② GIẢI PHÁP** | tôi làm gì, theo thứ tự nào | việc thật, không phải ý định. Mỗi việc phải nói được *ai làm · xong thì thấy gì* |
+| **③ RỦI RO** | làm thế thì hỏng được chỗ nào | ⛔ **cấm để trống.** Không thấy rủi ro nghĩa là chưa nghĩ đủ, không phải không có. Kèm *cách chặn* cho từng rủi ro |
+| **④ ĐẠT ĐƯỢC** | đổi lại được gì | phải **đo được hoặc nhìn thấy được**. Cấm "sạch hơn · tốt hơn · dễ bảo trì hơn" |
+
+**Ba luật giữ ô này khỏi thành thủ tục rỗng:**
+1. **Rủi ro phải là rủi ro của CHÍNH giải pháp mình**, không phải rủi ro chung của dự án.
+   *"Có thể có bug"* là không nói gì. *"Đập bố cục Home có thể đánh rơi đường resume — chặn bằng
+   bản kiểm kê năng lực"* mới là rủi ro.
+2. **Đạt được phải trả lời được câu "biết bằng cách nào".** Không nêu được cách kiểm ⇒ nó là lời
+   hứa, ghi vào ô ③ chứ không phải ô ④.
+3. **Ô này KHÔNG thay ô ⑦b** (CHƯA CHẮC / CHƯA KIỂM). ⑦b nói *tôi chưa biết gì*; ô ③ nói
+   *tôi biết nó có thể hỏng ở đâu*. Hai thứ khác nhau, giữ cả hai.
