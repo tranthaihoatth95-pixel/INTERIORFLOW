@@ -126,6 +126,68 @@ function timThieu(dk) {
   return xau;
 }
 
+/* ── SOI THEO DÒNG (thêm 05/09) ────────────────────────────────────────────────
+   VÌ SAO: `timThieu` xét theo TỆP — tệp có `mauThieu` ở BẤT KỲ đâu là được miễn CẢ TỆP. Nên một
+   tệp vừa dựng ring cho vật A vừa giết ring của vật B thì lọt sạch. Đo 05/09: luật vòng focus báo
+   21 tệp, nhưng soi theo dòng ra 64 occurrence với 8 lỗ thật NẰM TRONG tệp đã được miễn
+   (`ve3d-css` · `library-sheet-css` · `files-mock-css` · `inspiration-css` · `ProjectSelect` ·
+   `globals.css` slider). Số theo tệp là SÀN, không phải trần.
+
+   HỢP LỆ khi có ring thay thế CHO CÙNG SELECTOR — ba đường, theo đúng thứ tự:
+     ① khai báo `focus-ring-ok` trong 3 dòng trên (đọc trên bản THÔ: marker LÀ LỜI KHAI của tác
+        giả, cùng khuôn `mienTruTrongChuThich` — xem docstring `timThieu`);
+     ② cùng dòng có `mauThieu` VÀ một tín hiệu ring (`mauKem`) — ca className Tailwind;
+     ③ dòng CSS `sel{…}` → tệp phải có `sel` + `mauThieu` (ca CSS nhiều selector).
+   ⚠️ Chú thích CSS nằm TRONG chuỗi template không bị `bocChuThich` bóc (nó bảo toàn ruột chuỗi),
+   nên phải bóc thêm một lượt ở đây — nếu không, máy đọc trúng chính câu chú thích giải thích
+   `outline:none` rồi báo nhầm. Đây là lần thứ tư loại lỗi "máy soi đọc chú thích của chính mình"
+   xuất hiện; xem 00-CHOT 04/09. */
+function bocChuThichCss(s) {
+  let ra = '', i = 0, trong = false;
+  while (i < s.length) {
+    const c = s[i], d = s[i + 1];
+    if (!trong && c === '/' && d === '*') { trong = true; ra += '  '; i += 2; continue; }
+    if (trong && c === '*' && d === '/') { trong = false; ra += '  '; i += 2; continue; }
+    ra += trong ? (c === '\n' ? c : ' ') : c;
+    i++;
+  }
+  return ra;
+}
+
+/** selector của khối chứa dòng `idx` — dòng đó có `{` thì lấy tại chỗ, không thì ngược lên ≤6 dòng */
+function selectorCua(lines, idx) {
+  for (let k = idx; k >= Math.max(0, idx - 6); k--) {
+    const m = lines[k].match(/^([^{}]*?)\{/);
+    if (m && m[1].trim()) return m[1].trim().replace(/^[+`'"\s]+/, '');
+  }
+  return null;
+}
+
+/** kiểu mauCo/mauThieu/mauKem xét theo DÒNG — trả [{file, line}] các occurrence KHÔNG có ring. */
+function timThieuDong(dk) {
+  const reCo = new RegExp(dk.mauCo);
+  const reThieu = new RegExp(dk.mauThieu);
+  const reKem = new RegExp(dk.mauKem);
+  const xau = [];
+  for (const f of filesOf(dk)) {
+    const ma = bocChuThichCss(docMa(f));
+    const lines = ma.split('\n');
+    const tho = readFileSync(f, 'utf8').split('\n');
+    lines.forEach((line, i) => {
+      if (!reCo.test(line)) return;
+      const khai = (tho[i] ?? '') + (tho[i - 1] ?? '') + (tho[i - 2] ?? '') + (tho[i - 3] ?? '');
+      if (dk.mauKhai && new RegExp(dk.mauKhai).test(khai)) return;
+      if (reThieu.test(line) && reKem.test(line)) return;
+      const sel = selectorCua(lines, i);
+      // CSS: selector cua khoi phai co ban `:focus-visible` trong CUNG tep (dau `:` them o day —
+      // `mauThieu` giu dang tran de con khop ca cu phap Tailwind `focus-visible:ring-2`).
+      if (sel && ma.includes(sel.split(',')[0].trim() + ':' + dk.mauThieu)) return;
+      xau.push({ file: f.replace(ROOT, ''), line: i + 1 });
+    });
+  }
+  return xau;
+}
+
 const IN_TOI_DA = 5; // in tối đa 5 vị trí mỗi lỗi, còn lại đếm gộp
 
 let lech = 0;
@@ -137,7 +199,11 @@ for (const l of LUAT) {
   if (l.loai !== 'grep') continue;
   const loi = [];
   for (const dk of l.soi) {
-    if (dk.mauCo) {
+    if (dk.mauKem) {
+      // soi theo DÒNG: mỗi occurrence phải tự có ring, không được ăn theo ring của vật khác
+      const hits = timThieuDong(dk);
+      if (hits.length) loi.push({ kieu: 'cam', dk, hits });
+    } else if (dk.mauCo) {
       const xau = timThieu(dk);
       if (xau.length) loi.push({ kieu: 'thieu', dk, xau });
     } else if (dk.can === true) {
@@ -155,7 +221,9 @@ for (const l of LUAT) {
   for (const e of loi) {
     if (e.kieu === 'mat') console.log(`     ↳ bằng chứng bắt buộc MẤT: ${e.dk.file || e.dk.dir} thiếu /${e.dk.mau}/ — regress?`);
     if (e.kieu === 'cam') {
-      console.log(`     ↳ ${e.hits.length}× vi phạm (mẫu cấm /${e.dk.mau}/):`);
+      // nhanh soi-theo-dong khong co `mau` (no dung mauCo/mauThieu/mauKem) — in dung ten mau
+      const nhan = e.dk.mau ? `mẫu cấm /${e.dk.mau}/` : `/${e.dk.mauCo}/ mà KHÔNG có ring thay thế`;
+      console.log(`     ↳ ${e.hits.length}× vi phạm (${nhan}):`);
       e.hits.slice(0, IN_TOI_DA).forEach((h) => console.log(`        ${h.file}${h.line ? ':' + h.line : ''}`));
       if (e.hits.length > IN_TOI_DA) console.log(`        … +${e.hits.length - IN_TOI_DA} chỗ nữa`);
     }
