@@ -493,7 +493,16 @@
   --nen-mo-panel: rgba(249, 249, 251, 0.7);
   --nen-mo-card: rgba(255, 255, 255, 0.82);
   /* Cặp vành/lõi bản SÁNG — xem lý do đầy đủ ở khối theme tối. Cùng alpha, khác màu nền. */
-  --nen-mo-vanh: rgba(255, 255, 255, 0.55);
+  /* 🔴 SỬA 05/09. TRƯỚC ĐÂY cả hai là `rgba(255,255,255,…)` — trắng trên nền gần trắng ⇒ ba lớp
+     nền/vành/lõi **không tách nổi nhau**: đo được vành↔nền 1,061 và lõi↔vành 1,043, trong khi
+     ngưỡng của chính bộ kiểm là ≥1,15 và ≥1,08. Lỗi có sẵn ở CẢ HAI nhánh (bản nền kem cũng chỉ
+     1,081/1,046) — nó chưa bao giờ bị bắt vì bộ kiểm SẬP ở nhánh tối trước khi chạy tới nhánh
+     sáng (cửa sổ đọc token cắt cứng 4000 ký tự; đã sửa cùng lượt).
+     GIÁ TRỊ DƯỚI ĐÂY GIẢI RA TỪ NGƯỠNG, không chọn bằng mắt: giữ nguyên alpha, giữ sắc lam nhẹ
+     của bảng, chỉ hạ độ sáng nguồn tới mức NHỎ NHẤT đạt ngưỡng ⇒ 1,158 và 1,281.
+     Thứ bậc thị giác vẫn đúng chiều: nền → vành trầm hơn một nhịp → lõi sáng nhất.
+     👁 CẦN MẮT DUYỆT — máy chỉ chứng minh ba lớp TÁCH ĐƯỢC, không chứng minh nó ĐẸP. */
+  --nen-mo-vanh: rgba(213, 213, 217, 0.55);
   --nen-mo-loi: rgba(255, 255, 255, 0.9);
   --nen-mo-overlay: rgba(46, 46, 56, 0.28);
 
@@ -2705,6 +2714,8 @@ body[data-if-library-open='true'] .if-bottombar {
   .nen-dong-nang { transform: translate3d(0, 0, 0) rotate(-14deg); opacity: 0.5; }
   .nen-dong-bong { transform: translate3d(0, 0, 0); opacity: 0.38; }
   .nen-dong-luoi { opacity: 0.07; }
+}
+
 /* ---------- NHÃN NGUỒN SỰ THẬT `.if-truth` (lib/ui/truth.tsx · components/ui/TruthBadge.tsx) ----------
    Capsule 20px = "capsule có việc: trạng thái" (§7). Chữ MỰC `--t1` (kênh ①), dấu mang màu
    (kênh ②+③), viền/nền pha loãng từ bí danh `--truth-*` — KHÔNG mở màu mới. Kênh dự phòng khi
