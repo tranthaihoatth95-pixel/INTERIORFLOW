@@ -28,19 +28,51 @@ function* walk(dir) {
   }
 }
 
+/* ── BÓC CHÚ THÍCH — chỉ dùng cho TẦNG CẢNH BÁO, không đổi phán quyết ──────────────────
+ * VÌ SAO (đo 04/09): máy này khớp bằng chứng trên VĂN BẢN THÔ, nên một entry vẫn "xong-MÁY"
+ * khi tên hàm chỉ còn sống trong CHÚ THÍCH. Ca thật: `scaffolder` — mẫu `ProjectScaffolder`
+ * xuất hiện đúng 2 lần, CẢ HAI trong docstring (`lib/tasks/scaffolder.ts:2` ·
+ * `scaffolder.test.ts:2`), 0 lần trong mã chạy. Tính năng CÓ THẬT (hàm tên `suggestScaffold`,
+ * `ProjectInitBoard.tsx:85` gọi thật) — nên đây KHÔNG phải khai láo, mà là BẰNG CHỨNG YẾU:
+ * xoá hàm mà giữ docstring thì sổ vẫn xanh.
+ * ⚠️ CỐ Ý KHÔNG đổi phán quyết: 6 entry dính, và ≥4 trong đó chỉ là DIỄN ĐẠT KÉM (mẫu trỏ
+ * tên tệp/tên máy soi). Chuyển hết sang ĐỎ là báo quá tay, và đỏ-mà-không-sửa-được là cách
+ * nhanh nhất giết một máy soi. ⇒ in thành CẢNH BÁO có tên entry, siết từng cái khi sửa mẫu. */
+function bocChuThich(s) {
+  let ra = '', i = 0, trong = null;
+  while (i < s.length) {
+    const c = s[i], n = s[i + 1];
+    if (!trong) {
+      if (c === '/' && n === '/') { trong = '//'; ra += '  '; i += 2; continue; }
+      if (c === '/' && n === '*') { trong = '/*'; ra += '  '; i += 2; continue; }
+      ra += c; i++; continue;
+    }
+    if (trong === '//') { if (c === '\n') { trong = null; ra += '\n'; } else ra += ' '; i++; continue; }
+    if (c === '*' && n === '/') { trong = null; ra += '  '; i += 2; continue; }
+    ra += c === '\n' ? '\n' : ' '; i++;
+  }
+  return ra;
+}
+
 /** một điều kiện bằng chứng có ĐANG khớp không (chưa xét can) */
-function matches(bc) {
+function matches(bc, bocCt = false) {
   const re = new RegExp(bc.mau, 'm');
+  const doc = (p) => { const t = readFileSync(p, 'utf8'); return bocCt ? bocChuThich(t) : t; };
   if (bc.file) {
     const p = join(ROOT, bc.file);
     if (!existsSync(p)) return false;
-    return re.test(readFileSync(p, 'utf8'));
+    return re.test(doc(p));
   }
   const d = join(ROOT, bc.dir);
   if (!existsSync(d)) return false;
-  for (const f of walk(d)) if (re.test(readFileSync(f, 'utf8'))) return true;
+  for (const f of walk(d)) if (re.test(doc(f))) return true;
   return false;
 }
+
+/** Mẫu KHỚP-MỌI-THỨ: bằng chứng thật ra chỉ là "tệp tồn tại và không rỗng".
+ *  Ca thật 04/09: `h4-picker` dùng `mau: '.'` — thay 185 dòng tệp bằng một chữ `x`,
+ *  `soi-frontier` vẫn báo 0 LỆCH. Đó là bằng chứng rỗng đội lốt bằng chứng. */
+const MAU_RONG = new Set(['.', '.*', '.+', '[\\s\\S]', '^', '$', '\\S', '\\w']);
 
 /** trạng-thái-XONG có đang đúng trên code không */
 function doneHolds(item) {
@@ -96,5 +128,25 @@ if (goiY.length) {
   console.log('💡 GROUP-BY GỢI Ý (≥3 việc chờ cùng hệ×vai → xét 1 phiếu chung / chung engine lõi):');
   for (const [k, ids] of goiY) console.log(`   ${k}: ${ids.join(' · ')}`);
 }
+/* ── TẦNG CẢNH BÁO CHẤT LƯỢNG BẰNG CHỨNG (thêm 04/09) ─────────────────────────────────
+ * Máy này canh SỔ ↔ CODE. Nhưng nó không canh CHÍNH BẰNG CHỨNG CỦA NÓ có nói lên điều gì
+ * không. Hai lỗ đo được cùng ngày, cả hai chứng minh bằng thực nghiệm:
+ *   ① mẫu khớp-mọi-thứ  → rút ruột tệp còn 1 ký tự, vẫn 0 LỆCH
+ *   ② bằng chứng nằm trong chú thích → xoá hàm mà giữ docstring, vẫn 0 LỆCH
+ * KHÔNG chặn (exit vẫn theo `red`) — đây là chất lượng bằng chứng, không phải lệch sổ↔code. */
+const yeu = { rong: [], chuThich: [] };
+for (const it of FRONTIER) {
+  if (it.trangThai !== 'xong' && it.trangThai !== 'xong-mat') continue;
+  if (it.bangChung.some((bc) => bc.can !== false && MAU_RONG.has(bc.mau))) yeu.rong.push(it.id);
+  const thoCon = it.bangChung.every((bc) => (bc.can === false ? !matches(bc) : matches(bc)));
+  const sachCon = it.bangChung.every((bc) => (bc.can === false ? !matches(bc, true) : matches(bc, true)));
+  if (thoCon && !sachCon) yeu.chuThich.push(it.id);
+}
+if (yeu.rong.length || yeu.chuThich.length) {
+  console.log('🟡 CHẤT LƯỢNG BẰNG CHỨNG (không chặn — siết từng entry khi sửa mẫu):');
+  if (yeu.rong.length) console.log(`   · mẫu KHỚP-MỌI-THỨ, thật ra chỉ đòi "tệp tồn tại": ${yeu.rong.join(' · ')}`);
+  if (yeu.chuThich.length) console.log(`   · bằng chứng MẤT khi bóc chú thích (xoá mã mà giữ docstring thì vẫn xanh): ${yeu.chuThich.join(' · ')}`);
+}
+
 console.log(`👁 ${mat} qua mắt Hoà · ✅ ${mayOnly} xong-MÁY (NỢ NGHIỆM THU MẮT) · ⬜ ${todo} chờ · 🔴 ${red} LỆCH${red ? '  ← xử lệch TRƯỚC khi bàn việc mới' : ''}\n`);
 process.exit(red ? 1 : 0);

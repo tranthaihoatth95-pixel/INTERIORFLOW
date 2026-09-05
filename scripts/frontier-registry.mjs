@@ -20,7 +20,13 @@
 export const FRONTIER = [
   // ── ĐÃ XONG (script canh regress) ────────────────────────────────────────────
   { id: 'h4-picker', vai: 'mvp', ten: 'Màn chọn 6 loại hồ sơ Trình chiếu (H4/V6)', he: 'Workspace', dot: 0, trangThai: 'xong',
-    bangChung: [{ file: 'components/present-editor/PresentDocTypePicker.tsx', mau: '.' }] },
+    // 04/09 — mẫu cũ là `'.'`, tức bằng chứng thật ra CHỈ LÀ "tệp tồn tại và không rỗng":
+    // thay 185 dòng tệp bằng một chữ `x` thì soi-frontier vẫn báo 0 LỆCH (đã chứng minh).
+    // Nay đòi ĐÚNG THỨ entry hứa: hàm mặt tiền + đủ 6 đường chọn hồ sơ.
+    bangChung: [
+      { file: 'components/present-editor/PresentDocTypePicker.tsx', mau: 'export function PresentDocTypePicker' },
+      { file: 'components/present-editor/PresentDocTypePicker.tsx', mau: 'onChooseBlankDeck[\\s\\S]*onChooseMagicDeck[\\s\\S]*onChooseMaterialBoard[\\s\\S]*onChooseBoq[\\s\\S]*onChooseStorySet[\\s\\S]*onChooseSchedule' },
+    ] },
   { id: 'vitals-doccontext', vai: 'mvp', ten: 'Vitals đọc ngữ cảnh bản vẽ + lỗi chuẩn', he: 'ThinkDial', dot: 0, trangThai: 'xong',
     bangChung: [{ file: 'components/studio/VitalsGesture.tsx', mau: 'docContext' }] },
   { id: 'material-a3', vai: 'mvp', ten: 'Editor Bảng vật liệu A3 (lưu .idfp)', he: 'Workspace', dot: 0, trangThai: 'xong',

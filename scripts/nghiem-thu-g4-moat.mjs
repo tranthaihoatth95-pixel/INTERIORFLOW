@@ -49,6 +49,8 @@ const { getMaterial } = require(GOC + '/lib/materials/resolve.ts');
 const { baMatCuaVatLieu } = require(GOC + '/lib/materials/ba-mat.ts');
 const { inspectMaterialImpact, replaceMaterialReferences } = require(GOC + '/lib/materials/impact.ts');
 const { exportIdf, importIdf } = require(GOC + '/lib/cad/idf.ts');
+// ⚠️ 04/09 — trước lượt này bộ moat NHẮC `sheets-persist` 4 lần trong chú thích và GỌI 0 lần.
+const { sheetsKey } = require(GOC + '/lib/sheets-persist.ts');
 const { exportIdfc, importIdfc } = require(GOC + '/lib/cad/idfc.ts');
 const { normalizeAssetFamily } = require(GOC + '/lib/idfc-import/asset-family.ts');
 const { resolveIdfcCommerceToSpec } = require(GOC + '/lib/materials/warehouse/catalog-link.ts');
@@ -178,7 +180,10 @@ function chayChuoi(pha = {}) {
     elementType: 'slab',
     storey: 'T1',
   };
-  doi('mặt sàn mang specId vật liệu', san.specId === 'ps-go-soi', `specId=${san.specId} · 5000×4000mm = 20 m²`);
+  // Đây là kiểm TIỀN ĐỀ, không phải bằng chứng sản phẩm: `san` là literal của chính bộ đo và
+  // đường từ chỗ dựng tới chỗ đọc không qua hàm `lib/` nào. Giữ vì nếu ai sửa dữ liệu mẫu thì
+  // phải biết — nhưng nhãn phải nói đúng, và phần KẾT đếm riêng (xem `laTienDe`).
+  doi('TIỀN ĐỀ · mặt sàn mang specId vật liệu', san.specId === 'ps-go-soi', `specId=${san.specId} · 5000×4000mm = 20 m²`);
 
   const doc = {
     entities: [san, ...datVaoBanVe.map((d) => d.e)],
@@ -194,8 +199,22 @@ function chayChuoi(pha = {}) {
   khau('K2 · Định danh ngữ nghĩa (elementType · storey · cờ suy đoán)');
   const coKhai = doc.entities.filter((e) => !!e.elementType).length;
   doi('mọi entity có elementType khai báo', coKhai === doc.entities.length, `${coKhai}/${doc.entities.length}`);
+  /* ⚠️ BẢN TRƯỚC 04/09 LÀ TAUTOLOGY: nó đếm `e.inferred` trên `doc.entities` — mảng do CHÍNH bộ
+   * đo dựng bằng literal, và chữ `inferred` xuất hiện ĐÚNG ở chỗ đọc, 0 chỗ ghi. Không thao tác
+   * nào trong `lib/` làm nó đỏ được; nó chỉ có thể đỏ nếu ai sửa chính bộ đo.
+   * ⇒ SIẾT LÊN: hỏi câu đáng hỏi — NGƯỜI ĐÃ KHAI `elementType` thì MÁY CÓ GIẢ VỜ SUY ĐOÁN KHÔNG.
+   * Đo trên nhóm 3D do `docToObjScene` sinh (đối xứng với K10, chỗ hình học SUY RA phải khai
+   * `derived`). Đây là luật K3 của repo: suy đoán phải LỘ RA, và cũng không được lộ oan. */
   const bịaInferred = doc.entities.filter((e) => e.inferred).length;
-  doi('không entity nào bị gắn cờ suy đoán khi người đã khai', bịaInferred === 0, `inferred=${bịaInferred}`);
+  const canhSom = docToObjScene(doc, { wallHeightMm: 2700 }).groups;
+  const idDaKhai = new Set(doc.entities.filter((e) => !!e.elementType).map((e) => e.id));
+  const neoVaoEntityDaKhai = canhSom.filter((g) => g.entityId && idDaKhai.has(g.entityId));
+  const bịaSuyDoan = neoVaoEntityDaKhai.filter((g) => g.inferred || g.semanticProvenance === 'inferred' || g.semanticProvenance === 'derived');
+  doi('không entity nào bị gắn cờ suy đoán khi người đã khai',
+    bịaInferred === 0 && neoVaoEntityDaKhai.length > 0 && bịaSuyDoan.length === 0,
+    `entity 2D inferred=${bịaInferred} · nhóm 3D neo vào entity ĐÃ KHAI=${neoVaoEntityDaKhai.length}` +
+      ` · bị gắn suy đoán oan=${bịaSuyDoan.length}` +
+      ` · provenance: ${[...new Set(neoVaoEntityDaKhai.map((g) => g.semanticProvenance ?? '(trống)'))].join(',')}`);
   const coGiaPha = doc.entities.filter((e) => e.srcInsertId).length;
   doi('món từ Thư viện mang mã lần-chèn (gia phả)', coGiaPha === datVaoBanVe.length, `${coGiaPha} entity có srcInsertId`);
 
@@ -266,7 +285,7 @@ function chayChuoi(pha = {}) {
   const demDinh = (r) => (r?.geometry?.attributes?.position?.count ?? -1);
   doi('bật 2 bước ≠ tắt bước 2 (ngăn xếp có tác dụng thật)', demDinh(ket) > 0 && demDinh(ket) !== demDinh(ketTat), `bật=${demDinh(ket)} đỉnh · tắt=${demDinh(ketTat)} đỉnh`);
   doi('lỗi một bước KHÔNG làm sập cả ngăn xếp', Object.keys(ket?.stepErrors ?? {}).length === 0, `stepErrors=${JSON.stringify(ket?.stepErrors ?? {})}`);
-  doi('tắt bước KHÔNG xoá tham số của bước đó', recipe.steps[1].op.n === 2 && recipe.steps[1].op.dx === 1800, `n=${recipe.steps[1].op.n} dx=${recipe.steps[1].op.dx}`);
+  doi('TIỀN ĐỀ · tắt bước KHÔNG xoá tham số của bước đó (evalRecipe không sửa input tại chỗ)', recipe.steps[1].op.n === 2 && recipe.steps[1].op.dx === 1800, `n=${recipe.steps[1].op.n} dx=${recipe.steps[1].op.dx}`);
   // gắn recipe lên entity thật để nó đi qua vòng lưu ở K9
   datVaoBanVe[0].e.recipe = recipe;
 
@@ -411,11 +430,44 @@ function chayChuoi(pha = {}) {
     );
   }
 
-  // ② IndexedDB (vòng JSON mà sheets-persist áp trước khi ghi)
+  /* ── ② IndexedDB ──────────────────────────────────────────────────────────────
+   * ⚠️ BẢN TRƯỚC 04/09 CỦA HAI MẮT NÀY LÀ TAUTOLOGY, ĐO ĐƯỢC:
+   *   · nó hỏi `JSON.stringify(round-trip(x)) === JSON.stringify(x)` — đẳng thức này ĐÚNG VỚI
+   *     MỌI input, kể cả khi vòng JSON làm rơi `undefined`, biến `Date`→chuỗi, `Map`→`{}`,
+   *     `NaN`→`null`. Thực nghiệm: object 6 khoá còn 4 khoá sau vòng, mắt vẫn XANH.
+   *     Tức nó KHÔNG thể phát hiện đúng thứ nhãn nó hứa ("không rơi trường nào").
+   *   · và nó KHÔNG gọi `sheets-persist` một dòng nào — `grep require.*sheets-persist` = 0.
+   *     Chứng minh: XOÁ HẲN `lib/sheets-persist.ts` khỏi repo ⇒ bộ này vẫn 63/63.
+   * ⇒ SIẾT LÊN, không nới: ① so SÂU trên object THẬT (không qua JSON) để rơi trường là ĐỎ
+   *   ② gọi ĐÚNG `sheetsKey()` của `sheets-persist` và đòi khoá không rơi vào kho mơ hồ —
+   *   đây là bất biến #3 mà G1 canh trên trình duyệt, ở đây canh ở tầng hàm. */
   const quaIdb = JSON.parse(JSON.stringify({ v: 1, activeId: 's1', sheets: [{ id: 's1', name: 'Mặt bằng', doc: doc2 }], ts: 1 }));
   const docIdb = quaIdb.sheets[0].doc;
-  doi('② IndexedDB — Doc qua vòng JSON không rơi trường nào', JSON.stringify(docIdb) === JSON.stringify(doc2), `${JSON.stringify(docIdb).length} byte`);
-  doi('② IndexedDB — BOQ sau nạp lại ra đúng số', computeBoq(docIdb, KHO_GIA).totalAmount === boq2.totalAmount, `${computeBoq(docIdb, KHO_GIA).totalAmount?.toLocaleString('vi-VN')}₫`);
+
+  /** đếm khoá ĐỆ QUY trên object THẬT — `undefined`/hàm/Map cũng được đếm, khác hẳn JSON. */
+  const demKhoaSau = (v, sau = 0) => {
+    if (sau > 12 || v === null || typeof v !== 'object') return 0;
+    let n = 0;
+    for (const k of Object.keys(v)) { n += 1; n += demKhoaSau(v[k], sau + 1); }
+    return n;
+  };
+  const khoaGoc = demKhoaSau(doc2);
+  const khoaSau = demKhoaSau(docIdb);
+  doi('② IndexedDB — Doc qua vòng JSON không rơi trường nào',
+    khoaSau === khoaGoc && khoaGoc > 0,
+    `khoá đệ quy: gốc=${khoaGoc} → sau vòng=${khoaSau}${khoaSau === khoaGoc ? '' : ` · RƠI ${khoaGoc - khoaSau}`}`);
+
+  const KHO_MO_HO = ['local', '', 'undefined', 'null', 'anon'];
+  const khoaIdb = sheetsKey('u-g4-moat', '/projects/g4-moat/cad', 'g4-moat');
+  const khoaThieuDuAn = sheetsKey('u-g4-moat', '/projects/g4-moat/cad', null);
+  doi('② IndexedDB — khoá kho do CHÍNH sheets-persist sinh, mang cả người lẫn dự án',
+    khoaIdb === 'u-g4-moat::/projects/g4-moat/cad::g4-moat' && !KHO_MO_HO.includes(khoaIdb.split('::')[0]),
+    `khoá=${khoaIdb}`);
+  doi('② IndexedDB — thiếu dự án thì khoá NGẮN LẠI, KHÔNG bịa đoạn rỗng (tránh kho mơ hồ)',
+    khoaThieuDuAn === 'u-g4-moat::/projects/g4-moat/cad' && !khoaThieuDuAn.endsWith('::'),
+    `khoá=${khoaThieuDuAn}`);
+
+  doi('② IndexedDB — BOQ sau nạp lại ra đúng số', computeBoq(docIdb, KHO_GIA).totalAmount === boq2.totalAmount && boq2.totalAmount > 0, `${computeBoq(docIdb, KHO_GIA).totalAmount?.toLocaleString('vi-VN')}₫ (tổng > 0 để so không phải "hai số 0 bằng nhau")`);
 
   // ③ .idfc — một cấu kiện rời, mang cả hình học lẫn thương mại
   const chuoiIdfc = exportIdfc({
@@ -495,9 +547,31 @@ function chayChuoi(pha = {}) {
     doi('③b ĐỐI CHỨNG — tệp chỉ-có-sku thì CÙNG cú đổi đó làm MẤT NỐI (nên khoá bất biến mới đáng)',
       banCuSauDoi === null,
       banCuSauDoi ? `vẫn nối được qua '${banCuSauDoi.via}' ⇒ phép thử không phân biệt được gì` : 'mất nối (null) — đúng như dự đoán');
-    // ⚠️ `grep -n recipe lib/cad/idfc.ts` = 0 dòng. Cấu kiện lưu vào kho MẤT ngăn xếp dựng hình.
-    const idfcCoRecipe = /recipe/.test(require('node:fs').readFileSync(path.join(GOC, 'lib/cad/idfc.ts'), 'utf8'));
-    doi('③ .idfc — CÔNG THỨC KHỐI đi cùng cấu kiện', idfcCoRecipe, `chữ "recipe" trong lib/cad/idfc.ts = ${idfcCoRecipe ? 'có' : '0 dòng'}`);
+    /* ⚠️ BẢN TRƯỚC 04/09 ĐỌC MÃ NGUỒN: `/recipe/.test(readFileSync('lib/cad/idfc.ts'))`. Trong
+     * tệp đó chữ "recipe" xuất hiện 4 lần, BA trong chú thích — nên xoá dòng khai `recipe?:
+     * BuildRecipe` mà giữ chú thích thì mắt VẪN XANH. Đó là đo hình dạng của VĂN BẢN, không phải
+     * đo hành vi. ⇒ SIẾT: nhét ngăn xếp thật vào `.idfc`, đi export→import, đòi từng tham số
+     * sống sót — kể cả bậc `enabled:false` (không phá huỷ). */
+    const chuoiCoRecipe = exportIdfc({
+      meta: { name: 'Sofa 3 chỗ vải lanh', code: 'SOFA-3S', kind: 'furniture' },
+      body: {
+        type: 'component',
+        geom2d: { group: 'phong-khach', w: 1800, h: 800, prims: [{ t: 'rect', x: -900, y: -400, w: 1800, h: 800 }] },
+        geom3d: { heightMm: 800, matId: 'ps-sofa-3s', recipe: { steps: [
+          { id: 'r1', op: { op: 'extrude', h: 420 }, enabled: true, label: 'Thân' },
+          { id: 'r2', op: { op: 'arrayLinear', n: 4, dx: 450, dy: 0, dz: 0 }, enabled: false, label: 'Chân' },
+        ] } },
+      },
+      commerce: { sku: 'SOFA-3S', vendor: 'NCC A', priceVnd: 18_500_000, unit: 'cái' },
+    });
+    const coRecipe = importIdfc(chuoiCoRecipe);
+    const bacSau = coRecipe?.body?.geom3d?.recipe?.steps ?? [];
+    const bacTat = bacSau.find((s) => s.id === 'r2');
+    doi('③ .idfc — CÔNG THỨC KHỐI đi cùng cấu kiện',
+      bacSau.length === 2 && bacTat?.enabled === false && bacTat?.op?.n === 4 && bacTat?.op?.dx === 450,
+      bacSau.length
+        ? `${bacSau.length} bậc sống sót · bậc tắt giữ tham số n=${bacTat?.op?.n} dx=${bacTat?.op?.dx} enabled=${bacTat?.enabled}`
+        : 'MẤT ngăn xếp — .idfc chỉ còn lưới chết');
   }
 
   /* ── K10 · ĐƯỜNG LÙI · bản vẽ CŨ (chưa ai khai `slab`) vẫn phải dựng được ────────
@@ -514,7 +588,7 @@ function chayChuoi(pha = {}) {
     }),
   };
   const coSlabTrongDocCu = docCu.entities.filter((e) => e.elementType === 'slab').length;
-  doi('bản vẽ cũ đúng là KHÔNG khai slab nào', coSlabTrongDocCu === 0, `slab=${coSlabTrongDocCu}`);
+  doi('TIỀN ĐỀ · bản vẽ cũ đúng là KHÔNG khai slab nào', coSlabTrongDocCu === 0, `slab=${coSlabTrongDocCu}`);
   const sceneCu = docToObjScene(docCu, { wallHeightMm: 2700 });
   const sanCu = sceneCu.groups.filter((g) => g.semanticKind === 'floor');
   doi('vẫn dựng được mặt sàn', sanCu.length > 0 && sanCu.some((g) => g.positions.length > 0), `${sanCu.length} nhóm sàn · tên: ${sanCu.map((g) => g.name).join(',') || '—'}`);
@@ -531,9 +605,19 @@ function chayChuoi(pha = {}) {
    CHẠY
    ═══════════════════════════════════════════════════════════════════ */
 
+/**
+ * ⚠️ 04/09 — CON SỐ PHẢI NÓI ĐÚNG NÓ LÀ GÌ. Trước lượt này phần KẾT in "63/63 khẳng định ĐẠT",
+ * trộn chung hai loại khác hẳn nhau: khẳng định đi qua MÃ SẢN PHẨM (bằng chứng thật) và khẳng
+ * định kiểm TIỀN ĐỀ của chính phép thử (dữ liệu mẫu có đúng hình dạng dự kiến không). Loại sau
+ * KHÔNG chứng minh gì về sản phẩm — làm nó xanh chỉ cần sửa dữ liệu mẫu trong tệp này. Giữ nó
+ * (nếu ai sửa dữ liệu mẫu thì phải biết) nhưng ĐẾM RIÊNG, để "N/N ĐẠT" thôi nói quá.
+ */
+const laTienDe = (d) => d.nhan.startsWith('TIỀN ĐỀ ·');
+
 function tomTat() {
   const dat = so.filter((d) => d.dat).length;
-  return { dat, tong: so.length, dut: so.filter((d) => !d.dat) };
+  const tienDe = so.filter(laTienDe).length;
+  return { dat, tong: so.length, tienDe, dut: so.filter((d) => !d.dat) };
 }
 
 let maThoat = 0;
@@ -548,6 +632,8 @@ if (!CHI_HIEU_CHUAN) {
   inSo();
   const t = tomTat();
   console.log(`\n── KẾT: ${t.dat}/${t.tong} khẳng định ĐẠT ──`);
+  console.log(`   trong đó BẰNG CHỨNG SẢN PHẨM ${t.tong - t.tienDe} · kiểm TIỀN ĐỀ của chính bộ đo ${t.tienDe}`);
+  console.log(`   (khẳng định "TIỀN ĐỀ ·" chỉ canh dữ liệu mẫu — KHÔNG chứng minh gì về sản phẩm)`);
   if (t.dut.length) {
     console.log('ĐỨT Ở:');
     for (const d of t.dut) console.log(`  · [${d.khau}] ${d.nhan} — ${d.chiTiet}`);
