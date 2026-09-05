@@ -101,3 +101,73 @@ export function buildSpecRows(
 export function missingSpecCount(rows: readonly SpecRow[]): number {
   return rows.filter((r) => r.value === null).length;
 }
+
+/* ═══════════ NỐI VỀ KHO — nói ra liên kết này BỀN hay MỎNG (05/09) ═══════════
+ *
+ * Vì sao đây là chuyện NGHỀ chứ không phải chi tiết kỹ thuật: một cấu kiện `.idfc` nối về bản ghi
+ * thương mại bằng hai hạng khoá khác hẳn nhau về độ bền.
+ *   · khoá BẤT BIẾN (`ProductSpec.id` · `matId`) — nhà cung cấp đổi mã hàng, liên kết VẪN ĐÚNG.
+ *   · MÃ HÀNG (`sku`) — business key, đổi được. NCC đổi mã là **đứt**, và người dùng chỉ phát
+ *     hiện ra lúc bảng dự toán đã ra sai số.
+ * `resolveIdfcCommerceToSpec` (`lib/materials/warehouse/catalog-link.ts`) phân biệt được bằng cờ
+ * `ben`; trước lượt này cờ đó **0 nơi đọc** nên người dùng KHÔNG CÓ CÁCH NÀO biết mình đang ở
+ * tình trạng nào. Bốn ca dưới là bốn tình trạng thật, mỗi ca một câu khác nhau.
+ *
+ * ⛔ Không đưa chữ máy (`specId`/`matId`/`sku` trần) ra giao diện — `SPEC-NGON-NGU-CHI-DAN` cấm
+ *    jargon nội bộ lộ UI. "mã hàng" là chữ NGHỀ, người làm nội thất đọc là hiểu.
+ * ⛔ Không hứa đường sửa chưa tồn tại: ca `mong` chỉ NÓI hậu quả, không mời bấm một nút chưa có.
+ * ⛔ `chua-khai` ≠ `khong-thay`. "Chưa có thông tin" và "tìm không ra" là hai sự thật khác nhau;
+ *    gộp lại là đổ oan cho kho khi lỗi nằm ở tệp, và ngược lại.
+ */
+export type TrangThaiNoiKho =
+  /** nối bằng khoá bất biến — đổi mã hàng vẫn đúng. */
+  | { kieu: 'ben'; tenHang: string }
+  /** chỉ nối được bằng mã hàng — mỏng. */
+  | { kieu: 'mong'; tenHang: string }
+  /** tệp CÓ khai nơi mua nhưng kho không có món đó. */
+  | { kieu: 'khong-thay'; coSoTrongTep: boolean }
+  /** tệp không khai gì để nối — "chưa có thông tin", KHÁC hẳn "không tìm thấy". */
+  | { kieu: 'chua-khai' };
+
+/** Câu chữ cho một tình trạng nối. `[vi, en]` như mọi dòng khác của cột này. */
+export function nhanNoiKho(t: TrangThaiNoiKho): { chinh: [string, string]; phu: [string, string] } {
+  switch (t.kieu) {
+    case 'ben':
+      return {
+        chinh: ['Nối chắc với kho — đổi mã hàng vẫn đúng', 'Firmly linked — survives a code change'],
+        phu: [
+          `Hãng, đơn vị và giá đang đọc sống từ “${t.tenHang}” trong kho.`,
+          `Brand, unit and price are read live from “${t.tenHang}”.`,
+        ],
+      };
+    case 'mong':
+      return {
+        chinh: ['Nối tạm bằng mã hàng — đổi mã là đứt', 'Linked by product code only — fragile'],
+        phu: [
+          `Đang đọc từ “${t.tenHang}”. Nhà cung cấp đổi mã hàng này là mất nối.`,
+          `Reading from “${t.tenHang}”. If the supplier changes this code, the link breaks.`,
+        ],
+      };
+    case 'khong-thay':
+      return {
+        chinh: ['Kho chưa có món này', 'Not in the warehouse yet'],
+        phu: t.coSoTrongTep
+          ? [
+              'Số dưới đây chép trong tệp lúc nhập, không phải giá sống của kho.',
+              'The figures below were copied into the file at import time, not live warehouse prices.',
+            ]
+          : [
+              'Tệp có khai nơi mua nhưng kho không tìm ra hàng tương ứng.',
+              'The file names a supplier record, but no matching warehouse row was found.',
+            ],
+      };
+    case 'chua-khai':
+      return {
+        chinh: ['Mẫu này chưa khai thông tin mua hàng', 'No purchasing details in this file'],
+        phu: [
+          'Chưa có gì để nối về kho — hãng, đơn vị và giá còn trống.',
+          'Nothing to link to the warehouse — brand, unit and price are empty.',
+        ],
+      };
+  }
+}

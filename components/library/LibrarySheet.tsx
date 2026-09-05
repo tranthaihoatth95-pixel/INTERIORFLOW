@@ -12,7 +12,8 @@ import { useFlowStore } from '@/lib/store';
 import { getLastUserId } from '@/lib/resume';
 import type { StageKey } from '@/lib/library/types';
 import { idfcKindOfThumb, IDFC_KIND_LABEL, THUMB_OF_IDFC_KIND, type ThumbKind } from '@/lib/library/thumb-kinds';
-import { buildSpecRows, missingSpecCount, matchSpec, type SpecSource } from '@/lib/library/spec-panel';
+import { buildSpecRows, missingSpecCount, matchSpec, nhanNoiKho, type SpecSource } from '@/lib/library/spec-panel';
+import { noiIdfcVeKho } from '@/lib/library/idfc-noi-kho';
 import {
   BAYS,
   BAY_OF_SHELF,
@@ -362,7 +363,10 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
    * `w`/`d`/`hUp` thêm vào (VIỆC 2, chốt 07/08 chiều) cho dòng kích thước ở nấc thẻ LỚN — API
    * `GET /api/specs` (`lib/server/specs.ts` `specToDto`) đã trả sẵn 3 trường này, chỉ chưa được
    * bắt ở đây; không cần sửa route hay `lib/`. */
-  const [specs, setSpecs] = useState<{ id: string; name: string; sku: string | null; brand: string | null; unit: string | null; priceVnd: number | null; w: number | null; d: number | null; hUp: number | null }[] | null>(null);
+  /* 05/09 — thêm `matId` + `vendor`. `GET /api/specs` (`specToDto`) đã trả sẵn cả hai; chúng chỉ
+   * chưa được bắt ở đây, nên nhánh khoá-bất-biến của `resolveIdfcCommerceToSpec` KHÔNG BAO GIỜ
+   * có dữ liệu để chạy — dây có mà đầu kia không cắm vào ổ nào. */
+  const [specs, setSpecs] = useState<{ id: string; name: string; sku: string | null; matId: string | null; brand: string | null; vendor: string | null; unit: string | null; priceVnd: number | null; w: number | null; d: number | null; hUp: number | null }[] | null>(null);
   useEffect(() => {
     if (!open || specs !== null) return;
     let cancelled = false;
@@ -458,19 +462,31 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   const linkedSpecId = displayItem ? state.specLinks[displayItem.id] : undefined;
   const linkedSpec = linkedSpecId ? specs?.find((s) => s.id === linkedSpecId) : undefined;
 
+  /* ⚡ 05/09 — CẮM ĐIỆN `resolveIdfcCommerceToSpec` (qua `noiIdfcVeKho`).
+   *
+   * TRƯỚC: nhánh `.idfc` lấy thẳng `brand/unit/priceVnd` NHÚNG TRONG TỆP rồi dừng — không lần
+   * nào đi tra về kho. Hệ quả đo được: kho sửa giá xong, tấm Thư viện vẫn hiện giá cũ chép trong
+   * tệp, và người dùng không có dấu hiệu nào để biết. Hai khoá bất biến `commerce.specId` /
+   * `commerce.matId` nằm im, `resolveIdfcCommerceToSpec` có 0 nơi gọi.
+   *
+   * NAY: `.idfc` TRA VỀ KHO TRƯỚC. Nối được ⇒ kho thắng (giá SỐNG) — đúng luật 2.1.9.i và đúng
+   * docstring của chính `IdfcCommerce` (*"`priceVnd` chỉ là ảnh chụp lúc nhập, `specId` mới là
+   * đường về nguồn"*). Không nối được ⇒ VẪN rơi về số của tệp như cũ (chốt G-M16-03 "giá đi theo
+   * file" giữ nguyên hiệu lực khi kho không có món đó) — nhưng nay có câu NÓI RA đó là ảnh chụp.
+   * Tức đây là ĐỔI THỨ TỰ ƯU TIÊN, không phải bỏ đường cũ. */
+  const noiKho = useMemo(
+    () => (displayIdfc ? noiIdfcVeKho(displayIdfc.body, displayIdfc.commerce, specs) : null),
+    [displayIdfc, specs],
+  );
+
   const displaySpecSource: SpecSource | undefined = useMemo(() => {
-    // .idfc mang sẵn mặt thương mại — ưu tiên nó (giá đi THEO FILE giữa các dự án, G-M16-03);
-    // thiếu thì rơi về khớp sku trong DB như cũ.
-    if (displayIdfc?.commerce) {
-      const c = displayIdfc.commerce;
-      return { supplier: c.brand ?? c.vendor ?? null, unit: c.unit ?? null, priceVnd: c.priceVnd ?? null };
-    }
+    if (noiKho) return noiKho.nguon;
     if (linkedSpec) return { supplier: linkedSpec.brand, unit: linkedSpec.unit, priceVnd: linkedSpec.priceVnd };
     if (!displayItem || !specs?.length) return undefined;
     const hit = matchSpec(displayItem.code, specs);
     if (!hit) return undefined;
     return { supplier: hit.brand, unit: hit.unit, priceVnd: hit.priceVnd };
-  }, [displayItem, displayIdfc, specs, linkedSpec]);
+  }, [displayItem, noiKho, specs, linkedSpec]);
 
   const displaySpecRows = useMemo(() => {
     if (!displayItem) return [];
@@ -1008,6 +1024,23 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                   ))}
                 </div>
 
+                {/* ⚡ 05/09 — NỐI VỀ KHO. Cột thông số trước nay bày ra 6 con số mà KHÔNG nói
+                    chúng từ đâu tới và liên kết đó bền tới đâu. Với cấu kiện `.idfc` đây là
+                    thông tin NGHỀ: nối bằng khoá bất biến thì nhà cung cấp đổi mã hàng vẫn đúng;
+                    nối bằng mã hàng thì đổi mã là đứt — và người dùng chỉ phát hiện lúc bảng dự
+                    toán đã ra sai số. Câu chữ ở `lib/library/spec-panel.ts` (`nhanNoiKho`), bốn
+                    ca bốn câu khác nhau, không câu nào lộ chữ máy.
+                    Màu KHÔNG phải kênh duy nhất — chính câu chữ mang nghĩa, chấm chỉ để quét mắt. */}
+                {noiKho?.trangThai && (
+                  <div className="spnoi" data-kieu={noiKho.trangThai.kieu} data-testid="lib-noi-kho">
+                    <b>
+                      <i aria-hidden="true" />
+                      {tr(...nhanNoiKho(noiKho.trangThai).chinh)}
+                    </b>
+                    <span>{tr(...nhanNoiKho(noiKho.trangThai).phu)}</span>
+                  </div>
+                )}
+
                 {/* R? (20/08) — where-used, chỉ có nghĩa cho món DB thật (`db:` prefix). Hiện
                     NGOÀI điều kiện đang mở dự án — "asset này dùng ở đâu" là câu hỏi hữu ích
                     kể cả lúc đang duyệt kho không gắn dự án nào. */}
@@ -1018,13 +1051,22 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                   </div>
                 )}
 
-                {/* §9: ô trống phải KÈM LÝ DO, không giấu đi cho gọn mắt. */}
+                {/* §9: ô trống phải KÈM LÝ DO, không giấu đi cho gọn mắt.
+                    05/09 — món `.idfc` đã có dòng "nối về kho" ở trên nói CỤ THỂ chuyện thương mại
+                    rồi; giữ nguyên câu cũ ở đó sẽ thành HAI LỜI GIẢI THÍCH CHỌI NHAU ("Nối chắc
+                    với kho" ngay trên "Chưa món nào khớp mã trong kho"). Nên với món `.idfc` câu
+                    này rút về đúng nửa còn lại — độ nhám · độ bóng. */}
                 {missingSpecCount(displaySpecRows) > 0 && (
                   <div className="spwhy">
-                    {tr(
-                      'Ô “—” là chưa nối kho: hãng · đơn vị · giá nằm ở Kho vật liệu (khớp theo mã); độ nhám · độ bóng nằm ở vật liệu PBR. Chưa món nào trên kệ mẫu khớp mã trong kho.',
-                      'Each “—” means not linked yet: brand · unit · price live in the Materials warehouse (matched by code); roughness · gloss live in the PBR material. No demo shelf item matches a code in the warehouse yet.',
-                    )}
+                    {noiKho?.trangThai
+                      ? tr(
+                          'Ô “—” còn lại là độ nhám · độ bóng — chúng nằm ở vật liệu PBR, không phải ở kho.',
+                          'The remaining “—” are roughness · gloss — they live in the PBR material, not the warehouse.',
+                        )
+                      : tr(
+                          'Ô “—” là chưa nối kho: hãng · đơn vị · giá nằm ở Kho vật liệu (khớp theo mã); độ nhám · độ bóng nằm ở vật liệu PBR. Chưa món nào trên kệ mẫu khớp mã trong kho.',
+                          'Each “—” means not linked yet: brand · unit · price live in the Materials warehouse (matched by code); roughness · gloss live in the PBR material. No demo shelf item matches a code in the warehouse yet.',
+                        )}
                   </div>
                 )}
 
