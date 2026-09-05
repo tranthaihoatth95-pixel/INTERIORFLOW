@@ -281,3 +281,39 @@ việc #22) · phím ⌘ · gỡ cài có xoá dữ liệu không. ⇒ **Việc 
 | `node_modules/@next` | **275 MB** — binary SWC cho MỌI nền, chỉ cần một |
 | `node_modules/prisma` + `@prisma` | **201 MB** — gồm engine postgres/cockroach/mysql mà IF **không dùng** |
 ⇒ Cắt được ~400 MB bằng `files` globs, không đụng một dòng mã. Việc riêng, không chặn.
+
+---
+
+## 🔧 05/09 · SỬA MÔ TẢ MỘT MỤC HÀNG ĐỢI — "backfill `ProductSpec.matId`" KHÔNG phải việc đang chờ
+
+Hàng đợi ghi: *"backfill `ProductSpec.matId` (toàn null, treo từ 19/08) — một trong ba khoá của
+hàm nối `.idfc` chưa chạy sống lần nào vì thiếu nó."* **Đếm tại nguồn thì không phải vậy:**
+
+```
+ProductSpec: 0 HÀNG
+```
+⇒ **Không có dòng nào để backfill.** Câu *"matId toàn null"* đúng theo nghĩa đen nhưng dẫn sai
+việc: nó khiến người đọc đi viết/chạy `scripts/backfill-material-matid.ts`, mà script đó sẽ
+chạy trên tập rỗng và báo "xong" — **một cổng nữa tự chấm điểm**, đúng họ bệnh cả tuần.
+
+### Bản chất thật
+`ProductSpec` là **kho thương mại của người dùng/studio** — máy sạch thì nó **đúng phải rỗng**.
+Kho hạt giống (`kho-mo-dau`) là kho **thị giác/PBR**, tệp, không phải kho thương mại.
+Hai kho khác vai, **không phải hai nguồn sự thật** — `catalog-link.ts` viết tổng quát trên
+`MaterialSpecDto`, và `catalogPayloadFromFamily` đẩy qua `POST /api/specs` để **tạo** ProductSpec.
+⇒ Kiến trúc đúng. Không có duplication cần chữa.
+
+### Việc THẬT còn lại (thay mục cũ)
+Đường nối `.idfc` → bản ghi thương mại **chưa chạy sống trên dữ liệu CSDL thật lần nào** — mọi
+bằng chứng G4 tới nay đi qua tầng hạt giống/kho tệp. Muốn đóng thì phải:
+1. Gieo **vài** (3-5, KHÔNG hàng loạt) `ProductSpec` qua đúng đường `POST /api/specs`;
+2. Chạy hành trình `.idfc` → cột thông số Thư viện → BOQ trên chính mấy dòng đó;
+3. Kiểm cả hai nhánh: khoá **bất biến** giữ giá sống ↔ khoá **mỏng** đứt và **nói ra**.
+
+⚠️ Việc này **ghi vào CSDL** nên phải chạy trong lane có CSDL riêng — CSDL repo chính đang là
+**mốc sạch dùng để phát hiện rò ghi** (`User 1 · Project 4 · Flow 5 · ProjectMember 3 ·
+ProjectFile 2 · CreditTransaction 1` — 6/24 bảng có dữ liệu). Gieo vào đó là **mất phép đo đó**.
+
+📌 Đính chính tên bảng cho mọi lượt kiểm sau: mốc sạch dùng **`ProjectMember` · `ProjectFile` ·
+`CreditTransaction`**, KHÔNG phải `Member`/`File`/`Credit` (ba tên này không tồn tại — hỏi chúng
+thì `sqlite` trả "no such table", dễ đọc nhầm thành "mất bảng").
