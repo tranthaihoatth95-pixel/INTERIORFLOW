@@ -157,10 +157,11 @@ export default function SheetTabBar({
                   e.stopPropagation();
                 }}
                 onClick={(e) => e.stopPropagation()}
+                /* ring TRONG: ô đổi tên nằm trong vỏ tab — ring ngoài đè viền tab */
+                className="if-focus-inset"
                 style={{
                   width: Math.max(60, draft.length * 8),
                   border: 'none',
-                  outline: 'none',
                   background: 'transparent',
                   color: 'var(--t1)',
                   fontSize: 12.5,

@@ -1254,6 +1254,41 @@ export function segIntersect(a: Pt, b: Pt, c: Pt, d: Pt): Pt | null {
   return { x: a.x + t * r.x, y: a.y + t * r.y };
 }
 
+/**
+ * Điểm `p` có nằm TRONG đa giác `poly` không (even-odd, ray-casting chuẩn).
+ *
+ * 🏠 VÌ SAO Ở ĐÂY chứ không ở `hatch.ts` (dời 04/09): nó là hình học thuần, và `query.ts` cần
+ * nó để `hitTest` bắt được cú bấm GIỮA LÒNG vùng tô. Nhưng `hatch.ts` đã `import { entSegments }
+ * from './query'` ⇒ để nguyên chỗ cũ thì `query → hatch → query` thành vòng import. `model.ts`
+ * là tầng dưới cùng cả hai đều đã nhập, nên đây mới là nhà đúng. `hatch.ts` XUẤT LẠI hai hàm
+ * này nên 6 nơi đang nhập từ `./hatch` không phải đổi dòng nào.
+ * ⚠️ `lib/cad/label-placer.ts:248` còn một bản chép riêng — nợ cũ, KHÔNG đụng trong lượt này để
+ * khỏi trộn hai việc; ai dọn thì xoá bản đó và nhập từ đây.
+ */
+export function pointInPolygon(p: Pt, poly: Pt[]): boolean {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].x;
+    const yi = poly[i].y;
+    const xj = poly[j].x;
+    const yj = poly[j].y;
+    const intersect = yi > p.y !== yj > p.y && p.x < ((xj - xi) * (p.y - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+/** Diện tích tuyệt đối (shoelace) — dùng để chọn vòng NHỎ NHẤT khi nhiều vòng đều hợp lệ. */
+export function polygonArea(poly: Pt[]): number {
+  let a = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i];
+    const q = poly[(i + 1) % poly.length];
+    a += p.x * q.y - q.x * p.y;
+  }
+  return Math.abs(a) / 2;
+}
+
 export interface Box {
   minX: number;
   minY: number;

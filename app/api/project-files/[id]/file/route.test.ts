@@ -10,8 +10,11 @@
  * trên đĩa (410) · path traversal bị chặn · Content-Type sniff lại từ byte thật, không tin cột
  * `mime` · PDF ra `attachment`.
  *
- * ⛔ ĐIỂM NGHIỆM THU CỨNG: đếm hàng 3 bảng TRƯỚC/SAU phải BẰNG NHAU, và mọi file ghi ra
- * `./uploads` phải được dọn.
+ * ⛔ ĐIỂM NGHIỆM THU CỨNG: mọi `ProjectFile` do CHÍNH lượt này tạo phải xoá hết (kiểm theo id đã
+ * ghi trong `pfDaTao`), và mọi file ghi ra `./uploads` phải được dọn.
+ * 🔴 KHÔNG khẳng định đếm TOÀN CỤC trước === sau: `npm test` chạy `-P8`, tệp test khác cũng ghi
+ * `dev.db` ⇒ khẳng định một con số mình không sở hữu là test-đỏ-giả. Lý do đầy đủ ở khối dọn dẹp
+ * cuối `main()` — đừng khôi phục phép so sánh toàn cục.
  *
  * Chạy: node_modules/.bin/sucrase-node 'app/api/project-files/[id]/file/route.test.ts'
  */

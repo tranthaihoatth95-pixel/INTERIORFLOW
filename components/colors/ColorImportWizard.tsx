@@ -346,7 +346,7 @@ const box: React.CSSProperties = {
 };
 const field: React.CSSProperties = {
   height: 30, padding: '0 8px', borderRadius: 10, border: '1px solid var(--border)',
-  background: 'var(--panel)', color: 'var(--t1)', fontSize: 12.5, lineHeight: 1.6, outline: 'none',
+  background: 'var(--panel)', color: 'var(--t1)', fontSize: 12.5, lineHeight: 1.6,
 };
 const hint: React.CSSProperties = { margin: 0, fontSize: 11.5, lineHeight: 1.6, color: 'var(--t4)' };
 const label: React.CSSProperties = { fontSize: 12, lineHeight: 1.5, fontWeight: 600, color: 'var(--t2)', marginBottom: 6 };

@@ -24,6 +24,7 @@ import { savePresentReturn } from '@/lib/present-editor/present-return';
 import PlayerElements from './PlayerElements';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDismissable } from '@/lib/useDismissable';
+import VoiceNav from '@/components/voice/VoiceNav';
 
 interface Props {
   deck: EditorDeck;
@@ -172,6 +173,16 @@ export default function SlidePlayer({ deck, startIndex = 0, onClose }: Props) {
 
       <div style={counter}>
         {idx + 1} / {deck.slides.length}
+      </div>
+
+      {/* Giọng nói (02/09) — chỉ lật trang, cùng `go`/kẹp biên như phím; không đụng deck. */}
+      <div style={{ position: 'absolute', bottom: 12, right: 16, zIndex: 2 }}>
+        <VoiceNav
+          idx={idx}
+          total={deck.slides.length}
+          onGo={(n) => { if (busyRef.current) return; setDir(n > idx ? 1 : -1); setIdx(n); }}
+          tone="dark"
+        />
       </div>
     </div>
   );

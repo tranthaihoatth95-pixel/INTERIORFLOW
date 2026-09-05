@@ -171,3 +171,91 @@ ok('demo-flow + lỗi thật thì ambient vẫn alert (lỗi thắng)', trangTha
   const domSet = new Set(['yen', 'dang-chay', 'can-xem', 'khong-biet'].map((m: any) => domKhauDo(m)));
   ok('4 mức → 4 giá trị DOM riêng biệt', domSet.size === 4);
 }
+
+/* ═══════════ [chặng] MÀN KHÔNG PHẢI CHẶNG THÌ KHÔNG ĐƯỢC KHAI MÌNH LÀ CHẶNG (04/09) ═══════════
+ * Ca thật: ảnh chụp app 04/09 — đứng ở Trang chủ mà tấm chat ghi "VITALS · THIẾT KẾ 3D".
+ * Gốc: `activeToPhase` trả `'render'` cho MỌI thứ không phải cad/photo/present, mà sáu màn cấp app
+ * đều bọc `<AppShell active="render">`. Khoá lại bằng máy: đường dẫn quyết định, không phải `active`.
+ */
+{
+  const { changTheoDuong } = require('./vitals-tin-hieu');
+  console.log('\n[chặng] đường dẫn quyết định, KHÔNG phải `active`');
+
+  ok('/projects/x/cad → concept', changTheoDuong('/projects/abc/cad') === 'concept');
+  ok('/projects/x/render → render', changTheoDuong('/projects/abc/render') === 'render');
+  ok('/projects/x/present → present', changTheoDuong('/projects/abc/present') === 'present');
+  ok('/projects/x/photo → render (photo là mặt của chặng 3D)', changTheoDuong('/projects/abc/photo') === 'render');
+  ok('/cad-editor → concept', changTheoDuong('/cad-editor') === 'concept');
+  ok('/present-editor → present', changTheoDuong('/present-editor') === 'present');
+
+  // Sáu màn cấp app — đều `active="render"` trong mã, và ĐỀU PHẢI trả 'gallery'.
+  for (const d of ['/', '/files', '/library', '/library/gallery', '/materials', '/tasks', '/settings', '/inspiration', '/colors']) {
+    ok(`${d} → gallery (không thuộc chặng nào)`, changTheoDuong(d) === 'gallery');
+  }
+  ok('null/undefined → gallery, không nổ', changTheoDuong(null) === 'gallery' && changTheoDuong(undefined) === 'gallery');
+  ok('/projects/x/overview → gallery (tổng quan không phải chặng)', changTheoDuong('/projects/abc/overview') === 'gallery');
+
+  /* Nhãn tấm chat: 'gallery' KHÔNG được chứa tên chặng nào. Đọc thẳng chuỗi từ nơi vẽ để test
+     không tự chép lại một bản nhãn thứ hai (chép là hai nguồn, và chúng sẽ lệch). */
+  const nguon = readFileSync(join(__dirname, 'VitalsGesture.tsx'), 'utf8');
+  ok('`nhanTamChat` là NGUỒN DUY NHẤT của nhãn (tiêu đề + aria cùng gọi nó)',
+    (nguon.match(/nhanTamChat\(stage\)/g) || []).length >= 2 && !/Vitals · \{STAGE_LABEL/.test(nguon));
+  const nhanTamChat = (st: string) => (st === 'gallery' ? 'Vitals' : null);
+  ok('gallery ⇒ nhãn chỉ còn "Vitals", không kèm tên chặng', nhanTamChat('gallery') === 'Vitals');
+  ok('mã nguồn có nhánh gallery bỏ tên chặng',
+    /stage === 'gallery' \? 'Vitals'/.test(nguon));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   [CẤM HỘP RỖNG] — Hoà cấm 05/09, kèm ảnh chụp: Peek mở ra một tấm chỉ để nói
+   "Không có tín hiệu nào." + một dòng "Mở Vitals…".
+
+   Ba luật cùng cấm nó: N-10 cờ đỏ *hộp rỗng* · khuôn thông điệp TRỐNG phải hành
+   động được · định nghĩa Peek §17 (một tín hiệu lớn + ngữ cảnh + một hành động)
+   — không tín hiệu thì Peek KHÔNG CÓ RUỘT.
+
+   Đây là test ĐỌC MÃ, không dựng DOM: nó canh cho ba điều kiện dưới đây không
+   bị gỡ ra trong lúc sửa việc khác. Gỡ một trong ba là hộp rỗng sống lại.
+   ═══════════════════════════════════════════════════════════════════════════ */
+{
+  const fs = require('node:fs') as typeof import('node:fs');
+  const path = require('node:path') as typeof import('node:path');
+  const nguon = fs.readFileSync(
+    path.join(__dirname, 'VitalsAperture.tsx'),
+    'utf8',
+  );
+
+  // [1] Lối vào: `moPeek` phải bỏ đi khi không có tín hiệu.
+  if (!/if \(tinHieu\.length === 0\) \{/.test(nguon)) {
+    throw new Error(
+      '[CẤM HỘP RỖNG] `moPeek` không còn chặn `tinHieu.length === 0` — rê chuột ' +
+        'vào ổ khi không có tín hiệu sẽ bật ra một tấm rỗng. Hoà cấm 05/09.',
+    );
+  }
+
+  // [2] Cổng dựng tấm: Peek chỉ được dựng khi CÓ tín hiệu (Engage thì miễn).
+  if (!/muc === 'engage' \|\| tinHieu\.length > 0/.test(nguon)) {
+    throw new Error(
+      '[CẤM HỘP RỖNG] Cổng portal không còn điều kiện ' +
+        "`muc === 'engage' || tinHieu.length > 0` — tín hiệu tắt trong lúc tấm " +
+        'đang mở sẽ để lộ một tấm rỗng.',
+    );
+  }
+
+  // [3] Không được dựng lại câu chết. Chỉ cho phép nó tồn tại trong CHÚ THÍCH
+  //     (dòng bắt đầu bằng * hoặc //) — đó là chỗ ghi vì sao nó bị cấm.
+  const dongChet = nguon
+    .split('\n')
+    .map((d, i) => [i + 1, d] as const)
+    .filter(([, d]) => d.includes('Không có tín hiệu nào'))
+    .filter(([, d]) => !/^\s*(\*|\/\/)/.test(d));
+  if (dongChet.length > 0) {
+    throw new Error(
+      '[CẤM HỘP RỖNG] Câu "Không có tín hiệu nào." quay lại thành GIAO DIỆN ở dòng ' +
+        dongChet.map(([n]) => n).join(', ') +
+        ' — trống thì phải hành động được, không phải một câu chết.',
+    );
+  }
+
+  console.log('  ✓ [CẤM HỘP RỖNG] ba chốt chặn còn nguyên');
+}

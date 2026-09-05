@@ -159,7 +159,7 @@ function deltaLabel(d: number, tr: (vi: string, en: string) => string): string {
 
 const fieldStyle: React.CSSProperties = {
   height: 30, padding: '0 8px', borderRadius: 10, border: '1px solid var(--border)',
-  background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, lineHeight: 1.6, outline: 'none',
+  background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, lineHeight: 1.6,
 };
 const row: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 10, padding: 8,

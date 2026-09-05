@@ -46,9 +46,28 @@ async function chat(model: string, messages: Msg[], opts: { max_tokens?: number;
 
 export interface RefCaption { caption: string; style: string; materials: string[]; room: string }
 
+/** Model VLM đang dùng (để lớp trên GHI NHÃN tầng nào chạy — badge "_tier", cùng khuôn nvidiaLlmModel). */
+export function nvidiaVlmModel(): string {
+  return process.env.NVIDIA_VLM_MODEL ?? 'meta/llama-3.2-11b-vision-instruct';
+}
+
+/**
+ * VLM TỔNG QUÁT: prompt tuỳ biến + 1 ảnh (data-URI hoặc URL) → chữ thô. Đây là đường cho
+ * `lib/ai/vision-tier.ts` (Image→Spec, phiếu 4 cấp) — trước đây chỉ có `captionImage` với prompt
+ * cố định nên phiếu chỉ điền được cấp ①③ (ghi ở lib/grounded-render/reference-sheet.ts).
+ * Lỗi/hết lượt ném cùng họ NvidiaError/NvidiaFreeExhausted — lớp trên CHỈ BÁO.
+ */
+export async function visionChat(prompt: string, imageDataUri: string, opts: { max_tokens?: number } = {}): Promise<string> {
+  return chat(
+    nvidiaVlmModel(),
+    [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: imageDataUri } }] }],
+    { max_tokens: opts.max_tokens ?? 512 },
+  );
+}
+
 /** VLM: đọc ảnh ref nội thất → JSON chưng cất (caption/style/vật liệu/loại phòng). */
 export async function captionImage(imageDataUri: string): Promise<RefCaption> {
-  const model = process.env.NVIDIA_VLM_MODEL ?? 'meta/llama-3.2-11b-vision-instruct';
+  const model = nvidiaVlmModel();
   const prompt =
     'Bạn là chuyên gia nội thất. Nhìn ảnh và CHỈ trả về JSON thuần (không giải thích, không ```): ' +
     '{"caption":"<1 câu tiếng Việt mô tả không gian & vật liệu chính>","style":"<phong cách, vd Japandi / Quiet-luxury>",' +

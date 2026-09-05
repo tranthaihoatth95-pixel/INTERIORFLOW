@@ -43,6 +43,7 @@ import ReviewPanel from '@/components/review/ReviewPanel';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import type { StageKey } from '@/lib/library/types';
 import { tweenBase } from '@/lib/motion';
+import { laPhimChinh, coPhimHeThong } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 
 const INSPECTOR_WIDTH = 236;
 
@@ -163,7 +164,7 @@ export function AppShell({
       const typing = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
       if (typing) return;
       // ⌘\ — ẩn cả hai panel, bấm lại hiện lại (deterministic qua detail.set).
-      if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+      if (laPhimChinh(e) && e.key === '\\') {
         e.preventDefault();
         e.stopPropagation();
         const zen = !zenRef.current;
@@ -172,7 +173,7 @@ export function AppShell({
         datAnInspector(zen);
         return;
       }
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (coPhimHeThong(e) || e.altKey) return;
       const k = e.key.toLowerCase();
       if (k !== 'b' && k !== 'i') return;
       // CAD: chỉ ăn khi có ⇧ (phím trần thuộc type-anywhere gõ lệnh — §0c luật 2); chặng khác:
@@ -215,8 +216,21 @@ export function AppShell({
           {toolbelt && (
             <div className="pointer-events-none absolute inset-x-0 bottom-4 z-[6] flex justify-center">
               {/* maxWidth chặn dock rộng hơn Stage (bug cũ "toolbar tràn phải đè Inspector" là
-                  do pill tự đo theo 100vw — Stage mới là khung đúng, Inspector là cột riêng). */}
-              <div className="pointer-events-auto" style={{ maxWidth: 'calc(100% - 24px)' }}>{toolbelt}</div>
+                  do pill tự đo theo 100vw — Stage mới là khung đúng, Inspector là cột riêng).
+
+                  🔴 `pointer-events-none` chứ KHÔNG phải `-auto` — sửa lỗi ĐO ĐƯỢC 04/09.
+                  Hộp này là hộp BỐ CỤC: nó rộng bằng phần tử toolbelt rộng nhất và cao bằng cả
+                  cột (kể cả khoảng `marginBottom` dock dùng để né thanh lệnh), nên phần lớn diện
+                  tích của nó là khoảng TRỐNG trong suốt nằm đè lên mặt vẽ. Để `-auto` thì chính
+                  khoảng trống đó nuốt `pointerdown`: đo trên app thật (1600×900) là **428/5546
+                  điểm mặt vẽ**, dải x 470–1562 · y 666–822 — người dùng nhìn thấy mặt vẽ, bấm vào
+                  lại rơi vào hư không.
+                  LUẬT: hộp chỉ để BỐ TRÍ thì không bắt chuột; phần tử THẬT SỰ bấm được tự bật
+                  `pointer-events: auto` cho mình. Khoảng né phải nằm NGOÀI vùng bắt chuột.
+                  ⚠️ Ai cắm `toolbelt` mới thì phải tự khai `pointerEvents:'auto'` trên đúng khối
+                  nhìn thấy được của mình — quên là dock câm. Hôm nay chỉ `CadStageScreen` dùng ổ
+                  này (`<CadToolbelt/>`, đã khai đủ ở cả 2 nhánh Model và Paper). */}
+              <div className="pointer-events-none" style={{ maxWidth: 'calc(100% - 24px)' }}>{toolbelt}</div>
             </div>
           )}
         </div>

@@ -54,7 +54,7 @@ export default function PresenceRow({ members, max = 5 }: PresenceRowProps) {
             display: 'grid',
             placeItems: 'center',
             background: m.color || 'var(--accent)',
-            color: '#fff',
+            color: 'var(--on-accent)',
             fontSize: 10,
             fontWeight: 600,
             boxShadow: '0 0 0 2px var(--card)',

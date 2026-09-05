@@ -1,0 +1,296 @@
+/* docs/mocks/_home-lock-nen.css — NỀN CHUNG cho HOME BẢN KHOÁ (Design Lock 04/09).
+
+   Tệp MỚI. Không sửa nền của các vòng trước (_home-ps-nen.css · _home-h.css · _home-hybrid.css) —
+   chúng là BẰNG CHỨNG của vòng thăm dò, không phải nền của bản khoá.
+
+   NGỮ PHÁP HOME = MÔI TRƯỜNG × SỰ CHÚ Ý × GẦN VỀ KHÔNG GIAN × NGỮ CẢNH × CÁ NHÂN HOÁ.
+   Cơ chế tổ chức: THANG CHÚ Ý bốn bậc — NGAY BÂY GIỜ · KỀ BÊN · NỀN · KHI GỌI.
+   Bậc do TRẠNG THÁI tính ra, không do người dựng gán cứng. Không vật nào giành được sự chú ý
+   chỉ vì nó tồn tại.
+
+   ⚠️ Token giao diện chép NGUYÊN VĂN từ app/globals.css (:root tối · :root[data-theme='light']).
+   Bảng --canh-… và --nen-sang · --muc là màu CỦA NỘI DUNG — cố ý KHÔNG theo theme, cùng lý do khối
+   --illus-* sẵn có trong globals.css: một bản vật liệu không lật màu khi người dùng đổi theme app.
+
+   NĂM LUẬT TỰ ĐẶT CHO BỘ NÀY (máy soi không bắt được, nên phải viết ra):
+   ① Chữ trên NỀN APP chỉ lấy --t1/--t2/--t3. Đo tại nguồn: --t4 trên --bg = 2,66:1 ở nền sáng
+      ⇒ --t4/--t5 CHỈ cho đường kẻ và hình. Ngoại lệ khai được: chữ ĐÈ LÊN ẢNH dùng
+      --muc-tren-anh-* (vì --t1..3 lật theo theme còn ảnh thì không) và PHẢI mang data-tren-anh.
+   ② Màu trạng thái chỉ sống trên DẤU (chấm/vuông/tam giác); chữ luôn --t1/--t2/--t3.
+      Vừa né ca --warning sáng #9a6304 trên --bg chỉ 4,39:1, vừa thi hành "màu không bao giờ là
+      kênh duy nhất" mà không phải nhớ.
+   ③ Không hoa toàn phần với chữ Việt; line-height ≥ 1.5; giãn chữ DƯƠNG.
+   ④ MỘT THÂN DUY NHẤT: chỉ bậc NGAY BÂY GIỜ được có thân. Ba bậc dưới phân biệt bằng LOẠI
+      biểu diễn (mặt · dòng · số đếm), KHÔNG bằng cỡ thẻ. Đây là cách bản khoá trả lời cờ đỏ
+      "thẻ-cho-mọi-thứ" bằng cấu trúc, không bằng lời hứa.
+   ⑤ KIẾN TRÚC THÔNG TIN KHÔNG PHỤ THUỘC ẢNH NỀN. Bỏ hẳn dải môi trường đi thì không một chữ
+      nào mất đọc — chỉ mất không khí. Đây là bất biến kiểm được, và là chỗ bản khoá khác H1.
+*/
+
+:root{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --vien-mo:rgba(255,255,255,.06);
+  --mo-vo-hieu:.5;
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  color-scheme:dark;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --vien-mo:rgba(0,0,0,.05);
+  --mo-vo-hieu:.62;
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  color-scheme:light;
+}
+:root{
+  --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --on-accent:#ffffff;
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --tap:32px; --tap-lg:44px; --row:28px; --gap:8px; --fs-ui:13px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px;
+
+  /* TÔNG NỘI DUNG — hình vẽ và mặt nội dung. Không theo theme (xem đầu tệp). */
+  --canh-0:#14161a; --canh-1:#1e222a; --canh-2:#2c313b; --canh-3:#454c59;
+  --canh-4:#6e6a63; --canh-5:#9b9184; --canh-6:#cabfae; --canh-7:#ece3d3;
+  --nen-sang:#f7f5f0; --net-sang:#d8d2c6; --muc:#2a251d; --muc-2:#6b6459;
+  --vl-go:#9c7449; --vl-da:#cfc9bd; --vl-vai:#6f7b74; --vl-kl:#b9b4ab; --vl-son:#e9e2d4;
+
+  /* MỰC TRÊN ẢNH — ngoại lệ khai được của luật ①; luôn đi kèm data-tren-anh. */
+  --muc-tren-anh-1:#f7f5f1; --muc-tren-anh-3:#c9c5bd;
+  /* SCRIM CỤC BỘ — chỉ dìm DẢI CÓ CHỮ, không dìm cả tấm ảnh (§9 · chỉ thị D cấm lớp phủ tối
+     khổng lồ). Ba nấc để chỗ thi công chọn theo độ sáng đo được của vùng ảnh nằm dưới nhãn. */
+  --scrim-manh:rgba(8,9,11,.86); --scrim-vua:rgba(8,9,11,.58); --scrim-nhe:rgba(8,9,11,.30);
+  --phu-chan-chu:linear-gradient(180deg,var(--scrim-manh),var(--scrim-vua));
+
+  /* KHỔ + HÌNH HỌC MÀN — khai bằng biến để khổ hẹp chỉ đổi SỐ, không đổi HỆ. */
+  --w:1600px; --h:900px;
+  --thangW:400px;   /* trong dải Work Panel 320–440 của EXS §4 */
+  --daiH:420px;     /* chiều cao dải môi trường */
+  --vatTop:168px;   /* bậc NGAY BÂY GIỜ chồng lên dải bao nhiêu — đó là "gần về không gian" */
+  --gpH:184px;      /* dải ngữ cảnh */
+  --lePhai:56px; --khe:32px;
+}
+/* KHỔ HẸP — đặt biến ở :root qua :has() chứ KHÔNG đặt ở body.
+   Lý do đo được: máy soi gắn class vào <body>; biến khai trên body thì <html> không thấy
+   ⇒ html vẫn giữ 1600px và máy báo "vượt khổ" dù thân đã co đúng. */
+:root:has(body.hep){ --w:1280px; --h:800px; --thangW:320px; --daiH:330px;
+  --vatTop:126px; --gpH:150px; --lePhai:32px; --khe:24px; }
+/* Và tự co theo KHUNG NHÌN, không cần ai gắn class — để bản vẽ chụp ở khổ hẹp là ra đúng
+   khổ hẹp. Hai đường cùng đặt một bộ giá trị nên không bao giờ đánh nhau. */
+@media (max-width:1400px){
+  :root{ --w:1280px; --h:800px; --thangW:320px; --daiH:330px;
+    --vatTop:126px; --gpH:150px; --lePhai:32px; --khe:24px; }
+  .an-hep{display:none}
+  .chi-hep{display:inline}
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:var(--w);height:var(--h);overflow:hidden}
+body{background:var(--bg);color:var(--t1);font-size:var(--fs-sm);
+  font-family:-apple-system,'SF Pro Text','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+svg{display:block}
+
+/* ---------- CHỮ ---------- */
+.nhan{font:500 var(--fs-2xs)/1.5 ui-monospace,'SF Mono',Menlo,monospace;letter-spacing:.08em;color:var(--t3)}
+.so{font-variant-numeric:tabular-nums;letter-spacing:.01em}
+
+/* ---------- KHUNG: rail ba cụm · mép trên có khẩu độ · sàn ---------- */
+.khung{display:flex;width:var(--w);height:var(--h)}
+.rail{width:52px;flex:0 0 52px;display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 0;background:var(--panel);border-right:1px solid var(--vien-mo)}
+.rail b{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border-radius:var(--r-2);color:var(--t3)}
+.rail b.on{background:var(--accent-soft);color:var(--t1);box-shadow:inset 0 0 0 1px var(--accent)}
+.rail hr{width:22px;border:0;border-top:1px solid var(--vien-mo);margin:7px 0}
+.rail .day{margin-top:auto}
+.cot{flex:1;min-width:0;display:flex;flex-direction:column}
+
+.dinh{height:44px;flex:0 0 44px;display:flex;align-items:center;gap:12px;padding:0 16px;
+  background:var(--panel);border-bottom:1px solid var(--vien-mo);position:relative;z-index:3}
+.duong-di{display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--t3);line-height:1.5}
+.duong-di strong{color:var(--t2);font-weight:600}
+/* KHẨU ĐỘ VITALS — khe khoét VÀO mép trên (EXS §7 · D-DR1), mức Ambient.
+   Không phải nút nổi lên trên thanh; nó là một phần của chính mép trên. */
+.khau-do{position:absolute;left:50%;top:0;transform:translateX(-50%);height:44px;display:flex;
+  align-items:center;gap:9px;padding:0 16px;border-radius:0 0 var(--r-3) var(--r-3);background:var(--card);
+  box-shadow:inset 0 -1px 0 var(--vien-mo),inset 1px 0 0 var(--vien-mo),inset -1px 0 0 var(--vien-mo)}
+.khau-do .mat{width:8px;height:8px;border-radius:var(--r-full);background:var(--accent);flex:0 0 8px}
+.khau-do .tin{font-size:var(--fs-xs);color:var(--t2);white-space:nowrap;line-height:1.5}
+.khau-do .tin i{font-style:normal;color:var(--t3)}
+.khau-do .vach{width:1px;height:14px;background:var(--vien-mo)}
+.phai-dinh{margin-left:auto;display:flex;align-items:center;gap:10px}
+.the-demo{font:500 var(--fs-2xs)/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--t3);
+  border:1px dashed var(--border-strong);border-radius:var(--r-1);padding:2px 7px}
+.mat-nguoi{display:flex}
+.mat-nguoi i{width:22px;height:22px;border-radius:var(--r-full);display:block;margin-left:-6px;
+  box-shadow:0 0 0 2px var(--panel);background:var(--t5)}
+.mat-nguoi i:first-child{margin-left:0}
+
+.than{flex:1;min-height:0;display:flex}
+
+/* ---------- SÂN: dải môi trường + bậc NGAY BÂY GIỜ + dải ngữ cảnh ---------- */
+.san{flex:1;min-width:0;position:relative;display:flex;flex-direction:column;
+  padding:0 var(--lePhai) 12px;gap:var(--khe)}
+/* DẢI MÔI TRƯỜNG — Wallgallery. Ảnh THẬT của xưởng, để SẮC NÉT.
+   Nó là NỀN mà việc đứng lên, KHÔNG phải mặt phẳng để dán chữ — đó là chỗ khác H1.
+   Có biên: nhờ có biên nên nền sáng vẫn đọc ra là nền sáng (H1 hỏng đúng chỗ này). */
+.dai{position:absolute;left:0;right:0;top:0;height:var(--daiH);overflow:hidden;z-index:0;
+  /* TAN DẦN Ở ĐÁY, không cắt ngang một nhát. Mép cứng đọc ra là "một vệt lạ", không đọc ra
+     là chiều sâu — soi bằng mắt mới thấy, máy không bắt được. Đây là MẶT PHẲNG CHIỀU SÂU
+     (chỉ thị D), không phải lớp phủ tối: ảnh vẫn nét 100% ở phần thân. */
+  -webkit-mask-image:linear-gradient(180deg,#000 0,#000 74%,transparent 100%);
+  mask-image:linear-gradient(180deg,#000 0,#000 74%,transparent 100%)}
+.dai svg{width:100%;height:100%}
+/* VÙNG AN TOÀN NGỮ NGHĨA — nhãn chỉ được đặt trong hai ô này; cắt ảnh phải giữ hai ô đó "lặng".
+   🔴 SCRIM ĐẶC, KHÔNG CHUYỂN SẮC — đo được, không phải chuyện gu:
+   lớp phủ chuyển sắc mỏng dần về .46 ở CHÂN chữ; đặt lên vùng SÁNG nhất của dải thì nền hoà ra
+   rgb(131,127,119) và chữ --muc-tren-anh-3 chỉ còn **2,32:1** — TRƯỢT. Scrim ĐẶC .86 thì nền hoà
+   luôn nằm trong khoảng rgb(10,11,13)…rgb(40,40,39) với MỌI ảnh ⇒ **8,58:1 … 11,44:1**, tức
+   tương phản thành HẰNG SỐ không phụ thuộc ảnh người dùng thả vào (yêu cầu H).
+   ⇒ Chuyển sắc ở chân chữ là kỹ thuật cho DẢI CHỮ LỚN (chuyển sắc trải dài quá thân chữ),
+   KHÔNG dùng cho chip nhỏ. Token --phu-chan-chu giữ lại cho đúng ca đó. */
+.nhan-dai{position:absolute;z-index:1;display:inline-flex;align-items:center;gap:8px;
+  padding:5px 10px;border-radius:var(--r-1);background:var(--scrim-manh);
+  font:500 var(--fs-2xs)/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--muc-tren-anh-3)}
+.nhan-dai b{color:var(--muc-tren-anh-1);font-weight:600}
+
+/* ===== BẬC 1 · NGAY BÂY GIỜ — THÂN DUY NHẤT trên màn (luật ④) =====
+   Gần nhất về không gian: chồng lên dải môi trường, có bóng đổ thật, nét nhất.
+   Nền của nó là nền của NỘI DUNG (mặt sáng hoặc khung hình), không phải nền app
+   ⇒ mọi chữ trong nó MÁY ĐO ĐƯỢC. Đó là chỗ khác H1 (23–28 đoạn không đo được). */
+.vat{position:relative;z-index:2;margin-top:var(--vatTop);flex:1;min-height:0;
+  border-radius:var(--r-3);overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 26px 60px -28px rgba(0,0,0,.72),0 0 0 1px var(--vien-mo)}
+.vat.sang{background:var(--nen-sang)}
+.vat.toi{background:var(--canh-0)}
+.vat-dau{flex:0 0 46px;display:flex;align-items:center;gap:10px;padding:0 18px}
+.vat.sang .vat-dau{border-bottom:1px solid var(--net-sang)}
+.vat.toi .vat-dau{border-bottom:1px solid var(--canh-2)}
+.vat-dau .ten{font-size:var(--fs-md);font-weight:600;line-height:1.5}
+.vat.sang .vat-dau .ten{color:var(--muc)} .vat.toi .vat-dau .ten{color:var(--canh-7)}
+.vat-dau .kem{font-size:var(--fs-xs);line-height:1.5}
+.vat.sang .vat-dau .kem{color:var(--muc-2)} .vat.toi .vat-dau .kem{color:var(--canh-6)}
+.vat-dau .cuoi{margin-left:auto;display:flex;align-items:center;gap:10px}
+.vat-than{flex:1;min-height:0;display:flex}
+/* CHÂN — con số THẬT của chính vật đó. Viết bằng HTML nên máy đo được. */
+.vat-chan{flex:0 0 44px;display:flex;align-items:center;gap:16px;padding:0 18px;
+  font-size:var(--fs-xs);line-height:1.5}
+.vat.sang .vat-chan{border-top:1px solid var(--net-sang);color:var(--muc-2)}
+.vat.toi .vat-chan{border-top:1px solid var(--canh-2);color:var(--canh-6)}
+.vat-chan b{font-weight:600}
+.vat.sang .vat-chan b{color:var(--muc)} .vat.toi .vat-chan b{color:var(--canh-7)}
+.vat-chan .day2{margin-left:auto}
+.chip-sang{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;
+  border-radius:var(--r-full);background:var(--net-sang);color:var(--muc);
+  font-size:var(--fs-xs);line-height:1.5}
+.chip-toi{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;
+  border-radius:var(--r-full);background:var(--canh-2);color:var(--canh-7);
+  font-size:var(--fs-xs);line-height:1.5}
+
+/* BẢNG MẪU VẬT LIỆU — một trong các LOẠI biểu diễn (chỉ thị E: vật, không phải thẻ) */
+.bang-vl{flex:1;min-width:0;display:flex;flex-direction:column;padding:12px 18px;gap:0}
+.hang-vl{display:flex;align-items:center;gap:12px;height:38px;flex:0 0 38px}
+.hang-vl+.hang-vl{border-top:1px solid var(--net-sang)}
+.hang-vl .o{width:34px;height:24px;border-radius:var(--r-1);flex:0 0 34px}
+.hang-vl .ten{flex:1;min-width:0;font-size:var(--fs-ui);color:var(--muc);line-height:1.5;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hang-vl .ma{font:500 var(--fs-2xs)/1.5 ui-monospace,Menlo,monospace;letter-spacing:.06em;color:var(--muc-2)}
+.hang-vl .dm{font-size:var(--fs-xs);color:var(--muc);font-weight:600;line-height:1.5;width:74px;text-align:right}
+.hang-vl .ng{font-size:var(--fs-2xs);color:var(--muc-2);line-height:1.5;width:96px;text-align:right}
+.canh-vl{flex:0 0 40%;min-width:0;border-left:1px solid var(--net-sang)}
+.canh-vl svg{width:100%;height:100%}
+
+/* ---------- DẢI NGỮ CẢNH — đường đi của chính bậc NGAY BÂY GIỜ ----------
+   KHÔNG phải danh sách thứ phụ bị ép thành hàng ngang (§24), mà là CHUỖI THỜI GIAN:
+   ý tưởng → quyết định → bản đang xem → cái gì đang chờ nó. Chuỗi thời gian thì tuyến tính
+   là đúng hình dạng của nó. Đây là chỗ north star "không đánh rơi ngữ cảnh" nhìn thấy được. */
+.ngu-canh{position:relative;z-index:2;flex:0 0 var(--gpH);background:var(--panel);
+  border-radius:var(--r-3);box-shadow:0 0 0 1px var(--vien-mo);padding:13px 18px;
+  display:flex;flex-direction:column;gap:11px}
+.nc-dau{display:flex;align-items:center;gap:10px}
+.nc-dau .ke2{flex:1;height:1px;background:var(--vien-mo)}
+.mach{display:flex;align-items:stretch;flex:1;min-height:0}
+.nut-mach{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;padding-right:16px}
+.nut-mach+.nut-mach{padding-left:16px;border-left:1px solid var(--vien-mo)}
+.nut-mach .khi{font:500 var(--fs-2xs)/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--t3)}
+.nut-mach .cai{font-size:var(--fs-ui);line-height:1.5;color:var(--t1);font-weight:600}
+.nut-mach .no{font-size:var(--fs-xs);line-height:1.5;color:var(--t3)}
+.nut-mach.cho .cai{color:var(--t2);font-weight:500}
+
+/* ---------- THANG CHÚ Ý (cột phải) ---------- */
+.thang{flex:0 0 var(--thangW);width:var(--thangW);background:var(--panel);
+  border-left:1px solid var(--vien-mo);padding:14px 20px 16px;display:flex;flex-direction:column;overflow:hidden}
+.muc{display:flex;align-items:center;gap:10px;height:26px;flex:0 0 26px}
+.muc .ke2{flex:1;height:1px;background:var(--vien-mo)}
+.muc .dem{font:500 var(--fs-2xs)/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--t3)}
+
+/* ===== BẬC 2 · KỀ BÊN — nhận ra bằng MẮT, không phải bằng đọc =====
+   Không có nền thẻ (luật ④). Hình thức MẶT đổi theo NGHĨA CỦA VẬT (chỉ thị E):
+   .mat-anh = khung hình (render/ảnh hiện trường) · .mat-mau = dải mẫu vật liệu
+   · .mat-net = nét bản vẽ · .mat-trang = tỉ lệ trang hồ sơ. Khác nhau, cùng một ngữ pháp. */
+.ke-ben{display:flex;gap:12px;align-items:center;padding:10px 0}
+.ke-ben+.ke-ben{border-top:1px solid var(--vien-mo)}
+.ke-ben .mat-vat{flex:0 0 auto;width:104px;height:64px;border-radius:var(--r-2);overflow:hidden}
+.ke-ben .mat-vat svg{width:100%;height:100%}
+.ke-ben .mat-mau{display:flex;width:104px;height:64px;border-radius:var(--r-2);overflow:hidden}
+.ke-ben .mat-mau i{flex:1}
+.ke-ben .chu{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.ke-ben .ten{font-size:var(--fs-ui);font-weight:600;color:var(--t1);line-height:1.5;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ke-ben .con-so{font-size:var(--fs-xs);color:var(--t2);line-height:1.5}
+.ke-ben .khi{font-size:var(--fs-2xs);color:var(--t3);line-height:1.5}
+
+/* ===== BẬC 3 · NỀN — đang chạy / đang chờ người khác. Một dòng có số, không tranh chỗ. ===== */
+.o-nen{display:flex;align-items:center;gap:10px;height:38px;flex:0 0 38px}
+.o-nen+.o-nen{border-top:1px solid var(--vien-mo)}
+.o-nen .ten{flex:1;min-width:0;font-size:var(--fs-ui);color:var(--t2);line-height:1.5;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.o-nen .num{font-size:var(--fs-xs);color:var(--t1);font-weight:600;line-height:1.5}
+/* vạch tiến trình đo được — chi tiết MANG TIN, không phải trang trí */
+.vach-tt{width:52px;height:3px;border-radius:var(--r-full);background:var(--border);overflow:hidden;flex:0 0 52px}
+.vach-tt i{display:block;height:100%;background:var(--accent)}
+
+/* ===== BẬC 4 · KHI GỌI — tụt khỏi màn nhưng vẫn phải NÓI RA nó còn đó (§30) ===== */
+.khi-goi{display:flex;align-items:center;gap:10px;padding:11px 0;font-size:var(--fs-xs);
+  color:var(--t3);line-height:1.5}
+.khi-goi .vach-mo{flex:1;height:1px;background:linear-gradient(90deg,var(--border-strong),transparent)}
+
+/* DẤU TRẠNG THÁI — màu chỉ sống ở đây; hình dạng khác nhau nên màu không là kênh duy nhất. */
+.dau{width:9px;height:9px;flex:0 0 9px;border-radius:var(--r-full);display:inline-block}
+.dau.chay{background:var(--success)}
+.dau.cho{background:var(--warning);border-radius:var(--r-1)}
+.dau.lech{background:var(--danger);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:var(--r-full);
+  background:var(--card);color:var(--t2);font-size:var(--fs-xs);line-height:1.5;
+  box-shadow:inset 0 0 0 1px var(--vien-mo)}
+
+/* WIDGET CÁ NHÂN — bậc KHI GỌI: thứ TÔI tự đặt và hiện đang lặng.
+   Widget nào ĐANG CHẠY thì rời kệ này và lên bậc NỀN dưới dạng một dòng có số —
+   không widget nào giành sự chú ý chỉ vì nó tồn tại (chỉ thị C).
+   Cỡ ĐỊNH SẴN theo ô lưới (1×1 · 2×1), cấm kéo giãn tự do: đó là điều kiện để cùng một
+   widget chạy được trên máy tính · tablet · điện thoại. */
+.ke-widget{display:flex;gap:10px;flex-wrap:wrap}
+.o-w{background:var(--card);border-radius:var(--r-3);box-shadow:inset 0 0 0 1px var(--vien-mo);
+  padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between}
+.o-w.w2{flex:1 1 100%;height:82px} .o-w.w1{flex:1 1 0;min-width:0;height:82px}
+.o-w .nh{font:500 var(--fs-2xs)/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--t3)}
+.o-w .gt{font-size:var(--fs-lg);line-height:1.5;font-weight:600;color:var(--t1)}
+.o-w .gt small{font-size:var(--fs-xs);font-weight:400;color:var(--t3)}
+.dan{flex:1;min-height:0}
+
+/* NÚT */
+.nut{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:var(--tap-lg);
+  padding:0 20px;border-radius:var(--r-full);background:var(--accent);color:var(--on-accent);
+  font-size:var(--fs-ui);font-weight:600;line-height:1.5;border:0}
+.nut-nhe{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:var(--tap-lg);
+  padding:0 18px;border-radius:var(--r-full);background:transparent;color:var(--t2);
+  font-size:var(--fs-ui);line-height:1.5;box-shadow:inset 0 0 0 1px var(--border-strong)}
+
+/* KHỔ HẸP HƠN — thang KHÔNG đổi, chỉ đổi SỐ NGƯỜI ĐỨNG TRÊN MỖI BẬC.
+   Thứ bị ẩn không biến mất: nó tụt xuống bậc KHI GỌI và được đếm ở đó (§30). */
+body.hep .an-hep{display:none}
+.chi-hep{display:none}
+body.hep .chi-hep{display:inline}

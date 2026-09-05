@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  electron/entitlements.mac.inherit.plist — quyền cho các tiến trình CON
+  (Electron Helper: Renderer · GPU · Plugin).
+
+  Tiến trình con KHÔNG được khai lại quyền của tiến trình chính; nó KẾ THỪA.
+  Đây là bộ Apple quy định cho helper, và nó HẸP HƠN tệp chính có chủ ý:
+  renderer chỉ cần chạy JavaScript, không cần nạp thư viện gốc ngoài gói và
+  không cần truyền biến môi trường.
+-->
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <key>com.apple.security.inherit</key>
+  <true/>
+</dict>
+</plist>

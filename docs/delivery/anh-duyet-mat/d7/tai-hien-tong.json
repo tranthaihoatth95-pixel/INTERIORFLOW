@@ -1,0 +1,55 @@
+{
+  "luc": "2026-09-04T22:43:38.748Z",
+  "ds": [
+    {
+      "theGioi": "lanh-dinh-danh",
+      "xoaDinhDanh": false,
+      "userId": "cmtnjazmk00007dlsmmlz4u89",
+      "duAn": "cmtnjazmp00027dls4gyxhwni",
+      "resumeTruocKhiVao": "{\"route\":\"/cad-editor\",\"flowId\":\"cmtnjazmp00027dls4gyxhwni\",\"sheetId\":\"cadsheet-0\",\"ts\":1788561779282}",
+      "lastUserIdTruocKhiVao": "cmtnjazmk00007dlsmmlz4u89",
+      "duongDiQua": [
+        {
+          "url": "/cad-editor",
+          "sau_ms": 149
+        },
+        {
+          "url": "/cad-editor",
+          "sau_ms": 754
+        },
+        {
+          "url": "/projects/cmtnjazmp00027dls4gyxhwni/cad",
+          "sau_ms": 2349
+        }
+      ],
+      "dichSauRedirect": "/projects/cmtnjazmp00027dls4gyxhwni/cad",
+      "loeHome": false,
+      "dat": true
+    },
+    {
+      "theGioi": "nguoi-dinh-danh",
+      "xoaDinhDanh": true,
+      "userId": "cmtnjazmk00007dlsmmlz4u89",
+      "duAn": "cmtnjazmp00027dls4gyxhwni",
+      "resumeTruocKhiVao": "{\"route\":\"/cad-editor\",\"flowId\":\"cmtnjazmp00027dls4gyxhwni\",\"sheetId\":\"cadsheet-0\",\"ts\":1788561799613}",
+      "lastUserIdTruocKhiVao": null,
+      "duongDiQua": [
+        {
+          "url": "/cad-editor",
+          "sau_ms": 53
+        },
+        {
+          "url": "/cad-editor",
+          "sau_ms": 692
+        },
+        {
+          "url": "/projects/cmtnjazmp00027dls4gyxhwni/cad",
+          "sau_ms": 2262
+        }
+      ],
+      "dichSauRedirect": "/projects/cmtnjazmp00027dls4gyxhwni/cad",
+      "loeHome": false,
+      "dat": true
+    }
+  ]
+}

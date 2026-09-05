@@ -10,21 +10,46 @@
  *   ① Ambient  — *"Vitals đang sống, và có/không có gì đó"* · nhỏ, im, LUÔN THẤY ở mọi màn.
  *   ② Peek     — *"tôi nên biết gì"* · tối đa 3 tín hiệu THẬT; rê vào (có trễ) · focus · bấm ·
  *                nhấn giữ trên cảm ứng.
- *   ③ Engage   — *"nói chuyện với nó"* · mở ĐÚNG bề mặt chat Vitals đã có
- *                (`VitalsChatSurface`, tách ra từ `VitalsPill.tsx` — không dựng tấm thứ hai).
+ *   ③ Engage   — *"nói chuyện với nó"* · mở ĐÚNG bề mặt chat Vitals đã có.
+ *
+ * 🔀 BẢN HOÀ NHÁNH (`checkpoint/2026-08-24-control-plane` ← `integration/2026-09-04`).
+ * Hai nhánh DỰNG ĐỘC LẬP cùng tệp này rồi sửa mỗi bên một kiểu. Bản hoà giữ CẢ HAI ý định:
+ *   ① **Engage = `VitalsGesturePanel`** (từ `integration`) — KHÔNG phải `VitalsChatSurface`.
+ *      Lý do không phải "nhánh kia chưa có tệp" (sau hoà thì CÓ CẢ HAI), mà là ĐO ĐƯỢC:
+ *      `VitalsChatSurface` chỉ nhận `onClose`, gõ cứng `stage: 'gallery'`, KHÔNG nhận
+ *      `initialInput`/`autoSend` ⇒ câu hỏi gõ ở ô nhanh `StatusBar` **vẫn mất**. `VitalsGesturePanel`
+ *      là panel chat Vitals THẬT đang mồ côi (chỗ mount duy nhất `StageSwitcher.tsx` đã gỡ khỏi
+ *      header 17/08) và nó nhận đủ `stage`/`initialInput`/`autoSend`/`thinkLevel`. Hành vi giữ,
+ *      chỗ đứng đổi. `VitalsChatSurface` KHÔNG bị xoá — nó vẫn là bề mặt chat của widget Trang chủ.
+ *   ② **Tín hiệu `dia-diem` GIỮ** (từ `checkpoint`). Nhánh integration cắt nó chỉ vì route
+ *      `/api/projects/[id]/site` chưa tồn tại BÊN ĐÓ, và tự khai *"khi route về thì chỉ cần cấp
+ *      lại `diaDiemCanXem`/`diaDiemMien`"*. Route về rồi (đến từ checkpoint) ⇒ cắm lại, kèm cả
+ *      khối chi tiết mức-3 và cờ sức khoẻ nguồn `nguonSite` (bản vá P0 `L2-03`).
+ *   ③ **Tín hiệu `demo-flow` GIỮ** (từ `checkpoint`) — `lib/studio/demo-spine.ts` đã có sau hoà.
+ *   ④ **Ba hằng số cử chỉ đọc lại từ `cu-chi-nhan-giu.ts`** (checkpoint) thay vì khai tại chỗ:
+ *      integration khai tạm vì tệp đó chưa có bên nó; giữ bản khai tạm sau hoà là đẻ nguồn thứ hai
+ *      cho cùng một cử chỉ — đúng thứ `may-soi-dong-dang` sinh ra để bắt.
+ *
+ * ⭐ HAI HÀNH VI CỦA `VitalsRightEdgeHost` (Slice 12) ĐƯỢC HẤP THU VÀO ĐÂY, không xoá mù:
+ *   · **⌘J / Ctrl+J** — đăng ký DUY NHẤT ở tệp này (đã gỡ khỏi `StageSwitcher` + host cũ).
+ *   · **Ô gõ nhanh ở `StatusBar`** — nó gọi `useVitalsUi.open(câu hỏi, autoSend)`; khẩu độ nghe
+ *     `panelOpen` của kho dùng chung rồi tự nhảy sang Engage kèm `initialInput`. Trước lát này
+ *     `open()` gọi tới một panel không còn mount ⇒ **gõ Enter là mất câu hỏi**.
+ * Chỗ đứng "nút RỜI cạnh trục phải" thì BỎ — `CHOT-EXPERIENCE-SYSTEM-2026-08-20.md` §7 chốt
+ * Vitals nằm VẬT LÝ ở mép trên. Một vật, MỘT chỗ đứng.
  *
  * [Đ2] LOOK INSIDE trước khi dựng — bốn mảnh Vitals sẵn có, xử lý từng mảnh:
  *   · `VitalsIcon.tsx`        → THÔI DÙNG ở khẩu độ (20/08): hình thái ambient nay là LÕI +
  *                               QUỸ ĐẠO (`VitalsQuyDao.tsx`) vì cả ba mức phải mọc ra từ một
- *                               TÂM nhìn thấy được. Glyph cũ vẫn sống ở `VitalsChatSurface`.
+ *                               TÂM nhìn thấy được. Glyph cũ vẫn sống trong panel chat.
  *   · `VitalsStateBadge.tsx`  → DÙNG LẠI `VitalsStateDot` + bộ `VitalsState` (idle/answering/
  *                               alert) làm ngôn ngữ trạng thái. KHÔNG đẻ bảng trạng thái thứ hai.
  *   · `VitalsChatBubble.tsx`  → thuộc VitalsGesture, không đụng.
- *   · `VitalsGesture.tsx`     → 🔴 **BẢN CŨ, ĐÃ MỒ CÔI** — nơi mount DUY NHẤT của nó là
- *     `StageSwitcher.tsx`, mà StageSwitcher đã bị gỡ khỏi header 17/08 và `grep` toàn repo cho
- *     thấy KHÔNG route nào còn mount nó. Hệ quả đo được: chip "Vitals" ở `StatusBar.tsx` gọi
- *     `openVitals()` tới một panel không còn mount ⇒ **bấm vào không ra gì**. Khẩu độ này KHÔNG
- *     hồi sinh nó; nó thay chỗ đứng đó. Đóng dấu lỗi thời để ở ngay đầu `VitalsGesture.tsx`.
+ *   · `VitalsGesture.tsx`     → **MỒ CÔI, NAY VỀ ĐÂY LÀM MỨC ③.** Nơi mount duy nhất của nó là
+ *     `StageSwitcher.tsx`, mà StageSwitcher đã bị gỡ khỏi header 17/08 ⇒ `grep` toàn repo cho
+ *     thấy KHÔNG route nào còn mount nó. Hệ quả đo được: ô gõ nhanh ở `StatusBar.tsx` gọi
+ *     `openVitals()` tới một panel không còn mount ⇒ **gõ Enter là mất câu hỏi**. Khẩu độ này
+ *     KHÔNG dựng tấm chat thứ hai — nó cho tấm cũ một chỗ đứng đúng.
  *
  * 🔴 LUẬT CỨNG CỦA MỨC PEEK — CHỈ DỮ LIỆU THẬT. Việc chọn nói gì nằm ở lõi thuần
  * `vitals-tin-hieu.ts` và bị khoá bằng test (`chonTinHieu({}) === []`). Không có dữ liệu thì
@@ -49,18 +74,28 @@ import VitalsQuyDao from '@/components/studio/VitalsQuyDao';
 import { DUONG_CONG, giamChuyenDong, nhipToiBac, thoiLuong } from '@/lib/ui/nhip';
 import { useVungLamViec } from '@/components/ui/useVungLamViec';
 import { viTriO, viTriTamXo } from '@/lib/ui/vung-lam-viec';
-// 22/08 — đọc từ NHÀ CANONICAL, không đi vòng qua widget Trang chủ (tách quyền sở hữu Lane A/B).
-import { VitalsChatSurface } from '@/components/studio/VitalsChatSurface';
+import VitalsGesturePanel from '@/components/studio/VitalsGesture';
+import { useVitalsUi } from '@/lib/vitals-ui';
+import { laPhimChinh } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 import {
   chonTinHieu, trangThaiAmbient, mucKhauDo, nhanKhauDo, domKhauDo,
-  type TinHieu, type MaMien,
+  type TinHieu, type MaMien, type VitalsStage,
 } from '@/components/studio/vitals-tin-hieu';
 import { useDemoSpine, tomTatSpine, useCheDoDemo } from '@/lib/studio/demo-spine';
 import { NHAN_GIU_MS, SLOP_PX, TRE_RE_VAO_MS } from '@/components/studio/cu-chi-nhan-giu';
 
 type Muc = 'ambient' | 'peek' | 'engage';
 
+/* CỬ CHỈ (trễ rê vào · nhấn giữ · ngưỡng trượt) đọc từ `cu-chi-nhan-giu.ts` — MỘT nguồn cho
+   cùng một cử chỉ. Nhánh integration từng khai lại ba số này tại chỗ vì tệp đó chưa có bên nó;
+   sau hoà thì tệp có, nên trả về nguồn chung. */
+
 const RONG_TAM = 268;
+/** Bề rộng tấm Engage — khớp `width` mà `VitalsGesturePanel` tự đặt (`min(380px, 100vw-24px)`).
+ *  Chỉ dùng để TÍNH CHỖ RƠI cho đúng tâm; panel vẫn tự lo bề rộng thật của nó. */
+const RONG_ENGAGE = 380;
+/** `VitalsGesturePanel` tự đặt `top: calc(100% + 10px)`; lùi hộp cha đúng 10px ⇒ khe hở = 0. */
+const KHE_PANEL_PX = 10;
 /** Bề rộng Ổ — chỗ DÀNH RIÊNG trong header. Cố định: ổ mà co giãn thì tâm nhảy theo nội dung. */
 const O_RONG = 112;
 /** Ổ thò lên quá mép trên vài pixel ⇒ mắt đọc ra là KHE CẮT VÀO vỏ, không phải nút đặt lên vỏ. */
@@ -115,9 +150,28 @@ function doQuyChuan(): number | undefined {
   }
 }
 
-export function VitalsAperture() {
+export function VitalsAperture({ stage }: {
+  /**
+   * Chặng đang mở — `VitalsGesturePanel` gửi kèm để backend chọn system prompt, và in lên đầu
+   * tấm chat. Nơi mount (`AppChrome`) suy ra bằng `changTheoDuong(pathname)`.
+   * ⚠️ CỐ Ý là `VitalsStage` chứ không phải `Phase`: `'gallery'` = **không ở chặng nào**. Kiểu
+   * `Phase` không diễn đạt được điều đó, nên nơi gọi buộc phải nói dối — xem khối chú thích
+   * `changTheoDuong` ở `vitals-tin-hieu.ts` để biết lời nói dối đó đã hiện lên màn thế nào.
+   */
+  stage: VitalsStage;
+}) {
   const tr = useT();
   const [muc, setMuc] = useState<Muc>('ambient');
+  /* ⭐ KHO DÙNG CHUNG `lib/vitals-ui.ts` — ĐÂY LÀ CHỖ HAI HÀNH VI SLICE 12 VỀ ĐẬU.
+     Mức Engage KHÔNG có trạng thái mở/đóng riêng: nó soi gương `panelOpen` của kho. Lý do là
+     một lỗi đã sống thật — `StatusBar` gọi `open()` vào một panel không còn mount, gõ Enter là
+     MẤT CÂU HỎI. Có hai nguồn "đang mở" thì lỗi đó tái phát ở dạng khác; một nguồn thì không. */
+  const panelOpen = useVitalsUi((s) => s.panelOpen);
+  const initialInput = useVitalsUi((s) => s.initialInput);
+  const autoSend = useVitalsUi((s) => s.autoSend);
+  const consumeInitial = useVitalsUi((s) => s.consumeInitial);
+  const moKho = useVitalsUi((s) => s.open);
+  const dongKho = useVitalsUi((s) => s.close);
   /**
    * Peek mở do RÊ VÀO thì phải tự thu khi chuột đi khỏi; Peek mở do BẤM/FOCUS/NHẤN GIỮ thì GHIM
    * lại (người dùng đã ra quyết định, không được giật mất khi tay rời chuột).
@@ -257,21 +311,93 @@ export function VitalsAperture() {
     setNeo({ tren: r.bottom, trai: r.left, tam: r.left + r.width / 2 });
   }, []);
 
+  /**
+   * ⛔ HOÀ CẤM 05/09 — "HỘP RỖNG". Peek TỪNG mở ra một tấm chỉ để nói *"Không có tín hiệu nào."*
+   * Ba luật cùng cấm nó, không phải chuyện gu:
+   *   · N-10 cờ đỏ — *hộp rỗng khổng lồ*;
+   *   · khuôn thông điệp TRỐNG (`SPEC-NGON-NGU-CHI-DAN`) — trống thì phải **hành động được**,
+   *     không phải một câu chết + một dòng chữ;
+   *   · chính định nghĩa Peek ở §17 — *MỘT tín hiệu lớn + một dòng ngữ cảnh + một hành động*.
+   *     KHÔNG có tín hiệu ⇒ Peek không có ruột ⇒ **không được mở**.
+   *
+   * Hai lối vào xử KHÁC NHAU, cố ý:
+   *   · rê chuột, 0 tín hiệu → **không mở gì**. Ổ vẫn thở ở Ambient, không hộp nào bật ra.
+   *   · BẤM,      0 tín hiệu → nhảy **thẳng Engage** (Vitals thật, có ô hỏi). Nút KHÔNG chết —
+   *     và đây vốn đã là chỗ duy nhất nút "Mở Vitals…" trong tấm cũ dẫn tới, nên không mất
+   *     đường nào; chỉ bỏ một trạm trung gian rỗng.
+   */
   const moPeek = useCallback(
     (ghimLai: boolean) => {
+      if (tinHieu.length === 0) {
+        if (ghimLai) {
+          doNeo();
+          moKho();
+        }
+        return;
+      }
       doNeo();
       setQuyChuan(doQuyChuan()); // đo LƯỜI, đúng lúc mở
       if (ghimLai) datGhim(true);
       setMuc((m) => (m === 'engage' ? m : 'peek'));
     },
-    [doNeo, datGhim],
+    [doNeo, datGhim, moKho, tinHieu.length],
   );
 
   const dong = useCallback(() => {
     datGhim(false);
     setDaNo(false);
     setMuc('ambient');
-  }, [datGhim]);
+    // Đóng CẢ kho dùng chung — nếu không, `panelOpen` còn `true` và hiệu ứng đồng bộ dưới đây
+    // mở lại Engage ngay lập tức (vòng lặp mở-đóng, đúng loại lỗi chỉ lộ khi thao tác thật).
+    dongKho();
+  }, [datGhim, dongKho]);
+
+  /**
+   * ĐỒNG BỘ MỘT CHIỀU: kho `panelOpen` → mức Engage. Mọi lối vào Engage đều đi qua `open()` của
+   * kho (⌘J · ô gõ nhanh StatusBar · nút "Mở Vitals…"), nên không có luồng mở thứ hai.
+   */
+  useEffect(() => {
+    if (panelOpen) {
+      doNeo();
+      datGhim(true);
+      setDaNo(false);
+      setMuc('engage');
+    } else {
+      setMuc((m) => (m === 'engage' ? 'ambient' : m));
+    }
+  }, [panelOpen, doNeo, datGhim]);
+
+  /**
+   * ⌘J / Ctrl+J — ĐĂNG KÝ DUY NHẤT TRONG APP. Trước 04/09 tổ hợp này đăng ký ở `StageSwitcher`
+   * (không còn mount ⇒ chết) và ở `VitalsRightEdgeHost` (chưa từng được mount). Cả hai đã gỡ.
+   *
+   * 🔴 CỐ Ý **KHÔNG** CHÉP GUARD "NÉ Ô NHẬP" CỦA `StageSwitcher` — đo trên app thật 04/09 cho
+   * thấy guard đó biến ⌘J thành đường MỘT CHIỀU: panel vừa mở là tự đưa con trỏ vào ô nhập
+   * (`VitalsGesture.tsx` focus ô khi `open`), nên cú ⌘J thứ hai rơi đúng nhánh "đang ở INPUT →
+   * bỏ qua" ⇒ **mở được mà không đóng được**. Đo được: sau lần bấm thứ hai, `[data-vitals-chat]`
+   * vẫn còn trong DOM.
+   * Luật `keydown-ne-o-nhap` nhắm vào phím TRẦN (gõ chữ "j" trong ô tìm không được mở panel);
+   * một tổ hợp có ⌘/Ctrl thì không bao giờ là ký tự người dùng đang gõ, nên nó không thuộc phạm
+   * vi luật đó. Vẫn `preventDefault()` để không rơi vào phím tắt trình duyệt.
+   *
+   * 🔴 `capture: true` — BẮT BUỘC, không phải cho chắc. Ô nhập của `VitalsGesture.tsx:765` gọi
+   * `e.stopPropagation()` cho MỌI phím, nên ở pha nổi thì listener trên `window` KHÔNG BAO GIỜ
+   * thấy ⌘J khi con trỏ đang ở trong ô — đo được: bỏ guard rồi mà lần bấm thứ hai vẫn không
+   * đóng. Pha BẮT chạy từ `window` xuống mục tiêu nên nó tới trước cú chặn đó.
+   * (Cùng lý do và cùng cách `lib/useDismissable.ts:13` đã dùng cho Escape — không phát minh
+   * cơ chế mới, chỉ dùng lại cách của hệ.)
+   */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (laPhimChinh(e) && (e.key === 'j' || e.key === 'J')) {
+        e.preventDefault();
+        if (useVitalsUi.getState().panelOpen) dong();
+        else moKho();
+      }
+    };
+    window.addEventListener('keydown', onKey, { capture: true });
+    return () => window.removeEventListener('keydown', onKey, { capture: true });
+  }, [dong, moKho]);
 
   /* §14 CHUYỂN ĐỘNG TỪ GỐC — bề mặt NỞ RA TỪ CHÍNH TÂM LÕI quỹ đạo, không mọc từ hư không.
      Bật cờ ở khung hình SAU để trình duyệt có thế nội suy (không nhảy thẳng). */
@@ -330,7 +456,8 @@ export function VitalsAperture() {
 
   useDismissable({ open: muc !== 'ambient', onDismiss: dong, refs: [nutRef, tamRef] });
 
-  // Esc: Engage → về Ambient do chính `VitalsChatSurface` lo; Peek thì đóng ở đây.
+  // Esc: Engage → `VitalsGesturePanel` tự lo (nó có `useDismissable` riêng, gọi `onClose`=`dong`);
+  // Peek thì đóng ở đây.
   useEffect(() => {
     if (muc !== 'peek') return;
     const onEsc = (e: KeyboardEvent) => {
@@ -414,6 +541,17 @@ export function VitalsAperture() {
   // Nhãn và `data-vitals-state` sinh từ CÙNG `muc` — hai bề mặt tính riêng thì chúng sẽ lệch,
   // và chúng đã lệch (DOM nói `calm`, trình đọc màn hình nghe "không có tín hiệu").
   const nhanTrangThai = nhanKhauDo(mucTin, tr('vi', 'en') === 'en');
+
+  /* ① của thang nhường chỗ — ghi trần bề rộng cho cụm trái (đầu đề dự án) lên chính `<header>`.
+     Ổ là con `absolute` của header, nên `offsetParent` CHÍNH LÀ header; không phải đi tìm bằng
+     selector. Ghi một biến CSS thay vì nâng state lên cha: cha (`AppChrome`) chỉ cần đọc, không
+     cần vẽ lại — và nếu khẩu độ không mount thì biến không tồn tại, cụm trái về `100%` như cũ. */
+  useLayoutEffect(() => {
+    const cha = oRef.current?.offsetParent;
+    if (!(cha instanceof HTMLElement)) return;
+    if (oViTri) cha.style.setProperty('--if-tran-cum-trai', `${oViTri.tranCumTrai}px`);
+    else cha.style.removeProperty('--if-tran-cum-trai');
+  }, [oViTri]);
 
   if (!oViTri) return null;
 
@@ -550,7 +688,11 @@ export function VitalsAperture() {
         )}
       </button>
 
-      {muc !== 'ambient' && neo && typeof document !== 'undefined'
+      {/* ⛔ CỔNG CHỐNG HỘP RỖNG (Hoà cấm 05/09). `moPeek` đã chặn ở lối vào, nhưng tín hiệu
+          có thể TẮT trong lúc tấm đang mở (lượt render xong, cảnh báo hết hạn) — lúc đó tấm
+          sẽ tự rỗng ra. Chặn ở cả hai đầu nên không có khung hình nào lọt. Engage KHÔNG chịu
+          điều kiện này: nó là chỗ ĐỌC và HỎI, rỗng tín hiệu vẫn có việc để làm. */}
+      {muc !== 'ambient' && (muc === 'engage' || tinHieu.length > 0) && neo && typeof document !== 'undefined'
         ? createPortal(
             // PORTAL ra body — luật K4 (02/08): tấm nổi không được lồng trong chrome kính.
             <div
@@ -569,7 +711,7 @@ export function VitalsAperture() {
                 ...(() => {
                   const t = viTriTamXo(
                     { tam: neo.tam, day: neo.tren },
-                    muc === 'engage' ? 300 : RONG_TAM,
+                    muc === 'engage' ? RONG_ENGAGE : RONG_TAM,
                     window.innerWidth,
                   );
                   return { top: t.tren, left: t.trai };
@@ -585,17 +727,16 @@ export function VitalsAperture() {
                    ⛔ CẤM biến thành bảng phân tích doanh nghiệp: không biểu đồ, không %, không
                    "so với tuần trước". Trần 3 dòng đã khoá ở `vitals-tin-hieu.ts`. */
                 <div
+                  /* Vật liệu: `.be-mat-noi--kinh` (kho `lib/ui/vat-lieu.ts` + `globals.css:958`) —
+                     kho đó CÓ sau hoà, nên trả về lớp dùng chung thay cho bộ style khai tại chỗ mà
+                     nhánh integration phải dựng tạm. Không tự chế màu. */
                   style={{ width: RONG_TAM, ...kieuMoc() }}
                   className="be-mat-noi be-mat-noi--kinh overflow-hidden rounded-[var(--r-3)] p-2"
                 >
-                  {tinHieu.length === 0 ? (
-                    // Câu này nói về KHẨU ĐỘ, không nói về sức khoẻ hồ sơ. Cố ý KHÔNG viết
-                    // "bản vẽ không có lỗi": bộ kiểm chỉ bắt được thứ đo được, "0 vi phạm" ≠
-                    // "đạt chuẩn" (luật đã ghi thành chữ ở `violationsPromptBlock`).
-                    <p className="px-1.5 py-1 text-[length:var(--fs-xs)] leading-relaxed text-[var(--t3)]">
-                      {tr('Không có tín hiệu nào.', 'No signals.')}
-                    </p>
-                  ) : (
+                  {/* ⛔ NHÁNH "0 tín hiệu" ĐÃ XOÁ 05/09 (Hoà cấm hộp rỗng). KHÔNG để lại nhánh JSX
+                      không bao giờ chạy: một khối UI không bao giờ hiện là thứ phiên sau tưởng
+                      đã có rồi — đúng cơ chế đẻ ra luật N8. Điều kiện `tinHieu.length > 0` nay
+                      nằm ở CỔNG PORTAL bên trên, nên tới được đây là chắc chắn có tín hiệu. */}
                     <>
                       {/* TÍN HIỆU LỚN — số đứng riêng, cỡ lớn; chữ đi kèm ngắn. */}
                       <div className="flex items-baseline gap-2 px-1.5 pt-0.5">
@@ -631,7 +772,6 @@ export function VitalsAperture() {
                         </ul>
                       )}
                     </>
-                  )}
 
                   {/* ⭐ MỨC 3 · CHI TIẾT cho tín hiệu NGỮ CẢNH DỰ ÁN (§1). Năm câu hỏi, năm dòng:
                       CÁI GÌ · VÌ SAO · NGUỒN · ẢNH HƯỞNG · rồi mới tới HÀNH ĐỘNG.
@@ -690,24 +830,34 @@ export function VitalsAperture() {
                     type="button"
                     onClick={() => {
                       huyRoi();
-                      datGhim(true);
-                      setDaNo(false);
-                      setMuc('engage');
+                      // Đi qua kho dùng chung — MỘT lối vào Engage, xem hiệu ứng đồng bộ ở trên.
+                      moKho();
                     }}
-                    className="mt-1.5 w-full rounded-[var(--r-2)] px-2 py-1.5 text-left text-[length:var(--fs-xs)] text-[var(--t2)] transition-colors duration-[120ms] hover:bg-[var(--hover)]"
+                    className="mt-2 w-full rounded-[var(--r-2)] border border-[var(--border)] px-2 py-1.5 text-center text-[length:var(--fs-xs)] font-medium text-[var(--t2)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
                   >
                     {tr('Mở Vitals…', 'Open Vitals…')}
                   </button>
                 </div>
               ) : (
-                /* ⭐ ENGAGE — cùng tâm đó nở tiếp thành bề mặt ĐỌC ĐƯỢC. `VitalsChatSurface` đã
-                   là nền ĐẶC (`--card` + `--border`), đúng luật vật liệu: chỗ đọc lâu + có ô
-                   nhập thì KHÔNG đeo kính. Ở đây chỉ bọc một lớp CHUYỂN ĐỘNG, cố ý KHÔNG bọc
-                   `BeMatNoi` — bọc vào là kính chồng lên mặt đặc, đúng thứ luật cấm.
-                   ⛔ Nó không phải hộp thoại chatbot rời: không overlay, không giữa màn, mọc
-                   ra từ chính lõi quỹ đạo và thu về đó. */
-                <div style={kieuMoc()}>
-                  <VitalsChatSurface onClose={dong} />
+                /* ⭐ ENGAGE — cùng tâm đó nở tiếp thành bề mặt ĐỌC ĐƯỢC: `VitalsGesturePanel`,
+                   panel chat Vitals THẬT (nền `.vitals-pop` đặc, đúng luật vật liệu "chỗ đọc lâu
+                   + có ô nhập thì KHÔNG đeo kính"). Đây là CHỖ MOUNT DUY NHẤT của nó trong app.
+                   ⛔ Không bọc thêm lớp chuyển động nào ở đây: panel tự có nhịp mở/đóng riêng
+                   (framer-motion, đã tôn `prefers-reduced-motion`) — bọc thêm là hai nhịp chồng.
+                   ⚠️ Panel tự đặt `top: calc(100% + 10px)` so với hộp cha, nên hộp cha lùi lên
+                   đúng 10px để mép trên panel TRÙNG mép dưới ổ ⇒ khe hở = 0 (có khe là mắt đọc ra
+                   "popover gắn lên", không phải "mép trên hé mở"). */
+                <div style={{ position: 'relative', width: RONG_ENGAGE, height: 0, marginTop: -KHE_PANEL_PX }}>
+                  <VitalsGesturePanel
+                    originPx={null}
+                    open
+                    direction="down"
+                    stage={stage}
+                    initialInput={initialInput}
+                    autoSend={autoSend}
+                    onConsumeInitial={consumeInitial}
+                    onClose={dong}
+                  />
                 </div>
               )}
             </div>,

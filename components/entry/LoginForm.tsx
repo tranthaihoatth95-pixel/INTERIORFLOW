@@ -243,7 +243,7 @@ export function LoginForm({
 
   // input GẠCH DƯỚI mảnh (ref 2): nền trong suốt, chỉ 1 hairline dưới, focus chuyển đồng
   const field =
-    'w-full appearance-none rounded-none border-0 border-b border-[var(--border)] bg-transparent px-0.5 py-2.5 text-sm text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[color:var(--fc)]';
+    'w-full appearance-none rounded-none border-0 border-b border-[var(--border)] bg-transparent px-0.5 py-2.5 text-sm text-[var(--t1)] placeholder-[var(--t5)] transition-colors focus:border-[color:var(--fc)]';
   const tab =
     'relative pb-1.5 text-[12px] font-semibold uppercase tracking-[0.14em] transition-colors';
 

@@ -56,6 +56,17 @@ interface Props {
   shiftHotkeys?: boolean;
 }
 
+/** Ghi nhớ trạng thái thu/mở. Kho bị chặn thì BỎ QUA — cú bấm vẫn phải ăn, chỉ là lần mở
+ * sau không nhớ. Ném ở đây là ném BÊN TRONG hàm cập nhật state ⇒ chết cả cú bấm, không chỉ
+ * mất ghi nhớ (ca 3 nghiệm thu G1). */
+function ghiNhoThuMo(key: string, next: boolean): void {
+  try {
+    localStorage.setItem(key, next ? '1' : '0');
+  } catch {
+    /* kho bị chặn — chỉ mất phần ghi nhớ */
+  }
+}
+
 export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, collapsedLabel, width: widthProp = DEFAULT_WIDTH, shiftHotkeys = false, defaultCollapsed = false }: Props) {
   // 22/08 (hotfix "stop mini-app UI") — MÔI TRƯỜNG ĐẮM CHÌM (2D · 3D) MẶC ĐỊNH THU BẢNG TRÁI.
   // Hoà: *"canvas dominates · layers only when opened"*. Bảng Lớp thường trực chính là thứ làm
@@ -73,7 +84,16 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
   const kLibrary = shiftHotkeys ? '⇧L' : 'L';
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    // Trình duyệt chặn hẳn site data (Safari riêng tư, thiết lập siết) thì `getItem` NÉM,
+    // không phải trả null — ném trong effect là sập cả cây React, màn trắng bóc. Ca 3 của
+    // nghiệm thu G1 bắt được đúng chỗ này: an toàn dữ liệu không vi phạm, nhưng app không
+    // dùng được. Không đọc được thì dùng mặc định theo chặng — mất một tuỳ chọn, không mất cả app.
+    let stored: string | null = null;
+    try {
+      stored = localStorage.getItem(STORAGE_KEY);
+    } catch {
+      /* kho bị chặn — dùng mặc định */
+    }
     // Lựa chọn đã lưu THẮNG mặc định theo chặng — cả hai chiều ('1' thu, '0' mở).
     if (stored === '1') setCollapsed(true);
     else if (stored === '0') setCollapsed(false);
@@ -93,7 +113,7 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
   const toggle = () => {
     setCollapsed((c) => {
       const next = !c;
-      localStorage.setItem(STORAGE_KEY, next ? '1' : '0');
+      ghiNhoThuMo(STORAGE_KEY, next);
       return next;
     });
   };
@@ -106,7 +126,7 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
       const set = (e as CustomEvent<{ set?: boolean }>).detail?.set;
       setCollapsed((c) => {
         const next = set ?? !c;
-        localStorage.setItem(STORAGE_KEY, next ? '1' : '0');
+        ghiNhoThuMo(STORAGE_KEY, next);
         return next;
       });
     };
@@ -172,7 +192,7 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
           onClick={toggle}
           title={tr(`Mở lại ${collapsedLabel ?? 'bảng'} — ${kPanel}`, `Expand ${collapsedLabel ?? 'panel'} — ${kPanel}`)}
           aria-label={tr(`Mở lại ${collapsedLabel ?? 'bảng'}`, `Expand ${collapsedLabel ?? 'panel'}`)}
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] text-[var(--t3)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] text-[var(--t3)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
         >
           <ChevronLeft size={16} className="rotate-180" />
         </button>

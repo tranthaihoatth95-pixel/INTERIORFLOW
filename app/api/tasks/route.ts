@@ -1,35 +1,41 @@
 import { NextResponse } from 'next/server';
-import { getSessionUser } from '@/lib/server/auth';
-import { assertProjectAccess, accessErrorPayload } from '@/lib/server/access';
+import { authorizeRequest } from '@/lib/auth/authorize-request';
+import { listMemberSummaries } from '@/lib/auth/authorize-db';
+import { requireCapability, checkAssignees } from '@/lib/auth/authorize';
+import { respondError } from '@/lib/auth/route-helpers';
 import { listWorkflowStates, listTasks, createTask, isTaskStage } from '@/lib/server/tasks';
 
 export const dynamic = 'force-dynamic';
 
-/** GET /api/tasks?projectId=... — Task nội bộ IF (M-SCOPE VIỆC 2), KHÔNG liên quan LarkTaskRef. */
-export async function GET(req: Request) {
-  const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+/**
+ * SLICE 6 (02/09) — quyền đi qua `lib/auth` (vai canonical theo năng lực), thay `assertProjectAccess
+ * minRole 'drafter'`. Ánh xạ: đọc = task:read (mọi thành viên) · tạo/sửa/xoá = task:write
+ * (editor · reviewer · owner · admin; viewer KHÔNG). Reviewer có task:write vì Cổng Duyệt chốt
+ * 11/08: note duyệt gom thành checklist → việc — người duyệt phải tạo được việc.
+ * GIAO VIỆC: mọi `assigneeIds` phải là thành viên CÒN HIỆU LỰC có `task:assignable` — sai thì 400
+ * nêu tên, KHÔNG lặng lẽ lọc bớt (lọc bớt = giả thành công).
+ */
 
+/** GET /api/tasks?projectId=... — states + tasks + grant + members (nguồn picker giao việc). */
+export async function GET(req: Request) {
   const projectId = new URL(req.url).searchParams.get('projectId');
   if (!projectId) return NextResponse.json({ error: 'thiếu projectId' }, { status: 400 });
-
   try {
-    await assertProjectAccess(user.id, projectId, 'viewer');
-    const [states, tasks] = await Promise.all([listWorkflowStates(projectId), listTasks(projectId)]);
-    return NextResponse.json({ states, tasks });
+    const grant = requireCapability(await authorizeRequest(projectId), 'task:read');
+    const [states, tasks, members] = await Promise.all([
+      listWorkflowStates(projectId),
+      listTasks(projectId),
+      listMemberSummaries(projectId, grant.currentStage),
+    ]);
+    return NextResponse.json({ states, tasks, grant, members });
   } catch (e) {
-    const p = accessErrorPayload(e);
-    if (p) return NextResponse.json({ error: p.message }, { status: p.status });
-    return NextResponse.json({ error: e instanceof Error ? e.message : 'lỗi không rõ' }, { status: 500 });
+    return respondError(e);
   }
 }
 
-/** POST /api/tasks — tạo task mới trong 1 project (tối thiểu quyền 'drafter' — cùng ngưỡng tạo flow ở /api/flows). */
+/** POST /api/tasks — tạo task mới trong 1 project (task:write). */
 export async function POST(req: Request) {
-  const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const body = await req.json().catch(() => ({}));
-
   const projectId = typeof body.projectId === 'string' ? body.projectId : '';
   const title = typeof body.title === 'string' ? body.title : '';
   if (!projectId || !title.trim()) {
@@ -39,14 +45,22 @@ export async function POST(req: Request) {
   if (body.stage !== undefined && body.stage !== null && !isTaskStage(body.stage)) {
     return NextResponse.json({ error: "stage chỉ nhận 'concept' | 'render' | 'present' hoặc null" }, { status: 400 });
   }
+  const assigneeIds: string[] = Array.isArray(body.assigneeIds) ? body.assigneeIds.filter((x: unknown) => typeof x === 'string') : [];
 
   try {
-    await assertProjectAccess(user.id, projectId, 'drafter');
+    const grant = requireCapability(await authorizeRequest(projectId), 'task:write');
+    if (assigneeIds.length > 0) {
+      requireCapability(grant, 'task:assign');
+      const chk = checkAssignees(assigneeIds, await listMemberSummaries(projectId, grant.currentStage));
+      if (!chk.ok) {
+        return NextResponse.json({ error: 'Người được giao phải là thành viên còn hiệu lực và có quyền nhận việc.', ineligible: chk.ineligible }, { status: 400 });
+      }
+    }
     const task = await createTask({
       projectId,
       title,
       statusId: typeof body.statusId === 'string' ? body.statusId : null,
-      assigneeIds: Array.isArray(body.assigneeIds) ? body.assigneeIds.filter((x: unknown) => typeof x === 'string') : [],
+      assigneeIds,
       startAt: typeof body.startAt === 'string' ? body.startAt : null,
       dueAt: typeof body.dueAt === 'string' ? body.dueAt : null,
       order: typeof body.order === 'number' ? body.order : 0,
@@ -56,8 +70,6 @@ export async function POST(req: Request) {
     });
     return NextResponse.json({ task });
   } catch (e) {
-    const p = accessErrorPayload(e);
-    if (p) return NextResponse.json({ error: p.message }, { status: p.status });
-    return NextResponse.json({ error: e instanceof Error ? e.message : 'lỗi không rõ' }, { status: 500 });
+    return respondError(e);
   }
 }

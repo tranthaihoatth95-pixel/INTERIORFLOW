@@ -169,17 +169,26 @@ export default function StageToolbelt({ stage, coDoiTuongChon = false }: StageTo
   }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
+    /* 🔀 HOÀ NHÁNH (`187a7cac`) — `pointerEvents:'none'`, cùng luật với ổ toolbelt của `AppShell`
+       (04/09): hộp chỉ để BỐ TRÍ thì không bắt chuột, phần tử nhìn thấy được tự bật lại. Hộp này
+       nằm đè lên mặt vẽ 2D và rộng/cao hơn thanh nút bên trong (đo được: 2 điểm hở ở mép phải),
+       nên phần thừa của nó đang NUỐT cú bấm xuống mặt vẽ — 7,9% mặt vẽ mất vì một hộp trong suốt.
+       ⚠️ Mỗi vật nhìn thấy được bên trong PHẢI tự bật lại `pointerEvents:'auto'`; quên một chỗ là
+       chỗ đó thành câm. Đã bật: `ToolbarBar` (dưới), ô thả kéo-từ-Thư-viện, và `panel` của cửa
+       duyệt (xem hằng `panel` cuối tệp). */
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', pointerEvents: 'none' }}>
       {mo && <CuaDuyet nguonId={nguonId} onDong={() => setMo(false)} />}
       {moKhoi && <CuaAnhThanhSpec onDong={() => setMoKhoi(false)} />}
 
-      <ToolbarBar>
+      <ToolbarBar style={{ pointerEvents: 'auto' }}>
         {/* Bước SOURCE — nút này KHÔNG phải năng lực gộp (không nằm trong `compound.ts`): nó chỉ
             đưa nguyên liệu vào tay. Đặt trước dấu ngăn để đọc đúng thứ tự dây chuyền. */}
         {/* Ô THẢ: kéo một món từ Thư viện vào đây thì nguồn có DANH TÍNH (`nguonId`) — đó là điều
             kiện để xuất xứ ghi được xuống DB, tức sống qua đổi máy. Bấm vẫn mở hộp thoại tệp như
             cũ (nguồn không danh tính, chỉ bền trong localStorage của máy này). */}
-        <div onDragOver={keVao} onDragEnter={keVao} onDrop={thaTuThuVien}>
+        {/* `pointerEvents:'auto'` — hộp cha thôi bắt chuột (xem trên); ô thả là vật THẬT, phải tự
+            bật lại, nếu không thì vừa không bấm được vừa không thả được món kéo từ Thư viện. */}
+        <div onDragOver={keVao} onDragEnter={keVao} onDrop={thaTuThuVien} style={{ pointerEvents: 'auto' }}>
           <ToolbarChip
             icon={<CommandIcon name="ImagePlus" size={18} />}
             label={nguon.anhNguon ? `Nguồn: ${nguon.tenNguon ?? 'ảnh đã chọn'}` : 'Chọn ảnh nguồn'}
@@ -485,6 +494,9 @@ const panel: CSSProperties = {
   boxShadow: '0 8px 30px rgba(0,0,0,.22)',
   color: 'var(--t2)',
   fontSize: 11.5,
+  // Hộp cha (`StageToolbelt`) cố ý KHÔNG bắt chuột để trả mặt vẽ lại cho người dùng; cửa duyệt
+  // là vật nhìn thấy được nên tự bật lại cho mình — quên dòng này là cả cửa duyệt thành câm.
+  pointerEvents: 'auto',
 };
 
 const anhNho: CSSProperties = {
@@ -541,8 +553,9 @@ const nutPhu: CSSProperties = {
 const hopLoi: CSSProperties = {
   padding: 9,
   borderRadius: RADIUS.r2,
-  border: '1px solid color-mix(in srgb, var(--danger, #e05252) 45%, transparent)',
-  background: 'color-mix(in srgb, var(--danger, #e05252) 12%, transparent)',
+  // `--danger` có thật trong `globals.css` ⇒ bỏ fallback hex tự chế (luật: không chế màu tại chỗ).
+  border: '1px solid color-mix(in srgb, var(--danger) 45%, transparent)',
+  background: 'color-mix(in srgb, var(--danger) 12%, transparent)',
   fontSize: 11,
 };
 

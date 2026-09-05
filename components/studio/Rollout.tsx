@@ -312,7 +312,8 @@ export function RolloutGroup({ kindKey, children }: GroupProps) {
                   e.preventDefault();
                   setMenu({ x: e.clientX, y: e.clientY, id: it.id });
                 }}
-                className="group flex h-[var(--row)] w-full cursor-pointer select-none items-center gap-1.5 border-b border-[var(--vien-mo)] px-2 transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent-ring)]"
+                // HOÀ: giữ token `--nhip-bam` + `--accent-ring` (xem chú thích ở InspectorPages.tsx).
+                className="group flex h-[var(--row)] w-full cursor-pointer select-none items-center gap-1.5 border-b border-[var(--vien-mo)] px-2 transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] if-focus-inset"
               >
                 <ChevronDown
                   size={16}

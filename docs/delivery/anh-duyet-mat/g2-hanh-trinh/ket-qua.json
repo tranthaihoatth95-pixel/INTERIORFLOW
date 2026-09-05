@@ -1,0 +1,103 @@
+{
+  "okHieuChuan": true,
+  "ketQua": [
+    {
+      "ma": "J16",
+      "ten": "Deep-link studio → vẽ → đóng app → mở lại",
+      "trangThai": "PASS",
+      "vi": "1 thực thể còn nguyên ở cmtnerfou00007dlozlryzcvs::/cad-editor::cmtnerfqb00027dlouwh6ak91 sau khi ĐÓNG HẲN trình duyệt và mở lại",
+      "ghiChu": ""
+    },
+    {
+      "ma": "J17",
+      "ten": "Đang vẽ → app bị tắt ngang (SIGKILL) → mở lại",
+      "trangThai": "PASS",
+      "vi": "bị SIGKILL giữa lúc vẽ: nhịp autosave giữ được 3 thực thể (neo an toàn 2, trên màn lúc chết là 3)",
+      "ghiChu": ""
+    },
+    {
+      "ma": "J19",
+      "ten": "Máy đã có dữ liệu → cài đè bản mới → dữ liệu còn nguyên + có bản sao lùi",
+      "trangThai": "PASS",
+      "vi": "bản sao 2026-09-04T21-06-17-294Z-before-0.0.9 đọc lại bằng SQL thật: {\"user\":2,\"project\":20,\"flow\":20,\"projectMember\":19} — khớp gốc, kèm uploads",
+      "ghiChu": ""
+    },
+    {
+      "ma": "J20",
+      "ten": "Trình bày có nội dung → xuất PDF → mở tệp ra soi",
+      "trangThai": "LOI",
+      "vi": "page.waitForEvent: Timeout 120000ms exceeded while waiting for event \"download\"\n=========================== logs ===========================\nwaiting for event \"download\"\n============================================================",
+      "ghiChu": ""
+    },
+    {
+      "ma": "J07",
+      "ten": "Vẽ 2D → lưu → MÁY SẠCH (xoá hồ sơ) mở lại vẫn thấy nét",
+      "trangThai": "PASS",
+      "vi": "XOÁ SẠCH hồ sơ trình duyệt rồi mở lại: 3 thực thể quay về đúng ID cũ, khôi phục từ hàng ProjectFile trên máy chủ (1501 byte, 3 thực thể parse lại được)",
+      "ghiChu": ""
+    },
+    {
+      "ma": "J12",
+      "ten": "Trình bày: đặt nội dung lên trang → đóng app → mở lại còn nguyên",
+      "trangThai": "PASS",
+      "vi": "7 phần tử trên 1 trang còn nguyên ở cmtnerfou00007dlozlryzcvs::/present-editor::cmtnfcmla00087d4y309osbln sau khi ĐÓNG HẲN trình duyệt và mở lại",
+      "ghiChu": ""
+    },
+    {
+      "ma": "J04",
+      "ten": "Home → bấm \"Tạo dự án mới\" → dự án có thật trong CSDL và còn sau khi mở lại",
+      "trangThai": "PASS",
+      "vi": "dự án tạo thật trong CSDL (20 → 21 hàng Project, 21 Flow) · URL http://localhost:3096/ → http://localhost:3096/projects/cmtng76fo001d7de8ds9jzotj/render · Home mở lại vẫn thấy (17 dự án qua GET /api/flows)",
+      "ghiChu": ""
+    },
+    {
+      "ma": "J06",
+      "ten": "Mở lại dự án cũ → vẽ tiếp → nét cũ còn nguyên ID (gia phả không đứt)",
+      "trangThai": "PASS",
+      "vi": "mở lại dự án cũ vẽ tiếp: 1 → 2 thực thể, TOÀN BỘ 1 ID của lần trước còn nguyên (không phải vẽ đè lên bản trắng)",
+      "ghiChu": ""
+    },
+    {
+      "ma": "J18",
+      "ten": "Hai tab cùng lưu → tab sau bị chặn, KHÔNG ghi đè âm thầm (tầng cơ chế)",
+      "trangThai": "PASS",
+      "vi": "hai tab tranh ghi CÙNG một Flow: tab A 200 · tab B 409 · CSDL giữ đúng bản của A (rev 1), KHÔNG ghi đè âm thầm",
+      "ghiChu": "CHỈ chứng minh TẦNG CƠ CHẾ. Tab B ở đây gửi `fetch` PUT thô nên nó ĐI VÒNG qua bộ xử 409 của client (`lib/store.ts:1224`) ⇒ màn hình không hiện gì là ĐÚNG với phép đo này, KHÔNG phải bằng chứng app im lặng. Tầng người dùng vẫn UNVERIFIED — muốn đo phải làm tab B sửa bằng THAO TÁC THẬT trên canvas để `persistNow()` tự chạy."
+    },
+    {
+      "ma": "J22",
+      "ten": "Không có khoá cloud → báo rõ, không nút giả",
+      "trangThai": "PASS",
+      "vi": "gọi năng lực cloud khi máy không có khoá: 503 · code PROVIDER_NOT_CONFIGURED · câu báo nói rõ việc phải làm (\"Chưa nối máy render (COMFYUI_URL) cho mức \"oneAI\" — xem comfyui/README.md.\") · KHÔNG trả hàng giả",
+      "ghiChu": ""
+    },
+    {
+      "ma": "J15",
+      "ten": "Thư viện: mở lại `.idfc` đã lưu → sửa → ghi lại → đóng app → vẫn là bản sửa",
+      "trangThai": "PASS",
+      "vi": "khoá IndexedDB `studio::/studio-idfc`: bản gốc sống qua lần đóng #1 (w=600, \"Ghế G2 bản gốc\") → nhập lại cùng mã G2-J15-GHE → sau lần đóng #2 kho mang ĐÚNG bản sửa (w=940, \"Ghế G2 ĐÃ SỬA\", 1 prim, thẻ \"g2,da-sua\"), tổng 1 món, không nhân bản",
+      "ghiChu": "nhận diện lúc thả tệp: ghe-sua.idfc✓ Ghế G2 ĐÃ SỬA · G2-J15-GHE Cấu kiện IF 360 B"
+    },
+    {
+      "ma": "J13",
+      "ten": "Nhập tệp thô → gắn định nghĩa → lưu vào Thư viện → mở lại còn hàng DB + byte trên đĩa",
+      "trangThai": "PASS",
+      "vi": "① manifest `studio::/studio-ref-manifest` giữ tệp thô (usage=\"material\") qua lần đóng app · ② `GET /api/library` còn 1 hàng (tags \"inspo:1,license:cc0,nguon:upload,nganh:noi-that\") · ③ byte trên đĩa `uploads/`: 911 B, sha256 cc40e8edb5e1bce0 — KHỚP tệp nguồn",
+      "ghiChu": "⚠️ LỆCH MA TRẬN: đường `/library/ingest` (cột \"đường vào\" của J13) KHÔNG sinh `LibraryAsset` và KHÔNG đặt byte nào lên đĩa — nó chỉ ghi manifest IDB. Hàng DB + tệp đĩa ở trên đến từ `/inspiration` → POST /api/library. Hai đường, một cột."
+    },
+    {
+      "ma": "J21",
+      "ten": "Xuất gói `.idfp` → mở tệp ra soi → MÁY SẠCH nạp lại được",
+      "trangThai": "PASS",
+      "vi": "tệp J21-project.idfp (4.6 KB, idfpVersion 1, brandKit không) soi ra 1 hồ sơ · 1 trang · 14 phần tử [text]; XOÁ SẠCH hồ sơ trình duyệt rồi mở một DỰ ÁN KHÁC chưa từng có gì (kho = 0 phần tử) → nạp tệp → kho mọc lên 14 phần tử / 1 trang ở khoá cmtnpatxz00007duf6s1qnnvr::/present-editor::cmtnq5lfr00067dkv2bfjaznq",
+      "ghiChu": "🔴 MỞ TỆP RA SOI THẤY: 14/14 ô chữ mang nguyên văn \"Nhập nội dung\" — giá trị mặc định của `makeText()` (`lib/present-editor/model.ts`), tức đúng lỗi F1 mà J20 bắt được trên PDF, nay tái hiện trên `.idfp`. Khác PDF ở chỗ đắt giá: trong `.idfp` nó là CHỮ nên **máy grep được**, còn trong PDF nó đã thành điểm ảnh và chỉ mắt người bắt nổi. Kèm: 14 ô chữ đều **không có `x`/`y`** trong tệp ⇒ chồng khít một chỗ, nhìn trên màn tưởng chỉ có một ô."
+    },
+    {
+      "ma": "J14",
+      "ten": "Dùng một vật liệu → BOQ → đơn giá/hao hụt khớp kho giá, còn đúng sau khi đóng app",
+      "trangThai": "PASS",
+      "vi": "thả 1 cấu kiện mang `specId=ps-g2-j14-ghe` xuống bản vẽ → `POST /api/boq` ra dòng count: khối lượng 1, đơn giá 1500000 và hao 10% ĐÚNG BẰNG hàng `ProductSpec` trong CSDL, thành tiền 1650000; đóng app mở lại vẫn ra y hệt (Doc ở IndexedDB, giá ở CSDL — hai nơi lưu, cùng sống sót)",
+      "ghiChu": "⚠️ NỢ DỮ LIỆU ĐANG SỐNG: `ProductSpec.matId` của chính hàng này đọc ra **null** ⇒ nhánh matId-UUID vẫn CHƯA chạy sống lần nào; hành trình này đo nhánh `specId` — nhánh mà `computeBoq` thật sự dùng. Backfill (`scripts/backfill-material-matid.ts`, dry-run) vẫn là việc chưa làm."
+    }
+  ]
+}

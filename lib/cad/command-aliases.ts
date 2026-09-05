@@ -81,6 +81,9 @@ export const CAD_COMMANDS: { cmd: string; label: string; group: CadCommandGroup 
   { cmd: 'EXPLODE', label: 'Phá khối (explode)', group: 'Biến đổi' },
   { cmd: 'LEN', label: 'Đổi chiều dài (LEN 100)', group: 'Biến đổi' },
   { cmd: 'LENGTHEN', label: 'Đổi chiều dài', group: 'Biến đổi' },
+  // Chỉnh lệnh vừa chạy (B4, Blender F9) — mở/focus mặt tiền chỉnh lại tham số của Dời/Chép/Xoay/Offset/Tường vừa chốt.
+  { cmd: 'ADJ', label: 'Chỉnh lệnh vừa chạy (F9)', group: 'Biến đổi' },
+  { cmd: 'ADJUST', label: 'Chỉnh lệnh vừa chạy', group: 'Biến đổi' },
   { cmd: 'DIMTXT', label: 'Cỡ chữ kích thước', group: 'Kích thước & mặt cắt' },
   { cmd: 'DIMASZ', label: 'Cỡ mũi tên', group: 'Kích thước & mặt cắt' },
   { cmd: 'DIMSCALE', label: 'Tỉ lệ dim', group: 'Kích thước & mặt cắt' },

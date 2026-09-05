@@ -14,6 +14,7 @@ import { LogOut } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
 import { useT } from '@/lib/i18n';
+import { quenDangXuat } from '@/lib/danh-tinh-phien';
 
 export function AccountSettings() {
   const user = useFlowStore((s) => s.user);
@@ -52,6 +53,8 @@ export function AccountSettings() {
           type="button"
           onClick={async () => {
             await fetch('/api/auth/me', { method: 'DELETE' });
+            // G1 · xoá bộ đệm định danh NGAY khi đăng xuất (xem lib/danh-tinh-phien.ts).
+            quenDangXuat();
             setUser(null);
             router.push('/');
           }}

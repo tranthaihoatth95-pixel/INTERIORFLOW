@@ -236,7 +236,7 @@ export function Dashboard({
                 }
               }}
               placeholder="Tên dự án mới…"
-              className="w-48 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] outline-none focus:border-[var(--accent)]"
+              className="w-48 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] focus:border-[var(--accent)]"
             />
             <motion.button
               {...pressableIcon}

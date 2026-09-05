@@ -36,7 +36,8 @@ import {
   type MaterialTypeId,
 } from '@/lib/materials/material-edit';
 import { inferPbrFromCategory } from '@/lib/materials/pbr-from-category';
-import { getPbr, savePbr, removePbr } from '@/lib/materials/pbr-store';
+import { loadPbrMap, savePbr, removePbr } from '@/lib/materials/pbr-store';
+import { phanGiaiPbr } from '@/lib/materials/tang-phan-giai';
 import MaterialSphere from '@/components/three/MaterialSphere';
 import type { PreviewSpec } from '@/components/three/material-preview';
 import { pbrCacheKey } from '@/lib/three/pbr-three';
@@ -66,9 +67,17 @@ export function MaterialPbrEditor({
 }) {
   const tr = useT();
   const [pbr, setPbr] = useState<MaterialPbr>(() => {
-    const saved = getPbr(matId);
-    if (saved) return saved;
-    // chưa từng chỉnh — khởi tạo bằng SUY ĐOÁN từ danh mục/tên, GIỮ cờ suyDoan để UI hiện rõ
+    /* ⚡ 04/09 — ĐỌC BA TẦNG, KHÔNG CHỈ TẦNG STUDIO.
+       Đo được trên app thật: mở cửa này cho vật liệu SHIP KÈM BẢN CÀI (vd `Gỗ sồi tự nhiên`,
+       baseColor `#b98a54`) thì ô màu hiện `#9a9a9a` — vì `getPbr()` chỉ tra `localStorage` của
+       studio, thấy rỗng rồi rơi thẳng xuống `inferPbrFromCategory(tên)`, tức ĐOÁN TỪ CHỮ trong
+       khi tham số thật đã nằm sẵn trong repo. Người dùng mở ra thấy một vật liệu xám lạ, bấm Lưu
+       là ĐOÁN ĐÓ ĐÈ LÊN bản gốc. `phanGiaiPbr` là cửa đã có sẵn cho đúng việc này (dự án → studio
+       → hạt giống) và còn trả về TẦNG THẮNG. Suy đoán lùi về đúng vai của nó: chỗ dựa CUỐI CÙNG,
+       chỉ khi cả ba tầng đều không có gì. */
+    const baTang = phanGiaiPbr(matId, { studio: loadPbrMap() });
+    if (baTang.pbr) return baTang.pbr;
+    // chưa tầng nào có — khởi tạo bằng SUY ĐOÁN từ danh mục/tên, GIỮ cờ suyDoan để UI hiện rõ
     return { ...inferPbrFromCategory(categoryHint ?? name) };
   });
   const [savedFlash, setSavedFlash] = useState(false);
@@ -78,7 +87,15 @@ export function MaterialPbrEditor({
    * (cùng cái quả cầu ở Thư viện/scene sẽ đọc), không phải bản nháp chưa bấm Lưu. Chưa từng
    * lưu (chỉ có suy đoán) → nút khoá kèm lý do (luật §9: disabled phải nói vì sao).
    */
-  const [savedPbr, setSavedPbr] = useState<MaterialPbr | null>(() => getPbr(matId));
+  /* Cũng đọc BA TẦNG, cùng lý do trên — và ở đây hậu quả nhìn thấy được: với vật liệu ship kèm
+     bản cài, `getPbr()` trả `null` ⇒ hai nút Xuất V-Ray/D5 bị khoá kèm câu *"chưa lưu — lưu rồi
+     mới có gì để xuất"*, mà câu đó KHÔNG ĐÚNG: tham số thật có sẵn trong repo, chỉ là nó không
+     nằm ở `localStorage`. Người mua mở vật liệu ship sẵn ra và không xuất được sang V-Ray/D5 cho
+     tới khi tự lưu lại một lần vô nghĩa. Bất biến *"xuất bản ĐÃ LƯU, không xuất bản đang gõ dở"*
+     giữ nguyên: đây vẫn là ảnh chụp lúc mở/lúc lưu, không phải state đang gõ. */
+  const [savedPbr, setSavedPbr] = useState<MaterialPbr | null>(
+    () => phanGiaiPbr(matId, { studio: loadPbrMap() }).pbr,
+  );
 
   const typeDef = materialTypeOf(pbr.typeId);
 

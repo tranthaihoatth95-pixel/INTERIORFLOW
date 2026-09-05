@@ -48,6 +48,7 @@ import { SECTION_LAYERS } from '@/lib/three/section-entities';
 import { useLevelUi, UNASSIGNED_LEVEL, ROOM_LIGHT_KINDS, ROOM_LIGHT_DEFAULT_Z_MM } from '@/components/render-studio/scene3d-ui';
 import { addLevelToDoc, currentLighting, writeSun, writeRoomLights, patchRoomLight, newRoomLightId } from '@/components/render-studio/doc-catalog';
 import { buildLightRig, type RoomLight } from '@/lib/three/lighting';
+import { laPhimChinh, coPhimHeThong } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 
 const WELCOME_HIDDEN_KEY = 'if.ve3d.welcome_hidden_v1';
 
@@ -263,7 +264,7 @@ export default function Render3DModeSkeleton() {
    */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (coPhimHeThong(e) || e.altKey) return;
       const el = e.target;
       if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
 
@@ -313,7 +314,7 @@ export default function Render3DModeSkeleton() {
    */
   useEffect(() => {
     const onUndoKey = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+      if (!laPhimChinh(e) || e.altKey) return;
       const el = e.target;
       if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
       const k = e.key.toLowerCase();
@@ -702,7 +703,8 @@ export default function Render3DModeSkeleton() {
                     {tr('Bắt đầu trong 3D', 'Start in 3D')}
                   </button>
 
-                  {/* LỐI PHỤ — chỉ mời khi CÓ mặt bằng thật; không có thì chỉ là đường đi tiếp. */}
+                  {/* LỐI PHỤ — chỉ mời khi CÓ mặt bằng thật; không có thì chỉ là đường đi tiếp,
+                      không phải nút mờ kèm cảnh báo vàng. */}
                   {coBanVe ? (
                     <button
                       type="button"

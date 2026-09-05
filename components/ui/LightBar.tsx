@@ -284,8 +284,8 @@ export default function LightBar({
               display: 'block',
               background: `repeating-linear-gradient(90deg, ${mauVach(1)} 0 2px, transparent 2px 5px)`,
               WebkitMaskImage:
-                'linear-gradient(90deg, transparent 0%, rgba(0,0,0,.45) 45%, #000 100%)',
-              maskImage: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,.45) 45%, #000 100%)',
+                'linear-gradient(90deg, transparent 0%, rgba(0,0,0,.45) 45%, black 100%)',
+              maskImage: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,.45) 45%, black 100%)',
               filter: `drop-shadow(0 0 ${(6 * heSoChoi).toFixed(1)}px ${mau})`,
               animation: `${troiName} 1.5s linear infinite`,
             }}

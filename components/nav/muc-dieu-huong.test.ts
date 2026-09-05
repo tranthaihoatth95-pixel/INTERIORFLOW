@@ -32,8 +32,10 @@ import {
   THU_TU_NAC,
   nacKe,
   duongCua,
+  DUONG_MO_DU_AN,
   mucDangMo,
   lyDoMo,
+  goiYCua,
   co320,
   type MucRail,
 } from './muc-dieu-huong';
@@ -121,10 +123,15 @@ ok('Trang chủ → /', duongCua(byId('trang-chu'), null) === '/');
 ok('Thư viện → /library', duongCua(byId('thu-vien'), null) === '/library');
 ok('Cảm hứng → /library/gallery (route ĐANG SỐNG, không đẻ route mới)', duongCua(byId('cam-hung'), null) === '/library/gallery');
 ok('Thiết kế 2D + p1 → /projects/p1/cad', duongCua(byId('thiet-ke-2d'), 'p1') === '/projects/p1/cad');
-ok('Thiết kế 2D KHÔNG dự án → null', duongCua(byId('thiet-ke-2d'), null) === null);
+// 🔀 ĐỔI KHI HOÀ NHÁNH (05/09): chưa có dự án thì mục chặng KHÔNG còn trả `null` — nó dẫn về chỗ
+// TẠO dự án. Xem khối [5b] và chú thích trong `duongCua`.
+ok('Thiết kế 2D KHÔNG dự án → dẫn về chỗ tạo dự án', duongCua(byId('thiet-ke-2d'), null) === DUONG_MO_DU_AN);
 ok(
-  'mọi mục CẦN dự án đều về null khi chưa mở — không chuỗi "null"/"undefined" nào lọt ra',
-  MUC_RAIL.filter((m) => m.duoi).every((m) => duongCua(m, null) === null),
+  'không đường nào của mục CẦN dự án chứa chữ "null"/"undefined"',
+  MUC_RAIL.filter((m) => m.duoi).every((m) => {
+    const d = duongCua(m, null);
+    return d === null || !/null|undefined/.test(d);
+  }),
 );
 ok(
   'VIÊN VIỆC vẫn có mục sống khi chưa mở dự án (không thì thanh trái chết cứng lúc mới vào app)',
@@ -169,26 +176,25 @@ ok(
 );
 
 console.log('\n[5] Mục mờ LUÔN có lý do đọc được — §9 cấm nút giả');
-/* Cờ thứ hai NAY nghĩa là "CÓ dự án dùng được", không còn là "đang mở một dự án" — xem
- * `lyDoMo`. Đổi nghĩa cờ chứ không xoá nhánh: bất biến "không có đường đi ⇒ phải có lý do"
- * (ca ngay dưới) là thứ chặn nút giả, gỡ nó là mở cửa cho đúng thứ §9 cấm. */
-ok('CHƯA CÓ dự án nào → chặng mờ kèm lý do (vẫn không có nút giả)', Boolean(lyDoMo(byId('thiet-ke-2d'), false)?.vi));
-ok('CÓ dự án → chặng dùng được NGAY, không bắt chọn trước (chốt 15)', lyDoMo(byId('thiet-ke-2d'), true) === null);
-ok('Dự án (sổ toàn cục) KHÔNG BAO GIỜ mờ', lyDoMo(byId('du-an'), false) === null);
+/* 🔀 HOÀ NHÁNH 05/09 — `lyDoMo` nay CHỈ nhận `muc`. Cờ "có dự án dùng được" thôi đi vào lý do
+ * TẮT; nó chuyển sang `goiYCua` (gợi ý đi kèm mục CÒN BẤM ĐƯỢC). Bất biến "không có đường đi ⇒
+ * phải có lý do" (ca ngay dưới) GIỮ NGUYÊN — nó là thứ chặn nút giả; chỉ khác là nay mục chặng
+ * luôn CÓ đường nên nó không còn cần lý do. */
+ok('Dự án (sổ toàn cục) KHÔNG BAO GIỜ mờ', lyDoMo(byId('du-an')) === null);
 ok(
   'Cảm hứng/Thư viện KHÔNG bị dự án khoá',
-  lyDoMo(byId('cam-hung'), false) === null && lyDoMo(byId('thu-vien'), false) === null,
+  lyDoMo(byId('cam-hung')) === null && lyDoMo(byId('thu-vien')) === null,
 );
 // Bốn mục viên VIỆC đều toàn cục ⇒ mở app lần đầu là thấy MỘT viên sống trọn vẹn. Nếu có mục
 // nào bị khoá thì viên 1 đọc ra nham nhở ngay khung hình đầu — đúng bệnh P0 21/08 vừa chữa.
 ok('cả 4 mục viên VIỆC đều dùng được khi chưa mở dự án',
-  MUC_RAIL.filter((m) => m.cum === 'viec').every((m) => lyDoMo(m, false) === null));
+  MUC_RAIL.filter((m) => m.cum === 'viec').every((m) => lyDoMo(m) === null));
 ok(
   'HỄ không có đường đi thì PHẢI có lý do (và ngược lại)',
   MUC_RAIL.every((m) => {
     for (const duAn of [null, 'p1']) {
       const coDuong = duongCua(m, duAn) !== null;
-      const coLyDo = lyDoMo(m, duAn !== null) !== null;
+      const coLyDo = lyDoMo(m) !== null;
       if (coDuong === coLyDo) return false;
     }
     return true;
@@ -197,21 +203,53 @@ ok(
 ok(
   'mọi lý do đều song ngữ và không rỗng',
   MUC_RAIL.every((m) => {
-    const r = lyDoMo(m, false);
+    const r = lyDoMo(m);
     return r === null || (r.vi.trim().length > 0 && r.en.trim().length > 0);
   }),
 );
-/* 🔴 ĐỔI 02/09 (chốt 15 — Hoà 09:15 "rail khoá 2D/3D/Trình chiếu").
- * Ca cũ khoá câu *"chọn một dự án ở Trang chủ"*. Câu đó giả định người dùng ĐÃ CÓ dự án và chỉ
- * chưa chọn — mà đó chính là ca nay KHÔNG còn mờ nữa (rail tự lùi về dự án gần nhất). Ca mờ duy
- * nhất còn lại là tài khoản CHƯA CÓ dự án nào, và khi đó chỉ người ta sang Trang chủ để "chọn"
- * là chỉ sang một chỗ trống.
- * ⇒ Ca nay khoá điều KHÓ HƠN và đúng hơn: lý do phải nói VIỆC LÀM ĐƯỢC (tạo dự án), và KHÔNG
- * được bảo đi chọn. Đây là luật X2 ("empty state làm được việc tại chỗ") ở dạng đo được. */
+/* ═══ [5b] CHƯA CÓ DỰ ÁN THÌ CHẶNG VẪN BẤM ĐƯỢC — ghim bản vá 05/09 ═══════════════════════
+ * Chủ dự án mở bản cài lần đầu, chưa có dự án nào, bấm các mục chặng thì KHÔNG RA GÌ: tất cả là
+ * `aria-disabled`, không href. Trái LUẬT X2 ("không màn nào chặn vì chưa làm bước trước"). Gốc là
+ * chính khẳng định ở trên khi nó còn coi "chưa có dự án" là lý do TẮT. Bốn ca dưới ghim để lỗi đó
+ * không quay lại trong im lặng.
+ *
+ * 🔀 Ghi chú hoà nhánh: danh sách mục chặng CỐ Ý suy từ `MUC_RAIL` (`m.duoi` = mục chỉ có nghĩa
+ * khi đã mở dự án) thay vì chép cứng một dãy id. Hai nhánh có hai bộ id khác nhau (bản này 3 mục
+ * chặng, bản kia 5 — thêm `du-an-nay`/`so-tay`); chép cứng id là khoá test vào MỘT cấu trúc rail,
+ * còn suy từ `duoi` thì khoá đúng HÀNH VI, sống qua mọi lần đổi cấu trúc. Ca cuối canh cho danh
+ * sách không bao giờ rỗng — rỗng thì cả khối này xanh mà chẳng kiểm gì.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
 {
-  const ly = lyDoMo(byId('thiet-ke-2d'), false)?.vi ?? '';
-  ok('chưa có dự án nào ⇒ lý do nói VIỆC LÀM ĐƯỢC (tạo dự án)', /tạo/i.test(ly));
-  ok('… và KHÔNG bảo đi "chọn" ở một Trang chủ đang trống', !/chọn/i.test(ly));
+  const chang = MUC_RAIL.filter((m) => m.duoi && !m.chuaCoTrang);
+  ok('có ít nhất một mục chặng để kiểm (khối này không được rỗng mà vẫn xanh)', chang.length > 0);
+  ok(
+    'chưa có dự án → MỌI mục chặng vẫn có đường đi (không mục nào chết)',
+    chang.every((m) => duongCua(m, null) === DUONG_MO_DU_AN),
+  );
+  ok(
+    'chưa có dự án → KHÔNG mục chặng nào bị coi là tắt',
+    chang.every((m) => lyDoMo(m) === null),
+  );
+  ok(
+    'chưa có dự án → mỗi mục chặng có GỢI Ý song ngữ nói bấm vào thì gì xảy ra',
+    chang.every((m) => {
+      const g = goiYCua(m, false);
+      return g !== null && g.vi.trim().length > 0 && g.en.trim().length > 0;
+    }),
+  );
+  ok(
+    'ĐÃ có dự án → đường đi trỏ đúng dự án đó, và thôi gợi ý',
+    chang.every((m) => duongCua(m, 'p1') === `/projects/p1/${m.duoi}` && goiYCua(m, true) === null),
+  );
+  ok(
+    'mục KHÔNG cần dự án không bao giờ mang gợi ý dự án',
+    MUC_RAIL.filter((m) => !m.duoi).every((m) => goiYCua(m, false) === null),
+  );
+  /* Giữ nguyên tinh thần ca 02/09: câu hiện ra phải nói VIỆC LÀM ĐƯỢC (tạo dự án) và KHÔNG bảo
+     đi "chọn" ở một Trang chủ đang trống. Nay nó là GỢI Ý chứ không còn là lý do tắt. */
+  const g = goiYCua(byId('thiet-ke-2d'), false)?.vi ?? '';
+  ok('chưa có dự án ⇒ gợi ý nói VIỆC LÀM ĐƯỢC (tạo dự án)', /tạo/i.test(g));
+  ok('… và KHÔNG bảo đi "chọn" ở một Trang chủ đang trống', !/chọn/i.test(g));
 }
 
 console.log('\n[6] Nấc 320 — bỏ thì phải kèm lý do, không im lặng');

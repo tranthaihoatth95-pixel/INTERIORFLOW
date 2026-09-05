@@ -51,8 +51,14 @@ export function InspectorPages({ pages }: { pages: InspectorPage[] }) {
                 aria-pressed={on}
                 onClick={() => setActive(p.id)}
                 className={cn(
+                  // HOÀ: nhịp lấy token `--nhip-bam` (checkpoint) — có test `lib/ui/nhip.test.ts` canh.
+                  // 🔴 SỬA 05/09 (hoà nhánh): TRƯỚC ĐÂY tự vẽ vòng focus bằng `--accent-ring` và
+                  // tắt vòng chung bằng `focus-visible:outline-none`. Nay để LUẬT CHUNG ở
+                  // globals.css vẽ — một nguồn, và nó đã đo đủ tương phản ở cả hai theme.
+                  // (chú thích cũ:) Màu vòng focus giữ `--accent-ring`: nó là MỘT MÀU, còn `--focus-ring`
+                  // ở checkpoint là shorthand `2px solid ...` ⇒ nhét vào `ring-[...]` của Tailwind là hỏng.
                   'grid h-[26px] w-[30px] place-items-center rounded-[10px] transition-colors duration-[var(--nhip-bam)]',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]',
+                  '',
                   on ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t1)]',
                 )}
               >

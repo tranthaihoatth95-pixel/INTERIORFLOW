@@ -1,0 +1,87 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8">
+<title>Home · Nghiên cứu B — DẢI LIÊN TỤC</title>
+<!-- @dsCard group="Home · nghiên cứu bố cục" -->
+<link rel="stylesheet" href="_home-nc-nen.css">
+<style>
+/* ═══ B · DẢI LIÊN TỤC — BỎ HẲN CỘT PHẢI ═══
+   Ý: nguyên nhân "nghĩa địa widget" là CÁI CỘT, không phải từng widget. Bỏ cột thì không còn
+   chỗ cho widget xếp hàng. Màn chia theo CHIỀU NGANG thành ba dải có hạng rõ rệt:
+   dải VIỆC (chiếm 2/3) → dải DỰ ÁN (một hàng phim) → dải NỀN (một dòng chữ).
+   Không dải nào là "thẻ"; chúng phân nhau bằng KHOẢNG TRỐNG và CỠ CHỮ. */
+.b-nen{position:absolute;inset:0;display:grid;grid-template-rows:1fr auto auto;
+  padding:52px 64px 34px;gap:0}
+/* ① DẢI VIỆC — hiện vật thật (bản vẽ) đứng cạnh chữ; ảnh KHÔNG bị nhốt trong khung bo */
+.b-viec{display:grid;grid-template-columns:1fr 560px;gap:64px;align-items:center;min-height:0}
+.b-chu .nhan{margin-bottom:14px}
+.b-chu .hien{max-width:13ch;margin-bottom:18px}
+.b-dong{display:flex;gap:24px;color:var(--t3);font-size:var(--fs-md);align-items:baseline}
+.b-nut{margin-top:32px;display:flex;align-items:center;gap:18px}
+.b-nut a{height:46px;padding:0 24px;border-radius:var(--r-full);background:var(--t1);color:var(--bg);
+  display:inline-flex;align-items:center;font-weight:600;font-size:var(--fs-md)}
+.b-nut span{color:var(--t4);font-size:var(--fs-sm)}
+/* hiện vật: bản vẽ thật, nghiêng nhẹ, đổ bóng dài — CHIỀU SÂU thay cho viền thẻ */
+.b-vat{position:relative;aspect-ratio:4/3;border-radius:var(--r-2);overflow:hidden;
+  background:#fbfaf7;box-shadow:0 30px 70px rgba(0,0,0,.42);transform:rotate(-1.1deg)}
+:root[data-theme='light'] .b-vat{box-shadow:0 26px 60px rgba(80,66,44,.24)}
+.b-vat .luoi{position:absolute;inset:0;
+  background-image:linear-gradient(#e6e1d6 1px,transparent 1px),linear-gradient(90deg,#e6e1d6 1px,transparent 1px);
+  background-size:34px 34px}
+.b-vat .tuong{position:absolute;background:#2c2822}
+.b-vat .cua{position:absolute;background:#b9532f}
+/* ② DẢI DỰ ÁN — MỘT HÀNG, cuộn ngang; không phải lưới thẻ, không có ô "＋" chiếm chỗ ngang hàng */
+.b-ds{display:flex;align-items:flex-end;gap:20px;padding:30px 0 6px;
+  border-top:1px solid var(--vien-mo);margin-top:34px}
+.b-ds .nhan{align-self:center;flex:0 0 auto;margin-right:8px}
+.b-o{flex:0 0 132px}
+.b-o i{display:block;height:74px;border-radius:var(--r-2);
+  background:linear-gradient(140deg,#8a7154,#413424)}
+.b-o u{display:block;text-decoration:none;font-size:var(--fs-xs);margin-top:8px}
+.b-o s{display:block;text-decoration:none;color:var(--t4);font-size:var(--fs-2xs)}
+.b-them{flex:0 0 auto;color:var(--t4);font-size:var(--fs-xs);align-self:center}
+/* ③ DẢI NỀN — MỘT DÒNG cho tất cả thông tin phụ. Đây là chỗ 4 widget cũ bị nén lại. */
+.b-day{display:flex;align-items:center;gap:30px;padding-top:22px;margin-top:24px;
+  border-top:1px solid var(--vien-mo);color:var(--t3);font-size:var(--fs-xs)}
+.b-day b{color:var(--t2);font-weight:600}
+.b-day .cham{width:5px;height:5px;border-radius:var(--r-full);background:var(--t5)}
+.b-day .ghichu{margin-left:auto;color:var(--t4)}
+</style></head><body>
+<div class="khung">
+  <nav class="rail"><i class="on"></i><i></i><i></i><i></i><i></i><hr><i></i><i></i><i></i><i></i><hr><i></i><i></i></nav>
+  <div class="than"><div class="b-nen">
+    <section class="b-viec">
+      <div class="ghi" style="left:20px;top:18px">① dải việc · 2/3 màn</div>
+      <div class="b-chu">
+        <div class="nhan">Tiếp tục · Thiết kế 2D · dừng 16:20 hôm qua</div>
+        <div class="hien">Căn hộ<br>Thảo Điền</div>
+        <div class="b-dong"><span class="so">78 m²</span><span class="so">3 bản vẽ</span><span>mặt bằng tầng 2</span></div>
+        <div class="b-nut"><a>Mở lại →</a><span>hoặc bắt đầu dự án mới</span></div>
+      </div>
+      <div class="b-vat">
+        <div class="luoi"></div>
+        <div class="tuong" style="left:9%;top:14%;width:82%;height:3px"></div>
+        <div class="tuong" style="left:9%;top:14%;width:3px;height:70%"></div>
+        <div class="tuong" style="left:88.4%;top:14%;width:3px;height:70%"></div>
+        <div class="tuong" style="left:9%;top:82.6%;width:82%;height:3px"></div>
+        <div class="tuong" style="left:46%;top:14%;width:3px;height:38%"></div>
+        <div class="tuong" style="left:9%;top:52%;width:37%;height:3px"></div>
+        <div class="cua" style="left:46%;top:56%;width:3px;height:52px"></div>
+      </div>
+    </section>
+    <section class="b-ds">
+      <div class="ghi" style="right:20px;bottom:150px">② dự án · MỘT hàng</div>
+      <span class="nhan">Dự án</span>
+      <div class="b-o"><i></i><u>Detech Complex</u><s>2 ngày trước</s></div>
+      <div class="b-o"><i style="background:linear-gradient(140deg,#7d8a6e,#333a2b)"></i><u>Nhà phố Bình Thạnh</u><s>1 tuần</s></div>
+      <div class="b-o"><i style="background:linear-gradient(140deg,#6e7c8a,#2b3239)"></i><u>Sungroup Beach Club</u><s>3 tuần</s></div>
+      <div class="b-o"><i style="background:linear-gradient(140deg,#8a6e7c,#392b32)"></i><u>Nháp</u><s>53 phút</s></div>
+      <span class="b-them">＋ dự án mới</span>
+    </section>
+    <section class="b-day">
+      <div class="ghi" style="right:20px;bottom:14px">③ nền · MỘT dòng</div>
+      <span>Chiều muộn · <b>2700K</b></span><span class="cham"></span>
+      <span>Đang chạy <b class="so">4</b> ở 2D</span><span class="cham"></span>
+      <span><b>Detech Complex</b> vừa cập nhật · 9 phút</span>
+      <span class="ghichu">Gõ ghi chú rồi Enter…</span>
+    </section>
+  </div></div>
+</div></body></html>

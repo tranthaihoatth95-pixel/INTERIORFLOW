@@ -11,8 +11,17 @@
  *   ③ sự kiện `if:navigator-width` (`CadEditor.tsx:1468` phát) — nguồn PHỤ, đá vào một lần đo
  *      lại cho những nhịp cột trái đổi nấc mà hộp cha chưa kịp bố trí lại.
  *
- * ⚠️ KHÔNG có ổ marker (màn chưa dùng `AppShell`, vd trang đăng nhập) ⇒ trả `null`, và nơi dùng
- * phải tự lo đường lùi. Cố ý KHÔNG bịa ra tâm cửa sổ khi thiếu số đo: bịa thì ổ đứng sai mà
+ * 🔀 ĐƯỜNG LÙI ①b (hoà nhánh) — đo hộp THẬT của rail điều hướng (`[data-marker="railHaiCum"]`,
+ * `components/nav/RailDieuHuong.tsx`) rồi lấy phần CÒN LẠI bên phải nó làm vùng làm việc.
+ * ⚠️ Lý do integration thêm nó (*"AppShell chưa gắn marker ①"*) KHÔNG còn đúng sau hoà: nguồn ①
+ * CÓ THẬT ở `AppShell.tsx:213`. Vẫn giữ ①b vì nó cứu các màn KHÔNG dùng `AppShell` — và nó vẫn
+ * là ĐO một hộp có thật, không bịa, nên không phạm luật ngay dưới.
+ * ⚠️ Đường lùi này KHÔNG trừ cột Inspector bên phải (ổ ④ 236px) — khi inspector mở, tâm lệch phải
+ * ~118px. Màn nào cần chính xác thì gắn marker ① vào cột canvas của nó; đừng nới ①b.
+ *
+ * ⚠️ KHÔNG có ổ marker nào (màn chưa dùng `AppShell` và cũng không có rail, vd trang đăng nhập)
+ * ⇒ trả `null`, và nơi dùng phải tự lo đường lùi. Cố ý KHÔNG bịa ra tâm cửa sổ khi thiếu số đo:
+ * bịa thì ổ đứng sai mà
  * không ai biết là đang sai — đúng loại lỗi luật này sinh ra để diệt.
  */
 
@@ -31,7 +40,10 @@ export function useVungLamViec(): HopVungLamViec | null {
     let el: HTMLElement | null = null;
 
     const do_ = () => {
-      const found = document.querySelector<HTMLElement>('[data-if-vung-lam-viec]');
+      // ① nguồn CHÍNH — cột canvas tự khai. ①b đường lùi — rail điều hướng, lấy phần bên phải.
+      const cot = document.querySelector<HTMLElement>('[data-if-vung-lam-viec]');
+      const rail = cot ? null : document.querySelector<HTMLElement>('[data-marker="railHaiCum"]');
+      const found = cot ?? rail;
       if (!found) {
         setHop(null);
         return;
@@ -43,10 +55,14 @@ export function useVungLamViec(): HopVungLamViec | null {
         ro.observe(el);
       }
       const r = el.getBoundingClientRect();
+      // Nguồn ①: hộp CHÍNH LÀ vùng làm việc. Nguồn ①b: hộp là RAIL ⇒ vùng làm việc là phần còn
+      // lại bên phải nó.
+      const trai = cot ? r.left : r.right;
+      const rong = cot ? r.width : Math.max(0, window.innerWidth - r.right);
       setHop((cu) =>
-        cu && Math.abs(cu.trai - r.left) < 0.5 && Math.abs(cu.rong - r.width) < 0.5
+        cu && Math.abs(cu.trai - trai) < 0.5 && Math.abs(cu.rong - rong) < 0.5
           ? cu // giữ nguyên tham chiếu ⇒ không đẻ một lượt vẽ lại vì một con số y hệt
-          : { trai: r.left, rong: r.width },
+          : { trai, rong },
       );
     };
 

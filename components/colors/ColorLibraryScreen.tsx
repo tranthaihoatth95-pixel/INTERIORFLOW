@@ -250,7 +250,7 @@ const rowStyle: React.CSSProperties = {
 };
 const fieldStyle: React.CSSProperties = {
   height: 30, padding: '0 8px', borderRadius: 10, border: '1px solid var(--border)',
-  background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, lineHeight: 1.6, outline: 'none',
+  background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, lineHeight: 1.6,
 };
 const chip: React.CSSProperties = {
   height: 26, padding: '0 10px', borderRadius: 999, border: '1px solid var(--border)',

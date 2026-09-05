@@ -18,7 +18,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useT } from '@/lib/i18n';
+import { useT, useLang } from '@/lib/i18n';
 import { usePlayStatus } from '@/lib/present-editor/play-status';
 import type {
   EditorDeck,
@@ -52,6 +52,7 @@ import { DEFAULT_SPEC, applySpecToSlide, type LayoutSpec } from '@/lib/present-e
 import { classifyWheel } from '@/lib/input/wheel';
 import { buildGuProfile, type GuAsset, type GuProfile } from '@/lib/gu';
 import { exportDeckToPdf, exportDeckToPptxFromModel, exportDeckToPng, exportDeckToPdfAtPaperSize } from '@/lib/present-editor/export';
+import { buildDeckChuanDauRaChecks } from '@/lib/present-editor/export-checks';
 import { estimatePrintUpscale, UpscaleCreditError } from '@/lib/present-editor/print-upscale';
 import { useFlowStore } from '@/lib/store';
 import { useEditor } from './useEditor';
@@ -64,6 +65,14 @@ import { consumeCadPresentHandoff } from '@/lib/cad/present-handoff';
 import { consumeSpecPresentHandoff } from '@/lib/present-editor/spec-present-handoff';
 import { consumePresentReturn, peekPresentReturn } from '@/lib/present-editor/present-return';
 import { markDemoStep } from '@/lib/studio/demo-spine';
+/**
+ * CỬA NHẬN TỜ BẢN VẼ (04/09) — ĐƯỜNG THỨ HAI, SONG SONG với `consumeCadPresentHandoff` ở trên.
+ *   · đường ẢNH (ngay trên)  → chèn MỘT SLIDE ảnh vào deck; đứt dây với nguồn sau khi chèn.
+ *   · đường TỜ  (component)  → giữ một TỜ có tỉ lệ · khổ · lề · khung tên · NEO NGUỒN; không chèn
+ *     slide nào, và nguồn đổi thì tờ tự đánh dấu "Có bản mới".
+ * Hai khoá sessionStorage riêng ⇒ dùng cùng phiên không giẫm nhau. Không có tờ ⇒ render `null`.
+ */
+import CongThietLapTrang from './CongThietLapTrang';
 import {
   stashPhotoEditorIn,
   readPhotoEditorReturn,
@@ -71,7 +80,7 @@ import {
   PHOTO_EDITOR_RETURN_KEY,
 } from '@/lib/photo-editor/handoff';
 import { stageHrefFrom } from '@/lib/project-scope';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 // [marker: focusEntity] — đọc `?focusEntity=` từ deep-link Bảng việc (lib/tasks/context.ts sinh).
 import { parseFocusEntity } from '@/lib/tasks/focus-entity';
 // [marker: magic-phoi-canh] — vòng "Chỉnh phối cảnh" liên chặng (phiếu demo-d2-vong-chinh):
@@ -101,6 +110,9 @@ import SlidePlayer from './SlidePlayer';
 import ImageEditor from './ImageEditor';
 import BrandKitPanel from './BrandKitPanel';
 import { applyBrandKitToDeck, type BrandKit } from '@/lib/present-editor/brand-kit';
+import { effectiveUserId } from '@/lib/resume';
+import { buildBoqAppendixSlides, findBoqAppendixSlides, boqAppendixInsertIndex, replaceBoqAppendixSlides } from '@/lib/present-editor/boq-appendix';
+import { loadBoqAppendixSource } from '@/lib/present-editor/boq-appendix-source';
 import StagePresetPanel from './StagePresetPanel';
 import ReplaceImageDialog from './ReplaceImageDialog';
 import { reflowDeckForStage } from '@/lib/present-editor/reflow';
@@ -1323,6 +1335,49 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
     ed.selectSlide(ed.deck.slides.length);
   }, [ed, builtImages]);
 
+  /**
+   * PHỤ LỤC BOQ (02/09, slice "Present + BOQ + voice") — dựng/làm mới cụm trang bảng khối lượng
+   * từ ĐÚNG nguồn màn BOQ dùng (`loadBoqAppendixSource`: Doc sống → engine + Kho giá → sửa tay
+   * IDB → nhóm tầng/phòng) rồi thay cụm trang cũ của cùng dự án TRONG MỘT `ed.update` ⇒ một lượt
+   * undo trả lại y nguyên (kể cả lần "làm mới"). Không tự chạy sau lưng — chỉ khi bấm (Toolbar
+   * hoặc nút "Làm mới" ở Inspector). Toast đi kênh `exportMsg` sẵn có, không đẻ toast mới.
+   */
+  const boqParams = useParams<{ id?: string }>();
+  const boqProjectId = boqParams?.id ?? '';
+  const boqStoreUserId = useFlowStore((s) => s.user?.id);
+  const boqUserId = effectiveUserId(boqStoreUserId) ?? '';
+  const boqLang = useLang();
+  const [boqAppendixBusy, setBoqAppendixBusy] = useState(false);
+  const onInsertBoqAppendix = useCallback(async () => {
+    if (boqAppendixBusy) return;
+    setBoqAppendixBusy(true);
+    const say = (ok: boolean, vi: string, en: string) => setExportMsg({ ok, text: boqLang === 'vi' ? vi : en });
+    try {
+      const src = await loadBoqAppendixSource(boqUserId, boqProjectId);
+      if (!src.ok) { say(false, src.message[0], src.message[1]); return; }
+      const slides = buildBoqAppendixSlides({
+        rows: src.rows, errors: src.errors, groups: src.groups, groupMode: src.groupMode,
+        projectId: boqProjectId, fingerprint: src.fingerprint, generatedAt: Date.now(), lang: boqLang,
+        palette: ed.deck.palette, stagePreset: ed.deck.stagePreset, projectName: ed.deck.project,
+      });
+      // Vị trí tính TRƯỚC từ deck hiện tại (reducer có thể chạy trễ — không đọc kết quả từ trong mutate).
+      const existing = findBoqAppendixSlides(ed.deck, boqProjectId);
+      const at = existing.length ? existing[0] : boqAppendixInsertIndex(ed.deck, ed.currentSlide);
+      ed.update((d) => { replaceBoqAppendixSlides(d, slides, boqProjectId, ed.currentSlide); });
+      ed.selectSlide(at);
+      const hand = slides[0]?.boqAppendix?.handEdited ?? 0;
+      const errs = src.errors.length;
+      say(true,
+        `${existing.length ? 'Đã làm mới' : 'Đã chèn'} ${slides.length} trang phụ lục BOQ · ${src.rows.length} dòng (${hand} sửa tay)${errs ? ` · ${errs} mục chưa đủ nguồn — xem trang cuối` : ''}. ⌘Z để lùi.`,
+        `${existing.length ? 'Rebuilt' : 'Inserted'} ${slides.length} BOQ appendix page(s) · ${src.rows.length} rows (${hand} hand-edited)${errs ? ` · ${errs} items missing a source — see the last page` : ''}. ⌘Z to undo.`);
+    } catch (e) {
+      const why = e instanceof Error ? e.message : String(e);
+      say(false, `Không dựng được phụ lục BOQ: ${why}`, `Could not build the BOQ appendix: ${why}`);
+    } finally {
+      setBoqAppendixBusy(false);
+    }
+  }, [boqAppendixBusy, boqUserId, boqProjectId, boqLang, ed]);
+
   /* H4 (13/08, dogfood F1 "canvas trắng không dẫn lối") — TaskFirstStart: 3 LỐI TO thay canvas
    * trắng khi hồ sơ THỰC SỰ trống — ①0 slide (deck mới) HOẶC ②đúng 1 slide, 0 phần tử, 0 ảnh nền
    * (vừa "Trang trống"/chưa từng đụng gì). Deck có nội dung/nhiều trang → KHÔNG hiện, không đụng
@@ -1497,7 +1552,32 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
   );
 
   /* ------------------------------ export ----------------------------- */
+
+  /**
+   * CỔNG CHUAN_DAU_RA trước MỌI tệp giao khách (lỗi F1, 04/09: trang PDF in ra đúng một dòng
+   * "Nhập nội dung" — mặc định của `makeText()`, là DỮ LIỆU THẬT chứ không phải chữ mờ).
+   *
+   * KHÔNG chặn tuyệt đối và KHÔNG tự xoá nội dung người dùng: nêu rõ TRANG nào · MẤY ô · CÁCH
+   * SỬA, rồi để người xuất quyết (human-in-the-loop, [T5] con-người-quyết-cuối). Bấm "Huỷ" =
+   * quay lại sửa; bấm "OK" = cố ý xuất, vẫn cho đi.
+   *
+   * Trả `true` = được phép xuất tiếp.
+   */
+  const quaCongChuanDauRa = useCallback((): boolean => {
+    const findings = buildDeckChuanDauRaChecks(ed.deck);
+    if (findings.length === 0) return true;
+    const dong = findings.map((f) => `• ${f.message}\n  → ${f.fix}`).join('\n');
+    const oke = window.confirm(
+      `Hồ sơ còn nội dung mẫu chưa sửa:\n\n${dong}\n\nSửa xong hãy xuất — hoặc bấm OK để xuất luôn.`,
+    );
+    if (!oke) {
+      setExportMsg({ ok: false, text: 'Đã dừng — sửa ô chữ còn nội dung mẫu rồi xuất lại.' });
+    }
+    return oke;
+  }, [ed.deck]);
+
   const onExportPdf = useCallback(async () => {
+    if (!quaCongChuanDauRa()) return;
     setBusy('pdf');
     try {
       await exportDeckToPdf(ed.deck);
@@ -1508,9 +1588,10 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
     } finally {
       setBusy(null);
     }
-  }, [ed.deck]);
+  }, [ed.deck, quaCongChuanDauRa]);
 
   const onExportPptx = useCallback(async () => {
+    if (!quaCongChuanDauRa()) return;
     setBusy('pptx');
     try {
       const res = await exportDeckToPptxFromModel(ed.deck);
@@ -1537,7 +1618,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
     } finally {
       setBusy(null);
     }
-  }, [ed.deck]);
+  }, [ed.deck, quaCongChuanDauRa]);
 
   const onExportPng = useCallback(async () => {
     setBusy('png');
@@ -1563,6 +1644,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
    * có ở `Toolbar.tsx`, không thêm component mới) trước khi thật sự trừ credit.
    */
   const onExportPrint300 = useCallback(async () => {
+    if (!quaCongChuanDauRa()) return;
     setBusy('print300');
     try {
       const aiTier = useFlowStore.getState().aiTier;
@@ -1606,7 +1688,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
     } finally {
       setBusy(null);
     }
-  }, [ed.deck]);
+  }, [ed.deck, quaCongChuanDauRa]);
 
   /* ------------------------- splitter kéo dãn panel trái ------------------------- */
   const dragStart = useRef<{ x: number; w: number } | null>(null);
@@ -2053,7 +2135,11 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
         onUngroup={onUngroupSelected}
         onToggleLock={onToggleLockSelected}
         onToggleHide={onToggleHideSelected}
+        onInsertBoqAppendix={onInsertBoqAppendix}
+        boqAppendixBusy={boqAppendixBusy}
       />
+      {/* Cửa nhận tờ từ 2D/3D — tự ẩn khi chưa ai gửi tờ nào (không bày cửa rỗng). */}
+      <CongThietLapTrang />
 
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         {/* trái: panel 3 tab (kéo dãn + ẩn/hiện — tham khảo Photoshop dock/Canva sidebar) */}
@@ -2439,6 +2525,8 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
                   selectedIds={ed.selectedIds}
                   onSelect={ed.select}
                   onReorderElement={onReorderElement}
+                  onRefreshBoqAppendix={onInsertBoqAppendix}
+                  boqAppendixBusy={boqAppendixBusy}
                 />
               )}
             </aside>

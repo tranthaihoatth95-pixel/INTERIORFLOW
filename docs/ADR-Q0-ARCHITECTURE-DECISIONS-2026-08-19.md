@@ -8,6 +8,11 @@
 > (phiên 24/08 định đánh số lại từ `ADR-001` trong khi Q1–Q9 đang sống), và hai dãy song song là
 > hai lịch sử quyết định mâu thuẫn nhau. Quyết định mới **nối tiếp số**, không đẻ tệp mới.
 > Tiêu đề cũ ghi "9 QUYẾT ĐỊNH" — bỏ số đó đi vì nó sai ngay lần thêm đầu tiên.
+# ADR Q0 · 9 QUYẾT ĐỊNH KIẾN TRÚC INTERIORFLOW
+
+> **Ngày chốt**: 19/08/2026 (Hoà chốt sau khi đọc [Audit Q0](AUDIT-Q0-SOURCE-OF-TRUTH-LIBRARY-IDFC-2026-08-19.md))
+> **Trạng thái**: ACCEPTED (Hoà đã quyết) — nhiệm vụ T là **ghi lại + đối chiếu code + migration plan**, KHÔNG tự đổi quyết định.
+> **Mốc code**: `3da4b8c` (main HEAD)
 
 ---
 

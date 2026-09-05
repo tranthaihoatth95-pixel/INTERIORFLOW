@@ -69,6 +69,43 @@ console.log('SNIFFED_MIME — map đủ mọi SniffedKind sang MIME chuẩn');
   ok('webp → image/webp', SNIFFED_MIME.webp === 'image/webp');
   ok('avif → image/avif', SNIFFED_MIME.avif === 'image/avif');
   ok('pdf → application/pdf', SNIFFED_MIME.pdf === 'application/pdf');
+  ok('idfp → application/json', SNIFFED_MIME.idfp === 'application/json');
+}
+
+/* ── .idf/.idfp — hồ sơ của chính IF ──────────────────────────────────────────────────────
+   Nhận vào whitelist để deck VÀ bản vẽ 2D có bản sao BỀN trên máy chủ. Điều kiện chặt hơn
+   magic-bytes: phải parse được VÀ mang đúng chữ ký tài liệu. Các ca dưới khoá đúng ranh giới đó
+   — nới ra là mở lại vector XSS lưu trữ mà cả file này sinh ra để chặn. */
+console.log('sniffKind — .idf/.idfp nhận bằng CHỮ KÝ CẤU TRÚC, không phải magic-bytes');
+{
+  const idfpThat = Buffer.from(JSON.stringify({ idfpVersion: 1, sheets: [{ id: 's1', name: 'A', deck: {} }] }), 'utf8');
+  ok('.idfp thật → idfp', sniffKind(idfpThat) === 'idfp');
+
+  const idfThat = Buffer.from(JSON.stringify({ idfVersion: 2, sheets: [{ id: 'cadsheet-0', name: 'Bản vẽ 1' }] }), 'utf8');
+  ok('.idf (bản vẽ 2D) thật → idfp', sniffKind(idfThat) === 'idfp');
+
+  ok('JSON thường (không chữ ký IF) → null', sniffKind(Buffer.from('{"a":1}', 'utf8')) === null);
+  ok('JSON có sheets nhưng KHÔNG chữ ký IF → null', sniffKind(Buffer.from('{"sheets":[]}', 'utf8')) === null);
+  ok(
+    'JSON có idfpVersion nhưng sheets KHÔNG phải mảng → null',
+    sniffKind(Buffer.from('{"idfpVersion":1,"sheets":"x"}', 'utf8')) === null,
+  );
+  ok(
+    'chữ ký là chuỗi chứ không phải số → null (không nới kiểu cho dễ)',
+    sniffKind(Buffer.from('{"idfVersion":"2","sheets":[]}', 'utf8')) === null,
+  );
+  ok('HTML núp bóng JSON → null', sniffKind(Buffer.from('<html><script>alert(1)</script></html>', 'utf8')) === null);
+  ok(
+    'HTML nhét sau chữ ký hợp lệ vẫn là JSON hỏng → null',
+    sniffKind(Buffer.from('{"idfVersion":2,"sheets":[]}<script>alert(1)</script>', 'utf8')) === null,
+  );
+
+  // idfp KHÔNG phải ảnh raster ⇒ đường phục vụ lại ép octet-stream + attachment + nosniff.
+  ok('idfp → isRasterImageKind false (luôn tải xuống, không bao giờ render inline)', isRasterImageKind('idfp') === false);
+
+  // Ảnh/PDF phải THẮNG TRƯỚC: nhánh JSON đứng cuối, không được cướp của định dạng nhận bằng byte.
+  ok('PDF vẫn ra pdf sau khi thêm nhánh idfp', sniffKind(PDF) === 'pdf');
+  ok('PNG vẫn ra png sau khi thêm nhánh idfp', sniffKind(PNG) === 'png');
 }
 
 

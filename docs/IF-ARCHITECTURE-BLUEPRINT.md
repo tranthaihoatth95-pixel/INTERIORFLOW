@@ -132,6 +132,9 @@ Project (identity + truth + genealogy)
   ba độ sâu Rail 52-56 / Shelf 220-280 / Panel 320-440 [CHỐT 20/08 muộn — Navigation Override].
   Cá nhân/hệ thống chuyển hẳn lên **cụm phải-trên** `[Thông báo][Hiện diện][Ảnh đại diện]`,
   **cấm lặp ở trái**. Xem SUPERSEDED #7 và #9.
+- Sidebar = bản đồ, **BA CỤM** (Workspace chung · ba chặng · cá nhân/hệ thống), không đổi theo
+  chặng, ba độ sâu Rail 52-56 / Shelf 220-280 / Panel 320-440 [CHỐT 20/08 — EXPERIENCE SYSTEM
+  điều 3+4, đè bản HAI CỤM 16-17/08; xem SUPERSEDED #7].
 
 ## B7 · MODULE / MASTER TOOL / CAPABILITY
 
@@ -523,6 +526,7 @@ architecture:
 6. **Khuyến nghị "MỘT canvas duy nhất cho cả dự án" của T** (16/08 — chưa từng là chốt) → đè hẳn bởi C4 19/08: Project → nhiều Workspace → nhiều Canvas + một Project Flow/Timeline xuyên suốt.
 7. **Sidebar HAI CỤM (XƯỞNG · DỰ ÁN)** (16-17/08) → đè 20/08 sáng bởi BA CỤM. ⚠️ Bản BA CỤM đó **cũng đã bị đè tiếp** cùng ngày — xem #9. Phần "cái gì KHÔNG lên sidebar" (Bảng màu · Kho vật liệu · Gallery) GIỮ nguyên hiệu lực xuyên cả ba bản.
 9. **Sidebar BA CỤM có cụm "cá nhân/hệ thống" ở TRÁI** (20/08 sáng, Experience System điều 3) → đè 20/08 chiều bởi **Navigation Override**: trái **CHỈ CÓ VIỆC**, hai đảo; Hồ sơ·Credit·Cài đặt chuyển lên **cụm phải-trên**. Hoà nêu thành tiêu chí TRƯỢT ("trượt nếu trái còn Hồ sơ/Credit/Cài đặt"; "trượt nếu danh tính/cộng tác phải-trên bị lặp chỗ khác"). ⚠️ Ba bản trong ~4 ngày — trích bản nào phải ghi kèm NGÀY VÀ BUỔI.
+7. **Sidebar HAI CỤM (XƯỞNG · DỰ ÁN)** (16-17/08) → đè 20/08 EXPERIENCE SYSTEM điều 3: **BA CỤM** (Workspace chung · ba chặng · cá nhân/hệ thống) + ba độ sâu 52-56/220-280/320-440. Phần "cái gì KHÔNG lên sidebar" (Bảng màu · Kho vật liệu · Gallery) GIỮ nguyên hiệu lực.
 8. **Vitals neo theo ngữ cảnh — chấm cạnh ô tìm ở Home · nút RỜI cạnh trục phải trong chặng** (16/08) → đè 20/08 EXPERIENCE SYSTEM điều 7: **Vitals = Aperture sống VẬT LÝ trong TOP EDGE**, 3 mức Ambient→Peek→Engage, morph theo context. (Nguồn: `docs/CHOT-EXPERIENCE-SYSTEM-2026-08-20.md`.)
 
 ### DECISION CONFLICT — cả 4 ĐÃ ĐƯỢC HOÀ CHỐT 19/08 (RESOLVED)

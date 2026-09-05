@@ -36,7 +36,7 @@ function nhan(vi: string) {
   return cn('text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]', vi);
 }
 const O_NHAP =
-  'h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-2 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none';
+  'h-[var(--tap)] w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-2 text-[11px] leading-[1.6] text-[var(--t1)] focus-visible:border-[var(--accent)]';
 
 export function NhapViTri({
   duAnId,

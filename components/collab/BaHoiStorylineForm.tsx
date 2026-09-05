@@ -159,7 +159,6 @@ export function BaHoiStorylineForm({ hoi, onDoi }: BaHoiStorylineFormProps) {
                 border: '1px solid var(--border)',
                 background: 'var(--field)',
                 color: 'var(--t1)',
-                outline: 'none',
                 width: '100%',
               }}
             />
@@ -176,7 +175,6 @@ export function BaHoiStorylineForm({ hoi, onDoi }: BaHoiStorylineFormProps) {
                 border: '1px solid var(--border)',
                 background: 'var(--field)',
                 color: 'var(--t1)',
-                outline: 'none',
                 width: '100%',
                 resize: 'vertical',
                 minHeight: 60,

@@ -1,0 +1,103 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8">
+<title>Home · H2 XƯỞNG CÁ NHÂN — có việc · ý tưởng</title>
+<!-- @dsCard group="Home · 3 study hệ thống" -->
+<link rel="stylesheet" href="_home-h.css">
+<style>
+/* ══ H2 · XƯỞNG CÁ NHÂN ══ Cân bằng nhất: việc đang làm · dự án · vật cá nhân cùng sống.
+   Nguyên tắc: vật CHỒNG LỚP theo CHIỀU SÂU và VỊ TRÍ (khuôn F1 — bàn làm việc thật), thứ đang
+   làm mở sẵn, thứ khác gập lại và đẩy ra rìa (F2). KHÔNG lưới, KHÔNG thẻ đều nhau. */
+.moi{position:absolute;inset:0;background:
+  radial-gradient(64% 52% at 16% 4%, rgba(199,154,99,.10), transparent 64%),
+  linear-gradient(180deg, #121114 0%, #0c0c0e 62%)}
+:root[data-theme='light'] .moi{background:
+  radial-gradient(64% 52% at 16% 4%, rgba(199,154,99,.16), transparent 64%),
+  linear-gradient(180deg,#f7f4ee 0%,#f2efe9 62%)}
+.lop{position:absolute;inset:0;z-index:5;padding:30px 64px 34px 96px;display:flex;flex-direction:column}
+.tren{display:flex;align-items:baseline;gap:15px;color:var(--t3);font-size:var(--fs-xs)}
+.tren b{color:var(--t1);font-weight:600;font-size:var(--fs-sm)}
+.tren .cham{width:4px;height:4px;border-radius:var(--r-full);background:var(--t5);align-self:center}
+.tren .cuoi{margin-left:auto}
+.ban{position:relative;flex:1;margin-top:22px}
+/* vật CHÍNH — mở sẵn, lớp trên cùng */
+.vat-chinh{position:absolute;left:0;top:14px;width:592px;z-index:4}
+.vat-chinh .khung{border-radius:var(--r-3);overflow:hidden;box-shadow:0 30px 68px rgba(0,0,0,.5);
+  border:1px solid var(--vien-mo);position:relative}
+:root[data-theme='light'] .vat-chinh .khung{box-shadow:0 24px 54px rgba(80,66,44,.22)}
+.vat-chinh .khung svg{display:block;width:100%;height:300px}
+.vat-chinh .ten{font-size:40px;line-height:1.06;letter-spacing:-.02em;font-weight:600;margin:20px 0 10px}
+.vat-chinh .dong{display:flex;gap:18px;color:var(--t3);font-size:var(--fs-sm)}
+.vat-chinh .vi{margin-top:7px;color:var(--t3);font-size:var(--fs-sm)}
+.vat-chinh .cta{margin-top:20px;display:flex;align-items:center;gap:15px}
+.vat-chinh .cta a{height:44px;padding:0 22px;border-radius:var(--r-full);background:var(--t1);
+  color:var(--bg);display:inline-flex;align-items:center;font-weight:600;font-size:var(--fs-sm);text-decoration:none}
+.vat-chinh .cta span{color:var(--t3);font-size:var(--fs-xs)}
+/* vật NGỮ CẢNH — gập lại, nhỏ, lệch lớp: mẫu vật liệu · mẩu tham chiếu · ghi tay */
+.vat-phu{position:absolute;z-index:3;border-radius:var(--r-2);overflow:hidden;
+  box-shadow:0 16px 40px rgba(0,0,0,.42);border:1px solid var(--vien-mo)}
+:root[data-theme='light'] .vat-phu{box-shadow:0 12px 30px rgba(80,66,44,.18)}
+.giay-ghi{position:absolute;z-index:3;background:var(--giay);color:#2c2822;border-radius:var(--r-1);
+  padding:13px 15px;box-shadow:0 14px 34px rgba(0,0,0,.4);font-size:var(--fs-xs);line-height:1.5;
+  max-width:216px;transform:rotate(-1.4deg)}
+.giay-ghi b{display:block;font-weight:600;margin-bottom:4px;font-size:var(--fs-sm)}
+/* dự án khác — DẤU VẾT ở rìa, không phải danh sách */
+.vet{position:absolute;right:0;bottom:0;width:214px;z-index:2}
+.vet .nhan{margin-bottom:10px}
+.vet a{display:flex;align-items:center;gap:11px;padding:8px 0;text-decoration:none;color:inherit}
+.vet a+a{border-top:1px solid var(--vien-mo)}
+.vet i{width:34px;height:24px;border-radius:var(--r-1);flex:0 0 34px}
+.vet u{text-decoration:none;flex:1;font-size:var(--fs-xs)}
+.vet s{text-decoration:none;color:var(--t3);font-size:10px}
+.vet .them{margin-top:9px;color:var(--t3);font-size:var(--fs-xs)}
+.chan{display:flex;align-items:center;gap:22px;color:var(--t3);font-size:var(--fs-xs);
+  padding-top:16px;border-top:1px solid var(--vien-mo)}
+.chan kbd{font:600 10px/1 ui-monospace,monospace;color:var(--t2);border:1px solid var(--vien-mo);
+  border-radius:var(--r-1);padding:3px 6px}
+.chan .cuoi{margin-left:auto}
+</style></head><body>
+<div class="khaudo"><span class="cham"></span><span>VITALS</span></div>
+<div class="moi"></div>
+<div class="lop"><div class="tren"><b>Chiều muộn, Kiêm</b><span class="cham"></span>
+   <span>Thứ Sáu 04/09 · 17:12 · 2700K</span><span class="cham"></span>
+   <span>4 dự án đang sống</span><span class="cuoi">tường: <b style="color:var(--t2);font-weight:600">tham chiếu Thảo Điền</b> · ⌥W đổi</span></div>
+  <div class="ban">
+    <div class="ghi" style="left:0;top:-6px">vật CHÍNH — mở sẵn, lớp trên</div>
+    <div class="vat-chinh">
+      <div class="khung"><svg viewBox="0 0 592 300" preserveAspectRatio="xMidYMid slice">
+ <defs><linearGradient id="w2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0e0c2"/><stop offset="1" stop-color="#d5b98f"/></linearGradient>
+ <linearGradient id="f2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a7154"/><stop offset="1" stop-color="#5a4833"/></linearGradient></defs>
+ <rect width="592" height="300" fill="#7b6448"/>
+ <rect x="0" y="206" width="592" height="94" fill="url(#f2)"/>
+ <rect x="118" y="26" width="150" height="180" fill="url(#w2)"/><rect x="322" y="26" width="150" height="180" fill="url(#w2)"/>
+ <g fill="#5c4a34"><rect x="108" y="20" width="12" height="192"/><rect x="266" y="20" width="12" height="192"/><rect x="312" y="20" width="12" height="192"/><rect x="470" y="20" width="12" height="192"/></g>
+ <path d="M118 206 L268 206 L318 300 L46 300Z" fill="#f0dfbe" opacity=".2"/>
+ <path d="M156 194 L404 194 L420 214 L140 214Z" fill="#3f3225"/><rect x="140" y="214" width="280" height="46" rx="6" fill="#4a3b2b"/>
+ <rect x="164" y="180" width="240" height="18" rx="7" fill="#54432f"/>
+ <ellipse cx="286" cy="272" rx="168" ry="22" fill="#5f4c36" opacity=".55"/>
+ <g fill="#4d5a41"><ellipse cx="524" cy="196" rx="30" ry="40"/><ellipse cx="504" cy="168" rx="18" ry="24"/></g>
+ <rect x="512" y="230" width="24" height="30" rx="4" fill="#3a2f22"/>
+</svg><div class="demo" style="left:10px;bottom:8px">DỮ LIỆU DEMO</div></div>
+      <div class="nhan" style="margin-top:18px">Đang dở · Ý tưởng &amp; vật liệu · dừng 16:20 hôm qua</div>
+      <div class="ten">Căn hộ Thảo Điền</div>
+      <div class="dong"><span class="so">78 m²</span><span>bảng vật liệu</span><span class="so">3 tham chiếu</span></div>
+      <div class="vi">Còn lại: chưa chốt tông gỗ tủ bếp — đang so óc chó ↔ sồi</div>
+      <div class="cta"><a>Mở lại bảng vật liệu →</a><span>hoặc bắt đầu một không gian mới</span></div>
+    </div>
+    <div class="ghi" style="left:628px;top:170px">vật NGỮ CẢNH — gập lại, lệch lớp</div>
+    <div class="vat-phu" style="left:626px;top:196px;width:104px;height:104px;transform:rotate(2deg);background:linear-gradient(145deg,#8a6a45,#5e4630)"></div>
+    <div class="vat-phu" style="left:706px;top:236px;width:88px;height:88px;transform:rotate(-3deg);background:linear-gradient(145deg,#d8d2c6,#b4ac9c)"></div>
+    <div class="vat-phu" style="left:772px;top:198px;width:80px;height:80px;transform:rotate(4deg);background:linear-gradient(145deg,#6f7468,#4a4f45)"></div>
+    <div class="giay-ghi" style="left:626px;top:398px"><b>Nhắc mình</b>Hỏi CĐT có giữ được tủ bếp cũ không — nếu giữ thì tông gỗ phải theo nó.</div>
+    <div class="vet">
+      <div class="nhan">Còn đang sống</div>
+      <a><i style="background:linear-gradient(140deg,#8a7154,#413424)"></i><u>Detech Complex</u><s>2 ngày</s></a>
+      <a><i style="background:linear-gradient(140deg,#7d8a6e,#333a2b)"></i><u>Nhà phố Bình Thạnh</u><s>1 tuần</s></a>
+      <a><i style="background:linear-gradient(140deg,#6e7c8a,#2b3239)"></i><u>Sungroup Beach Club</u><s>3 tuần</s></a>
+      <div class="them">còn 4 nữa ↓</div>
+      <div class="ghi" style="right:0;top:-22px">dự án = DẤU VẾT ở rìa</div>
+    </div>
+  </div>
+  <div class="chan"><span><kbd>N</kbd> ghi nhanh</span><span><kbd>⌘K</kbd> lệnh · tìm · tạo</span>
+   <span><kbd>⌥</kbd> sắp lại xưởng</span><span class="cuoi"><b style="color:var(--t2);font-weight:600">Detech</b> — Vy đổi vật liệu tủ bếp · 9 phút</span></div>
+</div>
+<nav class="rail" style="color:var(--t1)"><i class="on"></i><i></i><i></i><i></i><i></i><hr><i></i><i></i><i></i><i></i><hr><i></i><i></i></nav>
+</body></html>

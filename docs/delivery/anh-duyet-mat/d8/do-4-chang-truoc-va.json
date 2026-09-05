@@ -1,0 +1,51 @@
+{
+  "nhan": "truoc-va",
+  "luc": "2026-09-04T23:40:30.989Z",
+  "ds": [
+    {
+      "chang": "settings",
+      "duong": "/settings",
+      "demGieoLuc_ms": 4236,
+      "storeCoUserLuc_ms": null,
+      "demCuoi": true,
+      "storeCuoi": false,
+      "dat": false
+    },
+    {
+      "chang": "cad",
+      "duong": "/projects/cmtnli7bf00027dso1ezmp2m9/cad",
+      "demGieoLuc_ms": 3865,
+      "storeCoUserLuc_ms": null,
+      "demCuoi": true,
+      "storeCuoi": false,
+      "dat": false
+    },
+    {
+      "chang": "render",
+      "duong": "/projects/cmtnli7bf00027dso1ezmp2m9/render",
+      "demGieoLuc_ms": 2372,
+      "storeCoUserLuc_ms": 2372,
+      "demCuoi": true,
+      "storeCuoi": true,
+      "dat": true
+    },
+    {
+      "chang": "present",
+      "duong": "/projects/cmtnli7bf00027dso1ezmp2m9/present",
+      "demGieoLuc_ms": 2842,
+      "storeCoUserLuc_ms": 3345,
+      "demCuoi": true,
+      "storeCuoi": true,
+      "dat": true
+    },
+    {
+      "chang": "photo",
+      "duong": "/projects/cmtnli7bf00027dso1ezmp2m9/photo",
+      "demGieoLuc_ms": 1299,
+      "storeCoUserLuc_ms": null,
+      "demCuoi": true,
+      "storeCuoi": false,
+      "dat": false
+    }
+  ]
+}

@@ -87,6 +87,8 @@ export const FILES_MOCK_CSS = `
 .if-files-app .searchbox{display:flex;align-items:center;gap:7px;height:32px;width:230px;padding:0 11px;border-radius:var(--radius-md);background:var(--field);border:1px solid transparent;color:var(--t4);transition:border-color .18s var(--ease-apple)}
 .if-files-app .searchbox:focus-within{border-color:var(--accent);color:var(--t2)}
 .if-files-app .searchbox input{flex:1;min-width:0;border:0;background:none;outline:none;font-size:12px;color:var(--t1)}
+/* Ring TRONG: ô nằm trong vỏ pill — ring ngoài đè viền vỏ. Cùng khuôn .gal-search input. */
+.if-files-app .searchbox input:focus-visible{outline:var(--stroke-focus) solid var(--focus-ring);outline-offset:calc(-1 * var(--stroke-focus))}
 .if-files-app .searchbox input::placeholder{color:var(--t4)}
 .if-files-app .chiprow{display:flex;gap:6px;flex-wrap:wrap}
 .if-files-app .chip{height:24px;padding:0 11px;border-radius:9999px;border:0;background:var(--field);color:var(--t3);font-size:11px;cursor:pointer;transition:background-color .12s,color .12s}
@@ -152,7 +154,7 @@ export const FILES_MOCK_CSS = `
 .if-files-app .insp{width:308px;padding:26px 26px 22px 0;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
 .if-files-app .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-node);padding:16px}
 .if-files-app .storrow{display:flex;align-items:center;gap:14px}
-.if-files-app .ring{width:64px;height:64px;flex:none;outline:none}
+.if-files-app .ring{width:64px;height:64px;flex:none}
 .if-files-app .stor .big{font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--t1)}
 .if-files-app .stor .small{font-size:11px;color:var(--t2)}
 .if-files-app .bars{margin-top:12px;display:flex;flex-direction:column;gap:8px}

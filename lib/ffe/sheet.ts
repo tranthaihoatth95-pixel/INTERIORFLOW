@@ -28,6 +28,8 @@ import {
   isCountUnit,
   normalizeQty,
 } from './item';
+import { ffeAssurance, type SpecVerifiedMap } from './assurance';
+import { isVerifiedQuantity, type AssuranceGrade } from '../distill/assurance';
 import {
   buildXlsxBuffer,
   STYLE,
@@ -76,6 +78,10 @@ export interface FfeSheetRow {
   /** `null` = CHƯA CÓ GIÁ ⇒ không cộng vào tổng, hiện rõ. 0đ và "chưa biết giá" là 2 chuyện khác. */
   amount: number | null;
   approval: FfeApproval;
+  /** Slice 5 (02/09) — độ đảm bảo theo thang chung `lib/distill/assurance`: dòng này là số
+   * ĐÃ ĐẢM BẢO (declared/catalog-approved/user-override) hay PROXY (inferred/unknown). Present/BOQ
+   * đọc field này để không cộng tiền máy đoán vào tổng đã đảm bảo. */
+  assurance: AssuranceGrade;
   /** món gốc — truy vết ngược về entity/ảnh, không phải chép dữ liệu ra rồi mất đường về. */
   item: FfeItem;
 }
@@ -89,6 +95,16 @@ export interface FfeSheetGroup {
   subtotalAmount: number;
   /** số dòng chưa có giá trong nhóm — UI/hồ sơ phải nói ra, không để tổng trông "đủ". */
   missingPriceCount: number;
+  /** số dòng PROXY (máy đoán / chưa rõ nguồn) trong nhóm — hồ sơ phải nói ra. */
+  proxyRowCount: number;
+}
+
+/** Tổng tiền tách theo lớp đảm bảo — `verified + proxy === totalAmount` (bất biến, test khoá). */
+export interface FfeAmountByAssurance {
+  /** tiền của các dòng ĐÃ ĐẢM BẢO có giá — phần được phép vào BOQ. */
+  verified: number;
+  /** tiền của các dòng PROXY có giá — hiện được, KHÔNG được coi là số thật. */
+  proxy: number;
 }
 
 export interface FfeSheet {
@@ -100,12 +116,19 @@ export interface FfeSheet {
   missingPriceCount: number;
   /** số món có số lượng hỏng (không phải số) — đã bị loại khỏi bảng, phải báo. */
   invalidQtyItemIds: string[];
+  /** Slice 5 — tổng tách theo lớp đảm bảo; `totalAmount` GIỮ NGUYÊN nghĩa cũ (mọi dòng có giá). */
+  amountByAssurance: FfeAmountByAssurance;
+  /** số dòng PROXY toàn bảng — 0 nghĩa là mọi con số trong bảng đều có người/tài liệu/danh mục đứng sau. */
+  proxyRowCount: number;
 }
 
 export interface BuildFfeSheetOptions {
   title?: string;
   /** trạng thái duyệt theo `FfeItem.id` — caller nạp từ nơi lưu của mình. */
   approvals?: Record<string, FfeApproval>;
+  /** `ProductSpec.verified` theo `specId` — caller nạp từ `/api/specs`; thiếu = coi như chưa duyệt
+   * (món thư viện vẫn là `declared`, không tụt xuống proxy). */
+  specVerified?: SpecVerifiedMap;
 }
 
 function dimsLabel(item: FfeItem): string {
@@ -134,6 +157,7 @@ function finishLabel(item: FfeItem): string {
  */
 export function buildFfeSheet(items: FfeItem[], opts?: BuildFfeSheetOptions): FfeSheet {
   const approvals = opts?.approvals ?? {};
+  const specVerified = opts?.specVerified ?? {};
   const invalidQtyItemIds: string[] = [];
   const byRoom = groupByRoom(items);
 
@@ -142,11 +166,15 @@ export function buildFfeSheet(items: FfeItem[], opts?: BuildFfeSheetOptions): Ff
   let totalAmount = 0;
   let missingPriceCount = 0;
   let rowCount = 0;
+  let verifiedAmount = 0;
+  let proxyAmount = 0;
+  let proxyRowCount = 0;
 
   for (const [key, roomItems] of byRoom) {
     const rows: FfeSheetRow[] = [];
     let subtotalAmount = 0;
     let groupMissing = 0;
+    let groupProxy = 0;
 
     for (const item of roomItems) {
       const qty = normalizeQty(item.qty, item.unit);
@@ -158,12 +186,20 @@ export function buildFfeSheet(items: FfeItem[], opts?: BuildFfeSheetOptions): Ff
       // `ffeLineAmount` tính theo `item.qty` gốc — dùng qty ĐÃ chuẩn hoá để bảng và tiền khớp
       // nhau (đơn vị đếm ⇒ số nguyên). Vẫn gọi hàm chung để giữ đúng 1 định nghĩa "thành tiền".
       const amount = ffeLineAmount({ ...item, qty });
+      const assurance = ffeAssurance(item, specVerified);
+      const verified = isVerifiedQuantity(assurance);
+      if (!verified) {
+        groupProxy += 1;
+        proxyRowCount += 1;
+      }
       if (amount === null) {
         groupMissing += 1;
         missingPriceCount += 1;
       } else {
         subtotalAmount += amount;
         totalAmount += amount;
+        if (verified) verifiedAmount += amount;
+        else proxyAmount += amount;
       }
       rows.push({
         stt,
@@ -179,6 +215,7 @@ export function buildFfeSheet(items: FfeItem[], opts?: BuildFfeSheetOptions): Ff
         unit: item.unit,
         amount,
         approval: approvals[item.id] ?? 'pending',
+        assurance,
         item,
       });
       rowCount += 1;
@@ -191,6 +228,7 @@ export function buildFfeSheet(items: FfeItem[], opts?: BuildFfeSheetOptions): Ff
       rows,
       subtotalAmount,
       missingPriceCount: groupMissing,
+      proxyRowCount: groupProxy,
     });
   }
 
@@ -201,6 +239,8 @@ export function buildFfeSheet(items: FfeItem[], opts?: BuildFfeSheetOptions): Ff
     totalAmount,
     missingPriceCount,
     invalidQtyItemIds,
+    amountByAssurance: { verified: verifiedAmount, proxy: proxyAmount },
+    proxyRowCount,
   };
 }
 

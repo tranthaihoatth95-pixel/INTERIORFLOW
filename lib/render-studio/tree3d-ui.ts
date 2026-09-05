@@ -23,7 +23,7 @@ interface Tree3DUiState {
   selectedEntityId: string | null;
   toggleHidden: (name: string) => void;
   select: (name: string | null) => void;
-  /** Chọn TRỰC TIẾP (không toggle) — cho đường bấm-vào-khối trên viewport (21/08): bấm lại cùng
+  /** Chọn TRỰC TIẾP (không toggle) — cho đường bấm-vào-khối trên khung nhìn 3D (21/08): bấm lại cùng
    *  khối phải GIỮ chọn, khác hành vi bấm-lại-bỏ-chọn của hàng cây Navigator. */
   pick: (name: string | null, entityId?: string | null) => void;
 }
@@ -39,9 +39,14 @@ export const useTree3DUi = create<Tree3DUiState>((set) => ({
       else next.add(name);
       return { hiddenNames: next };
     }),
-  // Chọn từ CÂY: không biết entityId ⇒ xoá cờ, tránh để lại entityId của lượt chọn trước (lệnh
-  // xoá sẽ nhắm nhầm khối cũ — đúng loại lỗi §9 cấm).
+  // Chọn từ CÂY: giữ NGUYÊN ngữ nghĩa toggle theo TÊN như trước, chỉ thêm việc xoá cờ entityId —
+  // cây không biết entityId, để sót entityId của lượt chọn trước thì lệnh xoá sẽ nhắm nhầm khối cũ
+  // (đúng loại lỗi §9 cấm).
   select: (name) =>
-    set((s) => (s.selectedName === name ? { selectedName: null, selectedEntityId: null } : { selectedName: name, selectedEntityId: null })),
+    set((s) =>
+      s.selectedName === name
+        ? { selectedName: null, selectedEntityId: null }
+        : { selectedName: name, selectedEntityId: null },
+    ),
   pick: (name, entityId = null) => set({ selectedName: name, selectedEntityId: name ? entityId : null }),
 }));

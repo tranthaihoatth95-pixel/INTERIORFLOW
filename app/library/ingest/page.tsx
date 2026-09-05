@@ -13,6 +13,7 @@ import {
   USAGES, type RefAsset, type RefManifest, type RefUsage,
 } from '@/lib/refingest';
 import { buildGalleryTag } from '@/lib/library/gallery-tags';
+import NhanDienCauKien from '@/components/library/NhanDienCauKien';
 
 const TYPE_BADGE: Record<string, string> = { pdf: 'PDF', excel: 'XLS', cad: 'CAD', other: 'FILE' };
 
@@ -256,6 +257,11 @@ function IngestPageInner() {
         Nạp ảnh/file tham khảo → chưng cất JSON nhẹ (palette · công dụng · tag), ảnh giữ dạng thumbnail.
         Feed AI bằng “AI manifest” (bỏ thumbnail) → không vỡ context.
       </p>
+
+      {/* Nhận diện cấu kiện — MẶT TIỀN của dây chuyền `lib/idfc-import/` (05/09).
+          Đặt ngay đầu trang vì đây là cửa nhập DUY NHẤT chạm tới engine đó; các khối phía dưới
+          là đường nhập ảnh tham khảo (manifest nhẹ), khác việc hoàn toàn. */}
+      <NhanDienCauKien />
 
       {/* AI Content Strategist — 3 kịch bản trình khách */}
       <div style={{ border: '1px solid #2A261F', borderRadius: 12, background: 'linear-gradient(180deg,#141009,transparent)', padding: 18, margin: '16px 0' }}>
