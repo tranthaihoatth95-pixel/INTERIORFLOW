@@ -170,10 +170,20 @@ export function getRulesByCategory(cat: StandardCategory): StandardRule[] {
   return getAllRules().filter((r) => r.category === cat);
 }
 
+/** Lọc MỘT MẢNG rule bất kỳ theo vùng — dạng thuần, không đụng registry toàn cục. Rule KHÔNG đặt
+ * `region` (rule chung, VD ISO drafting) luôn được giữ: chúng áp dụng bất kể dự án theo hệ nào.
+ *
+ * Tách ra khỏi `getRulesByRegion` vì `checkStandards()` nhận rule TỪ NƠI GỌI (có thể đã lọc theo
+ * loại hình khai thác, hoặc là bộ fixture của test) — lọc lại bằng registry toàn cục là lặng lẽ
+ * kéo về những rule nơi gọi đã cố ý bỏ. Cùng phép lọc, khác nguồn dữ liệu vào. */
+export function locTheoVung(rules: StandardRule[], region: StandardRegion): StandardRule[] {
+  return rules.filter((r) => r.region === undefined || r.region === region);
+}
+
 /** Lọc rule theo vùng/hệ quy chuẩn. Rule KHÔNG đặt `region` (rule chung, VD ISO drafting) luôn
  * được trả về cùng mọi vùng — chúng áp dụng bất kể dự án tham chiếu hệ nào. */
 export function getRulesByRegion(region: StandardRegion): StandardRule[] {
-  return getAllRules().filter((r) => r.region === undefined || r.region === region);
+  return locTheoVung(getAllRules(), region);
 }
 
 /** Chỉ lấy rule mang tính BẮT BUỘC (mandatory) — dùng khi cần bộ tối thiểu pháp lý cho hồ sơ. */

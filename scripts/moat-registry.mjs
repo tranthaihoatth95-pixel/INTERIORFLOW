@@ -25,14 +25,24 @@ export const TUYEN_BO_MOAT = [
     chot: '15/08 — "vị trí dự án nằm đâu thì áp quy chuẩn tiêu chuẩn đồng bộ tại đó"',
     kyHieu: 'getMandatoryRules',
     khaiTrong: 'lib/cad/standards/registry.ts',
-    trangThai: 'chua-noi',
+    // W2 05/09 — NỐI: `giuBoBatBuoc()` (lib/cad/standards/vung-tu-vi-tri.ts) gọi, và panel Kiểm
+    // chuẩn (components/cad/CadEditor.tsx) dùng để bộ lọc "loại vận hành" không làm rơi luật bắt
+    // buộc của vùng. Đo được là KHÔNG tautology: `rulesForOperator('generic')` vứt sạch nhóm
+    // `vn-fire` (toàn luật PCCC mandatory) — test [3] `vi-tri-quy-chuan.test.ts` chứng minh.
+    trangThai: 'song',
   },
   {
     id: 'vi-tri-loc-luat-theo-vung',
     chot: '15/08 — thang bậc A nền công thái học → B chuẩn quốc gia → C biến số ngữ cảnh',
     kyHieu: 'getRulesByRegion',
     khaiTrong: 'lib/cad/standards/registry.ts',
-    trangThai: 'chua-noi',
+    // W2 05/09 — NỐI: `nenLuatTheoVung()` (lib/cad/standards/vung-tu-vi-tri.ts) gọi HAI lượt, và
+    // panel Kiểm chuẩn dùng làm nền. Hai lượt vì thang bậc A→B: `getRulesByRegion('INTL')` giữ
+    // tầng A (nhân trắc) rồi `getRulesByRegion(vung)` chồng tầng B lên — gọi một lượt về 'VN' sẽ
+    // vứt mất 12 rule Neufert, tức phá câu "A lấp chỗ B im lặng".
+    // ⛔ Cửa an toàn: chỉ lọc khi NGƯỜI DÙNG đã khai quốc gia (`VungSuyRa.apDuocNgay`). Đoán vùng
+    // rồi lọc là làm biến mất cả bộ luật quốc gia mà không ai thấy.
+    trangThai: 'song',
   },
   {
     id: 'nang-that-tu-vi-tri',

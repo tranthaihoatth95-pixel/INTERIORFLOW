@@ -72,6 +72,12 @@ import {
   type Violation, type RoomKind,
 } from '@/lib/cad/standards/checker';
 import { getAllRules } from '@/lib/cad/standards/registry';
+// W2 (05/09) — VỊ TRÍ CÔNG TRÌNH QUYẾT ĐỊNH BỘ QUY CHUẨN (chốt 15/08). Nối A→B ở đây, C ở dưới.
+import { vungTuViTri, nenLuatTheoVung, giuBoBatBuoc, batBuocBiRoi } from '@/lib/cad/standards/vung-tu-vi-tri';
+import { goYBienSoTuDiaLy, apBienSoNguCanh, bienSoDaNhan, type BienSoNguCanhApDung } from '@/lib/cad/standards/ngu-canh';
+import { goYTuTenDiaDanh, type DacDiemDiaLy } from '@/lib/site/dia-ly';
+import { useHoSoDiaDiem, useDuAnHienTai } from '@/components/site/dia-diem-client';
+import type { SuThat } from '@/lib/site/types';
 import { suggestFix } from '@/lib/cad/standards/fix-suggest';
 import { exportStandardsReportPdf, extractProjectName, extractDrawnBy } from '@/lib/cad/standards-report';
 import { classifyOperator, rulesForOperator, type OperatorType } from '@/lib/cad/operator-profile';
@@ -2124,11 +2130,51 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
   const [operator, setOperator] = useState<OperatorType | ''>('');
   const [detectMsg, setDetectMsg] = useState('');
 
-  // Rule dùng để kiểm: CÓ operator ⇒ lọc theo rulesForOperator; KHÔNG ⇒ getAllRules() như cũ.
-  const rulesToUse = () =>
-    operator ? rulesForOperator(operator).flatMap((g) => g.rules) : getAllRules();
+  /* ── W2 (05/09) · VỊ TRÍ → BỘ QUY CHUẨN ─────────────────────────────────────────────────────
+   * Thang bậc chốt 15/08: A nền công thái học → B chuẩn quốc gia → C biến số ngữ cảnh.
+   * A+B ở `nenLuatTheoVung()`; C ở `apBienSoNguCanh()`. Panel này chỉ NỐI DÂY và BÀY RA — mọi
+   * luật an toàn (đoán-thì-không-lọc · chỉ-siết-không-nới · lọc-tiện-dụng-không-làm-rơi-bắt-buộc)
+   * nằm trong `lib/cad/standards/`, không phải trong nhánh `if` của giao diện. */
+  const duAnId = useDuAnHienTai();
+  const { hoSo } = useHoSoDiaDiem(duAnId);
+  const vung = vungTuViTri(hoSo.viTri);
 
-  const run = () => setViolations(checkStandards(doc, rulesToUse()));
+  /** Đặc điểm địa lý đang biết. Nguồn ĐO ĐƯỢC (`hoSo.suThat['dia-ly.*']`) trước; nếu chưa có thì
+   *  GỢI Ý TỪ TÊN địa danh — và gợi ý từ tên thì `dia-ly.ts` khoá cứng ở hạng `inferred`, tức
+   *  KHÔNG bao giờ tự áp. Đây đúng ca "Hải Dương có chữ hải mà không giáp biển". */
+  const diaLy: Partial<DacDiemDiaLy> = (() => {
+    const daLuu: Partial<DacDiemDiaLy> = {};
+    for (const [k, v] of Object.entries(hoSo.suThat)) {
+      if (!k.startsWith('dia-ly.')) continue;
+      const truong = k.slice('dia-ly.'.length) as keyof DacDiemDiaLy;
+      (daLuu as Record<string, SuThat<unknown>>)[truong] = v;
+    }
+    if (Object.keys(daLuu).length > 0) return daLuu;
+    return goYTuTenDiaDanh(hoSo.viTri.diaChi ?? hoSo.viTri.tinh_thanh);
+  })();
+  const bienSo: BienSoNguCanhApDung[] = goYBienSoTuDiaLy(diaLy);
+  const bienSoAp = bienSoDaNhan(bienSo);
+
+  // Rule dùng để kiểm — bốn bước, mỗi bước một luật đã chốt:
+  //   ① NỀN theo vùng (A luôn có mặt, B chồng lên; vùng chỉ ĐOÁN ⇒ không lọc)
+  //   ② lọc tiện dụng theo operator (giữ nguyên hành vi cũ)
+  //   ③ gộp lại bộ BẮT BUỘC của vùng — bộ lọc tiện dụng không được thành cửa sau lách luật
+  //   ④ tầng C siết thêm (chỉ biến số đã có bằng chứng/người gật)
+  const rulesToUse = () => {
+    const nen = nenLuatTheoVung(vung);
+    const idNen = new Set(nen.map((r) => r.id));
+    const chon = operator
+      ? rulesForOperator(operator).flatMap((g) => g.rules).filter((r) => idNen.has(r.id))
+      : nen;
+    return apBienSoNguCanh(giuBoBatBuoc(chon, vung), bienSo).rules;
+  };
+
+  /** Bộ lọc operator vừa suýt làm rơi mấy luật bắt buộc — bày ra, không giấu. */
+  const roiBatBuoc = operator
+    ? batBuocBiRoi(rulesForOperator(operator).flatMap((g) => g.rules), vung)
+    : [];
+
+  const run = () => setViolations(checkStandards(doc, rulesToUse(), { vung: vung.apDuocNgay ? vung.vung : null }));
 
   // VIỆC A (28/07) — đẩy số vi phạm LẦN CHẠY GẦN NHẤT sang StatusBar. KHÔNG tự chạy nền (giữ
   // đúng "chỉ đọc & đề xuất, chạy tay" của panel này) — null = chưa kiểm lần nào phiên này.
@@ -2155,12 +2201,12 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
     setStudioName(kit?.name?.trim() || '');
     setProjectName(extractProjectName(doc));
     setPreparedBy(extractDrawnBy(doc));
-    if (violations === null) setViolations(checkStandards(doc, rulesToUse())); // đảm bảo có kết quả để xuất
+    if (violations === null) setViolations(checkStandards(doc, rulesToUse(), { vung: vung.apDuocNgay ? vung.vung : null })); // đảm bảo có kết quả để xuất
     setReportOpen(true);
   };
 
   const doExportReport = async () => {
-    const vlist = violations ?? checkStandards(doc, rulesToUse());
+    const vlist = violations ?? checkStandards(doc, rulesToUse(), { vung: vung.apDuocNgay ? vung.vung : null });
     setExporting(true);
     try {
       const kit = brandRef.current;
@@ -2244,6 +2290,36 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
       </div>
       <div style={{ fontSize: 10.5, color: 'var(--t4)', padding: '0 6px 6px' }}>
         Chỉ đọc bản vẽ và đề xuất — KHÔNG tự sửa. Bấm biểu tượng khiên để chạy/chạy lại sau khi sửa bản vẽ.
+      </div>
+      {/* W2 — VỊ TRÍ QUYẾT ĐỊNH BỘ QUY CHUẨN. Nói ra bằng CHỮ, không chỉ bằng con số: người làm
+          hồ sơ phải biết mình đang bị kiểm bằng bộ nào và vì sao. `data-w2-*` là mốc nghiệm thu. */}
+      <div
+        data-w2-vung={vung.vung}
+        data-w2-ap={vung.apDuocNgay ? '1' : '0'}
+        data-w2-so-luat={rulesToUse().length}
+        data-w2-vn={rulesToUse().filter((r) => r.region === 'VN').length}
+        data-w2-ctx={rulesToUse().filter((r) => r.id.startsWith('ctx-')).map((r) => r.id).join(',')}
+        data-w2-bien-so-ap={bienSoAp.map((b) => b.ma).join(',')}
+        style={{ fontSize: 10.5, color: 'var(--t3)', padding: '0 6px 6px', lineHeight: 1.5 }}
+      >
+        <b>Bộ quy chuẩn: {vung.vung}</b> · {rulesToUse().length} luật
+        {vung.apDuocNgay ? '' : ' (chưa lọc)'}
+        <div style={{ color: 'var(--t4)' }}>{vung.ghiChu}</div>
+        {roiBatBuoc.length > 0 && (
+          <div style={{ color: 'var(--warning)' }}>
+            Bộ lọc loại vận hành bỏ sót {roiBatBuoc.length} luật bắt buộc của vùng — đã gộp lại, không cho rơi.
+          </div>
+        )}
+        {bienSoAp.length > 0 && (
+          <div style={{ color: 'var(--t4)' }}>
+            Biến số ngữ cảnh đang áp (chỉ siết thêm): {bienSoAp.map((b) => b.ma).join(' · ')}
+          </div>
+        )}
+        {bienSo.length > bienSoAp.length && (
+          <div style={{ color: 'var(--t4)' }}>
+            Máy gợi ý {bienSo.length - bienSoAp.length} biến số ngữ cảnh chưa áp — cần bằng chứng hoặc bạn xác nhận.
+          </div>
+        )}
       </div>
       {/* HOOK ML pha 1 — chọn LOẠI VẬN HÀNH để lọc bộ rule (mặc định = Tất cả, hành vi cũ nguyên vẹn). */}
       <div style={{ display: 'flex', gap: 4, alignItems: 'center', padding: '0 6px 4px' }}>
