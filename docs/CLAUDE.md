@@ -15,6 +15,41 @@
 
 # CLAUDE.md — Quy tắc làm việc dự án InteriorFlow (IF)
 
+> ## ⛳ MỤC ĐÍCH — GHIM CỨNG, ĐỌC TRƯỚC MỌI THỨ (Hoà 05/09)
+> **APP CHẠY ĐƯỢC TRONG TAY HOÀ. Mọi thứ khác là PHƯƠNG TIỆN.**
+> Nguyên văn: *"tôi muốn thoát khỏi cái này mà xuất cái app ra xài"* · *"ghim cứng cái này vào
+> đầu, làm gì làm đến cùng và phải biết mục đích là gì"*.
+>
+> **Ba câu tự hỏi trước khi bắt tay vào bất cứ việc gì:**
+> 1. Việc này có đưa app tới tay Hoà gần hơn không? Không → hoãn, dù nó đúng.
+> 2. Tôi có làm ĐẾN CÙNG không, hay chỉ tới chỗ "đã đo xong"? Đo xong ≠ xong.
+> 3. Tôi có đang dọn dẹp thay vì giao hàng không?
+>
+> ### ⛔ HAI CÁI BẪY ĐÃ SẬP THẬT, đừng sập lại
+> **① GỘP HAI ĐƯỜNG KHÁC HƯỚNG = THẬP CẨM.** Hoà 05/09: *"gộp cả lại thì IF lại thập cẩm nữa,
+> xong rồi lại sửa, rồi lại lặp lại vòng lặp"*. Gộp hai nhánh khác hướng cho ra **hợp của tính
+> năng và cái YẾU HƠN của bảo đảm** — bằng chứng ngay hôm đó: gộp xong thì cổng trước-phát-hành
+> đỏ 3 chỗ. Và mỗi lần gộp là một lần **sống lại thứ đã cố ý bỏ** — đó chính là cái vòng lặp.
+> ⇒ **CHỌN MỘT ĐƯỜNG LÀM SẢN PHẨM.** Thứ ở đường kia: **port từng món có lý do**, hoặc **khai
+> tử**. Không có "gộp cho chắc".
+>
+> **② ĐỪNG ĐI TÌM CÁI SAI KHI ĐANG PHẢI GIAO HÀNG.** Đo đạc là để mở đường, không phải để thay
+> việc giao. Đo xong mà không ship thì phiên đó = 0.
+>
+> ### 🔎 CÁCH LÀM ĐÚNG khi hai đường khác nhau (Hoà 05/09)
+> *"quét được cái thiếu để lắp đầy, cái xịn để chọn, cái phù hợp để đồng bộ"* — ba nấc, phân loại
+> TỪNG khác biệt, không xử cả cụm:
+> | nấc | nghĩa | ví dụ thật 05/09 |
+> |---|---|---|
+> | **THIẾU** → lắp | bên kia có, bên này không | — |
+> | **XỊN HƠN** → chọn | cùng năng lực, bản kia tốt hơn | CSDL tách `electron/nang-cap-csdl.js` + có test riêng ⇒ **giữ bản mới**, cổng báo oan là lỗi cổng |
+> | **PHÙ HỢP** → đồng bộ | hai bản cùng đúng, chỉ khác chỗ | bản dò macOS thứ hai trong `matchKeyToken` ⇒ dùng chung `IS_MAC` |
+>
+> ⚠️ **Thước đo theo TỆP không phân biệt được "mất" với "dời đi và tốt lên".** Cổng nào chỉ grep
+> một tệp sẽ trừng phạt đúng việc tái cấu trúc mà nó lẽ ra phải khen — đo theo **NĂNG LỰC**,
+> đừng đo theo **CHỖ NGỒI**.
+
+
 > File này để ở gốc repo. Đọc trước MỌI phiên làm việc.
 
 ## Bối cảnh
