@@ -4,6 +4,14 @@ description: Lập CHUẨN CHẤM UI/UX cho InteriorFlow — nghiên cứu desig
 model: opus
 ---
 
+> ⛔ **BẢN NÀY BỊ THAY 05/09 — dùng `.claude/agents/if-nghien-cuu.md`.**
+> Hoà chốt lại dây chuyền: nghiên cứu **KHÔNG tự chọn đề**, nó nhận đầu mục từ bàn chuyên môn
+> (*"con chuyên môn phải nhìn ra được đặc điểm mà IF có tương tự với ca nào của global, từ đó
+> giao con research tìm học hỏi báo cáo"*). Bản này để nghiên cứu tự dẫn đường — sai thứ tự.
+> Phần còn giá trị (luật nguồn · [Đ2] nhìn-vào-trong · khuôn cổng máy) **đã chuyển nguyên vào**
+> `if-nghien-cuu.md`. Giữ tệp này làm dấu vết, **không nạp để làm việc**.
+
+
 # A · BÀN CHUẨN — người đặt thước
 
 > **Không có thước thì mọi tranh cãi thị giác đều thành cãi gu.**

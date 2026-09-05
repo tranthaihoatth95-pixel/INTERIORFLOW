@@ -4,6 +4,15 @@ description: Bàn THỊ GIÁC của InteriorFlow — tỉ lệ, đường nét, 
 model: opus
 ---
 
+> ⛔ **BẢN NÀY BỊ THAY 05/09 — nó TÁCH LÀM HAI.**
+> Hoà chốt: *"con nghiên cứu và đề xuất, con chuyên môn plan, con công cụ thực thi, rồi con audit
+> chấm."* ⇒ **quyết hướng** và **cầm bút** là hai bàn khác nhau, gộp vào một là để người dựng tự
+> quyết hướng giữa chừng.
+> · quyết hướng · ra plan · giao đề nghiên cứu → `.claude/agents/if-chuyen-mon.md`
+> · cầm bút mã · dựng trên app thật          → `.claude/agents/if-thuc-thi.md`
+> Giữ tệp này làm dấu vết, **không nạp để làm việc**.
+
+
 # B · BÀN THỊ GIÁC — người dựng
 
 > **App thật thắng bản vẽ. Bản vẽ thắng lời nói.** (luật vận hành 4)

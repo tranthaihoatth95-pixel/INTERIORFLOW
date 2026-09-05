@@ -61,21 +61,42 @@ Muốn đọc nội dung gốc: `node scripts/moc.mjs inbox <lane>` · lịch s�
 
 ---
 
-## BA BÀN CHUYÊN TRÁCH — đợt dựng lại giao diện (Hoà chốt 05/09)
+## BỐN BÀN CHUYÊN TRÁCH — đợt dựng lại giao diện (Hoà chốt 05/09, sửa dây chuyền cùng ngày)
 
-Khác với bàn `00..08` (chia theo **công đoạn**), ba bàn dưới đây chia theo **vai** trong đúng một
+Khác với bàn `00..08` (chia theo **công đoạn**), bốn bàn dưới đây chia theo **vai** trong đúng một
 việc: dựng lại UX/UI từ đầu. Định nghĩa đầy đủ ở `.claude/agents/`, tra ở đây để không mồ côi —
 hai lần trước một tài liệu nền chết chỉ vì **không ai trỏ tới nó** (`IF-ARCHITECTURE-COMPASS` mồ
 côi 19 ngày · `GU-PROFILE` 0 con trỏ tới 30/08).
 
-| bàn | tệp | vai một câu | được cầm bút mã? |
-|---|---|---|---|
-| **A · CHUẨN** | `.claude/agents/if-chuan.md` | đặt THƯỚC — nghiên cứu pattern có nguồn → ngưỡng đo được → cổng máy | chỉ mã **cổng**, không mã giao diện |
-| **B · THỊ GIÁC** | `.claude/agents/if-thi-giac.md` | người DỰNG — tỉ lệ · đường nét · bố cục · Brand Kit · DS · chuyển động | **có** |
-| **C · NGƯỜI DÙNG NGHỀ** | `.claude/agents/if-nguoi-nghe.md` | designer đang hành nghề, khó tính, đi trọn một hành trình rồi kể chỗ vấp | **không** — chỉ đọc |
+### Dây chuyền — thứ tự không đảo được
 
-**Vì sao tách ba:** luật đã có trong repo — *"người vẽ ra nó không được là người duy nhất chấm
-nó"*. A đặt thước · B dựng · C thử. Không bàn nào tự chấm bài mình.
+```
+① CHUYÊN MÔN  suy từ TÍNH NĂNG → màn chính → key visual → chỗ đứng theo luồng tay
+              → xác lập ĐẦU MỤC + chỉ đích danh CA GLOBAL cần học
+                        ↓ giao đề
+② NGHIÊN CỨU  đào đúng đầu mục được giao → báo cáo có nguồn + ngưỡng đo được
+                        ↓ báo cáo về
+③ CHUYÊN MÔN  → PLAN (bố cục + thứ tự thi công + tiêu chí nghiệm thu + năng lực phải giữ)
+                        ↓ giao
+④ THỰC THI    dựng trên app thật
+                        ↓
+⑤ AUDIT       chấm — CÓ/KHÔNG dám giao hồ sơ cho khách
+```
+
+| bàn | tệp | vai một câu | cầm bút mã? |
+|---|---|---|---|
+| **B · CHUYÊN MÔN** | `.claude/agents/if-chuyen-mon.md` | cầm hướng — suy ưu tiên từ tính năng, chỉ ca global, giao đề, ra plan | **không** |
+| **A · NGHIÊN CỨU** | `.claude/agents/if-nghien-cuu.md` | đào đúng đề được giao → nguồn + ngưỡng đo được | chỉ mã **cổng** |
+| **D · THỰC THI** | `.claude/agents/if-thuc-thi.md` | dựng theo plan, tới app thật | **có** — nơi duy nhất |
+| **C · AUDIT** | `.claude/agents/if-nguoi-nghe.md` | designer đang hành nghề, khó tính, đi trọn hành trình rồi kể chỗ vấp | **không** — chỉ đọc |
+
+**Vì sao tách bốn:** luật đã có trong repo — *"người vẽ ra nó không được là người duy nhất chấm
+nó"*. Và Hoà tách tiếp **quyết hướng ≠ cầm bút**: gộp hai thứ đó vào một bàn là để người dựng tự
+đổi hướng giữa chừng, đúng cơ chế đẻ ra phân kỳ.
+
+⛔ **Hai tệp đã bị thay, giữ làm dấu vết, KHÔNG nạp để làm việc:**
+`.claude/agents/if-chuan.md` (→ `if-nghien-cuu`) · `.claude/agents/if-thi-giac.md`
+(→ tách thành `if-chuyen-mon` + `if-thuc-thi`).
 
 **Cửa chặn trước khi đập bất kỳ màn nào:** `docs/delivery/KIEM-KE-NANG-LUC.md` phải có mục cho màn
 đó. `§B25` bảo vệ **năng lực · hợp đồng · dữ liệu**, KHÔNG bảo vệ bố cục lỗi thời — nên được đập
