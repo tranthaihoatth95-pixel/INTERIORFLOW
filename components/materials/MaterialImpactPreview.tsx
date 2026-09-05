@@ -236,7 +236,7 @@ const applyBtn: React.CSSProperties = {
   borderRadius: 10,
   border: 0,
   background: 'var(--accent)',
-  color: '#fff',
+  color: 'var(--on-accent)',
   fontSize: 12,
   fontWeight: 600,
   cursor: 'pointer',

@@ -108,8 +108,8 @@ export default function ProjectNotebookPage() {
               fontSize: 10.5,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              color: '#B4443A',
-              border: '1px dashed #B4443A',
+              color: 'var(--danger)',
+              border: '1px dashed var(--danger)',
               padding: '3px 8px',
               borderRadius: 2,
             }}

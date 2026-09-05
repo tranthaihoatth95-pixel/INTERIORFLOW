@@ -125,8 +125,23 @@ export const LUAT = [
        CHÍNH mẫu này: **45 chỗ** (ước tính 59 ghi trong sổ 04/09 đếm bằng mẫu rộng hơn — số
        dùng là 45). Tổng 186 → 231 KHÔNG phải hồi quy, là thôi giấu; số LUẬT lệch vẫn là 2, cổng
        không đổi màu. Sửa để lượt riêng; máy vẫn chỉ cảnh báo. */
-    soi: [{ dir: 'components', mau: ":\\s*'#[0-9a-fA-F]{3,8}'" },
-          { dir: 'app', mau: ":\\s*'#[0-9a-fA-F]{3,8}'" }] },
+    /* 🔴 TÁCH LÀM HAI 05/09 — và đây là cách chữa DUY NHẤT không phải nói dối.
+       Mở vùng quét sang `app/` đẩy tổng 194 → 244, nhưng ĐO TÁCH RA thì `components/` chỉ còn
+       **179 — THẤP HƠN trần cũ 194**. Tức mã KHÔNG tệ đi; THƯỚC rộng ra. Bánh cóc lại cấm nới
+       trần (M-52), và nới thật thì đúng là tháo ngòi. Ba đường, chỉ một đường thật thà:
+         ⛔ nới 194 → 244 — che mất việc `components/` đã tốt lên, và phá luật bánh cóc
+         ⛔ thu lại chỉ quét `components/` — quay về giấu 45 chỗ trong `app/`
+         ✅ HAI BỘ ĐẾM, mỗi vùng một thước, mỗi thước một trần, cùng siết xuống độc lập
+       Không con số nào bị nới, không chỗ nào bị giấu, và `components/` được ghi nhận 194 → 179. */
+    soi: [{ dir: 'components', mau: ":\\s*'#[0-9a-fA-F]{3,8}'" }] },
+
+  { id: 'cam-hex-inline-app', toiDanh: 1, loai: 'grep',
+    luat: 'Màu qua CSS var app — cấm hardcode hex trong inline style (vùng app/)',
+    nguon: 'LUAT-GIAO-DIEN-BAT-BUOC L4 + SPEC-DESIGN-SYSTEM-IF §2e.1',
+    /* Vùng `app/` mở sổ 05/09 ở 43 (sau khi đổi 2 chỗ máy móc: overview `#fff` → `--on-accent`,
+       notebook `#B4443A` → `--danger`). 40/43 nằm trong ĐÚNG MỘT tệp `app/library/ingest/page.tsx`,
+       và đó KHÔNG phải việc của lint — xem `docs/delivery/HEX-INGEST-CHO-HOA.md`. */
+    soi: [{ dir: 'app', mau: ":\\s*'#[0-9a-fA-F]{3,8}'" }] },
 
   { id: 'so-tabular-nums', toiDanh: 7, loai: 'grep',
     luat: 'Số hiển thị động (zoom %, đếm) dùng tabular-nums để không nhảy bề rộng',

@@ -700,7 +700,7 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
                 borderRadius: 10,
                 border: 'none',
                 background: canRender ? 'var(--accent)' : 'var(--border)',
-                color: '#fff',
+                color: 'var(--on-accent)',
                 fontSize: 'var(--fs-ui)',
                 fontWeight: 600,
                 cursor: canRender ? 'pointer' : 'not-allowed',

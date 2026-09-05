@@ -248,7 +248,7 @@ export default function ProjectOverviewPage() {
                     borderRadius: 9,
                     border: 'none',
                     background: 'var(--accent)',
-                    color: '#fff',
+                    color: 'var(--on-accent)',
                     cursor: 'pointer',
                     fontSize: 12.5,
                   }}
