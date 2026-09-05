@@ -269,6 +269,14 @@ if (process.argv.includes('--kiem-ban')) {
     .replace(/\d+ · \d+[ph] trước/g, '· —')
     .replace(/\s+/g, ' ').trim();
   const chan = process.argv.includes('--chan');
+  /* ── LỖ MÙ THỨ TƯ, đo 05/09 ──
+   * Sổ phiếu nằm NGOÀI repo và ngoài git: `$BOS_SHARED_LOG_ROOT` hoặc `~/PROJECT/SHARED/LOG/`.
+   * Máy nào không có nó — máy CI, máy người mới, container đám mây — thì `doc()` trả RỖNG
+   * trong im lặng, và cổng so khối-có-phiếu với nguồn-rỗng rồi kêu "có bàn tay người".
+   * Đó là BUỘC TỘI OAN: không nhìn thấy sổ không có nghĩa là ai đó sửa bậy.
+   * Cùng họ với lỗi đã ghi ngay dưới (hai bộ lọc lệch nhau), chỉ khác cửa vào.
+   * ⇒ Vắng sổ thì KHAI MÙ và không phán. Ba lỗ ①②③ bên dưới KHÔNG cần sổ nên vẫn soi đủ. */
+  const COO_SO = co(CAU);
 
   /* ── BA LỖ MÙ CỦA CỔNG NÀY, ĐO 31/08 ──
    * Bản cũ chỉ so khối MÁY GIỮ với nguồn. Nó XANH suốt trong khi 9 tệp bàn bị writer phá:
@@ -326,6 +334,10 @@ if (process.argv.includes('--kiem-ban')) {
     const dau = mo.map((x) => `${x.id.slice(-12)}|${x.nhan}|${x.noted || 'THIẾU'}`).join('||');
     const tren2 = chuan(tren);
     const thieu = mo.filter((x) => !x.noted).length;
+    if (!COO_SO) {
+      console.log(`  ❓ ${ng.ma} — MÙ: không đọc được sổ phiếu, không phán khối máy giữ`);
+      continue;
+    }
     let sai = mo.some((x) => !tren2.includes(x.id.slice(-12)))
       || [...tren2.matchAll(/`([0-9a-f]{12})`/g)].some((m) => !mo.some((x) => x.id.endsWith(m[1])));
     if (sai) {
@@ -344,7 +356,12 @@ if (process.argv.includes('--kiem-ban')) {
     console.log('  ⛔ Đừng sửa tay bên trong dấu mốc — lần ghi biên nhận kế tiếp sẽ đè mất.');
     if (chan) process.exit(1);
   } else {
-    console.log(`\n  ✅ ${xet} tệp bàn — cấu trúc đủ, khối máy giữ khớp nguồn, không có bàn tay người.`);
+    if (!COO_SO) {
+      console.log(`\n  ❓ ${xet} tệp bàn — cấu trúc ĐỦ. Khối máy giữ CHƯA SOI: máy này không có sổ phiếu`);
+      console.log(`     (${CAU}). Chỉ máy CÓ sổ mới phán được phần đó — đây KHÔNG phải xanh.`);
+    } else {
+      console.log(`\n  ✅ ${xet} tệp bàn — cấu trúc đủ, khối máy giữ khớp nguồn, không có bàn tay người.`);
+    }
   }
   process.exit(0);
 }
