@@ -13,6 +13,15 @@ Bốn mắt trong các bộ nghiệm thu **đang tự chấm điểm**: chúng x
 | `soi-frontier` khớp văn bản thô | gỡ hẳn `RadialToolMenu` khỏi `CadCanvas`, để lại chữ trong **chú thích** | **vẫn 0 LỆCH** — 6/77 entry có bằng chứng sống trong chú thích |
 | `g4-moat:197` `bịaInferred === 0` | — | `inferred` có **0 chỗ ghi** ⇒ không thao tác nào làm nó đỏ được |
 
+
+### Đợt 2 (05/09) — không phải bốn, mà **CHÍN**
+
+Soi tay ra **bảy**; dạy máy canh nhận dạng **🪞 SO GƯƠNG** thì nó tìm thêm **hai ca người soi bỏ sót** ⇒ **9**. *Mắt so gương* = hai vế của khẳng định **cùng đi qua MỘT hàm**, nên hàm hỏng thì cả hai vế cùng sai giống nhau ⇒ vẫn bằng nhau ⇒ **vẫn xanh**. Bằng chứng: bẻ `computeBoq` → rỗng thì *"BOQ sau mở lại ra đúng số cũ"* vẫn xanh (`0₫ === 0₫`); bẻ `evalRecipe` → rỗng thì **4 mắt** của G6 vẫn xanh. Neo ngoài đã dùng: con số **tính tay** từ hình học + bảng giá (`102.340.000₫`) · **kích thước** từ tham số (`900×350×cao 100→1525mm`) · **sức phân biệt** cho hàm băm.
+
+🔴 **Lỗ nặng nhất của cả đợt, và nó ở PHÉP ĐO chứ không ở mã**: bộ G6 **suốt qua chứng nhận "kệ 5 tầng dựng được" trong khi khối nó dựng cao 25 mm thay vì 1525 mm** — bộ đo dựng nền bằng **mm/hệ CAD** rồi tự khai là `positions` (hợp đồng: **mét, Y-up**), nên `arrayLinear{dz:350}` thành dịch **0,35 mm**. **Không mắt nào thấy vì mọi mắt đếm ĐỈNH (180 = 5×36), không đo VỊ TRÍ.** MAIN kiểm chiều ngược: `build-ops.ts:44,255` đều gọi `cadToThreeM` đúng hợp đồng ⇒ **lỗi ở bộ đo, mã sản phẩm đúng**.
+
+📏 **Hai vùng mù đã mở, mốc TĂNG và đó là ĐÚNG**: `soi-hinh-hoc` **32 → 51** (thêm `app/`, 368→507 tệp) · `soi-thao-tac` hex **186 → 231** (+45 ở `app/`; 🔧 sổ từng ước 59, **đo thật 45**). Số luật lệch vẫn **2** (nợ cũ), cổng không đổi màu. Giải thích ghi **tại chỗ trong script** để lượt sau không tưởng có ai làm hỏng.
+
 ✅ **Đã siết cả bốn lên đo hành vi.** MAIN tự chạy lại thí nghiệm: giấu `sheets-persist.ts` nay làm cổng **rc=1** (trước là rc=0). ⭐ **Không lộ lỗ sản phẩm nào** — bốn phép siết đạt ngay, tức **mã vốn đúng, chỉ PHÉP ĐO sai**. `g4-moat` **63/63 → 65/65**, và nay nói đúng hơn: *62 bằng chứng sản phẩm + 3 tiền đề*.
 🆕 Máy canh `npm run soi:mat-tu-cham` — tự in tỉ lệ báo nhầm của chính nó (6/10 ở phát đầu) để **không ai dùng số của nó làm số nộp**.
 
