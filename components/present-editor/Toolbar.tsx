@@ -83,6 +83,7 @@ import type { BoqRow } from '@/lib/boq/model';
 import ExportPdfDialog from '@/components/print/ExportPdfDialog';
 import { detectFormat } from '@/lib/gateway/detect';
 import { routeFormat } from '@/lib/gateway/route';
+import { useLuiAnToan } from '@/lib/nav/lui-an-toan';
 
 interface Props {
   onAddText: () => void;
@@ -536,12 +537,10 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
     }
   }
 
-  // Thoát Canva mode: quay lại trang trước, không có lịch sử thì về app chính '/'.
-  function onBack() {
-    if (typeof window === 'undefined') return;
-    if (window.history.length > 1) window.history.back();
-    else window.location.href = '/';
-  }
+  /* Thoát Canva mode: lui một bậc nếu bậc đó là trang IF, không thì về app chính '/'.
+     A1-01 (05/09) — lá chắn cũ `window.history.length > 1` đếm cả ô của trang NGOÀI, nên vào ngang
+     bằng URL là bấm ra `about:blank`. Đích dự phòng '/' giữ nguyên, chỉ đổi cách hỏi. */
+  const onBack = useLuiAnToan('/');
 
   return (
     <div

@@ -33,6 +33,7 @@ import type { Tool, BrushSettings } from '@/lib/photo-editor/tools';
 import { isPaintTool, TOOL_LABELS, TOOL_HINTS, TOOL_KEYS } from '@/lib/photo-editor/tools';
 import { useModKey, useModShiftKey } from '@/lib/kbd';
 import Tooltip from '@/components/ui/Tooltip';
+import { useLuiAnToan } from '@/lib/nav/lui-an-toan';
 
 interface Props {
   tool: Tool;
@@ -83,6 +84,10 @@ function toolTitle(t: Tool): string {
 }
 
 export default function PhotoToolbar(p: Props) {
+  /* Đường thoát Photo mode. A1-01 (05/09) — lá chắn cũ `window.history.length > 1` đếm cả ô của
+     trang NGOÀI: vào ngang bằng URL cho length 2 ⇒ lá chắn qua ⇒ bật ra `about:blank`. Đích dự
+     phòng '/' giữ nguyên như cũ, chỉ đổi CÁCH HỎI. */
+  const quayLai = useLuiAnToan('/');
   const fileRef = useRef<HTMLInputElement>(null);
   const [urlOpen, setUrlOpen] = useState(false);
   const [url, setUrl] = useState('');
@@ -112,12 +117,7 @@ export default function PhotoToolbar(p: Props) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', flexWrap: 'wrap' }}>
         {/* Đường thoát Photo mode — luôn hiển thị, tránh kẹt trong route. */}
         <Btn
-          onClick={() => {
-            if (typeof window !== 'undefined') {
-              if (window.history.length > 1) window.history.back();
-              else window.location.href = '/';
-            }
-          }}
+          onClick={quayLai}
           title="Quay lại"
         >
           <ArrowLeft size={18} /> Quay lại

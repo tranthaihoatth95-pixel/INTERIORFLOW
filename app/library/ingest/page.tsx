@@ -14,6 +14,7 @@ import {
 } from '@/lib/refingest';
 import { buildGalleryTag } from '@/lib/library/gallery-tags';
 import NhanDienCauKien from '@/components/library/NhanDienCauKien';
+import { luiAnToan, useDongDauLichSu } from '@/lib/nav/lui-an-toan';
 
 const TYPE_BADGE: Record<string, string> = { pdf: 'PDF', excel: 'XLS', cad: 'CAD', other: 'FILE' };
 
@@ -47,6 +48,8 @@ export default function IngestPage() {
 
 function IngestPageInner() {
   const router = useRouter();
+  // Route này KHÔNG bọc `AppShell`/`AppChrome` ⇒ tự đóng dấu chuỗi lịch sử (A1-01, 05/09).
+  useDongDauLichSu();
   const searchParams = useSearchParams();
   const goBack = () => {
     // VIỆC 4 (01/08, SPEC-NAVIGATION-MODEL §1 — "mỗi lớp cần đường về") — trước đây route đứng
@@ -60,8 +63,10 @@ function IngestPageInner() {
       router.push(from);
       return;
     }
-    if (typeof window !== 'undefined' && window.history.length > 1) router.back();
-    else router.push('/');
+    // A1-01 (05/09) — `window.history.length > 1` KHÔNG phân biệt được ô IF với ô trang ngoài:
+    // vào ngang bằng URL cho length 2, lá chắn qua, `back()` bật ra `about:blank`. Đường `?from=`
+    // ở trên vẫn là đường ƯU TIÊN (đích XÁC ĐỊNH); phần này chỉ là lưới đỡ khi không có `from`.
+    luiAnToan({ duPhong: '/', day: (u) => router.push(u) });
   };
   const [project, setProject] = useState('Dự án chưa đặt tên');
   const [assets, setAssets] = useState<RefAsset[]>([]);

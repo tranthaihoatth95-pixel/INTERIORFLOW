@@ -19,6 +19,7 @@ import { CanvasWallpaper } from './CanvasWallpaper';
 import { ProfileCard } from './ProfileCard';
 import { AppearanceCard } from './AppearanceCard';
 import { StorageCard } from './StorageCard';
+import { useLuiAnToan } from '@/lib/nav/lui-an-toan';
 
 /**
  * VẬT MẪU mock-settings-polished.html — port markup/CSS 1:1 (xem settings-mock-css.ts). Icon =
@@ -147,6 +148,9 @@ function LegalRows() {
 
 export function PixelSettingsShell() {
   const router = useRouter();
+  /* A1-01 (05/09) — `router.back()` trần: vào ngang `/settings` là bấm ra `about:blank`.
+     `/` là đích dự phòng đã có sẵn (Trang chủ), không phải đích mới. */
+  const quayLai = useLuiAnToan('/', (u) => router.push(u));
   const user = useFlowStore((s) => s.user);
   const setUser = useFlowStore((s) => s.setUser);
   const { state, setWallpaper, setReducedMotion, setAutoBackup } = useSettingsLocalState();
@@ -163,7 +167,7 @@ export function PixelSettingsShell() {
             id khớp `#group-*` dưới đây). */}
 
         <div className="main">
-          <button type="button" className="backlink" onClick={() => router.back()}>
+          <button type="button" className="backlink" onClick={quayLai}>
             <ArrowLeft size={14} /> Quay lại
           </button>
 

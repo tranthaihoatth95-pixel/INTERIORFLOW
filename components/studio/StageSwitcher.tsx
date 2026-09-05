@@ -41,7 +41,6 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PencilRuler, Box, Presentation } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
@@ -84,11 +83,9 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   // IF2-nền — nhãn pill CAD tự đổi theo `store.stage` ('sketch' | 'technical' | 'bim').
   // Selector này KHÔNG trigger re-render nào ngoài lúc stage thật sự đổi (Zustand shallow-eq).
   const cadStage = useCadStore((s) => s.stage);
-  // SCOPE FIX (Task #18): id ổn định cho `/projects/[id]/notebook` (Project.id thật
-  // hoặc Flow.id) — không slug tên flow (trùng tên → rò dữ liệu chéo giữa dự án).
-  const currentProjectId = useFlowStore((s) => s.currentProjectId);
-  const currentFlowId = useFlowStore((s) => s.currentFlowId);
-  const router = useRouter();
+  /* `currentProjectId` · `currentFlowId` · `router` ĐÃ GỠ 05/09 cùng nhánh teleport `notebook-full`
+     (A1-02): sau khi nhánh đó thôi điều hướng, ba biến này không còn nơi dùng nào ngoài mảng deps
+     — giữ lại là để hở đúng cái móc cho phiên sau dựng lại chỗ đứng thứ hai. */
   const tr = useT();
 
   const dockRef = useRef<HTMLDivElement>(null);
@@ -170,15 +167,21 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
             localStorage.setItem(FIRST_DONE_KEY, '1');
           } catch {/* localStorage bị chặn (chế độ riêng tư) — hint/cờ không nhớ được, không chặn việc */}
         } else if (v === 'notebook-full') {
-          // Kéo lần 2 — bỏ popover, mở NotebookLM full modal (route hiện có).
-          setPanelOpen(false);
+          /* Kéo lần 2. TRƯỚC 05/09 nhánh này đẩy sang `/projects/<id>/notebook` — CÙNG MỘT LỖI
+             với nút ⤢ vừa gỡ ở `VitalsGesture.tsx` (A1-02): chỗ đứng THỨ HAI cho Vitals, ở một
+             route không có khẩu độ để quay về, và `|| 'default'` bịa ra dự án không tồn tại.
+             Nay KHÔNG điều hướng đi đâu cả — mức Engage của khẩu độ đã là mặt đầy đủ (EXS §7),
+             nên kéo tiếp chỉ giữ nguyên panel đang mở.
+             ⚠️ Cả tệp này hiện KHÔNG được mount ở đâu (`AppChrome.tsx` gỡ 17/08) nên nhánh này
+             không chạy trên app thật; sửa để nếu có ngày mount lại thì nó KHÔNG hồi sinh chỗ
+             đứng thứ hai — chứ không phải để nó "chạy đúng hơn". Verdict `notebook-full` vẫn do
+             `lib/input/stage-drop.ts` sinh ra; tên đó nay chỉ còn nghĩa "đã kéo qua ngưỡng hai". */
+          if (!panelOpen) setPanelOpen(true);
           setDragging(false);
           markVitalsUsed();
           try {
             localStorage.setItem(FIRST_DONE_KEY, '1');
           } catch {/* localStorage bị chặn (chế độ riêng tư) — hint/cờ không nhớ được, không chặn việc */}
-          const id = currentProjectId || currentFlowId || 'default';
-          router.push(`/projects/${id}/notebook`);
           cleanup();
         } else if (v === 'locked') {
           setDragging(false);
@@ -202,7 +205,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
       window.addEventListener('pointerup', onUp);
       window.addEventListener('pointercancel', onUp);
     },
-    [panelOpen, currentProjectId, currentFlowId, router],
+    [panelOpen],
   );
 
   // Khi panel đóng, dọn dragging để lần drag tiếp không dính state cũ.

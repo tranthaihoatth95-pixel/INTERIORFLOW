@@ -40,7 +40,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, useReducedMotion } from 'framer-motion';
-import { BookOpen, Brain, ClipboardCheck, Loader2, Maximize2, Scale, Send, X, Zap } from 'lucide-react';
+import { BookOpen, Brain, ClipboardCheck, Loader2, Scale, Send, X, Zap } from 'lucide-react';
 import type { ChatTurn } from '@/lib/ai/chat-assist';
 import {
   applyFeedback,
@@ -459,18 +459,22 @@ export default function VitalsGesturePanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  /**
-   * Mở NotebookLM full — điểm dừng thứ 2 của state machine kéo giọt Vitals.
-   * Reachable qua: (a) bấm nút Mở rộng ở header popover này; (b) kéo dài
-   * `LONG_DRAG_THRESHOLD_PX` ở StageSwitcher (fast-path, không cần dừng ở popover).
-   * Điều hướng thay vì portal modal để tận dụng route hiện có (mobile tab, deep
-   * link, back button đều hoạt động sẵn).
-   */
-  const openFullNotebook = useCallback(() => {
-    const id = currentProjectId || currentFlowId || 'default';
-    onClose();
-    router.push(`/projects/${id}/notebook`);
-  }, [currentProjectId, currentFlowId, router, onClose]);
+  /* ⛔ `openFullNotebook` + nút ⤢ ĐÃ GỠ 05/09 (A1-02). ĐỪNG DỰNG LẠI — đây là việc TRỪ ĐI, và
+     bốn lý do đều là luật đã chốt, không phải chuyện gu:
+       ① `ACTIVE-DESIGN-CONTEXT` §4 **D-DR1** — *"sau di trú phải còn ĐÚNG MỘT chỗ đứng vật lý"*.
+          Nút này đẩy sang `/projects/<id>/notebook`, một route KHÔNG có khẩu độ Vitals (đo 05/09:
+          `[data-vitals-state]` = 0 phần tử trên màn đó) ⇒ chỗ đứng thứ hai, và là ngõ cụt.
+       ② §2 **Morph giữ định danh** — aperture→peek→engage phải là CÙNG MỘT VẬT nở ra; nhảy sang
+          màn khác là teleport.
+       ③ `00-CHOT` 04/09 — *"trong IF AI tương tác là Vitals, không có mặt AI thứ hai"*; nhãn cũ
+          còn lộ tên sản phẩm ngoài ("NotebookLM").
+       ④ `id = currentProjectId || currentFlowId || 'default'` **bịa ra một dự án không có trên
+          tài khoản** — đo 05/09 với tài khoản 0 dự án: đầu trang in `DỰ ÁN · PROJECT #DEFAULT`.
+     Mức Engage của khẩu độ ĐÃ LÀ mặt đầy đủ (EXS §7), nên không mất năng lực nào.
+     Route `/projects/[id]/notebook` KHÔNG mồ côi — còn 3 lối vào thật, đo bằng grep 05/09:
+       · `app/projects/[id]/overview/page.tsx:224` (Link trên trang Tổng quan dự án)
+       · `app/library/knowledge/page.tsx:27` (nút "Thêm tài liệu (Sổ tay)")
+       · `lib/library/knowledge.ts:147` (href của mỗi mục tri thức) */
 
   const hasThread = messages.length > 0 || sending || !!error;
 
@@ -669,26 +673,6 @@ export default function VitalsGesturePanel({
                   Đánh giá
                 </button>
               )}
-              <button
-                type="button"
-                aria-label="Mở NotebookLM đầy đủ · Full"
-                title="Mở NotebookLM đầy đủ (kéo dài xuống cũng có tác dụng)"
-                onClick={openFullNotebook}
-                data-vitals-expand=""
-                style={{
-                  display: 'grid',
-                  placeItems: 'center',
-                  width: 22,
-                  height: 22,
-                  borderRadius: 999,
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--t4)',
-                  cursor: 'pointer',
-                }}
-              >
-                <Maximize2 size={14} />
-              </button>
               <button
                 type="button"
                 aria-label="Đóng Vitals"

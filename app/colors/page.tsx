@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { markOpenLibraryOnLoad } from '@/lib/library/use-library-sheet';
 import { danhDauMoBuocMau } from '@/components/library/buoc-mau';
+import { ghiDau, coDuongLui } from '@/lib/nav/lui-an-toan';
 
 /**
  * [marker: mauLaMotBuoc] `/colors` KHÔNG còn là trang.
@@ -29,7 +30,12 @@ export default function ColorsRedirect() {
   useEffect(() => {
     markOpenLibraryOnLoad(); // mở sheet Thư viện (cơ chế chung, chỉ GỌI — không sửa `lib/library`)
     danhDauMoBuocMau();      // …và dừng ở kệ Vật liệu, bước "Chọn theo màu"
-    if (window.history.length > 1) router.back();
+    /* A1-01 (05/09) — lá chắn cũ ở đây là `window.history.length > 1`. Dán thẳng `/colors` vào
+       tab mới cho `history.length === 2` ⇒ lá chắn QUA ⇒ `back()` ⇒ **trang trắng ngay lúc tải**,
+       không cần bấm gì (đo được, nặng hơn các nút Quay lại vì không có thao tác nào để hối tiếc).
+       `coDuongLui()` hỏi đúng câu cần hỏi: phía sau có trang IF không. */
+    ghiDau(); // màn này render `null`, không có vỏ chung đóng dấu hộ — phải tự đóng trước khi hỏi
+    if (coDuongLui()) router.back();
     else router.replace('/');
   }, [router]);
 

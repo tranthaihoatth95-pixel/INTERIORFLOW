@@ -24,6 +24,7 @@ import { NotebookChatPanel } from '@/components/notebook/NotebookChatPanel';
 import { NotebookSourceViewer } from '@/components/notebook/NotebookSourceViewer';
 import { useNotebook } from '@/components/notebook/useNotebook';
 import { BP } from '@/lib/breakpoints';
+import { useLuiAnToan } from '@/lib/nav/lui-an-toan';
 
 type MobileTab = 'sources' | 'chat' | 'viewer';
 
@@ -31,6 +32,12 @@ export default function ProjectNotebookPage() {
   const params = useParams<{ id: string }>();
   const projectId = params?.id ?? 'default';
   const router = useRouter();
+  /* A1-01 (05/09) — nút "Quay lại" từng là `router.back()` TRẦN: vào ngang bằng URL (link người
+     khác gửi) thì ô phía sau là `about:blank`, bấm là rơi ra trang trắng, không đường về. Màn này
+     KHÔNG bọc `AppChrome` nên phải tự đóng dấu chuỗi — `useLuiAnToan` lo cả hai việc.
+     Đường dự phòng `/` là đích ĐÃ CÓ SẴN tại chỗ: dòng "InteriorFlow" ngay dưới nút này là
+     `<Link href="/">`, không phải đích mới bịa ra. */
+  const quayLai = useLuiAnToan('/', (u) => router.push(u));
   const [mobileTab, setMobileTab] = useState<MobileTab>('chat');
 
   const nb = useNotebook(projectId);
@@ -60,7 +67,7 @@ export default function ProjectNotebookPage() {
       >
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={quayLai}
           style={{
             display: 'inline-flex',
             alignItems: 'center',

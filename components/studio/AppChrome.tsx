@@ -70,6 +70,7 @@ import { danhTinhSanSang } from '@/lib/danh-tinh-phien';
 import { useDismissable } from '@/lib/useDismissable';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import { activeToPhase, pickStage } from '@/lib/studio/stage-nav';
+import { useDongDauLichSu } from '@/lib/nav/lui-an-toan';
 import type { AppChromeActive } from '@/components/studio/AppChromeTypes';
 import { laPhimChinh } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 
@@ -85,6 +86,12 @@ interface Props {
 }
 
 export function AppChrome({ active, logoMenu }: Props) {
+  /* ĐÓNG DẤU CHUỖI LỊCH SỬ — vỏ chung là chỗ duy nhất chạy ở gần như mọi màn, nên nút "Quay lại"
+     của từng màn không phải tự đếm lấy (luật K1: một việc một chỗ). Xem `lib/nav/lui-an-toan.ts`
+     để biết vì sao `history.length > 1` KHÔNG trả lời được câu "phía sau có trang IF không".
+     Màn KHÔNG bọc vỏ này (notebook · photo · present · colors) tự gọi `useLuiAnToan` — hàm đóng
+     dấu idempotent nên chồng nhau vô hại. */
+  useDongDauLichSu();
   const flowName = useFlowStore((s) => s.flowName);
   const workspace = useFlowStore((s) => s.workspace);
   const setFlowName = useFlowStore((s) => s.setFlowName);
