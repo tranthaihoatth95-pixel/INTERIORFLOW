@@ -248,6 +248,50 @@ luồng nghề thật (§6)
 **Không bắt đầu từ ảnh chụp màn hình hiện tại.** Không để bản cài đặt quyết định bố cục.
 Bài học từ các bản cũ thì **giữ**; **bố cục** của chúng **không** được giữ mặc định.
 
+## ⭐ K1–K5 · NGUYÊN TẮC TỰ KẾT NỐI — Hoà ban 05/09
+
+> *"Để nó **tự kết nối, tự lên tiếng không cần ai gọi**, tự tìm về đường đúng đắn, **toả sáng đúng
+> vị trí nó được phân vùng**, đẹp đúng cách nó vận hành, thông minh như chính giá trị nó mang lại."*
+> Kèm câu trước đó: *"để mọi thứ tự nhiên phát triển theo con đường đúng của nó, tối ưu như cách
+> nó được sinh ra và **đúng như cách nó định nghĩa**."*
+
+Đây **không phải lời văn** — nó là chỉ dẫn kiến trúc, và IF đã có sẵn phần lớn cơ chế.
+
+### K1 · MỘT VIỆC, MỘT NƠI LÀM — cấm component làm lại việc của mô-đun thuần
+Ca thật 05/09: `lib/site/vitals-site.ts` (75 dòng, thuần, có test) sinh ra để biến sự thật địa
+điểm cũ thành tín hiệu Vitals. Nó **nằm chết**. Trong khi `VitalsAperture.tsx` **làm lại y việc
+đó bằng tay** — `d.daCu.map(k => k.split('.')[0])` viết thẳng trong component, đếm tay
+`setSoCu(ds.length)`, và **không dùng** bảng nhãn `TEN_MIEN` vốn tồn tại để *cấm chữ AI sinh lọt
+vào Vitals*.
+⇒ Thấy một component tự tính thứ mà một mô-đun thuần đã tính: **gọi mô-đun**, xoá bản tay.
+Không phải để cho gọn — bản tay **không có test**, và nó đã bỏ mất một ràng buộc an toàn.
+
+### K2 · TỰ LÊN TIẾNG, KHÔNG CHỜ AI GỌI
+IF **đã có** kênh này và đang dùng đúng một chỗ: `window.dispatchEvent(new Event('if:site-changed'))`
+⇒ sự thật đổi ở Tổng quan thì khẩu độ Vitals **tự biết, không cần F5**.
+⇒ Mọi nguồn sự thật đổi được đều phải **phát tín hiệu**; mọi mặt tiêu thụ **nghe**, thay vì đọc
+một lần lúc mount rồi đứng yên. Đây là lý do một màn "đúng lúc mở, sai sau đó" — lớp lỗi mà mắt
+người khó bắt vì nó chỉ sai *về sau*.
+
+### K3 · TỰ KHAI ĐIỀU KIỆN ÁP DỤNG — nơi tiêu thụ không phải biết tên ai
+`StandardRule` **đã có** trường `region?`, tức luật **tự khai** nó áp ở đâu; registry lọc.
+Đó đúng là hình dạng "tự tìm về đường đúng đắn". Chỗ đứt: **không ai truyền vùng vào**, nên
+`getRulesByRegion` chết dù cơ chế đã đúng.
+⇒ Thêm một điều kiện áp dụng thì **thêm vào chính luật đó**, không thêm một cành `if` ở nơi gọi.
+
+### K4 · TOẢ SÁNG ĐÚNG VÙNG NÓ ĐƯỢC PHÂN — phát hiện neo vào vật, không neo vào màn
+Kết luận thuộc về **đối tượng** nào thì hiện ở **workspace chứa đối tượng đó**. IF đã có
+entity-anchor + deep-link. Cấm gom mọi phát hiện vào một bảng tổng — bảng tổng là *biên niên*,
+không phải *việc cần xử*.
+
+### K5 · IM LẶNG LÀ MỘT TRẠNG THÁI HỢP LỆ — và là mặc định
+`vitals-site.ts` trả **`null`** chứ không trả một tín hiệu *"mọi thứ ổn"*, kèm lý do viết sẵn:
+*"Vitals nói cái gì cần chú ý BÂY GIỜ, nó không phải bảng báo cáo tình hình."*
+⇒ Cùng một luật với **cấm hộp rỗng** (`N-10`): không có gì để nói thì **không mở gì ra**.
+⚠️ Ranh giới phải giữ: *im vì không có gì* ≠ *im vì không hỏi được*. Ca `F-02 calm giả` đã trả
+giá — app khẳng định "không có gì cần xem" trong khi nó **không gọi được máy chủ**. Nguồn hỏng
+phải nói **"chưa đo được"**, không được im.
+
 ## HẠN DÙNG
 Hoà lật thì sửa **tại chỗ, viết lại** — không cộng dồn đuôi. Thấy tệp này dài ra là dấu hiệu nó
 đang biến thành nhật ký; nhật ký thuộc `docs/00-CHOT.md`, không thuộc đây.
