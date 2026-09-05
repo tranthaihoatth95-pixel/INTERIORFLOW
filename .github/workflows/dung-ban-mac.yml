@@ -11,7 +11,7 @@
 #    Đó là hành vi dự kiến, không phải app hỏng. Xem docs/delivery/G7-NGHIEM-THU-MAC.md mục T11.
 # ⚠️ Runner macos-14 là Apple Silicon (arm64) — khớp cấu hình `--mac --arm64` trong package.json.
 #    Máy Intel KHÔNG chạy được bản này.
-name: Dựng bộ cài macOS (.dmg)
+name: Dựng bộ cài macOS + Windows
 
 on:
   # Hai cửa kích hoạt, CỐ Ý:
@@ -71,6 +71,21 @@ jobs:
           # thay vì dừng lại. Ra .dmg chưa ký là KỲ VỌNG của lượt này (xem T1 trong G7-NGHIEM-THU-MAC).
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
+      - name: Gói có nuốt bí mật không (chặn cứng)
+        # ĐO ĐƯỢC 05/09: `build.mac.files` THAY THẾ danh sách `files` gốc (không cộng vào), mà nó
+        # chỉ có dòng loại-trừ ⇒ electron-builder rơi về mặc định `**/*` và gói nuốt `.env`
+        # (AUTH_SECRET, INTEGRATION_ENC_KEY), `dev.db`, cả `.claude/worktrees/`. Gói 4,2 GB.
+        # Đã gỡ hai khối đè đó; bước này canh để lỗi KHÔNG tái phát trong im lặng — vì nó là loại
+        # hỏng mà mọi dấu hiệu bề mặt vẫn xanh: app chạy bình thường, chỉ là đem theo bí mật.
+        run: |
+          set -e
+          APP="dist-installer/mac-arm64/InteriorFlow.app/Contents/Resources/app"
+          for pat in ".env" "*.db" ".claude"; do
+            n=$(find "$APP" -name "$pat" 2>/dev/null | wc -l)
+            echo "$pat trong gói: $n"
+            if [ "$n" -ne 0 ]; then echo "::error::Gói macOS chứa $pat — DỪNG phát hành"; exit 1; fi
+          done
+
       - name: Liệt kê thành phẩm
         run: ls -lh dist-installer/*.dmg dist-installer/*.zip 2>/dev/null || ls -lh dist-installer
 
@@ -80,3 +95,71 @@ jobs:
           path: dist-installer/*.dmg
           if-no-files-found: error
           retention-days: 14
+
+  dung-exe:
+    # Bộ cài Windows — bản công ty phát cho máy nhân viên. Chạy SONG SONG với job macOS:
+    # một lần push ra cả hai bộ cài, không phải nhớ chạy hai lần.
+    # `shell: bash` cho MỌI bước để câu lệnh giống hệt job macOS (runner Windows có sẵn bash) —
+    # tránh cảnh cùng một việc mà hai job viết hai kiểu rồi phân kỳ.
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Cài phụ thuộc
+        run: npm ci
+        env:
+          DATABASE_URL: file:./prisma/dev.db
+
+      - name: Kiểm trước phát hành
+        run: node scripts/release-preflight.mjs
+
+      - name: Dựng bản web (.next)
+        run: npx next build
+        env:
+          DATABASE_URL: file:./prisma/dev.db
+
+      - name: Có .next chưa (chặn gói rỗng)
+        run: test -f .next/BUILD_ID && echo "BUILD_ID = $(cat .next/BUILD_ID)"
+
+      - name: Đóng gói .exe
+        run: npx electron-builder --win --x64 --publish never
+        env:
+          DATABASE_URL: file:./prisma/dev.db
+          # Không có chứng chỉ ký Windows trên runner ⇒ trình cài KHÔNG ký. Windows sẽ hiện màn
+          # SmartScreen xanh "Windows protected your PC" ở lần chạy đầu — bấm "More info" →
+          # "Run anyway". Đây là KỲ VỌNG của bản nội bộ, không phải lỗi; giống hệt vai trò của
+          # Gatekeeper bên macOS (xem G7-NGHIEM-THU-MAC T11).
+          CSC_LINK: ''
+          CSC_KEY_PASSWORD: ''
+
+      - name: Gói có nuốt bí mật không (chặn cứng)
+        # Cùng lỗ đã đo 05/09 trên bản macOS: `build.win.files` từng THAY THẾ danh sách gốc nên
+        # gói nuốt cả `.env` và CSDL. Đã sửa; bước này canh để nó KHÔNG tái phát trong im lặng.
+        run: |
+          set -e
+          APP="dist-installer/win-unpacked/resources/app"
+          for pat in ".env" "*.db" ".claude"; do
+            n=$(find "$APP" -name "$pat" 2>/dev/null | wc -l)
+            echo "$pat trong gói: $n"
+            if [ "$n" -ne 0 ]; then echo "::error::Gói Windows chứa $pat — DỪNG phát hành"; exit 1; fi
+          done
+
+      - name: Liệt kê thành phẩm
+        run: ls -lh dist-installer/*.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: InteriorFlow-Windows-x64
+          path: dist-installer/*.exe
+          if-no-files-found: error
+          retention-days: 14
+
