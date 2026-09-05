@@ -120,6 +120,37 @@ tách vẽ diện đồ nội thất...) đều là mặt tiền của MỘT eng
   máy tự suy diễn đi tiếp trên giả định chưa duyệt. Trong lúc làm cứ ghi câu hỏi vào báo cáo/sổ,
   đừng hỏi ngay.
 - **KHÔNG tự push lên `origin/main`** trừ khi được yêu cầu rõ ràng trong phiên đó.
+
+  🔴 **ĐÍNH CHÍNH 05/09 — DÒNG TRÊN ĐANG BỊ ĐỌC NGƯỢC, VÀ NÓ LÀ GỐC CỦA MỘT BỆNH LẶP.**
+  Câu đó viết ra để chặn **ĐẨY THẲNG KHÔNG QUA DUYỆT**. Nó **KHÔNG** nói cấm *gộp một nhánh đã
+  qua cổng vào main* — mà gộp mới chính là cách thân cây đi tới. Bị đọc thành "không được đụng
+  main" thì thân cây đóng băng, và mỗi phiên phải tự dựng nhánh "thật" của riêng mình.
+
+  **Đo tại nguồn 05/09, có ngày tháng rõ ràng:**
+  · `main` tiến bằng GỘP **197 lần** cho tới **16/08** — rồi **dừng hẳn**.
+  · Sau 16/08: **118 commit vào main, 0 commit gộp**. Sau 03/09: `main` đứng yên.
+  · Nay **3 nhánh cùng tự nhận là thật** (`nen-checkpoint` · `integration/2026-09-04` ·
+    `checkpoint/2026-08-24-control-plane`), nhánh làm việc đi trước main **565 commit**.
+  · **14 PR mở · 13 nháp · cũ nhất 31/08 · 0 cái đã gộp.**
+  · **12/12** nhánh `claude/slice-*` **nằm TRỌN** trong nhánh làm việc ⇒ **không mất việc nào**;
+    thứ mất là **TÍN HIỆU** — 14 dòng mà 12 dòng đã được chứa thì 2 dòng đáng đọc bị chôn.
+
+  ⚠️ **VẾ THIẾU, mới là gốc thật:** có luật bắt **LUÔN MỞ PR** cho nhánh vừa đẩy, nhưng **không
+  luật nào nói ai ĐÓNG PR**. Cửa vào bắt buộc, cửa ra không có. Mọi hệ như thế đều phình — 14 PR
+  treo là **đầu ra tất định của bộ luật**, không phải ai đó lười. Sửa bằng cách nhắc nhau là vô
+  ích; phải có **cửa ra thành văn + máy canh**.
+
+- 🌳 **LUẬT VÒNG ĐỜI NHÁNH & PR (mở 05/09) — cửa ra còn thiếu:**
+  1. **`main` là thân cây duy nhất.** Nhánh dài ngày chỉ được tồn tại khi có lý do ghi ra được
+     (nhánh dựng bộ cài, nhánh sao lưu). Mọi nhánh việc phải kết thúc bằng **gộp vào main** hoặc
+     **đóng kèm lý do** — không có trạng thái thứ ba.
+  2. **PR mở ra thì phải có đường đóng.** Nội dung đã nằm trọn trong nhánh khác ⇒ đóng PR + xoá
+     nhánh, ghi rõ *"đã được chứa trong X"*. Đó là **dọn tín hiệu, không phải bỏ việc**.
+  3. **Gộp vào main KHÔNG phải là "tự push lên main".** Gộp một nhánh **đã qua cổng máy** là
+     việc bình thường và cần thiết; thứ bị cấm là đẩy thẳng thứ chưa ai kiểm.
+  4. **Máy canh:** `npm run soi:than-cay` — đo 4 dấu hiệu (thân cây tụt · nhánh ma · nhánh bỏ
+     hoang · **thân cây chẻ**), có bánh cóc trong `scripts/foundation-tran.json`, chỉ được kéo
+     xuống. Máy **không gộp, không xoá, không đóng PR** — nó chỉ đo và nói.
 - File gói `.md`/`.txt` dán tạm ở gốc repo (kiểu IF-DOCS-BATCH-*.md, PROMPT-*.txt) → xử lý xong
   thì XOÁ, không giữ lại làm rác.
 - Nếu file `docs/files.zip` hoặc file lạ không phải do Cowork tạo xuất hiện → để nguyên, không đụng.
