@@ -125,7 +125,7 @@ export default function SearchProjectsInput() {
         onKeyDown={onKeyDown}
         placeholder={tr('Tìm tên, ghi chú, dự án…', 'Search name, note, project…')}
         aria-label={tr('Tìm dự án', 'Search projects')}
-        className="min-w-0 bg-transparent text-[length:var(--fs-sm)] text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none"
+        className="min-w-0 bg-transparent text-[length:var(--fs-sm)] text-[var(--t1)] placeholder:text-[var(--t4)]"
         style={{ width: wide ? 220 : 180 }}
       />
       {query ? (

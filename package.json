@@ -1,6 +1,6 @@
 {
   "name": "interiorflow",
-  "version": "0.1.0-cp",
+  "version": "0.1.1-cp",
   "private": true,
   "description": "InteriorFlow — integrated workspace for interior design delivery (native desktop).",
   "author": "InteriorFlow",
@@ -17,11 +17,15 @@
     "soi:quan-tri": "node scripts/soi-quan-tri.mjs",
     "soi:hinh-hoc": "node scripts/soi-hinh-hoc.mjs",
     "soi:tu-dien": "node scripts/soi-tu-dien.mjs",
+    "soi:dong-dang": "node scripts/soi-dong-dang.mjs",
     "soi:thao-tac": "node scripts/soi-thao-tac.mjs",
     "ship:map": "node scripts/sinh-ship-map.mjs",
     "soi:contract": "node scripts/soi-contract.mjs",
     "soi:that": "node scripts/soi-that.mjs",
     "soi:cam-dien": "node scripts/soi-cam-dien.mjs",
+    "soi:cong-cu-chet": "node scripts/soi-cong-cu-chet.mjs",
+    "soi:mat-tu-cham": "node scripts/soi-mat-tu-cham.mjs",
+    "soi:mat-tien": "node scripts/soi-mat-tien.mjs",
     "release:preflight": "node scripts/release-preflight.mjs",
     "soi:du-lieu-dong-goi": "node scripts/soi-du-lieu-dong-goi.mjs",
     "soi:giay-phep": "node scripts/soi-giay-phep-phat-hanh.mjs",
@@ -49,8 +53,8 @@
     "soi:so-ngay": "node scripts/soi-so-khong-ngay.mjs",
     "soi:thiet-ke": "node scripts/cong-thiet-ke.mjs .",
     "soi:thiet-ke:tu-kiem": "node scripts/cong-thiet-ke.mjs --tu-kiem",
-    "test:ky-thuat": "npm run tsc && npm run license:check && npm run soi:giay-phep && npm run soi:thu-muc && npm run soi:con-tro -- --chan && npm run soi:route-dev -- --chan && npm run soi:worker -- --chan && npm run soi:trung-tinh -- --chan && npm run soi:so-ngay -- --chan && npm run soi:tep-nang -- --chan && npm run check:mocks && npm run soi:vang-mat && npm run check:chot && npm run soi:quan-tri && npm run soi:frontier && npm run soi:hinh-hoc && npm run soi:tu-dien && npm run soi:contract && npm run soi:that && npm run soi:cam-dien && npm run soi:kho-tai-lieu && npm run soi:visual-source && npm run soi:thao-tac && npm run soi:design-school && npm run soi:foundation -- --tran",
-    "test:sweep": "find . -name '*.test.ts' -not -path '*/node_modules/*' -not -path '*/.worktrees/*' -not -path '*/.claude/worktrees/*' -not -name 'edgecase-concurrency.test.ts' -print0 | xargs -0 -n1 -P8 sh -c 'node_modules/.bin/sucrase-node \"$0\"'",
+    "test:ky-thuat": "npm run tsc && npm run soi:css-can -- --chan && npm run license:check && npm run soi:giay-phep && npm run soi:thu-muc && npm run soi:con-tro -- --chan && npm run soi:route-dev -- --chan && npm run soi:worker -- --chan && npm run soi:trung-tinh -- --chan && npm run soi:so-ngay -- --chan && npm run soi:tep-nang -- --chan && npm run check:mocks && npm run soi:vang-mat && npm run check:chot && npm run soi:quan-tri && npm run soi:frontier && npm run soi:hinh-hoc && npm run soi:tu-dien && npm run soi:contract && npm run soi:that && npm run soi:cam-dien && npm run soi:kho-tai-lieu && npm run soi:visual-source && npm run soi:thao-tac && npm run soi:design-school && npm run soi:foundation -- --tran",
+    "test:sweep": "find . -name '*.test.ts' -not -path '*/node_modules/*' -not -path '*/.worktrees/*' -not -path '*/.claude/worktrees/*' -not -path './app/api/*' -not -path './lib/server/*' -not -name 'edgecase-concurrency.test.ts' -print0 | xargs -0 -n1 -P8 sh -c 'set -a; [ -f .env ] && . ./.env; set +a; node_modules/.bin/sucrase-node \"$0\"' && find ./app/api ./lib/server -name '*.test.ts' -not -name 'edgecase-concurrency.test.ts' -print0 | xargs -0 -n1 -P1 sh -c 'set -a; [ -f .env ] && . ./.env; set +a; node_modules/.bin/sucrase-node \"$0\"'",
     "test:so-sach": "e=0; npm run soi:cau -- --chan || e=1; npm run soi:ban -- --chan || e=1; exit $e",
     "test": "e=0; npm run test:ky-thuat || e=1; npm run test:sweep || e=1; npm run test:so-sach || e=1; exit $e",
     "postinstall": "prisma generate",
@@ -65,7 +69,9 @@
     "electron:pack:mac": "npm run soi:giay-phep -- --chan && npm run soi:du-lieu-dong-goi -- --hop-dong --chan && electron-builder --mac --publish never && npm run soi:du-lieu-dong-goi -- --chan && node scripts/sinh-bien-nhan-phat-hanh.mjs",
     "dev:electron": "node scripts/dev-electron.mjs",
     "soi:foundation": "node scripts/soi-foundation.mjs",
-    "soi:design-school": "node scripts/soi-design-school.mjs"
+    "soi:design-school": "node scripts/soi-design-school.mjs",
+    "soi:css-can": "node scripts/soi-css-can.mjs",
+    "soi:moat": "node scripts/soi-moat.mjs"
   },
   "dependencies": {
     "@fal-ai/client": "^1.10.1",
@@ -124,7 +130,8 @@
       {
         "provider": "github",
         "owner": "tranthaihoatth95-pixel",
-        "repo": "INTERIORFLOW"
+        "repo": "INTERIORFLOW",
+        "releaseType": "release"
       }
     ],
     "directories": {
@@ -166,7 +173,26 @@
       "!public/comments-images/**",
       "!public/library-assets/lincoln-327/**",
       "!public/anh-khoa/**",
-      "!public/.DS_Store"
+      "!public/.DS_Store",
+      "!node_modules/.prisma/client/libquery_engine-*",
+      "!node_modules/.prisma/client/query_engine-*",
+      "!node_modules/prisma/libquery_engine-*",
+      "!node_modules/prisma/query_engine-*",
+      "!.env",
+      "!.env.*",
+      "!**/.env",
+      "!**/.env.*",
+      "!**/*.db",
+      "!**/*.db-journal",
+      "!**/*.db-wal",
+      "!**/*.db-shm",
+      "!.claude/**",
+      "!.git/**",
+      "!dist-installer/**",
+      "!docs/**",
+      "!.nen-*/**",
+      "!node_modules/@prisma/engines/*query_engine*",
+      "!node_modules/@prisma/engines/*libquery*"
     ],
     "extraResources": [
       {
@@ -200,7 +226,21 @@
           ]
         }
       ],
-      "icon": "electron/icons/icon.png"
+      "icon": "electron/icons/icon.png",
+      "extraResources": [
+        {
+          "from": "node_modules/.prisma",
+          "to": "app/node_modules/.prisma",
+          "filter": [
+            "**/*",
+            "!**/*.db",
+            "!**/*.db-journal",
+            "!**/libquery_engine-linux-*",
+            "!**/libquery_engine-darwin-*",
+            "!**/*debian*"
+          ]
+        }
+      ]
     },
     "mac": {
       "target": [
@@ -211,9 +251,27 @@
           ]
         }
       ],
-      "icon": "electron/icons/icon.png",
+      "icon": "electron/icons/icon-mac.png",
       "category": "public.app-category.graphics-design",
-      "identity": null
+      "notarize": false,
+      "hardenedRuntime": true,
+      "entitlements": "electron/entitlements.mac.plist",
+      "entitlementsInherit": "electron/entitlements.mac.inherit.plist",
+      "gatekeeperAssess": false,
+      "extraResources": [
+        {
+          "from": "node_modules/.prisma",
+          "to": "app/node_modules/.prisma",
+          "filter": [
+            "**/*",
+            "!**/*.db",
+            "!**/*.db-journal",
+            "!**/query_engine-windows.dll.node",
+            "!**/libquery_engine-linux-*",
+            "!**/*debian*"
+          ]
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -221,7 +279,23 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "InteriorFlow"
+      "shortcutName": "InteriorFlow",
+      "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "extraResources": [
+        {
+          "from": "node_modules/.prisma",
+          "to": "app/node_modules/.prisma",
+          "filter": [
+            "**/*",
+            "!**/*.db",
+            "!**/*.db-journal",
+            "!**/query_engine-windows.dll.node",
+            "!**/libquery_engine-darwin-*"
+          ]
+        }
+      ]
     }
   }
 }

@@ -127,6 +127,7 @@ export async function promoteProjectFile(input: PromoteInput): Promise<PromoteRe
     where: { id: input.projectFileId },
     select: {
       id: true, projectId: true, name: true, mime: true, path: true, deletedAt: true,
+      // hash đã tính lúc nhận tệp — kéo theo để KHÔNG băm lại binary lần hai.
       contentHash: true,
     },
   });

@@ -238,7 +238,7 @@ export default function BatDauNgaySoKhong({
           <ChevronRight
             size={14}
             aria-hidden
-            style={{ transform: moDuongDi ? 'rotate(90deg)' : undefined, transition: 'transform 160ms ease' }}
+            style={{ transform: moDuongDi ? 'rotate(90deg)' : undefined, transition: 'transform var(--nhip-vien) ease' }}
           />
         </button>
       </div>

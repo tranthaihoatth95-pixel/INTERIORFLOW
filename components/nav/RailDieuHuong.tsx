@@ -69,6 +69,7 @@ import {
   BE_RONG_NAC,
   nacKe,
   duongCua,
+  goiYCua,
   mucDangMo,
   lyDoMo,
   type MucRail,
@@ -454,7 +455,7 @@ export function RailDieuHuong() {
       // Giữ trọn cả hai luật: canvas không bao giờ bị bóp · nấc mở không bao giờ che nội dung.
       style={{
         width: dangTrongChang ? BE_RONG_NAC.dinhVi : BE_RONG_NAC[nac],
-        transition: 'width 180ms cubic-bezier(.32,.72,0,1)',
+        transition: 'width var(--nhip-vien) cubic-bezier(.32,.72,0,1)',
         flexShrink: 0,
         position: 'relative',
         zIndex: 5,
@@ -659,7 +660,8 @@ export function RailDieuHuong() {
                 key={muc.id}
                 muc={muc}
                 duongDi={duongCua(muc, duAnHieuLuc)}
-                lyDo={lyDoMo(muc, daMoDuAn)}
+                lyDo={lyDoMo(muc)}
+                goiY={goiYCua(muc, daMoDuAn)}
                 dangMo={dangMo === muc.id}
                 hienChu={hienChu}
                 gonDoc={cum === 'chang'}
@@ -890,6 +892,7 @@ function HangRail({
   muc,
   duongDi,
   lyDo,
+  goiY,
   dangMo,
   hienChu,
   tinhTrang,
@@ -898,6 +901,13 @@ function HangRail({
   muc: MucRail;
   duongDi: string | null;
   lyDo: { vi: string; en: string } | null;
+  /**
+   * Gợi ý cho mục CÒN BẤM ĐƯỢC — khác hẳn `lyDo` (lý do TẮT).
+   * `lyDo` = "bấm cũng không ra gì, và đây là vì sao" · `goiY` = "bấm được, và đây là điều sẽ
+   * xảy ra". Hoà nhánh 05/09: "chưa có dự án" thôi làm lý do TẮT (nó tắt mất các mục chặng ⇒
+   * trái LUẬT X2) và chuyển sang kênh này, đi kèm một đường dẫn sống về chỗ tạo dự án.
+   */
+  goiY?: { vi: string; en: string } | null;
   dangMo: boolean;
   hienChu: boolean;
   tinhTrang: string | null;
@@ -919,6 +929,7 @@ function HangRail({
   /* `hienVien` đã gỡ cùng viên nhãn nở-khi-rê (02/09). `reVao` GIỮ LẠI: nó vẫn là kênh hover
    * cho nền hàng, và giữ `onFocus`/`onBlur` nghĩa là bàn phím vẫn thấy đúng thứ chuột thấy. */
   const lyDoChu = lyDo ? tr(lyDo.vi, lyDo.en) : null;
+  const goiYChu = goiY ? tr(goiY.vi, goiY.en) : null;
   const idLyDo = `rail-ly-do-${muc.id}`;
   // Mở/đóng viên nhãn. Gắn cho CẢ chuột lẫn bàn phím — tablet không có hover nên ở đó viên nhãn
   // không mọc, và đó là chấp nhận được: nấc định vị trên cảm ứng vẫn còn Tooltip nhấn-giữ.
@@ -1094,34 +1105,49 @@ function HangRail({
   // Ở nấc ĐỊNH VỊ hàng dùng được thì VIÊN NHÃN đã nói tên — bày thêm Tooltip là hai tấm cùng lúc,
   // và tấm kia neo theo con trỏ đúng thứ chốt cấm. Hàng MỜ vẫn giữ Tooltip vì nó chở LÝ DO, thứ
   // viên nhãn không chở.
+  /* Gợi ý (nếu có) đi CÙNG ĐƯỜNG với lý do: `aria-describedby` trỏ một phần tử ẩn, KHÔNG `title`.
+     Bài học 16/08 (`ToolbarChip.tsx`): `title=` câm trên cảm ứng và trình đọc màn hình đọc không
+     nhất quán ⇒ đúng cái cần giải thích nhất lại mất kênh giải thích. */
+  const moTaPhu = goiYChu ? (
+    <span id={idLyDo} className="if-tooltip-a11y">
+      {goiYChu}
+    </span>
+  ) : null;
+
   if (!hienChu) {
     return (
-      <Link
-        href={duongDi}
-        {...cuChi}
-        aria-current={dangMo ? 'page' : undefined}
-        data-chi-dau={dangMo ? 'dang-mo' : undefined}
-        aria-label={nhan}
-        style={chung}
-        className="transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
-      >
-        {ruot}
-      </Link>
+      <>
+        <Link
+          href={duongDi}
+          {...cuChi}
+          aria-current={dangMo ? 'page' : undefined}
+          data-chi-dau={dangMo ? 'dang-mo' : undefined}
+          aria-label={nhan}
+          aria-describedby={goiYChu ? idLyDo : undefined}
+          style={chung}
+          className="transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
+        >
+          {ruot}
+        </Link>
+        {moTaPhu}
+      </>
     );
   }
 
   return (
-    <Tooltip label={nhan} style={{ width: '100%' }}>
+    <Tooltip label={nhan} desc={goiYChu ?? undefined} style={{ width: '100%' }}>
       <Link
         href={duongDi}
         {...cuChi}
         aria-current={dangMo ? 'page' : undefined}
         data-chi-dau={dangMo ? 'dang-mo' : undefined}
+        aria-describedby={goiYChu ? idLyDo : undefined}
         style={chung}
         className="transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
       >
         {ruot}
       </Link>
+      {moTaPhu}
     </Tooltip>
   );
 }

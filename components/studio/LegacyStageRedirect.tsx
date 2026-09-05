@@ -27,19 +27,46 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { activeProjectRouteId } from '@/lib/project-scope';
+import { activeProjectRouteIdCho } from '@/lib/project-scope';
 import { stageRoutePath, type StageSegment } from '@/lib/scope-core';
 
 export default function LegacyStageRedirect({ stage }: { stage: StageSegment }) {
   const router = useRouter();
 
+  /**
+   * ⛔ D7 (04/09) — CHỜ ĐỊNH DANH RỒI MỚI ĐIỀU HƯỚNG, đừng đọc đồng bộ.
+   *
+   * Bản cũ gọi `activeProjectRouteId()` ĐỒNG BỘ ngay đây. Effect này có deps `[router, stage]`
+   * — cả hai bất biến trên một lượt vào — nên nó chạy đúng MỘT lần và không bao giờ chạy lại.
+   * Mở bookmark cũ `/cad-editor` bằng tab mới: store rỗng (chưa điều hướng gì trong phiên) và
+   * bộ đệm `lastUserId` chưa được gieo (trình duyệt chưa đi qua Home/đăng nhập) ⇒ hàm trả
+   * `null` ⇒ dội người dùng về `/?notice=choose-project` DÙ resume trên đĩa đã đủ `flowId` và
+   * phiên máy chủ vẫn hợp lệ. Tái hiện có đối chứng, hai thế giới khác nhau đúng một biến:
+   * `scripts/nghiem-thu-ban-lam-viec/tai-hien-d7.mjs`.
+   *
+   * `activeProjectRouteIdCho` hỏi store trước (điều hướng trong phiên vẫn nhanh như cũ, không
+   * chờ mạng), chỉ chờ định danh khi store rỗng — tức đúng ca bookmark/deep-link.
+   *
+   * KHÔNG LOÉ HOME: chỉ có MỘT lần `router.replace`, và nó xảy ra SAU khi đã biết đích. Trong
+   * lúc chờ, trang vẫn là spinner bên dưới — người dùng không bao giờ thấy Home hiện lên rồi
+   * biến mất. Bộ đo canh đúng điều này bằng `framenavigated` (`loeHome`), không bằng ảnh chụp.
+   */
   useEffect(() => {
-    const id = activeProjectRouteId();
-    router.replace(id ? stageRoutePath(id, stage) : '/?notice=choose-project');
+    let conSong = true;
+    void activeProjectRouteIdCho(() => conSong).then((id) => {
+      if (!conSong) return;
+      router.replace(id ? stageRoutePath(id, stage) : '/?notice=choose-project');
+    });
+    return () => {
+      conSong = false;
+    };
   }, [router, stage]);
 
-  // Nhịp chờ rất ngắn (không gọi API) — chỉ một spinner trầm để không nháy nền trắng,
-  // dù đích là route scope dự án hay Dashboard.
+  // Spinner trầm để không nháy nền trắng, dù đích là route scope dự án hay Dashboard.
+  // ⚠️ 04/09 — chú thích cũ ghi "nhịp chờ rất ngắn (không gọi API)": KHÔNG CÒN ĐÚNG. Đường
+  // bookmark nay chờ `/api/auth/me` (đã single-flight, thường ~vài chục ms; trần `HAN_HOI_MS`
+  // 8s khi máy chủ không với tới). Đổi một lượt chờ ngắn lấy việc không dội nhầm người dùng về
+  // Home là đánh đổi cố ý — và ở ca máy chủ không với tới thì MỌI câu trả lời đều là phỏng đoán.
   return (
     <div style={{ display: 'grid', placeItems: 'center', height: '100dvh', background: 'var(--bg)' }}>
       <Loader2 size={20} className="animate-spin" style={{ color: 'var(--t4)' }} />

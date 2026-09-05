@@ -1,0 +1,87 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8">
+<title>Home · Nghiên cứu A — BÌA TẠP CHÍ</title>
+<!-- @dsCard group="Home · nghiên cứu bố cục" -->
+<link rel="stylesheet" href="_home-nc-nen.css">
+<style>
+/* ═══ A · BÌA TẠP CHÍ — công việc đang dở CHIẾM MẶT TIỀN, không nằm trong thẻ ═══
+   Ý: Home không phải bảng điều khiển, nó là BÌA của việc bạn đang làm. Không có card nào
+   ở lớp chính; ảnh dự án LÀ mặt phẳng. Thông tin phụ là CHỮ trên nền, không có vỏ. */
+.a-nen{position:absolute;inset:0;display:grid;grid-template-columns:1fr 372px}
+/* ① TIÊU ĐIỂM — tràn viền, không bo, không viền, không bóng: nó là TRANG chứ không phải THẺ */
+.a-bia{position:relative;overflow:hidden;background:
+  radial-gradient(120% 90% at 18% 8%, #6b5233 0%, #2e2115 42%, #14100b 100%)}
+:root[data-theme='light'] .a-bia{background:
+  radial-gradient(120% 90% at 18% 8%, #d8c3a4 0%, #a68d6d 44%, #6f5c46 100%)}
+/* dải dìm CỤC BỘ chỉ ở chân chữ — luật 16/08: không dìm cả tấm, đo tương phản TẠI CHÂN CHỮ */
+.a-bia::after{content:'';position:absolute;left:0;right:0;bottom:0;height:56%;
+  background:linear-gradient(to top, rgba(0,0,0,.74), rgba(0,0,0,.34) 46%, transparent)}
+.a-chu{position:absolute;left:64px;right:64px;bottom:60px;z-index:2;color:#fff}
+.a-chu .hien{margin:10px 0 14px;max-width:15ch}
+.a-meta{display:flex;gap:26px;align-items:baseline;color:rgba(255,255,255,.86);font-size:var(--fs-sm)}
+.a-nut{margin-top:26px;display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 22px;
+  border-radius:var(--r-full);background:#fff;color:#17140f;font-weight:600;font-size:var(--fs-md)}
+.a-phu-nut{margin-left:18px;color:rgba(255,255,255,.72);font-size:var(--fs-sm)}
+/* ② LỚP THÔNG TIN NỀN — KHÔNG THẺ. Chỉ chữ + khoảng trắng + một vạch mảnh. */
+.a-ben{padding:56px 40px 40px;display:flex;flex-direction:column;gap:0}
+.a-muc{padding:22px 0;border-bottom:1px solid var(--vien-mo)}
+.a-muc:first-child{padding-top:0}
+.a-muc:last-child{border-bottom:0}
+.a-hang{display:flex;justify-content:space-between;align-items:baseline;gap:14px}
+.a-hang+.a-hang{margin-top:9px}
+.a-hang b{font-weight:600;font-size:var(--fs-sm)}
+.a-hang span{color:var(--t3);font-size:var(--fs-sm)}
+.a-so{display:flex;gap:28px;margin-top:12px}
+.a-so div{display:flex;flex-direction:column;gap:3px}
+.a-so b{font-size:22px;font-weight:600;letter-spacing:-.01em}
+/* ba dự án khác = DÒNG, không phải lưới thẻ */
+.a-dong{display:flex;align-items:center;gap:12px;padding:9px 0}
+.a-dong i{width:34px;height:26px;border-radius:var(--r-1);flex:0 0 34px;
+  background:linear-gradient(140deg,#8a7154,#4a3b2b)}
+.a-dong u{text-decoration:none;flex:1;font-size:var(--fs-sm)}
+.a-dong s{text-decoration:none;color:var(--t4);font-size:var(--fs-xs)}
+.a-note{margin-top:14px;height:38px;border-radius:var(--r-2);border:1px dashed var(--vien-mo);
+  display:flex;align-items:center;padding:0 12px;color:var(--t4);font-size:var(--fs-xs)}
+</style></head><body>
+<div class="khung">
+  <nav class="rail"><i class="on"></i><i></i><i></i><i></i><i></i><hr><i></i><i></i><i></i><i></i><hr><i></i><i></i></nav>
+  <div class="than"><div class="a-nen">
+    <section class="a-bia">
+      <div class="ghi" style="left:20px;top:20px">① tiêu điểm · tràn viền · KHÔNG phải thẻ</div>
+      <div class="a-chu">
+        <div class="nhan" style="color:rgba(255,255,255,.72)">Đang dở · Thiết kế 2D</div>
+        <div class="hien">Căn hộ Thảo Điền</div>
+        <div class="a-meta">
+          <span class="so">3 bản vẽ</span><span class="so">78 m²</span>
+          <span class="so">dừng lúc 16:20 hôm qua</span>
+        </div>
+        <div><a class="a-nut">Mở lại mặt bằng tầng 2 →</a>
+        <span class="a-phu-nut">hoặc bắt đầu dự án mới</span></div>
+      </div>
+    </section>
+    <aside class="a-ben">
+      <div class="ghi" style="right:20px;top:18px">② lớp nền · không vỏ</div>
+      <div class="a-muc">
+        <div class="hien-nho" style="font-size:22px">Chiều muộn, Kiêm</div>
+        <div class="phu" style="margin-top:6px">Ánh sáng 2700K · mặt trời lặn 18:04</div>
+      </div>
+      <div class="a-muc">
+        <div class="nhan">Đang chạy</div>
+        <div class="a-so">
+          <div><b class="so">4</b><span class="nhan">2D</span></div>
+          <div><b class="so">0</b><span class="nhan">3D</span></div>
+          <div><b class="so">0</b><span class="nhan">Trình chiếu</span></div>
+        </div>
+      </div>
+      <div class="a-muc">
+        <div class="nhan">Dự án khác</div>
+        <div class="a-dong"><i></i><u>Detech Complex</u><s>2 ngày</s></div>
+        <div class="a-dong"><i></i><u>Nhà phố Bình Thạnh</u><s>1 tuần</s></div>
+        <div class="a-dong"><i></i><u>Sungroup Beach Club</u><s>3 tuần</s></div>
+      </div>
+      <div class="a-muc">
+        <div class="nhan">Ghi nhanh</div>
+        <div class="a-note">Gõ ghi chú rồi Enter…</div>
+      </div>
+    </aside>
+  </div></div>
+</div></body></html>

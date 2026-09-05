@@ -42,6 +42,7 @@
  */
 
 import type { Prim } from './furniture';
+import type { BuildRecipe } from './model';
 import type { BlockGroup, ShapeVariant, SnapAnchor, ClearanceZone } from './shared-types';
 import type { MaterialPbr } from '../materials/schema';
 
@@ -162,6 +163,21 @@ export interface IdfcGeom3d {
   bevelMm?: number;
   matId?: string;
   pbr?: MaterialPbr;
+  /**
+   * ⭐ G6 (04/09) — CÔNG THỨC KHỐI đi cùng cấu kiện. Trước dòng này `grep "recipe" lib/cad/idfc.ts`
+   * = **0**: `BuildRecipe` sống được qua `.idf` (tệp dự án, `Base.recipe`) nhưng **MẤT** ngay khi
+   * cấu kiện rời khỏi bản vẽ để lên kho studio dưới dạng `.idfc` — tức đúng lúc nó thành TÀI SẢN
+   * DÙNG LẠI thì nó thôi là tham số và trở lại thành lưới chết. Đó là thứ hợp đồng G4 §3 cấm.
+   *
+   * ADDITIVE, optional: `.idfc` v1-v3 đã ghi ra đĩa KHÔNG có trường này vẫn đọc y nguyên, không
+   * cần bậc migration nào (v3 giữ nguyên số hiệu — thêm trường tuỳ chọn không đổi nghĩa trường
+   * nào đã có). Kiểu lấy từ `./model` — lõi THUẦN, `idfc.ts` không vì thế mà chạm `three`.
+   *
+   * Ngữ nghĩa GIỐNG HỆT `Base.recipe`: thứ tự mảng là thứ tự áp dụng; bậc `enabled:false` giữ
+   * nguyên tham số. Nơi tiêu thụ là `evalRecipe`/`resolveSceneGroupGeometry` sẵn có — KHÔNG
+   * evaluator thứ hai.
+   */
+  recipe?: BuildRecipe;
 }
 
 /** Ký hiệu 2D của VẬT LIỆU (hatch trên bản vẽ) — khuôn con `MaterialDef` (lib/cad/materials.ts),
@@ -191,6 +207,15 @@ export type IdfcBody =
   | { type: 'component'; geom2d: IdfcGeom2d; geom3d?: IdfcGeom3d; params?: ShapeVariant[] }
   | {
       type: 'material';
+      /**
+       * ⭐ G6 (04/09) — DANH TÍNH của vật liệu đi theo tệp. Trước dòng này ruột `material` mang đủ
+       * PBR và hatch nhưng **không mang mã**: xuất một vật liệu ra `.idfc` rồi nhập lại ở máy
+       * khác là ra một vật liệu **vô danh** — mọi bản chèn `.idf` đang trỏ vào `matId` cũ không
+       * tìm lại được nó. `meta.code` KHÔNG thay được vai này: code là business key (đổi được),
+       * `matId` là UUID bất biến (chốt 19/08, `matid-identity.ts`).
+       * Optional vì tệp cũ không có — nhập lại vẫn đọc được, chỉ là không nối được danh tính.
+       */
+      matId?: string;
       pbr: MaterialPbr;
       hatch2d?: IdfcHatch2d;
       /** ký hiệu 2D dạng block (vật liệu có swatch vẽ được) — cũng là nơi giữ `geom2d` của file
@@ -207,6 +232,27 @@ export type IdfcBody =
 /** ③ mặt Trình chiếu/thương mại — khuôn con `ProductSpec`. V2 BỎ `kind` (đã lên `meta.kind` —
  * một sự thật một chỗ); `priceVnd` để `number` (JSON không có Decimal — tầng ghi DB tự đổi). */
 export interface IdfcCommerce {
+  /**
+   * ⭐ KHOÁ BẤT BIẾN — `ProductSpec.id` (FK mềm, CÙNG namespace `BlockEntity.specId`/
+   * `HatchEntity.specId` mà `Doc` và `computeBoq` đang neo). ADDITIVE 04/09, KHÔNG bump
+   * `IDFC_VERSION`: trường optional thuần, tệp v3 cũ (chỉ có `sku`) mở lại y nguyên và rơi về
+   * đường lùi sku — xem `resolveIdfcCommerceToSpec` (lib/materials/warehouse/catalog-link.ts).
+   *
+   * ⚠️ VÌ SAO CẦN, đo được: `sku` là BUSINESS KEY — nhà cung cấp đổi mã là mất nối. Trước 04/09
+   * cấu kiện rời chỉ nối bằng `sku`, trong khi bản chèn trong `Doc` nối bằng `specId`; hai đầu
+   * của CÙNG một vật neo bằng hai khoá khác hạng bền. `CatalogLink` (idfc-import/asset-family.ts
+   * :129) vốn ĐÃ mang `specId`+`matId`, nhưng đường sinh chỉ chép `brand/sku/vendor` sang
+   * `commerce` — hai khoá bất biến bị bỏ lại trong khoá mở rộng `xAssetFamily`, nên chỗ tiêu thụ
+   * (`catalog-link.ts:readCatalog`) phải parse lại JSON thô mới lấy được, và `.idfc` sinh bằng
+   * `exportIdfc` thuần (không có `xAssetFamily`) thì mất hẳn.
+   *
+   * ⛔ KHÔNG phá luật 2.1.9.i: đây là CON TRỎ, không phải bản sao. Giá vẫn nằm ở `ProductSpec`;
+   * `priceVnd` dưới đây chỉ là ảnh chụp lúc nhập của cấu kiện rời, `specId` mới là đường về nguồn.
+   */
+  specId?: string;
+  /** Khoá bất biến hạng vật liệu — matId UUID canonical (`lib/materials/matid-identity.ts`).
+   * Cùng lý do như `specId`; dùng khi vật là `material` và kho đã backfill `ProductSpec.matId`. */
+  matId?: string;
   brand?: string;
   sku?: string;
   vendor?: string;

@@ -22,17 +22,25 @@
  *     handle). Idle 1px opacity 0.4; hover/active 3px opacity 0.9. Rất subtle,
  *     hint cử chỉ mà không cầu kỳ (tinh thần quiet-luxury TTT).
  *   - Pointer-down trên handle → `createStageDragTracker` phân biệt click/trượt
- *     ngang/kéo xuống (lib/input/stage-drop.ts). Kéo xuống vượt 28px → mở
- *     `VitalsGesturePanel`, chat với backend context-aware theo `active` chặng.
- *   - Pre-mount panel khi drag bắt đầu (fix motion khưng 8d3b6a4 vẫn giữ):
- *     mount opacity 0 → threshold hit set open=true, không cold-mount.
+ *     ngang/kéo xuống (lib/input/stage-drop.ts). Kéo xuống vượt 28px → mở Vitals
+ *     qua kho dùng chung `lib/vitals-ui.ts`.
+ *
+ * 🔴 ĐÍNH CHÍNH 04/09 — TỆP NÀY KHÔNG CÒN MOUNT PANEL VITALS, VÀ KHÔNG CÒN GIỮ ⌘J.
+ *   Bản thân `StageSwitcher` đã bị gỡ khỏi `AppChrome` từ 17/08 (sidebar thành hệ router)
+ *   ⇒ `grep` toàn repo: KHÔNG route nào mount nó. Nhưng nó vẫn là **nơi mount duy nhất** của
+ *   `VitalsGesturePanel` và **nơi đăng ký duy nhất** của ⌘J, nên hai thứ đó chết theo mà không
+ *   ai thấy: ô gõ nhanh ở `StatusBar` gọi `openVitals()` vào hư không — gõ Enter là MẤT CÂU HỎI.
+ *   Cả hai nay về `components/studio/VitalsAperture.tsx` (khẩu độ mép trên, EXS §7 — Hoà duyệt
+ *   mắt 20/08). Ở đây chỉ còn cử chỉ KÉO XUỐNG, và nó gọi thẳng kho dùng chung — nếu tệp này có
+ *   ngày được mount lại thì cử chỉ vẫn mở đúng MỘT panel, không đẻ chỗ đứng thứ hai.
+ *   ⛔ Đừng "khôi phục cho đủ": mount lại panel ở đây là vi phạm `SO-KIEM-TONG` §1 và phá luật
+ *   một-chỗ-đứng (test canh: `components/studio/mot-cho-dung.test.ts`).
  *   - Onboarding subtle: lần đầu vào 1 trong 3 chặng, handle line hiện active
  *     3s + tooltip "↓ Kéo xuống để hỏi Vitals" 4s (key `gesture_hint_seen`).
  *     Sau lần drag đầu (`gesture_first_done`) không hiện lại tooltip.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PencilRuler, Box, Presentation } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
@@ -44,7 +52,7 @@ import { createStageDragTracker } from '@/lib/input/stage-drop';
 import { useVitalsUi } from '@/lib/vitals-ui';
 import { useT } from '@/lib/i18n';
 import Tooltip from '@/components/ui/Tooltip';
-import VitalsGesturePanel, { markVitalsUsed, wasVitalsUsed } from './VitalsGesture';
+import { markVitalsUsed, wasVitalsUsed } from './VitalsGesture';
 
 /** Cùng công thức slug của NotebookButton cũ (đã bỏ khỏi Header). */
 const ICON: Record<Phase, typeof PencilRuler> = { concept: PencilRuler, render: Box, present: Presentation };
@@ -75,11 +83,9 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   // IF2-nền — nhãn pill CAD tự đổi theo `store.stage` ('sketch' | 'technical' | 'bim').
   // Selector này KHÔNG trigger re-render nào ngoài lúc stage thật sự đổi (Zustand shallow-eq).
   const cadStage = useCadStore((s) => s.stage);
-  // SCOPE FIX (Task #18): id ổn định cho `/projects/[id]/notebook` (Project.id thật
-  // hoặc Flow.id) — không slug tên flow (trùng tên → rò dữ liệu chéo giữa dự án).
-  const currentProjectId = useFlowStore((s) => s.currentProjectId);
-  const currentFlowId = useFlowStore((s) => s.currentFlowId);
-  const router = useRouter();
+  /* `currentProjectId` · `currentFlowId` · `router` ĐÃ GỠ 05/09 cùng nhánh teleport `notebook-full`
+     (A1-02): sau khi nhánh đó thôi điều hướng, ba biến này không còn nơi dùng nào ngoài mảng deps
+     — giữ lại là để hở đúng cái móc cho phiên sau dựng lại chỗ đứng thứ hai. */
   const tr = useT();
 
   const dockRef = useRef<HTMLDivElement>(null);
@@ -96,9 +102,8 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   const panelOpen = useVitalsUi((s) => s.panelOpen);
   const openShared = useVitalsUi((s) => s.open);
   const closeShared = useVitalsUi((s) => s.close);
-  const initialInput = useVitalsUi((s) => s.initialInput);
-  const autoSend = useVitalsUi((s) => s.autoSend);
-  const consumeInitial = useVitalsUi((s) => s.consumeInitial);
+  // `initialInput`/`autoSend`/`consumeInitial` đã GỠ khỏi đây 04/09 — chúng thuộc về NƠI MOUNT
+  // panel, và nơi đó nay là `VitalsAperture.tsx`. Đọc lại ở đây là đọc mà không dùng.
   const setPanelOpen = useCallback(
     (v: boolean | ((prev: boolean) => boolean)) => {
       const cur = useVitalsUi.getState();
@@ -108,7 +113,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
     },
     [openShared, closeShared],
   );
-  const [originPx, setOriginPx] = useState<number | null>(null);
+  // `originPx` (điểm gốc phóng của panel theo chỗ ngón đặt) cũng theo panel sang khẩu độ.
   const [handleActive, setHandleActive] = useState(false); // hover HOẶC onboarding highlight
   const [hintTooltip, setHintTooltip] = useState(false);
   // 08/08 — hover màu chữ nút chặng, port `mock-if-3chang.html` `.seg button:hover`.
@@ -139,14 +144,11 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
       const dock = dockRef.current;
       if (!el || !dock) return;
 
-      const dockRect = dock.getBoundingClientRect();
       const startX = e.clientX;
       const startY = e.clientY;
       const tracker = createStageDragTracker();
 
-      // Origin panel: nơi ngón tay bắt đầu, tính từ mép trái dock.
-      setOriginPx(Math.max(0, Math.min(dockRect.width, startX - dockRect.left)));
-      setDragging(true); // → pre-mount panel với open=false (fix motion khưng)
+      setDragging(true);
 
       try {
         el.setPointerCapture(e.pointerId);
@@ -165,15 +167,21 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
             localStorage.setItem(FIRST_DONE_KEY, '1');
           } catch {/* localStorage bị chặn (chế độ riêng tư) — hint/cờ không nhớ được, không chặn việc */}
         } else if (v === 'notebook-full') {
-          // Kéo lần 2 — bỏ popover, mở NotebookLM full modal (route hiện có).
-          setPanelOpen(false);
+          /* Kéo lần 2. TRƯỚC 05/09 nhánh này đẩy sang `/projects/<id>/notebook` — CÙNG MỘT LỖI
+             với nút ⤢ vừa gỡ ở `VitalsGesture.tsx` (A1-02): chỗ đứng THỨ HAI cho Vitals, ở một
+             route không có khẩu độ để quay về, và `|| 'default'` bịa ra dự án không tồn tại.
+             Nay KHÔNG điều hướng đi đâu cả — mức Engage của khẩu độ đã là mặt đầy đủ (EXS §7),
+             nên kéo tiếp chỉ giữ nguyên panel đang mở.
+             ⚠️ Cả tệp này hiện KHÔNG được mount ở đâu (`AppChrome.tsx` gỡ 17/08) nên nhánh này
+             không chạy trên app thật; sửa để nếu có ngày mount lại thì nó KHÔNG hồi sinh chỗ
+             đứng thứ hai — chứ không phải để nó "chạy đúng hơn". Verdict `notebook-full` vẫn do
+             `lib/input/stage-drop.ts` sinh ra; tên đó nay chỉ còn nghĩa "đã kéo qua ngưỡng hai". */
+          if (!panelOpen) setPanelOpen(true);
           setDragging(false);
           markVitalsUsed();
           try {
             localStorage.setItem(FIRST_DONE_KEY, '1');
           } catch {/* localStorage bị chặn (chế độ riêng tư) — hint/cờ không nhớ được, không chặn việc */}
-          const id = currentProjectId || currentFlowId || 'default';
-          router.push(`/projects/${id}/notebook`);
           cleanup();
         } else if (v === 'locked') {
           setDragging(false);
@@ -197,7 +205,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
       window.addEventListener('pointerup', onUp);
       window.addEventListener('pointercancel', onUp);
     },
-    [panelOpen, currentProjectId, currentFlowId, router],
+    [panelOpen],
   );
 
   // Khi panel đóng, dọn dragging để lần drag tiếp không dính state cũ.
@@ -210,28 +218,11 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
     };
   }, [panelOpen, dragging]);
 
-  const shouldMountPanel = dragging || panelOpen;
 
-  // ⌘J (Mac) / Ctrl+J (Win) — mở/đóng Vitals, cả 3 chặng (StageSwitcher mount ở cả 3).
-  // Đã grep trước: repo chưa dùng phím 'j' ở đâu khác — không đè phím tắt sẵn có.
-  // 05/08: `toggle()` không còn tham số anchor (panel chỉ mount ở đây) — mở đúng panel này.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      // Né ô nhập (luật keydown-ne-o-nhap) — cùng khuôn input-guard AppShell/AppChrome.
-      const el = document.activeElement;
-      if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'j' || e.key === 'J')) {
-        e.preventDefault();
-        useVitalsUi.getState().toggle();
-        markVitalsUsed();
-        try {
-          localStorage.setItem(FIRST_DONE_KEY, '1');
-        } catch {/* localStorage bị chặn (chế độ riêng tư) — hint/cờ không nhớ được, không chặn việc */}
-      }
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  /* ⌘J / Ctrl+J — ĐÃ GỠ KHỎI ĐÂY 04/09. Tổ hợp này nay đăng ký DUY NHẤT ở
+     `components/studio/VitalsAperture.tsx` (khẩu độ mép trên), kèm nguyên guard né ô nhập.
+     Giữ ở đây là đăng ký ở một component không được mount ⇒ phím tắt chết, và nếu component
+     này được mount lại thì thành HAI nơi cùng nghe một phím. */
 
   // Ẩn tooltip khi user đã drag lần đầu (dù chưa hết 4s).
   useEffect(() => {
@@ -438,24 +429,9 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
           )}
         </AnimatePresence>
 
-        {/* Panel chat Vitals — NƠI MOUNT DUY NHẤT trong app (05/08, Hoà chốt; xem
-            lib/vitals-ui.ts + SO-KIEM-TONG §1). Pre-mount khi dragging, chỉ open khi threshold
-            hit. `initialInput`/`autoSend` đến từ ô gõ nhanh ở StatusBar — người dùng gõ ở đáy
-            màn, câu hỏi chạy vào panel này. */}
-        {shouldMountPanel && (
-          <VitalsGesturePanel
-            originPx={originPx}
-            open={panelOpen}
-            initialInput={initialInput}
-            autoSend={autoSend}
-            onConsumeInitial={consumeInitial}
-            onClose={() => {
-              setPanelOpen(false);
-              setDragging(false);
-            }}
-            stage={active}
-          />
-        )}
+        {/* Panel chat Vitals ĐÃ RỜI KHỎI ĐÂY (04/09) — nay là mức ③ Engage của khẩu độ mép
+            trên, `components/studio/VitalsAperture.tsx`. Cử chỉ kéo xuống ở trên vẫn mở đúng
+            panel đó qua kho dùng chung `lib/vitals-ui.ts`. */}
       </div>
       {/* 03/08 SPEC-APP-SHELL-CHUNG §2 mục 4 — nhãn "— 01/02/03" ĐÃ CẮT HẲN: Hoà chỉ ra "nhãn
           không ai hiểu" (vi phạm SPEC-NGON-NGU-CHI-DAN — số thứ tự chặng là jargon nội bộ, nút

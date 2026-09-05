@@ -72,11 +72,33 @@ const MAU_NOI_DUNG = [
   '  </svg>',
   ');',
   'const x = { transition: `opacity var(--dur-fast)` };', // ↯ MOTION
+  /* ⛔ HAI KHỐI DƯỚI PHẢI **KHÔNG** BỊ BẮT — chúng khoá lại phần miễn trừ audit 05/09.
+     Ai gỡ nhầm miễn trừ đó thì `--tu-kiem` TRƯỢT ngay, chứ không âm thầm kết tội bản vẽ. */
+  'export const BanVe = ({ vb }) => (',
+  '  <svg viewBox={vb}>',                             // thang KHÔNG đo được (biểu thức JSX)
+  '    <motion.path strokeWidth={0.15} />',            // nét bản vẽ — KHÔNG được bắt
+  '  </svg>',
+  ');',
 ].join('\n');
-if (TU_KIEM) TEP.push(MAU_AO);
+/* Tệp ảo thứ hai, đuôi .css: nhánh CSS không có thẻ cũng không có viewBox, nên nó đi đường
+   `selectorNoiToiIcon` riêng — phải tự kiểm riêng, cả chiều BẮT lẫn chiều KHÔNG BẮT. */
+const MAU_AO_CSS = '«tu-kiem-ao».css';
+const MAU_NOI_DUNG_CSS = [
+  '/* dây nối giữa các node — không thuộc luật này, phải KHÔNG bị bắt */',
+  '.react-flow__edge.selected .react-flow__edge-path { stroke-width: 2.5; }',
+  '/* selector nói rõ đây là nét của một biểu tượng ⇒ PHẢI bắt */',
+  '.if-icon svg { stroke-width: 2; }',
+  '/* MÉP CUỘN — khai overflow dọc mà KHÔNG giữ chỗ thanh cuộn ⇒ PHẢI bắt */',
+  '.ao-cuon-tran { overflow-y: auto; }',
+  '/* ⛔ hai ca dưới PHẢI **KHÔNG** bị bắt — khoá cả hai chiều của luật mép cuộn */',
+  '.ao-cuon-du { overflow-y: auto; scrollbar-gutter: stable; }',
+  '.ao-cuon-ngang { overflow-x: auto; }',
+].join('\n');
+if (TU_KIEM) TEP.push(MAU_AO, MAU_AO_CSS);
 
 const doc = (p) => {
   if (p === MAU_AO) return MAU_NOI_DUNG;
+  if (p === MAU_AO_CSS) return MAU_NOI_DUNG_CSS;
   try { return readFileSync(join(ROOT, p), 'utf8'); } catch { return ''; }
 };
 
@@ -170,6 +192,60 @@ function viewBoxBaoQuanh(src, i) {
   return m ? m[1] : null;
 }
 
+/* ── AI SỞ HỮU NÉT NÀY? — phân định bằng THẺ, không bằng khoảng cách tới `viewBox` ──────────
+ * 🔬 AUDIT THƯỚC 05/09 (luật `_siet-25-08`: audit trước, sửa sau). Chạy probe trên đủ 45 ca đang
+ * bị kết tội, in ra THẺ SỞ HỮU của từng nét. Kết quả: **9 ca là BÁO OAN**, và cả 9 rơi đúng vào
+ * một nhánh — nhánh mà thước KHÔNG CÓ BẰNG CHỨNG GÌ là đang nhìn một icon:
+ *   · `DrawOnPreview.tsx:221,296`  `<motion.path 0.3>` `<motion.line 0.15>` — **bản vẽ mặt bằng**,
+ *      toạ độ mm, 0.3/0.15 là BỀ RỘNG NÉT theo chuẩn bản vẽ. `viewBox={viewBox}` là biểu thức JSX
+ *      nên `viewBoxBaoQuanh` (regex đòi dấu nháy) trả `null` ⇒ rơi vào nhánh `vb === null`.
+ *   · `ClusterPanel.tsx:82`        `<g strokeWidth={1} vectorEffect="non-scaling-stroke">` — xem
+ *      trước Prim[] CAD; `viewBox` khai ở dòng **131**, tức Ở DƯỚI, mà phép tìm chỉ lùi VỀ TRƯỚC.
+ *   · `AdjustPanel.tsx:162,163,167` `<line 0.5>` — lưới của **đồ thị đường cong tông màu**; cả tệp
+ *      KHÔNG có `viewBox` nào (svg đặt `width`/`height` thẳng).
+ *   · `globals.css:1237` · `foldable.css:89,130` — `.react-flow__edge-path`,
+ *      `.react-flow__connectionline` … tức **DÂY NỐI giữa các node**, không phải icon.
+ *
+ * ⚠️ Vì sao nhánh `vb === null` từng ĐÚNG, và vì sao nay phải chia đôi: chú thích 25/08 giữ nhánh
+ * này là ứng viên vì *"134/180 ca thật là PROP trên component lucide"* — điều đó vẫn đúng, nhưng
+ * chỉ đúng cho **THẺ COMPONENT** (`<Search strokeWidth={1.75}/>`), nơi việc không có `viewBox`
+ * trong mã nguồn CHÍNH LÀ dấu hiệu của icon lucide. Với **HÌNH HỌC SVG THÔ** (`path`/`line`/`g`…)
+ * thì ngược hẳn: nó luôn nằm trong MỘT `<svg>` nào đó, nên "không đo được viewBox" nghĩa là
+ * ta KHÔNG CHỨNG MINH ĐƯỢC đây là icon — chứ không phải "đây là icon".
+ *
+ * ⛔ KHÔNG nới luật: ngưỡng vẫn 1.5, lưới vẫn 24. Chỉ thu về ĐÚNG tập mà luật nói tới — cùng việc
+ * bản 24/08 đã làm cho F-ICON-SIZE (quả cầu vật liệu 120px từng bị đếm là icon). Một máy đếm quá
+ * tay nguy hiểm ngang máy đếm hụt: ai tin số rồi đi "sửa" sẽ ép nét 0.15 của một đường kích thước
+ * lên 1.5 và **làm hỏng bản vẽ**. Thứ bị loại KHÔNG bị giấu — nó vào sổ `NGOAI_PHAM_VI`, in ở cuối.
+ * Bộ `--tu-kiem` khoá cả HAI chiều: bắt được icon hỏng, VÀ không bắt oan nét bản vẽ. */
+const SVG_HINH_HOC = new Set([
+  'svg', 'path', 'line', 'polyline', 'polygon', 'circle', 'ellipse', 'rect', 'g', 'use',
+  'text', 'tspan', 'defs', 'mask', 'clipPath', 'pattern', 'marker', 'symbol', 'image', 'foreignObject',
+]);
+/** Thẻ JSX sở hữu vị trí `i` — lùi về `<` gần nhất mà giữa đó không có `>` chen ngang. */
+function theSoHuu(src, i) {
+  const truoc = src.lastIndexOf('<', i);
+  if (truoc === -1) return null;
+  const giua = src.slice(truoc, i);
+  if (giua.includes('>')) return null;                 // thẻ đã đóng trước đó ⇒ nét này không của nó
+  return /^<([A-Za-z][\w.$-]*)/.exec(giua)?.[1] ?? null;
+}
+/** `motion.path` · `m.line` → `path` · `line`. framer-motion chỉ bọc, phần tử SVG vẫn là nó. */
+const goiBoc = (t) => t.replace(/^(?:motion|m)\./, '');
+const laHinhHocSvg = (t) => t !== null && SVG_HINH_HOC.has(goiBoc(t));
+/** Selector CSS có nói tới icon không? Chỉ khi CÓ thì một `stroke-width` trong CSS mới là nét icon.
+ *  Cắt ĐÚNG đoạn selector (giữa dấu ngắt khối gần nhất và `{` mở khối) rồi BỎ CHÚ THÍCH — nếu không,
+ *  một chú thích kiểu `/* … không phải icon *\/` đứng ngay trên sẽ tự kết tội chính khối nó giải thích.
+ *  Đây là PHÉP SUY ĐOÁN, khai thẳng: nó bắt được `.if-icon svg{}` và bỏ qua `.react-flow__edge-path{}`,
+ *  nhưng một selector đặt tên icon mà không có chữ nào trong 4 từ khoá thì nó nhìn không ra. */
+function selectorNoiToiIcon(src, i) {
+  const moKhoi = src.lastIndexOf('{', i);
+  if (moKhoi === -1) return false;
+  const dau = Math.max(src.lastIndexOf('}', moKhoi), src.lastIndexOf('{', moKhoi - 1), src.lastIndexOf(';', moKhoi)) + 1;
+  const sel = src.slice(dau, moKhoi).replace(/\/\*[\s\S]*?\*\//g, '');
+  return /icon|glyph|lucide|\bsvg\b/i.test(sel);
+}
+
 moHo('F-ICON-STROKE', 'Icon · stroke-width phải = 1.5');
 moHo('F-ICON-SIZE', 'Icon · cỡ quang học ∈ {14,16,18,20}');
 moHo('F-ICON-VIEWBOX', 'Icon · inline svg viewBox = "0 0 24 24"');
@@ -192,9 +268,56 @@ moHo('F-MAT-VOCAB', 'Vật liệu · G0–G3 phải có mặt trong token sản 
  * placeholder). Chỉ bắt khi nó đứng sau `||`/`??` để **thế chỗ một giá trị thật chưa biết** —
  * đó mới là chỗ phỏng đoán đội lốt sự thật. */
 moHo('F-NHAN-BIA', 'Nhãn · cấm bịa tên khi giá trị thật chưa biết');
+/* ── F-MEP-CUON · VÙNG CUỘN KHÔNG CÓ DẤU HIỆU "CÒN TIẾP" ─────────────────────────────────────
+ * LUẬT NGẦM tìm ra 05/09, và nó là loại luật KHÔNG NẰM TRONG TÀI LIỆU NÀO — nó được thi hành
+ * bằng MỘT DÒNG CSS: `AppShell.tsx:193` khoá `height:100dvh; overflow:hidden`. Trang không bao
+ * giờ cao hơn màn ⇒ mỗi màn phải tự dựng hộp cuộn con. Đo: **122 chỗ / 95 tệp**, ≥4 phương ngữ.
+ *
+ * Vì `overflow:hidden` nằm ở VỎ, thanh cuộn cấp trang không bao giờ hiện. Và đo trên Chromium,
+ * MỌI hộp cuộn con có `offsetWidth − clientWidth = 0` ⇒ thanh cuộn là OVERLAY: chỉ hiện TRONG
+ * LÚC cuộn rồi tan. **Trước khi cuộn, không có tín hiệu nào.** Người dùng không khám phá được
+ * thứ họ không biết là có. Hậu quả đo được cùng ngày:
+ *   · Cài đặt  858 khung / 3737 nội dung → giấu 2879px, thấy 23%
+ *   · Files    858 / 2548              → giấu 1690px, thấy 34%, 22 phần tử bị cắt ở mép
+ *   · 0/122 vùng cuộn có bất kỳ dấu hiệu còn tiếp nào (mask · fade · bóng mép)
+ *
+ * ⇒ LUẬT: nơi nào khai `overflow[-y]: auto|scroll` thì nơi đó phải khai luôn `scrollbar-gutter`.
+ * `stable` biến máng 0px bóng ma thành 8px THẬT (đo: 0 → 8) — thanh cuộn thành công dân của bố
+ * cục, không phải bóng ma. `auto` là lối THOÁT CÓ KHAI cho ai cố ý ẩn thanh và đã tự dựng vệt mờ.
+ *
+ * ⚠️ THƯỚC LÀ XẤP XỈ, khai thẳng: nó tìm `scrollbar-gutter` trong cửa sổ ±260 ký tự quanh chỗ
+ * khai overflow, KHÔNG phân tích cây CSS. Khai đúng luật mà đặt cách xa >260 ký tự thì bị báo oan;
+ * ngược lại một khai báo của rule KHÁC nằm gần cũng có thể tha nhầm. Chấp nhận: rẻ, và sai số
+ * này không che được ca thật nào đã đo. `overflow-x` KHÔNG tính — cuộn ngang là bài khác. */
+moHo('F-MEP-CUON', 'Vùng cuộn · khai overflow thì phải khai scrollbar-gutter');
 
 for (const p of TEP) {
   const src = doc(p);
+
+  // ── MÉP CUỘN: khai overflow dọc mà không khai scrollbar-gutter ──────────────
+  {
+    const RE_CUON = /overflow(?:Y)?\s*:\s*['"`]?(auto|scroll)\b|overflow(?:-y)?\s*:\s*(auto|scroll)\b/g;
+    let m, thay = false;
+    while ((m = RE_CUON.exec(src))) {
+      // `overflow-x` đã bị loại bởi chính mẫu; loại thêm ca `overflowX` viết hoa lạc vào.
+      if (/overflow-?x/i.test(src.slice(Math.max(0, m.index - 2), m.index + 12))) continue;
+      thay = true; ho['F-MEP-CUON'].ungVien++;
+      /* 🔴 SỬA NGAY TRONG LƯỢT MỞ SỔ — bản đầu dùng CỬA SỔ ±260 KÝ TỰ và `--tu-kiem` bắt được
+       * ngay: trong tệp ảo, rule `.ao-cuon-tran{overflow-y:auto}` nằm cách rule kế
+       * `.ao-cuon-du{...scrollbar-gutter:stable}` đúng ~60 ký tự ⇒ nó ĐỌC GHÉ khai báo của hàng
+       * xóm rồi tha oan. Kho thật còn dễ rò hơn: CSS-in-TS ở repo này viết mỗi rule một dòng sát
+       * nhau. ⇒ Đổi sang phạm vi KHỐI `{...}` bao quanh — chính xác cho cả rule CSS phẳng lẫn
+       * object `style={{…}}` trong JSX. Không có bước tự kiểm hai chiều thì thước này đã mở sổ
+       * bằng một con số ĐẸP HƠN SỰ THẬT, và không ai biết. */
+      const mo = src.lastIndexOf('{', m.index);
+      const dong2 = src.indexOf('}', m.index);
+      const khoi = src.slice(mo === -1 ? 0 : mo, dong2 === -1 ? src.length : dong2);
+      if (/scrollbar-gutter|scrollbarGutter/.test(khoi)) continue;
+      viPham('F-MEP-CUON', p, soDong(src, m.index), m[0].trim(),
+        'kèm scrollbar-gutter', 'vùng cuộn không giữ chỗ cho thanh cuộn ⇒ 0 dấu hiệu "còn tiếp"');
+    }
+    if (thay) ho['F-MEP-CUON'].tep++;
+  }
 
   // ── NHÃN BỊA: `x || 'Chưa đặt tên'` · `x ?? 'Untitled'` ─────────────────────
   {
@@ -235,6 +358,18 @@ for (const p of TEP) {
       }
       if (vb !== null && !laIcon(vb)) {            // nét của TRANH, không phải nét của icon
         NGOAI_PHAM_VI.push({ ho: 'F-ICON-STROKE', p, dong: soDong(src, m.index), vi: `nét ${v} trong svg thang ${vb}` });
+        continue;
+      }
+      /* CHỈ KẾT TỘI KHI CÓ BẰNG CHỨNG LÀ ICON — xem khối audit 05/09 ở trên. */
+      if (p.endsWith('.css')) {
+        // CSS không có thẻ, không có viewBox. Bằng chứng duy nhất còn lại là SELECTOR.
+        if (!selectorNoiToiIcon(src, m.index)) {
+          NGOAI_PHAM_VI.push({ ho: 'F-ICON-STROKE', p, dong: soDong(src, m.index), vi: `nét ${v} trong luật CSS không nói tới icon` });
+          continue;
+        }
+      } else if (vb === null && laHinhHocSvg(theSoHuu(src, m.index))) {
+        // Hình học SVG thô mà không đo được thang của `<svg>` bao quanh ⇒ không chứng minh được là icon.
+        NGOAI_PHAM_VI.push({ ho: 'F-ICON-STROKE', p, dong: soDong(src, m.index), vi: `nét ${v} trên <${theSoHuu(src, m.index)}> không có viewBox đo được` });
         continue;
       }
       thay = true; ho['F-ICON-STROKE'].ungVien++;
@@ -318,10 +453,24 @@ for (const p of TEP) {
 
   // ── MOTION: thang cũ + ms thô trong transition/animation ────────────────────
   {
+    /* 🔬 AUDIT THƯỚC 05/09 — BÁO OAN ①: THƯỚC BẮT CHÍNH CHÚ THÍCH GIẢI THÍCH LUẬT NÓ ÉP.
+       Đo được 9 ca, và cả 9 đều là văn xuôi nói VỀ thang cũ chứ không phải mã dùng thang cũ:
+         · `lib/ui/nhip.ts:11`   "[Đ2] EXTEND không NEW: `--ease-apple` + `--dur-fast/--dur-base` đã có sẵn"
+         · `lib/motion.ts:24,25` "không khớp `--dur-fast` (180ms) lẫn `--dur-base` (320ms)"
+         · `app/globals.css:616` "/* bổ sung hai nấc còn thiếu quanh --dur-fast/--dur-base *​/"
+       ⇒ Hai tệp ĐẦU chính là nơi ĐỊNH NGHĨA thang MỚI. Thước đang phạt đúng bản vá của nó, y hệt
+       ca `_siet-28-08` ("lượt đầu bắt luôn chú thích của chính bản vá"). Ai tin số rồi đi "sửa"
+       sẽ xoá lời giải thích vì sao thang mới tồn tại — tức phá tài liệu để làm đẹp một con số.
+       ⛔ KHÔNG nới luật: thang vẫn là --nhip-*. Chỉ thôi đọc văn xuôi như thể là mã.
+       `trongChuThich` đã có sẵn và đã import từ 28/08 — nhưng chỉ nối vào F-NHAN-BIA. Nối nốt. */
     let thay = false;
     for (const cu of NHIP_CU) {
       const re = new RegExp(cu.replace(/[-]/g, '\\-'), 'g'); let m;
       while ((m = re.exec(src))) {
+        if (trongChuThich(src, m.index)) {
+          NGOAI_PHAM_VI.push({ ho: 'F-MOTION-TOKEN', p, dong: soDong(src, m.index), vi: `${cu} nhắc trong CHÚ THÍCH, không phải mã` });
+          continue;
+        }
         thay = true; ho['F-MOTION-TOKEN'].ungVien++;
         viPham('F-MOTION-TOKEN', p, soDong(src, m.index), cu, '--nhip-*', 'Sheet chốt thang --nhip-* (130/170/220/300/460); đây là thang CŨ');
       }
@@ -340,10 +489,28 @@ for (const p of TEP) {
       });
     const trongGiamCD = (i) => KHOI_GIAM_CD.some(([a, b]) => i >= a && i <= b);
 
+    /* 🔬 AUDIT THƯỚC 05/09 — BÁO OAN ②: ĐỘ TRỄ KHÔNG PHẢI THỜI LƯỢNG.
+       `animation-delay:35ms` khớp mẫu vì nó bắt đầu bằng chữ "animation", nhưng nó đo một
+       ĐẠI LƯỢNG KHÁC: khoảng CHỜ trước khi chạy, không phải thời gian chạy. Thang --nhip-*
+       (130…460) là thang THỜI LƯỢNG; ép một stagger 35ms lên 130ms không phải "sửa cho đúng
+       nhịp" mà là **giết hiệu ứng so le** — các phần tử sẽ vào cách nhau 130ms thay vì 35ms.
+       Đây không phải suy diễn: `SPEC-APPLE-MOTION-MATERIAL` (chốt 02/08) ghi thẳng
+       **"stagger 30-60ms"** — một dải nằm HOÀN TOÀN dưới nấc thấp nhất của thang nhịp.
+       Hai luật cùng hiệu lực mà mâu thuẫn thì phép đo sai, không phải mã sai.
+       ⛔ KHÔNG nới: chỉ `*-delay` được ra ngoài phạm vi. `transition-duration`,
+       `animation-duration` và mọi ms trong shorthand VẪN bị bắt như cũ. */
     const re2 = /(?:transition|animation)[^;\n]*?\b([0-9]{2,4})ms\b/g; let m2;
     while ((m2 = re2.exec(src))) {
       if (trongGiamCD(m2.index)) {
         NGOAI_PHAM_VI.push({ ho: 'F-MOTION-TOKEN', p, dong: soDong(src, m2.index), vi: 'lối thoát prefers-reduced-motion' });
+        continue;
+      }
+      if (trongChuThich(src, m2.index)) {
+        NGOAI_PHAM_VI.push({ ho: 'F-MOTION-TOKEN', p, dong: soDong(src, m2.index), vi: `${m2[1]}ms nhắc trong CHÚ THÍCH, không phải mã` });
+        continue;
+      }
+      if (/-delay\s*:[^;\n]*$/.test(src.slice(m2.index, m2.index + m2[0].length))) {
+        NGOAI_PHAM_VI.push({ ho: 'F-MOTION-TOKEN', p, dong: soDong(src, m2.index), vi: `${m2[1]}ms là ĐỘ TRỄ (stagger), không phải thời lượng` });
         continue;
       }
       thay = true; ho['F-MOTION-TOKEN'].ungVien++;
@@ -428,8 +595,40 @@ if (TU_KIEM) {
   }
   console.log('\n   ⓘ F-MAT-VOCAB không tự kiểm được kiểu này: nó là luật TOÀN KHO (G0–G3 có mặt');
   console.log('     trong token sản xuất hay không), không phải luật soi từng tệp.\n');
-  if (truot) { console.log(`🔴 TỰ KIỂM TRƯỢT — ${truot} họ luật không bắt được mẫu hỏng của chính nó.\n`); process.exit(3); }
-  console.log('🟢 TỰ KIỂM ĐẠT — cả 4 họ soi-theo-tệp đều còn sống.\n');
+
+  /* ── CHIỀU THỨ HAI (thêm 05/09): KHÔNG ĐƯỢC BẮT OAN ────────────────────────────────────
+   * Bộ trên chỉ hỏi *"luật còn sống không"*. Nhưng một luật **sống quá tay** cũng nguy hiểm
+   * ngang một luật chết: nó đẻ ra việc giả, và người đi làm việc giả sẽ ép nét 0.15 của một
+   * đường kích thước lên 1.5 rồi **làm hỏng bản vẽ**. Audit 05/09 gỡ 9 ca báo oan; hai
+   * khẳng định dưới đây KHOÁ phần miễn trừ đó lại, để lần sau gỡ nhầm là TRƯỢT ngay. */
+  const netCua = (tep) => ho['F-ICON-STROKE'].viPham.filter((v) => v.p === tep).map((v) => v.thay);
+  const mepCua = (tep) => ho['F-MEP-CUON'].viPham.filter((v) => v.p === tep);
+  /* Đếm vi phạm rơi ĐÚNG dòng chứa một selector — đủ để phân biệt ba ca ảo nằm cùng một tệp. */
+  const soDongViPham = (id, tep, selector) => {
+    const d = doc(tep).split('\n');
+    return ho[id].viPham.filter((v) => v.p === tep && (d[v.dong - 1] || '').includes(selector)).length;
+  };
+  const KHONG_BAT_OAN = [
+    ['F-ICON-STROKE', 'BẮT   nét 2 trong <svg viewBox="0 0 16 16">', netCua(MAU_AO).includes('2')],
+    ['F-ICON-STROKE', 'THA   nét 0.15 trên <motion.path> của bản vẽ (viewBox là biểu thức)', !netCua(MAU_AO).includes('0.15')],
+    ['F-ICON-STROKE', 'BẮT   nét 2 của selector `.if-icon svg`', netCua(MAU_AO_CSS).includes('2')],
+    ['F-ICON-STROKE', 'THA   nét 2.5 của dây nối `.react-flow__edge-path`', !netCua(MAU_AO_CSS).includes('2.5')],
+    /* MÉP CUỘN — cùng kỷ luật: đòi máy phân định CẢ HAI CHIỀU, không chỉ chiều bắt.
+     * Ai gỡ nhầm nhánh `scrollbar-gutter` hoặc nhánh `overflow-x` thì TRƯỢT ngay tại đây,
+     * chứ không âm thầm kết tội một vùng đã khai đúng luật / một vùng cuộn NGANG. */
+    ['F-MEP-CUON', 'BẮT   `overflow-y:auto` trần, không giữ chỗ thanh cuộn', mepCua(MAU_AO_CSS).length >= 1],
+    ['F-MEP-CUON', 'THA   `overflow-y:auto` ĐÃ kèm `scrollbar-gutter:stable`', soDongViPham('F-MEP-CUON', MAU_AO_CSS, 'ao-cuon-du') === 0],
+    ['F-MEP-CUON', 'THA   `overflow-x:auto` — cuộn NGANG là bài khác', soDongViPham('F-MEP-CUON', MAU_AO_CSS, 'ao-cuon-ngang') === 0],
+  ];
+  console.log('   RANH GIỚI ICON ↔ KHÔNG-PHẢI-ICON · MÉP CUỘN — đòi máy phân định ĐÚNG CẢ HAI CHIỀU\n');
+  for (const [id, mo, dat] of KHONG_BAT_OAN) {
+    if (!dat) truot++;
+    console.log(`   ${dat ? '🟢 ĐÚNG' : '🔴 SAI — RANH GIỚI ĐÃ LỆCH'}  ${id}  ${mo}`);
+  }
+  console.log('');
+
+  if (truot) { console.log(`🔴 TỰ KIỂM TRƯỢT — ${truot} khẳng định không đạt.\n`); process.exit(3); }
+  console.log('🟢 TỰ KIỂM ĐẠT — các họ soi-theo-tệp còn sống; ranh giới icon VÀ mép cuộn phân định đúng cả hai chiều.\n');
   console.log('⚠️ Lượt chạy này CÓ tệp ảo ⇒ các con số ở trên KHÔNG dùng làm phép đo. Chạy lại không cờ.\n');
 }
 if (doHong) { console.log('🟠 CÓ HỌ LUẬT KHÔNG THẤY ỨNG VIÊN NÀO — coi là PHÉP ĐO HỎNG, không phải ĐẠT.\n'); process.exit(2); }

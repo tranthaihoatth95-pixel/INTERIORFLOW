@@ -382,3 +382,196 @@ export function nextSeqFrom(ids: string[], prefix: string): number {
   }
   return max + 1;
 }
+
+/* ─────────────────── NHỊP SAO LƯU MÁY CHỦ (P0-LUU, 05/09) ─────────────────── */
+
+/**
+ * NHỊP ĐẨY BẢN SAO LÊN MÁY CHỦ — đích ③ của `lib/save-status.ts`.
+ *
+ * 🔴 VÌ SAO NÓ THAY `setInterval(30_000)` — đo tại nguồn, không phải chuyện gu:
+ * `CadSheets.tsx`/`PresentSheets.tsx` trước 05/09 đẩy bản sao bằng **đồng hồ treo tường 30 s**,
+ * khởi động lúc hydrate. Hệ quả đo được (lỗi `A2-03`, đo lại trên app thật `docs/delivery/
+ * FIX-P0-LUU.md`): thời điểm gửi **không dính gì tới thời điểm người dùng vẽ** — vẽ xong ngay sau
+ * một nhịp là phải chờ gần trọn 30 s; A2 đo được 21,1 s. Suốt khoảng đó bản vẽ **chỉ tồn tại
+ * trong một hồ sơ trình duyệt**, và nhãn lại nói "Đã lưu".
+ *
+ * Nhịp mới bám THAY ĐỔI chứ không bám đồng hồ, hai số:
+ *   · `TRE_SAO_LUU_MAY_CHU_MS` — chờ tay yên rồi mới gửi (debounce), y khuôn `createSheetsAutosaver`;
+ *   · `GIAN_CACH_SAO_LUU_MAY_CHU_MS` — hai lần gửi THÀNH CÔNG cách nhau tối thiểu bấy nhiêu.
+ *
+ * ⚠️ Vì sao vẫn phải có giãn cách (và vì sao nó KHÔNG dựng lại cửa sổ nói dối): `POST
+ * /api/project-files` **tạo BẢN GHI MỚI mỗi lần**, không ghi đè — bỏ hẳn giãn cách thì một giờ vẽ
+ * liên tục đẻ ~1.400 hàng `ProjectFile` + 1.400 bản sao trọn bản vẽ trong `./uploads`. Giãn cách
+ * 12 s chặn trần ở ~300 hàng/giờ (đồng hồ 30 s cũ: ~120 hàng/giờ ⇒ đắt hơn 2,5× ở ca xấu nhất —
+ * cái giá đã cân, đổi lấy cửa sổ phơi 30 s → ~2,5 s). Và trong lúc chờ giãn cách, trạng thái là
+ * `'pending'` ⇒ **nhãn nói đúng "Đã lưu trong máy"**, không hứa gì thêm. Cửa sổ NÓI DỐI = 0 ở mọi
+ * nhánh; thứ co lại là cửa sổ CHƯA-CÓ-BẢN-SAO, và nó luôn được khai báo.
+ *
+ * ⌘S và lúc rời trang **bỏ qua giãn cách** — đó là hai lúc người dùng thật sự cần chốt.
+ *
+ * ⛔ KHÔNG đẻ cơ chế lưu thứ tư: hàm này chỉ **xếp lịch**, việc gửi do `gui()` của nơi gọi làm
+ * (`saoLuuBanVeLenMayChu` / `saoLuuDeckLenMayChu` — giữ nguyên, kể cả cổng `duDieuKienSaoLuu`).
+ */
+export const TRE_SAO_LUU_MAY_CHU_MS = 2500;
+export const GIAN_CACH_SAO_LUU_MAY_CHU_MS = 12_000;
+/** Trần thân yêu cầu cho `sendBeacon`/`fetch(keepalive)` — chuẩn web chốt 64 KiB; trừ hao phần bọc. */
+export const TRAN_BEACON_BYTE = 60_000;
+
+/** Trạng thái nhịp báo ra ngoài — CÙNG bộ chữ với `ServerSyncState` (`lib/save-status.ts`). */
+export type TrangThaiNhipMayChu = 'pending' | 'syncing' | 'synced' | 'error';
+
+/** Kết quả một lượt gửi. Xem `TuyChonNhipMayChu.gui` cho nghĩa của `khongGuiGi`. */
+export interface KetQuaGuiMayChu {
+  ok: boolean;
+  loi?: string;
+  khongGuiGi?: boolean;
+}
+
+export interface NhipSaoLuuMayChu {
+  /** Tài liệu vừa đổi ⇒ hẹn một lượt đẩy. Gọi ở ĐÚNG chỗ đang gọi `saver.touch()`. */
+  touch: () => void;
+  /** ⌘S — đẩy ngay, bỏ qua giãn cách. */
+  flushNow: () => void;
+  /**
+   * Rời trang (`pagehide`/`visibilitychange:hidden`) — đường SỐNG SÓT, phải ĐỒNG BỘ.
+   * Trả `true` khi đã đẩy được đi (trình duyệt nhận gửi nền), `false` khi không đẩy được
+   * (không có gì treo thì cũng trả `true` — không có gì để mất).
+   */
+  flushKhiRoiTrang: () => boolean;
+  dispose: () => void;
+}
+
+export interface TuyChonNhipMayChu {
+  /**
+   * Gửi thật. Trả `{ok:false}` là nhịp sẽ THỬ LẠI — tuyệt đối không nuốt lỗi ở đây.
+   * `khongGuiGi:true` = **không có gì để gửi** (chưa có tờ nào, hoặc máy chủ đã giữ đúng nội dung
+   * này rồi). Nhịp vẫn coi phiên bản là xong, nhưng **KHÔNG gọi `onDaGui`** — vì không hề có lượt
+   * nhận mới nào, mà `onDaGui` chính là thứ cấp mốc cho câu hứa bền vững của nhãn.
+   */
+  gui: () => Promise<KetQuaGuiMayChu>;
+  /**
+   * Dựng gói tin ĐỒNG BỘ cho lúc rời trang. `null` = lúc này không dựng được (chưa hydrate,
+   * không dự án…) ⇒ bỏ qua, không cố. Phải sync: sau `pagehide` không còn lượt `await` nào.
+   */
+  goiKhiRoiTrang?: () => { url: string; body: string } | null;
+  onTrangThai: (s: TrangThaiNhipMayChu, thongDiep?: string | null) => void;
+  /** Máy chủ NHẬN THẬT lúc `t`. */
+  onDaGui?: (t: number) => void;
+  treMs?: number;
+  gianCachMs?: number;
+}
+
+export function taoNhipSaoLuuMayChu(opts: TuyChonNhipMayChu): NhipSaoLuuMayChu {
+  const tre = Math.max(0, opts.treMs ?? TRE_SAO_LUU_MAY_CHU_MS);
+  const gianCach = Math.max(0, opts.gianCachMs ?? GIAN_CACH_SAO_LUU_MAY_CHU_MS);
+
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let huy = false;
+  let dangGui = false;
+  let lanGuiXong = 0;
+  /**
+   * Đếm PHIÊN BẢN thay vì cờ `dirty`: một lượt gửi có thể mất vài trăm ms, người dùng vẽ tiếp
+   * ngay giữa lúc đó. So `phienBan` với `phienBanDaGui` để biết thứ máy chủ đang giữ có phải
+   * trạng thái HIỆN TẠI không — cờ boolean sẽ nuốt mất thay đổi đến giữa chuyến bay.
+   */
+  let phienBan = 0;
+  let phienBanDaGui = 0;
+  const conCho = () => phienBan !== phienBanDaGui;
+
+  const hen = (ms: number) => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(chay, Math.max(0, ms));
+  };
+
+  const chay = () => {
+    timer = null;
+    if (huy || !conCho()) return;
+    if (dangGui) {
+      hen(300); // đang bay → đợi chuyến này xong rồi tính, không gửi chồng
+      return;
+    }
+    const conThieu = lanGuiXong + gianCach - Date.now();
+    if (conThieu > 0) {
+      hen(conThieu); // chưa tới lượt — trạng thái vẫn 'pending', nhãn vẫn nói đúng
+      return;
+    }
+    const pb = phienBan;
+    dangGui = true;
+    opts.onTrangThai('syncing');
+    void opts
+      .gui()
+      .catch((e): KetQuaGuiMayChu => ({ ok: false, loi: String(e).slice(0, 120) }))
+      .then((kq) => {
+        dangGui = false;
+        if (huy) return;
+        if (kq.ok) {
+          phienBanDaGui = pb;
+          /**
+           * 🔴 Giãn cách chỉ được tính từ một lượt GHI THẬT. Bản đầu tiên tính cả lượt
+           * `khongGuiGi` và nó **đội độ trễ lên gấp bốn**: đo trên app thật, lượt lúc mở dự án
+           * (không gửi gì, vì bản vẽ còn rỗng) vẫn khoá đồng hồ, nên nét vẽ đầu tiên phải chờ
+           * **10,0 s** thay vì ~2,5 s. Giãn cách sinh ra để hạn chế SỐ BẢN GHI trên máy chủ —
+           * không có bản ghi nào thì không có gì để hạn chế.
+           */
+          if (!kq.khongGuiGi) {
+            lanGuiXong = Date.now();
+            opts.onDaGui?.(lanGuiXong);
+          }
+          if (conCho()) {
+            opts.onTrangThai('pending'); // có thay đổi mới đến giữa chuyến — chưa xong
+            hen(tre);
+          } else {
+            opts.onTrangThai('synced');
+          }
+        } else {
+          // Hỏng thì THỬ LẠI, và nói thật trong lúc chờ. Không lùi về 'pending' im lặng.
+          opts.onTrangThai('error', kq.loi ?? null);
+          hen(Math.max(tre, 5000));
+        }
+      });
+  };
+
+  return {
+    touch: () => {
+      if (huy) return;
+      phienBan += 1;
+      opts.onTrangThai('pending');
+      hen(tre);
+    },
+    flushNow: () => {
+      if (huy || !conCho()) return;
+      lanGuiXong = 0; // ⌘S: bỏ qua giãn cách (được đặt lại ngay khi gửi xong)
+      hen(0);
+    },
+    flushKhiRoiTrang: () => {
+      if (huy) return true;
+      // `dangGui` = có chuyến đang bay và nó SẼ CHẾT theo tab ⇒ vẫn phải đẩy lại lượt cuối.
+      if (!conCho() && !dangGui) return true;
+      const goi = opts.goiKhiRoiTrang?.();
+      if (!goi) return false;
+      const than = new Blob([goi.body], { type: 'application/json' });
+      try {
+        if (than.size <= TRAN_BEACON_BYTE && typeof navigator !== 'undefined' && navigator.sendBeacon) {
+          if (navigator.sendBeacon(goi.url, than)) return true;
+        }
+        // Quá trần beacon (bản vẽ nặng) hoặc beacon từ chối: `keepalive` cũng bị trần 64 KiB,
+        // nên đây chỉ là cú thử cuối — thất bại thì nhãn ĐÃ nói "Đã lưu trong máy" từ trước,
+        // người dùng không bị lừa. Đây là lý do nhịp phải NGẮN, không phải lý do để tin beacon.
+        void fetch(goi.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: goi.body,
+          keepalive: than.size <= TRAN_BEACON_BYTE,
+        }).catch(() => {});
+        return than.size <= TRAN_BEACON_BYTE;
+      } catch {
+        return false;
+      }
+    },
+    dispose: () => {
+      huy = true;
+      if (timer) clearTimeout(timer);
+      timer = null;
+    },
+  };
+}

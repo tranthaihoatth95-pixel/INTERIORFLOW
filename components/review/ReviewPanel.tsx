@@ -58,10 +58,14 @@ import {
 } from '@/lib/review';
 import { useT, useLang } from '@/lib/i18n';
 import type { EditorSlide } from '@/lib/present-editor/model';
+import { useFlowStore } from '@/lib/store';
+import { ApprovalQueue } from '@/components/review/ApprovalQueue';
 
 export type ReviewPanelStage = 'cad' | 'render' | 'present';
 
 const CHANG_OF_STAGE: Record<ReviewPanelStage, ReviewChang> = { cad: '2d', render: '3d', present: 'deck' };
+/** stage của panel → ID chặng kỹ thuật (lib/phases.ts) cho yêu cầu duyệt/việc — 'cad' là tên thư mục, id là 'concept'. */
+const TASK_STAGE_OF: Record<ReviewPanelStage, 'concept' | 'render' | 'present'> = { cad: 'concept', render: 'render', present: 'present' };
 
 /** Bo góc: thẻ = --r-2 (10) · chip/nút nằm SÂU trong thẻ nên lấy nấc của chính nó = --r-1 (6). */
 const R_THE = RADIUS.r2;
@@ -83,6 +87,9 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
   const lang = useLang();
   const doc = useCadStore((s) => s.doc);
   const chang = CHANG_OF_STAGE[stage];
+  // SLICE 6 (02/09): Cổng duyệt theo DỰ ÁN đứng cuối bảng kiểm — chỉ khi đang mở một dự án
+  // (flow nháp cá nhân không có projectId thì không có hàng đợi duyệt, không bịa).
+  const currentProjectId = useFlowStore((s) => s.currentProjectId);
   // "Bỏ qua" của lớp GỢI Ý — state phiên (không persist): gợi ý là chuyện của lần nhìn này.
   const [boQua, setBoQua] = useState<Set<number>>(new Set());
 
@@ -405,6 +412,9 @@ function ReviewBody({ stage }: { stage: ReviewPanelStage }) {
             </div>
           );
         })}
+
+        {/* ───────────────── KHỐI CỔNG DUYỆT — theo dự án, xuyên thiết bị (slice 6) ───────────────── */}
+        {currentProjectId && <ApprovalQueue projectId={currentProjectId} stage={TASK_STAGE_OF[stage]} />}
       </div>
     </div>
   );

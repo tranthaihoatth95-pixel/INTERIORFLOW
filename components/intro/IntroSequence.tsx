@@ -348,7 +348,7 @@ function Scene4({ reduce, onCta }: { reduce: boolean; onCta: () => void }) {
         whileTap={{ scale: 0.98 }}
         style={{
           background: ACCENT,
-          color: '#FFFFFF',
+          color: 'var(--on-accent)',
           border: 'none',
           padding: '14px 32px',
           fontSize: 13,

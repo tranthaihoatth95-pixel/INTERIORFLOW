@@ -12,7 +12,8 @@ import { useFlowStore } from '@/lib/store';
 import { getLastUserId } from '@/lib/resume';
 import type { StageKey } from '@/lib/library/types';
 import { idfcKindOfThumb, IDFC_KIND_LABEL, THUMB_OF_IDFC_KIND, type ThumbKind } from '@/lib/library/thumb-kinds';
-import { buildSpecRows, missingSpecCount, matchSpec, type SpecSource } from '@/lib/library/spec-panel';
+import { buildSpecRows, missingSpecCount, matchSpec, nhanNoiKho, type SpecSource } from '@/lib/library/spec-panel';
+import { noiIdfcVeKho } from '@/lib/library/idfc-noi-kho';
 import {
   BAYS,
   BAY_OF_SHELF,
@@ -58,6 +59,8 @@ import { ColorLibraryScreen } from '@/components/colors/ColorLibraryScreen';
 import PanelFlank from '@/components/ui/PanelFlank';
 import { AssetWhereUsed, useAssetWhereUsed } from './AssetWhereUsed';
 import { daGanVaoDuAn } from './da-gan-du-an';
+import { object3dModelForItem } from '@/lib/library/object-3d-models';
+import { taiVeJson } from '@/lib/library/tai-ve-json';
 
 // 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md) — "Vẽ"/"Dựng ảnh" là tên
 // round trước, nay đồng bộ theo bộ tên chính thức.
@@ -74,8 +77,10 @@ const STAGE_CAPTION: Record<StageKey, [string, string]> = {
  * `useCadStore.addEntities()`, nên thả là có hình ngay. Ghi lại để phiên nối canvas biết.
  * ✅ 06/08 (G-M3-14): ĐÃ NỐI. Chỗ nghe = `components/cad/LibraryDropBridge.tsx` (mount trong
  * `CadEditor`), đối chiếu món qua `lib/cad/library-item-resolve.ts` rồi ghi vào ĐÚNG đường
- * `addEntities()` nói trên. `LIBRARY_APPLY_EVENT` (áp preset/vật liệu lên vật đang chọn) thì
- * VẪN CÒN 0 nơi nghe — việc khác, chưa làm, đừng tưởng đã xong theo. */
+ * `addEntities()` nói trên.
+ * ✅ 05/09 (`[3D-VL-01]`): `LIBRARY_APPLY_EVENT` ĐÃ CÓ NƠI NGHE — `components/render-studio/
+ * Library3DApplyBridge.tsx` (mount trong `Render3DModeSkeleton`), ghi `specId` vào entity đang
+ * chọn qua `useCadStore.updateEntities()`. Cùng khuôn cờ `claimed` như đường instantiate. */
 export const LIBRARY_INSTANTIATE_EVENT = 'if:library-instantiate';
 export const LIBRARY_APPLY_EVENT = 'if:library-apply';
 
@@ -94,17 +99,12 @@ const CARD_SIZE_OPTIONS: { id: LibCardSize; label: [string, string] }[] = [
   { id: 'lg', label: ['Lớn', 'Large'] },
 ];
 
-/** Cửa sổ xem 3D (Object3DWindow) cho asset "Ghế bar Lincoln 327" (proof CW 14/08,
- * `docs/phieu-giao/ghe-3d-window-app.md`) — hình học CHUẨN-NÉT (`chuanNet`, `.obj`+`.mtl`) ưu tiên
- * hơn GLB Trellis thô theo biên phiếu ("có bản chuẩn-nét thì dùng bản đó"). Nhận diện qua TÊN món
- * — kho `LibraryAsset` chưa có cờ "có model 3D xem được" riêng; khi có cấu kiện 3D thứ hai, đường
- * đúng là đọc tag `has3d:` từ `LibraryApiAsset` (`lib/library/db-items.ts`) thay vì so tên ở đây. */
-const OBJECT_3D_MODELS: { match: RegExp; glbUrl: string; mtlUrl?: string }[] = [
-  { match: /lincoln 327/i, glbUrl: '/library-assets/lincoln-327/lincoln-327-chuannet.obj', mtlUrl: '/library-assets/lincoln-327/lincoln-327-chuannet.mtl' },
-];
+/** Cửa sổ xem 3D (Object3DWindow). Bảng nhận diện ở `lib/library/object-3d-models.ts` (02/09) vì
+ * trang tổng `/library` cũng đếm "Mô hình 3D" — một danh sách, hai nơi đọc.
+ * 🔄 05/09: đi qua `object3dModelForItem` — DỮ LIỆU (`item.model3d`, do cửa nhận diện cấu kiện ghi
+ * vào kho) TRƯỚC, bảng tên gõ cứng chỉ còn là đường lùi cho proof Lincoln. */
 function object3dModelFor(item: SheetItem): { glbUrl: string; mtlUrl?: string } | null {
-  const hit = OBJECT_3D_MODELS.find((m) => m.match.test(item.name));
-  return hit ? { glbUrl: hit.glbUrl, mtlUrl: hit.mtlUrl } : null;
+  return object3dModelForItem(item);
 }
 
 const BAY_ICON: Record<string, LucideIcon> = {
@@ -375,7 +375,10 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
    * `w`/`d`/`hUp` thêm vào (VIỆC 2, chốt 07/08 chiều) cho dòng kích thước ở nấc thẻ LỚN — API
    * `GET /api/specs` (`lib/server/specs.ts` `specToDto`) đã trả sẵn 3 trường này, chỉ chưa được
    * bắt ở đây; không cần sửa route hay `lib/`. */
-  const [specs, setSpecs] = useState<{ id: string; name: string; sku: string | null; brand: string | null; unit: string | null; priceVnd: number | null; w: number | null; d: number | null; hUp: number | null }[] | null>(null);
+  /* 05/09 — thêm `matId` + `vendor`. `GET /api/specs` (`specToDto`) đã trả sẵn cả hai; chúng chỉ
+   * chưa được bắt ở đây, nên nhánh khoá-bất-biến của `resolveIdfcCommerceToSpec` KHÔNG BAO GIỜ
+   * có dữ liệu để chạy — dây có mà đầu kia không cắm vào ổ nào. */
+  const [specs, setSpecs] = useState<{ id: string; name: string; sku: string | null; matId: string | null; brand: string | null; vendor: string | null; unit: string | null; priceVnd: number | null; w: number | null; d: number | null; hUp: number | null }[] | null>(null);
   useEffect(() => {
     if (!open || specs !== null) return;
     let cancelled = false;
@@ -471,19 +474,31 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   const linkedSpecId = displayItem ? state.specLinks[displayItem.id] : undefined;
   const linkedSpec = linkedSpecId ? specs?.find((s) => s.id === linkedSpecId) : undefined;
 
+  /* ⚡ 05/09 — CẮM ĐIỆN `resolveIdfcCommerceToSpec` (qua `noiIdfcVeKho`).
+   *
+   * TRƯỚC: nhánh `.idfc` lấy thẳng `brand/unit/priceVnd` NHÚNG TRONG TỆP rồi dừng — không lần
+   * nào đi tra về kho. Hệ quả đo được: kho sửa giá xong, tấm Thư viện vẫn hiện giá cũ chép trong
+   * tệp, và người dùng không có dấu hiệu nào để biết. Hai khoá bất biến `commerce.specId` /
+   * `commerce.matId` nằm im, `resolveIdfcCommerceToSpec` có 0 nơi gọi.
+   *
+   * NAY: `.idfc` TRA VỀ KHO TRƯỚC. Nối được ⇒ kho thắng (giá SỐNG) — đúng luật 2.1.9.i và đúng
+   * docstring của chính `IdfcCommerce` (*"`priceVnd` chỉ là ảnh chụp lúc nhập, `specId` mới là
+   * đường về nguồn"*). Không nối được ⇒ VẪN rơi về số của tệp như cũ (chốt G-M16-03 "giá đi theo
+   * file" giữ nguyên hiệu lực khi kho không có món đó) — nhưng nay có câu NÓI RA đó là ảnh chụp.
+   * Tức đây là ĐỔI THỨ TỰ ƯU TIÊN, không phải bỏ đường cũ. */
+  const noiKho = useMemo(
+    () => (displayIdfc ? noiIdfcVeKho(displayIdfc.body, displayIdfc.commerce, specs) : null),
+    [displayIdfc, specs],
+  );
+
   const displaySpecSource: SpecSource | undefined = useMemo(() => {
-    // .idfc mang sẵn mặt thương mại — ưu tiên nó (giá đi THEO FILE giữa các dự án, G-M16-03);
-    // thiếu thì rơi về khớp sku trong DB như cũ.
-    if (displayIdfc?.commerce) {
-      const c = displayIdfc.commerce;
-      return { supplier: c.brand ?? c.vendor ?? null, unit: c.unit ?? null, priceVnd: c.priceVnd ?? null };
-    }
+    if (noiKho) return noiKho.nguon;
     if (linkedSpec) return { supplier: linkedSpec.brand, unit: linkedSpec.unit, priceVnd: linkedSpec.priceVnd };
     if (!displayItem || !specs?.length) return undefined;
     const hit = matchSpec(displayItem.code, specs);
     if (!hit) return undefined;
     return { supplier: hit.brand, unit: hit.unit, priceVnd: hit.priceVnd };
-  }, [displayItem, displayIdfc, specs, linkedSpec]);
+  }, [displayItem, noiKho, specs, linkedSpec]);
 
   const displayDims = useMemo(() => {
     if (!displayItem || !specs?.length) return null;
@@ -546,9 +561,36 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
     );
   };
 
+  /**
+   * 05/09 (`[3D-VL-01]`) — SỬA LỜI BÁO NÓI DỐI, LẦN THỨ HAI. Đường `instantiate` ngay trên đã
+   * được vá đúng bài này từ 06/08 (G-M3-14) bằng cờ `claimed`; đường `ap` thì KHÔNG vá theo, nên
+   * nó tiếp tục bắn toast xanh *"Đã áp …"* VÔ ĐIỀU KIỆN trong khi `LIBRARY_APPLY_EVENT` có **0
+   * nơi nghe** (chính chú thích ở đầu tệp này đã khai từ 06/08). Đo trên app thật 05/09: toast
+   * xanh hiện, panel phải vẫn "Chưa gán vật liệu", F5 vẫn không có gì — đúng ca `00-CHOT` 04/09
+   * *"nút nói dối việc nó vừa làm, tệ hơn nút chết"*.
+   *
+   * Nay dùng CÙNG khuôn `claimed`: nơi nghe (`Library3DApplyBridge`) bật cờ khi ĐÃ ghi thật, và
+   * điền `loi` khi nhận việc mà không ghi được. Ba ngả, không ngả nào nói sai:
+   *  · có người nhận + ghi được  → báo đã áp;
+   *  · có người nhận + không ghi → báo ĐÚNG lý do của nơi nghe (chưa chọn khối, mã lạ, lớp khoá…);
+   *  · không ai nhận             → nói thẳng màn đang mở không đón được.
+   * Spread `item` chứ KHÔNG gửi chính nó: nơi nghe ghi cờ lên `detail`, gửi thẳng là làm bẩn món
+   * trên kệ.
+   */
   const applyPreset = (item: SheetItem) => {
-    window.dispatchEvent(new CustomEvent(LIBRARY_APPLY_EVENT, { detail: item }));
-    pushLibraryToast(tr(`Đã áp "${item.name}" lên vật đang chọn`, `Applied "${item.name}" to the current selection`));
+    const detail: SheetItem & { claimed?: boolean; loi?: string } = { ...item, claimed: false };
+    window.dispatchEvent(new CustomEvent(LIBRARY_APPLY_EVENT, { detail }));
+    if (detail.claimed && !detail.loi) {
+      pushLibraryToast(tr(`Đã áp "${item.name}" lên vật đang chọn`, `Applied "${item.name}" to the current selection`));
+      return;
+    }
+    pushLibraryToast(
+      detail.loi ??
+        tr(
+          `Chưa áp được "${item.name}" — màn đang mở không có vật nào để áp. Mở chặng Thiết kế 3D rồi chọn một khối.`,
+          `Can't apply "${item.name}" here — this screen has nothing to apply to. Open the 3D Design stage and select a block.`,
+        ),
+    );
   };
 
   const use = (item: SheetItem) => (item.mechanic === 'ap' ? applyPreset(item) : instantiate(item));
@@ -1130,6 +1172,23 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                   ))}
                 </div>
 
+                {/* ⚡ 05/09 — NỐI VỀ KHO. Cột thông số trước nay bày ra 6 con số mà KHÔNG nói
+                    chúng từ đâu tới và liên kết đó bền tới đâu. Với cấu kiện `.idfc` đây là
+                    thông tin NGHỀ: nối bằng khoá bất biến thì nhà cung cấp đổi mã hàng vẫn đúng;
+                    nối bằng mã hàng thì đổi mã là đứt — và người dùng chỉ phát hiện lúc bảng dự
+                    toán đã ra sai số. Câu chữ ở `lib/library/spec-panel.ts` (`nhanNoiKho`), bốn
+                    ca bốn câu khác nhau, không câu nào lộ chữ máy.
+                    Màu KHÔNG phải kênh duy nhất — chính câu chữ mang nghĩa, chấm chỉ để quét mắt. */}
+                {noiKho?.trangThai && (
+                  <div className="spnoi" data-kieu={noiKho.trangThai.kieu} data-testid="lib-noi-kho">
+                    <b>
+                      <i aria-hidden="true" />
+                      {tr(...nhanNoiKho(noiKho.trangThai).chinh)}
+                    </b>
+                    <span>{tr(...nhanNoiKho(noiKho.trangThai).phu)}</span>
+                  </div>
+                )}
+
                 {/* R? (20/08) — where-used, chỉ có nghĩa cho món DB thật (`db:` prefix). Hiện
                     NGOÀI điều kiện đang mở dự án — "asset này dùng ở đâu" là câu hỏi hữu ích
                     kể cả lúc đang duyệt kho không gắn dự án nào. */}
@@ -1140,13 +1199,22 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                   </div>
                 )}
 
-                {/* §9: ô trống phải KÈM LÝ DO, không giấu đi cho gọn mắt. */}
+                {/* §9: ô trống phải KÈM LÝ DO, không giấu đi cho gọn mắt.
+                    05/09 — món `.idfc` đã có dòng "nối về kho" ở trên nói CỤ THỂ chuyện thương mại
+                    rồi; giữ nguyên câu cũ ở đó sẽ thành HAI LỜI GIẢI THÍCH CHỌI NHAU ("Nối chắc
+                    với kho" ngay trên "Chưa món nào khớp mã trong kho"). Nên với món `.idfc` câu
+                    này rút về đúng nửa còn lại — độ nhám · độ bóng. */}
                 {missingSpecCount(displaySpecRows) > 0 && (
                   <div className="spwhy">
-                    {tr(
-                      'Ô “—” là chưa nối kho: hãng · đơn vị · giá nằm ở Kho vật liệu (khớp theo mã); độ nhám · độ bóng nằm ở vật liệu PBR. Chưa món nào trên kệ mẫu khớp mã trong kho.',
-                      'Each “—” means not linked yet: brand · unit · price live in the Materials warehouse (matched by code); roughness · gloss live in the PBR material. No demo shelf item matches a code in the warehouse yet.',
-                    )}
+                    {noiKho?.trangThai
+                      ? tr(
+                          'Ô “—” còn lại là độ nhám · độ bóng — chúng nằm ở vật liệu PBR, không phải ở kho.',
+                          'The remaining “—” are roughness · gloss — they live in the PBR material, not the warehouse.',
+                        )
+                      : tr(
+                          'Ô “—” là chưa nối kho: hãng · đơn vị · giá nằm ở Kho vật liệu (khớp theo mã); độ nhám · độ bóng nằm ở vật liệu PBR. Chưa món nào trên kệ mẫu khớp mã trong kho.',
+                          'Each “—” means not linked yet: brand · unit · price live in the Materials warehouse (matched by code); roughness · gloss live in the PBR material. No demo shelf item matches a code in the warehouse yet.',
+                        )}
                   </div>
                 )}
 
@@ -1272,11 +1340,9 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                           // Xuất xứ khai THẬT: món này lấy từ kho Thư viện, kèm id trong kho.
                           const daKy = await kyIdfc(json, { kind: 'library', ref: displayItem.id });
                           const coDau = daKy !== json;
-                          const a = document.createElement('a');
-                          a.href = URL.createObjectURL(new Blob([daKy], { type: 'application/json' }));
-                          a.download = `${displayItem.code}.idfc`;
-                          a.click();
-                          URL.revokeObjectURL(a.href);
+                          // 03/09: dùng chung `taiVeJson` — bản chép tay ở đây thu hồi blob NGAY
+                          // sau click, có thể cắt ngang lúc trình duyệt đang đọc (hỏng không báo).
+                          taiVeJson(daKy, `${displayItem.code}.idfc`);
                           pushLibraryToast(
                             coDau
                               ? tr(

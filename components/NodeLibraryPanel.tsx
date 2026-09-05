@@ -256,7 +256,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
       <div className="space-y-1.5 p-2.5">
         <input
           autoFocus={panel === 'search'}
-          className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs leading-normal text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
+          className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs leading-normal text-[var(--t1)] placeholder-[var(--t5)] transition-colors focus-visible:border-[var(--accent)]"
           placeholder={tr('Tìm khối…', 'Search blocks…')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}

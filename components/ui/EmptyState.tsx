@@ -17,9 +17,25 @@
  *
  * Ghost structure: `ghost="bays"` = lưới ngăn kệ 4:3 nét đứt (mock Thư viện) · `ghost="rows"` =
  * 3 hàng bảng ghost (bảng vật liệu/BOQ) · `ghost="none"` = chỉ icon+chữ+nút (panel hẹp).
+ *
+ * 04/09 — thêm trạng thái thứ TƯ `tone="offline"` (thu về từ `TrangThaiO` của dòng phát triển
+ * 20/08, gộp vào đây thay vì dựng component thứ hai). Ngoại tuyến dùng chung dấu hiệu nặng-nề với
+ * lỗi, nhưng khác ở chỗ quan trọng nhất: **không có nút "Thử lại"** — máy tự lọc, không dặn nơi
+ * gọi. Kèm `lapDayO` cho ô có chiều cao cố định: khối trạng thái phải chiếm đúng chỗ nội dung
+ * thật sẽ chiếm, không phải một viên 44px lơ lửng giữa ô 400px.
+ *
+ * 03/09 (Cloud Slice 9) — BA TRẠNG THÁI, MỘT KHUÔN: `tone="empty"` (mặc định, như cũ) ·
+ * `tone="loading"` (thanh `LightBar` — lõi tiến trình chung, KHÔNG bịa %: chỉ truyền `progress`
+ * khi có số thật, bỏ trống thì thanh tự sang hình thái không-đếm-được) · `tone="error"` (khung
+ * icon màu `--danger`, `role="alert"`, nút hành động = thử lại/mở lỗi tại chỗ). Cùng một khuôn để
+ * màn trống / đang tải / lỗi của mọi panel đứng cùng chỗ, cùng nhịp — không ba kiểu ba nơi.
+ * Nút mờ đi đường `aria-disabled` + `aria-describedby` (bài học 16/08: `disabled` bị Tab bỏ qua,
+ * `title` câm trên cảm ứng) — cùng đường với ToolbarChip.
  */
 
+import { useId } from 'react';
 import type { ReactNode, CSSProperties } from 'react';
+import LightBar from './LightBar';
 
 export interface EmptyStateAction {
   label: string;
@@ -46,6 +62,16 @@ export interface EmptyStateProps {
   bayCaptions?: string[];
   /** gọn cho panel hẹp (padding nhỏ, ghost thu lại). */
   compact?: boolean;
+  /** trạng thái: trống (mặc định) · đang tải · lỗi · ngoại tuyến — MỘT khuôn cho cả bốn. */
+  tone?: 'empty' | 'loading' | 'error' | 'offline';
+  /**
+   * Lấp đầy ô chứa (`height:100%`). Cái bị chê không phải "có khối trạng thái" mà là **một viên
+   * 44px lơ lửng giữa một ô cao 400px** — khối trạng thái phải chiếm đúng chỗ nội dung thật sẽ
+   * chiếm. Mặc định TẮT để không đổi hành vi của ~40 nơi đang gọi; bật ở ô có chiều cao cố định.
+   */
+  lapDayO?: boolean;
+  /** 0..100 CHỈ khi đo được thật; bỏ trống = không đếm được (LightBar không in số). */
+  progress?: number;
   style?: CSSProperties;
 }
 
@@ -64,13 +90,34 @@ export function EmptyState({
   bayCount = 10,
   bayCaptions = [],
   compact = false,
+  tone = 'empty',
+  progress,
+  lapDayO = false,
   style,
 }: EmptyStateProps) {
+  const reasonBase = useId();
+  /**
+   * NGOẠI TUYẾN THÌ KHÔNG CÓ "THỬ LẠI". Mất mạng mà bảo người ta bấm lại là lời khuyên vô ích —
+   * bấm mười lần cũng vậy, và mỗi lần bấm hụt là một lần app nói dối rằng nó làm được gì đó.
+   * Đường đúng là nêu việc CỤC BỘ nào vẫn dùng được, rồi để app tự biết lúc mạng về (sự kiện
+   * `online`). Lọc ở ĐÂY chứ không dặn nơi gọi: dặn thì sẽ có chỗ quên, lọc thì không.
+   */
+  const nutHienRa =
+    tone === 'offline' ? actions.filter((a) => !/thử lại|retry|tải lại|reload/i.test(a.label)) : actions;
+  // NGOẠI TUYẾN cũng là hỏng-việc-ngay ⇒ cùng dấu hiệu màu/khung với lỗi. Khác ở CHỖ KHÁC: nó
+  // KHÔNG được có nút "Thử lại" (xem chỗ lọc `actions` dưới đây).
+  const nangNe = tone === 'error' || tone === 'offline';
   return (
     <div
+      role={nangNe ? 'alert' : undefined}
+      aria-live={tone === 'loading' ? 'polite' : undefined}
+      aria-busy={tone === 'loading' || undefined}
+      data-tone={tone}
       style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
-        padding: compact ? '18px 14px' : '28px 26px', gap: 0, minWidth: 0, ...style,
+        padding: compact ? '18px 14px' : '28px 26px', gap: 0, minWidth: 0,
+        ...(lapDayO ? { height: '100%', justifyContent: 'center' } : null),
+        ...style,
       }}
     >
       {/* ── cấu trúc thật: kệ có ngăn (mock .shelf/.bays) hoặc hàng bảng ghost ── */}
@@ -111,11 +158,18 @@ export function EmptyState({
         </div>
       )}
 
+      {tone === 'loading' && (
+        <div style={{ width: compact ? 180 : 240, maxWidth: '100%', marginBottom: 14 }}>
+          <LightBar value={progress} label={title} />
+        </div>
+      )}
+
       {icon && (
         <div
           style={{
             width: 44, height: 44, display: 'grid', placeItems: 'center', borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--border-strong)', background: 'var(--field)', color: 'var(--t4)',
+            border: `1px solid ${nangNe ? 'var(--danger)' : 'var(--border-strong)'}`, background: 'var(--field)',
+            color: nangNe ? 'var(--danger)' : 'var(--t4)',
             boxShadow: 'inset 0 2px 4px rgba(0,0,0,.14)', marginBottom: 12,
           }}
         >
@@ -132,30 +186,35 @@ export function EmptyState({
         </p>
       )}
 
-      {actions.length > 0 && (
+      {nutHienRa.length > 0 && (
         <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginTop: 14 }}>
-          {actions.map((a) => (
+          {nutHienRa.map((a, i) => (
             <button
               key={a.label}
               type="button"
               onClick={a.disabled ? undefined : a.onClick}
-              disabled={a.disabled}
-              title={a.disabled ? a.disabledReason : a.hint}
+              aria-disabled={a.disabled || undefined}
+              aria-describedby={a.disabled && a.disabledReason ? `${reasonBase}-${i}` : undefined}
               style={{
                 height: 32, padding: '0 14px', borderRadius: 999,
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 cursor: a.disabled ? 'not-allowed' : 'pointer',
-                opacity: a.disabled ? 0.45 : 1,
+                opacity: a.disabled ? 'var(--mo-vo-hieu)' : 1,
                 fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)' as never, lineHeight: 1.5,
                 border: a.primary ? '1px solid var(--accent)' : '1px solid var(--border-strong)',
                 background: a.primary ? 'var(--accent)' : 'var(--field)',
-                color: a.primary ? '#fff' : 'var(--t1)',
+                color: a.primary ? 'var(--on-accent)' : 'var(--t1)',
               }}
             >
               {a.icon}
               {a.label}
               {a.hint && !a.disabled && (
                 <small style={{ fontWeight: 400, opacity: 0.75 }}>{a.hint}</small>
+              )}
+              {a.disabled && a.disabledReason && (
+                <span id={`${reasonBase}-${i}`} className="if-tooltip-a11y">
+                  {a.disabledReason}
+                </span>
               )}
             </button>
           ))}

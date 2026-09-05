@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { GPL_3_0_TEXT } from '@/lib/legal/gpl-3-0-text';
+import { useLuiAnToan } from '@/lib/nav/lui-an-toan';
 import {
   GPL_SCOPE_FILES,
   GPL_COPYRIGHT_NOTICE,
@@ -57,6 +58,10 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 export default function ThirdPartyLicensesPage() {
   const router = useRouter();
+  /* A1-01 (05/09) — trước đây là `router.back()` TRẦN, không lá chắn nào: vào ngang bằng URL
+     (link chia sẻ / bookmark) là bấm ra `about:blank`. Đường dự phòng `/settings` KHÔNG phải đích
+     mới bịa: đây là trang con của nó, và dòng nhãn ngay dưới nút này đã ghi "Cài đặt". */
+  const quayLai = useLuiAnToan('/settings', (u) => router.push(u));
   const tr = useT();
 
   return (
@@ -73,7 +78,7 @@ export default function ThirdPartyLicensesPage() {
       <div style={{ maxWidth: 760, width: '100%' }}>
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={quayLai}
           style={{ ...ghostButtonStyle, display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, marginBottom: 20 }}
         >
           <ArrowLeft size={18} /> {tr('Quay lại', 'Back')}

@@ -11,10 +11,11 @@
  *   - `members` (roster dự án, `GET /api/projects/{id}/members`, đổi CHẬM) = ai CÓ QUYỀN vào dự
  *     án, bất kể đang mở app hay không — nguồn cho "offline" (roster có nhưng không thấy cursor).
  *
- * "Mời (+)": KHÔNG có hạ tầng email-invite trong repo (đã khảo sát) — MVP này = thêm NGƯỜI ĐÃ CÓ
- * TÀI KHOẢN vào dự án, dùng THẲNG `POST /api/projects/{id}/members` (API có sẵn, `ProjectMembersPanel.tsx`
- * ở Dashboard đã dùng đúng luồng này) — KHÔNG tạo tài khoản mới/gửi email. Nút chỉ hiện khi
- * `canManage` (owner, đúng luật API — ẩn hẳn thay vì hiện rồi báo lỗi 403).
+ * "Mời (+)": thêm NGƯỜI ĐÃ CÓ TÀI KHOẢN vào dự án qua `POST /api/projects/{id}/members` (API có
+ * sẵn) — KHÔNG tạo tài khoản mới/gửi email. SLICE 6 (02/09) thêm hai đường nữa trong cùng popover:
+ * LINK MỜI ký + thu hồi (`InvitePanel`, năng lực invite:create) và VÀO BẰNG LINK (`JoinWithInvite`,
+ * ai cũng dùng được). Nút (+) hiện theo NĂNG LỰC từ `/api/auth/permissions` (invite:create), không
+ * còn đọc `canManage` từ nhãn vai — ẩn hẳn thay vì hiện rồi báo lỗi 403.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -27,6 +28,10 @@ import { useDismissable } from '@/lib/useDismissable';
 import Popover from '@/components/ui/Popover';
 import PresenceRow from '@/components/ui/PresenceRow';
 import { useT } from '@/lib/i18n';
+import { useProjectPermissions } from '@/components/auth/useProjectPermissions';
+import { InvitePanel } from '@/components/auth/InvitePanel';
+import { JoinWithInvite } from '@/components/auth/JoinWithInvite';
+import { RoleBadge } from '@/components/auth/RoleBadge';
 
 interface Person {
   userId: string;
@@ -53,8 +58,11 @@ export function PresenceBar() {
   const tr = useT();
 
   const [members, setMembers] = useState<MemberRow[]>([]);
-  const [canManage, setCanManage] = useState(false);
+  const perm = useProjectPermissions(currentProjectId);
+  // Năng lực, không nhãn: owner/admin có invite:create (theo ma trận lib/auth/roles.ts).
+  const canManage = perm.can('invite:create');
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteTab, setInviteTab] = useState<'them' | 'link' | 'vao'>('them');
   const [teamUsers, setTeamUsers] = useState<{ id: string; name: string }[] | null>(null);
   const [inviting, setInviting] = useState<string | null>(null);
   const inviteBtnRef = useRef<HTMLButtonElement>(null);
@@ -66,7 +74,6 @@ export function PresenceBar() {
       .then((data) => {
         if (!data) return;
         setMembers(data.members ?? []);
-        setCanManage(!!data.canManage);
       })
       .catch(() => {});
   }, [currentProjectId]);
@@ -132,7 +139,8 @@ export function PresenceBar() {
 
   useDismissable({ open: inviteOpen, onDismiss: () => setInviteOpen(false), refs: [inviteBtnRef] });
 
-  if (people.length <= 1 && !canManage) return null; // 1 mình + không có quyền mời thì ẩn cho gọn
+  // 1 mình + không có quyền mời + không có dự án (không có gì để vào bằng link) thì ẩn cho gọn
+  if (people.length <= 1 && !canManage && !currentProjectId) return null;
 
   const memberIds = new Set(members.map((m) => m.userId));
   const invitable = (teamUsers ?? []).filter((u) => u.id !== meId && !memberIds.has(u.id));
@@ -152,12 +160,18 @@ export function PresenceBar() {
         members={people.map((p) => ({ id: p.userId, name: p.name, color: p.color, online: p.online }))}
         max={MAX_AVATARS}
       />
-      {canManage && (
+      {perm.resolution.kind === 'grant' && (
+        <span className="ml-1"><RoleBadge role={perm.resolution.grant.role} storedRole={perm.resolution.grant.storedRole} /></span>
+      )}
+      {currentProjectId && (
         <button
           ref={inviteBtnRef}
           type="button"
-          onClick={openInvite}
-          title={tr('Thêm thành viên vào dự án', 'Add a member to this project')}
+          onClick={() => { setInviteTab(canManage ? 'them' : 'vao'); openInvite(); }}
+          aria-haspopup="dialog"
+          aria-expanded={inviteOpen}
+          title={canManage ? tr('Thêm thành viên · link mời', 'Add member · invite link') : tr('Vào dự án bằng link mời', 'Join a project with an invite link')}
+          aria-label={canManage ? tr('Thêm thành viên · link mời', 'Add member · invite link') : tr('Vào dự án bằng link mời', 'Join a project with an invite link')}
           className="ml-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full border border-dashed border-[var(--border)] text-[var(--t4)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
         >
           <UserPlus size={16} />
@@ -173,9 +187,31 @@ export function PresenceBar() {
               anchorX={r.right}
               anchorY={r.bottom + 6}
               onDismiss={() => setInviteOpen(false)}
-              className="w-60 rounded-[14px] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-xl"
+              className="w-72 rounded-[14px] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-xl"
               style={{ backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' }}
             >
+              {/* Ba đường vào cùng một popover — tab có chữ, aria-pressed; tab "Thêm"/"Link" chỉ khi có năng lực. */}
+              <div role="group" aria-label={tr('Cách mời', 'Invite method')} className="mb-1.5 flex gap-1">
+                {([
+                  ['them', tr('Thêm', 'Add'), canManage],
+                  ['link', tr('Link mời', 'Invite link'), canManage],
+                  ['vao', tr('Vào bằng link', 'Join by link'), true],
+                ] as const).filter(([, , show]) => show).map(([k, label]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    aria-pressed={inviteTab === k}
+                    onClick={() => setInviteTab(k)}
+                    className="h-6 flex-1 rounded-full text-[10.5px] font-semibold"
+                    style={{ background: inviteTab === k ? 'var(--card)' : 'transparent', color: inviteTab === k ? 'var(--t1)' : 'var(--t3)', border: '1px solid var(--border)' }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {inviteTab === 'link' && currentProjectId && <InvitePanel projectId={currentProjectId} canRevoke={perm.can('invite:revoke')} />}
+              {inviteTab === 'vao' && <JoinWithInvite onJoined={() => { fetchMembers(); void perm.refresh(); }} />}
+              {inviteTab === 'them' && (<>
               <p className="px-1 pb-1.5 text-[10px] leading-relaxed text-[var(--t4)]">
                 {tr('Thêm người đã có tài khoản IF vào dự án này.', 'Add someone who already has an IF account to this project.')}
               </p>
@@ -199,6 +235,7 @@ export function PresenceBar() {
                   </button>
                 ))}
               </div>
+              </>)}
             </Popover>
           );
         })()}

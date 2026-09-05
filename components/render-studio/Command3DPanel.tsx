@@ -43,6 +43,7 @@ import MaterialSphere from '@/components/three/MaterialSphere';
 import { darken, kindFromName, sceneForKind } from '@/components/three/material-preview';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import { useT } from '@/lib/i18n';
+import { modKey } from '@/lib/kbd'; // nhãn phím theo hệ: Mac ⌘ · Windows Ctrl
 import { cn } from '@/lib/utils';
 import Tooltip from '@/components/ui/Tooltip';
 import { WallTypePanel3D } from './WallTypePanel3D';
@@ -573,7 +574,7 @@ function WallBuilder({
               type="number"
               value={field.value}
               onChange={(event) => set(field.key, event.target.value)}
-              className="mt-0.5 h-7 w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[10px] text-[var(--t1)] outline-none focus:border-[var(--accent)]"
+              className="mt-0.5 h-7 w-full rounded-[6px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[10px] text-[var(--t1)] focus:border-[var(--accent)]"
             />
           </label>
         ))}
@@ -721,7 +722,7 @@ function ArrayGridSection({ scene }: { scene: Scene3DData | null }) {
   };
 
   const num =
-    'w-full rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-right text-[11px] tabular-nums text-[var(--t1)] outline-none focus:border-[var(--accent-ring)]';
+    'w-full rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-right text-[11px] tabular-nums text-[var(--t1)] focus:border-[var(--focus-ring)]';
   const lab = 'text-[9px] font-medium leading-[1.5] text-[var(--t4)]';
 
   return (
@@ -838,7 +839,7 @@ function NoSelectionNote({ group, tr }: { group: unknown; tr: (vi: string, en: s
 }
 
 const numCls =
-  'w-full rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-right text-[11px] tabular-nums text-[var(--t1)] outline-none focus:border-[var(--accent-ring)]';
+  'w-full rounded-[6px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-right text-[11px] tabular-nums text-[var(--t1)] focus:border-[var(--focus-ring)]';
 const labCls = 'text-[9px] font-medium leading-[1.5] text-[var(--t4)]';
 const sectionTitle = (en: string) => (
   <p className={`px-0.5 ${NHAN_NHO_BASE} text-[var(--t2)]`}>{en}</p>
@@ -871,7 +872,7 @@ function ArrayRadialSection({ scene }: { scene: Scene3DData | null }) {
     if (!entity) return;
     const updated = setEntityArrayRadial(entity, on ? { n, centerXMm: cx, centerYMm: cy, sweepDeg } : null);
     useCadStore.getState().updateEntities([updated]);
-    useCadStore.getState().setStatus(on ? `Array Radial ×${n} — Ctrl+Z để lùi` : 'Đã gỡ Array Radial — Ctrl+Z để lùi');
+    useCadStore.getState().setStatus(on ? `Array Radial ×${n} — ${modKey('Z')} để lùi` : `Đã gỡ Array Radial — ${modKey('Z')} để lùi`);
   };
 
   return (
@@ -939,7 +940,7 @@ function MirrorSection({ scene }: { scene: Scene3DData | null }) {
     if (!entity) return;
     const updated = setEntityMirror(entity, on ? { axis, atMm, withOriginal } : null);
     useCadStore.getState().updateEntities([updated]);
-    useCadStore.getState().setStatus(on ? `Mirror qua trục ${axis} — Ctrl+Z để lùi` : 'Đã gỡ Mirror — Ctrl+Z để lùi');
+    useCadStore.getState().setStatus(on ? `Mirror qua trục ${axis} — ${modKey('Z')} để lùi` : `Đã gỡ Mirror — ${modKey('Z')} để lùi`);
   };
 
   return (
@@ -1014,7 +1015,7 @@ function BevelExSection({ scene }: { scene: Scene3DData | null }) {
     if (!entity) return;
     const updated = setEntityBevelEx(entity, { radiusMm: on ? radiusMm : 0, segments, edges });
     useCadStore.getState().updateEntities([updated]);
-    useCadStore.getState().setStatus(on ? `${segments <= 1 ? 'Chamfer' : 'Fillet'} ${radiusMm}mm — Ctrl+Z để lùi` : 'Đã gỡ — Ctrl+Z để lùi');
+    useCadStore.getState().setStatus(on ? `${segments <= 1 ? 'Chamfer' : 'Fillet'} ${radiusMm}mm — ${modKey('Z')} để lùi` : `Đã gỡ — ${modKey('Z')} để lùi`);
   };
 
   return (
@@ -1072,7 +1073,7 @@ function TaperSection({ scene }: { scene: Scene3DData | null }) {
     if (!entity) return;
     const updated = setEntityTaper(entity, on ? topInsetMm : 0);
     useCadStore.getState().updateEntities([updated]);
-    useCadStore.getState().setStatus(on ? `Taper ${topInsetMm}mm — Ctrl+Z để lùi` : 'Đã gỡ Taper — Ctrl+Z để lùi');
+    useCadStore.getState().setStatus(on ? `Taper ${topInsetMm}mm — ${modKey('Z')} để lùi` : `Đã gỡ Taper — ${modKey('Z')} để lùi`);
   };
 
   return (
@@ -1120,7 +1121,7 @@ function SweepSection({ scene }: { scene: Scene3DData | null }) {
     if (!entity) return;
     const updated = setEntitySweep(entity, on ? { widthMm, heightMm } : null);
     useCadStore.getState().updateEntities([updated]);
-    useCadStore.getState().setStatus(on ? `Sweep ${widthMm}×${heightMm}mm — Ctrl+Z để lùi` : 'Đã gỡ Sweep — Ctrl+Z để lùi');
+    useCadStore.getState().setStatus(on ? `Sweep ${widthMm}×${heightMm}mm — ${modKey('Z')} để lùi` : `Đã gỡ Sweep — ${modKey('Z')} để lùi`);
   };
 
   return (
@@ -1298,7 +1299,7 @@ function BuildRecipeSection({ scene }: { scene: Scene3DData | null }) {
     if (!entity) return;
     const updated: Entity = { ...entity, recipe: next.length ? { steps: next } : undefined };
     useCadStore.getState().updateEntities([updated]);
-    useCadStore.getState().setStatus(next.length ? 'Đã cập nhật Build Recipe — Ctrl+Z để lùi' : 'Đã xoá hết bước Build Recipe — Ctrl+Z để lùi');
+    useCadStore.getState().setStatus(next.length ? `Đã cập nhật Build Recipe — ${modKey('Z')} để lùi` : `Đã xoá hết bước Build Recipe — ${modKey('Z')} để lùi`);
   };
 
   const addStep = (op: BuildOp, label: string) => writeSteps([...steps, { id: newId('recipe'), enabled: true, op, label }]);

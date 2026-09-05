@@ -49,14 +49,27 @@ không phải vì có ai đi đồng bộ, mà vì **chỉ có một vật**.
 **Luật ranh giới, một câu mỗi bên:**
 > **Sidebar không bao giờ đổi nội dung theo chặng. Thanh công cụ không bao giờ chứa lối đi.**
 
-## 3 · Sidebar — một trục dọc, HAI CỤM
+## 3 · Sidebar — một trục dọc, BA CỤM
 
-| Cụm | Gồm | Sống khi |
+> 🔄 **Cập nhật 04/09.** Mục này trước ghi **HAI cụm** (16-17/08). Chốt `CHOT-EXPERIENCE-SYSTEM`
+> 20/08 điều 3 **đè lên**: ba cụm — *workspace chung · dự án/ba chặng · cá nhân+hệ thống*. Mã đã
+> thi hành từ commit `3e1dde32` (EXS-BUILD-1); sổ này là thứ đi sau, nay khớp lại.
+> Đọc theo mã, không theo trí nhớ: `components/nav/muc-dieu-huong.ts` — `THU_TU_CUM` và `NHAN_CUM`.
+
+| Cụm | Gồm (đúng mã 04/09) | Sống khi |
 |---|---|---|
-| **CỤM XƯỞNG** | Cá nhân · Dashboard · Bảng việc · Chat/Họp · Files · Thư viện · Cài đặt | **không cần dự án nào** |
-| **CỤM DỰ ÁN** | 2D · 3D · Trình chiếu | **chỉ khi đã mở dự án** |
+| **① WORKSPACE CHUNG** | Tổng quan · Bảng việc · Chat·Họp · Files · Thư viện | **không cần dự án nào** |
+| **② DỰ ÁN** | Dự án này · Sổ tay · Thiết kế 2D · Thiết kế 3D · Trình chiếu | **chỉ khi đã mở dự án** |
+| **③ CÁ NHÂN + HỆ THỐNG** | Cá nhân · Cài đặt | luôn |
 
-Tách hai cụm bằng **một khoảng thở** chính là cách giải bài toán hai-cấp — rẻ hơn mọi cơ chế khác.
+**Vì sao tách ③ ra khỏi ①** (đây là phần chốt 20/08 thêm vào, không phải chuyện xếp cho đẹp):
+hồ sơ · credit · cài đặt là **thứ của NGƯỜI DÙNG**, không phải một nơi làm việc. Trộn chúng vào
+cụm workspace là bắt mắt đọc một danh sách gồm hai loại vật khác bản chất — và chính chủ dự án đặt
+tiêu chí trượt cho việc đó: *"trượt nếu thanh trái còn chứa Hồ sơ/Credit/Cài đặt"* lẫn trong cụm chung.
+
+Tách các cụm bằng **một khoảng thở**, không phải đường kẻ — rẻ hơn mọi cơ chế khác.
+Ba nấc chi tiết: **52 định vị · 240 điều hướng · 320–440 duyệt (kéo được)** — ba mức là ba **công
+năng** khác nhau, không phải ba cỡ (§7).
 **Files và Thư viện đứng cạnh nhau có lý do** (xem §5): chúng là hai trạng thái của cùng một dòng chảy.
 
 **KHÔNG lên sidebar:** Bảng màu (một *bước* trong chọn vật liệu) · Kho vật liệu (một *kệ* trong

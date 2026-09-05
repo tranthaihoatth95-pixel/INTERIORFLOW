@@ -22,6 +22,7 @@ import { nextThemePref, themeIconFor, themeLabelVi } from '@/lib/theme-toggle';
 import { toggleShare } from '@/lib/workspace';
 import { easeApple, pressableIcon } from '@/lib/motion';
 import { useT } from '@/lib/i18n';
+import { quenDangXuat } from '@/lib/danh-tinh-phien';
 import { cn } from '@/lib/utils';
 
 interface AnchorRect {
@@ -223,6 +224,9 @@ export function AccountMenu({ open, anchorRect, onDismiss, menuRef }: Props) {
                   onClick={async () => {
                     onDismiss();
                     await fetch('/api/auth/me', { method: 'DELETE' });
+                    // G1 · xoá bộ đệm định danh NGAY khi đăng xuất — nếu không, người kế tiếp
+                    // trên cùng máy mà mất mạng sẽ ghi việc vào kho của người vừa rời đi.
+                    quenDangXuat();
                     setUser(null);
                   }}
                   className="mt-1 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-2 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-red-400"

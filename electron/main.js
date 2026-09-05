@@ -5,7 +5,7 @@
 // InteriorFlow KHÔNG phải web tĩnh: nó có API routes (app/api/**) + Prisma/SQLite
 // nên bắt buộc phải có một Next.js server Node chạy nền. Luồng khởi động:
 //   1. Chuẩn bị thư mục GHI ĐƯỢC trong userData (DB SQLite + thư mục uploads).
-//   2. (Chỉ khi đóng gói) Chạy `prisma db push` để kiểm tra/nâng cấp dev.db; lỗi thì dừng.
+//   2. Chạy `prisma migrate deploy` để kiểm tra/nâng cấp dev.db; lỗi thì dừng (xem nangCapCsdl).
 //   3. Spawn Next.js production server (`next start`) trên một cổng nội bộ (dò cổng trống).
 //   4. Đợi server trả lời (poll HTTP) rồi mới tạo BrowserWindow trỏ vào http://localhost:<port>.
 //   5. Đóng app -> kill server. Single-instance lock để tránh mở 2 cửa sổ.
@@ -38,7 +38,8 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 
 // true khi chạy bản đã đóng gói (.exe cài đặt), false khi `electron .` lúc dev.
-const isPackaged = app.isPackaged;
+// `app` undefined khi tệp được require từ Node thuần (test) — xem chayTrongElectron cuối tệp.
+const isPackaged = Boolean(app && app.isPackaged);
 
 // Chế độ dev: `npm run electron:dev` set ELECTRON_START_URL=http://localhost:3000
 // (đã có `next dev` chạy sẵn nhờ concurrently + wait-on). Khi có biến này, main
@@ -221,6 +222,9 @@ const CONFIG_KEYS = [
   'GOOGLE_DESKTOP_CLIENT_ID',
 ];
 let configJsonPath = null; // giữ để menu "Mở file cấu hình…" dùng
+// Log riêng cho cấu hình: tách khỏi log nâng cấp CSDL vì hai thứ hỏng vì lý do khác nhau,
+// và người vận hành cần đọc đúng tệp khi đi tìm nguyên nhân "tự nhiên bị đăng xuất".
+const TEP_LOG_CAU_HINH = 'cau-hinh.log';
 
 function loadUserConfig(userDataDir) {
   configJsonPath = path.join(userDataDir, 'config.json');
@@ -229,10 +233,13 @@ function loadUserConfig(userDataDir) {
     try {
       cfg = JSON.parse(fs.readFileSync(configJsonPath, 'utf8'));
     } catch (e) {
-      dialog.showErrorBox(
-        'InteriorFlow — config.json lỗi',
-        `File cấu hình ${configJsonPath} không phải JSON hợp lệ:\n${e.message}\n\nApp vẫn chạy nhưng bỏ qua cấu hình này.`
-      );
+      // `dialog` chỉ tồn tại khi chạy trong Electron — guard để hàm này gọi được từ Node thuần.
+      if (dialog && typeof dialog.showErrorBox === 'function') {
+        dialog.showErrorBox(
+          'InteriorFlow — config.json lỗi',
+          `File cấu hình ${configJsonPath} không phải JSON hợp lệ:\n${e.message}\n\nApp vẫn chạy nhưng bỏ qua cấu hình này.`
+        );
+      }
       cfg = {};
     }
   } else {
@@ -247,13 +254,40 @@ function loadUserConfig(userDataDir) {
   }
   // AUTH_SECRET bắt buộc để cookie đăng nhập sống qua các lần mở app:
   // thiếu/để trống → sinh ngẫu nhiên 1 lần rồi persist.
-  if (!cfg.AUTH_SECRET || typeof cfg.AUTH_SECRET !== 'string' || cfg.AUTH_SECRET.trim() === '') {
+  const vuaSinhSecret =
+    !cfg.AUTH_SECRET || typeof cfg.AUTH_SECRET !== 'string' || cfg.AUTH_SECRET.trim() === '';
+  if (vuaSinhSecret) {
     cfg.AUTH_SECRET = crypto.randomBytes(32).toString('hex');
   }
   try {
     fs.writeFileSync(configJsonPath, JSON.stringify(cfg, null, 2) + '\n', 'utf8');
-  } catch {
-    /* ổ đĩa read-only? — vẫn chạy tiếp với cfg trong RAM */
+  } catch (e) {
+    // GIỮ NGUYÊN đường lùi: ổ đĩa read-only thì vẫn chạy tiếp với cfg trong RAM.
+    // NHƯNG KHÔNG ĐƯỢC IM LẶNG. Nếu secret VỪA được sinh mà không ghi xuống được thì
+    // mỗi lần mở app lại sinh một secret khác ⇒ mọi cookie phiên cũ chết ⇒ người dùng
+    // BỊ ĐĂNG XUẤT MỖI LẦN MỞ APP và không có gì trên màn nói cho họ biết vì sao.
+    // (Nếu secret đọc được từ config.json sẵn có thì đăng nhập vẫn sống — chỉ là các
+    //  khoá API vừa nhập sẽ không được nhớ; nhẹ hơn hẳn, nên nói khác đi.)
+    const hauQua = vuaSinhSecret
+      ? 'Bạn sẽ bị đăng xuất mỗi lần mở lại app, và các khoá API vừa nhập sẽ không được nhớ.'
+      : 'Các thay đổi cấu hình vừa rồi sẽ không được nhớ khi mở lại app. Đăng nhập vẫn giữ.';
+    const loiNhan =
+      `Không ghi được file cấu hình:\n${configJsonPath}\n\n${e && e.message}\n\n` +
+      `${hauQua}\n\nApp vẫn chạy bình thường. Thường do thư mục dữ liệu bị khoá hoặc ổ đĩa chỉ-đọc — ` +
+      'kiểm tra quyền ghi của thư mục rồi mở lại app.';
+    try {
+      fs.appendFileSync(
+        path.join(userDataDir, TEP_LOG_CAU_HINH),
+        `[${new Date().toISOString()}] ghi config.json thất bại: ${e && e.message}` +
+          ` — ${vuaSinhSecret ? 'AUTH_SECRET vừa sinh, KHÔNG persist được' : 'AUTH_SECRET cũ vẫn đọc được'}\n`,
+        'utf8',
+      );
+    } catch {
+      /* cả log cũng không ghi được — vẫn còn hộp thoại bên dưới */
+    }
+    if (dialog && typeof dialog.showErrorBox === 'function') {
+      dialog.showErrorBox('InteriorFlow — không lưu được cấu hình', loiNhan);
+    }
   }
   // Chỉ nhặt các key hợp lệ, giá trị chuỗi khác rỗng.
   const env = {};
@@ -263,112 +297,18 @@ function loadUserConfig(userDataDir) {
   return env;
 }
 
-// ── Đồng bộ schema vào dev.db bằng `prisma db push` ──────────────────────────
-// Dùng `db push --skip-generate` thay vì `migrate deploy` vì repo quản lý schema
-// bằng db push (prisma/migrations ĐÃ CŨ hơn schema.prisma — deploy sẽ tạo schema
-// thiếu bảng). db push idempotent: lần đầu tạo đủ bảng, các lần sau chỉ diff.
-function spawnDbPush(appRoot, env, userDataDir, extraArgs) {
-  return new Promise((resolve) => {
-    // Prisma CLI có sẵn trong node_modules được đóng gói.
-    const prismaBin = path.join(appRoot, 'node_modules', 'prisma', 'build', 'index.js');
-    if (!fs.existsSync(prismaBin)) {
-      resolve({ ok: false, missing: true });
-      return;
-    }
-    // Log ra userData để debug được khi máy user lỗi (không có console).
-    let logFd = null;
-    try {
-      logFd = fs.openSync(path.join(userDataDir, 'db-push.log'), 'a');
-    } catch {
-      /* không ghi được log — vẫn chạy */
-    }
-    let settled = false;
-    const finish = (result) => {
-      if (settled) return;
-      settled = true;
-      if (logFd !== null) {
-        try { fs.closeSync(logFd); } catch { /* bỏ qua */ }
-        logFd = null;
-      }
-      resolve(result);
-    };
-    const child = spawn(
-      process.execPath,
-      [
-        prismaBin, 'db', 'push', '--skip-generate',
-        '--schema', path.join(appRoot, 'prisma', 'schema.prisma'),
-        ...extraArgs,
-      ],
-      {
-        cwd: appRoot,
-        env: {
-          ...env,
-          // ELECTRON_RUN_AS_NODE: chạy binary electron như Node thuần để exec Prisma CLI.
-          ELECTRON_RUN_AS_NODE: '1',
-        },
-        stdio: logFd !== null ? ['ignore', logFd, logFd] : 'ignore',
-        windowsHide: true,
-      }
-    );
-    child.on('exit', (code, signal) => finish({ ok: code === 0, code, signal }));
-    child.on('error', (err) => finish({ ok: false, spawnError: err }));
-  });
-}
-
-// Sao lưu dev.db (kèm -wal/-journal/-shm) TRƯỚC khi thử nâng cấp có rủi ro.
-// Gọi lúc server CHƯA chạy nên DB đang đóng ⇒ copy tệp là an toàn.
-function backupDbBeforeRisky(userDataDir) {
-  const src = path.join(userDataDir, 'dev.db');
-  if (!fs.existsSync(src)) return null;
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const dest = path.join(userDataDir, `dev.db.backup-${stamp}`);
-  fs.copyFileSync(src, dest);
-  for (const suffix of ['-wal', '-journal', '-shm']) {
-    if (fs.existsSync(src + suffix)) {
-      try { fs.copyFileSync(src + suffix, dest + suffix); } catch { /* phụ trợ — bỏ qua */ }
-    }
-  }
-  return dest;
-}
-
-// Hai nấc, CỐ Ý:
-//   1. `db push` thường — đủ cho gần hết trường hợp (tạo mới / diff không rủi ro).
-//   2. Nếu nấc 1 hỏng: Prisma thường từ chối vì CẢNH BÁO có thể mất dữ liệu (ví dụ
-//      thêm ràng buộc UNIQUE lên cột đã có). Lúc đó SAO LƯU dev.db rồi thử LẠI
-//      ĐÚNG MỘT LẦN với --accept-data-loss.
-// Vì sao KHÔNG đặt --accept-data-loss ngay từ đầu: cờ đó tắt lưới an toàn cho MỌI
-// thay đổi schema về sau, kể cả thay đổi xoá thật. Chỉ dùng khi đã có bản sao.
-async function runDbPush(appRoot, env, userDataDir) {
-  const first = await spawnDbPush(appRoot, env, userDataDir, []);
-  if (first.ok) return;
-  if (first.missing) {
-    throw new Error('Không tìm thấy Prisma CLI để kiểm tra dữ liệu. Hãy cài lại InteriorFlow.');
-  }
-  if (first.spawnError) {
-    throw new Error(`Không chạy được Prisma: ${first.spawnError.message}`);
-  }
-
-  let backupPath = null;
-  try {
-    backupPath = backupDbBeforeRisky(userDataDir);
-  } catch (err) {
-    throw new Error(
-      'Không nâng cấp được dữ liệu cục bộ và cũng KHÔNG sao lưu được trước khi thử lại ' +
-        `(${err.message}). Dữ liệu chưa được mở để tránh ghi tiếp khi chưa an toàn.`,
-    );
-  }
-
-  const second = await spawnDbPush(appRoot, env, userDataDir, ['--accept-data-loss']);
-  if (second.ok) return;
-
-  throw new Error(
-    'Không thể kiểm tra/nâng cấp dữ liệu cục bộ' +
-      (second.code !== null && second.code !== undefined ? ` (mã ${second.code})` : '') +
-      '. Dữ liệu chưa được mở để tránh ghi tiếp khi chưa an toàn.' +
-      (backupPath ? ` Bản sao trước khi thử nâng cấp: ${backupPath}.` : '') +
-      ' Xem db-push.log trong thư mục dữ liệu rồi liên hệ người quản trị.',
-  );
-}
+// ── Nâng cấp CSDL cục bộ ─────────────────────────────────────────────────────
+// Tách sang `electron/nang-cap-csdl.js` ngày 05/09 để CHẠY THỬ ĐƯỢC — xem docstring ở đó.
+// Đường rủi ro nhất trong bộ cài không được phép là đường duy nhất không thử được.
+const {
+  nangCapCsdl,
+  doTrangThaiCsdl,
+  xoaSoLechRoiBacCau,
+  raSoatSqlBacCau,
+  danhSachMigration,
+  TEP_LOG_NANG_CAP,
+  TEP_SQL_BAC_CAU,
+} = require('./nang-cap-csdl.js');
 
 // ── Spawn Next.js production server ───────────────────────────────────────────
 async function startNextServer() {
@@ -398,7 +338,7 @@ async function startNextServer() {
   // Lần đầu: tạo/nâng cấp schema vào <userData>/dev.db. Nếu bước này lỗi thì
   // DỪNG khởi động; tuyệt đối không mở app rồi ghi tiếp trên trạng thái không rõ.
   // Người vận hành phải sao lưu DB trước khi cài bản nâng cấp (checklist release).
-  await runDbPush(appRoot, serverEnv, userDataDir);
+  await nangCapCsdl(appRoot, serverEnv, userDataDir, dbPath);
   // Chỉ đánh dấu phiên bản sau khi schema pass; lần khởi động lại cùng bản không
   // tạo thêm snapshot, còn lần update tiếp theo luôn còn một đường lùi.
   writeReleaseState(userDataDir);
@@ -414,10 +354,35 @@ async function startNextServer() {
     {
       cwd: userDataDir,
       env: serverEnv,
-      stdio: 'ignore',
+      // ⚠️ TRƯỚC ĐÂY LÀ `stdio: 'ignore'` — gói VỨT SẠCH mọi log của máy chủ nội bộ. Hệ quả đo
+      // được 05/09: `POST /api/auth/register` trả 500 CHỈ khi chạy trong gói (cùng CSDL đó,
+      // chạy `next start` thường thì trả 200) — và KHÔNG CÓ MỘT DÒNG NÀO để biết vì sao.
+      // App không chẩn được là app không sửa được ngoài thực địa. Nay ghi ra tệp trong
+      // userData: người dùng gửi đúng một tệp là đủ để lần ra nguyên nhân.
+      stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
     }
   );
+
+  // Sổ log máy chủ trong userData — CÙNG chỗ với CSDL, nên gỡ cài/sao lưu đi cùng nhau.
+  try {
+    const logDir = path.join(userDataDir, 'logs');
+    fs.mkdirSync(logDir, { recursive: true });
+    const logPath = path.join(logDir, 'server.log');
+    // Cắt sổ khi quá 5 MB — không để nó phình vô hạn trên máy người dùng.
+    try {
+      if (fs.existsSync(logPath) && fs.statSync(logPath).size > 5 * 1024 * 1024) {
+        fs.renameSync(logPath, logPath + '.1');
+      }
+    } catch {}
+    const logStream = fs.createWriteStream(logPath, { flags: 'a' });
+    logStream.write(`\n===== phiên mới ${new Date().toISOString()} =====\n`);
+    serverProcess.stdout?.pipe(logStream);
+    serverProcess.stderr?.pipe(logStream);
+  } catch (e) {
+    // Không ghi được log thì KHÔNG được làm chết app — chỉ mất khả năng chẩn.
+    console.error('[log] không mở được sổ log máy chủ:', e);
+  }
 
   serverProcess.on('error', (err) => {
     dialog.showErrorBox('InteriorFlow', `Không khởi động được server nội bộ:\n${err.message}`);
@@ -557,8 +522,14 @@ app.on('open-url', (event, url) => {
 });
 
 // ── Single-instance lock: chỉ cho 1 tiến trình app chạy ───────────────────────
-const gotLock = app.requestSingleInstanceLock();
-if (!gotLock) {
+// `app` chỉ tồn tại khi tệp này chạy TRONG Electron. Khi nó được require từ Node thuần
+// (test đường nâng cấp CSDL), require('electron') trả về một CHUỖI đường dẫn nhị phân nên
+// `app` là undefined — khi đó bỏ qua toàn bộ phần dựng app, chỉ để lộ các hàm thuần ở cuối tệp.
+const chayTrongElectron = Boolean(app && typeof app.requestSingleInstanceLock === 'function');
+const gotLock = chayTrongElectron ? app.requestSingleInstanceLock() : false;
+if (!chayTrongElectron) {
+  /* require từ Node thuần (test) — không dựng cửa sổ, không spawn server */
+} else if (!gotLock) {
   app.quit(); // đã có instance khác -> thoát ngay
 } else {
   // Nếu người dùng mở app lần 2, đưa cửa sổ hiện có lên trước.
@@ -623,13 +594,19 @@ function killServer() {
   }
 }
 
-app.on('window-all-closed', () => {
-  // Windows/Linux: đóng hết cửa sổ = thoát app (đồng thời kill server).
-  if (process.platform !== 'darwin') {
-    killServer();
-    app.quit();
-  }
-});
+if (chayTrongElectron) {
+  app.on('window-all-closed', () => {
+    // Windows/Linux: đóng hết cửa sổ = thoát app (đồng thời kill server).
+    if (process.platform !== 'darwin') {
+      killServer();
+      app.quit();
+    }
+  });
 
-app.on('before-quit', killServer); // chắc chắn kill server trước khi thoát
-app.on('quit', killServer);
+  app.on('before-quit', killServer); // chắc chắn kill server trước khi thoát
+  app.on('quit', killServer);
+}
+
+// Để lộ đúng đường nâng cấp CSDL cho test (electron/nang-cap-csdl.test.ts). Không có tác
+// dụng phụ khi chạy trong Electron — main process không ai require tệp này.
+module.exports = { nangCapCsdl, doTrangThaiCsdl, raSoatSqlBacCau, danhSachMigration, xoaSoLechRoiBacCau, loadUserConfig };

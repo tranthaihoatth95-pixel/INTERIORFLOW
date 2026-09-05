@@ -20,9 +20,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ImageOff, Image as ImageIcon, RefreshCw, Truck, Wallet } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { loadPbrMap } from '@/lib/materials/pbr-store';
+import { pbrMapBaTang } from '@/lib/materials/tang-phan-giai';
+import { tronHatGiong } from '@/lib/materials/kho-mo-dau';
 import { MATERIALS } from '@/lib/cad/materials';
 import type { MaterialPbr } from '@/lib/materials/schema';
-import { locMonTho, tomTatNganTho, type MonKhoChung, type MonTho } from '../_lib/ngan-tho';
+import type { MaterialSpecDto } from '@/lib/materials/warehouse/dto';
+import { locMonTho, tomTatNganTho, type MonTho } from '../_lib/ngan-tho';
 
 /** Dấu hình học cho trạng thái — KHÔNG dùng màu làm kênh duy nhất (luật màu-không-là-kênh-duy-nhất).
  *  `chuaDu` là ca đắt nhất: nó TRÔNG như đã xong, nên phải có dấu riêng chứ không gộp với `chuaCo`. */
@@ -93,7 +96,9 @@ function ThePhanTho({ mon }: { mon: MonTho }) {
 
 export function NganPhanTho() {
   const tr = useT();
-  const [kho, setKho] = useState<MonKhoChung[] | null>(null);
+  /* `MaterialSpecDto` (không phải shape con `MonKhoChung`) vì `tronHatGiong` trả về dòng đầy đủ và
+     `/api/specs` cũng trả đầy đủ; `MonKhoChung` vẫn là shape con hợp lệ nên `locMonTho` nhận được. */
+  const [kho, setKho] = useState<MaterialSpecDto[] | null>(null);
   const [loi, setLoi] = useState<string | null>(null);
   const [pbrMap, setPbrMap] = useState<Record<string, MaterialPbr>>({});
 
@@ -105,26 +110,39 @@ export function NganPhanTho() {
       const j = await res.json();
       setKho(j.specs ?? []);
     } catch (e) {
+      /* Máy chủ ngã KHÔNG được làm ngăn này rỗng: tầng hạt giống nằm trong REPO, nó không phụ
+         thuộc `/api/specs` — đó chính là lý do nó tồn tại. Giữ `kho = []` để `khoChung` bên dưới
+         vẫn trộn ra hàng hạt giống; dải báo lỗi vẫn hiện nên người dùng biết mặt THƯƠNG MẠI đang
+         thiếu, không bị lừa là đã đủ. (Cùng ca 401 đã vá ở `MaterialsScreen` 04/09.) */
+      setKho([]);
       setLoi(e instanceof Error ? e.message : String(e));
     }
   }, []);
 
   useEffect(() => { void nap(); }, [nap]);
   /* Kho PBR sống trong localStorage ⇒ chỉ đọc được sau khi lên client (SSR trả {}). Cùng lý do đã
-     ghi ở `MaterialsScreen`: đọc sớm thì người vừa đặt xong thông số vẫn thấy "chưa có". */
-  useEffect(() => { setPbrMap(loadPbrMap()); }, []);
+     ghi ở `MaterialsScreen`: đọc sớm thì người vừa đặt xong thông số vẫn thấy "chưa có".
+     `pbrMapBaTang` chứ không `loadPbrMap` trần — nếu chỉ đọc tầng studio thì vật liệu ship sẵn
+     không có thông số nào ⇒ ngăn thô bày chúng ra như hàng chưa định nghĩa. */
+  useEffect(() => { setPbrMap(pbrMapBaTang({ studio: loadPbrMap() })); }, []);
+
+  /* KHO CHUNG = hạt giống (theo bản cài) + dòng DB, dòng DB thắng khi trùng `matId`. Trước 04/09
+     ngăn này chỉ đọc `/api/specs` ⇒ trên máy sạch nó LUÔN rỗng và nói "Kho chung chưa có món nào",
+     trong khi bản cài đã ship sẵn vật liệu — câu đó SAI về hiện trạng, đúng họ lỗi "cột Nguồn nói
+     sai". `tronHatGiong` là cùng một hàm `MaterialsScreen` dùng, không đẻ luật xếp thứ hai. */
+  const khoChung = useMemo(() => (kho === null ? null : tronHatGiong(kho)), [kho]);
 
   const tho = useMemo(
-    () => (kho ? locMonTho(kho, { pbrMap, specs: kho, defs: MATERIALS }) : []),
-    [kho, pbrMap],
+    () => (khoChung ? locMonTho(khoChung, { pbrMap, specs: khoChung, defs: MATERIALS }) : []),
+    [khoChung, pbrMap],
   );
-  const tomTat = useMemo(() => tomTatNganTho(tho, kho?.length ?? 0), [tho, kho]);
+  const tomTat = useMemo(() => tomTatNganTho(tho, khoChung?.length ?? 0), [tho, khoChung]);
 
   return (
     <section style={{ display: 'grid', gap: 10, padding: '12px 14px' }} aria-label={tr('Phần thô dùng chung', 'Shared raw stock')}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <p style={{ margin: 0, fontSize: 'var(--fs-ui)', color: 'var(--t2)' }}>
-          {kho === null && !loi ? tr('Đang đọc kho chung…', 'Reading the shared catalogue…') : tr(tomTat.vi, tomTat.en)}
+          {khoChung === null && !loi ? tr('Đang đọc kho chung…', 'Reading the shared catalogue…') : tr(tomTat.vi, tomTat.en)}
         </p>
         <button
           type="button"
@@ -148,7 +166,7 @@ export function NganPhanTho() {
 
       {/* NGĂN RỖNG — hai ca khác hẳn nhau, cố ý không dùng chung một câu:
           ① kho chưa có gì  ② mọi món đều đã đủ định nghĩa (tin TỐT, không phải trạng thái lỗi). */}
-      {kho !== null && tho.length === 0 && !loi && (
+      {khoChung !== null && tho.length === 0 && !loi && (
         <p
           style={{
             margin: 0, padding: '18px 14px', textAlign: 'center',
@@ -156,7 +174,7 @@ export function NganPhanTho() {
             fontSize: 'var(--fs-2xs)', color: 'var(--t3)',
           }}
         >
-          {kho.length === 0
+          {khoChung.length === 0
             ? tr('Chưa món nào trong kho chung. Thả tệp vật liệu vào đây để bắt đầu.',
                  'Nothing in the shared catalogue yet. Drop material files here to start.')
             : tr('Không còn món thô nào — mọi món đều đã đủ định nghĩa để render.',

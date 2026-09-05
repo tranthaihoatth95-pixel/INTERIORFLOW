@@ -109,7 +109,7 @@ export default function IOMenu({
           cursor: busy ? 'default' : 'pointer',
           border: `1px solid ${accent ? 'var(--accent)' : 'var(--border)'}`,
           background: accent ? 'var(--accent)' : 'var(--field)',
-          color: accent ? '#fff' : 'var(--t2)',
+          color: accent ? 'var(--on-accent)' : 'var(--t2)',
           opacity: busy ? 0.6 : 1,
           whiteSpace: 'nowrap',
         }}
@@ -160,9 +160,9 @@ export default function IOMenu({
             padding: '7px 12px',
             borderRadius: RADIUS.r2,
             fontSize: 12.5,
-            border: `1px solid ${resultMsg.ok ? 'var(--accent)' : '#c0392b'}`,
+            border: `1px solid ${resultMsg.ok ? 'var(--accent)' : 'var(--danger)'}`,
             background: 'var(--panel)',
-            color: resultMsg.ok ? 'var(--t1)' : '#c0392b',
+            color: resultMsg.ok ? 'var(--t1)' : 'var(--danger)',
             boxShadow: '0 10px 30px rgba(0,0,0,.25)',
           }}
         >

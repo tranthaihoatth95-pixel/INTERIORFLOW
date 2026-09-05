@@ -27,7 +27,11 @@
 | | Thiết kế 3D | `/projects/[id]/render` | nt |
 | | Trình chiếu | `/projects/[id]/present` | nt |
 
-Hai cụm tách bằng **một khoảng thở**, không phải đường kẻ (luật *bỏ đường kẻ ngang chia khối*).
+Các cụm tách bằng **một khoảng thở**, không phải đường kẻ (luật *bỏ đường kẻ ngang chia khối*).
+
+> 🔄 **04/09** — hợp đồng này viết khi rail còn HAI cụm. Chốt `CHOT-EXPERIENCE-SYSTEM` 20/08 điều 3
+> đè thành **BA cụm** (workspace chung · dự án · cá nhân+hệ thống); mã đã thi hành. Nguồn sự thật là
+> `components/nav/muc-dieu-huong.ts`, xem thêm `docs/IF-KIEN-TRUC.md` §3.
 Cụm DỰ ÁN chưa mở dự án thì **mờ kèm lý do**, KHÔNG ẩn — ẩn thì người dùng không biết app có gì.
 
 ### ⛔ KHÔNG lên rail — và ở đâu thay thế
@@ -123,7 +127,7 @@ Cửa nghiệm thu: ① che nấc to → nấc nhỏ vẫn đứng một mình �
 
 | Phiên | Vùng ghi | Làm gì |
 |---|---|---|
-| **V1 · vỏ điều hướng** | `components/nav/**` (mới) · `components/studio/AppShell.tsx` · mock sidebar | rail hai cụm, ba nấc, thu/mở nhớ được, mờ-kèm-lý-do cho cụm dự án |
+| **V1 · vỏ điều hướng** | `components/nav/**` (mới) · `components/studio/AppShell.tsx` · mock sidebar | rail **ba cụm** (đã nới từ hai theo chốt 20/08), ba nấc **52/240/320–440 kéo được**, thu/mở nhớ được, mờ-kèm-lý-do cho cụm dự án |
 | **V2 · hai ngăn & kệ** | `app/files/**` · `components/library/**` · `app/colors/**` · mock Files + Thư viện | Files hai ngăn · Thư viện chia kệ · màu thành bước trong chọn vật liệu |
 
 **Cả hai đọc file này làm nguồn.** Chạm biên ngoài vùng ⇒ **DỪNG, báo T**, không tự quyết —

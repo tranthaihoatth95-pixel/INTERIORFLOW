@@ -37,7 +37,14 @@ function token(theme: WallpaperTheme, ten: string): string {
     ? CSS.indexOf(":root[data-theme='dark']")
     : CSS.indexOf(":root[data-theme='light'] {");
   if (moc < 0) return '';
-  const m = CSS.slice(moc, moc + 4000).match(new RegExp(`--${ten}:\\s*([^;]+);`));
+  // 🔴 SỬA 05/09 — TRƯỚC ĐÂY cắt cứng `moc + 4000` ký tự. Hoà nhánh làm chú thích trong khối
+  // theme dài thêm, và `--nen-mo-vanh` rơi RA NGOÀI cửa sổ 4000 ⇒ test báo "token không khai
+  // được ở theme tối" trong khi nó khai đầy đủ ở dòng 340. Báo nhầm kiểu này tốn đúng một
+  // lượt đi tìm lỗi không tồn tại.
+  // ⇒ Đọc tới ĐÚNG DẤU ĐÓNG của khối (`\n}` đầu tiên), không đoán độ dài.
+  const het = CSS.indexOf('\n}', moc);
+  const khoi = CSS.slice(moc, het < 0 ? CSS.length : het);
+  const m = khoi.match(new RegExp(`--${ten}:\\s*([^;]+);`));
   return m ? m[1].trim() : '';
 }
 

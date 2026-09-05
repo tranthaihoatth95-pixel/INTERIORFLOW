@@ -54,6 +54,7 @@ import {
   Loader2,
   X,
   MoreHorizontal,
+  TableProperties,
 } from 'lucide-react';
 import IOMenu from '@/components/ui/IOMenu';
 import LightArc from '@/components/ui/LightArc';
@@ -82,6 +83,7 @@ import type { BoqRow } from '@/lib/boq/model';
 import ExportPdfDialog from '@/components/print/ExportPdfDialog';
 import { detectFormat } from '@/lib/gateway/detect';
 import { routeFormat } from '@/lib/gateway/route';
+import { useLuiAnToan } from '@/lib/nav/lui-an-toan';
 
 interface Props {
   onAddText: () => void;
@@ -137,6 +139,10 @@ interface Props {
    * 1 nút cạnh Khoá, cùng khuôn toggle-cả-cụm với onToggleLock. */
   /** ẩn/hiện cả lựa chọn — 1 nút, đổi icon/nhãn theo trạng thái (xem `anyVisible` bên dưới). */
   onToggleHide: () => void;
+  /* Phụ lục BOQ (02/09) — dựng/làm mới trang bảng khối lượng từ Doc 2D + Kho giá + sửa tay. Logic ở
+   * PresentEditor#onInsertBoqAppendix; toolbar chỉ là mặt tiền (cùng khuôn export). */
+  onInsertBoqAppendix?: () => void | Promise<void>;
+  boqAppendixBusy?: boolean;
 }
 
 /**
@@ -150,6 +156,7 @@ export interface ToolbarHandle {
 }
 
 const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
+  const tr = useT();
   const fileRef = useRef<HTMLInputElement>(null);
   const gatewayFileRef = useRef<HTMLInputElement>(null);
   const [libOpen, setLibOpen] = useState(false);
@@ -530,12 +537,10 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
     }
   }
 
-  // Thoát Canva mode: quay lại trang trước, không có lịch sử thì về app chính '/'.
-  function onBack() {
-    if (typeof window === 'undefined') return;
-    if (window.history.length > 1) window.history.back();
-    else window.location.href = '/';
-  }
+  /* Thoát Canva mode: lui một bậc nếu bậc đó là trang IF, không thì về app chính '/'.
+     A1-01 (05/09) — lá chắn cũ `window.history.length > 1` đếm cả ô của trang NGOÀI, nên vào ngang
+     bằng URL là bấm ra `about:blank`. Đích dự phòng '/' giữ nguyên, chỉ đổi cách hỏi. */
+  const onBack = useLuiAnToan('/');
 
   return (
     <div
@@ -567,6 +572,20 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
             sub: 'Ảnh · PPTX · PDF (chữ sống, bậc 1) · IDFP · XLSX/CSV; định dạng chưa hỗ trợ sẽ nói rõ lý do',
             icon: <FileUp size={16} />,
             onSelect: () => gatewayFileRef.current?.click(),
+          },
+          {
+            id: 'boq-appendix',
+            label: tr('Phụ lục BOQ từ bản vẽ', 'BOQ appendix from the drawing'),
+            sub: tr(
+              'Dựng trang bảng khối lượng từ Doc 2D + Kho giá + số sửa tay · mỗi dòng ghi rõ Bản vẽ ↔ Sửa tay ✎ · làm mới được · PDF/PNG đúng bố cục, PPTX xuất trang này dạng ảnh',
+              'Build BOQ pages from the 2D doc + price library + hand edits · every row labelled Drawing ↔ Hand-edited ✎ · refreshable · PDF/PNG keep the layout, PPTX exports these pages as images',
+            ),
+            icon: <TableProperties size={16} />,
+            onSelect: () => { void p.onInsertBoqAppendix?.(); },
+            disabled: !p.onInsertBoqAppendix || !!p.boqAppendixBusy,
+            disabledReason: p.boqAppendixBusy
+              ? tr('Đang dựng phụ lục — chờ xong lượt trước.', 'Building the appendix — wait for the previous run.')
+              : tr('Chưa nối với hồ sơ đang mở.', 'Not connected to the open document.'),
           },
         ]}
       />

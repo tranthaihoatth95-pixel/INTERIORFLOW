@@ -54,3 +54,34 @@ export function useModShiftKey(key: string): string {
   const isMac = useMacAfterMount();
   return isMac ? `${MOD}${SHIFT}${key}` : `Ctrl+Shift+${key}`;
 }
+
+// ── PHÍM CHÍNH (PrimaryModifier) — MỘT NGUỒN CHUNG ───────────────────────────
+// 04/09 · macOS là nền tảng chính. Trước lượt này mỗi handler tự viết
+// `e.metaKey || e.ctrlKey`; đo được 50 chỗ, tất cả cùng một biểu thức nhưng
+// KHÔNG chỗ nào đọc từ một nguồn ⇒ đúng bệnh "cùng một danh sách khai nhiều nơi".
+// Từ nay: mọi nơi hỏi "người dùng có đang giữ phím chính không" đều gọi vào đây.
+//
+// ⚠️ HAI CÂU HỎI KHÁC NHAU, ĐỪNG TRỘN — đây là chỗ dễ sai nhất:
+//   · laPhimChinh(e)   — "đây CÓ PHẢI phím tắt của mình không?"  → theo hệ:
+//                        macOS chỉ ⌘ · Windows/Linux Ctrl (và ⊞ Win, giữ nguyên
+//                        hành vi cũ để không đổi thói quen người dùng Windows).
+//                        Trên Mac, Ctrl KHÔNG còn kích hoạt phím tắt của app —
+//                        đúng quy ước macOS, và giữ ⌃⌘Q tách bạch được.
+//   · coPhimHeThong(e) — "người dùng có đang giữ phím sửa đổi nào không, để mình
+//                        TRÁNH ĐƯỜNG?" → luôn nhận CẢ HAI trên mọi hệ, vì phím
+//                        tắt của trình duyệt/OS đến từ cả hai phía.
+// Dùng nhầm laPhimChinh cho nhánh "tránh đường" sẽ làm app cướp phím của OS.
+type PhimSuaDoi = Pick<KeyboardEvent, 'metaKey' | 'ctrlKey'>;
+
+/** Nhãn phím chính theo hệ — '⌘' trên macOS, 'Ctrl' nơi khác. */
+export const PHIM_CHINH = MOD;
+
+/** Người dùng đang giữ ĐÚNG phím chính của hệ này? (dùng cho phím tắt của app) */
+export function laPhimChinh(e: PhimSuaDoi): boolean {
+  return IS_MAC ? e.metaKey : e.ctrlKey || e.metaKey;
+}
+
+/** Có phím sửa đổi hệ thống nào đang giữ? (dùng cho nhánh "bỏ qua, nhường OS") */
+export function coPhimHeThong(e: PhimSuaDoi): boolean {
+  return e.metaKey || e.ctrlKey;
+}

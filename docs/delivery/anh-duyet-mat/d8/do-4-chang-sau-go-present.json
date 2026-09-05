@@ -1,0 +1,51 @@
+{
+  "nhan": "sau-go-present",
+  "luc": "2026-09-04T23:54:06.749Z",
+  "ds": [
+    {
+      "chang": "settings",
+      "duong": "/settings",
+      "demGieoLuc_ms": 3285,
+      "storeCoUserLuc_ms": 3285,
+      "demCuoi": true,
+      "storeCuoi": true,
+      "dat": true
+    },
+    {
+      "chang": "cad",
+      "duong": "/projects/cmtnli7bf00027dso1ezmp2m9/cad",
+      "demGieoLuc_ms": 4602,
+      "storeCoUserLuc_ms": 4602,
+      "demCuoi": true,
+      "storeCuoi": true,
+      "dat": true
+    },
+    {
+      "chang": "render",
+      "duong": "/projects/cmtnli7bf00027dso1ezmp2m9/render",
+      "demGieoLuc_ms": 2845,
+      "storeCoUserLuc_ms": 2845,
+      "demCuoi": true,
+      "storeCuoi": true,
+      "dat": true
+    },
+    {
+      "chang": "present",
+      "duong": "/projects/cmtnli7bf00027dso1ezmp2m9/present",
+      "demGieoLuc_ms": 7602,
+      "storeCoUserLuc_ms": 7602,
+      "demCuoi": true,
+      "storeCuoi": true,
+      "dat": true
+    },
+    {
+      "chang": "photo",
+      "duong": "/projects/cmtnli7bf00027dso1ezmp2m9/photo",
+      "demGieoLuc_ms": 1409,
+      "storeCoUserLuc_ms": 1409,
+      "demCuoi": true,
+      "storeCuoi": true,
+      "dat": true
+    }
+  ]
+}

@@ -49,10 +49,17 @@ const COOKIE = !HAS_AUTH_SECRET ? 'if_session_noenv' : IS_WORKTREE ? 'if_session
  * Trước đây thiếu `AUTH_SECRET` thì JWT ký bằng hằng số `'dev-secret-change-me'` — chuỗi này
  * NẰM CÔNG KHAI TRONG MÃ NGUỒN. Bản Electron được cứu vì `electron/main.js` tự sinh secret và
  * persist, nhưng repo có `vercel.json`: một lần deploy web quên đặt biến là ai cũng tự đúc được
- * cookie `sub=<userId bất kỳ>`, kể cả `isAdmin`. Đó là chiếm quyền, không phải bất tiện.
+ * cookie `sub=<userId bất kỳ>`, kể cả `isAdmin`. Đó là chiếm quyền, không phải bất tiện — và là loại hỏng
+ * KHÔNG CÓ TRIỆU CHỨNG: app chạy trơn tru, đăng nhập bình thường, không ai biết cho tới
+ * lúc bị lợi dụng.
  *
  * KHÔNG bỏ fallback ở dev: chế độ `if_session_noenv` ở trên là CÁCH LY CÓ CHỦ Ý (worktree /
  * server tạm không được đụng phiên thật ở cùng localhost). Bỏ nó là phá một thứ đang làm đúng.
+ *
+ * Bản desktop KHÔNG bị chặn: `electron/main.js` tự sinh và lưu `AUTH_SECRET` vào
+ * `<userData>/config.json` trước khi bật server, nên mỗi máy có khoá riêng. Máy dựng CI phải
+ * cấp khoá dùng-một-lần (xem `.github/workflows/dung-ban-mac.yml`). Deploy web (`vercel.json`)
+ * phải đặt biến trong cấu hình dự án — build ĐỎ ở đây là lá chắn LÀM ĐÚNG VIỆC, không phải lỗi mã.
  *
  * ⇒ Chỉ chặn ở `production`. Cùng khuôn với `lib/integrations/crypto.ts:15` — thiếu key thì NÉM,
  * không chạy tiếp lặng lẽ. Ném ở tầng module: hỏng thì hỏng LÚC KHỞI ĐỘNG, không phải hỏng

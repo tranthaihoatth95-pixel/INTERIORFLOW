@@ -5,8 +5,9 @@
  * chuỗi client khai, không đối chiếu nội dung thật).
  *
  * Whitelist CỨNG — chỉ nhận đúng các định dạng ĐÃ CÓ nơi dùng thật trong app (ảnh raster hiển thị
- * trong Thư viện/Notebook, PDF cho Notebook ingest). KHÔNG nhận `svg`/`html`/bất kỳ định dạng chứa
- * script được — đó chính là vector XSS lưu trữ mà spec này vá.
+ * trong Thư viện/Notebook, PDF cho Notebook ingest, và `.idf`/`.idfp` — hồ sơ của CHÍNH IF, nhận
+ * bằng kiểm CẤU TRÚC chứ không phải magic-bytes; xem nhánh `idfp` cuối `sniffKind`). KHÔNG nhận
+ * `svg`/`html`/bất kỳ định dạng chứa script được — đó chính là vector XSS lưu trữ mà spec này vá.
  *
  * Import TƯƠNG ĐỐI (không alias '@/') — test được thẳng qua `sucrase-node` (cùng quy ước đã ghi ở
  * `lib/commands/registry.ts`/`lib/server/credits.ts`).
@@ -84,6 +85,38 @@ export function sniffKind(buf: Buffer | Uint8Array): SniffedKind | null {
   if (b.length >= 12 && b.subarray(4, 8).toString('ascii') === 'ftyp') {
     const head = b.subarray(0, Math.min(32, b.length)).toString('ascii');
     if (head.includes('avif') || head.includes('avis')) return 'avif';
+  }
+  // `.idfp`/`.idf` — HỒ SƠ TRÌNH BÀY và BẢN VẼ 2D CỦA CHÍNH IF. Nhận vào whitelist để deck và
+  // bản vẽ có BẢN SAO BỀN trên máy chủ (`lib/present-editor/luu-len-may-chu.ts` +
+  // `lib/cad/luu-len-may-chu.ts`); trước bản này cả hai chỉ sống ở IndexedDB và deck đã MẤT
+  // TRẮNG một lần khi hồ sơ trình duyệt bị làm mới. Không có nhánh này thì `luuProjectFile()`
+  // trả 415 và cả hai đường sao lưu là tính năng chết — đã đo thật.
+  //
+  // Vì sao KHÔNG phá luật chống XSS lưu trữ mà whitelist này sinh ra:
+  //  ① đây không phải "nhận JSON bất kỳ" — phải PARSE ĐƯỢC và mang đúng chữ ký tài liệu
+  //     (`idfpVersion`/`idfVersion` là số + `sheets` là mảng). Một tệp HTML/SVG/JS không thể
+  //     thoả. Kiểm CẤU TRÚC mạnh hơn kiểm magic-bytes, không yếu hơn.
+  //  ② đường phục vụ lại (`app/api/project-files/_lib/doc-noi-dung.ts`) ép
+  //     `application/octet-stream` + `Content-Disposition: attachment` cho mọi thứ KHÔNG phải
+  //     ảnh raster, luôn kèm `X-Content-Type-Options: nosniff` ⇒ trình duyệt không bao giờ diễn
+  //     giải tệp này thành HTML. `idfp` cố ý ĐỨNG NGOÀI `RASTER_IMAGE_KINDS`.
+  // Đặt CUỐI THẬT SỰ (sau cả AVIF) để mọi định dạng nhận bằng magic-bytes luôn thắng trước; chỉ
+  // tệp không khớp byte đầu nào mới phải trả giá một lần `JSON.parse`.
+  if (b.length >= 2 && b.length <= 40 * 1024 * 1024) {
+    const dau = b.subarray(0, 64).toString('utf8').trimStart();
+    if (dau.startsWith('{')) {
+      try {
+        const o = JSON.parse(b.toString('utf8')) as { idfpVersion?: unknown; idfVersion?: unknown; sheets?: unknown };
+        // Hai chữ ký tài liệu của IF: `.idfp` (hồ sơ trình bày) và `.idf` (bản vẽ 2D). Cùng một
+        // lý lẽ an toàn: phải PARSE ĐƯỢC và mang đúng chữ ký + `sheets` là mảng. Bản vẽ là SỰ
+        // THẬT NGHỀ NGHIỆP nên nó cần bản sao bền hơn cả deck.
+        if (Array.isArray(o?.sheets) && (typeof o?.idfpVersion === 'number' || typeof o?.idfVersion === 'number')) {
+          return 'idfp';
+        }
+      } catch {
+        /* không phải JSON hợp lệ — rơi xuống, trả null như cũ */
+      }
+    }
   }
   return null;
 }

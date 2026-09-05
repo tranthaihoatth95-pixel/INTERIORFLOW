@@ -1,11 +1,11 @@
 /**
  * lib/cad/luu-len-may-chu.ts — SAO LƯU BẢN VẼ 2D LÊN MÁY CHỦ (21/08).
  *
- * VÌ SAO CÓ: cùng gốc rủi ro vừa vá cho chặng Trình bày, nhưng NẶNG HƠN. Bản vẽ 2D là SỰ THẬT
- * NGHỀ NGHIỆP — mất deck thì dựng lại được, mất bản vẽ là mất công việc. Đo tại nguồn: `Doc` chỉ
- * sống ở IndexedDB (`lib/sheets-persist.ts`); đồng bộ đĩa CÓ (`resolveAndSyncCadDisk`) nhưng mặc
- * định TẮT vì đòi người dùng tự chọn thư mục gốc. Xoá dữ liệu duyệt web là mất trắng — đã chứng
- * minh thật khi xoá IndexedDB để thử khôi phục deck.
+ * VÌ SAO CÓ: cùng gốc rủi ro với chặng Trình bày, nhưng NẶNG HƠN. Bản vẽ 2D là SỰ THẬT NGHỀ
+ * NGHIỆP — mất deck thì dựng lại được, mất bản vẽ là mất công việc. Đo tại nguồn: `Doc` chỉ sống
+ * ở IndexedDB (`lib/sheets-persist.ts`); đồng bộ đĩa CÓ (`resolveAndSyncCadDisk` ở
+ * `components/cad/CadSheets.tsx`) nhưng mặc định TẮT vì đòi người dùng tự chọn thư mục gốc. Xoá
+ * dữ liệu duyệt web là mất trắng — đã chứng minh thật khi xoá IndexedDB để thử khôi phục deck.
  *
  * ⛔ KHÔNG đẻ mô hình tài liệu CAD thứ hai, KHÔNG nhân bản sự thật hình học. Dùng ĐÚNG hai mảnh
  * đã có và đã có test: `exportIdf()`/`importIdf()` (định dạng `.idf` v2, có bảng nâng cấp) và
@@ -13,12 +13,31 @@
  * Cùng khuôn `lib/present-editor/luu-len-may-chu.ts` — cố ý KHÔNG gộp code: chữ ký `exportIdf`
  * (không brandKit) khác `exportIdfp`, y như lý do `resolveAndSyncCadDisk` không dùng chung với
  * bản Present.
+ *
+ * ⚠️ PHỤ THUỘC BẮT BUỘC: `lib/server/mime-sniff.ts` phải nhận kind `idfp` (chữ ký cấu trúc cho cả
+ * `.idf` lẫn `.idfp`). Thiếu nó thì `luuProjectFile()` trả **415** và mọi thứ dưới đây là tính
+ * năng chết — đã đo thật trước khi thu hồi mảnh này.
  */
 import { exportIdf, importIdf, type IdfSheetData } from './idf';
 
-/** Tên CỐ ĐỊNH → mỗi lần lưu là một BẢN GHI MỚI cùng tên (API không ghi đè hàng cũ), nên lịch sử
- *  còn nguyên để lùi về khi một bản hỏng/cụt. */
-export const TEN_TEP_SAO_LUU_2D = 'ban-ve.idf';
+/**
+ * Tên bản sao lưu TRÊN MÁY CHỦ (tên `ProjectFile.name`, hiện trong Files → "Tệp nguồn dự án").
+ *
+ * 🔴 CỐ Ý KHÁC `IDF_DISK_FILE = 'ban-ve.idf'` của đường ĐĨA CỤC BỘ (`CadSheets.tsx`) — hai đường
+ * khác nhau về bản chất nên không được trùng tên:
+ *   · đĩa cục bộ = NGUỒN SỰ THẬT người dùng tự chọn thư mục, người dùng sở hữu và nhìn thấy;
+ *   · máy chủ  = BẢN SAO do máy quản, chạy nền, người dùng không đặt tay vào.
+ * Hai kho vốn không đè được lên nhau (một bên là tệp trong thư mục người dùng, một bên là hàng
+ * `ProjectFile` + tệp băm ngẫu nhiên trong `./uploads`), nên đây KHÔNG phải chuyện tránh ghi đè.
+ * Thứ phải tránh là ĐỌC NHẦM: hàm `taiBanVeTuMayChu()` dưới đây lọc theo TÊN. Sau khi mime-sniff
+ * mở cửa cho `.idf`, người dùng có thể TỰ tải một tệp tên `ban-ve.idf` vào Files (đường
+ * `components/filemanager/TepNguonDuAn.tsx`); trùng tên là bản khôi phục tự động sẽ nuốt đúng tệp
+ * đó và tưởng là bản sao của mình. Hậu tố `.sao-luu.` khoá cửa ấy, và nói thẳng cho người đọc
+ * danh sách Files biết hàng nào là của máy.
+ * Mỗi lần lưu là một BẢN GHI MỚI cùng tên (API không ghi đè hàng cũ) nên lịch sử còn nguyên để
+ * lùi về khi một bản hỏng/cụt.
+ */
+export const TEN_TEP_SAO_LUU_2D = 'ban-ve.sao-luu.idf';
 
 export interface KetQuaSaoLuu2D {
   ok: boolean;
@@ -81,6 +100,10 @@ export async function saoLuuBanVeLenMayChu(
  * trắng, tức mất bài lần hai bằng chính cơ chế sinh ra để chống mất bài.
  * `null` = chưa từng sao lưu hoặc không bản nào đọc được ⇒ nơi gọi giữ nguyên trạng thái hiện
  * tại, KHÔNG dựng tờ trắng đè lên việc đang làm.
+ *
+ * ⚠️ CHỈ nhận đúng `TEN_TEP_SAO_LUU_2D`. Không nhận tên `ban-ve.idf` trần: nhánh này chưa bao giờ
+ * GHI tên đó lên máy chủ, nên một hàng mang tên đó chắc chắn do NGƯỜI DÙNG tự tải lên — khôi phục
+ * từ nó là đoán, và đoán sai thì đè lên việc đang làm.
  */
 export async function taiBanVeTuMayChu(projectId: string): Promise<IdfSheetData[] | null> {
   if (!projectId) return null;

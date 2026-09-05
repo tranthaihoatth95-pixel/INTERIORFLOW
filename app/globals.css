@@ -119,7 +119,6 @@
 
   /* Nhịp chuyển động Apple */
   --ease-apple: cubic-bezier(0.32, 0.72, 0, 1);
-  --dur-fast: 0.18s;
   --dur-base: 0.32s;
 
   /* ---------- NHỊP BỀ MẶT NỔI (họ kính, theo VAI TRÒ) ----------
@@ -202,6 +201,55 @@
   --paper-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6); /* tờ giấy cỡ thật */
   --paper-shadow-sm: 0 12px 30px -14px rgba(0, 0, 0, 0.6); /* tờ thu nhỏ trong hộp thoại xuất */
 
+  /* ---------- TÔNG NỘI DUNG (làn D · hiện vật công việc trên Home) ----------
+     Nguồn: :root của `docs/mocks/_home-lock-nen.css` (bản khoá Home 04/09). Cùng lý do
+     KHÔNG theo theme với hai khối --illus-* và --paper-* ngay trên: một bảng vật liệu,
+     một khung phối cảnh hay một mẫu gỗ KHÔNG lật màu khi người dùng đổi theme app —
+     nó là NỘI DUNG của người dùng, không phải giao diện.
+
+     ⚠️ Ba màu mặt sáng của bản vẽ (--nen-sang · --net-sang · --muc) ĐÃ TỒN TẠI dưới tên
+     --paper · --paper-edge · --paper-ink. Khai BÍ DANH thay vì hex thứ hai — đúng lối
+     --ok/--warn ngay dưới, và tránh đúng bệnh "cùng một thứ khai hai chỗ rồi phân kỳ". */
+  --nen-sang: var(--paper); /* mặt nội dung SÁNG (bảng vật liệu, tờ hồ sơ) */
+  --net-sang: var(--paper-edge); /* đường kẻ trên mặt sáng */
+  --muc: var(--paper-ink); /* chữ chính trên mặt sáng */
+  --muc-2: #6b6459; /* chữ phụ trên mặt sáng — ĐO 04/09: 5,37:1 trên --paper, đạt ngưỡng 4,5 */
+
+  /* Thang tông CẢNH — nền mà việc đứng lên (dải môi trường, khung phối cảnh tối). */
+  --canh-0: #14161a;
+  --canh-1: #1e222a;
+  --canh-2: #2c313b;
+  --canh-3: #454c59;
+  --canh-4: #6e6a63;
+  --canh-5: #9b9184;
+  --canh-6: #cabfae;
+  --canh-7: #ece3d3;
+
+  /* Tông VẬT LIỆU — ô mẫu trong bảng vật liệu và dải mẫu bậc KỀ BÊN. */
+  --vl-go: #9c7449;
+  --vl-da: #cfc9bd;
+  --vl-vai: #6f7b74;
+  --vl-kl: #b9b4ab;
+  --vl-son: #e9e2d4;
+
+  /* MỰC TRÊN ẢNH — ngoại lệ khai được của luật "chữ trên nền app chỉ lấy --t1/--t2/--t3":
+     chữ ĐÈ LÊN ảnh không được lật theo theme vì ảnh thì không lật. */
+  --muc-tren-anh-1: #f7f5f1;
+  --muc-tren-anh-3: #c9c5bd;
+
+  /* SCRIM CỤC BỘ — chỉ dìm DẢI CÓ CHỮ, không dìm cả tấm ảnh (chỉ thị D cấm lớp phủ tối
+     khổng lồ). 🔴 ĐẶC, KHÔNG chuyển sắc — đo được, không phải chuyện gu: lớp phủ chuyển
+     sắc mỏng dần về .46 ở CHÂN chữ, đặt lên vùng sáng nhất của ảnh thì nền hoà ra
+     rgb(131,127,119) ⇒ chữ chỉ còn 2,32:1 — TRƯỢT. Scrim đặc .86 thì nền hoà luôn nằm
+     trong rgb(10,11,13)…rgb(40,40,39) với MỌI ảnh ⇒ 8,58:1 … 11,44:1, tức tương phản
+     thành HẰNG SỐ do cấu trúc, không phải may rủi theo từng tấm ảnh người dùng thả vào. */
+  --scrim-manh: rgba(8, 9, 11, 0.86);
+  --scrim-vua: rgba(8, 9, 11, 0.58);
+  --scrim-nhe: rgba(8, 9, 11, 0.3);
+  /* Chuyển sắc ở chân chữ CHỈ dùng cho DẢI CHỮ LỚN (chuyển sắc trải dài quá thân chữ) —
+     cấm dùng cho chip nhỏ, xem phép tính ngay trên. */
+  --phu-chan-chu: linear-gradient(180deg, var(--scrim-manh), var(--scrim-vua));
+
   /* Bí danh trạng thái của làn in — mock khai --ok/--warn (đúng bằng hex của
      --success/--warning bản Tối). Khai BÍ DANH thay vì hex mới, đúng lối --p-img
      ở trên: theme Sáng tự lấy bản đủ tương phản, không kẹt lại màu nền Mực. */
@@ -237,6 +285,20 @@
   --t3: #9e9ea8;
   --t4: #6e6e78;
   --t5: #4e4e57;
+
+  /* ⛔ CHỮ PHỤ TRÊN KÍNH — dùng token này, KHÔNG dùng `--t3`.
+     Đo trên app thật 20/08 (4 nền × 2 theme, lấy nền XẤU NHẤT của mỗi môi trường):
+       --t3 trên kính mỏng → Tối 4.08 · Sáng 3.83  ❌ DƯỚI 4.5
+       --t3 trên nền ĐẶC   → Sáng 4.90            ⇒ chính token đã sát ngưỡng, KHÔNG CÒN BIÊN
+     ⇒ Gốc bệnh không phải kính: `--t3` là màu phụ vốn chỉ vừa đủ 4.5 trên nền đặc, mà kính
+     ăn mất ~0.5-1.0 điểm. Thêm độ đặc không cứu được (kính đặc nhất cũng chỉ lên 4.65 ở nền
+     Sáng) — phải đổi CHÍNH MÀU CHỮ. Giữ đúng thứ tự Hoà đặt: ĐỌC ĐƯỢC THẮNG TRONG SUỐT.
+     Giá trị dưới đây đo lại được 5.26 (Tối) · 5.34 (Sáng) ở nền xấu nhất trên kính MỎNG NHẤT —
+     vẫn đọc ra là chữ phụ (nhạt hơn hẳn --t1/--t2), nhưng có biên thật.
+     ⚠️ Khai ở KHỐI THEME chứ không ở khối dùng chung "BỘ NỀN CHROME": hai theme phải hai giá
+     trị, và luật [hai theme] của lib/ui/design-tokens.test.ts đòi khai đủ ở CẢ tối lẫn sáng. */
+  --kinh-chu-phu: #b4b4bd;
+
   --dots: #26262d;
   --minimap-mask: rgba(12, 12, 14, 0.7);
 
@@ -430,7 +492,16 @@
   --nen-mo-panel: rgba(249, 249, 251, 0.7);
   --nen-mo-card: rgba(255, 255, 255, 0.82);
   /* Cặp vành/lõi bản SÁNG — xem lý do đầy đủ ở khối theme tối. Cùng alpha, khác màu nền. */
-  --nen-mo-vanh: rgba(255, 255, 255, 0.55);
+  /* 🔴 SỬA 05/09. TRƯỚC ĐÂY cả hai là `rgba(255,255,255,…)` — trắng trên nền gần trắng ⇒ ba lớp
+     nền/vành/lõi **không tách nổi nhau**: đo được vành↔nền 1,061 và lõi↔vành 1,043, trong khi
+     ngưỡng của chính bộ kiểm là ≥1,15 và ≥1,08. Lỗi có sẵn ở CẢ HAI nhánh (bản nền kem cũng chỉ
+     1,081/1,046) — nó chưa bao giờ bị bắt vì bộ kiểm SẬP ở nhánh tối trước khi chạy tới nhánh
+     sáng (cửa sổ đọc token cắt cứng 4000 ký tự; đã sửa cùng lượt).
+     GIÁ TRỊ DƯỚI ĐÂY GIẢI RA TỪ NGƯỠNG, không chọn bằng mắt: giữ nguyên alpha, giữ sắc lam nhẹ
+     của bảng, chỉ hạ độ sáng nguồn tới mức NHỎ NHẤT đạt ngưỡng ⇒ 1,158 và 1,281.
+     Thứ bậc thị giác vẫn đúng chiều: nền → vành trầm hơn một nhịp → lõi sáng nhất.
+     👁 CẦN MẮT DUYỆT — máy chỉ chứng minh ba lớp TÁCH ĐƯỢC, không chứng minh nó ĐẸP. */
+  --nen-mo-vanh: rgba(213, 213, 217, 0.55);
   --nen-mo-loi: rgba(255, 255, 255, 0.9);
   --nen-mo-overlay: rgba(46, 46, 56, 0.28);
 
@@ -446,6 +517,14 @@
      một nhịp, cùng lý do chữ mực mất tương phản nhanh hơn chữ trắng. */
   --vl-dac: var(--panel);
   --vl-gan-dac: rgba(249, 249, 251, 0.975);
+  /* 🔴 THÊM 05/09 lúc hoà nhánh. Hai token này TRƯỚC ĐÂY chỉ khai ở theme TỐI ⇒ ở theme SÁNG
+     `blur(var(--kinh-nhoe-mong))` không giải được, trình duyệt bỏ qua cả khai báo ⇒ **kính mất
+     nhoè ở nền sáng**. Lỗi có sẵn của nhánh nền; cổng `design-tokens` (của nhánh kia) bắt được
+     ngay khi hai nhánh về một chỗ — đúng cái lợi của việc hoà.
+     GIÁ TRỊ GIỮ Y HỆT theme tối, CỐ Ý: đây là HÌNH HỌC (bán kính nhoè, đơn vị px), không phải
+     màu. Đổi số ở đây là quyết định thị giác — không tự chế trong một lượt hoà nhánh. */
+  --vl-gan-dac-nhoe: 6px;
+  --kinh-nhoe-mong: 12px;
 
   /* Nền tối thì mép bắt sáng là ánh sáng trắng loãng; nền sáng thì là bóng đen loãng —
      cùng vai "ánh sáng liếm rìa vật liệu", đảo cực theo nền (giống lối `--vien-mo` đã đi). */
@@ -498,6 +577,211 @@
      khối dark. Đây là BỀ MẶT ĐỌC trong app, KHÁC --paper* là mô phỏng tờ giấy sắp in. */
   --surface-page: #f9f9fb;
 }
+
+/* ============================================================
+   BỘ NỀN CHROME (Cloud Slice 9, 03/09) — token + lớp bề mặt dùng chung cho rail nổi
+   trái · dock/MasterTool dưới · Inspector phải · widget · lớp nổi.
+   NGUYÊN TẮC (B25 NO-REBUILD): CHỈ THÊM BÍ DANH + LỚP GHÉP từ công thức ĐÃ CÓ
+   (`--nen-mo-*` · `.glass-float` · `.vitals-pop` · thang `--r-*` · `--shadow-*`). Không đổi
+   một giá trị nào của token cũ; `--accent*` KHÔNG ĐỤNG (Hoà chưa chọn màu nhấn thứ hai).
+   Mọi số dưới đây là số ĐO TỪ CODE HIỆN HÀNH, không phải số mới:
+     · lh 1.3 / 1.5 / 1.6  = ba giá trị `lineHeight` đứng đầu trong components (32·135·45 chỗ);
+       1.5 là SÀN cho chữ Việt nhiều dòng (luật G4, dấu chồng lên nhau khi lh < 1.5).
+     · fs-min 11px          = `MIN_LABEL_PX` của lib/adaptive-contrast (đã chốt bỏ 9.5px).
+     · dur-instant .12s     = con số đang gõ rời ở .dock-icon-btn / .if-tooltip-tag.
+     · z: 30·31·40·60·80·1000 = các nấc đang dùng thật (ToolWindow 31 · popover 60 · tooltip 1000).
+   Máy canh: lib/ui/design-tokens.test.ts (tương phản · đồng bộ hai theme · giấy không theo theme ·
+   var() chưa khai · thứ tự z · cỡ chạm). Sửa token ở đây thì test đó là chỗ nói cho biết vỡ gì.
+   ============================================================ */
+:root {
+  /* — chữ: nhịp dòng + giãn chữ (chữ Việt: nhiều dòng ≥ 1.5, một dòng nhãn 1.3) — */
+  --lh-ui: 1.3;    /* nhãn một dòng: nút, chip, tiêu đề ngắn */
+  --lh-doc: 1.5;   /* SÀN chữ Việt nhiều dòng (mô tả, ô giải nghĩa, thông báo) */
+  --lh-loose: 1.6; /* đoạn đọc dài (Notebook, mô tả lỗi) */
+  --fs-min: 11px;  /* cỡ chữ NHỎ NHẤT còn được phép hiện (= MIN_LABEL_PX) */
+  --ls-ui: -0.011em; /* = letter-spacing của body — nhãn giao diện */
+  --ls-caps: 0.04em; /* chữ HOA nhỏ (nhãn kệ, caption) cần giãn để đọc được */
+
+  /* — nét kẻ: một thang, không gõ 1px/2px rời — */
+  --stroke-hair: 1px;   /* viền panel, gạch ngăn, vạch chia nhóm */
+  --stroke-key: 1.5px;  /* keyline nhấn (viền gradient chạy, mép chọn) */
+  --stroke-focus: 2px;  /* vòng focus bàn phím (WCAG 2.4.11/12) */
+  /* MÀU vòng focus: `--accent` ĐẶC, KHÔNG phải `--accent-ring` (alpha .55). Đo 03/09 bằng máy
+     (design-tokens.test): ring alpha .55 đắp lên --bg/--panel/--card chỉ còn 1,93–2,23:1 ở CẢ HAI
+     theme — dưới ngưỡng 3:1 của WCAG 1.4.11 cho chỉ báo focus. Accent đặc đạt ≥3:1 trên cả ba nền,
+     hai theme. Đây là bí danh: Hoà chọn màu nhấn thứ hai xong thì đổi MỘT chỗ này. */
+  --focus-ring: var(--accent);
+
+  /* — chuyển động: bổ sung hai nấc còn thiếu quanh --dur-fast/--dur-base — */
+  --dur-instant: 0.12s; /* hover đổi nền, bật/tắt chip (SPEC-HOVER-FOCUS: nút chỉ đổi nền 120ms) */
+  --dur-exit: 0.14s;    /* ĐÓNG nhanh hơn MỞ (luật "vào chậm ra nhanh") */
+  --dur-slow: 0.5s;     /* chuyển trang / sheet lớn */
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* — lớp xếp chồng: một thang, đọc được ai đè ai — */
+  --z-canvas: 0;
+  --z-rail: 30;      /* rail điều hướng nổi trái */
+  --z-inspector: 30; /* trục phải — cùng tầng rail, hai bên không đè nhau */
+  --z-dock: 31;      /* dock/cửa sổ công cụ dưới (= ToolWindow 31 hiện hành) */
+  --z-sheet: 40;     /* tấm thư viện, modal */
+  --z-popover: 60;   /* menu, popover, Vitals */
+  --z-toast: 80;
+  --z-tooltip: 1000; /* = .if-tooltip-tag hiện hành */
+
+  /* — ô chạm CHÍNH (rail · dock · nút hành động đầu): 44 desktop → 56 cảm ứng —
+     Khác `--tap` (32→44, nút thường) và `--tap-lg` (44 cố định). Đây là nấc dành cho cụm
+     người dùng bấm liên tục cả ngày; trên máy tính bảng ngón cái cần 56 mới không trượt. */
+  --tap-chinh: 44px;
+
+  /* — BỀ MẶT theo VAI TRÒ (bí danh — đổi vật liệu một chỗ, mọi mặt đổi theo) —
+     Kính CHỌN LỌC (SPEC-APPLE-MOTION: "kính là gia vị, đọc được TRƯỚC"; chốt 16/08 "kính chỉ ở
+     lớp VỎ đè lên thứ khác"): rail/dock/sheet NỔI trên canvas ⇒ kính; Inspector là NỘI DUNG
+     dày chữ ⇒ ĐẶC (luật G2, cùng lý do .vitals-pop ≥92%); widget Home đứng trên hình nền ⇒
+     kính card (`--nen-mo-card`, đã dùng thật ở dashboard 17/08). */
+  --surface-canvas: var(--bg);
+  --surface-rail: var(--nen-mo-panel);
+  --surface-dock: var(--nen-mo-panel);
+  --surface-inspector: var(--panel);
+  --surface-widget: var(--nen-mo-card);
+  --surface-sheet: var(--nen-mo-panel);
+  /* mép trên bắt sáng — tầng ① "kính nhận ánh sáng" (chốt 16/08), công thức lấy từ .vitals-pop */
+  --surface-rim: color-mix(in srgb, var(--t1) 22%, var(--border));
+
+  /* — NHÃN NGUỒN SỰ THẬT (Measured/Verified/Inferred/External/Stale — EXS điều 9) —
+     Bí danh của màu NGHĨA đã có, theo quy ước đang chạy ở ToolModeForm.tsx:835 (ĐO = success ·
+     SUY = warning) + DesignDnaCardPanel.tsx:45 (đã xác nhận = accent). Không mở màu mới:
+     phổ chỉ còn hai cửa sạch (đo 16/08), nhãn nguồn KHÔNG được ăn thêm cửa nào. External/Stale
+     dùng mực phụ — phân biệt bằng CHỮ + DẤU (màu không là kênh duy nhất). */
+  --truth-measured: var(--success);
+  --truth-verified: var(--accent);
+  --truth-inferred: var(--warning);
+  --truth-external: var(--t3);
+  --truth-stale: var(--t3);
+}
+@media (hover: none) and (pointer: coarse) {
+  :root {
+    --tap-chinh: 56px;
+  }
+}
+
+/* GIẤY VẼ KHÔNG THEO THEME — khai lại thành luật để máy canh: `--paper*` ở trên CHỈ được khai
+   trong khối :root dùng chung, KHÔNG BAO GIỜ trong `[data-theme=…]`. Tờ giấy đi theo CHẾ ĐỘ
+   LÀM VIỆC (in/giấy/xuất), không theo sáng/tối của vỏ app — trộn hai thứ là bản in xem trước
+   đổi màu theo theme, sai với PDF thật (lib/cad/pdf.ts). Test: design-tokens.test.ts [giấy]. */
+
+/* ---------- VÒNG FOCUS BÀN PHÍM TOÀN APP (WCAG 2.4.7 / 2.4.11) ----------
+   Đo 03/09: 0 luật `:focus-visible` trong CSS, 18 chỗ tự chế trong .tsx, 94 chỗ `outline:none`.
+   Người dùng bàn phím mất dấu con trỏ ở phần lớn app. `:where()` cho specificity (0,0,0) ⇒ mọi
+   ring tự chế hiện có (RailDieuHuong, Rollout, InspectorPages…) VẪN THẮNG, không đổi pixel nào ở
+   chỗ đã làm đúng; chỉ chỗ CHƯA có ring mới nhận ring này. Màu = `--focus-ring` (accent ĐẶC — ring
+   alpha .55 đo chỉ ~2:1, xem khai báo token), dày = `--stroke-focus`, cách mép 2px để không dính viền nút.
+   Chuột bấm KHÔNG hiện ring (`:focus:not(:focus-visible)`), đúng hành vi hệ điều hành. */
+:where(a[href], button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: var(--stroke-focus) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+/* focus-ring-ok: đây CHÍNH LÀ luật tắt ring khi bấm chuột — nó không cướp ring của ai. */
+:where(a[href], button, input, select, textarea, summary, [tabindex]):focus:not(:focus-visible) {
+  outline: none;
+}
+/* Phần tử nằm trong vùng cuộn/overflow:hidden — ring ngoài bị cắt, dùng ring TRONG. */
+.if-focus-inset:focus-visible {
+  outline: var(--stroke-focus) solid var(--focus-ring);
+  outline-offset: calc(-1 * var(--stroke-focus));
+}
+
+/* ---------- LỚP BỀ MẶT `.if-surface-*` — MỘT công thức kính, NHIỀU vai ----------
+   Rút từ công thức đang sống (`.nen-mo-panel` blur+saturate · `.vitals-pop` gờ sáng mép trên ·
+   `.glass-float` bo --r-4). Hình theo ngữ pháp §7: rail = rounded-rect (--r-4) · dock = CAPSULE
+   (--r-full, có việc: cụm hành động) · inspector = RECTANGLE (không gian, dính mép) · widget/sheet
+   = rounded-rect (--r-4). Không lớp nào là "kính lồng kính": đặt nội dung ĐẶC bên trong.
+   ⚠️ Trần 4 tấm backdrop-filter trên canvas WebGL (luật .glass-float) VẪN ÁP: rail + dock đã là
+   hai tấm — chặng 3D thêm tấm thứ ba/tư phải đếm lại. */
+.if-surface-rail,
+.if-surface-dock,
+.if-surface-sheet {
+  background: var(--surface-rail);
+  backdrop-filter: saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter: saturate(180%) blur(var(--blur));
+  border: var(--stroke-hair) solid var(--border);
+  border-top-color: var(--surface-rim);
+}
+.if-surface-rail {
+  border-radius: var(--r-4);
+  box-shadow: var(--shadow-pop);
+  z-index: var(--z-rail);
+}
+.if-surface-dock {
+  background: var(--surface-dock);
+  border-radius: var(--r-full);
+  box-shadow: var(--shadow-pop);
+  z-index: var(--z-dock);
+}
+.if-surface-sheet {
+  background: var(--surface-sheet);
+  border-radius: var(--r-4);
+  box-shadow: var(--shadow-sheet);
+  z-index: var(--z-sheet);
+}
+/* Inspector: ĐẶC, hình chữ nhật dính mép phải — chữ dày không đứng trên kính (luật G2). */
+.if-surface-inspector {
+  background: var(--surface-inspector);
+  border-left: var(--stroke-hair) solid var(--border);
+  border-radius: 0;
+  z-index: var(--z-inspector);
+}
+/* Widget Home: card kính trên hình nền, blur mạnh vì nền có chi tiết (= .nen-mo-card). */
+.if-surface-widget {
+  background: var(--surface-widget);
+  backdrop-filter: saturate(180%) blur(var(--blur-strong));
+  -webkit-backdrop-filter: saturate(180%) blur(var(--blur-strong));
+  border: var(--stroke-hair) solid var(--vien-mo);
+  border-top-color: var(--surface-rim);
+  border-radius: var(--r-4);
+  box-shadow: var(--shadow-node);
+}
+/* NẤC GIẢM CHÓI (NT-16, học từ iOS 27 tự sửa Liquid Glass): tắt kính, về màu ĐẶC — cả khi người
+   dùng bật `prefers-reduced-transparency` ở hệ điều hành lẫn khi app gắn `.if-surface--solid`.
+   Giảm chói cắt ÁNH KIM, không bao giờ cắt ĐỘ ĐỌC (luật rút 16/08 lượt 2). */
+.if-surface--solid {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--panel);
+}
+.if-surface-widget.if-surface--solid {
+  background: var(--card);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .if-surface-rail,
+  .if-surface-dock,
+  .if-surface-sheet,
+  .if-surface-widget {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--panel);
+  }
+  .if-surface-widget {
+    background: var(--card);
+  }
+}
+
+/* ---------- MỞ RA TỪ TÂM (`.if-reveal`, luật FROM-THE-CENTER §7) ----------
+   Surface mở ra từ NGUỒN của chính nó: nơi gọi đặt `--if-origin` = toạ độ nút/aperture đã bấm
+   (mặc định tâm). CHỈ animate `transform` — không animate opacity trên phần tử có backdrop-filter
+   (luật G1, bài học kính lỏng K1). Giảm chuyển động: khối `*` đầu file đã đưa duration về ~0. */
+@keyframes if-reveal {
+  from {
+    transform: scale(0.96);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+.if-reveal {
+  transform-origin: var(--if-origin, 50% 50%);
+  animation: if-reveal var(--nhip-ngu-canh) var(--ease-apple) both;
+}
+
 
 html,
 body {
@@ -923,6 +1207,126 @@ body {
   }
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+ * MÉP CUỘN — GIỮ CHỖ CHO THANH CUỘN (05/09)
+ *
+ * LUẬT NGẦM đã tìm ra: `AppShell.tsx:193` khoá `height:100dvh; overflow:hidden`, nên trang
+ * KHÔNG BAO GIỜ cao hơn màn. Mọi màn phải tự dựng hộp cuộn con — đo được **122 chỗ / 95 tệp**,
+ * ít nhất 4 phương ngữ khác nhau. Và vì `overflow:hidden` nằm ở VỎ, **thanh cuộn của trình duyệt
+ * không bao giờ hiện ở cấp trang** — mất luôn tín hiệu "còn nữa" phổ quát nhất.
+ *
+ * Đo 05/09 trên Chromium: mọi hộp cuộn có `offsetWidth − clientWidth = 0` ⇒ thanh cuộn là
+ * OVERLAY: chỉ hiện TRONG LÚC đang cuộn rồi tan. Nghĩa là **trước khi cuộn, không tín hiệu nào**
+ * — người dùng không thể khám phá ra thứ họ không biết là có. Hậu quả đo được: Cài đặt giấu
+ * **2879px** (thấy 23%), Files giấu 1690px (thấy 34%), 0/122 vùng có dấu hiệu còn tiếp.
+ *
+ * ⚠️ Và khối `::-webkit-scrollbar` ngay dưới đây — khai `width: 8px`, thumb tô màu theo theme —
+ * ĐÃ LÀ MÃ CHẾT: 8px đó chưa bao giờ chạm màn, vì không ai giữ chỗ cho nó. Đã viết, chưa cắm.
+ *
+ * `scrollbar-gutter: stable` biến 0px bóng ma thành 8px THẬT (đo: 0 → 8). Không mask, không bọc
+ * thêm thẻ, không đụng cấu trúc — nên không có rủi ro cắt popover như cách dùng `mask-image`.
+ * Vì sao KHÔNG bỏ khoá vỏ: mọi công cụ sáng tạo (Figma · VS Code · Blender · Photoshop · Linear)
+ * đều khoá vỏ, và bỏ khoá KHÔNG giải bài này — app cuộn-cả-trang với thanh overlay vẫn mù y hệt;
+ * nó chỉ làm rail · thanh công cụ · khẩu độ Vitals (đang neo viền màn) trôi theo.
+ * ───────────────────────────────────────────────────────────────────────────── */
+.overflow-y-auto,
+.overflow-auto,
+.if-vung-cuon,
+.if-settings-app .main,
+.if-lib-root .shelf,
+.if-files-app .insp,
+.if-files-app .uplist {
+  scrollbar-gutter: stable;
+
+  /* 🔴 HAI LẦN THỬ, HAI LẦN ĐO — ghi lại cả hai vì mỗi lần đều suýt thành "xong" giả.
+   *
+   * LẦN 1 · `scrollbar-gutter: stable`. Đo được máng `0 → 8px` trên 9/9 hộp cuộn thật. Số đẹp,
+   * đúng, nhưng cắt dải mép rồi soi pixel ⇒ **con trượt KHÔNG vẽ ra**. Dừng ở đó là lấy mất 8px
+   * bố cục mà không thêm tín hiệu nào. GIỮ `stable` (nó chặn nhảy bố cục khi nội dung lớn lên,
+   * và máng là chỗ để con trượt sống nếu môi trường có vẽ) nhưng KHÔNG coi nó là dấu hiệu.
+   *
+   * LẦN 2 · mẹo scroll-shadow 4 lớp background (2 `local` che + 2 `scroll` vệt). CSS áp ĐÚNG —
+   * `getComputedStyle` trả đủ 4 lớp, đúng attachment, đúng vị trí. Nhưng đo pixel: **CHÊNH = 0.0**.
+   * Lý do: **background vẽ PHÍA SAU con**. Màn Cài đặt toàn thẻ ĐỤC ⇒ thẻ che kín vệt. Mẹo đó chỉ
+   * hợp danh sách nền trong suốt, KHÔNG hợp bố cục thẻ. ⇒ ĐÃ GỠ, không để lại mã chết.
+   *
+   * LẦN 3 · dấu hiệu phải nằm TRÊN nội dung. Không bọc thêm thẻ (122 chỗ, không đi sửa từng chỗ
+   * được) ⇒ dùng `::before/::after` **sticky** ngay trong hộp cuộn: sticky dính theo khung nhìn của
+   * hộp, `z-index` cho nó nổi trên thẻ, `margin` âm để không chiếm chỗ. Phần "chỉ hiện khi thật sự
+   * còn nội dung" giao cho **scroll-driven animation** (`animation-timeline: scroll(self block)`) —
+   * Chromium 115+, mà IF ship bằng Electron 33 (Chromium 130). Trình duyệt không hỗ trợ thì
+   * `opacity` giữ nguyên giá trị tĩnh 0 ⇒ **không có tín hiệu SAI**, chỉ là không có tín hiệu.
+   * 🔴 BẪY THỨ BA, mắc rồi mới thấy: `.main` khai `overflow:auto` như một **THUỘC TÍNH CSS**, không
+   * phải **class Tailwind** ⇒ nó **chưa bao giờ khớp** `.overflow-y-auto`. Hai lần trong một lượt
+   * tôi lẫn "có tràn" với "có class". ⇒ Phải liệt kê tường minh các hộp cuộn khai-bằng-thuộc-tính.
+   * Và chính chỗ này chứng minh vì sao **không thể làm bằng một quy tắc CSS toàn cục**: CSS không
+   * chọn được theo "có tràn hay không". Đường bền là MỘT component sở hữu cái mép, mọi vùng cuộn
+   * đi qua nó. Danh sách dưới đây là **bản vá tạm có tên**, không phải kiến trúc.
+   * ⚠️ `mask-image` cố ý KHÔNG dùng: nó XÉN mọi thứ vẽ ra ngoài vùng ⇒ dropdown/popover nổi bên
+   * trong hộp cuộn sẽ bị cắt. Đó là lối `.cad-pill-scroll` dùng cho trục NGANG, nơi không có popover. */
+}
+
+@keyframes if-hien-mep-tren { from { opacity: 0; } 4%, to { opacity: 1; } }
+@keyframes if-hien-mep-duoi { from, 96% { opacity: 1; } to { opacity: 0; } }
+
+.overflow-y-auto::before, .overflow-auto::before, .if-vung-cuon::before,
+.if-settings-app .main::before, .if-lib-root .shelf::before,
+.if-files-app .insp::before, .if-files-app .uplist::before,
+.overflow-y-auto::after, .overflow-auto::after, .if-vung-cuon::after,
+.if-settings-app .main::after, .if-lib-root .shelf::after,
+.if-files-app .insp::after, .if-files-app .uplist::after {
+  content: '';
+  display: block;
+  position: sticky;
+  z-index: 3;
+  height: 14px;
+  pointer-events: none;
+  opacity: 0;
+  /* 🔴 `scroll(self)` SAI — `self` là phần tử MANG animation, tức chính ::before, mà pseudo thì
+   * không cuộn ⇒ timeline không bao giờ tiến, `opacity` kẹt ở 0. Đo được: pseudo tồn tại đủ
+   * (position sticky · z-index 3 · gradient · animation-name) mà pixel CHÊNH vẫn 0.0.
+   * `nearest` mới là hộp cuộn gần nhất — tức `.main`. */
+  animation-timeline: scroll(nearest block);
+  animation-fill-mode: both;
+}
+.overflow-y-auto::before, .overflow-auto::before, .if-vung-cuon::before,
+.if-settings-app .main::before, .if-lib-root .shelf::before,
+.if-files-app .insp::before, .if-files-app .uplist::before {
+  top: 0;
+  margin-bottom: -14px;
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, var(--t1) 12%, transparent), transparent);
+  animation-name: if-hien-mep-tren;
+}
+.overflow-y-auto::after, .overflow-auto::after, .if-vung-cuon::after,
+.if-settings-app .main::after, .if-lib-root .shelf::after,
+.if-files-app .insp::after, .if-files-app .uplist::after {
+  bottom: 0;
+  margin-top: -14px;
+  background: linear-gradient(to top,
+    color-mix(in srgb, var(--t1) 12%, transparent), transparent);
+  animation-name: if-hien-mep-duoi;
+}
+/* Giảm chuyển động: vệt là TRẠNG THÁI chứ không phải hiệu ứng, nên GIỮ — nhưng bỏ phần chạy theo
+ * cuộn, để nó đứng yên ở mức thấy được. Tắt hẳn là lấy mất tín hiệu của đúng nhóm người cần nó. */
+@media (prefers-reduced-motion: reduce) {
+  .overflow-y-auto::before, .overflow-auto::before, .if-vung-cuon::before,
+  .overflow-y-auto::after, .overflow-auto::after, .if-vung-cuon::after {
+    animation: none;
+    opacity: 1;
+  }
+}
+/* Hai lớp dưới CỐ Ý ẩn thanh cuộn và đã tự dựng vệt mờ 2 mép cho trục NGANG
+ * (`.cad-pill-scroll.is-overflowing`) ⇒ không giữ chỗ máng, và không mọc thêm vệt dọc. */
+.no-scrollbar::before, .no-scrollbar::after,
+.cad-pill-scroll::before, .cad-pill-scroll::after { content: none; }
+/* Ngoại lệ CÓ LÝ DO: hai lớp dưới CỐ Ý ẩn thanh cuộn và đã tự dựng vệt mờ 2 mép thay thế
+ * (`.cad-pill-scroll.is-overflowing`). Giữ chỗ cho một thanh đã ẩn là chừa 8px trống vô nghĩa. */
+.no-scrollbar,
+.cad-pill-scroll {
+  scrollbar-gutter: auto;
+}
+
 /* scrollbar tối giản, overlay kiểu macOS */
 ::-webkit-scrollbar {
   width: 8px;
@@ -998,7 +1402,7 @@ body {
 /* Splitter kéo dãn cột trái: hiện dải màu accent khi hover/kéo. */
 .pe-splitter {
   position: relative;
-  transition: background-color var(--dur-fast, 0.15s) var(--ease-apple, ease);
+  transition: background-color var(--nhip-vien) var(--ease-apple, ease);
 }
 .pe-splitter::before {
   content: '';
@@ -1157,6 +1561,12 @@ input[type='range'].if-slider {
   transition: filter 0.15s ease;
 }
 input[type='range'].if-slider:hover { filter: brightness(1.08); }
+/* `outline: none` ở khối trên có đặc hiệu 0-2-1 nên THẮNG luật `:where(...):focus-visible` toàn app
+   (0-1-0) ⇒ thanh trượt mất hẳn vòng focus khi Tab tới. Trả lại ring cho bàn phím, cùng token. */
+input[type='range'].if-slider:focus-visible {
+  outline: var(--stroke-focus) solid var(--focus-ring);
+  outline-offset: 2px;
+}
 input[type='range'].if-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 17px;
@@ -1917,6 +2327,7 @@ body[data-if-library-open='true'] .if-bottombar {
 }
 .if-tooltip-tag {
   --tt-offset: 0px;
+  --tt-offset-y: 0px; /* 03/09: default — thiếu là calc() ở nhánh right/left vô hiệu khi JS chưa kịp đặt */
   position: fixed;
   z-index: 1000;
   padding: 4px 9px;
@@ -2291,7 +2702,7 @@ body[data-if-library-open='true'] .if-bottombar {
     radial-gradient(56% 46% at 82% 94%, rgba(10, 5, 42, 0.30) 0%, rgba(10, 5, 42, 0) 60%);
   filter: blur(0.3px);
   transform: translate3d(var(--thau-dx, 0), var(--thau-dy, 0), 0) scale(var(--thau-s, 1));
-  transition: transform 260ms var(--ease-apple);
+  transition: transform var(--nhip-bang) var(--ease-apple);
   animation: if-thau-troi 18s ease-in-out infinite;
   transform-origin: 50% 50%;
 }
@@ -2323,7 +2734,7 @@ body[data-if-library-open='true'] .if-bottombar {
 .if-vao-xuong:active { transform: scale(0.985); }
 .if-vao-xuong:active::before { transform: translate3d(0, 0, 0) scale(0.94); }
 /* THÀNH CÔNG — MỘT lượt quét sáng, chạy đúng một lần rồi thôi. */
-.if-vao-xuong[data-xong='1']::before { animation: if-thau-quet 620ms var(--ease-apple) 1 forwards; }
+.if-vao-xuong[data-xong='1']::before { animation: if-thau-quet var(--nhip-bien-hinh) var(--ease-apple) 1 forwards; }
 @keyframes if-thau-quet {
   0%   { transform: translate3d(-22%, 0, 0) scale(1.05); }
   100% { transform: translate3d(24%, 0, 0) scale(1.12); }
@@ -2422,4 +2833,72 @@ body[data-if-library-open='true'] .if-bottombar {
   .nen-dong-nang { transform: translate3d(0, 0, 0) rotate(-14deg); opacity: 0.5; }
   .nen-dong-bong { transform: translate3d(0, 0, 0); opacity: 0.38; }
   .nen-dong-luoi { opacity: 0.07; }
+}
+
+/* ---------- NHÃN NGUỒN SỰ THẬT `.if-truth` (lib/ui/truth.tsx · components/ui/TruthBadge.tsx) ----------
+   Capsule 20px = "capsule có việc: trạng thái" (§7). Chữ MỰC `--t1` (kênh ①), dấu mang màu
+   (kênh ②+③), viền/nền pha loãng từ bí danh `--truth-*` — KHÔNG mở màu mới. Kênh dự phòng khi
+   mất màu: Inferred viền CHẤM · Stale viền ĐỨT · External/Stale cùng màu mực phụ nhưng khác dấu.
+   Bo đồng tâm tự đúng nhờ --r-full (kẹp về nửa cạnh ngắn) — không khai số. */
+.if-truth {
+  --truth-color: var(--t3);
+  box-sizing: border-box; /* 20px là cỡ NGOÀI kể cả viền — không phụ thuộc reset của nơi nhúng */
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--r-full);
+  border: var(--stroke-hair) solid color-mix(in srgb, var(--truth-color) 45%, transparent);
+  background: color-mix(in srgb, var(--truth-color) 12%, transparent);
+  color: var(--t1);
+  font-size: var(--fs-min);
+  font-weight: var(--fw-semi);
+  line-height: var(--lh-ui);
+  letter-spacing: var(--ls-ui);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.if-truth--compact {
+  padding: 0 6px;
+}
+.if-truth-dau {
+  color: var(--truth-color);
+  font-weight: 700;
+  letter-spacing: -0.06em; /* "✓✓" đứng sát thành một dấu */
+}
+.if-truth[data-truth='measured'] {
+  --truth-color: var(--truth-measured);
+}
+.if-truth[data-truth='verified'] {
+  --truth-color: var(--truth-verified);
+}
+.if-truth[data-truth='inferred'] {
+  --truth-color: var(--truth-inferred);
+  border-style: dotted;
+}
+.if-truth[data-truth='external'] {
+  --truth-color: var(--truth-external);
+}
+.if-truth[data-truth='stale'] {
+  --truth-color: var(--truth-stale);
+  border-style: dashed;
+}
+
+/* ═══ KHẨU ĐỘ VITALS — quỹ đạo quay (04/09, `components/studio/VitalsQuyDao.tsx`) ═══
+   §18 ánh sáng/chuyển động MANG TRẠNG THÁI: chỉ mức `answering` (đang chạy) mới quay, và quay
+   CHẬM + ĐỀU — không nhấp nháy, không neon. Tái dùng đúng nhịp `vitals-state-orbit-spin` sẵn có
+   (1,9s linear) thay vì đẻ nhịp thứ hai; ở đây quay chậm hơn vì nó là cả cụm quỹ đạo, không
+   phải một hạt nhỏ.
+   ♿ `prefers-reduced-motion` bỏ QUAY nhưng GIỮ độ sáng: trạng thái không được mất kênh báo. */
+.vitals-quy-dao--quay {
+  animation: vitals-quy-dao-quay 7s linear infinite;
+}
+@keyframes vitals-quy-dao-quay {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vitals-quy-dao--quay {
+    animation: none !important;
+  }
 }

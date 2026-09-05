@@ -221,7 +221,7 @@ export function LiveGuide() {
                 background: i === iBuoc ? 'var(--accent)' : xong.has(b.id) ? 'var(--success)' : 'transparent',
                 cursor: 'pointer',
                 padding: 0,
-                transition: giam ? 'none' : `all 160ms ${DUONG_CONG}`,
+                transition: giam ? 'none' : `all var(--nhip-vien) ${DUONG_CONG}`,
               }}
             />
           ))}

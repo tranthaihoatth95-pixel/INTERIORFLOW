@@ -110,7 +110,7 @@ function DongBuoc({ b, tr, onDi }: { b: BuocDemo; tr: (vi: string, en: string) =
       <button
         type="button"
         onClick={() => onDi(b.href!)}
-        className="w-full rounded-[var(--r-2)] px-2 py-1.5 text-left transition-colors duration-[120ms] hover:bg-[var(--hover)]"
+        className="w-full rounded-[var(--r-2)] px-2 py-1.5 text-left transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)]"
       >
         {noiDung}
       </button>
@@ -238,7 +238,7 @@ export function HoatDongChuong() {
             ? tr(`Hoạt động — ${tomTat}`, `Activity — ${tomTat}`)
             : tr('Hoạt động — không có gì đang chạy', 'Activity — nothing running')
         }
-        className="grid h-7 w-7 shrink-0 place-items-center rounded-[var(--r-full)] transition-colors duration-[120ms] hover:bg-[var(--hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+        className="grid h-7 w-7 shrink-0 place-items-center rounded-[var(--r-full)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
         style={{ background: muc !== 'gon' ? 'var(--hover)' : 'transparent' }}
       >
         <span className="relative">
@@ -298,7 +298,7 @@ export function HoatDongChuong() {
                 <button
                   type="button"
                   onClick={() => setMuc('day')}
-                  className="mt-1 flex w-full items-center justify-between rounded-[var(--r-2)] px-1.5 py-1 text-[length:var(--fs-xs)] text-[var(--t2)] transition-colors duration-[120ms] hover:bg-[var(--hover)]"
+                  className="mt-1 flex w-full items-center justify-between rounded-[var(--r-2)] px-1.5 py-1 text-[length:var(--fs-xs)] text-[var(--t2)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)]"
                 >
                   {tr('Xem tất cả', 'View all')}
                   <ArrowRight size={14} />
@@ -319,7 +319,7 @@ export function HoatDongChuong() {
                       role="tab"
                       aria-selected={tabDay === 'hoatDong'}
                       onClick={() => setTabDay('hoatDong')}
-                      className="rounded-[var(--r-2)] px-2 py-1 text-[length:var(--fs-ui)] font-semibold transition-colors duration-[120ms]"
+                      className="rounded-[var(--r-2)] px-2 py-1 text-[length:var(--fs-ui)] font-semibold transition-colors duration-[var(--nhip-bam)]"
                       style={{
                         color: tabDay === 'hoatDong' ? 'var(--t1)' : 'var(--t4)',
                         background: tabDay === 'hoatDong' ? 'var(--hover)' : 'transparent',
@@ -332,7 +332,7 @@ export function HoatDongChuong() {
                       role="tab"
                       aria-selected={tabDay === 'demo'}
                       onClick={() => setTabDay('demo')}
-                      className="rounded-[var(--r-2)] px-2 py-1 text-[length:var(--fs-ui)] font-semibold transition-colors duration-[120ms]"
+                      className="rounded-[var(--r-2)] px-2 py-1 text-[length:var(--fs-ui)] font-semibold transition-colors duration-[var(--nhip-bam)]"
                       style={{
                         color: tabDay === 'demo' ? 'var(--t1)' : 'var(--t4)',
                         background: tabDay === 'demo' ? 'var(--hover)' : 'transparent',
@@ -386,7 +386,7 @@ export function HoatDongChuong() {
                         onClick={() => datDemoBat(!demoBat)}
                         role="switch"
                         aria-checked={demoBat}
-                        className="shrink-0 rounded-[var(--r-full)] px-2 py-0.5 text-[length:var(--fs-xs)] font-semibold transition-colors duration-[120ms]"
+                        className="shrink-0 rounded-[var(--r-full)] px-2 py-0.5 text-[length:var(--fs-xs)] font-semibold transition-colors duration-[var(--nhip-bam)]"
                         style={{
                           background: demoBat ? 'var(--accent)' : 'var(--field)',
                           color: demoBat ? '#fff' : 'var(--t3)',
@@ -409,7 +409,7 @@ export function HoatDongChuong() {
                         onClick={() => datGuideBat(!guideBat)}
                         role="switch"
                         aria-checked={guideBat}
-                        className="shrink-0 rounded-[var(--r-full)] px-2 py-0.5 text-[length:var(--fs-xs)] font-semibold transition-colors duration-[120ms]"
+                        className="shrink-0 rounded-[var(--r-full)] px-2 py-0.5 text-[length:var(--fs-xs)] font-semibold transition-colors duration-[var(--nhip-bam)]"
                         style={{
                           background: guideBat ? 'var(--accent)' : 'var(--field)',
                           color: guideBat ? '#fff' : 'var(--t3)',

@@ -26,6 +26,7 @@ import MenuButton from '@/components/ui/MenuButton';
 import { useCadStore } from '@/lib/cad/store';
 import { dwgImportEnabled, dwgTatMessage } from '@/lib/cad/dwg-flag';
 import { thoiLuong, NHIP, DUONG_CONG } from '@/lib/ui/nhip';
+import { useChinhLenh } from '@/lib/commands/chinh-lenh-store';
 import { useT } from '@/lib/i18n';
 import { useCadLiveStatus } from '@/lib/cad/live-status';
 import type { HatchPattern } from '@/lib/cad/model';
@@ -71,6 +72,12 @@ import {
   type Violation, type RoomKind,
 } from '@/lib/cad/standards/checker';
 import { getAllRules } from '@/lib/cad/standards/registry';
+// W2 (05/09) — VỊ TRÍ CÔNG TRÌNH QUYẾT ĐỊNH BỘ QUY CHUẨN (chốt 15/08). Nối A→B ở đây, C ở dưới.
+import { vungTuViTri, nenLuatTheoVung, giuBoBatBuoc, batBuocBiRoi } from '@/lib/cad/standards/vung-tu-vi-tri';
+import { goYBienSoTuDiaLy, apBienSoNguCanh, bienSoDaNhan, type BienSoNguCanhApDung } from '@/lib/cad/standards/ngu-canh';
+import { goYTuTenDiaDanh, type DacDiemDiaLy } from '@/lib/site/dia-ly';
+import { useHoSoDiaDiem, useDuAnHienTai } from '@/components/site/dia-diem-client';
+import type { SuThat } from '@/lib/site/types';
 import { suggestFix } from '@/lib/cad/standards/fix-suggest';
 import { exportStandardsReportPdf, extractProjectName, extractDrawnBy } from '@/lib/cad/standards-report';
 import { classifyOperator, rulesForOperator, type OperatorType } from '@/lib/cad/operator-profile';
@@ -837,7 +844,12 @@ export default function CadEditor() {
               <div style={{ fontSize: 12, color: 'var(--t3)', lineHeight: 1.5 }}>
                 {/* W = cad.draw.wall (lib/commands/registry.ts:274, alias 'W'/'WALL'). KHÔNG đổi lại
                     thành L — L là cad.draw.line ("Đường thẳng", registry.ts:258), không phải tường. */}
-                {t('Gõ W để vẽ tường ngay tại chỗ, hoặc mở file có sẵn (.idf · .dxf · .dwg).', 'Type W to draw a wall right here, or open an existing file (.idf · .dxf · .dwg).')}
+                {/* 🔴 04/09 — THÊM "↵" vì đo được trên app thật: gõ chữ trần chỉ NẠP vào dòng
+                    lệnh (nhánh type-anywhere của `CadCanvas.tsx` bắn `cad:cmd-key`), phải ENTER
+                    mới chạy. Trước sửa: gõ W ⇒ ô lệnh hiện "W", công cụ vẫn "Chọn" ⇒ người dùng
+                    làm đúng lời dặn mà không có gì xảy ra. Sau Enter ⇒ công cụ đổi thành "Tường"
+                    và vẽ được thật (bằng chứng `.nen-kiem/out/2d-D-enter.png`). */}
+                {t('Gõ W ↵ để vẽ tường ngay tại chỗ, hoặc mở file có sẵn (.idf · .dxf · .dwg).', 'Type W ↵ to draw a wall right here, or open an existing file (.idf · .dxf · .dwg).')}
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 2, pointerEvents: 'auto' }}>
                 <button
@@ -2118,11 +2130,51 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
   const [operator, setOperator] = useState<OperatorType | ''>('');
   const [detectMsg, setDetectMsg] = useState('');
 
-  // Rule dùng để kiểm: CÓ operator ⇒ lọc theo rulesForOperator; KHÔNG ⇒ getAllRules() như cũ.
-  const rulesToUse = () =>
-    operator ? rulesForOperator(operator).flatMap((g) => g.rules) : getAllRules();
+  /* ── W2 (05/09) · VỊ TRÍ → BỘ QUY CHUẨN ─────────────────────────────────────────────────────
+   * Thang bậc chốt 15/08: A nền công thái học → B chuẩn quốc gia → C biến số ngữ cảnh.
+   * A+B ở `nenLuatTheoVung()`; C ở `apBienSoNguCanh()`. Panel này chỉ NỐI DÂY và BÀY RA — mọi
+   * luật an toàn (đoán-thì-không-lọc · chỉ-siết-không-nới · lọc-tiện-dụng-không-làm-rơi-bắt-buộc)
+   * nằm trong `lib/cad/standards/`, không phải trong nhánh `if` của giao diện. */
+  const duAnId = useDuAnHienTai();
+  const { hoSo } = useHoSoDiaDiem(duAnId);
+  const vung = vungTuViTri(hoSo.viTri);
 
-  const run = () => setViolations(checkStandards(doc, rulesToUse()));
+  /** Đặc điểm địa lý đang biết. Nguồn ĐO ĐƯỢC (`hoSo.suThat['dia-ly.*']`) trước; nếu chưa có thì
+   *  GỢI Ý TỪ TÊN địa danh — và gợi ý từ tên thì `dia-ly.ts` khoá cứng ở hạng `inferred`, tức
+   *  KHÔNG bao giờ tự áp. Đây đúng ca "Hải Dương có chữ hải mà không giáp biển". */
+  const diaLy: Partial<DacDiemDiaLy> = (() => {
+    const daLuu: Partial<DacDiemDiaLy> = {};
+    for (const [k, v] of Object.entries(hoSo.suThat)) {
+      if (!k.startsWith('dia-ly.')) continue;
+      const truong = k.slice('dia-ly.'.length) as keyof DacDiemDiaLy;
+      (daLuu as Record<string, SuThat<unknown>>)[truong] = v;
+    }
+    if (Object.keys(daLuu).length > 0) return daLuu;
+    return goYTuTenDiaDanh(hoSo.viTri.diaChi ?? hoSo.viTri.tinh_thanh);
+  })();
+  const bienSo: BienSoNguCanhApDung[] = goYBienSoTuDiaLy(diaLy);
+  const bienSoAp = bienSoDaNhan(bienSo);
+
+  // Rule dùng để kiểm — bốn bước, mỗi bước một luật đã chốt:
+  //   ① NỀN theo vùng (A luôn có mặt, B chồng lên; vùng chỉ ĐOÁN ⇒ không lọc)
+  //   ② lọc tiện dụng theo operator (giữ nguyên hành vi cũ)
+  //   ③ gộp lại bộ BẮT BUỘC của vùng — bộ lọc tiện dụng không được thành cửa sau lách luật
+  //   ④ tầng C siết thêm (chỉ biến số đã có bằng chứng/người gật)
+  const rulesToUse = () => {
+    const nen = nenLuatTheoVung(vung);
+    const idNen = new Set(nen.map((r) => r.id));
+    const chon = operator
+      ? rulesForOperator(operator).flatMap((g) => g.rules).filter((r) => idNen.has(r.id))
+      : nen;
+    return apBienSoNguCanh(giuBoBatBuoc(chon, vung), bienSo).rules;
+  };
+
+  /** Bộ lọc operator vừa suýt làm rơi mấy luật bắt buộc — bày ra, không giấu. */
+  const roiBatBuoc = operator
+    ? batBuocBiRoi(rulesForOperator(operator).flatMap((g) => g.rules), vung)
+    : [];
+
+  const run = () => setViolations(checkStandards(doc, rulesToUse(), { vung: vung.apDuocNgay ? vung.vung : null }));
 
   // VIỆC A (28/07) — đẩy số vi phạm LẦN CHẠY GẦN NHẤT sang StatusBar. KHÔNG tự chạy nền (giữ
   // đúng "chỉ đọc & đề xuất, chạy tay" của panel này) — null = chưa kiểm lần nào phiên này.
@@ -2149,12 +2201,12 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
     setStudioName(kit?.name?.trim() || '');
     setProjectName(extractProjectName(doc));
     setPreparedBy(extractDrawnBy(doc));
-    if (violations === null) setViolations(checkStandards(doc, rulesToUse())); // đảm bảo có kết quả để xuất
+    if (violations === null) setViolations(checkStandards(doc, rulesToUse(), { vung: vung.apDuocNgay ? vung.vung : null })); // đảm bảo có kết quả để xuất
     setReportOpen(true);
   };
 
   const doExportReport = async () => {
-    const vlist = violations ?? checkStandards(doc, rulesToUse());
+    const vlist = violations ?? checkStandards(doc, rulesToUse(), { vung: vung.apDuocNgay ? vung.vung : null });
     setExporting(true);
     try {
       const kit = brandRef.current;
@@ -2238,6 +2290,36 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
       </div>
       <div style={{ fontSize: 10.5, color: 'var(--t4)', padding: '0 6px 6px' }}>
         Chỉ đọc bản vẽ và đề xuất — KHÔNG tự sửa. Bấm biểu tượng khiên để chạy/chạy lại sau khi sửa bản vẽ.
+      </div>
+      {/* W2 — VỊ TRÍ QUYẾT ĐỊNH BỘ QUY CHUẨN. Nói ra bằng CHỮ, không chỉ bằng con số: người làm
+          hồ sơ phải biết mình đang bị kiểm bằng bộ nào và vì sao. `data-w2-*` là mốc nghiệm thu. */}
+      <div
+        data-w2-vung={vung.vung}
+        data-w2-ap={vung.apDuocNgay ? '1' : '0'}
+        data-w2-so-luat={rulesToUse().length}
+        data-w2-vn={rulesToUse().filter((r) => r.region === 'VN').length}
+        data-w2-ctx={rulesToUse().filter((r) => r.id.startsWith('ctx-')).map((r) => r.id).join(',')}
+        data-w2-bien-so-ap={bienSoAp.map((b) => b.ma).join(',')}
+        style={{ fontSize: 10.5, color: 'var(--t3)', padding: '0 6px 6px', lineHeight: 1.5 }}
+      >
+        <b>Bộ quy chuẩn: {vung.vung}</b> · {rulesToUse().length} luật
+        {vung.apDuocNgay ? '' : ' (chưa lọc)'}
+        <div style={{ color: 'var(--t4)' }}>{vung.ghiChu}</div>
+        {roiBatBuoc.length > 0 && (
+          <div style={{ color: 'var(--warning)' }}>
+            Bộ lọc loại vận hành bỏ sót {roiBatBuoc.length} luật bắt buộc của vùng — đã gộp lại, không cho rơi.
+          </div>
+        )}
+        {bienSoAp.length > 0 && (
+          <div style={{ color: 'var(--t4)' }}>
+            Biến số ngữ cảnh đang áp (chỉ siết thêm): {bienSoAp.map((b) => b.ma).join(' · ')}
+          </div>
+        )}
+        {bienSo.length > bienSoAp.length && (
+          <div style={{ color: 'var(--t4)' }}>
+            Máy gợi ý {bienSo.length - bienSoAp.length} biến số ngữ cảnh chưa áp — cần bằng chứng hoặc bạn xác nhận.
+          </div>
+        )}
       </div>
       {/* HOOK ML pha 1 — chọn LOẠI VẬN HÀNH để lọc bộ rule (mặc định = Tất cả, hành vi cũ nguyên vẹn). */}
       <div style={{ display: 'flex', gap: 4, alignItems: 'center', padding: '0 6px 4px' }}>
@@ -2841,6 +2923,9 @@ function CommandLine({ status }: { status: string }) {
         setTool('lengthen');
       },
       LENGTHEN: () => setTool('lengthen'),
+      // B4 — gõ ADJ/ADJUST = F9: focus mặt tiền "Chỉnh lệnh vừa chạy" (cùng store với registry `cad.edit.adjustlast`).
+      ADJ: () => useChinhLenh.getState().yeuCauFocus(),
+      ADJUST: () => useChinhLenh.getState().yeuCauFocus(),
       DIMTXT: () => {
         if (arg && Number.isFinite(parseFloat(arg))) setDimStyle({ textHeight: parseFloat(arg) });
       },
@@ -2967,7 +3052,16 @@ function CommandLine({ status }: { status: string }) {
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 34, flex: '0 0 auto', padding: '0 12px', borderTop: '1px solid var(--border)', background: 'var(--panel)' }}>
+    /* 🔴 `position:relative; zIndex:7` — sửa lỗi ĐO ĐƯỢC 04/09, không phải trang trí.
+       Slot toolbelt của `AppShell` là `absolute bottom-4 z-[6]`, và hộp `.pointer-events-auto`
+       bên trong nó cao đúng bằng dock (gồm cả 34px margin dock dùng để "né" thanh này) ⇒ hộp đó
+       neo đáy tại y=852 trong khi thanh lệnh chiếm y 834–868. Kết quả đo trên app thật: bấm vào
+       TÂM ô nhập lệnh (y=852) rơi trúng `div` rỗng của dock, KHÔNG vào ô lệnh — gõ lệnh bằng
+       chuột là bất khả.
+       Dock ở lớp nổi phía trên MẶT VẼ; thanh lệnh là nội dung in-flow của Stage. Ở đúng dải hai
+       thứ chồng nhau, nội dung phải thắng. Không đụng `AppShell` (bố cục chung, nhiều chặng dùng)
+       và không đổi bố cục chặng Vẽ — chỉ nói rõ ai đứng trên ai ở đúng 18px chồng lấn. */
+    <div style={{ position: 'relative', zIndex: 7, display: 'flex', alignItems: 'center', gap: 10, height: 34, flex: '0 0 auto', padding: '0 12px', borderTop: '1px solid var(--border)', background: 'var(--panel)' }}>
       <Command size={14} style={{ color: 'var(--t4)' }} />
       <div
         style={{
@@ -3010,7 +3104,7 @@ function CommandLine({ status }: { status: string }) {
           onFocus={() => setFocused(true)}
           onBlur={() => { setAcOpen(false); setFocused(false); }}
           placeholder={quiet ? 'Lệnh…' : 'Gõ lệnh: L · PL · REC · C · W 200 · ROOM · D · WIN · M · CO · RO · MI · O 150 · DIM · T · E · U…'}
-          style={{ width: '100%', background: 'var(--field)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 8px', fontSize: 12, color: 'var(--t1)', outline: 'none', fontFamily: 'ui-monospace, monospace' }}
+          style={{ width: '100%', background: 'var(--field)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 8px', fontSize: 12, color: 'var(--t1)', fontFamily: 'ui-monospace, monospace' }}
         />
       </div>
       {/* Trạng thái: câm ở Sơ phác lúc chưa gõ — đúng "minimal numeric interruption". Bấm/chạm

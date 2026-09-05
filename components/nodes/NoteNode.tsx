@@ -35,7 +35,7 @@ function NoteNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
         <X size={14} />
       </button>
       <textarea
-        className="nodrag h-24 w-full resize-none bg-transparent text-xs leading-snug text-[var(--t1)] placeholder-[var(--t4)] outline-none"
+        className="nodrag h-24 w-full resize-none bg-transparent text-xs leading-snug text-[var(--t1)] placeholder-[var(--t4)]"
         placeholder="Ghi chú…"
         value={data.note ?? ''}
         onChange={(e) => updateNote(id, e.target.value)}

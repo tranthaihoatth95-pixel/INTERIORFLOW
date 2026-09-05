@@ -23,8 +23,8 @@
 
 import type { Doc, Entity, Pt, RoomKind, WallKind } from '../model';
 import { buildHatchFaceIndex, pickHatchFace, collectBoundarySegments, polygonArea, pointInPolygon } from '../hatch';
-import type { StandardRule, Severity } from './registry';
-import { resolveRulesAsOf } from './registry';
+import type { StandardRule, Severity, StandardRegion } from './registry';
+import { resolveRulesAsOf, locTheoVung } from './registry';
 import { BLOCK_MAP } from '../furniture';
 import { effectiveBlockSize, WALL_LAYER_ID } from '../shape-interactions';
 
@@ -258,13 +258,28 @@ function mkViolation(r: StandardRule, message: string, at?: Pt, entityId?: strin
  * ở registry.ts. Không truyền ⇒ dùng bộ mới nhất và gắn `asOfNote` vào mọi violation để người
  * dùng biết. ⚠️ TUYỆT ĐỐI không lấy ngày hệ thống làm mặc định: hồ sơ cũ sẽ bị kiểm bằng bộ số
  * mới, sai âm thầm.
+ * W2 (2026-09-05) — `opts.vung` là HỆ QUY CHUẨN ÁP DỤNG, suy từ VỊ TRÍ CÔNG TRÌNH (chốt 15/08:
+ * *"vị trí dự án nằm đâu thì áp quy chuẩn tiêu chuẩn đồng bộ tại đó"*). Không truyền ⇒ hành vi
+ * CŨ Y NGUYÊN: kiểm bằng đúng mảng rule nơi gọi đưa vào, không lọc gì.
+ * ⚠️ TUYỆT ĐỐI không tự suy vùng ở đây (không đọc hồ sơ dự án, không đoán từ `doc`): lọc theo một
+ * vùng ĐOÁN SAI là làm biến mất cả bộ luật quốc gia — kể cả PCCC bắt buộc — mà không ai thấy.
+ * Cửa an toàn nằm ở `./vung-tu-vi-tri.ts#VungSuyRa.apDuocNgay`: chỉ vùng người dùng đã KHAI mới
+ * được truyền xuống đây.
  * 🔴 CHƯA NỐI ĐƯỢC TỚI DỮ LIỆU THẬT: `Doc` (model.ts) hiện KHÔNG có chỗ lưu ngày thẩm định, và
  * phiên S6 cố ý KHÔNG tự thêm field vào `Doc` (luật K4 — chỉ thêm field khi đã có nơi tiêu thụ
  * và đã chốt hình dạng dữ liệu). Vì vậy tham số này hiện chỉ nhận ngày do CALLER truyền vào;
  * chưa UI nào truyền. Cần Hoà chốt ngày thẩm định sống ở đâu (Doc? metadata dự án?) rồi mới nối. */
-export function checkStandards(doc: Doc, rules: StandardRule[], opts?: { asOfDate?: string | null }): Violation[] {
+export function checkStandards(
+  doc: Doc,
+  rules: StandardRule[],
+  opts?: { asOfDate?: string | null; vung?: StandardRegion | null },
+): Violation[] {
   const violations: Violation[] = [];
-  const resolved = resolveRulesAsOf(rules, opts?.asOfDate);
+  // W2 (05/09) — ĐIỀU KIỆN ÁP DỤNG THUỘC VỀ CHÍNH LUẬT (K3): vùng được so với `rule.region` sẵn
+  // có, KHÔNG mọc thêm nhánh `if` cho từng nước ở đây hay ở nơi gọi. Thêm một hệ quy chuẩn mới =
+  // thêm rule mang `region` mới, engine không phải sửa dòng nào.
+  const theoVung = opts?.vung ? locTheoVung(rules, opts.vung) : rules;
+  const resolved = resolveRulesAsOf(theoVung, opts?.asOfDate);
   // Tra theo id NGHIỆP VỤ: id viết thẳng trong code bên dưới là "tên phép kiểm", còn trị số có
   // thể đã sang phiên bản mới mang id khác ⇒ rơi xuống bảng aliasByOldId (xem registry.ts).
   const byId = (id: string) => {

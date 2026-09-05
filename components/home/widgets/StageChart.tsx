@@ -139,7 +139,7 @@ export default function StageChart({ summary, index }: { summary: HomeSummary; i
       </div>
       <style jsx>{`
         .stage-chart-bar {
-          animation: stage-chart-grow 260ms cubic-bezier(0.32, 0.72, 0, 1) both;
+          animation: stage-chart-grow var(--nhip-bang) cubic-bezier(0.32, 0.72, 0, 1) both;
         }
         @keyframes stage-chart-grow {
           from {

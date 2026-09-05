@@ -1,0 +1,180 @@
+/* docs/mocks/_home-ps-nen.css — NỀN CHUNG cho vòng PHÒNG SẠCH Home (04/09).
+   Tệp MỚI, không sửa nền của bộ cũ (_home-nc-nen.css · _home-hybrid.css · _home-h.css).
+
+   ⚠️ Màu/bo/mật độ CỦA GIAO DIỆN chép NGUYÊN VĂN từ app/globals.css — không chế màu, không chế
+   số. Nguồn: :root (tối) · :root[data-theme='light'] (sáng).
+   NGOẠI LỆ DUY NHẤT, khai rõ ở đây thay vì để người đọc tự phát hiện ở dòng 49: bảng
+   `--canh-0..7` là màu CỦA HÌNH VẼ, cố ý KHÔNG theo theme và KHÔNG có trong globals.css —
+   cùng lý do với khối `--illus-*`/`--paper-*` sẵn có (hình tự mang nền nên phải giữ tương phản
+   nội bộ). Đây là NỘI DUNG, không phải phần tử giao diện.
+
+   BA LUẬT TỰ ĐẶT RA CHO BỘ NÀY, vì máy soi không bắt được chúng:
+   ① CHỮ TRÊN NỀN APP CHỈ LẤY TỪ --t1/--t2/--t3. Đo tại nguồn: --t4 trên --bg đạt 3,8:1 (tối)
+      và 2,66:1 (sáng) ⇒ KHÔNG đủ 4,5:1 cho chữ nhỏ. --t4/--t5 chỉ dùng cho ĐƯỜNG KẺ và HÌNH.
+      ⚠️ MỘT NGOẠI LỆ, khai được: CHỮ ĐÈ LÊN ẢNH dùng bảng --muc-tren-anh-1/2/3 ở dưới, vì
+      --t1..--t3 lật theo theme còn ảnh thì không. Không ghi ra thì luật ① tự mâu thuẫn với
+      chính bản vẽ (H1 có 23–28 đoạn chữ nằm trên ảnh) và người sau sẽ đọc nó thành lỗi.
+   ② MÀU TRẠNG THÁI CHỈ NẰM TRÊN DẤU (chấm/vạch/hình), chữ giữ nguyên --t1/--t2/--t3.
+      Vừa tránh ca --warning sáng #9a6304 trên --bg chỉ đạt 4,39:1, vừa thi hành
+      "màu không bao giờ là kênh duy nhất" mà không phải nhớ.
+   ③ KHÔNG HOA TOÀN PHẦN với chữ Việt (luật chữ Việt 7.1.23) ⇒ nhãn mono dùng chữ thường
+      + giãn chữ dương, KHÔNG text-transform:uppercase. Đây là chỗ các bộ mock cũ đang hở. */
+
+:root{
+  /* ---- nền & mực (chép app/globals.css :root) ---- */
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --vien-mo:rgba(255,255,255,.06);
+  --nen-mo-header:rgba(20,20,23,.72);
+  --mo-vo-hieu:.5;
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  color-scheme:dark;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --vien-mo:rgba(0,0,0,.05);
+  --nen-mo-header:rgba(250,248,244,.72);
+  --mo-vo-hieu:.62;
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  color-scheme:light;
+}
+:root{
+  /* ---- nhấn (không theo theme, chép globals.css) ---- */
+  --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --on-accent:#ffffff;
+  /* ---- thang bo đã duyệt 12/08 — CẤM giá trị ngoài thang ---- */
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  /* ---- mật độ (globals.css) ---- */
+  --tap:32px; --tap-lg:44px; --row:28px; --gap:8px; --pad-card:8px 12px; --fs-ui:13px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px;
+  /* ---- cỡ chữ trưng bày của bộ này ---- */
+  --fs-hien:40px; --fs-hien-nho:26px;
+  /* ---- TÔNG HÌNH VẼ: cố ý KHÔNG theo theme, cùng lý do khối --illus-* / --paper-*
+         trong globals.css: hình tự mang nền riêng nên phải giữ tương phản nội bộ ---- */
+  --canh-0:#14161a; --canh-1:#1e222a; --canh-2:#2c313b; --canh-3:#454c59;
+  --canh-4:#6e6a63; --canh-5:#9b9184; --canh-6:#cabfae; --canh-7:#ece3d3;
+  --giay:#f7f5f0; --giay-mep:#d8d2c6; --muc:#2a251d; --muc-mo:rgba(42,37,29,.36);
+  /* MỰC PHỤ TRÊN GIẤY — thêm ở lượt H2/H3 vì bản vẽ/bảng cần HAI cấp mực, mà cách rẻ tiền
+     (đặt opacity lên <text>) thì HỎNG PHÉP ĐO: getComputedStyle trả màu ĐẶC, máy soi báo
+     tương phản cao trong khi mắt thấy chữ nhạt. Đo tại nguồn: #6b6459 trên --giay = 5,36:1
+     (≥4,5). --muc-mo GIỮ NGUYÊN nhưng CHỈ cho ĐƯỜNG KẺ/HÌNH — dùng cho chữ thì rơi ~2,3:1. */
+  --muc-2:#6b6459;
+  /* ---- TÔNG HIỆN VẬT: mẫu vật liệu · tông moodboard · nét cắt ----
+     Cố ý gom vào ĐÂY thay vì gõ trong từng SVG. Lý do không phải "cho sạch": ba hướng H1/H2/H3
+     dùng chung một bảng ⇒ khi so ba bản, mắt so BỐ CỤC chứ không bị nhiễu vì mỗi bản một tông.
+     Cùng lý do khối --illus-* và --paper-* của globals.css: hình tự mang nền nên không theo theme.
+     ⚠️ ĐỪNG viết "--illus-*" và "--paper-*" cạnh nhau bằng dấu gạch chéo trong chú thích CSS:
+     chuỗi ngôi-sao-gạch-chéo ĐÓNG chú thích ngay tại đó, phần còn lại thành rác cú pháp và
+     NUỐT LUÔN khai báo đứng ngay sau. Đó chính là cách --vl-go im lặng biến mất (đo được:
+     getPropertyValue('--vl-go') trả chuỗi rỗng, ô gỗ trong bản vẽ tô ĐEN) suốt từ lượt H1 —
+     H1 không lộ vì nó gõ thẳng #9c7449 vào <pattern>, H2 là bản đầu tiên gọi token nên mới lòi. */
+  --vl-go:#9c7449; --vl-go-net:#7d5a34;
+  --vl-da:#cfc9bd; --vl-da-1:#a49c8e; --vl-da-2:#8d8578; --vl-da-3:#b5ada0;
+  --vl-vai:#6f7b74; --vl-vai-1:#5d6862; --vl-vai-2:#7d8a82;
+  --vl-kl-1:#b9b4ab; --vl-kl-2:#8e8a83; --vl-kl-3:#d3cec5; --vl-kl-4:#7c7871;
+  --vl-dh:#e6e3dc; --vl-dh-1:#b7b2a6; --vl-dh-2:#cbc6ba;
+  --vl-son:#e9e2d4; --to-trang:#ffffff;
+  --gu-am-1:#8d7c66; --gu-am-2:#c9b99f; --gu-am-3:#5d5347;
+  --gu-lanh-1:#6f7b74; --gu-lanh-2:#c3ccc4; --gu-lanh-3:#3f4a45;
+  --gu-dat-1:#a08163; --gu-dat-2:#e0d3bd; --gu-dat-3:#5a4635;
+  --net-1:#eae5da; --net-2:#8d8578; --net-3:#f0ebe0; --net-4:#a89f8d;
+  /* ---- MỰC TRÊN ẢNH — NGOẠI LỆ KHAI BÁO ĐƯỢC của luật ① ở đầu tệp ----
+     Luật ① nói "chữ chỉ lấy từ --t1/--t2/--t3". Chữ ĐÈ LÊN ẢNH không theo được luật đó, và
+     đây là chỗ nói ra thay vì để người sau tự phát hiện: --t1..--t3 LẬT theo theme, còn ảnh
+     thì KHÔNG — ở nền sáng --t1 (#211e19) đặt trên một tấm render tối là mất đọc ngay. Nên
+     luật ① đọc đủ là: "chữ trên NỀN APP lấy từ --t1/--t2/--t3; chữ trên ẢNH lấy từ bộ dưới".
+     Ngoại lệ này KHAI ĐƯỢC, không phải kẽ hở: chỗ nào dùng bộ này thì phần tử phải mang
+     `data-tren-anh`, máy soi trả "không đo được" (câu trả lời ĐÚNG), và mắt Hoà là người phán.
+     BA NẤC, không hơn — lượt trước rải 9 giá trị hex gần y hệt nhau qua ba tệp; ba hướng
+     H1/H2/H3 phải dùng CHUNG một bảng để khi so, mắt so BỐ CỤC chứ không so tông. */
+  --muc-tren-anh-1:#f7f5f1;   /* tên · tiêu đề · con số chính, nằm trên ảnh */
+  --muc-tren-anh-2:#ece9e3;   /* thân chữ trên ảnh */
+  --muc-tren-anh-3:#c9c5bd;   /* nhãn mono · chữ phụ trên ảnh */
+  /* LỚP PHỦ CHUYỂN SẮC CỤC BỘ Ở CHÂN CHỮ (§9): chỉ dìm DẢI CÓ CHỮ, ảnh giữ nguyên độ nét.
+     Không dìm cả tấm — dìm cả tấm là đúng thứ đã bị lật 16/08. */
+  --chan-dam:rgba(8,9,11,.80); --chan-vua:rgba(8,9,11,.52); --chan-nhat:rgba(8,9,11,.34);
+  --phu-chan-chu:linear-gradient(180deg,var(--chan-dam),var(--chan-vua));
+  /* ĐƯỜNG/NÉT NẰM TRÊN ẢNH — cố ý KHÔNG lấy --border/--vien-mo: nó nằm trên ẢNH,
+     không nằm trên nền app, nên phải sáng theo ảnh chứ không theo theme. */
+  --net-tren-anh:rgba(255,255,255,.26); --net-tren-anh-mo:rgba(255,255,255,.18);
+
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1600px;height:900px;overflow:hidden}
+body{
+  background:var(--bg);color:var(--t1);
+  font-family:-apple-system,'SF Pro Text','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  font-size:var(--fs-sm);-webkit-font-smoothing:antialiased;
+}
+svg{display:block}
+
+/* ---------- CHỮ ---------- */
+/* line-height 1.5 KHÔNG phải chọn thẩm mỹ: §7 cấm `line-height < 1.5` với chữ Việt vì dấu
+   chồng mang nghĩa. Lượt trước để 1.2/1.25 — lọt vì chỉ dùng cho một câu MỘT DÒNG (một dòng
+   thì mắt không thấy), nhưng giá trị vẫn sai và H2/H3 có câu nhiều dòng thì nó lộ ngay. */
+.hien{font-size:var(--fs-hien);line-height:1.5;font-weight:600;letter-spacing:0}
+.hien-nho{font-size:var(--fs-hien-nho);line-height:1.5;font-weight:600;letter-spacing:0}
+.nhan{font-weight:500;font-size:var(--fs-2xs);line-height:1.5;font-family:ui-monospace,'SF Mono',Menlo,monospace;letter-spacing:.08em;color:var(--t3)}
+.phu{color:var(--t3);font-size:var(--fs-xs);line-height:1.5}
+.than-chu{color:var(--t2);font-size:var(--fs-sm);line-height:1.55}
+.so{font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.manh{color:var(--t3)}
+
+/* ---------- KHUNG CHUNG: rail 3 cụm · mép trên có khẩu độ · sàn ---------- */
+.khung{display:flex;width:1600px;height:900px}
+.rail{width:52px;flex:0 0 52px;height:900px;display:flex;flex-direction:column;align-items:center;
+  gap:4px;padding:10px 0;background:var(--panel);border-right:1px solid var(--vien-mo)}
+.rail b{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border-radius:var(--r-2);color:var(--t3)}
+.rail b.on{background:var(--accent-soft);color:var(--t1);box-shadow:inset 0 0 0 1px var(--accent)}
+.rail hr{width:22px;border:0;border-top:1px solid var(--vien-mo);margin:7px 0}
+.rail .day{margin-top:auto}
+.cot{flex:1;min-width:0;display:flex;flex-direction:column;height:900px}
+
+.dinh{height:44px;flex:0 0 44px;display:flex;align-items:center;gap:12px;padding:0 16px;
+  background:var(--panel);border-bottom:1px solid var(--vien-mo);position:relative}
+.duong-di{display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--t3)}
+.duong-di strong{color:var(--t2);font-weight:600}
+.duong-di span{color:var(--t3)}
+
+/* KHẨU ĐỘ VITALS — nằm VẬT LÝ trong mép trên (EXS §7 · D-DR1), mức Ambient.
+   Là một khe khoét vào thanh mép trên, không phải nút nổi lên trên nó. */
+.khau-do{position:absolute;left:50%;top:0;transform:translateX(-50%);height:44px;
+  display:flex;align-items:center;gap:9px;padding:0 16px;border-radius:0 0 var(--r-3) var(--r-3);
+  background:var(--card);box-shadow:inset 0 -1px 0 var(--vien-mo),inset 1px 0 0 var(--vien-mo),inset -1px 0 0 var(--vien-mo)}
+.khau-do .mat{width:8px;height:8px;border-radius:var(--r-full);background:var(--accent)}
+.khau-do .tin{font-size:var(--fs-xs);color:var(--t2);white-space:nowrap}
+.khau-do .tin i{font-style:normal;color:var(--t3)}
+.khau-do .vach{width:1px;height:14px;background:var(--vien-mo)}
+.phai-dinh{margin-left:auto;display:flex;align-items:center;gap:10px}
+.mat-nguoi{display:flex}
+.mat-nguoi i{width:22px;height:22px;border-radius:var(--r-full);display:block;margin-left:-6px;
+  box-shadow:0 0 0 2px var(--panel);background:var(--t5)}
+.mat-nguoi i:first-child{margin-left:0}
+.the-demo{font-weight:500;font-size:var(--fs-2xs);line-height:1.5;font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em;
+  color:var(--t3);border:1px dashed var(--border-strong);border-radius:var(--r-1);padding:2px 7px}
+
+.san{flex:1;min-height:0;position:relative;overflow:hidden}
+
+/* ---------- MẢNH DÙNG CHUNG ---------- */
+.tam{background:var(--panel);border-radius:var(--r-3);box-shadow:0 1px 0 var(--vien-mo)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;
+  border-radius:var(--r-full);background:var(--card);color:var(--t2);font-size:var(--fs-xs);
+  box-shadow:inset 0 0 0 1px var(--vien-mo)}
+.nut{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:var(--tap-lg);
+  padding:0 18px;border-radius:var(--r-full);background:var(--accent);color:var(--on-accent);
+  font-size:var(--fs-ui);font-weight:600;border:0}
+.nut-nhe{display:inline-flex;align-items:center;gap:8px;height:var(--tap);padding:0 14px;
+  border-radius:var(--r-full);background:transparent;color:var(--t2);font-size:var(--fs-ui);
+  box-shadow:inset 0 0 0 1px var(--border-strong)}
+.ke{border:0;border-top:1px solid var(--vien-mo)}
+/* DẤU TRẠNG THÁI — màu chỉ sống ở đây, chữ luôn là --t1/--t2/--t3 */
+.dau{width:8px;height:8px;border-radius:var(--r-full);flex:0 0 8px;display:inline-block}
+.dau.chay{background:var(--success)}
+.dau.cho{background:var(--warning);border-radius:var(--r-1)}
+.dau.lech{background:var(--danger);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)}
+/* DẤU CÒN TIẾP (§30) — nội dung ngoài tầm nhìn phải nói ra */
+.con-tiep{display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--t3)}
+.con-tiep .vach-mo{flex:1;height:1px;background:linear-gradient(90deg,var(--border-strong),transparent)}

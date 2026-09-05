@@ -31,6 +31,7 @@
 
 import { useCallback, useEffect, useId, useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { coPhimHeThong } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 
 const PREFIX = 'if.panelflank.';
 
@@ -149,7 +150,7 @@ export default function PanelFlank({ side, storageKey, label, defaultOpen = true
   useEffect(() => {
     if (!hotkey) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+      if (coPhimHeThong(e) || e.altKey || e.shiftKey) return;
       if (e.key.toLowerCase() !== hotkey.toLowerCase()) return;
       const el = e.target;
       if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;

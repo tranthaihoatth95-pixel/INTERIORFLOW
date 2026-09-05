@@ -146,7 +146,7 @@ export function HaiTang({ duAn, nhaCungCap }: { duAn: ReactNode; nhaCungCap: Rea
   const dinh = THU_MUC_HE_THONG.find((t) => t.khoa === thuMuc)!;
 
   return (
-    <div style={{ display: 'flex', minHeight: 0, flex: 1, flexDirection: 'column', overflowY: 'auto' }}>
+    <div style={{ display: 'flex', minHeight: 0, flex: 1, flexDirection: 'column', overflowY: 'auto', scrollbarGutter: 'stable' }}>
       <RawStyle css={CSS_TANG} />
 
       {/* ══ TẦNG ① · THƯ MỤC HỆ THỐNG ══════════════════════════════════════════ */}

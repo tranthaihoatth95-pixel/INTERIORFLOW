@@ -70,6 +70,8 @@ import { CAD_COMMANDS } from '../cad/command-aliases';
 // `icon` (chuỗi → component là việc của components/ui/command-icon.tsx), nên lib/ vẫn THUẦN,
 // test sucrase-node không kéo React vào. Kho hình + ràng buộc "cấm làm nút" sống ở chính file đó.
 import type { ThaoTacKey } from '../ui/thao-tac-glyph';
+// B4 — mặt tiền "Chỉnh lệnh vừa chạy" (lệnh `cad.edit.adjustlast` bên dưới), cùng lib/commands.
+import { useChinhLenh } from './chinh-lenh-store';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // Kiểu dữ liệu
@@ -224,16 +226,18 @@ const CAD_OR_RENDER = (ctx: WhenCtx): boolean => ctx.stage === 'cad' || ctx.stag
 
 /**
  * 21/08 — XOÁ: sống ở 'cad' như cũ, và sống ở 'render' KHI có khối đang chọn trên khung nhìn 3D.
- * Đọc `useTree3DUi.selectedEntityId` (state CHỌN của 3D — cùng store Navigator/Inspector đang
- * dùng, KHÔNG đẻ nguồn thứ hai). Chưa chọn gì ⇒ mờ kèm lý do, đúng §9 (cấm nút bấm-không-ra-gì).
+ * Đọc `useTree3DUi.selectedEntityId` (state CHỌN của 3D — cùng store Navigator/Inspector/
+ * Viewport3D đang dùng). Chưa chọn gì ⇒ vẫn MỜ kèm lý do thật (`toolbar-source.ts`), đúng §9
+ * (cấm nút bấm-không-ra-gì).
  */
 const CAD_OR_RENDER_SEL = (ctx: WhenCtx): boolean =>
   ctx.stage === 'cad' || (ctx.stage === 'render' && !!useTree3DUi.getState().selectedEntityId);
 
 /**
  * Xoá thứ ĐANG CHỌN, đúng theo chặng đang đứng: 3D có khối chọn ⇒ xoá đúng entity đó (một lệnh
- * `updateDoc` để undo gộp một nhịp); còn lại ⇒ đường cũ `deleteSelected()` của 2D. Một lệnh, hai
- * bộ thi hành — đúng khuôn "một sổ lệnh nhiều mặt tiền" (TICKET-KIEN-TRUC-LENH-3-TANG §B5).
+ * `removeIds` để undo gộp một nhịp) rồi dọn cờ chọn; còn lại ⇒ đường cũ `deleteSelected()` của 2D.
+ * Một lệnh, hai bộ thi hành — đúng khuôn "một sổ lệnh nhiều mặt tiền"
+ * (`TICKET-KIEN-TRUC-LENH-3-TANG` §B5).
  */
 function xoaDangChon(): void {
   const id3d = useTree3DUi.getState().selectedEntityId;
@@ -463,6 +467,15 @@ export const COMMANDS: CommandDef[] = [
       store().setTool('lengthen');
     },
   },
+  {
+    // B4 (tầng ③ ticket KIEN-TRUC-LENH-3-TANG) — "Chỉnh lệnh vừa chạy" (Blender F9 Adjust Last
+    // Operation). `run` KHÔNG đổi tool: chỉ yêu cầu mặt tiền `components/cad/ChinhLenhVuaChay.tsx`
+    // focus ô đầu; chưa có lệnh vừa chạy thì store tự báo ở thanh trạng thái (§9 cấm nút giả).
+    // `key: ['F9']` là phím THẬT — CadCanvas.tsx xử F9 cùng nhánh với F8/F12.
+    id: 'cad.edit.adjustlast', label: ['Chỉnh lệnh vừa chạy (F9)', 'Adjust last command (F9)'], aliases: ['ADJ', 'ADJUST'],
+    key: ['F9'], when: CAD_BASIC, group: 'edit@18', surfaces: ['statusbar', 'shortcut'],
+    run: () => useChinhLenh.getState().yeuCauFocus(),
+  },
   { id: 'cad.edit.divide', label: ['Divide/Measure — click đối tượng rồi nhập', 'Divide/Measure — click object then enter N'], aliases: ['DIV', 'DIVIDE'], when: gateFor('divide'), group: 'edit@18', surfaces: ['statusbar'], run: activate('divide') },
 
   // ── Nhìn ────────────────────────────────────────────────────────────────────────────────
@@ -484,8 +497,9 @@ export const COMMANDS: CommandDef[] = [
   },
 
   // ── Chọn, xoá, hoàn tác ─────────────────────────────────────────────────────────────────
-  // B1 (15/08) — 4 CommandDef của 9 LỆNH CHUNG / 10 CommandDef nằm ở nhóm này. `stages` khai đủ 3 (tầng ① ticket); `when`
-  // GIỮ NGUYÊN `CAD_BASIC` (mờ ở 'render'/'present') TRỪ undo/redo — xem lý do từng dòng.
+  // B1 (15/08) — 4 CommandDef của 9 LỆNH CHUNG / 10 CommandDef nằm ở nhóm này. `stages` khai đủ 3
+  // (tầng ① ticket); `when` GIỮ NGUYÊN `CAD_BASIC` (mờ ở 'render'/'present') TRỪ undo/redo (thật ở
+  // 'render') và XOÁ (thật ở 'render' khi có khối chọn) — xem lý do từng dòng.
   {
     id: 'cad.sel.select', label: ['Chọn', 'Select'], aliases: ['SEL'],
     // Phím thắng (ticket §4 B1): Esc — đã THẬT ở 'cad' (`CadCanvas.tsx:2583-2607`, Esc →
@@ -507,11 +521,12 @@ export const COMMANDS: CommandDef[] = [
     id: 'cad.sel.delete', label: ['Xoá', 'Delete'], aliases: ['E', 'DEL', 'ERASE'], key: ['Delete'],
     when: CAD_OR_RENDER_SEL, group: 'sel@2', surfaces: ['statusbar', 'shortcut'], run: xoaDangChon,
     stages: ['cad', 'render', 'present'], icon: 'Trash2',
-    // 21/08 — NAY THẬT ở 'render' khi có khối được chọn trên khung nhìn. Lý do mờ cũ ("3D dùng
-    // viewportSelectedId cục bộ, không đồng bộ useCadStore.selection") đã hết hiệu lực: bấm-vào-
-    // khối nay ghi `useTree3DUi.selectedEntityId` (state CHỌN, không phải kho sự thật thứ hai),
-    // nên xoá nhắm ĐÚNG khối đang chọn — xem `xoaDangChon`. Chưa chọn gì thì vẫn MỜ kèm lý do
-    // (`toolbar-source.ts`), KHÔNG có nút chạy-mà-không-làm-gì. MỜ ở 'present': không có store.
+    // 21/08 — THẬT ở 'render' khi có khối được chọn trên khung nhìn. Lý do mờ CŨ ("3D dùng
+    // `viewportSelectedId` cục bộ, không đồng bộ `useCadStore.selection`, gọi sẽ xoá NHẦM") ĐÃ HẾT
+    // HIỆU LỰC và được xoá khỏi đây: bấm-vào-khối nay ghi `useTree3DUi.selectedEntityId` (state
+    // CHỌN, không phải kho sự thật thứ hai), nên xoá nhắm ĐÚNG khối đang chọn — xem `xoaDangChon`.
+    // Chưa chọn gì thì vẫn MỜ kèm lý do (`toolbar-source.ts`), KHÔNG có nút chạy-mà-không-làm-gì.
+    // MỜ ở 'present': không có store toàn cục nào registry.ts với tới.
   },
   {
     id: 'cad.sel.undo', label: ['Hoàn tác', 'Undo'], aliases: ['U', 'UNDO'], key: ['mod', 'Z'],

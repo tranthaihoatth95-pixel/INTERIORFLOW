@@ -14,6 +14,22 @@
 import type { HoSoDiaDiem } from './types';
 import type { Mien } from './anh-huong';
 
+/**
+ * ⭐ TÊN SỰ KIỆN "SỰ THẬT ĐỊA ĐIỂM VỪA ĐỔI" — K2 (tự lên tiếng, không chờ ai gọi).
+ *
+ * Vì sao là HẰNG SỐ chứ không phải chuỗi gõ tại chỗ: trước 05/09 chuỗi `'if:site-changed'` được
+ * gõ tay ở khẩu độ Vitals, và **nơi GHI thì không gõ ở đâu cả** — `dia-diem-client.luu()` PATCH
+ * xong là im, nên khẩu độ chỉ nghe được đúng tiếng của CHÍNH NÓ (nút "Tính lại"). Đổi hướng ở
+ * Tổng quan hay bảng Đèn 3D thì Vitals không hay biết cho tới lần F5.
+ * Gõ tay hai nơi là hai nguồn cho cùng một cái tên — đúng thứ `may-soi-dong-dang` sinh ra để bắt.
+ */
+export const SU_KIEN_SITE_DOI = 'if:site-changed';
+
+/** Phát tiếng. Gọi SAU khi máy chủ đã nhận — phát trước là báo một sự thật chưa tồn tại. */
+export function baoSiteDoi() {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(SU_KIEN_SITE_DOI));
+}
+
 /** Nhãn người đọc cho từng miền. Hằng số — cấm chữ tự do/AI sinh lọt vào Vitals. */
 const TEN_MIEN: Record<string, string> = {
   nang: 'Phân tích nắng',

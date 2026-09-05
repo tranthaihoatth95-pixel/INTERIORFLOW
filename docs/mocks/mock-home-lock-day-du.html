@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<title>Home · BẢN KHOÁ · 14 dự án, ban đêm</title>
+<link rel="stylesheet" href="_home-lock-nen.css">
+<style>
+/* Ca DÀY: 14 dự án · 11 việc chờ · một việc đang chạy. HÌNH HỌC KHÔNG ĐỔI MỘT PIXEL so với
+   khung "ngày có việc" — chỉ đổi SỐ NGƯỜI ĐỨNG TRÊN MỖI BẬC. Đó là bằng chứng cho câu hỏi
+   "mật độ tăng thì bố cục có vỡ không": H2 hết chỗ ở ~9 món, thang này thì không. */
+.canh-so{flex:0 0 34%;min-width:0;border-left:1px solid var(--canh-2);padding:14px 18px;
+  display:flex;flex-direction:column;gap:0}
+.canh-so .tit{font-weight:500;font-size:var(--fs-2xs);line-height:1.5;font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em;
+  color:var(--canh-6);margin-bottom:8px}
+.ts{display:flex;align-items:center;gap:10px;min-height:34px;flex:1}
+/* Hàng GIÃN ĐỀU thay vì cao cố định: cột thông số cao hơn tổng 6 hàng, để cố định thì
+   dư ra một khoảng trống ở đáy — đọc ra là lỗ, không đọc ra là khoảng thở. */
+.ts+.ts{border-top:1px solid var(--canh-2)}
+.ts .n{flex:1;font-size:var(--fs-ui);color:var(--canh-6);line-height:1.5}
+.ts .v{font-size:var(--fs-xs);font-weight:600;color:var(--canh-7);line-height:1.5}
+.khung-anh{flex:1;min-width:0}
+.khung-anh svg{width:100%;height:100%}
+</style>
+</head>
+<body>
+<div class="khung">
+
+  <nav class="rail" aria-label="Điều hướng">
+    <b class="on" aria-label="Tổng quan"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.5 9 3l7 5.5V16H2z"/><path d="M7 16v-5h4v5"/></svg></b>
+    <b aria-label="Tệp"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h3.2l1.6 2h6.2A1.5 1.5 0 0 1 16 7.5v6A1.5 1.5 0 0 1 14.5 15h-11A1.5 1.5 0 0 1 2 13.5z"/></svg></b>
+    <b aria-label="Thư viện"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="4" height="12" rx="1"/><rect x="7.5" y="3.5" width="4" height="12" rx="1"/><path d="M12.6 4.6 15.5 5.4 13.2 15.2 10.4 14.4z"/></svg></b>
+    <b aria-label="Bảng việc"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M6 9.6l2 2 4-4.4"/></svg></b>
+    <b aria-label="Trao đổi"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5.5A1.5 1.5 0 0 1 4 4h11a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 15 13H7l-4 3z"/></svg></b>
+    <hr>
+    <b aria-label="2D Kỹ thuật"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="13" height="10" rx="1"/><path d="M2.5 11h6v3.5"/><path d="M8.5 4.5v3"/></svg></b>
+    <b aria-label="3D Thiết kế"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.4 15.6 6v7L9 16.6 2.4 13V6z"/><path d="M2.4 6 9 9.5 15.6 6"/><path d="M9 9.5v7.1"/></svg></b>
+    <b aria-label="Trình chiếu"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="13" height="9" rx="1"/><path d="M9 12.5V16"/><path d="M6 16h6"/></svg></b>
+    <div class="day"></div><hr>
+    <b aria-label="Hồ sơ của tôi"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3.6 15.6a5.6 5.6 0 0 1 10.8 0"/></svg></b>
+    <b aria-label="Cài đặt"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="2.6"/><path d="M9 2v2.2M9 13.8V16M2 9h2.2M13.8 9H16M4 4l1.6 1.6M12.4 12.4 14 14M14 4l-1.6 1.6M5.6 12.4 4 14"/></svg></b>
+  </nav>
+
+  <div class="cot">
+    <header class="dinh">
+      <div class="duong-di"><strong>Xưởng của Hoà</strong><span>·</span><span>Tổng quan</span></div>
+      <div class="khau-do" role="status" aria-label="Vitals · mức thường trực">
+        <span class="mat" aria-hidden="true"></span>
+        <span class="tin">1 việc đang chạy <i>· 11 việc chờ bạn</i></span>
+        <span class="vach" aria-hidden="true"></span>
+        <span class="tin"><i>Hỏi Vitals</i></span>
+      </div>
+      <div class="phai-dinh">
+        <span class="the-demo">demo · dữ liệu mẫu</span>
+        <span class="mat-nguoi" aria-label="5 người đang trong xưởng"><i></i><i></i><i></i><i></i><i></i></span>
+      </div>
+    </header>
+
+    <div class="than">
+      <main class="san">
+
+        <!-- DẢI MÔI TRƯỜNG · ban đêm. Cùng khối, cùng chỗ, khác giờ —
+             LightClock chỉ đổi hướng sáng, KHÔNG đổi bố cục. -->
+        <div class="dai" aria-hidden="true">
+          <svg viewBox="0 0 1148 420" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <linearGradient id="dem" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="var(--canh-0)"/><stop offset="1" stop-color="var(--canh-1)"/>
+              </linearGradient>
+              <radialGradient id="denvang" cx="34%" cy="30%" r="60%">
+                <stop offset="0" stop-color="var(--canh-6)" stop-opacity=".42"/>
+                <stop offset="1" stop-color="var(--canh-6)" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <rect x="0" y="0" width="1148" height="420" fill="url(#dem)"/>
+            <rect x="0" y="0" width="1148" height="292" fill="var(--canh-1)"/>
+            <!-- cửa kính nhìn ra đêm thành phố -->
+            <rect x="640" y="34" width="440" height="258" fill="var(--canh-1)"/>
+            <g fill="var(--canh-4)" opacity=".62">
+              <rect x="676" y="150" width="46" height="142"/><rect x="738" y="106" width="38" height="186"/>
+              <rect x="792" y="168" width="52" height="124"/><rect x="860" y="126" width="40" height="166"/>
+              <rect x="916" y="182" width="60" height="110"/><rect x="992" y="142" width="44" height="150"/></g>
+            <g fill="var(--canh-7)" opacity=".9">
+              <rect x="686" y="166" width="7" height="9"/><rect x="748" y="128" width="7" height="9"/>
+              <rect x="806" y="188" width="7" height="9"/><rect x="872" y="150" width="7" height="9"/>
+              <rect x="930" y="200" width="7" height="9"/><rect x="1004" y="164" width="7" height="9"/>
+              <rect x="700" y="196" width="7" height="9"/><rect x="880" y="212" width="7" height="9"/></g>
+            <rect x="640" y="34" width="440" height="258" fill="none" stroke="var(--canh-3)" stroke-width="2"/>
+            <line x1="860" y1="34" x2="860" y2="292" stroke="var(--canh-3)" stroke-width="2"/>
+            <!-- đèn hắt ấm trong phòng -->
+            <rect x="0" y="0" width="1148" height="420" fill="url(#denvang)"/>
+            <rect x="0" y="292" width="1148" height="128" fill="var(--canh-2)"/>
+            <rect x="0" y="292" width="1148" height="3" fill="var(--canh-4)" opacity=".45"/>
+            <rect x="120" y="212" width="316" height="80" rx="6" fill="var(--canh-1)"/>
+            <rect x="120" y="204" width="316" height="12" rx="4" fill="var(--canh-5)" opacity=".35"/>
+            <ellipse cx="292" cy="150" rx="58" ry="19" fill="var(--canh-6)" opacity=".26"/>
+            <line x1="292" y1="0" x2="292" y2="128" stroke="var(--canh-3)" stroke-width="1.4"/>
+            <ellipse cx="292" cy="134" rx="26" ry="8" fill="var(--canh-5)"/>
+            <!-- ĐỒNG HỒ ÁNH SÁNG lúc đêm: cung hạ xuống, chấm giờ ở mép -->
+            <path d="M932 150 A 96 96 0 0 1 1108 150" fill="none" stroke="var(--canh-4)" stroke-width="1.4" opacity=".5"/>
+            <circle cx="944" cy="128" r="4.5" fill="var(--canh-5)"/>
+          </svg>
+        </div>
+        <div class="nhan-dai" style="left:var(--lePhai);top:22px"><b>Vinhomes · penthouse 214 m²</b><span>· nền: khung 3 của mẻ render đang chạy</span></div>
+        <div class="nhan-dai" style="right:var(--lePhai);top:22px"><span>21:40 · đêm</span></div>
+
+        <!-- ===== BẬC 1 · NGAY BÂY GIỜ — vẫn ĐÚNG MỘT thân. Loại nội dung khác hẳn khung
+             "ngày có việc" (ở đó là bảng vật liệu trên nền sáng), chứng minh bậc 1 không
+             mặc định là mặt bằng 2D và không mặc định là một loại vật. ===== -->
+        <section class="vat toi" aria-label="Việc đang dở">
+          <div class="vat-dau">
+            <span class="dau chay" aria-hidden="true"></span>
+            <span class="ten">Phối cảnh phòng ăn · mẻ đêm</span>
+            <span class="kem">đang chạy từ 20:12 · bạn đặt 6 khung, xong 4</span>
+            <span class="cuoi"><span class="chip-toi">còn khoảng 22 phút</span></span>
+          </div>
+          <div class="vat-than">
+            <div class="khung-anh">
+              <svg viewBox="0 0 700 370" preserveAspectRatio="xMidYMid slice">
+                <rect x="0" y="0" width="700" height="370" fill="var(--canh-0)"/>
+                <rect x="0" y="0" width="700" height="250" fill="var(--canh-1)"/>
+                <rect x="0" y="250" width="700" height="120" fill="var(--canh-2)"/>
+                <rect x="0" y="250" width="700" height="2" fill="var(--canh-4)" opacity=".5"/>
+                <rect x="392" y="26" width="270" height="224" fill="var(--canh-0)"/>
+                <g fill="var(--canh-4)" opacity=".45">
+                  <rect x="410" y="120" width="30" height="130"/><rect x="452" y="86" width="24" height="164"/>
+                  <rect x="490" y="138" width="34" height="112"/><rect x="540" y="102" width="26" height="148"/>
+                  <rect x="580" y="146" width="40" height="104"/></g>
+                <rect x="392" y="26" width="270" height="224" fill="none" stroke="var(--canh-3)" stroke-width="2"/>
+                <rect x="70" y="222" width="250" height="14" rx="4" fill="var(--canh-5)"/>
+                <rect x="84" y="236" width="9" height="46" fill="var(--canh-3)"/>
+                <rect x="298" y="236" width="9" height="46" fill="var(--canh-3)"/>
+                <rect x="118" y="196" width="44" height="86" rx="6" fill="var(--canh-3)"/>
+                <rect x="182" y="196" width="44" height="86" rx="6" fill="var(--canh-3)"/>
+                <rect x="246" y="196" width="44" height="86" rx="6" fill="var(--canh-3)"/>
+                <line x1="196" y1="0" x2="196" y2="96" stroke="var(--canh-3)" stroke-width="1.4"/>
+                <ellipse cx="196" cy="104" rx="34" ry="10" fill="var(--canh-6)" opacity=".8"/>
+                <ellipse cx="196" cy="150" rx="86" ry="30" fill="var(--canh-6)" opacity=".13"/>
+              </svg>
+            </div>
+            <div class="canh-so">
+              <span class="tit">mẻ này gồm gì</span>
+              <div class="ts"><span class="n">Khung đã xong</span><span class="v so">4 / 6</span></div>
+              <div class="ts"><span class="n">Độ phân giải</span><span class="v so">3000 px</span></div>
+              <div class="ts"><span class="n">Giờ trong cảnh</span><span class="v so">19:30</span></div>
+              <div class="ts"><span class="n">Vật liệu bám theo</span><span class="v so">13 mã</span></div>
+              <div class="ts"><span class="n">Nguồn khối</span><span class="v so">bản dựng 7</span></div>
+              <div class="ts"><span class="n">Chi phí mẻ</span><span class="v so">24 cr</span></div>
+            </div>
+          </div>
+          <div class="vat-chan">
+            <span class="vach-tt" style="width:190px" role="progressbar" aria-valuenow="67" aria-valuemin="0" aria-valuemax="100" aria-label="Tiến trình mẻ render"><i style="width:67%"></i></span>
+            <span><b class="so">4/6</b> khung · <b class="so">67%</b></span>
+            <span>xong khung nào là thấy khung đó, không phải chờ hết mẻ</span>
+            <span class="day2">đổi vật liệu lúc này thì mẻ chạy lại từ khung 5</span>
+          </div>
+        </section>
+
+        <section class="ngu-canh" aria-label="Ngữ cảnh của việc đang dở">
+          <div class="nc-dau"><span class="nhan">việc này đi từ đâu tới</span><span class="ke2"></span><span class="chip">mẻ này phục vụ 2 hồ sơ</span></div>
+          <div class="mach">
+            <div class="nut-mach"><span class="khi">02.09</span><span class="cai">Chốt phương án B với chủ đầu tư</span><span class="no">bỏ đảo bếp, mở thông phòng ăn</span></div>
+            <div class="nut-mach"><span class="khi">03.09</span><span class="cai">Bản dựng khối 7</span><span class="no">trần hạ 2.700 · đã kiểm chuẩn, 0 lỗi</span></div>
+            <div class="nut-mach"><span class="khi">đang chạy</span><span class="cai">Mẻ render đêm · 6 khung</span><span class="no">bản 6 vẫn giữ, so cạnh nhau được</span></div>
+            <div class="nut-mach cho"><span class="khi">đang chờ mẻ này</span><span class="cai">Hồ sơ trình chủ đầu tư · 24 trang</span><span class="no">dàn ý đã chờ sẵn ở Trình bày</span></div>
+          </div>
+        </section>
+      </main>
+
+      <aside class="thang" aria-label="Thang chú ý">
+
+        <div class="muc"><span class="nhan">kề bên</span><span class="ke2"></span><span class="dem">3</span></div>
+
+        <div class="ke-ben">
+          <span class="mat-vat" aria-hidden="true"><svg viewBox="0 0 104 64" preserveAspectRatio="xMidYMid slice">
+            <rect x="0" y="0" width="104" height="64" fill="var(--nen-sang)"/>
+            <g stroke="var(--muc)" stroke-width="1" opacity=".6" fill="none">
+              <rect x="9" y="10" width="50" height="40"/><rect x="59" y="10" width="34" height="24"/>
+              <path d="M9 34h50M34 10v40M59 34h34"/></g>
+            <rect x="20" y="40" width="14" height="8" fill="var(--muc)" opacity=".22"/>
+            <g stroke="var(--muc)" stroke-width="1" opacity=".3"><path d="M9 57h84M9 54v6M93 54v6"/></g></svg></span>
+          <span class="chu">
+            <span class="ten">Mặt bằng tầng 12 · triển khai</span>
+            <span class="con-so so">3 kích thước chưa chốt</span>
+            <span class="khi">bạn sửa lúc 18:40</span>
+          </span>
+        </div>
+
+        <div class="ke-ben">
+          <span class="mat-mau" aria-hidden="true">
+            <i style="background:var(--vl-da)"></i><i style="background:var(--vl-kl)"></i>
+            <i style="background:var(--vl-go)"></i><i style="background:var(--vl-son)"></i></span>
+          <span class="chu">
+            <span class="ten">Bảng vật liệu · Thảo Điền bản 4</span>
+            <span class="con-so so">2 mục chờ bạn chốt · hạn 06.09</span>
+            <span class="khi">bạn rời lúc 15:48</span>
+          </span>
+        </div>
+
+        <div class="ke-ben an-hep">
+          <span class="mat-vat" aria-hidden="true"><svg viewBox="0 0 104 64" preserveAspectRatio="xMidYMid slice">
+            <rect x="0" y="0" width="104" height="64" fill="var(--nen-sang)"/>
+            <rect x="8" y="8" width="88" height="34" fill="var(--vl-da)"/>
+            <rect x="8" y="46" width="40" height="4" fill="var(--muc)" opacity=".55"/>
+            <rect x="8" y="54" width="66" height="3" fill="var(--muc)" opacity=".28"/>
+            <rect x="80" y="46" width="16" height="11" fill="var(--vl-go)"/></svg></span>
+          <span class="chu">
+            <span class="ten">Hồ sơ Nam Long · 24 trang</span>
+            <span class="con-so so">dàn ý sẵn · 6 trang chờ ảnh</span>
+            <span class="khi">chờ mẻ render đêm</span>
+          </span>
+        </div>
+
+        <div class="muc" style="margin-top:18px"><span class="nhan">nền</span><span class="ke2"></span><span class="dem">6</span></div>
+
+        <div class="o-nen"><span class="dau chay" aria-hidden="true"></span><span class="ten">Dựng khối tủ áo · đang tính</span><span class="vach-tt" aria-hidden="true"><i style="width:48%"></i></span><span class="num so">48%</span></div>
+        <div class="o-nen"><span class="dau cho" aria-hidden="true"></span><span class="ten">Cổng duyệt · trưởng bộ môn</span><span class="num so">2 ngày</span></div>
+        <div class="o-nen"><span class="dau cho" aria-hidden="true"></span><span class="ten">Báo giá đá · chờ nhà cung cấp</span><span class="num so">4 ngày</span></div>
+        <div class="o-nen"><span class="dau cho" aria-hidden="true"></span><span class="ten">Duyệt mẫu gỗ · chủ đầu tư</span><span class="num so">1 ngày</span></div>
+        <div class="o-nen an-hep"><span class="dau lech" aria-hidden="true"></span><span class="ten">Sungroup · hành lang thiếu 150 mm</span><span class="num so">1 lỗi</span></div>
+        <div class="o-nen an-hep"><span class="dau lech" aria-hidden="true"></span><span class="ten">Detech · khung tên thiếu tỉ lệ</span><span class="num so">1 lỗi</span></div>
+
+        <div class="khi-goi"><span>còn 9 việc · 11 dự án đang ngủ<span class="chi-hep"> · 3 mục thu ở khổ hẹp</span></span><span class="vach-mo" aria-hidden="true"></span><span class="so">gọi ra</span></div>
+
+        <div class="muc"><span class="nhan">tôi tự đặt</span><span class="ke2"></span><span class="dem">3</span></div>
+        <div class="ke-widget">
+          <div class="o-w w2"><span class="nh">tín dụng render tháng này</span><span class="gt so">318 <small>còn lại · dùng 182</small></span></div>
+          <div class="o-w w1"><span class="nh">dự án đang mở</span><span class="gt so">14</span></div>
+          <div class="o-w w1"><span class="nh">việc quá hạn</span><span class="gt so">2</span></div>
+        </div>
+        <div class="dan"></div>
+      </aside>
+    </div>
+  </div>
+</div>
+</body></html>

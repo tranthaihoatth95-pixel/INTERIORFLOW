@@ -6,6 +6,18 @@
  * Vai: nhận tờ qua cầu `lib/present-editor/to-ban-ve.ts` (consume-once, cùng pattern handoff.ts),
  * giữ tờ trong state của chặng Trình chiếu, và bày nút mở panel `ThietLapTrang`.
  *
+ * ⭐ LUẬT NỀN THI HÀNH Ở ĐÂY: **2D/3D SÁNG TÁC NỘI DUNG · TRÌNH CHIẾU DÀN TRANG VÀ PHÁT HÀNH.**
+ * Tờ đi qua cầu `to-ban-ve.ts` mang theo **tỉ lệ · khổ · lề · khung tên · neo nguồn** — KHÔNG
+ * phải một tấm ảnh.
+ *
+ * ⛔ §HAI ĐƯỜNG — phân biệt cho phiên sau khỏi gộp nhầm:
+ *   · ĐƯỜNG ẢNH  `interiorflow.cadPresentHandoff`  → PresentEditor chèn MỘT SLIDE ảnh vào deck.
+ *     Đầu ra là NỘI DUNG trong deck; sửa xong là hết dây, không biết nguồn đổi.
+ *   · ĐƯỜNG TỜ   `interiorflow.toBanVeHandoff`     → component NÀY giữ, không chèn slide nào.
+ *     Đầu ra là MỘT TỜ có neo nguồn; nguồn đổi thì tờ tự đánh dấu "Có bản mới".
+ *   Hai khoá riêng, hai kho riêng, hai bề mặt riêng ⇒ bấm "Đưa sang Present" (ảnh) và bấm
+ *   "Gửi sang Trình chiếu" (tờ) trong cùng một phiên KHÔNG giẫm nhau.
+ *
  * 🔴 VIỆC 7 — NGUỒN ĐỔI KHÔNG TỰ SỬA ĐẦU RA: component này CHỈ ĐỌC sổ dấu vết (`docDauVetNguon`)
  * để tính trạng thái và ĐÁNH DẤU. Không có nhánh nào tự ghi lại tờ khi nguồn đổi — người bấm
  * "Cập nhật" thì mới cập nhật, và tờ ĐÃ PHÁT HÀNH thì nút đó mờ hẳn (`coTheTuCapNhat`).
@@ -53,10 +65,11 @@ const KHA_NANG: KhaNang = {
 /**
  * Tờ đã nhận trong phiên này, giữ ở mức module.
  *
- * 🐛 Bug thật bắt được lúc nghiệm thu 20/08: cầu là CONSUME-ONCE, mà React StrictMode dựng
- * component hai lần (mount → unmount → mount lại với state MỚI). Lần dựng thứ nhất tiêu thụ mất
- * tờ rồi bị vứt; lần thứ hai — lần thật sự hiển thị — gọi vào cầu thì đã rỗng ⇒ tờ vừa gửi
- * BIẾN MẤT, nút "Thiết lập trang" không bao giờ hiện. Biến này sống ngoài vòng đời component nên
+ * 🐛 Bug thật bắt được lúc nghiệm thu 20/08: cầu là CONSUME-ONCE, mà chặng Trình chiếu dựng
+ * component này hai lần (StrictMode chạy effect → dọn → chạy lại; và `PresentEditor` còn remount
+ * THẬT khi đổi `key={activeId}` hoặc khi người dùng tạt sang màn BOQ rồi quay lại). Lần dựng thứ
+ * nhất tiêu thụ mất tờ rồi bị vứt; lần sau gọi vào cầu thì đã rỗng ⇒ tờ vừa gửi BIẾN MẤT, nút
+ * "Thiết lập trang" không bao giờ hiện. Biến này sống ngoài vòng đời component nên
  * lần dựng thứ hai nhặt lại đúng tờ đó. (Cùng họ bẫy với fallback bộ nhớ của `handoff.ts`.)
  */
 let toDaNhan: ToBanVe | null = null;

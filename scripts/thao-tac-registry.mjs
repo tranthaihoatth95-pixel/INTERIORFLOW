@@ -55,16 +55,45 @@ export const LUAT = [
   { id: 'outline-can-focus-visible', toiDanh: 3, loai: 'grep',
     luat: 'Bàn phím = chuột: file bỏ outline phải có :focus-visible thay thế (vòng focus accent)',
     nguon: 'SPEC-HOVER-FOCUS-IDF §3.6',
-    soi: [{ dir: 'components', mauCo: 'outline:\\s*none|outline-none', mauThieu: 'focus-visible' },
-          { dir: 'app', mauCo: 'outline:\\s*none|outline-none', mauThieu: 'focus-visible' }] },
+    // ⭐ THU HẸP 04/09 sau khi ĐO trên Chromium thật (không suy từ đặc hiệu). Mẫu cũ
+    // `outline:\s*none|outline-none` gộp BA cơ chế khác hẳn nhau vào một rọ ⇒ 32 tệp báo, chỉ 8 tệp
+    // là lỗ thật. Số đo (getComputedStyle lúc Tab tới, CSS bundle thật của Next):
+    //   · class `outline-none` (Tailwind v3 = `outline:2px solid transparent`, đặc hiệu 0-1-0, nằm
+    //     TRƯỚC luật globals trong bundle vì `@tailwind utilities` ở đầu app/globals.css)
+    //     → ring VẪN HIỆN 2px #6a57f5. KHÔNG phải lỗ ⇒ không soi nữa.
+    //   · `focus:outline-none` (đặc hiệu 0-2-0 — một class + một pseudo-class) → THẮNG luật
+    //     `:where(...):focus-visible` (0-1-0) → outline 2px solid TRANSPARENT ⇒ MẤT ring. LỖ THẬT.
+    //   · `outline:none` khai trong chuỗi CSS / style inline → thắng bằng đặc hiệu hoặc thứ tự
+    //     ⇒ outline 0px none. LỖ THẬT.
+    // ⚠️ Thế cân bằng của nhánh 1 dựa vào THỨ TỰ trong bundle, không phải đặc hiệu. Đảo thứ tự
+    //    `@tailwind utilities` xuống cuối globals.css, hoặc lên Tailwind v4 (utilities vào @layer,
+    //    thua mọi thứ ngoài layer), là 24 tệp kia thành lỗ thật ngay — lúc đó nới mẫu này trở lại.
+    // ⚠️ `mauThieu` xét theo TỆP: tệp có `focus-visible` ở bất kỳ đâu là được miễn cả tệp. Nên một
+    //    tệp vừa tự dựng ring cho vật A vừa giết ring của vật B vẫn lọt (xem báo cáo 04/09 §7).
+    // NANG 05/09 — soi theo DONG chu khong theo TEP. `mauThieu` kieu cu mien CA TEP neu tep co
+    //   chu `focus-visible` o bat ky dau => tep vua dung ring cho vat A vua giet ring vat B thi
+    //   lot sach. Do 05/09: luat cu bao 21 tep; soi theo dong lo them 8 LO THAT nam trong tep da
+    //   duoc mien — o tim cua ve3d/library-sheet/files-mock/inspiration, 5 cho ProjectSelect, va
+    //   slider `input[type=range].if-slider` (dac hieu 0-2-1 thang luat toan app => mat han ring).
+    //   `mauKem` = tin hieu ring thay the; CO `mauKem` la may tu chuyen sang nhanh soi-theo-dong.
+    //   `mauKhai` = loi thoat cho ca tat ring CO Y va DUNG: chinh luat tat-ring-khi-bam-chuot o
+    //   globals, va hop thoai `tabIndex={-1}` nhan focus bang ma nen khong nam trong duong Tab.
+    soi: [{ dir: 'components', mauCo: "[\\w-]+:outline-none|outline:\\s*['\"`]?none", mauThieu: 'focus-visible',
+            mauKem: "box-shadow|boxShadow|ring-\\d|ring-\\[|border-color|border-\\[|outline:\\s*(var|\\d)",
+            mauKhai: 'focus-ring-ok' },
+          { dir: 'app', mauCo: "[\\w-]+:outline-none|outline:\\s*['\"`]?none", mauThieu: 'focus-visible',
+            mauKem: "box-shadow|boxShadow|ring-\\d|ring-\\[|border-color|border-\\[|outline:\\s*(var|\\d)",
+            mauKhai: 'focus-ring-ok' }] },
 
   { id: 'keydown-ne-o-nhap', toiDanh: 3, loai: 'grep',
     luat: 'Phím tắt toàn cục không kích hoạt khi đang nhập chữ — listener keydown toàn cục phải né INPUT/TEXTAREA/contentEditable',
     nguon: 'Chốt hệ phím tắt toàn app 10/08 (00-CHOT)',
     // `esc-only` (phán quyết T 13/08): Escape là lệnh ĐÓNG, không phải phím tắt chức năng — listener
     // thật sự chỉ xử Escape thì ghi marker `esc-only` cạnh addEventListener thay vì guard (agent kiểm từng ca).
-    soi: [{ dir: 'components', mauCo: "(window|document)\\.addEventListener\\('keydown'", mauThieu: 'INPUT|TEXTAREA|isContentEditable|isTyping|isEditable|esc-only' },
-          { dir: 'lib', mauCo: "(window|document)\\.addEventListener\\('keydown'", mauThieu: 'INPUT|TEXTAREA|isContentEditable|isTyping|isEditable|esc-only' }] },
+    // `mienTruTrongChuThich`: marker `esc-only` là LỜI KHAI của tác giả nên được phép nằm trong
+    // chú thích — khác với vi phạm, thứ bắt buộc phải nằm trong mã thật (xem docstring `timThieu`).
+    soi: [{ dir: 'components', mienTruTrongChuThich: true, mauCo: "(window|document)\\.addEventListener\\('keydown'", mauThieu: 'INPUT|TEXTAREA|isContentEditable|isTyping|isEditable|esc-only' },
+          { dir: 'lib', mienTruTrongChuThich: true, mauCo: "(window|document)\\.addEventListener\\('keydown'", mauThieu: 'INPUT|TEXTAREA|isContentEditable|isTyping|isEditable|esc-only' }] },
 
   { id: 'cam-chu-tu-dong', toiDanh: 4, loai: 'grep',
     luat: 'CẤM chữ "tự động" trong UI — AI đoán phải mang dấu Magic, không tự xưng chắc chắn',
@@ -90,7 +119,29 @@ export const LUAT = [
   { id: 'cam-hex-inline', toiDanh: 1, loai: 'grep',
     luat: 'Màu qua CSS var app — cấm hardcode hex trong inline style của component',
     nguon: 'LUAT-GIAO-DIEN-BAT-BUOC L4 + SPEC-DESIGN-SYSTEM-IF §2e.1',
+    /* ⚠️ VÙNG QUÉT MỞ RỘNG 05/09 — mốc CŨ chỉ đếm `components/`, tức là SÀN.
+       Hai luật khác trong chính tệp này (`backdrop-filter`, `outline`) đã khai cả `app/` từ lâu;
+       riêng luật hex thì không, nên hex gõ cứng trong `app/` chưa ai từng thấy. Đo 05/09 bằng
+       CHÍNH mẫu này: **45 chỗ** (ước tính 59 ghi trong sổ 04/09 đếm bằng mẫu rộng hơn — số
+       dùng là 45). Tổng 186 → 231 KHÔNG phải hồi quy, là thôi giấu; số LUẬT lệch vẫn là 2, cổng
+       không đổi màu. Sửa để lượt riêng; máy vẫn chỉ cảnh báo. */
+    /* 🔴 TÁCH LÀM HAI 05/09 — và đây là cách chữa DUY NHẤT không phải nói dối.
+       Mở vùng quét sang `app/` đẩy tổng 194 → 244, nhưng ĐO TÁCH RA thì `components/` chỉ còn
+       **179 — THẤP HƠN trần cũ 194**. Tức mã KHÔNG tệ đi; THƯỚC rộng ra. Bánh cóc lại cấm nới
+       trần (M-52), và nới thật thì đúng là tháo ngòi. Ba đường, chỉ một đường thật thà:
+         ⛔ nới 194 → 244 — che mất việc `components/` đã tốt lên, và phá luật bánh cóc
+         ⛔ thu lại chỉ quét `components/` — quay về giấu 45 chỗ trong `app/`
+         ✅ HAI BỘ ĐẾM, mỗi vùng một thước, mỗi thước một trần, cùng siết xuống độc lập
+       Không con số nào bị nới, không chỗ nào bị giấu, và `components/` được ghi nhận 194 → 179. */
     soi: [{ dir: 'components', mau: ":\\s*'#[0-9a-fA-F]{3,8}'" }] },
+
+  { id: 'cam-hex-inline-app', toiDanh: 1, loai: 'grep',
+    luat: 'Màu qua CSS var app — cấm hardcode hex trong inline style (vùng app/)',
+    nguon: 'LUAT-GIAO-DIEN-BAT-BUOC L4 + SPEC-DESIGN-SYSTEM-IF §2e.1',
+    /* Vùng `app/` mở sổ 05/09 ở 43 (sau khi đổi 2 chỗ máy móc: overview `#fff` → `--on-accent`,
+       notebook `#B4443A` → `--danger`). 40/43 nằm trong ĐÚNG MỘT tệp `app/library/ingest/page.tsx`,
+       và đó KHÔNG phải việc của lint — xem `docs/delivery/HEX-INGEST-CHO-HOA.md`. */
+    soi: [{ dir: 'app', mau: ":\\s*'#[0-9a-fA-F]{3,8}'" }] },
 
   { id: 'so-tabular-nums', toiDanh: 7, loai: 'grep',
     luat: 'Số hiển thị động (zoom %, đếm) dùng tabular-nums để không nhảy bề rộng',

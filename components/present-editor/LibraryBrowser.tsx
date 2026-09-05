@@ -224,7 +224,7 @@ export default function LibraryBrowser({ images, loading, onUseImage, onDelete, 
                         type="button"
                         title="Xoá ảnh reference"
                         onClick={() => onDelete(img)}
-                        style={{ ...miniBtn, color: '#e5674f' }}
+                        style={{ ...miniBtn, color: 'var(--danger)' }}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -339,7 +339,7 @@ const miniBtn: React.CSSProperties = {
   borderRadius: 6,
   border: '1px solid var(--border)',
   background: 'rgba(20,20,24,.72)',
-  color: '#fff',
+  color: 'var(--on-accent)',
   cursor: 'pointer',
 };
 

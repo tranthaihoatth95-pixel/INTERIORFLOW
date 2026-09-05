@@ -1,0 +1,39 @@
+{
+  "luc": "2026-09-05T00:01:54.378Z",
+  "ds": [
+    {
+      "theGioi": "khong-dem",
+      "gieoDem": false,
+      "userId": "cmtnld99e00007d7vq4c7gcxw",
+      "coONhap": true,
+      "oBiVoHieu": false,
+      "ketCuc": "ghi-bi-nuot",
+      "phutDaGo": 42,
+      "truocKhiGo": {
+        "phutTrenDia": null,
+        "dem": "cmtnld99e00007d7vq4c7gcxw",
+        "moiKhoaPhut": [],
+        "storeUser": null,
+        "coStore": true,
+        "oHienThi": "15"
+      },
+      "sauKhiGo": {
+        "phutTrenDia": null,
+        "dem": "cmtnld99e00007d7vq4c7gcxw",
+        "moiKhoaPhut": [],
+        "storeUser": null,
+        "coStore": true,
+        "oHienThi": "15"
+      },
+      "sauKhiMoLai": {
+        "phutTrenDia": null,
+        "dem": "cmtnld99e00007d7vq4c7gcxw",
+        "moiKhoaPhut": [],
+        "storeUser": null,
+        "coStore": true,
+        "oHienThi": "15"
+      },
+      "dat": false
+    }
+  ]
+}

@@ -1178,9 +1178,36 @@ export function fitsAtScale(box: Box | null, paperMm: [number, number], margin: 
  * hàm này nên 2 con số không bao giờ lệch nhau.
  */
 export function docScaleLabel(doc: Doc, paperMm: [number, number], margin: number): string {
-  const box = docBox(doc);
-  if (doc.printScale && fitsAtScale(box, paperMm, margin, doc.printScale)) return `1:${doc.printScale}`;
-  return fitScaleLabel(box, paperMm, margin);
+  const n = resolveDocPrintScaleN(doc, paperMm, margin);
+  return n !== null ? `1:${n}` : fitScaleLabel(docBox(doc), paperMm, margin);
+}
+
+/**
+ * P0-GIAY (05/09) — TỈ LỆ IN HIỆU DỤNG của 1 Doc, **một nguồn duy nhất** cho: nhãn khung tên trên
+ * màn, con số bake vào entity lúc chèn khung tên, viewport lúc xuất PDF, dòng mục lục bộ hồ sơ,
+ * và cổng kiểm `CHUAN_DAU_RA`.
+ *
+ * 🔴 VÌ SAO PHẢI DỜI VỀ ĐÂY (đo được, A2-02): trước 05/09 có **HAI** phép tính cho cùng một con số —
+ * `docScaleLabel()` rơi thẳng về `fitScaleLabel()` (auto-fit THÔ, không neo dãy chuẩn) còn đường
+ * xuất PDF thì gọi `resolveExportScaleN()` (CÓ bắt nấc chuẩn). Hệ quả đo trên bản demo A3 ngang:
+ * màn hình + khung tên đã bake ghi **1:47** trong khi trang PDF vẽ ở **1:100** — và dòng chữ trên
+ * màn còn tự khẳng định *"khung tên + PDF dùng CÙNG con số này"*. Sai 0/10 tổ hợp khổ×hướng.
+ * Nay `resolveExportScaleN()` (lib/cad/pdf.ts) chỉ còn là vỏ gọi thẳng hàm này — một phép tính.
+ *
+ * Trả về:
+ *   · `doc.printScale` NGUYÊN VẸN khi người dùng đã chọn tường minh và nó lọt giấy — kể cả nấc lẻ
+ *     cố ý gõ; đường xuất KHÔNG tự sửa lựa chọn của người dùng, cổng `CHUAN_DAU_RA` sẽ báo đỏ.
+ *   · nấc chuẩn gần nhất PHÍA NHỎ (`snapPrintScale`) cho nấc "Vừa khổ" — hết cảnh in "1:47".
+ *   · `null` khi không nấc chuẩn nào lọt giấy (vượt 1:500) — caller rơi về auto-fit thô và cổng
+ *     kiểm chặn, KHÔNG im lặng in số lẻ.
+ */
+export function resolveDocPrintScaleN(doc: Doc, paperMm: [number, number], margin: number): number | null {
+  const box = docBox(doc) ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
+  if (doc.printScale && fitsAtScale(box, paperMm, margin, doc.printScale)) return doc.printScale;
+  const fit = fitBox(box, paperMm[0], paperMm[1], margin);
+  if (!Number.isFinite(fit.scale) || fit.scale <= 0) return 100;
+  const snapped = snapPrintScale(1 / fit.scale);
+  return fitsAtScale(box, paperMm, margin, snapped) ? snapped : null;
 }
 
 /** Khổ giấy hiệu dụng của Doc (mm) — paperKey+paperOrientation per-sheet. Doc cũ không có 2
@@ -1252,6 +1279,41 @@ export function segIntersect(a: Pt, b: Pt, c: Pt, d: Pt): Pt | null {
   const u = ((c.x - a.x) * r.y - (c.y - a.y) * r.x) / denom;
   if (t < 0 || t > 1 || u < 0 || u > 1) return null;
   return { x: a.x + t * r.x, y: a.y + t * r.y };
+}
+
+/**
+ * Điểm `p` có nằm TRONG đa giác `poly` không (even-odd, ray-casting chuẩn).
+ *
+ * 🏠 VÌ SAO Ở ĐÂY chứ không ở `hatch.ts` (dời 04/09): nó là hình học thuần, và `query.ts` cần
+ * nó để `hitTest` bắt được cú bấm GIỮA LÒNG vùng tô. Nhưng `hatch.ts` đã `import { entSegments }
+ * from './query'` ⇒ để nguyên chỗ cũ thì `query → hatch → query` thành vòng import. `model.ts`
+ * là tầng dưới cùng cả hai đều đã nhập, nên đây mới là nhà đúng. `hatch.ts` XUẤT LẠI hai hàm
+ * này nên 6 nơi đang nhập từ `./hatch` không phải đổi dòng nào.
+ * ⚠️ `lib/cad/label-placer.ts:248` còn một bản chép riêng — nợ cũ, KHÔNG đụng trong lượt này để
+ * khỏi trộn hai việc; ai dọn thì xoá bản đó và nhập từ đây.
+ */
+export function pointInPolygon(p: Pt, poly: Pt[]): boolean {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].x;
+    const yi = poly[i].y;
+    const xj = poly[j].x;
+    const yj = poly[j].y;
+    const intersect = yi > p.y !== yj > p.y && p.x < ((xj - xi) * (p.y - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+/** Diện tích tuyệt đối (shoelace) — dùng để chọn vòng NHỎ NHẤT khi nhiều vòng đều hợp lệ. */
+export function polygonArea(poly: Pt[]): number {
+  let a = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i];
+    const q = poly[(i + 1) % poly.length];
+    a += p.x * q.y - q.x * p.y;
+  }
+  return Math.abs(a) / 2;
 }
 
 export interface Box {

@@ -109,8 +109,13 @@ ${KHOI_CU}
      * lại chính 9 tệp bàn thật (dòng "máy sinh <giờ>" đổi ⇒ `git status` bẩn) — dựng lại đúng cái
      * bẫy vừa gỡ, và phá nghiệm thu vàng. Nên ⓒ tách hai nửa, vẫn đo đúng thứ cần đo. */
     const c1 = goiBan(['--kiem-ban']);
+    /* BỐN trạng thái, không phải ba. `❓` = MÙ (máy này không có sổ phiếu — sổ sống NGOÀI repo ở
+     * `$BOS_SHARED_LOG_ROOT`). Trước 04/09 máy không có sổ vẫn phán 🔴, tức VU OAN người viết:
+     * `doc()` trả `[]` khi thiếu tệp, và mảng rỗng đọc ra y hệt "không ai giao phiếu".
+     * Ở đây chỉ đo ĐỘ PHỦ — mọi bàn thật đều có một dòng phán. `❓ ≠ ✅`: dòng tổng cuối
+     * `--kiem-ban` nói thẳng "đây KHÔNG phải xanh". */
     la('B1ⓒ1 không biến nào → --kiem-ban soi đúng 9 bàn THẬT',
-      Object.keys(truoc).every((f) => new RegExp(`[✅🔴⚪] ${f.slice(0, 2)} `).test(c1.stdout)), true);
+      Object.keys(truoc).every((f) => new RegExp(`[✅🔴⚪❓] ${f.slice(0, 2)} `).test(c1.stdout)), true);
     la('B1ⓒ1  … và --kiem-ban là lệnh CHỈ-ĐỌC', dauVet(), truoc);
 
     const banC = thuMuc('c');

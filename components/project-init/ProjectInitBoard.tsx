@@ -38,13 +38,26 @@ interface Props {
 const CSS = `
 .pib-scrim { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center;
   background: rgba(0,0,0,.45); padding: 12px; }
+/* 🔴 ĐO 05/09 TRÊN APP THẬT, khổ 1440×900 (đúng khổ nghiệm thu của hệ thiết kế):
+ * cả hai nút của hộp thoại nằm ở **y = 909**, tức DƯỚI mép màn. .pib-card thừa 123px nội dung
+ * và máng cuộn chỉ 2px ⇒ người dùng MỚI mở "Tạo dự án mới" và **không nhìn thấy nút "Tạo dự án"**.
+ * Đây là hành động ĐẦU TIÊN của một người dùng mới, và nó vô hình.
+ * Cùng họ với luật ngầm mép cuộn (docs/delivery/LUAT-NGAM-MEP-CUON.md): một hộp cuộn không ai
+ * sở hữu cái mép. Ở hộp thoại thì nặng hơn — thứ trôi khỏi tầm nhìn là CHÍNH HÀNH ĐỘNG.
+ * Chữa: hàng nút GHIM ĐÁY (.pib-footer sticky), và giữ chỗ cho thanh cuộn để có tín hiệu còn tiếp. */
 .pib-card { width: min(620px, 100vw - 24px); max-height: min(86vh, 780px); overflow: auto;
+  scrollbar-gutter: stable;
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg, 20px);
   box-shadow: 0 24px 64px -24px rgba(0,0,0,.5); padding: 18px 20px 16px;
   transform: translateY(0) scale(1); opacity: 1;
   animation: pib-in .2s cubic-bezier(.32,.72,0,1); }
 @keyframes pib-in { from { transform: translateY(10px) scale(.97); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .pib-card { animation: none; } }
+/* Hàng nút ghim đáy: âm lề để tràn hết bề ngang thẻ, nền đặc để chữ cuộn bên dưới không lộ qua,
+ * vạch mảnh phía trên để mắt biết đây là chân hộp thoại chứ không phải một hàng nội dung. */
+.pib-footer { position: sticky; bottom: -16px; z-index: 2;
+  margin: 10px -20px -16px; padding: 12px 20px 16px;
+  background: var(--panel); border-top: 1px solid var(--vien-mo, var(--border)); }
 .pib-h { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
   color: var(--t3); margin: 0 0 8px; }
 .pib-field { display: flex; flex-direction: column; gap: 4px; }
@@ -52,6 +65,11 @@ const CSS = `
 .pib-input, .pib-select { height: 32px; padding: 0 10px; border-radius: var(--r-2, 10px); font-size: 12.5px;
   border: 1px solid var(--border); background: var(--field); color: var(--t1); outline: none; }
 .pib-input:focus, .pib-select:focus { border-color: var(--accent); }
+/* "outline: none" ở trên nằm trong <style> của component (đứng SAU globals.css, cùng đặc hiệu
+   0-1-0) ⇒ nó THẮNG luật :where(...):focus-visible toàn app — đo trên Chromium: outline 0px none.
+   Đổi màu viền là affordance, KHÔNG thay được vòng focus (SPEC-HOVER-FOCUS-IDF §3.6). */
+.pib-input:focus-visible, .pib-select:focus-visible {
+  outline: var(--stroke-focus) solid var(--focus-ring); outline-offset: 2px; }
 .pib-tpl { display: flex; align-items: flex-start; gap: 9px; padding: 8px 10px; border-radius: var(--r-2, 10px);
   border: 1px solid var(--border); background: var(--card); cursor: pointer; }
 .pib-tpl:hover { background: var(--hover); }
@@ -362,8 +380,8 @@ export function ProjectInitBoard({ open, en, larkCode, larkName, onClose, onSkip
           </div>
         )}
 
-        {/* Footer */}
-        <div className="flex items-center justify-between gap-2">
+        {/* Footer — GHIM ĐÁY. Trước 05/09 nó cuộn mất khỏi tầm nhìn ở 1440×900 (đo: y=909). */}
+        <div className="pib-footer flex items-center justify-between gap-2">
           <button type="button" className="pib-btn" onClick={onSkip} disabled={busy}>
             {en ? 'Skip, create empty' : 'Bỏ qua, tạo trống'}
           </button>

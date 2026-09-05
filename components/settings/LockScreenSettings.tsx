@@ -8,12 +8,13 @@
  * trong bản mẫu pixel (PixelSettingsShell.tsx đã ghi rõ khu này).
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LockKeyhole } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { getLastUserId } from '@/lib/resume';
 import {
   LOCK_IDLE_CHOICES,
+  DEFAULT_LOCK_IDLE_MINUTES,
   type LockIdleChoice,
   getLockIdleChoice,
   setLockIdleChoice,
@@ -24,13 +25,70 @@ import { useT } from '@/lib/i18n';
 
 export function LockScreenSettings() {
   const tr = useT();
-  const userId = useFlowStore((s) => s.user?.id) ?? getLastUserId() ?? '';
-  const [choice, setChoice] = useState<LockIdleChoice>(() => getLockIdleChoice(userId));
+  const idTrongStore = useFlowStore((s) => s.user?.id) ?? '';
+
+  /**
+   * 🔴 HYDRAT (05/09) — ĐỊNH DANH KHÔNG ĐƯỢC ĐỌC TRONG LÚC RENDER ĐẦU.
+   * Bản trước viết `useFlowStore(...) ?? getLastUserId() ?? ''` ngay thân component. Trên máy
+   * chủ `getLastUserId()` không có localStorage ⇒ trả null ⇒ `userId=''` ⇒ nút render
+   * `disabled=""` và nấc về mặc định 15. Trên trình duyệt, cùng lượt render ấy localStorage CÓ
+   * id ⇒ `disabled=false` và nấc là giá trị đã lưu. React đối chiếu hai bên rồi **vứt cả cây
+   * máy chủ dựng, render lại toàn bộ gốc bằng máy khách** (React #418 + #423, đo được ở
+   * `scripts/soi-mat/do-hydrat.mjs`: `Prop 'disabled' did not match. Server: "" Client: "false"`
+   * tại chính component này).
+   *
+   * Chữa: lượt render ĐẦU của trình duyệt phải giống hệt máy chủ ⇒ khởi tạo bằng hằng số, rồi
+   * mới với xuống localStorage trong hiệu ứng (chạy SAU khi hydrat xong). Cái giá là một nhịp
+   * ngắn nút bị vô hiệu — đúng bằng cửa sổ mà chú thích ② dưới đây vốn đã mô tả và đã có lời
+   * giải thích cho người dùng, nên không sinh trạng thái mới nào.
+   */
+  const [userId, setUserId] = useState('');
+  useEffect(() => {
+    setUserId(idTrongStore || getLastUserId() || '');
+  }, [idTrongStore]);
+
+  const [choice, setChoice] = useState<LockIdleChoice>(DEFAULT_LOCK_IDLE_MINUTES);
 
   /** Lane K (22/08): NẤC chọn sẵn thay ô nhập số tự do — 5/15/30/60/Không bao giờ. Ô số tự do
    * bắt người dùng nghĩ ra một con số cho việc họ không có ý kiến, và mở cửa cho giá trị vô
    * nghĩa (1 phút = khoá giữa lúc đang ngắm bản vẽ). */
+
+  /**
+   * 🔴 D8 (04/09) — HAI VIỆC GIỮ LẠI TỪ BẢN Ô-SỐ (nhánh integration), vì bệnh nằm ở ĐỊNH DANH
+   * chứ không ở kiểu điều khiển: đổi ô nhập thành nấc chọn KHÔNG chữa nó. Tái hiện được trên
+   * app thật (`scripts/nghiem-thu-ban-lam-viec/tai-hien-d8.mjs`), số đọc từ localStorage:
+   *
+   *   vào THẲNG `/settings` (tab mới/bookmark/F5) → đổi nấc → **giao diện hiện nấc mới**
+   *   → đóng hẳn trình duyệt → mở lại → **về 15, đĩa `null`**
+   *
+   * Cơ chế: `useFlowStore.user` không được đặt trên route này và `getLastUserId()` đọc
+   * localStorage (KHÔNG phản ứng) ⇒ `userId` đứng yên ở `''` suốt vòng đời component; rồi
+   * `setLockIdleChoice` có chốt `if (!userId) return;` ⇒ **không một byte nào xuống đĩa và
+   * không một dòng báo nào**. Giao diện nói dối: nó hiện nấc mới trong khi chưa lưu gì.
+   *
+   * Chữa gốc nằm ở `lib/danh-tinh-phien.ts` (nay nạp luôn hồ sơ vào store ⇒ component render
+   * lại khi định danh tới). Hai việc dưới đây là phần CÒN LẠI mà tầng nguồn không lo hộ được:
+   *
+   * ① ĐỌC LẠI khi định danh tới. `useState(() => …)` chỉ chạy ở lượt render ĐẦU; định danh tới
+   *    sau đó thì nấc đã chốt ở mặc định 15 dù đĩa có giá trị khác. Deps `[userId]` nên hiệu
+   *    ứng này KHÔNG chạy khi người dùng đang bấm nấc (bấm không đổi userId) — không có chuyện
+   *    đè mất lựa chọn họ vừa làm.
+   */
+  useEffect(() => {
+    if (!userId) return;
+    setChoice(getLockIdleChoice(userId));
+  }, [userId]);
+
+  /**
+   * ② KHÔNG NHẬN THAO TÁC KHI CHƯA CÓ ĐỊNH DANH. Nấc bị vô hiệu trong cửa sổ đó — thà không cho
+   * bấm còn hơn nhận rồi nuốt im lặng, đúng luật §9 "cấm nút giả bấm không ra gì". Cửa sổ này
+   * thường chỉ vài chục ms (`/api/auth/me` đã single-flight); nó chỉ kéo dài khi máy chủ thật sự
+   * không với tới — và lúc đó vô hiệu là câu trả lời TRUNG THỰC, không phải hỏng.
+   */
+  const sanSang = !!userId;
+
   const commit = (n: LockIdleChoice) => {
+    if (!sanSang) return;
     setChoice(n);
     setLockIdleChoice(userId, n);
   };
@@ -58,8 +116,10 @@ export function LockScreenSettings() {
                 key={n}
                 type="button"
                 aria-pressed={dangChon}
+                disabled={!sanSang}
+                aria-describedby={sanSang ? undefined : 'lock-idle-cho-dinh-danh'}
                 onClick={() => commit(n)}
-                className="rounded-[var(--r-full,999px)] px-3 py-1.5 text-[12px] transition-colors"
+                className="rounded-[var(--r-full,999px)] px-3 py-1.5 text-[12px] transition-colors disabled:opacity-[var(--mo-vo-hieu)]"
                 style={
                   dangChon
                     ? { background: 'var(--accent)', color: '#fff' }
@@ -71,6 +131,11 @@ export function LockScreenSettings() {
             );
           })}
         </div>
+        {!sanSang && (
+          <span id="lock-idle-cho-dinh-danh" className="sr-only">
+            {tr('Đang nhận diện tài khoản — chờ một chút rồi chỉnh.', 'Identifying your account — try again in a moment.')}
+          </span>
+        )}
       </div>
       <div className="mt-4 flex items-center gap-3">
         <button

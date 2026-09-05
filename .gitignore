@@ -98,6 +98,24 @@ docs/**/*.jpeg
 docs/**/*.webp
 _to_delete/
 
+# ── NGOẠI LỆ CÓ PHẠM VI: ẢNH NGHIỆM THU MẮT (04/09) ────────────────────────────
+# Luật "repo nhẹ" 01/08 gạt MỌI ảnh trong `docs/` — đúng cho 21 ảnh demo hồi đó, nhưng nó
+# gạt luôn thứ KHÁC BẢN CHẤT: ảnh chụp app làm BẰNG CHỨNG nghiệm thu.
+#
+# 🔴 CA THẬT 04/09, vì sao phải mở ngoại lệ: tôi chạy `git add docs/delivery/anh-duyet-mat/`
+# rồi commit với thông điệp *"cứu 6 ảnh bằng chứng vào repo"*. **`git add` KHÔNG BÁO LỖI, và
+# KHÔNG ẢNH NÀO VÀO GIT.** `git status` sau đó sạch, nên tôi tin là xong. Chỉ khi đếm
+# `git ls-files` ra **1** trên **21** tệp mới lộ. Đây đúng kiểu hỏng tệ nhất: nó KHÔNG KÊU.
+# Trớ trêu là commit đó sinh ra để chữa việc mất ảnh do `.nen-chrome-out/` bị gitignore —
+# tôi chữa một lỗ gitignore bằng cách rơi vào một lỗ gitignore khác.
+#
+# Vì sao ngoại lệ HẸP đúng chỗ này: ảnh nghiệm thu là **deliverable** — nó là bằng chứng cho
+# một quyết định của chủ dự án, phải sống lâu bằng quyết định đó. Ảnh minh hoạ tài liệu thì
+# không. Ngoại lệ khoá đúng MỘT thư mục; mọi ảnh khác trong `docs/` vẫn bị gạt như cũ.
+!docs/delivery/anh-duyet-mat/
+!docs/delivery/anh-duyet-mat/**/
+!docs/delivery/anh-duyet-mat/**/*.png
+
 # ── LUẬT TRUNG TÍNH — tài sản TTT KHÔNG được nằm trong repo IF ──
 # IF là sản phẩm độc lập bán cho mọi studio (LICENSE-NOTES §0).
 # Tài sản riêng của một studio để ở ~/Downloads/_TTT-BRAND/, không phải ở đây.
@@ -149,3 +167,26 @@ artifacts/man-*/
 
 # Fixture cổng giấy phép (bàn 07) — sinh lúc chạy, >64MB, KHÔNG commit
 .fixture-giay-phep/
+
+# 03/09 — ảnh + HTML đo bộ nền chrome (scripts/nen-chrome). Số đo chép vào báo cáo, ẢNH KHÔNG vào repo.
+.nen-chrome-out/
+
+# 04/09 — harness tạm của các phiên đo (chụp màn, gỡ lỗi). Đầu ra thật đi vào
+# .nen-chrome-out/ hoặc scripts/; những tệp này KHÔNG bao giờ được vào lịch sử.
+*-tmp.mjs
+*-tmp.js
+*.tmp.mjs
+*.tmp.js
+
+# ── RÁC CỦA CÔNG CỤ ĐỒNG BỘ (thêm 04/09, Hoà nghi thất thoát do repo nằm trong ~/Downloads) ──
+# Không phải để "cho gọn": các tệp này lọt vào repo là DẤU HIỆU thư mục đang bị đồng bộ, và bản
+# thân chúng gây lệch giữa máy Hoà với CI. Chặn ở đây để chúng không âm thầm thành lịch sử.
+# ⚠️ Chặn rác KHÔNG chữa được gốc bệnh — gốc bệnh là chỗ đặt repo. Chạy:
+#      bash scripts/chan-doan-noi-luu-repo.sh
+*conflicted copy*
+*Conflict [0-9]*
+desktop.ini
+Icon?
+.*.icloud
+.dropbox
+.dropbox.attr

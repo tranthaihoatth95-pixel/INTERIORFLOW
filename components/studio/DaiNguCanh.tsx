@@ -100,7 +100,7 @@ export function DaiNguCanh({ tenDuAn, chang, onChonChang, onDoiTen }: DaiNguCanh
           `Context: ${SEGMENTS.map((s) => s.chu).join(' — ')}. Open context switcher.`,
         )}
         data-dai-ngu-canh=""
-        className="flex min-w-0 items-center gap-1.5 rounded-[var(--r-2)] px-2 py-1 text-[length:var(--fs-xs)] transition-colors duration-[120ms] hover:bg-[var(--hover)]"
+        className="flex min-w-0 items-center gap-1.5 rounded-[var(--r-2)] px-2 py-1 text-[length:var(--fs-xs)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)]"
         style={{ background: mo ? 'var(--hover)' : 'transparent' }}
       >
         {SEGMENTS.map((s, i) => (
@@ -206,7 +206,7 @@ function MucMenu({
       // `aria-current` chứ không chỉ dấu tick: dấu tick là kênh HÌNH, trình đọc màn hình cần
       // kênh thứ hai (luật màu/hình không được là kênh duy nhất).
       aria-current={dangChon ? 'true' : undefined}
-      className="flex w-full items-center gap-2 rounded-[var(--r-2)] px-2 py-1.5 text-left text-[length:var(--fs-sm)] transition-colors duration-[120ms] hover:bg-[var(--hover)]"
+      className="flex w-full items-center gap-2 rounded-[var(--r-2)] px-2 py-1.5 text-left text-[length:var(--fs-sm)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)]"
       style={{ color: dangChon ? 'var(--t1)' : 'var(--t2)' }}
     >
       <span className="shrink-0 text-[var(--t4)]">{icon}</span>

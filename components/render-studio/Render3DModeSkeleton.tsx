@@ -48,6 +48,8 @@ import { SECTION_LAYERS } from '@/lib/three/section-entities';
 import { useLevelUi, UNASSIGNED_LEVEL, ROOM_LIGHT_KINDS, ROOM_LIGHT_DEFAULT_Z_MM } from '@/components/render-studio/scene3d-ui';
 import { addLevelToDoc, currentLighting, writeSun, writeRoomLights, patchRoomLight, newRoomLightId } from '@/components/render-studio/doc-catalog';
 import { buildLightRig, type RoomLight } from '@/lib/three/lighting';
+import { laPhimChinh, coPhimHeThong } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
+import Library3DApplyBridge from '@/components/render-studio/Library3DApplyBridge';
 
 const WELCOME_HIDDEN_KEY = 'if.ve3d.welcome_hidden_v1';
 
@@ -263,7 +265,7 @@ export default function Render3DModeSkeleton() {
    */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (coPhimHeThong(e) || e.altKey) return;
       const el = e.target;
       if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
 
@@ -313,7 +315,7 @@ export default function Render3DModeSkeleton() {
    */
   useEffect(() => {
     const onUndoKey = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+      if (!laPhimChinh(e) || e.altKey) return;
       const el = e.target;
       if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
       const k = e.key.toLowerCase();
@@ -337,6 +339,20 @@ export default function Render3DModeSkeleton() {
 
   const soKhoi = scene?.groups.length ?? 0;
   soKhoiRef.current = soKhoi;
+  /* `[3D-VL-01]` — NHÃN KHUNG NHÌN PHẢI ĐẾM THẬT. Trước lượt này nhãn là chuỗi CHẾT
+     "Khối xám · chưa vật liệu": gán vật liệu xong nó vẫn nói "chưa vật liệu" ⇒ một chỗ nữa
+     nói sai điều vừa xảy ra. Nay đếm `specId` thật trên chính scene đang hiện — không nguồn
+     thứ hai, không đoán. Chưa gán cái nào thì giữ NGUYÊN VĂN câu cũ (không hồi quy chữ). */
+  const soKhoiCoVatLieu = scene?.groups.filter((g) => !!g.specId).length ?? 0;
+  const nhanKhungNhin =
+    soKhoi === 0
+      ? tr('Không gian trống', 'Empty space')
+      : soKhoiCoVatLieu === 0
+        ? tr('Khối xám · chưa vật liệu', 'Clay blocks · no material yet')
+        : tr(
+            `Khối xám · ${soKhoiCoVatLieu}/${soKhoi} đã gán vật liệu`,
+            `Clay blocks · ${soKhoiCoVatLieu}/${soKhoi} with material`,
+          );
   const coBanVe = doc.entities.length > 0;
 
   // Lọc THẬT khỏi cảnh đưa vào Viewport3D theo tên group đang ẩn (state chia sẻ `useTree3DUi`,
@@ -590,6 +606,10 @@ export default function Render3DModeSkeleton() {
         onTouchEnd={onViewportTouchEnd}
         onTouchCancel={onViewportTouchEnd}
       >
+        {/* `[3D-VL-01]` — chỗ NGHE `LIBRARY_APPLY_EVENT`. Không vẽ gì; đặt trong cây của mode
+            Vẽ 3D để nó chỉ sống đúng lúc chặng này đang mở (thư viện áp vật liệu ở chặng khác
+            không bị nó nhận nhầm). */}
+        <Library3DApplyBridge />
         <Viewport3D
           scene={visibleScene ?? EMPTY_SCENE_3D}
           cameraApiRef={cameraApiRef}
@@ -603,7 +623,7 @@ export default function Render3DModeSkeleton() {
           lightingPreview={rig}
           ground
           snap3d={{ settings: snapSettings, gridStepMm }}
-          label={soKhoi > 0 ? 'Khối xám · chưa vật liệu' : 'Không gian trống'}
+          label={nhanKhungNhin}
         >
           {/* LANE D (20/08) — Toolbelt năng lực gộp cho chặng Vẽ 3D. Registry `compound.ts` đã
               khai `image-to-3d.stages = ['cad','render']` từ trước (cửa Ảnh→Spec ĐÃ thiết kế
@@ -702,7 +722,8 @@ export default function Render3DModeSkeleton() {
                     {tr('Bắt đầu trong 3D', 'Start in 3D')}
                   </button>
 
-                  {/* LỐI PHỤ — chỉ mời khi CÓ mặt bằng thật; không có thì chỉ là đường đi tiếp. */}
+                  {/* LỐI PHỤ — chỉ mời khi CÓ mặt bằng thật; không có thì chỉ là đường đi tiếp,
+                      không phải nút mờ kèm cảnh báo vàng. */}
                   {coBanVe ? (
                     <button
                       type="button"

@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Home · H2 Personal Studio · ngày thường</title>
+<link rel="stylesheet" href="_home-ps-nen.css">
+<style>
+
+/* H2 · MẶT BÀN — thứ bậc đọc bằng TẦM VỚI: càng xa tay càng ít trường, xa nhất còn một dòng. */
+.ban{position:absolute;left:0;top:0;width:1004px;height:856px}
+.to{position:absolute;border-radius:var(--r-2);overflow:hidden;background:var(--giay);
+  box-shadow:0 18px 42px -22px rgba(0,0,0,.78)}
+.to.toi{background:var(--canh-0)}
+.mep{position:absolute;border-radius:var(--r-1);background:var(--card);display:flex;align-items:center;
+  gap:10px;padding:0 14px;box-shadow:0 8px 18px -12px rgba(0,0,0,.65),inset 0 0 0 1px var(--vien-mo)}
+.mep .ten{font-size:13px;font-weight:500;color:var(--t1);white-space:nowrap}
+.mep .viec{flex:1;font-size:12px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mep .khi{font-size:11px;color:var(--t3);font-variant-numeric:tabular-nums}
+/* NHÃN MỤC — hai bản: trên MẶT BÀN (nằm trên ảnh) và trên KỆ (nằm trên nền app).
+   Cố ý tách vì nét/mực của hai chỗ lấy từ hai bảng khác nhau, không phải vì thẩm mỹ. */
+.muc-ban,.muc-ke{position:absolute;display:flex;align-items:center;gap:10px}
+.muc-ban .ke2{flex:1;height:1px;background:var(--net-tren-anh-mo)}
+.muc-ke .ke2{flex:1;height:1px;background:var(--vien-mo)}
+.muc-ban span{font-weight:500;font-size:11px;line-height:1.5;font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em;
+  color:var(--muc-tren-anh-3);background:var(--phu-chan-chu);border-radius:var(--r-1);padding:3px 8px}
+.muc-ke span{font-weight:500;font-size:11px;line-height:1.5;font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--t3)}
+/* TRỤC TẦM VỚI — vạch mảnh có nấc, nói ra CƠ CHẾ XẾP: đây là chi tiết mang tin, không phải nét trang trí */
+.tru{position:absolute;left:1012px;top:100px;width:1px;height:700px;background:var(--vien-mo)}
+.tru i{position:absolute;left:-3px;width:7px;height:1px;background:var(--border-strong)}
+.ho-so{position:absolute;padding:16px 18px;display:flex;flex-direction:column;gap:9px}
+.ho-so h1{font-size:17px;line-height:1.5;font-weight:600}
+.hang{display:flex;align-items:center;gap:10px}
+.hang .vach{width:1px;height:12px;background:var(--vien-mo)}
+.cau{position:absolute;width:84px;text-align:center}
+.cau .ten{margin-top:8px;font-size:11px;line-height:1.5;color:var(--t2)}
+.cau .ma{font-weight:500;font-size:10px;line-height:1.5;font-family:ui-monospace,Menlo,monospace;color:var(--t3)}
+.ke-o{position:absolute;background:var(--panel);border-radius:var(--r-3);padding:10px 12px;
+  display:flex;flex-direction:column;justify-content:space-between}
+.ke-o .nhan{font-size:10px}
+.ke-them{position:absolute;border-radius:var(--r-3);box-shadow:inset 0 0 0 1px var(--border-strong);
+  display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:20px;
+  opacity:var(--mo-vo-hieu)}
+.dong{position:absolute;font-size:12px;line-height:1.5;color:var(--t2)}
+.dong b{color:var(--t1);font-weight:600}
+.giay-trang{position:absolute;border-radius:var(--r-2);background:var(--giay);overflow:hidden;
+  box-shadow:0 18px 42px -22px rgba(0,0,0,.78)}
+.tren-giay{position:absolute;color:var(--muc)}
+.tren-giay .to-chu{font-size:26px;line-height:1.5;font-weight:600}
+.tren-giay p{font-size:13.5px;line-height:1.6;color:var(--muc-2);max-width:520px;margin-top:10px}
+.mau-ho-so{position:absolute;border-radius:var(--r-1);overflow:hidden;background:var(--giay);
+  box-shadow:0 8px 18px -12px rgba(0,0,0,.6)}
+</style></head>
+<body>
+<div class="khung">
+  <nav class="rail" aria-label="Điều hướng">
+  <b class="on" title=""><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.5 9 3l7 5.5V16H2z"/><path d="M7 16v-5h4v5"/></svg></b><b title=""><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h3.2l1.6 2h6.2A1.5 1.5 0 0 1 16 7.5v6A1.5 1.5 0 0 1 14.5 15h-11A1.5 1.5 0 0 1 2 13.5z"/></svg></b><b title=""><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="4" height="12" rx="1"/><rect x="7.5" y="3.5" width="4" height="12" rx="1"/><path d="M12.6 4.6 15.5 5.4 13.2 15.2 10.4 14.4z"/></svg></b><b title=""><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M6 9.6l2 2 4-4.4"/></svg></b><b title=""><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5.5A1.5 1.5 0 0 1 4 4h11a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 15 13H7l-4 3z"/></svg></b>
+  <hr>
+  <b title=""><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="13" height="10" rx="1"/><path d="M2.5 11h6v3.5"/><path d="M8.5 4.5v3"/></svg></b><b title=""><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.4 15.6 6v7L9 16.6 2.4 13V6z"/><path d="M2.4 6 9 9.5 15.6 6"/><path d="M9 9.5v7.1"/></svg></b><b title=""><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="13" height="9" rx="1"/><path d="M9 12.5V16"/><path d="M6 16h6"/></svg></b>
+  <div class="day"></div><hr><b title=""><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3.6 15.6a5.6 5.6 0 0 1 10.8 0"/></svg></b><b title=""><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="2.6"/><path d="M9 2v2.2M9 13.8V16M2 9h2.2M13.8 9H16M4 4l1.6 1.6M12.4 12.4 14 14M14 4l-1.6 1.6M5.6 12.4 4 14"/></svg></b></nav>
+  <div class="cot">
+    <header class="dinh">
+      <div class="duong-di"><strong>Xưởng của Hoà</strong><span>·</span><span>Tổng quan</span></div>
+      <div class="khau-do" role="status">
+  <span class="mat" aria-hidden="true"></span>
+  <span class="tin">3 việc chờ bạn <i>· 2 kích thước bếp chưa chốt</i></span>
+  <span class="vach" aria-hidden="true"></span>
+  <span class="tin"><i>Hỏi Vitals</i></span></div>
+      <div class="phai-dinh">
+        <span class="the-demo">demo · dữ liệu mẫu</span>
+        <span class="mat-nguoi" aria-label="3 người đang trong xưởng"><i></i><i></i><i></i></span>
+      </div>
+    </header>
+    <main class="san">
+
+      <div class="ban"><svg viewBox="0 0 1004 856" width="1004" height="856" aria-hidden="true">
+<defs><radialGradient id="denban" cx="26%" cy="12%" r="78%">
+  <stop offset="0" stop-color="var(--canh-4)" stop-opacity=".26"/>
+  <stop offset="55%" stop-color="var(--canh-4)" stop-opacity=".07"/>
+  <stop offset="100%" stop-color="var(--canh-4)" stop-opacity="0"/></radialGradient></defs>
+<rect x="0" y="0" width="1004" height="856" fill="var(--canh-1)"/>
+<path d="M0 40 C 301.2 28, 702.8 54, 1004 36"
+      stroke="var(--canh-0)" stroke-width="1.8" fill="none" opacity=".55"/><path d="M0 136 C 301.2 124, 702.8 150, 1004 132"
+      stroke="var(--canh-0)" stroke-width="1" fill="none" opacity=".55"/><path d="M0 232 C 301.2 220, 702.8 246, 1004 228"
+      stroke="var(--canh-0)" stroke-width="1" fill="none" opacity=".55"/><path d="M0 328 C 301.2 316, 702.8 342, 1004 324"
+      stroke="var(--canh-0)" stroke-width="1.8" fill="none" opacity=".55"/><path d="M0 424 C 301.2 412, 702.8 438, 1004 420"
+      stroke="var(--canh-0)" stroke-width="1" fill="none" opacity=".55"/><path d="M0 520 C 301.2 508, 702.8 534, 1004 516"
+      stroke="var(--canh-0)" stroke-width="1" fill="none" opacity=".55"/><path d="M0 616 C 301.2 604, 702.8 630, 1004 612"
+      stroke="var(--canh-0)" stroke-width="1.8" fill="none" opacity=".55"/><path d="M0 712 C 301.2 700, 702.8 726, 1004 708"
+      stroke="var(--canh-0)" stroke-width="1" fill="none" opacity=".55"/><path d="M0 808 C 301.2 796, 702.8 822, 1004 804"
+      stroke="var(--canh-0)" stroke-width="1" fill="none" opacity=".55"/>
+<rect x="0" y="0" width="1004" height="856" fill="url(#denban)"/>
+<rect x="0" y="830" width="1004" height="26" fill="var(--canh-0)"/>
+<rect x="0" y="828" width="1004" height="2" fill="var(--canh-4)" opacity=".45"/>
+<rect x="1001" y="0" width="3" height="856" fill="var(--canh-4)" opacity=".45"/></svg></div>
+      <div class="muc-ban" style="left:84px;top:86px;width:672px">
+        <span data-tren-anh>dưới tay bạn</span><span class="ke2"></span>
+        <span data-tren-anh>Thảo Điền · 4 tờ đang mở</span></div>
+      <div class="to toi" style="left:126px;top:124px;width:588px;height:480px"><svg viewBox="0 0 588 480" width="588" height="480">
+<rect x="0" y="0" width="588" height="480" fill="var(--canh-0)"/>
+<polygon points="0,330 246.95999999999998,290 246.95999999999998,444 0,444" fill="var(--canh-2)"/>
+<polygon points="246.95999999999998,290 588,316 588,444 246.95999999999998,444" fill="var(--canh-1)"/>
+<rect x="305.76" y="320" width="120" height="70" fill="var(--canh-3)"/>
+<g stroke="var(--canh-6)" stroke-width="1" opacity=".85">
+  <line x1="305.76" y1="308" x2="425.76" y2="308"/>
+  <line x1="305.76" y1="303" x2="305.76" y2="313"/>
+  <line x1="425.76" y1="303" x2="425.76" y2="313"/></g>
+<rect x="327.76" y="290" width="78" height="15" rx="3" fill="var(--canh-0)" opacity=".92"/>
+<text x="366.76" y="301" font-family="ui-monospace,Menlo,monospace" font-size="10" text-anchor="middle" fill="var(--canh-7)">1.240</text>
+<rect x="0" y="444" width="588" height="36" fill="var(--canh-0)"/>
+<circle cx="30" cy="462" r="4" fill="var(--success)"/>
+<text x="46" y="466" font-family="-apple-system,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="var(--canh-7)">Ảnh hiện trường · trục C</text>
+<text x="232" y="466" font-family="-apple-system,Segoe UI,sans-serif" font-size="11" fill="var(--canh-6)">6 số đo đã gắn vào khối</text>
+<text x="572" y="466" font-family="ui-monospace,Menlo,monospace" font-size="10.5" text-anchor="end" fill="var(--canh-6)">ArchiNote · hôm qua</text></svg></div>
+      <div class="to" style="left:112px;top:124px;width:616px;height:444px"><svg viewBox="0 0 616 444" width="616" height="444">
+<rect x="0" y="0" width="616" height="444" fill="var(--giay)"/>
+<line x1="16" y1="408" x2="600" y2="408" stroke="var(--giay-mep)"/>
+<rect x="26" y="422" width="8" height="8" rx="2" fill="var(--warning)"/>
+<text x="46" y="430" font-family="-apple-system,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="var(--muc)">Phiếu duyệt · vòng 2</text>
+<text x="196" y="430" font-family="-apple-system,Segoe UI,sans-serif" font-size="11" fill="var(--muc-2)">5 trong 9 mục đã tick · 2 ghi chú chưa xử</text>
+<text x="600" y="430" font-family="ui-monospace,Menlo,monospace" font-size="10.5" text-anchor="end" fill="var(--muc-2)">hạn 06.09</text></svg></div>
+      <div class="to" style="left:98px;top:124px;width:644px;height:408px"><svg viewBox="0 0 644 408" width="644" height="408">
+<rect x="0" y="0" width="644" height="408" fill="var(--giay)"/>
+<line x1="16" y1="372" x2="628" y2="372" stroke="var(--giay-mep)"/>
+<polygon points="30,385.4 34.6,393.6 25.4,393.6" fill="var(--danger)"/>
+<text x="46" y="394" font-family="-apple-system,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="var(--muc)">Bảng khối lượng · Phòng khách</text>
+<text x="268" y="394" font-family="-apple-system,Segoe UI,sans-serif" font-size="11" fill="var(--muc-2)">7 hạng mục · 3 dòng lệch</text>
+<text x="628" y="394" font-family="ui-monospace,Menlo,monospace" font-size="10.5" text-anchor="end" fill="var(--muc-2)">412,6 m² · 6 phút trước</text></svg></div>
+      <div class="to" style="left:84px;top:124px;width:672px;height:372px"><svg viewBox="0 0 672 372" width="672" height="372">
+<rect x="0" y="0" width="672" height="372" fill="var(--giay)"/>
+<g stroke="var(--muc)" stroke-width="6" stroke-linecap="square"><line x1="40" y1="66" x2="400" y2="66"/><line x1="40" y1="66" x2="40" y2="300"/><line x1="40" y1="300" x2="214" y2="300"/><line x1="268" y1="300" x2="400" y2="300"/><line x1="400" y1="66" x2="400" y2="300"/><line x1="268" y1="66" x2="268" y2="150"/><line x1="268" y1="196" x2="268" y2="300"/><line x1="40" y1="196" x2="150" y2="196"/><line x1="196" y1="196" x2="268" y2="196"/></g>
+<g stroke="var(--muc)" stroke-width="1.1" fill="none">
+  <path d="M214 300 A54 54 0 0 0 268 246"/><path d="M150 196 A46 46 0 0 1 196 196"/></g>
+<g stroke="var(--muc-2)" stroke-width="1.2" fill="none">
+  <rect x="62" y="96" width="126" height="52" rx="5"/><line x1="62" y1="112" x2="188" y2="112"/>
+  <line x1="104" y1="112" x2="104" y2="148"/><line x1="146" y1="112" x2="146" y2="148"/>
+  <rect x="92" y="160" width="66" height="30" rx="3"/>
+  <rect x="52" y="78" width="10" height="88"/>
+  <circle cx="336" cy="120" r="34"/>
+  <rect x="300" y="112" width="16" height="16" rx="3"/><rect x="356" y="112" width="16" height="16" rx="3"/>
+  <rect x="328" y="76" width="16" height="16" rx="3"/><rect x="328" y="152" width="16" height="16" rx="3"/>
+  <rect x="292" y="218" width="96" height="66" rx="4"/><line x1="292" y1="238" x2="388" y2="238"/>
+  <rect x="300" y="222" width="34" height="12" rx="2"/><rect x="346" y="222" width="34" height="12" rx="2"/>
+  <rect x="58" y="216" width="118" height="20" rx="2"/>
+</g>
+<g stroke="var(--muc-2)" stroke-width=".8" opacity=".8"><line x1="58" y1="216" x2="58" y2="236"/><line x1="68" y1="216" x2="68" y2="236"/><line x1="78" y1="216" x2="78" y2="236"/><line x1="88" y1="216" x2="88" y2="236"/><line x1="98" y1="216" x2="98" y2="236"/><line x1="108" y1="216" x2="108" y2="236"/><line x1="118" y1="216" x2="118" y2="236"/><line x1="128" y1="216" x2="128" y2="236"/><line x1="138" y1="216" x2="138" y2="236"/><line x1="148" y1="216" x2="148" y2="236"/><line x1="158" y1="216" x2="158" y2="236"/><line x1="168" y1="216" x2="168" y2="236"/></g>
+<text x="62" y="86" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="var(--muc-2)">Phòng khách · 24,6 m²</text>
+<text x="278" y="86" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="var(--muc-2)">Bếp + ăn · 11,2 m²</text>
+<text x="278" y="214" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="var(--muc-2)">Ngủ chính · 15,8 m²</text>
+<g stroke="var(--muc)" stroke-width=".9">
+  <line x1="40" y1="326" x2="400" y2="326"/><line x1="40" y1="320" x2="40" y2="332"/>
+  <line x1="400" y1="320" x2="400" y2="332"/><line x1="268" y1="322" x2="268" y2="330"/>
+  <line x1="22" y1="66" x2="22" y2="300"/><line x1="16" y1="66" x2="28" y2="66"/><line x1="16" y1="300" x2="28" y2="300"/></g>
+<text x="220" y="340" font-family="ui-monospace,Menlo,monospace" font-size="10" text-anchor="middle" fill="var(--muc)">5.520</text>
+<text x="16" y="186" font-family="ui-monospace,Menlo,monospace" font-size="10" text-anchor="middle" letter-spacing=".02em" fill="var(--muc)">3.840</text>
+<g transform="translate(446,44)">
+  <text x="0" y="12" font-family="-apple-system,Segoe UI,sans-serif" font-size="10.5" font-weight="600" fill="var(--muc)">Vật liệu trên bản vẽ</text>
+  <line x1="0" y1="20" x2="210" y2="20" stroke="var(--giay-mep)"/>
+  <rect x="0" y="30" width="18" height="18" rx="3" fill="var(--vl-go)" stroke="var(--giay-mep)"/><text x="26" y="44" font-family="ui-monospace,Menlo,monospace" font-size="9.5" letter-spacing=".05em" fill="var(--muc)">GO-01</text><text x="76" y="44" font-family="-apple-system,Segoe UI,sans-serif" font-size="10" fill="var(--muc-2)">Sồi trắng · sàn</text><rect x="0" y="56" width="18" height="18" rx="3" fill="var(--vl-da)" stroke="var(--giay-mep)"/><text x="26" y="70" font-family="ui-monospace,Menlo,monospace" font-size="9.5" letter-spacing=".05em" fill="var(--muc)">DA-04</text><text x="76" y="70" font-family="-apple-system,Segoe UI,sans-serif" font-size="10" fill="var(--muc-2)">Đá mặt bếp</text><rect x="0" y="82" width="18" height="18" rx="3" fill="var(--vl-son)" stroke="var(--giay-mep)"/><text x="26" y="96" font-family="ui-monospace,Menlo,monospace" font-size="9.5" letter-spacing=".05em" fill="var(--muc)">SN-03</text><text x="76" y="96" font-family="-apple-system,Segoe UI,sans-serif" font-size="10" fill="var(--muc-2)">Sơn khoáng · tường</text><rect x="0" y="108" width="18" height="18" rx="3" fill="var(--vl-vai)" stroke="var(--giay-mep)"/><text x="26" y="122" font-family="ui-monospace,Menlo,monospace" font-size="9.5" letter-spacing=".05em" fill="var(--muc)">VAI-07</text><text x="76" y="122" font-family="-apple-system,Segoe UI,sans-serif" font-size="10" fill="var(--muc-2)">Vải bố · rèm</text>
+</g>
+<g transform="translate(446,232)">
+  <rect x="0" y="0" width="210" height="112" fill="none" stroke="var(--muc)" stroke-width="1"/>
+  <line x1="0" y1="34" x2="210" y2="34" stroke="var(--muc)" stroke-width="1"/>
+  <line x1="0" y1="70" x2="210" y2="70" stroke="var(--muc)" stroke-width="1"/>
+  <text x="10" y="22" font-family="-apple-system,Segoe UI,sans-serif" font-size="11.5" font-weight="600" fill="var(--muc)">Mặt bằng bố trí nội thất</text>
+  <text x="10" y="52" font-family="-apple-system,Segoe UI,sans-serif" font-size="11" fill="var(--muc)">Căn hộ Thảo Điền</text><text x="200" y="52" font-family="ui-monospace,Menlo,monospace" font-size="10.5" text-anchor="end" fill="var(--muc)">1:50</text>
+  <text x="10" y="88" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="var(--muc-2)">bản 7 · 04.09.2026</text><text x="200" y="88" font-family="ui-monospace,Menlo,monospace" font-size="9.5" text-anchor="end" fill="var(--muc-2)">IF · 2D</text>
+  <text x="10" y="104" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="var(--muc-2)">2 kích thước chờ chốt</text>
+</g></svg></div>
+      
+      <div class="muc-ban" style="left:790px;top:108px;width:200px">
+        <span data-tren-anh>trong tầm mắt</span></div>
+      <div class="tam" style="position:absolute;left:790px;top:140px;width:200px;height:400px;
+        padding:14px;display:flex;flex-direction:column;gap:11px">
+        <span class="nhan" style="font-size:10px">nguyên liệu của bản này</span>
+        <div style="display:flex;align-items:center;gap:11px">
+          <svg viewBox="0 0 42 42" width="42" height="42" aria-hidden="true">
+<defs><radialGradient id="qc0" cx="34%" cy="30%" r="72%">
+  <stop offset="0" stop-color="var(--to-trang)" stop-opacity=".55"/>
+  <stop offset="45%" stop-color="var(--vl-go)"/><stop offset="100%" stop-color="var(--canh-0)" stop-opacity=".72"/>
+</radialGradient></defs>
+<circle cx="21" cy="21" r="20" fill="url(#qc0)"/>
+<ellipse cx="21" cy="38" rx="17" ry="3" fill="var(--canh-0)" opacity=".30"/></svg>
+          <div><div style="font-size:12px;line-height:1.5;color:var(--t2)">Sồi trắng</div>
+          <div class="nhan" style="font-size:10px">GO-01</div></div></div><div style="display:flex;align-items:center;gap:11px">
+          <svg viewBox="0 0 42 42" width="42" height="42" aria-hidden="true">
+<defs><radialGradient id="qc1" cx="34%" cy="30%" r="72%">
+  <stop offset="0" stop-color="var(--to-trang)" stop-opacity=".55"/>
+  <stop offset="45%" stop-color="var(--vl-da)"/><stop offset="100%" stop-color="var(--canh-0)" stop-opacity=".72"/>
+</radialGradient></defs>
+<circle cx="21" cy="21" r="20" fill="url(#qc1)"/>
+<ellipse cx="21" cy="38" rx="17" ry="3" fill="var(--canh-0)" opacity=".30"/></svg>
+          <div><div style="font-size:12px;line-height:1.5;color:var(--t2)">Đá mặt bếp</div>
+          <div class="nhan" style="font-size:10px">DA-04</div></div></div><div style="display:flex;align-items:center;gap:11px">
+          <svg viewBox="0 0 42 42" width="42" height="42" aria-hidden="true">
+<defs><radialGradient id="qc2" cx="34%" cy="30%" r="72%">
+  <stop offset="0" stop-color="var(--to-trang)" stop-opacity=".55"/>
+  <stop offset="45%" stop-color="var(--vl-son)"/><stop offset="100%" stop-color="var(--canh-0)" stop-opacity=".72"/>
+</radialGradient></defs>
+<circle cx="21" cy="21" r="20" fill="url(#qc2)"/>
+<ellipse cx="21" cy="38" rx="17" ry="3" fill="var(--canh-0)" opacity=".30"/></svg>
+          <div><div style="font-size:12px;line-height:1.5;color:var(--t2)">Sơn khoáng</div>
+          <div class="nhan" style="font-size:10px">SN-03</div></div></div><div style="display:flex;align-items:center;gap:11px">
+          <svg viewBox="0 0 42 42" width="42" height="42" aria-hidden="true">
+<defs><radialGradient id="qc3" cx="34%" cy="30%" r="72%">
+  <stop offset="0" stop-color="var(--to-trang)" stop-opacity=".55"/>
+  <stop offset="45%" stop-color="var(--vl-vai)"/><stop offset="100%" stop-color="var(--canh-0)" stop-opacity=".72"/>
+</radialGradient></defs>
+<circle cx="21" cy="21" r="20" fill="url(#qc3)"/>
+<ellipse cx="21" cy="38" rx="17" ry="3" fill="var(--canh-0)" opacity=".30"/></svg>
+          <div><div style="font-size:12px;line-height:1.5;color:var(--t2)">Vải bố</div>
+          <div class="nhan" style="font-size:10px">VAI-07</div></div></div><div style="display:flex;align-items:center;gap:11px">
+          <svg viewBox="0 0 42 42" width="42" height="42" aria-hidden="true">
+<defs><radialGradient id="qc4" cx="34%" cy="30%" r="72%">
+  <stop offset="0" stop-color="var(--to-trang)" stop-opacity=".55"/>
+  <stop offset="45%" stop-color="var(--vl-kl-1)"/><stop offset="100%" stop-color="var(--canh-0)" stop-opacity=".72"/>
+</radialGradient></defs>
+<circle cx="21" cy="21" r="20" fill="url(#qc4)"/>
+<ellipse cx="21" cy="38" rx="17" ry="3" fill="var(--canh-0)" opacity=".30"/></svg>
+          <div><div style="font-size:12px;line-height:1.5;color:var(--t2)">Đồng xước</div>
+          <div class="nhan" style="font-size:10px">KL-02</div></div></div>
+        <span class="phu" style="margin-top:auto">và 3 ảnh tham chiếu đã gắn vào bản vẽ</span></div>
+
+      <div class="muc-ban" style="left:84px;top:632px;width:672px">
+        <span data-tren-anh>xa hơn trên bàn</span><span class="ke2"></span>
+        <span data-tren-anh>sắp theo lần chạm gần nhất</span></div>
+      
+      <div class="mep" style="left:84px;top:658px;width:672px;height:30px">
+        <span class="dau chay" aria-hidden="true"></span><span class="ten">Nhà phố Bình Thạnh</span>
+        <span class="viec">dựng khối · 2 việc chờ</span><span class="khi">2 ngày</span></div>
+      <div class="mep" style="left:96px;top:692px;width:648px;height:30px">
+        <span class="dau cho" aria-hidden="true"></span><span class="ten">Văn phòng Hùng Vương</span>
+        <span class="viec">chờ chủ đầu tư duyệt</span><span class="khi">4 ngày</span></div>
+      <div class="mep" style="left:108px;top:726px;width:624px;height:30px">
+        <span class="dau chay" aria-hidden="true"></span><span class="ten">Biệt thự Long Hải</span>
+        <span class="viec">phối cảnh · 3 khung đã xong</span><span class="khi">1 tuần</span></div>
+      <div class="mep" style="left:120px;top:760px;width:600px;height:30px">
+        <span class="dau cho" aria-hidden="true"></span><span class="ten">Cà phê Nguyễn Huệ</span>
+        <span class="viec">thẻ DNA chưa chốt</span><span class="khi">1 tuần</span></div>
+      <div class="con-tiep" style="position:absolute;left:84px;top:800px;width:672px" data-tren-anh>
+        <span class="vach-mo"></span><span style="color:var(--muc-tren-anh-3)">còn 3 dự án nữa · 12 việc trong 7 ngày</span></div>
+
+      <div class="tru"><i style="top:40px"></i><i style="top:248px"></i><i style="top:490px"></i><i style="top:626px"></i></div>
+            <div class="muc-ke" style="left:1032px;top:118px;width:484px">
+        <span>trong tầm tay</span><span class="ke2"></span></div>
+      <div class="tam ho-so" style="left:1032px;top:140px;width:484px;height:150px">
+        <h1>Mặt bằng bố trí · Phòng khách</h1>
+        <div class="hang"><span class="phu so">bản 7 · sửa 8 phút trước</span><span class="vach"></span>
+          <span class="phu">Hoà + Trâm</span></div>
+        <div class="hang"><span class="dau cho" aria-hidden="true"></span>
+          <span class="than-chu" style="font-size:13px">2 kích thước chờ bạn chốt</span>
+          <span class="vach"></span><span class="phu">dùng ở 4 nơi</span></div>
+        <div class="hang" style="margin-top:auto">
+          <button class="nut-nhe">Mở bản vẽ</button><button class="nut-nhe">Xem nơi dùng</button></div></div>
+            <div class="muc-ke" style="left:1032px;top:326px;width:484px">
+        <span>trên kệ · dụng cụ của bạn</span><span class="ke2"></span></div>
+      
+      <div class="ke-o" style="left:1032px;top:348px;width:184px;height:184px">
+        <span class="nhan">đồng hồ ánh sáng</span>
+        <svg width="150" height="76" viewBox="0 0 150 76" fill="none" aria-hidden="true">
+          <path d="M8 70a67 67 0 0 1 134 0" stroke="var(--border-strong)" stroke-width="1.6"/>
+          <path d="M8 70a67 67 0 0 1 88.8-63.4" stroke="var(--accent)" stroke-width="1.8"/>
+          <circle cx="96.8" cy="6.6" r="4" fill="var(--accent)"/></svg>
+        <span class="phu so">14:20 · nắng còn 3g47 · nghiêng tây</span></div>
+      <div class="ke-o" style="left:1232px;top:348px;width:184px;height:84px">
+        <span class="nhan">ghi nhanh</span>
+        <span class="than-chu" style="font-size:12.5px">Hỏi lại CĐT chiều cao bếp — họ cao 1m78.</span></div>
+      <div class="ke-o" style="left:1232px;top:448px;width:184px;height:84px">
+        <span class="nhan">vật liệu của tuần</span>
+        <span class="than-chu" style="font-size:12.5px">Đồng xước phủ mờ · 3 dự án đang dùng</span></div>
+      <div class="ke-them" style="left:1432px;top:348px;width:84px;height:84px">＋</div>
+      <div class="ke-o" style="left:1432px;top:448px;width:84px;height:84px">
+        <span class="nhan">lịch</span><span class="phu so">06.09<br>bàn giao</span></div>
+            <div class="muc-ke" style="left:1032px;top:568px;width:484px">
+        <span>xa hơn · cần bạn quyết ở nơi khác</span><span class="ke2"></span></div>
+      <div class="dong" style="left:1032px;top:590px;width:484px"><b>Bình Thạnh</b> — 2 khối chờ bạn xác nhận cao độ</div>
+      <div class="dong" style="left:1032px;top:614px;width:484px"><b>Hùng Vương</b> — hồ sơ trình chờ bạn khoá bản</div>
+      <div class="dong" style="left:1032px;top:638px;width:484px"><b>Nguyễn Huệ</b> — thẻ DNA chưa chốt, deck đang chờ</div>
+            <div class="con-tiep" style="position:absolute;left:1032px;top:666px;width:484px">
+        <span class="vach-mo"></span><span>còn 4 việc chờ bạn trong tuần</span></div>
+            <div class="muc-ke" style="left:1032px;top:704px;width:484px">
+        <span>ngoài kệ · vừa đổi</span><span class="ke2"></span></div>
+      <div class="dong" style="left:1032px;top:726px;width:484px"><b>Trâm</b> đổi sàn ngủ chính sang GO-01 — khối lượng lệch 3 dòng</div>
+      <div class="dong" style="left:1032px;top:750px;width:484px"><b>Vitals</b> góp ý: đèn thả bàn ăn thấp hơn thói quen 120mm</div>
+      <div class="dong" style="left:1032px;top:774px;width:484px"><b>Hoà</b> khoá bản 3 hồ sơ trình · 09:12</div>
+            <div class="con-tiep" style="position:absolute;left:1032px;top:802px;width:484px">
+        <span class="vach-mo"></span><span>còn 9 thay đổi hôm nay</span></div>
+    </main>
+  </div>
+</div>
+</body></html>

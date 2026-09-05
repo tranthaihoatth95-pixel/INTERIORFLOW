@@ -22,6 +22,8 @@ import type { MaterialSpecDto } from '@/lib/materials/warehouse/dto';
 import { IMPORT_KIND_LABEL } from '@/lib/materials/warehouse/dto';
 import { getMaterial } from '@/lib/materials/resolve';
 import { loadPbrMap, ensurePbrCanonicalKeys } from '@/lib/materials/pbr-store';
+import { pbrMapBaTang } from '@/lib/materials/tang-phan-giai';
+import { khoaBaMat, laHangHatGiong, tronHatGiong } from '@/lib/materials/kho-mo-dau';
 import { baMatChuaCoMa, baMatCuaVatLieu, type BaMat } from '@/lib/materials/ba-mat';
 import type { MaterialPbr } from '@/lib/materials/schema';
 import { MATERIALS } from '@/lib/cad/materials';
@@ -105,7 +107,7 @@ export function MaterialsScreen() {
      `loadPbrMap()` trả {}). Nạp lại sau mỗi lần đóng cửa sổ chất liệu render, nếu không thì người
      dùng vừa đặt xong thông số mà chỉ báo vẫn nói "chưa có" — đúng kiểu lỗi khiến người ta thôi
      tin cả bảng. */
-  const napPbr = useCallback(() => setPbrMap(loadPbrMap()), []);
+  const napPbr = useCallback(() => setPbrMap(pbrMapBaTang({ studio: loadPbrMap() })), []);
   useEffect(() => { napPbr(); }, [napPbr]);
 
   /**
@@ -113,15 +115,38 @@ export function MaterialsScreen() {
    * đã fetch ở trên) · ③ `MATERIALS` (hoạ tiết 2D). Món CHƯA CÓ MÃ thì không có khoá nối — nói
    * thẳng bằng `baMatChuaCoMa()`, KHÔNG tra bừa rồi hiện ba ô trống.
    */
+  /**
+   * ⚡ CẮM ĐIỆN TẦNG HẠT GIỐNG (04/09). `items` chỉ là bản ghi DB — trên MÁY SẠCH nó RỖNG, và
+   * trước lượt này màn kho mở ra trống trơn dù repo đã ship sẵn vật liệu. `tronHatGiong` xếp dòng
+   * hạt giống xuống DƯỚI (nền của kho) rồi để dòng DB đè lên khi trùng `matId` — cùng thứ tự ghi
+   * đè của `pbrMapBaTang`, không đẻ luật xếp hạng thứ hai.
+   * `items === null` = ĐANG NẠP ⇒ giữ `null` để vòng quay chờ vẫn chạy; nạp xong mới trộn.
+   */
+  const hangHienThi = useMemo(() => {
+    /* `null` CHỈ khi đang thật sự nạp. Nếu `/api/specs` ngã (401 chưa đăng nhập · mất mạng ·
+       máy chủ chưa migrate) thì `items` vẫn `null` — nhưng đó KHÔNG phải lý do để kho trống:
+       tầng hạt giống nằm trong REPO, nó không phụ thuộc máy chủ. Đó chính là lý do tầng này tồn
+       tại. Khi `/api/specs` ngã thì màn HỎNG (theo `lyDoHong`) chiếm chỗ nội dung, nên người dùng
+       biết mặt THƯƠNG MẠI đang thiếu — không bị lừa là đã có đủ.
+       🔴 Đây là lỗi ĐO ĐƯỢC TRÊN APP THẬT 04/09: trước dòng này, mở `/materials` khi chưa đăng
+       nhập ra bảng rỗng + "Không có vật liệu nào khớp", dù repo đã ship sẵn vật liệu. */
+    if (items === null && !lyDoHong) return null;
+    return tronHatGiong(items);
+  }, [items, lyDoHong]);
+
   const baMatTheoId = useMemo(() => {
     const bang = new Map<string, BaMat>();
-    for (const m of items ?? []) {
-      bang.set(m.id, m.sku
-        ? baMatCuaVatLieu(getMaterial(m.sku, { pbrMap, specs: items ?? [], defs: MATERIALS }))
+    const nguon = hangHienThi ?? [];
+    for (const m of nguon) {
+      /* Dòng hạt giống tra bằng `matId` (UUID, đường CHÍNH); dòng DB giữ đường `sku` legacy —
+         `khoaBaMat` là chỗ DUY NHẤT quyết định, không rải `if` khắp màn. */
+      const khoa = khoaBaMat(m);
+      bang.set(m.id, khoa
+        ? baMatCuaVatLieu(getMaterial(khoa, { pbrMap, specs: nguon, defs: MATERIALS }))
         : baMatChuaCoMa());
     }
     return bang;
-  }, [items, pbrMap]);
+  }, [hangHienThi, pbrMap]);
 
   const layBaMat = useCallback(
     (m: MaterialSpecDto): BaMat => baMatTheoId.get(m.id) ?? baMatChuaCoMa(),
@@ -130,13 +155,13 @@ export function MaterialsScreen() {
 
   const brands = useMemo(() => {
     const set = new Set<string>();
-    for (const m of items ?? []) if (m.brand) set.add(m.brand);
+    for (const m of hangHienThi ?? []) if (m.brand) set.add(m.brand);
     return [...set].sort();
-  }, [items]);
+  }, [hangHienThi]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return (items ?? []).filter((m) => {
+    return (hangHienThi ?? []).filter((m) => {
       if (kindFilter && m.kind !== kindFilter) return false;
       if (brandFilter && m.brand !== brandFilter) return false;
       if (!q) return true;
@@ -146,7 +171,7 @@ export function MaterialsScreen() {
         (m.brand ?? '').toLowerCase().includes(q)
       );
     });
-  }, [items, query, brandFilter, kindFilter]);
+  }, [hangHienThi, query, brandFilter, kindFilter]);
 
   const onDelete = async (m: MaterialSpecDto) => {
     if (!window.confirm(tr(`Xoá "${m.name}"? Không hoàn tác được.`, `Delete "${m.name}"? This cannot be undone.`))) return;
@@ -166,7 +191,7 @@ export function MaterialsScreen() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 46, padding: '0 14px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--t1)' }}>{tr('Kho vật liệu', 'Materials warehouse')}</span>
-        <span style={{ fontSize: 11.5, color: 'var(--t4)' }}>{items ? tr(`${items.length} mục`, `${items.length} item(s)`) : ''}</span>
+        <span style={{ fontSize: 11.5, color: 'var(--t4)' }}>{hangHienThi ? tr(`${hangHienThi.length} mục`, `${hangHienThi.length} item(s)`) : ''}</span>
 
         <div style={{ marginLeft: 16, display: 'flex', alignItems: 'center', gap: 6, height: 30, padding: '0 10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', minWidth: 200 }}>
           <Search size={18} style={{ color: 'var(--t4)' }} />
@@ -174,7 +199,9 @@ export function MaterialsScreen() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={tr('Tìm tên, mã, hãng…', 'Search name, SKU, brand…')}
-            style={{ flex: 1, background: 'transparent', border: 0, outline: 'none', fontSize: 12.5, color: 'var(--t1)' }}
+            /* ring TRONG: ô nằm trong vỏ pill — ring ngoài sẽ đè viền vỏ (cùng khuôn .gal-search input) */
+            className="if-focus-inset"
+            style={{ flex: 1, background: 'transparent', border: 0, fontSize: 12.5, color: 'var(--t1)' }}
           />
         </div>
 
@@ -250,11 +277,11 @@ export function MaterialsScreen() {
             </div>
           );
         })()
-      ) : items === null ? (
+      ) : hangHienThi === null ? (
         <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--t4)' }}>
           <Loader2 size={20} className="animate-spin" />
         </div>
-      ) : items !== null && items.length === 0 ? (
+      ) : hangHienThi !== null && hangHienThi.length === 0 ? (
         /* P5 (04/08) — kho RỖNG THẬT (khác "lọc không khớp", nhánh đó vẫn ở MaterialTable):
            khuôn EmptyState chung (mock mock-if-thu-vien-trong) — hàng bảng ghost + 2 nút làm
            được việc NGAY TẠI ĐÂY (mở form thêm tay / mở wizard nhập file), không đá đi đâu. */
@@ -281,6 +308,9 @@ export function MaterialsScreen() {
           onEditPbr={setPbrEditing}
           baMatCua={layBaMat}
           onMoBaMat={setBaMatCua}
+          /* MỘT CHIỀU: mẫu gốc theo bản cài không sửa/xoá được ở màn kho. Mặt THỊ GIÁC vẫn chỉnh
+             được (nút chất liệu render) — bản chỉnh rơi xuống tầng studio, mẫu gốc nguyên vẹn. */
+          chiDocThuongMai={laHangHatGiong}
         />
       )}
 
@@ -291,14 +321,16 @@ export function MaterialsScreen() {
           onClose={() => setBaMatCua(null)}
           /* món chưa có mã thì KHÔNG mở được cửa chất liệu render (matId = mã vật liệu) — không
              truyền hàm ⇒ panel không mọc nút giả bấm không ra gì. */
-          onMoChatLieu={baMatCua.sku ? () => { setPbrEditing(baMatCua); setBaMatCua(null); } : undefined}
-          onMoSuaThuongMai={() => { setEditing(baMatCua); setBaMatCua(null); }}
+          onMoChatLieu={khoaBaMat(baMatCua) ? () => { setPbrEditing(baMatCua); setBaMatCua(null); } : undefined}
+          /* dòng hạt giống: KHÔNG có bản ghi thương mại để sửa ⇒ không truyền hàm, panel không
+             mọc nút giả (cùng lý do với nhánh `onMoChatLieu` ở trên). */
+          onMoSuaThuongMai={laHangHatGiong(baMatCua) ? undefined : () => { setEditing(baMatCua); setBaMatCua(null); }}
         />
       )}
 
-      {pbrEditing?.sku && (
+      {pbrEditing && khoaBaMat(pbrEditing) && (
         <MaterialPbrEditor
-          matId={pbrEditing.sku}
+          matId={khoaBaMat(pbrEditing)!}
           name={pbrEditing.name}
           /* gợi ý loại khi chưa từng chỉnh: ghép note + tên — nguồn chữ duy nhất mô tả món có sẵn */
           categoryHint={[pbrEditing.note, pbrEditing.name].filter(Boolean).join(' ')}

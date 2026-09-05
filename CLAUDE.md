@@ -159,6 +159,12 @@ Nếu 4 điều kiện đủ: `git worktree remove <path>` (KHÔNG `--force`) + 
   ⇒ Trần độ dài nay áp cho **`docs/control/IF-CURRENT-STATE.md`** (tệp nóng thật sự): giữ nhỏ, cấm
   để triết lý dài hạn, cập nhật trước khi kết phiên.
 - KHÔNG đọc CHANGELOG.md mỗi đầu phiên — chỉ đọc khi được yêu cầu.
+- **Nhật ký có CỬA VÀO, đừng quét mù**: `docs/bao-cao-phien/README.md` · `docs/nhat-ky/bao-cao-phien/README.md`
+  · `docs/nhat-ky/nc/README.md` · `docs/nhat-ky/goc/README.md` · `docs/memory/sessions/README.md`.
+  Máy sinh (`node scripts/sinh-muc-luc-nhat-ky.mjs`), mỗi tệp một dòng kèm tiêu đề thật. Trước 05/09
+  bốn thư mục này **không có mục lục nào** ⇒ 139 tệp không ai tìm ra được, và `soi:kho-tai-lieu`
+  đếm đúng chúng là mồ côi (232 / trần 153). Có cửa vào rồi thì còn **93**.
+  ⚠️ Chúng là NHẬT KÝ: mở khi cần **truy nguyên**, không phải khi cần biết hôm nay làm gì.
 - Nếu gặp lỗi "autocompact thrashing" → nguyên nhân là file quá lớn hoặc quá nhiều file trong context. Báo ngay, KHÔNG tự retry liên tục.
 
 ## Project Knowledge

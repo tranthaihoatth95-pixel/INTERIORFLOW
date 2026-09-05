@@ -53,6 +53,7 @@ import type { FontPairing } from '@/lib/slides';
 import { DEFAULT_ADJUST } from '@/lib/present-editor/model';
 import { CURATED_FONTS } from '@/lib/present-editor/fonts';
 import LayerPanel from './LayerPanel';
+import { BoqAppendixStatus } from './boq/BoqAppendixStatus';
 import {
   Trash2,
   Copy,
@@ -155,6 +156,9 @@ interface Props {
   selectedIds: string[];
   onSelect: (id: string) => void;
   onReorderElement: (fromIndex: number, toIndex: number) => void;
+  /* ---- phụ lục BOQ (02/09) — chỉ hiện khi `slide.boqAppendix` có; xem BoqAppendixStatus ---- */
+  onRefreshBoqAppendix?: () => void | Promise<void>;
+  boqAppendixBusy?: boolean;
 }
 
 export default function Inspector({
@@ -189,6 +193,8 @@ export default function Inspector({
   selectedIds,
   onSelect,
   onReorderElement,
+  onRefreshBoqAppendix,
+  boqAppendixBusy,
 }: Props) {
   const [layersOpen, setLayersOpen] = useState(true);
 
@@ -318,6 +324,11 @@ export default function Inspector({
       {layerBlock}
       {groupBlock}
       {multiBlock}
+      {slide.boqAppendix && (
+        <Panel title="Phụ lục BOQ">
+          <BoqAppendixStatus meta={slide.boqAppendix} onRefresh={onRefreshBoqAppendix} busy={boqAppendixBusy} />
+        </Panel>
+      )}
       <Panel title="Nền slide">
         <Field label="Màu nền">
           <ColorRow

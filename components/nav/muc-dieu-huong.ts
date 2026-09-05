@@ -303,13 +303,36 @@ export const NHAN_CUM: Record<CumRail, { vi: string; en: string }> = {
  */
 export const THU_TU_CUM: readonly CumRail[] = ['viec', 'chang'] as const;
 
-/** Đường đi thật của một mục — `null` khi mục chưa dùng được (chưa có trang / chưa mở dự án). */
+/**
+ * Đích khi bấm một mục CHẶNG mà tài khoản chưa có dự án nào: về Trang chủ và BUNG SẴN hộp tạo
+ * dự án. Một cú bấm ra đúng việc người dùng đang muốn, thay vì một cú bấm vào hư không.
+ */
+export const DUONG_MO_DU_AN = '/?mo=du-an';
+
+/** Đường đi thật của một mục — `null` chỉ khi mục THẬT SỰ chưa có trang. */
 export function duongCua(muc: MucRail, duAnId: string | null): string | null {
   if (muc.chuaCoTrang) return null;
   // Điều kiện đọc từ `duoi`, KHÔNG từ cụm: đảo VIỆC trộn cả mục cần dự án (Dự án) lẫn mục không
   // cần (Files · Thư viện) ⇒ lấy cụm làm điều kiện sẽ khoá nhầm nửa đảo.
   if (!muc.duoi) return muc.duong ?? null;
-  return duAnId ? `/projects/${duAnId}/${muc.duoi}` : null;
+  /* ⚠️ CHƯA CÓ DỰ ÁN THÌ VẪN TRẢ ĐƯỜNG — dẫn về chỗ tạo, KHÔNG trả null. (Bản vá 05/09.)
+   *
+   * Trước lát này chỗ này trả `null` ⇒ mọi mục chặng thành nút `aria-disabled`, bấm không ra gì.
+   * Chủ dự án mở bản cài lần đầu, chưa có dự án nào, gặp đúng những nút chết đó — báo "app không
+   * chạy được chặng". Đo lại trên app thật: tất cả đều `aria-disabled="true"`, không href.
+   *
+   * Trái LUẬT X2 (`00-CHOT` 03/08): *"KHÔNG màn nào được chặn vì chưa làm bước trước — chặng
+   * trống hiện empty state LÀM ĐƯỢC VIỆC tại chỗ"*. Nút chết còn tệ hơn màn trống: nó không nói
+   * được phải làm gì tiếp.
+   *
+   * 🔀 HOÀ HAI CÁCH SỬA. Nhánh này (02/09, chốt 15) đã đi được nửa đường: đổi nghĩa `daMoDuAn`
+   * thành *"CÓ dự án dùng được"* để rail tự lùi về dự án gần nhất, nhưng CỐ Ý giữ lại một ca mờ
+   * cho tài khoản trắng — vì bất biến *"hễ không có đường đi thì PHẢI có lý do"* là thứ chặn nút
+   * giả. Nhánh `integration` (05/09) đóng nốt ca đó theo cách KHÔNG phá bất biến: cấp cho nó MỘT
+   * ĐƯỜNG ĐI THẬT. Có đường ⇒ không cần lý do ⇒ bất biến vẫn đứng, mà cửa khoá cuối cùng cũng
+   * hết. Đây là lý do nhánh `lyDoMo` "chưa có dự án" bên dưới bị gỡ hẳn chứ không phải nới lỏng.
+   */
+  return duAnId ? `/projects/${duAnId}/${muc.duoi}` : DUONG_MO_DU_AN;
 }
 
 /**
@@ -356,34 +379,30 @@ export function mucDangMo(duong: string | null | undefined): string | null {
  * `<button disabled>` bị Tab bỏ qua hẳn và `title=` câm trên cảm ứng ⇒ đúng cái nút cần giải
  * thích nhất lại là cái mất sạch kênh giải thích.
  */
-export function lyDoMo(muc: MucRail, daMoDuAn: boolean): { vi: string; en: string } | null {
+export function lyDoMo(muc: MucRail): { vi: string; en: string } | null {
+  /* CHỈ mục THẬT SỰ chưa có trang mới bị tắt. "Chưa mở dự án" KHÔNG còn là lý do tắt — nó nay là
+   * GỢI Ý đi kèm một đường dẫn SỐNG (xem `goiYCua` + `duongCua`). Nút chết không nói được phải
+   * làm gì tiếp; nó chỉ bảo người dùng rằng họ đã sai ở đâu đó.
+   *
+   * ⚠️ Ghi lại vì đây là bẫy dễ lặp: *"mờ KÈM LÝ DO"* chỉ hợp lệ khi việc đó THẬT SỰ chưa làm
+   * được. Ở đây làm được — chỉ là chưa ai tạo cái dự án. Khoá một cửa mở được rồi dán giấy giải
+   * thích thì vẫn là cửa khoá. */
   if (muc.chuaCoTrang) return muc.chuaCoTrang;
-  /* 🔴 GỠ NHÁNH "CHƯA MỞ DỰ ÁN" — Hoà 02/09 09:15, chốt 15.
-   *
-   * Nhánh cũ: `muc.duoi && !daMoDuAn` ⇒ cả ba chặng 2D/3D/Trình chiếu MỜ kèm tooltip
-   * *"Chưa mở dự án — chọn một dự án ở Trang chủ"*. Nó tuân đúng luật §9 (mờ phải kèm lý do)
-   * nên trông rất hợp lệ — và vẫn sai, vì nó phạm một luật LỚN HƠN: X2 (`00-CHOT` 03/08)
-   * *"không màn nào chặn vì chưa làm bước trước — chặng trống hiện empty state LÀM ĐƯỢC VIỆC
-   * tại chỗ"*. Người mở app lần đầu gặp ba cửa khoá và một câu bảo đi chỗ khác.
-   *
-   * ⚠️ Ghi lại vì nó là bẫy dễ lặp: "mờ KÈM LÝ DO" chỉ hợp lệ khi việc đó THẬT SỰ chưa làm
-   * được. Ở đây làm được — chỉ là chưa ai chọn hộ cái dự án. Khoá một cửa mở được rồi dán
-   * giấy giải thích thì vẫn là cửa khoá.
-   *
-   * ⛔ NHƯNG KHÔNG GỠ TRẮNG. Cổng đã bắt đúng lúc tôi định gỡ: bất biến *"hễ không có đường đi
-   * thì PHẢI có lý do"* là thứ chặn **nút giả bấm không ra gì**. Bỏ lý do mà chặng vẫn không có
-   * đích ⇒ đúng cái nút giả đó. Nên nghĩa của cờ ĐỔI, không phải nhánh bị xoá:
-   *   TRƯỚC: `daMoDuAn` = "đang mở một dự án"  ⇒ mờ khi chưa CHỌN dự án nào (Hoà gặp cửa khoá
-   *          dù tài khoản anh ấy có sẵn dự án — đây chính là chỗ sai).
-   *   NAY  : `daMoDuAn` = "CÓ dự án dùng được" ⇒ rail tự lùi về dự án gần nhất (xem
-   *          `RailDieuHuong`), nên có dự án là có đích, không còn cửa khoá nào.
-   * Chỉ còn MỘT ca mờ thật: tài khoản CHƯA CÓ dự án nào. Và câu lý do cũng phải đổi theo — bảo
-   * người ta *"chọn một dự án ở Trang chủ"* khi chưa có dự án nào để chọn là chỉ sang một chỗ
-   * trống. Nói việc làm được: tạo dự án. */
-  if (muc.duoi && !daMoDuAn) {
+  return null;
+}
+
+/**
+ * Gợi ý đi kèm mục CÒN BẤM ĐƯỢC — khác hẳn `lyDoMo` (lý do TẮT).
+ *
+ * Ranh giới, để lần sau không lẫn: `lyDoMo` = *"bấm cũng không ra gì, và đây là vì sao"*;
+ * `goiYCua` = *"bấm được, và đây là điều sẽ xảy ra"*. Trước 05/09 hai thứ này bị gộp làm một, nên
+ * "chưa có dự án" — vốn chỉ là một trạng thái tạm — lại đi tắt mất các mục chặng.
+ */
+export function goiYCua(muc: MucRail, daMoDuAn: boolean): { vi: string; en: string } | null {
+  if (muc.duoi && !daMoDuAn && !muc.chuaCoTrang) {
     return {
-      vi: 'Chưa có dự án nào — tạo một dự án để mở chặng này',
-      en: 'No project yet — create one to open this stage',
+      vi: 'Chưa có dự án — bấm để tạo dự án đầu tiên',
+      en: 'No project yet — tap to create your first one',
     };
   }
   return null;

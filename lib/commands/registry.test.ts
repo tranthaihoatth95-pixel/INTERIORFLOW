@@ -281,6 +281,11 @@ function testSharedCommands() {
   // "Đủ 3 chặng" (stages) KHÔNG có nghĩa "chạy thật ở cả 3" — khớp đúng cách đọc ④.4: khai đủ,
   // `when` mới là cổng thật, có quyền mờ. Đối chiếu ĐÚNG bảng thật đã quyết trong report B1:
   // 'cad' → tất cả 10 thật; 'render' → CHỈ undo/redo thật, 8 lệnh còn lại mờ; 'present' → cả 10 mờ.
+  // 🔧 04/09 — `cad.sel.delete` KHÔNG còn mờ-cứng ở 'render': nay nó ĐỌC KHO chọn của khung nhìn
+  // 3D, mờ khi chưa chọn và THẬT khi đã chọn. Khẳng định `false` dưới đây vẫn đúng vì mặc định
+  // kho rỗng — nhưng nó đã ÂM THẦM ĐỔI NGHĨA từ "mờ ở render" thành "mờ khi chưa chọn". Ghi rõ ở
+  // đây, và khoá cả hai nhánh ở khối [xoá 3D] ngay dưới, để lần sau không ai đọc nhầm test này
+  // thành bằng chứng rằng render không xoá được.
   const REAL_AT_RENDER = new Set(['cad.sel.undo', 'cad.sel.redo']);
   for (const id of SHARED_IDS) {
     const c = COMMANDS.find((x) => x.id === id)!;
@@ -288,6 +293,19 @@ function testSharedCommands() {
     const expectRender = REAL_AT_RENDER.has(id);
     ok(`${id}: ${expectRender ? 'THẬT' : 'mờ'} ở stage='render' (đúng bảng report B1)`, c.when({ stage: 'render' }) === expectRender);
     ok(`${id}: mờ ở stage='present' (không store toàn cục nào registry.ts với tới)`, c.when({ stage: 'present' }) === false);
+  }
+
+  // ── [xoá 3D] khoá CẢ HAI nhánh của cổng mới, không để nhánh "thật" chỉ sống trong tệp test khác
+  {
+    const del = COMMANDS.find((x) => x.id === 'cad.sel.delete')!;
+    const kho = require('../render-studio/tree3d-ui') as {
+      useTree3DUi: { getState: () => { selectedEntityId: string | null }; setState: (p: { selectedEntityId: string | null }) => void };
+    };
+    const truoc = kho.useTree3DUi.getState();
+    kho.useTree3DUi.setState({ selectedEntityId: 'ent-kiem' });
+    ok("cad.sel.delete: THẬT ở 'render' KHI đã chọn khối", del.when({ stage: 'render' }) === true);
+    kho.useTree3DUi.setState({ selectedEntityId: truoc.selectedEntityId ?? null });
+    ok("cad.sel.delete: mờ lại ở 'render' khi bỏ chọn", del.when({ stage: 'render' }) === false);
   }
 
   // Không lệnh nào trùng phím TRONG CÙNG MỘT CHẶNG — chỉ xét lệnh THẬT (when(ctx)===true) ở

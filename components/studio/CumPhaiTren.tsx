@@ -172,7 +172,7 @@ export function CumPhaiTren() {
         aria-haspopup="menu"
         aria-label={tr(`Tài khoản — ${user.name}`, `Account — ${user.name}`)}
         style={{ borderRadius: RADIUS.full }}
-        className="grid shrink-0 place-items-center p-0.5 transition-colors duration-[120ms] hover:bg-[var(--hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
+        className="grid shrink-0 place-items-center p-0.5 transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
       >
         <UserAvatar id={user.id} avatar={user.avatar} name={user.name} size={26} frame={false} />
       </button>

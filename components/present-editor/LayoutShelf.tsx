@@ -788,7 +788,7 @@ const saveConfirmBtn: React.CSSProperties = {
   borderRadius: 6,
   border: '1px solid var(--accent)',
   background: 'var(--accent)',
-  color: '#fff',
+  color: 'var(--on-accent)',
   cursor: 'pointer',
   flexShrink: 0,
 };
@@ -816,7 +816,7 @@ const badge: React.CSSProperties = {
   padding: '2px 6px',
   borderRadius: 20,
   background: 'var(--accent)',
-  color: '#fff',
+  color: 'var(--on-accent)',
   fontSize: 8.5,
   fontWeight: 600,
 };
@@ -838,7 +838,7 @@ const fbBtn: React.CSSProperties = {
   borderRadius: 6,
   border: '1px solid var(--border)',
   background: 'rgba(20,20,24,.72)',
-  color: '#fff',
+  color: 'var(--on-accent)',
   cursor: 'pointer',
 };
 
@@ -860,6 +860,6 @@ const variantBtn: React.CSSProperties = {
   borderRadius: 6,
   border: '1px solid var(--border)',
   background: 'rgba(20,20,24,.72)',
-  color: '#fff',
+  color: 'var(--on-accent)',
   cursor: 'pointer',
 };

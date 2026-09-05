@@ -1,0 +1,162 @@
+/* docs/mocks/_home-hybrid.css — HOME · HYBRID B×A + khí quyển C (Hoà chốt 04/09).
+   Token CHÉP NGUYÊN VĂN từ app/globals.css. Không chế màu, không chế số ngoài thang bo 6/10/14/20. */
+:root{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --border:#2a2a31;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --accent:#6a57f5; --vien-mo:rgba(255,255,255,.06);
+  --giay:#fbfaf7; --muc:#22201c; --net-mo:#d9d3c6;
+  --r-1:6px; --r-2:10px; --r-3:14px; --r-4:20px; --r-full:999px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px;
+  color-scheme:dark;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#fff; --border:#e3ded4;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --vien-mo:rgba(0,0,0,.07);
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1600px;height:900px;overflow:hidden;background:var(--bg);color:var(--t1);
+  font-family:-apple-system,'SF Pro Text','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  font-size:var(--fs-sm);-webkit-font-smoothing:antialiased}
+body.hep{width:1280px;height:800px}
+
+/* ── C · KHÍ QUYỂN: LightClock. TIẾT CHẾ — không thấy "hiệu ứng", chỉ thấy giờ giấc. ── */
+/* 🔴 HẠ KHÍ QUYỂN 04/09 (lệnh: WORK > ATMOSPHERE). Bản trước .13/.20 đọc ra như một mảng sáng
+   — tức nó thành CHỦ THỂ thị giác. Nay .06/.09 và thu vùng lại: cảm được là chiều muộn, nhưng
+   không có "vệt" nào để nhìn. Khí quyển là MÔI TRƯỜNG, không phải hình. */
+.khiquyen{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(46% 34% at 10% 0%, rgba(199,154,99,.06), transparent 62%)}
+:root[data-theme='light'] .khiquyen{
+  background:radial-gradient(46% 34% at 10% 0%, rgba(199,154,99,.09), transparent 62%)}
+
+/* ── §27 · CHROME LÙI VỀ SAU: rail 52, không nền, không viền đậm ── */
+.khung{display:flex;height:100%;position:relative}
+.rail{width:52px;flex:0 0 52px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:14px 0;z-index:2}
+.rail i{width:34px;height:34px;border-radius:var(--r-2);background:var(--t5);opacity:.34;display:block}
+.rail i.on{opacity:.92;background:var(--t3)}
+.rail hr{width:16px;border:0;border-top:1px solid var(--vien-mo);margin:7px 0}
+.than{flex:1;min-width:0;position:relative;display:flex;flex-direction:column;
+  padding:34px 60px 30px 44px}
+body.hep .than{padding:26px 40px 24px 32px}
+
+/* ── §23 · NGÔN NGỮ EDITORIAL (từ A): chữ · khoảng trắng · vạch mảnh. KHÔNG THẺ. ── */
+.nhan{font-size:var(--fs-2xs);letter-spacing:.15em;text-transform:uppercase;color:var(--t3);
+  font-family:ui-monospace,'SF Mono',Menlo,monospace}
+.so{font-variant-numeric:tabular-nums}
+.vach{border:0;border-top:1px solid var(--vien-mo)}
+
+/* dòng khí quyển: lời chào + giờ + ánh sáng gộp làm MỘT DÒNG, không phải widget */
+.dong-tren{display:flex;align-items:baseline;gap:14px;color:var(--t3);font-size:var(--fs-xs);
+  margin-bottom:26px}
+.dong-tren b{color:var(--t2);font-weight:600;font-size:var(--fs-sm)}
+.dong-tren .cham{width:4px;height:4px;border-radius:var(--r-full);background:var(--t5);
+  align-self:center}
+
+/* ── §21 · XƯƠNG SỐNG B: hiện vật THẬT là đối tượng trội. Không cột widget phải. ── */
+.hero{display:grid;grid-template-columns:392px 1fr;gap:56px;align-items:center;flex:1;min-height:0}
+body.hep .hero{grid-template-columns:330px 1fr;gap:36px}
+.hero-chu .ten{font-size:52px;line-height:1.03;letter-spacing:-.022em;font-weight:600;margin:12px 0 16px}
+body.hep .hero-chu .ten{font-size:42px}
+.hero-chu .ngu{display:flex;gap:20px;color:var(--t3);font-size:var(--fs-sm);margin-bottom:10px}
+.hero-chu .vi{color:var(--t3);font-size:var(--fs-sm)}
+.hero-chu .vi em{font-style:normal;color:var(--t2)}
+.cta{margin-top:28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.cta a{height:46px;padding:0 24px;border-radius:var(--r-full);background:var(--t1);color:var(--bg);
+  display:inline-flex;align-items:center;font-weight:600;font-size:var(--fs-md);text-decoration:none}
+.cta span{color:var(--t3);font-size:var(--fs-xs)}
+
+/* hiện vật: TỜ BẢN VẼ THẬT — nghiêng nhẹ, bóng dài. Chiều sâu thay cho viền thẻ. */
+.vat{position:relative;justify-self:stretch;height:100%;max-height:472px;display:flex}
+.to{position:relative;flex:1;background:var(--giay);border-radius:var(--r-2);overflow:hidden;
+  box-shadow:0 26px 62px rgba(0,0,0,.44);transform:rotate(-.7deg)}
+:root[data-theme='light'] .to{box-shadow:0 22px 52px rgba(80,66,44,.22)}
+.to svg{display:block;width:100%;height:100%}
+/* nhãn DEMO về góc TRÁI-DƯỚI: góc phải là chỗ mảnh ngữ cảnh đứng, để đó thì hai thứ
+   chồng lên nhau và lời khai DEMO bị che — mà đó là thứ không được phép mờ đi. */
+.demo{position:absolute;left:12px;bottom:10px;z-index:2;font:600 9px/1 ui-monospace,monospace;
+  letter-spacing:.14em;color:#5c564d;background:rgba(255,255,255,.92);padding:4px 7px;
+  border-radius:var(--r-1);border:1px solid var(--net-mo)}
+/* 🔴 máy bắt 3,04:1 — nhãn DEMO phải đọc được, nó là lời khai chứ không phải trang trí */
+
+/* ── §24 · THỨ PHỤ: XẾP HẠNG, không phải một hàng ngang đều nhau ── */
+.phu{display:grid;grid-template-columns:1fr auto;gap:44px;align-items:end;
+  padding-top:20px;margin-top:24px}
+.ds{display:flex;flex-direction:column;gap:0}
+.ds .hang{display:flex;align-items:center;gap:14px;padding:9px 0;text-decoration:none;color:inherit}
+.ds .hang+.hang{border-top:1px solid var(--vien-mo)}
+.ds .hang i{width:38px;height:27px;border-radius:var(--r-1);flex:0 0 38px}
+.ds .hang u{text-decoration:none;flex:1;font-size:var(--fs-sm)}
+.ds .hang s{text-decoration:none;color:var(--t3);font-size:var(--fs-xs);font-variant-numeric:tabular-nums}
+/* §30 · DẤU HIỆU CÒN TIẾP — nói bằng CHỮ, không trông vào thanh cuộn */
+.contiep{margin-top:10px;color:var(--t3);font-size:var(--fs-xs);display:flex;align-items:center;gap:7px}
+.contiep::after{content:'↓';opacity:.7}
+/* cụm phải: số chặng + một dòng xưởng. Chữ trên nền, không vỏ. */
+.cum{text-align:right;display:flex;flex-direction:column;gap:15px;width:300px}
+.cum .day{display:flex;gap:26px;justify-content:flex-end;margin-top:7px}
+.cum .day div{text-align:right;min-width:46px}
+.cum .day b{display:block;font-size:21px;font-weight:600;letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums}
+.cum .tin{color:var(--t3);font-size:var(--fs-xs);line-height:1.5}
+.cum .tin b{color:var(--t2);font-weight:600}
+/* theo-yêu-cầu: ghi chú KHÔNG chiếm chỗ thường trực, chỉ một dòng mời gõ */
+.ghi{margin-top:4px;padding-top:13px;border-top:1px solid var(--vien-mo);color:var(--t3);
+  font-size:var(--fs-xs);display:flex;align-items:center;gap:9px;justify-content:flex-end}
+.ghi kbd{font:600 10px/1 ui-monospace,monospace;color:var(--t3);border:1px solid var(--vien-mo);
+  border-radius:var(--r-1);padding:3px 6px}
+
+/* ── §26 · TRẠNG THÁI RỖNG: RESUME → BEGIN ── */
+.rong{flex:1;display:flex;flex-direction:column;justify-content:center;max-width:760px}
+.rong .ten{font-size:52px;line-height:1.05;letter-spacing:-.022em;font-weight:600;margin:14px 0 18px}
+.rong .phu-chu{color:var(--t3);font-size:var(--fs-md);line-height:1.6;max-width:52ch}
+.rong .buoc{margin-top:38px;display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+/* 🔴 CHỈ nút ĐẦU là hành động chính. Hai lối kia là CHỮ có gạch chân — ba nút đầy màu đứng cạnh
+   nhau là "thông tin ngang hạng", đúng cờ đỏ N-10. Đã bắt được ở lượt chụp đầu và sửa ngay. */
+.rong .buoc > a:first-child{height:48px;padding:0 26px;border-radius:var(--r-full);
+  background:var(--t1);color:var(--bg);display:inline-flex;align-items:center;font-weight:600;
+  font-size:var(--fs-md);text-decoration:none}
+.rong .buoc span a{color:var(--t2);text-decoration:none;border-bottom:1px solid var(--t5);
+  padding-bottom:1px}
+.rong .buoc span{color:var(--t3);font-size:var(--fs-sm)}
+.rong .ba{margin-top:44px;padding-top:18px;color:var(--t3);font-size:var(--fs-xs)}
+.rong .ba a{color:var(--t3);text-decoration:none;border-bottom:1px solid var(--vien-mo)}
+
+
+/* ══════════ MẢNH VIỆC SỐNG (LIVE WORK FRAGMENT) ══════════
+   🔴 ĐỔI TÊN + ĐỔI NGHĨA 04/09. Bản trước gọi là "hiện vật công việc thật" và mặc định vẽ MẶT
+   BẰNG ⇒ Home kể sai câu chuyện: *"IF là nơi quay lại BẢN VẼ"* thay vì *"nơi quay lại QUÁ TRÌNH
+   THIẾT KẾ"*. Mặt bằng chỉ là MỘT trạng thái hợp lệ, KHÔNG phải bản sắc của Home.
+
+   Mảnh việc sống suy từ NGỮ CẢNH/CHẶNG đang làm:
+     Ý TƯỞNG   → tham chiếu · mood · vật liệu · phác
+     MẶT BẰNG  → bản vẽ
+     3D        → cảnh · đối tượng · trạng thái vật liệu
+     RENDER    → ảnh render + trạng thái duyệt
+     VẬT LIỆU  → bảng màu · mẫu · quy cách
+     TRÌNH BÀY → mảnh slide/hồ sơ
+     DUYỆT     → hiện vật + góp ý chưa xử
+     NGHIÊN CỨU→ chùm tham chiếu
+
+   GHÉP MẢNH: được phép một mảnh CHÍNH + một-hai mảnh NGỮ CẢNH nhỏ hơn hẳn, để nói TRẠNG THÁI
+   THIẾT KẾ thay vì chụp màn một công cụ. ⛔ Không thành collage, không thành bento — thứ bậc
+   trội phải còn rõ: mảnh chính ≥ 3 lần diện tích mảnh ngữ cảnh. */
+.vat{position:relative;justify-self:stretch;height:100%;max-height:472px;display:flex}
+.chinh{position:relative;flex:1;border-radius:var(--r-2);overflow:hidden;
+  box-shadow:0 26px 62px rgba(0,0,0,.44)}
+:root[data-theme='light'] .chinh{box-shadow:0 22px 52px rgba(80,66,44,.22)}
+.chinh.giay{background:var(--giay);transform:rotate(-.7deg)}
+.chinh svg,.chinh img{display:block;width:100%;height:100%}
+/* mảnh ngữ cảnh: NHỎ HẲN, nép mép dưới mảnh chính — đọc ra là "kèm theo", không ngang hàng */
+.ngucanh{position:absolute;right:16px;bottom:16px;display:flex;gap:9px;align-items:center;z-index:3;
+  max-width:calc(100% - 32px);flex-wrap:nowrap}
+.mau{width:46px;height:46px;flex:0 0 46px;border-radius:var(--r-1);border:1px solid rgba(255,255,255,.5);
+  box-shadow:0 6px 18px rgba(0,0,0,.34);position:relative}
+/* 🔴 BỎ nhãn chữ ĐẶT TRÊN ô màu (bản trước: trắng + đổ bóng, 9px). Hai lý do, không phải gu:
+   ① nó nằm trên một mảng MÀU THAY ĐỔI ⇒ tương phản không kiểm được, đo bao nhiêu cũng chỉ đúng
+      cho đúng cái màu đó — đúng bệnh "kính quá trong" đã chốt 16/08;
+   ② 9px + đổ bóng là cách giả-đọc-được. Tên vật liệu chuyển vào thẻ ngữ cảnh có nền đặc. */
+.the-nho{background:rgba(18,16,14,.82);color:#fff;border-radius:var(--r-2);padding:9px 12px;
+  font-size:var(--fs-xs);line-height:1.35;max-width:210px;backdrop-filter:blur(6px)}
+.the-nho b{display:block;font-weight:600;margin-bottom:2px}
+.the-nho s{text-decoration:none;color:rgba(255,255,255,.68);font-size:10px}

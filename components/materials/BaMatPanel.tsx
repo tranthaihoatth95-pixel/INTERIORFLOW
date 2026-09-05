@@ -56,7 +56,7 @@ export function BaMatPanel({
     // esc-only: handler CHỈ đóng bằng Escape — Escape phải luôn thoát được, kể cả khi tiêu điểm
     // đang ở trong một ô nhập bên trong tấm này, nên KHÔNG bail theo INPUT/TEXTAREA ở đây.
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey); // esc-only: chỉ xử Escape đóng lớp — đúng chuẩn dialog, không cần né ô nhập
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
@@ -94,6 +94,8 @@ export function BaMatPanel({
         aria-modal
         aria-label={tr('Ba mặt của vật liệu', 'The three faces of this material')}
         onClick={(e) => e.stopPropagation()}
+        /* focus-ring-ok: hộp thoại `tabIndex={-1}` — nhận focus bằng mã lúc mở, KHÔNG nằm trong
+           đường Tab. Vẽ ring quanh cả tấm là nhiễu, không phải chỉ dấu điều hướng. */
         className="focus-visible:outline-none"
         /* `maxWidth` chứ không chỉ `width`: cửa sổ hẹp (chia đôi màn, tablet dọc) thì tấm 460 cứng
            sẽ tràn ra ngoài mép và nút ✕ đi mất — người dùng kẹt trong hộp thoại. */
@@ -103,7 +105,7 @@ export function BaMatPanel({
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--t1)' }}>{tr('Một vật, ba mặt', 'One item, three faces')}</span>
           <button
             type="button" onClick={onClose} aria-label={tr('Đóng', 'Close')}
-            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
             style={{ marginLeft: 'auto', width: 26, height: 26, display: 'grid', placeItems: 'center', border: 0, borderRadius: 'var(--r-1)', background: 'transparent', color: 'var(--t3)', cursor: 'pointer' }}
           >
             <X size={14} />
@@ -171,7 +173,7 @@ export function BaMatPanel({
                 {viec && (
                   <button
                     type="button" onClick={viec.chay}
-                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]"
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
                     style={{
                       marginTop: 8, height: 'var(--tap)', padding: '0 12px', border: '1px solid var(--border)',
                       borderRadius: 'var(--r-2)', background: 'var(--field)', color: 'var(--t2)',

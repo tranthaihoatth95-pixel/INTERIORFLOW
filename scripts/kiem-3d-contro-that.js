@@ -1,77 +1,288 @@
+#!/usr/bin/env node
 /**
- * pointer3d.js — bộ kiểm 3D bằng CON TRỎ THẬT (Playwright trusted events).
+ * scripts/kiem-3d-contro-that.js — BỘ ĐO TRÊN APP THẬT bằng CON TRỎ THẬT (Playwright).
  *
- * Vì sao cần: pointer tổng hợp (`dispatchEvent`) KHÔNG giữ được `setPointerCapture`, mà cả
- * push/pull lẫn gizmo của IF đều dựa vào pointer capture ⇒ mọi phép thử kéo bằng JS đều thất bại
- * VÌ CÔNG CỤ THỬ, không phải vì app. Playwright `mouse.*` phát sự kiện tin cậy ở tầng CDP nên
- * capture hoạt động y như tay người.
+ * VÌ SAO CẦN TỆP NÀY (giữ nguyên lý do của bản 24/08, đã kiểm lại còn đúng):
+ * pointer TỔNG HỢP (`element.dispatchEvent(new PointerEvent(...))`) KHÔNG giữ được
+ * `setPointerCapture` — mà cả push/pull, gizmo lẫn CỬ CHỈ DỰNG KHỐI của IF đều dựa vào capture
+ * (`Scene3DViewer.onPointerDown` → `setPointerCapture`, nhả ở `onPointerUp`). Mọi phép kéo giả
+ * bằng JS vì thế thất bại VÌ CÔNG CỤ THỬ, không phải vì app. `page.mouse.*` của Playwright phát
+ * sự kiện ở tầng CDP nên là sự kiện TIN CẬY: capture chạy y như tay người, kể cả headless.
  *
- * Chạy: node pointer3d.js <lệnh>
- *   shot <tên>      chỉ chụp
- *   probe           đăng nhập, vào 3D, báo trạng thái
- *   drag            thử kéo gizmo/khối (Move) và báo trước/sau
+ * ⚠️ THAM SỐ HOÁ (04/09) — bản cũ gõ cứng đường dẫn máy tác giả (`/Users/tranben/...`), một
+ * `projectId` cụ thể và MẬT KHẨU DEMO TRONG MÃ. Nay tất cả ra biến môi trường; mật khẩu KHÔNG có
+ * giá trị mặc định và KHÔNG được ghi vào tệp này — thiếu thì script dừng và nói cách truyền.
+ *
+ * ⚠️ MỘT GIỚI HẠN PHẢI BIẾT TRƯỚC KHI ĐỌC SỐ: `window.__cadStore` chỉ được gắn khi
+ * `process.env.NODE_ENV === 'development'` (`lib/cad/store.ts:926`). Chạy trên BẢN DỰNG THẬT
+ * (`next build` + `next start`) thì KHÔNG có nó ⇒ bộ đo này lấy bằng chứng từ thứ NGƯỜI DÙNG
+ * NHÌN THẤY: nhãn khung nhìn (`.vplabel` — "Không gian trống" ↔ "Khối xám · chưa vật liệu"),
+ * cây đối tượng, Inspector, và ẢNH CHỤP so từng điểm ảnh. Ở đâu đọc được `__cadStore` thì ghi
+ * thêm, và ghi rõ nguồn nào đã dùng. Đo bằng mắt máy còn ĐÚNG HƠN đọc kho: kho có dữ liệu mà
+ * màn hình không hiện thì vẫn là hỏng.
+ *
+ * BIẾN MÔI TRƯỜNG
+ *   IF_BASE       gốc máy chủ            (mặc định http://localhost:3142)
+ *   IF_EMAIL      tài khoản kiểm thử     (mặc định kiem@localhost.test)
+ *   IF_MATKHAU    mật khẩu — BẮT BUỘC, không có mặc định, không ghi trong mã
+ *   IF_DU_AN      id dự án; trống thì tự tạo và nhớ ở <SHOT_DIR>/du-an.txt
+ *   IF_SHOT_DIR   nơi để ảnh + JSON      (mặc định <repo>/.nen-chrome-out — đã gitignore)
+ *   IF_DPR        deviceScaleFactor      (mặc định 2 — lỗi cắt cụt viewport CHỈ phát ở retina)
+ *   IF_CHROMIUM   đường dẫn Chromium     (mặc định /opt/pw-browsers/chromium)
+ *   IF_HEADED=1   hiện cửa sổ trình duyệt
+ *
+ * ⚠️ DỰNG MÁY CHỦ SAO CHO KHÔNG BỊ PHIÊN KHÁC GIẪM (đã mất một vòng đo vì chuyện này):
+ * `.next` là MỘT thư mục dùng chung. Hai phiên cùng `npm run build` thì máy chủ đang chạy giữ
+ * manifest cũ trong khi tệp đã đổi băm ⇒ mọi trang trả về TRẮNG TINH và `/_next/static/css/…css`
+ * trả 404 — đọc hệt như "giao diện hỏng". Cách thoát, không phải sửa tệp nào trong repo:
+ *     RUN=/tmp/if-run; rm -rf $RUN; mkdir -p $RUN
+ *     cp -al .next $RUN/.next            # chép CỨNG (hardlink) — tức thì, 0 byte thêm
+ *     for f in node_modules public next.config.mjs package.json prisma; do ln -s "$PWD/$f" $RUN/$f; done
+ *     printf 'DATABASE_URL="file:%s/prisma/dev.db"\n' "$PWD" > $RUN/.env   # + AUTH_SECRET, INTEGRATION_ENC_KEY
+ *     cd $RUN && node <repo>/node_modules/next/dist/bin/next start -p 3142
+ * `cp -al` là mấu chốt: `next build` XOÁ rồi TẠO MỚI tệp chứ không ghi đè tại chỗ, nên bản
+ * hardlink giữ nguyên inode và máy chủ SỐNG SÓT qua một lượt dựng của người khác.
+ * ⇒ Chỉ lúc DỰNG mới cần độc quyền, lúc CHẠY thì không.
+ *
+ * ⚠️ TRÌNH DUYỆT: gói `playwright` trong repo đóng đinh số hiệu 1234 còn máy có sẵn 1194 — lỗi
+ * "Executable doesn't exist" đọc như thiếu trình duyệt, thật ra chỉ lệch số hiệu. Trỏ `IF_CHROMIUM`
+ * vào bản có sẵn; ĐỪNG chạy `npx playwright install`.
+ *
+ * CHẠY:  IF_MATKHAU=... node scripts/kiem-3d-contro-that.js <lệnh>
+ *   probe        đăng nhập, vào 3D, báo trạng thái
+ *   cu-chi       (1) dựng khối bằng cử chỉ: kéo trên mặt sàn · hoàn tác · kéo quá nhỏ
+ *   chon-xoa     (2) chọn khối nhiều mặt · viền hộp bao NHÌN THẤY ĐƯỢC · lệnh Xoá
+ *   retina       (3) canvas viewport có bị cắt trên DPR cao không
+ *   to-present   (4) tờ bản vẽ 2D → Trình chiếu, và sống qua lần tải lại trang
+ *   hep          (5) hàng tab bản vẽ ở khổ desktop hẹp (1280×800 · 1152×720)
+ *   tat-ca       chạy cả năm
  */
+'use strict';
 const { chromium } = require('playwright');
+const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
-const BASE = process.env.IF_BASE || 'http://localhost:3000';
-const PROJ = 'cmsl8prn80001w9i2ud3bfdgr';
-const OUT = process.env.SHOT_DIR || '/Users/tranben/Downloads/interiorflow/present-demo/screens';
+const GOC = path.resolve(__dirname, '..');
+const BASE = process.env.IF_BASE || 'http://localhost:3142';
+const EMAIL = process.env.IF_EMAIL || 'kiem@localhost.test';
+const MATKHAU = process.env.IF_MATKHAU || '';
+const OUT = process.env.IF_SHOT_DIR || path.join(GOC, '.nen-chrome-out');
+const DPR = Number(process.env.IF_DPR || 2);
+const CHROME = process.env.IF_CHROMIUM || '/opt/pw-browsers/chromium';
+const HEADED = process.env.IF_HEADED === '1';
 
-async function login(page) {
-  // Đặt cờ "đã xem intro" TRƯỚC khi vào '/': hồ sơ Playwright trắng tinh ⇒ HomeScreen tự
-  // `router.replace('/intro')`, mà route đó đang 404 trên máy chủ dev (3 tiến trình `next dev`
-  // cùng giẫm một thư mục `.next` — bệnh đã ghi trong sổ). Người dùng thật đã xem intro từ lâu
-  // nên KHÔNG gặp; chỉ hồ sơ mới mới rơi vào. Đặt cờ là đi thẳng màn đăng nhập, không phải sửa
-  // app cho hợp bộ kiểm.
-  await page.goto(`${BASE}/favicon.ico`, { waitUntil: 'domcontentloaded' }).catch(() => {});
-  await page.evaluate(() => localStorage.setItem('if_intro_seen_v1', '1')).catch(() => {});
-  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(2500);
-  // Bỏ qua intro nếu có
-  for (let i = 0; i < 3; i++) {
-    const skip = page.locator('button', { hasText: /SKIP|Bỏ qua/i }).first();
-    if (await skip.count().catch(() => 0)) { await skip.click().catch(() => {}); await page.waitForTimeout(600); }
-  }
-  // Ô định danh nhận diện bằng PLACEHOLDER (form không có type="email"); ô mật khẩu là
-  // `PasswordInput` nên có thể đang ở chế độ hiện chữ ⇒ tìm theo placeholder trước, type sau.
-  const ident = page.locator('input[placeholder*="Email"], input[placeholder*="email"]').first();
-  if (await ident.count().catch(() => 0)) {
-    await ident.fill('demo@if.local').catch(() => {});
-    const pwd = page
-      .locator('input[placeholder*="Mật khẩu"], input[placeholder*="Password"], input[type="password"]')
-      .first();
-    await pwd.fill('demo1234').catch(() => {});
-    await page.waitForTimeout(300);
-    const go = page.locator('button[type="submit"]').first();
-    if (await go.count().catch(() => 0)) await go.click().catch(() => {});
-    else await pwd.press('Enter').catch(() => {});
-  }
-  // chờ auth thật
-  for (let i = 0; i < 30; i++) {
-    const me = await page.evaluate(() => fetch('/api/auth/me').then((r) => r.ok).catch(() => false));
-    if (me) return true;
-    await page.waitForTimeout(1000);
-  }
-  return false;
+if (!MATKHAU) {
+  console.error('✖ thiếu IF_MATKHAU. Mật khẩu KHÔNG được ghi trong mã — truyền qua môi trường:');
+  console.error('  IF_MATKHAU="<mật khẩu tài khoản kiểm thử>" node scripts/kiem-3d-contro-that.js <lệnh>');
+  process.exit(2);
+}
+fs.mkdirSync(OUT, { recursive: true });
+
+/* ── tiện ích ──────────────────────────────────────────────────────────────────────────────── */
+const so = (n) => Math.round(n * 100) / 100;
+/** {x,y,w,h} của app → {x,y,width,height} mà Playwright đòi. Trộn hai khuôn là lỗi đã dính. */
+const cat = (b) => ({ x: b.x, y: b.y, width: b.w, height: b.h });
+function ghiJson(ten, data) {
+  const p = path.join(OUT, `${ten}.json`);
+  fs.writeFileSync(p, JSON.stringify(data, null, 2));
+  return path.relative(GOC, p);
+}
+async function chup(page, ten, clip) {
+  const p = path.join(OUT, `${ten}.png`);
+  await page.screenshot({ path: p, clip });
+  return path.relative(GOC, p);
 }
 
-/** Vào chặng 3D, chuyển sang mode Vẽ 3D, đợi canvas WebGL lớn xuất hiện. */
-async function open3D(page) {
-  await page.goto(`${BASE}/projects/${PROJ}/render`, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(4000);
+/** So HAI ảnh theo TỪNG ĐIỂM ẢNH — dùng để chứng minh một thứ có THẬT SỰ HIỆN RA hay không.
+ *  Băm ảnh chỉ nói "có đổi"; đếm điểm ảnh nói "đổi bao nhiêu, ở đâu" — cần cho câu hỏi
+ *  "viền hộp bao có nhìn thấy được không". */
+async function soDiemAnh(bufA, bufB) {
+  const sharp = require('sharp');
+  const a = await sharp(bufA).raw().toBuffer({ resolveWithObject: true });
+  const b = await sharp(bufB).raw().toBuffer({ resolveWithObject: true });
+  if (a.info.width !== b.info.width || a.info.height !== b.info.height) return { loi: 'khác cỡ' };
+  const ch = a.info.channels;
+  let khac = 0;
+  let minX = 1e9, minY = 1e9, maxX = -1, maxY = -1;
+  for (let i = 0, px = 0; i < a.data.length; i += ch, px += 1) {
+    const d = Math.abs(a.data[i] - b.data[i]) + Math.abs(a.data[i + 1] - b.data[i + 1]) + Math.abs(a.data[i + 2] - b.data[i + 2]);
+    if (d > 24) {
+      khac += 1;
+      const x = px % a.info.width, y = (px / a.info.width) | 0;
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
+  }
+  const tong = a.info.width * a.info.height;
+  return {
+    diemKhac: khac,
+    tong,
+    tyLe: so((khac / tong) * 100),
+    hop: maxX < 0 ? null : { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 },
+  };
+}
+
+/**
+ * Đếm điểm ảnh MÀU NHẤN `#6a57f5` (106,87,245) — màu `Box3Helper` của viền hộp bao khi chọn khối
+ * (`Scene3DViewer.tsx:505`). Đây là phép đo TRỰC TIẾP cho câu "viền có NHÌN THẤY ĐƯỢC không";
+ * so-toàn-ảnh KHÔNG trả lời được câu đó vì hiệu ứng chọn còn kéo theo `fitCameraToScene` (hàm
+ * dựng lại cảnh phụ thuộc `selectedId`) làm đổi gần hết khung hình vì lý do khác.
+ * Cắt bỏ dải trên 18% (nhãn · ViewCube · nút Toàn cảnh) và dải dưới 25% (dock công cụ có nút tím
+ * đang hoạt động) để không đếm nhầm chrome.
+ */
+async function demMauNhan(buf, w, h) {
+  const sharp = require('sharp');
+  const y0 = Math.round(h * 0.18), y1 = Math.round(h * 0.75);
+  const { data, info } = await sharp(buf)
+    .extract({ left: 0, top: y0, width: Math.round(w), height: Math.max(1, y1 - y0) })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  let n = 0;
+  for (let i = 0; i < data.length; i += info.channels) {
+    // dung sai rộng: đường 1px bị khử răng cưa nên hiếm khi trúng đúng giá trị gốc
+    if (Math.abs(data[i] - 106) < 60 && Math.abs(data[i + 1] - 87) < 60 && Math.abs(data[i + 2] - 245) < 45 && data[i + 2] - data[i] > 60) n += 1;
+  }
+  return n;
+}
+
+/** Số khối theo CÂY ĐỐI TƯỢNG — huy hiệu đếm cạnh tên tầng (`Object3DTree.tsx:133`). Đây là con
+ *  số NGƯỜI DÙNG ĐỌC ĐƯỢC, và là thứ duy nhất phân biệt "xoá 1 trong 2 khối" với "không xoá gì"
+ *  (nhãn khung nhìn quá thô: còn 1 khối thì vẫn ghi "Khối xám"). */
+async function soKhoiTrenCay(page) {
+  return page.evaluate(() => {
+    const s = [...document.querySelectorAll('span')].filter(
+      (x) => /font-mono/.test(String(x.className || '')) && /^\d+$/.test((x.textContent || '').trim()),
+    );
+    return s.length ? s.reduce((a, x) => a + Number(x.textContent.trim()), 0) : 0;
+  });
+}
+
+async function moTrinhDuyet(viewport) {
+  const browser = await chromium.launch({
+    headless: !HEADED,
+    executablePath: CHROME,
+    // swiftshader: máy kiểm không có GPU; WebGL2 vẫn chạy (đã đo: "WebGL 2.0 (OpenGL ES 3.0)").
+    args: ['--no-sandbox', '--enable-unsafe-swiftshader', '--use-gl=angle', '--use-angle=swiftshader'],
+  });
+  const ctx = await browser.newContext({
+    viewport: viewport || { width: 1600, height: 1000 },
+    deviceScaleFactor: DPR,
+  });
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => loiTrang.push(String(e).slice(0, 200)));
+  return { browser, ctx, page };
+}
+const loiTrang = [];
+
+
+/**
+ * Điều hướng CHẮC TAY. Next hay huỷ lượt đi đang chạy khi một `router.replace` phía client nổ ra
+ * cùng lúc (`net::ERR_ABORTED`) — không phải lỗi app, nhưng làm bộ đo chết oan. Thử lại tối đa 3
+ * lượt rồi mới chịu thua, và luôn xác nhận bằng URL cuối chứ không tin lượt goto.
+ */
+async function diToi(page, url, cho = 3000) {
+  for (let i = 0; i < 3; i += 1) {
+    await page.goto(url, { waitUntil: 'domcontentloaded' }).catch(() => {});
+    await page.waitForTimeout(cho);
+    if (page.url().startsWith(url.split('?')[0])) return true;
+  }
+  return page.url().startsWith(url.split('?')[0]);
+}
+
+/** Đăng nhập qua chính API của app (cookie vào đúng context trình duyệt). */
+async function dangNhap(page) {
+  // ⚠️ PHẢI vào một TRANG THẬT của app trước (không phải `/favicon.ico` như bản cũ): đứng ở
+  // trang 404 của tài nguyên tĩnh rồi điều hướng tiếp thì Next huỷ luôn lượt đi
+  // (`net::ERR_ABORTED`) và trình duyệt nằm lại chỗ cũ — đã dính, mất một vòng đo.
+  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+  // Hồ sơ trình duyệt trắng tinh sẽ bị đẩy sang /intro; người dùng thật đã xem từ lâu. Đặt cờ là
+  // đi thẳng — không phải sửa app cho hợp bộ kiểm.
+  await page.evaluate(() => { try { localStorage.setItem('if_intro_seen_v1', '1'); } catch {} }).catch(() => {});
+  const ma = await page.evaluate(
+    ({ e, m }) =>
+      fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ identifier: e, password: m }),
+      }).then((r) => r.status).catch(() => 0),
+    { e: EMAIL, m: MATKHAU },
+  );
+  if (ma !== 200) throw new Error(`đăng nhập thất bại (HTTP ${ma}) — kiểm IF_EMAIL/IF_MATKHAU`);
+
+  /**
+   * ⚠️ BƯỚC NÀY KHÔNG THỪA — thiếu nó là bộ đo TỰ TẠO RA một lỗi không có thật (đã dính, và suýt
+   * ghi thành lỗi sản phẩm).
+   *
+   * App có HAI nguồn cho "ai đang đăng nhập": ① cookie phiên (máy chủ cấp, `/api/auth/login` ở
+   * trên đã có) ② `localStorage['interiorflow.lastUserId']` — và **lớp LƯU TRỮ bám vào nguồn ②**:
+   * `PresentSheets.tsx:322` mở bằng `getLastUserId()`, rỗng thì `:335-338` rẽ nhánh THUẦN
+   * IN-MEMORY và `saveSheets()` chặn ngay dòng đầu ⇒ không ghi IndexedDB dòng nào, tải lại là
+   * trắng. Khoá ② chỉ được ghi ở `LoginForm.tsx:135` (đăng nhập BẰNG BIỂU MẪU) và
+   * `HomeScreen.tsx:264` (ghé Home).
+   *
+   * Đăng nhập bằng API rồi vào thẳng `/projects/<id>/present` ⇒ cookie hợp lệ, app chạy bình
+   * thường, nhưng ② rỗng ⇒ đo ra "mất hồ sơ khi tải lại" trong khi người dùng thật (đăng nhập
+   * bằng biểu mẫu) KHÔNG gặp. Ghé Home một lượt để ② được ghi, đưa bộ đo về đúng trạng thái của
+   * người dùng thật. Đo xong xác nhận `lastUserId` có giá trị, không tin suông.
+   */
+  await diToi(page, `${BASE}/`, 4000);
+  for (let i = 0; i < 8; i += 1) {
+    const uid = await page.evaluate(() => { try { return localStorage.getItem('interiorflow.lastUserId'); } catch { return null; } });
+    if (uid) return true;
+    await page.waitForTimeout(800);
+  }
+  console.log('⚠ lastUserId vẫn rỗng sau khi ghé Home — lớp lưu trữ sẽ chạy in-memory, số đo về "tải lại" KHÔNG đáng tin');
+  return true;
+}
+
+/** Dự án để kiểm. Ưu tiên IF_DU_AN → tệp nhớ → tạo mới qua ĐÚNG đường app dùng (POST /api/flows). */
+async function baoDamDuAn(page) {
+  if (process.env.IF_DU_AN) return process.env.IF_DU_AN;
+  const nho = path.join(OUT, 'du-an.txt');
+  if (fs.existsSync(nho)) {
+    const id = fs.readFileSync(nho, 'utf8').trim();
+    // Thử LẠI vài lượt: ngay sau đăng nhập, trang /login hay tự điều hướng, và một `fetch` rơi
+    // đúng lúc đó trả lỗi mạng — tin lượt đầu là đẻ thêm một dự án rác mỗi lần chạy (đã dính).
+    for (let i = 0; i < 3 && id; i += 1) {
+      const ok = await page
+        .evaluate((x) => fetch(`/api/projects/${x}/overview`).then((r) => r.ok).catch(() => null), id)
+        .catch(() => null);
+      if (ok === true) return id;
+      if (ok === false) break; // trả lời rõ ràng là "không còn/không thấy" ⇒ tạo mới
+      await page.waitForTimeout(800);
+    }
+  }
+  const id = await page.evaluate(() =>
+    fetch('/api/flows', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ type: 'project', name: 'KIỂM APP THẬT 04/09' }),
+    })
+      .then((r) => r.json())
+      .then((j) => j?.project?.id || '')
+      .catch(() => ''),
+  );
+  if (!id) throw new Error('không tạo được dự án kiểm thử');
+  fs.writeFileSync(nho, id);
+  return id;
+}
+
+/** Vào chặng 3D, bật mode "Vẽ 3D", đợi canvas WebGL. */
+async function mo3D(page, duAn) {
+  await diToi(page, `${BASE}/projects/${duAn}/render`, 3500);
   const ve3d = page.locator('button[title^="Vẽ 3D"]').first();
-  if (await ve3d.count().catch(() => 0)) { await ve3d.click().catch(() => {}); await page.waitForTimeout(4000); }
-  // đóng tấm Thư viện nếu tự mở
-  const close = page.locator('button[aria-label="Đóng Thư viện"]').first();
-  if (await close.count().catch(() => 0)) { await close.click().catch(() => {}); await page.waitForTimeout(800); }
-  await page.waitForFunction(() => [...document.querySelectorAll('canvas')].some((c) => c.width > 500), null, { timeout: 30000 }).catch(() => {});
-  await page.waitForTimeout(1500);
-  return page.locator('canvas').first();
+  if (await ve3d.count().catch(() => 0)) { await ve3d.click().catch(() => {}); await page.waitForTimeout(3500); }
+  const dong = page.locator('button[aria-label="Đóng Thư viện"]').first();
+  if (await dong.count().catch(() => 0)) { await dong.click().catch(() => {}); await page.waitForTimeout(600); }
+  await page
+    .waitForFunction(() => [...document.querySelectorAll('canvas')].some((c) => c.width > 500), null, { timeout: 30000 })
+    .catch(() => {});
+  await page.waitForTimeout(1200);
 }
 
-/** Hộp của canvas viewport (canvas LỚN nhất — canvas nhỏ là ViewCube). */
-async function viewportBox(page) {
+/** Hộp của canvas viewport LỚN NHẤT (canvas nhỏ là ViewCube). */
+async function hopViewport(page) {
   return page.evaluate(() => {
     const c = [...document.querySelectorAll('canvas')].sort((a, b) => (b.width || 0) - (a.width || 0))[0];
     if (!c) return null;
@@ -80,645 +291,483 @@ async function viewportBox(page) {
   });
 }
 
-async function inspectorText(page) {
-  // Đọc theo DẤU HIỆU NỘI DUNG (nhãn loại khối in hoa + dòng "Đã chọn trong khung nhìn"), không
-  // theo vị trí panel: bề rộng cửa sổ đổi là mọi phép lọc theo toạ độ sai ngay (đã dính 1 lần).
-  // ⚠️ BẪY ĐÃ DÍNH: bắt từ chữ hoa đầu tiên rồi cắt 160 ký tự thì luôn tóm nhầm nhãn "KHỐI" của
-  // rail bên trái và KHÔNG BAO GIỜ tới được Inspector ⇒ báo "không trúng" trong khi app chọn
-  // đúng (ảnh chụp chứng minh). Nay tìm DẤU HIỆU CHỌN trên TOÀN BỘ body, không cắt cửa sổ.
-  return page.evaluate(() => {
-    const t = (document.body.innerText || '').replace(/\n+/g, ' | ');
-    const i = t.indexOf('Đã chọn trong khung nhìn');
-    if (i >= 0) return t.slice(Math.max(0, i - 160), i + 40);
-    return '';
-  });
+/** Nhãn khung nhìn — tín hiệu NGƯỜI DÙNG NHÌN THẤY cho "cảnh có khối hay không"
+ *  (`Render3DModeSkeleton.tsx:584`). */
+async function nhanKhungNhin(page) {
+  return page.evaluate(() => document.querySelector('.vplabel')?.textContent?.trim() || '');
 }
 
-/**
- * Ảnh chụp TRẠNG THÁI THẬT của Doc: id + cao độ + toạ độ. Đây là thứ dùng để khẳng định, KHÔNG
- * dùng pixel: xoay camera cũng đổi pixel, chỉ Doc mới phân biệt "khối đổi" với "máy ảnh đổi".
- */
-async function docSnapshot(page) {
-  return page.evaluate(() => {
-    try {
-      const ents = window.__cadStore?.getState?.().doc?.entities ?? [];
-      return ents.map((e) => ({
-        id: e.id,
-        h: e.heightMm ?? null,
-        // điểm đầu tiên tìm được — đủ để thấy khối có DỜI CHỖ hay không
-        p: e.points?.[0] ? [Math.round(e.points[0].x), Math.round(e.points[0].y)] : null,
-      }));
-    } catch {
-      return [];
-    }
-  });
-}
-
-/** Số khối trong Doc — nguồn thật để phân biệt "tạo/xoá" với "chỉ xoay camera". */
-async function entityCount(page) {
+/** Số khối theo cây đối tượng + kho (kho chỉ có ở bản dev). Trả cả hai để biết nguồn nào đã nói. */
+async function trangThaiKhoi(page) {
   return page.evaluate(() => {
     const w = window;
-    try {
-      return w.__cadStore?.getState?.().doc?.entities?.length ?? null;
-    } catch {
-      return null;
-    }
+    let kho = null;
+    try { kho = w.__cadStore?.getState?.().doc?.entities?.length ?? null; } catch {}
+    const nhan = document.querySelector('.vplabel')?.textContent?.trim() || '';
+    return { kho, nhan, coKhoiTheoNhan: /Khối xám/i.test(nhan) };
   });
 }
 
-/** Ảnh chụp cảnh dạng chuỗi để so "có đổi hình không" — dùng screenshot buffer, không đọc pixel
- *  WebGL (canvas không bật preserveDrawingBuffer nên đọc thẳng ra trắng). */
-async function sceneHash(page) {
-  const box = await viewportBox(page);
-  if (!box) return null;
-  const buf = await page.screenshot({ clip: { x: box.x, y: box.y, width: Math.min(box.w, 1200), height: Math.min(box.h, 700) } });
-  const crypto = require('crypto');
-  return crypto.createHash('sha256').update(buf).digest('hex').slice(0, 16);
+/** Kéo bằng CON TRỎ THẬT. steps cao để app nhận đủ pointermove (xem trước cử chỉ cần chúng). */
+async function keo(page, x1, y1, x2, y2, steps = 24) {
+  await page.mouse.move(x1, y1);
+  await page.waitForTimeout(120);
+  await page.mouse.down();
+  await page.waitForTimeout(120);
+  await page.mouse.move(x2, y2, { steps });
+  await page.waitForTimeout(180);
+  await page.mouse.up();
+  await page.waitForTimeout(900);
 }
 
+/* ── (1) CỬ CHỈ DỰNG KHỐI ──────────────────────────────────────────────────────────────────── */
+async function lenhCuChi(page, duAn) {
+  const kq = { muc: '1 · dựng khối bằng cử chỉ 3D', anh: [], doDuoc: {} };
+  await mo3D(page, duAn);
+  const box = await hopViewport(page);
+  kq.doDuoc.viewport = box ? `${so(box.w)}×${so(box.h)}` : null;
+  if (!box) { kq.ketQua = 'KHÔNG ĐO ĐƯỢC'; kq.vuong = 'không tìm thấy canvas viewport'; return kq; }
+
+  kq.doDuoc.nhanTruoc = await nhanKhungNhin(page);
+  kq.anh.push(await chup(page, '1a-truoc-khi-dung'));
+
+  // Lối chính của màn 3D rỗng: nút "Bắt đầu trong 3D" đóng card chào + cầm sẵn công cụ tường.
+  const batDau = page.locator('button', { hasText: /Bắt đầu trong 3D|Start in 3D/ }).first();
+  kq.doDuoc.coNutBatDau = (await batDau.count().catch(() => 0)) > 0;
+  if (kq.doDuoc.coNutBatDau) { await batDau.click().catch(() => {}); await page.waitForTimeout(1500); }
+
+  const box2 = (await hopViewport(page)) || box;
+  const cx = box2.x + box2.w * 0.5;
+  const cy = box2.y + box2.h * 0.62; // thấp hơn tâm: chắc chắn rơi trên MẶT SÀN, không phải chân trời
+
+  // ① kéo THẬT — mong đợi: nhãn đổi sang "Khối xám · chưa vật liệu"
+  const anhTruoc = await page.screenshot({ clip: cat(box2) });
+  await keo(page, cx - box2.w * 0.16, cy, cx + box2.w * 0.16, cy - box2.h * 0.06);
+  await page.waitForTimeout(1200);
+  const sauKeo = await trangThaiKhoi(page);
+  kq.doDuoc.sauKhiKeo = sauKeo;
+  kq.anh.push(await chup(page, '1b-sau-khi-keo'));
+  const anhSau = await page.screenshot({ clip: cat(box2) });
+  kq.doDuoc.doiHinh = await soDiemAnh(anhTruoc, anhSau);
+
+  const daTao = sauKeo.coKhoiTheoNhan || (sauKeo.kho !== null && sauKeo.kho > 0);
+  kq.doDuoc.khoiDaSinh = daTao;
+
+  // ② HOÀN TÁC
+  if (daTao) {
+    await page.keyboard.press('Control+z');
+    await page.waitForTimeout(1600);
+    const sauUndo = await trangThaiKhoi(page);
+    kq.doDuoc.sauHoanTac = sauUndo;
+    kq.doDuoc.hoanTacLuiDuoc = !sauUndo.coKhoiTheoNhan && (sauUndo.kho === null || sauUndo.kho === 0);
+    kq.anh.push(await chup(page, '1c-sau-hoan-tac'));
+  }
+
+  // ③ KÉO QUÁ NHỎ — ngưỡng MIN_KICH_THUOC_MM = 20mm. Không đọc được kho ở bản dựng thật nên đo
+  //    theo thứ nhìn thấy: kéo 1 điểm ảnh KHÔNG được sinh khối. Kèm ước lượng mm/điểm-ảnh suy từ
+  //    cú kéo lớn ở trên để nói rõ 1px tương ứng bao nhiêu mm — nếu 1px ≥ 20mm thì phép thử này
+  //    KHÔNG kết luận được về ngưỡng, và phải khai đúng như vậy.
+  if (kq.doDuoc.coNutBatDau) {
+    const lai = page.locator('button', { hasText: /Bắt đầu trong 3D|Start in 3D/ }).first();
+    if (await lai.count().catch(() => 0)) { await lai.click().catch(() => {}); await page.waitForTimeout(1200); }
+  }
+  const nhanTruocNho = await nhanKhungNhin(page);
+  await keo(page, cx, cy, cx + 1, cy, 2);
+  await page.waitForTimeout(1000);
+  const sauNho = await trangThaiKhoi(page);
+  kq.doDuoc.keoQuaNho = { nhanTruoc: nhanTruocNho, nhanSau: sauNho.nhan, kho: sauNho.kho };
+  kq.doDuoc.keoNhoBiHuy = sauNho.nhan === nhanTruocNho;
+  kq.anh.push(await chup(page, '1d-keo-qua-nho'));
+
+  kq.ketQua = daTao ? (kq.doDuoc.hoanTacLuiDuoc === false ? 'FAIL' : 'PASS') : 'FAIL';
+  return kq;
+}
+
+/* ── (2) CHỌN · VIỀN HỘP BAO · XOÁ ─────────────────────────────────────────────────────────── */
+async function lenhChonXoa(page, duAn) {
+  const kq = { muc: '2 · chọn / viền hộp bao / xoá khối 3D', anh: [], doDuoc: {} };
+  await mo3D(page, duAn);
+  let box = await hopViewport(page);
+  if (!box) { kq.ketQua = 'KHÔNG ĐO ĐƯỢC'; kq.vuong = 'không có canvas'; return kq; }
+
+  // cần MỘT khối để chọn — dựng bằng chính cử chỉ vừa kiểm ở mục 1
+  if (!(await trangThaiKhoi(page)).coKhoiTheoNhan) {
+    /* Cầm công cụ tường. HAI đường, vì đường thứ nhất chỉ tồn tại LẦN ĐẦU: nút "Bắt đầu trong 3D"
+       nằm trên card chào, mà card chào đã đóng thì không quay lại (mục 1 chạy trước trong lượt
+       `tat-ca` đã đóng nó) ⇒ mục này từng báo KHÔNG ĐO ĐƯỢC vì thừa hưởng trạng thái của mục
+       trước. Đường thứ hai — nút `Wall` ở bảng lệnh trái — luôn có. */
+    const batDau = page.locator('button', { hasText: /Bắt đầu trong 3D|Start in 3D/ }).first();
+    if (await batDau.count().catch(() => 0)) { await batDau.click().catch(() => {}); await page.waitForTimeout(1400); }
+    // ⛔ KHÔNG có đường dự phòng bằng nút bảng lệnh. Đã thử `Rectangle` và ĐO ĐƯỢC là nó
+    //    ĐIỀU HƯỚNG SANG `/cad` (khớp nhầm một nút khác cùng chữ) — khung nhìn 3D biến mất,
+    //    `.vplabel` thành `null`, và mục này báo sai. Thà KHÔNG ĐO ĐƯỢC còn hơn đo một màn khác.
+    //    Điều kiện để mục này chạy được là card chào còn nguyên ⇒ xem cách `tat-ca` cấp
+    //    TRANG RIÊNG cho từng mục ở `main()`.
+    box = (await hopViewport(page)) || box;
+    const cx = box.x + box.w * 0.5, cy = box.y + box.h * 0.62;
+    await keo(page, cx - box.w * 0.16, cy, cx + box.w * 0.16, cy - box.h * 0.06);
+    await page.waitForTimeout(1400);
+  }
+  kq.doDuoc.coKhoiDeChon = (await trangThaiKhoi(page)).coKhoiTheoNhan;
+  if (!kq.doDuoc.coKhoiDeChon) { kq.ketQua = 'KHÔNG ĐO ĐƯỢC'; kq.vuong = 'không dựng được khối để chọn'; return kq; }
+
+  const fit = page.locator('button.fitbtn').first();
+  if (await fit.count().catch(() => 0)) { await fit.click().catch(() => {}); await page.waitForTimeout(1400); }
+  box = (await hopViewport(page)) || box;
+  kq.doDuoc.soKhoiBanDau = await soKhoiTrenCay(page);
+  kq.anh.push(await chup(page, '2a-truoc-khi-chon', cat(box)));
+  const anhChuaChon = await page.screenshot({ clip: cat(box) });
+  kq.doDuoc.mauNhanTruocChon = await demMauNhan(anhChuaChon, box.w * DPR, box.h * DPR);
+
+  // Quét NHIỀU ĐIỂM để chạm cả mặt đỉnh lẫn mặt đứng — mục tiêu là chứng minh KHÔNG chỉ mặt trên
+  // mới bấm được. Ghi lại mọi điểm đã thử, kể cả điểm trượt.
+  const diem = [];
+  let daChon = false;
+  for (const fy of [0.40, 0.48, 0.56, 0.64]) {
+    for (const fx of [0.36, 0.46, 0.56, 0.66]) {
+      await page.mouse.click(box.x + box.w * fx, box.y + box.h * fy);
+      await page.waitForTimeout(480);
+      const trung = await page.evaluate(() => /Đã chọn trong khung nhìn/.test(document.body.innerText || ''));
+      diem.push({ fx, fy, trung });
+      if (trung) { daChon = true; break; }
+    }
+    if (daChon) break;
+  }
+  kq.doDuoc.quetChon = diem;
+  kq.doDuoc.soDiemDaThu = diem.length;
+  kq.doDuoc.chonDuoc = daChon;
+  kq.anh.push(await chup(page, '2b-sau-khi-chon', cat(box)));
+
+  // VIỀN HỘP BAO — đếm điểm ảnh MÀU NHẤN, không so cả khung hình (xem docstring `demMauNhan`).
+  const anhDaChon = await page.screenshot({ clip: cat(box) });
+  kq.doDuoc.mauNhanSauChon = await demMauNhan(anhDaChon, box.w * DPR, box.h * DPR);
+  kq.doDuoc.vienHopBaoThemDiem = kq.doDuoc.mauNhanSauChon - kq.doDuoc.mauNhanTruocChon;
+  kq.doDuoc.vienHopBaoNhinThayDuoc = kq.doDuoc.vienHopBaoThemDiem > 500;
+
+  // LỆNH XOÁ — đo RIÊNG hai mặt tiền, vì chúng có thể hỏng độc lập:
+  //   ① PHÍM `Delete`  ② CHIP "Xoá" trên thanh công cụ
+  const docChip = () =>
+    page.evaluate(() => {
+      const b = [...document.querySelectorAll('button,[role="button"]')].find(
+        (e) => /^(Xoá|Delete)$/i.test(((e.getAttribute('aria-label') || e.textContent || '')).trim()),
+      );
+      if (!b) return { co: false };
+      return { co: true, moDi: b.getAttribute('aria-disabled') === 'true' || !!b.disabled };
+    });
+  kq.doDuoc.chipXoaKhiDangChon = await docChip();
+
+  const truoc = await soKhoiTrenCay(page);
+  await page.keyboard.press('Delete');
+  await page.waitForTimeout(1600);
+  const sauPhim = await soKhoiTrenCay(page);
+  kq.doDuoc.xoaBangPhim = { truoc, sau: sauPhim, chay: sauPhim < truoc };
+  kq.anh.push(await chup(page, '2c-sau-phim-delete', cat(box)));
+
+  // Chip chỉ được thử KHI phím đã trượt — để biết "hỏng cả hai" hay "chỉ hỏng đường bàn phím".
+  if (kq.doDuoc.xoaBangPhim.chay) {
+    kq.doDuoc.xoaBangChip = { thu: false, lyDo: 'phím đã xoá được, không cần thử tới chip' };
+  } else {
+    const chip = page.locator('[aria-label="Xoá"]').first();
+    const coChip = (await chip.count().catch(() => 0)) > 0;
+    if (coChip) { await chip.click({ force: true }).catch(() => {}); await page.waitForTimeout(1600); }
+    const sauChip = await soKhoiTrenCay(page);
+    kq.doDuoc.xoaBangChip = { thu: true, coChip, sau: sauChip, chay: coChip && sauChip < truoc };
+  }
+  kq.doDuoc.nhanSauXoa = await nhanKhungNhin(page);
+  kq.doDuoc.xoaDuoc = kq.doDuoc.xoaBangPhim.chay || kq.doDuoc.xoaBangChip.chay === true;
+  kq.anh.push(await chup(page, '2d-sau-khi-xoa', cat(box)));
+
+  // PASS đòi ĐỦ BA: chọn được · viền hộp bao hiện ra · xoá chạy BẰNG PHÍM. Cố ý tính phím vào
+  // điều kiện: chip chạy mà phím câm vẫn là năng lực hụt một mặt tiền đã khai (`key:['Delete']`).
+  kq.ketQua = kq.doDuoc.chonDuoc && kq.doDuoc.vienHopBaoNhinThayDuoc && kq.doDuoc.xoaBangPhim.chay ? 'PASS' : 'FAIL';
+  return kq;
+}
+
+/* ── (3) VIEWPORT TRÊN MÀN RETINA ──────────────────────────────────────────────────────────── */
+async function lenhRetina(page, duAn) {
+  const kq = { muc: '3 · viewport 3D không bị cắt trên retina', anh: [], doDuoc: { dpr: DPR } };
+  await mo3D(page, duAn);
+  const d = await page.evaluate(() => {
+    const c = [...document.querySelectorAll('canvas')].sort((a, b) => (b.width || 0) - (a.width || 0))[0];
+    if (!c) return null;
+    const oc = c.closest('.vpscene') || c.parentElement;
+    const ov = c.closest('.vp3d') || oc;
+    const r = c.getBoundingClientRect();
+    const rc = oc.getBoundingClientRect();
+    const rv = ov.getBoundingClientRect();
+    const cs = getComputedStyle(c);
+    return {
+      dprThat: window.devicePixelRatio,
+      canvasHienThi: { w: r.width, h: r.height },
+      canvasBoDem: { w: c.width, h: c.height },
+      oChua: { w: rc.width, h: rc.height },
+      khungNgoai: { w: rv.width, h: rv.height },
+      cssWidth: cs.width, cssHeight: cs.height, display: cs.display,
+    };
+  });
+  if (!d) { kq.ketQua = 'KHÔNG ĐO ĐƯỢC'; kq.vuong = 'không có canvas'; return kq; }
+  const tranW = so(d.canvasHienThi.w - d.oChua.w);
+  const tranH = so(d.canvasHienThi.h - d.oChua.h);
+  kq.doDuoc = {
+    ...kq.doDuoc, ...d,
+    tranNgang: tranW, tranDoc: tranH,
+    tyLeBoDem: so(d.canvasBoDem.w / Math.max(1, d.canvasHienThi.w)),
+  };
+  // Khớp = hiển thị bằng ô chứa (sai số ≤1px do làm tròn bố cục).
+  kq.doDuoc.khop = Math.abs(tranW) <= 1 && Math.abs(tranH) <= 1;
+  kq.anh.push(await chup(page, '3a-viewport-retina'));
+  kq.ketQua = kq.doDuoc.khop ? 'PASS' : 'FAIL';
+  return kq;
+}
+
+
+/**
+ * Chặng 2D của một dự án MỚI mở ra ở màn rỗng ("… chưa có bản vẽ nào") — hàng tab và nút
+ * "Gửi sang Trình chiếu" chỉ tồn tại KHI đã có ít nhất một bản vẽ. Bấm "Tạo bản vẽ mới" cho tới
+ * khi hàng tab xuất hiện; trả về việc có bản vẽ hay không để nơi gọi khai KHÔNG ĐO ĐƯỢC thay vì
+ * đoán.
+ */
+async function baoDamCoBanVe(page) {
+  for (let i = 0; i < 3; i += 1) {
+    const daCo = await page.locator('button', { hasText: /Gửi sang Trình chiếu/ }).count().catch(() => 0);
+    if (daCo) return true;
+    const tao = page.locator('button', { hasText: /^\s*Tạo bản vẽ mới\s*$/ }).first();
+    if (!(await tao.count().catch(() => 0))) return false;
+    await tao.click().catch(() => {});
+    await page.waitForTimeout(3500);
+  }
+  return (await page.locator('button', { hasText: /Gửi sang Trình chiếu/ }).count().catch(() => 0)) > 0;
+}
+
+/* ── (4) TỜ BẢN VẼ → TRÌNH CHIẾU ───────────────────────────────────────────────────────────── */
+async function lenhToPresent(page, duAn) {
+  const kq = { muc: '4 · bản vẽ → Trình chiếu', anh: [], doDuoc: {} };
+  await diToi(page, `${BASE}/projects/${duAn}/cad`, 5000);
+  kq.doDuoc.daCoSanBanVe = (await page.locator('button', { hasText: /Gửi sang Trình chiếu/ }).count().catch(() => 0)) > 0;
+  await baoDamCoBanVe(page);
+  kq.anh.push(await chup(page, '4a-chang-2d'));
+
+  const nut = page.locator('button', { hasText: /Gửi sang Trình chiếu/ }).first();
+  kq.doDuoc.coNutGui = (await nut.count().catch(() => 0)) > 0;
+  if (!kq.doDuoc.coNutGui) {
+    kq.ketQua = 'KHÔNG ĐO ĐƯỢC';
+    kq.vuong = 'chặng 2D không có bản vẽ nào nên hàng tab + nút gửi không tồn tại';
+    return kq;
+  }
+  await nut.click();
+
+  /* ① CẦU RA — tờ có được ghi sang kho vận chuyển không, và mang theo NHỮNG GÌ.
+     ⚠️ PHẢI BẮT NHANH: kho này là CONSUME-ONCE. Khi chặng Trình chiếu đã có hồ sơ sẵn thì
+     `CongThietLapTrang` mount ngay và tiêu thụ tờ trong vài trăm mili-giây — đọc ở mốc +1500ms là
+     thấy rỗng và tưởng "cầu ra hỏng" (đã dính). Nên dò 100ms một lần, lấy giá trị đầu tiên bắt
+     được. Bắt hụt KHÔNG phải bằng chứng hỏng — xem cách tính kết luận ở cuối hàm. */
+  let stash = null;
+  for (let i = 0; i < 30 && !stash; i += 1) {
+    stash = await page
+      .evaluate(() => { try { return sessionStorage.getItem('interiorflow.toBanVeHandoff'); } catch { return null; } })
+      .catch(() => null);
+    if (!stash) await page.waitForTimeout(100);
+  }
+  kq.doDuoc.cauRa = (() => {
+    if (!stash) return { coTo: false };
+    try {
+      const t = JSON.parse(stash)[0];
+      return {
+        coTo: true, khoGiay: t.khoGiay, huong: t.huong, le: t.le,
+        tyLe: t.tyLe ? `1:${t.tyLe.n}` : null,
+        tenBanVe: t.khungTen?.tenBanVe ?? null, duAnKhungTen: t.khungTen?.duAn ?? null,
+        neoChang: t.neo?.chang ?? null, coNeoDocId: !!t.neo?.docId,
+      };
+    } catch { return { coTo: true, loi: 'không đọc được JSON' }; }
+  })();
+
+  await page.waitForTimeout(5000);
+  kq.doDuoc.urlSauGui = page.url();
+  if (!/\/present/.test(page.url())) await diToi(page, `${BASE}/projects/${duAn}/present`, 4000);
+
+  /**
+   * ⚠️ CỬA NHẬN CHỈ MOUNT KHI ĐÃ CÓ HỒ SƠ. `CongThietLapTrang` nằm trong `PresentEditor`; dự án
+   * chưa có deck nào thì chặng Trình chiếu đứng ở màn CHỌN MẪU và cửa nhận chưa dựng ⇒ đo lúc đó
+   * sẽ báo "mất tờ" oan. Tờ KHÔNG mất (còn nguyên trong sessionStorage, consume-once chưa chạy) —
+   * nên ở đây tạo hồ sơ trống rồi mới đo.
+   */
+  const taoTrong = page.locator('text=Tạo hồ sơ trống').first();
+  kq.doDuoc.phaiTaoHoSoTruoc = (await taoTrong.count().catch(() => 0)) > 0;
+  if (kq.doDuoc.phaiTaoHoSoTruoc) { await taoTrong.click().catch(() => {}); await page.waitForTimeout(6000); }
+
+  /** Đọc mặt CỬA NHẬN. Regex KHÔNG PHÂN BIỆT HOA/THƯỜNG — panel viết nhãn bằng `text-transform`
+   *  nên `innerText` trả về "KHỔ GIẤY", bắt bằng /Khổ giấy/ là trượt (đã dính một lượt). */
+  const docCua = async () => {
+    await page.waitForTimeout(1500);
+    return page.evaluate(() => {
+      const t = document.body.innerText || '';
+      const chip = /Thiết lập trang\s*([A-Z]\d)\s*[·.]?\s*(1\s*:\s*\d+)/i.exec(t);
+      return {
+        coCuaNhanTo: /thiết lập trang/i.test(t),
+        chipKho: chip ? chip[1] : null,
+        chipTyLe: chip ? chip[2].replace(/\s/g, '') : null,
+        coKhungTen: /khung tên/i.test(t),
+        coKhoGiay: /khổ giấy/i.test(t),
+        coTyLeBanVe: /tỉ lệ bản vẽ/i.test(t),
+        coDuongVe2D: /quay lại 2d/i.test(t),
+        nguon: (/Nguồn:\s*([^\n]+)/i.exec(t) || [])[1] || null,
+      };
+    });
+  };
+  kq.doDuoc.benTrinhChieu = await docCua();
+  kq.anh.push(await chup(page, '4c-trinh-chieu-nhan-to'));
+
+  // ② TẢI LẠI TRANG rồi mở lại — cầu consume-once từng làm MẤT tờ khi component dựng hai lần.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(9000);
+  kq.doDuoc.sauTaiLai = await docCua();
+  kq.anh.push(await chup(page, '4d-sau-tai-lai'));
+
+  const b = kq.doDuoc.benTrinhChieu, r = kq.doDuoc.sauTaiLai, c = kq.doDuoc.cauRa;
+  // Bắt được cầu ra ⇒ đối chiếu ĐÚNG hai đầu. Bắt hụt (bị tiêu thụ quá nhanh) ⇒ KHÔNG kết luận
+  // hỏng, chỉ khai là không quan sát được; bằng chứng lúc đó là giá trị hợp lệ ở bên NHẬN.
+  kq.doDuoc.mangDungTyLeVaKho = c.coTo
+    ? b.chipKho === c.khoGiay && b.chipTyLe === c.tyLe
+    : 'không quan sát được cầu ra (tiêu thụ quá nhanh) — đối chiếu bằng giá trị bên nhận';
+  kq.doDuoc.benNhanCoGiaTriThat = !!b.chipKho && !!b.chipTyLe;
+  kq.doDuoc.songQuaTaiLai = !!r.coCuaNhanTo && r.chipKho === b.chipKho && r.chipTyLe === b.chipTyLe;
+  const hopCauRa = c.coTo ? kq.doDuoc.mangDungTyLeVaKho === true : kq.doDuoc.benNhanCoGiaTriThat;
+  kq.ketQua = b.coCuaNhanTo && hopCauRa && b.coKhungTen && kq.doDuoc.songQuaTaiLai ? 'PASS' : 'FAIL';
+  return kq;
+}
+
+/* ── (5) HÀNG TAB Ở KHỔ HẸP ────────────────────────────────────────────────────────────────── */
+async function lenhHep(duAn) {
+  const kq = { muc: '5 · hàng tab bản vẽ ở khổ desktop hẹp', anh: [], doDuoc: { khoDo: [] } };
+  for (const kho of [{ width: 1280, height: 800 }, { width: 1152, height: 720 }]) {
+    const { browser, page } = await moTrinhDuyet(kho);
+    try {
+      await dangNhap(page);
+      await diToi(page, `${BASE}/projects/${duAn}/cad`, 5500);
+      if (!(await baoDamCoBanVe(page))) {
+        kq.doDuoc.khoDo.push({ kho: `${kho.width}×${kho.height}`, coNut: false });
+        continue;
+      }
+      /* ÉP HÀNG TAB CHỊU TẢI. Một tờ thì không gì tràn được — câu hỏi thật là "nút mới có bóp
+         chết hàng tab khi có nhiều tờ không". Thêm tờ tới khi dải tab bắt đầu phải cuộn, trần 8
+         lượt để không chạy vô tận. */
+      const them = page.locator('button[aria-label="Thêm bản vẽ"], button[title="Thêm bản vẽ"]').first();
+      kq.doDuoc.coNutThem = (await them.count().catch(() => 0)) > 0;
+      let daThem = 0;
+      for (let i = 0; i < 8 && kq.doDuoc.coNutThem; i += 1) {
+        await them.click().catch(() => {});
+        await page.waitForTimeout(900);
+        daThem += 1;
+      }
+      await page.waitForTimeout(1500);
+
+      const d = await page.evaluate(() => {
+        const nut = [...document.querySelectorAll('button')].find((e) => /Gửi sang Trình chiếu/.test(e.textContent || ''));
+        if (!nut) return { coNut: false };
+        const rN = nut.getBoundingClientRect();
+        // HÀNG TAB = tổ tiên đầu tiên RỘNG HƠN HẲN nút (nút nằm trong ổ phải hẹp, đi lên 1-2 bậc
+        // vẫn chỉ là ổ phải — đã đo nhầm một lượt vì lấy đúng ổ đó làm "hàng").
+        let hang = nut.parentElement;
+        for (let i = 0; i < 6 && hang; i += 1) {
+          const r = hang.getBoundingClientRect();
+          if (r.width > rN.width * 2.5) break;
+          hang = hang.parentElement;
+        }
+        const rH = hang.getBoundingClientRect();
+        const oTab = hang.firstElementChild;
+        const rT = oTab.getBoundingClientRect();
+        const soTab = oTab.querySelectorAll('button').length;
+        return {
+          coNut: true,
+          soTab,
+          nut: { x: Math.round(rN.left), w: Math.round(rN.width), phai: Math.round(rN.right) },
+          hang: { x: Math.round(rH.left), w: Math.round(rH.width), phai: Math.round(rH.right), cao: Math.round(rH.height) },
+          oTab: { w: Math.round(rT.width), cuonNgang: oTab.scrollWidth, tran: oTab.scrollWidth - oTab.clientWidth },
+          nutBiCat: rN.right > rH.right + 1 || rN.left < rH.left - 1,
+          nutHepDi: Math.round(rN.width) < 90,
+          bodyTran: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+          rongCuaSo: window.innerWidth,
+        };
+      });
+      const anh = await chup(page, `5-tab-${kho.width}x${kho.height}`);
+      kq.anh.push(anh);
+      /* VỠ = một trong bốn: nút bị cắt ra ngoài hàng · hàng cao gấp đôi (đã xuống dòng) · trang
+         cuộn ngang · nút bị bóp hẹp tới mức mất chữ. Dải tab TRÀN thì KHÔNG tính là vỡ nếu nó
+         cuộn được — đó là hành vi đúng của một dải tab nhiều tờ. */
+      const vo = !d.coNut || d.nutBiCat || d.hang.cao > 60 || d.bodyTran > 0 || d.nutHepDi;
+      kq.doDuoc.khoDo.push({ kho: `${kho.width}×${kho.height}`, daThemTo: daThem, ...d, vo, anh });
+    } finally {
+      await browser.close();
+    }
+  }
+  const doDu = kq.doDuoc.khoDo.every((k) => k.coNut);
+  kq.ketQua = !doDu ? 'KHÔNG ĐO ĐƯỢC' : kq.doDuoc.khoDo.some((k) => k.vo) ? 'FAIL' : 'PASS';
+  if (!doDu) kq.vuong = 'không thấy nút "Gửi sang Trình chiếu" ở một trong hai khổ';
+  return kq;
+}
+
+/* ── điều phối ─────────────────────────────────────────────────────────────────────────────── */
 async function main() {
   const cmd = process.argv[2] || 'probe';
-  // HEADLESS: bộ kiểm chạy nền, không chiếm màn hình người dùng. Sự kiện chuột của Playwright
-  // vẫn là TIN CẬY ở chế độ này (phát qua CDP, không phải dispatchEvent) nên pointer capture —
-  // thứ gizmo/push-pull phụ thuộc — vẫn hoạt động y như tay người.
-  const browser = await chromium.launch({ headless: process.env.HEADED !== '1' });
-  const ctx = await browser.newContext({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 2 });
-  const page = await ctx.newPage();
-  const log = [];
-  try {
-    const ok = await login(page);
-    log.push(`login: ${ok}`);
-    if (!ok) throw new Error('login failed');
-    await open3D(page);
-    const box = await viewportBox(page);
-    log.push(`viewport: ${box ? `${Math.round(box.w)}x${Math.round(box.h)}` : 'NONE'}`);
-    if (!box) throw new Error('no viewport');
+  const tatCa = cmd === 'tat-ca';
+  const ketQua = [];
+  const canTrinhDuyetChung = tatCa || ['probe', 'cu-chi', 'chon-xoa', 'retina', 'to-present'].includes(cmd);
 
-    // Fit view cho khung chuẩn
-    const fit = page.locator('button.fitbtn').first();
-    if (await fit.count().catch(() => 0)) { await fit.click().catch(() => {}); await page.waitForTimeout(1200); }
-
-    let cx = box.x + box.w * 0.45;
-    let cy = box.y + box.h * 0.45;
-
-    if (cmd === 'form') {
-      // CÔNG THỨC HÌNH: dựng vật nhiều bước → soi ngăn xếp → SỬA MỘT BƯỚC CŨ → hình đổi → hoàn tác.
-      let n0 = await entityCount(page);
-      if (!n0) {
-        const openCmd = page.locator('button[title="Mở bảng lệnh 3D"]').first();
-        if (await openCmd.count().catch(() => 0)) { await openCmd.click().catch(() => {}); await page.waitForTimeout(900); }
-        const w = page.locator('button', { hasText: /Thêm tường/ }).first();
-        if (await w.count().catch(() => 0)) { await w.click().catch(() => {}); await page.waitForTimeout(1600); }
-        const f = page.locator('button.fitbtn').first();
-        if (await f.count().catch(() => 0)) { await f.click().catch(() => {}); await page.waitForTimeout(1300); }
+  let duAn = null;
+  if (canTrinhDuyetChung || cmd === 'hep') {
+    const { browser, page } = await moTrinhDuyet();
+    try {
+      await dangNhap(page);
+      duAn = await baoDamDuAn(page);
+      console.log(`· dự án kiểm thử: ${duAn}`);
+      if (cmd === 'probe') {
+        await mo3D(page, duAn);
+        const box = await hopViewport(page);
+        console.log(`· viewport: ${box ? `${so(box.w)}×${so(box.h)}` : 'KHÔNG CÓ'}`);
+        console.log(`· nhãn khung nhìn: "${await nhanKhungNhin(page)}"`);
+        console.log(`· ảnh: ${await chup(page, '0-probe')}`);
       }
-      // chọn khối
-      for (const fy of [0.42, 0.5, 0.58]) {
-        let xong = false;
-        for (const fx of [0.5, 0.42, 0.58]) {
-          await page.mouse.click(box.x + box.w * fx, box.y + box.h * fy);
-          await page.waitForTimeout(420);
-          if (await inspectorText(page)) { xong = true; break; }
-        }
-        if (xong) break;
+      if (!tatCa) {
+        if (cmd === 'retina') ketQua.push(await lenhRetina(page, duAn));
+        if (cmd === 'cu-chi') ketQua.push(await lenhCuChi(page, duAn));
+        if (cmd === 'chon-xoa') ketQua.push(await lenhChonXoa(page, duAn));
+        if (cmd === 'to-present') ketQua.push(await lenhToPresent(page, duAn));
       }
-      // dựng ngăn xếp NHIỀU Ý ĐỊNH bằng chính store (đúng hàm UI gọi), rồi soi UI
-      const dung = await page.evaluate(() => {
-        const st = window.__cadStore.getState();
-        const ents = st.doc.entities;
-        // Group hình học của tường sinh từ HATCH (poché) chứ không phải polyline — gắn recipe
-        // nhầm entity thì evaluator không bao giờ đọc tới. Bám đúng entity mang `ops`/hình.
-        const wall = ents.find((e) => e.type === 'hatch') || ents.find((e) => e.type === 'polyline') || ents[0];
-        if (!wall) return 'không có khối';
-        const ps = wall.points || [];
-        const xs = ps.map((p) => p.x), ys = ps.map((p) => p.y);
-        const poly = [
-          { x: Math.min(...xs), y: Math.min(...ys) }, { x: Math.max(...xs), y: Math.min(...ys) },
-          { x: Math.max(...xs), y: Math.max(...ys) }, { x: Math.min(...xs), y: Math.max(...ys) },
-        ];
-        const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
-        const steps = [
-          { id: 'r1', enabled: true, label: 'Đùn', op: { op: 'extrude', h: 1050 } },
-          { id: 'r2', enabled: true, label: 'Thu đỉnh', op: { op: 'taper', polyMm: poly, topInsetMm: 80 } },
-          { id: 'r3', enabled: true, label: 'Bo cạnh', op: { op: 'bevelEx', polyMm: poly, radiusMm: 12, segments: 4, edges: 'top' } },
-          { id: 'r4', enabled: true, label: 'Lặp', op: { op: 'arrayLinear', n: 2, dx: 1800, dy: 0, dz: 0 } },
-        ];
-        st.updateEntities([{ ...wall, recipe: { steps } }]);
-        return { id: wall.id, soBuoc: steps.length };
-      });
-      log.push(`dựng ngăn xếp: ${JSON.stringify(dung)}`);
-      await page.waitForTimeout(1800);
-
-      // UI có bày theo Ý ĐỊNH không?
-      const tabSua = page.locator('button', { hasText: /^Sửa$/ }).first();
-      if (await tabSua.count().catch(() => 0)) { await tabSua.click().catch(() => {}); await page.waitForTimeout(1200); }
-      const nhanNhom = await page.evaluate(() => {
-        const t = document.body.innerText || '';
-        return ['HÌNH CHÍNH', 'KHOÉT', 'CHI TIẾT', 'HOA VĂN'].filter((k) => t.includes(k));
-      });
-      log.push(`nhóm ý định hiện trên UI: ${JSON.stringify(nhanNhom)}`);
-      const conMotVat = await page.evaluate(() => (window.__cadStore.getState().doc.entities || []).length);
-      log.push(`vẫn là MỘT vật chọn được: ${conMotVat} entity trong Doc (recipe không đẻ entity mới)`);
-
-      // SỬA MỘT BƯỚC CŨ (taper, bậc 2 — không phải bậc cuối) rồi xem hình có đổi
-      const h0 = await sceneHash(page);
-      await page.evaluate(() => {
-        const st = window.__cadStore.getState();
-        const e = st.doc.entities.find((x) => x.recipe);
-        const steps = e.recipe.steps.map((s) => (s.id === 'r2' ? { ...s, op: { ...s.op, topInsetMm: 420 } } : s));
-        st.updateEntities([{ ...e, recipe: { steps } }]);
-      });
-      await page.waitForTimeout(1800);
-      const h1 = await sceneHash(page);
-      log.push(`SỬA bậc CŨ (taper 80→420mm): hình đổi=${h0 !== h1}`);
-
-      // tắt một bước (không xoá tham số)
-      await page.evaluate(() => {
-        const st = window.__cadStore.getState();
-        const e = st.doc.entities.find((x) => x.recipe);
-        st.updateEntities([{ ...e, recipe: { steps: e.recipe.steps.map((s) => (s.id === 'r4' ? { ...s, enabled: false } : s)) } }]);
-      });
-      await page.waitForTimeout(1600);
-      const h2 = await sceneHash(page);
-      const giuThamSo = await page.evaluate(() => {
-        const e = window.__cadStore.getState().doc.entities.find((x) => x.recipe);
-        const s = e.recipe.steps.find((y) => y.id === 'r4');
-        return { enabled: s.enabled, conThamSo: s.op.n };
-      });
-      log.push(`TẮT bậc Lặp: hình đổi=${h1 !== h2} · tham số còn nguyên=${JSON.stringify(giuThamSo)}`);
-
-      const undo = page.locator('button[title*="Hoàn tác"], button[aria-label*="Hoàn tác"]').first();
-      if (await undo.count().catch(() => 0)) { await undo.click().catch(() => {}); await page.waitForTimeout(1500); }
-      const batLai = await page.evaluate(() => {
-        const e = window.__cadStore.getState().doc.entities.find((x) => x.recipe);
-        return e ? e.recipe.steps.find((y) => y.id === 'r4')?.enabled : null;
-      });
-      log.push(`HOÀN TÁC: bậc Lặp bật lại=${batLai}`);
-      await page.screenshot({ path: OUT + '/14-form-recipe.png' });
+    } finally {
+      await browser.close();
     }
-
-    if (cmd === 'boolean') {
-      // BOOLEAN: đo tận Doc — op có được ghi lên `ops` không, cutter có sinh ra không, và hình
-      // trong khung nhìn có đổi không. Ba câu hỏi tách bạch để biết đứt ở khâu nào.
-      let n0 = await entityCount(page);
-      if (!n0) {
-        const openCmd = page.locator('button[title="Mở bảng lệnh 3D"]').first();
-        if (await openCmd.count().catch(() => 0)) { await openCmd.click().catch(() => {}); await page.waitForTimeout(900); }
-        const w = page.locator('button', { hasText: /Thêm tường/ }).first();
-        if (await w.count().catch(() => 0)) { await w.click().catch(() => {}); await page.waitForTimeout(1600); }
-        const f = page.locator('button.fitbtn').first();
-        if (await f.count().catch(() => 0)) { await f.click().catch(() => {}); await page.waitForTimeout(1300); }
-        n0 = await entityCount(page);
-      }
-      let trung = false;
-      for (const fy of [0.42, 0.5, 0.58]) {
-        for (const fx of [0.5, 0.42, 0.58]) {
-          await page.mouse.click(box.x + box.w * fx, box.y + box.h * fy);
-          await page.waitForTimeout(420);
-          if (await inspectorText(page)) { trung = true; break; }
-        }
-        if (trung) break;
-      }
-      const doc = () => page.evaluate(() => {
-        const ents = window.__cadStore?.getState?.().doc?.entities ?? [];
-        return {
-          n: ents.length,
-          ops: ents.map((e) => ({ id: e.id.slice(-5), t: e.type, ops: (e.ops || []).map((o) => o.op) })).filter((x) => x.ops.length),
-        };
-      });
-      const d0 = await doc();
-      const h0 = await sceneHash(page);
-      // ⚠️ CÓ HAI thứ khớp /Khoét hốc/: ô "Boolean khoét/hợp khối" ở bảng Tạo bên trái (ĐANG MỜ
-      // có chủ ý — chưa có thao tác rời) và nút THẬT ở Inspector bên phải. `.first()` tóm nhầm ô
-      // mờ ⇒ Playwright chờ mãi rồi timeout, và ta suýt kết luận "engine hỏng". Bám nhãn đầy đủ.
-      const nut = page.locator('button', { hasText: /Khoét hốc \(mẫu/ }).first();
-      log.push(`chọn=${trung} · nút Khoét hốc=${(await nut.count().catch(() => 0)) > 0}`);
-      // KHÔNG nuốt lỗi click nữa: lần trước `.catch(()=>{})` che mất khả năng "cú bấm không tới
-      // nơi" và đẩy nghi ngờ sang engine — sai địa chỉ điều tra.
-      // Ai đang nằm TRÊN nút? (chẩn hit-test ở cấp chủ sở hữu, không đoán)
-      const chanNut = await page.evaluate(() => {
-        const b = [...document.querySelectorAll('button')].find((x) => /Khoét hốc \(mẫu/.test(x.textContent || ''));
-        if (!b) return 'không thấy nút';
-        const r = b.getBoundingClientRect();
-        const cx = r.x + r.width / 2, cy = r.y + r.height / 2;
-        const tren = document.elementFromPoint(cx, cy);
-        const mo = (el) => { const s = getComputedStyle(el); return `${el.tagName}.${String(el.className).slice(0,26)} pe=${s.pointerEvents} z=${s.zIndex} op=${s.opacity}`; };
-        const to = [];
-        let p = b;
-        for (let i = 0; i < 5 && p; i++) { to.push(mo(p)); p = p.parentElement; }
-        return {
-          hop: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)],
-          trongMan: r.width > 0 && r.height > 0 && r.y >= 0 && r.y < window.innerHeight,
-          nguoiChe: tren ? mo(tren) : null,
-          laChinhNo: tren === b || (tren && b.contains(tren)),
-          toTien: to,
-        };
-      });
-      log.push(`  CHẨN NÚT: ${JSON.stringify(chanNut)}`);
-      const loiClick = [];
-      page.on('pageerror', (er) => loiClick.push('PAGEERR: ' + String(er.message).slice(0, 120)));
-      if (await nut.count().catch(() => 0)) {
-        try {
-          await nut.click({ timeout: 5000 });
-        } catch (er) {
-          loiClick.push('CLICK FAIL: ' + String(er.message).split('\n')[0].slice(0, 140));
-        }
-        await page.waitForTimeout(1800);
-      }
-      if (loiClick.length) log.push(`  lỗi: ${JSON.stringify(loiClick)}`);
-      const d1 = await doc();
-      const h1 = await sceneHash(page);
-      log.push(`entity: ${d0.n} → ${d1.n} (cutter sinh ra=${d1.n > d0.n})`);
-      log.push(`ops mang boolean: trước=${JSON.stringify(d0.ops)} · sau=${JSON.stringify(d1.ops)}`);
-      log.push(`hình trong khung nhìn đổi=${h0 !== h1}`);
-      await page.screenshot({ path: OUT + '/13-3d-boolean.png' });
-    }
-
-    if (cmd === 'transform') {
-      // MOVE / ROTATE bằng KÉO GIZMO — khẳng định bằng Doc, không bằng pixel.
-      let n0 = await entityCount(page);
-      if (!n0) {
-        const openCmd = page.locator('button[title="Mở bảng lệnh 3D"]').first();
-        if (await openCmd.count().catch(() => 0)) { await openCmd.click().catch(() => {}); await page.waitForTimeout(900); }
-        const w = page.locator('button', { hasText: /Thêm tường/ }).first();
-        if (await w.count().catch(() => 0)) { await w.click().catch(() => {}); await page.waitForTimeout(1600); }
-        const f = page.locator('button.fitbtn').first();
-        if (await f.count().catch(() => 0)) { await f.click().catch(() => {}); await page.waitForTimeout(1300); }
-        n0 = await entityCount(page);
-      }
-      // chọn khối
-      let trung = false;
-      for (const fy of [0.42, 0.5, 0.58]) {
-        for (const fx of [0.5, 0.42, 0.58]) {
-          await page.mouse.click(box.x + box.w * fx, box.y + box.h * fy);
-          await page.waitForTimeout(450);
-          if (await inspectorText(page)) { trung = true; break; }
-        }
-        if (trung) break;
-      }
-      log.push(`chọn khối: ${trung}`);
-      if (!trung) return;
-
-      // `onVanh`: vòng xoay là <circle fill=none r=44> ⇒ tâm hộp bao KHÔNG nằm trên nét. Bấm ở
-      // tâm là bấm xuyên qua xuống canvas (đã đo: xoay không ăn). Phải bám ĐÚNG nét: tâm + r.
-      const keoTruc = async (nhan, dx, dy, onVanh = false) => {
-        const g = page.locator(`g[aria-label="${nhan}"], circle[aria-label="${nhan}"]`).first();
-        if (!(await g.count().catch(() => 0))) return `KHÔNG thấy "${nhan}"`;
-        const bb = await g.boundingBox();
-        if (!bb) return `"${nhan}" không có hộp`;
-        const cx0 = bb.x + bb.width / 2 + (onVanh ? bb.width / 2 - 2 : 0);
-        const cy0 = bb.y + bb.height / 2;
-        await page.mouse.move(cx0, cy0);
-        await page.mouse.down();
-        for (let i = 1; i <= 12; i++) { await page.mouse.move(cx0 + (dx * i) / 12, cy0 + (dy * i) / 12); await page.waitForTimeout(28); }
-        await page.mouse.up();
-        await page.waitForTimeout(1400);
-        return null;
-      };
-
-      const d0 = await docSnapshot(page);
-      const e1 = await keoTruc('Kéo theo trục X', 150, 0);
-      const d1 = await docSnapshot(page);
-      log.push(`DỜI trục X: ${e1 ?? ''} vị trí đổi=${JSON.stringify(d0.map((x) => x.p)) !== JSON.stringify(d1.map((x) => x.p))} · ${JSON.stringify(d0.map((x) => x.p))} → ${JSON.stringify(d1.map((x) => x.p))}`);
-
-      // chẩn: vòng xoay có nằm đúng chỗ ta bấm không?
-      const chanVanh = await page.evaluate(() => {
-        const c = document.querySelector('circle[aria-label="Kéo để xoay quanh trục đứng"]');
-        if (!c) return 'không có phần tử';
-        const r = c.getBoundingClientRect();
-        const px = r.x + r.width - 3;
-        const py = r.y + r.height / 2;
-        const tren = document.elementFromPoint(px, py);
-        return { hop: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], tren: tren ? tren.tagName + '/' + (tren.getAttribute('aria-label') || '') : null };
-      });
-      log.push(`  chẩn vòng xoay: ${JSON.stringify(chanVanh)}`);
-      const e2 = await keoTruc('Kéo để xoay quanh trục đứng', 140, 0, true);
-      const d2 = await docSnapshot(page);
-      log.push(`XOAY: ${e2 ?? ''} hình đổi=${JSON.stringify(d1.map((x) => x.p)) !== JSON.stringify(d2.map((x) => x.p))} · ${JSON.stringify(d2.map((x) => x.p))}`);
-
-      const undo = page.locator('button[title*="Hoàn tác"], button[aria-label*="Hoàn tác"]').first();
-      if (await undo.count().catch(() => 0)) { await undo.click().catch(() => {}); await page.waitForTimeout(1200); }
-      const d3 = await docSnapshot(page);
-      log.push(`HOÀN TÁC sau xoay: về lại vị trí trước xoay=${JSON.stringify(d3.map((x) => x.p)) === JSON.stringify(d1.map((x) => x.p))}`);
-      await page.screenshot({ path: OUT + '/10-3d-selection.png' });
-    }
-
-    if (cmd === 'empty3d') {
-      // CỬA VÀO 3D RỖNG: phải dựng được NGAY, không đòi mặt bằng 2D.
-      const n0 = await entityCount(page);
-      // Card chào tự đóng khi có pointerdown RA NGOÀI nó — chính bộ kiểm đã bấm "Vẽ 3D"/fit nên
-      // nó đóng trước khi ta kịp soi. Gọi lại bằng đúng nút app cung cấp, không hack state.
-      const goiLai = page.locator('button[aria-label="Hiện lại gợi ý bắt đầu"]').first();
-      if (await goiLai.count().catch(() => 0)) { await goiLai.click().catch(() => {}); await page.waitForTimeout(900); }
-      const txt = await page.evaluate(() => document.body.innerText || '');
-      const coCanhBao = /Cần ít nhất một mặt bằng/.test(txt);
-      const coNutChinh = await page.locator('button', { hasText: /Bắt đầu trong 3D/ }).count().catch(() => 0);
-      const coDoiMatBang = /Vẽ mặt bằng trước/.test(txt);
-      log.push(`cảnh trống: ${n0} khối · nút "Bắt đầu trong 3D"=${coNutChinh > 0} · còn cảnh báo vàng=${coCanhBao} · còn ép "Vẽ mặt bằng trước"=${coDoiMatBang}`);
-      if (coNutChinh) {
-        await page.locator('button', { hasText: /Bắt đầu trong 3D/ }).first().click().catch(() => {});
-        await page.waitForTimeout(1000);
-        // kéo ngay trên mặt sàn — không bấm gì thêm
-        const sx = box.x + box.w * 0.42;
-        const sy = box.y + box.h * 0.56;
-        await page.mouse.move(sx, sy);
-        await page.mouse.down();
-        for (let i = 1; i <= 10; i++) { await page.mouse.move(sx + i * 26, sy - i * 9); await page.waitForTimeout(30); }
-        await page.mouse.up();
-        await page.waitForTimeout(1600);
-        const n1 = await entityCount(page);
-        log.push(`sau "Bắt đầu trong 3D" + MỘT cú kéo: ${n0} → ${n1} khối (${n1 > n0 ? 'DỰNG ĐƯỢC, không cần 2D' : 'KHÔNG dựng được'})`);
-        const f = page.locator('button.fitbtn').first();
-        if (await f.count().catch(() => 0)) { await f.click().catch(() => {}); await page.waitForTimeout(1300); }
-        await page.screenshot({ path: OUT + '/11b-3d-empty-entry.png' });
+  }
+  /**
+   * MỖI MỤC MỘT TRANG RIÊNG khi chạy gộp — KHÔNG dùng chung một trang.
+   * Lý do đo được, không phải cẩn thận thừa: mục 1 ĐÓNG card chào "Bắt đầu trong 3D" và card đó
+   * KHÔNG quay lại sau khi điều hướng ⇒ mục 2 chạy sau không còn đường cầm công cụ dựng và báo
+   * KHÔNG ĐO ĐƯỢC — một mục PASS khi chạy lẻ lại đỏ khi chạy gộp, thuần vì thứ tự. Trang riêng
+   * làm mỗi phép đo độc lập, đúng như `hep` vốn đã làm.
+   */
+  if (tatCa) {
+    for (const [ten, ham] of [['retina', lenhRetina], ['cu-chi', lenhCuChi], ['chon-xoa', lenhChonXoa], ['to-present', lenhToPresent]]) {
+      const { browser, page } = await moTrinhDuyet();
+      try {
+        await dangNhap(page);
+        ketQua.push(await ham(page, duAn));
+      } catch (e) {
+        ketQua.push({ muc: ten, ketQua: 'KHÔNG ĐO ĐƯỢC', vuong: `lỗi khi chạy: ${e.message.slice(0, 120)}`, anh: [], doDuoc: {} });
+      } finally {
+        await browser.close();
       }
     }
+  }
 
-    if (cmd === 'shots') {
-      // BỘ ẢNH THẬT cho Present/tài liệu. Luật: chỉ chụp màn CHẠY ĐƯỢC; màn chưa có thì ghi
-      // thiếu, KHÔNG dựng ảnh giả. Mỗi khung đóng panel thừa trước khi bấm máy.
-      const chup = async (ten, moTa) => {
-        await page.waitForTimeout(1200);
-        await page.screenshot({ path: `${OUT}/${ten}.png` });
-        log.push(`✓ ${ten} — ${moTa}`);
-      };
-      const di = async (url, cho = 5000) => {
-        await page.goto(`${BASE}${url}`, { waitUntil: 'domcontentloaded' });
-        await page.waitForTimeout(cho);
-      };
-      const dongThuVien = async () => {
-        const c = page.locator('button[aria-label="Đóng Thư viện"]').first();
-        if (await c.count().catch(() => 0)) { await c.click().catch(() => {}); await page.waitForTimeout(700); }
-      };
+  if (tatCa || cmd === 'hep') ketQua.push(await lenhHep(duAn));
 
-      await di('/', 6000);
-      await chup('01-home', 'Trang chủ — bento, Resume, nền theo giờ');
-
-      await di('/files', 4500);
-      await chup('04-files', 'Files dự án');
-
-      await di('/materials', 4500);
-      await chup('05-library-materials', 'Kho vật liệu — quả cầu PBR thật');
-
-      await di(`/projects/${PROJ}/cad`, 7000);
-      await dongThuVien();
-      await chup('07-2d-so-phac', '2D — chế độ Sơ phác');
-
-      await di(`/projects/${PROJ}/present`, 8000);
-      await chup('17-present', 'Trình bày — deck IF dựng trong chính IF');
-
-      // 31/08 — QĐ-1 "demo sạch": bước chụp '/demo/ghe-3d' đã gỡ cùng route. Ảnh→3D vẫn
-      // còn trong sản phẩm, nhưng nó KHÔNG còn màn demo riêng để chụp thẳng; muốn có lại
-      // ảnh này thì phải đi qua đúng đường người dùng thật (Thư viện → vật thể), không
-      // dựng lại route thử.
-
-      // 3D: viewport sạch + khối đang chọn
-      await open3D(page);
-      await dongThuVien();
-      const f = page.locator('button.fitbtn').first();
-      if (await f.count().catch(() => 0)) { await f.click().catch(() => {}); await page.waitForTimeout(1400); }
-      await chup('09-3d-viewport', '3D — khung nhìn sạch');
-      const b2 = await viewportBox(page);
-      if (b2) {
-        let trung = false;
-        for (const fy of [0.42, 0.5, 0.58]) {
-          for (const fx of [0.5, 0.42, 0.58]) {
-            await page.mouse.click(b2.x + b2.w * fx, b2.y + b2.h * fy);
-            await page.waitForTimeout(450);
-            if (await inspectorText(page)) { trung = true; break; }
-          }
-          if (trung) break;
-        }
-        if (trung) await chup('10-3d-selection', '3D — khối đang chọn + Inspector + gizmo');
-        else log.push('✗ 10-3d-selection — cảnh trống, không có khối để chọn (không chụp giả)');
-      }
-    }
-
-    if (cmd === 'home') {
-      // Trang chủ: cụm góc-phải phải TRỐNG, và VI/EN + Giới thiệu phải nằm trong menu Hồ sơ.
-      await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-      await page.waitForTimeout(5000);
-      const noiTrenHome = await page.evaluate(() => {
-        const t = document.body.innerText || '';
-        return { coVI_EN: /\bVI\b/.test(t) && /\bEN\b/.test(t) };
-      });
-      log.push(`Home: còn công tắc VI/EN lơ lửng? ${noiTrenHome.coVI_EN}`);
-      await page.screenshot({ path: OUT + '/01-home.png' });
-      // mở menu Hồ sơ qua avatar
-      const av = page.locator('button[aria-label*="Tài khoản"], button[aria-label*="Avatar"]').first();
-      if (await av.count().catch(() => 0)) {
-        await av.click().catch(() => {});
-        await page.waitForTimeout(1200);
-        const muc = await page.evaluate(() =>
-          [...document.querySelectorAll('button,div[role=button]')]
-            .map((b) => (b.textContent || '').trim())
-            .filter((t) => t && t.length < 26),
-        );
-        const co = (x) => muc.some((m) => m.includes(x));
-        log.push(`Menu Hồ sơ: Ngôn ngữ=${co('Ngôn ngữ') || co('Language')} · Giới thiệu=${co('Giới thiệu') || co('About')} · Giao diện=${co('Giao diện') || co('Appearance')} · Cài đặt=${co('Cài đặt') || co('Settings')}`);
-        await page.screenshot({ path: OUT + '/02-profile-menu.png' });
-      } else log.push('Menu Hồ sơ: KHÔNG thấy avatar');
-    }
-
-    if (cmd === 've') {
-      // ── CỬ CHỈ DỰNG: cầm công cụ → kéo trên mặt sàn → thả → khối vào Doc + tự được chọn ──
-      const truoc = await entityCount(page);
-      // Cầm công cụ bằng PHÍM TẮT (r/c/l — TOOL3D_HOTKEYS): đúng đường người dùng thạo việc đi,
-      // và tránh bẫy "hai nút cùng tên" (dock có 'Chữ nhật', bảng Tạo có 'Rectangle chữ nhật' —
-      // bấm nhầm cái thứ hai thì cầm tool 2D, cử chỉ 3D không chạy; đã dính đúng bẫy này).
-      const cases = [
-        { phim: 'c', ten: 'TRỤ (kéo bán kính)', dx: 180, dy: 0 },
-        { phim: 'l', ten: 'TƯỜNG (kéo hai điểm)', dx: -240, dy: 120 },
-        { phim: 'r', ten: 'HỘP (kéo đáy)', dx: 300, dy: 200, fitTruoc: true },
-      ];
-      let n = truoc;
-      // Cú bấm LÀM NÓNG: phím tắt đầu tiên bị rơi nếu khung nhìn chưa nhận focus (đã đo: ca 1
-      // luôn trượt, ca 2-3 luôn chạy). Bấm một phát vào chỗ trống để trao focus rồi mới thử.
-      await page.mouse.click(box.x + box.w * 0.12, box.y + box.h * 0.16);
-      await page.waitForTimeout(700);
-      for (const c of cases) {
-        if (c.fitTruoc) {
-          const f = page.locator('button.fitbtn').first();
-          if (await f.count().catch(() => 0)) { await f.click().catch(() => {}); await page.waitForTimeout(1400); }
-        }
-        await page.mouse.move(box.x + box.w * 0.5, box.y + box.h * 0.5);
-        await page.keyboard.press(c.phim);
-        await page.waitForTimeout(600);
-        // Công cụ nào ĐANG cầm? đọc nút dock đang bật (aria-pressed/active) — để phân biệt
-        // "phím không ăn" với "cử chỉ không ăn".
-        const dangCam = await page.evaluate(() => {
-          const on = [...document.querySelectorAll('button')].filter(
-            (b) => b.getAttribute('aria-pressed') === 'true' || /active|dang-cam/.test(b.className),
-          );
-          return on.map((b) => (b.getAttribute('aria-label') || b.getAttribute('title') || b.textContent || '').trim().slice(0, 28));
-        });
-        log.push(`  [${c.phim}] đang cầm: ${JSON.stringify(dangCam)}`);
-        const sx = box.x + box.w * 0.45;
-        const sy = box.y + box.h * 0.55;
-        await page.mouse.move(sx, sy);
-        await page.mouse.down();
-        for (let i = 1; i <= 10; i++) {
-          await page.mouse.move(sx + (c.dx * i) / 10, sy + (c.dy * i) / 10);
-          await page.waitForTimeout(30);
-        }
-        await page.mouse.up();
-        await page.waitForTimeout(1600);
-        const sau = await entityCount(page);
-        const chon = await inspectorText(page);
-        log.push(`${c.ten}: entities ${n} → ${sau} (${sau > n ? 'TẠO ĐƯỢC' : 'KHÔNG tạo'}) · tự chọn=${chon ? 'CÓ' : 'không'}`);
-        n = sau;
-      }
-      const fit3 = page.locator('button.fitbtn').first();
-      if (await fit3.count().catch(() => 0)) { await fit3.click().catch(() => {}); await page.waitForTimeout(1200); }
-      await page.screenshot({ path: OUT + '/11-3d-authoring.png' });
-      log.push('đã chụp 11-3d-authoring.png');
-    }
-
-    if (cmd === 'gate') {
-      // ── CỔNG 3D CƠ BẢN: chọn → kéo (di/push-pull) → xoá → hoàn tác, đo bằng STORE THẬT ──
-      // GIEO MẦM: hồ sơ Playwright là trắng tinh (Doc 3D nằm ở IndexedDB của TỪNG trình duyệt,
-      // không ở DB máy chủ) ⇒ cảnh trống. Tạo sẵn một bức tường bằng LỆNH SỐ đang có, để phép
-      // thử chọn/kéo/xoá/hoàn tác đứng độc lập, chạy lại từ số 0 lần nào cũng ra như nhau.
-      let n0 = await entityCount(page);
-      if (!n0) {
-        const openCmd = page.locator('button[title="Mở bảng lệnh 3D"]').first();
-        if (await openCmd.count().catch(() => 0)) { await openCmd.click().catch(() => {}); await page.waitForTimeout(1000); }
-        // "Thêm tường" = nút mở form tường trong tab Tạo (khác nút "Tường" ở dock công cụ).
-        const wall = page.locator('button', { hasText: /Thêm tường/ }).first();
-        if (await wall.count().catch(() => 0)) { await wall.click().catch(() => {}); await page.waitForTimeout(1400); }
-        const make = page.locator('button', { hasText: /^Tạo tường$/ }).first();
-        if (await make.count().catch(() => 0)) { await make.click().catch(() => {}); await page.waitForTimeout(1800); }
-        else {
-          log.push(`DEBUG nút sau khi mở form: ${JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('button')].map((b) => (b.textContent || '').trim()).filter((t) => t && t.length < 20).slice(0, 40)))}`);
-        }
-        n0 = await entityCount(page);
-        log.push(`gieo mầm tường (lệnh số) → entities: ${n0}`);
-        const fit2 = page.locator('button.fitbtn').first();
-        if (await fit2.count().catch(() => 0)) { await fit2.click().catch(() => {}); await page.waitForTimeout(1400); }
-      }
-      log.push(`entities ban đầu: ${n0}`);
-
-      // CHỌN bằng con trỏ thật — QUÉT LƯỚI thay vì đoán một điểm: sau `fit` khối nằm đâu trong
-      // khung là do camera quyết, đoán giữa màn là cách chắc chắn trượt (đã trượt 2 lượt). Dừng
-      // ngay khi Inspector báo đã chọn — đó là tín hiệu THẬT của app, không phải suy từ pixel.
-      let hitAt = null;
-      outer: for (const fy of [0.42, 0.5, 0.58, 0.34]) {
-        for (const fx of [0.5, 0.42, 0.58, 0.34, 0.66]) {
-          const px = box.x + box.w * fx;
-          const py = box.y + box.h * fy;
-          await page.mouse.move(px, py);
-          await page.mouse.down();
-          await page.mouse.up();
-          await page.waitForTimeout(450);
-          const t = await inspectorText(page);
-          if (/Đã chọn trong khung nhìn|TƯỜNG\s*\|\s*Cao/.test(t)) { hitAt = { fx, fy, px, py }; break outer; }
-        }
-      }
-      log.push(`CHỌN: ${hitAt ? `trúng tại ${hitAt.fx}/${hitAt.fy}` : 'KHÔNG trúng khối nào'}`);
-      if(!hitAt){ await page.screenshot({path:'/Users/tranben/Downloads/interiorflow/present-demo/screens/_debug-no-hit.png'}); log.push('đã chụp _debug-no-hit.png'); }
-      if (hitAt) { cx = hitAt.px; cy = hitAt.py; }
-      await page.waitForTimeout(600);
-      const sel = await page.evaluate(() => {
-        try {
-          return window.__cadStore ? null : null;
-        } catch {
-          return null;
-        }
-      });
-      void sel;
-      log.push(`CHỌN → inspector: ${JSON.stringify(await inspectorText(page))}`);
-
-      // KÉO thật: giữ chuột trên khối, di lên (push/pull mặt trên hoặc gizmo)
-      const doc0 = await docSnapshot(page);
-      const h0 = await sceneHash(page);
-      await page.mouse.move(cx, cy);
-      await page.mouse.down();
-      for (let i = 1; i <= 14; i++) {
-        await page.mouse.move(cx, cy - i * 7);
-        await page.waitForTimeout(35);
-      }
-      await page.mouse.up();
-      await page.waitForTimeout(1500);
-      const doc1 = await docSnapshot(page);
-      const hChanged = JSON.stringify(doc0.map((e) => e.h)) !== JSON.stringify(doc1.map((e) => e.h));
-      const pChanged = JSON.stringify(doc0.map((e) => e.p)) !== JSON.stringify(doc1.map((e) => e.p));
-      log.push(
-        `KÉO: pixel đổi=${h0 !== (await sceneHash(page))} · CAO ĐỘ đổi=${hChanged} · VỊ TRÍ đổi=${pChanged}` +
-          ` → ${hChanged || pChanged ? 'ĐỔI KHỐI THẬT (không phải xoay máy ảnh)' : 'CHỈ máy ảnh đổi, khối không đụng'}`,
-      );
-      log.push(`  cao độ: ${JSON.stringify(doc0.map((e) => e.h))} → ${JSON.stringify(doc1.map((e) => e.h))}`);
-
-      // NUDGE: gizmo hiện tại KHÔNG kéo được — mỗi trục là một nút "dời 100mm" (Viewport3D.tsx
-      // onNudge). Kiểm đúng thứ đang có, thay vì kết luận "Move hỏng" khi thực ra Move chưa từng
-      // là thao tác kéo.
-      const gizX = page.locator('g[aria-label="Kéo theo trục X"]').first();
-      const docN0 = await docSnapshot(page);
-      if (await gizX.count().catch(() => 0)) {
-        await gizX.click().catch(() => {});
-        await page.waitForTimeout(1200);
-        const docN1 = await docSnapshot(page);
-        const moved = JSON.stringify(docN0.map((e) => e.p)) !== JSON.stringify(docN1.map((e) => e.p));
-        log.push(`NUDGE trục X (nút 100mm): vị trí đổi=${moved} · ${JSON.stringify(docN0.map((e) => e.p))} → ${JSON.stringify(docN1.map((e) => e.p))}`);
-      } else {
-        log.push('NUDGE: KHÔNG thấy gizmo trục X trên màn');
-      }
-
-      // XOÁ qua thanh lệnh (mở "Thêm" rồi bấm Xoá)
-      const them = page.locator('button', { hasText: /^Thêm$/ }).first();
-      if (await them.count().catch(() => 0)) { await them.click().catch(() => {}); await page.waitForTimeout(700); }
-      const del = page.locator('button[title="Xoá"], button[aria-label="Xoá"]').first();
-      if (await del.count().catch(() => 0)) {
-        await del.click().catch(() => {});
-        await page.waitForTimeout(1400);
-      }
-      const doc2 = await docSnapshot(page);
-      const n1 = doc2.length;
-      const goneIds = doc1.filter((a) => !doc2.some((b) => b.id === a.id)).map((e) => e.id);
-      // Đường 3D xoá ĐÚNG MỘT entity (id đang chọn); đường 2D `deleteSelected()` xoá theo
-      // `useCadStore.selection` nên thường cuốn cả cụm ⇒ số id biến mất là dấu hiệu phân biệt.
-      log.push(`XOÁ: ${n0} → ${n1} · số khối biến mất=${goneIds.length} → ${goneIds.length === 1 ? 'ĐI ĐƯỜNG 3D (đúng khối đang chọn)' : 'đi đường 2D/cụm'}`);
-
-      // HOÀN TÁC
-      const undo = page.locator('button[title*="Hoàn tác"], button[aria-label*="Hoàn tác"]').first();
-      if (await undo.count().catch(() => 0)) { await undo.click().catch(() => {}); await page.waitForTimeout(1400); }
-      const n2 = await entityCount(page);
-      log.push(`HOÀN TÁC: ${n1} → ${n2} (khôi phục=${n2 === n0})`);
-    }
-
-    if (cmd === 'probe' || cmd === 'drag') {
-      // 1) CHỌN bằng con trỏ thật
-      const before = await sceneHash(page);
-      await page.mouse.move(cx, cy);
-      await page.mouse.down();
-      await page.mouse.up();
-      await page.waitForTimeout(1200);
-      const insp = await inspectorText(page);
-      log.push(`select → inspector: ${JSON.stringify(insp.split('\n').slice(0, 4).join(' | '))}`);
-
-      // 2) KÉO thật (push/pull hoặc gizmo) — giữ chuột, di từng bước như tay người
-      await page.mouse.move(cx, cy);
-      await page.mouse.down();
-      for (let i = 1; i <= 12; i++) {
-        await page.mouse.move(cx + i * 8, cy - i * 6);
-        await page.waitForTimeout(35);
-      }
-      await page.mouse.up();
-      await page.waitForTimeout(1500);
-      const after = await sceneHash(page);
-      log.push(`drag: sceneChanged=${before !== after} (${before} → ${after})`);
-      log.push(`after-drag inspector: ${JSON.stringify((await inspectorText(page)).split('\n').slice(0, 4).join(' | '))}`);
-    }
-
-    if (cmd === 'shot') {
-      const name = process.argv[3] || 'shot';
-      await page.screenshot({ path: path.join(OUT, `${name}.png`) });
-      log.push(`shot saved: ${name}.png`);
-    }
-  } catch (e) {
-    log.push(`ERROR: ${e.message}`);
-  } finally {
-    console.log(log.join('\n'));
-    await browser.close();
+  if (ketQua.length) {
+    const bao = { luc: new Date().toISOString(), base: BASE, dpr: DPR, duAn, loiTrang: loiTrang.slice(0, 20), muc: ketQua };
+    const tep = ghiJson(`ket-qua-${cmd}`, bao);
+    console.log(`\n${'='.repeat(70)}`);
+    for (const m of ketQua) console.log(`${String(m.ketQua).padEnd(16)} ${m.muc}${m.vuong ? `  ← ${m.vuong}` : ''}`);
+    console.log(`${'='.repeat(70)}\nJSON: ${tep}`);
+    if (loiTrang.length) console.log(`⚠ lỗi trang: ${loiTrang.length} (xem JSON)`);
   }
 }
-main();
+
+main().catch((e) => { console.error('✖', e.message); process.exit(1); });

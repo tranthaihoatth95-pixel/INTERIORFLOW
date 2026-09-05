@@ -68,7 +68,7 @@ export default function WeeklyImage({
       ))}
       <style jsx>{`
         .weekly-image-frame {
-          transition: opacity 700ms ease-in-out;
+          transition: opacity var(--nhip-bien-hinh) ease-in-out;
         }
         @media (prefers-reduced-motion: reduce) {
           .weekly-image-frame {

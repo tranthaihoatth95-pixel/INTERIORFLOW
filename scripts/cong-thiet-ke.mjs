@@ -63,7 +63,20 @@ const VAT_LIEU = (h, s, l) => h >= 15 && h <= 55 && s < 0.45; // gỗ/đất tro
 // trục hay vật liệu — bản vẽ phải TỰ NÓI bằng thuộc tính. Không khai thì vẫn bị đếm như mọi accent
 // khác. Và miễn trừ chỉ ăn ĐÚNG BÊN TRONG phần tử đã khai, không phải cả tệp: rải accent ở chrome
 // UI vẫn bị bắt dù trong tệp có một gizmo hợp lệ (khoá bằng ca ④ của `--tu-kiem`).
-const THE_MIEN_TRU = ['data-truc', 'data-mau-vat-lieu'];
+//   · `data-kenh`          — MÀU KÊNH NGỮ NGHĨA (05/09). Ba token có thật trong `app/globals.css`
+//                            đang bị đếm như accent lạ: `--danger` #e5674f (hue 9,6° — sát NGOÀI
+//                            dải cam 15–50°), `--success` #46b876 (145°), `--mau-ai` #1f7f88
+//                            (187°, globals.css:44). Chúng cùng hạng với cam-cảnh-báo: hệ thiết
+//                            kế BẮT BUỘC rải chúng, nên kết tội "rải màu" là kết tội sai.
+//
+// 🔴 MỘT LƯỢT VÁ SAI ĐÃ BỊ CHÍNH `--tu-kiem` BẮT (05/09) — ghi lại vì nó là bài học, không phải
+// chuyện vặt: lượt đầu tôi định miễn trừ bằng cách ĐỌC hue của ba token đó từ globals.css rồi tha
+// mọi màu rơi trong ±14°. Ca ① đỏ ngay: gizmo trục KHÔNG khai `data-truc` có đỏ 5° · lục 140° ·
+// lam 215° — hai màu đầu rơi trúng dải danger/success ⇒ gizmo lậu thoát tội. Tức miễn trừ theo
+// HUE là ĐOÁN, và đoán thì không phân biệt nổi "đỏ nguy hiểm" với "đỏ trục X". Luật của chính tệp
+// này đã trả lời từ 01/09: KHAI BÁO, KHÔNG SUY ĐOÁN. Nên `data-kenh` đi đúng cửa cũ — bản vẽ phải
+// tự nói, và miễn trừ chỉ ăn bên trong phần tử đã khai.
+const THE_MIEN_TRU = ['data-truc', 'data-mau-vat-lieu', 'data-kenh'];
 
 /** Cắt bỏ TRỌN phần tử mang thuộc tính khai báo (kể cả con của nó), có đếm lồng cùng tên thẻ. */
 function boTheKhai(src, attr) {
@@ -143,6 +156,18 @@ if (TU_KIEM) {
   // ⑥ Thẻ lồng cùng tên không làm lệch điểm đóng.
   ok('⑥ thẻ lồng cùng tên ⇒ vẫn cắt đúng, màu sau đó còn nguyên',
     cacHoAccent(`<div data-mau-vat-lieu><div>${VIEN}</div></div><div style="color:#6a57f5"/>`).length === 1);
+
+  // ⑦ Màu kênh ngữ nghĩa CÓ khai `data-kenh` ⇒ miễn trừ (đỏ nguy hiểm + lục đạt + teal AI).
+  const KENH = '<i style="color:#e5674f"/><i style="color:#46b876"/><i style="color:#1f7f88"/>';
+  ok('⑦ khối CÓ data-kenh ⇒ miễn trừ, 0 họ accent',
+    cacHoAccent(`<div data-kenh="trang-thai">${KENH}</div>`).length === 0);
+  // ⑧ ⭐ CHÍNH CA ĐÃ BẮT LƯỢT VÁ SAI: cùng ba màu ấy mà KHÔNG khai ⇒ vẫn phải bị bắt tè le.
+  //    Nếu ai sau này quay lại lối "tha theo hue", ca này đỏ.
+  ok('⑧ cùng ba màu ấy mà KHÔNG khai ⇒ vẫn bắt tè le',
+    cacHoAccent(`<div>${KENH}</div>`).length >= 2);
+  // ⑨ Khai `data-kenh` không được rò ra chrome UI đứng ngoài nó.
+  ok('⑨ có data-kenh NHƯNG chrome UI rải accent ⇒ VẪN bắt được tè le',
+    cacHoAccent(`<div data-kenh="trang-thai">${KENH}</div>${teLe}`).length >= 2);
 
   console.log(`\n— tự kiểm cổng thiết kế: ${p} pass, ${f} fail`);
   process.exit(f ? 1 : 0);

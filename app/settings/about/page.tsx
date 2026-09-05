@@ -11,9 +11,14 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, ScrollText } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import pkg from '@/package.json';
+import { useLuiAnToan } from '@/lib/nav/lui-an-toan';
 
 export default function AboutPage() {
   const router = useRouter();
+  /* A1-01 (05/09) — trước đây là `router.back()` TRẦN, không lá chắn nào: vào ngang bằng URL
+     (link chia sẻ / bookmark) là bấm ra `about:blank`. Đường dự phòng `/settings` KHÔNG phải đích
+     mới bịa: đây là trang con của nó, và dòng nhãn ngay dưới nút này đã ghi "Cài đặt". */
+  const quayLai = useLuiAnToan('/settings', (u) => router.push(u));
   const tr = useT();
 
   return (
@@ -31,7 +36,7 @@ export default function AboutPage() {
       <div style={{ maxWidth: 480, width: '100%' }}>
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={quayLai}
           style={{
             background: 'transparent',
             border: '1px solid var(--border)',

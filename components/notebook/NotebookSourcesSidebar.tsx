@@ -400,5 +400,4 @@ const inputStyle: React.CSSProperties = {
   background: 'var(--surface-page)',
   color: 'var(--t1)',
   borderRadius: 2,
-  outline: 'none',
 };

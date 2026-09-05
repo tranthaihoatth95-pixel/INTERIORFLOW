@@ -32,6 +32,8 @@ export const VE3D_CSS = `
 .if-ve3d .search{display:flex;align-items:center;gap:7px;border:1px solid var(--border);
   border-radius:var(--radius-sm);padding:8px 10px;font-size:var(--fs-xs);color:var(--t3);background:var(--field);flex:none}
 .if-ve3d .search input{flex:1;min-width:0;border:0;background:none;outline:none;color:var(--t1);font:inherit}
+/* Ring TRONG: ô nằm trong vỏ pill — ring ngoài đè viền vỏ. Cùng khuôn .gal-search input. */
+.if-ve3d .search input:focus-visible{outline:var(--stroke-focus) solid var(--focus-ring);outline-offset:calc(-1 * var(--stroke-focus))}
 .if-ve3d .search input::placeholder{color:var(--t4)}
 
 /* engine chips — pill, hover đổi nền (không scale: nằm trong hàng lặp) */
@@ -103,6 +105,8 @@ export const VE3D_CSS = `
 .if-ve3d .fld .box{display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:var(--radius-sm);
   background:var(--field);padding:6px 8px}
 .if-ve3d .fld input{flex:1;min-width:0;border:0;background:none;outline:none;color:var(--t1);font:inherit;
+/* Ring TRONG: ô nằm trong vỏ pill — ring ngoài đè viền vỏ. Cùng khuôn .gal-search input. */
+.if-ve3d .fld input:focus-visible{outline:var(--stroke-focus) solid var(--focus-ring);outline-offset:calc(-1 * var(--stroke-focus))}
   font-size:var(--fs-xs);font-variant-numeric:tabular-nums}
 .if-ve3d .fld .u{font-size:var(--fs-3xs);color:var(--t4);flex:none}
 .if-ve3d .fld .box:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
@@ -127,11 +131,12 @@ export const VE3D_CSS = `
 .if-ve3d.vp3d{position:relative;width:100%;height:100%;overflow:hidden;background:var(--bg)}
 .if-ve3d .vpscene{position:absolute;inset:0}
 /* 21/08 — GỐC BỆNH "3D không dùng được" trên màn retina: Scene3DViewer gọi renderer.setSize(w,h,
-   FALSE) (không ghi style) + setPixelRatio(min(dpr,1.5)) ⇒ buffer canvas = container × 1.5, và vì
-   KHÔNG có luật CSS nào ghim cỡ hiển thị, trình duyệt vẽ canvas Ở ĐÚNG CỠ BUFFER — tràn 50% ra
-   ngoài container rồi bị .vp3d overflow:hidden cắt cụt: chỉ thấy 2/3 khung hình, raycast/NDC lệch
-   theo. DPR=1 thì buffer=container nên không ai thấy — bệnh chỉ phát trên retina. Đây là khuôn
-   chuẩn three.js cho setSize(…,false): CSS phải tự ghim canvas theo container. */
+   FALSE) (không ghi style, :742) + setPixelRatio(min(dpr,1.5)) (:225) ⇒ buffer canvas = container
+   × 1.5, và vì KHÔNG có luật CSS nào ghim cỡ HIỂN THỊ, trình duyệt vẽ canvas Ở ĐÚNG CỠ BUFFER —
+   tràn 50% ra ngoài container rồi bị .vp3d overflow:hidden cắt cụt: chỉ thấy 2/3 khung hình,
+   raycast/NDC lệch theo. DPR=1 thì buffer=container nên không ai thấy — bệnh CHỈ PHÁT TRÊN RETINA,
+   nên bộ kiểm headless mặc định (DPR=1) không bao giờ bắt được. Đây là khuôn chuẩn three.js cho
+   setSize(…,false): CSS phải tự ghim canvas theo container. */
 .if-ve3d .vpscene>canvas{display:block;width:100%;height:100%}
 /* PHIẾU ĐỢT 7 NHÓM B — 96×96 (spec), khung ViewCube3D thật (renderer riêng, xem ViewCube3D.tsx);
    không còn <button> con — cube tự vẽ nhãn bằng texture, tự bắt pointer trên canvas của nó. */
@@ -146,11 +151,31 @@ export const VE3D_CSS = `
    "màu qua biến", không phải tiện tay hardcode. */
 .if-ve3d .vpover{background:rgba(20,22,26,.72);backdrop-filter:blur(var(--blur)) saturate(140%);
   -webkit-backdrop-filter:blur(var(--blur)) saturate(140%);border:1px solid rgba(255,255,255,.14);color:#e8e8ee}
+/* "[3D-CHAM-01]" (05/09) — NHÃN CHỈ-ĐỌC KHÔNG ĐƯỢC NUỐT CỬ CHỈ.
+   Đo tại nguồn trên app thật (CDP "Input.dispatchTouchEvent", ngữ cảnh hasTouch): chạm bắt đầu
+   TRÊN ".vplabel"/".vpnote" thì "event.target" là chính cái nhãn, và **canvas nhận 0 event** ⇒
+   xoay/zoom/pan chết cả cử chỉ. Chuột KHÔNG dính vì chuột không có bắt-ngầm: con trỏ vừa rời
+   khỏi nhãn là canvas nhận "pointermove" ngay (đo được 15 event). Chạm thì MỌI "touchmove" bị
+   giữ nguyên target của "touchstart" — đó là ngữ nghĩa bắt-ngầm của Touch Events, không phải lỗi
+   trình duyệt. Hai nhãn này KHÔNG có tương tác nào (không nút, không menu, không tooltip) nên
+   "pointer-events:none" không mất gì, và trả lại đúng luật CẤP 0 (11/08): *"Touch = LỚP thao
+   tác"*. Bấm/hover trên chúng trước nay cũng chẳng làm gì — nay cú chạm đi thẳng xuống camera. */
 .if-ve3d .vplabel{position:absolute;left:14px;top:14px;z-index:4;display:flex;align-items:center;gap:6px;
-  border-radius:var(--radius-sm);font-size:var(--fs-2xs);padding:4px 9px}
+  border-radius:var(--radius-sm);font-size:var(--fs-2xs);padding:4px 9px;pointer-events:none}
 .if-ve3d .vpnote{position:absolute;left:14px;bottom:14px;z-index:4;font-size:10.5px;
-  border-radius:var(--radius-sm);padding:5px 9px;max-width:250px;line-height:1.45}
+  border-radius:var(--radius-sm);padding:5px 9px;max-width:250px;line-height:1.45;pointer-events:none}
 .if-ve3d .vpnote b{color:#fff}
+/* "[3D-CHAM-01]" — CHIP ĐIỂM TỤ (".vpover" rời, "Viewport3D.tsx:502") có "title" THẬT nên trên
+   máy có chuột nó phải giữ "pointer-events" để hiện chú giải khi rê. Nhưng trên thiết bị chạm
+   "title" KHÔNG BAO GIỜ hiện, còn cái giá thì có thật: chạm trúng nó là mất trọn cử chỉ xoay.
+   ⇒ chỉ tắt bắt sự kiện ở NGÓN TAY, giữ nguyên ở chuột. Cùng điều kiện "(hover:none) and
+   (pointer:coarse)" mà app đã dùng cho lớp cảm ứng ("app/globals.css", "Tooltip.tsx:268") —
+   không đẻ ngưỡng thứ hai. */
+@media (hover:none) and (pointer:coarse){
+  .if-ve3d .vpover{pointer-events:none}
+  /* nút thật thì PHẢI giữ bấm được — ".vpover" là lớp KIỂU DÁNG, có nút dùng chung nó. */
+  .if-ve3d button.vpover,.if-ve3d .vpover button,.if-ve3d a.vpover{pointer-events:auto}
+}
 /* G-M18-04 — nút "Toàn cảnh". CÙNG lý do màu cố định của .vpover trên (nền cảnh #2a2d33 luôn
    tối bất kể theme) NHƯNG KHÔNG backdrop-filter (G9: cảnh này đã có sẵn ViewCube + vplabel/vpnote
    dùng blur, thêm 1 tấm nữa là vượt ngân sách hiệu năng WebGL — dùng nền đặc thay kính). */

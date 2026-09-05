@@ -29,7 +29,7 @@
  */
 
 import type { Doc, Entity, Pt } from './model';
-import { dist, nearestOnSeg } from './model';
+import { dist, nearestOnSeg, pointInPolygon, polygonArea } from './model';
 import { entSegments } from './query';
 import { infiniteLineIntersect } from './modify';
 import { blockInfo } from './schedule';
@@ -38,30 +38,13 @@ function norm2pi(a: number): number {
   return ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
 }
 
-/** Điểm p có nằm trong đa giác `poly` không (even-odd rule, chuẩn ray-casting). */
-export function pointInPolygon(p: Pt, poly: Pt[]): boolean {
-  let inside = false;
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const xi = poly[i].x;
-    const yi = poly[i].y;
-    const xj = poly[j].x;
-    const yj = poly[j].y;
-    const intersect = yi > p.y !== yj > p.y && p.x < ((xj - xi) * (p.y - yi)) / (yj - yi) + xi;
-    if (intersect) inside = !inside;
-  }
-  return inside;
-}
-
-/** Diện tích tuyệt đối (shoelace) — dùng để chọn vòng NHỎ NHẤT khi nhiều vòng đều hợp lệ. */
-export function polygonArea(poly: Pt[]): number {
-  let a = 0;
-  for (let i = 0; i < poly.length; i++) {
-    const p = poly[i];
-    const q = poly[(i + 1) % poly.length];
-    a += p.x * q.y - q.x * p.y;
-  }
-  return Math.abs(a) / 2;
-}
+/**
+ * `pointInPolygon` + `polygonArea` ĐÃ DỜI xuống `./model` (04/09) và được XUẤT LẠI ở đây.
+ * Lý do dời: `query.ts` cần chúng cho hit-test lòng vùng tô, mà tệp này đã nhập `entSegments`
+ * từ `query.ts` ⇒ để nguyên là vòng import. Xuất lại để 6 nơi đang `import … from './hatch'`
+ * không phải sửa dòng nào — đây là CHUYỂN NHÀ, không phải bản thứ hai.
+ */
+export { pointInPolygon, polygonArea };
 
 /**
  * 2.1.9.q — chu vi (mm), TẤT CẢ cạnh hoặc chỉ cạnh được chọn qua `edgeMask` (cạnh `i` nối

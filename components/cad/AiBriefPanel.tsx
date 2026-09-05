@@ -638,7 +638,6 @@ const inputStyle: React.CSSProperties = {
   border: '1px solid var(--border)',
   background: 'var(--field)',
   padding: '6px 8px',
-  outline: 'none',
   fontSize: 12,
   color: 'var(--t1)',
   boxSizing: 'border-box',

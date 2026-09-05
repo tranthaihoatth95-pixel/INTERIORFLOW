@@ -15,7 +15,7 @@ import { useReactFlow, useViewport } from '@xyflow/react';
 import { useFlowStore } from '@/lib/store';
 import { springSheet, easeApple } from '@/lib/motion';
 import { cn } from '@/lib/utils';
-import { modKey, modShiftKey } from '@/lib/kbd';
+import { modKey, modShiftKey, laPhimChinh } from '@/lib/kbd';
 import ModeSwitchCell from '@/components/render-studio/ModeSwitchCell';
 
 export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
@@ -40,7 +40,7 @@ export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-      const mod = e.metaKey || e.ctrlKey;
+      const mod = laPhimChinh(e);
       if (mod && e.key === '9') {
         e.preventDefault();
         fitView({ padding: 0.2 });

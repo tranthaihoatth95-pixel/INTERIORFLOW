@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check, LogOut, PanelsTopLeft, Boxes, ClipboardList, ScrollText, Info } from 'lucide-react';
 import { resetAllRolloutLayouts } from '@/components/studio/Rollout';
 import { useFlowStore } from '@/lib/store';
+import { quenDangXuat } from '@/lib/danh-tinh-phien';
 import { AiDependencySettings } from '@/components/settings/AiDependencySettings';
+import { AiTiersCard } from './AiTiersCard';
 import { GuModelSettings } from '@/components/settings/GuModelSettings';
 import { ExperienceSettings } from '@/components/settings/ExperienceSettings';
 import { LockScreenSettings } from '@/components/settings/LockScreenSettings';
@@ -17,6 +19,7 @@ import { CanvasWallpaper } from './CanvasWallpaper';
 import { ProfileCard } from './ProfileCard';
 import { AppearanceCard } from './AppearanceCard';
 import { StorageCard } from './StorageCard';
+import { useLuiAnToan } from '@/lib/nav/lui-an-toan';
 
 /**
  * VẬT MẪU mock-settings-polished.html — port markup/CSS 1:1 (xem settings-mock-css.ts). Icon =
@@ -145,6 +148,9 @@ function LegalRows() {
 
 export function PixelSettingsShell() {
   const router = useRouter();
+  /* A1-01 (05/09) — `router.back()` trần: vào ngang `/settings` là bấm ra `about:blank`.
+     `/` là đích dự phòng đã có sẵn (Trang chủ), không phải đích mới. */
+  const quayLai = useLuiAnToan('/', (u) => router.push(u));
   const user = useFlowStore((s) => s.user);
   const setUser = useFlowStore((s) => s.setUser);
   const { state, setWallpaper, setReducedMotion, setAutoBackup } = useSettingsLocalState();
@@ -161,7 +167,7 @@ export function PixelSettingsShell() {
             id khớp `#group-*` dưới đây). */}
 
         <div className="main">
-          <button type="button" className="backlink" onClick={() => router.back()}>
+          <button type="button" className="backlink" onClick={quayLai}>
             <ArrowLeft size={14} /> Quay lại
           </button>
 
@@ -188,6 +194,8 @@ export function PixelSettingsShell() {
               type="button"
               onClick={async () => {
                 await fetch('/api/auth/me', { method: 'DELETE' });
+                // G1 · xoá bộ đệm định danh NGAY khi đăng xuất (xem lib/danh-tinh-phien.ts).
+                quenDangXuat();
                 setUser(null);
                 router.push('/');
               }}
@@ -217,6 +225,9 @@ export function PixelSettingsShell() {
               <TaskBoardRow />
               <LegalRows />
               <AiDependencySettings />
+              {/* Slice 10 (03/09): bốn mức AI theo nghĩa + năng lực/kiểm tra provider — lớp giải nghĩa
+                  cạnh bộ chọn thật ở trên (một nguồn chọn, nhiều mặt tiền). */}
+              <AiTiersCard />
               <GuModelSettings />
               <ExperienceSettings />
               <LockScreenSettings />

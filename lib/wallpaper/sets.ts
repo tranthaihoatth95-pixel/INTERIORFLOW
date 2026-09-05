@@ -169,22 +169,32 @@ const NEO_DO_SANG: Record<WallpaperTheme, Record<WallpaperPeriod, [number, numbe
     day: [0.09, 0.34],
     dusk: [0.06, 0.22],
   },
-  /* 🔴 SỬA 26/08 — DẢI SÁNG CŨ VÔ HÌNH TRÊN THEME SÁNG.
-     Bản cũ `day: [0.900, 0.998]` đặt trên nền `--bg` L≈95% ⇒ chênh lệch chỉ ~3 điểm độ sáng.
-     Mắt người không phân giải nổi 3 điểm ở vùng gần trắng, nên **nền theo giờ có chạy, có tốn
-     tài nguyên, mà không ai thấy** — Hoà soi app thật 26/08: màn phẳng lì.
+  /* 🔴 SỬA 26/08 — DẢI SÁNG CŨ VÔ HÌNH TRÊN THEME SÁNG (giữ lại làm lịch sử, đừng lặp lại).
+     Bản trước nữa `day: [0.900, 0.998]` đặt trên nền `--bg` L≈95% ⇒ chênh lệch chỉ ~3 điểm độ
+     sáng. Mắt người không phân giải nổi 3 điểm ở vùng gần trắng, nên **nền theo giờ có chạy, có
+     tốn tài nguyên, mà không ai thấy** — Hoà soi app thật 26/08: màn phẳng lì.
      ⭐ Một tính năng vô hình là một tính năng KHÔNG TỒN TẠI, nhưng tệ hơn: nó vẫn đứng trong sổ
-     như đã xong, nên không ai đi sửa. Đây là PASS giả ở tầng thị giác.
-     Nay hạ CẬN DƯỚI để có biên độ thật (~10-13 điểm), giữ CẬN TRÊN gần trắng để vùng có chữ
-     vẫn sáng và đọc được. Vẫn là trường TĨNH, không phải hoa văn. */
+     như đã xong, nên không ai đi sửa. Đây là PASS giả ở tầng thị giác. */
+  /* 🔴 VÒNG 3 (04/09) — nâng nhánh SÁNG. Bản trước neo từ 0.862; đo trên chính `bangMau()`
+   * cho ra **8/20 bảng có điểm SÁNG NHẤT vẫn tối hơn nền trang** (toàn bộ `night` + 3/5
+   * `dusk`) ⇒ dải nền đọc ra như một vệt xám đè lên trang, không phải như ánh sáng.
+   * Số đối chiếu: `--bg` sáng `#f2efe9` có lum **0.8649**, mà `night/chan-troi` chỉ đạt
+   * lum tối đa 0.8544.
+   *
+   * ⚠️ ĐÁNH ĐỔI PHẢI KHAI, không giấu: nền trang sáng nên trần vật lý chỉ còn [0.865 … 1.0]
+   * ⇒ biến thiên tối đa có thể đạt là **1.156**. Dải cũ có bộ đạt 1.21, tức KHÔNG THỂ vừa
+   * "sáng hơn trang" vừa giữ nguyên biến thiên cũ. Sau khi nâng: biến thiên **1.021–1.087**
+   * (cũ 1.057–1.213) — thấp hơn, nhưng vẫn KHÔNG phẳng lì, và **thứ tự giờ giữ nguyên**:
+   * night 0.9015 < dusk 0.9069 < dawn 0.9231 < day 0.9511. Dải vẫn kể được giờ.
+   *
+   * Neo dò bằng máy chứ không chỉnh tay: `scripts/nghiem-thu-ban-lam-viec/do-neo-sang.ts`
+   * (điều kiện: `lumMin ≥ lum(--bg)` với MỌI bộ × MỌI chặng ⇒ đạt 0/20 vi phạm).
+   * Nhánh TỐI không đụng — đo được 0/20 vi phạm, đang đúng. */
   light: {
-    /* BIÊN ĐỘ = MAX CÒN QUA CỔNG. Dò từng dải, không áp một công thức chung — lượt đầu tôi
-       áp công thức chung và làm `night` TỆ HƠN bản gốc (biên độ 1 điểm so với 7).
-       Ngưỡng do `contrast.test` định, không do tôi chọn: hạ thêm là 9/40 tổ hợp trượt. */
-    night: [0.862, 0.935],
-    dawn: [0.880, 0.966],
-    day: [0.900, 0.998],
-    dusk: [0.862, 0.950],
+    night: [0.943, 0.970],
+    dawn: [0.951, 0.982],
+    day: [0.96, 0.996],
+    dusk: [0.944, 0.973],
   },
 };
 

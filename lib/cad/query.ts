@@ -9,7 +9,17 @@
  */
 
 import type { Doc, Entity, Pt } from './model';
-import { dist, entityBox, mid, nearestOnSeg, segIntersect, zoneBoundaryPoints, ellipseBoundaryPoints } from './model';
+import {
+  dist,
+  entityBox,
+  mid,
+  nearestOnSeg,
+  segIntersect,
+  zoneBoundaryPoints,
+  ellipseBoundaryPoints,
+  pointInPolygon,
+  polygonArea,
+} from './model';
 import type { SnapSettings } from './store';
 
 export type SnapType =
@@ -524,8 +534,45 @@ function segsOfLoop(p: Pt[]): [Pt, Pt][] {
   return segs;
 }
 
-/** Đối tượng dưới con trỏ (id) trong dung sai px→mm. null nếu không có. */
-export function hitTest(doc: Doc, world: Pt, tolMm: number): string | null {
+/**
+ * Tuỳ chọn của `hitTest`.
+ *
+ * `pickInsideFill` — cho phép cú bấm GIỮA LÒNG một vùng tô chọn được chính vùng đó.
+ * MẶC ĐỊNH TẮT, cố ý: `hitTest` còn là mắt của cả họ lệnh sửa hình (TRIM · EXTEND · FILLET ·
+ * CHAMFER · BREAK · JOIN · EXPLODE · LENGTHEN · OFFSET · DIM). Những lệnh đó chỉ làm việc với
+ * LINE/ARC/đường; trả cho chúng một vùng tô vì người dùng bấm nhằm vào lòng phòng là đổi câu
+ * "chưa trỏ trúng gì" thành "đối tượng này không hỗ trợ" — tệ hơn, và không ai xin. Chỉ ba
+ * đường CHỌN bật cờ này (chọn bằng chuột · lệnh cần-đối-tượng · ống hút thuộc tính).
+ */
+export interface HitTestOpts {
+  pickInsideFill?: boolean;
+}
+
+/**
+ * Đối tượng dưới con trỏ (id) trong dung sai px→mm. null nếu không có.
+ *
+ * HAI VÒNG, THỨ TỰ LÀ PHẦN QUAN TRỌNG NHẤT (sửa 04/09 — trước nay chỉ có vòng ①):
+ *  ① BIÊN — mọi entity, gần nhất trong dung sai thắng. Đây là luật cũ, GIỮ NGUYÊN từng dòng.
+ *  ② LÒNG — chỉ chạy khi vòng ① không bắt được ai, và chỉ xét `hatch`.
+ *
+ * ⭐ VÌ SAO LÒNG PHẢI XẾP SAU BIÊN, không phải "gần nhất thắng": khoảng cách tới lòng một vùng
+ * tô luôn bằng 0, nên gộp chung một vòng thì vùng tô THẮNG MỌI THỨ nó phủ lên — bấm vào một
+ * đường nằm trong phòng sẽ chọn phải cái nền. Xếp sau biên thì mặt nền chỉ nhận cú bấm rơi vào
+ * chỗ TRỐNG, đúng trực giác "cái gì ở trên thì bắt trước".
+ *
+ * ⭐ VÙNG TÔ LỒNG NHAU — lấy DIỆN TÍCH NHỎ NHẤT (vùng trong cùng). Không phải luật mới: đây
+ * đúng luật `pickHatchFace` (`lib/cad/hatch.ts` §4 "ưu tiên vùng trong cùng khi có phòng lồng
+ * phòng") đang chạy cho lệnh HATCH. Hai chỗ cùng một câu hỏi thì phải cùng một câu trả lời,
+ * nếu không người dùng tô được vùng nhỏ nhưng bấm lại trúng vùng to.
+ * Bằng diện tích thì `<=` cho entity đứng SAU trong `doc.entities` thắng — nó là cái được VẼ
+ * SAU, tức cái người dùng đang nhìn thấy ở trên.
+ *
+ * ⚠️ CHỈ `hatch`, cố ý hẹp. `rect`/`polyline closed` KHÔNG chọn được bằng lòng — đúng thói quen
+ * AutoCAD (đường khép kín vẫn là ĐƯỜNG, muốn bắt cả mặt thì tô nó). `room`/`zone` để ngoài lượt
+ * này vì chúng phủ gần hết bản vẽ; mở chúng ra là đổi hành vi chọn ở mọi cú bấm vào chỗ trống,
+ * việc riêng, cần đo riêng.
+ */
+export function hitTest(doc: Doc, world: Pt, tolMm: number, opts?: HitTestOpts): string | null {
   let bestId: string | null = null;
   let bestD = tolMm;
   const consider = (id: string, d: number) => {
@@ -573,7 +620,23 @@ export function hitTest(doc: Doc, world: Pt, tolMm: number): string | null {
         break;
     }
   }
-  return bestId;
+  if (bestId || !opts?.pickInsideFill) return bestId;
+
+  // ② LÒNG — chỉ tới đây khi không có biên nào trong dung sai (xem docstring hàm).
+  let fillId: string | null = null;
+  let fillArea = Infinity;
+  for (const e of doc.entities) {
+    if (e.type !== 'hatch' || e.points.length < 3) continue;
+    const lay = doc.layers.find((l) => l.id === e.layer);
+    if (lay && (!lay.visible || lay.locked)) continue;
+    if (!pointInPolygon(world, e.points)) continue;
+    const a = polygonArea(e.points);
+    if (a <= fillArea) {
+      fillArea = a;
+      fillId = e.id;
+    }
+  }
+  return fillId;
 }
 
 /** Các id nằm trong khung chọn (world rect). `window`=true: phải nằm gọn trong khung. */

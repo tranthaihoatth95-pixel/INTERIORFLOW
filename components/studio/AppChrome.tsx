@@ -35,24 +35,23 @@ import { DEFAULT_PHASE, STAGE_TINT, type Phase } from '@/lib/phases';
 import { MobileMenu } from '@/components/MobileMenu';
 // P-V 17/08 — ô tìm dự án + Vitals ở top bar (chỉ Home; chặng có Vitals cạnh trục phải riêng).
 import SearchProjectsInput from '@/components/SearchProjectsInput';
-// COHERENCE-SHELL 20/08 — mép trên có HAI thứ mới, cả hai sống ở MỌI màn (không còn "chỉ Home"):
-// dải ngữ cảnh (đang ở đâu) + khẩu độ Vitals (nên biết gì).
+// COHERENCE-SHELL 20/08 — mép trên có HAI thứ, cả hai sống ở MỌI màn: dải ngữ cảnh (đang ở đâu)
+// + khẩu độ Vitals (nên biết gì).
 //
-// 🔴 ĐẢO NỬA SAU 02/09 (V-3a) — KHẨU ĐỘ VITALS THÔI MOUNT Ở HEADER. Hoà 09:08 02/09: *"VITAL
-// HẢ? DM"* ⇒ chốt sau thắng chốt duyệt-mắt 20/08. Nhưng Vitals là tính năng THẬT, không được
-// mất cùng chỗ đứng của nó (luật: gỡ CHỖ ĐỨNG ≠ gỡ NĂNG LỰC — bàn 06, 02/09).
-// ⇒ `VitalsPill` (bản chỉ-Home, `components/home/widgets/VitalsPill.tsx`) MOUNT LẠI vào đúng
-// cụm `data-tour="home-search-vitals"` bên dưới. Đây là CONNECT, không phải NEW (B25): tệp đó
-// đã làm sẵn việc "nút nhỏ → mở `VitalsChatSurface`", nó chỉ mất chỗ mount từ 20/08.
-// Vì sao cụm tìm kiếm chứ không phải `CumPhaiTren`: SO-TONG mục `vitals` (Hoà 17/08) đặt Vitals
-// *"nằm TRÊN thanh tìm kiếm"*, còn chốt 6 giao góc phải cho *cá nhân + thông báo* — và chính
-// `CumPhaiTren.tsx:14-17` cấm nhập hai hệ. Phiếu V-3b đề nghị góc phải; nguồn thắng phiếu.
-// ⛳ NỢ CÓ TÊN: cụm này chỉ render khi `active === 'home'` ⇒ Vitals nay CHỈ CÒN Ở HOME, trong
-// khi khẩu độ cũ sống ở mọi màn. Thu hẹp có chủ ý cho pilot, không phải quên. Muốn trả lại
-// "mọi màn" thì đó là việc THÊM một chỗ đứng, không phải khôi phục `<VitalsAperture/>`.
+// 🔀 HOÀ NHÁNH — CHỖ ĐỨNG CỦA VITALS: quyết định D-DR1 (04/09) GIỮ EXS §7 *"Vitals nằm VẬT LÝ
+// trong TOP EDGE như một khẩu độ sống"*. Đảo V-3a của nhánh `checkpoint` (02/09) từng gỡ khẩu độ
+// khỏi header và mount lại `VitalsPill` vào cụm tìm kiếm của Home — **nay SUPERSEDED**, vì:
+//   · EXS §7 là chốt Hoà DUYỆT MẮT 20/08, và D-DR1 tuyên nó không lật được;
+//   · `VitalsPill` chỉ sống ở Home và gõ cứng `stage:'gallery'` ⇒ mọi màn khác mất Vitals;
+//   · đo 04/09: `StatusBar` gọi `useVitalsUi.open()` tới một panel KHÔNG CÒN MOUNT ⇒ gõ câu hỏi
+//     rồi Enter là MẤT CÂU HỎI, `⌘J` không làm gì. Khẩu độ mép trên là chỗ nhận lại hành vi đó.
+// ⇒ App có ĐÚNG MỘT chỗ đứng vật lý cho Vitals. `VitalsPill.tsx` KHÔNG bị xoá (nó vẫn là widget
+//   của Trang chủ) — nó chỉ thôi mount ở header.
 import { DaiNguCanh } from '@/components/studio/DaiNguCanh';
-import VitalsPill from '@/components/home/widgets/VitalsPill';
 import { CumPhaiTren } from '@/components/studio/CumPhaiTren';
+import { VitalsAperture } from '@/components/studio/VitalsAperture';
+import { changTheoDuong } from '@/components/studio/vitals-tin-hieu';
+import { pressable } from '@/lib/motion';
 import { useStageTransition } from '@/components/studio/StageTransitionProvider';
 import { stageHrefFrom } from '@/lib/project-scope';
 import { useT } from '@/lib/i18n';
@@ -67,10 +66,13 @@ import { LiveGuide } from '@/components/studio/LiveGuide';
 import { QuayVeTrinhBay } from '@/components/studio/QuayVeTrinhBay';
 import { useLockScreen, lockScreenNow, getLockIdleMinutes } from '@/lib/lockscreen';
 import { getLastUserId } from '@/lib/resume';
+import { danhTinhSanSang } from '@/lib/danh-tinh-phien';
 import { useDismissable } from '@/lib/useDismissable';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import { activeToPhase, pickStage } from '@/lib/studio/stage-nav';
+import { useDongDauLichSu } from '@/lib/nav/lui-an-toan';
 import type { AppChromeActive } from '@/components/studio/AppChromeTypes';
+import { laPhimChinh } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 
 export type { AppChromeActive };
 
@@ -84,6 +86,12 @@ interface Props {
 }
 
 export function AppChrome({ active, logoMenu }: Props) {
+  /* ĐÓNG DẤU CHUỖI LỊCH SỬ — vỏ chung là chỗ duy nhất chạy ở gần như mọi màn, nên nút "Quay lại"
+     của từng màn không phải tự đếm lấy (luật K1: một việc một chỗ). Xem `lib/nav/lui-an-toan.ts`
+     để biết vì sao `history.length > 1` KHÔNG trả lời được câu "phía sau có trang IF không".
+     Màn KHÔNG bọc vỏ này (notebook · photo · present · colors) tự gọi `useLuiAnToan` — hàm đóng
+     dấu idempotent nên chồng nhau vô hại. */
+  useDongDauLichSu();
   const flowName = useFlowStore((s) => s.flowName);
   const workspace = useFlowStore((s) => s.workspace);
   const setFlowName = useFlowStore((s) => s.setFlowName);
@@ -116,6 +124,22 @@ export function AppChrome({ active, logoMenu }: Props) {
   const currentPhase = activeToPhase(active);
   const tint = STAGE_TINT[active === 'render' ? (workspace ?? DEFAULT_PHASE) : currentPhase];
 
+  /**
+   * P0 04/09 — GIEO ĐỊNH DANH TỪ PHIÊN MÁY CHỦ. `AppChrome` là thanh đầu DUY NHẤT của mọi route
+   * studio, nên đây là chỗ vỏ app khởi động sớm nhất và dùng chung được cho cả 4 route.
+   *
+   * Vì sao ở đây chứ không vá tại từng nơi cần userId: bộ đệm `lastUserId` chỉ được ghi khi đi
+   * qua Home/đăng nhập. Vào THẲNG `/projects/[id]/cad` (tab mới/bookmark/F5) thì bộ đệm rỗng
+   * dù phiên máy chủ vẫn hợp lệ ⇒ mọi đường tiêu thụ đọc ra null và lặng lẽ chạy nhánh
+   * không-có-user (nặng nhất: sheet không ghi xuống IndexedDB). Gieo MỘT lần ở tầng nguồn thì
+   * các đường tiêu thụ hiện có tự đúng — không thêm chỗ gọi `getLastUserId()` nào nữa.
+   *
+   * `danhTinhSanSang()` single-flight + bỏ qua khi đệm đã có ⇒ không tốn request ở đường thường.
+   */
+  useEffect(() => {
+    void danhTinhSanSang();
+  }, []);
+
   // Route studio (cad/present/photo) đứng riêng, page không tự gọi hydrate/applyTheme — route
   // `/` đã có hydrate riêng nhưng gọi lại đây vô hại (applyTheme thuần, idempotent).
   useEffect(() => {
@@ -143,7 +167,7 @@ export function AppChrome({ active, logoMenu }: Props) {
       }
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-      if (((e.metaKey || e.ctrlKey) && e.key === '/') || e.key === '?') {
+      if ((laPhimChinh(e) && e.key === '/') || e.key === '?') {
         e.preventDefault();
         setShortcutsOpen((v) => !v);
       }
@@ -151,7 +175,7 @@ export function AppChrome({ active, logoMenu }: Props) {
       // Trình bày (03/08 CHỐT TÊN vòng cuối).
       // Đặt ở AppChrome (không phải AppShell) vì pickStage cần đủ bộ {active,pathname,router,
       // begin} đã wire sẵn tại đây — không nhân đôi dây.
-      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === '1' || e.key === '2' || e.key === '3')) {
+      if (laPhimChinh(e) && !e.shiftKey && !e.altKey && (e.key === '1' || e.key === '2' || e.key === '3')) {
         e.preventDefault();
         const target: Phase = e.key === '1' ? 'concept' : e.key === '2' ? 'render' : 'present';
         onPickRef.current(target);
@@ -161,17 +185,17 @@ export function AppChrome({ active, logoMenu }: Props) {
       // "về Gallery" của VIỆC 1 (goHomeConfirmed, hỏi trước nếu chưa lưu). ⌘B/⌘L tái dùng đúng sự
       // kiện/hàm sẵn có của phím trần B (AppShell.tsx `if:navigator-toggle`) và L (`openLibrarySheet`,
       // lib/library/use-library-sheet.ts) — không viết luồng toggle/mở-sheet thứ hai.
-      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key === '0') {
+      if (laPhimChinh(e) && !e.shiftKey && !e.altKey && e.key === '0') {
         e.preventDefault();
         goHomeConfirmed(router, { push: activeRef.current !== 'render' });
         return;
       }
-      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'b') {
+      if (laPhimChinh(e) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'b') {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('if:navigator-toggle', { detail: {} }));
         return;
       }
-      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'l') {
+      if (laPhimChinh(e) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'l') {
         e.preventDefault();
         const a = activeRef.current;
         openLibrarySheet({ stage: a === 'render' ? 'render' : a === 'present' ? 'present' : 'cad' });
@@ -336,15 +360,27 @@ export function AppChrome({ active, logoMenu }: Props) {
           Vì sao dải chỉ có HAI tầng (không có "Không gian/Workspace"): đo tại nguồn — schema
           KHÔNG có model Workspace, `lib/store.ts:33` `WorkspaceMode = Phase` tức "workspace"
           hiện chính là chặng. Chi tiết + bằng chứng file:dòng ở đầu `DaiNguCanh.tsx`. */}
-      {/* ⓵ VÙNG TRÁI — DỰ ÁN · CHẶNG. `min-w-0` + `overflow-hidden` là bước ① của bậc thang
-          nhường va chạm (Hoà chốt 20/08): **đầu đề dự án nén/cắt TRƯỚC**, để ổ Vitals ở giữa
-          không bao giờ phải nhúc nhích. `data-if-cum-trai-tren` cho ổ đo được mép phải của cụm
-          này mà không phải đoán. */}
-      <div className="flex min-w-0 flex-1 items-center overflow-hidden" data-if-cum-trai-tren="">
+      {/* ⓵ VÙNG TRÁI — DỰ ÁN · CHẶNG, và là bước ① của THỨ TỰ NHƯỜNG CHỖ (Hoà chốt, thi hành ở
+          `lib/ui/vung-lam-viec.ts#viTriO`): ① nén/cắt ĐẦU ĐỀ DỰ ÁN trước → ② GIỮ NEO VITALS ĐỨNG
+          YÊN → ③ co bề rộng Peek → ④ chỉ khi đó mới dịch ổ.
+          🔀 Hoà nhánh: giữ CẢ HAI nửa của bước ①.
+            · `data-if-cum-trai-tren` (checkpoint) — mốc để khẩu độ ĐO mép phải cụm này mà không
+              phải đoán; `VitalsAperture` đọc đúng thuộc tính này.
+            · `--if-tran-cum-trai` (integration) — TRẦN bề rộng do chính khẩu độ ghi lên `<header>`
+              mỗi lần đo lại. Thiếu nó thì tên dự án dài chạy thẳng xuống dưới ổ Vitals, hai vật
+              chồng nhau ở giữa header. Chưa có khẩu độ (hoặc chưa đo được) ⇒ `100%` như cũ.
+          Một cái để ĐỌC, một cái để ÉP — không thay thế nhau được. */}
+      <div
+        className="flex min-w-0 flex-1 items-center overflow-hidden"
+        data-if-cum-trai-tren=""
+        style={{ maxWidth: 'var(--if-tran-cum-trai, 100%)' }}
+      >
         {editing ? (
           <input
             autoFocus
-            className="w-36 shrink rounded-[var(--r-2)] border border-[var(--accent-ring)] bg-[var(--field)] px-2 py-1 text-sm text-[var(--t1)] outline-none sm:w-56"
+            /* KHÔNG `outline-none`: luật focus toàn app ở `globals.css` lo vòng focus cho ô này
+               (đợt a11y 04/09 gỡ hẳn các `outline-none` tại chỗ — chúng thắng luật chung). */
+            className="w-36 shrink rounded-[var(--r-2)] border border-[var(--accent-ring)] bg-[var(--field)] px-2 py-1 text-sm text-[var(--t1)] sm:w-56"
             value={flowName}
             onChange={(e) => setFlowName(e.target.value)}
             onBlur={() => setEditing(false)}
@@ -379,42 +415,39 @@ export function AppChrome({ active, logoMenu }: Props) {
           dùng lại nếu quay đầu. */}
 
       {/* Ô TÌM DỰ ÁN — vẫn CHỈ Home (tìm giữa các dự án chỉ có nghĩa khi chưa mở dự án nào).
-          KHẨU ĐỘ VITALS thì ở MỌI màn: chốt 16/08 nói "cùng MỘT vật, di chuyển theo chỗ tay
-          đang đặt", và mép trên là chỗ vật đó đứng khi tay chưa ở trục phải. Vẫn đúng ràng buộc
-          "mỗi màn ĐÚNG MỘT Vitals" — `VitalsGesture` bản cũ đã mồ côi từ 17/08 (xem đầu
-          `VitalsAperture.tsx`).
-          🔴 SỬA 02/09: câu cũ ở đây ghi *"`VitalsPill` bản chỉ-Home đã thôi mount"* — nay SAI,
-          nó vừa mount lại ngay dưới đây (V-3a). Sửa tại chỗ thay vì để lại: một chú thích tả
-          hiện trạng đã hết đúng thì phiên sau đọc nó như FACT rồi đi tìm bug không tồn tại. */}
+          🔴 `<VitalsPill/>` ĐÃ GỠ khỏi đây (hoà nhánh, quyết định D-DR1): nó là chỗ đứng THỨ HAI
+          của Vitals, mà app chỉ được có MỘT — và nó chỉ sống ở Home trong khi Ambient phải thấy
+          ở mọi màn. Ô tìm KHÔNG phải Vitals nên giữ nguyên chỗ cũ.
+          ⛔ KHÔNG gắn `data-marker="cumPhaiTren"` lên cụm này: mốc đó là của `CumPhaiTren.tsx:141`
+          và khẩu độ đọc nó làm BIÊN CỨNG bên phải. Hai phần tử cùng một marker thì `querySelector`
+          lấy cái đầu tiên trong DOM — tức ổ Vitals sẽ tưởng biên phải nằm ngay sau ô tìm. */}
       <div className="flex shrink-0 items-center gap-2" data-tour="home-search-vitals">
         {active === 'home' && <SearchProjectsInput />}
-        {active === 'home' && <VitalsPill />}
       </div>
-
-      {/* ⓶ Ổ VITALS — ĐÃ GỠ 02/09 (V-3a). Khối cũ dựng một VÙNG NGỮ NGHĨA GIỮA riêng cho
-          `<VitalsAperture/>`: con trực tiếp của `<header>`, tự đặt mình bằng toạ độ tuyệt đối
-          theo tâm vùng làm việc (`useVungLamViec` → `viTriO`), cố ý ĐỨNG NGOÀI mọi cụm flex.
-          Thiết kế đó không sai về mặt kỹ thuật — nó bị Hoà bác về mặt SỰ CÓ MẶT (09:08 02/09).
-          ⛔ Đừng dựng lại chỗ đứng này. `VitalsAperture.tsx` giữ nguyên trên đĩa (mức Peek +
-          quỹ đạo là công sức thật, và bản thân tệp đã là lời chứng vì sao chip StatusBar chết);
-          nó chỉ THÔI MOUNT. Lối vào Vitals nay ở cụm tìm kiếm phía trên — xem chú thích ở import.
-          Header nay là một dòng flex phẳng: trái = Dự án·Chặng · giữa = tìm + Vitals ·
-          phải = Thông báo·Hiện diện·Avatar. */}
 
       {/* NAV-HAI-DAO 20/08 — CỤM PHẢI TRÊN: "tôi là ai / ai đang ở đây".
           Hoà chốt thanh trái CHỈ CÒN VIỆC ⇒ Hồ sơ · Credit · Cài đặt · Tài khoản · Đăng xuất rời
-          rail và về đây, sau khẩu độ Vitals. ⛔ HAI HỆ KHÁC NHAU, cấm nhập một: `VitalsAperture`
-          (mép trên) trả lời *tôi nên biết gì*; `CumPhaiTren` trả lời *tôi là ai / ai đang ở đây*.
-          Vì sao đứng ở đây mà không sớm hơn trong DOM: thứ tự đọc trái→phải phải là ngữ-cảnh →
-          Vitals → danh-tính; đảo lại thì avatar chen vào giữa ô tìm và khẩu độ.
+          rail và về đây. ⛔ HAI HỆ KHÁC NHAU, cấm nhập một: khẩu độ Vitals (mép trên) trả lời
+          *tôi nên biết gì*; `CumPhaiTren` trả lời *tôi là ai / ai đang ở đây*.
+          Ổ Vitals đọc mép trái của cụm này qua marker SẴN CÓ `data-marker="cumPhaiTren"` — [Đ2]
+          CONNECT, không đẻ marker thứ hai — và coi đó là BIÊN CỨNG: bước ④ chỉ được dịch trong
+          vùng an toàn, không bao giờ chạm vào cụm này.
           Cụm TỰ ẨN khi chưa đăng nhập, và phần hiện diện tự ẩn khi chỉ có một mình — không giữ
           chỗ trống (luật widget-thiếu-dữ-liệu-tự-ẩn, Hoà chốt 13/08). */}
-      {/* ⓷ VÙNG PHẢI — THÔNG BÁO · HIỆN DIỆN · AVATAR. Ổ Vitals đọc mép trái của cụm này qua
-          marker SẴN CÓ `data-marker="cumPhaiTren"` (`CumPhaiTren.tsx:132`) — [Đ2] CONNECT, không
-          đẻ marker thứ hai — và coi đó là BIÊN CỨNG: bước ④ chỉ được dịch trong vùng an toàn,
-          không bao giờ chạm vào cụm này. Hai hệ cạnh nhau về không gian, tách hẳn về nghĩa:
-          Vitals = *tôi nên biết gì* · cụm này = *ai gửi gì cho tôi / tôi là ai*. */}
       <CumPhaiTren />
+
+      {/* ⭐⭐ KHẨU ĐỘ VITALS — chỗ đứng vật lý DUY NHẤT của Vitals trong app (EXS §7, D-DR1).
+          Nó là con `absolute` của chính `<header>` này (header đã `relative` ở trên), neo vào TÂM
+          VÙNG LÀM VIỆC chứ không vào tâm cửa sổ — xem `lib/ui/vung-lam-viec.ts`.
+          Mount NGOÀI nhánh `active === 'home'` ⇒ có mặt ở MỌI chặng, đúng "Ambient luôn thấy ở
+          mọi màn". Nó cũng là nơi NHẬN lại hai hành vi từng mồ côi: `⌘J` và ô gõ nhanh ở
+          `StatusBar` (qua kho dùng chung `lib/vitals-ui.ts`).
+          🔴 Chặng suy từ ĐƯỜNG DẪN, KHÔNG từ `activeToPhase(active)` — sửa 04/09 sau khi soi ảnh
+          thật: `/files` · `/library` · `/materials` · `/tasks` · `/settings` · `/inspiration` đều
+          bọc `<AppShell active="render">`, nên `activeToPhase` trả `'render'` cho cả sáu ⇒ tấm chat
+          ghi "VITALS · THIẾT KẾ 3D" khi đứng ở Trang chủ. `active` KHÔNG phân biệt nổi
+          `/projects/<id>/render` với `/files`; chỉ đường dẫn phân biệt được. */}
+      <VitalsAperture stage={changTheoDuong(pathname)} />
 
       {/* 2.2.86 (30/07, Hoà chốt) — "Chạy flow" KHÔNG còn đứng riêng trên bar (~110px trả lại
           ngân sách bề rộng). Khởi chạy giờ CẠNH ĐỐI TƯỢNG: nút ▶ trên node, "Kết xuất" trên thẻ

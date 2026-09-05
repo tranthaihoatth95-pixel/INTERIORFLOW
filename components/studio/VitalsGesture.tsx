@@ -40,12 +40,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, useReducedMotion } from 'framer-motion';
-import { BookOpen, Brain, Loader2, Maximize2, Scale, Send, X, Zap } from 'lucide-react';
+import { BookOpen, Brain, ClipboardCheck, Loader2, Scale, Send, X, Zap } from 'lucide-react';
 import type { ChatTurn } from '@/lib/ai/chat-assist';
+import {
+  applyFeedback,
+  buildEvalRecord,
+  isRecordStale,
+  learnDelta,
+  summaryForVitals,
+  type EvalRecord,
+  type EvalVerdict,
+} from '@/lib/capabilities/vitals-eval-core';
+import { loadEvalModel, saveEvalModel, saveEvalRecord } from '@/lib/capabilities/vitals-eval-persist';
+import type { DesignDnaCard } from '@/lib/dna/types';
+import { isDesignDnaCard } from '@/lib/dna/types';
+import { getLastUserId } from '@/lib/resume';
+import VitalsEvalPanel from './VitalsEvalPanel';
+import { vitalsStateFor } from './vitals-eval-ui';
 import { summarizeDoc, type DocContext } from '@/lib/ai/doc-context';
 import { topViolations, type TopViolationsResult } from '@/lib/ai/violations-context';
 import { useCadStore } from '@/lib/cad/store';
-import type { Phase } from '@/lib/phases';
+import type { VitalsStage } from './vitals-tin-hieu';
 import { easeApple } from '@/lib/motion';
 import { useFlowStore } from '@/lib/store';
 import { brandContextForVitals } from '@/lib/present-editor/brand-kit';
@@ -71,10 +86,13 @@ const ACCENT = 'var(--accent)';
  * quy chuẩn. Riêng BA GỢI Ý này vẫn là bảng TĨNH theo chặng — nâng thành
  * `suggestionsFor(stage, docContext)` (ô 6.8, gợi ý theo đối tượng đang chọn) là việc RIÊNG,
  * chưa làm ở phiên nối payload này. */
-const STAGE_SUGGESTIONS: Record<Phase, [string, string, string]> = {
+const STAGE_SUGGESTIONS: Record<VitalsStage, [string, string, string]> = {
   concept: ['kiểm chuẩn tờ này', 'phòng nào chưa có vật liệu', 'xuất PDF'],
   render: ['đặt đèn nắng chiều', 'vật liệu sàn phòng ngủ', 'render thử'],
   present: ['sinh bảng khối lượng', 'thêm trang bìa', 'xuất hồ sơ khách'],
+  // 'gallery' = KHÔNG ở chặng nào (Trang chủ · Files · Thư viện · Bảng việc · Cài đặt).
+  // Gợi ý phải ở mức bàn phương án, đúng `ChatStage.gallery` của `lib/ai/chat-assist.ts`.
+  gallery: ['bắt đầu dự án thế nào', 'chọn chặng nào tiếp', 'gợi ý phong cách'],
 };
 
 /**
@@ -92,7 +110,7 @@ const STAGE_SUGGESTIONS: Record<Phase, [string, string, string]> = {
  * chặng nào cũng đọc nó). Doc rỗng → trả {} — prompt y hệt trước, không hồi quy.
  */
 function buildVitalsDocPayload(
-  stage: Phase,
+  stage: VitalsStage,
   level: ThinkLevel = 'deep',
 ): {
   docContext?: DocContext;
@@ -256,17 +274,27 @@ export function wasVitalsUsed() {
 /** Nhãn hiển thị theo chặng — dùng ở header panel để user biết đang hỏi Vitals ở đâu.
  * 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md).
  * 04/08 [P7 ĐỔI TÊN] — 2D Kỹ thuật→Thiết kế 2D · 3D Thiết kế→Thiết kế 3D · Trình bày→Trình chiếu. */
-const STAGE_LABEL: Record<Phase, string> = {
+const STAGE_LABEL: Record<Exclude<VitalsStage, 'gallery'>, string> = {
   concept: 'Thiết kế 2D',
   render: 'Thiết kế 3D',
   present: 'Trình chiếu',
 };
 
-const STAGE_PLACEHOLDER: Record<Phase, string> = {
+const STAGE_PLACEHOLDER: Record<VitalsStage, string> = {
   concept: 'Hỏi Vitals — TCVN, kích thước, dossier check…',
   render: 'Hỏi Vitals — materials, lighting, camera angle…',
   present: 'Hỏi Vitals — brand guideline, typography, layout…',
+  gallery: 'Hỏi Vitals — dự án, phong cách, bắt đầu từ đâu…',
 };
+
+/**
+ * Nhãn tấm chat. `'gallery'` KHÔNG có tên chặng — và đó là điểm của cả lát sửa này: ở màn không
+ * thuộc chặng nào thì nói **"Vitals"**, đừng bịa ra một chặng. Nguồn DUY NHẤT của chuỗi này, để
+ * tiêu đề nhìn thấy và `aria-label` không thể lệch nhau.
+ */
+export function nhanTamChat(stage: VitalsStage): string {
+  return stage === 'gallery' ? 'Vitals' : `Vitals · ${STAGE_LABEL[stage]}`;
+}
 
 export default function VitalsGesturePanel({
   originPx,
@@ -282,7 +310,14 @@ export default function VitalsGesturePanel({
   open: boolean;
   onClose: () => void;
   /** Chặng hiện tại — gửi vào payload để backend pick system prompt phù hợp. */
-  stage: Phase;
+  /**
+   * Chặng hiện tại — gửi vào payload để backend pick system prompt phù hợp.
+   * `'gallery'` (04/09) = **KHÔNG ở chặng nào** (Trang chủ · Files · Thư viện · Bảng việc · Cài
+   * đặt). Thêm giá trị này vì `Phase` chỉ có 3 chặng nên nơi gọi buộc phải nói dối một trong ba;
+   * đo được hậu quả: tấm chat ghi "VITALS · THIẾT KẾ 3D" khi đứng ở Trang chủ.
+   * Mã `'gallery'` KHÔNG mới — `lib/ai/chat-assist.ts#ChatStage` đã có đúng nghĩa đó từ trước.
+   */
+  stage: VitalsStage;
   /**
    * 'down' (mặc định, hành vi CŨ) = panel xổ XUỐNG từ mép trên container (gesture kéo ở
    * StageSwitcher, trên cùng màn). 'up' (VIỆC A, 28/07) = xổ LÊN từ mép dưới container —
@@ -424,18 +459,22 @@ export default function VitalsGesturePanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  /**
-   * Mở NotebookLM full — điểm dừng thứ 2 của state machine kéo giọt Vitals.
-   * Reachable qua: (a) bấm nút Mở rộng ở header popover này; (b) kéo dài
-   * `LONG_DRAG_THRESHOLD_PX` ở StageSwitcher (fast-path, không cần dừng ở popover).
-   * Điều hướng thay vì portal modal để tận dụng route hiện có (mobile tab, deep
-   * link, back button đều hoạt động sẵn).
-   */
-  const openFullNotebook = useCallback(() => {
-    const id = currentProjectId || currentFlowId || 'default';
-    onClose();
-    router.push(`/projects/${id}/notebook`);
-  }, [currentProjectId, currentFlowId, router, onClose]);
+  /* ⛔ `openFullNotebook` + nút ⤢ ĐÃ GỠ 05/09 (A1-02). ĐỪNG DỰNG LẠI — đây là việc TRỪ ĐI, và
+     bốn lý do đều là luật đã chốt, không phải chuyện gu:
+       ① `ACTIVE-DESIGN-CONTEXT` §4 **D-DR1** — *"sau di trú phải còn ĐÚNG MỘT chỗ đứng vật lý"*.
+          Nút này đẩy sang `/projects/<id>/notebook`, một route KHÔNG có khẩu độ Vitals (đo 05/09:
+          `[data-vitals-state]` = 0 phần tử trên màn đó) ⇒ chỗ đứng thứ hai, và là ngõ cụt.
+       ② §2 **Morph giữ định danh** — aperture→peek→engage phải là CÙNG MỘT VẬT nở ra; nhảy sang
+          màn khác là teleport.
+       ③ `00-CHOT` 04/09 — *"trong IF AI tương tác là Vitals, không có mặt AI thứ hai"*; nhãn cũ
+          còn lộ tên sản phẩm ngoài ("NotebookLM").
+       ④ `id = currentProjectId || currentFlowId || 'default'` **bịa ra một dự án không có trên
+          tài khoản** — đo 05/09 với tài khoản 0 dự án: đầu trang in `DỰ ÁN · PROJECT #DEFAULT`.
+     Mức Engage của khẩu độ ĐÃ LÀ mặt đầy đủ (EXS §7), nên không mất năng lực nào.
+     Route `/projects/[id]/notebook` KHÔNG mồ côi — còn 3 lối vào thật, đo bằng grep 05/09:
+       · `app/projects/[id]/overview/page.tsx:224` (Link trên trang Tổng quan dự án)
+       · `app/library/knowledge/page.tsx:27` (nút "Thêm tài liệu (Sổ tay)")
+       · `lib/library/knowledge.ts:147` (href của mỗi mục tri thức) */
 
   const hasThread = messages.length > 0 || sending || !!error;
 
@@ -456,13 +495,92 @@ export default function VitalsGesturePanel({
    * VitalsTyping cũ). 'listening'/'thinking' chưa có nguồn thật (không voice input, không
    * streaming 2 pha) nên không gán ở đây — xem comment đầu VitalsStateBadge.tsx.
    * 08/08 thêm 'alert' khi bản vẽ có lỗi/cảnh báo quy chuẩn chưa xử lý (nguồn thật ở trên). */
-  const vitalsState: VitalsState = sending ? 'answering' : pendingIssues > 0 ? 'alert' : 'idle';
+  /* ── Slice 12 (03/09) — ĐÁNH GIÁ BẢN VẼ: hành động thật, tất định, 0 credit, không sửa Doc.
+   * Lõi `lib/capabilities/vitals-eval-core` đọc Doc + Thẻ DNA dự án (GET route sẵn có, thẻ mới
+   * cập nhật nhất) + mô hình phản hồi on-device (localStorage) → bản ghi đánh giá; bản ghi lưu
+   * IndexedDB qua sheets-persist (best-effort, hỏng đĩa không chặn). Nhận/Bỏ = nhãn huấn luyện
+   * duy nhất — im lặng không phải nhãn. "Hỏi Vitals" = đường AI TUỲ CHỌN qua chat sẵn có. */
+  const [evalRecord, setEvalRecord] = useState<EvalRecord | null>(null);
+  const [evalBusy, setEvalBusy] = useState(false);
+  const [evalSaved, setEvalSaved] = useState<boolean | null>(null);
+  const [evalNote, setEvalNote] = useState<string | null>(null);
+  const evalModelRef = useRef<ReturnType<typeof loadEvalModel> | null>(null);
+  const sessionUser = useFlowStore((s) => s.user);
+  const evalUserId = sessionUser?.id ?? (typeof window !== 'undefined' ? getLastUserId() : null);
+  const evalProjectId = currentProjectId || currentFlowId || null;
+
+  const runEval = useCallback(async () => {
+    if (evalBusy) return;
+    // Nút "Đánh giá bản vẽ" chỉ render khi `stage === 'concept'`; canh lại ở đây để kiểu THU HẸP
+    // đúng chỗ, thay vì ép kiểu. `buildEvalRecord` chấm bản vẽ 2D — 'gallery' không có bản vẽ nào.
+    if (stage !== 'concept') return;
+    const doc = useCadStore.getState().doc;
+    if (!doc || !Array.isArray(doc.entities) || doc.entities.length === 0) {
+      setEvalNote('Bản vẽ đang trống — chưa có gì để đánh giá.');
+      return;
+    }
+    setEvalBusy(true);
+    setEvalNote(null);
+    setEvalSaved(null);
+    // Thẻ DNA: chỉ đọc; không có/không tải được ⇒ lớp gu tự khai bị chặn (lõi ghi lý do).
+    let card: DesignDnaCard | null = null;
+    if (evalProjectId) {
+      try {
+        const res = await fetch(`/api/projects/${evalProjectId}/dna`);
+        const j = res.ok ? await res.json().catch(() => null) : null;
+        const cards: unknown[] = Array.isArray(j?.cards) ? j.cards : [];
+        const valid = cards.filter(isDesignDnaCard).sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+        card = valid[0] ?? null;
+      } catch (err) {
+        console.warn('[vitals-eval] không tải được Thẻ DNA — lớp gu bị chặn', err);
+      }
+    }
+    const model = evalModelRef.current ?? loadEvalModel();
+    evalModelRef.current = model;
+    const record = buildEvalRecord({ doc, stage, projectId: evalProjectId, card, model, now: new Date().toISOString() });
+    setEvalRecord(record);
+    setEvalBusy(false);
+    if (evalUserId && evalProjectId) setEvalSaved(await saveEvalRecord(evalUserId, evalProjectId, record));
+  }, [evalBusy, evalProjectId, evalUserId, stage]);
+
+  const onEvalFeedback = useCallback(
+    (findingId: string, verdict: EvalVerdict) => {
+      setEvalRecord((prev) => {
+        if (!prev) return prev;
+        const next = applyFeedback(prev, findingId, verdict, new Date().toISOString());
+        const model = evalModelRef.current ?? loadEvalModel();
+        evalModelRef.current = model;
+        if (learnDelta(model, next, findingId) > 0) saveEvalModel(model);
+        if (evalUserId && evalProjectId) void saveEvalRecord(evalUserId, evalProjectId, next).then(setEvalSaved);
+        return next;
+      });
+    },
+    [evalProjectId, evalUserId],
+  );
+
+  // Chọn = trạng thái UI của CAD store, không đụng hình học — lùi được bằng cách bấm chỗ khác.
+  const onEvalSelect = useCallback((ids: string[]) => {
+    useCadStore.getState().select(ids);
+  }, []);
+
+  const onEvalAsk = useCallback(() => {
+    if (!evalRecord) return;
+    void send(summaryForVitals(evalRecord));
+  }, [evalRecord, send]);
+
+  const evalStale = !!evalRecord && isRecordStale(evalRecord, useCadStore.getState().doc);
+
+  const vitalsState: VitalsState = sending
+    ? 'answering'
+    : pendingIssues > 0 || vitalsStateFor(evalRecord) === 'alert'
+      ? 'alert'
+      : 'idle';
 
   return (
     <motion.div
       ref={rootRef}
       role="dialog"
-      aria-label={`Vitals AI · ${STAGE_LABEL[stage]}`}
+      aria-label={nhanTamChat(stage)}
       aria-hidden={!open}
       data-vitals-chat=""
       initial={reduce ? { opacity: 0 } : { opacity: 0, scaleY: 0.7, scaleX: 0.95, y: direction === 'up' ? 6 : -6 }}
@@ -523,29 +641,38 @@ export default function VitalsGesturePanel({
               }}
             >
               <VitalsStateDot state={vitalsState} size={7} />
-              Vitals · {STAGE_LABEL[stage]}
+              {nhanTamChat(stage)}
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <button
-                type="button"
-                aria-label="Mở NotebookLM đầy đủ · Full"
-                title="Mở NotebookLM đầy đủ (kéo dài xuống cũng có tác dụng)"
-                onClick={openFullNotebook}
-                data-vitals-expand=""
-                style={{
-                  display: 'grid',
-                  placeItems: 'center',
-                  width: 22,
-                  height: 22,
-                  borderRadius: 999,
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--t4)',
-                  cursor: 'pointer',
-                }}
-              >
-                <Maximize2 size={14} />
-              </button>
+              {stage === 'concept' && (
+                <button
+                  type="button"
+                  aria-label="Đánh giá bản vẽ — máy đo, 0 credit"
+                  title="Đánh giá bản vẽ: quy chuẩn · chuẩn đầu ra · tỷ lệ phòng · vật liệu · gu dự án (máy đo, không tốn credit)"
+                  aria-pressed={!!evalRecord}
+                  disabled={evalBusy}
+                  onClick={() => void runEval()}
+                  data-vitals-eval-run=""
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    height: 22,
+                    padding: '0 8px',
+                    borderRadius: 999,
+                    border: `1px solid ${evalRecord ? ACCENT : 'rgba(127,127,127,0.2)'}`,
+                    background: evalRecord ? 'var(--accent-soft)' : 'transparent',
+                    color: evalRecord ? ACCENT : 'var(--t3)',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    cursor: evalBusy ? 'progress' : 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {evalBusy ? <Loader2 size={14} className="animate-spin" /> : <ClipboardCheck size={14} />}
+                  Đánh giá
+                </button>
+              )}
               <button
                 type="button"
                 aria-label="Đóng Vitals"
@@ -567,7 +694,25 @@ export default function VitalsGesturePanel({
             </div>
           </div>
 
-          {!hasThread && (
+          {evalNote && (
+            <div role="status" style={{ padding: '8px 12px 0', fontSize: 11, color: 'var(--t3)' }}>
+              {evalNote}
+            </div>
+          )}
+
+          {evalRecord && (
+            <VitalsEvalPanel
+              record={evalRecord}
+              stale={evalStale}
+              saved={evalSaved}
+              onFeedback={onEvalFeedback}
+              onSelect={onEvalSelect}
+              onAsk={onEvalAsk}
+              onClose={() => setEvalRecord(null)}
+            />
+          )}
+
+          {!hasThread && !evalRecord && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '8px 10px 4px' }}>
               {STAGE_SUGGESTIONS[stage].map((q) => (
                 <button
@@ -655,12 +800,13 @@ export default function VitalsGesturePanel({
               disabled={sending}
               aria-label="Hỏi Vitals"
               placeholder={STAGE_PLACEHOLDER[stage]}
+              /* ring TRONG: ô nằm trong vỏ pill của khẩu độ Vitals — ring ngoài đè viền vỏ */
+              className="if-focus-inset"
               style={{
                 flex: 1,
                 minWidth: 0,
                 background: 'transparent',
                 border: 'none',
-                outline: 'none',
                 fontSize: 12.5,
                 color: 'var(--t1)',
               }}

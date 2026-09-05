@@ -312,7 +312,8 @@ export function RolloutGroup({ kindKey, children }: GroupProps) {
                   e.preventDefault();
                   setMenu({ x: e.clientX, y: e.clientY, id: it.id });
                 }}
-                className="group flex h-[var(--row)] w-full cursor-pointer select-none items-center gap-1.5 border-b border-[var(--vien-mo)] px-2 transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent-ring)]"
+                // HOÀ: giữ token `--nhip-bam` + `--accent-ring` (xem chú thích ở InspectorPages.tsx).
+                className="group flex h-[var(--row)] w-full cursor-pointer select-none items-center gap-1.5 border-b border-[var(--vien-mo)] px-2 transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] if-focus-inset"
               >
                 <ChevronDown
                   size={16}
@@ -398,7 +399,7 @@ export function RolloutGroup({ kindKey, children }: GroupProps) {
                   fn();
                   setMenu(null);
                 }}
-                className="flex w-full items-center rounded-[6px] px-2 py-1.5 text-left text-[11.5px] text-[var(--t2)] transition-colors duration-[100ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+                className="flex w-full items-center rounded-[6px] px-2 py-1.5 text-left text-[11.5px] text-[var(--t2)] transition-colors duration-[var(--nhip-bam)] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
               >
                 {label}
               </button>

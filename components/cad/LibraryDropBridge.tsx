@@ -44,6 +44,7 @@ import {
   type LibraryItemRef,
 } from '@/lib/cad/library-item-resolve';
 import { hydrateIdfcStore, loadIdfcStore } from '@/lib/library/idfc-store';
+import { loadSpecRefs } from '@/lib/library/spec-refs';
 
 /** Chi tiết sự kiện: món trên kệ + cờ để nơi PHÁT biết đã có ai nhận chưa (đặt lại đồng bộ ngay
  * trong listener — `dispatchEvent` chạy đồng bộ nên nơi phát đọc được ngay sau khi gọi).
@@ -89,7 +90,17 @@ async function dropItem(item: LibraryItemRef, sheetItemId?: string): Promise<voi
   // manifest tải lười + cache theo phiên trang (`loadManifest`), hỏng mạng thì coi như chưa có
   // kho ② chứ không chặn kho ①.
   const manifest = await loadManifest().catch(() => null);
-  const hit = resolveLibraryItem(item, manifest, undefined, idfcGeom2d);
+
+  // 03/09 — ĐƯỜNG DỰ PHÒNG CHO `specId`. Trước nay tham số `specs` của resolver bỏ trống, nên
+  // nhánh khớp mã tự động bên trong nó KHÔNG BAO GIỜ chạy ở phía nghe. Ca thường ngày vẫn đúng
+  // (`LibrarySheet.tsx:503` đã tự tính `specId` rồi gửi kèm), chỗ thủng là CỬA SỔ ĐUA: tấm Thư
+  // viện chỉ fetch `/api/specs` khi tấm mở (`:351`), món thả trước lúc trả lời về thì rơi xuống
+  // KHÔNG MÃ và `lib/boq/model.ts:102` đếm vào `missing-specId-item` — người dùng không có cách
+  // nào biết mình vừa rơi vào cửa sổ đó. Nơi nghe tự đủ thì hết phụ thuộc nơi phát kịp hay không.
+  // Chỉ nạp KHI THIẾU: món đã mang mã (gán tay ở tấm Thư viện) thì không tốn lượt mạng nào, và
+  // `item.specId` vẫn thắng — đúng thứ tự ưu tiên R1 19/08, đây là dự phòng không phải đường mới.
+  const specs = item.specId ? undefined : await loadSpecRefs();
+  const hit = resolveLibraryItem(item, manifest, specs, idfcGeom2d);
 
   if (!hit) {
     // `.idfc` có trong kho nhưng không mang hình 2D (video/mẫu trang/vật liệu chưa có ký hiệu…)
