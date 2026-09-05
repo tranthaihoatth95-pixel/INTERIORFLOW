@@ -77,7 +77,12 @@ function thanhDong(v: VatLieuHatGiong): MaterialSpecDto {
     w: null,
     d: null,
     hUp: null,
-    colorHex: v.pbr.baseColor ?? null,
+    /* 🔴 05/09 — LẤY MÀU TỪ MẶT 2D, KHÔNG TỪ `pbr.baseColor`. Vật liệu có ảnh vân thì
+       `baseColor` là **HỆ SỐ NHÂN** của glTF và phải bằng TRẮNG; đọc nó ra làm "màu của món"
+       biến năm hàng thành năm ô TRẮNG. Bắt được bằng cách chụp app với WebGL tắt — lúc quả cầu
+       không dựng được, ô rơi về `colorHex` và cái sai lộ ra ngay; `tsc`, test và ảnh ở máy có
+       WebGL đều xanh. `hatch2d.color` là chỗ màu vẫn còn nghĩa là MÀU. */
+    colorHex: v.hatch2d.color ?? v.pbr.baseColor ?? null,
     imageAssetId: null,
     priceNote: null,
     currency: null,

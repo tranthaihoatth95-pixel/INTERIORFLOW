@@ -20,6 +20,7 @@ import {
   pbrMapHatGiong,
   timVatLieuHatGiong,
 } from './hat-giong';
+import { hangHatGiong } from './kho-mo-dau';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { isMatIdUuid, normalizeMatIdCanonical } from './matid-identity';
@@ -120,6 +121,20 @@ for (const v of VAT_LIEU_HAT_GIONG) {
   /* glTF: `baseColorFactor × baseColorTexture`. Ảnh vân đủ màu phải đi với hệ số TRẮNG, không
      thì ảnh bị ám màu — gỗ óc chó nhân với chính màu nâu của nó ra gần đen. */
   ok(`"${v.code}" có ảnh vân thì baseColor phải TRẮNG (hệ số nhân)`, (v.pbr.baseColor ?? '').toLowerCase() === '#ffffff', String(v.pbr.baseColor));
+}
+
+/* ─── MÀU CỦA HÀNG KHO KHÔNG ĐƯỢC LÀ HỆ SỐ NHÂN ───────────────────────────── */
+console.log('màu hiện ở kho lấy từ MẶT 2D, không lấy từ hệ số nhân của glTF');
+for (const v of VAT_LIEU_HAT_GIONG) {
+  const hang = hangHatGiong().find((h) => h.sku === v.code);
+  ok(`"${v.code}" có mặt trong hàng kho`, !!hang);
+  if (!hang) continue;
+  ok(`"${v.code}" colorHex = màu mặt 2D`, hang.colorHex === v.hatch2d.color, `${hang.colorHex} vs ${v.hatch2d.color}`);
+  /* Ca thật đã xảy ra: có ảnh vân ⇒ `baseColor` trắng ⇒ nếu kho đọc `baseColor` thì năm hàng
+     thành năm ô TRẮNG khi quả cầu không dựng được (WebGL tắt). */
+  if (v.pbr.baseColorMapUrl) {
+    ok(`"${v.code}" KHÔNG lấy màu từ pbr.baseColor (đang là hệ số nhân)`, hang.colorHex !== v.pbr.baseColor, String(hang.colorHex));
+  }
 }
 
 /* ─── GIẤY PHÉP — mọi tài sản phân phối phải khai tường minh ─────────────── */

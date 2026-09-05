@@ -30,7 +30,11 @@
  *     ⇒ Luật không bị bỏ, nó bị **thu hẹp đúng phần đã hết lý do**: test nay chặn ảnh NGOÀI
  *     (http · data: · thư mục khác) và chặn cả URL trỏ vào tệp KHÔNG TỒN TẠI.
  *
- * 📄 HỢP ĐỒNG NÀY LÀ THỨ SCENE 3D SẼ ĐỌC — `docs/phieu-giao/P-V8-SCENE-DOC-VAT-LIEU.md`.
+ * 📄 HỢP ĐỒNG NÀY LÀ THỨ SCENE 3D SẼ ĐỌC — phiếu ĐANG SỐNG là
+ * `docs/phieu-giao/P-V8b-DANH-TINH-VAT-LIEU-LEN-3D.md`; bản đầu
+ * `docs/phieu-giao/P-V8-SCENE-DOC-VAT-LIEU.md` giữ làm dấu vết (nó tra vật liệu bằng
+ * `ProductSpec.id` — cuid, không phải UUID ⇒ rơi xuống nhánh legacy-sku và `pbr` null vĩnh viễn;
+ * đúng điều `lib/boq/model.ts:64` đã cấm bằng chữ hoa).
  * Khai đủ ở ĐÂY để V8 chỉ việc **đọc**, không phải đoán thêm gì: `baseColorMapUrl` (đường dẫn
  * cùng gốc) · `uvScaleMm` (mm thật, đúng thứ tự w×h theo hướng vân) · `baseColor` trắng làm hệ
  * số nhân. `lib/three/pbr-three.ts` đã dịch trọn bộ đó ra `MeshPhysicalMaterial` — V8 gọi
