@@ -198,7 +198,7 @@ export const LIBRARY_SHEET_CSS = `
       thật của item, không qua "automatic minimum size". Đo lại: hàng 1 bottom=499, hàng 2
       top=510 — đúng khoảng cách gap 11px, hết chồng.
       CẤM backtick trong comment file *-css.ts — phạm 2 lần liên tiếp lúc viết đúng đoạn này. */
-.if-lib-root .grid{flex:1;overflow-y:auto;padding:12px 14px 16px;display:grid;
+.if-lib-root .grid{flex:1;overflow-y:auto;scrollbar-gutter:stable;padding:12px 14px 16px;display:grid;
       grid-template-columns:repeat(auto-fill,minmax(var(--lib-card-min),1fr));grid-auto-rows:max-content;
       gap:11px;align-content:start;align-items:start}
 .if-lib-root .it{border-radius:var(--radius-md);overflow:hidden;background:var(--card);border:1px solid var(--border);
