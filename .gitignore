@@ -105,6 +105,15 @@ docs/**/*.png
 docs/**/*.jpg
 docs/**/*.jpeg
 docs/**/*.webp
+
+# NGOẠI LỆ HẸP — bằng chứng app thật của SHIP BOARD (Hoà chốt 05/09 §14).
+# Luật trên (01/08) đuổi ảnh khỏi repo vì hai lý do: trung tính (ảnh render khách) và repo nhẹ.
+# Lô này không dính lý do nào: ảnh chụp CHÍNH APP với tài khoản thử + dự án thử, 0 dữ liệu khách,
+# 2,3 MB. Và Ship Board đòi ảnh phải nằm chỗ THEO DÕI ĐƯỢC — nằm /tmp là mất, đã mất một lô rồi.
+# ⚠️ Ngoại lệ này CHỈ cho đúng thư mục này. Ảnh docs khác vẫn bị đuổi như cũ.
+!docs/ship/anh/
+!docs/ship/anh/*.png
+
 _to_delete/
 
 # ── NGOẠI LỆ CÓ PHẠM VI: ẢNH NGHIỆM THU MẮT (04/09) ────────────────────────────
