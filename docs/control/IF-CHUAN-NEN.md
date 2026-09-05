@@ -237,23 +237,27 @@ trong năm bộ**, không phải cái khuôn của cả năm.
 
 ---
 
-## 5 · CÒN THIẾU — nói thẳng, chưa nghiên cứu
+## 5 · BỐN MẢNG TỪNG TRỐNG — ĐÃ LẤP 05/09, và phần nào CHƯA lấp
 
-Bốn mục dưới đây **chưa** có nguồn và ngưỡng, nên **chưa được dựng cổng**. Ghi ra để chúng không
-biến thành "chuẩn" bằng cách im lặng trôi qua.
+🔴 **MỤC NÀY ĐÃ VIẾT LẠI 05/09.** Bản cũ khai bốn mảng *"chưa có nguồn và ngưỡng, nên chưa được
+dựng cổng"*, kèm bốn lệnh kiểm đều ra **0**. Nay chuẩn + ngưỡng + nguồn nằm ở
+**`docs/control/IF-CHUAN-BO-CUC.md`**. Để nguyên dòng "chưa có" khi thứ đó đã có là đúng cơ chế
+đẻ ra tội **N8** — mục này từng bị dính một lần rồi (§4, ca `lib/wallpaper/sets.ts`).
 
-⚠️ **Mỗi dòng dưới đây kèm LỆNH KIỂM.** Cổng `soi:vang-mat` bắt mục này ngay lần viết đầu, và nó
-bắt đúng: một dòng khai thiếu mà không kèm cách đo thì sáu tháng sau không ai biết nó còn đúng hay
-đã cũ. Lệnh ở cột phải chạy được, cho ra đúng con số ghi kèm.
+| mảng | trạng thái | kiểm bằng |
+|---|---|---|
+| **Bố cục** — lưới · thứ bậc thị giác | 🟢 **CÓ CỔNG** (nhịp lưới 4px + độ dài dòng) · ⛔ **thứ bậc thị giác vẫn thuộc MẮT** (N-16) | `node -e "const s=require('./package.json').scripts; console.log(Object.keys(s).filter(k=>/bo-cuc\|luoi/.test(k)).length)"` → **2** · `npm run soi:bo-cuc` |
+| **Gestalt** — gần nhau · vùng chung | 🟡 **CÓ NGƯỠNG + ĐO SỐNG, chưa bánh cóc** (mẫu còn nhỏ: 2–4 nhóm/màn đủ điều kiện) | `PORT=<cổng> node scripts/soi-mat/do-chuan-bo-cuc.mjs` → `nhomTiDuoi1` |
+| **Vùng bấm** | 🟡 **CÓ NGƯỠNG + ĐO SỐNG, chưa bánh cóc** — kích thước đích không đọc được tĩnh | cùng lệnh trên → `duoi24` · `duoi24ThieuKhoangCach` |
+| **Chuyển động** — giá trị token có đúng nghiên cứu không | ✅ **ĐẠT 5/5** — 130·170·220·300·460ms đều < 1s (NN/g) và trong dải Material 3 | `node -e "const s=require('fs').readFileSync('lib/ui/nhip.ts','utf8'); console.log([...s.matchAll(/^\s*(bam\|vien\|bang\|nguCanh\|bienHinh):\s*(\d+)/gm)].filter(m=>+m[2]<50\|\|+m[2]>=1000).length)"` → **0** |
 
-| thiếu gì | kiểm bằng |
-|---|---|
-| **Bố cục** — lưới, tỉ lệ khung, thứ bậc thị giác | `node -e "const s=require('./package.json').scripts; console.log(Object.keys(s).filter(k=>/bo-cuc\|luoi/.test(k)).length)"` → **0** |
-| **Luật thị giác Gestalt** — gần nhau · giống nhau · khép kín · liên tục | `node -e "const s=require('./package.json').scripts; console.log(Object.keys(s).filter(k=>/gestalt\|thi-giac/.test(k)).length)"` → **0** |
-| **Vùng bấm** — sàn 44px (quy ước Apple HIG / WCAG 2.5.8 là 24px) | `node -e "const s=require('./package.json').scripts; console.log(Object.keys(s).filter(k=>/vung-bam\|tap-target/.test(k)).length)"` → **0** |
-| **Chuyển động** — thời lượng, đường cong | có token `--nhip-*` và cổng `F-MOTION-TOKEN` (trần 41) canh **việc dùng token**, nhưng **không** canh giá trị token có đúng nghiên cứu không: `node -e "console.log(require('./scripts/foundation-tran.json')['F-MOTION-TOKEN'])"` → **41** |
+**Đo hiện trạng 05/09 — con số đau nhất:** `npm run soi:bo-cuc` ra **2786 / 5072 (55%)** khoảng
+cách gõ cứng nằm ngoài lưới 4px. Nguồn lớn nhất **không phải** ai đó chọn số xấu, mà là **thang
+phụ của Tailwind** (`gap-1.5`=6px · `px-2.5`=10px…) lệch thang của IF: **791/2786**.
 
-Cả bốn đã giao lane `05 · THIẾT KẾ/NC` (`docs/phieu-giao/khao-sat-ux-toan-cau.md`).
+⚠️ **Ba chỗ vẫn CHƯA có chuẩn, khai thẳng** (chi tiết `IF-CHUAN-BO-CUC` §1.3 · §1.5):
+**thứ bậc thị giác** (N-16 — mắt người) · **tỉ lệ gói hộp** (đo được, **không có ngưỡng công bố**)
+· **ô mồ côi cuối lưới** và **hộp rỗng do ép chiều cao** (thấy bằng mắt trên app thật, chưa có nguồn).
 
 ---
 

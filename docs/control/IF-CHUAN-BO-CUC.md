@@ -132,6 +132,7 @@ cảnh báo — chấm bằng một thang khi bối cảnh thuộc thang khác.
 ⇒ **VB-3 (44) chỉ áp khi con trỏ thô.** Chấm bản desktop bằng 44 là bịa một lỗi không có.
 
 ### 2.2 · Vì sao chưa dựng bánh cóc cho vùng bấm
+Kiểm lại: `grep -c 'vung-bam\|tap-target' scripts/foundation-tran.json` → **0** khoá trần.
 
 Kích thước đích **không đọc được từ mã tĩnh** — nó là kết quả của lớp CSS + nội dung + khung chứa
 lúc chạy. Một cổng tĩnh đoán con số này sẽ báo oan hàng loạt, đúng kiểu hỏng đã trả giá **bốn lần
@@ -289,3 +290,8 @@ gestalt    : 1 / 7 nhóm có tỉ lệ giữa/trong < 1
 - **Palmer (1992)**, *Common region: a new principle of perceptual grouping*,
   Cognitive Psychology 24(3):436-447 — PMID `1516361`
 - ⛔ **BỊ BÁC:** *"Palmer 1992 · 40px/120px/89%"* — xem §3.2, con số này không tồn tại trong bài gốc.
+  Kiểm chưa ai chép nó vào repo: `grep -rn "40 pixel" docs/ --exclude=IF-CHUAN-BO-CUC.md` → **0 dòng**.
+  Kiểm bài gốc: mở `pubmed.ncbi.nlm.nih.gov/1516361/` + `eric.ed.gov/?id=EJ450926` — cả hai mô tả
+  bài là *đề xuất nguyên lý vùng chung*, không nêu ngưỡng px nào.
+  ⚠️ Cờ `--exclude` là bắt buộc: **chính tệp này** có chứa chuỗi đó (để cảnh báo), nên bỏ cờ đi
+  thì lệnh tự bắt trúng mình và trả ra 3 — đúng kiểu hỏng đã xảy ra 4 lần ngày 05/09.
