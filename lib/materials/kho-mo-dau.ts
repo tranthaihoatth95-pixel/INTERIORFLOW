@@ -26,6 +26,9 @@
 import type { MaterialSpecDto } from './warehouse/dto';
 import { VAT_LIEU_HAT_GIONG, type VatLieuHatGiong } from './hat-giong';
 import { normalizeMatIdCanonical } from './matid-identity';
+import type { MaterialDef, MaterialTexture } from '../cad/materials';
+import { mixHex } from '../cad/plan-depth';
+import { materialTypeOf, type MaterialPreviewKind } from './material-edit';
 
 /** Tiền tố `id` của dòng hạt giống — cố ý KHÔNG phải dạng cuid của Prisma, để không lẫn được với
  * bản ghi DB thật ở bất cứ chỗ nào so `id`. */
@@ -174,4 +177,91 @@ export function tronPickHatGiong<T extends { sku: string | null }>(
   const db = kho ?? [];
   const daCo = new Set(db.map((m) => chuanSku(m.sku)).filter((x): x is string => !!x));
   return [...pickHatGiong().filter((h) => !daCo.has(chuanSku(h.sku) ?? '')), ...db];
+}
+
+/**
+ * MẶT TIỀN THỨ SÁU — MẶT 2D (`MaterialDef`), chân thứ ba của kiềng ba chân.
+ *
+ * ⛔ VÌ SAO TỒN TẠI (đo 05/09 trên app thật, `:3277`, tài khoản mới): chỉ báo ba mặt của **cả hai**
+ * vật liệu ship theo bản cài đọc ra `2D – · 3D ✓ · Giá !`. Tức mặt 2D **chết trên 100% vật liệu
+ * người dùng thấy ở lần mở app đầu tiên**. Nguyên nhân đo được, không suy:
+ *   · `grep -c 'matId:' lib/cad/materials.ts` = **0** — 13 preset, không preset nào khai mã;
+ *   · mặt 3D đã có `pbrMapHatGiong()`, mặt thương mại đã có `hangHatGiong()`,
+ *     **`defsHatGiong()` thì KHÔNG TỒN TẠI** ⇒ `getMaterial().flat` luôn `null` ⇒ `ba-mat.ts`
+ *     trả `chuaCo` cho mặt 2D, đúng như nó phải trả.
+ * Hàm này là chân còn thiếu, dựng **đối xứng y hệt** `pbrMapHatGiong()`: cùng nguồn dữ liệu
+ * (`VAT_LIEU_HAT_GIONG`), cùng luật bản-sao-mỗi-lần-gọi, cùng luật nhường (mã trùng ⇒ preset
+ * người dùng THẮNG).
+ *
+ * 🔴 KHÔNG SỬA `MATERIALS`. Mảng preset đó là dữ liệu người dùng đang dùng ở ô chọn 2D; nhét
+ * dòng hạt giống vào nó là đổi nội dung một kho đang sống. Hạt giống là tầng **DƯỚI**, trộn ở
+ * đường ĐỌC (`tronDefsHatGiong`), đúng thứ tự ba tầng của `tang-phan-giai.ts`.
+ *
+ * ⚠️ HAI TRƯỜNG SUY RA, KHAI THẲNG LÀ SUY (không tự nhận là dữ liệu gốc):
+ *  · `tones` — `MaterialDef` cần 3 tông để vẽ vân procedural, `VatLieuHatGiong` chỉ có MỘT màu.
+ *    Ba tông **suy tất định** từ `hatch2d.color` bằng `mixHex` (`lib/cad/plan-depth.ts`) — tái
+ *    dùng bộ pha màu đã có, KHÔNG chép một bộ thứ hai vào đây (đúng họ bệnh `soi:dong-dang` bắt).
+ *    Chép cứng ba tông vào tệp này là dựng **nguồn sự thật thứ hai** cho màu của cùng một vật:
+ *    ai đó đổi `baseColor` mà quên đổi `tones` thì vân và màu nói hai điều khác nhau.
+ *  · `texture` — kiểu vân procedural, suy từ `pbr.typeId` qua `MATERIAL_TYPES[].previewKind`
+ *    (bảng ĐÃ CÓ ở `material-edit.ts`), không đẻ bảng ánh xạ thứ hai. Họ nào chưa có kiểu vân
+ *    riêng thì rơi về `'solid'` — **màu phẳng đúng còn hơn vân sai họ**.
+ */
+
+/** previewKind (bảng `MATERIAL_TYPES`) → kiểu vân procedural của `material-texture.ts`.
+ * Chỉ ánh xạ chỗ có vân THẬT tương ứng; còn lại `'solid'` — xem ghi chú ⚠️ ở trên. */
+const VAN_THEO_HO: Record<MaterialPreviewKind, MaterialTexture> = {
+  wood: 'wood',
+  stone: 'marble',
+  metal: 'solid',
+  paint: 'solid',
+  fabric: 'solid',
+  glass: 'solid',
+};
+
+/** Một vật liệu hạt giống → một `MaterialDef` (mặt 2D). */
+function thanhDef(v: VatLieuHatGiong): MaterialDef {
+  const mau = v.hatch2d.color ?? v.pbr.baseColor ?? '#888888';
+  const ho = materialTypeOf(v.pbr.typeId)?.previewKind ?? null;
+  return {
+    /* Tiền tố y như dòng bảng — nhìn `id` là biết đến từ tầng nào, và không lẫn được với id
+       preset gõ tay trong `MATERIALS`. `seedFromId` của `material-texture.ts` băm chính chuỗi
+       này ⇒ vân của một vật liệu bất biến qua mọi lần mở app. */
+    id: `${TIEN_TO_HAT_GIONG}${normalizeMatIdCanonical(v.matId)}`,
+    name: v.name,
+    /* NHÃN NHÓM của ô chọn 2D — hạt giống CHƯA vào ô chọn đó, nên trường này chưa nơi nào đọc.
+       Đặt `'Sàn'` để trùng chỗ hai preset gỗ đang có (`san-go-soi` · `san-go-oc-cho`), khi nào
+       hạt giống vào ô chọn thì chúng đứng đúng chỗ người dùng đã quen. KHÔNG phải khẳng định
+       "gỗ sồi chỉ dùng cho sàn". */
+    category: 'Sàn',
+    hatchPattern: v.hatch2d.hatchPattern as MaterialDef['hatchPattern'],
+    patternScale: v.hatch2d.patternScale ?? 1,
+    patternAngle: v.hatch2d.patternAngle ?? 0,
+    color: mau,
+    texture: ho ? VAN_THEO_HO[ho] : 'solid',
+    tones: [mixHex(mau, '#000000', 0.28), mau, mixHex(mau, '#ffffff', 0.3)],
+    /* KHOÁ NỐI — đây là toàn bộ lý do hàm này tồn tại. `getMaterial()` tra `flat` bằng
+       `d.matId` canonical; thiếu dòng này thì mặt 2D vẫn `chuaCo`. */
+    matId: normalizeMatIdCanonical(v.matId),
+  };
+}
+
+/** MỌI preset 2D của tầng hạt giống. Bản sao mỗi lần gọi (cùng kỷ luật `pbrMapHatGiong()`). */
+export function defsHatGiong(): MaterialDef[] {
+  return VAT_LIEU_HAT_GIONG.map(thanhDef);
+}
+
+/**
+ * Trộn preset hạt giống vào danh sách preset 2D trước khi đưa cho `getMaterial()`.
+ * Cùng luật nhường như `tronHatGiong`/`tronPickHatGiong`: hạt giống đứng TRƯỚC (nền của kho),
+ * nhưng preset nào ĐÃ khai đúng `matId` đó thì **preset đó thắng** — studio tự khai ký hiệu 2D
+ * riêng cho mã này thì bản của họ là bản dùng, không hiện hai ký hiệu cho một vật.
+ */
+export function tronDefsHatGiong(defs: readonly MaterialDef[] | null | undefined): MaterialDef[] {
+  const co = defs ?? [];
+  const daCo = new Set(
+    co.map((d) => (typeof d.matId === 'string' ? normalizeMatIdCanonical(d.matId) : null))
+      .filter((x): x is string => !!x),
+  );
+  return [...defsHatGiong().filter((d) => !daCo.has(d.matId ?? '')), ...co];
 }
