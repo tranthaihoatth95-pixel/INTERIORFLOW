@@ -291,6 +291,115 @@ không phải *việc cần xử*.
 ⚠️ Ranh giới phải giữ: *im vì không có gì* ≠ *im vì không hỏi được*. Ca `F-02 calm giả` đã trả
 giá — app khẳng định "không có gì cần xem" trong khi nó **không gọi được máy chủ**. Nguồn hỏng
 phải nói **"chưa đo được"**, không được im.
+## ⛔ LUẬT NGHIỆM THU — HOÀ BAN 05/09
+
+> *"Không có gì đảm bảo thì **SPEC phải đảm bảo**. Và **không biết thì tại sao không hỏi?**"*
+
+Hoà ban sau khi tôi trả lời rằng lỗi *"hộp rỗng"* của Vitals **không có gì đảm bảo không tái
+diễn, chỉ mắt người mới phán được**. Câu đó là **buông việc**, không phải câu trả lời — nó biến
+mắt Hoà thành lưới chắn cuối cùng cho thứ lẽ ra không được lọt tới đó.
+
+### N1 · "MÁY KHÔNG PHÁN ĐƯỢC" KHÔNG PHẢI KẾT LUẬN — LÀ MỘT VIỆC CHƯA LÀM
+
+Gặp một tiêu chí tưởng là *gu*, phải đi hết ba nấc **theo thứ tự**, chỉ được xuống nấc sau khi
+nấc trước thật sự bí:
+
+| Nấc | Làm gì | Ca đã chạy thật |
+|---|---|---|
+| ① **QUY VỀ SỐ** | tìm đại lượng đo được đứng sau cái "gu" đó | *"nút mờ nhìn không rõ"* → tỉ số tương phản 2,55 → 3,36 · *"màu này đụng màu kia"* → khoảng cách góc màu OKLCH ±20° |
+| ② **QUY VỀ LUẬT NHỊ PHÂN** | không ra số thì ra câu **đúng/sai**, máy đọc được | *"hộp rỗng"* → **cấm dựng tấm khi `tinHieu.length === 0`** — ba chốt, khoá bằng test |
+| ③ **KHAI LÀ CÂU HỎI CÓ TÊN** | thật sự bí thì **ghi ra một CÂU HỎI cụ thể cho Hoà**, kèm 2-3 phương án + cái giá của mỗi phương án | — |
+
+⛔ **Nấc ③ KHÔNG phải "để mắt Hoà tự bắt".** Câu hỏi phải được **hỏi TRƯỚC khi giao**, đặt cạnh
+ảnh chụp của đúng bề mặt đó. Để Hoà tự phát hiện rồi mới bàn là **đã trượt rồi mới chữa**.
+
+### N2 · SPEC PHẢI MANG ĐIỀU KIỆN NGHIỆM THU, KHÔNG CHỈ MANG MÔ TẢ
+
+Mỗi bề mặt trong spec phải trả lời được: **"nhìn vào đâu để biết nó SAI?"**
+Spec chỉ tả *nó nên trông thế nào* thì không nghiệm thu được — hai người đọc ra hai bản khác nhau,
+và đó đúng là chỗ lỗi chui vào. Không viết được điều kiện sai ⇒ **spec chưa xong**, không phải
+*"phần này thuộc về gu"*.
+
+### N3 · KHÔNG BIẾT THÌ HỎI — VÀ ĐÂY LÀ NGOẠI LỆ CỦA LUẬT "THÔI HỎI CHUYỆN GU"
+
+Luật *STOP ASKING FOR TASTE DECISIONS* (đợt chạy nước rút) **vẫn còn hiệu lực** và **không**
+mâu thuẫn với luật này. Ranh giới:
+
+| | |
+|---|---|
+| **Tự quyết, cấm hỏi** | thứ suy được từ luật đã ghi · thứ quy được về số · thứ chỉ là **phép trừ** (bỏ bớt thì không đẻ ra lỗi gu mới) |
+| **Phải hỏi, cấm đoán** | thứ **thêm mới** một bề mặt/bố cục · thứ mà hai cách đọc dẫn tới **hai việc khác hẳn nhau** · thứ tôi đang định biện minh bằng *"chắc là ý Hoà muốn…"* |
+
+Dấu hiệu nhận ra mình đang đoán: **câu giải thích dài hơn thay đổi.**
+
+### N4 · CỔNG NGHIỆM THU LÀ BỐN THỨ ĐO ĐƯỢC — **KHÔNG PHẢI MẮT HOÀ**
+
+> Hoà ban 05/09, sửa thẳng bản N4 đầu tiên tôi vừa viết (bản đó đặt *"trình ảnh cho Hoà duyệt"*
+> làm cổng — **sai**, vì nó biến mắt Hoà thành thứ sản phẩm phụ thuộc vào):
+> *"Yêu cầu cứng: sản phẩm phải đi theo **tầm nhìn và mô tả của Hoà**, **không phụ thuộc mắt Hoà**.
+> Đúng tầm nhìn · đúng chuẩn ngành đã nghiên cứu · đúng spec mô tả · đúng visual chưng cất → PASS."*
+
+**Cổng gồm bốn cột. Đủ bốn thì PASS — không cần ai nhìn.** Thiếu một cột thì **chưa xong**, và
+*"chờ Hoà xem"* **không phải** cách lấp cột thiếu.
+
+| # | Cột | Nguồn sự thật trong repo | Trượt thì sao |
+|---|---|---|---|
+| ① | **Tầm nhìn** | `docs/IF-KIEN-TRUC-OS.md` — north star `N-1…N-20`, 13 cờ đỏ `N-10` | trượt north star = sai sản phẩm, sửa màu không cứu được (`N-17`) |
+| ② | **Chuẩn ngành đã nghiên cứu** | `NC-NGUYEN-TAC-GIAO-DIEN` `NT-1..18` · `NC-TRIET-LY-GIAO-DIEN` `KB-1..5` · `CHUAN-DAU-RA-NGHE` · Apple HIG/WWDC đã trích | nghiên cứu **đã làm rồi** — không tra là tự chế lại (tội `N8`) |
+| ③ | **Spec mô tả** | `CHOT-EXPERIENCE-SYSTEM-2026-08-20` 12 điều · `SPEC-DESIGN-SYSTEM-IF` §7 · luật hình học 14 mục · quyết định Hoà trong `00-CHOT` | spec không nói ⇒ **spec chưa xong** (`N2`), không phải *"phần này tuỳ gu"* |
+| ④ | **Visual chưng cất** | board `EXS-A…L` trên Claude Design · `REF-VISUAL-EXS` `R1-R16` · `docs/mocks/` | chưng cất **từ ảnh của chính Hoà** — nó LÀ mô tả của Hoà ở dạng nhìn được |
+
+⭐ **Vì sao bốn cột này đủ, không cần mắt**: cả bốn đều **đã là ý Hoà**, chỉ ở bốn dạng khác nhau —
+lời (①), nghề (②), chữ (③), hình (④). Đối chiếu đủ bốn tức là **đã hỏi Hoà rồi**, hỏi qua thứ
+Hoà để lại. Mắt Hoà chỉ còn là **phép thử ngẫu nhiên**, không phải mắt xích.
+
+⛔ **Cấm hai câu chống chế**:
+· *"để Hoà xem rồi tính"* — đẩy việc phán lên người ra đề, đúng thứ vừa bị cấm.
+· *"cái này thuộc về gu"* — trước khi nói câu đó phải đi hết `N1` ba nấc và tra đủ bốn cột trên.
+
+**Ảnh chụp vẫn phải có** — nhưng đổi vai: nó là **bằng chứng đã qua cổng**, không phải **đơn xin
+duyệt**. Trình cùng bảng bốn cột, ghi rõ cột nào đối chiếu với đoạn nào.
+
+### N5 · TỰ CHẤM TRƯỚC KHI GIAO — BẢNG BỐN CỘT LÀ BẮT BUỘC
+
+Mọi bề mặt đụng vào phải kèm bảng: | Bề mặt | ① tầm nhìn | ② chuẩn ngành | ③ spec | ④ visual | Kết |
+Mỗi ô ghi **điều khoản cụ thể** (`N-10`, `NT-8`, `EXS §7`, `EXS-D`) — không ghi *"đạt"* trống trơn.
+Ô nào không tra được nguồn ⇒ ghi **`[KHÔNG TRA ĐƯỢC]`** kèm câu hỏi, **không** được ghi *"đạt"*.
+
+### N6 · CỔNG CUỐI — **THAO TÁC THẬT NHƯ NGƯỜI DÙNG**, HAI LỐI NHẬP
+
+> Hoà ban 05/09: *"Gate cuối là audit với thao tác đi như một người thật ở hai bản **cảm ứng và
+> phím**, với **xác suất bao gồm hầu hết các trường hợp thực tế** sử dụng. Ở cửa cuối này nếu đạt:
+> **không bất tiện thao tác · không khó hiểu trong cách sử dụng · đúng design pattern tham chiếu**."*
+
+Bốn cột `N4` chứng minh **thiết kế đúng**. `N6` chứng minh **dùng được**. Hai việc khác nhau —
+đúng spec mà vẫn khó dùng là chuyện **thường xuyên xảy ra**, và chỉ lộ khi có người đi thật.
+
+**Bắt buộc CHẠY, cấm ĐỌC MÃ.** Đây là cổng duy nhất không được thay bằng grep. Bài học đã trả giá:
+*nút mờ kèm lý do* từng qua mọi máy soi vì lý do **có trong mã** — chỉ khi đi bằng **bàn phím thật**
+mới lộ ra nó **không bao giờ tới được người dùng**.
+
+#### Hai lối nhập, chạy CẢ HAI — không suy từ nhau
+| | Chuột + bàn phím (desktop) | Cảm ứng (tablet) |
+|---|---|---|
+| đi được tới đích | Tab · mũi tên · phím tắt · Enter | chạm · nhấn giữ · vuốt |
+| phải kiểm riêng | vòng focus thấy được · thứ tự Tab hợp lý · phím tắt khớp `hotkey-registry` | **không có hover ⇒ mọi thứ giấu sau hover là MẤT** · vùng chạm ≥44px · không kẹt cạnh màn |
+
+#### Ba điều kiện ĐẠT — quy về câu hỏi trả lời được, không để dạng cảm giác
+| Điều kiện Hoà nêu | Kiểm bằng gì |
+|---|---|
+| **không bất tiện thao tác** | việc thường gặp có đi thẳng được không · có đường **cụt** nào không (bấm rồi không có gì xảy ra, hoặc vào rồi không ra được) · có phải **rê chuột mới biết** không |
+| **không khó hiểu** | phép thử 3 giây: nhìn màn hình có trả lời được **đang ở đâu · làm được gì ở đây · quay về thế nào** không (`SPEC-NGON-NGU-CHI-DAN`) |
+| **đúng design pattern tham chiếu** | đối chiếu cột ④ của `N4` — board `EXS-*` · `REF-VISUAL-EXS` · `docs/mocks/`. Không có tham chiếu cho ca đó ⇒ nêu câu hỏi, **không tự chế rồi khai đạt** |
+
+#### "Hầu hết trường hợp thực tế" — phủ theo XÁC SUẤT, không phủ theo đường sung sướng
+Mỗi bề mặt phải đi ít nhất bốn ca, vì lỗi hay nằm ở ba ca sau:
+1. **đường sung sướng** — có dữ liệu, làm đúng thứ tự
+2. **rỗng** — chưa có dự án · chưa có tín hiệu · kho trống *(đúng ca đẻ ra lỗi hộp rỗng 05/09)*
+3. **vào ngang** — mở thẳng bằng đường dẫn/bookmark, bỏ qua các bước trước
+4. **quay về / bỏ dở** — thoát giữa chừng, vào lại, tìm đường ra *(đúng ca Hoà kẹt trong màn vẽ 05/09)*
+
+⛔ Đi mỗi ca 1 rồi khai đạt là **khai sai**, không phải khai thiếu.
 
 ## HẠN DÙNG
 Hoà lật thì sửa **tại chỗ, viết lại** — không cộng dồn đuôi. Thấy tệp này dài ra là dấu hiệu nó
