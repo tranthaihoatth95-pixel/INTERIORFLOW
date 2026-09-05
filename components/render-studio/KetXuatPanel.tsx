@@ -152,7 +152,7 @@ export default function KetXuatPanel({ scene, cameraApiRef, soKhoi }: KetXuatPan
     try {
       // `three` chỉ nạp khi thật sự bấm — không kéo vào bundle lúc mở app.
       const { chupKhungNhinSong } = await import('@/components/three/capture-live');
-      const chup = chupKhungNhinSong(scene, cam, cheDo.rongPx, tyLe);
+      const chup = await chupKhungNhinSong(scene, cam, cheDo.rongPx, tyLe);
       const rev = sceneRev ?? bamSceneRev(scene);
       const ten = `${cheDo.ten[0]} · ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
 

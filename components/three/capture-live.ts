@@ -27,6 +27,7 @@ import { buildMergedGeometries } from '@/lib/three/obj-scene-to-geometry';
 import { nearFarForScene } from '@/lib/three/capture';
 import type { Scene3DData } from '@/lib/three/cad-to-obj';
 import type { KhungMayQuay } from '@/lib/capabilities/render';
+import { chuanBiVatLieu, nguonVatLieuMacDinh, vatLieuChoNhomDongBo } from '@/lib/three/vat-lieu-nhom';
 
 /** Nền cảnh chụp — CÙNG mã màu với `buildOffscreenScene` (capture.ts:91) để hai đường chụp không
  * ra hai tông nền khác nhau. */
@@ -42,12 +43,17 @@ export interface KetQuaChup {
  * `rongPx` là bề rộng mong muốn; chiều cao suy từ `tyLe` (w/h) để tỉ lệ khung là thứ NGƯỜI chọn,
  * không phải thứ vô tình theo kích thước cửa sổ.
  */
-export function chupKhungNhinSong(
+/* 🔴 05/09 (V8c bước 3) — hàm này thành ASYNC. Lý do: vật liệu thật phải TẢI XONG texture trước
+   khi dựng cảnh, và đây là NGƯỜI ĐỌC THỨ BA của cùng một `SceneGroup[]` (viewer · capture.ts ·
+   tệp này). Sửa hai chỗ kia mà bỏ chỗ này thì "Chụp khung nhìn" — nút người dùng bấm nhiều nhất —
+   vẫn ra ảnh phẳng. Nơi gọi duy nhất (`KetXuatPanel.tsx`) vốn đã ở trong `async` nên chỉ thêm
+   `await`. */
+export async function chupKhungNhinSong(
   scene: Scene3DData,
   camera: THREE.PerspectiveCamera,
   rongPx: number,
   tyLe: number,
-): KetQuaChup {
+): Promise<KetQuaChup> {
   const w = Math.max(64, Math.round(rongPx));
   const h = Math.max(64, Math.round(w / tyLe));
 
@@ -70,8 +76,12 @@ export function chupKhungNhinSong(
   const three = new THREE.Scene();
   three.background = new THREE.Color(NEN);
   const built = buildMergedGeometries(scene);
+  const nguon = nguonVatLieuMacDinh();
+  await chuanBiVatLieu(built, nguon, 'khong-den');
   for (const b of built) {
-    three.add(new THREE.Mesh(b.geometry, new THREE.MeshBasicMaterial({ color: b.colorHex, side: THREE.DoubleSide })));
+    // Vật liệu DÙNG CHUNG (kho `vat-lieu-nhom`) ⇒ KHÔNG dispose ở dưới, chỉ dispose geometry.
+    const vl = vatLieuChoNhomDongBo(b, nguon, 'khong-den');
+    three.add(new THREE.Mesh(b.geometry, vl ?? new THREE.MeshBasicMaterial({ color: b.colorHex, side: THREE.DoubleSide })));
   }
 
   renderer.render(three, cam);

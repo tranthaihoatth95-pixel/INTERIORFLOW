@@ -26,6 +26,7 @@
  */
 import * as THREE from 'three';
 import { buildMergedGeometries } from './obj-scene-to-geometry';
+import { chuanBiVatLieu, nguonVatLieuMacDinh, vatLieuChoNhomDongBo, type NguonVatLieu3D } from './vat-lieu-nhom';
 import { cadAxesToThree, cadToThreeM, type Scene3DData } from './cad-to-obj';
 import { placeCamera, fovFromLens, type CameraSpec } from './camera';
 import type { CamPathResult, CamPathSample } from '@/lib/cad/campath';
@@ -86,14 +87,42 @@ export function camPathSampleToThree(sample: CamPathSample, cameraHeightMm = EYE
   return { position: new THREE.Vector3(px, py, pz), target: new THREE.Vector3(tx, ty, tz) };
 }
 
-function buildOffscreenScene(scene: Scene3DData) {
+/**
+ * 🔴 05/09 (V8c bước 3) — CẢNH XUẤT RA PHẢI CÓ VẬT LIỆU THẬT, KHÔNG CHỈ MÀU.
+ * Trước bước này hàm dựng `MeshBasicMaterial({ color })` thuần ⇒ sửa mỗi `Scene3DViewer` thì màn
+ * hình có vân mà **ảnh/video xuất ra vẫn phẳng** — mà ảnh xuất mới là thứ khách nhìn. Đây đúng chỗ
+ * probe 05/09 bỏ sót ở vòng đầu ("người đọc thứ ba").
+ *
+ * ⚠️ ĐỌC ĐỒNG BỘ TỪ KHO. Hàm này bị gọi trong đường ĐỒNG BỘ (`captureFrame`/`captureSequence`)
+ * nên không `await` được ở đây; nơi gọi phải `await chuanBiVatLieuCanh(scene, …)` TRƯỚC. Nhóm nào
+ * chưa sẵn sàng thì rơi về `colorHex` — vẫn ra ảnh, không bao giờ trắng/đen bí ẩn.
+ *
+ * Vật liệu KHÔNG dispose ở đây: chúng dùng chung giữa các lần chụp và giữa các mesh (xem
+ * `xoaKhoVatLieu`). Chỉ geometry của lượt này mới là của riêng lượt này.
+ */
+function buildOffscreenScene(scene: Scene3DData, nguon?: NguonVatLieu3D) {
   const three = new THREE.Scene();
   three.background = new THREE.Color('#2a2d33');
   const built = buildMergedGeometries(scene);
+  const nv = nguon ?? { pbrMap: {} };
+  let coVan = 0;
   for (const b of built) {
-    three.add(new THREE.Mesh(b.geometry, new THREE.MeshBasicMaterial({ color: b.colorHex, side: THREE.DoubleSide })));
+    const vl = vatLieuChoNhomDongBo(b, nv, 'khong-den');
+    if (vl) coVan += 1;
+    three.add(new THREE.Mesh(b.geometry, vl ?? new THREE.MeshBasicMaterial({ color: b.colorHex, side: THREE.DoubleSide })));
   }
-  return { three, built, dispose: () => built.forEach((b) => b.geometry.dispose()) };
+  return { three, built, coVan, dispose: () => built.forEach((b) => b.geometry.dispose()) };
+}
+
+/**
+ * Nạp trước vật liệu của cả cảnh rồi mới chụp. Trả số vật liệu KHÁC NHAU đã sẵn sàng — nơi gọi
+ * khai con số thật vào log/nghiệm thu, không đoán. Nguồn mặc định = hạt giống + studio, nên máy
+ * sạch chưa có CSDL vẫn ra vân.
+ */
+export async function chuanBiVatLieuCanh(scene: Scene3DData, nguon?: NguonVatLieu3D): Promise<NguonVatLieu3D> {
+  const nv = nguon ?? nguonVatLieuMacDinh();
+  await chuanBiVatLieu(scene.groups, nv, 'khong-den');
+  return nv;
 }
 
 /** Scene depth — `MeshDepthMaterial` (quy ước mặc định three.js `BasicDepthPacking`: GẦN camera
@@ -163,7 +192,7 @@ function verticalFovDeg(spec: CameraSpec, aspect: number): number {
  * gọi `captureFrame` nhiều lần với CÙNG `scene`+`spec` LUÔN cho camera giống hệt nhau (tất định),
  * nên `png`/`depth`/`lineart` của cùng 1 khung khớp hình học tuyệt đối.
  */
-export function captureFrame(scene: Scene3DData, spec: CameraSpec, out: CaptureOut): string {
+export function captureFrame(scene: Scene3DData, spec: CameraSpec, out: CaptureOut, nguon?: NguonVatLieu3D): string {
   const canvas = document.createElement('canvas');
   canvas.width = out.w;
   canvas.height = out.h;
@@ -179,7 +208,9 @@ export function captureFrame(scene: Scene3DData, spec: CameraSpec, out: CaptureO
   camera.position.copy(posM);
   camera.lookAt(targetM);
 
-  const built = out.kind === 'depth' ? buildDepthScene(scene) : out.kind === 'lineart' ? buildLineartScene(scene) : buildOffscreenScene(scene);
+  // `depth`/`lineart` CỐ Ý không dùng vật liệu: chúng nuôi ControlNet bằng hình học thuần, dán vân
+  // vào đó là làm nhiễu tín hiệu đầu vào. Chỉ nhánh `png` mới cần vật liệu thật.
+  const built = out.kind === 'depth' ? buildDepthScene(scene) : out.kind === 'lineart' ? buildLineartScene(scene) : buildOffscreenScene(scene, nguon);
   renderer.render(built.three, camera);
   const png = canvas.toDataURL('image/png');
   built.dispose();
@@ -273,7 +304,7 @@ export interface CaptureSequenceResult {
  * gọi nào khác ngoài `capture.test.ts`/file này tại thời điểm đổi (đã grep xác nhận), nên đổi
  * thẳng, không giữ chữ ký cũ song song.
  */
-export function captureSequence(scene: Scene3DData, path: CamPathResult, opts: CaptureSequenceOptions): CaptureSequenceResult {
+export function captureSequence(scene: Scene3DData, path: CamPathResult, opts: CaptureSequenceOptions, nguon?: NguonVatLieu3D): CaptureSequenceResult {
   const plan = planCaptureSequenceFrames(path, opts.fps, opts.frameCount);
   const canvas = document.createElement('canvas');
   canvas.width = opts.w;
@@ -281,7 +312,7 @@ export function captureSequence(scene: Scene3DData, path: CamPathResult, opts: C
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
   renderer.setSize(opts.w, opts.h, false);
   const camera = new THREE.PerspectiveCamera(60, opts.w / opts.h, 0.05, 500);
-  const { three, dispose } = buildOffscreenScene(scene);
+  const { three, dispose } = buildOffscreenScene(scene, nguon);
 
   let rendered = 0;
   let aborted = false;
@@ -313,7 +344,7 @@ export function captureSequence(scene: Scene3DData, path: CamPathResult, opts: C
  * KHÔNG sửa `captureSequence` hiện có (bench `app/dev-bench-3d-2` đo hiệu năng cần bản sync thuần,
  * không lẫn chi phí setTimeout vào số đo).
  */
-export async function captureSequenceAsync(scene: Scene3DData, path: CamPathResult, opts: CaptureSequenceOptions): Promise<CaptureSequenceResult> {
+export async function captureSequenceAsync(scene: Scene3DData, path: CamPathResult, opts: CaptureSequenceOptions, nguon?: NguonVatLieu3D): Promise<CaptureSequenceResult> {
   const plan = planCaptureSequenceFrames(path, opts.fps, opts.frameCount);
   const canvas = document.createElement('canvas');
   canvas.width = opts.w;
@@ -321,7 +352,10 @@ export async function captureSequenceAsync(scene: Scene3DData, path: CamPathResu
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
   renderer.setSize(opts.w, opts.h, false);
   const camera = new THREE.PerspectiveCamera(60, opts.w / opts.h, 0.05, 500);
-  const { three, dispose } = buildOffscreenScene(scene);
+  // Đường ASYNC `await` được ⇒ tự nạp vật liệu, nơi gọi không phải nhớ. Đây là đường DUY NHẤT có
+  // nút UI thật (`CameraExportTab`), nên nó phải đúng mà không cần ai đọc tài liệu.
+  const nv = await chuanBiVatLieuCanh(scene, nguon);
+  const { three, dispose } = buildOffscreenScene(scene, nv);
 
   let rendered = 0;
   let aborted = false;

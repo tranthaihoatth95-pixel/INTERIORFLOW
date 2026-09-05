@@ -39,7 +39,8 @@ import type { MutableRefObject } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
-import { buildMergedGeometries, buildMassingWalls, isMassingWallGroup } from '@/lib/three/obj-scene-to-geometry';
+import { buildMergedGeometries, buildMassingWalls, isMassingWallGroup, type BuiltGroup, type MassingWall } from '@/lib/three/obj-scene-to-geometry';
+import { chuanBiVatLieu, nguonVatLieuMacDinh, vatLieuChoNhomDongBo, type HinhThucTo } from '@/lib/three/vat-lieu-nhom';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { ensureBoundsTree, dropBoundsTree, installAcceleratedRaycast } from '@/lib/three/bvh';
 import { findSnap3D, lockToAxis, DEFAULT_SNAP_TOLERANCE_PX, type Snap3DKind, type CadAxis } from '@/lib/three/snap3d';
@@ -473,6 +474,10 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
       mesh.add(lines);
       edgeJunk.push(eg, em);
     };
+    /* V8c bước 3 — giữ cặp nhóm↔mesh để NÂNG CẤP vật liệu khi texture tải xong. Dựng cảnh vẫn
+       ĐỒNG BỘ bằng `colorHex` như trước: cảnh hiện ra ngay, không có khung trắng chờ ảnh, và nếu
+       ảnh hỏng/không có mạng thì đây chính là bậc lùi — y hệt hôm nay, không tệ hơn. */
+    const meshTinh: { b: BuiltGroup; mesh: THREE.Mesh }[] = [];
     for (const b of built) {
       const material = lightingPreview
         ? new THREE.MeshStandardMaterial({ color: b.colorHex, roughness: 0.78, metalness: 0.02, side: THREE.DoubleSide })
@@ -480,11 +485,13 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
       const mesh = new THREE.Mesh(b.geometry, material);
       addEdges(mesh);
       group.add(mesh);
+      meshTinh.push({ b, mesh });
     }
     three.add(group);
 
     const massingWalls = massingActive ? buildMassingWalls(scene) : [];
     const massingMeshes: THREE.Mesh[] = [];
+    const meshKhoi: { w: MassingWall; mesh: THREE.Mesh }[] = [];
     for (const w of massingWalls) {
       const isSelected = !!selectedId && w.entityId === selectedId;
       const material = lightingPreview
@@ -495,6 +502,10 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
       addEdges(mesh);
       massingMeshes.push(mesh);
       group.add(mesh);
+      // ⛔ KHỐI ĐANG CHỌN KHÔNG nâng cấp vật liệu: phản hồi chọn ở mode dựng khối nằm trong
+      // `emissive` của material riêng nó; thay bằng vật liệu DÙNG CHUNG là mất kênh phản hồi đó
+      // (và không thể bật emissive trên bản dùng chung — các khối khác sẽ sáng theo).
+      if (!isSelected) meshKhoi.push({ w, mesh });
       if (isSelected) {
         // ⭐ SELECTION FEEDBACK THẬT — thứ truth-map 20/08 gắn cờ "3D PASS trừ selection feedback".
         // Gốc bệnh: `Viewport3D` gizmo trước đây LUÔN vẽ ở CHÍNH GIỮA khung nhìn bất kể khối
@@ -998,7 +1009,38 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
     }
     raf = requestAnimationFrame(tick);
 
+    /* ══════════ V8c bước 3 · NÂNG CẤP VẬT LIỆU KHI ẢNH VỀ ══════════
+     * Ba nơi đọc cùng một `SceneGroup[]` (viewer này · `capture.ts` · `capture-live.ts`) nên đường
+     * tra là HÀM DÙNG CHUNG `vat-lieu-nhom.ts`, không phải mã dán vào đây.
+     *
+     * KHÔNG NHẤP NHÁY: cảnh đã hiện bằng `colorHex` ở trên; đây chỉ đổi `material` của mesh CÓ
+     * SẴN, không dựng lại hình học, không đổi camera.
+     * `hinhThuc` phải theo đèn: cảnh KHÔNG có `lightingPreview` thì không có nguồn sáng nào, gán
+     * `MeshPhysicalMaterial` vào là cả cảnh ĐEN SÌ — đó là cái bẫy của bước này. */
+    let conSong = true;
+    const vatLieuDungChung = new Set<THREE.Material>();
+    const hinhThuc: HinhThucTo = lightingPreview ? 'co-den' : 'khong-den';
+    void (async () => {
+      const nguon = nguonVatLieuMacDinh();
+      const soVatLieu = await chuanBiVatLieu([...built, ...massingWalls], nguon, hinhThuc);
+      if (!conSong || soVatLieu === 0) return; // effect đã dọn, hoặc không nhóm nào tra ra vật liệu
+      const doi = (nhom: BuiltGroup | MassingWall, mesh: THREE.Mesh) => {
+        const vl = vatLieuChoNhomDongBo(nhom, nguon, hinhThuc);
+        if (!vl) return;
+        const cu = mesh.material as THREE.Material;
+        mesh.material = vl;
+        vatLieuDungChung.add(vl);
+        // material CŨ là của riêng mesh này (dựng ngay trên) ⇒ dispose được. Material MỚI thì
+        // KHÔNG — nó dùng chung, xem `xoaKhoVatLieu`.
+        if (!vatLieuDungChung.has(cu)) cu.dispose();
+      };
+      for (const { b, mesh } of meshTinh) doi(b, mesh);
+      for (const { w, mesh } of meshKhoi) doi(w, mesh);
+      needsRender = true;
+    })();
+
     return () => {
+      conSong = false;
       if (cameraApiRef) cameraApiRef.current = null;
       cancelAnimationFrame(raf);
       ro.disconnect();
@@ -1041,7 +1083,13 @@ export default function Scene3DViewer({ scene, mode, camPath, cameraHeightMm = E
         w.geometry.dispose();
       }
       group.children.forEach((m) => {
-        if (m instanceof THREE.Mesh) (m.material as THREE.Material).dispose();
+        if (!(m instanceof THREE.Mesh)) return;
+        const mat = m.material as THREE.Material;
+        // ⛔ Vật liệu DÙNG CHUNG (kho `vat-lieu-nhom`) không được dispose ở đây: cùng một vật đang
+        // gắn trên nhiều mesh và sẽ còn dùng cho lần dựng cảnh sau. `material-preview.ts:318` đã
+        // trả giá đúng bài này một lần — dispose một vật dùng chung là các mesh còn lại mất texture.
+        if (vatLieuDungChung.has(mat)) return;
+        mat.dispose();
       });
       renderer.dispose();
       container.removeChild(renderer.domElement);
