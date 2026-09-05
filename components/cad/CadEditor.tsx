@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Trash2, X, Command, Sparkles, Wand2,
   ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair, Tag, Check, Lightbulb, FileText, Save, Camera,
@@ -66,6 +66,7 @@ import {
 import { useFlowStore } from '@/lib/store';
 import { stashCadHandoff } from '@/lib/cad/handoff';
 import { stashCadPresentHandoff } from '@/lib/cad/present-handoff';
+import { stageHrefFrom } from '@/lib/project-scope';
 import {
   checkStandards, findRoomLabels, classifyRoom, ROOM_NAME_RE, isWallLikeEntity, wallKindSummary,
   type Violation, type RoomKind,
@@ -111,6 +112,7 @@ import { routeFormat } from '@/lib/gateway/route';
 
 export default function CadEditor() {
   const router = useRouter();
+  const pathname = usePathname();
   const [furnitureOpen, setFurnitureOpen] = useState(false);
   const [materialOpen, setMaterialOpen] = useState(false);
   // Toolbelt ổ ⑤ (CadToolbelt trong AppShell) không với tới 2 state panel cục bộ này →
@@ -649,7 +651,7 @@ export default function CadEditor() {
       fromRole: cadSt.role,
       toRole: null,
     });
-    router.push('/');
+    router.push(stageHrefFrom(pathname, 'render'));
   };
 
   // "Đưa sang Present →" — SONG SONG với "Đưa sang Render →" (không đụng luồng đó).
@@ -670,7 +672,7 @@ export default function CadEditor() {
       fromRole: useCadStore.getState().role,
       toRole: null,
     });
-    router.push('/present-editor');
+    router.push(stageHrefFrom(pathname, 'present'));
   };
 
   // Zone tool (24/07) — "Xuất Presenting" từ panel Zone: KHÁC toPresent ở chỗ dùng
@@ -689,7 +691,7 @@ export default function CadEditor() {
       fromRole: useCadStore.getState().role,
       toRole: null,
     });
-    router.push('/present-editor');
+    router.push(stageHrefFrom(pathname, 'present'));
   };
 
   return (

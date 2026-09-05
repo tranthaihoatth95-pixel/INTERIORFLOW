@@ -7,23 +7,16 @@
  * là nơi KÉO-THẢ vào bàn làm việc đang mở; Gallery là nơi DUYỆT/TUYỂN CHỌN đứng một mình, giống
  * `/materials` (`app/materials/page.tsx`) đứng cạnh sheet Thư viện chứ không phải bên trong nó.
  *
- * Bọc `<AppShell active="render">` — cùng lựa chọn `/files`/`/materials` đã làm cho route KHÔNG
- * phải 1-trong-3-chặng: header/Navigator/Thư viện sheet dùng chung, `openLibrarySheet()` từ trong
- * `GalleryLienNganh` (nút "Nhập từ Kho chung") hoạt động thật vì `<LibrarySheet>` được `AppShell`
- * mount sẵn ở đây.
+ * Bọc `<AppShell active="home">`: đây là bề mặt Workspace độc lập, không mượn chrome/Navigator
+ * của chặng Render. `LibrarySheet` vẫn được AppShell mount nên lối “Nhập từ Kho chung” giữ nguyên.
  */
 import { AppShell } from '@/components/studio/AppShell';
-import { GalleryNavigator } from '@/components/library/GalleryNavigator';
 import { GalleryLienNganh } from '@/components/library/GalleryLienNganh';
-import { useT } from '@/lib/i18n';
 
 export default function LibraryGalleryPage() {
-  const tr = useT();
   return (
     <AppShell
-      active="render"
-      navigator={<GalleryNavigator />}
-      navigatorAddLabel={tr('Gallery', 'Gallery')}
+      active="home"
       /* DẢI CHỮ DỌC "GALLERY" ĐÃ BỎ 30/08 — Hoà đã yêu cầu một lần trước đó và nó vẫn còn.
          Nó là nhãn của Navigator lúc thu gọn: một cột chữ HOA xoay dọc chiếm chỗ cạnh lưới ảnh,
          nói đúng cái tên đã có ở thanh điều hướng bên trái. Trên một mặt CẢM HỨNG, mọi pixel

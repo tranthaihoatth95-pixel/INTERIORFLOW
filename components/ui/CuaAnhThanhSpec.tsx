@@ -30,7 +30,7 @@
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { RADIUS } from '@/lib/geometry';
 import { markDemoStep } from '@/lib/studio/demo-spine';
 import { CommandIcon } from './command-icon';
@@ -38,6 +38,7 @@ import LightBar from './LightBar';
 import SoSpecDaLuu from './SoSpecDaLuu';
 import { loadImage } from '@/lib/imaging';
 import { stashSpecPresentHandoff } from '@/lib/present-editor/spec-present-handoff';
+import { stageHrefFrom } from '@/lib/project-scope';
 import { extractForeground } from '@/lib/render-core/furniture-extract-core';
 import {
   FURNITURE_SIZE_PRIORS,
@@ -123,6 +124,7 @@ function mauTrungBinh(data: Uint8ClampedArray): Mau | null {
 
 export default function CuaAnhThanhSpec({ onDong }: { onDong: () => void }) {
   const router = useRouter();
+  const pathname = usePathname();
   // Portal ra `document.body` (K4, đã trả giá 4 vòng sửa kính lỏng: panel kính nổi PHẢI portal,
   // không lồng trong chrome kính) — nơi gọi (`StageToolbelt.tsx`) đứng trong một wrapper CÓ
   // `transform` (neo top-center của Viewport3D), và bất kỳ ancestor nào có `transform` đều tự
@@ -275,8 +277,8 @@ export default function CuaAnhThanhSpec({ onDong }: { onDong: () => void }) {
       boqNote: spec.boq.duoc ? 'Đủ điều kiện vào BOQ.' : `Chưa vào BOQ: ${spec.boq.lyDo}`,
       representationId: daLuu.id,
     });
-    router.push('/present-editor');
-  }, [spec, daLuu, router]);
+    router.push(stageHrefFrom(pathname, 'present'));
+  }, [spec, daLuu, pathname, router]);
 
   if (!mounted) return null; // portal cần DOM — tránh lệch SSR (cùng khuôn `CuaSoCongCu.tsx`).
 

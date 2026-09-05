@@ -5,7 +5,10 @@
 //   - asset tĩnh        → cache-first (icon, font, ảnh, _next/static… bất biến theo hash)
 // Đổi CACHE_VERSION mỗi lần muốn ép làm mới toàn bộ cache.
 
-const CACHE_VERSION = 'iflow-v1';
+// Bump khi phát hành một app shell mới. Giữ nguyên tên qua nhiều bản build có thể
+// khiến Electron mở HTML mới cùng JS/CSS còn sót từ bản trước, dẫn tới lỗi client
+// ngay ở lần mở đầu tiên. `activate` bên dưới sẽ dọn toàn bộ cache phiên bản cũ.
+const CACHE_VERSION = 'iflow-v2';
 const APP_SHELL = `${CACHE_VERSION}-shell`;
 const RUNTIME = `${CACHE_VERSION}-runtime`;
 

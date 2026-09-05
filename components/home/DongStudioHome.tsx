@@ -43,8 +43,8 @@
  *     `custom` (xuongLayout) — đây là quyết định của bề mặt năm-trạng-thái, không phải xoá widget.
  */
 
-import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import { ChevronUp, ChevronDown, Pin, EyeOff } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Check, ChevronUp, ChevronDown, Pin, EyeOff, RotateCcw, X } from 'lucide-react';
 import { ProjectSelect } from '@/components/ProjectSelect';
 import { useFlowStore } from '@/lib/store';
 import { useLang, useT } from '@/lib/i18n';
@@ -57,8 +57,8 @@ import { bocCucXuong, cotXuong, hangPhu, type MucPhu } from './xuong-layout';
 import BeMatHome from './BeMatHome';
 import type { MaWidget, TinHieu } from './nam-trang-thai';
 import { docDaQuayLai, ghiDaRoiHome } from './da-quay-lai';
-import { useHomeWidgetPrefs, applyWidgetPrefs } from '@/lib/home/widget-prefs';
-import { docCheDo, laBonDai, nhipDai, type CheDoHome } from '@/lib/home/che-do-home';
+import { useHomeWidgetPrefs, applyWidgetPrefs, type HomeWidgetPrefs } from '@/lib/home/widget-prefs';
+import { docCheDo, ghiCheDo, laBonDai, nhipDai, type CheDoHome } from '@/lib/home/che-do-home';
 import { shouldShowActivityGrid } from '@/lib/home/aggregate';
 import { pickWeeklyItem, pickWeeklyImages, isSeedLibraryAsset } from '@/lib/home/weekly-picks';
 // P-V 17/08 — VitalsPill dời lên AppChrome top bar (không import ở đây nữa).
@@ -79,7 +79,6 @@ import ResumeWork, { resumeWorkHasSignal } from './widgets/ResumeWork';
 import { buildResumeCard, daysAgoLabel, resumeHref } from './widgets/resume-card';
 import { loadResume, type ResumeState } from '@/lib/resume';
 import WeeklyMaterial, { type WeeklyMaterialItem } from './widgets/WeeklyMaterial';
-import SystemWallpaper from '@/components/wallpaper/SystemWallpaper';
 import { listGallery } from '@/lib/gallery';
 import type { HomeSummary } from './widgets/types';
 
@@ -446,6 +445,40 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
      thẳng lúc dựng là lệch SSR/CSR). Mặc định `calm` = bốn dải. */
   const [cheDo, setCheDo] = useState<CheDoHome>('calm');
   useEffect(() => { setCheDo(docCheDo()); }, []);
+  const [dangTuyBien, setDangTuyBien] = useState(false);
+  const truocTuyBien = useRef<{ cheDo: CheDoHome; prefs: HomeWidgetPrefs } | null>(null);
+  const lichSuPrefs = useRef<HomeWidgetPrefs[]>([]);
+  const henNhanGiu = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const vaoTuyBien = useCallback(() => {
+    if (dangTuyBien) return;
+    truocTuyBien.current = { cheDo, prefs: widgetPrefs.prefs };
+    lichSuPrefs.current = [];
+    setDangTuyBien(true);
+    setCheDo('custom');
+  }, [cheDo, dangTuyBien, widgetPrefs.prefs]);
+  const ghiMocUndo = () => { lichSuPrefs.current.push(widgetPrefs.prefs); };
+  const huyTuyBien = () => {
+    const snapshot = truocTuyBien.current;
+    if (snapshot) { widgetPrefs.restore(snapshot.prefs); setCheDo(snapshot.cheDo); }
+    setDangTuyBien(false);
+  };
+  const xongTuyBien = () => { ghiCheDo('custom'); setDangTuyBien(false); };
+  const undoTuyBien = () => {
+    const snapshot = lichSuPrefs.current.pop();
+    if (snapshot) widgetPrefs.restore(snapshot);
+  };
+  useEffect(() => {
+    const keyboard = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName ?? '')) return;
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'e') { event.preventDefault(); vaoTuyBien(); }
+      if (event.key === 'Escape' && dangTuyBien) huyTuyBien();
+    };
+    const rail = () => vaoTuyBien();
+    window.addEventListener('keydown', keyboard);
+    window.addEventListener('interiorflow:customize-home', rail);
+    return () => { window.removeEventListener('keydown', keyboard); window.removeEventListener('interiorflow:customize-home', rail); };
+  }, [dangTuyBien, vaoTuyBien]);
 
   /* ── 23/08 · NGỮ CẢNH cho năm trạng thái ─────────────────────────────────────────────────
      `gio` khởi tạo `null` (= CHƯA BIẾT) chứ không phải một giờ mặc định: đọc `new Date()` ngay
@@ -747,7 +780,7 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
                   >
                     <button
                       type="button"
-                      onClick={() => widgetPrefs.move(m, -1, cumPhuFinal)}
+                      onClick={() => { ghiMocUndo(); widgetPrefs.move(m, -1, cumPhuFinal); }}
                       disabled={i === 0}
                       aria-label={tr('Đưa lên trên', 'Move up')}
                       title={tr('Đưa lên trên', 'Move up')}
@@ -757,7 +790,7 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
                     </button>
                     <button
                       type="button"
-                      onClick={() => widgetPrefs.move(m, 1, cumPhuFinal)}
+                      onClick={() => { ghiMocUndo(); widgetPrefs.move(m, 1, cumPhuFinal); }}
                       disabled={i === cumPhuFinal.length - 1}
                       aria-label={tr('Đưa xuống dưới', 'Move down')}
                       title={tr('Đưa xuống dưới', 'Move down')}
@@ -767,7 +800,7 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
                     </button>
                     <button
                       type="button"
-                      onClick={() => widgetPrefs.pinTop(m, cumPhuFinal)}
+                      onClick={() => { ghiMocUndo(); widgetPrefs.pinTop(m, cumPhuFinal); }}
                       disabled={i === 0}
                       aria-label={tr('Ghim lên đầu', 'Pin to top')}
                       title={tr('Ghim lên đầu', 'Pin to top')}
@@ -777,7 +810,7 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
                     </button>
                     <button
                       type="button"
-                      onClick={() => widgetPrefs.toggleHidden(m)}
+                      onClick={() => { ghiMocUndo(); widgetPrefs.toggleHidden(m); }}
                       aria-label={tr(`Ẩn ${MUC_PHU_LABEL[m][0]}`, `Hide ${MUC_PHU_LABEL[m][1]}`)}
                       title={tr('Ẩn khỏi Home', 'Hide from Home')}
                       className="grid h-6 w-6 place-items-center rounded-[var(--r-1)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
@@ -845,7 +878,15 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
   );
 
   return (
-    <div className={isWide ? 'relative h-[100dvh] w-full overflow-hidden' : 'relative min-h-[100dvh] w-full overflow-y-auto'} data-dong-studio="">
+    <div
+      className={isWide ? 'relative h-[100dvh] w-full overflow-hidden' : 'relative min-h-[100dvh] w-full overflow-y-auto'}
+      data-dong-studio=""
+      data-home-customize={dangTuyBien ? 'on' : 'off'}
+      onContextMenu={(event) => { if (!(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLTextAreaElement)) { event.preventDefault(); vaoTuyBien(); } }}
+      onPointerDown={(event) => { if (event.pointerType !== 'mouse') henNhanGiu.current = setTimeout(vaoTuyBien, 550); }}
+      onPointerUp={() => { if (henNhanGiu.current) clearTimeout(henNhanGiu.current); }}
+      onPointerCancel={() => { if (henNhanGiu.current) clearTimeout(henNhanGiu.current); }}
+    >
       {/* NỀN — phiếu P-O (16/08). Trước đây: `--bg` đặc + gradient `tod.gradient` phủ mờ 0.16.
           Nay là HÌNH NỀN HỆ THỐNG sinh bằng mã (`components/wallpaper/SystemWallpaper.tsx`):
           năm bộ, đổi ánh sáng theo giờ, chậm dần rồi DỪNG HẲN khi vào.
@@ -853,7 +894,17 @@ export default function DongStudioHome({ onEnter }: { onEnter: () => void }) {
           thẻ đủ đặc, không phải nền mờ. Lớp `--bg` giữ lại làm đáy (nền hệ thống có thể bị
           tắt trong Cài đặt, lúc đó nó là nền trơn như trước). */}
       <div className="pointer-events-none absolute inset-0" style={{ background: 'var(--bg)' }} aria-hidden />
-      <SystemWallpaper />
+      {/* Workspace Home dùng mặt phẳng nội dung bình thường. Wallpaper hệ thống có grammar
+          giấy/lưới chỉ thuộc các Stage sáng tác; mount nó tại Home làm bề mặt đọc như CAD. */}
+
+      {dangTuyBien && (
+        <div className="fixed left-1/2 top-16 z-[90] flex -translate-x-1/2 items-center gap-1 rounded-[var(--r-full)] border border-[var(--vien-mo)] bg-[var(--panel)] p-1.5 shadow-xl backdrop-blur-2xl" role="toolbar" aria-label={tr('Tùy biến Trang chủ', 'Customize Home')}>
+          <button type="button" onClick={undoTuyBien} disabled={!lichSuPrefs.current.length} className="flex min-h-11 items-center gap-2 rounded-[var(--r-full)] px-3 text-[var(--t2)] disabled:opacity-35"><RotateCcw size={16} />{tr('Hoàn tác', 'Undo')}</button>
+          <button type="button" onClick={() => { ghiMocUndo(); widgetPrefs.reset(); }} className="min-h-11 rounded-[var(--r-full)] px-3 text-[var(--t2)]">{tr('Mặc định', 'Default')}</button>
+          <button type="button" onClick={huyTuyBien} className="flex min-h-11 items-center gap-2 rounded-[var(--r-full)] px-3 text-[var(--t2)]"><X size={16} />{tr('Hủy', 'Cancel')}</button>
+          <button type="button" onClick={xongTuyBien} className="flex min-h-11 items-center gap-2 rounded-[var(--r-full)] bg-[var(--accent)] px-4 text-white"><Check size={16} />{tr('Xong', 'Done')}</button>
+        </div>
+      )}
 
       {/* v4 (13/08, phiếu home-bento-v4.md ④.4, lỗi #4 "VI/EN·(i) lơ lửng") — cụm góc-phải-trên
           DUY NHẤT của toàn trang Home: "Chi tiết" (dashboard tất cả dự án) + đổi ngôn ngữ +

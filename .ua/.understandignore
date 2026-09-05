@@ -51,10 +51,18 @@ nhat-ky-chup-man.txt
 docs/
 # public/ chỉ có asset tĩnh, không phải code
 public/
-# components/ — 310 file UI, cắt theo Hoà chốt 19/08 để giảm scope.
-# Đối chiếu 5 lớp OS + AI Gateway + Phase model KHÔNG cần đọc UI component.
-components/
+
+# 🔴 ĐẢO NGƯỢC 03/09 — components/ NAY ĐƯỢC PHÂN TÍCH.
+# Dòng cũ (giữ làm dấu vết): `components/` bị loại từ 19/08 với lý do
+# "đối chiếu 5 lớp OS + AI Gateway + Phase model KHÔNG cần đọc UI component".
+# Lý do đó đúng cho MỤC TIÊU 19/08 (soi kiến trúc nền), nhưng đã hết đúng:
+# chỉ thị Hoà 03/09 đặt "BỀ MẶT SỬ DỤNG" (Design System + UI/interaction của
+# Home · Projects · Resources · 2D · 3D · Materials/Render · BOQ · Present)
+# thành MỘT TRONG HAI phần duy nhất còn được làm.
+# Đo trên đồ thị 18/08: components/ = 0 node, docs/ = 0 node ⇒ bản đồ mù
+# đúng nửa nhiệm vụ. Rebuild mà giữ dòng loại này là tiêu token để giữ lỗ mù.
 
 # --- Giữ nguyên (KHÔNG loại) ---
 # app/ · lib/ · components/ · prisma/schema.prisma · scripts/ · package.json · tsconfig.json
-# Test files (*.test.ts, *.spec.ts) GIỮ — chúng khai giả định kiến trúc, cần đọc.
+# Test files (*.test.ts, *.spec.ts) GIỮ — chúng khai giả định kiến trúc, cần đọc,
+# và máy merge dựng cạnh `tested_by` từ chúng (mất test là mất lớp phủ kiểm thử).

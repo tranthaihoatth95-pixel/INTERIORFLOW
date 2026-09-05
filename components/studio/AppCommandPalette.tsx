@@ -23,7 +23,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Search, CornerDownLeft, Command as CommandIcon, Keyboard, SunMoon, Library, PanelLeft, Layers } from 'lucide-react';
 import { cmdsFor, type WhenCtx } from '@/lib/commands/registry';
 import { useCadStore, shouldShowProTools } from '@/lib/cad/store';
@@ -34,6 +34,7 @@ import { textScore } from '@/lib/nodes/search';
 import { useDismissable } from '@/lib/useDismissable';
 import { useT } from '@/lib/i18n';
 import type { AppChromeActive } from '@/components/studio/AppChrome';
+import { stageHrefFrom } from '@/lib/project-scope';
 
 interface Row {
   id: string;
@@ -56,6 +57,7 @@ const BUCKET_LABEL: Record<string, [string, string]> = {
 export function AppCommandPalette({ active }: { active: AppChromeActive }) {
   const tr = useT();
   const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const openRef = useRef(false);
   openRef.current = open;
@@ -128,9 +130,9 @@ export function AppCommandPalette({ active }: { active: AppChromeActive }) {
       // khoá vòng trước (cad/drafting/render/dung anh) để tìm không bị hụt trong lúc chuyển tên.
       // 04/08 [P7 ĐỔI TÊN]: 2D Kỹ thuật→Thiết kế 2D · 3D Thiết kế→Thiết kế 3D · Trình bày→Trình
       // chiếu — keywords cộng thêm "thiet ke 2d/3d"/"trinh chieu", GIỮ nguyên keywords cũ.
-      { id: 'go.cad', label: tr('Sang chặng Thiết kế 2D', 'Go to 2D Design'), hint: '⌘1', group: shellGroup, keywords: 'cad drafting 2d ky thuat thiet ke ve chuyen chang stage', run: act(() => router.push('/cad-editor')) },
-      { id: 'go.render', label: tr('Sang chặng Thiết kế 3D', 'Go to 3D Design'), hint: '⌘2', group: shellGroup, keywords: 'render rendering dung anh 3d thiet ke chuyen chang stage', run: act(() => router.push('/')) },
-      { id: 'go.present', label: tr('Sang chặng Trình chiếu', 'Go to Presenting'), hint: '⌘3', group: shellGroup, keywords: 'present trinh bay trinh chieu deck chuyen chang stage', run: act(() => router.push('/present-editor')) },
+      { id: 'go.cad', label: tr('Sang chặng Thiết kế 2D', 'Go to 2D Design'), hint: '⌘1', group: shellGroup, keywords: 'cad drafting 2d ky thuat thiet ke ve chuyen chang stage', run: act(() => router.push(stageHrefFrom(pathname, 'cad'))) },
+      { id: 'go.render', label: tr('Sang chặng Thiết kế 3D', 'Go to 3D Design'), hint: '⌘2', group: shellGroup, keywords: 'render rendering dung anh 3d thiet ke chuyen chang stage', run: act(() => router.push(stageHrefFrom(pathname, 'render'))) },
+      { id: 'go.present', label: tr('Sang chặng Trình chiếu', 'Go to Presenting'), hint: '⌘3', group: shellGroup, keywords: 'present trinh bay trinh chieu deck chuyen chang stage', run: act(() => router.push(stageHrefFrom(pathname, 'present'))) },
       // Phím Thư viện: chặng Vẽ ⇧L, chặng khác L trần (§4e — `use-library-sheet.ts` tự gate y hệt).
       { id: 'shell.library', label: tr('Mở Thư viện', 'Open Library'), hint: active === 'cad' ? '⇧L' : 'L', group: shellGroup, keywords: 'thu vien library kho vat lieu template', run: act(() => openLibrarySheet({ stage: libStage })) },
       { id: 'shell.files', label: tr('Mở Quản lý tệp', 'Open File Manager'), group: shellGroup, keywords: 'file manager tep quan ly', run: act(() => router.push('/files')) },
@@ -173,7 +175,7 @@ export function AppCommandPalette({ active }: { active: AppChromeActive }) {
     return [...shell, ...cmds];
     // `open` trong deps: dựng lại mỗi lần mở để nhãn/ctx động luôn đúng state hiện tại.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, cadMode, role, cadStage, open, router, tr]);
+  }, [active, cadMode, role, cadStage, open, pathname, router, tr]);
 
   const filtered = useMemo(() => {
     const q = query.trim();

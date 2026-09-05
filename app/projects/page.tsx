@@ -45,8 +45,24 @@ export default function ProjectIndexPage() {
     // case cho mọi route (xem docstring `AppChromeTypes.ts`), và mục rail nào sáng thì do
     // `mucDangMo(pathname)` quyết — `/projects` đã khai ở đó, nên "Dự án" sáng đúng.
     <AppShell active="home">
-      <div className="h-full overflow-y-auto">
-        <ProjectSelect onEnter={vaoDuAn} hideHeroCopy hideVitalsBar revealAll />
+      <div className="h-full overflow-y-auto bg-[var(--bg)] px-5 pb-12 pt-7 sm:px-8 lg:px-12">
+        <header className="mx-auto mb-6 w-full max-w-6xl">
+          <p className="text-[length:var(--fs-xs)] font-medium uppercase tracking-[0.18em] text-[var(--t4)]">
+            Workspace
+          </p>
+          <h1 className="mt-2 text-[length:var(--fs-xl)] font-semibold tracking-[-0.03em] text-[var(--t1)]">
+            Dự án
+          </h1>
+          <p className="mt-2 max-w-2xl text-[length:var(--fs-sm)] leading-relaxed text-[var(--t3)]">
+            Mở dự án đang làm, tìm theo tên hoặc bắt đầu một dự án mới.
+          </p>
+        </header>
+        <section
+          aria-label="Danh sách dự án"
+          className="mx-auto min-h-[560px] w-full max-w-6xl overflow-hidden rounded-[var(--radius-xl)] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)]"
+        >
+          <ProjectSelect onEnter={vaoDuAn} hideHeroCopy hideVitalsBar revealAll bentoBox />
+        </section>
       </div>
     </AppShell>
   );

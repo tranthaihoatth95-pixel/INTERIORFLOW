@@ -23,7 +23,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Camera, Clapperboard, ExternalLink, Check, X, RotateCw, AlertTriangle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import type * as THREE from 'three';
 import { useT } from '@/lib/i18n';
 import LightBar from '@/components/ui/LightBar';
@@ -54,6 +54,7 @@ import {
   type YDinhChuyenDongId,
 } from '@/lib/capabilities/motion';
 import { useRenderQueue } from '@/components/render-studio/render-queue-store';
+import { stageHrefFrom } from '@/lib/project-scope';
 
 /** Phong cách — đúng `STYLE_OPTIONS` của `ai.clay2render` (registry.ts:164). Không thêm giá trị
  * node không nhận. */
@@ -76,6 +77,7 @@ export interface KetXuatPanelProps {
 export default function KetXuatPanel({ scene, cameraApiRef, soKhoi }: KetXuatPanelProps) {
   const tr = useT();
   const router = useRouter();
+  const pathname = usePathname();
   const items = useKhoKetQua((s) => s.items);
   const jobs = useRenderQueue((s) => s.jobs);
 
@@ -204,9 +206,9 @@ export default function KetXuatPanel({ scene, cameraApiRef, soKhoi }: KetXuatPan
       const id = bg.nodeId ? renderImageId(bg.nodeId, 0, 1) : bg.id;
       useKhoKetQua.getState().capNhat(bg.id, { thamSo: { ...bg.thamSo, assetId: id } });
       stashPresentHandoffWithIds([{ src: bg.url, id }]);
-      router.push('/present-editor');
+      router.push(stageHrefFrom(pathname, 'present'));
     },
-    [router],
+    [pathname, router],
   );
 
   /* ─────────────────────────────── GIAO DIỆN ─────────────────────────────── */

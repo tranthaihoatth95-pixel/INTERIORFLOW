@@ -52,7 +52,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useReducedMotion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Pin, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pin, Plus, SlidersHorizontal } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { useT } from '@/lib/i18n';
 import { getLastStage } from '@/lib/shell/last-stage';
@@ -688,6 +688,17 @@ export function RailDieuHuong() {
           padding: 6,
         }}
       >
+        {dangMo === 'trang-chu' && (
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event('interiorflow:customize-home'))}
+            aria-label={tr('Tùy biến Trang chủ', 'Customize Home')}
+            title={tr('Tùy biến Trang chủ', 'Customize Home')}
+            className="grid h-11 w-11 place-items-center rounded-[var(--r-full)] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+          >
+            <SlidersHorizontal size={18} strokeWidth={1.75} aria-hidden />
+          </button>
+        )}
         {/* GHIM (§8) — chỉ có nghĩa khi tấm đang nổi: ghim = tấm ở lại; bỏ ghim = tự thu khi rời
             chuột. Mặc định làm-sâu là KHÔNG ghim. */}
         {noi && (

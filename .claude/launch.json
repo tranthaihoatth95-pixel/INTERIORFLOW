@@ -4,9 +4,43 @@
     {
       "name": "interiorflow-main",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 3000,
       "autoPort": true,
+      "cwd": "."
+    },
+    {
+      "name": "interiorflow-tuong",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "NEXT_PUBLIC_IF_TUONG_HINH_HOC=1 npm run dev"
+      ],
+      "port": 3000,
+      "autoPort": true,
+      "cwd": "."
+    },
+    {
+      "name": "ua-dashboard",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/tranben/.claude/plugins/cache/understand-anything/understand-anything/2.9.4/packages/dashboard && GRAPH_DIR=/Users/tranben/Downloads/interiorflow exec npx vite --host 127.0.0.1"
+      ],
+      "port": 5173,
+      "autoPort": true,
+      "cwd": "."
+    },
+    {
+      "name": "ttt-team-hub-local",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "/private/tmp/claude-501/-Users-tranben-Downloads-interiorflow/20ab08fe-ba0e-4282-9043-3f6eecbf93a4/scratchpad/hub/local-server.mjs"
+      ],
+      "port": 3005,
       "cwd": "."
     }
   ]

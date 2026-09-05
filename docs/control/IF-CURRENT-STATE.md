@@ -1,5 +1,65 @@
 # IF · TRẠNG THÁI HIỆN TẠI — tệp NÓNG, cố ý dễ cũ
 
+## 🔴 OWNER DIRECTIVE — 03/09/2026, ưu tiên cao nhất
+
+### HAI PHẦN DUY NHẤT — ghim để mọi phiên cùng chạy
+
+1. **BỀ MẶT SỬ DỤNG:** Design System và UI/interaction thật của Home, Projects,
+   Resources, 2D, 3D, Materials/Render, BOQ, Present; desktop và tablet tách đúng phương thức
+   nhập. Đích là app nhìn đúng, thao tác mượt và không có đường cụt.
+2. **LÕI SẢN PHẨM:** feature/engine, kiến trúc miền và dữ liệu, identity, save/reopen/offline,
+   import/export, DXF/DWG, IDFC→3D, BOQ/Present, hiệu năng, recovery và installer. Đích là
+   golden path chạy end-to-end bằng dữ liệu thật.
+
+**Định hướng 3D + MasterTool do Hoà chốt 03/09:** năng lực dựng 3D của IF phải tiến tới parity
+theo ma trận tính năng Blender/3ds Max, nhưng giao diện không bê nguyên độ phức tạp của chúng.
+Các nhóm lệnh vẽ/dựng đặc trưng của nghề nội thất được đóng gói thành **MasterTool theo ngữ
+cảnh**: thao tác chính ở lớp đầu, tham số sâu mở dần, selection/tool state/snap/constraint/
+undo luôn rõ. BỀ MẶT chịu trách nhiệm grammar và khả dụng; LÕI chịu trách nhiệm command/modeling
+engine chính xác, editable, có identity/provenance và round-trip save/reopen.
+
+**Định hướng Render + Media Node do Hoà chốt 03/09:** Render phải có hai tầng rõ ràng:
+preview tương tác nhanh và final chất lượng cao; giữ đúng geometry/camera/material/light, quản lý
+màu nhất quán, có AOV/denoise/provenance và compare/return-to-source. AI chỉ tạo biến thể có
+kiểm soát, không âm thầm thay thế sự thật vật lý. Giao diện node không phơi “rừng node”: lớp đầu
+phân theo hành trình **Ảnh → Cảnh → Chuyển động → Phim**, kèm recipe nghề và MasterTool theo
+ngữ cảnh; node kỹ thuật sâu nằm trong Advanced. Mỗi bước phải thấy input/output, trạng thái,
+thời lượng/chi phí, lỗi và undo; asset xuyên suốt giữ identity thay vì copy đứt nguồn.
+
+**Định nghĩa sản phẩm do Hoà chốt 03/09:** IF là sự kết hợp của **một bộ tool thiết kế chuyên
+nghiệp** và **một nhân sự AI biết sử dụng chính bộ tool đó**. Tool phải đủ chính xác để con người
+tự vẽ/dựng/chỉnh; AI nhận brief, gu, hiện trạng, ràng buộc và tiêu chuẩn nghề rồi lập phương án,
+gọi command/MasterTool, kiểm kết quả và tạo sản phẩm chuyên nghiệp. Đầu ra AI phải là đối tượng
+native có thể chọn, sửa, undo, truy nguồn, save/reopen và đi tiếp qua 2D→3D→Material→Render→BOQ→
+Present; ảnh/video sinh phẳng chỉ là một loại đầu ra, không được thay thế mô hình thiết kế.
+
+**Golden path Ảnh→Thiết kế do Hoà chốt 03/09:** từ ảnh phối cảnh, IF tách nền/phân đoạn rồi
+nhận diện và dựng thành các đối tượng native riêng: furniture, trần, vách và sàn; đặt tên, phân
+loại và gắn vật liệu/PBR có provenance; sinh hình/chi tiết rời và dim. Kích thước suy từ một ảnh
+đơn phải mang nhãn inferred; chỉ được gọi chính xác/verified khi có scale anchor, camera/calibration,
+bản vẽ đối chiếu hoặc multi-view đủ bằng chứng. Người dùng phải sửa mapping, tên, vật liệu và dim,
+rồi mọi thay đổi đi tiếp được sang 2D/3D/BOQ/Present.
+Đây là năng lực **Image→Spec**: xuất bộ specification có liên kết ngược tới vùng ảnh và đối tượng
+nguồn, gồm loại cấu kiện/sản phẩm, kích thước + cấp độ tin cậy, vật liệu/finish, màu, mã/catalog
+nếu khớp có bằng chứng, số lượng và ghi chú thi công; cấm biến suy đoán thành thông số nhà sản xuất.
+
+Mọi việc không trực tiếp phục vụ một trong hai phần trên đều dừng. Hai phần chạy song song;
+BUILD là writer sản phẩm, Design/Architecture/Quality đo và đưa delta cụ thể, 00 hợp nhất và
+kiểm runtime. Mốc Hoà giao: **một giờ từ 05:00 03/09 để đóng tối đa blocker thực**, không được
+đổi thành thêm spec/governance.
+
+Hoà yêu cầu hoàn thiện **InteriorFlow thành app dùng được**, không tiếp tục tiêu thời gian vào
+Builder-OS/cầu/lease/guard/memory/governance nếu chúng không trực tiếp chặn một lát sản phẩm.
+Mọi agent phải làm việc đàng hoàng trên một phần IF cụ thể, đi tới runtime proof; không dừng ở
+spec, tài liệu, mã, test đơn vị hay đóng gói. 00 tự điều phối và tự quyết vi mô; không bắt Hoà
+dán tin, chuyển phiếu hoặc lặp lại bối cảnh. Thứ tự duy nhất: app mở được → golden path thật
+Project → 2D → 3D → Materials/Render → BOQ → Present → save/reopen/offline → installer.
+
+**Bằng chứng nóng 03/09:** bản `.app` đóng 02/09 từng mở lần đầu thành client-side exception;
+reload thì sống. Candidate fix đã đổi cache Service Worker `iflow-v1 → iflow-v2`, test PWA
+20/20, `tsc` 0, `next build` exit 0; DMG mới đã dựng. Chưa gọi PASS cho tới khi cold-launch
+DMG/app và golden path được chạy lại độc lập.
+
 `Plane: BOS` · phân luồng: `docs/control/BOS-PHAN-LUONG-TRI-NHO.md`
 
 > Nhỏ và mới. **Cấm để triết lý dài hạn ở đây** — nó thuộc `IF-CANONICAL.md`.

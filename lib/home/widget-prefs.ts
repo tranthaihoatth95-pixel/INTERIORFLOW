@@ -152,13 +152,21 @@ export function useHomeWidgetPrefs(userId: string | null | undefined) {
 
   const reset = () => {
     if (!userId) return;
-    setPrefs(DEFAULTS);
-    try {
-      window.localStorage.removeItem(keyFor(userId));
-    } catch {
-      /* bỏ qua */
-    }
+    // Ghi một giá trị mặc định tường minh thay vì chỉ xoá key. Trong Customize, một render/
+    // callback cũ có thể còn giữ snapshot trước reset; giá trị tường minh bảo đảm thao tác
+    // “Mặc định → Xong” thắng preference ẩn cũ cả sau reload.
+    const next = { hidden: [], order: [] } satisfies HomeWidgetPrefs;
+    setPrefs(next);
+    writeStorage(userId, next);
   };
 
-  return { prefs, hydrated, toggleHidden, pinTop, move, reset, LOCKED };
+  /** Khôi phục một snapshot trong phiên — dùng cho Cancel/Undo của Customize Home. */
+  const restore = (snapshot: HomeWidgetPrefs) => {
+    if (!userId) return;
+    const next = { hidden: [...snapshot.hidden], order: [...snapshot.order] };
+    setPrefs(next);
+    writeStorage(userId, next);
+  };
+
+  return { prefs, hydrated, toggleHidden, pinTop, move, reset, restore, LOCKED };
 }

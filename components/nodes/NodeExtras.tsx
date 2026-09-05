@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Download, FileText, Film, Presentation, Check, Box } from 'lucide-react';
 import { tweenBase, prefersReducedMotion } from '@/lib/motion';
@@ -13,6 +13,7 @@ import { Scene3DPreviewModal } from '@/components/three/Scene3DPreviewModal';
 import { docToObjScene, toScene3DData, type Scene3DData, type SceneOptions } from '@/lib/three/cad-to-obj';
 import { useCadStore } from '@/lib/cad/store';
 import type { InteriorNodeData, PortValue } from '@/lib/types';
+import { stageHrefFrom } from '@/lib/project-scope';
 
 /** Parse an toàn `_sceneOpts` (JSON `SceneOptions`, 3D-5) — options ĐÃ dùng lúc node chạy, để
  * dựng lại scene sau push-pull không lệch màu/trần/palette. Hỏng/thiếu → `{}` (mặc định
@@ -259,6 +260,7 @@ function DeckActions({ slidesJson, deckName }: { slidesJson: string; deckName: s
  */
 function SendToPresent({ images, nodeId }: { images: string[]; nodeId: string }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [sent, setSent] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => {
@@ -283,7 +285,7 @@ function SendToPresent({ images, nodeId }: { images: string[]; nodeId: string })
           images.map((src, i) => ({ src, id: renderImageId(nodeId, i, images.length) })),
         );
         setSent(images.length);
-        timerRef.current = setTimeout(() => router.push('/present-editor'), 650);
+        timerRef.current = setTimeout(() => router.push(stageHrefFrom(pathname, 'present')), 650);
       }}
     >
       <Presentation size={16} /> Đưa sang Trình chiếu →
