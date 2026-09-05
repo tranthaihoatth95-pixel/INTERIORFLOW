@@ -62,6 +62,9 @@ jobs:
         run: npx next build
         env:
           DATABASE_URL: file:./prisma/dev.db
+          # Sinh ngẫu nhiên mỗi lần dựng, KHÔNG lưu ở đâu: khoá thật do máy người dùng tự tạo
+          # lúc chạy. Ở đây chỉ để qua cổng "từ chối ký bằng hằng số công khai" của checkpoint.
+          AUTH_SECRET: ${{ github.run_id }}-${{ github.sha }}-chi-de-dung-goi
 
       - name: Có .next chưa (chặn gói rỗng)
         run: test -f .next/BUILD_ID && echo "BUILD_ID = $(cat .next/BUILD_ID)"
@@ -133,6 +136,9 @@ jobs:
         run: npm ci
         env:
           DATABASE_URL: file:./prisma/dev.db
+          # Sinh ngẫu nhiên mỗi lần dựng, KHÔNG lưu ở đâu: khoá thật do máy người dùng tự tạo
+          # lúc chạy. Ở đây chỉ để qua cổng "từ chối ký bằng hằng số công khai" của checkpoint.
+          AUTH_SECRET: ${{ github.run_id }}-${{ github.sha }}-chi-de-dung-goi
 
       - name: Kiểm trước phát hành
         run: node scripts/release-preflight.mjs
@@ -141,6 +147,9 @@ jobs:
         run: npx next build
         env:
           DATABASE_URL: file:./prisma/dev.db
+          # Sinh ngẫu nhiên mỗi lần dựng, KHÔNG lưu ở đâu: khoá thật do máy người dùng tự tạo
+          # lúc chạy. Ở đây chỉ để qua cổng "từ chối ký bằng hằng số công khai" của checkpoint.
+          AUTH_SECRET: ${{ github.run_id }}-${{ github.sha }}-chi-de-dung-goi
 
       - name: Có .next chưa (chặn gói rỗng)
         run: test -f .next/BUILD_ID && echo "BUILD_ID = $(cat .next/BUILD_ID)"
