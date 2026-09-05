@@ -46,10 +46,13 @@ export const HAN_HOI_MS = 8000;
 
 /** Kết quả một lượt giải định danh — đủ để test phân biệt "im lặng" với "ghi bừa". */
 export type KetQuaDanhTinh =
-  /** Bộ đệm đã có sẵn — KHÔNG tốn request nào, xong ngay trong microtask. */
-  | { trangThai: 'da-co'; userId: string }
+  /**
+   * Bộ đệm khớp với máy chủ — hoặc máy chủ không với tới nên đệm được dùng lại (đường lùi
+   * local-first). `hoSo` CHỈ có ở vế thứ nhất: đường lùi không có bằng chứng nào từ máy chủ.
+   */
+  | { trangThai: 'da-co'; userId: string; hoSo?: unknown }
   /** Máy chủ xác nhận, vừa gieo vào bộ đệm. */
-  | { trangThai: 'gieo-moi'; userId: string }
+  | { trangThai: 'gieo-moi'; userId: string; hoSo?: unknown }
   /** Máy chủ nói rõ: chưa đăng nhập (401). Không ghi gì. */
   | { trangThai: 'chua-dang-nhap' }
   /** Không kết luận được (503 / mạng đứt / hết giờ / thân lạ). Không ghi gì. */
@@ -153,17 +156,71 @@ export async function giaiDanhTinh(deps: PhuThuocDanhTinh): Promise<KetQuaDanhTi
   const id = typeof u?.id === 'string' ? u.id.trim() : '';
   if (!id) return { trangThai: 'khong-ket-luan', lyDo: 'thieu-id' };
 
+  /**
+   * 🔴 TRẢ LUÔN CẢ HỒ SƠ, KHÔNG CHỈ ID (D8, 04/09).
+   *
+   * Bản trước vứt `u` đi và chỉ giữ `id`. Hệ quả đo được trên app thật: bộ đệm được gieo mà
+   * `useFlowStore.user` KHÔNG BAO GIỜ được đặt trên `/settings` · `/cad` · `/photo` (đo 12 s,
+   * `store=null`), vì `getLastUserId()` đọc localStorage — KHÔNG phải state phản ứng, nên gieo
+   * xong **không kích một lượt render nào**. Mọi chỗ đọc `effectiveUserId` ở THÂN RENDER đứng
+   * yên ở giá trị null của lượt render đầu.
+   *
+   * Vì thân đáp án `/api/auth/me` VỐN ĐÃ mang đủ hồ sơ (id · email · name · credits · isAdmin ·
+   * avatar), giữ lại nó là MIỄN PHÍ — không thêm request, không thêm vòng. Đây là điều kiện để
+   * `danhTinhSanSang()` nạp được vào store, tức để bốn màn kia thôi phải tự hỏi máy chủ lần nữa.
+   *
+   * ⚠️ Lõi vẫn THUẦN: `hoSo` là `unknown` — lõi không biết `SessionUser` là gì, tầng vỏ mới ép
+   * kiểu. Giữ được như thế thì `lib/danh-tinh-phien.test.ts` không phải kéo store vào.
+   */
   // Máy chủ đã lên tiếng ⇒ tiếng nói của nó THẮNG. Đệm lệch (người trước còn sót) thì ghi đè,
   // tự chữa ngay trong lượt này — đây chính là chỗ vá lỗ rò chéo người dùng.
   if (id !== dem) {
     deps.ghiDem(id);
-    return { trangThai: 'gieo-moi', userId: id };
+    return { trangThai: 'gieo-moi', userId: id, hoSo: u };
   }
-  return { trangThai: 'da-co', userId: id };
+  return { trangThai: 'da-co', userId: id, hoSo: u };
 }
 
 /** Một lượt duy nhất cho cả vòng đời tab — nhiều nơi gọi cũng chỉ MỘT request. */
 let dangChay: Promise<KetQuaDanhTinh> | null = null;
+
+/**
+ * NẠP HỒ SƠ VÀO STORE — nửa còn thiếu của việc gieo định danh (D8, 04/09).
+ *
+ * ⛔ VÌ SAO PHẢI CÓ, và vì sao gieo bộ đệm KHÔNG đủ. `interiorflow.lastUserId` là localStorage:
+ * ghi vào đó **không kích render**. Nên bộ đệm chỉ cứu được các đường ĐỌC-MỘT-LẦN-LÚC-MOUNT đã
+ * `await danhTinhChoLuot()` (CadSheets · PresentSheets · autosave 3D · ResumeTracker ·
+ * project-scope). Còn 12 chỗ đọc `effectiveUserId(storeUserId)` trong **THÂN RENDER** thì phụ
+ * thuộc `useFlowStore.user` — đo trên app thật ngày 04/09: `/settings` · `/cad` · `/photo` chờ
+ * 12 giây, `store.user` vẫn `null`. Chúng đứng yên ở lượt render đầu, vĩnh viễn.
+ *
+ * ⭐ ĐÂY LÀ CONNECT, KHÔNG PHẢI CƠ CHẾ THỨ BA. Trước lượt này app chạy BA đường đọc định danh
+ * song song: `danhTinhSanSang` (chỉ gieo đệm) · `HomeScreen:423` · `PresentStageScreen:66` —
+ * hai đường sau tự `fetch('/api/auth/me')` rồi `setUser`. Nay đường thứ nhất làm nốt phần
+ * `setUser`, nên hai đường kia thành thừa và gỡ được. Số cơ chế đi TỪ BA XUỐNG MỘT.
+ *
+ * 🔒 BA CHỐT CHẶN, mỗi cái chặn một ca hỏng cụ thể:
+ *  ① `import()` ĐỘNG, không import tĩnh — `lib/store.ts` kéo theo zustand + registry; import
+ *    tĩnh sẽ lôi cả cụm đó vào `lib/danh-tinh-phien.test.ts` (chạy bằng sucrase-node, không DOM).
+ *    Lõi `giaiDanhTinh` phải ở lại thuần.
+ *  ② KHÔNG ghi đè khi store đã có ĐÚNG người đó — `/settings/avatar/page.tsx:39` `setUser` một
+ *    hồ sơ MỚI HƠN (vừa đổi avatar); đè bằng bản `/api/auth/me` cũ là làm mất avatar vừa lưu.
+ *  ③ Chỉ nạp khi máy chủ THỰC SỰ trả hồ sơ (`hoSo` chỉ tồn tại ở nhánh có đáp án 200). Đường
+ *    lui-về-đệm lúc mất mạng KHÔNG có `hoSo` ⇒ không bịa ra một user từ mỗi cái id.
+ */
+async function napHoSoVaoStore(kq: KetQuaDanhTinh): Promise<void> {
+  if (kq.trangThai !== 'da-co' && kq.trangThai !== 'gieo-moi') return;
+  const hs = kq.hoSo as { id?: unknown } | null | undefined;
+  if (!hs || typeof hs.id !== 'string' || !hs.id.trim()) return;
+  try {
+    const { useFlowStore } = await import('./store');
+    const dangCo = useFlowStore.getState().user;
+    if (dangCo?.id === hs.id) return; // chốt ② — đã đúng người, đừng đè bản mới bằng bản cũ
+    useFlowStore.getState().setUser(hs as never);
+  } catch {
+    /* nạp module hỏng / store chưa sẵn — app chạy tiếp y như trước, không ném */
+  }
+}
 
 /**
  * Gieo định danh cho tab hiện tại. Gọi được nhiều lần, nhiều nơi (single-flight).
@@ -186,9 +243,17 @@ export function danhTinhSanSang(): Promise<KetQuaDanhTinh> {
           hen = setTimeout(res, HAN_HOI_MS);
         }),
       cat: () => huy?.abort(),
-    }).finally(() => {
-      if (hen) clearTimeout(hen); // không để timer 8s giữ tab thức sau khi đã có câu trả lời
-    });
+    })
+      .then(async (kq) => {
+        // Nạp hồ sơ TRƯỚC khi promise này resolve: nơi nào `await danhTinhSanSang()` rồi đọc
+        // store ngay sau đó (đường đọc-một-lần-lúc-mount) phải thấy store đã đầy, không phải
+        // đợi thêm một microtask nữa — nếu không thì lại đúng cuộc chạy đua vừa chữa xong.
+        await napHoSoVaoStore(kq);
+        return kq;
+      })
+      .finally(() => {
+        if (hen) clearTimeout(hen); // không để timer 8s giữ tab thức sau khi đã có câu trả lời
+      });
   }
   return dangChay;
 }
