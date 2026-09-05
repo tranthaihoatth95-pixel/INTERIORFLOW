@@ -38,6 +38,8 @@
  *  · Bậc không bao giờ HẠ: đã dính `doc` thì mọi touch sau vẫn ra lưu đầy cho tới khi ghi xong.
  */
 
+import { henLucRanh } from './hen-luc-ranh';
+
 const DB_NAME = 'interiorflow-sheets';
 const DB_VERSION = 1;
 const STORE = 'sheets';
@@ -287,19 +289,10 @@ export function createSheetsAutosaver(
   let lastClean: SheetsRecord | null = null;
 
   /** Hẹn chạy lúc trình duyệt RẢNH — trần 1500ms để không bao giờ trễ vô hạn; Node/trình duyệt
-   * cũ không có requestIdleCallback thì chạy ở macrotask kế (hành vi ≈ bản cũ). */
-  const henIdle = (fn: () => void): (() => void) => {
-    const g = globalThis as {
-      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
-      cancelIdleCallback?: (id: number) => void;
-    };
-    if (typeof g.requestIdleCallback === 'function') {
-      const id = g.requestIdleCallback(fn, { timeout: 1500 });
-      return () => g.cancelIdleCallback?.(id);
-    }
-    const id = setTimeout(fn, 0);
-    return () => clearTimeout(id);
-  };
+   * cũ không có requestIdleCallback thì chạy ở macrotask kế (hành vi ≈ bản cũ).
+   * 05/09: thân hàm dời ra `lib/hen-luc-ranh.ts` để máy xem trước vật liệu dùng CHUNG một cơ
+   * chế, không chép bản thứ hai. Hành vi không đổi một dòng. */
+  const henIdle = (fn: () => void): (() => void) => henLucRanh(fn, 1500);
 
   const write = () => {
     huyIdle = null;

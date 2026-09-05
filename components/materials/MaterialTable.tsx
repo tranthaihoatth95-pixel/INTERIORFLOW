@@ -5,11 +5,13 @@
  * "ảnh · mã · tên · hãng · kích thước · giá · đơn vị · nguồn". Cùng phong cách inline-style +
  * biến `var(--t*)` như `components/present-editor/boq/BoqTable.tsx` (nhất quán design tokens).
  */
-import { Image as ImageIcon, Pencil, Trash2, Orbit } from 'lucide-react';
+import { Pencil, Trash2, Orbit } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { dimensionLabel, imageUrlOf, materialSourceLabel, type MaterialSpecDto } from '@/lib/materials/warehouse/dto';
 import { dinhDangVnd, type BaMat } from '@/lib/materials/ba-mat';
 import { ChiBaoBaMat } from './ChiBaoBaMat';
+import { MauVatLieu, CANH_O_SCAN } from './MauVatLieu';
+import type { XemTruocO } from '@/lib/materials/xem-truoc-o';
 
 export function MaterialTable({
   items,
@@ -17,6 +19,7 @@ export function MaterialTable({
   onDelete,
   onEditPbr,
   baMatCua,
+  xemTruocCua,
   onMoBaMat,
   chiDocThuongMai,
 }: {
@@ -28,6 +31,11 @@ export function MaterialTable({
   onEditPbr?: (m: MaterialSpecDto) => void;
   /** [marker: vatLieuBaMat] ba mặt đã đọc sẵn cho từng dòng — bảng chỉ VẼ, không tự tra. */
   baMatCua: (m: MaterialSpecDto) => BaMat;
+  /**
+   * 05/09 — nguyên liệu VẼ ô mẫu vật. `null` = món chưa có mã ⇒ không tra được mặt nào.
+   * Không truyền ⇒ ô rơi về màu phẳng; **không bao giờ** rơi về biểu tượng ảnh-hỏng nữa.
+   */
+  xemTruocCua?: (m: MaterialSpecDto) => XemTruocO | null;
   onMoBaMat: (m: MaterialSpecDto) => void;
   /**
    * 04/09 — dòng CHỈ ĐỌC Ở MẶT THƯƠNG MẠI (vật liệu hạt giống ship theo bản cài). Chúng KHÔNG có
@@ -67,16 +75,15 @@ export function MaterialTable({
             const url = imageUrlOf(m);
             const chiDoc = chiDocThuongMai?.(m) ?? false;
             return (
-              <tr key={m.id} style={{ height: 46 }}>
+              /* 46 → 52: ô mẫu phải đạt sàn nhận dạng 44 px (`SAN_PX.scan`), cộng đệm trên dưới.
+                 Cả hai đều là bội số 4 (BC-1). Mất ~13% số hàng nhìn thấy một màn — cái giá
+                 có chủ ý: một cột 32 px chiếm 2,8% bảng thì không ai nhận ra vật liệu bằng mắt. */
+              <tr key={m.id} style={{ height: CANH_O_SCAN + 8 }}>
+                {/* 05/09 — MẪU VẬT, nấc SCAN. Trước lượt này ô là 32×32 chứa biểu tượng
+                    ảnh-hỏng vì `imageUrlOf` đi tìm ẢNH ĐÃ TẢI LÊN, mà vật liệu của IF ship
+                    THAM SỐ chứ không ship ảnh. Nay ô được VẼ RA — xem `MauVatLieu`. */}
                 <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 6, overflow: 'hidden', background: 'var(--field)', display: 'grid', placeItems: 'center', color: 'var(--t4)' }}>
-                    {url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <ImageIcon size={14} />
-                    )}
-                  </div>
+                  <MauVatLieu ten={m.name} anhDaTai={url} xemTruoc={xemTruocCua?.(m) ?? null} mauPhang={m.colorHex} />
                 </td>
                 <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t4)', fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11 }}>
                   {m.sku || '—'}

@@ -23,7 +23,8 @@ import { IMPORT_KIND_LABEL } from '@/lib/materials/warehouse/dto';
 import { getMaterial } from '@/lib/materials/resolve';
 import { loadPbrMap, ensurePbrCanonicalKeys } from '@/lib/materials/pbr-store';
 import { pbrMapBaTang } from '@/lib/materials/tang-phan-giai';
-import { khoaBaMat, laHangHatGiong, tronHatGiong } from '@/lib/materials/kho-mo-dau';
+import { khoaBaMat, laHangHatGiong, tronDefsHatGiong, tronHatGiong } from '@/lib/materials/kho-mo-dau';
+import { xemTruocO, type XemTruocO } from '@/lib/materials/xem-truoc-o';
 import { baMatChuaCoMa, baMatCuaVatLieu, type BaMat } from '@/lib/materials/ba-mat';
 import type { MaterialPbr } from '@/lib/materials/schema';
 import { MATERIALS } from '@/lib/cad/materials';
@@ -134,23 +135,42 @@ export function MaterialsScreen() {
     return tronHatGiong(items);
   }, [items, lyDoHong]);
 
-  const baMatTheoId = useMemo(() => {
+  /* ⚡ CHÂN THỨ BA (05/09). `MATERIALS` một mình KHÔNG đủ: đo trên app thật, 0/13 preset khai
+     `matId` ⇒ `getMaterial().flat` luôn `null` ⇒ chỉ báo đọc ra `2D –` cho **cả hai** vật liệu
+     ship theo bản cài. `tronDefsHatGiong` xếp preset hạt giống xuống DƯỚI rồi để preset thật đè
+     lên khi trùng mã — cùng luật nhường của `tronHatGiong`, không đẻ thứ tự xếp hạng thứ hai. */
+  const defs2d = useMemo(() => tronDefsHatGiong(MATERIALS), []);
+
+  /* MỘT LƯỢT TRA, HAI THỨ DÙNG. Ba mặt (chỉ báo) và ô xem trước (mẫu vật) đọc CÙNG kết quả
+     `getMaterial` — tra hai lần là mở cửa cho hai đường đọc phân kỳ, đúng thứ luật M5 cấm
+     ("mọi đường đọc đi qua `getMaterial()`; cấm đường đọc thứ hai"). */
+  const { baMatTheoId, xemTruocTheoId } = useMemo(() => {
     const bang = new Map<string, BaMat>();
+    const xem = new Map<string, XemTruocO>();
     const nguon = hangHienThi ?? [];
     for (const m of nguon) {
       /* Dòng hạt giống tra bằng `matId` (UUID, đường CHÍNH); dòng DB giữ đường `sku` legacy —
          `khoaBaMat` là chỗ DUY NHẤT quyết định, không rải `if` khắp màn. */
       const khoa = khoaBaMat(m);
-      bang.set(m.id, khoa
-        ? baMatCuaVatLieu(getMaterial(khoa, { pbrMap, specs: nguon, defs: MATERIALS }))
-        : baMatChuaCoMa());
+      if (!khoa) { bang.set(m.id, baMatChuaCoMa()); continue; }
+      const facets = getMaterial(khoa, { pbrMap, specs: nguon, defs: defs2d });
+      bang.set(m.id, baMatCuaVatLieu(facets));
+      xem.set(m.id, xemTruocO(m.id, facets, m.colorHex));
     }
-    return bang;
-  }, [hangHienThi, pbrMap]);
+    return { baMatTheoId: bang, xemTruocTheoId: xem };
+  }, [hangHienThi, pbrMap, defs2d]);
 
   const layBaMat = useCallback(
     (m: MaterialSpecDto): BaMat => baMatTheoId.get(m.id) ?? baMatChuaCoMa(),
     [baMatTheoId],
+  );
+
+  /* Món CHƯA CÓ MÃ không có khoá nối ⇒ không tra được mặt nào ⇒ `null`. Bảng sẽ hiện ô màu
+     phẳng kèm lời giải thích, KHÔNG hiện biểu tượng ảnh-hỏng — không có dữ liệu là một sự thật,
+     không phải một lỗi tải ảnh. */
+  const layXemTruoc = useCallback(
+    (m: MaterialSpecDto): XemTruocO | null => xemTruocTheoId.get(m.id) ?? null,
+    [xemTruocTheoId],
   );
 
   const brands = useMemo(() => {
@@ -307,6 +327,7 @@ export function MaterialsScreen() {
           onDelete={(m) => void onDelete(m)}
           onEditPbr={setPbrEditing}
           baMatCua={layBaMat}
+          xemTruocCua={layXemTruoc}
           onMoBaMat={setBaMatCua}
           /* MỘT CHIỀU: mẫu gốc theo bản cài không sửa/xoá được ở màn kho. Mặt THỊ GIÁC vẫn chỉnh
              được (nút chất liệu render) — bản chỉnh rơi xuống tầng studio, mẫu gốc nguyên vẹn. */
